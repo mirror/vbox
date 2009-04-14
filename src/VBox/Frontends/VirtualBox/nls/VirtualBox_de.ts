@@ -65,12 +65,12 @@
         <translation>Inkompatible Qt-Bibliothek</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="586"/>
+        <location filename="../src/main.cpp" line="592"/>
         <source>VirtualBox - Error In %1</source>
         <translation>VirtualBox - Fehler in %1</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="592"/>
+        <location filename="../src/main.cpp" line="598"/>
         <source>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</source>
         <translation></translation>
     </message>
@@ -95,19 +95,24 @@
         <translation>Stellen Sie sicher, dass das Kernmodul erfolgreich geladen wurde.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="523"/>
+        <location filename="../src/main.cpp" line="524"/>
         <source>VirtualBox - Runtime Error</source>
         <translation>VirtualBox - Fehler in der Laufzeitumgebung</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="530"/>
+        <location filename="../src/main.cpp" line="531"/>
         <source>&lt;b&gt;Cannot access the kernel driver!&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</source>
         <translation>&lt;b&gt;Der Kerntreiber kann nicht angesprochen werden!&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="545"/>
+        <location filename="../src/main.cpp" line="551"/>
         <source>Unknown %2 error during initialization of the Runtime</source>
         <translation>Unbekannter Fehler %2 während der Initialisierung der Laufzeitumgebung</translation>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="545"/>
+        <source>Kernel driver not accessible</source>
+        <translation>Auf den Kerntreiber kann nicht zugegriffen werden</translation>
     </message>
 </context>
 <context>
@@ -357,12 +362,12 @@
 <context>
     <name>QIHttp</name>
     <message>
-        <location filename="../include/QIHttp.h" line="90"/>
+        <location filename="../include/QIHttp.h" line="91"/>
         <source>Connection timed out</source>
         <translation>Die Verbindung konnte innerhalb der vorgegebenen Zeit nicht aufgebaut werden</translation>
     </message>
     <message>
-        <location filename="../include/QIHttp.h" line="93"/>
+        <location filename="../include/QIHttp.h" line="94"/>
         <source>Could not locate the file on the server (response: %1)</source>
         <translation>Die Datei konnte auf dem Server nicht gefunden werden (Antwort: %1)</translation>
     </message>
@@ -550,7 +555,7 @@
         <translation>Version</translation>
     </message>
     <message>
-        <location filename="../src/VBoxApplianceEditorWgt.cpp" line="778"/>
+        <location filename="../src/VBoxApplianceEditorWgt.cpp" line="780"/>
         <source>Description</source>
         <translation>Beschreibung</translation>
     </message>
@@ -625,17 +630,17 @@
         <translation>Unbekannter Hardware</translation>
     </message>
     <message>
-        <location filename="../src/VBoxApplianceEditorWgt.cpp" line="390"/>
+        <location filename="../src/VBoxApplianceEditorWgt.cpp" line="392"/>
         <source>MB</source>
         <translation>MB</translation>
     </message>
     <message>
-        <location filename="../src/VBoxApplianceEditorWgt.cpp" line="232"/>
+        <location filename="../src/VBoxApplianceEditorWgt.cpp" line="234"/>
         <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
         <translation>&lt;b&gt;Originalwert:&lt;/b&gt; %1</translation>
     </message>
     <message>
-        <location filename="../src/VBoxApplianceEditorWgt.cpp" line="779"/>
+        <location filename="../src/VBoxApplianceEditorWgt.cpp" line="781"/>
         <source>Configuration</source>
         <translation>Konfiguration</translation>
     </message>
@@ -1193,11 +1198,16 @@
         <source>Sun VirtualBox</source>
         <translation>Sun VirtualBox</translation>
     </message>
+    <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2082"/>
+        <source>&lt;qt&gt;Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</source>
+        <translation>&lt;qt&gt;Zeigt an, ob diese virtuelle Maschine Hardware-Virtualisierung benutzt:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&gt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</translation>
+    </message>
 </context>
 <context>
     <name>VBoxDownloaderWgt</name>
     <message>
-        <location filename="../src/VBoxDownloaderWgt.cpp" line="154"/>
+        <location filename="../src/VBoxDownloaderWgt.cpp" line="155"/>
         <source>The download process has been cancelled by the user.</source>
         <translation>Das Herunterladen wurde vom Nutzer unterbrochen.</translation>
     </message>
@@ -5008,12 +5018,12 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxSwitchMenu</name>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="5645"/>
+        <location filename="../src/VBoxGlobal.cpp" line="5649"/>
         <source>Disable</source>
         <translation>Deaktivieren</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="5645"/>
+        <location filename="../src/VBoxGlobal.cpp" line="5649"/>
         <source>Enable</source>
         <translation>Aktivieren</translation>
     </message>
@@ -5096,13 +5106,13 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxUSBMenu</name>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="5575"/>
+        <location filename="../src/VBoxGlobal.cpp" line="5579"/>
         <source>&lt;no available devices&gt;</source>
         <comment>USB devices</comment>
         <translation>&lt;keine Geräte verfügbar&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="5578"/>
+        <location filename="../src/VBoxGlobal.cpp" line="5582"/>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
         <translation>Keine unterstützten Geräte mit dem PC verbunden</translation>
@@ -6121,37 +6131,37 @@ p, li {white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsHD</name>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="782"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="783"/>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
         <translation>Keine Festplatte für &lt;i&gt;%1&lt;/i&gt; ausgewählt</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="794"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="795"/>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
         <translation>&lt;i&gt;%1&lt;/i&gt; benutzt die Festplatte, die bereits an &lt;i&gt;%2&lt;/i&gt; angeschlossen ist</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="815"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="816"/>
         <source>&amp;Add Attachment</source>
         <translation>Anschluss &amp;hinzufügen</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="816"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="817"/>
         <source>&amp;Remove Attachment</source>
         <translation>Anschluss &amp;entfernen</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="817"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="818"/>
         <source>&amp;Select Hard Disk</source>
         <translation>Festplatte &amp;auswählen</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="826"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="827"/>
         <source>Adds a new hard disk attachment.</source>
         <translation>Fügt eine virtuelle Festplatte zur VM hinzu.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="827"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="828"/>
         <source>Removes the highlighted hard disk attachment.</source>
         <translation>Entfernt die ausgewählte virtuelle Platte von der VM.</translation>
     </message>
@@ -6166,7 +6176,7 @@ p, li {white-space: pre-wrap; }
         <translation>Zeigt alle an diese Maschine angeschlossenen Festplatten. Durch Mausklick oder Betätigen der Leertaste auf dem ausgewählten Eintrag aktivieren Sie eine Drop-Down-Liste und können den Anschlusstyp wählen. Benutzen Sie das Kontextmenü oder die Buttons auf der rechten Seite, um Festplatten hinzuzufügen oder zu entfernen.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="830"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="831"/>
         <source>Invokes the Virtual Media Manager to select a hard disk to attach to the currently highlighted slot.</source>
         <translation>Ruft den Manager für virtuelle Medien auf, um eine Festplatte an den ausgewählten Slot anzuschließen.</translation>
     </message>
@@ -6229,53 +6239,53 @@ p, li {white-space: pre-wrap; }
         <translation>Öffnet die erweiterten Einstellungen für den aktuellen Adaptertyp.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="204"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="223"/>
         <source>Adapter</source>
         <comment>network</comment>
         <translation>Adapter</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="205"/>
+        <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="301"/>
         <source>Not selected</source>
         <comment>adapter</comment>
         <translation>nicht ausgewählt</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="197"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="216"/>
         <source>Network</source>
         <comment>internal</comment>
         <translation>Netzwerk</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="198"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="217"/>
         <source>Not selected</source>
         <comment>network</comment>
         <translation>nicht ausgewählt</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="215"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="234"/>
         <source>MAC Address</source>
         <translation>MAC-Adresse</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="216"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="235"/>
         <source>Not selected</source>
         <comment>address</comment>
         <translation>nicht ausgewählt</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="218"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="237"/>
         <source>Cable</source>
         <translation>Kabel</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="219"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="238"/>
         <source>Connected</source>
         <comment>cable</comment>
         <translation>verbunden</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="219"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="238"/>
         <source>Not connected</source>
         <comment>cable</comment>
         <translation>nicht verbunden</translation>
@@ -6284,32 +6294,32 @@ p, li {white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsNetworkDetails</name>
     <message>
-        <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="155"/>
+        <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="157"/>
         <source>no bridged network adapter is selected</source>
         <translation>haben Sie kein Interface für Bridged Netzwerk ausgewählt</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="162"/>
+        <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="164"/>
         <source>no internal network name is specified</source>
         <translation>haben Sie keinen Namen für das interne Netzwerk ausgewählt</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="212"/>
+        <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="214"/>
         <source>Basic Details</source>
         <translation>Grundeinstellungen</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="215"/>
+        <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="217"/>
         <source>Bridged Network Details</source>
         <translation>Einstellungen für Bridged Netzwerk</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="218"/>
+        <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="220"/>
         <source>Internal Network Details</source>
         <translation>Einstellungen für Internes Netzwerk</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="221"/>
+        <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="223"/>
         <source>Host-only Network Details</source>
         <translation>Einstellungen für Hostonly Netzwerk</translation>
     </message>
@@ -6369,14 +6379,14 @@ p, li {white-space: pre-wrap; }
         <translation>Zeigt, ob das virtuelle Netzwerkkabel an die virtuelle Maschine angeschlossen ist oder nicht.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="169"/>
+        <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="171"/>
         <source>no host-only adapter is selected</source>
         <translation>haben Sie keinen Host-only-Adapter ausgewählt</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="226"/>
         <source>Not selected</source>
-        <translation>nicht ausgewählt</translation>
+        <translation type="obsolete">nicht ausgewählt</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="101"/>
