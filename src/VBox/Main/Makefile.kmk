@@ -663,11 +663,11 @@ if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "linux"
  INSTALLS.linux += VBoxMain-hardening-inst
  VBoxMain-hardening-inst_INST = $(INST_BIN)components/
  VBoxMain-hardening-inst_SYMLINKS = \
- 	VBoxDDU.so=../VBoxDDU.so \
- 	VBoxREM.so=../VBoxREM.so \
- 	VBoxRT.so=../VBoxRT.so \
- 	VBoxVMM.so=../VBoxVMM.so \
- 	VBoxXPCOM.so=../VBoxXPCOM.so
+ 	VBoxDDU.so=>../VBoxDDU.so \
+ 	VBoxREM.so=>../VBoxREM.so \
+ 	VBoxRT.so=>../VBoxRT.so \
+ 	VBoxVMM.so=>../VBoxVMM.so \
+ 	VBoxXPCOM.so=>../VBoxXPCOM.so
 endif
 
 
