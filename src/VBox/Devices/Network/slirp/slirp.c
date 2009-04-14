@@ -339,7 +339,6 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     char *suffix;
     struct dns_entry *da = NULL;
     struct dns_domain_entry *dd = NULL;
-    int fzerro_len_added = 0;
     ULONG ret = ERROR_SUCCESS;
 
     /* @todo add SKIPing flags to get only required information */
@@ -408,12 +407,8 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
             RTUtf16ToUtf8(addr->DnsSuffix, &suffix);
 
             if (!suffix || strlen(suffix) == 0) {
-                /* dhcpcd client very sad if no domain name is passed */
                 RTStrFree(suffix);
-                if (fzerro_len_added)
-                    goto next_dns;
-                fzerro_len_added = 1;
-                suffix = RTStrDup(" ");
+                goto next_dns;
             }
 
             found = 0;
