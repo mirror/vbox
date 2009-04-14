@@ -75,7 +75,6 @@ void glue(helper_psrlw, SUFFIX)(Reg *d, Reg *s)
         d->W(7) >>= shift;
 #endif
     }
-    FORCE_RET();
 }
 
 void glue(helper_psraw, SUFFIX)(Reg *d, Reg *s)
@@ -121,7 +120,6 @@ void glue(helper_psllw, SUFFIX)(Reg *d, Reg *s)
         d->W(7) <<= shift;
 #endif
     }
-    FORCE_RET();
 }
 
 void glue(helper_psrld, SUFFIX)(Reg *d, Reg *s)
@@ -142,7 +140,6 @@ void glue(helper_psrld, SUFFIX)(Reg *d, Reg *s)
         d->L(3) >>= shift;
 #endif
     }
-    FORCE_RET();
 }
 
 void glue(helper_psrad, SUFFIX)(Reg *d, Reg *s)
@@ -180,7 +177,6 @@ void glue(helper_pslld, SUFFIX)(Reg *d, Reg *s)
         d->L(3) <<= shift;
 #endif
     }
-    FORCE_RET();
 }
 
 void glue(helper_psrlq, SUFFIX)(Reg *d, Reg *s)
@@ -199,7 +195,6 @@ void glue(helper_psrlq, SUFFIX)(Reg *d, Reg *s)
         d->Q(1) >>= shift;
 #endif
     }
-    FORCE_RET();
 }
 
 void glue(helper_psllq, SUFFIX)(Reg *d, Reg *s)
@@ -218,7 +213,6 @@ void glue(helper_psllq, SUFFIX)(Reg *d, Reg *s)
         d->Q(1) <<= shift;
 #endif
     }
-    FORCE_RET();
 }
 
 #if SHIFT == 1
@@ -233,7 +227,6 @@ void glue(helper_psrldq, SUFFIX)(Reg *d, Reg *s)
         d->B(i) = d->B(i + shift);
     for(i = 16 - shift; i < 16; i++)
         d->B(i) = 0;
-    FORCE_RET();
 }
 
 void glue(helper_pslldq, SUFFIX)(Reg *d, Reg *s)
@@ -247,7 +240,6 @@ void glue(helper_pslldq, SUFFIX)(Reg *d, Reg *s)
         d->B(i) = d->B(i - shift);
     for(i = 0; i < shift; i++)
         d->B(i) = 0;
-    FORCE_RET();
 }
 #endif
 
@@ -465,7 +457,6 @@ void glue(helper_pmaddwd, SUFFIX) (Reg *d, Reg *s)
         d->L(i) = (int16_t)s->W(2*i) * (int16_t)d->W(2*i) +
             (int16_t)s->W(2*i+1) * (int16_t)d->W(2*i+1);
     }
-    FORCE_RET();
 }
 
 #if SHIFT == 0
@@ -516,7 +507,6 @@ void glue(helper_maskmov, SUFFIX) (Reg *d, Reg *s, target_ulong a0)
         if (s->B(i) & 0x80)
             stb(a0 + i, d->B(i));
     }
-    FORCE_RET();
 }
 
 void glue(helper_movl_mm_T0, SUFFIX) (Reg *d, uint32_t val)
@@ -954,7 +944,6 @@ void helper_ucomiss(Reg *d, Reg *s)
     s1 = s->XMM_S(0);
     ret = float32_compare_quiet(s0, s1, &env->sse_status);
     CC_SRC = comis_eflags[ret + 1];
-    FORCE_RET();
 }
 
 void helper_comiss(Reg *d, Reg *s)
@@ -966,7 +955,6 @@ void helper_comiss(Reg *d, Reg *s)
     s1 = s->XMM_S(0);
     ret = float32_compare(s0, s1, &env->sse_status);
     CC_SRC = comis_eflags[ret + 1];
-    FORCE_RET();
 }
 
 void helper_ucomisd(Reg *d, Reg *s)
@@ -978,7 +966,6 @@ void helper_ucomisd(Reg *d, Reg *s)
     d1 = s->XMM_D(0);
     ret = float64_compare_quiet(d0, d1, &env->sse_status);
     CC_SRC = comis_eflags[ret + 1];
-    FORCE_RET();
 }
 
 void helper_comisd(Reg *d, Reg *s)
@@ -990,7 +977,6 @@ void helper_comisd(Reg *d, Reg *s)
     d1 = s->XMM_D(0);
     ret = float64_compare(d0, d1, &env->sse_status);
     CC_SRC = comis_eflags[ret + 1];
-    FORCE_RET();
 }
 
 uint32_t helper_movmskps(Reg *s)
