@@ -467,8 +467,9 @@ DECLASM(int) TRPMGCTrap07Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
     PVM pVM = TRPM2VM(pTrpm);
 
     int rc = CPUMHandleLazyFPU(pVM, VMMGetCpu(pVM));
+    rc = trpmGCExitTrap(pVM, rc, pRegFrame);
     Log6(("TRPMGC07: %Rrc (%04x:%08x)\n", rc, pRegFrame->cs, pRegFrame->eip));
-    return rc; /** @todo call trpmGCExitTrap! (after 2.2.0) */
+    return rc;
 }
 
 
