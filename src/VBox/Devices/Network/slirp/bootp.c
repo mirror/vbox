@@ -299,6 +299,12 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
         {
             FILL_BOOTP_EXT(q, RFC1533_DNS, 4, &de->de_addr.s_addr);
         }
+        if (LIST_EMPTY(&pData->dns_domain_list_head))
+        {
+                /* Microsoft dhcp client doen't like domain-less dhcp and trimmed packets*/
+                /* dhcpcd client very sad if no domain name is passed */
+                FILL_BOOTP_EXT(q, RFC1533_DOMAINNAME, 1, " "); 
+        }
         LIST_FOREACH(dd, &pData->dns_domain_list_head, dd_list)
         {
             
