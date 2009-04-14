@@ -1,0 +1,56 @@
+# $Id$
+## @file
+# Sub-Makefile for the Guest Properties Host Service testcases.
+#
+
+#
+# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+# Clara, CA 95054 USA or visit http://www.sun.com if you need
+# additional information or have any questions.
+#
+
+SUB_DEPTH = ../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+ifdef VBOX_WITH_TESTCASES
+ ifndef VBOX_ONLY_ADDITIONS
+#
+# Case conversion testcase.
+#
+  if1of ($(KBUILD_TARGET),freebsd linux netbsd openbsd solaris)
+   PROGRAMS += tstClipboardX11
+   tstClipboardX11_TEMPLATE = VBOXR3TSTEXE
+# The second define here is to ensure that the testcase will run fast, without
+# waiting for any thread synchronisation.
+   tstClipboardX11_DEFS     = VBOX_WITH_HGCM TESTCASE
+   tstClipboardX11_SOURCES  = x11-clipboard.cpp clipboard-helper.cpp
+   tstClipboardX11_LIBS     = $(LIB_RUNTIME) Xt
+
+# Set this in LocalConfig.kmk if you are working on the X11 clipboard service
+# to automatically run the testcase at build time.
+   ifdef VBOX_RUN_X11_CLIPBOARD_TEST
+    ifndef VBOX_ONLY_SDK
+     TESTING  += $(PATH_tstClipboardX11)/tstClipboardX11.run
+     OTHERS += $(PATH_tstClipboardX11)/tstClipboardX11.run
+$$(PATH_tstClipboardX11)/tstClipboardX11.run: $$(INSTARGET_tstClipboardX11)
+	export VBOX_LOG_DEST=nofile; $(INSTARGET_tstClipboardX11) quiet
+	$(QUIET)$(APPEND) -t "$@" "done"
+    endif
+   endif
+
+  endif # 1of ($(KBUILD_TARGET),freebsd linux netbsd openbsd solaris)
+ endif # ! VBOX_ONLY_ADDITIONS
+endif # VBOX_WITH_TESTCASES
+
+include $(KBUILD_PATH)/subfooter.kmk
+
