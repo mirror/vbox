@@ -1023,6 +1023,74 @@ VMMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
 
 
 /**
+ * Worker called by PGMR3InitFinalize if we're configured to pre-allocate RAM.
+ *
+ * We do this late in the init process so that all the ROM and MMIO ranges have
+ * been registered already and we don't go wasting memory on them.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM     Pointer to the shared VM structure.
+ */
+int pgmR3PhysRamPreAllocate(PVM pVM)
+{
+    Assert(pVM->pgm.s.fRamPreAlloc);
+    Log(("pgmR3PhysRamPreAllocate: enter\n"));
+
+    /*
+     * Walk the RAM ranges and allocate all RAM pages, halt at
+     * the first allocation error.
+     */
+    uint64_t cPages = 0;
+    uint64_t NanoTS = RTTimeNanoTS();
+    pgmLock(pVM);
+    for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesR3; pRam; pRam = pRam->pNextR3)
+    {
+        PPGMPAGE    pPage  = &pRam->aPages[0];
+        RTGCPHYS    GCPhys = pRam->GCPhys;
+        uint32_t    cLeft  = pRam->cb >> PAGE_SHIFT;
+        while (cLeft-- > 0)
+        {
+            if (PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM)
+            {
+                switch (PGM_PAGE_GET_STATE(pPage))
+                {
+                    case PGM_PAGE_STATE_ZERO:
+                    {
+                        int rc = pgmPhysAllocPage(pVM, pPage, GCPhys);
+                        if (RT_FAILURE(rc))
+                        {
+                            LogRel(("PGM: RAM Pre-allocation failed at %RGp (in %s) with rc=%Rrc\n", GCPhys, pRam->pszDesc, rc));
+                            pgmUnlock(pVM);
+                            return rc;
+                        }
+                        cPages++;
+                        break;
+                    }
+
+                    case PGM_PAGE_STATE_ALLOCATED:
+                    case PGM_PAGE_STATE_WRITE_MONITORED:
+                    case PGM_PAGE_STATE_SHARED:
+                        /* nothing to do here. */
+                        break;
+                }
+            }
+
+            /* next */
+            pPage++;
+            GCPhys += PAGE_SIZE;
+        }
+    }
+    pgmUnlock(pVM);
+    NanoTS = RTTimeNanoTS() - NanoTS;
+
+    LogRel(("PGM: Pre-allocated %llu pages in %llu ms\n", cPages, NanoTS / 1000000));
+    Log(("pgmR3PhysRamPreAllocate: returns VINF_SUCCESS\n"));
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Resets (zeros) the RAM.
  *
  * ASSUMES that the caller owns the PGM lock.
@@ -1488,7 +1556,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
      */
     int rc = MMR3AdjustFixedReservation(pVM, cPages, pszDesc);
     if (RT_SUCCESS(rc))
-    {    
+    {
         void *pvPages;
         PSUPPAGE paPages = (PSUPPAGE)RTMemTmpAlloc(cPages * sizeof(SUPPAGE));
         if (RT_SUCCESS(rc))
@@ -1496,7 +1564,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
         if (RT_SUCCESS(rc))
         {
             memset(pvPages, 0, cPages * PAGE_SIZE);
-    
+
             /*
              * Create the MMIO2 range record for it.
              */
@@ -1519,9 +1587,9 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
                 pNew->RamRange.pszDesc      = pszDesc;
                 pNew->RamRange.cb           = cb;
                 //pNew->RamRange.fFlags     = 0; /// @todo MMIO2 flag?
-    
+
                 pNew->RamRange.pvR3         = pvPages;
-    
+
                 uint32_t iPage = cPages;
                 while (iPage-- > 0)
                 {
@@ -1529,23 +1597,23 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
                                   paPages[iPage].Phys & X86_PTE_PAE_PG_MASK, NIL_GMM_PAGEID,
                                   PGMPAGETYPE_MMIO2, PGM_PAGE_STATE_ALLOCATED);
                 }
-    
+
                 /* update page count stats */
                 pVM->pgm.s.cAllPages     += cPages;
                 pVM->pgm.s.cPrivatePages += cPages;
-    
+
                 /*
                  * Link it into the list.
                  * Since there is no particular order, just push it.
                  */
                 pNew->pNextR3 = pVM->pgm.s.pMmio2RangesR3;
                 pVM->pgm.s.pMmio2RangesR3 = pNew;
-    
+
                 *ppv = pvPages;
                 RTMemTmpFree(paPages);
                 return VINF_SUCCESS;
             }
-    
+
             SUPR3PageFreeEx(pvPages, cPages);
         }
         RTMemTmpFree(paPages);
