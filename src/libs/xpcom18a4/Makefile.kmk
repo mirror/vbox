@@ -1356,10 +1356,17 @@ ifdef VBOX_WITH_PYTHON
   endif
  else  # !darwin || configured darwin
   ifndef VBOX_PATH_PYTHON_INC
+   # As we build Solaris on newer Nevadas (109 currently) we want to use libpython2.4 for IPS compatiblity
+   # with older Nevada/OpenSolaris versions upon importing/installing the package. Otherwise we pick the
+   # highest libpython2.X available on the build box (2.6 on 109). We thus hardcode it to 2.4 here...
+   ifeq ($(KBUILD_TARGET),solaris)
+    VBOX_PATH_PYTHON_INC := /usr/include/python2.4
+   else
     VBOX_PATH_PYTHON_INC := $(patsubst %/Python.h,%, $(lastword $(sort $(wildcard \
     	/usr/include/python2.*/Python.h \
     	/usr/local/include/python2.*/Python.h \
     	))))
+   endif
    ifeq ($(VBOX_PATH_PYTHON_INC),)
     $(warning Unable to determine the python include directory (VBOX_PATH_PYTHON_INC).)
    endif
