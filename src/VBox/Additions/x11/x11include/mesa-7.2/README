@@ -1,0 +1,11 @@
+This directory was generated from the mesa-7.2.tar.gz archive by unpacking it
+and executing
+
+$ mkdir $VBOX_PATH/src/VBox/Additions/x11/x11include/mesa-7.2
+$ for i in `find include src/mesa -name '*.h' | grep -v src/mesa/drivers` \
+           `find src/mesa/drivers/dri/common -name '*.h'`
+    do
+      cp --parents $i $VBOX_PATH/src/VBox/Additions/x11/x11include/mesa-7.2
+    done
+
+in the mesa-7.2 directory.
