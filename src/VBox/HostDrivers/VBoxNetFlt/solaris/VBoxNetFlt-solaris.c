@@ -1951,7 +1951,7 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
                         LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp4: failed to unlink upper stream rc=%d rc2=%d.\n", rc, rc2));
                 }
                 else
-                    LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp4: failed to get MuxFd from MuxId. rc=%d rc2=%d\n"));
+                    LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp4: failed to get MuxFd from MuxId. rc=%d rc2=%d\n", rc, rc2));
             }
             else
                 LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp4: failed to get Mux Ids. rc=%d\n", rc));
@@ -2147,7 +2147,7 @@ static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
                         LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp6: failed to unlink upper stream rc=%d rc2=%d.\n", rc, rc2));
                 }
                 else
-                    LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp6: failed to get MuxFd from MuxId. rc=%d rc2=%d\n"));
+                    LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp6: failed to get MuxFd from MuxId. rc=%d rc2=%d\n", rc, rc2));
             }
             else
                 LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp6: failed to get Mux Ids. rc=%d\n", rc));
