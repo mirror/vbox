@@ -35,15 +35,13 @@ DLLS.win += \
     VBoxOGLpackspu \
     VBoxOGLfeedbackspu
 
-ifndef VBOX_OSE
- if1of ($(KBUILD_TARGET),linux solaris)
+if1of ($(KBUILD_TARGET),linux solaris)
 DLLS += \
     VBoxOGL \
     VBoxOGLarrayspu \
     VBoxOGLpassthroughspu \
     VBoxOGLpackspu \
     VBoxOGLfeedbackspu
- endif
 endif
 
 if1of ($(KBUILD_TARGET),linux solaris)
@@ -51,7 +49,7 @@ if1of ($(KBUILD_TARGET),linux solaris)
  ifneq ($(KBUILD_TARGET),solaris)   # No DRI on Solaris yet
   VBoxOGL_FAKEDRI = 1
  endif
- VBOX_PATH_MESA_SOURCE = $(VBOX_PATH_X11_ROOT)/mesa-7.2
+ VBOX_PATH_MESA_SOURCE = $(PATH_ROOT)/src/libs/mesa-7.2
 
  # Only Solaris right now needs C stubs because I can't figure out how to
  # generate the GOT based relocation ASM yet.
