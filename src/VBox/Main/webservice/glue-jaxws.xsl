@@ -504,7 +504,7 @@ class PortPool
  <xsl:text><![CDATA[
     private Map<VboxPortType, Integer> known;
     private boolean initStarted;
-    private VboxService svc;    
+    private VboxService svc;
 
     PortPool(boolean usePreinit)
     {
