@@ -428,12 +428,6 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
     }
     else
         rc = PGMR3PhysRegisterRam(pVM, 0, RT_MIN(cbRam, offRamHole), "Base RAM");
-    if (    RT_SUCCESS(rc)
-        &&  fPreAlloc)
-    {
-        /** @todo RamPreAlloc should be handled at the very end of the VM creation. (lazy bird) */
-        return VM_SET_ERROR(pVM, VERR_NOT_IMPLEMENTED, "TODO: RamPreAlloc");
-    }
 
     /*
      * Enabled mmR3UpdateReservation here since we don't want the

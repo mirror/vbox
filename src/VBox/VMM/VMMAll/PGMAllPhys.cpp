@@ -333,10 +333,11 @@ static int pgmPhysEnsureHandyPage(PVM pVM)
  *          nip back to ring-3/0 in some cases.
  *
  * @remarks This function shouldn't really fail, however if it does
- *          it probably means we've screwed up the size of the amount
- *          and/or the low-water mark of handy pages. Or, that some
- *          device I/O is causing a lot of pages to be allocated while
- *          while the host is in a low-memory condition.
+ *          it probably means we've screwed up the size of handy pages and/or
+ *          the low-water mark. Or, that some device I/O is causing a lot of
+ *          pages to be allocated while while the host is in a low-memory
+ *          condition. This latter should be handled elsewhere and in a more
+ *          controlled manner, it's on the @bugref{3170} todo list...
  */
 int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
 {

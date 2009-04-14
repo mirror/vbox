@@ -1208,7 +1208,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
         pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] = NIL_RTGCPHYS;
     }
 
-    rc = CFGMR3QueryBoolDef(pCfgPGM, "RamPreAlloc", &pVM->pgm.s.fRamPreAlloc, false);
+    rc = CFGMR3QueryBoolDef(CFGMR3GetRoot(pVM), "RamPreAlloc", &pVM->pgm.s.fRamPreAlloc, false);
     AssertLogRelRCReturn(rc, rc);
 
 #if HC_ARCH_BITS == 64 || 1 /** @todo 4GB/32-bit: remove || 1 later and adjust the limit. */
@@ -1872,6 +1872,12 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
         pVM->pgm.s.GCPhys4MBPSEMask = RT_BIT_64(36) - 1;
     else
         pVM->pgm.s.GCPhys4MBPSEMask = RT_BIT_64(32) - 1;
+
+    /*
+     * Allocate memory if we're supposed to do that.
+     */
+    if (pVM->pgm.s.fRamPreAlloc)
+        rc = pgmR3PhysRamPreAllocate(pVM);
 
     LogRel(("PGMR3InitFinalize: 4 MB PSE mask %RGp\n", pVM->pgm.s.GCPhys4MBPSEMask));
     return rc;
