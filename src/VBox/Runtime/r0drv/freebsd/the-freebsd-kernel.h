@@ -36,6 +36,7 @@
 /* Deal with conflicts first. */
 #include <sys/param.h>
 #undef PVM
+#include <sys/bus.h>
 #include <sys/types.h>
 #include <sys/errno.h>
 #include <sys/kernel.h>
@@ -52,6 +53,7 @@
 #include <sys/mutex.h>
 #include <sys/sched.h>
 #include <sys/callout.h>
+#include <sys/cpu.h>
 #include <sys/smp.h>
 #include <vm/vm.h>
 #include <vm/pmap.h>            /* for vtophys */
@@ -59,6 +61,8 @@
 #include <vm/vm_object.h>
 #include <vm/vm_kern.h>
 #include <vm/vm_param.h>        /* KERN_SUCCESS ++ */
+#include <vm/vm_page.h>
+#include <sys/resourcevar.h>
 
 /*#ifdef __cplusplus
 # error "This header doesn't work for C++ code. Sorry, typical kernel crap."
