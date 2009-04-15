@@ -410,7 +410,7 @@ VBOX_WITH_LSILOGIC = 1
 # Enable SCSI drivers
 VBOX_WITH_SCSI = 1
 # Enable host network interface API.
-if1of ($(KBUILD_TARGET), darwin solaris linux win)
+if1of ($(KBUILD_TARGET), darwin solaris linux win freebsd)
  VBOX_WITH_HOSTNETIF_API = 1
 endif
 # Enables the Python<->XPCOM and later Python<->COM bindings.
