@@ -215,7 +215,7 @@ static int handleRegisterVM(HandlerArg *a)
         }
         CHECK_ERROR(a->virtualBox, OpenMachine(Bstr(szVMFileAbs), machine.asOutParam()));
     }
-    else
+    else if (FAILED(rc))
         CHECK_ERROR(a->virtualBox, OpenMachine(Bstr(a->argv[0]), machine.asOutParam()));
     if (SUCCEEDED(rc))
     {

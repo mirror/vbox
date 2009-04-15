@@ -1282,7 +1282,7 @@ int handleOpenMedium(HandlerArg *a)
             }
             CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(szFilenameAbs), AccessMode_ReadWrite, hardDisk.asOutParam()));
         }
-        else
+        else if (FAILED(rc))
             CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(Filename), AccessMode_ReadWrite, hardDisk.asOutParam()));
         if (SUCCEEDED(rc) && hardDisk)
         {
@@ -1310,7 +1310,7 @@ int handleOpenMedium(HandlerArg *a)
             }
             CHECK_ERROR(a->virtualBox, OpenDVDImage(Bstr(szFilenameAbs), Guid(), dvdImage.asOutParam()));
         }
-        else
+        else if (FAILED(rc))
             CHECK_ERROR(a->virtualBox, OpenDVDImage(Bstr(Filename), Guid(), dvdImage.asOutParam()));
     }
     else if (cmd == CMD_FLOPPY)
@@ -1330,7 +1330,7 @@ int handleOpenMedium(HandlerArg *a)
             }
             CHECK_ERROR(a->virtualBox, OpenFloppyImage(Bstr(szFilenameAbs), Guid(), floppyImage.asOutParam()));
         }
-        else
+        else if (FAILED(rc))
             CHECK_ERROR(a->virtualBox, OpenFloppyImage(Bstr(Filename), Guid(), floppyImage.asOutParam()));
     }
 
