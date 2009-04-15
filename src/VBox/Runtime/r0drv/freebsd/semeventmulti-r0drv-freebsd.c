@@ -192,11 +192,11 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
 
         ASMAtomicIncU32(&pEventMultiInt->cWaiters);
 
-        rc = msleep(pEventMultiInt,     /* block id */
-                    &pEventMultiInt->Mtx,
-                    fInterruptible ? PZERO | PCATCH : PZERO,
-                    "iprtev",           /* max 6 chars */
-                    cTicks);
+        rc = msleep_spin(pEventMultiInt,     /* block id */
+                         &pEventMultiInt->Mtx,
+                         //fInterruptible ? PZERO | PCATCH : PZERO,
+                         "iprte",           /* max 6 chars */
+                         cTicks);
         switch (rc)
         {
             case 0:
