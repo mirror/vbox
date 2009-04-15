@@ -29,13 +29,19 @@
 class QILineEdit: public QLineEdit
 {
 public:
+
     QILineEdit (QWidget *aParent = 0)
         :QLineEdit (aParent) {}
     QILineEdit (const QString &aContents, QWidget *aParent = 0)
         :QLineEdit (aContents, aParent) {}
 
+    void setMinimumWidthByText (const QString &aText);
     void setFixedWidthByText (const QString &aText);
-}; 
+
+private:
+
+    QSize featTextWidth (const QString &aText) const;
+};
 
 #endif /* __QILineEdit_h__ */
 

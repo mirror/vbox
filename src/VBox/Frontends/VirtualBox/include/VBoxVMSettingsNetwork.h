@@ -50,7 +50,8 @@ public:
     QWidget* setOrderAfter (QWidget *aAfter);
 
     QString pageTitle() const;
-    QString currentName (KNetworkAttachmentType aType = KNetworkAttachmentType_Null) const;
+    KNetworkAttachmentType attachmentType() const;
+    QString alternativeName (int aType = -1) const;
 
 protected:
 
@@ -58,18 +59,22 @@ protected:
 
 private slots:
 
-    void updateAttachmentInfo();
+    void updateAttachmentAlternative();
+    void updateAlternativeName();
     void detailsClicked();
 
 private:
 
     void populateComboboxes();
-    KNetworkAttachmentType attachmentType() const;
 
     VBoxVMSettingsNetworkPage *mParent;
     VBoxVMSettingsNetworkDetails *mDetails;
     CNetworkAdapter mAdapter;
     QIWidgetValidator *mValidator;
+
+    QString mBrgName;
+    QString mIntName;
+    QString mHoiName;
 };
 
 class VBoxVMSettingsNetworkPage : public VBoxSettingsPage
@@ -80,8 +85,8 @@ public:
 
     VBoxVMSettingsNetworkPage();
 
-    QStringList intList (bool aRefresh = false);
     QStringList brgList (bool aRefresh = false);
+    QStringList intList (bool aRefresh = false);
     QStringList hoiList (bool aRefresh = false);
 
 protected:
@@ -94,13 +99,17 @@ protected:
 
     void retranslateUi();
 
+private slots:
+
+    void updatePages();
+
 private:
 
     QIWidgetValidator *mValidator;
     QTabWidget *mTwAdapters;
 
-    QStringList mIntList;
     QStringList mBrgList;
+    QStringList mIntList;
     QStringList mHoiList;
 };
 

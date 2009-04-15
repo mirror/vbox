@@ -40,12 +40,10 @@ public:
 
     void getFromAdapter (const CNetworkAdapter &mAdapter);
     void putBackToAdapter();
+    void reload();
 
-    void loadList (KNetworkAttachmentType aType, const QStringList &aList);
-
-    bool revalidate (KNetworkAttachmentType aType, QString &aWarning);
-
-    QString currentName (KNetworkAttachmentType aType = KNetworkAttachmentType_Null) const;
+    const QString& macAddress() const { return mMacAddress; }
+    bool cableConnected() const { return mCableConnected; }
 
 protected:
 
@@ -55,16 +53,13 @@ protected:
 private slots:
 
     void accept();
-    void genMACClicked();
+    void generateMac();
 
 private:
 
-    void populateComboboxes();
-    void saveAlternative();
-    QComboBox* comboBox() const;
-
-    KNetworkAttachmentType mType;
     CNetworkAdapter mAdapter;
+    QString mMacAddress;
+    bool mCableConnected;
 };
 
 #endif // __VBoxVMSettingsNetworkDetails_h__

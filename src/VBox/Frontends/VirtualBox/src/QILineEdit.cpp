@@ -29,7 +29,17 @@
 #include <QWindowsVistaStyle>
 #endif
 
+void QILineEdit::setMinimumWidthByText (const QString &aText)
+{
+    setMinimumWidth (featTextWidth (aText).width());
+}
+
 void QILineEdit::setFixedWidthByText (const QString &aText)
+{
+    setFixedWidth (featTextWidth (aText).width());
+}
+
+QSize QILineEdit::featTextWidth (const QString &aText) const
 {
     QStyleOptionFrame sof;
     sof.initFrom (this);
@@ -53,7 +63,6 @@ void QILineEdit::setFixedWidthByText (const QString &aText)
         sa -= QSize (23, 0);
 #endif
 
-    setMaximumWidth (sa.width());
-    setMinimumWidth (sa.width());
+    return sa;
 }
 
