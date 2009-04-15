@@ -103,6 +103,8 @@ static struct cdevsw        g_VBoxDrvFreeBSDChrDevSW =
 static struct clonedevs    *g_pVBoxDrvFreeBSDClones;
 /** The dev_clone event handler tag. */
 static eventhandler_tag     g_VBoxDrvFreeBSDEHTag;
+/** Reference counter */
+static volatile uint32_t    cUsers;
 
 /** The device extention. */
 static SUPDRVDEVEXT         g_VBoxDrvFreeBSDDevExt;
@@ -148,6 +150,8 @@ static int VBoxDrvFreeBSDLoad(void)
 {
     dprintf(("VBoxDrvFreeBSDLoad:\n"));
 
+    cUsers = 0;
+
     /*
      * Initialize the runtime.
      */
@@ -189,7 +193,8 @@ static int VBoxDrvFreeBSDUnload(void)
 {
     dprintf(("VBoxDrvFreeBSDUnload:\n"));
 
-    /** @todo verify that FreeBSD does reference counting. */
+    if (cUsers > 0)
+        return EBUSY;
 
     /*
      * Reserve what we did in VBoxDrvFreeBSDInit.
@@ -306,7 +311,10 @@ static int VBoxDrvFreeBSDOpen(struct cdev *pDev, int fOpen, struct thread *pTd, 
         pSession->Uid = stuff;
         pSession->Gid = stuff; */
         if (ASMAtomicCmpXchgPtr(&pDev->si_drv1, pSession, (void *)0x42))
+        {
+            ASMAtomicIncU32(&cUsers);
             return 0;
+        }
 
         OSDBGPRINT(("VBoxDrvFreeBSDOpen: si_drv1=%p, expected 0x42!\n", pDev->si_drv1));
         supdrvCloseSession(&g_VBoxDrvFreeBSDDevExt, pSession);
@@ -338,6 +346,9 @@ static int VBoxDrvFreeBSDClose(struct cdev *pDev, int fFile, int DevType, struct
         supdrvCloseSession(&g_VBoxDrvFreeBSDDevExt, pSession);
         if (!ASMAtomicCmpXchgPtr(&pDev->si_drv1, NULL, pSession))
             OSDBGPRINT(("VBoxDrvFreeBSDClose: si_drv1=%p expected %p!\n", pDev->si_drv1, pSession));
+        ASMAtomicDecU32(&cUsers);
+        /* Don't use destroy_dev here because it may sleep resulting in a hanging user process. */
+        destroy_dev_sched(pDev);
     }
     else
         OSDBGPRINT(("VBoxDrvFreeBSDClose: si_drv1=%p!\n", pSession));
@@ -490,10 +501,11 @@ static int VBoxDrvFreeBSDIOCtlSlow(PSUPDRVSESSION pSession, u_long ulCmd, caddr_
             if (RT_UNLIKELY(rc))
                 OSDBGPRINT(("VBoxDrvFreeBSDIOCtlSlow: copyout(%p,%p,%#x) -> %d; uCmd=%#lx!\n", pHdr, pvUser, cbOut, rc, ulCmd));
 
+            dprintf(("VBoxDrvFreeBSDIOCtlSlow: returns %d / %d ulCmd=%lx\n", 0, pHdr->rc, ulCmd));
+
             /* cleanup */
             RTMemTmpFree(pHdr);
         }
-        dprintf(("VBoxDrvFreeBSDIOCtlSlow: returns %d / %d ulCmd=%lx\n", 0, pHdr->rc, ulCmd));
     }
     else
     {
