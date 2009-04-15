@@ -18,28 +18,8 @@
 # include <IPHlpApi.h>
 #endif
 
-#if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
+#if !defined(RT_OS_WINDOWS)
 
-# ifndef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
-#  define DO_ENGAGE_EVENT1(so, fdset, label)          \
-    do {                                             \
-        FD_SET((so)->s, (fdset));                    \
-        UPD_NFDS((so)->s);                           \
-    } while(0)
-
-
-#  define DO_ENGAGE_EVENT2(so, fdset1, fdset2, label) \
-    do {                                             \
-        FD_SET((so)->s, (fdset1));                   \
-        FD_SET((so)->s, (fdset2));                   \
-        UPD_NFDS((so)->s);                           \
-    } while(0)
-
-#  define DO_POLL_EVENTS(rc, error, so, events, label) do {} while (0)
-
-#  define DO_CHECK_FD_SET(so, events, fdset) (FD_ISSET((so)->s, fdset))
-#  define DO_UNIX_CHECK_FD_SET(so, events, fdset )  0 /*specific for Unix API */
-# else /* !VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 #  define DO_ENGAGE_EVENT1(so, fdset, label)                        \
     do {                                                            \
         if(    so->so_poll_index != -1                              \
@@ -81,7 +61,6 @@
                                                 && (polls[(so)->so_poll_index].revents & N_(fdset ## _poll)))
 #  define DO_UNIX_CHECK_FD_SET(so, events, fdset ) DO_CHECK_FD_SET((so), (events), fdset) /*specific for Unix API */
 #  define DO_WIN_CHECK_FD_SET(so, events, fdset ) 0 /* specific for Windows Winsock API */
-# endif /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 
 # ifndef RT_OS_WINDOWS
 
@@ -104,15 +83,11 @@
             DO_ENGAGE_EVENT1((so), fdset, ICMP);    \
     } while (0)
 # else /* !RT_OS_WINDOWS */
-#  ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
-#   define DO_WIN_CHECK_FD_SET(so, events, fdset ) DO_CHECK_FD_SET((so), (events), fdset)
-#  else /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
-#   define DO_WIN_CHECK_FD_SET(so, events, fdset ) 0
-#  endif /* !VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
+#  define DO_WIN_CHECK_FD_SET(so, events, fdset ) DO_CHECK_FD_SET((so), (events), fdset)
 #  define ICMP_ENGAGE_EVENT(so, fdset) do {} while(0)
 #endif /* RT_OS_WINDOWS */
 
-#else /* defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) */
+#else /* defined(RT_OS_WINDOWS) */
 
 /*
  * On Windows, we will be notified by IcmpSendEcho2() when the response arrives.
@@ -163,7 +138,7 @@
 # define DO_WIN_CHECK_FD_SET(so, events, fdset ) DO_CHECK_FD_SET((so), (events), fdset)
 # define DO_UNIX_CHECK_FD_SET(so, events, fdset ) 1 /*specific for Unix API */
 
-#endif /* defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) */
+#endif /* defined(RT_OS_WINDOWS) */
 
 #define TCP_ENGAGE_EVENT1(so, fdset) \
     DO_ENGAGE_EVENT1((so), fdset, tcp)
@@ -192,33 +167,23 @@
  * Loging macros
  */
 #if VBOX_WITH_DEBUG_NAT_SOCKETS
-# if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC)
-#  if defined(RT_OS_WINDOWS)
-#   define  DO_LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset)             \
-    do {                                                                                \
-        LogRel(("  " #proto " %R[natsock] %R[natwinnetevents]\n", (so), (winevent)));   \
-    } while (0)
-#  else /* RT_OS_WINDOWS */
-#   define  DO_LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset)         \
-    do {                                                                            \
-            LogRel(("  " #proto " %R[natsock] %s %s %s er: %s, %s, %s\n", (so),     \
-                     CHECK_FD_SET(so, ign ,r_fdset) ? "READ":"",                    \
-                     CHECK_FD_SET(so, ign, w_fdset) ? "WRITE":"",                   \
-                     CHECK_FD_SET(so, ign, x_fdset) ? "OOB":"",                     \
-                     CHECK_FD_SET(so, ign, rderr) ? "RDERR":"",                     \
-                     CHECK_FD_SET(so, ign, rdhup) ? "RDHUP":"",                     \
-                     CHECK_FD_SET(so, ign, nval) ? "RDNVAL":""));                   \
-    } while (0)
-#  endif /* !RT_OS_WINDOWS */
-# else /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
-#  define  DO_LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset)  \
-    do {                                                                    \
-            LogRel(("  " #proto " %R[natsock] %s %s %s\n", (so),            \
-                FD_ISSET((so)->s, (r_fdset))?"READ":"",                     \
-                FD_ISSET((so)->s, (w_fdset))?"WRITE":"",                    \
-                FD_ISSET((so)->s, (x_fdset))?"OOB":""));                    \
-    } while (0)
-# endif
+# if defined(RT_OS_WINDOWS)
+#  define  DO_LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset)             \
+   do {                                                                                \
+       LogRel(("  " #proto " %R[natsock] %R[natwinnetevents]\n", (so), (winevent)));   \
+   } while (0)
+# else /* RT_OS_WINDOWS */
+#  define  DO_LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset)         \
+   do {                                                                            \
+           LogRel(("  " #proto " %R[natsock] %s %s %s er: %s, %s, %s\n", (so),     \
+                    CHECK_FD_SET(so, ign ,r_fdset) ? "READ":"",                    \
+                    CHECK_FD_SET(so, ign, w_fdset) ? "WRITE":"",                   \
+                    CHECK_FD_SET(so, ign, x_fdset) ? "OOB":"",                     \
+                    CHECK_FD_SET(so, ign, rderr) ? "RDERR":"",                     \
+                    CHECK_FD_SET(so, ign, rdhup) ? "RDHUP":"",                     \
+                    CHECK_FD_SET(so, ign, nval) ? "RDNVAL":""));                   \
+   } while (0)
+# endif /* !RT_OS_WINDOWS */
 #else /* VBOX_WITH_DEBUG_NAT_SOCKETS */
 # define DO_LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset) do {} while (0)
 #endif /* !VBOX_WITH_DEBUG_NAT_SOCKETS */
@@ -642,9 +607,7 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
         WSADATA Data;
         WSAStartup(MAKEWORD(2, 0), &Data);
     }
-# if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC)
     pData->phEvents[VBOX_SOCKET_EVENT_INDEX] = CreateEvent(NULL, FALSE, FALSE, NULL);
-# endif
 #endif
 #ifdef VBOX_WITH_SLIRP_MT
     QSOCKET_LOCK_CREATE(tcb);
@@ -809,24 +772,18 @@ static void updtime(PNATState pData)
 #endif
 }
 
-#ifndef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
-void slirp_select_fill(PNATState pData, int *pnfds,
-                       fd_set *readfds, fd_set *writefds, fd_set *xfds)
-#else /* !VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
-# ifdef RT_OS_WINDOWS
+#ifdef RT_OS_WINDOWS
 void slirp_select_fill(PNATState pData, int *pnfds)
-# else /* RT_OS_WINDOWS */
+#else /* RT_OS_WINDOWS */
 void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
-# endif /* !RT_OS_WINDOWS */
-#endif /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
+#endif /* !RT_OS_WINDOWS */
 {
     struct socket *so, *so_next;
     int nfds;
-#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+#if defined(RT_OS_WINDOWS)
     int rc;
     int error;
-#endif
-#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && !defined(RT_OS_WINDOWS)
+#else
     int poll_index = 0;
 #endif
     int i;
@@ -867,7 +824,7 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
 
         QSOCKET_FOREACH(so, so_next, tcp)
         /* { */
-#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && !defined(RT_OS_WINDOWS)
+#if !defined(RT_OS_WINDOWS)
             so->so_poll_index = -1;
 #endif
             STAM_COUNTER_INC(&pData->StatTCP);
@@ -939,7 +896,7 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
         /* { */
 
             STAM_COUNTER_INC(&pData->StatUDP);
-#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && !defined(RT_OS_WINDOWS)
+#if !defined(RT_OS_WINDOWS)
             so->so_poll_index = -1;
 #endif
 
@@ -988,38 +945,29 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
 
     }
 
-#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC)
-# if defined(RT_OS_WINDOWS)
+#if defined(RT_OS_WINDOWS)
     *pnfds = VBOX_EVENT_COUNT;
-# else /* RT_OS_WINDOWS */
+#else /* RT_OS_WINDOWS */
     AssertRelease(poll_index <= *pnfds);
     *pnfds = poll_index;
-# endif /* !RT_OS_WINDOWS */
-#else /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
-    *pnfds = nfds;
-#endif /* !VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
+#endif /* !RT_OS_WINDOWS */
 
     STAM_PROFILE_STOP(&pData->StatFill, a);
 }
 
-#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC)
-# if defined(RT_OS_WINDOWS)
+#if defined(RT_OS_WINDOWS)
 void slirp_select_poll(PNATState pData, int fTimeout, int fIcmp)
-# else /* RT_OS_WINDOWS */
+#else /* RT_OS_WINDOWS */
 void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
-# endif /* !RT_OS_WINDOWS */
-#else /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
-void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_set *xfds)
-#endif /* !VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
+#endif /* !RT_OS_WINDOWS */
 {
     struct socket *so, *so_next;
     int ret;
-#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+#if defined(RT_OS_WINDOWS)
     WSANETWORKEVENTS NetworkEvents;
     int rc;
     int error;
-#endif
-#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && !defined(RT_OS_WINDOWS)
+#else
     int poll_index = 0;
 #endif
 
@@ -1049,7 +997,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
             STAM_PROFILE_STOP(&pData->StatSlowTimer, a);
         }
     }
-#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+#if defined(RT_OS_WINDOWS)
     if (fTimeout)
         return; /* only timer update */
 #endif
@@ -1142,7 +1090,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                 if (so->so_state & SS_FACCEPTCONN)
                 {
                     TCP_CONNECT(pData, so);
-#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+#if defined(RT_OS_WINDOWS)
                     if (!(NetworkEvents.lNetworkEvents & FD_CLOSE))
 #endif
                         CONTINUE(tcp);
@@ -1154,7 +1102,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                     TCP_OUTPUT(pData, sototcpcb(so));
             }
 
-#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+#if defined(RT_OS_WINDOWS)
             /*
              * Check for FD_CLOSE events.
              * in some cases once FD_CLOSE engaged on socket it could be flashed latter (for some reasons)
@@ -1449,11 +1397,7 @@ struct arphdr
 };
 AssertCompileSize(struct arphdr, 28);
 
-#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
 static void arp_input(PNATState pData, struct mbuf *m)
-#else
-static void arp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
-#endif
 {
     struct ethhdr *eh;
     struct ethhdr *reh;
@@ -1462,25 +1406,15 @@ static void arp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
     int ar_op;
     struct ex_list *ex_ptr;
     uint32_t htip;
-#ifndef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
-    uint8_t arp_reply[sizeof(struct arphdr) + ETH_HLEN];
-    eh = (struct ethhdr *)pkt;
-#else
     struct mbuf *mr;
     eh = mtod(m, struct ethhdr *);
-#endif
     ah = (struct arphdr *)&eh[1];
     htip = ntohl(*(uint32_t*)ah->ar_tip);
 
-#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
     mr = m_get(pData);
     mr->m_data += if_maxlinkhdr;
     mr->m_len = sizeof(struct arphdr);
     rah = mtod(mr, struct arphdr *);
-#else
-    reh = (struct ethhdr *)arp_reply;
-    rah = (struct arphdr *)&reh[1];
-#endif
 
     ar_op = ntohs(ah->ar_op);
     switch(ar_op)
@@ -1499,13 +1433,6 @@ static void arp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
                 }
                 return;
         arp_ok:
-
-#ifndef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
-                memcpy(reh->h_dest, eh->h_source, ETH_ALEN);
-                memcpy(reh->h_source, &special_addr, ETH_ALEN);
-                reh->h_source[5] = ah->ar_tip[3];
-                reh->h_proto = htons(ETH_P_ARP);
-#endif
                 rah->ar_hrd = htons(1);
                 rah->ar_pro = htons(ETH_P_IP);
                 rah->ar_hln = ETH_ALEN;
@@ -1525,12 +1452,8 @@ static void arp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
                 memcpy(rah->ar_sip, ah->ar_tip, 4);
                 memcpy(rah->ar_tha, ah->ar_sha, ETH_ALEN);
                 memcpy(rah->ar_tip, ah->ar_sip, 4);
-#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
                 if_encap(pData, ETH_P_ARP, mr);
                 m_free(pData, m);
-#else
-                slirp_output(pData->pvUser, arp_reply, sizeof(arp_reply));
-#endif
             }
             break;
         default:
@@ -1569,12 +1492,7 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
     switch(proto)
     {
         case ETH_P_ARP:
-#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
             arp_input(pData, m);
-#else
-            arp_input(pData, pkt, pkt_len);
-            m_free(pData, m);
-#endif
             break;
         case ETH_P_IP:
             /* Update time. Important if the network is very quiet, as otherwise
@@ -1601,34 +1519,19 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
 }
 
 /* output the IP packet to the ethernet device */
-#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
 void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m)
-#else
-void if_encap(PNATState pData, uint8_t *ip_data, int ip_data_len)
-#endif
 {
-#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
     struct ethhdr *eh;
     uint8_t *buf = RTMemAlloc(1600);
+
     m->m_data -= if_maxlinkhdr;
     m->m_len += ETH_HLEN;
     eh = mtod(m, struct ethhdr *);
-#else
-    uint8_t buf[1600];
-    struct ethhdr *eh = (struct ethhdr *)buf;
-
-    if (ip_data_len + ETH_HLEN > sizeof(buf))
-        return;
-
-    memcpy(buf + sizeof(struct ethhdr), ip_data, ip_data_len);
-#endif
-
 
     memcpy(eh->h_dest, client_ethaddr, ETH_ALEN);
     memcpy(eh->h_source, special_ethaddr, ETH_ALEN - 1);
     /* XXX: not correct */
     eh->h_source[5] = CTL_ALIAS;
-#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
     eh->h_proto = htons(eth_proto);
 #if 0
     slirp_output(pData->pvUser, m, mtod(m, uint8_t *), m->m_len);
@@ -1636,10 +1539,6 @@ void if_encap(PNATState pData, uint8_t *ip_data, int ip_data_len)
     memcpy(buf, mtod(m, uint8_t *), m->m_len);
     slirp_output(pData->pvUser, NULL, buf, m->m_len);
     m_free(pData, m);
-#endif
-#else
-    eh->h_proto = htons(ETH_P_IP);
-    slirp_output(pData->pvUser, buf, ip_data_len + ETH_HLEN);
 #endif
 }
 
@@ -1674,7 +1573,7 @@ void slirp_set_ethaddr(PNATState pData, const uint8_t *ethaddr)
     memcpy(client_ethaddr, ethaddr, ETH_ALEN);
 }
 
-#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+#if defined(RT_OS_WINDOWS)
 HANDLE *slirp_get_events(PNATState pData)
 {
         return pData->phEvents;

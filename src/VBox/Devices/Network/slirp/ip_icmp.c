@@ -42,16 +42,9 @@
 #endif
 
 #ifdef RT_OS_WINDOWS
-# ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
 # define ICMP_SEND_ECHO(event, routine, addr, data, datasize, ipopt)                                        \
                 IcmpSendEcho2(pData->icmp_socket.sh, (event), NULL, NULL, (addr), (data), (datasize),       \
                                (ipopt), pData->pvIcmpBuffer, pData->szIcmpBuffer, 1)
-# else /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
-# define ICMP_SEND_ECHO(event, routine, addr, data, datasize, ipopt)                                                        \
-                IcmpSendEcho2(pData->icmp_socket.sh, NULL, (FARPROC)(routine), (void *)pData, (addr), (data), (datasize),   \
-                             (ipopt), pData->pvIcmpBuffer, pData->szIcmpBuffer, 1)
-static void WINAPI notify_slirp(void *);
-# endif /* !VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 #endif /* RT_OS_WINDOWS */
 
 /* The message sent when emulating PING */
@@ -151,9 +144,7 @@ icmp_init(PNATState pData)
         return 1;
     }
     pData->icmp_socket.sh = IcmpCreateFile();
-# ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
     pData->phEvents[VBOX_ICMP_EVENT_INDEX] = CreateEvent(NULL, FALSE, FALSE, NULL);
-# endif /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
     pData->szIcmpBuffer = sizeof(ICMP_ECHO_REPLY) * 10;
     pData->pvIcmpBuffer = RTMemAlloc(pData->szIcmpBuffer);
 #endif /* RT_OS_WINDOWS */
@@ -656,12 +647,3 @@ icmp_reflect(PNATState pData, struct mbuf *m)
 
     icmpstat.icps_reflect++;
 }
-#if defined(RT_OS_WINDOWS) && !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC)
-static void WINAPI
-notify_slirp(void *ctx)
-{
-    /* pData name is important see slirp_state.h */
-    PNATState pData = (PNATState)ctx;
-    fIcmp = 1;
-}
-#endif

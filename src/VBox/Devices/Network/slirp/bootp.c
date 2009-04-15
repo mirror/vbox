@@ -179,9 +179,6 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
     m->m_data += if_maxlinkhdr; /*reserve ether header */
     rbp = mtod(m, struct bootp_t *);
     memset(rbp, 0, sizeof(struct bootp_t));
-#ifndef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
-    m->m_data += sizeof(struct udpiphdr);
-#endif
 
     if (dhcp_msg_type == DHCPDISCOVER)
     {
@@ -340,10 +337,8 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
     m->m_len = sizeof(struct bootp_t)
              - sizeof(struct ip)
              - sizeof(struct udphdr);
-#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
     m->m_data += sizeof(struct udphdr)
-             + sizeof(struct ip);
-#endif
+               + sizeof(struct ip);
     /* Reply to the broadcast address, as some clients perform paranoid checks. */
     daddr.sin_addr.s_addr = INADDR_BROADCAST;
     udp_output2(pData, NULL, m, &saddr, &daddr, IPTOS_LOWDELAY);

@@ -64,7 +64,7 @@ socreate()
     {
         so->so_state = SS_NOFDREF;
         so->s = -1;
-#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && !defined(RT_OS_WINDOWS)
+#if !defined(RT_OS_WINDOWS)
         so->so_poll_index = -1;
 #endif
     }
@@ -197,7 +197,7 @@ soread(PNATState pData, struct socket *so)
 #endif
     if (nn <= 0)
     {
-#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+#if defined(RT_OS_WINDOWS)
         /*
          * Special case for WSAEnumNetworkEvents: If we receive 0 bytes that
          * _could_ mean that the connection is closed. But we will receive an
@@ -512,10 +512,8 @@ sorecvfrom(PNATState pData, struct socket *so)
             return;
         }
         m->m_data += if_maxlinkhdr;
-#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
         m->m_data += sizeof(struct udphdr)
-                    + sizeof(struct ip); /*XXX: no options atm*/
-#endif
+                   + sizeof(struct ip); /*XXX: no options atm*/
 
         /*
          * XXX Shouldn't FIONREAD packets destined for port 53,
@@ -1001,9 +999,6 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
     u_char code = ~0;
 
     len = pData->pfIcmpParseReplies(pData->pvIcmpBuffer, pData->szIcmpBuffer);
-#ifndef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
-    fIcmp = 0;  /* reply processed */
-#endif
     if (len < 0)
     {
         LogRel(("NAT: Error (%d) occurred on ICMP receiving\n", GetLastError()));

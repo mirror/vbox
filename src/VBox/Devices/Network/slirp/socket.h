@@ -70,16 +70,14 @@ struct socket
     RTCRITSECT      so_mutex;
     int             so_deleted;
 #endif
-#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
-# ifndef RT_OS_WINDOWS
+#ifndef RT_OS_WINDOWS
     int so_poll_index;
-# else /* !RT_OS_WINDOWS */
+#else /* !RT_OS_WINDOWS */
     /*
      * FD_CLOSE event has been occured on socket 
      */
     int so_close; 
-# endif /* RT_OS_WINDOWS */
-#endif /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
+#endif /* RT_OS_WINDOWS */
 #ifdef VBOX_WITH_SLIRP_DNS_PROXY
     void (* so_timeout)(PNATState pData, struct socket *so, void *arg);
     void *so_timeout_arg;
