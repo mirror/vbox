@@ -130,13 +130,23 @@ static Status AcquireDaemonLock(const char *baseDir)
 
     if (st.st_uid != getuid() && st.st_uid != geteuid())
     {
-        printf("Wrong owner (%d) of '%s'.\n", st.st_uid, baseDir);
+        printf("Wrong owner (%d) of '%s'", st.st_uid, baseDir);
+        if (   !stat("/tmp", &st)
+            && (st.st_mode & 07777) != 01777)
+            printf(" -- check /tmp permissions (%o should be 1777)\n",
+                    st.st_mode & 07777);
+        printf(".\n");
         return ELockFileOwner;
     }
 
     if (st.st_mode != (S_IRUSR | S_IWUSR | S_IXUSR | S_IFDIR))
     {
-        printf("Wrong mode (%o) of '%s'.\n", st.st_mode, baseDir);
+        printf("Wrong mode (%o) of '%s'", st.st_mode, baseDir);
+        if (   !stat("/tmp", &st)
+            && (st.st_mode & 07777) != 01777)
+            printf(" -- check /tmp permissions (%o should be 1777)\n",
+                    st.st_mode & 07777);
+        printf(".\n");
         return ELockFileOwner;
     }
 #endif
