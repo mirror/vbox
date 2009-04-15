@@ -43,7 +43,6 @@
 #include <iprt/process.h>
 #include "internal/memobj.h"
 
-
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -136,7 +135,18 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 
         case RTR0MEMOBJTYPE_MAPPING:
         {
-            /** @todo Figure out mapping... */
+            vm_map_t pMap = kernel_map;
+
+            /* vm_map_remove will unmap the pages we inserted with pmap_enter */
+            AssertMsg(pMemFreeBSD->pMappingObject != NULL, ("MappingObject is NULL\n"));
+            if (pMemFreeBSD->Core.u.Mapping.R0Process != NIL_RTR0PROCESS)
+                pMap = &((struct proc *)pMemFreeBSD->Core.u.Mapping.R0Process)->p_vmspace->vm_map;
+
+            rc = vm_map_remove(pMap,
+                                (vm_offset_t)pMemFreeBSD->Core.pv,
+                                (vm_offset_t)pMemFreeBSD->Core.pv + pMemFreeBSD->Core.cb);
+            AssertMsg(rc == KERN_SUCCESS, ("%#x", rc));
+            break;
         }
 
         /* unused: */
@@ -147,8 +157,6 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             AssertMsgFailed(("enmType=%d\n", pMemFreeBSD->Core.enmType));
             return VERR_INTERNAL_ERROR;
     }
-
-    Assert(!pMemFreeBSD->pMappingObject);
 
     return VINF_SUCCESS;
 }
@@ -211,8 +219,6 @@ int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
                          MapAddress,
                          MapAddress + cb);
         }
-        else
-            vm_object_deallocate(pMemFreeBSD->pObject);
         rc = VERR_NO_MEMORY; /** @todo fix translation (borrow from darwin) */
     }
     else
@@ -343,9 +349,9 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t c
      * resource usage restrictions, so we'll call vm_map_wire directly.
      */
     rc = vm_map_wire(&((struct proc *)R0Process)->p_vmspace->vm_map, /* the map */
-                     (vm_offset_t)R3Ptr,                            /* start */
-                     (vm_offset_t)R3Ptr + cb,                       /* end */
-                     VM_MAP_WIRE_SYSTEM | VM_MAP_WIRE_NOHOLES);     /* flags - SYSTEM? */
+                     (vm_offset_t)R3Ptr,                             /* start */
+                     (vm_offset_t)R3Ptr + cb,                        /* end */
+                     VM_MAP_WIRE_USER | VM_MAP_WIRE_NOHOLES);        /* flags */
     if (rc == KERN_SUCCESS)
     {
         pMemFreeBSD->Core.u.Lock.R0Process = R0Process;
@@ -414,7 +420,7 @@ static int rtR0MemObjNativeReserveInMap(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixe
     {
         vm_offset_t MapAddress = pvFixed != (void *)-1
                                ? (vm_offset_t)pvFixed
-                               : vm_map_min(kernel_map);
+                               : vm_map_min(pMap);
         if (pvFixed)
             vm_map_remove(pMap,
                           MapAddress,
@@ -428,7 +434,7 @@ static int rtR0MemObjNativeReserveInMap(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixe
                          pvFixed == (void *)-1,         /* find_space */
                          VM_PROT_NONE,                  /* protection */
                          VM_PROT_ALL,                   /* max(_prot) ?? */
-                         FALSE);                        /* cow (copy-on-write) */
+                         0);                            /* cow (copy-on-write) */
         if (rc == KERN_SUCCESS)
         {
             if (R0Process != NIL_RTR0PROCESS)
@@ -542,92 +548,123 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
     return VERR_NOT_IMPLEMENTED;
 }
 
-
+/* see http://markmail.org/message/udhq33tefgtyfozs */
 int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RTR3PTR R3PtrFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process)
 {
     AssertMsgReturn(R0Process == RTR0ProcHandleSelf(), ("%p != %p\n", R0Process, RTR0ProcHandleSelf()), VERR_NOT_SUPPORTED);
     AssertMsgReturn(R3PtrFixed == (RTR3PTR)-1, ("%p\n", R3PtrFixed), VERR_NOT_SUPPORTED);
 
-#if 0
     int rc;
-    void *pvR0;
-    void *pvR3 = NULL;
-    PRTR0MEMOBJFREEBSD pMemToMapOs2 = (PRTR0MEMOBJFREEBSD)pMemToMap;
-    switch (pMemToMapOs2->Core.enmType)
+    vm_object_t pObjectToMap = ((PRTR0MEMOBJFREEBSD)pMemToMap)->pObject;
+    struct proc   *pProc     = (struct proc *)R0Process;
+    struct vm_map *pProcMap  = &pProc->p_vmspace->vm_map;
+    vm_offset_t AddrR3 = 0;
+    vm_prot_t   ProtectionFlags = 0;
+
+    if ((fProt & RTMEM_PROT_NONE) == RTMEM_PROT_NONE)
+        ProtectionFlags = VM_PROT_NONE;
+    if ((fProt & RTMEM_PROT_READ) == RTMEM_PROT_READ)
+        ProtectionFlags |= VM_PROT_READ;
+    if ((fProt & RTMEM_PROT_WRITE) == RTMEM_PROT_WRITE)
+        ProtectionFlags |= VM_PROT_WRITE;
+    if ((fProt & RTMEM_PROT_EXEC) == RTMEM_PROT_EXEC)
+        ProtectionFlags |= VM_PROT_EXECUTE;
+
+    PROC_LOCK(pProc);
+    AddrR3 = round_page((vm_offset_t)pProc->p_vmspace->vm_daddr + lim_max(pProc, RLIMIT_DATA));
+    PROC_UNLOCK(pProc);
+
+    /*
+     * Mapping into R3 is easy if the mem object has a associated VM object.
+     * If there is not such an object we have to get it from the address.
+     */
+    if (!pObjectToMap)
+    {
+        vm_object_t pObjectNew = vm_object_allocate(OBJT_PHYS, pMemToMap->cb >> PAGE_SHIFT);
+        if (pObjectNew)
+        {
+            /* Insert the object in the map. */
+            rc = vm_map_find(pProcMap,              /* Map to insert the object in */
+                             pObjectNew  ,          /* Object to map */
+                             0,                     /* Start offset in the object */
+                             &AddrR3,               /* Start address IN/OUT */
+                             pMemToMap->cb,         /* Size of the mapping */
+                             TRUE,                  /* Whether a suitable address should be searched for first */
+                             ProtectionFlags,       /* protection flags */
+                             VM_PROT_ALL,           /* Maximum protection flags */
+                             0);                    /* Copy on write */
+            if (rc == KERN_SUCCESS)
+            {
+                int            cPages = pMemToMap->cb >> PAGE_SHIFT;
+                int            iPage;
+                void          *AddrToMap    = pMemToMap->pv;
+                pmap_t         pPhysicalMap = pProcMap->pmap;
+                vm_offset_t    AddrR3Dest   = AddrR3;
+
+                /* Insert the memory page by page into the mapping. */
+                for (iPage = 0; iPage < cPages; iPage++)
+                {
+                    vm_page_t Page = PHYS_TO_VM_PAGE(vtophys(AddrToMap));
+
+                    pmap_enter(pPhysicalMap, AddrR3Dest, Page, ProtectionFlags, TRUE);
+                    AddrToMap   = (uint8_t *)AddrToMap + PAGE_SIZE;
+                    AddrR3Dest += PAGE_SIZE;
+                }
+            }
+            else
+                vm_object_deallocate(pObjectNew);
+        }
+        else
+        {
+            AssertMsgFailed(("Could not allocate VM object\n"));
+            rc = 1; /* @todo fix */
+        }
+    }
+    else
+    {
+        /* 
+         * Reference the object. If this isn't done the object will removed from kernel space
+         * if the mapping is destroyed.
+         */
+        vm_object_reference(pObjectToMap);
+
+        rc = vm_map_find(pProcMap,              /* Map to insert the object in */
+                         pObjectToMap,          /* Object to map */
+                         0,                     /* Start offset in the object */
+                         &AddrR3,               /* Start address IN/OUT */
+                         pMemToMap->cb,         /* Size of the mapping */
+                         TRUE,                  /* Whether a suitable address should be searched for first */
+                         ProtectionFlags,       /* protection flags */
+                         VM_PROT_ALL,           /* Maximum protection flags */
+                         0);                    /* Copy on write */
+    }
+
+    if (rc == KERN_SUCCESS)
     {
         /*
-         * These has kernel mappings.
+         * Create a mapping object for it.
          */
-        case RTR0MEMOBJTYPE_PAGE:
-        case RTR0MEMOBJTYPE_LOW:
-        case RTR0MEMOBJTYPE_CONT:
-            pvR0 = pMemToMapOs2->Core.pv;
-            break;
+        PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(sizeof(RTR0MEMOBJFREEBSD),
+                                                                           RTR0MEMOBJTYPE_MAPPING, 
+                                                                           (void *)AddrR3,
+                                                                           pMemToMap->cb);
+        if (pMemFreeBSD)
+        {
+            Assert(pMemFreeBSD->Core.pv == (void *)AddrR3);
+            pMemFreeBSD->Core.u.Mapping.R0Process = R0Process;
+            pMemFreeBSD->pMappingObject = pObjectToMap;
+            *ppMem = &pMemFreeBSD->Core;
+            return VINF_SUCCESS;
+        }
 
-        case RTR0MEMOBJTYPE_PHYS:
-            pvR0 = pMemToMapOs2->Core.pv;
-#if 0/* this is wrong. */
-            if (!pvR0)
-            {
-                /* no ring-0 mapping, so allocate a mapping in the process. */
-                AssertMsgReturn(uAlignment == PAGE_SIZE, ("%#zx\n", uAlignment), VERR_NOT_SUPPORTED);
-                AssertMsgReturn(fProt & RTMEM_PROT_WRITE, ("%#x\n", fProt), VERR_NOT_SUPPORTED);
-                Assert(!pMemToMapOs2->Core.u.Phys.fAllocated);
-                ULONG ulPhys = pMemToMapOs2->Core.u.Phys.PhysBase;
-                rc = KernVMAlloc(pMemToMapOs2->Core.cb, VMDHA_PHYS | VMDHA_PROCESS, &pvR3, (PPVOID)&ulPhys, NULL);
-                if (rc)
-                    return RTErrConvertFromOS2(rc);
-            }
-            break;
-#endif
-            return VERR_NOT_SUPPORTED;
-
-        case RTR0MEMOBJTYPE_LOCK:
-            if (pMemToMapOs2->Core.u.Lock.R0Process != NIL_RTR0PROCESS)
-                return VERR_NOT_SUPPORTED; /** @todo implement this... */
-            pvR0 = pMemToMapOs2->Core.pv;
-            break;
-
-        case RTR0MEMOBJTYPE_PHYS_NC:
-        case RTR0MEMOBJTYPE_RES_VIRT:
-        case RTR0MEMOBJTYPE_MAPPING:
-        default:
-            AssertMsgFailed(("enmType=%d\n", pMemToMapOs2->Core.enmType));
-            return VERR_INTERNAL_ERROR;
+        rc = vm_map_remove(pProcMap, ((vm_offset_t)AddrR3), ((vm_offset_t)AddrR3) + pMemToMap->cb);
+        AssertMsg(rc == KERN_SUCCESS, ("Deleting mapping failed\n"));
     }
 
-    /*
-     * Map the ring-0 memory into the current process.
-     */
-    if (!pvR3)
-    {
-        Assert(pvR0);
-        ULONG flFlags = 0;
-        if (uAlignment == PAGE_SIZE)
-            flFlags |= VMDHGP_4MB;
-        if (fProt & RTMEM_PROT_WRITE)
-            flFlags |= VMDHGP_WRITE;
-        rc = RTR0Os2DHVMGlobalToProcess(flFlags, pvR0, pMemToMapOs2->Core.cb, &pvR3);
-        if (rc)
-            return RTErrConvertFromOS2(rc);
-    }
-    Assert(pvR3);
+    if (pObjectToMap)
+        vm_object_deallocate(pObjectToMap);
 
-    /*
-     * Create a mapping object for it.
-     */
-    PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(RT_OFFSETOF(RTR0MEMOBJOS2, Lock), RTR0MEMOBJTYPE_MAPPING, pvR3, pMemToMapOs2->Core.cb);
-    if (pMemFreeBSD)
-    {
-        Assert(pMemFreeBSD->Core.pv == pvR3);
-        pMemFreeBSD->Core.u.Mapping.R0Process = R0Process;
-        *ppMem = &pMemFreeBSD->Core;
-        return VINF_SUCCESS;
-    }
-    KernVMFree(pvR3);
     return VERR_NO_MEMORY;
-#endif
-    return VERR_NOT_IMPLEMENTED;
 }
 
 
@@ -647,6 +684,7 @@ RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage)
             }
         }
         case RTR0MEMOBJTYPE_PAGE:
+        case RTR0MEMOBJTYPE_MAPPING:
         {
             uint8_t *pb = (uint8_t *)pMemFreeBSD->Core.pv + ((size_t)iPage << PAGE_SHIFT);
             return vtophys(pb);
@@ -660,7 +698,6 @@ RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage)
 
         case RTR0MEMOBJTYPE_PHYS_NC:
         case RTR0MEMOBJTYPE_RES_VIRT:
-        case RTR0MEMOBJTYPE_MAPPING:
         case RTR0MEMOBJTYPE_LOW:
         default:
             return NIL_RTHCPHYS;
