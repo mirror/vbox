@@ -925,7 +925,7 @@ RTDECL(int) RTFileAioCtxWaitForCompletion(RTFILEAIOCTX hAioContext, int cMinRequ
  * @returns IPRT status code.
  * @param   hAioContext            The context handle to wakeup.
  */
-RTDECL(int) RTFileAioCtxWakeup(RTFILEAIOCONTEXT hAioContext);
+RTDECL(int) RTFileAioCtxWakeup(RTFILEAIOCTX hAioContext);
 
 #endif /* IN_RING3 */
 
