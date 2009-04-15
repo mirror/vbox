@@ -1630,8 +1630,14 @@ extern "C" int main(void)
 }
 EOF
   found=
+# For Solaris we use libpython2.4 for compatibility with Solaris 10 and passing IPS pkg audit
+  if [ "$OS" != "solaris" ]; then
+    SUPPYTHONLIBS="python2.6 python2.5 python2.4 python2.3"
+  else
+    SUPPYTHONLIBS="python2.4"
+  fi
   for p in $PYTHONDIR; do
-    for d in python2.6 python2.5 python2.4 python2.3; do
+    for d in $SUPPYTHONLIBS; do
       for b in lib64 lib/64 lib; do
         echo "compiling the following source file:" >> $LOG
         cat $ODIR.tmp_src.cc >> $LOG
