@@ -117,6 +117,7 @@ ifdef VBOX_SOLARIS_10
 else
  $(REM_MOD)_DEFS.solaris   = HOST_SOLARIS=11
 endif
+$(REM_MOD)_DEFS.freebsd   += _BSD
 
 $(REM_MOD)_INCS            = 		\
 	Sun 				\
@@ -155,8 +156,10 @@ else
  $(REM_MOD)_INCS          +=  tcg/i386
 endif
 
+ifneq ($(KBUILD_TARGET),freebsd)
 $(REM_MOD)_SOURCES.debug  += \
 	Sun/testmath.c
+endif
 $(REM_MOD)_SOURCES.win.x86 = $(PATH_VBoxREMImp)/VBoxREMWin.def
 ifndef VBOX_USE_REM2
  $(REM_MOD)_POST_CMDS      = $(VBOX_SIGN_IMAGE_CMDS)
