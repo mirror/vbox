@@ -1012,6 +1012,20 @@ typedef RTFILE                                     *PRTFILE;
 /** Nil file handle. */
 #define NIL_RTFILE                                  (~(RTFILE)0)
 
+/** Async I/O request handle. */
+typedef R3PTRTYPE(struct RTFILEAIOREQINTERNAL *)    RTFILEAIOREQ;
+/** Pointer to a async I/O request handle. */
+typedef RTFILEAIOREQ                               *PRTFILEAIOREQ;
+/** Nil request handle. */
+#define NIL_RTFILEAIOREQ                            0
+
+/** Async I/O completion context handle. */
+typedef R3PTRTYPE(struct RTFILEAIOCTXINTERNAL *)    RTFILEAIOCTX;
+/** Pointer to a async I/O completion context handle. */
+typedef RTFILEAIOCTX                               *PRTFILEAIOCTX;
+/** Nil context handle. */
+#define NIL_RTFILEAIOCTX                            0
+
 /** Loader module handle. */
 typedef R3PTRTYPE(struct RTLDRMODINTERNAL *)        RTLDRMOD;
 /** Pointer to a loader module handle. */
