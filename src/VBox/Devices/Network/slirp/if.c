@@ -27,13 +27,8 @@ static void ifs_remque(struct mbuf *ifm)
 void
 if_init(PNATState pData)
 {
-#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
     /* 14 for ethernet */
-    if_maxlinkhdr =  14;
-#else
-    /* 2 for alignment, 14 for ethernet, 40 for TCP/IP */
-    if_maxlinkhdr =  2 + 14 + 40;
-#endif
+    if_maxlinkhdr = 14;
     if_queued = 0;
     if_thresh = 10;
     if_mtu = 1500;
@@ -228,12 +223,7 @@ if_start(PNATState pData)
                 ifm->ifq_so->so_nqueued = 0;
         }
 
-#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
         if_encap(pData, ETH_P_IP, ifm);
-#else
-        if_encap(pData,  mtod(ifm, uint8_t *), ifm->m_len);
-        m_free(pData, ifm);
-#endif
 
         if (!if_queued)
             return;
