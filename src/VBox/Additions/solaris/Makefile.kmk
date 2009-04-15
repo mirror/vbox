@@ -153,6 +153,7 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions.pkg: \
 		$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxservice.xml \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/98vboxadd-xclient \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config.pl \
+		$(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config15sol.pl \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/x11restore.pl \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/solaris_xorg.conf \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/solaris_xorg_modeless.conf \
@@ -186,6 +187,7 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions.pkg: \
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_X11_ADDITION_INSTALLER)/vboxclient.desktop                   $(SOLARIS_ADD_INST_DIR)/vboxclient.desktop
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/98vboxadd-xclient                    $(SOLARIS_ADD_INST_DIR)/1099.vboxclient
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config.pl                         $(SOLARIS_ADD_INST_DIR)/x11config.pl
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config15sol.pl                    $(SOLARIS_ADD_INST_DIR)/x11config15sol.pl
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/x11restore.pl                        $(SOLARIS_ADD_INST_DIR)/x11restore.pl
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_X11_ADDITION_INSTALLER)/solaris_xorg.conf                    $(SOLARIS_ADD_INST_DIR)/solaris_xorg.conf
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_X11_ADDITION_INSTALLER)/solaris_xorg_modeless.conf           $(SOLARIS_ADD_INST_DIR)/solaris_xorg_modeless.conf

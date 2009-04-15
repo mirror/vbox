@@ -212,8 +212,14 @@ else
         /usr/sbin/removef $PKGINST $vboxadditions_path/$xorgconf_unfit 1>/dev/null
         rm -f $vboxadditions_path/$xorgconf_unfit
     fi
-
-    $vboxadditions_path/x11config.pl
+    case "$xorgversion" in
+        7.1.* | 7.2.* | 6.9.* | 7.0.* | 1.3.* )
+            $vboxadditions_path/x11config.pl
+            ;;
+        1.5.* )
+            $vboxadditions_path/x11config15sol.pl
+            ;;
+    esac
 fi
 
 
