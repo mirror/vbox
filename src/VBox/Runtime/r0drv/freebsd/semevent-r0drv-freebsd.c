@@ -182,11 +182,11 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterrup
 
         ASMAtomicIncU32(&pEventInt->cWaiters);
 
-        rc = msleep(pEventInt,          /* block id */
-                    &pEventInt->Mtx,
-                    fInterruptible ? PZERO | PCATCH : PZERO,
-                    "iprtev",           /* max 6 chars */
-                    cTicks);
+        rc = msleep_spin(pEventInt,          /* block id */
+                         &pEventInt->Mtx,
+                         //fInterruptible ? PZERO | PCATCH : PZERO,
+                         "iprte",           /* max 6 chars */
+                         cTicks);
         switch (rc)
         {
             case 0:
