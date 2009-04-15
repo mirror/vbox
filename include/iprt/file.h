@@ -886,7 +886,7 @@ RTDECL(int) RTFileAioCtxDestroy(RTFILEAIOCTX hAioContext);
  *                          which can be passed to RTFileAsyncIoContextCreate()
  *                          is returned.
  */
-RTDECL(int) RTFileAioCtxGetMaxRequestCount(RTFILEAIOCTX hAioContext);
+RTDECL(int) RTFileAioCtxGetMaxReqCount(RTFILEAIOCTX hAioContext);
 
 /**
  * Submit an array of requests to an aio context for processing.
