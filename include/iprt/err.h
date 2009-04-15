@@ -569,6 +569,14 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_IS_A_DIRECTORY                 (-127)
 /** Tried to grow a file beyond the limit imposed by the process or the filesystem. */
 #define VERR_FILE_TOO_BIG                   (-128)
+/** No pending request the aio context has to wait for completion. */
+#define VERR_FILE_AIO_NO_REQUEST            (-129)
+/** The request could not be canceled because it is already processed. */
+#define VERR_FILE_AIO_IN_PROGRESS           (-130)
+/** The request could not be canceled because it already completed. */
+#define VERR_FILE_AIO_COMPLETED             (-131)
+/** The I/O context couldn't be destroyed because there are still pending requests. */
+#define VERR_FILE_AIO_BUSY                  (-132)
 /** @} */
 
 
