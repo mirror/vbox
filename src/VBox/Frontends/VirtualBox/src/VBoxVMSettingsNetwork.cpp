@@ -269,6 +269,8 @@ void VBoxVMSettingsNetwork::updateAttachmentAlternative()
     mCbName->blockSignals (true);
 
     /* Update alternative-name combo-box availability */
+    mLbName->setEnabled (attachmentType() != KNetworkAttachmentType_Null &&
+                         attachmentType() != KNetworkAttachmentType_NAT);
     mCbName->setEnabled (attachmentType() != KNetworkAttachmentType_Null &&
                          attachmentType() != KNetworkAttachmentType_NAT);
 
