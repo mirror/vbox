@@ -23,16 +23,21 @@ void set_floatx80_rounding_precision(int val STATUS_PARAM)
 #endif
 
 #if defined(_BSD) || (defined(HOST_SOLARIS) && HOST_SOLARIS < 10)
-#define rintl(d)		((int32_t)rint(d))
 #define lrint(d)		((int32_t)rint(d))
 #define llrint(d)		((int64_t)rint(d))
-#define lrintl(f)		((int32_t)rint(f))
-#define llrintl(f)		((int64_t)rint(f))
+#define lrintf(f)		((int32_t)rint(f))
+#define llrintf(f)		((int64_t)rint(f))
 #define sqrtf(f)		((float)sqrt(f))
 #define remainderf(fa, fb)	((float)remainder(fa, fb))
 #define rintf(f)		((float)rint(f))
-#define sqrtl(f)        (sqrt(f))
-#define remainderl(fa, fb)   (remainder(fa, fb))
+/* Some defines which only apply to *BSD */
+# if defined(_BSD)
+#  define lrintl(f)            ((int32_t)rint(f))
+#  define llrintl(f)           ((int64_t)rint(f))
+#  define rintl(d)             ((int32_t)rint(d))
+#  define sqrtl(f)             (sqrt(f))
+#  define remainderl(fa, fb)   (remainder(fa, fb))
+# endif
 #endif
 
 #if defined(__powerpc__)
