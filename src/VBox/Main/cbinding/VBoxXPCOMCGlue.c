@@ -46,7 +46,7 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#if defined(__linux__) || defined(__linux_gnu__) || defined(__sun__)
+#if defined(__linux__) || defined(__linux_gnu__) || defined(__sun__) || defined(__FreeBSD__)
 # define DYNLIB_NAME    "VBoxXPCOMC.so"
 #elif defined(__APPLE__)
 # define DYNLIB_NAME    "VBoxXPCOMC.dylib"
@@ -170,6 +170,9 @@ int VBoxCGlueInit(void)
         return 0;
 #elif defined(__APPLE__)
     if (tryLoadOne("/Application/VirtualBox.app/Contents/MacOS", 1) == 0)
+        return 0;
+#elif defined(__FreeBSD__)
+    if (tryLoadOne("/usr/local/lib/virtualbox", 1) == 0)
         return 0;
 #else
 # error "port me"
