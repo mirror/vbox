@@ -793,7 +793,7 @@ RTDECL(void) RTFileAioReqDestroy(RTFILEAIOREQ hRequest);
  * @param   pvBuf           Where to store the read bits.
  * @param   cbRead          Number of bytes to read.
  * @param   pvUser          Opaque user data associated with this request which
- *                          can be retrieved with RTFileAsyncRequestGetUser()
+ *                          can be retrieved with RTFileAioReqGetUser()
  */
 RTDECL(int) RTFileAioReqPrepareRead(RTFILEAIOREQ hRequest, RTFILE File,
                                     RTFOFF off, void *pvBuf, size_t cbRead,
@@ -809,7 +809,7 @@ RTDECL(int) RTFileAioReqPrepareRead(RTFILEAIOREQ hRequest, RTFILE File,
  * @param   pvBuf           Where to store the written bits.
  * @param   cbRead          Number of bytes to write.
  * @param   pvUser          Opaque user data associated with this request which
- *                          can be retrieved with RTFileAsyncRequestGetUser()
+ *                          can be retrieved with RTFileAioReqGetUser()
  */
 RTDECL(int) RTFileAioReqPrepareWrite(RTFILEAIOREQ hRequest, RTFILE File,
                                      RTFOFF off, void *pvBuf, size_t cbWrite,
@@ -822,7 +822,7 @@ RTDECL(int) RTFileAioReqPrepareWrite(RTFILEAIOREQ hRequest, RTFILE File,
  * @param   hRequest        The request handle.
  * @param   File            The file to flush.
  * @param   pvUser          Opaque user data associated with this request which
- *                          can be retrieved with RTFileAsyncRequestGetUser()
+ *                          can be retrieved with RTFileAioReqGetUser()
  */
 RTDECL(int) RTFileAioReqPrepareFlush(RTFILEAIOREQ Request, RTFILE File, void *pvUser);
 
@@ -883,7 +883,7 @@ RTDECL(int) RTFileAioCtxDestroy(RTFILEAIOCTX hAioContext);
  *
  * @param   hAioContext     The aio context handle.
  *                          If NIL_RTAIOCONTEXT is passed the maximum value
- *                          which can be passed to RTFileAsyncIoContextCreate()
+ *                          which can be passed to RTFileAioCtxCreate()
  *                          is returned.
  */
 RTDECL(int) RTFileAioCtxGetMaxReqCount(RTFILEAIOCTX hAioContext);
@@ -904,7 +904,7 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioContext, RTFILEAIOREQ aRequests[
  * @returns IPRT status code.
  * @retval  VERR_NUMBER_TOO_BIG      If cMinRequests or cMaxRequests exceeds limit.
  * @retval  VERR_TIMEOUT             If the timeout value expired before at least cMinRequests requests finished.
- * @retval  VERR_INTERRUPTED         If the completion context was interrupted with RTFileAsyncIoContextWakeup().
+ * @retval  VERR_INTERRUPTED         If the completion context was interrupted with RTFileAioCtxWakeup().
  * @retval  VERR_FILE_AIO_NO_REQUEST If there is no pending request to wait for completion.
  *
  * @param   hAioContext            The aio context handle to get completed requests from.
@@ -920,7 +920,7 @@ RTDECL(int) RTFileAioCtxWaitForCompletion(RTFILEAIOCTX hAioContext, int cMinRequ
                                           int *pcRequestsCompleted, unsigned cMillisTimeout);
 
 /**
- * Let's return RTFileAsyncIoContextWaitForCompletion() immediateley.
+ * Let's return RTFileAioCtxWaitForCompletion() immediateley.
  *
  * @returns IPRT status code.
  * @param   hAioContext            The context handle to wakeup.
