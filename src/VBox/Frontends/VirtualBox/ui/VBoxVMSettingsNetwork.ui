@@ -22,12 +22,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>417</width>
-    <height>348</height>
+    <width>350</width>
+    <height>200</height>
    </rect>
   </property>
   <layout class="QGridLayout" >
-   <item row="0" column="0" colspan="2" >
+   <item row="0" column="0" colspan="3" >
     <widget class="QCheckBox" name="mGbAdapter" >
      <property name="whatsThis" >
       <string>When checked, plugs this virtual network adapter into the virtual machine.</string>
@@ -114,38 +114,61 @@
       <item row="1" column="2" >
        <widget class="QToolButton" name="mTbDetails" >
         <property name="whatsThis" >
-         <string>Open extended settings dialog for current attachment type.</string>
+         <string>Open additional options dialog for current attachment type.</string>
         </property>
         <property name="autoRaise" >
          <bool>true</bool>
         </property>
        </widget>
       </item>
-      <item row="2" column="1" colspan="3" >
-       <widget class="QLabel" name="mLbInfo" >
-        <property name="alignment" >
-         <set>Qt::AlignLeft|Qt::AlignTop</set>
+      <item row="2" column="0" >
+       <widget class="QLabel" name="mLbName" >
+        <property name="text" >
+         <string>&amp;Name:</string>
         </property>
-        <property name="wordWrap" >
-         <bool>true</bool>
+        <property name="alignment" >
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="buddy" >
+         <cstring>mCbName</cstring>
         </property>
        </widget>
       </item>
-      <item rowspan="2" row="0" column="3" >
-       <spacer>
-        <property name="orientation" >
-         <enum>Qt::Horizontal</enum>
+      <item row="2" column="1" colspan="2" >
+       <widget class="QComboBox" name="mCbName" >
+        <property name="whatsThis" >
+         <string>Selects the name of the network adapter if attachment type is equivalent to &lt;b>Bridged Adapter&lt;/b> or &lt;b>Host-only Adapter&lt;/b> and the name of the internal network if attachment type is equivalent to &lt;b>Internal Network&lt;/b>.</string>
         </property>
-        <property name="sizeHint" >
-         <size>
-          <width>0</width>
-          <height>0</height>
-         </size>
-        </property>
-       </spacer>
+       </widget>
       </item>
      </layout>
     </widget>
+   </item>
+   <item row="2" column="0" colspan="3" >
+    <spacer name="verticalSpacer" >
+     <property name="orientation" >
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" >
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="1" column="2" >
+    <spacer>
+     <property name="orientation" >
+      <enum>Qt::Horizontal</enum>
+     </property>
+        <property name="sizeHint" >
+      <size>
+       <width>0</width>
+       <height>0</height>
+      </size>
+     </property>
+    </spacer>
    </item>
   </layout>
  </widget>

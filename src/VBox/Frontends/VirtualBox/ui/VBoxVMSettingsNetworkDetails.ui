@@ -22,135 +22,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>402</width>
-    <height>255</height>
+    <width>300</width>
+    <height>140</height>
    </rect>
   </property>
+  <property name="windowTitle" >
+   <string>Additional Options</string>
+  </property>
   <layout class="QGridLayout" >
-   <item row="0" column="0" colspan="4" >
-    <widget class="QILabelSeparator" name="mLsHost" >
-     <property name="sizePolicy" >
-      <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="text" >
-      <string>Host Settings</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="1" >
-    <widget class="QLabel" name="mLbBRG" >
-     <property name="text" >
-      <string>&amp;Bridged Network Adapter:</string>
-     </property>
-     <property name="alignment" >
-      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-     </property>
-     <property name="buddy" >
-      <cstring>mCbBRG</cstring>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="2" colspan="2" >
-    <widget class="QComboBox" name="mCbBRG" >
-     <property name="sizePolicy" >
-      <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="toolTip" >
-      <string>Displays the name of the host network adapter selected for bridged networking.</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="1" >
-    <widget class="QLabel" name="mLbINT" >
-     <property name="text" >
-      <string>Internal &amp;Network:</string>
-     </property>
-     <property name="alignment" >
-      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-     </property>
-     <property name="buddy" >
-      <cstring>mCbINT</cstring>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="2" colspan="2" >
-    <widget class="QComboBox" name="mCbINT" >
-     <property name="sizePolicy" >
-      <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="toolTip" >
-      <string>Displays the name of the internal network selected for this adapter.</string>
-     </property>
-     <property name="editable" >
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="1" >
-    <widget class="QLabel" name="mLbHOI" >
-     <property name="text" >
-      <string>Host-only &amp;Network Adapter:</string>
-     </property>
-     <property name="alignment" >
-      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-     </property>
-     <property name="buddy" >
-      <cstring>mCbHOI</cstring>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="2" colspan="2" >
-    <widget class="QComboBox" name="mCbHOI" >
-     <property name="sizePolicy" >
-      <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="toolTip" >
-      <string>Displays the name of the VirtualBox network adapter selected for host-only networking.</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="0" colspan="4" >
-    <widget class="QILabelSeparator" name="mLsGuest" >
-     <property name="sizePolicy" >
-      <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="text" >
-      <string>Guest Settings</string>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="0" >
-    <spacer>
-     <property name="orientation" >
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeType" >
-      <enum>QSizePolicy::Fixed</enum>
-     </property>
-     <property name="sizeHint" >
-      <size>
-       <width>20</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="5" column="1" >
+   <item row="0" column="0" >
     <widget class="QLabel" name="mLbMAC" >
      <property name="text" >
       <string>Guest &amp;MAC Address:</string>
@@ -163,8 +43,8 @@
      </property>
     </widget>
    </item>
-   <item row="5" column="2" >
-    <widget class="QLineEdit" name="mLeMAC" >
+   <item row="0" column="1" >
+    <widget class="QILineEdit" name="mLeMAC" >
      <property name="sizePolicy" >
       <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
        <horstretch>0</horstretch>
@@ -176,7 +56,7 @@
      </property>
     </widget>
    </item>
-   <item row="5" column="3" >
+   <item row="0" column="2" >
     <widget class="QToolButton" name="mTbMAC" >
      <property name="toolTip" >
       <string>Generates a new random MAC address.</string>
@@ -189,7 +69,7 @@
      </property>
     </widget>
    </item>
-   <item row="6" column="2" colspan="2" >
+   <item row="1" column="1" colspan="2" >
     <widget class="QCheckBox" name="mCbCable" >
      <property name="text" >
       <string>&amp;Cable connected</string>
@@ -199,7 +79,7 @@
      </property>
     </widget>
    </item>
-   <item row="7" column="0" colspan="4" >
+   <item row="2" column="0" colspan="3" >
     <spacer name="verticalSpacer" >
      <property name="orientation" >
       <enum>Qt::Vertical</enum>
@@ -212,7 +92,7 @@
      </property>
     </spacer>
    </item>
-   <item row="8" column="0" colspan="4" >
+   <item row="3" column="0" colspan="3" >
     <widget class="QIDialogButtonBox" name="mButtonBox" >
      <property name="standardButtons" >
       <set>QDialogButtonBox::Cancel|QDialogButtonBox::NoButton|QDialogButtonBox::Ok</set>
@@ -223,9 +103,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QILabelSeparator</class>
-   <extends>QLabel</extends>
-   <header>QILabelSeparator.h</header>
+   <class>QILineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>QILineEdit.h</header>
   </customwidget>
   <customwidget>
    <class>QIDialogButtonBox</class>

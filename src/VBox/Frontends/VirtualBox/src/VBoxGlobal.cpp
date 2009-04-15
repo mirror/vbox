@@ -1896,13 +1896,13 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
                      * an additional symbolic network/interface name field, use
                      * this name instead */
                     if (type == KNetworkAttachmentType_Bridged)
-                        attType = attType.arg (tr ("Bridged network, %1",
+                        attType = attType.arg (tr ("Bridged adapter, %1",
                             "details report (network)").arg (adapter.GetHostInterface()));
                     else if (type == KNetworkAttachmentType_Internal)
                         attType = attType.arg (tr ("Internal network, '%1'",
                             "details report (network)").arg (adapter.GetInternalNetwork()));
                     else if (type == KNetworkAttachmentType_HostOnly)
-                        attType = attType.arg (tr ("Host-only network, '%1'",
+                        attType = attType.arg (tr ("Host-only adapter, '%1'",
                             "details report (network)").arg (adapter.GetHostInterface()));
                     else
                         attType = attType.arg (vboxGlobal().toString (type));
@@ -2920,11 +2920,11 @@ void VBoxGlobal::retranslateUi()
     mNetworkAttachmentTypes [KNetworkAttachmentType_NAT] =
         tr ("NAT", "NetworkAttachmentType");
     mNetworkAttachmentTypes [KNetworkAttachmentType_Bridged] =
-        tr ("Bridged Network", "NetworkAttachmentType");
+        tr ("Bridged Adapter", "NetworkAttachmentType");
     mNetworkAttachmentTypes [KNetworkAttachmentType_Internal] =
         tr ("Internal Network", "NetworkAttachmentType");
     mNetworkAttachmentTypes [KNetworkAttachmentType_HostOnly] =
-        tr ("Host-only Network", "NetworkAttachmentType");
+        tr ("Host-only Adapter", "NetworkAttachmentType");
 
     mClipboardTypes [KClipboardMode_Disabled] =
         tr ("Disabled", "ClipboardType");
