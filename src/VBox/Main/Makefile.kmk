@@ -383,8 +383,9 @@ ifdef VBOX_WITH_HOSTNETIF_API
  VBoxSVC_SOURCES.os2     +=     os2/NetIf-os2.cpp
  VBoxSVC_SOURCES.darwin  +=  darwin/NetIf-darwin.cpp
  VBoxSVC_SOURCES.solaris += solaris/NetIf-solaris.cpp
+ VBoxSVC_SOURCES.freebsd += freebsd/NetIf-freebsd.cpp
  VBoxSVC_DEFS            += VBOX_WITH_HOSTNETIF_API
- if1of ($(KBUILD_TARGET), linux darwin solaris)
+ if1of ($(KBUILD_TARGET), linux darwin solaris freebsd)
   VBoxSVC_SOURCES        += generic/NetIf-generic.cpp
  endif
 endif

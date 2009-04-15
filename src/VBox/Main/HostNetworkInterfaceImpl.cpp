@@ -27,6 +27,9 @@
 
 #ifndef RT_OS_WINDOWS
 #include <arpa/inet.h>
+# ifdef RT_OS_FREEBSD
+#  include <netinet/in.h> /* INADDR_NONE */
+# endif
 #endif /* RT_OS_WINDOWS */
 
 // constructor / destructor
