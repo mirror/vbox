@@ -509,6 +509,8 @@ int main()
     GEN_CHECK_OFF(PGMCPU, GCPhysA20Mask);
     GEN_CHECK_OFF(PGMCPU, fA20Enabled);
     GEN_CHECK_OFF(PGMCPU, fSyncFlags);
+    GEN_CHECK_OFF(PGM, aHCPhysDynPageMapCache);
+    GEN_CHECK_OFF(PGM, aLockedDynPageMapCache);
     GEN_CHECK_OFF(PGM, CritSect);
     GEN_CHECK_OFF(PGM, pPoolR3);
     GEN_CHECK_OFF(PGM, pPoolR0);
