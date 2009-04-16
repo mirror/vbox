@@ -349,7 +349,7 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
      * Specifies the policy to use when reserving memory for this VM. The recognized
      * value is 'no overcommitment' (default). See GMMPOLICY.
      */
-    GMMOCPOLICY enmOcPolicy;
+    GMMOCPOLICY enmOcPolicy = GMMOCPOLICY_NO_OC;
     char sz[64];
     rc = CFGMR3QueryString(CFGMR3GetRoot(pVM), "Policy", sz, sizeof(sz));
     if (RT_SUCCESS(rc))

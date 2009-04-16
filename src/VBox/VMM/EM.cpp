@@ -522,7 +522,7 @@ static DECLCALLBACK(int) emR3Save(PVM pVM, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
 
     /*
      * Validate version.
