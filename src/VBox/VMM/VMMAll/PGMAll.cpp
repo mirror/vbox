@@ -1482,7 +1482,7 @@ PX86PML4 pgmGstLazyMapPml4(PPGMCPU pPGM)
     PVM pVM = PGMCPU2VM(pPGM);
     pgmLock(pVM);
 
-    PPGMPAGE    pPage = pgmPhysGetPage(pPGM, pPGM->GCPhysCR3);
+    PPGMPAGE    pPage = pgmPhysGetPage(&pVM->pgm.s, pPGM->GCPhysCR3);
     AssertReturn(pPage, NULL);
 
     RTHCPTR     HCPtrGuestCR3;
