@@ -1899,7 +1899,7 @@ int pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **pp
             if (pSet->iSubset < pSet->cEntries)
             {
                 STAM_COUNTER_INC(&pVCpu->pgm.s.StatR0DynMapSetSearchFlushes);
-                STAM_COUNTER_INC(&pVM->pgm.s.aStatR0DynMapSetSize[(pSet->cEntries * 10 / RT_ELEMENTS(pSet->aEntries)) % 11]);
+                STAM_COUNTER_INC(&pVCpu->pgm.s.aStatR0DynMapSetSize[(pSet->cEntries * 10 / RT_ELEMENTS(pSet->aEntries)) % 11]);
                 AssertMsg(pSet->cEntries < PGMMAPSET_MAX_FILL, ("%u\n", pSet->cEntries));
                 pgmDynMapFlushSubset(pSet);
             }
