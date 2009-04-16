@@ -779,7 +779,47 @@ out:
 
 static int vhdRename(void *pBackendData, const char *pszFilename)
 {
-    return VERR_NOT_IMPLEMENTED;
+    LogFlowFunc(("pBackendData=%#p pszFilename=%#p\n", pBackendData, pszFilename));
+
+    int rc = VINF_SUCCESS;
+    PVHDIMAGEDESC pImage = (PVHDIMAGEDESC)pBackendData;
+
+    /* Check arguments. */
+    if (   !pImage
+        || !pszFilename
+        || !*pszFilename)
+    {
+        rc = VERR_INVALID_PARAMETER;
+        goto out;
+    }
+
+    /* Close the file. vhdFreeImage would additionally free pImage. */
+    vhdFlush(pImage);
+    RTFileClose(pImage->File);
+
+    /* Rename the file. */
+    rc = RTFileMove(pImage->pszFilename, pszFilename, 0);
+    if (RT_FAILURE(rc))
+    {
+        /* The move failed, try to reopen the original image. */
+        int rc2 = vhdOpenImage(pImage, pImage->uOpenFlags);
+        if (RT_FAILURE(rc2))
+            rc = rc2;
+
+        goto out;
+    }
+
+    /* Update pImage with the new information. */
+    pImage->pszFilename = pszFilename;
+
+    /* Open the new image. */
+    rc = vhdOpenImage(pImage, pImage->uOpenFlags);
+    if (RT_FAILURE(rc))
+        goto out;
+
+out:
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
 }
 
 static void vhdFreeImageMemory(PVHDIMAGE pImage)
