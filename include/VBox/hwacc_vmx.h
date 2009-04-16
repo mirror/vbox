@@ -393,6 +393,8 @@ typedef enum
 /** @name VMX Basic Exit Reasons.
  * @{
  */
+/** -1 Invalid exit code */
+#define VMX_EXIT_INVALID            -1
 /** 0 Exception or non-maskable interrupt (NMI). */
 #define VMX_EXIT_EXCEPTION          0
 /** 1 External interrupt. */
