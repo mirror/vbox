@@ -528,6 +528,8 @@ VMMR0DECL(int) VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg)
  */
 VMMR0DECL(void) VMMR0EntryFast(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperation)
 {
+    PVMCPU pVCpu = &pVM->aCpus[idCpu];
+
     if (RT_UNLIKELY(idCpu >= pVM->cCPUs))
     {
         pVM->vmm.s.iLastGZRc = VERR_INVALID_PARAMETER;
@@ -550,7 +552,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperat
                 bool fVTxDisabled;
 
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-                if (RT_UNLIKELY(!PGMGetHyperCR3(pVM)))
+                if (RT_UNLIKELY(!PGMGetHyperCR3(pVCpu)))
                 {
                     pVM->vmm.s.iLastGZRc = VERR_PGM_NO_CR3_SHADOW_ROOT;
                     return;
@@ -796,7 +798,7 @@ static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQ
                 return VERR_NOT_SUPPORTED;
 
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-            if (RT_UNLIKELY(!PGMGetHyperCR3(pVM)))
+            if (RT_UNLIKELY(!PGMGetHyperCR3(VMMGetCpu0(pVM))))
                 return VERR_PGM_NO_CR3_SHADOW_ROOT;
 #endif
 

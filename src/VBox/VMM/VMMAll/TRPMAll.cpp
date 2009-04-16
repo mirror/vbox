@@ -364,6 +364,8 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
 {
 #ifdef TRPM_FORWARD_TRAPS_IN_GC
     X86EFLAGS eflags;
+    Assert(pVM->cCPUs == 1);
+    PVMCPU    pVCpu = &pVM->aCpus[0];
 
     STAM_PROFILE_ADV_START(&pVM->trpm.s.CTX_SUFF_Z(StatForwardProf), a);
 
@@ -382,7 +384,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
 #  ifdef IN_RC
             rc = MMGCRamRead(pVM, &pCallerGC, (void *)pRegFrame->esp, sizeof(pCallerGC));
 #  else
-            rc = PGMPhysSimpleReadGCPtr(pVM, &pCallerGC, (RTGCPTR)pRegFrame->esp, sizeof(pCallerGC));
+            rc = PGMPhysSimpleReadGCPtr(pVCpu, &pCallerGC, (RTGCPTR)pRegFrame->esp, sizeof(pCallerGC));
 #  endif
             if (RT_SUCCESS(rc))
                 Log(("TRPMForwardTrap: caller=%RGv\n", pCallerGC));
@@ -405,7 +407,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
 
     /* Retrieve the eflags including the virtualized bits. */
     /* Note: hackish as the cpumctxcore structure doesn't contain the right value */
-    eflags.u32 = CPUMRawGetEFlags(pVM, pRegFrame);
+    eflags.u32 = CPUMRawGetEFlags(pVCpu, pRegFrame);
 
     /* VM_FF_INHIBIT_INTERRUPTS should be cleared upfront or don't call this function at all for dispatching hardware interrupts. */
     Assert(enmType != TRPM_HARDWARE_INT || !VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS));
@@ -424,7 +426,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
        )
     {
         uint16_t    cbIDT;
-        RTGCPTR     GCPtrIDT = (RTGCPTR)CPUMGetGuestIDTR(pVM, &cbIDT);
+        RTGCPTR     GCPtrIDT = (RTGCPTR)CPUMGetGuestIDTR(pVCpu, &cbIDT);
         uint32_t    cpl;
         VBOXIDTE    GuestIdte;
         RTGCPTR     pIDTEntry;
@@ -434,7 +436,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
         Assert(!VM_FF_ISPENDING(pVM, VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_TSS));
 
         /* Get the current privilege level. */
-        cpl = CPUMGetGuestCPL(pVM, pRegFrame);
+        cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
 
         if (GCPtrIDT && iGate * sizeof(VBOXIDTE) >= cbIDT)
             goto failure;
@@ -449,13 +451,13 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
 #ifdef IN_RC
         rc = MMGCRamRead(pVM, &GuestIdte, (void *)pIDTEntry, sizeof(GuestIdte));
 #else
-        rc = PGMPhysSimpleReadGCPtr(pVM, &GuestIdte, pIDTEntry, sizeof(GuestIdte));
+        rc = PGMPhysSimpleReadGCPtr(pVCpu, &GuestIdte, pIDTEntry, sizeof(GuestIdte));
 #endif
         if (RT_FAILURE(rc))
         {
             /* The page might be out of sync. */ /** @todo might cross a page boundary) */
             Log(("Page %RGv out of sync -> prefetch and try again\n", pIDTEntry));
-            rc = PGMPrefetchPage(pVM, pIDTEntry); /** @todo r=bird: rainy day: this isn't entirely safe because of access bit virtualiziation and CSAM. */
+            rc = PGMPrefetchPage(pVM, pVCpu, pIDTEntry); /** @todo r=bird: rainy day: this isn't entirely safe because of access bit virtualiziation and CSAM. */
             if (rc != VINF_SUCCESS)
             {
                 Log(("TRPMForwardTrap: PGMPrefetchPage failed with rc=%Rrc\n", rc));
@@ -464,7 +466,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
 #ifdef IN_RC
             rc = MMGCRamRead(pVM, &GuestIdte, (void *)pIDTEntry, sizeof(GuestIdte));
 #else
-            rc = PGMPhysSimpleReadGCPtr(pVM, &GuestIdte, pIDTEntry, sizeof(GuestIdte));
+            rc = PGMPhysSimpleReadGCPtr(pVCpu, &GuestIdte, pIDTEntry, sizeof(GuestIdte));
 #endif
         }
         if (    RT_SUCCESS(rc)
@@ -499,7 +501,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
                 X86DESC  Desc;
                 RTGCPTR  pGdtEntry;
 
-                CPUMGetGuestGDTR(pVM, &gdtr);
+                CPUMGetGuestGDTR(pVCpu, &gdtr);
                 Assert(gdtr.pGdt && gdtr.cbGdt > GuestIdte.Gen.u16SegSel);
 
                 if (!gdtr.pGdt)
@@ -509,13 +511,13 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
 #ifdef IN_RC
                 rc = MMGCRamRead(pVM, &Desc, (void *)pGdtEntry, sizeof(Desc));
 #else
-                rc = PGMPhysSimpleReadGCPtr(pVM, &Desc, pGdtEntry, sizeof(Desc));
+                rc = PGMPhysSimpleReadGCPtr(pVCpu, &Desc, pGdtEntry, sizeof(Desc));
 #endif
                 if (RT_FAILURE(rc))
                 {
                     /* The page might be out of sync. */ /** @todo might cross a page boundary) */
                     Log(("Page %RGv out of sync -> prefetch and try again\n", pGdtEntry));
-                    rc = PGMPrefetchPage(pVM, pGdtEntry);  /** @todo r=bird: rainy day: this isn't entirely safe because of access bit virtualiziation and CSAM. */
+                    rc = PGMPrefetchPage(pVM, pVCpu, pGdtEntry);  /** @todo r=bird: rainy day: this isn't entirely safe because of access bit virtualiziation and CSAM. */
                     if (rc != VINF_SUCCESS)
                     {
                         Log(("PGMPrefetchPage failed with rc=%Rrc\n", rc));
@@ -524,7 +526,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
 #ifdef IN_RC
                     rc = MMGCRamRead(pVM, &Desc, (void *)pGdtEntry, sizeof(Desc));
 #else
-                    rc = PGMPhysSimpleReadGCPtr(pVM, &Desc, pGdtEntry, sizeof(Desc));
+                    rc = PGMPhysSimpleReadGCPtr(pVCpu, &Desc, pGdtEntry, sizeof(Desc));
 #endif
                     if (RT_FAILURE(rc))
                     {
@@ -585,7 +587,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
 #ifdef IN_RC
                 Assert(eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) != 0);
                 /* Check maximum amount we need (10 when executing in V86 mode) */
-                rc = PGMVerifyAccess(pVM, (RTGCUINTPTR)pTrapStackGC - 10*sizeof(uint32_t), 10 * sizeof(uint32_t), X86_PTE_RW);
+                rc = PGMVerifyAccess(pVM, pVCpu, (RTGCUINTPTR)pTrapStackGC - 10*sizeof(uint32_t), 10 * sizeof(uint32_t), X86_PTE_RW);
                 pTrapStack = (uint32_t *)pTrapStackGC;
 #else
                 Assert(eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) == 0 || (pRegFrame->ss & X86_SEL_RPL) == 3);
@@ -593,7 +595,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
                 if ((pTrapStackGC >> PAGE_SHIFT) != ((pTrapStackGC - 10*sizeof(uint32_t)) >> PAGE_SHIFT)) /* fail if we cross a page boundary */
                     goto failure;
                 PGMPAGEMAPLOCK PageMappingLock;
-                rc = PGMPhysGCPtr2CCPtr(pVM, pTrapStackGC, (void **)&pTrapStack, &PageMappingLock);
+                rc = PGMPhysGCPtr2CCPtr(pVCpu, pTrapStackGC, (void **)&pTrapStack, &PageMappingLock);
                 if (RT_FAILURE(rc))
                 {
                     AssertRC(rc);
@@ -671,7 +673,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
                     Log(("PATM Handler %RRv Adjusted stack %08X new EFLAGS=%08X idx=%d dpl=%d cpl=%d\n", pVM->trpm.s.aGuestTrapHandler[iGate], esp_r0, eflags.u32, idx, dpl, cpl));
 
                     /* Make sure the internal guest context structure is up-to-date. */
-                    CPUMSetGuestCR2(pVM, pVM->trpm.s.uActiveCR2);
+                    CPUMSetGuestCR2(pVCpu, pVM->trpm.s.uActiveCR2);
 
 #ifdef IN_RC
                     /* Note: shouldn't be necessary */
@@ -679,7 +681,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
 
                     /* Turn off interrupts for interrupt gates. */
                     if (GuestIdte.Gen.u5Type2 == VBOX_IDTE_TYPE2_INT_32)
-                        CPUMRawSetEFlags(pVM, pRegFrame, eflags.u32 & ~X86_EFL_IF);
+                        CPUMRawSetEFlags(pVCpu, pRegFrame, eflags.u32 & ~X86_EFL_IF);
 
                     /* The virtualized bits must be removed again!! */
                     eflags.Bits.u1IF   = 1;

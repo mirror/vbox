@@ -710,11 +710,15 @@ VMMDECL(int) IOMIOPortWriteString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrSrc, PR
  */
 VMMDECL(int) IOMInterpretCheckPortIOAccess(PVM pVM, PCPUMCTXCORE pCtxCore, RTIOPORT Port, unsigned cb)
 {
+    /* @todo SMP support */
+    Assert(pVM->cCPUs == 1);
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
     /*
      * If this isn't ring-0, we have to check for I/O privileges.
      */
-    uint32_t efl = CPUMRawGetEFlags(pVM, pCtxCore);
-    uint32_t cpl = CPUMGetGuestCPL(pVM, pCtxCore);
+    uint32_t efl = CPUMRawGetEFlags(pVCpu, pCtxCore);
+    uint32_t cpl = CPUMGetGuestCPL(pVCpu, pCtxCore);
 
     if (    (    cpl > 0
              &&  X86_EFL_GET_IOPL(efl) < cpl)
@@ -727,7 +731,7 @@ VMMDECL(int) IOMInterpretCheckPortIOAccess(PVM pVM, PCPUMCTXCORE pCtxCore, RTIOP
         RTGCUINTPTR GCPtrTss;
         RTGCUINTPTR cbTss;
         bool        fCanHaveIOBitmap;
-        int rc = SELMGetTSSInfo(pVM, &GCPtrTss, &cbTss, &fCanHaveIOBitmap);
+        int rc = SELMGetTSSInfo(pVM, pVCpu, &GCPtrTss, &cbTss, &fCanHaveIOBitmap);
         if (RT_FAILURE(rc))
         {
             Log(("iomInterpretCheckPortIOAccess: Port=%RTiop cb=%d %Rrc -> #GP(0)\n", Port, cb, rc));
@@ -746,7 +750,7 @@ VMMDECL(int) IOMInterpretCheckPortIOAccess(PVM pVM, PCPUMCTXCORE pCtxCore, RTIOP
          * Fetch the I/O bitmap offset.
          */
         uint16_t offIOPB;
-        rc = PGMPhysInterpretedRead(pVM, pCtxCore, &offIOPB, GCPtrTss + RT_OFFSETOF(VBOXTSS, offIoBitmap), sizeof(offIOPB));
+        rc = PGMPhysInterpretedRead(pVCpu, pCtxCore, &offIOPB, GCPtrTss + RT_OFFSETOF(VBOXTSS, offIoBitmap), sizeof(offIOPB));
         if (rc != VINF_SUCCESS)
         {
             Log(("iomInterpretCheckPortIOAccess: Port=%RTiop cb=%d GCPtrTss=%RGv %Rrc\n",
@@ -765,7 +769,7 @@ VMMDECL(int) IOMInterpretCheckPortIOAccess(PVM pVM, PCPUMCTXCORE pCtxCore, RTIOP
             return TRPMRaiseXcptErr(pVM, pCtxCore, X86_XCPT_GP, 0);
         }
         uint16_t u16;
-        rc = PGMPhysInterpretedRead(pVM, pCtxCore, &u16, GCPtrTss + offTss, sizeof(u16));
+        rc = PGMPhysInterpretedRead(pVCpu, pCtxCore, &u16, GCPtrTss + offTss, sizeof(u16));
         if (rc != VINF_SUCCESS)
         {
             Log(("iomInterpretCheckPortIOAccess: Port=%RTiop cb=%d GCPtrTss=%RGv offTss=%#x -> %Rrc\n",

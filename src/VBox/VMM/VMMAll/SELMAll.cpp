@@ -35,6 +35,7 @@
 #include <VBox/param.h>
 #include <iprt/assert.h>
 #include <VBox/log.h>
+#include <VBox/vmm.h>
 
 
 
@@ -54,7 +55,7 @@
  */
 VMMDECL(RTGCPTR) SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr)
 {
-    Assert(!CPUMIsGuestInLongMode(pVM));    /* DON'T USE! */
+    Assert(pVM->cCPUs == 1 && !CPUMIsGuestInLongMode(VMMGetCpu(pVM)));    /* DON'T USE! */
 
     /** @todo check the limit. */
     X86DESC    Desc;
@@ -89,13 +90,14 @@ VMMDECL(RTGCPTR) SELMToFlat(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, R
     PCPUMSELREGHID pHiddenSel;
     RTSEL          Sel;
     int            rc;
+    PVMCPU         pVCpu = VMMGetCpu(pVM);
 
     rc = DISFetchRegSegEx(pCtxCore, SelReg, &Sel, &pHiddenSel); AssertRC(rc);
 
     /*
      * Deal with real & v86 mode first.
      */
-    if (    CPUMIsGuestInRealMode(pVM)
+    if (    CPUMIsGuestInRealMode(pVCpu)
         ||  pCtxCore->eflags.Bits.u1VM)
     {
         RTGCUINTPTR uFlat = (RTGCUINTPTR)Addr & 0xffff;
@@ -115,7 +117,7 @@ VMMDECL(RTGCPTR) SELMToFlat(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, R
 #endif
 
     /* 64 bits mode: CS, DS, ES and SS are treated as if each segment base is 0 (Intel® 64 and IA-32 Architectures Software Developer's Manual: 3.4.2.1). */
-    if (    CPUMIsGuestInLongMode(pVM)
+    if (    CPUMIsGuestInLongMode(pVCpu)
         &&  pCtxCore->csHid.Attr.n.u1Long)
     {
         switch (SelReg)
@@ -156,13 +158,15 @@ VMMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, RT
      */
     PCPUMSELREGHID pHiddenSel;
     RTSEL          Sel;
+    PVMCPU         pVCpu = VMMGetCpu(pVM);
+
     int rc = DISFetchRegSegEx(pCtxCore, SelReg, &Sel, &pHiddenSel);
     AssertRC(rc);
 
     /*
      * Deal with real & v86 mode first.
      */
-    if (    CPUMIsGuestInRealMode(pVM)
+    if (    CPUMIsGuestInRealMode(pVCpu)
         ||  pCtxCore->eflags.Bits.u1VM)
     {
         RTGCUINTPTR uFlat = (RTGCUINTPTR)Addr & 0xffff;
@@ -196,7 +200,7 @@ VMMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, RT
         u32Limit      = pHiddenSel->u32Limit;
 
         /* 64 bits mode: CS, DS, ES and SS are treated as if each segment base is 0 (Intel® 64 and IA-32 Architectures Software Developer's Manual: 3.4.2.1). */
-        if (    CPUMIsGuestInLongMode(pVM)
+        if (    CPUMIsGuestInLongMode(pVCpu)
             &&  pCtxCore->csHid.Attr.n.u1Long)
         {
             fCheckLimit = false;
@@ -457,12 +461,14 @@ VMMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, RT
  */
 VMMDECL(int) SELMToFlatBySelEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, CPUMSELREGHID *pHiddenSel, unsigned fFlags, PRTGCPTR ppvGC, uint32_t *pcb)
 {
-    Assert(!CPUMIsGuestInLongMode(pVM));    /* DON'T USE! */
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+
+    Assert(!CPUMIsGuestInLongMode(pVCpu));    /* DON'T USE! */
 
     /*
      * Deal with real & v86 mode first.
      */
-    if (    CPUMIsGuestInRealMode(pVM)
+    if (    CPUMIsGuestInRealMode(pVCpu)
         ||  eflags.Bits.u1VM)
     {
         RTGCUINTPTR uFlat = (RTGCUINTPTR)Addr & 0xffff;
@@ -496,7 +502,7 @@ VMMDECL(int) SELMToFlatBySelEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Add
         u32Limit      = pHiddenSel->u32Limit;
         pvFlat        = (RTGCPTR)(pHiddenSel->u64Base + (RTGCUINTPTR)Addr);
 
-        if (   !CPUMIsGuestInLongMode(pVM)
+        if (   !CPUMIsGuestInLongMode(pVCpu)
             || !pHiddenSel->Attr.n.u1Long)
         {
             /* AMD64 manual: compatibility mode ignores the high 32 bits when calculating an effective address. */
@@ -750,14 +756,14 @@ DECLINLINE(int) selmValidateAndConvertCSAddrStd(PVM pVM, RTSEL SelCPL, RTSEL Sel
  * address when in protected/long mode using the standard algorithm.
  *
  * @returns VBox status code.
- * @param   pVM     VM Handle.
+ * @param   pVCpu   VMCPU Handle.
  * @param   SelCPL  Current privilege level. Get this from SS - CS might be conforming!
  *                  A full selector can be passed, we'll only use the RPL part.
  * @param   SelCS   Selector part.
  * @param   Addr    Address part.
  * @param   ppvFlat Where to store the flat address.
  */
-DECLINLINE(int) selmValidateAndConvertCSAddrHidden(PVM pVM, RTSEL SelCPL, RTSEL SelCS, PCPUMSELREGHID pHidCS, RTGCPTR Addr, PRTGCPTR ppvFlat)
+DECLINLINE(int) selmValidateAndConvertCSAddrHidden(PVMCPU pVCpu, RTSEL SelCPL, RTSEL SelCS, PCPUMSELREGHID pHidCS, RTGCPTR Addr, PRTGCPTR ppvFlat)
 {
     /*
      * Check if present.
@@ -780,7 +786,7 @@ DECLINLINE(int) selmValidateAndConvertCSAddrHidden(PVM pVM, RTSEL SelCPL, RTSEL 
                     )
             {
                 /* 64 bits mode: CS, DS, ES and SS are treated as if each segment base is 0 (Intel® 64 and IA-32 Architectures Software Developer's Manual: 3.4.2.1). */
-                if (    CPUMIsGuestInLongMode(pVM)
+                if (    CPUMIsGuestInLongMode(pVCpu)
                     &&  pHidCS->Attr.n.u1Long)
                 {
                     *ppvFlat = Addr;
@@ -828,7 +834,10 @@ DECLINLINE(int) selmValidateAndConvertCSAddrHidden(PVM pVM, RTSEL SelCPL, RTSEL 
  */
 VMMDECL(int) SELMValidateAndConvertCSAddrGCTrap(PVM pVM, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, RTGCPTR Addr, PRTGCPTR ppvFlat, uint32_t *pcBits)
 {
-    if (    CPUMIsGuestInRealMode(pVM)
+    Assert(pVM->cCPUs == 1);
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
+    if (    CPUMIsGuestInRealMode(pVCpu)
         ||  eflags.Bits.u1VM)
     {
         *pcBits = 16;
@@ -854,7 +863,9 @@ VMMDECL(int) SELMValidateAndConvertCSAddrGCTrap(PVM pVM, X86EFLAGS eflags, RTSEL
  */
 VMMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, CPUMSELREGHID *pHiddenCSSel, RTGCPTR Addr, PRTGCPTR ppvFlat)
 {
-    if (    CPUMIsGuestInRealMode(pVM)
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+
+    if (    CPUMIsGuestInRealMode(pVCpu)
         ||  eflags.Bits.u1VM)
         return selmValidateAndConvertCSAddrRealMode(pVM, SelCS, pHiddenCSSel, Addr, ppvFlat);
 
@@ -865,7 +876,7 @@ VMMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, X86EFLAGS eflags, RTSEL SelCP
     if (!CPUMAreHiddenSelRegsValid(pVM))
         return selmValidateAndConvertCSAddrStd(pVM, SelCPL, SelCS, Addr, ppvFlat, NULL);
 #endif
-    return selmValidateAndConvertCSAddrHidden(pVM, SelCPL, SelCS, pHiddenCSSel, Addr, ppvFlat);
+    return selmValidateAndConvertCSAddrHidden(pVCpu, SelCPL, SelCS, pHiddenCSSel, Addr, ppvFlat);
 }
 
 
@@ -907,6 +918,7 @@ static DISCPUMODE selmGetCpuModeFromSelector(PVM pVM, RTSEL Sel)
  */
 VMMDECL(DISCPUMODE) SELMGetCpuModeFromSelector(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID *pHiddenSel)
 {
+    PVMCPU pVCpu = VMMGetCpu(pVM);
 #ifdef IN_RING0
     Assert(CPUMAreHiddenSelRegsValid(pVM));
 #else  /* !IN_RING0 */
@@ -915,14 +927,14 @@ VMMDECL(DISCPUMODE) SELMGetCpuModeFromSelector(PVM pVM, X86EFLAGS eflags, RTSEL 
         /*
          * Deal with real & v86 mode first.
          */
-        if (    CPUMIsGuestInRealMode(pVM)
+        if (    CPUMIsGuestInRealMode(pVCpu)
             ||  eflags.Bits.u1VM)
             return CPUMODE_16BIT;
 
         return selmGetCpuModeFromSelector(pVM, Sel);
     }
 #endif /* !IN_RING0 */
-    if (    CPUMIsGuestInLongMode(pVM)
+    if (    CPUMIsGuestInLongMode(pVCpu)
         &&  pHiddenSel->Attr.n.u1Long)
         return CPUMODE_64BIT;
 
@@ -983,6 +995,9 @@ void selmSetRing1Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp)
  */
 VMMDECL(int) SELMGetRing1Stack(PVM pVM, uint32_t *pSS, PRTGCPTR32 pEsp)
 {
+    Assert(pVM->cCPUs == 1);
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
     if (pVM->selm.s.fSyncTSSRing0Stack)
     {
         RTGCPTR GCPtrTss = pVM->selm.s.GCPtrGuestTss;
@@ -1008,7 +1023,7 @@ l_tryagain:
                 /* Shadow page might be out of sync. Sync and try again */
                 /** @todo might cross page boundary */
                 fTriedAlready = true;
-                rc = PGMPrefetchPage(pVM, (RTGCPTR)GCPtrTss);
+                rc = PGMPrefetchPage(pVM, pVCpu, (RTGCPTR)GCPtrTss);
                 if (rc != VINF_SUCCESS)
                     return rc;
                 goto l_tryagain;
@@ -1019,7 +1034,7 @@ l_tryagain:
 
 # else /* !IN_RC */
         /* Reading too much. Could be cheaper than two seperate calls though. */
-        rc = PGMPhysSimpleReadGCPtr(pVM, &tss, GCPtrTss, sizeof(VBOXTSS));
+        rc = PGMPhysSimpleReadGCPtr(pVCpu, &tss, GCPtrTss, sizeof(VBOXTSS));
         if (RT_FAILURE(rc))
         {
             AssertReleaseMsgFailed(("Unable to read TSS structure at %08X\n", GCPtrTss));
@@ -1182,17 +1197,18 @@ VMMDECL(RTRCPTR) SELMGetHyperGDT(PVM pVM)
  * @retval  VERR_SELM_NO_TSS if we haven't got a TSS (rather unlikely).
  *
  * @param   pVM                 The VM handle.
+ * @param   pVCpu               VMCPU Handle.
  * @param   pGCPtrTss           Where to store the TSS address.
  * @param   pcbTss              Where to store the TSS size limit.
  * @param   pfCanHaveIOBitmap   Where to store the can-have-I/O-bitmap indicator. (optional)
  */
-VMMDECL(int) SELMGetTSSInfo(PVM pVM, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTss, bool *pfCanHaveIOBitmap)
+VMMDECL(int) SELMGetTSSInfo(PVM pVM, PVMCPU pVCpu, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTss, bool *pfCanHaveIOBitmap)
 {
     /*
      * The TR hidden register is always valid.
      */
     CPUMSELREGHID trHid;
-    RTSEL tr = CPUMGetGuestTR(pVM, &trHid);
+    RTSEL tr = CPUMGetGuestTR(pVCpu, &trHid);
     if (!(tr & X86_SEL_MASK))
         return VERR_SELM_NO_TSS;
 
@@ -1212,9 +1228,11 @@ VMMDECL(int) SELMGetTSSInfo(PVM pVM, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTss
  * This is called by PGM.
  *
  * @param   pVM       The VM handle
+ * @param   pVCpu     The VMCPU handle
  */
-VMMDECL(void) SELMShadowCR3Changed(PVM pVM)
+VMMDECL(void) SELMShadowCR3Changed(PVM pVM, PVMCPU pVCpu)
 {
-    pVM->selm.s.Tss.cr3       = PGMGetHyperCR3(pVM);
-    pVM->selm.s.TssTrap08.cr3 = PGMGetInterRCCR3(pVM);
+    /** @todo SMP support!! */
+    pVM->selm.s.Tss.cr3       = PGMGetHyperCR3(pVCpu);
+    pVM->selm.s.TssTrap08.cr3 = PGMGetInterRCCR3(pVM, pVCpu);
 }

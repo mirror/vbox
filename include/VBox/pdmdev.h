@@ -2842,6 +2842,14 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(int, pfnUnregisterVMMDevHeap,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys));
 
+    /**
+     * Gets the VMCPU handle. Restricted API.
+     *
+     * @returns VMCPU Handle.
+     * @param   pDevIns             Device instance.
+     */
+    DECLR3CALLBACKMEMBER(PVMCPU, pfnGetVMCPU,(PPDMDEVINS pDevIns));
+
     /** @} */
 
     /** Just a safety precaution. (PDM_DEVHLP_VERSION) */
@@ -2982,6 +2990,14 @@ typedef struct PDMDEVHLPRC
      * @param   pDevIns         Device instance.
      */
     DECLRCCALLBACKMEMBER(PVM, pfnGetVM,(PPDMDEVINS pDevIns));
+
+    /**
+     * Gets the VMCPU handle. Restricted API.
+     *
+     * @returns VMCPU Handle.
+     * @param   pDevIns             Device instance.
+     */
+    DECLRCCALLBACKMEMBER(PVMCPU, pfnGetVMCPU,(PPDMDEVINS pDevIns));
 
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
@@ -3128,6 +3144,14 @@ typedef struct PDMDEVHLPR0
      * @param   pDevIns         Device instance.
      */
     DECLR0CALLBACKMEMBER(bool, pfnCanEmulateIoBlock,(PPDMDEVINS pDevIns));
+
+    /**
+     * Gets the VMCPU handle. Restricted API.
+     *
+     * @returns VMCPU Handle.
+     * @param   pDevIns             Device instance.
+     */
+    DECLR0CALLBACKMEMBER(PVMCPU, pfnGetVMCPU,(PPDMDEVINS pDevIns));
 
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
@@ -3712,6 +3736,14 @@ DECLINLINE(int) PDMDevHlpPDMThreadCreate(PPDMDEVINS pDevIns, PPPDMTHREAD ppThrea
 DECLINLINE(PVM) PDMDevHlpGetVM(PPDMDEVINS pDevIns)
 {
     return pDevIns->CTX_SUFF(pDevHlp)->pfnGetVM(pDevIns);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnGetVMCPU
+ */
+DECLINLINE(PVMCPU) PDMDevHlpGetVMCPU(PPDMDEVINS pDevIns)
+{
+    return pDevIns->CTX_SUFF(pDevHlp)->pfnGetVMCPU(pDevIns);
 }
 
 #ifdef IN_RING0

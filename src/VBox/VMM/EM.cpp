@@ -92,22 +92,22 @@
 *******************************************************************************/
 static DECLCALLBACK(int) emR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
-static int emR3Debug(PVM pVM, int rc);
-static int emR3RemStep(PVM pVM);
-static int emR3RemExecute(PVM pVM, bool *pfFFDone);
-static int emR3RawResumeHyper(PVM pVM);
-static int emR3RawStep(PVM pVM);
-DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc);
-DECLINLINE(int) emR3RawUpdateForceFlag(PVM pVM, PCPUMCTX pCtx, int rc);
-static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx);
-static int emR3RawExecute(PVM pVM, bool *pfFFDone);
-DECLINLINE(int) emR3RawExecuteInstruction(PVM pVM, const char *pszPrefix, int rcGC = VINF_SUCCESS);
-static int emR3HighPriorityPostForcedActions(PVM pVM, int rc);
-static int emR3ForcedActions(PVM pVM, int rc);
-static int emR3RawGuestTrap(PVM pVM);
-static int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret);
+static int emR3Debug(PVM pVM, PVMCPU pVCpu, int rc);
+static int emR3RemStep(PVM pVM, PVMCPU pVCpu);
+static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone);
+static int emR3RawResumeHyper(PVM pVM, PVMCPU pVCpu);
+static int emR3RawStep(PVM pVM, PVMCPU pVCpu);
+DECLINLINE(int) emR3RawHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc);
+DECLINLINE(int) emR3RawUpdateForceFlag(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc);
+static int emR3RawForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+static int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone);
+DECLINLINE(int) emR3RawExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszPrefix, int rcGC = VINF_SUCCESS);
+static int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc);
+static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc);
+static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu);
+static int emR3PatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret);
 static int emR3SingleStepExecRem(PVM pVM, uint32_t cIterations);
-static EMSTATE emR3Reschedule(PVM pVM, PCPUMCTX pCtx);
+static EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
 /**
  * Initializes the EM.
@@ -121,10 +121,10 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
     /*
      * Assert alignment and sizes.
      */
-    AssertRelease(!(RT_OFFSETOF(VM, em.s) & 31));
-    AssertRelease(sizeof(pVM->em.s) <= sizeof(pVM->em.padding));
-    AssertReleaseMsg(sizeof(pVM->em.s.u.FatalLongJump) <= sizeof(pVM->em.s.u.achPaddingFatalLongJump),
-        ("%d bytes, padding %d\n", sizeof(pVM->em.s.u.FatalLongJump), sizeof(pVM->em.s.u.achPaddingFatalLongJump)));
+    AssertCompile(!(RT_OFFSETOF(VM, em.s) & 31));
+    AssertCompile(sizeof(pVM->em.s) <= sizeof(pVM->em.padding));
+    AssertReleaseMsg(sizeof(pVM->aCpus[0].em.s.u.FatalLongJump) <= sizeof(pVM->aCpus[0].em.s.u.achPaddingFatalLongJump),
+        ("%d bytes, padding %d\n", sizeof(pVM->aCpus[0].em.s.u.FatalLongJump), sizeof(pVM->aCpus[0].em.s.u.achPaddingFatalLongJump)));
 
     /*
      * Init the structure.
@@ -137,12 +137,6 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
     if (RT_FAILURE(rc))
         pVM->fRawR0Enabled = true;
     Log(("EMR3Init: fRawR3Enabled=%d fRawR0Enabled=%d\n", pVM->fRawR3Enabled, pVM->fRawR0Enabled));
-    pVM->em.s.enmState = EMSTATE_NONE;
-    pVM->em.s.fForceRAW = false;
-
-    pVM->em.s.pCtx = CPUMQueryGuestCtxPtr(pVM);
-    pVM->em.s.pPatmGCState = PATMR3QueryGCStateHC(pVM);
-    AssertMsg(pVM->em.s.pPatmGCState, ("PATMR3QueryGCStateHC failed!\n"));
 
     /*
      * Saved state.
@@ -153,235 +147,267 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
     if (RT_FAILURE(rc))
         return rc;
 
-    /*
-     * Statistics.
-     */
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
+        pVCpu->em.s.offVMCPU = RT_OFFSETOF(VMCPU, em.s);
+
+        pVCpu->em.s.enmState     = EMSTATE_NONE;
+        pVCpu->em.s.fForceRAW    = false;
+
+        pVCpu->em.s.pCtx         = CPUMQueryGuestCtxPtr(pVCpu);
+        pVCpu->em.s.pPatmGCState = PATMR3QueryGCStateHC(pVM);
+        AssertMsg(pVCpu->em.s.pPatmGCState, ("PATMR3QueryGCStateHC failed!\n"));
+
+# define EM_REG_COUNTER(a, b, c) \
+        rc = STAMR3RegisterF(pVM, a, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, c, b, i); \
+        AssertRC(rc);
+
+# define EM_REG_COUNTER_USED(a, b, c) \
+        rc = STAMR3RegisterF(pVM, a, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, c, b, i); \
+        AssertRC(rc);
+
+# define EM_REG_PROFILE(a, b, c) \
+        rc = STAMR3RegisterF(pVM, a, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, c, b, i); \
+        AssertRC(rc);
+
+# define EM_REG_PROFILE_ADV(a, b, c) \
+        rc = STAMR3RegisterF(pVM, a, STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, c, b, i); \
+        AssertRC(rc);
+
+        /*
+         * Statistics.
+         */
 #ifdef VBOX_WITH_STATISTICS
-    PEMSTATS pStats;
-    rc = MMHyperAlloc(pVM, sizeof(*pStats), 0, MM_TAG_EM, (void **)&pStats);
-    if (RT_FAILURE(rc))
-        return rc;
-    pVM->em.s.pStatsR3 = pStats;
-    pVM->em.s.pStatsR0 = MMHyperR3ToR0(pVM, pStats);
-    pVM->em.s.pStatsRC = MMHyperR3ToRC(pVM, pStats);
+        PEMSTATS pStats;
+        rc = MMHyperAlloc(pVM, sizeof(*pStats), 0, MM_TAG_EM, (void **)&pStats);
+        if (RT_FAILURE(rc))
+            return rc;
 
-    STAM_REG(pVM, &pStats->StatRZEmulate,               STAMTYPE_PROFILE, "/EM/RZ/Interpret",                   STAMUNIT_TICKS_PER_CALL, "Profiling of EMInterpretInstruction.");
-    STAM_REG(pVM, &pStats->StatR3Emulate,               STAMTYPE_PROFILE, "/EM/R3/Interpret",                   STAMUNIT_TICKS_PER_CALL, "Profiling of EMInterpretInstruction.");
+        pVCpu->em.s.pStatsR3 = pStats;
+        pVCpu->em.s.pStatsR0 = MMHyperR3ToR0(pVM, pStats);
+        pVCpu->em.s.pStatsRC = MMHyperR3ToRC(pVM, pStats);
 
-    STAM_REG(pVM, &pStats->StatRZInterpretSucceeded,    STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success",           STAMUNIT_OCCURENCES,    "The number of times an instruction was successfully interpreted.");
-    STAM_REG(pVM, &pStats->StatR3InterpretSucceeded,    STAMTYPE_COUNTER, "/EM/R3/Interpret/Success",           STAMUNIT_OCCURENCES,    "The number of times an instruction was successfully interpreted.");
+        EM_REG_PROFILE(&pStats->StatRZEmulate,               "/EM/CPU%d/RZ/Interpret",                   "Profiling of EMInterpretInstruction.");
+        EM_REG_PROFILE(&pStats->StatR3Emulate,               "/EM/CPU%d/R3/Interpret",                   "Profiling of EMInterpretInstruction.");
 
-    STAM_REG_USED(pVM, &pStats->StatRZAnd,                  STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/And",       STAMUNIT_OCCURENCES,    "The number of times AND was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3And,                  STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/And",       STAMUNIT_OCCURENCES,    "The number of times AND was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZAdd,                  STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Add",       STAMUNIT_OCCURENCES,    "The number of times ADD was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3Add,                  STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Add",       STAMUNIT_OCCURENCES,    "The number of times ADD was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZAdc,                  STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Adc",       STAMUNIT_OCCURENCES,    "The number of times ADC was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3Adc,                  STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Adc",       STAMUNIT_OCCURENCES,    "The number of times ADC was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZSub,                  STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Sub",       STAMUNIT_OCCURENCES,    "The number of times SUB was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3Sub,                  STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Sub",       STAMUNIT_OCCURENCES,    "The number of times SUB was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZCpuId,                STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/CpuId",     STAMUNIT_OCCURENCES,    "The number of times CPUID was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3CpuId,                STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/CpuId",     STAMUNIT_OCCURENCES,    "The number of times CPUID was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZDec,                  STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Dec",       STAMUNIT_OCCURENCES,    "The number of times DEC was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3Dec,                  STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Dec",       STAMUNIT_OCCURENCES,    "The number of times DEC was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZHlt,                  STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Hlt",       STAMUNIT_OCCURENCES,    "The number of times HLT was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3Hlt,                  STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Hlt",       STAMUNIT_OCCURENCES,    "The number of times HLT was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZInc,                  STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Inc",       STAMUNIT_OCCURENCES,    "The number of times INC was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3Inc,                  STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Inc",       STAMUNIT_OCCURENCES,    "The number of times INC was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZInvlPg,               STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Invlpg",    STAMUNIT_OCCURENCES,    "The number of times INVLPG was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3InvlPg,               STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Invlpg",    STAMUNIT_OCCURENCES,    "The number of times INVLPG was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZIret,                 STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Iret",      STAMUNIT_OCCURENCES,    "The number of times IRET was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3Iret,                 STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Iret",      STAMUNIT_OCCURENCES,    "The number of times IRET was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZLLdt,                 STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/LLdt",      STAMUNIT_OCCURENCES,    "The number of times LLDT was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3LLdt,                 STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/LLdt",      STAMUNIT_OCCURENCES,    "The number of times LLDT was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZLIdt,                 STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/LIdt",      STAMUNIT_OCCURENCES,    "The number of times LIDT was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3LIdt,                 STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/LIdt",      STAMUNIT_OCCURENCES,    "The number of times LIDT was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZLGdt,                 STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/LGdt",      STAMUNIT_OCCURENCES,    "The number of times LGDT was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3LGdt,                 STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/LGdt",      STAMUNIT_OCCURENCES,    "The number of times LGDT was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZMov,                  STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Mov",       STAMUNIT_OCCURENCES,    "The number of times MOV was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3Mov,                  STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Mov",       STAMUNIT_OCCURENCES,    "The number of times MOV was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZMovCRx,               STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/MovCRx",    STAMUNIT_OCCURENCES,    "The number of times MOV CRx was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3MovCRx,               STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/MovCRx",    STAMUNIT_OCCURENCES,    "The number of times MOV CRx was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZMovDRx,               STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/MovDRx",    STAMUNIT_OCCURENCES,    "The number of times MOV DRx was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3MovDRx,               STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/MovDRx",    STAMUNIT_OCCURENCES,    "The number of times MOV DRx was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZOr,                   STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Or",        STAMUNIT_OCCURENCES,    "The number of times OR was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3Or,                   STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Or",        STAMUNIT_OCCURENCES,    "The number of times OR was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZPop,                  STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Pop",       STAMUNIT_OCCURENCES,    "The number of times POP was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3Pop,                  STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Pop",       STAMUNIT_OCCURENCES,    "The number of times POP was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZRdtsc,                STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Rdtsc",     STAMUNIT_OCCURENCES,    "The number of times RDTSC was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3Rdtsc,                STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Rdtsc",     STAMUNIT_OCCURENCES,    "The number of times RDTSC was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZRdpmc,                STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Rdpmc",     STAMUNIT_OCCURENCES,    "The number of times RDPMC was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3Rdpmc,                STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Rdpmc",     STAMUNIT_OCCURENCES,    "The number of times RDPMC was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZSti,                  STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Sti",       STAMUNIT_OCCURENCES,    "The number of times STI was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3Sti,                  STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Sti",       STAMUNIT_OCCURENCES,    "The number of times STI was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZXchg,                 STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Xchg",      STAMUNIT_OCCURENCES,    "The number of times XCHG was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3Xchg,                 STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Xchg",      STAMUNIT_OCCURENCES,    "The number of times XCHG was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZXor,                  STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Xor",       STAMUNIT_OCCURENCES,    "The number of times XOR was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3Xor,                  STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Xor",       STAMUNIT_OCCURENCES,    "The number of times XOR was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZMonitor,              STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Monitor",   STAMUNIT_OCCURENCES,    "The number of times MONITOR was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3Monitor,              STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Monitor",   STAMUNIT_OCCURENCES,    "The number of times MONITOR was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZMWait,                STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/MWait",     STAMUNIT_OCCURENCES,    "The number of times MWAIT was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3MWait,                STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/MWait",     STAMUNIT_OCCURENCES,    "The number of times MWAIT was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZBtr,                  STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Btr",       STAMUNIT_OCCURENCES,    "The number of times BTR was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3Btr,                  STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Btr",       STAMUNIT_OCCURENCES,    "The number of times BTR was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZBts,                  STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Bts",       STAMUNIT_OCCURENCES,    "The number of times BTS was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3Bts,                  STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Bts",       STAMUNIT_OCCURENCES,    "The number of times BTS was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZBtc,                  STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Btc",       STAMUNIT_OCCURENCES,    "The number of times BTC was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3Btc,                  STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Btc",       STAMUNIT_OCCURENCES,    "The number of times BTC was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZCmpXchg,              STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/CmpXchg",   STAMUNIT_OCCURENCES,    "The number of times CMPXCHG was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3CmpXchg,              STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/CmpXchg",   STAMUNIT_OCCURENCES,    "The number of times CMPXCHG was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZCmpXchg8b,            STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/CmpXchg8b",   STAMUNIT_OCCURENCES,  "The number of times CMPXCHG8B was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3CmpXchg8b,            STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/CmpXchg8b",   STAMUNIT_OCCURENCES,  "The number of times CMPXCHG8B was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZXAdd,                 STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/XAdd",      STAMUNIT_OCCURENCES,    "The number of times XADD was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3XAdd,                 STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/XAdd",      STAMUNIT_OCCURENCES,    "The number of times XADD was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3Rdmsr,                STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Rdmsr",      STAMUNIT_OCCURENCES,   "The number of times RDMSR was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZRdmsr,                STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Rdmsr",      STAMUNIT_OCCURENCES,   "The number of times RDMSR was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3Wrmsr,                STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Wrmsr",      STAMUNIT_OCCURENCES,   "The number of times WRMSR was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZWrmsr,                STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Wrmsr",      STAMUNIT_OCCURENCES,   "The number of times WRMSR was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3StosWD,               STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Stoswd",     STAMUNIT_OCCURENCES,   "The number of times STOSWD was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZStosWD,               STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Stoswd",     STAMUNIT_OCCURENCES,   "The number of times STOSWD was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZWbInvd,               STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/WbInvd",     STAMUNIT_OCCURENCES,   "The number of times WBINVD was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3WbInvd,               STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/WbInvd",     STAMUNIT_OCCURENCES,   "The number of times WBINVD was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZLmsw,                 STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Lmsw",       STAMUNIT_OCCURENCES,   "The number of times LMSW was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3Lmsw,                 STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Lmsw",       STAMUNIT_OCCURENCES,   "The number of times LMSW was successfully interpreted.");
+        EM_REG_PROFILE(&pStats->StatRZInterpretSucceeded,    "/EM/CPU%d/RZ/Interpret/Success",           "The number of times an instruction was successfully interpreted.");
+        EM_REG_PROFILE(&pStats->StatR3InterpretSucceeded,    "/EM/CPU%d/R3/Interpret/Success",           "The number of times an instruction was successfully interpreted.");
 
-    STAM_REG(pVM, &pStats->StatRZInterpretFailed,           STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed",            STAMUNIT_OCCURENCES,    "The number of times an instruction was not interpreted.");
-    STAM_REG(pVM, &pStats->StatR3InterpretFailed,           STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed",            STAMUNIT_OCCURENCES,    "The number of times an instruction was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZAnd,                  "/EM/CPU%d/RZ/Interpret/Success/And",       "The number of times AND was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3And,                  "/EM/CPU%d/R3/Interpret/Success/And",       "The number of times AND was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZAdd,                  "/EM/CPU%d/RZ/Interpret/Success/Add",       "The number of times ADD was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3Add,                  "/EM/CPU%d/R3/Interpret/Success/Add",       "The number of times ADD was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZAdc,                  "/EM/CPU%d/RZ/Interpret/Success/Adc",       "The number of times ADC was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3Adc,                  "/EM/CPU%d/R3/Interpret/Success/Adc",       "The number of times ADC was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZSub,                  "/EM/CPU%d/RZ/Interpret/Success/Sub",       "The number of times SUB was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3Sub,                  "/EM/CPU%d/R3/Interpret/Success/Sub",       "The number of times SUB was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZCpuId,                "/EM/CPU%d/RZ/Interpret/Success/CpuId",     "The number of times CPUID was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3CpuId,                "/EM/CPU%d/R3/Interpret/Success/CpuId",     "The number of times CPUID was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZDec,                  "/EM/CPU%d/RZ/Interpret/Success/Dec",       "The number of times DEC was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3Dec,                  "/EM/CPU%d/R3/Interpret/Success/Dec",       "The number of times DEC was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZHlt,                  "/EM/CPU%d/RZ/Interpret/Success/Hlt",       "The number of times HLT was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3Hlt,                  "/EM/CPU%d/R3/Interpret/Success/Hlt",       "The number of times HLT was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZInc,                  "/EM/CPU%d/RZ/Interpret/Success/Inc",       "The number of times INC was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3Inc,                  "/EM/CPU%d/R3/Interpret/Success/Inc",       "The number of times INC was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZInvlPg,               "/EM/CPU%d/RZ/Interpret/Success/Invlpg",    "The number of times INVLPG was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3InvlPg,               "/EM/CPU%d/R3/Interpret/Success/Invlpg",    "The number of times INVLPG was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZIret,                 "/EM/CPU%d/RZ/Interpret/Success/Iret",      "The number of times IRET was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3Iret,                 "/EM/CPU%d/R3/Interpret/Success/Iret",      "The number of times IRET was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZLLdt,                 "/EM/CPU%d/RZ/Interpret/Success/LLdt",      "The number of times LLDT was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3LLdt,                 "/EM/CPU%d/R3/Interpret/Success/LLdt",      "The number of times LLDT was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZLIdt,                 "/EM/CPU%d/RZ/Interpret/Success/LIdt",      "The number of times LIDT was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3LIdt,                 "/EM/CPU%d/R3/Interpret/Success/LIdt",      "The number of times LIDT was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZLGdt,                 "/EM/CPU%d/RZ/Interpret/Success/LGdt",      "The number of times LGDT was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3LGdt,                 "/EM/CPU%d/R3/Interpret/Success/LGdt",      "The number of times LGDT was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZMov,                  "/EM/CPU%d/RZ/Interpret/Success/Mov",       "The number of times MOV was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3Mov,                  "/EM/CPU%d/R3/Interpret/Success/Mov",       "The number of times MOV was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZMovCRx,               "/EM/CPU%d/RZ/Interpret/Success/MovCRx",    "The number of times MOV CRx was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3MovCRx,               "/EM/CPU%d/R3/Interpret/Success/MovCRx",    "The number of times MOV CRx was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZMovDRx,               "/EM/CPU%d/RZ/Interpret/Success/MovDRx",    "The number of times MOV DRx was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3MovDRx,               "/EM/CPU%d/R3/Interpret/Success/MovDRx",    "The number of times MOV DRx was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZOr,                   "/EM/CPU%d/RZ/Interpret/Success/Or",        "The number of times OR was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3Or,                   "/EM/CPU%d/R3/Interpret/Success/Or",        "The number of times OR was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZPop,                  "/EM/CPU%d/RZ/Interpret/Success/Pop",       "The number of times POP was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3Pop,                  "/EM/CPU%d/R3/Interpret/Success/Pop",       "The number of times POP was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZRdtsc,                "/EM/CPU%d/RZ/Interpret/Success/Rdtsc",     "The number of times RDTSC was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3Rdtsc,                "/EM/CPU%d/R3/Interpret/Success/Rdtsc",     "The number of times RDTSC was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZRdpmc,                "/EM/CPU%d/RZ/Interpret/Success/Rdpmc",     "The number of times RDPMC was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3Rdpmc,                "/EM/CPU%d/R3/Interpret/Success/Rdpmc",     "The number of times RDPMC was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZSti,                  "/EM/CPU%d/RZ/Interpret/Success/Sti",       "The number of times STI was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3Sti,                  "/EM/CPU%d/R3/Interpret/Success/Sti",       "The number of times STI was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZXchg,                 "/EM/CPU%d/RZ/Interpret/Success/Xchg",      "The number of times XCHG was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3Xchg,                 "/EM/CPU%d/R3/Interpret/Success/Xchg",      "The number of times XCHG was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZXor,                  "/EM/CPU%d/RZ/Interpret/Success/Xor",       "The number of times XOR was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3Xor,                  "/EM/CPU%d/R3/Interpret/Success/Xor",       "The number of times XOR was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZMonitor,              "/EM/CPU%d/RZ/Interpret/Success/Monitor",   "The number of times MONITOR was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3Monitor,              "/EM/CPU%d/R3/Interpret/Success/Monitor",   "The number of times MONITOR was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZMWait,                "/EM/CPU%d/RZ/Interpret/Success/MWait",     "The number of times MWAIT was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3MWait,                "/EM/CPU%d/R3/Interpret/Success/MWait",     "The number of times MWAIT was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZBtr,                  "/EM/CPU%d/RZ/Interpret/Success/Btr",       "The number of times BTR was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3Btr,                  "/EM/CPU%d/R3/Interpret/Success/Btr",       "The number of times BTR was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZBts,                  "/EM/CPU%d/RZ/Interpret/Success/Bts",       "The number of times BTS was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3Bts,                  "/EM/CPU%d/R3/Interpret/Success/Bts",       "The number of times BTS was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZBtc,                  "/EM/CPU%d/RZ/Interpret/Success/Btc",       "The number of times BTC was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3Btc,                  "/EM/CPU%d/R3/Interpret/Success/Btc",       "The number of times BTC was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZCmpXchg,              "/EM/CPU%d/RZ/Interpret/Success/CmpXchg",   "The number of times CMPXCHG was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3CmpXchg,              "/EM/CPU%d/R3/Interpret/Success/CmpXchg",   "The number of times CMPXCHG was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZCmpXchg8b,            "/EM/CPU%d/RZ/Interpret/Success/CmpXchg8b",   "The number of times CMPXCHG8B was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3CmpXchg8b,            "/EM/CPU%d/R3/Interpret/Success/CmpXchg8b",   "The number of times CMPXCHG8B was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZXAdd,                 "/EM/CPU%d/RZ/Interpret/Success/XAdd",      "The number of times XADD was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3XAdd,                 "/EM/CPU%d/R3/Interpret/Success/XAdd",      "The number of times XADD was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3Rdmsr,                "/EM/CPU%d/R3/Interpret/Success/Rdmsr",      "The number of times RDMSR was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZRdmsr,                "/EM/CPU%d/RZ/Interpret/Success/Rdmsr",      "The number of times RDMSR was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3Wrmsr,                "/EM/CPU%d/R3/Interpret/Success/Wrmsr",      "The number of times WRMSR was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZWrmsr,                "/EM/CPU%d/RZ/Interpret/Success/Wrmsr",      "The number of times WRMSR was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3StosWD,               "/EM/CPU%d/R3/Interpret/Success/Stoswd",     "The number of times STOSWD was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZStosWD,               "/EM/CPU%d/RZ/Interpret/Success/Stoswd",     "The number of times STOSWD was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZWbInvd,               "/EM/CPU%d/RZ/Interpret/Success/WbInvd",     "The number of times WBINVD was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3WbInvd,               "/EM/CPU%d/R3/Interpret/Success/WbInvd",     "The number of times WBINVD was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZLmsw,                 "/EM/CPU%d/RZ/Interpret/Success/Lmsw",       "The number of times LMSW was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3Lmsw,                 "/EM/CPU%d/R3/Interpret/Success/Lmsw",       "The number of times LMSW was successfully interpreted.");
 
-    STAM_REG_USED(pVM, &pStats->StatRZFailedAnd,            STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/And",        STAMUNIT_OCCURENCES,    "The number of times AND was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedAnd,            STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/And",        STAMUNIT_OCCURENCES,    "The number of times AND was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedCpuId,          STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/CpuId",      STAMUNIT_OCCURENCES,    "The number of times CPUID was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedCpuId,          STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/CpuId",      STAMUNIT_OCCURENCES,    "The number of times CPUID was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedDec,            STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Dec",        STAMUNIT_OCCURENCES,    "The number of times DEC was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedDec,            STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Dec",        STAMUNIT_OCCURENCES,    "The number of times DEC was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedHlt,            STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Hlt",        STAMUNIT_OCCURENCES,    "The number of times HLT was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedHlt,            STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Hlt",        STAMUNIT_OCCURENCES,    "The number of times HLT was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedInc,            STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Inc",        STAMUNIT_OCCURENCES,    "The number of times INC was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedInc,            STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Inc",        STAMUNIT_OCCURENCES,    "The number of times INC was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedInvlPg,         STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/InvlPg",     STAMUNIT_OCCURENCES,    "The number of times INVLPG was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedInvlPg,         STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/InvlPg",     STAMUNIT_OCCURENCES,    "The number of times INVLPG was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedIret,           STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Iret",       STAMUNIT_OCCURENCES,    "The number of times IRET was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedIret,           STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Iret",       STAMUNIT_OCCURENCES,    "The number of times IRET was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedLLdt,           STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/LLdt",       STAMUNIT_OCCURENCES,    "The number of times LLDT was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedLLdt,           STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/LLdt",       STAMUNIT_OCCURENCES,    "The number of times LLDT was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedLIdt,           STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/LIdt",       STAMUNIT_OCCURENCES,    "The number of times LIDT was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedLIdt,           STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/LIdt",       STAMUNIT_OCCURENCES,    "The number of times LIDT was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedLGdt,           STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/LGdt",       STAMUNIT_OCCURENCES,    "The number of times LGDT was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedLGdt,           STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/LGdt",       STAMUNIT_OCCURENCES,    "The number of times LGDT was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedMov,            STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Mov",        STAMUNIT_OCCURENCES,    "The number of times MOV was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedMov,            STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Mov",        STAMUNIT_OCCURENCES,    "The number of times MOV was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedMovCRx,         STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/MovCRx",     STAMUNIT_OCCURENCES,    "The number of times MOV CRx was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedMovCRx,         STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/MovCRx",     STAMUNIT_OCCURENCES,    "The number of times MOV CRx was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedMovDRx,         STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/MovDRx",     STAMUNIT_OCCURENCES,    "The number of times MOV DRx was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedMovDRx,         STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/MovDRx",     STAMUNIT_OCCURENCES,    "The number of times MOV DRx was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedOr,             STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Or",         STAMUNIT_OCCURENCES,    "The number of times OR was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedOr,             STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Or",         STAMUNIT_OCCURENCES,    "The number of times OR was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedPop,            STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Pop",        STAMUNIT_OCCURENCES,    "The number of times POP was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedPop,            STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Pop",        STAMUNIT_OCCURENCES,    "The number of times POP was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedSti,            STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Sti",        STAMUNIT_OCCURENCES,    "The number of times STI was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedSti,            STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Sti",        STAMUNIT_OCCURENCES,    "The number of times STI was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedXchg,           STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Xchg",       STAMUNIT_OCCURENCES,    "The number of times XCHG was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedXchg,           STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Xchg",       STAMUNIT_OCCURENCES,    "The number of times XCHG was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedXor,            STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Xor",        STAMUNIT_OCCURENCES,    "The number of times XOR was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedXor,            STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Xor",        STAMUNIT_OCCURENCES,    "The number of times XOR was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedMonitor,        STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Monitor",    STAMUNIT_OCCURENCES,    "The number of times MONITOR was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedMonitor,        STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Monitor",    STAMUNIT_OCCURENCES,    "The number of times MONITOR was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedMWait,          STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/MWait",      STAMUNIT_OCCURENCES,    "The number of times MONITOR was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedMWait,          STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/MWait",      STAMUNIT_OCCURENCES,    "The number of times MONITOR was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedRdtsc,          STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Rdtsc",      STAMUNIT_OCCURENCES,    "The number of times RDTSC was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedRdtsc,          STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Rdtsc",      STAMUNIT_OCCURENCES,    "The number of times RDTSC was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedRdpmc,          STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Rdpmc",      STAMUNIT_OCCURENCES,    "The number of times RDPMC was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedRdpmc,          STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Rdpmc",      STAMUNIT_OCCURENCES,    "The number of times RDPMC was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedRdmsr,          STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Rdmsr",      STAMUNIT_OCCURENCES,    "The number of times RDMSR was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedRdmsr,          STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Rdmsr",      STAMUNIT_OCCURENCES,    "The number of times RDMSR was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedWrmsr,          STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Wrmsr",      STAMUNIT_OCCURENCES,    "The number of times WRMSR was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedWrmsr,          STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Wrmsr",      STAMUNIT_OCCURENCES,    "The number of times WRMSR was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedLmsw,           STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Lmsw",       STAMUNIT_OCCURENCES,    "The number of times LMSW was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedLmsw,           STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Lmsw",       STAMUNIT_OCCURENCES,    "The number of times LMSW was not interpreted.");
+        EM_REG_COUNTER(&pStats->StatRZInterpretFailed,           "/EM/CPU%d/RZ/Interpret/Failed",            "The number of times an instruction was not interpreted.");
+        EM_REG_COUNTER(&pStats->StatR3InterpretFailed,           "/EM/CPU%d/R3/Interpret/Failed",            "The number of times an instruction was not interpreted.");
 
-    STAM_REG_USED(pVM, &pStats->StatRZFailedMisc,           STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Misc",       STAMUNIT_OCCURENCES,    "The number of times some misc instruction was encountered.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedMisc,           STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Misc",       STAMUNIT_OCCURENCES,    "The number of times some misc instruction was encountered.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedAdd,            STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Add",        STAMUNIT_OCCURENCES,    "The number of times ADD was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedAdd,            STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Add",        STAMUNIT_OCCURENCES,    "The number of times ADD was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedAdc,            STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Adc",        STAMUNIT_OCCURENCES,    "The number of times ADC was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedAdc,            STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Adc",        STAMUNIT_OCCURENCES,    "The number of times ADC was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedBtr,            STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Btr",        STAMUNIT_OCCURENCES,    "The number of times BTR was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedBtr,            STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Btr",        STAMUNIT_OCCURENCES,    "The number of times BTR was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedBts,            STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Bts",        STAMUNIT_OCCURENCES,    "The number of times BTS was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedBts,            STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Bts",        STAMUNIT_OCCURENCES,    "The number of times BTS was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedBtc,            STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Btc",        STAMUNIT_OCCURENCES,    "The number of times BTC was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedBtc,            STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Btc",        STAMUNIT_OCCURENCES,    "The number of times BTC was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedCli,            STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Cli",        STAMUNIT_OCCURENCES,    "The number of times CLI was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedCli,            STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Cli",        STAMUNIT_OCCURENCES,    "The number of times CLI was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedCmpXchg,        STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/CmpXchg",    STAMUNIT_OCCURENCES,    "The number of times CMPXCHG was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedCmpXchg,        STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/CmpXchg",    STAMUNIT_OCCURENCES,    "The number of times CMPXCHG was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedCmpXchg8b,      STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/CmpXchg8b",  STAMUNIT_OCCURENCES,    "The number of times CMPXCHG8B was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedCmpXchg8b,      STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/CmpXchg8b",  STAMUNIT_OCCURENCES,    "The number of times CMPXCHG8B was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedXAdd,           STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/XAdd",       STAMUNIT_OCCURENCES,    "The number of times XADD was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedXAdd,           STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/XAdd",       STAMUNIT_OCCURENCES,    "The number of times XADD was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedMovNTPS,        STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/MovNTPS",    STAMUNIT_OCCURENCES,    "The number of times MOVNTPS was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedMovNTPS,        STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/MovNTPS",    STAMUNIT_OCCURENCES,    "The number of times MOVNTPS was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedStosWD,         STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/StosWD",     STAMUNIT_OCCURENCES,    "The number of times STOSWD was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedStosWD,         STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/StosWD",     STAMUNIT_OCCURENCES,    "The number of times STOSWD was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedSub,            STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Sub",        STAMUNIT_OCCURENCES,    "The number of times SUB was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedSub,            STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Sub",        STAMUNIT_OCCURENCES,    "The number of times SUB was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedWbInvd,         STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/WbInvd",     STAMUNIT_OCCURENCES,    "The number of times WBINVD was not interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedWbInvd,         STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/WbInvd",     STAMUNIT_OCCURENCES,    "The number of times WBINVD was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedAnd,            "/EM/CPU%d/RZ/Interpret/Failed/And",        "The number of times AND was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedAnd,            "/EM/CPU%d/R3/Interpret/Failed/And",        "The number of times AND was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedCpuId,          "/EM/CPU%d/RZ/Interpret/Failed/CpuId",      "The number of times CPUID was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedCpuId,          "/EM/CPU%d/R3/Interpret/Failed/CpuId",      "The number of times CPUID was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedDec,            "/EM/CPU%d/RZ/Interpret/Failed/Dec",        "The number of times DEC was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedDec,            "/EM/CPU%d/R3/Interpret/Failed/Dec",        "The number of times DEC was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedHlt,            "/EM/CPU%d/RZ/Interpret/Failed/Hlt",        "The number of times HLT was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedHlt,            "/EM/CPU%d/R3/Interpret/Failed/Hlt",        "The number of times HLT was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedInc,            "/EM/CPU%d/RZ/Interpret/Failed/Inc",        "The number of times INC was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedInc,            "/EM/CPU%d/R3/Interpret/Failed/Inc",        "The number of times INC was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedInvlPg,         "/EM/CPU%d/RZ/Interpret/Failed/InvlPg",     "The number of times INVLPG was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedInvlPg,         "/EM/CPU%d/R3/Interpret/Failed/InvlPg",     "The number of times INVLPG was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedIret,           "/EM/CPU%d/RZ/Interpret/Failed/Iret",       "The number of times IRET was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedIret,           "/EM/CPU%d/R3/Interpret/Failed/Iret",       "The number of times IRET was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedLLdt,           "/EM/CPU%d/RZ/Interpret/Failed/LLdt",       "The number of times LLDT was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedLLdt,           "/EM/CPU%d/R3/Interpret/Failed/LLdt",       "The number of times LLDT was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedLIdt,           "/EM/CPU%d/RZ/Interpret/Failed/LIdt",       "The number of times LIDT was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedLIdt,           "/EM/CPU%d/R3/Interpret/Failed/LIdt",       "The number of times LIDT was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedLGdt,           "/EM/CPU%d/RZ/Interpret/Failed/LGdt",       "The number of times LGDT was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedLGdt,           "/EM/CPU%d/R3/Interpret/Failed/LGdt",       "The number of times LGDT was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedMov,            "/EM/CPU%d/RZ/Interpret/Failed/Mov",        "The number of times MOV was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedMov,            "/EM/CPU%d/R3/Interpret/Failed/Mov",        "The number of times MOV was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedMovCRx,         "/EM/CPU%d/RZ/Interpret/Failed/MovCRx",     "The number of times MOV CRx was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedMovCRx,         "/EM/CPU%d/R3/Interpret/Failed/MovCRx",     "The number of times MOV CRx was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedMovDRx,         "/EM/CPU%d/RZ/Interpret/Failed/MovDRx",     "The number of times MOV DRx was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedMovDRx,         "/EM/CPU%d/R3/Interpret/Failed/MovDRx",     "The number of times MOV DRx was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedOr,             "/EM/CPU%d/RZ/Interpret/Failed/Or",         "The number of times OR was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedOr,             "/EM/CPU%d/R3/Interpret/Failed/Or",         "The number of times OR was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedPop,            "/EM/CPU%d/RZ/Interpret/Failed/Pop",        "The number of times POP was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedPop,            "/EM/CPU%d/R3/Interpret/Failed/Pop",        "The number of times POP was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedSti,            "/EM/CPU%d/RZ/Interpret/Failed/Sti",        "The number of times STI was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedSti,            "/EM/CPU%d/R3/Interpret/Failed/Sti",        "The number of times STI was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedXchg,           "/EM/CPU%d/RZ/Interpret/Failed/Xchg",       "The number of times XCHG was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedXchg,           "/EM/CPU%d/R3/Interpret/Failed/Xchg",       "The number of times XCHG was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedXor,            "/EM/CPU%d/RZ/Interpret/Failed/Xor",        "The number of times XOR was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedXor,            "/EM/CPU%d/R3/Interpret/Failed/Xor",        "The number of times XOR was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedMonitor,        "/EM/CPU%d/RZ/Interpret/Failed/Monitor",    "The number of times MONITOR was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedMonitor,        "/EM/CPU%d/R3/Interpret/Failed/Monitor",    "The number of times MONITOR was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedMWait,          "/EM/CPU%d/RZ/Interpret/Failed/MWait",      "The number of times MONITOR was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedMWait,          "/EM/CPU%d/R3/Interpret/Failed/MWait",      "The number of times MONITOR was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedRdtsc,          "/EM/CPU%d/RZ/Interpret/Failed/Rdtsc",      "The number of times RDTSC was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedRdtsc,          "/EM/CPU%d/R3/Interpret/Failed/Rdtsc",      "The number of times RDTSC was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedRdpmc,          "/EM/CPU%d/RZ/Interpret/Failed/Rdpmc",      "The number of times RDPMC was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedRdpmc,          "/EM/CPU%d/R3/Interpret/Failed/Rdpmc",      "The number of times RDPMC was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedRdmsr,          "/EM/CPU%d/RZ/Interpret/Failed/Rdmsr",      "The number of times RDMSR was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedRdmsr,          "/EM/CPU%d/R3/Interpret/Failed/Rdmsr",      "The number of times RDMSR was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedWrmsr,          "/EM/CPU%d/RZ/Interpret/Failed/Wrmsr",      "The number of times WRMSR was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedWrmsr,          "/EM/CPU%d/R3/Interpret/Failed/Wrmsr",      "The number of times WRMSR was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedLmsw,           "/EM/CPU%d/RZ/Interpret/Failed/Lmsw",       "The number of times LMSW was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedLmsw,           "/EM/CPU%d/R3/Interpret/Failed/Lmsw",       "The number of times LMSW was not interpreted.");
 
-    STAM_REG_USED(pVM, &pStats->StatRZFailedUserMode,       STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/UserMode",   STAMUNIT_OCCURENCES,    "The number of rejections because of CPL.");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedUserMode,       STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/UserMode",   STAMUNIT_OCCURENCES,    "The number of rejections because of CPL.");
-    STAM_REG_USED(pVM, &pStats->StatRZFailedPrefix,         STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Prefix",     STAMUNIT_OCCURENCES,    "The number of rejections because of prefix .");
-    STAM_REG_USED(pVM, &pStats->StatR3FailedPrefix,         STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Prefix",     STAMUNIT_OCCURENCES,    "The number of rejections because of prefix .");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedMisc,           "/EM/CPU%d/RZ/Interpret/Failed/Misc",       "The number of times some misc instruction was encountered.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedMisc,           "/EM/CPU%d/R3/Interpret/Failed/Misc",       "The number of times some misc instruction was encountered.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedAdd,            "/EM/CPU%d/RZ/Interpret/Failed/Add",        "The number of times ADD was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedAdd,            "/EM/CPU%d/R3/Interpret/Failed/Add",        "The number of times ADD was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedAdc,            "/EM/CPU%d/RZ/Interpret/Failed/Adc",        "The number of times ADC was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedAdc,            "/EM/CPU%d/R3/Interpret/Failed/Adc",        "The number of times ADC was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedBtr,            "/EM/CPU%d/RZ/Interpret/Failed/Btr",        "The number of times BTR was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedBtr,            "/EM/CPU%d/R3/Interpret/Failed/Btr",        "The number of times BTR was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedBts,            "/EM/CPU%d/RZ/Interpret/Failed/Bts",        "The number of times BTS was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedBts,            "/EM/CPU%d/R3/Interpret/Failed/Bts",        "The number of times BTS was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedBtc,            "/EM/CPU%d/RZ/Interpret/Failed/Btc",        "The number of times BTC was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedBtc,            "/EM/CPU%d/R3/Interpret/Failed/Btc",        "The number of times BTC was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedCli,            "/EM/CPU%d/RZ/Interpret/Failed/Cli",        "The number of times CLI was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedCli,            "/EM/CPU%d/R3/Interpret/Failed/Cli",        "The number of times CLI was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedCmpXchg,        "/EM/CPU%d/RZ/Interpret/Failed/CmpXchg",    "The number of times CMPXCHG was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedCmpXchg,        "/EM/CPU%d/R3/Interpret/Failed/CmpXchg",    "The number of times CMPXCHG was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedCmpXchg8b,      "/EM/CPU%d/RZ/Interpret/Failed/CmpXchg8b",  "The number of times CMPXCHG8B was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedCmpXchg8b,      "/EM/CPU%d/R3/Interpret/Failed/CmpXchg8b",  "The number of times CMPXCHG8B was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedXAdd,           "/EM/CPU%d/RZ/Interpret/Failed/XAdd",       "The number of times XADD was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedXAdd,           "/EM/CPU%d/R3/Interpret/Failed/XAdd",       "The number of times XADD was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedMovNTPS,        "/EM/CPU%d/RZ/Interpret/Failed/MovNTPS",    "The number of times MOVNTPS was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedMovNTPS,        "/EM/CPU%d/R3/Interpret/Failed/MovNTPS",    "The number of times MOVNTPS was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedStosWD,         "/EM/CPU%d/RZ/Interpret/Failed/StosWD",     "The number of times STOSWD was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedStosWD,         "/EM/CPU%d/R3/Interpret/Failed/StosWD",     "The number of times STOSWD was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedSub,            "/EM/CPU%d/RZ/Interpret/Failed/Sub",        "The number of times SUB was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedSub,            "/EM/CPU%d/R3/Interpret/Failed/Sub",        "The number of times SUB was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedWbInvd,         "/EM/CPU%d/RZ/Interpret/Failed/WbInvd",     "The number of times WBINVD was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedWbInvd,         "/EM/CPU%d/R3/Interpret/Failed/WbInvd",     "The number of times WBINVD was not interpreted.");
 
-    STAM_REG_USED(pVM, &pStats->StatCli,                    STAMTYPE_COUNTER, "/EM/R3/PrivInst/Cli",                STAMUNIT_OCCURENCES,    "Number of cli instructions.");
-    STAM_REG_USED(pVM, &pStats->StatSti,                    STAMTYPE_COUNTER, "/EM/R3/PrivInst/Sti",                STAMUNIT_OCCURENCES,    "Number of sli instructions.");
-    STAM_REG_USED(pVM, &pStats->StatIn,                     STAMTYPE_COUNTER, "/EM/R3/PrivInst/In",                 STAMUNIT_OCCURENCES,    "Number of in instructions.");
-    STAM_REG_USED(pVM, &pStats->StatOut,                    STAMTYPE_COUNTER, "/EM/R3/PrivInst/Out",                STAMUNIT_OCCURENCES,    "Number of out instructions.");
-    STAM_REG_USED(pVM, &pStats->StatHlt,                    STAMTYPE_COUNTER, "/EM/R3/PrivInst/Hlt",                STAMUNIT_OCCURENCES,    "Number of hlt instructions not handled in GC because of PATM.");
-    STAM_REG_USED(pVM, &pStats->StatInvlpg,                 STAMTYPE_COUNTER, "/EM/R3/PrivInst/Invlpg",             STAMUNIT_OCCURENCES,    "Number of invlpg instructions.");
-    STAM_REG_USED(pVM, &pStats->StatMisc,                   STAMTYPE_COUNTER, "/EM/R3/PrivInst/Misc",               STAMUNIT_OCCURENCES,    "Number of misc. instructions.");
-    STAM_REG_USED(pVM, &pStats->StatMovWriteCR[0],          STAMTYPE_COUNTER, "/EM/R3/PrivInst/Mov CR0, X",         STAMUNIT_OCCURENCES,    "Number of mov CR0 read instructions.");
-    STAM_REG_USED(pVM, &pStats->StatMovWriteCR[1],          STAMTYPE_COUNTER, "/EM/R3/PrivInst/Mov CR1, X",         STAMUNIT_OCCURENCES,    "Number of mov CR1 read instructions.");
-    STAM_REG_USED(pVM, &pStats->StatMovWriteCR[2],          STAMTYPE_COUNTER, "/EM/R3/PrivInst/Mov CR2, X",         STAMUNIT_OCCURENCES,    "Number of mov CR2 read instructions.");
-    STAM_REG_USED(pVM, &pStats->StatMovWriteCR[3],          STAMTYPE_COUNTER, "/EM/R3/PrivInst/Mov CR3, X",         STAMUNIT_OCCURENCES,    "Number of mov CR3 read instructions.");
-    STAM_REG_USED(pVM, &pStats->StatMovWriteCR[4],          STAMTYPE_COUNTER, "/EM/R3/PrivInst/Mov CR4, X",         STAMUNIT_OCCURENCES,    "Number of mov CR4 read instructions.");
-    STAM_REG_USED(pVM, &pStats->StatMovReadCR[0],           STAMTYPE_COUNTER, "/EM/R3/PrivInst/Mov X, CR0",         STAMUNIT_OCCURENCES,    "Number of mov CR0 write instructions.");
-    STAM_REG_USED(pVM, &pStats->StatMovReadCR[1],           STAMTYPE_COUNTER, "/EM/R3/PrivInst/Mov X, CR1",         STAMUNIT_OCCURENCES,    "Number of mov CR1 write instructions.");
-    STAM_REG_USED(pVM, &pStats->StatMovReadCR[2],           STAMTYPE_COUNTER, "/EM/R3/PrivInst/Mov X, CR2",         STAMUNIT_OCCURENCES,    "Number of mov CR2 write instructions.");
-    STAM_REG_USED(pVM, &pStats->StatMovReadCR[3],           STAMTYPE_COUNTER, "/EM/R3/PrivInst/Mov X, CR3",         STAMUNIT_OCCURENCES,    "Number of mov CR3 write instructions.");
-    STAM_REG_USED(pVM, &pStats->StatMovReadCR[4],           STAMTYPE_COUNTER, "/EM/R3/PrivInst/Mov X, CR4",         STAMUNIT_OCCURENCES,    "Number of mov CR4 write instructions.");
-    STAM_REG_USED(pVM, &pStats->StatMovDRx,                 STAMTYPE_COUNTER, "/EM/R3/PrivInst/MovDRx",             STAMUNIT_OCCURENCES,    "Number of mov DRx instructions.");
-    STAM_REG_USED(pVM, &pStats->StatIret,                   STAMTYPE_COUNTER, "/EM/R3/PrivInst/Iret",               STAMUNIT_OCCURENCES,    "Number of iret instructions.");
-    STAM_REG_USED(pVM, &pStats->StatMovLgdt,                STAMTYPE_COUNTER, "/EM/R3/PrivInst/Lgdt",               STAMUNIT_OCCURENCES,    "Number of lgdt instructions.");
-    STAM_REG_USED(pVM, &pStats->StatMovLidt,                STAMTYPE_COUNTER, "/EM/R3/PrivInst/Lidt",               STAMUNIT_OCCURENCES,    "Number of lidt instructions.");
-    STAM_REG_USED(pVM, &pStats->StatMovLldt,                STAMTYPE_COUNTER, "/EM/R3/PrivInst/Lldt",               STAMUNIT_OCCURENCES,    "Number of lldt instructions.");
-    STAM_REG_USED(pVM, &pStats->StatSysEnter,               STAMTYPE_COUNTER, "/EM/R3/PrivInst/Sysenter",           STAMUNIT_OCCURENCES,    "Number of sysenter instructions.");
-    STAM_REG_USED(pVM, &pStats->StatSysExit,                STAMTYPE_COUNTER, "/EM/R3/PrivInst/Sysexit",            STAMUNIT_OCCURENCES,    "Number of sysexit instructions.");
-    STAM_REG_USED(pVM, &pStats->StatSysCall,                STAMTYPE_COUNTER, "/EM/R3/PrivInst/Syscall",            STAMUNIT_OCCURENCES,    "Number of syscall instructions.");
-    STAM_REG_USED(pVM, &pStats->StatSysRet,                 STAMTYPE_COUNTER, "/EM/R3/PrivInst/Sysret",             STAMUNIT_OCCURENCES,    "Number of sysret instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedUserMode,       "/EM/CPU%d/RZ/Interpret/Failed/UserMode",   "The number of rejections because of CPL.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedUserMode,       "/EM/CPU%d/R3/Interpret/Failed/UserMode",   "The number of rejections because of CPL.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedPrefix,         "/EM/CPU%d/RZ/Interpret/Failed/Prefix",     "The number of rejections because of prefix .");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedPrefix,         "/EM/CPU%d/R3/Interpret/Failed/Prefix",     "The number of rejections because of prefix .");
 
-    STAM_REG(pVM, &pVM->em.s.StatTotalClis,             STAMTYPE_COUNTER, "/EM/Cli/Total",              STAMUNIT_OCCURENCES,     "Total number of cli instructions executed.");
-    pVM->em.s.pCliStatTree = 0;
+        EM_REG_COUNTER_USED(&pStats->StatCli,                    "/EM/CPU%d/R3/PrivInst/Cli",                "Number of cli instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatSti,                    "/EM/CPU%d/R3/PrivInst/Sti",                "Number of sli instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatIn,                     "/EM/CPU%d/R3/PrivInst/In",                 "Number of in instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatOut,                    "/EM/CPU%d/R3/PrivInst/Out",                "Number of out instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatHlt,                    "/EM/CPU%d/R3/PrivInst/Hlt",                "Number of hlt instructions not handled in GC because of PATM.");
+        EM_REG_COUNTER_USED(&pStats->StatInvlpg,                 "/EM/CPU%d/R3/PrivInst/Invlpg",             "Number of invlpg instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMisc,                   "/EM/CPU%d/R3/PrivInst/Misc",               "Number of misc. instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovWriteCR[0],          "/EM/CPU%d/R3/PrivInst/Mov CR0, X",         "Number of mov CR0 read instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovWriteCR[1],          "/EM/CPU%d/R3/PrivInst/Mov CR1, X",         "Number of mov CR1 read instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovWriteCR[2],          "/EM/CPU%d/R3/PrivInst/Mov CR2, X",         "Number of mov CR2 read instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovWriteCR[3],          "/EM/CPU%d/R3/PrivInst/Mov CR3, X",         "Number of mov CR3 read instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovWriteCR[4],          "/EM/CPU%d/R3/PrivInst/Mov CR4, X",         "Number of mov CR4 read instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovReadCR[0],           "/EM/CPU%d/R3/PrivInst/Mov X, CR0",         "Number of mov CR0 write instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovReadCR[1],           "/EM/CPU%d/R3/PrivInst/Mov X, CR1",         "Number of mov CR1 write instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovReadCR[2],           "/EM/CPU%d/R3/PrivInst/Mov X, CR2",         "Number of mov CR2 write instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovReadCR[3],           "/EM/CPU%d/R3/PrivInst/Mov X, CR3",         "Number of mov CR3 write instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovReadCR[4],           "/EM/CPU%d/R3/PrivInst/Mov X, CR4",         "Number of mov CR4 write instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovDRx,                 "/EM/CPU%d/R3/PrivInst/MovDRx",             "Number of mov DRx instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatIret,                   "/EM/CPU%d/R3/PrivInst/Iret",               "Number of iret instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovLgdt,                "/EM/CPU%d/R3/PrivInst/Lgdt",               "Number of lgdt instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovLidt,                "/EM/CPU%d/R3/PrivInst/Lidt",               "Number of lidt instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovLldt,                "/EM/CPU%d/R3/PrivInst/Lldt",               "Number of lldt instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatSysEnter,               "/EM/CPU%d/R3/PrivInst/Sysenter",           "Number of sysenter instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatSysExit,                "/EM/CPU%d/R3/PrivInst/Sysexit",            "Number of sysexit instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatSysCall,                "/EM/CPU%d/R3/PrivInst/Syscall",            "Number of syscall instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatSysRet,                 "/EM/CPU%d/R3/PrivInst/Sysret",             "Number of sysret instructions.");
+
+        EM_REG_COUNTER(&pVCpu->em.s.StatTotalClis,               "/EM/Cli/Total",              "Total number of cli instructions executed.");
+        pVCpu->em.s.pCliStatTree = 0;
+
+        /* these should be considered for release statistics. */
+        EM_REG_COUNTER(&pVCpu->em.s.StatIOEmu,                 "/PROF/CPU%d/EM/Emulation/IO",      "Profiling of emR3RawExecuteIOInstruction.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatPrivEmu,               "/PROF/CPU%d/EM/Emulation/Priv",    "Profiling of emR3RawPrivileged.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatMiscEmu,               "/PROF/CPU%d/EM/Emulation/Misc",    "Profiling of emR3RawExecuteInstruction.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatHwAccEntry,           "/PROF/CPU%d/EM/HwAccEnter",        "Profiling Hardware Accelerated Mode entry overhead.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatHwAccExec,            "/PROF/CPU%d/EM/HwAccExec",         "Profiling Hardware Accelerated Mode execution.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatREMEmu,               "/PROF/CPU%d/EM/REMEmuSingle",      "Profiling single instruction REM execution.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatREMExec,              "/PROF/CPU%d/EM/REMExec",           "Profiling REM execution.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatREMSync,              "/PROF/CPU%d/EM/REMSync",           "Profiling REM context syncing.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatRAWEntry,             "/PROF/CPU%d/EM/RAWEnter",          "Profiling Raw Mode entry overhead.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatRAWExec,              "/PROF/CPU%d/EM/RAWExec",           "Profiling Raw Mode execution.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatRAWTail,              "/PROF/CPU%d/EM/RAWTail",           "Profiling Raw Mode tail overhead.");
+
 #endif /* VBOX_WITH_STATISTICS */
 
-    /* these should be considered for release statistics. */
-    STAM_REL_REG(pVM, &pVM->em.s.StatForcedActions,     STAMTYPE_PROFILE, "/PROF/EM/ForcedActions",     STAMUNIT_TICKS_PER_CALL, "Profiling forced action execution.");
-    STAM_REG(pVM, &pVM->em.s.StatIOEmu,                 STAMTYPE_PROFILE, "/PROF/EM/Emulation/IO",      STAMUNIT_TICKS_PER_CALL, "Profiling of emR3RawExecuteIOInstruction.");
-    STAM_REG(pVM, &pVM->em.s.StatPrivEmu,               STAMTYPE_PROFILE, "/PROF/EM/Emulation/Priv",    STAMUNIT_TICKS_PER_CALL, "Profiling of emR3RawPrivileged.");
-    STAM_REG(pVM, &pVM->em.s.StatMiscEmu,               STAMTYPE_PROFILE, "/PROF/EM/Emulation/Misc",    STAMUNIT_TICKS_PER_CALL, "Profiling of emR3RawExecuteInstruction.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatForcedActions,     "/PROF/CPU%d/EM/ForcedActions",     "Profiling forced action execution.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatHalted,            "/PROF/CPU%d/EM/Halted",            "Profiling halted state (VMR3WaitHalted).");
+        EM_REG_COUNTER(&pVCpu->em.s.StatREMTotal,          "/PROF/CPU%d/EM/REMTotal",          "Profiling emR3RemExecute (excluding FFs).");
+        EM_REG_COUNTER(&pVCpu->em.s.StatRAWTotal,          "/PROF/CPU%d/EM/RAWTotal",          "Profiling emR3RawExecute (excluding FFs).");
 
-    STAM_REL_REG(pVM, &pVM->em.s.StatHalted,            STAMTYPE_PROFILE, "/PROF/EM/Halted",            STAMUNIT_TICKS_PER_CALL, "Profiling halted state (VMR3WaitHalted).");
-    STAM_REG(pVM, &pVM->em.s.StatHwAccEntry,            STAMTYPE_PROFILE, "/PROF/EM/HwAccEnter",        STAMUNIT_TICKS_PER_CALL, "Profiling Hardware Accelerated Mode entry overhead.");
-    STAM_REG(pVM, &pVM->em.s.StatHwAccExec,             STAMTYPE_PROFILE, "/PROF/EM/HwAccExec",         STAMUNIT_TICKS_PER_CALL, "Profiling Hardware Accelerated Mode execution.");
-    STAM_REG(pVM, &pVM->em.s.StatREMEmu,                STAMTYPE_PROFILE, "/PROF/EM/REMEmuSingle",      STAMUNIT_TICKS_PER_CALL, "Profiling single instruction REM execution.");
-    STAM_REG(pVM, &pVM->em.s.StatREMExec,               STAMTYPE_PROFILE, "/PROF/EM/REMExec",           STAMUNIT_TICKS_PER_CALL, "Profiling REM execution.");
-    STAM_REG(pVM, &pVM->em.s.StatREMSync,               STAMTYPE_PROFILE, "/PROF/EM/REMSync",           STAMUNIT_TICKS_PER_CALL, "Profiling REM context syncing.");
-    STAM_REL_REG(pVM, &pVM->em.s.StatREMTotal,          STAMTYPE_PROFILE, "/PROF/EM/REMTotal",          STAMUNIT_TICKS_PER_CALL, "Profiling emR3RemExecute (excluding FFs).");
-    STAM_REG(pVM, &pVM->em.s.StatRAWEntry,              STAMTYPE_PROFILE, "/PROF/EM/RAWEnter",          STAMUNIT_TICKS_PER_CALL, "Profiling Raw Mode entry overhead.");
-    STAM_REG(pVM, &pVM->em.s.StatRAWExec,               STAMTYPE_PROFILE, "/PROF/EM/RAWExec",           STAMUNIT_TICKS_PER_CALL, "Profiling Raw Mode execution.");
-    STAM_REG(pVM, &pVM->em.s.StatRAWTail,               STAMTYPE_PROFILE, "/PROF/EM/RAWTail",           STAMUNIT_TICKS_PER_CALL, "Profiling Raw Mode tail overhead.");
-    STAM_REL_REG(pVM, &pVM->em.s.StatRAWTotal,          STAMTYPE_PROFILE, "/PROF/EM/RAWTotal",          STAMUNIT_TICKS_PER_CALL, "Profiling emR3RawExecute (excluding FFs).");
-    STAM_REL_REG(pVM, &pVM->em.s.StatTotal,         STAMTYPE_PROFILE_ADV, "/PROF/EM/Total",             STAMUNIT_TICKS_PER_CALL, "Profiling EMR3ExecuteVM.");
-
+        EM_REG_PROFILE_ADV(&pVCpu->em.s.StatTotal,         "/PROF/CPU%d/EM/Total",             "Profiling EMR3ExecuteVM.");
+    }
 
     return VINF_SUCCESS;
 }
@@ -410,8 +436,13 @@ VMMR3DECL(int) EMR3InitCPU(PVM pVM)
 VMMR3DECL(void) EMR3Relocate(PVM pVM)
 {
     LogFlow(("EMR3Relocate\n"));
-    if (pVM->em.s.pStatsR3)
-        pVM->em.s.pStatsRC = MMHyperR3ToRC(pVM, pVM->em.s.pStatsR3);
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
+        if (pVCpu->em.s.pStatsR3)
+            pVCpu->em.s.pStatsRC = MMHyperR3ToRC(pVM, pVCpu->em.s.pStatsR3);
+    }
 }
 
 
@@ -423,7 +454,12 @@ VMMR3DECL(void) EMR3Relocate(PVM pVM)
 VMMR3DECL(void) EMR3Reset(PVM pVM)
 {
     LogFlow(("EMR3Reset: \n"));
-    pVM->em.s.fForceRAW = false;
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
+        pVCpu->em.s.fForceRAW = false;
+    }
 }
 
 
@@ -439,7 +475,6 @@ VMMR3DECL(void) EMR3Reset(PVM pVM)
 VMMR3DECL(int) EMR3Term(PVM pVM)
 {
     AssertMsg(pVM->em.s.offVM, ("bad init order!\n"));
-
     return VINF_SUCCESS;
 }
 
@@ -466,7 +501,14 @@ VMMR3DECL(int) EMR3TermCPU(PVM pVM)
  */
 static DECLCALLBACK(int) emR3Save(PVM pVM, PSSMHANDLE pSSM)
 {
-    return SSMR3PutBool(pSSM, pVM->em.s.fForceRAW);
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
+        int rc = SSMR3PutBool(pSSM, pVCpu->em.s.fForceRAW);
+        AssertRCReturn(rc, rc);
+    }
+    return VINF_SUCCESS;
 }
 
 
@@ -480,6 +522,8 @@ static DECLCALLBACK(int) emR3Save(PVM pVM, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
 {
+    int rc;
+
     /*
      * Validate version.
      */
@@ -492,11 +536,16 @@ static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     /*
      * Load the saved state.
      */
-    int rc = SSMR3GetBool(pSSM, &pVM->em.s.fForceRAW);
-    if (RT_FAILURE(rc))
-        pVM->em.s.fForceRAW = false;
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
 
-    Assert(!pVM->em.s.pCliStatTree);
+        rc = SSMR3GetBool(pSSM, &pVCpu->em.s.fForceRAW);
+        if (RT_FAILURE(rc))
+            pVCpu->em.s.fForceRAW = false;
+
+        Assert(!pVCpu->em.s.pCliStatTree);
+    }
     return rc;
 }
 
@@ -538,7 +587,7 @@ VMMR3DECL(int) EMR3RawSetMode(PVM pVM, EMRAWMODE enmMode)
     }
     Log(("EMR3SetRawMode: fRawR3Enabled=%RTbool fRawR0Enabled=%RTbool\n",
           pVM->fRawR3Enabled, pVM->fRawR0Enabled));
-    return pVM->em.s.enmState == EMSTATE_RAW ? VINF_EM_RESCHEDULE : VINF_SUCCESS;
+    return pVM->aCpus[0].em.s.enmState == EMSTATE_RAW ? VINF_EM_RESCHEDULE : VINF_SUCCESS;
 }
 
 
@@ -548,12 +597,12 @@ VMMR3DECL(int) EMR3RawSetMode(PVM pVM, EMRAWMODE enmMode)
  * Safely terminate the VM with full state report and stuff. This function
  * will naturally never return.
  *
- * @param   pVM         VM handle.
+ * @param   pVCpu       VMCPU handle.
  * @param   rc          VBox status code.
  */
-VMMR3DECL(void) EMR3FatalError(PVM pVM, int rc)
+VMMR3DECL(void) EMR3FatalError(PVMCPU pVCpu, int rc)
 {
-    longjmp(pVM->em.s.u.FatalLongJump, rc);
+    longjmp(pVCpu->em.s.u.FatalLongJump, rc);
     AssertReleaseMsgFailed(("longjmp returned!\n"));
 }
 
@@ -589,13 +638,14 @@ VMMR3DECL(const char *) EMR3GetStateName(EMSTATE enmState)
 /**
  * Just a braindead function to keep track of cli addresses.
  * @param   pVM         VM handle.
+ * @param   pVMCPU      VMCPU handle.
  * @param   GCPtrInstr  The EIP of the cli instruction.
  */
-static void emR3RecordCli(PVM pVM, RTGCPTR GCPtrInstr)
+static void emR3RecordCli(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrInstr)
 {
     PCLISTAT pRec;
 
-    pRec = (PCLISTAT)RTAvlPVGet(&pVM->em.s.pCliStatTree, (AVLPVKEY)GCPtrInstr);
+    pRec = (PCLISTAT)RTAvlPVGet(&pVCpu->em.s.pCliStatTree, (AVLPVKEY)GCPtrInstr);
     if (!pRec)
     {
         /* New cli instruction; insert into the tree. */
@@ -609,11 +659,11 @@ static void emR3RecordCli(PVM pVM, RTGCPTR GCPtrInstr)
         RTStrPrintf(szCliStatName, sizeof(szCliStatName), "/EM/Cli/0x%RGv", GCPtrInstr);
         STAM_REG(pVM, &pRec->Counter, STAMTYPE_COUNTER, szCliStatName, STAMUNIT_OCCURENCES, "Number of times cli was executed.");
 
-        bool fRc = RTAvlPVInsert(&pVM->em.s.pCliStatTree, &pRec->Core);
+        bool fRc = RTAvlPVInsert(&pVCpu->em.s.pCliStatTree, &pRec->Core);
         Assert(fRc); NOREF(fRc);
     }
     STAM_COUNTER_INC(&pRec->Counter);
-    STAM_COUNTER_INC(&pVM->em.s.StatTotalClis);
+    STAM_COUNTER_INC(&pVCpu->em.s.StatTotalClis);
 }
 #endif /* VBOX_WITH_STATISTICS */
 
@@ -623,9 +673,10 @@ static void emR3RecordCli(PVM pVM, RTGCPTR GCPtrInstr)
  *
  * @returns VBox status code for EM.
  * @param   pVM     VM handle.
+ * @param   pVCpu   VMCPU handle.
  * @param   rc      Current EM VBox status code..
  */
-static int emR3Debug(PVM pVM, int rc)
+static int emR3Debug(PVM pVM, PVMCPU pVCpu, int rc)
 {
     for (;;)
     {
@@ -641,14 +692,14 @@ static int emR3Debug(PVM pVM, int rc)
              * Single step an instruction.
              */
             case VINF_EM_DBG_STEP:
-                if (    pVM->em.s.enmState == EMSTATE_DEBUG_GUEST_RAW
-                    ||  pVM->em.s.enmState == EMSTATE_DEBUG_HYPER
-                    ||  pVM->em.s.fForceRAW /* paranoia */)
-                    rc = emR3RawStep(pVM);
+                if (    pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_RAW
+                    ||  pVCpu->em.s.enmState == EMSTATE_DEBUG_HYPER
+                    ||  pVCpu->em.s.fForceRAW /* paranoia */)
+                    rc = emR3RawStep(pVM, pVCpu);
                 else
                 {
-                    Assert(pVM->em.s.enmState == EMSTATE_DEBUG_GUEST_REM);
-                    rc = emR3RemStep(pVM);
+                    Assert(pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_REM);
+                    rc = emR3RemStep(pVM, pVCpu);
                 }
                 break;
 
@@ -725,9 +776,9 @@ static int emR3Debug(PVM pVM, int rc)
                 case VINF_EM_RESCHEDULE_RAW:
                 case VINF_EM_RESCHEDULE_REM:
                 case VINF_EM_HALT:
-                    if (pVM->em.s.enmState == EMSTATE_DEBUG_HYPER)
+                    if (pVCpu->em.s.enmState == EMSTATE_DEBUG_HYPER)
                     {
-                        rc = emR3RawResumeHyper(pVM);
+                        rc = emR3RawResumeHyper(pVM, pVCpu);
                         if (rc != VINF_SUCCESS && RT_SUCCESS(rc))
                             continue;
                     }
@@ -793,21 +844,22 @@ static int emR3Debug(PVM pVM, int rc)
  *          VINF_EM_RESCHEDULE, VINF_EM_SUSPEND, VINF_EM_RESET and VINF_EM_TERMINATE.
  *
  * @param   pVM         VM handle.
+ * @param   pVCpu       VMCPU handle.
  */
-static int emR3RemStep(PVM pVM)
+static int emR3RemStep(PVM pVM, PVMCPU pVCpu)
 {
-    LogFlow(("emR3RemStep: cs:eip=%04x:%08x\n", CPUMGetGuestCS(pVM),  CPUMGetGuestEIP(pVM)));
+    LogFlow(("emR3RemStep: cs:eip=%04x:%08x\n", CPUMGetGuestCS(pVCpu),  CPUMGetGuestEIP(pVCpu)));
 
     /*
      * Switch to REM, step instruction, switch back.
      */
-    int rc = REMR3State(pVM);
+    int rc = REMR3State(pVM, pVCpu);
     if (RT_SUCCESS(rc))
     {
-        rc = REMR3Step(pVM);
-        REMR3StateBack(pVM);
+        rc = REMR3Step(pVM, pVCpu);
+        REMR3StateBack(pVM, pVCpu);
     }
-    LogFlow(("emR3RemStep: returns %Rrc cs:eip=%04x:%08x\n", rc, CPUMGetGuestCS(pVM),  CPUMGetGuestEIP(pVM)));
+    LogFlow(("emR3RemStep: returns %Rrc cs:eip=%04x:%08x\n", rc, CPUMGetGuestCS(pVCpu),  CPUMGetGuestEIP(pVCpu)));
     return rc;
 }
 
@@ -822,27 +874,28 @@ static int emR3RemStep(PVM pVM)
  *          VINF_EM_SUSPEND, VINF_EM_RESET and VINF_EM_TERMINATE.
  *
  * @param   pVM         VM handle.
+ * @param   pVCpu       VMCPU handle.
  * @param   pfFFDone    Where to store an indicator telling wheter or not
  *                      FFs were done before returning.
  *
  */
-static int emR3RemExecute(PVM pVM, bool *pfFFDone)
+static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 {
 #ifdef LOG_ENABLED
-    PCPUMCTX pCtx = pVM->em.s.pCtx;
-    uint32_t cpl = CPUMGetGuestCPL(pVM, CPUMCTX2CORE(pCtx));
+    PCPUMCTX pCtx = pVCpu->em.s.pCtx;
+    uint32_t cpl = CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx));
 
     if (pCtx->eflags.Bits.u1VM)
         Log(("EMV86: %04X:%08X IF=%d\n", pCtx->cs, pCtx->eip, pCtx->eflags.Bits.u1IF));
     else
         Log(("EMR%d: %04X:%08X ESP=%08X IF=%d CR0=%x\n", cpl, pCtx->cs, pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, (uint32_t)pCtx->cr0));
 #endif
-    STAM_REL_PROFILE_ADV_START(&pVM->em.s.StatREMTotal, a);
+    STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatREMTotal, a);
 
 #if defined(VBOX_STRICT) && defined(DEBUG_bird)
     AssertMsg(   VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3|VM_FF_PGM_SYNC_CR3_NON_GLOBAL)
-              || !MMHyperIsInsideArea(pVM, CPUMGetGuestEIP(pVM)),  /** @todo #1419 - get flat address. */
-              ("cs:eip=%RX16:%RX32\n", CPUMGetGuestCS(pVM), CPUMGetGuestEIP(pVM)));
+              || !MMHyperIsInsideArea(pVM, CPUMGetGuestEIP(pVCpu)),  /** @todo #1419 - get flat address. */
+              ("cs:eip=%RX16:%RX32\n", CPUMGetGuestCS(pVM), CPUMGetGuestEIP(pVCpu)));
 #endif
 
     /*
@@ -859,9 +912,9 @@ static int emR3RemExecute(PVM pVM, bool *pfFFDone)
          */
         if (!fInREMState)
         {
-            STAM_PROFILE_START(&pVM->em.s.StatREMSync, b);
-            rc = REMR3State(pVM);
-            STAM_PROFILE_STOP(&pVM->em.s.StatREMSync, b);
+            STAM_PROFILE_START(&pVCpu->em.s.StatREMSync, b);
+            rc = REMR3State(pVM, pVCpu);
+            STAM_PROFILE_STOP(&pVCpu->em.s.StatREMSync, b);
             if (RT_FAILURE(rc))
                 break;
             fInREMState = true;
@@ -881,16 +934,16 @@ static int emR3RemExecute(PVM pVM, bool *pfFFDone)
         /*
          * Execute REM.
          */
-        STAM_PROFILE_START(&pVM->em.s.StatREMExec, c);
-        rc = REMR3Run(pVM);
-        STAM_PROFILE_STOP(&pVM->em.s.StatREMExec, c);
+        STAM_PROFILE_START(&pVCpu->em.s.StatREMExec, c);
+        rc = REMR3Run(pVM, pVCpu);
+        STAM_PROFILE_STOP(&pVCpu->em.s.StatREMExec, c);
 
 
         /*
          * Deal with high priority post execution FFs before doing anything else.
          */
         if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK))
-            rc = emR3HighPriorityPostForcedActions(pVM, rc);
+            rc = emR3HighPriorityPostForcedActions(pVM, pVCpu, rc);
 
         /*
          * Process the returned status code.
@@ -924,14 +977,14 @@ static int emR3RemExecute(PVM pVM, bool *pfFFDone)
 l_REMDoForcedActions:
             if (fInREMState)
             {
-                STAM_PROFILE_START(&pVM->em.s.StatREMSync, d);
-                REMR3StateBack(pVM);
-                STAM_PROFILE_STOP(&pVM->em.s.StatREMSync, d);
+                STAM_PROFILE_START(&pVCpu->em.s.StatREMSync, d);
+                REMR3StateBack(pVM, pVCpu);
+                STAM_PROFILE_STOP(&pVCpu->em.s.StatREMSync, d);
                 fInREMState = false;
             }
-            STAM_REL_PROFILE_ADV_SUSPEND(&pVM->em.s.StatREMTotal, a);
-            rc = emR3ForcedActions(pVM, rc);
-            STAM_REL_PROFILE_ADV_RESUME(&pVM->em.s.StatREMTotal, a);
+            STAM_REL_PROFILE_ADV_SUSPEND(&pVCpu->em.s.StatREMTotal, a);
+            rc = emR3ForcedActions(pVM, pVCpu, rc);
+            STAM_REL_PROFILE_ADV_RESUME(&pVCpu->em.s.StatREMTotal, a);
             if (    rc != VINF_SUCCESS
                 &&  rc != VINF_EM_RESCHEDULE_REM)
             {
@@ -948,12 +1001,12 @@ l_REMDoForcedActions:
      */
     if (fInREMState)
     {
-        STAM_PROFILE_START(&pVM->em.s.StatREMSync, e);
-        REMR3StateBack(pVM);
-        STAM_PROFILE_STOP(&pVM->em.s.StatREMSync, e);
+        STAM_PROFILE_START(&pVCpu->em.s.StatREMSync, e);
+        REMR3StateBack(pVM, pVCpu);
+        STAM_PROFILE_STOP(&pVCpu->em.s.StatREMSync, e);
     }
 
-    STAM_REL_PROFILE_ADV_STOP(&pVM->em.s.StatREMTotal, a);
+    STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatREMTotal, a);
     return rc;
 }
 
@@ -966,30 +1019,31 @@ l_REMDoForcedActions:
  *
  * @returns VBox status code.
  * @param   pVM     The VM handle.
+ * @param   pVCpu   The VMCPU handle.
  */
-static int emR3RawResumeHyper(PVM pVM)
+static int emR3RawResumeHyper(PVM pVM, PVMCPU pVCpu)
 {
     int         rc;
-    PCPUMCTX    pCtx = pVM->em.s.pCtx;
-    Assert(pVM->em.s.enmState == EMSTATE_DEBUG_HYPER);
+    PCPUMCTX    pCtx = pVCpu->em.s.pCtx;
+    Assert(pVCpu->em.s.enmState == EMSTATE_DEBUG_HYPER);
     Log(("emR3RawResumeHyper: cs:eip=%RTsel:%RGr efl=%RGr\n", pCtx->cs, pCtx->eip, pCtx->eflags));
 
     /*
      * Resume execution.
      */
-    CPUMRawEnter(pVM, NULL);
-    CPUMSetHyperEFlags(pVM, CPUMGetHyperEFlags(pVM) | X86_EFL_RF);
-    rc = VMMR3ResumeHyper(pVM);
+    CPUMRawEnter(pVCpu, NULL);
+    CPUMSetHyperEFlags(pVCpu, CPUMGetHyperEFlags(pVCpu) | X86_EFL_RF);
+    rc = VMMR3ResumeHyper(pVM, pVCpu);
     Log(("emR3RawStep: cs:eip=%RTsel:%RGr efl=%RGr - returned from GC with rc=%Rrc\n", pCtx->cs, pCtx->eip, pCtx->eflags, rc));
-    rc = CPUMRawLeave(pVM, NULL, rc);
+    rc = CPUMRawLeave(pVCpu, NULL, rc);
     VM_FF_CLEAR(pVM, VM_FF_RESUME_GUEST_MASK);
 
     /*
      * Deal with the return code.
      */
-    rc = emR3HighPriorityPostForcedActions(pVM, rc);
-    rc = emR3RawHandleRC(pVM, pCtx, rc);
-    rc = emR3RawUpdateForceFlag(pVM, pCtx, rc);
+    rc = emR3HighPriorityPostForcedActions(pVM, pVCpu, rc);
+    rc = emR3RawHandleRC(pVM, pVCpu, pCtx, rc);
+    rc = emR3RawUpdateForceFlag(pVM, pVCpu, pCtx, rc);
     return rc;
 }
 
@@ -999,18 +1053,19 @@ static int emR3RawResumeHyper(PVM pVM)
  *
  * @returns VBox status code.
  * @param   pVM     The VM handle.
+ * @param   pVCpu   The VMCPU handle.
  */
-static int emR3RawStep(PVM pVM)
+static int emR3RawStep(PVM pVM, PVMCPU pVCpu)
 {
-    Assert(   pVM->em.s.enmState == EMSTATE_DEBUG_HYPER
-           || pVM->em.s.enmState == EMSTATE_DEBUG_GUEST_RAW
-           || pVM->em.s.enmState == EMSTATE_DEBUG_GUEST_REM);
+    Assert(   pVCpu->em.s.enmState == EMSTATE_DEBUG_HYPER
+           || pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_RAW
+           || pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_REM);
     int         rc;
-    PCPUMCTX    pCtx   = pVM->em.s.pCtx;
-    bool        fGuest = pVM->em.s.enmState != EMSTATE_DEBUG_HYPER;
+    PCPUMCTX    pCtx   = pVCpu->em.s.pCtx;
+    bool        fGuest = pVCpu->em.s.enmState != EMSTATE_DEBUG_HYPER;
 #ifndef DEBUG_sandervl
-    Log(("emR3RawStep: cs:eip=%RTsel:%RGr efl=%RGr\n", fGuest ? CPUMGetGuestCS(pVM) : CPUMGetHyperCS(pVM),
-         fGuest ? CPUMGetGuestEIP(pVM) : CPUMGetHyperEIP(pVM), fGuest ? CPUMGetGuestEFlags(pVM) : CPUMGetHyperEFlags(pVM)));
+    Log(("emR3RawStep: cs:eip=%RTsel:%RGr efl=%RGr\n", fGuest ? CPUMGetGuestCS(pVM) : CPUMGetHyperCS(pVCpu),
+         fGuest ? CPUMGetGuestEIP(pVCpu) : CPUMGetHyperEIP(pVM), fGuest ? CPUMGetGuestEFlags(pVCpu) : CPUMGetHyperEFlags(pVM)));
 #endif
     if (fGuest)
     {
@@ -1019,7 +1074,7 @@ static int emR3RawStep(PVM pVM)
          */
         if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
-            rc = emR3RawForcedActions(pVM, pCtx);
+            rc = emR3RawForcedActions(pVM, pVCpu, pCtx);
             if (rc != VINF_SUCCESS)
                 return rc;
         }
@@ -1027,29 +1082,29 @@ static int emR3RawStep(PVM pVM)
         /*
          * Set flags for single stepping.
          */
-        CPUMSetGuestEFlags(pVM, CPUMGetGuestEFlags(pVM) | X86_EFL_TF | X86_EFL_RF);
+        CPUMSetGuestEFlags(pVCpu, CPUMGetGuestEFlags(pVCpu) | X86_EFL_TF | X86_EFL_RF);
     }
     else
-        CPUMSetHyperEFlags(pVM, CPUMGetHyperEFlags(pVM) | X86_EFL_TF | X86_EFL_RF);
+        CPUMSetHyperEFlags(pVCpu, CPUMGetHyperEFlags(pVCpu) | X86_EFL_TF | X86_EFL_RF);
 
     /*
      * Single step.
      * We do not start time or anything, if anything we should just do a few nanoseconds.
      */
-    CPUMRawEnter(pVM, NULL);
+    CPUMRawEnter(pVCpu, NULL);
     do
     {
-        if (pVM->em.s.enmState == EMSTATE_DEBUG_HYPER)
-            rc = VMMR3ResumeHyper(pVM);
+        if (pVCpu->em.s.enmState == EMSTATE_DEBUG_HYPER)
+            rc = VMMR3ResumeHyper(pVM, pVCpu);
         else
-            rc = VMMR3RawRunGC(pVM);
+            rc = VMMR3RawRunGC(pVM, pVCpu);
 #ifndef DEBUG_sandervl
-        Log(("emR3RawStep: cs:eip=%RTsel:%RGr efl=%RGr - GC rc %Rrc\n", fGuest ? CPUMGetGuestCS(pVM) : CPUMGetHyperCS(pVM),
-             fGuest ? CPUMGetGuestEIP(pVM) : CPUMGetHyperEIP(pVM), fGuest ? CPUMGetGuestEFlags(pVM) : CPUMGetHyperEFlags(pVM), rc));
+        Log(("emR3RawStep: cs:eip=%RTsel:%RGr efl=%RGr - GC rc %Rrc\n", fGuest ? CPUMGetGuestCS(pVM) : CPUMGetHyperCS(pVCpu),
+             fGuest ? CPUMGetGuestEIP(pVCpu) : CPUMGetHyperEIP(pVM), fGuest ? CPUMGetGuestEFlags(pVCpu) : CPUMGetHyperEFlags(pVM), rc));
 #endif
     } while (   rc == VINF_SUCCESS
              || rc == VINF_EM_RAW_INTERRUPT);
-    rc = CPUMRawLeave(pVM, NULL, rc);
+    rc = CPUMRawLeave(pVCpu, NULL, rc);
     VM_FF_CLEAR(pVM, VM_FF_RESUME_GUEST_MASK);
 
     /*
@@ -1057,16 +1112,16 @@ static int emR3RawStep(PVM pVM)
      * (Too bad if the guest is trying to single step too.)
      */
     if (fGuest)
-        CPUMSetGuestEFlags(pVM, CPUMGetGuestEFlags(pVM) & ~X86_EFL_TF);
+        CPUMSetGuestEFlags(pVCpu, CPUMGetGuestEFlags(pVCpu) & ~X86_EFL_TF);
     else
-        CPUMSetHyperEFlags(pVM, CPUMGetHyperEFlags(pVM) & ~X86_EFL_TF);
+        CPUMSetHyperEFlags(pVCpu, CPUMGetHyperEFlags(pVCpu) & ~X86_EFL_TF);
 
     /*
      * Deal with the return codes.
      */
-    rc = emR3HighPriorityPostForcedActions(pVM, rc);
-    rc = emR3RawHandleRC(pVM, pCtx, rc);
-    rc = emR3RawUpdateForceFlag(pVM, pCtx, rc);
+    rc = emR3HighPriorityPostForcedActions(pVM, pVCpu, rc);
+    rc = emR3RawHandleRC(pVM, pVCpu, pCtx, rc);
+    rc = emR3RawUpdateForceFlag(pVM, pVCpu, pCtx, rc);
     return rc;
 }
 
@@ -1078,14 +1133,14 @@ static int emR3RawStep(PVM pVM)
  *
  * @returns VBox status code.
  * @param   pVM     The VM handle.
- * @param   idCpu   VMCPU id.
+ * @param   pVCpu   The VMCPU handle.
  */
-static int emR3HwAccStep(PVM pVM, RTCPUID idCpu)
+static int emR3HwAccStep(PVM pVM, PVMCPU pVCpu)
 {
-    Assert(pVM->em.s.enmState == EMSTATE_DEBUG_GUEST_HWACC);
+    Assert(pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HWACC);
 
     int         rc;
-    PCPUMCTX    pCtx   = pVM->em.s.pCtx;
+    PCPUMCTX    pCtx   = pVCpu->em.s.pCtx;
     VM_FF_CLEAR(pVM, (VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_TSS));
 
     /*
@@ -1093,14 +1148,14 @@ static int emR3HwAccStep(PVM pVM, RTCPUID idCpu)
      */
     if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK))
     {
-        rc = emR3RawForcedActions(pVM, pCtx);
+        rc = emR3RawForcedActions(pVM, pVCpu, pCtx);
         if (rc != VINF_SUCCESS)
             return rc;
     }
     /*
      * Set flags for single stepping.
      */
-    CPUMSetGuestEFlags(pVM, CPUMGetGuestEFlags(pVM) | X86_EFL_TF | X86_EFL_RF);
+    CPUMSetGuestEFlags(pVCpu, CPUMGetGuestEFlags(pVCpu) | X86_EFL_TF | X86_EFL_RF);
 
     /*
      * Single step.
@@ -1108,7 +1163,7 @@ static int emR3HwAccStep(PVM pVM, RTCPUID idCpu)
      */
     do
     {
-        rc = VMMR3HwAccRunGC(pVM, idCpu);
+        rc = VMMR3HwAccRunGC(pVM, pVCpu);
     } while (   rc == VINF_SUCCESS
              || rc == VINF_EM_RAW_INTERRUPT);
     VM_FF_CLEAR(pVM, VM_FF_RESUME_GUEST_MASK);
@@ -1117,81 +1172,81 @@ static int emR3HwAccStep(PVM pVM, RTCPUID idCpu)
      * Make sure the trap flag is cleared.
      * (Too bad if the guest is trying to single step too.)
      */
-    CPUMSetGuestEFlags(pVM, CPUMGetGuestEFlags(pVM) & ~X86_EFL_TF);
+    CPUMSetGuestEFlags(pVCpu, CPUMGetGuestEFlags(pVCpu) & ~X86_EFL_TF);
 
     /*
      * Deal with the return codes.
      */
-    rc = emR3HighPriorityPostForcedActions(pVM, rc);
-    rc = emR3RawHandleRC(pVM, pCtx, rc);
-    rc = emR3RawUpdateForceFlag(pVM, pCtx, rc);
+    rc = emR3HighPriorityPostForcedActions(pVM, pVCpu, rc);
+    rc = emR3RawHandleRC(pVM, pVCpu, pCtx, rc);
+    rc = emR3RawUpdateForceFlag(pVM, pVCpu, pCtx, rc);
     return rc;
 }
 
 
-int emR3SingleStepExecRaw(PVM pVM, uint32_t cIterations)
+int emR3SingleStepExecRaw(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
 {
     int     rc          = VINF_SUCCESS;
-    EMSTATE enmOldState = pVM->em.s.enmState;
-    pVM->em.s.enmState  = EMSTATE_DEBUG_GUEST_RAW;
+    EMSTATE enmOldState = pVCpu->em.s.enmState;
+    pVCpu->em.s.enmState  = EMSTATE_DEBUG_GUEST_RAW;
 
     Log(("Single step BEGIN:\n"));
     for (uint32_t i = 0; i < cIterations; i++)
     {
         DBGFR3PrgStep(pVM);
         DBGFR3DisasInstrCurrentLog(pVM, "RSS: ");
-        rc = emR3RawStep(pVM);
+        rc = emR3RawStep(pVM, pVCpu);
         if (rc != VINF_SUCCESS)
             break;
     }
     Log(("Single step END: rc=%Rrc\n", rc));
-    CPUMSetGuestEFlags(pVM, CPUMGetGuestEFlags(pVM) & ~X86_EFL_TF);
-    pVM->em.s.enmState = enmOldState;
+    CPUMSetGuestEFlags(pVCpu, CPUMGetGuestEFlags(pVCpu) & ~X86_EFL_TF);
+    pVCpu->em.s.enmState = enmOldState;
     return rc;
 }
 
 
-static int emR3SingleStepExecHwAcc(PVM pVM, RTCPUID idCpu, uint32_t cIterations)
+static int emR3SingleStepExecHwAcc(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
 {
     int     rc          = VINF_SUCCESS;
-    EMSTATE enmOldState = pVM->em.s.enmState;
-    pVM->em.s.enmState  = EMSTATE_DEBUG_GUEST_HWACC;
+    EMSTATE enmOldState = pVCpu->em.s.enmState;
+    pVCpu->em.s.enmState  = EMSTATE_DEBUG_GUEST_HWACC;
 
     Log(("Single step BEGIN:\n"));
     for (uint32_t i = 0; i < cIterations; i++)
     {
         DBGFR3PrgStep(pVM);
         DBGFR3DisasInstrCurrentLog(pVM, "RSS: ");
-        rc = emR3HwAccStep(pVM, idCpu);
+        rc = emR3HwAccStep(pVM, pVCpu);
         if (    rc != VINF_SUCCESS
-            ||  !HWACCMR3CanExecuteGuest(pVM, pVM->em.s.pCtx))
+            ||  !HWACCMR3CanExecuteGuest(pVM, pVCpu->em.s.pCtx))
             break;
     }
     Log(("Single step END: rc=%Rrc\n", rc));
-    CPUMSetGuestEFlags(pVM, CPUMGetGuestEFlags(pVM) & ~X86_EFL_TF);
-    pVM->em.s.enmState = enmOldState;
+    CPUMSetGuestEFlags(pVCpu, CPUMGetGuestEFlags(pVCpu) & ~X86_EFL_TF);
+    pVCpu->em.s.enmState = enmOldState;
     return rc == VINF_SUCCESS ? VINF_EM_RESCHEDULE_REM : rc;
 }
 
 
-static int emR3SingleStepExecRem(PVM pVM, uint32_t cIterations)
+static int emR3SingleStepExecRem(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
 {
-    EMSTATE  enmOldState = pVM->em.s.enmState;
+    EMSTATE  enmOldState = pVCpu->em.s.enmState;
 
-    pVM->em.s.enmState = EMSTATE_DEBUG_GUEST_REM;
+    pVCpu->em.s.enmState = EMSTATE_DEBUG_GUEST_REM;
 
     Log(("Single step BEGIN:\n"));
     for (uint32_t i = 0; i < cIterations; i++)
     {
         DBGFR3PrgStep(pVM);
         DBGFR3DisasInstrCurrentLog(pVM, "RSS: ");
-        emR3RemStep(pVM);
-        if (emR3Reschedule(pVM, pVM->em.s.pCtx) != EMSTATE_REM)
+        emR3RemStep(pVM, pVCpu);
+        if (emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx) != EMSTATE_REM)
             break;
     }
     Log(("Single step END:\n"));
-    CPUMSetGuestEFlags(pVM, CPUMGetGuestEFlags(pVM) & ~X86_EFL_TF);
-    pVM->em.s.enmState = enmOldState;
+    CPUMSetGuestEFlags(pVCpu, CPUMGetGuestEFlags(pVCpu) & ~X86_EFL_TF);
+    pVCpu->em.s.enmState = enmOldState;
     return VINF_EM_RESCHEDULE;
 }
 
@@ -1204,17 +1259,18 @@ static int emR3SingleStepExecRem(PVM pVM, uint32_t cIterations)
  * @returns VBox status code suitable for EM.
  *
  * @param   pVM         VM handle.
+ * @param   pVCpu       VMCPU handle
  * @param   rcGC        GC return code
  * @param   pszPrefix   Disassembly prefix. If not NULL we'll disassemble the
  *                      instruction and prefix the log output with this text.
  */
 #ifdef LOG_ENABLED
-static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC, const char *pszPrefix)
+static int emR3RawExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC, const char *pszPrefix)
 #else
-static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
+static int emR3RawExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
 #endif
 {
-    PCPUMCTX pCtx = pVM->em.s.pCtx;
+    PCPUMCTX pCtx = pVCpu->em.s.pCtx;
     int      rc;
 
     /*
@@ -1256,7 +1312,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
              */
             case VINF_SUCCESS:
                 Log(("emR3RawExecuteInstruction: Executing instruction starting at new address %RGv IF=%d VMIF=%x\n",
-                     pNewEip, pCtx->eflags.Bits.u1IF, pVM->em.s.pPatmGCState->uVMFlags));
+                     pNewEip, pCtx->eflags.Bits.u1IF, pVCpu->em.s.pPatmGCState->uVMFlags));
                 pCtx->eip = pNewEip;
                 Assert(pCtx->eip);
 
@@ -1266,12 +1322,12 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
                      * The last instruction in the patch block needs to be executed!! (sti/sysexit for example)
                      */
                     Log(("PATCH: IF=1 -> emulate last instruction as it can't be interrupted!!\n"));
-                    return emR3RawExecuteInstruction(pVM, "PATCHIR");
+                    return emR3RawExecuteInstruction(pVM, pVCpu, "PATCHIR");
                 }
                 else if (rcGC == VINF_PATM_PENDING_IRQ_AFTER_IRET)
                 {
                     /* special case: iret, that sets IF,  detected a pending irq/event */
-                    return emR3RawExecuteInstruction(pVM, "PATCHIRET");
+                    return emR3RawExecuteInstruction(pVM, pVCpu, "PATCHIRET");
                 }
                 return VINF_EM_RESCHEDULE_REM;
 
@@ -1280,16 +1336,16 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
              */
             case VINF_PATCH_EMULATE_INSTR:
                 Log(("emR3RawExecuteInstruction: Emulate patched instruction at %RGv IF=%d VMIF=%x\n",
-                     pNewEip, pCtx->eflags.Bits.u1IF, pVM->em.s.pPatmGCState->uVMFlags));
+                     pNewEip, pCtx->eflags.Bits.u1IF, pVCpu->em.s.pPatmGCState->uVMFlags));
                 pCtx->eip = pNewEip;
-                return emR3RawExecuteInstruction(pVM, "PATCHIR");
+                return emR3RawExecuteInstruction(pVM, pVCpu, "PATCHIR");
 
             /*
              * The patch was disabled, hand it to the REM.
              */
             case VERR_PATCH_DISABLED:
                 Log(("emR3RawExecuteInstruction: Disabled patch -> new eip %RGv IF=%d VMIF=%x\n",
-                     pNewEip, pCtx->eflags.Bits.u1IF, pVM->em.s.pPatmGCState->uVMFlags));
+                     pNewEip, pCtx->eflags.Bits.u1IF, pVCpu->em.s.pPatmGCState->uVMFlags));
                 pCtx->eip = pNewEip;
                 if (pCtx->eflags.Bits.u1IF)
                 {
@@ -1297,7 +1353,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
                      * The last instruction in the patch block needs to be executed!! (sti/sysexit for example)
                      */
                     Log(("PATCH: IF=1 -> emulate last instruction as it can't be interrupted!!\n"));
-                    return emR3RawExecuteInstruction(pVM, "PATCHIR");
+                    return emR3RawExecuteInstruction(pVM, pVCpu, "PATCHIR");
                 }
                 return VINF_EM_RESCHEDULE_REM;
 
@@ -1314,7 +1370,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
 #if 0
     /* Try our own instruction emulator before falling back to the recompiler. */
     DISCPUSTATE Cpu;
-    rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->rip, &Cpu, "GEN EMU");
+    rc = CPUMR3DisasmInstrCPU(pVM, pVCpu, pCtx, pCtx->rip, &Cpu, "GEN EMU");
     if (RT_SUCCESS(rc))
     {
         uint32_t size;
@@ -1330,33 +1386,33 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
         case OP_INC:
         case OP_DEC:
         case OP_XCHG:
-            STAM_PROFILE_START(&pVM->em.s.StatMiscEmu, a);
+            STAM_PROFILE_START(&pVCpu->em.s.StatMiscEmu, a);
             rc = EMInterpretInstructionCPU(pVM, &Cpu, CPUMCTX2CORE(pCtx), 0, &size);
             if (RT_SUCCESS(rc))
             {
                 pCtx->rip += Cpu.opsize;
 #ifdef EM_NOTIFY_HWACCM
-                if (pVM->em.s.enmState == EMSTATE_DEBUG_GUEST_HWACC)
-                    HWACCMR3NotifyEmulated(VMMGetCpu(pVM));
+                if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HWACC)
+                    HWACCMR3NotifyEmulated(pVCpu);
 #endif
-                STAM_PROFILE_STOP(&pVM->em.s.StatMiscEmu, a);
+                STAM_PROFILE_STOP(&pVCpu->em.s.StatMiscEmu, a);
                 return rc;
             }
             if (rc != VERR_EM_INTERPRETER)
                 AssertMsgFailedReturn(("rc=%Rrc\n", rc), rc);
-            STAM_PROFILE_STOP(&pVM->em.s.StatMiscEmu, a);
+            STAM_PROFILE_STOP(&pVCpu->em.s.StatMiscEmu, a);
             break;
         }
     }
 #endif /* 0 */
-    STAM_PROFILE_START(&pVM->em.s.StatREMEmu, a);
+    STAM_PROFILE_START(&pVCpu->em.s.StatREMEmu, a);
     Log(("EMINS: %04x:%RGv RSP=%RGv\n", pCtx->cs, (RTGCPTR)pCtx->rip, (RTGCPTR)pCtx->rsp));
-    rc = REMR3EmulateInstruction(pVM);
-    STAM_PROFILE_STOP(&pVM->em.s.StatREMEmu, a);
+    rc = REMR3EmulateInstruction(pVM, pVCpu);
+    STAM_PROFILE_STOP(&pVCpu->em.s.StatREMEmu, a);
 
 #ifdef EM_NOTIFY_HWACCM
-    if (pVM->em.s.enmState == EMSTATE_DEBUG_GUEST_HWACC)
-        HWACCMR3NotifyEmulated(VMMGetCpu(pVM));
+    if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HWACC)
+        HWACCMR3NotifyEmulated(pVCpu);
 #endif
     return rc;
 }
@@ -1368,16 +1424,17 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
  *
  * @returns VBox status code suitable for EM.
  * @param   pVM         VM handle.
+ * @param   pVCpu       VMCPU handle.
  * @param   pszPrefix   Disassembly prefix. If not NULL we'll disassemble the
  *                      instruction and prefix the log output with this text.
  * @param   rcGC        GC return code
  */
-DECLINLINE(int) emR3RawExecuteInstruction(PVM pVM, const char *pszPrefix, int rcGC)
+DECLINLINE(int) emR3RawExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszPrefix, int rcGC)
 {
 #ifdef LOG_ENABLED
-    return emR3RawExecuteInstructionWorker(pVM, rcGC, pszPrefix);
+    return emR3RawExecuteInstructionWorker(pVM, pVCpu, rcGC, pszPrefix);
 #else
-    return emR3RawExecuteInstructionWorker(pVM, rcGC);
+    return emR3RawExecuteInstructionWorker(pVM, pVCpu, rcGC);
 #endif
 }
 
@@ -1386,19 +1443,20 @@ DECLINLINE(int) emR3RawExecuteInstruction(PVM pVM, const char *pszPrefix, int rc
  *
  * @returns VBox status code suitable for EM.
  * @param   pVM         VM handle.
+ * @param   pVCpu       VMCPU handle.
  */
-int emR3RawExecuteIOInstruction(PVM pVM)
+int emR3RawExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
 {
     int         rc;
-    PCPUMCTX    pCtx = pVM->em.s.pCtx;
+    PCPUMCTX    pCtx = pVCpu->em.s.pCtx;
 
-    STAM_PROFILE_START(&pVM->em.s.StatIOEmu, a);
+    STAM_PROFILE_START(&pVCpu->em.s.StatIOEmu, a);
 
     /** @todo probably we should fall back to the recompiler; otherwise we'll go back and forth between HC & GC
      *   as io instructions tend to come in packages of more than one
      */
     DISCPUSTATE Cpu;
-    rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->rip, &Cpu, "IO EMU");
+    rc = CPUMR3DisasmInstrCPU(pVM, pVCpu, pCtx, pCtx->rip, &Cpu, "IO EMU");
     if (RT_SUCCESS(rc))
     {
         rc = VINF_EM_RAW_EMULATE_INSTR;
@@ -1409,14 +1467,14 @@ int emR3RawExecuteIOInstruction(PVM pVM)
             {
                 case OP_IN:
                 {
-                    STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->StatIn);
+                    STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatIn);
                     rc = IOMInterpretIN(pVM, CPUMCTX2CORE(pCtx), &Cpu);
                     break;
                 }
 
                 case OP_OUT:
                 {
-                    STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->StatOut);
+                    STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatOut);
                     rc = IOMInterpretOUT(pVM, CPUMCTX2CORE(pCtx), &Cpu);
                     break;
                 }
@@ -1429,7 +1487,7 @@ int emR3RawExecuteIOInstruction(PVM pVM)
                 case OP_INSB:
                 case OP_INSWD:
                 {
-                    STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->StatIn);
+                    STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatIn);
                     rc = IOMInterpretINS(pVM, CPUMCTX2CORE(pCtx), &Cpu);
                     break;
                 }
@@ -1437,7 +1495,7 @@ int emR3RawExecuteIOInstruction(PVM pVM)
                 case OP_OUTSB:
                 case OP_OUTSWD:
                 {
-                    STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->StatOut);
+                    STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatOut);
                     rc = IOMInterpretOUTS(pVM, CPUMCTX2CORE(pCtx), &Cpu);
                     break;
                 }
@@ -1451,27 +1509,27 @@ int emR3RawExecuteIOInstruction(PVM pVM)
         if (IOM_SUCCESS(rc))
         {
             pCtx->rip += Cpu.opsize;
-            STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
+            STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
             return rc;
         }
 
         if (rc == VINF_EM_RAW_GUEST_TRAP)
         {
-            STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
-            rc = emR3RawGuestTrap(pVM);
+            STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
+            rc = emR3RawGuestTrap(pVM, pVCpu);
             return rc;
         }
         AssertMsg(rc != VINF_TRPM_XCPT_DISPATCHED, ("Handle VINF_TRPM_XCPT_DISPATCHED\n"));
 
         if (RT_FAILURE(rc))
         {
-            STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
+            STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
             return rc;
         }
         AssertMsg(rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_EM_RESCHEDULE_REM, ("rc=%Rrc\n", rc));
     }
-    STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
-    return emR3RawExecuteInstruction(pVM, "IO: ");
+    STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
+    return emR3RawExecuteInstruction(pVM, pVCpu, "IO: ");
 }
 
 
@@ -1480,10 +1538,11 @@ int emR3RawExecuteIOInstruction(PVM pVM)
  *
  * @returns VBox status code suitable for EM.
  * @param   pVM         VM handle.
+ * @param   pVCpu       VMCPU handle.
  */
-static int emR3RawGuestTrap(PVM pVM)
+static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu)
 {
-    PCPUMCTX pCtx = pVM->em.s.pCtx;
+    PCPUMCTX pCtx = pVCpu->em.s.pCtx;
 
     /*
      * Get the trap info.
@@ -1519,12 +1578,12 @@ static int emR3RawGuestTrap(PVM pVM)
      * but several traps isn't handled specially by TRPM in RC and we end up here
      * instead. One example is #DE.
      */
-    uint32_t uCpl = CPUMGetGuestCPL(pVM, CPUMCTX2CORE(pCtx));
+    uint32_t uCpl = CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx));
     if (    uCpl == 0
         &&  PATMIsPatchGCAddr(pVM, (RTGCPTR)pCtx->eip))
     {
         LogFlow(("emR3RawGuestTrap: trap %#x in patch code; eip=%08x\n", u8TrapNo, pCtx->eip));
-        return emR3PatchTrap(pVM, pCtx, rc);
+        return emR3PatchTrap(pVM, pVCpu, pCtx, rc);
     }
 #endif
 
@@ -1543,7 +1602,7 @@ static int emR3RawGuestTrap(PVM pVM)
         if (TRPMR3GetGuestTrapHandler(pVM, u8TrapNo) != TRPM_INVALID_HANDLER)
         {
             /* Must check pending forced actions as our IDT or GDT might be out of sync. */
-            rc = EMR3CheckRawForcedActions(pVM);
+            rc = EMR3CheckRawForcedActions(pVM, pVCpu);
             AssertRCReturn(rc, rc);
 
             TRPMERRORCODE enmError = uErrorCode != ~0U
@@ -1579,7 +1638,7 @@ static int emR3RawGuestTrap(PVM pVM)
          * If MONITOR & MWAIT are supported, then interpret them here.
          */
         DISCPUSTATE cpu;
-        rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->rip, &cpu, "Guest Trap (#UD): ");
+        rc = CPUMR3DisasmInstrCPU(pVM, pVCpu, pCtx, pCtx->rip, &cpu, "Guest Trap (#UD): ");
         if (    RT_SUCCESS(rc)
             && (cpu.pCurInstr->opcode == OP_MONITOR || cpu.pCurInstr->opcode == OP_MWAIT))
         {
@@ -1591,17 +1650,17 @@ static int emR3RawGuestTrap(PVM pVM)
                 AssertRC(rc);
 
                 uint32_t opsize;
-                rc = EMInterpretInstructionCPU(pVM, &cpu, CPUMCTX2CORE(pCtx), 0, &opsize);
+                rc = EMInterpretInstructionCPU(pVM, pVCpu, &cpu, CPUMCTX2CORE(pCtx), 0, &opsize);
                 if (RT_SUCCESS(rc))
                 {
                     pCtx->rip += cpu.opsize;
 #ifdef EM_NOTIFY_HWACCM
-                    if (pVM->em.s.enmState == EMSTATE_DEBUG_GUEST_HWACC)
-                        HWACCMR3NotifyEmulated(VMMGetCpu(pVM));
+                    if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HWACC)
+                        HWACCMR3NotifyEmulated(pVCpu);
 #endif
                     return rc;
                 }
-                return emR3RawExecuteInstruction(pVM, "Monitor: ");
+                return emR3RawExecuteInstruction(pVM, pVCpu, "Monitor: ");
             }
         }
     }
@@ -1613,7 +1672,7 @@ static int emR3RawGuestTrap(PVM pVM)
         /** @todo We're not supposed to be here with a false guest trap concerning
          *        I/O access. We can easily handle those in RC.  */
         DISCPUSTATE cpu;
-        rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->rip, &cpu, "Guest Trap: ");
+        rc = CPUMR3DisasmInstrCPU(pVM, pVCpu, pCtx, pCtx->rip, &cpu, "Guest Trap: ");
         if (    RT_SUCCESS(rc)
             &&  (cpu.pCurInstr->optype & OPTYPE_PORTIO))
         {
@@ -1623,7 +1682,7 @@ static int emR3RawGuestTrap(PVM pVM)
              */
             rc = TRPMResetTrap(pVM);
             AssertRC(rc);
-            return emR3RawExecuteInstruction(pVM, "IO Guest Trap: ");
+            return emR3RawExecuteInstruction(pVM, pVCpu, "IO Guest Trap: ");
         }
     }
 
@@ -1634,7 +1693,7 @@ static int emR3RawGuestTrap(PVM pVM)
     /* Get guest page information. */
     uint64_t    fFlags = 0;
     RTGCPHYS    GCPhys = 0;
-    int rc2 = PGMGstGetPage(pVM, uCR2, &fFlags, &GCPhys);
+    int rc2 = PGMGstGetPage(pVM, pVCpu, uCR2, &fFlags, &GCPhys);
     Log(("emR3RawGuestTrap: cs:eip=%04x:%08x: trap=%02x err=%08x cr2=%08x cr0=%08x%s: Phys=%RGp fFlags=%08llx %s %s %s%s rc2=%d\n",
          pCtx->cs, pCtx->eip, u8TrapNo, uErrorCode, uCR2, (uint32_t)pCtx->cr0, (enmType == TRPM_SOFTWARE_INT) ? " software" : "",  GCPhys, fFlags,
          fFlags & X86_PTE_P  ? "P " : "NP", fFlags & X86_PTE_US ? "U"  : "S",
@@ -1658,17 +1717,18 @@ static int emR3RawGuestTrap(PVM pVM)
  *
  * @returns VBox status code suitable for EM.
  * @param   pVM     VM handle.
+ * @param   pVCpu       VMCPU handle.
  */
-int emR3RawRingSwitch(PVM pVM)
+int emR3RawRingSwitch(PVM pVM, PVMCPU pVCpu)
 {
     int         rc;
     DISCPUSTATE Cpu;
-    PCPUMCTX    pCtx = pVM->em.s.pCtx;
+    PCPUMCTX    pCtx = pVCpu->em.s.pCtx;
 
     /*
      * sysenter, syscall & callgate
      */
-    rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->rip, &Cpu, "RSWITCH: ");
+    rc = CPUMR3DisasmInstrCPU(pVM, pVCpu, pCtx, pCtx->rip, &Cpu, "RSWITCH: ");
     if (RT_SUCCESS(rc))
     {
         if (Cpu.pCurInstr->opcode == OP_SYSENTER)
@@ -1689,16 +1749,16 @@ int emR3RawRingSwitch(PVM pVM)
         switch (Cpu.pCurInstr->opcode)
         {
             case OP_SYSENTER:
-                STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->StatSysEnter);
+                STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatSysEnter);
                 break;
             case OP_SYSEXIT:
-                STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->StatSysExit);
+                STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatSysExit);
                 break;
             case OP_SYSCALL:
-                STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->StatSysCall);
+                STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatSysCall);
                 break;
             case OP_SYSRET:
-                STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->StatSysRet);
+                STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatSysRet);
                 break;
         }
 #endif
@@ -1707,7 +1767,7 @@ int emR3RawRingSwitch(PVM pVM)
         AssertRC(rc);
 
     /* go to the REM to emulate a single instruction */
-    return emR3RawExecuteInstruction(pVM, "RSWITCH: ");
+    return emR3RawExecuteInstruction(pVM, pVCpu, "RSWITCH: ");
 }
 
 
@@ -1716,10 +1776,11 @@ int emR3RawRingSwitch(PVM pVM)
  *
  * @returns VBox status code suitable for EM.
  * @param   pVM     VM handle.
+ * @param   pVCpu   VMCPU handle.
  * @param   pCtx    CPU context
  * @param   gcret   GC return code
  */
-static int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
+static int emR3PatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret)
 {
     uint8_t         u8TrapNo;
     int             rc;
@@ -1767,16 +1828,16 @@ static int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
         DISCPUSTATE Cpu;
         int         rc;
 
-        rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->eip, &Cpu, "Patch code: ");
+        rc = CPUMR3DisasmInstrCPU(pVM, pVCpu, pCtx, pCtx->eip, &Cpu, "Patch code: ");
         if (    RT_SUCCESS(rc)
             &&  Cpu.pCurInstr->opcode == OP_IRET)
         {
             uint32_t eip, selCS, uEFlags;
 
             /* Iret crashes are bad as we have already changed the flags on the stack */
-            rc  = PGMPhysSimpleReadGCPtr(pVM, &eip,     pCtx->esp, 4);
-            rc |= PGMPhysSimpleReadGCPtr(pVM, &selCS,   pCtx->esp+4, 4);
-            rc |= PGMPhysSimpleReadGCPtr(pVM, &uEFlags, pCtx->esp+8, 4);
+            rc  = PGMPhysSimpleReadGCPtr(pVCpu, &eip,     pCtx->esp, 4);
+            rc |= PGMPhysSimpleReadGCPtr(pVCpu, &selCS,   pCtx->esp+4, 4);
+            rc |= PGMPhysSimpleReadGCPtr(pVCpu, &uEFlags, pCtx->esp+8, 4);
             if (rc == VINF_SUCCESS)
             {
                 if (    (uEFlags & X86_EFL_VM)
@@ -1784,16 +1845,16 @@ static int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
                 {
                     uint32_t selSS, esp;
 
-                    rc |= PGMPhysSimpleReadGCPtr(pVM, &esp,     pCtx->esp + 12, 4);
-                    rc |= PGMPhysSimpleReadGCPtr(pVM, &selSS,   pCtx->esp + 16, 4);
+                    rc |= PGMPhysSimpleReadGCPtr(pVCpu, &esp,     pCtx->esp + 12, 4);
+                    rc |= PGMPhysSimpleReadGCPtr(pVCpu, &selSS,   pCtx->esp + 16, 4);
 
                     if (uEFlags & X86_EFL_VM)
                     {
                         uint32_t selDS, selES, selFS, selGS;
-                        rc  = PGMPhysSimpleReadGCPtr(pVM, &selES,   pCtx->esp + 20, 4);
-                        rc |= PGMPhysSimpleReadGCPtr(pVM, &selDS,   pCtx->esp + 24, 4);
-                        rc |= PGMPhysSimpleReadGCPtr(pVM, &selFS,   pCtx->esp + 28, 4);
-                        rc |= PGMPhysSimpleReadGCPtr(pVM, &selGS,   pCtx->esp + 32, 4);
+                        rc  = PGMPhysSimpleReadGCPtr(pVCpu, &selES,   pCtx->esp + 20, 4);
+                        rc |= PGMPhysSimpleReadGCPtr(pVCpu, &selDS,   pCtx->esp + 24, 4);
+                        rc |= PGMPhysSimpleReadGCPtr(pVCpu, &selFS,   pCtx->esp + 28, 4);
+                        rc |= PGMPhysSimpleReadGCPtr(pVCpu, &selGS,   pCtx->esp + 32, 4);
                         if (rc == VINF_SUCCESS)
                         {
                             Log(("Patch code: IRET->VM stack frame: return address %04X:%08RX32 eflags=%08x ss:esp=%04X:%08RX32\n", selCS, eip, uEFlags, selSS, esp));
@@ -1822,7 +1883,7 @@ static int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
             {
                 /** @todo execute a whole block */
                 Log(("emR3PatchTrap: Executing faulting instruction at new address %RGv\n", pNewEip));
-                if (!(pVM->em.s.pPatmGCState->uVMFlags & X86_EFL_IF))
+                if (!(pVCpu->em.s.pPatmGCState->uVMFlags & X86_EFL_IF))
                     Log(("emR3PatchTrap: Virtual IF flag disabled!!\n"));
 
                 pCtx->eip = pNewEip;
@@ -1844,7 +1905,7 @@ static int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
                     /** @todo Knoppix 5 regression when returning VINF_SUCCESS here and going back to raw mode. */
                     /* Note: possibly because a reschedule is required (e.g. iret to V86 code) */
 
-                    return emR3RawExecuteInstruction(pVM, "PATCHIR");
+                    return emR3RawExecuteInstruction(pVM, pVCpu, "PATCHIR");
                     /* Interrupts are enabled; just go back to the original instruction.
                     return VINF_SUCCESS; */
                 }
@@ -1856,16 +1917,16 @@ static int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
              */
             case VINF_PATCH_EMULATE_INSTR:
                 Log(("emR3PatchTrap: Emulate patched instruction at %RGv IF=%d VMIF=%x\n",
-                     pNewEip, pCtx->eflags.Bits.u1IF, pVM->em.s.pPatmGCState->uVMFlags));
+                     pNewEip, pCtx->eflags.Bits.u1IF, pVCpu->em.s.pPatmGCState->uVMFlags));
                 pCtx->eip = pNewEip;
                 AssertRelease(pCtx->eip);
-                return emR3RawExecuteInstruction(pVM, "PATCHEMUL: ");
+                return emR3RawExecuteInstruction(pVM, pVCpu, "PATCHEMUL: ");
 
             /*
              * The patch was disabled, hand it to the REM.
              */
             case VERR_PATCH_DISABLED:
-                if (!(pVM->em.s.pPatmGCState->uVMFlags & X86_EFL_IF))
+                if (!(pVCpu->em.s.pPatmGCState->uVMFlags & X86_EFL_IF))
                     Log(("emR3PatchTrap: Virtual IF flag disabled!!\n"));
                 pCtx->eip = pNewEip;
                 AssertRelease(pCtx->eip);
@@ -1876,7 +1937,7 @@ static int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
                      * The last instruction in the patch block needs to be executed!! (sti/sysexit for example)
                      */
                     Log(("PATCH: IF=1 -> emulate last instruction as it can't be interrupted!!\n"));
-                    return emR3RawExecuteInstruction(pVM, "PATCHIR");
+                    return emR3RawExecuteInstruction(pVM, pVCpu, "PATCHIR");
                 }
                 return VINF_EM_RESCHEDULE_REM;
 
@@ -1901,11 +1962,12 @@ static int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
  *
  * @returns VBox status code suitable for EM.
  * @param   pVM     VM handle.
+ * @param   pVCpu   VMCPU handle;
  */
-int emR3RawPrivileged(PVM pVM)
+int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
 {
-    STAM_PROFILE_START(&pVM->em.s.StatPrivEmu, a);
-    PCPUMCTX    pCtx = pVM->em.s.pCtx;
+    STAM_PROFILE_START(&pVCpu->em.s.StatPrivEmu, a);
+    PCPUMCTX    pCtx = pVCpu->em.s.pCtx;
 
     Assert(!pCtx->eflags.Bits.u1VM);
 
@@ -1953,11 +2015,11 @@ int emR3RawPrivileged(PVM pVM)
     DISCPUSTATE Cpu;
     int         rc;
 
-    rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->rip, &Cpu, "PRIV: ");
+    rc = CPUMR3DisasmInstrCPU(pVM, pVCpu, pCtx, pCtx->rip, &Cpu, "PRIV: ");
     if (RT_SUCCESS(rc))
     {
 #ifdef VBOX_WITH_STATISTICS
-        PEMSTATS pStats = pVM->em.s.CTX_SUFF(pStats);
+        PEMSTATS pStats = pVCpu->em.s.CTX_SUFF(pStats);
         switch (Cpu.pCurInstr->opcode)
         {
             case OP_INVLPG:
@@ -1968,7 +2030,7 @@ int emR3RawPrivileged(PVM pVM)
                 break;
             case OP_CLI:
                 STAM_COUNTER_INC(&pStats->StatCli);
-                emR3RecordCli(pVM, pCtx->rip);
+                emR3RecordCli(pVM, pVCpu, pCtx->rip);
                 break;
             case OP_STI:
                 STAM_COUNTER_INC(&pStats->StatSti);
@@ -2038,22 +2100,22 @@ int emR3RawPrivileged(PVM pVM)
         {
             uint32_t size;
 
-            STAM_PROFILE_START(&pVM->em.s.StatPrivEmu, a);
+            STAM_PROFILE_START(&pVCpu->em.s.StatPrivEmu, a);
             switch (Cpu.pCurInstr->opcode)
             {
                 case OP_CLI:
                     pCtx->eflags.u32 &= ~X86_EFL_IF;
                     Assert(Cpu.opsize == 1);
                     pCtx->rip += Cpu.opsize;
-                    STAM_PROFILE_STOP(&pVM->em.s.StatPrivEmu, a);
+                    STAM_PROFILE_STOP(&pVCpu->em.s.StatPrivEmu, a);
                     return VINF_EM_RESCHEDULE_REM; /* must go to the recompiler now! */
 
                 case OP_STI:
                     pCtx->eflags.u32 |= X86_EFL_IF;
-                    EMSetInhibitInterruptsPC(pVM, pCtx->rip + Cpu.opsize);
+                    EMSetInhibitInterruptsPC(pVM, pVCpu, pCtx->rip + Cpu.opsize);
                     Assert(Cpu.opsize == 1);
                     pCtx->rip += Cpu.opsize;
-                    STAM_PROFILE_STOP(&pVM->em.s.StatPrivEmu, a);
+                    STAM_PROFILE_STOP(&pVCpu->em.s.StatPrivEmu, a);
                     return VINF_SUCCESS;
 
                 case OP_HLT:
@@ -2089,15 +2151,15 @@ int emR3RawPrivileged(PVM pVM)
                     }
 #endif
 
-                    rc = EMInterpretInstructionCPU(pVM, &Cpu, CPUMCTX2CORE(pCtx), 0, &size);
+                    rc = EMInterpretInstructionCPU(pVM, pVCpu, &Cpu, CPUMCTX2CORE(pCtx), 0, &size);
                     if (RT_SUCCESS(rc))
                     {
                         pCtx->rip += Cpu.opsize;
 #ifdef EM_NOTIFY_HWACCM
-                        if (pVM->em.s.enmState == EMSTATE_DEBUG_GUEST_HWACC)
-                            HWACCMR3NotifyEmulated(VMMGetCpu(pVM));
+                        if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HWACC)
+                            HWACCMR3NotifyEmulated(pVCpu);
 #endif
-                        STAM_PROFILE_STOP(&pVM->em.s.StatPrivEmu, a);
+                        STAM_PROFILE_STOP(&pVCpu->em.s.StatPrivEmu, a);
 
                         if (    Cpu.pCurInstr->opcode == OP_MOV_CR
                             &&  Cpu.param1.flags == USE_REG_CR /* write */
@@ -2135,14 +2197,14 @@ int emR3RawPrivileged(PVM pVM)
                     AssertMsgReturn(rc == VERR_EM_INTERPRETER, ("%Rrc\n", rc), rc);
                     break; /* fall back to the recompiler */
             }
-            STAM_PROFILE_STOP(&pVM->em.s.StatPrivEmu, a);
+            STAM_PROFILE_STOP(&pVCpu->em.s.StatPrivEmu, a);
         }
     }
 
     if (PATMIsPatchGCAddr(pVM, pCtx->eip))
-        return emR3PatchTrap(pVM, pCtx, VINF_PATM_PATCH_TRAP_GP);
+        return emR3PatchTrap(pVM, pVCpu, pCtx, VINF_PATM_PATCH_TRAP_GP);
 
-    return emR3RawExecuteInstruction(pVM, "PRIV");
+    return emR3RawExecuteInstruction(pVM, pVCpu, "PRIV");
 }
 
 
@@ -2160,10 +2222,11 @@ int emR3RawPrivileged(PVM pVM)
  * @returns Updated rc.
  *
  * @param   pVM     The VM handle.
+ * @param   pVCpu   The VMCPU handle.
  * @param   pCtx    The guest CPU context.
  * @param   rc      The result code.
  */
-DECLINLINE(int) emR3RawUpdateForceFlag(PVM pVM, PCPUMCTX pCtx, int rc)
+DECLINLINE(int) emR3RawUpdateForceFlag(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
 {
     if (PATMIsPatchGCAddr(pVM, pCtx->eip)) /** @todo check cs selector base/type */
     {
@@ -2176,10 +2239,10 @@ DECLINLINE(int) emR3RawUpdateForceFlag(PVM pVM, PCPUMCTX pCtx, int rc)
                 rc = VINF_SUCCESS;
                 break;
         }
-        pVM->em.s.fForceRAW = true;
+        pVCpu->em.s.fForceRAW = true;
     }
     else
-        pVM->em.s.fForceRAW = false;
+        pVCpu->em.s.fForceRAW = false;
     return rc;
 }
 
@@ -2194,10 +2257,11 @@ DECLINLINE(int) emR3RawUpdateForceFlag(PVM pVM, PCPUMCTX pCtx, int rc)
  * @returns VBox status code to return to the EM main loop.
  *
  * @param   pVM     The VM handle
+ * @param   pVCpu   The VMCPU handle
  * @param   rc      The return code.
  * @param   pCtx    The guest cpu context.
  */
-DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
+DECLINLINE(int) emR3RawHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
 {
     switch (rc)
     {
@@ -2220,7 +2284,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
          */
         case VINF_EM_RAW_EXCEPTION_PRIVILEGED:
         case VINF_PATM_PATCH_TRAP_GP:
-            rc = emR3RawPrivileged(pVM);
+            rc = emR3RawPrivileged(pVM, pVCpu);
             break;
 
         /*
@@ -2229,11 +2293,11 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
         case VINF_EM_RAW_GUEST_TRAP:
             if (PATMR3IsInsidePatchJump(pVM, pCtx->eip, NULL))
             {
-                AssertReleaseMsgFailed(("FATAL ERROR: executing random instruction inside generated patch jump %08X\n", CPUMGetGuestEIP(pVM)));
+                AssertReleaseMsgFailed(("FATAL ERROR: executing random instruction inside generated patch jump %08X\n", CPUMGetGuestEIP(pVCpu)));
                 rc = VERR_EM_RAW_PATCH_CONFLICT;
                 break;
             }
-            rc = emR3RawGuestTrap(pVM);
+            rc = emR3RawGuestTrap(pVM, pVCpu);
             break;
 
         /*
@@ -2241,7 +2305,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
          */
         case VINF_PATM_PATCH_TRAP_PF:
         case VINF_PATM_PATCH_INT3:
-            rc = emR3PatchTrap(pVM, pCtx, rc);
+            rc = emR3PatchTrap(pVM, pVCpu, pCtx, rc);
             break;
 
         case VINF_PATM_DUPLICATE_FUNCTION:
@@ -2280,12 +2344,12 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
             rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, DIS_SELREG_CS, CPUMCTX2CORE(pCtx), pCtx->eip),
                                     PATMFL_MMIO_ACCESS | ((SELMGetCpuModeFromSelector(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid) == CPUMODE_32BIT) ? PATMFL_CODE32 : 0));
             if (RT_FAILURE(rc))
-                rc = emR3RawExecuteInstruction(pVM, "MMIO");
+                rc = emR3RawExecuteInstruction(pVM, pVCpu, "MMIO");
             break;
 
         case VINF_PATM_HC_MMIO_PATCH_WRITE:
             AssertFailed(); /* not yet implemented. */
-            rc = emR3RawExecuteInstruction(pVM, "MMIO");
+            rc = emR3RawExecuteInstruction(pVM, pVCpu, "MMIO");
             break;
 
         /*
@@ -2304,7 +2368,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
          * Paging mode change.
          */
         case VINF_PGM_CHANGE_MODE:
-            rc = PGMChangeMode(pVM, pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
+            rc = PGMChangeMode(pVM, pVCpu, pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
             if (rc == VINF_SUCCESS)
                 rc = VINF_EM_RESCHEDULE;
             AssertMsg(RT_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST), ("%Rrc\n", rc));
@@ -2343,7 +2407,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
          * Other ring switch types.
          */
         case VINF_EM_RAW_RING_SWITCH:
-            rc = emR3RawRingSwitch(pVM);
+            rc = emR3RawRingSwitch(pVM, pVCpu);
             break;
 
         /*
@@ -2351,7 +2415,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
          */
         case VERR_REM_FLUSHED_PAGES_OVERFLOW:
             Assert((pCtx->ss & X86_SEL_RPL) != 1);
-            REMR3ReplayInvalidatedPages(pVM);
+            REMR3ReplayInvalidatedPages(pVM, pVCpu);
             rc = VINF_SUCCESS;
             break;
 
@@ -2360,7 +2424,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
          */
         case VINF_IOM_HC_IOPORT_READ:
         case VINF_IOM_HC_IOPORT_WRITE:
-            rc = emR3RawExecuteIOInstruction(pVM);
+            rc = emR3RawExecuteIOInstruction(pVM, pVCpu);
             break;
 
         /*
@@ -2369,47 +2433,47 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
         case VINF_IOM_HC_MMIO_READ:
         case VINF_IOM_HC_MMIO_WRITE:
         case VINF_IOM_HC_MMIO_READ_WRITE:
-            rc = emR3RawExecuteInstruction(pVM, "MMIO");
+            rc = emR3RawExecuteInstruction(pVM, pVCpu, "MMIO");
             break;
 
         /*
          * (MM)IO intensive code block detected; fall back to the recompiler for better performance
          */
         case VINF_EM_RAW_EMULATE_IO_BLOCK:
-            rc =HWACCMR3EmulateIoBlock(pVM, pCtx);
+            rc = HWACCMR3EmulateIoBlock(pVM, pCtx);
             break;
 
         /*
          * Execute instruction.
          */
         case VINF_EM_RAW_EMULATE_INSTR_LDT_FAULT:
-            rc = emR3RawExecuteInstruction(pVM, "LDT FAULT: ");
+            rc = emR3RawExecuteInstruction(pVM, pVCpu, "LDT FAULT: ");
             break;
         case VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT:
-            rc = emR3RawExecuteInstruction(pVM, "GDT FAULT: ");
+            rc = emR3RawExecuteInstruction(pVM, pVCpu, "GDT FAULT: ");
             break;
         case VINF_EM_RAW_EMULATE_INSTR_IDT_FAULT:
-            rc = emR3RawExecuteInstruction(pVM, "IDT FAULT: ");
+            rc = emR3RawExecuteInstruction(pVM, pVCpu, "IDT FAULT: ");
             break;
         case VINF_EM_RAW_EMULATE_INSTR_TSS_FAULT:
-            rc = emR3RawExecuteInstruction(pVM, "TSS FAULT: ");
+            rc = emR3RawExecuteInstruction(pVM, pVCpu, "TSS FAULT: ");
             break;
         case VINF_EM_RAW_EMULATE_INSTR_PD_FAULT:
-            rc = emR3RawExecuteInstruction(pVM, "PD FAULT: ");
+            rc = emR3RawExecuteInstruction(pVM, pVCpu, "PD FAULT: ");
             break;
 
         case VINF_EM_RAW_EMULATE_INSTR_HLT:
             /** @todo skip instruction and go directly to the halt state. (see REM for implementation details) */
-            rc = emR3RawPrivileged(pVM);
+            rc = emR3RawPrivileged(pVM, pVCpu);
             break;
 
         case VINF_PATM_PENDING_IRQ_AFTER_IRET:
-            rc = emR3RawExecuteInstruction(pVM, "EMUL: ", VINF_PATM_PENDING_IRQ_AFTER_IRET);
+            rc = emR3RawExecuteInstruction(pVM, pVCpu, "EMUL: ", VINF_PATM_PENDING_IRQ_AFTER_IRET);
             break;
 
         case VINF_EM_RAW_EMULATE_INSTR:
         case VINF_PATCH_EMULATE_INSTR:
-            rc = emR3RawExecuteInstruction(pVM, "EMUL: ");
+            rc = emR3RawExecuteInstruction(pVM, pVCpu, "EMUL: ");
             break;
 
         /*
@@ -2492,10 +2556,11 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
  * @returns VBox status code. May return VINF_EM_NO_MEMORY but none of the other
  *          EM statuses.
  * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VMCPU handle.
  */
-VMMR3DECL(int) EMR3CheckRawForcedActions(PVM pVM)
+VMMR3DECL(int) EMR3CheckRawForcedActions(PVM pVM, PVMCPU pVCpu)
 {
-    return emR3RawForcedActions(pVM, pVM->em.s.pCtx);
+    return emR3RawForcedActions(pVM, pVCpu, pVCpu->em.s.pCtx);
 }
 
 
@@ -2507,9 +2572,10 @@ VMMR3DECL(int) EMR3CheckRawForcedActions(PVM pVM)
  * @returns VBox status code. May return VINF_EM_NO_MEMORY but none of the other
  *          EM statuses.
  * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  * @param   pCtx        The guest CPUM register context.
  */
-static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
+static int emR3RawForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     /*
      * Note that the order is *vitally* important!
@@ -2522,7 +2588,7 @@ static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
      */
     if (VM_FF_ISPENDING(pVM, VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT))
     {
-        int rc = SELMR3UpdateFromCPUM(pVM);
+        int rc = SELMR3UpdateFromCPUM(pVM, pVCpu);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -2540,12 +2606,12 @@ static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
             && EMIsRawRing0Enabled(pVM)
             && CSAMIsEnabled(pVM))
         {
-            int rc = PGMSyncCR3(pVM, pCtx->cr0, pCtx->cr3, pCtx->cr4, VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
+            int rc = PGMSyncCR3(pVM, pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
             if (RT_FAILURE(rc))
                 return rc;
         }
 
-        int rc = TRPMR3SyncIDT(pVM);
+        int rc = TRPMR3SyncIDT(pVM, pVCpu);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -2555,7 +2621,7 @@ static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
      */
     if (VM_FF_ISPENDING(pVM, VM_FF_SELM_SYNC_TSS))
     {
-        int rc = SELMR3SyncTSS(pVM);
+        int rc = SELMR3SyncTSS(pVM, pVCpu);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -2565,7 +2631,7 @@ static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
      */
     if (VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL))
     {
-        int rc = PGMSyncCR3(pVM, pCtx->cr0, pCtx->cr3, pCtx->cr4, VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
+        int rc = PGMSyncCR3(pVM, pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
         if (RT_FAILURE(rc))
             return rc;
 
@@ -2573,9 +2639,9 @@ static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
 
         /* Prefetch pages for EIP and ESP. */
         /** @todo This is rather expensive. Should investigate if it really helps at all. */
-        rc = PGMPrefetchPage(pVM, SELMToFlat(pVM, DIS_SELREG_CS, CPUMCTX2CORE(pCtx), pCtx->rip));
+        rc = PGMPrefetchPage(pVM, pVCpu, SELMToFlat(pVM, DIS_SELREG_CS, CPUMCTX2CORE(pCtx), pCtx->rip));
         if (rc == VINF_SUCCESS)
-            rc = PGMPrefetchPage(pVM, SELMToFlat(pVM, DIS_SELREG_SS, CPUMCTX2CORE(pCtx), pCtx->rsp));
+            rc = PGMPrefetchPage(pVM, pVCpu, SELMToFlat(pVM, DIS_SELREG_SS, CPUMCTX2CORE(pCtx), pCtx->rsp));
         if (rc != VINF_SUCCESS)
         {
             if (rc != VINF_PGM_SYNC_CR3)
@@ -2583,7 +2649,7 @@ static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
                 AssertLogRelMsgReturn(RT_FAILURE(rc), ("%Rrc\n", rc), VERR_IPE_UNEXPECTED_INFO_STATUS);
                 return rc;
             }
-            rc = PGMSyncCR3(pVM, pCtx->cr0, pCtx->cr3, pCtx->cr4, VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
+            rc = PGMSyncCR3(pVM, pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
             if (RT_FAILURE(rc))
                 return rc;
         }
@@ -2625,17 +2691,18 @@ static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
  *          VINF_EM_RESCHEDULE_REM, VINF_EM_SUSPEND, VINF_EM_RESET and VINF_EM_TERMINATE.
  *
  * @param   pVM         VM handle.
+ * @param   pVCpu       VMCPU handle.
  * @param   pfFFDone    Where to store an indicator telling whether or not
  *                      FFs were done before returning.
  */
-static int emR3RawExecute(PVM pVM, bool *pfFFDone)
+static int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 {
-    STAM_REL_PROFILE_ADV_START(&pVM->em.s.StatRAWTotal, a);
+    STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatRAWTotal, a);
 
     int      rc = VERR_INTERNAL_ERROR;
-    PCPUMCTX pCtx = pVM->em.s.pCtx;
+    PCPUMCTX pCtx = pVCpu->em.s.pCtx;
     LogFlow(("emR3RawExecute: (cs:eip=%04x:%08x)\n", pCtx->cs, pCtx->eip));
-    pVM->em.s.fForceRAW = false;
+    pVCpu->em.s.fForceRAW = false;
     *pfFFDone = false;
 
 
@@ -2647,13 +2714,13 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
      */
     for (;;)
     {
-        STAM_PROFILE_ADV_START(&pVM->em.s.StatRAWEntry, b);
+        STAM_PROFILE_ADV_START(&pVCpu->em.s.StatRAWEntry, b);
 
         /*
          * Check various preconditions.
          */
 #ifdef VBOX_STRICT
-        Assert(REMR3QueryPendingInterrupt(pVM) == REM_NO_PENDING_IRQ);
+        Assert(REMR3QueryPendingInterrupt(pVM, pVCpu) == REM_NO_PENDING_IRQ);
         Assert(pCtx->eflags.Bits.u1VM || (pCtx->ss & X86_SEL_RPL) == 3 || (pCtx->ss & X86_SEL_RPL) == 0);
         AssertMsg(   (pCtx->eflags.u32 & X86_EFL_IF)
                   || PATMShouldUseRawMode(pVM, (RTGCPTR)pCtx->eip),
@@ -2672,7 +2739,7 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
          */
         if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
-            rc = emR3RawForcedActions(pVM, pCtx);
+            rc = emR3RawForcedActions(pVM, pVCpu, pCtx);
             if (rc != VINF_SUCCESS)
                 break;
         }
@@ -2682,10 +2749,10 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
          * be modified a bit and some of the state components (IF, SS/CS RPL,
          * and perhaps EIP) needs to be stored with PATM.
          */
-        rc = CPUMRawEnter(pVM, NULL);
+        rc = CPUMRawEnter(pVCpu, NULL);
         if (rc != VINF_SUCCESS)
         {
-            STAM_PROFILE_ADV_STOP(&pVM->em.s.StatRAWEntry, b);
+            STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatRAWEntry, b);
             break;
         }
 
@@ -2696,15 +2763,15 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
             &&  !pCtx->eflags.Bits.u1VM
             && !PATMIsPatchGCAddr(pVM, pCtx->eip))
         {
-            STAM_PROFILE_ADV_SUSPEND(&pVM->em.s.StatRAWEntry, b);
+            STAM_PROFILE_ADV_SUSPEND(&pVCpu->em.s.StatRAWEntry, b);
             CSAMR3CheckCodeEx(pVM, CPUMCTX2CORE(pCtx), pCtx->eip);
-            STAM_PROFILE_ADV_RESUME(&pVM->em.s.StatRAWEntry, b);
+            STAM_PROFILE_ADV_RESUME(&pVCpu->em.s.StatRAWEntry, b);
             if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK))
             {
-                rc = emR3RawForcedActions(pVM, pCtx);
+                rc = emR3RawForcedActions(pVM, pVCpu, pCtx);
                 if (rc != VINF_SUCCESS)
                 {
-                    rc = CPUMRawLeave(pVM, NULL, rc);
+                    rc = CPUMRawLeave(pVCpu, NULL, rc);
                     break;
                 }
             }
@@ -2731,13 +2798,13 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
         /*
          * Execute the code.
          */
-        STAM_PROFILE_ADV_STOP(&pVM->em.s.StatRAWEntry, b);
-        STAM_PROFILE_START(&pVM->em.s.StatRAWExec, c);
+        STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatRAWEntry, b);
+        STAM_PROFILE_START(&pVCpu->em.s.StatRAWExec, c);
         VMMR3Unlock(pVM);
-        rc = VMMR3RawRunGC(pVM);
+        rc = VMMR3RawRunGC(pVM, pVCpu);
         VMMR3Lock(pVM);
-        STAM_PROFILE_STOP(&pVM->em.s.StatRAWExec, c);
-        STAM_PROFILE_ADV_START(&pVM->em.s.StatRAWTail, d);
+        STAM_PROFILE_STOP(&pVCpu->em.s.StatRAWExec, c);
+        STAM_PROFILE_ADV_START(&pVCpu->em.s.StatRAWTail, d);
 
         LogFlow(("RR0-E: %08X ESP=%08X IF=%d VMFlags=%x PIF=%d CPL=%d\n", pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, pGCState->uVMFlags, pGCState->fPIF, (pCtx->ss & X86_SEL_RPL)));
         LogFlow(("VMMR3RawRunGC returned %Rrc\n", rc));
@@ -2748,10 +2815,10 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
          * Restore the real CPU state and deal with high priority post
          * execution FFs before doing anything else.
          */
-        rc = CPUMRawLeave(pVM, NULL, rc);
+        rc = CPUMRawLeave(pVCpu, NULL, rc);
         VM_FF_CLEAR(pVM, VM_FF_RESUME_GUEST_MASK);
         if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK))
-            rc = emR3HighPriorityPostForcedActions(pVM, rc);
+            rc = emR3HighPriorityPostForcedActions(pVM, pVCpu, rc);
 
 #ifdef VBOX_STRICT
         /*
@@ -2775,7 +2842,7 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
 
             default:
                 if (PATMIsPatchGCAddr(pVM, pCtx->eip) && !(pCtx->eflags.u32 & X86_EFL_TF))
-                    LogIt(NULL, 0, LOG_GROUP_PATM, ("Patch code interrupted at %RRv for reason %Rrc\n", (RTRCPTR)CPUMGetGuestEIP(pVM), rc));
+                    LogIt(NULL, 0, LOG_GROUP_PATM, ("Patch code interrupted at %RRv for reason %Rrc\n", (RTRCPTR)CPUMGetGuestEIP(pVCpu), rc));
                 break;
         }
         /*
@@ -2795,16 +2862,16 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
          */
         if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
         {
-            STAM_PROFILE_ADV_STOP(&pVM->em.s.StatRAWTail, d);
+            STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatRAWTail, d);
             break;
         }
-        rc = emR3RawHandleRC(pVM, pCtx, rc);
+        rc = emR3RawHandleRC(pVM, pVCpu, pCtx, rc);
         if (rc != VINF_SUCCESS)
         {
-            rc = emR3RawUpdateForceFlag(pVM, pCtx, rc);
+            rc = emR3RawUpdateForceFlag(pVM, pVCpu, pCtx, rc);
             if (rc != VINF_SUCCESS)
             {
-                STAM_PROFILE_ADV_STOP(&pVM->em.s.StatRAWTail, d);
+                STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatRAWTail, d);
                 break;
             }
         }
@@ -2815,18 +2882,18 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
 #ifdef VBOX_HIGH_RES_TIMERS_HACK
         TMTimerPoll(pVM);
 #endif
-        STAM_PROFILE_ADV_STOP(&pVM->em.s.StatRAWTail, d);
+        STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatRAWTail, d);
         if (VM_FF_ISPENDING(pVM, ~VM_FF_HIGH_PRIORITY_PRE_RAW_MASK | VM_FF_PGM_NO_MEMORY))
         {
             Assert(pCtx->eflags.Bits.u1VM || (pCtx->ss & X86_SEL_RPL) != 1);
 
-            STAM_REL_PROFILE_ADV_SUSPEND(&pVM->em.s.StatRAWTotal, a);
-            rc = emR3ForcedActions(pVM, rc);
-            STAM_REL_PROFILE_ADV_RESUME(&pVM->em.s.StatRAWTotal, a);
+            STAM_REL_PROFILE_ADV_SUSPEND(&pVCpu->em.s.StatRAWTotal, a);
+            rc = emR3ForcedActions(pVM, pVCpu, rc);
+            STAM_REL_PROFILE_ADV_RESUME(&pVCpu->em.s.StatRAWTotal, a);
             if (    rc != VINF_SUCCESS
                 &&  rc != VINF_EM_RESCHEDULE_RAW)
             {
-                rc = emR3RawUpdateForceFlag(pVM, pCtx, rc);
+                rc = emR3RawUpdateForceFlag(pVM, pVCpu, pCtx, rc);
                 if (rc != VINF_SUCCESS)
                 {
                     *pfFFDone = true;
@@ -2842,7 +2909,7 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
 #if defined(LOG_ENABLED) && defined(DEBUG)
     RTLogFlush(NULL);
 #endif
-    STAM_REL_PROFILE_ADV_STOP(&pVM->em.s.StatRAWTotal, a);
+    STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatRAWTotal, a);
     return rc;
 }
 
@@ -2857,22 +2924,22 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
  *          VINF_EM_RESCHEDULE_REM, VINF_EM_SUSPEND, VINF_EM_RESET and VINF_EM_TERMINATE.
  *
  * @param   pVM         VM handle.
- * @param   idCpu       VMCPU id.
+ * @param   pVCpu       VMCPU handle.
  * @param   pfFFDone    Where to store an indicator telling whether or not
  *                      FFs were done before returning.
  */
-static int emR3HwAccExecute(PVM pVM, RTCPUID idCpu, bool *pfFFDone)
+static int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 {
     int      rc = VERR_INTERNAL_ERROR;
-    PCPUMCTX pCtx = pVM->em.s.pCtx;
+    PCPUMCTX pCtx = pVCpu->em.s.pCtx;
 
-    LogFlow(("emR3HwAccExecute%d: (cs:eip=%04x:%RGv)\n", idCpu, pCtx->cs, (RTGCPTR)pCtx->rip));
+    LogFlow(("emR3HwAccExecute%d: (cs:eip=%04x:%RGv)\n", pVCpu->idCpu, pCtx->cs, (RTGCPTR)pCtx->rip));
     *pfFFDone = false;
 
-    STAM_COUNTER_INC(&pVM->em.s.StatHwAccExecuteEntry);
+    STAM_COUNTER_INC(&pVCpu->em.s.StatHwAccExecuteEntry);
 
 #ifdef EM_NOTIFY_HWACCM
-    HWACCMR3NotifyScheduled(&pVM->aCpus[idCpu]);
+    HWACCMR3NotifyScheduled(pVCpu);
 #endif
 
     /*
@@ -2880,7 +2947,7 @@ static int emR3HwAccExecute(PVM pVM, RTCPUID idCpu, bool *pfFFDone)
      */
     for (;;)
     {
-        STAM_PROFILE_ADV_START(&pVM->em.s.StatHwAccEntry, a);
+        STAM_PROFILE_ADV_START(&pVCpu->em.s.StatHwAccEntry, a);
 
         /*
          * Process high priority pre-execution raw-mode FFs.
@@ -2888,7 +2955,7 @@ static int emR3HwAccExecute(PVM pVM, RTCPUID idCpu, bool *pfFFDone)
         VM_FF_CLEAR(pVM, (VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_TSS)); /* not relevant in HWACCM mode; shouldn't be set really. */
         if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
-            rc = emR3RawForcedActions(pVM, pCtx);
+            rc = emR3RawForcedActions(pVM, pVCpu, pCtx);
             if (rc != VINF_SUCCESS)
                 break;
         }
@@ -2900,10 +2967,10 @@ static int emR3HwAccExecute(PVM pVM, RTCPUID idCpu, bool *pfFFDone)
         if (TRPMHasTrap(pVM))
             Log(("Pending hardware interrupt=0x%x cs:rip=%04X:%RGv\n", TRPMGetTrapNo(pVM), pCtx->cs, (RTGCPTR)pCtx->rip));
 
-        uint32_t cpl = CPUMGetGuestCPL(pVM, CPUMCTX2CORE(pCtx));
+        uint32_t cpl = CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx));
         if (pCtx->eflags.Bits.u1VM)
             Log(("HWV86: %08X IF=%d\n", pCtx->eip, pCtx->eflags.Bits.u1IF));
-        else if (CPUMIsGuestIn64BitCode(pVM, CPUMCTX2CORE(pCtx)))
+        else if (CPUMIsGuestIn64BitCodeEx(pCtx))
             Log(("HWR%d: %04X:%RGv ESP=%RGv IF=%d IOPL=%d CR0=%x CR4=%x EFER=%x\n", cpl, pCtx->cs, (RTGCPTR)pCtx->rip, pCtx->rsp, pCtx->eflags.Bits.u1IF, pCtx->eflags.Bits.u2IOPL, (uint32_t)pCtx->cr0, (uint32_t)pCtx->cr4, (uint32_t)pCtx->msrEFER));
         else
             Log(("HWR%d: %04X:%08X ESP=%08X IF=%d IOPL=%d CR0=%x CR4=%x EFER=%x\n", cpl, pCtx->cs,          pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, pCtx->eflags.Bits.u2IOPL, (uint32_t)pCtx->cr0, (uint32_t)pCtx->cr4, (uint32_t)pCtx->msrEFER));
@@ -2912,19 +2979,19 @@ static int emR3HwAccExecute(PVM pVM, RTCPUID idCpu, bool *pfFFDone)
         /*
          * Execute the code.
          */
-        STAM_PROFILE_ADV_STOP(&pVM->em.s.StatHwAccEntry, a);
-        STAM_PROFILE_START(&pVM->em.s.StatHwAccExec, x);
+        STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatHwAccEntry, a);
+        STAM_PROFILE_START(&pVCpu->em.s.StatHwAccExec, x);
         VMMR3Unlock(pVM);
-        rc = VMMR3HwAccRunGC(pVM, idCpu);
+        rc = VMMR3HwAccRunGC(pVM, pVCpu);
         VMMR3Lock(pVM);
-        STAM_PROFILE_STOP(&pVM->em.s.StatHwAccExec, x);
+        STAM_PROFILE_STOP(&pVCpu->em.s.StatHwAccExec, x);
 
         /*
          * Deal with high priority post execution FFs before doing anything else.
          */
         VM_FF_CLEAR(pVM, VM_FF_RESUME_GUEST_MASK);
         if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK))
-            rc = emR3HighPriorityPostForcedActions(pVM, rc);
+            rc = emR3HighPriorityPostForcedActions(pVM, pVCpu, rc);
 
         /*
          * Process the returned status code.
@@ -2932,7 +2999,7 @@ static int emR3HwAccExecute(PVM pVM, RTCPUID idCpu, bool *pfFFDone)
         if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
             break;
 
-        rc = emR3RawHandleRC(pVM, pCtx, rc);
+        rc = emR3RawHandleRC(pVM, pVCpu, pCtx, rc);
         if (rc != VINF_SUCCESS)
             break;
 
@@ -2944,7 +3011,7 @@ static int emR3HwAccExecute(PVM pVM, RTCPUID idCpu, bool *pfFFDone)
 #endif
         if (VM_FF_ISPENDING(pVM, VM_FF_ALL_MASK))
         {
-            rc = emR3ForcedActions(pVM, rc);
+            rc = emR3ForcedActions(pVM, pVCpu, rc);
             if (    rc != VINF_SUCCESS
                 &&  rc != VINF_EM_RESCHEDULE_HWACC)
             {
@@ -2969,14 +3036,15 @@ static int emR3HwAccExecute(PVM pVM, RTCPUID idCpu, bool *pfFFDone)
  *
  * @returns new EM state
  * @param   pVM     The VM.
+ * @param   pVCpu   The VMCPU handle.
  * @param   pCtx    The CPU context.
  */
-static EMSTATE emR3Reschedule(PVM pVM, PCPUMCTX pCtx)
+static EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     /*
      * When forcing raw-mode execution, things are simple.
      */
-    if (pVM->em.s.fForceRAW)
+    if (pVCpu->em.s.fForceRAW)
         return EMSTATE_RAW;
 
     /* !!! THIS MUST BE IN SYNC WITH remR3CanExecuteRaw !!! */
@@ -3106,7 +3174,7 @@ static EMSTATE emR3Reschedule(PVM pVM, PCPUMCTX pCtx)
         }
     }
 
-    Assert(PGMPhysIsA20Enabled(pVM));
+    Assert(PGMPhysIsA20Enabled(pVCpu));
     return EMSTATE_RAW;
 }
 
@@ -3117,9 +3185,10 @@ static EMSTATE emR3Reschedule(PVM pVM, PCPUMCTX pCtx)
  * @returns rc or a fatal status code.
  *
  * @param   pVM         VM handle.
+ * @param   pVCpu       VMCPU handle.
  * @param   rc          The current rc.
  */
-static int emR3HighPriorityPostForcedActions(PVM pVM, int rc)
+static int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 {
     if (VM_FF_ISPENDING(pVM, VM_FF_PDM_CRITSECT))
         PDMR3CritSectFF(pVM);
@@ -3153,12 +3222,13 @@ static int emR3HighPriorityPostForcedActions(PVM pVM, int rc)
  *          VINF_EM_SUSPEND, VINF_EM_RESET and VINF_EM_TERMINATE.
  *
  * @param   pVM         VM handle.
+ * @param   pVCpu       VMCPU handle.
  * @param   rc          The current rc.
  *
  */
-static int emR3ForcedActions(PVM pVM, int rc)
+static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 {
-    STAM_REL_PROFILE_START(&pVM->em.s.StatForcedActions, a);
+    STAM_REL_PROFILE_START(&pVCpu->em.s.StatForcedActions, a);
 #ifdef VBOX_STRICT
     int rcIrq = VINF_SUCCESS;
 #endif
@@ -3183,7 +3253,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
         if (VM_FF_ISPENDING(pVM, VM_FF_TERMINATE))
         {
             Log2(("emR3ForcedActions: returns VINF_EM_TERMINATE\n"));
-            STAM_REL_PROFILE_STOP(&pVM->em.s.StatForcedActions, a);
+            STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatForcedActions, a);
             return VINF_EM_TERMINATE;
         }
 
@@ -3211,7 +3281,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
          */
         if (VM_FF_IS_PENDING_EXCEPT(pVM, VM_FF_CSAM_SCAN_PAGE, VM_FF_PGM_NO_MEMORY))
         {
-            PCPUMCTX pCtx = pVM->em.s.pCtx;
+            PCPUMCTX pCtx = pVCpu->em.s.pCtx;
 
             /** @todo: check for 16 or 32 bits code! (D bit in the code selector) */
             Log(("Forced action VM_FF_CSAM_SCAN_PAGE\n"));
@@ -3262,7 +3332,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
             if (rc2 == VINF_EM_OFF || rc2 == VINF_EM_TERMINATE)
             {
                 Log2(("emR3ForcedActions: returns %Rrc\n", rc2));
-                STAM_REL_PROFILE_STOP(&pVM->em.s.StatForcedActions, a);
+                STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatForcedActions, a);
                 return rc2;
             }
             UPDATE_RC();
@@ -3293,8 +3363,8 @@ static int emR3ForcedActions(PVM pVM, int rc)
          */
         if (VM_FF_IS_PENDING_EXCEPT(pVM, VM_FF_INHIBIT_INTERRUPTS, VM_FF_PGM_NO_MEMORY))
         {
-            Log(("VM_FF_EMULATED_STI at %RGv successor %RGv\n", (RTGCPTR)CPUMGetGuestRIP(pVM), EMGetInhibitInterruptsPC(pVM)));
-            if (CPUMGetGuestEIP(pVM) != EMGetInhibitInterruptsPC(pVM))
+            Log(("VM_FF_EMULATED_STI at %RGv successor %RGv\n", (RTGCPTR)CPUMGetGuestRIP(pVCpu), EMGetInhibitInterruptsPC(pVM, pVCpu)));
+            if (CPUMGetGuestEIP(pVCpu) != EMGetInhibitInterruptsPC(pVM, pVCpu))
             {
                 /* Note: we intentionally don't clear VM_FF_INHIBIT_INTERRUPTS here if the eip is the same as the inhibited instr address.
                  *  Before we are able to execute this instruction in raw mode (iret to guest code) an external interrupt might
@@ -3324,14 +3394,14 @@ static int emR3ForcedActions(PVM pVM, int rc)
             {
                 /* Note: it's important to make sure the return code from TRPMR3InjectEvent isn't ignored! */
                 /** @todo this really isn't nice, should properly handle this */
-                rc2 = TRPMR3InjectEvent(pVM, TRPM_HARDWARE_INT);
+                rc2 = TRPMR3InjectEvent(pVM, pVCpu, TRPM_HARDWARE_INT);
 #ifdef VBOX_STRICT
                 rcIrq = rc2;
 #endif
                 UPDATE_RC();
             }
             /** @todo really ugly; if we entered the hlt state when exiting the recompiler and an interrupt was pending, we previously got stuck in the halted state. */
-            else if (REMR3QueryPendingInterrupt(pVM) != REM_NO_PENDING_IRQ)
+            else if (REMR3QueryPendingInterrupt(pVM, pVCpu) != REM_NO_PENDING_IRQ)
             {
                 rc2 = VINF_EM_RESCHEDULE_REM;
                 UPDATE_RC();
@@ -3362,7 +3432,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
         if (VM_FF_ISPENDING(pVM, VM_FF_TERMINATE))
         {
             Log2(("emR3ForcedActions: returns VINF_EM_TERMINATE\n"));
-            STAM_REL_PROFILE_STOP(&pVM->em.s.StatForcedActions, a);
+            STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatForcedActions, a);
             return VINF_EM_TERMINATE;
         }
 
@@ -3398,7 +3468,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
 
 #undef UPDATE_RC
     Log2(("emR3ForcedActions: returns %Rrc\n", rc));
-    STAM_REL_PROFILE_STOP(&pVM->em.s.StatForcedActions, a);
+    STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatForcedActions, a);
     Assert(rcIrq == VINF_SUCCESS || rcIrq == rc);
     return rc;
 }
@@ -3419,18 +3489,18 @@ static int emR3ForcedActions(PVM pVM, int rc)
  *
  * @returns VBox status code, informational status codes may indicate failure.
  * @param   pVM         The VM to operate on.
- * @param   idCpu       VMCPU id.
+ * @param   pVCpu       The VMCPU to operate on.
  */
-VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
+VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
 {
     LogFlow(("EMR3ExecuteVM: pVM=%p enmVMState=%d  enmState=%d (%s) fForceRAW=%d\n", pVM, pVM->enmVMState,
-             pVM->em.s.enmState, EMR3GetStateName(pVM->em.s.enmState), pVM->em.s.fForceRAW));
+             pVCpu->em.s.enmState, EMR3GetStateName(pVCpu->em.s.enmState), pVCpu->em.s.fForceRAW));
     VM_ASSERT_EMT(pVM);
-    Assert(pVM->em.s.enmState == EMSTATE_NONE || pVM->em.s.enmState == EMSTATE_SUSPENDED);
+    Assert(pVCpu->em.s.enmState == EMSTATE_NONE || pVCpu->em.s.enmState == EMSTATE_SUSPENDED);
 
     VMMR3Lock(pVM);
 
-    int rc = setjmp(pVM->em.s.u.FatalLongJump);
+    int rc = setjmp(pVCpu->em.s.u.FatalLongJump);
     if (rc == 0)
     {
         /*
@@ -3448,9 +3518,9 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
 
         /* Reschedule right away to start in the right state. */
         rc = VINF_SUCCESS;
-        pVM->em.s.enmState = emR3Reschedule(pVM, pVM->em.s.pCtx);
+        pVCpu->em.s.enmState = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);
 
-        STAM_REL_PROFILE_ADV_START(&pVM->em.s.StatTotal, x);
+        STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatTotal, x);
         for (;;)
         {
             /*
@@ -3466,10 +3536,10 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
                 && rc != VINF_EM_OFF
                 && VM_FF_ISPENDING(pVM, VM_FF_ALL_BUT_RAW_MASK))
             {
-                rc = emR3ForcedActions(pVM, rc);
+                rc = emR3ForcedActions(pVM, pVCpu, rc);
                 if (    (   rc == VINF_EM_RESCHEDULE_REM
                          || rc == VINF_EM_RESCHEDULE_HWACC)
-                    &&  pVM->em.s.fForceRAW)
+                    &&  pVCpu->em.s.fForceRAW)
                     rc = VINF_EM_RESCHEDULE_RAW;
             }
             else if (fFFDone)
@@ -3491,25 +3561,25 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
                  * Reschedule - to raw-mode execution.
                  */
                 case VINF_EM_RESCHEDULE_RAW:
-                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_RAW: %d -> %d (EMSTATE_RAW)\n", pVM->em.s.enmState, EMSTATE_RAW));
-                    pVM->em.s.enmState = EMSTATE_RAW;
+                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_RAW: %d -> %d (EMSTATE_RAW)\n", pVCpu->em.s.enmState, EMSTATE_RAW));
+                    pVCpu->em.s.enmState = EMSTATE_RAW;
                     break;
 
                 /*
                  * Reschedule - to hardware accelerated raw-mode execution.
                  */
                 case VINF_EM_RESCHEDULE_HWACC:
-                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_HWACC: %d -> %d (EMSTATE_HWACC)\n", pVM->em.s.enmState, EMSTATE_HWACC));
-                    Assert(!pVM->em.s.fForceRAW);
-                    pVM->em.s.enmState = EMSTATE_HWACC;
+                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_HWACC: %d -> %d (EMSTATE_HWACC)\n", pVCpu->em.s.enmState, EMSTATE_HWACC));
+                    Assert(!pVCpu->em.s.fForceRAW);
+                    pVCpu->em.s.enmState = EMSTATE_HWACC;
                     break;
 
                 /*
                  * Reschedule - to recompiled execution.
                  */
                 case VINF_EM_RESCHEDULE_REM:
-                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_REM: %d -> %d (EMSTATE_REM)\n", pVM->em.s.enmState, EMSTATE_REM));
-                    pVM->em.s.enmState = EMSTATE_REM;
+                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_REM: %d -> %d (EMSTATE_REM)\n", pVCpu->em.s.enmState, EMSTATE_REM));
+                    pVCpu->em.s.enmState = EMSTATE_REM;
                     break;
 
 #ifdef VBOX_WITH_VMI
@@ -3517,8 +3587,8 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
                  * Reschedule - parav call.
                  */
                 case VINF_EM_RESCHEDULE_PARAV:
-                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_PARAV: %d -> %d (EMSTATE_PARAV)\n", pVM->em.s.enmState, EMSTATE_PARAV));
-                    pVM->em.s.enmState = EMSTATE_PARAV;
+                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_PARAV: %d -> %d (EMSTATE_PARAV)\n", pVCpu->em.s.enmState, EMSTATE_PARAV));
+                    pVCpu->em.s.enmState = EMSTATE_PARAV;
                     break;
 #endif
 
@@ -3526,7 +3596,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
                  * Resume.
                  */
                 case VINF_EM_RESUME:
-                    Log2(("EMR3ExecuteVM: VINF_EM_RESUME: %d -> VINF_EM_RESCHEDULE\n", pVM->em.s.enmState));
+                    Log2(("EMR3ExecuteVM: VINF_EM_RESUME: %d -> VINF_EM_RESCHEDULE\n", pVCpu->em.s.enmState));
                     /* fall through and get scheduled. */
 
                 /*
@@ -3534,9 +3604,9 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
                  */
                 case VINF_EM_RESCHEDULE:
                 {
-                    EMSTATE enmState = emR3Reschedule(pVM, pVM->em.s.pCtx);
-                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE: %d -> %d (%s)\n", pVM->em.s.enmState, enmState, EMR3GetStateName(enmState)));
-                    pVM->em.s.enmState = enmState;
+                    EMSTATE enmState = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);
+                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE: %d -> %d (%s)\n", pVCpu->em.s.enmState, enmState, EMR3GetStateName(enmState)));
+                    pVCpu->em.s.enmState = enmState;
                     break;
                 }
 
@@ -3544,16 +3614,16 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
                  * Halted.
                  */
                 case VINF_EM_HALT:
-                    Log2(("EMR3ExecuteVM: VINF_EM_HALT: %d -> %d\n", pVM->em.s.enmState, EMSTATE_HALTED));
-                    pVM->em.s.enmState = EMSTATE_HALTED;
+                    Log2(("EMR3ExecuteVM: VINF_EM_HALT: %d -> %d\n", pVCpu->em.s.enmState, EMSTATE_HALTED));
+                    pVCpu->em.s.enmState = EMSTATE_HALTED;
                     break;
 
                 /*
                  * Suspend.
                  */
                 case VINF_EM_SUSPEND:
-                    Log2(("EMR3ExecuteVM: VINF_EM_SUSPEND: %d -> %d\n", pVM->em.s.enmState, EMSTATE_SUSPENDED));
-                    pVM->em.s.enmState = EMSTATE_SUSPENDED;
+                    Log2(("EMR3ExecuteVM: VINF_EM_SUSPEND: %d -> %d\n", pVCpu->em.s.enmState, EMSTATE_SUSPENDED));
+                    pVCpu->em.s.enmState = EMSTATE_SUSPENDED;
                     break;
 
                 /*
@@ -3562,9 +3632,9 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
                  */
                 case VINF_EM_RESET:
                 {
-                    EMSTATE enmState = emR3Reschedule(pVM, pVM->em.s.pCtx);
-                    Log2(("EMR3ExecuteVM: VINF_EM_RESET: %d -> %d (%s)\n", pVM->em.s.enmState, enmState, EMR3GetStateName(enmState)));
-                    pVM->em.s.enmState = enmState;
+                    EMSTATE enmState = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);
+                    Log2(("EMR3ExecuteVM: VINF_EM_RESET: %d -> %d (%s)\n", pVCpu->em.s.enmState, enmState, EMR3GetStateName(enmState)));
+                    pVCpu->em.s.enmState = enmState;
                     break;
                 }
 
@@ -3572,23 +3642,23 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
                  * Power Off.
                  */
                 case VINF_EM_OFF:
-                    pVM->em.s.enmState = EMSTATE_TERMINATING;
-                    Log2(("EMR3ExecuteVM: returns VINF_EM_OFF (%d -> %d)\n", pVM->em.s.enmState, EMSTATE_TERMINATING));
+                    pVCpu->em.s.enmState = EMSTATE_TERMINATING;
+                    Log2(("EMR3ExecuteVM: returns VINF_EM_OFF (%d -> %d)\n", pVCpu->em.s.enmState, EMSTATE_TERMINATING));
                     TMVirtualPause(pVM);
                     TMCpuTickPause(pVM);
                     VMMR3Unlock(pVM);
-                    STAM_REL_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
+                    STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
                     return rc;
 
                 /*
                  * Terminate the VM.
                  */
                 case VINF_EM_TERMINATE:
-                    pVM->em.s.enmState = EMSTATE_TERMINATING;
-                    Log(("EMR3ExecuteVM returns VINF_EM_TERMINATE (%d -> %d)\n", pVM->em.s.enmState, EMSTATE_TERMINATING));
+                    pVCpu->em.s.enmState = EMSTATE_TERMINATING;
+                    Log(("EMR3ExecuteVM returns VINF_EM_TERMINATE (%d -> %d)\n", pVCpu->em.s.enmState, EMSTATE_TERMINATING));
                     TMVirtualPause(pVM);
                     TMCpuTickPause(pVM);
-                    STAM_REL_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
+                    STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
                     return rc;
 
 
@@ -3596,12 +3666,12 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
                  * Out of memory, suspend the VM and stuff.
                  */
                 case VINF_EM_NO_MEMORY:
-                    Log2(("EMR3ExecuteVM: VINF_EM_NO_MEMORY: %d -> %d\n", pVM->em.s.enmState, EMSTATE_SUSPENDED));
-                    pVM->em.s.enmState = EMSTATE_SUSPENDED;
+                    Log2(("EMR3ExecuteVM: VINF_EM_NO_MEMORY: %d -> %d\n", pVCpu->em.s.enmState, EMSTATE_SUSPENDED));
+                    pVCpu->em.s.enmState = EMSTATE_SUSPENDED;
                     TMVirtualPause(pVM);
                     TMCpuTickPause(pVM);
                     VMMR3Unlock(pVM);
-                    STAM_REL_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
+                    STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
 
                     rc = VMSetRuntimeError(pVM, VMSETRTERR_FLAGS_SUSPEND, "HostMemoryLow",
                                            N_("Unable to allocate and lock memory. The virtual machine will be paused. Please close applications to free up memory or close the VM"));
@@ -3612,7 +3682,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
                             AssertLogRelMsgFailed(("%Rrc\n", rc));
                             rc = VERR_EM_INTERNAL_ERROR;
                         }
-                        pVM->em.s.enmState = EMSTATE_GURU_MEDITATION;
+                        pVCpu->em.s.enmState = EMSTATE_GURU_MEDITATION;
                     }
                     return rc;
 
@@ -3624,15 +3694,15 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
                 case VINF_EM_DBG_STOP:
                 case VINF_EM_DBG_BREAKPOINT:
                 case VINF_EM_DBG_STEP:
-                    if (pVM->em.s.enmState == EMSTATE_RAW)
+                    if (pVCpu->em.s.enmState == EMSTATE_RAW)
                     {
-                        Log2(("EMR3ExecuteVM: %Rrc: %d -> %d\n", rc, pVM->em.s.enmState, EMSTATE_DEBUG_GUEST_RAW));
-                        pVM->em.s.enmState = EMSTATE_DEBUG_GUEST_RAW;
+                        Log2(("EMR3ExecuteVM: %Rrc: %d -> %d\n", rc, pVCpu->em.s.enmState, EMSTATE_DEBUG_GUEST_RAW));
+                        pVCpu->em.s.enmState = EMSTATE_DEBUG_GUEST_RAW;
                     }
                     else
                     {
-                        Log2(("EMR3ExecuteVM: %Rrc: %d -> %d\n", rc, pVM->em.s.enmState, EMSTATE_DEBUG_GUEST_REM));
-                        pVM->em.s.enmState = EMSTATE_DEBUG_GUEST_REM;
+                        Log2(("EMR3ExecuteVM: %Rrc: %d -> %d\n", rc, pVCpu->em.s.enmState, EMSTATE_DEBUG_GUEST_REM));
+                        pVCpu->em.s.enmState = EMSTATE_DEBUG_GUEST_REM;
                     }
                     break;
 
@@ -3642,16 +3712,16 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
                 case VINF_EM_DBG_HYPER_STEPPED:
                 case VINF_EM_DBG_HYPER_BREAKPOINT:
                 case VINF_EM_DBG_HYPER_ASSERTION:
-                    Log2(("EMR3ExecuteVM: %Rrc: %d -> %d\n", rc, pVM->em.s.enmState, EMSTATE_DEBUG_HYPER));
-                    pVM->em.s.enmState = EMSTATE_DEBUG_HYPER;
+                    Log2(("EMR3ExecuteVM: %Rrc: %d -> %d\n", rc, pVCpu->em.s.enmState, EMSTATE_DEBUG_HYPER));
+                    pVCpu->em.s.enmState = EMSTATE_DEBUG_HYPER;
                     break;
 
                 /*
                  * Guru mediations.
                  */
                 case VERR_VMM_RING0_ASSERTION:
-                    Log(("EMR3ExecuteVM: %Rrc: %d -> %d (EMSTATE_GURU_MEDITATION)\n", rc, pVM->em.s.enmState, EMSTATE_GURU_MEDITATION));
-                    pVM->em.s.enmState = EMSTATE_GURU_MEDITATION;
+                    Log(("EMR3ExecuteVM: %Rrc: %d -> %d (EMSTATE_GURU_MEDITATION)\n", rc, pVCpu->em.s.enmState, EMSTATE_GURU_MEDITATION));
+                    pVCpu->em.s.enmState = EMSTATE_GURU_MEDITATION;
                     break;
 
                 /*
@@ -3667,7 +3737,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
                         AssertMsgFailed(("Unexpected warning or informational status code %Rra!\n", rc));
                         rc = VERR_EM_INTERNAL_ERROR;
                     }
-                    pVM->em.s.enmState = EMSTATE_GURU_MEDITATION;
+                    pVCpu->em.s.enmState = EMSTATE_GURU_MEDITATION;
                     Log(("EMR3ExecuteVM returns %d\n", rc));
                     break;
             }
@@ -3679,33 +3749,33 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
             VMMR3Unlock(pVM);
             VMMR3Lock(pVM);
 
-            STAM_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x); /* (skip this in release) */
-            STAM_PROFILE_ADV_START(&pVM->em.s.StatTotal, x);
+            STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x); /* (skip this in release) */
+            STAM_PROFILE_ADV_START(&pVCpu->em.s.StatTotal, x);
 
             /*
              * Act on the state.
              */
-            switch (pVM->em.s.enmState)
+            switch (pVCpu->em.s.enmState)
             {
                 /*
                  * Execute raw.
                  */
                 case EMSTATE_RAW:
-                    rc = emR3RawExecute(pVM, &fFFDone);
+                    rc = emR3RawExecute(pVM, pVCpu, &fFFDone);
                     break;
 
                 /*
                  * Execute hardware accelerated raw.
                  */
                 case EMSTATE_HWACC:
-                    rc = emR3HwAccExecute(pVM, idCpu, &fFFDone);
+                    rc = emR3HwAccExecute(pVM, pVCpu, &fFFDone);
                     break;
 
                 /*
                  * Execute recompiled.
                  */
                 case EMSTATE_REM:
-                    rc = emR3RemExecute(pVM, &fFFDone);
+                    rc = emR3RemExecute(pVM, pVCpu, &fFFDone);
                     Log2(("EMR3ExecuteVM: emR3RemExecute -> %Rrc\n", rc));
                     break;
 
@@ -3715,7 +3785,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
                  */
                 case EMSTATE_PARAV:
                     rc = PARAVCallFunction(pVM);
-                    pVM->em.s.enmState = EMSTATE_REM;
+                    pVCpu->em.s.enmState = EMSTATE_REM;
                     break;
 #endif
 
@@ -3724,9 +3794,9 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
                  */
                 case EMSTATE_HALTED:
                 {
-                    STAM_REL_PROFILE_START(&pVM->em.s.StatHalted, y);
-                    rc = VMR3WaitHalted(pVM, !(CPUMGetGuestEFlags(pVM) & X86_EFL_IF));
-                    STAM_REL_PROFILE_STOP(&pVM->em.s.StatHalted, y);
+                    STAM_REL_PROFILE_START(&pVCpu->em.s.StatHalted, y);
+                    rc = VMR3WaitHalted(pVM, !(CPUMGetGuestEFlags(pVCpu) & X86_EFL_IF));
+                    STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatHalted, y);
                     break;
                 }
 
@@ -3737,7 +3807,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
                     TMVirtualPause(pVM);
                     TMCpuTickPause(pVM);
                     VMMR3Unlock(pVM);
-                    STAM_REL_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
+                    STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
                     return VINF_EM_SUSPEND;
 
                 /*
@@ -3747,10 +3817,10 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
                 case EMSTATE_DEBUG_GUEST_RAW:
                     TMVirtualPause(pVM);
                     TMCpuTickPause(pVM);
-                    rc = emR3Debug(pVM, rc);
+                    rc = emR3Debug(pVM, pVCpu, rc);
                     TMVirtualResume(pVM);
                     TMCpuTickResume(pVM);
-                    Log2(("EMR3ExecuteVM: enmr3Debug -> %Rrc (state %d)\n", rc, pVM->em.s.enmState));
+                    Log2(("EMR3ExecuteVM: enmr3Debug -> %Rrc (state %d)\n", rc, pVCpu->em.s.enmState));
                     break;
 
                 /*
@@ -3760,19 +3830,19 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
                 {
                     TMVirtualPause(pVM);
                     TMCpuTickPause(pVM);
-                    STAM_REL_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
+                    STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
 
-                    rc = emR3Debug(pVM, rc);
-                    Log2(("EMR3ExecuteVM: enmr3Debug -> %Rrc (state %d)\n", rc, pVM->em.s.enmState));
+                    rc = emR3Debug(pVM, pVCpu, rc);
+                    Log2(("EMR3ExecuteVM: enmr3Debug -> %Rrc (state %d)\n", rc, pVCpu->em.s.enmState));
                     if (rc != VINF_SUCCESS)
                     {
                         /* switch to guru meditation mode */
-                        pVM->em.s.enmState = EMSTATE_GURU_MEDITATION;
-                        VMMR3FatalDump(pVM, rc);
+                        pVCpu->em.s.enmState = EMSTATE_GURU_MEDITATION;
+                        VMMR3FatalDump(pVM, pVCpu, rc);
                         return rc;
                     }
 
-                    STAM_REL_PROFILE_ADV_START(&pVM->em.s.StatTotal, x);
+                    STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatTotal, x);
                     TMVirtualResume(pVM);
                     TMCpuTickResume(pVM);
                     break;
@@ -3785,10 +3855,10 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
                 {
                     TMVirtualPause(pVM);
                     TMCpuTickPause(pVM);
-                    VMMR3FatalDump(pVM, rc);
-                    emR3Debug(pVM, rc);
+                    VMMR3FatalDump(pVM, pVCpu, rc);
+                    emR3Debug(pVM, pVCpu, rc);
                     VMMR3Unlock(pVM);
-                    STAM_REL_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
+                    STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
                     return rc;
                 }
 
@@ -3798,12 +3868,12 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
                 case EMSTATE_NONE:
                 case EMSTATE_TERMINATING:
                 default:
-                    AssertMsgFailed(("EMR3ExecuteVM: Invalid state %d!\n", pVM->em.s.enmState));
-                    pVM->em.s.enmState = EMSTATE_GURU_MEDITATION;
+                    AssertMsgFailed(("EMR3ExecuteVM: Invalid state %d!\n", pVCpu->em.s.enmState));
+                    pVCpu->em.s.enmState = EMSTATE_GURU_MEDITATION;
                     TMVirtualPause(pVM);
                     TMCpuTickPause(pVM);
                     VMMR3Unlock(pVM);
-                    STAM_REL_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
+                    STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
                     return VERR_EM_INTERNAL_ERROR;
             }
         } /* The Outer Main Loop */
@@ -3816,10 +3886,10 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
         LogFlow(("EMR3ExecuteVM: returns %Rrc (longjmp / fatal error)\n", rc));
         TMVirtualPause(pVM);
         TMCpuTickPause(pVM);
-        VMMR3FatalDump(pVM, rc);
-        emR3Debug(pVM, rc);
+        VMMR3FatalDump(pVM, pVCpu, rc);
+        emR3Debug(pVM, pVCpu, rc);
         VMMR3Unlock(pVM);
-        STAM_REL_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
+        STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
         /** @todo change the VM state! */
         return rc;
     }

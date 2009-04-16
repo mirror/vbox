@@ -34,6 +34,7 @@
 #include <VBox/trpm.h>
 #include "IOMInternal.h"
 #include <VBox/vm.h>
+#include <VBox/vmm.h>
 #include <VBox/hwaccm.h>
 
 #include <VBox/dis.h>
@@ -268,20 +269,20 @@ static int iomInterpretMOVxXWrite(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE 
 
 
 /** Wrapper for reading virtual memory. */
-DECLINLINE(int) iomRamRead(PVM pVM, void *pDest, RTGCPTR GCSrc, uint32_t cb)
+DECLINLINE(int) iomRamRead(PVMCPU pVCpu, void *pDest, RTGCPTR GCSrc, uint32_t cb)
 {
     /* Note: This will fail in R0 or RC if it hits an access handler. That
              isn't a problem though since the operation can be restarted in REM. */
 #ifdef IN_RC
     return MMGCRamReadNoTrapHandler(pDest, (void *)GCSrc, cb);
 #else
-    return PGMPhysReadGCPtr(pVM, pDest, GCSrc, cb);
+    return PGMPhysReadGCPtr(pVCpu, pDest, GCSrc, cb);
 #endif
 }
 
 
 /** Wrapper for writing virtual memory. */
-DECLINLINE(int) iomRamWrite(PVM pVM, PCPUMCTXCORE pCtxCore, RTGCPTR GCPtrDst, void *pvSrc, uint32_t cb)
+DECLINLINE(int) iomRamWrite(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, RTGCPTR GCPtrDst, void *pvSrc, uint32_t cb)
 {
     /** @todo Need to update PGMVerifyAccess to take access handlers into account for Ring-0 and
      *        raw mode code. Some thought needs to be spent on theoretical concurrency issues as
@@ -296,10 +297,10 @@ DECLINLINE(int) iomRamWrite(PVM pVM, PCPUMCTXCORE pCtxCore, RTGCPTR GCPtrDst, vo
     NOREF(pCtxCore);
     return MMGCRamWriteNoTrapHandler((void *)GCPtrDst, pvSrc, cb);
 #elif IN_RING0
-    return PGMPhysInterpretedWriteNoHandlers(pVM, pCtxCore, GCPtrDst, pvSrc, cb, false /*fRaiseTrap*/);
+    return PGMPhysInterpretedWriteNoHandlers(pVCpu, pCtxCore, GCPtrDst, pvSrc, cb, false /*fRaiseTrap*/);
 #else
     NOREF(pCtxCore);
-    return PGMPhysWriteGCPtr(pVM, GCPtrDst, pvSrc, cb);
+    return PGMPhysWriteGCPtr(pVCpu, GCPtrDst, pvSrc, cb);
 #endif
 }
 
@@ -331,6 +332,7 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
     if (pCpu->prefix & (PREFIX_SEG | PREFIX_REPNE))
         return VINF_IOM_HC_MMIO_READ_WRITE; /** @todo -> interpret whatever. */
 
+    PVMCPU pVCpu = VMMGetCpu(pVM)
 
     /*
      * Get bytes/words/dwords/qword count to copy.
@@ -339,7 +341,7 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
     if (pCpu->prefix & PREFIX_REP)
     {
 #ifndef IN_RC
-        if (    CPUMIsGuestIn64BitCode(pVM, pRegFrame)
+        if (    CPUMIsGuestIn64BitCode(pVCpu, pRegFrame)
             &&  pRegFrame->rcx >= _4G)
             return VINF_EM_RAW_EMULATE_INSTR;
 #endif
@@ -353,7 +355,7 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
     }
 
     /* Get the current privilege level. */
-    uint32_t cpl = CPUMGetGuestCPL(pVM, pRegFrame);
+    uint32_t cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
 
     /*
      * Get data size.
@@ -407,7 +409,7 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
             while (cTransfers)
             {
                 uint32_t u32Data = 0;
-                rc = iomRamRead(pVM, &u32Data, (RTGCPTR)pu8Virt, cb);
+                rc = iomRamRead(pVCpu, &u32Data, (RTGCPTR)pu8Virt, cb);
                 if (rc != VINF_SUCCESS)
                     break;
                 rc = iomMMIODoWrite(pVM, pRange, Phys, &u32Data, cb);
@@ -506,7 +508,7 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
                 rc = iomMMIODoRead(pVM, pRange, Phys, &u32Data, cb);
                 if (rc != VINF_SUCCESS)
                     break;
-                rc = iomRamWrite(pVM, pRegFrame, (RTGCPTR)pu8Virt, &u32Data, cb);
+                rc = iomRamWrite(pVCpu, pRegFrame, (RTGCPTR)pu8Virt, &u32Data, cb);
                 if (rc != VINF_SUCCESS)
                 {
                     Log(("iomRamWrite %08X size=%d failed with %d\n", pu8Virt, cb, rc));
@@ -569,7 +571,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
     if (pCpu->prefix & PREFIX_REP)
     {
 #ifndef IN_RC
-        if (    CPUMIsGuestIn64BitCode(pVM, pRegFrame)
+        if (    CPUMIsGuestIn64BitCode(VMMGetCpu(pVM), pRegFrame)
             &&  pRegFrame->rcx >= _4G)
             return VINF_EM_RAW_EMULATE_INSTR;
 #endif
@@ -1097,7 +1099,7 @@ VMMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore,
      */
     DISCPUSTATE Cpu;
     unsigned cbOp;
-    int rc = EMInterpretDisasOne(pVM, pCtxCore, &Cpu, &cbOp);
+    int rc = EMInterpretDisasOne(pVM, VMMGetCpu(pVM), pCtxCore, &Cpu, &cbOp);
     AssertRCReturn(rc, rc);
     switch (Cpu.pCurInstr->opcode)
     {
@@ -1466,6 +1468,8 @@ VMMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
         || pRegFrame->eflags.Bits.u1DF)
         return VINF_EM_RAW_EMULATE_INSTR;
 
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+
     /*
      * Get bytes/words/dwords count to transfer.
      */
@@ -1473,7 +1477,7 @@ VMMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
     if (uPrefix & PREFIX_REP)
     {
 #ifndef IN_RC
-        if (    CPUMIsGuestIn64BitCode(pVM, pRegFrame)
+        if (    CPUMIsGuestIn64BitCode(pVCpu, pRegFrame)
             &&  pRegFrame->rcx >= _4G)
             return VINF_EM_RAW_EMULATE_INSTR;
 #endif
@@ -1498,9 +1502,9 @@ VMMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
     }
 
     /* Access verification first; we can't recover from traps inside this instruction, as the port read cannot be repeated. */
-    uint32_t cpl = CPUMGetGuestCPL(pVM, pRegFrame);
+    uint32_t cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
 
-    rc = PGMVerifyAccess(pVM, (RTGCUINTPTR)GCPtrDst, cTransfers * cbTransfer,
+    rc = PGMVerifyAccess(pVM, pVCpu, (RTGCUINTPTR)GCPtrDst, cTransfers * cbTransfer,
                          X86_PTE_RW | ((cpl == 3) ? X86_PTE_US : 0));
     if (rc != VINF_SUCCESS)
     {
@@ -1529,7 +1533,7 @@ VMMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
         rc = IOMIOPortRead(pVM, uPort, &u32Value, cbTransfer);
         if (!IOM_SUCCESS(rc))
             break;
-        int rc2 = iomRamWrite(pVM, pRegFrame, GCPtrDst, &u32Value, cbTransfer);
+        int rc2 = iomRamWrite(pVCpu, pRegFrame, GCPtrDst, &u32Value, cbTransfer);
         Assert(rc2 == VINF_SUCCESS); NOREF(rc2);
         GCPtrDst = (RTGCPTR)((RTGCUINTPTR)GCPtrDst + cbTransfer);
         pRegFrame->rdi += cbTransfer;
@@ -1627,6 +1631,8 @@ VMMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
         || pRegFrame->eflags.Bits.u1DF)
         return VINF_EM_RAW_EMULATE_INSTR;
 
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+
     /*
      * Get bytes/words/dwords count to transfer.
      */
@@ -1634,7 +1640,7 @@ VMMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
     if (uPrefix & PREFIX_REP)
     {
 #ifndef IN_RC
-        if (    CPUMIsGuestIn64BitCode(pVM, pRegFrame)
+        if (    CPUMIsGuestIn64BitCode(pVCpu, pRegFrame)
             &&  pRegFrame->rcx >= _4G)
             return VINF_EM_RAW_EMULATE_INSTR;
 #endif
@@ -1658,8 +1664,8 @@ VMMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
     }
 
     /* Access verification first; we currently can't recover properly from traps inside this instruction */
-    uint32_t cpl = CPUMGetGuestCPL(pVM, pRegFrame);
-    rc = PGMVerifyAccess(pVM, (RTGCUINTPTR)GCPtrSrc, cTransfers * cbTransfer,
+    uint32_t cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
+    rc = PGMVerifyAccess(pVM, pVCpu, (RTGCUINTPTR)GCPtrSrc, cTransfers * cbTransfer,
                          (cpl == 3) ? X86_PTE_US : 0);
     if (rc != VINF_SUCCESS)
     {
@@ -1687,7 +1693,7 @@ VMMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
     while (cTransfers && rc == VINF_SUCCESS)
     {
         uint32_t u32Value;
-        rc = iomRamRead(pVM, &u32Value, GCPtrSrc, cbTransfer);
+        rc = iomRamRead(pVCpu, &u32Value, GCPtrSrc, cbTransfer);
         if (rc != VINF_SUCCESS)
             break;
         rc = IOMIOPortWrite(pVM, uPort, u32Value, cbTransfer);
@@ -1776,9 +1782,11 @@ VMMDECL(int) IOMMMIOMapMMIO2Page(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapp
 
     AssertReturn(fPageFlags == (X86_PTE_RW | X86_PTE_P), VERR_INVALID_PARAMETER);
 
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+
     /* This currently only works in real mode, protected mode without paging or with nested paging. */
     if (    !HWACCMIsEnabled(pVM)       /* useless without VT-x/AMD-V */
-        ||  (   CPUMIsGuestInPagedProtectedMode(pVM)
+        ||  (   CPUMIsGuestInPagedProtectedMode(pVCpu)
              && !HWACCMIsNestedPagingActive(pVM)))
         return VINF_SUCCESS;    /* ignore */
 
@@ -1815,7 +1823,7 @@ VMMDECL(int) IOMMMIOMapMMIO2Page(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapp
     Assert(rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
 # endif
 #endif
-    rc = PGMPrefetchPage(pVM, (RTGCPTR)GCPhys);
+    rc = PGMPrefetchPage(pVM, pVCpu, (RTGCPTR)GCPhys);
     Assert(rc == VINF_SUCCESS || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
     return VINF_SUCCESS;
 }
@@ -1833,9 +1841,11 @@ VMMDECL(int) IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys)
 {
     Log(("IOMMMIOResetRegion %RGp\n", GCPhys));
 
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+
     /* This currently only works in real mode, protected mode without paging or with nested paging. */
     if (    !HWACCMIsEnabled(pVM)       /* useless without VT-x/AMD-V */
-        ||  (   CPUMIsGuestInPagedProtectedMode(pVM)
+        ||  (   CPUMIsGuestInPagedProtectedMode(pVCpu)
              && !HWACCMIsNestedPagingActive(pVM)))
         return VINF_SUCCESS;    /* ignore */
 
@@ -1865,7 +1875,7 @@ VMMDECL(int) IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys)
         {
             uint64_t fFlags;
             RTHCPHYS HCPhys;
-            rc = PGMShwGetPage(pVM, (RTGCPTR)GCPhys, &fFlags, &HCPhys);
+            rc = PGMShwGetPage(pVM, pVCpu, (RTGCPTR)GCPhys, &fFlags, &HCPhys);
             Assert(rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
             cb     -= PAGE_SIZE;
             GCPhys += PAGE_SIZE;

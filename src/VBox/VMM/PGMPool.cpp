@@ -514,8 +514,10 @@ static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *
     LogFlow(("pgmR3PoolAccessHandler: GCPhys=%RGp %p:{.Core=%RHp, .idx=%d, .GCPhys=%RGp, .enmType=%d}\n",
              GCPhys, pPage, pPage->Core.Key, pPage->idx, pPage->GCPhys, pPage->enmKind));
 
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+
     /*
-     * We don't have to be very sophisiticated about this since there are relativly few calls here.
+     * We don't have to be very sophisticated about this since there are relativly few calls here.
      * However, we must try our best to detect any non-cpu accesses (disk / networking).
      *
      * Just to make life more interesting, we'll have to deal with the async threads too.
@@ -533,14 +535,14 @@ static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *
             pPage->fReusedFlushPending = true;
             pPage->cModifications += 0x1000;
         }
-        pgmPoolMonitorChainChanging(pPool, pPage, GCPhys, pvPhys, NULL);
+        pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhys, pvPhys, NULL);
         /** @todo r=bird: making unsafe assumption about not crossing entries here! */
         while (cbBuf > 4)
         {
             cbBuf -= 4;
             pvPhys = (uint8_t *)pvPhys + 4;
             GCPhys += 4;
-            pgmPoolMonitorChainChanging(pPool, pPage, GCPhys, pvPhys, NULL);
+            pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhys, pvPhys, NULL);
         }
         STAM_PROFILE_STOP(&pPool->StatMonitorR3, a);
     }
@@ -553,7 +555,7 @@ static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *
         if (!pPage->cModifications++)
             pgmPoolMonitorModifiedInsert(pPool, pPage);
         /** @todo r=bird: making unsafe assumption about not crossing entries here! */
-        pgmPoolMonitorChainChanging(pPool, pPage, GCPhys, pvPhys, NULL);
+        pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhys, pvPhys, NULL);
         STAM_PROFILE_STOP(&pPool->StatMonitorR3, a);
     }
     else

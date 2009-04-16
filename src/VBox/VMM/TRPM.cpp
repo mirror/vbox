@@ -569,6 +569,9 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
  */
 VMMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
+    /* Only applies to raw mode which supports only 1 VCPU. */
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
     LogFlow(("TRPMR3Relocate\n"));
     /*
      * Get the trap handler addresses.
@@ -591,7 +594,7 @@ VMMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "TRPMGCHandlerTrap12",   &aRCPtrs[TRPM_HANDLER_TRAP_12]);
     AssertReleaseMsgRC(rc, ("Couldn't find TRPMGCHandlerTrap12 in VMMGC.gc!\n"));
 
-    RTSEL SelCS = CPUMGetHyperCS(pVM);
+    RTSEL SelCS = CPUMGetHyperCS(pVCpu);
 
     /*
      * Iterate the idt and set the addresses.
@@ -638,7 +641,7 @@ VMMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * Update IDTR (limit is including!).
      */
-    CPUMSetHyperIDTR(pVM, VM_RC_ADDR(pVM, &pVM->trpm.s.aIdt[0]), sizeof(pVM->trpm.s.aIdt)-1);
+    CPUMSetHyperIDTR(pVCpu, VM_RC_ADDR(pVM, &pVM->trpm.s.aIdt[0]), sizeof(pVM->trpm.s.aIdt)-1);
 
     if (!pVM->trpm.s.fDisableMonitoring)
     {
@@ -902,8 +905,9 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  */
-VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM)
+VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM, PVMCPU pVCpu)
 {
     STAM_PROFILE_START(&pVM->trpm.s.StatSyncIDT, a);
     const bool  fRawRing0 = EMIsRawRing0Enabled(pVM);
@@ -931,7 +935,7 @@ VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM)
      * Get the IDTR.
      */
     VBOXIDTR IDTR;
-    IDTR.pIdt = CPUMGetGuestIDTR(pVM, &IDTR.cbIdt);
+    IDTR.pIdt = CPUMGetGuestIDTR(pVCpu, &IDTR.cbIdt);
     if (!IDTR.cbIdt)
     {
         Log(("No IDT entries...\n"));
@@ -984,7 +988,7 @@ VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM)
      * Should probably check/sync the others too, but for now we'll handle that in #GP.
      */
     X86DESC  Idte3;
-    rc = PGMPhysSimpleReadGCPtr(pVM, &Idte3, IDTR.pIdt + sizeof(Idte3) * 3,  sizeof(Idte3));
+    rc = PGMPhysSimpleReadGCPtr(pVCpu, &Idte3, IDTR.pIdt + sizeof(Idte3) * 3,  sizeof(Idte3));
     if (RT_FAILURE(rc))
     {
         AssertMsgRC(rc, ("Failed to read IDT[3]! rc=%Rrc\n", rc));
@@ -1077,6 +1081,9 @@ static DECLCALLBACK(int) trpmR3GuestIDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void
  */
 VMMR3DECL(int) trpmR3ClearPassThroughHandler(PVM pVM, unsigned iTrap)
 {
+    /* Only applies to raw mode which supports only 1 VCPU. */
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
     /** @todo cleanup trpmR3ClearPassThroughHandler()! */
     RTRCPTR aGCPtrs[TRPM_HANDLER_MAX];
     int rc;
@@ -1097,7 +1104,7 @@ VMMR3DECL(int) trpmR3ClearPassThroughHandler(PVM pVM, unsigned iTrap)
     /* Unmark it for relocation purposes. */
     ASMBitClear(&pVM->trpm.s.au32IdtPatched[0], iTrap);
 
-    RTSEL               SelCS         = CPUMGetHyperCS(pVM);
+    RTSEL               SelCS         = CPUMGetHyperCS(pVCpu);
     PVBOXIDTE           pIdte         = &pVM->trpm.s.aIdt[iTrap];
     PVBOXIDTE_GENERIC   pIdteTemplate = &g_aIdt[iTrap];
     if (pIdte->Gen.u1Present)
@@ -1181,6 +1188,10 @@ VMMR3DECL(RTRCPTR) TRPMR3GetGuestTrapHandler(PVM pVM, unsigned iTrap)
  */
 VMMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTRCPTR pHandler)
 {
+    /* Only valid in raw mode which implies 1 VCPU */
+    Assert(PATMIsEnabled(pVM) && pVM->cCPUs == 1);
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
     /*
      * Validate.
      */
@@ -1193,7 +1204,7 @@ VMMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTRCPTR pHandl
     AssertReturn(pHandler == TRPM_INVALID_HANDLER || PATMIsPatchGCAddr(pVM, pHandler), VERR_INVALID_PARAMETER);
 
     uint16_t    cbIDT;
-    RTGCPTR     GCPtrIDT = CPUMGetGuestIDTR(pVM, &cbIDT);
+    RTGCPTR     GCPtrIDT = CPUMGetGuestIDTR(pVCpu, &cbIDT);
     if (iTrap * sizeof(VBOXIDTE) >= cbIDT)
         return VERR_INVALID_PARAMETER;  /* Silently ignore out of range requests. */
 
@@ -1208,7 +1219,7 @@ VMMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTRCPTR pHandl
      * Read the guest IDT entry.
      */
     VBOXIDTE GuestIdte;
-    int rc = PGMPhysSimpleReadGCPtr(pVM, &GuestIdte, GCPtrIDT + iTrap * sizeof(GuestIdte),  sizeof(GuestIdte));
+    int rc = PGMPhysSimpleReadGCPtr(pVCpu, &GuestIdte, GCPtrIDT + iTrap * sizeof(GuestIdte),  sizeof(GuestIdte));
     if (RT_FAILURE(rc))
     {
         AssertMsgRC(rc, ("Failed to read IDTE! rc=%Rrc\n", rc));
@@ -1300,11 +1311,15 @@ VMMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTRCPTR pHandl
  */
 VMMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTRCPTR GCPtr)
 {
+    /* Only valid in raw mode which implies 1 VCPU */
+    Assert(PATMIsEnabled(pVM) && pVM->cCPUs == 1);
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
     /*
      * Read IDTR and calc last entry.
      */
     uint16_t    cbIDT;
-    RTGCPTR     GCPtrIDTE = CPUMGetGuestIDTR(pVM, &cbIDT);
+    RTGCPTR     GCPtrIDTE = CPUMGetGuestIDTR(pVCpu, &cbIDT);
     unsigned    cEntries = (cbIDT + 1) / sizeof(VBOXIDTE);
     if (!cEntries)
         return false;
@@ -1321,7 +1336,7 @@ VMMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTRCPTR GCPtr)
          */
         PCVBOXIDTE      pIDTE;
         PGMPAGEMAPLOCK  Lock;
-        int rc = PGMPhysGCPtr2CCPtrReadOnly(pVM, GCPtrIDTE, (const void **)&pIDTE, &Lock);
+        int rc = PGMPhysGCPtr2CCPtrReadOnly(pVCpu, GCPtrIDTE, (const void **)&pIDTE, &Lock);
         if (RT_SUCCESS(rc))
         {
             /*
@@ -1370,21 +1385,22 @@ VMMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTRCPTR GCPtr)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VMCPU to operate on.
  * @param   enmEvent    Trpm event type
  */
-VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, TRPMEVENT enmEvent)
+VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
 {
     PCPUMCTX pCtx;
     int      rc;
 
-    pCtx = CPUMQueryGuestCtxPtr(pVM);
+    pCtx = CPUMQueryGuestCtxPtr(pVCpu);
     Assert(!PATMIsPatchGCAddr(pVM, (RTGCPTR)pCtx->eip));
     Assert(!VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS));
 
     /* Currently only useful for external hardware interrupts. */
     Assert(enmEvent == TRPM_HARDWARE_INT);
 
-    if (REMR3QueryPendingInterrupt(pVM) == REM_NO_PENDING_IRQ)
+    if (REMR3QueryPendingInterrupt(pVM, pVCpu) == REM_NO_PENDING_IRQ)
     {
 #ifdef TRPM_FORWARD_TRAPS_IN_GC
 
@@ -1415,7 +1431,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, TRPMEVENT enmEvent)
             if (pVM->trpm.s.aGuestTrapHandler[u8Interrupt] != TRPM_INVALID_HANDLER)
             {
                 /* Must check pending forced actions as our IDT or GDT might be out of sync */
-                rc = EMR3CheckRawForcedActions(pVM);
+                rc = EMR3CheckRawForcedActions(pVM, pVCpu);
                 if (rc == VINF_SUCCESS)
                 {
                     /* There's a handler -> let's execute it in raw mode */
@@ -1431,7 +1447,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, TRPMEVENT enmEvent)
             }
             else
                 STAM_COUNTER_INC(&pVM->trpm.s.StatForwardFailNoHandler);
-            REMR3NotifyPendingInterrupt(pVM, u8Interrupt);
+            REMR3NotifyPendingInterrupt(pVM, pVCpu, u8Interrupt);
         }
         else
             AssertRC(rc);

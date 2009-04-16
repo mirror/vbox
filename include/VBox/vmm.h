@@ -109,9 +109,10 @@ typedef enum VMMCALLHOST
     VMMCALLHOST_32BIT_HACK = 0x7fffffff
 } VMMCALLHOST;
 
-RTRCPTR              VMMGetStackRC(PVM pVM);
-VMCPUID              VMMGetCpuId(PVM pVM);
-PVMCPU               VMMGetCpu(PVM pVM);
+VMMDECL(RTRCPTR)     VMMGetStackRC(PVM pVM);
+VMMDECL(VMCPUID)     VMMGetCpuId(PVM pVM);
+VMMDECL(PVMCPU)      VMMGetCpu(PVM pVM);
+VMMDECL(PVMCPU)      VMMGetCpu0(PVM pVM);
 VMMDECL(PVMCPU)      VMMGetCpuEx(PVM pVM, RTCPUID idCpu);
 VMMDECL(uint32_t)    VMMGetSvnRev(void);
 VMMDECL(VMMSWITCHER) VMMGetSwitcher(PVM pVM);
@@ -147,13 +148,13 @@ VMMR3DECL(int)      VMMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pR
 VMMR3DECL(int)      VMMR3SelectSwitcher(PVM pVM, VMMSWITCHER enmSwitcher);
 VMMR3DECL(int)      VMMR3DisableSwitcher(PVM pVM);
 VMMR3DECL(RTR0PTR)  VMMR3GetHostToGuestSwitcher(PVM pVM, VMMSWITCHER enmSwitcher);
-VMMR3DECL(int)      VMMR3RawRunGC(PVM pVM);
-VMMR3DECL(int)      VMMR3HwAccRunGC(PVM pVM, RTCPUID idCpu);
+VMMR3DECL(int)      VMMR3RawRunGC(PVM pVM, PVMCPU pVCpu);
+VMMR3DECL(int)      VMMR3HwAccRunGC(PVM pVM, PVMCPU pVCpu);
 VMMR3DECL(int)      VMMR3CallRC(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, ...);
 VMMR3DECL(int)      VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list args);
 VMMR3DECL(int)      VMMR3CallR0(PVM pVM, uint32_t uOperation, uint64_t u64Arg, PSUPVMMR0REQHDR pReqHdr);
-VMMR3DECL(int)      VMMR3ResumeHyper(PVM pVM);
-VMMR3DECL(void)     VMMR3FatalDump(PVM pVM, int rcErr);
+VMMR3DECL(int)      VMMR3ResumeHyper(PVM pVM, PVMCPU pVCpu);
+VMMR3DECL(void)     VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr);
 VMMR3DECL(int)      VMMR3Lock(PVM pVM);
 VMMR3DECL(int)      VMMR3Unlock(PVM pVM);
 VMMR3DECL(RTNATIVETHREAD) VMMR3LockGetOwner(PVM pVM);

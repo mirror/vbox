@@ -195,9 +195,10 @@ static void vmmR3FatalDumpInfoHlpDelete(PVMMR3FATALDUMPINFOHLP pHlp)
  * Dumps the VM state on a fatal error.
  *
  * @param   pVM         VM Handle.
+ * @param   pVCpu       VMCPU Handle.
  * @param   rcErr       VBox status code.
  */
-VMMR3DECL(void) VMMR3FatalDump(PVM pVM, int rcErr)
+VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
 {
     /*
      * Create our output helper and sync it with the log settings.
@@ -258,7 +259,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, int rcErr)
              * Active trap? This is only of partial interest when in hardware
              * assisted virtualization mode, thus the different messages.
              */
-            uint32_t        uEIP       = CPUMGetHyperEIP(pVM);
+            uint32_t        uEIP       = CPUMGetHyperEIP(pVCpu);
             TRPMEVENT       enmType;
             uint8_t         u8TrapNo   =       0xce;
             RTGCUINT        uErrorCode = 0xdeadface;
@@ -278,7 +279,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, int rcErr)
             else if (RT_SUCCESS(rc2))
                 pHlp->pfnPrintf(pHlp,
                                 "!! ACTIVE TRAP=%02x ERRCD=%RGv CR2=%RGv PC=%RGr Type=%d (Guest!)\n",
-                                u8TrapNo, uErrorCode, uCR2, CPUMGetGuestRIP(pVM), enmType);
+                                u8TrapNo, uErrorCode, uCR2, CPUMGetGuestRIP(pVCpu), enmType);
 
             /*
              * The hypervisor dump is not relevant when we're in VT-x/AMD-V mode.
@@ -322,7 +323,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, int rcErr)
 
                 /* Disassemble the instruction. */
                 char szInstr[256];
-                rc2 = DBGFR3DisasInstrEx(pVM, 0, 0, DBGF_DISAS_FLAGS_CURRENT_HYPER, &szInstr[0], sizeof(szInstr), NULL);
+                rc2 = DBGFR3DisasInstrEx(pVM, pVCpu, 0, 0, DBGF_DISAS_FLAGS_CURRENT_HYPER, &szInstr[0], sizeof(szInstr), NULL);
                 if (RT_SUCCESS(rc2))
                     pHlp->pfnPrintf(pHlp,
                                     "!! %s\n", szInstr);

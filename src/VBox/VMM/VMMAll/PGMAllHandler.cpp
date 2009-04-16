@@ -1418,46 +1418,51 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOne(PAVLROGCPTRNODECORE pNode, v
     RTGCUINTPTR   GCPtr = (RTGCUINTPTR)pVirt->Core.Key;
     for (unsigned iPage = 0; iPage < pVirt->cPages; iPage++, GCPtr += PAGE_SIZE)
     {
-        RTGCPHYS   GCPhysGst;
-        uint64_t   fGst;
-        int rc = PGMGstGetPage(pVM, (RTGCPTR)GCPtr, &fGst, &GCPhysGst);
-        if (    rc == VERR_PAGE_NOT_PRESENT
-            ||  rc == VERR_PAGE_TABLE_NOT_PRESENT)
+        for (unsigned i=0;i<pVM->cCPUs;i++)
         {
-            if (pVirt->aPhysToVirt[iPage].Core.Key != NIL_RTGCPHYS)
+            PVMCPU pVCpu = &pVM->aCpus[i];
+
+            RTGCPHYS   GCPhysGst;
+            uint64_t   fGst;
+            int rc = PGMGstGetPage(pVM, pVCpu, (RTGCPTR)GCPtr, &fGst, &GCPhysGst);
+            if (    rc == VERR_PAGE_NOT_PRESENT
+                ||  rc == VERR_PAGE_TABLE_NOT_PRESENT)
             {
-                AssertMsgFailed(("virt handler phys out of sync. %RGp GCPhysNew=~0 iPage=%#x %RGv %s\n",
-                                 pVirt->aPhysToVirt[iPage].Core.Key, iPage, GCPtr, R3STRING(pVirt->pszDesc)));
-                pState->cErrors++;
+                if (pVirt->aPhysToVirt[iPage].Core.Key != NIL_RTGCPHYS)
+                {
+                    AssertMsgFailed(("virt handler phys out of sync. %RGp GCPhysNew=~0 iPage=%#x %RGv %s\n",
+                                    pVirt->aPhysToVirt[iPage].Core.Key, iPage, GCPtr, R3STRING(pVirt->pszDesc)));
+                    pState->cErrors++;
+                }
+                continue;
             }
-            continue;
-        }
 
-        AssertRCReturn(rc, 0);
-        if ((pVirt->aPhysToVirt[iPage].Core.Key & X86_PTE_PAE_PG_MASK) != GCPhysGst)
-        {
-            AssertMsgFailed(("virt handler phys out of sync. %RGp GCPhysGst=%RGp iPage=%#x %RGv %s\n",
-                             pVirt->aPhysToVirt[iPage].Core.Key, GCPhysGst, iPage, GCPtr, R3STRING(pVirt->pszDesc)));
-            pState->cErrors++;
-            continue;
-        }
+            AssertRCReturn(rc, 0);
+            if ((pVirt->aPhysToVirt[iPage].Core.Key & X86_PTE_PAE_PG_MASK) != GCPhysGst)
+            {
+                AssertMsgFailed(("virt handler phys out of sync. %RGp GCPhysGst=%RGp iPage=%#x %RGv %s\n",
+                                pVirt->aPhysToVirt[iPage].Core.Key, GCPhysGst, iPage, GCPtr, R3STRING(pVirt->pszDesc)));
+                pState->cErrors++;
+                continue;
+            }
 
-        PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhysGst);
-        if (!pPage)
-        {
-            AssertMsgFailed(("virt handler getting ram flags. GCPhysGst=%RGp iPage=%#x %RGv %s\n",
-                             GCPhysGst, iPage, GCPtr, R3STRING(pVirt->pszDesc)));
-            pState->cErrors++;
-            continue;
-        }
+            PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhysGst);
+            if (!pPage)
+            {
+                AssertMsgFailed(("virt handler getting ram flags. GCPhysGst=%RGp iPage=%#x %RGv %s\n",
+                                GCPhysGst, iPage, GCPtr, R3STRING(pVirt->pszDesc)));
+                pState->cErrors++;
+                continue;
+            }
 
-        if (PGM_PAGE_GET_HNDL_VIRT_STATE(pPage) < uState)
-        {
-            AssertMsgFailed(("virt handler state mismatch. pPage=%R[pgmpage] GCPhysGst=%RGp iPage=%#x %RGv state=%d expected>=%d %s\n",
-                             pPage, GCPhysGst, iPage, GCPtr, PGM_PAGE_GET_HNDL_VIRT_STATE(pPage), uState, R3STRING(pVirt->pszDesc)));
-            pState->cErrors++;
-            continue;
-        }
+            if (PGM_PAGE_GET_HNDL_VIRT_STATE(pPage) < uState)
+            {
+                AssertMsgFailed(("virt handler state mismatch. pPage=%R[pgmpage] GCPhysGst=%RGp iPage=%#x %RGv state=%d expected>=%d %s\n",
+                                pPage, GCPhysGst, iPage, GCPtr, PGM_PAGE_GET_HNDL_VIRT_STATE(pPage), uState, R3STRING(pVirt->pszDesc)));
+                pState->cErrors++;
+                continue;
+            }
+        } /* for each VCPU */
     } /* for pages in virtual mapping. */
 
     return 0;

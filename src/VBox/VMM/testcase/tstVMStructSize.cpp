@@ -80,6 +80,13 @@ int main()
     } while (0)
 
 
+#define CHECK_PADDING_VMCPU(member) \
+    do \
+    { \
+        CHECK_PADDING(VMCPU, member); \
+        CHECK_MEMBER_ALIGNMENT(VMCPU, member, 32); \
+    } while (0)
+
 #define CHECK_CPUMCTXCORE(member) \
     do { \
         if (RT_OFFSETOF(CPUMCTX, member) - RT_OFFSETOF(CPUMCTX, edi) != RT_OFFSETOF(CPUMCTXCORE, member)) \
@@ -147,6 +154,14 @@ int main()
     CHECK_PADDING_VM(hwaccm);
     CHECK_PADDING_VM(patm);
     CHECK_PADDING_VM(csam);
+
+    CHECK_PADDING_VMCPU(cpum);
+    CHECK_PADDING_VMCPU(pgm);
+    CHECK_PADDING_VMCPU(em);
+    CHECK_PADDING_VMCPU(hwaccm);
+    CHECK_PADDING_VMCPU(tm);
+    CHECK_PADDING_VMCPU(vmm);
+
     CHECK_MEMBER_ALIGNMENT(VM, selm.s.Tss, 16);
     PRINT_OFFSET(VM, selm.s.Tss);
     PVM pVM;
@@ -163,11 +178,20 @@ int main()
     }
     CHECK_MEMBER_ALIGNMENT(VM, trpm.s.aIdt, 16);
     CHECK_MEMBER_ALIGNMENT(VM, cpum, 64);
+    CHECK_MEMBER_ALIGNMENT(VM, aCpus[0], 64);
+    CHECK_MEMBER_ALIGNMENT(VM, aCpus[1], 64);
+    CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].cpum, 64);
+    CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].hwaccm, 64);
+    CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].pgm, 64);
+    CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].em, 64);
+    CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].tm, 64);
+    CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].vmm, 64);
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].cpum.s.Host, 64);
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].cpum.s.Guest, 64);
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[1].cpum.s.Host, 64);
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[1].cpum.s.Guest, 64);
-    CHECK_MEMBER_ALIGNMENT(VM, cpum.s.Hyper, 64);
+    CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].cpum.s.Hyper, 64);
+    CHECK_MEMBER_ALIGNMENT(VM, aCpus[1].cpum.s.Hyper, 64);
     CHECK_MEMBER_ALIGNMENT(VM, cpum.s.GuestEntry, 64);
 
     CHECK_MEMBER_ALIGNMENT(VM, vmm.s.CritSectVMLock, 8);
@@ -253,7 +277,7 @@ int main()
 
     /* misc */
     CHECK_MEMBER_ALIGNMENT(REM, aGCPtrInvalidatedPages, 8);
-    CHECK_PADDING3(EM, u.FatalLongJump, u.achPaddingFatalLongJump);
+    CHECK_PADDING3(EMCPU, u.FatalLongJump, u.achPaddingFatalLongJump);
     CHECK_PADDING3(REMHANDLERNOTIFICATION, u.PhysicalRegister, u.padding);
     CHECK_PADDING3(REMHANDLERNOTIFICATION, u.PhysicalDeregister, u.padding);
     CHECK_PADDING3(REMHANDLERNOTIFICATION, u.PhysicalModify, u.padding);

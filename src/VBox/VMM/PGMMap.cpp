@@ -511,6 +511,11 @@ VMMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
         &&  HWACCMR3IsActive(pVM))
         return VINF_SUCCESS;
 
+    /* Only applies to VCPU 0 as we don't support SMP guests with raw mode. */
+    Assert(pVM->cCPUs == 1);
+
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
     /*
      * This is all or nothing at all. So, a tiny bit of paranoia first.
      */
@@ -529,7 +534,7 @@ VMMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
      * Before we do anything we'll do a forced PD sync to try make sure any
      * pending relocations because of these mappings have been resolved.
      */
-    PGMSyncCR3(pVM, CPUMGetGuestCR0(pVM), CPUMGetGuestCR3(pVM), CPUMGetGuestCR4(pVM), true);
+    PGMSyncCR3(pVM, pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR3(pVCpu), CPUMGetGuestCR4(pVCpu), true);
 
     /*
      * Check that it's not conflicting with a core code mapping in the intermediate page table.
@@ -560,10 +565,10 @@ VMMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
     /*
      * In PAE / PAE mode, make sure we don't cross page directories.
      */
-    if (    (   pVM->pgm.s.enmGuestMode  == PGMMODE_PAE
-             || pVM->pgm.s.enmGuestMode  == PGMMODE_PAE_NX)
-        &&  (   pVM->pgm.s.enmShadowMode == PGMMODE_PAE
-             || pVM->pgm.s.enmShadowMode == PGMMODE_PAE_NX))
+    if (    (   pVCpu->pgm.s.enmGuestMode  == PGMMODE_PAE
+             || pVCpu->pgm.s.enmGuestMode  == PGMMODE_PAE_NX)
+        &&  (   pVCpu->pgm.s.enmShadowMode == PGMMODE_PAE
+             || pVCpu->pgm.s.enmShadowMode == PGMMODE_PAE_NX))
     {
         unsigned iPdptBase = GCPtrBase >> X86_PDPT_SHIFT;
         unsigned iPdptLast = (GCPtrBase + cb - 1) >> X86_PDPT_SHIFT;
@@ -638,8 +643,13 @@ VMMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
     pVM->pgm.s.fMappingsFixed    = true;
     pVM->pgm.s.GCPtrMappingFixed = GCPtrBase;
     pVM->pgm.s.cbMappingFixed    = cb;
-    pVM->pgm.s.fSyncFlags       &= ~PGM_SYNC_MONITOR_CR3;
-    VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+        pVCpu->pgm.s.fSyncFlags       &= ~PGM_SYNC_MONITOR_CR3;
+        VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+    }
     return VINF_SUCCESS;
 }
 
@@ -655,7 +665,10 @@ VMMR3DECL(int) PGMR3MappingsDisable(PVM pVM)
     int rc = PGMR3MappingsSize(pVM, &cb);
     AssertRCReturn(rc, rc);
 
-    rc = pgmMapDeactivateCR3(pVM, pVM->pgm.s.pShwPageCR3R3);
+    /* Only applies to VCPU 0. */
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
+    rc = pgmMapDeactivateCR3(pVM, pVCpu->pgm.s.pShwPageCR3R3);
     AssertRCReturn(rc, rc);
 
     /*
@@ -665,8 +678,13 @@ VMMR3DECL(int) PGMR3MappingsDisable(PVM pVM)
     pVM->pgm.s.fMappingsFixed    = true;
     pVM->pgm.s.GCPtrMappingFixed = MM_HYPER_AREA_ADDRESS;
     pVM->pgm.s.cbMappingFixed    = cb;
-    pVM->pgm.s.fSyncFlags       &= ~PGM_SYNC_MONITOR_CR3;
-    VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
+        pVCpu->pgm.s.fSyncFlags       &= ~PGM_SYNC_MONITOR_CR3;
+        VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+    }
     return VINF_SUCCESS;
 }
 
@@ -689,7 +707,12 @@ VMMR3DECL(int) PGMR3MappingsUnfix(PVM pVM)
     pVM->pgm.s.fMappingsFixed    = false;
     pVM->pgm.s.GCPtrMappingFixed = 0;
     pVM->pgm.s.cbMappingFixed    = 0;
-    VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
+        VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+    }
     return VINF_SUCCESS;
 }
 
@@ -910,9 +933,10 @@ static void pgmR3MapIntermediateDoOne(PVM pVM, uintptr_t uAddress, RTHCPHYS HCPh
  */
 static void pgmR3MapClearPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iOldPDE)
 {
-    unsigned i = pMap->cPTs;
+    unsigned i     = pMap->cPTs;
+    PVMCPU   pVCpu = VMMGetCpu(pVM);
 
-    pgmMapClearShadowPDEs(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3), pMap, iOldPDE, false /*fDeactivateCR3*/);
+    pgmMapClearShadowPDEs(pVM, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3), pMap, iOldPDE, false /*fDeactivateCR3*/);
 
     iOldPDE += i;
     while (i-- > 0)
@@ -944,9 +968,10 @@ static void pgmR3MapClearPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iOldPDE)
  */
 static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
 {
-    PPGM pPGM = &pVM->pgm.s;
+    PPGM   pPGM  = &pVM->pgm.s;
+    PVMCPU pVCpu = VMMGetCpu(pVM);
 
-    Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s) || PGMGetGuestMode(pVM) <= PGMMODE_PAE_NX);
+    Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s) || PGMGetGuestMode(pVCpu) <= PGMMODE_PAE_NX);
 
     pgmMapSetShadowPDEs(pVM, pMap, iNewPDE);
 
@@ -1116,6 +1141,9 @@ int pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PX86PD pPDSrc, RTG
     STAM_REL_COUNTER_INC(&pVM->pgm.s.cRelocations);
     STAM_PROFILE_START(&pVM->pgm.s.StatR3ResolveConflict, a);
 
+    /* Raw mode only which implies one VCPU. */
+    Assert(pVM->cCPUs == 1);
+
     pMapping->aGCPtrConflicts[pMapping->cConflicts & (PGMMAPPING_CONFLICT_MAX-1)] = GCPtrOldMapping;
     pMapping->cConflicts++;
 
@@ -1189,13 +1217,17 @@ int pgmR3SyncPTResolveConflictPAE(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOl
     STAM_REL_COUNTER_INC(&pVM->pgm.s.cRelocations);
     STAM_PROFILE_START(&pVM->pgm.s.StatR3ResolveConflict, a);
 
+    /* Raw mode only which implies one VCPU. */
+    Assert(pVM->cCPUs == 1);
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+
     pMapping->aGCPtrConflicts[pMapping->cConflicts & (PGMMAPPING_CONFLICT_MAX-1)] = GCPtrOldMapping;
     pMapping->cConflicts++;
 
     for (int iPDPTE = X86_PG_PAE_PDPE_ENTRIES - 1; iPDPTE >= 0; iPDPTE--)
     {
         unsigned  iPDSrc;
-        PX86PDPAE pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, (RTGCPTR32)iPDPTE << X86_PDPT_SHIFT, &iPDSrc, NULL);
+        PX86PDPAE pPDSrc = pgmGstGetPaePDPtr(&pVCpu->pgm.s, (RTGCPTR32)iPDPTE << X86_PDPT_SHIFT, &iPDSrc, NULL);
 
         /*
          * Scan for free page directory entries.

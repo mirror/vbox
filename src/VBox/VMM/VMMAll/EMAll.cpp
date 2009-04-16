@@ -66,11 +66,17 @@
 # define EM_ASSERT_FAULT_RETURN(expr, rc) do { } while (0)
 #endif
 
+/* Used to pass information during instruction disassembly. */
+typedef struct
+{
+    PVM     pVM;
+    PVMCPU  pVCpu;
+} EMDISSTATE, *PEMDISSTATE;
 
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize);
+DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize);
 
 
 
@@ -79,9 +85,9 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
  *
  * @returns Current status.
  */
-VMMDECL(EMSTATE) EMGetState(PVM pVM)
+VMMDECL(EMSTATE) EMGetState(PVMCPU pVCpu)
 {
-    return pVM->em.s.enmState;
+    return pVCpu->em.s.enmState;
 }
 
 #ifndef IN_RC
@@ -93,20 +99,23 @@ VMMDECL(EMSTATE) EMGetState(PVM pVM)
  * @param   pSrc        GC source pointer
  * @param   pDest       HC destination pointer
  * @param   cb          Number of bytes to read
- * @param   dwUserdata  Callback specific user data (pCpu)
+ * @param   dwUserdata  Callback specific user data (pDISState)
  *
  */
 DECLCALLBACK(int) EMReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned cb, void *pvUserdata)
 {
-    DISCPUSTATE  *pCpu     = (DISCPUSTATE *)pvUserdata;
-    PVM           pVM      = (PVM)pCpu->apvUserData[0];
+    DISCPUSTATE  *pDISState = (DISCPUSTATE *)pvUserdata;
+    PEMDISSTATE   pState    = (PEMDISSTATE)pDISState->apvUserData[0];
+    PVM           pVM       = pState->pVM;
+    PVMCPU        pVCpu     = pState->pVCpu;
+
 # ifdef IN_RING0
-    int rc = PGMPhysSimpleReadGCPtr(pVM, pDest, pSrc, cb);
+    int rc = PGMPhysSimpleReadGCPtr(pVCpu, pDest, pSrc, cb);
     AssertMsgRC(rc, ("PGMPhysSimpleReadGCPtr failed for pSrc=%RGv cb=%x\n", pSrc, cb));
 # else /* IN_RING3 */
     if (!PATMIsPatchGCAddr(pVM, pSrc))
     {
-        int rc = PGMPhysSimpleReadGCPtr(pVM, pDest, pSrc, cb);
+        int rc = PGMPhysSimpleReadGCPtr(pVCpu, pDest, pSrc, cb);
         AssertRC(rc);
     }
     else
@@ -115,25 +124,31 @@ DECLCALLBACK(int) EMReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned cb, void 
         {
             uint8_t opcode;
             if (RT_SUCCESS(PATMR3QueryOpcode(pVM, (RTGCPTR)pSrc + i, &opcode)))
-            {
                 *(pDest+i) = opcode;
-            }
+
         }
     }
 # endif /* IN_RING3 */
     return VINF_SUCCESS;
 }
 
-DECLINLINE(int) emDisCoreOne(PVM pVM, DISCPUSTATE *pCpu, RTGCUINTPTR InstrGC, uint32_t *pOpsize)
+DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, DISCPUSTATE *pDISState, RTGCUINTPTR InstrGC, uint32_t *pOpsize)
 {
-    return DISCoreOneEx(InstrGC, pCpu->mode, EMReadBytes, pVM, pCpu,  pOpsize);
+    EMDISSTATE State;
+
+    State.pVM   = pVM;
+    State.pVCpu = pVCpu;
+
+    return DISCoreOneEx(InstrGC, pDISState->mode, EMReadBytes, &State, pDISState, pOpsize);
 }
 
 #else /* IN_RC */
 
-DECLINLINE(int) emDisCoreOne(PVM pVM, DISCPUSTATE *pCpu, RTGCUINTPTR InstrGC, uint32_t *pOpsize)
+DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, DISCPUSTATE *pDISState, RTGCUINTPTR InstrGC, uint32_t *pOpsize)
 {
-    return DISCoreOne(pCpu, InstrGC, pOpsize);
+    NOREF(pVCpu);
+    NOREF(pVM);
+    return DISCoreOne(pDISState, InstrGC, pOpsize);
 }
 
 #endif /* IN_RC */
@@ -147,11 +162,12 @@ DECLINLINE(int) emDisCoreOne(PVM pVM, DISCPUSTATE *pCpu, RTGCUINTPTR InstrGC, ui
  * @retval  VERR_INTERNAL_ERROR on DISCoreOneEx failure.
  *
  * @param   pVM             The VM handle.
+ * @param   pVCpu           The VMCPU handle.
  * @param   pCtxCore        The context core (used for both the mode and instruction).
- * @param   pCpu            Where to return the parsed instruction info.
+ * @param   pDISState       Where to return the parsed instruction info.
  * @param   pcbInstr        Where to return the instruction size. (optional)
  */
-VMMDECL(int) EMInterpretDisasOne(PVM pVM, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu, unsigned *pcbInstr)
+VMMDECL(int) EMInterpretDisasOne(PVM pVM, PVMCPU pVCpu, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE pDISState, unsigned *pcbInstr)
 {
     RTGCPTR GCPtrInstr;
     int rc = SELMToFlatEx(pVM, DIS_SELREG_CS, pCtxCore, pCtxCore->rip, 0, &GCPtrInstr);
@@ -161,7 +177,7 @@ VMMDECL(int) EMInterpretDisasOne(PVM pVM, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE p
              pCtxCore->cs, (RTGCPTR)pCtxCore->rip, pCtxCore->ss & X86_SEL_RPL, rc));
         return rc;
     }
-    return EMInterpretDisasOneEx(pVM, (RTGCUINTPTR)GCPtrInstr, pCtxCore, pCpu, pcbInstr);
+    return EMInterpretDisasOneEx(pVM, pVCpu, (RTGCUINTPTR)GCPtrInstr, pCtxCore, pDISState, pcbInstr);
 }
 
 
@@ -174,20 +190,28 @@ VMMDECL(int) EMInterpretDisasOne(PVM pVM, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE p
  * @retval  VERR_INTERNAL_ERROR on DISCoreOneEx failure.
  *
  * @param   pVM             The VM handle.
+ * @param   pVCpu           The VMCPU handle.
  * @param   GCPtrInstr      The flat address of the instruction.
  * @param   pCtxCore        The context core (used to determine the cpu mode).
- * @param   pCpu            Where to return the parsed instruction info.
+ * @param   pDISState       Where to return the parsed instruction info.
  * @param   pcbInstr        Where to return the instruction size. (optional)
  */
-VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu, unsigned *pcbInstr)
+VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE pDISState, unsigned *pcbInstr)
 {
+#ifndef IN_RC
+    EMDISSTATE State;
+
+    State.pVM   = pVM;
+    State.pVCpu = pVCpu;
+#endif
+
     int rc = DISCoreOneEx(GCPtrInstr, SELMGetCpuModeFromSelector(pVM, pCtxCore->eflags, pCtxCore->cs, (PCPUMSELREGHID)&pCtxCore->csHid),
 #ifdef IN_RC
                           NULL, NULL,
 #else
-                          EMReadBytes, pVM,
+                          EMReadBytes, &State,
 #endif
-                          pCpu, pcbInstr);
+                          pDISState, pcbInstr);
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
     AssertMsgFailed(("DISCoreOne failed to GCPtrInstr=%RGv rc=%Rrc\n", GCPtrInstr, rc));
@@ -204,6 +228,7 @@ VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCOR
  * @retval  VERR_*                  Fatal errors.
  *
  * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  *                      Updates the EIP if an instruction was executed successfully.
  * @param   pvFault     The fault address (CR2).
@@ -213,7 +238,7 @@ VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCOR
  *          Architecture System Developers Manual, Vol 3, 5.5) so we don't need
  *          to worry about e.g. invalid modrm combinations (!)
  */
-VMMDECL(int) EMInterpretInstruction(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+VMMDECL(int) EMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     RTGCPTR pbCode;
 
@@ -224,15 +249,14 @@ VMMDECL(int) EMInterpretInstruction(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvF
         uint32_t    cbOp;
         DISCPUSTATE Cpu;
         Cpu.mode = SELMGetCpuModeFromSelector(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid);
-        rc = emDisCoreOne(pVM, &Cpu, (RTGCUINTPTR)pbCode, &cbOp);
+        rc = emDisCoreOne(pVM, pVCpu, &Cpu, (RTGCUINTPTR)pbCode, &cbOp);
         if (RT_SUCCESS(rc))
         {
             Assert(cbOp == Cpu.opsize);
-            rc = EMInterpretInstructionCPU(pVM, &Cpu, pRegFrame, pvFault, pcbSize);
+            rc = EMInterpretInstructionCPU(pVM, pVCpu, &Cpu, pRegFrame, pvFault, pcbSize);
             if (RT_SUCCESS(rc))
-            {
                 pRegFrame->rip += cbOp; /* Move on to the next instruction. */
-            }
+
             return rc;
         }
     }
@@ -253,7 +277,8 @@ VMMDECL(int) EMInterpretInstruction(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvF
  * @retval  VERR_*                  Fatal errors.
  *
  * @param   pVM         The VM handle.
- * @param   pCpu        The disassembler cpu state for the instruction to be interpreted.
+ * @param   pVCpu       The VMCPU handle.
+ * @param   pDISState   The disassembler cpu state for the instruction to be interpreted.
  * @param   pRegFrame   The register frame. EIP is *NOT* changed!
  * @param   pvFault     The fault address (CR2).
  * @param   pcbSize     Size of the write (if applicable).
@@ -265,15 +290,15 @@ VMMDECL(int) EMInterpretInstruction(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvF
  * @todo    At this time we do NOT check if the instruction overwrites vital information.
  *          Make sure this can't happen!! (will add some assertions/checks later)
  */
-VMMDECL(int) EMInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+VMMDECL(int) EMInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    STAM_PROFILE_START(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Emulate), a);
-    int rc = emInterpretInstructionCPU(pVM, pCpu, pRegFrame, pvFault, pcbSize);
-    STAM_PROFILE_STOP(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Emulate), a);
+    STAM_PROFILE_START(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Emulate), a);
+    int rc = emInterpretInstructionCPU(pVM, pVCpu, pDISState, pRegFrame, pvFault, pcbSize);
+    STAM_PROFILE_STOP(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Emulate), a);
     if (RT_SUCCESS(rc))
-        STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InterpretSucceeded));
+        STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InterpretSucceeded));
     else
-        STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InterpretFailed));
+        STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InterpretFailed));
     return rc;
 }
 
@@ -283,18 +308,19 @@ VMMDECL(int) EMInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE 
  *
  * @returns VBox status code suitable for scheduling.
  * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  * @param   pCtxCore    The context core. This will be updated on successful return.
- * @param   pCpu        The instruction to interpret.
+ * @param   pDISState   The instruction to interpret.
  * @param   cbOp        The size of the instruction.
  * @remark  This may raise exceptions.
  */
-VMMDECL(int) EMInterpretPortIO(PVM pVM, PCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu, uint32_t cbOp)
+VMMDECL(int) EMInterpretPortIO(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, PDISCPUSTATE pDISState, uint32_t cbOp)
 {
     /*
      * Hand it on to IOM.
      */
 #ifdef IN_RC
-    int rc = IOMGCIOPortHandler(pVM, pCtxCore, pCpu);
+    int rc = IOMGCIOPortHandler(pVM, pCtxCore, pDISState);
     if (IOM_SUCCESS(rc))
         pCtxCore->rip += cbOp;
     return rc;
@@ -305,7 +331,7 @@ VMMDECL(int) EMInterpretPortIO(PVM pVM, PCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu
 }
 
 
-DECLINLINE(int) emRamRead(PVM pVM, PCPUMCTXCORE pCtxCore, void *pvDst, RTGCPTR GCPtrSrc, uint32_t cb)
+DECLINLINE(int) emRamRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void *pvDst, RTGCPTR GCPtrSrc, uint32_t cb)
 {
 #ifdef IN_RC
     int rc = MMGCRamRead(pVM, pvDst, (void *)GCPtrSrc, cb);
@@ -317,11 +343,11 @@ DECLINLINE(int) emRamRead(PVM pVM, PCPUMCTXCORE pCtxCore, void *pvDst, RTGCPTR G
      * instruction and it either flushed the TLB or the CPU reused it.
      */
 #endif
-    return PGMPhysInterpretedReadNoHandlers(pVM, pCtxCore, pvDst, GCPtrSrc, cb, /*fMayTrap*/ false);
+    return PGMPhysInterpretedReadNoHandlers(pVCpu, pCtxCore, pvDst, GCPtrSrc, cb, /*fMayTrap*/ false);
 }
 
 
-DECLINLINE(int) emRamWrite(PVM pVM, PCPUMCTXCORE pCtxCore, RTGCPTR GCPtrDst, const void *pvSrc, uint32_t cb)
+DECLINLINE(int) emRamWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, RTGCPTR GCPtrDst, const void *pvSrc, uint32_t cb)
 {
 #ifdef IN_RC
     int rc = MMGCRamWrite(pVM, (void *)(uintptr_t)GCPtrDst, (void *)pvSrc, cb);
@@ -335,14 +361,14 @@ DECLINLINE(int) emRamWrite(PVM pVM, PCPUMCTXCORE pCtxCore, RTGCPTR GCPtrDst, con
      * access doesn't cost us much (see PGMPhysGCPtr2GCPhys()).
      */
 #endif
-    return PGMPhysInterpretedWriteNoHandlers(pVM, pCtxCore, GCPtrDst, pvSrc, cb, /*fMayTrap*/ false);
+    return PGMPhysInterpretedWriteNoHandlers(pVCpu, pCtxCore, GCPtrDst, pvSrc, cb, /*fMayTrap*/ false);
 }
 
 
 /** Convert sel:addr to a flat GC address. */
-DECLINLINE(RTGCPTR) emConvertToFlatAddr(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu, POP_PARAMETER pParam, RTGCPTR pvAddr)
+DECLINLINE(RTGCPTR) emConvertToFlatAddr(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pDISState, POP_PARAMETER pParam, RTGCPTR pvAddr)
 {
-    DIS_SELREG enmPrefixSeg = DISDetectSegReg(pCpu, pParam);
+    DIS_SELREG enmPrefixSeg = DISDetectSegReg(pDISState, pParam);
     return SELMToFlat(pVM, enmPrefixSeg, pRegFrame, pvAddr);
 }
 
@@ -354,9 +380,9 @@ DECLINLINE(RTGCPTR) emConvertToFlatAddr(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPU
  * GC/R0 doesn't include the strings in the DIS tables because
  * of limited space.
  */
-static const char *emGetMnemonic(PDISCPUSTATE pCpu)
+static const char *emGetMnemonic(PDISCPUSTATE pDISState)
 {
-    switch (pCpu->pCurInstr->opcode)
+    switch (pDISState->pCurInstr->opcode)
     {
         case OP_XCHG:       return "Xchg";
         case OP_DEC:        return "Dec";
@@ -396,11 +422,11 @@ static const char *emGetMnemonic(PDISCPUSTATE pCpu)
         case OP_BTC:        return "Btc";
         case OP_LMSW:       return "Lmsw";
         case OP_SMSW:       return "Smsw";
-        case OP_CMPXCHG:    return pCpu->prefix & PREFIX_LOCK ? "Lock CmpXchg"   : "CmpXchg";
-        case OP_CMPXCHG8B:  return pCpu->prefix & PREFIX_LOCK ? "Lock CmpXchg8b" : "CmpXchg8b";
+        case OP_CMPXCHG:    return pDISState->prefix & PREFIX_LOCK ? "Lock CmpXchg"   : "CmpXchg";
+        case OP_CMPXCHG8B:  return pDISState->prefix & PREFIX_LOCK ? "Lock CmpXchg8b" : "CmpXchg8b";
 
         default:
-            Log(("Unknown opcode %d\n", pCpu->pCurInstr->opcode));
+            Log(("Unknown opcode %d\n", pDISState->pCurInstr->opcode));
             return "???";
     }
 }
@@ -410,16 +436,16 @@ static const char *emGetMnemonic(PDISCPUSTATE pCpu)
 /**
  * XCHG instruction emulation.
  */
-static int emInterpretXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretXchg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     OP_PARAMVAL param1, param2;
 
     /* Source to make DISQueryParamVal read the register value - ugly hack */
-    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_SOURCE);
+    int rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param1, &param1, PARAM_SOURCE);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
-    rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param2, &param2, PARAM_SOURCE);
+    rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param2, &param2, PARAM_SOURCE);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
@@ -432,7 +458,7 @@ static int emInterpretXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
             RTGCPTR pParam1 = 0, pParam2 = 0;
             uint64_t valpar1, valpar2;
 
-            AssertReturn(pCpu->param1.size == pCpu->param2.size, VERR_EM_INTERPRETER);
+            AssertReturn(pDISState->param1.size == pDISState->param2.size, VERR_EM_INTERPRETER);
             switch(param1.type)
             {
             case PARMTYPE_IMMEDIATE: /* register type is translated to this one too */
@@ -441,9 +467,9 @@ static int emInterpretXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
 
             case PARMTYPE_ADDRESS:
                 pParam1 = (RTGCPTR)param1.val.val64;
-                pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, pParam1);
+                pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pDISState, &pDISState->param1, pParam1);
                 EM_ASSERT_FAULT_RETURN(pParam1 == pvFault, VERR_EM_INTERPRETER);
-                rc = emRamRead(pVM, pRegFrame, &valpar1, pParam1, param1.size);
+                rc = emRamRead(pVM, pVCpu, pRegFrame, &valpar1, pParam1, param1.size);
                 if (RT_FAILURE(rc))
                 {
                     AssertMsgFailed(("MMGCRamRead %RGv size=%d failed with %Rrc\n", pParam1, param1.size, rc));
@@ -460,9 +486,9 @@ static int emInterpretXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
             {
             case PARMTYPE_ADDRESS:
                 pParam2 = (RTGCPTR)param2.val.val64;
-                pParam2 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param2, pParam2);
+                pParam2 = emConvertToFlatAddr(pVM, pRegFrame, pDISState, &pDISState->param2, pParam2);
                 EM_ASSERT_FAULT_RETURN(pParam2 == pvFault, VERR_EM_INTERPRETER);
-                rc = emRamRead(pVM, pRegFrame, &valpar2, pParam2, param2.size);
+                rc = emRamRead(pVM, pVCpu, pRegFrame, &valpar2, pParam2, param2.size);
                 if (RT_FAILURE(rc))
                 {
                     AssertMsgFailed(("MMGCRamRead %RGv size=%d failed with %Rrc\n", pParam1, param1.size, rc));
@@ -485,10 +511,10 @@ static int emInterpretXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
                 switch(param1.size)
                 {
                 case 1: //special case for AH etc
-                        rc = DISWriteReg8(pRegFrame, pCpu->param1.base.reg_gen,  (uint8_t )valpar2); break;
-                case 2: rc = DISWriteReg16(pRegFrame, pCpu->param1.base.reg_gen, (uint16_t)valpar2); break;
-                case 4: rc = DISWriteReg32(pRegFrame, pCpu->param1.base.reg_gen, (uint32_t)valpar2); break;
-                case 8: rc = DISWriteReg64(pRegFrame, pCpu->param1.base.reg_gen, valpar2); break;
+                        rc = DISWriteReg8(pRegFrame, pDISState->param1.base.reg_gen,  (uint8_t )valpar2); break;
+                case 2: rc = DISWriteReg16(pRegFrame, pDISState->param1.base.reg_gen, (uint16_t)valpar2); break;
+                case 4: rc = DISWriteReg32(pRegFrame, pDISState->param1.base.reg_gen, (uint32_t)valpar2); break;
+                case 8: rc = DISWriteReg64(pRegFrame, pDISState->param1.base.reg_gen, valpar2); break;
                 default: AssertFailedReturn(VERR_EM_INTERPRETER);
                 }
                 if (RT_FAILURE(rc))
@@ -496,7 +522,7 @@ static int emInterpretXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
             }
             else
             {
-                rc = emRamWrite(pVM, pRegFrame, pParam1, &valpar2, param1.size);
+                rc = emRamWrite(pVM, pVCpu, pRegFrame, pParam1, &valpar2, param1.size);
                 if (RT_FAILURE(rc))
                 {
                     AssertMsgFailed(("emRamWrite %RGv size=%d failed with %Rrc\n", pParam1, param1.size, rc));
@@ -511,10 +537,10 @@ static int emInterpretXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
                 switch(param2.size)
                 {
                 case 1: //special case for AH etc
-                        rc = DISWriteReg8(pRegFrame, pCpu->param2.base.reg_gen,  (uint8_t )valpar1);    break;
-                case 2: rc = DISWriteReg16(pRegFrame, pCpu->param2.base.reg_gen, (uint16_t)valpar1);    break;
-                case 4: rc = DISWriteReg32(pRegFrame, pCpu->param2.base.reg_gen, (uint32_t)valpar1);    break;
-                case 8: rc = DISWriteReg64(pRegFrame, pCpu->param2.base.reg_gen, valpar1);              break;
+                        rc = DISWriteReg8(pRegFrame, pDISState->param2.base.reg_gen,  (uint8_t )valpar1);    break;
+                case 2: rc = DISWriteReg16(pRegFrame, pDISState->param2.base.reg_gen, (uint16_t)valpar1);    break;
+                case 4: rc = DISWriteReg32(pRegFrame, pDISState->param2.base.reg_gen, (uint32_t)valpar1);    break;
+                case 8: rc = DISWriteReg64(pRegFrame, pDISState->param2.base.reg_gen, valpar1);              break;
                 default: AssertFailedReturn(VERR_EM_INTERPRETER);
                 }
                 if (RT_FAILURE(rc))
@@ -522,7 +548,7 @@ static int emInterpretXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
             }
             else
             {
-                rc = emRamWrite(pVM, pRegFrame, pParam2, &valpar1, param2.size);
+                rc = emRamWrite(pVM, pVCpu, pRegFrame, pParam2, &valpar1, param2.size);
                 if (RT_FAILURE(rc))
                 {
                     AssertMsgFailed(("emRamWrite %RGv size=%d failed with %Rrc\n", pParam1, param1.size, rc));
@@ -543,12 +569,12 @@ static int emInterpretXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
 /**
  * INC and DEC emulation.
  */
-static int emInterpretIncDec(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize,
+static int emInterpretIncDec(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize,
                              PFNEMULATEPARAM2 pfnEmulate)
 {
     OP_PARAMVAL param1;
 
-    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_DEST);
+    int rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param1, &param1, PARAM_DEST);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
@@ -564,12 +590,12 @@ static int emInterpretIncDec(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
             if (param1.type == PARMTYPE_ADDRESS)
             {
                 pParam1 = (RTGCPTR)param1.val.val64;
-                pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, pParam1);
+                pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pDISState, &pDISState->param1, pParam1);
 #ifdef IN_RC
                 /* Safety check (in theory it could cross a page boundary and fault there though) */
                 AssertReturn(pParam1 == pvFault, VERR_EM_INTERPRETER);
 #endif
-                rc = emRamRead(pVM, pRegFrame,  &valpar1, pParam1, param1.size);
+                rc = emRamRead(pVM, pVCpu, pRegFrame,  &valpar1, pParam1, param1.size);
                 if (RT_FAILURE(rc))
                 {
                     AssertMsgFailed(("emRamRead %RGv size=%d failed with %Rrc\n", pParam1, param1.size, rc));
@@ -587,7 +613,7 @@ static int emInterpretIncDec(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
             eflags = pfnEmulate(&valpar1, param1.size);
 
             /* Write result back */
-            rc = emRamWrite(pVM, pRegFrame, pParam1, &valpar1, param1.size);
+            rc = emRamWrite(pVM, pVCpu, pRegFrame, pParam1, &valpar1, param1.size);
             if (RT_FAILURE(rc))
             {
                 AssertMsgFailed(("emRamWrite %RGv size=%d failed with %Rrc\n", pParam1, param1.size, rc));
@@ -612,11 +638,11 @@ static int emInterpretIncDec(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
 /**
  * POP Emulation.
  */
-static int emInterpretPop(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretPop(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    Assert(pCpu->mode != CPUMODE_64BIT);    /** @todo check */
+    Assert(pDISState->mode != CPUMODE_64BIT);    /** @todo check */
     OP_PARAMVAL param1;
-    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_DEST);
+    int rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param1, &param1, PARAM_DEST);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
@@ -639,7 +665,7 @@ static int emInterpretPop(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
             if (pStackVal == 0)
                 return VERR_EM_INTERPRETER;
 
-            rc = emRamRead(pVM, pRegFrame, &valpar1, pStackVal, param1.size);
+            rc = emRamRead(pVM, pVCpu, pRegFrame, &valpar1, pStackVal, param1.size);
             if (RT_FAILURE(rc))
             {
                 AssertMsgFailed(("emRamRead %RGv size=%d failed with %Rrc\n", pParam1, param1.size, rc));
@@ -652,15 +678,15 @@ static int emInterpretPop(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
 
                 /* pop [esp+xx] uses esp after the actual pop! */
                 AssertCompile(USE_REG_ESP == USE_REG_SP);
-                if (    (pCpu->param1.flags & USE_BASE)
-                    &&  (pCpu->param1.flags & (USE_REG_GEN16|USE_REG_GEN32))
-                    &&  pCpu->param1.base.reg_gen == USE_REG_ESP
+                if (    (pDISState->param1.flags & USE_BASE)
+                    &&  (pDISState->param1.flags & (USE_REG_GEN16|USE_REG_GEN32))
+                    &&  pDISState->param1.base.reg_gen == USE_REG_ESP
                    )
                    pParam1 = (RTGCPTR)((RTGCUINTPTR)pParam1 + param1.size);
 
-                pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, pParam1);
+                pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pDISState, &pDISState->param1, pParam1);
                 EM_ASSERT_FAULT_RETURN(pParam1 == pvFault || (RTGCPTR)pRegFrame->esp == pvFault, VERR_EM_INTERPRETER);
-                rc = emRamWrite(pVM, pRegFrame, pParam1, &valpar1, param1.size);
+                rc = emRamWrite(pVM, pVCpu, pRegFrame, pParam1, &valpar1, param1.size);
                 if (RT_FAILURE(rc))
                 {
                     AssertMsgFailed(("emRamWrite %RGv size=%d failed with %Rrc\n", pParam1, param1.size, rc));
@@ -692,16 +718,16 @@ static int emInterpretPop(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
 /**
  * XOR/OR/AND Emulation.
  */
-static int emInterpretOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize,
+static int emInterpretOrXorAnd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize,
                                PFNEMULATEPARAM3 pfnEmulate)
 {
     OP_PARAMVAL param1, param2;
 
-    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_DEST);
+    int rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param1, &param1, PARAM_DEST);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
-    rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param2, &param2, PARAM_SOURCE);
+    rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param2, &param2, PARAM_SOURCE);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
@@ -714,15 +740,15 @@ static int emInterpretOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFram
             RTGCPTR  pParam1;
             uint64_t valpar1, valpar2;
 
-            if (pCpu->param1.size != pCpu->param2.size)
+            if (pDISState->param1.size != pDISState->param2.size)
             {
-                if (pCpu->param1.size < pCpu->param2.size)
+                if (pDISState->param1.size < pDISState->param2.size)
                 {
-                    AssertMsgFailed(("%s at %RGv parameter mismatch %d vs %d!!\n", emGetMnemonic(pCpu), (RTGCPTR)pRegFrame->rip, pCpu->param1.size, pCpu->param2.size)); /* should never happen! */
+                    AssertMsgFailed(("%s at %RGv parameter mismatch %d vs %d!!\n", emGetMnemonic(pDISState), (RTGCPTR)pRegFrame->rip, pDISState->param1.size, pDISState->param2.size)); /* should never happen! */
                     return VERR_EM_INTERPRETER;
                 }
                 /* Or %Ev, Ib -> just a hack to save some space; the data width of the 1st parameter determines the real width */
-                pCpu->param2.size = pCpu->param1.size;
+                pDISState->param2.size = pDISState->param1.size;
                 param2.size     = param1.size;
             }
 
@@ -730,9 +756,9 @@ static int emInterpretOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFram
             if (param1.type == PARMTYPE_ADDRESS)
             {
                 pParam1 = (RTGCPTR)param1.val.val64;
-                pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, pParam1);
+                pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pDISState, &pDISState->param1, pParam1);
                 EM_ASSERT_FAULT_RETURN(pParam1 == pvFault, VERR_EM_INTERPRETER);
-                rc = emRamRead(pVM, pRegFrame, &valpar1, pParam1, param1.size);
+                rc = emRamRead(pVM, pVCpu, pRegFrame, &valpar1, pParam1, param1.size);
                 if (RT_FAILURE(rc))
                 {
                     AssertMsgFailed(("emRamRead %RGv size=%d failed with %Rrc\n", pParam1, param1.size, rc));
@@ -757,19 +783,19 @@ static int emInterpretOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFram
                 return VERR_EM_INTERPRETER;
             }
 
-            LogFlow(("emInterpretOrXorAnd %s %RGv %RX64 - %RX64 size %d (%d)\n", emGetMnemonic(pCpu), pParam1, valpar1, valpar2, param2.size, param1.size));
+            LogFlow(("emInterpretOrXorAnd %s %RGv %RX64 - %RX64 size %d (%d)\n", emGetMnemonic(pDISState), pParam1, valpar1, valpar2, param2.size, param1.size));
 
             /* Data read, emulate instruction. */
             uint32_t eflags = pfnEmulate(&valpar1, valpar2, param2.size);
 
-            LogFlow(("emInterpretOrXorAnd %s result %RX64\n", emGetMnemonic(pCpu), valpar1));
+            LogFlow(("emInterpretOrXorAnd %s result %RX64\n", emGetMnemonic(pDISState), valpar1));
 
             /* Update guest's eflags and finish. */
             pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
                                   | (eflags                &  (X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF));
 
             /* And write it back */
-            rc = emRamWrite(pVM, pRegFrame, pParam1, &valpar1, param1.size);
+            rc = emRamWrite(pVM, pVCpu, pRegFrame, pParam1, &valpar1, param1.size);
             if (RT_SUCCESS(rc))
             {
                 /* All done! */
@@ -787,32 +813,32 @@ static int emInterpretOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFram
 /**
  * LOCK XOR/OR/AND Emulation.
  */
-static int emInterpretLockOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+static int emInterpretLockOrXorAnd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
                                    uint32_t *pcbSize, PFNEMULATELOCKPARAM3 pfnEmulate)
 {
     void *pvParam1;
     OP_PARAMVAL param1, param2;
 
 #if HC_ARCH_BITS == 32
-    Assert(pCpu->param1.size <= 4);
+    Assert(pDISState->param1.size <= 4);
 #endif
 
-    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_DEST);
+    int rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param1, &param1, PARAM_DEST);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
-    rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param2, &param2, PARAM_SOURCE);
+    rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param2, &param2, PARAM_SOURCE);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
-    if (pCpu->param1.size != pCpu->param2.size)
+    if (pDISState->param1.size != pDISState->param2.size)
     {
-        AssertMsgReturn(pCpu->param1.size >= pCpu->param2.size, /* should never happen! */
-                        ("%s at %RGv parameter mismatch %d vs %d!!\n", emGetMnemonic(pCpu), (RTGCPTR)pRegFrame->rip, pCpu->param1.size, pCpu->param2.size),
+        AssertMsgReturn(pDISState->param1.size >= pDISState->param2.size, /* should never happen! */
+                        ("%s at %RGv parameter mismatch %d vs %d!!\n", emGetMnemonic(pDISState), (RTGCPTR)pRegFrame->rip, pDISState->param1.size, pDISState->param2.size),
                         VERR_EM_INTERPRETER);
 
         /* Or %Ev, Ib -> just a hack to save some space; the data width of the 1st parameter determines the real width */
-        pCpu->param2.size = pCpu->param1.size;
+        pDISState->param2.size = pDISState->param1.size;
         param2.size       = param1.size;
     }
 
@@ -831,23 +857,23 @@ static int emInterpretLockOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pReg
     AssertReturn(param1.type == PARMTYPE_ADDRESS, VERR_EM_INTERPRETER);
 
     RTGCPTR GCPtrPar1 = param1.val.val64;
-    GCPtrPar1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, GCPtrPar1);
+    GCPtrPar1 = emConvertToFlatAddr(pVM, pRegFrame, pDISState, &pDISState->param1, GCPtrPar1);
 #ifdef IN_RC
     pvParam1  = (void *)GCPtrPar1;
 #else
     PGMPAGEMAPLOCK Lock;
-    rc = PGMPhysGCPtr2CCPtr(pVM, GCPtrPar1, &pvParam1, &Lock);
+    rc = PGMPhysGCPtr2CCPtr(pVCpu, GCPtrPar1, &pvParam1, &Lock);
     AssertRCReturn(rc, VERR_EM_INTERPRETER);
 #endif
 
     /* Try emulate it with a one-shot #PF handler in place. (RC) */
-    Log2(("%s %RGv imm%d=%RX64\n", emGetMnemonic(pCpu), GCPtrPar1, pCpu->param2.size*8, ValPar2));
+    Log2(("%s %RGv imm%d=%RX64\n", emGetMnemonic(pDISState), GCPtrPar1, pDISState->param2.size*8, ValPar2));
 
     RTGCUINTREG32 eflags = 0;
 #ifdef IN_RC
     MMGCRamRegisterTrapHandler(pVM);
 #endif
-    rc = pfnEmulate(pvParam1, ValPar2, pCpu->param2.size, &eflags);
+    rc = pfnEmulate(pvParam1, ValPar2, pDISState->param2.size, &eflags);
 #ifdef IN_RC
     MMGCRamDeregisterTrapHandler(pVM);
 #else
@@ -855,7 +881,7 @@ static int emInterpretLockOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pReg
 #endif
     if (RT_FAILURE(rc))
     {
-        Log(("%s %RGv imm%d=%RX64-> emulation failed due to page fault!\n", emGetMnemonic(pCpu), GCPtrPar1, pCpu->param2.size*8, ValPar2));
+        Log(("%s %RGv imm%d=%RX64-> emulation failed due to page fault!\n", emGetMnemonic(pDISState), GCPtrPar1, pDISState->param2.size*8, ValPar2));
         return VERR_EM_INTERPRETER;
     }
 
@@ -871,15 +897,15 @@ static int emInterpretLockOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pReg
 /**
  * ADD, ADC & SUB Emulation.
  */
-static int emInterpretAddSub(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize,
+static int emInterpretAddSub(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize,
                              PFNEMULATEPARAM3 pfnEmulate)
 {
     OP_PARAMVAL param1, param2;
-    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_DEST);
+    int rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param1, &param1, PARAM_DEST);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
-    rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param2, &param2, PARAM_SOURCE);
+    rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param2, &param2, PARAM_SOURCE);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
@@ -892,15 +918,15 @@ static int emInterpretAddSub(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
             RTGCPTR  pParam1;
             uint64_t valpar1, valpar2;
 
-            if (pCpu->param1.size != pCpu->param2.size)
+            if (pDISState->param1.size != pDISState->param2.size)
             {
-                if (pCpu->param1.size < pCpu->param2.size)
+                if (pDISState->param1.size < pDISState->param2.size)
                 {
-                    AssertMsgFailed(("%s at %RGv parameter mismatch %d vs %d!!\n", emGetMnemonic(pCpu), (RTGCPTR)pRegFrame->rip, pCpu->param1.size, pCpu->param2.size)); /* should never happen! */
+                    AssertMsgFailed(("%s at %RGv parameter mismatch %d vs %d!!\n", emGetMnemonic(pDISState), (RTGCPTR)pRegFrame->rip, pDISState->param1.size, pDISState->param2.size)); /* should never happen! */
                     return VERR_EM_INTERPRETER;
                 }
                 /* Or %Ev, Ib -> just a hack to save some space; the data width of the 1st parameter determines the real width */
-                pCpu->param2.size = pCpu->param1.size;
+                pDISState->param2.size = pDISState->param1.size;
                 param2.size     = param1.size;
             }
 
@@ -908,9 +934,9 @@ static int emInterpretAddSub(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
             if (param1.type == PARMTYPE_ADDRESS)
             {
                 pParam1 = (RTGCPTR)param1.val.val64;
-                pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, pParam1);
+                pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pDISState, &pDISState->param1, pParam1);
                 EM_ASSERT_FAULT_RETURN(pParam1 == pvFault, VERR_EM_INTERPRETER);
-                rc = emRamRead(pVM, pRegFrame, &valpar1, pParam1, param1.size);
+                rc = emRamRead(pVM, pVCpu, pRegFrame, &valpar1, pParam1, param1.size);
                 if (RT_FAILURE(rc))
                 {
                     AssertMsgFailed(("emRamRead %RGv size=%d failed with %Rrc\n", pParam1, param1.size, rc));
@@ -945,7 +971,7 @@ static int emInterpretAddSub(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
                                   | (eflags                &  (X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF));
 
             /* And write it back */
-            rc = emRamWrite(pVM, pRegFrame, pParam1, &valpar1, param1.size);
+            rc = emRamWrite(pVM, pVCpu, pRegFrame, pParam1, &valpar1, param1.size);
             if (RT_SUCCESS(rc))
             {
                 /* All done! */
@@ -963,27 +989,27 @@ static int emInterpretAddSub(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
 /**
  * ADC Emulation.
  */
-static int emInterpretAdc(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretAdc(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     if (pRegFrame->eflags.Bits.u1CF)
-        return emInterpretAddSub(pVM, pCpu, pRegFrame, pvFault, pcbSize, EMEmulateAdcWithCarrySet);
+        return emInterpretAddSub(pVM, pVCpu, pDISState, pRegFrame, pvFault, pcbSize, EMEmulateAdcWithCarrySet);
     else
-        return emInterpretAddSub(pVM, pCpu, pRegFrame, pvFault, pcbSize, EMEmulateAdd);
+        return emInterpretAddSub(pVM, pVCpu, pDISState, pRegFrame, pvFault, pcbSize, EMEmulateAdd);
 }
 
 
 /**
  * BTR/C/S Emulation.
  */
-static int emInterpretBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize,
+static int emInterpretBitTest(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize,
                               PFNEMULATEPARAM2UINT32 pfnEmulate)
 {
     OP_PARAMVAL param1, param2;
-    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_DEST);
+    int rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param1, &param1, PARAM_DEST);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
-    rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param2, &param2, PARAM_SOURCE);
+    rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param2, &param2, PARAM_SOURCE);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
@@ -1002,7 +1028,7 @@ static int emInterpretBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
                 return VERR_EM_INTERPRETER;
 
             pParam1 = (RTGCPTR)param1.val.val64;
-            pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, pParam1);
+            pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pDISState, &pDISState->param1, pParam1);
 
             /* Register or immediate data */
             switch(param2.type)
@@ -1016,10 +1042,10 @@ static int emInterpretBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
                 return VERR_EM_INTERPRETER;
             }
 
-            Log2(("emInterpret%s: pvFault=%RGv pParam1=%RGv val2=%x\n", emGetMnemonic(pCpu), pvFault, pParam1, valpar2));
+            Log2(("emInterpret%s: pvFault=%RGv pParam1=%RGv val2=%x\n", emGetMnemonic(pDISState), pvFault, pParam1, valpar2));
             pParam1 = (RTGCPTR)((RTGCUINTPTR)pParam1 + valpar2/8);
             EM_ASSERT_FAULT_RETURN((RTGCPTR)((RTGCUINTPTR)pParam1 & ~3) == pvFault, VERR_EM_INTERPRETER);
-            rc = emRamRead(pVM, pRegFrame, &valpar1, pParam1, 1);
+            rc = emRamRead(pVM, pVCpu, pRegFrame, &valpar1, pParam1, 1);
             if (RT_FAILURE(rc))
             {
                 AssertMsgFailed(("emRamRead %RGv size=%d failed with %Rrc\n", pParam1, param1.size, rc));
@@ -1037,7 +1063,7 @@ static int emInterpretBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
                                   | (eflags                &  (X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF));
 
             /* And write it back */
-            rc = emRamWrite(pVM, pRegFrame, pParam1, &valpar1, 1);
+            rc = emRamWrite(pVM, pVCpu, pRegFrame, pParam1, &valpar1, 1);
             if (RT_SUCCESS(rc))
             {
                 /* All done! */
@@ -1055,17 +1081,17 @@ static int emInterpretBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
 /**
  * LOCK BTR/C/S Emulation.
  */
-static int emInterpretLockBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+static int emInterpretLockBitTest(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
                                   uint32_t *pcbSize, PFNEMULATELOCKPARAM2 pfnEmulate)
 {
     void *pvParam1;
 
     OP_PARAMVAL param1, param2;
-    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_DEST);
+    int rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param1, &param1, PARAM_DEST);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
-    rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param2, &param2, PARAM_SOURCE);
+    rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param2, &param2, PARAM_SOURCE);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
@@ -1082,7 +1108,7 @@ static int emInterpretLockBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegF
     GCPtrPar1 = (GCPtrPar1 + ValPar2 / 8);
     ValPar2 &= 7;
 
-    GCPtrPar1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, GCPtrPar1);
+    GCPtrPar1 = emConvertToFlatAddr(pVM, pRegFrame, pDISState, &pDISState->param1, GCPtrPar1);
 #ifdef IN_RC
     Assert(TRPMHasTrap(pVM));
     EM_ASSERT_FAULT_RETURN((RTGCPTR)((RTGCUINTPTR)GCPtrPar1 & ~(RTGCUINTPTR)3) == pvFault, VERR_EM_INTERPRETER);
@@ -1092,11 +1118,11 @@ static int emInterpretLockBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegF
     pvParam1  = (void *)GCPtrPar1;
 #else
     PGMPAGEMAPLOCK Lock;
-    rc = PGMPhysGCPtr2CCPtr(pVM, GCPtrPar1, &pvParam1, &Lock);
+    rc = PGMPhysGCPtr2CCPtr(pVCpu, GCPtrPar1, &pvParam1, &Lock);
     AssertRCReturn(rc, VERR_EM_INTERPRETER);
 #endif
 
-    Log2(("emInterpretLockBitTest %s: pvFault=%RGv GCPtrPar1=%RGv imm=%RX64\n", emGetMnemonic(pCpu), pvFault, GCPtrPar1, ValPar2));
+    Log2(("emInterpretLockBitTest %s: pvFault=%RGv GCPtrPar1=%RGv imm=%RX64\n", emGetMnemonic(pDISState), pvFault, GCPtrPar1, ValPar2));
 
     /* Try emulate it with a one-shot #PF handler in place. (RC) */
     RTGCUINTREG32 eflags = 0;
@@ -1112,11 +1138,11 @@ static int emInterpretLockBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegF
     if (RT_FAILURE(rc))
     {
         Log(("emInterpretLockBitTest %s: %RGv imm%d=%RX64 -> emulation failed due to page fault!\n",
-             emGetMnemonic(pCpu), GCPtrPar1, pCpu->param2.size*8, ValPar2));
+             emGetMnemonic(pDISState), GCPtrPar1, pDISState->param2.size*8, ValPar2));
         return VERR_EM_INTERPRETER;
     }
 
-    Log2(("emInterpretLockBitTest %s: GCPtrPar1=%RGv imm=%RX64 CF=%d\n", emGetMnemonic(pCpu), GCPtrPar1, ValPar2, !!(eflags & X86_EFL_CF)));
+    Log2(("emInterpretLockBitTest %s: GCPtrPar1=%RGv imm=%RX64 CF=%d\n", emGetMnemonic(pDISState), GCPtrPar1, ValPar2, !!(eflags & X86_EFL_CF)));
 
     /* Update guest's eflags and finish. */
     pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
@@ -1130,14 +1156,14 @@ static int emInterpretLockBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegF
 /**
  * MOV emulation.
  */
-static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretMov(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     OP_PARAMVAL param1, param2;
-    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_DEST);
+    int rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param1, &param1, PARAM_DEST);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
-    rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param2, &param2, PARAM_SOURCE);
+    rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param2, &param2, PARAM_SOURCE);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
@@ -1163,7 +1189,7 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
 
             case PARMTYPE_ADDRESS:
                 pDest = (RTGCPTR)param1.val.val64;
-                pDest = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, pDest);
+                pDest = emConvertToFlatAddr(pVM, pRegFrame, pDISState, &pDISState->param1, pDest);
                 break;
 
             default:
@@ -1182,7 +1208,7 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
                 return VERR_EM_INTERPRETER;
             }
 #ifdef LOG_ENABLED
-            if (pCpu->mode == CPUMODE_64BIT)
+            if (pDISState->mode == CPUMODE_64BIT)
                 LogFlow(("EMInterpretInstruction at %RGv: OP_MOV %RGv <- %RX64 (%d) &val64=%RHv\n", (RTGCPTR)pRegFrame->rip, pDest, val64, param2.size, &val64));
             else
                 LogFlow(("EMInterpretInstruction at %08RX64: OP_MOV %RGv <- %08X  (%d) &val64=%RHv\n", pRegFrame->rip, pDest, (uint32_t)val64, param2.size, &val64));
@@ -1190,7 +1216,7 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
 
             Assert(param2.size <= 8 && param2.size > 0);
             EM_ASSERT_FAULT_RETURN(pDest == pvFault, VERR_EM_INTERPRETER);
-            rc = emRamWrite(pVM, pRegFrame, pDest, &val64, param2.size);
+            rc = emRamWrite(pVM, pVCpu, pRegFrame, pDest, &val64, param2.size);
             if (RT_FAILURE(rc))
                 return VERR_EM_INTERPRETER;
 
@@ -1211,7 +1237,7 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
 
             case PARMTYPE_ADDRESS:
                 pSrc = (RTGCPTR)param2.val.val64;
-                pSrc = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param2, pSrc);
+                pSrc = emConvertToFlatAddr(pVM, pRegFrame, pDISState, &pDISState->param2, pSrc);
                 break;
 
             default:
@@ -1220,7 +1246,7 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
 
             Assert(param1.size <= 8 && param1.size > 0);
             EM_ASSERT_FAULT_RETURN(pSrc == pvFault, VERR_EM_INTERPRETER);
-            rc = emRamRead(pVM, pRegFrame, &val64, pSrc, param1.size);
+            rc = emRamRead(pVM, pVCpu, pRegFrame, &val64, pSrc, param1.size);
             if (RT_FAILURE(rc))
                 return VERR_EM_INTERPRETER;
 
@@ -1230,10 +1256,10 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
             case PARMTYPE_REGISTER:
                 switch(param1.size)
                 {
-                case 1: rc = DISWriteReg8(pRegFrame, pCpu->param1.base.reg_gen,  (uint8_t) val64); break;
-                case 2: rc = DISWriteReg16(pRegFrame, pCpu->param1.base.reg_gen, (uint16_t)val64); break;
-                case 4: rc = DISWriteReg32(pRegFrame, pCpu->param1.base.reg_gen, (uint32_t)val64); break;
-                case 8: rc = DISWriteReg64(pRegFrame, pCpu->param1.base.reg_gen, val64); break;
+                case 1: rc = DISWriteReg8(pRegFrame, pDISState->param1.base.reg_gen,  (uint8_t) val64); break;
+                case 2: rc = DISWriteReg16(pRegFrame, pDISState->param1.base.reg_gen, (uint16_t)val64); break;
+                case 4: rc = DISWriteReg32(pRegFrame, pDISState->param1.base.reg_gen, (uint32_t)val64); break;
+                case 8: rc = DISWriteReg64(pRegFrame, pDISState->param1.base.reg_gen, val64); break;
                 default:
                     return VERR_EM_INTERPRETER;
                 }
@@ -1245,7 +1271,7 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
                 return VERR_EM_INTERPRETER;
             }
 #ifdef LOG_ENABLED
-            if (pCpu->mode == CPUMODE_64BIT)
+            if (pDISState->mode == CPUMODE_64BIT)
                 LogFlow(("EMInterpretInstruction: OP_MOV %RGv -> %RX64 (%d)\n", pSrc, val64, param1.size));
             else
                 LogFlow(("EMInterpretInstruction: OP_MOV %RGv -> %08X (%d)\n", pSrc, (uint32_t)val64, param1.size));
@@ -1263,7 +1289,7 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
 /**
  * [REP] STOSWD emulation
  */
-static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretStosWD(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     int      rc;
     RTGCPTR  GCDest, GCOffset;
@@ -1272,10 +1298,10 @@ static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
     int      offIncrement;
 
     /* Don't support any but these three prefix bytes. */
-    if ((pCpu->prefix & ~(PREFIX_ADDRSIZE|PREFIX_OPSIZE|PREFIX_REP|PREFIX_REX)))
+    if ((pDISState->prefix & ~(PREFIX_ADDRSIZE|PREFIX_OPSIZE|PREFIX_REP|PREFIX_REX)))
         return VERR_EM_INTERPRETER;
 
-    switch (pCpu->addrmode)
+    switch (pDISState->addrmode)
     {
     case CPUMODE_16BIT:
         GCOffset   = pRegFrame->di;
@@ -1295,7 +1321,7 @@ static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
     }
 
     GCDest = SELMToFlat(pVM, DIS_SELREG_ES, pRegFrame, GCOffset);
-    switch (pCpu->opmode)
+    switch (pDISState->opmode)
     {
     case CPUMODE_16BIT:
         cbSize = 2;
@@ -1313,17 +1339,17 @@ static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
 
     offIncrement = pRegFrame->eflags.Bits.u1DF ? -(signed)cbSize : (signed)cbSize;
 
-    if (!(pCpu->prefix & PREFIX_REP))
+    if (!(pDISState->prefix & PREFIX_REP))
     {
         LogFlow(("emInterpretStosWD dest=%04X:%RGv (%RGv) cbSize=%d\n", pRegFrame->es, GCOffset, GCDest, cbSize));
 
-        rc = emRamWrite(pVM, pRegFrame, GCDest, &pRegFrame->rax, cbSize);
+        rc = emRamWrite(pVM, pVCpu, pRegFrame, GCDest, &pRegFrame->rax, cbSize);
         if (RT_FAILURE(rc))
             return VERR_EM_INTERPRETER;
         Assert(rc == VINF_SUCCESS);
 
         /* Update (e/r)di. */
-        switch (pCpu->addrmode)
+        switch (pDISState->addrmode)
         {
         case CPUMODE_16BIT:
             pRegFrame->di  += offIncrement;
@@ -1362,9 +1388,9 @@ static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
 
         LogFlow(("emInterpretStosWD dest=%04X:%RGv (%RGv) cbSize=%d cTransfers=%x DF=%d\n", pRegFrame->es, GCOffset, GCDest, cbSize, cTransfers, pRegFrame->eflags.Bits.u1DF));
         /* Access verification first; we currently can't recover properly from traps inside this instruction */
-        rc = PGMVerifyAccess(pVM, GCDest - ((offIncrement > 0) ? 0 : ((cTransfers-1) * cbSize)),
+        rc = PGMVerifyAccess(pVM, pVCpu, GCDest - ((offIncrement > 0) ? 0 : ((cTransfers-1) * cbSize)),
                              cTransfers * cbSize,
-                             X86_PTE_RW | (CPUMGetGuestCPL(pVM, pRegFrame) == 3 ? X86_PTE_US : 0));
+                             X86_PTE_RW | (CPUMGetGuestCPL(pVCpu, pRegFrame) == 3 ? X86_PTE_US : 0));
         if (rc != VINF_SUCCESS)
         {
             Log(("STOSWD will generate a trap -> recompiler, rc=%d\n", rc));
@@ -1374,7 +1400,7 @@ static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
         /* REP case */
         while (cTransfers)
         {
-            rc = emRamWrite(pVM, pRegFrame, GCDest, &pRegFrame->rax, cbSize);
+            rc = emRamWrite(pVM, pVCpu, pRegFrame, GCDest, &pRegFrame->rax, cbSize);
             if (RT_FAILURE(rc))
             {
                 rc = VERR_EM_INTERPRETER;
@@ -1388,7 +1414,7 @@ static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
         }
 
         /* Update the registers. */
-        switch (pCpu->addrmode)
+        switch (pDISState->addrmode)
         {
         case CPUMODE_16BIT:
             pRegFrame->di = GCOffset;
@@ -1418,20 +1444,20 @@ static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
 /**
  * [LOCK] CMPXCHG emulation.
  */
-static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretCmpXchg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     OP_PARAMVAL param1, param2;
 
 #if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0)
-    Assert(pCpu->param1.size <= 4);
+    Assert(pDISState->param1.size <= 4);
 #endif
 
     /* Source to make DISQueryParamVal read the register value - ugly hack */
-    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_SOURCE);
+    int rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param1, &param1, PARAM_SOURCE);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
-    rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param2, &param2, PARAM_SOURCE);
+    rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param2, &param2, PARAM_SOURCE);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
@@ -1451,14 +1477,14 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
     void    *pvParam1;
     uint64_t eflags;
 
-    AssertReturn(pCpu->param1.size == pCpu->param2.size, VERR_EM_INTERPRETER);
+    AssertReturn(pDISState->param1.size == pDISState->param2.size, VERR_EM_INTERPRETER);
     switch(param1.type)
     {
     case PARMTYPE_ADDRESS:
         GCPtrPar1 = param1.val.val64;
-        GCPtrPar1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, GCPtrPar1);
+        GCPtrPar1 = emConvertToFlatAddr(pVM, pRegFrame, pDISState, &pDISState->param1, GCPtrPar1);
 
-        rc = PGMPhysGCPtr2CCPtr(pVM, GCPtrPar1, &pvParam1, &Lock);
+        rc = PGMPhysGCPtr2CCPtr(pVCpu, GCPtrPar1, &pvParam1, &Lock);
         AssertRCReturn(rc, VERR_EM_INTERPRETER);
         break;
 
@@ -1466,14 +1492,14 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
         return VERR_EM_INTERPRETER;
     }
 
-    LogFlow(("%s %RGv rax=%RX64 %RX64\n", emGetMnemonic(pCpu), GCPtrPar1, pRegFrame->rax, valpar));
+    LogFlow(("%s %RGv rax=%RX64 %RX64\n", emGetMnemonic(pDISState), GCPtrPar1, pRegFrame->rax, valpar));
 
-    if (pCpu->prefix & PREFIX_LOCK)
-        eflags = EMEmulateLockCmpXchg(pvParam1, &pRegFrame->rax, valpar, pCpu->param2.size);
+    if (pDISState->prefix & PREFIX_LOCK)
+        eflags = EMEmulateLockCmpXchg(pvParam1, &pRegFrame->rax, valpar, pDISState->param2.size);
     else
-        eflags = EMEmulateCmpXchg(pvParam1, &pRegFrame->rax, valpar, pCpu->param2.size);
+        eflags = EMEmulateCmpXchg(pvParam1, &pRegFrame->rax, valpar, pDISState->param2.size);
 
-    LogFlow(("%s %RGv rax=%RX64 %RX64 ZF=%d\n", emGetMnemonic(pCpu), GCPtrPar1, pRegFrame->rax, valpar, !!(eflags & X86_EFL_ZF)));
+    LogFlow(("%s %RGv rax=%RX64 %RX64 ZF=%d\n", emGetMnemonic(pDISState), GCPtrPar1, pRegFrame->rax, valpar, !!(eflags & X86_EFL_ZF)));
 
     /* Update guest's eflags and finish. */
     pRegFrame->eflags.u32 =   (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
@@ -1488,13 +1514,13 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
 /**
  * [LOCK] CMPXCHG8B emulation.
  */
-static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretCmpXchg8b(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    Assert(pCpu->mode != CPUMODE_64BIT);    /** @todo check */
+    Assert(pDISState->mode != CPUMODE_64BIT);    /** @todo check */
     OP_PARAMVAL param1;
 
     /* Source to make DISQueryParamVal read the register value - ugly hack */
-    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_SOURCE);
+    int rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param1, &param1, PARAM_SOURCE);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
@@ -1503,14 +1529,14 @@ static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFra
     uint64_t eflags;
     PGMPAGEMAPLOCK Lock;
 
-    AssertReturn(pCpu->param1.size == 8, VERR_EM_INTERPRETER);
+    AssertReturn(pDISState->param1.size == 8, VERR_EM_INTERPRETER);
     switch(param1.type)
     {
     case PARMTYPE_ADDRESS:
         GCPtrPar1 = param1.val.val64;
-        GCPtrPar1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, GCPtrPar1);
+        GCPtrPar1 = emConvertToFlatAddr(pVM, pRegFrame, pDISState, &pDISState->param1, GCPtrPar1);
 
-        rc = PGMPhysGCPtr2CCPtr(pVM, GCPtrPar1, &pvParam1, &Lock);
+        rc = PGMPhysGCPtr2CCPtr(pVCpu, GCPtrPar1, &pvParam1, &Lock);
         AssertRCReturn(rc, VERR_EM_INTERPRETER);
         break;
 
@@ -1518,14 +1544,14 @@ static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFra
         return VERR_EM_INTERPRETER;
     }
 
-    LogFlow(("%s %RGv=%08x eax=%08x\n", emGetMnemonic(pCpu), pvParam1, pRegFrame->eax));
+    LogFlow(("%s %RGv=%08x eax=%08x\n", emGetMnemonic(pDISState), pvParam1, pRegFrame->eax));
 
-    if (pCpu->prefix & PREFIX_LOCK)
+    if (pDISState->prefix & PREFIX_LOCK)
         eflags = EMEmulateLockCmpXchg8b(pvParam1, &pRegFrame->eax, &pRegFrame->edx, pRegFrame->ebx, pRegFrame->ecx);
     else
         eflags = EMEmulateCmpXchg8b(pvParam1, &pRegFrame->eax, &pRegFrame->edx, pRegFrame->ebx, pRegFrame->ecx);
 
-    LogFlow(("%s %RGv=%08x eax=%08x ZF=%d\n", emGetMnemonic(pCpu), pvParam1, pRegFrame->eax, !!(eflags & X86_EFL_ZF)));
+    LogFlow(("%s %RGv=%08x eax=%08x ZF=%d\n", emGetMnemonic(pDISState), pvParam1, pRegFrame->eax, !!(eflags & X86_EFL_ZF)));
 
     /* Update guest's eflags and finish; note that *only* ZF is affected. */
     pRegFrame->eflags.u32 =   (pRegFrame->eflags.u32 & ~(X86_EFL_ZF))
@@ -1541,17 +1567,17 @@ static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFra
 /**
  * [LOCK] CMPXCHG emulation.
  */
-static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretCmpXchg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    Assert(pCpu->mode != CPUMODE_64BIT);    /** @todo check */
+    Assert(pDISState->mode != CPUMODE_64BIT);    /** @todo check */
     OP_PARAMVAL param1, param2;
 
     /* Source to make DISQueryParamVal read the register value - ugly hack */
-    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_SOURCE);
+    int rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param1, &param1, PARAM_SOURCE);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
-    rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param2, &param2, PARAM_SOURCE);
+    rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param2, &param2, PARAM_SOURCE);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
@@ -1562,12 +1588,12 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
             RTRCPTR pParam1;
             uint32_t valpar, eflags;
 
-            AssertReturn(pCpu->param1.size == pCpu->param2.size, VERR_EM_INTERPRETER);
+            AssertReturn(pDISState->param1.size == pDISState->param2.size, VERR_EM_INTERPRETER);
             switch(param1.type)
             {
             case PARMTYPE_ADDRESS:
                 pParam1 = (RTRCPTR)param1.val.val64;
-                pParam1 = (RTRCPTR)emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, (RTGCPTR)(RTRCUINTPTR)pParam1);
+                pParam1 = (RTRCPTR)emConvertToFlatAddr(pVM, pRegFrame, pDISState, &pDISState->param1, (RTGCPTR)(RTRCUINTPTR)pParam1);
                 EM_ASSERT_FAULT_RETURN(pParam1 == (RTRCPTR)pvFault, VERR_EM_INTERPRETER);
                 break;
 
@@ -1585,22 +1611,22 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
                 return VERR_EM_INTERPRETER;
             }
 
-            LogFlow(("%s %RRv eax=%08x %08x\n", emGetMnemonic(pCpu), pParam1, pRegFrame->eax, valpar));
+            LogFlow(("%s %RRv eax=%08x %08x\n", emGetMnemonic(pDISState), pParam1, pRegFrame->eax, valpar));
 
             MMGCRamRegisterTrapHandler(pVM);
-            if (pCpu->prefix & PREFIX_LOCK)
-                rc = EMGCEmulateLockCmpXchg(pParam1, &pRegFrame->eax, valpar, pCpu->param2.size, &eflags);
+            if (pDISState->prefix & PREFIX_LOCK)
+                rc = EMGCEmulateLockCmpXchg(pParam1, &pRegFrame->eax, valpar, pDISState->param2.size, &eflags);
             else
-                rc = EMGCEmulateCmpXchg(pParam1, &pRegFrame->eax, valpar, pCpu->param2.size, &eflags);
+                rc = EMGCEmulateCmpXchg(pParam1, &pRegFrame->eax, valpar, pDISState->param2.size, &eflags);
             MMGCRamDeregisterTrapHandler(pVM);
 
             if (RT_FAILURE(rc))
             {
-                Log(("%s %RGv eax=%08x %08x -> emulation failed due to page fault!\n", emGetMnemonic(pCpu), pParam1, pRegFrame->eax, valpar));
+                Log(("%s %RGv eax=%08x %08x -> emulation failed due to page fault!\n", emGetMnemonic(pDISState), pParam1, pRegFrame->eax, valpar));
                 return VERR_EM_INTERPRETER;
             }
 
-            LogFlow(("%s %RRv eax=%08x %08x ZF=%d\n", emGetMnemonic(pCpu), pParam1, pRegFrame->eax, valpar, !!(eflags & X86_EFL_ZF)));
+            LogFlow(("%s %RRv eax=%08x %08x ZF=%d\n", emGetMnemonic(pDISState), pParam1, pRegFrame->eax, valpar, !!(eflags & X86_EFL_ZF)));
 
             /* Update guest's eflags and finish. */
             pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
@@ -1617,13 +1643,13 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
 /**
  * [LOCK] CMPXCHG8B emulation.
  */
-static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretCmpXchg8b(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    Assert(pCpu->mode != CPUMODE_64BIT);    /** @todo check */
+    Assert(pDISState->mode != CPUMODE_64BIT);    /** @todo check */
     OP_PARAMVAL param1;
 
     /* Source to make DISQueryParamVal read the register value - ugly hack */
-    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_SOURCE);
+    int rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param1, &param1, PARAM_SOURCE);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
@@ -1634,12 +1660,12 @@ static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFra
             RTRCPTR pParam1;
             uint32_t eflags;
 
-            AssertReturn(pCpu->param1.size == 8, VERR_EM_INTERPRETER);
+            AssertReturn(pDISState->param1.size == 8, VERR_EM_INTERPRETER);
             switch(param1.type)
             {
             case PARMTYPE_ADDRESS:
                 pParam1 = (RTRCPTR)param1.val.val64;
-                pParam1 = (RTRCPTR)emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, (RTGCPTR)(RTRCUINTPTR)pParam1);
+                pParam1 = (RTRCPTR)emConvertToFlatAddr(pVM, pRegFrame, pDISState, &pDISState->param1, (RTGCPTR)(RTRCUINTPTR)pParam1);
                 EM_ASSERT_FAULT_RETURN(pParam1 == (RTRCPTR)pvFault, VERR_EM_INTERPRETER);
                 break;
 
@@ -1647,10 +1673,10 @@ static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFra
                 return VERR_EM_INTERPRETER;
             }
 
-            LogFlow(("%s %RRv=%08x eax=%08x\n", emGetMnemonic(pCpu), pParam1, pRegFrame->eax));
+            LogFlow(("%s %RRv=%08x eax=%08x\n", emGetMnemonic(pDISState), pParam1, pRegFrame->eax));
 
             MMGCRamRegisterTrapHandler(pVM);
-            if (pCpu->prefix & PREFIX_LOCK)
+            if (pDISState->prefix & PREFIX_LOCK)
                 rc = EMGCEmulateLockCmpXchg8b(pParam1, &pRegFrame->eax, &pRegFrame->edx, pRegFrame->ebx, pRegFrame->ecx, &eflags);
             else
                 rc = EMGCEmulateCmpXchg8b(pParam1, &pRegFrame->eax, &pRegFrame->edx, pRegFrame->ebx, pRegFrame->ecx, &eflags);
@@ -1658,11 +1684,11 @@ static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFra
 
             if (RT_FAILURE(rc))
             {
-                Log(("%s %RGv=%08x eax=%08x -> emulation failed due to page fault!\n", emGetMnemonic(pCpu), pParam1, pRegFrame->eax));
+                Log(("%s %RGv=%08x eax=%08x -> emulation failed due to page fault!\n", emGetMnemonic(pDISState), pParam1, pRegFrame->eax));
                 return VERR_EM_INTERPRETER;
             }
 
-            LogFlow(("%s %RGv=%08x eax=%08x ZF=%d\n", emGetMnemonic(pCpu), pParam1, pRegFrame->eax, !!(eflags & X86_EFL_ZF)));
+            LogFlow(("%s %RGv=%08x eax=%08x ZF=%d\n", emGetMnemonic(pDISState), pParam1, pRegFrame->eax, !!(eflags & X86_EFL_ZF)));
 
             /* Update guest's eflags and finish; note that *only* ZF is affected. */
             pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_ZF))
@@ -1681,19 +1707,19 @@ static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFra
 /**
  * [LOCK] XADD emulation.
  */
-static int emInterpretXAdd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretXAdd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    Assert(pCpu->mode != CPUMODE_64BIT);    /** @todo check */
+    Assert(pDISState->mode != CPUMODE_64BIT);    /** @todo check */
     OP_PARAMVAL param1;
     uint32_t *pParamReg2;
     size_t cbSizeParamReg2;
 
     /* Source to make DISQueryParamVal read the register value - ugly hack */
-    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_SOURCE);
+    int rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param1, &param1, PARAM_SOURCE);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
-    rc = DISQueryParamRegPtr(pRegFrame, pCpu, &pCpu->param2, (void **)&pParamReg2, &cbSizeParamReg2);
+    rc = DISQueryParamRegPtr(pRegFrame, pDISState, &pDISState->param2, (void **)&pParamReg2, &cbSizeParamReg2);
     Assert(cbSizeParamReg2 <= 4);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
@@ -1705,12 +1731,12 @@ static int emInterpretXAdd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
             RTRCPTR pParam1;
             uint32_t eflags;
 
-            AssertReturn(pCpu->param1.size == pCpu->param2.size, VERR_EM_INTERPRETER);
+            AssertReturn(pDISState->param1.size == pDISState->param2.size, VERR_EM_INTERPRETER);
             switch(param1.type)
             {
             case PARMTYPE_ADDRESS:
                 pParam1 = (RTRCPTR)param1.val.val64;
-                pParam1 = (RTRCPTR)emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, (RTGCPTR)(RTRCUINTPTR)pParam1);
+                pParam1 = (RTRCPTR)emConvertToFlatAddr(pVM, pRegFrame, pDISState, &pDISState->param1, (RTGCPTR)(RTRCUINTPTR)pParam1);
                 EM_ASSERT_FAULT_RETURN(pParam1 == (RTRCPTR)pvFault, VERR_EM_INTERPRETER);
                 break;
 
@@ -1721,7 +1747,7 @@ static int emInterpretXAdd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
             LogFlow(("XAdd %RRv=%08x reg=%08x\n", pParam1, *pParamReg2));
 
             MMGCRamRegisterTrapHandler(pVM);
-            if (pCpu->prefix & PREFIX_LOCK)
+            if (pDISState->prefix & PREFIX_LOCK)
                 rc = EMGCEmulateLockXAdd(pParam1, pParamReg2, cbSizeParamReg2, &eflags);
             else
                 rc = EMGCEmulateXAdd(pParam1, pParamReg2, cbSizeParamReg2, &eflags);
@@ -1754,29 +1780,30 @@ static int emInterpretXAdd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  *
  */
-VMMDECL(int) EMInterpretIret(PVM pVM, PCPUMCTXCORE pRegFrame)
+VMMDECL(int) EMInterpretIret(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
     RTGCUINTPTR pIretStack = (RTGCUINTPTR)pRegFrame->esp;
     RTGCUINTPTR eip, cs, esp, ss, eflags, ds, es, fs, gs, uMask;
     int         rc;
 
-    Assert(!CPUMIsGuestIn64BitCode(pVM, pRegFrame));
+    Assert(!CPUMIsGuestIn64BitCode(pVCpu, pRegFrame));
 
-    rc  = emRamRead(pVM, pRegFrame, &eip,      (RTGCPTR)pIretStack      , 4);
-    rc |= emRamRead(pVM, pRegFrame, &cs,       (RTGCPTR)(pIretStack + 4), 4);
-    rc |= emRamRead(pVM, pRegFrame, &eflags,   (RTGCPTR)(pIretStack + 8), 4);
+    rc  = emRamRead(pVM, pVCpu, pRegFrame, &eip,      (RTGCPTR)pIretStack      , 4);
+    rc |= emRamRead(pVM, pVCpu, pRegFrame, &cs,       (RTGCPTR)(pIretStack + 4), 4);
+    rc |= emRamRead(pVM, pVCpu, pRegFrame, &eflags,   (RTGCPTR)(pIretStack + 8), 4);
     AssertRCReturn(rc, VERR_EM_INTERPRETER);
     AssertReturn(eflags & X86_EFL_VM, VERR_EM_INTERPRETER);
 
-    rc |= emRamRead(pVM, pRegFrame, &esp,      (RTGCPTR)(pIretStack + 12), 4);
-    rc |= emRamRead(pVM, pRegFrame, &ss,       (RTGCPTR)(pIretStack + 16), 4);
-    rc |= emRamRead(pVM, pRegFrame, &es,       (RTGCPTR)(pIretStack + 20), 4);
-    rc |= emRamRead(pVM, pRegFrame, &ds,       (RTGCPTR)(pIretStack + 24), 4);
-    rc |= emRamRead(pVM, pRegFrame, &fs,       (RTGCPTR)(pIretStack + 28), 4);
-    rc |= emRamRead(pVM, pRegFrame, &gs,       (RTGCPTR)(pIretStack + 32), 4);
+    rc |= emRamRead(pVM, pVCpu, pRegFrame, &esp,      (RTGCPTR)(pIretStack + 12), 4);
+    rc |= emRamRead(pVM, pVCpu, pRegFrame, &ss,       (RTGCPTR)(pIretStack + 16), 4);
+    rc |= emRamRead(pVM, pVCpu, pRegFrame, &es,       (RTGCPTR)(pIretStack + 20), 4);
+    rc |= emRamRead(pVM, pVCpu, pRegFrame, &ds,       (RTGCPTR)(pIretStack + 24), 4);
+    rc |= emRamRead(pVM, pVCpu, pRegFrame, &fs,       (RTGCPTR)(pIretStack + 28), 4);
+    rc |= emRamRead(pVM, pVCpu, pRegFrame, &gs,       (RTGCPTR)(pIretStack + 32), 4);
     AssertRCReturn(rc, VERR_EM_INTERPRETER);
 
     pRegFrame->eip = eip & 0xffff;
@@ -1787,7 +1814,7 @@ VMMDECL(int) EMInterpretIret(PVM pVM, PCPUMCTXCORE pRegFrame)
     eflags &= uMask;
 
 #ifndef IN_RING0
-    CPUMRawSetEFlags(pVM, pRegFrame, eflags);
+    CPUMRawSetEFlags(pVCpu, pRegFrame, eflags);
 #endif
     Assert((pRegFrame->eflags.u32 & (X86_EFL_IF|X86_EFL_IOPL)) == X86_EFL_IF);
 
@@ -1806,7 +1833,7 @@ VMMDECL(int) EMInterpretIret(PVM pVM, PCPUMCTXCORE pRegFrame)
 /**
  * IRET Emulation.
  */
-static int emInterpretIret(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretIret(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     /* only allow direct calls to EMInterpretIret for now */
     return VERR_EM_INTERPRETER;
@@ -1815,7 +1842,7 @@ static int emInterpretIret(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
 /**
  * WBINVD Emulation.
  */
-static int emInterpretWbInvd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretWbInvd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     /* Nothing to do. */
     return VINF_SUCCESS;
@@ -1827,11 +1854,12 @@ static int emInterpretWbInvd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  * @param   pAddrGC     Operand address
  *
  */
-VMMDECL(int) EMInterpretInvlpg(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pAddrGC)
+VMMDECL(int) EMInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pAddrGC)
 {
     int rc;
 
@@ -1841,7 +1869,7 @@ VMMDECL(int) EMInterpretInvlpg(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pAddrGC)
 #ifdef IN_RC
     LogFlow(("RC: EMULATE: invlpg %RGv\n", pAddrGC));
 #endif
-    rc = PGMInvalidatePage(pVM, pAddrGC);
+    rc = PGMInvalidatePage(pVM, pVCpu, pAddrGC);
     if (    rc == VINF_SUCCESS
         ||  rc == VINF_PGM_SYNC_CR3 /* we can rely on the FF */)
         return VINF_SUCCESS;
@@ -1856,12 +1884,12 @@ VMMDECL(int) EMInterpretInvlpg(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pAddrGC)
 /**
  * INVLPG Emulation.
  */
-static int emInterpretInvlPg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretInvlPg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     OP_PARAMVAL param1;
     RTGCPTR     addr;
 
-    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_SOURCE);
+    int rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param1, &param1, PARAM_SOURCE);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
@@ -1884,7 +1912,7 @@ static int emInterpretInvlPg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
 #ifdef IN_RC
     LogFlow(("RC: EMULATE: invlpg %RGv\n", addr));
 #endif
-    rc = PGMInvalidatePage(pVM, addr);
+    rc = PGMInvalidatePage(pVM, pVCpu, addr);
     if (    rc == VINF_SUCCESS
         ||  rc == VINF_PGM_SYNC_CR3 /* we can rely on the FF */)
         return VINF_SUCCESS;
@@ -1901,10 +1929,11 @@ static int emInterpretInvlPg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  *
  */
-VMMDECL(int) EMInterpretCpuId(PVM pVM, PCPUMCTXCORE pRegFrame)
+VMMDECL(int) EMInterpretCpuId(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
     uint32_t iLeaf = pRegFrame->eax;
 
@@ -1924,9 +1953,9 @@ VMMDECL(int) EMInterpretCpuId(PVM pVM, PCPUMCTXCORE pRegFrame)
 /**
  * CPUID Emulation.
  */
-static int emInterpretCpuId(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretCpuId(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    int rc = EMInterpretCpuId(pVM, pRegFrame);
+    int rc = EMInterpretCpuId(pVM, pVCpu, pRegFrame);
     return rc;
 }
 
@@ -1936,12 +1965,13 @@ static int emInterpretCpuId(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, 
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  * @param   DestRegGen  General purpose register index (USE_REG_E**))
  * @param   SrcRegCRx   CRx register index (USE_REG_CR*)
  *
  */
-VMMDECL(int) EMInterpretCRxRead(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegCrx)
+VMMDECL(int) EMInterpretCRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegCrx)
 {
     int      rc;
     uint64_t val64;
@@ -1954,11 +1984,11 @@ VMMDECL(int) EMInterpretCRxRead(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRe
     }
     else
     {
-        rc = CPUMGetGuestCRx(pVM, SrcRegCrx, &val64);
+        rc = CPUMGetGuestCRx(pVCpu, SrcRegCrx, &val64);
         AssertMsgRCReturn(rc, ("CPUMGetGuestCRx %d failed\n", SrcRegCrx), VERR_EM_INTERPRETER);
     }
 
-    if (CPUMIsGuestIn64BitCode(pVM, pRegFrame))
+    if (CPUMIsGuestIn64BitCode(pVCpu, pRegFrame))
         rc = DISWriteReg64(pRegFrame, DestRegGen, val64);
     else
         rc = DISWriteReg32(pRegFrame, DestRegGen, val64);
@@ -1978,22 +2008,23 @@ VMMDECL(int) EMInterpretCRxRead(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRe
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  *
  */
-VMMDECL(int) EMInterpretCLTS(PVM pVM)
+VMMDECL(int) EMInterpretCLTS(PVM pVM, PVMCPU pVCpu)
 {
-    uint64_t cr0 = CPUMGetGuestCR0(pVM);
+    uint64_t cr0 = CPUMGetGuestCR0(pVCpu);
     if (!(cr0 & X86_CR0_TS))
         return VINF_SUCCESS;
-    return CPUMSetGuestCR0(pVM, cr0 & ~X86_CR0_TS);
+    return CPUMSetGuestCR0(pVCpu, cr0 & ~X86_CR0_TS);
 }
 
 /**
  * CLTS Emulation.
  */
-static int emInterpretClts(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretClts(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    return EMInterpretCLTS(pVM);
+    return EMInterpretCLTS(pVM, pVCpu);
 }
 
 
@@ -2002,12 +2033,13 @@ static int emInterpretClts(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  * @param   DestRegCRx  CRx register index (USE_REG_CR*)
  * @param   val         New CRx value
  *
  */
-static int emUpdateCRx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uint64_t val)
+static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uint64_t val)
 {
     uint64_t oldval;
     uint64_t msrEFER;
@@ -2018,7 +2050,7 @@ static int emUpdateCRx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uin
     switch (DestRegCrx)
     {
     case USE_REG_CR0:
-        oldval = CPUMGetGuestCR0(pVM);
+        oldval = CPUMGetGuestCR0(pVCpu);
 #ifdef IN_RC
         /* CR0.WP and CR0.AM changes require a reschedule run in ring 3. */
         if (    (val    & (X86_CR0_WP | X86_CR0_AM))
@@ -2026,18 +2058,18 @@ static int emUpdateCRx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uin
             return VERR_EM_INTERPRETER;
 #endif
         rc = VINF_SUCCESS;
-        CPUMSetGuestCR0(pVM, val);
-        val = CPUMGetGuestCR0(pVM);
+        CPUMSetGuestCR0(pVCpu, val);
+        val = CPUMGetGuestCR0(pVCpu);
         if (    (oldval & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE))
             !=  (val    & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)))
         {
             /* global flush */
-            rc = PGMFlushTLB(pVM, CPUMGetGuestCR3(pVM), true /* global */);
+            rc = PGMFlushTLB(pVM, pVCpu, CPUMGetGuestCR3(pVCpu), true /* global */);
             AssertRCReturn(rc, rc);
         }
 
         /* Deal with long mode enabling/disabling. */
-        msrEFER = CPUMGetGuestEFER(pVM);
+        msrEFER = CPUMGetGuestEFER(pVCpu);
         if (msrEFER & MSR_K6_EFER_LME)
         {
             if (    !(oldval & X86_CR0_PG)
@@ -2051,7 +2083,7 @@ static int emUpdateCRx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uin
                 }
 
                 /* Illegal to switch to long mode before activating PAE first (AMD Arch. Programmer's Manual Volume 2: Table 14-5) */
-                if (!(CPUMGetGuestCR4(pVM) & X86_CR4_PAE))
+                if (!(CPUMGetGuestCR4(pVCpu) & X86_CR4_PAE))
                 {
                     AssertMsgFailed(("Illegal enabling of paging with PAE disabled!!\n"));
                     return VERR_EM_INTERPRETER; /* @todo generate #GP(0) */
@@ -2065,33 +2097,33 @@ static int emUpdateCRx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uin
                 msrEFER &= ~MSR_K6_EFER_LMA;
                 /* @todo Do we need to cut off rip here? High dword of rip is undefined, so it shouldn't really matter. */
             }
-            CPUMSetGuestEFER(pVM, msrEFER);
+            CPUMSetGuestEFER(pVCpu, msrEFER);
         }
-        rc2 = PGMChangeMode(pVM, CPUMGetGuestCR0(pVM), CPUMGetGuestCR4(pVM), CPUMGetGuestEFER(pVM));
+        rc2 = PGMChangeMode(pVM, pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR4(pVCpu), CPUMGetGuestEFER(pVCpu));
         return rc2 == VINF_SUCCESS ? rc : rc2;
 
     case USE_REG_CR2:
-        rc = CPUMSetGuestCR2(pVM, val); AssertRC(rc);
+        rc = CPUMSetGuestCR2(pVCpu, val); AssertRC(rc);
         return VINF_SUCCESS;
 
     case USE_REG_CR3:
         /* Reloading the current CR3 means the guest just wants to flush the TLBs */
-        rc = CPUMSetGuestCR3(pVM, val); AssertRC(rc);
-        if (CPUMGetGuestCR0(pVM) & X86_CR0_PG)
+        rc = CPUMSetGuestCR3(pVCpu, val); AssertRC(rc);
+        if (CPUMGetGuestCR0(pVCpu) & X86_CR0_PG)
         {
             /* flush */
-            rc = PGMFlushTLB(pVM, val, !(CPUMGetGuestCR4(pVM) & X86_CR4_PGE));
+            rc = PGMFlushTLB(pVM, pVCpu, val, !(CPUMGetGuestCR4(pVCpu) & X86_CR4_PGE));
             AssertRCReturn(rc, rc);
         }
         return rc;
 
     case USE_REG_CR4:
-        oldval = CPUMGetGuestCR4(pVM);
-        rc = CPUMSetGuestCR4(pVM, val); AssertRC(rc);
-        val = CPUMGetGuestCR4(pVM);
+        oldval = CPUMGetGuestCR4(pVCpu);
+        rc = CPUMSetGuestCR4(pVCpu, val); AssertRC(rc);
+        val = CPUMGetGuestCR4(pVCpu);
 
         /* Illegal to disable PAE when long mode is active. (AMD Arch. Programmer's Manual Volume 2: Table 14-5) */
-        msrEFER = CPUMGetGuestEFER(pVM);
+        msrEFER = CPUMGetGuestEFER(pVCpu);
         if (    (msrEFER & MSR_K6_EFER_LMA)
             &&  (oldval & X86_CR4_PAE)
             &&  !(val & X86_CR4_PAE))
@@ -2104,7 +2136,7 @@ static int emUpdateCRx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uin
             !=  (val    & (X86_CR4_PGE|X86_CR4_PAE|X86_CR4_PSE)))
         {
             /* global flush */
-            rc = PGMFlushTLB(pVM, CPUMGetGuestCR3(pVM), true /* global */);
+            rc = PGMFlushTLB(pVM, pVCpu, CPUMGetGuestCR3(pVCpu), true /* global */);
             AssertRCReturn(rc, rc);
         }
 
@@ -2120,7 +2152,7 @@ static int emUpdateCRx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uin
         if ((val ^ oldval) & X86_CR4_VME)
             VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
 
-        rc2 = PGMChangeMode(pVM, CPUMGetGuestCR0(pVM), CPUMGetGuestCR4(pVM), CPUMGetGuestEFER(pVM));
+        rc2 = PGMChangeMode(pVM, pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR4(pVCpu), CPUMGetGuestEFER(pVCpu));
         return rc2 == VINF_SUCCESS ? rc : rc2;
 
     case USE_REG_CR8:
@@ -2139,17 +2171,18 @@ static int emUpdateCRx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uin
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  * @param   DestRegCRx  CRx register index (USE_REG_CR*)
  * @param   SrcRegGen   General purpose register index (USE_REG_E**))
  *
  */
-VMMDECL(int) EMInterpretCRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uint32_t SrcRegGen)
+VMMDECL(int) EMInterpretCRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uint32_t SrcRegGen)
 {
     uint64_t val;
     int      rc;
 
-    if (CPUMIsGuestIn64BitCode(pVM, pRegFrame))
+    if (CPUMIsGuestIn64BitCode(pVCpu, pRegFrame))
     {
         rc = DISFetchReg64(pRegFrame, SrcRegGen, &val);
     }
@@ -2161,7 +2194,7 @@ VMMDECL(int) EMInterpretCRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestR
     }
 
     if (RT_SUCCESS(rc))
-        return emUpdateCRx(pVM, pRegFrame, DestRegCrx, val);
+        return emUpdateCRx(pVM, pVCpu, pRegFrame, DestRegCrx, val);
 
     return VERR_EM_INTERPRETER;
 }
@@ -2171,30 +2204,31 @@ VMMDECL(int) EMInterpretCRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestR
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  * @param   u16Data     LMSW source data.
  *
  */
-VMMDECL(int) EMInterpretLMSW(PVM pVM, PCPUMCTXCORE pRegFrame, uint16_t u16Data)
+VMMDECL(int) EMInterpretLMSW(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint16_t u16Data)
 {
-    uint64_t OldCr0 = CPUMGetGuestCR0(pVM);
+    uint64_t OldCr0 = CPUMGetGuestCR0(pVCpu);
 
     /* Only PE, MP, EM and TS can be changed; note that PE can't be cleared by this instruction. */
     uint64_t NewCr0 = ( OldCr0 & ~(             X86_CR0_MP | X86_CR0_EM | X86_CR0_TS))
                     | (u16Data &  (X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS));
 
-    return emUpdateCRx(pVM, pRegFrame, USE_REG_CR0, NewCr0);
+    return emUpdateCRx(pVM, pVCpu, pRegFrame, USE_REG_CR0, NewCr0);
 }
 
 /**
  * LMSW Emulation.
  */
-static int emInterpretLmsw(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretLmsw(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     OP_PARAMVAL param1;
     uint32_t    val;
 
-    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_SOURCE);
+    int rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param1, &param1, PARAM_SOURCE);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
@@ -2212,19 +2246,19 @@ static int emInterpretLmsw(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
     }
 
     LogFlow(("emInterpretLmsw %x\n", val));
-    return EMInterpretLMSW(pVM, pRegFrame, val);
+    return EMInterpretLMSW(pVM, pVCpu, pRegFrame, val);
 }
 
 #ifdef EM_EMULATE_SMSW
 /**
  * SMSW Emulation.
  */
-static int emInterpretSmsw(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretSmsw(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     OP_PARAMVAL param1;
-    uint64_t    cr0 = CPUMGetGuestCR0(pVM);
+    uint64_t    cr0 = CPUMGetGuestCR0(pVCpu);
 
-    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_SOURCE);
+    int rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param1, &param1, PARAM_SOURCE);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
@@ -2233,8 +2267,8 @@ static int emInterpretSmsw(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
     case PARMTYPE_IMMEDIATE:
         if(param1.size != sizeof(uint16_t))
             return VERR_EM_INTERPRETER;
-        LogFlow(("emInterpretSmsw %d <- cr0 (%x)\n", pCpu->param1.base.reg_gen, cr0));
-        rc = DISWriteReg16(pRegFrame, pCpu->param1.base.reg_gen, cr0);
+        LogFlow(("emInterpretSmsw %d <- cr0 (%x)\n", pDISState->param1.base.reg_gen, cr0));
+        rc = DISWriteReg16(pRegFrame, pDISState->param1.base.reg_gen, cr0);
         break;
 
     case PARMTYPE_ADDRESS:
@@ -2246,10 +2280,10 @@ static int emInterpretSmsw(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
             return VERR_EM_INTERPRETER;
 
         pParam1 = (RTGCPTR)param1.val.val64;
-        pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, pParam1);
+        pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pDISState, &pDISState->param1, pParam1);
         LogFlow(("emInterpretSmsw %VGv <- cr0 (%x)\n", pParam1, cr0));
 
-        rc = emRamWrite(pVM, pRegFrame, pParam1, &cr0, sizeof(uint16_t));
+        rc = emRamWrite(pVM, pVCpu, pRegFrame, pParam1, &cr0, sizeof(uint16_t));
         if (RT_FAILURE(rc))
         {
             AssertMsgFailed(("emRamWrite %RGv size=%d failed with %Rrc\n", pParam1, param1.size, rc));
@@ -2270,13 +2304,13 @@ static int emInterpretSmsw(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
 /**
  * MOV CRx
  */
-static int emInterpretMovCRx(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretMovCRx(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    if ((pCpu->param1.flags == USE_REG_GEN32 || pCpu->param1.flags == USE_REG_GEN64) && pCpu->param2.flags == USE_REG_CR)
-        return EMInterpretCRxRead(pVM, pRegFrame, pCpu->param1.base.reg_gen, pCpu->param2.base.reg_ctrl);
+    if ((pDISState->param1.flags == USE_REG_GEN32 || pDISState->param1.flags == USE_REG_GEN64) && pDISState->param2.flags == USE_REG_CR)
+        return EMInterpretCRxRead(pVM, pVCpu, pRegFrame, pDISState->param1.base.reg_gen, pDISState->param2.base.reg_ctrl);
 
-    if (pCpu->param1.flags == USE_REG_CR && (pCpu->param2.flags == USE_REG_GEN32 || pCpu->param2.flags == USE_REG_GEN64))
-        return EMInterpretCRxWrite(pVM, pRegFrame, pCpu->param1.base.reg_ctrl, pCpu->param2.base.reg_gen);
+    if (pDISState->param1.flags == USE_REG_CR && (pDISState->param2.flags == USE_REG_GEN32 || pDISState->param2.flags == USE_REG_GEN64))
+        return EMInterpretCRxWrite(pVM, pVCpu, pRegFrame, pDISState->param1.base.reg_ctrl, pDISState->param2.base.reg_gen);
 
     AssertMsgFailedReturn(("Unexpected control register move\n"), VERR_EM_INTERPRETER);
     return VERR_EM_INTERPRETER;
@@ -2288,17 +2322,18 @@ static int emInterpretMovCRx(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  * @param   DestRegDRx  DRx register index (USE_REG_DR*)
  * @param   SrcRegGen   General purpose register index (USE_REG_E**))
  *
  */
-VMMDECL(int) EMInterpretDRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegDrx, uint32_t SrcRegGen)
+VMMDECL(int) EMInterpretDRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegDrx, uint32_t SrcRegGen)
 {
     uint64_t val;
     int      rc;
 
-    if (CPUMIsGuestIn64BitCode(pVM, pRegFrame))
+    if (CPUMIsGuestIn64BitCode(pVCpu, pRegFrame))
     {
         rc = DISFetchReg64(pRegFrame, SrcRegGen, &val);
     }
@@ -2312,7 +2347,7 @@ VMMDECL(int) EMInterpretDRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestR
     if (RT_SUCCESS(rc))
     {
         /** @todo we don't fail if illegal bits are set/cleared for e.g. dr7 */
-        rc = CPUMSetGuestDRx(pVM, DestRegDrx, val);
+        rc = CPUMSetGuestDRx(pVCpu, DestRegDrx, val);
         if (RT_SUCCESS(rc))
             return rc;
         AssertMsgFailed(("CPUMSetGuestDRx %d failed\n", DestRegDrx));
@@ -2326,18 +2361,19 @@ VMMDECL(int) EMInterpretDRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestR
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  * @param   DestRegGen  General purpose register index (USE_REG_E**))
  * @param   SrcRegDRx   DRx register index (USE_REG_DR*)
  *
  */
-VMMDECL(int) EMInterpretDRxRead(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegDrx)
+VMMDECL(int) EMInterpretDRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegDrx)
 {
     uint64_t val64;
 
-    int rc = CPUMGetGuestDRx(pVM, SrcRegDrx, &val64);
+    int rc = CPUMGetGuestDRx(pVCpu, SrcRegDrx, &val64);
     AssertMsgRCReturn(rc, ("CPUMGetGuestDRx %d failed\n", SrcRegDrx), VERR_EM_INTERPRETER);
-    if (CPUMIsGuestIn64BitCode(pVM, pRegFrame))
+    if (CPUMIsGuestIn64BitCode(pVCpu, pRegFrame))
     {
         rc = DISWriteReg64(pRegFrame, DestRegGen, val64);
     }
@@ -2354,18 +2390,18 @@ VMMDECL(int) EMInterpretDRxRead(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRe
 /**
  * MOV DRx
  */
-static int emInterpretMovDRx(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretMovDRx(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     int rc = VERR_EM_INTERPRETER;
 
-    if((pCpu->param1.flags == USE_REG_GEN32 || pCpu->param1.flags == USE_REG_GEN64) && pCpu->param2.flags == USE_REG_DBG)
+    if((pDISState->param1.flags == USE_REG_GEN32 || pDISState->param1.flags == USE_REG_GEN64) && pDISState->param2.flags == USE_REG_DBG)
     {
-        rc = EMInterpretDRxRead(pVM, pRegFrame, pCpu->param1.base.reg_gen, pCpu->param2.base.reg_dbg);
+        rc = EMInterpretDRxRead(pVM, pVCpu, pRegFrame, pDISState->param1.base.reg_gen, pDISState->param2.base.reg_dbg);
     }
     else
-    if(pCpu->param1.flags == USE_REG_DBG && (pCpu->param2.flags == USE_REG_GEN32 || pCpu->param2.flags == USE_REG_GEN64))
+    if(pDISState->param1.flags == USE_REG_DBG && (pDISState->param2.flags == USE_REG_GEN32 || pDISState->param2.flags == USE_REG_GEN64))
     {
-        rc = EMInterpretDRxWrite(pVM, pRegFrame, pCpu->param1.base.reg_dbg, pCpu->param2.base.reg_gen);
+        rc = EMInterpretDRxWrite(pVM, pVCpu, pRegFrame, pDISState->param1.base.reg_dbg, pDISState->param2.base.reg_gen);
     }
     else
         AssertMsgFailed(("Unexpected debug register move\n"));
@@ -2377,12 +2413,12 @@ static int emInterpretMovDRx(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
 /**
  * LLDT Emulation.
  */
-static int emInterpretLLdt(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretLLdt(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     OP_PARAMVAL param1;
     RTSEL       sel;
 
-    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_SOURCE);
+    int rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param1, &param1, PARAM_SOURCE);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
@@ -2403,13 +2439,13 @@ static int emInterpretLLdt(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
 
 #ifdef IN_RING0
     /* Only for the VT-x real-mode emulation case. */
-    AssertReturn(CPUMIsGuestInRealMode(pVM), VERR_EM_INTERPRETER);
-    CPUMSetGuestLDTR(pVM, sel);
+    AssertReturn(CPUMIsGuestInRealMode(pVCpu), VERR_EM_INTERPRETER);
+    CPUMSetGuestLDTR(pVCpu, sel);
     return VINF_SUCCESS;
 #else
     if (sel == 0)
     {
-        if (CPUMGetHyperLDTR(pVM) == 0)
+        if (CPUMGetHyperLDTR(pVCpu) == 0)
         {
             // this simple case is most frequent in Windows 2000 (31k - boot & shutdown)
             return VINF_SUCCESS;
@@ -2424,41 +2460,41 @@ static int emInterpretLLdt(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
 /**
  * LIDT/LGDT Emulation.
  */
-static int emInterpretLIGdt(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretLIGdt(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     OP_PARAMVAL param1;
     RTGCPTR     pParam1;
     X86XDTR32   dtr32;
 
-    Log(("Emulate %s at %RGv\n", emGetMnemonic(pCpu), (RTGCPTR)pRegFrame->rip));
+    Log(("Emulate %s at %RGv\n", emGetMnemonic(pDISState), (RTGCPTR)pRegFrame->rip));
 
     /* Only for the VT-x real-mode emulation case. */
-    AssertReturn(CPUMIsGuestInRealMode(pVM), VERR_EM_INTERPRETER);
+    AssertReturn(CPUMIsGuestInRealMode(pVCpu), VERR_EM_INTERPRETER);
 
-    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_SOURCE);
+    int rc = DISQueryParamVal(pRegFrame, pDISState, &pDISState->param1, &param1, PARAM_SOURCE);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
     switch(param1.type)
     {
     case PARMTYPE_ADDRESS:
-        pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, param1.val.val16);
+        pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pDISState, &pDISState->param1, param1.val.val16);
         break;
 
     default:
         return VERR_EM_INTERPRETER;
     }
 
-    rc = emRamRead(pVM, pRegFrame, &dtr32, pParam1, sizeof(dtr32));
+    rc = emRamRead(pVM, pVCpu, pRegFrame, &dtr32, pParam1, sizeof(dtr32));
     AssertRCReturn(rc, VERR_EM_INTERPRETER);
 
-    if (!(pCpu->prefix & PREFIX_OPSIZE))
+    if (!(pDISState->prefix & PREFIX_OPSIZE))
         dtr32.uAddr &= 0xffffff; /* 16 bits operand size */
 
-    if (pCpu->pCurInstr->opcode == OP_LIDT)
-        CPUMSetGuestIDTR(pVM, dtr32.uAddr, dtr32.cb);
+    if (pDISState->pCurInstr->opcode == OP_LIDT)
+        CPUMSetGuestIDTR(pVCpu, dtr32.uAddr, dtr32.cb);
     else
-        CPUMSetGuestGDTR(pVM, dtr32.uAddr, dtr32.cb);
+        CPUMSetGuestGDTR(pVCpu, dtr32.uAddr, dtr32.cb);
 
     return VINF_SUCCESS;
 }
@@ -2471,7 +2507,7 @@ static int emInterpretLIGdt(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, 
  *
  * @remark the instruction following sti is guaranteed to be executed before any interrupts are dispatched
  */
-static int emInterpretSti(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretSti(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     PPATMGCSTATE pGCState = PATMQueryGCState(pVM);
 
@@ -2485,7 +2521,7 @@ static int emInterpretSti(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
     Assert(pRegFrame->eflags.u32 & X86_EFL_IF);
     Assert(pvFault == SELMToFlat(pVM, DIS_SELREG_CS, pRegFrame, (RTGCPTR)pRegFrame->rip));
 
-    pVM->em.s.GCPtrInhibitInterrupts = pRegFrame->eip + pCpu->opsize;
+    pVCpu->em.s.GCPtrInhibitInterrupts = pRegFrame->eip + pDISState->opsize;
     VM_FF_SET(pVM, VM_FF_INHIBIT_INTERRUPTS);
 
     return VINF_SUCCESS;
@@ -2496,7 +2532,7 @@ static int emInterpretSti(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
 /**
  * HLT Emulation.
  */
-static int emInterpretHlt(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretHlt(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     return VINF_EM_HALT;
 }
@@ -2507,12 +2543,13 @@ static int emInterpretHlt(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  *
  */
-VMMDECL(int) EMInterpretRdtsc(PVM pVM, PCPUMCTXCORE pRegFrame)
+VMMDECL(int) EMInterpretRdtsc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
-    unsigned uCR4 = CPUMGetGuestCR4(pVM);
+    unsigned uCR4 = CPUMGetGuestCR4(pVCpu);
 
     if (uCR4 & X86_CR4_TSD)
         return VERR_EM_INTERPRETER; /* genuine #GP */
@@ -2526,9 +2563,18 @@ VMMDECL(int) EMInterpretRdtsc(PVM pVM, PCPUMCTXCORE pRegFrame)
     return VINF_SUCCESS;
 }
 
-VMMDECL(int) EMInterpretRdtscp(PVM pVM, PCPUMCTX pCtx)
+/**
+ * Interpret RDTSCP
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
+ * @param   pCtx        The CPU context.
+ *
+ */
+VMMDECL(int) EMInterpretRdtscp(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    unsigned uCR4 = CPUMGetGuestCR4(pVM);
+    unsigned uCR4 = CPUMGetGuestCR4(pVCpu);
 
     if (!CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_RDTSCP))
     {
@@ -2545,7 +2591,7 @@ VMMDECL(int) EMInterpretRdtscp(PVM pVM, PCPUMCTX pCtx)
     pCtx->rax = (uint32_t)uTicks;
     pCtx->rdx = (uTicks >> 32ULL);
     /* Low dword of the TSC_AUX msr only. */
-    pCtx->rcx = (uint32_t)CPUMGetGuestMsr(pVM, MSR_K8_TSC_AUX);
+    pCtx->rcx = (uint32_t)CPUMGetGuestMsr(pVCpu, MSR_K8_TSC_AUX);
 
     return VINF_SUCCESS;
 }
@@ -2553,9 +2599,9 @@ VMMDECL(int) EMInterpretRdtscp(PVM pVM, PCPUMCTX pCtx)
 /**
  * RDTSC Emulation.
  */
-static int emInterpretRdtsc(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretRdtsc(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    return EMInterpretRdtsc(pVM, pRegFrame);
+    return EMInterpretRdtsc(pVM, pVCpu, pRegFrame);
 }
 
 /**
@@ -2563,18 +2609,19 @@ static int emInterpretRdtsc(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, 
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  *
  */
-VMMDECL(int) EMInterpretRdpmc(PVM pVM, PCPUMCTXCORE pRegFrame)
+VMMDECL(int) EMInterpretRdpmc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
-    unsigned uCR4 = CPUMGetGuestCR4(pVM);
+    unsigned uCR4 = CPUMGetGuestCR4(pVCpu);
 
     /* If X86_CR4_PCE is not set, then CPL must be zero. */
     if (    !(uCR4 & X86_CR4_PCE)
-        &&  CPUMGetGuestCPL(pVM, pRegFrame) != 0)
+        &&  CPUMGetGuestCPL(pVCpu, pRegFrame) != 0)
     {
-        Assert(CPUMGetGuestCR0(pVM) & X86_CR0_PE);
+        Assert(CPUMGetGuestCR0(pVCpu) & X86_CR0_PE);
         return VERR_EM_INTERPRETER; /* genuine #GP */
     }
 
@@ -2588,24 +2635,24 @@ VMMDECL(int) EMInterpretRdpmc(PVM pVM, PCPUMCTXCORE pRegFrame)
 /**
  * RDPMC Emulation
  */
-static int emInterpretRdpmc(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretRdpmc(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    return EMInterpretRdpmc(pVM, pRegFrame);
+    return EMInterpretRdpmc(pVM, pVCpu, pRegFrame);
 }
 
 /**
  * MONITOR Emulation.
  */
-static int emInterpretMonitor(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretMonitor(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     uint32_t u32Dummy, u32ExtFeatures, cpl;
 
-    Assert(pCpu->mode != CPUMODE_64BIT);    /** @todo check */
+    Assert(pDISState->mode != CPUMODE_64BIT);    /** @todo check */
     if (pRegFrame->ecx != 0)
         return VERR_EM_INTERPRETER; /* illegal value. */
 
     /* Get the current privilege level. */
-    cpl = CPUMGetGuestCPL(pVM, pRegFrame);
+    cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
     if (cpl != 0)
         return VERR_EM_INTERPRETER; /* supervisor only */
 
@@ -2620,16 +2667,16 @@ static int emInterpretMonitor(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
 /**
  * MWAIT Emulation.
  */
-static int emInterpretMWait(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretMWait(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     uint32_t u32Dummy, u32ExtFeatures, cpl;
 
-    Assert(pCpu->mode != CPUMODE_64BIT);    /** @todo check */
+    Assert(pDISState->mode != CPUMODE_64BIT);    /** @todo check */
     if (pRegFrame->ecx != 0)
         return VERR_EM_INTERPRETER; /* illegal value. */
 
     /* Get the current privilege level. */
-    cpl = CPUMGetGuestCPL(pVM, pRegFrame);
+    cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
     if (cpl != 0)
         return VERR_EM_INTERPRETER; /* supervisor only */
 
@@ -2724,10 +2771,11 @@ static const char *emMSRtoString(uint32_t uMsr)
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  *
  */
-VMMDECL(int) EMInterpretRdmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
+VMMDECL(int) EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
     uint32_t u32Dummy, u32Features, cpl;
     uint64_t val;
@@ -2736,10 +2784,10 @@ VMMDECL(int) EMInterpretRdmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
 
     /** @todo According to the Intel manuals, there's a REX version of RDMSR that is slightly different.
      *  That version clears the high dwords of both RDX & RAX */
-    pCtx = CPUMQueryGuestCtxPtr(pVM);
+    pCtx = CPUMQueryGuestCtxPtr(pVCpu);
 
     /* Get the current privilege level. */
-    cpl = CPUMGetGuestCPL(pVM, pRegFrame);
+    cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
     if (cpl != 0)
         return VERR_EM_INTERPRETER; /* supervisor only */
 
@@ -2807,7 +2855,7 @@ VMMDECL(int) EMInterpretRdmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
         break;
 
     case MSR_K8_TSC_AUX:
-        val = CPUMGetGuestMsr(pVM, MSR_K8_TSC_AUX);
+        val = CPUMGetGuestMsr(pVCpu, MSR_K8_TSC_AUX);
         break;
 
 #if 0 /*def IN_RING0 */
@@ -2828,7 +2876,7 @@ VMMDECL(int) EMInterpretRdmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
     default:
         /* In X2APIC specification this range is reserved for APIC control. */
         if ((pRegFrame->ecx >= MSR_IA32_APIC_START) && (pRegFrame->ecx < MSR_IA32_APIC_END))
-            rc = PDMApicReadMSR(pVM, VMMGetCpuId(pVM), pRegFrame->ecx, &val);
+            rc = PDMApicReadMSR(pVM, pVCpu->idCpu, pRegFrame->ecx, &val);
         else
             /* We should actually trigger a #GP here, but don't as that might cause more trouble. */
             val = 0;
@@ -2847,11 +2895,11 @@ VMMDECL(int) EMInterpretRdmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
 /**
  * RDMSR Emulation.
  */
-static int emInterpretRdmsr(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     /* Note: the Intel manual claims there's a REX version of RDMSR that's slightly different, so we play safe by completely disassembling the instruction. */
-    Assert(!(pCpu->prefix & PREFIX_REX));
-    return EMInterpretRdmsr(pVM, pRegFrame);
+    Assert(!(pDISState->prefix & PREFIX_REX));
+    return EMInterpretRdmsr(pVM, pVCpu, pRegFrame);
 }
 
 
@@ -2860,19 +2908,20 @@ static int emInterpretRdmsr(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, 
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  */
-VMMDECL(int) EMInterpretWrmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
+VMMDECL(int) EMInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
     uint32_t u32Dummy, u32Features, cpl;
     uint64_t val;
     CPUMCTX *pCtx;
 
     /* Note: works the same in 32 and 64 bits modes. */
-    pCtx = CPUMQueryGuestCtxPtr(pVM);
+    pCtx = CPUMQueryGuestCtxPtr(pVCpu);
 
     /* Get the current privilege level. */
-    cpl = CPUMGetGuestCPL(pVM, pRegFrame);
+    cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
     if (cpl != 0)
         return VERR_EM_INTERPRETER; /* supervisor only */
 
@@ -2971,13 +3020,13 @@ VMMDECL(int) EMInterpretWrmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
         break;
 
     case MSR_K8_TSC_AUX:
-        CPUMSetGuestMsr(pVM, MSR_K8_TSC_AUX, val);
+        CPUMSetGuestMsr(pVCpu, MSR_K8_TSC_AUX, val);
         break;
 
     default:
         /* In X2APIC specification this range is reserved for APIC control. */
         if ((pRegFrame->ecx >=  MSR_IA32_APIC_START) && (pRegFrame->ecx <  MSR_IA32_APIC_END))
-            return PDMApicWriteMSR(pVM, VMMGetCpuId(pVM), pRegFrame->ecx, val);
+            return PDMApicWriteMSR(pVM, pVCpu->idCpu, pRegFrame->ecx, val);
 
         /* We should actually trigger a #GP here, but don't as that might cause more trouble. */
         break;
@@ -2989,9 +3038,9 @@ VMMDECL(int) EMInterpretWrmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
 /**
  * WRMSR Emulation.
  */
-static int emInterpretWrmsr(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+static int emInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    return EMInterpretWrmsr(pVM, pRegFrame);
+    return EMInterpretWrmsr(pVM, pVCpu, pRegFrame);
 }
 
 
@@ -2999,7 +3048,7 @@ static int emInterpretWrmsr(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, 
  * Internal worker.
  * @copydoc EMInterpretInstructionCPU
  */
-DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     Assert(pcbSize);
     *pcbSize = 0;
@@ -3009,41 +3058,41 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
      * And no complicated prefixes.
      */
     /* Get the current privilege level. */
-    uint32_t cpl = CPUMGetGuestCPL(pVM, pRegFrame);
+    uint32_t cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
     if (    cpl != 0
-        &&  pCpu->pCurInstr->opcode != OP_RDTSC)    /* rdtsc requires emulation in ring 3 as well */
+        &&  pDISState->pCurInstr->opcode != OP_RDTSC)    /* rdtsc requires emulation in ring 3 as well */
     {
         Log(("WARNING: refusing instruction emulation for user-mode code!!\n"));
-        STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FailedUserMode));
+        STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FailedUserMode));
         return VERR_EM_INTERPRETER;
     }
 
 #ifdef IN_RC
-    if (    (pCpu->prefix & (PREFIX_REPNE | PREFIX_REP))
-        ||  (   (pCpu->prefix & PREFIX_LOCK)
-             && pCpu->pCurInstr->opcode != OP_CMPXCHG
-             && pCpu->pCurInstr->opcode != OP_CMPXCHG8B
-             && pCpu->pCurInstr->opcode != OP_XADD
-             && pCpu->pCurInstr->opcode != OP_OR
-             && pCpu->pCurInstr->opcode != OP_BTR
+    if (    (pDISState->prefix & (PREFIX_REPNE | PREFIX_REP))
+        ||  (   (pDISState->prefix & PREFIX_LOCK)
+             && pDISState->pCurInstr->opcode != OP_CMPXCHG
+             && pDISState->pCurInstr->opcode != OP_CMPXCHG8B
+             && pDISState->pCurInstr->opcode != OP_XADD
+             && pDISState->pCurInstr->opcode != OP_OR
+             && pDISState->pCurInstr->opcode != OP_BTR
             )
        )
 #else
-    if (    (pCpu->prefix & PREFIX_REPNE)
-        ||  (   (pCpu->prefix & PREFIX_REP)
-             && pCpu->pCurInstr->opcode != OP_STOSWD
+    if (    (pDISState->prefix & PREFIX_REPNE)
+        ||  (   (pDISState->prefix & PREFIX_REP)
+             && pDISState->pCurInstr->opcode != OP_STOSWD
             )
-        ||  (   (pCpu->prefix & PREFIX_LOCK)
-             && pCpu->pCurInstr->opcode != OP_OR
-             && pCpu->pCurInstr->opcode != OP_BTR
-             && pCpu->pCurInstr->opcode != OP_CMPXCHG
-             && pCpu->pCurInstr->opcode != OP_CMPXCHG8B
+        ||  (   (pDISState->prefix & PREFIX_LOCK)
+             && pDISState->pCurInstr->opcode != OP_OR
+             && pDISState->pCurInstr->opcode != OP_BTR
+             && pDISState->pCurInstr->opcode != OP_CMPXCHG
+             && pDISState->pCurInstr->opcode != OP_CMPXCHG8B
             )
        )
 #endif
     {
         //Log(("EMInterpretInstruction: wrong prefix!!\n"));
-        STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FailedPrefix));
+        STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FailedPrefix));
         return VERR_EM_INTERPRETER;
     }
 
@@ -3052,10 +3101,10 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
      * Unable to emulate most >4 bytes accesses in 32 bits mode.
      * Whitelisted instructions are safe.
      */
-    if (    pCpu->param1.size > 4
-        &&  CPUMIsGuestIn64BitCode(pVM, pRegFrame))
+    if (    pDISState->param1.size > 4
+        &&  CPUMIsGuestIn64BitCode(pVCpu, pRegFrame))
     {
-        uint32_t uOpCode = pCpu->pCurInstr->opcode;
+        uint32_t uOpCode = pDISState->pCurInstr->opcode;
         if (    uOpCode != OP_STOSWD
             &&  uOpCode != OP_MOV
             &&  uOpCode != OP_CMPXCHG8B
@@ -3076,10 +3125,10 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
             )
         {
 # ifdef VBOX_WITH_STATISTICS
-            switch (pCpu->pCurInstr->opcode)
+            switch (pDISState->pCurInstr->opcode)
             {
 #  define INTERPRET_FAILED_CASE(opcode, Instr) \
-                case opcode: STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Failed##Instr)); break;
+                case opcode: STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Failed##Instr)); break;
                 INTERPRET_FAILED_CASE(OP_XCHG,Xchg);
                 INTERPRET_FAILED_CASE(OP_DEC,Dec);
                 INTERPRET_FAILED_CASE(OP_INC,Inc);
@@ -3119,7 +3168,7 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
                 INTERPRET_FAILED_CASE(OP_MOVNTPS,MovNTPS);
 #  undef INTERPRET_FAILED_CASE
                 default:
-                    STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FailedMisc));
+                    STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FailedMisc));
                     break;
             }
 # endif /* VBOX_WITH_STATISTICS */
@@ -3130,31 +3179,31 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
 
     int rc;
 #if (defined(VBOX_STRICT) || defined(LOG_ENABLED))
-    LogFlow(("emInterpretInstructionCPU %s\n", emGetMnemonic(pCpu)));
+    LogFlow(("emInterpretInstructionCPU %s\n", emGetMnemonic(pDISState)));
 #endif
-    switch (pCpu->pCurInstr->opcode)
+    switch (pDISState->pCurInstr->opcode)
     {
         /*
          * Macros for generating the right case statements.
          */
 # define INTERPRET_CASE_EX_LOCK_PARAM3(opcode, Instr, InstrFn, pfnEmulate, pfnEmulateLock) \
         case opcode:\
-            if (pCpu->prefix & PREFIX_LOCK) \
-                rc = emInterpretLock##InstrFn(pVM, pCpu, pRegFrame, pvFault, pcbSize, pfnEmulateLock); \
+            if (pDISState->prefix & PREFIX_LOCK) \
+                rc = emInterpretLock##InstrFn(pVM, pVCpu, pDISState, pRegFrame, pvFault, pcbSize, pfnEmulateLock); \
             else \
-                rc = emInterpret##InstrFn(pVM, pCpu, pRegFrame, pvFault, pcbSize, pfnEmulate); \
+                rc = emInterpret##InstrFn(pVM, pVCpu, pDISState, pRegFrame, pvFault, pcbSize, pfnEmulate); \
             if (RT_SUCCESS(rc)) \
-                STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Instr)); \
+                STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Instr)); \
             else \
-                STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Failed##Instr)); \
+                STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Failed##Instr)); \
             return rc
 #define INTERPRET_CASE_EX_PARAM3(opcode, Instr, InstrFn, pfnEmulate) \
         case opcode:\
-            rc = emInterpret##InstrFn(pVM, pCpu, pRegFrame, pvFault, pcbSize, pfnEmulate); \
+            rc = emInterpret##InstrFn(pVM, pVCpu, pDISState, pRegFrame, pvFault, pcbSize, pfnEmulate); \
             if (RT_SUCCESS(rc)) \
-                STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Instr)); \
+                STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Instr)); \
             else \
-                STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Failed##Instr)); \
+                STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Failed##Instr)); \
             return rc
 
 #define INTERPRET_CASE_EX_PARAM2(opcode, Instr, InstrFn, pfnEmulate) \
@@ -3164,24 +3213,24 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
 
 #define INTERPRET_CASE(opcode, Instr) \
         case opcode:\
-            rc = emInterpret##Instr(pVM, pCpu, pRegFrame, pvFault, pcbSize); \
+            rc = emInterpret##Instr(pVM, pVCpu, pDISState, pRegFrame, pvFault, pcbSize); \
             if (RT_SUCCESS(rc)) \
-                STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Instr)); \
+                STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Instr)); \
             else \
-                STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Failed##Instr)); \
+                STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Failed##Instr)); \
             return rc
 
 #define INTERPRET_CASE_EX_DUAL_PARAM2(opcode, Instr, InstrFn) \
         case opcode:\
-            rc = emInterpret##InstrFn(pVM, pCpu, pRegFrame, pvFault, pcbSize); \
+            rc = emInterpret##InstrFn(pVM, pVCpu, pDISState, pRegFrame, pvFault, pcbSize); \
             if (RT_SUCCESS(rc)) \
-                STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Instr)); \
+                STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Instr)); \
             else \
-                STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Failed##Instr)); \
+                STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Failed##Instr)); \
             return rc
 
 #define INTERPRET_STAT_CASE(opcode, Instr) \
-        case opcode: STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Failed##Instr)); return VERR_EM_INTERPRETER;
+        case opcode: STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Failed##Instr)); return VERR_EM_INTERPRETER;
 
         /*
          * The actual case statements.
@@ -3240,8 +3289,8 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
 #endif
 
         default:
-            Log3(("emInterpretInstructionCPU: opcode=%d\n", pCpu->pCurInstr->opcode));
-            STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FailedMisc));
+            Log3(("emInterpretInstructionCPU: opcode=%d\n", pDISState->pCurInstr->opcode));
+            STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FailedMisc));
             return VERR_EM_INTERPRETER;
 
 #undef INTERPRET_CASE_EX_PARAM2
@@ -3258,11 +3307,12 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
  * Sets the PC for which interrupts should be inhibited.
  *
  * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  * @param   PC          The PC.
  */
-VMMDECL(void) EMSetInhibitInterruptsPC(PVM pVM, RTGCUINTPTR PC)
+VMMDECL(void) EMSetInhibitInterruptsPC(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR PC)
 {
-    pVM->em.s.GCPtrInhibitInterrupts = PC;
+    pVCpu->em.s.GCPtrInhibitInterrupts = PC;
     VM_FF_SET(pVM, VM_FF_INHIBIT_INTERRUPTS);
 }
 
@@ -3278,10 +3328,11 @@ VMMDECL(void) EMSetInhibitInterruptsPC(PVM pVM, RTGCUINTPTR PC)
  *
  * @returns The PC for which interrupts should be inhibited.
  * @param   pVM         VM handle.
+ * @param   pVCpu       The VMCPU handle.
  *
  */
-VMMDECL(RTGCUINTPTR) EMGetInhibitInterruptsPC(PVM pVM)
+VMMDECL(RTGCUINTPTR) EMGetInhibitInterruptsPC(PVM pVM, PVMCPU pVCpu)
 {
-    return pVM->em.s.GCPtrInhibitInterrupts;
+    return pVCpu->em.s.GCPtrInhibitInterrupts;
 }
 

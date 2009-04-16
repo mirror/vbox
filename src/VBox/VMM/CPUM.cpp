@@ -121,17 +121,15 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     /*
      * Assert alignment and sizes.
      */
-    AssertRelease(!(RT_OFFSETOF(VM, cpum.s) & 31));
-    AssertRelease(sizeof(pVM->cpum.s) <= sizeof(pVM->cpum.padding));
-
-    /*
-     * Setup any fixed pointers and offsets.
-     */
-    pVM->cpum.s.pHyperCoreR3 = CPUMCTX2CORE(&pVM->cpum.s.Hyper);
-    pVM->cpum.s.pHyperCoreR0 = VM_R0_ADDR(pVM, CPUMCTX2CORE(&pVM->cpum.s.Hyper));
-
-    /* Hidden selector registers are invalid by default. */
-    pVM->cpum.s.fValidHiddenSelRegs  = false;
+    AssertCompile(!(RT_OFFSETOF(VM, cpum.s) & 31));
+    AssertCompile(sizeof(pVM->cpum.s) <= sizeof(pVM->cpum.padding));
+    AssertCompile(!(sizeof(CPUMCTX) & 63));
+    AssertCompile(!(sizeof(CPUMCTXMSR) & 63));
+    AssertCompile(!(sizeof(CPUMHOSTCTX) & 63));
+    AssertCompile(!(RT_OFFSETOF(VM, cpum) & 63));
+    AssertCompile(!(RT_OFFSETOF(VM, aCpus) & 63));
+    AssertCompile(!(RT_OFFSETOF(VMCPU, cpum.s) & 63));
+    AssertCompile(!(sizeof(pVM->aCpus[0].cpum.s) & 63));
 
     /* Calculate the offset from CPUM to CPUMCPU for the first CPU. */
     pVM->cpum.s.ulOffCPUMCPU = RT_OFFSETOF(VM, aCpus[0].cpum) - RT_OFFSETOF(VM, cpum);
@@ -140,8 +138,16 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     /* Calculate the offset from CPUMCPU to CPUM. */
     for (unsigned i=0;i<pVM->cCPUs;i++)
     {
-        pVM->aCpus[i].cpum.s.ulOffCPUM = RT_OFFSETOF(VM, aCpus[i].cpum) - RT_OFFSETOF(VM, cpum);
-        Assert((uintptr_t)&pVM->aCpus[i].cpum - pVM->aCpus[i].cpum.s.ulOffCPUM == (uintptr_t)&pVM->cpum);
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
+        /*
+         * Setup any fixed pointers and offsets.
+         */
+        pVCpu->cpum.s.pHyperCoreR3 = CPUMCTX2CORE(&pVCpu->cpum.s.Hyper);
+        pVCpu->cpum.s.pHyperCoreR0 = VM_R0_ADDR(pVM, CPUMCTX2CORE(&pVCpu->cpum.s.Hyper));
+
+        pVCpu->cpum.s.ulOffCPUM   = RT_OFFSETOF(VM, aCpus[i].cpum) - RT_OFFSETOF(VM, cpum);
+        Assert((uintptr_t)&pVCpu->cpum - pVCpu->cpum.s.ulOffCPUM == (uintptr_t)&pVM->cpum);
     }
 
     /*
@@ -636,11 +642,15 @@ static int cpumR3CpuIdInit(PVM pVM)
 VMMR3DECL(void) CPUMR3Relocate(PVM pVM)
 {
     LogFlow(("CPUMR3Relocate\n"));
-    /*
-     * Switcher pointers.
-     */
-    pVM->cpum.s.pHyperCoreRC = MMHyperCCToRC(pVM, pVM->cpum.s.pHyperCoreR3);
-    Assert(pVM->cpum.s.pHyperCoreRC != NIL_RTRCPTR);
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu  = &pVM->aCpus[i];
+        /*
+         * Switcher pointers.
+         */
+        pVCpu->cpum.s.pHyperCoreRC = MMHyperCCToRC(pVM, pVCpu->cpum.s.pHyperCoreR3);
+        Assert(pVCpu->cpum.s.pHyperCoreRC != NIL_RTRCPTR);
+    }
 }
 
 
@@ -674,11 +684,12 @@ VMMR3DECL(int) CPUMR3TermCPU(PVM pVM)
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
     for (unsigned i=0;i<pVM->cCPUs;i++)
     {
-        PCPUMCTX pCtx = CPUMQueryGuestCtxPtrEx(pVM, &pVM->aCpus[i]);
+        PVMCPU pVCpu  = &pVM->aCpus[i];
+        PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
 
-        memset(pVM->aCpus[i].cpum.s.aMagic, 0, sizeof(pVM->aCpus[i].cpum.s.aMagic));
-        pVM->aCpus[i].cpum.s.uMagic     = 0;
-        pCtx->dr[5]                     = 0;
+        memset(pVCpu->cpum.s.aMagic, 0, sizeof(pVCpu->cpum.s.aMagic));
+        pVCpu->cpum.s.uMagic     = 0;
+        pCtx->dr[5]              = 0;
     }
 #endif
     return 0;
@@ -696,7 +707,7 @@ VMMR3DECL(void) CPUMR3Reset(PVM pVM)
     /* @todo anything different for VCPU > 0? */
     for (unsigned i=0;i<pVM->cCPUs;i++)
     {
-        PCPUMCTX pCtx = CPUMQueryGuestCtxPtrEx(pVM, &pVM->aCpus[i]);
+        PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(&pVM->aCpus[i]);
 
         /*
          * Initialize everything to ZERO first.
@@ -792,15 +803,22 @@ static DECLCALLBACK(int) cpumR3Save(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Save.
      */
-    SSMR3PutMem(pSSM, &pVM->cpum.s.Hyper, sizeof(pVM->cpum.s.Hyper));
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
+        SSMR3PutMem(pSSM, &pVCpu->cpum.s.Hyper, sizeof(pVCpu->cpum.s.Hyper));
+    }
 
     SSMR3PutU32(pSSM, pVM->cCPUs);
     for (unsigned i=0;i<pVM->cCPUs;i++)
     {
-        SSMR3PutMem(pSSM, &pVM->aCpus[i].cpum.s.Guest, sizeof(pVM->aCpus[i].cpum.s.Guest));
-        SSMR3PutU32(pSSM, pVM->aCpus[i].cpum.s.fUseFlags);
-        SSMR3PutU32(pSSM, pVM->aCpus[i].cpum.s.fChanged);
-        SSMR3PutMem(pSSM, &pVM->aCpus[i].cpum.s.GuestMsr, sizeof(pVM->aCpus[i].cpum.s.GuestMsr));
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
+        SSMR3PutMem(pSSM, &pVCpu->cpum.s.Guest, sizeof(pVCpu->cpum.s.Guest));
+        SSMR3PutU32(pSSM, pVCpu->cpum.s.fUseFlags);
+        SSMR3PutU32(pSSM, pVCpu->cpum.s.fChanged);
+        SSMR3PutMem(pSSM, &pVCpu->cpum.s.GuestMsr, sizeof(pVCpu->cpum.s.GuestMsr));
     }
 
     SSMR3PutU32(pSSM, RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd));
@@ -948,11 +966,17 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
     /*
      * Restore.
      */
-    uint32_t uCR3 = pVM->cpum.s.Hyper.cr3;
-    uint32_t uESP = pVM->cpum.s.Hyper.esp; /* see VMMR3Relocate(). */
-    SSMR3GetMem(pSSM, &pVM->cpum.s.Hyper, sizeof(pVM->cpum.s.Hyper));
-    pVM->cpum.s.Hyper.cr3 = uCR3;
-    pVM->cpum.s.Hyper.esp = uESP;
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU   pVCpu = &pVM->aCpus[i];
+        uint32_t uCR3  = pVCpu->cpum.s.Hyper.cr3;
+        uint32_t uESP  = pVCpu->cpum.s.Hyper.esp; /* see VMMR3Relocate(). */
+
+        SSMR3GetMem(pSSM, &pVCpu->cpum.s.Hyper, sizeof(pVCpu->cpum.s.Hyper));
+        pVCpu->cpum.s.Hyper.cr3 = uCR3;
+        pVCpu->cpum.s.Hyper.esp = uESP;
+    }
+
     if (u32Version == CPUM_SAVED_STATE_VERSION_VER1_6)
     {
         CPUMCTX_VER1_6 cpumctx16;
@@ -1132,7 +1156,7 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
     switch (enmType)
     {
         case CPUMDUMPTYPE_TERSE:
-            if (CPUMIsGuestIn64BitCode(pVM, pCtxCore))
+            if (CPUMIsGuestIn64BitCodeEx(pCtx))
                 pHlp->pfnPrintf(pHlp,
                     "%srax=%016RX64 %srbx=%016RX64 %srcx=%016RX64 %srdx=%016RX64\n"
                     "%srsi=%016RX64 %srdi=%016RX64 %sr8 =%016RX64 %sr9 =%016RX64\n"
@@ -1158,7 +1182,7 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
             break;
 
         case CPUMDUMPTYPE_DEFAULT:
-            if (CPUMIsGuestIn64BitCode(pVM, pCtxCore))
+            if (CPUMIsGuestIn64BitCodeEx(pCtx))
                 pHlp->pfnPrintf(pHlp,
                     "%srax=%016RX64 %srbx=%016RX64 %srcx=%016RX64 %srdx=%016RX64\n"
                     "%srsi=%016RX64 %srdi=%016RX64 %sr8 =%016RX64 %sr9 =%016RX64\n"
@@ -1192,7 +1216,7 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
             break;
 
         case CPUMDUMPTYPE_VERBOSE:
-            if (CPUMIsGuestIn64BitCode(pVM, pCtxCore))
+            if (CPUMIsGuestIn64BitCodeEx(pCtx))
                 pHlp->pfnPrintf(pHlp,
                     "%srax=%016RX64 %srbx=%016RX64 %srcx=%016RX64 %srdx=%016RX64\n"
                     "%srsi=%016RX64 %srdi=%016RX64 %sr8 =%016RX64 %sr9 =%016RX64\n"
@@ -1360,8 +1384,10 @@ static DECLCALLBACK(void) cpumR3InfoGuest(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     const char *pszComment;
     cpumR3InfoParseArg(pszArgs, &enmType, &pszComment);
     pHlp->pfnPrintf(pHlp, "Guest CPUM state: %s\n", pszComment);
-    /* @todo SMP */
-    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVM);
+
+    /* @todo SMP support! */
+    PVMCPU pVCpu = &pVM->aCpus[0];
+    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
     cpumR3InfoOne(pVM, pCtx, CPUMCTX2CORE(pCtx), pHlp, enmType, "");
 }
 
@@ -1393,9 +1419,12 @@ static DECLCALLBACK(void) cpumR3InfoHyper(PVM pVM, PCDBGFINFOHLP pHlp, const cha
 {
     CPUMDUMPTYPE enmType;
     const char *pszComment;
+    /* @todo SMP */
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
     cpumR3InfoParseArg(pszArgs, &enmType, &pszComment);
     pHlp->pfnPrintf(pHlp, "Hypervisor CPUM state: %s\n", pszComment);
-    cpumR3InfoOne(pVM, &pVM->cpum.s.Hyper, pVM->cpum.s.pHyperCoreR3, pHlp, enmType, ".");
+    cpumR3InfoOne(pVM, &pVCpu->cpum.s.Hyper, pVCpu->cpum.s.pHyperCoreR3, pHlp, enmType, ".");
     pHlp->pfnPrintf(pHlp, "CR4OrMask=%#x CR4AndMask=%#x\n", pVM->cpum.s.CR4.OrMask, pVM->cpum.s.CR4.AndMask);
 }
 
@@ -2135,6 +2164,8 @@ typedef struct CPUMDISASSTATE
     PDISCPUSTATE    pCpu;
     /** The VM handle. */
     PVM             pVM;
+    /** The VMCPU handle. */
+    PVMCPU          pVCpu;
     /** Pointer to the first byte in the segemnt. */
     RTGCUINTPTR     GCPtrSegBase;
     /** Pointer to the byte after the end of the segment. (might have wrapped!) */
@@ -2194,7 +2225,7 @@ static DECLCALLBACK(int) cpumR3DisasInstrRead(RTUINTPTR PtrSrc, uint8_t *pu8Dst,
                 /* Release mapping lock previously acquired. */
                 if (pState->fLocked)
                     PGMPhysReleasePageMappingLock(pState->pVM, &pState->PageMapLock);
-                rc = PGMPhysGCPtr2CCPtrReadOnly(pState->pVM, pState->pvPageGC, &pState->pvPageR3, &pState->PageMapLock);
+                rc = PGMPhysGCPtr2CCPtrReadOnly(pState->pVCpu, pState->pvPageGC, &pState->pvPageR3, &pState->PageMapLock);
                 pState->fLocked = RT_SUCCESS_NP(rc);
             }
             if (RT_FAILURE(rc))
@@ -2235,22 +2266,24 @@ static DECLCALLBACK(int) cpumR3DisasInstrRead(RTUINTPTR PtrSrc, uint8_t *pu8Dst,
  *
  * @returns VBox status code.
  * @param   pVM         VM Handle
+ * @param   pVCpu       VMCPU Handle
  * @param   pCtx        CPU context
  * @param   GCPtrPC     Program counter (relative to CS) to disassemble from.
  * @param   pCpu        Disassembly state
  * @param   pszPrefix   String prefix for logging (debug only)
  *
  */
-VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PDISCPUSTATE pCpu, const char *pszPrefix)
+VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PDISCPUSTATE pCpu, const char *pszPrefix)
 {
     CPUMDISASSTATE  State;
     int             rc;
 
-    const PGMMODE enmMode = PGMGetGuestMode(pVM);
+    const PGMMODE enmMode = PGMGetGuestMode(pVCpu);
     State.pCpu            = pCpu;
     State.pvPageGC        = 0;
     State.pvPageR3        = NULL;
     State.pVM             = pVM;
+    State.pVCpu           = pVCpu;
     State.fLocked         = false;
     State.f64Bits         = false;
 
@@ -2348,40 +2381,17 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PDI
  *
  * @returns VBox status code.
  * @param   pVM         VM Handle
+ * @param   pVCpu       VMCPU Handle
  * @param   pCtx        CPU context
  * @param   pc          GC instruction pointer
  * @param   pszPrefix   String prefix for logging
  *
  * @deprecated  Use DBGFR3DisasInstrCurrentLog().
  */
-VMMR3DECL(void) CPUMR3DisasmInstr(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, const char *pszPrefix)
+VMMR3DECL(void) CPUMR3DisasmInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPTR pc, const char *pszPrefix)
 {
     DISCPUSTATE Cpu;
-    CPUMR3DisasmInstrCPU(pVM, pCtx, pc, &Cpu, pszPrefix);
-}
-
-
-/**
- * Disassemble an instruction and dump it to the log
- *
- * @returns VBox status code.
- * @param   pVM         VM Handle
- * @param   pCtx        CPU context
- * @param   pc          GC instruction pointer
- * @param   pszPrefix   String prefix for logging
- * @param   nrInstructions
- *
- * @deprecated  Create new DBGFR3Disas function to do this.
- */
-VMMR3DECL(void) CPUMR3DisasmBlock(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, const char *pszPrefix, int nrInstructions)
-{
-    for (int i = 0; i < nrInstructions; i++)
-    {
-        DISCPUSTATE cpu;
-
-        CPUMR3DisasmInstrCPU(pVM, pCtx, pc, &cpu, pszPrefix);
-        pc += cpu.opsize;
-    }
+    CPUMR3DisasmInstrCPU(pVM, pVCpu, pCtx, pc, &Cpu, pszPrefix);
 }
 
 
@@ -2392,8 +2402,8 @@ VMMR3DECL(void) CPUMR3DisasmBlock(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, const char
  */
 VMMR3DECL(void) CPUMR3SaveEntryCtx(PVM pVM)
 {
-    /* @todo SMP */
-    pVM->cpum.s.GuestEntry = *CPUMQueryGuestCtxPtr(pVM);
+    /* @todo SMP support!! */
+    pVM->cpum.s.GuestEntry = *CPUMQueryGuestCtxPtr(VMMGetCpu(pVM));
 }
 
 #endif /* DEBUG */

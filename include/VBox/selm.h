@@ -52,10 +52,10 @@ VMMDECL(RTSEL)      SELMGetHyperDS(PVM pVM);
 VMMDECL(RTSEL)      SELMGetHyperTSS(PVM pVM);
 VMMDECL(RTSEL)      SELMGetHyperTSSTrap08(PVM pVM);
 VMMDECL(RTRCPTR)    SELMGetHyperGDT(PVM pVM);
-VMMDECL(int)        SELMGetTSSInfo(PVM pVM, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTss, bool *pfCanHaveIOBitmap);
+VMMDECL(int)        SELMGetTSSInfo(PVM pVM, PVMCPU pVCpu, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTss, bool *pfCanHaveIOBitmap);
 VMMDECL(RTGCPTR)    SELMToFlat(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr);
 VMMDECL(RTGCPTR)    SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr);
-VMMDECL(void)       SELMShadowCR3Changed(PVM pVM);
+VMMDECL(void)       SELMShadowCR3Changed(PVM pVM, PVMCPU pVCpu);
 
 /** Flags for SELMToFlatEx().
  * @{ */
@@ -137,9 +137,9 @@ VMMR3DECL(int)      SELMR3InitFinalize(PVM pVM);
 VMMR3DECL(void)     SELMR3Relocate(PVM pVM);
 VMMR3DECL(int)      SELMR3Term(PVM pVM);
 VMMR3DECL(void)     SELMR3Reset(PVM pVM);
-VMMR3DECL(int)      SELMR3UpdateFromCPUM(PVM pVM);
-VMMR3DECL(int)      SELMR3SyncTSS(PVM pVM);
-VMMR3DECL(int)      SELMR3GetSelectorInfo(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo);
+VMMR3DECL(int)      SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu);
+VMMR3DECL(int)      SELMR3SyncTSS(PVM pVM, PVMCPU pVCpu);
+VMMR3DECL(int)      SELMR3GetSelectorInfo(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PSELMSELINFO pSelInfo);
 VMMR3DECL(int)      SELMR3GetShadowSelectorInfo(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo);
 VMMR3DECL(void)     SELMR3DisableMonitoring(PVM pVM);
 VMMR3DECL(void)     SELMR3DumpDescriptor(X86DESC  Desc, RTSEL Sel, const char *pszMsg);

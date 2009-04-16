@@ -144,8 +144,8 @@ VMMR3DECL(int) HWACCMR3Init(PVM pVM)
     /*
      * Assert alignment and sizes.
      */
-    AssertRelease(!(RT_OFFSETOF(VM, hwaccm.s) & 31));
-    AssertRelease(sizeof(pVM->hwaccm.s) <= sizeof(pVM->hwaccm.padding));
+    AssertCompile(!(RT_OFFSETOF(VM, hwaccm.s) & 31));
+    AssertCompile(sizeof(pVM->hwaccm.s) <= sizeof(pVM->hwaccm.padding));
 
     /* Some structure checks. */
     AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, u8Reserved3) == 0xC0, ("u8Reserved3 offset = %x\n", RT_OFFSETOF(SVM_VMCB, u8Reserved3)));
@@ -416,9 +416,6 @@ static void hwaccmR3DisableRawMode(PVM pVM)
     SELMR3DisableMonitoring(pVM);
     TRPMR3DisableMonitoring(pVM);
 
-    /* The hidden selector registers are now valid. */
-    CPUMSetHiddenSelRegsValid(pVM, true);
-
     /* Disable the switcher code (safety precaution). */
     VMMR3DisableSwitcher(pVM);
 
@@ -429,7 +426,12 @@ static void hwaccmR3DisableRawMode(PVM pVM)
     VMMR3DisableSwitcher(pVM);
 
     /* Reinit the paging mode to force the new shadow mode. */
-    PGMR3ChangeMode(pVM, PGMMODE_REAL);
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
+        PGMR3ChangeMode(pVM, pVCpu, PGMMODE_REAL);
+    }
 }
 
 /**
@@ -853,7 +855,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 if (pVM->hwaccm.s.fNestedPaging)
                 {
                     LogRel(("HWACCM: Enabled nested paging\n"));
-                    LogRel(("HWACCM: EPT root page                 = %RHp\n", PGMGetHyperCR3(pVM)));
+                    LogRel(("HWACCM: EPT root page                 = %RHp\n", PGMGetHyperCR3(VMMGetCpu(pVM))));
                 }
                 if (pVM->hwaccm.s.vmx.fVPID)
                     LogRel(("HWACCM: Enabled VPID\n"));
@@ -987,8 +989,8 @@ VMMR3DECL(void) HWACCMR3Relocate(PVM pVM)
         {
             PVMCPU pVCpu = &pVM->aCpus[i];
             /* @todo SMP */
-            pVCpu->hwaccm.s.enmShadowMode            = PGMGetShadowMode(pVM);
-            pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode = PGMGetGuestMode(pVM);
+            pVCpu->hwaccm.s.enmShadowMode            = PGMGetShadowMode(pVCpu);
+            pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode = PGMGetGuestMode(pVCpu);
         }
     }
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
@@ -1050,16 +1052,16 @@ VMMR3DECL(bool) HWACCMR3IsAllowed(PVM pVM)
  * This is called by PGM.
  *
  * @param   pVM            The VM to operate on.
+ * @param   pVCpu          The VMCPU to operate on.
  * @param   enmShadowMode  New shadow paging mode.
  * @param   enmGuestMode   New guest paging mode.
  */
-VMMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PGMMODE enmShadowMode, PGMMODE enmGuestMode)
+VMMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode)
 {
     /* Ignore page mode changes during state loading. */
-    if (VMR3GetState(pVM) == VMSTATE_LOADING)
+    if (VMR3GetState(pVCpu->pVMR3) == VMSTATE_LOADING)
         return;
 
-    PVMCPU pVCpu = VMMGetCpu(pVM);
     pVCpu->hwaccm.s.enmShadowMode = enmShadowMode;
 
     if (   pVM->hwaccm.s.vmx.fEnabled
@@ -1070,7 +1072,7 @@ VMMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PGMMODE enmShadowMode, PGMMOD
         {
             PCPUMCTX pCtx;
 
-            pCtx = CPUMQueryGuestCtxPtr(pVM);
+            pCtx = CPUMQueryGuestCtxPtr(pVCpu);
 
             /* After a real mode switch to protected mode we must force
              * CPL to 0. Our real mode emulation had to set it to 3.
@@ -1273,12 +1275,10 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
         }
         else
         {
-            PGMMODE enmGuestMode = PGMGetGuestMode(pVM);
+            PGMMODE enmGuestMode = PGMGetGuestMode(pVCpu);
             /* Verify the requirements for executing code in protected mode. VT-x can't handle the CPU state right after a switch
              * from real to protected mode. (all sorts of RPL & DPL assumptions)
              */
-            PVMCPU pVCpu = VMMGetCpu(pVM);
-
             if (    pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode == PGMMODE_REAL
                 &&  enmGuestMode >= PGMMODE_PROTECTED)
             {

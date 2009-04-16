@@ -42,13 +42,16 @@
  */
 DECLINLINE(int) dbgfR3Read(PVM pVM, void *pvBuf, RTGCUINTPTR GCPtr, size_t cb, size_t *pcbRead)
 {
-    int rc = MMR3ReadGCVirt(pVM, pvBuf, GCPtr, cb);
+    /* @todo SMP support! */
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
+    int rc = DBGFR3ReadGCVirt(pVM, pVCpu, pvBuf, GCPtr, cb);
     if (RT_FAILURE(rc))
     {
         size_t cbRead;
         for (cbRead = 0; cbRead < cb; cbRead++)
         {
-            rc = MMR3ReadGCVirt(pVM, (uint8_t *)pvBuf + cbRead, GCPtr + cbRead, 1);
+            rc = DBGFR3ReadGCVirt(pVM, pVCpu, (uint8_t *)pvBuf + cbRead, GCPtr + cbRead, 1);
             if (RT_FAILURE(rc))
                 break;
         }
@@ -357,7 +360,7 @@ VMMR3DECL(int) DBGFR3StackWalkBeginGuest(PVM pVM, PDBGFSTACKFRAME pFrame)
 
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3StackWalkCtxFull, 4,
-                         pVM, pFrame, CPUMGetGuestCtxCoreEx(pVM, VMMGetCpu(pVM)), true); /* @todo SMP */
+                         pVM, pFrame, CPUMGetGuestCtxCore(VMMGetCpu(pVM)), true); /* @todo SMP support!! */
     if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
@@ -383,12 +386,15 @@ VMMR3DECL(int) DBGFR3StackWalkBeginGuest(PVM pVM, PDBGFSTACKFRAME pFrame)
  */
 VMMR3DECL(int) DBGFR3StackWalkBeginHyper(PVM pVM, PDBGFSTACKFRAME pFrame)
 {
+    /* @todo SMP support! */
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
     pFrame->pFirst = NULL;
     pFrame->pNext = NULL;
 
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3StackWalkCtxFull, 4,
-                         pVM, pFrame, CPUMGetHyperCtxCore(pVM), 4);
+                         pVM, pFrame, CPUMGetHyperCtxCore(pVCpu), 4);
     if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);

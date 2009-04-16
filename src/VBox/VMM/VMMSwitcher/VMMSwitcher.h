@@ -61,6 +61,7 @@
 #define FIX_GC_APIC_BASE_32BIT  34
 #define FIX_HC_64BIT_NOCHECK    35
 #define FIX_GC_64_BIT_CPUM_OFF  36
+#define FIX_GC_CPUMCPU_OFF      37
 #define FIX_THE_END             255
 /** @} */
 

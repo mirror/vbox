@@ -285,7 +285,7 @@
      PGMPhysGCPhys2R3Ptr(pVM, GCPhys, 1 /* one page only */, (PRTR3PTR)(ppv)) /** @todo this isn't asserting, use PGMRamGCPhys2HCPtr! */
 #endif
 
-/** @def PGM_GCPHYS_2_PTR_BY_PGM
+/** @def PGM_GCPHYS_2_PTR_BY_PGMCPU
  * Maps a GC physical page address to a virtual address.
  *
  * @returns VBox status code.
@@ -298,11 +298,11 @@
  * @remark  There is no need to assert on the result.
  */
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-# define PGM_GCPHYS_2_PTR_BY_PGM(pPGM, GCPhys, ppv) \
-     pgmR0DynMapGCPageInlined(pPGM, GCPhys, (void **)(ppv))
+# define PGM_GCPHYS_2_PTR_BY_PGMCPU(pPGM, GCPhys, ppv) \
+     pgmR0DynMapGCPageInlined(PGMCPU2PGM(pPGM), GCPhys, (void **)(ppv))
 #else
-# define PGM_GCPHYS_2_PTR_BY_PGM(pPGM, GCPhys, ppv) \
-     PGM_GCPHYS_2_PTR(PGM2VM(pPGM), GCPhys, ppv)
+# define PGM_GCPHYS_2_PTR_BY_PGMCPU(pPGM, GCPhys, ppv) \
+     PGM_GCPHYS_2_PTR(PGMCPU2VM(pPGM), GCPhys, ppv)
 #endif
 
 /** @def PGM_GCPHYS_2_PTR_EX
@@ -1957,7 +1957,7 @@ typedef PGMTREES *PPGMTREES;
 #define PGM_GST_NAME_AMD64(name)        PGM_CTX(pgm,GstAMD64##name)
 #define PGM_GST_NAME_RC_AMD64_STR(name) "pgmRCGstAMD64" #name
 #define PGM_GST_NAME_R0_AMD64_STR(name) "pgmR0GstAMD64" #name
-#define PGM_GST_PFN(name, pVM)          ((pVM)->pgm.s.PGM_CTX(pfn,Gst##name))
+#define PGM_GST_PFN(name, pVM)          ((pVCpu)->pgm.s.PGM_CTX(pfn,Gst##name))
 #define PGM_GST_DECL(type, name)        PGM_CTX_DECL(type) PGM_GST_NAME(name)
 
 #define PGM_SHW_NAME_32BIT(name)        PGM_CTX(pgm,Shw32Bit##name)
@@ -1976,7 +1976,7 @@ typedef PGMTREES *PPGMTREES;
 #define PGM_SHW_NAME_RC_EPT_STR(name)   "pgmRCShwEPT" #name
 #define PGM_SHW_NAME_R0_EPT_STR(name)   "pgmR0ShwEPT" #name
 #define PGM_SHW_DECL(type, name)        PGM_CTX_DECL(type) PGM_SHW_NAME(name)
-#define PGM_SHW_PFN(name, pVM)          ((pVM)->pgm.s.PGM_CTX(pfn,Shw##name))
+#define PGM_SHW_PFN(name, pVM)          ((pVCpu)->pgm.s.PGM_CTX(pfn,Shw##name))
 
 /*                   Shw_Gst */
 #define PGM_BTH_NAME_32BIT_REAL(name)   PGM_CTX(pgm,Bth32BitReal##name)
@@ -2038,7 +2038,7 @@ typedef PGMTREES *PPGMTREES;
 #define PGM_BTH_NAME_R0_EPT_AMD64_STR(name)     "pgmR0BthEPTAMD64" #name
 
 #define PGM_BTH_DECL(type, name)        PGM_CTX_DECL(type) PGM_BTH_NAME(name)
-#define PGM_BTH_PFN(name, pVM)          ((pVM)->pgm.s.PGM_CTX(pfn,Bth##name))
+#define PGM_BTH_PFN(name, pVM)          ((pVCpu)->pgm.s.PGM_CTX(pfn,Bth##name))
 /** @} */
 
 /**
@@ -2054,73 +2054,73 @@ typedef struct PGMMODEDATA
     /** @name Function pointers for Shadow paging.
      * @{
      */
-    DECLR3CALLBACKMEMBER(int,       pfnR3ShwRelocate,(PVM pVM, RTGCPTR offDelta));
-    DECLR3CALLBACKMEMBER(int,       pfnR3ShwExit,(PVM pVM));
-    DECLR3CALLBACKMEMBER(int,       pfnR3ShwGetPage,(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
-    DECLR3CALLBACKMEMBER(int,       pfnR3ShwModifyPage,(PVM pVM, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+    DECLR3CALLBACKMEMBER(int,       pfnR3ShwRelocate,(PVM pVM, PVMCPU pVCpu, RTGCPTR offDelta));
+    DECLR3CALLBACKMEMBER(int,       pfnR3ShwExit,(PVM pVM, PVMCPU pVCpu));
+    DECLR3CALLBACKMEMBER(int,       pfnR3ShwGetPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
+    DECLR3CALLBACKMEMBER(int,       pfnR3ShwModifyPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
 
-    DECLRCCALLBACKMEMBER(int,       pfnRCShwGetPage,(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
-    DECLRCCALLBACKMEMBER(int,       pfnRCShwModifyPage,(PVM pVM, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+    DECLRCCALLBACKMEMBER(int,       pfnRCShwGetPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
+    DECLRCCALLBACKMEMBER(int,       pfnRCShwModifyPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
 
-    DECLR0CALLBACKMEMBER(int,       pfnR0ShwGetPage,(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
-    DECLR0CALLBACKMEMBER(int,       pfnR0ShwModifyPage,(PVM pVM, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+    DECLR0CALLBACKMEMBER(int,       pfnR0ShwGetPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
+    DECLR0CALLBACKMEMBER(int,       pfnR0ShwModifyPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
     /** @} */
 
     /** @name Function pointers for Guest paging.
      * @{
      */
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstRelocate,(PVM pVM, RTGCPTR offDelta));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstExit,(PVM pVM));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPage,(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstModifyPage,(PVM pVM, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPDE,(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPde));
-    DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPage,(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
-    DECLRCCALLBACKMEMBER(int,       pfnRCGstModifyPage,(PVM pVM, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPDE,(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPde));
-    DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPage,(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
-    DECLR0CALLBACKMEMBER(int,       pfnR0GstModifyPage,(PVM pVM, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPDE,(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPde));
+    DECLR3CALLBACKMEMBER(int,       pfnR3GstRelocate,(PVM pVM, PVMCPU pVCpu, RTGCPTR offDelta));
+    DECLR3CALLBACKMEMBER(int,       pfnR3GstExit,(PVM pVM, PVMCPU pVCpu));
+    DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
+    DECLR3CALLBACKMEMBER(int,       pfnR3GstModifyPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+    DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPDE,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde));
+    DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
+    DECLRCCALLBACKMEMBER(int,       pfnRCGstModifyPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+    DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPDE,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde));
+    DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
+    DECLR0CALLBACKMEMBER(int,       pfnR0GstModifyPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+    DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPDE,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde));
     /** @} */
 
     /** @name Function pointers for Both Shadow and Guest paging.
      * @{
      */
-    DECLR3CALLBACKMEMBER(int,       pfnR3BthRelocate,(PVM pVM, RTGCPTR offDelta));
+    DECLR3CALLBACKMEMBER(int,       pfnR3BthRelocate,(PVM pVM, PVMCPU pVCpu, RTGCPTR offDelta));
     /*                           no pfnR3BthTrap0eHandler */
-    DECLR3CALLBACKMEMBER(int,       pfnR3BthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
-    DECLR3CALLBACKMEMBER(int,       pfnR3BthSyncCR3,(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
-    DECLR3CALLBACKMEMBER(int,       pfnR3BthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCPTR GCPtrPage, unsigned cPages, unsigned uError));
-    DECLR3CALLBACKMEMBER(int,       pfnR3BthPrefetchPage,(PVM pVM, RTGCPTR GCPtrPage));
-    DECLR3CALLBACKMEMBER(int,       pfnR3BthVerifyAccessSyncPage,(PVM pVM, RTGCPTR GCPtrPage, unsigned fFlags, unsigned uError));
+    DECLR3CALLBACKMEMBER(int,       pfnR3BthInvalidatePage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrPage));
+    DECLR3CALLBACKMEMBER(int,       pfnR3BthSyncCR3,(PVM pVM, PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
+    DECLR3CALLBACKMEMBER(int,       pfnR3BthSyncPage,(PVM pVM, PVMCPU pVCpu, X86PDE PdeSrc, RTGCPTR GCPtrPage, unsigned cPages, unsigned uError));
+    DECLR3CALLBACKMEMBER(int,       pfnR3BthPrefetchPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrPage));
+    DECLR3CALLBACKMEMBER(int,       pfnR3BthVerifyAccessSyncPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigned fFlags, unsigned uError));
 #ifdef VBOX_STRICT
-    DECLR3CALLBACKMEMBER(unsigned,  pfnR3BthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb));
+    DECLR3CALLBACKMEMBER(unsigned,  pfnR3BthAssertCR3,(PVM pVM, PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb));
 #endif
-    DECLR3CALLBACKMEMBER(int,       pfnR3BthMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
-    DECLR3CALLBACKMEMBER(int,       pfnR3BthUnmapCR3,(PVM pVM));
+    DECLR3CALLBACKMEMBER(int,       pfnR3BthMapCR3,(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysCR3));
+    DECLR3CALLBACKMEMBER(int,       pfnR3BthUnmapCR3,(PVM pVM, PVMCPU pVCpu));
 
-    DECLRCCALLBACKMEMBER(int,       pfnRCBthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
-    DECLRCCALLBACKMEMBER(int,       pfnRCBthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
-    DECLRCCALLBACKMEMBER(int,       pfnRCBthSyncCR3,(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
-    DECLRCCALLBACKMEMBER(int,       pfnRCBthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCPTR GCPtrPage, unsigned cPages, unsigned uError));
-    DECLRCCALLBACKMEMBER(int,       pfnRCBthPrefetchPage,(PVM pVM, RTGCPTR GCPtrPage));
-    DECLRCCALLBACKMEMBER(int,       pfnRCBthVerifyAccessSyncPage,(PVM pVM, RTGCPTR GCPtrPage, unsigned fFlags, unsigned uError));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthTrap0eHandler,(PVM pVM, PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthInvalidatePage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrPage));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthSyncCR3,(PVM pVM, PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthSyncPage,(PVM pVM, PVMCPU pVCpu, X86PDE PdeSrc, RTGCPTR GCPtrPage, unsigned cPages, unsigned uError));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthPrefetchPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrPage));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthVerifyAccessSyncPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigned fFlags, unsigned uError));
 #ifdef VBOX_STRICT
-    DECLRCCALLBACKMEMBER(unsigned,  pfnRCBthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb));
+    DECLRCCALLBACKMEMBER(unsigned,  pfnRCBthAssertCR3,(PVM pVM, PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb));
 #endif
-    DECLRCCALLBACKMEMBER(int,       pfnRCBthMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
-    DECLRCCALLBACKMEMBER(int,       pfnRCBthUnmapCR3,(PVM pVM));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthMapCR3,(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysCR3));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthUnmapCR3,(PVM pVM, PVMCPU pVCpu));
 
-    DECLR0CALLBACKMEMBER(int,       pfnR0BthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
-    DECLR0CALLBACKMEMBER(int,       pfnR0BthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
-    DECLR0CALLBACKMEMBER(int,       pfnR0BthSyncCR3,(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
-    DECLR0CALLBACKMEMBER(int,       pfnR0BthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCPTR GCPtrPage, unsigned cPages, unsigned uError));
-    DECLR0CALLBACKMEMBER(int,       pfnR0BthPrefetchPage,(PVM pVM, RTGCPTR GCPtrPage));
-    DECLR0CALLBACKMEMBER(int,       pfnR0BthVerifyAccessSyncPage,(PVM pVM, RTGCPTR GCPtrPage, unsigned fFlags, unsigned uError));
+    DECLR0CALLBACKMEMBER(int,       pfnR0BthTrap0eHandler,(PVM pVM, PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
+    DECLR0CALLBACKMEMBER(int,       pfnR0BthInvalidatePage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrPage));
+    DECLR0CALLBACKMEMBER(int,       pfnR0BthSyncCR3,(PVM pVM, PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
+    DECLR0CALLBACKMEMBER(int,       pfnR0BthSyncPage,(PVM pVM, PVMCPU pVCpu, X86PDE PdeSrc, RTGCPTR GCPtrPage, unsigned cPages, unsigned uError));
+    DECLR0CALLBACKMEMBER(int,       pfnR0BthPrefetchPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrPage));
+    DECLR0CALLBACKMEMBER(int,       pfnR0BthVerifyAccessSyncPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigned fFlags, unsigned uError));
 #ifdef VBOX_STRICT
-    DECLR0CALLBACKMEMBER(unsigned,  pfnR0BthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb));
+    DECLR0CALLBACKMEMBER(unsigned,  pfnR0BthAssertCR3,(PVM pVM, PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb));
 #endif
-    DECLR0CALLBACKMEMBER(int,       pfnR0BthMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
-    DECLR0CALLBACKMEMBER(int,       pfnR0BthUnmapCR3,(PVM pVM));
+    DECLR0CALLBACKMEMBER(int,       pfnR0BthMapCR3,(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysCR3));
+    DECLR0CALLBACKMEMBER(int,       pfnR0BthUnmapCR3,(PVM pVM, PVMCPU pVCpu));
     /** @} */
 } PGMMODEDATA, *PPGMMODEDATA;
 
@@ -2141,13 +2141,18 @@ typedef struct PGM
     /** Offset to the VM structure. */
     RTINT                           offVM;
     /** Offset of the PGMCPU structure relative to VMCPU. */
-    int32_t                         offVCpu;
+    RTINT                           offVCpu;
+
     /** @cfgm{PGM/RamPreAlloc, bool, false}
      * Whether to preallocate all the guest RAM or not. */
     bool                            fRamPreAlloc;
     /** Alignment padding. */
     bool                            afAlignment0[3];
 
+    /** What needs syncing (PGM_SYNC_*).
+     * This is used to queue operations for PGMSyncCR3, PGMInvalidatePage,
+     * PGMFlushTLB, and PGMR3Load. */
+    RTUINT                          fGlobalSyncFlags;
 
     /*
      * This will be redefined at least two more times before we're done, I'm sure.
@@ -2165,164 +2170,9 @@ typedef struct PGM
 
     /** The host paging mode. (This is what SUPLib reports.) */
     SUPPAGINGMODE                   enmHostMode;
-    /** The shadow paging mode. */
-    PGMMODE                         enmShadowMode;
-    /** The guest paging mode. */
-    PGMMODE                         enmGuestMode;
 
-    /** The current physical address representing in the guest CR3 register. */
-    RTGCPHYS                        GCPhysCR3;
-    /** Pointer to the 5 page CR3 content mapping.
-     * The first page is always the CR3 (in some form) while the 4 other pages
-     * are used of the PDs in PAE mode. */
-    RTGCPTR                         GCPtrCR3Mapping;
-#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
-    uint32_t                        u32Alignment;
-#endif
-    /** @name 32-bit Guest Paging.
-     * @{ */
-    /** The guest's page directory, R3 pointer. */
-    R3PTRTYPE(PX86PD)               pGst32BitPdR3;
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    /** The guest's page directory, R0 pointer. */
-    R0PTRTYPE(PX86PD)               pGst32BitPdR0;
-#endif
-    /** The guest's page directory, static RC mapping. */
-    RCPTRTYPE(PX86PD)               pGst32BitPdRC;
-    /** @} */
-
-    /** @name PAE Guest Paging.
-     * @{ */
-    /** The guest's page directory pointer table, static RC mapping. */
-    RCPTRTYPE(PX86PDPT)             pGstPaePdptRC;
-    /** The guest's page directory pointer table, R3 pointer. */
-    R3PTRTYPE(PX86PDPT)             pGstPaePdptR3;
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    /** The guest's page directory pointer table, R0 pointer. */
-    R0PTRTYPE(PX86PDPT)             pGstPaePdptR0;
-#endif
-
-    /** The guest's page directories, R3 pointers.
-     * These are individual pointers and don't have to be adjecent.
-     * These don't have to be up-to-date - use pgmGstGetPaePD() to access them. */
-    R3PTRTYPE(PX86PDPAE)            apGstPaePDsR3[4];
-    /** The guest's page directories, R0 pointers.
-     * Same restrictions as apGstPaePDsR3. */
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    R0PTRTYPE(PX86PDPAE)            apGstPaePDsR0[4];
-#endif
-    /** The guest's page directories, static GC mapping.
-     * Unlike the R3/R0 array the first entry can be accessed as a 2048 entry PD.
-     * These don't have to be up-to-date - use pgmGstGetPaePD() to access them. */
-    RCPTRTYPE(PX86PDPAE)            apGstPaePDsRC[4];
-    /** The physical addresses of the guest page directories (PAE) pointed to by apGstPagePDsHC/GC. */
-    RTGCPHYS                        aGCPhysGstPaePDs[4];
-    /** The physical addresses of the monitored guest page directories (PAE). */
-    RTGCPHYS                        aGCPhysGstPaePDsMonitored[4];
-    /** @} */
-
-    /** @name AMD64 Guest Paging.
-     * @{ */
-    /** The guest's page directory pointer table, R3 pointer. */
-    R3PTRTYPE(PX86PML4)             pGstAmd64Pml4R3;
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    /** The guest's page directory pointer table, R0 pointer. */
-    R0PTRTYPE(PX86PML4)             pGstAmd64Pml4R0;
-#endif
-    /** @} */
-
-    /** Pointer to the page of the current active CR3 - R3 Ptr. */
-    R3PTRTYPE(PPGMPOOLPAGE)         pShwPageCR3R3;
-    /** Pointer to the page of the current active CR3 - R0 Ptr. */
-    R0PTRTYPE(PPGMPOOLPAGE)         pShwPageCR3R0;
-    /** Pointer to the page of the current active CR3 - RC Ptr. */
-    RCPTRTYPE(PPGMPOOLPAGE)         pShwPageCR3RC;
-    /* The shadow page pool index of the user table as specified during allocation; useful for freeing root pages */
-    uint32_t                        iShwUser;
-    /* The index into the user table (shadowed) as specified during allocation; useful for freeing root pages. */
-    uint32_t                        iShwUserTable;
-# if HC_ARCH_BITS == 64
-    RTRCPTR                         alignment6; /**< structure size alignment. */
-# endif
-    /** @} */
-
-    /** @name Function pointers for Shadow paging.
-     * @{
-     */
-    DECLR3CALLBACKMEMBER(int,       pfnR3ShwRelocate,(PVM pVM, RTGCPTR offDelta));
-    DECLR3CALLBACKMEMBER(int,       pfnR3ShwExit,(PVM pVM));
-    DECLR3CALLBACKMEMBER(int,       pfnR3ShwGetPage,(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
-    DECLR3CALLBACKMEMBER(int,       pfnR3ShwModifyPage,(PVM pVM, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-
-    DECLRCCALLBACKMEMBER(int,       pfnRCShwGetPage,(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
-    DECLRCCALLBACKMEMBER(int,       pfnRCShwModifyPage,(PVM pVM, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-
-    DECLR0CALLBACKMEMBER(int,       pfnR0ShwGetPage,(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
-    DECLR0CALLBACKMEMBER(int,       pfnR0ShwModifyPage,(PVM pVM, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-
-    /** @} */
-
-    /** @name Function pointers for Guest paging.
-     * @{
-     */
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstRelocate,(PVM pVM, RTGCPTR offDelta));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstExit,(PVM pVM));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPage,(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstModifyPage,(PVM pVM, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPDE,(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPde));
-    DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPage,(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
-    DECLRCCALLBACKMEMBER(int,       pfnRCGstModifyPage,(PVM pVM, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPDE,(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPde));
-#if HC_ARCH_BITS == 64
-    RTRCPTR                         alignment3; /**< structure size alignment. */
-#endif
-
-    DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPage,(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
-    DECLR0CALLBACKMEMBER(int,       pfnR0GstModifyPage,(PVM pVM, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPDE,(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPde));
-    /** @} */
-
-    /** @name Function pointers for Both Shadow and Guest paging.
-     * @{
-     */
-    DECLR3CALLBACKMEMBER(int,       pfnR3BthRelocate,(PVM pVM, RTGCPTR offDelta));
-    /*                           no pfnR3BthTrap0eHandler */
-    DECLR3CALLBACKMEMBER(int,       pfnR3BthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
-    DECLR3CALLBACKMEMBER(int,       pfnR3BthSyncCR3,(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
-    DECLR3CALLBACKMEMBER(int,       pfnR3BthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCPTR GCPtrPage, unsigned cPages, unsigned uError));
-    DECLR3CALLBACKMEMBER(int,       pfnR3BthPrefetchPage,(PVM pVM, RTGCPTR GCPtrPage));
-    DECLR3CALLBACKMEMBER(int,       pfnR3BthVerifyAccessSyncPage,(PVM pVM, RTGCPTR GCPtrPage, unsigned fFlags, unsigned uError));
-    DECLR3CALLBACKMEMBER(unsigned,  pfnR3BthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb));
-    DECLR3CALLBACKMEMBER(int,       pfnR3BthMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
-    DECLR3CALLBACKMEMBER(int,       pfnR3BthUnmapCR3,(PVM pVM));
-
-    DECLR0CALLBACKMEMBER(int,       pfnR0BthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
-    DECLR0CALLBACKMEMBER(int,       pfnR0BthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
-    DECLR0CALLBACKMEMBER(int,       pfnR0BthSyncCR3,(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
-    DECLR0CALLBACKMEMBER(int,       pfnR0BthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCPTR GCPtrPage, unsigned cPages, unsigned uError));
-    DECLR0CALLBACKMEMBER(int,       pfnR0BthPrefetchPage,(PVM pVM, RTGCPTR GCPtrPage));
-    DECLR0CALLBACKMEMBER(int,       pfnR0BthVerifyAccessSyncPage,(PVM pVM, RTGCPTR GCPtrPage, unsigned fFlags, unsigned uError));
-    DECLR0CALLBACKMEMBER(unsigned,  pfnR0BthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb));
-    DECLR0CALLBACKMEMBER(int,       pfnR0BthMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
-    DECLR0CALLBACKMEMBER(int,       pfnR0BthUnmapCR3,(PVM pVM));
-
-    DECLRCCALLBACKMEMBER(int,       pfnRCBthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
-    DECLRCCALLBACKMEMBER(int,       pfnRCBthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
-    DECLRCCALLBACKMEMBER(int,       pfnRCBthSyncCR3,(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
-    DECLRCCALLBACKMEMBER(int,       pfnRCBthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCPTR GCPtrPage, unsigned cPages, unsigned uError));
-    DECLRCCALLBACKMEMBER(int,       pfnRCBthPrefetchPage,(PVM pVM, RTGCPTR GCPtrPage));
-    DECLRCCALLBACKMEMBER(int,       pfnRCBthVerifyAccessSyncPage,(PVM pVM, RTGCPTR GCPtrPage, unsigned fFlags, unsigned uError));
-    DECLRCCALLBACKMEMBER(unsigned,  pfnRCBthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb));
-    DECLRCCALLBACKMEMBER(int,       pfnRCBthMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
-    DECLRCCALLBACKMEMBER(int,       pfnRCBthUnmapCR3,(PVM pVM));
-#if HC_ARCH_BITS == 64
-    RTRCPTR                         alignment2; /**< structure size alignment. */
-#endif
-    /** @} */
-
-    /** Pointer to SHW+GST mode data (function pointers).
-     * The index into this table is made up from */
-    R3PTRTYPE(PPGMMODEDATA)         paModeData;
+    /** 4 MB page mask; 32 or 36 bits depending on PSE-36 (identical for all VCPUs) */
+    RTGCPHYS                        GCPhys4MBPSEMask;
 
     /** Pointer to the list of RAM ranges (Phys GC -> Phys HC conversion) - for R3.
      * This is sorted by physical address and contains no overlapping ranges. */
@@ -2366,6 +2216,14 @@ typedef struct PGM
      * The list is sorted ascending on address.
      */
     R0PTRTYPE(PPGMMAPPING)          pMappingsR0;
+
+    /** Pointer to the 5 page CR3 content mapping.
+     * The first page is always the CR3 (in some form) while the 4 other pages
+     * are used of the PDs in PAE mode. */
+    RTGCPTR                         GCPtrCR3Mapping;
+#if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
+    uint32_t                        u32Alignment;
+#endif
 
     /** Indicates that PGMR3FinalizeMappings has been called and that further
      * PGMR3MapIntermediate calls will be rejected. */
@@ -2424,28 +2282,15 @@ typedef struct PGM
     RTR0PTR                         R0PtrPadding0;  /**< Alignment. */
 #endif
 
-
-    /** 4 MB page mask; 32 or 36 bits depending on PSE-36 */
-    RTGCPHYS                        GCPhys4MBPSEMask;
-
-    /** A20 gate mask.
-     * Our current approach to A20 emulation is to let REM do it and don't bother
-     * anywhere else. The interesting Guests will be operating with it enabled anyway.
-     * But whould need arrise, we'll subject physical addresses to this mask. */
-    RTGCPHYS                        GCPhysA20Mask;
-    /** A20 gate state - boolean! */
-    bool                            fA20Enabled;
-
-    /** What needs syncing (PGM_SYNC_*).
-     * This is used to queue operations for PGMSyncCR3, PGMInvalidatePage,
-     * PGMFlushTLB, and PGMR3Load. */
-    RTUINT                          fSyncFlags;
-
     /** PGM critical section.
      * This protects the physical & virtual access handlers, ram ranges,
      * and the page flag updating (some of it anyway).
      */
     PDMCRITSECT                     CritSect;
+
+    /** Pointer to SHW+GST mode data (function pointers).
+     * The index into this table is made up from */
+    R3PTRTYPE(PPGMMODEDATA)         paModeData;
 
     /** Shadow Page Pool - R3 Ptr. */
     R3PTRTYPE(PPGMPOOL)             pPoolR3;
@@ -2541,21 +2386,45 @@ typedef struct PGM
     uint32_t                        cPrivatePages;      /**< The number of private pages. */
     uint32_t                        cSharedPages;       /**< The number of shared pages. */
     uint32_t                        cZeroPages;         /**< The number of zero backed pages. */
-    /** The number of times the guest has switched mode since last reset or statistics reset. */
-    STAMCOUNTER                     cGuestModeChanges;
+
     /** The number of times we were forced to change the hypervisor region location. */
     STAMCOUNTER                     cRelocations;
     /** @} */
 
 #ifdef VBOX_WITH_STATISTICS /** @todo move this chunk to the heap.  */
-    /** RC: Which statistic this \#PF should be attributed to. */
-    RCPTRTYPE(PSTAMPROFILE)         pStatTrap0eAttributionRC;
-    RTRCPTR                         padding0;
-    /** R0: Which statistic this \#PF should be attributed to. */
-    R0PTRTYPE(PSTAMPROFILE)         pStatTrap0eAttributionR0;
-    RTR0PTR                         padding1;
+    /* R3 only: */
+    STAMCOUNTER StatR3DetectedConflicts;            /**< R3: Number of times PGMR3MapHasConflicts() detected a conflict. */
+    STAMPROFILE StatR3ResolveConflict;              /**< R3: pgmR3SyncPTResolveConflict() profiling (includes the entire relocation). */
 
-    /* Common */
+    STAMCOUNTER StatRZChunkR3MapTlbHits;            /**< RC/R0: Ring-3/0 chunk mapper TLB hits. */
+    STAMCOUNTER StatRZChunkR3MapTlbMisses;          /**< RC/R0: Ring-3/0 chunk mapper TLB misses. */
+    STAMCOUNTER StatRZPageMapTlbHits;               /**< RC/R0: Ring-3/0 page mapper TLB hits. */
+    STAMCOUNTER StatRZPageMapTlbMisses;             /**< RC/R0: Ring-3/0 page mapper TLB misses. */
+    STAMCOUNTER StatR3ChunkR3MapTlbHits;            /**< R3: Ring-3/0 chunk mapper TLB hits. */
+    STAMCOUNTER StatR3ChunkR3MapTlbMisses;          /**< R3: Ring-3/0 chunk mapper TLB misses. */
+    STAMCOUNTER StatR3PageMapTlbHits;               /**< R3: Ring-3/0 page mapper TLB hits. */
+    STAMCOUNTER StatR3PageMapTlbMisses;             /**< R3: Ring-3/0 page mapper TLB misses. */
+    STAMPROFILE StatRZSyncCR3HandlerVirtualReset;   /**< RC/R0: Profiling of the virtual handler resets. */
+    STAMPROFILE StatRZSyncCR3HandlerVirtualUpdate;  /**< RC/R0: Profiling of the virtual handler updates. */
+    STAMPROFILE StatR3SyncCR3HandlerVirtualReset;   /**< R3: Profiling of the virtual handler resets. */
+    STAMPROFILE StatR3SyncCR3HandlerVirtualUpdate;  /**< R3: Profiling of the virtual handler updates. */
+    STAMCOUNTER StatR3PhysHandlerReset;             /**< R3: The number of times PGMHandlerPhysicalReset is called. */
+    STAMCOUNTER StatRZPhysHandlerReset;             /**< RC/R0: The number of times PGMHandlerPhysicalReset is called. */
+    STAMPROFILE StatRZVirtHandlerSearchByPhys;      /**< RC/R0: Profiling of pgmHandlerVirtualFindByPhysAddr. */
+    STAMPROFILE StatR3VirtHandlerSearchByPhys;      /**< R3: Profiling of pgmHandlerVirtualFindByPhysAddr. */
+    STAMCOUNTER StatRZPageReplaceShared;            /**< RC/R0: Times a shared page has been replaced by a private one. */
+    STAMCOUNTER StatRZPageReplaceZero;              /**< RC/R0: Times the zero page has been replaced by a private one. */
+/// @todo    STAMCOUNTER StatRZPageHandyAllocs;              /**< RC/R0: The number of times we've executed GMMR3AllocateHandyPages. */
+    STAMCOUNTER StatR3PageReplaceShared;            /**< R3: Times a shared page has been replaced by a private one. */
+    STAMCOUNTER StatR3PageReplaceZero;              /**< R3: Times the zero page has been replaced by a private one. */
+/// @todo    STAMCOUNTER StatR3PageHandyAllocs;              /**< R3: The number of times we've executed GMMR3AllocateHandyPages. */
+
+    /* RC only: */
+    STAMCOUNTER StatRCDynMapCacheMisses;            /**< RC: The number of dynamic page mapping cache hits */
+    STAMCOUNTER StatRCDynMapCacheHits;              /**< RC: The number of dynamic page mapping cache misses */
+    STAMCOUNTER StatRCInvlPgConflict;               /**< RC: Number of times PGMInvalidatePage() detected a mapping conflict. */
+    STAMCOUNTER StatRCInvlPgSyncMonCR3;             /**< RC: Number of times PGMInvalidatePage() ran into PGM_SYNC_MONITOR_CR3. */
+
 # ifdef PGMPOOL_WITH_GCPHYS_TRACKING
     STAMCOUNTER StatTrackVirgin;                    /**< The number of first time shadowings. */
     STAMCOUNTER StatTrackAliased;                   /**< The number of times switching to cRef2, i.e. the page is being shadowed by two PTs. */
@@ -2564,14 +2433,223 @@ typedef struct PGM
     STAMCOUNTER StatTrackOverflows;                 /**< The number of times the extent list grows to long. */
     STAMPROFILE StatTrackDeref;                     /**< Profiling of SyncPageWorkerTrackDeref (expensive). */
 # endif
+#endif
+} PGM;
+/** Pointer to the PGM instance data. */
+typedef PGM *PPGM;
+
+
+/**
+ * Converts a PGMCPU pointer into a VM pointer.
+ * @returns Pointer to the VM structure the PGM is part of.
+ * @param   pPGM   Pointer to PGMCPU instance data.
+ */
+#define PGMCPU2VM(pPGM)  ( (PVM)((char*)pPGM - pPGM->offVM) )
+
+/**
+ * Converts a PGMCPU pointer into a PGM pointer.
+ * @returns Pointer to the VM structure the PGM is part of.
+ * @param   pPGM   Pointer to PGMCPU instance data.
+ */
+#define PGMCPU2PGM(pPGMCpu)  ( (PPGM)((char*)pPGMCpu - pPGMCpu->offPGM) )
+
+/**
+ * PGMCPU Data (part of VMCPU).
+ */
+typedef struct PGMCPU
+{
+    /** Offset to the VM structure. */
+    RTINT                           offVM;
+    /** Offset to the VMCPU structure. */
+    RTINT                           offVCpu;
+    /** Offset of the PGM structure relative to VMCPU. */
+    RTINT                           offPGM;
+
+    /** Automatically tracked physical memory mapping set.
+     * Ring-0 and strict raw-mode builds. */
+    PGMMAPSET                       AutoSet;
+
+    /** A20 gate mask.
+     * Our current approach to A20 emulation is to let REM do it and don't bother
+     * anywhere else. The interesting Guests will be operating with it enabled anyway.
+     * But whould need arrise, we'll subject physical addresses to this mask. */
+    RTGCPHYS                        GCPhysA20Mask;
+    /** A20 gate state - boolean! */
+    bool                            fA20Enabled;
+
+    /** What needs syncing (PGM_SYNC_*).
+     * This is used to queue operations for PGMSyncCR3, PGMInvalidatePage,
+     * PGMFlushTLB, and PGMR3Load. */
+    RTUINT                          fSyncFlags;
+
+    /** The shadow paging mode. */
+    PGMMODE                         enmShadowMode;
+    /** The guest paging mode. */
+    PGMMODE                         enmGuestMode;
+
+    /** The current physical address representing in the guest CR3 register. */
+    RTGCPHYS                        GCPhysCR3;
+
+    /** @name 32-bit Guest Paging.
+     * @{ */
+    /** The guest's page directory, R3 pointer. */
+    R3PTRTYPE(PX86PD)               pGst32BitPdR3;
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    /** The guest's page directory, R0 pointer. */
+    R0PTRTYPE(PX86PD)               pGst32BitPdR0;
+#endif
+    /** The guest's page directory, static RC mapping. */
+    RCPTRTYPE(PX86PD)               pGst32BitPdRC;
+    /** @} */
+
+    /** @name PAE Guest Paging.
+     * @{ */
+    /** The guest's page directory pointer table, static RC mapping. */
+    RCPTRTYPE(PX86PDPT)             pGstPaePdptRC;
+    /** The guest's page directory pointer table, R3 pointer. */
+    R3PTRTYPE(PX86PDPT)             pGstPaePdptR3;
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    /** The guest's page directory pointer table, R0 pointer. */
+    R0PTRTYPE(PX86PDPT)             pGstPaePdptR0;
+#endif
+
+    /** The guest's page directories, R3 pointers.
+     * These are individual pointers and don't have to be adjecent.
+     * These don't have to be up-to-date - use pgmGstGetPaePD() to access them. */
+    R3PTRTYPE(PX86PDPAE)            apGstPaePDsR3[4];
+    /** The guest's page directories, R0 pointers.
+     * Same restrictions as apGstPaePDsR3. */
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    R0PTRTYPE(PX86PDPAE)            apGstPaePDsR0[4];
+#endif
+    /** The guest's page directories, static GC mapping.
+     * Unlike the R3/R0 array the first entry can be accessed as a 2048 entry PD.
+     * These don't have to be up-to-date - use pgmGstGetPaePD() to access them. */
+    RCPTRTYPE(PX86PDPAE)            apGstPaePDsRC[4];
+    /** The physical addresses of the guest page directories (PAE) pointed to by apGstPagePDsHC/GC. */
+    RTGCPHYS                        aGCPhysGstPaePDs[4];
+    /** The physical addresses of the monitored guest page directories (PAE). */
+    RTGCPHYS                        aGCPhysGstPaePDsMonitored[4];
+    /** @} */
+
+    /** @name AMD64 Guest Paging.
+     * @{ */
+    /** The guest's page directory pointer table, R3 pointer. */
+    R3PTRTYPE(PX86PML4)             pGstAmd64Pml4R3;
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    /** The guest's page directory pointer table, R0 pointer. */
+    R0PTRTYPE(PX86PML4)             pGstAmd64Pml4R0;
+#endif
+    /** @} */
+
+    /** Pointer to the page of the current active CR3 - R3 Ptr. */
+    R3PTRTYPE(PPGMPOOLPAGE)         pShwPageCR3R3;
+    /** Pointer to the page of the current active CR3 - R0 Ptr. */
+    R0PTRTYPE(PPGMPOOLPAGE)         pShwPageCR3R0;
+    /** Pointer to the page of the current active CR3 - RC Ptr. */
+    RCPTRTYPE(PPGMPOOLPAGE)         pShwPageCR3RC;
+    /* The shadow page pool index of the user table as specified during allocation; useful for freeing root pages */
+    uint32_t                        iShwUser;
+    /* The index into the user table (shadowed) as specified during allocation; useful for freeing root pages. */
+    uint32_t                        iShwUserTable;
+# if HC_ARCH_BITS == 64
+    RTRCPTR                         alignment6; /**< structure size alignment. */
+# endif
+    /** @} */
+
+    /** @name Function pointers for Shadow paging.
+     * @{
+     */
+    DECLR3CALLBACKMEMBER(int,       pfnR3ShwRelocate,(PVM pVM, PVMCPU pVCpu, RTGCPTR offDelta));
+    DECLR3CALLBACKMEMBER(int,       pfnR3ShwExit,(PVM pVM, PVMCPU pVCpu));
+    DECLR3CALLBACKMEMBER(int,       pfnR3ShwGetPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
+    DECLR3CALLBACKMEMBER(int,       pfnR3ShwModifyPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+
+    DECLRCCALLBACKMEMBER(int,       pfnRCShwGetPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
+    DECLRCCALLBACKMEMBER(int,       pfnRCShwModifyPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+
+    DECLR0CALLBACKMEMBER(int,       pfnR0ShwGetPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
+    DECLR0CALLBACKMEMBER(int,       pfnR0ShwModifyPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+
+    /** @} */
+
+    /** @name Function pointers for Guest paging.
+     * @{
+     */
+    DECLR3CALLBACKMEMBER(int,       pfnR3GstRelocate,(PVM pVM, PVMCPU pVCpu, RTGCPTR offDelta));
+    DECLR3CALLBACKMEMBER(int,       pfnR3GstExit,(PVM pVM, PVMCPU pVCpu));
+    DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
+    DECLR3CALLBACKMEMBER(int,       pfnR3GstModifyPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+    DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPDE,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde));
+    DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
+    DECLRCCALLBACKMEMBER(int,       pfnRCGstModifyPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+    DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPDE,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde));
+#if HC_ARCH_BITS == 64
+    RTRCPTR                         alignment3; /**< structure size alignment. */
+#endif
+
+    DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
+    DECLR0CALLBACKMEMBER(int,       pfnR0GstModifyPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+    DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPDE,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde));
+    /** @} */
+
+    /** @name Function pointers for Both Shadow and Guest paging.
+     * @{
+     */
+    DECLR3CALLBACKMEMBER(int,       pfnR3BthRelocate,(PVM pVM, PVMCPU pVCpu, RTGCPTR offDelta));
+    /*                           no pfnR3BthTrap0eHandler */
+    DECLR3CALLBACKMEMBER(int,       pfnR3BthInvalidatePage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrPage));
+    DECLR3CALLBACKMEMBER(int,       pfnR3BthSyncCR3,(PVM pVM, PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
+    DECLR3CALLBACKMEMBER(int,       pfnR3BthSyncPage,(PVM pVM, PVMCPU pVCpu, X86PDE PdeSrc, RTGCPTR GCPtrPage, unsigned cPages, unsigned uError));
+    DECLR3CALLBACKMEMBER(int,       pfnR3BthPrefetchPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrPage));
+    DECLR3CALLBACKMEMBER(int,       pfnR3BthVerifyAccessSyncPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigned fFlags, unsigned uError));
+    DECLR3CALLBACKMEMBER(unsigned,  pfnR3BthAssertCR3,(PVM pVM, PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb));
+    DECLR3CALLBACKMEMBER(int,       pfnR3BthMapCR3,(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysCR3));
+    DECLR3CALLBACKMEMBER(int,       pfnR3BthUnmapCR3,(PVM pVM, PVMCPU pVCpu));
+
+    DECLR0CALLBACKMEMBER(int,       pfnR0BthTrap0eHandler,(PVM pVM, PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
+    DECLR0CALLBACKMEMBER(int,       pfnR0BthInvalidatePage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrPage));
+    DECLR0CALLBACKMEMBER(int,       pfnR0BthSyncCR3,(PVM pVM, PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
+    DECLR0CALLBACKMEMBER(int,       pfnR0BthSyncPage,(PVM pVM, PVMCPU pVCpu, X86PDE PdeSrc, RTGCPTR GCPtrPage, unsigned cPages, unsigned uError));
+    DECLR0CALLBACKMEMBER(int,       pfnR0BthPrefetchPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrPage));
+    DECLR0CALLBACKMEMBER(int,       pfnR0BthVerifyAccessSyncPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigned fFlags, unsigned uError));
+    DECLR0CALLBACKMEMBER(unsigned,  pfnR0BthAssertCR3,(PVM pVM, PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb));
+    DECLR0CALLBACKMEMBER(int,       pfnR0BthMapCR3,(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysCR3));
+    DECLR0CALLBACKMEMBER(int,       pfnR0BthUnmapCR3,(PVM pVM, PVMCPU pVCpu));
+
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthTrap0eHandler,(PVM pVM, PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthInvalidatePage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrPage));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthSyncCR3,(PVM pVM, PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthSyncPage,(PVM pVM, PVMCPU pVCpu, X86PDE PdeSrc, RTGCPTR GCPtrPage, unsigned cPages, unsigned uError));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthPrefetchPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrPage));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthVerifyAccessSyncPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigned fFlags, unsigned uError));
+    DECLRCCALLBACKMEMBER(unsigned,  pfnRCBthAssertCR3,(PVM pVM, PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthMapCR3,(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysCR3));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthUnmapCR3,(PVM pVM, PVMCPU pVCpu));
+#if HC_ARCH_BITS == 64
+    RTRCPTR                         alignment2; /**< structure size alignment. */
+#endif
+    /** @} */
+
+    /** @name Release Statistics
+     * @{ */
+    /** The number of times the guest has switched mode since last reset or statistics reset. */
+    STAMCOUNTER                     cGuestModeChanges;
+    /** @} */
+
+#ifdef VBOX_WITH_STATISTICS /** @todo move this chunk to the heap.  */
+    /** @name Statistics
+     * @{ */
+    /** RC: Which statistic this \#PF should be attributed to. */
+    RCPTRTYPE(PSTAMPROFILE)         pStatTrap0eAttributionRC;
+    RTRCPTR                         padding0;
+    /** R0: Which statistic this \#PF should be attributed to. */
+    R0PTRTYPE(PSTAMPROFILE)         pStatTrap0eAttributionR0;
+    RTR0PTR                         padding1;
+
+    /* Common */
     STAMCOUNTER StatSyncPtPD[X86_PG_ENTRIES];       /**< SyncPT - PD distribution. */
     STAMCOUNTER StatSyncPagePD[X86_PG_ENTRIES];     /**< SyncPage - PD distribution. */
-
-    /* R3 only: */
-    STAMCOUNTER StatR3DetectedConflicts;            /**< R3: Number of times PGMR3MapHasConflicts() detected a conflict. */
-    STAMPROFILE StatR3ResolveConflict;              /**< R3: pgmR3SyncPTResolveConflict() profiling (includes the entire relocation). */
-    STAMCOUNTER StatR3GuestPDWrite;                 /**< R3: The total number of times pgmHCGuestPDWriteHandler() was called. */
-    STAMCOUNTER StatR3GuestPDWriteConflict;         /**< R3: The number of times GuestPDWriteContlict() detected a conflict. */
 
     /* R0 only: */
     STAMCOUNTER StatR0DynMapMigrateInvlPg;          /**< R0: invlpg in PGMDynMapMigrateAutoSet. */
@@ -2600,12 +2678,6 @@ typedef struct PGM
     STAMCOUNTER StatR0DynMapSubsets;                /**< R0: Times PGMDynMapPushAutoSubset was called. */
     STAMCOUNTER StatR0DynMapPopFlushes;             /**< R0: Times PGMDynMapPopAutoSubset flushes the subset. */
     STAMCOUNTER aStatR0DynMapSetSize[11];           /**< R0: Set size distribution. */
-
-    /* RC only: */
-    STAMCOUNTER StatRCDynMapCacheMisses;            /**< RC: The number of dynamic page mapping cache hits */
-    STAMCOUNTER StatRCDynMapCacheHits;              /**< RC: The number of dynamic page mapping cache misses */
-    STAMCOUNTER StatRCInvlPgConflict;               /**< RC: Number of times PGMInvalidatePage() detected a mapping conflict. */
-    STAMCOUNTER StatRCInvlPgSyncMonCR3;             /**< RC: Number of times PGMInvalidatePage() ran into PGM_SYNC_MONITOR_CR3. */
 
     /* RZ only: */
     STAMPROFILE StatRZTrap0e;                       /**< RC/R0: PGMTrap0eHandler() profiling. */
@@ -2663,8 +2735,6 @@ typedef struct PGM
     /* RZ & R3: */
     STAMPROFILE StatRZSyncCR3;                      /**< RC/R0: PGMSyncCR3() profiling. */
     STAMPROFILE StatRZSyncCR3Handlers;              /**< RC/R0: Profiling of the PGMSyncCR3() update handler section. */
-    STAMPROFILE StatRZSyncCR3HandlerVirtualReset;   /**< RC/R0: Profiling of the virtual handler resets. */
-    STAMPROFILE StatRZSyncCR3HandlerVirtualUpdate;  /**< RC/R0: Profiling of the virtual handler updates. */
     STAMCOUNTER StatRZSyncCR3Global;                /**< RC/R0: The number of global CR3 syncs. */
     STAMCOUNTER StatRZSyncCR3NotGlobal;             /**< RC/R0: The number of non-global CR3 syncs. */
     STAMCOUNTER StatRZSyncCR3DstCacheHit;           /**< RC/R0: The number of times we got some kind of cache hit on a page table. */
@@ -2697,18 +2767,9 @@ typedef struct PGM
     STAMCOUNTER StatRZInvalidatePagePDNPs;          /**< RC/R0: The number of times PGMInvalidatePage() was called for a not present page directory. */
     STAMCOUNTER StatRZInvalidatePagePDOutOfSync;    /**< RC/R0: The number of times PGMInvalidatePage() was called for an out of sync page directory. */
     STAMCOUNTER StatRZInvalidatePageSkipped;        /**< RC/R0: The number of times PGMInvalidatePage() was skipped due to not present shw or pending pending SyncCR3. */
-    STAMPROFILE StatRZVirtHandlerSearchByPhys;      /**< RC/R0: Profiling of pgmHandlerVirtualFindByPhysAddr. */
-    STAMCOUNTER StatRZPhysHandlerReset;             /**< RC/R0: The number of times PGMHandlerPhysicalReset is called. */
     STAMCOUNTER StatRZPageOutOfSyncUser;            /**< RC/R0: The number of times user page is out of sync was detected in #PF or VerifyAccessSyncPage. */
     STAMCOUNTER StatRZPageOutOfSyncSupervisor;      /**< RC/R0: The number of times supervisor page is out of sync was detected in in #PF or VerifyAccessSyncPage. */
     STAMPROFILE StatRZPrefetch;                     /**< RC/R0: PGMPrefetchPage. */
-    STAMCOUNTER StatRZChunkR3MapTlbHits;            /**< RC/R0: Ring-3/0 chunk mapper TLB hits. */
-    STAMCOUNTER StatRZChunkR3MapTlbMisses;          /**< RC/R0: Ring-3/0 chunk mapper TLB misses. */
-    STAMCOUNTER StatRZPageMapTlbHits;               /**< RC/R0: Ring-3/0 page mapper TLB hits. */
-    STAMCOUNTER StatRZPageMapTlbMisses;             /**< RC/R0: Ring-3/0 page mapper TLB misses. */
-    STAMCOUNTER StatRZPageReplaceShared;            /**< RC/R0: Times a shared page has been replaced by a private one. */
-    STAMCOUNTER StatRZPageReplaceZero;              /**< RC/R0: Times the zero page has been replaced by a private one. */
-/// @todo    STAMCOUNTER StatRZPageHandyAllocs;              /**< RC/R0: The number of times we've executed GMMR3AllocateHandyPages. */
     STAMPROFILE StatRZFlushTLB;                     /**< RC/R0: Profiling of the PGMFlushTLB() body. */
     STAMCOUNTER StatRZFlushTLBNewCR3;               /**< RC/R0: The number of times PGMFlushTLB was called with a new CR3, non-global. (switch) */
     STAMCOUNTER StatRZFlushTLBNewCR3Global;         /**< RC/R0: The number of times PGMFlushTLB was called with a new CR3, global. (switch) */
@@ -2718,8 +2779,6 @@ typedef struct PGM
 
     STAMPROFILE StatR3SyncCR3;                      /**< R3: PGMSyncCR3() profiling. */
     STAMPROFILE StatR3SyncCR3Handlers;              /**< R3: Profiling of the PGMSyncCR3() update handler section. */
-    STAMPROFILE StatR3SyncCR3HandlerVirtualReset;   /**< R3: Profiling of the virtual handler resets. */
-    STAMPROFILE StatR3SyncCR3HandlerVirtualUpdate;  /**< R3: Profiling of the virtual handler updates. */
     STAMCOUNTER StatR3SyncCR3Global;                /**< R3: The number of global CR3 syncs. */
     STAMCOUNTER StatR3SyncCR3NotGlobal;             /**< R3: The number of non-global CR3 syncs. */
     STAMCOUNTER StatR3SyncCR3DstFreed;              /**< R3: The number of times we've had to free a shadow entry. */
@@ -2752,40 +2811,17 @@ typedef struct PGM
     STAMCOUNTER StatR3InvalidatePagePDMappings;     /**< R3: The number of times PGMInvalidatePage() was called for a page directory containing mappings (no conflict). */
     STAMCOUNTER StatR3InvalidatePagePDOutOfSync;    /**< R3: The number of times PGMInvalidatePage() was called for an out of sync page directory. */
     STAMCOUNTER StatR3InvalidatePageSkipped;        /**< R3: The number of times PGMInvalidatePage() was skipped due to not present shw or pending pending SyncCR3. */
-    STAMPROFILE StatR3VirtHandlerSearchByPhys;      /**< R3: Profiling of pgmHandlerVirtualFindByPhysAddr. */
-    STAMCOUNTER StatR3PhysHandlerReset;             /**< R3: The number of times PGMHandlerPhysicalReset is called. */
     STAMCOUNTER StatR3PageOutOfSyncUser;            /**< R3: The number of times user page is out of sync was detected in #PF or VerifyAccessSyncPage. */
     STAMCOUNTER StatR3PageOutOfSyncSupervisor;      /**< R3: The number of times supervisor page is out of sync was detected in in #PF or VerifyAccessSyncPage. */
     STAMPROFILE StatR3Prefetch;                     /**< R3: PGMPrefetchPage. */
-    STAMCOUNTER StatR3ChunkR3MapTlbHits;            /**< R3: Ring-3/0 chunk mapper TLB hits. */
-    STAMCOUNTER StatR3ChunkR3MapTlbMisses;          /**< R3: Ring-3/0 chunk mapper TLB misses. */
-    STAMCOUNTER StatR3PageMapTlbHits;               /**< R3: Ring-3/0 page mapper TLB hits. */
-    STAMCOUNTER StatR3PageMapTlbMisses;             /**< R3: Ring-3/0 page mapper TLB misses. */
-    STAMCOUNTER StatR3PageReplaceShared;            /**< R3: Times a shared page has been replaced by a private one. */
-    STAMCOUNTER StatR3PageReplaceZero;              /**< R3: Times the zero page has been replaced by a private one. */
-/// @todo    STAMCOUNTER StatR3PageHandyAllocs;              /**< R3: The number of times we've executed GMMR3AllocateHandyPages. */
     STAMPROFILE StatR3FlushTLB;                     /**< R3: Profiling of the PGMFlushTLB() body. */
     STAMCOUNTER StatR3FlushTLBNewCR3;               /**< R3: The number of times PGMFlushTLB was called with a new CR3, non-global. (switch) */
     STAMCOUNTER StatR3FlushTLBNewCR3Global;         /**< R3: The number of times PGMFlushTLB was called with a new CR3, global. (switch) */
     STAMCOUNTER StatR3FlushTLBSameCR3;              /**< R3: The number of times PGMFlushTLB was called with the same CR3, non-global. (flush) */
     STAMCOUNTER StatR3FlushTLBSameCR3Global;        /**< R3: The number of times PGMFlushTLB was called with the same CR3, global. (flush) */
     STAMPROFILE StatR3GstModifyPage;                /**< R3: Profiling of the PGMGstModifyPage() body */
+    /** @} */
 #endif /* VBOX_WITH_STATISTICS */
-} PGM;
-/** Pointer to the PGM instance data. */
-typedef PGM *PPGM;
-
-
-/**
- * PGMCPU Data (part of VMCPU).
- */
-typedef struct PGMCPU
-{
-    /** Offset to the VMCPU structure. */
-    RTINT                           offVMCPU;
-    /** Automatically tracked physical memory mapping set.
-     * Ring-0 and strict raw-mode builds. */
-    PGMMAPSET                       AutoSet;
 } PGMCPU;
 /** Pointer to the per-cpu PGM data. */
 typedef PGMCPU *PPGMCPU;
@@ -2875,7 +2911,7 @@ void            pgmPoolTrackPhysExtFreeList(PVM pVM, uint16_t iPhysExt);
 uint16_t        pgmPoolTrackPhysExtAddref(PVM pVM, uint16_t u16, uint16_t iShwPT);
 void            pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPoolPage, PPGMPAGE pPhysPage);
 #ifdef PGMPOOL_WITH_MONITORING
-void            pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GCPhysFault, CTXTYPE(RTGCPTR, RTHCPTR, RTGCPTR) pvAddress, PDISCPUSTATE pCpu);
+void            pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GCPhysFault, CTXTYPE(RTGCPTR, RTHCPTR, RTGCPTR) pvAddress, PDISCPUSTATE pCpu);
 int             pgmPoolMonitorChainFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 void            pgmPoolMonitorModifiedInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 void            pgmPoolMonitorModifiedClearAll(PVM pVM);
@@ -2891,16 +2927,16 @@ void            pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAP
 int             pgmMapActivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3);
 int             pgmMapDeactivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3);
 
-int             pgmShwSyncPaePDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppPD);
+int             pgmShwSyncPaePDPtr(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppPD);
 #ifndef IN_RC
-int             pgmShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGstPml4e, PX86PDPE pGstPdpe, PX86PDPAE *ppPD);
+int             pgmShwSyncLongModePDPtr(PVM pVM, PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E pGstPml4e, PX86PDPE pGstPdpe, PX86PDPAE *ppPD);
 #endif
-int             pgmShwGetEPTPDPtr(PVM pVM, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD);
+int             pgmShwGetEPTPDPtr(PVM pVM, PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD);
 
-PX86PD          pgmGstLazyMap32BitPD(PPGM pPGM);
-PX86PDPT        pgmGstLazyMapPaePDPT(PPGM pPGM);
-PX86PDPAE       pgmGstLazyMapPaePD(PPGM pPGM, uint32_t iPdpt);
-PX86PML4        pgmGstLazyMapPml4(PPGM pPGM);
+PX86PD          pgmGstLazyMap32BitPD(PPGMCPU pPGM);
+PX86PDPT        pgmGstLazyMapPaePDPT(PPGMCPU pPGM);
+PX86PDPAE       pgmGstLazyMapPaePD(PPGMCPU pPGM, uint32_t iPdpt);
+PX86PML4        pgmGstLazyMapPml4(PPGMCPU pPGM);
 
 __END_DECLS
 
@@ -3286,7 +3322,7 @@ DECLINLINE(void *) pgmDynMapHCPageOff(PPGM pPGM, RTHCPHYS HCPhys)
 
 /**
  * Queries the Physical TLB entry for a physical guest page,
- * attemting to load the TLB entry if necessary.
+ * attempting to load the TLB entry if necessary.
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success
@@ -3314,7 +3350,7 @@ DECLINLINE(int) pgmPhysPageQueryTlbe(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGEMAPTLB
 
 /**
  * Queries the Physical TLB entry for a physical guest page,
- * attemting to load the TLB entry if necessary.
+ * attempting to load the TLB entry if necessary.
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success
@@ -3367,7 +3403,7 @@ DECLINLINE(RTGCPHYS) pgmGstGet4MBPhysPage(PPGM pPGM, X86PDE Pde)
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   GCPtr       The address.
  */
-DECLINLINE(X86PDE) pgmGstGet32bitPDE(PPGM pPGM, RTGCPTR GCPtr)
+DECLINLINE(X86PDE) pgmGstGet32bitPDE(PPGMCPU pPGM, RTGCPTR GCPtr)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PCX86PD pGuestPD = NULL;
@@ -3395,7 +3431,7 @@ DECLINLINE(X86PDE) pgmGstGet32bitPDE(PPGM pPGM, RTGCPTR GCPtr)
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   GCPtr       The address.
  */
-DECLINLINE(PX86PDE) pgmGstGet32bitPDEPtr(PPGM pPGM, RTGCPTR GCPtr)
+DECLINLINE(PX86PDE) pgmGstGet32bitPDEPtr(PPGMCPU pPGM, RTGCPTR GCPtr)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PD pGuestPD = NULL;
@@ -3418,7 +3454,7 @@ DECLINLINE(PX86PDE) pgmGstGet32bitPDEPtr(PPGM pPGM, RTGCPTR GCPtr)
  * @returns Pointer the page directory entry in question.
  * @param   pPGM        Pointer to the PGM instance data.
  */
-DECLINLINE(PX86PD) pgmGstGet32bitPDPtr(PPGM pPGM)
+DECLINLINE(PX86PD) pgmGstGet32bitPDPtr(PPGMCPU pPGM)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PD pGuestPD = NULL;
@@ -3442,7 +3478,7 @@ DECLINLINE(PX86PD) pgmGstGet32bitPDPtr(PPGM pPGM)
  * @returns NULL if the page directory is not present or on an invalid page.
  * @param   pPGM        Pointer to the PGM instance data.
  */
-DECLINLINE(PX86PDPT) pgmGstGetPaePDPTPtr(PPGM pPGM)
+DECLINLINE(PX86PDPT) pgmGstGetPaePDPTPtr(PPGMCPU pPGM)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PDPT pGuestPDPT = NULL;
@@ -3467,7 +3503,7 @@ DECLINLINE(PX86PDPT) pgmGstGetPaePDPTPtr(PPGM pPGM)
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   GCPtr       The address.
  */
-DECLINLINE(PX86PDPE) pgmGstGetPaePDPEPtr(PPGM pPGM, RTGCPTR GCPtr)
+DECLINLINE(PX86PDPE) pgmGstGetPaePDPEPtr(PPGMCPU pPGM, RTGCPTR GCPtr)
 {
     AssertGCPtr32(GCPtr);
 
@@ -3494,7 +3530,7 @@ DECLINLINE(PX86PDPE) pgmGstGetPaePDPEPtr(PPGM pPGM, RTGCPTR GCPtr)
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   GCPtr       The address.
  */
-DECLINLINE(PX86PDPAE) pgmGstGetPaePD(PPGM pPGM, RTGCPTR GCPtr)
+DECLINLINE(PX86PDPAE) pgmGstGetPaePD(PPGMCPU pPGM, RTGCPTR GCPtr)
 {
     AssertGCPtr32(GCPtr);
 
@@ -3528,7 +3564,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetPaePD(PPGM pPGM, RTGCPTR GCPtr)
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   GCPtr       The address.
  */
-DECLINLINE(PX86PDEPAE) pgmGstGetPaePDEPtr(PPGM pPGM, RTGCPTR GCPtr)
+DECLINLINE(PX86PDEPAE) pgmGstGetPaePDEPtr(PPGMCPU pPGM, RTGCPTR GCPtr)
 {
     AssertGCPtr32(GCPtr);
 
@@ -3563,7 +3599,7 @@ DECLINLINE(PX86PDEPAE) pgmGstGetPaePDEPtr(PPGM pPGM, RTGCPTR GCPtr)
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   GCPtr       The address.
  */
-DECLINLINE(X86PDEPAE) pgmGstGetPaePDE(PPGM pPGM, RTGCPTR GCPtr)
+DECLINLINE(X86PDEPAE) pgmGstGetPaePDE(PPGMCPU pPGM, RTGCPTR GCPtr)
 {
     AssertGCPtr32(GCPtr);
     X86PDEPAE   ZeroPde = {0};
@@ -3602,7 +3638,7 @@ DECLINLINE(X86PDEPAE) pgmGstGetPaePDE(PPGM pPGM, RTGCPTR GCPtr)
  * @param   piPD        Receives the index into the returned page directory
  * @param   pPdpe       Receives the page directory pointer entry. Optional.
  */
-DECLINLINE(PX86PDPAE) pgmGstGetPaePDPtr(PPGM pPGM, RTGCPTR GCPtr, unsigned *piPD, PX86PDPE pPdpe)
+DECLINLINE(PX86PDPAE) pgmGstGetPaePDPtr(PPGMCPU pPGM, RTGCPTR GCPtr, unsigned *piPD, PX86PDPE pPdpe)
 {
     AssertGCPtr32(GCPtr);
 
@@ -3639,7 +3675,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetPaePDPtr(PPGM pPGM, RTGCPTR GCPtr, unsigned *piPD
  * @returns Pointer to the PML4 page.
  * @param   pPGM        Pointer to the PGM instance data.
  */
-DECLINLINE(PX86PML4) pgmGstGetLongModePML4Ptr(PPGM pPGM)
+DECLINLINE(PX86PML4) pgmGstGetLongModePML4Ptr(PPGMCPU pPGM)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PML4 pGuestPml4;
@@ -3664,7 +3700,7 @@ DECLINLINE(PX86PML4) pgmGstGetLongModePML4Ptr(PPGM pPGM)
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   iPml4       The index.
  */
-DECLINLINE(PX86PML4E) pgmGstGetLongModePML4EPtr(PPGM pPGM, unsigned int iPml4)
+DECLINLINE(PX86PML4E) pgmGstGetLongModePML4EPtr(PPGMCPU pPGM, unsigned int iPml4)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PML4 pGuestPml4;
@@ -3689,7 +3725,7 @@ DECLINLINE(PX86PML4E) pgmGstGetLongModePML4EPtr(PPGM pPGM, unsigned int iPml4)
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   iPml4       The index.
  */
-DECLINLINE(X86PML4E) pgmGstGetLongModePML4E(PPGM pPGM, unsigned int iPml4)
+DECLINLINE(X86PML4E) pgmGstGetLongModePML4E(PPGMCPU pPGM, unsigned int iPml4)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PML4 pGuestPml4;
@@ -3720,7 +3756,7 @@ DECLINLINE(X86PML4E) pgmGstGetLongModePML4E(PPGM pPGM, unsigned int iPml4)
  * @param   GCPtr       The address.
  * @param   ppPml4e     Page Map Level-4 Entry (out)
  */
-DECLINLINE(PX86PDPE) pgmGstGetLongModePDPTPtr(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e)
+DECLINLINE(PX86PDPE) pgmGstGetLongModePDPTPtr(PPGMCPU pPGM, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e)
 {
     PX86PML4        pGuestPml4 = pgmGstGetLongModePML4Ptr(pPGM);
     const unsigned  iPml4  = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
@@ -3728,7 +3764,7 @@ DECLINLINE(PX86PDPE) pgmGstGetLongModePDPTPtr(PPGM pPGM, RTGCPTR64 GCPtr, PX86PM
     if (pPml4e->n.u1Present)
     {
         PX86PDPT pPdpt;
-        int rc = PGM_GCPHYS_2_PTR_BY_PGM(pPGM, pPml4e->u & X86_PML4E_PG_MASK, &pPdpt);
+        int rc = PGM_GCPHYS_2_PTR_BY_PGMCPU(pPGM, pPml4e->u & X86_PML4E_PG_MASK, &pPdpt);
         AssertRCReturn(rc, NULL);
 
         const unsigned iPdpt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
@@ -3748,7 +3784,7 @@ DECLINLINE(PX86PDPE) pgmGstGetLongModePDPTPtr(PPGM pPGM, RTGCPTR64 GCPtr, PX86PM
  * @param   ppPml4e     Page Map Level-4 Entry (out)
  * @param   pPdpe       Page directory pointer table entry (out)
  */
-DECLINLINE(X86PDEPAE) pgmGstGetLongModePDEEx(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPE pPdpe)
+DECLINLINE(X86PDEPAE) pgmGstGetLongModePDEEx(PPGMCPU pPGM, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPE pPdpe)
 {
     X86PDEPAE       ZeroPde = {0};
     PX86PML4        pGuestPml4 = pgmGstGetLongModePML4Ptr(pPGM);
@@ -3757,7 +3793,7 @@ DECLINLINE(X86PDEPAE) pgmGstGetLongModePDEEx(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML
     if (pPml4e->n.u1Present)
     {
         PCX86PDPT   pPdptTemp;
-        int rc = PGM_GCPHYS_2_PTR_BY_PGM(pPGM, pPml4e->u & X86_PML4E_PG_MASK, &pPdptTemp);
+        int rc = PGM_GCPHYS_2_PTR_BY_PGMCPU(pPGM, pPml4e->u & X86_PML4E_PG_MASK, &pPdptTemp);
         AssertRCReturn(rc, ZeroPde);
 
         const unsigned iPdpt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
@@ -3765,7 +3801,7 @@ DECLINLINE(X86PDEPAE) pgmGstGetLongModePDEEx(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML
         if (pPdptTemp->a[iPdpt].n.u1Present)
         {
             PCX86PDPAE pPD;
-            rc = PGM_GCPHYS_2_PTR_BY_PGM(pPGM, pPdptTemp->a[iPdpt].u & X86_PDPE_PG_MASK, &pPD);
+            rc = PGM_GCPHYS_2_PTR_BY_PGMCPU(pPGM, pPdptTemp->a[iPdpt].u & X86_PDPE_PG_MASK, &pPD);
             AssertRCReturn(rc, ZeroPde);
 
             const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
@@ -3785,7 +3821,7 @@ DECLINLINE(X86PDEPAE) pgmGstGetLongModePDEEx(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   GCPtr       The address.
  */
-DECLINLINE(X86PDEPAE) pgmGstGetLongModePDE(PPGM pPGM, RTGCPTR64 GCPtr)
+DECLINLINE(X86PDEPAE) pgmGstGetLongModePDE(PPGMCPU pPGM, RTGCPTR64 GCPtr)
 {
     X86PDEPAE       ZeroPde = {0};
     PCX86PML4       pGuestPml4 = pgmGstGetLongModePML4Ptr(pPGM);
@@ -3793,14 +3829,14 @@ DECLINLINE(X86PDEPAE) pgmGstGetLongModePDE(PPGM pPGM, RTGCPTR64 GCPtr)
     if (pGuestPml4->a[iPml4].n.u1Present)
     {
         PCX86PDPT   pPdptTemp;
-        int rc = PGM_GCPHYS_2_PTR_BY_PGM(pPGM, pGuestPml4->a[iPml4].u & X86_PML4E_PG_MASK, &pPdptTemp);
+        int rc = PGM_GCPHYS_2_PTR_BY_PGMCPU(pPGM, pGuestPml4->a[iPml4].u & X86_PML4E_PG_MASK, &pPdptTemp);
         AssertRCReturn(rc, ZeroPde);
 
         const unsigned iPdpt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
         if (pPdptTemp->a[iPdpt].n.u1Present)
         {
             PCX86PDPAE pPD;
-            rc = PGM_GCPHYS_2_PTR_BY_PGM(pPGM, pPdptTemp->a[iPdpt].u & X86_PDPE_PG_MASK, &pPD);
+            rc = PGM_GCPHYS_2_PTR_BY_PGMCPU(pPGM, pPdptTemp->a[iPdpt].u & X86_PDPE_PG_MASK, &pPD);
             AssertRCReturn(rc, ZeroPde);
 
             const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
@@ -3819,21 +3855,21 @@ DECLINLINE(X86PDEPAE) pgmGstGetLongModePDE(PPGM pPGM, RTGCPTR64 GCPtr)
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   GCPtr       The address.
  */
-DECLINLINE(PX86PDEPAE) pgmGstGetLongModePDEPtr(PPGM pPGM, RTGCPTR64 GCPtr)
+DECLINLINE(PX86PDEPAE) pgmGstGetLongModePDEPtr(PPGMCPU pPGM, RTGCPTR64 GCPtr)
 {
     PCX86PML4       pGuestPml4 = pgmGstGetLongModePML4Ptr(pPGM);
     const unsigned  iPml4 = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
     if (pGuestPml4->a[iPml4].n.u1Present)
     {
         PCX86PDPT   pPdptTemp;
-        int rc = PGM_GCPHYS_2_PTR_BY_PGM(pPGM, pGuestPml4->a[iPml4].u & X86_PML4E_PG_MASK, &pPdptTemp);
+        int rc = PGM_GCPHYS_2_PTR_BY_PGMCPU(pPGM, pGuestPml4->a[iPml4].u & X86_PML4E_PG_MASK, &pPdptTemp);
         AssertRCReturn(rc, NULL);
 
         const unsigned iPdpt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
         if (pPdptTemp->a[iPdpt].n.u1Present)
         {
             PX86PDPAE pPD;
-            rc = PGM_GCPHYS_2_PTR_BY_PGM(pPGM, pPdptTemp->a[iPdpt].u & X86_PDPE_PG_MASK, &pPD);
+            rc = PGM_GCPHYS_2_PTR_BY_PGMCPU(pPGM, pPdptTemp->a[iPdpt].u & X86_PDPE_PG_MASK, &pPD);
             AssertRCReturn(rc, NULL);
 
             const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
@@ -3855,7 +3891,7 @@ DECLINLINE(PX86PDEPAE) pgmGstGetLongModePDEPtr(PPGM pPGM, RTGCPTR64 GCPtr)
  * @param   pPdpe       Page directory pointer table entry (out)
  * @param   piPD        Receives the index into the returned page directory
  */
-DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPE pPdpe, unsigned *piPD)
+DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGMCPU pPGM, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPE pPdpe, unsigned *piPD)
 {
     PX86PML4        pGuestPml4 = pgmGstGetLongModePML4Ptr(pPGM);
     const unsigned  iPml4  = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
@@ -3863,7 +3899,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML
     if (pPml4e->n.u1Present)
     {
         PCX86PDPT   pPdptTemp;
-        int rc = PGM_GCPHYS_2_PTR_BY_PGM(pPGM, pPml4e->u & X86_PML4E_PG_MASK, &pPdptTemp);
+        int rc = PGM_GCPHYS_2_PTR_BY_PGMCPU(pPGM, pPml4e->u & X86_PML4E_PG_MASK, &pPdptTemp);
         AssertRCReturn(rc, NULL);
 
         const unsigned iPdpt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
@@ -3871,7 +3907,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML
         if (pPdptTemp->a[iPdpt].n.u1Present)
         {
             PX86PDPAE pPD;
-            rc = PGM_GCPHYS_2_PTR_BY_PGM(pPGM, pPdptTemp->a[iPdpt].u & X86_PDPE_PG_MASK, &pPD);
+            rc = PGM_GCPHYS_2_PTR_BY_PGMCPU(pPGM, pPdptTemp->a[iPdpt].u & X86_PDPE_PG_MASK, &pPD);
             AssertRCReturn(rc, NULL);
 
             *piPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
@@ -3889,9 +3925,9 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML
  * @returns Pointer to the shadow 32-bit PD.
  * @param   pPGM        Pointer to the PGM instance data.
  */
-DECLINLINE(PX86PD) pgmShwGet32BitPDPtr(PPGM pPGM)
+DECLINLINE(PX86PD) pgmShwGet32BitPDPtr(PPGMCPU pPGM)
 {
-    return (PX86PD)PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPGM->CTX_SUFF(pShwPageCR3));
+    return (PX86PD)PGMPOOL_PAGE_2_PTR_BY_PGM(PGMCPU2PGM(pPGM), pPGM->CTX_SUFF(pShwPageCR3));
 }
 
 
@@ -3902,7 +3938,7 @@ DECLINLINE(PX86PD) pgmShwGet32BitPDPtr(PPGM pPGM)
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   GCPtr       The address.
  */
-DECLINLINE(X86PDE) pgmShwGet32BitPDE(PPGM pPGM, RTGCPTR GCPtr)
+DECLINLINE(X86PDE) pgmShwGet32BitPDE(PPGMCPU pPGM, RTGCPTR GCPtr)
 {
     const unsigned iPd = (GCPtr >> X86_PD_SHIFT) & X86_PD_MASK;
 
@@ -3924,7 +3960,7 @@ DECLINLINE(X86PDE) pgmShwGet32BitPDE(PPGM pPGM, RTGCPTR GCPtr)
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   GCPtr       The address.
  */
-DECLINLINE(PX86PDE) pgmShwGet32BitPDEPtr(PPGM pPGM, RTGCPTR GCPtr)
+DECLINLINE(PX86PDE) pgmShwGet32BitPDEPtr(PPGMCPU pPGM, RTGCPTR GCPtr)
 {
     const unsigned iPd = (GCPtr >> X86_PD_SHIFT) & X86_PD_MASK;
 
@@ -3940,9 +3976,9 @@ DECLINLINE(PX86PDE) pgmShwGet32BitPDEPtr(PPGM pPGM, RTGCPTR GCPtr)
  * @returns Pointer to the shadow PAE PDPT.
  * @param   pPGM        Pointer to the PGM instance data.
  */
-DECLINLINE(PX86PDPT) pgmShwGetPaePDPTPtr(PPGM pPGM)
+DECLINLINE(PX86PDPT) pgmShwGetPaePDPTPtr(PPGMCPU pPGM)
 {
-    return (PX86PDPT)PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPGM->CTX_SUFF(pShwPageCR3));
+    return (PX86PDPT)PGMPOOL_PAGE_2_PTR_BY_PGM(PGMCPU2PGM(pPGM), pPGM->CTX_SUFF(pShwPageCR3));
 }
 
 
@@ -3953,7 +3989,7 @@ DECLINLINE(PX86PDPT) pgmShwGetPaePDPTPtr(PPGM pPGM)
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   GCPtr       The address.
  */
-DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGM pPGM, RTGCPTR GCPtr)
+DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGMCPU pPGM, RTGCPTR GCPtr)
 {
     const unsigned  iPdpt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
     PX86PDPT        pPdpt = pgmShwGetPaePDPTPtr(pPGM);
@@ -3962,10 +3998,10 @@ DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGM pPGM, RTGCPTR GCPtr)
         return NULL;
 
     /* Fetch the pgm pool shadow descriptor. */
-    PPGMPOOLPAGE    pShwPde = pgmPoolGetPageByHCPhys(PGM2VM(pPGM), pPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
+    PPGMPOOLPAGE    pShwPde = pgmPoolGetPageByHCPhys(PGMCPU2VM(pPGM), pPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
     AssertReturn(pShwPde, NULL);
 
-    return (PX86PDPAE)PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pShwPde);
+    return (PX86PDPAE)PGMPOOL_PAGE_2_PTR_BY_PGM(PGMCPU2PGM(pPGM), pShwPde);
 }
 
 
@@ -3976,7 +4012,7 @@ DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGM pPGM, RTGCPTR GCPtr)
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   GCPtr       The address.
  */
-DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGM pPGM, PX86PDPT pPdpt, RTGCPTR GCPtr)
+DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGMCPU pPGM, PX86PDPT pPdpt, RTGCPTR GCPtr)
 {
     const unsigned  iPdpt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
 
@@ -3984,10 +4020,10 @@ DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGM pPGM, PX86PDPT pPdpt, RTGCPTR GCPtr
         return NULL;
 
     /* Fetch the pgm pool shadow descriptor. */
-    PPGMPOOLPAGE    pShwPde = pgmPoolGetPageByHCPhys(PGM2VM(pPGM), pPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
+    PPGMPOOLPAGE    pShwPde = pgmPoolGetPageByHCPhys(PGMCPU2VM(pPGM), pPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
     AssertReturn(pShwPde, NULL);
 
-    return (PX86PDPAE)PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pShwPde);
+    return (PX86PDPAE)PGMPOOL_PAGE_2_PTR_BY_PGM(PGMCPU2PGM(pPGM), pShwPde);
 }
 
 
@@ -3998,7 +4034,7 @@ DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGM pPGM, PX86PDPT pPdpt, RTGCPTR GCPtr
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   GCPtr       The address.
  */
-DECLINLINE(X86PDEPAE) pgmShwGetPaePDE(PPGM pPGM, RTGCPTR GCPtr)
+DECLINLINE(X86PDEPAE) pgmShwGetPaePDE(PPGMCPU pPGM, RTGCPTR GCPtr)
 {
     const unsigned  iPd   = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
 
@@ -4019,7 +4055,7 @@ DECLINLINE(X86PDEPAE) pgmShwGetPaePDE(PPGM pPGM, RTGCPTR GCPtr)
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   GCPtr       The address.
  */
-DECLINLINE(PX86PDEPAE) pgmShwGetPaePDEPtr(PPGM pPGM, RTGCPTR GCPtr)
+DECLINLINE(PX86PDEPAE) pgmShwGetPaePDEPtr(PPGMCPU pPGM, RTGCPTR GCPtr)
 {
     const unsigned  iPd   = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
 
@@ -4036,9 +4072,9 @@ DECLINLINE(PX86PDEPAE) pgmShwGetPaePDEPtr(PPGM pPGM, RTGCPTR GCPtr)
  * @returns Pointer to the shadow PML4.
  * @param   pPGM        Pointer to the PGM instance data.
  */
-DECLINLINE(PX86PML4) pgmShwGetLongModePML4Ptr(PPGM pPGM)
+DECLINLINE(PX86PML4) pgmShwGetLongModePML4Ptr(PPGMCPU pPGM)
 {
-    return (PX86PML4)PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPGM->CTX_SUFF(pShwPageCR3));
+    return (PX86PML4)PGMPOOL_PAGE_2_PTR_BY_PGM(PGMCPU2PGM(pPGM), pPGM->CTX_SUFF(pShwPageCR3));
 }
 
 
@@ -4049,7 +4085,7 @@ DECLINLINE(PX86PML4) pgmShwGetLongModePML4Ptr(PPGM pPGM)
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   GCPtr       The address.
  */
-DECLINLINE(X86PML4E) pgmShwGetLongModePML4E(PPGM pPGM, RTGCPTR GCPtr)
+DECLINLINE(X86PML4E) pgmShwGetLongModePML4E(PPGMCPU pPGM, RTGCPTR GCPtr)
 {
     const unsigned  iPml4 = ((RTGCUINTPTR64)GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
     PX86PML4        pShwPml4 = pgmShwGetLongModePML4Ptr(pPGM);
@@ -4070,7 +4106,7 @@ DECLINLINE(X86PML4E) pgmShwGetLongModePML4E(PPGM pPGM, RTGCPTR GCPtr)
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   iPml4       The PML4 index.
  */
-DECLINLINE(PX86PML4E) pgmShwGetLongModePML4EPtr(PPGM pPGM, unsigned int iPml4)
+DECLINLINE(PX86PML4E) pgmShwGetLongModePML4EPtr(PPGMCPU pPGM, unsigned int iPml4)
 {
     PX86PML4 pShwPml4 = pgmShwGetLongModePML4Ptr(pPGM);
     if (!pShwPml4)
@@ -4088,21 +4124,21 @@ DECLINLINE(PX86PML4E) pgmShwGetLongModePML4EPtr(PPGM pPGM, unsigned int iPml4)
  * @param   GCPtr       The address.
  * @param   piPD        Receives the index into the returned page directory
  */
-DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCPTR64 GCPtr, unsigned *piPD)
+DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGMCPU pPGM, RTGCPTR64 GCPtr, unsigned *piPD)
 {
     PCX86PML4       pGuestPml4 = pgmGstGetLongModePML4Ptr(pPGM);
     const unsigned  iPml4  = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
     if (pGuestPml4->a[iPml4].n.u1Present)
     {
         PCX86PDPT   pPdptTemp;
-        int rc = PGM_GCPHYS_2_PTR_BY_PGM(pPGM, pGuestPml4->a[iPml4].u & X86_PML4E_PG_MASK, &pPdptTemp);
+        int rc = PGM_GCPHYS_2_PTR_BY_PGMCPU(pPGM, pGuestPml4->a[iPml4].u & X86_PML4E_PG_MASK, &pPdptTemp);
         AssertRCReturn(rc, NULL);
 
         const unsigned iPdpt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
         if (pPdptTemp->a[iPdpt].n.u1Present)
         {
             PX86PDPAE pPD;
-            rc = PGM_GCPHYS_2_PTR_BY_PGM(pPGM, pPdptTemp->a[iPdpt].u & X86_PDPE_PG_MASK, &pPD);
+            rc = PGM_GCPHYS_2_PTR_BY_PGMCPU(pPGM, pPdptTemp->a[iPdpt].u & X86_PDPE_PG_MASK, &pPD);
             AssertRCReturn(rc, NULL);
 
             *piPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;

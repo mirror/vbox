@@ -221,7 +221,7 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         }
 
         /* If we sync the FPU/XMM state on-demand, then we can continue execution as if nothing has happened. */
-        int rc = CPUMHandleLazyFPU(pVM, pVCpu);
+        int rc = CPUMHandleLazyFPU(pVCpu);
         AssertRC(rc);
         Assert(CPUMIsGuestFPUStateActive(pVCpu));
 

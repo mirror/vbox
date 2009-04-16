@@ -388,8 +388,13 @@ VMMDECL(int) PGMR3HandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, 
         if (enmType != PGMVIRTHANDLERTYPE_HYPERVISOR)
         {
             pVM->pgm.s.fPhysCacheFlushPending = true;
-            pVM->pgm.s.fSyncFlags |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL | PGM_SYNC_CLEAR_PGM_POOL;
-            VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+            for (unsigned i=0;i<pVM->cCPUs;i++)
+            {
+                PVMCPU pVCpu = &pVM->aCpus[i];
+
+                pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL | PGM_SYNC_CLEAR_PGM_POOL;
+                VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+            }
         }
         pgmUnlock(pVM);
 
@@ -468,8 +473,13 @@ VMMDECL(int) PGMHandlerVirtualDeregister(PVM pVM, RTGCPTR GCPtr)
         /*
          * Schedule CR3 sync.
          */
-        pVM->pgm.s.fSyncFlags |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL | PGM_SYNC_CLEAR_PGM_POOL;
-        VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+        for (unsigned i=0;i<pVM->cCPUs;i++)
+        {
+            PVMCPU pVCpu = &pVM->aCpus[i];
+
+            pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL | PGM_SYNC_CLEAR_PGM_POOL;
+            VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+        }
     }
     else
     {

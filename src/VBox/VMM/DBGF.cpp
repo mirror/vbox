@@ -290,6 +290,8 @@ bool dbgfR3WaitForAttach(PVM pVM, DBGFEVENTTYPE enmEvent)
  */
 VMMR3DECL(int) DBGFR3VMMForcedAction(PVM pVM)
 {
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+
     /*
      * Clear the FF DBGF request flag.
      */
@@ -303,7 +305,7 @@ VMMR3DECL(int) DBGFR3VMMForcedAction(PVM pVM)
     if (pVM->dbgf.s.enmVMMCmd != DBGFCMD_NO_COMMAND)
     {
         /** @todo stupid GDT/LDT sync hack. go away! */
-        SELMR3UpdateFromCPUM(pVM);
+        SELMR3UpdateFromCPUM(pVM, pVCpu);
 
         /*
          * Process the command.
@@ -343,14 +345,17 @@ static void dbgfR3EventSetStoppedInHyperFlag(PVM pVM, DBGFEVENTTYPE enmEvent)
 
 
 /**
- * Try determin the event context.
+ * Try to determine the event context.
  *
  * @returns debug event context.
  * @param   pVM         The VM handle.
  */
 static DBGFEVENTCTX dbgfR3FigureEventCtx(PVM pVM)
 {
-    switch (EMGetState(pVM))
+    /** @todo SMP support! */
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
+    switch (EMGetState(pVCpu))
     {
         case EMSTATE_RAW:
         case EMSTATE_DEBUG_GUEST_RAW:
@@ -380,6 +385,8 @@ static DBGFEVENTCTX dbgfR3FigureEventCtx(PVM pVM)
  */
 static int dbgfR3EventPrologue(PVM pVM, DBGFEVENTTYPE enmEvent)
 {
+    PVMCPU pVCpu = VMMGetCpu0(pVM);
+
     /*
      * Check if a debugger is attached.
      */
@@ -395,7 +402,7 @@ static int dbgfR3EventPrologue(PVM pVM, DBGFEVENTTYPE enmEvent)
      */
     dbgfR3EventSetStoppedInHyperFlag(pVM, enmEvent);
     if (!pVM->dbgf.s.fStoppedInHyper)
-        REMR3StateUpdate(pVM);
+        REMR3StateUpdate(pVM, pVCpu);
 
     /*
      * Look thru pending commands and finish those which make sense now.
@@ -564,8 +571,8 @@ VMMR3DECL(int) DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent)
 #if 0   /** @todo get flat PC api! */
         uint32_t eip = CPUMGetGuestEIP(pVM);
 #else
-        /* @todo SMP */
-        PCPUMCTX pCtx = CPUMQueryGuestCtxPtrEx(pVM, VMMGetCpuEx(pVM, 0));
+        /* @todo SMP support!! */
+        PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(VMMGetCpu(pVM));
         RTGCPTR  eip = pCtx->rip + pCtx->csHid.u64Base;
 #endif
         for (iBp = 0; iBp < RT_ELEMENTS(pVM->dbgf.s.aBreakpoints); iBp++)
@@ -590,10 +597,12 @@ VMMR3DECL(int) DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent)
  */
 static int dbgfR3VMMWait(PVM pVM)
 {
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+
     LogFlow(("dbgfR3VMMWait:\n"));
 
     /** @todo stupid GDT/LDT sync hack. go away! */
-    SELMR3UpdateFromCPUM(pVM);
+    SELMR3UpdateFromCPUM(pVM, pVCpu);
     int rcRet = VINF_SUCCESS;
 
     /*

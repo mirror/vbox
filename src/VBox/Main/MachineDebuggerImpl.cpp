@@ -557,7 +557,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(PAEEnabled) (BOOL *aEnabled)
 
     if (pVM.isOk())
     {
-        uint64_t cr4 = CPUMGetGuestCR4 (pVM.raw());
+        uint64_t cr4 = CPUMGetGuestCR4 (VMMGetCpu0(pVM.raw()));
         *aEnabled = !!(cr4 & X86_CR4_PAE);
     }
     else

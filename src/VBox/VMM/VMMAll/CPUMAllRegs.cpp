@@ -33,6 +33,7 @@
 #include <VBox/err.h>
 #include <VBox/dis.h>
 #include <VBox/log.h>
+#include <VBox/hwaccm.h>
 #include <VBox/tm.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
@@ -53,25 +54,27 @@
  * core with the trap frame on the stack. It is called again to reset
  * back to the default context core when resuming hypervisor execution.
  *
- * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  * @param   pCtxCore    Pointer to the alternative context core or NULL
  *                      to go back to the default context core.
  */
-VMMDECL(void) CPUMHyperSetCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore)
+VMMDECL(void) CPUMHyperSetCtxCore(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
 {
-    LogFlow(("CPUMHyperSetCtxCore: %p/%p/%p -> %p\n", pVM->cpum.s.CTX_SUFF(pHyperCore), pCtxCore));
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+
+    LogFlow(("CPUMHyperSetCtxCore: %p/%p/%p -> %p\n", pVCpu->cpum.s.CTX_SUFF(pHyperCore), pCtxCore));
     if (!pCtxCore)
     {
-        pCtxCore = CPUMCTX2CORE(&pVM->cpum.s.Hyper);
-        pVM->cpum.s.pHyperCoreR3 = (R3PTRTYPE(PCPUMCTXCORE))VM_R3_ADDR(pVM, pCtxCore);
-        pVM->cpum.s.pHyperCoreR0 = (R0PTRTYPE(PCPUMCTXCORE))VM_R0_ADDR(pVM, pCtxCore);
-        pVM->cpum.s.pHyperCoreRC = (RCPTRTYPE(PCPUMCTXCORE))VM_RC_ADDR(pVM, pCtxCore);
+        pCtxCore = CPUMCTX2CORE(&pVCpu->cpum.s.Hyper);
+        pVCpu->cpum.s.pHyperCoreR3 = (R3PTRTYPE(PCPUMCTXCORE))VM_R3_ADDR(pVM, pCtxCore);
+        pVCpu->cpum.s.pHyperCoreR0 = (R0PTRTYPE(PCPUMCTXCORE))VM_R0_ADDR(pVM, pCtxCore);
+        pVCpu->cpum.s.pHyperCoreRC = (RCPTRTYPE(PCPUMCTXCORE))VM_RC_ADDR(pVM, pCtxCore);
     }
     else
     {
-        pVM->cpum.s.pHyperCoreR3 = (R3PTRTYPE(PCPUMCTXCORE))MMHyperCCToR3(pVM, pCtxCore);
-        pVM->cpum.s.pHyperCoreR0 = (R0PTRTYPE(PCPUMCTXCORE))MMHyperCCToR0(pVM, pCtxCore);
-        pVM->cpum.s.pHyperCoreRC = (RCPTRTYPE(PCPUMCTXCORE))MMHyperCCToRC(pVM, pCtxCore);
+        pVCpu->cpum.s.pHyperCoreR3 = (R3PTRTYPE(PCPUMCTXCORE))MMHyperCCToR3(pVM, pCtxCore);
+        pVCpu->cpum.s.pHyperCoreR0 = (R0PTRTYPE(PCPUMCTXCORE))MMHyperCCToR0(pVM, pCtxCore);
+        pVCpu->cpum.s.pHyperCoreRC = (RCPTRTYPE(PCPUMCTXCORE))MMHyperCCToRC(pVM, pCtxCore);
     }
 }
 
@@ -82,9 +85,9 @@ VMMDECL(void) CPUMHyperSetCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore)
  *
  * @param   pVM         Handle to the virtual machine.
  */
-VMMDECL(PCCPUMCTXCORE) CPUMGetHyperCtxCore(PVM pVM)
+VMMDECL(PCCPUMCTXCORE) CPUMGetHyperCtxCore(PVMCPU pVCpu)
 {
-    return pVM->cpum.s.CTX_SUFF(pHyperCore);
+    return pVCpu->cpum.s.CTX_SUFF(pHyperCore);
 }
 
 
@@ -100,32 +103,32 @@ VMMDECL(PCCPUMCTXCORE) CPUMGetHyperCtxCore(PVM pVM)
  *              getting much worse. So, use the individual functions for getting
  *              and esp. setting the hypervisor registers.
  */
-VMMDECL(int) CPUMQueryHyperCtxPtr(PVM pVM, PCPUMCTX *ppCtx)
+VMMDECL(int) CPUMQueryHyperCtxPtr(PVMCPU pVCpu, PCPUMCTX *ppCtx)
 {
-    *ppCtx = &pVM->cpum.s.Hyper;
+    *ppCtx = &pVCpu->cpum.s.Hyper;
     return VINF_SUCCESS;
 }
 
 
-VMMDECL(void) CPUMSetHyperGDTR(PVM pVM, uint32_t addr, uint16_t limit)
+VMMDECL(void) CPUMSetHyperGDTR(PVMCPU pVCpu, uint32_t addr, uint16_t limit)
 {
-    pVM->cpum.s.Hyper.gdtr.cbGdt = limit;
-    pVM->cpum.s.Hyper.gdtr.pGdt  = addr;
-    pVM->cpum.s.Hyper.gdtrPadding = 0;
+    pVCpu->cpum.s.Hyper.gdtr.cbGdt = limit;
+    pVCpu->cpum.s.Hyper.gdtr.pGdt  = addr;
+    pVCpu->cpum.s.Hyper.gdtrPadding = 0;
 }
 
 
-VMMDECL(void) CPUMSetHyperIDTR(PVM pVM, uint32_t addr, uint16_t limit)
+VMMDECL(void) CPUMSetHyperIDTR(PVMCPU pVCpu, uint32_t addr, uint16_t limit)
 {
-    pVM->cpum.s.Hyper.idtr.cbIdt = limit;
-    pVM->cpum.s.Hyper.idtr.pIdt = addr;
-    pVM->cpum.s.Hyper.idtrPadding = 0;
+    pVCpu->cpum.s.Hyper.idtr.cbIdt = limit;
+    pVCpu->cpum.s.Hyper.idtr.pIdt = addr;
+    pVCpu->cpum.s.Hyper.idtrPadding = 0;
 }
 
 
-VMMDECL(void) CPUMSetHyperCR3(PVM pVM, uint32_t cr3)
+VMMDECL(void) CPUMSetHyperCR3(PVMCPU pVCpu, uint32_t cr3)
 {
-    pVM->cpum.s.Hyper.cr3 = cr3;
+    pVCpu->cpum.s.Hyper.cr3 = cr3;
 
 #ifdef IN_RC
     /* Update the current CR3. */
@@ -133,278 +136,278 @@ VMMDECL(void) CPUMSetHyperCR3(PVM pVM, uint32_t cr3)
 #endif
 }
 
-VMMDECL(uint32_t) CPUMGetHyperCR3(PVM pVM)
+VMMDECL(uint32_t) CPUMGetHyperCR3(PVMCPU pVCpu)
 {
-    return pVM->cpum.s.Hyper.cr3;
+    return pVCpu->cpum.s.Hyper.cr3;
 }
 
 
-VMMDECL(void) CPUMSetHyperCS(PVM pVM, RTSEL SelCS)
+VMMDECL(void) CPUMSetHyperCS(PVMCPU pVCpu, RTSEL SelCS)
 {
-    pVM->cpum.s.CTX_SUFF(pHyperCore)->cs = SelCS;
+    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->cs = SelCS;
 }
 
 
-VMMDECL(void) CPUMSetHyperDS(PVM pVM, RTSEL SelDS)
+VMMDECL(void) CPUMSetHyperDS(PVMCPU pVCpu, RTSEL SelDS)
 {
-    pVM->cpum.s.CTX_SUFF(pHyperCore)->ds = SelDS;
+    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->ds = SelDS;
 }
 
 
-VMMDECL(void) CPUMSetHyperES(PVM pVM, RTSEL SelES)
+VMMDECL(void) CPUMSetHyperES(PVMCPU pVCpu, RTSEL SelES)
 {
-    pVM->cpum.s.CTX_SUFF(pHyperCore)->es = SelES;
+    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->es = SelES;
 }
 
 
-VMMDECL(void) CPUMSetHyperFS(PVM pVM, RTSEL SelFS)
+VMMDECL(void) CPUMSetHyperFS(PVMCPU pVCpu, RTSEL SelFS)
 {
-    pVM->cpum.s.CTX_SUFF(pHyperCore)->fs = SelFS;
+    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->fs = SelFS;
 }
 
 
-VMMDECL(void) CPUMSetHyperGS(PVM pVM, RTSEL SelGS)
+VMMDECL(void) CPUMSetHyperGS(PVMCPU pVCpu, RTSEL SelGS)
 {
-    pVM->cpum.s.CTX_SUFF(pHyperCore)->gs = SelGS;
+    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->gs = SelGS;
 }
 
 
-VMMDECL(void) CPUMSetHyperSS(PVM pVM, RTSEL SelSS)
+VMMDECL(void) CPUMSetHyperSS(PVMCPU pVCpu, RTSEL SelSS)
 {
-    pVM->cpum.s.CTX_SUFF(pHyperCore)->ss = SelSS;
+    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->ss = SelSS;
 }
 
 
-VMMDECL(void) CPUMSetHyperESP(PVM pVM, uint32_t u32ESP)
+VMMDECL(void) CPUMSetHyperESP(PVMCPU pVCpu, uint32_t u32ESP)
 {
-    pVM->cpum.s.CTX_SUFF(pHyperCore)->esp = u32ESP;
+    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->esp = u32ESP;
 }
 
 
-VMMDECL(int) CPUMSetHyperEFlags(PVM pVM, uint32_t Efl)
+VMMDECL(int) CPUMSetHyperEFlags(PVMCPU pVCpu, uint32_t Efl)
 {
-    pVM->cpum.s.CTX_SUFF(pHyperCore)->eflags.u32 = Efl;
+    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->eflags.u32 = Efl;
     return VINF_SUCCESS;
 }
 
 
-VMMDECL(void) CPUMSetHyperEIP(PVM pVM, uint32_t u32EIP)
+VMMDECL(void) CPUMSetHyperEIP(PVMCPU pVCpu, uint32_t u32EIP)
 {
-    pVM->cpum.s.CTX_SUFF(pHyperCore)->eip = u32EIP;
+    pVCpu->cpum.s.CTX_SUFF(pHyperCore)->eip = u32EIP;
 }
 
 
-VMMDECL(void) CPUMSetHyperTR(PVM pVM, RTSEL SelTR)
+VMMDECL(void) CPUMSetHyperTR(PVMCPU pVCpu, RTSEL SelTR)
 {
-    pVM->cpum.s.Hyper.tr = SelTR;
+    pVCpu->cpum.s.Hyper.tr = SelTR;
 }
 
 
-VMMDECL(void) CPUMSetHyperLDTR(PVM pVM, RTSEL SelLDTR)
+VMMDECL(void) CPUMSetHyperLDTR(PVMCPU pVCpu, RTSEL SelLDTR)
 {
-    pVM->cpum.s.Hyper.ldtr = SelLDTR;
+    pVCpu->cpum.s.Hyper.ldtr = SelLDTR;
 }
 
 
-VMMDECL(void) CPUMSetHyperDR0(PVM pVM, RTGCUINTREG uDr0)
+VMMDECL(void) CPUMSetHyperDR0(PVMCPU pVCpu, RTGCUINTREG uDr0)
 {
-    pVM->cpum.s.Hyper.dr[0] = uDr0;
+    pVCpu->cpum.s.Hyper.dr[0] = uDr0;
     /** @todo in GC we must load it! */
 }
 
 
-VMMDECL(void) CPUMSetHyperDR1(PVM pVM, RTGCUINTREG uDr1)
+VMMDECL(void) CPUMSetHyperDR1(PVMCPU pVCpu, RTGCUINTREG uDr1)
 {
-    pVM->cpum.s.Hyper.dr[1] = uDr1;
+    pVCpu->cpum.s.Hyper.dr[1] = uDr1;
     /** @todo in GC we must load it! */
 }
 
 
-VMMDECL(void) CPUMSetHyperDR2(PVM pVM, RTGCUINTREG uDr2)
+VMMDECL(void) CPUMSetHyperDR2(PVMCPU pVCpu, RTGCUINTREG uDr2)
 {
-    pVM->cpum.s.Hyper.dr[2] = uDr2;
+    pVCpu->cpum.s.Hyper.dr[2] = uDr2;
     /** @todo in GC we must load it! */
 }
 
 
-VMMDECL(void) CPUMSetHyperDR3(PVM pVM, RTGCUINTREG uDr3)
+VMMDECL(void) CPUMSetHyperDR3(PVMCPU pVCpu, RTGCUINTREG uDr3)
 {
-    pVM->cpum.s.Hyper.dr[3] = uDr3;
+    pVCpu->cpum.s.Hyper.dr[3] = uDr3;
     /** @todo in GC we must load it! */
 }
 
 
-VMMDECL(void) CPUMSetHyperDR6(PVM pVM, RTGCUINTREG uDr6)
+VMMDECL(void) CPUMSetHyperDR6(PVMCPU pVCpu, RTGCUINTREG uDr6)
 {
-    pVM->cpum.s.Hyper.dr[6] = uDr6;
+    pVCpu->cpum.s.Hyper.dr[6] = uDr6;
     /** @todo in GC we must load it! */
 }
 
 
-VMMDECL(void) CPUMSetHyperDR7(PVM pVM, RTGCUINTREG uDr7)
+VMMDECL(void) CPUMSetHyperDR7(PVMCPU pVCpu, RTGCUINTREG uDr7)
 {
-    pVM->cpum.s.Hyper.dr[7] = uDr7;
+    pVCpu->cpum.s.Hyper.dr[7] = uDr7;
     /** @todo in GC we must load it! */
 }
 
 
-VMMDECL(RTSEL) CPUMGetHyperCS(PVM pVM)
+VMMDECL(RTSEL) CPUMGetHyperCS(PVMCPU pVCpu)
 {
-    return pVM->cpum.s.CTX_SUFF(pHyperCore)->cs;
+    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->cs;
 }
 
 
-VMMDECL(RTSEL) CPUMGetHyperDS(PVM pVM)
+VMMDECL(RTSEL) CPUMGetHyperDS(PVMCPU pVCpu)
 {
-    return pVM->cpum.s.CTX_SUFF(pHyperCore)->ds;
+    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->ds;
 }
 
 
-VMMDECL(RTSEL) CPUMGetHyperES(PVM pVM)
+VMMDECL(RTSEL) CPUMGetHyperES(PVMCPU pVCpu)
 {
-    return pVM->cpum.s.CTX_SUFF(pHyperCore)->es;
+    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->es;
 }
 
 
-VMMDECL(RTSEL) CPUMGetHyperFS(PVM pVM)
+VMMDECL(RTSEL) CPUMGetHyperFS(PVMCPU pVCpu)
 {
-    return pVM->cpum.s.CTX_SUFF(pHyperCore)->fs;
+    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->fs;
 }
 
 
-VMMDECL(RTSEL) CPUMGetHyperGS(PVM pVM)
+VMMDECL(RTSEL) CPUMGetHyperGS(PVMCPU pVCpu)
 {
-    return pVM->cpum.s.CTX_SUFF(pHyperCore)->gs;
+    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->gs;
 }
 
 
-VMMDECL(RTSEL) CPUMGetHyperSS(PVM pVM)
+VMMDECL(RTSEL) CPUMGetHyperSS(PVMCPU pVCpu)
 {
-    return pVM->cpum.s.CTX_SUFF(pHyperCore)->ss;
+    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->ss;
 }
 
 
-VMMDECL(uint32_t) CPUMGetHyperEAX(PVM pVM)
+VMMDECL(uint32_t) CPUMGetHyperEAX(PVMCPU pVCpu)
 {
-    return pVM->cpum.s.CTX_SUFF(pHyperCore)->eax;
+    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->eax;
 }
 
 
-VMMDECL(uint32_t) CPUMGetHyperEBX(PVM pVM)
+VMMDECL(uint32_t) CPUMGetHyperEBX(PVMCPU pVCpu)
 {
-    return pVM->cpum.s.CTX_SUFF(pHyperCore)->ebx;
+    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->ebx;
 }
 
 
-VMMDECL(uint32_t) CPUMGetHyperECX(PVM pVM)
+VMMDECL(uint32_t) CPUMGetHyperECX(PVMCPU pVCpu)
 {
-    return pVM->cpum.s.CTX_SUFF(pHyperCore)->ecx;
+    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->ecx;
 }
 
 
-VMMDECL(uint32_t) CPUMGetHyperEDX(PVM pVM)
+VMMDECL(uint32_t) CPUMGetHyperEDX(PVMCPU pVCpu)
 {
-    return pVM->cpum.s.CTX_SUFF(pHyperCore)->edx;
+    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->edx;
 }
 
 
-VMMDECL(uint32_t) CPUMGetHyperESI(PVM pVM)
+VMMDECL(uint32_t) CPUMGetHyperESI(PVMCPU pVCpu)
 {
-    return pVM->cpum.s.CTX_SUFF(pHyperCore)->esi;
+    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->esi;
 }
 
 
-VMMDECL(uint32_t) CPUMGetHyperEDI(PVM pVM)
+VMMDECL(uint32_t) CPUMGetHyperEDI(PVMCPU pVCpu)
 {
-    return pVM->cpum.s.CTX_SUFF(pHyperCore)->edi;
+    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->edi;
 }
 
 
-VMMDECL(uint32_t) CPUMGetHyperEBP(PVM pVM)
+VMMDECL(uint32_t) CPUMGetHyperEBP(PVMCPU pVCpu)
 {
-    return pVM->cpum.s.CTX_SUFF(pHyperCore)->ebp;
+    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->ebp;
 }
 
 
-VMMDECL(uint32_t) CPUMGetHyperESP(PVM pVM)
+VMMDECL(uint32_t) CPUMGetHyperESP(PVMCPU pVCpu)
 {
-    return pVM->cpum.s.CTX_SUFF(pHyperCore)->esp;
+    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->esp;
 }
 
 
-VMMDECL(uint32_t) CPUMGetHyperEFlags(PVM pVM)
+VMMDECL(uint32_t) CPUMGetHyperEFlags(PVMCPU pVCpu)
 {
-    return pVM->cpum.s.CTX_SUFF(pHyperCore)->eflags.u32;
+    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->eflags.u32;
 }
 
 
-VMMDECL(uint32_t) CPUMGetHyperEIP(PVM pVM)
+VMMDECL(uint32_t) CPUMGetHyperEIP(PVMCPU pVCpu)
 {
-    return pVM->cpum.s.CTX_SUFF(pHyperCore)->eip;
+    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->eip;
 }
 
 
-VMMDECL(uint64_t) CPUMGetHyperRIP(PVM pVM)
+VMMDECL(uint64_t) CPUMGetHyperRIP(PVMCPU pVCpu)
 {
-    return pVM->cpum.s.CTX_SUFF(pHyperCore)->rip;
+    return pVCpu->cpum.s.CTX_SUFF(pHyperCore)->rip;
 }
 
 
-VMMDECL(uint32_t) CPUMGetHyperIDTR(PVM pVM, uint16_t *pcbLimit)
+VMMDECL(uint32_t) CPUMGetHyperIDTR(PVMCPU pVCpu, uint16_t *pcbLimit)
 {
     if (pcbLimit)
-        *pcbLimit = pVM->cpum.s.Hyper.idtr.cbIdt;
-    return pVM->cpum.s.Hyper.idtr.pIdt;
+        *pcbLimit = pVCpu->cpum.s.Hyper.idtr.cbIdt;
+    return pVCpu->cpum.s.Hyper.idtr.pIdt;
 }
 
 
-VMMDECL(uint32_t) CPUMGetHyperGDTR(PVM pVM, uint16_t *pcbLimit)
+VMMDECL(uint32_t) CPUMGetHyperGDTR(PVMCPU pVCpu, uint16_t *pcbLimit)
 {
     if (pcbLimit)
-        *pcbLimit = pVM->cpum.s.Hyper.gdtr.cbGdt;
-    return pVM->cpum.s.Hyper.gdtr.pGdt;
+        *pcbLimit = pVCpu->cpum.s.Hyper.gdtr.cbGdt;
+    return pVCpu->cpum.s.Hyper.gdtr.pGdt;
 }
 
 
-VMMDECL(RTSEL) CPUMGetHyperLDTR(PVM pVM)
+VMMDECL(RTSEL) CPUMGetHyperLDTR(PVMCPU pVCpu)
 {
-    return pVM->cpum.s.Hyper.ldtr;
+    return pVCpu->cpum.s.Hyper.ldtr;
 }
 
 
-VMMDECL(RTGCUINTREG) CPUMGetHyperDR0(PVM pVM)
+VMMDECL(RTGCUINTREG) CPUMGetHyperDR0(PVMCPU pVCpu)
 {
-    return pVM->cpum.s.Hyper.dr[0];
+    return pVCpu->cpum.s.Hyper.dr[0];
 }
 
 
-VMMDECL(RTGCUINTREG) CPUMGetHyperDR1(PVM pVM)
+VMMDECL(RTGCUINTREG) CPUMGetHyperDR1(PVMCPU pVCpu)
 {
-    return pVM->cpum.s.Hyper.dr[1];
+    return pVCpu->cpum.s.Hyper.dr[1];
 }
 
 
-VMMDECL(RTGCUINTREG) CPUMGetHyperDR2(PVM pVM)
+VMMDECL(RTGCUINTREG) CPUMGetHyperDR2(PVMCPU pVCpu)
 {
-    return pVM->cpum.s.Hyper.dr[2];
+    return pVCpu->cpum.s.Hyper.dr[2];
 }
 
 
-VMMDECL(RTGCUINTREG) CPUMGetHyperDR3(PVM pVM)
+VMMDECL(RTGCUINTREG) CPUMGetHyperDR3(PVMCPU pVCpu)
 {
-    return pVM->cpum.s.Hyper.dr[3];
+    return pVCpu->cpum.s.Hyper.dr[3];
 }
 
 
-VMMDECL(RTGCUINTREG) CPUMGetHyperDR6(PVM pVM)
+VMMDECL(RTGCUINTREG) CPUMGetHyperDR6(PVMCPU pVCpu)
 {
-    return pVM->cpum.s.Hyper.dr[6];
+    return pVCpu->cpum.s.Hyper.dr[6];
 }
 
 
-VMMDECL(RTGCUINTREG) CPUMGetHyperDR7(PVM pVM)
+VMMDECL(RTGCUINTREG) CPUMGetHyperDR7(PVMCPU pVCpu)
 {
-    return pVM->cpum.s.Hyper.dr[7];
+    return pVCpu->cpum.s.Hyper.dr[7];
 }
 
 
@@ -412,21 +415,9 @@ VMMDECL(RTGCUINTREG) CPUMGetHyperDR7(PVM pVM)
  * Gets the pointer to the internal CPUMCTXCORE structure.
  * This is only for reading in order to save a few calls.
  *
- * @param   pVM         Handle to the virtual machine.
+ * @param   pVCpu       Handle to the virtual cpu.
  */
-VMMDECL(PCCPUMCTXCORE) CPUMGetGuestCtxCore(PVM pVM)
-{
-    VM_ASSERT_EMT(pVM);
-    return CPUMCTX2CORE(&pVM->aCpus[VMMGetCpuId(pVM)].cpum.s.Guest);
-}
-
-/**
- * Gets the pointer to the internal CPUMCTXCORE structure.
- * This is only for reading in order to save a few calls.
- *
- * @param   pVM         Handle to the virtual machine.
- */
-VMMDECL(PCCPUMCTXCORE) CPUMGetGuestCtxCoreEx(PVM pVM, PVMCPU pVCpu)
+VMMDECL(PCCPUMCTXCORE) CPUMGetGuestCtxCore(PVMCPU pVCpu)
 {
     return CPUMCTX2CORE(&pVCpu->cpum.s.Guest);
 }
@@ -435,18 +426,18 @@ VMMDECL(PCCPUMCTXCORE) CPUMGetGuestCtxCoreEx(PVM pVM, PVMCPU pVCpu)
 /**
  * Sets the guest context core registers.
  *
- * @param   pVM         Handle to the virtual machine.
+ * @param   pVCpu       Handle to the virtual cpu.
  * @param   pCtxCore    The new context core values.
  */
-VMMDECL(void) CPUMSetGuestCtxCore(PVM pVM, PCCPUMCTXCORE pCtxCore)
+VMMDECL(void) CPUMSetGuestCtxCore(PVMCPU pVCpu, PCCPUMCTXCORE pCtxCore)
 {
     /** @todo #1410 requires selectors to be checked. (huh? 1410?) */
 
-    PCPUMCTXCORE pCtxCoreDst = CPUMCTX2CORE(&pVM->aCpus[VMMGetCpuId(pVM)].cpum.s.Guest);
+    PCPUMCTXCORE pCtxCoreDst = CPUMCTX2CORE(&pVCpu->cpum.s.Guest);
     *pCtxCoreDst = *pCtxCore;
 
     /* Mask away invalid parts of the cpu context. */
-    if (!CPUMIsGuestInLongMode(pVM))
+    if (!CPUMIsGuestInLongMode(pVCpu))
     {
         uint64_t u64Mask = UINT64_C(0xffffffff);
 
@@ -477,62 +468,42 @@ VMMDECL(void) CPUMSetGuestCtxCore(PVM pVM, PCCPUMCTXCORE pCtxCore)
  * Queries the pointer to the internal CPUMCTX structure
  *
  * @returns The CPUMCTX pointer.
- * @param   pVM         Handle to the virtual machine.
+ * @param   pVCpu       Handle to the virtual cpu.
  */
-VMMDECL(PCPUMCTX) CPUMQueryGuestCtxPtr(PVM pVM)
+VMMDECL(PCPUMCTX) CPUMQueryGuestCtxPtr(PVMCPU pVCpu)
 {
-    return &pVM->aCpus[VMMGetCpuId(pVM)].cpum.s.Guest;
-}
-
-static PCPUMCPU cpumGetCpumCpu(PVM pVM)
-{
-    RTCPUID idCpu = VMMGetCpuId(pVM);
-
-    return &pVM->aCpus[idCpu].cpum.s;
-}
-
-VMMDECL(PCPUMCTX) CPUMQueryGuestCtxPtrEx(PVM pVM, PVMCPU pVCpu)
-{
-    Assert(pVCpu->idCpu < pVM->cCPUs);
     return &pVCpu->cpum.s.Guest;
 }
 
-VMMDECL(int) CPUMSetGuestGDTR(PVM pVM, uint32_t addr, uint16_t limit)
+VMMDECL(int) CPUMSetGuestGDTR(PVMCPU pVCpu, uint32_t addr, uint16_t limit)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.gdtr.cbGdt = limit;
-    pCpumCpu->Guest.gdtr.pGdt  = addr;
-    pCpumCpu->fChanged |= CPUM_CHANGED_GDTR;
+    pVCpu->cpum.s.Guest.gdtr.cbGdt = limit;
+    pVCpu->cpum.s.Guest.gdtr.pGdt  = addr;
+    pVCpu->cpum.s.fChanged |= CPUM_CHANGED_GDTR;
     return VINF_SUCCESS;
 }
 
-VMMDECL(int) CPUMSetGuestIDTR(PVM pVM, uint32_t addr, uint16_t limit)
+VMMDECL(int) CPUMSetGuestIDTR(PVMCPU pVCpu, uint32_t addr, uint16_t limit)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.idtr.cbIdt = limit;
-    pCpumCpu->Guest.idtr.pIdt  = addr;
-    pCpumCpu->fChanged |= CPUM_CHANGED_IDTR;
+    pVCpu->cpum.s.Guest.idtr.cbIdt = limit;
+    pVCpu->cpum.s.Guest.idtr.pIdt  = addr;
+    pVCpu->cpum.s.fChanged |= CPUM_CHANGED_IDTR;
     return VINF_SUCCESS;
 }
 
-VMMDECL(int) CPUMSetGuestTR(PVM pVM, uint16_t tr)
+VMMDECL(int) CPUMSetGuestTR(PVMCPU pVCpu, uint16_t tr)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
     AssertMsgFailed(("Need to load the hidden bits too!\n"));
 
-    pCpumCpu->Guest.tr  = tr;
-    pCpumCpu->fChanged |= CPUM_CHANGED_TR;
+    pVCpu->cpum.s.Guest.tr  = tr;
+    pVCpu->cpum.s.fChanged |= CPUM_CHANGED_TR;
     return VINF_SUCCESS;
 }
 
-VMMDECL(int) CPUMSetGuestLDTR(PVM pVM, uint16_t ldtr)
+VMMDECL(int) CPUMSetGuestLDTR(PVMCPU pVCpu, uint16_t ldtr)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.ldtr = ldtr;
-    pCpumCpu->fChanged  |= CPUM_CHANGED_LDTR;
+    pVCpu->cpum.s.Guest.ldtr = ldtr;
+    pVCpu->cpum.s.fChanged  |= CPUM_CHANGED_LDTR;
     return VINF_SUCCESS;
 }
 
@@ -545,32 +516,30 @@ VMMDECL(int) CPUMSetGuestLDTR(PVM pVM, uint16_t ldtr)
  * WP, PG or PE changes.
  *
  * @returns VINF_SUCCESS (consider it void).
- * @param   pVM     Pointer to the shared VM structure.
+ * @param   pVCpu   Handle to the virtual cpu.
  * @param   cr0     The new CR0 value.
  */
-VMMDECL(int) CPUMSetGuestCR0(PVM pVM, uint64_t cr0)
+VMMDECL(int) CPUMSetGuestCR0(PVMCPU pVCpu, uint64_t cr0)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
 #ifdef IN_RC
     /*
      * Check if we need to change hypervisor CR0 because
      * of math stuff.
      */
     if (    (cr0                 & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP))
-        !=  (pCpumCpu->Guest.cr0 & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP)))
+        !=  (pVCpu->cpum.s.Guest.cr0 & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP)))
     {
-        if (!(pCpumCpu->fUseFlags & CPUM_USED_FPU))
+        if (!(pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU))
         {
             /*
              * We haven't saved the host FPU state yet, so TS and MT are both set
              * and EM should be reflecting the guest EM (it always does this).
              */
-            if ((cr0 & X86_CR0_EM) != (pCpumCpu->Guest.cr0 & X86_CR0_EM))
+            if ((cr0 & X86_CR0_EM) != (pVCpu->cpum.s.Guest.cr0 & X86_CR0_EM))
             {
                 uint32_t HyperCR0 = ASMGetCR0();
                 AssertMsg((HyperCR0 & (X86_CR0_TS | X86_CR0_MP)) == (X86_CR0_TS | X86_CR0_MP), ("%#x\n", HyperCR0));
-                AssertMsg((HyperCR0 & X86_CR0_EM) == (pCpumCpu->Guest.cr0 & X86_CR0_EM), ("%#x\n", HyperCR0));
+                AssertMsg((HyperCR0 & X86_CR0_EM) == (pVCpu->cpum.s.Guest.cr0 & X86_CR0_EM), ("%#x\n", HyperCR0));
                 HyperCR0 &= ~X86_CR0_EM;
                 HyperCR0 |= cr0 & X86_CR0_EM;
                 Log(("CPUM New HyperCR0=%#x\n", HyperCR0));
@@ -581,7 +550,7 @@ VMMDECL(int) CPUMSetGuestCR0(PVM pVM, uint64_t cr0)
             {
                 uint32_t HyperCR0 = ASMGetCR0();
                 AssertMsg((HyperCR0 & (X86_CR0_TS | X86_CR0_MP)) == (X86_CR0_TS | X86_CR0_MP), ("%#x\n", HyperCR0));
-                AssertMsg((HyperCR0 & X86_CR0_EM) == (pCpumCpu->Guest.cr0 & X86_CR0_EM), ("%#x\n", HyperCR0));
+                AssertMsg((HyperCR0 & X86_CR0_EM) == (pVCpu->cpum.s.Guest.cr0 & X86_CR0_EM), ("%#x\n", HyperCR0));
             }
 # endif
         }
@@ -593,8 +562,8 @@ VMMDECL(int) CPUMSetGuestCR0(PVM pVM, uint64_t cr0)
              */
             uint32_t HyperCR0 = ASMGetCR0();
             AssertMsg(     (HyperCR0             & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP))
-                      ==   (pCpumCpu->Guest.cr0  & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP)),
-                      ("%#x %#x\n", HyperCR0, pCpumCpu->Guest.cr0));
+                      ==   (pVCpu->cpum.s.Guest.cr0  & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP)),
+                      ("%#x %#x\n", HyperCR0, pVCpu->cpum.s.Guest.cr0));
             HyperCR0 &= ~(X86_CR0_TS | X86_CR0_EM | X86_CR0_MP);
             HyperCR0 |= cr0 & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP);
             Log(("CPUM New HyperCR0=%#x\n", HyperCR0));
@@ -608,254 +577,213 @@ VMMDECL(int) CPUMSetGuestCR0(PVM pVM, uint64_t cr0)
      * The caller is responsible for calling PGM when appropriate.
      */
     if (    (cr0                 & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE))
-        !=  (pCpumCpu->Guest.cr0 & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)))
-        pCpumCpu->fChanged |= CPUM_CHANGED_GLOBAL_TLB_FLUSH;
-    pCpumCpu->fChanged |= CPUM_CHANGED_CR0;
+        !=  (pVCpu->cpum.s.Guest.cr0 & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)))
+        pVCpu->cpum.s.fChanged |= CPUM_CHANGED_GLOBAL_TLB_FLUSH;
+    pVCpu->cpum.s.fChanged |= CPUM_CHANGED_CR0;
 
-    pCpumCpu->Guest.cr0 = cr0 | X86_CR0_ET;
+    pVCpu->cpum.s.Guest.cr0 = cr0 | X86_CR0_ET;
     return VINF_SUCCESS;
 }
 
 
-VMMDECL(int) CPUMSetGuestCR2(PVM pVM, uint64_t cr2)
+VMMDECL(int) CPUMSetGuestCR2(PVMCPU pVCpu, uint64_t cr2)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.cr2 = cr2;
+    pVCpu->cpum.s.Guest.cr2 = cr2;
     return VINF_SUCCESS;
 }
 
 
-VMMDECL(int) CPUMSetGuestCR3(PVM pVM, uint64_t cr3)
+VMMDECL(int) CPUMSetGuestCR3(PVMCPU pVCpu, uint64_t cr3)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.cr3 = cr3;
-    pCpumCpu->fChanged |= CPUM_CHANGED_CR3;
+    pVCpu->cpum.s.Guest.cr3 = cr3;
+    pVCpu->cpum.s.fChanged |= CPUM_CHANGED_CR3;
     return VINF_SUCCESS;
 }
 
 
-VMMDECL(int) CPUMSetGuestCR4(PVM pVM, uint64_t cr4)
+VMMDECL(int) CPUMSetGuestCR4(PVMCPU pVCpu, uint64_t cr4)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
     if (    (cr4                 & (X86_CR4_PGE | X86_CR4_PAE | X86_CR4_PSE))
-        !=  (pCpumCpu->Guest.cr4 & (X86_CR4_PGE | X86_CR4_PAE | X86_CR4_PSE)))
-        pCpumCpu->fChanged |= CPUM_CHANGED_GLOBAL_TLB_FLUSH;
-    pCpumCpu->fChanged |= CPUM_CHANGED_CR4;
-    if (!CPUMSupportsFXSR(pVM))
+        !=  (pVCpu->cpum.s.Guest.cr4 & (X86_CR4_PGE | X86_CR4_PAE | X86_CR4_PSE)))
+        pVCpu->cpum.s.fChanged |= CPUM_CHANGED_GLOBAL_TLB_FLUSH;
+    pVCpu->cpum.s.fChanged |= CPUM_CHANGED_CR4;
+    if (!CPUMSupportsFXSR(pVCpu->CTX_SUFF(pVM)))
         cr4 &= ~X86_CR4_OSFSXR;
-    pCpumCpu->Guest.cr4 = cr4;
+    pVCpu->cpum.s.Guest.cr4 = cr4;
     return VINF_SUCCESS;
 }
 
 
-VMMDECL(int) CPUMSetGuestEFlags(PVM pVM, uint32_t eflags)
+VMMDECL(int) CPUMSetGuestEFlags(PVMCPU pVCpu, uint32_t eflags)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.eflags.u32 = eflags;
+    pVCpu->cpum.s.Guest.eflags.u32 = eflags;
     return VINF_SUCCESS;
 }
 
 
-VMMDECL(int) CPUMSetGuestEIP(PVM pVM, uint32_t eip)
+VMMDECL(int) CPUMSetGuestEIP(PVMCPU pVCpu, uint32_t eip)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.eip = eip;
+    pVCpu->cpum.s.Guest.eip = eip;
     return VINF_SUCCESS;
 }
 
 
-VMMDECL(int) CPUMSetGuestEAX(PVM pVM, uint32_t eax)
+VMMDECL(int) CPUMSetGuestEAX(PVMCPU pVCpu, uint32_t eax)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.eax = eax;
+    pVCpu->cpum.s.Guest.eax = eax;
     return VINF_SUCCESS;
 }
 
 
-VMMDECL(int) CPUMSetGuestEBX(PVM pVM, uint32_t ebx)
+VMMDECL(int) CPUMSetGuestEBX(PVMCPU pVCpu, uint32_t ebx)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.ebx = ebx;
+    pVCpu->cpum.s.Guest.ebx = ebx;
     return VINF_SUCCESS;
 }
 
 
-VMMDECL(int) CPUMSetGuestECX(PVM pVM, uint32_t ecx)
+VMMDECL(int) CPUMSetGuestECX(PVMCPU pVCpu, uint32_t ecx)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.ecx = ecx;
+    pVCpu->cpum.s.Guest.ecx = ecx;
     return VINF_SUCCESS;
 }
 
 
-VMMDECL(int) CPUMSetGuestEDX(PVM pVM, uint32_t edx)
+VMMDECL(int) CPUMSetGuestEDX(PVMCPU pVCpu, uint32_t edx)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.edx = edx;
+    pVCpu->cpum.s.Guest.edx = edx;
     return VINF_SUCCESS;
 }
 
 
-VMMDECL(int) CPUMSetGuestESP(PVM pVM, uint32_t esp)
+VMMDECL(int) CPUMSetGuestESP(PVMCPU pVCpu, uint32_t esp)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.esp = esp;
+    pVCpu->cpum.s.Guest.esp = esp;
     return VINF_SUCCESS;
 }
 
 
-VMMDECL(int) CPUMSetGuestEBP(PVM pVM, uint32_t ebp)
+VMMDECL(int) CPUMSetGuestEBP(PVMCPU pVCpu, uint32_t ebp)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.ebp = ebp;
+    pVCpu->cpum.s.Guest.ebp = ebp;
     return VINF_SUCCESS;
 }
 
 
-VMMDECL(int) CPUMSetGuestESI(PVM pVM, uint32_t esi)
+VMMDECL(int) CPUMSetGuestESI(PVMCPU pVCpu, uint32_t esi)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.esi = esi;
+    pVCpu->cpum.s.Guest.esi = esi;
     return VINF_SUCCESS;
 }
 
 
-VMMDECL(int) CPUMSetGuestEDI(PVM pVM, uint32_t edi)
+VMMDECL(int) CPUMSetGuestEDI(PVMCPU pVCpu, uint32_t edi)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.edi = edi;
+    pVCpu->cpum.s.Guest.edi = edi;
     return VINF_SUCCESS;
 }
 
 
-VMMDECL(int) CPUMSetGuestSS(PVM pVM, uint16_t ss)
+VMMDECL(int) CPUMSetGuestSS(PVMCPU pVCpu, uint16_t ss)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.ss = ss;
+    pVCpu->cpum.s.Guest.ss = ss;
     return VINF_SUCCESS;
 }
 
 
-VMMDECL(int) CPUMSetGuestCS(PVM pVM, uint16_t cs)
+VMMDECL(int) CPUMSetGuestCS(PVMCPU pVCpu, uint16_t cs)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.cs = cs;
+    pVCpu->cpum.s.Guest.cs = cs;
     return VINF_SUCCESS;
 }
 
 
-VMMDECL(int) CPUMSetGuestDS(PVM pVM, uint16_t ds)
+VMMDECL(int) CPUMSetGuestDS(PVMCPU pVCpu, uint16_t ds)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.ds = ds;
+    pVCpu->cpum.s.Guest.ds = ds;
     return VINF_SUCCESS;
 }
 
 
-VMMDECL(int) CPUMSetGuestES(PVM pVM, uint16_t es)
+VMMDECL(int) CPUMSetGuestES(PVMCPU pVCpu, uint16_t es)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.es = es;
+    pVCpu->cpum.s.Guest.es = es;
     return VINF_SUCCESS;
 }
 
 
-VMMDECL(int) CPUMSetGuestFS(PVM pVM, uint16_t fs)
+VMMDECL(int) CPUMSetGuestFS(PVMCPU pVCpu, uint16_t fs)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.fs = fs;
+    pVCpu->cpum.s.Guest.fs = fs;
     return VINF_SUCCESS;
 }
 
 
-VMMDECL(int) CPUMSetGuestGS(PVM pVM, uint16_t gs)
+VMMDECL(int) CPUMSetGuestGS(PVMCPU pVCpu, uint16_t gs)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.gs = gs;
+    pVCpu->cpum.s.Guest.gs = gs;
     return VINF_SUCCESS;
 }
 
 
-VMMDECL(void) CPUMSetGuestEFER(PVM pVM, uint64_t val)
+VMMDECL(void) CPUMSetGuestEFER(PVMCPU pVCpu, uint64_t val)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.msrEFER = val;
+    pVCpu->cpum.s.Guest.msrEFER = val;
 }
 
 
-VMMDECL(uint64_t)  CPUMGetGuestMsr(PVM pVM, unsigned idMsr)
+VMMDECL(uint64_t)  CPUMGetGuestMsr(PVMCPU pVCpu, unsigned idMsr)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
     uint64_t u64 = 0;
 
     switch (idMsr)
     {
         case MSR_IA32_TSC:
-            u64 = TMCpuTickGet(pVM);
+            u64 = TMCpuTickGet(pVCpu->CTX_SUFF(pVM));
             break;
 
         case MSR_IA32_CR_PAT:
-            u64 = pCpumCpu->Guest.msrPAT;
+            u64 = pVCpu->cpum.s.Guest.msrPAT;
             break;
 
         case MSR_IA32_SYSENTER_CS:
-            u64 = pCpumCpu->Guest.SysEnter.cs;
+            u64 = pVCpu->cpum.s.Guest.SysEnter.cs;
             break;
 
         case MSR_IA32_SYSENTER_EIP:
-            u64 = pCpumCpu->Guest.SysEnter.eip;
+            u64 = pVCpu->cpum.s.Guest.SysEnter.eip;
             break;
 
         case MSR_IA32_SYSENTER_ESP:
-            u64 = pCpumCpu->Guest.SysEnter.esp;
+            u64 = pVCpu->cpum.s.Guest.SysEnter.esp;
             break;
 
         case MSR_K6_EFER:
-            u64 = pCpumCpu->Guest.msrEFER;
+            u64 = pVCpu->cpum.s.Guest.msrEFER;
             break;
 
         case MSR_K8_SF_MASK:
-            u64 = pCpumCpu->Guest.msrSFMASK;
+            u64 = pVCpu->cpum.s.Guest.msrSFMASK;
             break;
 
         case MSR_K6_STAR:
-            u64 = pCpumCpu->Guest.msrSTAR;
+            u64 = pVCpu->cpum.s.Guest.msrSTAR;
             break;
 
         case MSR_K8_LSTAR:
-            u64 = pCpumCpu->Guest.msrLSTAR;
+            u64 = pVCpu->cpum.s.Guest.msrLSTAR;
             break;
 
         case MSR_K8_CSTAR:
-            u64 = pCpumCpu->Guest.msrCSTAR;
+            u64 = pVCpu->cpum.s.Guest.msrCSTAR;
             break;
 
         case MSR_K8_KERNEL_GS_BASE:
-            u64 = pCpumCpu->Guest.msrKERNELGSBASE;
+            u64 = pVCpu->cpum.s.Guest.msrKERNELGSBASE;
             break;
 
         case MSR_K8_TSC_AUX:
-            u64 = pCpumCpu->GuestMsr.msr.tscAux;
+            u64 = pVCpu->cpum.s.GuestMsr.msr.tscAux;
             break;
 
         /* fs & gs base skipped on purpose as the current context might not be up-to-date. */
@@ -866,15 +794,13 @@ VMMDECL(uint64_t)  CPUMGetGuestMsr(PVM pVM, unsigned idMsr)
     return u64;
 }
 
-VMMDECL(void) CPUMSetGuestMsr(PVM pVM, unsigned idMsr, uint64_t valMsr)
+VMMDECL(void) CPUMSetGuestMsr(PVMCPU pVCpu, unsigned idMsr, uint64_t valMsr)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
     /* On purpose only a limited number of MSRs; use the emulation function to update the others. */
     switch (idMsr)
     {
         case MSR_K8_TSC_AUX:
-            pCpumCpu->GuestMsr.msr.tscAux = valMsr;
+            pVCpu->cpum.s.GuestMsr.msr.tscAux = valMsr;
             break;
 
         default:
@@ -883,227 +809,176 @@ VMMDECL(void) CPUMSetGuestMsr(PVM pVM, unsigned idMsr, uint64_t valMsr)
     }
 }
 
-VMMDECL(RTGCPTR) CPUMGetGuestIDTR(PVM pVM, uint16_t *pcbLimit)
+VMMDECL(RTGCPTR) CPUMGetGuestIDTR(PVMCPU pVCpu, uint16_t *pcbLimit)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
     if (pcbLimit)
-        *pcbLimit = pCpumCpu->Guest.idtr.cbIdt;
-    return pCpumCpu->Guest.idtr.pIdt;
+        *pcbLimit = pVCpu->cpum.s.Guest.idtr.cbIdt;
+    return pVCpu->cpum.s.Guest.idtr.pIdt;
 }
 
 
-VMMDECL(RTSEL) CPUMGetGuestTR(PVM pVM, PCPUMSELREGHID pHidden)
+VMMDECL(RTSEL) CPUMGetGuestTR(PVMCPU pVCpu, PCPUMSELREGHID pHidden)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
     if (pHidden)
-        *pHidden = pCpumCpu->Guest.trHid;
-    return pCpumCpu->Guest.tr;
+        *pHidden = pVCpu->cpum.s.Guest.trHid;
+    return pVCpu->cpum.s.Guest.tr;
 }
 
 
-VMMDECL(RTSEL) CPUMGetGuestCS(PVM pVM)
+VMMDECL(RTSEL) CPUMGetGuestCS(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.cs;
+    return pVCpu->cpum.s.Guest.cs;
 }
 
 
-VMMDECL(RTSEL) CPUMGetGuestDS(PVM pVM)
+VMMDECL(RTSEL) CPUMGetGuestDS(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.ds;
+    return pVCpu->cpum.s.Guest.ds;
 }
 
 
-VMMDECL(RTSEL) CPUMGetGuestES(PVM pVM)
+VMMDECL(RTSEL) CPUMGetGuestES(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.es;
+    return pVCpu->cpum.s.Guest.es;
 }
 
 
-VMMDECL(RTSEL) CPUMGetGuestFS(PVM pVM)
+VMMDECL(RTSEL) CPUMGetGuestFS(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.fs;
+    return pVCpu->cpum.s.Guest.fs;
 }
 
 
-VMMDECL(RTSEL) CPUMGetGuestGS(PVM pVM)
+VMMDECL(RTSEL) CPUMGetGuestGS(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.gs;
+    return pVCpu->cpum.s.Guest.gs;
 }
 
 
-VMMDECL(RTSEL) CPUMGetGuestSS(PVM pVM)
+VMMDECL(RTSEL) CPUMGetGuestSS(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.ss;
+    return pVCpu->cpum.s.Guest.ss;
 }
 
 
-VMMDECL(RTSEL) CPUMGetGuestLDTR(PVM pVM)
+VMMDECL(RTSEL) CPUMGetGuestLDTR(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.ldtr;
+    return pVCpu->cpum.s.Guest.ldtr;
 }
 
 
-VMMDECL(uint64_t) CPUMGetGuestCR0(PVM pVM)
+VMMDECL(uint64_t) CPUMGetGuestCR0(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.cr0;
+    return pVCpu->cpum.s.Guest.cr0;
 }
 
 
-VMMDECL(uint64_t) CPUMGetGuestCR2(PVM pVM)
+VMMDECL(uint64_t) CPUMGetGuestCR2(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.cr2;
+    return pVCpu->cpum.s.Guest.cr2;
 }
 
 
-VMMDECL(uint64_t) CPUMGetGuestCR3(PVM pVM)
+VMMDECL(uint64_t) CPUMGetGuestCR3(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.cr3;
+    return pVCpu->cpum.s.Guest.cr3;
 }
 
 
-VMMDECL(uint64_t) CPUMGetGuestCR4(PVM pVM)
+VMMDECL(uint64_t) CPUMGetGuestCR4(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.cr4;
+    return pVCpu->cpum.s.Guest.cr4;
 }
 
 
-VMMDECL(void) CPUMGetGuestGDTR(PVM pVM, PVBOXGDTR pGDTR)
+VMMDECL(void) CPUMGetGuestGDTR(PVMCPU pVCpu, PVBOXGDTR pGDTR)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    *pGDTR = pCpumCpu->Guest.gdtr;
+    *pGDTR = pVCpu->cpum.s.Guest.gdtr;
 }
 
 
-VMMDECL(uint32_t) CPUMGetGuestEIP(PVM pVM)
+VMMDECL(uint32_t) CPUMGetGuestEIP(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.eip;
+    return pVCpu->cpum.s.Guest.eip;
 }
 
 
-VMMDECL(uint64_t) CPUMGetGuestRIP(PVM pVM)
+VMMDECL(uint64_t) CPUMGetGuestRIP(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.rip;
+    return pVCpu->cpum.s.Guest.rip;
 }
 
 
-VMMDECL(uint32_t) CPUMGetGuestEAX(PVM pVM)
+VMMDECL(uint32_t) CPUMGetGuestEAX(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.eax;
+    return pVCpu->cpum.s.Guest.eax;
 }
 
 
-VMMDECL(uint32_t) CPUMGetGuestEBX(PVM pVM)
+VMMDECL(uint32_t) CPUMGetGuestEBX(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.ebx;
+    return pVCpu->cpum.s.Guest.ebx;
 }
 
 
-VMMDECL(uint32_t) CPUMGetGuestECX(PVM pVM)
+VMMDECL(uint32_t) CPUMGetGuestECX(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.ecx;
+    return pVCpu->cpum.s.Guest.ecx;
 }
 
 
-VMMDECL(uint32_t) CPUMGetGuestEDX(PVM pVM)
+VMMDECL(uint32_t) CPUMGetGuestEDX(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.edx;
+    return pVCpu->cpum.s.Guest.edx;
 }
 
 
-VMMDECL(uint32_t) CPUMGetGuestESI(PVM pVM)
+VMMDECL(uint32_t) CPUMGetGuestESI(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.esi;
+    return pVCpu->cpum.s.Guest.esi;
 }
 
 
-VMMDECL(uint32_t) CPUMGetGuestEDI(PVM pVM)
+VMMDECL(uint32_t) CPUMGetGuestEDI(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.edi;
+    return pVCpu->cpum.s.Guest.edi;
 }
 
 
-VMMDECL(uint32_t) CPUMGetGuestESP(PVM pVM)
+VMMDECL(uint32_t) CPUMGetGuestESP(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.esp;
+    return pVCpu->cpum.s.Guest.esp;
 }
 
 
-VMMDECL(uint32_t) CPUMGetGuestEBP(PVM pVM)
+VMMDECL(uint32_t) CPUMGetGuestEBP(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.ebp;
+    return pVCpu->cpum.s.Guest.ebp;
 }
 
 
-VMMDECL(uint32_t) CPUMGetGuestEFlags(PVM pVM)
+VMMDECL(uint32_t) CPUMGetGuestEFlags(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.eflags.u32;
+    return pVCpu->cpum.s.Guest.eflags.u32;
 }
 
 
 ///@todo: crx should be an array
-VMMDECL(int) CPUMGetGuestCRx(PVM pVM, unsigned iReg, uint64_t *pValue)
+VMMDECL(int) CPUMGetGuestCRx(PVMCPU pVCpu, unsigned iReg, uint64_t *pValue)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
     switch (iReg)
     {
         case USE_REG_CR0:
-            *pValue = pCpumCpu->Guest.cr0;
+            *pValue = pVCpu->cpum.s.Guest.cr0;
             break;
         case USE_REG_CR2:
-            *pValue = pCpumCpu->Guest.cr2;
+            *pValue = pVCpu->cpum.s.Guest.cr2;
             break;
         case USE_REG_CR3:
-            *pValue = pCpumCpu->Guest.cr3;
+            *pValue = pVCpu->cpum.s.Guest.cr3;
             break;
         case USE_REG_CR4:
-            *pValue = pCpumCpu->Guest.cr4;
+            *pValue = pVCpu->cpum.s.Guest.cr4;
             break;
         default:
             return VERR_INVALID_PARAMETER;
@@ -1112,72 +987,56 @@ VMMDECL(int) CPUMGetGuestCRx(PVM pVM, unsigned iReg, uint64_t *pValue)
 }
 
 
-VMMDECL(uint64_t) CPUMGetGuestDR0(PVM pVM)
+VMMDECL(uint64_t) CPUMGetGuestDR0(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.dr[0];
+    return pVCpu->cpum.s.Guest.dr[0];
 }
 
 
-VMMDECL(uint64_t) CPUMGetGuestDR1(PVM pVM)
+VMMDECL(uint64_t) CPUMGetGuestDR1(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.dr[1];
+    return pVCpu->cpum.s.Guest.dr[1];
 }
 
 
-VMMDECL(uint64_t) CPUMGetGuestDR2(PVM pVM)
+VMMDECL(uint64_t) CPUMGetGuestDR2(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.dr[2];
+    return pVCpu->cpum.s.Guest.dr[2];
 }
 
 
-VMMDECL(uint64_t) CPUMGetGuestDR3(PVM pVM)
+VMMDECL(uint64_t) CPUMGetGuestDR3(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.dr[3];
+    return pVCpu->cpum.s.Guest.dr[3];
 }
 
 
-VMMDECL(uint64_t) CPUMGetGuestDR6(PVM pVM)
+VMMDECL(uint64_t) CPUMGetGuestDR6(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.dr[6];
+    return pVCpu->cpum.s.Guest.dr[6];
 }
 
 
-VMMDECL(uint64_t) CPUMGetGuestDR7(PVM pVM)
+VMMDECL(uint64_t) CPUMGetGuestDR7(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.dr[7];
+    return pVCpu->cpum.s.Guest.dr[7];
 }
 
 
-VMMDECL(int) CPUMGetGuestDRx(PVM pVM, uint32_t iReg, uint64_t *pValue)
+VMMDECL(int) CPUMGetGuestDRx(PVMCPU pVCpu, uint32_t iReg, uint64_t *pValue)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
     AssertReturn(iReg <= USE_REG_DR7, VERR_INVALID_PARAMETER);
     /* DR4 is an alias for DR6, and DR5 is an alias for DR7. */
     if (iReg == 4 || iReg == 5)
         iReg += 2;
-    *pValue = pCpumCpu->Guest.dr[iReg];
+    *pValue = pVCpu->cpum.s.Guest.dr[iReg];
     return VINF_SUCCESS;
 }
 
 
-VMMDECL(uint64_t) CPUMGetGuestEFER(PVM pVM)
+VMMDECL(uint64_t) CPUMGetGuestEFER(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return pCpumCpu->Guest.msrEFER;
+    return pVCpu->cpum.s.Guest.msrEFER;
 }
 
 
@@ -1488,9 +1347,12 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             AssertMsgFailed(("enmFeature=%d\n", enmFeature));
             break;
     }
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
 
-    pCpumCpu->fChanged |= CPUM_CHANGED_CPUID;
+        pVCpu->cpum.s.fChanged |= CPUM_CHANGED_CPUID;
+    }
 }
 
 
@@ -1605,8 +1467,12 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             AssertMsgFailed(("enmFeature=%d\n", enmFeature));
             break;
     }
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-    pCpumCpu->fChanged |= CPUM_CHANGED_CPUID;
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
+        pVCpu->cpum.s.fChanged |= CPUM_CHANGED_CPUID;
+    }
 }
 
 
@@ -1622,70 +1488,56 @@ VMMDECL(CPUMCPUVENDOR) CPUMGetCPUVendor(PVM pVM)
 }
 
 
-VMMDECL(int) CPUMSetGuestDR0(PVM pVM, uint64_t uDr0)
+VMMDECL(int) CPUMSetGuestDR0(PVMCPU pVCpu, uint64_t uDr0)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.dr[0] = uDr0;
-    return CPUMRecalcHyperDRx(pVM);
+    pVCpu->cpum.s.Guest.dr[0] = uDr0;
+    return CPUMRecalcHyperDRx(pVCpu);
 }
 
 
-VMMDECL(int) CPUMSetGuestDR1(PVM pVM, uint64_t uDr1)
+VMMDECL(int) CPUMSetGuestDR1(PVMCPU pVCpu, uint64_t uDr1)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.dr[1] = uDr1;
-    return CPUMRecalcHyperDRx(pVM);
+    pVCpu->cpum.s.Guest.dr[1] = uDr1;
+    return CPUMRecalcHyperDRx(pVCpu);
 }
 
 
-VMMDECL(int) CPUMSetGuestDR2(PVM pVM, uint64_t uDr2)
+VMMDECL(int) CPUMSetGuestDR2(PVMCPU pVCpu, uint64_t uDr2)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.dr[2] = uDr2;
-    return CPUMRecalcHyperDRx(pVM);
+    pVCpu->cpum.s.Guest.dr[2] = uDr2;
+    return CPUMRecalcHyperDRx(pVCpu);
 }
 
 
-VMMDECL(int) CPUMSetGuestDR3(PVM pVM, uint64_t uDr3)
+VMMDECL(int) CPUMSetGuestDR3(PVMCPU pVCpu, uint64_t uDr3)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.dr[3] = uDr3;
-    return CPUMRecalcHyperDRx(pVM);
+    pVCpu->cpum.s.Guest.dr[3] = uDr3;
+    return CPUMRecalcHyperDRx(pVCpu);
 }
 
 
-VMMDECL(int) CPUMSetGuestDR6(PVM pVM, uint64_t uDr6)
+VMMDECL(int) CPUMSetGuestDR6(PVMCPU pVCpu, uint64_t uDr6)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.dr[6] = uDr6;
-    return CPUMRecalcHyperDRx(pVM);
+    pVCpu->cpum.s.Guest.dr[6] = uDr6;
+    return CPUMRecalcHyperDRx(pVCpu);
 }
 
 
-VMMDECL(int) CPUMSetGuestDR7(PVM pVM, uint64_t uDr7)
+VMMDECL(int) CPUMSetGuestDR7(PVMCPU pVCpu, uint64_t uDr7)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->Guest.dr[7] = uDr7;
-    return CPUMRecalcHyperDRx(pVM);
+    pVCpu->cpum.s.Guest.dr[7] = uDr7;
+    return CPUMRecalcHyperDRx(pVCpu);
 }
 
 
-VMMDECL(int) CPUMSetGuestDRx(PVM pVM, uint32_t iReg, uint64_t Value)
+VMMDECL(int) CPUMSetGuestDRx(PVMCPU pVCpu, uint32_t iReg, uint64_t Value)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
     AssertReturn(iReg <= USE_REG_DR7, VERR_INVALID_PARAMETER);
     /* DR4 is an alias for DR6, and DR5 is an alias for DR7. */
     if (iReg == 4 || iReg == 5)
         iReg += 2;
-    pCpumCpu->Guest.dr[iReg] = Value;
-    return CPUMRecalcHyperDRx(pVM);
+    pVCpu->cpum.s.Guest.dr[iReg] = Value;
+    return CPUMRecalcHyperDRx(pVCpu);
 }
 
 
@@ -1698,11 +1550,12 @@ VMMDECL(int) CPUMSetGuestDRx(PVM pVM, uint32_t iReg, uint64_t Value)
  * any (hyper) DRx registers which comes out with a different value.
  *
  * @returns VINF_SUCCESS.
- * @param   pVM     The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  */
-VMMDECL(int) CPUMRecalcHyperDRx(PVM pVM)
+VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+
     /*
      * Compare the DR7s first.
      *
@@ -1712,7 +1565,7 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVM pVM)
      */
     const RTGCUINTREG uDbgfDr7 = DBGFBpGetDR7(pVM);
 #ifdef CPUM_VIRTUALIZE_DRX
-    const RTGCUINTREG uGstDr7  = CPUMGetGuestDR7(pVM);
+    const RTGCUINTREG uGstDr7  = CPUMGetGuestDR7(pVCpu);
 #else
     const RTGCUINTREG uGstDr7  = 0;
 #endif
@@ -1734,10 +1587,10 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVM pVM)
         else if (uGstDr7 & (X86_DR7_L0 | X86_DR7_G0))
         {
             uNewDr7 |= uGstDr7 & (X86_DR7_L0 | X86_DR7_G0 | X86_DR7_RW0_MASK | X86_DR7_LEN0_MASK);
-            uNewDr0 = CPUMGetGuestDR0(pVM);
+            uNewDr0 = CPUMGetGuestDR0(pVCpu);
         }
         else
-            uNewDr0 = pVM->cpum.s.Hyper.dr[0];
+            uNewDr0 = pVCpu->cpum.s.Hyper.dr[0];
 
         /* bp 1 */
         RTGCUINTREG uNewDr1;
@@ -1749,10 +1602,10 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVM pVM)
         else if (uGstDr7 & (X86_DR7_L1 | X86_DR7_G1))
         {
             uNewDr7 |= uGstDr7 & (X86_DR7_L1 | X86_DR7_G1 | X86_DR7_RW1_MASK | X86_DR7_LEN1_MASK);
-            uNewDr1 = CPUMGetGuestDR1(pVM);
+            uNewDr1 = CPUMGetGuestDR1(pVCpu);
         }
         else
-            uNewDr1 = pVM->cpum.s.Hyper.dr[1];
+            uNewDr1 = pVCpu->cpum.s.Hyper.dr[1];
 
         /* bp 2 */
         RTGCUINTREG uNewDr2;
@@ -1764,10 +1617,10 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVM pVM)
         else if (uGstDr7 & (X86_DR7_L2 | X86_DR7_G2))
         {
             uNewDr7 |= uGstDr7 & (X86_DR7_L2 | X86_DR7_G2 | X86_DR7_RW2_MASK | X86_DR7_LEN2_MASK);
-            uNewDr2 = CPUMGetGuestDR2(pVM);
+            uNewDr2 = CPUMGetGuestDR2(pVCpu);
         }
         else
-            uNewDr2 = pVM->cpum.s.Hyper.dr[2];
+            uNewDr2 = pVCpu->cpum.s.Hyper.dr[2];
 
         /* bp 3 */
         RTGCUINTREG uNewDr3;
@@ -1779,46 +1632,46 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVM pVM)
         else if (uGstDr7 & (X86_DR7_L3 | X86_DR7_G3))
         {
             uNewDr7 |= uGstDr7 & (X86_DR7_L3 | X86_DR7_G3 | X86_DR7_RW3_MASK | X86_DR7_LEN3_MASK);
-            uNewDr3 = CPUMGetGuestDR3(pVM);
+            uNewDr3 = CPUMGetGuestDR3(pVCpu);
         }
         else
-            uNewDr3 = pVM->cpum.s.Hyper.dr[3];
+            uNewDr3 = pVCpu->cpum.s.Hyper.dr[3];
 
         /*
          * Apply the updates.
          */
 #ifdef IN_RC
-        if (!(pCpumCpu->fUseFlags & CPUM_USE_DEBUG_REGS))
+        if (!(pVCpu->cpum.s.fUseFlags & CPUM_USE_DEBUG_REGS))
         {
             /** @todo save host DBx registers. */
         }
 #endif
-        pCpumCpu->fUseFlags |= CPUM_USE_DEBUG_REGS;
-        if (uNewDr3 != pVM->cpum.s.Hyper.dr[3])
-            CPUMSetHyperDR3(pVM, uNewDr3);
-        if (uNewDr2 != pVM->cpum.s.Hyper.dr[2])
-            CPUMSetHyperDR2(pVM, uNewDr2);
-        if (uNewDr1 != pVM->cpum.s.Hyper.dr[1])
-            CPUMSetHyperDR1(pVM, uNewDr1);
-        if (uNewDr0 != pVM->cpum.s.Hyper.dr[0])
-            CPUMSetHyperDR0(pVM, uNewDr0);
-        if (uNewDr7 != pVM->cpum.s.Hyper.dr[7])
-            CPUMSetHyperDR7(pVM, uNewDr7);
+        pVCpu->cpum.s.fUseFlags |= CPUM_USE_DEBUG_REGS;
+        if (uNewDr3 != pVCpu->cpum.s.Hyper.dr[3])
+            CPUMSetHyperDR3(pVCpu, uNewDr3);
+        if (uNewDr2 != pVCpu->cpum.s.Hyper.dr[2])
+            CPUMSetHyperDR2(pVCpu, uNewDr2);
+        if (uNewDr1 != pVCpu->cpum.s.Hyper.dr[1])
+            CPUMSetHyperDR1(pVCpu, uNewDr1);
+        if (uNewDr0 != pVCpu->cpum.s.Hyper.dr[0])
+            CPUMSetHyperDR0(pVCpu, uNewDr0);
+        if (uNewDr7 != pVCpu->cpum.s.Hyper.dr[7])
+            CPUMSetHyperDR7(pVCpu, uNewDr7);
     }
     else
     {
 #ifdef IN_RC
-        if (pCpumCpu->fUseFlags & CPUM_USE_DEBUG_REGS)
+        if (pVCpu->cpum.s.fUseFlags & CPUM_USE_DEBUG_REGS)
         {
             /** @todo restore host DBx registers. */
         }
 #endif
-        pCpumCpu->fUseFlags &= ~CPUM_USE_DEBUG_REGS;
+        pVCpu->cpum.s.fUseFlags &= ~CPUM_USE_DEBUG_REGS;
     }
     Log2(("CPUMRecalcHyperDRx: fUseFlags=%#x %RGr %RGr %RGr %RGr  %RGr %RGr\n",
-          pCpumCpu->fUseFlags, pVM->cpum.s.Hyper.dr[0], pVM->cpum.s.Hyper.dr[1],
-         pVM->cpum.s.Hyper.dr[2], pVM->cpum.s.Hyper.dr[3], pVM->cpum.s.Hyper.dr[6],
-         pVM->cpum.s.Hyper.dr[7]));
+          pVCpu->cpum.s.fUseFlags, pVCpu->cpum.s.Hyper.dr[0], pVCpu->cpum.s.Hyper.dr[1],
+         pVCpu->cpum.s.Hyper.dr[2], pVCpu->cpum.s.Hyper.dr[3], pVCpu->cpum.s.Hyper.dr[6],
+         pVCpu->cpum.s.Hyper.dr[7]));
 
     return VINF_SUCCESS;
 }
@@ -1831,17 +1684,17 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVM pVM)
  * This function will change the any of the cs and ss register with DPL=0 to DPL=1.
  *
  * @returns VBox status. (recompiler failure)
- * @param   pVM         VM handle.
+ * @param   pVCpu       The VMCPU handle.
  * @param   pCtxCore    The context core (for trap usage).
  * @see     @ref pg_raw
  */
-VMMDECL(int) CPUMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore)
+VMMDECL(int) CPUMRawEnter(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
 
     Assert(!pVM->cpum.s.fRawEntered);
     if (!pCtxCore)
-        pCtxCore = CPUMCTX2CORE(&pCpumCpu->Guest);
+        pCtxCore = CPUMCTX2CORE(&pVCpu->cpum.s.Guest);
 
     /*
      * Are we in Ring-0?
@@ -1878,7 +1731,7 @@ VMMDECL(int) CPUMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore)
     AssertReleaseMsg(   pCtxCore->eflags.Bits.u2IOPL < (unsigned)(pCtxCore->ss & X86_SEL_RPL)
                      || pCtxCore->eflags.Bits.u1VM,
                      ("X86_EFL_IOPL=%d CPL=%d\n", pCtxCore->eflags.Bits.u2IOPL, pCtxCore->ss & X86_SEL_RPL));
-    Assert((pCpumCpu->Guest.cr0 & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)) == (X86_CR0_PG | X86_CR0_PE | X86_CR0_WP));
+    Assert((pVCpu->cpum.s.Guest.cr0 & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)) == (X86_CR0_PG | X86_CR0_PE | X86_CR0_WP));
     pCtxCore->eflags.u32        |= X86_EFL_IF; /* paranoia */
 
     pVM->cpum.s.fRawEntered = true;
@@ -1892,14 +1745,14 @@ VMMDECL(int) CPUMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore)
  * This function will change any selector registers with DPL=1 to DPL=0.
  *
  * @returns Adjusted rc.
- * @param   pVM         VM handle.
+ * @param   pVCpu       The VMCPU handle.
  * @param   rc          Raw mode return code
  * @param   pCtxCore    The context core (for trap usage).
  * @see     @ref pg_raw
  */
-VMMDECL(int) CPUMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rc)
+VMMDECL(int) CPUMRawLeave(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, int rc)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
 
     /*
      * Don't leave if we've already left (in GC).
@@ -1909,7 +1762,7 @@ VMMDECL(int) CPUMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rc)
         return rc;
     pVM->cpum.s.fRawEntered = false;
 
-    PCPUMCTX pCtx = &pCpumCpu->Guest;
+    PCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
     if (!pCtxCore)
         pCtxCore = CPUMCTX2CORE(pCtx);
     Assert(pCtxCore->eflags.Bits.u1VM || (pCtxCore->ss & X86_SEL_RPL));
@@ -1970,12 +1823,14 @@ VMMDECL(int) CPUMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rc)
 /**
  * Updates the EFLAGS while we're in raw-mode.
  *
- * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  * @param   pCtxCore    The context core.
  * @param   eflags      The new EFLAGS value.
  */
-VMMDECL(void) CPUMRawSetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore, uint32_t eflags)
+VMMDECL(void) CPUMRawSetEFlags(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, uint32_t eflags)
 {
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+
     if (!pVM->cpum.s.fRawEntered)
     {
         pCtxCore->eflags.u32 = eflags;
@@ -1990,14 +1845,16 @@ VMMDECL(void) CPUMRawSetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore, uint32_t eflags)
  * Gets the EFLAGS while we're in raw-mode.
  *
  * @returns The eflags.
- * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  * @param   pCtxCore    The context core.
  */
-VMMDECL(uint32_t) CPUMRawGetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore)
+VMMDECL(uint32_t) CPUMRawGetEFlags(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
 {
 #ifdef IN_RING0
     return pCtxCore->eflags.u32;
 #else
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+
     if (!pVM->cpum.s.fRawEntered)
         return pCtxCore->eflags.u32;
     return PATMRawGetEFlags(pVM, pCtxCore);
@@ -2010,19 +1867,17 @@ VMMDECL(uint32_t) CPUMRawGetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore)
  * Only REM should call this function.
  *
  * @returns The changed flags.
- * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  */
-VMMDECL(unsigned) CPUMGetAndClearChangedFlagsREM(PVM pVM)
+VMMDECL(unsigned) CPUMGetAndClearChangedFlagsREM(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    unsigned fFlags = pCpumCpu->fChanged;
-    pCpumCpu->fChanged = 0;
+    unsigned fFlags = pVCpu->cpum.s.fChanged;
+    pVCpu->cpum.s.fChanged = 0;
     /** @todo change the switcher to use the fChanged flags. */
-    if (pCpumCpu->fUseFlags & CPUM_USED_FPU_SINCE_REM)
+    if (pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_SINCE_REM)
     {
         fFlags |= CPUM_CHANGED_FPU_REM;
-        pCpumCpu->fUseFlags &= ~CPUM_USED_FPU_SINCE_REM;
+        pVCpu->cpum.s.fUseFlags &= ~CPUM_USED_FPU_SINCE_REM;
     }
     return fFlags;
 }
@@ -2031,13 +1886,11 @@ VMMDECL(unsigned) CPUMGetAndClearChangedFlagsREM(PVM pVM)
 /**
  * Sets the specified changed flags (CPUM_CHANGED_*).
  *
- * @param   pVM     The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  */
-VMMDECL(void) CPUMSetChangedFlags(PVM pVM, uint32_t fChangedFlags)
+VMMDECL(void) CPUMSetChangedFlags(PVMCPU pVCpu, uint32_t fChangedFlags)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->fChanged |= fChangedFlags;
+    pVCpu->cpum.s.fChanged |= fChangedFlags;
 }
 
 
@@ -2057,13 +1910,11 @@ VMMDECL(bool) CPUMSupportsFXSR(PVM pVM)
  * Checks if the host OS uses the SYSENTER / SYSEXIT instructions.
  * @returns true if used.
  * @returns false if not used.
- * @param   pVM     The VM handle.
+ * @param   pVM       The VM handle.
  */
 VMMDECL(bool) CPUMIsHostUsingSysEnter(PVM pVM)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return (pCpumCpu->fUseFlags & CPUM_USE_SYSENTER) != 0;
+    return (pVM->cpum.s.fHostUseFlags & CPUM_USE_SYSENTER) != 0;
 }
 
 
@@ -2071,13 +1922,11 @@ VMMDECL(bool) CPUMIsHostUsingSysEnter(PVM pVM)
  * Checks if the host OS uses the SYSCALL / SYSRET instructions.
  * @returns true if used.
  * @returns false if not used.
- * @param   pVM     The VM handle.
+ * @param   pVM       The VM handle.
  */
 VMMDECL(bool) CPUMIsHostUsingSysCall(PVM pVM)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return (pCpumCpu->fUseFlags & CPUM_USE_SYSCALL) != 0;
+    return (pVM->cpum.s.fHostUseFlags & CPUM_USE_SYSCALL) != 0;
 }
 
 #ifndef IN_RING3
@@ -2086,10 +1935,9 @@ VMMDECL(bool) CPUMIsHostUsingSysCall(PVM pVM)
  * Lazily sync in the FPU/XMM state
  *
  * @returns VBox status code.
- * @param   pVM         VM handle.
  * @param   pVCpu       VMCPU handle
  */
-VMMDECL(int) CPUMHandleLazyFPU(PVM pVM, PVMCPU pVCpu)
+VMMDECL(int) CPUMHandleLazyFPU(PVMCPU pVCpu)
 {
     return cpumHandleLazyFPUAsm(&pVCpu->cpum.s);
 }
@@ -2110,13 +1958,11 @@ VMMDECL(bool) CPUMIsGuestFPUStateActive(PVMCPU pVCpu)
 
 /**
  * Deactivate the FPU/XMM state of the guest OS
- * @param   pVM     The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  */
-VMMDECL(void) CPUMDeactivateGuestFPUState(PVM pVM)
+VMMDECL(void) CPUMDeactivateGuestFPUState(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->fUseFlags &= ~CPUM_USED_FPU;
+    pVCpu->cpum.s.fUseFlags &= ~CPUM_USED_FPU;
 }
 
 
@@ -2126,11 +1972,9 @@ VMMDECL(void) CPUMDeactivateGuestFPUState(PVM pVM)
  * @returns boolean
  * @param   pVM         VM handle.
  */
-VMMDECL(bool) CPUMIsGuestDebugStateActive(PVM pVM)
+VMMDECL(bool) CPUMIsGuestDebugStateActive(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    return (pCpumCpu->fUseFlags & CPUM_USE_DEBUG_REGS) != 0;
+    return (pVCpu->cpum.s.fUseFlags & CPUM_USE_DEBUG_REGS) != 0;
 }
 
 
@@ -2140,11 +1984,9 @@ VMMDECL(bool) CPUMIsGuestDebugStateActive(PVM pVM)
  * @returns boolean
  * @param   pVM         VM handle.
  */
-VMMDECL(void) CPUMDeactivateGuestDebugState(PVM pVM)
+VMMDECL(void) CPUMDeactivateGuestDebugState(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
-    pCpumCpu->fUseFlags &= ~CPUM_USE_DEBUG_REGS;
+    pVCpu->cpum.s.fUseFlags &= ~CPUM_USE_DEBUG_REGS;
 }
 
 
@@ -2156,19 +1998,9 @@ VMMDECL(void) CPUMDeactivateGuestDebugState(PVM pVM)
  */
 VMMDECL(bool) CPUMAreHiddenSelRegsValid(PVM pVM)
 {
-    return !!pVM->cpum.s.fValidHiddenSelRegs; /** @todo change fValidHiddenSelRegs to bool! */
+    return HWACCMIsEnabled(pVM);
 }
 
-
-/**
- * Checks if the hidden selector registers are valid
- * @param   pVM     The VM handle.
- * @param   fValid  Valid or not
- */
-VMMDECL(void) CPUMSetHiddenSelRegsValid(PVM pVM, bool fValid)
-{
-    pVM->cpum.s.fValidHiddenSelRegs = fValid;
-}
 
 
 /**
@@ -2178,12 +2010,11 @@ VMMDECL(void) CPUMSetHiddenSelRegsValid(PVM pVM, bool fValid)
  * @param   pVM         VM Handle.
  * @param   pRegFrame   Trap register frame.
  */
-VMMDECL(uint32_t) CPUMGetGuestCPL(PVM pVM, PCPUMCTXCORE pCtxCore)
+VMMDECL(uint32_t) CPUMGetGuestCPL(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
     uint32_t cpl;
 
-    if (CPUMAreHiddenSelRegsValid(pVM))
+    if (CPUMAreHiddenSelRegsValid(pVCpu->CTX_SUFF(pVM)))
     {
         /*
          * The hidden CS.DPL register is always equal to the CPL, it is
@@ -2192,12 +2023,12 @@ VMMDECL(uint32_t) CPUMGetGuestCPL(PVM pVM, PCPUMCTXCORE pCtxCore)
          * This only seems to apply to AMD-V; in the VT-x case we *do* need to look
          * at SS. (ACP2 regression during install after a far call to ring 2)
          */
-        if (RT_LIKELY(pCpumCpu->Guest.cr0 & X86_CR0_PE))
+        if (RT_LIKELY(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE))
             cpl = pCtxCore->ssHid.Attr.n.u2Dpl;
         else
             cpl = 0;  /* CPL set to 3 for VT-x real-mode emulation. */
     }
-    else if (RT_LIKELY(pCpumCpu->Guest.cr0 & X86_CR0_PE))
+    else if (RT_LIKELY(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE))
     {
         if (RT_LIKELY(!pCtxCore->eflags.Bits.u1VM))
         {
@@ -2228,16 +2059,14 @@ VMMDECL(uint32_t) CPUMGetGuestCPL(PVM pVM, PCPUMCTXCORE pCtxCore)
  * If paging mode is what you need, check out PGMGetGuestMode().
  *
  * @returns The CPU mode.
- * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  */
-VMMDECL(CPUMMODE) CPUMGetGuestMode(PVM pVM)
+VMMDECL(CPUMMODE) CPUMGetGuestMode(PVMCPU pVCpu)
 {
-    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
-
     CPUMMODE enmMode;
-    if (!(pCpumCpu->Guest.cr0 & X86_CR0_PE))
+    if (!(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE))
         enmMode = CPUMMODE_REAL;
-    else if (!(pCpumCpu->Guest.msrEFER & MSR_K6_EFER_LMA))
+    else if (!(pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_LMA))
         enmMode = CPUMMODE_PROTECTED;
     else
         enmMode = CPUMMODE_LONG;

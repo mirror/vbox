@@ -73,6 +73,8 @@
 #define VERR_PAGE_MAP_LEVEL4_NOT_PRESENT    (-1013)
 /** Page directory pointer not present. */
 #define VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT (-1014)
+/** Raw mode doesn't support SMP. */
+#define VERR_RAW_MODE_INVALID_SMP           (-1015)
 /** @} */
 
 

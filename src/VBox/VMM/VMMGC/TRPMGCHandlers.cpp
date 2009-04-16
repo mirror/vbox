@@ -36,6 +36,7 @@
 #include <VBox/cpum.h>
 #include "TRPMInternal.h"
 #include <VBox/vm.h>
+#include <VBox/vmm.h>
 #include <VBox/param.h>
 
 #include <VBox/err.h>
@@ -133,6 +134,7 @@ __END_DECLS
  */
 static int trpmGCExitTrap(PVM pVM, int rc, PCPUMCTXCORE pRegFrame)
 {
+    PVMCPU   pVCpu = VMMGetCpu0(pVM);
     uint32_t uOldActiveVector = pVM->trpm.s.uActiveVector;
     NOREF(uOldActiveVector);
 
@@ -165,8 +167,8 @@ static int trpmGCExitTrap(PVM pVM, int rc, PCPUMCTXCORE pRegFrame)
     /* Clear pending inhibit interrupt state if required. (necessary for dispatching interrupts later on) */
     if (VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS))
     {
-        Log2(("VM_FF_INHIBIT_INTERRUPTS at %08RX32 successor %RGv\n", pRegFrame->eip, EMGetInhibitInterruptsPC(pVM)));
-        if (pRegFrame->eip != EMGetInhibitInterruptsPC(pVM))
+        Log2(("VM_FF_INHIBIT_INTERRUPTS at %08RX32 successor %RGv\n", pRegFrame->eip, EMGetInhibitInterruptsPC(pVM, pVCpu)));
+        if (pRegFrame->eip != EMGetInhibitInterruptsPC(pVM, pVCpu))
         {
             /** @note we intentionally don't clear VM_FF_INHIBIT_INTERRUPTS here if the eip is the same as the inhibited instr address.
              *  Before we are able to execute this instruction in raw mode (iret to guest code) an external interrupt might
@@ -226,7 +228,7 @@ static int trpmGCExitTrap(PVM pVM, int rc, PCPUMCTXCORE pRegFrame)
          */
         else if (VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL))
 #if 1
-            rc = PGMSyncCR3(pVM, CPUMGetGuestCR0(pVM), CPUMGetGuestCR3(pVM), CPUMGetGuestCR4(pVM), VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
+            rc = PGMSyncCR3(pVM, pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR3(pVCpu), CPUMGetGuestCR4(pVCpu), VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
 #else
             rc = VINF_PGM_SYNC_CR3;
 #endif
@@ -257,7 +259,9 @@ static int trpmGCExitTrap(PVM pVM, int rc, PCPUMCTXCORE pRegFrame)
 DECLASM(int) TRPMGCTrap01Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
 {
     RTGCUINTREG uDr6 = ASMGetAndClearDR6();
-    PVM pVM = TRPM2VM(pTrpm);
+    PVM         pVM = TRPM2VM(pTrpm);
+    PVMCPU      pVCpu = VMMGetCpu0(pVM);
+
     LogFlow(("TRPMGC01: cs:eip=%04x:%08x uDr6=%RTreg\n", pRegFrame->cs, pRegFrame->eip, uDr6));
 
     /*
@@ -267,7 +271,7 @@ DECLASM(int) TRPMGCTrap01Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
     if ((uDr6 & X86_DR6_BD) == X86_DR6_BD)
     {
         AssertReleaseMsgFailed(("X86_DR6_BD isn't used, but it's set! dr7=%RTreg(%RTreg) dr6=%RTreg\n",
-                                ASMGetDR7(), CPUMGetHyperDR7(pVM), uDr6));
+                                ASMGetDR7(), CPUMGetHyperDR7(pVCpu), uDr6));
         return VERR_NOT_IMPLEMENTED;
     }
 
@@ -278,7 +282,7 @@ DECLASM(int) TRPMGCTrap01Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
      */
     int rc = DBGFGCTrap01Handler(pVM, pRegFrame, uDr6);
     if (rc == VINF_EM_RAW_GUEST_TRAP)
-        CPUMSetGuestDR6(pVM, uDr6);
+        CPUMSetGuestDR6(pVCpu, uDr6);
 
     rc = trpmGCExitTrap(pVM, rc, pRegFrame);
     Log6(("TRPMGC01: %Rrc (%04x:%08x %RTreg)\n", rc, pRegFrame->cs, pRegFrame->eip, uDr6));
@@ -360,10 +364,11 @@ DECLASM(int) TRPMGCTrap03Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
 DECLASM(int) TRPMGCTrap06Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
 {
     LogFlow(("TRPMGC06: %04x:%08x efl=%x\n", pRegFrame->cs, pRegFrame->eip, pRegFrame->eflags.u32));
-    PVM pVM = TRPM2VM(pTrpm);
-    int rc;
+    PVM     pVM = TRPM2VM(pTrpm);
+    PVMCPU  pVCpu = VMMGetCpu0(pVM);
+    int     rc;
 
-    if (CPUMGetGuestCPL(pVM, pRegFrame) == 0)
+    if (CPUMGetGuestCPL(pVCpu, pRegFrame) == 0)
     {
         /*
          * Decode the instruction.
@@ -380,7 +385,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
 
         DISCPUSTATE Cpu;
         uint32_t    cbOp;
-        rc = EMInterpretDisasOneEx(pVM, (RTGCUINTPTR)PC, pRegFrame, &Cpu, &cbOp);
+        rc = EMInterpretDisasOneEx(pVM, pVCpu, (RTGCUINTPTR)PC, pRegFrame, &Cpu, &cbOp);
         if (RT_FAILURE(rc))
         {
             rc = trpmGCExitTrap(pVM, VINF_EM_RAW_EMULATE_INSTR, pRegFrame);
@@ -428,7 +433,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
         else if (Cpu.pCurInstr->opcode == OP_MONITOR)
         {
             uint32_t cbIgnored;
-            rc = EMInterpretInstructionCPU(pVM, &Cpu, pRegFrame, PC, &cbIgnored);
+            rc = EMInterpretInstructionCPU(pVM, pVCpu, &Cpu, pRegFrame, PC, &cbIgnored);
             if (RT_LIKELY(RT_SUCCESS(rc)))
                 pRegFrame->eip += Cpu.opsize;
         }
@@ -464,9 +469,10 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
 DECLASM(int) TRPMGCTrap07Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
 {
     LogFlow(("TRPMGC07: %04x:%08x\n", pRegFrame->cs, pRegFrame->eip));
-    PVM pVM = TRPM2VM(pTrpm);
+    PVM     pVM   = TRPM2VM(pTrpm);
+    PVMCPU  pVCpu = VMMGetCpu0(pVM);
 
-    int rc = CPUMHandleLazyFPU(pVM, VMMGetCpu(pVM));
+    int rc = CPUMHandleLazyFPU(pVCpu);
     rc = trpmGCExitTrap(pVM, rc, pRegFrame);
     Log6(("TRPMGC07: %Rrc (%04x:%08x)\n", rc, pRegFrame->cs, pRegFrame->eip));
     return rc;
@@ -585,7 +591,8 @@ DECLASM(int) TRPMGCTrap0bHandler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
  */
 static int trpmGCTrap0dHandlerRing0(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu, RTGCPTR PC)
 {
-    int rc;
+    int     rc;
+    PVMCPU  pVCpu = VMMGetCpu0(pVM);
 
     /*
      * Try handle it here, if not return to HC and emulate/interpret it there.
@@ -660,7 +667,7 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
         case OP_WRMSR:
         {
             uint32_t cbIgnored;
-            rc = EMInterpretInstructionCPU(pVM, pCpu, pRegFrame, PC, &cbIgnored);
+            rc = EMInterpretInstructionCPU(pVM, pVCpu, pCpu, pRegFrame, PC, &cbIgnored);
             if (RT_SUCCESS(rc))
                 pRegFrame->eip += pCpu->opsize;
             else if (rc == VERR_EM_INTERPRETER)
@@ -687,7 +694,8 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
  */
 static int trpmGCTrap0dHandlerRing3(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu, RTGCPTR PC)
 {
-    int rc;
+    int     rc;
+    PVMCPU  pVCpu = VMMGetCpu0(pVM);
 
     Assert(!pRegFrame->eflags.Bits.u1VM);
 
@@ -739,7 +747,7 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
         case OP_RDPMC:
         {
             uint32_t cbIgnored;
-            rc = EMInterpretInstructionCPU(pVM, pCpu, pRegFrame, PC, &cbIgnored);
+            rc = EMInterpretInstructionCPU(pVM, pVCpu, pCpu, pRegFrame, PC, &cbIgnored);
             if (RT_SUCCESS(rc))
                 pRegFrame->eip += pCpu->opsize;
             else if (rc == VERR_EM_INTERPRETER)
@@ -753,7 +761,7 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
         case OP_STI:
         case OP_CLI:
         {
-            uint32_t efl = CPUMRawGetEFlags(pVM, pRegFrame);
+            uint32_t efl = CPUMRawGetEFlags(pVCpu, pRegFrame);
             if (X86_EFL_GET_IOPL(efl) >= (unsigned)(pRegFrame->ss & X86_SEL_RPL))
             {
                 LogFlow(("trpmGCTrap0dHandlerRing3: CLI/STI -> REM\n"));
@@ -782,9 +790,11 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
  */
 DECLINLINE(int) trpmGCTrap0dHandlerRdTsc(PVM pVM, PCPUMCTXCORE pRegFrame)
 {
+    PVMCPU pVCpu = VMMGetCpu0(pVM);
+
     STAM_COUNTER_INC(&pVM->trpm.s.StatTrap0dRdTsc);
 
-    if (CPUMGetGuestCR4(pVM) & X86_CR4_TSD)
+    if (CPUMGetGuestCR4(pVCpu) & X86_CR4_TSD)
         return trpmGCExitTrap(pVM, VINF_EM_RAW_EMULATE_INSTR, pRegFrame); /* will trap (optimize later). */
 
     uint64_t uTicks = TMCpuTickGet(pVM);
@@ -808,6 +818,8 @@ DECLINLINE(int) trpmGCTrap0dHandlerRdTsc(PVM pVM, PCPUMCTXCORE pRegFrame)
  */
 static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
 {
+    PVMCPU pVCpu = VMMGetCpu0(pVM);
+
     LogFlow(("trpmGCTrap0dHandler: cs:eip=%RTsel:%08RX32 uErr=%RGv\n", pRegFrame->ss, pRegFrame->eip, pTrpm->uActiveErrorCode));
 
     /*
@@ -860,7 +872,7 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
     if (    pVM->trpm.s.uActiveErrorCode == 0
         &&  (Cpu.pCurInstr->optype & OPTYPE_PORTIO))
     {
-        rc = EMInterpretPortIO(pVM, pRegFrame, &Cpu, cbOp);
+        rc = EMInterpretPortIO(pVM, pVCpu, pRegFrame, &Cpu, cbOp);
         return trpmGCExitTrap(pVM, rc, pRegFrame);
     }
 
@@ -886,7 +898,7 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
      * that's the case. To get the correct we must use CPUMRawGetEFlags.
      */
     X86EFLAGS eflags;
-    eflags.u32 = CPUMRawGetEFlags(pVM, pRegFrame); /* Get the correct value. */
+    eflags.u32 = CPUMRawGetEFlags(pVCpu, pRegFrame); /* Get the correct value. */
     Log3(("TRPM #GP V86: cs:eip=%04x:%08x IOPL=%d efl=%08x\n", pRegFrame->cs, pRegFrame->eip, eflags.Bits.u2IOPL, eflags.u));
     if (eflags.Bits.u2IOPL != 3)
     {
@@ -970,13 +982,14 @@ DECLASM(int) TRPMGCTrap0dHandler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
 DECLASM(int) TRPMGCTrap0eHandler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
 {
     LogFlow(("TRPMGC0e: %04x:%08x err=%x cr2=%08x\n", pRegFrame->cs, pRegFrame->eip, (uint32_t)pTrpm->uActiveErrorCode, (uint32_t)pTrpm->uActiveCR2));
-    PVM pVM = TRPM2VM(pTrpm);
+    PVM     pVM = TRPM2VM(pTrpm);
+    PVMCPU  pVCpu = VMMGetCpu0(pVM);
 
 
     /*
      * This is all PGM stuff.
      */
-    int rc = PGMTrap0eHandler(pVM, pTrpm->uActiveErrorCode, pRegFrame, (RTGCPTR)pTrpm->uActiveCR2);
+    int rc = PGMTrap0eHandler(pVM, pVCpu, pTrpm->uActiveErrorCode, pRegFrame, (RTGCPTR)pTrpm->uActiveCR2);
     switch (rc)
     {
         case VINF_EM_RAW_EMULATE_INSTR:
@@ -1234,7 +1247,7 @@ DECLCALLBACK(int) trpmGCTrapInGeneric(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t
         }
 
 
-        CPUMSetGuestCtxCore(pVM, &CtxCore);
+        CPUMSetGuestCtxCore(VMMGetCpu0(pVM), &CtxCore);
         TRPMGCHyperReturnToHost(pVM, rc);
     }
 

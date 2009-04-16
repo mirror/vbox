@@ -953,13 +953,13 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM, PVMCPU pVCpu)
     AssertReturn(!ASMAtomicReadBool(&HWACCMR0Globals.fSuspended), VERR_HWACCM_SUSPEND_PENDING);
     ASMAtomicWriteBool(&pCpu->fInUse, true);
 
-    pCtx = CPUMQueryGuestCtxPtrEx(pVM, pVCpu);
+    pCtx = CPUMQueryGuestCtxPtr(pVCpu);
 
     /* Always load the guest's FPU/XMM state on-demand. */
-    CPUMDeactivateGuestFPUState(pVM);
+    CPUMDeactivateGuestFPUState(pVCpu);
 
     /* Always load the guest's debug state on-demand. */
-    CPUMDeactivateGuestDebugState(pVM);
+    CPUMDeactivateGuestDebugState(pVCpu);
 
     /* Always reload the host context and the guest's CR0 register. (!!!!) */
     pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0 | HWACCM_CHANGED_HOST_CONTEXT;
@@ -1008,7 +1008,7 @@ VMMR0DECL(int) HWACCMR0Leave(PVM pVM, PVMCPU pVCpu)
 
     AssertReturn(!ASMAtomicReadBool(&HWACCMR0Globals.fSuspended), VERR_HWACCM_SUSPEND_PENDING);
 
-    pCtx = CPUMQueryGuestCtxPtrEx(pVM, pVCpu);
+    pCtx = CPUMQueryGuestCtxPtr(pVCpu);
 
     /* Note:  It's rather tricky with longjmps done by e.g. Log statements or the page fault handler.
      *        We must restore the host FPU here to make absolutely sure we don't leave the guest FPU state active
@@ -1066,7 +1066,7 @@ VMMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
     PGMDynMapStartAutoSet(pVCpu);
 #endif
 
-    pCtx = CPUMQueryGuestCtxPtrEx(pVM, pVCpu);
+    pCtx = CPUMQueryGuestCtxPtr(pVCpu);
 
     rc = HWACCMR0Globals.pfnRunGuestCode(pVM, pVCpu, pCtx);
 
@@ -1123,7 +1123,7 @@ VMMR0DECL(int)   HWACCMR0TestSwitcher3264(PVM pVM)
     uint32_t aParam[5] = {0, 1, 2, 3, 4};
     int      rc;
 
-    pCtx = CPUMQueryGuestCtxPtrEx(pVM, pVCpu);
+    pCtx = CPUMQueryGuestCtxPtr(pVCpu);
 
     STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatWorldSwitch3264, z);   
     if (pVM->hwaccm.s.vmx.fSupported)
@@ -1373,9 +1373,10 @@ VMMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC pDesc, RTSEL Sel, const char *
  * Formats a full register dump.
  *
  * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VMCPU to operate on.
  * @param   pCtx        The context to format.
  */
-VMMR0DECL(void) HWACCMDumpRegs(PVM pVM, PCPUMCTX pCtx)
+VMMR0DECL(void) HWACCMDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     /*
      * Format the flags.
@@ -1420,7 +1421,7 @@ VMMR0DECL(void) HWACCMDumpRegs(PVM pVM, PCPUMCTX pCtx)
     /*
      * Format the registers.
      */
-    if (CPUMIsGuestIn64BitCode(pVM, CPUMCTX2CORE(pCtx)))
+    if (CPUMIsGuestIn64BitCode(pVCpu, CPUMCTX2CORE(pCtx)))
     {
         Log(("rax=%016RX64 rbx=%016RX64 rcx=%016RX64 rdx=%016RX64\n"
             "rsi=%016RX64 rdi=%016RX64 r8 =%016RX64 r9 =%016RX64\n"
