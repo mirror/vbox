@@ -2147,7 +2147,7 @@ typedef struct PGM
      * Whether to preallocate all the guest RAM or not. */
     bool                            fRamPreAlloc;
     /** Alignment padding. */
-    bool                            afAlignment0[3];
+    bool                            afAlignment0[7];
 
     /** What needs syncing (PGM_SYNC_*).
      * This is used to queue operations for PGMSyncCR3, PGMInvalidatePage,
