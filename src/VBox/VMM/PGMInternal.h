@@ -3215,7 +3215,8 @@ DECLINLINE(int) pgmRamGCPhys2HCPhys(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhy
  */
 DECLINLINE(int) pgmR0DynMapHCPageInlined(PPGM pPGM, RTHCPHYS HCPhys, void **ppv)
 {
-    PPGMCPU     pPGMCPU = &((PPGMCPU)((uint8_t *)VMMGetCpu(PGM2VM(pPGM)) + pPGM->offVCpuPGM)); /* very pretty ;-) */
+    PVM         pVM     = PGM2VM(pPGM);
+    PPGMCPU     pPGMCPU = &((PPGMCPU)((uint8_t *)VMMGetCpu(pVM) + pPGM->offVCpuPGM)); /* very pretty ;-) */
     PPGMMAPSET  pSet    = pPGMCPU->AutoSet; 
 
     STAM_PROFILE_START(&pPGMCPU->StatR0DynMapHCPageInl, a);
@@ -3233,7 +3234,7 @@ DECLINLINE(int) pgmR0DynMapHCPageInlined(PPGM pPGM, RTHCPHYS HCPhys, void **ppv)
     else
     {
         STAM_COUNTER_INC(&pPGMCPU->StatR0DynMapHCPageInlMisses);
-        pgmR0DynMapHCPageCommon(PGM2VM(pPGM), pSet, HCPhys, ppv);
+        pgmR0DynMapHCPageCommon(pVM, pSet, HCPhys, ppv);
     }
 
     STAM_PROFILE_STOP(&pPGMCPU->StatR0DynMapHCPageInl, a);
@@ -3252,7 +3253,8 @@ DECLINLINE(int) pgmR0DynMapHCPageInlined(PPGM pPGM, RTHCPHYS HCPhys, void **ppv)
  */
 DECLINLINE(int) pgmR0DynMapGCPageInlined(PPGM pPGM, RTGCPHYS GCPhys, void **ppv)
 {
-    PPGMCPU     pPGMCPU = &((PPGMCPU)((uint8_t *)VMMGetCpu(PGM2VM(pPGM)) + pPGM->offVCpuPGM)); /* very pretty ;-) */
+    PVM     pVM     = PGM2VM(pPGM);
+    PPGMCPU pPGMCPU = &((PPGMCPU)((uint8_t *)VMMGetCpu(pVM) + pPGM->offVCpuPGM)); /* very pretty ;-) */
 
     STAM_PROFILE_START(&pPGMCPU->StatR0DynMapGCPageInl, a);
     Assert(!(GCPhys & PAGE_OFFSET_MASK));
@@ -3267,7 +3269,7 @@ DECLINLINE(int) pgmR0DynMapGCPageInlined(PPGM pPGM, RTGCPHYS GCPhys, void **ppv)
     {
         /* This case is not counted into StatR0DynMapGCPageInl. */
         STAM_COUNTER_INC(&pPGMCPU->StatR0DynMapGCPageInlRamMisses);
-        return PGMDynMapGCPage(PGM2VM(pPGM), GCPhys, ppv);
+        return PGMDynMapGCPage(pVM, GCPhys, ppv);
     }
 
     RTHCPHYS HCPhys = PGM_PAGE_GET_HCPHYS(&pRam->aPages[off >> PAGE_SHIFT]);
@@ -3291,7 +3293,7 @@ DECLINLINE(int) pgmR0DynMapGCPageInlined(PPGM pPGM, RTGCPHYS GCPhys, void **ppv)
     else
     {
         STAM_COUNTER_INC(&pPGMCPU->StatR0DynMapGCPageInlMisses);
-        pgmR0DynMapHCPageCommon(PGM2VM(pPGM), pSet, HCPhys, ppv);
+        pgmR0DynMapHCPageCommon(pVM, pSet, HCPhys, ppv);
     }
 
     STAM_PROFILE_STOP(&pPGMCPU->StatR0DynMapGCPageInl, a);
