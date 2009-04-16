@@ -1843,11 +1843,30 @@ DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE pPage)
  * @remark  There is no need to assert on the result.
  */
 #if defined(IN_RC)
-# define PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPage)  pgmPoolMapPageInlined((pPGM), (pPage))
+# define PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPage)  pgmPoolMapPageInlined(pPGM, (pPage))
 #elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-# define PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPage)  pgmPoolMapPageInlined((pPGM), (pPage))
+# define PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPage)  pgmPoolMapPageInlined(pPGM, (pPage))
 #else
 # define PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPage)  PGMPOOL_PAGE_2_PTR(PGM2VM(pPGM), pPage)
+#endif
+
+/** @def PGMPOOL_PAGE_2_PTR_BY_PGMCPU
+ * Maps a pool page pool into the current context.
+ *
+ * @returns VBox status code.
+ * @param   pPGM    Pointer to the PGMCPU instance data.
+ * @param   pPage   The pool page.
+ *
+ * @remark  In RC this uses PGMGCDynMapHCPage(), so it will consume of the
+ *          small page window employeed by that function. Be careful.
+ * @remark  There is no need to assert on the result.
+ */
+#if defined(IN_RC)
+# define PGMPOOL_PAGE_2_PTR_BY_PGMCPU(pPGM, pPage)  pgmPoolMapPageInlined(PGMCPU2PGM(pPGM), (pPage))
+#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+# define PGMPOOL_PAGE_2_PTR_BY_PGMCPU(pPGM, pPage)  pgmPoolMapPageInlined(PGMCPU2PGM(pPGM), (pPage))
+#else
+# define PGMPOOL_PAGE_2_PTR_BY_PGMCPU(pPGM, pPage)  PGMPOOL_PAGE_2_PTR(PGMCPU2VM(pPGM), pPage)
 #endif
 
 
@@ -3934,7 +3953,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGMCPU pPGM, RTGCPTR64 GCPtr, PX86
  */
 DECLINLINE(PX86PD) pgmShwGet32BitPDPtr(PPGMCPU pPGM)
 {
-    return (PX86PD)PGMPOOL_PAGE_2_PTR_BY_PGM(PGMCPU2PGM(pPGM), pPGM->CTX_SUFF(pShwPageCR3));
+    return (PX86PD)PGMPOOL_PAGE_2_PTR_BY_PGMCPU(pPGM, pPGM->CTX_SUFF(pShwPageCR3));
 }
 
 
@@ -3985,7 +4004,7 @@ DECLINLINE(PX86PDE) pgmShwGet32BitPDEPtr(PPGMCPU pPGM, RTGCPTR GCPtr)
  */
 DECLINLINE(PX86PDPT) pgmShwGetPaePDPTPtr(PPGMCPU pPGM)
 {
-    return (PX86PDPT)PGMPOOL_PAGE_2_PTR_BY_PGM(PGMCPU2PGM(pPGM), pPGM->CTX_SUFF(pShwPageCR3));
+    return (PX86PDPT)PGMPOOL_PAGE_2_PTR_BY_PGMCPU(pPGM, pPGM->CTX_SUFF(pShwPageCR3));
 }
 
 
@@ -4008,7 +4027,7 @@ DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGMCPU pPGM, RTGCPTR GCPtr)
     PPGMPOOLPAGE    pShwPde = pgmPoolGetPageByHCPhys(PGMCPU2VM(pPGM), pPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
     AssertReturn(pShwPde, NULL);
 
-    return (PX86PDPAE)PGMPOOL_PAGE_2_PTR_BY_PGM(PGMCPU2PGM(pPGM), pShwPde);
+    return (PX86PDPAE)PGMPOOL_PAGE_2_PTR_BY_PGMCPU(pPGM, pShwPde);
 }
 
 
@@ -4030,7 +4049,7 @@ DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGMCPU pPGM, PX86PDPT pPdpt, RTGCPTR GC
     PPGMPOOLPAGE    pShwPde = pgmPoolGetPageByHCPhys(PGMCPU2VM(pPGM), pPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
     AssertReturn(pShwPde, NULL);
 
-    return (PX86PDPAE)PGMPOOL_PAGE_2_PTR_BY_PGM(PGMCPU2PGM(pPGM), pShwPde);
+    return (PX86PDPAE)PGMPOOL_PAGE_2_PTR_BY_PGMCPU(pPGM, pShwPde);
 }
 
 
@@ -4081,7 +4100,7 @@ DECLINLINE(PX86PDEPAE) pgmShwGetPaePDEPtr(PPGMCPU pPGM, RTGCPTR GCPtr)
  */
 DECLINLINE(PX86PML4) pgmShwGetLongModePML4Ptr(PPGMCPU pPGM)
 {
-    return (PX86PML4)PGMPOOL_PAGE_2_PTR_BY_PGM(PGMCPU2PGM(pPGM), pPGM->CTX_SUFF(pShwPageCR3));
+    return (PX86PML4)PGMPOOL_PAGE_2_PTR_BY_PGMCPU(pPGM, pPGM->CTX_SUFF(pShwPageCR3));
 }
 
 
