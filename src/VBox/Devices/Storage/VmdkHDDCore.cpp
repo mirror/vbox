@@ -5049,7 +5049,7 @@ static int vmdkWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                 {
                     uint32_t uSectorInGrain = uSectorExtentRel % pExtent->cSectorsPerGrain;
                     uSectorExtentAbs -= uSectorInGrain;
-                    uint64_t uLBA;
+                    uint64_t uLBA = uSectorExtentRel;
                     if (    pExtent->uGrainSector != uSectorExtentAbs
                         ||  pExtent->uGrainSector != pExtent->uLastGrainSector)
                     {
