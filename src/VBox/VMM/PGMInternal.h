@@ -2464,6 +2464,7 @@ typedef struct PGMCPU
     RTINT                           offVCpu;
     /** Offset of the PGM structure relative to VMCPU. */
     RTINT                           offPGM;
+    RTINT                           uPadding0;
 
     /** Automatically tracked physical memory mapping set.
      * Ring-0 and strict raw-mode builds. */
