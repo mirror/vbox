@@ -44,7 +44,11 @@ public:
             return VERR_NOT_SUPPORTED;
         }
         mSeamless.init();
-        pause();
+        /* Stay running as long as X does... */
+        Display *pDisplay = XOpenDisplay(NULL);
+        XEvent ev;
+        while (true)
+            XNextEvent(pDisplay, &ev);
         return VERR_INTERRUPTED;
     }
     virtual void cleanup()
