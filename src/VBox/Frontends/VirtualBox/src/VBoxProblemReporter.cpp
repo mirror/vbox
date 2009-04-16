@@ -326,7 +326,7 @@ bool VBoxProblemReporter::askForOverridingFilesIfExists (const QStringList& aPat
 void VBoxProblemReporter::cannotDeleteFile (const QString& path, QWidget *aParent /* = NULL */) const
 {
     message (aParent, Error,
-             tr ("Failed to remove the file <b>%1</b>.<br /><br />Please try to remove that file yourself & try again.")
+             tr ("Failed to remove the file <b>%1</b>.<br /><br />Please try to remove the file yourself and try again.")
              .arg (path));
 }
 
