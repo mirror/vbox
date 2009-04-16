@@ -110,13 +110,21 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 
         case RTR0MEMOBJTYPE_LOCK:
         {
+            int fFlags = VM_MAP_WIRE_NOHOLES;
             vm_map_t pMap = kernel_map;
+
             if (pMemFreeBSD->Core.u.Lock.R0Process != NIL_RTR0PROCESS)
+            {
                 pMap = &((struct proc *)pMemFreeBSD->Core.u.Lock.R0Process)->p_vmspace->vm_map;
+                fFlags |= VM_MAP_WIRE_USER;
+            }
+            else
+                fFlags |= VM_MAP_WIRE_SYSTEM;
+
             rc = vm_map_unwire(pMap,
                                (vm_offset_t)pMemFreeBSD->Core.pv,
                                (vm_offset_t)pMemFreeBSD->Core.pv + pMemFreeBSD->Core.cb,
-                               VM_MAP_WIRE_SYSTEM | VM_MAP_WIRE_NOHOLES);
+                               fFlags);
             AssertMsg(rc == KERN_SUCCESS, ("%#x", rc));
             break;
         }
@@ -610,6 +618,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
                     AddrToMap   = (uint8_t *)AddrToMap + PAGE_SIZE;
                     AddrR3Dest += PAGE_SIZE;
                 }
+                pObjectToMap = pObjectNew;
             }
             else
                 vm_object_deallocate(pObjectNew);
