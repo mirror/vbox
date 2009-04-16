@@ -2021,17 +2021,15 @@ ifeq ($(VBOX_LDR_FMT32),elf)
  TEMPLATE_VBOXGCEXE_LDFLAGS.dbgopt = -g
  TEMPLATE_VBOXGCEXE_LDFLAGS.strict = -g
  TEMPLATE_VBOXGCEXE_LDFLAGS.release = -g
- if1of ($(KBUILD_TARGET),freebsd)
-  ifeq ($(KBUILD_TARGET_ARCH), amd64)
-    # The FreeBSD port of gcc isn't picking up -m32 where it should. the .o order below isn't
-    # quite right (target source comes first), if it stops working we'll have to write a linker tool.
-    TEMPLATE_VBOXGCEXE_DEFS.$(KBUILD_TARGET)    = $(TEMPLATE_VBOXGC_DEFS.$(KBUILD_TARGET))    IPRT_DONT_USE_SYSTEM_STDINT_H
-    TEMPLATE_VBOXGCEXE_LDFLAGS.$(KBUILD_TARGET) = $(TEMPLATE_VBOXGC_LDFLAGS.$(KBUILD_TARGET)) -nostdlib -v
-    TEMPLATE_VBOXGCEXE_SOURCES.$(KBUILD_TARGET) = /usr/lib32/crtend.o /usr/lib32/crtn.o
-    TEMPLATE_VBOXGCEXE_SOURCES                  =	/usr/lib32/crt1.o /usr/lib32/crti.o /usr/lib32/crtbegin.o
-    TEMPLATE_VBOXGCEXE_LIBPATH.$(KBUILD_TARGET) = /usr/lib32
-    TEMPLATE_VBOXGCEXE_LIBS.$(KBUILD_TARGET)    = /usr/lib32/libc.so
-  endif
+ if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), freebsd.amd64)
+  # The FreeBSD port of gcc isn't picking up -m32 where it should. the .o order below isn't
+  # quite right (target source comes first), if it stops working we'll have to write a linker tool.
+  TEMPLATE_VBOXGCEXE_DEFS.$(KBUILD_TARGET)    = $(TEMPLATE_VBOXGC_DEFS.$(KBUILD_TARGET))    IPRT_DONT_USE_SYSTEM_STDINT_H
+  TEMPLATE_VBOXGCEXE_LDFLAGS.$(KBUILD_TARGET) = $(TEMPLATE_VBOXGC_LDFLAGS.$(KBUILD_TARGET)) -nostdlib -v
+  TEMPLATE_VBOXGCEXE_SOURCES.$(KBUILD_TARGET) = /usr/lib32/crtend.o /usr/lib32/crtn.o
+  TEMPLATE_VBOXGCEXE_SOURCES                  =	/usr/lib32/crt1.o /usr/lib32/crti.o /usr/lib32/crtbegin.o
+  TEMPLATE_VBOXGCEXE_LIBPATH.$(KBUILD_TARGET) = /usr/lib32
+  TEMPLATE_VBOXGCEXE_LIBS.$(KBUILD_TARGET)    = /usr/lib32/libc.so
  endif
 endif
 
