@@ -1183,8 +1183,8 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     /*
      * Init the structure.
      */
-    pVM->pgm.s.offVM            = RT_OFFSETOF(VM, pgm.s);
-    pVM->pgm.s.offVCpu          = RT_OFFSETOF(VMCPU, pgm.s);
+    pVM->pgm.s.offVM       = RT_OFFSETOF(VM, pgm.s);
+    pVM->pgm.s.offVCpuPGM  = RT_OFFSETOF(VMCPU, pgm.s);
 
     /* Init the per-CPU part. */
     for (unsigned i=0;i<pVM->cCPUs;i++)
