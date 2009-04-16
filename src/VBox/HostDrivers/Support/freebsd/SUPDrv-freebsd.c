@@ -103,8 +103,8 @@ static struct cdevsw        g_VBoxDrvFreeBSDChrDevSW =
 static struct clonedevs    *g_pVBoxDrvFreeBSDClones;
 /** The dev_clone event handler tag. */
 static eventhandler_tag     g_VBoxDrvFreeBSDEHTag;
-/** Reference counter */
-static volatile uint32_t    cUsers;
+/** Reference counter. */
+static volatile uint32_t    g_cUsers;
 
 /** The device extention. */
 static SUPDRVDEVEXT         g_VBoxDrvFreeBSDDevExt;
@@ -150,7 +150,7 @@ static int VBoxDrvFreeBSDLoad(void)
 {
     dprintf(("VBoxDrvFreeBSDLoad:\n"));
 
-    cUsers = 0;
+    g_cUsers = 0;
 
     /*
      * Initialize the runtime.
@@ -193,7 +193,7 @@ static int VBoxDrvFreeBSDUnload(void)
 {
     dprintf(("VBoxDrvFreeBSDUnload:\n"));
 
-    if (cUsers > 0)
+    if (g_cUsers > 0)
         return EBUSY;
 
     /*
@@ -312,7 +312,7 @@ static int VBoxDrvFreeBSDOpen(struct cdev *pDev, int fOpen, struct thread *pTd, 
         pSession->Gid = stuff; */
         if (ASMAtomicCmpXchgPtr(&pDev->si_drv1, pSession, (void *)0x42))
         {
-            ASMAtomicIncU32(&cUsers);
+            ASMAtomicIncU32(&g_cUsers);
             return 0;
         }
 
@@ -346,7 +346,7 @@ static int VBoxDrvFreeBSDClose(struct cdev *pDev, int fFile, int DevType, struct
         supdrvCloseSession(&g_VBoxDrvFreeBSDDevExt, pSession);
         if (!ASMAtomicCmpXchgPtr(&pDev->si_drv1, NULL, pSession))
             OSDBGPRINT(("VBoxDrvFreeBSDClose: si_drv1=%p expected %p!\n", pDev->si_drv1, pSession));
-        ASMAtomicDecU32(&cUsers);
+        ASMAtomicDecU32(&g_cUsers);
         /* Don't use destroy_dev here because it may sleep resulting in a hanging user process. */
         destroy_dev_sched(pDev);
     }
