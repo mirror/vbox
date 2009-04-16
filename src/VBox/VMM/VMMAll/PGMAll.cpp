@@ -2306,6 +2306,7 @@ VMMDECL(void) PGMDynUnlockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage)
     unsigned iPage;
 
     AssertCompile(RT_ELEMENTS(pVM->pgm.s.aLockedDynPageMapCache) == 2* RT_ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache));
+    AssertCompileMemberSize(VM, pgm.s.aLockedDynPageMapCache, sizeof(uint32_t) * (MM_HYPER_DYNAMIC_SIZE >> (PAGE_SHIFT)));
 
     Assert(GCPage >= pVM->pgm.s.pbDynPageMapBaseGC && GCPage < (pVM->pgm.s.pbDynPageMapBaseGC + MM_HYPER_DYNAMIC_SIZE));
     iPage = ((uintptr_t)(GCPage - pVM->pgm.s.pbDynPageMapBaseGC)) >> PAGE_SHIFT;
