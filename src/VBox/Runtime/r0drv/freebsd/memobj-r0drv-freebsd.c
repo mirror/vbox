@@ -43,6 +43,7 @@
 #include <iprt/process.h>
 #include "internal/memobj.h"
 
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -151,8 +152,8 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
                 pMap = &((struct proc *)pMemFreeBSD->Core.u.Mapping.R0Process)->p_vmspace->vm_map;
 
             rc = vm_map_remove(pMap,
-                                (vm_offset_t)pMemFreeBSD->Core.pv,
-                                (vm_offset_t)pMemFreeBSD->Core.pv + pMemFreeBSD->Core.cb);
+                               (vm_offset_t)pMemFreeBSD->Core.pv,
+                               (vm_offset_t)pMemFreeBSD->Core.pv + pMemFreeBSD->Core.cb);
             AssertMsg(rc == KERN_SUCCESS, ("%#x", rc));
             break;
         }
@@ -556,19 +557,20 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
     return VERR_NOT_IMPLEMENTED;
 }
 
+
 /* see http://markmail.org/message/udhq33tefgtyfozs */
 int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RTR3PTR R3PtrFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process)
 {
     AssertMsgReturn(R0Process == RTR0ProcHandleSelf(), ("%p != %p\n", R0Process, RTR0ProcHandleSelf()), VERR_NOT_SUPPORTED);
     AssertMsgReturn(R3PtrFixed == (RTR3PTR)-1, ("%p\n", R3PtrFixed), VERR_NOT_SUPPORTED);
 
-    int rc;
-    vm_object_t pObjectToMap = ((PRTR0MEMOBJFREEBSD)pMemToMap)->pObject;
-    struct proc   *pProc     = (struct proc *)R0Process;
-    struct vm_map *pProcMap  = &pProc->p_vmspace->vm_map;
-    vm_offset_t AddrR3 = 0;
-    vm_prot_t   ProtectionFlags = 0;
+    int             rc;
+    vm_object_t     pObjectToMap = ((PRTR0MEMOBJFREEBSD)pMemToMap)->pObject;
+    struct proc    *pProc     = (struct proc *)R0Process;
+    struct vm_map  *pProcMap  = &pProc->p_vmspace->vm_map;
 
+    /* calc protection */
+    vm_prot_t       ProtectionFlags = 0;
     if ((fProt & RTMEM_PROT_NONE) == RTMEM_PROT_NONE)
         ProtectionFlags = VM_PROT_NONE;
     if ((fProt & RTMEM_PROT_READ) == RTMEM_PROT_READ)
@@ -578,8 +580,9 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
     if ((fProt & RTMEM_PROT_EXEC) == RTMEM_PROT_EXEC)
         ProtectionFlags |= VM_PROT_EXECUTE;
 
+    /* calc mapping address */
     PROC_LOCK(pProc);
-    AddrR3 = round_page((vm_offset_t)pProc->p_vmspace->vm_daddr + lim_max(pProc, RLIMIT_DATA));
+    vm_offset_t AddrR3 = round_page((vm_offset_t)pProc->p_vmspace->vm_daddr + lim_max(pProc, RLIMIT_DATA));
     PROC_UNLOCK(pProc);
 
     /*
@@ -603,20 +606,19 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
                              0);                    /* Copy on write */
             if (rc == KERN_SUCCESS)
             {
-                int            cPages = pMemToMap->cb >> PAGE_SHIFT;
-                int            iPage;
-                void          *AddrToMap    = pMemToMap->pv;
+                size_t         cLeft        = pMemToMap->cb >> PAGE_SHIFT;
+                vm_offset_t    AddrToMap    = (vm_offset_t)pMemToMap->pv;
                 pmap_t         pPhysicalMap = pProcMap->pmap;
-                vm_offset_t    AddrR3Dest   = AddrR3;
+                vm_offset_t    AddrR3Dst    = AddrR3;
 
                 /* Insert the memory page by page into the mapping. */
-                for (iPage = 0; iPage < cPages; iPage++)
+                while (cLeft-- > 0)
                 {
                     vm_page_t Page = PHYS_TO_VM_PAGE(vtophys(AddrToMap));
 
-                    pmap_enter(pPhysicalMap, AddrR3Dest, Page, ProtectionFlags, TRUE);
-                    AddrToMap   = (uint8_t *)AddrToMap + PAGE_SIZE;
-                    AddrR3Dest += PAGE_SIZE;
+                    pmap_enter(pPhysicalMap, AddrR3Dst, Page, ProtectionFlags, TRUE);
+                    AddrToMap += PAGE_SIZE;
+                    AddrR3Dst += PAGE_SIZE;
                 }
                 pObjectToMap = pObjectNew;
             }
@@ -631,7 +633,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
     }
     else
     {
-        /* 
+        /*
          * Reference the object. If this isn't done the object will removed from kernel space
          * if the mapping is destroyed.
          */
@@ -654,12 +656,12 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
          * Create a mapping object for it.
          */
         PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(sizeof(RTR0MEMOBJFREEBSD),
-                                                                           RTR0MEMOBJTYPE_MAPPING, 
+                                                                           RTR0MEMOBJTYPE_MAPPING,
                                                                            (void *)AddrR3,
                                                                            pMemToMap->cb);
         if (pMemFreeBSD)
         {
-            Assert(pMemFreeBSD->Core.pv == (void *)AddrR3);
+            Assert((vm_offset_t)pMemFreeBSD->Core.pv == AddrR3);
             pMemFreeBSD->Core.u.Mapping.R0Process = R0Process;
             pMemFreeBSD->pMappingObject = pObjectToMap;
             *ppMem = &pMemFreeBSD->Core;
@@ -684,18 +686,17 @@ RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage)
     switch (pMemFreeBSD->Core.enmType)
     {
         case RTR0MEMOBJTYPE_LOCK:
-        {
             if (    pMemFreeBSD->Core.u.Lock.R0Process != NIL_RTR0PROCESS
                 &&  pMemFreeBSD->Core.u.Lock.R0Process != (RTR0PROCESS)curproc)
             {
                 /* later */
                 return NIL_RTHCPHYS;
             }
-        }
+            /* fall thru*/
         case RTR0MEMOBJTYPE_PAGE:
         case RTR0MEMOBJTYPE_MAPPING:
         {
-            uint8_t *pb = (uint8_t *)pMemFreeBSD->Core.pv + ((size_t)iPage << PAGE_SHIFT);
+            uint8_t *pb = (uint8_t *)pMemFreeBSD->Core.pv + (iPage << PAGE_SHIFT);
             return vtophys(pb);
         }
 
@@ -712,3 +713,4 @@ RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage)
             return NIL_RTHCPHYS;
     }
 }
+
