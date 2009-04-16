@@ -25,7 +25,6 @@
 
 #include <stdint.h>
 
-#define VBOX_DBUS_1_2_LIB "libdbus-1.so.2"  /* This should be compatible */
 #define VBOX_DBUS_1_3_LIB "libdbus-1.so.3"
 
 /** Types and defines from the dbus header files which we need.  These are

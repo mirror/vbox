@@ -76,12 +76,9 @@ static int32_t loadDBusLibOnce(void *, void *)
     RTLDRMOD hLib;
 
     LogFlowFunc(("\n"));
-    rc = RTLdrLoad(VBOX_DBUS_1_2_LIB, &hLib);
+    rc = RTLdrLoad(VBOX_DBUS_1_3_LIB, &hLib);
     if (RT_FAILURE(rc))
-        rc = RTLdrLoad(VBOX_DBUS_1_3_LIB, &hLib);
-    if (RT_FAILURE(rc))
-        LogRelFunc(("Failed to load library %s or %s\n",
-                    VBOX_DBUS_1_2_LIB, VBOX_DBUS_1_3_LIB));
+        LogRelFunc(("Failed to load library %s\n", VBOX_DBUS_1_3_LIB));
     for (unsigned i = 0; RT_SUCCESS(rc) && SharedFuncs[i].name != NULL; ++i)
         rc = RTLdrGetSymbol(hLib, SharedFuncs[i].name, (void**)SharedFuncs[i].fn);
     LogFlowFunc(("rc = %Rrc\n", rc));
