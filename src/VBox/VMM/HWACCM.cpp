@@ -144,7 +144,7 @@ VMMR3DECL(int) HWACCMR3Init(PVM pVM)
     /*
      * Assert alignment and sizes.
      */
-    AssertCompile(!(RT_OFFSETOF(VM, hwaccm.s) & 31));
+    AssertCompileMemberAlignment(VM, hwaccm.s, 32));
     AssertCompile(sizeof(pVM->hwaccm.s) <= sizeof(pVM->hwaccm.padding));
 
     /* Some structure checks. */
