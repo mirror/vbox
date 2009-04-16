@@ -84,9 +84,11 @@ VMMRCDECL(int) TRPMGCSetTempHandler(PVM pVM, unsigned iTrap, PFNTRPMGCTRAPHANDLE
  */
 VMMRCDECL(void) TRPMGCHyperReturnToHost(PVM pVM, int rc)
 {
+    PVMCPU pVCpu = VMMGetCpu0(pVM);
+
     LogFlow(("TRPMGCHyperReturnToHost: rc=%Rrc\n", rc));
     TRPMResetTrap(pVM);
-    CPUMHyperSetCtxCore(pVM, NULL);
+    CPUMHyperSetCtxCore(pVCpu, NULL);
     VMMGCGuestToHost(pVM, rc);
     AssertReleaseFailed();
 }
@@ -106,8 +108,9 @@ VMMRCDECL(void) TRPMGCHyperReturnToHost(PVM pVM, int rc)
  */
 VMMRCDECL(int) trpmRCGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 {
+    PVMCPU      pVCpu = VMMGetCpu0(pVM);
     uint16_t    cbIDT;
-    RTGCPTR     GCPtrIDT    = (RTGCPTR)CPUMGetGuestIDTR(pVM, &cbIDT);
+    RTGCPTR     GCPtrIDT    = (RTGCPTR)CPUMGetGuestIDTR(pVCpu, &cbIDT);
 #ifdef VBOX_STRICT
     RTGCPTR     GCPtrIDTEnd = (RTGCPTR)((RTGCUINTPTR)GCPtrIDT + cbIDT + 1);
 #endif
@@ -124,7 +127,7 @@ VMMRCDECL(int) trpmRCGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
         &&  !ASMBitTest(&pVM->trpm.s.au32IdtPatched[0], iGate)) /* Passthru gates need special attention too. */
     {
         uint32_t cb;
-        int rc = EMInterpretInstruction(pVM, pRegFrame, pvFault, &cb);
+        int rc = EMInterpretInstruction(pVM, pVCpu, pRegFrame, pvFault, &cb);
         if (RT_SUCCESS(rc) && cb)
         {
             uint32_t iGate1 = (offRange + cb - 1)/sizeof(VBOXIDTE);
@@ -167,6 +170,7 @@ VMMRCDECL(int) trpmRCGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
  */
 VMMRCDECL(int) trpmRCShadowIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 {
+    PVMCPU pVCpu = VMMGetCpu0(pVM);
     LogRel(("FATAL ERROR: trpmRCShadowIDTWriteHandler: eip=%08X pvFault=%RGv pvRange=%08X\r\n", pRegFrame->eip, pvFault, pvRange));
 
     /* If we ever get here, then the guest has executed an sidt instruction that we failed to patch. In theory this could be very bad, but
@@ -179,7 +183,7 @@ VMMRCDECL(int) trpmRCShadowIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
     {
         DISCPUSTATE Cpu;
         uint32_t    cbOp;
-        rc = EMInterpretDisasOneEx(pVM, (RTGCUINTPTR)PC, pRegFrame, &Cpu, &cbOp);
+        rc = EMInterpretDisasOneEx(pVM, pVCpu, (RTGCUINTPTR)PC, pRegFrame, &Cpu, &cbOp);
         if (rc == VINF_SUCCESS)
         {
             /* Just ignore the write. */

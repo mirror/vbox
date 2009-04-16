@@ -378,14 +378,18 @@ static DECLCALLBACK(int) dbgfR3BpSetInt3(PVM pVM, PCDBGFADDRESS pAddress, uint64
 static int dbgfR3BpInt3Arm(PVM pVM, PDBGFBP pBp)
 {
     /** @todo should actually use physical address here! */
+
+    /* @todo SMP support! */
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
     /*
      * Save current byte and write int3 instruction.
      */
-    int rc = MMR3ReadGCVirt(pVM, &pBp->u.Int3.bOrg, pBp->GCPtr, 1);
+    int rc = DBGFR3ReadGCVirt(pVM, pVCpu, &pBp->u.Int3.bOrg, pBp->GCPtr, 1);
     if (RT_SUCCESS(rc))
     {
         static const uint8_t s_bInt3 = 0xcc;
-        rc = MMR3WriteGCVirt(pVM, pBp->GCPtr, &s_bInt3, 1);
+        rc = DBGFR3WriteGCVirt(pVM, pVCpu,  pBp->GCPtr, &s_bInt3, 1);
     }
     return rc;
 }
@@ -401,14 +405,17 @@ static int dbgfR3BpInt3Arm(PVM pVM, PDBGFBP pBp)
  */
 static int dbgfR3BpInt3Disarm(PVM pVM, PDBGFBP pBp)
 {
+    /* @todo SMP support! */
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
     /*
      * Check that the current byte is the int3 instruction, and restore the original one.
      * We currently ignore invalid bytes.
      */
     uint8_t bCurrent;
-    int rc = MMR3ReadGCVirt(pVM, &bCurrent, pBp->GCPtr, 1);
+    int rc = DBGFR3ReadGCVirt(pVM, pVCpu, &bCurrent, pBp->GCPtr, 1);
     if (bCurrent == 0xcc)
-        rc = MMR3WriteGCVirt(pVM, pBp->GCPtr, &pBp->u.Int3.bOrg, 1);
+        rc = DBGFR3WriteGCVirt(pVM, pVCpu,  pBp->GCPtr, &pBp->u.Int3.bOrg, 1);
     return rc;
 }
 
@@ -562,8 +569,11 @@ static DECLCALLBACK(int) dbgfR3BpSetReg(PVM pVM, PCDBGFADDRESS pAddress, uint64_
  */
 static int dbgfR3BpRegArm(PVM pVM, PDBGFBP pBp)
 {
+    /* @todo SMP support! */
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
     Assert(pBp->fEnabled);
-    return CPUMRecalcHyperDRx(pVM);
+    return CPUMRecalcHyperDRx(pVCpu);
 }
 
 
@@ -577,8 +587,11 @@ static int dbgfR3BpRegArm(PVM pVM, PDBGFBP pBp)
  */
 static int dbgfR3BpRegDisarm(PVM pVM, PDBGFBP pBp)
 {
+    /* @todo SMP support! */
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
     Assert(!pBp->fEnabled);
-    return CPUMRecalcHyperDRx(pVM);
+    return CPUMRecalcHyperDRx(pVCpu);
 }
 
 

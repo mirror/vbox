@@ -51,6 +51,43 @@
 %endif
 
 struc CPUM
+    ;...
+    .ulOffCPUMCPU         resd    1
+    .fHostUseFlags        resd    1
+
+    ; CPUID eax=1
+    .CPUFeatures.edx      resd    1
+    .CPUFeatures.ecx      resd    1
+
+    ; CPUID eax=0x80000001
+    .CPUFeaturesExt.edx   resd    1
+    .CPUFeaturesExt.ecx   resd    1
+
+    .enmCPUVendor         resd    1
+
+    ; CR4 masks
+    .CR4.AndMask          resd    1
+    .CR4.OrMask           resd    1
+    ; entered rawmode?
+    .fRawEntered          resb    1
+%if RTHCPTR_CB == 8
+    .abPadding            resb    7
+%else
+    .abPadding            resb    3
+%endif
+
+    ; CPUID leafs
+    .aGuestCpuIdStd       resb    16*6
+    .aGuestCpuIdExt       resb    16*10
+    .aGuestCpuIdCentaur   resb    16*4
+    .GuestCpuIdDef        resb    16
+
+    alignb 64
+    ; CPUMCTX debug stuff...
+    .GuestEntry           resb   1024
+endstruc
+
+struc CPUMCPU
     ;
     ; Hypervisor Context.
     ;
@@ -149,51 +186,6 @@ struc CPUM
     .Hyper.trHid.u32Limit     resd    1
     .Hyper.trHid.Attr         resd    1
 
-    ;
-    ; Other stuff.
-    ;
-    alignb 64
-    ; hypervisor core context.
-    .pHyperCoreR3         RTR3PTR_RES   1
-    .pHyperCoreR0         RTR0PTR_RES   1
-    .pHyperCoreRC         RTRCPTR_RES   1
-    ;...
-    .ulOffCPUMCPU         resd    1
-    .fValidHiddenSelRegs  resd    1
-
-    ; CPUID eax=1
-    .CPUFeatures.edx      resd    1
-    .CPUFeatures.ecx      resd    1
-
-    ; CPUID eax=0x80000001
-    .CPUFeaturesExt.edx   resd    1
-    .CPUFeaturesExt.ecx   resd    1
-
-    .enmCPUVendor         resd    1
-
-    ; CR4 masks
-    .CR4.AndMask          resd    1
-    .CR4.OrMask           resd    1
-    ; entered rawmode?
-    .fRawEntered          resb    1
-%if RTHCPTR_CB == 8
-    .abPadding            resb    7
-%else
-    .abPadding            resb    3
-%endif
-
-    ; CPUID leafs
-    .aGuestCpuIdStd       resb    16*6
-    .aGuestCpuIdExt       resb    16*10
-    .aGuestCpuIdCentaur   resb    16*4
-    .GuestCpuIdDef        resb    16
-
-    alignb 64
-    ; CPUMCTX debug stuff...
-    .GuestEntry           resb   1024
-endstruc
-
-struc CPUMCPU
     ;
     ; Host context state
     ;
@@ -412,10 +404,26 @@ struc CPUMCPU
 
     .GuestMsr.au64            resq    64
 
+    ;
+    ; Other stuff.
+    ;
+    alignb 64
+    ; hypervisor core context.
+    .pHyperCoreR3         RTR3PTR_RES   1
+    .pHyperCoreR0         RTR0PTR_RES   1
+    .pHyperCoreRC         RTRCPTR_RES   1
+
     .fUseFlags            resd    1
     .fChanged             resd    1
     .ulOffCPUM            resd    1
     .u32RetCode           resd    1
+
+%if RTHCPTR_CB == 8
+    .abPadding2           resb    28
+%else
+    .abPadding2           resb    36
+%endif
+
 endstruc
 
 

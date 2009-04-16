@@ -395,17 +395,22 @@ VMMR3DECL(void) SELMR3Relocate(PVM pVM)
     PX86DESC paGdt = pVM->selm.s.paGdtR3;
     LogFlow(("SELMR3Relocate\n"));
 
-    /*
-     * Update GDTR and selector.
-     */
-    CPUMSetHyperGDTR(pVM, MMHyperR3ToRC(pVM, paGdt), SELM_GDT_ELEMENTS * sizeof(paGdt[0]) - 1);
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
 
-    /** @todo selector relocations should be a seperate operation? */
-    CPUMSetHyperCS(pVM, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS]);
-    CPUMSetHyperDS(pVM, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]);
-    CPUMSetHyperES(pVM, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]);
-    CPUMSetHyperSS(pVM, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]);
-    CPUMSetHyperTR(pVM, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]);
+        /*
+         * Update GDTR and selector.
+         */
+        CPUMSetHyperGDTR(pVCpu, MMHyperR3ToRC(pVM, paGdt), SELM_GDT_ELEMENTS * sizeof(paGdt[0]) - 1);
+
+        /** @todo selector relocations should be a seperate operation? */
+        CPUMSetHyperCS(pVCpu, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS]);
+        CPUMSetHyperDS(pVCpu, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]);
+        CPUMSetHyperES(pVCpu, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]);
+        CPUMSetHyperSS(pVCpu, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]);
+        CPUMSetHyperTR(pVCpu, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]);
+    }
 
     selmR3SetupHyperGDTSelectors(pVM);
 
@@ -414,8 +419,11 @@ VMMR3DECL(void) SELMR3Relocate(PVM pVM)
     /*
      * Update the TSSes.
      */
+    /* Only applies to raw mode which supports only 1 VCPU */
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
     /* Current TSS */
-    pVM->selm.s.Tss.cr3     = PGMGetHyperCR3(pVM);
+    pVM->selm.s.Tss.cr3     = PGMGetHyperCR3(pVCpu);
     pVM->selm.s.Tss.ss0     = pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS];
     pVM->selm.s.Tss.esp0    = VMMGetStackRC(pVM);
     pVM->selm.s.Tss.cs      = pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS];
@@ -424,7 +432,7 @@ VMMR3DECL(void) SELMR3Relocate(PVM pVM)
     pVM->selm.s.Tss.offIoBitmap = sizeof(VBOXTSS);
 
     /* trap 08 */
-    pVM->selm.s.TssTrap08.cr3    = PGMGetInterRCCR3(pVM);                   /* this should give use better survival chances. */
+    pVM->selm.s.TssTrap08.cr3    = PGMGetInterRCCR3(pVM, pVCpu);                   /* this should give use better survival chances. */
     pVM->selm.s.TssTrap08.ss0    = pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS];
     pVM->selm.s.TssTrap08.ss     = pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS];
     pVM->selm.s.TssTrap08.esp0   = VMMGetStackRC(pVM) - PAGE_SIZE / 2;  /* upper half can be analysed this way. */
@@ -749,6 +757,8 @@ static DECLCALLBACK(int) selmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
  */
 static DECLCALLBACK(int) selmR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
 {
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+
     LogFlow(("selmR3LoadDone:\n"));
 
     /*
@@ -761,12 +771,12 @@ static DECLCALLBACK(int) selmR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Do the syncing if we're in protected mode.
      */
-    if (PGMGetGuestMode(pVM) != PGMMODE_REAL)
+    if (PGMGetGuestMode(pVCpu) != PGMMODE_REAL)
     {
         VM_FF_SET(pVM, VM_FF_SELM_SYNC_GDT);
         VM_FF_SET(pVM, VM_FF_SELM_SYNC_LDT);
         VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
-        SELMR3UpdateFromCPUM(pVM);
+        SELMR3UpdateFromCPUM(pVM, pVCpu);
     }
 
     /*
@@ -785,10 +795,11 @@ static DECLCALLBACK(int) selmR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VMCPU to operate on.
  */
-VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
+VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
 {
-    int rc = VINF_SUCCESS;
+    int    rc    = VINF_SUCCESS;
 
     if (pVM->selm.s.fDisableMonitoring)
     {
@@ -821,7 +832,7 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
          * Get the GDTR and check if there is anything to do (there usually is).
          */
         VBOXGDTR    GDTR;
-        CPUMGetGuestGDTR(pVM, &GDTR);
+        CPUMGetGuestGDTR(pVCpu, &GDTR);
         if (GDTR.cbGdt < sizeof(X86DESC))
         {
             Log(("No GDT entries...\n"));
@@ -835,7 +846,7 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
          */
         RTUINT      cbEffLimit = GDTR.cbGdt;
         PX86DESC   pGDTE = &pVM->selm.s.paGdtR3[1];
-        rc = PGMPhysSimpleReadGCPtr(pVM, pGDTE, GDTR.pGdt + sizeof(X86DESC), cbEffLimit + 1 - sizeof(X86DESC));
+        rc = PGMPhysSimpleReadGCPtr(pVCpu, pGDTE, GDTR.pGdt + sizeof(X86DESC), cbEffLimit + 1 - sizeof(X86DESC));
         if (RT_FAILURE(rc))
         {
             /*
@@ -856,7 +867,7 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
             {
                 RTUINT cb = PAGE_SIZE - (GCPtrSrc & PAGE_OFFSET_MASK);
                 cb = RT_MIN(cb, cbLeft);
-                rc = PGMPhysSimpleReadGCPtr(pVM, pu8Dst, GCPtrSrc, cb);
+                rc = PGMPhysSimpleReadGCPtr(pVCpu, pu8Dst, GCPtrSrc, cb);
                 if (RT_SUCCESS(rc))
                 {
                     if (pu8DstInvalid != pu8Dst)
@@ -1064,7 +1075,7 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
      */
     if (VM_FF_ISSET(pVM, VM_FF_SELM_SYNC_TSS))
     {
-        SELMR3SyncTSS(pVM);
+        SELMR3SyncTSS(pVM, pVCpu);
     }
 
     /*
@@ -1092,11 +1103,11 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
         /*
          * First, determin the current LDT selector.
          */
-        RTSEL SelLdt = CPUMGetGuestLDTR(pVM);
+        RTSEL SelLdt = CPUMGetGuestLDTR(pVCpu);
         if ((SelLdt & X86_SEL_MASK) == 0)
         {
             /* ldtr = 0 - update hyper LDTR and deregister any active handler. */
-            CPUMSetHyperLDTR(pVM, 0);
+            CPUMSetHyperLDTR(pVCpu, 0);
 #ifdef SELM_TRACK_GUEST_LDT_CHANGES
             if (pVM->selm.s.GCPtrGuestLdt != RTRCPTR_MAX)
             {
@@ -1132,7 +1143,7 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
              * This is quite impossible, so we do as most people do when faced with
              * the impossible, we simply ignore it.
              */
-            CPUMSetHyperLDTR(pVM, 0);
+            CPUMSetHyperLDTR(pVCpu, 0);
 #ifdef SELM_TRACK_GUEST_LDT_CHANGES
             if (pVM->selm.s.GCPtrGuestLdt != RTRCPTR_MAX)
             {
@@ -1194,7 +1205,7 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
                     pVM->selm.s.GCPtrGuestLdt = GCPtrLdt;
                 else
                 {
-                    CPUMSetHyperLDTR(pVM, 0);
+                    CPUMSetHyperLDTR(pVCpu, 0);
                     STAM_PROFILE_STOP(&pVM->selm.s.StatUpdateFromCPUM, a);
                     return rc;
                 }
@@ -1233,7 +1244,7 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
         /*
          * Set Hyper LDTR and notify TRPM.
          */
-        CPUMSetHyperLDTR(pVM, SelLdt);
+        CPUMSetHyperLDTR(pVCpu, SelLdt);
 
         /*
          * Loop synchronising the LDT page by page.
@@ -1253,7 +1264,7 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
             unsigned  cbChunk = PAGE_SIZE - ((RTGCUINTPTR)GCPtrLdt & PAGE_OFFSET_MASK);
             if (cbChunk > cbLeft)
                 cbChunk = cbLeft;
-            rc = PGMPhysSimpleReadGCPtr(pVM, pShadowLDT, GCPtrLdt, cbChunk);
+            rc = PGMPhysSimpleReadGCPtr(pVCpu, pShadowLDT, GCPtrLdt, cbChunk);
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -1429,10 +1440,11 @@ static DECLCALLBACK(int) selmR3GuestTSSWriteHandler(PVM pVM, RTGCPTR GCPtr, void
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VMCPU to operate on.
  */
-VMMR3DECL(int) SELMR3SyncTSS(PVM pVM)
+VMMR3DECL(int) SELMR3SyncTSS(PVM pVM, PVMCPU pVCpu)
 {
-    int rc;
+    int    rc;
 
     if (pVM->selm.s.fDisableMonitoring)
     {
@@ -1452,7 +1464,7 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM)
      *       make sure cbTss is 0.
      */
     CPUMSELREGHID   trHid;
-    RTSEL           SelTss   = CPUMGetGuestTR(pVM, &trHid);
+    RTSEL           SelTss   = CPUMGetGuestTR(pVCpu, &trHid);
     RTGCPTR         GCPtrTss = trHid.u64Base;
     uint32_t        cbTss    = trHid.u32Limit;
     Assert(     (SelTss & X86_SEL_MASK)
@@ -1496,8 +1508,8 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM)
          * redirection bitmap.
          */
         VBOXTSS Tss;
-        uint32_t cr4 = CPUMGetGuestCR4(pVM);
-        rc = PGMPhysSimpleReadGCPtr(pVM, &Tss, GCPtrTss, RT_OFFSETOF(VBOXTSS, IntRedirBitmap));
+        uint32_t cr4 = CPUMGetGuestCR4(pVCpu);
+        rc = PGMPhysSimpleReadGCPtr(pVCpu, &Tss, GCPtrTss, RT_OFFSETOF(VBOXTSS, IntRedirBitmap));
         if (    !(cr4 & X86_CR4_VME)
             ||   (  VBOX_SUCCESS(rc)
                  && Tss.offIoBitmap < sizeof(VBOXTSS) /* too small */
@@ -1519,7 +1531,7 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM)
             pVM->selm.s.offGuestIoBitmap = Tss.offIoBitmap;
 
             uint32_t offRedirBitmap = Tss.offIoBitmap - sizeof(Tss.IntRedirBitmap);
-            rc = PGMPhysSimpleReadGCPtr(pVM, &pVM->selm.s.Tss.IntRedirBitmap,
+            rc = PGMPhysSimpleReadGCPtr(pVCpu, &pVM->selm.s.Tss.IntRedirBitmap,
                                         GCPtrTss + offRedirBitmap, sizeof(Tss.IntRedirBitmap));
             AssertRC(rc);
             /** @todo memset the bitmap on failure? */
@@ -1546,7 +1558,7 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM)
                 if ((ssr0 & ~1) != Tss.ss0 || espr0 != Tss.esp0)
                 {
                     RTGCPHYS GCPhys = NIL_RTGCPHYS;
-                    rc = PGMGstGetPage(pVM, GCPtrTss, NULL, &GCPhys); AssertRC(rc);
+                    rc = PGMGstGetPage(pVM, pVCpu, GCPtrTss, NULL, &GCPhys); AssertRC(rc);
                     Log(("SELMR3SyncTSS: Updating TSS ring 0 stack to %04X:%08X from %04X:%08X; TSS Phys=%VGp)\n",
                          Tss.ss0, Tss.esp0, (ssr0 & ~1), espr0,  GCPhys));
                     AssertMsg(ssr0 != Tss.ss0,
@@ -1636,11 +1648,13 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM)
 VMMR3DECL(int) SELMR3DebugCheck(PVM pVM)
 {
 #ifdef VBOX_STRICT
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+
     /*
      * Get GDTR and check for conflict.
      */
     VBOXGDTR  GDTR;
-    CPUMGetGuestGDTR(pVM, &GDTR);
+    CPUMGetGuestGDTR(pVCpu, &GDTR);
     if (GDTR.cbGdt == 0)
         return VINF_SUCCESS;
 
@@ -1659,7 +1673,7 @@ VMMR3DECL(int) SELMR3DebugCheck(PVM pVM)
     while (pGDTE < pGDTEEnd)
     {
         X86DESC    GDTEGuest;
-        int rc = PGMPhysSimpleReadGCPtr(pVM, &GDTEGuest, GCPtrGDTEGuest, sizeof(GDTEGuest));
+        int rc = PGMPhysSimpleReadGCPtr(pVCpu, &GDTEGuest, GCPtrGDTEGuest, sizeof(GDTEGuest));
         if (RT_SUCCESS(rc))
         {
             if (pGDTE->Gen.u1DescType || pGDTE->Gen.u4Type != X86_SEL_TYPE_SYS_LDT)
@@ -1688,7 +1702,7 @@ VMMR3DECL(int) SELMR3DebugCheck(PVM pVM)
     /*
      * LDT?
      */
-    RTSEL SelLdt = CPUMGetGuestLDTR(pVM);
+    RTSEL SelLdt = CPUMGetGuestLDTR(pVCpu);
     if ((SelLdt & X86_SEL_MASK) == 0)
         return VINF_SUCCESS;
     if (SelLdt > GDTR.cbGdt)
@@ -1697,7 +1711,7 @@ VMMR3DECL(int) SELMR3DebugCheck(PVM pVM)
         return VERR_INTERNAL_ERROR;
     }
     X86DESC    LDTDesc;
-    int rc = PGMPhysSimpleReadGCPtr(pVM, &LDTDesc, GDTR.pGdt + (SelLdt & X86_SEL_MASK), sizeof(LDTDesc));
+    int rc = PGMPhysSimpleReadGCPtr(pVCpu, &LDTDesc, GDTR.pGdt + (SelLdt & X86_SEL_MASK), sizeof(LDTDesc));
     if (RT_FAILURE(rc))
     {
         Log(("SELMR3DebugCheck: Failed to read LDT descriptor. rc=%d\n", rc));
@@ -1732,7 +1746,7 @@ VMMR3DECL(int) SELMR3DebugCheck(PVM pVM)
     while (pLDTE < pLDTEEnd)
     {
         X86DESC    LDTEGuest;
-        int rc = PGMPhysSimpleReadGCPtr(pVM, &LDTEGuest, GCPtrLDTEGuest, sizeof(LDTEGuest));
+        int rc = PGMPhysSimpleReadGCPtr(pVCpu, &LDTEGuest, GCPtrLDTEGuest, sizeof(LDTEGuest));
         if (RT_SUCCESS(rc))
         {
             if (   pLDTE->Gen.u16LimitLow != LDTEGuest.Gen.u16LimitLow
@@ -1772,6 +1786,8 @@ VMMR3DECL(int) SELMR3DebugCheck(PVM pVM)
 VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
 {
 #ifdef VBOX_STRICT
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+
     if (VM_FF_ISSET(pVM, VM_FF_SELM_SYNC_TSS))
         return true;
 
@@ -1779,7 +1795,7 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
      * Get TR and extract the basic info.
      */
     CPUMSELREGHID   trHid;
-    RTSEL           SelTss   = CPUMGetGuestTR(pVM, &trHid);
+    RTSEL           SelTss   = CPUMGetGuestTR(pVCpu, &trHid);
     RTGCPTR         GCPtrTss = trHid.u64Base;
     uint32_t        cbTss    = trHid.u32Limit;
     Assert(     (SelTss & X86_SEL_MASK)
@@ -1829,12 +1845,12 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
     if (cbMonitoredTss)
     {
         VBOXTSS Tss;
-        uint32_t cr4 = CPUMGetGuestCR4(pVM);
-        int rc = PGMPhysSimpleReadGCPtr(pVM, &Tss, GCPtrTss, RT_OFFSETOF(VBOXTSS, IntRedirBitmap));
+        uint32_t cr4 = CPUMGetGuestCR4(pVCpu);
+        int rc = PGMPhysSimpleReadGCPtr(pVCpu, &Tss, GCPtrTss, RT_OFFSETOF(VBOXTSS, IntRedirBitmap));
         AssertReturn(   rc == VINF_SUCCESS
                         /* Happends early in XP boot during page table switching. */
                      || (   (rc == VERR_PAGE_TABLE_NOT_PRESENT || rc == VERR_PAGE_NOT_PRESENT)
-                         && !(CPUMGetGuestEFlags(pVM) & X86_EFL_IF)),
+                         && !(CPUMGetGuestEFlags(pVCpu) & X86_EFL_IF)),
                      false);
         if (    !(cr4 & X86_CR4_VME)
             ||   (  VBOX_SUCCESS(rc)
@@ -1851,7 +1867,7 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
 
             /* check the bitmap */
             uint32_t offRedirBitmap = Tss.offIoBitmap - sizeof(Tss.IntRedirBitmap);
-            rc = PGMPhysSimpleReadGCPtr(pVM, &Tss.IntRedirBitmap,
+            rc = PGMPhysSimpleReadGCPtr(pVCpu, &Tss.IntRedirBitmap,
                                         GCPtrTss + offRedirBitmap, sizeof(Tss.IntRedirBitmap));
             AssertRCReturn(rc, false);
             AssertMsgReturn(!memcmp(&Tss.IntRedirBitmap[0], &pVM->selm.s.Tss.IntRedirBitmap[0], sizeof(Tss.IntRedirBitmap)),
@@ -1876,7 +1892,7 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
                 ||  Tss.ss0  != (pVM->selm.s.Tss.ss1 & ~1))
             {
                 RTGCPHYS GCPhys;
-                rc = PGMGstGetPage(pVM, GCPtrTss, NULL, &GCPhys); AssertRC(rc);
+                rc = PGMGstGetPage(pVM, pVCpu, GCPtrTss, NULL, &GCPhys); AssertRC(rc);
                 AssertMsgFailed(("TSS out of sync!! (%04X:%08X vs %04X:%08X (guest)) Tss=%RGv Phys=%RGp\n",
                                  (pVM->selm.s.Tss.ss1 & ~1), pVM->selm.s.Tss.esp1,
                                  Tss.ss1, Tss.esp1, GCPtrTss, GCPhys));
@@ -1916,9 +1932,11 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
  */
 VMMDECL(int) SELMGetLDTFromSel(PVM pVM, RTSEL SelLdt, PRTGCPTR ppvLdt, unsigned *pcbLimit)
 {
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+
     /* Get guest GDTR. */
     VBOXGDTR GDTR;
-    CPUMGetGuestGDTR(pVM, &GDTR);
+    CPUMGetGuestGDTR(pVCpu, &GDTR);
 
     /* Check selector TI and GDT limit. */
     if (    SelLdt & X86_SEL_LDT
@@ -1927,7 +1945,7 @@ VMMDECL(int) SELMGetLDTFromSel(PVM pVM, RTSEL SelLdt, PRTGCPTR ppvLdt, unsigned 
 
     /* Read descriptor from GC. */
     X86DESC Desc;
-    int rc = PGMPhysSimpleReadGCPtr(pVM, (void *)&Desc, (RTGCPTR)(GDTR.pGdt + (SelLdt & X86_SEL_MASK)), sizeof(Desc));
+    int rc = PGMPhysSimpleReadGCPtr(pVCpu, (void *)&Desc, (RTGCPTR)(GDTR.pGdt + (SelLdt & X86_SEL_MASK)), sizeof(Desc));
     if (RT_FAILURE(rc))
     {
         /* fatal */
@@ -1962,10 +1980,11 @@ VMMDECL(int) SELMGetLDTFromSel(PVM pVM, RTSEL SelLdt, PRTGCPTR ppvLdt, unsigned 
  * @returns VBox status code, see SELMR3GetSelectorInfo for details.
  *
  * @param   pVM         VM handle.
+ * @param   pVCpu       VMCPU handle.
  * @param   Sel         The selector to get info about.
  * @param   pSelInfo    Where to store the information.
  */
-static int selmR3GetSelectorInfo64(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
+static int selmR3GetSelectorInfo64(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PSELMSELINFO pSelInfo)
 {
     pSelInfo->fHyper = false;
 
@@ -1975,7 +1994,7 @@ static int selmR3GetSelectorInfo64(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
     X86DESC64   Desc;
     VBOXGDTR    Gdtr;
     RTGCPTR     GCPtrDesc;
-    CPUMGetGuestGDTR(pVM, &Gdtr);
+    CPUMGetGuestGDTR(pVCpu, &Gdtr);
     if (!(Sel & X86_SEL_LDT))
     {
         /* GDT */
@@ -1988,12 +2007,12 @@ static int selmR3GetSelectorInfo64(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
         /*
          * LDT - must locate the LDT first...
          */
-        RTSEL SelLdt = CPUMGetGuestLDTR(pVM);
+        RTSEL SelLdt = CPUMGetGuestLDTR(pVCpu);
         if (    (unsigned)(SelLdt & X86_SEL_MASK) < sizeof(X86DESC) /* the first selector is invalid, right? */
             ||  (unsigned)(SelLdt & X86_SEL_MASK) + sizeof(X86DESC) - 1 > (unsigned)Gdtr.cbGdt)
             return VERR_INVALID_SELECTOR;
         GCPtrDesc = Gdtr.pGdt + (SelLdt & X86_SEL_MASK);
-        int rc = PGMPhysSimpleReadGCPtr(pVM, &Desc, GCPtrDesc, sizeof(Desc));
+        int rc = PGMPhysSimpleReadGCPtr(pVCpu, &Desc, GCPtrDesc, sizeof(Desc));
         if (RT_FAILURE(rc))
             return rc;
 
@@ -2016,7 +2035,7 @@ static int selmR3GetSelectorInfo64(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
     }
 
     /* read the descriptor. */
-    int rc = PGMPhysSimpleReadGCPtr(pVM, &Desc, GCPtrDesc, sizeof(Desc));
+    int rc = PGMPhysSimpleReadGCPtr(pVCpu, &Desc, GCPtrDesc, sizeof(Desc));
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2043,10 +2062,11 @@ static int selmR3GetSelectorInfo64(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
  * @returns VBox status code, see SELMR3GetSelectorInfo for details.
  *
  * @param   pVM         VM handle.
+ * @param   pVCpu       VMCPU handle.
  * @param   Sel         The selector to get info about.
  * @param   pSelInfo    Where to store the information.
  */
-static int selmR3GetSelectorInfo32(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
+static int selmR3GetSelectorInfo32(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PSELMSELINFO pSelInfo)
 {
     /*
      * Read the descriptor entry
@@ -2066,7 +2086,7 @@ static int selmR3GetSelectorInfo32(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
         pSelInfo->fHyper = true;
         Desc = pVM->selm.s.paGdtR3[Sel >> X86_SEL_SHIFT];
     }
-    else if (CPUMIsGuestInProtectedMode(pVM))
+    else if (CPUMIsGuestInProtectedMode(pVCpu))
     {
         /*
          * Read it from the guest descriptor table.
@@ -2075,7 +2095,7 @@ static int selmR3GetSelectorInfo32(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
 
         VBOXGDTR    Gdtr;
         RTGCPTR     GCPtrDesc;
-        CPUMGetGuestGDTR(pVM, &Gdtr);
+        CPUMGetGuestGDTR(pVCpu, &Gdtr);
         if (!(Sel & X86_SEL_LDT))
         {
             /* GDT */
@@ -2088,12 +2108,12 @@ static int selmR3GetSelectorInfo32(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
             /*
              * LDT - must locate the LDT first...
              */
-            RTSEL SelLdt = CPUMGetGuestLDTR(pVM);
+            RTSEL SelLdt = CPUMGetGuestLDTR(pVCpu);
             if (    (unsigned)(SelLdt & X86_SEL_MASK) < sizeof(X86DESC) /* the first selector is invalid, right? */
                 ||  (unsigned)(SelLdt & X86_SEL_MASK) + sizeof(X86DESC) - 1 > (unsigned)Gdtr.cbGdt)
                 return VERR_INVALID_SELECTOR;
             GCPtrDesc = Gdtr.pGdt + (SelLdt & X86_SEL_MASK);
-            int rc = PGMPhysSimpleReadGCPtr(pVM, &Desc, GCPtrDesc, sizeof(Desc));
+            int rc = PGMPhysSimpleReadGCPtr(pVCpu, &Desc, GCPtrDesc, sizeof(Desc));
             if (RT_FAILURE(rc))
                 return rc;
 
@@ -2116,7 +2136,7 @@ static int selmR3GetSelectorInfo32(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
         }
 
         /* read the descriptor. */
-        int rc = PGMPhysSimpleReadGCPtr(pVM, &Desc, GCPtrDesc, sizeof(Desc));
+        int rc = PGMPhysSimpleReadGCPtr(pVCpu, &Desc, GCPtrDesc, sizeof(Desc));
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -2165,12 +2185,12 @@ static int selmR3GetSelectorInfo32(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
  * @param   Sel         The selector to get info about.
  * @param   pSelInfo    Where to store the information.
  */
-VMMR3DECL(int) SELMR3GetSelectorInfo(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
+VMMR3DECL(int) SELMR3GetSelectorInfo(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PSELMSELINFO pSelInfo)
 {
     AssertPtr(pSelInfo);
-    if (CPUMIsGuestInLongMode(pVM))
-        return selmR3GetSelectorInfo64(pVM, Sel, pSelInfo);
-    return selmR3GetSelectorInfo32(pVM, Sel, pSelInfo);
+    if (CPUMIsGuestInLongMode(pVCpu))
+        return selmR3GetSelectorInfo64(pVM, pVCpu, Sel, pSelInfo);
+    return selmR3GetSelectorInfo32(pVM, pVCpu, Sel, pSelInfo);
 }
 
 
@@ -2386,8 +2406,11 @@ static DECLCALLBACK(void) selmR3InfoGdt(PVM pVM, PCDBGFINFOHLP pHlp, const char 
  */
 static DECLCALLBACK(void) selmR3InfoGdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    /** @todo SMP support! */
+    PVMCPU      pVCpu = &pVM->aCpus[0];
+
     VBOXGDTR    GDTR;
-    CPUMGetGuestGDTR(pVM, &GDTR);
+    CPUMGetGuestGDTR(pVCpu, &GDTR);
     RTGCPTR     GCPtrGDT = GDTR.pGdt;
     unsigned    cGDTs = ((unsigned)GDTR.cbGdt + 1) / sizeof(X86DESC);
 
@@ -2395,7 +2418,7 @@ static DECLCALLBACK(void) selmR3InfoGdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
     for (unsigned iGDT = 0; iGDT < cGDTs; iGDT++, GCPtrGDT += sizeof(X86DESC))
     {
         X86DESC GDTE;
-        int rc = PGMPhysSimpleReadGCPtr(pVM, &GDTE, GCPtrGDT, sizeof(GDTE));
+        int rc = PGMPhysSimpleReadGCPtr(pVCpu, &GDTE, GCPtrGDT, sizeof(GDTE));
         if (RT_SUCCESS(rc))
         {
             if (GDTE.Gen.u1Present)
@@ -2449,7 +2472,10 @@ static DECLCALLBACK(void) selmR3InfoLdt(PVM pVM, PCDBGFINFOHLP pHlp, const char 
  */
 static DECLCALLBACK(void) selmR3InfoLdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    RTSEL SelLdt = CPUMGetGuestLDTR(pVM);
+    /** @todo SMP support! */
+    PVMCPU      pVCpu = &pVM->aCpus[0];
+
+    RTSEL SelLdt = CPUMGetGuestLDTR(pVCpu);
     if (!(SelLdt & X86_SEL_MASK))
     {
         pHlp->pfnPrintf(pHlp, "Guest LDT (Sel=%x): Null-Selector\n", SelLdt);
@@ -2470,7 +2496,7 @@ static DECLCALLBACK(void) selmR3InfoLdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
     for (unsigned iLdt = 0; iLdt < cLdts; iLdt++, GCPtrLdt += sizeof(X86DESC))
     {
         X86DESC LdtE;
-        int rc = PGMPhysSimpleReadGCPtr(pVM, &LdtE, GCPtrLdt, sizeof(LdtE));
+        int rc = PGMPhysSimpleReadGCPtr(pVCpu, &LdtE, GCPtrLdt, sizeof(LdtE));
         if (RT_SUCCESS(rc))
         {
             if (LdtE.Gen.u1Present)

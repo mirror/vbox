@@ -403,7 +403,7 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PPATC
 /* Read bytes and check for overwritten instructions. */
 static int patmPatchReadBytes(PVM pVM, uint8_t *pDest, RTRCPTR pSrc, uint32_t cb)
 {
-    int rc = PGMPhysSimpleReadGCPtr(pVM, pDest, pSrc, cb);
+    int rc = PGMPhysSimpleReadGCPtr(&pVM->aCpus[0], pDest, pSrc, cb);
     AssertRCReturn(rc, rc);
     /*
      * Could be patched already; make sure this is checked!

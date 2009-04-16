@@ -242,9 +242,12 @@ VMMR3DECL(int) PGMR3DbgReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t 
     AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
+    /* @todo SMP support! */
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
 /** @todo deal with HMA */
     /* try simple first. */
-    int rc = PGMPhysSimpleReadGCPtr(pVM, pvDst, GCPtrSrc, cb);
+    int rc = PGMPhysSimpleReadGCPtr(pVCpu, pvDst, GCPtrSrc, cb);
     if (RT_SUCCESS(rc) || !pcbRead)
         return rc;
 
@@ -258,7 +261,7 @@ VMMR3DECL(int) PGMR3DbgReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t 
         if (cbChunk > cb)
             cbChunk = cb;
 
-        rc = PGMPhysSimpleReadGCPtr(pVM, pvDst, GCPtrSrc, cbChunk);
+        rc = PGMPhysSimpleReadGCPtr(pVCpu, pvDst, GCPtrSrc, cbChunk);
 
         /* advance */
         if (RT_FAILURE(rc))
@@ -294,9 +297,12 @@ VMMR3DECL(int) PGMR3DbgWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, void const *pvSrc, 
     AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
+    /* @todo SMP support! */
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
 /** @todo deal with HMA */
     /* try simple first. */
-    int rc = PGMPhysSimpleWriteGCPtr(pVM, GCPtrDst, pvSrc, cb);
+    int rc = PGMPhysSimpleWriteGCPtr(pVCpu, GCPtrDst, pvSrc, cb);
     if (RT_SUCCESS(rc) || !pcbWritten)
         return rc;
 
@@ -310,7 +316,7 @@ VMMR3DECL(int) PGMR3DbgWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, void const *pvSrc, 
         if (cbChunk > cb)
             cbChunk = cb;
 
-        rc = PGMPhysSimpleWriteGCPtr(pVM, GCPtrDst, pvSrc, cbChunk);
+        rc = PGMPhysSimpleWriteGCPtr(pVCpu, GCPtrDst, pvSrc, cbChunk);
 
         /* advance */
         if (RT_FAILURE(rc))
@@ -561,6 +567,9 @@ VMMR3DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, 
  */
 VMMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, RTGCPTR GCPtr, RTGCPTR cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PRTGCUINTPTR pGCPtrHit)
 {
+    /** @todo SMP support! */
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
     /*
      * Validate and adjust the input a bit.
      */
@@ -592,7 +601,7 @@ VMMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, RTGCPTR GCPtr, RTGCPTR cbRange, cons
     while (cPages-- > 0)
     {
         RTGCPHYS GCPhys;
-        int rc = PGMPhysGCPtr2GCPhys(pVM, GCPtr, &GCPhys);
+        int rc = PGMPhysGCPtr2GCPhys(pVCpu, GCPtr, &GCPhys);
         if (RT_SUCCESS(rc))
         {
             PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhys);

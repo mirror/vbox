@@ -95,6 +95,7 @@ int main()
     GEN_CHECK_SIZE(CFGM);
 
     GEN_CHECK_SIZE(CPUM); // has .mac
+    GEN_CHECK_SIZE(CPUMCPU); // has .mac
     GEN_CHECK_SIZE(CPUMHOSTCTX);
     GEN_CHECK_SIZE(CPUMCTX);
     GEN_CHECK_SIZE(CPUMCTXMSR);
@@ -131,16 +132,16 @@ int main()
 
     GEN_CHECK_SIZE(EM);
     GEN_CHECK_OFF(EM, offVM);
-    GEN_CHECK_OFF(EM, pCtx);
-    GEN_CHECK_OFF(EM, enmState);
-    GEN_CHECK_OFF(EM, fForceRAW);
-    GEN_CHECK_OFF(EM, u.achPaddingFatalLongJump);
-    GEN_CHECK_OFF(EM, StatForcedActions);
-    GEN_CHECK_OFF(EM, StatTotalClis);
-    GEN_CHECK_OFF(EM, pStatsR3);
-    GEN_CHECK_OFF(EM, pStatsR0);
-    GEN_CHECK_OFF(EM, pStatsRC);
-    GEN_CHECK_OFF(EM, pCliStatTree);
+    GEN_CHECK_OFF(EMCPU, pCtx);
+    GEN_CHECK_OFF(EMCPU, enmState);
+    GEN_CHECK_OFF(EMCPU, fForceRAW);
+    GEN_CHECK_OFF(EMCPU, u.achPaddingFatalLongJump);
+    GEN_CHECK_OFF(EMCPU, StatForcedActions);
+    GEN_CHECK_OFF(EMCPU, StatTotalClis);
+    GEN_CHECK_OFF(EMCPU, pStatsR3);
+    GEN_CHECK_OFF(EMCPU, pStatsR0);
+    GEN_CHECK_OFF(EMCPU, pStatsRC);
+    GEN_CHECK_OFF(EMCPU, pCliStatTree);
 
     GEN_CHECK_SIZE(IOM);
     GEN_CHECK_OFF(IOM, pTreesRC);
@@ -406,59 +407,59 @@ int main()
     GEN_CHECK_OFF(PGM, paDynPageMap32BitPTEsGC);
     GEN_CHECK_OFF(PGM, paDynPageMapPaePTEsGC);
     GEN_CHECK_OFF(PGM, enmHostMode);
-    GEN_CHECK_OFF(PGM, enmShadowMode);
-    GEN_CHECK_OFF(PGM, enmGuestMode);
-    GEN_CHECK_OFF(PGM, GCPhysCR3);
+    GEN_CHECK_OFF(PGMCPU, enmShadowMode);
+    GEN_CHECK_OFF(PGMCPU, enmGuestMode);
+    GEN_CHECK_OFF(PGMCPU, GCPhysCR3);
     GEN_CHECK_OFF(PGM, GCPtrCR3Mapping);
-    GEN_CHECK_OFF(PGM, pGst32BitPdR3);
+    GEN_CHECK_OFF(PGMCPU, pGst32BitPdR3);
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    GEN_CHECK_OFF(PGM, pGst32BitPdR0);
+    GEN_CHECK_OFF(PGMCPU, pGst32BitPdR0);
 #endif
-    GEN_CHECK_OFF(PGM, pGst32BitPdRC);
-    GEN_CHECK_OFF(PGM, pGstPaePdptR3);
+    GEN_CHECK_OFF(PGMCPU, pGst32BitPdRC);
+    GEN_CHECK_OFF(PGMCPU, pGstPaePdptR3);
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    GEN_CHECK_OFF(PGM, pGstPaePdptR0);
+    GEN_CHECK_OFF(PGMCPU, pGstPaePdptR0);
 #endif
-    GEN_CHECK_OFF(PGM, pGstPaePdptRC);
-    GEN_CHECK_OFF(PGM, apGstPaePDsR3);
+    GEN_CHECK_OFF(PGMCPU, pGstPaePdptRC);
+    GEN_CHECK_OFF(PGMCPU, apGstPaePDsR3);
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    GEN_CHECK_OFF(PGM, apGstPaePDsR0);
+    GEN_CHECK_OFF(PGMCPU, apGstPaePDsR0);
 #endif
-    GEN_CHECK_OFF(PGM, apGstPaePDsRC);
-    GEN_CHECK_OFF(PGM, aGCPhysGstPaePDs);
-    GEN_CHECK_OFF(PGM, aGCPhysGstPaePDsMonitored);
-    GEN_CHECK_OFF(PGM, pShwPageCR3R3);
-    GEN_CHECK_OFF(PGM, pShwPageCR3R0);
-    GEN_CHECK_OFF(PGM, pShwPageCR3RC);
-    GEN_CHECK_OFF(PGM, pfnR3ShwRelocate);
-    GEN_CHECK_OFF(PGM, pfnR3ShwExit);
-    GEN_CHECK_OFF(PGM, pfnR3ShwGetPage);
-    GEN_CHECK_OFF(PGM, pfnR3ShwModifyPage);
-    GEN_CHECK_OFF(PGM, pfnRCShwGetPage);
-    GEN_CHECK_OFF(PGM, pfnRCShwModifyPage);
-    GEN_CHECK_OFF(PGM, pfnR3GstRelocate);
-    GEN_CHECK_OFF(PGM, pfnR3GstExit);
-    GEN_CHECK_OFF(PGM, pfnR3BthMapCR3);
-    GEN_CHECK_OFF(PGM, pfnR3BthUnmapCR3);
-    GEN_CHECK_OFF(PGM, pfnR3GstGetPage);
-    GEN_CHECK_OFF(PGM, pfnR3GstModifyPage);
-    GEN_CHECK_OFF(PGM, pfnR3GstGetPDE);
-    GEN_CHECK_OFF(PGM, pfnRCGstGetPage);
-    GEN_CHECK_OFF(PGM, pfnRCGstModifyPage);
-    GEN_CHECK_OFF(PGM, pfnRCGstGetPDE);
-    GEN_CHECK_OFF(PGM, pfnR3BthRelocate);
-    GEN_CHECK_OFF(PGM, pfnR3BthSyncCR3);
-    GEN_CHECK_OFF(PGM, pfnR3BthInvalidatePage);
-    GEN_CHECK_OFF(PGM, pfnR3BthSyncPage);
-    GEN_CHECK_OFF(PGM, pfnR3BthPrefetchPage);
-    GEN_CHECK_OFF(PGM, pfnR3BthVerifyAccessSyncPage);
-    GEN_CHECK_OFF(PGM, pfnR3BthAssertCR3);
-    GEN_CHECK_OFF(PGM, pfnRCBthTrap0eHandler);
-    GEN_CHECK_OFF(PGM, pfnRCBthInvalidatePage);
-    GEN_CHECK_OFF(PGM, pfnRCBthSyncPage);
-    GEN_CHECK_OFF(PGM, pfnRCBthPrefetchPage);
-    GEN_CHECK_OFF(PGM, pfnRCBthVerifyAccessSyncPage);
-    GEN_CHECK_OFF(PGM, pfnRCBthAssertCR3);
+    GEN_CHECK_OFF(PGMCPU, apGstPaePDsRC);
+    GEN_CHECK_OFF(PGMCPU, aGCPhysGstPaePDs);
+    GEN_CHECK_OFF(PGMCPU, aGCPhysGstPaePDsMonitored);
+    GEN_CHECK_OFF(PGMCPU, pShwPageCR3R3);
+    GEN_CHECK_OFF(PGMCPU, pShwPageCR3R0);
+    GEN_CHECK_OFF(PGMCPU, pShwPageCR3RC);
+    GEN_CHECK_OFF(PGMCPU, pfnR3ShwRelocate);
+    GEN_CHECK_OFF(PGMCPU, pfnR3ShwExit);
+    GEN_CHECK_OFF(PGMCPU, pfnR3ShwGetPage);
+    GEN_CHECK_OFF(PGMCPU, pfnR3ShwModifyPage);
+    GEN_CHECK_OFF(PGMCPU, pfnRCShwGetPage);
+    GEN_CHECK_OFF(PGMCPU, pfnRCShwModifyPage);
+    GEN_CHECK_OFF(PGMCPU, pfnR3GstRelocate);
+    GEN_CHECK_OFF(PGMCPU, pfnR3GstExit);
+    GEN_CHECK_OFF(PGMCPU, pfnR3BthMapCR3);
+    GEN_CHECK_OFF(PGMCPU, pfnR3BthUnmapCR3);
+    GEN_CHECK_OFF(PGMCPU, pfnR3GstGetPage);
+    GEN_CHECK_OFF(PGMCPU, pfnR3GstModifyPage);
+    GEN_CHECK_OFF(PGMCPU, pfnR3GstGetPDE);
+    GEN_CHECK_OFF(PGMCPU, pfnRCGstGetPage);
+    GEN_CHECK_OFF(PGMCPU, pfnRCGstModifyPage);
+    GEN_CHECK_OFF(PGMCPU, pfnRCGstGetPDE);
+    GEN_CHECK_OFF(PGMCPU, pfnR3BthRelocate);
+    GEN_CHECK_OFF(PGMCPU, pfnR3BthSyncCR3);
+    GEN_CHECK_OFF(PGMCPU, pfnR3BthInvalidatePage);
+    GEN_CHECK_OFF(PGMCPU, pfnR3BthSyncPage);
+    GEN_CHECK_OFF(PGMCPU, pfnR3BthPrefetchPage);
+    GEN_CHECK_OFF(PGMCPU, pfnR3BthVerifyAccessSyncPage);
+    GEN_CHECK_OFF(PGMCPU, pfnR3BthAssertCR3);
+    GEN_CHECK_OFF(PGMCPU, pfnRCBthTrap0eHandler);
+    GEN_CHECK_OFF(PGMCPU, pfnRCBthInvalidatePage);
+    GEN_CHECK_OFF(PGMCPU, pfnRCBthSyncPage);
+    GEN_CHECK_OFF(PGMCPU, pfnRCBthPrefetchPage);
+    GEN_CHECK_OFF(PGMCPU, pfnRCBthVerifyAccessSyncPage);
+    GEN_CHECK_OFF(PGMCPU, pfnRCBthAssertCR3);
     GEN_CHECK_OFF(PGM, pRamRangesR3);
     GEN_CHECK_OFF(PGM, pRamRangesR0);
     GEN_CHECK_OFF(PGM, pRamRangesRC);
@@ -490,9 +491,9 @@ int main()
     GEN_CHECK_OFF(PGM, aHCPhysDynPageMapCache);
     GEN_CHECK_OFF(PGM, pvR0DynMapUsed);
     GEN_CHECK_OFF(PGM, GCPhys4MBPSEMask);
-    GEN_CHECK_OFF(PGM, GCPhysA20Mask);
-    GEN_CHECK_OFF(PGM, fA20Enabled);
-    GEN_CHECK_OFF(PGM, fSyncFlags);
+    GEN_CHECK_OFF(PGMCPU, GCPhysA20Mask);
+    GEN_CHECK_OFF(PGMCPU, fA20Enabled);
+    GEN_CHECK_OFF(PGMCPU, fSyncFlags);
     GEN_CHECK_OFF(PGM, CritSect);
     GEN_CHECK_OFF(PGM, pPoolR3);
     GEN_CHECK_OFF(PGM, pPoolR0);
@@ -529,10 +530,10 @@ int main()
     GEN_CHECK_OFF(PGM, cPrivatePages);
     GEN_CHECK_OFF(PGM, cSharedPages);
     GEN_CHECK_OFF(PGM, cZeroPages);
-    GEN_CHECK_OFF(PGM, cGuestModeChanges);
+    GEN_CHECK_OFF(PGMCPU, cGuestModeChanges);
 #ifdef VBOX_WITH_STATISTICS
-    GEN_CHECK_OFF(PGM, pStatTrap0eAttributionR0);
-    GEN_CHECK_OFF(PGM, pStatTrap0eAttributionRC);
+    GEN_CHECK_OFF(PGMCPU, pStatTrap0eAttributionR0);
+    GEN_CHECK_OFF(PGMCPU, pStatTrap0eAttributionRC);
 #endif
 
     GEN_CHECK_SIZE(PGMMAPPING);

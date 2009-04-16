@@ -62,8 +62,11 @@ VMMR3DECL(int) DBGFR3AddrFromSelOff(PVM pVM, PDBGFADDRESS pAddress, RTSEL Sel, R
     pAddress->off = off;
     if (Sel != DBGF_SEL_FLAT)
     {
+        /* @todo SMP support!! */
+        PVMCPU pVCpu = &pVM->aCpus[0];
+
         SELMSELINFO SelInfo;
-        int rc = SELMR3GetSelectorInfo(pVM, Sel, &SelInfo);
+        int rc = SELMR3GetSelectorInfo(pVM, pVCpu, Sel, &SelInfo);
         if (RT_FAILURE(rc))
             return rc;
 

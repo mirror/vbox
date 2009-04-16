@@ -72,7 +72,7 @@ __BEGIN_DECLS
  * @returns boolean
  * @param   pCtx        CPU context
  */
-#define HWACCMCanEmulateIoBlock(pVM)       (!CPUMIsGuestInPagedProtectedMode(pVM))
+#define HWACCMCanEmulateIoBlock(pVCpu)     (!CPUMIsGuestInPagedProtectedMode(pVCpu))
 #define HWACCMCanEmulateIoBlockEx(pCtx)    (!CPUMIsGuestInPagedProtectedModeEx(pCtx))
 
 VMMDECL(int)    HWACCMInvalidatePage(PVM pVM, RTGCPTR GCVirt);
@@ -126,7 +126,7 @@ VMMR3DECL(void) HWACCMR3NotifyEmulated(PVMCPU pVCpu);
 VMMR3DECL(bool) HWACCMR3IsActive(PVM pVM);
 VMMR3DECL(bool) HWACCMR3IsNestedPagingActive(PVM pVM);
 VMMR3DECL(bool) HWACCMR3IsAllowed(PVM pVM);
-VMMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PGMMODE enmShadowMode, PGMMODE enmGuestMode);
+VMMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode);
 VMMR3DECL(bool) HWACCMR3IsVPIDActive(PVM pVM);
 VMMR3DECL(int)  HWACCMR3InjectNMI(PVM pVM);
 VMMR3DECL(int)  HWACCMR3EmulateIoBlock(PVM pVM, PCPUMCTX pCtx);

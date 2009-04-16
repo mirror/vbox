@@ -25,18 +25,18 @@
 *******************************************************************************/
 __BEGIN_DECLS
 PGM_BTH_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR0);
-PGM_BTH_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3);
-PGM_BTH_DECL(int, Relocate)(PVM pVM, RTGCPTR offDelta);
+PGM_BTH_DECL(int, Enter)(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
+PGM_BTH_DECL(int, Relocate)(PVM pVM, PVMCPU pVCpu, RTGCPTR offDelta);
 
-PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault);
-PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal);
-PGM_BTH_DECL(int, SyncPage)(PVM pVM, X86PDE PdeSrc, RTGCPTR GCPtrPage, unsigned cPages, unsigned uError);
-PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCPTR Addr, unsigned fPage, unsigned uError);
-PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCPTR GCPtrPage);
-PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCPTR GCPtrPage);
-PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr = 0, RTGCPTR cb = ~(RTGCPTR)0);
-PGM_BTH_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3);
-PGM_BTH_DECL(int, UnmapCR3)(PVM pVM);
+PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault);
+PGM_BTH_DECL(int, SyncCR3)(PVM pVM, PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal);
+PGM_BTH_DECL(int, SyncPage)(PVM pVM, PVMCPU pVCpu, X86PDE PdeSrc, RTGCPTR GCPtrPage, unsigned cPages, unsigned uError);
+PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, PVMCPU pVCpu, RTGCPTR Addr, unsigned fPage, unsigned uError);
+PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrPage);
+PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrPage);
+PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr = 0, RTGCPTR cb = ~(RTGCPTR)0);
+PGM_BTH_DECL(int, MapCR3)(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
+PGM_BTH_DECL(int, UnmapCR3)(PVM pVM, PVMCPU pVCpu);
 __END_DECLS
 
 
@@ -125,9 +125,10 @@ PGM_BTH_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
  *
  * @returns VBox status code.
  * @param   pVM         VM handle.
+ * @param   pVCpu       The VMCPU to operate on.
  * @param   GCPhysCR3   The physical address from the CR3 register.
  */
-PGM_BTH_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3)
+PGM_BTH_DECL(int, Enter)(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
 {
     /* Here we deal with allocation of the root shadow page table for real and protected mode during mode switches;
      * Other modes rely on MapCR3/UnmapCR3 to setup the shadow root page tables.
@@ -144,29 +145,29 @@ PGM_BTH_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3)
      */
     /* Free the previous root mapping if still active. */
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
-    if (pVM->pgm.s.CTX_SUFF(pShwPageCR3))
+    if (pVCpu->pgm.s.CTX_SUFF(pShwPageCR3))
     {
-        Assert(pVM->pgm.s.pShwPageCR3R3->enmKind != PGMPOOLKIND_FREE);
+        Assert(pVCpu->pgm.s.pShwPageCR3R3->enmKind != PGMPOOLKIND_FREE);
 
         /* Mark the page as unlocked; allow flushing again. */
-        pgmPoolUnlockPage(pPool, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+        pgmPoolUnlockPage(pPool, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
 
         /* Remove the hypervisor mappings from the shadow page table. */
-        pgmMapDeactivateCR3(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+        pgmMapDeactivateCR3(pVM, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
 
-        pgmPoolFreeByPage(pPool, pVM->pgm.s.pShwPageCR3R3, pVM->pgm.s.iShwUser, pVM->pgm.s.iShwUserTable);
-        pVM->pgm.s.pShwPageCR3R3 = 0;
-        pVM->pgm.s.pShwPageCR3RC = 0;
-        pVM->pgm.s.pShwPageCR3R0 = 0;
-        pVM->pgm.s.iShwUser      = 0;
-        pVM->pgm.s.iShwUserTable = 0;
+        pgmPoolFreeByPage(pPool, pVCpu->pgm.s.pShwPageCR3R3, pVCpu->pgm.s.iShwUser, pVCpu->pgm.s.iShwUserTable);
+        pVCpu->pgm.s.pShwPageCR3R3 = 0;
+        pVCpu->pgm.s.pShwPageCR3RC = 0;
+        pVCpu->pgm.s.pShwPageCR3R0 = 0;
+        pVCpu->pgm.s.iShwUser      = 0;
+        pVCpu->pgm.s.iShwUserTable = 0;
     }
 
     /* contruct a fake address */
     GCPhysCR3 = RT_BIT_64(63);
-    pVM->pgm.s.iShwUser      = SHW_POOL_ROOT_IDX;
-    pVM->pgm.s.iShwUserTable = GCPhysCR3 >> PAGE_SHIFT;
-    int rc = pgmPoolAlloc(pVM, GCPhysCR3, BTH_PGMPOOLKIND_ROOT, pVM->pgm.s.iShwUser, pVM->pgm.s.iShwUserTable, &pVM->pgm.s.pShwPageCR3R3);
+    pVCpu->pgm.s.iShwUser      = SHW_POOL_ROOT_IDX;
+    pVCpu->pgm.s.iShwUserTable = GCPhysCR3 >> PAGE_SHIFT;
+    int rc = pgmPoolAlloc(pVM, GCPhysCR3, BTH_PGMPOOLKIND_ROOT, pVCpu->pgm.s.iShwUser, pVCpu->pgm.s.iShwUserTable, &pVCpu->pgm.s.pShwPageCR3R3);
     if (rc == VERR_PGM_POOL_FLUSHED)
     {
         Log(("Bth-Enter: PGM pool flushed -> signal sync cr3\n"));
@@ -176,16 +177,16 @@ PGM_BTH_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3)
     AssertRCReturn(rc, rc);
 
     /* Mark the page as locked; disallow flushing. */
-    pgmPoolLockPage(pPool, pVM->pgm.s.pShwPageCR3R3);
+    pgmPoolLockPage(pPool, pVCpu->pgm.s.pShwPageCR3R3);
 
-    pVM->pgm.s.pShwPageCR3R0 = MMHyperCCToR0(pVM, pVM->pgm.s.pShwPageCR3R3);
-    pVM->pgm.s.pShwPageCR3RC = MMHyperCCToRC(pVM, pVM->pgm.s.pShwPageCR3R3);
+    pVCpu->pgm.s.pShwPageCR3R0 = MMHyperCCToR0(pVM, pVCpu->pgm.s.pShwPageCR3R3);
+    pVCpu->pgm.s.pShwPageCR3RC = MMHyperCCToRC(pVM, pVCpu->pgm.s.pShwPageCR3R3);
 
     /* Set the current hypervisor CR3. */
-    CPUMSetHyperCR3(pVM, PGMGetHyperCR3(pVM));
+    CPUMSetHyperCR3(pVCpu, PGMGetHyperCR3(pVCpu));
 
     /* Apply all hypervisor mappings to the new CR3. */
-    return pgmMapActivateCR3(pVM, pVM->pgm.s.CTX_SUFF(pShwPageCR3));
+    return pgmMapActivateCR3(pVM, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
 #else
     return VINF_SUCCESS;
 #endif
@@ -197,9 +198,10 @@ PGM_BTH_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3)
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU to operate on.
  * @param   offDelta    The reloation offset.
  */
-PGM_BTH_DECL(int, Relocate)(PVM pVM, RTGCPTR offDelta)
+PGM_BTH_DECL(int, Relocate)(PVM pVM, PVMCPU pVCpu, RTGCPTR offDelta)
 {
     /* nothing special to do here - InitData does the job. */
     return VINF_SUCCESS;

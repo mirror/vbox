@@ -126,7 +126,7 @@ typedef struct REM
     /** Alignment padding. */
     RTUINT                  uPadding0;
 
-    /** Cached guest cpu context pointer. */
+    /** Cached pointer of the register context of the current VCPU. */
     R3PTRTYPE(PCPUMCTX)     pCtx;
 
     /** In REM mode.
@@ -262,8 +262,8 @@ void    remR3RecordCall(CPUState *env);
 #endif /* REM_INCLUDE_CPU_H */
 void    remR3TrapClear(PVM pVM);
 void    remR3RaiseRC(PVM pVM, int rc);
-void    remR3DumpLnxSyscall(PVM pVM);
-void    remR3DumpOBsdSyscall(PVM pVM);
+void    remR3DumpLnxSyscall(PVMCPU pVCpu);
+void    remR3DumpOBsdSyscall(PVMCPU pVCpu);
 
 
 /** @todo r=bird: clean up the RAWEx stats. */

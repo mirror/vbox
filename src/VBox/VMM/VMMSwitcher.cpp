@@ -402,6 +402,17 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
             }
 
             /*
+             * Make 32-bit GC pointer given CPUMCPU offset.
+             */
+            case FIX_GC_CPUMCPU_OFF:
+            {
+                uint32_t offCPUM = *u.pu32++;
+                Assert(offCPUM < sizeof(pVM->aCpus[0].cpum));
+                *uSrc.pu32 = (uint32_t)(VM_RC_ADDR(pVM, &pVM->aCpus[0].cpum) + offCPUM);
+                break;
+            }
+
+            /*
              * Make 32-bit GC pointer given VM offset.
              */
             case FIX_GC_VM_OFF:
@@ -699,7 +710,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
                     "   pCPUMR3     = %p\n"
                     "   GCPtrGDT    = %RGv\n"
                     "   InterCR3s   = %08RHp, %08RHp, %08RHp (32-Bit, PAE, AMD64)\n"
-                    "   HyperCR3s   = %08RHp, %08RHp, %08RHp (32-Bit, PAE, AMD64)\n"
+                    "   HyperCR3s   = %08RHp (32-Bit, PAE & AMD64)\n"
                     "   SelCS       = %04x\n"
                     "   SelDS       = %04x\n"
                     "   SelCS64     = %04x\n"
@@ -715,8 +726,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
                     &pVM->cpum,
                     GCPtrGDT,
                     PGMGetInter32BitCR3(pVM), PGMGetInterPaeCR3(pVM), PGMGetInterAmd64CR3(pVM),
-                    /* @todo No need for three GetHyper calls; one and the same base is used */
-                    PGMGetHyper32BitCR3(pVM), PGMGetHyperPaeCR3(pVM), PGMGetHyperAmd64CR3(pVM),
+                    PGMGetHyperCR3(VMMGetCpu(pVM)),
                     SelCS, SelDS, SelCS64, SelTSS);
 
         uint32_t offCode = 0;

@@ -24,9 +24,9 @@
 *   Internal Functions                                                         *
 *******************************************************************************/
 __BEGIN_DECLS
-PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys);
-PGM_GST_DECL(int, ModifyPage)(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
-PGM_GST_DECL(int, GetPDE)(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPDE);
+PGM_GST_DECL(int, GetPage)(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys);
+PGM_GST_DECL(int, ModifyPage)(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
+PGM_GST_DECL(int, GetPDE)(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPDE);
 PGM_GST_DECL(bool, HandlerVirtualUpdate)(PVM pVM, uint32_t cr4);
 __END_DECLS
 
@@ -42,12 +42,13 @@ __END_DECLS
  *
  * @returns VBox status.
  * @param   pVM         VM Handle.
+ * @param   pVCpu       The VMCPU handle.
  * @param   GCPtr       Guest Context virtual address of the page. Page aligned!
  * @param   pfFlags     Where to store the flags. These are X86_PTE_*, even for big pages.
  * @param   pGCPhys     Where to store the GC physical address of the page.
  *                      This is page aligned. The fact that the
  */
-PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys)
+PGM_GST_DECL(int, GetPage)(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys)
 {
 #if PGM_GST_TYPE == PGM_TYPE_REAL \
  || PGM_GST_TYPE == PGM_TYPE_PROT
@@ -66,19 +67,19 @@ PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS 
      * Get the PDE.
      */
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
-    X86PDE      Pde = pgmGstGet32bitPDE(&pVM->pgm.s, GCPtr);
+    X86PDE      Pde = pgmGstGet32bitPDE(&pVCpu->pgm.s, GCPtr);
 
 #elif PGM_GST_TYPE == PGM_TYPE_PAE
     /* pgmGstGetPaePDE will return 0 if the PDPTE is marked as not present.
      * All the other bits in the PDPTE are only valid in long mode (r/w, u/s, nx). */
-    X86PDEPAE   Pde = pgmGstGetPaePDE(&pVM->pgm.s, GCPtr);
-    bool        fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
+    X86PDEPAE   Pde = pgmGstGetPaePDE(&pVCpu->pgm.s, GCPtr);
+    bool        fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVCpu) & MSR_K6_EFER_NXE);
 
 #elif PGM_GST_TYPE == PGM_TYPE_AMD64
     PX86PML4E   pPml4e;
     X86PDPE     Pdpe;
-    X86PDEPAE   Pde = pgmGstGetLongModePDEEx(&pVM->pgm.s, GCPtr, &pPml4e, &Pdpe);
-    bool        fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
+    X86PDEPAE   Pde = pgmGstGetLongModePDEEx(&pVCpu->pgm.s, GCPtr, &pPml4e, &Pdpe);
+    bool        fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVCpu) & MSR_K6_EFER_NXE);
 
     Assert(pPml4e);
     if (!(pPml4e->n.u1Present & Pdpe.n.u1Present))
@@ -99,7 +100,7 @@ PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS 
 
     if (    !Pde.b.u1Size
 # if PGM_GST_TYPE != PGM_TYPE_AMD64
-        ||  !(CPUMGetGuestCR4(pVM) & X86_CR4_PSE)
+        ||  !(CPUMGetGuestCR4(pVCpu) & X86_CR4_PSE)
 # endif
         )
     {
@@ -167,12 +168,13 @@ PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS 
  *
  * @returns VBox status code.
  * @param   pVM         VM handle.
+ * @param   pVCpu       The VMCPU handle.
  * @param   GCPtr       Virtual address of the first page in the range. Page aligned!
  * @param   cb          Size (in bytes) of the page range to apply the modification to. Page aligned!
  * @param   fFlags      The OR  mask - page flags X86_PTE_*, excluding the page mask of course.
  * @param   fMask       The AND mask - page flags X86_PTE_*.
  */
-PGM_GST_DECL(int, ModifyPage)(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask)
+PGM_GST_DECL(int, ModifyPage)(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask)
 {
 #if PGM_GST_TYPE == PGM_TYPE_32BIT \
  || PGM_GST_TYPE == PGM_TYPE_PAE \
@@ -184,19 +186,19 @@ PGM_GST_DECL(int, ModifyPage)(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags
          * Get the PD entry.
          */
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
-        PX86PDE pPde = pgmGstGet32bitPDEPtr(&pVM->pgm.s, GCPtr);
+        PX86PDE pPde = pgmGstGet32bitPDEPtr(&pVCpu->pgm.s, GCPtr);
 
 # elif PGM_GST_TYPE == PGM_TYPE_PAE
         /* pgmGstGetPaePDEPtr will return 0 if the PDPTE is marked as not present
          * All the other bits in the PDPTE are only valid in long mode (r/w, u/s, nx)
          */
-        PX86PDEPAE pPde = pgmGstGetPaePDEPtr(&pVM->pgm.s, GCPtr);
+        PX86PDEPAE pPde = pgmGstGetPaePDEPtr(&pVCpu->pgm.s, GCPtr);
         Assert(pPde);
         if (!pPde)
             return VERR_PAGE_TABLE_NOT_PRESENT;
 # elif PGM_GST_TYPE == PGM_TYPE_AMD64
         /** @todo Setting the r/w, u/s & nx bits might have no effect depending on the pdpte & pml4 values */
-        PX86PDEPAE pPde = pgmGstGetLongModePDEPtr(&pVM->pgm.s, GCPtr);
+        PX86PDEPAE pPde = pgmGstGetLongModePDEPtr(&pVCpu->pgm.s, GCPtr);
         Assert(pPde);
         if (!pPde)
             return VERR_PAGE_TABLE_NOT_PRESENT;
@@ -208,7 +210,7 @@ PGM_GST_DECL(int, ModifyPage)(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags
 
         if (    !Pde.b.u1Size
 # if PGM_GST_TYPE != PGM_TYPE_AMD64
-            ||  !(CPUMGetGuestCR4(pVM) & X86_CR4_PSE)
+            ||  !(CPUMGetGuestCR4(pVCpu) & X86_CR4_PSE)
 # endif
             )
         {
@@ -273,21 +275,22 @@ PGM_GST_DECL(int, ModifyPage)(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags
  *
  * @returns VBox status code.
  * @param   pVM         The virtual machine.
+ * @param   pVCpu       The VMCPU handle.
  * @param   GCPtr       Guest context pointer
  * @param   pPDE        Pointer to guest PDE structure
  */
-PGM_GST_DECL(int, GetPDE)(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPDE)
+PGM_GST_DECL(int, GetPDE)(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPDE)
 {
 #if PGM_GST_TYPE == PGM_TYPE_32BIT \
  || PGM_GST_TYPE == PGM_TYPE_PAE   \
  || PGM_GST_TYPE == PGM_TYPE_AMD64
 
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
-    X86PDE    Pde = pgmGstGet32bitPDE(&pVM->pgm.s, GCPtr);
+    X86PDE    Pde = pgmGstGet32bitPDE(&pVCpu->pgm.s, GCPtr);
 # elif PGM_GST_TYPE == PGM_TYPE_PAE
-    X86PDEPAE Pde = pgmGstGetPaePDE(&pVM->pgm.s, GCPtr);
+    X86PDEPAE Pde = pgmGstGetPaePDE(&pVCpu->pgm.s, GCPtr);
 # elif PGM_GST_TYPE == PGM_TYPE_AMD64
-    X86PDEPAE Pde = pgmGstGetLongModePDE(&pVM->pgm.s, GCPtr);
+    X86PDEPAE Pde = pgmGstGetLongModePDE(&pVCpu->pgm.s, GCPtr);
 # endif
 
     pPDE->u = (X86PGPAEUINT)Pde.u;
@@ -313,10 +316,12 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
 {
     PPGMVIRTHANDLER pCur  = (PPGMVIRTHANDLER)pNode;
     PPGMHVUSTATE    pState = (PPGMHVUSTATE)pvUser;
+    PVM             pVM = pState->pVM;
+    PVMCPU          pVCpu = pState->pVCpu;
     Assert(pCur->enmType != PGMVIRTHANDLERTYPE_HYPERVISOR);
 
 #if PGM_GST_TYPE == PGM_TYPE_32BIT
-    PX86PD          pPDSrc = pgmGstGet32bitPDPtr(&pState->pVM->pgm.s);
+    PX86PD          pPDSrc = pgmGstGet32bitPDPtr(&pVCpu->pgm.s);
 #endif
 
     RTGCPTR         GCPtr = pCur->Core.Key;
@@ -333,9 +338,9 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
 #if PGM_GST_TYPE == PGM_TYPE_32BIT
         X86PDE      Pde = pPDSrc->a[GCPtr >> X86_PD_SHIFT];
 #elif PGM_GST_TYPE == PGM_TYPE_PAE
-        X86PDEPAE   Pde = pgmGstGetPaePDE(&pState->pVM->pgm.s, GCPtr);
+        X86PDEPAE   Pde = pgmGstGetPaePDE(&pVCpu->pgm.s, GCPtr);
 #elif PGM_GST_TYPE == PGM_TYPE_AMD64
-        X86PDEPAE   Pde = pgmGstGetLongModePDE(&pState->pVM->pgm.s, GCPtr);
+        X86PDEPAE   Pde = pgmGstGetLongModePDE(&pVCpu->pgm.s, GCPtr);
 #endif
         if (Pde.n.u1Present)
         {
@@ -349,7 +354,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
                  * Normal page table.
                  */
                 PGSTPT pPT;
-                int rc = PGM_GCPHYS_2_PTR(pState->pVM, Pde.u & GST_PDE_PG_MASK, &pPT);
+                int rc = PGM_GCPHYS_2_PTR(pVM, Pde.u & GST_PDE_PG_MASK, &pPT);
                 if (RT_SUCCESS(rc))
                 {
                     for (unsigned iPTE = (GCPtr >> GST_PT_SHIFT) & GST_PT_MASK;
@@ -365,7 +370,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
                         if (pCur->aPhysToVirt[iPage].Core.Key != GCPhysNew)
                         {
                             if (pCur->aPhysToVirt[iPage].Core.Key != NIL_RTGCPHYS)
-                                pgmHandlerVirtualClearPage(&pState->pVM->pgm.s, pCur, iPage);
+                                pgmHandlerVirtualClearPage(&pVM->pgm.s, pCur, iPage);
 #ifdef VBOX_STRICT_PGM_HANDLER_VIRTUAL
                             AssertReleaseMsg(!pCur->aPhysToVirt[iPage].offNextAlias,
                                              ("{.Core.Key=%RGp, .Core.KeyLast=%RGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32} GCPhysNew=%RGp\n",
@@ -388,7 +393,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
                     {
                         if (pCur->aPhysToVirt[iPage].Core.Key != NIL_RTGCPHYS)
                         {
-                            pgmHandlerVirtualClearPage(&pState->pVM->pgm.s, pCur, iPage);
+                            pgmHandlerVirtualClearPage(&pVM->pgm.s, pCur, iPage);
 #ifdef VBOX_STRICT_PGM_HANDLER_VIRTUAL
                             AssertReleaseMsg(!pCur->aPhysToVirt[iPage].offNextAlias,
                                              ("{.Core.Key=%RGp, .Core.KeyLast=%RGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n",
@@ -415,7 +420,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
                     if (pCur->aPhysToVirt[iPage].Core.Key != GCPhysNew)
                     {
                         if (pCur->aPhysToVirt[iPage].Core.Key != NIL_RTGCPHYS)
-                            pgmHandlerVirtualClearPage(&pState->pVM->pgm.s, pCur, iPage);
+                            pgmHandlerVirtualClearPage(&pVM->pgm.s, pCur, iPage);
 #ifdef VBOX_STRICT_PGM_HANDLER_VIRTUAL
                         AssertReleaseMsg(!pCur->aPhysToVirt[iPage].offNextAlias,
                                          ("{.Core.Key=%RGp, .Core.KeyLast=%RGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32} GCPhysNew=%RGp\n",
@@ -437,7 +442,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
             {
                 if (pCur->aPhysToVirt[iPage].Core.Key != NIL_RTGCPHYS)
                 {
-                    pgmHandlerVirtualClearPage(&pState->pVM->pgm.s, pCur, iPage);
+                    pgmHandlerVirtualClearPage(&pVM->pgm.s, pCur, iPage);
                     pCur->aPhysToVirt[iPage].Core.Key = NIL_RTGCPHYS;
                     pState->fTodo |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL;
                 }
@@ -474,31 +479,47 @@ PGM_GST_DECL(bool, HandlerVirtualUpdate)(PVM pVM, uint32_t cr4)
      * Resolve any virtual address based access handlers to GC physical addresses.
      * This should be fairly quick.
      */
-    PGMHVUSTATE State;
+    RTUINT      fTodo = 0;
 
     pgmLock(pVM);
     STAM_PROFILE_START(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3HandlerVirtualUpdate), a);
-    State.pVM   = pVM;
-    State.fTodo = pVM->pgm.s.fSyncFlags;
-    State.cr4   = cr4;
-    RTAvlroGCPtrDoWithAll(&pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers, true, PGM_GST_NAME(VirtHandlerUpdateOne), &State);
+
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PGMHVUSTATE State;
+        PVMCPU      pVCpu = &pVM->aCpus[i];
+
+        State.pVM   = pVM;
+        State.pVCpu = pVCpu;
+        State.fTodo = pVCpu->pgm.s.fSyncFlags;
+        State.cr4   = cr4;
+        RTAvlroGCPtrDoWithAll(&pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers, true, PGM_GST_NAME(VirtHandlerUpdateOne), &State);
+
+        fTodo |= State.fTodo;
+    }
     STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3HandlerVirtualUpdate), a);
 
 
     /*
      * Set / reset bits?
      */
-    if (State.fTodo & PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL)
+    if (fTodo & PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL)
     {
         STAM_PROFILE_START(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3HandlerVirtualReset), b);
         Log(("pgmR3VirtualHandlersUpdate: resets bits\n"));
         RTAvlroGCPtrDoWithAll(&pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers, true, pgmHandlerVirtualResetOne, pVM);
-        pVM->pgm.s.fSyncFlags &= ~PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL;
+
+        for (unsigned i=0;i<pVM->cCPUs;i++)
+        {
+            PVMCPU pVCpu = &pVM->aCpus[i];
+            pVCpu->pgm.s.fSyncFlags &= ~PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL;
+        }
+
         STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3HandlerVirtualReset), b);
     }
     pgmUnlock(pVM);
 
-    return !!(State.fTodo & PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL);
+    return !!(fTodo & PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL);
 
 #else /* real / protected */
     return false;

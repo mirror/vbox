@@ -112,7 +112,7 @@ typedef struct VMCPU
 #ifdef ___CPUMInternal_h
         struct CPUMCPU      s;
 #endif
-        char                padding[2560];      /* multiple of 64 */
+        char                padding[4096];      /* multiple of 64 */
     } cpum;
     /** VMM part. */
     union
@@ -129,7 +129,7 @@ typedef struct VMCPU
 #ifdef ___PGMInternal_h
         struct PGMCPU       s;
 #endif
-        char                padding[2048];       /* multiple of 64 */
+        char                padding[32*1024];       /* multiple of 64 */
     } pgm;
 
     /** HWACCM part. */
@@ -147,7 +147,7 @@ typedef struct VMCPU
 #ifdef ___EMInternal_h
         struct EMCPU        s;
 #endif
-        char                padding[64];        /* multiple of 64 */
+        char                padding[2048];        /* multiple of 64 */
     } em;
 
     /** TM part. */
@@ -618,7 +618,7 @@ typedef struct VM
 #ifdef ___CPUMInternal_h
         struct CPUM s;
 #endif
-        char        padding[4096];      /* multiple of 32 */
+        char        padding[2048];        /* multiple of 32 */
     } cpum;
 
     /** VMM part. */
@@ -636,7 +636,7 @@ typedef struct VM
 #ifdef ___PGMInternal_h
         struct PGM  s;
 #endif
-        char        padding[50*1024];   /* multiple of 32 */
+        char        padding[16*1024];   /* multiple of 32 */
     } pgm;
 
     /** HWACCM part. */
@@ -735,7 +735,7 @@ typedef struct VM
 #ifdef ___EMInternal_h
         struct EM   s;
 #endif
-        char        padding[1344];      /* multiple of 32 */
+        char        padding[64];         /* multiple of 32 */
     } em;
 
     /** TM part. */

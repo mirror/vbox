@@ -182,10 +182,12 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
             &&  enmBefore != pUVM->pVM->enmVMState
             &&  pUVM->pVM->enmVMState == VMSTATE_RUNNING)
         {
-            PVM pVM = pUVM->pVM;
-            rc = EMR3ExecuteVM(pVM, idCpu);
+            PVM    pVM   = pUVM->pVM;
+            PVMCPU pVCpu = &pVM->aCpus[idCpu];
+
+            rc = EMR3ExecuteVM(pVM, pVCpu);
             Log(("vmR3EmulationThread: EMR3ExecuteVM() -> rc=%Rrc, enmVMState=%d\n", rc, pVM->enmVMState));
-            if (   EMGetState(pVM) == EMSTATE_GURU_MEDITATION
+            if (   EMGetState(pVCpu) == EMSTATE_GURU_MEDITATION
                 && pVM->enmVMState == VMSTATE_RUNNING)
                 vmR3SetState(pVM, VMSTATE_GURU_MEDITATION);
         }

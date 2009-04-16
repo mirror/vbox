@@ -643,6 +643,8 @@ typedef struct CPUX86State {
     uint32_t    state;
     /** The VM handle. */
     PVM         pVM;
+    /** The VMCPU handle. */
+    PVMCPU      pVCpu;
     /** code buffer for instruction emulation */
     void       *pvCodeBuffer;
     /** code buffer size */

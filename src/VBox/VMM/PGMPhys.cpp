@@ -2680,18 +2680,18 @@ VMMR3DECL(int) PGMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMROM
 /**
  * Sets the Address Gate 20 state.
  *
- * @param   pVM         VM handle.
+ * @param   pVCpu       The VCPU to operate on.
  * @param   fEnable     True if the gate should be enabled.
  *                      False if the gate should be disabled.
  */
-VMMDECL(void) PGMR3PhysSetA20(PVM pVM, bool fEnable)
+VMMDECL(void) PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable)
 {
-    LogFlow(("PGMR3PhysSetA20 %d (was %d)\n", fEnable, pVM->pgm.s.fA20Enabled));
-    if (pVM->pgm.s.fA20Enabled != fEnable)
+    LogFlow(("PGMR3PhysSetA20 %d (was %d)\n", fEnable, pVCpu->pgm.s.fA20Enabled));
+    if (pVCpu->pgm.s.fA20Enabled != fEnable)
     {
-        pVM->pgm.s.fA20Enabled = fEnable;
-        pVM->pgm.s.GCPhysA20Mask = ~(RTGCPHYS)(!fEnable << 20);
-        REMR3A20Set(pVM, fEnable);
+        pVCpu->pgm.s.fA20Enabled = fEnable;
+        pVCpu->pgm.s.GCPhysA20Mask = ~(RTGCPHYS)(!fEnable << 20);
+        REMR3A20Set(pVCpu->pVMR3, pVCpu, fEnable);
         /** @todo we're not handling this correctly for VT-x / AMD-V. See #2911 */
     }
 }

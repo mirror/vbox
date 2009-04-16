@@ -190,7 +190,7 @@ htg_debug_regs_no:
     and     eax, X86_CR4_MCE | X86_CR4_PSE | X86_CR4_PAE | X86_CR4_VMXE
     mov     ecx, [edx + CPUMCPU.Guest.cr4]
     ;; @todo Switcher cleanup: Determin base CR4 during CPUMR0Init / VMMR3SelectSwitcher putting it
-    ;                          in CPUM.Hyper.cr4 (which isn't currently being used). That should
+    ;                          in CPUMCPU.Hyper.cr4 (which isn't currently being used). That should
     ;                          simplify this operation a bit (and improve locality of the data).
 
     ;
@@ -209,13 +209,12 @@ htg_debug_regs_no:
     or      eax, X86_CR0_PE | X86_CR0_PG | X86_CR0_TS | X86_CR0_ET | X86_CR0_NE | X86_CR0_MP
     mov     cr0, eax
 
-    CPUM_FROM_CPUMCPU(edx)
     ; Load new gdt so we can do far jump to guest code after cr3 reload.
-    lgdt    [edx + CPUM.Hyper.gdtr]
+    lgdt    [edx + CPUMCPU.Hyper.gdtr]
     DEBUG_CHAR('1')                     ; trashes esi
 
     ; Store the hypervisor cr3 for later loading
-    mov     ebp, [edx + CPUM.Hyper.cr3]
+    mov     ebp, [edx + CPUMCPU.Hyper.cr3]
     
     ;;
     ;; Load Intermediate memory context.
@@ -278,11 +277,11 @@ GLOBALNAME FarJmpGCTarget
     ;; We're in VMM MMU context and VMM CS is loaded.
     ;; Setup the rest of the VMM state.
     ;;
-    FIXUP FIX_GC_CPUM_OFF, 1, 0
+    FIXUP FIX_GC_CPUMCPU_OFF, 1, 0
     mov     edx, 0ffffffffh
     ; Activate guest IDT
     DEBUG_CHAR('1')
-    lidt    [edx + CPUM.Hyper.idtr]
+    lidt    [edx + CPUMCPU.Hyper.idtr]
     ; Load selectors
     DEBUG_CHAR('2')
     FIXUP FIX_HYPER_DS, 1
@@ -295,26 +294,24 @@ GLOBALNAME FarJmpGCTarget
 
     ; Setup stack; use the lss_esp, ss pair for lss
     DEBUG_CHAR('3')
-    mov     eax, [edx + CPUM.Hyper.esp]
-    mov     [edx + CPUM.Hyper.lss_esp], eax
-    lss     esp, [edx + CPUM.Hyper.lss_esp]
+    mov     eax, [edx + CPUMCPU.Hyper.esp]
+    mov     [edx + CPUMCPU.Hyper.lss_esp], eax
+    lss     esp, [edx + CPUMCPU.Hyper.lss_esp]
 
     ; Restore TSS selector; must mark it as not busy before using ltr (!)
     DEBUG_CHAR('4')
     FIXUP FIX_GC_TSS_GDTE_DW2, 2
     and     dword [0ffffffffh], ~0200h      ; clear busy flag (2nd type2 bit)
     DEBUG_CHAR('5')
-    ltr     word [edx + CPUM.Hyper.tr]
+    ltr     word [edx + CPUMCPU.Hyper.tr]
     DEBUG_CHAR('6')
 
     ; Activate the ldt (now we can safely crash).
-    lldt    [edx + CPUM.Hyper.ldtr]
+    lldt    [edx + CPUMCPU.Hyper.ldtr]
     DEBUG_CHAR('7')
 
-    CPUMCPU_FROM_CPUM(edx)
     ;; use flags.
     mov     esi, [edx + CPUMCPU.fUseFlags]
-    CPUM_FROM_CPUMCPU(edx)
 
     ; debug registers
     test    esi, CPUM_USE_DEBUG_REGS
@@ -362,11 +359,11 @@ htg_debug_regs_guest_no:
 %endif
 
     ; General registers.
-    mov     ebx, [edx + CPUM.Hyper.ebx]
-    mov     ebp, [edx + CPUM.Hyper.ebp]
-    mov     esi, [edx + CPUM.Hyper.esi]
-    mov     edi, [edx + CPUM.Hyper.edi]
-    push    dword [edx + CPUM.Hyper.eflags]
+    mov     ebx, [edx + CPUMCPU.Hyper.ebx]
+    mov     ebp, [edx + CPUMCPU.Hyper.ebp]
+    mov     esi, [edx + CPUMCPU.Hyper.esi]
+    mov     edi, [edx + CPUMCPU.Hyper.edi]
+    push    dword [edx + CPUMCPU.Hyper.eflags]
     popfd
     DEBUG_CHAR('!')
 
@@ -376,11 +373,14 @@ htg_debug_regs_guest_no:
     ;;
 %ifdef DEBUG_STUFF
     COM_S_PRINT ';eip='
-    mov     eax, [edx + CPUM.Hyper.eip]
+    mov     eax, [edx + CPUMCPU.Hyper.eip]
     COM_S_DWORD_REG eax
     COM_S_CHAR ';'
 %endif
-    mov     eax, [edx + CPUM.Hyper.eip]
+    mov     eax, [edx + CPUMCPU.Hyper.eip]
+    ; callees expect CPUM ptr
+    CPUM_FROM_CPUMCPU(edx)
+    
 %ifdef VBOX_WITH_STATISTICS
     FIXUP FIX_GC_VM_OFF, 1, VM.StatSwitcherToGC
     mov     edx, 0ffffffffh
@@ -410,7 +410,6 @@ htg_debug_regs_guest:
     DEBUG_S_CHAR('D')
     DEBUG_S_CHAR('R')
     DEBUG_S_CHAR('x')
-    CPUMCPU_FROM_CPUM(edx)
     ; save host DR0-3.
     mov     eax, dr0
     mov     [edx + CPUMCPU.Host.dr0], eax
@@ -420,21 +419,20 @@ htg_debug_regs_guest:
     mov     [edx + CPUMCPU.Host.dr2], ecx
     mov     eax, dr3
     mov     [edx + CPUMCPU.Host.dr3], eax
-    CPUM_FROM_CPUMCPU(edx)
     
     ; load hyper DR0-7
-    mov     ebx, [edx + CPUM.Hyper.dr]
+    mov     ebx, [edx + CPUMCPU.Hyper.dr]
     mov     dr0, ebx
-    mov     ecx, [edx + CPUM.Hyper.dr + 8*1]
+    mov     ecx, [edx + CPUMCPU.Hyper.dr + 8*1]
     mov     dr1, ecx
-    mov     eax, [edx + CPUM.Hyper.dr + 8*2]
+    mov     eax, [edx + CPUMCPU.Hyper.dr + 8*2]
     mov     dr2, eax
-    mov     ebx, [edx + CPUM.Hyper.dr + 8*3]
+    mov     ebx, [edx + CPUMCPU.Hyper.dr + 8*3]
     mov     dr3, ebx
-    ;mov     eax, [edx + CPUM.Hyper.dr + 8*6]
+    ;mov     eax, [edx + CPUMCPU.Hyper.dr + 8*6]
     mov     ecx, 0ffff0ff0h
     mov     dr6, ecx
-    mov     eax, [edx + CPUM.Hyper.dr + 8*7]
+    mov     eax, [edx + CPUMCPU.Hyper.dr + 8*7]
     mov     dr7, eax
     jmp     htg_debug_regs_guest_no
 
@@ -533,9 +531,9 @@ BEGINPROC VMMGCGuestToHostAsmGuestCtx
 %endif
 
     ;
-    ; Load the CPUM pointer.
+    ; Load the CPUMCPU pointer.
     ;
-    FIXUP FIX_GC_CPUM_OFF, 1, 0
+    FIXUP FIX_GC_CPUMCPU_OFF, 1, 0
     mov     edx, 0ffffffffh
 
     ; Skip return address (assumes called!)
@@ -547,7 +545,6 @@ BEGINPROC VMMGCGuestToHostAsmGuestCtx
     ; general purpose registers.
     push    eax
 
-    CPUMCPU_FROM_CPUM(edx)
     mov     eax, [esp + 4 + CPUMCTXCORE.eax]
     mov     [edx + CPUMCPU.Guest.eax], eax
     mov     eax, [esp + 4 + CPUMCTXCORE.ecx]
@@ -581,7 +578,6 @@ BEGINPROC VMMGCGuestToHostAsmGuestCtx
     mov     eax, [esp + 4 + CPUMCTXCORE.eip]
     mov     dword [edx + CPUMCPU.Guest.eip], eax
     pop     eax
-    CPUM_FROM_CPUMCPU(edx)
 
     add     esp, CPUMCTXCORE_size      ; skip CPUMCTXCORE structure
 
@@ -623,46 +619,46 @@ BEGINPROC VMMGCGuestToHostAsmHyperCtx
     ;
     ; Load the CPUM pointer.
     ;
-    FIXUP FIX_GC_CPUM_OFF, 1, 0
+    FIXUP FIX_GC_CPUMCPU_OFF, 1, 0
     mov     edx, 0ffffffffh
 
     push    eax                         ; save return code.
     ; general purpose registers
     mov     eax, [ecx + CPUMCTXCORE.edi]
-    mov     [edx + CPUM.Hyper.edi], eax
+    mov     [edx + CPUMCPU.Hyper.edi], eax
     mov     eax, [ecx + CPUMCTXCORE.esi]
-    mov     [edx + CPUM.Hyper.esi], eax
+    mov     [edx + CPUMCPU.Hyper.esi], eax
     mov     eax, [ecx + CPUMCTXCORE.ebp]
-    mov     [edx + CPUM.Hyper.ebp], eax
+    mov     [edx + CPUMCPU.Hyper.ebp], eax
     mov     eax, [ecx + CPUMCTXCORE.eax]
-    mov     [edx + CPUM.Hyper.eax], eax
+    mov     [edx + CPUMCPU.Hyper.eax], eax
     mov     eax, [ecx + CPUMCTXCORE.ebx]
-    mov     [edx + CPUM.Hyper.ebx], eax
+    mov     [edx + CPUMCPU.Hyper.ebx], eax
     mov     eax, [ecx + CPUMCTXCORE.edx]
-    mov     [edx + CPUM.Hyper.edx], eax
+    mov     [edx + CPUMCPU.Hyper.edx], eax
     mov     eax, [ecx + CPUMCTXCORE.ecx]
-    mov     [edx + CPUM.Hyper.ecx], eax
+    mov     [edx + CPUMCPU.Hyper.ecx], eax
     mov     eax, [ecx + CPUMCTXCORE.esp]
-    mov     [edx + CPUM.Hyper.esp], eax
+    mov     [edx + CPUMCPU.Hyper.esp], eax
     ; selectors
     mov     eax, [ecx + CPUMCTXCORE.ss]
-    mov     [edx + CPUM.Hyper.ss], eax
+    mov     [edx + CPUMCPU.Hyper.ss], eax
     mov     eax, [ecx + CPUMCTXCORE.gs]
-    mov     [edx + CPUM.Hyper.gs], eax
+    mov     [edx + CPUMCPU.Hyper.gs], eax
     mov     eax, [ecx + CPUMCTXCORE.fs]
-    mov     [edx + CPUM.Hyper.fs], eax
+    mov     [edx + CPUMCPU.Hyper.fs], eax
     mov     eax, [ecx + CPUMCTXCORE.es]
-    mov     [edx + CPUM.Hyper.es], eax
+    mov     [edx + CPUMCPU.Hyper.es], eax
     mov     eax, [ecx + CPUMCTXCORE.ds]
-    mov     [edx + CPUM.Hyper.ds], eax
+    mov     [edx + CPUMCPU.Hyper.ds], eax
     mov     eax, [ecx + CPUMCTXCORE.cs]
-    mov     [edx + CPUM.Hyper.cs], eax
+    mov     [edx + CPUMCPU.Hyper.cs], eax
     ; flags
     mov     eax, [ecx + CPUMCTXCORE.eflags]
-    mov     [edx + CPUM.Hyper.eflags], eax
+    mov     [edx + CPUMCPU.Hyper.eflags], eax
     ; eip
     mov     eax, [ecx + CPUMCTXCORE.eip]
-    mov     [edx + CPUM.Hyper.eip], eax
+    mov     [edx + CPUMCPU.Hyper.eip], eax
     ; jump to common worker code.
     pop     eax                         ; restore return code.
     jmp     vmmGCGuestToHostAsm_SkipHyperRegs
@@ -699,27 +695,27 @@ BEGINPROC VMMGCGuestToHostAsm
 %endif
 
     ;
-    ; Load the CPUM pointer.
+    ; Load the CPUMCPU pointer.
     ;
-    FIXUP FIX_GC_CPUM_OFF, 1, 0
+    FIXUP FIX_GC_CPUMCPU_OFF, 1, 0
     mov     edx, 0ffffffffh
 
-    pop     dword [edx + CPUM.Hyper.eip] ; call return from stack
+    pop     dword [edx + CPUMCPU.Hyper.eip] ; call return from stack
     jmp short vmmGCGuestToHostAsm_EIPDone
 
 ALIGNCODE(16)
 vmmGCGuestToHostAsm_EIPDone:
     ; general registers which we care about.
-    mov     dword [edx + CPUM.Hyper.ebx], ebx
-    mov     dword [edx + CPUM.Hyper.esi], esi
-    mov     dword [edx + CPUM.Hyper.edi], edi
-    mov     dword [edx + CPUM.Hyper.ebp], ebp
-    mov     dword [edx + CPUM.Hyper.esp], esp
+    mov     dword [edx + CPUMCPU.Hyper.ebx], ebx
+    mov     dword [edx + CPUMCPU.Hyper.esi], esi
+    mov     dword [edx + CPUMCPU.Hyper.edi], edi
+    mov     dword [edx + CPUMCPU.Hyper.ebp], ebp
+    mov     dword [edx + CPUMCPU.Hyper.esp], esp
 
     ; special registers which may change.
 vmmGCGuestToHostAsm_SkipHyperRegs:
-    ; str     [edx + CPUM.Hyper.tr] - double fault only, and it won't be right then either.
-    sldt    [edx + CPUM.Hyper.ldtr]
+    ; str     [edx + CPUMCPU.Hyper.tr] - double fault only, and it won't be right then either.
+    sldt    [edx + CPUMCPU.Hyper.ldtr]
 
     ; No need to save CRx here. They are set dynamically according to Guest/Host requirements.
     ; FPU context is saved before restore of host saving (another) branch.
@@ -745,9 +741,7 @@ vmmGCGuestToHostAsm_SkipHyperRegs:
     ;; Load Intermediate memory context.
     ;;
     mov     edi, eax                    ; save return code in EDI (careful with COM_DWORD_REG from here on!)
-    CPUMCPU_FROM_CPUM(edx)
     mov     ecx, [edx + CPUMCPU.Host.cr3]
-    CPUM_FROM_CPUMCPU(edx)
     FIXUP SWITCHER_FIX_INTER_CR3_GC, 1
     mov     eax, 0ffffffffh
     mov     cr3, eax

@@ -30,6 +30,7 @@
 #include <VBox/em.h>
 #include "MMInternal.h"
 #include <VBox/vm.h>
+#include <VBox/vmm.h>
 #include <VBox/pgm.h>
 
 #include <iprt/assert.h>
@@ -137,7 +138,7 @@ VMMRCDECL(int) MMGCRamWrite(PVM pVM, void *pDst, void *pSrc, size_t cb)
     /*
      * And mark the relevant guest page as accessed and dirty.
      */
-    PGMGstModifyPage(pVM, (RTGCPTR)(RTRCUINTPTR)pDst, cb, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
+    PGMGstModifyPage(pVM, VMMGetCpu0(pVM), (RTGCPTR)(RTRCUINTPTR)pDst, cb, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
 
     return rc;
 }

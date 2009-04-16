@@ -30,6 +30,7 @@
 #include <VBox/vm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
+#include <VBox/mm.h>
 
 
 
@@ -48,6 +49,9 @@
 static DECLCALLBACK(int) dbgfR3MemScan(PVM pVM, PCDBGFADDRESS pAddress, PCRTGCUINTPTR pcbRange, const uint8_t *pabNeedle, size_t cbNeedle,
                                        PDBGFADDRESS pHitAddress)
 {
+    /** @todo SMP support!! */
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
     /*
      * Validate the input we use, PGM does the rest.
      */
@@ -63,7 +67,7 @@ static DECLCALLBACK(int) dbgfR3MemScan(PVM pVM, PCDBGFADDRESS pAddress, PCRTGCUI
      * Select DBGF worker by addressing mode.
      */
     int rc;
-    PGMMODE enmMode = PGMGetGuestMode(pVM);
+    PGMMODE enmMode = PGMGetGuestMode(pVCpu);
     if (    enmMode == PGMMODE_REAL
         ||  enmMode == PGMMODE_PROTECTED
         ||  DBGFADDRESS_IS_PHYS(pAddress)
@@ -113,6 +117,7 @@ static DECLCALLBACK(int) dbgfR3MemScan(PVM pVM, PCDBGFADDRESS pAddress, PCRTGCUI
  */
 VMMR3DECL(int) DBGFR3MemScan(PVM pVM, PCDBGFADDRESS pAddress, RTGCUINTPTR cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PDBGFADDRESS pHitAddress)
 {
+    /** @todo SMP support!! */
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3MemScan, 6,
                          pVM, pAddress, &cbRange, pabNeedle, cbNeedle, pHitAddress);
@@ -135,6 +140,9 @@ VMMR3DECL(int) DBGFR3MemScan(PVM pVM, PCDBGFADDRESS pAddress, RTGCUINTPTR cbRang
  */
 static DECLCALLBACK(int) dbgfR3MemRead(PVM pVM, PCDBGFADDRESS pAddress, void *pvBuf, size_t cbRead)
 {
+    /** @todo SMP support!! */
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
     /*
      * Validate the input we use, PGM does the rest.
      */
@@ -149,7 +157,7 @@ static DECLCALLBACK(int) dbgfR3MemRead(PVM pVM, PCDBGFADDRESS pAddress, void *pv
      * Select DBGF worker by addressing mode.
      */
     int rc;
-    PGMMODE enmMode = PGMGetGuestMode(pVM);
+    PGMMODE enmMode = PGMGetGuestMode(pVCpu);
     if (    enmMode == PGMMODE_REAL
         ||  enmMode == PGMMODE_PROTECTED
         ||  DBGFADDRESS_IS_PHYS(pAddress) )
@@ -163,7 +171,7 @@ static DECLCALLBACK(int) dbgfR3MemRead(PVM pVM, PCDBGFADDRESS pAddress, void *pv
             &&  enmMode != PGMMODE_AMD64_NX)
             return VERR_PAGE_TABLE_NOT_PRESENT;
 #endif
-        rc = PGMPhysSimpleReadGCPtr(pVM, pvBuf, pAddress->FlatPtr, cbRead);
+        rc = PGMPhysSimpleReadGCPtr(pVCpu, pvBuf, pAddress->FlatPtr, cbRead);
     }
     return rc;
 }
@@ -180,6 +188,7 @@ static DECLCALLBACK(int) dbgfR3MemRead(PVM pVM, PCDBGFADDRESS pAddress, void *pv
  */
 VMMR3DECL(int) DBGFR3MemRead(PVM pVM, PCDBGFADDRESS pAddress, void *pvBuf, size_t cbRead)
 {
+    /** @todo SMP support!! */
     PVMREQ pReq;
     int rc = VMR3ReqCallU(pVM->pUVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)dbgfR3MemRead, 4,
                           pVM, pAddress, pvBuf, cbRead);
@@ -202,6 +211,9 @@ VMMR3DECL(int) DBGFR3MemRead(PVM pVM, PCDBGFADDRESS pAddress, void *pvBuf, size_
  */
 static DECLCALLBACK(int) dbgfR3MemReadString(PVM pVM, PCDBGFADDRESS pAddress, char *pszBuf, size_t cchBuf)
 {
+    /** @todo SMP support!! */
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
     /*
      * Validate the input we use, PGM does the rest.
      */
@@ -216,7 +228,7 @@ static DECLCALLBACK(int) dbgfR3MemReadString(PVM pVM, PCDBGFADDRESS pAddress, ch
      * Select DBGF worker by addressing mode.
      */
     int rc;
-    PGMMODE enmMode = PGMGetGuestMode(pVM);
+    PGMMODE enmMode = PGMGetGuestMode(pVCpu);
     if (    enmMode == PGMMODE_REAL
         ||  enmMode == PGMMODE_PROTECTED
         ||  DBGFADDRESS_IS_PHYS(pAddress) )
@@ -230,7 +242,7 @@ static DECLCALLBACK(int) dbgfR3MemReadString(PVM pVM, PCDBGFADDRESS pAddress, ch
             &&  enmMode != PGMMODE_AMD64_NX)
             return VERR_PAGE_TABLE_NOT_PRESENT;
 #endif
-        rc = PGMPhysSimpleReadGCPtr(pVM, pszBuf, pAddress->FlatPtr, cchBuf);
+        rc = PGMPhysSimpleReadGCPtr(pVCpu, pszBuf, pAddress->FlatPtr, cchBuf);
     }
 
     /*
@@ -287,3 +299,42 @@ VMMR3DECL(int) DBGFR3MemReadString(PVM pVM, PCDBGFADDRESS pAddress, char *pszBuf
     return rc;
 }
 
+
+/**
+ * Read memory from GC virtual address using the current guest CR3.
+ *
+ * @returns VBox status.
+ * @param   pVM         VM handle.
+ * @param   pVCpu       VMCPU handle.
+ * @param   pvDst       Destination address (HC of course).
+ * @param   GCPtr       GC virtual address.
+ * @param   cb          Number of bytes to read.
+ *
+ * @remarks Intended for the debugger facility only.
+ */
+VMMR3DECL(int) DBGFR3ReadGCVirt(PVM pVM, PVMCPU pVCpu, void *pvDst, RTGCPTR GCPtr, size_t cb)
+{
+    if (MMHyperIsInsideArea(pVM, GCPtr))
+        return MMR3HyperReadGCVirt(pVM, pvDst, GCPtr, cb);
+    return PGMPhysSimpleReadGCPtr(pVCpu, pvDst, GCPtr, cb);
+}
+
+
+/**
+ * Write to memory at GC virtual address translated using the current guest CR3.
+ *
+ * @returns VBox status.
+ * @param   pVM         VM handle.
+ * @param   pVCpu       VMCPU handle.
+ * @param   GCPtrDst    GC virtual address.
+ * @param   pvSrc       The source address (HC of course).
+ * @param   cb          Number of bytes to read.
+ *
+ * @remarks Intended for the debugger facility only.
+ */
+VMMR3DECL(int) DBGFR3WriteGCVirt(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb)
+{
+    if (MMHyperIsInsideArea(pVM, GCPtrDst))
+        return VERR_ACCESS_DENIED;
+    return PGMPhysSimpleWriteGCPtr(pVCpu, GCPtrDst, pvSrc, cb);
+}

@@ -1251,6 +1251,13 @@ static DECLCALLBACK(PVM) pdmR3DevHlp_GetVM(PPDMDEVINS pDevIns)
     return pDevIns->Internal.s.pVMR3;
 }
 
+/** @copydoc PDMDEVHLPR3::pfnGetVMCPU */
+static DECLCALLBACK(PVMCPU) pdmR3DevHlp_GetVMCPU(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_GetVMCPU: caller='%s'/%d for CPU %d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VMMGetCpuId(pDevIns->Internal.s.pVMR3)));
+    return VMMGetCpu(pDevIns->Internal.s.pVMR3);
+}
 
 /** @copydoc PDMDEVHLPR3::pfnPCIBusRegister */
 static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIBUSREG pPciBusReg, PCPDMPCIHLPR3 *ppPciHlpR3)
@@ -2160,7 +2167,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysReadGCVirt(PPDMDEVINS pDevIns, void *pv
     /** @todo SMP. */
 #endif
 
-    int rc = PGMPhysSimpleReadGCPtr(pVM, pvDst, GCVirtSrc, cb);
+    int rc = PGMPhysSimpleReadGCPtr(VMMGetCpu(pVM), pvDst, GCVirtSrc, cb);
 
     LogFlow(("pdmR3DevHlp_PhysReadGCVirt: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
 
@@ -2183,7 +2190,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysWriteGCVirt(PPDMDEVINS pDevIns, RTGCPTR
     /** @todo SMP. */
 #endif
 
-    int rc = PGMPhysSimpleWriteGCPtr(pVM, GCVirtDst, pvSrc, cb);
+    int rc = PGMPhysSimpleWriteGCPtr(VMMGetCpu(pVM), GCVirtDst, pvSrc, cb);
 
     LogFlow(("pdmR3DevHlp_PhysWriteGCVirt: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
 
@@ -2206,7 +2213,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPtr2GCPhys(PPDMDEVINS pDevIns, RTGCPT
     /** @todo SMP. */
 #endif
 
-    int rc = PGMPhysGCPtr2GCPhys(pVM, GCPtr, pGCPhys);
+    int rc = PGMPhysGCPtr2GCPhys(VMMGetCpu(pVM), GCPtr, pGCPhys);
 
     LogFlow(("pdmR3DevHlp_PhysGCPtr2GCPhys: caller='%s'/%d: returns %Rrc *pGCPhys=%RGp\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc, *pGCPhys));
 
@@ -2233,7 +2240,7 @@ static DECLCALLBACK(bool) pdmR3DevHlp_A20IsEnabled(PPDMDEVINS pDevIns)
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
 
-    bool fRc = PGMPhysIsA20Enabled(pDevIns->Internal.s.pVMR3);
+    bool fRc = PGMPhysIsA20Enabled(VMMGetCpu(pDevIns->Internal.s.pVMR3));
 
     LogFlow(("pdmR3DevHlp_A20IsEnabled: caller='%s'/%d: returns %d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, fRc));
     return fRc;
@@ -2247,7 +2254,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_A20Set(PPDMDEVINS pDevIns, bool fEnable)
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
     LogFlow(("pdmR3DevHlp_A20Set: caller='%s'/%d: fEnable=%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, fEnable));
     //Assert(*(unsigned *)&fEnable <= 1);
-    PGMR3PhysSetA20(pDevIns->Internal.s.pVMR3, fEnable);
+    PGMR3PhysSetA20(VMMGetCpu(pDevIns->Internal.s.pVMR3), fEnable);
 }
 
 
@@ -2771,6 +2778,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_MMIO2MapKernel,
     pdmR3DevHlp_RegisterVMMDevHeap,
     pdmR3DevHlp_UnregisterVMMDevHeap,
+    pdmR3DevHlp_GetVMCPU,
     PDM_DEVHLP_VERSION /* the end */
 };
 
@@ -3160,6 +3168,14 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_UnregisterVMMDevHeap(PPDMDEVINS p
     return VERR_ACCESS_DENIED;
 }
 
+/** @copydoc PDMDEVHLPR3::pfnGetVMCPU */
+static DECLCALLBACK(PVMCPU) pdmR3DevHlp_Untrusted_GetVMCPU(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+    return NULL;
+}
+
 
 /**
  * The device helper structure for non-trusted devices.
@@ -3254,6 +3270,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_Untrusted_MMIO2MapKernel,
     pdmR3DevHlp_Untrusted_RegisterVMMDevHeap,
     pdmR3DevHlp_Untrusted_UnregisterVMMDevHeap,
+    pdmR3DevHlp_Untrusted_GetVMCPU,
     PDM_DEVHLP_VERSION /* the end */
 };
 

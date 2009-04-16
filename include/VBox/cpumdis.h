@@ -43,18 +43,14 @@ __BEGIN_DECLS
  */
 
 #ifdef IN_RING3
-VMMR3DECL(int)  CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PDISCPUSTATE pCpu, const char *pszPrefix);
+VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PDISCPUSTATE pCpu, const char *pszPrefix);
 
 # ifdef DEBUG
 /** @deprecated  Use DBGFR3DisasInstrCurrentLog().  */
-VMMR3DECL(void) CPUMR3DisasmInstr(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, const char *pszPrefix);
-/** @deprecated  Create new DBGFR3Disas function to do this. */
-VMMR3DECL(void) CPUMR3DisasmBlock(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, const char *pszPrefix, int nrInstructions);
+VMMR3DECL(void) CPUMR3DisasmInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPTR pc, const char *pszPrefix);
 # else
 /** @deprecated  Use DBGFR3DisasInstrCurrentLog(). */
-#  define CPUMR3DisasmInstr(pVM, pCtx, pc, pszPrefix)                   do {} while (0)
-/** @deprecated  Create new DBGFR3Disas function to do this. */
-#  define CPUMR3DisasmBlock(pVM, pCtx, pc, pszPrefix, nrInstructions)   do {} while (0)
+#  define CPUMR3DisasmInstr(pVM, pVCpu, pCtx, pc, pszPrefix)                   do {} while (0)
 # endif
 
 #endif /* IN_RING3 */

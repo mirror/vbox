@@ -33,6 +33,7 @@
 #include <VBox/mm.h>
 #include "PATMInternal.h"
 #include <VBox/vm.h>
+#include <VBox/vmm.h>
 #include "PATMA.h"
 
 #include <VBox/log.h>
@@ -189,7 +190,7 @@ VMMDECL(void) PATMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rawRC)
     {
         if (CTXSUFF(pVM->patm.s.pGCState)->GCPtrInhibitInterrupts == (RTRCPTR)pCtxCore->eip)
         {
-            EMSetInhibitInterruptsPC(pVM, pCtxCore->eip);
+            EMSetInhibitInterruptsPC(pVM, VMMGetCpu0(pVM), pCtxCore->eip);
         }
         CTXSUFF(pVM->patm.s.pGCState)->GCPtrInhibitInterrupts = 0;
 
@@ -297,7 +298,7 @@ VMMDECL(int) PATMSetMMIOPatchInfo(PVM pVM, RTGCPHYS GCPhys, RTRCPTR pCachedData)
  */
 VMMDECL(bool) PATMAreInterruptsEnabled(PVM pVM)
 {
-    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVM);
+    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(VMMGetCpu0(pVM));
 
     return PATMAreInterruptsEnabledByCtxCore(pVM, CPUMCTX2CORE(pCtx));
 }
@@ -381,7 +382,7 @@ VMMDECL(bool) PATMIsInt3Patch(PVM pVM, RTRCPTR pInstrGC, uint32_t *pOpcode, uint
  */
 VMMDECL(int) PATMSysCall(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 {
-    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVM);
+    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(VMMGetCpu0(pVM));
 
     if (pCpu->pCurInstr->opcode == OP_SYSENTER)
     {

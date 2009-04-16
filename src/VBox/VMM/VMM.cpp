@@ -221,7 +221,7 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
  */
 static int vmmR3InitStacks(PVM pVM)
 {
-    /** @todo SMP: On stack per vCPU. */
+    /** @todo SMP: One stack per vCPU. */
 #ifdef VBOX_STRICT_VMM_STACK
     int rc = MMR3HyperAllocOnceNoRel(pVM, VMM_STACK_SIZE + PAGE_SIZE + PAGE_SIZE, PAGE_SIZE, MM_TAG_VMM, (void **)&pVM->vmm.s.pbEMTStackR3);
 #else
@@ -240,7 +240,11 @@ static int vmmR3InitStacks(PVM pVM)
         pVM->vmm.s.pbEMTStackBottomRC = pVM->vmm.s.pbEMTStackRC + VMM_STACK_SIZE;
         AssertRelease(pVM->vmm.s.pbEMTStackRC);
 
-        CPUMSetHyperESP(pVM, pVM->vmm.s.pbEMTStackBottomRC);
+        for (unsigned i=0;i<pVM->cCPUs;i++)
+        {
+            PVMCPU pVCpu = &pVM->aCpus[i];
+            CPUMSetHyperESP(pVCpu, pVM->vmm.s.pbEMTStackBottomRC);
+        }
     }
 
     return rc;
@@ -489,9 +493,14 @@ VMMR3DECL(int) VMMR3InitR0(PVM pVM)
  */
 VMMR3DECL(int) VMMR3InitRC(PVM pVM)
 {
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    Assert(pVCpu);
+
     /* In VMX mode, there's no need to init RC. */
     if (pVM->vmm.s.fSwitcherDisabled)
         return VINF_SUCCESS;
+
+    AssertReturn(pVM->cCPUs == 1, VERR_RAW_MODE_INVALID_SMP);
 
     /*
      * Call VMMGCInit():
@@ -503,18 +512,18 @@ VMMR3DECL(int) VMMR3InitRC(PVM pVM)
     int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &RCPtrEP);
     if (RT_SUCCESS(rc))
     {
-        CPUMHyperSetCtxCore(pVM, NULL);
-        CPUMSetHyperESP(pVM, pVM->vmm.s.pbEMTStackBottomRC); /* Clear the stack. */
+        CPUMHyperSetCtxCore(pVCpu, NULL);
+        CPUMSetHyperESP(pVCpu, pVM->vmm.s.pbEMTStackBottomRC); /* Clear the stack. */
         uint64_t u64TS = RTTimeProgramStartNanoTS();
-        CPUMPushHyper(pVM, (uint32_t)(u64TS >> 32));    /* Param 3: The program startup TS - Hi. */
-        CPUMPushHyper(pVM, (uint32_t)u64TS);            /* Param 3: The program startup TS - Lo. */
-        CPUMPushHyper(pVM, VMMGetSvnRev());             /* Param 2: Version argument. */
-        CPUMPushHyper(pVM, VMMGC_DO_VMMGC_INIT);        /* Param 1: Operation. */
-        CPUMPushHyper(pVM, pVM->pVMRC);                 /* Param 0: pVM */
-        CPUMPushHyper(pVM, 5 * sizeof(RTRCPTR));        /* trampoline param: stacksize.  */
-        CPUMPushHyper(pVM, RCPtrEP);                    /* Call EIP. */
-        CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnCallTrampolineRC);
-        Assert(CPUMGetHyperCR3(pVM) && CPUMGetHyperCR3(pVM) == PGMGetHyperCR3(pVM));
+        CPUMPushHyper(pVCpu, (uint32_t)(u64TS >> 32));    /* Param 3: The program startup TS - Hi. */
+        CPUMPushHyper(pVCpu, (uint32_t)u64TS);            /* Param 3: The program startup TS - Lo. */
+        CPUMPushHyper(pVCpu, VMMGetSvnRev());             /* Param 2: Version argument. */
+        CPUMPushHyper(pVCpu, VMMGC_DO_VMMGC_INIT);        /* Param 1: Operation. */
+        CPUMPushHyper(pVCpu, pVM->pVMRC);                 /* Param 0: pVM */
+        CPUMPushHyper(pVCpu, 5 * sizeof(RTRCPTR));        /* trampoline param: stacksize.  */
+        CPUMPushHyper(pVCpu, RCPtrEP);                    /* Call EIP. */
+        CPUMSetHyperEIP(pVCpu, pVM->vmm.s.pfnCallTrampolineRC);
+        Assert(CPUMGetHyperCR3(pVCpu) && CPUMGetHyperCR3(pVCpu) == PGMGetHyperCR3(pVCpu));
 
         for (;;)
         {
@@ -544,7 +553,7 @@ VMMR3DECL(int) VMMR3InitRC(PVM pVM)
 
         if (RT_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
         {
-            VMMR3FatalDump(pVM, rc);
+            VMMR3FatalDump(pVM, pVCpu, rc);
             if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
                 rc = VERR_INTERNAL_ERROR;
         }
@@ -639,7 +648,13 @@ VMMR3DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * The stack.
      */
-    CPUMSetHyperESP(pVM, CPUMGetHyperESP(pVM) + offDelta);
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
+        CPUMSetHyperESP(pVCpu, CPUMGetHyperESP(pVCpu) + offDelta);
+    }
+
     pVM->vmm.s.pbEMTStackRC = MMHyperR3ToRC(pVM, pVM->vmm.s.pbEMTStackR3);
     pVM->vmm.s.pbEMTStackBottomRC = pVM->vmm.s.pbEMTStackRC + VMM_STACK_SIZE;
 
@@ -803,9 +818,15 @@ static DECLCALLBACK(int) vmmR3Save(PVM pVM, PSSMHANDLE pSSM)
      * Note! See not in vmmR3Load.
      */
     SSMR3PutRCPtr(pSSM, pVM->vmm.s.pbEMTStackBottomRC);
-    RTRCPTR RCPtrESP = CPUMGetHyperESP(pVM);
-    AssertMsg(pVM->vmm.s.pbEMTStackBottomRC - RCPtrESP <= VMM_STACK_SIZE, ("Bottom %RRv ESP=%RRv\n", pVM->vmm.s.pbEMTStackBottomRC, RCPtrESP));
-    SSMR3PutRCPtr(pSSM, RCPtrESP);
+
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
+        RTRCPTR RCPtrESP = CPUMGetHyperESP(pVCpu);
+        AssertMsg(pVM->vmm.s.pbEMTStackBottomRC - RCPtrESP <= VMM_STACK_SIZE, ("Bottom %RRv ESP=%RRv\n", pVM->vmm.s.pbEMTStackBottomRC, RCPtrESP));
+        SSMR3PutRCPtr(pSSM, RCPtrESP);
+    }
     SSMR3PutMem(pSSM, pVM->vmm.s.pbEMTStackR3, VMM_STACK_SIZE);
     return SSMR3PutU32(pSSM, ~0); /* terminator */
 }
@@ -1051,25 +1072,26 @@ VMMR3DECL(bool) VMMR3LockIsOwner(PVM pVM)
  * Executes guest code in the raw-mode context.
  *
  * @param   pVM         VM handle.
+ * @param   pVCpu       The VMCPU to operate on.
  */
-VMMR3DECL(int) VMMR3RawRunGC(PVM pVM)
+VMMR3DECL(int) VMMR3RawRunGC(PVM pVM, PVMCPU pVCpu)
 {
-    Log2(("VMMR3RawRunGC: (cs:eip=%04x:%08x)\n", CPUMGetGuestCS(pVM), CPUMGetGuestEIP(pVM)));
+    Log2(("VMMR3RawRunGC: (cs:eip=%04x:%08x)\n", CPUMGetGuestCS(pVCpu), CPUMGetGuestEIP(pVCpu)));
 
     /*
      * Set the EIP and ESP.
      */
-    CPUMSetHyperEIP(pVM, CPUMGetGuestEFlags(pVM) & X86_EFL_VM
+    CPUMSetHyperEIP(pVCpu, CPUMGetGuestEFlags(pVCpu) & X86_EFL_VM
                     ? pVM->vmm.s.pfnCPUMRCResumeGuestV86
                     : pVM->vmm.s.pfnCPUMRCResumeGuest);
-    CPUMSetHyperESP(pVM, pVM->vmm.s.pbEMTStackBottomRC);
+    CPUMSetHyperESP(pVCpu, pVM->vmm.s.pbEMTStackBottomRC);
 
     /*
      * We hide log flushes (outer) and hypervisor interrupts (inner).
      */
     for (;;)
     {
-        Assert(CPUMGetHyperCR3(pVM) && CPUMGetHyperCR3(pVM) == PGMGetHyperCR3(pVM));
+        Assert(CPUMGetHyperCR3(pVCpu) && CPUMGetHyperCR3(pVCpu) == PGMGetHyperCR3(pVCpu));
 #ifdef VBOX_STRICT
         PGMMapCheck(pVM);
 #endif
@@ -1101,7 +1123,7 @@ VMMR3DECL(int) VMMR3RawRunGC(PVM pVM)
 #endif
         if (rc != VINF_VMM_CALL_HOST)
         {
-            Log2(("VMMR3RawRunGC: returns %Rrc (cs:eip=%04x:%08x)\n", rc, CPUMGetGuestCS(pVM), CPUMGetGuestEIP(pVM)));
+            Log2(("VMMR3RawRunGC: returns %Rrc (cs:eip=%04x:%08x)\n", rc, CPUMGetGuestCS(pVCpu), CPUMGetGuestEIP(pVCpu)));
             return rc;
         }
         rc = vmmR3ServiceCallHostRequest(pVM);
@@ -1116,11 +1138,11 @@ VMMR3DECL(int) VMMR3RawRunGC(PVM pVM)
  * Executes guest code (Intel VT-x and AMD-V).
  *
  * @param   pVM         VM handle.
- * @param   idCpu       VMCPU id.
+ * @param   pVCpu       The VMCPU to operate on.
  */
-VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM, RTCPUID idCpu)
+VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM, PVMCPU pVCpu)
 {
-    Log2(("VMMR3HwAccRunGC: (cs:eip=%04x:%08x)\n", CPUMGetGuestCS(pVM), CPUMGetGuestEIP(pVM)));
+    Log2(("VMMR3HwAccRunGC: (cs:eip=%04x:%08x)\n", CPUMGetGuestCS(pVCpu), CPUMGetGuestEIP(pVCpu)));
 
     for (;;)
     {
@@ -1130,7 +1152,7 @@ VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM, RTCPUID idCpu)
 #ifdef NO_SUPCALLR0VMM
             rc = VERR_GENERAL_FAILURE;
 #else
-            rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_HWACC_RUN, idCpu);
+            rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_HWACC_RUN, pVCpu->idCpu);
             if (RT_LIKELY(rc == VINF_SUCCESS))
                 rc = pVM->vmm.s.iLastGZRc;
 #endif
@@ -1147,7 +1169,7 @@ VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM, RTCPUID idCpu)
 #endif /* !LOG_ENABLED */
         if (rc != VINF_VMM_CALL_HOST)
         {
-            Log2(("VMMR3HwAccRunGC: returns %Rrc (cs:eip=%04x:%08x)\n", rc, CPUMGetGuestCS(pVM), CPUMGetGuestEIP(pVM)));
+            Log2(("VMMR3HwAccRunGC: returns %Rrc (cs:eip=%04x:%08x)\n", rc, CPUMGetGuestCS(pVCpu), CPUMGetGuestEIP(pVCpu)));
             return rc;
         }
         rc = vmmR3ServiceCallHostRequest(pVM);
@@ -1186,22 +1208,26 @@ VMMR3DECL(int) VMMR3CallRC(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, ...)
  */
 VMMR3DECL(int) VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list args)
 {
+    /* Raw mode implies 1 VCPU. */
+    Assert(pVM->cCPUs == 1);
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
     Log2(("VMMR3CallGCV: RCPtrEntry=%RRv cArgs=%d\n", RCPtrEntry, cArgs));
 
     /*
      * Setup the call frame using the trampoline.
      */
-    CPUMHyperSetCtxCore(pVM, NULL);
+    CPUMHyperSetCtxCore(pVCpu, NULL);
     memset(pVM->vmm.s.pbEMTStackR3, 0xaa, VMM_STACK_SIZE); /* Clear the stack. */
-    CPUMSetHyperESP(pVM, pVM->vmm.s.pbEMTStackBottomRC - cArgs * sizeof(RTGCUINTPTR32));
+    CPUMSetHyperESP(pVCpu, pVM->vmm.s.pbEMTStackBottomRC - cArgs * sizeof(RTGCUINTPTR32));
     PRTGCUINTPTR32 pFrame = (PRTGCUINTPTR32)(pVM->vmm.s.pbEMTStackR3 + VMM_STACK_SIZE) - cArgs;
     int i = cArgs;
     while (i-- > 0)
         *pFrame++ = va_arg(args, RTGCUINTPTR32);
 
-    CPUMPushHyper(pVM, cArgs * sizeof(RTGCUINTPTR32));                          /* stack frame size */
-    CPUMPushHyper(pVM, RCPtrEntry);                                             /* what to call */
-    CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnCallTrampolineRC);
+    CPUMPushHyper(pVCpu, cArgs * sizeof(RTGCUINTPTR32));                          /* stack frame size */
+    CPUMPushHyper(pVCpu, RCPtrEntry);                                             /* what to call */
+    CPUMSetHyperEIP(pVCpu, pVM->vmm.s.pfnCallTrampolineRC);
 
     /*
      * We hide log flushes (outer) and hypervisor interrupts (inner).
@@ -1209,7 +1235,7 @@ VMMR3DECL(int) VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list
     for (;;)
     {
         int rc;
-        Assert(CPUMGetHyperCR3(pVM) && CPUMGetHyperCR3(pVM) == PGMGetHyperCR3(pVM));
+        Assert(CPUMGetHyperCR3(pVCpu) && CPUMGetHyperCR3(pVCpu) == PGMGetHyperCR3(pVCpu));
         do
         {
 #ifdef NO_SUPCALLR0VMM
@@ -1236,10 +1262,10 @@ VMMR3DECL(int) VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list
             RTLogFlushRC(RTLogRelDefaultInstance(), pRelLogger);
 #endif
         if (rc == VERR_TRPM_PANIC || rc == VERR_TRPM_DONT_PANIC)
-            VMMR3FatalDump(pVM, rc);
+            VMMR3FatalDump(pVM, pVCpu, rc);
         if (rc != VINF_VMM_CALL_HOST)
         {
-            Log2(("VMMR3CallGCV: returns %Rrc (cs:eip=%04x:%08x)\n", rc, CPUMGetGuestCS(pVM), CPUMGetGuestEIP(pVM)));
+            Log2(("VMMR3CallGCV: returns %Rrc (cs:eip=%04x:%08x)\n", rc, CPUMGetGuestCS(pVCpu), CPUMGetGuestEIP(pVCpu)));
             return rc;
         }
         rc = vmmR3ServiceCallHostRequest(pVM);
@@ -1297,10 +1323,11 @@ VMMR3DECL(int) VMMR3CallR0(PVM pVM, uint32_t uOperation, uint64_t u64Arg, PSUPVM
  *
  * @returns VBox status code.
  * @param   pVM         VM handle.
+ * @param   pVCpu       VMCPU handle.
  */
-VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM)
+VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM, PVMCPU pVCpu)
 {
-    Log(("VMMR3ResumeHyper: eip=%RRv esp=%RRv\n", CPUMGetHyperEIP(pVM), CPUMGetHyperESP(pVM)));
+    Log(("VMMR3ResumeHyper: eip=%RRv esp=%RRv\n", CPUMGetHyperEIP(pVCpu), CPUMGetHyperESP(pVCpu)));
 
     /*
      * We hide log flushes (outer) and hypervisor interrupts (inner).
@@ -1308,7 +1335,7 @@ VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM)
     for (;;)
     {
         int rc;
-        Assert(CPUMGetHyperCR3(pVM) && CPUMGetHyperCR3(pVM) == PGMGetHyperCR3(pVM));
+        Assert(CPUMGetHyperCR3(pVCpu) && CPUMGetHyperCR3(pVCpu) == PGMGetHyperCR3(pVCpu));
         do
         {
 #ifdef NO_SUPCALLR0VMM
@@ -1335,7 +1362,7 @@ VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM)
             RTLogFlushRC(RTLogRelDefaultInstance(), pRelLogger);
 #endif
         if (rc == VERR_TRPM_PANIC || rc == VERR_TRPM_DONT_PANIC)
-            VMMR3FatalDump(pVM, rc);
+            VMMR3FatalDump(pVM, pVCpu, rc);
         if (rc != VINF_VMM_CALL_HOST)
         {
             Log(("VMMR3ResumeHyper: returns %Rrc\n", rc));

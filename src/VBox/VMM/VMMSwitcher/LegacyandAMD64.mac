@@ -172,14 +172,11 @@ BEGINPROC vmmR0HostToGuestAsm
     mov dword [edx + CPUMCPU.Guest.dr + 4*8], 3
 %endif
 
-    CPUM_FROM_CPUMCPU(edx)
     ; Load new gdt so we can do a far jump after going into 64 bits mode
-    lgdt    [edx + CPUM.Hyper.gdtr]
+    lgdt    [edx + CPUMCPU.Hyper.gdtr]
 
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    CPUMCPU_FROM_CPUM(edx)
     mov dword [edx + CPUMCPU.Guest.dr + 4*8], 4
-    CPUM_FROM_CPUMCPU(edx)
 %endif
 
     ;;
@@ -284,6 +281,7 @@ ALIGNCODE(16)
 GLOBALNAME ICEnterTarget     
     ; Load CPUM pointer into rdx
     mov     rdx, [NAME(pCpumIC) wrt rip]
+    CPUMCPU_FROM_CPUM(edx)
 
     mov     rax, cs
     mov     ds, rax
@@ -295,30 +293,24 @@ GLOBALNAME ICEnterTarget
     mov     gs, rax
 
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    CPUMCPU_FROM_CPUM(edx)
     mov dword [rdx + CPUMCPU.Guest.dr + 4*8], 5
-    CPUM_FROM_CPUMCPU(edx)
 %endif
 
     ; Setup stack; use the lss_esp, ss pair for lss
     DEBUG_CHAR('7')
     mov     rsp, 0
-    mov     eax, [rdx + CPUM.Hyper.esp]
-    mov     [rdx + CPUM.Hyper.lss_esp], eax
-    lss     esp, [rdx + CPUM.Hyper.lss_esp]
+    mov     eax, [rdx + CPUMCPU.Hyper.esp]
+    mov     [rdx + CPUMCPU.Hyper.lss_esp], eax
+    lss     esp, [rdx + CPUMCPU.Hyper.lss_esp]
 
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    CPUMCPU_FROM_CPUM(edx)
     mov dword [rdx + CPUMCPU.Guest.dr + 4*8], 6
-    CPUM_FROM_CPUMCPU(edx)
 %endif
 
 
     ; load the hypervisor function address
-    mov     r9, [rdx + CPUM.Hyper.eip]
-
-    CPUMCPU_FROM_CPUM(edx)
-    
+    mov     r9, [rdx + CPUMCPU.Hyper.eip]
+   
     ; Check if we need to restore the guest FPU state
     mov     esi, [rdx + CPUMCPU.fUseFlags] ; esi == use flags.
     test    esi, CPUM_SYNC_FPU_STATE
@@ -516,9 +508,8 @@ GLOBALNAME ICExitTarget
     mov     ds, eax
     mov     es, eax
 
-    FIXUP FIX_GC_CPUM_OFF, 1, 0
+    FIXUP FIX_GC_CPUMCPU_OFF, 1, 0
     mov     edx, 0ffffffffh
-    CPUMCPU_FROM_CPUM(edx)
     mov     esi, [edx + CPUMCPU.Host.cr3]
     mov     cr3, esi
 

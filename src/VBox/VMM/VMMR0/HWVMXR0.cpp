@@ -1055,7 +1055,7 @@ static void vmxR0PrefetchPAEPdptrs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
         for (unsigned i=0;i<4;i++)
         {
-            Pdpe = PGMGstGetPaePDPtr(pVM, i);
+            Pdpe = PGMGstGetPaePDPtr(pVCpu, i);
             int rc = VMXWriteVMCS64(VMX_VMCS_GUEST_PDPTR0_FULL + i*2, Pdpe.u);
             AssertRC(rc);
         }
@@ -1180,7 +1180,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #ifdef HWACCM_VMX_EMULATE_REALMODE
         if (pVM->hwaccm.s.vmx.pRealModeTSS)
         {
-            PGMMODE enmGuestMode = PGMGetGuestMode(pVM);
+            PGMMODE enmGuestMode = PGMGetGuestMode(pVCpu);
             if (pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode != enmGuestMode)
             {
                 /* Correct weird requirements for switching to protected mode. */
@@ -1490,8 +1490,8 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     {
         if (pVM->hwaccm.s.fNestedPaging)
         {
-            Assert(PGMGetHyperCR3(pVM));
-            pVCpu->hwaccm.s.vmx.GCPhysEPTP = PGMGetHyperCR3(pVM);
+            Assert(PGMGetHyperCR3(pVCpu));
+            pVCpu->hwaccm.s.vmx.GCPhysEPTP = PGMGetHyperCR3(pVCpu);
 
             Assert(!(pVCpu->hwaccm.s.vmx.GCPhysEPTP & 0xfff));
             /** @todo Check the IA32_VMX_EPT_VPID_CAP MSR for other supported memory types. */
@@ -1524,7 +1524,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         }
         else
         {
-            val = PGMGetHyperCR3(pVM);
+            val = PGMGetHyperCR3(pVCpu);
             Assert(val || VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL));
         }
 
@@ -1549,7 +1549,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
         /* Sync the debug state now if any breakpoint is armed. */
         if (    (pCtx->dr[7] & (X86_DR7_ENABLED_MASK|X86_DR7_GD))
-            &&  !CPUMIsGuestDebugStateActive(pVM)
+            &&  !CPUMIsGuestDebugStateActive(pVCpu)
             &&  !DBGFIsStepping(pVM))
         {
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatDRxArmed);
@@ -1692,7 +1692,7 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     {
         Assert(uInterruptState <= 2);    /* only sti & mov ss */
         Log(("uInterruptState %x eip=%RGv\n", uInterruptState, pCtx->rip));
-        EMSetInhibitInterruptsPC(pVM, pCtx->rip);
+        EMSetInhibitInterruptsPC(pVM, pVCpu, pCtx->rip);
     }
     else
         VM_FF_CLEAR(pVM, VM_FF_INHIBIT_INTERRUPTS);
@@ -1701,12 +1701,12 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     VMXReadCachedVMCS(VMX_VMCS_CTRL_CR0_READ_SHADOW,     &valShadow);
     VMXReadCachedVMCS(VMX_VMCS64_GUEST_CR0,              &val);
     val = (valShadow & pVCpu->hwaccm.s.vmx.cr0_mask) | (val & ~pVCpu->hwaccm.s.vmx.cr0_mask);
-    CPUMSetGuestCR0(pVM, val);
+    CPUMSetGuestCR0(pVCpu, val);
 
     VMXReadCachedVMCS(VMX_VMCS_CTRL_CR4_READ_SHADOW,     &valShadow);
     VMXReadCachedVMCS(VMX_VMCS64_GUEST_CR4,              &val);
     val = (valShadow & pVCpu->hwaccm.s.vmx.cr4_mask) | (val & ~pVCpu->hwaccm.s.vmx.cr4_mask);
-    CPUMSetGuestCR4(pVM, val);
+    CPUMSetGuestCR4(pVCpu, val);
 
     /* Note: no reason to sync back the CRx registers. They can't be changed by the guest. */
     /* Note: only in the nested paging case can CR3 & CR4 be changed by the guest. */
@@ -1716,14 +1716,14 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         PVMCSCACHE pCache = &pVCpu->hwaccm.s.vmx.VMCSCache;
 
         /* Can be updated behind our back in the nested paging case. */
-        CPUMSetGuestCR2(pVM, pCache->cr2);
+        CPUMSetGuestCR2(pVCpu, pCache->cr2);
 
         VMXReadCachedVMCS(VMX_VMCS64_GUEST_CR3, &val);
 
         if (val != pCtx->cr3)
         {
-            CPUMSetGuestCR3(pVM, val);
-            PGMUpdateCR3(pVM, val);
+            CPUMSetGuestCR3(pVCpu, val);
+            PGMUpdateCR3(pVM, pVCpu, val);
         }
         /* Prefetch the four PDPT entries in PAE mode. */
         vmxR0PrefetchPAEPdptrs(pVM, pVCpu, pCtx);
@@ -2035,8 +2035,8 @@ ResumeExecution:
     /* Check for irq inhibition due to instruction fusing (sti, mov ss). */
     if (VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS))
     {
-        Log(("VM_FF_INHIBIT_INTERRUPTS at %RGv successor %RGv\n", (RTGCPTR)pCtx->rip, EMGetInhibitInterruptsPC(pVM)));
-        if (pCtx->rip != EMGetInhibitInterruptsPC(pVM))
+        Log(("VM_FF_INHIBIT_INTERRUPTS at %RGv successor %RGv\n", (RTGCPTR)pCtx->rip, EMGetInhibitInterruptsPC(pVM, pVCpu)));
+        if (pCtx->rip != EMGetInhibitInterruptsPC(pVM, pVCpu))
         {
             /* Note: we intentionally don't clear VM_FF_INHIBIT_INTERRUPTS here.
              * Before we are able to execute this instruction in raw mode (iret to guest code) an external interrupt might
@@ -2275,7 +2275,7 @@ ResumeExecution:
     }
 
     if (exitReason == VMX_EXIT_ERR_INVALID_GUEST_STATE)
-        HWACCMDumpRegs(pVM, pCtx);
+        HWACCMDumpRegs(pVM, pVCpu, pCtx);
 #endif
 
     Log2(("E%d: New EIP=%RGv\n", exitReason, (RTGCPTR)pCtx->rip));
@@ -2387,7 +2387,7 @@ ResumeExecution:
                 TRPMSetFaultAddress(pVM, exitQualification);
 
                 /* Forward it to our trap handler first, in case our shadow pages are out of sync. */
-                rc = PGMTrap0eHandler(pVM, errCode, CPUMCTX2CORE(pCtx), (RTGCPTR)exitQualification);
+                rc = PGMTrap0eHandler(pVM, pVCpu, errCode, CPUMCTX2CORE(pCtx), (RTGCPTR)exitQualification);
                 Log2(("PGMTrap0eHandler %RGv returned %Rrc\n", (RTGCPTR)pCtx->rip, rc));
                 if (rc == VINF_SUCCESS)
                 {   /* We've successfully synced our shadow pages, so let's just continue execution. */
@@ -2537,7 +2537,7 @@ ResumeExecution:
 
                 LogFlow(("Real mode X86_XCPT_GP instruction emulation at %RGv\n", (RTGCPTR)pCtx->rip));
 
-                rc = EMInterpretDisasOne(pVM, CPUMCTX2CORE(pCtx), &Cpu, &cbOp);
+                rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), &Cpu, &cbOp);
                 if (RT_SUCCESS(rc))
                 {
                     bool fUpdateRIP = true;
@@ -2734,7 +2734,7 @@ ResumeExecution:
                     }
 
                     default:
-                        rc = EMInterpretInstructionCPU(pVM, &Cpu, CPUMCTX2CORE(pCtx), 0, &cbSize);
+                        rc = EMInterpretInstructionCPU(pVM, pVCpu, &Cpu, CPUMCTX2CORE(pCtx), 0, &cbSize);
                         break;
                     }
 
@@ -2852,7 +2852,7 @@ ResumeExecution:
         TRPMSetFaultAddress(pVM, GCPhys);
 
         /* Handle the pagefault trap for the nested shadow table. */
-        rc = PGMR0Trap0eHandlerNestedPaging(pVM, PGMMODE_EPT, errCode, CPUMCTX2CORE(pCtx), GCPhys);
+        rc = PGMR0Trap0eHandlerNestedPaging(pVM, pVCpu, PGMMODE_EPT, errCode, CPUMCTX2CORE(pCtx), GCPhys);
         Log2(("PGMR0Trap0eHandlerNestedPaging %RGv returned %Rrc\n", (RTGCPTR)pCtx->rip, rc));
         if (rc == VINF_SUCCESS)
         {   /* We've successfully synced our shadow pages, so let's just continue execution. */
@@ -2907,7 +2907,7 @@ ResumeExecution:
     {
         Log2(("VMX: Cpuid %x\n", pCtx->eax));
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitCpuid);
-        rc = EMInterpretCpuId(pVM, CPUMCTX2CORE(pCtx));
+        rc = EMInterpretCpuId(pVM, pVCpu, CPUMCTX2CORE(pCtx));
         if (rc == VINF_SUCCESS)
         {
             /* Update EIP and continue execution. */
@@ -2924,7 +2924,7 @@ ResumeExecution:
     {
         Log2(("VMX: Rdpmc %x\n", pCtx->ecx));
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitRdpmc);
-        rc = EMInterpretRdpmc(pVM, CPUMCTX2CORE(pCtx));
+        rc = EMInterpretRdpmc(pVM, pVCpu, CPUMCTX2CORE(pCtx));
         if (rc == VINF_SUCCESS)
         {
             /* Update EIP and continue execution. */
@@ -2940,7 +2940,7 @@ ResumeExecution:
     {
         Log2(("VMX: Rdtsc\n"));
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitRdtsc);
-        rc = EMInterpretRdtsc(pVM, CPUMCTX2CORE(pCtx));
+        rc = EMInterpretRdtsc(pVM, pVCpu, CPUMCTX2CORE(pCtx));
         if (rc == VINF_SUCCESS)
         {
             /* Update EIP and continue execution. */
@@ -2958,7 +2958,7 @@ ResumeExecution:
         Assert(!pVM->hwaccm.s.fNestedPaging);
 
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitInvpg);
-        rc = EMInterpretInvlpg(pVM, CPUMCTX2CORE(pCtx), exitQualification);
+        rc = EMInterpretInvlpg(pVM, pVCpu, CPUMCTX2CORE(pCtx), exitQualification);
         if (rc == VINF_SUCCESS)
         {
             /* Update EIP and continue execution. */
@@ -2976,7 +2976,7 @@ ResumeExecution:
 
         /* Note: the intel manual claims there's a REX version of RDMSR that's slightly different, so we play safe by completely disassembling the instruction. */
         Log2(("VMX: %s\n", (exitReason == VMX_EXIT_RDMSR) ? "rdmsr" : "wrmsr"));
-        rc = EMInterpretInstruction(pVM, CPUMCTX2CORE(pCtx), 0, &cbSize);
+        rc = EMInterpretInstruction(pVM, pVCpu, CPUMCTX2CORE(pCtx), 0, &cbSize);
         if (rc == VINF_SUCCESS)
         {
             /* EIP has been updated already. */
@@ -2997,7 +2997,7 @@ ResumeExecution:
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_WRITE:
             Log2(("VMX: %RGv mov cr%d, x\n", (RTGCPTR)pCtx->rip, VMX_EXIT_QUALIFICATION_CRX_REGISTER(exitQualification)));
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitCRxWrite[VMX_EXIT_QUALIFICATION_CRX_REGISTER(exitQualification)]);
-            rc = EMInterpretCRxWrite(pVM, CPUMCTX2CORE(pCtx),
+            rc = EMInterpretCRxWrite(pVM, pVCpu, CPUMCTX2CORE(pCtx),
                                      VMX_EXIT_QUALIFICATION_CRX_REGISTER(exitQualification),
                                      VMX_EXIT_QUALIFICATION_CRX_GENREG(exitQualification));
 
@@ -3028,7 +3028,7 @@ ResumeExecution:
             if (    rc == VINF_SUCCESS /* don't bother if we are going to ring 3 anyway */
                 &&  VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL))
             {
-                rc = PGMSyncCR3(pVM, CPUMGetGuestCR0(pVM), CPUMGetGuestCR3(pVM), CPUMGetGuestCR4(pVM), VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
+                rc = PGMSyncCR3(pVM, pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
                 AssertRC(rc);
             }
             break;
@@ -3042,7 +3042,7 @@ ResumeExecution:
             /* CR8 reads only cause an exit when the TPR shadow feature isn't present. */
             Assert(VMX_EXIT_QUALIFICATION_CRX_REGISTER(exitQualification) != 8 || !(pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW));
 
-            rc = EMInterpretCRxRead(pVM, CPUMCTX2CORE(pCtx),
+            rc = EMInterpretCRxRead(pVM, pVCpu, CPUMCTX2CORE(pCtx),
                                     VMX_EXIT_QUALIFICATION_CRX_GENREG(exitQualification),
                                     VMX_EXIT_QUALIFICATION_CRX_REGISTER(exitQualification));
             break;
@@ -3050,14 +3050,14 @@ ResumeExecution:
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_CLTS:
             Log2(("VMX: clts\n"));
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitCLTS);
-            rc = EMInterpretCLTS(pVM);
+            rc = EMInterpretCLTS(pVM, pVCpu);
             pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
             break;
 
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_LMSW:
             Log2(("VMX: lmsw %x\n", VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(exitQualification)));
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitLMSW);
-            rc = EMInterpretLMSW(pVM, CPUMCTX2CORE(pCtx), VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(exitQualification));
+            rc = EMInterpretLMSW(pVM, pVCpu, CPUMCTX2CORE(pCtx), VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(exitQualification));
             pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
             break;
         }
@@ -3106,7 +3106,7 @@ ResumeExecution:
         {
             Log2(("VMX: mov drx%d, genreg%d\n", VMX_EXIT_QUALIFICATION_DRX_REGISTER(exitQualification), VMX_EXIT_QUALIFICATION_DRX_GENREG(exitQualification)));
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitDRxWrite);
-            rc = EMInterpretDRxWrite(pVM, CPUMCTX2CORE(pCtx),
+            rc = EMInterpretDRxWrite(pVM, pVCpu, CPUMCTX2CORE(pCtx),
                                      VMX_EXIT_QUALIFICATION_DRX_REGISTER(exitQualification),
                                      VMX_EXIT_QUALIFICATION_DRX_GENREG(exitQualification));
             pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_DEBUG;
@@ -3116,7 +3116,7 @@ ResumeExecution:
         {
             Log2(("VMX: mov x, drx\n"));
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitDRxRead);
-            rc = EMInterpretDRxRead(pVM, CPUMCTX2CORE(pCtx),
+            rc = EMInterpretDRxRead(pVM, pVCpu, CPUMCTX2CORE(pCtx),
                                     VMX_EXIT_QUALIFICATION_DRX_GENREG(exitQualification),
                                     VMX_EXIT_QUALIFICATION_DRX_REGISTER(exitQualification));
         }
@@ -3167,7 +3167,7 @@ ResumeExecution:
             /* Disassemble manually to deal with segment prefixes. */
             /** @todo VMX_VMCS_EXIT_GUEST_LINEAR_ADDR contains the flat pointer operand of the instruction. */
             /** @todo VMX_VMCS32_RO_EXIT_INSTR_INFO also contains segment prefix info. */
-            rc = EMInterpretDisasOne(pVM, CPUMCTX2CORE(pCtx), &Cpu, NULL);
+            rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), &Cpu, NULL);
             if (rc == VINF_SUCCESS)
             {
                 if (fIOWrite)
@@ -3235,7 +3235,7 @@ ResumeExecution:
                         {
                             uint64_t uDR6;
 
-                            Assert(CPUMIsGuestDebugStateActive(pVM));
+                            Assert(CPUMIsGuestDebugStateActive(pVCpu));
 
                             uDR6 = ASMGetDR6();
 
@@ -3458,7 +3458,7 @@ ResumeExecution:
 end:
 
     /* Signal changes for the recompiler. */
-    CPUMSetChangedFlags(pVM, CPUM_CHANGED_SYSENTER_MSR | CPUM_CHANGED_LDTR | CPUM_CHANGED_GDTR | CPUM_CHANGED_IDTR | CPUM_CHANGED_TR | CPUM_CHANGED_HIDDEN_SEL_REGS);
+    CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_SYSENTER_MSR | CPUM_CHANGED_LDTR | CPUM_CHANGED_GDTR | CPUM_CHANGED_IDTR | CPUM_CHANGED_TR | CPUM_CHANGED_HIDDEN_SEL_REGS);
 
     /* If we executed vmlaunch/vmresume and an external irq was pending, then we don't have to do a full sync the next time. */
     if (    exitReason == VMX_EXIT_EXTERNAL_IRQ
@@ -3540,7 +3540,7 @@ VMMR0DECL(int) VMXR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(pVM->hwaccm.s.vmx.fSupported);
 
     /* Save the guest debug state if necessary. */
-    if (CPUMIsGuestDebugStateActive(pVM))
+    if (CPUMIsGuestDebugStateActive(pVCpu))
     {
         CPUMR0SaveGuestDebugState(pVM, pVCpu, pCtx, true /* save DR6 */);
 
@@ -3597,7 +3597,7 @@ static void vmxR0FlushVPID(PVM pVM, PVMCPU pVCpu, VMX_FLUSH enmFlush, RTGCPTR GC
 {
 #if HC_ARCH_BITS == 32
     /* If we get a flush in 64 bits guest mode, then force a full TLB flush. Invvpid probably takes only 32 bits addresses. (@todo) */
-    if (   CPUMIsGuestInLongMode(pVM)
+    if (   CPUMIsGuestInLongMode(pVCpu)
         && !VMX_IS_64BIT_HOST_MODE())
     {
         pVCpu->hwaccm.s.fForceTLBFlush = true;
@@ -3918,7 +3918,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     PHWACCM_CPUINFO pCpu;
     RTHCPHYS        pPageCpuPhys;
 
-    /* @todo This code is not guest SMP safe (hyper context) */
+    /* @todo This code is not guest SMP safe (hyper stack) */
     AssertReturn(pVM->cCPUs == 1, VERR_ACCESS_DENIED);
     AssertReturn(pVM->hwaccm.s.pfnHost32ToGuest64R0, VERR_INTERNAL_ERROR);
     Assert(pVCpu->hwaccm.s.vmx.VMCSCache.Write.cValidEntries <= RT_ELEMENTS(pVCpu->hwaccm.s.vmx.VMCSCache.Write.aField));
@@ -3943,10 +3943,10 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
 
     ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
 
-    CPUMSetHyperESP(pVM, VMMGetStackRC(pVM));
-    CPUMSetHyperEIP(pVM, pfnHandler);
+    CPUMSetHyperESP(pVCpu, VMMGetStackRC(pVM));
+    CPUMSetHyperEIP(pVCpu, pfnHandler);
     for (int i=(int)cbParam-1;i>=0;i--)
-        CPUMPushHyper(pVM, paParam[i]);
+        CPUMPushHyper(pVCpu, paParam[i]);
 
     STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatWorldSwitch3264, z);
     /* Call switcher. */

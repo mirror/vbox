@@ -40,7 +40,7 @@
  * @returns bottom of the stack.
  * @param   pVM         The VM handle.
  */
-RTRCPTR VMMGetStackRC(PVM pVM)
+VMMDECL(RTRCPTR) VMMGetStackRC(PVM pVM)
 {
     return (RTRCPTR)pVM->vmm.s.pbEMTStackBottomRC;
 }
@@ -53,7 +53,7 @@ RTRCPTR VMMGetStackRC(PVM pVM)
  * @param   pVM         Pointer to the shared VM handle.
  * @thread  EMT
  */
-VMCPUID VMMGetCpuId(PVM pVM)
+VMMDECL(VMCPUID) VMMGetCpuId(PVM pVM)
 {
 #ifdef IN_RING3
     /* Only emulation thread(s) allowed to ask for CPU id */
@@ -82,7 +82,7 @@ VMCPUID VMMGetCpuId(PVM pVM)
  * @returns The VMCPU pointer.
  * @param   pVM         The VM to operate on.
  */
-PVMCPU VMMGetCpu(PVM pVM)
+VMMDECL(PVMCPU) VMMGetCpu(PVM pVM)
 {
 #ifdef IN_RING3
     /* Only emulation thread(s) allowed to ask for CPU id */
@@ -102,6 +102,18 @@ PVMCPU VMMGetCpu(PVM pVM)
 #else  /* IN_RING0 */
     return &pVM->aCpus[HWACCMGetVMCPUId(pVM)];
 #endif /* IN_RING0 */
+}
+
+/**
+ * Returns the VMCPU of the first EMT thread.
+ *
+ * @returns The VMCPU pointer.
+ * @param   pVM         The VM to operate on.
+ */
+VMMDECL(PVMCPU) VMMGetCpu0(PVM pVM)
+{
+    Assert(pVM->cCPUs == 1);
+    return &pVM->aCpus[0];
 }
 
 /**

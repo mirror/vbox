@@ -29,6 +29,7 @@
 #include <VBox/trpm.h>
 #include "SELMInternal.h"
 #include <VBox/vm.h>
+#include <VBox/vmm.h>
 #include <VBox/pgm.h>
 
 #include <VBox/param.h>
@@ -48,13 +49,15 @@
  */
 static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntry)
 {
-    Log2(("GDT %04X LDTR=%04X\n", iGDTEntry, CPUMGetGuestLDTR(pVM)));
+    PVMCPU pVCpu = VMMGetCpu0(pVM);
+
+    Log2(("GDT %04X LDTR=%04X\n", iGDTEntry, CPUMGetGuestLDTR(pVCpu)));
 
     /*
      * Validate the offset.
      */
     VBOXGDTR GdtrGuest;
-    CPUMGetGuestGDTR(pVM, &GdtrGuest);
+    CPUMGetGuestGDTR(pVCpu, &GdtrGuest);
     unsigned offEntry = iGDTEntry * sizeof(X86DESC);
     if (    iGDTEntry >= SELM_GDT_ELEMENTS
         ||  offEntry > GdtrGuest.cbGdt)
@@ -133,7 +136,7 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
     *pShadowDescr = Desc;
 
     /* Check if we change the LDT selector */
-    if (Sel == CPUMGetGuestLDTR(pVM)) /** @todo this isn't correct in two(+) ways! 1. It shouldn't be done until the LDTR is reloaded. 2. It caused the next instruction to be emulated.  */
+    if (Sel == CPUMGetGuestLDTR(pVCpu)) /** @todo this isn't correct in two(+) ways! 1. It shouldn't be done until the LDTR is reloaded. 2. It caused the next instruction to be emulated.  */
     {
         VM_FF_SET(pVM, VM_FF_SELM_SYNC_LDT);
         return VINF_EM_RAW_EMULATE_INSTR_LDT_FAULT;
@@ -171,6 +174,8 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
  */
 VMMRCDECL(int) selmRCGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 {
+    PVMCPU pVCpu = VMMGetCpu0(pVM);
+
     LogFlow(("selmRCGuestGDTWriteHandler errcode=%x fault=%RGv offRange=%08x\n", (uint32_t)uErrorCode, pvFault, offRange));
 
     /*
@@ -178,7 +183,7 @@ VMMRCDECL(int) selmRCGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
      * LDT updates are problemous since an invalid LDT entry will cause trouble during worldswitch.
      */
     int rc;
-    if (CPUMGetGuestLDTR(pVM) / sizeof(X86DESC) == offRange / sizeof(X86DESC))
+    if (CPUMGetGuestLDTR(pVCpu) / sizeof(X86DESC) == offRange / sizeof(X86DESC))
     {
         Log(("LDTR selector change -> fall back to HC!!\n"));
         rc = VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT;
@@ -192,7 +197,7 @@ VMMRCDECL(int) selmRCGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
          */
         /** @todo should check if any affected selectors are loaded. */
         uint32_t cb;
-        rc = EMInterpretInstruction(pVM, pRegFrame, (RTGCPTR)(RTRCUINTPTR)pvFault, &cb);
+        rc = EMInterpretInstruction(pVM, pVCpu, pRegFrame, (RTGCPTR)(RTRCUINTPTR)pvFault, &cb);
         if (RT_SUCCESS(rc) && cb)
         {
             unsigned iGDTE1 = offRange / sizeof(X86DESC);
@@ -263,12 +268,14 @@ VMMRCDECL(int) selmRCGuestLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
  */
 DECLINLINE(int) selmRCReadTssBits(PVM pVM, void *pvDst, void const *pvSrc, size_t cb)
 {
+    PVMCPU pVCpu = VMMGetCpu0(pVM);
+
     int rc = MMGCRamRead(pVM, pvDst, (void *)pvSrc, cb);
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
 
     /** @todo use different fallback?    */
-    rc = PGMPrefetchPage(pVM, (uintptr_t)pvSrc);
+    rc = PGMPrefetchPage(pVM, pVCpu, (uintptr_t)pvSrc);
     AssertMsg(rc == VINF_SUCCESS, ("PGMPrefetchPage %p failed with %Rrc\n", &pvSrc, rc));
     if (rc == VINF_SUCCESS)
     {
@@ -292,13 +299,15 @@ DECLINLINE(int) selmRCReadTssBits(PVM pVM, void *pvDst, void const *pvSrc, size_
  */
 VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 {
+    PVMCPU pVCpu = VMMGetCpu0(pVM);
+
     LogFlow(("selmRCGuestTSSWriteHandler errcode=%x fault=%RGv offRange=%08x\n", (uint32_t)uErrorCode, pvFault, offRange));
 
     /*
      * Try emulate the access.
      */
     uint32_t cb;
-    int rc = EMInterpretInstruction(pVM, pRegFrame, (RTGCPTR)(RTRCUINTPTR)pvFault, &cb);
+    int rc = EMInterpretInstruction(pVM, pVCpu, pRegFrame, (RTGCPTR)(RTRCUINTPTR)pvFault, &cb);
     if (RT_SUCCESS(rc) && cb)
     {
         rc = VINF_SUCCESS;
@@ -350,7 +359,7 @@ VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
          * needs updating.
          */
         if (    offRange >= RT_UOFFSETOF(VBOXTSS, offIoBitmap)
-            &&  (CPUMGetGuestCR4(pVM) & X86_CR4_VME))
+            &&  (CPUMGetGuestCR4(pVCpu) & X86_CR4_VME))
         {
             if (offRange - RT_UOFFSETOF(VBOXTSS, offIoBitmap) < sizeof(pGuestTss->offIoBitmap))
             {

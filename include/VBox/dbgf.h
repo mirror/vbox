@@ -765,8 +765,8 @@ VMMR3DECL(void) DBGFR3StackWalkEnd(PVM pVM, PDBGFSTACKFRAME pFrame);
 /** Special flat selector. */
 #define DBGF_SEL_FLAT                       1
 
-VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned fFlags, char *pszOutput, uint32_t cchOutput, uint32_t *pcbInstr);
-VMMR3DECL(int) DBGFR3DisasInstr(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, char *pszOutput, uint32_t cbOutput);
+VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, PVMCPU pVCpu, RTSEL Sel, RTGCPTR GCPtr, unsigned fFlags, char *pszOutput, uint32_t cchOutput, uint32_t *pcbInstr);
+VMMR3DECL(int) DBGFR3DisasInstr(PVM pVM, PVMCPU pVCpu, RTSEL Sel, RTGCPTR GCPtr, char *pszOutput, uint32_t cbOutput);
 VMMR3DECL(int) DBGFR3DisasInstrCurrent(PVM pVM, char *pszOutput, uint32_t cbOutput);
 VMMR3DECL(int) DBGFR3DisasInstrCurrentLogInternal(PVM pVM, const char *pszPrefix);
 
@@ -784,7 +784,7 @@ VMMR3DECL(int) DBGFR3DisasInstrCurrentLogInternal(PVM pVM, const char *pszPrefix
 # define DBGFR3DisasInstrCurrentLog(pVM, pszPrefix) do { } while (0)
 #endif
 
-VMMR3DECL(int) DBGFR3DisasInstrLogInternal(PVM pVM, RTSEL Sel, RTGCPTR GCPtr);
+VMMR3DECL(int) DBGFR3DisasInstrLogInternal(PVM pVM, PVMCPU pVCpu, RTSEL Sel, RTGCPTR GCPtr);
 
 /** @def DBGFR3DisasInstrLog
  * Disassembles the specified guest context instruction and writes it to the log.
@@ -804,6 +804,8 @@ VMMR3DECL(int) DBGFR3DisasInstrLogInternal(PVM pVM, RTSEL Sel, RTGCPTR GCPtr);
 VMMR3DECL(int) DBGFR3MemScan(PVM pVM, PCDBGFADDRESS pAddress, RTGCUINTPTR cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PDBGFADDRESS pHitAddress);
 VMMR3DECL(int) DBGFR3MemRead(PVM pVM, PCDBGFADDRESS pAddress, void *pvBuf, size_t cbRead);
 VMMR3DECL(int) DBGFR3MemReadString(PVM pVM, PCDBGFADDRESS pAddress, char *pszBuf, size_t cbBuf);
+VMMR3DECL(int) DBGFR3ReadGCVirt(PVM pVM, PVMCPU pVCpu, void *pvDst, RTGCPTR GCPtr, size_t cb);
+VMMR3DECL(int) DBGFR3WriteGCVirt(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb);
 
 
 /**

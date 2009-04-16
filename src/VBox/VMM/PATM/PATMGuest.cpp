@@ -98,10 +98,11 @@ static uint8_t uFnOpenBSDHandlerPrefix2[6] = { 0x0E, 0x56, 0x6A, 0x00, 0x6A, 0x0
  */
 int PATMPatchSysenterXP(PVM pVM, RTGCPTR32 pInstrGC, PPATMPATCHREC pPatchRec)
 {
-    PPATCHINFO pPatch = &pPatchRec->patch;
-    uint8_t   uTemp[16];
+    PPATCHINFO  pPatch = &pPatchRec->patch;
+    uint8_t     uTemp[16];
     RTGCPTR32   lpfnKiFastSystemCall, lpfnKiIntSystemCall = 0; /* (initializing it to shut up warning.) */
-    int       rc, i;
+    int         rc, i;
+    PVMCPU      pVCpu = VMMGetCpu0(pVM); 
 
     Assert(sizeof(uTemp) > sizeof(uFnKiIntSystemCall));
     Assert(sizeof(uTemp) > sizeof(uFnKiFastSystemCall));
@@ -110,7 +111,7 @@ int PATMPatchSysenterXP(PVM pVM, RTGCPTR32 pInstrGC, PPATMPATCHREC pPatchRec)
 
     /* check the epilog of KiFastSystemCall */
     lpfnKiFastSystemCall = pInstrGC - 2;
-    rc = PGMPhysSimpleReadGCPtr(pVM, uTemp, lpfnKiFastSystemCall, sizeof(uFnKiFastSystemCall));
+    rc = PGMPhysSimpleReadGCPtr(pVCpu, uTemp, lpfnKiFastSystemCall, sizeof(uFnKiFastSystemCall));
     if (    RT_FAILURE(rc)
         ||  memcmp(uFnKiFastSystemCall, uTemp, sizeof(uFnKiFastSystemCall)))
     {
@@ -120,7 +121,7 @@ int PATMPatchSysenterXP(PVM pVM, RTGCPTR32 pInstrGC, PPATMPATCHREC pPatchRec)
     /* Now search for KiIntSystemCall */
     for (i=0;i<64;i++)
     {
-        rc = PGMPhysSimpleReadGCPtr(pVM, uTemp, pInstrGC + i, sizeof(uFnKiIntSystemCall));
+        rc = PGMPhysSimpleReadGCPtr(pVCpu, uTemp, pInstrGC + i, sizeof(uFnKiIntSystemCall));
         if(RT_FAILURE(rc))
         {
             break;
@@ -145,13 +146,13 @@ int PATMPatchSysenterXP(PVM pVM, RTGCPTR32 pInstrGC, PPATMPATCHREC pPatchRec)
     }
 
     // make a copy of the guest code bytes that will be overwritten
-    rc = PGMPhysSimpleReadGCPtr(pVM, pPatch->aPrivInstr, pPatch->pPrivInstrGC, SIZEOF_NEARJUMP32);
+    rc = PGMPhysSimpleReadGCPtr(pVCpu, pPatch->aPrivInstr, pPatch->pPrivInstrGC, SIZEOF_NEARJUMP32);
     AssertRC(rc);
 
     /* Now we simply jump from the fast version to the 'old and slow' system call */
     uTemp[0] = 0xE9;
     *(RTGCPTR32 *)&uTemp[1] = lpfnKiIntSystemCall - (pInstrGC + SIZEOF_NEARJUMP32);
-    rc = PGMPhysSimpleDirtyWriteGCPtr(pVM, pInstrGC, uTemp, SIZEOF_NEARJUMP32);
+    rc = PGMPhysSimpleDirtyWriteGCPtr(pVCpu, pInstrGC, uTemp, SIZEOF_NEARJUMP32);
     if (RT_FAILURE(rc))
     {
         Log(("MMR3PhysWriteGCVirt failed with rc=%d!!\n", rc));
@@ -188,7 +189,7 @@ int PATMPatchOpenBSDHandlerPrefix(PVM pVM, PDISCPUSTATE pCpu, RTGCPTR32 pInstrGC
 
     /* Guest OS specific patch; check heuristics first */
 
-    rc = PGMPhysSimpleReadGCPtr(pVM, uTemp, pInstrGC, RT_MAX(sizeof(uFnOpenBSDHandlerPrefix1), sizeof(uFnOpenBSDHandlerPrefix2)));
+    rc = PGMPhysSimpleReadGCPtr(VMMGetCpu0(pVM), uTemp, pInstrGC, RT_MAX(sizeof(uFnOpenBSDHandlerPrefix1), sizeof(uFnOpenBSDHandlerPrefix2)));
     if (    RT_FAILURE(rc)
         || (    memcmp(uFnOpenBSDHandlerPrefix1, uTemp, sizeof(uFnOpenBSDHandlerPrefix1))
             &&  memcmp(uFnOpenBSDHandlerPrefix2, uTemp, sizeof(uFnOpenBSDHandlerPrefix2))))

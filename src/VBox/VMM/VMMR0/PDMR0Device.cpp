@@ -29,6 +29,7 @@
 #include <VBox/pgm.h>
 #include <VBox/mm.h>
 #include <VBox/vm.h>
+#include <VBox/vmm.h>
 #include <VBox/patm.h>
 #include <VBox/hwaccm.h>
 
@@ -69,6 +70,7 @@ static DECLCALLBACK(int)  pdmR0DevHlp_VMSetRuntimeErrorV(PPDMDEVINS pDevIns, uin
 static DECLCALLBACK(int)  pdmR0DevHlp_PATMSetMMIOPatchInfo(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPTR pCachedData);
 static DECLCALLBACK(PVM)  pdmR0DevHlp_GetVM(PPDMDEVINS pDevIns);
 static DECLCALLBACK(bool) pdmR0DevHlp_CanEmulateIoBlock(PPDMDEVINS pDevIns);
+static DECLCALLBACK(PVMCPU) pdmR0DevHlp_GetVMCPU(PPDMDEVINS pDevIns);
 /** @} */
 
 
@@ -137,6 +139,7 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlp =
     pdmR0DevHlp_PATMSetMMIOPatchInfo,
     pdmR0DevHlp_GetVM,
     pdmR0DevHlp_CanEmulateIoBlock,
+    pdmR0DevHlp_GetVMCPU,
     PDM_DEVHLPR0_VERSION
 };
 
@@ -285,7 +288,7 @@ static DECLCALLBACK(bool) pdmR0DevHlp_A20IsEnabled(PPDMDEVINS pDevIns)
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR0DevHlp_A20IsEnabled: caller=%p/%d:\n", pDevIns, pDevIns->iInstance));
 
-    bool fEnabled = PGMPhysIsA20Enabled(pDevIns->Internal.s.pVMR0);
+    bool fEnabled = PGMPhysIsA20Enabled(VMMGetCpu(pDevIns->Internal.s.pVMR0));
 
     Log(("pdmR0DevHlp_A20IsEnabled: caller=%p/%d: returns %RTbool\n", pDevIns, pDevIns->iInstance, fEnabled));
     return fEnabled;
@@ -361,9 +364,17 @@ static DECLCALLBACK(bool) pdmR0DevHlp_CanEmulateIoBlock(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR0DevHlp_GetVM: caller='%p'/%d\n", pDevIns, pDevIns->iInstance));
-    return HWACCMCanEmulateIoBlock(pDevIns->Internal.s.pVMR0);
+    return HWACCMCanEmulateIoBlock(VMMGetCpu(pDevIns->Internal.s.pVMR0));
 }
 
+
+/** @copydoc PDMDEVHLPR0::pfnGetVMCPU */
+static DECLCALLBACK(PVMCPU) pdmR0DevHlp_GetVMCPU(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR0DevHlp_GetVMCPU: caller='%p'/%d\n", pDevIns, pDevIns->iInstance));
+    return VMMGetCpu(pDevIns->Internal.s.pVMR0);
+}
 
 
 

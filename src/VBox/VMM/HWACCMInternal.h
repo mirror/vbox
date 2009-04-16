@@ -658,7 +658,7 @@ VMMR0DECL(PHWACCM_CPUINFO) HWACCMR0GetCurrentCpuEx(RTCPUID idCpu);
 
 
 #ifdef VBOX_STRICT
-VMMR0DECL(void) HWACCMDumpRegs(PVM pVM, PCPUMCTX pCtx);
+VMMR0DECL(void) HWACCMDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 VMMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC  Desc, RTSEL Sel, const char *pszMsg);
 #else
 #define HWACCMDumpRegs(a, b)                do { } while (0)

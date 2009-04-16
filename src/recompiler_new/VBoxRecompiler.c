@@ -88,7 +88,7 @@ unsigned long get_phys_page_offset(target_ulong addr);
 *******************************************************************************/
 static DECLCALLBACK(int) remR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
-static void     remR3StateUpdate(PVM pVM);
+static void     remR3StateUpdate(PVM pVM, PVMCPU pVCpu);
 static int      remR3InitPhysRamSizeAndDirtyMap(PVM pVM, bool fGuarded);
 
 static uint32_t remR3MMIOReadU8(void *pvVM, target_phys_addr_t GCPhys);
@@ -273,8 +273,8 @@ REMR3DECL(int) REMR3Init(PVM pVM)
 #endif
 
     /* ctx. */
-    pVM->rem.s.pCtx = CPUMQueryGuestCtxPtr(pVM);
-    AssertMsg(MMR3PhysGetRamSize(pVM) == 0, ("Init order have changed! REM depends on notification about ALL physical memory registrations\n"));
+    pVM->rem.s.pCtx = NULL;     /* set when executing code. */
+    AssertMsg(MMR3PhysGetRamSize(pVM) == 0, ("Init order has changed! REM depends on notification about ALL physical memory registrations\n"));
 
     /* ignore all notifications */
     pVM->rem.s.fIgnoreAll = true;
@@ -633,6 +633,7 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     uint32_t u32Dummy;
     uint32_t fRawRing0 = false;
     uint32_t u32Sep;
+    unsigned i;
     int rc;
     PREM pRem;
     LogFlow(("remR3Load:\n"));
@@ -688,8 +689,6 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
 
     if (u32Version == REM_SAVED_STATE_VERSION_VER1_6)
     {
-        unsigned i;
-
         /*
          * Load the REM stuff.
          */
@@ -738,7 +737,12 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     /*
      * Sync the whole CPU state when executing code in the recompiler.
      */
-    CPUMSetChangedFlags(pVM, CPUM_CHANGED_ALL);
+    for (i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
+        CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
+    }
     return VINF_SUCCESS;
 }
 
@@ -758,8 +762,9 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
  * @returns VBox status code.
  *
  * @param   pVM         VM Handle.
+ * @param   pVCpu       VMCPU Handle.
  */
-REMR3DECL(int) REMR3Step(PVM pVM)
+REMR3DECL(int) REMR3Step(PVM pVM, PVMCPU pVCpu)
 {
     int         rc, interrupt_request;
     RTGCPTR     GCPtrPC;
@@ -886,13 +891,14 @@ REMR3DECL(int) REMR3BreakpointClear(PVM pVM, RTGCUINTPTR Address)
  *
  * @returns VBox status code.
  * @param   pVM         VM handle.
+ * @param   pVCpu       VMCPU Handle.
  */
-REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
+REMR3DECL(int) REMR3EmulateInstruction(PVM pVM, PVMCPU pVCpu)
 {
     bool fFlushTBs;
 
     int rc, rc2;
-    Log2(("REMR3EmulateInstruction: (cs:eip=%04x:%08x)\n", CPUMGetGuestCS(pVM), CPUMGetGuestEIP(pVM)));
+    Log2(("REMR3EmulateInstruction: (cs:eip=%04x:%08x)\n", CPUMGetGuestCS(pVCpu), CPUMGetGuestEIP(pVCpu)));
 
     /* Make sure this flag is set; we might never execute remR3CanExecuteRaw in the AMD-V case.
      * CPU_RAW_HWACC makes sure we never execute interrupt handlers in the recompiler.
@@ -907,7 +913,7 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
     /*
      * Sync the state and enable single instruction / single stepping.
      */
-    rc = REMR3State(pVM);
+    rc = REMR3State(pVM, pVCpu);
     pVM->rem.s.fFlushTBs = fFlushTBs;
     if (RT_SUCCESS(rc))
     {
@@ -1015,7 +1021,7 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
          * Switch back the state.
          */
         pVM->rem.s.Env.interrupt_request = interrupt_request;
-        rc2 = REMR3StateBack(pVM);
+        rc2 = REMR3StateBack(pVM, pVCpu);
         AssertRC(rc2);
     }
 
@@ -1036,8 +1042,9 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
  * @returns VBox status code.
  *
  * @param   pVM         VM Handle.
+ * @param   pVCpu       VMCPU Handle.
  */
-REMR3DECL(int) REMR3Run(PVM pVM)
+REMR3DECL(int) REMR3Run(PVM pVM, PVMCPU pVCpu)
 {
     int rc;
     Log2(("REMR3Run: (cs:eip=%04x:%RGv)\n", pVM->rem.s.Env.segs[R_CS].selector, (RTGCPTR)pVM->rem.s.Env.eip));
@@ -1383,8 +1390,8 @@ bool remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, int *piExce
         STAM_COUNTER_INC(&gStatRefuseCanExecute);
         return false;
     }
-
-    Assert(PGMPhysIsA20Enabled(env->pVM));
+    
+    Assert(env->pVCpu && PGMPhysIsA20Enabled(env->pVCpu));
     *piException = EXCP_EXECUTE_RAW;
     return true;
 }
@@ -1436,6 +1443,7 @@ void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
      * Update the control registers before calling PGMFlushPage.
      */
     pCtx = (PCPUMCTX)pVM->rem.s.pCtx;
+    Assert(pCtx);
     pCtx->cr0 = env->cr[0];
     pCtx->cr3 = env->cr[3];
     if ((env->cr[4] ^ pCtx->cr4) & X86_CR4_VME)
@@ -1445,7 +1453,8 @@ void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
     /*
      * Let PGM do the rest.
      */
-    rc = PGMInvalidatePage(pVM, GCPtr);
+    Assert(env->pVCpu);
+    rc = PGMInvalidatePage(pVM, env->pVCpu, GCPtr);
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("remR3FlushPage %RGv failed with %d!!\n", GCPtr, rc));
@@ -1550,6 +1559,7 @@ void remR3FlushTLB(CPUState *env, bool fGlobal)
      * Update the control registers before calling PGMR3FlushTLB.
      */
     pCtx = (PCPUMCTX)pVM->rem.s.pCtx;
+    Assert(pCtx);
     pCtx->cr0 = env->cr[0];
     pCtx->cr3 = env->cr[3];
     if ((env->cr[4] ^ pCtx->cr4) & X86_CR4_VME)
@@ -1559,7 +1569,8 @@ void remR3FlushTLB(CPUState *env, bool fGlobal)
     /*
      * Let PGM do the rest.
      */
-    PGMFlushTLB(pVM, env->cr[3], fGlobal);
+    Assert(env->pVCpu);
+    PGMFlushTLB(pVM, env->pVCpu, env->cr[3], fGlobal);
 }
 
 
@@ -1588,6 +1599,7 @@ void remR3ChangeCpuMode(CPUState *env)
      * as it may need to map whatever cr3 is pointing to.
      */
     pCtx = (PCPUMCTX)pVM->rem.s.pCtx;
+    Assert(pCtx);
     pCtx->cr0 = env->cr[0];
     pCtx->cr3 = env->cr[3];
     if ((env->cr[4] ^ pCtx->cr4) & X86_CR4_VME)
@@ -1599,7 +1611,8 @@ void remR3ChangeCpuMode(CPUState *env)
 #else
     efer = 0;
 #endif
-    rc = PGMChangeMode(pVM, env->cr[0], env->cr[4], efer);
+    Assert(env->pVCpu);
+    rc = PGMChangeMode(pVM, env->pVCpu, env->cr[0], env->cr[4], efer);
     if (rc != VINF_SUCCESS)
     {
         if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
@@ -1738,12 +1751,13 @@ void remR3RecordCall(CPUState *env)
  * @returns VBox status code.
  *
  * @param   pVM         VM Handle.
+ * @param   pVCpu       VMCPU Handle.
  *
  * @remark  The caller has to check for important FFs before calling REMR3Run. REMR3State will
  *          no do this since the majority of the callers don't want any unnecessary of events
  *          pending that would immediatly interrupt execution.
  */
-REMR3DECL(int)  REMR3State(PVM pVM)
+REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
 {
     register const CPUMCTX *pCtx;
     register unsigned       fFlags;
@@ -1756,7 +1770,8 @@ REMR3DECL(int)  REMR3State(PVM pVM)
     STAM_PROFILE_START(&pVM->rem.s.StatsState, a);
     Log2(("REMR3State:\n"));
 
-    pCtx = pVM->rem.s.pCtx;
+    pVM->rem.s.Env.pVCpu = pVCpu;
+    pCtx = pVM->rem.s.pCtx = CPUMQueryGuestCtxPtr(pVCpu);
     fHiddenSelRegsValid = CPUMAreHiddenSelRegsValid(pVM);
 
     Assert(!pVM->rem.s.fInREM);
@@ -1880,7 +1895,7 @@ REMR3DECL(int)  REMR3State(PVM pVM)
     /*
      * Registers which are rarely changed and require special handling / order when changed.
      */
-    fFlags = CPUMGetAndClearChangedFlagsREM(pVM);
+    fFlags = CPUMGetAndClearChangedFlagsREM(pVCpu);
     LogFlow(("CPUMGetAndClearChangedFlagsREM %x\n", fFlags));
     if (fFlags & (  CPUM_CHANGED_CR4  | CPUM_CHANGED_CR3  | CPUM_CHANGED_CR0
                   | CPUM_CHANGED_GDTR | CPUM_CHANGED_IDTR | CPUM_CHANGED_LDTR
@@ -1994,7 +2009,7 @@ REMR3DECL(int)  REMR3State(PVM pVM)
         /** @note QEmu saves the 2nd dword of the descriptor; we should convert the attribute word back! */
 
         /* Set current CPL */
-        cpu_x86_set_cpl(&pVM->rem.s.Env, CPUMGetGuestCPL(pVM, CPUMCTX2CORE(pCtx)));
+        cpu_x86_set_cpl(&pVM->rem.s.Env, CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx)));
 
         cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_CS, pCtx->cs, pCtx->csHid.u64Base, pCtx->csHid.u32Limit, (pCtx->csHid.Attr.u << 8) & 0xFFFFFF);
         cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_SS, pCtx->ss, pCtx->ssHid.u64Base, pCtx->ssHid.u32Limit, (pCtx->ssHid.Attr.u << 8) & 0xFFFFFF);
@@ -2010,7 +2025,7 @@ REMR3DECL(int)  REMR3State(PVM pVM)
         {
             Log2(("REMR3State: SS changed from %04x to %04x!\n", pVM->rem.s.Env.segs[R_SS].selector, pCtx->ss));
 
-            cpu_x86_set_cpl(&pVM->rem.s.Env, CPUMGetGuestCPL(pVM, CPUMCTX2CORE(pCtx)));
+            cpu_x86_set_cpl(&pVM->rem.s.Env, CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx)));
             sync_seg(&pVM->rem.s.Env, R_SS, pCtx->ss);
 #ifdef VBOX_WITH_STATISTICS
             if (pVM->rem.s.Env.segs[R_SS].newselector)
@@ -2105,8 +2120,8 @@ REMR3DECL(int)  REMR3State(PVM pVM)
 #ifdef DEBUG
         if (u8TrapNo == 0x80)
         {
-            remR3DumpLnxSyscall(pVM);
-            remR3DumpOBsdSyscall(pVM);
+            remR3DumpLnxSyscall(pVCpu);
+            remR3DumpOBsdSyscall(pVCpu);
         }
 #endif
 
@@ -2194,10 +2209,12 @@ REMR3DECL(int)  REMR3State(PVM pVM)
  * @returns VBox status code.
  *
  * @param   pVM         VM Handle.
+ * @param   pVCpu       VMCPU Handle.
  */
-REMR3DECL(int) REMR3StateBack(PVM pVM)
+REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
 {
     register PCPUMCTX pCtx = pVM->rem.s.pCtx;
+    Assert(pCtx);
     unsigned          i;
 
     STAM_PROFILE_START(&pVM->rem.s.StatsStateBack, a);
@@ -2425,7 +2442,9 @@ REMR3DECL(int) REMR3StateBack(PVM pVM)
     /*
      * We're not longer in REM mode.
      */
-    pVM->rem.s.fInREM   = false;
+    pVM->rem.s.fInREM    = false;
+    pVM->rem.s.pCtx      = NULL;
+    pVM->rem.s.Env.pVCpu = NULL;
     STAM_PROFILE_STOP(&pVM->rem.s.StatsStateBack, a);
     Log2(("REMR3StateBack: returns VINF_SUCCESS\n"));
     return VINF_SUCCESS;
@@ -2436,7 +2455,7 @@ REMR3DECL(int) REMR3StateBack(PVM pVM)
  * This is called by the disassembler when it wants to update the cpu state
  * before for instance doing a register dump.
  */
-static void remR3StateUpdate(PVM pVM)
+static void remR3StateUpdate(PVM pVM, PVMCPU pVCpu)
 {
     register PCPUMCTX pCtx = pVM->rem.s.pCtx;
     unsigned          i;
@@ -2621,11 +2640,12 @@ static void remR3StateUpdate(PVM pVM)
  * course check that we're executing in REM before syncing any data over to the VMM.
  *
  * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  */
-REMR3DECL(void) REMR3StateUpdate(PVM pVM)
+REMR3DECL(void) REMR3StateUpdate(PVM pVM, PVMCPU pVCpu)
 {
     if (pVM->rem.s.fInREM)
-        remR3StateUpdate(pVM);
+        remR3StateUpdate(pVM, pVCpu);
 }
 
 
@@ -2641,10 +2661,11 @@ REMR3DECL(void) REMR3StateUpdate(PVM pVM)
  * well be in REM mode as in RAW mode.
  *
  * @param   pVM         VM handle.
+ * @param   pVCpu       VMCPU handle.
  * @param   fEnable     True if the gate should be enabled.
  *                      False if the gate should be disabled.
  */
-REMR3DECL(void) REMR3A20Set(PVM pVM, bool fEnable)
+REMR3DECL(void) REMR3A20Set(PVM pVM, PVMCPU pVCpu, bool fEnable)
 {
     bool fSaved;
 
@@ -2665,8 +2686,9 @@ REMR3DECL(void) REMR3A20Set(PVM pVM, bool fEnable)
  * Called in response to VERR_REM_FLUSHED_PAGES_OVERFLOW from the RAW execution loop.
  *
  * @param   pVM         VM handle.
+ * @param   pVCpu       VMCPU handle.
  */
-REMR3DECL(void) REMR3ReplayInvalidatedPages(PVM pVM)
+REMR3DECL(void) REMR3ReplayInvalidatedPages(PVM pVM, PVMCPU pVCpu)
 {
     RTUINT i;
 
@@ -2758,9 +2780,10 @@ REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
  *
  * @returns VBox status code.
  * @param   pVM         VM handle.
+ * @param   pVCpu       VMCPU handle.
  * @param   pvCodePage  Code page address
  */
-REMR3DECL(int) REMR3NotifyCodePageChanged(PVM pVM, RTGCPTR pvCodePage)
+REMR3DECL(int) REMR3NotifyCodePageChanged(PVM pVM, PVMCPU pVCpu, RTGCPTR pvCodePage)
 {
 #ifdef VBOX_REM_PROTECT_PAGES_FROM_SMC
     int      rc;
@@ -3576,7 +3599,7 @@ bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
     /*
      * Update the state so DBGF reads the correct register values.
      */
-    remR3StateUpdate(pVM);
+    remR3StateUpdate(pVM, env->pVCpu);
 
     /*
      * Log registers if requested.
@@ -3660,14 +3683,17 @@ void target_disas(FILE *phFile, target_ulong uCode, target_ulong cb, int fFlags)
     if (LogIs2Enabled())
 #endif
     {
-        PVM pVM = cpu_single_env->pVM;
-        RTSEL cs;
+        PVM         pVM = cpu_single_env->pVM;
+        PVMCPU      pVCpu = cpu_single_env->pVCpu;
+        RTSEL       cs;
         RTGCUINTPTR eip;
+
+        Assert(pVCpu);
 
         /*
          * Update the state so DBGF reads the correct register values (flags).
          */
-        remR3StateUpdate(pVM);
+        remR3StateUpdate(pVM, pVCpu);
 
         /*
          * Do the disassembling.
@@ -3680,6 +3706,7 @@ void target_disas(FILE *phFile, target_ulong uCode, target_ulong cb, int fFlags)
             char        szBuf[256];
             uint32_t    cbInstr;
             int rc = DBGFR3DisasInstrEx(pVM,
+                                        pVCpu,
                                         cs,
                                         eip,
                                         0,
@@ -3743,10 +3770,11 @@ const char *lookup_symbol(target_ulong orig_addr)
  * Notification about a pending interrupt.
  *
  * @param   pVM             VM Handle.
+ * @param   pVCpu           VMCPU Handle.
  * @param   u8Interrupt     Interrupt
  * @thread  The emulation thread.
  */
-REMR3DECL(void) REMR3NotifyPendingInterrupt(PVM pVM, uint8_t u8Interrupt)
+REMR3DECL(void) REMR3NotifyPendingInterrupt(PVM pVM, PVMCPU pVCpu, uint8_t u8Interrupt)
 {
     Assert(pVM->rem.s.u32PendingInterrupt == REM_NO_PENDING_IRQ);
     pVM->rem.s.u32PendingInterrupt = u8Interrupt;
@@ -3757,9 +3785,10 @@ REMR3DECL(void) REMR3NotifyPendingInterrupt(PVM pVM, uint8_t u8Interrupt)
  *
  * @returns Pending interrupt or REM_NO_PENDING_IRQ
  * @param   pVM             VM Handle.
+ * @param   pVCpu           VMCPU Handle.
  * @thread  The emulation thread.
  */
-REMR3DECL(uint32_t) REMR3QueryPendingInterrupt(PVM pVM)
+REMR3DECL(uint32_t) REMR3QueryPendingInterrupt(PVM pVM, PVMCPU pVCpu)
 {
     return pVM->rem.s.u32PendingInterrupt;
 }
@@ -3768,9 +3797,10 @@ REMR3DECL(uint32_t) REMR3QueryPendingInterrupt(PVM pVM)
  * Notification about the interrupt FF being set.
  *
  * @param   pVM             VM Handle.
+ * @param   pVCpu           VMCPU Handle.
  * @thread  The emulation thread.
  */
-REMR3DECL(void) REMR3NotifyInterruptSet(PVM pVM)
+REMR3DECL(void) REMR3NotifyInterruptSet(PVM pVM, PVMCPU pVCpu)
 {
     LogFlow(("REMR3NotifyInterruptSet: fInRem=%d interrupts %s\n", pVM->rem.s.fInREM,
              (pVM->rem.s.Env.eflags & IF_MASK) && !(pVM->rem.s.Env.hflags & HF_INHIBIT_IRQ_MASK) ? "enabled" : "disabled"));
@@ -3786,9 +3816,10 @@ REMR3DECL(void) REMR3NotifyInterruptSet(PVM pVM)
  * Notification about the interrupt FF being set.
  *
  * @param   pVM             VM Handle.
+ * @param   pVCpu           VMCPU Handle.
  * @thread  Any.
  */
-REMR3DECL(void) REMR3NotifyInterruptClear(PVM pVM)
+REMR3DECL(void) REMR3NotifyInterruptClear(PVM pVM, PVMCPU pVCpu)
 {
     LogFlow(("REMR3NotifyInterruptClear:\n"));
     if (pVM->rem.s.fInREM)
@@ -4073,12 +4104,14 @@ void     cpu_apic_wrmsr(CPUX86State *env, uint32_t reg, uint64_t value)
 
 uint64_t cpu_rdmsr(CPUX86State *env, uint32_t msr)
 {
-    return CPUMGetGuestMsr(env->pVM, msr);
+    Assert(env->pVCpu);
+    return CPUMGetGuestMsr(env->pVCpu, msr);
 }
 
 void cpu_wrmsr(CPUX86State *env, uint32_t msr, uint64_t val)
 {
-    CPUMSetGuestMsr(env->pVM, msr, val);
+    Assert(env->pVCpu);
+    CPUMSetGuestMsr(env->pVCpu, msr, val);
 }
 
 /* -+- I/O Ports -+- */
@@ -4258,7 +4291,8 @@ void hw_error(const char *pszFormat, ...)
 void cpu_abort(CPUState *env, const char *pszFormat, ...)
 {
     va_list args;
-    PVM pVM;
+    PVM     pVM;
+    PVMCPU  pVCpu;
 
     /*
      * Bitch about it.
@@ -4278,10 +4312,13 @@ void cpu_abort(CPUState *env, const char *pszFormat, ...)
      * If we're in REM context we'll sync back the state before 'jumping' to
      * the EMs failure handling.
      */
-    pVM = cpu_single_env->pVM;
+    pVM   = cpu_single_env->pVM;
+    pVCpu = cpu_single_env->pVCpu;
+    Assert(pVCpu);
+
     if (pVM->rem.s.fInREM)
-        REMR3StateBack(pVM);
-    EMR3FatalError(pVM, VERR_REM_VIRTUAL_CPU_ERROR);
+        REMR3StateBack(pVM, pVCpu);
+    EMR3FatalError(pVCpu, VERR_REM_VIRTUAL_CPU_ERROR);
     AssertMsgFailed(("EMR3FatalError returned!\n"));
 }
 
@@ -4294,7 +4331,8 @@ void cpu_abort(CPUState *env, const char *pszFormat, ...)
  */
 void remAbort(int rc, const char *pszTip)
 {
-    PVM pVM;
+    PVM     pVM;
+    PVMCPU  pVCpu;
 
     /*
      * Bitch about it.
@@ -4306,18 +4344,22 @@ void remAbort(int rc, const char *pszTip)
      * Jump back to where we entered the recompiler.
      */
     pVM = cpu_single_env->pVM;
+    pVCpu = cpu_single_env->pVCpu;
+    Assert(pVCpu);
+
     if (pVM->rem.s.fInREM)
-        REMR3StateBack(pVM);
-    EMR3FatalError(pVM, rc);
+        REMR3StateBack(pVM, pVCpu);
+
+    EMR3FatalError(pVCpu, rc);
     AssertMsgFailed(("EMR3FatalError returned!\n"));
 }
 
 
 /**
  * Dumps a linux system call.
- * @param   pVM     VM handle.
+ * @param   pVCpu     VMCPU handle.
  */
-void remR3DumpLnxSyscall(PVM pVM)
+void remR3DumpLnxSyscall(PVMCPU pVCpu)
 {
     static const char *apsz[] =
     {
@@ -4597,16 +4639,16 @@ void remR3DumpLnxSyscall(PVM pVM)
 	"sys_ni_syscall"	/* sys_vserver */
     };
 
-    uint32_t    uEAX = CPUMGetGuestEAX(pVM);
+    uint32_t    uEAX = CPUMGetGuestEAX(pVCpu);
     switch (uEAX)
     {
         default:
             if (uEAX < RT_ELEMENTS(apsz))
                 Log(("REM: linux syscall %3d: %s (eip=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x ebp=%08x)\n",
-                     uEAX, apsz[uEAX], CPUMGetGuestEIP(pVM), CPUMGetGuestEBX(pVM), CPUMGetGuestECX(pVM),
-                     CPUMGetGuestEDX(pVM), CPUMGetGuestESI(pVM), CPUMGetGuestEDI(pVM), CPUMGetGuestEBP(pVM)));
+                     uEAX, apsz[uEAX], CPUMGetGuestEIP(pVCpu), CPUMGetGuestEBX(pVCpu), CPUMGetGuestECX(pVCpu),
+                     CPUMGetGuestEDX(pVCpu), CPUMGetGuestESI(pVCpu), CPUMGetGuestEDI(pVCpu), CPUMGetGuestEBP(pVCpu)));
             else
-                Log(("eip=%08x: linux syscall %d (#%x) unknown\n", CPUMGetGuestEIP(pVM), uEAX, uEAX));
+                Log(("eip=%08x: linux syscall %d (#%x) unknown\n", CPUMGetGuestEIP(pVCpu), uEAX, uEAX));
             break;
 
     }
@@ -4615,9 +4657,9 @@ void remR3DumpLnxSyscall(PVM pVM)
 
 /**
  * Dumps an OpenBSD system call.
- * @param   pVM     VM handle.
+ * @param   pVCpu     VMCPU handle.
  */
-void remR3DumpOBsdSyscall(PVM pVM)
+void remR3DumpOBsdSyscall(PVMCPU pVCpu)
 {
     static const char *apsz[] =
     {
@@ -4926,20 +4968,20 @@ void remR3DumpOBsdSyscall(PVM pVM)
     uint32_t    uEAX;
     if (!LogIsEnabled())
         return;
-    uEAX = CPUMGetGuestEAX(pVM);
+    uEAX = CPUMGetGuestEAX(pVCpu);
     switch (uEAX)
     {
         default:
             if (uEAX < RT_ELEMENTS(apsz))
             {
                 uint32_t au32Args[8] = {0};
-                PGMPhysSimpleReadGCPtr(pVM, au32Args, CPUMGetGuestESP(pVM), sizeof(au32Args));
+                PGMPhysSimpleReadGCPtr(pVCpu, au32Args, CPUMGetGuestESP(pVCpu), sizeof(au32Args));
                 RTLogPrintf("REM: OpenBSD syscall %3d: %s (eip=%08x %08x %08x %08x %08x %08x %08x %08x %08x)\n",
-                            uEAX, apsz[uEAX], CPUMGetGuestEIP(pVM), au32Args[0], au32Args[1], au32Args[2], au32Args[3],
+                            uEAX, apsz[uEAX], CPUMGetGuestEIP(pVCpu), au32Args[0], au32Args[1], au32Args[2], au32Args[3],
                             au32Args[4], au32Args[5], au32Args[6], au32Args[7]);
             }
             else
-                RTLogPrintf("eip=%08x: OpenBSD syscall %d (#%x) unknown!!\n", CPUMGetGuestEIP(pVM), uEAX, uEAX);
+                RTLogPrintf("eip=%08x: OpenBSD syscall %d (#%x) unknown!!\n", CPUMGetGuestEIP(pVCpu), uEAX, uEAX);
             break;
     }
 }

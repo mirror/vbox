@@ -1480,6 +1480,9 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
      */
     if (pVM->enmVMState != VMSTATE_GURU_MEDITATION)
     {
+        /* @todo SMP support? */
+        PVMCPU pVCpu = VMMGetCpu(pVM);
+
         /** @todo make the state dumping at VMR3PowerOff optional. */
         RTLogRelPrintf("****************** Guest state at power off ******************\n");
         DBGFR3Info(pVM, "cpumguest", "verbose", DBGFR3InfoLogRelHlp());
@@ -1492,8 +1495,8 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
         /** @todo dump guest call stack. */
 #if 1 // temporary while debugging #1589
         RTLogRelPrintf("***\n");
-        uint32_t esp = CPUMGetGuestESP(pVM);
-        if (    CPUMGetGuestSS(pVM) == 0
+        uint32_t esp = CPUMGetGuestESP(pVCpu);
+        if (    CPUMGetGuestSS(pVCpu) == 0
             &&  esp < _64K)
         {
             uint8_t abBuf[PAGE_SIZE];
