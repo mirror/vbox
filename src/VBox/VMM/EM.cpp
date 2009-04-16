@@ -121,7 +121,7 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
     /*
      * Assert alignment and sizes.
      */
-    AssertCompile(!(RT_OFFSETOF(VM, em.s) & 31));
+    AssertCompileMemberAlignment(VM, em.s, 32);
     AssertCompile(sizeof(pVM->em.s) <= sizeof(pVM->em.padding));
     AssertReleaseMsg(sizeof(pVM->aCpus[0].em.s.u.FatalLongJump) <= sizeof(pVM->aCpus[0].em.s.u.achPaddingFatalLongJump),
         ("%d bytes, padding %d\n", sizeof(pVM->aCpus[0].em.s.u.FatalLongJump), sizeof(pVM->aCpus[0].em.s.u.achPaddingFatalLongJump)));
