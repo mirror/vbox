@@ -460,6 +460,14 @@ int main()
     GEN_CHECK_OFF(PGMCPU, pfnRCBthPrefetchPage);
     GEN_CHECK_OFF(PGMCPU, pfnRCBthVerifyAccessSyncPage);
     GEN_CHECK_OFF(PGMCPU, pfnRCBthAssertCR3);
+    GEN_CHECK_OFF(PGM, offVM);
+    GEN_CHECK_OFF(PGM, offVCpu);
+    GEN_CHECK_OFF(PGM, fRamPreAlloc);
+    GEN_CHECK_OFF(PGM, fGlobalSyncFlags);
+    GEN_CHECK_OFF(PGM, paDynPageMap32BitPTEsGC);
+    GEN_CHECK_OFF(PGM, paDynPageMapPaePTEsGC);
+    GEN_CHECK_OFF(PGM, enmHostMode);
+    GEN_CHECK_OFF(PGM, GCPhys4MBPSEMask);
     GEN_CHECK_OFF(PGM, pRamRangesR3);
     GEN_CHECK_OFF(PGM, pRamRangesR0);
     GEN_CHECK_OFF(PGM, pRamRangesRC);
