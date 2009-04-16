@@ -26,10 +26,12 @@
 #include <sys/wait.h>
 #include <errno.h>
 
-#include <VBox/log.h>
-#include <VBox/VBoxGuest.h>
+#include <X11/Xlib.h>
+
 #include <iprt/assert.h>
 #include <iprt/thread.h>
+#include <VBox/log.h>
+#include <VBox/VBoxGuest.h>
 
 #include "VBoxClient.h"
 
@@ -72,12 +74,17 @@ void cleanupAutoResize(void)
 int runAutoResize()
 {
     LogFlowFunc(("\n"));
+    /* Keep an open display so that we terminate if X11 does. */
+    Display *pDisplay = XOpenDisplay(NULL);
     uint32_t cx0 = 0, cy0 = 0, cBits0 = 0, iDisplay0 = 0;
     int rc = VbglR3GetLastDisplayChangeRequest(&cx0, &cy0, &cBits0, &iDisplay0);
     while (true)
     {
         uint32_t cx = 0, cy = 0, cBits = 0, iDisplay = 0;
         rc = VbglR3DisplayChangeWaitEvent(&cx, &cy, &cBits, &iDisplay);
+        /* Make sure we are still connected to X.  If the X server has
+         * terminated then we should get a resize event above. */
+        XPending(pDisplay);
         /* Ignore the request if it is stale */
         if ((cx != cx0) || (cy != cy0))
         {
@@ -92,6 +99,7 @@ int runAutoResize()
         cx0 = 0;
         cy0 = 0;
     }
+    XCloseDisplay(pDisplay);
     LogFlowFunc(("returning VINF_SUCCESS\n"));
     return VINF_SUCCESS;
 }
