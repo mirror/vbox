@@ -407,6 +407,13 @@ int main()
     GEN_CHECK_OFF(PGM, paDynPageMap32BitPTEsGC);
     GEN_CHECK_OFF(PGM, paDynPageMapPaePTEsGC);
     GEN_CHECK_OFF(PGM, enmHostMode);
+    GEN_CHECK_OFF(PGMCPU, offVM);
+    GEN_CHECK_OFF(PGMCPU, offVCpu);
+    GEN_CHECK_OFF(PGMCPU, offPGM);
+    GEN_CHECK_OFF(PGMCPU, AutoSet);
+    GEN_CHECK_OFF(PGMCPU, GCPhysA20Mask);
+    GEN_CHECK_OFF(PGMCPU, fA20Enabled);
+    GEN_CHECK_OFF(PGMCPU, fSyncFlags);
     GEN_CHECK_OFF(PGMCPU, enmShadowMode);
     GEN_CHECK_OFF(PGMCPU, enmGuestMode);
     GEN_CHECK_OFF(PGMCPU, GCPhysCR3);
