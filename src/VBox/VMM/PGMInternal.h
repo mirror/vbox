@@ -1304,6 +1304,9 @@ typedef struct PGMMAPSETENTRY
     /** The number of references.
      * The max is UINT16_MAX - 1. */
     uint16_t                    cRefs;
+#if HC_ARCH_BITS == 64
+    uint32_t                    alignment;
+#endif
     /** Pointer to the page. */
     RTR0PTR                     pvPage;
     /** The physical address for this entry. */
@@ -1329,6 +1332,9 @@ typedef struct PGMMAPSET
     uint32_t                    iSubset;
     /** The index of the current CPU, only valid if the set is open. */
     int32_t                     iCpu;
+#if HC_ARCH_BITS == 64
+    uint32_t                    alignment;
+#endif
     /** The entries. */
     PGMMAPSETENTRY              aEntries[64];
     /** HCPhys -> iEntry fast lookup table.
@@ -2464,7 +2470,7 @@ typedef struct PGMCPU
     RTINT                           offVCpu;
     /** Offset of the PGM structure relative to VMCPU. */
     RTINT                           offPGM;
-    RTINT                           uPadding0;
+    RTINT                           uPadding0;      /**< structure size alignment. */
 
     /** Automatically tracked physical memory mapping set.
      * Ring-0 and strict raw-mode builds. */
