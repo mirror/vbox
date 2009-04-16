@@ -762,78 +762,83 @@ RTDECL(int) RTFileReadAllByHandleEx(RTFILE File, RTFOFF off, RTFOFF cbMax, uint3
  */
 RTDECL(void) RTFileReadAllFree(void *pvFile, size_t cbFile);
 
+
+
 /** @page pg_rt_asyncio RT File async I/O API
  *
  * @todo Write something
  */
 
 /**
- * Create a async I/O request handle.
+ * Creates an async I/O request handle.
  *
  * @returns IPRT status code.
- * @param   phRequest          Where to store the request handle.
+ * @param   phReq           Where to store the request handle.
  */
-RTDECL(int) RTFileAioReqCreate(PRTFILEAIOREQ phRequest);
+RTDECL(int) RTFileAioReqCreate(PRTFILEAIOREQ phReq);
 
 /**
- * Destroy a async I/O request handle.
+ * Destroys an async I/O request handle.
  *
- * @returns nothing
- * @param   hRequest           The request handle.
+ * @param   hReq            The request handle.
  */
-RTDECL(void) RTFileAioReqDestroy(RTFILEAIOREQ hRequest);
+RTDECL(void) RTFileAioReqDestroy(RTFILEAIOREQ hReq);
 
 /**
- * Prepare a read task for a async request.
+ * Prepares an async read request.
  *
  * @returns IPRT status code.
- * @param   hRequest        The request handle.
- * @param   File            The file to read from.
+ *
+ * @param   hReq            The request handle.
+ * @param   hFile           The file to read from.
  * @param   off             The offset to start reading at.
  * @param   pvBuf           Where to store the read bits.
  * @param   cbRead          Number of bytes to read.
  * @param   pvUser          Opaque user data associated with this request which
- *                          can be retrieved with RTFileAioReqGetUser()
+ *                          can be retrieved with RTFileAioReqGetUser().
  */
-RTDECL(int) RTFileAioReqPrepareRead(RTFILEAIOREQ hRequest, RTFILE File,
-                                    RTFOFF off, void *pvBuf, size_t cbRead,
-                                    void *pvUser);
+RTDECL(int) RTFileAioReqPrepareRead(RTFILEAIOREQ hReq, RTFILE hFile, RTFOFF off,
+                                    void *pvBuf, size_t cbRead, void *pvUser);
 
 /**
- * Prepare a write task for a async request.
+ * Prepares an async write request.
  *
  * @returns IPRT status code.
- * @param   hRequest        The request handle.
- * @param   File            The file to write to.
+ *
+ * @param   hReq            The request handle.
+ * @param   hFile           The file to write to.
  * @param   off             The offset to start writing at.
  * @param   pvBuf           Where to store the written bits.
  * @param   cbRead          Number of bytes to write.
  * @param   pvUser          Opaque user data associated with this request which
- *                          can be retrieved with RTFileAioReqGetUser()
+ *                          can be retrieved with RTFileAioReqGetUser().
  */
-RTDECL(int) RTFileAioReqPrepareWrite(RTFILEAIOREQ hRequest, RTFILE File,
-                                     RTFOFF off, void *pvBuf, size_t cbWrite,
-                                     void *pvUser);
+RTDECL(int) RTFileAioReqPrepareWrite(RTFILEAIOREQ hReq, RTFILE hFile, RTFOFF off,
+                                     void *pvBuf, size_t cbWrite, void *pvUser);
 
 /**
- * Prepare a async flush of all cached data associated with a file handle.
+ * Prepares an async flush of all cached data associated with a file handle.
  *
  * @returns IPRT status code.
- * @param   hRequest        The request handle.
- * @param   File            The file to flush.
+ *
+ * @param   hReq            The request handle.
+ * @param   hFile           The file to flush.
  * @param   pvUser          Opaque user data associated with this request which
- *                          can be retrieved with RTFileAioReqGetUser()
+ *                          can be retrieved with RTFileAioReqGetUser().
+ *
+ * @remarks May also flush other caches on some platforms.
  */
-RTDECL(int) RTFileAioReqPrepareFlush(RTFILEAIOREQ Request, RTFILE File, void *pvUser);
+RTDECL(int) RTFileAioReqPrepareFlush(RTFILEAIOREQ hReq, RTFILE hFile, void *pvUser);
 
 /**
- * Get the opaque user data associated with the given request.
+ * Gets the opaque user data associated with the given request.
  *
  * @returns Opaque user data.
- * @retval  NULL if there is no user data associated with the given request.
- * @param   hRequest        The request handle.
+ * @retval  NULL if the request hasn't been prepared yet.
+ *
+ * @param   hReq            The request handle.
  */
-RTDECL(void *) RTFileAioReqGetUser(RTFILEAIOREQ hRequest);
+RTDECL(void *) RTFileAioReqGetUser(RTFILEAIOREQ hReq);
 
 /**
  * Cancels a pending request.
@@ -843,89 +848,126 @@ RTDECL(void *) RTFileAioReqGetUser(RTFILEAIOREQ hRequest);
  * @retval  VERR_FILE_AIO_IN_PROGRESS If the request could not be canceled because it is already processed.
  * @retval  VERR_FILE_AIO_COMPLETED   If the request could not be canceled because it already completed.
  *
- * @param   hRequest   The request to cancel.
+ * @param   hReq            The request to cancel.
  */
-RTDECL(int) RTFileAioReqCancel(RTFILEAIOREQ hRequest);
+RTDECL(int) RTFileAioReqCancel(RTFILEAIOREQ hReq);
 
 /**
- * Get the status of a completed request.
+ * Gets the status of a completed request.
  *
  * @returns The IPRT status code of the given request.
- * @param   hRequest          The request handle.
- * @param   pcbTransferred    Where to store the number of bytes transfered.
+ * @retval  VERR_FILE_AIO_IN_PROGRESS if the request isn't yet completed.
+ *
+ * @param   hReq            The request handle.
+ * @param   pcbTransferred  Where to store the number of bytes transfered.
+ *                          Optional since it is not relevant for all kinds of
+ *                          requests.
  */
-RTDECL(int) RTFileAioReqGetRC(RTFILEAIOREQ hRequest, size_t *pcbTransfered);
+RTDECL(int) RTFileAioReqGetRC(RTFILEAIOREQ hReq, size_t *pcbTransfered);
+
+
 
 /**
- * Create an async I/O context.
+ * Creates an async I/O context.
+ *
+ * @todo briefly explain what an async context is here or in the page
+ *       above.
  *
  * @returns IPRT status code.
- * @param   phAioContext    Where to store the aio context handle.
+ * @param   phAioCtx        Where to store the async I/O context handle.
  * @param   cAioReqsMax     How many async I/O requests the context should be capable
- *                          to handle. -1 means that the context should support an
- *                          unlimited number of requests.
+ *                          to handle. Pass RTFILEAIO_UNLIMITED_REQS if the
+ *                          context should support an unlimited number of
+ *                          requests.
  */
-RTDECL(int) RTFileAioCtxCreate(RTFILEAIOCTX phAioContext, int cAioReqsMax);
+RTDECL(int) RTFileAioCtxCreate(RTFILEAIOCTX phAioCtx, uint32_t cAioReqsMax);
+
+/** Unlimited number of requests.
+ * Used with RTFileAioCtxCreate and RTFileAioCtxGetMaxReqCount. */
+#define RTFILEAIO_UNLIMITED_REQS    UINT32_MAX
 
 /**
- * Destroy an async I/O context.
+ * Destroys an async I/O context.
  *
  * @returns IPRT status code.
- * @param   hAioContext     The aio context handle.
+ * @param   hAioCtx         The async I/O context handle.
  */
-RTDECL(int) RTFileAioCtxDestroy(RTFILEAIOCTX hAioContext);
+RTDECL(int) RTFileAioCtxDestroy(RTFILEAIOCTX hAioCtx);
 
 /**
  * Get the maximum number of requests one aio context can handle.
  *
  * @returns Maximum number of tasks the context can handle.
- *          -1 if there is no limit.
+ *          RTFILEAIO_UNLIMITED_REQS if there is no limit.
  *
- * @param   hAioContext     The aio context handle.
+ * @param   hAioCtx         The async I/O context handle.
  *                          If NIL_RTAIOCONTEXT is passed the maximum value
  *                          which can be passed to RTFileAioCtxCreate()
  *                          is returned.
  */
-RTDECL(int) RTFileAioCtxGetMaxReqCount(RTFILEAIOCTX hAioContext);
+RTDECL(uint32_t) RTFileAioCtxGetMaxReqCount(RTFILEAIOCTX hAioCtx);
 
 /**
- * Submit an array of requests to an aio context for processing.
+ * Submits a set of requests to an async I/O context for processing.
  *
  * @returns IPRT status code.
- * @param   hAioContext     The context handle.
- * @param   aRequests       Array of requests to submit.
- * @param   cRequests       Number of requests in the array.
+ *
+ * @param   hAioCtx         The async I/O context handle.
+ * @param   pahReqs         Pointer to an array of request handles.
+ * @param   cReqs           The number of entries in the array.
+ *
+ * @remarks @a cReqs uses the type size_t while it really is a uint32_t, this is
+ *          to avoid annoying warnings when using RT_ELEMENTS and similar
+ *          macros.
  */
-RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioContext, RTFILEAIOREQ aRequests[], unsigned cRequests);
+RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ phReqs, size_t cReqs);
 
 /**
- * Wait for request completion.
+ * Waits for request completion.
  *
  * @returns IPRT status code.
- * @retval  VERR_NUMBER_TOO_BIG      If cMinRequests or cMaxRequests exceeds limit.
- * @retval  VERR_TIMEOUT             If the timeout value expired before at least cMinRequests requests finished.
- * @retval  VERR_INTERRUPTED         If the completion context was interrupted with RTFileAioCtxWakeup().
- * @retval  VERR_FILE_AIO_NO_REQUEST If there is no pending request to wait for completion.
+ * @retval  VERR_INVALID_POINTER     If pcReqs or/and pahReqs are invalid.
+ * @retval  VERR_INVALID_HANDLE      If hAioCtx is invalid.
+ * @retval  VERR_OUT_OF_RANGE        If cMinReqs is larger than cReqs.
+ * @retval  VERR_INVALID_PARAMETER   If cReqs is 0.
+ * @retval  VERR_TIMEOUT             If cMinReqs didn't complete before the
+ *                                   timeout expired.
+ * @retval  VERR_INTERRUPTED         If the completion context was interrupted
+ *                                   by RTFileAioCtxWakeup().
+ * @retval  VERR_FILE_AIO_NO_REQUEST If there are no pending request.
  *
- * @param   hAioContext            The aio context handle to get completed requests from.
- * @param   cMinRequests           The minimum number of requests which have to complete until this function returns.
- * @param   apRequestsCompleted    Where to store the completed tasks.
- * @param   cMaxRequests           The maximum number of requests the array can hold.
- * @param   pcRequestsCompleted    Where to store the number of requests completed.
- * @param   cMillisTimeout         Maximum number of millisceonds to wait before returning.
- *                                 Use RT_INDEFINITE_WAIT to wait forever.
+ * @param   hAioCtx         The async I/O context handle to wait and get
+ *                          completed requests from.
+ * @param   cMinReqs        The minimum number of requests which have to
+ *                          complete before this function returns.
+ * @param   cMillisTimeout  The number of milliseconds to wait before returning
+ *                          VERR_TIMEOUT. Use RT_INDEFINITE_WAIT to wait
+ *                          forever.
+ * @param   pahReqs         Pointer to an array where the handles of the
+ *                          completed requests will be stored on success.
+ * @param   cReqs           The number of entries @a pahReqs can hold.
+ * @param   pcReqs          Where to store the number of returned (complete)
+ *                          requests. This will always be set.
+ *
+ * @remarks The wait will be resume if interrupted by a signal. An
+ *          RTFileAioCtxWaitNoResume variant can be added later if it becomes
+ *          necessary.
+ *
+ * @remarks @a cMinReqs and @a cReqs use the type size_t while they really are
+ *          uint32_t's, this is to avoid annoying warnings when using
+ *          RT_ELEMENTS and similar macros.
  */
-RTDECL(int) RTFileAioCtxWaitForCompletion(RTFILEAIOCTX hAioContext, int cMinRequests,
-                                          RTFILEAIOREQ apRequestsCompleted[], int cMaxRequests,
-                                          int *pcRequestsCompleted, unsigned cMillisTimeout);
+RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMillisTimeout,
+                             PRTFILEAIOREQ paphReqs, size_t cReqs, uint32_t *pcReqs);
 
 /**
- * Let's return RTFileAioCtxWaitForCompletion() immediateley.
+ * Forces any RTFileAioCtxWait() call from another thread to return immediately.
  *
  * @returns IPRT status code.
- * @param   hAioContext            The context handle to wakeup.
+ *
+ * @param   hAioCtx         The handle of the async I/O context to wakeup.
  */
-RTDECL(int) RTFileAioCtxWakeup(RTFILEAIOCTX hAioContext);
+RTDECL(int) RTFileAioCtxWakeup(RTFILEAIOCTX hAioCtx);
 
 #endif /* IN_RING3 */
 
