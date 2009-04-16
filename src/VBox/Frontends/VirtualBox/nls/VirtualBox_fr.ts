@@ -105,7 +105,7 @@
     </message>
     <message>
         <source>Kernel driver not accessible</source>
-        <translation type="unfinished">Pilote noyau non trouvé</translation>
+        <translation>Pilote noyau non trouvé</translation>
     </message>
 </context>
 <context>
@@ -1123,6 +1123,10 @@ Version %1</source>
     <message>
         <source>Sun VirtualBox</source>
         <translation>Sun VirtualBox</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</source>
+        <translation>&lt;qt&gt;Montre l&apos;état des fonctionnalités de virtualisation du processeur utlisées par cette machine virtuelle :&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1 :&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3 :&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
