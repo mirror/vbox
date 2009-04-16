@@ -3216,8 +3216,8 @@ DECLINLINE(int) pgmRamGCPhys2HCPhys(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhy
 DECLINLINE(int) pgmR0DynMapHCPageInlined(PPGM pPGM, RTHCPHYS HCPhys, void **ppv)
 {
     PVM         pVM     = PGM2VM(pPGM);
-    PPGMCPU     pPGMCPU = &((PPGMCPU)((uint8_t *)VMMGetCpu(pVM) + pPGM->offVCpuPGM)); /* very pretty ;-) */
-    PPGMMAPSET  pSet    = pPGMCPU->AutoSet; 
+    PPGMCPU     pPGMCPU = (PPGMCPU)((uint8_t *)VMMGetCpu(pVM) + pPGM->offVCpuPGM); /* very pretty ;-) */
+    PPGMMAPSET  pSet    = &pPGMCPU->AutoSet; 
 
     STAM_PROFILE_START(&pPGMCPU->StatR0DynMapHCPageInl, a);
     Assert(!(HCPhys & PAGE_OFFSET_MASK));
@@ -3254,7 +3254,7 @@ DECLINLINE(int) pgmR0DynMapHCPageInlined(PPGM pPGM, RTHCPHYS HCPhys, void **ppv)
 DECLINLINE(int) pgmR0DynMapGCPageInlined(PPGM pPGM, RTGCPHYS GCPhys, void **ppv)
 {
     PVM     pVM     = PGM2VM(pPGM);
-    PPGMCPU pPGMCPU = &((PPGMCPU)((uint8_t *)VMMGetCpu(pVM) + pPGM->offVCpuPGM)); /* very pretty ;-) */
+    PPGMCPU pPGMCPU = (PPGMCPU)((uint8_t *)VMMGetCpu(pVM) + pPGM->offVCpuPGM); /* very pretty ;-) */
 
     STAM_PROFILE_START(&pPGMCPU->StatR0DynMapGCPageInl, a);
     Assert(!(GCPhys & PAGE_OFFSET_MASK));
@@ -3278,7 +3278,7 @@ DECLINLINE(int) pgmR0DynMapGCPageInlined(PPGM pPGM, RTGCPHYS GCPhys, void **ppv)
     /*
      * pgmR0DynMapHCPageInlined with out stats.
      */
-    PPGMMAPSET pSet = pPGMCPU->AutoSet; 
+    PPGMMAPSET pSet = &pPGMCPU->AutoSet; 
     Assert(!(HCPhys & PAGE_OFFSET_MASK));
     Assert(pSet->cEntries <= RT_ELEMENTS(pSet->aEntries));
 
