@@ -121,15 +121,15 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     /*
      * Assert alignment and sizes.
      */
-    AssertCompile(!(RT_OFFSETOF(VM, cpum.s) & 31));
+    AssertCompileMemberAlignment(VM, cpum.s, 32);
     AssertCompile(sizeof(pVM->cpum.s) <= sizeof(pVM->cpum.padding));
-    AssertCompile(!(sizeof(CPUMCTX) & 63));
-    AssertCompile(!(sizeof(CPUMCTXMSR) & 63));
-    AssertCompile(!(sizeof(CPUMHOSTCTX) & 63));
-    AssertCompile(!(RT_OFFSETOF(VM, cpum) & 63));
-    AssertCompile(!(RT_OFFSETOF(VM, aCpus) & 63));
-    AssertCompile(!(RT_OFFSETOF(VMCPU, cpum.s) & 63));
-    AssertCompile(!(sizeof(pVM->aCpus[0].cpum.s) & 63));
+    AssertCompileSizeAlignment(CPUMCTX, 64);
+    AssertCompileSizeAlignment(CPUMCTXMSR, 64);
+    AssertCompileSizeAlignment(CPUMHOSTCTX, 64);
+    AssertCompileMemberAlignment(VM, cpum, 64);
+    AssertCompileMemberAlignment(VM, aCpus, 64);
+    AssertCompileMemberAlignment(VMCPU, cpum.s, 64);
+    AssertCompileMemberSizeAlignment(VM, aCpus[0].cpum.s, 64);
 
     /* Calculate the offset from CPUM to CPUMCPU for the first CPU. */
     pVM->cpum.s.ulOffCPUMCPU = RT_OFFSETOF(VM, aCpus[0].cpum) - RT_OFFSETOF(VM, cpum);
