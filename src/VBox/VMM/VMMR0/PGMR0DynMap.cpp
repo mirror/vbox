@@ -1571,7 +1571,7 @@ VMMDECL(void) PGMDynMapReleaseAutoSet(PVMCPU pVCpu)
     pSet->iSubset = UINT32_MAX;
     pSet->iCpu = -1;
 
-    STAM_COUNTER_INC(&pVCpu->pVMR0->pgm.s.aStatR0DynMapSetSize[(cEntries * 10 / RT_ELEMENTS(pSet->aEntries)) % 11]);
+    STAM_COUNTER_INC(&pVCpu->pgm.s.aStatR0DynMapSetSize[(cEntries * 10 / RT_ELEMENTS(pSet->aEntries)) % 11]);
     AssertMsg(cEntries < PGMMAPSET_MAX_FILL, ("%u\n", cEntries));
     if (cEntries > RT_ELEMENTS(pSet->aEntries) * 50 / 100)
         Log(("PGMDynMapReleaseAutoSet: cEntries=%d\n", pSet->cEntries));
@@ -1595,7 +1595,7 @@ VMMDECL(void) PGMDynMapFlushAutoSet(PVMCPU pVCpu)
      */
     uint32_t cEntries = pSet->cEntries;
     AssertReturnVoid(cEntries != PGMMAPSET_CLOSED);
-    STAM_COUNTER_INC(&pVCpu->pVMR0->pgm.s.aStatR0DynMapSetSize[(cEntries * 10 / RT_ELEMENTS(pSet->aEntries)) % 11]);
+    STAM_COUNTER_INC(&pVCpu->pgm.s.aStatR0DynMapSetSize[(cEntries * 10 / RT_ELEMENTS(pSet->aEntries)) % 11]);
     if (cEntries >= RT_ELEMENTS(pSet->aEntries) * 45 / 100)
     {
         pSet->cEntries = 0;
@@ -1649,7 +1649,7 @@ VMMDECL(void) PGMDynMapMigrateAutoSet(PVMCPU pVCpu)
                         RTSpinlockRelease(pThis->hSpinlock, &Tmp);
 
                         ASMInvalidatePage(pThis->paPages[iPage].pvPage);
-                        STAM_COUNTER_INC(&pVCpu->pVMR0->pgm.s.StatR0DynMapMigrateInvlPg);
+                        STAM_COUNTER_INC(&pVCpu->pgm.s.StatR0DynMapMigrateInvlPg);
 
                         RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
                     }
@@ -1726,7 +1726,7 @@ VMMDECL(uint32_t) PGMDynMapPushAutoSubset(PVMCPU pVCpu)
     uint32_t        iPrevSubset = pSet->iSubset;
 Assert(iPrevSubset == UINT32_MAX);
     pSet->iSubset = pSet->cEntries;
-    STAM_COUNTER_INC(&pVCpu->pVMR0->pgm.s.StatR0DynMapSubsets);
+    STAM_COUNTER_INC(&pVCpu->pgm.s.StatR0DynMapSubsets);
     return iPrevSubset;
 }
 
@@ -1744,7 +1744,7 @@ VMMDECL(void) PGMDynMapPopAutoSubset(PVMCPU pVCpu, uint32_t iPrevSubset)
     AssertReturnVoid(cEntries != PGMMAPSET_CLOSED);
     AssertReturnVoid(pSet->iSubset <= iPrevSubset || iPrevSubset == UINT32_MAX);
 Assert(iPrevSubset == UINT32_MAX);
-    STAM_COUNTER_INC(&pVCpu->pVMR0->pgm.s.aStatR0DynMapSetSize[(cEntries * 10 / RT_ELEMENTS(pSet->aEntries)) % 11]);
+    STAM_COUNTER_INC(&pVCpu->pgm.s.aStatR0DynMapSetSize[(cEntries * 10 / RT_ELEMENTS(pSet->aEntries)) % 11]);
     if (    cEntries >= RT_ELEMENTS(pSet->aEntries) * 40 / 100
         &&  cEntries != pSet->iSubset)
     {
