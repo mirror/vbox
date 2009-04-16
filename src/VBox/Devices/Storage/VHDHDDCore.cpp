@@ -782,7 +782,7 @@ static int vhdRename(void *pBackendData, const char *pszFilename)
     LogFlowFunc(("pBackendData=%#p pszFilename=%#p\n", pBackendData, pszFilename));
 
     int rc = VINF_SUCCESS;
-    PVHDIMAGEDESC pImage = (PVHDIMAGEDESC)pBackendData;
+    PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
 
     /* Check arguments. */
     if (   !pImage
