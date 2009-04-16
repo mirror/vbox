@@ -31,13 +31,13 @@ void set_floatx80_rounding_precision(int val STATUS_PARAM)
 #define remainderf(fa, fb)	((float)remainder(fa, fb))
 #define rintf(f)		((float)rint(f))
 /* Some defines which only apply to *BSD */
-# if defined(_BSD)
+# if defined(VBOX) && defined(_BSD)
 #  define lrintl(f)            ((int32_t)rint(f))
 #  define llrintl(f)           ((int64_t)rint(f))
 #  define rintl(d)             ((int32_t)rint(d))
 #  define sqrtl(f)             (sqrt(f))
 #  define remainderl(fa, fb)   (remainder(fa, fb))
-# endif
+# endif /* VBOX */
 #endif
 
 #if defined(__powerpc__)
@@ -48,7 +48,7 @@ double qemu_rint(double x)
     double y = 4503599627370496.0;
     if (fabs(x) >= y)
         return x;
-    if (x < 0) 
+    if (x < 0)
         y = -y;
     y = (x + y) - y;
     if (y == 0.0)
@@ -110,7 +110,7 @@ static inline int long_to_int32(long a)
 DECLINLINE(int) long_to_int32(long a)
 #endif /* VBOX */
 {
-    if (a != (int32_t)a) 
+    if (a != (int32_t)a)
         a = 0x80000000;
     return a;
 }
