@@ -2299,8 +2299,7 @@ typedef struct PGM
     /** Cache containing the last entries in the dynamic page mapping area.
      * The cache size is covering half of the mapping area. */
     RTHCPHYS                        aHCPhysDynPageMapCache[MM_HYPER_DYNAMIC_SIZE >> (PAGE_SHIFT + 1)];
-    /**
-     * Keep a lock counter for the full (!) mapping area. */
+    /** Keep a lock counter for the full (!) mapping area. */
     uint32_t                        aLockedDynPageMapCache[MM_HYPER_DYNAMIC_SIZE >> (PAGE_SHIFT)];
 
     /** The address of the ring-0 mapping cache if we're making use of it.  */
