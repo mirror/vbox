@@ -468,7 +468,7 @@ int main()
     GEN_CHECK_OFF(PGMCPU, pfnRCBthVerifyAccessSyncPage);
     GEN_CHECK_OFF(PGMCPU, pfnRCBthAssertCR3);
     GEN_CHECK_OFF(PGM, offVM);
-    GEN_CHECK_OFF(PGM, offVCpu);
+    GEN_CHECK_OFF(PGM, offVCpuPGM);
     GEN_CHECK_OFF(PGM, fRamPreAlloc);
     GEN_CHECK_OFF(PGM, fGlobalSyncFlags);
     GEN_CHECK_OFF(PGM, paDynPageMap32BitPTEsGC);
