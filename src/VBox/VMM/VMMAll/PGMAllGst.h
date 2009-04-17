@@ -24,9 +24,9 @@
 *   Internal Functions                                                         *
 *******************************************************************************/
 __BEGIN_DECLS
-PGM_GST_DECL(int, GetPage)(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys);
-PGM_GST_DECL(int, ModifyPage)(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
-PGM_GST_DECL(int, GetPDE)(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPDE);
+PGM_GST_DECL(int, GetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys);
+PGM_GST_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
+PGM_GST_DECL(int, GetPDE)(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPDE);
 PGM_GST_DECL(bool, HandlerVirtualUpdate)(PVM pVM, uint32_t cr4);
 __END_DECLS
 
@@ -41,14 +41,13 @@ __END_DECLS
  * purpose.
  *
  * @returns VBox status.
- * @param   pVM         VM Handle.
  * @param   pVCpu       The VMCPU handle.
  * @param   GCPtr       Guest Context virtual address of the page. Page aligned!
  * @param   pfFlags     Where to store the flags. These are X86_PTE_*, even for big pages.
  * @param   pGCPhys     Where to store the GC physical address of the page.
  *                      This is page aligned. The fact that the
  */
-PGM_GST_DECL(int, GetPage)(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys)
+PGM_GST_DECL(int, GetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys)
 {
 #if PGM_GST_TYPE == PGM_TYPE_REAL \
  || PGM_GST_TYPE == PGM_TYPE_PROT
@@ -63,6 +62,7 @@ PGM_GST_DECL(int, GetPage)(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFla
 
 #elif PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64
 
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
     /*
      * Get the PDE.
      */
@@ -167,19 +167,19 @@ PGM_GST_DECL(int, GetPage)(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFla
  * The existing flags are ANDed with the fMask and ORed with the fFlags.
  *
  * @returns VBox status code.
- * @param   pVM         VM handle.
  * @param   pVCpu       The VMCPU handle.
  * @param   GCPtr       Virtual address of the first page in the range. Page aligned!
  * @param   cb          Size (in bytes) of the page range to apply the modification to. Page aligned!
  * @param   fFlags      The OR  mask - page flags X86_PTE_*, excluding the page mask of course.
  * @param   fMask       The AND mask - page flags X86_PTE_*.
  */
-PGM_GST_DECL(int, ModifyPage)(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask)
+PGM_GST_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask)
 {
 #if PGM_GST_TYPE == PGM_TYPE_32BIT \
  || PGM_GST_TYPE == PGM_TYPE_PAE \
  || PGM_GST_TYPE == PGM_TYPE_AMD64
 
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
     for (;;)
     {
         /*
@@ -274,12 +274,11 @@ PGM_GST_DECL(int, ModifyPage)(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, u
  * Retrieve guest PDE information
  *
  * @returns VBox status code.
- * @param   pVM         The virtual machine.
  * @param   pVCpu       The VMCPU handle.
  * @param   GCPtr       Guest context pointer
  * @param   pPDE        Pointer to guest PDE structure
  */
-PGM_GST_DECL(int, GetPDE)(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPDE)
+PGM_GST_DECL(int, GetPDE)(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPDE)
 {
 #if PGM_GST_TYPE == PGM_TYPE_32BIT \
  || PGM_GST_TYPE == PGM_TYPE_PAE   \

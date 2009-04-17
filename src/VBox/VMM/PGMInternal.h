@@ -1982,7 +1982,7 @@ typedef PGMTREES *PPGMTREES;
 #define PGM_GST_NAME_AMD64(name)        PGM_CTX(pgm,GstAMD64##name)
 #define PGM_GST_NAME_RC_AMD64_STR(name) "pgmRCGstAMD64" #name
 #define PGM_GST_NAME_R0_AMD64_STR(name) "pgmR0GstAMD64" #name
-#define PGM_GST_PFN(name, pVM)          ((pVCpu)->pgm.s.PGM_CTX(pfn,Gst##name))
+#define PGM_GST_PFN(name, pVCpu)        ((pVCpu)->pgm.s.PGM_CTX(pfn,Gst##name))
 #define PGM_GST_DECL(type, name)        PGM_CTX_DECL(type) PGM_GST_NAME(name)
 
 #define PGM_SHW_NAME_32BIT(name)        PGM_CTX(pgm,Shw32Bit##name)
@@ -2001,7 +2001,7 @@ typedef PGMTREES *PPGMTREES;
 #define PGM_SHW_NAME_RC_EPT_STR(name)   "pgmRCShwEPT" #name
 #define PGM_SHW_NAME_R0_EPT_STR(name)   "pgmR0ShwEPT" #name
 #define PGM_SHW_DECL(type, name)        PGM_CTX_DECL(type) PGM_SHW_NAME(name)
-#define PGM_SHW_PFN(name, pVM)          ((pVCpu)->pgm.s.PGM_CTX(pfn,Shw##name))
+#define PGM_SHW_PFN(name, pVCpu)        ((pVCpu)->pgm.s.PGM_CTX(pfn,Shw##name))
 
 /*                   Shw_Gst */
 #define PGM_BTH_NAME_32BIT_REAL(name)   PGM_CTX(pgm,Bth32BitReal##name)
@@ -2063,7 +2063,7 @@ typedef PGMTREES *PPGMTREES;
 #define PGM_BTH_NAME_R0_EPT_AMD64_STR(name)     "pgmR0BthEPTAMD64" #name
 
 #define PGM_BTH_DECL(type, name)        PGM_CTX_DECL(type) PGM_BTH_NAME(name)
-#define PGM_BTH_PFN(name, pVM)          ((pVCpu)->pgm.s.PGM_CTX(pfn,Bth##name))
+#define PGM_BTH_PFN(name, pVCpu)        ((pVCpu)->pgm.s.PGM_CTX(pfn,Bth##name))
 /** @} */
 
 /**
@@ -2079,32 +2079,32 @@ typedef struct PGMMODEDATA
     /** @name Function pointers for Shadow paging.
      * @{
      */
-    DECLR3CALLBACKMEMBER(int,       pfnR3ShwRelocate,(PVM pVM, PVMCPU pVCpu, RTGCPTR offDelta));
-    DECLR3CALLBACKMEMBER(int,       pfnR3ShwExit,(PVM pVM, PVMCPU pVCpu));
-    DECLR3CALLBACKMEMBER(int,       pfnR3ShwGetPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
-    DECLR3CALLBACKMEMBER(int,       pfnR3ShwModifyPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+    DECLR3CALLBACKMEMBER(int,       pfnR3ShwRelocate,(PVMCPU pVCpu, RTGCPTR offDelta));
+    DECLR3CALLBACKMEMBER(int,       pfnR3ShwExit,(PVMCPU pVCpu));
+    DECLR3CALLBACKMEMBER(int,       pfnR3ShwGetPage,(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
+    DECLR3CALLBACKMEMBER(int,       pfnR3ShwModifyPage,(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
 
-    DECLRCCALLBACKMEMBER(int,       pfnRCShwGetPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
-    DECLRCCALLBACKMEMBER(int,       pfnRCShwModifyPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+    DECLRCCALLBACKMEMBER(int,       pfnRCShwGetPage,(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
+    DECLRCCALLBACKMEMBER(int,       pfnRCShwModifyPage,(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
 
-    DECLR0CALLBACKMEMBER(int,       pfnR0ShwGetPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
-    DECLR0CALLBACKMEMBER(int,       pfnR0ShwModifyPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+    DECLR0CALLBACKMEMBER(int,       pfnR0ShwGetPage,(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
+    DECLR0CALLBACKMEMBER(int,       pfnR0ShwModifyPage,(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
     /** @} */
 
     /** @name Function pointers for Guest paging.
      * @{
      */
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstRelocate,(PVM pVM, PVMCPU pVCpu, RTGCPTR offDelta));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstExit,(PVM pVM, PVMCPU pVCpu));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstModifyPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPDE,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde));
-    DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
-    DECLRCCALLBACKMEMBER(int,       pfnRCGstModifyPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPDE,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde));
-    DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
-    DECLR0CALLBACKMEMBER(int,       pfnR0GstModifyPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPDE,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde));
+    DECLR3CALLBACKMEMBER(int,       pfnR3GstRelocate,(PVMCPU pVCpu, RTGCPTR offDelta));
+    DECLR3CALLBACKMEMBER(int,       pfnR3GstExit,(PVMCPU pVCpu));
+    DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPage,(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
+    DECLR3CALLBACKMEMBER(int,       pfnR3GstModifyPage,(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+    DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPDE,(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde));
+    DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPage,(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
+    DECLRCCALLBACKMEMBER(int,       pfnRCGstModifyPage,(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+    DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPDE,(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde));
+    DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPage,(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
+    DECLR0CALLBACKMEMBER(int,       pfnR0GstModifyPage,(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+    DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPDE,(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde));
     /** @} */
 
     /** @name Function pointers for Both Shadow and Guest paging.
@@ -2589,37 +2589,37 @@ typedef struct PGMCPU
     /** @name Function pointers for Shadow paging.
      * @{
      */
-    DECLR3CALLBACKMEMBER(int,       pfnR3ShwRelocate,(PVM pVM, PVMCPU pVCpu, RTGCPTR offDelta));
-    DECLR3CALLBACKMEMBER(int,       pfnR3ShwExit,(PVM pVM, PVMCPU pVCpu));
-    DECLR3CALLBACKMEMBER(int,       pfnR3ShwGetPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
-    DECLR3CALLBACKMEMBER(int,       pfnR3ShwModifyPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+    DECLR3CALLBACKMEMBER(int,       pfnR3ShwRelocate,(PVMCPU pVCpu, RTGCPTR offDelta));
+    DECLR3CALLBACKMEMBER(int,       pfnR3ShwExit,(PVMCPU pVCpu));
+    DECLR3CALLBACKMEMBER(int,       pfnR3ShwGetPage,(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
+    DECLR3CALLBACKMEMBER(int,       pfnR3ShwModifyPage,(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
 
-    DECLRCCALLBACKMEMBER(int,       pfnRCShwGetPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
-    DECLRCCALLBACKMEMBER(int,       pfnRCShwModifyPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+    DECLRCCALLBACKMEMBER(int,       pfnRCShwGetPage,(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
+    DECLRCCALLBACKMEMBER(int,       pfnRCShwModifyPage,(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
 
-    DECLR0CALLBACKMEMBER(int,       pfnR0ShwGetPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
-    DECLR0CALLBACKMEMBER(int,       pfnR0ShwModifyPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+    DECLR0CALLBACKMEMBER(int,       pfnR0ShwGetPage,(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
+    DECLR0CALLBACKMEMBER(int,       pfnR0ShwModifyPage,(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
 
     /** @} */
 
     /** @name Function pointers for Guest paging.
      * @{
      */
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstRelocate,(PVM pVM, PVMCPU pVCpu, RTGCPTR offDelta));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstExit,(PVM pVM, PVMCPU pVCpu));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstModifyPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPDE,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde));
-    DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
-    DECLRCCALLBACKMEMBER(int,       pfnRCGstModifyPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPDE,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde));
+    DECLR3CALLBACKMEMBER(int,       pfnR3GstRelocate,(PVMCPU pVCpu, RTGCPTR offDelta));
+    DECLR3CALLBACKMEMBER(int,       pfnR3GstExit,(PVMCPU pVCpu));
+    DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPage,(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
+    DECLR3CALLBACKMEMBER(int,       pfnR3GstModifyPage,(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+    DECLR3CALLBACKMEMBER(int,       pfnR3GstGetPDE,(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde));
+    DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPage,(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
+    DECLRCCALLBACKMEMBER(int,       pfnRCGstModifyPage,(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+    DECLRCCALLBACKMEMBER(int,       pfnRCGstGetPDE,(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde));
 #if HC_ARCH_BITS == 64
     RTRCPTR                         alignment3; /**< structure size alignment. */
 #endif
 
-    DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
-    DECLR0CALLBACKMEMBER(int,       pfnR0GstModifyPage,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPDE,(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde));
+    DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPage,(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
+    DECLR0CALLBACKMEMBER(int,       pfnR0GstModifyPage,(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+    DECLR0CALLBACKMEMBER(int,       pfnR0GstGetPDE,(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde));
     /** @} */
 
     /** @name Function pointers for Both Shadow and Guest paging.

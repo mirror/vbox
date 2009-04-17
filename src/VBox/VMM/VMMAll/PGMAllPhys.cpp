@@ -1282,7 +1282,7 @@ VMMDECL(RTR3PTR) PGMPhysGCPhys2R3PtrAssert(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRa
  */
 VMMDECL(int) PGMPhysGCPtr2GCPhys(PVMCPU pVCpu, RTGCPTR GCPtr, PRTGCPHYS pGCPhys)
 {
-    int rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu->CTX_SUFF(pVM), pVCpu, (RTGCUINTPTR)GCPtr, NULL, pGCPhys);
+    int rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, (RTGCUINTPTR)GCPtr, NULL, pGCPhys);
     if (pGCPhys && RT_SUCCESS(rc))
         *pGCPhys |= (RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK;
     return rc;
@@ -1303,7 +1303,7 @@ VMMDECL(int) PGMPhysGCPtr2HCPhys(PVMCPU pVCpu, RTGCPTR GCPtr, PRTHCPHYS pHCPhys)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     RTGCPHYS GCPhys;
-    int rc = PGM_GST_PFN(GetPage,pVCpu)(pVM, pVCpu, (RTGCUINTPTR)GCPtr, NULL, &GCPhys);
+    int rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, (RTGCUINTPTR)GCPtr, NULL, &GCPhys);
     if (RT_SUCCESS(rc))
         rc = PGMPhysGCPhys2HCPhys(pVM, GCPhys | ((RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK), pHCPhys);
     return rc;
@@ -1327,7 +1327,7 @@ VMMDECL(int) PGMPhysGCPtr2R3Ptr(PVMCPU pVCpu, RTGCPTR GCPtr, PRTR3PTR pR3Ptr)
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     VM_ASSERT_EMT(pVM); /* no longer safe for use outside the EMT thread! */
     RTGCPHYS GCPhys;
-    int rc = PGM_GST_PFN(GetPage,pVCpu)(pVM, pVCpu, (RTGCUINTPTR)GCPtr, NULL, &GCPhys);
+    int rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, (RTGCUINTPTR)GCPtr, NULL, &GCPhys);
     if (RT_SUCCESS(rc))
         rc = PGMPhysGCPhys2R3Ptr(pVM, GCPhys | ((RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK), 1 /* we always stay within one page */, pR3Ptr);
     return rc;
@@ -2384,14 +2384,14 @@ VMMDECL(int) PGMPhysSimpleDirtyWriteGCPtr(PVMCPU pVCpu, RTGCPTR GCPtrDst, const 
     {
         memcpy(pvDst, pvSrc, cb);
         PGMPhysReleasePageMappingLock(pVM, &Lock);
-        rc = PGMGstModifyPage(pVM, pVCpu, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D)); AssertRC(rc);
+        rc = PGMGstModifyPage(pVCpu, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D)); AssertRC(rc);
         return VINF_SUCCESS;
     }
 
     /* copy to the end of the page. */
     memcpy(pvDst, pvSrc, cbPage);
     PGMPhysReleasePageMappingLock(pVM, &Lock);
-    rc = PGMGstModifyPage(pVM, pVCpu, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D)); AssertRC(rc);
+    rc = PGMGstModifyPage(pVCpu, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D)); AssertRC(rc);
     GCPtrDst = (RTGCPTR)((RTGCUINTPTR)GCPtrDst + cbPage);
     pvSrc = (const uint8_t *)pvSrc + cbPage;
     cb -= cbPage;
@@ -2411,14 +2411,14 @@ VMMDECL(int) PGMPhysSimpleDirtyWriteGCPtr(PVMCPU pVCpu, RTGCPTR GCPtrDst, const 
         {
             memcpy(pvDst, pvSrc, cb);
             PGMPhysReleasePageMappingLock(pVM, &Lock);
-            rc = PGMGstModifyPage(pVM, pVCpu, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D)); AssertRC(rc);
+            rc = PGMGstModifyPage(pVCpu, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D)); AssertRC(rc);
             return VINF_SUCCESS;
         }
 
         /* copy the entire page and advance */
         memcpy(pvDst, pvSrc, PAGE_SIZE);
         PGMPhysReleasePageMappingLock(pVM, &Lock);
-        rc = PGMGstModifyPage(pVM, pVCpu, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D)); AssertRC(rc);
+        rc = PGMGstModifyPage(pVCpu, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D)); AssertRC(rc);
         GCPtrDst = (RTGCPTR)((RTGCUINTPTR)GCPtrDst + PAGE_SIZE);
         pvSrc = (const uint8_t *)pvSrc + PAGE_SIZE;
         cb -= PAGE_SIZE;
@@ -2461,14 +2461,14 @@ VMMDECL(int) PGMPhysReadGCPtr(PVMCPU pVCpu, void *pvDst, RTGCPTR GCPtrSrc, size_
     if (((RTGCUINTPTR)GCPtrSrc & PAGE_OFFSET_MASK) + cb <= PAGE_SIZE)
     {
         /* Convert virtual to physical address + flags */
-        rc = PGM_GST_PFN(GetPage,pVCpu)(pVM, pVCpu, (RTGCUINTPTR)GCPtrSrc, &fFlags, &GCPhys);
+        rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, (RTGCUINTPTR)GCPtrSrc, &fFlags, &GCPhys);
         AssertMsgRCReturn(rc, ("GetPage failed with %Rrc for %RGv\n", rc, GCPtrSrc), rc);
         GCPhys |= (RTGCUINTPTR)GCPtrSrc & PAGE_OFFSET_MASK;
 
         /* mark the guest page as accessed. */
         if (!(fFlags & X86_PTE_A))
         {
-            rc = PGMGstModifyPage(pVM, pVCpu, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)(X86_PTE_A));
+            rc = PGMGstModifyPage(pVCpu, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)(X86_PTE_A));
             AssertRC(rc);
         }
 
@@ -2481,14 +2481,14 @@ VMMDECL(int) PGMPhysReadGCPtr(PVMCPU pVCpu, void *pvDst, RTGCPTR GCPtrSrc, size_
     for (;;)
     {
         /* Convert virtual to physical address + flags */
-        rc = PGM_GST_PFN(GetPage,pVCpu)(pVM, pVCpu, (RTGCUINTPTR)GCPtrSrc, &fFlags, &GCPhys);
+        rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, (RTGCUINTPTR)GCPtrSrc, &fFlags, &GCPhys);
         AssertMsgRCReturn(rc, ("GetPage failed with %Rrc for %RGv\n", rc, GCPtrSrc), rc);
         GCPhys |= (RTGCUINTPTR)GCPtrSrc & PAGE_OFFSET_MASK;
 
         /* mark the guest page as accessed. */
         if (!(fFlags & X86_PTE_A))
         {
-            rc = PGMGstModifyPage(pVM, pVCpu, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)(X86_PTE_A));
+            rc = PGMGstModifyPage(pVCpu, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)(X86_PTE_A));
             AssertRC(rc);
         }
 
@@ -2542,7 +2542,7 @@ VMMDECL(int) PGMPhysWriteGCPtr(PVMCPU pVCpu, RTGCPTR GCPtrDst, const void *pvSrc
     if (((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK) + cb <= PAGE_SIZE)
     {
         /* Convert virtual to physical address + flags */
-        rc = PGM_GST_PFN(GetPage,pVCpu)(pVM, pVCpu, (RTGCUINTPTR)GCPtrDst, &fFlags, &GCPhys);
+        rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, (RTGCUINTPTR)GCPtrDst, &fFlags, &GCPhys);
         AssertMsgRCReturn(rc, ("GetPage failed with %Rrc for %RGv\n", rc, GCPtrDst), rc);
         GCPhys |= (RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK;
 
@@ -2553,7 +2553,7 @@ VMMDECL(int) PGMPhysWriteGCPtr(PVMCPU pVCpu, RTGCPTR GCPtrDst, const void *pvSrc
         /* Mark the guest page as accessed and dirty if necessary. */
         if ((fFlags & (X86_PTE_A | X86_PTE_D)) != (X86_PTE_A | X86_PTE_D))
         {
-            rc = PGMGstModifyPage(pVM, pVCpu, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
+            rc = PGMGstModifyPage(pVCpu, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
             AssertRC(rc);
         }
 
@@ -2566,7 +2566,7 @@ VMMDECL(int) PGMPhysWriteGCPtr(PVMCPU pVCpu, RTGCPTR GCPtrDst, const void *pvSrc
     for (;;)
     {
         /* Convert virtual to physical address + flags */
-        rc = PGM_GST_PFN(GetPage,pVCpu)(pVM, pVCpu, (RTGCUINTPTR)GCPtrDst, &fFlags, &GCPhys);
+        rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, (RTGCUINTPTR)GCPtrDst, &fFlags, &GCPhys);
         AssertMsgRCReturn(rc, ("GetPage failed with %Rrc for %RGv\n", rc, GCPtrDst), rc);
         GCPhys |= (RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK;
 
@@ -2577,7 +2577,7 @@ VMMDECL(int) PGMPhysWriteGCPtr(PVMCPU pVCpu, RTGCPTR GCPtrDst, const void *pvSrc
         /* Mark the guest page as accessed and dirty if necessary. */
         if ((fFlags & (X86_PTE_A | X86_PTE_D)) != (X86_PTE_A | X86_PTE_D))
         {
-            rc = PGMGstModifyPage(pVM, pVCpu, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
+            rc = PGMGstModifyPage(pVCpu, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
             AssertRC(rc);
         }
 
@@ -2644,7 +2644,7 @@ VMMDECL(int) PGMPhysInterpretedRead(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void *p
          */
         RTGCPHYS GCPhys;
         uint64_t fFlags;
-        rc = PGM_GST_PFN(GetPage,pVCpu)(pVM, pVCpu, GCPtrSrc, &fFlags, &GCPhys);
+        rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, GCPtrSrc, &fFlags, &GCPhys);
         if (RT_SUCCESS(rc))
         {
             /** @todo we should check reserved bits ... */
@@ -2667,7 +2667,7 @@ VMMDECL(int) PGMPhysInterpretedRead(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void *p
             /** @todo access bit emulation isn't 100% correct. */
             if (!(fFlags & X86_PTE_A))
             {
-                rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVM, pVCpu, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
+                rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVCpu, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
                 AssertRC(rc);
             }
             return VINF_SUCCESS;
@@ -2683,9 +2683,9 @@ VMMDECL(int) PGMPhysInterpretedRead(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void *p
         RTGCPHYS GCPhys1;
         uint64_t fFlags2;
         RTGCPHYS GCPhys2;
-        rc = PGM_GST_PFN(GetPage,pVCpu)(pVM, pVCpu, GCPtrSrc, &fFlags1, &GCPhys1);
+        rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, GCPtrSrc, &fFlags1, &GCPhys1);
         if (RT_SUCCESS(rc))
-            rc = PGM_GST_PFN(GetPage,pVCpu)(pVM, pVCpu, GCPtrSrc + cb1, &fFlags2, &GCPhys2);
+            rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, GCPtrSrc + cb1, &fFlags2, &GCPhys2);
         if (RT_SUCCESS(rc))
         {
             /** @todo we should check reserved bits ... */
@@ -2720,12 +2720,12 @@ VMMDECL(int) PGMPhysInterpretedRead(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void *p
 
             if (!(fFlags1 & X86_PTE_A))
             {
-                rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVM, pVCpu, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
+                rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVCpu, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
                 AssertRC(rc);
             }
             if (!(fFlags2 & X86_PTE_A))
             {
-                rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVM, pVCpu, GCPtrSrc + cb1, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
+                rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVCpu, GCPtrSrc + cb1, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
                 AssertRC(rc);
             }
             return VINF_SUCCESS;
@@ -2810,7 +2810,7 @@ VMMDECL(int) PGMPhysInterpretedReadNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCor
          */
         RTGCPHYS    GCPhys;
         uint64_t    fFlags;
-        rc = PGM_GST_PFN(GetPage,pVCpu)(pVM, pVCpu, GCPtrSrc, &fFlags, &GCPhys);
+        rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, GCPtrSrc, &fFlags, &GCPhys);
         if (RT_SUCCESS(rc))
         {
             if (1) /** @todo we should check reserved bits ... */
@@ -2839,7 +2839,7 @@ VMMDECL(int) PGMPhysInterpretedReadNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCor
                 if (!(fFlags & X86_PTE_A))
                 {
                     /** @todo access bit emulation isn't 100% correct. */
-                    rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVM, pVCpu, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
+                    rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVCpu, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
                     AssertRC(rc);
                 }
                 return VINF_SUCCESS;
@@ -2856,10 +2856,10 @@ VMMDECL(int) PGMPhysInterpretedReadNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCor
         RTGCPHYS    GCPhys1;
         uint64_t    fFlags2;
         RTGCPHYS    GCPhys2;
-        rc = PGM_GST_PFN(GetPage,pVCpu)(pVM, pVCpu, GCPtrSrc, &fFlags1, &GCPhys1);
+        rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, GCPtrSrc, &fFlags1, &GCPhys1);
         if (RT_SUCCESS(rc))
         {
-            rc = PGM_GST_PFN(GetPage,pVCpu)(pVM, pVCpu, GCPtrSrc + cb1, &fFlags2, &GCPhys2);
+            rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, GCPtrSrc + cb1, &fFlags2, &GCPhys2);
             if (RT_SUCCESS(rc))
             {
                 if (1) /** @todo we should check reserved bits ... */
@@ -2904,12 +2904,12 @@ VMMDECL(int) PGMPhysInterpretedReadNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCor
 
                     if (!(fFlags1 & X86_PTE_A))
                     {
-                        rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVM, pVCpu, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
+                        rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVCpu, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
                         AssertRC(rc);
                     }
                     if (!(fFlags2 & X86_PTE_A))
                     {
-                        rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVM, pVCpu, GCPtrSrc + cb1, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
+                        rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVCpu, GCPtrSrc + cb1, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
                         AssertRC(rc);
                     }
                     return VINF_SUCCESS;
@@ -3001,7 +3001,7 @@ VMMDECL(int) PGMPhysInterpretedWriteNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCo
          */
         RTGCPHYS    GCPhys;
         uint64_t    fFlags;
-        rc = PGM_GST_PFN(GetPage,pVCpu)(pVM, pVCpu, GCPtrDst, &fFlags, &GCPhys);
+        rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, GCPtrDst, &fFlags, &GCPhys);
         if (RT_SUCCESS(rc))
         {
             if (    (fFlags & X86_PTE_RW)                   /** @todo Also check reserved bits. */
@@ -3032,7 +3032,7 @@ VMMDECL(int) PGMPhysInterpretedWriteNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCo
                 if (!(fFlags & (X86_PTE_A | X86_PTE_D)))
                 {
                     /** @todo dirty & access bit emulation isn't 100% correct. */
-                    rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVM, pVCpu, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
+                    rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVCpu, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
                     AssertRC(rc);
                 }
                 return VINF_SUCCESS;
@@ -3050,10 +3050,10 @@ VMMDECL(int) PGMPhysInterpretedWriteNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCo
         RTGCPHYS    GCPhys1;
         uint64_t    fFlags2;
         RTGCPHYS    GCPhys2;
-        rc = PGM_GST_PFN(GetPage,pVCpu)(pVM, pVCpu, GCPtrDst, &fFlags1, &GCPhys1);
+        rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, GCPtrDst, &fFlags1, &GCPhys1);
         if (RT_SUCCESS(rc))
         {
-            rc = PGM_GST_PFN(GetPage,pVCpu)(pVM, pVCpu, GCPtrDst + cb1, &fFlags2, &GCPhys2);
+            rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, GCPtrDst + cb1, &fFlags2, &GCPhys2);
             if (RT_SUCCESS(rc))
             {
                 if (    (   (fFlags1 & X86_PTE_RW)  /** @todo Also check reserved bits. */
@@ -3101,12 +3101,12 @@ VMMDECL(int) PGMPhysInterpretedWriteNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCo
 
                     if (!(fFlags1 & (X86_PTE_A | X86_PTE_RW)))
                     {
-                        rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVM, pVCpu, GCPtrDst, 1, (X86_PTE_A | X86_PTE_RW), ~(uint64_t)(X86_PTE_A | X86_PTE_RW));
+                        rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVCpu, GCPtrDst, 1, (X86_PTE_A | X86_PTE_RW), ~(uint64_t)(X86_PTE_A | X86_PTE_RW));
                         AssertRC(rc);
                     }
                     if (!(fFlags2 & (X86_PTE_A | X86_PTE_RW)))
                     {
-                        rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVM, pVCpu, GCPtrDst + cb1, 1, (X86_PTE_A | X86_PTE_RW), ~(uint64_t)(X86_PTE_A | X86_PTE_RW));
+                        rc = PGM_GST_PFN(ModifyPage,pVCpu)(pVCpu, GCPtrDst + cb1, 1, (X86_PTE_A | X86_PTE_RW), ~(uint64_t)(X86_PTE_A | X86_PTE_RW));
                         AssertRC(rc);
                     }
                     return VINF_SUCCESS;

@@ -26,14 +26,14 @@
 __BEGIN_DECLS
 /* r3 */
 PGM_GST_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR0);
-PGM_GST_DECL(int, Enter)(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
-PGM_GST_DECL(int, Relocate)(PVM pVM, PVMCPU pVCpu, RTGCPTR offDelta);
-PGM_GST_DECL(int, Exit)(PVM pVM, PVMCPU pVCpu);
+PGM_GST_DECL(int, Enter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
+PGM_GST_DECL(int, Relocate)(PVMCPU pVCpu, RTGCPTR offDelta);
+PGM_GST_DECL(int, Exit)(PVMCPU pVCpu);
 
 /* all */
-PGM_GST_DECL(int, GetPage)(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys);
-PGM_GST_DECL(int, ModifyPage)(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
-PGM_GST_DECL(int, GetPDE)(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPDE);
+PGM_GST_DECL(int, GetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys);
+PGM_GST_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
+PGM_GST_DECL(int, GetPDE)(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPDE);
 __END_DECLS
 
 
@@ -88,16 +88,15 @@ PGM_GST_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
  * Enters the guest mode.
  *
  * @returns VBox status code.
- * @param   pVM         VM handle.
  * @param   pVCpu       The VMCPU to operate on.
  * @param   GCPhysCR3   The physical address from the CR3 register.
  */
-PGM_GST_DECL(int, Enter)(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
+PGM_GST_DECL(int, Enter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
 {
     /*
      * Map and monitor CR3
      */
-    int rc = PGM_BTH_PFN(MapCR3, pVM)(pVM, pVCpu, GCPhysCR3);
+    int rc = PGM_BTH_PFN(MapCR3, pVCpu)(pVCpu->pVMR3, pVCpu, GCPhysCR3);
     return rc;
 }
 
@@ -106,11 +105,10 @@ PGM_GST_DECL(int, Enter)(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
  * Relocate any GC pointers related to guest mode paging.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
  * @param   pVCpu       The VMCPU to operate on.
  * @param   offDelta    The reloation offset.
  */
-PGM_GST_DECL(int, Relocate)(PVM pVM, PVMCPU pVCpu, RTGCPTR offDelta)
+PGM_GST_DECL(int, Relocate)(PVMCPU pVCpu, RTGCPTR offDelta)
 {
     pVCpu->pgm.s.pGst32BitPdRC += offDelta;
 
@@ -128,14 +126,13 @@ PGM_GST_DECL(int, Relocate)(PVM pVM, PVMCPU pVCpu, RTGCPTR offDelta)
  * Exits the guest mode.
  *
  * @returns VBox status code.
- * @param   pVM         VM handle.
  * @param   pVCpu       The VMCPU to operate on.
  */
-PGM_GST_DECL(int, Exit)(PVM pVM, PVMCPU pVCpu)
+PGM_GST_DECL(int, Exit)(PVMCPU pVCpu)
 {
     int rc;
 
-    rc = PGM_BTH_PFN(UnmapCR3, pVM)(pVM, pVCpu);
+    rc = PGM_BTH_PFN(UnmapCR3, pVCpu)(pVCpu->pVMR3, pVCpu);
     return rc;
 }
 

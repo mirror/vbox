@@ -120,13 +120,13 @@
 __BEGIN_DECLS
 /* r3 */
 PGM_SHW_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR0);
-PGM_SHW_DECL(int, Enter)(PVM pVM, PVMCPU pVCpu);
-PGM_SHW_DECL(int, Relocate)(PVM pVM, PVMCPU pVCpu, RTGCPTR offDelta);
-PGM_SHW_DECL(int, Exit)(PVM pVM, PVMCPU pVCpu);
+PGM_SHW_DECL(int, Enter)(PVMCPU pVCpu);
+PGM_SHW_DECL(int, Relocate)(PVMCPU pVCpu, RTGCPTR offDelta);
+PGM_SHW_DECL(int, Exit)(PVMCPU pVCpu);
 
 /* all */
-PGM_SHW_DECL(int, GetPage)(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
-PGM_SHW_DECL(int, ModifyPage)(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
+PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
+PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
 __END_DECLS
 
 
@@ -174,14 +174,14 @@ PGM_SHW_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
  * Enters the shadow mode.
  *
  * @returns VBox status code.
- * @param   pVM         VM handle.
  * @param   pVCpu       The VMCPU to operate on.
  */
-PGM_SHW_DECL(int, Enter)(PVM pVM, PVMCPU pVCpu)
+PGM_SHW_DECL(int, Enter)(PVMCPU pVCpu)
 {
 #if PGM_SHW_TYPE == PGM_TYPE_NESTED || PGM_SHW_TYPE == PGM_TYPE_EPT
     RTGCPHYS     GCPhysCR3 = RT_BIT_64(63);
     PPGMPOOLPAGE pNewShwPageCR3;
+    PVM          pVM       = pVCpu->pVMR3;
     PPGMPOOL     pPool     = pVM->pgm.s.CTX_SUFF(pPool);
 
     Assert(HWACCMIsNestedPagingActive(pVM));
@@ -210,11 +210,10 @@ PGM_SHW_DECL(int, Enter)(PVM pVM, PVMCPU pVCpu)
  * Relocate any GC pointers related to shadow mode paging.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
  * @param   pVCpu       The VMCPU to operate on.
  * @param   offDelta    The reloation offset.
  */
-PGM_SHW_DECL(int, Relocate)(PVM pVM, PVMCPU pVCpu, RTGCPTR offDelta)
+PGM_SHW_DECL(int, Relocate)(PVMCPU pVCpu, RTGCPTR offDelta)
 {
     pVCpu->pgm.s.pShwPageCR3RC += offDelta;
     return VINF_SUCCESS;
@@ -225,14 +224,14 @@ PGM_SHW_DECL(int, Relocate)(PVM pVM, PVMCPU pVCpu, RTGCPTR offDelta)
  * Exits the shadow mode.
  *
  * @returns VBox status code.
- * @param   pVM         VM handle.
  * @param   pVCpu       The VMCPU to operate on.
  */
-PGM_SHW_DECL(int, Exit)(PVM pVM, PVMCPU pVCpu)
+PGM_SHW_DECL(int, Exit)(PVMCPU pVCpu)
 {
 #if PGM_SHW_TYPE == PGM_TYPE_NESTED || PGM_SHW_TYPE == PGM_TYPE_EPT
     if (pVCpu->pgm.s.CTX_SUFF(pShwPageCR3))
     {
+        PVM      pVM   = pVCpu->pVMR3;
         PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
         Assert(pVCpu->pgm.s.iShwUser == PGMPOOL_IDX_NESTED_ROOT);

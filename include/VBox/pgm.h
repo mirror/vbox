@@ -307,13 +307,13 @@ VMMDECL(int)        PGMMapResolveConflicts(PVM pVM);
 #ifdef VBOX_STRICT
 VMMDECL(void)       PGMMapCheck(PVM pVM);
 #endif
-VMMDECL(int)        PGMShwGetPage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
-VMMDECL(int)        PGMShwSetPage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags);
-VMMDECL(int)        PGMShwModifyPage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
-VMMDECL(int)        PGMGstGetPage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys);
-VMMDECL(bool)       PGMGstIsPagePresent(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr);
-VMMDECL(int)        PGMGstSetPage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags);
-VMMDECL(int)        PGMGstModifyPage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
+VMMDECL(int)        PGMShwGetPage(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
+VMMDECL(int)        PGMShwSetPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags);
+VMMDECL(int)        PGMShwModifyPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
+VMMDECL(int)        PGMGstGetPage(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys);
+VMMDECL(bool)       PGMGstIsPagePresent(PVMCPU pVCpu, RTGCPTR GCPtr);
+VMMDECL(int)        PGMGstSetPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags);
+VMMDECL(int)        PGMGstModifyPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
 VMMDECL(X86PDPE)    PGMGstGetPaePDPtr(PVMCPU pVCpu, unsigned iPdPt);
 
 VMMDECL(int)        PGMInvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrPage);

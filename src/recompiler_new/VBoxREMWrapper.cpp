@@ -719,7 +719,6 @@ static const REMPARMDESC g_aArgsPGMGetGuestMode[] =
 };
 static const REMPARMDESC g_aArgsPGMGstGetPage[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
     { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCPTR), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t *), NULL },

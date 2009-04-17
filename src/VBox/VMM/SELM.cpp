@@ -1558,7 +1558,7 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM, PVMCPU pVCpu)
                 if ((ssr0 & ~1) != Tss.ss0 || espr0 != Tss.esp0)
                 {
                     RTGCPHYS GCPhys = NIL_RTGCPHYS;
-                    rc = PGMGstGetPage(pVM, pVCpu, GCPtrTss, NULL, &GCPhys); AssertRC(rc);
+                    rc = PGMGstGetPage(pVCpu, GCPtrTss, NULL, &GCPhys); AssertRC(rc);
                     Log(("SELMR3SyncTSS: Updating TSS ring 0 stack to %04X:%08X from %04X:%08X; TSS Phys=%VGp)\n",
                          Tss.ss0, Tss.esp0, (ssr0 & ~1), espr0,  GCPhys));
                     AssertMsg(ssr0 != Tss.ss0,
@@ -1892,7 +1892,7 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
                 ||  Tss.ss0  != (pVM->selm.s.Tss.ss1 & ~1))
             {
                 RTGCPHYS GCPhys;
-                rc = PGMGstGetPage(pVM, pVCpu, GCPtrTss, NULL, &GCPhys); AssertRC(rc);
+                rc = PGMGstGetPage(pVCpu, GCPtrTss, NULL, &GCPhys); AssertRC(rc);
                 AssertMsgFailed(("TSS out of sync!! (%04X:%08X vs %04X:%08X (guest)) Tss=%RGv Phys=%RGp\n",
                                  (pVM->selm.s.Tss.ss1 & ~1), pVM->selm.s.Tss.esp1,
                                  Tss.ss1, Tss.esp1, GCPtrTss, GCPhys));

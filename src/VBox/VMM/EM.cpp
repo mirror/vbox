@@ -1693,7 +1693,7 @@ static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu)
     /* Get guest page information. */
     uint64_t    fFlags = 0;
     RTGCPHYS    GCPhys = 0;
-    int rc2 = PGMGstGetPage(pVM, pVCpu, uCR2, &fFlags, &GCPhys);
+    int rc2 = PGMGstGetPage(pVCpu, uCR2, &fFlags, &GCPhys);
     Log(("emR3RawGuestTrap: cs:eip=%04x:%08x: trap=%02x err=%08x cr2=%08x cr0=%08x%s: Phys=%RGp fFlags=%08llx %s %s %s%s rc2=%d\n",
          pCtx->cs, pCtx->eip, u8TrapNo, uErrorCode, uCR2, (uint32_t)pCtx->cr0, (enmType == TRPM_SOFTWARE_INT) ? " software" : "",  GCPhys, fFlags,
          fFlags & X86_PTE_P  ? "P " : "NP", fFlags & X86_PTE_US ? "U"  : "S",

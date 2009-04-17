@@ -120,8 +120,8 @@
 *   Internal Functions                                                         *
 *******************************************************************************/
 __BEGIN_DECLS
-PGM_SHW_DECL(int, GetPage)(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
-PGM_SHW_DECL(int, ModifyPage)(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask);
+PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
+PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask);
 __END_DECLS
 
 
@@ -130,7 +130,6 @@ __END_DECLS
  * Gets effective page information (from the VMM page directory).
  *
  * @returns VBox status.
- * @param   pVM         VM Handle.
  * @param   pVCpu       The VMCPU handle.
  * @param   GCPtr       Guest Context virtual address of the page.
  * @param   pfFlags     Where to store the flags. These are X86_PTE_*.
@@ -138,12 +137,14 @@ __END_DECLS
  *                      This is page aligned.
  * @remark  You should use PGMMapGetPage() for pages in a mapping.
  */
-PGM_SHW_DECL(int, GetPage)(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys)
+PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys)
 {
 #if PGM_SHW_TYPE == PGM_TYPE_NESTED
     return VERR_PAGE_TABLE_NOT_PRESENT;
 
 #else /* PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT */
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+
     /*
      * Get the PDE.
      */
@@ -268,7 +269,6 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *p
  * The existing flags are ANDed with the fMask and ORed with the fFlags.
  *
  * @returns VBox status code.
- * @param   pVM         VM handle.
  * @param   pVCpu       The VMCPU handle.
  * @param   GCPtr       Virtual address of the first page in the range. Page aligned!
  * @param   cb          Size (in bytes) of the range to apply the modification to. Page aligned!
@@ -277,12 +277,13 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *p
  *                      Be extremely CAREFUL with ~'ing values because they can be 32-bit!
  * @remark  You must use PGMMapModifyPage() for pages in a mapping.
  */
-PGM_SHW_DECL(int, ModifyPage)(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask)
+PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask)
 {
 # if PGM_SHW_TYPE == PGM_TYPE_NESTED
     return VERR_PAGE_TABLE_NOT_PRESENT;
 
 # else /* PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT */
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
     int rc;
 
     /*

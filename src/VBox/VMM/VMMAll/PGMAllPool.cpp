@@ -3823,7 +3823,7 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
     AssertRC(rc);
 
     /* Exit the current shadow paging mode as well; nested paging and EPT use a root CR3 which will get flushed here. */
-    rc = PGM_SHW_PFN(Exit, pVCpu)(pVM, pVCpu);
+    rc = PGM_SHW_PFN(Exit, pVCpu)(pVCpu);
     AssertRC(rc);
 
     /*

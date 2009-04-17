@@ -1985,9 +1985,9 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 
         pgmR3ModeDataSwitch(pVM, pVCpu, pVCpu->pgm.s.enmShadowMode, pVCpu->pgm.s.enmGuestMode);
 
-        PGM_SHW_PFN(Relocate, pVM)(pVM, pVCpu, offDelta);
-        PGM_GST_PFN(Relocate, pVM)(pVM, pVCpu, offDelta);
-        PGM_BTH_PFN(Relocate, pVM)(pVM, pVCpu, offDelta);
+        PGM_SHW_PFN(Relocate, pVCpu)(pVCpu, offDelta);
+        PGM_GST_PFN(Relocate, pVCpu)(pVCpu, offDelta);
+        PGM_BTH_PFN(Relocate, pVCpu)(pVM, pVCpu, offDelta);
     }
 
     /*
@@ -2146,7 +2146,7 @@ VMMR3DECL(void) PGMR3Reset(PVM pVM)
     {
         PVMCPU  pVCpu = &pVM->aCpus[i];
 
-        rc = PGM_GST_PFN(Exit, pVM)(pVM, pVCpu);
+        rc = PGM_GST_PFN(Exit, pVCpu)(pVCpu);
         AssertRC(rc);
     }
 
@@ -3813,9 +3813,9 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
     if (enmShadowMode != pVCpu->pgm.s.enmShadowMode)
     {
         LogFlow(("PGMR3ChangeMode: Shadow mode: %s -> %s\n",  PGMGetModeName(pVCpu->pgm.s.enmShadowMode), PGMGetModeName(enmShadowMode)));
-        if (PGM_SHW_PFN(Exit, pVM))
+        if (PGM_SHW_PFN(Exit, pVCpu))
         {
-            int rc = PGM_SHW_PFN(Exit, pVM)(pVM, pVCpu);
+            int rc = PGM_SHW_PFN(Exit, pVCpu)(pVCpu);
             if (RT_FAILURE(rc))
             {
                 AssertMsgFailed(("Exit failed for shadow mode %d: %Rrc\n", pVCpu->pgm.s.enmShadowMode, rc));
@@ -3828,9 +3828,9 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
         LogFlow(("PGMR3ChangeMode: Shadow mode remains: %s\n",  PGMGetModeName(pVCpu->pgm.s.enmShadowMode)));
 
     /* guest */
-    if (PGM_GST_PFN(Exit, pVM))
+    if (PGM_GST_PFN(Exit, pVCpu))
     {
-        int rc = PGM_GST_PFN(Exit, pVM)(pVM, pVCpu);
+        int rc = PGM_GST_PFN(Exit, pVCpu)(pVCpu);
         if (RT_FAILURE(rc))
         {
             AssertMsgFailed(("Exit failed for guest mode %d: %Rrc\n", pVCpu->pgm.s.enmGuestMode, rc));
@@ -3853,21 +3853,21 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
         switch (enmShadowMode)
         {
             case PGMMODE_32_BIT:
-                rc = PGM_SHW_NAME_32BIT(Enter)(pVM, pVCpu);
+                rc = PGM_SHW_NAME_32BIT(Enter)(pVCpu);
                 break;
             case PGMMODE_PAE:
             case PGMMODE_PAE_NX:
-                rc = PGM_SHW_NAME_PAE(Enter)(pVM, pVCpu);
+                rc = PGM_SHW_NAME_PAE(Enter)(pVCpu);
                 break;
             case PGMMODE_AMD64:
             case PGMMODE_AMD64_NX:
-                rc = PGM_SHW_NAME_AMD64(Enter)(pVM, pVCpu);
+                rc = PGM_SHW_NAME_AMD64(Enter)(pVCpu);
                 break;
             case PGMMODE_NESTED:
-                rc = PGM_SHW_NAME_NESTED(Enter)(pVM, pVCpu);
+                rc = PGM_SHW_NAME_NESTED(Enter)(pVCpu);
                 break;
             case PGMMODE_EPT:
-                rc = PGM_SHW_NAME_EPT(Enter)(pVM, pVCpu);
+                rc = PGM_SHW_NAME_EPT(Enter)(pVCpu);
                 break;
             case PGMMODE_REAL:
             case PGMMODE_PROTECTED:
@@ -3898,7 +3898,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
     switch (enmGuestMode)
     {
         case PGMMODE_REAL:
-            rc = PGM_GST_NAME_REAL(Enter)(pVM, pVCpu, NIL_RTGCPHYS);
+            rc = PGM_GST_NAME_REAL(Enter)(pVCpu, NIL_RTGCPHYS);
             switch (pVCpu->pgm.s.enmShadowMode)
             {
                 case PGMMODE_32_BIT:
@@ -3922,7 +3922,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
             break;
 
         case PGMMODE_PROTECTED:
-            rc = PGM_GST_NAME_PROT(Enter)(pVM, pVCpu, NIL_RTGCPHYS);
+            rc = PGM_GST_NAME_PROT(Enter)(pVCpu, NIL_RTGCPHYS);
             switch (pVCpu->pgm.s.enmShadowMode)
             {
                 case PGMMODE_32_BIT:
@@ -3947,7 +3947,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
 
         case PGMMODE_32_BIT:
             GCPhysCR3 = CPUMGetGuestCR3(pVCpu) & X86_CR3_PAGE_MASK;
-            rc = PGM_GST_NAME_32BIT(Enter)(pVM, pVCpu, GCPhysCR3);
+            rc = PGM_GST_NAME_32BIT(Enter)(pVCpu, GCPhysCR3);
             switch (pVCpu->pgm.s.enmShadowMode)
             {
                 case PGMMODE_32_BIT:
@@ -3981,7 +3981,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
                                          N_("The guest is trying to switch to the PAE mode which is currently disabled by default in VirtualBox. PAE support can be enabled using the VM settings (General/Advanced)"));
 
             GCPhysCR3 = CPUMGetGuestCR3(pVCpu) & X86_CR3_PAE_PAGE_MASK;
-            rc = PGM_GST_NAME_PAE(Enter)(pVM, pVCpu, GCPhysCR3);
+            rc = PGM_GST_NAME_PAE(Enter)(pVCpu, GCPhysCR3);
             switch (pVCpu->pgm.s.enmShadowMode)
             {
                 case PGMMODE_PAE:
@@ -4007,7 +4007,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
         case PGMMODE_AMD64_NX:
         case PGMMODE_AMD64:
             GCPhysCR3 = CPUMGetGuestCR3(pVCpu) & UINT64_C(0xfffffffffffff000); /** @todo define this mask! */
-            rc = PGM_GST_NAME_AMD64(Enter)(pVM, pVCpu, GCPhysCR3);
+            rc = PGM_GST_NAME_AMD64(Enter)(pVCpu, GCPhysCR3);
             switch (pVCpu->pgm.s.enmShadowMode)
             {
                 case PGMMODE_AMD64:
@@ -4496,7 +4496,7 @@ int pgmR3DumpHierarchyGC32BitPT(PVM pVM, PX86PT pPT, uint32_t u32Address, RTGCPH
                 RTHCPHYS pPhysHC = 0;
 
                 /** @todo SMP support!! */
-                PGMShwGetPage(pVM, &pVM->aCpus[0], (RTGCPTR)(u32Address + (i << X86_PT_SHIFT)), &fPageShw, &pPhysHC);
+                PGMShwGetPage(&pVM->aCpus[0], (RTGCPTR)(u32Address + (i << X86_PT_SHIFT)), &fPageShw, &pPhysHC);
                 Log(("Found %RGp at %RGv -> flags=%llx\n", PhysSearch, (RTGCPTR)(u32Address + (i << X86_PT_SHIFT)), fPageShw));
             }
         }
