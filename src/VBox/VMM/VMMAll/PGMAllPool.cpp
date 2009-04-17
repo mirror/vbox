@@ -977,9 +977,9 @@ DECLINLINE(int) pgmPoolAccessHandlerSTOSD(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE 
     while (pRegFrame->ecx)
     {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-        uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
+        uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVM);
         pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, (RTGCPTR)pu32, NULL);
-        PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
+        PGMDynMapPopAutoSubset(pVM, iPrevSubset);
 #else
         pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, (RTGCPTR)pu32, NULL);
 #endif
@@ -1033,9 +1033,9 @@ DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool
      * Clear all the pages. ASSUMES that pvFault is readable.
      */
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    uint32_t    iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
+    uint32_t    iPrevSubset = PGMDynMapPushAutoSubset(pVM);
     pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, pvFault, pCpu);
-    PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
+    PGMDynMapPopAutoSubset(pVM, iPrevSubset);
 #else
     pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, pvFault, pCpu);
 #endif
@@ -2667,7 +2667,7 @@ int pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs)
             /* Start a subset here because pgmPoolTrackFlushGCPhysPTsSlow and
                pgmPoolTrackFlushGCPhysPTs will/may kill the pool otherwise. */
             PVMCPU pVCpu = VMMGetCpu(pVM);
-            uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
+            uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVM);
 # endif
 
             if (PGMPOOL_TD_GET_CREFS(u16) != PGMPOOL_TD_CREFS_PHYSEXT)
@@ -2682,7 +2682,7 @@ int pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs)
             *pfFlushTLBs = true;
 
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-            PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
+            PGMDynMapPopAutoSubset(pVM, iPrevSubset);
 # endif
         }
     }
@@ -2695,7 +2695,7 @@ int pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs)
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
         /* Start a subset here because pgmPoolTrackFlushGCPhysPTsSlow kill the pool otherwise. */
         PVMCPU pVCpu = VMMGetCpu(pVM);
-        uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
+        uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVM);
 # endif
         rc = pgmPoolTrackFlushGCPhysPTsSlow(pVM, pPhysPage);
         if (rc == VINF_SUCCESS)
@@ -2703,7 +2703,7 @@ int pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs)
     }
 
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
+    PGMDynMapPopAutoSubset(pVM, iPrevSubset);
 # endif
 
 #else
@@ -4037,7 +4037,7 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     /* Start a subset so we won't run out of mapping space. */
     PVMCPU pVCpu = VMMGetCpu(pPool->CTX_SUFF(pVM));
-    uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
+    uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVM);
 #endif
 
     /*
@@ -4064,7 +4064,7 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     /* Heavy stuff done. */
-    PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
+    PGMDynMapPopAutoSubset(pVM, iPrevSubset);
 #endif
 
 #ifdef PGMPOOL_WITH_MONITORING
