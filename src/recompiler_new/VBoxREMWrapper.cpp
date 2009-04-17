@@ -726,7 +726,6 @@ static const REMPARMDESC g_aArgsPGMGstGetPage[] =
 };
 static const REMPARMDESC g_aArgsPGMInvalidatePage[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
     { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCPTR), NULL }
 };
@@ -770,7 +769,6 @@ static const REMPARMDESC g_aArgsPGMPhysWrite[] =
 };
 static const REMPARMDESC g_aArgsPGMChangeMode[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t), NULL },
@@ -778,7 +776,6 @@ static const REMPARMDESC g_aArgsPGMChangeMode[] =
 };
 static const REMPARMDESC g_aArgsPGMFlushTLB[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(bool), NULL }

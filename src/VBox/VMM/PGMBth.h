@@ -25,18 +25,18 @@
 *******************************************************************************/
 __BEGIN_DECLS
 PGM_BTH_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR0);
-PGM_BTH_DECL(int, Enter)(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
-PGM_BTH_DECL(int, Relocate)(PVM pVM, PVMCPU pVCpu, RTGCPTR offDelta);
+PGM_BTH_DECL(int, Enter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
+PGM_BTH_DECL(int, Relocate)(PVMCPU pVCpu, RTGCPTR offDelta);
 
-PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault);
-PGM_BTH_DECL(int, SyncCR3)(PVM pVM, PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal);
-PGM_BTH_DECL(int, SyncPage)(PVM pVM, PVMCPU pVCpu, X86PDE PdeSrc, RTGCPTR GCPtrPage, unsigned cPages, unsigned uError);
-PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, PVMCPU pVCpu, RTGCPTR Addr, unsigned fPage, unsigned uError);
-PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrPage);
-PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrPage);
-PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr = 0, RTGCPTR cb = ~(RTGCPTR)0);
-PGM_BTH_DECL(int, MapCR3)(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
-PGM_BTH_DECL(int, UnmapCR3)(PVM pVM, PVMCPU pVCpu);
+PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault);
+PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal);
+PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, X86PDE PdeSrc, RTGCPTR GCPtrPage, unsigned cPages, unsigned uError);
+PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR Addr, unsigned fPage, unsigned uError);
+PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage);
+PGM_BTH_DECL(int, PrefetchPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage);
+PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr = 0, RTGCPTR cb = ~(RTGCPTR)0);
+PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
+PGM_BTH_DECL(int, UnmapCR3)(PVMCPU pVCpu);
 __END_DECLS
 
 
@@ -128,7 +128,7 @@ PGM_BTH_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
  * @param   pVCpu       The VMCPU to operate on.
  * @param   GCPhysCR3   The physical address from the CR3 register.
  */
-PGM_BTH_DECL(int, Enter)(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
+PGM_BTH_DECL(int, Enter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
 {
     /* Here we deal with allocation of the root shadow page table for real and protected mode during mode switches;
      * Other modes rely on MapCR3/UnmapCR3 to setup the shadow root page tables.
@@ -138,6 +138,8 @@ PGM_BTH_DECL(int, Enter)(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
           || PGM_SHW_TYPE == PGM_TYPE_AMD64) \
       && (   PGM_GST_TYPE == PGM_TYPE_REAL   \
           || PGM_GST_TYPE == PGM_TYPE_PROT))
+
+    PVM pVM   = pVCpu->pVMR3;
 
     Assert(!HWACCMIsNestedPagingActive(pVM));
     /* Note: we only really need shadow paging in real and protected mode for VT-x and AMD-V (excluding nested paging/EPT modes),
@@ -201,7 +203,7 @@ PGM_BTH_DECL(int, Enter)(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
  * @param   pVCpu       The VMCPU to operate on.
  * @param   offDelta    The reloation offset.
  */
-PGM_BTH_DECL(int, Relocate)(PVM pVM, PVMCPU pVCpu, RTGCPTR offDelta)
+PGM_BTH_DECL(int, Relocate)(PVMCPU pVCpu, RTGCPTR offDelta)
 {
     /* nothing special to do here - InitData does the job. */
     return VINF_SUCCESS;

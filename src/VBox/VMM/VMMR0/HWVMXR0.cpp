@@ -1723,7 +1723,7 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         if (val != pCtx->cr3)
         {
             CPUMSetGuestCR3(pVCpu, val);
-            PGMUpdateCR3(pVM, pVCpu, val);
+            PGMUpdateCR3(pVCpu, val);
         }
         /* Prefetch the four PDPT entries in PAE mode. */
         vmxR0PrefetchPAEPdptrs(pVM, pVCpu, pCtx);
@@ -2388,7 +2388,7 @@ ResumeExecution:
                 TRPMSetFaultAddress(pVM, exitQualification);
 
                 /* Forward it to our trap handler first, in case our shadow pages are out of sync. */
-                rc = PGMTrap0eHandler(pVM, pVCpu, errCode, CPUMCTX2CORE(pCtx), (RTGCPTR)exitQualification);
+                rc = PGMTrap0eHandler(pVCpu, errCode, CPUMCTX2CORE(pCtx), (RTGCPTR)exitQualification);
                 Log2(("PGMTrap0eHandler %RGv returned %Rrc\n", (RTGCPTR)pCtx->rip, rc));
                 if (rc == VINF_SUCCESS)
                 {   /* We've successfully synced our shadow pages, so let's just continue execution. */
@@ -3029,7 +3029,7 @@ ResumeExecution:
             if (    rc == VINF_SUCCESS /* don't bother if we are going to ring 3 anyway */
                 &&  VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL))
             {
-                rc = PGMSyncCR3(pVM, pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
+                rc = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
                 AssertRC(rc);
             }
             break;

@@ -275,7 +275,7 @@ DECLINLINE(int) selmRCReadTssBits(PVM pVM, void *pvDst, void const *pvSrc, size_
         return VINF_SUCCESS;
 
     /** @todo use different fallback?    */
-    rc = PGMPrefetchPage(pVM, pVCpu, (uintptr_t)pvSrc);
+    rc = PGMPrefetchPage(pVCpu, (uintptr_t)pvSrc);
     AssertMsg(rc == VINF_SUCCESS, ("PGMPrefetchPage %p failed with %Rrc\n", &pvSrc, rc));
     if (rc == VINF_SUCCESS)
     {

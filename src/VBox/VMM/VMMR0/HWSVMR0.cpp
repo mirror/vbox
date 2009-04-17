@@ -1235,7 +1235,7 @@ ResumeExecution:
         &&  pCtx->cr3 != pVMCB->guest.u64CR3)
     {
         CPUMSetGuestCR3(pVCpu, pVMCB->guest.u64CR3);
-        PGMUpdateCR3(pVM, pVCpu, pVMCB->guest.u64CR3);
+        PGMUpdateCR3(pVCpu, pVMCB->guest.u64CR3);
     }
 
     /* Note! NOW IT'S SAFE FOR LOGGING! */
@@ -1412,7 +1412,7 @@ ResumeExecution:
             TRPMSetFaultAddress(pVM, uFaultAddress);
 
             /* Forward it to our trap handler first, in case our shadow pages are out of sync. */
-            rc = PGMTrap0eHandler(pVM, pVCpu, errCode, CPUMCTX2CORE(pCtx), (RTGCPTR)uFaultAddress);
+            rc = PGMTrap0eHandler(pVCpu, errCode, CPUMCTX2CORE(pCtx), (RTGCPTR)uFaultAddress);
             Log2(("PGMTrap0eHandler %RGv returned %Rrc\n", (RTGCPTR)pCtx->rip, rc));
             if (rc == VINF_SUCCESS)
             {   /* We've successfully synced our shadow pages, so let's just continue execution. */
@@ -1720,7 +1720,7 @@ ResumeExecution:
         if (    rc == VINF_SUCCESS /* don't bother if we are going to ring 3 anyway */
             &&  VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL))
         {
-            rc = PGMSyncCR3(pVM, pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
+            rc = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
             AssertRC(rc);
 
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushTLBCRxChange);
@@ -2171,7 +2171,7 @@ VMMR0DECL(int) SVMR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 }
 
 
-static int svmR0InterpretInvlPg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, uint32_t uASID)
+static int svmR0InterpretInvlPg(PVMCPU pVCpu, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, uint32_t uASID)
 {
     OP_PARAMVAL param1;
     RTGCPTR     addr;
@@ -2196,7 +2196,7 @@ static int svmR0InterpretInvlPg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pCpu, PCPUMC
     /** @todo is addr always a flat linear address or ds based
      * (in absence of segment override prefixes)????
      */
-    rc = PGMInvalidatePage(pVM, pVCpu, addr);
+    rc = PGMInvalidatePage(pVCpu, addr);
     if (RT_SUCCESS(rc))
     {
         /* Manually invalidate the page for the VM's TLB. */
@@ -2243,7 +2243,7 @@ static int SVMR0InterpretInvpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, ui
             if (RT_SUCCESS(rc) && Cpu.pCurInstr->opcode == OP_INVLPG)
             {
                 Assert(cbOp == Cpu.opsize);
-                rc = svmR0InterpretInvlPg(pVM, pVCpu, &Cpu, pRegFrame, uASID);
+                rc = svmR0InterpretInvlPg(pVCpu, &Cpu, pRegFrame, uASID);
                 if (RT_SUCCESS(rc))
                 {
                     pRegFrame->rip += cbOp; /* Move on to the next instruction. */

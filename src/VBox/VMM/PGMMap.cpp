@@ -534,7 +534,7 @@ VMMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
      * Before we do anything we'll do a forced PD sync to try make sure any
      * pending relocations because of these mappings have been resolved.
      */
-    PGMSyncCR3(pVM, pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR3(pVCpu), CPUMGetGuestCR4(pVCpu), true);
+    PGMSyncCR3(pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR3(pVCpu), CPUMGetGuestCR4(pVCpu), true);
 
     /*
      * Check that it's not conflicting with a core code mapping in the intermediate page table.

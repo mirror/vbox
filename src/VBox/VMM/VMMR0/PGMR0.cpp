@@ -233,18 +233,18 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enm
     switch(enmShwPagingMode)
     {
     case PGMMODE_32_BIT:
-        rc = PGM_BTH_NAME_32BIT_PROT(Trap0eHandler)(pVM, pVCpu, uErr, pRegFrame, pvFault);
+        rc = PGM_BTH_NAME_32BIT_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, pvFault);
         break;
     case PGMMODE_PAE:
     case PGMMODE_PAE_NX:
-        rc = PGM_BTH_NAME_PAE_PROT(Trap0eHandler)(pVM, pVCpu, uErr, pRegFrame, pvFault);
+        rc = PGM_BTH_NAME_PAE_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, pvFault);
         break;
     case PGMMODE_AMD64:
     case PGMMODE_AMD64_NX:
-        rc = PGM_BTH_NAME_AMD64_PROT(Trap0eHandler)(pVM, pVCpu, uErr, pRegFrame, pvFault);
+        rc = PGM_BTH_NAME_AMD64_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, pvFault);
         break;
     case PGMMODE_EPT:
-        rc = PGM_BTH_NAME_EPT_PROT(Trap0eHandler)(pVM, pVCpu, uErr, pRegFrame, pvFault);
+        rc = PGM_BTH_NAME_EPT_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, pvFault);
         break;
     default:
         AssertFailed();

@@ -298,7 +298,7 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                         else
                             GstPdpe.u = X86_PDPE_P;
                     }
-                    int rc = pgmShwSyncPaePDPtr(pVM, pVCpu, iPdPt << X86_PDPT_SHIFT, &GstPdpe, &pShwPaePd);
+                    int rc = pgmShwSyncPaePDPtr(pVCpu, iPdPt << X86_PDPT_SHIFT, &GstPdpe, &pShwPaePd);
                     AssertFatalRC(rc);
                 }
                 Assert(pShwPaePd);

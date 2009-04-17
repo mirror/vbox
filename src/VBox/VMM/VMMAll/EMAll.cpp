@@ -1388,7 +1388,7 @@ static int emInterpretStosWD(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPU
 
         LogFlow(("emInterpretStosWD dest=%04X:%RGv (%RGv) cbSize=%d cTransfers=%x DF=%d\n", pRegFrame->es, GCOffset, GCDest, cbSize, cTransfers, pRegFrame->eflags.Bits.u1DF));
         /* Access verification first; we currently can't recover properly from traps inside this instruction */
-        rc = PGMVerifyAccess(pVM, pVCpu, GCDest - ((offIncrement > 0) ? 0 : ((cTransfers-1) * cbSize)),
+        rc = PGMVerifyAccess(pVCpu, GCDest - ((offIncrement > 0) ? 0 : ((cTransfers-1) * cbSize)),
                              cTransfers * cbSize,
                              X86_PTE_RW | (CPUMGetGuestCPL(pVCpu, pRegFrame) == 3 ? X86_PTE_US : 0));
         if (rc != VINF_SUCCESS)
@@ -1869,7 +1869,7 @@ VMMDECL(int) EMInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RT
 #ifdef IN_RC
     LogFlow(("RC: EMULATE: invlpg %RGv\n", pAddrGC));
 #endif
-    rc = PGMInvalidatePage(pVM, pVCpu, pAddrGC);
+    rc = PGMInvalidatePage(pVCpu, pAddrGC);
     if (    rc == VINF_SUCCESS
         ||  rc == VINF_PGM_SYNC_CR3 /* we can rely on the FF */)
         return VINF_SUCCESS;
@@ -1912,7 +1912,7 @@ static int emInterpretInvlPg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPU
 #ifdef IN_RC
     LogFlow(("RC: EMULATE: invlpg %RGv\n", addr));
 #endif
-    rc = PGMInvalidatePage(pVM, pVCpu, addr);
+    rc = PGMInvalidatePage(pVCpu, addr);
     if (    rc == VINF_SUCCESS
         ||  rc == VINF_PGM_SYNC_CR3 /* we can rely on the FF */)
         return VINF_SUCCESS;
@@ -2064,7 +2064,7 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
             !=  (val    & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)))
         {
             /* global flush */
-            rc = PGMFlushTLB(pVM, pVCpu, CPUMGetGuestCR3(pVCpu), true /* global */);
+            rc = PGMFlushTLB(pVCpu, CPUMGetGuestCR3(pVCpu), true /* global */);
             AssertRCReturn(rc, rc);
         }
 
@@ -2099,7 +2099,7 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
             }
             CPUMSetGuestEFER(pVCpu, msrEFER);
         }
-        rc2 = PGMChangeMode(pVM, pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR4(pVCpu), CPUMGetGuestEFER(pVCpu));
+        rc2 = PGMChangeMode(pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR4(pVCpu), CPUMGetGuestEFER(pVCpu));
         return rc2 == VINF_SUCCESS ? rc : rc2;
 
     case USE_REG_CR2:
@@ -2112,7 +2112,7 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
         if (CPUMGetGuestCR0(pVCpu) & X86_CR0_PG)
         {
             /* flush */
-            rc = PGMFlushTLB(pVM, pVCpu, val, !(CPUMGetGuestCR4(pVCpu) & X86_CR4_PGE));
+            rc = PGMFlushTLB(pVCpu, val, !(CPUMGetGuestCR4(pVCpu) & X86_CR4_PGE));
             AssertRCReturn(rc, rc);
         }
         return rc;
@@ -2136,7 +2136,7 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
             !=  (val    & (X86_CR4_PGE|X86_CR4_PAE|X86_CR4_PSE)))
         {
             /* global flush */
-            rc = PGMFlushTLB(pVM, pVCpu, CPUMGetGuestCR3(pVCpu), true /* global */);
+            rc = PGMFlushTLB(pVCpu, CPUMGetGuestCR3(pVCpu), true /* global */);
             AssertRCReturn(rc, rc);
         }
 
@@ -2152,7 +2152,7 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
         if ((val ^ oldval) & X86_CR4_VME)
             VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
 
-        rc2 = PGMChangeMode(pVM, pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR4(pVCpu), CPUMGetGuestEFER(pVCpu));
+        rc2 = PGMChangeMode(pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR4(pVCpu), CPUMGetGuestEFER(pVCpu));
         return rc2 == VINF_SUCCESS ? rc : rc2;
 
     case USE_REG_CR8:

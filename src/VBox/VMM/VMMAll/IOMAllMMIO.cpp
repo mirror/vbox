@@ -394,7 +394,7 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
         {
 
             /* Access verification first; we currently can't recover properly from traps inside this instruction */
-            rc = PGMVerifyAccess(pVM, pu8Virt, cTransfers * cb, (cpl == 3) ? X86_PTE_US : 0);
+            rc = PGMVerifyAccess(pVCpu, pu8Virt, cTransfers * cb, (cpl == 3) ? X86_PTE_US : 0);
             if (rc != VINF_SUCCESS)
             {
                 Log(("MOVS will generate a trap -> recompiler, rc=%d\n", rc));
@@ -491,7 +491,7 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
              * Normal: [MMIO] -> [Mem]
              */
             /* Access verification first; we currently can't recover properly from traps inside this instruction */
-            rc = PGMVerifyAccess(pVM, pu8Virt, cTransfers * cb, X86_PTE_RW | ((cpl == 3) ? X86_PTE_US : 0));
+            rc = PGMVerifyAccess(pVCpu, pu8Virt, cTransfers * cb, X86_PTE_RW | ((cpl == 3) ? X86_PTE_US : 0));
             if (rc != VINF_SUCCESS)
             {
                 Log(("MOVS will generate a trap -> recompiler, rc=%d\n", rc));
@@ -1504,7 +1504,7 @@ VMMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
     /* Access verification first; we can't recover from traps inside this instruction, as the port read cannot be repeated. */
     uint32_t cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
 
-    rc = PGMVerifyAccess(pVM, pVCpu, (RTGCUINTPTR)GCPtrDst, cTransfers * cbTransfer,
+    rc = PGMVerifyAccess(pVCpu, (RTGCUINTPTR)GCPtrDst, cTransfers * cbTransfer,
                          X86_PTE_RW | ((cpl == 3) ? X86_PTE_US : 0));
     if (rc != VINF_SUCCESS)
     {
@@ -1665,7 +1665,7 @@ VMMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
 
     /* Access verification first; we currently can't recover properly from traps inside this instruction */
     uint32_t cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
-    rc = PGMVerifyAccess(pVM, pVCpu, (RTGCUINTPTR)GCPtrSrc, cTransfers * cbTransfer,
+    rc = PGMVerifyAccess(pVCpu, (RTGCUINTPTR)GCPtrSrc, cTransfers * cbTransfer,
                          (cpl == 3) ? X86_PTE_US : 0);
     if (rc != VINF_SUCCESS)
     {
@@ -1819,11 +1819,11 @@ VMMDECL(int) IOMMMIOMapMMIO2Page(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapp
 # ifdef VBOX_STRICT
     uint64_t fFlags;
     RTHCPHYS HCPhys;
-    rc = PGMShwGetPage(pVM, (RTGCPTR)GCPhys, &fFlags, &HCPhys);
+    rc = PGMShwGetPage(pVCpu, (RTGCPTR)GCPhys, &fFlags, &HCPhys);
     Assert(rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
 # endif
 #endif
-    rc = PGMPrefetchPage(pVM, pVCpu, (RTGCPTR)GCPhys);
+    rc = PGMPrefetchPage(pVCpu, (RTGCPTR)GCPhys);
     Assert(rc == VINF_SUCCESS || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
     return VINF_SUCCESS;
 }
