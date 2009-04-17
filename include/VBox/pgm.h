@@ -412,12 +412,12 @@ VMMDECL(void)       PGMDynUnlockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage);
 VMMDECL(void)       PGMDynCheckLocks(PVM pVM);
 #  endif
 # endif
-VMMDECL(void)       PGMDynMapStartAutoSet(PVM pVM);
-VMMDECL(void)       PGMDynMapReleaseAutoSet(PVM pVM);
-VMMDECL(void)       PGMDynMapFlushAutoSet(PVM pVM);
-VMMDECL(void)       PGMDynMapMigrateAutoSet(PVM pVM);
-VMMDECL(uint32_t)   PGMDynMapPushAutoSubset(PVM pVM);
-VMMDECL(void)       PGMDynMapPopAutoSubset(PVM pVM, uint32_t iPrevSubset);
+VMMDECL(void)       PGMDynMapStartAutoSet(PVMCPU pVCpu);
+VMMDECL(void)       PGMDynMapReleaseAutoSet(PVMCPU pVCpu);
+VMMDECL(void)       PGMDynMapFlushAutoSet(PVMCPU pVCpu);
+VMMDECL(void)       PGMDynMapMigrateAutoSet(PVMCPU pVCpu);
+VMMDECL(uint32_t)   PGMDynMapPushAutoSubset(PVMCPU pVCpu);
+VMMDECL(void)       PGMDynMapPopAutoSubset(PVMCPU pVCpu, uint32_t iPrevSubset);
 #endif
 
 

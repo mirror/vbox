@@ -2196,12 +2196,6 @@ typedef struct PGM
     /** The host paging mode. (This is what SUPLib reports.) */
     SUPPAGINGMODE                   enmHostMode;
 
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    /** Automatically tracked physical memory mapping set.
-     * Ring-0 and strict raw-mode builds. */
-    PGMMAPSET                       AutoSet;
-#endif
-
     /** 4 MB page mask; 32 or 36 bits depending on PSE-36 (identical for all VCPUs) */
     RTGCPHYS                        GCPhys4MBPSEMask;
 
@@ -2457,34 +2451,6 @@ typedef struct PGM
     STAMCOUNTER StatRCInvlPgConflict;               /**< RC: Number of times PGMInvalidatePage() detected a mapping conflict. */
     STAMCOUNTER StatRCInvlPgSyncMonCR3;             /**< RC: Number of times PGMInvalidatePage() ran into PGM_SYNC_MONITOR_CR3. */
 
-    /* R0 only: */
-    STAMCOUNTER StatR0DynMapMigrateInvlPg;          /**< R0: invlpg in PGMDynMapMigrateAutoSet. */
-    STAMPROFILE StatR0DynMapGCPageInl;              /**< R0: Calls to pgmR0DynMapGCPageInlined. */
-    STAMCOUNTER StatR0DynMapGCPageInlHits;          /**< R0: Hash table lookup hits. */
-    STAMCOUNTER StatR0DynMapGCPageInlMisses;        /**< R0: Misses that falls back to code common with PGMDynMapHCPage. */
-    STAMCOUNTER StatR0DynMapGCPageInlRamHits;       /**< R0: 1st ram range hits. */
-    STAMCOUNTER StatR0DynMapGCPageInlRamMisses;     /**< R0: 1st ram range misses, takes slow path. */
-    STAMPROFILE StatR0DynMapHCPageInl;              /**< R0: Calls to pgmR0DynMapHCPageInlined. */
-    STAMCOUNTER StatR0DynMapHCPageInlHits;          /**< R0: Hash table lookup hits. */
-    STAMCOUNTER StatR0DynMapHCPageInlMisses;        /**< R0: Misses that falls back to code common with PGMDynMapHCPage. */
-    STAMPROFILE StatR0DynMapHCPage;                 /**< R0: Calls to PGMDynMapHCPage. */
-    STAMCOUNTER StatR0DynMapSetOptimize;            /**< R0: Calls to pgmDynMapOptimizeAutoSet. */
-    STAMCOUNTER StatR0DynMapSetSearchFlushes;       /**< R0: Set search restorting to subset flushes. */
-    STAMCOUNTER StatR0DynMapSetSearchHits;          /**< R0: Set search hits. */
-    STAMCOUNTER StatR0DynMapSetSearchMisses;        /**< R0: Set search misses. */
-    STAMCOUNTER StatR0DynMapPage;                   /**< R0: Calls to pgmR0DynMapPage. */
-    STAMCOUNTER StatR0DynMapPageHits0;              /**< R0: Hits at iPage+0. */
-    STAMCOUNTER StatR0DynMapPageHits1;              /**< R0: Hits at iPage+1. */
-    STAMCOUNTER StatR0DynMapPageHits2;              /**< R0: Hits at iPage+2. */
-    STAMCOUNTER StatR0DynMapPageInvlPg;             /**< R0: invlpg. */
-    STAMCOUNTER StatR0DynMapPageSlow;               /**< R0: Calls to pgmR0DynMapPageSlow. */
-    STAMCOUNTER StatR0DynMapPageSlowLoopHits;       /**< R0: Hits in the pgmR0DynMapPageSlow search loop. */
-    STAMCOUNTER StatR0DynMapPageSlowLoopMisses;     /**< R0: Misses in the pgmR0DynMapPageSlow search loop. */
-    //STAMCOUNTER StatR0DynMapPageSlowLostHits;       /**< R0: Lost hits. */
-    STAMCOUNTER StatR0DynMapSubsets;                /**< R0: Times PGMDynMapPushAutoSubset was called. */
-    STAMCOUNTER StatR0DynMapPopFlushes;             /**< R0: Times PGMDynMapPopAutoSubset flushes the subset. */
-    STAMCOUNTER aStatR0DynMapSetSize[11];           /**< R0: Set size distribution. */
-
 # ifdef PGMPOOL_WITH_GCPHYS_TRACKING
     STAMCOUNTER StatTrackVirgin;                    /**< The number of first time shadowings. */
     STAMCOUNTER StatTrackAliased;                   /**< The number of times switching to cRef2, i.e. the page is being shadowed by two PTs. */
@@ -2525,6 +2491,12 @@ typedef struct PGMCPU
     /** Offset of the PGM structure relative to VMCPU. */
     RTINT                           offPGM;
     RTINT                           uPadding0;      /**< structure size alignment. */
+
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+    /** Automatically tracked physical memory mapping set.
+     * Ring-0 and strict raw-mode builds. */
+    PGMMAPSET                       AutoSet;
+#endif
 
     /** A20 gate mask.
      * Our current approach to A20 emulation is to let REM do it and don't bother
@@ -2707,6 +2679,34 @@ typedef struct PGMCPU
     /* Common */
     STAMCOUNTER StatSyncPtPD[X86_PG_ENTRIES];       /**< SyncPT - PD distribution. */
     STAMCOUNTER StatSyncPagePD[X86_PG_ENTRIES];     /**< SyncPage - PD distribution. */
+
+    /* R0 only: */
+    STAMCOUNTER StatR0DynMapMigrateInvlPg;          /**< R0: invlpg in PGMDynMapMigrateAutoSet. */
+    STAMPROFILE StatR0DynMapGCPageInl;              /**< R0: Calls to pgmR0DynMapGCPageInlined. */
+    STAMCOUNTER StatR0DynMapGCPageInlHits;          /**< R0: Hash table lookup hits. */
+    STAMCOUNTER StatR0DynMapGCPageInlMisses;        /**< R0: Misses that falls back to code common with PGMDynMapHCPage. */
+    STAMCOUNTER StatR0DynMapGCPageInlRamHits;       /**< R0: 1st ram range hits. */
+    STAMCOUNTER StatR0DynMapGCPageInlRamMisses;     /**< R0: 1st ram range misses, takes slow path. */
+    STAMPROFILE StatR0DynMapHCPageInl;              /**< R0: Calls to pgmR0DynMapHCPageInlined. */
+    STAMCOUNTER StatR0DynMapHCPageInlHits;          /**< R0: Hash table lookup hits. */
+    STAMCOUNTER StatR0DynMapHCPageInlMisses;        /**< R0: Misses that falls back to code common with PGMDynMapHCPage. */
+    STAMPROFILE StatR0DynMapHCPage;                 /**< R0: Calls to PGMDynMapHCPage. */
+    STAMCOUNTER StatR0DynMapSetOptimize;            /**< R0: Calls to pgmDynMapOptimizeAutoSet. */
+    STAMCOUNTER StatR0DynMapSetSearchFlushes;       /**< R0: Set search restorting to subset flushes. */
+    STAMCOUNTER StatR0DynMapSetSearchHits;          /**< R0: Set search hits. */
+    STAMCOUNTER StatR0DynMapSetSearchMisses;        /**< R0: Set search misses. */
+    STAMCOUNTER StatR0DynMapPage;                   /**< R0: Calls to pgmR0DynMapPage. */
+    STAMCOUNTER StatR0DynMapPageHits0;              /**< R0: Hits at iPage+0. */
+    STAMCOUNTER StatR0DynMapPageHits1;              /**< R0: Hits at iPage+1. */
+    STAMCOUNTER StatR0DynMapPageHits2;              /**< R0: Hits at iPage+2. */
+    STAMCOUNTER StatR0DynMapPageInvlPg;             /**< R0: invlpg. */
+    STAMCOUNTER StatR0DynMapPageSlow;               /**< R0: Calls to pgmR0DynMapPageSlow. */
+    STAMCOUNTER StatR0DynMapPageSlowLoopHits;       /**< R0: Hits in the pgmR0DynMapPageSlow search loop. */
+    STAMCOUNTER StatR0DynMapPageSlowLoopMisses;     /**< R0: Misses in the pgmR0DynMapPageSlow search loop. */
+    //STAMCOUNTER StatR0DynMapPageSlowLostHits;       /**< R0: Lost hits. */
+    STAMCOUNTER StatR0DynMapSubsets;                /**< R0: Times PGMDynMapPushAutoSubset was called. */
+    STAMCOUNTER StatR0DynMapPopFlushes;             /**< R0: Times PGMDynMapPopAutoSubset flushes the subset. */
+    STAMCOUNTER aStatR0DynMapSetSize[11];           /**< R0: Set size distribution. */
 
     /* RZ only: */
     STAMPROFILE StatRZTrap0e;                       /**< RC/R0: PGMTrap0eHandler() profiling. */
@@ -3218,10 +3218,11 @@ DECLINLINE(int) pgmRamGCPhys2HCPhys(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhy
  */
 DECLINLINE(int) pgmR0DynMapHCPageInlined(PPGM pPGM, RTHCPHYS HCPhys, void **ppv)
 {
-    PVM         pVM  = PGM2VM(pPGM);
-    PPGMMAPSET  pSet = &pPGM->AutoSet; 
+    PVM         pVM     = PGM2VM(pPGM);
+    PPGMCPU     pPGMCPU = (PPGMCPU)((uint8_t *)VMMGetCpu(pVM) + pPGM->offVCpuPGM); /* very pretty ;-) */
+    PPGMMAPSET  pSet    = &pPGMCPU->AutoSet; 
 
-    STAM_PROFILE_START(&pPGM->StatR0DynMapHCPageInl, a);
+    STAM_PROFILE_START(&pPGMCPU->StatR0DynMapHCPageInl, a);
     Assert(!(HCPhys & PAGE_OFFSET_MASK));
     Assert(pSet->cEntries <= RT_ELEMENTS(pSet->aEntries));
 
@@ -3231,15 +3232,15 @@ DECLINLINE(int) pgmR0DynMapHCPageInlined(PPGM pPGM, RTHCPHYS HCPhys, void **ppv)
         &&  pSet->aEntries[iEntry].HCPhys == HCPhys)
     {
         *ppv = pSet->aEntries[iEntry].pvPage;
-        STAM_COUNTER_INC(&pPGM->StatR0DynMapHCPageInlHits);
+        STAM_COUNTER_INC(&pPGMCPU->StatR0DynMapHCPageInlHits);
     }
     else
     {
-        STAM_COUNTER_INC(&pPGM->StatR0DynMapHCPageInlMisses);
+        STAM_COUNTER_INC(&pPGMCPU->StatR0DynMapHCPageInlMisses);
         pgmR0DynMapHCPageCommon(pVM, pSet, HCPhys, ppv);
     }
 
-    STAM_PROFILE_STOP(&pPGM->StatR0DynMapHCPageInl, a);
+    STAM_PROFILE_STOP(&pPGMCPU->StatR0DynMapHCPageInl, a);
     return VINF_SUCCESS;
 }
 
@@ -3255,10 +3256,10 @@ DECLINLINE(int) pgmR0DynMapHCPageInlined(PPGM pPGM, RTHCPHYS HCPhys, void **ppv)
  */
 DECLINLINE(int) pgmR0DynMapGCPageInlined(PPGM pPGM, RTGCPHYS GCPhys, void **ppv)
 {
-    PVM         pVM  = PGM2VM(pPGM);
-    PPGMMAPSET  pSet = &pPGM->AutoSet; 
+    PVM     pVM     = PGM2VM(pPGM);
+    PPGMCPU pPGMCPU = (PPGMCPU)((uint8_t *)VMMGetCpu(pVM) + pPGM->offVCpuPGM); /* very pretty ;-) */
 
-    STAM_PROFILE_START(&pPGM->StatR0DynMapGCPageInl, a);
+    STAM_PROFILE_START(&pPGMCPU->StatR0DynMapGCPageInl, a);
     Assert(!(GCPhys & PAGE_OFFSET_MASK));
 
     /*
@@ -3270,16 +3271,17 @@ DECLINLINE(int) pgmR0DynMapGCPageInlined(PPGM pPGM, RTGCPHYS GCPhys, void **ppv)
         /** @todo   || page state stuff */))
     {
         /* This case is not counted into StatR0DynMapGCPageInl. */
-        STAM_COUNTER_INC(&pPGM->StatR0DynMapGCPageInlRamMisses);
+        STAM_COUNTER_INC(&pPGMCPU->StatR0DynMapGCPageInlRamMisses);
         return PGMDynMapGCPage(pVM, GCPhys, ppv);
     }
 
     RTHCPHYS HCPhys = PGM_PAGE_GET_HCPHYS(&pRam->aPages[off >> PAGE_SHIFT]);
-    STAM_COUNTER_INC(&pPGM->StatR0DynMapGCPageInlRamHits);
+    STAM_COUNTER_INC(&pPGMCPU->StatR0DynMapGCPageInlRamHits);
 
     /*
      * pgmR0DynMapHCPageInlined with out stats.
      */
+    PPGMMAPSET pSet = &pPGMCPU->AutoSet; 
     Assert(!(HCPhys & PAGE_OFFSET_MASK));
     Assert(pSet->cEntries <= RT_ELEMENTS(pSet->aEntries));
 
@@ -3289,15 +3291,15 @@ DECLINLINE(int) pgmR0DynMapGCPageInlined(PPGM pPGM, RTGCPHYS GCPhys, void **ppv)
         &&  pSet->aEntries[iEntry].HCPhys == HCPhys)
     {
         *ppv = pSet->aEntries[iEntry].pvPage;
-        STAM_COUNTER_INC(&pPGM->StatR0DynMapGCPageInlHits);
+        STAM_COUNTER_INC(&pPGMCPU->StatR0DynMapGCPageInlHits);
     }
     else
     {
-        STAM_COUNTER_INC(&pPGM->StatR0DynMapGCPageInlMisses);
+        STAM_COUNTER_INC(&pPGMCPU->StatR0DynMapGCPageInlMisses);
         pgmR0DynMapHCPageCommon(pVM, pSet, HCPhys, ppv);
     }
 
-    STAM_PROFILE_STOP(&pPGM->StatR0DynMapGCPageInl, a);
+    STAM_PROFILE_STOP(&pPGMCPU->StatR0DynMapGCPageInl, a);
     return VINF_SUCCESS;
 }
 
