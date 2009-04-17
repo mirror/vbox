@@ -4000,7 +4000,9 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
  */
 int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 {
-    int rc = VINF_SUCCESS;
+    int rc  = VINF_SUCCESS;
+    PVM pVM = pPool->CTX_SUFF(pVM);
+
     STAM_PROFILE_START(&pPool->StatFlushPage, f);
     LogFlow(("pgmPoolFlushPage: pPage=%p:{.Key=%RHp, .idx=%d, .enmKind=%s, .GCPhys=%RGp}\n",
              pPage, pPage->Core.Key, pPage->idx, pgmPoolPoolKindToStr(pPage->enmKind), pPage->GCPhys));
@@ -4018,7 +4020,7 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     /*
      * Quietly reject any attempts at flushing the currently active shadow CR3 mapping
      */
-    if (pgmPoolIsPageLocked(&pPool->CTX_SUFF(pVM)->pgm.s, pPage))
+    if (pgmPoolIsPageLocked(&pVM->pgm.s, pPage))
     {
         AssertMsg(   pPage->enmKind == PGMPOOLKIND_64BIT_PML4
                   || pPage->enmKind == PGMPOOLKIND_PAE_PDPT
@@ -4029,14 +4031,14 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
                   || pPage->enmKind == PGMPOOLKIND_PAE_PD1_FOR_32BIT_PD
                   || pPage->enmKind == PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD
                   || pPage->enmKind == PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD,
-                  ("Can't free the shadow CR3! (%RHp vs %RHp kind=%d\n", PGMGetHyperCR3(VMMGetCpu(pPool->CTX_SUFF(pVM))), pPage->Core.Key, pPage->enmKind));
+                  ("Can't free the shadow CR3! (%RHp vs %RHp kind=%d\n", PGMGetHyperCR3(VMMGetCpu(pVM)), pPage->Core.Key, pPage->enmKind));
         Log(("pgmPoolFlushPage: current active shadow CR3, rejected. enmKind=%s idx=%d\n", pgmPoolPoolKindToStr(pPage->enmKind), pPage->idx));
         return VINF_SUCCESS;
     }
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     /* Start a subset so we won't run out of mapping space. */
-    uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pPool->CTX_SUFF(pVM));
+    uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVM);
 #endif
 
     /*
