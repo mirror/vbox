@@ -699,7 +699,8 @@ endif # darwin
 ifeq ($(KBUILD_TARGET),freebsd)
 Drivers_SOURCES      := $(filter-out \
 	Storage/DrvHost% \
-	, $(Drivers_SOURCES))
+	, $(Drivers_SOURCES)) \
+	Audio/ossaudio.c
 Drivers_SOURCES.freebsd =
 endif # freebsd
 

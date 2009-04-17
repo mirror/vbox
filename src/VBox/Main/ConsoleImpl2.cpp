@@ -2273,6 +2273,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 break;
             }
 #endif
+#ifdef RT_OS_FREEBSD
+            case AudioDriverType_OSS:
+            {
+                rc = CFGMR3InsertString(pCfg, "AudioDriver", "oss");                RC_CHECK();
+                break;
+            }
+#endif
         }
         hrc = pMachine->COMGETTER(Name)(&str);                                      H();
         STR_CONV();

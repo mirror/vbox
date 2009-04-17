@@ -92,6 +92,8 @@ void VBoxVMSettingsAudio::prepareComboboxes()
 # endif
 #elif defined Q_OS_MACX
     mCbAudioDriver->addItem (vboxGlobal().toString (KAudioDriverType_CoreAudio));
+#elif defined Q_OS_FREEBSD
+    mCbAudioDriver->addItem (vboxGlobal().toString (KAudioDriverType_OSS));
 #endif
     /* Set the old value */
     mCbAudioDriver->setCurrentIndex (currentDriver);
