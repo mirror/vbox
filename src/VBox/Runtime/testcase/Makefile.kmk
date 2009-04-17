@@ -61,6 +61,7 @@ PROGRAMS += \
 	tstErrUnique \
 	tstFile \
 	tstFileLock \
+	tstFork \
 	tstGetOpt \
 	tstHandleTable \
 	tstHeapSimple \
@@ -168,6 +169,8 @@ tstFile_SOURCES = tstFile.cpp
 tstFileAppendWin-1_SOURCES = tstFileAppendWin-1.cpp
 
 tstFileLock_SOURCES = tstFileLock.cpp
+
+tstFork_SOURCES = tstFork.cpp
 
 tstGetOpt_SOURCES = tstGetOpt.cpp
 
