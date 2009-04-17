@@ -1124,32 +1124,20 @@ static void pcbiosPlantMPStable(PPDMDEVINS pDevIns, uint8_t *pTable, uint16_t nu
          * an MP table we have an IOAPIC and therefore a Local APIC. */
         u32FeatureFlags = u32Edx | X86_CPUID_FEATURE_EDX_APIC;
     }
-#ifdef VBOX_WITH_SMP_GUESTS
-    PMPSPROCENTRY pProcEntry       = (PMPSPROCENTRY)(pCfgTab+1);
+    /* Construct MPS table for each VCPU. */
+    PMPSPROCENTRY pProcEntry = (PMPSPROCENTRY)(pCfgTab+1);
     for (int i = 0; i<numCpus; i++)
     {
-      pProcEntry->u8EntryType        = 0; /* processor entry */
-      pProcEntry->u8LocalApicId      = i;
-      pProcEntry->u8LocalApicVersion = 0x11;
-      pProcEntry->u8CPUFlags         = (i == 0 ? 2 /* bootstrap processor */ : 0 /* application processor */) | 1 /* enabled */;
-      pProcEntry->u32CPUSignature    = u32CPUSignature;
-      pProcEntry->u32CPUFeatureFlags = u32FeatureFlags;
-      pProcEntry->u32Reserved[0]     =
+        pProcEntry->u8EntryType        = 0; /* processor entry */
+        pProcEntry->u8LocalApicId      = i;
+        pProcEntry->u8LocalApicVersion = 0x11;
+        pProcEntry->u8CPUFlags         = (i == 0 ? 2 /* bootstrap processor */ : 0 /* application processor */) | 1 /* enabled */;
+        pProcEntry->u32CPUSignature    = u32CPUSignature;
+        pProcEntry->u32CPUFeatureFlags = u32FeatureFlags;
+        pProcEntry->u32Reserved[0]     =
         pProcEntry->u32Reserved[1]     = 0;
-      pProcEntry++;
+        pProcEntry++;
     }
-#else
-    /* one processor so far */
-    PMPSPROCENTRY pProcEntry       = (PMPSPROCENTRY)(pCfgTab+1);
-    pProcEntry->u8EntryType        = 0; /* processor entry */
-    pProcEntry->u8LocalApicId      = 0;
-    pProcEntry->u8LocalApicVersion = 0x11;
-    pProcEntry->u8CPUFlags         = 2 /* bootstrap processor */ | 1 /* enabled */;
-    pProcEntry->u32CPUSignature    = u32CPUSignature;
-    pProcEntry->u32CPUFeatureFlags = u32FeatureFlags;
-    pProcEntry->u32Reserved[0]     =
-    pProcEntry->u32Reserved[1]     = 0;
-#endif
 
     /* ISA bus */
     PMPSBUSENTRY pBusEntry         = (PMPSBUSENTRY)(pProcEntry+1);
