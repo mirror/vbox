@@ -455,7 +455,7 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
         /* Check if destination address is MMIO. */
         PIOMMMIORANGE pMMIODst;
         RTGCPHYS PhysDst;
-        rc = PGMGstGetPage(pVM, (RTGCPTR)pu8Virt, NULL, &PhysDst);
+        rc = PGMGstGetPage((RTGCPTR)pu8Virt, NULL, &PhysDst);
         PhysDst |= (RTGCUINTPTR)pu8Virt & PAGE_OFFSET_MASK;
         if (    RT_SUCCESS(rc)
             &&  (pMMIODst = iomMMIOGetRange(&pVM->iom.s, PhysDst)))
@@ -1875,7 +1875,7 @@ VMMDECL(int) IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys)
         {
             uint64_t fFlags;
             RTHCPHYS HCPhys;
-            rc = PGMShwGetPage(pVM, pVCpu, (RTGCPTR)GCPhys, &fFlags, &HCPhys);
+            rc = PGMShwGetPage(pVCpu, (RTGCPTR)GCPhys, &fFlags, &HCPhys);
             Assert(rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
             cb     -= PAGE_SIZE;
             GCPhys += PAGE_SIZE;

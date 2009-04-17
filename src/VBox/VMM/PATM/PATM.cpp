@@ -4107,7 +4107,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
     Assert(rc);
 
     RTGCPHYS GCPhys;
-    rc = PGMGstGetPage(pVM, pVCpu, pInstrGC, NULL, &GCPhys);
+    rc = PGMGstGetPage(pVCpu, pInstrGC, NULL, &GCPhys);
     if (rc != VINF_SUCCESS)
     {
         Log(("PGMGstGetPage failed with %Rrc\n", rc));
@@ -6077,7 +6077,7 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
 
             if (Cpu.pCurInstr->opcode == OP_PUSH)
             {
-                rc = PGMShwGetPage(pVM, pVCpu, pCtx->esp, &fFlags, NULL);
+                rc = PGMShwGetPage(pVCpu, pCtx->esp, &fFlags, NULL);
                 if (    rc == VINF_SUCCESS
                     &&  ((fFlags & (X86_PTE_P|X86_PTE_RW)) == (X86_PTE_P|X86_PTE_RW)) )
                 {
@@ -6098,13 +6098,13 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
             }
 
             /* Typical pushf (most patches)/push (call patch) trap because of a monitored page. */
-            rc = PGMShwModifyPage(pVM, pVCpu, pCtx->esp, 1, X86_PTE_RW, ~(uint64_t)X86_PTE_RW);
+            rc = PGMShwModifyPage(pVCpu, pCtx->esp, 1, X86_PTE_RW, ~(uint64_t)X86_PTE_RW);
             AssertMsgRC(rc, ("PGMShwModifyPage -> rc=%Rrc\n", rc));
             if (rc == VINF_SUCCESS)
             {
 
                 /* The guest page *must* be present. */
-                rc = PGMGstGetPage(pVM, pVCpu, pCtx->esp, &fFlags, NULL);
+                rc = PGMGstGetPage(pVCpu, pCtx->esp, &fFlags, NULL);
                 if (rc == VINF_SUCCESS && (fFlags & X86_PTE_P))
                 {
                     STAM_PROFILE_ADV_STOP(&pVM->patm.s.StatHandleTrap, a);

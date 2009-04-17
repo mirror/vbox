@@ -450,7 +450,7 @@ VMMDECL(int)     PGMTrap0eHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTX
     /*
      * Call the worker.
      */
-    int rc = PGM_BTH_PFN(Trap0eHandler, pVM)(pVM, pVCpu, uErr, pRegFrame, pvFault);
+    int rc = PGM_BTH_PFN(Trap0eHandler, pVCpu)(pVM, pVCpu, uErr, pRegFrame, pvFault);
     if (rc == VINF_PGM_SYNCPAGE_MODIFIED_PDE)
         rc = VINF_SUCCESS;
     STAM_STATS({ if (rc == VINF_EM_RAW_GUEST_TRAP) STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eGuestPF); });
@@ -478,7 +478,7 @@ VMMDECL(int)     PGMTrap0eHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTX
 VMMDECL(int) PGMPrefetchPage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrPage)
 {
     STAM_PROFILE_START(&pVCpu->pgm.s.CTX_MID_Z(Stat,Prefetch), a);
-    int rc = PGM_BTH_PFN(PrefetchPage, pVM)(pVM, pVCpu, GCPtrPage);
+    int rc = PGM_BTH_PFN(PrefetchPage, pVCpu)(pVM, pVCpu, GCPtrPage);
     STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,Prefetch), a);
     AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 || RT_FAILURE(rc), ("rc=%Rrc\n", rc));
     return rc;
@@ -534,7 +534,7 @@ VMMDECL(int) PGMIsValidAccess(PVM pVM, PVMCPU pVCpu, RTGCPTR Addr, uint32_t cbSi
     }
 
     uint64_t fPage;
-    int rc = PGMGstGetPage(pVM, pVCpu, (RTGCPTR)Addr, &fPage, NULL);
+    int rc = PGMGstGetPage(pVCpu, (RTGCPTR)Addr, &fPage, NULL);
     if (RT_FAILURE(rc))
     {
         Log(("PGMIsValidAccess: access violation for %RGv rc=%d\n", Addr, rc));
@@ -583,7 +583,7 @@ VMMDECL(int) PGMVerifyAccess(PVM pVM, PVMCPU pVCpu, RTGCPTR Addr, uint32_t cbSiz
      * Get going.
      */
     uint64_t fPageGst;
-    int rc = PGMGstGetPage(pVM, pVCpu, (RTGCPTR)Addr, &fPageGst, NULL);
+    int rc = PGMGstGetPage(pVCpu, (RTGCPTR)Addr, &fPageGst, NULL);
     if (RT_FAILURE(rc))
     {
         Log(("PGMVerifyAccess: access violation for %RGv rc=%d\n", Addr, rc));
@@ -611,7 +611,7 @@ VMMDECL(int) PGMVerifyAccess(PVM pVM, PVMCPU pVCpu, RTGCPTR Addr, uint32_t cbSiz
         /*
          * Next step is to verify if we protected this page for dirty bit tracking or for CSAM scanning
          */
-        rc = PGMShwGetPage(pVM, pVCpu, (RTGCPTR)Addr, NULL, NULL);
+        rc = PGMShwGetPage(pVCpu, (RTGCPTR)Addr, NULL, NULL);
         if (    rc == VERR_PAGE_NOT_PRESENT
             ||  rc == VERR_PAGE_TABLE_NOT_PRESENT)
         {
@@ -621,7 +621,7 @@ VMMDECL(int) PGMVerifyAccess(PVM pVM, PVMCPU pVCpu, RTGCPTR Addr, uint32_t cbSiz
             */
             Assert(X86_TRAP_PF_RW == X86_PTE_RW && X86_TRAP_PF_US == X86_PTE_US);
             uint32_t uErr = fAccess & (X86_TRAP_PF_RW | X86_TRAP_PF_US);
-            rc = PGM_BTH_PFN(VerifyAccessSyncPage, pVM)(pVM, pVCpu, Addr, fPageGst, uErr);
+            rc = PGM_BTH_PFN(VerifyAccessSyncPage, pVCpu)(pVM, pVCpu, Addr, fPageGst, uErr);
             if (rc != VINF_SUCCESS)
                 return rc;
         }
@@ -635,7 +635,7 @@ VMMDECL(int) PGMVerifyAccess(PVM pVM, PVMCPU pVCpu, RTGCPTR Addr, uint32_t cbSiz
      */
     /** @note this will assert when writing to monitored pages (a bit annoying actually) */
     uint64_t fPageShw;
-    rc = PGMShwGetPage(pVM, pVCpu, (RTGCPTR)Addr, &fPageShw, NULL);
+    rc = PGMShwGetPage(pVCpu, (RTGCPTR)Addr, &fPageShw, NULL);
     if (    (rc == VERR_PAGE_NOT_PRESENT || RT_FAILURE(rc))
         || (fWrite && !(fPageShw & X86_PTE_RW))
         || (fUser  && !(fPageShw & X86_PTE_US)) )
@@ -709,7 +709,7 @@ VMMDECL(int) PGMInvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrPage)
     if (!pVM->pgm.s.fMappingsFixed)
     {
         if (    pgmGetMapping(pVM, GCPtrPage)
-            &&  PGMGstGetPage(pVM, pVCpu, GCPtrPage, NULL, NULL) != VERR_PAGE_TABLE_NOT_PRESENT)
+            &&  PGMGstGetPage(pVCpu, GCPtrPage, NULL, NULL) != VERR_PAGE_TABLE_NOT_PRESENT)
         {
             LogFlow(("PGMGCInvalidatePage: Conflict!\n"));
             VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
@@ -730,7 +730,7 @@ VMMDECL(int) PGMInvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrPage)
      * Call paging mode specific worker.
      */
     STAM_PROFILE_START(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePage), a);
-    rc = PGM_BTH_PFN(InvalidatePage, pVM)(pVM, pVCpu, GCPtrPage);
+    rc = PGM_BTH_PFN(InvalidatePage, pVCpu)(pVM, pVCpu, GCPtrPage);
     STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePage), a);
 
 #ifdef IN_RING3
@@ -781,7 +781,6 @@ VMMDECL(int) PGMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFra
  * Gets effective page information (from the VMM page directory).
  *
  * @returns VBox status.
- * @param   pVM         VM Handle.
  * @param   pVCpu       VMCPU handle.
  * @param   GCPtr       Guest Context virtual address of the page.
  * @param   pfFlags     Where to store the flags. These are X86_PTE_*.
@@ -789,9 +788,9 @@ VMMDECL(int) PGMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFra
  *                      This is page aligned.
  * @remark  You should use PGMMapGetPage() for pages in a mapping.
  */
-VMMDECL(int) PGMShwGetPage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys)
+VMMDECL(int) PGMShwGetPage(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys)
 {
-    return PGM_SHW_PFN(GetPage,pVM)(pVM, pVCpu, GCPtr, pfFlags, pHCPhys);
+    return PGM_SHW_PFN(GetPage, pVCpu)(pVCpu, GCPtr, pfFlags, pHCPhys);
 }
 
 
@@ -799,16 +798,15 @@ VMMDECL(int) PGMShwGetPage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFla
  * Sets (replaces) the page flags for a range of pages in the shadow context.
  *
  * @returns VBox status.
- * @param   pVM         VM handle.
  * @param   pVCpu       VMCPU handle.
  * @param   GCPtr       The address of the first page.
  * @param   cb          The size of the range in bytes.
  * @param   fFlags      Page flags X86_PTE_*, excluding the page mask of course.
  * @remark  You must use PGMMapSetPage() for pages in a mapping.
  */
-VMMDECL(int) PGMShwSetPage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags)
+VMMDECL(int) PGMShwSetPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags)
 {
-    return PGMShwModifyPage(pVM, pVCpu, GCPtr, cb, fFlags, 0);
+    return PGMShwModifyPage(pVCpu, GCPtr, cb, fFlags, 0);
 }
 
 
@@ -818,7 +816,6 @@ VMMDECL(int) PGMShwSetPage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint
  * The existing flags are ANDed with the fMask and ORed with the fFlags.
  *
  * @returns VBox status code.
- * @param   pVM         VM handle.
  * @param   pVCpu       VMCPU handle.
  * @param   GCPtr       Virtual address of the first page in the range.
  * @param   cb          Size (in bytes) of the range to apply the modification to.
@@ -827,7 +824,7 @@ VMMDECL(int) PGMShwSetPage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint
  *                      Be very CAREFUL when ~'ing constants which could be 32-bit!
  * @remark  You must use PGMMapModifyPage() for pages in a mapping.
  */
-VMMDECL(int) PGMShwModifyPage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask)
+VMMDECL(int) PGMShwModifyPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask)
 {
     AssertMsg(!(fFlags & X86_PTE_PAE_PG_MASK), ("fFlags=%#llx\n", fFlags));
     Assert(cb);
@@ -842,7 +839,7 @@ VMMDECL(int) PGMShwModifyPage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, u
     /*
      * Call worker.
      */
-    return PGM_SHW_PFN(ModifyPage, pVM)(pVM, pVCpu, GCPtr, cb, fFlags, fMask);
+    return PGM_SHW_PFN(ModifyPage, pVCpu)(pVCpu, GCPtr, cb, fFlags, fMask);
 }
 
 
@@ -1256,16 +1253,15 @@ int pgmShwGetEPTPDPtr(PVM pVM, PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, 
  * purpose.
  *
  * @returns VBox status.
- * @param   pVM         VM Handle.
  * @param   pVCpu       VMCPU handle.
  * @param   GCPtr       Guest Context virtual address of the page.
  * @param   pfFlags     Where to store the flags. These are X86_PTE_*, even for big pages.
  * @param   pGCPhys     Where to store the GC physical address of the page.
  *                      This is page aligned. The fact that the
  */
-VMMDECL(int) PGMGstGetPage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys)
+VMMDECL(int) PGMGstGetPage(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys)
 {
-    return PGM_GST_PFN(GetPage,pVM)(pVM, pVCpu, GCPtr, pfFlags, pGCPhys);
+    return PGM_GST_PFN(GetPage, pVCpu)(pVCpu, GCPtr, pfFlags, pGCPhys);
 }
 
 
@@ -1274,13 +1270,12 @@ VMMDECL(int) PGMGstGetPage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFla
  *
  * @returns true if the page is present.
  * @returns false if the page is not present.
- * @param   pVM         The VM handle.
  * @param   pVCpu       VMCPU handle.
  * @param   GCPtr       Address within the page.
  */
-VMMDECL(bool) PGMGstIsPagePresent(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr)
+VMMDECL(bool) PGMGstIsPagePresent(PVMCPU pVCpu, RTGCPTR GCPtr)
 {
-    int rc = PGMGstGetPage(pVM, pVCpu, GCPtr, NULL, NULL);
+    int rc = PGMGstGetPage(pVCpu, GCPtr, NULL, NULL);
     return RT_SUCCESS(rc);
 }
 
@@ -1289,15 +1284,14 @@ VMMDECL(bool) PGMGstIsPagePresent(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr)
  * Sets (replaces) the page flags for a range of pages in the guest's tables.
  *
  * @returns VBox status.
- * @param   pVM         VM handle.
  * @param   pVCpu       VMCPU handle.
  * @param   GCPtr       The address of the first page.
  * @param   cb          The size of the range in bytes.
  * @param   fFlags      Page flags X86_PTE_*, excluding the page mask of course.
  */
-VMMDECL(int)  PGMGstSetPage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags)
+VMMDECL(int)  PGMGstSetPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags)
 {
-    return PGMGstModifyPage(pVM, pVCpu, GCPtr, cb, fFlags, 0);
+    return PGMGstModifyPage(pVCpu, GCPtr, cb, fFlags, 0);
 }
 
 
@@ -1307,7 +1301,6 @@ VMMDECL(int)  PGMGstSetPage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uin
  * The existing flags are ANDed with the fMask and ORed with the fFlags.
  *
  * @returns VBox status code.
- * @param   pVM         VM handle.
  * @param   pVCpu       VMCPU handle.
  * @param   GCPtr       Virtual address of the first page in the range.
  * @param   cb          Size (in bytes) of the range to apply the modification to.
@@ -1315,7 +1308,7 @@ VMMDECL(int)  PGMGstSetPage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uin
  * @param   fMask       The AND mask - page flags X86_PTE_*, excluding the page mask of course.
  *                      Be very CAREFUL when ~'ing constants which could be 32-bit!
  */
-VMMDECL(int)  PGMGstModifyPage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask)
+VMMDECL(int)  PGMGstModifyPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask)
 {
     STAM_PROFILE_START(&pVCpu->pgm.s.CTX_MID_Z(Stat,GstModifyPage), a);
 
@@ -1337,7 +1330,7 @@ VMMDECL(int)  PGMGstModifyPage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, 
     /*
      * Call worker.
      */
-    int rc = PGM_GST_PFN(ModifyPage, pVM)(pVM, pVCpu, GCPtr, cb, fFlags, fMask);
+    int rc = PGM_GST_PFN(ModifyPage, pVCpu)(pVCpu, GCPtr, cb, fFlags, fMask);
 
     STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,GstModifyPage), a);
     return rc;
@@ -1686,7 +1679,7 @@ VMMDECL(int) PGMFlushTLB(PVM pVM, PVMCPU pVCpu, uint64_t cr3, bool fGlobal)
     {
         RTGCPHYS GCPhysOldCR3 = pVCpu->pgm.s.GCPhysCR3;
         pVCpu->pgm.s.GCPhysCR3  = GCPhysCR3;
-        rc = PGM_BTH_PFN(MapCR3, pVM)(pVM, pVCpu, GCPhysCR3);
+        rc = PGM_BTH_PFN(MapCR3, pVCpu)(pVM, pVCpu, GCPhysCR3);
         if (RT_LIKELY(rc == VINF_SUCCESS))
         {
             if (!pVM->pgm.s.fMappingsFixed)
@@ -1779,7 +1772,7 @@ VMMDECL(int) PGMUpdateCR3(PVM pVM, PVMCPU pVCpu, uint64_t cr3)
     if (pVCpu->pgm.s.GCPhysCR3 != GCPhysCR3)
     {
         pVCpu->pgm.s.GCPhysCR3 = GCPhysCR3;
-        rc = PGM_BTH_PFN(MapCR3, pVM)(pVM, pVCpu, GCPhysCR3);
+        rc = PGM_BTH_PFN(MapCR3, pVCpu)(pVM, pVCpu, GCPhysCR3);
         AssertRCSuccess(rc); /* Assumes VINF_PGM_SYNC_CR3 doesn't apply to nested paging. */ /** @todo this isn't true for the mac, but we need hw to test/fix this. */
     }
     return rc;
@@ -1865,7 +1858,7 @@ VMMDECL(int) PGMSyncCR3(PVM pVM, PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint6
         if (pVCpu->pgm.s.GCPhysCR3 != GCPhysCR3)
         {
             pVCpu->pgm.s.GCPhysCR3 = GCPhysCR3;
-            rc = PGM_BTH_PFN(MapCR3, pVM)(pVM, pVCpu, GCPhysCR3);
+            rc = PGM_BTH_PFN(MapCR3, pVCpu)(pVM, pVCpu, GCPhysCR3);
         }
 #ifdef IN_RING3
         if (rc == VINF_PGM_SYNC_CR3)
@@ -1885,7 +1878,7 @@ VMMDECL(int) PGMSyncCR3(PVM pVM, PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint6
      * Let the 'Bth' function do the work and we'll just keep track of the flags.
      */
     STAM_PROFILE_START(&pVCpu->pgm.s.CTX_MID_Z(Stat,SyncCR3), a);
-    rc = PGM_BTH_PFN(SyncCR3, pVM)(pVM, pVCpu, cr0, cr3, cr4, fGlobal);
+    rc = PGM_BTH_PFN(SyncCR3, pVCpu)(pVM, pVCpu, cr0, cr3, cr4, fGlobal);
     STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,SyncCR3), a);
     AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 || RT_FAILURE(rc), ("rc=%Rrc\n", rc));
     if (rc == VINF_SUCCESS)
@@ -2513,7 +2506,7 @@ VMMDECL(unsigned) PGMAssertNoMappingConflicts(PVM pVM)
               GCPtr <= pMapping->GCPtrLast;
               GCPtr += PAGE_SIZE)
         {
-            int rc = PGMGstGetPage(pVM, pVCpu, (RTGCPTR)GCPtr, NULL, NULL);
+            int rc = PGMGstGetPage(pVCpu, (RTGCPTR)GCPtr, NULL, NULL);
             if (rc != VERR_PAGE_TABLE_NOT_PRESENT)
             {
                 AssertMsgFailed(("Conflict at %RGv with %s\n", GCPtr, R3STRING(pMapping->pszDesc)));
@@ -2543,7 +2536,7 @@ VMMDECL(unsigned) PGMAssertNoMappingConflicts(PVM pVM)
 VMMDECL(unsigned) PGMAssertCR3(PVM pVM, PVMCPU pVCpu, uint64_t cr3, uint64_t cr4)
 {
     STAM_PROFILE_START(&pVCpu->pgm.s.CTX_MID_Z(Stat,SyncCR3), a);
-    unsigned cErrors = PGM_BTH_PFN(AssertCR3, pVM)(pVM, pVCpu, cr3, cr4, 0, ~(RTGCPTR)0);
+    unsigned cErrors = PGM_BTH_PFN(AssertCR3, pVCpu)(pVM, pVCpu, cr3, cr4, 0, ~(RTGCPTR)0);
     STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,SyncCR3), a);
     return cErrors;
 }

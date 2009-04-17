@@ -404,7 +404,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
 RTDECL(uint32_t) RTTimerGetSystemGranularity(void)
 {
     /*
-     * Get the default/max timer increment value, return it if ExtSetTimerResolution
+     * Get the default/max timer increment value, return it if ExSetTimerResolution
      * isn't available. Accoring to the sysinternals guys NtQueryTimerResolution
      * is only available in userland and they find it equally annoying.
      */

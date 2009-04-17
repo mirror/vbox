@@ -1424,7 +1424,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOne(PAVLROGCPTRNODECORE pNode, v
 
             RTGCPHYS   GCPhysGst;
             uint64_t   fGst;
-            int rc = PGMGstGetPage(pVM, pVCpu, (RTGCPTR)GCPtr, &fGst, &GCPhysGst);
+            int rc = PGMGstGetPage(pVCpu, (RTGCPTR)GCPtr, &fGst, &GCPhysGst);
             if (    rc == VERR_PAGE_NOT_PRESENT
                 ||  rc == VERR_PAGE_TABLE_NOT_PRESENT)
             {

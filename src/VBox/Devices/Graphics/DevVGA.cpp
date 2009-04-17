@@ -3719,7 +3719,7 @@ static int vgaLFBAccess(PVM pVM, PVGASTATE pThis, RTGCPHYS GCPhys, RTGCPTR GCPtr
     if (RT_SUCCESS(rc))
     {
 #ifndef IN_RING3
-        rc = PGMShwModifyPage(pVM, PDMDevHlpGetVMCPU(pThis->CTX_SUFF(pDevIns)), GCPtr, 1, X86_PTE_RW, ~(uint64_t)X86_PTE_RW);
+        rc = PGMShwModifyPage(PDMDevHlpGetVMCPU(pThis->CTX_SUFF(pDevIns)), GCPtr, 1, X86_PTE_RW, ~(uint64_t)X86_PTE_RW);
         if (RT_SUCCESS(rc))
             return VINF_SUCCESS;
         else

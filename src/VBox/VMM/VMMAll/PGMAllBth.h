@@ -651,7 +651,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXC
 #   if defined(LOG_ENABLED) && !defined(IN_RING0)
                 RTGCPHYS   GCPhys;
                 uint64_t   fPageGst;
-                PGMGstGetPage(pVM, pVCpu, pvFault, &fPageGst, &GCPhys);
+                PGMGstGetPage(pVCpu, pvFault, &fPageGst, &GCPhys);
                 Log(("Page out of sync: %RGv eip=%08x PdeSrc.n.u1User=%d fPageGst=%08llx GCPhys=%RGp scan=%d\n",
                      pvFault, pRegFrame->eip, PdeSrc.n.u1User, fPageGst, GCPhys, CSAMDoesPageNeedScanning(pVM, (RTRCPTR)pRegFrame->eip)));
 #   endif /* LOG_ENABLED */
@@ -660,7 +660,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXC
                 if (CPUMGetGuestCPL(pVCpu, pRegFrame) == 0)
                 {
                     uint64_t fPageGst;
-                    rc = PGMGstGetPage(pVM, pVCpu, pvFault, &fPageGst, NULL);
+                    rc = PGMGstGetPage(pVCpu, pvFault, &fPageGst, NULL);
                     if (    RT_SUCCESS(rc)
                         && !(fPageGst & X86_PTE_US))
                     {
@@ -786,12 +786,12 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXC
 #   ifdef VBOX_STRICT
                         RTGCPHYS GCPhys;
                         uint64_t fPageGst;
-                        rc = PGMGstGetPage(pVM, pVCpu, pvFault, &fPageGst, &GCPhys);
+                        rc = PGMGstGetPage(pVCpu, pvFault, &fPageGst, &GCPhys);
                         Assert(RT_SUCCESS(rc) && fPageGst & X86_PTE_RW);
                         LogFlow(("Obsolete physical monitor page out of sync %RGv - phys %RGp flags=%08llx\n", pvFault, GCPhys, (uint64_t)fPageGst));
 
                         uint64_t fPageShw;
-                        rc = PGMShwGetPage(pVM, pVCpu, pvFault, &fPageShw, NULL);
+                        rc = PGMShwGetPage(pVCpu, pvFault, &fPageShw, NULL);
                         AssertMsg(RT_SUCCESS(rc) && fPageShw & X86_PTE_RW, ("rc=%Rrc fPageShw=%RX64\n", rc, fPageShw));
 #   endif /* VBOX_STRICT */
                         STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeOutOfSync, c);
@@ -805,7 +805,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXC
                         &&  (uErr & (X86_TRAP_PF_RW | X86_TRAP_PF_P)) == (X86_TRAP_PF_RW | X86_TRAP_PF_P))
                     {
                         uint64_t fPageGst;
-                        rc = PGMGstGetPage(pVM, pVCpu, pvFault, &fPageGst, NULL);
+                        rc = PGMGstGetPage(pVCpu, pvFault, &fPageGst, NULL);
                         if (    RT_SUCCESS(rc)
                             && !(fPageGst & X86_PTE_RW))
                         {
@@ -830,11 +830,11 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXC
                 {
                     /* Get guest page flags. */
                     uint64_t fPageGst;
-                    rc = PGMGstGetPage(pVM, pVCpu, pvFault, &fPageGst, NULL);
+                    rc = PGMGstGetPage(pVCpu, pvFault, &fPageGst, NULL);
                     if (RT_SUCCESS(rc))
                     {
                         uint64_t fPageShw;
-                        rc = PGMShwGetPage(pVM, pVCpu, pvFault, &fPageShw, NULL);
+                        rc = PGMShwGetPage(pVCpu, pvFault, &fPageShw, NULL);
 
                         /*
                          * Compare page flags.
@@ -3403,9 +3403,9 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, PVMCPU pVCpu, uint64_t cr3, uint64_t 
                     false);
 # if !defined(IN_RING0) && PGM_GST_TYPE != PGM_TYPE_AMD64
 #  if PGM_GST_TYPE == PGM_TYPE_32BIT
-    rc = PGMShwGetPage(pVM, pVCpu, (RTGCPTR)pPGM->pGst32BitPdRC, NULL, &HCPhysShw);
+    rc = PGMShwGetPage(pVCpu, (RTGCPTR)pPGM->pGst32BitPdRC, NULL, &HCPhysShw);
 #  else
-    rc = PGMShwGetPage(pVM, pVCpu, (RTGCPTR)pPGM->pGstPaePdptRC, NULL, &HCPhysShw);
+    rc = PGMShwGetPage(pVCpu, (RTGCPTR)pPGM->pGstPaePdptRC, NULL, &HCPhysShw);
 #  endif
     AssertRCReturn(rc, 1);
     HCPhys = NIL_RTHCPHYS;
