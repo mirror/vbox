@@ -1721,7 +1721,7 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         /** @todo we should probably deal with out-of-memory conditions here, but for now increasing
          * the heap size should suffice. */
         AssertFatalRC(rc);
-        Assert(!(pVM->pgm.s.fGlobalSyncFlags & PGM_SYNC_CLEAR_PGM_POOL) || VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
+        Assert(!(pVM->pgm.s.fGlobalSyncFlags & PGM_GLOBAL_SYNC_CLEAR_PGM_POOL) || VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
     }
     pPage->fMonitored = true;
     return rc;
@@ -1818,7 +1818,7 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     {
         rc = PGMHandlerPhysicalDeregister(pVM, pPage->GCPhys & ~(RTGCPHYS)(PAGE_SIZE - 1));
         AssertFatalRC(rc);
-        AssertMsg(!(pVM->pgm.s.fGlobalSyncFlags & PGM_SYNC_CLEAR_PGM_POOL) || VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3),
+        AssertMsg(!(pVM->pgm.s.fGlobalSyncFlags & PGM_GLOBAL_SYNC_CLEAR_PGM_POOL) || VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3),
                   ("%#x %#x\n", pVM->pgm.s.fGlobalSyncFlags, pVM->fForcedActions));
     }
     pPage->fMonitored = false;
@@ -2069,17 +2069,17 @@ int pgmPoolSyncCR3(PVM pVM)
      * to monitor a page which was mapped by too many shadowed page tables. This operation
      * sometimes refered to as a 'lightweight flush'.
      */
-    if (!(pVM->pgm.s.fGlobalSyncFlags & PGM_SYNC_CLEAR_PGM_POOL))
+    if (!(pVM->pgm.s.fGlobalSyncFlags & PGM_GLOBAL_SYNC_CLEAR_PGM_POOL))
         pgmPoolMonitorModifiedClearAll(pVM);
     else
     {
 # ifdef IN_RING3 /* Don't flush in ring-0 or raw mode, it's taking too long. */
         /** @todo SMP support! */
         Assert(pVM->cCPUs == 1);
-        pVM->pgm.s.fGlobalSyncFlags &= ~PGM_SYNC_CLEAR_PGM_POOL;
+        pVM->pgm.s.fGlobalSyncFlags &= ~PGM_GLOBAL_SYNC_CLEAR_PGM_POOL;
         pgmPoolClearAll(pVM);
 # else  /* !IN_RING3 */
-        LogFlow(("SyncCR3: PGM_SYNC_CLEAR_PGM_POOL is set -> VINF_PGM_SYNC_CR3\n"));
+        LogFlow(("SyncCR3: PGM_GLOBAL_SYNC_CLEAR_PGM_POOL is set -> VINF_PGM_SYNC_CR3\n"));
         VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3); /** @todo no need to do global sync, right? */
         return VINF_PGM_SYNC_CR3;
 # endif /* !IN_RING3 */
@@ -2712,7 +2712,7 @@ int pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs)
 
     if (rc == VINF_PGM_GCPHYS_ALIASED)
     {
-        pVM->pgm.s.fGlobalSyncFlags |= PGM_SYNC_CLEAR_PGM_POOL;
+        pVM->pgm.s.fGlobalSyncFlags |= PGM_GLOBAL_SYNC_CLEAR_PGM_POOL;
         VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
         rc = VINF_PGM_SYNC_CR3;
     }
@@ -4206,7 +4206,7 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
     *ppPage = NULL;
     /** @todo CSAM/PGMPrefetchPage messes up here during CSAMR3CheckGates
      *  (TRPMR3SyncIDT) because of FF priority. Try fix that?
-     *  Assert(!(pVM->pgm.s.fGlobalSyncFlags & PGM_SYNC_CLEAR_PGM_POOL)); */
+     *  Assert(!(pVM->pgm.s.fGlobalSyncFlags & PGM_GLOBAL_SYNC_CLEAR_PGM_POOL)); */
 
 #ifdef PGMPOOL_WITH_CACHE
     if (pPool->fCacheEnabled)
