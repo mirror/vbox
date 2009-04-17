@@ -880,7 +880,7 @@ RTDECL(int) RTFileAioReqGetRC(RTFILEAIOREQ hReq, size_t *pcbTransfered);
  *                          context should support an unlimited number of
  *                          requests.
  */
-RTDECL(int) RTFileAioCtxCreate(RTFILEAIOCTX phAioCtx, uint32_t cAioReqsMax);
+RTDECL(int) RTFileAioCtxCreate(PRTFILEAIOCTX phAioCtx, uint32_t cAioReqsMax);
 
 /** Unlimited number of requests.
  * Used with RTFileAioCtxCreate and RTFileAioCtxGetMaxReqCount. */
@@ -958,7 +958,7 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ phReqs, size_
  *          RT_ELEMENTS and similar macros.
  */
 RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMillisTimeout,
-                             PRTFILEAIOREQ paphReqs, size_t cReqs, uint32_t *pcReqs);
+                             PRTFILEAIOREQ pahReqs, size_t cReqs, uint32_t *pcReqs);
 
 /**
  * Forces any RTFileAioCtxWait() call from another thread to return immediately.
