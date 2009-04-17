@@ -3235,7 +3235,7 @@ DECLINLINE(int) pgmR0DynMapHCPageInlined(PPGM pPGM, RTHCPHYS HCPhys, void **ppv)
     }
     else
     {
-        STAM_COUNTER_INC(&pPGMCPU->StatR0DynMapHCPageInlMisses);
+        STAM_COUNTER_INC(&pPGM->StatR0DynMapHCPageInlMisses);
         pgmR0DynMapHCPageCommon(pVM, pSet, HCPhys, ppv);
     }
 
