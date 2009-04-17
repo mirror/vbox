@@ -985,7 +985,7 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM, PVMCPU pVCpu)
         pVCpu->hwaccm.s.idEnteredCpu = idCpu;
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-        PGMDynMapMigrateAutoSet(pVCpu);
+        PGMDynMapMigrateAutoSet(pVM);
 #endif
     }
     return rc;
@@ -1063,7 +1063,7 @@ VMMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
     Assert(ASMAtomicReadBool(&pCpu->fInUse) == true);
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-    PGMDynMapStartAutoSet(pVCpu);
+    PGMDynMapStartAutoSet(pVM);
 #endif
 
     pCtx = CPUMQueryGuestCtxPtr(pVCpu);
@@ -1071,7 +1071,7 @@ VMMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
     rc = HWACCMR0Globals.pfnRunGuestCode(pVM, pVCpu, pCtx);
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-    PGMDynMapReleaseAutoSet(pVCpu);
+    PGMDynMapReleaseAutoSet(pVM);
 #endif
     return rc;
 }
