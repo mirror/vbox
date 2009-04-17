@@ -1275,14 +1275,15 @@ RuntimeR0Drv_INCS.freebsd += $(PATH_RuntimeR0Drv)
   # the header next to the source. So, we'll have to temporarily copy the
   # source file to the destination directory to work.
   #
+  ## @todo Create an install target for this and install it to gen-sys-hdrs/, user order deps to force RuntimeR0Drv to build it. Use it for the other drivers as well.
   VBOX_AWK := /usr/bin/awk
-  $$(PATH_RuntimeR0Drv)/bus_if.h: $(VBOX_FREEBSD_SRC)/kern/bus_if.m
+  $$(PATH_RuntimeR0Drv)/bus_if.h: $(VBOX_FREEBSD_SRC)/kern/bus_if.m | $$(dir $$@)
 	$(call MSG_TOOL,awk,RuntimeR0Drv,$<,$@)
 	$(QUIET)$(CP) -f $(VBOX_FREEBSD_SRC)/kern/bus_if.m $(PATH_RuntimeR0Drv)/bus_if.m
 	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(PATH_RuntimeR0Drv)/bus_if.m -h -p
 	$(QUIET)$(RM) $(PATH_RuntimeR0Drv)/bus_if.m
 
-  $$(PATH_RuntimeR0Drv)/device_if.h: $(VBOX_FREEBSD_SRC)/kern/device_if.m
+  $$(PATH_RuntimeR0Drv)/device_if.h: $(VBOX_FREEBSD_SRC)/kern/device_if.m | $$(dir $$@)
 	$(call MSG_TOOL,awk,RuntimeR0Drv,$<,$@)
 	$(QUIET)$(CP) -f $(VBOX_FREEBSD_SRC)/kern/device_if.m $(PATH_RuntimeR0Drv)/device_if.m
 	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(PATH_RuntimeR0Drv)/device_if.m -h -p
