@@ -425,7 +425,6 @@ struct ACPITBLIOAPIC
 };
 AssertCompileSize(ACPITBLIOAPIC, 12);
 
-#ifdef VBOX_WITH_SMP_GUESTS
 # ifdef IN_RING3 /**@todo r=bird: Move this down to where it's used. */
 
 #  define PCAT_COMPAT   0x1                     /**< system has also a dual-8259 setup */
@@ -531,20 +530,6 @@ public:
     }
 };
 # endif /* IN_RING3 */
-
-#else  /* !VBOX_WITH_SMP_GUESTS */
-/** Multiple APIC Description Table */
-struct ACPITBLMADT
-{
-    ACPITBLHEADER       header;
-    uint32_t            u32LAPIC;               /**< local APIC address */
-    uint32_t            u32Flags;               /**< Flags */
-# define PCAT_COMPAT    0x1                     /**< system has also a dual-8259 setup */
-    ACPITBLLAPIC        LApic;
-    ACPITBLIOAPIC       IOApic;
-};
-AssertCompileSize(ACPITBLMADT, 64);
-#endif /* !VBOX_WITH_SMP_GUESTS */
 
 #pragma pack()
 
@@ -783,7 +768,6 @@ static void acpiSetupRSDP(ACPITBLRSDP *rsdp, uint32_t rsdt_addr, uint64_t xsdt_a
  */
 static void acpiSetupMADT(ACPIState *s, RTGCPHYS32 addr)
 {
-#ifdef VBOX_WITH_SMP_GUESTS
     uint16_t cpus = s->cCpus;
     AcpiTableMADT madt(cpus);
 
@@ -814,35 +798,6 @@ static void acpiSetupMADT(ACPIState *s, RTGCPHYS32 addr)
 
     madt.header_addr()->u8Checksum = acpiChecksum(madt.data(), madt.size());
     acpiPhyscpy(s, addr, madt.data(), madt.size());
-
-#else  /* !VBOX_WITH_SMP_GUESTS */
-    ACPITBLMADT madt;
-
-    /* Don't call this function if u8UseIOApic==false! */
-    Assert(s->u8UseIOApic);
-
-    memset(&madt, 0, sizeof(madt));
-    acpiPrepareHeader(&madt.header, "APIC", sizeof(madt), 2);
-
-    madt.u32LAPIC          = RT_H2LE_U32(0xfee00000);
-    madt.u32Flags          = RT_H2LE_U32(PCAT_COMPAT);
-
-    madt.LApic.u8Type      = 0;
-    madt.LApic.u8Length    = sizeof(ACPITBLLAPIC);
-    madt.LApic.u8ProcId    = 0;
-    madt.LApic.u8ApicId    = 0;
-    madt.LApic.u32Flags    = RT_H2LE_U32(LAPIC_ENABLED);
-
-    madt.IOApic.u8Type     = 1;
-    madt.IOApic.u8Length   = sizeof(ACPITBLIOAPIC);
-    madt.IOApic.u8IOApicId = 1;
-    madt.IOApic.u8Reserved = 0;
-    madt.IOApic.u32Address = RT_H2LE_U32(0xfec00000);
-    madt.IOApic.u32GSIB    = RT_H2LE_U32(0);
-
-    madt.header.u8Checksum = acpiChecksum((uint8_t*)&madt, sizeof(madt));
-    acpiPhyscpy(s, addr, &madt, sizeof(madt));
-#endif /* !VBOX_WITH_SMP_GUESTS */
 }
 
 /* SCI IRQ */
@@ -1372,7 +1327,6 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
                 case SYSTEM_INFO_INDEX_CPU1_STATUS:
                 case SYSTEM_INFO_INDEX_CPU2_STATUS:
                 case SYSTEM_INFO_INDEX_CPU3_STATUS:
-#ifdef VBOX_WITH_SMP_GUESTS
                     *pu32 = s->fShowCpu
                          && s->uSystemInfoIndex - SYSTEM_INFO_INDEX_CPU0_STATUS < s->cCpus
                           ?   STA_DEVICE_PRESENT_MASK
@@ -1380,9 +1334,6 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
                             | STA_DEVICE_SHOW_IN_UI_MASK
                             | STA_DEVICE_FUNCTIONING_PROPERLY_MASK
                           : 0;
-#else
-                    *pu32 = 0;
-#endif
                     break;
 
                 /* Solaris 9 tries to read from this index */
@@ -1779,15 +1730,11 @@ static int acpiPlantTables(ACPIState *s)
     if (s->u8UseIOApic)
     {
         apic_addr = RT_ALIGN_32(facs_addr + sizeof(ACPITBLFACS), 16);
-#ifdef VBOX_WITH_SMP_GUESTS
         /**
          * @todo nike: maybe some refactoring needed to compute tables layout,
          * but as this code is executed only once it doesn't make sense to optimize much
          */
         dsdt_addr = RT_ALIGN_32(apic_addr + AcpiTableMADT::sizeFor(s), 16);
-#else
-        dsdt_addr = RT_ALIGN_32(apic_addr + sizeof(ACPITBLMADT), 16);
-#endif
     }
     else
     {
