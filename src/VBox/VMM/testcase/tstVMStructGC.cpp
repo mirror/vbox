@@ -410,7 +410,9 @@ int main()
     GEN_CHECK_OFF(PGMCPU, offVM);
     GEN_CHECK_OFF(PGMCPU, offVCpu);
     GEN_CHECK_OFF(PGMCPU, offPGM);
-    GEN_CHECK_OFF(PGMCPU, AutoSet);
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    GEN_CHECK_OFF(PGM, AutoSet);
+#endif
     GEN_CHECK_OFF(PGMCPU, GCPhysA20Mask);
     GEN_CHECK_OFF(PGMCPU, fA20Enabled);
     GEN_CHECK_OFF(PGMCPU, fSyncFlags);
