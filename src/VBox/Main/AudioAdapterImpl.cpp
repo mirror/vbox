@@ -255,6 +255,9 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioDriver)(AudioDriverType_T aAudioDriver
 #ifdef RT_OS_OS2
             case AudioDriverType_MMPM:
 #endif
+#ifdef RT_OS_FREEBSD
+            case AudioDriverType_OSS:
+#endif
             {
                 mData.backup();
                 mData->mAudioDriver = aAudioDriver;
@@ -457,6 +460,10 @@ HRESULT AudioAdapter::loadSettings (const settings::Key &aMachineNode)
     else if (strcmp (driver, "MMPM") == 0)
         mData->mAudioDriver = AudioDriverType_MMPM;
 #endif
+#ifdef RT_OS_FREEBSD
+    else if (strcmp (driver, "OSS") == 0)
+        mData->mAudioDriver = AudioDriverType_OSS;
+# endif
     else
         AssertMsgFailed (("Invalid driver '%s'\n", driver));
 
@@ -560,6 +567,13 @@ HRESULT AudioAdapter::saveSettings (settings::Key &aMachineNode)
             case AudioDriverType_MMPM:
             {
                 driverStr = "MMPM";
+                break;
+            }
+#endif
+#ifdef RT_OS_FREEBSD
+            case AudioDriverType_OSS:
+            {
+                driverStr = "OSS";
                 break;
             }
 #endif
