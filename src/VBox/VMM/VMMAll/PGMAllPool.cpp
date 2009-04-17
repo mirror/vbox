@@ -977,9 +977,9 @@ DECLINLINE(int) pgmPoolAccessHandlerSTOSD(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE 
     while (pRegFrame->ecx)
     {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-        uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVM);
+        uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
         pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, (RTGCPTR)pu32, NULL);
-        PGMDynMapPopAutoSubset(pVM, iPrevSubset);
+        PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
 #else
         pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, (RTGCPTR)pu32, NULL);
 #endif
@@ -1033,9 +1033,9 @@ DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool
      * Clear all the pages. ASSUMES that pvFault is readable.
      */
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    uint32_t    iPrevSubset = PGMDynMapPushAutoSubset(pVM);
+    uint32_t    iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
     pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, pvFault, pCpu);
-    PGMDynMapPopAutoSubset(pVM, iPrevSubset);
+    PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
 #else
     pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, pvFault, pCpu);
 #endif
@@ -2667,7 +2667,7 @@ int pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs)
             /* Start a subset here because pgmPoolTrackFlushGCPhysPTsSlow and
                pgmPoolTrackFlushGCPhysPTs will/may kill the pool otherwise. */
             PVMCPU pVCpu = VMMGetCpu(pVM);
-            uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVM);
+            uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
 # endif
 
             if (PGMPOOL_TD_GET_CREFS(u16) != PGMPOOL_TD_CREFS_PHYSEXT)
@@ -2682,7 +2682,7 @@ int pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs)
             *pfFlushTLBs = true;
 
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-            PGMDynMapPopAutoSubset(pVM, iPrevSubset);
+            PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
 # endif
         }
     }
@@ -2695,7 +2695,7 @@ int pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs)
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
         /* Start a subset here because pgmPoolTrackFlushGCPhysPTsSlow kill the pool otherwise. */
         PVMCPU pVCpu = VMMGetCpu(pVM);
-        uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVM);
+        uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
 # endif
         rc = pgmPoolTrackFlushGCPhysPTsSlow(pVM, pPhysPage);
         if (rc == VINF_SUCCESS)
@@ -2703,7 +2703,7 @@ int pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs)
     }
 
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    PGMDynMapPopAutoSubset(pVM, iPrevSubset);
+    PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
 # endif
 
 #else
@@ -4000,9 +4000,7 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
  */
 int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 {
-    int rc  = VINF_SUCCESS;
-    PVM pVM = pPool->CTX_SUFF(pVM);
-
+    int rc = VINF_SUCCESS;
     STAM_PROFILE_START(&pPool->StatFlushPage, f);
     LogFlow(("pgmPoolFlushPage: pPage=%p:{.Key=%RHp, .idx=%d, .enmKind=%s, .GCPhys=%RGp}\n",
              pPage, pPage->Core.Key, pPage->idx, pgmPoolPoolKindToStr(pPage->enmKind), pPage->GCPhys));
@@ -4020,7 +4018,7 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     /*
      * Quietly reject any attempts at flushing the currently active shadow CR3 mapping
      */
-    if (pgmPoolIsPageLocked(&pVM->pgm.s, pPage))
+    if (pgmPoolIsPageLocked(&pPool->CTX_SUFF(pVM)->pgm.s, pPage))
     {
         AssertMsg(   pPage->enmKind == PGMPOOLKIND_64BIT_PML4
                   || pPage->enmKind == PGMPOOLKIND_PAE_PDPT
@@ -4031,14 +4029,15 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
                   || pPage->enmKind == PGMPOOLKIND_PAE_PD1_FOR_32BIT_PD
                   || pPage->enmKind == PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD
                   || pPage->enmKind == PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD,
-                  ("Can't free the shadow CR3! (%RHp vs %RHp kind=%d\n", PGMGetHyperCR3(VMMGetCpu(pVM)), pPage->Core.Key, pPage->enmKind));
+                  ("Can't free the shadow CR3! (%RHp vs %RHp kind=%d\n", PGMGetHyperCR3(VMMGetCpu(pPool->CTX_SUFF(pVM))), pPage->Core.Key, pPage->enmKind));
         Log(("pgmPoolFlushPage: current active shadow CR3, rejected. enmKind=%s idx=%d\n", pgmPoolPoolKindToStr(pPage->enmKind), pPage->idx));
         return VINF_SUCCESS;
     }
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     /* Start a subset so we won't run out of mapping space. */
-    uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVM);
+    PVMCPU pVCpu = VMMGetCpu(pPool->CTX_SUFF(pVM));
+    uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
 #endif
 
     /*
@@ -4065,7 +4064,7 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     /* Heavy stuff done. */
-    PGMDynMapPopAutoSubset(pVM, iPrevSubset);
+    PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
 #endif
 
 #ifdef PGMPOOL_WITH_MONITORING
