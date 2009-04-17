@@ -33,6 +33,7 @@ XpComCSamples_INST = \
 	$(INST_SDK)bindings/xpcom/cbinding/samples/
 XpComCSamples_SOURCES = \
 	tstXPCOMCGlue.c \
+	tstXPCOMCCall.c \
 	makefile.tstXPCOMCGlue=>Makefile
 
 INSTALLS += XpComCGlue

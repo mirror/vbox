@@ -31,7 +31,9 @@
 #include <unistd.h>
 
 static char *nsIDToString(nsID *guid);
-static void listVMs(IVirtualBox *virtualBox, ISession *session);
+static void listVMs(IVirtualBox *virtualBox, ISession *session, nsIEventQueue *queue);
+static void registerCallBack(IVirtualBox *virtualBox, ISession *session, nsID *machineId, nsIEventQueue *queue);
+static void startVM(IVirtualBox *virtualBox, ISession *session, nsID *id, nsIEventQueue *queue);
 
 int volatile g_refcount = 0;
 
@@ -58,6 +60,9 @@ static char *nsIDToString(nsID *guid)
     return res;
 }
 
+/**
+ * Callback functions
+ */
 static const char *GetStateName(PRUint32 machineState)
 {
     switch (machineState)
@@ -89,7 +94,7 @@ static nsresult OnMousePointerShapeChange(
     PRUint32 height,
     PRUint8 * shape
 ) {
-    printf("%d here\n",__LINE__);
+    printf("OnMousePointerShapeChange\n");
     return 0;
 }
 
@@ -98,7 +103,7 @@ static nsresult OnMouseCapabilityChange(
     PRBool supportsAbsolute,
     PRBool needsHostCursor
 ) {
-    printf("%d here\n",__LINE__);
+    printf("OnMouseCapabilityChange\n");
     return 0;
 }
 
@@ -108,7 +113,7 @@ static nsresult OnKeyboardLedsChange(
     PRBool capsLock,
     PRBool scrollLock
 ) {
-    printf("%d here\n",__LINE__);
+    printf("OnMouseCapabilityChange\n");
     return 0;
 }
 
@@ -116,7 +121,6 @@ static nsresult OnStateChange(
     IConsoleCallback *pThis,
     PRUint32 state
 ) {
-    printf("%d here\n",__LINE__);
     printf("OnStateChange: %s\n", GetStateName(state));
     fflush(stdout);
     return 0;
@@ -124,19 +128,19 @@ static nsresult OnStateChange(
 
 static nsresult OnAdditionsStateChange(IConsoleCallback *pThis )
 {
-    printf("%d here\n",__LINE__);
+    printf("OnAdditionsStateChange\n");
     return 0;
 }
 
 static nsresult OnDVDDriveChange(IConsoleCallback *pThis )
 {
-    printf("%d here\n",__LINE__);
+    printf("OnDVDDriveChange \n");
     return 0;
 }
 
 static nsresult OnFloppyDriveChange(IConsoleCallback *pThis )
 {
-    printf("%d here\n",__LINE__);
+    printf("OnFloppyDriveChange \n");
     return 0;
 }
 
@@ -144,7 +148,7 @@ static nsresult OnNetworkAdapterChange(
     IConsoleCallback *pThis,
     INetworkAdapter * networkAdapter
 ) {
-    printf("%d here\n",__LINE__);
+    printf("OnNetworkAdapterChange\n");
     return 0;
 }
 
@@ -152,7 +156,7 @@ static nsresult OnSerialPortChange(
     IConsoleCallback *pThis,
     ISerialPort * serialPort
 ) {
-    printf("%d here\n",__LINE__);
+    printf("OnSerialPortChange\n");
     return 0;
 }
 
@@ -160,25 +164,25 @@ static nsresult OnParallelPortChange(
     IConsoleCallback *pThis,
     IParallelPort * parallelPort
 ) {
-    printf("%d here\n",__LINE__);
+    printf("OnParallelPortChange\n");
     return 0;
 }
 
 static nsresult OnStorageControllerChange(IConsoleCallback *pThis )
 {
-    printf("%d here\n",__LINE__);
+    printf("OnStorageControllerChange\n");
     return 0;
 }
 
 static nsresult OnVRDPServerChange(IConsoleCallback *pThis )
 {
-    printf("%d here\n",__LINE__);
+    printf("OnVRDPServerChange\n");
     return 0;
 }
 
 static nsresult OnUSBControllerChange(IConsoleCallback *pThis )
 {
-    printf("%d here\n",__LINE__);
+    printf("OnUSBControllerChange\n");
     return 0;
 }
 
@@ -188,7 +192,7 @@ static nsresult OnUSBDeviceStateChange(
     PRBool attached,
     IVirtualBoxErrorInfo * error
 ) {
-    printf("%d here\n",__LINE__);
+    printf("OnUSBDeviceStateChange\n");
     return 0;
 }
 
@@ -196,7 +200,7 @@ static nsresult OnSharedFolderChange(
     IConsoleCallback *pThis,
     PRUint32 scope
 ) {
-    printf("%d here\n",__LINE__);
+    printf("OnSharedFolderChange\n");
     return 0;
 }
 
@@ -206,7 +210,7 @@ static nsresult OnRuntimeError(
     PRUnichar * id,
     PRUnichar * message
 ) {
-    printf("%d here\n",__LINE__);
+    printf("OnRuntimeError\n");
     return 0;
 }
 
@@ -214,7 +218,7 @@ static nsresult OnCanShowWindow(
     IConsoleCallback *pThis,
     PRBool * canShow
 ) {
-    printf("%d here\n",__LINE__);
+    printf("OnCanShowWindow\n");
     return 0;
 }
 
@@ -222,7 +226,7 @@ static nsresult OnShowWindow(
     IConsoleCallback *pThis,
     PRUint64 * winId
 ) {
-    printf("%d here\n",__LINE__);
+    printf("OnShowWindow\n");
     return 0;
 }
 
@@ -245,10 +249,8 @@ static nsresult Release(nsISupports *pThis)
     if (c == 0)
     {
         /* delete object */
-#if 1 /* test */
         free(pThis->vtbl);
         free(pThis);
-#endif
     }
     return c;
 }
@@ -264,7 +266,15 @@ static nsresult QueryInterface(nsISupports *pThis, const nsID *iid, void **resul
     return 0;
 }
 
-static void registerCallBack(IVirtualBox *virtualBox, ISession *session, nsID *machineId)
+/**
+ * Register callback functions for the selected VM.
+ *
+ * @param   virtualBox ptr to IVirtualBox object
+ * @param   session    ptr to ISession object
+ * @param   id         identifies the machine to start
+ * @param   queue      handle to the event queue
+ */
+static void registerCallBack(IVirtualBox *virtualBox, ISession *session, nsID *machineId, nsIEventQueue *queue)
 {
     IConsole *console = NULL;
     nsresult rc;
@@ -302,21 +312,20 @@ static void registerCallBack(IVirtualBox *virtualBox, ISession *session, nsID *m
             consoleCallback->vtbl->OnShowWindow = &OnShowWindow;
             g_refcount = 1;
 
-            printf("%d here\n",__LINE__);
             console->vtbl->RegisterCallback(console, consoleCallback);
-            printf("%d here\n",__LINE__);
 
             {
-                int run = 10;
+                /* crude way to show how it works, but any
+                 * great ideas anyone?
+                 */
+                int run = 10000000;
                 while (run-- > 0) {
-                    sleep(1);
-                    printf("waiting here:%d\n",run);
-                    fflush(stdout);
+                    queue->vtbl->ProcessPendingEvents(queue);
                 }
             }
             console->vtbl->UnregisterCallback(console, consoleCallback);
         }
-        /*consoleCallback->vtbl->Release(consoleCallback);*/
+        consoleCallback->vtbl->nsisupports.Release((nsISupports *)consoleCallback);
     }
     session->vtbl->Close((void *)session);
 }
@@ -326,8 +335,9 @@ static void registerCallBack(IVirtualBox *virtualBox, ISession *session, nsID *m
  *
  * @param   virtualBox ptr to IVirtualBox object
  * @param   session    ptr to ISession object
+ * @param   queue      handle to the event queue
  */
-static void listVMs(IVirtualBox *virtualBox, ISession *session)
+static void listVMs(IVirtualBox *virtualBox, ISession *session, nsIEventQueue *queue)
 {
     nsresult rc;
     IMachine **machines = NULL;
@@ -462,8 +472,7 @@ static void listVMs(IVirtualBox *virtualBox, ISession *session)
             nsID  *iid = NULL;
 
             machine->vtbl->GetId(machine, &iid);
-            /*startVM(virtualBox, session, iid);*/
-            registerCallBack(virtualBox, session, iid);
+            startVM(virtualBox, session, iid, queue);
 
             g_pVBoxFuncs->pfnComUnallocMem(iid);
         }
@@ -490,9 +499,10 @@ static void listVMs(IVirtualBox *virtualBox, ISession *session)
  * @param   virtualBox ptr to IVirtualBox object
  * @param   session    ptr to ISession object
  * @param   id         identifies the machine to start
+ * @param   queue      handle to the event queue
  */
-#if 0
-static void startVM(IVirtualBox *virtualBox, ISession *session, nsID *id)
+
+static void startVM(IVirtualBox *virtualBox, ISession *session, nsID *id, nsIEventQueue *queue)
 {
     nsresult rc;
     IMachine  *machine    = NULL;
@@ -557,6 +567,7 @@ static void startVM(IVirtualBox *virtualBox, ISession *session, nsID *id)
         else
         {
             fprintf(stderr, "Remote session has been successfully opened.\n");
+            registerCallBack(virtualBox, session, id, queue);
         }
         progress->vtbl->nsisupports.Release((void *)progress);
     }
@@ -564,14 +575,14 @@ static void startVM(IVirtualBox *virtualBox, ISession *session, nsID *id)
     /* It's important to always release resources. */
     machine->vtbl->nsisupports.Release((void *)machine);
 }
-#endif
 
 /* Main - Start the ball rolling. */
 
 int main(int argc, char **argv)
 {
-    IVirtualBox *vbox           = NULL;
+    IVirtualBox *vbox            = NULL;
     ISession   *session          = NULL;
+    nsIEventQueue *queue         = NULL;
     PRUint32    revision         = 0;
     PRUnichar  *versionUtf16     = NULL;
     PRUnichar  *homefolderUtf16  = NULL;
@@ -603,6 +614,8 @@ int main(int argc, char **argv)
         fprintf(stderr, "%s: FATAL: could not get session handle\n", argv[0]);
         return EXIT_FAILURE;
     }
+    g_pVBoxFuncs->pfnGetEventQueue(&queue);
+    printf("Got the event queue: %p\n", queue);
 
     /*
      * Now ask for revision, version and home folder information of
@@ -659,7 +672,7 @@ int main(int argc, char **argv)
             argv[0], (unsigned)rc);
     }
 
-    listVMs(vbox, session);
+    listVMs(vbox, session, queue);
     session->vtbl->Close(session);
 
     printf("----------------------------------------------------\n");

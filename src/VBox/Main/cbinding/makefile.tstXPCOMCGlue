@@ -27,11 +27,11 @@ CC            = gcc
 CFLAGS        = -g -Wall
 
 .PHONY: all
-all: tstXPCOMCGlue
+all: tstXPCOMCGlue tstXPCOMCCall
 
 .PHONY: clean
 clean:
-	rm -f tstXPCOMCGlue.o tstXPCOMCGlue VBoxXPCOMCGlue.o
+	rm -f tstXPCOMCGlue.o tstXPCOMCGlue VBoxXPCOMCGlue.o tstXPCOMCCall.o tstXPCOMCCall
 
 tstXPCOMCGlue: tstXPCOMCGlue.o VBoxXPCOMCGlue.o
 	$(CC) -o $@ $^ -ldl
@@ -39,6 +39,11 @@ tstXPCOMCGlue: tstXPCOMCGlue.o VBoxXPCOMCGlue.o
 tstXPCOMCGlue.o: tstXPCOMCGlue.c
 	$(CC) $(CFLAGS) $(INCS_XPCOM) $(GLUE_INC) -o $@ -c $<
 
-VBoxXPCOMCGlue.o: $(GLUE_DIR)/VBoxXPCOMCGlue.c
+tstXPCOMCCall: tstXPCOMCCall.o VBoxXPCOMCGlue.o
+	$(CC) -o $@ $^ -ldl -lpthread
+
+tstXPCOMCCall.o: tstXPCOMCCall.c
 	$(CC) $(CFLAGS) $(INCS_XPCOM) $(GLUE_INC) -o $@ -c $<
 
+VBoxXPCOMCGlue.o: $(GLUE_DIR)/VBoxXPCOMCGlue.c
+	$(CC) $(CFLAGS) $(INCS_XPCOM) $(GLUE_INC) -o $@ -c $<

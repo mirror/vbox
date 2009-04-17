@@ -34,10 +34,11 @@
 
 using namespace std;
 
-static ISession            *Session;
-static IVirtualBox         *Ivirtualbox;
-static nsIServiceManager   *serviceManager;
-static nsIComponentManager *manager;
+static ISession            *Session        = NULL;
+static IVirtualBox         *Ivirtualbox    = NULL;
+static nsIServiceManager   *serviceManager = NULL;
+static nsIComponentManager *manager        = NULL;
+static nsIEventQueue       *eventQ         = NULL;
 
 static void VBoxComUninitialize(void);
 
@@ -101,6 +102,14 @@ VBoxComInitialize(IVirtualBox **virtualBox, ISession **session)
         return;
     }
 
+    rc = NS_GetMainEventQ (&eventQ);
+    if (NS_FAILED(rc))
+    {
+        Log(("Cbinding: Could not get xpcom event queue! rc=%Rhrc\n",rc));
+        VBoxComUninitialize();
+        return;
+    }
+
     rc = manager->CreateInstanceByContractID(NS_VIRTUALBOX_CONTRACTID,
                                              nsnull,
                                              NS_GET_IID(IVirtualBox),
@@ -135,12 +144,20 @@ VBoxComUninitialize(void)
         NS_RELEASE(Session);        // decrement refcount
     if (Ivirtualbox)
         NS_RELEASE(Ivirtualbox);    // decrement refcount
+    if (eventQ)
+        NS_RELEASE(eventQ);         // decrement refcount
     if (manager)
         NS_RELEASE(manager);        // decrement refcount
     if (serviceManager)
         NS_RELEASE(serviceManager); // decrement refcount
     com::Shutdown();
     Log(("Cbinding: Cleaned up the created IVirtualBox and ISession Objects.\n"));
+}
+
+static void
+VBoxGetEventQueue(nsIEventQueue **eventQueue)
+{
+    *eventQueue = eventQ;
 }
 
 static uint32_t
@@ -173,6 +190,8 @@ VBoxGetXPCOMCFunctions(unsigned uVersion)
 
         VBoxUtf16ToUtf8,
         VBoxUtf8ToUtf16,
+
+        VBoxGetEventQueue,
 
         VBOX_XPCOMC_VERSION
     };

@@ -387,6 +387,290 @@ typedef PRUint32 nsresult;
 #define NS_FAILED(_nsresult) (NS_UNLIKELY((_nsresult) &amp; 0x80000000))
 #define NS_SUCCEEDED(_nsresult) (NS_LIKELY(!((_nsresult) &amp; 0x80000000)))
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+# define PR_IntervalNow VBoxNsprPR_IntervalNow
+# define PR_TicksPerSecond VBoxNsprPR_TicksPerSecond
+# define PR_SecondsToInterval VBoxNsprPR_SecondsToInterval
+# define PR_MillisecondsToInterval VBoxNsprPR_MillisecondsToInterval
+# define PR_MicrosecondsToInterval VBoxNsprPR_MicrosecondsToInterval
+# define PR_IntervalToSeconds VBoxNsprPR_IntervalToSeconds
+# define PR_IntervalToMilliseconds VBoxNsprPR_IntervalToMilliseconds
+# define PR_IntervalToMicroseconds VBoxNsprPR_IntervalToMicroseconds
+# define PR_EnterMonitor VBoxNsprPR_EnterMonitor
+# define PR_ExitMonitor VBoxNsprPR_ExitMonitor
+# define PR_Notify VBoxNsprPR_Notify
+# define PR_NotifyAll VBoxNsprPR_NotifyAll
+# define PR_Wait VBoxNsprPR_Wait
+# define PR_NewMonitor VBoxNsprPR_NewMonitor
+# define PR_DestroyMonitor VBoxNsprPR_DestroyMonitor
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
+typedef PRUint32 PRIntervalTime;
+
+#define PR_INTERVAL_MIN 1000UL
+#define PR_INTERVAL_MAX 100000UL
+#define PR_INTERVAL_NO_WAIT 0UL
+#define PR_INTERVAL_NO_TIMEOUT 0xffffffffUL
+
+NSPR_API(PRIntervalTime) PR_IntervalNow(void);
+NSPR_API(PRUint32) PR_TicksPerSecond(void);
+NSPR_API(PRIntervalTime) PR_SecondsToInterval(PRUint32 seconds);
+NSPR_API(PRIntervalTime) PR_MillisecondsToInterval(PRUint32 milli);
+NSPR_API(PRIntervalTime) PR_MicrosecondsToInterval(PRUint32 micro);
+NSPR_API(PRUint32) PR_IntervalToSeconds(PRIntervalTime ticks);
+NSPR_API(PRUint32) PR_IntervalToMilliseconds(PRIntervalTime ticks);
+NSPR_API(PRUint32) PR_IntervalToMicroseconds(PRIntervalTime ticks);
+
+typedef struct PRMonitor PRMonitor;
+
+NSPR_API(PRMonitor*) PR_NewMonitor(void);
+NSPR_API(void) PR_DestroyMonitor(PRMonitor *mon);
+NSPR_API(void) PR_EnterMonitor(PRMonitor *mon);
+NSPR_API(PRStatus) PR_ExitMonitor(PRMonitor *mon);
+NSPR_API(PRStatus) PR_Wait(PRMonitor *mon, PRIntervalTime ticks);
+NSPR_API(PRStatus) PR_Notify(PRMonitor *mon);
+NSPR_API(PRStatus) PR_NotifyAll(PRMonitor *mon);
+
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+# define PR_CreateThread VBoxNsprPR_CreateThread
+# define PR_JoinThread VBoxNsprPR_JoinThread
+# define PR_Sleep VBoxNsprPR_Sleep
+# define PR_GetCurrentThread VBoxNsprPR_GetCurrentThread
+# define PR_GetThreadState VBoxNsprPR_GetThreadState
+# define PR_SetThreadPrivate VBoxNsprPR_SetThreadPrivate
+# define PR_GetThreadPrivate VBoxNsprPR_GetThreadPrivate
+# define PR_NewThreadPrivateIndex VBoxNsprPR_NewThreadPrivateIndex
+# define PR_GetThreadPriority VBoxNsprPR_GetThreadPriority
+# define PR_SetThreadPriority VBoxNsprPR_SetThreadPriority
+# define PR_Interrupt VBoxNsprPR_Interrupt
+# define PR_ClearInterrupt VBoxNsprPR_ClearInterrupt
+# define PR_BlockInterrupt VBoxNsprPR_BlockInterrupt
+# define PR_UnblockInterrupt VBoxNsprPR_UnblockInterrupt
+# define PR_GetThreadScope VBoxNsprPR_GetThreadScope
+# define PR_GetThreadType VBoxNsprPR_GetThreadType
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
+typedef struct PRThread PRThread;
+typedef struct PRThreadStack PRThreadStack;
+
+typedef enum PRThreadType {
+    PR_USER_THREAD,
+    PR_SYSTEM_THREAD
+} PRThreadType;
+
+typedef enum PRThreadScope {
+    PR_LOCAL_THREAD,
+    PR_GLOBAL_THREAD,
+    PR_GLOBAL_BOUND_THREAD
+} PRThreadScope;
+
+typedef enum PRThreadState {
+    PR_JOINABLE_THREAD,
+    PR_UNJOINABLE_THREAD
+} PRThreadState;
+
+typedef enum PRThreadPriority
+{
+    PR_PRIORITY_FIRST = 0,      /* just a placeholder */
+    PR_PRIORITY_LOW = 0,        /* the lowest possible priority */
+    PR_PRIORITY_NORMAL = 1,     /* most common expected priority */
+    PR_PRIORITY_HIGH = 2,       /* slightly more aggressive scheduling */
+    PR_PRIORITY_URGENT = 3,     /* it does little good to have more than one */
+    PR_PRIORITY_LAST = 3        /* this is just a placeholder */
+} PRThreadPriority;
+
+NSPR_API(PRThread*) PR_CreateThread(PRThreadType type,
+                     void (PR_CALLBACK *start)(void *arg),
+                     void *arg,
+                     PRThreadPriority priority,
+                     PRThreadScope scope,
+                     PRThreadState state,
+                     PRUint32 stackSize);
+NSPR_API(PRStatus) PR_JoinThread(PRThread *thread);
+NSPR_API(PRThread*) PR_GetCurrentThread(void);
+#ifndef NO_NSPR_10_SUPPORT
+#define PR_CurrentThread() PR_GetCurrentThread() /* for nspr1.0 compat. */
+#endif /* NO_NSPR_10_SUPPORT */
+NSPR_API(PRThreadPriority) PR_GetThreadPriority(const PRThread *thread);
+NSPR_API(void) PR_SetThreadPriority(PRThread *thread, PRThreadPriority priority);
+
+typedef void (PR_CALLBACK *PRThreadPrivateDTOR)(void *priv);
+
+NSPR_API(PRStatus) PR_NewThreadPrivateIndex(
+    PRUintn *newIndex, PRThreadPrivateDTOR destructor);
+NSPR_API(PRStatus) PR_SetThreadPrivate(PRUintn tpdIndex, void *priv);
+NSPR_API(void*) PR_GetThreadPrivate(PRUintn tpdIndex);
+NSPR_API(PRStatus) PR_Interrupt(PRThread *thread);
+NSPR_API(void) PR_ClearInterrupt(void);
+NSPR_API(void) PR_BlockInterrupt(void);
+NSPR_API(void) PR_UnblockInterrupt(void);
+NSPR_API(PRStatus) PR_Sleep(PRIntervalTime ticks);
+NSPR_API(PRThreadScope) PR_GetThreadScope(const PRThread *thread);
+NSPR_API(PRThreadType) PR_GetThreadType(const PRThread *thread);
+NSPR_API(PRThreadState) PR_GetThreadState(const PRThread *thread);
+
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+# define PR_DestroyLock VBoxNsprPR_DestroyLock
+# define PR_Lock VBoxNsprPR_Lock
+# define PR_NewLock VBoxNsprPR_NewLock
+# define PR_Unlock VBoxNsprPR_Unlock
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
+typedef struct PRLock PRLock;
+
+NSPR_API(PRLock*) PR_NewLock(void);
+NSPR_API(void) PR_DestroyLock(PRLock *lock);
+NSPR_API(void) PR_Lock(PRLock *lock);
+NSPR_API(PRStatus) PR_Unlock(PRLock *lock);
+
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+# define PR_NewCondVar VBoxNsprPR_NewCondVar
+# define PR_DestroyCondVar VBoxNsprPR_DestroyCondVar
+# define PR_WaitCondVar VBoxNsprPR_WaitCondVar
+# define PR_NotifyCondVar VBoxNsprPR_NotifyCondVar
+# define PR_NotifyAllCondVar VBoxNsprPR_NotifyAllCondVar
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
+typedef struct PRCondVar PRCondVar;
+
+NSPR_API(PRCondVar*) PR_NewCondVar(PRLock *lock);
+NSPR_API(void) PR_DestroyCondVar(PRCondVar *cvar);
+NSPR_API(PRStatus) PR_WaitCondVar(PRCondVar *cvar, PRIntervalTime timeout);
+NSPR_API(PRStatus) PR_NotifyCondVar(PRCondVar *cvar);
+NSPR_API(PRStatus) PR_NotifyAllCondVar(PRCondVar *cvar);
+
+typedef struct PRCListStr PRCList;
+
+struct PRCListStr {
+    PRCList	*next;
+    PRCList	*prev;
+};
+
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+# define PL_DestroyEvent VBoxNsplPL_DestroyEvent
+# define PL_HandleEvent VBoxNsplPL_HandleEvent
+# define PL_InitEvent VBoxNsplPL_InitEvent
+# define PL_CreateEventQueue VBoxNsplPL_CreateEventQueue
+# define PL_CreateMonitoredEventQueue VBoxNsplPL_CreateMonitoredEventQueue
+# define PL_CreateNativeEventQueue VBoxNsplPL_CreateNativeEventQueue
+# define PL_DequeueEvent VBoxNsplPL_DequeueEvent
+# define PL_DestroyEventQueue VBoxNsplPL_DestroyEventQueue
+# define PL_EventAvailable VBoxNsplPL_EventAvailable
+# define PL_EventLoop VBoxNsplPL_EventLoop
+# define PL_GetEvent VBoxNsplPL_GetEvent
+# define PL_GetEventOwner VBoxNsplPL_GetEventOwner
+# define PL_GetEventQueueMonitor VBoxNsplPL_GetEventQueueMonitor
+# define PL_GetEventQueueSelectFD VBoxNsplPL_GetEventQueueSelectFD
+# define PL_MapEvents VBoxNsplPL_MapEvents
+# define PL_PostEvent VBoxNsplPL_PostEvent
+# define PL_PostSynchronousEvent VBoxNsplPL_PostSynchronousEvent
+# define PL_ProcessEventsBeforeID VBoxNsplPL_ProcessEventsBeforeID
+# define PL_ProcessPendingEvents VBoxNsplPL_ProcessPendingEvents
+# define PL_RegisterEventIDFunc VBoxNsplPL_RegisterEventIDFunc
+# define PL_RevokeEvents VBoxNsplPL_RevokeEvents
+# define PL_UnregisterEventIDFunc VBoxNsplPL_UnregisterEventIDFunc
+# define PL_WaitForEvent VBoxNsplPL_WaitForEvent
+# define PL_IsQueueNative VBoxNsplPL_IsQueueNative
+# define PL_IsQueueOnCurrentThread VBoxNsplPL_IsQueueOnCurrentThread
+# define PL_FavorPerformanceHint VBoxNsplPL_FavorPerformanceHint
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
+typedef struct PLEvent PLEvent;
+typedef struct PLEventQueue PLEventQueue;
+
+PR_EXTERN(PLEventQueue*)
+PL_CreateEventQueue(const char* name, PRThread* handlerThread);
+PR_EXTERN(PLEventQueue *) 
+    PL_CreateNativeEventQueue(
+        const char *name, 
+        PRThread *handlerThread
+    );
+PR_EXTERN(PLEventQueue *) 
+    PL_CreateMonitoredEventQueue(
+        const char *name,
+        PRThread *handlerThread
+    );
+PR_EXTERN(void)
+PL_DestroyEventQueue(PLEventQueue* self);
+PR_EXTERN(PRMonitor*)
+PL_GetEventQueueMonitor(PLEventQueue* self);
+
+#define PL_ENTER_EVENT_QUEUE_MONITOR(queue)	\
+	PR_EnterMonitor(PL_GetEventQueueMonitor(queue))
+
+#define PL_EXIT_EVENT_QUEUE_MONITOR(queue)	\
+	PR_ExitMonitor(PL_GetEventQueueMonitor(queue))
+
+PR_EXTERN(PRStatus) PL_PostEvent(PLEventQueue* self, PLEvent* event);
+PR_EXTERN(void*) PL_PostSynchronousEvent(PLEventQueue* self, PLEvent* event);
+PR_EXTERN(PLEvent*) PL_GetEvent(PLEventQueue* self);
+PR_EXTERN(PRBool) PL_EventAvailable(PLEventQueue* self);
+
+typedef void (PR_CALLBACK *PLEventFunProc)(PLEvent* event, void* data, PLEventQueue* queue);
+
+PR_EXTERN(void) PL_MapEvents(PLEventQueue* self, PLEventFunProc fun, void* data);
+PR_EXTERN(void) PL_RevokeEvents(PLEventQueue* self, void* owner);
+PR_EXTERN(void) PL_ProcessPendingEvents(PLEventQueue* self);
+PR_EXTERN(PLEvent*) PL_WaitForEvent(PLEventQueue* self);
+PR_EXTERN(void) PL_EventLoop(PLEventQueue* self);
+PR_EXTERN(PRInt32) PL_GetEventQueueSelectFD(PLEventQueue* self);
+PR_EXTERN(PRBool) PL_IsQueueOnCurrentThread( PLEventQueue *queue );
+PR_EXTERN(PRBool) PL_IsQueueNative(PLEventQueue *queue);
+
+typedef void* (PR_CALLBACK *PLHandleEventProc)(PLEvent* self);
+typedef void (PR_CALLBACK *PLDestroyEventProc)(PLEvent* self);
+PR_EXTERN(void)
+PL_InitEvent(PLEvent* self, void* owner,
+			 PLHandleEventProc handler,
+			 PLDestroyEventProc destructor);
+PR_EXTERN(void*) PL_GetEventOwner(PLEvent* self);
+PR_EXTERN(void) PL_HandleEvent(PLEvent* self);
+PR_EXTERN(void) PL_DestroyEvent(PLEvent* self);
+PR_EXTERN(void) PL_DequeueEvent(PLEvent* self, PLEventQueue* queue);
+PR_EXTERN(void) PL_FavorPerformanceHint(PRBool favorPerformanceOverEventStarvation, PRUint32 starvationDelay);
+
+struct PLEvent {
+    PRCList				link;
+    PLHandleEventProc	handler;
+    PLDestroyEventProc	destructor;
+    void*				owner;
+    void*				synchronousResult;
+    PRLock*             lock;
+    PRCondVar*          condVar;
+    PRBool              handled;
+#ifdef PL_POST_TIMINGS
+    PRIntervalTime      postTime;
+#endif
+#ifdef XP_UNIX
+    unsigned long       id;
+#endif /* XP_UNIX */
+    /* other fields follow... */
+};
+
+#if defined(XP_WIN) || defined(XP_OS2)
+
+PR_EXTERN(HWND) 
+    PL_GetNativeEventReceiverWindow( 
+        PLEventQueue *eqp 
+    );
+#endif /* XP_WIN || XP_OS2 */
+
+#ifdef XP_UNIX
+
+PR_EXTERN(PRInt32)
+PL_ProcessEventsBeforeID(PLEventQueue *aSelf, unsigned long aID);
+
+typedef unsigned long (PR_CALLBACK *PLGetEventIDFunc)(void *aClosure);
+
+PR_EXTERN(void)
+PL_RegisterEventIDFunc(PLEventQueue *aSelf, PLGetEventIDFunc aFunc,
+                       void *aClosure);
+PR_EXTERN(void) PL_UnregisterEventIDFunc(PLEventQueue *aSelf);
+
+#endif /* XP_UNIX */
+
+
+
 /**
  * An "interface id" which can be used to uniquely identify a given
  * interface.
@@ -564,6 +848,88 @@ struct nsIStackFrame {
     struct nsIStackFrame_vtbl *vtbl;
 };
 
+/* starting interface:    nsIEventTarget */
+#define NS_IEVENTTARGET_IID_STR "ea99ad5b-cc67-4efb-97c9-2ef620a59f2a"
+
+#define NS_IEVENTTARGET_IID \
+  {0xea99ad5b, 0xcc67, 0x4efb, \
+    { 0x97, 0xc9, 0x2e, 0xf6, 0x20, 0xa5, 0x9f, 0x2a }}
+
+struct nsIEventTarget;
+typedef struct nsIEventTarget nsIEventTarget;
+
+struct nsIEventTarget_vtbl {
+
+    struct nsISupports_vtbl nsisupports;
+
+    nsresult (*PostEvent)(nsIEventTarget *pThis, PLEvent * aEvent);
+
+    nsresult (*IsOnCurrentThread)(nsIEventTarget *pThis, PRBool *_retval);
+
+};
+
+struct nsIEventTarget {
+    struct nsIEventTarget_vtbl *vtbl;
+};
+
+/* starting interface:    nsIEventQueue */
+#define NS_IEVENTQUEUE_IID_STR "176afb41-00a4-11d3-9f2a-00400553eef0"
+
+#define NS_IEVENTQUEUE_IID \
+  {0x176afb41, 0x00a4, 0x11d3, \
+    { 0x9f, 0x2a, 0x00, 0x40, 0x05, 0x53, 0xee, 0xf0 }}
+
+struct nsIEventQueue;
+typedef struct nsIEventQueue nsIEventQueue;
+
+struct nsIEventQueue_vtbl {
+
+    struct nsIEventTarget_vtbl nsieventtarget;
+
+    nsresult (*InitEvent)(nsIEventQueue *pThis, PLEvent * aEvent, void * owner, PLHandleEventProc handler, PLDestroyEventProc destructor);
+
+    nsresult (*PostSynchronousEvent)(nsIEventQueue *pThis, PLEvent * aEvent, void * *aResult);
+
+    nsresult (*PendingEvents)(nsIEventQueue *pThis, PRBool *_retval);
+
+    nsresult (*ProcessPendingEvents)(nsIEventQueue *pThis);
+
+    nsresult (*EventLoop)(nsIEventQueue *pThis);
+
+    nsresult (*EventAvailable)(nsIEventQueue *pThis, PRBool *aResult);
+
+    nsresult (*GetEvent)(nsIEventQueue *pThis, PLEvent * *_retval);
+
+    nsresult (*HandleEvent)(nsIEventQueue *pThis, PLEvent * aEvent);
+
+    nsresult (*WaitForEvent)(nsIEventQueue *pThis, PLEvent * *_retval);
+
+    PRInt32 (*GetEventQueueSelectFD)(nsIEventQueue *pThis);
+
+    nsresult (*Init)(nsIEventQueue *pThis, PRBool aNative);
+
+    nsresult (*InitFromPRThread)(nsIEventQueue *pThis, PRThread * thread, PRBool aNative);
+
+    nsresult (*InitFromPLQueue)(nsIEventQueue *pThis, PLEventQueue * aQueue);
+
+    nsresult (*EnterMonitor)(nsIEventQueue *pThis);
+
+    nsresult (*ExitMonitor)(nsIEventQueue *pThis);
+
+    nsresult (*RevokeEvents)(nsIEventQueue *pThis, void * owner);
+
+    nsresult (*GetPLEventQueue)(nsIEventQueue *pThis, PLEventQueue * *_retval);
+
+    nsresult (*IsQueueNative)(nsIEventQueue *pThis, PRBool *_retval);
+
+    nsresult (*StopAcceptingEvents)(nsIEventQueue *pThis);
+
+};
+
+struct nsIEventQueue {
+    struct nsIEventQueue_vtbl *vtbl;
+};
+
 </xsl:text>
  <xsl:apply-templates/>
 <xsl:text>
@@ -603,6 +969,8 @@ typedef struct VBOXXPCOMC
     int   (*pfnUtf16ToUtf8)(const PRUnichar *pwszString, char **ppszString);
     int   (*pfnUtf8ToUtf16)(const char *pszString, PRUnichar **ppwszString);
 
+    void  (*pfnGetEventQueue)(nsIEventQueue **eventQueue);
+
     /** Tail version, same as uVersion. */
     unsigned uEndVersion;
 } VBOXXPCOMC;
@@ -612,7 +980,7 @@ typedef VBOXXPCOMC const *PCVBOXXPCOM;
 /** The current interface version.
  * For use with VBoxGetXPCOMCFunctions and to be found in
  * VBOXXPCOMC::uVersion. */
-#define VBOX_XPCOMC_VERSION     0x00010000U
+#define VBOX_XPCOMC_VERSION     0x00020000U
 
 VBOXXPCOMC_DECL(PCVBOXXPCOM) VBoxGetXPCOMCFunctions(unsigned uVersion);
 /** Typedef for VBoxGetXPCOMCFunctions. */
