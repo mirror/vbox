@@ -27,6 +27,7 @@
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/rtnetlink.h>
+#include <linux/miscdevice.h>
 
 #define LOG_GROUP LOG_GROUP_NET_FLT_DRV
 #include <VBox/log.h>
@@ -156,116 +157,6 @@ MODULE_VERSION(VBOX_VERSION_STRING " (" xstr(INTNETTRUNKIFPORT_VERSION) ")");
  */
 static VBOXNETFLTGLOBALS g_VBoxNetFltGlobals;
 
-
-/*
- * NetAdp-related part
- */
-
-#define VBOX_NETADP_NAME "vboxnet%d"
-
-struct net_device *g_pNetDev;
-
-struct VBoxNetAdpPriv
-{
-    struct net_device_stats Stats;
-};
-typedef struct VBoxNetAdpPriv VBOXNETADPPRIV;
-typedef VBOXNETADPPRIV *PVBOXNETADPPRIV;
-
-static int vboxNetAdpOpen(struct net_device *pNetDev)
-{
-    netif_start_queue(pNetDev);
-    printk("vboxNetAdpOpen returns 0\n");
-    return 0;
-}
-
-static int vboxNetAdpStop(struct net_device *pNetDev)
-{
-    netif_stop_queue(pNetDev);
-    return 0;
-}
-
-static int vboxNetAdpXmit(struct sk_buff *pSkb, struct net_device *pNetDev)
-{
-    PVBOXNETADPPRIV pPriv = netdev_priv(pNetDev);
-
-    /* Update the stats. */
-    pPriv->Stats.tx_packets++;
-    pPriv->Stats.tx_bytes += pSkb->len;
-    /* Update transmission time stamp. */
-    pNetDev->trans_start = jiffies;
-    /* Nothing else to do, just free the sk_buff. */
-    dev_kfree_skb(pSkb);
-    return 0;
-}
-
-struct net_device_stats *vboxNetAdpGetStats(struct net_device *pNetDev)
-{
-    PVBOXNETADPPRIV pPriv = netdev_priv(pNetDev);
-    return &pPriv->Stats;
-}
-
-/* Currently not referenced in vboxNetAdpNetDevInit
-static int vboxNetAdpValidateAddr(struct net_device *dev)
-{
-    Log(("vboxNetAdpValidateAddr: %02x:%02x:%02x:%02x:%02x:%02x\n",
-         dev->dev_addr[0], dev->dev_addr[1], dev->dev_addr[2],
-         dev->dev_addr[3], dev->dev_addr[4], dev->dev_addr[5]));
-    return -EADDRNOTAVAIL;
-} */
-
-static void vboxNetAdpNetDevInit(struct net_device *pNetDev)
-{
-    PVBOXNETADPPRIV pPriv;
-
-    ether_setup(pNetDev);
-    /// @todo Use Sun vendor id
-    memcpy(pNetDev->dev_addr, "\0vbnet", ETH_ALEN);
-    Log(("vboxNetAdpNetDevInit: pNetDev->dev_addr = %.6Rhxd\n", pNetDev->dev_addr));
-    pNetDev->open = vboxNetAdpOpen;
-    pNetDev->stop = vboxNetAdpStop;
-    pNetDev->hard_start_xmit = vboxNetAdpXmit;
-    pNetDev->get_stats = vboxNetAdpGetStats;
-    //pNetDev->validate_addr = vboxNetAdpValidateAddr;
-/*    pNetDev-> = vboxNetAdp;
-    pNetDev-> = vboxNetAdp;
-    pNetDev-> = vboxNetAdp;
-    pNetDev-> = vboxNetAdp;
-    pNetDev-> = vboxNetAdp;*/
-
-    pPriv = netdev_priv(pNetDev);
-    memset(pPriv, 0, sizeof(*pPriv));
-}
-
-static int vboxNetAdpRegisterNetDev(void)
-{
-    int rc = VINF_SUCCESS;
-    struct net_device *pNetDev;
-
-    /* No need for private data. */
-    pNetDev = alloc_netdev(sizeof(VBOXNETADPPRIV), VBOX_NETADP_NAME, vboxNetAdpNetDevInit);
-    if (pNetDev)
-    {
-        int err = register_netdev(pNetDev);
-        if (!err)
-        {
-            g_pNetDev = pNetDev;
-            return VINF_SUCCESS;
-        }
-        free_netdev(pNetDev);
-        rc = RTErrConvertFromErrno(err);
-    }
-    return rc;
-}
-
-static int vboxNetAdpUnregisterNetDev(void)
-{
-    unregister_netdev(g_pNetDev);
-    free_netdev(g_pNetDev);
-    g_pNetDev = NULL;
-    return VINF_SUCCESS;
-}
-
 /**
  * Initialize module.
  *
@@ -300,14 +191,8 @@ static int __init VBoxNetFltLinuxInit(void)
         rc = vboxNetFltInitGlobalsAndIdc(&g_VBoxNetFltGlobals);
         if (RT_SUCCESS(rc))
         {
-            rc = vboxNetAdpRegisterNetDev();
-            if (RT_SUCCESS(rc))
-            {
-                LogRel(("VBoxNetFlt: Successfully started.\n"));
-                return 0;
-            }
-            else
-                LogRel(("VBoxNetFlt: failed to register device (rc=%d)\n", rc));
+            LogRel(("VBoxNetFlt: Successfully started.\n"));
+            return 0;
         }
         else
             LogRel(("VBoxNetFlt: failed to initialize device extension (rc=%d)\n", rc));
@@ -335,8 +220,6 @@ static void __exit VBoxNetFltLinuxUnload(void)
     /*
      * Undo the work done during start (in reverse order).
      */
-    rc = vboxNetAdpUnregisterNetDev();
-    AssertRC(rc);
     rc = vboxNetFltTryDeleteIdcAndGlobals(&g_VBoxNetFltGlobals);
     AssertRC(rc); NOREF(rc);
 

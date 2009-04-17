@@ -23,7 +23,7 @@ SUB_DEPTH = ../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
 
-if1of ($(KBUILD_TARGET), solaris darwin)
+if1of ($(KBUILD_TARGET), solaris darwin linux)
 #
 # VBoxNetAdp - Virtual Network Adapter
 # Note! On Solaris the name has to be <= 8 chars long.
@@ -33,16 +33,24 @@ SYSMODS += VBoxNetAdp
 VBoxNetAdp_TEMPLATE         = VBOXR0DRV
 VBoxNetAdp_INST = $(INST_VBOXNETADP)$(if $(eq $(KBUILD_TARGET),darwin),Contents/MacOS/)
 VBoxNetAdp_NAME.solaris     = vboxnet
+VBoxNetAdp_NAME.linux       = vboxnetadp
+VBoxNetAdp_NOINST.linux     = true
 VBoxNetAdp_DEPS.solaris    += $(VBOX_SVN_REV_KMK)
 VBoxNetAdp_DEFS             = IN_RT_R0 VBOX_SVN_REV=$(VBOX_SVN_REV) IN_SUP_STATIC
+VBoxNetAdp_DEFS.linux       = KBUILD_MODNAME=KBUILD_STR\(vboxnetadp\) KBUILD_BASENAME=KBUILD_STR\(vboxnetadp\) MODULE
 VBoxNetAdp_LDFLAGS.darwin   = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
 VBoxNetAdp_LDFLAGS.solaris += -N misc/gld -N drv/vboxdrv
+VBoxNetAdp_INCS.linux   := \
+	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
 VBoxNetAdp_INCS             = \
 	.
 VBoxNetAdp_SOURCES.darwin   = \
 	darwin/VBoxNetAdp-darwin.cpp
 VBoxNetAdp_SOURCES.solaris  = \
 	solaris/VBoxNetAdp-solaris.c
+VBoxNetAdp_SOURCES.linux   = \
+	linux/VBoxNetAdp-linux.c \
+	VBoxNetAdp.c
 VBoxNetAdp_SOURCES          =
 #VBoxNetAdp_SOURCES          = \
 #	VBoxNetAdp.c
@@ -80,6 +88,66 @@ Scripts-darwin-adp_INST = $(INST_DIST)
 Scripts-darwin-adp_SOURCES = \
 	darwin/loadnetadp.sh
 endif # darwin
+
+ifeq ($(KBUILD_TARGET),linux)
+ #
+ # Install source files for compliation on Linux.
+ # files_vboxnetadp defines VBOX_VBOXNETADP_SOURCES.
+ #
+ include $(PATH_SUB_CURRENT)/linux/files_vboxnetadp
+ INSTALLS += VBoxNetAdp-src VBoxNetAdp-sh
+ VBoxNetAdp-src_INST    = bin/src/vboxnetadp/
+ VBoxNetAdp-src_MODE    = a+r,u+w
+ VBoxNetAdp-src_SOURCES = $(subst ",,$(VBOX_VBOXNETADP_SOURCES)) #"
+ VBoxNetAdp-src_SOURCES+= \
+ 	$(if $(VBOX_OSE),,\
+	  $(PATH_VBoxNetAdp-src)/dkms.conf) \
+	$(PATH_VBoxNetAdp-src)/Makefile
+ VBoxNetAdp-src_CLEAN   = \
+	$(PATH_VBoxNetAdp-src)/dkms.conf \
+	$(PATH_VBoxNetAdp-src)/Makefile	\
+	$(PATH_TARGET)/VBoxNetAdp-src-1.dep
+
+ VBoxNetAdp-sh_INST    = bin/src/vboxnetadp/
+ VBoxNetAdp-sh_MODE    = a+rx,u+w
+ VBoxNetAdp-sh_SOURCES = \
+	$(PATH_VBoxNetAdp-sh)/build_in_tmp \
+	$(if $(VBOX_OSE),,\
+	  $(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers)
+ VBoxNetAdp-sh_CLEAN   = $(PATH_VBoxNetAdp-sh)/build_in_tmp
+
+
+includedep $(PATH_TARGET)/VBoxNetAdp-src-1.dep
+$$(PATH_VBoxNetAdp-src)/Makefile: \
+		$(PATH_SUB_CURRENT)/linux/Makefile \
+		$$(if $$(eq $$(VBoxNetAdp/linux/Makefile_VBOX_HARDENED),$$(VBOX_WITH_HARDENING)),,FORCE) \
+		| $$(dir $$@)
+ifndef VBOX_WITH_HARDENING
+	$(QUIET)$(SED) -e "s;-DVBOX_WITH_HARDENING;;g" --output $@ $<
+else
+	$(QUIET)$(CP) -f $< $@
+endif
+	%$(QUIET2)$(RM) -f -- $(PATH_TARGET)/VBoxNetAdp-src-1.dep
+	%$(QUIET2)$(APPEND) '$(PATH_TARGET)/VBoxNetAdp-src-1.dep' 'VBoxNetAdp/linux/Makefile_VBOX_HARDENED=$(VBOX_WITH_HARDENING)'
+
+## Scripts needed for building the kernel modules
+
+$$(PATH_VBoxNetAdp-sh)/build_in_tmp: \
+		$(PATH_ROOT)/src/VBox/HostDrivers/linux/build_in_tmp \
+		$(VBOX_VERSION_STAMP) \
+		| $$(dir $$@)
+	$(call MSG_TOOL,Creating,,$@)
+	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxnetadp;g" --output $@ $<
+	$(QUIET)chmod 0755 $@
+
+$$(PATH_VBoxNetAdp-src)/dkms.conf: \
+		$(PATH_SUB_CURRENT)/linux/dkms.conf \
+		$(VBOX_VERSION_STAMP) \
+		| $$(dir $$@)
+	$(call MSG_TOOL,Creating,,$@)
+	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" --output $@ $<
+
+endif # linux
 
 include	$(KBUILD_PATH)/subfooter.kmk
 

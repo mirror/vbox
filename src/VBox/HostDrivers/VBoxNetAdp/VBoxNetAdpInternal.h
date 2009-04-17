@@ -122,7 +122,7 @@ struct VBoxNetAdapter
     RTSEMEVENT        hEventIdle;
 #endif /* !VBOXANETADP_DO_NOT_USE_NETFLT */
     /** Corresponds to the digit at the end of device name. */
-    uint8_t           uUnit;
+    uint32_t          uUnit;
 
     union
     {
@@ -140,6 +140,13 @@ struct VBoxNetAdapter
             RTMAC             Mac;
             /** Protocol families attached to this adapter. */
             protocol_family_t aAttachedFamilies[VBOXNETADP_MAX_FAMILIES];
+            /** @} */
+# elif defined(RT_OS_LINUX)
+            /** @name Darwin instance data.
+             * @{ */
+            /** Pointer to Linux network device structure. */
+            struct net_device *pNetDev;
+            /** @} */
 # else
 # error PORTME
 # endif
@@ -153,7 +160,7 @@ struct VBoxNetAdapter
         uint8_t abPadding[1024];
 # endif
 #elif defined(RT_OS_LINUX)
-        uint8_t abPadding[320];
+        uint8_t abPadding[64];
 #else
         uint8_t abPadding[64];
 #endif
@@ -163,6 +170,12 @@ struct VBoxNetAdapter
 };
 typedef struct VBoxNetAdapter VBOXNETADP;
 typedef VBOXNETADP *PVBOXNETADP;
+
+DECLHIDDEN(int) vboxNetAdpInit(void);
+DECLHIDDEN(void) vboxNetAdpShutdown(void);
+DECLHIDDEN(int) vboxNetAdpCreate (PVBOXNETADP *ppNew);
+DECLHIDDEN(int) vboxNetAdpDestroy(PVBOXNETADP pThis);
+DECLHIDDEN(PVBOXNETADP) vboxNetAdpFindByName(const char *pszName);
 
 #ifdef VBOXANETADP_DO_NOT_USE_NETFLT
 /**
@@ -287,6 +300,9 @@ DECLHIDDEN(int) vboxNetAdpOsDisconnectIt(PVBOXNETADP pThis);
  */
 DECLHIDDEN(int) vboxNetAdpOsConnectIt(PVBOXNETADP pThis);
 
+/** @} */
+#endif /* !VBOXANETADP_DO_NOT_USE_NETFLT */
+
 /**
  * This is called to perform OS-specific structure initializations.
  *
@@ -319,8 +335,6 @@ DECLHIDDEN(void) vboxNetAdpOsDestroy(PVBOXNETADP pThis);
  */
 DECLHIDDEN(int) vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMac);
 
-/** @} */
-#endif /* !VBOXANETADP_DO_NOT_USE_NETFLT */
 
 
 __END_DECLS

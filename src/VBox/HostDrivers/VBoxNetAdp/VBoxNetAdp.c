@@ -35,11 +35,14 @@
 #define LOG_GROUP LOG_GROUP_NET_ADP_DRV
 #include "VBoxNetAdpInternal.h"
 
-#include <VBox/sup.h>
 #include <VBox/log.h>
 #include <VBox/err.h>
-#include <iprt/assert.h>
 #include <iprt/string.h>
+
+#ifdef VBOXANETADP_DO_NOT_USE_NETFLT
+
+#include <VBox/sup.h>
+#include <iprt/assert.h>
 #include <iprt/spinlock.h>
 #include <iprt/uuid.h>
 #include <VBox/version.h>
@@ -1118,3 +1121,129 @@ DECLHIDDEN(int) vboxNetAdpInitGlobals(PVBOXNETADPGLOBALS pGlobals)
     return rc;
 }
 
+#else /* !VBOXANETADP_DO_NOT_USE_NETFLT */
+
+
+VBOXNETADP g_aAdapters[VBOXNETADP_MAX_INSTANCES];
+
+
+
+/**
+ * Generate a suitable MAC address.
+ *
+ * @param   pThis       The instance.
+ * @param   pMac        Where to return the MAC address.
+ */
+DECLHIDDEN(void) vboxNetAdpComposeMACAddress(PVBOXNETADP pThis, PRTMAC pMac)
+{
+    /* Use a locally administered version of the OUI we use for the guest NICs. */
+    pMac->au8[0] = 0x08 | 2;
+    pMac->au8[1] = 0x00;
+    pMac->au8[2] = 0x27;
+
+    pMac->au8[3] = 0; /* pThis->uUnit >> 16; */
+    pMac->au8[4] = 0; /* pThis->uUnit >> 8; */
+    pMac->au8[5] = pThis->uUnit;
+}
+
+int vboxNetAdpCreate (PVBOXNETADP *ppNew)
+{
+    int rc;
+    unsigned i;
+    for (i = 0; i < RT_ELEMENTS(g_aAdapters); i++)
+    {
+        PVBOXNETADP pThis = &g_aAdapters[i];
+
+        if (ASMAtomicCmpXchgU32((uint32_t volatile *)&pThis->enmState, kVBoxNetAdpState_Transitional, kVBoxNetAdpState_Invalid))
+        {
+            RTMAC Mac;
+            /* Found an empty slot -- use it. */
+            Log(("vboxNetAdpCreate: found empty slot: %d\n", i));
+            vboxNetAdpComposeMACAddress(pThis, &Mac);
+            rc = vboxNetAdpOsCreate(pThis, &Mac);
+            Log(("vboxNetAdpCreate: pThis=%p pThis->szName=%p\n", pThis, pThis->szName));
+            if (RT_SUCCESS(rc))
+            {
+                *ppNew = pThis;
+                ASMAtomicWriteU32((uint32_t volatile *)&pThis->enmState, kVBoxNetAdpState_Active);
+            }
+            else
+            {
+                ASMAtomicWriteU32((uint32_t volatile *)&pThis->enmState, kVBoxNetAdpState_Invalid);
+                Log(("vboxNetAdpCreate: vboxNetAdpOsCreate failed with '%Rrc'.\n", rc));
+            }
+            Log2(("VBoxNetAdpCreate: Created %s\n", g_aAdapters[i].szName));
+            for (i = 0; i < RT_ELEMENTS(g_aAdapters); i++)
+                Log2(("VBoxNetAdpCreate: Scanning entry: state=%d name=%s\n", g_aAdapters[i].enmState, g_aAdapters[i].szName));
+            return rc;
+        }
+    }
+    Log(("vboxNetAdpCreate: no empty slots!\n"));
+
+    /* All slots in adapter array are busy. */
+    return VERR_OUT_OF_RESOURCES;
+}
+
+int vboxNetAdpDestroy (PVBOXNETADP pThis)
+{
+    int rc = VINF_SUCCESS;
+
+    if (!ASMAtomicCmpXchgU32((uint32_t volatile *)&pThis->enmState, kVBoxNetAdpState_Transitional, kVBoxNetAdpState_Active))
+        return VERR_INTNET_FLT_IF_BUSY;
+
+    vboxNetAdpOsDestroy(pThis);
+
+    ASMAtomicWriteU32((uint32_t volatile *)&pThis->enmState, kVBoxNetAdpState_Invalid);
+
+    return rc;
+}
+
+int  vboxNetAdpInit(void)
+{
+    unsigned i;
+    PVBOXNETADP pVboxnet0;
+    /*
+     * Init common members and call OS-specific init.
+     */
+    for (i = 0; i < RT_ELEMENTS(g_aAdapters); i++)
+    {
+        g_aAdapters[i].enmState = kVBoxNetAdpState_Invalid;
+        g_aAdapters[i].uUnit    = i;
+        vboxNetAdpOsInit(&g_aAdapters[i]);
+    }
+
+    /* Create vboxnet0 */
+    return vboxNetAdpCreate(&pVboxnet0);
+}
+
+/**
+ * Finds an adapter by its name.
+ *
+ * @returns Pointer to the instance by the given name. NULL if not found.
+ * @param   pGlobals        The globals.
+ * @param   pszName         The name of the instance.
+ */
+PVBOXNETADP vboxNetAdpFindByName(const char *pszName)
+{
+    unsigned i;
+
+    for (i = 0; i < RT_ELEMENTS(g_aAdapters); i++)
+    {
+        PVBOXNETADP pThis = &g_aAdapters[i];
+        Log2(("VBoxNetAdp: Scanning entry: state=%d name=%s\n", pThis->enmState, pThis->szName));
+        if (strncmp(pThis->szName, pszName, VBOXNETADP_MAX_NAME_LEN) == 0)
+            if (ASMAtomicReadU32((uint32_t volatile *)&pThis->enmState) == kVBoxNetAdpState_Active)
+                return pThis;
+    }
+    return NULL;
+}
+
+void vboxNetAdpShutdown(void)
+{
+    unsigned i;
+
+    /* Remove virtual adapters */
+    for (i = 0; i < RT_ELEMENTS(g_aAdapters); i++)
+        vboxNetAdpDestroy(&g_aAdapters[i]);
+}
+#endif /* !VBOXANETADP_DO_NOT_USE_NETFLT */
