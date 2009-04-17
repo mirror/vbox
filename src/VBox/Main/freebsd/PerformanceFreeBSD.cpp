@@ -19,6 +19,8 @@
  * additional information or have any questions.
  */
 
+#include <sys/types.h>
+#include <sys/sysctl.h>
 #include "Performance.h"
 
 namespace pm {
@@ -46,12 +48,47 @@ int CollectorFreeBSD::getHostCpuLoad(ULONG *user, ULONG *kernel, ULONG *idle)
 
 int CollectorFreeBSD::getHostCpuMHz(ULONG *mhz)
 {
-    return E_NOTIMPL;
+    int CpuMHz = 0;
+    size_t cbParameter = sizeof(int);
+
+    /** @todo: Howto support more than one CPU? */
+    if (sysctlbyname("dev.cpu.0.freq", &CpuMHz, &cbParameter, NULL, 0))
+        return VERR_NOT_SUPPORTED;
+
+    *mhz = CpuMHz;
+
+    return VINF_SUCCESS;
 }
 
 int CollectorFreeBSD::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available)
 {
-    return E_NOTIMPL;
+    int rc = VINF_SUCCESS;
+    u_long cbMemPhys;
+    int cPagesMemFree, cPagesMemUsed, cbPage;
+    size_t cbParameter = sizeof(u_long);
+    int cbProcessed = 0;
+
+    if (!sysctlbyname("hw.physmem", &cbMemPhys, &cbParameter, NULL, 0))
+        cbProcessed++;
+
+    cbParameter = sizeof(int);
+    if (!sysctlbyname("vm.stats.vm.v_free_count", &cPagesMemFree, &cbParameter, NULL, 0))
+        cbProcessed++;
+    if (!sysctlbyname("vm.stats.vm.v_active_count", &cPagesMemUsed, &cbParameter, NULL, 0))
+        cbProcessed++;
+    if (!sysctlbyname("hw.pagesize", &cbPage, &cbParameter, NULL, 0))
+        cbProcessed++;
+
+    if (cbProcessed == 4)
+    {
+        *total     = cbMemPhys;
+        *used      = cPagesMemUsed * cbPage;
+        *available = cPagesMemFree * cbPage;
+    }
+    else
+        rc = VERR_NOT_SUPPORTED;
+
+    return rc;
 }
 
 int CollectorFreeBSD::getProcessCpuLoad(RTPROCESS process, ULONG *user, ULONG *kernel)
