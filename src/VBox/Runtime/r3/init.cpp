@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,7 +29,6 @@
  */
 
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -38,6 +37,12 @@
 # include <process.h>
 #else
 # include <unistd.h>
+# ifndef RT_OS_OS2
+#  include <pthread.h>
+# endif
+#endif
+#ifdef RT_OS_OS2
+# include <InnoTekLIBC/fork.h>
 #endif
 #include <locale.h>
 
@@ -50,7 +55,6 @@
 #include <iprt/time.h>
 #include <iprt/string.h>
 #include <iprt/param.h>
-#include <iprt/process.h>
 #if !defined(IN_GUEST) && !defined(RT_NO_GIP)
 # include <iprt/file.h>
 # include <VBox/sup.h>
@@ -100,12 +104,35 @@ uint64_t    g_u64ProgramStartMilliTS;
 /**
  * The process identifier of the running process.
  */
-RTPROCESS g_ProcessSelf = NIL_RTPROCESS;
+RTPROCESS   g_ProcessSelf = NIL_RTPROCESS;
 
 /**
  * The current process priority.
  */
 RTPROCPRIORITY g_enmProcessPriority = RTPROCPRIORITY_DEFAULT;
+
+
+#ifndef RT_OS_WINDOWS
+/**
+ * Fork callback, child context.
+ */
+static void rtR3ForkChildCallback(void)
+{
+    g_ProcessSelf = getpid();
+}
+#endif /* RT_OS_WINDOWS */
+
+#ifdef RT_OS_OS2
+/** Low-level fork callback for OS/2.  */
+int rtR3ForkOs2Child(__LIBC_PFORKHANDLE pForkHandle, __LIBC_FORKOP enmOperation)
+{
+    if (enmOperation == __LIBC_FORK_STAGE_COMPLETION_CHILD)
+        rtR3ForkChildCallback();
+    return 0;
+}
+
+_FORK_CHILD1(0, rtR3ForkOs2Child);
+#endif /* RT_OS_OS2 */
 
 
 
@@ -144,39 +171,19 @@ static int rtR3InitProgramPath(const char *pszProgramPath)
     return VINF_SUCCESS;
 }
 
-
 /**
- * Internal initialization worker.
- *
- * @returns IPRT status code.
- * @param   fInitSUPLib     Whether to call SUPR3Init.
- * @param   pszProgramPath  The program path, NULL if not specified.
+ * rtR3Init worker.
  */
-static int rtR3Init(bool fInitSUPLib, const char *pszProgramPath)
+static int rtR3InitBody(bool fInitSUPLib, const char *pszProgramPath)
 {
-    int rc = VINF_SUCCESS;
-    /* no entry log flow, because prefixes and thread may freak out. */
-
     /*
-     * Do reference counting, only initialize the first time around.
-     *
-     * We are ASSUMING that nobody will be able to race RTR3Init calls when the
-     * first one, the real init, is running (second assertion).
+     * The Process ID.
      */
-    int32_t cUsers = ASMAtomicIncS32(&g_cUsers);
-    if (cUsers != 1)
-    {
-        AssertMsg(cUsers > 1, ("%d\n", cUsers));
-        Assert(!g_fInitializing);
-#if !defined(IN_GUEST) && !defined(RT_NO_GIP)
-        if (fInitSUPLib)
-            SUPR3Init(NULL);
+#ifdef _MSC_VER
+    g_ProcessSelf = _getpid(); /* crappy ansi compiler */
+#else
+    g_ProcessSelf = getpid();
 #endif
-        if (pszProgramPath)
-            rc = rtR3InitProgramPath(pszProgramPath);
-        return rc;
-    }
-    ASMAtomicWriteBool(&g_fInitializing, true);
 
 #if !defined(IN_GUEST) && !defined(RT_NO_GIP)
 # ifdef VBOX
@@ -201,14 +208,8 @@ static int rtR3Init(bool fInitSUPLib, const char *pszProgramPath)
      * This must be done before everything else or else we'll call into threading
      * without having initialized TLS entries and suchlike.
      */
-    rc = rtThreadInit();
-    if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("Failed to initialize threads, rc=%Rrc!\n", rc));
-        ASMAtomicWriteBool(&g_fInitializing, false);
-        ASMAtomicDecS32(&g_cUsers);
-        return rc;
-    }
+    int rc = rtThreadInit();
+    AssertMsgRCReturn(rc, ("Failed to initialize threads, rc=%Rrc!\n", rc), rc);
 
 #if !defined(IN_GUEST) && !defined(RT_NO_GIP)
     if (fInitSUPLib)
@@ -218,38 +219,15 @@ static int rtR3Init(bool fInitSUPLib, const char *pszProgramPath)
          * (The more time for updates before real use, the better.)
          */
         rc = SUPR3Init(NULL);
-        if (RT_FAILURE(rc))
-        {
-            AssertMsgFailed(("Failed to initializeble the support library, rc=%Rrc!\n", rc));
-            ASMAtomicWriteBool(&g_fInitializing, false);
-            ASMAtomicDecS32(&g_cUsers);
-            return rc;
-        }
+        AssertMsgRCReturn(rc, ("Failed to initializeble the support library, rc=%Rrc!\n", rc), rc);
     }
 #endif
-
-    /*
-     * The Process ID.
-     */
-    /* The first call to RTProcSelf lazily initialises the cached pid, and
-     * on posix systems also sets a callback to update the cache on fork.
-     * We just do a dummy call to it here rather than duplicating
-     * initialisation code. */
-    /** @todo since we do lazy initialisation anyway, do we really also need
-     * to do it explicitly? */
-    RTProcSelf();
 
     /*
      * The executable path, name and directory.
      */
     rc = rtR3InitProgramPath(pszProgramPath);
-    if (RT_FAILURE(rc))
-    {
-        AssertLogRelMsgFailed(("Failed to get executable directory path, rc=%Rrc!\n", rc));
-        ASMAtomicWriteBool(&g_fInitializing, false);
-        ASMAtomicDecS32(&g_cUsers);
-        return rc;
-    }
+    AssertLogRelMsgRCReturn(rc, ("Failed to get executable directory path, rc=%Rrc!\n", rc), rc);
 
 #if !defined(IN_GUEST) && !defined(RT_NO_GIP)
     /*
@@ -272,14 +250,67 @@ static int rtR3Init(bool fInitSUPLib, const char *pszProgramPath)
     g_u64ProgramStartMilliTS = g_u64ProgramStartNanoTS / 1000000;
 
     /*
-     * Init C runtime locale
+     * The remainder cannot easily be undone, so it has to go last.
      */
+
+    /* Init C runtime locale. */
     setlocale(LC_CTYPE, "");
 
-    /*
-     * More stuff to come?
-     */
+    /* Fork callbacks. */
+#if !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
+    rc = pthread_atfork(NULL, NULL, rtR3ForkChildCallback);
+    AssertMsg(rc == 0, ("%d\n", rc));
+#endif
 
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Internal initialization worker.
+ *
+ * @returns IPRT status code.
+ * @param   fInitSUPLib     Whether to call SUPR3Init.
+ * @param   pszProgramPath  The program path, NULL if not specified.
+ */
+static int rtR3Init(bool fInitSUPLib, const char *pszProgramPath)
+{
+    /* no entry log flow, because prefixes and thread may freak out. */
+
+    /*
+     * Do reference counting, only initialize the first time around.
+     *
+     * We are ASSUMING that nobody will be able to race RTR3Init calls when the
+     * first one, the real init, is running (second assertion).
+     */
+    int32_t cUsers = ASMAtomicIncS32(&g_cUsers);
+    if (cUsers != 1)
+    {
+        AssertMsg(cUsers > 1, ("%d\n", cUsers));
+        Assert(!g_fInitializing);
+#if !defined(IN_GUEST) && !defined(RT_NO_GIP)
+        if (fInitSUPLib)
+            SUPR3Init(NULL);
+#endif
+        if (!pszProgramPath)
+            return VINF_SUCCESS;
+        return rtR3InitProgramPath(pszProgramPath);
+    }
+    ASMAtomicWriteBool(&g_fInitializing, true);
+
+    /*
+     * Do the initialization.
+     */
+    int rc = rtR3InitBody(fInitSUPLib, pszProgramPath);
+    if (RT_FAILURE(rc))
+    {
+        /* failure */
+        ASMAtomicWriteBool(&g_fInitializing, false);
+        ASMAtomicDecS32(&g_cUsers);
+        return rc;
+    }
+
+    /* success */
     LogFlow(("RTR3Init: returns VINF_SUCCESS\n"));
     ASMAtomicWriteBool(&g_fInitializing, false);
     return VINF_SUCCESS;
