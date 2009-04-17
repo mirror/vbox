@@ -3280,7 +3280,6 @@ DECLINLINE(int) pgmR0DynMapGCPageInlined(PPGM pPGM, RTGCPHYS GCPhys, void **ppv)
     /*
      * pgmR0DynMapHCPageInlined with out stats.
      */
-    PPGMMAPSET pSet = &pPGMCPU->AutoSet; 
     Assert(!(HCPhys & PAGE_OFFSET_MASK));
     Assert(pSet->cEntries <= RT_ELEMENTS(pSet->aEntries));
 
