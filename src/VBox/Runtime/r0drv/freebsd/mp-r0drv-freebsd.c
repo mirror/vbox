@@ -37,6 +37,7 @@
 #include <iprt/mp.h>
 #include <iprt/err.h>
 #include <iprt/asm.h>
+#include <iprt/cpuset.h>
 #include "r0drv/mp-r0drv.h"
 
 
@@ -45,6 +46,80 @@ RTDECL(RTCPUID) RTMpCpuId(void)
     return curcpu;
 }
 
+
+RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
+{
+    return (int)idCpu < mp_ncpus ? (int)idCpu : -1;
+}
+
+
+RTDECL(RTCPUID) RTMpCpuIdFromSetIndex(int iCpu)
+{
+    return iCpu < mp_ncpus ? (RTCPUID)iCpu : NIL_RTCPUID;
+}
+
+RTDECL(RTCPUID) RTMpGetMaxCpuId(void)
+{
+    return mp_ncpus;
+}
+
+RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
+{
+    if (RT_UNLIKELY((int)idCpu > mp_ncpus))
+        return false;
+    else
+        return true;
+}
+
+RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
+{
+    RTCPUID idCpu;
+
+    RTCpuSetEmpty(pSet);
+    idCpu = RTMpGetMaxCpuId();
+    do
+    {
+        if (RTMpIsCpuPossible(idCpu))
+            RTCpuSetAdd(pSet, idCpu);
+    } while (idCpu-- > 0);
+    return pSet;
+}
+
+
+RTDECL(RTCPUID) RTMpGetCount(void)
+{
+    return mp_ncpus;
+}
+
+
+RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
+{
+    if (RT_UNLIKELY((int)idCpu > mp_ncpus))
+        return false;
+
+    return CPU_ABSENT(idCpu) ? false : true;
+}
+
+RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
+{
+    RTCPUID idCpu;
+
+    RTCpuSetEmpty(pSet);
+    idCpu = RTMpGetMaxCpuId();
+    do
+    {
+        if (RTMpIsCpuOnline(idCpu))
+            RTCpuSetAdd(pSet, idCpu);
+    } while (idCpu-- > 0);
+
+    return pSet;
+}
+
+
+RTDECL(RTCPUID) RTMpGetOnlineCount(void)
+{
+    return mp_ncpus;
+}
 
 /**
  * Wrapper between the native FreeBSD per-cpu callback and PFNRTWORKER
