@@ -626,10 +626,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
                 vm_object_deallocate(pObjectNew);
         }
         else
-        {
-            AssertMsgFailed(("Could not allocate VM object\n"));
-            rc = 1; /* @todo fix */
-        }
+            return VERR_NO_MEMORY;
     }
     else
     {
