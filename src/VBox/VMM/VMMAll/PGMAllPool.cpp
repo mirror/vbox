@@ -4036,8 +4036,7 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     /* Start a subset so we won't run out of mapping space. */
-    PVMCPU pVCpu = VMMGetCpu(pPool->CTX_SUFF(pVM));
-    uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVM);
+    uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pPool->CTX_SUFF(pVM));
 #endif
 
     /*
