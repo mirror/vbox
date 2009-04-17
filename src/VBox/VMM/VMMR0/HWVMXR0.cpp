@@ -2135,7 +2135,7 @@ ResumeExecution:
     }
 #endif
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    PGMDynMapFlushAutoSet(pVCpu);
+    PGMDynMapFlushAutoSet(pVM);
 #endif
 
     /*
