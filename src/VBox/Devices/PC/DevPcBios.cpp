@@ -1408,16 +1408,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"NumCPUs\" as integer failed"));
 
-#ifdef VBOX_WITH_SMP_GUESTS
     LogRel(("[SMP] BIOS with %u CPUs\n", pThis->cCpus));
-#else
-    /** @todo: move this check up in configuration chain */
-    if (pThis->cCpus != 1)
-    {
-        LogRel(("WARNING: guest SMP not supported in this build, going UP\n"));
-        pThis->cCpus = 1;
-    }
-#endif
 
     rc = CFGMR3QueryU8Def(pCfgHandle, "IOAPIC", &pThis->u8IOAPIC, 1);
     if (RT_FAILURE (rc))
