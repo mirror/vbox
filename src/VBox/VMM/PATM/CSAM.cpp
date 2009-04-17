@@ -1666,7 +1666,7 @@ static PCSAMPAGE csamCreatePageRecord(PVM pVM, RTRCPTR GCPtr, CSAMTAG enmTag, bo
         /* Could fail, because it's already monitored. Don't treat that condition as fatal. */
 
         /* Prefetch it in case it's not there yet. */
-        rc = PGMPrefetchPage(pVM, pVCpu, GCPtr);
+        rc = PGMPrefetchPage(pVCpu, GCPtr);
         AssertRC(rc);
 
         rc = PGMShwModifyPage(pVCpu, GCPtr, 1, 0, ~(uint64_t)X86_PTE_RW);
@@ -1778,7 +1778,7 @@ VMMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
         /* Could fail, because it's already monitored. Don't treat that condition as fatal. */
 
         /* Prefetch it in case it's not there yet. */
-        rc = PGMPrefetchPage(pVM, pVCpu, pPageAddrGC);
+        rc = PGMPrefetchPage(pVCpu, pPageAddrGC);
         AssertRC(rc);
 
         rc = PGMShwModifyPage(pVCpu, pPageAddrGC, 1, 0, ~(uint64_t)X86_PTE_RW);
@@ -1799,7 +1799,7 @@ VMMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
         STAM_COUNTER_INC(&pVM->csam.s.StatNrPagesInv);
 
         /* Prefetch it in case it's not there yet. */
-        rc = PGMPrefetchPage(pVM, pVCpu, pPageAddrGC);
+        rc = PGMPrefetchPage(pVCpu, pPageAddrGC);
         AssertRC(rc);
 
         /* Make sure it's readonly. Page invalidation may have modified the attributes. */
@@ -1822,7 +1822,7 @@ VMMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
     if (pPageRec->page.GCPhys == 0)
     {
         /* Prefetch it in case it's not there yet. */
-        rc = PGMPrefetchPage(pVM, pVCpu, pPageAddrGC);
+        rc = PGMPrefetchPage(pVCpu, pPageAddrGC);
         AssertRC(rc);
         /* The page was changed behind our back. It won't be made read-only until the next SyncCR3, so force it here. */
         rc = PGMShwModifyPage(pVCpu, pPageAddrGC, 1, 0, ~(uint64_t)X86_PTE_RW);

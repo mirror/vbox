@@ -190,7 +190,7 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
     PEPTPD          pPDDst;
     EPTPDE          Pde;
 
-    int rc = pgmShwGetEPTPDPtr(pVM, pVCpu, GCPtr, NULL, &pPDDst);
+    int rc = pgmShwGetEPTPDPtr(pVCpu, GCPtr, NULL, &pPDDst);
     if (rc != VINF_SUCCESS) /** @todo this function isn't expected to return informational status codes. Check callers / fix. */
     {
         AssertRC(rc);
@@ -327,7 +327,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64
         PEPTPD          pPDDst;
         EPTPDE          Pde;
 
-        rc = pgmShwGetEPTPDPtr(pVM, pVCpu, GCPtr, NULL, &pPDDst);
+        rc = pgmShwGetEPTPDPtr(pVCpu, GCPtr, NULL, &pPDDst);
         if (rc != VINF_SUCCESS)
         {
             AssertRC(rc);

@@ -457,7 +457,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
         {
             /* The page might be out of sync. */ /** @todo might cross a page boundary) */
             Log(("Page %RGv out of sync -> prefetch and try again\n", pIDTEntry));
-            rc = PGMPrefetchPage(pVM, pVCpu, pIDTEntry); /** @todo r=bird: rainy day: this isn't entirely safe because of access bit virtualiziation and CSAM. */
+            rc = PGMPrefetchPage(pVCpu, pIDTEntry); /** @todo r=bird: rainy day: this isn't entirely safe because of access bit virtualiziation and CSAM. */
             if (rc != VINF_SUCCESS)
             {
                 Log(("TRPMForwardTrap: PGMPrefetchPage failed with rc=%Rrc\n", rc));
@@ -517,7 +517,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
                 {
                     /* The page might be out of sync. */ /** @todo might cross a page boundary) */
                     Log(("Page %RGv out of sync -> prefetch and try again\n", pGdtEntry));
-                    rc = PGMPrefetchPage(pVM, pVCpu, pGdtEntry);  /** @todo r=bird: rainy day: this isn't entirely safe because of access bit virtualiziation and CSAM. */
+                    rc = PGMPrefetchPage(pVCpu, pGdtEntry);  /** @todo r=bird: rainy day: this isn't entirely safe because of access bit virtualiziation and CSAM. */
                     if (rc != VINF_SUCCESS)
                     {
                         Log(("PGMPrefetchPage failed with rc=%Rrc\n", rc));
@@ -587,7 +587,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
 #ifdef IN_RC
                 Assert(eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) != 0);
                 /* Check maximum amount we need (10 when executing in V86 mode) */
-                rc = PGMVerifyAccess(pVM, pVCpu, (RTGCUINTPTR)pTrapStackGC - 10*sizeof(uint32_t), 10 * sizeof(uint32_t), X86_PTE_RW);
+                rc = PGMVerifyAccess(pVCpu, (RTGCUINTPTR)pTrapStackGC - 10*sizeof(uint32_t), 10 * sizeof(uint32_t), X86_PTE_RW);
                 pTrapStack = (uint32_t *)pTrapStackGC;
 #else
                 Assert(eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) == 0 || (pRegFrame->ss & X86_SEL_RPL) == 3);
