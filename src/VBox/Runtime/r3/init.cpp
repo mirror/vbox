@@ -50,6 +50,7 @@
 #include <iprt/time.h>
 #include <iprt/string.h>
 #include <iprt/param.h>
+#include <iprt/process.h>
 #if !defined(IN_GUEST) && !defined(RT_NO_GIP)
 # include <iprt/file.h>
 # include <VBox/sup.h>
@@ -230,11 +231,13 @@ static int rtR3Init(bool fInitSUPLib, const char *pszProgramPath)
     /*
      * The Process ID.
      */
-#ifdef _MSC_VER
-    g_ProcessSelf = _getpid(); /* crappy ansi compiler */
-#else
-    g_ProcessSelf = getpid();
-#endif
+    /* The first call to RTProcSelf lazily initialises the cached pid, and
+     * on posix systems also sets a callback to update the cache on fork.
+     * We just do a dummy call to it here rather than duplicating
+     * initialisation code. */
+    /** @todo since we do lazy initialisation anyway, do we really also need
+     * to do it explicitly? */
+    RTProcSelf();
 
     /*
      * The executable path, name and directory.
