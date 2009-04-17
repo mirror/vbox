@@ -1229,20 +1229,9 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
-	generic/RTMpCpuId-generic.cpp \
-	generic/RTMpCpuIdFromSetIndex-generic.cpp \
-	generic/RTMpCpuIdToSetIndex-generic.cpp \
-	generic/RTMpIsCpuPossible-generic.cpp \
-	generic/RTMpGetCount-generic.cpp \
-	generic/RTMpGetMaxCpuId-generic.cpp \
-	generic/RTMpGetOnlineCount-generic.cpp \
-	generic/RTMpGetOnlineSet-generic.cpp \
-	generic/RTMpGetSet-generic.cpp \
-	generic/RTMpIsCpuOnline-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
 	r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.cpp \
-	r0drv/generic/RTMpOn-r0drv-generic.cpp \
 	r0drv/generic/RTThreadPreemptIsEnabled-r0drv-generic.cpp \
 	r0drv/generic/RTThreadPreemptDisable-r0drv-generic.cpp \
 	r0drv/generic/RTThreadPreemptRestore-r0drv-generic.cpp \
