@@ -682,6 +682,9 @@ ifdef VBOX_OSE
  VBOX_WITH_BUSLOGIC=
  VBOX_WITH_LSILOGIC=
  VBOX_WITH_SCSI=
+ VBOX_WITH_HPET=
+ VBOX_WITH_LPC=
+ VBOX_WITH_SMC=
  # branding
  VBOX_BRAND_BIOS_LOGO          := $(PATH_ROOT)/src/VBox/Devices/Graphics/BIOS/ose_logo.bmp
  VBOX_BRAND_GUI_ABOUT_PNG      := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/about.png
