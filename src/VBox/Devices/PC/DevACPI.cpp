@@ -140,7 +140,8 @@ enum
     SYSTEM_INFO_INDEX_CPU2_STATUS       = 7,
     SYSTEM_INFO_INDEX_CPU3_STATUS       = 8,
     SYSTEM_INFO_INDEX_HIGH_MEMORY_LENGTH= 9,
-    SYSTEM_INFO_INDEX_END               = 10,
+    SYSTEM_INFO_INDEX_RTC_STATUS        = 10,
+    SYSTEM_INFO_INDEX_END               = 11,
     SYSTEM_INFO_INDEX_INVALID           = 0x80,
     SYSTEM_INFO_INDEX_VALID             = 0x200
 };
@@ -213,8 +214,10 @@ typedef struct ACPIState
     bool                fPowerButtonHandled;
     /** If ACPI CPU device should be shown */
     bool                fShowCpu;
+    /** If Real Time Clock ACPI object to be shown */
+    bool                fShowRtc;
     /** Aligning IBase. */
-    bool                afAlignment[6];
+    bool                afAlignment[5];
 
     /** ACPI port base interface. */
     PDMIBASE            IBase;
@@ -1316,14 +1319,8 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
                                           | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
                             : 0;
                     break;
+               
                 case SYSTEM_INFO_INDEX_CPU0_STATUS:
-                    *pu32 = s->fShowCpu ? (  STA_DEVICE_PRESENT_MASK
-                                           | STA_DEVICE_ENABLED_MASK
-                                           | STA_DEVICE_SHOW_IN_UI_MASK
-                                           | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
-                            : 0;
-                    break;
-
                 case SYSTEM_INFO_INDEX_CPU1_STATUS:
                 case SYSTEM_INFO_INDEX_CPU2_STATUS:
                 case SYSTEM_INFO_INDEX_CPU3_STATUS:
@@ -1334,6 +1331,14 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
                             | STA_DEVICE_SHOW_IN_UI_MASK
                             | STA_DEVICE_FUNCTIONING_PROPERLY_MASK
                           : 0;
+                    break;
+
+                 case SYSTEM_INFO_INDEX_RTC_STATUS:
+                    *pu32 = s->fShowRtc ? (  STA_DEVICE_PRESENT_MASK
+                                           | STA_DEVICE_ENABLED_MASK
+                                           | STA_DEVICE_SHOW_IN_UI_MASK
+                                           | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
+                            : 0;
                     break;
 
                 /* Solaris 9 tries to read from this index */
@@ -1802,6 +1807,8 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "HpetEnabled\0"
                               "SmcEnabled\0"
                               "FdcEnabled\0"
+                              "ShowRtc\0"
+                              "ShowCpu\0"
                               ))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Configuration error: Invalid config key for ACPI device"));
@@ -1835,8 +1842,18 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"SmcEnabled\""));
-    /** @todo: a bit of hack: if we have SMC, also show CPU object in ACPI tables */
-    s->fShowCpu = s->fUseSmc;
+
+    /* query whether we are supposed to present RTC object */
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "ShowRtc", &s->fShowRtc, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"ShowRtc\""));
+
+    /* query whether we are supposed to present CPU objects */
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "ShowCpu", &s->fShowCpu, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"ShowCpu\""));
 
     rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &fGCEnabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
