@@ -406,10 +406,6 @@ else
  RuntimeR3_SOURCES.linux.amd64 += \
 	r3/posix/semmutex-posix.cpp
 endif
-ifdef RT_ASYNC_IO_CODE
- RuntimeR3_SOURCES.linux += \
-	r3/linux/fileaio-linux.cpp
-endif
 
 RuntimeR3_SOURCES.os2   = \
 	generic/pathhost-generic.cpp \
@@ -582,6 +578,13 @@ RuntimeR3_SOURCES.solaris = \
 	r3/solaris/alloc-solaris.cpp \
 	r3/solaris/mp-solaris.cpp \
 	r3/solaris/rtProcInitExePath-solaris.cpp
+
+ifdef RT_ASYNC_IO_CODE
+ RuntimeR3_SOURCES.linux += \
+	r3/linux/fileaio-linux.cpp
+ RuntimeR3_SOURCES.solaris += \
+	r3/solaris/fileaio-solaris.cpp
+endif
 
 ## PORTME: Porters add their selection of platform specific files for Ring-3 here.
 
