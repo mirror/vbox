@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VBox - Coding Guidelines.
  */
 

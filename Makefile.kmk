@@ -450,6 +450,7 @@ VBOX_CORE_DOXYFILE_INPUT_DIRS = \
 VBOX_CORE_DOXYFILE_INPUT_FIRST =\
 	$(PATH_ROOT)/doc/VBox-doc.c \
 	$(PATH_ROOT)/doc/VBox-CodingGuidelines.cpp \
+	$(PATH_ROOT)/doc/VBox-MakefileGuidelines.cpp \
 	$(PATH_ROOT)/src/VBox/VMM/VMMCodingGuidelines.cpp \
 	$(PATH_ROOT)/src/VBox/VMM/VMMDocsRawMode.cpp \
 	$(PATH_ROOT)/include/VBox/cdefs.h \
