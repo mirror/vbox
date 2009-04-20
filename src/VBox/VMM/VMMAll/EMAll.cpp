@@ -450,9 +450,9 @@ static int emInterpretXchg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMC
         return VERR_EM_INTERPRETER;
 
 #ifdef IN_RC
-    if (TRPMHasTrap(pVM))
+    if (TRPMHasTrap(pVCpu))
     {
-        if (TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW)
+        if (TRPMGetErrorCode(pVCpu) & X86_TRAP_PF_RW)
         {
 #endif
             RTGCPTR pParam1 = 0, pParam2 = 0;
@@ -579,9 +579,9 @@ static int emInterpretIncDec(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPU
         return VERR_EM_INTERPRETER;
 
 #ifdef IN_RC
-    if (TRPMHasTrap(pVM))
+    if (TRPMHasTrap(pVCpu))
     {
-        if (TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW)
+        if (TRPMGetErrorCode(pVCpu) & X86_TRAP_PF_RW)
         {
 #endif
             RTGCPTR pParam1 = 0;
@@ -647,9 +647,9 @@ static int emInterpretPop(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCT
         return VERR_EM_INTERPRETER;
 
 #ifdef IN_RC
-    if (TRPMHasTrap(pVM))
+    if (TRPMHasTrap(pVCpu))
     {
-        if (TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW)
+        if (TRPMGetErrorCode(pVCpu) & X86_TRAP_PF_RW)
         {
 #endif
             RTGCPTR pParam1 = 0;
@@ -732,9 +732,9 @@ static int emInterpretOrXorAnd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PC
         return VERR_EM_INTERPRETER;
 
 #ifdef IN_RC
-    if (TRPMHasTrap(pVM))
+    if (TRPMHasTrap(pVCpu))
     {
-        if (TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW)
+        if (TRPMGetErrorCode(pVCpu) & X86_TRAP_PF_RW)
         {
 #endif
             RTGCPTR  pParam1;
@@ -844,8 +844,8 @@ static int emInterpretLockOrXorAnd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState
 
 #ifdef IN_RC
     /* Safety check (in theory it could cross a page boundary and fault there though) */
-    Assert(   TRPMHasTrap(pVM)
-           && (TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW));
+    Assert(   TRPMHasTrap(pVCpu)
+           && (TRPMGetErrorCode(pVCpu) & X86_TRAP_PF_RW));
     EM_ASSERT_FAULT_RETURN(GCPtrPar1 == pvFault, VERR_EM_INTERPRETER);
 #endif
 
@@ -910,9 +910,9 @@ static int emInterpretAddSub(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPU
         return VERR_EM_INTERPRETER;
 
 #ifdef IN_RC
-    if (TRPMHasTrap(pVM))
+    if (TRPMHasTrap(pVCpu))
     {
-        if (TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW)
+        if (TRPMGetErrorCode(pVCpu) & X86_TRAP_PF_RW)
         {
 #endif
             RTGCPTR  pParam1;
@@ -1014,9 +1014,9 @@ static int emInterpretBitTest(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCP
         return VERR_EM_INTERPRETER;
 
 #ifdef IN_RC
-    if (TRPMHasTrap(pVM))
+    if (TRPMHasTrap(pVCpu))
     {
-        if (TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW)
+        if (TRPMGetErrorCode(pVCpu) & X86_TRAP_PF_RW)
         {
 #endif
             RTGCPTR  pParam1;
@@ -1110,7 +1110,7 @@ static int emInterpretLockBitTest(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState,
 
     GCPtrPar1 = emConvertToFlatAddr(pVM, pRegFrame, pDISState, &pDISState->param1, GCPtrPar1);
 #ifdef IN_RC
-    Assert(TRPMHasTrap(pVM));
+    Assert(TRPMHasTrap(pVCpu));
     EM_ASSERT_FAULT_RETURN((RTGCPTR)((RTGCUINTPTR)GCPtrPar1 & ~(RTGCUINTPTR)3) == pvFault, VERR_EM_INTERPRETER);
 #endif
 
@@ -1168,9 +1168,9 @@ static int emInterpretMov(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCT
         return VERR_EM_INTERPRETER;
 
 #ifdef IN_RC
-    if (TRPMHasTrap(pVM))
+    if (TRPMHasTrap(pVCpu))
     {
-        if (TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW)
+        if (TRPMGetErrorCode(pVCpu) & X86_TRAP_PF_RW)
         {
 #else
         /** @todo Make this the default and don't rely on TRPM information. */
@@ -1581,9 +1581,9 @@ static int emInterpretCmpXchg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCP
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
-    if (TRPMHasTrap(pVM))
+    if (TRPMHasTrap(pVCpu))
     {
-        if (TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW)
+        if (TRPMGetErrorCode(pVCpu) & X86_TRAP_PF_RW)
         {
             RTRCPTR pParam1;
             uint32_t valpar, eflags;
@@ -1653,9 +1653,9 @@ static int emInterpretCmpXchg8b(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, P
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
-    if (TRPMHasTrap(pVM))
+    if (TRPMHasTrap(pVCpu))
     {
-        if (TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW)
+        if (TRPMGetErrorCode(pVCpu) & X86_TRAP_PF_RW)
         {
             RTRCPTR pParam1;
             uint32_t eflags;
@@ -1724,9 +1724,9 @@ static int emInterpretXAdd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMC
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
-    if (TRPMHasTrap(pVM))
+    if (TRPMHasTrap(pVCpu))
     {
-        if (TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW)
+        if (TRPMGetErrorCode(pVCpu) & X86_TRAP_PF_RW)
         {
             RTRCPTR pParam1;
             uint32_t eflags;

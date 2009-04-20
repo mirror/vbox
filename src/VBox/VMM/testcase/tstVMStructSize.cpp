@@ -159,6 +159,7 @@ int main()
     CHECK_PADDING_VMCPU(pgm);
     CHECK_PADDING_VMCPU(em);
     CHECK_PADDING_VMCPU(hwaccm);
+    CHECK_PADDING_VMCPU(trpm);
     CHECK_PADDING_VMCPU(tm);
     CHECK_PADDING_VMCPU(vmm);
 

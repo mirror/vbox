@@ -87,7 +87,7 @@ VMMRCDECL(void) TRPMGCHyperReturnToHost(PVM pVM, int rc)
     PVMCPU pVCpu = VMMGetCpu0(pVM);
 
     LogFlow(("TRPMGCHyperReturnToHost: rc=%Rrc\n", rc));
-    TRPMResetTrap(pVM);
+    TRPMResetTrap(pVCpu);
     CPUMHyperSetCtxCore(pVCpu, NULL);
     VMMGCGuestToHost(pVM, rc);
     AssertReleaseFailed();

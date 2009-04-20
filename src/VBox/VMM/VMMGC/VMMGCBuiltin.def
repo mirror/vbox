@@ -24,6 +24,7 @@ EXPORTS
     g_VM                            DATA
     g_CPUM                          DATA
     g_TRPM                          DATA
+    g_TRPMCPU                       DATA
     g_Logger                        DATA
     g_RelLogger                     DATA
     g_pSUPGlobalInfoPage            DATA

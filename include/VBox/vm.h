@@ -150,6 +150,15 @@ typedef struct VMCPU
         char                padding[2048];        /* multiple of 64 */
     } em;
 
+    /** TRPM part. */
+    union
+    {
+#ifdef ___TRPMInternal_h
+        struct TRPMCPU      s;
+#endif
+        char                padding[64];        /* multiple of 64 */
+    } trpm;
+
     /** TM part. */
     union
     {

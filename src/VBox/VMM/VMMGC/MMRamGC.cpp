@@ -102,15 +102,16 @@ VMMRCDECL(void) MMGCRamDeregisterTrapHandler(PVM pVM)
  */
 VMMRCDECL(int) MMGCRamRead(PVM pVM, void *pDst, void *pSrc, size_t cb)
 {
-    int rc;
+    int    rc;
+    PVMCPU pVCpu = VMMGetCpu0(pVM);
 
-    TRPMSaveTrap(pVM);  /* save the current trap info, because it will get trashed if our access failed. */
+    TRPMSaveTrap(pVCpu);  /* save the current trap info, because it will get trashed if our access failed. */
 
     MMGCRamRegisterTrapHandler(pVM);
     rc = MMGCRamReadNoTrapHandler(pDst, pSrc, cb);
     MMGCRamDeregisterTrapHandler(pVM);
     if (RT_FAILURE(rc))
-        TRPMRestoreTrap(pVM);
+        TRPMRestoreTrap(pVCpu);
 
     return rc;
 }
@@ -127,13 +128,14 @@ VMMRCDECL(int) MMGCRamRead(PVM pVM, void *pDst, void *pSrc, size_t cb)
  */
 VMMRCDECL(int) MMGCRamWrite(PVM pVM, void *pDst, void *pSrc, size_t cb)
 {
-    TRPMSaveTrap(pVM);  /* save the current trap info, because it will get trashed if our access failed. */
+    PVMCPU pVCpu = VMMGetCpu0(pVM);
+    TRPMSaveTrap(pVCpu);  /* save the current trap info, because it will get trashed if our access failed. */
 
     MMGCRamRegisterTrapHandler(pVM);
     int rc = MMGCRamWriteNoTrapHandler(pDst, pSrc, cb);
     MMGCRamDeregisterTrapHandler(pVM);
     if (RT_FAILURE(rc))
-        TRPMRestoreTrap(pVM);
+        TRPMRestoreTrap(pVCpu);
 
     /*
      * And mark the relevant guest page as accessed and dirty.
@@ -158,7 +160,7 @@ DECLCALLBACK(int) mmGCRamTrap0eHandler(PVM pVM, PCPUMCTXCORE pRegFrame)
         &&  (uintptr_t)pRegFrame->eip < (uintptr_t)&MMGCRamReadNoTrapHandler_EndProc)
     {
         /* Must be a read violation. */
-        AssertReturn(!(TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW), VERR_INTERNAL_ERROR);
+        AssertReturn(!(TRPMGetErrorCode(VMMGetCpu0(pVM)) & X86_TRAP_PF_RW), VERR_INTERNAL_ERROR);
         pRegFrame->eip = (uintptr_t)&MMGCRamRead_Error;
         return VINF_SUCCESS;
     }
@@ -170,7 +172,7 @@ DECLCALLBACK(int) mmGCRamTrap0eHandler(PVM pVM, PCPUMCTXCORE pRegFrame)
         &&  (uintptr_t)pRegFrame->eip < (uintptr_t)&MMGCRamWriteNoTrapHandler_EndProc)
     {
         /* Must be a write violation. */
-        AssertReturn(TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW, VERR_INTERNAL_ERROR);
+        AssertReturn(TRPMGetErrorCode(VMMGetCpu0(pVM)) & X86_TRAP_PF_RW, VERR_INTERNAL_ERROR);
         pRegFrame->eip = (uintptr_t)&MMGCRamWrite_Error;
         return VINF_SUCCESS;
     }

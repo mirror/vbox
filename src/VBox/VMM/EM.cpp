@@ -1551,7 +1551,7 @@ static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu)
     TRPMEVENT       enmType;
     RTGCUINT        uErrorCode;
     RTGCUINTPTR     uCR2;
-    int rc = TRPMQueryTrapAll(pVM, &u8TrapNo, &enmType, &uErrorCode, &uCR2);
+    int rc = TRPMQueryTrapAll(pVCpu, &u8TrapNo, &enmType, &uErrorCode, &uCR2);
     if (RT_FAILURE(rc))
     {
         AssertReleaseMsgFailed(("No trap! (rc=%Rrc)\n", rc));
@@ -1608,10 +1608,10 @@ static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu)
             TRPMERRORCODE enmError = uErrorCode != ~0U
                                    ? TRPM_TRAP_HAS_ERRORCODE
                                    : TRPM_TRAP_NO_ERRORCODE;
-            rc = TRPMForwardTrap(pVM, CPUMCTX2CORE(pCtx), u8TrapNo, uErrorCode, enmError, TRPM_TRAP, -1);
+            rc = TRPMForwardTrap(pVCpu, CPUMCTX2CORE(pCtx), u8TrapNo, uErrorCode, enmError, TRPM_TRAP, -1);
             if (rc == VINF_SUCCESS /* Don't use RT_SUCCESS */)
             {
-                TRPMResetTrap(pVM);
+                TRPMResetTrap(pVCpu);
                 return VINF_EM_RESCHEDULE_RAW;
             }
             AssertMsg(rc == VINF_EM_RAW_GUEST_TRAP, ("%Rrc\n", rc));
@@ -1646,7 +1646,7 @@ static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu)
             CPUMGetGuestCpuId(pVM, 1, &u32Dummy, &u32Dummy, &u32ExtFeatures, &u32Features);
             if (u32ExtFeatures & X86_CPUID_FEATURE_ECX_MONITOR)
             {
-                rc = TRPMResetTrap(pVM);
+                rc = TRPMResetTrap(pVCpu);
                 AssertRC(rc);
 
                 uint32_t opsize;
@@ -1680,7 +1680,7 @@ static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu)
              * We should really check the TSS for the IO bitmap, but it's not like this
              * lazy approach really makes things worse.
              */
-            rc = TRPMResetTrap(pVM);
+            rc = TRPMResetTrap(pVCpu);
             AssertRC(rc);
             return emR3RawExecuteInstruction(pVM, pVCpu, "IO Guest Trap: ");
         }
@@ -1805,14 +1805,14 @@ static int emR3PatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret)
     }
     else
     {
-        rc = TRPMQueryTrapAll(pVM, &u8TrapNo, &enmType, &uErrorCode, &uCR2);
+        rc = TRPMQueryTrapAll(pVCpu, &u8TrapNo, &enmType, &uErrorCode, &uCR2);
         if (RT_FAILURE(rc))
         {
             AssertReleaseMsgFailed(("emR3PatchTrap: no trap! (rc=%Rrc) gcret=%Rrc\n", rc, gcret));
             return rc;
         }
         /* Reset the trap as we'll execute the original instruction again. */
-        TRPMResetTrap(pVM);
+        TRPMResetTrap(pVCpu);
     }
 
     /*
@@ -2386,13 +2386,13 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
          */
         case VINF_EM_RAW_INTERRUPT_PENDING:
         case VINF_EM_RAW_RING_SWITCH_INT:
-            Assert(TRPMHasTrap(pVM));
+            Assert(TRPMHasTrap(pVCpu));
             Assert(!PATMIsPatchGCAddr(pVM, (RTGCPTR)pCtx->eip));
 
-            if (TRPMHasTrap(pVM))
+            if (TRPMHasTrap(pVCpu))
             {
                 /* If the guest gate is marked unpatched, then we will check again if we can patch it. */
-                uint8_t u8Interrupt = TRPMGetTrapNo(pVM);
+                uint8_t u8Interrupt = TRPMGetTrapNo(pVCpu);
                 if (TRPMR3GetGuestTrapHandler(pVM, u8Interrupt) == TRPM_INVALID_HANDLER)
                 {
                     CSAMR3CheckGates(pVM, u8Interrupt, 1);
@@ -2964,8 +2964,8 @@ static int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         /*
          * Log important stuff before entering GC.
          */
-        if (TRPMHasTrap(pVM))
-            Log(("Pending hardware interrupt=0x%x cs:rip=%04X:%RGv\n", TRPMGetTrapNo(pVM), pCtx->cs, (RTGCPTR)pCtx->rip));
+        if (TRPMHasTrap(pVCpu))
+            Log(("Pending hardware interrupt=0x%x cs:rip=%04X:%RGv\n", TRPMGetTrapNo(pVCpu), pCtx->cs, (RTGCPTR)pCtx->rip));
 
         uint32_t cpl = CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx));
         if (pCtx->eflags.Bits.u1VM)
@@ -3386,7 +3386,7 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          */
         if (    !VM_FF_ISPENDING(pVM, VM_FF_INHIBIT_INTERRUPTS | VM_FF_PGM_NO_MEMORY)
             &&  (!rc || rc >= VINF_EM_RESCHEDULE_HWACC)
-            &&  !TRPMHasTrap(pVM) /* an interrupt could already be scheduled for dispatching in the recompiler. */
+            &&  !TRPMHasTrap(pVCpu) /* an interrupt could already be scheduled for dispatching in the recompiler. */
             &&  PATMAreInterruptsEnabled(pVM)
             &&  !HWACCMR3IsEventPending(pVM))
         {

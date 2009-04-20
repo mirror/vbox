@@ -73,23 +73,23 @@ typedef TRPMEVENT const *PCTRPMEVENT;
  */
 #define TRPM_INVALID_HANDLER        0
 
-VMMDECL(int)        TRPMQueryTrap(PVM pVM, uint8_t *pu8TrapNo, PTRPMEVENT pEnmType);
-VMMDECL(uint8_t)    TRPMGetTrapNo(PVM pVM);
-VMMDECL(RTGCUINT)   TRPMGetErrorCode(PVM pVM);
-VMMDECL(RTGCUINTPTR) TRPMGetFaultAddress(PVM pVM);
-VMMDECL(int)        TRPMResetTrap(PVM pVM);
-VMMDECL(int)        TRPMAssertTrap(PVM pVM, uint8_t u8TrapNo, TRPMEVENT enmType);
-VMMDECL(void)       TRPMSetErrorCode(PVM pVM, RTGCUINT uErrorCode);
-VMMDECL(void)       TRPMSetFaultAddress(PVM pVM, RTGCUINTPTR uCR2);
-VMMDECL(bool)       TRPMIsSoftwareInterrupt(PVM pVM);
-VMMDECL(bool)       TRPMHasTrap(PVM pVM);
-VMMDECL(int)        TRPMQueryTrapAll(PVM pVM, uint8_t *pu8TrapNo, PTRPMEVENT pEnmType, PRTGCUINT puErrorCode, PRTGCUINTPTR puCR2);
-VMMDECL(void)       TRPMSaveTrap(PVM pVM);
-VMMDECL(void)       TRPMRestoreTrap(PVM pVM);
-VMMDECL(int)        TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, uint32_t opsize, TRPMERRORCODE enmError, TRPMEVENT enmType, int32_t iOrgTrap);
-VMMDECL(int)        TRPMRaiseXcpt(PVM pVM, PCPUMCTXCORE pCtxCore, X86XCPT enmXcpt);
-VMMDECL(int)        TRPMRaiseXcptErr(PVM pVM, PCPUMCTXCORE pCtxCore, X86XCPT enmXcpt, uint32_t uErr);
-VMMDECL(int)        TRPMRaiseXcptErrCR2(PVM pVM, PCPUMCTXCORE pCtxCore, X86XCPT enmXcpt, uint32_t uErr, RTGCUINTPTR uCR2);
+VMMDECL(int)        TRPMQueryTrap(PVMCPU pVCpu, uint8_t *pu8TrapNo, PTRPMEVENT pEnmType);
+VMMDECL(uint8_t)    TRPMGetTrapNo(PVMCPU pVCpu);
+VMMDECL(RTGCUINT)   TRPMGetErrorCode(PVMCPU pVCpu);
+VMMDECL(RTGCUINTPTR) TRPMGetFaultAddress(PVMCPU pVCpu);
+VMMDECL(int)        TRPMResetTrap(PVMCPU pVCpu);
+VMMDECL(int)        TRPMAssertTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType);
+VMMDECL(void)       TRPMSetErrorCode(PVMCPU pVCpu, RTGCUINT uErrorCode);
+VMMDECL(void)       TRPMSetFaultAddress(PVMCPU pVCpu, RTGCUINTPTR uCR2);
+VMMDECL(bool)       TRPMIsSoftwareInterrupt(PVMCPU pVCpu);
+VMMDECL(bool)       TRPMHasTrap(PVMCPU pVCpu);
+VMMDECL(int)        TRPMQueryTrapAll(PVMCPU pVCpu, uint8_t *pu8TrapNo, PTRPMEVENT pEnmType, PRTGCUINT puErrorCode, PRTGCUINTPTR puCR2);
+VMMDECL(void)       TRPMSaveTrap(PVMCPU pVCpu);
+VMMDECL(void)       TRPMRestoreTrap(PVMCPU pVCpu);
+VMMDECL(int)        TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGate, uint32_t opsize, TRPMERRORCODE enmError, TRPMEVENT enmType, int32_t iOrgTrap);
+VMMDECL(int)        TRPMRaiseXcpt(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, X86XCPT enmXcpt);
+VMMDECL(int)        TRPMRaiseXcptErr(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, X86XCPT enmXcpt, uint32_t uErr);
+VMMDECL(int)        TRPMRaiseXcptErrCR2(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, X86XCPT enmXcpt, uint32_t uErr, RTGCUINTPTR uCR2);
 
 
 #ifdef IN_RING3

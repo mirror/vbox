@@ -735,7 +735,7 @@ VMMDECL(int) IOMInterpretCheckPortIOAccess(PVM pVM, PCPUMCTXCORE pCtxCore, RTIOP
         if (RT_FAILURE(rc))
         {
             Log(("iomInterpretCheckPortIOAccess: Port=%RTiop cb=%d %Rrc -> #GP(0)\n", Port, cb, rc));
-            return TRPMRaiseXcptErr(pVM, pCtxCore, X86_XCPT_GP, 0);
+            return TRPMRaiseXcptErr(pVCpu, pCtxCore, X86_XCPT_GP, 0);
         }
 
         if (    !fCanHaveIOBitmap
@@ -743,7 +743,7 @@ VMMDECL(int) IOMInterpretCheckPortIOAccess(PVM pVM, PCPUMCTXCORE pCtxCore, RTIOP
         {
             Log(("iomInterpretCheckPortIOAccess: Port=%RTiop cb=%d cbTss=%#x fCanHaveIOBitmap=%RTbool -> #GP(0)\n",
                  Port, cb, cbTss, fCanHaveIOBitmap));
-            return TRPMRaiseXcptErr(pVM, pCtxCore, X86_XCPT_GP, 0);
+            return TRPMRaiseXcptErr(pVCpu, pCtxCore, X86_XCPT_GP, 0);
         }
 
         /*
@@ -766,7 +766,7 @@ VMMDECL(int) IOMInterpretCheckPortIOAccess(PVM pVM, PCPUMCTXCORE pCtxCore, RTIOP
         {
             Log(("iomInterpretCheckPortIOAccess: Port=%RTiop cb=%d offTss=%#x cbTss=%#x -> #GP(0)\n",
                  Port, cb, offTss, cbTss));
-            return TRPMRaiseXcptErr(pVM, pCtxCore, X86_XCPT_GP, 0);
+            return TRPMRaiseXcptErr(pVCpu, pCtxCore, X86_XCPT_GP, 0);
         }
         uint16_t u16;
         rc = PGMPhysInterpretedRead(pVCpu, pCtxCore, &u16, GCPtrTss + offTss, sizeof(u16));
@@ -784,7 +784,7 @@ VMMDECL(int) IOMInterpretCheckPortIOAccess(PVM pVM, PCPUMCTXCORE pCtxCore, RTIOP
         {
             Log(("iomInterpretCheckPortIOAccess: Port=%RTiop cb=%d u16=%#x -> #GP(0)\n",
                  Port, cb, u16, offTss));
-            return TRPMRaiseXcptErr(pVM, pCtxCore, X86_XCPT_GP, 0);
+            return TRPMRaiseXcptErr(pVCpu, pCtxCore, X86_XCPT_GP, 0);
         }
         LogFlow(("iomInterpretCheckPortIOAccess: Port=%RTiop cb=%d offTss=%#x cbTss=%#x u16=%#x -> OK\n",
                  Port, cb, u16, offTss, cbTss));

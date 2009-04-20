@@ -2114,7 +2114,7 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
      * Check for traps.
      */
     pVM->rem.s.Env.exception_index = -1; /** @todo this won't work :/ */
-    rc = TRPMQueryTrap(pVM, &u8TrapNo, &enmType);
+    rc = TRPMQueryTrap(pVCpu, &u8TrapNo, &enmType);
     if (RT_SUCCESS(rc))
     {
 #ifdef DEBUG
@@ -2158,10 +2158,10 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
         switch (u8TrapNo)
         {
             case 0x0e:
-                pVM->rem.s.Env.cr[2] = TRPMGetFaultAddress(pVM);
+                pVM->rem.s.Env.cr[2] = TRPMGetFaultAddress(pVCpu);
                 /* fallthru */
             case 0x0a: case 0x0b: case 0x0c: case 0x0d:
-                pVM->rem.s.Env.error_code = TRPMGetErrorCode(pVM);
+                pVM->rem.s.Env.error_code = TRPMGetErrorCode(pVCpu);
                 break;
 
             case 0x11: case 0x08:
@@ -2173,7 +2173,7 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
         /*
          * We can now reset the active trap since the recompiler is gonna have a go at it.
          */
-        rc = TRPMResetTrap(pVM);
+        rc = TRPMResetTrap(pVCpu);
         AssertRC(rc);
         Log2(("REMR3State: trap=%02x errcd=%RGv cr2=%RGv nexteip=%RGv%s\n", pVM->rem.s.Env.exception_index, (RTGCPTR)pVM->rem.s.Env.error_code,
               (RTGCPTR)pVM->rem.s.Env.cr[2], (RTGCPTR)pVM->rem.s.Env.exception_next_eip, pVM->rem.s.Env.exception_is_int ? " software" : ""));
@@ -2424,16 +2424,16 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
         int rc;
 
         Log(("REMR3StateBack: Pending trap %x %d\n", pVM->rem.s.Env.exception_index, pVM->rem.s.Env.exception_is_int));
-        rc = TRPMAssertTrap(pVM, pVM->rem.s.Env.exception_index, (pVM->rem.s.Env.exception_is_int) ? TRPM_SOFTWARE_INT : TRPM_HARDWARE_INT);
+        rc = TRPMAssertTrap(pVCpu, pVM->rem.s.Env.exception_index, (pVM->rem.s.Env.exception_is_int) ? TRPM_SOFTWARE_INT : TRPM_HARDWARE_INT);
         AssertRC(rc);
         switch (pVM->rem.s.Env.exception_index)
         {
             case 0x0e:
-                TRPMSetFaultAddress(pVM, pCtx->cr2);
+                TRPMSetFaultAddress(pVCpu, pCtx->cr2);
                 /* fallthru */
             case 0x0a: case 0x0b: case 0x0c: case 0x0d:
             case 0x11: case 0x08: /* 0 */
-                TRPMSetErrorCode(pVM, pVM->rem.s.Env.error_code);
+                TRPMSetErrorCode(pVCpu, pVM->rem.s.Env.error_code);
                 break;
         }
 

@@ -852,6 +852,7 @@ int main()
     GEN_CHECK_OFF(TMTIMERQUEUE, enmClock);
 
     GEN_CHECK_SIZE(TRPM); // has .mac
+    GEN_CHECK_SIZE(TRPMCPU); // has .mac
     GEN_CHECK_SIZE(VM);  // has .mac
     GEN_CHECK_SIZE(VMM);
     GEN_CHECK_OFF(VMM, offVM);

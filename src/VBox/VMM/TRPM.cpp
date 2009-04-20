@@ -430,7 +430,8 @@ static VBOXIDTE_GENERIC     g_aIdt[256] =
 #define TRPM_TRACK_SHADOW_IDT_CHANGES
 
 /** TRPM saved state version. */
-#define TRPM_SAVED_STATE_VERSION    8
+#define TRPM_SAVED_STATE_VERSION        9
+#define TRPM_SAVED_STATE_VERSION_UNI    8   /* SMP support bumped the version */
 
 
 /*******************************************************************************
@@ -463,7 +464,16 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
      * Initialize members.
      */
     pVM->trpm.s.offVM              = RT_OFFSETOF(VM, trpm);
-    pVM->trpm.s.uActiveVector      = ~0;
+    pVM->trpm.s.offTRPMCPU         = RT_OFFSETOF(VM, aCpus[0].trpm) - RT_OFFSETOF(VM, trpm);
+
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
+        pVCpu->trpm.s.offVM         = RT_OFFSETOF(VM, aCpus[i].trpm);
+        pVCpu->trpm.s.uActiveVector = ~0;
+    }
+
     pVM->trpm.s.GuestIdtr.pIdt     = RTRCPTR_MAX;
     pVM->trpm.s.pvMonShwIdtRC            = RTRCPTR_MAX;
     pVM->trpm.s.fDisableMonitoring = false;
@@ -730,7 +740,11 @@ VMMR3DECL(void) TRPMR3Reset(PVM pVM)
     /*
      * Reinitialize other members calling the relocator to get things right.
      */
-    pVM->trpm.s.uActiveVector  = ~0;
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+        pVCpu->trpm.s.uActiveVector = ~0;
+    }
     memcpy(&pVM->trpm.s.aIdt[0], &g_aIdt[0], sizeof(pVM->trpm.s.aIdt));
     memset(pVM->trpm.s.aGuestTrapHandler, 0, sizeof(pVM->trpm.s.aGuestTrapHandler));
     TRPMR3Relocate(pVM, 0);
@@ -751,26 +765,27 @@ VMMR3DECL(void) TRPMR3Reset(PVM pVM)
  */
 static DECLCALLBACK(int) trpmR3Save(PVM pVM, PSSMHANDLE pSSM)
 {
+    PTRPM pTrpm = &pVM->trpm.s;
     LogFlow(("trpmR3Save:\n"));
 
     /*
      * Active and saved traps.
      */
-    PTRPM pTrpm = &pVM->trpm.s;
-    SSMR3PutUInt(pSSM,      pTrpm->uActiveVector);
-    SSMR3PutUInt(pSSM,      pTrpm->enmActiveType);
-    SSMR3PutGCUInt(pSSM,    pTrpm->uActiveErrorCode);
-    SSMR3PutGCUIntPtr(pSSM, pTrpm->uActiveCR2);
-    SSMR3PutGCUInt(pSSM,    pTrpm->uSavedVector);
-    SSMR3PutUInt(pSSM,      pTrpm->enmSavedType);
-    SSMR3PutGCUInt(pSSM,    pTrpm->uSavedErrorCode);
-    SSMR3PutGCUIntPtr(pSSM, pTrpm->uSavedCR2);
-    SSMR3PutGCUInt(pSSM,    pTrpm->uPrevVector);
-#if 0  /** @todo Enable this (+ load change) on the next version change. */
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PTRPMCPU pTrpmCpu = &pVM->aCpus[i].trpm.s;
+
+        SSMR3PutUInt(pSSM,      pTrpmCpu->uActiveVector);
+        SSMR3PutUInt(pSSM,      pTrpmCpu->enmActiveType);
+        SSMR3PutGCUInt(pSSM,    pTrpmCpu->uActiveErrorCode);
+        SSMR3PutGCUIntPtr(pSSM, pTrpmCpu->uActiveCR2);
+        SSMR3PutGCUInt(pSSM,    pTrpmCpu->uSavedVector);
+        SSMR3PutUInt(pSSM,      pTrpmCpu->enmSavedType);
+        SSMR3PutGCUInt(pSSM,    pTrpmCpu->uSavedErrorCode);
+        SSMR3PutGCUIntPtr(pSSM, pTrpmCpu->uSavedCR2);
+        SSMR3PutGCUInt(pSSM,    pTrpmCpu->uPrevVector);
+    }
     SSMR3PutBool(pSSM,      pTrpm->fDisableMonitoring);
-#else
-    SSMR3PutGCUInt(pSSM,    pTrpm->fDisableMonitoring);
-#endif
     SSMR3PutUInt(pSSM,      VM_FF_ISSET(pVM, VM_FF_TRPM_SYNC_IDT));
     SSMR3PutMem(pSSM,       &pTrpm->au32IdtPatched[0], sizeof(pTrpm->au32IdtPatched));
     SSMR3PutU32(pSSM, ~0);              /* separator. */
@@ -807,7 +822,8 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
     /*
      * Validate version.
      */
-    if (u32Version != TRPM_SAVED_STATE_VERSION)
+    if (    u32Version != TRPM_SAVED_STATE_VERSION
+        &&  u32Version != TRPM_SAVED_STATE_VERSION_UNI)
     {
         AssertMsgFailed(("trpmR3Load: Invalid version u32Version=%d!\n", u32Version));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -822,22 +838,42 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
      * Active and saved traps.
      */
     PTRPM pTrpm = &pVM->trpm.s;
-    SSMR3GetUInt(pSSM,      &pTrpm->uActiveVector);
-    SSMR3GetUInt(pSSM,      (uint32_t *)&pTrpm->enmActiveType);
-    SSMR3GetGCUInt(pSSM,    &pTrpm->uActiveErrorCode);
-    SSMR3GetGCUIntPtr(pSSM, &pTrpm->uActiveCR2);
-    SSMR3GetGCUInt(pSSM,    &pTrpm->uSavedVector);
-    SSMR3GetUInt(pSSM,      (uint32_t *)&pTrpm->enmSavedType);
-    SSMR3GetGCUInt(pSSM,    &pTrpm->uSavedErrorCode);
-    SSMR3GetGCUIntPtr(pSSM, &pTrpm->uSavedCR2);
-    SSMR3GetGCUInt(pSSM,    &pTrpm->uPrevVector);
-#if 0 /** @todo Enable this + the corresponding save code on the next version change. */
-    SSMR3GetBool(pSSM,      &pTrpm->fDisableMonitoring);
-#else
-    RTGCUINT fDisableMonitoring;
-    SSMR3GetGCUInt(pSSM,    &fDisableMonitoring);
-    pTrpm->fDisableMonitoring = !!fDisableMonitoring;
-#endif
+
+    if (u32Version == TRPM_SAVED_STATE_VERSION)
+    {
+        for (unsigned i=0;i<pVM->cCPUs;i++)
+        {
+            PTRPMCPU pTrpmCpu = &pVM->aCpus[i].trpm.s;
+            SSMR3GetUInt(pSSM,      &pTrpmCpu->uActiveVector);
+            SSMR3GetUInt(pSSM,      (uint32_t *)&pTrpmCpu->enmActiveType);
+            SSMR3GetGCUInt(pSSM,    &pTrpmCpu->uActiveErrorCode);
+            SSMR3GetGCUIntPtr(pSSM, &pTrpmCpu->uActiveCR2);
+            SSMR3GetGCUInt(pSSM,    &pTrpmCpu->uSavedVector);
+            SSMR3GetUInt(pSSM,      (uint32_t *)&pTrpmCpu->enmSavedType);
+            SSMR3GetGCUInt(pSSM,    &pTrpmCpu->uSavedErrorCode);
+            SSMR3GetGCUIntPtr(pSSM, &pTrpmCpu->uSavedCR2);
+            SSMR3GetGCUInt(pSSM,    &pTrpmCpu->uPrevVector);
+        }
+
+        SSMR3GetBool(pSSM,      &pVM->trpm.s.fDisableMonitoring);
+    }
+    else
+    {
+        PTRPMCPU pTrpmCpu = &pVM->aCpus[0].trpm.s;
+        SSMR3GetUInt(pSSM,      &pTrpmCpu->uActiveVector);
+        SSMR3GetUInt(pSSM,      (uint32_t *)&pTrpmCpu->enmActiveType);
+        SSMR3GetGCUInt(pSSM,    &pTrpmCpu->uActiveErrorCode);
+        SSMR3GetGCUIntPtr(pSSM, &pTrpmCpu->uActiveCR2);
+        SSMR3GetGCUInt(pSSM,    &pTrpmCpu->uSavedVector);
+        SSMR3GetUInt(pSSM,      (uint32_t *)&pTrpmCpu->enmSavedType);
+        SSMR3GetGCUInt(pSSM,    &pTrpmCpu->uSavedErrorCode);
+        SSMR3GetGCUIntPtr(pSSM, &pTrpmCpu->uSavedCR2);
+        SSMR3GetGCUInt(pSSM,    &pTrpmCpu->uPrevVector);
+
+        RTGCUINT fDisableMonitoring;
+        SSMR3GetGCUInt(pSSM,    &fDisableMonitoring);
+        pTrpm->fDisableMonitoring = !!fDisableMonitoring;
+    }
 
     RTUINT fSyncIDT;
     int rc = SSMR3GetUInt(pSSM, &fSyncIDT);
@@ -1416,7 +1452,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
         {
             if (HWACCMR3IsActive(pVM))
             {
-                rc = TRPMAssertTrap(pVM, u8Interrupt, enmEvent);
+                rc = TRPMAssertTrap(pVCpu, u8Interrupt, enmEvent);
                 AssertRC(rc);
                 STAM_COUNTER_INC(&pVM->trpm.s.paStatForwardedIRQR3[u8Interrupt]);
                 return VINF_EM_RESCHEDULE_HWACC;
@@ -1435,7 +1471,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
                 if (rc == VINF_SUCCESS)
                 {
                     /* There's a handler -> let's execute it in raw mode */
-                    rc = TRPMForwardTrap(pVM, CPUMCTX2CORE(pCtx), u8Interrupt, 0, TRPM_TRAP_NO_ERRORCODE, enmEvent, -1);
+                    rc = TRPMForwardTrap(pVCpu, CPUMCTX2CORE(pCtx), u8Interrupt, 0, TRPM_TRAP_NO_ERRORCODE, enmEvent, -1);
                     if (rc == VINF_SUCCESS /* Don't use RT_SUCCESS */)
                     {
                         Assert(!VM_FF_ISPENDING(pVM, VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_TSS));
