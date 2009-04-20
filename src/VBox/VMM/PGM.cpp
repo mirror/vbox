@@ -2168,7 +2168,7 @@ VMMR3DECL(void) PGMR3Reset(PVM pVM)
          * Re-init other members.
          */
         pVCpu->pgm.s.fA20Enabled = true;
-    
+
         /*
          * Clear the FFs PGM owns.
          */
@@ -4047,6 +4047,52 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
 
     /* Notify HWACCM as well. */
     HWACCMR3PagingModeChanged(pVM, pVCpu, pVCpu->pgm.s.enmShadowMode, pVCpu->pgm.s.enmGuestMode);
+    return rc;
+}
+
+
+/**
+ * Called by pgmPoolFlushAllInt prior to flushing the pool.
+ *
+ * @returns VBox status code, fully asserted.
+ * @param   pVM     The VM handle.
+ * @param   pVCpu   The VMCPU to operate on.
+ */
+int pgmR3ExitShadowModeBeforePoolFlush(PVM pVM, PVMCPU pVCpu)
+{
+    /** @todo Need to synchronize this across all VCPUs! */
+
+    /* Unmap the old CR3 value before flushing everything. */
+    int rc = PGM_BTH_PFN(UnmapCR3, pVCpu)(pVCpu);
+    AssertRC(rc);
+
+    /* Exit the current shadow paging mode as well; nested paging and EPT use a root CR3 which will get flushed here. */
+    rc = PGM_SHW_PFN(Exit, pVCpu)(pVCpu);
+    AssertRC(rc);
+    Assert(pVCpu->pgm.s.pShwPageCR3R3 == NULL);
+    return rc;
+}
+
+
+/**
+ * Called by pgmPoolFlushAllInt after flushing the pool.
+ *
+ * @returns VBox status code, fully asserted.
+ * @param   pVM     The VM handle.
+ * @param   pVCpu   The VMCPU to operate on.
+ */
+int pgmR3ReEnterShadowModeAfterPoolFlush(PVM pVM, PVMCPU pVCpu)
+{
+    pVCpu->pgm.s.enmShadowMode = PGMMODE_INVALID;
+    int rc = PGMR3ChangeMode(pVM, pVCpu, PGMGetGuestMode(pVCpu));
+    Assert(VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
+    AssertRCReturn(rc, rc);
+    AssertRCSuccessReturn(rc, VERR_IPE_UNEXPECTED_INFO_STATUS);
+
+    Assert(pVCpu->pgm.s.pShwPageCR3R3 != NULL);
+    AssertMsg(   pVCpu->pgm.s.enmShadowMode >= PGMMODE_NESTED
+              || CPUMGetHyperCR3(pVCpu) == PGMGetHyperCR3(pVCpu),
+              ("%RHp != %RHp %s\n", (RTHCPHYS)CPUMGetHyperCR3(pVCpu), PGMGetHyperCR3(pVCpu), PGMGetModeName(pVCpu->pgm.s.enmShadowMode)));
     return rc;
 }
 

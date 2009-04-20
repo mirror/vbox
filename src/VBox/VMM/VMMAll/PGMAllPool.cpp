@@ -3797,6 +3797,8 @@ static void pgmPoolFlushAllSpecialRoots(PPGMPOOL pPool)
  * and execute this CR3 flush.
  *
  * @param   pPool       The pool.
+ *
+ * @remark Only used during reset now, we might want to rename and/or move it.
  */
 static void pgmPoolFlushAllInt(PPGMPOOL pPool)
 {
@@ -3814,17 +3816,14 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
         return;
     }
 
-    /* @todo Need to synchronize this across all VCPUs! */
+    /*
+     * Exit the shadow mode since we're going to clear everything,
+     * including the root page.
+     */
+    /** @todo Need to synchronize this across all VCPUs! */
     Assert(pVM->cCPUs == 1);
     PVMCPU pVCpu = &pVM->aCpus[0];  /* to get it compiled... */
-
-    /* Unmap the old CR3 value before flushing everything. */
-    int rc = PGM_BTH_PFN(UnmapCR3, pVCpu)(pVCpu);
-    AssertRC(rc);
-
-    /* Exit the current shadow paging mode as well; nested paging and EPT use a root CR3 which will get flushed here. */
-    rc = PGM_SHW_PFN(Exit, pVCpu)(pVCpu);
-    AssertRC(rc);
+    pgmR3ExitShadowModeBeforePoolFlush(pVM, pVCpu);
 
     /*
      * Nuke the free list and reinsert all pages into it.
@@ -3833,9 +3832,7 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
     {
         PPGMPOOLPAGE pPage = &pPool->aPages[i];
 
-#ifdef IN_RING3
         Assert(pPage->Core.Key == MMPage2Phys(pVM, pPage->pvPageR3));
-#endif
 #ifdef PGMPOOL_WITH_MONITORING
         if (pPage->fMonitored)
             pgmPoolMonitorFlush(pPool, pPage);
@@ -3969,17 +3966,9 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
     }
 
     /*
-     * Force a shadow mode reinit (necessary for nested paging and ept).
-     * Reinit the current shadow paging mode as well; nested paging and
-     * EPT use a root CR3 which will get flushed here.
+     * Re-enter the shadowing mode and assert Sync CR3 FF.
      */
-    pVCpu->pgm.s.enmShadowMode = PGMMODE_INVALID;
-    rc = PGMR3ChangeMode(pVM, pVCpu, PGMGetGuestMode(pVCpu));
-    AssertRC(rc);
-
-    /*
-     * Finally, assert the FF.
-     */
+    pgmR3ReEnterShadowModeAfterPoolFlush(pVM, pVCpu);
     VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
 
     STAM_PROFILE_STOP(&pPool->StatFlushAllInt, a);
