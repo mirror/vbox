@@ -1920,7 +1920,7 @@ Vuoi eliminarlo comunque?</translation>
     <message>
         <location filename="../src/corelib/plugin/qlibrary_win.cpp" line="76"/>
         <source>QLibrary::unload_sys: Cannot unload %1 (%2)</source>
-        <translation type="unfinished">QLibrary::unload_sys: Impossibile  %1 (%2)</translation>
+        <translation>QLibrary::unload_sys: Impossibile rimuovere %1 (%2)</translation>
     </message>
     <message>
         <location filename="../src/corelib/plugin/qlibrary_win.cpp" line="91"/>
@@ -2251,7 +2251,7 @@ Vuoi eliminarlo comunque?</translation>
     <message>
         <location filename="../src/gui/dialogs/qmessagebox.cpp" line="1635"/>
         <source>&lt;h3&gt;About Qt&lt;/h3&gt;%1&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qtopia Core.&lt;/p&gt;&lt;p&gt;Qt is a Trolltech product. See &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;Informazioni su Qt&lt;/h3&gt;%1&lt;p&gt;Qt è un toolkit C++ per lo sviluppo multi-piattaforma di applicazione.&lt;/p&gt;&lt;p&gt;Qt fornisce la portabilità del codice sorgente tra MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, e tutte le principali varianti commerciali di. Qt è anche disponibile per dispositivi integrati come Qtopia Core.&lt;/p&gt;&lt;p&gt;Qt è un prodotto Trolltech. Vedere &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; per ulteriori informazioni.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qmessagebox.cpp" line="83"/>
@@ -2266,7 +2266,7 @@ Vuoi eliminarlo comunque?</translation>
     <message>
         <location filename="../src/gui/dialogs/qmessagebox.cpp" line="1644"/>
         <source>&lt;p&gt;This program uses Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition is intended for the development of Open Source applications. You need a commercial Qt license for development of proprietary (closed source) applications.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Questo programma utilizza la versione Qt Open Source Edition %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition è destinata allo sviluppo di applicazioni Open Source. Per lo sviluppo di applicazioni proprietarie (sorgente chiuso) è necessario disporre di una licenza Qt commerciale.&lt;/p&gt;&lt;p&gt;Vedere &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; per una panoramica del sistema di licenze Qt.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -2467,7 +2467,7 @@ Vuoi eliminarlo comunque?</translation>
     <message>
         <location filename="../src/sql/drivers/oci/qsql_oci.cpp" line="1689"/>
         <source>Unable to execute select statement</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile eseguire l&apos;istruzione di selezione</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/oci/qsql_oci.cpp" line="1706"/>
@@ -2763,7 +2763,7 @@ Vuoi eliminarlo comunque?</translation>
     <message>
         <location filename="../src/gui/dialogs/qprintdialog_unix.cpp" line="805"/>
         <source>US Common #10 Envelope (105 x 241 mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>Busta standard #10 USA (105 x 241 mm)</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qpagesetupdialog_unix.cpp" line="155"/>
@@ -2788,7 +2788,7 @@ Vuoi eliminarlo comunque?</translation>
     <message>
         <location filename="../src/gui/dialogs/qpagesetupdialog_unix.cpp" line="141"/>
         <source>Paper source:</source>
-        <translation type="unfinished"></translation>
+        <translation>Origine carta:</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qprintdialog_unix.cpp" line="951"/>
@@ -2883,7 +2883,7 @@ Vuoi eliminarlo comunque?</translation>
     <message>
         <location filename="../src/gui/dialogs/qprintdialog.ui" line="423"/>
         <source>Collate</source>
-        <translation type="unfinished"></translation>
+        <translation>Fascicola</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qprintdialog.ui" line="430"/>
@@ -3111,7 +3111,7 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/sql/drivers/sqlite/qsql_sqlite.cpp" line="284"/>
         <source>Unable to reset statement</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile ripristinare l&apos;istruzione</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/sqlite/qsql_sqlite.cpp" line="328"/>
@@ -3532,7 +3532,7 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="358"/>
         <source>Print Screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Stampa schermo</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="359"/>
@@ -3557,7 +3557,7 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="363"/>
         <source>Number Lock</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Blocco tast numerico</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="364"/>
@@ -3587,7 +3587,7 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="372"/>
         <source>Select</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="373"/>
@@ -3622,12 +3622,12 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="382"/>
         <source>Call</source>
-        <translation type="unfinished"></translation>
+        <translation>Chiama</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="383"/>
         <source>Hangup</source>
-        <translation type="unfinished"></translation>
+        <translation>Riaggancia</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="384"/>
@@ -4177,32 +4177,32 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/xml/qxml.cpp" line="34"/>
         <source>more than one document type definition</source>
-        <translation type="unfinished"></translation>
+        <translation>più di una definizione del tipo di documento</translation>
     </message>
     <message>
         <location filename="../src/xml/qxml.cpp" line="35"/>
         <source>error occurred while parsing element</source>
-        <translation type="unfinished"></translation>
+        <translation>riscontrato errore durante l&apos;analisi dell&apos;elemento</translation>
     </message>
     <message>
         <location filename="../src/xml/qxml.cpp" line="36"/>
         <source>tag mismatch</source>
-        <translation type="unfinished"></translation>
+        <translation>tag non corrispondente</translation>
     </message>
     <message>
         <location filename="../src/xml/qxml.cpp" line="37"/>
         <source>error occurred while parsing content</source>
-        <translation type="unfinished"></translation>
+        <translation>riscontrato errore durante l&apos;analisi del contenuto</translation>
     </message>
     <message>
         <location filename="../src/xml/qxml.cpp" line="38"/>
         <source>unexpected character</source>
-        <translation type="unfinished"></translation>
+        <translation>carattere inatteso</translation>
     </message>
     <message>
         <location filename="../src/xml/qxml.cpp" line="39"/>
         <source>invalid name for processing instruction</source>
-        <translation type="unfinished"></translation>
+        <translation>nome dell&apos;istruzione di elaborazione non valido</translation>
     </message>
     <message>
         <location filename="../src/xml/qxml.cpp" line="40"/>
@@ -4227,7 +4227,7 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/xml/qxml.cpp" line="44"/>
         <source>error occurred while parsing document type definition</source>
-        <translation type="unfinished"></translation>
+        <translation>riscontrato errore durante l&apos;analisi della definizione del tipo di documento</translation>
     </message>
     <message>
         <location filename="../src/xml/qxml.cpp" line="45"/>
@@ -4237,12 +4237,12 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/xml/qxml.cpp" line="46"/>
         <source>error occurred while parsing comment</source>
-        <translation type="unfinished"></translation>
+        <translation>riscontrato errore durante l&apos;analisi del commento</translation>
     </message>
     <message>
         <location filename="../src/xml/qxml.cpp" line="47"/>
         <source>error occurred while parsing reference</source>
-        <translation type="unfinished"></translation>
+        <translation>riscontrato errore durante l&apos;analisi dei riferimenti</translation>
     </message>
     <message>
         <location filename="../src/xml/qxml.cpp" line="48"/>
@@ -4325,7 +4325,7 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1489"/>
         <source>%1 is an invalid encoding name.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 è un nome di codifica non valido.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1496"/>
@@ -4335,7 +4335,7 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1498"/>
         <source>Invalid XML encoding name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nome di codifica XML non valido.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1514"/>
@@ -4345,12 +4345,12 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1516"/>
         <source>Invalid attribute in XML declaration.</source>
-        <translation type="unfinished"></translation>
+        <translation>Attributo non valido nella dichiarazione XML.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1532"/>
         <source>Premature end of document.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fine imprevista del documento.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1534"/>
@@ -4360,17 +4360,17 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1574"/>
         <source>Expected </source>
-        <translation type="unfinished"></translation>
+        <translation>Atteso </translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1585"/>
         <source>, but got &apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>, ma ricevuto &apos;</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1589"/>
         <source>Unexpected &apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Inatteso &apos;</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1719"/>
@@ -4380,17 +4380,17 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/xml/qxmlstream_p.h" line="718"/>
         <source>Recursive entity detected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rilevata entità ricorsiva.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream_p.h" line="1223"/>
         <source>Start tag expected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Atteso tag iniziale.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream_p.h" line="1434"/>
         <source>XML declaration not at start of document.</source>
-        <translation type="unfinished"></translation>
+        <translation>La dichiarazione XML non è all&apos;inizio del documento.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream_p.h" line="1403"/>
@@ -4430,7 +4430,7 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/xml/qxmlstream_p.h" line="1774"/>
         <source>Entity &apos;%1&apos; not declared.</source>
-        <translation type="unfinished"></translation>
+        <translation>Entità &apos;%1&apos; non dichiarata.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream_p.h" line="1760"/>
@@ -4445,7 +4445,7 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/xml/qxmlstream_p.h" line="1011"/>
         <source>Encountered incorrectly encoded content.</source>
-        <translation type="unfinished"></translation>
+        <translation>Riscontrato contenuto non codificato correttamente.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1487"/>
