@@ -259,7 +259,7 @@ static int trpmGCExitTrap(PVM pVM, int rc, PCPUMCTXCORE pRegFrame)
 DECLASM(int) TRPMGCTrap01Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 {
     RTGCUINTREG uDr6 = ASMGetAndClearDR6();
-    PVM         pVM = TRPM2VM(pTrpmCpu);
+    PVM         pVM = TRPMCPU2VM(pTrpmCpu);
     PVMCPU      pVCpu = VMMGetCpu0(pVM);
 
     LogFlow(("TRPMGC01: cs:eip=%04x:%08x uDr6=%RTreg\n", pRegFrame->cs, pRegFrame->eip, uDr6));
@@ -324,7 +324,7 @@ DECLASM(int) TRPMGCTrap02Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 DECLASM(int) TRPMGCTrap03Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 {
     LogFlow(("TRPMGC03: %04x:%08x\n", pRegFrame->cs, pRegFrame->eip));
-    PVM pVM = TRPM2VM(pTrpmCpu);
+    PVM pVM = TRPMCPU2VM(pTrpmCpu);
     int rc;
 
     /*
@@ -364,7 +364,7 @@ DECLASM(int) TRPMGCTrap03Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 DECLASM(int) TRPMGCTrap06Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 {
     LogFlow(("TRPMGC06: %04x:%08x efl=%x\n", pRegFrame->cs, pRegFrame->eip, pRegFrame->eflags.u32));
-    PVM     pVM = TRPM2VM(pTrpmCpu);
+    PVM     pVM = TRPMCPU2VM(pTrpmCpu);
     PVMCPU  pVCpu = VMMGetCpu0(pVM);
     int     rc;
 
@@ -469,7 +469,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 DECLASM(int) TRPMGCTrap07Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 {
     LogFlow(("TRPMGC07: %04x:%08x\n", pRegFrame->cs, pRegFrame->eip));
-    PVM     pVM   = TRPM2VM(pTrpmCpu);
+    PVM     pVM   = TRPMCPU2VM(pTrpmCpu);
     PVMCPU  pVCpu = VMMGetCpu0(pVM);
 
     int rc = CPUMHandleLazyFPU(pVCpu);
@@ -493,7 +493,7 @@ DECLASM(int) TRPMGCTrap07Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 DECLASM(int) TRPMGCTrap0bHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 {
     LogFlow(("TRPMGC0b: %04x:%08x\n", pRegFrame->cs, pRegFrame->eip));
-    PVM pVM = TRPM2VM(pTrpmCpu);
+    PVM pVM = TRPMCPU2VM(pTrpmCpu);
 
     /*
      * Try to detect instruction by opcode which caused trap.
@@ -925,7 +925,7 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFram
  */
 DECLASM(int) TRPMGCTrap0dHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 {
-    PVM pVM = TRPM2VM(pTrpmCpu);
+    PVM pVM = TRPMCPU2VM(pTrpmCpu);
     PVMCPU pVCpu = VMMGetCpu0(pVM);
 
     LogFlow(("TRPMGC0d: %04x:%08x err=%x\n", pRegFrame->cs, pRegFrame->eip, (uint32_t)pVCpu->trpm.s.uActiveErrorCode));
@@ -983,7 +983,7 @@ DECLASM(int) TRPMGCTrap0dHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
  */
 DECLASM(int) TRPMGCTrap0eHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 {
-    PVM     pVM = TRPM2VM(pTrpmCpu);
+    PVM     pVM = TRPMCPU2VM(pTrpmCpu);
     PVMCPU  pVCpu = VMMGetCpu0(pVM);
 
     LogFlow(("TRPMGC0e: %04x:%08x err=%x cr2=%08x\n", pRegFrame->cs, pRegFrame->eip, (uint32_t)pVCpu->trpm.s.uActiveErrorCode, (uint32_t)pVCpu->trpm.s.uActiveCR2));
@@ -1096,7 +1096,7 @@ static int trpmGCHyperGeneric(PVM pVM, PCPUMCTXCORE pRegFrame, PCTRPMGCHYPER paH
  */
 DECLASM(int) TRPMGCHyperTrap0bHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 {
-    return trpmGCHyperGeneric(TRPM2VM(pTrpmCpu), pRegFrame, g_aTrap0bHandlers, g_aTrap0bHandlersEnd);
+    return trpmGCHyperGeneric(TRPMCPU2VM(pTrpmCpu), pRegFrame, g_aTrap0bHandlers, g_aTrap0bHandlersEnd);
 }
 
 
@@ -1115,7 +1115,7 @@ DECLASM(int) TRPMGCHyperTrap0bHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
  */
 DECLASM(int) TRPMGCHyperTrap0dHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 {
-    return trpmGCHyperGeneric(TRPM2VM(pTrpmCpu), pRegFrame, g_aTrap0dHandlers, g_aTrap0dHandlersEnd);
+    return trpmGCHyperGeneric(TRPMCPU2VM(pTrpmCpu), pRegFrame, g_aTrap0dHandlers, g_aTrap0dHandlersEnd);
 }
 
 
@@ -1134,7 +1134,7 @@ DECLASM(int) TRPMGCHyperTrap0dHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
  */
 DECLASM(int) TRPMGCHyperTrap0eHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 {
-    return trpmGCHyperGeneric(TRPM2VM(pTrpmCpu), pRegFrame, g_aTrap0dHandlers, g_aTrap0dHandlersEnd);
+    return trpmGCHyperGeneric(TRPMCPU2VM(pTrpmCpu), pRegFrame, g_aTrap0dHandlers, g_aTrap0dHandlersEnd);
 }
 
 

@@ -66,12 +66,14 @@ __BEGIN_DECLS
 /** @} */
 
 
+#if 0 /* not used */
 /**
  * Converts a TRPM pointer into a VM pointer.
  * @returns Pointer to the VM structure the TRPM is part of.
  * @param   pTRPM   Pointer to TRPM instance data.
  */
 #define TRPM2VM(pTRPM)          ( (PVM)((char*)pTRPM - pTRPM->offVM) )
+#endif
 
 /**
  * Converts a TRPMCPU pointer into a VM pointer.
