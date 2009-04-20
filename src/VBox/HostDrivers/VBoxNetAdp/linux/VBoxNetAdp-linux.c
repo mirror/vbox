@@ -33,6 +33,7 @@
 #include <VBox/err.h>
 #include <iprt/process.h>
 #include <iprt/initterm.h>
+#include <iprt/mem.h>
 
 /*
 #include <iprt/assert.h>
