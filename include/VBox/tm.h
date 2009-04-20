@@ -72,10 +72,10 @@ typedef enum TMCLOCK
 } TMCLOCK;
 
 
-VMMDECL(void)     TMNotifyStartOfExecution(PVM pVM);
-VMMDECL(void)     TMNotifyEndOfExecution(PVM pVM);
-VMMDECL(void)     TMNotifyStartOfHalt(PVM pVM);
-VMMDECL(void)     TMNotifyEndOfHalt(PVM pVM);
+VMMDECL(void)     TMNotifyStartOfExecution(PVMCPU pVCpu);
+VMMDECL(void)     TMNotifyEndOfExecution(PVMCPU pVCpu);
+VMMDECL(void)     TMNotifyStartOfHalt(PVMCPU pVCpu);
+VMMDECL(void)     TMNotifyEndOfHalt(PVMCPU pVCpu);
 
 
 /** @name Real Clock Methods
@@ -112,11 +112,11 @@ VMMDECL(int)      TMVirtualSetWarpDrive(PVM pVM, uint32_t u32Percent);
 /** @name CPU Clock Methods
  * @{
  */
-VMMDECL(int)      TMCpuTickResume(PVM pVM);
-VMMDECL(int)      TMCpuTickPause(PVM pVM);
-VMMDECL(uint64_t) TMCpuTickGet(PVM pVM);
-VMMDECL(bool)     TMCpuTickCanUseRealTSC(PVM pVM, uint64_t *poffRealTSC);
-VMMDECL(int)      TMCpuTickSet(PVM pVM, uint64_t u64Tick);
+VMMDECL(int)      TMCpuTickResume(PVMCPU pVCpu);
+VMMDECL(int)      TMCpuTickPause(PVMCPU pVCpu);
+VMMDECL(uint64_t) TMCpuTickGet(PVMCPU pVCpu);
+VMMDECL(bool)     TMCpuTickCanUseRealTSC(PVMCPU pVCpu, uint64_t *poffRealTSC);
+VMMDECL(int)      TMCpuTickSet(PVMCPU pVCpu, uint64_t u64Tick);
 VMMDECL(uint64_t) TMCpuTicksPerSecond(PVM pVM);
 /** @} */
 

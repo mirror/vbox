@@ -797,7 +797,7 @@ DECLINLINE(int) trpmGCTrap0dHandlerRdTsc(PVM pVM, PCPUMCTXCORE pRegFrame)
     if (CPUMGetGuestCR4(pVCpu) & X86_CR4_TSD)
         return trpmGCExitTrap(pVM, VINF_EM_RAW_EMULATE_INSTR, pRegFrame); /* will trap (optimize later). */
 
-    uint64_t uTicks = TMCpuTickGet(pVM);
+    uint64_t uTicks = TMCpuTickGet(pVCpu);
     pRegFrame->eax = uTicks;
     pRegFrame->edx = uTicks >> 32;
     pRegFrame->eip += 2;

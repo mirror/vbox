@@ -567,10 +567,10 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperat
                     return;
                 }
 
-                TMNotifyStartOfExecution(pVM);
+                TMNotifyStartOfExecution(pVCpu);
                 rc = pVM->vmm.s.pfnHostToGuestR0(pVM);
                 pVM->vmm.s.iLastGZRc = rc;
-                TMNotifyEndOfExecution(pVM);
+                TMNotifyEndOfExecution(pVCpu);
 
                 /* Re-enable VT-x if previously turned off. */
                 HWACCMR0LeaveSwitcher(pVM, fVTxDisabled);

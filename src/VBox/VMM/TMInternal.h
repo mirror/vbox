@@ -286,8 +286,6 @@ typedef struct TM
      * See TM2VM(). */
     RTUINT                      offVM;
 
-    /** CPU timestamp ticking enabled indicator (bool). (RDTSC) */
-    bool                        fTSCTicking;
     /** Set if we fully virtualize the TSC, i.e. intercept all rdtsc instructions.
      * Config variable: TSCVirtualized (bool) */
     bool                        fTSCVirtualized;
@@ -306,11 +304,6 @@ typedef struct TM
      * Config variable: TSCNotTiedToHalt (bool) */
     bool                        fTSCNotTiedToHalt;
     bool                        afAlignment0[6]; /**< alignment padding */
-    /** The offset between the host TSC and the Guest TSC.
-     * Only valid if fTicking is set and and fTSCUseRealTSC is clear. */
-    uint64_t                    u64TSCOffset;
-    /** The guest TSC when fTicking is cleared. */
-    uint64_t                    u64TSC;
     /** The number of CPU clock ticks per second (TMCLOCK_TSC).
      * Config variable: TSCTicksPerSecond (64-bit unsigned int)
      * The config variable implies fTSCVirtualized = true and fTSCUseRealTSC = false. */
@@ -507,6 +500,18 @@ typedef struct TMCPU
     /** Offset to the VMCPU structure.
      * See TMCPU2VM(). */
     RTUINT                      offVMCPU;
+
+    /** CPU timestamp ticking enabled indicator (bool). (RDTSC) */
+    bool                        fTSCTicking;
+    bool                        afAlignment0[3]; /**< alignment padding */
+
+    /** The offset between the host TSC and the Guest TSC.
+     * Only valid if fTicking is set and and fTSCUseRealTSC is clear. */
+    uint64_t                    u64TSCOffset;
+
+    /** The guest TSC when fTicking is cleared. */
+    uint64_t                    u64TSC;
+
 } TMCPU;
 /** Pointer to TM VMCPU instance data. */
 typedef TMCPU *PTMCPU;
@@ -517,8 +522,8 @@ void                    tmTimerQueueSchedule(PVM pVM, PTMTIMERQUEUE pQueue);
 void                    tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere);
 #endif
 
-int                     tmCpuTickPause(PVM pVM);
-int                     tmCpuTickResume(PVM pVM);
+int                     tmCpuTickPause(PVM pVM, PVMCPU pVCpu);
+int                     tmCpuTickResume(PVM pVM, PVMCPU pVCpu);
 
 DECLEXPORT(void)        tmVirtualNanoTSBad(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS);
 DECLEXPORT(uint64_t)    tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA pData);

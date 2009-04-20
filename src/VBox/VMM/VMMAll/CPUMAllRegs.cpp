@@ -739,7 +739,7 @@ VMMDECL(uint64_t)  CPUMGetGuestMsr(PVMCPU pVCpu, unsigned idMsr)
     switch (idMsr)
     {
         case MSR_IA32_TSC:
-            u64 = TMCpuTickGet(pVCpu->CTX_SUFF(pVM));
+            u64 = TMCpuTickGet(pVCpu);
             break;
 
         case MSR_IA32_CR_PAT:

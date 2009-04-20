@@ -760,11 +760,11 @@ int main()
     GEN_CHECK_OFF(TM, pvGIPR3);
     //GEN_CHECK_OFF(TM, pvGIPR0);
     GEN_CHECK_OFF(TM, pvGIPRC);
-    GEN_CHECK_OFF(TM, fTSCTicking);
+    GEN_CHECK_OFF(TMCPU, fTSCTicking);
     GEN_CHECK_OFF(TM, fTSCUseRealTSC);
     GEN_CHECK_OFF(TM, fTSCTiedToExecution);
-    GEN_CHECK_OFF(TM, u64TSCOffset);
-    GEN_CHECK_OFF(TM, u64TSC);
+    GEN_CHECK_OFF(TMCPU, u64TSCOffset);
+    GEN_CHECK_OFF(TMCPU, u64TSC);
     GEN_CHECK_OFF(TM, cTSCTicksPerSecond);
     GEN_CHECK_OFF(TM, fVirtualTicking);
     GEN_CHECK_OFF(TM, fVirtualWarpDrive);
