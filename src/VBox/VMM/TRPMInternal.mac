@@ -33,22 +33,10 @@
 
 struc TRPM
     .offVM              resd 1
-    .uActiveVector      resd 1
-    .enmActiveType      resd 1
-    .uActiveErrorCode   RTGCPTR_RES 1
-    .uActiveCR2         RTGCPTR_RES 1
-    .uSavedVector       RTGCPTR_RES 1
-    .enmSavedType       resd 1
-    .uSavedErrorCode    RTGCPTR_RES 1
-    .uSavedCR2          RTGCPTR_RES 1
-    .uPrevVector        RTGCPTR_RES 1
+    .offTRPMCPU         resd 1
     .fDisableMonitoring resb 1
     .fSafeToDropGuestIDTMonitoring resb 1
-%if GC_ARCH_BITS == 32
     .abPadding1         resb 6
-%else
-    .abPadding1         resb 14
-%endif
     .aIdt               resd 512
     .au32IdtPatched     resd 8
     .aTmpTrapHandlers   RTRCPTR_RES 256
@@ -79,6 +67,19 @@ struc TRPM
     .paStatForwardedIRQR0  RTR0PTR_RES 1
     .paStatForwardedIRQRC  RTRCPTR_RES 1
 %endif
+endstruc
+
+struc TRPMCPU
+    .offVM              resd 1
+    .uActiveVector      resd 1
+    .enmActiveType      resd 1
+    .uActiveErrorCode   RTGCPTR_RES 1
+    .uActiveCR2         RTGCPTR_RES 1
+    .uSavedVector       RTGCPTR_RES 1
+    .enmSavedType       resd 1
+    .uSavedErrorCode    RTGCPTR_RES 1
+    .uSavedCR2          RTGCPTR_RES 1
+    .uPrevVector        RTGCPTR_RES 1
 endstruc
 
 struc VBOXTSS

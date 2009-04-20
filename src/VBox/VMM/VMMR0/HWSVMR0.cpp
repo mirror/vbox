@@ -426,7 +426,7 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, SVM_VMCB *pVMCB, CP
     }
 
     /* When external interrupts are pending, we should exit the VM when IF is set. */
-    if (    !TRPMHasTrap(pVM)
+    if (    !TRPMHasTrap(pVCpu)
         &&  VM_FF_ISPENDING(pVM, (VM_FF_INTERRUPT_APIC|VM_FF_INTERRUPT_PIC)))
     {
         if (    !(pCtx->eflags.u32 & X86_EFL_IF)
@@ -453,7 +453,7 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, SVM_VMCB *pVMCB, CP
             Log(("Dispatch interrupt: u8Interrupt=%x (%d) rc=%Rrc\n", u8Interrupt, u8Interrupt, rc));
             if (RT_SUCCESS(rc))
             {
-                rc = TRPMAssertTrap(pVM, u8Interrupt, TRPM_HARDWARE_INT);
+                rc = TRPMAssertTrap(pVCpu, u8Interrupt, TRPM_HARDWARE_INT);
                 AssertRC(rc);
             }
             else
@@ -467,17 +467,17 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, SVM_VMCB *pVMCB, CP
     }
 
 #ifdef VBOX_STRICT
-    if (TRPMHasTrap(pVM))
+    if (TRPMHasTrap(pVCpu))
     {
         uint8_t     u8Vector;
-        rc = TRPMQueryTrapAll(pVM, &u8Vector, 0, 0, 0);
+        rc = TRPMQueryTrapAll(pVCpu, &u8Vector, 0, 0, 0);
         AssertRC(rc);
     }
 #endif
 
     if (    pCtx->eflags.u32 & X86_EFL_IF
         && (!VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS))
-        && TRPMHasTrap(pVM)
+        && TRPMHasTrap(pVCpu)
        )
     {
         uint8_t     u8Vector;
@@ -489,13 +489,13 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, SVM_VMCB *pVMCB, CP
         Event.au64[0] = 0;
 
         /* If a new event is pending, then dispatch it now. */
-        rc = TRPMQueryTrapAll(pVM, &u8Vector, &enmType, &u32ErrorCode, 0);
+        rc = TRPMQueryTrapAll(pVCpu, &u8Vector, &enmType, &u32ErrorCode, 0);
         AssertRC(rc);
         Assert(pCtx->eflags.Bits.u1IF == 1 || enmType == TRPM_TRAP);
         Assert(enmType != TRPM_SOFTWARE_INT);
 
         /* Clear the pending trap. */
-        rc = TRPMResetTrap(pVM);
+        rc = TRPMResetTrap(pVCpu);
         AssertRC(rc);
 
         Event.n.u8Vector = u8Vector;
@@ -1407,9 +1407,9 @@ ResumeExecution:
 
             Log2(("Page fault at %RGv cr2=%RGv error code %x\n", (RTGCPTR)pCtx->rip, uFaultAddress, errCode));
             /* Exit qualification contains the linear address of the page fault. */
-            TRPMAssertTrap(pVM, X86_XCPT_PF, TRPM_TRAP);
-            TRPMSetErrorCode(pVM, errCode);
-            TRPMSetFaultAddress(pVM, uFaultAddress);
+            TRPMAssertTrap(pVCpu, X86_XCPT_PF, TRPM_TRAP);
+            TRPMSetErrorCode(pVCpu, errCode);
+            TRPMSetFaultAddress(pVCpu, uFaultAddress);
 
             /* Forward it to our trap handler first, in case our shadow pages are out of sync. */
             rc = PGMTrap0eHandler(pVCpu, errCode, CPUMCTX2CORE(pCtx), (RTGCPTR)uFaultAddress);
@@ -1419,7 +1419,7 @@ ResumeExecution:
                 Log2(("Shadow page fault at %RGv cr2=%RGv error code %x\n", (RTGCPTR)pCtx->rip, uFaultAddress, errCode));
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitShadowPF);
 
-                TRPMResetTrap(pVM);
+                TRPMResetTrap(pVCpu);
 
                 STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
                 goto ResumeExecution;
@@ -1432,9 +1432,9 @@ ResumeExecution:
                 Log2(("Forward page fault to the guest\n"));
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestPF);
                 /* The error code might have been changed. */
-                errCode = TRPMGetErrorCode(pVM);
+                errCode = TRPMGetErrorCode(pVCpu);
 
-                TRPMResetTrap(pVM);
+                TRPMResetTrap(pVCpu);
 
                 /* Now we must update CR2. */
                 pCtx->cr2 = uFaultAddress;
@@ -1456,7 +1456,7 @@ ResumeExecution:
                 LogFlow(("PGMTrap0eHandler failed with %d\n", rc));
 #endif
             /* Need to go back to the recompiler to emulate the instruction. */
-            TRPMResetTrap(pVM);
+            TRPMResetTrap(pVCpu);
             break;
         }
 
@@ -1545,9 +1545,9 @@ ResumeExecution:
         Assert(pVM->hwaccm.s.fNestedPaging);
         Log(("Nested page fault at %RGv cr2=%RGp error code %x\n", (RTGCPTR)pCtx->rip, uFaultAddress, errCode));
         /* Exit qualification contains the linear address of the page fault. */
-        TRPMAssertTrap(pVM, X86_XCPT_PF, TRPM_TRAP);
-        TRPMSetErrorCode(pVM, errCode);
-        TRPMSetFaultAddress(pVM, uFaultAddress);
+        TRPMAssertTrap(pVCpu, X86_XCPT_PF, TRPM_TRAP);
+        TRPMSetErrorCode(pVCpu, errCode);
+        TRPMSetFaultAddress(pVCpu, uFaultAddress);
 
         /* Handle the pagefault trap for the nested shadow table. */
 #if HC_ARCH_BITS == 32
@@ -1564,7 +1564,7 @@ ResumeExecution:
             Log2(("Shadow page fault at %RGv cr2=%RGp error code %x\n", (RTGCPTR)pCtx->rip, uFaultAddress, errCode));
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitShadowPF);
 
-            TRPMResetTrap(pVM);
+            TRPMResetTrap(pVCpu);
 
             STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
             goto ResumeExecution;
@@ -1575,7 +1575,7 @@ ResumeExecution:
             LogFlow(("PGMTrap0eHandlerNestedPaging failed with %d\n", rc));
 #endif
         /* Need to go back to the recompiler to emulate the instruction. */
-        TRPMResetTrap(pVM);
+        TRPMResetTrap(pVCpu);
         break;
     }
 

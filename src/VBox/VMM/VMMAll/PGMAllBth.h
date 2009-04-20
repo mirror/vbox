@@ -100,7 +100,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
     if (uErr & X86_TRAP_PF_ID)
     {
         uErr &= ~X86_TRAP_PF_ID;
-        TRPMSetErrorCode(pVM, uErr);
+        TRPMSetErrorCode(pVCpu, uErr);
     }
 #  endif
 
@@ -139,7 +139,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
         LogFlow(("Trap0eHandler: guest iPDSrc=%u not present CR3=%RGp\n", iPDSrc, CPUMGetGuestCR3(pVCpu) & X86_CR3_PAGE_MASK));
 #    endif
         STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2GuestTrap; });
-        TRPMSetErrorCode(pVM, uErr);
+        TRPMSetErrorCode(pVCpu, uErr);
         return VINF_EM_RAW_GUEST_TRAP;
     }
 #   endif
@@ -328,7 +328,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                 /*
                  * Pretend we're not here and let the guest handle the trap.
                  */
-                TRPMSetErrorCode(pVM, uErr & ~X86_TRAP_PF_P);
+                TRPMSetErrorCode(pVCpu, uErr & ~X86_TRAP_PF_P);
                 STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eGuestPFMapping);
                 LogFlow(("PGM: Mapping access -> route trap to recompiler!\n"));
                 STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeMapping, a);
@@ -2200,7 +2200,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
              * See the 2nd case above as well.
              */
             if (pPdeSrc->n.u1Present && pPteSrc->n.u1Present)
-                TRPMSetErrorCode(pVM, uErr | X86_TRAP_PF_P); /* page-level protection violation */
+                TRPMSetErrorCode(pVCpu, uErr | X86_TRAP_PF_P); /* page-level protection violation */
 
             STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyBitTracking), a);
             return VINF_EM_RAW_GUEST_TRAP;
@@ -2327,7 +2327,7 @@ l_UpperLevelPageFault:
         /* Check the present bit as the shadow tables can cause different error codes by being out of sync. */
         if (pPdeSrc->b.u1Size && fBigPagesSupported)
         {
-            TRPMSetErrorCode(pVM, uErr | X86_TRAP_PF_P); /* page-level protection violation */
+            TRPMSetErrorCode(pVCpu, uErr | X86_TRAP_PF_P); /* page-level protection violation */
         }
         else
         {
@@ -2341,7 +2341,7 @@ l_UpperLevelPageFault:
                 PGSTPTE         pPteSrc = &pPTSrc->a[(GCPtrPage >> GST_PT_SHIFT) & GST_PT_MASK];
                 const GSTPTE    PteSrc = *pPteSrc;
                 if (pPteSrc->n.u1Present)
-                    TRPMSetErrorCode(pVM, uErr | X86_TRAP_PF_P); /* page-level protection violation */
+                    TRPMSetErrorCode(pVCpu, uErr | X86_TRAP_PF_P); /* page-level protection violation */
             }
             AssertRC(rc);
         }

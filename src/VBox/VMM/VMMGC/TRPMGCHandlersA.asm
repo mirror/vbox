@@ -36,7 +36,8 @@
 ;*******************************************************************************
 extern IMPNAME(g_CPUM)                  ; These IMPNAME(g_*) symbols resolve to the import table
 extern IMPNAME(g_TRPM)                  ; where there is a pointer to the real symbol. PE imports
-extern IMPNAME(g_VM)                    ; are a bit confusing at first... :-)
+extern IMPNAME(g_TRPMCPU)               ; are a bit confusing at first... :-)
+extern IMPNAME(g_VM)                    
 extern NAME(CPUMGCRestoreInt)
 extern NAME(cpumHandleLazyFPUAsm)
 extern NAME(CPUMHyperSetCtxCore)
@@ -337,19 +338,19 @@ gt_SkipV86Entry:
     ;
     ; Store the information about the active trap/interrupt.
     ;
-    mov     eax, IMP(g_TRPM)
+    mov     eax, IMP(g_TRPMCPU)
     movzx   edx, byte [esp + 0h + ESPOFF]  ; vector number
-    mov     [eax + TRPM.uActiveVector], edx
+    mov     [eax + TRPMCPU.uActiveVector], edx
     mov     edx, [esp + 4h + ESPOFF]       ; error code
-    mov     [eax + TRPM.uActiveErrorCode], edx
-    mov     dword [eax + TRPM.enmActiveType], TRPM_TRAP
+    mov     [eax + TRPMCPU.uActiveErrorCode], edx
+    mov     dword [eax + TRPMCPU.enmActiveType], TRPM_TRAP
     mov     edx, cr2                       ;; @todo Check how expensive cr2 reads are!
-    mov     dword [eax + TRPM.uActiveCR2], edx
+    mov     dword [eax + TRPMCPU.uActiveCR2], edx
 
 %if GC_ARCH_BITS == 64
     ; zero out the high dword
-    mov     dword [eax + TRPM.uActiveErrorCode + 4], 0
-    mov     dword [eax + TRPM.uActiveCR2 + 4], 0
+    mov     dword [eax + TRPMCPU.uActiveErrorCode + 4], 0
+    mov     dword [eax + TRPMCPU.uActiveCR2 + 4], 0
 %endif
 
     ;
@@ -388,7 +389,7 @@ gt_NotHyperVisor:
     ;
 gt_HaveHandler:
     push    esp                         ; Param 2 - CPUMCTXCORE pointer.
-    push    dword IMP(g_TRPM)           ; Param 1 - Pointer to TRPM
+    push    dword IMP(g_TRPMCPU)        ; Param 1 - Pointer to TRPMCPU
     call    eax
     add     esp, byte 8                 ; cleanup stack (cdecl)
     or      eax, eax
@@ -536,7 +537,7 @@ gt_V86Return:
     ;
     ; Trap in Hypervisor, try to handle it.
     ;
-    ;   (eax = pTRPM)
+    ;   (eax = pTRPMCPU)
     ;
 ALIGNCODE(16)
 gt_InHypervisor:
@@ -556,7 +557,8 @@ gt_InHypervisor:
     xchg    eax, esi                    ; restore pTRPM
 
     ; check for temporary handler.
-    movzx   ebx, byte [eax + TRPM.uActiveVector]
+    movzx   ebx, byte [eax + TRPMCPU.uActiveVector]
+    mov     eax, IMP(g_TRPM)
     xor     ecx, ecx
     xchg    ecx, [eax + TRPM.aTmpTrapHandlers + ebx * 4]    ; ecx = Temp handler pointer or 0
     or      ecx, ecx
@@ -825,18 +827,18 @@ ti_SkipV86Entry:
     ;
     ; Store the information about the active trap/interrupt.
     ;
-    mov     eax, IMP(g_TRPM)
+    mov     eax, IMP(g_TRPMCPU)
     movzx   edx, byte [esp + 0h + ESPOFF]  ; vector number
-    mov     [eax + TRPM.uActiveVector], edx
+    mov     [eax + TRPMCPU.uActiveVector], edx
     xor     edx, edx
-    mov     dword [eax + TRPM.enmActiveType], TRPM_HARDWARE_INT
+    mov     dword [eax + TRPMCPU.enmActiveType], TRPM_HARDWARE_INT
     dec     edx
-    mov     [eax + TRPM.uActiveErrorCode], edx
-    mov     [eax + TRPM.uActiveCR2], edx
+    mov     [eax + TRPMCPU.uActiveErrorCode], edx
+    mov     [eax + TRPMCPU.uActiveCR2], edx
 %if GC_ARCH_BITS == 64
     ; zero out the high dword
-    mov     dword [eax + TRPM.uActiveErrorCode + 4], 0
-    mov     dword [eax + TRPM.uActiveCR2 + 4], 0
+    mov     dword [eax + TRPMCPU.uActiveErrorCode + 4], 0
+    mov     dword [eax + TRPMCPU.uActiveCR2 + 4], 0
 %endif
 
     ;
@@ -872,11 +874,11 @@ gi_NotHyperVisor:
     ;      there is no longer any CPUMCTXCORE around and esp points to vector number!
     ;
     ; Reset TRPM state
-    mov     eax, IMP(g_TRPM)
+    mov     eax, IMP(g_TRPMCPU)
     xor     edx, edx
     dec     edx                         ; edx = 0ffffffffh
-    xchg    [eax + TRPM.uActiveVector], edx
-    mov     [eax + TRPM.uPrevVector], edx
+    xchg    [eax + TRPMCPU.uActiveVector], edx
+    mov     [eax + TRPMCPU.uPrevVector], edx
 
     ; Enable WP
     mov     eax, cr0                    ;; @todo try elimiate this read.
@@ -924,8 +926,8 @@ gi_HyperVisor:
     ; We've returned!
     ;
     ; Reset TRPM state - don't record this.
-    mov     eax, IMP(g_TRPM)
-    mov     dword [eax + TRPM.uActiveVector], 0ffffffffh
+    mov     eax, IMP(g_TRPMCPU)
+    mov     dword [eax + TRPMCPU.uActiveVector], 0ffffffffh
 
     ;
     ; Restore the hypervisor context and return.

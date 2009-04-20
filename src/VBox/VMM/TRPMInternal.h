@@ -73,6 +73,19 @@ __BEGIN_DECLS
  */
 #define TRPM2VM(pTRPM)          ( (PVM)((char*)pTRPM - pTRPM->offVM) )
 
+/**
+ * Converts a TRPMCPU pointer into a VM pointer.
+ * @returns Pointer to the VM structure the TRPMCPU is part of.
+ * @param   pTRPM   Pointer to TRPMCPU instance data.
+ */
+#define TRPMCPU2VM(pTrpmCpu)    ( (PVM)((char*)pTrpmCpu - pTrpmCpu->offVM) )
+
+/**
+ * Converts a TRPM pointer into a TRPMCPU pointer.
+ * @returns Pointer to the VM structure the TRPMCPU is part of.
+ * @param   pTRPM   Pointer to TRPMCPU instance data.
+ */
+#define TRPM2TRPMCPU(pTrpmCpu)     ( (PTRPMCPU)((char*)pTrpmCpu + pTrpmCpu->offTRPMCPU) )
 
 /**
  * TRPM Data (part of VM)
@@ -85,37 +98,9 @@ typedef struct TRPM
     /** Offset to the VM structure.
      * See TRPM2VM(). */
     RTINT                   offVM;
-
-    /** Active Interrupt or trap vector number.
-     * If not ~0U this indicates that we're currently processing
-     * a interrupt, trap, fault, abort, whatever which have arrived
-     * at that vector number.
-     */
-    RTUINT                  uActiveVector;
-
-    /** Active trap type. */
-    TRPMEVENT               enmActiveType;
-
-    /** Errorcode for the active interrupt/trap. */
-    RTGCUINT                uActiveErrorCode; /**< @todo don't use RTGCUINT */
-
-    /** CR2 at the time of the active exception. */
-    RTGCUINTPTR             uActiveCR2;
-
-    /** Saved trap vector number. */
-    RTGCUINT                uSavedVector; /**< @todo don't use RTGCUINT */
-
-    /** Saved trap type. */
-    TRPMEVENT               enmSavedType;
-
-    /** Saved errorcode. */
-    RTGCUINT                uSavedErrorCode;
-
-    /** Saved cr2. */
-    RTGCUINTPTR             uSavedCR2;
-
-    /** Previous trap vector # - for debugging. */
-    RTGCUINT                uPrevVector;
+    /** Offset to the TRPMCPU structure.
+     * See TRPM2TRPMCPU(). */
+    RTINT                   offTRPMCPU;
 
     /** IDT monitoring and sync flag (HWACC). */
     bool                    fDisableMonitoring; /** @todo r=bird: bool and 7 byte achPadding1. */
@@ -135,11 +120,7 @@ typedef struct TRPM
     bool                    fSafeToDropGuestIDTMonitoring;
 
     /** Padding to get the IDTs at a 16 byte alignement. */
-#if GC_ARCH_BITS == 32
     uint8_t                 abPadding1[6];
-#else
-    uint8_t                 abPadding1[14];
-#endif
     /** IDTs. Aligned at 16 byte offset for speed. */
     VBOXIDTE                aIdt[256];
 
@@ -189,10 +170,53 @@ typedef struct TRPM
     RCPTRTYPE(PSTAMCOUNTER) paStatForwardedIRQRC;
 #endif
 } TRPM;
-#pragma pack()
 
 /** Pointer to TRPM Data. */
 typedef TRPM *PTRPM;
+
+
+typedef struct TRPMCPU
+{
+    /** Offset to the VM structure.
+     * See TRPMCPU2VM(). */
+    RTINT                   offVM;
+    /** Active Interrupt or trap vector number.
+     * If not ~0U this indicates that we're currently processing
+     * a interrupt, trap, fault, abort, whatever which have arrived
+     * at that vector number.
+     */
+    RTUINT                  uActiveVector;
+
+    /** Active trap type. */
+    TRPMEVENT               enmActiveType;
+
+    /** Errorcode for the active interrupt/trap. */
+    RTGCUINT                uActiveErrorCode; /**< @todo don't use RTGCUINT */
+
+    /** CR2 at the time of the active exception. */
+    RTGCUINTPTR             uActiveCR2;
+
+    /** Saved trap vector number. */
+    RTGCUINT                uSavedVector; /**< @todo don't use RTGCUINT */
+
+    /** Saved trap type. */
+    TRPMEVENT               enmSavedType;
+
+    /** Saved errorcode. */
+    RTGCUINT                uSavedErrorCode;
+
+    /** Saved cr2. */
+    RTGCUINTPTR             uSavedCR2;
+
+    /** Previous trap vector # - for debugging. */
+    RTGCUINT                uPrevVector;
+} TRPMCPU;
+
+/** Pointer to TRPMCPU Data. */
+typedef TRPMCPU *PTRPMCPU;
+
+#pragma pack()
+
 
 VMMRCDECL(int) trpmRCGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
 VMMRCDECL(int) trpmRCShadowIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
