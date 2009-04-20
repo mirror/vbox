@@ -300,17 +300,6 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
         AssertRCReturn(rc, rc);
     }
 
-    /** @cfgm{RamPreAlloc, boolean, false}
-     * Indicates whether the base RAM should all be allocated before starting
-     * the VM (default), or if it should be allocated when first written to.
-     */
-    bool fPreAlloc;
-    rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "RamPreAlloc", &fPreAlloc);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        fPreAlloc = false;
-    else
-        AssertMsgRCReturn(rc, ("Configuration error: Failed to query integer \"RamPreAlloc\", rc=%Rrc.\n", rc), rc);
-
     /** @cfgm{RamSize, uint64_t, 0, 16TB, 0}
      * Specifies the size of the base RAM that is to be set up during
      * VM initialization.
@@ -341,9 +330,9 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
                           ("Configuration error: \"RamHoleSize\"=%#RX32 is misaligned.\n", cbRamHole), VERR_OUT_OF_RANGE);
     uint64_t const offRamHole = _4G - cbRamHole;
     if (cbRam < offRamHole)
-        Log(("MM: %RU64 bytes of RAM%s\n", cbRam, fPreAlloc ? " (PreAlloc)" : ""));
+        Log(("MM: %RU64 bytes of RAM\n", cbRam));
     else
-        Log(("MM: %RU64 bytes of RAM%s with a hole at %RU64 up to 4GB.\n", cbRam, fPreAlloc ? " (PreAlloc)" : "", offRamHole));
+        Log(("MM: %RU64 bytes of RAM with a hole at %RU64 up to 4GB.\n", cbRam, offRamHole));
 
     /** @cfgm{MM/Policy, string, no overcommitment}
      * Specifies the policy to use when reserving memory for this VM. The recognized
