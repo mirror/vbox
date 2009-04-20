@@ -39,10 +39,12 @@ if [ -n "$INSTALL_DIR" ]; then
     VBOXMANAGE="$INSTALL_DIR/VBoxManage"
     BUILDVBOXDRV="$INSTALL_DIR/src/vboxdrv/build_in_tmp"
     BUILDVBOXNETFLT="$INSTALL_DIR/src/vboxnetflt/build_in_tmp"
+    BUILDVBOXNETADP="$INSTALL_DIR/src/vboxnetadp/build_in_tmp"
 else
     VBOXMANAGE="/usr/lib/%PACKAGE%/VBoxManage"
     BUILDVBOXDRV="/usr/share/%PACKAGE%/src/vboxdrv/build_in_tmp"
     BUILDVBOXNETFLT="/usr/share/%PACKAGE%/src/vboxnetflt/build_in_tmp"
+    BUILDVBOXNETADP="/usr/share/%PACKAGE%/src/vboxnetadp/build_in_tmp"
 fi
 
 if [ -n "$NOLSB" ]; then
@@ -181,6 +183,7 @@ start()
     fi
     # ensure permissions
     if ! chown :$GROUPNAME $DEVICE 2>/dev/null; then
+        rmmod vboxnetadp 2>/dev/null
         rmmod vboxnetflt 2>/dev/null
         rmmod vboxdrv 2>/dev/null
         failure "Cannot change owner $GROUPNAME for device $DEVICE"
@@ -188,12 +191,20 @@ start()
     if ! modprobe vboxnetflt > /dev/null 2>&1; then
         failure "modprobe vboxnetflt failed. Please use 'dmesg' to find out why"
     fi
+    if ! modprobe vboxnetadp > /dev/null 2>&1; then
+        failure "modprobe vboxnetadp failed. Please use 'dmesg' to find out why"
+    fi
     succ_msg
 }
 
 stop()
 {
     begin_msg "Stopping VirtualBox kernel module"
+    if running vboxnetadp; then
+        if ! rmmod vboxnetadp 2>/dev/null; then
+            failure "Cannot unload module vboxnetadp"
+        fi
+    fi
     if running vboxdrv; then
         if running vboxnetflt; then
             if ! rmmod vboxnetflt 2>/dev/null; then
@@ -260,6 +271,11 @@ stop_vms()
 setup()
 {
     stop
+    if find /lib/modules/`uname -r` -name "vboxnetadp\.*" 2>/dev/null|grep -q vboxnetadp; then
+        begin_msg "Removing old VirtualBox netadp kernel module"
+        find /lib/modules/`uname -r` -name "vboxnetadp\.*" 2>/dev/null|xargs rm -f 2>/dev/null
+        succ_msg
+    fi  
     if find /lib/modules/`uname -r` -name "vboxnetflt\.*" 2>/dev/null|grep -q vboxnetflt; then
         begin_msg "Removing old VirtualBox netflt kernel module"
         find /lib/modules/`uname -r` -name "vboxnetflt\.*" 2>/dev/null|xargs rm -f 2>/dev/null
@@ -281,6 +297,11 @@ setup()
         --no-print-directory install >> $LOG 2>&1; then
         failure "Look at $LOG to find out what went wrong"
     fi
+    if ! $BUILDVBOXNETADP \
+        --use-module-symvers /tmp/vboxdrv-Module.symvers \
+        --no-print-directory install >> $LOG 2>&1; then
+        failure "Look at $LOG to find out what went wrong"
+    fi
     rm -f /etc/vbox/module_not_compiled
     succ_msg
     start
@@ -290,7 +311,11 @@ dmnstatus()
 {
     if running vboxdrv; then
         if running vboxnetflt; then
-            echo "VirtualBox kernel modules (vboxdrv and vboxnetflt) are loaded."
+            if running vboxnetadp; then
+                echo "VirtualBox kernel modules (vboxdrv, vboxnetflt and vboxnetadp) are loaded."
+            else
+                echo "VirtualBox kernel modules (vboxdrv and vboxnetflt) are loaded."
+            fi
         else
             echo "VirtualBox kernel module is loaded."
         fi
