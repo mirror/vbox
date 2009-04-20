@@ -367,30 +367,33 @@ ifdef VBOX_ONLY_SDK
 
  VBOXWEB_OTHERS               += \
 	$(VBOXWEB_GLUE_JAVA_TMP) \
-	$(VBOXWEB_GLUE_PYTHON)   \
-	$(VBOXWEB_WS_PYTHON)     \
-        $(VBOXWEB_WS_PERL)       \
+	$(VBOXWEB_GLUE_PYTHON) \
+	$(VBOXWEB_WS_PYTHON) \
+        $(VBOXWEB_WS_PERL) \
 	$(VBOXWEB_PYTHONWSSAMPLE)\
-	$(VBOXWEB_SHELLCOMMON)   \
-	$(VBOXWEB_JAXWSSAMPLE)   \
-	$(VBOXWEB_METRICSAMPLE)  \
-	$(VBOXWEB_JAVA15_JAR)    \
+	$(VBOXWEB_SHELLCOMMON) \
+	$(VBOXWEB_JAXWSSAMPLE) \
+	$(VBOXWEB_METRICSAMPLE) \
+	$(VBOXWEB_JAVA15_JAR) \
 	$(VBOXWEB_JAVA16_JAR)
 
-VBOXWEB_INSTALLS = vboxwebinst
+ #
+ # Install sample code.
+ #
+ INSTALLS += vboxwebinst
+ vboxwebinst_INST = $(INST_SDK)bindings/webservice/
+ vboxwebinst_MODE = a+rx,u+w
+ vboxwebinst_SOURCES = \
+      samples/java/axis/clienttest.java=>java/axis/samples/clienttest.java \
+      samples/java/jax-ws/Makefile.glue=>java/jax-ws/src/Makefile \
+      samples/java/jax-ws/Makefile=>java/jax-ws/samples/Makefile \
+      samples/perl/clienttest.pl=>perl/samples/clienttest.pl \
+      samples/python/Makefile=>python/samples/Makefile \
+      samples/python/Makefile.glue=>python/lib/Makefile \
+      $(PATH_ROOT)/src/VBox/Frontends/VBoxShell/ws/vboxshell.py=>python/samples/vboxshell.py \
+      $(PATH_ROOT)/src/VBox/Frontends/VBoxShell/shellcommon.py=>python/samples/shellcommon.py
 
-vboxwebinst_INST = bin/sdk/bindings/webservice/
-vboxwebinst_MODE = a+rx,u+w
-vboxwebinst_SOURCES =                                                               \
-     samples/java/axis/clienttest.java=>java/axis/samples/clienttest.java           \
-     samples/java/jax-ws/Makefile.glue=>java/jax-ws/src/Makefile                    \
-     samples/java/jax-ws/Makefile=>java/jax-ws/samples/Makefile                     \
-     samples/perl/clienttest.pl=>perl/samples/clienttest.pl                         \
-     samples/python/Makefile=>python/samples/Makefile                               \
-     samples/python/Makefile.glue=>python/lib/Makefile                              \
-     $(PATH_ROOT)/src/VBox/Frontends/VBoxShell/ws/vboxshell.py=>python/samples/vboxshell.py  \
-     $(PATH_ROOT)/src/VBox/Frontends/VBoxShell/shellcommon.py=>python/samples/shellcommon.py
-
+ #
  # filesplitter - build helper, splits up the java classes.
  #
  BLDPROGS += filesplitter
@@ -415,10 +418,9 @@ VBOXWEB_OTHERS += \
 #
 OTHERS += $(VBOXWEB_OTHERS)
 OTHER_CLEAN += \
-	$(VBOXWEB_OTHERS)  \
+	$(VBOXWEB_OTHERS) \
 	$(VBOXWEB_TYPEMAP) \
 	$(VBOXWEB_IDL_SRC)
-INSTALLS += $(VBOXWEB_INSTALLS)
 
 
 # generate platform-specific XIDL file from original XIDL file
@@ -586,8 +588,8 @@ $(VBOXWEB_METRICSAMPLE): $(VBOX_PATH_WEBSERVICE)/samples/java/jax-ws/metrictest.
 $(VBOXWEB_GLUE_JAVA_TMP): $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/glue-jaxws.xsl $(VBOX_PATH_WEBSERVICE)/websrv-shared.inc.xsl $$(TARGET_filesplitter) $(RECOMPILE_ON_MAKEFILE_CURRENT) | $$(dir $$@)
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(call MSG_GENERATE,,$@,$(VBOXWEB_IDL_SRC) using glue-jaxws.xsl)
-	$(QUIET)$(VBOX_XSLTPROC) $(VBOXWEB_XSLTPROC_VERBOSE)         \
-              --stringparam G_vboxApiSuffix $(VBOX_API_SUFFIX)       \
+	$(QUIET)$(VBOX_XSLTPROC) $(VBOXWEB_XSLTPROC_VERBOSE) \
+              --stringparam G_vboxApiSuffix $(VBOX_API_SUFFIX) \
               -o $@ $(VBOX_PATH_WEBSERVICE)/glue-jaxws.xsl $<
 	$(call MSG_GENERATE,,java client glue files in $(VBOXWEB_PATH_SDK_GLUE_JAVA))
 	$(RM) -R -f $(VBOXWEB_PATH_SDK_GLUE_JAVA)
