@@ -31,13 +31,10 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#ifdef LIBVIRT_VERSION
-# include <config.h>
-#endif /* LIBVIRT_VERSION */
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <dlfcn.h>
 
 #include "VBoxXPCOMCGlue.h"
@@ -63,9 +60,26 @@
 /** The dlopen handle for VBoxXPCOMC. */
 void *g_hVBoxXPCOMC = NULL;
 /** The last load error. */
+char g_szVBoxErrMsg[256];
+/** Pointer to the VBoxXPCOMC function table. */
 PCVBOXXPCOM g_pVBoxFuncs = NULL;
 /** Pointer to VBoxGetXPCOMCFunctions for the loaded VBoxXPCOMC so/dylib/dll. */
 PFNVBOXGETXPCOMCFUNCTIONS g_pfnGetFunctions = NULL;
+
+
+/**
+ * Wrapper for setting g_szVBoxErrMsg. Can be an empty stub.
+ *
+ * @param   pszFormat       The format string.
+ * @param   ...             The arguments.
+ */
+static void setErrMsg(const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    vsnprintf(g_szVBoxErrMsg, sizeof(g_szVBoxErrMsg), pszFormat, va);
+    va_end(va);
+}
 
 
 /**
@@ -73,31 +87,35 @@ PFNVBOXGETXPCOMCFUNCTIONS g_pfnGetFunctions = NULL;
  * the symbols we need.
  *
  * @returns 0 on success, -1 on failure.
- * @param   pszHome         The director where to try load VBoxXPCOMC from. Can be NULL.
- * @param   fSetAppHome     Whether to set the VBOX_APP_HOME env.var. or not (boolean).
+ * @param   pszHome         The director where to try load VBoxXPCOMC from. Can
+ *                          be NULL.
+ * @param   fSetAppHome     Whether to set the VBOX_APP_HOME env.var. or not
+ *                          (boolean).
  */
 static int tryLoadOne(const char *pszHome, int fSetAppHome)
 {
     size_t      cchHome = pszHome ? strlen(pszHome) : 0;
     size_t      cbBufNeeded;
-    char        szBuf[4096];
+    char        szName[4096];
     int         rc = -1;
 
     /*
      * Construct the full name.
      */
     cbBufNeeded = cchHome + sizeof("/" DYNLIB_NAME);
-    if (cbBufNeeded > sizeof(szBuf))
+    if (cbBufNeeded > sizeof(szName))
     {
+        setErrMsg("path buffer too small: %u bytes needed",
+                  (unsigned)cbBufNeeded);
         return -1;
     }
     if (cchHome)
     {
-        memcpy(szBuf, pszHome, cchHome);
-        szBuf[cchHome] = '/';
+        memcpy(szName, pszHome, cchHome);
+        szName[cchHome] = '/';
         cchHome++;
     }
-    memcpy(&szBuf[cchHome], DYNLIB_NAME, sizeof(DYNLIB_NAME));
+    memcpy(&szName[cchHome], DYNLIB_NAME, sizeof(DYNLIB_NAME));
 
     /*
      * Try load it by that name, setting the VBOX_APP_HOME first (for now).
@@ -110,7 +128,7 @@ static int tryLoadOne(const char *pszHome, int fSetAppHome)
         else
             unsetenv("VBOX_APP_HOME");
     }
-    g_hVBoxXPCOMC = dlopen(szBuf, RTLD_NOW | RTLD_LOCAL);
+    g_hVBoxXPCOMC = dlopen(szName, RTLD_NOW | RTLD_LOCAL);
     if (g_hVBoxXPCOMC)
     {
         PFNVBOXGETXPCOMCFUNCTIONS pfnGetFunctions;
@@ -122,15 +140,21 @@ static int tryLoadOne(const char *pszHome, int fSetAppHome)
             if (g_pVBoxFuncs)
             {
                 g_pfnGetFunctions = pfnGetFunctions;
-                rc = 0;
+                return 0;
             }
+
+            /* bail out */
+            setErrMsg("%.80s: pfnGetFunctions(%#x) failed",
+                      szName, VBOX_XPCOMC_VERSION);
         }
-        if (rc != 0)
-        {
-            dlclose(g_hVBoxXPCOMC);
-            g_hVBoxXPCOMC = NULL;
-        }
+        else
+            setErrMsg("dlsym(%.80s/%.32s): %.128s",
+                      szName, VBOX_GET_XPCOMC_FUNCTIONS_SYMBOL_NAME, dlerror());
+        dlclose(g_hVBoxXPCOMC);
+        g_hVBoxXPCOMC = NULL;
     }
+    else
+        setErrMsg("dlopen(%.80s): %.160s", szName, dlerror());
     return rc;
 }
 
@@ -203,5 +227,6 @@ void VBoxCGlueTerm(void)
     }
     g_pVBoxFuncs = NULL;
     g_pfnGetFunctions = NULL;
+    memset(g_szVBoxErrMsg, 0, sizeof(g_szVBoxErrMsg));
 }
 

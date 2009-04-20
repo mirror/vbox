@@ -320,7 +320,8 @@ int main(int argc, char **argv)
 
     if (VBoxCGlueInit() != 0)
     {
-        fprintf(stderr, "%s: FATAL: VBoxCGlueInit failed.\n", argv[0]);
+        fprintf(stderr, "%s: FATAL: VBoxCGlueInit failed: %s\n",
+                argv[0], g_szVBoxErrMsg);
         return EXIT_FAILURE;
     }
 
