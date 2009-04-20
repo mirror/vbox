@@ -491,6 +491,10 @@ void PerformanceCollector::unregisterBaseMetricsFor (const ComPtr <IUnknown> &aO
     BaseMetricList::iterator it = std::remove_if (
         m.baseMetrics.begin(), m.baseMetrics.end(), std::bind2nd (
             std::mem_fun (&pm::BaseMetric::associatedWith), aObject));
+    /* Delete the content of the list as well */
+    BaseMetricList::iterator it1 = it;
+    for (;it1 != m.baseMetrics.end(); ++it1)
+        delete *it1;
     m.baseMetrics.erase(it, m.baseMetrics.end());
     LogAleksey(("{%p} " LOG_FN_FMT ": after remove_if: m.baseMetrics.size()=%d\n", this, __PRETTY_FUNCTION__, m.baseMetrics.size()));
     //LogFlowThisFuncLeave();
@@ -507,6 +511,10 @@ void PerformanceCollector::unregisterMetricsFor (const ComPtr <IUnknown> &aObjec
     MetricList::iterator it = std::remove_if (
         m.metrics.begin(), m.metrics.end(), std::bind2nd (
             std::mem_fun (&pm::Metric::associatedWith), aObject));
+    /* Delete the content of the list as well */
+    MetricList::iterator it1 = it;
+    for (;it1 != m.metrics.end(); ++it1)
+        delete *it1;
     m.metrics.erase(it, m.metrics.end());
     //LogFlowThisFuncLeave();
 }
