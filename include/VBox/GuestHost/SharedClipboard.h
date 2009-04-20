@@ -64,6 +64,8 @@ struct _VBOXCLIPBOARDREQUEST
     /** The size of the X11 clipboard data written to the buffer (valid
      * during a request for the clipboard contents) */
     uint32_t *pcbActual;
+    /** Return code for the request processing code */
+    int rc;
     /** The clipboard context this request is associated with */
     VBOXCLIPBOARDCONTEXTX11 *pCtx;
 };
