@@ -58,7 +58,7 @@
 struct HardDisk::Task : public com::SupportErrorInfoBase
 {
     enum Operation { CreateBase, CreateDiff,
-                     Merge, Clone, Delete, Reset };
+                     Merge, Clone, Delete, Reset, Compact };
 
     HardDisk *that;
     VirtualBoxBaseProto::AutoCaller autoCaller;
@@ -103,12 +103,18 @@ struct HardDisk::Task : public com::SupportErrorInfoBase
         d.chain.reset (aChain);
     }
 
-    void setData (CloneChain *aSrcChain, CloneChain *aParentChain)
+    void setData (ImageChain *aSrcChain, ImageChain *aParentChain)
     {
         AssertReturnVoid (aSrcChain != NULL);
         AssertReturnVoid (aParentChain != NULL);
         d.source.reset (aSrcChain);
         d.parent.reset (aParentChain);
+    }
+
+    void setData (ImageChain *aImgChain)
+    {
+        AssertReturnVoid (aImgChain != NULL);
+        d.images.reset (aImgChain);
     }
 
     HRESULT startThread();
@@ -133,9 +139,9 @@ struct HardDisk::Task : public com::SupportErrorInfoBase
         /* Clone */
 
         /** Hard disks to open, in {parent,child} order */
-        std::auto_ptr <CloneChain> source;
+        std::auto_ptr <ImageChain> source;
         /** Hard disks which are parent of target, in {parent,child} order */
-        std::auto_ptr <CloneChain> parent;
+        std::auto_ptr <ImageChain> parent;
         /** The to-be parent hard disk object */
         ComObjPtr<HardDisk> parentDisk;
 
@@ -143,6 +149,11 @@ struct HardDisk::Task : public com::SupportErrorInfoBase
 
         /** Hard disks to merge, in {parent,child} order */
         std::auto_ptr <MergeChain> chain;
+
+        /* Compact */
+
+        /** Hard disks to open, in {parent,child} order */
+        std::auto_ptr <ImageChain> images;
     }
     d;
 
@@ -457,26 +468,40 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Helper class for clone operations.
+ * Helper class for image operations involving the entire parent chain.
  *
  * @note It is assumed that when modifying methods of this class are called,
  *       HardDisk::treeLock() is held in read mode.
  */
-class HardDisk::CloneChain : public HardDisk::List,
+class HardDisk::ImageChain : public HardDisk::List,
                              public com::SupportErrorInfoBase
 {
 public:
 
-    CloneChain () {}
+    ImageChain () {}
 
-    ~CloneChain()
+    ~ImageChain()
     {
-        for (iterator it = begin(); it != end(); ++ it)
+        List::const_iterator last = end();
+        last--;
+        for (List::const_iterator it = begin(); it != end(); ++ it)
         {
             AutoWriteLock alock (*it);
-            Assert ((*it)->m.state == MediaState_LockedRead);
-            if ((*it)->m.state == MediaState_LockedRead)
-                (*it)->UnlockRead (NULL);
+            if (it == last)
+            {
+                Assert (   (*it)->m.state == MediaState_LockedRead
+                        || (*it)->m.state == MediaState_LockedWrite);
+                if ((*it)->m.state == MediaState_LockedRead)
+                    (*it)->UnlockRead (NULL);
+                else if ((*it)->m.state == MediaState_LockedWrite)
+                    (*it)->UnlockWrite (NULL);
+            }
+            else
+            {
+                Assert ((*it)->m.state == MediaState_LockedRead);
+                if ((*it)->m.state == MediaState_LockedRead)
+                    (*it)->UnlockRead (NULL);
+            }
 
             (*it)->releaseCaller();
         }
@@ -511,6 +536,66 @@ public:
                 rc = (*it)->COMGETTER(State) (&mediaState);
                 CheckComRCReturnRC (rc);
                 Assert (mediaState == MediaState_LockedRead);
+
+                /* Note that we locked the medium already, so use the error
+                 * value to see if there was an accessibility failure */
+                Bstr error;
+                rc = (*it)->COMGETTER(LastAccessError) (error.asOutParam());
+                CheckComRCReturnRC (rc);
+
+                if (!error.isNull())
+                {
+                    Bstr loc;
+                    rc = (*it)->COMGETTER(Location) (loc.asOutParam());
+                    CheckComRCThrowRC (rc);
+
+                    /* collect multiple errors */
+                    eik.restore();
+
+                    /* be in sync with MediumBase::setStateError() */
+                    Assert (!error.isEmpty());
+                    mrc = setError (E_FAIL,
+                        tr ("Medium '%ls' is not accessible. %ls"),
+                        loc.raw(), error.raw());
+
+                    eik.fetch();
+                }
+            }
+        }
+
+        eik.restore();
+        CheckComRCReturnRC ((HRESULT) mrc);
+
+        return S_OK;
+    }
+
+    HRESULT lockImagesReadAndLastWrite ()
+    {
+        /* Lock all disks in the chain in {parent, child} order,
+         * and make sure they are accessible. */
+        /// @todo code duplication with SessionMachine::lockMedia, see below
+        ErrorInfoKeeper eik (true /* aIsNull */);
+        MultiResult mrc (S_OK);
+        List::const_iterator last = end();
+        last--;
+        for (List::const_iterator it = begin(); it != end(); ++ it)
+        {
+            HRESULT rc = S_OK;
+            MediaState_T mediaState;
+            if (it == last)
+                rc = (*it)->LockWrite(&mediaState);
+            else
+                rc = (*it)->LockRead(&mediaState);
+            CheckComRCReturnRC (rc);
+
+            if (mediaState == MediaState_Inaccessible)
+            {
+                rc = (*it)->COMGETTER(State) (&mediaState);
+                CheckComRCReturnRC (rc);
+                if (it == last)
+                    Assert (mediaState == MediaState_LockedWrite);
+                else
+                    Assert (mediaState == MediaState_LockedRead);
 
                 /* Note that we locked the medium already, so use the error
                  * value to see if there was an accessibility failure */
@@ -1488,7 +1573,7 @@ STDMETHODIMP HardDisk::CloneTo (IHardDisk *aTarget,
          * logically this belongs into HardDisk functionality. */
 
         /* Build the source chain and lock images in the proper order. */
-        std::auto_ptr <CloneChain> srcChain (new CloneChain ());
+        std::auto_ptr <ImageChain> srcChain (new ImageChain ());
 
         /* we walk the source tree */
         AutoReadLock srcTreeLock (this->treeLock());
@@ -1501,7 +1586,7 @@ STDMETHODIMP HardDisk::CloneTo (IHardDisk *aTarget,
         CheckComRCThrowRC (rc);
 
         /* Build the parent chain and lock images in the proper order. */
-        std::auto_ptr <CloneChain> parentChain (new CloneChain ());
+        std::auto_ptr <ImageChain> parentChain (new ImageChain ());
 
         /* we walk the future parent tree */
         AutoReadLock parentTreeLock;
@@ -1562,7 +1647,63 @@ STDMETHODIMP HardDisk::Compact (IProgress **aProgress)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    ReturnComNotImplemented();
+    AutoWriteLock alock (this);
+
+    ComObjPtr <Progress> progress;
+
+    HRESULT rc = S_OK;
+
+    try
+    {
+        /** @todo separate out creating/locking an image chain from
+         * SessionMachine::lockMedia and use it from here too.
+         * logically this belongs into HardDisk functionality. */
+
+        /* Build the image chain and lock images in the proper order. */
+        std::auto_ptr <ImageChain> imgChain (new ImageChain ());
+
+        /* we walk the image tree */
+        AutoReadLock srcTreeLock (this->treeLock());
+        for (HardDisk *hd = this; hd; hd = hd->mParent)
+        {
+            rc = imgChain->addImage(hd);
+            CheckComRCThrowRC (rc);
+        }
+        rc = imgChain->lockImagesReadAndLastWrite();
+        CheckComRCThrowRC (rc);
+
+        progress.createObject();
+        rc = progress->init (mVirtualBox, static_cast <IHardDisk *> (this),
+            BstrFmt (tr ("Compacting hard disk '%ls'"), m.locationFull.raw()),
+            TRUE /* aCancelable */);
+        CheckComRCThrowRC (rc);
+
+        /* setup task object and thread to carry out the operation
+         * asynchronously */
+
+        std::auto_ptr <Task> task (new Task (this, progress, Task::Compact));
+        AssertComRCThrowRC (task->autoCaller.rc());
+
+        task->setData (imgChain.release());
+
+        rc = task->startThread();
+        CheckComRCThrowRC (rc);
+
+        /* task is now owned (or already deleted) by taskThread() so release it */
+        task.release();
+    }
+    catch (HRESULT aRC)
+    {
+        rc = aRC;
+    }
+
+    if (SUCCEEDED (rc))
+    {
+        /* return progress to the caller */
+        progress.queryInterfaceTo (aProgress);
+    }
+
+    return rc;
 }
 
 STDMETHODIMP HardDisk::Reset (IProgress **aProgress)
@@ -4108,8 +4249,8 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
              * RTThreadCreate()) that we can start the job. */
             AutoMultiWriteLock3 thatLock (that, target, parent);
 
-            CloneChain *srcChain = task->d.source.get();
-            CloneChain *parentChain = task->d.parent.get();
+            ImageChain *srcChain = task->d.source.get();
+            ImageChain *parentChain = task->d.parent.get();
 
             uint64_t size = 0, logicalSize = 0;
 
@@ -4452,6 +4593,93 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
 
             /* Note that in sync mode, it's the caller's responsibility to
              * unlock the hard disk */
+
+            break;
+        }
+
+        ////////////////////////////////////////////////////////////////////////
+
+        case Task::Compact:
+        {
+            /* Lock all in {parent,child} order. The lock is also used as a
+             * signal from the task initiator (which releases it only after
+             * RTThreadCreate()) that we can start the job. */
+            AutoWriteLock thatLock (that);
+
+            ImageChain *imgChain = task->d.images.get();
+
+            try
+            {
+                PVBOXHDD hdd;
+                int vrc = VDCreate (that->mm.vdDiskIfaces, &hdd);
+                ComAssertRCThrow (vrc, E_FAIL);
+
+                try
+                {
+                    /* Open all hard disk images in the chain. */
+                    List::const_iterator last = imgChain->end();
+                    last--;
+                    for (List::const_iterator it = imgChain->begin();
+                         it != imgChain->end(); ++ it)
+                    {
+                        /* sanity check */
+                        if (it == last)
+                            Assert ((*it)->m.state == MediaState_LockedWrite);
+                        else
+                            Assert ((*it)->m.state == MediaState_LockedRead);
+
+                        /** Open all images but last in read-only mode. */
+                        vrc = VDOpen (hdd, Utf8Str ((*it)->mm.format),
+                                      Utf8Str ((*it)->m.locationFull),
+                                      (it == last) ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY,
+                                      (*it)->mm.vdDiskIfaces);
+                        if (RT_FAILURE (vrc))
+                        {
+                            throw setError (E_FAIL,
+                                tr ("Could not open the hard disk storage "
+                                    "unit '%s'%s"),
+                                Utf8Str ((*it)->m.locationFull).raw(),
+                                that->vdError (vrc).raw());
+                        }
+                    }
+
+                    /* unlock before the potentially lengthy operation */
+                    thatLock.leave();
+
+                    Assert (that->m.state == MediaState_LockedWrite);
+
+                    /* needed for vdProgressCallback */
+                    that->mm.vdProgress = task->progress;
+
+                    vrc = VDCompact (hdd, VD_LAST_IMAGE, that->mm.vdDiskIfaces);
+
+                    that->mm.vdProgress = NULL;
+
+                    if (RT_FAILURE (vrc))
+                    {
+                        if (vrc == VERR_NOT_SUPPORTED)
+                            throw setError(VBOX_E_NOT_SUPPORTED,
+                                           tr("Compacting is not supported yet for hard disk '%s'"),
+                                           Utf8Str (that->m.locationFull).raw());
+                        else if (vrc == VERR_NOT_IMPLEMENTED)
+                            throw setError(E_NOTIMPL,
+                                           tr("Compacting is not implemented, hard disk '%s'"),
+                                           Utf8Str (that->m.locationFull).raw());
+                        else
+                            throw setError (E_FAIL,
+                                tr ("Could not compact hard disk '%s'%s"),
+                                    Utf8Str (that->m.locationFull).raw(),
+                                    that->vdError (vrc).raw());
+                    }
+                }
+                catch (HRESULT aRC) { rc = aRC; }
+
+                VDDestroy (hdd);
+            }
+            catch (HRESULT aRC) { rc = aRC; }
+
+            /* Everything is explicitly unlocked when the task exits,
+             * as the task destruction also destroys the image chain. */
 
             break;
         }
