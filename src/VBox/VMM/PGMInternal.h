@@ -2168,8 +2168,10 @@ typedef struct PGM
     /** Offset of the PGMCPU structure relative to VMCPU. */
     RTINT                           offVCpuPGM;
 
-    /** @cfgm{PGM/RamPreAlloc, bool, false}
-     * Whether to preallocate all the guest RAM or not. */
+    /** @cfgm{RamPreAlloc, boolean, false}
+     * Indicates whether the base RAM should all be allocated before starting
+     * the VM (default), or if it should be allocated when first written to.
+     */
     bool                            fRamPreAlloc;
     /** Alignment padding. */
     bool                            afAlignment0[7];
@@ -2948,8 +2950,8 @@ int             pgmPoolMonitorMonitorCR3(PPGMPOOL pPool, uint16_t idxRoot, RTGCP
 int             pgmPoolMonitorUnmonitorCR3(PPGMPOOL pPool, uint16_t idxRoot);
 #endif
 
-int             pgmR3ExitShadowModeBeforePoolFlush(PVM pVM);
-int             pgmR3ReEnterShadowModeAfterPoolFlush(PVM pVM);
+int             pgmR3ExitShadowModeBeforePoolFlush(PVM pVM, PVMCPU pVCpu);
+int             pgmR3ReEnterShadowModeAfterPoolFlush(PVM pVM, PVMCPU pVCpu);
 
 void            pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE);
 void            pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, unsigned iOldPDE, bool fDeactivateCR3);
@@ -3220,7 +3222,7 @@ DECLINLINE(int) pgmR0DynMapHCPageInlined(PPGM pPGM, RTHCPHYS HCPhys, void **ppv)
 {
     PVM         pVM     = PGM2VM(pPGM);
     PPGMCPU     pPGMCPU = (PPGMCPU)((uint8_t *)VMMGetCpu(pVM) + pPGM->offVCpuPGM); /* very pretty ;-) */
-    PPGMMAPSET  pSet    = &pPGMCPU->AutoSet; 
+    PPGMMAPSET  pSet    = &pPGMCPU->AutoSet;
 
     STAM_PROFILE_START(&pPGMCPU->StatR0DynMapHCPageInl, a);
     Assert(!(HCPhys & PAGE_OFFSET_MASK));
@@ -3281,7 +3283,7 @@ DECLINLINE(int) pgmR0DynMapGCPageInlined(PPGM pPGM, RTGCPHYS GCPhys, void **ppv)
     /*
      * pgmR0DynMapHCPageInlined with out stats.
      */
-    PPGMMAPSET pSet = &pPGMCPU->AutoSet; 
+    PPGMMAPSET pSet = &pPGMCPU->AutoSet;
     Assert(!(HCPhys & PAGE_OFFSET_MASK));
     Assert(pSet->cEntries <= RT_ELEMENTS(pSet->aEntries));
 
