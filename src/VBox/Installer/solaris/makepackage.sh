@@ -46,7 +46,8 @@ if [ -z "$4" ]; then
     exit 1
 fi
 
-VBOX_INSTALLED_DIR=$1
+PKG_BASE_DIR=$1
+VBOX_INSTALLED_DIR=$1/opt/VirtualBox
 VBOX_PKGFILE=$2.pkg
 VBOX_ARCHIVE=$2.tar.gz
 # VBOX_PKG_ARCH is currently unused.
@@ -94,8 +95,8 @@ symlink_fixup()
 }
 
 
-# prepare file list
-cd "$VBOX_INSTALLED_DIR"
+# Prepare file list
+cd "$PKG_BASE_DIR"
 echo 'i pkginfo=./vbox.pkginfo' > prototype
 echo 'i postinstall=./postinstall.sh' >> prototype
 echo 'i preremove=./preremove.sh' >> prototype
@@ -104,7 +105,8 @@ if test -f "./vbox.copyright"; then
     echo 'i copyright=./vbox.copyright' >> prototype
 fi
 
-# Relative hardlinks
+# Create relative hardlinks
+cd "$VBOX_INSTALLED_DIR"
 ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxManage
 ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxSDL
 ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/vboxwebsrv
@@ -121,49 +123,43 @@ if test -f $VBOX_INSTALLED_DIR/amd64/VBoxHeadless || test -f $VBOX_INSTALLED_DIR
     ln -fs ./VBoxHeadless $VBOX_INSTALLED_DIR/VBoxVRDP
 fi
 
-find . -print | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vbox.pkginfo|postinstall.sh|preremove.sh|ReadMe.txt|vbox.space|vbox.copyright|VirtualBoxKern' | pkgproto >> prototype
+# Exclude directories to not cause install-time conflicts with existing system directories
+cd "$PKG_BASE_DIR"
+find . ! -type d | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vbox.pkginfo|postinstall.sh|preremove.sh|ReadMe.txt|vbox.space|vbox.copyright|VirtualBoxKern' | pkgproto >> prototype
 
-# don't grok for the class files
-filelist_fixup prototype '$2 == "none"'                                                                 '$5 = "root"; $6 = "bin"'
-filelist_fixup prototype '$2 == "none"'                                                                 '$3 = "opt/VirtualBox/"$3"="$3'
-hardlink_fixup prototype '$2 == "none"'                                                                 '$3 = "opt/VirtualBox/"$3'
-symlink_fixup  prototype '$2 == "none"'                                                                 '$3 = "opt/VirtualBox/"$3'
+# fix up file permissions (owner/group)
+# don't grok for class-specific files (like sed, if any)
+filelist_fixup prototype '$2 == "none"'                                                                '$5 = "root"; $6 = "bin"'
 
-# install the kernel modules to the right place.
-filelist_fixup prototype '$3 == "opt/VirtualBox/i386/vboxdrv=i386/vboxdrv"'                             '$3 = "platform/i86pc/kernel/drv/vboxdrv=i386/vboxdrv"; $6 = "sys"'
-filelist_fixup prototype '$3 == "opt/VirtualBox/amd64/vboxdrv=amd64/vboxdrv"'                           '$3 = "platform/i86pc/kernel/drv/amd64/vboxdrv=amd64/vboxdrv"; $6 = "sys"'
+# HostDriver vboxdrv
+filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/vboxdrv"'                                   '$6 = "sys"'
+filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/amd64/vboxdrv"'                             '$6 = "sys"'
 
 # NetFilter vboxflt
-filelist_fixup prototype '$3 == "opt/VirtualBox/i386/vboxflt=i386/vboxflt"'                             '$3 = "platform/i86pc/kernel/drv/vboxflt=i386/vboxflt"; $6 = "sys"'
-filelist_fixup prototype '$3 == "opt/VirtualBox/amd64/vboxflt=amd64/vboxflt"'                           '$3 = "platform/i86pc/kernel/drv/amd64/vboxflt=amd64/vboxflt"; $6 = "sys"'
+filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/vboxflt"'                                   '$6 = "sys"'
+filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/amd64/vboxflt"'                             '$6 = "sys"'
 
 # NetAdapter vboxnet
-filelist_fixup prototype '$3 == "opt/VirtualBox/i386/vboxnet=i386/vboxnet"'                             '$3 = "platform/i86pc/kernel/drv/vboxnet=i386/vboxnet"; $6 = "sys"'
-filelist_fixup prototype '$3 == "opt/VirtualBox/amd64/vboxnet=amd64/vboxnet"'                           '$3 = "platform/i86pc/kernel/drv/amd64/vboxnet=amd64/vboxnet"; $6 = "sys"'
+filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/vboxnet"'                                   '$6 = "sys"'
+filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/amd64/vboxnet"'                             '$6 = "sys"'
 
-# USB vboxusbmon
-filelist_fixup prototype '$3 == "opt/VirtualBox/i386/vboxusbmon=i386/vboxusbmon"'                       '$3 = "platform/i86pc/kernel/drv/vboxusbmon=i386/vboxusbmon"; $6 = "sys"'
-filelist_fixup prototype '$3 == "opt/VirtualBox/amd64/vboxusbmon=amd64/vboxusbmon"'                     '$3 = "platform/i86pc/kernel/drv/amd64/vboxusbmon=amd64/vboxusbmon"; $6 = "sys"'
-
-# All the driver conf files
-filelist_fixup prototype '$3 == "opt/VirtualBox/vboxdrv.conf=vboxdrv.conf"'                             '$3 = "platform/i86pc/kernel/drv/vboxdrv.conf=vboxdrv.conf"'
-filelist_fixup prototype '$3 == "opt/VirtualBox/vboxflt.conf=vboxflt.conf"'                             '$3 = "platform/i86pc/kernel/drv/vboxflt.conf=vboxflt.conf"'
-filelist_fixup prototype '$3 == "opt/VirtualBox/vboxnet.conf=vboxnet.conf"'                             '$3 = "platform/i86pc/kernel/drv/vboxnet.conf=vboxnet.conf"'
-filelist_fixup prototype '$3 == "opt/VirtualBox/vboxusbmon.conf=vboxusbmon.conf"'                       '$3 = "platform/i86pc/kernel/drv/vboxusbmon.conf=vboxusbmon.conf"'
+# USBMonitor vboxusbmon
+filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/vboxusbmon"'                                '$6 = "sys"'
+filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/amd64/vboxusbmon"'                          '$6 = "sys"'
 
 # hardening requires some executables to be marked setuid.
 if test -n "$HARDENED"; then
     $VBOX_AWK 'NF == 6 \
-        && (    $3 == "opt/VirtualBox/amd64/VirtualBox=amd64/VirtualBox" \
-            ||  $3 == "opt/VirtualBox/amd64/VirtualBox3=amd64/VirtualBox3" \
-            ||  $3 == "opt/VirtualBox/amd64/VBoxHeadless=amd64/VBoxHeadless" \
-            ||  $3 == "opt/VirtualBox/amd64/VBoxSDL=amd64/VBoxSDL" \
-            ||  $3 == "opt/VirtualBox/amd64/VBoxBFE=amd64/VBoxBFE" \
-            ||  $3 == "opt/VirtualBox/i386/VirtualBox=i386/VirtualBox" \
-            ||  $3 == "opt/VirtualBox/i386/VirtualBox3=i386/VirtualBox3" \
-            ||  $3 == "opt/VirtualBox/i386/VBoxHeadless=i386/VBoxHeadless" \
-            ||  $3 == "opt/VirtualBox/i386/VBoxSDL=i386/VBoxSDL" \
-            ||  $3 == "opt/VirtualBox/i386/VBoxBFE=i386/VBoxBFE" \
+        && (    $3 == "opt/VirtualBox/amd64/VirtualBox" \
+            ||  $3 == "opt/VirtualBox/amd64/VirtualBox3" \
+            ||  $3 == "opt/VirtualBox/amd64/VBoxHeadless" \
+            ||  $3 == "opt/VirtualBox/amd64/VBoxSDL" \
+            ||  $3 == "opt/VirtualBox/amd64/VBoxBFE" \
+            ||  $3 == "opt/VirtualBox/i386/VirtualBox" \
+            ||  $3 == "opt/VirtualBox/i386/VirtualBox3" \
+            ||  $3 == "opt/VirtualBox/i386/VBoxHeadless" \
+            ||  $3 == "opt/VirtualBox/i386/VBoxSDL" \
+            ||  $3 == "opt/VirtualBox/i386/VBoxBFE" \
             ) \
        { $4 = "4755" } { print }' prototype > prototype2
     mv -f prototype2 prototype
@@ -171,41 +167,27 @@ fi
 
 # Other executables that need setuid root (hardened or otherwise)
 $VBOX_AWK 'NF == 6 \
-    && (    $3 == "opt/VirtualBox/amd64/VBoxUSBHelper=amd64/VBoxUSBHelper" \
-        ||  $3 == "opt/VirtualBox/i386/VBoxUSBHelper=i386/VBoxUSBHelper" \
-        ||  $3 == "opt/VirtualBox/amd64/VBoxNetAdpCtl=amd64/VBoxNetAdpCtl" \
-        ||  $3 == "opt/VirtualBox/i386/VBoxNetAdpCtl=i386/VBoxNetAdpCtl" \
-        ||  $3 == "opt/VirtualBox/amd64/VBoxNetDHCP=amd64/VBoxNetDHCP" \
-        ||  $3 == "opt/VirtualBox/i386/VBoxNetDHCP=i386/VBoxNetDHCP" \
+    && (    $3 == "opt/VirtualBox/amd64/VBoxUSBHelper" \
+        ||  $3 == "opt/VirtualBox/i386/VBoxUSBHelper" \
+        ||  $3 == "opt/VirtualBox/amd64/VBoxNetAdpCtl" \
+        ||  $3 == "opt/VirtualBox/i386/VBoxNetAdpCtl" \
+        ||  $3 == "opt/VirtualBox/amd64/VBoxNetDHCP" \
+        ||  $3 == "opt/VirtualBox/i386/VBoxNetDHCP" \
         ) \
    { $4 = "4755" } { print }' prototype > prototype2
 mv -f prototype2 prototype
-
-
-# desktop links and icons
-filelist_fixup prototype '$3 == "opt/VirtualBox/virtualbox.desktop=virtualbox.desktop"'                 '$3 = "usr/share/applications/virtualbox.desktop=virtualbox.desktop"'
-filelist_fixup prototype '$3 == "opt/VirtualBox/VBox.png=VBox.png"'                                     '$3 = "usr/share/pixmaps/VBox.png=VBox.png"'
-
-# zoneaccess SMF manifest
-filelist_fixup prototype '$3 == "opt/VirtualBox/virtualbox-zoneaccess.xml=virtualbox-zoneaccess.xml"'   '$3 = "var/svc/manifest/application/virtualbox/zoneaccess.xml=virtualbox-zoneaccess.xml"'
-
-# webservice SMF manifest
-filelist_fixup prototype '$3 == "opt/VirtualBox/virtualbox-webservice.xml=virtualbox-webservice.xml"'   '$3 = "var/svc/manifest/application/virtualbox/webservice.xml=virtualbox-webservice.xml"'
-
-# webservice SMF start/stop script
-filelist_fixup prototype '$3 == "opt/VirtualBox/smf-vboxwebsrv.sh=smf-vboxwebsrv.sh"'                   '$3 = "opt/VirtualBox/smf-vboxwebsrv=smf-vboxwebsrv.sh"'
 
 echo " --- start of prototype  ---"
 cat prototype
 echo " --- end of prototype --- "
 
-# explicitly set timestamp to shutup warning
+# Explicitly set timestamp to shutup warning
 VBOXPKG_TIMESTAMP=vbox`date '+%Y%m%d%H%M%S'`_r$VBOX_SVN_REV
 
-# create the package instance
+# Create the package instance
 pkgmk -p $VBOXPKG_TIMESTAMP -o -r .
 
-# translate into package datastream
+# Translate into package datastream
 pkgtrans -s -o /var/spool/pkg "`pwd`/$VBOX_PKGFILE" "$VBOX_PKGNAME"
 
 # $5 if exist would contain the path to the VBI package to include in the .tar.gz
