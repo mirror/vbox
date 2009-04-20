@@ -129,7 +129,7 @@ static RTSEMEVENTMULTI g_TimeSyncEvent = NIL_RTSEMEVENTMULTI;
 /** Process token. */
 static HANDLE g_hTokenProcess = NULL;
 /** Old token privileges. */
-static TOKEN_PRIVILEGES g_OldTokenPrivileges;
+static TOKEN_PRIVILEGES g_tkOldPrivileges;
 #endif
 
 
@@ -184,14 +184,14 @@ static DECLCALLBACK(int) VBoxServiceTimeSyncInit(void)
          */
         if (OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &g_hTokenProcess))
         {
-            TOKEN_PRIVILEGES Tp;
-            RT_ZERO(Tp);
-            tp.PrivilegeCount = 1;
-            tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-            if (LookupPrivilegeValue(NULL, SE_SYSTEMTIME_NAME, &tp.Privileges[0].Luid))
+            TOKEN_PRIVILEGES tkPriv;
+            RT_ZERO(tkPriv);
+            tkPriv.PrivilegeCount = 1;
+            tkPriv.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+            if (LookupPrivilegeValue(NULL, SE_SYSTEMTIME_NAME, &tkPriv.Privileges[0].Luid))
             {
-                DWORD cbRet = sizeof(g_OldTokenPrivileges);
-                if (!AdjustTokenPrivileges(g_hTokenProcess, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), &g_OldTokenPrivileges, &cbRet))
+                DWORD cbRet = sizeof(g_tkOldPrivileges);
+                if (!AdjustTokenPrivileges(g_hTokenProcess, FALSE, &tkPriv, sizeof(TOKEN_PRIVILEGES), &g_tkOldPrivileges, &cbRet))
                 {
                     DWORD dwErr = GetLastError();
                     rc = RTErrConvertFromWin32(dwErr);
@@ -377,7 +377,7 @@ static DECLCALLBACK(void) VBoxServiceTimeSyncTerm(void)
      */
     if (g_hTokenProcess)
     {
-        if (!AdjustTokenPrivileges(g_hTokenProcess, FALSE, &g_tpOld, sizeof(TOKEN_PRIVILEGES), NULL, NULL))
+        if (!AdjustTokenPrivileges(g_hTokenProcess, FALSE, &g_tkOldPrivileges, sizeof(TOKEN_PRIVILEGES), NULL, NULL))
         {
             DWORD dwErr = GetLastError();
             VBoxServiceError("Restoring token privileges (SE_SYSTEMTIME_NAME) failed with code %u!\n", dwErr);

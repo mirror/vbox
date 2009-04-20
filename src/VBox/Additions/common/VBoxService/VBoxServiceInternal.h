@@ -109,8 +109,8 @@ extern uint32_t g_DefaultInterval;
  *  dangling.
  *  @todo all this should be moved to -win.cpp and exposed via functions. */
 #ifdef RT_OS_WINDOWS
-extern DWORD                 g_vboxServiceStatusCode;   /** @todo g_rcWinService */
-extern SERVICE_STATUS_HANDLE g_vboxServiceStatusHandle; /** @todo g_hWinServiceStatus */
+extern DWORD                 g_rcWinService;
+extern SERVICE_STATUS_HANDLE g_hWinServiceStatus;
 extern SERVICE_TABLE_ENTRY const g_aServiceTable[];     /** @todo generate on the fly, see comment in main() from the enabled sub services. */
 #endif
 
@@ -118,8 +118,9 @@ extern int VBoxServiceSyntax(const char *pszFormat, ...);
 extern int VBoxServiceError(const char *pszFormat, ...);
 extern void VBoxServiceVerbose(int iLevel, const char *pszFormat, ...);
 extern int VBoxServiceArgUInt32(int argc, char **argv, const char *psz, int *pi, uint32_t *pu32, uint32_t u32Min, uint32_t u32Max);
+extern unsigned VBoxServiceGetStartedServices(void);
 extern int VBoxServiceStartServices(unsigned iMain);
-extern void VBoxServiceStopServices(void);
+extern int VBoxServiceStopServices(void);
 #ifdef RT_OS_WINDOWS
 extern int VBoxServiceWinInstall(void);
 extern int VBoxServiceWinUninstall(void);
