@@ -1217,8 +1217,8 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
  * @return  VBox status code.
  * @return  VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @param   pDisk           Pointer to HDD container.
- * @param   nImageFrom      Name of the image file to merge from.
- * @param   nImageTo        Name of the image file to merge to.
+ * @param   nImageFrom      Image number to merge from, counts from 0. 0 is always base image of container.
+ * @param   nImageTo        Image number to merge to, counts from 0. 0 is always base image of container.
  * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
  */
 VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
@@ -1260,6 +1260,25 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                          PVDINTERFACE pVDIfsOperation,
                          PVDINTERFACE pDstVDIfsImage,
                          PVDINTERFACE pDstVDIfsOperation);
+
+/**
+ * Optimizes the storage consumption of an image. Typically the unused blocks
+ * have to be wiped with zeroes to achieve a substantial reduced storage use.
+ * Another optimization done is reordering the image blocks, which can provide
+ * a significant performance boost, as reads and writes tend to use less random
+ * file offsets.
+ *
+ * @return  VBox status code.
+ * @return  VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @return  VERR_VD_IMAGE_READ_ONLY if image is not writable.
+ * @return  VERR_NOT_SUPPORTED if this kind of image can be compacted, but
+ *                             this isn't supported yet.
+ * @param   pDisk           Pointer to HDD container.
+ * @param   nImage          Image number, counts from 0. 0 is always base image of container.
+ * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
+ */
+VBOXDDU_DECL(int) VDCompact(PVBOXHDD pDisk, unsigned nImage,
+                            PVDINTERFACE pVDIfsOperation);
 
 /**
  * Closes the last opened image file in HDD container.
