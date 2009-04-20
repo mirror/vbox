@@ -52,12 +52,14 @@
  * The function may, depending on the configuration, resume the TSC and future
  * clocks that only ticks when we're executing guest code.
  *
- * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVCpu       The VMCPU to operate on.
  */
-VMMDECL(void) TMNotifyStartOfExecution(PVM pVM)
+VMMDECL(void) TMNotifyStartOfExecution(PVMCPU pVCpu)
 {
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+
     if (pVM->tm.s.fTSCTiedToExecution)
-        tmCpuTickResume(pVM);
+        tmCpuTickResume(pVM, pVCpu);
 }
 
 
@@ -69,12 +71,14 @@ VMMDECL(void) TMNotifyStartOfExecution(PVM pVM)
  * The function may, depending on the configuration, suspend the TSC and future
  * clocks that only ticks when we're executing guest code.
  *
- * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVCpu       The VMCPU to operate on.
  */
-VMMDECL(void) TMNotifyEndOfExecution(PVM pVM)
+VMMDECL(void) TMNotifyEndOfExecution(PVMCPU pVCpu)
 {
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+
     if (pVM->tm.s.fTSCTiedToExecution)
-        tmCpuTickPause(pVM);
+        tmCpuTickPause(pVM, pVCpu);
 }
 
 
@@ -86,13 +90,15 @@ VMMDECL(void) TMNotifyEndOfExecution(PVM pVM)
  * The function may, depending on the configuration, resume the TSC and future
  * clocks that only ticks when we're halted.
  *
- * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVCpu       The VMCPU to operate on.
  */
-VMMDECL(void) TMNotifyStartOfHalt(PVM pVM)
+VMMDECL(void) TMNotifyStartOfHalt(PVMCPU pVCpu)
 {
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+
     if (    pVM->tm.s.fTSCTiedToExecution
         &&  !pVM->tm.s.fTSCNotTiedToHalt)
-        tmCpuTickResume(pVM);
+        tmCpuTickResume(pVM, pVCpu);
 }
 
 
@@ -104,13 +110,15 @@ VMMDECL(void) TMNotifyStartOfHalt(PVM pVM)
  * The function may, depending on the configuration, suspend the TSC and future
  * clocks that only ticks when we're halted.
  *
- * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVCpu       The VMCPU to operate on.
  */
-VMMDECL(void) TMNotifyEndOfHalt(PVM pVM)
+VMMDECL(void) TMNotifyEndOfHalt(PVMCPU pVCpu)
 {
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+
     if (    pVM->tm.s.fTSCTiedToExecution
         &&  !pVM->tm.s.fTSCNotTiedToHalt)
-        tmCpuTickPause(pVM);
+        tmCpuTickPause(pVM, pVCpu);
 }
 
 
@@ -658,7 +666,9 @@ VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
  */
 VMMDECL(int) TMTimerSetMillies(PTMTIMER pTimer, uint32_t cMilliesToNext)
 {
-    PVM pVM = pTimer->CTX_SUFF(pVM);
+    PVM    pVM   = pTimer->CTX_SUFF(pVM);
+    PVMCPU pVCpu = &pVM->aCpus[0];  /* just take the first VCPU */
+
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
@@ -669,7 +679,7 @@ VMMDECL(int) TMTimerSetMillies(PTMTIMER pTimer, uint32_t cMilliesToNext)
             AssertCompile(TMCLOCK_FREQ_REAL == 1000);
             return TMTimerSet(pTimer, cMilliesToNext + TMRealGet(pVM));
         case TMCLOCK_TSC:
-            return TMTimerSet(pTimer, cMilliesToNext * pVM->tm.s.cTSCTicksPerSecond / 1000 + TMCpuTickGet(pVM));
+            return TMTimerSet(pTimer, cMilliesToNext * pVM->tm.s.cTSCTicksPerSecond / 1000 + TMCpuTickGet(pVCpu));
 
         default:
             AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
@@ -687,7 +697,9 @@ VMMDECL(int) TMTimerSetMillies(PTMTIMER pTimer, uint32_t cMilliesToNext)
  */
 VMMDECL(int) TMTimerSetMicro(PTMTIMER pTimer, uint64_t cMicrosToNext)
 {
-    PVM pVM = pTimer->CTX_SUFF(pVM);
+    PVM    pVM   = pTimer->CTX_SUFF(pVM);
+    PVMCPU pVCpu = &pVM->aCpus[0];  /* just take the first VCPU */
+
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
@@ -703,7 +715,7 @@ VMMDECL(int) TMTimerSetMicro(PTMTIMER pTimer, uint64_t cMicrosToNext)
             return TMTimerSet(pTimer, cMicrosToNext / 1000 + TMRealGet(pVM));
 
         case TMCLOCK_TSC:
-            return TMTimerSet(pTimer, TMTimerFromMicro(pTimer, cMicrosToNext) + TMCpuTickGet(pVM));
+            return TMTimerSet(pTimer, TMTimerFromMicro(pTimer, cMicrosToNext) + TMCpuTickGet(pVCpu));
 
         default:
             AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
@@ -721,7 +733,9 @@ VMMDECL(int) TMTimerSetMicro(PTMTIMER pTimer, uint64_t cMicrosToNext)
  */
 VMMDECL(int) TMTimerSetNano(PTMTIMER pTimer, uint64_t cNanosToNext)
 {
-    PVM pVM = pTimer->CTX_SUFF(pVM);
+    PVM    pVM   = pTimer->CTX_SUFF(pVM);
+    PVMCPU pVCpu = &pVM->aCpus[0];  /* just take the first VCPU */
+
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
@@ -737,7 +751,7 @@ VMMDECL(int) TMTimerSetNano(PTMTIMER pTimer, uint64_t cNanosToNext)
             return TMTimerSet(pTimer, cNanosToNext / 1000000 + TMRealGet(pVM));
 
         case TMCLOCK_TSC:
-            return TMTimerSet(pTimer, TMTimerFromNano(pTimer, cNanosToNext) + TMCpuTickGet(pVM));
+            return TMTimerSet(pTimer, TMTimerFromNano(pTimer, cNanosToNext) + TMCpuTickGet(pVCpu));
 
         default:
             AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
@@ -846,7 +860,8 @@ VMMDECL(int) TMTimerStop(PTMTIMER pTimer)
 VMMDECL(uint64_t) TMTimerGet(PTMTIMER pTimer)
 {
     uint64_t u64;
-    PVM pVM = pTimer->CTX_SUFF(pVM);
+    PVM      pVM   = pTimer->CTX_SUFF(pVM);
+
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
@@ -859,9 +874,11 @@ VMMDECL(uint64_t) TMTimerGet(PTMTIMER pTimer)
             u64 = TMRealGet(pVM);
             break;
         case TMCLOCK_TSC:
-            u64 = TMCpuTickGet(pVM);
+        {
+            PVMCPU pVCpu = &pVM->aCpus[0];  /* just take the first VCPU */
+            u64 = TMCpuTickGet(pVCpu);
             break;
-
+        }
         default:
             AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
             return ~(uint64_t)0;

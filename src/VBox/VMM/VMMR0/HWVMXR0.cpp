@@ -1599,7 +1599,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /* TSC offset. */
     uint64_t u64TSCOffset;
 
-    if (TMCpuTickCanUseRealTSC(pVM, &u64TSCOffset))
+    if (TMCpuTickCanUseRealTSC(pVCpu, &u64TSCOffset))
     {
         /* Note: VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT takes precedence over TSC_OFFSET */
         rc = VMXWriteVMCS64(VMX_VMCS_CTRL_TSC_OFFSET_FULL, u64TSCOffset);
@@ -2191,9 +2191,9 @@ ResumeExecution:
     pVCpu->hwaccm.s.vmx.VMCSCache.u64TimeSwitch = RTTimeNanoTS();
 #endif
 
-    TMNotifyStartOfExecution(pVM);
+    TMNotifyStartOfExecution(pVCpu);
     rc = pVCpu->hwaccm.s.vmx.pfnStartVM(pVCpu->hwaccm.s.fResumeVM, pCtx, &pVCpu->hwaccm.s.vmx.VMCSCache, pVM, pVCpu);
-    TMNotifyEndOfExecution(pVM);
+    TMNotifyEndOfExecution(pVCpu);
 
     AssertMsg(!pVCpu->hwaccm.s.vmx.VMCSCache.Write.cValidEntries, ("pVCpu->hwaccm.s.vmx.VMCSCache.Write.cValidEntries=%d\n", pVCpu->hwaccm.s.vmx.VMCSCache.Write.cValidEntries));
 

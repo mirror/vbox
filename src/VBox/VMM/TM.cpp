@@ -90,14 +90,14 @@
  * The timers can use any of the TM clocks described in the previous section.
  * Each clock has its own scheduling facility, or timer queue if you like.
  * There are a few factors which makes it a bit complex.  First, there is the
- * usual R0 vs R3 vs. RC thing.  Then there is multiple threads, and then there
+ * usual R0 vs R3 vs. RC thing.  Then there are multiple threads, and then there
  * is the timer thread that periodically checks whether any timers has expired
  * without EMT noticing.  On the API level, all but the create and save APIs
  * must be mulithreaded.  EMT will always run the timers.
  *
  * The design is using a doubly linked list of active timers which is ordered
  * by expire date.  This list is only modified by the EMT thread.  Updates to
- * the list are batched in a singly linked list, which is then process by the
+ * the list are batched in a singly linked list, which is then processed by the
  * EMT thread at the first opportunity (immediately, next time EMT modifies a
  * timer on that clock, or next timer timeout).  Both lists are offset based and
  * all the elements are therefore allocated from the hyper heap.
@@ -309,7 +309,11 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
         if (!pVM->tm.s.fTSCUseRealTSC)
-            pVM->tm.s.fMaybeUseOffsettedHostTSC = tmR3HasFixedTSC(pVM);
+        {
+            /* @todo simple case for guest SMP; always emulate RDTSC */
+            if (pVM->cCPUs == 1)
+                pVM->tm.s.fMaybeUseOffsettedHostTSC = tmR3HasFixedTSC(pVM);
+        }
         else
             pVM->tm.s.fMaybeUseOffsettedHostTSC = true;
     }
@@ -345,7 +349,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
 
     /** @cfgm{TM/TSCTiedToExecution, bool, false}
      * Whether the TSC should be tied to execution. This will exclude most of the
-     * virtualization overhead, but will by default include the time spend in the
+     * virtualization overhead, but will by default include the time spent in the
      * halt state (see TM/TSCNotTiedToHalt). This setting will override all other
      * TSC settings except for TSCTicksPerSecond and TSCNotTiedToHalt, which should
      * be used avoided or used with great care. Note that this will only work right
@@ -983,10 +987,18 @@ VMMR3DECL(int) TMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPtrVa
  */
 static DECLCALLBACK(int) tmR3Save(PVM pVM, PSSMHANDLE pSSM)
 {
+    unsigned i;
+
     LogFlow(("tmR3Save:\n"));
-    Assert(!pVM->tm.s.fTSCTicking);
+#ifdef VBOX_STRICT
+    for (i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+        Assert(!pVCpu->tm.s.fTSCTicking);
+    }
     Assert(!pVM->tm.s.fVirtualTicking);
     Assert(!pVM->tm.s.fVirtualSyncTicking);
+#endif
 
     /*
      * Save the virtual clocks.
@@ -1005,8 +1017,13 @@ static DECLCALLBACK(int) tmR3Save(PVM pVM, PSSMHANDLE pSSM)
     /* real time clock */
     SSMR3PutU64(pSSM, TMCLOCK_FREQ_REAL);
 
-    /* the cpu tick clock. */
-    SSMR3PutU64(pSSM, TMCpuTickGet(pVM));
+    for (i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
+        /* the cpu tick clock. */
+        SSMR3PutU64(pSSM, TMCpuTickGet(pVCpu));
+    }
     return SSMR3PutU64(pSSM, pVM->tm.s.cTSCTicksPerSecond);
 }
 
@@ -1021,10 +1038,18 @@ static DECLCALLBACK(int) tmR3Save(PVM pVM, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
 {
+    unsigned i;
     LogFlow(("tmR3Load:\n"));
-    Assert(!pVM->tm.s.fTSCTicking);
+
+#ifdef VBOX_STRICT
+    for (i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+        Assert(!pVCpu->tm.s.fTSCTicking);
+    }
     Assert(!pVM->tm.s.fVirtualTicking);
     Assert(!pVM->tm.s.fVirtualSyncTicking);
+#endif
 
     /*
      * Validate version.
@@ -1080,15 +1105,23 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     }
 
     /* the cpu tick clock. */
-    pVM->tm.s.fTSCTicking = false;
-    SSMR3GetU64(pSSM, &pVM->tm.s.u64TSC);
+    for (i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
+        pVCpu->tm.s.fTSCTicking = false;
+        SSMR3GetU64(pSSM, &pVCpu->tm.s.u64TSC);
+
+        if (pVM->tm.s.fTSCUseRealTSC)
+            pVCpu->tm.s.u64TSCOffset = 0; /** @todo TSC restore stuff and HWACC. */
+    }
+
     rc = SSMR3GetU64(pSSM, &u64Hz);
     if (RT_FAILURE(rc))
         return rc;
-    if (pVM->tm.s.fTSCUseRealTSC)
-        pVM->tm.s.u64TSCOffset = 0; /** @todo TSC restore stuff and HWACC. */
-    else
+    if (!pVM->tm.s.fTSCUseRealTSC)
         pVM->tm.s.cTSCTicksPerSecond = u64Hz;
+
     LogRel(("TM: cTSCTicksPerSecond=%#RX64 (%RU64) fTSCVirtualized=%RTbool fTSCUseRealTSC=%RTbool (state load)\n",
             pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.fTSCVirtualized, pVM->tm.s.fTSCUseRealTSC));
 
@@ -1359,7 +1392,7 @@ DECLINLINE(uint64_t) tmClock(PVM pVM, TMCLOCK enmClock)
         case TMCLOCK_VIRTUAL:       return TMVirtualGet(pVM);
         case TMCLOCK_VIRTUAL_SYNC:  return TMVirtualSyncGet(pVM);
         case TMCLOCK_REAL:          return TMRealGet(pVM);
-        case TMCLOCK_TSC:           return TMCpuTickGet(pVM);
+        case TMCLOCK_TSC:           return TMCpuTickGet(&pVM->aCpus[0] /* just take VCPU 0 */);
         default:
             AssertMsgFailed(("enmClock=%d\n", enmClock));
             return ~(uint64_t)0;
@@ -2082,28 +2115,33 @@ static DECLCALLBACK(void) tmR3InfoClocks(PVM pVM, PCDBGFINFOHLP pHlp, const char
     /*
      * Read the times first to avoid more than necessary time variation.
      */
-    const uint64_t u64TSC = TMCpuTickGet(pVM);
     const uint64_t u64Virtual = TMVirtualGet(pVM);
     const uint64_t u64VirtualSync = TMVirtualSyncGet(pVM);
     const uint64_t u64Real = TMRealGet(pVM);
 
-    /*
-     * TSC
-     */
-    pHlp->pfnPrintf(pHlp,
-                    "Cpu Tick: %18RU64 (%#016RX64) %RU64Hz %s%s",
-                    u64TSC, u64TSC, TMCpuTicksPerSecond(pVM),
-                    pVM->tm.s.fTSCTicking ? "ticking" : "paused",
-                    pVM->tm.s.fTSCVirtualized ? " - virtualized" : "");
-    if (pVM->tm.s.fTSCUseRealTSC)
+    for (unsigned i=0;i<pVM->cCPUs;i++)
     {
-        pHlp->pfnPrintf(pHlp, " - real tsc");
-        if (pVM->tm.s.u64TSCOffset)
-            pHlp->pfnPrintf(pHlp, "\n          offset %RU64", pVM->tm.s.u64TSCOffset);
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
+        uint64_t u64TSC = TMCpuTickGet(pVCpu);
+        /*
+         * TSC
+         */
+        pHlp->pfnPrintf(pHlp,
+                        "Cpu Tick: %18RU64 (%#016RX64) %RU64Hz %s%s",
+                        u64TSC, u64TSC, TMCpuTicksPerSecond(pVM),
+                        pVCpu->tm.s.fTSCTicking ? "ticking" : "paused",
+                        pVM->tm.s.fTSCVirtualized ? " - virtualized" : "");
+        if (pVM->tm.s.fTSCUseRealTSC)
+        {
+            pHlp->pfnPrintf(pHlp, " - real tsc");
+            if (pVCpu->tm.s.u64TSCOffset)
+                pHlp->pfnPrintf(pHlp, "\n          offset %RU64", pVCpu->tm.s.u64TSCOffset);
+        }
+        else
+            pHlp->pfnPrintf(pHlp, " - virtual clock");
+        pHlp->pfnPrintf(pHlp, "\n");
     }
-    else
-        pHlp->pfnPrintf(pHlp, " - virtual clock");
-    pHlp->pfnPrintf(pHlp, "\n");
 
     /*
      * virtual

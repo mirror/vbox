@@ -794,8 +794,8 @@ REMR3DECL(int) REMR3Step(PVM pVM, PVMCPU pVCpu)
     rc = cpu_exec(&pVM->rem.s.Env);
     if (rc == EXCP_DEBUG)
     {
-        TMCpuTickResume(pVM);
-        TMCpuTickPause(pVM);
+        TMCpuTickResume(pVCpu);
+        TMCpuTickPause(pVCpu);
         TMVirtualResume(pVM);
         TMVirtualPause(pVM);
         rc = VINF_EM_DBG_STEPPED;
@@ -923,10 +923,10 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM, PVMCPU pVCpu)
         /*
          * Now we set the execute single instruction flag and enter the cpu_exec loop.
          */
-        TMNotifyStartOfExecution(pVM);
+        TMNotifyStartOfExecution(pVCpu);
         pVM->rem.s.Env.interrupt_request = CPU_INTERRUPT_SINGLE_INSTR;
         rc = cpu_exec(&pVM->rem.s.Env);
-        TMNotifyEndOfExecution(pVM);
+        TMNotifyEndOfExecution(pVCpu);
         switch (rc)
         {
             /*
@@ -1050,9 +1050,9 @@ REMR3DECL(int) REMR3Run(PVM pVM, PVMCPU pVCpu)
     Log2(("REMR3Run: (cs:eip=%04x:%RGv)\n", pVM->rem.s.Env.segs[R_CS].selector, (RTGCPTR)pVM->rem.s.Env.eip));
     Assert(pVM->rem.s.fInREM);
 
-    TMNotifyStartOfExecution(pVM);
+    TMNotifyStartOfExecution(pVCpu);
     rc = cpu_exec(&pVM->rem.s.Env);
-    TMNotifyEndOfExecution(pVM);
+    TMNotifyEndOfExecution(pVCpu);
     switch (rc)
     {
         /*
@@ -3994,7 +3994,7 @@ void remR3RaiseRC(PVM pVM, int rc)
 uint64_t cpu_get_tsc(CPUX86State *env)
 {
     STAM_COUNTER_INC(&gStatCpuGetTSC);
-    return TMCpuTickGet(env->pVM);
+    return TMCpuTickGet(env->pVCpu);
 }
 
 

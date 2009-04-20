@@ -984,6 +984,8 @@ VMMR3DECL(void) VMR3NotifyFFU(PUVM pUVM, bool fNotifiedREM)
  */
 VMMR3DECL(int) VMR3WaitHalted(PVM pVM, bool fIgnoreInterrupts)
 {
+    PVMCPU pVCpu = VMMGetCpu(pVM);  /* @todo SMP: get rid of this */
+
     LogFlow(("VMR3WaitHalted: fIgnoreInterrupts=%d\n", fIgnoreInterrupts));
 
     /*
@@ -1003,7 +1005,7 @@ VMMR3DECL(int) VMR3WaitHalted(PVM pVM, bool fIgnoreInterrupts)
      * only at certain times and need to be notified..
      */
     VMMR3YieldSuspend(pVM);
-    TMNotifyStartOfHalt(pVM);
+    TMNotifyStartOfHalt(pVCpu);
 
     /*
      * Record halt averages for the last second.
@@ -1036,7 +1038,7 @@ VMMR3DECL(int) VMR3WaitHalted(PVM pVM, bool fIgnoreInterrupts)
     /*
      * Notify TM and resume the yielder
      */
-    TMNotifyEndOfHalt(pVM);
+    TMNotifyEndOfHalt(pVCpu);
     VMMR3YieldResume(pVM);
 
     LogFlow(("VMR3WaitHalted: returns %Rrc (FF %#x)\n", rc, pVM->fForcedActions));
