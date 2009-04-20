@@ -2741,7 +2741,6 @@ STDMETHODIMP Machine::DeleteSettings()
             tr ("Cannot delete settings of a registered machine"));
 
     /* delete the settings only when the file actually exists */
-    lockConfig();
     if (isConfigLocked())
     {
         unlockConfig();
@@ -8107,15 +8106,11 @@ void Machine::registerMetrics (PerformanceCollector *aCollector, Machine *aMachi
     pm::SubMetric *ramUsageUsed  = new pm::SubMetric ("RAM/Usage/Used",
         "Size of resident portion of VM process in memory.");
     /* Create and register base metrics */
-    IUnknown *objptr;
-
-    ComObjPtr<Machine> tmp = aMachine;
-    tmp.queryInterfaceTo (&objptr);
-    pm::BaseMetric *cpuLoad = new pm::MachineCpuLoadRaw (hal, objptr, pid,
-                                             cpuLoadUser, cpuLoadKernel);
+    pm::BaseMetric *cpuLoad = new pm::MachineCpuLoadRaw (hal, aMachine, pid,
+                                                         cpuLoadUser, cpuLoadKernel);
     aCollector->registerBaseMetric (cpuLoad);
-    pm::BaseMetric *ramUsage = new pm::MachineRamUsage (hal, objptr, pid,
-                                                           ramUsageUsed);
+    pm::BaseMetric *ramUsage = new pm::MachineRamUsage (hal, aMachine, pid,
+                                                        ramUsageUsed);
     aCollector->registerBaseMetric (ramUsage);
 
     aCollector->registerMetric (new pm::Metric (cpuLoad, cpuLoadUser, 0));
