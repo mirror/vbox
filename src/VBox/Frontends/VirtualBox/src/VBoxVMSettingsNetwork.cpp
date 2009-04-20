@@ -366,12 +366,12 @@ void VBoxVMSettingsNetwork::updateAlternativeName()
         }
         case KNetworkAttachmentType_Internal:
         {
-            QString newName (mCbName->itemData (mCbName->currentIndex()).toString() ==
-                             QString (emptyItemCode) &&
-                             mCbName->currentText() ==
-                             mCbName->itemText (mCbName->currentIndex()) ||
-                             mCbName->currentText().isEmpty() ?
-                             QString::null : mCbName->currentText());
+            QString newName ((mCbName->itemData (mCbName->currentIndex()).toString() ==
+                              QString (emptyItemCode) &&
+                              mCbName->currentText() ==
+                              mCbName->itemText (mCbName->currentIndex())) ||
+                              mCbName->currentText().isEmpty() ?
+                              QString::null : mCbName->currentText());
             if (mIntName != newName)
             {
                 mIntName = newName;
