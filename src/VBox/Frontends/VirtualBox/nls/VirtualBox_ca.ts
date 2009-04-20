@@ -8,7 +8,7 @@
         <location filename="../src/VBoxGlobal.cpp" line="2772"/>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation>Català - Valencià</translation>
+        <translation>Català</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2783"/>
@@ -32,7 +32,7 @@
         <location filename="../src/VBoxGlobal.cpp" line="2820"/>
         <source>Sun Microsystems, Inc.</source>
         <comment>Comma-separated list of translators</comment>
-        <translation>Vicent Fornés, Pau Iranzo &lt;info@somgnu.cat&gt;</translation>
+        <translation>Vicent Fornés, Pau Iranzo &lt;info@somgnu.cat&gt;.</translation>
     </message>
 </context>
 <context>
@@ -40,7 +40,7 @@
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="139"/>
         <source>Double-click to add a new attachment</source>
-        <translation>Doble clic per afegir un nou adjunt</translation>
+        <translation>Doble clic per afegir una nova adjunció</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="196"/>
@@ -83,7 +83,7 @@
     <name>HDItemsModel</name>
     <message>
         <source>Double-click to add a new attachment</source>
-        <translation type="obsolete">Doble clic per afegir un nou adjunt</translation>
+        <translation type="obsolete">Doble clic per afegir una nova adjunció</translation>
     </message>
     <message>
         <source>Hard Disk</source>
@@ -99,17 +99,17 @@
     <message>
         <location filename="../src/main.cpp" line="62"/>
         <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.&lt;br/&gt;&lt;br/&gt;There are known problems with Linux 2.6.29. If you are running such a kernel, please edit /usr/src/vboxdrv-*/Makefile and enable &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. After that, re-compile the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aquest error significa que el controlador del nucli no ha pogut assignar memòria suficient o bé alguna operació de mapejat ha fallat.&lt;br/&gt;&lt;br/&gt;Existeixen alguns problemes coneguts amb el nucli Linux 2.6.29. Si esteu executant aquest nucli, editeu el fitxer /usr/src/vboxdrv-*/Makefile i habiliteu &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. Després d&apos;això, torneu a compilar el mòdul executant com a root a una terminal l&apos;ordre &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;.</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="73"/>
         <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Re-setup the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
-        <translation type="unfinished"></translation>
+        <translation>El controlador del nucli del VirtualBox (vboxdrv) no s&apos;ha carregat o existeix un problema de permisos amb /dev/vboxdrv. Torneu a configurar el mòdul del nucli executant com a root a una terminal &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;. Usuaris d&apos;Ubuntu, Fedora o Mandriva haurien d&apos;instal·lar abans el paquet DKMS. Aquest paquet manté actiu el mòdul quan hi ha canvis al nucli i el recompila si és necessari.</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="83"/>
         <source>Make sure the kernel module has been loaded successfully.</source>
-        <translation type="unfinished"></translation>
+        <translation>Assegureu-vos que el mòdul del nucli s&apos;ha carregat correctament.</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="391"/>
@@ -124,17 +124,17 @@
     <message>
         <location filename="../src/main.cpp" line="523"/>
         <source>VirtualBox - Runtime Error</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox - Error d&apos;execució</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="529"/>
         <source>&lt;b&gt;Cannot access the kernel driver!&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;No es pot accedir al controlador del nucli&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="543"/>
         <source>Unknown %2 error during initialization of the Runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>S&apos;ha produït un error desconegut %2 quan s&apos;iniciava l&apos;execució</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="586"/>
@@ -157,12 +157,12 @@
     <message>
         <location filename="../src/QIMessageBox.cpp" line="272"/>
         <source>&amp;Back</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Enrere</translation>
     </message>
     <message>
         <location filename="../src/QIMessageBox.cpp" line="273"/>
         <source>&amp;Next</source>
-        <translation type="unfinished">&amp;Següent</translation>
+        <translation>&amp;Següent</translation>
     </message>
 </context>
 <context>
@@ -254,7 +254,7 @@
         <location filename="../src/QIHotKeyEdit.cpp" line="310"/>
         <location filename="../src/QIHotKeyEdit.cpp" line="365"/>
         <source>Scroll Lock</source>
-        <translation>Tecla de fixació de desplaçament (Scroll Lock)</translation>
+        <translation>Tecla de fixació de desplaçament</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="416"/>
@@ -462,12 +462,12 @@
     <message>
         <location filename="../src/QIMessageBox.cpp" line="772"/>
         <source>&amp;Details</source>
-        <translation type="unfinished">&amp;Detalls</translation>
+        <translation>&amp;Detalls</translation>
     </message>
     <message>
         <location filename="../src/QIMessageBox.cpp" line="773"/>
         <source>&amp;Details (%1 of %2)</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Detalls (%1 de %2)</translation>
     </message>
 </context>
 <context>
@@ -494,12 +494,12 @@
     <message>
         <location filename="../src/QIWidgetValidator.cpp" line="318"/>
         <source>&lt;qt&gt;Value of the &lt;b&gt;%1&lt;/b&gt; field on the &lt;b&gt;%2&lt;/b&gt; page is %3.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;El valor del camp &lt;b&gt;%1&lt;/b&gt; en la pàgina &lt;b&gt;%2&lt;/b&gt; %3.&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;El valor del camp &lt;b&gt;%1&lt;/b&gt; a la pàgina &lt;b&gt;%2&lt;/b&gt; %3.&lt;/qt&gt;</translation>
     </message>
     <message>
         <location filename="../src/QIWidgetValidator.cpp" line="322"/>
         <source>&lt;qt&gt;One of the values on the &lt;b&gt;%1&lt;/b&gt; page is %2.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Un dels valors en la pàgina &lt;b&gt;%1&lt;/b&gt; %2.&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Un dels valors a la pàgina &lt;b&gt;%1&lt;/b&gt; %2.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -522,7 +522,7 @@
     <message>
         <location filename="../src/VBoxAboutDlg.cpp" line="48"/>
         <source>VirtualBox Graphical User Interface</source>
-        <translation>Interfície Gràfica d&apos;Usuari de VirtualBox</translation>
+        <translation>Interfície gràfica d&apos;usuari del VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxAboutDlg.cpp" line="49"/>
@@ -623,7 +623,7 @@ Versió %1</translation>
     </message>
     <message>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
-        <translation type="obsolete">Quan estiga marcat, el sistema operatiu client no podrà escriure a la carpeta compartida especificada.</translation>
+        <translation type="obsolete">Quan estigui marcat, el sistema operatiu client no podrà escriure a la carpeta compartida especificada.</translation>
     </message>
 </context>
 <context>
@@ -636,17 +636,17 @@ Versió %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="122"/>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation>S&apos;està descarregant la imatge del CD de les Guest Additions del VirtualBox des de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation>S&apos;està baixant la imatge de les Guest Additions del VirtualBox des de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="125"/>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation>Cancel·la la descàrrega de la imatge del CD de les Guest Additions del VirtualBox</translation>
+        <translation>Cancel·la la baixada de la imatge de les Guest Additions del VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="155"/>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Hi ha hagut un error mentre es desava el fitxer descarregat com a &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;No s&apos;ha pogut desar el fitxer baixat com a &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="162"/>
@@ -659,134 +659,134 @@ Versió %1</translation>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="100"/>
         <source>Virtual System %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Sistema virtual %1</translation>
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="180"/>
         <source>Name</source>
-        <translation type="unfinished">Nom</translation>
+        <translation>Nom</translation>
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="181"/>
         <source>Product</source>
-        <translation type="unfinished"></translation>
+        <translation>Producte</translation>
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="182"/>
         <source>Product-URL</source>
-        <translation type="unfinished"></translation>
+        <translation>URL del producte</translation>
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="183"/>
         <source>Vendor</source>
-        <translation type="unfinished"></translation>
+        <translation>Venedor</translation>
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="184"/>
         <source>Vendor-URL</source>
-        <translation type="unfinished"></translation>
+        <translation>URL del venedor</translation>
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="185"/>
         <source>Version</source>
-        <translation type="unfinished"></translation>
+        <translation>Versió</translation>
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="186"/>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="777"/>
         <source>Description</source>
-        <translation type="unfinished"></translation>
+        <translation>Descripció</translation>
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="187"/>
         <source>License</source>
-        <translation type="unfinished"></translation>
+        <translation>Llicència</translation>
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="188"/>
         <source>Guest OS Type</source>
-        <translation type="unfinished">Tipus de sistema client</translation>
+        <translation>Tipus de sistema client</translation>
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="189"/>
         <source>CPU</source>
-        <translation type="unfinished"></translation>
+        <translation>CPU</translation>
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="190"/>
         <source>RAM</source>
-        <translation type="unfinished"></translation>
+        <translation>RAM</translation>
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="191"/>
         <source>Hard Disk Controller IDE</source>
-        <translation type="unfinished"></translation>
+        <translation>Controlador de disc IDE</translation>
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="192"/>
         <source>Hard Disk Controller SATA</source>
-        <translation type="unfinished"></translation>
+        <translation>Controlador de disc SATA</translation>
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="193"/>
         <source>Hard Disk Controller SCSI</source>
-        <translation type="unfinished"></translation>
+        <translation>Controlador de disc SCSI</translation>
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="194"/>
         <source>DVD</source>
-        <translation type="unfinished"></translation>
+        <translation>DVD</translation>
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="195"/>
         <source>Floppy</source>
-        <translation type="unfinished">Disquet</translation>
+        <translation>Disquet</translation>
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="196"/>
         <source>Network Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>Adaptador de xarxa</translation>
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="197"/>
         <source>USB Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Controlador USB</translation>
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="198"/>
         <source>Sound Card</source>
-        <translation type="unfinished"></translation>
+        <translation>Targeta de so</translation>
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="199"/>
         <source>Virtual Disk Image</source>
-        <translation type="unfinished">Imatge de disc virtual</translation>
+        <translation>Imatge de disc virtual</translation>
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="200"/>
         <source>Unknown Hardware Item</source>
-        <translation type="unfinished"></translation>
+        <translation>Maquinari desconegut</translation>
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="219"/>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="390"/>
         <source>MB</source>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="232"/>
         <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Valor original:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="778"/>
         <source>Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Configuració</translation>
     </message>
     <message>
         <location filename="../ui/VBoxApplianceEditorWgt.ui" line="62"/>
         <source>Warnings:</source>
-        <translation type="unfinished"></translation>
+        <translation>Avisos:</translation>
     </message>
 </context>
 <context>
@@ -799,7 +799,7 @@ Versió %1</translation>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="79"/>
         <source>You want to:</source>
-        <translation>Què voleu fer?</translation>
+        <translation>Voleu:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="107"/>
@@ -819,7 +819,7 @@ Versió %1</translation>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="204"/>
         <source>Revert the machine state to the state stored in the current snapshot</source>
-        <translation>Torna l&apos;estat de la màquina a l&apos;estat restaurat en la captura actual</translation>
+        <translation>Torna l&apos;estat de la màquina a l&apos;estat emmagatzemat a la captura actual</translation>
     </message>
     <message>
         <source>Help</source>
@@ -848,14 +848,14 @@ Versió %1</translation>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="133"/>
         <source>S&amp;end the shutdown signal</source>
-        <translation>&amp;Envia el senyal d&apos;aturada (shutdown)</translation>
+        <translation>&amp;Envia el senyal d&apos;aturada</translation>
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;
 &lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;
 &lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Envia a la màquina virtual l&apos;esdeveniment de prémer el botó ACPI Power.&lt;/p&gt;
-&lt;p&gt;Normalment, el sistema operatiu client que s&apos;està executant a dins de la màquina virtual detectarà aquest esdeveniment i realitzarà un procediment de tancament net. Aquesta és una manera recomanada de tancar la màquina virtual perquè totes les aplicacions que s&apos;estan executant en ella tindran la possibilitat de desar les seues dades i estat.&lt;/p&gt;
+&lt;p&gt;Normalment, el sistema operatiu client que s&apos;està executant a dins de la màquina virtual detectarà aquest esdeveniment i realitzarà un procediment de tancament net. Aquesta és una manera recomanada de tancar la màquina virtual perquè totes les aplicacions que s&apos;estan executant en ella tindran la possibilitat de desar les seves dades i estat.&lt;/p&gt;
 &lt;p&gt;Si la màquina no respon a aquesta acció potser el sistema operatiu client pot estar mal configurat o no entén els events del botó ACPI Power. En aquest cas, seleccioneu l&apos;acció &lt;b&gt;Atura la màquina&lt;/b&gt; per aturar l&apos;execució de la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -867,22 +867,22 @@ Versió %1</translation>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="207"/>
         <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Si activeu aquesta casella, es restaurarà l&apos;estat de la màquina des de l&apos;estat desat en la captura actual, quan es va aturar. Això és útil si esteu segur que voleu descartar els resultats de les vostres últimes sessions i tornar a la captura actual.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Quan estigui marcat, es restaurarà l&apos;estat de la màquina des de l&apos;estat emmagatzemat a la captura actual quan es va aturar. Això és útil si esteu segur que voleu descartar els resultats de les últimes sessions i tornar a la captura actual.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="104"/>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Desa l&apos;estat d&apos;execució actual de la màquina virtual al disc dur físic de l&apos;ordinador d&apos;amfitrió.&lt;/p&gt;&lt;p&gt;La propera vegada que s&apos;engegue aquesta màquina, es restaurarà des de l&apos;estat desat i continuarà l&apos;execució des del mateix lloc en què l&apos;heu desat, cosa que us permetrà continuar immediatament amb el vostre treball.&lt;/p&gt;&lt;p&gt;Tingueu en compte que l&apos;operació de desar l&apos;estat de la màquina pot prendre molt de temps, depenent del tipus de sistema operatiu client i la quantitat de memòria assignada a la màquina virtual.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Desa l&apos;estat d&apos;execució actual de la màquina virtual al disc dur físic de l&apos;ordinador amfitrió.&lt;/p&gt;&lt;p&gt;La propera vegada que s&apos;iniciÏ aquesta màquina, es restaurarà des de l&apos;estat desat i continuarà l&apos;execució des del mateix lloc en què l&apos;heu desat, cosa que permetrà continuar immediatament amb el vostre treball.&lt;/p&gt;&lt;p&gt;Tingueu en compte que l&apos;operació de desar l&apos;estat de la màquina pot prendre molt de temps, depenent del tipus de sistema operatiu client i la quantitat de memòria assignada a la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="130"/>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Envia a la màquina virtual l&apos;esdeveniment de prémer el botó ACPI Power.&lt;/p&gt;&lt;p&gt;Normalment, el sistema operatiu client que s&apos;està executant a dins de la màquina virtual detectarà aquest esdeveniment i realitzarà un procediment de tancament net. Aquesta és una manera recomanada de tancar la màquina virtual perquè totes les aplicacions que s&apos;estan executant en ella tindran la possibilitat de desar les seues dades i estat.&lt;/p&gt;&lt;p&gt;Si la màquina no respon a aquesta acció potser el sistema operatiu client pot estar mal configurat o no entén els events del botó ACPI Power. En aquest cas, seleccioneu l&apos;acció &lt;b&gt;Atura la màquina&lt;/b&gt; per aturar l&apos;execució de la màquina virtual.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Envia a la màquina virtual l&apos;esdeveniment de prémer el botó ACPI Power.&lt;/p&gt;&lt;p&gt;Normalment, el sistema operatiu client que s&apos;està executant a dins de la màquina virtual detectarà aquest esdeveniment i realitzarà un procediment de tancament net. Aquesta és una manera recomanada de tancar la màquina virtual perquè totes les aplicacions que s&apos;estan executant en ella tindran la possibilitat de desar les seves dades i estat.&lt;/p&gt;&lt;p&gt;Si la màquina no respon a aquesta acció potser el sistema operatiu client pot estar mal configurat o no entén els events del botó ACPI Power. En aquest cas, seleccioneu l&apos;acció &lt;b&gt;Atura la màquina&lt;/b&gt; per aturar l&apos;execució de la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="156"/>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Atura la màquina virtual.&lt;/p&gt;&lt;p&gt;Tingueu en compte que aquesta acció aturarà immediatament l&apos;execució de la màquina de manera que el sistema operatiu client que s&apos;hi està executant no podrà realitzar un procediment de tancament net, cosa que pot ocasionar una &lt;i&gt;pèrdua de dades&lt;/i&gt; en la màquina virtual. Només es recomana seleccionar aquesta acció si la màquina virtual no respon a l&apos;acció &lt;b&gt;Envia el senyal d&apos;aturada&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Atura la màquina virtual.&lt;/p&gt;&lt;p&gt;Tingueu en compte que aquesta acció aturarà immediatament l&apos;execució de la màquina de manera que el sistema operatiu client que s&apos;hi està executant no podrà realitzar un procediment de tancament net, cosa que podria ocasionar una &lt;i&gt;pèrdua de dades&lt;/i&gt; a la màquina virtual. Només es recomana seleccionar aquesta acció si la màquina virtual no respon a l&apos;acció &lt;b&gt;Envia el senyal d&apos;aturada&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -910,7 +910,7 @@ Versió %1</translation>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1630"/>
         <source>Mouse Integration</source>
         <comment>enable/disable...</comment>
-        <translation>Integració del ratolí</translation>
+        <translation>Integració del punter</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1632"/>
@@ -1022,22 +1022,22 @@ Versió %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1691"/>
         <source>&amp;CD/DVD-ROM Image...</source>
-        <translation>Imatge de &amp;CD/DVD-ROM...</translation>
+        <translation>Imatge de &amp;CD/DVD...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1693"/>
         <source>Mount a CD/DVD-ROM image file</source>
-        <translation>Munta un fitxer d&apos;imatge de CD/DVD-ROM</translation>
+        <translation>Munta un fitxer d&apos;imatge de CD/DVD</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1695"/>
         <source>Unmount C&amp;D/DVD-ROM</source>
-        <translation>Desmunta el C&amp;D/DVD-ROM</translation>
+        <translation>Desmunta el C&amp;D/DVD</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1697"/>
         <source>Unmount the currently mounted CD/DVD-ROM media</source>
-        <translation>Desmunta el suport que està muntat actualment en el CD/DVD-ROM</translation>
+        <translation>Desmunta el suport que està muntat actualment en el CD/DVD</translation>
     </message>
     <message>
         <source>Remote Desktop (RDP) Server</source>
@@ -1052,7 +1052,7 @@ Versió %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1703"/>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
-        <translation>Habilita o deshabilita les connexions d&apos;escriptori remot (RDP) a aquesta màquina</translation>
+        <translation>Habilita o inhabilita les connexions d&apos;escriptori remot (RDP) a aquesta màquina</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1705"/>
@@ -1114,7 +1114,7 @@ Versió %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1731"/>
         <source>Mount &amp;CD/DVD-ROM</source>
-        <translation>Munta el &amp;CD/DVD-ROM</translation>
+        <translation>Munta el &amp;CD/DVD</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1733"/>
@@ -1176,22 +1176,22 @@ Versió %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="2116"/>
         <source>Disable &amp;Mouse Integration</source>
-        <translation>Desactiva la integració del &amp;ratolí</translation>
+        <translation>Desactiva la integració del &amp;punter</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="2119"/>
         <source>Temporarily disable host mouse pointer integration</source>
-        <translation>Desactiva temporalment la integració del punter del ratolí de l&apos;amfitrió</translation>
+        <translation>Desactiva temporalment la integració del punter de l&apos;amfitrió</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="2123"/>
         <source>Enable &amp;Mouse Integration</source>
-        <translation>Activa la integració del &amp;ratolí</translation>
+        <translation>Activa la integració del &amp;punter</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="2126"/>
         <source>Enable temporarily disabled host mouse pointer integration</source>
-        <translation>Activa la integració del punter del ratolí de l&apos;amfitrió que s&apos;havia desactivat temporalment</translation>
+        <translation>Activa la integració del punter de l&apos;amfitrió que s&apos;havia desactivat temporalment</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="2657"/>
@@ -1229,7 +1229,7 @@ Versió %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1603"/>
         <source>Sun VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3079"/>
@@ -1289,7 +1289,7 @@ Versió %1</translation>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1861"/>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD-ROM media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Indica l&apos;activitat del CD/DVD-ROM:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Indica l&apos;activitat del CD/DVD:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1875"/>
@@ -1313,7 +1313,7 @@ Versió %1</translation>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1899"/>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Indica l&apos;activitat dels discs durs virtuals:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Indica l&apos;activitat dels discos durs virtuals:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1920"/>
@@ -1412,12 +1412,12 @@ Versió %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1676"/>
         <source>Session I&amp;nformation Dialog</source>
-        <translation>D&amp;iàleg Informatiu de la Sessió</translation>
+        <translation>D&amp;iàleg informatiu de la sessió</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1678"/>
         <source>Show Session Information Dialog</source>
-        <translation>Mostra el Diàleg Informatiu de la Sessió</translation>
+        <translation>Mostra el diàleg informatiu de la sessió</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1717"/>
@@ -1483,11 +1483,11 @@ Versió %1</translation>
     </message>
     <message>
         <source>Virtual Disk Manager</source>
-        <translation type="obsolete">Gestor de discs virtuals</translation>
+        <translation type="obsolete">Gestor de discos virtuals</translation>
     </message>
     <message>
         <source>&amp;Hard Disks</source>
-        <translation type="obsolete">&amp;Discs durs</translation>
+        <translation type="obsolete">&amp;Discos durs</translation>
     </message>
     <message>
         <source>&amp;CD/DVD Images</source>
@@ -1682,7 +1682,7 @@ Versió %1</translation>
     </message>
     <message>
         <source>All hard disk images (*.vdi; *.vmdk);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;All files (*)</source>
-        <translation type="obsolete">Totes les imatges de discs durs (*.vdi; *.vmdk);;Imatges de disc virtual (*.vdi);;Imatges VMDK (*.vmdk);;Tots els fitxers (*)</translation>
+        <translation type="obsolete">Totes les imatges de discos durs (*.vdi; *.vmdk);;Imatges de disc virtual (*.vdi);;Imatges VMDK (*.vmdk);;Tots els fitxers (*)</translation>
     </message>
     <message>
         <source>Select a hard disk image file</source>
@@ -1726,11 +1726,11 @@ Versió %1</translation>
     </message>
     <message>
         <source>All hard disk images (*.vdi *.vmdk *.vhd);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;VHD images (*.vhd);;All files (*)</source>
-        <translation type="obsolete">Totes les imatges de discs durs (*.vdi; *.vmdk);;Imatges de disc virtual (*.vdi);;Imatges VMDK (*.vmdk);;Imatges VHD (*.vhd);;Tots els fitxers (*)</translation>
+        <translation type="obsolete">Totes les imatges de discos durs (*.vdi; *.vmdk);;Imatges de disc virtual (*.vdi);;Imatges VMDK (*.vmdk);;Imatges VHD (*.vhd);;Tots els fitxers (*)</translation>
     </message>
     <message>
         <source>Hard &amp;Disks</source>
-        <translation type="obsolete">&amp;Discs durs</translation>
+        <translation type="obsolete">&amp;Discos durs</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Location:&lt;/nobr&gt;</source>
@@ -1746,7 +1746,7 @@ Versió %1</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Attached to:&lt;/nobr&gt;</source>
-        <translation type="obsolete">&lt;nobr&gt;Adjuntat a:&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;Connectat a:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Snapshot:&lt;/nobr&gt;</source>
@@ -1761,7 +1761,7 @@ Versió %1</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="obsolete">S&apos;està descarregant la imatge del CD de les Guest Additions del VirtualBox des de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation type="obsolete">S&apos;està baixant la imatge del CD de les Guest Additions del VirtualBox des de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
@@ -1786,7 +1786,7 @@ Versió %1</translation>
     <message>
         <location filename="../src/VBoxDownloaderWgt.cpp" line="154"/>
         <source>The download process has been cancelled by the user.</source>
-        <translation>L&apos;usuari ha cancel·lat el procés de descàrrega.</translation>
+        <translation>L&apos;usuari ha cancel·lat el procés de baixada.</translation>
     </message>
 </context>
 <context>
@@ -1794,7 +1794,7 @@ Versió %1</translation>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="625"/>
         <source>&amp;Choose...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Trieu...</translation>
     </message>
 </context>
 <context>
@@ -1802,32 +1802,32 @@ Versió %1</translation>
     <message>
         <location filename="../src/VBoxExportApplianceWzd.cpp" line="76"/>
         <source>Select a file to export into</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleccioneu un fitxer al qual s&apos;exportarà</translation>
     </message>
     <message>
         <location filename="../src/VBoxExportApplianceWzd.cpp" line="77"/>
         <source>Open Virtualization Format (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Format virtual obert (%1)</translation>
     </message>
     <message>
         <location filename="../src/VBoxExportApplianceWzd.cpp" line="110"/>
         <source>Appliance</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplicació virtual</translation>
     </message>
     <message>
         <location filename="../src/VBoxExportApplianceWzd.cpp" line="309"/>
         <source>Exporting Appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>S&apos;està exportant l&apos;aplicació virtual...</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="31"/>
         <source>Appliance Export Wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Assistent d&apos;exportació d&apos;aplicació virtuals</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="55"/>
         <source>Welcome to the Appliance Export Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation>Benvingut a l&apos;assistent d&apos;exportació d&apos;aplicacions virtuals!</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="105"/>
@@ -1838,53 +1838,59 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that should be exported to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Aquest assitent us guiarà durant el procés d&apos;exportació d&apos;una aplicació virtual. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Feu servir el botó &lt;span style=&quot; font-weight:600;&quot;&gt;Següent&lt;/span&gt; per anar a la següent pàgina de l&apos;assistent i el botó &lt;span style=&quot; font-weight:600;&quot;&gt;Enrere&lt;/span&gt; per anar a la pàgina prèvia.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Seleccioneu les màquines virtuals que s&apos;haurien d&apos;exportar a l&apos;aplicació virtual. En podeu seleccionar més d&apos;una. Tingueu en compte que aquestes màquines han d&apos;estar aturades per tal que puguin importar-se.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="151"/>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="318"/>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="469"/>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished">&lt; &amp;Enrere</translation>
+        <translation>&lt; &amp;Enrere</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="158"/>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="325"/>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished">&amp;Següent &gt;</translation>
+        <translation>&amp;Següent &gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="181"/>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="348"/>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="499"/>
         <source>Cancel</source>
-        <translation type="unfinished">Cancel·la</translation>
+        <translation>Cancel·la</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="202"/>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="369"/>
         <source>Appliance Export Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Paràmetres d&apos;exportació de l&apos;aplicació virtual</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="252"/>
         <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the shown properties by double-clicking on the items.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aquí podeu canviar valors adicionals de la configuració de les màquines virtuals seleccionades. Podeu modificar la majoria de les propietats mostrades fent doble clic sobre els ítems.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="298"/>
         <source>Restore Defaults</source>
-        <translation type="unfinished"></translation>
+        <translation>Restaura els paràmetres per defecte</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="419"/>
         <source>Please specify a filename into which the appliance information will be written. Currently VirtualBox supports the Open Virtualization Format (OVF).</source>
-        <translation type="unfinished"></translation>
+        <translation>Especifiqueu un nom de fitxer a dins del qual s&apos;escriurà la informació de l&apos;aplicació virtual. Actualment el VirtualBox suporta el format obert de virtualització (OVF).</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="476"/>
         <source>&amp;Export &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Exporta &gt;</translation>
     </message>
 </context>
 <context>
@@ -1897,7 +1903,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="282"/>
         <source>The actual default path value will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation>L&apos;actual ruta per defecte es mostrarà després d&apos;acceptar els canvis i obrir aquest diàleg novament. </translation>
+        <translation>La ruta actual per defecte es mostrarà després d&apos;acceptar els canvis i obrir aquest diàleg novament. </translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="287"/>
@@ -1907,7 +1913,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="288"/>
         <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a desired path.</source>
-        <translation>Per favor, feu servir l&apos;ítem &lt;b&gt;Altra...&lt;/b&gt; a la llista desplegable per a seleccionar la ruta desitjada.</translation>
+        <translation>Feu servir l&apos;ítem &lt;b&gt;Altra...&lt;/b&gt; a la llista desplegable per a seleccionar la ruta desitjada.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="301"/>
@@ -1922,7 +1928,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="312"/>
         <source>Opens a dialog to select a different folder.</source>
-        <translation>Obri un quadre de diàleg per a seleccionar una carpeta diferent.</translation>
+        <translation>Obre un quadre de diàleg per a seleccionar una carpeta diferent.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="315"/>
@@ -1932,7 +1938,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="321"/>
         <source>Opens a dialog to select a different file.</source>
-        <translation>Obri un quadre de diàleg per a seleccionar un fitxer diferent.</translation>
+        <translation>Obre un quadre de diàleg per a seleccionar un fitxer diferent.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="324"/>
@@ -1947,12 +1953,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="507"/>
         <source>Please type the desired folder path here.</source>
-        <translation>Introduïu ací la ruta desitjada per a la carpeta.</translation>
+        <translation>Introduïu aquí la ruta desitjada per a la carpeta.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="508"/>
         <source>Please type the desired file path here.</source>
-        <translation>Introduïu ací la ruta desitjada per al fitxer.</translation>
+        <translation>Introduïu aquí la ruta desitjada per al fitxer.</translation>
     </message>
 </context>
 <context>
@@ -1985,7 +1991,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="166"/>
         <source>Network</source>
-        <translation type="unfinished">Xarxa</translation>
+        <translation>Xarxa</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="179"/>
@@ -2012,12 +2018,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="45"/>
         <source>Default &amp;Hard Disk Folder:</source>
-        <translation>Carpeta de &amp;Disc per defecte:</translation>
+        <translation>Carpeta de &amp;disc dur per defecte:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="68"/>
         <source>Default &amp;Machine Folder:</source>
-        <translation>Carpeta de la &amp;Màquina per defecte:</translation>
+        <translation>Carpeta de la &amp;màquina per defecte:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="98"/>
@@ -2027,12 +2033,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="141"/>
         <source>When checked, the Dock Icon will reflect the VM window content in realtime.</source>
-        <translation type="unfinished"></translation>
+        <translation>Quan estigui marcat, la icona del dock mostrarà el contingut de la finestra de la màquina virtual en temps real.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="144"/>
         <source>&amp;Dock Icon Realtime Preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Previsualització en temps real a la icona del &amp;dock</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="92"/>
@@ -2042,12 +2048,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="128"/>
         <source>When checked, the application will provide an icon with the context menu in the system tray.</source>
-        <translation>Quan estiga marcat, l&apos;aplicació proveirà una icona amb el menú de context a la safata de sistema.</translation>
+        <translation>Quan estigui marcat, l&apos;aplicació proveirà una icona amb el menú de context a la safata de sistema.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="131"/>
         <source>&amp;Show System Tray Icon</source>
-        <translation>&amp;Mostra la Icona a la Safata del Sistema</translation>
+        <translation>&amp;Mostra la icona a la safata del sistema</translation>
     </message>
 </context>
 <context>
@@ -2060,12 +2066,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="71"/>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
-        <translation>Mostra la tecla que es fa servir com a tecla d&apos;amfitrió en la finestra de la màquina virtual. Activeu el camp d&apos;entrada i premeu una nova tecla d&apos;amfitrió. Tingueu en compte les tecles alfanumèriques, de moviment del cursor i d&apos;edició no es poden fer servir com a tecles d&apos;amfitrió.</translation>
+        <translation>Mostra la tecla que es fa servir com a tecla d&apos;amfitrió en la finestra de la màquina virtual. Activeu el camp d&apos;entrada i premeu una nova tecla d&apos;amfitrió. Tingueu en compte que les tecles alfanumèriques, de moviment del cursor i d&apos;edició no es poden fer servir com a tecles d&apos;amfitrió.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="91"/>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation>Si activeu aquesta casella, el teclat serà automàticament capturat cada vegada que s&apos;active la finestra de la màquina virtual. Quan el teclat és capturat, totes les pulsacions de tecles (incloses les de sistema, com ara Alt+Tab) es redireccionaran cap a la màquina virtual.</translation>
+        <translation>Quan estigui marcat, el teclat serà automàticament capturat cada vegada que s&apos;activi la finestra de la màquina virtual. Quan el teclat és capturat, totes les pulsacions de tecles (incloses les de sistema, com ara Alt+Tab) es redireccionaran cap a la màquina virtual.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="94"/>
@@ -2147,64 +2153,64 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="60"/>
         <source>%1 network</source>
         <comment>&lt;adapter name&gt; network</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 xarxa</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="130"/>
         <source>host IPv4 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>l&apos;adreça IPv4 de l&apos;amfitrió de &lt;b&gt;%1&lt;/b&gt; és errònia</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="137"/>
         <source>host IPv4 network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>la màscara de xarxa IPv4 de l&apos;amfitrió &lt;b&gt;%1&lt;/b&gt; és errònia</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="146"/>
         <source>host IPv6 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>l&apos;adreça IPv6 de l&apos;amfitrió de &lt;b&gt;%1&lt;/b&gt; és errònia</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="158"/>
         <source>DHCP server address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>l&apos;adreça del servidor DHCP de &lt;b&gt;%1&lt;/b&gt; és errònia</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="164"/>
         <source>DHCP server network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>la màscara de xarxa del servidor DHCP de &lt;b&gt;%1&lt;/b&gt; és errònia</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="170"/>
         <source>DHCP lower address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>el límit inferior de l&apos;adreça DHCP de &lt;b&gt;%1&lt;/b&gt; és erroni</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="176"/>
         <source>DHCP upper address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>el límit superior de l&apos;adreça DHCP de &lt;b&gt;%1&lt;/b&gt; és erroni</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="193"/>
         <source>Adapter</source>
-        <translation type="unfinished">Adaptador</translation>
+        <translation>Adaptador</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="194"/>
         <source>Automatically configured</source>
         <comment>interface</comment>
-        <translation type="unfinished"></translation>
+        <translation>Configurat automàticament</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="195"/>
         <source>Manually configured</source>
         <comment>interface</comment>
-        <translation type="unfinished"></translation>
+        <translation>Configurat manualment</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="201"/>
         <source>IPv4 Address</source>
-        <translation type="unfinished"></translation>
+        <translation>Adreça IPv4</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="202"/>
@@ -2212,116 +2218,116 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="231"/>
         <source>Not set</source>
         <comment>address</comment>
-        <translation type="unfinished"></translation>
+        <translation>Sense especificar</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="204"/>
         <source>IPv4 Network Mask</source>
-        <translation type="unfinished"></translation>
+        <translation>Màscara de xarxa IPv4</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="205"/>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="234"/>
         <source>Not set</source>
         <comment>mask</comment>
-        <translation type="unfinished"></translation>
+        <translation>Sense especificar</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="211"/>
         <source>IPv6 Address</source>
-        <translation type="unfinished"></translation>
+        <translation>Adreça IPv6</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="214"/>
         <source>IPv6 Network Mask Length</source>
-        <translation type="unfinished"></translation>
+        <translation>Mida de la màscara de xarxa IPv6</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="215"/>
         <source>Not set</source>
         <comment>length</comment>
-        <translation type="unfinished"></translation>
+        <translation>Sense especificar</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="222"/>
         <source>DHCP Server</source>
-        <translation type="unfinished"></translation>
+        <translation>Servidor DHCP</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="223"/>
         <source>Enabled</source>
         <comment>server</comment>
-        <translation type="unfinished">Activat</translation>
+        <translation>Activat</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="224"/>
         <source>Disabled</source>
         <comment>server</comment>
-        <translation type="unfinished">Desactivat</translation>
+        <translation>Desactivat</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="230"/>
         <source>Address</source>
-        <translation type="unfinished"></translation>
+        <translation>Adreça</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="233"/>
         <source>Network Mask</source>
-        <translation type="unfinished"></translation>
+        <translation>Màscara de xarxa</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="236"/>
         <source>Lower Bound</source>
-        <translation type="unfinished"></translation>
+        <translation>Límit inferior</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="237"/>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="240"/>
         <source>Not set</source>
         <comment>bound</comment>
-        <translation type="unfinished"></translation>
+        <translation>Sense especificar</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="239"/>
         <source>Upper Bound</source>
-        <translation type="unfinished"></translation>
+        <translation>Límit superior</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="378"/>
         <source>&amp;Add host-only network</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Afegeix xarxa només per a l&apos;amfitrió</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="379"/>
         <source>&amp;Remove host-only network</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Suprimeix xarxa només per a l&apos;amfitrió</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="380"/>
         <source>&amp;Edit host-only network</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Edita xarxa només per a l&apos;amfitrió</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="403"/>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="448"/>
         <source>Performing</source>
         <comment>creating/removing host-only network</comment>
-        <translation type="unfinished"></translation>
+        <translation>S&apos;estan realitzant les operacions</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsNetwork.ui" line="50"/>
         <source>&amp;Host-only Networks:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Xarxes només de l&apos;amfitrió:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsNetwork.ui" line="72"/>
         <source>Lists all available host-only networks.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra totes les xarxes només de l&apos;amfitrió.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsNetwork.ui" line="79"/>
         <source>Name</source>
-        <translation type="unfinished">Nom</translation>
+        <translation>Nom</translation>
     </message>
 </context>
 <context>
@@ -2329,117 +2335,117 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxGLSettingsNetworkDetails.ui" line="30"/>
         <source>Host-only Network Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Detalls de xarxa de només l&apos;amfitrió</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsNetworkDetails.ui" line="46"/>
         <source>&amp;Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Adaptador</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsNetworkDetails.ui" line="52"/>
         <source>Manual &amp;Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Configuració manual</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsNetworkDetails.ui" line="58"/>
         <source>Use manual configuration for this host-only network adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fes servir la configuració manual només per a l&apos;adaptador de xarxa de l&apos;amfitrió.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsNetworkDetails.ui" line="65"/>
         <source>&amp;IPv4 Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>Adreça &amp;IPv4:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsNetworkDetails.ui" line="84"/>
         <source>Displays the host IPv4 address for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra l&apos;adreça IPv4 de l&apos;amfitrió d&apos;aquest adaptador.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsNetworkDetails.ui" line="91"/>
         <source>IPv4 Network &amp;Mask:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Màscara de xarxa IPv4:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsNetworkDetails.ui" line="110"/>
         <source>Displays the host IPv4 network mask for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra la màscara de xarxa IPv4 de l&apos;amfitrió d&apos;aquest adaptador.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsNetworkDetails.ui" line="117"/>
         <source>I&amp;Pv6 Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>Adreça I&amp;Pv6:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsNetworkDetails.ui" line="136"/>
         <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra l&apos;adreça IPv6 de l&apos;amfitrió d&apos;aquest adaptador si IPv6 està suportat.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsNetworkDetails.ui" line="143"/>
         <source>IPv6 Network Mask &amp;Length:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Longitud de la màscara de xarxa IPv6:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsNetworkDetails.ui" line="162"/>
         <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra la longitud de l&apos;adreça de la màscara de xarxa IPv6 de l&apos;amfitrió per a aquest adaptador si IPv6 està suportat.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsNetworkDetails.ui" line="183"/>
         <source>&amp;DHCP Server</source>
-        <translation type="unfinished"></translation>
+        <translation>Servidor &amp;DHCP</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsNetworkDetails.ui" line="189"/>
         <source>&amp;Enable Server</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Habilita el servidor</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsNetworkDetails.ui" line="192"/>
         <source>Indicates whether the DHCP Server is enabled on machine startup or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Indica si el servidor DHCP està habilitat en iniciar de la màquina o no.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsNetworkDetails.ui" line="199"/>
         <source>Server Add&amp;ress:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ad&amp;reça del servidor:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsNetworkDetails.ui" line="218"/>
         <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra l&apos;adreça del servidor DHCP de la xarxa associada a aquest adaptador de només l&apos;amfitrió.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsNetworkDetails.ui" line="225"/>
         <source>Server &amp;Mask:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Màscara del servidor:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsNetworkDetails.ui" line="244"/>
         <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra la màscara de xarxa del servidor DHCP de la xarxa associada a aquest adaptador de només l&apos;amfitrió.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsNetworkDetails.ui" line="251"/>
         <source>&amp;Lower Address Bound:</source>
-        <translation type="unfinished"></translation>
+        <translation>Adreça límit &amp;inferior:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsNetworkDetails.ui" line="270"/>
         <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra l&apos;adreça límit inferior oferida pel servidor DHCP de la xarxa associada aquet adaptador de només l&apos;amfitrió.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsNetworkDetails.ui" line="277"/>
         <source>&amp;Upper Address Bound:</source>
-        <translation type="unfinished"></translation>
+        <translation>Adreça límit &amp;superior:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsNetworkDetails.ui" line="296"/>
         <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra l&apos;adreça límit superior oferida pel servidor DHCP de la xarxa associada a aquest adaptador de només l&apos;amfitrió.</translation>
     </message>
 </context>
 <context>
@@ -2447,7 +2453,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="45"/>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
-        <translation>Quan estiga marcat, l&apos;aplicació es connectarà periòdicament al web del VirtualBox per comprovar si hi ha noves versions disponibles.</translation>
+        <translation>Quan estigui marcat, l&apos;aplicació es connectarà periòdicament al web del VirtualBox per comprovar si hi ha noves versions disponibles.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="48"/>
@@ -2517,7 +2523,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxGlobal.cpp" line="1605"/>
         <source>Base Memory</source>
         <comment>details report</comment>
-        <translation>Memòria RAM</translation>
+        <translation>Memòria base</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1606"/>
@@ -2569,7 +2575,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxVMInformationDlg.cpp" line="475"/>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation type="unfinished">Nested Paging</translation>
+        <translation>Paginació imbricada</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1683"/>
@@ -2581,7 +2587,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxGlobal.cpp" line="1691"/>
         <source>Hard Disks</source>
         <comment>details report</comment>
-        <translation>Discs durs</translation>
+        <translation>Discos durs</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1736"/>
@@ -2612,14 +2618,14 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxVMInformationDlg.cpp" line="450"/>
         <source>Enabled</source>
         <comment>details report (Nested Paging)</comment>
-        <translation type="unfinished">Activat</translation>
+        <translation>Activat</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1752"/>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="451"/>
         <source>Disabled</source>
         <comment>details report (Nested Paging)</comment>
-        <translation type="unfinished">Desactivat</translation>
+        <translation>Desactivat</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1827"/>
@@ -2667,7 +2673,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxGlobal.cpp" line="1818"/>
         <source>CD/DVD-ROM</source>
         <comment>details report</comment>
-        <translation>CD/DVD-ROM</translation>
+        <translation>CD/DVD</translation>
     </message>
     <message>
         <source>Adapter</source>
@@ -2766,7 +2772,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxGlobal.cpp" line="2832"/>
         <source>Aborted</source>
         <comment>MachineState</comment>
-        <translation>interromput</translation>
+        <translation>Interromput</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2833"/>
@@ -2850,7 +2856,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxGlobal.cpp" line="2850"/>
         <source>CD/DVD-ROM</source>
         <comment>DeviceType</comment>
-        <translation>CD/DVD-ROM</translation>
+        <translation>CD/DVD</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2851"/>
@@ -3167,49 +3173,49 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxGlobal.cpp" line="2921"/>
         <source>Bridged Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Xarxa en pont</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2925"/>
         <source>Host-only Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Xarxa només d&apos;amfitrió</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2937"/>
         <source>PIIX3</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished">PIIX3</translation>
+        <translation>PIIX3</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2939"/>
         <source>PIIX4</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished">PIIX4</translation>
+        <translation>PIIX4</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2941"/>
         <source>ICH6</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>ICH6</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2943"/>
         <source>AHCI</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>AHCI</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2945"/>
         <source>Lsilogic</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Lsilogic</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2947"/>
         <source>BusLogic</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>BusLogic</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2962"/>
@@ -3280,19 +3286,19 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxGlobal.cpp" line="1899"/>
         <source>Bridged network, %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Xarxa en pont, %1</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1902"/>
         <source>Internal network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Xarxa interna, &apos;%1&apos;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1905"/>
         <source>Host-only network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Xarxa només de l&apos;amfitrió, &apos;%1&apos;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1989"/>
@@ -3322,7 +3328,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxGlobal.cpp" line="2854"/>
         <source>Shared Folder</source>
         <comment>DeviceType</comment>
-        <translation>Carpeta Compartida</translation>
+        <translation>Carpeta compartida</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2856"/>
@@ -3340,7 +3346,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxGlobal.cpp" line="2858"/>
         <source>SCSI</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
+        <translation>SCSI</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2860"/>
@@ -3503,7 +3509,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxMedium.cpp" line="241"/>
         <source>&lt;br&gt;&lt;nobr&gt;Type&amp;nbsp;(Format):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</source>
         <comment>hard disk</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;Type&amp;nbsp;(Format):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Tipus&amp;nbsp;(format):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxMedium.cpp" line="248"/>
@@ -3515,7 +3521,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxMedium.cpp" line="251"/>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
         <comment>medium</comment>
-        <translation>&lt;i&gt;No&amp;nbsp;Adjuntat&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;No&amp;nbsp;connectat&lt;/i&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxMedium.cpp" line="258"/>
@@ -3527,13 +3533,13 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxMedium.cpp" line="274"/>
         <source>&lt;hr&gt;Failed to check media accessibility.&lt;br&gt;%1.</source>
         <comment>medium</comment>
-        <translation>&lt;hr&gt;Ha fallat la comprovació de l&apos;accessibilita.&lt;br&gt;%1.</translation>
+        <translation>&lt;hr&gt;Ha fallat la comprovació de l&apos;accessibilitat.&lt;br&gt;%1.</translation>
     </message>
     <message>
         <location filename="../src/VBoxMedium.cpp" line="322"/>
         <source>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
         <comment>medium</comment>
-        <translation>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;Per a adjuntar aquest disc dur es crearà un altre disc dur diferenciat.</translation>
+        <translation>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;Per a connectar aquest disc dur es crearà un altre disc dur diferenciat.</translation>
     </message>
     <message>
         <location filename="../src/VBoxMedium.cpp" line="445"/>
@@ -3550,12 +3556,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxMedium.cpp" line="491"/>
         <source>&lt;hr&gt;Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
-        <translation>&lt;hr&gt;No s&apos;hi pot accedir a alguns dels medis d&apos;aquest disc. Feu servir el Gestor Virtual de Medis al mode &lt;b&gt;Mostra diferències als discs durs&lt;/b&gt; per inspeccionar aquest medi.</translation>
+        <translation>&lt;hr&gt;No s&apos;hi pot accedir a alguns dels suports d&apos;aquest disc. Feu servir el gestor de suports virtuals al mode &lt;b&gt;Mostra diferències als discos durs&lt;/b&gt; per inspeccionar aquest suport.</translation>
     </message>
     <message>
         <location filename="../src/VBoxMedium.cpp" line="509"/>
         <source>%1&lt;hr&gt;This base hard disk is indirectly attached using the following differencing hard disk:&lt;br&gt;%2%3</source>
-        <translation>%1&lt;hr&gt;Aquest disc dur base s&apos;adjunta indirectament fent servint el següent disc dur diferenciat:&lt;br&gt;%2%3</translation>
+        <translation>%1&lt;hr&gt;Aquest disc dur base es connecta indirectament fent servint el següent disc dur diferenciat:&lt;br&gt;%2%3</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1629"/>
@@ -3567,13 +3573,13 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxGlobal.cpp" line="1761"/>
         <source>Enabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation>Activat</translation>
+        <translation>Activada</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1762"/>
         <source>Disabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation>Desactivat</translation>
+        <translation>Desactivada</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2841"/>
@@ -3626,7 +3632,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
-        <translation type="obsolete">&lt;i&gt;Seleccioneu una categoria de paràmetres en la llista de l&apos;esquerra i deplaceu el ratolí sobre un element de la dreta per obtindre més informació&lt;i&gt;.</translation>
+        <translation type="obsolete">&lt;i&gt;Seleccioneu una categoria de paràmetres en la llista de l&apos;esquerra i deplaceu el ratolí sobre un element de la dreta per obtenir més informació&lt;i&gt;.</translation>
     </message>
     <message>
         <source> General </source>
@@ -4026,7 +4032,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Hard Disks</source>
-        <translation type="obsolete">&amp;Discs durs</translation>
+        <translation type="obsolete">&amp;Discos durs</translation>
     </message>
     <message>
         <source>&amp;Enable SATA Controller</source>
@@ -4039,14 +4045,14 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
                           attach hard disks to SATA ports when the virtual SATA
                           controller is disabled.&lt;/qt&gt;
                         </source>
-        <translation type="obsolete">&lt;qt&gt;Quan estiga marcat, habilita el controlador
+        <translation type="obsolete">&lt;qt&gt;Quan estigui marcat, habilita el controlador
 virtual SATA per a aquesta màquina. Tingueu en
-compte qu no podeu adjuntar discs durs a ports
+compte qu no podeu connectar discos durs a ports
 SATA quan el controlador SATA no es troba actiu.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Hard Disks &amp;Attachments</source>
-        <translation type="obsolete">Discs Durs &amp;Adjunts</translation>
+        <translation type="obsolete">Discos durs &amp;connectats</translation>
     </message>
     <message>
         <source>
@@ -4059,23 +4065,23 @@ SATA quan el controlador SATA no es troba actiu.&lt;/qt&gt;</translation>
                                   to add or remove hard disk
                                   attachments.&lt;/qt&gt;
                                 </source>
-        <translation type="obsolete">&lt;qt&gt;Mostra tots els discs durs
-adjunts a aquesta màquina. Feu doble
+        <translation type="obsolete">&lt;qt&gt;Mostra tots els discos durs
+connectats a aquesta màquina. Feu doble
 clic amb el ratolí o premeu el botó
 &lt;tt&gt;F2&lt;/tt&gt;/&lt;tt&gt;Espai&lt;/tt&gt; a l&apos;element
 remarcat per activar la llista desplegable i
 triar el valor que desitgeu. Feu servir el
 menú de context o els botons de la dreta
-per afegir o eliminar els adjunts als discs
+per afegir o eliminar les adjuncions als discos
 durs.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add Attachment</source>
-        <translation type="obsolete">Afegeix Adjunt</translation>
+        <translation type="obsolete">Afegeix una adjunció</translation>
     </message>
     <message>
         <source>&amp;Add Attachment</source>
-        <translation type="obsolete">&amp;Afegeix Adjunt</translation>
+        <translation type="obsolete">&amp;Afegeix una adjunció</translation>
     </message>
     <message>
         <source>Ins</source>
@@ -4085,15 +4091,15 @@ durs.&lt;/qt&gt;</translation>
         <source>
               &lt;qt&gt;Adds a new hard disk attachment.&lt;/qt&gt;
             </source>
-        <translation type="obsolete">&lt;qt&gt;Afegeix un nou adjunt al disc dur.&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;Afegeix una nova adjunció al disc dur.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Remove Attachment</source>
-        <translation type="obsolete">Elimina Adjunt</translation>
+        <translation type="obsolete">Elimina l&apos;adjunció</translation>
     </message>
     <message>
         <source>&amp;Remove Attachment</source>
-        <translation type="obsolete">&amp;Elimina Adjunt</translation>
+        <translation type="obsolete">&amp;Elimina l&apos;adjunció</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -4103,7 +4109,7 @@ durs.&lt;/qt&gt;</translation>
         <source>
               &lt;qt&gt;Removes the highlighted hard disk attachment.&lt;/qt&gt;
             </source>
-        <translation type="obsolete">&lt;qt&gt;Elimina l&apos;adjunt al disc dur remarcat.&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;Elimina l&apos;adjunció al disc dur remarcada.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Select Hard Disk</source>
@@ -4122,16 +4128,16 @@ durs.&lt;/qt&gt;</translation>
               &lt;qt&gt;Invokes the Virtual Disk Manager to select a hard disk
               to attach to the currently highlighted slot.&lt;/qt&gt;
             </source>
-        <translation type="obsolete">&lt;qt&gt;Invoca el Gestor de Discs Virtuals per a seleccionar
-un disc dur per adjuntar a la ranura remarcada actualment.&lt;/a&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;Invoca el gestor de discos virtuals per a seleccionar
+un disc dur per connectar a la ranura remarcada actualment.&lt;/a&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
-        <translation type="obsolete">&lt;i&gt;%1&lt;/i&gt; fa servir el disc dur que es troba adjuntat a &lt;i&gt;%2&lt;/i&gt;</translation>
+        <translation type="obsolete">&lt;i&gt;%1&lt;/i&gt; fa servir el disc dur que es troba connectat a &lt;i&gt;%2&lt;/i&gt;</translation>
     </message>
     <message>
         <source>Double-click to add a new attachment</source>
-        <translation type="obsolete">Doble clic per afegir un nou adjunt</translation>
+        <translation type="obsolete">Doble clic per afegir una nova adjunció</translation>
     </message>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
@@ -4143,7 +4149,7 @@ un disc dur per adjuntar a la ranura remarcada actualment.&lt;/a&gt;</translatio
     <message>
         <location filename="../src/VBoxImportApplianceWgt.cpp" line="133"/>
         <source>Importing Appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>S&apos;està important l&apos;aplicació virtual...</translation>
     </message>
 </context>
 <context>
@@ -4151,22 +4157,22 @@ un disc dur per adjuntar a la ranura remarcada actualment.&lt;/a&gt;</translatio
     <message>
         <location filename="../src/VBoxImportApplianceWzd.cpp" line="127"/>
         <source>Select an appliance to import</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleccioneu una aplicació virtual per importar</translation>
     </message>
     <message>
         <location filename="../src/VBoxImportApplianceWzd.cpp" line="128"/>
         <source>Open Virtualization Format (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Format obert de virtualització (%1)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxImportApplianceWzd.ui" line="31"/>
         <source>Appliance Import Wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Assistent d&apos;importació d&apos;aplicacions virtuals</translation>
     </message>
     <message>
         <location filename="../ui/VBoxImportApplianceWzd.ui" line="55"/>
         <source>Welcome to the Appliance Import Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation>Benvingut a l&apos;assistent d&apos;importació d&apos;aplicacions virtuals!</translation>
     </message>
     <message>
         <location filename="../ui/VBoxImportApplianceWzd.ui" line="105"/>
@@ -4177,44 +4183,50 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through importing an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;In order to import an appliance, you have to select a file describing the appliance first. Currently VirtualBox supports the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Aquest assitent us guiarà durant el procés d&apos;importació d&apos;una aplicació virtual. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Feu servir el botó &lt;span style=&quot; font-weight:600;&quot;&gt;Següent&lt;/span&gt; per anar a la següent pàgina de l&apos;assistent i el botó &lt;span style=&quot; font-weight:600;&quot;&gt;Enrere&lt;/span&gt; per anar a la pàgina prèvia.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Per importar una aplicació virtual, heu de seleccionar un fitxer que el descrigui primer. Actualment el VirtualBox suporta el format obert de virtualització (OVF). Per continuar, seleccioneu el fitxer per a importar:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxImportApplianceWzd.ui" line="164"/>
         <location filename="../ui/VBoxImportApplianceWzd.ui" line="331"/>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished">&lt; &amp;Enrere</translation>
+        <translation>&lt; &amp;Enrere</translation>
     </message>
     <message>
         <location filename="../ui/VBoxImportApplianceWzd.ui" line="171"/>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished">&amp;Següent &gt;</translation>
+        <translation>&amp;Següent &gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxImportApplianceWzd.ui" line="194"/>
         <location filename="../ui/VBoxImportApplianceWzd.ui" line="361"/>
         <source>Cancel</source>
-        <translation type="unfinished">Cancel·la</translation>
+        <translation>Cancel·la</translation>
     </message>
     <message>
         <location filename="../ui/VBoxImportApplianceWzd.ui" line="215"/>
         <source>Appliance Import Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Paràmetres d&apos;importació de l&apos;aplicació virtual</translation>
     </message>
     <message>
         <location filename="../ui/VBoxImportApplianceWzd.ui" line="265"/>
         <source>These are the virtual machines as described in the appliance with their suggested mappings for importing into VirtualBox. You can change many of the shown properties by double-clicking on the items and disable others by using the check boxes below.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aquestes són les màquines virtuals que es descriuen a l&apos;aplicació virtual amb els mapejats suggerits per a la importació al VirtualBox. Podeu canviar la majoria dels paràmetres mostrats fent doble clic sobre els ítems i inhabilitar altres fent servir els quadres de verificació.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxImportApplianceWzd.ui" line="311"/>
         <source>Restore Defaults</source>
-        <translation type="unfinished"></translation>
+        <translation>Restaura els paràmetres per defecte</translation>
     </message>
     <message>
         <location filename="../ui/VBoxImportApplianceWzd.ui" line="338"/>
         <source>&amp;Import &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Importa &gt;</translation>
     </message>
 </context>
 <context>
@@ -4222,42 +4234,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxImportApplianceWzd.cpp" line="76"/>
         <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;El sistema virtual &quot;%1&quot; requreix l&apos;acceptació dels termes i condicions de l&apos;acord de llicència del programari que es mostra.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Premeu &lt;b&gt;Hi estic d&apos;acord&lt;/b&gt; per continuar o &lt;b&gt;No hi estic d&apos;acord&lt;/b&gt; per a cancel·lar la importació.</translation>
     </message>
     <message>
         <location filename="../src/VBoxImportApplianceWzd.cpp" line="83"/>
         <source>Software License Agreement</source>
-        <translation type="unfinished"></translation>
+        <translation>Acord de llicència de programari</translation>
     </message>
     <message>
         <location filename="../src/VBoxImportApplianceWzd.cpp" line="84"/>
         <source>&amp;Disagree</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;No hi estic d&apos;acord</translation>
     </message>
     <message>
         <location filename="../src/VBoxImportApplianceWzd.cpp" line="85"/>
         <source>&amp;Agree</source>
-        <translation type="unfinished"></translation>
+        <translation>Hi estic d&apos;&amp;acord</translation>
     </message>
     <message>
         <location filename="../src/VBoxImportApplianceWzd.cpp" line="86"/>
         <source>&amp;Print...</source>
-        <translation type="unfinished"></translation>
+        <translation>Im&amp;primeix...</translation>
     </message>
     <message>
         <location filename="../src/VBoxImportApplianceWzd.cpp" line="87"/>
         <source>&amp;Save...</source>
-        <translation type="unfinished"></translation>
+        <translation>De&amp;sa...</translation>
     </message>
     <message>
         <location filename="../src/VBoxImportApplianceWzd.cpp" line="102"/>
         <source>Text (*.txt)</source>
-        <translation type="unfinished"></translation>
+        <translation>Text (*.txt)</translation>
     </message>
     <message>
         <location filename="../src/VBoxImportApplianceWzd.cpp" line="102"/>
         <source>Save license to file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Anomena i desa la llicència...</translation>
     </message>
 </context>
 <context>
@@ -4283,7 +4295,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxLineTextEdit.cpp" line="111"/>
         <source>&amp;Edit</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Edita</translation>
     </message>
 </context>
 <context>
@@ -4331,7 +4343,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMLogViewer.cpp" line="429"/>
         <source>Perform case sensitive search (when checked)</source>
-        <translation>Si activeu aquesta casella, cercarà distingint entre majúscules i minúscules</translation>
+        <translation>Si activeu aquesta casella, la cerca distingirà entre majúscules i minúscules</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMLogViewer.cpp" line="432"/>
@@ -4352,7 +4364,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxMediaComboBox.cpp" line="261"/>
         <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
-        <translation>No hi ha medis disponibles. Feu servir el Gestor Virtual de Medis per a afegir nous medis del tipus corresponent.</translation>
+        <translation>No hi ha suports disponibles. Feu servir el gestor de suports virtuals per a afegir-ne de nous del tipus corresponent.</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaComboBox.cpp" line="263"/>
@@ -4400,17 +4412,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="635"/>
         <source>Add an existing medium</source>
-        <translation>Afegeix un medi existent</translation>
+        <translation>Afegeix un suport existent</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="637"/>
         <source>Remove the selected medium</source>
-        <translation>Elimina el medi seleccionat</translation>
+        <translation>Elimina el suport seleccionat</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="638"/>
         <source>Release the selected medium by detaching it from the machines</source>
-        <translation>Allibera el medi seleccionat de forma que ja no estiga adjunt a les màquines</translation>
+        <translation>Allibera el suport seleccionat de forma que ja no estigui connectat a les màquines</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="639"/>
@@ -4471,12 +4483,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1030"/>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation>Imatges de CD/DVD-ROM (*.iso);;Tots els fitxers (*)</translation>
+        <translation>Imatges de CD/DVD (*.iso);;Tots els fitxers (*)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1032"/>
         <source>Select a CD/DVD-ROM disk image file</source>
-        <translation>Seleccioneu un fitxer d&apos;imatge de disc CD/DVD-ROM</translation>
+        <translation>Seleccioneu un fitxer d&apos;imatge de disc CD/DVD</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1037"/>
@@ -4491,7 +4503,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1430"/>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;No&amp;nbsp;Adjuntat&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;No&amp;nbsp;connectat&lt;/i&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1899"/>
@@ -4502,7 +4514,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="36"/>
         <source>Virtual Media Manager</source>
-        <translation>Gestor Virtual de Meis</translation>
+        <translation>Gestor de suports virtuals</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="59"/>
@@ -4551,7 +4563,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Voleu suprimir la interfície de xarxa  &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; seleccionada?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota:&lt;/b&gt;Aquesta interfície potser s&apos;estiga fent servir per un o més adaptadors de xarxa d&apos;aquesta o altra MV. Després de suprimir-los, aquests adaptadors no podran treballar fins que corregiu els paràmetres triant un nom d&apos;interfície diferent o un tipus diferent d&apos;adaptador.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Voleu suprimir la interfície de xarxa  &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; seleccionada?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota:&lt;/b&gt;Aquesta interfície potser s&apos;estigui fent servir per un o més adaptadors de xarxa d&apos;aquesta o altra màquina virtual. Després de suprimir-los, aquests adaptadors no podran treballar fins que corregiu els paràmetres triant un nom d&apos;interfície diferent o un tipus diferent d&apos;adaptador.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Host &amp;Interfaces</source>
@@ -4677,7 +4689,7 @@ al sistema operatiu client com a mida del disc dur.&lt;/p&gt;</translation>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="364"/>
         <source>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1 bytes&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Location:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Size:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
@@ -4795,7 +4807,7 @@ l&apos;eficiència d&apos;escriptura del disc dur físic.&lt;/p&gt;</translation
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="285"/>
         <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccioneu la imatge de disc dur virtual que voleu crear. Una &lt;b&gt;imatge d&apos;expansió dinàmica&lt;/b&gt; ocupa inicialment una quantiat molt petita d&apos;espai al disc dur físic. Creixerà dinàmicament (fins a la mida especificada) conforme el Sistema Amfitrió consumisca espai. Una &lt;b&gt;imatge de mida fixa&lt;/b&gt; no creix. S&apos;emmagatzema en un fitxer de mida aproximadament la que s&apos;indica per al disc dur virtual. La creació d&apos;una imatge de mida fixa triga un temps segons la grandària de la mateixa i de l&apos;eficiència d&apos;escriptura del disc dur físic.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Seleccioneu la imatge de disc dur virtual que voleu crear. Una &lt;b&gt;imatge d&apos;expansió dinàmica&lt;/b&gt; ocupa inicialment una quantiat molt petita d&apos;espai al disc dur físic. Creixerà dinàmicament (fins a la mida especificada) conforme el Sistema Amfitrió consumeixi espai. Una &lt;b&gt;imatge de mida fixa&lt;/b&gt; no creix. S&apos;emmagatzema en un fitxer de mida aproximadament la que s&apos;indica per al disc dur virtual. La creació d&apos;una imatge de mida fixa triga un temps segons la mida de la mateixa i de l&apos;eficiència d&apos;escriptura del disc dur físic.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="304"/>
@@ -4825,8 +4837,7 @@ l&apos;eficiència d&apos;escriptura del disc dur físic.&lt;/p&gt;</translation
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="549"/>
         <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccioneu la mida de la imatge del disc dur virtual en megabytes. Aquesta serà la mida que s&apos;informarà
-al sistema operatiu client com a mida del disc dur.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Seleccioneu la mida de la imatge del disc dur virtual en megabytes. Aquesta serà la mida que s&apos;informarà al sistema operatiu client com a mida del disc dur.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="568"/>
@@ -4836,7 +4847,7 @@ al sistema operatiu client com a mida del disc dur.&lt;/p&gt;</translation>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="793"/>
         <source>You are going to create a new virtual hard disk with the following parameters:</source>
-        <translation>Esteu a punt de crear una imatge de disc dur virtual amb els paràmetres següents:</translation>
+        <translation>Ara creareu una imatge de disc dur virtual amb els paràmetres següents:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="843"/>
@@ -4873,7 +4884,7 @@ system you plan to install onto the virtual machine.&lt;/p&gt;
 It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Introduïu un nom per a la màquina virtual nova i seleccioneu el tipus del sistema
 operatiu client que voleu instal·lar en la màquina virtual.&lt;/p&gt;
-&lt;p&gt;Normalment, el nom de la màquina virtual indica la seua configuració de programari i maquinari.
+&lt;p&gt;Normalment, el nom de la màquina virtual indica la seva configuració de programari i maquinari.
 Tots els components del VirtualBox el faran servir per a identificar la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4899,7 +4910,7 @@ Tots els components del VirtualBox el faran servir per a identificar la màquina
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="532"/>
         <source>Base &amp;Memory Size</source>
-        <translation>Mida de la &amp;memòria RAM</translation>
+        <translation>Mida de la &amp;memòria base</translation>
     </message>
     <message>
         <source>&lt;</source>
@@ -4935,9 +4946,9 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
 com a disc dur d&apos;arrrencada de la màquina virtual. Podeu crear un disc dur nou
 usant el botó &lt;b&gt;Nou&lt;/b&gt; o seleccionar una imatge de disc
 dur existent de la llista desplegable o prement el botó &lt;b&gt;Existents&lt;/b&gt;
-(per a invocar el diàleg del gestor de discs virtuals).&lt;/p&gt;
+(per a invocar el diàleg del gestor de discos virtuals).&lt;/p&gt;
 &lt;p&gt;Si us cal una configuració de disc dur més complexa, podeu també saltar-vos aquest
-pas i connectar discs durs més endavant, fent servir el diàleg de configuració de la màquina virtual.&lt;/p&gt;</translation>
+pas i connectar discos durs més endavant, fent servir el diàleg de configuració de la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>B&amp;oot Hard Disk (Primary Master)</source>
@@ -5014,7 +5025,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="153"/>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation>La mida de memòria RAM recomanada és &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+        <translation>La mida de memòria base recomanada és &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="156"/>
@@ -5046,21 +5057,21 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="282"/>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Introduïu un nom per a la màquina virtual nova i seleccioneu el tipus del sistema operatiu client que voleu instal·lar en la màquina virtual.&lt;/p&gt;&lt;p&gt;Normalment, el nom de la màquina virtual indica la seua configuració de programari i maquinari. Tots els components del VirtualBox el faran servir per a identificar la màquina virtual.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Introduïu un nom per a la màquina virtual nova i seleccioneu el tipus del sistema operatiu client que voleu instal·lar en la màquina virtual.&lt;/p&gt;&lt;p&gt;Normalment, el nom de la màquina virtual indica la seva configuració de programari i maquinari. Tots els components del VirtualBox el faran servir per a identificar la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="829"/>
         <source>&amp;Create new hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Crea un nou disc</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="839"/>
         <source>&amp;Use existing hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Fes servir un disc existent</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Seleccioneu la imatge de disc dur que es farà servir com a disc dur d&apos;arrrencada de la màquina virtual. Podeu crear un disc dur nou usant el botó &lt;b&gt;Nou&lt;/b&gt; o seleccionar una imatge de disc dur existent de la llista desplegable o prement el botó &lt;b&gt;Existents&lt;/b&gt; (per a invocar el diàleg del gestor de discs virtuals).&lt;/p&gt; &lt;p&gt;Si us cal una configuració de disc dur més complexa, podeu també saltar-vos aquest pas i connectar discs durs més endavant, fent servir el diàleg de configuració de la màquina virtual.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Seleccioneu la imatge de disc dur que es farà servir com a disc dur d&apos;arrrencada de la màquina virtual. Podeu crear un disc dur nou usant el botó &lt;b&gt;Nou&lt;/b&gt; o seleccionar una imatge de disc dur existent de la llista desplegable o prement el botó &lt;b&gt;Existents&lt;/b&gt; (per a invocar el diàleg del gestor de discos virtuals).&lt;/p&gt; &lt;p&gt;Si us cal una configuració de disc dur més complexa, podeu també saltar-vos aquest pas i connectar discos durs més endavant, fent servir el diàleg de configuració de la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1014"/>
@@ -5070,7 +5081,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1061"/>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Si el que hi ha més amunt és correcte premeu el botó &lt;b&gt;Finalitza&lt;/b&gt;. Quan el premeu, es crearà una màquina virtual nova.&lt;/p&gt;&lt;p&gt;Tingueu en compte que podeu canviar aquests i els altres paràmetres de la màquina virtua creada en qualsevol moment fent servir el diàleg &lt;b&gt;Paràmetres&lt;/b&gt; a través del menú de la finestra principal.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Si el que hi ha més amunt és correcte premeu el botó &lt;b&gt;Finalitza&lt;/b&gt;. Quan el premeu, es crearà una màquina virtual nova.&lt;/p&gt;&lt;p&gt;Tingueu en compte que podeu canviar aquests i els altres paràmetres de la màquina virtual creada en qualsevol moment fent servir el diàleg &lt;b&gt;Paràmetres&lt;/b&gt; a través del menú de la finestra principal.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1120"/>
@@ -5121,7 +5132,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="782"/>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccioneu la imatge de disc dur que es farà servir com a disc dur d&apos;arrrencada de la màquina virtual. Podeu crear un disc dur nou usant el botó &lt;b&gt;Nou&lt;/b&gt; o seleccionar una imatge de disc dur existent de la llista desplegable o prement el botó &lt;b&gt;Existents&lt;/b&gt; (per a invocar el diàleg del gestor de discs virtuals). Si us cal una configuració de disc dur més complexa, podeu també saltar-vos aquest pas i connectar discs durs més endavant, fent servir el diàleg de configuració de la màquina virtual.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Seleccioneu la imatge de disc dur que es farà servir com a disc dur d&apos;arrrencada de la màquina virtual. Podeu crear un disc dur nou usant el botó &lt;b&gt;Nou&lt;/b&gt; o seleccionar una imatge de disc dur existent de la llista desplegable o prement el botó &lt;b&gt;Existents&lt;/b&gt; (per a invocar el diàleg del gestor de discos virtuals). Si us cal una configuració de disc dur més complexa, podeu també saltar-vos aquest pas i connectar discos durs més endavant, fent servir el diàleg de configuració de la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="820"/>
@@ -5180,7 +5191,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
         <location filename="../src/VBoxProblemReporter.cpp" line="199"/>
         <source>Do not show this message again</source>
         <comment>msg box flag</comment>
-        <translation>No tornes a mostrar aquest missatge</translation>
+        <translation>No tornis a mostrar aquest missatge</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="508"/>
@@ -5194,7 +5205,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     </message>
     <message>
         <source>Failed to attach a hard disk image with UUID %1 to the device slot %2 of the controller %3 of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
-        <translation type="obsolete">No s&apos;ha pogut adjuntar la imatge de disc dur amb UUID %1 al dispositiu %2 del controlador %3 de la màquina &lt;b&gt;%4&lt;/b&gt;.</translation>
+        <translation type="obsolete">No s&apos;ha pogut connectar la imatge de disc dur amb UUID %1 al dispositiu %2 del controlador %3 de la màquina &lt;b&gt;%4&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1283"/>
@@ -5350,7 +5361,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="638"/>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>No s&apos;ha pogut enviar l&apos;esdeveniment de prémer el botó d&apos;engegar/aturar a la màquina virtual  &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>No s&apos;ha pogut enviar l&apos;esdeveniment de prémer el botó d&apos;iniciar/aturar a la màquina virtual  &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="478"/>
@@ -5397,13 +5408,13 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
         <location filename="../src/VBoxProblemReporter.cpp" line="2077"/>
         <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Error Greu&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Error fatal&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2083"/>
         <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Error No Greu&lt;/nobr&gt; </translation>
+        <translation>&lt;nobr&gt;Error no fatal&lt;/nobr&gt; </translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2089"/>
@@ -5413,17 +5424,17 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;S&apos;ha produït un error crític mentre s&apos;executava la màquina virtual, que s&apos;ha aturat.&lt;/p&gt;&lt;p&gt;Per obtindre ajuda, visiteu la secció Community a  &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; o al vostre contracte de suport. Afegiu el contingut del fitxer de registre &lt;tt&gt;VBox.log&lt;/tt&gt; i el fitxer d&apos;imatge &lt;tt&gt;VBox.png&lt;/tt&gt;,que podreu trobar al directori &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, i una descripció sobre allò que estàveu fent al moment al qual es va produir l&apos;error. Podeu accedir als fitxers especificats mitjançant &lt;b&gt;Mostra registre&lt;/b&gt; des del menú de la &lt;b&gt;Màquina&lt;/b&gt; a la finestra principal del VirtualBox.&lt;/p&gt;Premeu &lt;b&gt;D&apos;acord&lt;/b&gt; si voleu aturar la màquina o &lt;b&gt;Ignora&lt;/b&gt; si voleu deixar-la en procés de depuració. Tingueu en compte que el procés de depuració requereix coneixements avançats i eines especials, per tant és recomanabla prémer &lt;b&gt;D&apos;acord&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;S&apos;ha produït un error crític mentre s&apos;executava la màquina virtual, que s&apos;ha aturat.&lt;/p&gt;&lt;p&gt;Per obtenir ajuda, visiteu la secció Community a  &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; o al vostre contracte de suport. Afegiu el contingut del fitxer de registre &lt;tt&gt;VBox.log&lt;/tt&gt; i el fitxer d&apos;imatge &lt;tt&gt;VBox.png&lt;/tt&gt;,que podreu trobar al directori &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, i una descripció sobre allò que estàveu fent al moment al qual es va produir l&apos;error. Podeu accedir als fitxers especificats mitjançant &lt;b&gt;Mostra registre&lt;/b&gt; des del menú de la &lt;b&gt;Màquina&lt;/b&gt; a la finestra principal del VirtualBox.&lt;/p&gt;Premeu &lt;b&gt;D&apos;acord&lt;/b&gt; si voleu aturar la màquina o &lt;b&gt;Ignora&lt;/b&gt; si voleu deixar-la en procés de depuració. Tingueu en compte que el procés de depuració requereix coneixements avançats i eines especials, per tant és recomanabla prémer &lt;b&gt;D&apos;acord&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2120"/>
         <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;S&apos;ha produït un error mentre la màquina virtual s&apos;executava i es tancarà. Es recomanable copiar el missatge d&apos;error següent per a una posterior anàlisi:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;S&apos;ha produït un error mentre la màquina virtual s&apos;executava i es tancarà. Es recomanable copiar el missatge d&apos;error següent per a una anàlisi posterior:&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2132"/>
         <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;S&apos;ha produït un error mentre la màquina virtual s&apos;executava. Els detalls de l&apos;error es mostren a continuació. Podeu provar a resoldre l&apos;error i tornar a execuar la màquina virtual.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;S&apos;ha produït un error mentre la màquina virtual s&apos;executava. Els detalls de l&apos;error es mostren a continuació. Podeu provar a resoldre l&apos;error i tornar a executar la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="935"/>
@@ -5433,7 +5444,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1429"/>
         <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Esteu segur que voleu descarregar la imatge del CD VirtualBox Guest Additions des de  &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (mida %3 bytes)?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Esteu segur que voleu baixar la imatge del VirtualBox Guest Additions des de  &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (mida %3 bytes)?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="908"/>
@@ -5443,7 +5454,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="920"/>
         <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will no longer be able to register it back from GUI.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Esteu segur que voleu suprimir del registre la màquina virtaul inaccessible&lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;No podreu registrar-la novament des del GUI&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Esteu segur que voleu suprimir del registre la màquina virtaul inaccessible&lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;No podreu registrar-la novament des de la interfície.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1963"/>
@@ -5457,22 +5468,22 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the VM to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;No es pot entrar al mode fluid degut a que no hi ha suficient memòria de vídeo.&lt;/p&gt;&lt;p&gt;Heu de configurar la MV per tal que tinga almenys &lt;b&gt;%1&lt;/b&gt; de memòria de vídeo.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;No es pot entrar al mode fluid degut a que no hi ha suficient memòria de vídeo.&lt;/p&gt;&lt;p&gt;Heu de configurar la màquina virtual per tal que tingui almenys &lt;b&gt;%1&lt;/b&gt; de memòria de vídeo.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="394"/>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;No es pot trobar el fitxer de llengua per a la llengua &lt;b&gt;%1&lt;/b&gt; al directori &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Es farà servir l&apos;anglès (llengua per defecte). Aneu al diàleg de &lt;b&gt;Preferències&lt;/b&gt; que podeu obrir des del menú &lt;b&gt;Fitxer&lt;/b&gt; de la finestra principal del VirtualBox. Allà podreu triar entre les diferents llengües a la pàgina de &lt;b&gt;Llengües&lt;/b&gt;.&lt;/p&gt; </translation>
+        <translation>&lt;p&gt;No es pot trobar el fitxer de llengua per a l&apos;idioma &lt;b&gt;%1&lt;/b&gt; al directori &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Es farà servir l&apos;anglès (llengua per defecte). Aneu al diàleg de &lt;b&gt;Preferències&lt;/b&gt; que podeu obrir des del menú &lt;b&gt;Fitxer&lt;/b&gt; de la finestra principal del VirtualBox. Allà podreu triar entre les diferents llengües a la secció d&apos;&lt;b&gt;Idioma&lt;/b&gt;.&lt;/p&gt; </translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1406"/>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;No es pot trobar el fitxer d&apos;imatge de CD VirtualBox Guest Additions &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; o &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Voleu descarregar aquest CD des d&apos;internet?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;No es pot trobar el fitxer d&apos;imatge del VirtualBox Guest Additions &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; o &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Voleu baixar-la des d&apos;internet?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="407"/>
         <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;No es pot trobar el fitxer de llengua per a la llengua&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Es farà servir l&apos;anglès (llengua per defecte). Aneu al diàleg de &lt;b&gt;Preferències&lt;/b&gt; que podeu obrir des del menú &lt;b&gt;Fitxer&lt;/b&gt; de la finestra principal del VirtualBox. Allà podreu triar entre les diferents llengües a la pàgina de &lt;b&gt;Llengües&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;No es pot trobar el fitxer de llengua per a l&apos;idioma&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Es farà servir l&apos;anglès (llengua per defecte). Aneu al diàleg de &lt;b&gt;Preferències&lt;/b&gt; que podeu obrir des del menú &lt;b&gt;Fitxer&lt;/b&gt; de la finestra principal del VirtualBox. Allà podreu triar entre les diferents llengües a la pàgina de &lt;b&gt;Llengües&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;No&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Yes&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;</source>
@@ -5494,7 +5505,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1420"/>
         <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;No s&apos;ha pogut descarregar la imatge de CD de VirtualBox Guest Additions des de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;No s&apos;ha pogut baixar la imatge del de VirtualBox Guest Additions des de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="419"/>
@@ -5521,7 +5532,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     </message>
     <message>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;No es pot accedir a un o més dels discs, CD/DVD o disquet virtuals. Com a resultat, no podreu operar amb les màquines virtuals que els facen servir fins que estiguen accessibles.&lt;/p&gt;&lt;p&gt;Premeu &lt;b&gt;D&apos;acord&lt;/b&gt; per obrir el Gestor de Discs Virtuals i veure a quins suports no s&apos;hi pot accedir, o premeu &lt;b&gt;ignora&lt;/b&gt; per ignorar aquest missatge.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;No es pot accedir a un o més dels discos, CD/DVD o disquet virtuals. Com a resultat, no podreu operar amb les màquines virtuals que els facin servir fins que estiguin accessibles.&lt;/p&gt;&lt;p&gt;Premeu &lt;b&gt;D&apos;acord&lt;/b&gt; per obrir el gestor de discos virtuals i veure a quins suports no s&apos;hi pot accedir, o premeu &lt;b&gt;ignora&lt;/b&gt; per ignorar aquest missatge.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Releasing this media image will detach it from the following virtual machine(s): &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
@@ -5534,31 +5545,31 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1441"/>
         <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;S&apos;ha descarregat la imatge de CD de VirtualBox Guest Additions des de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; i s&apos;ha desat localment com a &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Voleu registrar aquesta imatge de CD i montar-la a la unitat virtual de CD/DVD?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;S&apos;ha baixat la imatge del VirtualBox Guest Additions des de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; i s&apos;ha desat localment com a &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Voleu registrar aquesta imatge de CD i montar-la a la unitat virtual de CD/DVD?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2141"/>
         <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. You may ignore this message, but it is suggested to perform an appropriate action to make sure the described error will not happen.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La màquina virtual s&apos;executarà, però amb l&apos;error que es descriu a continuació. Podeu ignorar aquest missatge, però és recomanable solucionar l&apos;error per tal que no torne a passar.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;La màquina virtual s&apos;executarà, però amb l&apos;error que es descriu a continuació. Podeu ignorar aquest missatge, però és recomanable solucionar l&apos;error per tal que no es torni a produir.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1681"/>
         <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and therefore does not accept any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La Màquina Virtual és actualment en &lt;b&gt;Pausa&lt;/pa&gt; i per tant no accepta cap acció provinent del teclat o del ratolí. Si voleu continuar treballant amb la MV, haureu de reprendre el funcionament des de l&apos;opció corresponent de la barra de menú.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;La Màquina Virtual és actualment en &lt;b&gt;Pausa&lt;/pa&gt; i per tant no accepta cap acció provinent del teclat o del ratolí. Si voleu continuar treballant amb la màquina virtual, haureu de reprendre el funcionament des de l&apos;opció corresponent de la barra de menú.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1663"/>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La Màquina Virtual ha informat que el sistema client no suporta &lt;b&gt;integració del punter del ratolí&lt;/b&gt; al mode de vídeo actual. Heu de capturar el ratolí (clicant sobre la pantalla de la MV o prement la tecla amfitrió) per tal de poder controlar el ratolí a dins del sistema client.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;La Màquina Virtual ha informat que el sistema client no suporta &lt;b&gt;integració del punter del ratolí&lt;/b&gt; al mode de vídeo actual. Heu de capturar el ratolí (clicant sobre la pantalla de la màquina virtual o prement la tecla amfitrió) per tal de poder controlar el ratolí a dins del sistema client.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;La Màquina Virtual ha informat que el sistema client suporta &lt;b&gt;integració del punter del ratolí&lt;/b&gt;. Això significa que no necessiteu &lt;i&gt;capturar&lt;/i&gt; el punter del ratolí per poder fer-lo servir al sistema client -- totes les accions que executeu quan el punter del ratolí estiga a sobre de la Màquina virtual s&apos;enviaran directament al sistema client. Si es captura el ratolí, automàticament es tornarà al mode normal.&lt;/p&gt;&lt;p&gt;La icona del ratolí a la barra d&apos;estat es mostrarà com&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;per informar-vos que la integració del punter està suportada pel sistema client que està actiu.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;: Algunes aplicacions poden comportar-se incorrectament treballant en el mode d&apos;integració del ratolí. Sempre podeu inhabilitar-ho a la sessió actual (o habilitar-ho) seleccionat l&apos;opció corresponent a la barra de menú.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;La Màquina Virtual ha informat que el sistema client suporta &lt;b&gt;integració del punter del ratolí&lt;/b&gt;. Això significa que no necessiteu &lt;i&gt;capturar&lt;/i&gt; el punter del ratolí per poder fer-lo servir al sistema client -- totes les accions que executeu quan el punter del ratolí estigui a sobre de la Màquina virtual s&apos;enviaran directament al sistema client. Si es captura el ratolí, automàticament es tornarà al mode normal.&lt;/p&gt;&lt;p&gt;La icona del ratolí a la barra d&apos;estat es mostrarà com&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;per informar-vos que la integració del punter està suportada pel sistema client que està actiu.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;: Algunes aplicacions poden comportar-se incorrectament treballant en el mode d&apos;integració del ratolí. Sempre podeu inhabilitar-ho a la sessió actual (o habilitar-ho) seleccionat l&apos;opció corresponent a la barra de menú.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1874"/>
         <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the color quality of the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color quality to see if this message disappears or you can simply disable the message now if you are sure the required color quality (%4&amp;nbsp;bit) is not available in the given guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La finestra de la màquina virtual està optimitzada per treballar en el mode de color &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; però la qualitat del color que es mostra actualment està establida a &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;. Obriu el diàleg de propietats de la pantalla del sistema client i seleccioneu el mode de color &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt;, si és disponible, per obtindre el millor funcionament possible del subsistema de vídeo.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;: Alguns sistemes operatius, com OS/2, necessiten treballar actualment al mode 32&amp;nbsp;bit però informen que és 24&amp;nbsp;bit (16 milions de colors). Haureu de provar a seleccionar una qualitat de color diferent per veure si és correcta i aquest missatge desapareix o simplemente podeu inhabilitar aquest missatge si esteu segur que la qualitat de color requerida (%4&amp;nbsp;bit) no és disponible al sistema client.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;La finestra de la màquina virtual està optimitzada per treballar en el mode de color &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; però la qualitat del color que es mostra actualment està establerta a &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;. Obriu el diàleg de propietats de la pantalla del sistema client i seleccioneu el mode de color &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt;, si és disponible, per obtenir el millor funcionament possible del subsistema de vídeo.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;: Alguns sistemes operatius, com OS/2, necessiten treballar actualment al mode 32&amp;nbsp;bit però informen que és 24&amp;nbsp;bit (16 milions de colors). Haureu de provar a seleccionar una qualitat de color diferent per veure si és correcta i aquest missatge desapareix o simplemente podeu inhabilitar aquest missatge si esteu segur que la qualitat de color requerida (%4&amp;nbsp;bit) no és disponible al sistema client.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
@@ -5590,11 +5601,11 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     </message>
     <message>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Heu fet &lt;b&gt;clic amb el ratolí&lt;/b&gt; a dins de la finestra de la Màquina Virtual o heu premut la &lt;b&gt;tecla d&apos;amfitrió&lt;/b&gt;. Això fa que la Màquina Virtual &lt;b&gt;capture&lt;/b&gt; el punter del ratolí (només en cas que la integració del ratolí no estiga suportada pel sistema client) i el teclat, que ara no estaran disponibles per funcionar a la màquina amfitriona.&lt;/p&gt;&lt;p&gt;Podeu prémer la &lt;b&gt;tecla d&apos;amfitrió&lt;/b&gt; en qualsevol moment per &lt;b&gt;tornar&lt;/b&gt; el ratolí i el teclat al mode normal de funcionament. La tecla d&apos;amfitrió assiganada actualment es mostra a la barra d&apos;estat a la part inferior de la finestra, al costat de la icona &amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;. Aquesta icona indica si el teclat i el ratolí estan en estat de captura o no.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Heu fet &lt;b&gt;clic amb el ratolí&lt;/b&gt; a dins de la finestra de la Màquina Virtual o heu premut la &lt;b&gt;tecla d&apos;amfitrió&lt;/b&gt;. Això fa que la Màquina Virtual &lt;b&gt;capture&lt;/b&gt; el punter del ratolí (només en cas que la integració del ratolí no estigui suportada pel sistema client) i el teclat, que ara no estaran disponibles per funcionar a la màquina amfitriona.&lt;/p&gt;&lt;p&gt;Podeu prémer la &lt;b&gt;tecla d&apos;amfitrió&lt;/b&gt; en qualsevol moment per &lt;b&gt;tornar&lt;/b&gt; el ratolí i el teclat al mode normal de funcionament. La tecla d&apos;amfitrió assiganada actualment es mostra a la barra d&apos;estat a la part inferior de la finestra, al costat de la icona &amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;. Aquesta icona indica si el teclat i el ratolí estan en estat de captura o no.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;L&apos;opció de &lt;b&gt;Captura automàtica del teclat&lt;/b&gt; és activa. Això farà que la Màquina Virtual &lt;b&gt;capture&lt;/b&gt; el teclat sempre que la finestra de la MV estiga activa i farà que el teclat no estiga disponible per a d&apos;altres aplicacions que s&apos;estiguen executant a l&apos;ordinador amfitrió: quan el teclat està capturat, totes les tecles especials (incloent Alt-Tab) es readrecen a la MV.&lt;/p&gt;&lt;p&gt;Podeu prémer la &lt;b&gt;tecla d&apos;amfitrió&lt;/b&gt; en qualsevol moment per &lt;b&gt;tornar&lt;/b&gt; el ratolí i el teclat al mode normal de funcionament. La tecla d&apos;amfitrió assiganada actualment es mostra a la barra d&apos;estat a la part inferior de la finestra, al costat de la icona &amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;. Aquesta icona indica si el teclat i el ratolí estan en estat de captura o no.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;L&apos;opció de &lt;b&gt;Captura automàtica del teclat&lt;/b&gt; és activa. Això farà que la Màquina Virtual &lt;b&gt;capture&lt;/b&gt; el teclat sempre que la finestra de la màquina virtual estigui activa i farà que el teclat no estigui disponible per a d&apos;altres aplicacions que s&apos;estiguin executant a l&apos;ordinador amfitrió: quan el teclat està capturat, totes les tecles especials (incloent Alt-Tab) es readrecen a la màquina virtual.&lt;/p&gt;&lt;p&gt;Podeu prémer la &lt;b&gt;tecla d&apos;amfitrió&lt;/b&gt; en qualsevol moment per &lt;b&gt;tornar&lt;/b&gt; el ratolí i el teclat al mode normal de funcionament. La tecla d&apos;amfitrió assiganada actualment es mostra a la barra d&apos;estat a la part inferior de la finestra, al costat de la icona &amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;. Aquesta icona indica si el teclat i el ratolí estan en estat de captura o no.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2258"/>
@@ -5617,7 +5628,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
         <location filename="../src/VBoxProblemReporter.cpp" line="175"/>
         <source>VirtualBox - Critical Error</source>
         <comment>msg box title</comment>
-        <translation>VirtualBox - Error Crític</translation>
+        <translation>VirtualBox - Error crític</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="171"/>
@@ -5651,12 +5662,12 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="454"/>
         <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;No s&apos;ha pogut carregar la configuració global de la IGU des de &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;L&apos;aplicació es tancarà.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;No s&apos;ha pogut carregar la configuració global de la interfície des de &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;L&apos;aplicació es tancarà.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="468"/>
         <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;No s&apos;ha pogut desar la configuració global de la IGU a &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;L&apos;aplicació es tancarà.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;No s&apos;ha pogut desar la configuració global de la interfície a &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;L&apos;aplicació es tancarà.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="556"/>
@@ -5678,7 +5689,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
         <location filename="../src/VBoxProblemReporter.cpp" line="925"/>
         <source>Unregister</source>
         <comment>machine</comment>
-        <translation>Lleva del registre</translation>
+        <translation>Treu del registre</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="942"/>
@@ -5707,7 +5718,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Hi ha discs durs adjunts als ports SATA a aquesta màquina virtual. Si deshabiliteu el controlador SATA, tots aquests discs es desadjuntaran automàticament.&lt;/p&gt;&lt;p&gt;Esteu segur que voleu deshabilitar el controlador SATA?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Hi ha discos durs connectats als ports SATA a aquesta màquina virtual. Si deshabiliteu el controlador SATA, tots aquests discos es desconnectaran automàticament.&lt;/p&gt;&lt;p&gt;Esteu segur que voleu inhabilitar el controlador SATA?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1055"/>
@@ -5717,17 +5728,17 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     </message>
     <message>
         <source>Failed to attach a hard disk image with UUID %1 to device slot %2 on channel %3 of the %4 bus of the machine &lt;b&gt;%5&lt;/b&gt;.</source>
-        <translation type="obsolete">No s&apos;ha pogut adjuntar la imatge del disc dur amb UUID %1 a la ranura de dispositius %2 al canal %3 del bus %4 de la màquina &lt;b&gt;%5&lt;/b&gt;.</translation>
+        <translation type="obsolete">No s&apos;ha pogut connectar la imatge del disc dur amb UUID %1 a la ranura de dispositius %2 al canal %3 del bus %4 de la màquina &lt;b&gt;%5&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach a hard disk image from device slot %1 on channel %2 of the %3 bus of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
-        <translation type="obsolete">No s&apos;ha pogut desadjuntar una imatge de disc dur a la ranura de dispositius %1 al canal %2 del bus %3 de la màquina &lt;b&gt;%4&lt;/b&gt;.</translation>
+        <translation type="obsolete">No s&apos;ha pogut desconnectar una imatge de disc dur a la ranura de dispositius %1 al canal %2 del bus %3 de la màquina &lt;b&gt;%4&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1434"/>
         <source>Download</source>
         <comment>additions</comment>
-        <translation>Descarrega</translation>
+        <translation>Baixa</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1449"/>
@@ -5750,7 +5761,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     </message>
     <message>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Un  o més dels discs durs virtuals, CD/DVD o disquet no es troben actualment accessibles. Això significa que no podreu treballar amb les màquines virtuals que els facen servir fins que estiguen accessibles.&lt;/p&gt;&lt;p&gt;Premeu &lt;b&gt;Comprova&lt;/b&gt; per obrir la finestra del Gestor de Disc Virtual i comprovar quins medis es troben inaccessibles, o premeu &lt;b&gt;Ignora&lt;/b&gt; per ignorar aquest missatge.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Un  o més dels discos durs virtuals, CD/DVD o disquet no es troben actualment accessibles. Això significa que no podreu treballar amb les màquines virtuals que els facin servir fins que estiguin accessibles.&lt;/p&gt;&lt;p&gt;Premeu &lt;b&gt;Comprova&lt;/b&gt; per obrir la finestra del Gestor de Disc Virtual i comprovar quins medis es troben inaccessibles, o premeu &lt;b&gt;Ignora&lt;/b&gt; per ignorar aquest missatge.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1707"/>
@@ -5811,7 +5822,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
         <location filename="../src/VBoxProblemReporter.cpp" line="1957"/>
         <source>Go Back</source>
         <comment>no hard disk attached</comment>
-        <translation>Vés Enrere</translation>
+        <translation>Vés enrere</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="385"/>
@@ -5820,7 +5831,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     </message>
     <message>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Hi ha discs durs disponibles que no es fan servir per al nou adjunt creat.&lt;/p&gt;&lt;p&gt;Prmeu el botó &lt;b&gt;Crea&lt;/b&gt; per iniciar el gestor de &lt;i&gt;Creació de disc durs virtuals&lt;/i&gt; i crear un nou disc dur, o premeu el botó &lt;b&gt;Selecciona&lt;/b&gt; per obrir el &lt;i&gt;Gestor de Discs Durs&lt;/i&gt; i seleccionar què fer.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Hi ha discos durs disponibles que no es fan servir per a la nova adjunció creada.&lt;/p&gt;&lt;p&gt;Prmeu el botó &lt;b&gt;Crea&lt;/b&gt; per iniciar el gestor de &lt;i&gt;Creació de disc durs virtuals&lt;/i&gt; i crear un nou disc dur, o premeu el botó &lt;b&gt;Selecciona&lt;/b&gt; per obrir el &lt;i&gt;Gestor de Discs Durs&lt;/i&gt; i seleccionar què fer.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1083"/>
@@ -5837,36 +5848,36 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="874"/>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;No es pot entrar al mode fluid degut a que no hi ha suficient memòria de vídeo.&lt;/p&gt;&lt;p&gt;Heu de configurar la MV per tal que tinga almenys &lt;b&gt;%1&lt;/b&gt; de memòria de vídeo.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;No es pot entrar al mode fluid degut a que no hi ha suficient memòria de vídeo.&lt;/p&gt;&lt;p&gt;Heu de configurar la màquina virtual per tal que tingui almenys &lt;b&gt;%1&lt;/b&gt; de memòria de vídeo.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="887"/>
         <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;No es pot canviar al mode de pantalla completa perquè no hi ha suficient memòria de vídeo assignada a la màquina virtual.&lt;/p&gt;&lt;p&gt;Haureu de fixar la memòria de vídeo com a mínim a &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Premeu &lt;b&gt;Ignora&lt;/b&gt; per canviar de totes maneres al mode de pantalla completa o premeu &lt;b&gt;Cancel·la&lt;/b&gt; per a cancel·lar l&apos;operació.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;No es pot canviar al mode de pantalla completa perquè no hi ha suficient memòria de vídeo assignada a la màquina virtual.&lt;/p&gt;&lt;p&gt;Haureu d&apos;establir la memòria de vídeo com a mínim a &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Premeu &lt;b&gt;Ignora&lt;/b&gt; per canviar de totes maneres al mode de pantalla completa o premeu &lt;b&gt;Cancel·la&lt;/b&gt; per a cancel·lar l&apos;operació.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;No es pot obtindre informació de noves versions degut a un problema amb la xarxa:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;No es pot obtenir informació de noves versions degut a un problema amb la xarxa:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1552"/>
         <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
-        <translation>Ja teniu instal·lada la darrera versió del VirtualBox. Proveu novament més tard.</translation>
+        <translation>Ja teniu instal·lada la darrera versió del VirtualBox. Proveu més tard.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1564"/>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Heu fet &lt;b&gt;clic amb el ratolí&lt;/b&gt; a dins de la finestra de la Màquina Virtual o heu premut la &lt;b&gt;tecla d&apos;amfitrió&lt;/b&gt;. Això fa que la Màquina Virtual &lt;b&gt;capture&lt;/b&gt; el punter del ratolí (només en cas que la integració del ratolí no estiga suportada pel sistema client) i el teclat, que ara no estaran disponibles per funcionar a la màquina amfitriona.&lt;/p&gt;&lt;p&gt;Podeu prémer la &lt;b&gt;tecla d&apos;amfitrió&lt;/b&gt; en qualsevol moment per &lt;b&gt;tornar&lt;/b&gt; el ratolí i el teclat al mode normal de funcionament. La tecla d&apos;amfitrió assiganada actualment es mostra a la barra d&apos;estat a la part inferior de la finestra, al costat de la icona &amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;. Aquesta icona indica si el teclat i el ratolí estan en estat de captura o no.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Heu fet &lt;b&gt;clic amb el ratolí&lt;/b&gt; a dins de la finestra de la màquina virtual o heu premut la &lt;b&gt;tecla d&apos;amfitrió&lt;/b&gt;. Això fa que la màquina virtual &lt;b&gt;capturi&lt;/b&gt; el punter del ratolí (només en cas que la integració del ratolí no estigui suportada pel sistema client) i el teclat, que ara no estaran disponibles per funcionar a la màquina amfitriona.&lt;/p&gt;&lt;p&gt;Podeu prémer la &lt;b&gt;tecla d&apos;amfitrió&lt;/b&gt; en qualsevol moment per &lt;b&gt;tornar&lt;/b&gt; el ratolí i el teclat al mode normal de funcionament. La tecla d&apos;amfitrió assiganada actualment es mostra a la barra d&apos;estat a la part inferior de la finestra, al costat de la icona &amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;. Aquesta icona indica si el teclat i el ratolí estan en estat de captura o no.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1597"/>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;L&apos;opció de &lt;b&gt;Captura automàtica del teclat&lt;/b&gt; és activa. Això farà que la Màquina Virtual &lt;b&gt;capture&lt;/b&gt; el teclat sempre que la finestra de la MV estiga activa i farà que el teclat no estiga disponible per a d&apos;altres aplicacions que s&apos;estiguen executant a l&apos;ordinador amfitrió: quan el teclat està capturat, totes les tecles especials (incloent Alt-Tab) es readrecen a la MV.&lt;/p&gt;&lt;p&gt;Podeu prémer la &lt;b&gt;tecla d&apos;amfitrió&lt;/b&gt; en qualsevol moment per &lt;b&gt;tornar&lt;/b&gt; el ratolí i el teclat al mode normal de funcionament. La tecla d&apos;amfitrió assiganada actualment es mostra a la barra d&apos;estat a la part inferior de la finestra, al costat de la icona &amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;. Aquesta icona indica si el teclat i el ratolí estan en estat de captura o no.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;L&apos;opció de &lt;b&gt;captura automàtica del teclat&lt;/b&gt; és activa. Això farà que la màquina virtual &lt;b&gt;capturi&lt;/b&gt; el teclat sempre que la finestra de la màquina virtual estigui activa i farà que el teclat no estigui disponible per a altres aplicacions que s&apos;estiguin executant a l&apos;ordinador amfitrió: quan el teclat està capturat, totes les tecles especials (incloent Alt-Tab) es readrecen a la màquina virtual.&lt;/p&gt;&lt;p&gt;Podeu prémer la &lt;b&gt;tecla d&apos;amfitrió&lt;/b&gt; en qualsevol moment per &lt;b&gt;tornar&lt;/b&gt; el ratolí i el teclat al mode normal de funcionament. La tecla d&apos;amfitrió assiganada actualment es mostra a la barra d&apos;estat a la part inferior de la finestra, al costat de la icona &amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;. Aquesta icona indica si el teclat i el ratolí estan en estat de captura o no.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1639"/>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La Màquina Virtual ha informat que el sistema client suporta &lt;b&gt;integració del punter del ratolí&lt;/b&gt;. Això significa que no necessiteu &lt;i&gt;capturar&lt;/i&gt; el punter del ratolí per poder fer-lo servir al sistema client -- totes les accions que executeu quan el punter del ratolí estiga a sobre de la Màquina virtual s&apos;enviaran directament al sistema client. Si es captura el ratolí, automàticament es tornarà al mode normal.&lt;/p&gt;&lt;p&gt;La icona del ratolí a la barra d&apos;estat es mostrarà com&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;per informar-vos que la integració del punter està suportada pel sistema client que està actiu.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;: Algunes aplicacions poden comportar-se incorrectament treballant en el mode d&apos;integració del ratolí. Sempre podeu inhabilitar-ho a la sessió actual (o habilitar-ho) seleccionat l&apos;opció corresponent a la barra de menú.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;La Màquina Virtual ha informat que el sistema client suporta &lt;b&gt;integració del punter del ratolí&lt;/b&gt;. Això significa que no necessiteu &lt;i&gt;capturar&lt;/i&gt; el punter del ratolí per poder fer-lo servir al sistema client -- totes les accions que executeu quan el punter del ratolí estigui a sobre de la Màquina virtual s&apos;enviaran directament al sistema client. Si es captura el ratolí, automàticament es tornarà al mode normal.&lt;/p&gt;&lt;p&gt;La icona del ratolí a la barra d&apos;estat es mostrarà com&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;per informar-vos que la integració del punter està suportada pel sistema client que està actiu.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;: Algunes aplicacions poden comportar-se incorrectament treballant en el mode d&apos;integració del ratolí. Sempre podeu inhabilitar-ho a la sessió actual (o habilitar-ho) seleccionat l&apos;opció corresponent a la barra de menú.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1825"/>
@@ -5896,7 +5907,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxHelpActions.cpp" line="109"/>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation>Obre el navegador i ves al lloc web del producte VirtualBox</translation>
+        <translation>Obre el navegador i vés al lloc web del producte VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxHelpActions.cpp" line="112"/>
@@ -5906,7 +5917,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxHelpActions.cpp" line="113"/>
         <source>Cause all suppressed warnings and messages to be shown again</source>
-        <translation>Fa que tots els avisos i missatges suprimits es mostren una altra vegada</translation>
+        <translation>Fa que tots els avisos i missatges suprimits es mostrin una altra vegada</translation>
     </message>
     <message>
         <location filename="../src/VBoxHelpActions.cpp" line="116"/>
@@ -5941,72 +5952,73 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1534"/>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;b&gt;S&apos;ha publicat una nova versió del VirtualBox!. La versió &lt;b&gt;%1&lt;/b&gt; és disponible a &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Podeu descarregar-la directametn des d&apos;aquest enllaç: &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation>&lt;b&gt;S&apos;ha publicat una nova versió del VirtualBox!. La versió &lt;b&gt;%1&lt;/b&gt; és disponible a &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Podeu baixar-la directametn des d&apos;aquest enllaç: &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="952"/>
         <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Esteu segur que voleu alliberar el %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Això el desadjuntarà de les següents màquines virtuals: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt; </translation>
+        <translation>&lt;p&gt;Esteu segur que voleu alliberar el %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Això el desconnectarà de les següents màquines virtuals: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt; </translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="303"/>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;The file already exists in &quot;%2&quot;. Replacing it will overwrite its contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ja existeix un fitxer anomenat &lt;b&gt;%1&lt;/b&gt;. Esteu segur que voleu reemplaçar-lo?&lt;br /&gt;&lt;br /&gt;El fitxer ja existeix a &quot;%2&quot;. Si el reemplaceu se sobreescriuran els continguts.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="321"/>
         <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ja existeixen els següents fitxers: &lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Esteu segur que voleu reemplaçar-los? Si els reemplaceu se sobreescriuran els continguts.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="329"/>
         <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove the file yourself and try again.</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>We don&apos;t use &quot;&amp;&quot; in Catalan.</translatorcomment>
+        <translation>No es pot eliminar el fitxer &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Elimineu el fitxer i proveu novament.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="340"/>
         <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
-        <translation type="unfinished"></translation>
+        <translation>Esteu fent servir una versió en desenvolupament del VirtualBox. Aquesta versió no és recomanable per a entorns de producció.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="497"/>
         <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>No es pot accedir a l&apos;USB al sistema amfitrió perquè ni el servei de sistema de fitxers USB (usbfs) ni el DBus s&apos;hi troben disponibles. Si voleu fer servir els dispositius USB de l&apos;amfitrió a dins dels sistemes clients, heu de solucionar això i tornar a iniciar el VirtualBox.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="745"/>
         <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not use the ACPI subsystem.</source>
-        <translation type="unfinished"></translation>
+        <translation>Esteu tractant de tancar el sistema client amb el botó ACPI. Això no és possible actualment perquè el sistema client no fa servir el subsistema ACPI.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="753"/>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;S&apos;ha habilitat l&apos;acceleració per maquinari VT-x/AMD-V, però no és operativa. El vostre sistema client de 64 bits fallarà quan detecti una CPU de 64 bits i no podrà iniciar-se.&lt;/p&gt;&lt;p&gt;Assegureu-vos que heu habilitat VT-x/AMD-V correctament a la BIOS del vostre ordinador.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="759"/>
         <source>Close VM</source>
-        <translation type="unfinished"></translation>
+        <translation>Tanca la màquina virtual</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="759"/>
         <source>Continue</source>
-        <translation type="unfinished">Continua</translation>
+        <translation>Continua</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="778"/>
         <source>&lt;p&gt;Are you sure you wish to delete the selected snapshot and saved state?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Esteu segur que voleu eliminar la captura seleccionada i l&apos;estat desat?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="781"/>
         <source>Discard</source>
-        <translation type="unfinished">Descarta</translation>
+        <translation>Descarta</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="781"/>
         <source>Cancel</source>
-        <translation type="unfinished">Cancel·la</translation>
+        <translation>Cancel·la</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="960"/>
@@ -6017,7 +6029,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="969"/>
         <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Esteu segur que voleu eliminar el %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; de la llista de medis coneguts?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Esteu segur que voleu eliminar el %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; de la llista de suports coneguts?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="978"/>
@@ -6070,23 +6082,23 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1049"/>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Existeixen discos durs connectats als ports del controlador addicional. Si desactiveu el controlador addicional, tots aquests discos durs es desconnectaran automàticament.&lt;/p&gt;&lt;p&gt;Esteu segur que voleu desactivar el controlador addicional?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1061"/>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Existeixen discos durs connectats als ports del controlador addicional. Si canvieu el controlador addicional, tots aquests discos durs es desconnectaran automàticament.&lt;/p&gt;&lt;p&gt;Esteu segur que voleu canviar el controlador addicional?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1067"/>
         <source>Change</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>Canvia</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1073"/>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Hi ha discs durs disponibles que no es fan servir per al nou adjunt creat.&lt;/p&gt;&lt;p&gt;Prmeu el botó &lt;b&gt;Crea&lt;/b&gt; per iniciar el gestor de &lt;i&gt;Creació de disc durs virtuals&lt;/i&gt; i crear un nou disc dur, o premeu el botó &lt;b&gt;Selecciona&lt;/b&gt; per obrir el &lt;i&gt;Gestor de Discs Durs&lt;/i&gt; i seleccionar què fer.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Hi ha discos durs disponibles que no es fan servir per a la nova adjunció creada.&lt;/p&gt;&lt;p&gt;Premeu el botó &lt;b&gt;Crea&lt;/b&gt; per iniciar el gestor de &lt;i&gt;Creació de disc durs virtuals&lt;/i&gt; i crear un nou disc dur, o premeu el botó &lt;b&gt;Selecciona&lt;/b&gt; per obrir el &lt;i&gt;Gestor de Discs Durs&lt;/i&gt; i seleccionar què fer.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1092"/>
@@ -6096,12 +6108,12 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1105"/>
         <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>No s&apos;ha pogut adjuntar el disc dur &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; a l&apos;slot &lt;i&gt;%2&lt;/i&gt; de la màquina &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation>No s&apos;ha pogut connectar el disc dur &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; a la ranura &lt;i&gt;%2&lt;/i&gt; de la màquina &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1118"/>
         <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>No s&apos;ha pogut treure el disc dur &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; de l&apos;slot &lt;i&gt;%2&lt;/i&gt; de la màquina &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation>No s&apos;ha pogut treure el disc dur &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; de la ranura &lt;i&gt;%2&lt;/i&gt; de la màquina &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1133"/>
@@ -6126,18 +6138,18 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1216"/>
         <source>Failed to get the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>No s&apos;ha pogut accedir a l&apos;estat del medi &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
+        <translation>No s&apos;ha pogut accedir a l&apos;estat del suport &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1228"/>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Voleu suprimir la interfície de xarxa  &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; seleccionada?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota:&lt;/b&gt;Aquesta interfície potser s&apos;estiga fent servir per un o més adaptadors de xarxa d&apos;aquesta o altra MV. Després de suprimir-los, aquests adaptadors no podran treballar fins que corregiu els paràmetres triant un nom d&apos;interfície diferent o un tipus diferent d&apos;adaptador.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Voleu suprimir la interfície de xarxa &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; seleccionada?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota:&lt;/b&gt;Aquesta interfície potser s&apos;estigui fent servir per un o més adaptadors de xarxa d&apos;aquesta o altra màquina virtual. Després de suprimir-los, aquests adaptadors no podran treballar fins que corregiu els paràmetres triant un nom d&apos;interfície diferent o un tipus diferent d&apos;adaptador.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1244"/>
         <location filename="../src/VBoxProblemReporter.cpp" line="1252"/>
         <source>Failed to create the host-only network interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;ha pogut crear una interfície de xarxa de només l&apos;amfitrió.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1510"/>
@@ -6147,22 +6159,22 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1544"/>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;No es pot obtindre informació de noves versions degut al següent problema:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;No es pot obtenir informació de noves versions degut al següent problema:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1696"/>
         <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;No es pot accedir a un o més dels discs, CD/DVD o disquet virtuals. Com a resultat, no podreu operar amb les màquines virtuals que els facen servir fins que estiguen accessibles.&lt;/p&gt;&lt;p&gt;Premeu &lt;b&gt;Comprova&lt;/b&gt; per obrir el Gestor de Discs Virtuals i veure a quins suports no s&apos;hi pot accedir, o premeu &lt;b&gt;Ignora&lt;/b&gt; per ignorar aquest missatge.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;No es pot accedir a un o més dels discos, CD/DVD o disquet virtuals. Com a resultat, no podreu operar amb les màquines virtuals que els facin servir fins que estiguin accessibles.&lt;/p&gt;&lt;p&gt;Premeu &lt;b&gt;Comprova&lt;/b&gt; per obrir el gestor de discos virtuals i veure a quins suports no s&apos;hi pot accedir, o premeu &lt;b&gt;Ignora&lt;/b&gt; per ignorar aquest missatge.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1733"/>
         <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Els fitxers de configuració existents del VirtualBox es convertiran automàticament des del format antic al nou format necessari per a la nova versió del VirtualBox.&lt;/p&gt;&lt;p&gt;Premeu &lt;b&gt;D&apos;acord&lt;/b&gt; per a iniciar ara el VirtualBox o premeu &lt;b&gt;Surt&lt;/b&gt; si voleu tancar el VirtualBox sense realitzar més accions.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1754"/>
         <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Els fitxers de configuració actuals del VirtualBox es convertiran des del format antic al nou format necessari per a la nova versió del VirtualBox.&lt;/p&gt;&lt;p&gt;Premeu &lt;b&gt;D&apos;acord&lt;/b&gt; per iniciar el VirtualBox ara o premeu &lt;b&gt;Més&lt;/b&gt; si voleu obtindre més informació sobre quins fitxers es convertiran i accedir a accions addicionals.&lt;/p&gt;&lt;p&gt;Premeu &lt;b&gt;Eixida&lt;/b&gt; per tancar l&apos;apliació del VirtualBox sense desar els resultats de la conversió al disc.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Els fitxers de configuració actuals del VirtualBox es convertiran des del format antic al nou format necessari per a la nova versió del VirtualBox.&lt;/p&gt;&lt;p&gt;Premeu &lt;b&gt;D&apos;acord&lt;/b&gt; per iniciar el VirtualBox ara o premeu &lt;b&gt;Més&lt;/b&gt; si voleu obtenir més informació sobre quins fitxers es convertiran i accedir a accions addicionals.&lt;/p&gt;&lt;p&gt;Premeu &lt;b&gt;Surt&lt;/b&gt; per tancar l&apos;apliació del VirtualBox sense desar els resultats de la conversió al disc.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1768"/>
@@ -6176,17 +6188,17 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
         <location filename="../src/VBoxProblemReporter.cpp" line="1813"/>
         <source>E&amp;xit</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation>Ei&amp;xida</translation>
+        <translation>&amp;Surt</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1781"/>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overwrite&lt;/b&gt; to save all auto-converted files without creating backup copies (it will not be possible to use these settings files with an older version of VirtualBox afterwards);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;It is recommended to always select &lt;b&gt;Backup&lt;/b&gt; because in this case it will be possible to go back to the previous version of VirtualBox (if necessary) without losing your current settings. See the VirtualBox Manual for more information about downgrading.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Els següents fitxers de paràmetres del VirtualBox s&apos;han convertit automàticament al nou format &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Tot i així, els resultats de la conversió encara no s&apos;han desat al disc. Premeu:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Desa&lt;/b&gt; per desar ara els fitxers auto-convertits (ja no serà possible fer servir aquests paràmetres amb una versió anterior del VirtualBox);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Còpia de seguretat&lt;/b&gt; per crear una còpia de seguretat dels fitxers de paràmetres en el format antic abans de desar-los en el nou format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Sobreescriu&lt;/b&gt; per desar tots els fitxers auto-convertitts sense crear còpies de seguretat;&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;Es recomana seleccionar en tot moment &lt;b&gt;Còpia de seguretat&lt;/b&gt; perquè sempre serà possible tornar a l&apos;estat anterior sense perdre els paràmetres de configuració actuals. Mireu el Manual del VirtualBox per a més informació sobre desactualització.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Els següents fitxers de paràmetres del VirtualBox s&apos;han convertit automàticament al nou format &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Tot i així, els resultats de la conversió encara no s&apos;han desat al disc. Premeu:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Desa&lt;/b&gt; per desar ara els fitxers auto-convertits (ja no serà possible fer servir aquests paràmetres amb una versió anterior del VirtualBox);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Còpia de seguretat&lt;/b&gt; per crear una còpia de seguretat dels fitxers de paràmetres en el format antic abans de desar-los en el nou format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Sobreescriu&lt;/b&gt; per desar tots els fitxers auto-convertitts sense crear còpies de seguretat;&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;Es recomana seleccionar en tot moment &lt;b&gt;Còpia de seguretat&lt;/b&gt; perquè sempre serà possible tornar a l&apos;estat anterior sense perdre els paràmetres de configuració actuals. Mireu el manual del VirtualBox per a més informació sobre desactualització.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1802"/>
         <source>&lt;li&gt;&lt;b&gt;Exit&lt;/b&gt; to terminate VirtualBox without saving the results of the conversion to disk.&lt;/li&gt;</source>
-        <translation>&lt;li&gt;&lt;b&gt;Ix&lt;/b&gt; tancant el VirtualBox sense desar els resultats de la conversió del disc.&lt;/li&gt;</translation>
+        <translation>&lt;li&gt;&lt;b&gt;Surt&lt;/b&gt; tancant el VirtualBox sense desar els resultats de la conversió del disc.&lt;/li&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1810"/>
@@ -6197,43 +6209,43 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1900"/>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;S&apos;ha produït un error crític mentre s&apos;executava la màquina virtual, que s&apos;ha aturat.&lt;/p&gt;&lt;p&gt;Per obtindre ajuda, visiteu la secció Community a  &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; o al vostre contracte de suport. Afegiu el contingut del fitxer de registre &lt;tt&gt;VBox.log&lt;/tt&gt; i el fitxer d&apos;imatge &lt;tt&gt;VBox.png&lt;/tt&gt;,que podreu trobar al directori &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, i una descripció sobre allò que estàveu fent al moment al qual es va produir l&apos;error. Podeu accedir als fitxers especificats mitjançant &lt;b&gt;Mostra registre&lt;/b&gt; des del menú de la &lt;b&gt;Màquina&lt;/b&gt; a la finestra principal del VirtualBox.&lt;/p&gt;Premeu &lt;b&gt;D&apos;acord&lt;/b&gt; si voleu aturar la màquina o &lt;b&gt;Ignora&lt;/b&gt; si voleu deixar-la en procés de depuració. Tingueu en compte que el procés de depuració requereix coneixements avançats i eines especials, per tant és recomanabla prémer &lt;b&gt;D&apos;acord&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;S&apos;ha produït un error crític mentre s&apos;executava la màquina virtual, que s&apos;ha aturat.&lt;/p&gt;&lt;p&gt;Per obtenir ajuda, visiteu la secció Community a  &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; o al vostre contracte de suport. Afegiu el contingut del fitxer de registre &lt;tt&gt;VBox.log&lt;/tt&gt; i el fitxer d&apos;imatge &lt;tt&gt;VBox.png&lt;/tt&gt;,que podreu trobar al directori &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, i una descripció sobre allò que estàveu fent al moment al qual es va produir l&apos;error. Podeu accedir als fitxers especificats mitjançant &lt;b&gt;Mostra registre&lt;/b&gt; des del menú de la &lt;b&gt;Màquina&lt;/b&gt; a la finestra principal del VirtualBox.&lt;/p&gt;Premeu &lt;b&gt;D&apos;acord&lt;/b&gt; si voleu aturar la màquina o &lt;b&gt;Ignora&lt;/b&gt; si voleu deixar-la en procés de depuració. Tingueu en compte que el procés de depuració requereix coneixements avançats i eines especials, per tant és recomanable prémer &lt;b&gt;D&apos;acord&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1974"/>
         <source>Failed to open appliance.</source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;ha pogut obrir l&apos;aplicació virtual.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1990"/>
         <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;ha pogut obrir/interpretar l&apos;aplicació virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2002"/>
         <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;ha pogut importar l&apos;aplicació virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2012"/>
         <source>Failed to create appliance.</source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;ha pogut crear l&apos;aplicació virtual.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2020"/>
         <location filename="../src/VBoxProblemReporter.cpp" line="2037"/>
         <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;ha pogut preparar l&apos;exportació de l&apos;aplicació virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2032"/>
         <source>Failed to create an appliance.</source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;ha pogut crear una aplicació virtual.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2048"/>
         <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;ha pogut exportar l&apos;aplicació virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2157"/>
@@ -6245,13 +6257,13 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
         <location filename="../src/VBoxProblemReporter.cpp" line="2159"/>
         <source>CD/DVD image</source>
         <comment>failed to close ...</comment>
-        <translation>Imatge CD/DVD</translation>
+        <translation>Imatge de CD/DVD</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2161"/>
         <source>floppy image</source>
         <comment>failed to close ...</comment>
-        <translation>imatge disquet</translation>
+        <translation>imatge de disquet</translation>
     </message>
 </context>
 <context>
@@ -6259,7 +6271,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxProgressDialog.cpp" line="69"/>
         <source>&amp;Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Cancel·la</translation>
     </message>
 </context>
 <context>
@@ -6307,17 +6319,17 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that innotek will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, innotek will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Ompliu aquest formulari de registre per fer-nos saber que fas servir el VirtualBox i, opcionalment, per mantindre&apos;t informat sobre noves versions i actualitzacions.&lt;/p&gt;&lt;p&gt;Introduïu als camps següents el vostre nom complet fent servir caràcters llatins i la vostra adreça de correu. Teniu en compte que innotek farà servir aquesta informació només per recopilar estadístiques d&apos;ús del producte i per informar-vos de novetats. Innotek mai no deixarà les vostres dades a terceres parts. La informació detallada de l&apos;ús de les vostres dades podeu trobar-lo a la secció del manual de VirtualBox de &lt;b&gt;Política de Privacitat&lt;/b&gt; o a la secció &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Política de privacitat&lt;/a&gt; de la pàgina de VirtualBox.&lt;/P&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Ompliu aquest formulari de registre per fer-nos saber que fas servir el VirtualBox i, opcionalment, per mantenir&apos;t informat sobre noves versions i actualitzacions.&lt;/p&gt;&lt;p&gt;Introduïu als camps següents el vostre nom complet fent servir caràcters llatins i la vostra adreça de correu. Teniu en compte que innotek farà servir aquesta informació només per recopilar estadístiques d&apos;ús del producte i per informar-vos de novetats. Innotek mai no deixarà les vostres dades a terceres parts. La informació detallada de l&apos;ús de les vostres dades podeu trobar-lo a la secció del manual de VirtualBox de &lt;b&gt;Política de Privacitat&lt;/b&gt; o a la secció &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Política de privacitat&lt;/a&gt; de la pàgina de VirtualBox.&lt;/P&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="30"/>
         <source>VirtualBox Registration Dialog</source>
-        <translation>Diàleg de Registre del VirtualBox</translation>
+        <translation>Diàleg de registre del VirtualBox</translation>
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="63"/>
         <source>Welcome to the VirtualBox Registration Form!</source>
-        <translation>Benvinguts al Formulari de Registre del VirtualBox!</translation>
+        <translation>Benvinguts al formulari de registre del VirtualBox!</translation>
     </message>
     <message>
         <location filename="../src/VBoxRegistrationDlg.cpp" line="337"/>
@@ -6327,7 +6339,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="112"/>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ompliu aquest formulari de registre per deixar-nos conèixer que feu servir el VirtualBox i, opcionalment, per mantindre-vos informat sobre novetats i actualitzacions.&lt;/p&gt;&lt;p&gt;Introduïu el vostre nom complet fent servir caràcters latins i la vostra adreça de correu electrònica als camps següents. Tingueu en compte que Sun Microsystems farà servir aquesta informació només per estadístiques del producte i per enviar-vos notícies sobre el VirtualBox. En particular, Sun Microsystems no deixarà les vostres dades a terceres parts. Podeu trobar informació detallada sobre l&apos;ús de les dades personals a la secció &lt;b&gt;Política de Privacitat&lt;/b&gt; (en anglès) del Manual de Virtual Box o &lt; l&apos;adreça web &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Política de Privacitat&lt;/a&gt; (en anglès).&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ompliu aquest formulari de registre per deixar-nos conèixer que feu servir el VirtualBox i, opcionalment, per mantenir-vos informat sobre novetats i actualitzacions.&lt;/p&gt;&lt;p&gt;Introduïu el vostre nom complet fent servir caràcters llatins i la vostra adreça de correu electrònica als camps següents. Tingueu en compte que Sun Microsystems farà servir aquesta informació només per estadístiques del producte i per enviar-vos notícies sobre el VirtualBox. En particular, Sun Microsystems no deixarà les vostres dades a terceres parts. Podeu trobar informació detallada sobre l&apos;ús de les dades personals a la secció &lt;b&gt;Política de Privacitat&lt;/b&gt; (en anglès) del manual de VirtualBox o &lt; l&apos;adreça web &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Política de Privacitat&lt;/a&gt; (en anglès).&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="174"/>
@@ -6362,7 +6374,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3775"/>
         <source>Shared Folders</source>
-        <translation>Carpetes Compartides</translation>
+        <translation>Carpetes compartides</translation>
     </message>
 </context>
 <context>
@@ -6392,7 +6404,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1332"/>
         <source>Create a new virtual machine</source>
-        <translation>Crea una nova màquina virtual</translation>
+        <translation>Crea una màquina virtual nova</translation>
     </message>
     <message>
         <source>Ctrl+D</source>
@@ -6473,12 +6485,12 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     </message>
     <message>
         <source>Display the Virtual Disk Manager dialog</source>
-        <translation type="obsolete">Mostra el diàleg del Gestor de Discs Virtuals</translation>
+        <translation type="obsolete">Mostra el diàleg del gestor de discos virtuals</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1326"/>
         <source>E&amp;xit</source>
-        <translation>Ei&amp;xida</translation>
+        <translation type="unfinished">&amp;Surt</translation>
     </message>
     <message>
         <source>F1</source>
@@ -6491,7 +6503,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     </message>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;h3&gt;Benvinguts a VirtualBox!&lt;/h3&gt;&lt;p&gt;A la part esquerra d&apos;aquesta finestra es mostra un llistat de totes les màquines virtuals a l&apos;ordinador. Aquest llistat és buit actualment perquè encara no heu creat cap màquina virtual.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Per crear una nova màquina virtual, premeu sobre el botó &lt;b&gt;Nova&lt;/b&gt; a la barra principal que es troba a la part de dalt d&apos;aquesta finestra.&lt;/p&gt;&lt;p&gt;Podeu prémer la tecla &lt;b&gt;F1&lt;/b&gt; per obtindre ajuda o bé visitar &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; per veure altra informació i novetats.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;h3&gt;Benvinguts a VirtualBox!&lt;/h3&gt;&lt;p&gt;A la part esquerra d&apos;aquesta finestra es mostra un llistat de totes les màquines virtuals a l&apos;ordinador. Aquest llistat és buit actualment perquè encara no heu creat cap màquina virtual.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Per crear una nova màquina virtual, premeu sobre el botó &lt;b&gt;Nova&lt;/b&gt; a la barra principal que es troba a la part de dalt d&apos;aquesta finestra.&lt;/p&gt;&lt;p&gt;Podeu prémer la tecla &lt;b&gt;F1&lt;/b&gt; per obtenir ajuda o bé visitar &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; per veure altra informació i novetats.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1370"/>
@@ -6581,7 +6593,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1360"/>
         <source>Show &amp;Log...</source>
-        <translation>Mostra &amp;Registre...</translation>
+        <translation>Mostra el &amp;registre...</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1364"/>
@@ -6673,47 +6685,47 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1505"/>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation>&lt;h3&gt;Benvinguts a VirtualBox!&lt;/h3&gt;&lt;p&gt;A la part esquerra d&apos;aquesta finestra es mostra un llistat de totes les màquines virtuals a l&apos;ordinador. Aquest llistat és buit actualment perquè encara no heu creat cap màquina virtual.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Per crear una nova màquina virtual, premeu sobre el botó &lt;b&gt;Nova&lt;/b&gt; a la barra principal que es troba a la part de dalt d&apos;aquesta finestra.&lt;/p&gt;&lt;p&gt;Podeu prémer la tecla &lt;b&gt;F1&lt;/b&gt; per obtindre ajuda o bé visitar &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; per veure altra informació i novetats.&lt;/p&gt;</translation>
+        <translation>&lt;h3&gt;Benvinguts a VirtualBox!&lt;/h3&gt;&lt;p&gt;A la part esquerra d&apos;aquesta finestra es mostra un llistat de totes les màquines virtuals a l&apos;ordinador. Aquest llistat és buit actualment perquè encara no heu creat cap màquina virtual.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Per crear una nova màquina virtual, premeu sobre el botó &lt;b&gt;Nova&lt;/b&gt; a la barra principal que es troba a la part de dalt d&apos;aquesta finestra.&lt;/p&gt;&lt;p&gt;Podeu prémer la tecla &lt;b&gt;F1&lt;/b&gt; per obtenir ajuda o bé visitar &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; per veure altra informació i novetats.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1291"/>
         <source>&amp;Virtual Media Manager...</source>
-        <translation>Gestor &amp;Virtual de Medis...</translation>
+        <translation>Gestor de suports &amp;virtuals...</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1281"/>
         <source>Sun VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1293"/>
         <source>Display the Virtual Media Manager dialog</source>
-        <translation>Mostra el diàleg del Gestor Virtual de Medis</translation>
+        <translation>Mostra el diàleg del gestor de suports virtuals</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1295"/>
         <source>&amp;Import Appliance...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Importa una aplicació virtual...</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1297"/>
         <source>Import an appliance into VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Importa una aplicació virtual al VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1299"/>
         <source>&amp;Export Appliance...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Exporta una aplicació virtual...</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1301"/>
         <source>Export an appliance out of VM&apos;s from VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Exporta una aplicació virtual d&apos;una màquina virtual del VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1356"/>
         <source>Re&amp;fresh</source>
-        <translation type="unfinished">Re&amp;fresca</translation>
+        <translation>Re&amp;fresca</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1361"/>
@@ -6727,12 +6739,12 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="95"/>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
-        <translation>&lt;i&gt;Seleccioneu una categoria de paràmetres en la llista de l&apos;esquerra i deplaceu el ratolí sobre un element de la dreta per obtindre més informació&lt;i&gt;.</translation>
+        <translation>&lt;i&gt;Seleccioneu una categoria de paràmetres en la llista de l&apos;esquerra i deplaceu el ratolí sobre un element de la dreta per obtenir-ne més informació&lt;i&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="136"/>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
-        <translation type="unfinished">A la &lt;b&gt;%1&lt;/b&gt; pàgina, %2</translation>
+        <translation>A la pàgina &lt;b&gt;%1&lt;/b&gt;, %2</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="185"/>
@@ -6878,7 +6890,7 @@ per accedir a ella des d&apos;un sistema Linux. Aquesta característica requerei
     <message>
         <location filename="../ui/VBoxSnapshotDetailsDlg.ui" line="98"/>
         <source>&amp;Machine Details</source>
-        <translation>Detalls de la &amp;Màquina</translation>
+        <translation>Detalls de la &amp;màquina</translation>
     </message>
     <message>
         <location filename="../ui/VBoxSnapshotDetailsDlg.ui" line="50"/>
@@ -6896,12 +6908,12 @@ per accedir a ella des d&apos;un sistema Linux. Aquesta característica requerei
     <message>
         <location filename="../ui/VBoxSnapshotDetailsDlg.ui" line="30"/>
         <source>VBoxSnapshotDetailsDlg</source>
-        <translation>DlgDetallsCapturaVBox</translation>
+        <translation>VBoxSnapshotDetailsDlg</translation>
     </message>
     <message>
         <location filename="../ui/VBoxSnapshotDetailsDlg.ui" line="39"/>
         <source>Snapshot Details</source>
-        <translation>Detalls de Captura</translation>
+        <translation>Detalls de la captura</translation>
     </message>
 </context>
 <context>
@@ -6938,13 +6950,13 @@ per accedir a ella des d&apos;un sistema Linux. Aquesta característica requerei
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="126"/>
         <source>Current State</source>
         <comment>Current State (Unmodified)</comment>
-        <translation>Estat Actual</translation>
+        <translation>Estat actual</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="124"/>
         <source>Current State (changed)</source>
         <comment>Current State (Modified)</comment>
-        <translation>Estat Actual</translation>
+        <translation>Estat actual (modificat)</translation>
     </message>
     <message>
         <source>curStateActionGroup</source>
@@ -6971,12 +6983,12 @@ per accedir a ella des d&apos;un sistema Linux. Aquesta característica requerei
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="693"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation>Descarta la captura actual i torna la màquina a l&apos;estat en què es trobava abans que s&apos;haguera fet</translation>
+        <translation>Descarta la captura actual i torna la màquina a l&apos;estat en què es trobava abans que s&apos;hagués fet</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="690"/>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation>Descarta la captura seleccioanda de la màquina virtual</translation>
+        <translation>Descarta la captura seleccionada de la màquina virtual</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="183"/>
@@ -7120,12 +7132,12 @@ per accedir a ella des d&apos;un sistema Linux. Aquesta característica requerei
     <message>
         <location filename="../ui/VBoxTakeSnapshotDlg.ui" line="98"/>
         <source>Snapshot &amp;Description</source>
-        <translation>&amp;Descripció de la Captura</translation>
+        <translation>&amp;Descripció de la captura</translation>
     </message>
     <message>
         <location filename="../ui/VBoxTakeSnapshotDlg.ui" line="78"/>
         <source>Snapshot &amp;Name</source>
-        <translation>&amp;Títol de la Captura</translation>
+        <translation>&amp;Títol de la captura</translation>
     </message>
     <message>
         <location filename="../ui/VBoxTakeSnapshotDlg.ui" line="30"/>
@@ -7138,27 +7150,27 @@ per accedir a ella des d&apos;un sistema Linux. Aquesta característica requerei
     <message>
         <location filename="../src/VBoxLineTextEdit.cpp" line="76"/>
         <source>Edit text</source>
-        <translation type="unfinished"></translation>
+        <translation>Edita el text</translation>
     </message>
     <message>
         <location filename="../src/VBoxLineTextEdit.cpp" line="77"/>
         <source>&amp;Replace...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Reemplaça...</translation>
     </message>
     <message>
         <location filename="../src/VBoxLineTextEdit.cpp" line="78"/>
         <source>Replaces the current text with the content of a given file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Reemplaça el text actual amb el contingut del fitxer proveït.</translation>
     </message>
     <message>
         <location filename="../src/VBoxLineTextEdit.cpp" line="83"/>
         <source>Text (*.txt);;All (*.*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Text (*.txt);;Tot (*.*)</translation>
     </message>
     <message>
         <location filename="../src/VBoxLineTextEdit.cpp" line="83"/>
         <source>Select a file to open...</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleccioneu un fitxer per obrir...</translation>
     </message>
 </context>
 <context>
@@ -7187,7 +7199,7 @@ per accedir a ella des d&apos;un sistema Linux. Aquesta característica requerei
         <location filename="../src/VBoxSelectorWnd.cpp" line="1975"/>
         <source>&amp;Other Machines...</source>
         <comment>tray menu</comment>
-        <translation>&amp;Altres Màquines...</translation>
+        <translation>&amp;Altres màquines...</translation>
     </message>
 </context>
 <context>
@@ -7461,12 +7473,12 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="392"/>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;b&gt;S&apos;ha publicat una nova versió del VirtualBox!. La versió &lt;b&gt;%1&lt;/b&gt; és disponible a &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Podeu descarregar-la directametn des d&apos;aquest enllaç: &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation>&lt;b&gt;S&apos;ha publicat una nova versió del VirtualBox!. La versió &lt;b&gt;%1&lt;/b&gt; és disponible a &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Podeu baixar-la directametn des d&apos;aquest enllaç: &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="398"/>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;No es pot obtindre informació de noves versions degut a un problema amb la xarxa:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;No es pot obtenir informació de noves versions degut a un problema amb la xarxa:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="401"/>
@@ -7514,17 +7526,17 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="363"/>
         <source>&amp;CD/DVD-ROM Device</source>
-        <translation>Dispositiu &amp;CD/DVD-ROM</translation>
+        <translation>Dispositiu &amp;CD/DVD</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMFirstRunWzd.cpp" line="95"/>
         <source>CD/DVD-ROM Device</source>
-        <translation>Dispositiu CD/DVD-ROM</translation>
+        <translation>Dispositiu CD/DVD</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="30"/>
         <source>First Run Wizard</source>
-        <translation>Executa primer l&apos;auxiliar</translation>
+        <translation>Executa l&apos;auxiliar d&apos;inici</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMFirstRunWzd.cpp" line="96"/>
@@ -7539,12 +7551,12 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="450"/>
         <source>&amp;Host Drive</source>
-        <translation>&amp;Dispositiu Amfitrió</translation>
+        <translation>&amp;Dispositiu amfitrió</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMFirstRunWzd.cpp" line="99"/>
         <source>Host Drive %1</source>
-        <translation>Dispositiu Amfitrió %1</translation>
+        <translation>Dispositiu amfitrió %1</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="479"/>
@@ -7568,7 +7580,7 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Si el que hi ha a continuació és correcte, premeu el botó &lt;b&gt;Finalitza&lt;/b&gt;. Quan el premeu, el dispositiu seleccionat es muntarà a la màquina virtual.&lt;/p&gt;&lt;p&gt;Tingueu en compte que quan tanqueu la màquina virtual, el dispositiu especificat es desmuntarà automàticament i el dispositiu d&apos;inici tornarà a ser el primer disc d&apos;arrencada.&lt;/p&gt;&lt;p&gt;Segons el tipus del programa de configuració, necessitareu desmuntar manualment (expulsar) el dispositiu una vegada que el programa de configuració haja reiniciat la màquina virtual, per tal de previndre que s&apos;inicie novament el procès d&apos;instal·lació. Podeu fer axiò seleccionat l&apos;acció corresponent &lt;b&gt;Desmunta...&lt;/b&gt; al menú &lt;b&gt;Dispositius.&lt;/b&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Si el que hi ha a continuació és correcte, premeu el botó &lt;b&gt;Finalitza&lt;/b&gt;. Quan el premeu, el dispositiu seleccionat es muntarà a la màquina virtual.&lt;/p&gt;&lt;p&gt;Tingueu en compte que quan tanqueu la màquina virtual, el dispositiu especificat es desmuntarà automàticament i el dispositiu d&apos;inici tornarà a ser el primer disc d&apos;arrencada.&lt;/p&gt;&lt;p&gt;Segons el tipus del programa de configuració, necessitareu desmuntar manualment (expulsar) el dispositiu una vegada que el programa de configuració haja reiniciat la màquina virtual, per tal de prevenir que s&apos;iniciï novament el procès d&apos;instal·lació. Podeu fer axiò seleccionat l&apos;acció corresponent &lt;b&gt;Desmunta...&lt;/b&gt; al menú &lt;b&gt;Dispositius.&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="423"/>
@@ -7578,12 +7590,12 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="401"/>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccioneu el suport que conté el  programa de configuració del sistema operatiu amb el qual voleu treballar. Aquest suport ha d&apos;ésser arrencable, en altre cas el sistema no podrà iniciar-se.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Seleccioneu el suport que conté el programa de configuració del sistema operatiu amb el qual voleu treballar. Aquest suport ha d&apos;ésser arrencable, en altre cas el sistema no podrà iniciar-se.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="332"/>
         <source>&lt;p&gt;Select the type of the media you would like to use for booting an operating system.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccionaeu el tipus de suport que voleu fer servir per iniciar un sistema operatiu.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Seleccioneu el tipus de suport que voleu fer servir per iniciar un sistema operatiu.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="307"/>
@@ -7618,7 +7630,7 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="593"/>
         <source>Summary</source>
-        <translation>Sumari</translation>
+        <translation>Resum</translation>
     </message>
     <message>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
@@ -7654,7 +7666,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;If the above is correct, press the &lt;span style=&quot; font-weight:600;&quot;&gt;Finish&lt;/span&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;span style=&quot; font-weight:600;&quot;&gt;Unmount...&lt;/span&gt; action in the &lt;span style=&quot; font-weight:600;&quot;&gt;Devices&lt;/span&gt; menu&lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;p, li { white-space: pre-wrap; }&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Si el que posa amunt és correcte, premeu sobre &lt;span style=&quot; font-weight:600;&quot;&gt;Finalitza&lt;/span&gt;. Una vegada que premeu el botó, el dispositiu seleccionat es muntarà temporalment a la màquina virtual i començarà l&apos;execució..&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Tingueu en compte que quan tanqueu la màquina virtual, el dispositiu s&apos;expulsarà automàticament.&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Segons el tipus de programa de configuració, potser necessitareu expulsar manualment el dispositiu després que la màquina virtual es torne a iniciar per tal que el procés d&apos;instal·lació s&apos;inicie novament. Podeu fer això seleccionant l&apos;acció corresponent &lt;span style=&quot; font-weight:600;&quot;&gt;Expulsa...&lt;/span&gt; al menú &lt;span style=&quot; font-weight:600;&quot;&gt;Dispositius&lt;/span&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;p, li { white-space: pre-wrap; }&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Si el que posa amunt és correcte, premeu sobre &lt;span style=&quot; font-weight:600;&quot;&gt;Finalitza&lt;/span&gt;. Una vegada que premeu el botó, el dispositiu seleccionat es muntarà temporalment a la màquina virtual i començarà l&apos;execució..&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Tingueu en compte que quan tanqueu la màquina virtual, el dispositiu s&apos;expulsarà automàticament.&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Segons el tipus de programa de configuració, potser necessitareu expulsar manualment el dispositiu després que la màquina virtual es torni a iniciar per tal que el procés d&apos;instal·lació s&apos;iniciï novament. Podeu fer això seleccionant l&apos;acció corresponent &lt;span style=&quot; font-weight:600;&quot;&gt;Expulsa...&lt;/span&gt; al menú &lt;span style=&quot; font-weight:600;&quot;&gt;Dispositius&lt;/span&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="812"/>
@@ -7694,7 +7706,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="166"/>
         <source>%1 - Session Information</source>
-        <translation>%1 - Informació de la Sessió</translation>
+        <translation>%1 - Informació de la sessió</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="169"/>
@@ -7724,24 +7736,24 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxVMInformationDlg.cpp" line="216"/>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="237"/>
         <source>Data Read</source>
-        <translation>Lectura de Dades</translation>
+        <translation>Lectura de dades</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="189"/>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="218"/>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="239"/>
         <source>Data Written</source>
-        <translation>Escriptura de Dades</translation>
+        <translation>Escriptura de dades</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="273"/>
         <source>Data Transmitted</source>
-        <translation>Transmissió de Dades</translation>
+        <translation>Transmissió de dades</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="275"/>
         <source>Data Received</source>
-        <translation>Recepció de Dades</translation>
+        <translation>Recepció de dades</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -7754,12 +7766,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="472"/>
         <source>Runtime Attributes</source>
-        <translation>Atributs del Temps d&apos;Execució</translation>
+        <translation>Atributs del temps d&apos;execució</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="473"/>
         <source>Screen Resolution</source>
-        <translation>Resolució de Pantalla</translation>
+        <translation>Resolució de pantalla</translation>
     </message>
     <message>
         <source>Hardware Virtualization</source>
@@ -7768,12 +7780,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="550"/>
         <source>CD/DVD-ROM Statistics</source>
-        <translation>Estadístiques CD/DVD-ROM</translation>
+        <translation>Estadístiques CD/DVD</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="560"/>
         <source>Network Adapter Statistics</source>
-        <translation>Estadístiques de l&apos;Adaptador de Xarxa</translation>
+        <translation>Estadístiques de l&apos;adaptador de xarxa</translation>
     </message>
     <message>
         <source>Adapter 1</source>
@@ -7797,7 +7809,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Hard Disks Statistics</source>
-        <translation type="obsolete">Estadístiques de Discs Durs</translation>
+        <translation type="obsolete">Estadístiques de discos durs</translation>
     </message>
     <message>
         <source>Primary Master</source>
@@ -7846,7 +7858,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="487"/>
         <source>Hard Disk Statistics</source>
-        <translation>Estadístiques de Discs Durs</translation>
+        <translation>Estadístiques de discos durs</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="543"/>
@@ -7873,7 +7885,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="2092"/>
         <source>Nested Paging</source>
-        <translation>Nested Paging</translation>
+        <translation>Paginació imbricada</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMInformationDlg.ui" line="30"/>
@@ -7903,7 +7915,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMListView.cpp" line="153"/>
         <source>Inaccessible</source>
-        <translation>No s&apos;hi pot accedir</translation>
+        <translation>Inaccessible</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMListView.cpp" line="169"/>
@@ -8015,7 +8027,7 @@ p, li { white-space: pre-wrap; }
     <name>VBoxVMNetworkSettings</name>
     <message>
         <source>&amp;Attached to</source>
-        <translation type="obsolete">&amp;Adjuntat a</translation>
+        <translation type="obsolete">&amp;Connectat a</translation>
     </message>
     <message>
         <source>Ca&amp;ble Connected</source>
@@ -8023,7 +8035,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation type="obsolete">Controla la forma en què aquest adaptador virtual s&apos;adjunta a la xarxa real del sistema amfitrió.</translation>
+        <translation type="obsolete">Controla la forma en què aquest adaptador virtual es connecta a la xarxa real del sistema amfitrió.</translation>
     </message>
     <message>
         <source>Displays the command executed to set up the TAP interface.</source>
@@ -8111,7 +8123,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation type="obsolete">Quan estiga marca, activa aquest adaptador de xarxa virtual a dins de la màquina virtual.</translation>
+        <translation type="obsolete">Quan estigui marcat, s&apos;activarà aquest adaptador de xarxa virtual a dins de la màquina virtual.</translation>
     </message>
     <message>
         <source>&amp;Network Name</source>
@@ -8142,7 +8154,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, enables the given parallel port of the virtual machine.</source>
-        <translation type="obsolete">Quan estiga marca, habilita el port paral·lel de la màquina virtual.</translation>
+        <translation type="obsolete">Quan estigui marcat, s&apos;habilitarà el port paral·lel de la màquina virtual.</translation>
     </message>
     <message>
         <source>Port &amp;Number</source>
@@ -8209,7 +8221,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
-        <translation type="obsolete">Si està marcat, el conducte especificat al camp &lt;b&gt;Ruta del Port&lt;/b&gt; es crearà per la màquina virtual quan s&apos;inicie. En altre cas, la màquina virtual provarà de fer servir el conducte existent.</translation>
+        <translation type="obsolete">Si està marcat, el conducte especificat al camp &lt;b&gt;Ruta del Port&lt;/b&gt; es crearà per la màquina virtual quan s&apos;iniciï. En altre cas, la màquina virtual provarà de fer servir el conducte existent.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt</source>
@@ -8237,7 +8249,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, enables the given serial port of the virtual machine.</source>
-        <translation type="obsolete">Quan estiga marcat, habilita el port sèrie a la màquina virtual.</translation>
+        <translation type="obsolete">Quan estigui marcat, s&apos;habilitarà el port sèrie a la màquina virtual.</translation>
     </message>
 </context>
 <context>
@@ -8245,7 +8257,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="33"/>
         <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
-        <translation>Quan estiga marcat, la tarjeta de so PCI virtual es connectarà a dins de la màquina virtual la qual farà servir un controlador específic per comunicar-se amb la tarjeta de so de l&apos;amfitrió.</translation>
+        <translation>Quan estigui marcat, la tarjeta de so PCI virtual es connectarà a dins de la màquina virtual la qual farà servir un controlador específic per comunicar-se amb la tarjeta de so de l&apos;amfitrió.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="36"/>
@@ -8260,12 +8272,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="90"/>
         <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation>Gestiona el controlador d&apos;eixida de so. El &lt;b&gt;Controlador d&apos;Àudio Nul&lt;/b&gt; fa que el client veja una tarjeta de so, però l&apos;accés a ella s&apos;ignorarà.</translation>
+        <translation>Gestiona el controlador de sortida de so. El &lt;b&gt;controlador d&apos;àudio Nul&lt;/b&gt; fa que el client vegi una tarjeta de so, però l&apos;accés a ella s&apos;ignorarà.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="97"/>
         <source>Audio &amp;Controller:</source>
-        <translation>&amp;Controlador d&apos;Àudio:</translation>
+        <translation>&amp;Controlador d&apos;àudio:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="110"/>
@@ -8288,7 +8300,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="33"/>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation>Quan estiga marca, munta el suport especificat al controlador CD/DVD de la màquina virtual. Tingueu en compte que el controlador CD/DVD sempre està connectat al controlador Secundari Mestre IDE de la màquina.</translation>
+        <translation>Quan estigui marcat, es muntarà el suport especificat al controlador CD/DVD de la màquina virtual. Tingueu en compte que el controlador CD/DVD sempre està connectat al controlador secundari mestre IDE de la màquina.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="36"/>
@@ -8313,7 +8325,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="125"/>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation>Quan estiga marcat, permet al client enviar ordres ATAPI directament al controlador amfitrió, cosa que permet fer servir lectores de CD/DVD de l&apos;amfitrió a dins de la MV. Tingueu en compte que gravar CD&apos;s d&apos;àudio a dins de la MV encara no és suportat.</translation>
+        <translation>Quan estigui marcat, es permetrà al client enviar ordres ATAPI directament al controlador amfitrió, cosa que permetrà fer servir lectors de CD/DVD de l&apos;amfitrió a dins de la màquina virtual. Tingueu en compte que gravar CD&apos;s d&apos;àudio a dins de la màquina virtual encara no està suportat.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="128"/>
@@ -8342,7 +8354,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="155"/>
         <source>Invokes the Virtual Media Manager to select a CD/DVD image to mount.</source>
-        <translation>Invoca el Gestor de Disc Durs Virtuals per seleccionar una imatge CD/DVD a muntar.</translation>
+        <translation>Invoca el gestor de discos durs virtuals per seleccionar una imatge CD/DVD a muntar.</translation>
     </message>
 </context>
 <context>
@@ -8426,7 +8438,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Adds a new host interface.</source>
-        <translation type="obsolete">Afegeix una nova interfície d&apos;amfitrió.</translation>
+        <translation type="obsolete">Afegeix una nova interfície amfitriona.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
@@ -8470,7 +8482,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Boo&amp;t Order</source>
-        <translation type="obsolete">&amp;Ordre d&apos;Inici</translation>
+        <translation type="obsolete">&amp;Ordre d&apos;inici</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -8494,11 +8506,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation type="obsolete">Controla la quantitat de memòria amb què es proveïx a la màquina virtual. Si n&apos;assigneu massa, pot ser que la màquina no s&apos;inicie.</translation>
+        <translation type="obsolete">Controla la quantitat de memòria amb què es proveeix a la màquina virtual. Si n&apos;assigneu massa, pot ser que la màquina no s&apos;iniciï.</translation>
     </message>
     <message>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation type="obsolete">Controla la quantitat de memòria de vídeo amb què es proveïx a la màquina virtual.</translation>
+        <translation type="obsolete">Controla la quantitat de memòria de vídeo amb què es proveeix a la màquina virtual.</translation>
     </message>
     <message>
         <source>Ctrl+Down</source>
@@ -8510,7 +8522,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="obsolete">Defineix el mode de compartició del porta-retalls entre el client i l&apos;amfitrió. Tingueu en compte que aquesta característica requereix tindre instal·lades les Guest Additions al sistema client.</translation>
+        <translation type="obsolete">Defineix el mode de compartició del porta-retalls entre el client i l&apos;amfitrió. Tingueu en compte que aquesta característica requereix tenir instal·lades les Guest Additions al sistema client.</translation>
     </message>
     <message>
         <source>Defines the VRDP authentication method.</source>
@@ -8614,7 +8626,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source> Hard Disks </source>
-        <translation type="obsolete">Discs durs</translation>
+        <translation type="obsolete">Discos durs</translation>
     </message>
     <message>
         <source>Help</source>
@@ -8666,7 +8678,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</source>
-        <translation type="obsolete">Invoca el Gestor de Disc Durs Virtuals per crear un de nou o seleccionar un disc dur existent per adjuntar.</translation>
+        <translation type="obsolete">Invoca el Gestor de Disc Durs Virtuals per crear un de nou o seleccionar un disc dur existent per connectar.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
@@ -8674,11 +8686,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
-        <translation type="obsolete">Invoca el Gestor de Discs Durs Virtuals per seleccionar una imatge de disquet a muntar.</translation>
+        <translation type="obsolete">Invoca el Gestor de discos durs virtuals per seleccionar una imatge de disquet a muntar.</translation>
     </message>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
-        <translation type="obsolete">&lt;i&gt;Seleccioneu una categoria de configuració de la llista de l&apos;esquerra i moveu el ratolí sobre l&apos;ítem de paràmetres per obtindre més informació&lt;/i&gt;.</translation>
+        <translation type="obsolete">&lt;i&gt;Seleccioneu una categoria de configuració de la llista de l&apos;esquerra i moveu el ratolí sobre l&apos;ítem de paràmetres per obtenir més informació&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>&amp;ISO Image File</source>
@@ -8796,7 +8808,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Voleu suprimir la interfície de xarxa  &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; seleccionada?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota:&lt;/b&gt;Aquesta interfície potser s&apos;estiga fent servir per un o més adaptadors de xarxa d&apos;aquesta o altra MV. Després de suprimir-los, aquests adaptadors no podran treballar fins que corregiu els paràmetres triant un nom d&apos;interfície diferent o un tipus diferent d&apos;adaptador.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Voleu suprimir la interfície de xarxa  &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; seleccionada?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota:&lt;/b&gt;Aquesta interfície potser s&apos;estigui fent servir per un o més adaptadors de xarxa d&apos;aquesta o altra màquina virtual. Després de suprimir-los, aquests adaptadors no podran treballar fins que corregiu els paràmetres triant un nom d&apos;interfície diferent o un tipus diferent d&apos;adaptador.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -8830,8 +8842,8 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Gestiona el controlador d&apos;eixida de so. El &lt;b&gt;Controlador d&apos;Àudio Nul&lt;/b&gt;
-fa que el client veja una tarjeta de so, però l&apos;accés a ella s&apos;ignorarà.&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;Gestiona el controlador de sortida de so. El &lt;b&gt;controlador d&apos;àudio Nul&lt;/b&gt;
+fa que el client vegi una tarjeta de so, però l&apos;accés a ella s&apos;ignorarà.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</source>
@@ -8841,14 +8853,14 @@ fa que el client veja una tarjeta de so, però l&apos;accés a ella s&apos;ignor
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Quan estiga marcat, la màquina virtual suportarà la Configuració Avançada i la Interfície de Gestió de l&apos;Energia (ACPI). &lt;b&gt;Nota:&lt;/b&gt; no inhabiliteu aquesta característica després d&apos;haver instal·lat un Windows al sistema operatiu client!&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;Quan estigui marcat, la màquina virtual suportarà la Configuració Avançada i la Interfície de Gestió de l&apos;Energia (ACPI). &lt;b&gt;Nota:&lt;/b&gt; no inhabiliteu aquesta característica després d&apos;haver instal·lat un Windows al sistema operatiu client!&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Quan estiga marcat, la màquina virtual suportarà
-l&apos;Entrada Sortida APIC (ES APIC), que pot disminuir el rendiment de la MV. &lt;b&gt;Nota:&lt;/b&gt; no inhabiliteu
+        <translation type="obsolete">&lt;qt&gt;Quan estigui marcat, la màquina virtual suportarà
+l&apos;Entrada Sortida APIC (ES APIC), que pot disminuir el rendiment de la màquina virtual. &lt;b&gt;Nota:&lt;/b&gt; no inhabiliteu
 aquesta característica després d&apos;haver instal·lat un Windows al sistema operatiu client!&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -8921,7 +8933,7 @@ aquesta característica després d&apos;haver instal·lat un Windows al sistema 
     </message>
     <message>
         <source>&amp;Shared Clipboard</source>
-        <translation type="obsolete">Porta-retall&amp;s Compartit</translation>
+        <translation type="obsolete">Porta-retall&amp;s compartit</translation>
     </message>
     <message>
         <source> Shared Folders </source>
@@ -8957,43 +8969,43 @@ aquesta característica després d&apos;haver instal·lat un Windows al sistema 
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation type="obsolete">Quan estiga marcat, permet al client enviar ordres ATAPI directament al controlador amfitrió, cosa que permet fer servir lectores de CD/DVD de l&apos;amfitrió a dins de la MV. Tingueu en compte que gravar CD&apos;s d&apos;àudio a dins de la MV encara no és suportat.</translation>
+        <translation type="obsolete">Quan estigui marcat, es permetrà al client enviar ordres ATAPI directament al controlador amfitrió, cosa que permet fer servir lectores de CD/DVD de l&apos;amfitrió a dins de la màquina virtual. Tingueu en compte que gravar CD&apos;s d&apos;àudio a dins de la màquina virtual encara no és suportat.</translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Master slot of the Primary IDE controller.</source>
-        <translation type="obsolete">Quan estiga marcat, connecta el disc virtual especificat a la ranura Mestre del controlador IDE primari.</translation>
+        <translation type="obsolete">Quan estigui marcat, es connectarà el disc virtual especificat a la ranura Mestre del controlador IDE primari.</translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Primary IDE controller.</source>
-        <translation type="obsolete">Quan estiga marcat, connecta el disc virtual especificat a la ranura Esclau del controlador IDE primari.</translation>
+        <translation type="obsolete">Quan estigui marcat, es connectarà el disc virtual especificat a la ranura Esclau del controlador IDE primari.</translation>
     </message>
     <message>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Secondary IDE controller.</source>
-        <translation type="obsolete">Quan estiga marcat, connecta el disc virtual especificat a la ranura Esclau del controlador IDE secundari.</translation>
+        <translation type="obsolete">Quan estigui marcat, es connectarà el disc virtual especificat a la ranura Esclau del controlador IDE secundari.</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation type="obsolete">Quan estiga marca, habilita el controlador virtual USB d&apos;aquesta màquina.</translation>
+        <translation type="obsolete">Quan estigui es marcat, habilitarà el controlador virtual USB d&apos;aquesta màquina.</translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation type="obsolete">Quan estiga marca, munta el suport especificat al controlador CD/DVD de la màquina virtual. Tingueu en compte que el controlador CD/DVD sempre està connectat al controlador Secundari Mestre IDE de la màquina.</translation>
+        <translation type="obsolete">Quan estigui marcat, es muntarà el suport especificat al controlador CD/DVD de la màquina virtual. Tingueu en compte que el controlador CD/DVD sempre està connectat al controlador Secundari Mestre IDE de la màquina.</translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
-        <translation type="obsolete">Quant estiga marcat, munta el suport especificat al dispositiu de disquet de la màquina virtual.</translation>
+        <translation type="obsolete">Quant estigui marcat, es muntarà el suport especificat al dispositiu de disquet de la màquina virtual.</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</source>
-        <translation type="obsolete">Quan estiga marcat, la màquina virtual provarà de fer servir les extensions de virtualització per maquinari de la CPU de l&apos;amfitrió com Intel VT-x i AMD-V. L&apos;estat grayed de la casella de selecció indica que aquest paràmetre està determinat pel valor del paràmetre global.</translation>
+        <translation type="obsolete">Quan estigui marcat, la màquina virtual provarà de fer servir les extensions de virtualització per maquinari de la CPU de l&apos;amfitrió com Intel VT-x i AMD-V. L&apos;estat grayed de la casella de selecció indica que aquest paràmetre està determinat pel valor del paràmetre global.</translation>
     </message>
     <message>
         <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
-        <translation type="obsolete">Quan estiga marcat, la tarjeta de so PCI virtual es connectarà a dins de la màquina virtual la qual farà servir un controlador específic per comunicar-se amb la tarjeta de so de l&apos;amfitrió.</translation>
+        <translation type="obsolete">Quan estigui marcat, la tarjeta de so PCI virtual es connectarà a dins de la màquina virtual, la qual farà servir un controlador específic per comunicar-se amb la tarjeta de so de l&apos;amfitrió.</translation>
     </message>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation type="obsolete">Quan estiga marcat, la MV actuarà com un servidor Remote Desktop Protocol (RDP), permetent als clients remots connectar la MV (quan estiga executant-se) fent servir l&apos;estàndard client RDP.</translation>
+        <translation type="obsolete">Quan estigui marcat, la màquina virtual actuarà com un servidor Remote Desktop Protocol (RDP), permetent als clients remots connectar la màquina virtual (quan estigui executant-se) fent servir l&apos;estàndard client RDP.</translation>
     </message>
     <message>
         <source>00</source>
@@ -9061,7 +9073,7 @@ aquesta característica després d&apos;haver instal·lat un Windows al sistema 
                                                           machine.&lt;/qt&gt;
                                                         </source>
         <translation type="obsolete">&lt;qt&gt;Quan
-estiga marcat, la
+estigui marcat, la
 característica d&apos;Extensió
 d&apos;Adreça Física (PAE)
 de la CPU del sistema
@@ -9070,7 +9082,7 @@ màquina virtual.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;IDE Controller Type</source>
-        <translation type="obsolete">T&amp;ipus de Controlador IDE</translation>
+        <translation type="obsolete">T&amp;ipus de controlador IDE</translation>
     </message>
     <message>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
@@ -9078,7 +9090,7 @@ màquina virtual.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Audio &amp;Controller</source>
-        <translation type="obsolete">&amp;Controlador d&apos;Àudio</translation>
+        <translation type="obsolete">&amp;Controlador d&apos;àudio</translation>
     </message>
     <message>
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
@@ -9090,7 +9102,7 @@ màquina virtual.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation type="obsolete">Quan estiga marcat, habilita el controlador virtual USB EHCI per a aquesta màquina. El controlador USB EHCI proveïx de suport USB 2.0.</translation>
+        <translation type="obsolete">Quan estigui marcat, s&apos;habilitarà el controlador virtual USB EHCI per a aquesta màquina. El controlador USB EHCI proveeix de suport USB 2.0.</translation>
     </message>
     <message>
         <source>
@@ -9113,11 +9125,11 @@ afegir o eliminar filtres USB.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add Empty Filter</source>
-        <translation type="obsolete">Afegeix Filtre Buit</translation>
+        <translation type="obsolete">&amp;Afegeix un filtre buit</translation>
     </message>
     <message>
         <source>&amp;Add Empty Filter</source>
-        <translation type="obsolete">&amp;Afegeix Filtre Buit</translation>
+        <translation type="obsolete">&amp;Afegeix un filtre buit</translation>
     </message>
     <message>
         <source>
@@ -9131,11 +9143,11 @@ amb qualsevol dispositiu USB connectat.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add Filter From Device</source>
-        <translation type="obsolete">Afegeix un Filtre des d&apos;un Dispositiu</translation>
+        <translation type="obsolete">Afegeix un filtre des d&apos;un dispositiu</translation>
     </message>
     <message>
         <source>A&amp;dd Filter From Device</source>
-        <translation type="obsolete">Afegeix un Filtre des d&apos;un &amp;Dispositiu</translation>
+        <translation type="obsolete">Afegeix un filtre des d&apos;un &amp;dispositiu</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
@@ -9162,11 +9174,11 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Move Filter Up</source>
-        <translation type="obsolete">Mou el Filtre Amunt</translation>
+        <translation type="obsolete">Mou el filtre amunt</translation>
     </message>
     <message>
         <source>&amp;Move Filter Up</source>
-        <translation type="obsolete">&amp;Mou el Filtre Amunt</translation>
+        <translation type="obsolete">&amp;Mou el filtre amunt</translation>
     </message>
     <message>
         <source>
@@ -9176,11 +9188,11 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Move Filter Down</source>
-        <translation type="obsolete">Mou el Filtre Avall</translation>
+        <translation type="obsolete">Mou el filtre avall</translation>
     </message>
     <message>
         <source>M&amp;ove Filter Down</source>
-        <translation type="obsolete">M&amp;ou el Filtre Avall</translation>
+        <translation type="obsolete">M&amp;ou el filtre avall</translation>
     </message>
     <message>
         <source>
@@ -9218,12 +9230,12 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="376"/>
         <source>Hard Disks</source>
-        <translation>Discs durs</translation>
+        <translation>Discos durs</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="379"/>
         <source>CD/DVD-ROM</source>
-        <translation>CD/DVD-ROM</translation>
+        <translation>CD/DVD</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="382"/>
@@ -9295,7 +9307,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="33"/>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
-        <translation>Quant estiga marcat, munta el suport especificat al dispositiu de disquet de la màquina virtual.</translation>
+        <translation>Quant estigui marcat, muntarà el suport especificat al dispositiu de disquet de la màquina virtual.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="36"/>
@@ -9334,12 +9346,12 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
-        <translation type="obsolete">Invoca el Gestor de Discs Durs Virtuals per seleccionar una imatge de disquet a muntar.</translation>
+        <translation type="obsolete">Invoca el Gestor de discos durs virtuals per seleccionar una imatge de disquet a muntar.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="139"/>
         <source>Invokes the Virtual Media Manager to select a Floppy image to mount.</source>
-        <translation>Invoca el Gestor de Discs Durs Virtuals per seleccionar una imatge de disquet a muntar.</translation>
+        <translation>Invoca el gestor de discos durs virtuals per seleccionar una imatge de disquet a muntar.</translation>
     </message>
 </context>
 <context>
@@ -9347,17 +9359,17 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="435"/>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation type="unfinished"></translation>
+        <translation>heu assignat més d&apos;un &lt;b&gt;%1%&lt;/b&gt; de la memòria del vostre ordinador (&lt;b&gt;%2&lt;/b&gt;) a la màquina virtual. No heu deixat suficient memòria al sistema amfitrió. Seleccineu un percentatge menor.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="445"/>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
-        <translation type="unfinished"></translation>
+        <translation>heu assignat més d&apos;un &lt;b&gt;%1%&lt;/b&gt; de la memòria del vostre ordinador (&lt;b&gt;%2&lt;/b&gt;) a la màquina virtual. No heu deixat suficient memòria al sistema amfitrió. Contineu pel vostre compte (no recomanable).</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="466"/>
         <source>there is a 64 bits guest OS type assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else your guest will fail to detect a 64 bits CPU and will not be able to boot, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>existeix un sistema client de 64 bits assignat a aquesta màquina virtual que requereix tenir habilitada la característica de virtualització (VT-x/AMD-V). El vostre sistema client fallarà al detectar una CPU de 64 bits i no podrà iniciar-se, per la qual cosa aquesta característica s&apos;habilitarà per defecte quan accepteu els paràmetres de la màquina virtual prement el botó D&apos;acord.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="517"/>
@@ -9403,13 +9415,13 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="104"/>
         <source>Base &amp;Memory Size</source>
-        <translation>Mida de la &amp;memòria RAM</translation>
+        <translation>Mida de la &amp;memòria base</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="153"/>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="230"/>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation>Controla la quantitat de memòria amb què es proveïx a la màquina virtual. Si n&apos;assigneu massa, pot ser que la màquina no s&apos;inicie.</translation>
+        <translation>Controla la quantitat de memòria amb què es proveeix a la màquina virtual. Si n&apos;assigneu massa, pot ser que la màquina no s&apos;iniciï.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="174"/>
@@ -9438,7 +9450,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="328"/>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="405"/>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation>Controla la quantitat de memòria de vídeo amb què es proveïx a la màquina virtual.</translation>
+        <translation>Controla la quantitat de memòria de vídeo amb què es proveeix a la màquina virtual.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="478"/>
@@ -9448,12 +9460,12 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="484"/>
         <source>Boo&amp;t Order:</source>
-        <translation>&amp;Ordre d&apos;Inici:</translation>
+        <translation>&amp;Ordre d&apos;inici:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="538"/>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation>Definiu l&apos;ordre dels dispositius d&apos;arrencada. Useu les caseles de selecció a l&apos;esquerra per activar o desactivar els dispositius d&apos;arrencada individuals. Moveu els elements amunt i avall per a canviar l&apos;ordre dels dispositius.</translation>
+        <translation>Defineix l&apos;ordre dels dispositius d&apos;arrencada. Useu les caselles de selecció a l&apos;esquerra per activar o desactivar els dispositius d&apos;arrencada individuals. Moveu els elements amunt i avall per a canviar l&apos;ordre dels dispositius.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="557"/>
@@ -9488,7 +9500,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="661"/>
         <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>Quan estiga marcat, la màquina virtual suportarà la Configuració Avançada i la Interfície de Gestió de l&apos;Energia (ACPI). &lt;b&gt;Nota:&lt;/b&gt; no inhabiliteu aquesta característica després d&apos;haver instal·lat un Windows al sistema operatiu client!</translation>
+        <translation>Quan estigui marcat, la màquina virtual suportarà la configuració avançada i la interfície de gestió de l&apos;energia (ACPI). &lt;b&gt;Nota:&lt;/b&gt; no inhabiliteu aquesta característica després d&apos;haver instal·lat un Windows al sistema operatiu client!</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="664"/>
@@ -9498,7 +9510,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="677"/>
         <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>Quan estiga marcat, la màquina virtual suportarà l&apos;Entrada Sortida APIC (ES APIC), que pot disminuir el rendiment de la MV. &lt;b&gt;Nota:&lt;/b&gt; no inhabiliteu aquesta característica després d&apos;haver instal·lat un Windows al sistema operatiu client!</translation>
+        <translation>Quan estigui marcat, la màquina virtual suportarà l&apos;entrada/sortida APIC (ES APIC), que pot reduir el rendiment de la màquina virtual. &lt;b&gt;Nota:&lt;/b&gt; no inhabiliteu aquesta característica després d&apos;haver instal·lat un Windows al sistema operatiu client!</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="680"/>
@@ -9508,7 +9520,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="693"/>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation>Quan estiga marcat, l&apos;aplicació tractarà de fer ús  del processador de l&apos;amfitrió per habilitar extensions com Intel VT-x and AMD-V.</translation>
+        <translation>Quan estigui marcat, l&apos;aplicació tractarà de fer ús del processador de l&apos;amfitrió per habilitar extensions com Intel VT-x i AMD-V.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="696"/>
@@ -9518,17 +9530,17 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="727"/>
         <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation type="unfinished"></translation>
+        <translation>Quan estigui marcat, la màquina virtual provarà de fer ús de l&apos;extensió de paginació imbricada d&apos;intel VT-x i AMD-V.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="730"/>
         <source>Enable Nested Pa&amp;ging</source>
-        <translation type="unfinished"></translation>
+        <translation>Activa la pa&amp;ginació imbricada</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="745"/>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation>Quan estiga marca, la característica d&apos;Extensió d&apos;Adreça Física (PAE) del processador de l&apos;amfitrió s&apos;exposarà a la màquina virtual.</translation>
+        <translation>Quan estigui marcat, la característica d&apos;extensió d&apos;adreça física (PAE) del processador de l&apos;amfitrió s&apos;exposarà a la màquina virtual.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="748"/>
@@ -9538,12 +9550,12 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="757"/>
         <source>&amp;Shared Clipboard:</source>
-        <translation>Porta-retall&amp;s Compartit:</translation>
+        <translation>Porta-retall&amp;s compartit:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="780"/>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Defineix el mode de compartició del porta-retalls entre el client i l&apos;amfitrió. Tingueu en compte que aquesta característica requereix tindre instal·lades les Guest Additions al sistema client.</translation>
+        <translation>Defineix el mode de compartició del porta-retalls entre el client i l&apos;amfitrió. Tingueu en compte que aquesta característica requereix tenir instal·lades les Guest Additions al sistema client.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="793"/>
@@ -9553,7 +9565,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="820"/>
         <source>&amp;IDE Controller Type:</source>
-        <translation>T&amp;ipus de Controlador IDE:</translation>
+        <translation>T&amp;ipus de controlador IDE:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="833"/>
@@ -9601,12 +9613,12 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="455"/>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
-        <translation>heu assignat menys de l&apos;&lt;b&gt;%1&lt;/b&gt; per a la memòria de vídeo, que és el mínim necessari per arrencar el sistema client en mode de pantalla completa o fluïd.</translation>
+        <translation>heu assignat menys de l&apos;&lt;b&gt;%1&lt;/b&gt; per a la memòria de vídeo, que és el mínim necessari per arrencar el sistema client en mode de pantalla completa o fluid.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="454"/>
         <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
-        <translation>Quan estiga marcat, la màquina virtual permetrà l&apos;accés als gràfics 3D disponibles a l&apos;amfitrió.</translation>
+        <translation>Quan estigui marcat, la màquina virtual permetrà l&apos;accés als gràfics 3D disponibles a l&apos;amfitrió.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="457"/>
@@ -9624,79 +9636,79 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="792"/>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
-        <translation>&lt;i&gt;%1&lt;/i&gt; fa servir el disc dur que es troba adjuntat a &lt;i&gt;%2&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;%1&lt;/i&gt; fa servir el disc dur que es troba connectat a &lt;i&gt;%2&lt;/i&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="815"/>
         <source>&amp;Add Attachment</source>
-        <translation>&amp;Afegeix Adjunt</translation>
+        <translation>&amp;Afegeix una adjunció</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="816"/>
         <source>&amp;Remove Attachment</source>
-        <translation>&amp;Elimina Adjunt</translation>
+        <translation>&amp;Elimina una adjució</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="817"/>
         <source>&amp;Select Hard Disk</source>
-        <translation>&amp;Seleccioneu un Disc Dur</translation>
+        <translation>&amp;Seleccioneu un disc dur</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="826"/>
         <source>Adds a new hard disk attachment.</source>
-        <translation>Afegeix un nou adjunt de disc dur.</translation>
+        <translation>Afegeix una nova adjunció de disc dur.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="827"/>
         <source>Removes the highlighted hard disk attachment.</source>
-        <translation>Elimina l&apos;adjunt de disc dur remarcat.</translation>
+        <translation>Elimina l&apos;adjunció de disc dur remarcada.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a hard disk to attach to the currently highlighted slot.</source>
-        <translation type="obsolete">Invoca el Gestor de Disc Durs Virtuals per crear un de nou o seleccionar un disc dur existent per adjuntar.</translation>
+        <translation type="obsolete">Invoca el Gestor de Disc Durs Virtuals per crear un de nou o seleccionar un disc dur existent per connectar.</translation>
     </message>
     <message>
         <source>When checked, enables the virtual SATA controller of this machine. Note that you cannot attach hard disks to SATA ports when the virtual SATA controller is disabled.</source>
-        <translation type="obsolete">Quan estiga marcat, habilita el controlador virtual SATA per a aquesta màquina. Tingueu en compte que no podeu adjuntar discs durs a ports SATA quan el controlador SATA no és actiu.</translation>
+        <translation>Quan estigui marcat, s&apos;habilitarà el controlador virtual SATA per a aquesta màquina. Tingueu en compte que no podeu connectar discos durs a ports SATA quan el controlador SATA no és actiu.</translation>
     </message>
     <message>
         <source>&amp;Enable SATA Controller</source>
-        <translation type="obsolete">Habilita &amp;el Controlador SATA</translation>
+        <translation type="obsolete">Habilita &amp;el controlador SATA</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="34"/>
         <source>When checked, enables an additional virtual controller (either SATA or SCSI) of this machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Quan estigui marcat, habilitarà un controlador virtual addicional (SATA o SCSI) per a aquesta màquina.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="37"/>
         <source>&amp;Enable Additional Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Activa el controlador addicional</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="77"/>
         <source>&amp;Attachments</source>
-        <translation>&amp;Adjunts</translation>
+        <translation>&amp;Adjuncions</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="102"/>
         <source>Lists all hard disks attached to this machine. Use a mouse click or the &lt;tt&gt;Space&lt;/tt&gt; key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
-        <translation>Mostra els discs durs adjunts a aquesta màquina. FEu servir el clic de ratolí o la tecla &lt;tt&gt;Spai&lt;/tt&gt; a l&apos;ítem remarcat per activar la llista deslplegable i seleccionar el valor desitjat. Feu servir el menú de context o els botons de la dreta per afegir o suprimir adjunts de discs durs.</translation>
+        <translation>Mostra els discos durs connectats a aquesta màquina. Feu servir el clic de ratolí o la tecla &lt;tt&gt;espai&lt;/tt&gt; a l&apos;ítem remarcat per activar la llista deslplegable i seleccionar el valor desitjat. Feu servir el menú de context o els botons de la dreta per afegir o suprimir discos durs connectats.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="828"/>
         <source>Invokes the Virtual Media Manager to select a hard disk to attach to the currently highlighted slot.</source>
-        <translation>Invoca el Gestor de Medis Virtuals per crear un de nou o seleccionar un disc dur existent per adjuntar a l&apos;slot remarcat.</translation>
+        <translation>Invoca el gestor de suports virtuals per crear un de nou o seleccionar un disc dur existent per connectar-lo a la ranura remarcada.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="133"/>
         <source>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</source>
-        <translation>Si està marcat, mostrarà de forma diferenciada els discs durs adjuntats als slots en lloc de als discs durs base (mostrat en cas d&apos;adjunts indirectes), a més permetrà adjuntar altres discs durs explicitament. Marqueu això només si necessiteu una configuració complexa del disc dur.</translation>
+        <translation>Si està marcat, mostrarà de forma diferenciada els discos durs connectats a les ranures en lloc de als discos durs base (mostrat en cas d&apos;adjuncions indirectes), a més permetrà connectar altres discos durs explícitament. Marqueu això només si necessiteu una configuració complexa del disc dur.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="136"/>
         <source>&amp;Show Differencing Hard Disks</source>
-        <translation>Mo&amp;stra els Discs Durs Diferenciats</translation>
+        <translation>Mo&amp;stra els discos durs diferenciats</translation>
     </message>
 </context>
 <context>
@@ -9706,54 +9718,54 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="204"/>
         <source>Adapter</source>
         <comment>network</comment>
-        <translation type="unfinished">Adaptador</translation>
+        <translation>Adaptador</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="191"/>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="205"/>
         <source>Not selected</source>
         <comment>adapter</comment>
-        <translation type="unfinished"></translation>
+        <translation>No seleccionat</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="197"/>
         <source>Network</source>
         <comment>internal</comment>
-        <translation type="unfinished">Xarxa</translation>
+        <translation>Xarxa</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="198"/>
         <source>Not selected</source>
         <comment>network</comment>
-        <translation type="unfinished"></translation>
+        <translation>No seleccionat</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="215"/>
         <source>MAC Address</source>
-        <translation type="unfinished"></translation>
+        <translation>Adreça MAC</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="216"/>
         <source>Not selected</source>
         <comment>address</comment>
-        <translation type="unfinished"></translation>
+        <translation>No seleccionat</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="218"/>
         <source>Cable</source>
-        <translation type="unfinished"></translation>
+        <translation>Cable</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="219"/>
         <source>Connected</source>
         <comment>cable</comment>
-        <translation type="unfinished"></translation>
+        <translation>Connectat</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="219"/>
         <source>Not connected</source>
         <comment>cable</comment>
-        <translation type="unfinished"></translation>
+        <translation>No connectat</translation>
     </message>
     <message>
         <source>Select TAP setup application</source>
@@ -9766,7 +9778,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="33"/>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation>Quan estiga marca, activa aquest adaptador de xarxa virtual a dins de la màquina virtual.</translation>
+        <translation>Quan estigui marcat, s&apos;activarà aquest adaptador de xarxa virtual a dins de la màquina virtual.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="36"/>
@@ -9780,27 +9792,27 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="77"/>
         <source>Adapter &amp;Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Tipus d&apos;adaptador:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="90"/>
         <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
-        <translation>Selecciona el tipus d&apos;adaptador de xarxa virtual. Segons el valor, VirtualBox proveirà diferent maquinari de xarxa per a la màquina virtual.</translation>
+        <translation>Selecciona el tipus d&apos;adaptador de xarxa virtual. Segons el valor, el VirtualBox proveirà diferent maquinari de xarxa per a la màquina virtual.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="97"/>
         <source>&amp;Attached to:</source>
-        <translation>&amp;Adjuntat a:</translation>
+        <translation>Connect&amp;at a:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="110"/>
         <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation>Controla la forma en què aquest adaptador virtual s&apos;adjunta a la xarxa real del sistema amfitrió.</translation>
+        <translation>Controla la forma en què aquest adaptador virtual es connecta a la xarxa real del sistema amfitrió.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="117"/>
         <source>Open extended settings dialog for current attachment type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Obre el diàleg de configuració ampliat per a l&apos;actual tipus d&apos;adjunció.</translation>
     </message>
     <message>
         <source>&amp;Network Name:</source>
@@ -9876,107 +9888,107 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="155"/>
         <source>no bridged network adapter is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>no hi ha cap adaptador de xarxa en pont seleccionat</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="162"/>
         <source>no internal network name is specified</source>
-        <translation type="unfinished"></translation>
+        <translation>no hi ha cap nom de xarxa interna especificat</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="169"/>
         <source>no host-only adapter is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>no hi ha seleccionat cap adaptador de xarxa de només l&apos;amfitrió</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="212"/>
         <source>Basic Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Detalls bàsics</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="215"/>
         <source>Bridged Network Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Detalls de la xarxa en pont</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="218"/>
         <source>Internal Network Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Detalls de la xarxa interna</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="221"/>
         <source>Host-only Network Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Detalls de la xarxa de només l&apos;amfitrió</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="226"/>
         <source>Not selected</source>
-        <translation type="unfinished"></translation>
+        <translation>No seleccionat</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="39"/>
         <source>Host Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Paràmetres de l&apos;amfitrió</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="46"/>
         <source>&amp;Bridged Network Adapter:</source>
-        <translation type="unfinished"></translation>
+        <translation>Adaptador de xarxa en &amp;pont:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="65"/>
         <source>Displays the name of the host network adapter selected for bridged networking.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra el nom de l&apos;adaptador de xarxa seleccionat de l&apos;amfitrió per a la xarxa en pont.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="72"/>
         <source>Internal &amp;Network:</source>
-        <translation type="unfinished"></translation>
+        <translation>Xarxa i&amp;nterna:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="91"/>
         <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation type="unfinished">Mostra el nom de la xarxa interna seleccionada per a aquest adaptador.</translation>
+        <translation>Mostra el nom de la xarxa interna seleccionada per a aquest adaptador.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="101"/>
         <source>Host-only &amp;Network Adapter:</source>
-        <translation type="unfinished"></translation>
+        <translation>Adaptador de xarxa de &amp;només l&apos;amfitrió:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="120"/>
         <source>Displays the name of the VirtualBox network adapter selected for host-only networking.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra el nom de l&apos;adaptador de xarxa VirtualBox seleccionat per a la xarxa de només l&apos;amfitrió.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="133"/>
         <source>Guest Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Paràmetres del client</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="156"/>
         <source>Guest &amp;MAC Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>Adreça &amp;MAC del client:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="175"/>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="unfinished">Mostra l&apos;adreça MAC d&apos;aquest adaptador. Conté exactament 12 caràcters compresos entre {0-9,A-F}. Tingueu en compte que el segon caràcter ha d&apos;éser un dígit.</translation>
+        <translation>Mostra l&apos;adreça MAC d&apos;aquest adaptador. Conté exactament 12 caràcters compresos entre {0-9,A-F}. Tingueu en compte que el segon caràcter ha d&apos;ésser un dígit.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="182"/>
         <source>Generates a new random MAC address.</source>
-        <translation type="unfinished">Genera una nova adreça MAC aleatòria.</translation>
+        <translation>Genera una nova adreça MAC aleatòria.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="195"/>
         <source>&amp;Cable connected</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Cable connectat</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="198"/>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="unfinished">Indica si el cable de la xarxa virtual està connectat a l&apos;inici de la màquina virtual o no.</translation>
+        <translation>Indica si el cable de la xarxa virtual està connectat a l&apos;inici de la màquina virtual o no.</translation>
     </message>
 </context>
 <context>
@@ -9987,7 +9999,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Internal network name is not set</source>
-        <translation type="obsolete">No s&apos;ha especificat un nom de xarxa intern</translation>
+        <translation>No s&apos;ha especificat un nom de xarxa intern</translation>
     </message>
 </context>
 <context>
@@ -10001,17 +10013,17 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="33"/>
         <source>When checked, enables the given parallel port of the virtual machine.</source>
-        <translation>Quan estiga marcat, habilita el port paral·lel de la màquina virtual.</translation>
+        <translation>Quan estigui marcat, s&apos;habilitarà el port paral·lel de la màquina virtual.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="36"/>
         <source>&amp;Enable Parallel Port</source>
-        <translation>Habilita Port Paral·l&amp;el</translation>
+        <translation>Habilita el port paral·l&amp;el</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="77"/>
         <source>Port &amp;Number:</source>
-        <translation>&amp;Número de Port:</translation>
+        <translation>&amp;Número del port:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="90"/>
@@ -10041,7 +10053,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="143"/>
         <source>Port &amp;Path:</source>
-        <translation>Ruta del &amp;Port:</translation>
+        <translation>Ruta del &amp;port:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="156"/>
@@ -10122,7 +10134,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="63"/>
         <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
-        <translation>Mostra totes les carpetes accessibles a aquesta màquina. Feu servir: &apos;net use x: \\vboxsvr\share&apos; per accedir a la carpeta anomenada &lt;i&gt;share&lt;/i&gt; des d&apos;un sistema tipus DOS, o &apos;mount -t vboxsf share mount_point&apos; per accedir a ella des d&apos;un sistema Linux. Aquesta característica requereix Guest Additions.</translation>
+        <translation>Mostra totes les carpetes accessibles a aquesta màquina. Feu servir: &apos;net use x: \\vboxsvr\share&apos; per accedir a la carpeta anomenada &lt;i&gt;share&lt;/i&gt; des d&apos;un sistema tipus DOS, o &apos;mount -t vboxsf share mount_point&apos; per accedir a ella des d&apos;un sistema Linux. Aquesta característica requereix les Guest Additions.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="73"/>
@@ -10175,7 +10187,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="66"/>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
-        <translation>Quan estiga marcat, el sistema operatiu client no podrà escriure a la carpeta compartida especificada.</translation>
+        <translation>Quan estigui marcat, el sistema operatiu client no podrà escriure a la carpeta compartida especificada.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="69"/>
@@ -10199,12 +10211,12 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="33"/>
         <source>When checked, enables the given serial port of the virtual machine.</source>
-        <translation>Quan estiga marcat, habilita el port sèrie a la màquina virtual.</translation>
+        <translation>Quan estigui marcat, s&apos;habilitarà el port sèrie a la màquina virtual.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="36"/>
         <source>&amp;Enable Serial Port</source>
-        <translation>Habilita &amp;el Port Sèrie</translation>
+        <translation>&amp;Habilita el port sèrie</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="77"/>
@@ -10249,22 +10261,22 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="176"/>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
-        <translation>Si està marcat, el conducte especificat al camp &lt;b&gt;Ruta del Port&lt;/b&gt; es crearà per la màquina virtual quan s&apos;inicie. En altre cas, la màquina virtual provarà de fer servir el conducte existent.</translation>
+        <translation>Si està marcat, el conducte especificat al camp &lt;b&gt;Ruta del port&lt;/b&gt; es crearà per la màquina virtual quan s&apos;iniciï. En altre cas, la màquina virtual provarà de fer servir el conducte existent.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="179"/>
         <source>&amp;Create Pipe</source>
-        <translation>&amp;Crea Conducte</translation>
+        <translation>&amp;Crea un conducte</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="186"/>
         <source>Port &amp;Path:</source>
-        <translation>Ruta del &amp;Port:</translation>
+        <translation>Ruta del &amp;port:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="199"/>
         <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
-        <translation>Mostra la ruta al conducte del port sèrie a l&apos;amfitrió quan el port treballa en el mode &lt;b&gt;Conducte Amfitrió&lt;/b&gt;, o al dispositiu sèrie de l&apos;amfitrió quan el port treballa en el mode &lt;b&gt;Dispositiu Amfitrió&lt;/b&gt;.</translation>
+        <translation>Mostra la ruta al conducte del port sèrie a l&apos;amfitrió quan el port treballa en el mode &lt;b&gt;Conducte amfitrió&lt;/b&gt;, o al dispositiu sèrie de l&apos;amfitrió quan el port treballa en el mode &lt;b&gt;Dispositiu Amfitrió&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
@@ -10290,12 +10302,12 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="239"/>
         <source>&amp;Add Empty Filter</source>
-        <translation>&amp;Afegeix Filtre Buit</translation>
+        <translation>&amp;Afegeix un filtre buit</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="240"/>
         <source>A&amp;dd Filter From Device</source>
-        <translation>Afegeix un Filtre des d&apos;un &amp;Dispositiu</translation>
+        <translation>Afegeix un filtre des d&apos;un &amp;dispositiu</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="241"/>
@@ -10310,12 +10322,12 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="243"/>
         <source>&amp;Move Filter Up</source>
-        <translation>&amp;Mou el Filtre Amunt</translation>
+        <translation>&amp;Mou el filtre amunt</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="244"/>
         <source>M&amp;ove Filter Down</source>
-        <translation>M&amp;ou el Filtre Avall</translation>
+        <translation>M&amp;ou el filtre avall</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="259"/>
@@ -10356,7 +10368,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="33"/>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation>Quan estiga marca, habilita el controlador virtual USB d&apos;aquesta màquina.</translation>
+        <translation>Quan estigui marcat, s&apos;habilitarà el controlador virtual USB d&apos;aquesta màquina.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="36"/>
@@ -10366,7 +10378,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="77"/>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation>Quan estiga marcat, habilita el controlador virtual USB EHCI per a aquesta màquina. El controlador USB EHCI proveïx de suport USB 2.0.</translation>
+        <translation>Quan estigui marcat, s&apos;habilitarà el controlador virtual USB EHCI per a aquesta màquina. El controlador USB EHCI proveeix de suport USB 2.0.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="80"/>
@@ -10381,7 +10393,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="115"/>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
-        <translation>Mostra tots els filtres USB d&apos;aquesta màquina. La casella de selecció de l&apos;esquerra defenieix si un filtre concret és actiu o no. Feu servir el menú de context o els botons de la dreta per afegir o eliminar filtres USB.</translation>
+        <translation>Mostra tots els filtres USB d&apos;aquesta màquina. La casella de selecció de l&apos;esquerra defeneix si un filtre concret és actiu o no. Feu servir el menú de context o els botons de la dreta per afegir o eliminar filtres USB.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="122"/>
@@ -10447,7 +10459,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="115"/>
         <source>Defines the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
-        <translation>Defineix el número de revisió del filtre. El format de la cadena de &lt;i&gt;seqüència exacta&lt;/i&gt; és &lt;tt&gt;IIFF&lt;/tt&gt; a on &lt;tt&gt;I&lt;/tt&gt; és un dígit decimal de la part entera i &lt;tt&gt;F&lt;/tt&gt;és un dígit decimal d&apos;una part de fracció. Una cadena buida no tindrà cap valor.</translation>
+        <translation>Defineix el número de revisió del filtre. El format de la cadena de &lt;i&gt;seqüència exacta&lt;/i&gt; és &lt;tt&gt;IIFF&lt;/tt&gt; a on &lt;tt&gt;I&lt;/tt&gt; és un dígit decimal de la part entera i &lt;tt&gt;F&lt;/tt&gt; és un dígit decimal d&apos;una part de fracció. Una cadena buida no tindrà cap valor.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="122"/>
@@ -10472,7 +10484,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="162"/>
         <source>&amp;Serial No.:</source>
-        <translation>Número de &amp;Sèrie:</translation>
+        <translation>Número de &amp;sèrie:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="175"/>
@@ -10497,7 +10509,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="221"/>
         <source>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
-        <translation>Defineix on s&apos;aplica aquest filtre als dispositius USB connectats localment a l&apos;amfitrió (&lt;i&gt;No&lt;/i&gt;), al VRDP de la computadora client (&lt;i&gt;Sí&lt;/i&gt;), o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).</translation>
+        <translation>Defineix on s&apos;aplica aquest filtre als dispositius USB connectats localment a l&apos;amfitrió (&lt;i&gt;No&lt;/i&gt;), al VRDP de la computadora client (&lt;i&gt;Sí&lt;/i&gt;), o a ambdós (&lt;i&gt;Qualsevol&lt;/i&gt;).</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="228"/>
@@ -10512,7 +10524,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="36"/>
         <source>USB Filter Details</source>
-        <translation>Detals del Filtre USB</translation>
+        <translation>Detalls del filtre USB</translation>
     </message>
 </context>
 <context>
@@ -10520,7 +10532,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="33"/>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation>Quan estiga marcat, la MV actuarà com un servidor Remote Desktop Protocol (RDP), permetent als clients remots connectar la MV (quan estiga executant-se) fent servir l&apos;estàndard client RDP.</translation>
+        <translation>Quan estigui marcat, la màquina virtual actuarà com un servidor protocol d&apos;escriptori remot (RDP), permetent als clients remots connectar-se a la màquina virtual (quan estigui executant-se) fent servir l&apos;estàndard client RDP.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="36"/>
@@ -10530,12 +10542,12 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="77"/>
         <source>Server &amp;Port:</source>
-        <translation>Port del &amp;Servidor:</translation>
+        <translation>Port del &amp;servidor:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="96"/>
         <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
-        <translation>Mostra el nombre del port del Servidor VRDP. heu d&apos;especificar &lt;tt&gt;0&lt;/tt&gt; (cero) per reiniciar el port al valor per defecte.</translation>
+        <translation>Mostra el nombre del port del servidor VRDP. Heu d&apos;especificar &lt;tt&gt;0&lt;/tt&gt; (cero) per reiniciar el port al valor per defecte.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="103"/>
@@ -10555,7 +10567,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="142"/>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation>Especifica el temps d&apos;espera per a la autenticació el client, en milisegons.</translation>
+        <translation>Especifica el temps d&apos;espera per a la autenticació del client, en milisegons.</translation>
     </message>
 </context>
 </TS>

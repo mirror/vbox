@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="1.1" language="ca">
+<!DOCTYPE TS>
+<TS version="2.0" language="ca">
 <defaultcodec></defaultcodec>
 <context>
     <name>PPDOptionsModel</name>
@@ -130,7 +131,7 @@
     <message>
         <location filename="../src/qt3support/dialogs/q3filedialog.cpp" line="2515"/>
         <source>Back</source>
-        <translation>Endarrere</translation>
+        <translation>Enrere</translation>
     </message>
     <message>
         <location filename="../src/qt3support/dialogs/q3filedialog.cpp" line="2522"/>
@@ -180,7 +181,7 @@
     <message>
         <location filename="../src/qt3support/dialogs/q3filedialog.cpp" line="2680"/>
         <source>Inaccessible</source>
-        <translation>No s&apos;hi pot accedir</translation>
+        <translation>Inaccessible</translation>
     </message>
     <message>
         <location filename="../src/qt3support/dialogs/q3filedialog.cpp" line="2682"/>
@@ -195,7 +196,7 @@
     <message>
         <location filename="../src/qt3support/dialogs/q3filedialog.cpp" line="2684"/>
         <source>Symlink to Special</source>
-        <translation>Enllaç simbòlic a Especial</translation>
+        <translation>Enllaç simbòlic a especial</translation>
     </message>
     <message>
         <location filename="../src/qt3support/dialogs/q3filedialog.cpp" line="2685"/>
@@ -220,7 +221,7 @@
     <message>
         <location filename="../src/qt3support/dialogs/q3filedialog_win.cpp" line="392"/>
         <source>Save As</source>
-        <translation>Desa com</translation>
+        <translation>Anomena i desa</translation>
     </message>
     <message>
         <location filename="../src/qt3support/dialogs/q3filedialog.cpp" line="4536"/>
@@ -250,22 +251,22 @@
     <message>
         <location filename="../src/qt3support/dialogs/q3filedialog.cpp" line="4204"/>
         <source>Sort by &amp;Name</source>
-        <translation>Ordena per &amp;Nom</translation>
+        <translation>Ordena per &amp;nom</translation>
     </message>
     <message>
         <location filename="../src/qt3support/dialogs/q3filedialog.cpp" line="4206"/>
         <source>Sort by &amp;Size</source>
-        <translation>Ordena per &amp;Mida</translation>
+        <translation>Ordena per &amp;mida</translation>
     </message>
     <message>
         <location filename="../src/qt3support/dialogs/q3filedialog.cpp" line="4207"/>
         <source>Sort by &amp;Date</source>
-        <translation>Ordena per &amp;Data</translation>
+        <translation>Ordena per &amp;data</translation>
     </message>
     <message>
         <location filename="../src/qt3support/dialogs/q3filedialog.cpp" line="4209"/>
         <source>&amp;Unsorted</source>
-        <translation>&amp;Sense Ordre</translation>
+        <translation>&amp;Sense ordre</translation>
     </message>
     <message>
         <location filename="../src/qt3support/dialogs/q3filedialog.cpp" line="4224"/>
@@ -275,7 +276,7 @@
     <message>
         <location filename="../src/qt3support/dialogs/q3filedialog.cpp" line="4228"/>
         <source>Show &amp;hidden files</source>
-        <translation>Mostra fitxers &amp;ocults</translation>
+        <translation>Mostra els fitxers &amp;ocults</translation>
     </message>
     <message>
         <location filename="../src/qt3support/dialogs/q3filedialog.cpp" line="4259"/>
@@ -300,7 +301,7 @@
     <message>
         <location filename="../src/qt3support/dialogs/q3filedialog.cpp" line="4268"/>
         <source>&lt;qt&gt;Are you sure you wish to delete %1 &quot;%2&quot;?&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Esteu segurs que voleu esborrar %1 &quot;%2&quot;?&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;Esteu segur que voleu esborrar %1 &quot;%2&quot;?&lt;/qt&gt;</translation>
     </message>
     <message>
         <location filename="../src/qt3support/dialogs/q3filedialog.cpp" line="4269"/>
@@ -401,7 +402,7 @@ Comproveu la ruta i el nom del fitxer.</translation>
 %1
 to
 %2</source>
-        <translation>No s&apos;ha pogut canviar el nom
+        <translation>No es pot canviar el nom
 %1
 a
 %2</translation>
@@ -417,7 +418,7 @@ a
         <location filename="../src/qt3support/network/q3localfs.cpp" line="312"/>
         <source>Could not write
 %1</source>
-        <translation>No s&apos;hi pot escriure
+        <translation>No es pot escriure
 %1</translation>
     </message>
 </context>
@@ -551,7 +552,7 @@ a
     <message>
         <location filename="../src/plugins/accessible/compat/q3complexwidgets.cpp" line="244"/>
         <source>Contains commands to manipulate the window</source>
-        <translation>Conte ordres per a manipular la finestra</translation>
+        <translation>Conté ordres per a manipular la finestra</translation>
     </message>
     <message>
         <location filename="../src/plugins/accessible/compat/q3complexwidgets.cpp" line="247"/>
@@ -571,7 +572,7 @@ a
     <message>
         <location filename="../src/plugins/accessible/compat/q3complexwidgets.cpp" line="252"/>
         <source>Makes the window full screen</source>
-        <translation>Fa que la finestra ocupe tota la pantalla</translation>
+        <translation>Fa que la finestra ocupi tota la pantalla</translation>
     </message>
     <message>
         <location filename="../src/plugins/accessible/compat/q3complexwidgets.cpp" line="254"/>
@@ -650,7 +651,7 @@ a
     <message>
         <location filename="../src/qt3support/dialogs/q3wizard.cpp" line="146"/>
         <source>&lt; &amp;Back</source>
-        <translation>&lt; &amp;Endarrere</translation>
+        <translation>&lt; &amp;Enrere</translation>
     </message>
     <message>
         <location filename="../src/qt3support/dialogs/q3wizard.cpp" line="147"/>
@@ -1025,7 +1026,7 @@ a
     <message>
         <location filename="../src/gui/widgets/qdialogbuttonbox.cpp" line="550"/>
         <source>Don&apos;t Save</source>
-        <translation>No ho deses</translation>
+        <translation>No ho desis</translation>
     </message>
     <message>
         <location filename="../src/gui/widgets/qdialogbuttonbox.cpp" line="554"/>
@@ -1237,7 +1238,7 @@ Comproveu que el nom del fitxer es correcte.</translation>
     <message>
         <location filename="../src/gui/ui_qfiledialog.h" line="257"/>
         <source>Back</source>
-        <translation>Endarrere</translation>
+        <translation>Enrere</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_qfiledialog.h" line="259"/>
@@ -1306,7 +1307,7 @@ Do you want to delete it anyway?</source>
     <message>
         <location filename="../src/gui/dialogs/qfiledialog.cpp" line="418"/>
         <source>Save As</source>
-        <translation>Desa com</translation>
+        <translation>Anomena i desa</translation>
     </message>
     <message>
         <location filename="../src/gui/itemviews/qfileiconprovider.cpp" line="332"/>
@@ -1384,7 +1385,7 @@ Do you want to delete it anyway?</source>
     <message>
         <location filename="../src/gui/dialogs/qfilesystemmodel.cpp" line="562"/>
         <source>&lt;b&gt;The name &quot;%1&quot; can not be used.&lt;/b&gt;&lt;p&gt;Try using another name, with fewer characters or no punctuations marks.</source>
-        <translation>&lt;b&gt;No es pot usar el nom &quot;%1&quot;.&lt;/b&gt;&lt;p&gt;Proveu d&apos;usar un altre nom, amb menys caràcters o sense signes de puntuacio.</translation>
+        <translation>&lt;b&gt;No es pot usar el nom &quot;%1&quot;.&lt;/b&gt;&lt;p&gt;Proveu d&apos;usar un altre nom, amb menys caràcters o sense signes de puntuació.</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qfilesystemmodel.cpp" line="607"/>
@@ -1411,7 +1412,7 @@ Do you want to delete it anyway?</source>
     <message>
         <location filename="../src/gui/dialogs/qfilesystemmodel.cpp" line="622"/>
         <source>Date Modified</source>
-        <translation>Data modificada</translation>
+        <translation>Data de modificació</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qfilesystemmodel_p.h" line="261"/>
@@ -1494,7 +1495,7 @@ Do you want to delete it anyway?</source>
     <message>
         <location filename="../src/gui/dialogs/qfontdialog.cpp" line="449"/>
         <source>Select Font</source>
-        <translation>Seleccioneu tipus de lletra</translation>
+        <translation>Seleccioneu el tipus de lletra</translation>
     </message>
 </context>
 <context>
@@ -1507,7 +1508,7 @@ Do you want to delete it anyway?</source>
     <message>
         <location filename="../src/qt3support/network/q3ftp.cpp" line="718"/>
         <source>Host %1 not found</source>
-        <translation>Amfitrió %1 no trobat</translation>
+        <translation>No s&apos;ha trobat l&apos;amfitrió %1</translation>
     </message>
     <message>
         <location filename="../src/qt3support/network/q3ftp.cpp" line="722"/>
@@ -1654,7 +1655,7 @@ Do you want to delete it anyway?</source>
     <message>
         <location filename="../src/qt3support/network/q3http.cpp" line="1379"/>
         <source>Request aborted</source>
-        <translation>S&apos;ha avortat la sol·licitud</translation>
+        <translation>S&apos;ha interromput la sol·licitud</translation>
     </message>
     <message>
         <location filename="../src/qt3support/network/q3http.cpp" line="1760"/>
@@ -1684,7 +1685,7 @@ Do you want to delete it anyway?</source>
     <message>
         <location filename="../src/qt3support/network/q3http.cpp" line="1864"/>
         <source>HTTP request failed</source>
-        <translation>Ha fallta la sol·licitud HTTP</translation>
+        <translation>Ha fallat la sol·licitud HTTP</translation>
     </message>
     <message>
         <location filename="../src/qt3support/network/q3http.cpp" line="1933"/>
@@ -1699,7 +1700,7 @@ Do you want to delete it anyway?</source>
     <message>
         <location filename="../src/qt3support/network/q3http.cpp" line="2314"/>
         <source>Host %1 found</source>
-        <translation>Amfitrió %1 trobat</translation>
+        <translation>S&apos;ha trobat l&apos;amfitrió %1</translation>
     </message>
     <message>
         <location filename="../src/qt3support/network/q3http.cpp" line="2317"/>
@@ -1714,7 +1715,7 @@ Do you want to delete it anyway?</source>
     <message>
         <location filename="../src/qt3support/network/q3http.cpp" line="2328"/>
         <source>Host found</source>
-        <translation>Amfitrió trobat</translation>
+        <translation>S&apos;ha trobat l&apos;amfitrió</translation>
     </message>
     <message>
         <location filename="../src/qt3support/network/q3http.cpp" line="2331"/>
@@ -1729,12 +1730,12 @@ Do you want to delete it anyway?</source>
     <message>
         <location filename="../src/network/qhttp.cpp" line="2652"/>
         <source>Proxy authentication required</source>
-        <translation>Autenticació del servidor intermediari requerida</translation>
+        <translation>Es requereix autenticació del servidor intermediari</translation>
     </message>
     <message>
         <location filename="../src/network/qhttp.cpp" line="2656"/>
         <source>Authentication required</source>
-        <translation>Autenticació requerida</translation>
+        <translation>Es requreix autenticació</translation>
     </message>
 </context>
 <context>
@@ -1742,7 +1743,7 @@ Do you want to delete it anyway?</source>
     <message>
         <location filename="../src/network/qhttpsocketengine.cpp" line="492"/>
         <source>Authentication required</source>
-        <translation>Autenticació requerida</translation>
+        <translation>Es requreix autenticació</translation>
     </message>
 </context>
 <context>
@@ -1937,7 +1938,7 @@ Do you want to delete it anyway?</source>
     <message>
         <location filename="../src/corelib/plugin/qlibrary.cpp" line="383"/>
         <source>Could not unmap &apos;%1&apos;: %2</source>
-        <translation>No s&apos;ha pogut unmap &apos;%1&apos;: %2</translation>
+        <translation>No s&apos;ha pogut desmapejar &apos;%1&apos;: %2</translation>
     </message>
     <message>
         <location filename="../src/corelib/plugin/qlibrary.cpp" line="620"/>
@@ -1967,7 +1968,7 @@ Do you want to delete it anyway?</source>
     <message>
         <location filename="../src/corelib/plugin/qlibrary.cpp" line="643"/>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. (Cannot mix debug and release libraries.)</source>
-        <translation>El connector &apos;%1&apos; usa una bilioteca Qt incompatible. (No es poden barrejar les biblioteques de depuracio i de llançament.)</translation>
+        <translation>El connector &apos;%1&apos; fa servir una biblioteca Qt incompatible. (No es poden barrejar les biblioteques de depuració i llançament.)</translation>
     </message>
 </context>
 <context>
@@ -2195,12 +2196,12 @@ Do you want to delete it anyway?</source>
     <message>
         <location filename="../src/gui/widgets/qmenu_mac.cpp" line="320"/>
         <source>Quit</source>
-        <translation>Ix</translation>
+        <translation>Surt</translation>
     </message>
     <message>
         <location filename="../src/gui/widgets/qmenu_mac.cpp" line="321"/>
         <source>Exit</source>
-        <translation>Ix</translation>
+        <translation>Surt</translation>
     </message>
     <message>
         <location filename="../src/gui/widgets/qmenu_mac.cpp" line="356"/>
@@ -2220,7 +2221,7 @@ Do you want to delete it anyway?</source>
     <message>
         <location filename="../src/gui/widgets/qmenu_mac.cpp" line="362"/>
         <source>Quit %1</source>
-        <translation>Ix %1</translation>
+        <translation>Surt %1</translation>
     </message>
 </context>
 <context>
@@ -2342,7 +2343,7 @@ Do you want to delete it anyway?</source>
     <message>
         <location filename="../src/network/qnativesocketengine.cpp" line="202"/>
         <source>The bound address is already in use</source>
-        <translation>Ja està usant-se l&apos;adreça limit</translation>
+        <translation>Ja s&apos;està fent servir l&apos;adreça limit</translation>
     </message>
     <message>
         <location filename="../src/network/qnativesocketengine.cpp" line="205"/>
@@ -2392,7 +2393,7 @@ Do you want to delete it anyway?</source>
     <message>
         <location filename="../src/network/qnativesocketengine.cpp" line="166"/>
         <source>Attempt to use IPv6 socket on a platform with no IPv6 support</source>
-        <translation>S&apos;està intentant usar un sòcol IPv6 en una plataforma que no admet IPv6</translation>
+        <translation>S&apos;està provant de fer servir un sòcol IPv6 en una plataforma que no admet IPv6</translation>
     </message>
     <message>
         <location filename="../src/network/qnativesocketengine.cpp" line="187"/>
@@ -2595,7 +2596,7 @@ Do you want to delete it anyway?</source>
     <message>
         <location filename="../src/gui/dialogs/qprintdialog_unix.cpp" line="411"/>
         <source>Aliases: %1</source>
-        <translation>Alies: %1</translation>
+        <translation>Àlies: %1</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qprintdialog_unix.cpp" line="854"/>
@@ -2805,7 +2806,7 @@ Do you want to delete it anyway?</source>
     <message>
         <location filename="../src/gui/dialogs/qprintdialog_unix.cpp" line="1136"/>
         <source>Print To File ...</source>
-        <translation>Imprimeix a un fitxer ...</translation>
+        <translation>Imprimeix a un fitxer...</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qprintdialog.ui" line="25"/>
@@ -3334,7 +3335,7 @@ Trieu un nom de fitxer diferent.</translation>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="315"/>
         <source>Back</source>
-        <translation>Endarrere</translation>
+        <translation>Enrere</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="316"/>
@@ -3369,27 +3370,27 @@ Trieu un nom de fitxer diferent.</translation>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="322"/>
         <source>Bass Boost</source>
-        <translation>Potencia Greus</translation>
+        <translation>Potencia els geus</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="323"/>
         <source>Bass Up</source>
-        <translation>Puja Greus</translation>
+        <translation>Puja els greus</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="324"/>
         <source>Bass Down</source>
-        <translation>Baixa Greus</translation>
+        <translation>Baixa els greus</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="325"/>
         <source>Treble Up</source>
-        <translation>Puja Aguts </translation>
+        <translation>Puja els aguts </translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="326"/>
         <source>Treble Down</source>
-        <translation>Baixa Aguts</translation>
+        <translation>Baixa els aguts</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="327"/>
@@ -3619,7 +3620,7 @@ Trieu un nom de fitxer diferent.</translation>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="382"/>
         <source>Call</source>
-        <translation>Truca</translation>
+        <translation>Crida</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="383"/>
@@ -3726,7 +3727,7 @@ Trieu un nom de fitxer diferent.</translation>
     <message>
         <location filename="../src/qt3support/sql/q3sqlmanager_p.cpp" line="871"/>
         <source>Delete this record?</source>
-        <translation>Suprimim aquest registre?</translation>
+        <translation>Voleu suprimir aquest registre?</translation>
     </message>
     <message>
         <location filename="../src/qt3support/sql/q3sqlmanager_p.cpp" line="924"/>
@@ -3751,7 +3752,7 @@ Trieu un nom de fitxer diferent.</translation>
     <message>
         <location filename="../src/qt3support/sql/q3sqlmanager_p.cpp" line="887"/>
         <source>Save edits?</source>
-        <translation>Desem els canvis editats?</translation>
+        <translation>Voleu desar els canvis?</translation>
     </message>
     <message>
         <location filename="../src/qt3support/sql/q3sqlmanager_p.cpp" line="890"/>
@@ -3766,7 +3767,7 @@ Trieu un nom de fitxer diferent.</translation>
     <message>
         <location filename="../src/qt3support/sql/q3sqlmanager_p.cpp" line="923"/>
         <source>Cancel your edits?</source>
-        <translation>Cancel·lem els canvis editats?</translation>
+        <translation>Voleu cancel·lar els canvis?</translation>
     </message>
 </context>
 <context>
@@ -3964,12 +3965,12 @@ Trieu un nom de fitxer diferent.</translation>
     <message>
         <location filename="../src/gui/widgets/qtextedit.cpp" line="2586"/>
         <source>LRM Left-to-right mark</source>
-        <translation>LRM Marca Esquerra-a-dreta</translation>
+        <translation>LRM Marca esquerra-a-dreta</translation>
     </message>
     <message>
         <location filename="../src/gui/widgets/qtextedit.cpp" line="2587"/>
         <source>RLM Right-to-left mark</source>
-        <translation>RLM marca Dreta-a-esquerra</translation>
+        <translation>RLM marca dreta-a-esquerra</translation>
     </message>
     <message>
         <location filename="../src/gui/widgets/qtextedit.cpp" line="2588"/>
@@ -4038,7 +4039,7 @@ Trieu un nom de fitxer diferent.</translation>
     <message>
         <location filename="../src/gui/dialogs/qwizard.cpp" line="554"/>
         <source>Go Back</source>
-        <translation>Vés endarrere</translation>
+        <translation>Vés enrere</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qwizard.cpp" line="555"/>
@@ -4058,7 +4059,7 @@ Trieu un nom de fitxer diferent.</translation>
     <message>
         <location filename="../src/gui/dialogs/qwizard.cpp" line="558"/>
         <source>Quit</source>
-        <translation>Ix</translation>
+        <translation>Surt</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qwizard.cpp" line="559"/>
@@ -4068,7 +4069,7 @@ Trieu un nom de fitxer diferent.</translation>
     <message>
         <location filename="../src/gui/dialogs/qwizard.cpp" line="561"/>
         <source>&lt; &amp;Back</source>
-        <translation>&lt; &amp;Endarrere</translation>
+        <translation>&lt; &amp;Enrere</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qwizard.cpp" line="566"/>
@@ -4151,7 +4152,7 @@ Trieu un nom de fitxer diferent.</translation>
     <message>
         <location filename="../src/gui/widgets/qworkspace.cpp" line="2133"/>
         <source>&amp;Unshade</source>
-        <translation>&amp;Unshade</translation>
+        <translation>&amp;Ombreja</translation>
     </message>
 </context>
 <context>
@@ -4159,12 +4160,12 @@ Trieu un nom de fitxer diferent.</translation>
     <message>
         <location filename="../src/xml/qxml.cpp" line="31"/>
         <source>no error occurred</source>
-        <translation>sense errors</translation>
+        <translation>no s&apos;ha produït cap error</translation>
     </message>
     <message>
         <location filename="../src/xml/qxml.cpp" line="32"/>
         <source>error triggered by consumer</source>
-        <translation>error llençat per l&apos;usuari</translation>
+        <translation>error provocat per l&apos;usuari</translation>
     </message>
     <message>
         <location filename="../src/xml/qxml.cpp" line="33"/>
@@ -4179,7 +4180,7 @@ Trieu un nom de fitxer diferent.</translation>
     <message>
         <location filename="../src/xml/qxml.cpp" line="35"/>
         <source>error occurred while parsing element</source>
-        <translation>error mentre s&apos;analitzava l&apos;element</translation>
+        <translation>s&apos;ha produït un error mentre s&apos;analitzava l&apos;element</translation>
     </message>
     <message>
         <location filename="../src/xml/qxml.cpp" line="36"/>
@@ -4189,7 +4190,7 @@ Trieu un nom de fitxer diferent.</translation>
     <message>
         <location filename="../src/xml/qxml.cpp" line="37"/>
         <source>error occurred while parsing content</source>
-        <translation>error mentre s&apos;analitzava el contingut</translation>
+        <translation>s&apos;ha produït un error mentre s&apos;analitzava el contingut</translation>
     </message>
     <message>
         <location filename="../src/xml/qxml.cpp" line="38"/>
@@ -4224,22 +4225,22 @@ Trieu un nom de fitxer diferent.</translation>
     <message>
         <location filename="../src/xml/qxml.cpp" line="44"/>
         <source>error occurred while parsing document type definition</source>
-        <translation>error analitzant la definició del tipus de document</translation>
+        <translation>s&apos;ha produït un error mentre s&apos;analitzava la definició del tipus de document</translation>
     </message>
     <message>
         <location filename="../src/xml/qxml.cpp" line="45"/>
         <source>letter is expected</source>
-        <translation>s&apos;esperava una carta</translation>
+        <translation>s&apos;espera una carta</translation>
     </message>
     <message>
         <location filename="../src/xml/qxml.cpp" line="46"/>
         <source>error occurred while parsing comment</source>
-        <translation>error analitzant el document</translation>
+        <translation>s&apos;ha produït un error quan s&apos;analitzava el document</translation>
     </message>
     <message>
         <location filename="../src/xml/qxml.cpp" line="47"/>
         <source>error occurred while parsing reference</source>
-        <translation>error analitzant la referència</translation>
+        <translation>s&apos;ha produït un error quan s&apos;analitzava la referència</translation>
     </message>
     <message>
         <location filename="../src/xml/qxml.cpp" line="48"/>
@@ -4447,7 +4448,7 @@ Trieu un nom de fitxer diferent.</translation>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1487"/>
         <source>The standalone pseudo attribute must appear after the encoding.</source>
-        <translation>El pseudo atribut &apos;standalone&apos; deu aparèixer després de la codificació.</translation>
+        <translation>El pseudo atribut &apos;standalone&apos; ha d&apos;aparèixer després de la codificació.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream_p.h" line="1558"/>
