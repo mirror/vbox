@@ -478,12 +478,12 @@ ifdef VBOX_WITH_COMBINED_PACKAGE
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0755 $(SOLARIS_PATH_QT_32)/bin/qtconfig                                $(SOLARIS_VBOXINST_DIR_32)/VBoxQtconfig,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0755 $(SOLARIS_PATH_QT_64)/bin/qtconfig                                $(SOLARIS_VBOXINST_DIR_64)/VBoxQtconfig,)
 	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_OUT_BIN_32)/VBoxISAExec                                                         $(SOLARIS_VBOXINST_DIR)/VBoxISAExec
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) ../rdesktop-vrdp-keymaps                                               $(SOLARIS_VBOXINST_DIR_32)/rdesktop-vrdp-keymaps,)
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) ../rdesktop-vrdp-keymaps                                               $(SOLARIS_VBOXINST_DIR_64)/rdesktop-vrdp-keymaps,)
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) ../additions                                                           $(SOLARIS_VBOXINST_DIR_32)/additions,)
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) ../additions                                                           $(SOLARIS_VBOXINST_DIR_64)/additions,)
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) ../VirtualBox.chm                                                      $(SOLARIS_VBOXINST_DIR_32)/VirtualBox.chm,)
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) ../VirtualBox.chm                                                      $(SOLARIS_VBOXINST_DIR_64)/VirtualBox.chm,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../rdesktop-vrdp-keymaps                                            $(SOLARIS_VBOXINST_DIR_32)/rdesktop-vrdp-keymaps,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../rdesktop-vrdp-keymaps                                            $(SOLARIS_VBOXINST_DIR_64)/rdesktop-vrdp-keymaps,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../additions                                                        $(SOLARIS_VBOXINST_DIR_32)/additions,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../additions                                                        $(SOLARIS_VBOXINST_DIR_64)/additions,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../VirtualBox.chm                                                   $(SOLARIS_VBOXINST_DIR_32)/VirtualBox.chm,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../VirtualBox.chm                                                   $(SOLARIS_VBOXINST_DIR_64)/VirtualBox.chm,)
 else
 	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/libSDL/v1.2.13/lib/libSDL-1.2.so.0.11.2    $(SOLARIS_VBOXINST_DIR_ISA)/libSDL-1.2.so.0,)
 	@# @todo -XXX- how to get rid of this manual MKDIR ?
@@ -493,11 +493,11 @@ else
  endif
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0755 $(VBOX_PATH_QT4)/bin/qtconfig                                     $(SOLARIS_VBOXINST_DIR_ISA)/VBoxQtconfig,)
 	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_OUT_BIN)/VBoxISAExec                                                            $(SOLARIS_VBOXINST_DIR)/VBoxISAExec
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) ../rdesktop-vrdp-keymaps                                               $(SOLARIS_VBOXINST_DIR_ISA)/rdesktop-vrdp-keymaps,)
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) ../additions                                                           $(SOLARIS_VBOXINST_DIR_ISA)/additions,)
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) ../VirtualBox.chm                                                      $(SOLARIS_VBOXINST_DIR_ISA)/VirtualBox.chm,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../rdesktop-vrdp-keymaps                                            $(SOLARIS_VBOXINST_DIR_ISA)/rdesktop-vrdp-keymaps,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../additions                                                        $(SOLARIS_VBOXINST_DIR_ISA)/additions,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../VirtualBox.chm                                                   $(SOLARIS_VBOXINST_DIR_ISA)/VirtualBox.chm,)
 endif
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) ../..$(SOLARIS_VBOXINST_SUBDIR)/VBox.sh                                $(SOLARIS_USRBIN_DIR)/VBoxQtconfig,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../..$(SOLARIS_VBOXINST_SUBDIR)/VBox.sh                                $(SOLARIS_USRBIN_DIR)/VBoxQtconfig,)
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox-zoneaccess.xml                                       $(SOLARIS_VBOXSMF_DIR)/virtualbox-zoneaccess.xml
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox-webservice.xml         $(SOLARIS_VBOXSMF_DIR)/virtualbox-webservice.xml,)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/smf-vboxwebsrv.sh                 $(SOLARIS_VBOXINST_DIR)/smf-vboxwebsrv.sh,)
@@ -615,7 +615,7 @@ $(addprefix $(SOLARIS_VBOXINST_DIR)/,$(SOLARIS_COMMON)): \
 #
 $(addprefix $(SOLARIS_USRBIN_DIR)/,$(SOLARIS_USRBIN_LINKS)): \
 		$(SOLARIS_USRBIN_DIR)/% : % | $$(dir $$@)
-	$(LN_SYMLINK) ../..$(SOLARIS_VBOXINST_SUBDIR)/VBox.sh $@
+	$(LN_SYMLINK) -f ../..$(SOLARIS_VBOXINST_SUBDIR)/VBox.sh $@
 
 
 #
