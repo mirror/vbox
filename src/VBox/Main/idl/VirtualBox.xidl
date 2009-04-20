@@ -9616,6 +9616,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         state and all its parent hard disks (if any) will be placed to
         <link to="MediaState_LockedRead"/> state for the duration of this
         operation.
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          Hard disk format does not support compacting (but potentially
+          needs it).
+        </result>
       </desc>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
