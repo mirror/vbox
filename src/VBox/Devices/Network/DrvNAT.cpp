@@ -329,8 +329,8 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         {
             if (cPollNegRet++ > 128)
             {
-                cPollNegRet = 0;
                 LogRel(("Poll returns (%s) suppressed %d\n", strerror(errno), cPollNegRet));
+                cPollNegRet = 0;
             }
         }
 
