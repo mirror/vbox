@@ -198,7 +198,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     hrc = pMachine->COMGETTER(MemorySize)(&cRamMBs);                                H();
 #if 0 /* enable to play with lots of memory. */
     if (RTEnvExist("VBOX_RAM_SIZE"))
-        cRamMBs = RTStrToUInt64(RTEnvGet("VBOX_RAM_SIZE")) * 1024;
+        cRamMBs = RTStrToUInt64(RTEnvGet("VBOX_RAM_SIZE"));
 #endif
     uint64_t const cbRam = cRamMBs * (uint64_t)_1M;
     uint32_t const cbRamHole = MM_RAM_HOLE_SIZE_DEFAULT;
@@ -479,8 +479,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                     RC_CHECK();
     rc = CFGMR3InsertInteger(pInst, "PCIBusNo",             1);/* ->pcibridge[0] */ RC_CHECK();
 #endif
-    
-    
+
+
     Bstr tmpStr;
     rc = pMachine->GetExtraData(Bstr("VBoxInternal/Devices/SupportExtHwProfile"), tmpStr.asOutParam());
 
@@ -666,7 +666,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #ifdef VBOX_WITH_SMC
         rc = CFGMR3InsertInteger(pCfg,  "SmcEnabled", fSmcEnabled);                 RC_CHECK();
 #endif
-        rc = CFGMR3InsertInteger(pCfg,  "ShowRtc", fExtProfile);                    RC_CHECK();      
+        rc = CFGMR3InsertInteger(pCfg,  "ShowRtc", fExtProfile);                    RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,  "ShowCpu", fExtProfile);                    RC_CHECK();
         rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          7);                 RC_CHECK();
         Assert(!afPciDeviceNo[7]);
@@ -1248,7 +1248,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 iPciDeviceNo = ulInstance - 4 + 16;
         }
 #ifdef VMWARE_NET_IN_SLOT_11
-        /* 
+        /*
          * Dirty hack for PCI slot compatibility with VMWare,
          * it assigns slot 11 to the first network controller.
          */
