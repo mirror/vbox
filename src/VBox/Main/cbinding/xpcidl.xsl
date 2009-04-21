@@ -580,12 +580,12 @@ typedef struct PLEventQueue PLEventQueue;
 
 PR_EXTERN(PLEventQueue*)
 PL_CreateEventQueue(const char* name, PRThread* handlerThread);
-PR_EXTERN(PLEventQueue *) 
+PR_EXTERN(PLEventQueue *)
     PL_CreateNativeEventQueue(
-        const char *name, 
+        const char *name,
         PRThread *handlerThread
     );
-PR_EXTERN(PLEventQueue *) 
+PR_EXTERN(PLEventQueue *)
     PL_CreateMonitoredEventQueue(
         const char *name,
         PRThread *handlerThread
@@ -650,8 +650,8 @@ struct PLEvent {
 #if defined(XP_WIN) || defined(XP_OS2)
 
 PR_EXTERN(HWND) 
-    PL_GetNativeEventReceiverWindow( 
-        PLEventQueue *eqp 
+    PL_GetNativeEventReceiverWindow(
+        PLEventQueue *eqp
     );
 #endif /* XP_WIN || XP_OS2 */
 
