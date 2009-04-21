@@ -70,15 +70,20 @@ PFNVBOXGETXPCOMCFUNCTIONS g_pfnGetFunctions = NULL;
 /**
  * Wrapper for setting g_szVBoxErrMsg. Can be an empty stub.
  *
+ * @param   fAlways         When 0 the g_szVBoxErrMsg is only set if empty.
  * @param   pszFormat       The format string.
  * @param   ...             The arguments.
  */
-static void setErrMsg(const char *pszFormat, ...)
+static void setErrMsg(int fAlways, const char *pszFormat, ...)
 {
-    va_list va;
-    va_start(va, pszFormat);
-    vsnprintf(g_szVBoxErrMsg, sizeof(g_szVBoxErrMsg), pszFormat, va);
-    va_end(va);
+    if (    fAlways
+        ||  !g_szVBoxErrMsg[0])
+    {
+        va_list va;
+        va_start(va, pszFormat);
+        vsnprintf(g_szVBoxErrMsg, sizeof(g_szVBoxErrMsg), pszFormat, va);
+        va_end(va);
+    }
 }
 
 
@@ -105,7 +110,7 @@ static int tryLoadOne(const char *pszHome, int fSetAppHome)
     cbBufNeeded = cchHome + sizeof("/" DYNLIB_NAME);
     if (cbBufNeeded > sizeof(szName))
     {
-        setErrMsg("path buffer too small: %u bytes needed",
+        setErrMsg(1, "path buffer too small: %u bytes needed",
                   (unsigned)cbBufNeeded);
         return -1;
     }
@@ -144,17 +149,17 @@ static int tryLoadOne(const char *pszHome, int fSetAppHome)
             }
 
             /* bail out */
-            setErrMsg("%.80s: pfnGetFunctions(%#x) failed",
+            setErrMsg(1, "%.80s: pfnGetFunctions(%#x) failed",
                       szName, VBOX_XPCOMC_VERSION);
         }
         else
-            setErrMsg("dlsym(%.80s/%.32s): %.128s",
+            setErrMsg(1, "dlsym(%.80s/%.32s): %.128s",
                       szName, VBOX_GET_XPCOMC_FUNCTIONS_SYMBOL_NAME, dlerror());
         dlclose(g_hVBoxXPCOMC);
         g_hVBoxXPCOMC = NULL;
     }
     else
-        setErrMsg("dlopen(%.80s): %.160s", szName, dlerror());
+        setErrMsg(0, "dlopen(%.80s): %.160s", szName, dlerror());
     return rc;
 }
 
@@ -182,6 +187,7 @@ int VBoxCGlueInit(void)
     /*
      * Try the known standard locations.
      */
+    g_szVBoxErrMsg[0] = '\0';
 #if defined(__gnu__linux__) || defined(__linux__)
     if (tryLoadOne("/opt/VirtualBox", 1) == 0)
         return 0;
