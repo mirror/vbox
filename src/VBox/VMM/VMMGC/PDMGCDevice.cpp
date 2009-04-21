@@ -352,6 +352,7 @@ static DECLCALLBACK(PVM)  pdmGCDevHlp_GetVM(PPDMDEVINS pDevIns)
     return pDevIns->Internal.s.pVMRC;
 }
 
+
 /** @copydoc PDMDEVHLPRC::pfnGetVMCPU */
 static DECLCALLBACK(PVMCPU) pdmGCDevHlp_GetVMCPU(PPDMDEVINS pDevIns)
 {
@@ -359,6 +360,7 @@ static DECLCALLBACK(PVMCPU) pdmGCDevHlp_GetVMCPU(PPDMDEVINS pDevIns)
     LogFlow(("pdmGCDevHlp_GetVMCPU: caller='%p'/%d\n", pDevIns, pDevIns->iInstance));
     return VMMGetCpu(pDevIns->Internal.s.pVMRC);
 }
+
 
 
 
