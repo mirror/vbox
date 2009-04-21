@@ -6499,11 +6499,15 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
                 AssertComRC (rc2);
             }
 
+            alock.leave();
+
             /* Deregister the VMSetError callback. This is necessary as the
              * pfnVMAtError() function passed to VMR3Create() is supposed to
              * be sticky but our error callback isn't. */
             VMR3AtErrorDeregister(pVM, task->mSetVMErrorCallback, task.get());
             /** @todo register another VMSetError callback? */
+
+            alock.enter();
         }
         else
         {
