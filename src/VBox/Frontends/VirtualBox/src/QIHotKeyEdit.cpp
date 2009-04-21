@@ -123,6 +123,7 @@ QIHotKeyEdit::QIHotKeyEdit (QWidget *aParent) :
 
     clear();
 
+    setAttribute (Qt::WA_NativeWindow);
     setFrameStyle (QFrame::StyledPanel | Sunken);
     setAlignment (Qt::AlignCenter);
     setFocusPolicy (Qt::StrongFocus);
