@@ -338,7 +338,7 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
      * Specifies the policy to use when reserving memory for this VM. The recognized
      * value is 'no overcommitment' (default). See GMMPOLICY.
      */
-    GMMOCPOLICY enmOcPolicy = GMMOCPOLICY_NO_OC;
+    GMMOCPOLICY enmOcPolicy;
     char sz[64];
     rc = CFGMR3QueryString(CFGMR3GetRoot(pVM), "Policy", sz, sizeof(sz));
     if (RT_SUCCESS(rc))
@@ -352,7 +352,7 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
     else if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         enmOcPolicy = GMMOCPOLICY_NO_OC;
     else
-        AssertMsgRCReturn(rc, ("Configuration error: Failed to query string \"MM/Policy\", rc=%Rrc.\n", rc), rc);
+        AssertMsgFailedReturn(("Configuration error: Failed to query string \"MM/Policy\", rc=%Rrc.\n", rc), rc);
 
     /** @cfgm{MM/Priority, string, normal}
      * Specifies the memory priority of this VM. The priority comes into play when the
