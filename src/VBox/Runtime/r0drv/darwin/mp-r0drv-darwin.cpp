@@ -234,7 +234,7 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
     Args.pfnWorker = pfnWorker;
     Args.pvUser1 = pvUser1;
     Args.pvUser2 = pvUser2;
-    Args.idCpu = NIL_RTCPUID;
+    Args.idCpu = RTMpCpuId();
     Args.cHits = 0;
     mp_rendezvous_no_intrs(rtmpOnOthersDarwinWrapper, &Args);
     return VINF_SUCCESS;
