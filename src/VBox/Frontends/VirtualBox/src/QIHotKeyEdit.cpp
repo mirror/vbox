@@ -123,7 +123,12 @@ QIHotKeyEdit::QIHotKeyEdit (QWidget *aParent) :
 
     clear();
 
+#if defined (Q_WS_WIN32)
+    /* Qt documentation hasn't mentioned this is
+     * windows-only flag, but looks like that is so,
+     * anyway it is required for winEvent() handler only */
     setAttribute (Qt::WA_NativeWindow);
+#endif
     setFrameStyle (QFrame::StyledPanel | Sunken);
     setAlignment (Qt::AlignCenter);
     setFocusPolicy (Qt::StrongFocus);
