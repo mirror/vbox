@@ -235,22 +235,22 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PPATC
 
                 case PATM_CPUID_STD_PTR:
                     /* @todo dirty hack when correcting this fixup (state restore) */
-                    dest = CPUMGetGuestCpuIdStdRCPtr(pVM);
+                    dest = CPUMR3GetGuestCpuIdStdRCPtr(pVM);
                     break;
 
                 case PATM_CPUID_EXT_PTR:
                     /* @todo dirty hack when correcting this fixup (state restore) */
-                    dest = CPUMGetGuestCpuIdExtRCPtr(pVM);
+                    dest = CPUMR3GetGuestCpuIdExtRCPtr(pVM);
                     break;
 
                 case PATM_CPUID_CENTAUR_PTR:
                     /* @todo dirty hack when correcting this fixup (state restore) */
-                    dest = CPUMGetGuestCpuIdCentaurRCPtr(pVM);
+                    dest = CPUMR3GetGuestCpuIdCentaurRCPtr(pVM);
                     break;
 
                 case PATM_CPUID_DEF_PTR:
                     /* @todo dirty hack when correcting this fixup (state restore) */
-                    dest = CPUMGetGuestCpuIdDefRCPtr(pVM);
+                    dest = CPUMR3GetGuestCpuIdDefRCPtr(pVM);
                     break;
 
                 case PATM_CPUID_STD_MAX:

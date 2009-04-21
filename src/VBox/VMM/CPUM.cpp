@@ -388,6 +388,9 @@ static int cpumR3CpuIdInit(PVM pVM)
 #ifdef VBOX_WITH_MULTI_CORE
     /* Set the Maximum number of addressable IDs for logical processors in this physical package (bits 16-23) */
     pCPUM->aGuestCpuIdStd[1].ebx |= ((pVM->cCPUs - 1) << 16);
+
+    if (pVM->cCPUs > 1)
+        pCPUM->aGuestCpuIdStd[1].edx |= X86_CPUID_FEATURE_EDX_HTT;  /* necessary for hyper-threading *or* multi-core CPUs */
 #endif
 
     /* Cpuid 2:
@@ -417,9 +420,6 @@ static int cpumR3CpuIdInit(PVM pVM)
     pCPUM->aGuestCpuIdStd[4].ecx = pCPUM->aGuestCpuIdStd[4].edx = 0;
     pCPUM->aGuestCpuIdStd[4].eax = pCPUM->aGuestCpuIdStd[4].ebx = 0;
 #ifdef VBOX_WITH_MULTI_CORE
-    if (pVM->cCPUs > 1)
-        pCPUM->aGuestCpuIdStd[1].edx |= X86_CPUID_FEATURE_EDX_HTT;  /* necessary for hyper-threading *or* multi-core CPUs */
-
     if (pVM->cpum.s.enmCPUVendor == CPUMCPUVENDOR_INTEL)
     {
         /* One logical processor with possibly multiple cores. */
@@ -2456,3 +2456,60 @@ VMMR3DECL(int) CPUMR3SetCR4Feature(PVM pVM, RTHCUINTREG fOr, RTHCUINTREG fAnd)
     return VINF_SUCCESS;
 }
 
+
+/**
+ * Gets a pointer to the array of standard CPUID leafs.
+ *
+ * CPUMR3GetGuestCpuIdStdMax() give the size of the array.
+ *
+ * @returns Pointer to the standard CPUID leafs (read-only).
+ * @param   pVM         The VM handle.
+ * @remark  Intended for PATM.
+ */
+VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdStdRCPtr(PVM pVM)
+{
+    return RCPTRTYPE(PCCPUMCPUID)VM_RC_ADDR(pVM, &pVM->cpum.s.aGuestCpuIdStd[0]);
+}
+
+
+/**
+ * Gets a pointer to the array of extended CPUID leafs.
+ *
+ * CPUMGetGuestCpuIdExtMax() give the size of the array.
+ *
+ * @returns Pointer to the extended CPUID leafs (read-only).
+ * @param   pVM         The VM handle.
+ * @remark  Intended for PATM.
+ */
+VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdExtRCPtr(PVM pVM)
+{
+    return (RCPTRTYPE(PCCPUMCPUID))VM_RC_ADDR(pVM, &pVM->cpum.s.aGuestCpuIdExt[0]);
+}
+
+
+/**
+ * Gets a pointer to the array of centaur CPUID leafs.
+ *
+ * CPUMGetGuestCpuIdCentaurMax() give the size of the array.
+ *
+ * @returns Pointer to the centaur CPUID leafs (read-only).
+ * @param   pVM         The VM handle.
+ * @remark  Intended for PATM.
+ */
+VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdCentaurRCPtr(PVM pVM)
+{
+    return (RCPTRTYPE(PCCPUMCPUID))VM_RC_ADDR(pVM, &pVM->cpum.s.aGuestCpuIdCentaur[0]);
+}
+
+
+/**
+ * Gets a pointer to the default CPUID leaf.
+ *
+ * @returns Pointer to the default CPUID leaf (read-only).
+ * @param   pVM         The VM handle.
+ * @remark  Intended for PATM.
+ */
+VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdDefRCPtr(PVM pVM)
+{
+    return (RCPTRTYPE(PCCPUMCPUID))VM_RC_ADDR(pVM, &pVM->cpum.s.GuestCpuIdDef);
+}

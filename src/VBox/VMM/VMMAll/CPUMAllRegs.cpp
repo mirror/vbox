@@ -1069,65 +1069,6 @@ VMMDECL(void) CPUMGetGuestCpuId(PVM pVM, uint32_t iLeaf, uint32_t *pEax, uint32_
     Log2(("CPUMGetGuestCpuId: iLeaf=%#010x %RX32 %RX32 %RX32 %RX32\n", iLeaf, *pEax, *pEbx, *pEcx, *pEdx));
 }
 
-
-/**
- * Gets a pointer to the array of standard CPUID leafs.
- *
- * CPUMGetGuestCpuIdStdMax() give the size of the array.
- *
- * @returns Pointer to the standard CPUID leafs (read-only).
- * @param   pVM         The VM handle.
- * @remark  Intended for PATM.
- */
-VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdStdRCPtr(PVM pVM)
-{
-    return RCPTRTYPE(PCCPUMCPUID)VM_RC_ADDR(pVM, &pVM->cpum.s.aGuestCpuIdStd[0]);
-}
-
-
-/**
- * Gets a pointer to the array of extended CPUID leafs.
- *
- * CPUMGetGuestCpuIdExtMax() give the size of the array.
- *
- * @returns Pointer to the extended CPUID leafs (read-only).
- * @param   pVM         The VM handle.
- * @remark  Intended for PATM.
- */
-VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdExtRCPtr(PVM pVM)
-{
-    return (RCPTRTYPE(PCCPUMCPUID))VM_RC_ADDR(pVM, &pVM->cpum.s.aGuestCpuIdExt[0]);
-}
-
-
-/**
- * Gets a pointer to the array of centaur CPUID leafs.
- *
- * CPUMGetGuestCpuIdCentaurMax() give the size of the array.
- *
- * @returns Pointer to the centaur CPUID leafs (read-only).
- * @param   pVM         The VM handle.
- * @remark  Intended for PATM.
- */
-VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdCentaurRCPtr(PVM pVM)
-{
-    return (RCPTRTYPE(PCCPUMCPUID))VM_RC_ADDR(pVM, &pVM->cpum.s.aGuestCpuIdCentaur[0]);
-}
-
-
-/**
- * Gets a pointer to the default CPUID leaf.
- *
- * @returns Pointer to the default CPUID leaf (read-only).
- * @param   pVM         The VM handle.
- * @remark  Intended for PATM.
- */
-VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdDefRCPtr(PVM pVM)
-{
-    return (RCPTRTYPE(PCCPUMCPUID))VM_RC_ADDR(pVM, &pVM->cpum.s.GuestCpuIdDef);
-}
-
-
 /**
  * Gets a number of standard CPUID leafs.
  *
