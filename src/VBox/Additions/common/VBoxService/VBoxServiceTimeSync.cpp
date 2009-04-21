@@ -129,7 +129,11 @@ static RTSEMEVENTMULTI g_TimeSyncEvent = NIL_RTSEMEVENTMULTI;
 /** Process token. */
 static HANDLE g_hTokenProcess = NULL;
 /** Old token privileges. */
-static TOKEN_PRIVILEGES g_tkOldPrivileges;
+static TOKEN_PRIVILEGES g_TkOldPrivileges;
+/** Backup values for time adjustment. */
+static DWORD g_dwWinTimeAdjustment;
+static DWORD g_dwWinTimeIncrement;
+static BOOL g_bWinTimeAdjustmentDisabled;
 #endif
 
 
@@ -190,8 +194,8 @@ static DECLCALLBACK(int) VBoxServiceTimeSyncInit(void)
             tkPriv.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
             if (LookupPrivilegeValue(NULL, SE_SYSTEMTIME_NAME, &tkPriv.Privileges[0].Luid))
             {
-                DWORD cbRet = sizeof(g_tkOldPrivileges);
-                if (!AdjustTokenPrivileges(g_hTokenProcess, FALSE, &tkPriv, sizeof(TOKEN_PRIVILEGES), &g_tkOldPrivileges, &cbRet))
+                DWORD cbRet = sizeof(g_TkOldPrivileges);
+                if (!AdjustTokenPrivileges(g_hTokenProcess, FALSE, &tkPriv, sizeof(TOKEN_PRIVILEGES), &g_TkOldPrivileges, &cbRet))
                 {
                     DWORD dwErr = GetLastError();
                     rc = RTErrConvertFromWin32(dwErr);
@@ -219,6 +223,15 @@ static DECLCALLBACK(int) VBoxServiceTimeSyncInit(void)
             g_hTokenProcess = NULL;
         }
     }
+
+    if (!::GetSystemTimeAdjustment(&g_dwWinTimeAdjustment, &g_dwWinTimeIncrement, &g_bWinTimeAdjustmentDisabled))
+    {
+        DWORD dwErr = GetLastError();
+        rc = RTErrConvertFromWin32(dwErr);
+        VBoxServiceError("Could not get time adjustment values! Last error: %ld!\n", dwErr);
+    }
+    else VBoxServiceVerbose(3, "Windows time adjustment: Initially %ld (100ns) units per %ld (100 ns) units interval, disabled=%d\n", 
+                            g_dwWinTimeAdjustment, g_dwWinTimeIncrement, g_bWinTimeAdjustmentDisabled ? 1 : 0);
 #endif /* RT_OS_WINDOWS */
 
     return rc;
@@ -288,10 +301,46 @@ DECLCALLBACK(int) VBoxServiceTimeSyncWorker(bool volatile *pfShutdown)
                      * *NIX systems have it. Fall back on settimeofday.
                      */
 #ifdef RT_OS_WINDOWS
-                    /* Just make sure it compiles for now, but later:
-                     SetSystemTimeAdjustment and fall back on SetSystemTime.
-                     */
-                    //AssertFatalFailed();
+                    DWORD dwWinTimeAdjustment, dwWinNewTimeAdjustment, dwWinTimeIncrement;
+                    BOOL bWinTimeAdjustmentDisabled;
+                    if (!::GetSystemTimeAdjustment(&dwWinTimeAdjustment, &dwWinTimeIncrement, &bWinTimeAdjustmentDisabled))
+                    {
+                        VBoxServiceError("GetSystemTimeAdjustment failed, error=%ld\n", GetLastError());
+                    }
+                    else
+                    {
+                        DWORD dwDiffMax = g_dwWinTimeAdjustment * 0.50;
+                        DWORD dwDiffNew = dwWinTimeAdjustment * 0.10;
+
+                        if (RTTimeSpecGetMilli(&Drift) > 0)
+                        {
+                            dwWinNewTimeAdjustment = dwWinTimeAdjustment + dwDiffNew;
+                            if (dwWinNewTimeAdjustment > (g_dwWinTimeAdjustment + dwDiffMax))
+                            {    
+                                dwWinNewTimeAdjustment = g_dwWinTimeAdjustment + dwDiffMax;
+                                dwDiffNew = dwDiffMax;
+                            }
+                        }
+                        else 
+                        {
+                            dwWinNewTimeAdjustment = dwWinTimeAdjustment - dwDiffNew;
+                            if (dwWinNewTimeAdjustment < (g_dwWinTimeAdjustment - dwDiffMax))
+                            {    
+                                dwWinNewTimeAdjustment = g_dwWinTimeAdjustment - dwDiffMax;
+                                dwDiffNew = dwDiffMax;
+                            }
+                        }
+
+                        VBoxServiceVerbose(3, "Windows time adjustment: Drift=%ldms\n", RTTimeSpecGetMilli(&Drift));
+                        VBoxServiceVerbose(3, "Windows time adjustment: OrgTA=%ld, CurTA=%ld, NewTA=%ld, DiffNew=%ld, DiffMax=%ld\n", 
+                                           g_dwWinTimeAdjustment, dwWinTimeAdjustment, dwWinNewTimeAdjustment, dwDiffNew, dwDiffMax);
+                       
+                        if (!::SetSystemTimeAdjustment(dwWinNewTimeAdjustment, FALSE /* Periodic adjustments enabled. */))
+                        {    
+                            VBoxServiceError("SetSystemTimeAdjustment failed, error=%ld\n", GetLastError());       
+                        }
+                    }
+
 #else  /* !RT_OS_WINDOWS */
                     struct timeval tv;
 # if !defined(RT_OS_OS2) /* PORTME */
@@ -328,6 +377,13 @@ DECLCALLBACK(int) VBoxServiceTimeSyncWorker(bool volatile *pfShutdown)
                         else if (cErrors++ < 10)
                             VBoxServiceError("gettimeofday failed; errno=%d: %s\n", errno, strerror(errno));
                     }
+#endif /* !RT_OS_WINDOWS */
+                }
+                else
+                {
+#ifdef RT_OS_WINDOWS
+                    if (::SetSystemTimeAdjustment(0, TRUE /* Periodic adjustments disabled. */))
+                        VBoxServiceVerbose(3, "Windows Time Adjustment is now disabled.");
 #endif /* !RT_OS_WINDOWS */
                 }
                 break;
@@ -377,7 +433,7 @@ static DECLCALLBACK(void) VBoxServiceTimeSyncTerm(void)
      */
     if (g_hTokenProcess)
     {
-        if (!AdjustTokenPrivileges(g_hTokenProcess, FALSE, &g_tkOldPrivileges, sizeof(TOKEN_PRIVILEGES), NULL, NULL))
+        if (!AdjustTokenPrivileges(g_hTokenProcess, FALSE, &g_TkOldPrivileges, sizeof(TOKEN_PRIVILEGES), NULL, NULL))
         {
             DWORD dwErr = GetLastError();
             VBoxServiceError("Restoring token privileges (SE_SYSTEMTIME_NAME) failed with code %u!\n", dwErr);
