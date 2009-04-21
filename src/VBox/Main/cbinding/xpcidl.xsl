@@ -649,7 +649,7 @@ struct PLEvent {
 
 #if defined(XP_WIN) || defined(XP_OS2)
 
-PR_EXTERN(HWND) 
+PR_EXTERN(HWND)
     PL_GetNativeEventReceiverWindow(
         PLEventQueue *eqp
     );
