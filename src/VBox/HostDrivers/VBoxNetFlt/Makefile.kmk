@@ -146,6 +146,7 @@ WinNetConfig_DEFS     = _WIN32_WINNT=0x0501 _UNICODE UNICODE
 WinNetConfig_SDKS     = WINPSDK W2K3DDK
 WinNetConfig_SOURCES  = \
 	win/WinNetConfig.cpp
+WinNetConfig_INCS.win += $(PATH_TOOL_$(VBOX_VCC_TOOL)_INC)
 
 #
 # NetFltInstall
@@ -154,7 +155,9 @@ PROGRAMS.win  += NetFltInstall
 NetFltInstall_TEMPLATE = VBOXR3STATIC
 NetFltInstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
 NetFltInstall_SOURCES  = win/NetFltInstall.cpp
-NetFltInstall_LIBS     = $(TARGET_WinNetConfig)
+NetFltInstall_LIBS     = $(TARGET_WinNetConfig) \
+ 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
+	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
 
 
 #
@@ -164,7 +167,9 @@ PROGRAMS.win  += NetFltUninstall
 NetFltUninstall_TEMPLATE = VBOXR3STATIC
 NetFltUninstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
 NetFltUninstall_SOURCES  = win/NetFltUninstall.cpp
-NetFltUninstall_LIBS     = $(TARGET_WinNetConfig)
+NetFltUninstall_LIBS     = $(TARGET_WinNetConfig) \
+ 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
+	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
 
 
 #
