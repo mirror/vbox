@@ -35,12 +35,18 @@ int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess
 {
     int rc = VINF_SUCCESS;
 
-    /* Ugly edge case - zero size buffers shouldn't be locked. */
+    /* Zero size buffers shouldn't be locked. */
     if (u32Size == 0)
     {
+        Assert(pv == NULL);
+#ifdef RT_OS_WINDOWS
+        *ppvCtx = NULL;
+#else
         *ppvCtx = NIL_RTR0MEMOBJ;
+#endif
         return VINF_SUCCESS;
     }
+
 #ifdef RT_OS_WINDOWS
     PMDL pMdl = IoAllocateMdl (pv, u32Size, FALSE, FALSE, NULL);
 
@@ -76,7 +82,7 @@ int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess
      *  if this is true in any case.
      * r=michael: on Linux, we sometimes have R3 addresses (e.g. shared
      *  clipboard) and sometimes R0 (e.g. shared folders).  We really ought
-     *  to have two separate paths here - at any rate, Linux R0 shouldn't 
+     *  to have two separate paths here - at any rate, Linux R0 shouldn't
      *  end up calling this API.  In practice, Linux R3 does it's own thing
      *  before winding up in the R0 path - which calls this stub API.
      */
@@ -103,9 +109,6 @@ void vbglUnlockLinear (void *pvCtx, void *pv, uint32_t u32Size)
     NOREF(pv);
     NOREF(u32Size);
 
-    /* Ugly edge case - zero size buffers aren't be locked. */
-    if (pvCtx == NIL_RTR0MEMOBJ)
-        return;
 #ifdef RT_OS_WINDOWS
     PMDL pMdl = (PMDL)pvCtx;
 
