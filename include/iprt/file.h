@@ -910,6 +910,9 @@ RTDECL(uint32_t) RTFileAioCtxGetMaxReqCount(RTFILEAIOCTX hAioCtx);
 /**
  * Submits a set of requests to an async I/O context for processing.
  *
+ * @todo Is it possible to call this API while another thread is in
+ *       RTFileAioCtxWait?
+ *
  * @returns IPRT status code.
  *
  * @param   hAioCtx         The async I/O context handle.
@@ -924,6 +927,8 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ phReqs, size_
 
 /**
  * Waits for request completion.
+ *
+ * Only one thread at a time may call this API on a context.
  *
  * @returns IPRT status code.
  * @retval  VERR_INVALID_POINTER     If pcReqs or/and pahReqs are invalid.
@@ -961,7 +966,7 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMi
                              PRTFILEAIOREQ pahReqs, size_t cReqs, uint32_t *pcReqs);
 
 /**
- * Forces any RTFileAioCtxWait() call from another thread to return immediately.
+ * Forces any RTFileAioCtxWait() call on another thread to return immediately.
  *
  * @returns IPRT status code.
  *
