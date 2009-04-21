@@ -892,16 +892,16 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
             switch(cCpuidFixup & 3)
             {
             case 0:
-                *pFixup = CPUMGetGuestCpuIdDefRCPtr(pVM);
+                *pFixup = CPUMR3GetGuestCpuIdDefRCPtr(pVM);
                 break;
             case 1:
-                *pFixup = CPUMGetGuestCpuIdStdRCPtr(pVM);
+                *pFixup = CPUMR3GetGuestCpuIdStdRCPtr(pVM);
                 break;
             case 2:
-                *pFixup = CPUMGetGuestCpuIdExtRCPtr(pVM);
+                *pFixup = CPUMR3GetGuestCpuIdExtRCPtr(pVM);
                 break;
             case 3:
-                *pFixup = CPUMGetGuestCpuIdCentaurRCPtr(pVM);
+                *pFixup = CPUMR3GetGuestCpuIdCentaurRCPtr(pVM);
                 break;
             }
             LogFlow(("Changing cpuid fixup %d from %x to %x\n", cCpuidFixup, oldFixup, *pFixup));
