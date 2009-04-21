@@ -2257,11 +2257,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             }
 #endif
 #ifdef RT_OS_LINUX
-            case AudioDriverType_OSS:
-            {
-                rc = CFGMR3InsertString(pCfg, "AudioDriver", "oss");                RC_CHECK();
-                break;
-            }
 # ifdef VBOX_WITH_ALSA
             case AudioDriverType_ALSA:
             {
@@ -2277,17 +2272,17 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             }
 # endif
 #endif /* RT_OS_LINUX */
+#if defined (RT_OS_LINUX) || defined (RT_OS_FREEBSD)
+            case AudioDriverType_OSS:
+            {
+                rc = CFGMR3InsertString(pCfg, "AudioDriver", "oss");                RC_CHECK();
+                break;
+            }
+#endif
 #ifdef RT_OS_DARWIN
             case AudioDriverType_CoreAudio:
             {
                 rc = CFGMR3InsertString(pCfg, "AudioDriver", "coreaudio");          RC_CHECK();
-                break;
-            }
-#endif
-#ifdef RT_OS_FREEBSD
-            case AudioDriverType_OSS:
-            {
-                rc = CFGMR3InsertString(pCfg, "AudioDriver", "oss");                RC_CHECK();
                 break;
             }
 #endif
