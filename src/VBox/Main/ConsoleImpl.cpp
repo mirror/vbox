@@ -6487,7 +6487,7 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
             }
             while (0);
 
-            /*  On failure, destroy the VM */
+            /* On failure, destroy the VM */
             if (FAILED (rc) || VBOX_FAILURE (vrc))
             {
                 /* preserve existing error info */
@@ -6498,16 +6498,18 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
                 HRESULT rc2 = console->powerDown();
                 AssertComRC (rc2);
             }
-
-            alock.leave();
-
-            /* Deregister the VMSetError callback. This is necessary as the
-             * pfnVMAtError() function passed to VMR3Create() is supposed to
-             * be sticky but our error callback isn't. */
-            VMR3AtErrorDeregister(pVM, task->mSetVMErrorCallback, task.get());
-            /** @todo register another VMSetError callback? */
-
-            alock.enter();
+            else
+            {
+                /*
+                 * Deregister the VMSetError callback. This is necessary as the
+                 * pfnVMAtError() function passed to VMR3Create() is supposed to
+                 * be sticky but our error callback isn't.
+                 */
+                alock.leave();
+                VMR3AtErrorDeregister(pVM, task->mSetVMErrorCallback, task.get());
+                /** @todo register another VMSetError callback? */
+                alock.enter();
+            }
         }
         else
         {
