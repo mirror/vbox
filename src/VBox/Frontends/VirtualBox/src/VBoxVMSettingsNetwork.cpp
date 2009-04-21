@@ -306,9 +306,9 @@ void VBoxVMSettingsNetwork::updateAttachmentAlternative()
                 /* Adapters list 'empty' */
                 int pos = mCbName->findData (emptyItemCode);
                 if (pos == -1)
-                    mCbName->insertItem (0, tr ("Not selected", "network adapter"), emptyItemCode);
+                    mCbName->insertItem (0, tr ("Not selected", "network adapter name"), emptyItemCode);
                 else
-                    mCbName->setItemText (pos, tr ("Not selected", "network adapter"));
+                    mCbName->setItemText (pos, tr ("Not selected", "network adapter name"));
                 break;
             }
             case KNetworkAttachmentType_Internal:
