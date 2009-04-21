@@ -1251,6 +1251,7 @@ static DECLCALLBACK(PVM) pdmR3DevHlp_GetVM(PPDMDEVINS pDevIns)
     return pDevIns->Internal.s.pVMR3;
 }
 
+
 /** @copydoc PDMDEVHLPR3::pfnGetVMCPU */
 static DECLCALLBACK(PVMCPU) pdmR3DevHlp_GetVMCPU(PPDMDEVINS pDevIns)
 {
@@ -1258,6 +1259,7 @@ static DECLCALLBACK(PVMCPU) pdmR3DevHlp_GetVMCPU(PPDMDEVINS pDevIns)
     LogFlow(("pdmR3DevHlp_GetVMCPU: caller='%s'/%d for CPU %d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VMMGetCpuId(pDevIns->Internal.s.pVMR3)));
     return VMMGetCpu(pDevIns->Internal.s.pVMR3);
 }
+
 
 /** @copydoc PDMDEVHLPR3::pfnPCIBusRegister */
 static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIBUSREG pPciBusReg, PCPDMPCIHLPR3 *ppPciHlpR3)
@@ -3167,6 +3169,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_UnregisterVMMDevHeap(PPDMDEVINS p
     AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
     return VERR_ACCESS_DENIED;
 }
+
 
 /** @copydoc PDMDEVHLPR3::pfnGetVMCPU */
 static DECLCALLBACK(PVMCPU) pdmR3DevHlp_Untrusted_GetVMCPU(PPDMDEVINS pDevIns)
