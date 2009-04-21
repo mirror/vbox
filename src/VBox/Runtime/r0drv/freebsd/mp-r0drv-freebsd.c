@@ -49,27 +49,27 @@ RTDECL(RTCPUID) RTMpCpuId(void)
 
 RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
 {
-    return (int)idCpu < mp_ncpus ? (int)idCpu : -1;
+    return idCpu <= mp_maxid ? (int)idCpu : -1;
 }
 
 
 RTDECL(RTCPUID) RTMpCpuIdFromSetIndex(int iCpu)
 {
-    return iCpu < mp_ncpus ? (RTCPUID)iCpu : NIL_RTCPUID;
+    return (unsigned)iCpu <= mp_maxid ? (RTCPUID)iCpu : NIL_RTCPUID;
 }
+
 
 RTDECL(RTCPUID) RTMpGetMaxCpuId(void)
 {
-    return mp_ncpus;
+    return mp_maxid;
 }
+
 
 RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
 {
-    if (RT_UNLIKELY((int)idCpu > mp_ncpus))
-        return false;
-    else
-        return true;
+    return idCpu <= mp_maxid;
 }
+
 
 RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
 {
@@ -88,17 +88,16 @@ RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
 
 RTDECL(RTCPUID) RTMpGetCount(void)
 {
-    return mp_ncpus;
+    return mp_maxid + 1;
 }
 
 
 RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
 {
-    if (RT_UNLIKELY((int)idCpu > mp_ncpus))
-        return false;
-
-    return CPU_ABSENT(idCpu) ? false : true;
+    return idCpu <= mp_maxid
+        && !CPU_ABSENT(idCpu);
 }
+
 
 RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
 {
@@ -120,6 +119,7 @@ RTDECL(RTCPUID) RTMpGetOnlineCount(void)
 {
     return mp_ncpus;
 }
+
 
 /**
  * Wrapper between the native FreeBSD per-cpu callback and PFNRTWORKER
@@ -164,14 +164,25 @@ static void rtmpOnOthersFreeBSDWrapper(void *pvArg)
 
 RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
-    int rc;
-    RTMPARGS Args;
-    Args.pfnWorker = pfnWorker;
-    Args.pvUser1 = pvUser1;
-    Args.pvUser2 = pvUser2;
-    Args.idCpu = NIL_RTCPUID;
-    Args.cHits = 0;
-    smp_rendezvous(NULL, rtmpOnOthersFreeBSDWrapper, NULL, &Args);
+    /* Will panic if no rendezvouing cpus, so check up front. */
+    if (RTMpGetOnlineCount() > 1)
+    {
+#if  __FreeBSD_version >= 700000
+        cpumask_t   Mask = ~(cpumask_t)curcpu;
+#endif
+        RTMPARGS    Args;
+
+        Args.pfnWorker = pfnWorker;
+        Args.pvUser1 = pvUser1;
+        Args.pvUser2 = pvUser2;
+        Args.idCpu = RTMpCpuId();
+        Args.cHits = 0;
+#if __FreeBSD_version >= 700000
+        smp_rendezvous_cpus(Mask, NULL, rtmpOnOthersFreeBSDWrapper, NULL, &Args);
+#else
+        smp_rendezvous(NULL, rtmpOnOthersFreeBSDWrapper, NULL, &Args);
+#endif
+    }
     return VINF_SUCCESS;
 }
 
@@ -184,8 +195,8 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
  */
 static void rtmpOnSpecificFreeBSDWrapper(void *pvArg)
 {
-    PRTMPARGS pArgs = (PRTMPARGS)pvArg;
-    RTCPUID idCpu = curcpu;
+    PRTMPARGS   pArgs = (PRTMPARGS)pvArg;
+    RTCPUID     idCpu = curcpu;
     if (pArgs->idCpu == idCpu)
     {
         pArgs->pfnWorker(idCpu, pArgs->pvUser1, pArgs->pvUser2);
@@ -196,14 +207,26 @@ static void rtmpOnSpecificFreeBSDWrapper(void *pvArg)
 
 RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
-    int rc;
-    RTMPARGS Args;
+#if  __FreeBSD_version >= 700000
+    cpumask_t   Mask = 1 << idCpu;
+#endif
+    RTMPARGS    Args;
+
+    /* Will panic if no rendezvouing cpus, so make sure the cpu is online. */
+    if (!RTMpIsCpuOnline(idCpu))
+        return VERR_CPU_NOT_FOUND;
+
     Args.pfnWorker = pfnWorker;
     Args.pvUser1 = pvUser1;
     Args.pvUser2 = pvUser2;
     Args.idCpu = idCpu;
     Args.cHits = 0;
+#if __FreeBSD_version >= 700000
+    Mask = (cpumask_t)1 << idCpu;
+    smp_rendezvous_smp(Mask, NULL, rtmpOnSpecificFreeBSDWrapper, NULL, &Args);
+#else
     smp_rendezvous(NULL, rtmpOnSpecificFreeBSDWrapper, NULL, &Args);
+#endif
     return Args.cHits == 1
          ? VINF_SUCCESS
          : VERR_CPU_NOT_FOUND;
