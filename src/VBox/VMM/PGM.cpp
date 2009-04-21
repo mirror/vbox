@@ -2331,7 +2331,7 @@ static int pgmR3SaveShadowedRomPage(PVM pVM, PSSMHANDLE pSSM, PPGMPAGE pPage, RT
 }
 
 /** PGM fields to save/load. */
-static SSMFIELD s_aPGMFields[] =
+static const SSMFIELD s_aPGMFields[] =
 {
     SSMFIELD_ENTRY(         PGM, fMappingsFixed),
     SSMFIELD_ENTRY_GCPTR(   PGM, GCPtrMappingFixed),
@@ -2339,7 +2339,7 @@ static SSMFIELD s_aPGMFields[] =
     SSMFIELD_ENTRY_TERM()
 };
 
-static SSMFIELD s_aPGMCpuFields[] =
+static const SSMFIELD s_aPGMCpuFields[] =
 {
     SSMFIELD_ENTRY(         PGMCPU, fA20Enabled),
     SSMFIELD_ENTRY_GCPHYS(  PGMCPU, GCPhysA20Mask),
@@ -2367,7 +2367,7 @@ typedef struct
     PGMMODE                         enmGuestMode;
 } PGMOLD;
 
-static SSMFIELD s_aPGMFields_Old[] =
+static const SSMFIELD s_aPGMFields_Old[] =
 {
     SSMFIELD_ENTRY(         PGMOLD, fMappingsFixed),
     SSMFIELD_ENTRY_GCPTR(   PGMOLD, GCPtrMappingFixed),
