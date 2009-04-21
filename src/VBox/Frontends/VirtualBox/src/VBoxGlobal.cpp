@@ -4046,15 +4046,6 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
             bi.lpfn = winGetExistDirCallbackProc;
             bi.lParam = Q_ULONG (&mDir);
 
-            /* Qt is uncapable to properly handle modal state if the modal
-             * window is not a QWidget. For example, if we have the W1->W2->N
-             * ownership where Wx are QWidgets (W2 is modal), and N is a
-             * native modal window, cliking on the title bar of W1 will still
-             * activate W2 and redirect keyboard/mouse to it. The dirty hack
-             * to prevent it is to disable the entire widget... */
-            if (mParent)
-                mParent->setEnabled (false);
-
             LPITEMIDLIST itemIdList = SHBrowseForFolder (&bi);
             if (itemIdList)
             {
@@ -4072,10 +4063,6 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
             else
                 result = QString::null;
             QApplication::postEvent (mTarget, new GetExistDirectoryEvent (result));
-
-            /* Enable the parent widget again. */
-            if (mParent)
-                mParent->setEnabled (true);
         }
 
     private:
