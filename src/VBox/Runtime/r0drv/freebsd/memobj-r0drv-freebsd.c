@@ -592,41 +592,39 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
     if (!pObjectToMap)
     {
         vm_object_t pObjectNew = vm_object_allocate(OBJT_PHYS, pMemToMap->cb >> PAGE_SHIFT);
-        if (pObjectNew)
+        if (!RT_UNLIKELY(pObjectNew))
+            return VERR_NO_MEMORY;
+
+        /* Insert the object in the map. */
+        rc = vm_map_find(pProcMap,              /* Map to insert the object in */
+                         pObjectNew  ,          /* Object to map */
+                         0,                     /* Start offset in the object */
+                         &AddrR3,               /* Start address IN/OUT */
+                         pMemToMap->cb,         /* Size of the mapping */
+                         TRUE,                  /* Whether a suitable address should be searched for first */
+                         ProtectionFlags,       /* protection flags */
+                         VM_PROT_ALL,           /* Maximum protection flags */
+                         0);                    /* Copy on write */
+        if (rc == KERN_SUCCESS)
         {
-            /* Insert the object in the map. */
-            rc = vm_map_find(pProcMap,              /* Map to insert the object in */
-                             pObjectNew  ,          /* Object to map */
-                             0,                     /* Start offset in the object */
-                             &AddrR3,               /* Start address IN/OUT */
-                             pMemToMap->cb,         /* Size of the mapping */
-                             TRUE,                  /* Whether a suitable address should be searched for first */
-                             ProtectionFlags,       /* protection flags */
-                             VM_PROT_ALL,           /* Maximum protection flags */
-                             0);                    /* Copy on write */
-            if (rc == KERN_SUCCESS)
+            size_t         cLeft        = pMemToMap->cb >> PAGE_SHIFT;
+            vm_offset_t    AddrToMap    = (vm_offset_t)pMemToMap->pv;
+            pmap_t         pPhysicalMap = pProcMap->pmap;
+            vm_offset_t    AddrR3Dst    = AddrR3;
+
+            /* Insert the memory page by page into the mapping. */
+            while (cLeft-- > 0)
             {
-                size_t         cLeft        = pMemToMap->cb >> PAGE_SHIFT;
-                vm_offset_t    AddrToMap    = (vm_offset_t)pMemToMap->pv;
-                pmap_t         pPhysicalMap = pProcMap->pmap;
-                vm_offset_t    AddrR3Dst    = AddrR3;
+                vm_page_t Page = PHYS_TO_VM_PAGE(vtophys(AddrToMap));
 
-                /* Insert the memory page by page into the mapping. */
-                while (cLeft-- > 0)
-                {
-                    vm_page_t Page = PHYS_TO_VM_PAGE(vtophys(AddrToMap));
-
-                    pmap_enter(pPhysicalMap, AddrR3Dst, Page, ProtectionFlags, TRUE);
-                    AddrToMap += PAGE_SIZE;
-                    AddrR3Dst += PAGE_SIZE;
-                }
-                pObjectToMap = pObjectNew;
+                pmap_enter(pPhysicalMap, AddrR3Dst, Page, ProtectionFlags, TRUE);
+                AddrToMap += PAGE_SIZE;
+                AddrR3Dst += PAGE_SIZE;
             }
-            else
-                vm_object_deallocate(pObjectNew);
+            pObjectToMap = pObjectNew;
         }
         else
-            return VERR_NO_MEMORY;
+            vm_object_deallocate(pObjectNew);
     }
     else
     {
