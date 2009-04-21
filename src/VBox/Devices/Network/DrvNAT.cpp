@@ -312,27 +312,29 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 #ifndef RT_OS_WINDOWS
         nFDs = slirp_get_nsock(pThis->pNATState);
         polls = NULL;
-        polls = (struct pollfd *)RTMemAlloc((1 + nFDs) * sizeof(struct pollfd) + sizeof(uint32_t)); /* allocation for all sockets + Management pipe*/
+        /* allocation for all sockets + Management pipe */
+        polls = (struct pollfd *)RTMemAlloc((1 + nFDs) * sizeof(struct pollfd) + sizeof(uint32_t));
         if (polls == NULL)
             return VERR_NO_MEMORY;
 
-        slirp_select_fill(pThis->pNATState, &nFDs, &polls[1]); /*don't bother Slirp with knowelege about managemant pipe*/
+        /* don't pass the managemant pipe */
+        slirp_select_fill(pThis->pNATState, &nFDs, &polls[1]);
         ms = slirp_get_timeout_ms(pThis->pNATState);
 
         polls[0].fd = pThis->PipeRead;
-        polls[0].events = POLLRDNORM|POLLPRI|POLLRDBAND; /* POLLRDBAND usually doesn't used on Linux but seems used on Solaris */
+        /* POLLRDBAND usually doesn't used on Linux but seems used on Solaris */
+        polls[0].events = POLLRDNORM|POLLPRI|POLLRDBAND;
         polls[0].revents = 0;
 
         int cChangedFDs = poll(polls, nFDs + 1, ms ? ms : -1);
-        /* 2.6.23 + gdb -> hitting all the time. probably a bug in poll/ptrace/whatever. */
-        if (cChangedFDs < 0) 
+        if (cChangedFDs < 0)
         {
-            if (errno == EINTR) 
+            if (errno == EINTR)
             {
                 Log2(("NAT: signal was cautched while sleep on poll\n"));
-                slirp_select_poll(pThis->pNATState, &polls[1], 0);
-                /* process _all_ outstanding requests but don't wait */
-            } 
+                /* No error, just process all outstanding requests but don't wait */
+                cChangedFDs = 0;
+            }
             else if (cPollNegRet++ > 128)
             {
                 LogRel(("NAT:Poll returns (%s) suppressed %d\n", strerror(errno), cPollNegRet));
