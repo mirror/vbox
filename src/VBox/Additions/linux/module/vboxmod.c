@@ -441,21 +441,28 @@ static int vboxadd_hgcm_alloc_buffer(hgcm_bounce_buffer **ppBuf, void *pUser,
     int rc = 0;
 
     AssertPtrReturn(ppBuf, -EINVAL);
-    AssertPtrReturn(pUser, -EINVAL);
 
     pBuf = RTMemAlloc(sizeof(*pBuf));
     if (pBuf == NULL)
         rc = -ENOMEM;
     if (rc >= 0)
     {
-        pKernel = RTMemAlloc(cb);
-        if (pKernel == NULL)
-            rc = -ENOMEM;
+        if (cb > 0)
+        {
+            pKernel = RTMemAlloc(cb);
+            if (pKernel == NULL)
+                rc = -ENOMEM;
+            if (   rc >= 0
+                && copy
+                && copy_from_user(pKernel, pUser, cb) != 0)
+                rc = -EFAULT;
+        }
+        else
+            /* Empty buffers are allowed, but then the user pointer is not
+             * required to be valid, and we definitely don't want to copy
+             * anything. */
+            pKernel = NULL;
     }
-    if (   rc >= 0
-        && copy
-        && copy_from_user(pKernel, pUser, cb) != 0)
-        rc = -EFAULT;
     if (rc >= 0)
     {
         pBuf->pKernel = pKernel;
@@ -477,7 +484,9 @@ static int vboxadd_hgcm_free_buffer(hgcm_bounce_buffer *pBuf, bool copy)
 {
     int rc = 0;
     AssertPtrReturn(pBuf, -EINVAL);
-    if (copy && copy_to_user(pBuf->pUser, pBuf->pKernel, pBuf->cb) != 0)
+    if ((pBuf->cb > 0)
+        && copy
+        && copy_to_user(pBuf->pUser, pBuf->pKernel, pBuf->cb) != 0)
         rc = -EFAULT;
     RTMemFree(pBuf->pKernel);  /* We want to do this whatever the outcome. */
     RTMemFree(pBuf);
