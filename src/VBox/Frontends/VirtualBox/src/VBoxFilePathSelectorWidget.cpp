@@ -379,10 +379,6 @@ void VBoxFilePathSelectorWidget::changePath (const QString &aPath,
 
 void VBoxFilePathSelectorWidget::selectPath()
 {
-    /* Clear the focus early to prevent race condition between our and
-     * Qt internal focus out events when opening native modal dialog */
-    clearFocus();
-
     /* Preparing initial directory. */
     QString initDir = mPath.isNull() ? mHomeDir :
         VBoxGlobal::getFirstExistingDir (mPath);
