@@ -416,7 +416,6 @@ int handleList(HandlerArg *a)
             CHECK_ERROR (Host, COMGETTER(MemoryAvailable)(&memoryAvailable));
             RTPrintf("Memory available: %lu MByte\n", memoryAvailable);
 
-#if 0 /* not yet implemented in Main */
             Bstr operatingSystem;
             CHECK_ERROR (Host, COMGETTER(OperatingSystem)(operatingSystem.asOutParam()));
             RTPrintf("Operating system: %lS\n", operatingSystem.raw());
@@ -424,7 +423,6 @@ int handleList(HandlerArg *a)
             Bstr oSVersion;
             CHECK_ERROR (Host, COMGETTER(OSVersion)(oSVersion.asOutParam()));
             RTPrintf("Operating system version: %lS\n", oSVersion.raw());
-#endif
         }
         break;
 

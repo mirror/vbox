@@ -109,6 +109,7 @@ extern "C" char *getfullrawname(char *);
 #include <iprt/param.h>
 #include <iprt/env.h>
 #include <iprt/mem.h>
+#include <iprt/system.h>
 #ifdef RT_OS_SOLARIS
 # include <iprt/path.h>
 # include <iprt/ctype.h>
@@ -1151,8 +1152,13 @@ STDMETHODIMP Host::COMGETTER(OperatingSystem)(BSTR *aOs)
     CheckComArgOutPointerValid(aOs);
     AutoWriteLock alock (this);
     CHECK_READY();
-    /** @todo */
-    ReturnComNotImplemented();
+
+    char szOSName[80];
+    int vrc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szOSName, sizeof(szOSName));
+    if (RT_FAILURE(vrc))
+        return E_FAIL; /** @todo error reporting? */
+    Bstr (szOSName).cloneTo (aOs);
+    return S_OK;
 }
 
 /**
@@ -1166,8 +1172,30 @@ STDMETHODIMP Host::COMGETTER(OSVersion)(BSTR *aVersion)
     CheckComArgOutPointerValid(aVersion);
     AutoWriteLock alock (this);
     CHECK_READY();
-    /** @todo */
-    ReturnComNotImplemented();
+
+    /* Get the OS release. Reserve some buffer space for the service pack. */
+    char szOSRelease[128];
+    int vrc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szOSRelease, sizeof(szOSRelease) - 32);
+    if (RT_FAILURE(vrc))
+        return E_FAIL; /** @todo error reporting? */
+
+    /* Append the service pack if present. */
+    char szOSServicePack[80];
+    vrc = RTSystemQueryOSInfo(RTSYSOSINFO_SERVICE_PACK, szOSServicePack, sizeof(szOSServicePack));
+    if (RT_FAILURE(vrc))
+    {
+        if (vrc != VERR_NOT_SUPPORTED)
+            return E_FAIL; /** @todo error reporting? */
+        szOSServicePack[0] = '\0';
+    }
+    if (szOSServicePack[0] != '\0')
+    {
+        char *psz = strchr(szOSRelease, '\0');
+        RTStrPrintf(psz, &szOSRelease[sizeof(szOSRelease)] - psz, "sp%s", szOSServicePack);
+    }
+
+    Bstr (szOSRelease).cloneTo (aVersion);
+    return S_OK;
 }
 
 /**
