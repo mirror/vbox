@@ -241,7 +241,6 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioDriver)(AudioDriverType_T aAudioDriver
             case AudioDriverType_SolAudio:
 #endif
 #ifdef RT_OS_LINUX
-            case AudioDriverType_OSS:
 # ifdef VBOX_WITH_ALSA
             case AudioDriverType_ALSA:
 # endif
@@ -249,14 +248,14 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioDriver)(AudioDriverType_T aAudioDriver
             case AudioDriverType_Pulse:
 # endif
 #endif /* RT_OS_LINUX */
+#if defined (RT_OS_LINUX) || defined (RT_OS_FREEBSD)
+            case AudioDriverType_OSS:
+#endif
 #ifdef RT_OS_DARWIN
             case AudioDriverType_CoreAudio:
 #endif
 #ifdef RT_OS_OS2
             case AudioDriverType_MMPM:
-#endif
-#ifdef RT_OS_FREEBSD
-            case AudioDriverType_OSS:
 #endif
             {
                 mData.backup();
@@ -366,7 +365,9 @@ AudioAdapter::Data::Data()
 #elif defined (RT_OS_DARWIN)
     mAudioDriver = AudioDriverType_CoreAudio;
 #elif defined (RT_OS_OS2)
-    mAudioDriver = AudioDriverType_MMP;;
+    mAudioDriver = AudioDriverType_MMP;
+#elif defined (RT_OS_FREEBSD)
+    mAudioDriver = AudioDriverType_OSS;
 #else
     mAudioDriver = AudioDriverType_Null;
 #endif
@@ -435,8 +436,6 @@ HRESULT AudioAdapter::loadSettings (const settings::Key &aMachineNode)
         mData->mAudioDriver = AudioDriverType_SolAudio;
 #endif // RT_OS_SOLARIS
 #ifdef RT_OS_LINUX
-    else if (strcmp (driver, "OSS") == 0)
-        mData->mAudioDriver = AudioDriverType_OSS;
     else if (strcmp (driver, "ALSA") == 0)
 # ifdef VBOX_WITH_ALSA
         mData->mAudioDriver = AudioDriverType_ALSA;
@@ -452,6 +451,10 @@ HRESULT AudioAdapter::loadSettings (const settings::Key &aMachineNode)
         mData->mAudioDriver = AudioDriverType_OSS;
 # endif
 #endif // RT_OS_LINUX
+#if defined (RT_OS_LINUX) || defined (RT_OS_FREEBSD)
+    else if (strcmp (driver, "OSS") == 0)
+        mData->mAudioDriver = AudioDriverType_OSS;
+#endif // RT_OS_LINUX || RT_OS_FREEBSD
 #ifdef RT_OS_DARWIN
     else if (strcmp (driver, "CoreAudio") == 0)
         mData->mAudioDriver = AudioDriverType_CoreAudio;
@@ -460,10 +463,6 @@ HRESULT AudioAdapter::loadSettings (const settings::Key &aMachineNode)
     else if (strcmp (driver, "MMPM") == 0)
         mData->mAudioDriver = AudioDriverType_MMPM;
 #endif
-#ifdef RT_OS_FREEBSD
-    else if (strcmp (driver, "OSS") == 0)
-        mData->mAudioDriver = AudioDriverType_OSS;
-# endif
     else
         AssertMsgFailed (("Invalid driver '%s'\n", driver));
 
@@ -550,12 +549,14 @@ HRESULT AudioAdapter::saveSettings (settings::Key &aMachineNode)
                 break;
             }
 # endif
+#endif /* RT_OS_LINUX */
+#if defined (RT_OS_LINUX) || defined (RT_OS_FREEBSD)
             case AudioDriverType_OSS:
             {
                 driverStr = "OSS";
                 break;
             }
-#endif /* RT_OS_LINUX */
+#endif /* RT_OS_LINUX || RT_OS_FREEBSD */
 #ifdef RT_OS_DARWIN
             case AudioDriverType_CoreAudio:
             {
@@ -567,13 +568,6 @@ HRESULT AudioAdapter::saveSettings (settings::Key &aMachineNode)
             case AudioDriverType_MMPM:
             {
                 driverStr = "MMPM";
-                break;
-            }
-#endif
-#ifdef RT_OS_FREEBSD
-            case AudioDriverType_OSS:
-            {
-                driverStr = "OSS";
                 break;
             }
 #endif
