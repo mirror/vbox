@@ -173,7 +173,9 @@ VBoxVersion(void)
 VBOXXPCOMC_DECL(PCVBOXXPCOM)
 VBoxGetXPCOMCFunctions(unsigned uVersion)
 {
-    /* The current version. */
+    /*
+     * The current interface version.
+     */
     static const VBOXXPCOMC s_Functions =
     {
         sizeof(VBOXXPCOMC),
@@ -196,10 +198,60 @@ VBoxGetXPCOMCFunctions(unsigned uVersion)
         VBOX_XPCOMC_VERSION
     };
 
-    if ((uVersion & 0xffff0000U) != VBOX_XPCOMC_VERSION)
-        return NULL; /* not supported. */
+    if ((uVersion & 0xffff0000U) == (VBOX_XPCOMC_VERSION & 0xffff0000U))
+        return &s_Functions;
 
-    return &s_Functions;
+    /*
+     * Legacy interface version 1.0.
+     */
+    static const struct VBOXXPCOMCV1
+    {
+        /** The size of the structure. */
+        unsigned cb;
+        /** The structure version. */
+        unsigned uVersion;
+
+        unsigned int (*pfnGetVersion)(void);
+
+        void  (*pfnComInitialize)(IVirtualBox **virtualBox, ISession **session);
+        void  (*pfnComUninitialize)(void);
+
+        void  (*pfnComUnallocMem)(void *pv);
+        void  (*pfnUtf16Free)(PRUnichar *pwszString);
+        void  (*pfnUtf8Free)(char *pszString);
+
+        int   (*pfnUtf16ToUtf8)(const PRUnichar *pwszString, char **ppszString);
+        int   (*pfnUtf8ToUtf16)(const char *pszString, PRUnichar **ppwszString);
+
+        /** Tail version, same as uVersion. */
+        unsigned uEndVersion;
+    } s_Functions_v1_0 =
+    {
+        sizeof(s_Functions_v1_0),
+        0x00010000U,
+
+        VBoxVersion,
+
+        VBoxComInitialize,
+        VBoxComUninitialize,
+
+        VBoxComUnallocMem,
+        VBoxUtf16Free,
+        VBoxUtf8Free,
+
+        VBoxUtf16ToUtf8,
+        VBoxUtf8ToUtf16,
+
+        0x00010000U
+    };
+
+    if ((uVersion & 0xffff0000U) == 0x00010000U)
+        return (PCVBOXXPCOM)&s_Functions_v1_0;
+
+    /*
+     * Unsupported interface version.
+     */
+    return NULL;
 }
 
 /* vim: set ts=4 sw=4 et: */
