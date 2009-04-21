@@ -327,9 +327,16 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         /* 2.6.23 + gdb -> hitting all the time. probably a bug in poll/ptrace/whatever. */
         if (cChangedFDs < 0) 
         {
-            if (cPollNegRet++ > 128)
+            if (errno == EINTR) 
             {
-                LogRel(("Poll returns (%s) suppressed %d\n", strerror(errno), cPollNegRet));
+                Log2(("NAT: signal was cautched while sleep on poll\n"));
+                slirp_select_poll(pThis->pNATState, &polls[1], 0);
+                /* process _all_ outstanding requests but don't wait */
+                RTReqProcess(pThis->pReqQueue, 0);
+            } 
+            else if (cPollNegRet++ > 128)
+            {
+                LogRel(("NAT:Poll returns (%s) suppressed %d\n", strerror(errno), cPollNegRet));
                 cPollNegRet = 0;
             }
         }
