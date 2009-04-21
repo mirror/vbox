@@ -103,7 +103,7 @@ typedef struct RTGETOPTDEF
     const char     *pszLong;
     /** The short option character.
      * This doesn't have to be a character, it may also be a \#define or enum value if
-     * there isn't any short version of this option. Must not be 0. */
+     * there isn't any short version of this option. Must be greater than 0. */
     int             iShort;
     /** The flags (RTGETOPT_*). */
     unsigned        fFlags;
