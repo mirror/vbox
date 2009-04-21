@@ -292,8 +292,9 @@ REMR3DECL(int) REMR3Init(PVM pVM)
         AssertMsgFailed(("cpu_x86_init failed - impossible!\n"));
         return VERR_GENERAL_FAILURE;
     }
-    CPUMGetGuestCpuId(pVM,          1, &u32Dummy, &u32Dummy, &pVM->rem.s.Env.cpuid_ext_features, &pVM->rem.s.Env.cpuid_features);
-    CPUMGetGuestCpuId(pVM, 0x80000001, &u32Dummy, &u32Dummy, &pVM->rem.s.Env.cpuid_ext3_features, &pVM->rem.s.Env.cpuid_ext2_features);
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    CPUMGetGuestCpuId(pVCpu,          1, &u32Dummy, &u32Dummy, &pVM->rem.s.Env.cpuid_ext_features, &pVM->rem.s.Env.cpuid_features);
+    CPUMGetGuestCpuId(pVCpu, 0x80000001, &u32Dummy, &u32Dummy, &pVM->rem.s.Env.cpuid_ext3_features, &pVM->rem.s.Env.cpuid_ext2_features);
 
     /* allocate code buffer for single instruction emulation. */
     pVM->rem.s.Env.cbCodeBuffer = 4096;
@@ -721,8 +722,9 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     /*
      * Get the CPUID features.
      */
-    CPUMGetGuestCpuId(pVM,          1, &u32Dummy, &u32Dummy, &pVM->rem.s.Env.cpuid_ext_features, &pVM->rem.s.Env.cpuid_features);
-    CPUMGetGuestCpuId(pVM, 0x80000001, &u32Dummy, &u32Dummy, &u32Dummy, &pVM->rem.s.Env.cpuid_ext2_features);
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    CPUMGetGuestCpuId(pVCpu,          1, &u32Dummy, &u32Dummy, &pVM->rem.s.Env.cpuid_ext_features, &pVM->rem.s.Env.cpuid_features);
+    CPUMGetGuestCpuId(pVCpu, 0x80000001, &u32Dummy, &u32Dummy, &u32Dummy, &pVM->rem.s.Env.cpuid_ext2_features);
 
     /*
      * Sync the Load Flush the TLB
@@ -1971,10 +1973,10 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
             uint32_t u32Dummy;
 
             /*
-            * Get the CPUID features.
-            */
-            CPUMGetGuestCpuId(pVM,          1, &u32Dummy, &u32Dummy, &pVM->rem.s.Env.cpuid_ext_features, &pVM->rem.s.Env.cpuid_features);
-            CPUMGetGuestCpuId(pVM, 0x80000001, &u32Dummy, &u32Dummy, &u32Dummy, &pVM->rem.s.Env.cpuid_ext2_features);
+             * Get the CPUID features.
+             */
+            CPUMGetGuestCpuId(pVCpu,          1, &u32Dummy, &u32Dummy, &pVM->rem.s.Env.cpuid_ext_features, &pVM->rem.s.Env.cpuid_features);
+            CPUMGetGuestCpuId(pVCpu, 0x80000001, &u32Dummy, &u32Dummy, &u32Dummy, &pVM->rem.s.Env.cpuid_ext2_features);
         }
 
         /* Sync FPU state after CR4, CPUID and EFER (!). */
@@ -4250,7 +4252,7 @@ int cpu_inl(CPUState *env, int addr)
  */
 void remR3CpuId(CPUState *env, unsigned uOperator, void *pvEAX, void *pvEBX, void *pvECX, void *pvEDX)
 {
-    CPUMGetGuestCpuId(env->pVM, uOperator, (uint32_t *)pvEAX, (uint32_t *)pvEBX, (uint32_t *)pvECX, (uint32_t *)pvEDX);
+    CPUMGetGuestCpuId(env->pVCpu, uOperator, (uint32_t *)pvEAX, (uint32_t *)pvEBX, (uint32_t *)pvECX, (uint32_t *)pvEDX);
 }
 
 

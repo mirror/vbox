@@ -1944,7 +1944,7 @@ VMMDECL(int) EMInterpretCpuId(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
     pRegFrame->rdx = 0;
 
     /* Note: operates the same in 64 and non-64 bits mode. */
-    CPUMGetGuestCpuId(pVM, iLeaf, &pRegFrame->eax, &pRegFrame->ebx, &pRegFrame->ecx, &pRegFrame->edx);
+    CPUMGetGuestCpuId(pVCpu, iLeaf, &pRegFrame->eax, &pRegFrame->ebx, &pRegFrame->ecx, &pRegFrame->edx);
     Log(("Emulate: CPUID %x -> %08x %08x %08x %08x\n", iLeaf, pRegFrame->eax, pRegFrame->ebx, pRegFrame->ecx, pRegFrame->edx));
     return VINF_SUCCESS;
 }
@@ -2656,7 +2656,7 @@ static int emInterpretMonitor(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCP
     if (cpl != 0)
         return VERR_EM_INTERPRETER; /* supervisor only */
 
-    CPUMGetGuestCpuId(pVM, 1, &u32Dummy, &u32Dummy, &u32ExtFeatures, &u32Dummy);
+    CPUMGetGuestCpuId(pVCpu, 1, &u32Dummy, &u32Dummy, &u32ExtFeatures, &u32Dummy);
     if (!(u32ExtFeatures & X86_CPUID_FEATURE_ECX_MONITOR))
         return VERR_EM_INTERPRETER; /* not supported */
 
@@ -2680,7 +2680,7 @@ static int emInterpretMWait(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUM
     if (cpl != 0)
         return VERR_EM_INTERPRETER; /* supervisor only */
 
-    CPUMGetGuestCpuId(pVM, 1, &u32Dummy, &u32Dummy, &u32ExtFeatures, &u32Dummy);
+    CPUMGetGuestCpuId(pVCpu, 1, &u32Dummy, &u32Dummy, &u32ExtFeatures, &u32Dummy);
     if (!(u32ExtFeatures & X86_CPUID_FEATURE_ECX_MONITOR))
         return VERR_EM_INTERPRETER; /* not supported */
 
@@ -2791,7 +2791,7 @@ VMMDECL(int) EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
     if (cpl != 0)
         return VERR_EM_INTERPRETER; /* supervisor only */
 
-    CPUMGetGuestCpuId(pVM, 1, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
+    CPUMGetGuestCpuId(pVCpu, 1, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
     if (!(u32Features & X86_CPUID_FEATURE_EDX_MSR))
         return VERR_EM_INTERPRETER; /* not supported */
 
@@ -2925,7 +2925,7 @@ VMMDECL(int) EMInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
     if (cpl != 0)
         return VERR_EM_INTERPRETER; /* supervisor only */
 
-    CPUMGetGuestCpuId(pVM, 1, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
+    CPUMGetGuestCpuId(pVCpu, 1, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
     if (!(u32Features & X86_CPUID_FEATURE_EDX_MSR))
         return VERR_EM_INTERPRETER; /* not supported */
 
@@ -2962,7 +2962,7 @@ VMMDECL(int) EMInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
         uint64_t oldval = pCtx->msrEFER;
 
         /* Filter out those bits the guest is allowed to change. (e.g. LMA is read-only) */
-        CPUMGetGuestCpuId(pVM, 0x80000001, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
+        CPUMGetGuestCpuId(pVCpu, 0x80000001, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
         if (u32Features & X86_CPUID_AMD_FEATURE_EDX_NX)
             uMask |= MSR_K6_EFER_NXE;
         if (u32Features & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE)

@@ -509,7 +509,7 @@ static const REMPARMDESC g_aArgsCPUMSetGuestMsr[] =
 
 static const REMPARMDESC g_aArgsCPUMGetGuestCpuId[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *), NULL },
