@@ -62,15 +62,17 @@ typedef struct DRVAUDIO
 } DRVAUDIO, *PDRVAUDIO;
 
 static struct audio_driver *drvtab[] = {
-#ifdef RT_OS_LINUX
+#if defined (RT_OS_LINUX) || defined (RT_OS_FREEBSD)
     &oss_audio_driver,
-#ifdef VBOX_WITH_ALSA
+#endif
+#ifdef RT_OS_LINUX
+# ifdef VBOX_WITH_ALSA
     &alsa_audio_driver,
-#endif
-#ifdef VBOX_WITH_PULSE
+# endif
+# ifdef VBOX_WITH_PULSE
     &pulse_audio_driver,
-#endif
-#endif
+# endif
+#endif /* RT_OS_LINUX */
 #ifdef RT_OS_DARWIN
     &coreaudio_audio_driver,
 #endif
@@ -82,9 +84,6 @@ static struct audio_driver *drvtab[] = {
 #endif
 #ifdef RT_OS_SOLARIS
     &solaudio_audio_driver,
-#endif
-#ifdef RT_OS_FREEBSD
-    &oss_audio_driver,
 #endif
     &no_audio_driver
 };
