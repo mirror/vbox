@@ -43,6 +43,13 @@ if test "$currentzone" = "global"; then
             if test -f /platform/i86pc/kernel/drv/vboxnet.conf; then
                 /opt/VirtualBox/vboxdrv.sh netstart
                 rc=$?
+
+                # nwam/dhcpagent fix
+                if test "$rc" -eq 0 && test -f /etc/nwam/llp; then
+                    sed -e '/vboxnet/d' /etc/nwam/llp > /etc/nwam/llp.vbox
+                    echo "vboxnet0	static 1.1.1.1" >> /etc/nwam/llp.vbox
+                    mv -f /etc/nwam/llp.vbox /etc/nwam/llp
+                fi
             fi
 
             # Load VBoxNetFilter vboxflt
