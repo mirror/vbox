@@ -143,13 +143,20 @@ namespace pm
     public:
         virtual ~CollectorHAL() { };
         virtual int preCollect(const CollectorHints& /* hints */) { return VINF_SUCCESS; }
+        /** Returns averaged CPU usage in 1/1000th per cent across all host's CPUs. */
         virtual int getHostCpuLoad(ULONG *user, ULONG *kernel, ULONG *idle);
+        /** Returns the average frequency in MHz across all host's CPUs. */
         virtual int getHostCpuMHz(ULONG *mhz);
+        /** Returns the amount of physical memory in kilobytes. */
         virtual int getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available) = 0;
+        /** Returns CPU usage in 1/1000th per cent by a particular process. */
         virtual int getProcessCpuLoad(RTPROCESS process, ULONG *user, ULONG *kernel);
+        /** Returns the amount of memory used by a process in kilobytes. */
         virtual int getProcessMemoryUsage(RTPROCESS process, ULONG *used) = 0;
 
+        /** Returns CPU usage counters in platform-specific units. */
         virtual int getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle);
+        /** Returns process' CPU usage counter in platform-specific units. */
         virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
     };
 
