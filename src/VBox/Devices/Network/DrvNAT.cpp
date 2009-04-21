@@ -331,7 +331,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         {
             if (errno == EINTR)
             {
-                Log2(("NAT: signal was cautched while sleep on poll\n"));
+                Log2(("NAT: signal was caught while sleep on poll\n"));
                 /* No error, just process all outstanding requests but don't wait */
                 cChangedFDs = 0;
             }
