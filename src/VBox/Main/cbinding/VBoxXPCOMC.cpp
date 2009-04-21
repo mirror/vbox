@@ -76,20 +76,22 @@ VBoxComUnallocMem(void *ptr)
 }
 
 static void
-VBoxComInitialize(IVirtualBox **virtualBox, ISession **session)
+VBoxComInitialize(const char *pszVirtualBoxIID, IVirtualBox **ppVirtualBox,
+                  const char *pszSessionIID, ISession **ppSession)
 {
     nsresult rc;
 
-    *session    = NULL;
-    *virtualBox = NULL;
+    *ppSession    = NULL;
+    *ppVirtualBox = NULL;
 
-    Session     = *session;
-    Ivirtualbox = *virtualBox;
+    /** @todo r=bird: what exactly is this supposed to acomplish? */
+    Session     = *ppSession;
+    Ivirtualbox = *ppVirtualBox;
 
     rc = com::Initialize();
     if (NS_FAILED(rc))
     {
-        Log(("Cbinding: XPCOM could not be initialized! rc=%Rhrc\n",rc));
+        Log(("Cbinding: XPCOM could not be initialized! rc=%Rhrc\n", rc));
         VBoxComUninitialize();
         return;
     }
@@ -97,7 +99,7 @@ VBoxComInitialize(IVirtualBox **virtualBox, ISession **session)
     rc = NS_GetComponentManager (&manager);
     if (NS_FAILED(rc))
     {
-        Log(("Cbinding: Could not get component manager! rc=%Rhrc\n",rc));
+        Log(("Cbinding: Could not get component manager! rc=%Rhrc\n", rc));
         VBoxComUninitialize();
         return;
     }
@@ -105,15 +107,15 @@ VBoxComInitialize(IVirtualBox **virtualBox, ISession **session)
     rc = NS_GetMainEventQ (&eventQ);
     if (NS_FAILED(rc))
     {
-        Log(("Cbinding: Could not get xpcom event queue! rc=%Rhrc\n",rc));
+        Log(("Cbinding: Could not get xpcom event queue! rc=%Rhrc\n", rc));
         VBoxComUninitialize();
         return;
     }
 
     rc = manager->CreateInstanceByContractID(NS_VIRTUALBOX_CONTRACTID,
                                              nsnull,
-                                             NS_GET_IID(IVirtualBox),
-                                             (void **)virtualBox);
+                                             NS_GET_IID(IVirtualBox), /** @todo Use pszVirtualBoxIID here! */
+                                             (void **)ppVirtualBox);
     if (NS_FAILED(rc))
     {
         Log(("Cbinding: Could not instantiate VirtualBox object! rc=%Rhrc\n",rc));
@@ -125,8 +127,8 @@ VBoxComInitialize(IVirtualBox **virtualBox, ISession **session)
 
     rc = manager->CreateInstanceByContractID (NS_SESSION_CONTRACTID,
                                               nsnull,
-                                              NS_GET_IID(ISession),
-                                              (void **)session);
+                                              NS_GET_IID(ISession), /** @todo Use */
+                                              (void **)ppSession);
     if (NS_FAILED(rc))
     {
         Log(("Cbinding: Could not instantiate Session object! rc=%Rhrc\n",rc));
@@ -135,6 +137,14 @@ VBoxComInitialize(IVirtualBox **virtualBox, ISession **session)
     }
 
     Log(("Cbinding: ISession object created.\n"));
+}
+
+static void
+VBoxComInitializeV1(IVirtualBox **ppVirtualBox, ISession **ppSession)
+{
+    /* stub that always fails. */
+    *ppVirtualBox = NULL;
+    *ppSession = NULL;
 }
 
 static void
@@ -232,7 +242,7 @@ VBoxGetXPCOMCFunctions(unsigned uVersion)
 
         VBoxVersion,
 
-        VBoxComInitialize,
+        VBoxComInitializeV1,
         VBoxComUninitialize,
 
         VBoxComUnallocMem,
