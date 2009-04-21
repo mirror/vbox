@@ -383,9 +383,9 @@ int handleList(HandlerArg *a)
             CHECK_ERROR (Host, COMGETTER(UTCTime)(&uTCTime));
             RTTIMESPEC timeSpec;
             RTTimeSpecSetMilli(&timeSpec, uTCTime);
-            char pszTime[30] = {0};
-            RTTimeSpecToString(&timeSpec, pszTime, sizeof(pszTime));
-            RTPrintf("Host time: %s\n", pszTime);
+            char szTime[32] = {0};
+            RTTimeSpecToString(&timeSpec, szTime, sizeof(szTime));
+            RTPrintf("Host time: %s\n", szTime);
 
             ULONG processorOnlineCount = 0;
             CHECK_ERROR (Host, COMGETTER(ProcessorOnlineCount)(&processorOnlineCount));
@@ -408,7 +408,6 @@ int handleList(HandlerArg *a)
 #endif
             }
 
-#if 0 /* not yet implemented in Main */
             ULONG memorySize = 0;
             CHECK_ERROR (Host, COMGETTER(MemorySize)(&memorySize));
             RTPrintf("Memory size: %lu MByte\n", memorySize);
@@ -417,6 +416,7 @@ int handleList(HandlerArg *a)
             CHECK_ERROR (Host, COMGETTER(MemoryAvailable)(&memoryAvailable));
             RTPrintf("Memory available: %lu MByte\n", memoryAvailable);
 
+#if 0 /* not yet implemented in Main */
             Bstr operatingSystem;
             CHECK_ERROR (Host, COMGETTER(OperatingSystem)(operatingSystem.asOutParam()));
             RTPrintf("Operating system: %lS\n", operatingSystem.raw());
