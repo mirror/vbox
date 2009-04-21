@@ -49,7 +49,7 @@ int CollectorFreeBSD::getHostCpuLoad(ULONG *user, ULONG *kernel, ULONG *idle)
 int CollectorFreeBSD::getHostCpuMHz(ULONG *mhz)
 {
     int CpuMHz = 0;
-    size_t cbParameter = sizeof(int);
+    size_t cbParameter = sizeof(CpuMHz);
 
     /** @todo: Howto support more than one CPU? */
     if (sysctlbyname("dev.cpu.0.freq", &CpuMHz, &cbParameter, NULL, 0))
@@ -63,27 +63,31 @@ int CollectorFreeBSD::getHostCpuMHz(ULONG *mhz)
 int CollectorFreeBSD::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available)
 {
     int rc = VINF_SUCCESS;
-    u_long cbMemPhys;
-    int cPagesMemFree, cPagesMemUsed, cbPage;
-    size_t cbParameter = sizeof(u_long);
-    int cbProcessed = 0;
+    u_long cbMemPhys = 0;
+    u_int cPagesMemFree = 0;
+    u_int cPagesMemUsed = 0;
+    int cbPage = 0;
+    size_t cbParameter = sizeof(cbMemPhys);
+    int cProcessed = 0;
 
     if (!sysctlbyname("hw.physmem", &cbMemPhys, &cbParameter, NULL, 0))
-        cbProcessed++;
+        cProcessed++;
 
-    cbParameter = sizeof(int);
+    cbParameter = sizeof(cPagesMemFree);
     if (!sysctlbyname("vm.stats.vm.v_free_count", &cPagesMemFree, &cbParameter, NULL, 0))
-        cbProcessed++;
+        cProcessed++;
+    cbParameter = sizeof(cPagesMemUsed);
     if (!sysctlbyname("vm.stats.vm.v_active_count", &cPagesMemUsed, &cbParameter, NULL, 0))
-        cbProcessed++;
+        cProcessed++;
+    cbParameter = sizeof(cbPage);
     if (!sysctlbyname("hw.pagesize", &cbPage, &cbParameter, NULL, 0))
-        cbProcessed++;
+        cProcessed++;
 
-    if (cbProcessed == 4)
+    if (cProcessed == 4)
     {
-        *total     = cbMemPhys;
-        *used      = cPagesMemUsed * cbPage;
-        *available = cPagesMemFree * cbPage;
+        *total     = cbMemPhys / _1K;
+        *used      = cPagesMemUsed * (cbPage / _1K);
+        *available = cPagesMemFree * (cbPage / _1K);
     }
     else
         rc = VERR_NOT_SUPPORTED;
