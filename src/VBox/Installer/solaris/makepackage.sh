@@ -131,6 +131,11 @@ find . ! -type d | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vbox.pkginfo|post
 # don't grok for class-specific files (like sed, if any)
 filelist_fixup prototype '$2 == "none"'                                                                '$5 = "root"; $6 = "bin"'
 
+# don't include autoresponse from the base folder into / of the package, it goes into .tar.gz
+# and another one already exists in /opt/VirtualBox
+sed '/f none autoresponse/d' prototype > prototype2
+mv -f prototype2 prototype
+
 # HostDriver vboxdrv
 filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/vboxdrv"'                                   '$6 = "sys"'
 filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/amd64/vboxdrv"'                             '$6 = "sys"'
