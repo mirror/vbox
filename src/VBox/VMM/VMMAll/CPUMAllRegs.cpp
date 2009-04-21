@@ -1043,15 +1043,17 @@ VMMDECL(uint64_t) CPUMGetGuestEFER(PVMCPU pVCpu)
 /**
  * Gets a CpuId leaf.
  *
- * @param   pVM     The VM handle.
+ * @param   pVCpu   The VMCPU handle.
  * @param   iLeaf   The CPUID leaf to get.
  * @param   pEax    Where to store the EAX value.
  * @param   pEbx    Where to store the EBX value.
  * @param   pEcx    Where to store the ECX value.
  * @param   pEdx    Where to store the EDX value.
  */
-VMMDECL(void) CPUMGetGuestCpuId(PVM pVM, uint32_t iLeaf, uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx)
+VMMDECL(void) CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t iLeaf, uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx)
 {
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+
     PCCPUMCPUID pCpuId;
     if (iLeaf < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd))
         pCpuId = &pVM->cpum.s.aGuestCpuIdStd[iLeaf];
@@ -1066,6 +1068,15 @@ VMMDECL(void) CPUMGetGuestCpuId(PVM pVM, uint32_t iLeaf, uint32_t *pEax, uint32_
     *pEbx = pCpuId->ebx;
     *pEcx = pCpuId->ecx;
     *pEdx = pCpuId->edx;
+
+    if (    iLeaf == 1
+        &&  pVM->cCPUs > 1)
+    {
+        /* Bits 31-24: Initial APIC ID */
+        Assert(pVCpu->idCpu <= 255);
+        *pEbx |= (pVCpu->idCpu << 24);
+    }
+
     Log2(("CPUMGetGuestCpuId: iLeaf=%#010x %RX32 %RX32 %RX32 %RX32\n", iLeaf, *pEax, *pEbx, *pEcx, *pEdx));
 }
 

@@ -1940,7 +1940,7 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
      */
     /** @todo How to test for the 40 bits support? Long mode seems to be the test criterium. */
     uint32_t u32Dummy, u32Features;
-    CPUMGetGuestCpuId(pVM, 1, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
+    CPUMGetGuestCpuId(VMMGetCpu(pVM), 1, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
 
     if (u32Features & X86_CPUID_FEATURE_EDX_PSE36)
         pVM->pgm.s.GCPhys4MBPSEMask = RT_BIT_64(36) - 1;
@@ -3975,7 +3975,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
         {
             uint32_t u32Dummy, u32Features;
 
-            CPUMGetGuestCpuId(pVM, 1, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
+            CPUMGetGuestCpuId(VMMGetCpu(pVM), 1, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
             if (!(u32Features & X86_CPUID_FEATURE_EDX_PAE))
                 return VMSetRuntimeError(pVM, VMSETRTERR_FLAGS_FATAL, "PAEmode",
                                          N_("The guest is trying to switch to the PAE mode which is currently disabled by default in VirtualBox. PAE support can be enabled using the VM settings (General/Advanced)"));

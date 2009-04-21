@@ -652,7 +652,7 @@ VMMDECL(uint64_t)   CPUMGetGuestDR3(PVMCPU pVCpu);
 VMMDECL(uint64_t)   CPUMGetGuestDR6(PVMCPU pVCpu);
 VMMDECL(uint64_t)   CPUMGetGuestDR7(PVMCPU pVCpu);
 VMMDECL(int)        CPUMGetGuestDRx(PVMCPU pVCpu, uint32_t iReg, uint64_t *pValue);
-VMMDECL(void)       CPUMGetGuestCpuId(PVM pVM, uint32_t iLeaf, uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx);
+VMMDECL(void)       CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t iLeaf, uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx);
 VMMDECL(uint32_t)   CPUMGetGuestCpuIdStdMax(PVM pVM);
 VMMDECL(uint32_t)   CPUMGetGuestCpuIdExtMax(PVM pVM);
 VMMDECL(uint32_t)   CPUMGetGuestCpuIdCentaurMax(PVM pVM);
