@@ -2862,7 +2862,7 @@ typedef R3PTRTYPE(struct PDMDEVHLPR3 *) PPDMDEVHLPR3;
 typedef R3PTRTYPE(const struct PDMDEVHLPR3 *) PCPDMDEVHLPR3;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLP_VERSION  0xf2080000
+#define PDM_DEVHLP_VERSION  0xf2090000
 
 
 /**
@@ -3008,7 +3008,7 @@ typedef RCPTRTYPE(struct PDMDEVHLPRC *) PPDMDEVHLPRC;
 typedef RCPTRTYPE(const struct PDMDEVHLPRC *) PCPDMDEVHLPRC;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPRC_VERSION  0xfb010001
+#define PDM_DEVHLPRC_VERSION  0xfb020000
 
 
 /**
@@ -3162,7 +3162,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION  0xfb020001
+#define PDM_DEVHLPR0_VERSION  0xfb030000
 
 
 
