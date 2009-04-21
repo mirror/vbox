@@ -211,23 +211,12 @@ VBoxSVC_DEFS = \
 	$(if $(VBOX_WITH_PDM_ASYNC_COMPLETION),VBOX_WITH_PDM_ASYNC_COMPLETION,) \
 	$(if $(VBOX_WITH_DBUS),VBOX_WITH_DBUS,) \
 	$(if $(VBOX_USB_WITH_SYSFS),VBOX_USB_WITH_SYSFS,)
-
-VBoxSVC_CXXFLAGS = $(filter-out -Wno-unused,$(TEMPLATE_VBOXMAINEXE_CXXFLAGS))
-
-# XXX:
-# Disable optimizations on FreeBSD. We will get strange linker errors in release
-# builds otherwise.
-# @todo: Investigate
-VBoxSVC_CXXFLAGS.freebsd = -O0
-
 ifdef VBOX_WITH_USB
  VBoxSVC_DEFS += \
  	VBOX_WITH_USB \
  	$(if $(VBOX_WITH_EHCI),VBOX_WITH_EHCI,) \
  	$(if $(VBOX_WITH_NEW_USB_CODE_ON_DARWIN),VBOX_WITH_NEW_USB_CODE_ON_DARWIN,)
 endif
-
-
 VBoxSVC_DEFS.win += VBOX_COM_OUTOFPROC_MODULE
 VBoxSVC_DEFS.win.x86 += _WIN32_WINNT=0x0500
 VBoxSVC_DEFS.win.amd64 += _WIN32_WINNT=0x0510
@@ -237,6 +226,12 @@ VBoxSVC_DEFS.solaris += VBOX_USE_LIBHAL
 ifdef VBOX_SOLARIS_NSL_RESOLVED
  VBoxSVC_DEFS.solaris += VBOX_SOLARIS_NSL_RESOLVED
 endif
+
+VBoxSVC_CXXFLAGS = $(filter-out -Wno-unused,$(TEMPLATE_VBOXMAINEXE_CXXFLAGS))
+## @todo We're disabling optimizations on FreeBSD to work around strange linker
+#        errors in release builds. Figure out why and how to work around it in a
+#        more optimal fashion.
+VBoxSVC_CXXFLAGS.freebsd = -O0
 
 VBoxSVC_INCS = \
 	include \
