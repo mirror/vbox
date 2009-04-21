@@ -325,7 +325,8 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    g_pVBoxFuncs->pfnComInitialize(&vbox, &session);
+    g_pVBoxFuncs->pfnComInitialize(IVIRTUALBOX_IID_STR, &vbox,
+                                   ISESSION_IID_STR, &session);
     if (vbox == NULL)
     {
         fprintf(stderr, "%s: FATAL: could not get vbox handle\n", argv[0]);

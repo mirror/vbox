@@ -959,8 +959,11 @@ typedef struct VBOXXPCOMC
 
     unsigned int (*pfnGetVersion)(void);
 
-    void  (*pfnComInitialize)(IVirtualBox **virtualBox, ISession **session);
-    void  (*pfnComUninitialize)(void);
+    void  (*pfnComInitialize)(const char *pszVirtualBoxIID,
+                              IVirtualBox **ppVirtualBox,
+                              const char *pszSessionIID,
+                              ISession **ppSession);
+    void (*pfnComUninitialize)(void);
 
     void  (*pfnComUnallocMem)(void *pv);
     void  (*pfnUtf16Free)(PRUnichar *pwszString);
