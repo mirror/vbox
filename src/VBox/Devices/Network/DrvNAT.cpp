@@ -332,7 +332,6 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
                 Log2(("NAT: signal was cautched while sleep on poll\n"));
                 slirp_select_poll(pThis->pNATState, &polls[1], 0);
                 /* process _all_ outstanding requests but don't wait */
-                RTReqProcess(pThis->pReqQueue, 0);
             } 
             else if (cPollNegRet++ > 128)
             {
@@ -362,9 +361,9 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
                  */
                 RTFileRead(pThis->PipeRead, &ch, 1, &cbRead);
             }
-            /* process _all_ outstanding requests but don't wait */
-            RTReqProcess(pThis->pReqQueue, 0);
         }
+        /* process _all_ outstanding requests but don't wait */
+        RTReqProcess(pThis->pReqQueue, 0);
         RTMemFree(polls);
 #else /* RT_OS_WINDOWS */
         slirp_select_fill(pThis->pNATState, &nFDs);
