@@ -385,6 +385,8 @@ static int cpumR3CpuIdInit(PVM pVM)
      * (APIC-ID := 0 and #LogCpus := 0)
      */
     pCPUM->aGuestCpuIdStd[1].ebx &= 0x0000ffff;
+    /* Set the Maximum number of addressable IDs for logical processors in this physical package (bits 16-23) */
+    pCPUM->aGuestCpuIdStd[1].ebx |= ((pVM->cCPUs - 1) << 16);
 
     /* Cpuid 2:
      * Intel: Cache and TLB information
@@ -406,11 +408,22 @@ static int cpumR3CpuIdInit(PVM pVM)
      *        Note: Depends on the ECX input! -> Feeling rather lazy now, so we just return 0
      * AMD:   Reserved
      * Safe to expose, except for EAX:
-     *      Bits 25-14: Maximum number of threads sharing this cache in a physical package (see note)**
+     *      Bits 25-14: Maximum number of addressable IDs for logical processors sharing this cache (see note)**
      *      Bits 31-26: Maximum number of processor cores in this physical package**
+     * @Note These SMP values are constant regardless of ECX
      */
     pCPUM->aGuestCpuIdStd[4].ecx = pCPUM->aGuestCpuIdStd[4].edx = 0;
     pCPUM->aGuestCpuIdStd[4].eax = pCPUM->aGuestCpuIdStd[4].ebx = 0;
+#ifdef VBOX_WITH_MULTI_CORE
+    if (pVM->cCPUs > 1)
+        pCPUM->aGuestCpuIdStd[1].edx |= X86_CPUID_FEATURE_EDX_HTT;  /* necessary for hyper-threading *or* multi-core CPUs */
+
+    if (pVM->cpum.s.enmCPUVendor == CPUMCPUVENDOR_INTEL)
+    {
+        /* One logical processor with possibly multiple cores. */
+        pCPUM->aGuestCpuIdStd[4].eax |= ((pVM->cCPUs - 1) << 26);   /* 6 bits only -> 64 cores! */
+    }
+#endif
 
     /* Cpuid 5:     Monitor/mwait Leaf
      * Intel: ECX, EDX - reserved
@@ -489,6 +502,12 @@ static int cpumR3CpuIdInit(PVM pVM)
         /* Set APICIdCoreIdSize to zero (use legacy method to determine the number of cores per cpu)
          * NC (0-7) Number of cores; 0 equals 1 core */
         pCPUM->aGuestCpuIdExt[8].ecx = 0;
+#ifdef VBOX_WITH_MULTI_CORE
+        if (pVM->cpum.s.enmCPUVendor == CPUMCPUVENDOR_AMD)
+        {
+    
+        }
+#endif
     }
 
     /*
@@ -500,6 +519,11 @@ static int cpumR3CpuIdInit(PVM pVM)
      */
 #if 0
     /** @todo NT4 installation regression - investigate */
+    /** Note from Intel manuals:
+     * CPUID leaves > 3 < 80000000 are visible only when
+     * IA32_MISC_ENABLES.BOOT_NT4[bit 22] = 0 (default).
+     *
+     */
     if (pCPUM->aGuestCpuIdStd[0].eax > 5)
         pCPUM->aGuestCpuIdStd[0].eax = 5;
 #else
