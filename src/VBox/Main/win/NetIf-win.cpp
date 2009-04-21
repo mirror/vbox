@@ -799,59 +799,6 @@ static int collectNetIfInfo(Bstr &strName, Guid &guid, PNETIFINFO pInfo)
     return VINF_SUCCESS;
 }
 
-static int netIfEnableStaticIpConfig(const Guid &guid, ULONG ip, ULONG mask)
-{
-    HRESULT hr;
-        ComPtr <IWbemServices> pSvc;
-        hr = netIfWinCreateIWbemServices(pSvc.asOutParam());
-        if(SUCCEEDED(hr))
-        {
-            ComPtr <IWbemClassObject> pAdapterConfig;
-            hr = netIfWinFindAdapterClassById(pSvc, guid, pAdapterConfig.asOutParam());
-            if(SUCCEEDED(hr))
-            {
-                BOOL bIsHostOnly;
-                hr = netIfWinIsHostOnly(pAdapterConfig, &bIsHostOnly);
-                if(SUCCEEDED(hr))
-                {
-                    if(bIsHostOnly)
-                    {
-                        in_addr aIp[1];
-                        in_addr aMask[1];
-                        aIp[0].S_un.S_addr = ip;
-                        aMask[0].S_un.S_addr = mask;
-
-                        BSTR ObjPath;
-                        hr = netIfWinAdapterConfigPath(pAdapterConfig, &ObjPath);
-                        if(SUCCEEDED(hr))
-                        {
-                            hr = netIfWinEnableStaticV4(pSvc, ObjPath, aIp, aMask, ip != 0 ? 1 : 0);
-                            if(SUCCEEDED(hr))
-                            {
-#if 0
-                                in_addr aGw[1];
-                                aGw[0].S_un.S_addr = gw;
-                                hr = netIfWinSetGatewaysV4(pSvc, ObjPath, aGw, 1);
-                                if(SUCCEEDED(hr))
-#endif
-                                {
-        //                            hr = netIfWinUpdateConfig(pIf);
-                                }
-                            }
-                            SysFreeString(ObjPath);
-                        }
-                    }
-                    else
-                    {
-                        hr = E_FAIL;
-                    }
-                }
-            }
-        }
-
-    return SUCCEEDED(hr) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
-}
-
 static int netIfEnableStaticIpConfigV6(const Guid & guid, IN_BSTR aIPV6Address, IN_BSTR aIPV6Mask, IN_BSTR aIPV6DefaultGateway)
 {
     HRESULT hr;
@@ -1406,575 +1353,6 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
 }
 
 
-/* The original source of the VBoxNetAdp adapter creation/destruction code has the following copyright */
-/*
-   Copyright 2004 by the Massachusetts Institute of Technology
-
-   All rights reserved.
-
-   Permission to use, copy, modify, and distribute this software and its
-   documentation for any purpose and without fee is hereby granted,
-   provided that the above copyright notice appear in all copies and that
-   both that copyright notice and this permission notice appear in
-   supporting documentation, and that the name of the Massachusetts
-   Institute of Technology (M.I.T.) not be used in advertising or publicity
-   pertaining to distribution of the software without specific, written
-   prior permission.
-
-   M.I.T. DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
-   ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL
-   M.I.T. BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR
-   ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
-   WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
-   ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
-   SOFTWARE.
-*/
-
-
-#define DRIVERHWID _T("sun_VBoxNetAdp")
-
-#define SetErrBreak(strAndArgs) \
-    if (1) { \
-        aErrMsg = Utf8StrFmt strAndArgs; vrc = VERR_GENERAL_FAILURE; \
-        Assert(0);\
-        break; \
-    } else do {} while (0)
-
-/* static */
-static int createNetworkInterface (SVCHlpClient *aClient,
-                                  BSTR * pName,
-                                  Guid &aGUID, Utf8Str &aErrMsg)
-{
-    LogFlowFuncEnter();
-//    LogFlowFunc (("Network connection name = '%s'\n", aName.raw()));
-
-    AssertReturn (aClient, VERR_INVALID_POINTER);
-//    AssertReturn (!aName.isNull(), VERR_INVALID_PARAMETER);
-
-    int vrc = VINF_SUCCESS;
-
-    HDEVINFO hDeviceInfo = INVALID_HANDLE_VALUE;
-    SP_DEVINFO_DATA DeviceInfoData;
-    DWORD ret = 0;
-    BOOL found = FALSE;
-    BOOL registered = FALSE;
-    BOOL destroyList = FALSE;
-    WCHAR pWCfgGuidString [50];
-    WCHAR DevName[256];
-
-    do
-    {
-        BOOL ok;
-        GUID netGuid;
-        SP_DRVINFO_DATA DriverInfoData;
-        SP_DEVINSTALL_PARAMS  DeviceInstallParams;
-        TCHAR className [MAX_PATH];
-        DWORD index = 0;
-        PSP_DRVINFO_DETAIL_DATA pDriverInfoDetail;
-        /* for our purposes, 2k buffer is more
-         * than enough to obtain the hardware ID
-         * of the VBoxNetAdp driver. */
-        DWORD detailBuf [2048];
-
-        HKEY hkey = NULL;
-        DWORD cbSize;
-        DWORD dwValueType;
-
-        /* initialize the structure size */
-        DeviceInfoData.cbSize = sizeof(SP_DEVINFO_DATA);
-        DriverInfoData.cbSize = sizeof(SP_DRVINFO_DATA);
-
-        /* copy the net class GUID */
-        memcpy(&netGuid, &GUID_DEVCLASS_NET, sizeof(GUID_DEVCLASS_NET));
-
-        /* create an empty device info set associated with the net class GUID */
-        hDeviceInfo = SetupDiCreateDeviceInfoList (&netGuid, NULL);
-        if (hDeviceInfo == INVALID_HANDLE_VALUE)
-            SetErrBreak (("SetupDiCreateDeviceInfoList failed (0x%08X)",
-                          GetLastError()));
-
-        /* get the class name from GUID */
-        ok = SetupDiClassNameFromGuid (&netGuid, className, MAX_PATH, NULL);
-        if (!ok)
-            SetErrBreak (("SetupDiClassNameFromGuid failed (0x%08X)",
-                          GetLastError()));
-
-        /* create a device info element and add the new device instance
-         * key to registry */
-        ok = SetupDiCreateDeviceInfo (hDeviceInfo, className, &netGuid, NULL, NULL,
-                                     DICD_GENERATE_ID, &DeviceInfoData);
-        if (!ok)
-            SetErrBreak (("SetupDiCreateDeviceInfo failed (0x%08X)",
-                          GetLastError()));
-
-        /* select the newly created device info to be the currently
-           selected member */
-        ok = SetupDiSetSelectedDevice (hDeviceInfo, &DeviceInfoData);
-        if (!ok)
-            SetErrBreak (("SetupDiSetSelectedDevice failed (0x%08X)",
-                          GetLastError()));
-
-        /* build a list of class drivers */
-        ok = SetupDiBuildDriverInfoList (hDeviceInfo, &DeviceInfoData,
-                                        SPDIT_CLASSDRIVER);
-        if (!ok)
-            SetErrBreak (("SetupDiBuildDriverInfoList failed (0x%08X)",
-                          GetLastError()));
-
-        destroyList = TRUE;
-
-        /* enumerate the driver info list */
-        while (TRUE)
-        {
-            BOOL ret;
-
-            ret = SetupDiEnumDriverInfo (hDeviceInfo, &DeviceInfoData,
-                                         SPDIT_CLASSDRIVER, index, &DriverInfoData);
-
-            /* if the function failed and GetLastError() returned
-             * ERROR_NO_MORE_ITEMS, then we have reached the end of the
-             * list.  Othewise there was something wrong with this
-             * particular driver. */
-            if (!ret)
-            {
-                if(GetLastError() == ERROR_NO_MORE_ITEMS)
-                    break;
-                else
-                {
-                    index++;
-                    continue;
-                }
-            }
-
-            pDriverInfoDetail = (PSP_DRVINFO_DETAIL_DATA) detailBuf;
-            pDriverInfoDetail->cbSize = sizeof(SP_DRVINFO_DETAIL_DATA);
-
-            /* if we successfully find the hardware ID and it turns out to
-             * be the one for the loopback driver, then we are done. */
-            if (SetupDiGetDriverInfoDetail (hDeviceInfo,
-                                            &DeviceInfoData,
-                                            &DriverInfoData,
-                                            pDriverInfoDetail,
-                                            sizeof (detailBuf),
-                                            NULL))
-            {
-                TCHAR * t;
-
-                /* pDriverInfoDetail->HardwareID is a MULTISZ string.  Go through the
-                 * whole list and see if there is a match somewhere. */
-                t = pDriverInfoDetail->HardwareID;
-                while (t && *t && t < (TCHAR *) &detailBuf [RT_ELEMENTS(detailBuf)])
-                {
-                    if (!_tcsicmp(t, DRIVERHWID))
-                        break;
-
-                    t += _tcslen(t) + 1;
-                }
-
-                if (t && *t && t < (TCHAR *) &detailBuf [RT_ELEMENTS(detailBuf)])
-                {
-                    found = TRUE;
-                    break;
-                }
-            }
-
-            index ++;
-        }
-
-        if (!found)
-            SetErrBreak (("Could not find Host Interface Networking driver! "
-                              "Please reinstall"));
-
-        /* set the loopback driver to be the currently selected */
-        ok = SetupDiSetSelectedDriver (hDeviceInfo, &DeviceInfoData,
-                                       &DriverInfoData);
-        if (!ok)
-            SetErrBreak (("SetupDiSetSelectedDriver failed (0x%08X)",
-                          GetLastError()));
-
-        /* register the phantom device to prepare for install */
-        ok = SetupDiCallClassInstaller (DIF_REGISTERDEVICE, hDeviceInfo,
-                                        &DeviceInfoData);
-        if (!ok)
-            SetErrBreak (("SetupDiCallClassInstaller failed (0x%08X)",
-                          GetLastError()));
-
-        /* registered, but remove if errors occur in the following code */
-        registered = TRUE;
-
-        /* ask the installer if we can install the device */
-        ok = SetupDiCallClassInstaller (DIF_ALLOW_INSTALL, hDeviceInfo,
-                                        &DeviceInfoData);
-        if (!ok)
-        {
-            if (GetLastError() != ERROR_DI_DO_DEFAULT)
-                SetErrBreak (("SetupDiCallClassInstaller (DIF_ALLOW_INSTALL) failed (0x%08X)",
-                              GetLastError()));
-            /* that's fine */
-        }
-
-        /* install the files first */
-        ok = SetupDiCallClassInstaller (DIF_INSTALLDEVICEFILES, hDeviceInfo,
-                                        &DeviceInfoData);
-        if (!ok)
-            SetErrBreak (("SetupDiCallClassInstaller (DIF_INSTALLDEVICEFILES) failed (0x%08X)",
-                          GetLastError()));
-
-        /* get the device install parameters and disable filecopy */
-        DeviceInstallParams.cbSize = sizeof(SP_DEVINSTALL_PARAMS);
-        ok = SetupDiGetDeviceInstallParams (hDeviceInfo, &DeviceInfoData,
-                                            &DeviceInstallParams);
-        if (ok)
-        {
-            DeviceInstallParams.Flags |= DI_NOFILECOPY;
-            ok = SetupDiSetDeviceInstallParams (hDeviceInfo, &DeviceInfoData,
-                                                &DeviceInstallParams);
-            if (!ok)
-                SetErrBreak (("SetupDiSetDeviceInstallParams failed (0x%08X)",
-                              GetLastError()));
-        }
-
-        /*
-         * Register any device-specific co-installers for this device,
-         */
-
-        ok = SetupDiCallClassInstaller (DIF_REGISTER_COINSTALLERS,
-                                        hDeviceInfo,
-                                        &DeviceInfoData);
-        if (!ok)
-            SetErrBreak (("SetupDiCallClassInstaller (DIF_REGISTER_COINSTALLERS) failed (0x%08X)",
-                          GetLastError()));
-
-        /*
-         * install any  installer-specified interfaces.
-         * and then do the real install
-         */
-        ok = SetupDiCallClassInstaller (DIF_INSTALLINTERFACES,
-                                        hDeviceInfo,
-                                        &DeviceInfoData);
-        if (!ok)
-            SetErrBreak (("SetupDiCallClassInstaller (DIF_INSTALLINTERFACES) failed (0x%08X)",
-                          GetLastError()));
-
-        ok = SetupDiCallClassInstaller (DIF_INSTALLDEVICE,
-                                        hDeviceInfo,
-                                        &DeviceInfoData);
-        if (!ok)
-            SetErrBreak (("SetupDiCallClassInstaller (DIF_INSTALLDEVICE) failed (0x%08X)",
-                          GetLastError()));
-
-        /* Figure out NetCfgInstanceId */
-        hkey = SetupDiOpenDevRegKey (hDeviceInfo,
-                                     &DeviceInfoData,
-                                     DICS_FLAG_GLOBAL,
-                                     0,
-                                     DIREG_DRV,
-                                     KEY_READ);
-        if (hkey == INVALID_HANDLE_VALUE)
-            SetErrBreak (("SetupDiOpenDevRegKey failed (0x%08X)",
-                          GetLastError()));
-
-        cbSize = sizeof (pWCfgGuidString);
-        DWORD ret;
-        ret = RegQueryValueExW (hkey, L"NetCfgInstanceId", NULL,
-                               &dwValueType, (LPBYTE) pWCfgGuidString, &cbSize);
-
-        RegCloseKey (hkey);
-
-        if(!SetupDiGetDeviceRegistryPropertyW(hDeviceInfo, &DeviceInfoData,
-                SPDRP_FRIENDLYNAME , /* IN DWORD  Property,*/
-                  NULL, /*OUT PDWORD  PropertyRegDataType,  OPTIONAL*/
-                  (PBYTE)DevName, /*OUT PBYTE  PropertyBuffer,*/
-                  sizeof(DevName), /* IN DWORD  PropertyBufferSize,*/
-                  NULL /*OUT PDWORD  RequiredSize  OPTIONAL*/
-                ))
-        {
-            int err = GetLastError();
-            if(err != ERROR_INVALID_DATA)
-            {
-                SetErrBreak (("SetupDiGetDeviceRegistryProperty failed (0x%08X)",
-                              err));
-            }
-
-            if(!SetupDiGetDeviceRegistryPropertyW(hDeviceInfo, &DeviceInfoData,
-                              SPDRP_DEVICEDESC  , /* IN DWORD  Property,*/
-                              NULL, /*OUT PDWORD  PropertyRegDataType,  OPTIONAL*/
-                              (PBYTE)DevName, /*OUT PBYTE  PropertyBuffer,*/
-                              sizeof(DevName), /* IN DWORD  PropertyBufferSize,*/
-                              NULL /*OUT PDWORD  RequiredSize  OPTIONAL*/
-                            ))
-            {
-                err = GetLastError();
-                SetErrBreak (("SetupDiGetDeviceRegistryProperty failed (0x%08X)",
-                                              err));
-            }
-        }
-    }
-    while (0);
-
-    /*
-     * cleanup
-     */
-
-    if (hDeviceInfo != INVALID_HANDLE_VALUE)
-    {
-        /* an error has occured, but the device is registered, we must remove it */
-        if (ret != 0 && registered)
-            SetupDiCallClassInstaller (DIF_REMOVE, hDeviceInfo, &DeviceInfoData);
-
-        found = SetupDiDeleteDeviceInfo (hDeviceInfo, &DeviceInfoData);
-
-        /* destroy the driver info list */
-        if (destroyList)
-            SetupDiDestroyDriverInfoList (hDeviceInfo, &DeviceInfoData,
-                                          SPDIT_CLASSDRIVER);
-        /* clean up the device info set */
-        SetupDiDestroyDeviceInfoList (hDeviceInfo);
-    }
-
-    /* return the network connection GUID on success */
-    if (RT_SUCCESS (vrc))
-    {
-        Bstr str(DevName);
-        str.detachTo(pName);
-
-        WCHAR ConnectoinName[128];
-        ULONG cbName = sizeof(ConnectoinName);
-
-        HRESULT hr = VBoxNetCfgWinGenHostonlyConnectionName (DevName, ConnectoinName, &cbName);
-        if(hr == S_OK)
-        {
-            hr = VBoxNetCfgWinRenameConnection (pWCfgGuidString, ConnectoinName);
-        }
-
-        /* remove the curly bracket at the end */
-        pWCfgGuidString [wcslen (pWCfgGuidString) - 1] = L'\0';
-        LogFlowFunc (("Network connection GUID string = {%ls}\n", pWCfgGuidString + 1));
-
-        aGUID = Guid (Utf8Str (pWCfgGuidString + 1));
-        LogFlowFunc (("Network connection GUID = {%RTuuid}\n", aGUID.raw()));
-        Assert (!aGUID.isEmpty());
-    }
-
-    LogFlowFunc (("vrc=%Rrc\n", vrc));
-    LogFlowFuncLeave();
-    return vrc;
-}
-
-/* static */
-static int removeNetworkInterface (SVCHlpClient *aClient,
-                                  const Guid &aGUID,
-                                  Utf8Str &aErrMsg)
-{
-    LogFlowFuncEnter();
-    LogFlowFunc (("Network connection GUID = {%RTuuid}\n", aGUID.raw()));
-
-    AssertReturn (aClient, VERR_INVALID_POINTER);
-    AssertReturn (!aGUID.isEmpty(), VERR_INVALID_PARAMETER);
-
-    int vrc = VINF_SUCCESS;
-
-    do
-    {
-        TCHAR lszPnPInstanceId [512] = {0};
-
-        /* We have to find the device instance ID through a registry search */
-
-        HKEY hkeyNetwork = 0;
-        HKEY hkeyConnection = 0;
-
-        do
-        {
-            char strRegLocation [256];
-            sprintf (strRegLocation,
-                     "SYSTEM\\CurrentControlSet\\Control\\Network\\"
-                     "{4D36E972-E325-11CE-BFC1-08002BE10318}\\{%s}",
-                     aGUID.toString().raw());
-            LONG status;
-            status = RegOpenKeyExA (HKEY_LOCAL_MACHINE, strRegLocation, 0,
-                                    KEY_READ, &hkeyNetwork);
-            if ((status != ERROR_SUCCESS) || !hkeyNetwork)
-                SetErrBreak ((
-                        "Host interface network is not found in registry (%s) [1]",
-                    strRegLocation));
-
-            status = RegOpenKeyExA (hkeyNetwork, "Connection", 0,
-                                    KEY_READ, &hkeyConnection);
-            if ((status != ERROR_SUCCESS) || !hkeyConnection)
-                SetErrBreak ((
-                        "Host interface network is not found in registry (%s) [2]",
-                    strRegLocation));
-
-            DWORD len = sizeof (lszPnPInstanceId);
-            DWORD dwKeyType;
-            status = RegQueryValueExW (hkeyConnection, L"PnPInstanceID", NULL,
-                                       &dwKeyType, (LPBYTE) lszPnPInstanceId, &len);
-            if ((status != ERROR_SUCCESS) || (dwKeyType != REG_SZ))
-                SetErrBreak ((
-                        "Host interface network is not found in registry (%s) [3]",
-                    strRegLocation));
-        }
-        while (0);
-
-        if (hkeyConnection)
-            RegCloseKey (hkeyConnection);
-        if (hkeyNetwork)
-            RegCloseKey (hkeyNetwork);
-
-        if (RT_FAILURE (vrc))
-            break;
-
-        /*
-         * Now we are going to enumerate all network devices and
-         * wait until we encounter the right device instance ID
-         */
-
-        HDEVINFO hDeviceInfo = INVALID_HANDLE_VALUE;
-
-        do
-        {
-            BOOL ok;
-            DWORD ret = 0;
-            GUID netGuid;
-            SP_DEVINFO_DATA DeviceInfoData;
-            DWORD index = 0;
-            BOOL found = FALSE;
-            DWORD size = 0;
-
-            /* initialize the structure size */
-            DeviceInfoData.cbSize = sizeof (SP_DEVINFO_DATA);
-
-            /* copy the net class GUID */
-            memcpy (&netGuid, &GUID_DEVCLASS_NET, sizeof (GUID_DEVCLASS_NET));
-
-            /* return a device info set contains all installed devices of the Net class */
-            hDeviceInfo = SetupDiGetClassDevs (&netGuid, NULL, NULL, DIGCF_PRESENT);
-
-            if (hDeviceInfo == INVALID_HANDLE_VALUE)
-                SetErrBreak (("SetupDiGetClassDevs failed (0x%08X)", GetLastError()));
-
-            /* enumerate the driver info list */
-            while (TRUE)
-            {
-                TCHAR *deviceHwid;
-
-                ok = SetupDiEnumDeviceInfo (hDeviceInfo, index, &DeviceInfoData);
-
-                if (!ok)
-                {
-                    if (GetLastError() == ERROR_NO_MORE_ITEMS)
-                        break;
-                    else
-                    {
-                        index++;
-                        continue;
-                    }
-                }
-
-                /* try to get the hardware ID registry property */
-                ok = SetupDiGetDeviceRegistryProperty (hDeviceInfo,
-                                                       &DeviceInfoData,
-                                                       SPDRP_HARDWAREID,
-                                                       NULL,
-                                                       NULL,
-                                                       0,
-                                                       &size);
-                if (!ok)
-                {
-                    if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
-                    {
-                        index++;
-                        continue;
-                    }
-
-                    deviceHwid = (TCHAR *) malloc (size);
-                    ok = SetupDiGetDeviceRegistryProperty (hDeviceInfo,
-                                                           &DeviceInfoData,
-                                                           SPDRP_HARDWAREID,
-                                                           NULL,
-                                                           (PBYTE)deviceHwid,
-                                                           size,
-                                                           NULL);
-                    if (!ok)
-                    {
-                        free (deviceHwid);
-                        deviceHwid = NULL;
-                        index++;
-                        continue;
-                    }
-                }
-                else
-                {
-                    /* something is wrong.  This shouldn't have worked with a NULL buffer */
-                    index++;
-                    continue;
-                }
-
-                for (TCHAR *t = deviceHwid;
-                     t && *t && t < &deviceHwid[size / sizeof(TCHAR)];
-                     t += _tcslen (t) + 1)
-                {
-                    if (!_tcsicmp (DRIVERHWID, t))
-                    {
-                          /* get the device instance ID */
-                          TCHAR devID [MAX_DEVICE_ID_LEN];
-                          if (CM_Get_Device_ID(DeviceInfoData.DevInst,
-                                               devID, MAX_DEVICE_ID_LEN, 0) == CR_SUCCESS)
-                          {
-                              /* compare to what we determined before */
-                              if (wcscmp(devID, lszPnPInstanceId) == 0)
-                              {
-                                  found = TRUE;
-                                  break;
-                              }
-                          }
-                    }
-                }
-
-                if (deviceHwid)
-                {
-                    free (deviceHwid);
-                    deviceHwid = NULL;
-                }
-
-                if (found)
-                    break;
-
-                index++;
-            }
-
-            if (found == FALSE)
-                SetErrBreak (("Host Interface Network driver not found (0x%08X)",
-                              GetLastError()));
-
-            ok = SetupDiSetSelectedDevice (hDeviceInfo, &DeviceInfoData);
-            if (!ok)
-                SetErrBreak (("SetupDiSetSelectedDevice failed (0x%08X)",
-                              GetLastError()));
-
-            ok = SetupDiCallClassInstaller (DIF_REMOVE, hDeviceInfo, &DeviceInfoData);
-            if (!ok)
-                SetErrBreak (("SetupDiCallClassInstaller (DIF_REMOVE) failed (0x%08X)",
-                              GetLastError()));
-        }
-        while (0);
-
-        /* clean up the device info set */
-        if (hDeviceInfo != INVALID_HANDLE_VALUE)
-            SetupDiDestroyDeviceInfoList (hDeviceInfo);
-
-        if (RT_FAILURE (vrc))
-            break;
-    }
-    while (0);
-
-    LogFlowFunc (("vrc=%Rrc\n", vrc));
-    LogFlowFuncLeave();
-    return vrc;
-}
-
-#undef SetErrBreak
-
 int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
                                         SVCHlpMsg::Code aMsgCode)
 {
@@ -1984,6 +1362,7 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
     AssertReturn (aClient, VERR_INVALID_POINTER);
 
     int vrc = VINF_SUCCESS;
+    HRESULT hrc;
 
     switch (aMsgCode)
     {
@@ -1998,9 +1377,11 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
             Guid guid;
             Utf8Str errMsg;
             Bstr name;
-            vrc = createNetworkInterface (aClient, name.asOutParam(), guid, errMsg);
+            Bstr bstrErr;
 
-            if (RT_SUCCESS (vrc))
+            hrc = VBoxNetCfgWinCreateHostOnlyNetworkInterface (guid.asOutParam(), name.asOutParam(), bstrErr.asOutParam());
+
+            if (hrc == S_OK)
             {
                 /* write success followed by GUID */
                 vrc = aClient->write (SVCHlpMsg::CreateHostOnlyNetworkInterface_OK);
@@ -2012,6 +1393,8 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
             }
             else
             {
+                vrc = VERR_GENERAL_FAILURE;
+                errMsg = Utf8Str(bstrErr);
                 /* write failure followed by error message */
                 if (errMsg.isEmpty())
                     errMsg = Utf8StrFmt ("Unspecified error (%Rrc)", vrc);
@@ -2028,13 +1411,15 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
             LogFlowFunc (("RemoveHostOnlyNetworkInterface:\n"));
 
             Guid guid;
+            Bstr bstrErr;
+
             vrc = aClient->read (guid);
             if (RT_FAILURE (vrc)) break;
 
             Utf8Str errMsg;
-            vrc = removeNetworkInterface (aClient, guid, errMsg);
+            hrc = VBoxNetCfgWinRemoveHostOnlyNetworkInterface ((const GUID*)guid.raw(), bstrErr.asOutParam());
 
-            if (RT_SUCCESS (vrc))
+            if (hrc == S_OK)
             {
                 /* write parameter-less success */
                 vrc = aClient->write (SVCHlpMsg::OK);
@@ -2042,6 +1427,8 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
             }
             else
             {
+                vrc = VERR_GENERAL_FAILURE;
+                errMsg = Utf8Str(bstrErr);
                 /* write failure followed by error message */
                 if (errMsg.isEmpty())
                     errMsg = Utf8StrFmt ("Unspecified error (%Rrc)", vrc);
@@ -2068,7 +1455,7 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
             if (RT_FAILURE (vrc)) break;
 
             Utf8Str errMsg;
-            vrc = netIfEnableStaticIpConfigV6 (guid, Bstr(ipV6), maskLengthV6);
+            vrc = VERR_NOT_IMPLEMENTED;
 
             if (RT_SUCCESS (vrc))
             {
@@ -2103,9 +1490,9 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
             if (RT_FAILURE (vrc)) break;
 
             Utf8Str errMsg;
-            vrc = netIfEnableStaticIpConfig (guid, ip, mask);
+            hrc = VBoxNetCfgWinEnableStaticIpConfig ((const GUID *)guid.raw(), ip, mask);
 
-            if (RT_SUCCESS (vrc))
+            if (hrc == S_OK)
             {
                 /* write success followed by GUID */
                 vrc = aClient->write (SVCHlpMsg::OK);
@@ -2113,6 +1500,7 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
             }
             else
             {
+                vrc = VERR_GENERAL_FAILURE;
                 /* write failure followed by error message */
                 if (errMsg.isEmpty())
                     errMsg = Utf8StrFmt ("Unspecified error (%Rrc)", vrc);
@@ -2133,9 +1521,9 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
             if (RT_FAILURE (vrc)) break;
 
             Utf8Str errMsg;
-            vrc = netIfEnableDynamicIpConfig (guid);
+            hrc = VBoxNetCfgWinEnableDynamicIpConfig ((const GUID *)guid.raw());
 
-            if (RT_SUCCESS (vrc))
+            if (hrc == S_OK)
             {
                 /* write success followed by GUID */
                 vrc = aClient->write (SVCHlpMsg::OK);
@@ -2143,6 +1531,7 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
             }
             else
             {
+                vrc = VERR_GENERAL_FAILURE;
                 /* write failure followed by error message */
                 if (errMsg.isEmpty())
                     errMsg = Utf8StrFmt ("Unspecified error (%Rrc)", vrc);
@@ -2163,9 +1552,9 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
             if (RT_FAILURE (vrc)) break;
 
             Utf8Str errMsg;
-            vrc = netIfDhcpRediscover (guid);
+            hrc = VBoxNetCfgWinDhcpRediscover ((const GUID *)guid.raw());
 
-            if (RT_SUCCESS (vrc))
+            if (hrc == S_OK)
             {
                 /* write success followed by GUID */
                 vrc = aClient->write (SVCHlpMsg::OK);
@@ -2173,6 +1562,7 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
             }
             else
             {
+                vrc = VERR_GENERAL_FAILURE;
                 /* write failure followed by error message */
                 if (errMsg.isEmpty())
                     errMsg = Utf8StrFmt ("Unspecified error (%Rrc)", vrc);

@@ -540,7 +540,9 @@ VBoxC_LIBS += \
 	$(LIB_REM)
 
 ifdef VBOX_WITH_NETFLT
- VBoxC_LIBS.win += $(PATH_LIB)/WinNetConfig.lib
+ VBoxC_LIBS.win += $(PATH_LIB)/WinNetConfig.lib \
+ 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
+	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
 endif
 
 VBoxC_INTERMEDIATES = \
