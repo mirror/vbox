@@ -515,6 +515,7 @@ endif
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/postinstall.sh                                     $(SOLARIS_BASEINST_DIR)/postinstall.sh
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/preremove.sh                                       $(SOLARIS_BASEINST_DIR)/preremove.sh
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/makepackage.sh                                     $(SOLARIS_BASEINST_DIR)/makepackage.sh
+	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/vbox.pkgresponse                                   $(SOLARIS_VBOXINST_DIR)/autoresponse
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/vbox.pkgresponse                                   $(SOLARIS_BASEINST_DIR)/autoresponse
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/vbox.space                                         $(SOLARIS_BASEINST_DIR)/vbox.space
 	$(QUIET)$(SED) \
