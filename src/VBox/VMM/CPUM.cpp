@@ -385,8 +385,10 @@ static int cpumR3CpuIdInit(PVM pVM)
      * (APIC-ID := 0 and #LogCpus := 0)
      */
     pCPUM->aGuestCpuIdStd[1].ebx &= 0x0000ffff;
+#ifdef VBOX_WITH_MULTI_CORE
     /* Set the Maximum number of addressable IDs for logical processors in this physical package (bits 16-23) */
     pCPUM->aGuestCpuIdStd[1].ebx |= ((pVM->cCPUs - 1) << 16);
+#endif
 
     /* Cpuid 2:
      * Intel: Cache and TLB information
