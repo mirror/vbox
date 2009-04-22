@@ -93,7 +93,7 @@ public:
     STDMETHOD(COMGETTER(UTCTime))(LONG64 *aUTCTime);
 
     // IHost methods
-#ifdef RT_OS_WINDOWS
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
 
     STDMETHOD(CreateHostOnlyNetworkInterface) (IHostNetworkInterface **aHostNetworkInterface,
                                            IProgress **aProgress);
