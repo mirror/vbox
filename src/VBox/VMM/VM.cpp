@@ -1769,7 +1769,7 @@ static void vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait)
         ASMAtomicUoWriteBool(&pUVM->aCpus[i].vm.s.fTerminateEMT, true);
         if (pUVM->pVM)
             VM_FF_SET(pUVM->pVM, VM_FF_TERMINATE);
-        VMR3NotifyFFU(pUVM, false);
+        VMR3NotifyFFU(pUVM, true /* fNotifiedREM */);
         if (pUVM->aCpus[i].vm.s.EventSemWait != NIL_RTSEMEVENT) /** @todo remove test when we start initializing it! */
             RTSemEventSignal(pUVM->aCpus[i].vm.s.EventSemWait);
     }
