@@ -36,7 +36,6 @@ using namespace std;
 
 static ISession            *Session        = NULL;
 static IVirtualBox         *Ivirtualbox    = NULL;
-static nsIServiceManager   *serviceManager = NULL;
 static nsIComponentManager *manager        = NULL;
 static nsIEventQueue       *eventQ         = NULL;
 
@@ -83,10 +82,6 @@ VBoxComInitialize(const char *pszVirtualBoxIID, IVirtualBox **ppVirtualBox,
 
     *ppSession    = NULL;
     *ppVirtualBox = NULL;
-
-    /** @todo r=bird: what exactly is this supposed to acomplish? */
-    Session     = *ppSession;
-    Ivirtualbox = *ppVirtualBox;
 
     rc = com::Initialize();
     if (NS_FAILED(rc))
@@ -137,6 +132,13 @@ VBoxComInitialize(const char *pszVirtualBoxIID, IVirtualBox **ppVirtualBox,
     }
 
     Log(("Cbinding: ISession object created.\n"));
+
+    /* Store ppSession & ppVirtualBox so that VBoxComUninitialize
+     * can later take care of them while cleanup
+     */
+    Session     = *ppSession;
+    Ivirtualbox = *ppVirtualBox;
+
 }
 
 static void
@@ -158,8 +160,6 @@ VBoxComUninitialize(void)
         NS_RELEASE(eventQ);         // decrement refcount
     if (manager)
         NS_RELEASE(manager);        // decrement refcount
-    if (serviceManager)
-        NS_RELEASE(serviceManager); // decrement refcount
     com::Shutdown();
     Log(("Cbinding: Cleaned up the created IVirtualBox and ISession Objects.\n"));
 }
