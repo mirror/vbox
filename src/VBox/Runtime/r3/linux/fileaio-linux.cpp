@@ -60,7 +60,7 @@
 #include <iprt/err.h>
 #include <iprt/log.h>
 #include <iprt/thread.h>
-#include "internal/magics.h"
+#include "internal/fileaio.h"
 
 #include <linux/aio_abi.h>
 #include <unistd.h>
@@ -158,28 +158,6 @@ typedef struct LNXKAIOIOEVENT
 
 
 /**
- * Async I/O request state.
- */
-typedef struct RTFILEAIOREQINTERNAL
-{
-    /** The aio control block. This must be the FIRST elment in
-     *  the structure! (see notes below) */
-    LNXKAIOIOCB     AioCB;
-    /** The I/O context this request is associated with. */
-    aio_context_t   AioContext;
-    /** Return code the request completed with. */
-    int             Rc;
-    /** Flag whether the request is in process or not. */
-    bool            fFinished;
-    /** Number of bytes actually trasnfered. */
-    size_t          cbTransfered;
-    /** Magic value  (RTFILEAIOREQ_MAGIC). */
-    uint32_t        u32Magic;
-} RTFILEAIOREQINTERNAL;
-/** Pointer to an internal request structure. */
-typedef RTFILEAIOREQINTERNAL *PRTFILEAIOREQINTERNAL;
-
-/**
  * Async I/O completion context state.
  */
 typedef struct RTFILEAIOCTXINTERNAL
@@ -202,39 +180,36 @@ typedef struct RTFILEAIOCTXINTERNAL
 /** Pointer to an internal context structure. */
 typedef RTFILEAIOCTXINTERNAL *PRTFILEAIOCTXINTERNAL;
 
+/**
+ * Async I/O request state.
+ */
+typedef struct RTFILEAIOREQINTERNAL
+{
+    /** The aio control block. This must be the FIRST elment in
+     *  the structure! (see notes below) */
+    LNXKAIOIOCB           AioCB;
+    /** The I/O context this request is associated with. */
+    aio_context_t         AioContext;
+    /** Return code the request completed with. */
+    int                   Rc;
+    /** Flag whether the request is in process or not. */
+    bool                  fFinished;
+    /** Number of bytes actually trasnfered. */
+    size_t                cbTransfered;
+    /** Completion context we are assigned to. */
+    PRTFILEAIOCTXINTERNAL pCtxInt;
+    /** Magic value  (RTFILEAIOREQ_MAGIC). */
+    uint32_t              u32Magic;
+} RTFILEAIOREQINTERNAL;
+/** Pointer to an internal request structure. */
+typedef RTFILEAIOREQINTERNAL *PRTFILEAIOREQINTERNAL;
+
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** The max number of events to get in one call. */
 #define AIO_MAXIMUM_REQUESTS_PER_CONTEXT 64
-
-/** Validates a context handle and returns VERR_INVALID_HANDLE if not valid. */
-#define RTFILEAIOREQ_VALID_RETURN_RC(pReq, rc) \
-    do { \
-        AssertPtrReturn((pReq), (rc)); \
-        AssertReturn((pReq)->u32Magic == RTFILEAIOREQ_MAGIC, (rc)); \
-    } while (0)
-
-/** Validates a context handle and returns VERR_INVALID_HANDLE if not valid. */
-#define RTFILEAIOREQ_VALID_RETURN(pReq) RTFILEAIOREQ_VALID_RETURN_RC((pReq), VERR_INVALID_HANDLE)
-
-/** Validates a context handle and returns (void) if not valid. */
-#define RTFILEAIOREQ_VALID_RETURN_VOID(pReq) \
-    do { \
-        AssertPtrReturnVoid(pReq); \
-        AssertReturnVoid((pReq)->u32Magic == RTFILEAIOREQ_MAGIC); \
-    } while (0)
-
-/** Validates a context handle and returns the specified rc if not valid. */
-#define RTFILEAIOCTX_VALID_RETURN_RC(pCtx, rc) \
-    do { \
-        AssertPtrReturn((pCtx), (rc)); \
-        AssertReturn((pCtx)->u32Magic == RTFILEAIOCTX_MAGIC, (rc)); \
-    } while (0)
-
-/** Validates a context handle and returns VERR_INVALID_HANDLE if not valid. */
-#define RTFILEAIOCTX_VALID_RETURN(pCtx) RTFILEAIOCTX_VALID_RETURN_RC((pCtx), VERR_INVALID_HANDLE)
 
 
 /**
@@ -299,7 +274,6 @@ DECLINLINE(int) rtFileAsyncIoLinuxGetEvents(aio_context_t AioContext, long cReqs
     return rc;
 }
 
-
 RTR3DECL(int) RTFileAioReqCreate(PRTFILEAIOREQ phReq)
 {
     AssertPtrReturn(phReq, VERR_INVALID_POINTER);
@@ -312,7 +286,8 @@ RTR3DECL(int) RTFileAioReqCreate(PRTFILEAIOREQ phReq)
         return VERR_NO_MEMORY;
 
     pReqInt->fFinished = false;
-    pReqInt->u32Magic = RTFILEAIOREQ_MAGIC;
+    pReqInt->pCtxInt   = NULL;
+    pReqInt->u32Magic  = RTFILEAIOREQ_MAGIC;
 
     *phReq = (RTFILEAIOREQ)pReqInt;
     return VINF_SUCCESS;
@@ -366,6 +341,7 @@ DECLINLINE(int) rtFileAioReqPrepareTransfer(RTFILEAIOREQ hReq, RTFILE hFile,
     pReqInt->AioCB.pvUser      = pvUser;
 
     pReqInt->fFinished         = false;
+    pReqInt->pCtxInt           = NULL;
 
     return VINF_SUCCESS;
 }
@@ -424,7 +400,14 @@ RTDECL(int) RTFileAioReqCancel(RTFILEAIOREQ hReq)
     int rc = rtFileAsyncIoLinuxCancel(pReqInt->AioContext, &pReqInt->AioCB, &AioEvent);
     if (RT_SUCCESS(rc))
     {
-        /* Examine rc in the event structure. */
+        /*
+         * Decrement request count because the request will never arrive at the
+         * completion port.
+         */
+        AssertMsg(VALID_PTR(pReqInt->pCtxInt),
+                  ("Invalid state. Request was canceled but wasn't submitted\n"));
+
+        ASMAtomicDecS32(&pReqInt->pCtxInt->cRequests);
         return VINF_SUCCESS;
     }
     if (rc == VERR_TRY_AGAIN)
@@ -527,24 +510,25 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
     AssertReturn(cReqs > 0,  VERR_INVALID_PARAMETER);
     AssertPtrReturn(pahReqs, VERR_INVALID_POINTER);
     uint32_t i = cReqs;
+
+    /*
+     * Vaildate requests and associate with the context.
+     */
     while (i-- > 0)
     {
         PRTFILEAIOREQINTERNAL pReqInt = pahReqs[i];
         RTFILEAIOREQ_VALID_RETURN(pReqInt);
+
+        pReqInt->AioContext = pCtxInt->AioContext;
+        pReqInt->pCtxInt    = pCtxInt;
     }
 
     /*
-     * Add descriptive comment.
+     * Add the submitted requests to the counter
+     * to prevent destroying the context while
+     * it is still used.
      */
-    /** @todo r=bird: Why this particular order?
-     *  Perhaps combine the AioContext initialization with the validation? */
     ASMAtomicAddS32(&pCtxInt->cRequests, cReqs);
-
-    for (unsigned i = 0; i < cReqs; i++)
-    {
-        PRTFILEAIOREQINTERNAL pReqInt = pahReqs[i];
-        pReqInt->AioContext = pCtxInt->AioContext;
-    }
 
     /*
      * We cast phReqs to the Linux iocb structure to avoid copying the requests
@@ -599,7 +583,7 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMi
 
     /* For the wakeup call. */
     Assert(pCtxInt->hThreadWait == NIL_RTTHREAD);
-    pCtxInt->hThreadWait = RTThreadSelf();
+    ASMAtomicWriteHandle(&pCtxInt->hThreadWait, RTThreadSelf());
 
     /*
      * Loop until we're woken up, hit an error (incl timeout), or
@@ -682,7 +666,7 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMi
     *pcReqs = cRequestsCompleted;
     ASMAtomicSubS32(&pCtxInt->cRequests, cRequestsCompleted);
     Assert(pCtxInt->hThreadWait == RTThreadSelf());
-    pCtxInt->hThreadWait = NIL_RTTHREAD;
+    ASMAtomicWriteHandle(&pCtxInt->hThreadWait, NIL_RTTHREAD);
 
     /*
      * Clear the wakeup flag and set rc.
@@ -706,10 +690,38 @@ RTDECL(int) RTFileAioCtxWakeup(RTFILEAIOCTX hAioCtx)
     /** @todo r=bird: Define the protocol for how to resume work after calling
      *        this function. */
 
-    bool fWokenUp = ASMAtomicXchgBool(&pCtxInt->fWokenUp, true);
+    bool fWokenUp    = ASMAtomicXchgBool(&pCtxInt->fWokenUp, true);
+
+    /*
+     * Read the thread handle before the status flag.
+     * If we read the handle after the flag we might
+     * end up with an invalid handle because the thread
+     * waiting in RTFileAioCtxWakeup() might get scheduled
+     * before we read the flag and returns.
+     * We can ensure that the handle is valid if fWaiting is true
+     * when reading the handle before the status flag.
+     */
+    RTTHREAD hThread;
+    ASMAtomicReadHandle(&pCtxInt->hThreadWait, &hThread);
+    bool fWaiting    = ASMAtomicReadBool(&pCtxInt->fWaiting);
     if (    !fWokenUp
-        &&  pCtxInt->fWaiting)
-        RTThreadPoke(pCtxInt->hThreadWait);
+        &&  fWaiting)
+    {
+        /*
+         * If a thread waits the handle must be valid.
+         * It is possible that the thread returns from
+         * rtFileAsyncIoLinuxGetEvents() before the signal
+         * is send.
+         * This is no problem because we already set fWokenUp
+         * to true which will let the thread return VERR_INTERRUPTED
+         * and the next call to RTFileAioCtxWait() will not
+         * return VERR_INTERRUPTED because signals are not saved
+         * and will simply vanish if the destination thread can't
+         * receive it.
+         */
+        Assert(hThread != NIL_RTTHREAD);
+        RTThreadPoke(hThread);
+    }
 
     return VINF_SUCCESS;
 }
