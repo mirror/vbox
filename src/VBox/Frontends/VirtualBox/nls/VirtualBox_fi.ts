@@ -113,7 +113,7 @@
     <message>
         <location filename="../src/main.cpp" line="523"/>
         <source>VirtualBox - Runtime Error</source>
-        <translation>Virtual Box - ajonaikainen virhe</translation>
+        <translation>VirtualBox - ajonaikainen virhe</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="529"/>

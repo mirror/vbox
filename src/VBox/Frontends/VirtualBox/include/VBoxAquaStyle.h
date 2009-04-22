@@ -29,11 +29,11 @@
 #include <Q3PopupMenu>
 
 /**
- * The Virtual Box QAquaStyle overrider.
- * 
- * The purpose of this class is to make some small adjustments to 
+ * The VirtualBox QAquaStyle overrider.
+ *
+ * The purpose of this class is to make some small adjustments to
  * the QAquaStyle so it looks and works better.
- * 
+ *
  * Since the QAquaStyle class isn't exported we have to do all the
  * virtual method work our selves. This also means we doesn't have
  * access to any protected or QAquaStyle methods, too bad.
@@ -53,9 +53,9 @@ public:
     virtual void unPolish( QApplication *app );
     virtual void polish( QPalette &p );
     virtual void polishPopupMenu( Q3PopupMenu *m );
-    virtual QRect itemRect( QPainter *p, const QRect &r, int flags, bool enabled, const QPixmap *pixmap, 
+    virtual QRect itemRect( QPainter *p, const QRect &r, int flags, bool enabled, const QPixmap *pixmap,
                             const QString &text, int len = -1 ) const;
-    virtual void drawItem( QPainter *p, const QRect &r, int flags, const QColorGroup &g, bool enabled, 
+    virtual void drawItem( QPainter *p, const QRect &r, int flags, const QColorGroup &g, bool enabled,
                            const QPixmap *pixmap, const QString &text, int len = -1, const QColor *penColor = 0 ) const;
     virtual void drawPrimitive( PrimitiveElement pe, QPainter *p, const QRect &r, const QColorGroup &cg,
                                 SFlags flags = Style_Default, const QStyleOption &foo = QStyleOption::Default ) const;
@@ -65,9 +65,9 @@ public:
                                   const QStyleOption &foo = QStyleOption::Default ) const;
     virtual QRect subRect( SubRect r, const QWidget *widget ) const;
     virtual int pixelMetric( PixelMetric metric, const QWidget *widget = 0 ) const;
-    virtual QSize sizeFromContents( ContentsType contents, const QWidget *widget, const QSize &contentsSize, 
+    virtual QSize sizeFromContents( ContentsType contents, const QWidget *widget, const QSize &contentsSize,
                                     const QStyleOption &foo = QStyleOption::Default ) const;
-    virtual int styleHint( StyleHint stylehint, const QWidget *widget = 0, const QStyleOption &foo = QStyleOption::Default, 
+    virtual int styleHint( StyleHint stylehint, const QWidget *widget = 0, const QStyleOption &foo = QStyleOption::Default,
                            QStyleHintReturn* returnData = 0 ) const;
     virtual QPixmap stylePixmap( StylePixmap stylepixmap, const QWidget *widget = 0, const QStyleOption &foo = QStyleOption::Default ) const;
     virtual void drawComplexControl( ComplexControl control, QPainter *p, const QWidget *widget, const QRect &r,
