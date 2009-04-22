@@ -26,7 +26,6 @@
 
 #include <iprt/string.h>
 #include <iprt/env.h>
-#include <iprt/uuid.h>
 #include <VBox/log.h>
 
 #include "VBoxCAPI_v2_5.h"
