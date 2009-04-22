@@ -17,6 +17,13 @@
 #include "cr_timer.h"
 #include "cr_glstate.h"
 
+typedef struct context_info_t ContextInfo;
+
+struct context_info_t {
+    CRContext *clientState;  /* used to store client-side GL state */
+    GLint clientCtx;         /* client context ID */
+};
+
 typedef struct {
 	int id;
 	int has_child;
@@ -27,6 +34,14 @@ typedef struct {
 	int default_viewport;
 
 	CRCurrentStatePointers current;
+
+    CRContext *defaultctx;
+    int numContexts;
+    ContextInfo context[CR_MAX_CONTEXTS];
+
+#ifdef CHROMIUM_THREADSAFE
+    CRmutex mutex;
+#endif
 } feedbackSPU;
 
 extern feedbackSPU feedback_spu;

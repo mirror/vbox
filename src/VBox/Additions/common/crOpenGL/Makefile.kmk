@@ -397,6 +397,7 @@ VBoxOGLarrayspu_INTERMEDIATES = \
 VBoxOGLfeedbackspu_SOURCES     = \
 	feedback/feedbackspu_config.c \
 	feedback/feedbackspu_init.c \
+	feedback/feedback_context.c \
 	$(VBOX_PATH_CROGL_GENFILES)/feedbackspu.c \
 	$(VBOX_PATH_CROGL_GENFILES)/feedbackspu_state.c
 VBoxOGLfeedbackspu_SOURCES.win = \

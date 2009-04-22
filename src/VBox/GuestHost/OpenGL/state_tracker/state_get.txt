@@ -292,7 +292,7 @@ GLfloat GL_SMOOTH_POINT_SIZE_GRANULARITY g->limits.pointSizeGranularity
 GLfloat GL_ALIASED_LINE_WIDTH_RANGE      g->limits.aliasedLineWidthRange[0] g->limits.aliasedLineWidthRange[1]
 GLfloat GL_SMOOTH_LINE_WIDTH_RANGE       g->limits.smoothLineWidthRange[0] g->limits.smoothLineWidthRange[1]
 GLfloat GL_SMOOTH_LINE_WIDTH_GRANULARITY g->limits.lineWidthGranularity
-GLint	GL_RENDER_MODE					 GL_RENDER
+GLint	GL_RENDER_MODE					 g->renderMode
 
 # Feedback
 

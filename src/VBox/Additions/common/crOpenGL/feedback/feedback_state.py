@@ -15,16 +15,19 @@ print """
 #include "feedbackspu.h"
 #include "feedbackspu_proto.h"
 """
+custom = ["CreateContext", "MakeCurrent", "DestroyContext"]
 
 keys = apiutil.GetDispatchedFunctions(sys.argv[1]+"/APIspec.txt")
 
 for func_name in keys:
-	if apiutil.FindSpecial( "feedback_state", func_name ):
-		return_type = apiutil.ReturnType(func_name)
-		params = apiutil.Parameters(func_name)
-		print '%s FEEDBACKSPU_APIENTRY feedbackspu_%s( %s )' % (return_type, func_name, apiutil.MakeDeclarationString(params))
-		print '{'
-		print '\tcrState%s( %s );' % (func_name, apiutil.MakeCallString(params))
-		print ''
-		print '\tfeedback_spu.super.%s( %s );' % (func_name, apiutil.MakeCallString(params))
-		print '}'
+    if apiutil.FindSpecial( "feedback_state", func_name ):
+        if func_name in custom:
+            continue
+        return_type = apiutil.ReturnType(func_name)
+        params = apiutil.Parameters(func_name)
+        print '%s FEEDBACKSPU_APIENTRY feedbackspu_%s( %s )' % (return_type, func_name, apiutil.MakeDeclarationString(params))
+        print '{'
+        print '\tcrState%s( %s );' % (func_name, apiutil.MakeCallString(params))
+        print ''
+        print '\tfeedback_spu.super.%s( %s );' % (func_name, apiutil.MakeCallString(params))
+        print '}'
