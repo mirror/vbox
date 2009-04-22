@@ -2718,4 +2718,5 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
     return rc;
 }
+
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
