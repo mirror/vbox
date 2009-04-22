@@ -2844,7 +2844,7 @@ static void notdirty_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t 
     int dirty_flags;
 #if defined(VBOX)
     ram_addr = addr;
-#elif
+#else
     ram_addr = addr - (unsigned long)phys_ram_base;
 #endif
 #ifdef VBOX

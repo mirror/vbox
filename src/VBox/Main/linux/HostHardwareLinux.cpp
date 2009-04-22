@@ -197,7 +197,7 @@ int VBoxMainDriveInfo::updateFloppies ()
             char devName[10];
             for (int i = 0; i <= 7; i++)
             {
-                sprintf(devName, "/dev/fd%d", i);
+                RTStrPrintf(devName, sizeof(devName), "/dev/fd%d", i);
                 if (validateDevice(devName, false))
                     try
                     {
