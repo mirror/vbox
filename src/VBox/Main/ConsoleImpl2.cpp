@@ -356,26 +356,22 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
     rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
 
-    BOOL fEfiEnabled;
-    /** @todo: implement appropriate getter */
-#ifdef VBOX_WITH_EFI
-    fEfiEnabled = true;
-#else
-    fEfiEnabled = false;
-#endif
-
-    if (fEfiEnabled)
-    {
-        rc = CFGMR3InsertNode(pDevices, "efi", &pDev);                       RC_CHECK();
-        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                        RC_CHECK();
-        rc = CFGMR3InsertInteger(pInst, "Trusted",   1);     /* boolean */   RC_CHECK();
-    }
-
     /*
-     * PC Bios.
+     * Firmware.
      */
+#ifdef VBOX_WITH_EFI
+    /** @todo: implement appropriate getter */
+    Bstr tmpStr1;
+    hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/UseEFI"), tmpStr1.asOutParam());    H();
+    BOOL fEfiEnabled = tmpStr1 == Bstr("on");
+#else
+    BOOL fEfiEnabled = false;
+#endif
     if (!fEfiEnabled)
     {
+        /*
+         * PC Bios.
+         */
         rc = CFGMR3InsertNode(pDevices, "pcbios", &pDev);                               RC_CHECK();
         rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
         rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
@@ -430,6 +426,15 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             rc = CFGMR3InsertString(pBiosCfg, szParamName, pszBootDevice);              RC_CHECK();
         }
     }
+    else
+    {
+        /*
+         * EFI.
+         */
+        rc = CFGMR3InsertNode(pDevices, "efi", &pDev);                       RC_CHECK();
+        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                        RC_CHECK();
+        rc = CFGMR3InsertInteger(pInst, "Trusted",   1);     /* boolean */   RC_CHECK();
+    }
 
     /*
      * The time offset
@@ -480,16 +485,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertInteger(pInst, "PCIBusNo",             1);/* ->pcibridge[0] */ RC_CHECK();
 #endif
 
-
-    Bstr tmpStr;
-    rc = pMachine->GetExtraData(Bstr("VBoxInternal/Devices/SupportExtHwProfile"), tmpStr.asOutParam());
-
-    BOOL fExtProfile;
-
-    if (SUCCEEDED(rc))
-        fExtProfile = (tmpStr == Bstr("on"));
-    else
-        fExtProfile = false;
+    /*
+     * Temporary hack for enabling the next three devices and various ACPI features.
+     */
+    Bstr tmpStr2;
+    hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/SupportExtHwProfile"), tmpStr2.asOutParam()); H();
+    BOOL fExtProfile = tmpStr2 == Bstr("on");
 
     /*
      * High Precision Event Timer (HPET)
@@ -500,7 +501,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #else
     fHpetEnabled = false;
 #endif
-
     if (fHpetEnabled)
     {
         rc = CFGMR3InsertNode(pDevices, "hpet", &pDev);                      RC_CHECK();
@@ -534,7 +534,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #else
     fLpcEnabled = false;
 #endif
-
     if (fLpcEnabled)
     {
         rc = CFGMR3InsertNode(pDevices, "lpc", &pDev);                       RC_CHECK();
