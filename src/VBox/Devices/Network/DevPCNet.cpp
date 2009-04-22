@@ -1905,30 +1905,20 @@ static void pcnetReceiveNoSync(PCNetState *pThis, const uint8_t *buf, size_t siz
 
             size_t count = RT_MIN(4096 - (size_t)rmd.rmd1.bcnt, size);
             RTGCPHYS32 rbadr = PHYSADDR(pThis, rmd.rmd0.rbadr);
-#if 0
-            if (pThis->fPrivIfEnabled)
-            {
-                uint8_t *pb = (uint8_t*)pThis->CTX_SUFF(pSharedMMIO)
-                            + rbadr - pThis->GCRDRA + pThis->CTX_SUFF(pSharedMMIO)->V.V1.offRxDescriptors;
-                memcpy(pb, src, count);
-            }
-            else
-#endif
-            {
-                /* We have to leave the critical section here or we risk deadlocking
-                 * with EMT when the write is to an unallocated page or has an access
-                 * handler associated with it.
-                 *
-                 * This shouldn't be a problem because:
-                 *  - any modification to the RX descriptor by the driver is
-                 *    forbidden as long as it is owned by the device
-                 *  - we don't cache any register state beyond this point
-                 */
-                PDMCritSectLeave(&pThis->CritSect);
-                PDMDevHlpPhysWrite(pDevIns, rbadr, src, count);
-                int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
-                AssertReleaseRC(rc);
-            }
+
+            /* We have to leave the critical section here or we risk deadlocking
+             * with EMT when the write is to an unallocated page or has an access
+             * handler associated with it.
+             *
+             * This shouldn't be a problem because:
+             *  - any modification to the RX descriptor by the driver is
+             *    forbidden as long as it is owned by the device
+             *  - we don't cache any register state beyond this point
+             */
+            PDMCritSectLeave(&pThis->CritSect);
+            PDMDevHlpPhysWrite(pDevIns, rbadr, src, count);
+            int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+            AssertReleaseRC(rc);
 
             src  += count;
             size -= count;
@@ -1959,24 +1949,15 @@ static void pcnetReceiveNoSync(PCNetState *pThis, const uint8_t *buf, size_t siz
 
                 count = RT_MIN(4096 - (size_t)rmd.rmd1.bcnt, size);
                 RTGCPHYS32 rbadr = PHYSADDR(pThis, rmd.rmd0.rbadr);
-#if 0
-                if (pThis->fPrivIfEnabled)
-                {
-                    uint8_t *pb = (uint8_t*)pThis->CTX_SUFF(pSharedMMIO)
-                                + rbadr - pThis->GCRDRA + pThis->CTX_SUFF(pSharedMMIO)->V.V1.offRxDescriptors;
-                    memcpy(pb, src, count);
-                }
-                else
-#endif
-                {
-                    /* We have to leave the critical section here or we risk deadlocking
-                     * with EMT when the write is to an unallocated page or has an access
-                     * handler associated with it. See above for additional comments. */
-                    PDMCritSectLeave(&pThis->CritSect);
-                    PDMDevHlpPhysWrite(pDevIns, rbadr, src, count);
-                    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
-                    AssertReleaseRC(rc);
-                }
+
+                /* We have to leave the critical section here or we risk deadlocking
+                 * with EMT when the write is to an unallocated page or has an access
+                 * handler associated with it. See above for additional comments. */
+                PDMCritSectLeave(&pThis->CritSect);
+                PDMDevHlpPhysWrite(pDevIns, rbadr, src, count);
+                int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+                AssertReleaseRC(rc);
+
                 src  += count;
                 size -= count;
 
