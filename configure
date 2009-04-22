@@ -1562,6 +1562,7 @@ check_libcap()
   test_header "libcap library"
   cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
+#include <sys/types.h>
 #include <sys/capability.h>
 
 extern "C" int main(void)

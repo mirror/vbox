@@ -58,6 +58,8 @@
 # include <unistd.h>
 #endif
 
+#include <cstdio>
+
 /* XXX Temporarily. Don't rely on ther user to hack the Makefile himsef! */
 QString g_QStrHintLinuxNoMemory = QApplication::tr(
   "This error means that the kernel driver was either not able to "
