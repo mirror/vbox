@@ -504,7 +504,7 @@ static DECLCALLBACK(void) HWACCMR0InitCPU(RTCPUID idCpu, void *pvUser1, void *pv
     int     *paRc         = (int *)pvUser2;
     uint64_t val;
 
-#ifdef LOG_ENABLED
+#if defined(LOG_ENABLED) && !defined(DEBUG_bird)
     SUPR0Printf("HWACCMR0InitCPU cpu %d\n", idCpu);
 #endif
     Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /// @todo fix idCpu == index assumption (rainy day)
@@ -621,7 +621,7 @@ VMMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM)
                     Assert(pvR0);
                     ASMMemZeroPage(pvR0);
 
-#ifdef LOG_ENABLED
+#if defined(LOG_ENABLED) && !defined(DEBUG_bird)
                     SUPR0Printf("address %x phys %x\n", pvR0, (uint32_t)RTR0MemObjGetPagePhysAddr(HWACCMR0Globals.aCpuInfo[i].pMemObj, 0));
 #endif
                 }
@@ -1125,7 +1125,7 @@ VMMR0DECL(int)   HWACCMR0TestSwitcher3264(PVM pVM)
 
     pCtx = CPUMQueryGuestCtxPtr(pVCpu);
 
-    STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatWorldSwitch3264, z);   
+    STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatWorldSwitch3264, z);
     if (pVM->hwaccm.s.vmx.fSupported)
         rc = VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnTest64, 5, &aParam[0]);
     else
@@ -1194,7 +1194,7 @@ VMMR0DECL(int) HWACCMR0EnterSwitcher(PVM pVM, bool *pfVTxDisabled)
     case VMMSWITCHER_PAE_TO_PAE:
         return VINF_SUCCESS;    /* safe switchers as they don't turn off paging */
 
-    case VMMSWITCHER_32_TO_PAE: 
+    case VMMSWITCHER_32_TO_PAE:
     case VMMSWITCHER_PAE_TO_32: /* is this one actually used?? */
     case VMMSWITCHER_AMD64_TO_32:
     case VMMSWITCHER_AMD64_TO_PAE:

@@ -72,7 +72,7 @@ VMMR0DECL(int) SVMR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RT
 
     /* We must turn on AMD-V and setup the host state physical address, as those MSRs are per-cpu/core. */
 
-#ifdef LOG_ENABLED
+#if defined(LOG_ENABLED) && !defined(DEBUG_bird)
     SUPR0Printf("SVMR0EnableCpu cpu %d page (%x) %x\n", pCpu->idCpu, pvPageCpu, (uint32_t)pPageCpuPhys);
 #endif
 
@@ -100,7 +100,7 @@ VMMR0DECL(int) SVMR0DisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS p
     AssertReturn(pPageCpuPhys, VERR_INVALID_PARAMETER);
     AssertReturn(pvPageCpu, VERR_INVALID_PARAMETER);
 
-#ifdef LOG_ENABLED
+#if defined(LOG_ENABLED) && !defined(DEBUG_bird)
     SUPR0Printf("SVMR0DisableCpu cpu %d\n", pCpu->idCpu);
 #endif
 
