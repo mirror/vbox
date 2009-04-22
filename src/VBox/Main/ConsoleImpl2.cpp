@@ -363,7 +363,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     /** @todo: implement appropriate getter */
     Bstr tmpStr1;
     hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/UseEFI"), tmpStr1.asOutParam());    H();
-    BOOL fEfiEnabled = tmpStr1 == Bstr("on");
+    BOOL fEfiEnabled = !tmpStr1.isEmpty();
 #else
     BOOL fEfiEnabled = false;
 #endif
