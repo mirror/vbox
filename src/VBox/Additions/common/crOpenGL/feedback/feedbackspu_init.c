@@ -32,6 +32,10 @@ static SPUFunctions *feedbackSPUInit( int id, SPU *child, SPU *self,
 	(void) context_id;
 	(void) num_contexts;
 
+#ifdef CHROMIUM_THREADSAFE
+    crInitMutex(&feedback_spu.mutex);
+#endif
+
 	feedback_spu.id = id;
 	feedback_spu.has_child = 0;
 	if (child)
@@ -46,9 +50,12 @@ static SPUFunctions *feedbackSPUInit( int id, SPU *child, SPU *self,
 
 	/* create/init default state tracker */
 	crStateInit();
-	ctx = crStateGetCurrent();
-	CRASSERT(ctx);
-	crStateSetCurrentPointers(ctx, &feedback_spu.current);
+
+    feedback_spu.defaultctx = crStateCreateContext(NULL, 0, NULL);
+    crStateSetCurrent(feedback_spu.defaultctx);
+
+    feedback_spu.numContexts = 0;
+    crMemZero(feedback_spu.context, CR_MAX_CONTEXTS * sizeof(ContextInfo));
 
 	return &feedback_functions;
 }
