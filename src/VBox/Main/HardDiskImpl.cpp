@@ -281,8 +281,15 @@ public:
             }
         }
 
+        /* We have to fetch the state with the COM method, cause it's possible
+           that the hard disk isn't fully initialized yet. See HRESULT
+           ImageMediumBase::protectedInit (VirtualBox *aVirtualBox, const
+           settings::Key &aImageNode) for an explanation why. */
+        MediaState_T m;
+        rc = aHardDisk->COMGETTER(State)(&m);
+        CheckComRCReturnRC (rc);
         /* go to Deleting */
-        switch (aHardDisk->m.state)
+        switch (m)
         {
             case MediaState_Created:
                 aHardDisk->m.state = MediaState_Deleting;
