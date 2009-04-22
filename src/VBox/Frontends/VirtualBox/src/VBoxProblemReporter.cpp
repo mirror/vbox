@@ -1225,13 +1225,14 @@ int VBoxProblemReporter::confirmDeletingHostInterface (const QString &aName,
                                                        QWidget *aParent)
 {
     return vboxProblem().message (aParent, VBoxProblemReporter::Question,
-        tr ("<p>Do you want to remove the selected host network interface "
-            "<nobr><b>%1</b>?</nobr></p>"
-            "<p><b>Note:</b> This interface may be in use by one or more "
-            "network adapters of this or another VM. After it is removed, these "
-            "adapters will no longer work until you correct their settings by "
-            "either choosing a different interface name or a different adapter "
-            "attachment type.</p>").arg (aName),
+        tr ("<p>Deleting this host-only network will lead to the deleting of "
+            "the host-only interface this network is based on. Do you want to "
+            "remove the (host-only network) interface <nobr><b>%1</b>?</nobr></p>"
+            "<p><b>Note:</b> this interface may be in use by one or more "
+            "virtual network adapters belonging to one of your VMs. "
+            "After it is removed, these adapters will no longer be usable until "
+            "you correct their settings by either choosing a different interface "
+            "name or a different adapter attachment type.</p>").arg (aName),
         0, /* autoConfirmId */
         QIMessageBox::Ok | QIMessageBox::Default,
         QIMessageBox::Cancel | QIMessageBox::Escape);
