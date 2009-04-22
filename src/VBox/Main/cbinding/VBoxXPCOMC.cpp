@@ -26,6 +26,7 @@
 
 #include <iprt/string.h>
 #include <iprt/env.h>
+#include <iprt/uuid.h>
 #include <VBox/log.h>
 
 #include "VBoxCAPI_v2_5.h"
@@ -79,9 +80,15 @@ VBoxComInitialize(const char *pszVirtualBoxIID, IVirtualBox **ppVirtualBox,
                   const char *pszSessionIID, ISession **ppSession)
 {
     nsresult rc;
+    nsID virtualBoxIID;
+    nsID sessionIID;
 
     *ppSession    = NULL;
     *ppVirtualBox = NULL;
+
+    /* convert the string representation of UUID to nsIID type */
+    if (!(virtualBoxIID.Parse(pszVirtualBoxIID) && sessionIID.Parse(pszSessionIID)))
+        return;
 
     rc = com::Initialize();
     if (NS_FAILED(rc))
@@ -109,7 +116,7 @@ VBoxComInitialize(const char *pszVirtualBoxIID, IVirtualBox **ppVirtualBox,
 
     rc = manager->CreateInstanceByContractID(NS_VIRTUALBOX_CONTRACTID,
                                              nsnull,
-                                             NS_GET_IID(IVirtualBox), /** @todo Use pszVirtualBoxIID here! */
+                                             virtualBoxIID,
                                              (void **)ppVirtualBox);
     if (NS_FAILED(rc))
     {
@@ -122,7 +129,7 @@ VBoxComInitialize(const char *pszVirtualBoxIID, IVirtualBox **ppVirtualBox,
 
     rc = manager->CreateInstanceByContractID (NS_SESSION_CONTRACTID,
                                               nsnull,
-                                              NS_GET_IID(ISession), /** @todo Use */
+                                              sessionIID,
                                               (void **)ppSession);
     if (NS_FAILED(rc))
     {
