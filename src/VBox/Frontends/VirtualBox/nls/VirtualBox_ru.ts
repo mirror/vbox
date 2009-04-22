@@ -91,6 +91,10 @@
         <source>Unknown %2 error during initialization of the Runtime</source>
         <translation>Неизвестная ошибка инициализации программы (%2)</translation>
     </message>
+    <message>
+        <source>Kernel driver not accessible</source>
+        <translation>Драйвер ядра не доступен</translation>
+    </message>
 </context>
 <context>
     <name>QIArrowSplitter</name>
@@ -378,23 +382,23 @@
     <name>VBoxAddNIDialog</name>
     <message>
         <source>Add Host Interface</source>
-        <translation>Добавить хост-интерфейс</translation>
+        <translation type="obsolete">Добавить хост-интерфейс</translation>
     </message>
     <message>
         <source>Interface Name</source>
-        <translation>Имя интерфейса</translation>
+        <translation type="obsolete">Имя интерфейса</translation>
     </message>
     <message>
         <source>Descriptive name of the new network interface</source>
-        <translation>Описательное имя нового сетевого интерфейса</translation>
+        <translation type="obsolete">Описательное имя нового сетевого интерфейса</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation>&amp;ОК</translation>
+        <translation type="obsolete">&amp;ОК</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Отмена</translation>
+        <translation type="obsolete">Отмена</translation>
     </message>
 </context>
 <context>
@@ -971,6 +975,10 @@
     <message>
         <source>Sun VirtualBox</source>
         <translation>Sun VirtualBox</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</source>
+        <translation>&lt;qt&gt;Показывает статус опций аппаратной виртуализации используемых виртуальной машиной:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -2336,7 +2344,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Bridged network, %1</source>
         <comment>details report (network)</comment>
-        <translation>Сетевой мост, &apos;%1&apos;</translation>
+        <translation type="obsolete">Сетевой мост, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Internal network, &apos;%1&apos;</source>
@@ -2346,7 +2354,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Host-only network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation>Виртуальная сеть хоста, &apos;%1&apos;</translation>
+        <translation type="obsolete">Виртуальная сеть хоста, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>SCSI</source>
@@ -2356,12 +2364,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Bridged Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>Сетевой мост</translation>
+        <translation type="obsolete">Сетевой мост</translation>
     </message>
     <message>
         <source>Host-only Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>Виртуальная сеть хоста</translation>
+        <translation type="obsolete">Виртуальная сеть хоста</translation>
     </message>
     <message>
         <source>PIIX3</source>
@@ -2397,6 +2405,26 @@ p, li { white-space: pre-wrap; }
         <source>Intel PRO/1000 MT Server (82545EM)</source>
         <comment>NetworkAdapterType</comment>
         <translation>Intel PRO/1000 MT Server (82545EM)</translation>
+    </message>
+    <message>
+        <source>Bridged adapter, %1</source>
+        <comment>details report (network)</comment>
+        <translation>Сетевой мост, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Host-only adapter, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation>Виртуальный адаптер хоста, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Bridged Adapter</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation>Сетевой мост</translation>
+    </message>
+    <message>
+        <source>Host-only Adapter</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation>Виртуальный адаптер хоста</translation>
     </message>
 </context>
 <context>
@@ -3748,7 +3776,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Вы уверены, что хотите удалить выбранный сетевой адаптер хоста &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Примечание:&lt;/b&gt; Этот адаптер может использоваться виртуальными сетевыми адаптерами нескольких ВМ. После его удаления такие виртуальные адаптеры не будут работать, пока Вы не исправите их настройки выбором другого сетевого адаптера хоста или изменением типа подключения виртуального адаптера.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Вы уверены, что хотите удалить выбранный сетевой адаптер хоста &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Примечание:&lt;/b&gt; Этот адаптер может использоваться виртуальными сетевыми адаптерами нескольких ВМ. После его удаления такие виртуальные адаптеры не будут работать, пока Вы не исправите их настройки выбором другого сетевого адаптера хоста или изменением типа подключения виртуального адаптера.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create the host-only network interface.</source>
@@ -3785,6 +3813,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Не удалось экспортировать конфигурацию &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting this host-only network will lead to the deleting of the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Удаление данной виртуальной сети хоста приведёт к удалению виртуального сетевого адаптера хоста, на котором основана данная сеть. Хотите ли Вы удалить адаптер &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Примечание:&lt;/b&gt; этот виртуальный сетевой адаптер хоста может использоваться в данный момент одним или более виртуальным сетевым адаптером гостя, принадлежащим одной из Ваших ВМ. После того как он будет удалён, эти гостевые адаптеры не будут функционировать до тех пор, пока Вы не скорректируете их настройки, выбрав другой виртуальный сетевой адаптер хоста или иной тип подключения к сети.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -5262,45 +5294,45 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Adapter</source>
         <comment>network</comment>
-        <translation>Адаптер</translation>
+        <translation type="obsolete">Адаптер</translation>
     </message>
     <message>
         <source>Not selected</source>
         <comment>adapter</comment>
-        <translation>Не выбран</translation>
+        <translation type="obsolete">Не выбран</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>internal</comment>
-        <translation>Сеть</translation>
+        <translation type="obsolete">Сеть</translation>
     </message>
     <message>
         <source>Not selected</source>
         <comment>network</comment>
-        <translation>Не выбрана</translation>
+        <translation type="obsolete">Не выбрана</translation>
     </message>
     <message>
         <source>MAC Address</source>
-        <translation>MAC-адрес</translation>
+        <translation type="obsolete">MAC-адрес</translation>
     </message>
     <message>
         <source>Not selected</source>
         <comment>address</comment>
-        <translation>Не указан</translation>
+        <translation type="obsolete">Не указан</translation>
     </message>
     <message>
         <source>Cable</source>
-        <translation>Кабель</translation>
+        <translation type="obsolete">Кабель</translation>
     </message>
     <message>
         <source>Connected</source>
         <comment>cable</comment>
-        <translation>Подсоединён</translation>
+        <translation type="obsolete">Подсоединён</translation>
     </message>
     <message>
         <source>Not connected</source>
         <comment>cable</comment>
-        <translation>Не подсоединён</translation>
+        <translation type="obsolete">Не подсоединён</translation>
     </message>
     <message>
         <source>Adapter &amp;Type:</source>
@@ -5308,11 +5340,8 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Open extended settings dialog for current attachment type.</source>
-        <translation>Открыть диалог расширенных настроек для выбранного типа подключения.</translation>
+        <translation type="obsolete">Открыть диалог расширенных настроек для выбранного типа подключения.</translation>
     </message>
-</context>
-<context>
-    <name>VBoxVMSettingsNetworkDetails</name>
     <message>
         <source>no bridged network adapter is selected</source>
         <translation>не выбран адаптер для подключения по сетевому мосту</translation>
@@ -5322,24 +5351,56 @@ p, li { white-space: pre-wrap; }
         <translation>не указано имя внутренней сети</translation>
     </message>
     <message>
-        <source>no host-only adapter is selected</source>
+        <source>no host-only network adapter is selected</source>
         <translation>не выбран виртуальный сетевой адаптер хоста</translation>
     </message>
     <message>
+        <source>Not selected</source>
+        <comment>network adapter name</comment>
+        <translation>Не выбрано</translation>
+    </message>
+    <message>
+        <source>Open additional options dialog for current attachment type.</source>
+        <translation>Открыть диалог дополнительных опций данного типа подключения.</translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation>&amp;Имя:</translation>
+    </message>
+    <message>
+        <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
+        <translation>Позволяет выбрать имя сетевого адаптера, если тип подключения - &lt;b&gt;Сетевой мост&lt;/b&gt; или &lt;b&gt;Виртуальный адаптер хоста&lt;/b&gt;, либо имя внутренней сети, если тип подключения - &lt;b&gt;Внутренняя сеть&lt;/b&gt;.</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxVMSettingsNetworkDetails</name>
+    <message>
+        <source>no bridged network adapter is selected</source>
+        <translation type="obsolete">не выбран адаптер для подключения по сетевому мосту</translation>
+    </message>
+    <message>
+        <source>no internal network name is specified</source>
+        <translation type="obsolete">не указано имя внутренней сети</translation>
+    </message>
+    <message>
+        <source>no host-only adapter is selected</source>
+        <translation type="obsolete">не выбран виртуальный сетевой адаптер хоста</translation>
+    </message>
+    <message>
         <source>Basic Details</source>
-        <translation>Базовые атрибуты</translation>
+        <translation type="obsolete">Базовые атрибуты</translation>
     </message>
     <message>
         <source>Bridged Network Details</source>
-        <translation>Атрибуты сетевого моста</translation>
+        <translation type="obsolete">Атрибуты сетевого моста</translation>
     </message>
     <message>
         <source>Internal Network Details</source>
-        <translation>Атрибуты внутренней сети</translation>
+        <translation type="obsolete">Атрибуты внутренней сети</translation>
     </message>
     <message>
         <source>Host-only Network Details</source>
-        <translation>Атрибуты виртуальной сети хоста</translation>
+        <translation type="obsolete">Атрибуты виртуальной сети хоста</translation>
     </message>
     <message>
         <source>Not selected</source>
@@ -5347,35 +5408,35 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Host Settings</source>
-        <translation>Настройки хоста</translation>
+        <translation type="obsolete">Настройки хоста</translation>
     </message>
     <message>
         <source>&amp;Bridged Network Adapter:</source>
-        <translation>Адаптер сетевого &amp;моста:</translation>
+        <translation type="obsolete">Адаптер сетевого &amp;моста:</translation>
     </message>
     <message>
         <source>Displays the name of the host network adapter selected for bridged networking.</source>
-        <translation>Отображает имя адаптера хоста, используемого для создания сетевого моста.</translation>
+        <translation type="obsolete">Отображает имя адаптера хоста, используемого для создания сетевого моста.</translation>
     </message>
     <message>
         <source>Internal &amp;Network:</source>
-        <translation>&amp;Внутренняя сеть:</translation>
+        <translation type="obsolete">&amp;Внутренняя сеть:</translation>
     </message>
     <message>
         <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation>Отображает имя внутренней сети для данного виртуального адаптера.</translation>
+        <translation type="obsolete">Отображает имя внутренней сети для данного виртуального адаптера.</translation>
     </message>
     <message>
         <source>Host-only &amp;Network Adapter:</source>
-        <translation>&amp;Виртуальный сетевой адаптер хоста:</translation>
+        <translation type="obsolete">&amp;Виртуальный сетевой адаптер хоста:</translation>
     </message>
     <message>
         <source>Displays the name of the VirtualBox network adapter selected for host-only networking.</source>
-        <translation>Отображает имя виртуального адаптера VirtualBox, выбранного для виртуальной сети хоста.</translation>
+        <translation type="obsolete">Отображает имя виртуального адаптера VirtualBox, выбранного для виртуальной сети хоста.</translation>
     </message>
     <message>
         <source>Guest Settings</source>
-        <translation>Настройки гостя</translation>
+        <translation type="obsolete">Настройки гостя</translation>
     </message>
     <message>
         <source>Guest &amp;MAC Address:</source>
@@ -5396,6 +5457,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation>Определяет, подключен виртуальный сетевой кабель при запуске машины или нет.</translation>
+    </message>
+    <message>
+        <source>Additional Options</source>
+        <translation>Дополнительные опции</translation>
     </message>
 </context>
 <context>
