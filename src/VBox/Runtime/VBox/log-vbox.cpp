@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Virtual Box Runtime - Logging configuration.
+ * VirtualBox Runtime - Logging configuration.
  */
 
 /*

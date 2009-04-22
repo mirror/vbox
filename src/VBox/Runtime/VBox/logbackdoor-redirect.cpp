@@ -1,8 +1,8 @@
 /* $Id$ */
 /** @file
- * Virtual Box Runtime - RTLog stubs for the stripped down IPRT used by
- *                       RuntimeGuestR3Shared (X11), output is redirected
- *                       to the RTLogBackdoor API where possible.
+ * VirtualBox Runtime - RTLog stubs for the stripped down IPRT used by
+ *                      RuntimeGuestR3Shared (X11), output is redirected
+ *                      to the RTLogBackdoor API where possible.
  */
 
 /*

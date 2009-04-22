@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Virtual Box Runtime - Guest Backdoor Logging.
+ * VirtualBox Runtime - Guest Backdoor Logging.
  */
 
 /*
