@@ -1216,9 +1216,6 @@ STDMETHODIMP Host::COMGETTER(UTCTime)(LONG64 *aUTCTime)
 
 // IHost methods
 ////////////////////////////////////////////////////////////////////////////////
-
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
-
 STDMETHODIMP
 Host::CreateHostOnlyNetworkInterface (IHostNetworkInterface **aHostNetworkInterface,
                                   IProgress **aProgress)
@@ -1266,8 +1263,6 @@ Host::RemoveHostOnlyNetworkInterface (IN_GUID aId,
 
     return r == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
 }
-
-#endif /* defined(RT_OS_WINDOWS) || defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) */
 
 STDMETHODIMP Host::CreateUSBDeviceFilter (IN_BSTR aName, IHostUSBDeviceFilter **aFilter)
 {
