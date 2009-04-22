@@ -441,6 +441,8 @@ static int vboxadd_hgcm_alloc_buffer(hgcm_bounce_buffer **ppBuf, void *pUser,
     int rc = 0;
 
     AssertPtrReturn(ppBuf, -EINVAL);
+    /* Empty buffers are allowed, but then the user pointer should be NULL */
+    AssertReturn(((cb > 0) && VALID_PTR(pUser)) || (pUser == NULL), -EINVAL);
 
     pBuf = RTMemAlloc(sizeof(*pBuf));
     if (pBuf == NULL)
@@ -458,9 +460,8 @@ static int vboxadd_hgcm_alloc_buffer(hgcm_bounce_buffer **ppBuf, void *pUser,
                 rc = -EFAULT;
         }
         else
-            /* Empty buffers are allowed, but then the user pointer is not
-             * required to be valid, and we definitely don't want to copy
-             * anything. */
+            /* We definitely don't want to copy anything from an empty
+             * buffer. */
             pKernel = NULL;
     }
     if (rc >= 0)
