@@ -392,7 +392,7 @@ void VBoxGLSettingsNetwork::addInterface()
 #if defined (Q_WS_WIN32)
     /* Allow the started helper process to make itself the foreground window */
     AllowSetForegroundWindow (ASFW_ANY);
-
+#endif
     /* Creating interface */
     CHostNetworkInterface iface;
     CHost host = vboxGlobal().virtualBox().GetHost();
@@ -414,7 +414,7 @@ void VBoxGLSettingsNetwork::addInterface()
     }
     else
         vboxProblem().cannotCreateHostInterface (host, this);
-
+#if defined (Q_WS_WIN32)
     /* Allow the started helper process to make itself the foreground window */
     AllowSetForegroundWindow (ASFW_ANY);
 #endif
@@ -425,7 +425,7 @@ void VBoxGLSettingsNetwork::remInterface()
 #if defined (Q_WS_WIN32)
     /* Allow the started helper process to make itself the foreground window */
     AllowSetForegroundWindow (ASFW_ANY);
-
+#endif
     /* Check interface presence & name */
     NetworkItem *item = static_cast <NetworkItem*> (mTwInterfaces->currentItem());
     AssertMsg (item, ("Current item should be selected!\n"));
@@ -454,7 +454,7 @@ void VBoxGLSettingsNetwork::remInterface()
     }
     if (!host.isOk())
         vboxProblem().cannotRemoveHostInterface (host, iface, this);
-
+#if defined (Q_WS_WIN32)
     /* Allow the started helper process to make itself the foreground window */
     AllowSetForegroundWindow (ASFW_ANY);
 #endif
@@ -489,11 +489,6 @@ void VBoxGLSettingsNetwork::updateCurrentItem()
     /* Update availability */
     mRemInterface->setEnabled (item);
     mEditInterface->setEnabled (item);
-#if !defined (Q_WS_WIN32)
-    /* Disable add/remove for all except win for now */
-    mAddInterface->setEnabled (false);
-    mRemInterface->setEnabled (false);
-#endif
 }
 
 void VBoxGLSettingsNetwork::showContextMenu (const QPoint &aPos)
