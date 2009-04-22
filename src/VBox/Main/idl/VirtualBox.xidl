@@ -6967,7 +6967,7 @@
 
   <interface
      name="IHost" extends="$unknown"
-     uuid="926469ca-9091-42ef-928e-582d78b66c70"
+     uuid="fa7b3d79-972c-4f18-9f61-6b20c88559b6"
      wsmap="managed"
      >
     <desc>
@@ -7108,7 +7108,6 @@
       <desc>Returns the current host time in milliseconds since 1970-01-01 UTC.</desc>
     </attribute>
 
-<if target="midl">
     <method name="createHostOnlyNetworkInterface">
       <desc>
         Creates a new adapter for Host Only Networking.
@@ -7127,6 +7126,7 @@
         </desc>
       </param>
     </method>
+
     <method name="removeHostOnlyNetworkInterface">
       <desc>
         Removes the given Host Only Networking interface.
@@ -7150,7 +7150,6 @@
         </desc>
       </param>
     </method>
-</if>
 
     <method name="createUSBDeviceFilter">
       <desc>
