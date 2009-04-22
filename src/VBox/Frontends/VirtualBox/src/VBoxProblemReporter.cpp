@@ -1219,8 +1219,6 @@ void VBoxProblemReporter::cannotGetMediaAccessibility (const VBoxMedium &aMedium
         formatErrorInfo (aMedium.result()));
 }
 
-#if defined Q_WS_WIN
-
 int VBoxProblemReporter::confirmDeletingHostInterface (const QString &aName,
                                                        QWidget *aParent)
 {
@@ -1271,8 +1269,6 @@ void VBoxProblemReporter::cannotRemoveHostInterface (
             .arg (iface.GetName()),
         formatErrorInfo (progress.GetErrorInfo()));
 }
-
-#endif
 
 void VBoxProblemReporter::cannotAttachUSBDevice (const CConsole &console,
                                                  const QString &device)
