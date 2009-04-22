@@ -173,6 +173,7 @@ endif
 ifdef VBOX_WITH_FAULT_INJECTION
  VBoxDD_DEFS           += VBOX_WITH_FAULT_INJECTION
 endif
+
 VBoxDD_LIBS             = \
 	$(PATH_LIB)/DevicesR3$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/Drivers$(VBOX_SUFF_LIB) \
@@ -195,11 +196,15 @@ ifeq ($(KBUILD_TARGET),l4)
 endif
 
 ifdef VBOX_USE_NAT
-VBoxDD_LIBS           += $(PATH_LIB)/NatAlias$(VBOX_SUFF_LIB)
+ VBoxDD_LIBS          += $(PATH_LIB)/NatAlias$(VBOX_SUFF_LIB)
 endif
 
 ifdef VBOX_WITH_NETFLT
-VBoxDD_LIBS.win       += $(PATH_LIB)/WinNetConfig.lib
+ VBoxDD_LIBS.win      += $(PATH_LIB)/WinNetConfig.lib
+endif
+
+ifdef VBOX_WITH_EFI
+ VBoxDD_LIBS          += $(PATH_LIB)/EfiThunk$(VBOX_SUFF_LIB)
 endif
 
 ifeq ($(KBUILD_TARGET),solaris)
@@ -211,8 +216,10 @@ ifeq ($(KBUILD_TARGET),solaris)
   VBoxDD_LIBS          += aio
  endif
 endif
+
 VBoxDD_LIBS.darwin     += \
 	$(LIB_REM)
+
 VBoxDD_LDFLAGS.darwin   = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDD.dylib \
 	-framework CoreAudio \
 	-framework IOKit \
@@ -360,7 +367,7 @@ endif
 ifdef VBOX_WITH_EFI
 DevicesR3_DEFS            += VBOX_WITH_EFI
 DevicesR3_SOURCES         += EFI/DevEFI.cpp
-VBoxDD_LIBS               += $(PATH_LIB)/EfiThunk$(VBOX_SUFF_LIB)
+
 EFI/DevEFI.cpp_INCS	  += EFI/tools/include
 EFI/DevEFI.cpp_INCS.x86	  += EFI/tools/include/Ia32
 EFI/DevEFI.cpp_INCS.amd64 += EFI/tools/include/X64
@@ -377,7 +384,6 @@ DevicesR3_SOURCES      += \
   DevicesR3_SOURCES    += \
 	USB/DevEHCI.cpp
  endif
-
 endif
 
 DevicesR3_DEFS         += VBOX_WITH_HGCM
@@ -786,7 +792,6 @@ ifdef VBOX_WITH_ALSA
  Drivers_SOURCES.linux+= \
 	Audio/alsaaudio.c \
 	Audio/alsa_stubs.c
-# VBoxDD_LIBS.linux    += asound
 endif
 
 ifdef VBOX_WITH_PULSE
@@ -794,7 +799,6 @@ ifdef VBOX_WITH_PULSE
  Drivers_SOURCES.linux+= \
 	Audio/pulseaudio.c \
 	Audio/pulse_stubs.c
-# VBoxDD_LIBS.linux    += pulse
 endif
 
 ifdef VBOX_WITH_USB
