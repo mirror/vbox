@@ -766,7 +766,61 @@ RTDECL(void) RTFileReadAllFree(void *pvFile, size_t cbFile);
 
 /** @page pg_rt_asyncio RT File async I/O API
  *
- * @todo Write something
+ * File operations are usually blocking the calling thread until
+ * they completed making it impossible to let the thread do anything
+ * else inbetween.
+ * The RT File async I/O API provides an easy and efficient way to
+ * access files asynchronously using the native facilities provided
+ * by each operating system.
+ *
+ * There are two objects used in this API.
+ * The first object is the request. A request contains every information
+ * needed two complete the file operation successfully like the start offset
+ * and pointer to the source or destination buffer.
+ * Requests are created with RTFileAioReqCreate() and destroyed with
+ * RTFileAioReqDestroy().
+ * Because creating a request may require allocating various operating
+ * system dependent ressources and may be quite expensive it is possible
+ * to use a request more than once to save CPU cycles.
+ * A request is constructed with either RTFileAioReqPrepareRead()
+ * which will set up a request to read from the given file or
+ * RTFileAioReqPrepareWrite() which will write to a given file.
+ *
+ * The second object is the context. Requests are associated with a context
+ * during RTFileAioCtxSubmit() which will also submit the requests to the
+ * operating system.
+ * RTFileAioCtxWait() is used to wait for completion of requests which were
+ * associated with the context. While waiting for requests the thread can not
+ * respond to global state changes. Thatswhy the API provides a way to let
+ * RTFileAioCtxWait() return immediately no matter how many requests
+ * have finished through RTFileAioCtxWakeup(). The return code is
+ * VERR_INTERRUPTED to let the thread know that he got interrupted.
+ *
+ * Threading:
+ *
+ * The API is a thin wrapper around the specific host OS APIs and therefore
+ * relies on the thread safety of the underlying API.
+ * The interesting functions with regards to thread safety are RTFileAioCtxSubmit()
+ * and RTFileAioCtxWait(). RTFileAioCtxWait() must not be called from different
+ * threads at the same time with the same context handle. The same applies to
+ * RTFileAioCtxSubmit(). However it is possible to submit new requests from a different
+ * thread while waiting for completed requests on another thread with RTFileAioCtxWait().
+ *
+ * Differences in implementation:
+ * Because the host APIs are quite different on every OS and every API has other limitations
+ * there are some things to consider to make the code as portable as possible.
+ *
+ * The only restriction at the moment is that every buffer has to be aligned to a 512 byte boundary.
+ * This limitation comes from the Linux io_* interface. To use the interface the file
+ * must be opened with O_DIRECT. This flag disables the kernel cache too which may
+ * degrade performance but is unfortunately the only way to make asynchronous
+ * I/O work till today (if O_DIRECT is omitted io_submit will revert to sychronous behavior
+ * and will return when the requests finished and when they are queued).
+ * It is mostly used by DBMS which do theire own caching.
+ * Furthermore there is no filesystem independent way to discover the restrictions at least
+ * for the 2.4 kernel series. Since 2.6 the 512 byte boundary seems to be used by all
+ * file systems. So Linus comment about this flag is comprehensible but Linux
+ * lacks an alternative at the moment.
  */
 
 /**
