@@ -376,11 +376,15 @@ check_gcc()
         fail really
       elif [ $cc_maj -eq 4 -a $cc_min -eq 0 -a "OS" = "darwin" ]; then
         log_success "found version $cc_ver"
+      elif [ $cc_maj -eq 4 -a $cc_min -eq 4 ]; then
+        log_success "found version $cc_ver"
+        log "   WARNING: gcc version 4.4 was not extensively tested with the"
+        log "            VirtualBox source code! Continue at your own risk!"
       # gcc-4.0 is allowed for Darwin only
       elif [ $cc_maj -lt 3 \
              -o \( $cc_maj -eq 3 -a $cc_min -lt 2 \) \
              -o \( $cc_maj -eq 4 -a $cc_min -lt 1 -a "$OS" != "darwin" \) \
-             -o \( $cc_maj -eq 4 -a $cc_min -gt 3 \) \
+             -o \( $cc_maj -eq 4 -a $cc_min -gt 4 \) \
              -o $cc_maj -gt 4 ]; then
         log_failure "gcc version $cc_ver found, expected gcc 3.x with x>1 or gcc 4.x with 0<x<4"
         fail really
