@@ -1568,43 +1568,23 @@ static void pcnetInit(PCNetState *pThis)
     size_t cbRxBuffers = 0;
     for (int i = CSR_RCVRL(pThis); i >= 1; i--)
     {
-        RMD        rmd;
+        RMD rmd;
         RTGCPHYS32 rdaddr = PHYSADDR(pThis, pcnetRdraAddr(pThis, i));
 
         pcnetDescTouch(pThis, rdaddr);
         /* At this time it is not guaranteed that the buffers are already initialized. */
         if (pcnetRmdLoad(pThis, &rmd, rdaddr, false))
         {
-            /* Hack: Make sure that all RX buffers are touched when the
-             * device is initialized. */
-            static char aBuf[4096];
-            RTGCPHYS32 rbadr = PHYSADDR(pThis, rmd.rmd0.rbadr);
             uint32_t cbBuf = 4096U-rmd.rmd1.bcnt;
-            /* don't change the content */
-            PDMDevHlpPhysRead(pDevIns, rbadr, aBuf, RT_MIN(sizeof(aBuf), cbBuf));
-            PDMDevHlpPhysWrite(pDevIns, rbadr, aBuf, RT_MIN(sizeof(aBuf), cbBuf));
             cbRxBuffers += cbBuf;
         }
     }
 
     for (int i = CSR_XMTRL(pThis); i >= 1; i--)
     {
-        TMD        tmd;
         RTGCPHYS32 tdaddr = PHYSADDR(pThis, pcnetTdraAddr(pThis, i));
 
         pcnetDescTouch(pThis, tdaddr);
-        if (pcnetTmdLoad(pThis, &tmd, tdaddr, false))
-        {
-            /* Hack: Make sure that all TX buffers are touched when the
-             * device is initialized. Of course it is unlikely that the
-             * TX buffers are already owned by the device right now. */
-            static char aBuf[4096];
-            uint32_t cbBuf = 4096U-tmd.tmd1.bcnt;
-            RTGCPHYS32 tbadr = PHYSADDR(pThis, tmd.tmd0.tbadr);
-            /* don't change the content */
-            PDMDevHlpPhysRead(pDevIns, tbadr, aBuf, RT_MIN(sizeof(aBuf), cbBuf));
-            PDMDevHlpPhysWrite(pDevIns, tbadr, aBuf, RT_MIN(sizeof(aBuf), cbBuf));
-        }
     }
 
     /*
@@ -1848,7 +1828,7 @@ static void pcnetReceiveNoSync(PCNetState *pThis, const uint8_t *buf, size_t siz
 {
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pThis);
     int is_padr = 0, is_bcast = 0, is_ladr = 0;
-    unsigned i;
+    unsigned iRxDesc;
     int pkt_size;
 
     if (RT_UNLIKELY(CSR_DRX(pThis) || CSR_STOP(pThis) || CSR_SPND(pThis) || !size))
@@ -1881,8 +1861,8 @@ static void pcnetReceiveNoSync(PCNetState *pThis, const uint8_t *buf, size_t siz
             /* Dump the status of all RX descriptors */
             const unsigned  cb = 1 << pThis->iLog2DescSize;
             RTGCPHYS32      GCPhys = pThis->GCRDRA;
-            i = CSR_RCVRL(pThis);
-            while (i-- > 0)
+            iRxDesc = CSR_RCVRL(pThis);
+            while (iRxDesc-- > 0)
             {
                 RMD rmd;
                 pcnetRmdLoad(pThis, &rmd, PHYSADDR(pThis, GCPhys), false);
@@ -1898,7 +1878,6 @@ static void pcnetReceiveNoSync(PCNetState *pThis, const uint8_t *buf, size_t siz
             RTGCPHYS32 crda = CSR_CRDA(pThis);
             RTGCPHYS32 next_crda;
             RMD      rmd, next_rmd;
-            int      pktcount = 0;
 
             memcpy(src, buf, size);
             if (!CSR_ASTRP_RCV(pThis))
@@ -1935,20 +1914,35 @@ static void pcnetReceiveNoSync(PCNetState *pThis, const uint8_t *buf, size_t siz
             }
             else
 #endif
+            {
+                /* We have to leave the critical section here or we risk deadlocking
+                 * with EMT when the write is to an unallocated page or has an access
+                 * handler associated with it.
+                 *
+                 * This shouldn't be a problem because:
+                 *  - any modification to the RX descriptor by the driver is
+                 *    forbidden as long as it is owned by the device
+                 *  - we don't cache any register state beyond this point
+                 */
+                PDMCritSectLeave(&pThis->CritSect);
                 PDMDevHlpPhysWrite(pDevIns, rbadr, src, count);
+                int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+                AssertReleaseRC(rc);
+            }
+
             src  += count;
             size -= count;
-            pktcount++;
 
-            /* Read current receive descriptor index */
-            i = CSR_RCVRC(pThis);
+            /* adapt the current RX descriptor counter */
+            iRxDesc = CSR_RCVRC(pThis);
+            if (iRxDesc-- < 2)
+                iRxDesc = CSR_RCVRL(pThis);
+            CSR_RCVRC(pThis) = iRxDesc;
 
             while (size > 0)
             {
                 /* Read the entire next descriptor as we're likely to need it. */
-                if (--i < 1)
-                    i = CSR_RCVRL(pThis);
-                next_crda = pcnetRdraAddr(pThis, i);
+                next_crda = pcnetRdraAddr(pThis, iRxDesc);
 
                 /* Check next descriptor's own bit. If we don't own it, we have
                  * to quit and write error status into the last descriptor we own.
@@ -1974,10 +1968,23 @@ static void pcnetReceiveNoSync(PCNetState *pThis, const uint8_t *buf, size_t siz
                 }
                 else
 #endif
+                {
+                    /* We have to leave the critical section here or we risk deadlocking
+                     * with EMT when the write is to an unallocated page or has an access
+                     * handler associated with it. See above for additional comments. */
+                    PDMCritSectLeave(&pThis->CritSect);
                     PDMDevHlpPhysWrite(pDevIns, rbadr, src, count);
+                    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+                    AssertReleaseRC(rc);
+                }
                 src  += count;
                 size -= count;
-                pktcount++;
+
+                /* adapt the current RX descriptor counter */
+                iRxDesc = CSR_RCVRC(pThis);
+                if (iRxDesc-- < 1)
+                    iRxDesc = CSR_RCVRL(pThis);
+                CSR_RCVRC(pThis) = iRxDesc;
             }
 
             if (RT_LIKELY(size == 0))
@@ -2003,19 +2010,12 @@ static void pcnetReceiveNoSync(PCNetState *pThis, const uint8_t *buf, size_t siz
 
             pThis->aCSR[0] |= 0x0400;
 
-            Log(("#%d RCVRC=%d CRDA=%#010x BLKS=%d\n", PCNET_INST_NR,
-                 CSR_RCVRC(pThis), PHYSADDR(pThis, CSR_CRDA(pThis)), pktcount));
+            Log(("#%d RCVRC=%d CRDA=%#010x\n", PCNET_INST_NR,
+                 CSR_RCVRC(pThis), PHYSADDR(pThis, CSR_CRDA(pThis))));
 #ifdef PCNET_DEBUG_RMD
             PRINT_RMD(&rmd);
 #endif
 
-            while (pktcount--)
-            {
-                if (CSR_RCVRC(pThis) < 2)
-                    CSR_RCVRC(pThis) = CSR_RCVRL(pThis);
-                else
-                    CSR_RCVRC(pThis)--;
-            }
             /* guest driver is owner: force repoll of current and next RDTEs */
             CSR_CRST(pThis) = 0;
         }
