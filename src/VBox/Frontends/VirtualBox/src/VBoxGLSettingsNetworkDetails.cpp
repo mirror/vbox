@@ -63,7 +63,7 @@ VBoxGLSettingsNetworkDetails::VBoxGLSettingsNetworkDetails (QWidget *aParent)
     /* Setup widgets */
     mLeIPv6->setFixedWidthByText (QString().fill ('X', 32) + QString().fill (':', 7));
 
-#if defined (Q_WS_WIN32)
+#if 0 /* defined (Q_WS_WIN32) */
     QStyleOption options1;
     options1.initFrom (mCbManual);
     QGridLayout *layout1 = qobject_cast <QGridLayout*> (mTwDetails->widget (0)->layout());
@@ -106,8 +106,8 @@ void VBoxGLSettingsNetworkDetails::getFromItem (NetworkItem *aItem)
 
     /* Host-only Interface */
     mCbManual->setChecked (!mItem->isDhcpClientEnabled());
-#if !defined (Q_WS_WIN32)
-    /* Disable automatic for all except win for now */
+#if !0 /* !defined (Q_WS_WIN32) */
+    /* Disable automatic for all hosts for now */
     mCbManual->setChecked (true);
     mCbManual->setEnabled (false);
 #endif
