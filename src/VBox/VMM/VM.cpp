@@ -136,7 +136,7 @@ static DECLCALLBACK(int) vmR3Resume(PVM pVM);
 static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser);
 static DECLCALLBACK(int) vmR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser);
 static DECLCALLBACK(int) vmR3PowerOff(PVM pVM);
-static void              vmR3DestroyUVM(PUVM pUVM);
+static void              vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait);
 static void              vmR3AtDtor(PVM pVM);
 static int               vmR3AtResetU(PUVM pUVM);
 static DECLCALLBACK(int) vmR3Reset(PVM pVM);
@@ -370,7 +370,7 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCPUs, PFNVMATERROR pfnVMAtError, void *pvU
     }
 
     /* cleanup */
-    vmR3DestroyUVM(pUVM);
+    vmR3DestroyUVM(pUVM, 2000);
     LogFlow(("VMR3Create: returns %Rrc\n", rc));
     return rc;
 }
@@ -396,6 +396,7 @@ static int vmR3CreateUVM(uint32_t cCPUs, PUVM *ppUVM)
     PUVM pUVM = (PUVM)RTMemAllocZ(RT_OFFSETOF(UVM, aCpus[cCPUs]));
     AssertReturn(pUVM, VERR_NO_MEMORY);
     pUVM->u32Magic = UVM_MAGIC;
+    pUVM->cCpus = cCPUs;
 
     AssertCompile(sizeof(pUVM->vm.s) <= sizeof(pUVM->vm.padding));
     AssertRelease(sizeof(pUVM->vm.s) <= sizeof(pUVM->vm.padding));
@@ -1619,17 +1620,10 @@ VMMR3DECL(int)   VMR3Destroy(PVM pVM)
         VMR3ReqFree(pReq);
 
         /*
-         * Wait for the EMT thread to terminate.
-         */
-        Assert(pUVM->vm.s.fTerminateEMT);
-        /** @todo SMP */
-        rc = RTThreadWait(pUVM->aCpus[0].vm.s.ThreadEMT, 30000, NULL);
-        AssertMsgRC(rc, ("EMT thread wait failed, rc=%Rrc\n", rc));
-
-        /*
          * Now do the final bit where the heap and VM structures are freed up.
+         * This will also wait 30 secs for the emulation threads to terminate.
          */
-        vmR3DestroyUVM(pUVM);
+        vmR3DestroyUVM(pUVM, 30000);
     }
 
     LogFlow(("VMR3Destroy: returns VINF_SUCCESS\n"));
@@ -1743,10 +1737,10 @@ void vmR3DestroyFinalBitFromEMT(PUVM pUVM)
     }
 
     /*
-     * Did EMT call VMR3Destroy and have to do it all?
+     * Did an EMT call VMR3Destroy and end up having to do all the work?
      */
     if (pUVM->vm.s.fEMTDoesTheCleanup)
-        vmR3DestroyUVM(pUVM);
+        vmR3DestroyUVM(pUVM, 30000);
 }
 
 
@@ -1758,27 +1752,60 @@ void vmR3DestroyFinalBitFromEMT(PUVM pUVM)
  * VMINTUSERPERVM::fEMTDoesTheCleanup is true, it will call this as
  * vmR3DestroyFinalBitFromEMT completes.
  *
- * @param   pVM     VM Handle.
+ * @param   pVM             VM Handle.
+ * @param   cMilliesEMTWait The number of milliseconds to wait for the emulation
+ *                          threads.
  */
-static void vmR3DestroyUVM(PUVM pUVM)
+static void vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait)
 {
     /*
-     * Terminate the EMT if still running (creation failure only).
+     * Signal termination of each the emulation threads and
+     * wait for them to complete.
      */
-    if (!pUVM->vm.s.fTerminateEMT)
+    /* Signal them. */
+    ASMAtomicUoWriteBool(&pUVM->vm.s.fTerminateEMT, true);
+    for (VMCPUID i = 0; i < pUVM->cCpus; i++)
     {
-        ASMAtomicUoWriteBool(&pUVM->vm.s.fTerminateEMT, true);
+        ASMAtomicUoWriteBool(&pUVM->aCpus[i].vm.s.fTerminateEMT, true);
         if (pUVM->pVM)
-        {
             VM_FF_SET(pUVM->pVM, VM_FF_TERMINATE);
-            VMR3NotifyFF(pUVM->pVM, false);
-        }
-        RTSemEventSignal(pUVM->vm.s.EventSemWait);
-
-        /** @todo SMP */
-        int rc2 = RTThreadWait(pUVM->aCpus[0].vm.s.ThreadEMT, 2000, NULL);
-        AssertRC(rc2);
+        VMR3NotifyFFU(pUVM, false);
+        if (pUVM->aCpus[i].vm.s.EventSemWait != NIL_RTSEMEVENT) /** @todo remove test when we start initializing it! */
+            RTSemEventSignal(pUVM->aCpus[i].vm.s.EventSemWait);
     }
+    RTSemEventSignal(pUVM->vm.s.EventSemWait);
+
+    /* Wait for them. */
+    uint64_t    NanoTS = RTTimeNanoTS();
+    RTTHREAD    hSelf  = RTThreadSelf();
+    ASMAtomicUoWriteBool(&pUVM->vm.s.fTerminateEMT, true);
+    for (VMCPUID i = 0; i < pUVM->cCpus; i++)
+    {
+        RTTHREAD hThread = pUVM->aCpus[i].vm.s.ThreadEMT;
+        if (    hThread != NIL_RTTHREAD
+            &&  hThread != hSelf)
+        {
+            uint64_t cMilliesElapsed = (RTTimeNanoTS() - NanoTS) / 1000000;
+            int rc2 = RTThreadWait(hThread,
+                                   cMilliesElapsed < cMilliesEMTWait
+                                   ? RT_MAX(cMilliesEMTWait - cMilliesElapsed, 2000)
+                                   : 2000,
+                                   NULL);
+            if (rc2 == VERR_TIMEOUT) /* avoid the assertion when debugging. */
+                rc2 = RTThreadWait(hThread, 1000, NULL);
+            AssertLogRelMsgRC(rc2, ("i=%u rc=%Rrc\n", i, rc2));
+            if (RT_SUCCESS(rc2))
+                pUVM->aCpus[0].vm.s.ThreadEMT = NIL_RTTHREAD;
+        }
+    }
+
+    /* Cleanup the semaphores. */
+    for (VMCPUID i = 0; i < pUVM->cCpus; i++)
+        if (pUVM->aCpus[i].vm.s.EventSemWait != NIL_RTSEMEVENT) /** @todo remove test when we start initializing it! */
+        {
+            RTSemEventDestroy(pUVM->aCpus[i].vm.s.EventSemWait);
+            pUVM->aCpus[i].vm.s.EventSemWait = NIL_RTSEMEVENT;
+        }
     RTSemEventDestroy(pUVM->vm.s.EventSemWait);
     pUVM->vm.s.EventSemWait = NIL_RTSEMEVENT;
 

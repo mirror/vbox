@@ -70,7 +70,8 @@ typedef struct UVM
 {
     /** Magic / eye-catcher (UVM_MAGIC). */
     uint32_t        u32Magic;
-    uint32_t        uReserved;          /**< alignment */
+    /** The number of virtual CPUs. */
+    uint32_t        cCpus;
     /** The ring-3 mapping of the shared VM structure. */
     PVM             pVM;
     /** Pointer to the next VM.
