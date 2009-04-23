@@ -7209,7 +7209,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Se selezionato, connette questa scheda di rete virtuale alla macchina virtuale.</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="obsolete">Controlla la modalità secondo la quale questa scheda di rete virtuale è collegata alla rete reale del sistema Host.</translation>
     </message>
     <message>
@@ -8846,7 +8846,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
         <translation>Conness&amp;a a:</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation>Controlla il modo in cui questa scheda di rete virtuale è collegata alla rete reale del sistema host.</translation>
     </message>
     <message>

@@ -5211,7 +5211,7 @@ p, li { white-space: pre-wrap; }
         <translation>Прикључен на:</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation>Контролише рад овог адаптера према праву мрежу хоста.</translation>
     </message>
     <message>

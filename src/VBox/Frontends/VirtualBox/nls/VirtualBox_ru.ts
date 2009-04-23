@@ -5220,7 +5220,7 @@ p, li { white-space: pre-wrap; }
         <translation>Тип &amp;подключения:</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation>Определяет способ, которым этот виртуальный сетевой адаптер подсоединяется к настоящей сети основной ОС.</translation>
     </message>
     <message>

@@ -6671,7 +6671,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Ha engedélyezed, a kábel be lesz dugba a virtuális gép hálókártyájába.</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="obsolete">Megadhathatod, hogyan legyen a virtuális adapter a valódi hálózathoz csatlakoztatva.</translation>
     </message>
     <message>
@@ -8037,7 +8037,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <translation>Cs&amp;atlakoztatva ide:</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation>Megadhathatod, hogyan legyen a virtuális adapter a valódi hálózathoz csatlakoztatva.</translation>
     </message>
     <message>

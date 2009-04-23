@@ -6853,7 +6853,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Saat ditandai, tancapkan adapter jaringan virtual ini ke mesin virtual.</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="obsolete">Mengendalikan cara adapter virtual ini terpasang pada jaringan Sistem Operasi Host yang sesungguhnya.</translation>
     </message>
     <message>
@@ -8405,7 +8405,7 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="unfinished">Mengendalikan cara adapter virtual ini terpasang pada jaringan Sistem Operasi Host yang sesungguhnya.</translation>
     </message>
     <message>

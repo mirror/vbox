@@ -7110,7 +7110,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Quando seleccionado, activa este adaptador de rede virtual na máquina virtual.</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="obsolete">Controla a maneira como este adaptador virtual é ligado à rede real no sistema Hospedeiro.</translation>
     </message>
     <message>
@@ -8747,7 +8747,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
         <translation>&amp;Associado a:</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation>Controla a maneira como este adaptador virtual é ligado à rede real no sistema Hospedeiro.</translation>
     </message>
     <message>

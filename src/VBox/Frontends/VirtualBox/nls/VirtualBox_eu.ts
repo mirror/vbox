@@ -7653,7 +7653,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Aukeratua dagoenean, sare moldagailu birtual hau eransten du makina birtualean.</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="obsolete">Ostalari SE-ren sare errealera konektatzeko moldagailu birtualak modua kontrolatzen du.</translation>
     </message>
     <message>
@@ -9180,7 +9180,7 @@ bezeroak audio txartela ikustea eragiten du baina sortzen duen edozein irteera b
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="110"/>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="unfinished">Ostalari SE-ren sare errealera konektatzeko moldagailu birtualak modua kontrolatzen du.</translation>
     </message>
     <message>

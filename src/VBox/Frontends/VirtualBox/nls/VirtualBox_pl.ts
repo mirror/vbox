@@ -7011,7 +7011,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Podłącza konfigurowaną wirtualną kartę sieciową do maszyny wirtualnej.</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="obsolete">Decyduje o sposobie w jaki wirtualna karta sieciowa zostanie podłączona do rzeczywistej sieci w systemie operacyjnym gospodarza.</translation>
     </message>
     <message>
@@ -8528,7 +8528,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>&amp;Podłączona do:</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation>Decyduje o sposobie w jaki wirtualna karta sieciowa zostanie podłączona do rzeczywistej sieci w systmie operacyjnym gospodarza.</translation>
     </message>
     <message>

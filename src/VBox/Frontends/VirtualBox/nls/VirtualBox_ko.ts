@@ -5109,7 +5109,7 @@ p, li { white-space: pre-wrap; }
         <translation>다음에 연결됨(&amp;A):</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation>이 어댑터가 호스트 운영체제의 실제 네트워크에 어떻게 연결되어 있는지를 제어합니다.</translation>
     </message>
     <message>

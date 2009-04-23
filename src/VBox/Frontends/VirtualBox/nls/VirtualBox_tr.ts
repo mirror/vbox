@@ -6690,7 +6690,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Seçilirse bu sanal ağ bağdaştırıcısını sanal makineye bağlar.</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="obsolete">Sanal bağdaştırıcının Sunucu İşletim Sisiteminin gerçek ağına nasıl bağlanacağını denetler.</translation>
     </message>
     <message>
@@ -8091,7 +8091,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>Şur&amp;aya eklendi:</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="unfinished">Sanal bağdaştırıcının Sunucu İşletim Sisiteminin gerçek ağına nasıl bağlanacağını denetler.</translation>
     </message>
     <message>

@@ -5770,7 +5770,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Anslutet till:</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation>Kontrollerar sättet på hur den här virtuella adaptern anslutits till det verkliga nätverket för värdoperativsystemet.</translation>
     </message>
     <message>

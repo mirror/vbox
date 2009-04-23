@@ -7487,7 +7487,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Conect&amp;ată la</translation>
     </message>
     <message>
-        <source>Controls the way how this
+        <source>Controls how this
                                         virtual adapter is attached to the
                                         real network of the Host OS.</source>
         <translation type="obsolete">Controlează modul în care această
@@ -7638,7 +7638,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Când este activat, conectează placa de rețea virtuală la mașina virtuală.</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="obsolete">Controlează modul în care această placă de rețea virtuală este atașată la rețeaua reală a SO gazdă.</translation>
     </message>
     <message>
@@ -9386,7 +9386,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>Conect&amp;ată la:</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation>Controlează modul în care această placă de rețea virtuală este atașată la rețeaua reală a SO gazdă.</translation>
     </message>
     <message>
