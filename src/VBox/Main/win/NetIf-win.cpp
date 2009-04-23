@@ -1383,6 +1383,16 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
 
             if (hrc == S_OK)
             {
+                ULONG ip, mask;
+                hrc = VBoxNetCfgWinGenHostOnlyNetworkNetworkIp(&ip, &mask);
+                if(hrc == S_OK)
+                {
+                    /* ip returned by VBoxNetCfgWinGenHostOnlyNetworkNetworkIp is a network ip,
+                     * i.e. 192.168.xxx.0, assign  192.168.xxx.1 for the hostonly adapter */
+                    ip = ip | (1 << 24);
+                    hrc = VBoxNetCfgWinEnableStaticIpConfig((const GUID*)guid.raw(), ip, mask);
+                }
+
                 /* write success followed by GUID */
                 vrc = aClient->write (SVCHlpMsg::CreateHostOnlyNetworkInterface_OK);
                 if (RT_FAILURE (vrc)) break;
@@ -1769,7 +1779,11 @@ int NetIfGetConfig(HostNetworkInterface * pIf, NETIFINFO *pInfo)
         Assert(hr == S_OK);
         if (hr == S_OK)
         {
-            return collectNetIfInfo(name, Guid(IfGuid), pInfo);
+            memset(pInfo, 0, sizeof(NETIFINFO));
+            Guid guid(IfGuid);
+            pInfo->Uuid = *(guid.raw());
+
+            return collectNetIfInfo(name, guid, pInfo);
         }
     }
     return VERR_GENERAL_FAILURE;
