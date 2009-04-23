@@ -170,6 +170,8 @@ public:
     Qt::ItemFlags flags (const QModelIndex &aIndex) const;
     QVariant headerData (int aSection, Qt::Orientation aOrientation, int aRole) const;
 
+    QModelIndex buddy (const QModelIndex &aIndex) const;
+
     void restoreDefaults (const QModelIndex& aParent = QModelIndex());
     void putBack();
 
