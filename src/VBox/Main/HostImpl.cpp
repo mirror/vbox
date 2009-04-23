@@ -22,6 +22,10 @@
 #define __STDC_LIMIT_MACROS
 #define __STDC_CONSTANT_MACROS
 
+#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
+# include <VBox/WinNetConfig.h>
+#endif /* #if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT) */
+
 #ifdef RT_OS_LINUX
 // # include <sys/types.h>
 // # include <sys/stat.h>
@@ -122,10 +126,6 @@ extern "C" char *getfullrawname(char *);
 #include <VBox/x86.h>
 #include <VBox/err.h>
 #include <VBox/settings.h>
-
-#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
-# include <VBox/WinNetConfig.h>
-#endif /* #if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT) */
 
 #include <stdio.h>
 
