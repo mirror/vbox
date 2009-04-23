@@ -74,8 +74,11 @@
 #define Elf_Sword           RTLDRELF_MID(Elf,_Sword)
 #define Elf_Word            RTLDRELF_MID(Elf,_Word)
 
-#define RTLDRMODELF         RTLDRELF_MID(RTLDRMODELF,)
-#define PRTLDRMODELF        RTLDRELF_MID(PRTLDRMODELF,)
+/* gcc-4.4 warning: ''empty macro arguments are undefined in ISO C90 and ISO C++98'' */
+#define NO_SUFFIX
+#define RTLDRMODELF         RTLDRELF_MID(RTLDRMODELF,NO_SUFFIX)
+#define PRTLDRMODELF        RTLDRELF_MID(PRTLDRMODELF,NO_SUFFIX)
+#undef NO_SUFFIX
 
 #define ELF_R_SYM(info)     RTLDRELF_MID(ELF,_R_SYM)(info)
 #define ELF_R_TYPE(info)    RTLDRELF_MID(ELF,_R_TYPE)(info)
