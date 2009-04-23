@@ -893,7 +893,7 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
     STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatREMTotal, a);
 
 #if defined(VBOX_STRICT) && defined(DEBUG_bird)
-    AssertMsg(   VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3|VM_FF_PGM_SYNC_CR3_NON_GLOBAL)
+    AssertMsg(   VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL)
               || !MMHyperIsInsideArea(pVM, CPUMGetGuestEIP(pVCpu)),  /** @todo #1419 - get flat address. */
               ("cs:eip=%RX16:%RX32\n", CPUMGetGuestCS(pVCpu), CPUMGetGuestEIP(pVCpu)));
 #endif
