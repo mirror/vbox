@@ -639,7 +639,7 @@ static void vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff 
         if (IS_ERR(pSegment))
         {
             dev_kfree_skb(pBuf);
-            LogRel(("VBoxNetFlt: Failed to segment a packet (%d).\n", PRT_ERR(pBuf)));
+            LogRel(("VBoxNetFlt: Failed to segment a packet (%d).\n", PTR_ERR(pBuf)));
             return;
         }
         for (; pSegment; pSegment = pNext)
