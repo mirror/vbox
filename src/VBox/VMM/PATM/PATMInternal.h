@@ -39,7 +39,8 @@
 /* Last version to use SSMR3Put/GetMem */
 # define PATM_SSM_VERSION_GETPUTMEM          53
 #else
-# define PATM_SSM_VERSION                    54
+# define PATM_SSM_VERSION                    55
+# define PATM_SSM_VERSION_FIXUP_HACK         54
 # define PATM_SSM_VERSION_FIXUP_HACK         54
 # define PATM_SSM_VERSION_VER16              53
 #endif
