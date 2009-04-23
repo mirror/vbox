@@ -8343,7 +8343,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Cuando se selecciona, conecta este adaptador de red virtual a la máquina virtual.</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="obsolete">Controla la manera en que este adaptador se conecta a la red real del Sist. Operativo Anfitrión.</translation>
     </message>
     <message>
@@ -10021,7 +10021,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="110"/>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="unfinished">Controla la manera en que este adaptador se conecta a la red real del Sist. Operativo Anfitrión.</translation>
     </message>
     <message>

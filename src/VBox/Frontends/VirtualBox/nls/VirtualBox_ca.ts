@@ -8079,7 +8079,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Fi&amp;l Connectat</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="obsolete">Controla la forma en què aquest adaptador virtual es connecta a la xarxa real del sistema amfitrió.</translation>
     </message>
     <message>
@@ -9862,7 +9862,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="110"/>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation>Controla la forma en què aquest adaptador virtual es connecta a la xarxa real del sistema amfitrió.</translation>
     </message>
     <message>

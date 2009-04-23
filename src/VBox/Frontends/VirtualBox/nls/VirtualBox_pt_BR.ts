@@ -7320,7 +7320,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Quando selecionado, conecta este adaptador de rede virtual na máquina virtual.</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="obsolete">Controla a maneira como este adaptador virtual é conectado à rede real no sistema Hospedeiro.</translation>
     </message>
     <message>
@@ -8974,7 +8974,7 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
         <translation>Conectado &amp;a:</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation>Controla a maneira como este adaptador virtual é conectado à rede real no sistema Hospedeiro.</translation>
     </message>
     <message>

@@ -7157,7 +7157,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">网络连接方式(&amp;A)</translation>
     </message>
     <message>
-        <source>Controls the way how this
+        <source>Controls how this
                                         virtual adapter is attached to the
                                         real network of the Host OS.</source>
         <translation type="obsolete">设置网络连接以何种方式接入到主机上的真实网络.</translation>
@@ -7307,7 +7307,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">选中，将在虚拟电脑内启用该网络连接.</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="obsolete">设置网络连接以何种方式接入到主机上的真实网络.</translation>
     </message>
     <message>
@@ -9015,7 +9015,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>连接方式(&amp;A):</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation>设置网络连接以何种方式接入到主机上的真实网络.</translation>
     </message>
     <message>

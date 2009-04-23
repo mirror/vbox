@@ -107,7 +107,7 @@
       <item row="1" column="1" >
        <widget class="QComboBox" name="mCbAttachmentType" >
         <property name="whatsThis" >
-         <string>Controls the way how this virtual adapter is attached to the real network of the Host OS.</string>
+         <string>Controls how this virtual adapter is attached to the real network of the Host OS.</string>
         </property>
        </widget>
       </item>

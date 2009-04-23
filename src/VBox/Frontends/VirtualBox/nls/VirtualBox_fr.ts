@@ -6043,7 +6043,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Mode d&apos;accès réseau : </translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation>Contrôle la façon dont la carte virtuel accède au réseau physique de l&apos;ordinateur principal. </translation>
     </message>
     <message>

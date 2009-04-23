@@ -7664,7 +7664,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Je-li zatrženo, připojí vybraný virtuální síťový adaptér do virtuálního počítače.</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="obsolete">Ovládá způsob, jakým bude virtuální karta připojena k reálné síti hostitelského OS.</translation>
     </message>
     <message>
@@ -9058,7 +9058,7 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="110"/>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation>Ovládá způsob, jakým bude virtuální karta připojena k reálné síti hostitelského OS.</translation>
     </message>
     <message>

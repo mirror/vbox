@@ -7472,7 +7472,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">附掛到(&amp;A)</translation>
     </message>
     <message>
-        <source>Controls the way how this
+        <source>Controls how this
                                         virtual adapter is attached to the
                                         real network of the Host OS.</source>
         <translation type="obsolete">控制這塊虛擬網路卡
@@ -7635,7 +7635,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">如果勾選，就將此虛擬網路卡插入虛擬機器之內。</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="obsolete">控制此虛擬配接卡附掛到主端作業系統真實網路的方式。</translation>
     </message>
     <message>
@@ -9258,7 +9258,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="unfinished">控制此虛擬配接卡附掛到主端作業系統真實網路的方式。</translation>
     </message>
     <message>

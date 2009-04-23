@@ -5206,7 +5206,7 @@ p, li { white-space: pre-wrap; }
         <translation>បាន​ភ្ជាប់​ទៅ ៖</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation>ត្រួតពិនិត្យ​វិធី​ដែល​អាដាប់ទ័រ​និម្មិត​នេះ​ត្រូវ​បាន​ភ្ជាប់​ទៅ​បណ្ដាញ​ពិតប្រាកដ​របស់​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន ។</translation>
     </message>
     <message>

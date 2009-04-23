@@ -6715,7 +6715,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">仮想ネットワーク アダプタを仮想マシンに接続します。</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="obsolete">仮想アダプタをホストOSの実際のネットワークに割り当てる方式を指定します。</translation>
     </message>
     <message>
@@ -8090,7 +8090,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <translation>割り当て(&amp;A):</translation>
     </message>
     <message>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation>仮想アダプタをホストOSの実際のネットワークに割り当てる方式を指定します。</translation>
     </message>
     <message>
