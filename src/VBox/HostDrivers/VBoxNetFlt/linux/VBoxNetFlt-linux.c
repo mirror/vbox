@@ -635,7 +635,14 @@ static void vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff 
           pBuf->len, pBuf->data_len, pBuf->truesize, pBuf->next, skb_shinfo(pBuf)->nr_frags, skb_shinfo(pBuf)->gso_size, skb_shinfo(pBuf)->gso_segs, skb_shinfo(pBuf)->gso_type, skb_shinfo(pBuf)->frag_list, pBuf->pkt_type));
 #endif
 
-        for (pSegment = VBOX_SKB_GSO_SEGMENT(pBuf); pSegment; pSegment = pNext)
+        pSegment = VBOX_SKB_GSO_SEGMENT(pBuf);
+        if (IS_ERR(pSegment))
+        {
+            dev_kfree_skb(pBuf);
+            LogRel(("VBoxNetFlt: Failed to segment a packet (%d).\n", PRT_ERR(pBuf)));
+            return;
+        }
+        for (; pSegment; pSegment = pNext)
         {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
             Log3(("vboxNetFltLinuxForwardToIntNet: segment len=%u data_len=%u truesize=%u next=%p nr_frags=%u gso_size=%u gso_seqs=%u gso_type=%x frag_list=%p pkt_type=%x\n",
