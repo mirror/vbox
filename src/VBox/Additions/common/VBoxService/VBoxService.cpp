@@ -552,16 +552,16 @@ int main(int argc, char **argv)
         /* in-child */
 #endif
     }
-    else
-    {
-        /** @todo Make the main thread responsive to signal so it can shutdown/restart the threads on non-SIGKILL signals. */
 
-        /*
-         * Start the service, enter the main threads run loop and stop them again when it returns.
-         */
-        rc = VBoxServiceStartServices(iMain);
-        VBoxServiceStopServices();
-    }
+#ifndef RT_OS_WINDOWS
+    /** @todo Make the main thread responsive to signal so it can shutdown/restart the threads on non-SIGKILL signals. */
+
+    /*
+     * Start the service, enter the main threads run loop and stop them again when it returns.
+     */
+    rc = VBoxServiceStartServices(iMain);
+    VBoxServiceStopServices();
+#endif
 
 #ifdef RT_OS_WINDOWS
     /*
