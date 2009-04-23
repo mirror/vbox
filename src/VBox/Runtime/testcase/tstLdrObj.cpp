@@ -62,7 +62,7 @@ extern "C" DECLEXPORT(int) Entrypoint(void)
 {
     g_VM.fRawR0Enabled = true;
     g_VM.fRawR3Enabled = true;
-    g_VM.fForcedActions = 0;
+    g_VM.fGlobalForcedActions = 0;
     strcpy(achBss, szStr2);
     memcpy(achBss, szStr1, sizeof(szStr1));
     memcpy(achBss, &g_VM, RT_MIN(sizeof(g_VM), sizeof(achBss)));
@@ -79,7 +79,7 @@ extern "C" DECLEXPORT(int) Entrypoint(void)
 extern "C" DECLEXPORT(uint32_t) SomeExportFunction1(void *pvBuf)
 {
     memcpy(pvBuf, &g_VM, sizeof(g_VM));
-    return g_VM.fForcedActions;
+    return g_VM.fGlobalForcedActions;
 }
 
 
