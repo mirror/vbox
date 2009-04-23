@@ -37,7 +37,7 @@ class ATL_NO_VTABLE HostNetworkInterface :
     public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <HostNetworkInterface, IHostNetworkInterface>,
     public VirtualBoxSupportTranslation <HostNetworkInterface>,
-    public IHostNetworkInterface
+    VBOX_SCRIPTABLE_IMPL(IHostNetworkInterface)
 {
 public:
 

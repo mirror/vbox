@@ -574,6 +574,17 @@ private:
     HRESULT mRC;
 };
 
+// use this macro to implement scriptable interfaces
+#ifdef RT_OS_WINDOWS
+#define VBOX_SCRIPTABLE_IMPL(iface)                                          \
+    public IDispatchImpl<iface, &IID_##iface, &LIBID_VirtualBox,             \
+                         kTypeLibraryMajorVersion, kTypeLibraryMinorVersion>
+#else
+#define VBOX_SCRIPTABLE_IMPL(iface) \
+    public iface
+#endif
+
+
 } /* namespace com */
 
 #endif /* ___VBox_com_defs_h */

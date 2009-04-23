@@ -37,7 +37,7 @@ class ATL_NO_VTABLE SystemProperties :
     public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <SystemProperties, ISystemProperties>,
     public VirtualBoxSupportTranslation <SystemProperties>,
-    public ISystemProperties
+    VBOX_SCRIPTABLE_IMPL(ISystemProperties)
 {
 public:
 

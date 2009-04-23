@@ -35,7 +35,7 @@ class ATL_NO_VTABLE OUSBDevice :
     public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl<OUSBDevice, IUSBDevice>,
     public VirtualBoxSupportTranslation<OUSBDevice>,
-    public IUSBDevice
+    VBOX_SCRIPTABLE_IMPL(IUSBDevice)
 {
 public:
 

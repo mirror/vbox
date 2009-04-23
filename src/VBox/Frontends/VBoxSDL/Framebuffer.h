@@ -46,7 +46,7 @@ extern DECLSPEC void (SDLCALL *pTTF_Quit)(void);
 class VBoxSDLFBOverlay;
 
 class VBoxSDLFB :
-    public IFramebuffer
+    VBOX_SCRIPTABLE_IMPL(IFramebuffer)
 {
 public:
     VBoxSDLFB(bool fFullscreen = false, bool fResizable = true, bool fShowSDLConfig = false,

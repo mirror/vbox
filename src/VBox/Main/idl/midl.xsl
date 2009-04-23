@@ -202,13 +202,14 @@
 <xsl:template match="interface">[
     uuid(<xsl:value-of select="@uuid"/>),
     object,
-    dual
+    dual,
+    oleautomation
 ]
 <xsl:text>interface </xsl:text>
   <xsl:value-of select="@name"/>
   <xsl:text> : </xsl:text>
   <xsl:choose>
-    <xsl:when test="@extends='$unknown'">IUnknown</xsl:when>
+    <xsl:when test="@extends='$unknown'">IDispatch</xsl:when>
     <xsl:when test="@extends='$dispatched'">IDispatch</xsl:when>
     <xsl:when test="@extends='$errorinfo'">IErrorInfo</xsl:when>
     <xsl:otherwise><xsl:value-of select="@extends"/></xsl:otherwise>

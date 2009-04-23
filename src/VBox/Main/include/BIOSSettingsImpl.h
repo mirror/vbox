@@ -33,7 +33,7 @@ class ATL_NO_VTABLE BIOSSettings :
     public VirtualBoxSupportErrorInfoImpl <BIOSSettings, IBIOSSettings>,
     public VirtualBoxSupportTranslation <BIOSSettings>,
     public VirtualBoxBaseNEXT,
-    public IBIOSSettings
+    VBOX_SCRIPTABLE_IMPL(IBIOSSettings)
 {
 public:
 

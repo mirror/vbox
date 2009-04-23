@@ -47,11 +47,13 @@ class ATL_NO_VTABLE Session :
 #ifdef RT_OS_WINDOWS
     public IDispatchImpl<ISession, &IID_ISession, &LIBID_VirtualBox,
                          kTypeLibraryMajorVersion, kTypeLibraryMinorVersion>,
-    public CComCoClass<Session, &CLSID_Session>,
+    public IDispatchImpl<IInternalSessionControl, &IID_IInternalSessionControl, &LIBID_VirtualBox,
+                         kTypeLibraryMajorVersion, kTypeLibraryMinorVersion>,    
+    public CComCoClass<Session, &CLSID_Session>
 #else
     public ISession,
-#endif
     public IInternalSessionControl
+#endif
 {
 public:
 
@@ -63,7 +65,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(Session)
-        COM_INTERFACE_ENTRY(IDispatch)
+        //COM_INTERFACE_ENTRY(IDispatch)
         COM_INTERFACE_ENTRY(IInternalSessionControl)
         COM_INTERFACE_ENTRY(ISupportErrorInfo)
         COM_INTERFACE_ENTRY(ISession)

@@ -45,7 +45,7 @@ class ATL_NO_VTABLE USBController :
     public VirtualBoxBaseWithChildrenNEXT,
     public VirtualBoxSupportErrorInfoImpl <USBController, IUSBController>,
     public VirtualBoxSupportTranslation <USBController>,
-    public IUSBController
+    VBOX_SCRIPTABLE_IMPL(IUSBController)
 {
 private:
 

@@ -30,7 +30,7 @@ class ATL_NO_VTABLE HardDiskAttachment :
     public VirtualBoxBaseNEXT,
     public com::SupportErrorInfoImpl<HardDiskAttachment, IHardDiskAttachment>,
     public VirtualBoxSupportTranslation<HardDiskAttachment>,
-    public IHardDiskAttachment
+    VBOX_SCRIPTABLE_IMPL(IHardDiskAttachment)
 {
 public:
 

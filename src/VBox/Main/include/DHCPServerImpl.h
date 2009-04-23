@@ -37,7 +37,7 @@ class ATL_NO_VTABLE DHCPServer :
     public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <DHCPServer, IDHCPServer>,
     public VirtualBoxSupportTranslation <DHCPServer>,
-    public IDHCPServer
+    VBOX_SCRIPTABLE_IMPL(IDHCPServer)
 {
 public:
 

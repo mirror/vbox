@@ -83,10 +83,10 @@ typedef struct _DISPLAYFBINFO
 
 class ATL_NO_VTABLE Display :
     public VirtualBoxBaseNEXT,
-    public IConsoleCallback,
+    VBOX_SCRIPTABLE_IMPL(IConsoleCallback),
     public VirtualBoxSupportErrorInfoImpl <Display, IDisplay>,
     public VirtualBoxSupportTranslation <Display>,
-    public IDisplay
+    VBOX_SCRIPTABLE_IMPL(IDisplay)
 {
 
 public:

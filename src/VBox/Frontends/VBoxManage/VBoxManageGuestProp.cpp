@@ -48,7 +48,8 @@ using namespace com;
  * IVirtualBoxCallback implementation for handling the GuestPropertyCallback in
  * relation to the "guestproperty wait" command.
  */
-class GuestPropertyCallback : public IVirtualBoxCallback
+class GuestPropertyCallback : 
+  VBOX_SCRIPTABLE_IMPL(IVirtualBoxCallback)
 {
 public:
     GuestPropertyCallback(const char *pszPatterns, Guid aUuid)

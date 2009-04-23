@@ -50,7 +50,7 @@ class ATL_NO_VTABLE Keyboard :
     public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <Keyboard, IKeyboard>,
     public VirtualBoxSupportTranslation <Keyboard>,
-    public IKeyboard
+    VBOX_SCRIPTABLE_IMPL(IKeyboard)
 {
 
 public:

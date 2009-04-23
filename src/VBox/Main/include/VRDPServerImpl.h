@@ -34,7 +34,7 @@ class ATL_NO_VTABLE VRDPServer :
     public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <VRDPServer, IVRDPServer>,
     public VirtualBoxSupportTranslation <VRDPServer>,
-    public IVRDPServer
+    VBOX_SCRIPTABLE_IMPL(IVRDPServer)
 {
 public:
 

@@ -34,7 +34,7 @@ class ATL_NO_VTABLE Snapshot :
     public VirtualBoxSupportErrorInfoImpl <Snapshot, ISnapshot>,
     public VirtualBoxSupportTranslation <Snapshot>,
     public VirtualBoxBaseWithTypedChildren <Snapshot>,
-    public ISnapshot
+    VBOX_SCRIPTABLE_IMPL(ISnapshot)
 {
 public:
 

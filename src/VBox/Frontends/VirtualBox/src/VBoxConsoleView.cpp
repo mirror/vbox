@@ -432,7 +432,7 @@ private:
 // VBoxConsoleCallback class
 /////////////////////////////////////////////////////////////////////////////
 
-class VBoxConsoleCallback : public IConsoleCallback
+class VBoxConsoleCallback : VBOX_SCRIPTABLE_IMPL(IConsoleCallback)
 {
 public:
 

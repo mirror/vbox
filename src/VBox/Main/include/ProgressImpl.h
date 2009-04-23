@@ -42,7 +42,7 @@ class ATL_NO_VTABLE ProgressBase :
     public VirtualBoxBaseNEXT,
     public com::SupportErrorInfoBase,
     public VirtualBoxSupportTranslation <ProgressBase>,
-    public IProgress
+    VBOX_SCRIPTABLE_IMPL(IProgress)
 {
 protected:
 

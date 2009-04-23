@@ -47,7 +47,7 @@ class ATL_NO_VTABLE HardDisk
     : public com::SupportErrorInfoDerived<MediumBase, HardDisk, IHardDisk>
     , public VirtualBoxBaseWithTypedChildrenNEXT<HardDisk>
     , public VirtualBoxSupportTranslation<HardDisk>
-    , public IHardDisk
+    , VBOX_SCRIPTABLE_IMPL(IHardDisk)
 {
 public:
 

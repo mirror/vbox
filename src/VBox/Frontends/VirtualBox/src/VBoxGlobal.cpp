@@ -149,7 +149,7 @@ public:
 // VirtualBox callback class
 /////////////////////////////////////////////////////////////////////////////
 
-class VBoxCallback : public IVirtualBoxCallback
+class VBoxCallback : VBOX_SCRIPTABLE_IMPL(IVirtualBoxCallback)
 {
 public:
 

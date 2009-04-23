@@ -238,7 +238,7 @@ static volatile int32_t g_cNotifyUpdateEventsPending;
  * Callback handler for VirtualBox events
  */
 class VBoxSDLCallback :
-    public IVirtualBoxCallback
+  VBOX_SCRIPTABLE_IMPL(IVirtualBoxCallback)
 {
 public:
     VBoxSDLCallback()
@@ -386,7 +386,7 @@ private:
  * Callback handler for machine events
  */
 class VBoxSDLConsoleCallback :
-    public IConsoleCallback
+    VBOX_SCRIPTABLE_IMPL(IConsoleCallback)
 {
 public:
     VBoxSDLConsoleCallback() : m_fIgnorePowerOffEvents(false)

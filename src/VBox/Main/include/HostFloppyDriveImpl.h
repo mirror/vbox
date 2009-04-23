@@ -28,7 +28,7 @@ class ATL_NO_VTABLE HostFloppyDrive :
     public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <HostFloppyDrive, IHostFloppyDrive>,
     public VirtualBoxSupportTranslation <HostFloppyDrive>,
-    public IHostFloppyDrive
+    VBOX_SCRIPTABLE_IMPL(IHostFloppyDrive)
 {
 public:
 

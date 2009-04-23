@@ -34,7 +34,7 @@ class ATL_NO_VTABLE StorageController :
     public VirtualBoxBaseWithChildrenNEXT,
     public VirtualBoxSupportErrorInfoImpl <StorageController, IStorageController>,
     public VirtualBoxSupportTranslation <StorageController>,
-    public IStorageController
+    VBOX_SCRIPTABLE_IMPL(IStorageController)
 {
 private:
 
