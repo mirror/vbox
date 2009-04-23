@@ -134,7 +134,7 @@ private:
  *  See IFramebuffer documentation for more info.
  */
 
-class VBoxFrameBuffer : public IFramebuffer
+class VBoxFrameBuffer : VBOX_SCRIPTABLE_IMPL(IFramebuffer)
 {
 public:
 

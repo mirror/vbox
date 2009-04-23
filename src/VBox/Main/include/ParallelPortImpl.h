@@ -31,7 +31,7 @@ class ATL_NO_VTABLE ParallelPort :
     public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <ParallelPort, IParallelPort>,
     public VirtualBoxSupportTranslation <ParallelPort>,
-    public IParallelPort
+    VBOX_SCRIPTABLE_IMPL(IParallelPort)
 {
 public:
 

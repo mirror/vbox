@@ -32,7 +32,7 @@ class ATL_NO_VTABLE MachineDebugger :
     public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <MachineDebugger, IMachineDebugger>,
     public VirtualBoxSupportTranslation <MachineDebugger>,
-    public IMachineDebugger
+    VBOX_SCRIPTABLE_IMPL(IMachineDebugger)
 {
 public:
 

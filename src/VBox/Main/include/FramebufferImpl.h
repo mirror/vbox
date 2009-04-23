@@ -27,7 +27,7 @@
 
 class ATL_NO_VTABLE InternalFramebuffer :
     public VirtualBoxBase,
-    public IFramebuffer
+    VBOX_SCRIPTABLE_IMPL(IFramebuffer)
 {
 public:
     InternalFramebuffer();

@@ -33,7 +33,7 @@ class ATL_NO_VTABLE Guest :
     public VirtualBoxSupportErrorInfoImpl <Guest, IGuest>,
     public VirtualBoxSupportTranslation <Guest>,
     public VirtualBoxBaseNEXT,
-    public IGuest
+    VBOX_SCRIPTABLE_IMPL(IGuest)
 {
 public:
 

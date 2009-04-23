@@ -34,7 +34,7 @@ class ATL_NO_VTABLE RemoteUSBDevice :
     public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <RemoteUSBDevice, IHostUSBDevice>,
     public VirtualBoxSupportTranslation <RemoteUSBDevice>,
-    public IHostUSBDevice
+    VBOX_SCRIPTABLE_IMPL(IHostUSBDevice)
 {
 public:
 

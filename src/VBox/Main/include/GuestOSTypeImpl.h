@@ -31,7 +31,7 @@ class ATL_NO_VTABLE GuestOSType :
     public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <GuestOSType, IGuestOSType>,
     public VirtualBoxSupportTranslation <GuestOSType>,
-    public IGuestOSType
+    VBOX_SCRIPTABLE_IMPL(IGuestOSType)
 {
 public:
 

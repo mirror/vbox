@@ -33,7 +33,7 @@ class ATL_NO_VTABLE NetworkAdapter :
     public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <NetworkAdapter, INetworkAdapter>,
     public VirtualBoxSupportTranslation <NetworkAdapter>,
-    public INetworkAdapter
+    VBOX_SCRIPTABLE_IMPL(INetworkAdapter)
 {
 public:
 

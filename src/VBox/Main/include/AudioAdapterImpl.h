@@ -32,7 +32,7 @@ class ATL_NO_VTABLE AudioAdapter :
     public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <AudioAdapter, IAudioAdapter>,
     public VirtualBoxSupportTranslation <AudioAdapter>,
-    public IAudioAdapter
+    VBOX_SCRIPTABLE_IMPL(IAudioAdapter)
 {
 public:
 

@@ -53,7 +53,7 @@ class ATL_NO_VTABLE Host :
     public VirtualBoxBaseWithChildren,
     public VirtualBoxSupportErrorInfoImpl <Host, IHost>,
     public VirtualBoxSupportTranslation <Host>,
-    public IHost
+    VBOX_SCRIPTABLE_IMPL(IHost)
 {
 public:
 

@@ -235,7 +235,7 @@ class ATL_NO_VTABLE RemoteDisplayInfo :
     public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <RemoteDisplayInfo, IRemoteDisplayInfo>,
     public VirtualBoxSupportTranslation <RemoteDisplayInfo>,
-    public IRemoteDisplayInfo
+    VBOX_SCRIPTABLE_IMPL(IRemoteDisplayInfo)
 {
 public:
 

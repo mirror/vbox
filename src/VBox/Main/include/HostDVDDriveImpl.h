@@ -28,7 +28,7 @@ class ATL_NO_VTABLE HostDVDDrive :
     public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <HostDVDDrive, IHostDVDDrive>,
     public VirtualBoxSupportTranslation <HostDVDDrive>,
-    public IHostDVDDrive
+    VBOX_SCRIPTABLE_IMPL(IHostDVDDrive)
 {
 public:
 

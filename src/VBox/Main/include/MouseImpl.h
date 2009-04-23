@@ -52,7 +52,7 @@ class ATL_NO_VTABLE Mouse :
     public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <Mouse, IMouse>,
     public VirtualBoxSupportTranslation <Mouse>,
-    public IMouse
+    VBOX_SCRIPTABLE_IMPL(IMouse)
 {
 public:
 

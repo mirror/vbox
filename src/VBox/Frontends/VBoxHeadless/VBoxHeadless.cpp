@@ -105,7 +105,7 @@ private:
 /**
  *  Callback handler for machine events.
  */
-class ConsoleCallback : public IConsoleCallback
+class ConsoleCallback : VBOX_SCRIPTABLE_IMPL(IConsoleCallback)
 {
 public:
 

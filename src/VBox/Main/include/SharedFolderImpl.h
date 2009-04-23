@@ -33,7 +33,7 @@ class ATL_NO_VTABLE SharedFolder :
     public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <SharedFolder, ISharedFolder>,
     public VirtualBoxSupportTranslation <SharedFolder>,
-    public ISharedFolder
+    VBOX_SCRIPTABLE_IMPL(ISharedFolder)
 {
 public:
 

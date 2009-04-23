@@ -47,7 +47,7 @@ class ATL_NO_VTABLE MediumBase :
     virtual public VirtualBoxBaseProto,
     public com::SupportErrorInfoBase,
     public VirtualBoxSupportTranslation <MediumBase>,
-    public IMedium
+    VBOX_SCRIPTABLE_IMPL(IMedium)
 {
 public:
 
@@ -240,7 +240,7 @@ public:
 class ATL_NO_VTABLE DVDImage
     : public com::SupportErrorInfoDerived<ImageMediumBase, DVDImage, IDVDImage>
     , public VirtualBoxSupportTranslation<DVDImage>
-    , public IDVDImage
+    , VBOX_SCRIPTABLE_IMPL(IDVDImage)
 {
 public:
 
@@ -293,7 +293,7 @@ private:
 class ATL_NO_VTABLE FloppyImage
     : public com::SupportErrorInfoDerived <ImageMediumBase, FloppyImage, IFloppyImage>
     , public VirtualBoxSupportTranslation <FloppyImage>
-    , public IFloppyImage
+    , VBOX_SCRIPTABLE_IMPL(IFloppyImage)
 {
 public:
 

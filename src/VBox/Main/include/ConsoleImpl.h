@@ -79,7 +79,7 @@ class ATL_NO_VTABLE Console :
     public VirtualBoxBaseWithChildrenNEXT,
     public VirtualBoxSupportErrorInfoImpl <Console, IConsole>,
     public VirtualBoxSupportTranslation <Console>,
-    public IConsole
+    VBOX_SCRIPTABLE_IMPL(IConsole)
 {
     Q_OBJECT
 
