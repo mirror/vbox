@@ -19,9 +19,9 @@
  * additional information or have any questions.
  */
 
-/*******************************************************************************
-*   Header Files                                                               *
-*******************************************************************************/
+/****************************************************************************
+*   Header Files                                                            *
+****************************************************************************/
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include <VBox/log.h>
 #include <iprt/alloc.h>
@@ -49,9 +49,9 @@
 #define USE_UTF8
 #define USE_CTEXT
 
-/*******************************************************************************
-*   Global Variables                                                           *
-*******************************************************************************/
+/****************************************************************************
+*   Global Variables                                                        *
+****************************************************************************/
 /** The different clipboard formats which we support. */
 enum g_eClipboardFormat
 {
@@ -511,9 +511,9 @@ static void vboxClipboardGetProc(Widget, XtPointer /* pClientData */, Atom * /* 
                                  Atom *atomType, XtPointer pValue, long unsigned int *pcLen,
                                  int *piFormat)
 {
-    /* The X Toolkit may have failed to get the clipboard selection for us. */
     LogFlowFunc(("*pcLen=%lu, *piFormat=%d, requested target format: %d, g_ctx.requestBufferSize=%d\n",
                  *pcLen, *piFormat, g_ctx.requestGuestFormat, g_ctx.requestBufferSize));
+    /* The X Toolkit may have failed to get the clipboard selection for us. */
     if (*atomType == XT_CONVERT_FAIL)
     {
         vboxClipboardSendData(0, NULL, 0);
@@ -1214,15 +1214,17 @@ void vboxClipboardFormatAnnounce (uint32_t u32Formats)
     g_ctx.eOwner = HOST;
     g_ctx.guestTextFormat = INVALID;
     g_ctx.guestBitmapFormat = INVALID;
-    if (XtOwnSelection(g_ctx.widget, g_ctx.atomClipboard, CurrentTime, vboxClipboardConvertProc,
-                       vboxClipboardLoseProc, 0) != True)
+    if (XtOwnSelection(g_ctx.widget, g_ctx.atomClipboard, CurrentTime,
+                       vboxClipboardConvertProc, vboxClipboardLoseProc, 0)
+                       == True)
+        XtOwnSelection(g_ctx.widget, g_ctx.atomPrimary, CurrentTime,
+                       vboxClipboardConvertProc, NULL, 0);
+    else
     {
         LogFlow(("vboxClipboardFormatAnnounce: returning clipboard ownership to the guest\n"));
         g_ctx.notifyHost = true;
         g_ctx.eOwner = GUEST;
     }
-    XtOwnSelection(g_ctx.widget, g_ctx.atomPrimary, CurrentTime, vboxClipboardConvertProc,
-                   NULL, 0);
     LogFlowFunc(("returning\n"));
 }
 
@@ -1396,7 +1398,9 @@ int vboxClipboardConnect(void)
         LogRel(("Invalid client ID of 0\n"));
         return VERR_NOT_SUPPORTED;
     }
-    g_ctx.eOwner = HOST;
+    /* Assume that if the guest clipboard already contains data then the
+     * user put it there for a reason. */
+    g_ctx.eOwner = GUEST;
     LogFlowFunc(("g_ctx.client=%u rc=%Rrc\n", g_ctx.client, rc));
     return rc;
 }
