@@ -227,7 +227,8 @@ static int csamReinit(PVM pVM)
     pVM->csam.s.fGatesChecked    = false;
     pVM->csam.s.fScanningStarted = false;
 
-    VM_FF_CLEAR(pVM, VM_FF_CSAM_PENDING_ACTION);
+    PVMCPU pVCpu = &pVM->aCpus[0];  /* raw mode implies 1 VPCU */
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_CSAM_PENDING_ACTION);
     pVM->csam.s.cDirtyPages = 0;
     /* not necessary */
     memset(pVM->csam.s.pvDirtyBasePage, 0, sizeof(pVM->csam.s.pvDirtyBasePage));
@@ -2262,13 +2263,14 @@ static int csamR3FlushCodePages(PVM pVM)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VMCPU to operate on.
  */
-VMMR3DECL(int) CSAMR3DoPendingAction(PVM pVM)
+VMMR3DECL(int) CSAMR3DoPendingAction(PVM pVM, PVMCPU pVCpu)
 {
     csamR3FlushDirtyPages(pVM);
     csamR3FlushCodePages(pVM);
 
-    VM_FF_CLEAR(pVM, VM_FF_CSAM_PENDING_ACTION);
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_CSAM_PENDING_ACTION);
     return VINF_SUCCESS;
 }
 

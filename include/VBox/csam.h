@@ -258,8 +258,9 @@ VMMR3DECL(int) CSAMR3MarkCode(PVM pVM, RTRCPTR pInstr, uint32_t opsize, bool fSc
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VMCPU to operate on.
  */
-VMMR3DECL(int) CSAMR3DoPendingAction(PVM pVM);
+VMMR3DECL(int) CSAMR3DoPendingAction(PVM pVM, PVMCPU pVCpu);
 
 /**
  * Monitors a code page (if not already monitored)

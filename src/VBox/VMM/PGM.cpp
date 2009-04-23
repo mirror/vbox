@@ -610,6 +610,8 @@
 *******************************************************************************/
 /** Saved state data unit version for 2.5.x and later. */
 #define PGM_SAVED_STATE_VERSION                 9
+/** Saved state data unit version for 2.2.2 and later. */
+#define PGM_SAVED_STATE_VERSION_2_2_2           8
 /** Saved state data unit version for 2.2.0. */
 #define PGM_SAVED_STATE_VERSION_RR_DESC         7
 /** Saved state data unit version. */
@@ -2172,8 +2174,8 @@ VMMR3DECL(void) PGMR3Reset(PVM pVM)
         /*
          * Clear the FFs PGM owns.
          */
-        VM_FF_CLEAR(pVM, VM_FF_PGM_SYNC_CR3);
-        VM_FF_CLEAR(pVM, VM_FF_PGM_SYNC_CR3_NON_GLOBAL);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
     }
 
     /*
@@ -3008,6 +3010,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
      * Validate version.
      */
     if (    u32Version != PGM_SAVED_STATE_VERSION
+        &&  u32Version != PGM_SAVED_STATE_VERSION_2_2_2
         &&  u32Version != PGM_SAVED_STATE_VERSION_RR_DESC
         &&  u32Version != PGM_SAVED_STATE_VERSION_OLD_PHYS_CODE)
     {
@@ -3035,8 +3038,8 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
         for (unsigned i=0;i<pVM->cCPUs;i++)
         {
             PVMCPU pVCpu = &pVM->aCpus[i];
-            VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3_NON_GLOBAL);
-            VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
 
             pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL;
         }
@@ -3886,7 +3889,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
     /*
      * Always flag the necessary updates
      */
-    VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
 
     /*
      * Enter the new guest and shadow+guest modes.
@@ -4085,7 +4088,7 @@ int pgmR3ReEnterShadowModeAfterPoolFlush(PVM pVM, PVMCPU pVCpu)
 {
     pVCpu->pgm.s.enmShadowMode = PGMMODE_INVALID;
     int rc = PGMR3ChangeMode(pVM, pVCpu, PGMGetGuestMode(pVCpu));
-    Assert(VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
+    Assert(VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
     AssertRCReturn(rc, rc);
     AssertRCSuccessReturn(rc, VERR_IPE_UNEXPECTED_INFO_STATUS);
 
@@ -4848,6 +4851,9 @@ static DECLCALLBACK(int)  pgmR3CmdError(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
  */
 static DECLCALLBACK(int) pgmR3CmdSync(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
 {
+    /** @todo SMP support */
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
     /*
      * Validate input.
      */
@@ -4857,7 +4863,7 @@ static DECLCALLBACK(int) pgmR3CmdSync(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM p
     /*
      * Force page directory sync.
      */
-    VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
 
     int rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Forcing page directory sync.\n");
     if (RT_FAILURE(rc))
@@ -4932,7 +4938,7 @@ static DECLCALLBACK(int) pgmR3CmdSyncAlways(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
     else
     {
         ASMAtomicOrU32(&pVCpu->pgm.s.fSyncFlags, PGM_SYNC_ALWAYS);
-        VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Enabled permanent forced page directory syncing.\n");
     }
 }

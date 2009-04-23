@@ -111,8 +111,14 @@ VMMR3DECL(int) PATMR3Init(PVM pVM)
 
     Log(("PATMR3Init: Patch record size %d\n", sizeof(PATCHINFO)));
 
-    AssertReleaseMsg(PATMInterruptFlag == (VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC | VM_FF_TIMER | VM_FF_REQUEST),
-                     ("Interrupt flags out of sync!! PATMInterruptFlag=%#x expected %#x. broken assembler?\n", PATMInterruptFlag, VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC | VM_FF_TIMER | VM_FF_REQUEST));
+    /* These values can't change as they are hardcoded in patch code (old saved states!) */
+    AssertCompile(VM_FF_TIMER   == VMCPU_FF_TIMER);
+    AssertCompile(VM_FF_REQUEST == VMCPU_FF_REQUEST);
+    AssertCompile(VMCPU_FF_INTERRUPT_APIC == RT_BIT_32(0));
+    AssertCompile(VMCPU_FF_INTERRUPT_PIC == RT_BIT_32(1));
+
+    AssertReleaseMsg(PATMInterruptFlag == (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST),
+                     ("Interrupt flags out of sync!! PATMInterruptFlag=%#x expected %#x. broken assembler?\n", PATMInterruptFlag, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST));
 
     /* Allocate patch memory and GC patch state memory. */
     pVM->patm.s.cbPatchMem = PATCH_MEMORY_SIZE;
@@ -6232,7 +6238,7 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
             Assert(cpu.pCurInstr->opcode == OP_SYSEXIT || cpu.pCurInstr->opcode == OP_HLT || cpu.pCurInstr->opcode == OP_IRET);
         }
 #endif
-        EMSetInhibitInterruptsPC(pVM, pVCpu, pNewEip);
+        EMSetInhibitInterruptsPC(pVCpu, pNewEip);
         pVM->patm.s.pGCStateHC->GCPtrInhibitInterrupts = 0;
     }
 

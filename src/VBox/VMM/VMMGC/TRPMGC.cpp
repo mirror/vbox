@@ -149,7 +149,7 @@ VMMRCDECL(int) trpmRCGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
     Log(("trpmRCGuestIDTWriteHandler: eip=%RGv write to gate %x offset %x\n", pRegFrame->eip, iGate, offRange));
 
     /** @todo Check which IDT entry and keep the update cost low in TRPMR3SyncIDT() and CSAMCheckGates(). */
-    VM_FF_SET(pVM, VM_FF_TRPM_SYNC_IDT);
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT);
 
     STAM_COUNTER_INC(&pVM->trpm.s.StatRCWriteGuestIDTFault);
     return VINF_EM_RAW_EMULATE_INSTR_IDT_FAULT;

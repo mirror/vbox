@@ -145,7 +145,7 @@ PATMClearInhibitIRQFaultIF0_Start:
 	jz		PATMClearInhibitIRQFaultIF0_Fault
 
     ; if interrupts are pending, then we must go back to the host context to handle them!
-    test    dword [ss:PATM_VM_FORCEDACTIONS], VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC | VM_FF_TIMER | VM_FF_REQUEST
+    test    dword [ss:PATM_VM_FORCEDACTIONS], VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST
     jz      PATMClearInhibitIRQFaultIF0_Continue
 
     ; Go to our hypervisor trap handler to dispatch the pending irq
@@ -220,7 +220,7 @@ PATMClearInhibitIRQContIF0_Start:
 	jz		PATMClearInhibitIRQContIF0_Continue
 
     ; if interrupts are pending, then we must go back to the host context to handle them!
-    test    dword [ss:PATM_VM_FORCEDACTIONS], VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC | VM_FF_TIMER | VM_FF_REQUEST
+    test    dword [ss:PATM_VM_FORCEDACTIONS], VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST
     jz      PATMClearInhibitIRQContIF0_Continue
 
     ; Go to our hypervisor trap handler to dispatch the pending irq
@@ -743,7 +743,7 @@ PATMPopf32_Ok:
     or      dword [ss:PATM_VMFLAGS], X86_EFL_IF
 
     ; if interrupts are pending, then we must go back to the host context to handle them!
-    test    dword [ss:PATM_VM_FORCEDACTIONS], VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC | VM_FF_TIMER | VM_FF_REQUEST
+    test    dword [ss:PATM_VM_FORCEDACTIONS], VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST
     jz      PATMPopf32_Continue
 
     ; Go to our hypervisor trap handler to dispatch the pending irq
@@ -833,7 +833,7 @@ PATMPopf32_NoExitLog:
     jz      PATMPopf32_NoExit_Continue
 
     ; if interrupts are pending, then we must go back to the host context to handle them!
-    test    dword [ss:PATM_VM_FORCEDACTIONS], VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC | VM_FF_TIMER | VM_FF_REQUEST
+    test    dword [ss:PATM_VM_FORCEDACTIONS], VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST
     jz      PATMPopf32_NoExit_Continue
 
     ; Go to our hypervisor trap handler to dispatch the pending irq
@@ -921,7 +921,7 @@ PATMPopf16Start:
 PATMPopf16_Ok:
     ; if interrupts are pending, then we must go back to the host context to handle them!
     ; @note we destroy the flags here, but that should really not matter (PATM_INT3 case)
-    test    dword [ss:PATM_VM_FORCEDACTIONS], VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC | VM_FF_TIMER | VM_FF_REQUEST
+    test    dword [ss:PATM_VM_FORCEDACTIONS], VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST
     jz      PATMPopf16_Continue
     mov     dword [ss:PATM_INTERRUPTFLAG], 1
     PATM_INT3
@@ -986,7 +986,7 @@ PATMPopf16Start_NoExit:
 PATMPopf16_Ok_NoExit:
     ; if interrupts are pending, then we must go back to the host context to handle them!
     ; @note we destroy the flags here, but that should really not matter (PATM_INT3 case)
-    test    dword [ss:PATM_VM_FORCEDACTIONS], VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC | VM_FF_TIMER | VM_FF_REQUEST
+    test    dword [ss:PATM_VM_FORCEDACTIONS], VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST
     jz      PATMPopf16_Continue_NoExit
     mov     dword [ss:PATM_INTERRUPTFLAG], 1
     PATM_INT3
@@ -1237,7 +1237,7 @@ iret_notring0:
 ; if interrupts are pending, then we must go back to the host context to handle them!
 ; Note: This is very important as pending pic interrupts can be overriden by apic interrupts if we don't check early enough (Fedora 5 boot)
 ; @@todo fix this properly, so we can dispatch pending interrupts in GC
-    test    dword [ss:PATM_VM_FORCEDACTIONS], VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC
+    test    dword [ss:PATM_VM_FORCEDACTIONS], VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
     jz      iret_continue
 
 ; Go to our hypervisor trap handler to dispatch the pending irq
@@ -2581,5 +2581,5 @@ GLOBALNAME PATMMovFromSSRecord
 
 ; For assertion during init (to make absolutely sure the flags are in sync in vm.mac & vm.h)
 GLOBALNAME PATMInterruptFlag
-    DD      VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC | VM_FF_TIMER | VM_FF_REQUEST
+    DD      VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST
 

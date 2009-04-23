@@ -390,8 +390,8 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         /*
          * These forced actions are not necessary for the test and trigger breakpoints too.
          */
-        VM_FF_CLEAR(pVM, VM_FF_TRPM_SYNC_IDT);
-        VM_FF_CLEAR(pVM, VM_FF_SELM_SYNC_TSS);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TRPM_SYNC_IDT);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
 
         /*
          * Profile switching.
@@ -484,8 +484,8 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
     /*
      * These forced actions are not necessary for the test and trigger breakpoints too.
      */
-    VM_FF_CLEAR(pVM, VM_FF_TRPM_SYNC_IDT);
-    VM_FF_CLEAR(pVM, VM_FF_SELM_SYNC_TSS);
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TRPM_SYNC_IDT);
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
 
     /* Enable mapping of the hypervisor into the shadow page table. */
     uint32_t cb;
@@ -503,7 +503,7 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
     PGMChangeMode(pVCpu, pHyperCtx->cr0, pHyperCtx->cr4, pHyperCtx->msrEFER);
     PGMSyncCR3(pVCpu, pHyperCtx->cr0, CR3Phys, pHyperCtx->cr4, true);
 
-    VM_FF_CLEAR(pVM, VM_FF_TO_R3);
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
     VM_FF_CLEAR(pVM, VM_FF_TIMER);
     VM_FF_CLEAR(pVM, VM_FF_REQUEST);
 
@@ -554,7 +554,7 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
             *pGuestCtx = *pHyperCtx;
             pGuestCtx->cr3 = CR3Phys;
 
-            VM_FF_CLEAR(pVM, VM_FF_TO_R3);
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
             VM_FF_CLEAR(pVM, VM_FF_TIMER);
 
             uint64_t TickThisStart = ASMReadTSC();

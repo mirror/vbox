@@ -704,7 +704,7 @@ static const REMPARMDESC g_aArgsPDMApicReadMSR[] =
 };
 static const REMPARMDESC g_aArgsPDMGetInterrupt[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t *), NULL }
 };
 static const REMPARMDESC g_aArgsPDMIsaSetIrq[] =
@@ -1170,10 +1170,10 @@ static REMFNDESC g_aVMMImports[] =
     { "TMVirtualPause",                         (void *)(uintptr_t)&TMVirtualPause,                 &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "TMVirtualResume",                        (void *)(uintptr_t)&TMVirtualResume,                &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "TRPMAssertTrap",                         (void *)(uintptr_t)&TRPMAssertTrap,                 &g_aArgsTRPMAssertTrap[0],                  RT_ELEMENTS(g_aArgsTRPMAssertTrap),                    REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
-    { "TRPMGetErrorCode",                       (void *)(uintptr_t)&TRPMGetErrorCode,               &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(RTGCUINT),   NULL },
-    { "TRPMGetFaultAddress",                    (void *)(uintptr_t)&TRPMGetFaultAddress,            &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(RTGCUINTPTR),NULL },
+    { "TRPMGetErrorCode",                       (void *)(uintptr_t)&TRPMGetErrorCode,               &g_aArgsVMCPU[0],                           RT_ELEMENTS(g_aArgsVMCPU),                             REMFNDESC_FLAGS_RET_INT,    sizeof(RTGCUINT),   NULL },
+    { "TRPMGetFaultAddress",                    (void *)(uintptr_t)&TRPMGetFaultAddress,            &g_aArgsVMCPU[0],                           RT_ELEMENTS(g_aArgsVMCPU),                             REMFNDESC_FLAGS_RET_INT,    sizeof(RTGCUINTPTR),NULL },
     { "TRPMQueryTrap",                          (void *)(uintptr_t)&TRPMQueryTrap,                  &g_aArgsTRPMQueryTrap[0],                   RT_ELEMENTS(g_aArgsTRPMQueryTrap),                     REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
-    { "TRPMResetTrap",                          (void *)(uintptr_t)&TRPMResetTrap,                  &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
+    { "TRPMResetTrap",                          (void *)(uintptr_t)&TRPMResetTrap,                  &g_aArgsVMCPU[0],                           RT_ELEMENTS(g_aArgsVMCPU),                             REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "TRPMSetErrorCode",                       (void *)(uintptr_t)&TRPMSetErrorCode,               &g_aArgsTRPMSetErrorCode[0],                RT_ELEMENTS(g_aArgsTRPMSetErrorCode),                  REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "TRPMSetFaultAddress",                    (void *)(uintptr_t)&TRPMSetFaultAddress,            &g_aArgsTRPMSetFaultAddress[0],             RT_ELEMENTS(g_aArgsTRPMSetFaultAddress),               REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "VMMGetCpu",                              (void *)(uintptr_t)&VMMGetCpu,                      &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(PVMCPU),     NULL },

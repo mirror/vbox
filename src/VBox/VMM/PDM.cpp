@@ -640,8 +640,12 @@ static DECLCALLBACK(int) pdmR3Save(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Save interrupt and DMA states.
      */
-    SSMR3PutUInt(pSSM, VM_FF_ISSET(pVM, VM_FF_INTERRUPT_APIC));
-    SSMR3PutUInt(pSSM, VM_FF_ISSET(pVM, VM_FF_INTERRUPT_PIC));
+    for (unsigned idCpu=0;idCpu<pVM->cCPUs;idCpu++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[idCpu];
+        SSMR3PutUInt(pSSM, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_APIC));
+        SSMR3PutUInt(pSSM, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_PIC));
+    }
     SSMR3PutUInt(pSSM, VM_FF_ISSET(pVM, VM_FF_PDM_DMA));
 
     /*
@@ -674,10 +678,18 @@ static DECLCALLBACK(int) pdmR3LoadPrep(PVM pVM, PSSMHANDLE pSSM)
 {
     LogFlow(("pdmR3LoadPrep: %s%s%s%s\n",
              VM_FF_ISSET(pVM, VM_FF_PDM_QUEUES)     ? " VM_FF_PDM_QUEUES" : "",
-             VM_FF_ISSET(pVM, VM_FF_PDM_DMA)        ? " VM_FF_PDM_DMA" : "",
-             VM_FF_ISSET(pVM, VM_FF_INTERRUPT_APIC) ? " VM_FF_INTERRUPT_APIC" : "",
-             VM_FF_ISSET(pVM, VM_FF_INTERRUPT_PIC)  ? " VM_FF_INTERRUPT_PIC" : ""
+             VM_FF_ISSET(pVM, VM_FF_PDM_DMA)        ? " VM_FF_PDM_DMA" : ""
              ));
+#ifdef LOG_ENABLED
+    for (unsigned idCpu=0;idCpu<pVM->cCPUs;idCpu++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[idCpu];
+        LogFlow(("pdmR3LoadPrep: VCPU %d %s%s%s%s\n", idCpu, 
+                VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_APIC) ? " VMCPU_FF_INTERRUPT_APIC" : "",
+                VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_PIC)  ? " VMCPU_FF_INTERRUPT_PIC" : ""
+                ));
+    }
+#endif
 
     /*
      * In case there is work pending that will raise an interrupt,
@@ -687,8 +699,12 @@ static DECLCALLBACK(int) pdmR3LoadPrep(PVM pVM, PSSMHANDLE pSSM)
         PDMR3QueueFlushAll(pVM);
 
     /* Clear the FFs. */
-    VM_FF_CLEAR(pVM, VM_FF_INTERRUPT_APIC);
-    VM_FF_CLEAR(pVM, VM_FF_INTERRUPT_PIC);
+    for (unsigned idCpu=0;idCpu<pVM->cCPUs;idCpu++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[idCpu];
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_APIC);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_PIC);
+    }
     VM_FF_CLEAR(pVM, VM_FF_PDM_DMA);
 
     return VINF_SUCCESS;
@@ -705,6 +721,8 @@ static DECLCALLBACK(int) pdmR3LoadPrep(PVM pVM, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
 {
+    int rc;
+
     LogFlow(("pdmR3Load:\n"));
 
     /*
@@ -719,33 +737,38 @@ static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     /*
      * Load the interrupt and DMA states.
      */
-    /* APIC interrupt */
-    RTUINT fInterruptPending = 0;
-    int rc = SSMR3GetUInt(pSSM, &fInterruptPending);
-    if (RT_FAILURE(rc))
-        return rc;
-    if (fInterruptPending & ~1)
+    for (unsigned idCpu=0;idCpu<pVM->cCPUs;idCpu++)
     {
-        AssertMsgFailed(("fInterruptPending=%#x (APIC)\n", fInterruptPending));
-        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-    }
-    AssertRelease(!VM_FF_ISSET(pVM, VM_FF_INTERRUPT_APIC));
-    if (fInterruptPending)
-        VM_FF_SET(pVM, VM_FF_INTERRUPT_APIC);
+        PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
-    /* PIC interrupt */
-    fInterruptPending = 0;
-    rc = SSMR3GetUInt(pSSM, &fInterruptPending);
-    if (RT_FAILURE(rc))
-        return rc;
-    if (fInterruptPending & ~1)
-    {
-        AssertMsgFailed(("fInterruptPending=%#x (PIC)\n", fInterruptPending));
-        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+        /* APIC interrupt */
+        RTUINT fInterruptPending = 0;
+        rc = SSMR3GetUInt(pSSM, &fInterruptPending);
+        if (RT_FAILURE(rc))
+            return rc;
+        if (fInterruptPending & ~1)
+        {
+            AssertMsgFailed(("fInterruptPending=%#x (APIC)\n", fInterruptPending));
+            return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+        }
+        AssertRelease(!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_APIC));
+        if (fInterruptPending)
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC);
+
+        /* PIC interrupt */
+        fInterruptPending = 0;
+        rc = SSMR3GetUInt(pSSM, &fInterruptPending);
+        if (RT_FAILURE(rc))
+            return rc;
+        if (fInterruptPending & ~1)
+        {
+            AssertMsgFailed(("fInterruptPending=%#x (PIC)\n", fInterruptPending));
+            return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+        }
+        AssertRelease(!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_PIC));
+        if (fInterruptPending)
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC);
     }
-    AssertRelease(!VM_FF_ISSET(pVM, VM_FF_INTERRUPT_PIC));
-    if (fInterruptPending)
-        VM_FF_SET(pVM, VM_FF_INTERRUPT_PIC);
 
     /* DMA pending */
     RTUINT fDMAPending = 0;
@@ -902,8 +925,12 @@ VMMR3DECL(void) PDMR3Reset(PVM pVM)
     /*
      * Clear all pending interrupts and DMA operations.
      */
-    VM_FF_CLEAR(pVM, VM_FF_INTERRUPT_APIC);
-    VM_FF_CLEAR(pVM, VM_FF_INTERRUPT_PIC);
+    for (unsigned idCpu=0;idCpu<pVM->cCPUs;idCpu++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[idCpu];
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_APIC);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_PIC);
+    }
     VM_FF_CLEAR(pVM, VM_FF_PDM_DMA);
 
     /*

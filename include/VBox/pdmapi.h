@@ -42,7 +42,7 @@ __BEGIN_DECLS
  * @{
  */
 
-VMMDECL(int)    PDMGetInterrupt(PVM pVM, uint8_t *pu8Interrupt);
+VMMDECL(int)    PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt);
 VMMDECL(int)    PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level);
 VMMDECL(int)    PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level);
 VMMDECL(int)    PDMApicHasPendingIrq(PVM pVM, bool *pfPending);

@@ -1449,7 +1449,7 @@ void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
     pCtx->cr0 = env->cr[0];
     pCtx->cr3 = env->cr[3];
     if ((env->cr[4] ^ pCtx->cr4) & X86_CR4_VME)
-        VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
+        VMCPU_FF_SET(env->pVCpu, VMCPU_FF_SELM_SYNC_TSS);
     pCtx->cr4 = env->cr[4];
 
     /*
@@ -1460,7 +1460,7 @@ void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("remR3FlushPage %RGv failed with %d!!\n", GCPtr, rc));
-        VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+        VMCPU_FF_SET(env->pVCpu, VMCPU_FF_PGM_SYNC_CR3);
     }
     //RAWEx_ProfileStart(env, STATS_QEMU_TOTAL);
 }
@@ -1565,7 +1565,7 @@ void remR3FlushTLB(CPUState *env, bool fGlobal)
     pCtx->cr0 = env->cr[0];
     pCtx->cr3 = env->cr[3];
     if ((env->cr[4] ^ pCtx->cr4) & X86_CR4_VME)
-        VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
+        VMCPU_FF_SET(env->pVCpu, VMCPU_FF_SELM_SYNC_TSS);
     pCtx->cr4 = env->cr[4];
 
     /*
@@ -1605,7 +1605,7 @@ void remR3ChangeCpuMode(CPUState *env)
     pCtx->cr0 = env->cr[0];
     pCtx->cr3 = env->cr[3];
     if ((env->cr[4] ^ pCtx->cr4) & X86_CR4_VME)
-        VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
+        VMCPU_FF_SET(env->pVCpu, VMCPU_FF_SELM_SYNC_TSS);
     pCtx->cr4 = env->cr[4];
 
 #ifdef TARGET_X86_64
@@ -2187,7 +2187,7 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
      */
     pVM->rem.s.Env.interrupt_request &= ~(CPU_INTERRUPT_HARD | CPU_INTERRUPT_EXIT | CPU_INTERRUPT_EXITTB | CPU_INTERRUPT_TIMER);
     if (    pVM->rem.s.u32PendingInterrupt != REM_NO_PENDING_IRQ
-        ||  VM_FF_ISPENDING(pVM, VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC))
+        ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
         pVM->rem.s.Env.interrupt_request |= CPU_INTERRUPT_HARD;
 
     /*
@@ -2316,7 +2316,7 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
     pCtx->cr2           = pVM->rem.s.Env.cr[2];
     pCtx->cr3           = pVM->rem.s.Env.cr[3];
     if ((pVM->rem.s.Env.cr[4] ^ pCtx->cr4) & X86_CR4_VME)
-        VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
     pCtx->cr4           = pVM->rem.s.Env.cr[4];
 
     for (i = 0; i < 8; i++)
@@ -2327,7 +2327,7 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
     {
         pCtx->gdtr.pGdt = pVM->rem.s.Env.gdt.base;
         STAM_COUNTER_INC(&gStatREMGDTChange);
-        VM_FF_SET(pVM, VM_FF_SELM_SYNC_GDT);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
     }
 
     pCtx->idtr.cbIdt    = pVM->rem.s.Env.idt.limit;
@@ -2335,7 +2335,7 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
     {
         pCtx->idtr.pIdt = pVM->rem.s.Env.idt.base;
         STAM_COUNTER_INC(&gStatREMIDTChange);
-        VM_FF_SET(pVM, VM_FF_TRPM_SYNC_IDT);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT);
     }
 
     if (    pCtx->ldtr             != pVM->rem.s.Env.ldt.selector
@@ -2348,7 +2348,7 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
         pCtx->ldtrHid.u32Limit  = pVM->rem.s.Env.ldt.limit;
         pCtx->ldtrHid.Attr.u    = (pVM->rem.s.Env.ldt.flags >> 8) & 0xF0FF;
         STAM_COUNTER_INC(&gStatREMLDTRChange);
-        VM_FF_SET(pVM, VM_FF_SELM_SYNC_LDT);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
     }
 
     if (    pCtx->tr             != pVM->rem.s.Env.tr.selector
@@ -2370,7 +2370,7 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
         if (pCtx->trHid.Attr.u)
             pCtx->trHid.Attr.u |= DESC_TSS_BUSY_MASK >> 8;
         STAM_COUNTER_INC(&gStatREMTRChange);
-        VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
     }
 
     /** @todo These values could still be out of sync! */
@@ -2532,7 +2532,7 @@ static void remR3StateUpdate(PVM pVM, PVMCPU pVCpu)
     pCtx->cr2           = pVM->rem.s.Env.cr[2];
     pCtx->cr3           = pVM->rem.s.Env.cr[3];
     if ((pVM->rem.s.Env.cr[4] ^ pCtx->cr4) & X86_CR4_VME)
-        VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
     pCtx->cr4           = pVM->rem.s.Env.cr[4];
 
     for (i = 0; i < 8; i++)
@@ -2543,7 +2543,7 @@ static void remR3StateUpdate(PVM pVM, PVMCPU pVCpu)
     {
         pCtx->gdtr.pGdt     = (RTGCPTR)pVM->rem.s.Env.gdt.base;
         STAM_COUNTER_INC(&gStatREMGDTChange);
-        VM_FF_SET(pVM, VM_FF_SELM_SYNC_GDT);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
     }
 
     pCtx->idtr.cbIdt    = pVM->rem.s.Env.idt.limit;
@@ -2551,7 +2551,7 @@ static void remR3StateUpdate(PVM pVM, PVMCPU pVCpu)
     {
         pCtx->idtr.pIdt     = (RTGCPTR)pVM->rem.s.Env.idt.base;
         STAM_COUNTER_INC(&gStatREMIDTChange);
-        VM_FF_SET(pVM, VM_FF_TRPM_SYNC_IDT);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT);
     }
 
     if (    pCtx->ldtr             != pVM->rem.s.Env.ldt.selector
@@ -2564,7 +2564,7 @@ static void remR3StateUpdate(PVM pVM, PVMCPU pVCpu)
         pCtx->ldtrHid.u32Limit  = pVM->rem.s.Env.ldt.limit;
         pCtx->ldtrHid.Attr.u    = (pVM->rem.s.Env.ldt.flags >> 8) & 0xFFFF;
         STAM_COUNTER_INC(&gStatREMLDTRChange);
-        VM_FF_SET(pVM, VM_FF_SELM_SYNC_LDT);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
     }
 
     if (    pCtx->tr             != pVM->rem.s.Env.tr.selector
@@ -2586,7 +2586,7 @@ static void remR3StateUpdate(PVM pVM, PVMCPU pVCpu)
         if (pCtx->trHid.Attr.u)
             pCtx->trHid.Attr.u |= DESC_TSS_BUSY_MASK >> 8;
         STAM_COUNTER_INC(&gStatREMTRChange);
-        VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
     }
 
     /** @todo These values could still be out of sync! */
@@ -4029,12 +4029,12 @@ int cpu_get_pic_interrupt(CPUState *env)
         env->pVM->rem.s.u32PendingInterrupt = REM_NO_PENDING_IRQ;
     }
     else
-        rc = PDMGetInterrupt(env->pVM, &u8Interrupt);
+        rc = PDMGetInterrupt(env->pVCpu, &u8Interrupt);
 
     LogFlow(("cpu_get_pic_interrupt: u8Interrupt=%d rc=%Rrc\n", u8Interrupt, rc));
     if (RT_SUCCESS(rc))
     {
-        if (VM_FF_ISPENDING(env->pVM, VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC))
+        if (VMCPU_FF_ISPENDING(env->pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
             env->interrupt_request |= CPU_INTERRUPT_HARD;
         return u8Interrupt;
     }

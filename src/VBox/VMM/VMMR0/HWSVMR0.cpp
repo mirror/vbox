@@ -374,7 +374,7 @@ inline void SVMR0InjectEvent(PVM pVM, SVM_VMCB *pVMCB, CPUMCTX *pCtx, SVM_EVENT*
     else
     {
         Log(("INJ-EI: %x at %RGv\n", pEvent->n.u8Vector, (RTGCPTR)pCtx->rip));
-        Assert(!VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS));
+        Assert(!VMCPU_FF_ISSET(VMMGetCpu(pVM), VMCPU_FF_INHIBIT_INTERRUPTS));
         Assert(pCtx->eflags.u32 & X86_EFL_IF);
     }
 #endif
@@ -427,14 +427,14 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, SVM_VMCB *pVMCB, CP
 
     /* When external interrupts are pending, we should exit the VM when IF is set. */
     if (    !TRPMHasTrap(pVCpu)
-        &&  VM_FF_ISPENDING(pVM, (VM_FF_INTERRUPT_APIC|VM_FF_INTERRUPT_PIC)))
+        &&  VMCPU_FF_ISPENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC|VMCPU_FF_INTERRUPT_PIC)))
     {
         if (    !(pCtx->eflags.u32 & X86_EFL_IF)
-            ||  VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS))
+            ||  VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
         {
             if (!pVMCB->ctrl.IntCtrl.n.u1VIrqValid)
             {
-                if (!VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS))
+                if (!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
                     LogFlow(("Enable irq window exit!\n"));
                 else
                     Log(("Pending interrupt blocked at %RGv by VM_FF_INHIBIT_INTERRUPTS -> irq window exit\n", (RTGCPTR)pCtx->rip));
@@ -449,7 +449,7 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, SVM_VMCB *pVMCB, CP
         {
             uint8_t u8Interrupt;
 
-            rc = PDMGetInterrupt(pVM, &u8Interrupt);
+            rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
             Log(("Dispatch interrupt: u8Interrupt=%x (%d) rc=%Rrc\n", u8Interrupt, u8Interrupt, rc));
             if (RT_SUCCESS(rc))
             {
@@ -459,7 +459,7 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, SVM_VMCB *pVMCB, CP
             else
             {
                 /* Can only happen in rare cases where a pending interrupt is cleared behind our back */
-                Assert(!VM_FF_ISPENDING(pVM, (VM_FF_INTERRUPT_APIC|VM_FF_INTERRUPT_PIC)));
+                Assert(!VMCPU_FF_ISPENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC|VMCPU_FF_INTERRUPT_PIC)));
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatSwitchGuestIrq);
                 /* Just continue */
             }
@@ -476,7 +476,7 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, SVM_VMCB *pVMCB, CP
 #endif
 
     if (    pCtx->eflags.u32 & X86_EFL_IF
-        && (!VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS))
+        && (!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
         && TRPMHasTrap(pVCpu)
        )
     {
@@ -677,7 +677,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         else
         {
             pVMCB->guest.u64CR3             = PGMGetHyperCR3(pVCpu);
-            Assert(pVMCB->guest.u64CR3 || VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL));
+            Assert(pVMCB->guest.u64CR3 || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL));
         }
     }
 
@@ -866,17 +866,17 @@ ResumeExecution:
     }
 
     /* Check for irq inhibition due to instruction fusing (sti, mov ss). */
-    if (VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS))
+    if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
     {
-        Log(("VM_FF_INHIBIT_INTERRUPTS at %RGv successor %RGv\n", (RTGCPTR)pCtx->rip, EMGetInhibitInterruptsPC(pVM, pVCpu)));
-        if (pCtx->rip != EMGetInhibitInterruptsPC(pVM, pVCpu))
+        Log(("VM_FF_INHIBIT_INTERRUPTS at %RGv successor %RGv\n", (RTGCPTR)pCtx->rip, EMGetInhibitInterruptsPC(pVCpu)));
+        if (pCtx->rip != EMGetInhibitInterruptsPC(pVCpu))
         {
             /* Note: we intentionally don't clear VM_FF_INHIBIT_INTERRUPTS here.
              * Before we are able to execute this instruction in raw mode (iret to guest code) an external interrupt might
              * force a world switch again. Possibly allowing a guest interrupt to be dispatched in the process. This could
              * break the guest. Sounds very unlikely, but such timing sensitive problems are not as rare as you might think.
              */
-            VM_FF_CLEAR(pVM, VM_FF_INHIBIT_INTERRUPTS);
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
             /* Irq inhibition is no longer active; clear the corresponding SVM state. */
             pVMCB->ctrl.u64IntShadow = 0;
         }
@@ -893,9 +893,10 @@ ResumeExecution:
     if (!DBGFIsStepping(pVM))
 #endif
     {
-        if (VM_FF_ISPENDING(pVM, VM_FF_HWACCM_TO_R3_MASK))
+        if (    VM_FF_ISPENDING(pVM, VM_FF_HWACCM_TO_R3_MASK)
+            ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HWACCM_TO_R3_MASK))
         {
-            VM_FF_CLEAR(pVM, VM_FF_TO_R3);
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatSwitchToR3);
             STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatEntry, x);
             rc = RT_UNLIKELY(VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)) ? VINF_EM_NO_MEMORY : VINF_EM_RAW_TO_R3;
@@ -1244,10 +1245,10 @@ ResumeExecution:
     if (pVMCB->ctrl.u64IntShadow & SVM_INTERRUPT_SHADOW_ACTIVE)
     {
         Log(("uInterruptState %x rip=%RGv\n", pVMCB->ctrl.u64IntShadow, (RTGCPTR)pCtx->rip));
-        EMSetInhibitInterruptsPC(pVM, pVCpu, pCtx->rip);
+        EMSetInhibitInterruptsPC(pVCpu, pCtx->rip);
     }
     else
-        VM_FF_CLEAR(pVM, VM_FF_INHIBIT_INTERRUPTS);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
 
     Log2(("exitCode = %x\n", exitCode));
 
@@ -1718,9 +1719,9 @@ ResumeExecution:
         }
         /* Check if a sync operation is pending. */
         if (    rc == VINF_SUCCESS /* don't bother if we are going to ring 3 anyway */
-            &&  VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL))
+            &&  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
         {
-            rc = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
+            rc = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
             AssertRC(rc);
 
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushTLBCRxChange);
@@ -2009,7 +2010,7 @@ ResumeExecution:
         /** Check if external interrupts are pending; if so, don't switch back. */
         pCtx->rip++;    /* skip hlt */
         if (    pCtx->eflags.Bits.u1IF
-            &&  VM_FF_ISPENDING(pVM, (VM_FF_INTERRUPT_APIC|VM_FF_INTERRUPT_PIC)))
+            &&  VMCPU_FF_ISPENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC|VMCPU_FF_INTERRUPT_PIC)))
             goto ResumeExecution;
 
         rc = VINF_EM_HALT;

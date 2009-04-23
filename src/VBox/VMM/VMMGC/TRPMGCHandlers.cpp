@@ -165,17 +165,17 @@ static int trpmGCExitTrap(PVM pVM, int rc, PCPUMCTXCORE pRegFrame)
 #endif
 
     /* Clear pending inhibit interrupt state if required. (necessary for dispatching interrupts later on) */
-    if (VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS))
+    if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
     {
-        Log2(("VM_FF_INHIBIT_INTERRUPTS at %08RX32 successor %RGv\n", pRegFrame->eip, EMGetInhibitInterruptsPC(pVM, pVCpu)));
-        if (pRegFrame->eip != EMGetInhibitInterruptsPC(pVM, pVCpu))
+        Log2(("VM_FF_INHIBIT_INTERRUPTS at %08RX32 successor %RGv\n", pRegFrame->eip, EMGetInhibitInterruptsPC(pVCpu)));
+        if (pRegFrame->eip != EMGetInhibitInterruptsPC(pVCpu))
         {
             /** @note we intentionally don't clear VM_FF_INHIBIT_INTERRUPTS here if the eip is the same as the inhibited instr address.
              *  Before we are able to execute this instruction in raw mode (iret to guest code) an external interrupt might
              *  force a world switch again. Possibly allowing a guest interrupt to be dispatched in the process. This could
              *  break the guest. Sounds very unlikely, but such timing sensitive problem are not as rare as you might think.
              */
-            VM_FF_CLEAR(pVM, VM_FF_INHIBIT_INTERRUPTS);
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
         }
     }
 
@@ -184,29 +184,31 @@ static int trpmGCExitTrap(PVM pVM, int rc, PCPUMCTXCORE pRegFrame)
      * Or pending (A)PIC interrupt? Windows XP will crash if we delay APIC interrupts.
      */
     if (    rc == VINF_SUCCESS
-        &&  VM_FF_ISPENDING(pVM, VM_FF_TO_R3 | VM_FF_TIMER | VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC | VM_FF_REQUEST
-                               | VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL | VM_FF_PGM_NO_MEMORY))
+        &&  (   VM_FF_ISPENDING(pVM, VM_FF_TIMER | VM_FF_REQUEST | VM_FF_PGM_NO_MEMORY)
+             || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TO_R3 | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_REQUEST | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL)
+            )
+       )
     {
         /* The out of memory condition naturally outrang the others. */
         if (RT_UNLIKELY(VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)))
             rc = VINF_EM_NO_MEMORY;
         /* Pending Ring-3 action. */
-        else if (VM_FF_ISPENDING(pVM, VM_FF_TO_R3))
+        else if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TO_R3))
         {
-            VM_FF_CLEAR(pVM, VM_FF_TO_R3);
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
             rc = VINF_EM_RAW_TO_R3;
         }
         /* Pending timer action. */
         else if (VM_FF_ISPENDING(pVM, VM_FF_TIMER))
             rc = VINF_EM_RAW_TIMER_PENDING;
         /* Pending interrupt: dispatch it. */
-        else if (    VM_FF_ISPENDING(pVM, VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC)
-                 && !VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS)
+        else if (    VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
+                 && !VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
                  &&  PATMAreInterruptsEnabledByCtxCore(pVM, pRegFrame)
            )
         {
             uint8_t u8Interrupt;
-            rc = PDMGetInterrupt(pVM, &u8Interrupt);
+            rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
             Log(("trpmGCExitTrap: u8Interrupt=%d (%#x) rc=%Rrc\n", u8Interrupt, u8Interrupt, rc));
             AssertFatalMsgRC(rc, ("PDMGetInterrupt failed with %Rrc\n", rc));
             rc = TRPMForwardTrap(pVCpu, pRegFrame, (uint32_t)u8Interrupt, 0, TRPM_TRAP_NO_ERRORCODE, TRPM_HARDWARE_INT, uOldActiveVector);
@@ -226,14 +228,15 @@ static int trpmGCExitTrap(PVM pVM, int rc, PCPUMCTXCORE pRegFrame)
         /*
          * Try sync CR3?
          */
-        else if (VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL))
+        else if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
 #if 1
-            rc = PGMSyncCR3(pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR3(pVCpu), CPUMGetGuestCR4(pVCpu), VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
+            rc = PGMSyncCR3(pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR3(pVCpu), CPUMGetGuestCR4(pVCpu), VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
 #else
             rc = VINF_PGM_SYNC_CR3;
 #endif
         /* Pending request packets might contain actions that need immediate attention, such as pending hardware interrupts. */
-        else if (VM_FF_ISPENDING(pVM, VM_FF_REQUEST))
+        else if (   VM_FF_ISPENDING(pVM, VM_FF_REQUEST)
+                 || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
             rc = VINF_EM_PENDING_REQUEST;
     }
 

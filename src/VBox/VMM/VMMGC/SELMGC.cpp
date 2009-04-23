@@ -138,7 +138,7 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
     /* Check if we change the LDT selector */
     if (Sel == CPUMGetGuestLDTR(pVCpu)) /** @todo this isn't correct in two(+) ways! 1. It shouldn't be done until the LDTR is reloaded. 2. It caused the next instruction to be emulated.  */
     {
-        VM_FF_SET(pVM, VM_FF_SELM_SYNC_LDT);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
         return VINF_EM_RAW_EMULATE_INSTR_LDT_FAULT;
     }
 
@@ -228,7 +228,7 @@ VMMRCDECL(int) selmRCGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
         &&  rc != VINF_EM_RAW_EMULATE_INSTR_TSS_FAULT)
     {
         /* Not necessary when we need to go back to the host context to sync the LDT or TSS. */
-        VM_FF_SET(pVM, VM_FF_SELM_SYNC_GDT);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
     }
     STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestGDTUnhandled);
     return rc;
@@ -252,7 +252,7 @@ VMMRCDECL(int) selmRCGuestLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
     /** @todo To be implemented. */
     ////LogCom(("selmRCGuestLDTWriteHandler: eip=%08X pvFault=%RGv pvRange=%RGv\r\n", pRegFrame->eip, pvFault, pvRange));
 
-    VM_FF_SET(pVM, VM_FF_SELM_SYNC_LDT);
+    VMCPU_FF_SET(VMMGetCpu0(pVM), VMCPU_FF_SELM_SYNC_LDT);
     STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestLDT);
     return VINF_EM_RAW_EMULATE_INSTR_LDT_FAULT;
 }
@@ -367,8 +367,8 @@ VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
                 if (offIoBitmap != pVM->selm.s.offGuestIoBitmap)
                 {
                     Log(("TSS offIoBitmap changed: old=%#x new=%#x -> resync in ring-3\n", pVM->selm.s.offGuestIoBitmap, offIoBitmap));
-                    VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
-                    VM_FF_SET(pVM, VM_FF_TO_R3);
+                    VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
+                    VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
                 }
                 else
                     Log(("TSS offIoBitmap: old=%#x new=%#x [unchanged]\n", pVM->selm.s.offGuestIoBitmap, offIoBitmap));
@@ -400,8 +400,8 @@ VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
         /* Return to ring-3 for a full resync if any of the above fails... (?) */
         if (rc != VINF_SUCCESS)
         {
-            VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
-            VM_FF_SET(pVM, VM_FF_TO_R3);
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
             if (RT_SUCCESS(rc))
                 rc = VINF_SUCCESS;
         }
@@ -411,7 +411,7 @@ VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
     else
     {
         Assert(RT_FAILURE(rc));
-        VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
         STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestTSSUnhandled);
         if (rc == VERR_EM_INTERPRETER)
             rc = VINF_EM_RAW_EMULATE_INSTR_TSS_FAULT;

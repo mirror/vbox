@@ -1867,7 +1867,7 @@ VMMDECL(int) IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys)
     AssertRC(rc);
 
 #ifdef VBOX_STRICT
-    if (!VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3))
+    if (!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3))
     {
         uint32_t cb = pRange->cb;
         GCPhys = pRange->GCPhys;

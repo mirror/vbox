@@ -409,8 +409,8 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
     /* Note: hackish as the cpumctxcore structure doesn't contain the right value */
     eflags.u32 = CPUMRawGetEFlags(pVCpu, pRegFrame);
 
-    /* VM_FF_INHIBIT_INTERRUPTS should be cleared upfront or don't call this function at all for dispatching hardware interrupts. */
-    Assert(enmType != TRPM_HARDWARE_INT || !VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS));
+    /* VMCPU_FF_INHIBIT_INTERRUPTS should be cleared upfront or don't call this function at all for dispatching hardware interrupts. */
+    Assert(enmType != TRPM_HARDWARE_INT || !VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
 
     /*
      * If it's a real guest trap and the guest's page fault handler is marked as safe for GC execution, then we call it directly.
@@ -433,7 +433,7 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
         int         rc;
 
         Assert(PATMAreInterruptsEnabledByCtxCore(pVM, pRegFrame));
-        Assert(!VM_FF_ISPENDING(pVM, VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_TSS));
+        Assert(!VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_TSS));
 
         /* Get the current privilege level. */
         cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);

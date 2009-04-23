@@ -116,8 +116,8 @@ typedef FNEMULATELOCKPARAM3    *PFNEMULATELOCKPARAM3;
  */
 #define EMIsRawRing0Enabled(pVM) ((pVM)->fRawR0Enabled)
 
-VMMDECL(void)       EMSetInhibitInterruptsPC(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR PC);
-VMMDECL(RTGCUINTPTR) EMGetInhibitInterruptsPC(PVM pVM, PVMCPU pVCpu);
+VMMDECL(void)       EMSetInhibitInterruptsPC(PVMCPU pVCpu, RTGCUINTPTR PC);
+VMMDECL(RTGCUINTPTR) EMGetInhibitInterruptsPC(PVMCPU pVCpu);
 VMMDECL(int)        EMInterpretDisasOne(PVM pVM, PVMCPU pVCpu, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu, unsigned *pcbInstr);
 VMMDECL(int)        EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCORE pCtxCore,
                                           PDISCPUSTATE pDISState, unsigned *pcbInstr);

@@ -343,7 +343,7 @@ static const char *vmR3GetHaltMethodName(VMHALTMETHOD enmMethod)
  *
  * @param   pUVM            Pointer to the user mode VM structure.
  */
-static DECLCALLBACK(int) vmR3HaltOldDoHalt(PUVM pUVM, const uint32_t fMask, uint64_t /* u64Now*/)
+static DECLCALLBACK(int) vmR3HaltOldDoHalt(PUVM pUVM, PVMCPU pVCpu, const uint32_t fMask, uint64_t /* u64Now*/)
 {
     /*
      * Halt loop.
@@ -362,10 +362,12 @@ static DECLCALLBACK(int) vmR3HaltOldDoHalt(PUVM pUVM, const uint32_t fMask, uint
         STAM_REL_PROFILE_START(&pUVM->vm.s.StatHaltTimers, b);
         TMR3TimerQueuesDo(pVM);
         STAM_REL_PROFILE_STOP(&pUVM->vm.s.StatHaltTimers, b);
-        if (VM_FF_ISPENDING(pVM, fMask))
+        if (    VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
+            ||  VMCPU_FF_ISPENDING(pVCpu, fMask))
             break;
         uint64_t u64NanoTS = TMVirtualToNano(pVM, TMTimerPoll(pVM));
-        if (VM_FF_ISPENDING(pVM, fMask))
+        if (    VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
+            ||  VMCPU_FF_ISPENDING(pVCpu, fMask))
             break;
 
         /*
@@ -497,7 +499,7 @@ static DECLCALLBACK(int) vmR3HaltMethod1Init(PUVM pUVM)
  * switch to spinning for 10-30ms with occational blocking until
  * the lag has been eliminated.
  */
-static DECLCALLBACK(int) vmR3HaltMethod1Halt(PUVM pUVM, const uint32_t fMask, uint64_t u64Now)
+static DECLCALLBACK(int) vmR3HaltMethod1Halt(PUVM pUVM, PVMCPU pVCpu, const uint32_t fMask, uint64_t u64Now)
 {
     PVM pVM = pUVM->pVM;
 
@@ -556,14 +558,16 @@ static DECLCALLBACK(int) vmR3HaltMethod1Halt(PUVM pUVM, const uint32_t fMask, ui
         STAM_REL_PROFILE_START(&pUVM->vm.s.StatHaltTimers, b);
         TMR3TimerQueuesDo(pVM);
         STAM_REL_PROFILE_STOP(&pUVM->vm.s.StatHaltTimers, b);
-        if (VM_FF_ISPENDING(pVM, fMask))
+        if (    VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
+            ||  VMCPU_FF_ISPENDING(pVCpu, fMask))
             break;
 
         /*
          * Estimate time left to the next event.
          */
         uint64_t u64NanoTS = TMVirtualToNano(pVM, TMTimerPoll(pVM));
-        if (VM_FF_ISPENDING(pVM, fMask))
+        if (    VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
+            ||  VMCPU_FF_ISPENDING(pVCpu, fMask))
             break;
 
         /*
@@ -652,7 +656,7 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Init(PUVM pUVM)
  * The global 1 halt method - Block in GMM (ring-0) and let it
  * try take care of the global scheduling of EMT threads.
  */
-static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVM pUVM, const uint32_t fMask, uint64_t u64Now)
+static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVM pUVM, PVMCPU pVCpu, const uint32_t fMask, uint64_t u64Now)
 {
     PVM pVM = pUVM->pVM;
 
@@ -670,7 +674,8 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVM pUVM, const uint32_t fMask, ui
         STAM_REL_PROFILE_START(&pUVM->vm.s.StatHaltTimers, b);
         TMR3TimerQueuesDo(pVM);
         STAM_REL_PROFILE_STOP(&pUVM->vm.s.StatHaltTimers, b);
-        if (VM_FF_ISPENDING(pVM, fMask))
+        if (    VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
+            ||  VMCPU_FF_ISPENDING(pVCpu, fMask))
             break;
 
         /*
@@ -678,7 +683,8 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVM pUVM, const uint32_t fMask, ui
          */
         uint64_t u64Delta;
         uint64_t u64GipTime = TMTimerPollGIP(pVM, &u64Delta);
-        if (VM_FF_ISPENDING(pVM, fMask))
+        if (    VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
+            ||  VMCPU_FF_ISPENDING(pVCpu, fMask))
             break;
 
         /*
@@ -687,8 +693,9 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVM pUVM, const uint32_t fMask, ui
         if (u64Delta > 50000 /* 0.050ms */)
         {
             VMMR3YieldStop(pVM);
-            if (VM_FF_ISPENDING(pVM, fMask))
-                break;
+            if (    VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
+                ||  VMCPU_FF_ISPENDING(pVCpu, fMask))
+                    break;
 
             //RTLogRelPrintf("u64NanoTS=%RI64 cLoops=%3d sleep %02dms (%7RU64) ", u64NanoTS, cLoops, cMilliSecs, u64NanoTS);
             STAM_REL_PROFILE_START(&pUVM->vm.s.StatHaltBlock, c);
@@ -733,14 +740,17 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Wait(PUVM pUVM)
 {
     ASMAtomicWriteBool(&pUVM->vm.s.fWait, true);
 
-    PVM pVM = pUVM->pVM;
+    PVM    pVM   = pUVM->pVM;
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+
     int rc = VINF_SUCCESS;
     for (;;)
     {
         /*
          * Check Relevant FFs.
          */
-        if (VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_SUSPENDED_MASK))
+        if (    VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_SUSPENDED_MASK)
+            ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_EXTERNAL_SUSPENDED_MASK))
             break;
 
         /*
@@ -803,7 +813,10 @@ static DECLCALLBACK(int) vmR3BootstrapWait(PUVM pUVM)
         if (pUVM->vm.s.pReqs)
             break;
         if (    pUVM->pVM
-            &&  VM_FF_ISPENDING(pUVM->pVM, VM_FF_EXTERNAL_SUSPENDED_MASK))
+            &&  (   VM_FF_ISPENDING(pUVM->pVM, VM_FF_EXTERNAL_SUSPENDED_MASK)
+                 || VMCPU_FF_ISPENDING(VMMGetCpu(pUVM->pVM), VMCPU_FF_EXTERNAL_SUSPENDED_MASK)
+                )
+            )
             break;
         if (pUVM->vm.s.fTerminateEMT)
             break;
@@ -858,14 +871,16 @@ static DECLCALLBACK(int) vmR3DefaultWait(PUVM pUVM)
 {
     ASMAtomicWriteBool(&pUVM->vm.s.fWait, true);
 
-    PVM pVM = pUVM->pVM;
-    int rc = VINF_SUCCESS;
+    PVM    pVM   = pUVM->pVM;
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    int    rc    = VINF_SUCCESS;
     for (;;)
     {
         /*
          * Check Relevant FFs.
          */
-        if (VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_SUSPENDED_MASK))
+        if (    VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_SUSPENDED_MASK)
+            ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_EXTERNAL_SUSPENDED_MASK))
             break;
 
         /*
@@ -922,7 +937,7 @@ static const struct VMHALTMETHODDESC
     /** The term function. */
     DECLR3CALLBACKMEMBER(void, pfnTerm,(PUVM pUVM));
     /** The halt function. */
-    DECLR3CALLBACKMEMBER(int,  pfnHalt,(PUVM pUVM, const uint32_t fMask, uint64_t u64Now));
+    DECLR3CALLBACKMEMBER(int,  pfnHalt,(PUVM pUVM, PVMCPU pVCpu, const uint32_t fMask, uint64_t u64Now));
     /** The wait function. */
     DECLR3CALLBACKMEMBER(int,  pfnWait,(PUVM pUVM));
     /** The notifyFF function. */
@@ -979,24 +994,24 @@ VMMR3DECL(void) VMR3NotifyFFU(PUVM pUVM, bool fNotifiedREM)
  * @returns VINF_SUCCESS unless a fatal error occured. In the latter
  *          case an appropriate status code is returned.
  * @param   pVM         VM handle.
+ * @param   pVCpu       VMCPU handle.
  * @param   fIgnoreInterrupts   If set the VM_FF_INTERRUPT flags is ignored.
  * @thread  The emulation thread.
  */
-VMMR3DECL(int) VMR3WaitHalted(PVM pVM, bool fIgnoreInterrupts)
+VMMR3DECL(int) VMR3WaitHalted(PVM pVM, PVMCPU pVCpu, bool fIgnoreInterrupts)
 {
-    PVMCPU pVCpu = VMMGetCpu(pVM);  /* @todo SMP: get rid of this */
-
     LogFlow(("VMR3WaitHalted: fIgnoreInterrupts=%d\n", fIgnoreInterrupts));
 
     /*
      * Check Relevant FFs.
      */
     const uint32_t fMask = !fIgnoreInterrupts
-        ? VM_FF_EXTERNAL_HALTED_MASK
-        : VM_FF_EXTERNAL_HALTED_MASK & ~(VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC);
-    if (VM_FF_ISPENDING(pVM, fMask))
+        ? VMCPU_FF_EXTERNAL_HALTED_MASK
+        : VMCPU_FF_EXTERNAL_HALTED_MASK & ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC);
+    if (    VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
+        ||  VMCPU_FF_ISPENDING(pVCpu, fMask))
     {
-        LogFlow(("VMR3WaitHalted: returns VINF_SUCCESS (FF %#x)\n", pVM->fForcedActions));
+        LogFlow(("VMR3WaitHalted: returns VINF_SUCCESS (FF %#x FFCPU %#x)\n", pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions));
         return VINF_SUCCESS;
     }
 
@@ -1033,7 +1048,7 @@ VMMR3DECL(int) VMR3WaitHalted(PVM pVM, bool fIgnoreInterrupts)
     /*
      * Do the halt.
      */
-    int rc = g_aHaltMethods[pUVM->vm.s.iHaltMethod].pfnHalt(pUVM, fMask, u64Now);
+    int rc = g_aHaltMethods[pUVM->vm.s.iHaltMethod].pfnHalt(pUVM, pVCpu, fMask, u64Now);
 
     /*
      * Notify TM and resume the yielder
@@ -1041,7 +1056,7 @@ VMMR3DECL(int) VMR3WaitHalted(PVM pVM, bool fIgnoreInterrupts)
     TMNotifyEndOfHalt(pVCpu);
     VMMR3YieldResume(pVM);
 
-    LogFlow(("VMR3WaitHalted: returns %Rrc (FF %#x)\n", rc, pVM->fForcedActions));
+    LogFlow(("VMR3WaitHalted: returns %Rrc (FF %#x)\n", rc, pVM->fGlobalForcedActions));
     return rc;
 }
 
@@ -1063,11 +1078,15 @@ VMMR3DECL(int) VMR3WaitU(PUVM pUVM)
     /*
      * Check Relevant FFs.
      */
-    PVM pVM = pUVM->pVM;
+    PVM    pVM   = pUVM->pVM;
+
     if (    pVM
-        &&  VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_SUSPENDED_MASK))
+        &&  (   VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_SUSPENDED_MASK)
+             || VMCPU_FF_ISPENDING(VMMGetCpu(pVM), VMCPU_FF_EXTERNAL_SUSPENDED_MASK)
+            )
+        )
     {
-        LogFlow(("VMR3Wait: returns VINF_SUCCESS (FF %#x)\n", pVM->fForcedActions));
+        LogFlow(("VMR3Wait: returns VINF_SUCCESS (FF %#x)\n", pVM->fGlobalForcedActions));
         return VINF_SUCCESS;
     }
 
@@ -1076,7 +1095,7 @@ VMMR3DECL(int) VMR3WaitU(PUVM pUVM)
      * doesn't have to special case anything).
      */
     int rc = g_aHaltMethods[pUVM->vm.s.iHaltMethod].pfnWait(pUVM);
-    LogFlow(("VMR3WaitU: returns %Rrc (FF %#x)\n", rc, pVM ? pVM->fForcedActions : 0));
+    LogFlow(("VMR3WaitU: returns %Rrc (FF %#x)\n", rc, pVM ? pVM->fGlobalForcedActions : 0));
     return rc;
 }
 

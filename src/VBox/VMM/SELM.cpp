@@ -222,9 +222,10 @@ VMMR3DECL(int) SELMR3Init(PVM pVM)
     /*
      * Default action when entering raw mode for the first time
      */
-    VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
-    VM_FF_SET(pVM, VM_FF_SELM_SYNC_GDT);
-    VM_FF_SET(pVM, VM_FF_SELM_SYNC_LDT);
+    PVMCPU pVCpu = &pVM->aCpus[0];  /* raw mode implies on VCPU */
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
 
     /*
      * Register info handlers.
@@ -578,9 +579,10 @@ VMMR3DECL(void) SELMR3Reset(PVM pVM)
     /*
      * Default action when entering raw mode for the first time
      */
-    VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
-    VM_FF_SET(pVM, VM_FF_SELM_SYNC_GDT);
-    VM_FF_SET(pVM, VM_FF_SELM_SYNC_LDT);
+    PVMCPU pVCpu = &pVM->aCpus[0];  /* raw mode implies on VCPU */
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
 }
 
 /**
@@ -650,9 +652,10 @@ VMMR3DECL(void) SELMR3DisableMonitoring(PVM pVM)
     }
 #endif
 
-    VM_FF_CLEAR(pVM, VM_FF_SELM_SYNC_TSS);
-    VM_FF_CLEAR(pVM, VM_FF_SELM_SYNC_GDT);
-    VM_FF_CLEAR(pVM, VM_FF_SELM_SYNC_LDT);
+    PVMCPU pVCpu = &pVM->aCpus[0];  /* raw mode implies on VCPU */
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
 
     pVM->selm.s.fDisableMonitoring = true;
 }
@@ -773,18 +776,18 @@ static DECLCALLBACK(int) selmR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
      */
     if (PGMGetGuestMode(pVCpu) != PGMMODE_REAL)
     {
-        VM_FF_SET(pVM, VM_FF_SELM_SYNC_GDT);
-        VM_FF_SET(pVM, VM_FF_SELM_SYNC_LDT);
-        VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
         SELMR3UpdateFromCPUM(pVM, pVCpu);
     }
 
     /*
      * Flag everything for resync on next raw mode entry.
      */
-    VM_FF_SET(pVM, VM_FF_SELM_SYNC_GDT);
-    VM_FF_SET(pVM, VM_FF_SELM_SYNC_LDT);
-    VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
 
     return VINF_SUCCESS;
 }
@@ -803,9 +806,9 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
 
     if (pVM->selm.s.fDisableMonitoring)
     {
-        VM_FF_CLEAR(pVM, VM_FF_SELM_SYNC_GDT);
-        VM_FF_CLEAR(pVM, VM_FF_SELM_SYNC_LDT);
-        VM_FF_CLEAR(pVM, VM_FF_SELM_SYNC_TSS);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
 
         return VINF_SUCCESS;
     }
@@ -815,18 +818,18 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
     /*
      * GDT sync
      */
-    if (VM_FF_ISSET(pVM, VM_FF_SELM_SYNC_GDT))
+    if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_SELM_SYNC_GDT))
     {
         /*
          * Always assume the best
          */
-        VM_FF_CLEAR(pVM, VM_FF_SELM_SYNC_GDT);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
 
         /* If the GDT was changed, then make sure the LDT is checked too */
         /** @todo only do this if the actual ldtr selector was changed; this is a bit excessive */
-        VM_FF_SET(pVM, VM_FF_SELM_SYNC_LDT);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
         /* Same goes for the TSS selector */
-        VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
 
         /*
          * Get the GDTR and check if there is anything to do (there usually is).
@@ -1073,7 +1076,7 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
     /*
      * TSS sync
      */
-    if (VM_FF_ISSET(pVM, VM_FF_SELM_SYNC_TSS))
+    if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_SELM_SYNC_TSS))
     {
         SELMR3SyncTSS(pVM, pVCpu);
     }
@@ -1081,12 +1084,12 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
     /*
      * LDT sync
      */
-    if (VM_FF_ISSET(pVM, VM_FF_SELM_SYNC_LDT))
+    if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_SELM_SYNC_LDT))
     {
         /*
          * Always assume the best
          */
-        VM_FF_CLEAR(pVM, VM_FF_SELM_SYNC_LDT);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
 
         /*
          * LDT handling is done similarly to the GDT handling with a shadow
@@ -1367,8 +1370,8 @@ static DECLCALLBACK(int) selmR3GuestGDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void
 {
     Assert(enmAccessType == PGMACCESSTYPE_WRITE);
     Log(("selmR3GuestGDTWriteHandler: write to %RGv size %d\n", GCPtr, cbBuf));
-    VM_FF_SET(pVM, VM_FF_SELM_SYNC_GDT);
 
+    VMCPU_FF_SET(VMMGetCpu(pVM), VMCPU_FF_SELM_SYNC_GDT);
     return VINF_PGM_HANDLER_DO_DEFAULT;
 }
 
@@ -1393,7 +1396,7 @@ static DECLCALLBACK(int) selmR3GuestLDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void
 {
     Assert(enmAccessType == PGMACCESSTYPE_WRITE);
     Log(("selmR3GuestLDTWriteHandler: write to %RGv size %d\n", GCPtr, cbBuf));
-    VM_FF_SET(pVM, VM_FF_SELM_SYNC_LDT);
+    VMCPU_FF_SET(VMMGetCpu(pVM), VMCPU_FF_SELM_SYNC_LDT);
     return VINF_PGM_HANDLER_DO_DEFAULT;
 }
 
@@ -1424,7 +1427,7 @@ static DECLCALLBACK(int) selmR3GuestTSSWriteHandler(PVM pVM, RTGCPTR GCPtr, void
      *        should probably also deregister the virtual handler if TR.base/size
      *        changes while we're in REM. */
 
-    VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
+    VMCPU_FF_SET(VMMGetCpu(pVM), VMCPU_FF_SELM_SYNC_TSS);
 
     return VINF_PGM_HANDLER_DO_DEFAULT;
 }
@@ -1448,12 +1451,12 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM, PVMCPU pVCpu)
 
     if (pVM->selm.s.fDisableMonitoring)
     {
-        VM_FF_CLEAR(pVM, VM_FF_SELM_SYNC_TSS);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
         return VINF_SUCCESS;
     }
 
     STAM_PROFILE_START(&pVM->selm.s.StatTSSSync, a);
-    Assert(VM_FF_ISSET(pVM, VM_FF_SELM_SYNC_TSS));
+    Assert(VMCPU_FF_ISSET(pVCpu, VMCPU_FF_SELM_SYNC_TSS));
 
     /*
      * Get TR and extract and store the basic info.
@@ -1631,7 +1634,7 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM, PVMCPU pVCpu)
         }
     }
 
-    VM_FF_CLEAR(pVM, VM_FF_SELM_SYNC_TSS);
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
 
     STAM_PROFILE_STOP(&pVM->selm.s.StatTSSSync, a);
     return VINF_SUCCESS;
@@ -1788,7 +1791,7 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
 #ifdef VBOX_STRICT
     PVMCPU pVCpu = VMMGetCpu(pVM);
 
-    if (VM_FF_ISSET(pVM, VM_FF_SELM_SYNC_TSS))
+    if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_SELM_SYNC_TSS))
         return true;
 
     /*

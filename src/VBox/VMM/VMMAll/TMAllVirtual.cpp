@@ -95,7 +95,7 @@ DECLINLINE(uint64_t) tmVirtualGetRawNanoTS(PVM pVM)
     uint32_t cPrevSteps = pVM->tm.s.CTX_SUFF(VirtualGetRawData).c1nsSteps;
     uint64_t u64 = pVM->tm.s.CTX_SUFF(pfnVirtualGetRaw)(&pVM->tm.s.CTX_SUFF(VirtualGetRawData));
     if (cPrevSteps != pVM->tm.s.CTX_SUFF(VirtualGetRawData).c1nsSteps)
-        VM_FF_SET(pVM, VM_FF_TO_R3); /* S10 hack */
+        VMCPU_FF_SET(VMMGetCpu(pVM), VMCPU_FF_TO_R3);
     return u64;
 # endif /* !IN_RING3 */
 }

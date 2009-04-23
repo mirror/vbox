@@ -290,7 +290,7 @@ static int pgmPhysEnsureHandyPage(PVM pVM)
 #ifdef IN_RING3
                 REMR3NotifyFF(pVM);
 #else
-                VM_FF_SET(pVM, VM_FF_TO_R3); /* paranoia */
+                VMCPU_FF_SET(VMMGetCpu(pVM), VMCPU_FF_TO_R3); /* paranoia */
 #endif
             }
             AssertMsgReturn(    pVM->pgm.s.cHandyPages > 0
@@ -306,7 +306,7 @@ static int pgmPhysEnsureHandyPage(PVM pVM)
             if (pVM->pgm.s.cHandyPages <= PGM_HANDY_PAGES_RZ_TO_R3)
             {
                 Log(("PGM: VM_FF_TO_R3 - cHandyPages=%u out of %u\n", pVM->pgm.s.cHandyPages, RT_ELEMENTS(pVM->pgm.s.aHandyPages)));
-                VM_FF_SET(pVM, VM_FF_TO_R3);
+                VMCPU_FF_SET(VMMGetCpu(pVM), VMCPU_FF_TO_R3);
             }
 #endif
         }

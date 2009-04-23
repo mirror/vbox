@@ -393,7 +393,7 @@ VMMDECL(int) PGMR3HandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, 
                 PVMCPU pVCpu = &pVM->aCpus[i];
 
                 pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL;
-                VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+                VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
             }
             pVM->pgm.s.fGlobalSyncFlags |= PGM_GLOBAL_SYNC_CLEAR_PGM_POOL;
         }
@@ -479,7 +479,7 @@ VMMDECL(int) PGMHandlerVirtualDeregister(PVM pVM, RTGCPTR GCPtr)
             PVMCPU pVCpu = &pVM->aCpus[i];
 
             pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL;
-            VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
         }
         pVM->pgm.s.fGlobalSyncFlags |= PGM_GLOBAL_SYNC_CLEAR_PGM_POOL;
     }

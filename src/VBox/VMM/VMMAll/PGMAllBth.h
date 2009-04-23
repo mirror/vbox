@@ -264,7 +264,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
             return rc;
         }
         Log(("SyncPT: %d failed!! rc=%d\n", iPDSrc, rc));
-        VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3); /** @todo no need to do global sync, right? */
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3); /** @todo no need to do global sync, right? */
         STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeSyncPT, f);
         return VINF_PGM_SYNC_CR3;
     }
@@ -298,7 +298,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                         {
                             STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eConflicts);
                             Log(("Trap0e: Detected Conflict %RGv-%RGv\n", pMapping->GCPtr, pMapping->GCPtrLast));
-                            VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3); /** @todo no need to do global sync,right? */
+                            VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3); /** @todo no need to do global sync,right? */
                             STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeMapping, a);
                             return VINF_PGM_SYNC_CR3;
                         }
@@ -972,7 +972,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     {
         AssertMsg(rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT || rc == VERR_PAGE_MAP_LEVEL4_NOT_PRESENT, ("Unexpected rc=%Rrc\n", rc));
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePageSkipped));
-        if (!VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3))
+        if (!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3))
             PGM_INVL_GUEST_TLBS();
         return VINF_SUCCESS;
     }
@@ -984,7 +984,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     if (!pPdpeDst->n.u1Present)
     {
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePageSkipped));
-        if (!VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3))
+        if (!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3))
             PGM_INVL_GUEST_TLBS();
         return VINF_SUCCESS;
     }
@@ -1041,8 +1041,8 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
      * This doesn't make sense in GC/R0 so we'll skip it entirely there.
      */
 #  ifdef PGM_SKIP_GLOBAL_PAGEDIRS_ON_NONGLOBAL_FLUSH
-    if (    VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3)
-        || (   VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3_NON_GLOBAL)
+    if (    VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3)
+        || (   VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL)
             && fIsBigPage
             && PdeSrc.b.u1Global
            )
@@ -2530,7 +2530,7 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
         }
         else if (rc == VERR_PGM_POOL_FLUSHED)
         {
-            VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
 # if defined(IN_RC)
             PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
 # endif
@@ -3275,7 +3275,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 
-    if (VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3))
+    if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3))
         fGlobal = true; /* Change this CR3 reload to be a global one. */
 
     LogFlow(("SyncCR3 %d\n", fGlobal));
@@ -4297,7 +4297,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
      * make sure we check for conflicts in the new CR3 root.
      */
 #   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
-    Assert(VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3_NON_GLOBAL) || VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
+    Assert(VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL) || VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
 #   endif
     rc = pgmMapActivateCR3(pVM, pNewShwPageCR3);
     AssertRCReturn(rc, rc);
