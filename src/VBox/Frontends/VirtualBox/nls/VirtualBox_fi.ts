@@ -86,57 +86,62 @@
 <context>
     <name>QApplication</name>
     <message>
-        <location filename="../src/main.cpp" line="62"/>
+        <location filename="../src/main.cpp" line="64"/>
         <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.&lt;br/&gt;&lt;br/&gt;There are known problems with Linux 2.6.29. If you are running such a kernel, please edit /usr/src/vboxdrv-*/Makefile and enable &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. After that, re-compile the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root.</source>
         <translation>Tämä virhe tarkoittaa, että ytimen ajuri ei voinut varata tarpeeksi muistia  tai että joku muistin kartoitustoiminto epäonnistui.&lt;br/&gt;&lt;br/&gt;Ydintä 2.6.29 käytettäessä on tunnettuja käyttöongelmia. Jos käytät tätä ydintä,  muokkaa tiedostoja /usr/src/vboxdrv-*/Makefile ja aseta arvo &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. Tämän jälkeen sinun täytyy kääntää ytimen moduli uudestaan komennolla &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; root-käyttäjän oikeuksilla.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="73"/>
+        <location filename="../src/main.cpp" line="75"/>
         <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Re-setup the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
         <translation>VirtualBoxin Linux-ytimen ajuri (vboxdrv) ei ole joko ladattu tai laitetiedoston /dev/vboxdrv oikeudet ovat väärin. Määrittele ytimen moduulin asetukset uudestaan root-käyttäjänä komennolla &lt;br/&gt;&lt;br/&gt;&lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;. Ubuntun, fedoran ja mandrivan käyttäjien tulisi ensin asentaa paketti dkms. Tämä paketti pitää kirjaa ytimen muutoksista ja kääntää moduulit automaattisesti tarvittaessa.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="83"/>
+        <location filename="../src/main.cpp" line="85"/>
         <source>Make sure the kernel module has been loaded successfully.</source>
         <translation>Varmista, että ytimen moduli on ladattu onnistuneesti.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="391"/>
+        <location filename="../src/main.cpp" line="393"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation>Sovellus &lt;b&gt;%1&lt;/b&gt; vaatii Qt %2.x, löydettiin Qt %3.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="396"/>
+        <location filename="../src/main.cpp" line="398"/>
         <source>Incompatible Qt Library Error</source>
         <translation>Qt-kirjastovirhe</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="523"/>
+        <location filename="../src/main.cpp" line="526"/>
         <source>VirtualBox - Runtime Error</source>
         <translation>VirtualBox - ajonaikainen virhe</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="529"/>
+        <location filename="../src/main.cpp" line="532"/>
         <source>&lt;b&gt;Cannot access the kernel driver!&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</source>
         <translation>&lt;b&gt;Ytimen ajuriin ei päästy käsiksi!&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="543"/>
+        <location filename="../src/main.cpp" line="546"/>
+        <source>Kernel driver not accessible</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="549"/>
         <source>Unknown %2 error during initialization of the Runtime</source>
         <translation>Tuntematon %2-virhe alustettaessa suoritusjärjestelmää</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="586"/>
+        <location filename="../src/main.cpp" line="592"/>
         <source>VirtualBox - Error In %1</source>
         <translation>VirtualBox - virhe kohdassa %1</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="591"/>
+        <location filename="../src/main.cpp" line="597"/>
         <source>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</source>
         <translation>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="88"/>
+        <location filename="../src/main.cpp" line="90"/>
         <source>It may help to reinstall VirtualBox.</source>
         <translation>VirtualBoxin uudestaan saattaa auttaa.</translation>
     </message>
@@ -165,222 +170,237 @@
 <context>
     <name>QIHotKeyEdit</name>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="447"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="453"/>
         <source>Left </source>
         <translation>Vasen </translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="453"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="459"/>
         <source>Right </source>
         <translation>Oikea </translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="354"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="306"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="360"/>
         <source>Left Shift</source>
         <translation>Vasen vaihtonäppäin</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="355"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="307"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="361"/>
         <source>Right Shift</source>
         <translation>Oikea vaihtonäppäin</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="356"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="308"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="362"/>
         <source>Left Ctrl</source>
         <translation>Vasen Ctrl</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="357"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="309"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="363"/>
         <source>Right Ctrl</source>
         <translation>Oikea Ctrl</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="358"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="310"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="364"/>
         <source>Left Alt</source>
         <translation>Vasen Alt</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="359"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="311"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="365"/>
         <source>Right Alt</source>
         <translation>Oikeat Alt</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="360"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="312"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="366"/>
         <source>Left WinKey</source>
         <translation>Vasen Win</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="361"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="313"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="367"/>
         <source>Right WinKey</source>
         <translation>Oikea Win</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="362"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="314"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="368"/>
         <source>Menu key</source>
         <translation>Menu-näppäin</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="363"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="369"/>
         <source>Alt Gr</source>
         <translation>Alt Gr</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="364"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="315"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="370"/>
         <source>Caps Lock</source>
         <translation>Caps Lock</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="365"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="316"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="371"/>
         <source>Scroll Lock</source>
         <translation>Scroll Lock</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="596"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="422"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="430"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="443"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="485"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="602"/>
         <source>&lt;key_%1&gt;</source>
         <translation>&lt;avain_%1&gt;</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="312"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="318"/>
         <source>Pause</source>
         <translation>Keskeytä</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="313"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="319"/>
         <source>Print Screen</source>
         <translation>PrintScreen</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="315"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="321"/>
         <source>F1</source>
         <translation>F1</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="316"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="322"/>
         <source>F2</source>
         <translation>F2</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="317"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="323"/>
         <source>F3</source>
         <translation>F3</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="318"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="324"/>
         <source>F4</source>
         <translation>F4</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="319"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="325"/>
         <source>F5</source>
         <translation>F5</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="320"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="326"/>
         <source>F6</source>
         <translation>F6</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="321"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="327"/>
         <source>F7</source>
         <translation>F7</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="322"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="328"/>
         <source>F8</source>
         <translation>F8</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="323"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="329"/>
         <source>F9</source>
         <translation>F9</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="324"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="330"/>
         <source>F10</source>
         <translation>F10</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="325"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="331"/>
         <source>F11</source>
         <translation>F11</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="326"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="332"/>
         <source>F12</source>
         <translation>F12</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="327"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="333"/>
         <source>F13</source>
         <translation>F13</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="328"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="334"/>
         <source>F14</source>
         <translation>F14</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="329"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="335"/>
         <source>F15</source>
         <translation>F15</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="330"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="336"/>
         <source>F16</source>
         <translation>F16</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="331"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="337"/>
         <source>F17</source>
         <translation>F17</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="332"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="338"/>
         <source>F18</source>
         <translation>F18</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="333"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="339"/>
         <source>F19</source>
         <translation>F19</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="334"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="340"/>
         <source>F20</source>
         <translation>F20</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="335"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="341"/>
         <source>F21</source>
         <translation>F21</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="336"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="342"/>
         <source>F22</source>
         <translation>F22</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="337"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="343"/>
         <source>F23</source>
         <translation>F23</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="338"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="344"/>
         <source>F24</source>
         <translation>F24</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="340"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="346"/>
         <source>Num Lock</source>
         <translation>NumLock</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="341"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="347"/>
         <source>Forward</source>
         <translation>Seuraava</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="342"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="348"/>
         <source>Back</source>
         <translation>Edellinen</translation>
     </message>
@@ -388,12 +408,12 @@
 <context>
     <name>QIHttp</name>
     <message>
-        <location filename="../include/QIHttp.h" line="90"/>
+        <location filename="../include/QIHttp.h" line="91"/>
         <source>Connection timed out</source>
         <translation>Yhteyden aikakatkaisu</translation>
     </message>
     <message>
-        <location filename="../include/QIHttp.h" line="92"/>
+        <location filename="../include/QIHttp.h" line="93"/>
         <source>Could not locate the file on the server (response: %1)</source>
         <translation>Tiedostoa ei löytynyt palvelimelta (vastaus: %1)</translation>
     </message>
@@ -515,29 +535,24 @@ Version %1</source>
 <context>
     <name>VBoxAddNIDialog</name>
     <message>
-        <location filename="../include/VBoxSettingsUtils.h" line="118"/>
         <source>Add Host Interface</source>
-        <translation>Lisää isäntäkoneen verkkoliitäntä</translation>
+        <translation type="obsolete">Lisää isäntäkoneen verkkoliitäntä</translation>
     </message>
     <message>
-        <location filename="../include/VBoxSettingsUtils.h" line="123"/>
         <source>Interface Name</source>
-        <translation>Verkkoliitännän nimi</translation>
+        <translation type="obsolete">Verkkoliitännän nimi</translation>
     </message>
     <message>
-        <location filename="../include/VBoxSettingsUtils.h" line="125"/>
         <source>Descriptive name of the new network interface</source>
-        <translation>Kuvaava nimi uudelle verkkoliitännälle</translation>
+        <translation type="obsolete">Kuvaava nimi uudelle verkkoliitännälle</translation>
     </message>
     <message>
-        <location filename="../include/VBoxSettingsUtils.h" line="135"/>
         <source>&amp;OK</source>
-        <translation>&amp;OK</translation>
+        <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
-        <location filename="../include/VBoxSettingsUtils.h" line="136"/>
         <source>Cancel</source>
-        <translation>Peru</translation>
+        <translation type="obsolete">Peru</translation>
     </message>
 </context>
 <context>
@@ -649,7 +664,8 @@ Version %1</source>
         <translation>Versio</translation>
     </message>
     <message>
-        <location filename="../src/VBoxApplianceEditorWgt.cpp" line="777"/>
+        <location filename="../src/VBoxApplianceEditorWgt.cpp" line="186"/>
+        <location filename="../src/VBoxApplianceEditorWgt.cpp" line="780"/>
         <source>Description</source>
         <translation>Kuvaus</translation>
     </message>
@@ -724,17 +740,18 @@ Version %1</source>
         <translation>Tuntematon laitteiston osa</translation>
     </message>
     <message>
-        <location filename="../src/VBoxApplianceEditorWgt.cpp" line="390"/>
+        <location filename="../src/VBoxApplianceEditorWgt.cpp" line="221"/>
+        <location filename="../src/VBoxApplianceEditorWgt.cpp" line="392"/>
         <source>MB</source>
         <translation>MB</translation>
     </message>
     <message>
-        <location filename="../src/VBoxApplianceEditorWgt.cpp" line="232"/>
+        <location filename="../src/VBoxApplianceEditorWgt.cpp" line="234"/>
         <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
         <translation>&lt;b&gt;Alkuperäinen arvo:&lt;/b&gt; %1</translation>
     </message>
     <message>
-        <location filename="../src/VBoxApplianceEditorWgt.cpp" line="778"/>
+        <location filename="../src/VBoxApplianceEditorWgt.cpp" line="781"/>
         <source>Configuration</source>
         <translation>Määrittely</translation>
     </message>
@@ -928,6 +945,7 @@ Version %1</source>
         <translation>Palauta virtuaalikone</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1662"/>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1664"/>
         <source>ACPI S&amp;hutdown</source>
         <translation>ACPI-samm&amp;utus</translation>
@@ -1121,6 +1139,11 @@ Version %1</source>
         <translation>&lt;hr&gt;VRDP-palvelin kuuntelee porttissa %1</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2079"/>
+        <source>&lt;qt&gt;Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="2100"/>
         <source>&amp;Pause</source>
         <translation>&amp;Keskeytä</translation>
@@ -1166,6 +1189,7 @@ Version %1</source>
         <translation>Palautuspiste %1</translation>
     </message>
     <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="3030"/>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3078"/>
         <source>Host Drive </source>
         <translation>Isäntäkoneen asema </translation>
@@ -1682,7 +1706,7 @@ Version %1</source>
         <translation type="obsolete">Peru VirtualBox-asiakaslisäyksien CD-levykuvan lataus</translation>
     </message>
     <message>
-        <location filename="../src/VBoxDownloaderWgt.cpp" line="154"/>
+        <location filename="../src/VBoxDownloaderWgt.cpp" line="155"/>
         <source>The download process has been cancelled by the user.</source>
         <translation>Käyttäjä keskeytti noutoprosessin.</translation>
     </message>
@@ -1713,7 +1737,7 @@ Version %1</source>
         <translation>Laitteistokuva</translation>
     </message>
     <message>
-        <location filename="../src/VBoxExportApplianceWzd.cpp" line="309"/>
+        <location filename="../src/VBoxExportApplianceWzd.cpp" line="310"/>
         <source>Exporting Appliance ...</source>
         <translation>Viedään laitteistokuvaa...</translation>
     </message>
@@ -1739,21 +1763,27 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;p, li { white-space: pre-wrap; }&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Tämä apulainen ohjaa sinua laitekuvan viennissä. &lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Siirry apulaisen seuraavalle sivulle &lt;span style=&quot; font-weight:600;&quot;&gt;Seuraava&lt;/span&gt;-napista ja edelliselle sivulle &lt;span style=&quot; font-weight:600;&quot;&gt;Takaisin&lt;/span&gt;-napista.&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Valitse virtuaalikoneet, jotka haluat viedä uuteen laitekuvaan. Voit valita useamman kuin yhden virtuaalikoneen. Huomaa, että virtuaalikoneiden täytyy olla sammutettu ennen vientiä.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxExportApplianceWzd.ui" line="469"/>
+        <location filename="../ui/VBoxExportApplianceWzd.ui" line="151"/>
+        <location filename="../ui/VBoxExportApplianceWzd.ui" line="318"/>
+        <location filename="../ui/VBoxExportApplianceWzd.ui" line="479"/>
         <source>&lt; &amp;Back</source>
         <translation>&lt; &amp;Edellinen</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxExportApplianceWzd.ui" line="158"/>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="325"/>
         <source>&amp;Next &gt;</source>
         <translation>&amp;Seuraava &gt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxExportApplianceWzd.ui" line="499"/>
+        <location filename="../ui/VBoxExportApplianceWzd.ui" line="181"/>
+        <location filename="../ui/VBoxExportApplianceWzd.ui" line="348"/>
+        <location filename="../ui/VBoxExportApplianceWzd.ui" line="509"/>
         <source>Cancel</source>
         <translation>Peru</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxExportApplianceWzd.ui" line="202"/>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="369"/>
         <source>Appliance Export Settings</source>
         <translation>Laitteistokuvan viennin asetukset</translation>
@@ -1774,7 +1804,17 @@ p, li { white-space: pre-wrap; }
         <translation>Valitse tiedostonimi, johon laitteistokuvan tiedot kirjoitetaan. Tällä hetkellä VirtualBox tulee avointa virtualisointimuotoa (OVF).</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxExportApplianceWzd.ui" line="476"/>
+        <location filename="../ui/VBoxExportApplianceWzd.ui" line="445"/>
+        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxExportApplianceWzd.ui" line="448"/>
+        <source>&amp;Write legacy OVF 0.9</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxExportApplianceWzd.ui" line="486"/>
         <source>&amp;Export &gt;</source>
         <translation>&amp;Vie &gt;</translation>
     </message>
@@ -1964,6 +2004,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxGLSettingsLanguage</name>
     <message>
+        <location filename="../src/VBoxGLSettingsLanguage.cpp" line="88"/>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="89"/>
         <source> (built-in)</source>
         <comment>Language</comment>
@@ -1988,7 +2029,7 @@ p, li { white-space: pre-wrap; }
         <translation>Oletus</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGLSettingsLanguage.cpp" line="307"/>
+        <location filename="../src/VBoxGLSettingsLanguage.cpp" line="311"/>
         <source>Language:</source>
         <translation>Kieli:</translation>
     </message>
@@ -2023,7 +2064,7 @@ p, li { white-space: pre-wrap; }
         <translation>Tekijä</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGLSettingsLanguage.cpp" line="309"/>
+        <location filename="../src/VBoxGLSettingsLanguage.cpp" line="313"/>
         <source>Author(s):</source>
         <translation>Tekijä(t):</translation>
     </message>
@@ -2094,6 +2135,8 @@ p, li { white-space: pre-wrap; }
         <translation>IPv4-osoite</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGLSettingsNetwork.cpp" line="202"/>
+        <location filename="../src/VBoxGLSettingsNetwork.cpp" line="212"/>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="231"/>
         <source>Not set</source>
         <comment>address</comment>
@@ -2105,6 +2148,7 @@ p, li { white-space: pre-wrap; }
         <translation>IPv4-verkkopeite</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGLSettingsNetwork.cpp" line="205"/>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="234"/>
         <source>Not set</source>
         <comment>mask</comment>
@@ -2159,6 +2203,7 @@ p, li { white-space: pre-wrap; }
         <translation>Alaraja</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGLSettingsNetwork.cpp" line="237"/>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="240"/>
         <source>Not set</source>
         <comment>bound</comment>
@@ -2185,6 +2230,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Muokkaa laitteiston sisäistä verkkoa</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGLSettingsNetwork.cpp" line="403"/>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="448"/>
         <source>Performing</source>
         <comment>creating/removing host-only network</comment>
@@ -2403,6 +2449,9 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;nobr&gt;%3 MB&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1611"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1617"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1635"/>
         <location filename="../src/VBoxGlobal.cpp" line="1641"/>
         <source>General</source>
         <comment>details report</comment>
@@ -2439,7 +2488,8 @@ p, li { white-space: pre-wrap; }
         <translation>IO APIC</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="475"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1627"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="476"/>
         <source>Nested Paging</source>
         <comment>details report</comment>
         <translation>Sisäkkäinen sivutus</translation>
@@ -2481,13 +2531,15 @@ p, li { white-space: pre-wrap; }
         <translation>Ei käytössä</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="450"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1751"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="451"/>
         <source>Enabled</source>
         <comment>details report (Nested Paging)</comment>
         <translation>Käytössä</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="451"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1752"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="452"/>
         <source>Disabled</source>
         <comment>details report (Nested Paging)</comment>
         <translation>Ei käytössä</translation>
@@ -2515,6 +2567,12 @@ p, li { white-space: pre-wrap; }
         <source>Floppy</source>
         <comment>details report</comment>
         <translation>Levyke</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2923"/>
+        <source>Bridged Adapter</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1788"/>
@@ -2558,7 +2616,20 @@ p, li { white-space: pre-wrap; }
         <translation>Ääni</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="633"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1899"/>
+        <source>Bridged adapter, %1</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1905"/>
+        <source>Host-only adapter, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1911"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="634"/>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
         <translation>Sovitin %1</translation>
@@ -2859,13 +2930,19 @@ p, li { white-space: pre-wrap; }
         <translation>CoreAudio</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2917"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2916"/>
+        <source>Intel PRO/1000 MT Server (82545EM)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2919"/>
         <source>Not attached</source>
         <comment>NetworkAttachmentType</comment>
         <translation>Ei liitetty</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2919"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2921"/>
         <source>NAT</source>
         <comment>NetworkAttachmentType</comment>
         <translation>NAT</translation>
@@ -2876,43 +2953,49 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Isäntäkoneen liitäntä</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2923"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2925"/>
         <source>Internal Network</source>
         <comment>NetworkAttachmentType</comment>
         <translation>Sisäinen verkko</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2950"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2927"/>
+        <source>Host-only Adapter</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2952"/>
         <source>Not supported</source>
         <comment>USBDeviceState</comment>
         <translation>Ei tuettu</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2952"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2954"/>
         <source>Unavailable</source>
         <comment>USBDeviceState</comment>
         <translation>Ei käytettävissä</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2954"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2956"/>
         <source>Busy</source>
         <comment>USBDeviceState</comment>
         <translation>Varattu</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2956"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2958"/>
         <source>Available</source>
         <comment>USBDeviceState</comment>
         <translation>Käytettävissä</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2958"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2960"/>
         <source>Held</source>
         <comment>USBDeviceState</comment>
         <translation>Pidossa</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2960"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2962"/>
         <source>Captured</source>
         <comment>USBDeviceState</comment>
         <translation>Kaapattu</translation>
@@ -2923,36 +3006,37 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Ei käytettävissä</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2928"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2930"/>
         <source>Disabled</source>
         <comment>ClipboardType</comment>
         <translation>Ei käytössä</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2930"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2932"/>
         <source>Host To Guest</source>
         <comment>ClipboardType</comment>
         <translation>Isännältä asiakkaalle</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2932"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2934"/>
         <source>Guest To Host</source>
         <comment>ClipboardType</comment>
         <translation>Asiakkaalta isännälle</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2934"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2936"/>
         <source>Bidirectional</source>
         <comment>ClipboardType</comment>
         <translation>Kaksisuuntainen</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="4031"/>
+        <location filename="../src/VBoxGlobal.cpp" line="4033"/>
         <source>Select a directory</source>
         <translation>Valitse kansio</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="4416"/>
+        <location filename="../src/VBoxGlobal.cpp" line="4191"/>
+        <location filename="../src/VBoxGlobal.cpp" line="4405"/>
         <source>Select a file</source>
         <translation>Valitse tiedosto</translation>
     </message>
@@ -3028,61 +3112,61 @@ p, li { white-space: pre-wrap; }
         <translation>Isäntäkoneen laite</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2921"/>
         <source>Bridged Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>Sillattu verkko</translation>
+        <translation type="obsolete">Sillattu verkko</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2925"/>
         <source>Host-only Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>Laitteiston sisäinen verkko</translation>
+        <translation type="obsolete">Laitteiston sisäinen verkko</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2937"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2939"/>
         <source>PIIX3</source>
         <comment>StorageControllerType</comment>
         <translation>PIIX3</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2939"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2941"/>
         <source>PIIX4</source>
         <comment>StorageControllerType</comment>
         <translation>PIIX4</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2941"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2943"/>
         <source>ICH6</source>
         <comment>StorageControllerType</comment>
         <translation>ICH6</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2943"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2945"/>
         <source>AHCI</source>
         <comment>StorageControllerType</comment>
         <translation>AHCI</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2945"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2947"/>
         <source>Lsilogic</source>
         <comment>StorageControllerType</comment>
         <translation>Lsilogic</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2947"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2949"/>
         <source>BusLogic</source>
         <comment>StorageControllerType</comment>
         <translation>BusLogic</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2962"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2964"/>
         <source>User-defined</source>
         <comment>serial port</comment>
         <translation>Käyttäjän määrittämä</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="474"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1626"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2091"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="475"/>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
         <translation>VT-x/AMD-V</translation>
@@ -3094,13 +3178,17 @@ p, li { white-space: pre-wrap; }
         <translation>PAE/NX</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="447"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1746"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2084"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="448"/>
         <source>Enabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
         <translation>Käytössä</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="448"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1747"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2085"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="449"/>
         <source>Disabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
         <translation>Ei käytössä</translation>
@@ -3130,10 +3218,9 @@ p, li { white-space: pre-wrap; }
         <translation>Ohjain</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1899"/>
         <source>Bridged network, %1</source>
         <comment>details report (network)</comment>
-        <translation>Sillattu verkko, %1</translation>
+        <translation type="obsolete">Sillattu verkko, %1</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1902"/>
@@ -3142,10 +3229,9 @@ p, li { white-space: pre-wrap; }
         <translation>Sisäinen verkko, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1905"/>
         <source>Host-only network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation>Laitteiston sisäinen verkko, &apos;%1&apos;</translation>
+        <translation type="obsolete">Laitteiston sisäinen verkko, &apos;%1&apos;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1989"/>
@@ -3347,7 +3433,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">siäsinen verkko, &quot;%1&quot;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="154"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="220"/>
         <source>Adapter %1</source>
         <comment>network</comment>
         <translation>Sovitin %1</translation>
@@ -3806,6 +3892,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Jotta voisit tuoda laitteistokuvan, sinun täytyy ensin valita sen määrittävä tiedosto. Tällä hetkellä VirtualBox tukee avoimen virtualisointimuodon mukaisia tiedostoja (OVF). Valitse tuotava tiedosto alla olevasta luettelosta jatkaaksesi:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxImportApplianceWzd.ui" line="164"/>
         <location filename="../ui/VBoxImportApplianceWzd.ui" line="331"/>
         <source>&lt; &amp;Back</source>
         <translation>&lt; &amp;Edellinen</translation>
@@ -3816,6 +3903,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Seuraava &gt;</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxImportApplianceWzd.ui" line="194"/>
         <location filename="../ui/VBoxImportApplianceWzd.ui" line="361"/>
         <source>Cancel</source>
         <translation>Peru</translation>
@@ -4042,16 +4130,27 @@ p, li { white-space: pre-wrap; }
         <translation>Päivitä medialuettelo</translation>
     </message>
     <message>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="654"/>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="658"/>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="661"/>
+        <location filename="../ui/VBoxMediaManagerDlg.ui" line="114"/>
+        <location filename="../ui/VBoxMediaManagerDlg.ui" line="219"/>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="310"/>
         <source>Location</source>
         <translation>Sijainti</translation>
     </message>
     <message>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="655"/>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="131"/>
         <source>Type (Format)</source>
         <translation>Tyyppi (muoto)</translation>
     </message>
     <message>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="656"/>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="659"/>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="662"/>
+        <location filename="../ui/VBoxMediaManagerDlg.ui" line="148"/>
+        <location filename="../ui/VBoxMediaManagerDlg.ui" line="236"/>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="327"/>
         <source>Attached to</source>
         <translation>Liitetty kohteeseen</translation>
@@ -4123,6 +4222,8 @@ p, li { white-space: pre-wrap; }
         <translation>Kiinto&amp;levyt</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxMediaManagerDlg.ui" line="81"/>
+        <location filename="../ui/VBoxMediaManagerDlg.ui" line="191"/>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="279"/>
         <source>Name</source>
         <translation>Nimi</translation>
@@ -4143,6 +4244,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;CD/DVD-levykuvat</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxMediaManagerDlg.ui" line="196"/>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="284"/>
         <source>Size</source>
         <translation>Koko</translation>
@@ -4284,11 +4386,16 @@ levykuvan sijainnin ja nimen, tai kirjoita tiedostonimi tekstikenttään.&lt;/p&
         <translation>Valitse uuden kiintolevyn levykuvan tiedosto</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="176"/>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="384"/>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="684"/>
         <location filename="../ui/VBoxNewHDWzd.ui" line="898"/>
         <source>&lt; &amp;Back</source>
         <translation>&lt; &amp;Edellinen</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="183"/>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="391"/>
         <location filename="../ui/VBoxNewHDWzd.ui" line="691"/>
         <source>&amp;Next &gt;</source>
         <translation>&amp;Seuraava &gt;</translation>
@@ -4323,6 +4430,9 @@ levykuvan sijainnin ja nimen, tai kirjoita tiedostonimi tekstikenttään.&lt;/p&
         <translation>Tavua</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="206"/>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="414"/>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="714"/>
         <location filename="../ui/VBoxNewHDWzd.ui" line="928"/>
         <source>Cancel</source>
         <translation>Peru</translation>
@@ -4523,11 +4633,18 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation>&lt;p&gt;Tämä apulainen auttaa sinua luomaan uuden VirtualBoxin virtuaalikoneen.&lt;/p&gt;&lt;p&gt;Voit siirtyä apulaisen kysymyksissä seuraavalle sivulle napista &lt;b&gt;Seuraava&lt;/b&gt; ja edelliselle sivulle napista &lt;b&gt;Takaisin&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="173"/>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="385"/>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="673"/>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="905"/>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1113"/>
         <source>&lt; &amp;Back</source>
         <translation>&lt; &amp;Takaisin</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="180"/>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="392"/>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="680"/>
         <location filename="../ui/VBoxNewVMWzd.ui" line="912"/>
         <source>&amp;Next &gt;</source>
         <translation>&amp;Seuraava &gt;</translation>
@@ -4563,6 +4680,8 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation>&amp;Viimeistele</translation>
     </message>
     <message>
+        <location filename="../src/VBoxNewVMWzd.cpp" line="164"/>
+        <location filename="../src/VBoxNewVMWzd.cpp" line="166"/>
         <location filename="../src/VBoxNewVMWzd.cpp" line="180"/>
         <source>MB</source>
         <comment>megabytes</comment>
@@ -4593,6 +4712,10 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation>Käynnistyskiintolevy</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="203"/>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="415"/>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="703"/>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="935"/>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1143"/>
         <source>Cancel</source>
         <translation>Peru</translation>
@@ -4735,6 +4858,7 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation>Virtuaalikoneen &lt;b&gt;%1&lt;/b&gt; asetuksia ei voitu toteuttaa.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="590"/>
         <location filename="../src/VBoxProblemReporter.cpp" line="604"/>
         <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Virtuaalikonetta &lt;b&gt;%1&lt;/b&gt; ei voitu käynnistää.</translation>
@@ -4750,16 +4874,19 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation>Virtuaalikoneen &lt;b&gt;%1&lt;/b&gt; suoritusta ei voitu jatkaa.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="650"/>
         <location filename="../src/VBoxProblemReporter.cpp" line="664"/>
         <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Virtuaalikoneen &lt;b&gt;%1&lt;/b&gt; tilaa ei voitu tallentaa.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="676"/>
         <location filename="../src/VBoxProblemReporter.cpp" line="690"/>
         <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Virtuaalikoneesta &lt;b&gt;%1&lt;/b&gt; ei voitu luoda palautuspistettä.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="702"/>
         <location filename="../src/VBoxProblemReporter.cpp" line="714"/>
         <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Virtuaalikoneen &lt;b&gt;%1&lt;/b&gt; pysäytys ei onnistunut.</translation>
@@ -4810,16 +4937,19 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation>Peru</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="788"/>
         <location filename="../src/VBoxProblemReporter.cpp" line="801"/>
         <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation>Virtuaalikoneen &lt;b&gt;%2&lt;/b&gt; palautuspistettä &lt;b&gt;%1&lt;/b&gt; ei voitu hylätä.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="813"/>
         <location filename="../src/VBoxProblemReporter.cpp" line="826"/>
         <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Virtuaalikoneen &lt;b&gt;%1&lt;/b&gt; tämänhetkistä tilaa ei voitu hylätä.</translation>
     </message>
     <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="837"/>
         <location filename="../src/VBoxProblemReporter.cpp" line="850"/>
         <source>Failed to discard the current snapshot and the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Virtuaalikoneen &lt;b&gt;%1&lt;/b&gt; tämänhetkistä palautuspistettä ja tilaa ei voitu hylätä.</translation>
@@ -4871,151 +5001,156 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation type="obsolete">Isäntäkoneen verkkosovitinliittymää &lt;b&gt;%1&lt;/b&gt; ei voitu luoda.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1269"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1259"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1268"/>
         <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Isäntäkoneen verkkosovitinliittymää &lt;b&gt;%1&lt;/b&gt; ei voitu poistaa..</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1295"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1280"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1292"/>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation>USB-laitteen &lt;b&gt;%1&lt;/b&gt; liittäminen virtuaalikoneeseen &lt;b&gt;%2&lt;/b&gt; ei onnistunut.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1321"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1306"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1318"/>
         <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation>USB-laitteen &lt;b&gt;%1&lt;/b&gt; irrotus virtuaalikoneesta &lt;b&gt;%2&lt;/b&gt; ei onnistunut.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1373"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1334"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1370"/>
         <source>Failed to create a shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Jaettua kansiota &lt;b&gt;%1&lt;/b&gt; (osoittaa kohteeseen &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) ei voitu luoda virtuaalikoneeseen &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1355"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1352"/>
         <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Jaettua kansiota &lt;b&gt;%1&lt;/b&gt; (osoittaa kohteeseen &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) ei voitu poistaa virtuaalikoneesta &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1663"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1660"/>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Virtuaalikone kertoi, ettei asiakasvirtuaalikone tue &lt;b&gt;hiirikohdistimen integrointia&lt;/b&gt; tässä videotilassa. Hiiri täytyy kaapata, joko napsauttamalla virtuaalikonetta tai painamalla isäntänäppäintä, jotta voit käyttää hiirtä tässä virtuaalikoneessa.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1681"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1678"/>
         <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and therefore does not accept any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Virtuaalikone on nyt &lt;b&gt;Pysäytetty&lt;/b&gt; eikä se hyväksy näppäimistösyötteitä tai hiiriohjausta. Jos haluat jatkaa virtuaalikoneen käyttöä, palauta se valitsemalla tämä toiminto valikkopalkista.&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1963"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1960"/>
         <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation>&lt;p&gt;VirtualBoxia ei voi suorittaa &lt;i&gt;VM Selector&lt;/i&gt;-tilassa paikallisista rajoitteista johtuen.&lt;/p&gt;&lt;p&gt;Ohjelma suljetaan nyt.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1974"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1971"/>
         <source>Failed to open appliance.</source>
         <translation>Laitteistokuvaa ei voitu avata.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1990"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1987"/>
         <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Laitteistokuvaa &lt;b&gt;%1&lt;/b&gt; ei voitu avata tai tulkita.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2002"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1999"/>
         <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Laitteistokuvaa &lt;b&gt;%1&lt;/b&gt; ei voitu tuoda.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2012"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2009"/>
         <source>Failed to create appliance.</source>
         <translation>Laitteistokuvaa ei voitu luoda.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2037"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2017"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2034"/>
         <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Laitteistokuvan &lt;b&gt;%1&lt;/b&gt; viennin valmistelu epäonnistui.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2032"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2029"/>
         <source>Failed to create an appliance.</source>
         <translation>Laitteistokuvan luonti epäonnistui.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2048"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2045"/>
         <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Laitteistokuvan &lt;b&gt;%1&lt;/b&gt; vienti epäonnistui.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2077"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2074"/>
         <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
         <translation>&lt;nobr&gt;Kriittinen virhe&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2083"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2080"/>
         <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
         <translation>&lt;nobr&gt;Ei-kriittinen virhe&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2089"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2086"/>
         <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
         <translation>&lt;nobr&gt;Varoitus&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2107"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2103"/>
         <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
         <translation>&lt;nobr&gt;Virheen tunniste: &lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2109"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2105"/>
         <source>Severity: </source>
         <comment>runtime error info</comment>
         <translation>Vakavuus: </translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2120"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2116"/>
         <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
         <translation>&lt;p&gt;Tapahtui kriittinen virhe suoritettaesa virtuaalikonetta! Virtuaalikone sammutetaan nyt. On suositeltavaa kopioida seuraava virheviesti leikepöydälle jatkotoimenpiteiden varalta:&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2132"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2128"/>
         <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Tapahtui kriittinen virhe suoritettaesa virtuaalikonetta! Virheen yksityiskohdat näytetään alla.Voit yrittää korjata kuvatun virheen ja jatkaa virtuaalikoneen suorittamista.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2141"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2137"/>
         <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. You may ignore this message, but it is suggested to perform an appropriate action to make sure the described error will not happen.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Virtuaalikoneen suoritus saattaa päätyä alla kuvattuun virhetilaan. Voit jättää tämän viestin huomioimatta, mutta on suositeltavaa suorittaa tarvitut toimenpiteet, ettei alla kuvattu virhe pääse tapahtumaan.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2258"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2254"/>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
         <translation>Tulos&amp;nbsp;koodi:</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2264"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2260"/>
         <source>Component: </source>
         <comment>error info</comment>
         <translation>Komponetti:</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2272"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2268"/>
         <source>Interface: </source>
         <comment>error info</comment>
         <translation>Sovitin:</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2281"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2277"/>
         <source>Callee: </source>
         <comment>error info</comment>
         <translation>Kutsuja:</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2289"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2285"/>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
         <translation>Kutsujan&amp;nbsp;RC:</translation>
@@ -5031,17 +5166,17 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation>&lt;p&gt;Kielitiedostoa &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ei voitu ladata.&lt;/p&gt;&lt;p&gt;Kieli on väliaikaisesti asetettu oletusarvoon Englanti. Siirry VirtualBoxin pääikkunan &lt;b&gt;File&lt;/b&gt;-valikon kohtaan &lt;b&gt;Preferences&lt;/b&gt;, josta voit valita jonkun olemassaolevista kielistä &lt;b&gt;Language&lt;/b&gt;-sivulta.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1457"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1454"/>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Virtuaalikoneeseen asennetut VirtualBoxin asiakaslisäosat ovat liian vanhoja: asennettu versio on %1, ja vaadittu versio on %2. Jotkut ominaisuudet, jotka vaativat lisäosien toiminnan,kuten hiiren integrointi ja näytön koon automaattinen vaihto, lakkaavat luultavasti toimimasta oikein.&lt;/p&gt;&lt;p&gt;Päivitä asiakslisäosat uusimpaan versioon valitsemalla &lt;b&gt;Laitteet&lt;/b&gt;-valikosta kohta &lt;b&gt;Asenna asiakaslisäosat...&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1474"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1471"/>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Virtuaalikoneeseen asennetut VirtualBoxin asiakaslisäosat ovat vanhentuneet: asennettu versio on %1, ja vaadittu versio on %2. Jotkut ominaisuudet, jotka vaativat lisäosien toiminnan,kuten hiiren integrointi ja näytön koon automaattinen vaihto, lakkaavat luultavasti toimimasta oikein.&lt;/p&gt;&lt;p&gt;Päivitä asiakslisäosat uusimpaan versioon valitsemalla &lt;b&gt;Laitteet&lt;/b&gt;-valikosta kohta &lt;b&gt;Asenna asiakaslisäosat...&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1490"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1487"/>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Virtuaalikoneeseen asennetut VirtualBoxin asiakaslisäosat ovat liian uusia tälle VirtualBoxin versiolle: asennettu versio on %1, ja vaadittu versio on %2. Uudempien lisäosien version käyttäminen vanhemman VirtualBoxin kanssa ei ole tuettu.&lt;/p&gt;&lt;p&gt;Asenna asiakslisäosat tähän versioon valitsemalla &lt;b&gt;Laitteet&lt;/b&gt;-valikosta kohta &lt;b&gt;Asenna asiakaslisäosat...&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
@@ -5051,37 +5186,42 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation>Palautuspisteiden kansion polun vaihto virtuaalikoneelle &lt;b&gt;%1&lt;b&gt; arvoon &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; epäonnistui.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1391"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1226"/>
+        <source>&lt;p&gt;Deleting this host-only network will lead to the deleting of the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1388"/>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Jaettua kansiota &lt;b&gt;%1&lt;/b&gt; (osoittaa kohteeseen &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) ei voitu poistaa virtuaalikoneesta &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Sulje virtuaalikoneen ohjelmat, jotka käyttävät jaettua kansiota ja yritä uudestaan.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1406"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1403"/>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to download this CD image from the Internet?&lt;/p&gt;</source>
         <translation>&lt;p&gt;VirtualBoxin asiakaslisäosien CD-levykuvaa &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; tai &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt; ei löytynyt. Haluatko noutaa tämän CD-levykuvan internetistä?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1420"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1417"/>
         <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
         <translation>&lt;p&gt;VirtualBoxin asiakaslisäosien CD-levykuvan nouto osoitteesta &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; epäonnistui.&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1429"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1426"/>
         <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Haluatko varmasti noutaa VirtualBoxin asiakaslisäosien CD-levykuvan osoitteesta &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (koko %3 tavua)?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1441"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1438"/>
         <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation>&lt;p&gt;VirtualBoxin asiakaslisäosien CD-levykuvan nouto osoitteesta &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; onnistui ja se on tallennettu paikallisesti nimelle &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Haluatko rekisteröidä tämän CD-levykuvan ja liittää sen virtuaalisena CD/DVD-asemana?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1874"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1871"/>
         <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the color quality of the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color quality to see if this message disappears or you can simply disable the message now if you are sure the required color quality (%4&amp;nbsp;bit) is not available in the given guest OS.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Virtuaalikoneen ikkuna on optimoitu toimimaan &lt;b&gt;%1&amp;nbsp;bittisessä&lt;/b&gt; väritilassa, mutta virtuaalinäytön värimäärä on asetettu nyt arvoon &lt;b&gt;%2&amp;nbsp;bittiä&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Avaa virtuaalikoneen näyttöasetukset ja valitse värien määräksi &lt;b&gt;%3&amp;nbsp;bittinen&lt;/b&gt; tila, jos saatavilla, jotta saat parhaan laatuisen videokuvan virtuaalikoneestasi.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Huomautus:&lt;/b&gt; joissain käyttöjärjestelmissä kuten OS/2, värien bittisyvyys saattaa todellisuudessa olla 32&amp;nbsp;bittiä mutta ne raportoivat tämän 24&amp;nbsp;bittisenä (16 miljoonaa väriä). Voit yrittää valita toisen värimäärän nähdäksesi häipyykö tämä varoitus, tai voit vain estää tämän viestin näyttämisen jos olet varma että vaadittu värisyvyys (%4&amp;nbsp;bittiä) ei ole saatavilla virtuaalikoneen käyttöjärjestelmässä.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1947"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1944"/>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Et liittänyt uuteen virtuaalikoneeseen kiintolevyä. Virtuaalikone ei voi käynnistyä, jollet liitä siihen kiintolevyä, jolla on asiakaskäyttöjärjestelmä, tai jotain muuta käynnistettävää mediaa myöhemmin käyttäen virtuaalikoneen asetuksia tai ensimmäisen käyttökerran asetusapulaista.&lt;/p&gt;&lt;p&gt;Haluatko varmasti jatkaa?&lt;/p&gt;</translation>
     </message>
@@ -5101,12 +5241,12 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation>ACPI-virtanapin painallustapahtuman lähetys virtuaalikoneelle &lt;b&gt;%1&lt;/b&gt; epäonnistui.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1520"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1517"/>
         <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
         <translation>&lt;p&gt;Onnittelut! Olet onnistuneesti rekisteröitynyt VirtualBoxin käyttäjäksi.&lt;/p&gt;&lt;p&gt;Kiitos että jaksoit käyttää aikaasi rekisteröintikaavakkeen täyttöön!&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1525"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1522"/>
         <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
         <translation>&lt;p&gt;VirtualBox-tuotteen rekisteröinti epäonnistui&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
@@ -5179,31 +5319,32 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation>Poista käytöstä</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1434"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1431"/>
         <source>Download</source>
         <comment>additions</comment>
         <translation>Nouda</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1449"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1446"/>
         <source>Mount</source>
         <comment>additions</comment>
         <translation>Liitä</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1612"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1576"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1609"/>
         <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
         <comment>additional message box paragraph</comment>
         <translation>&lt;p&gt;Isäntänäppäin on nyt &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1586"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1583"/>
         <source>Capture</source>
         <comment>do input capture</comment>
         <translation>Kaappaa</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1707"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1704"/>
         <source>Check</source>
         <comment>inaccessible media message box</comment>
         <translation>Tarkista</translation>
@@ -5214,7 +5355,7 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation type="obsolete">&amp;Tallenna</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1811"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1808"/>
         <source>&amp;Backup</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
         <translation>&amp;Varmuuskopioi</translation>
@@ -5225,36 +5366,36 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation type="obsolete">Peru</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1835"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1832"/>
         <source>Switch</source>
         <comment>fullscreen</comment>
         <translation>Vaihda</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1857"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1854"/>
         <source>Switch</source>
         <comment>seamless</comment>
         <translation>Vaihda</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1933"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1930"/>
         <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;When the machine is reset, unsaved data of all applications running inside it will be lost.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Haluatko varmasti nollata virtuaalikoneen?&lt;/p&gt;&lt;p&gt;Kun virtuaalikone nollataan, hukataan pysyvästi kaikki tallentamattomat tiedostot virtuaalikoneessa käynnissä olevista ohjelmista.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1937"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1934"/>
         <source>Reset</source>
         <comment>machine</comment>
         <translation>Nollaa</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1956"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1953"/>
         <source>Continue</source>
         <comment>no hard disk attached</comment>
         <translation>Jatka</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1957"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1954"/>
         <source>Go Back</source>
         <comment>no hard disk attached</comment>
         <translation>Takaisin</translation>
@@ -5287,32 +5428,32 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation>&lt;p&gt;Virtuaalikoneen näyttöä ei voitu siirtää kokoruututilaan, koska virtuaalikoneen näyttömuisti ei riitä.&lt;/p&gt;&lt;p&gt;Muuta virtuaalikoneen asetuksista näyttömuistin määräksi vähintään &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Valitse &lt;p&gt;Älä huomioi&lt;/p&gt;, jos haluat joka tapauksessa siirtyä kokoruututilaan ta valitse &lt;b&gt;Peru&lt;/b&gt;, jos haluat perua toiminnon.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1552"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1549"/>
         <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
         <translation>Olet jo asentanut uusimman VirtualBoxin version. Etsi uutta versiota joskus myöhemmin.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1564"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1561"/>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
         <translation>&lt;p&gt;&lt;b&gt;Napsautit hiirtä&lt;/b&gt; virtuaalikoneen ikkunassa tai painoit &lt;b&gt;isäntänäppäintä&lt;/b&gt;. Tämän seurauksena virtuaalikone &lt;b&gt;kaappaa&lt;/b&gt; hiiren kohdistimen (vain jos hiirikohdistimen integrointi ei ole tuettu tällä hetkellä virtuaalikoneessa) ja näppäimen, jolloin niitäei voi käyttää muissa isäntäkoneen ohjelmissa.&lt;/p&gt;&lt;p&gt;Voit painaa &lt;b&gt;isäntänäppäintä&lt;/b&gt; milloin tahansa ja &lt;b&gt;vapauttaa&lt;/b&gt; kaapatun hiiren ja näppäimistön normaaliin käyttöön. Tällä hetkellä käytössä oleva isäntänäppäin näytetään virtuaalikoneen ikkunan alareunan tilarivillä, &amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;-kuvakkeen vieressä. Tämä kuvake sekä lähellä oleva hiiren kuvake kertovat, onko hiiri ja näppäimistö kaapattu.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1597"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1594"/>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Valitsin &lt;b&gt;kaappaa näppäimistö automaattisesti&lt;/b&gt; on päällä. Tämä valitsin kaappaa näppäimistön automaattisesti aina, kun virtuaalikoneen ikkuna on aktiivinen, ja estää näppäimistön käytön muissa isäntäkoneen ohjelmissa: kun näppäimistö on kaapattu, lähetetään kaikki näppäilyt virtuaalikoneelle, mukaanlukien järjestelmänäppäilyt kuten Alt-Tab.&lt;/p&gt;&lt;p&gt;Voit &lt;b&gt;vapauttaa&lt;/b&gt; kaapatun näppäimistön ja hiiren (jos se on kaapattu) milloin tahansa painamalla &lt;b&gt;isäntänäppäintä&lt;/b&gt;, jonka jälkeen ne toimivat isäntäjärjestelmässä normaalisti. Tällä hetkellä käytössä oleva isäntänäppäin näytetään virtuaalikoneen ikkunan alareunan tilarivillä, &amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;-kuvakkeen vieressä. Tämä kuvake sekä lähellä oleva hiiren kuvake kertovat, onko hiiri ja näppäimistö kaapattu.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1639"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1636"/>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Virtuaalikone ilmoitti, että asiakaskäyttöjärjestelmä tukee &lt;b&gt;hiirikohdistimen integrointia&lt;/b&gt;. Tämä tarkoittaa, ettei hiiren kohdistinta tarvitse &lt;i&gt;kaapata&lt;/i&gt; käyttääksesi sitä virtuaalikoneessa: kaikki hiiriliikeet joita suoritat kohdistimen ollessa virtuaalikoneen ikkunassa lähetetään asiakaskäyttöjärjestelmälle. Jos hiiri oli nyt kaapattuna, se vapautetaan nyt automaattisesti.&lt;/p&gt;&lt;p&gt;Hiiren kuvake &amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp; tilarivillä kertoo, että hiirikohdistimen integrointi on tuettu asiakaskäyttöjärjestelmässä ja on tällä hetkellä päällä.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Huomautus:&lt;/b&gt;: jotkut sovellukset voivat toimia väärin käytettäessä hiiren kohdistimen integrointia. Voit aina poistaa sen käytöstä tai ottaa uudestaan käyttöön tässä istunnossa valitsemalla vastaavan toiminnon valikkopalkin &lt;b&gt;Kone&lt;/b&gt;-valikosta.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1825"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1822"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Virtuaalikoneen ikkuna siirtyy nyt &lt;b&gt;kokoruututilaan&lt;/b&gt;. Voit siirtyä takaisin ikkunoituun tilaan näppäinyhdistelmällä &lt;b&gt;%1&lt;/b&gt;. Huomaa, että &lt;i&gt;isäntänäppäin&lt;/i&lt; on asetettu näppäimeksi &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Huomaa, että ikkunan valikkopalkki on piilotettu kokoruututilassa. Saat sen näkyviin näppäinyhdistelmällä &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1847"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1844"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Virtuaalikoneen ikkuna on nyt &lt;b&gt;saumattomassa&lt;/b&gt; tilassa. Voit siirtyä takaisin ikkunoituun tilaan näppäinyhdistelmällä &lt;b&gt;%1&lt;/b&gt;. Huomaa, että &lt;i&gt;isäntänäppäin&lt;/i&lt; on asetettu näppäimeksi &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Huomaa, että ikkunan valikkopalkki on piilotettu kokoruututilassa. Saat sen näkyviin näppäinyhdistelmällä &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
@@ -5377,7 +5518,7 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation>Näytä tietoja tuotteesta ikkunassa</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1534"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1531"/>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;Uusi versio VirtualBoxista on julkaistu! Versio &lt;b&gt;%1&lt;/b&gt; on saatavilla sivulta &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Voit noutaa tämän version seuraavasta linkistä: &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
@@ -5508,87 +5649,89 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation>Ei voitu selvittää median &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; saatavuutta.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1228"/>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Haluatko poistaa valitun isäntäkoneen verkkosovittimen &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Huomautus:&lt;/b&gt; Yksi tai useampi virtuaalikone saattaa käyttää käyttää tätä verkkosovitinta. Kun verkkosovitin on poistettu, nämä virtuaalisovittimet eivät enää toimi, jos et korjaa niitä valitsemalla toisen verkkosovittimen tai sovittimen liitostavan.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Haluatko poistaa valitun isäntäkoneen verkkosovittimen &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Huomautus:&lt;/b&gt; Yksi tai useampi virtuaalikone saattaa käyttää käyttää tätä verkkosovitinta. Kun verkkosovitin on poistettu, nämä virtuaalisovittimet eivät enää toimi, jos et korjaa niitä valitsemalla toisen verkkosovittimen tai sovittimen liitostavan.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1252"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1243"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1251"/>
         <source>Failed to create the host-only network interface.</source>
         <translation>Laitteiston sisäistä verkkosovitinta ei voitu luoda.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1510"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1507"/>
         <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;VirtualBoxin rekisteröitymispalveluun ei saatu yhteyttä seuraavan virheen takia:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1544"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1541"/>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;Uuden version tietoja ei voitu noutaa seuraavasta virheestä johtuen:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1696"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1693"/>
         <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Yksi tai useampi kiintolevyistä, CD/DVD- tai levykemedioista ei ole tällä hetkellä saatavilla. Tästä johtuen et voi käyttää virtuaalikoneita, jotka käyttävät näitä taltioita, kunnes ne ovat taas saatavilla&lt;/p&gt;&lt;p&gt;Paina nappia &lt;b&gt;Tarkista&lt;/b&gt;, jos haluat avata virtuaalimedioiden hallinnan ja selvittää mitkä taltiot eivät ole saatavilla, tai paina nappia &lt;b&gt;Älä huomioi&lt;/b&gt; jos haluat jättää tämän viestin huomioimatta.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1733"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1730"/>
         <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Olemassaoleva VirtualBoxin asetustiedosto muunnetaan automaattisesti vanhasta tiedostomuodosta uuden VirtualBoxin vaatimaan muotoon.&lt;/p&gt;&lt;p&gt;Valiste &lt;b&gt;OK&lt;/b&gt;, jos haluat käynnistää VirtualBoxin nyt, tai valitse &lt;b&gt;Lopeta&lt;/b&gt;, jos haluat keskeyttää VirtualBoxin käynnistyksen nyt.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1754"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1751"/>
         <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Aikaisemmat VirtualBoxin asetuksesi on muunnettu automaattisesti uuden VirtualBoxin vaatimaan uuteen muotoon.&lt;/p&gt;&lt;p&gt;Paina nappia &lt;b&gt;OK&lt;/b&gt; käynnistääksesi VirtualBox heti, tai paina nappia &lt;b&gt;Lisätietoja&lt;/b&gt;, jos haluat tietää lisää muunnetuista tiedostoista ja päästä käsiksi muihin valintoihin.&lt;/p&gt;&lt;p&gt;Paina nappia &lt;b&gt;Sulje&lt;/b&gt;, jos haluat keskeyttää VirtualBoxin tallentamatta muunnoksen tuloksia levylle.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1768"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1765"/>
         <source>&amp;More</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
         <translation>&amp;Lisätietoja</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1813"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1741"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1766"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1810"/>
         <source>E&amp;xit</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
         <translation>&amp;Sulje</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1781"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1778"/>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overwrite&lt;/b&gt; to save all auto-converted files without creating backup copies (it will not be possible to use these settings files with an older version of VirtualBox afterwards);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;It is recommended to always select &lt;b&gt;Backup&lt;/b&gt; because in this case it will be possible to go back to the previous version of VirtualBox (if necessary) without losing your current settings. See the VirtualBox Manual for more information about downgrading.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Seuraavat VirtualBoxin asetustiedostot on muunnettu automaattisesti uuteen asetustiedostojen versiomuotoon &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Muunnoksen lopputulosta ei ole kuitenkaan vielä tallennettu levylle. Valitse yksi seuraavista:&lt;/p&gt; &lt;ul&gt;&lt;li&gt;&lt;b&gt;Varmuuskopioi&lt;/b&gt; luo varmuuskopion vanhanmuotoisista asetustiedostoista ennen kuin ne tallennetaan uudessa muodossa&lt;/li&gt;&lt;li&gt;&lt;b&gt;Korvaa&lt;/b&gt; tallentaa kaikki automaattisesti muunnetut tiedostot varmuuskopioimatta niitä (näitä asetustiedostoja ei voi enää käyttää vanhempien VirtualBoxin versoiden kanssa)&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;On aina suositeltavaa valita &lt;b&gt;Varmuuskopioi&lt;/b&gt;, koska tämän jälkeen voit palata tarvittaessa vanhempaan VirtualBoxin versioon hävittämättä nykyisiä asetuksia. Lue lisätietoja version vanhentamisesta VirtualBoxin manuaalista.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1802"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1799"/>
         <source>&lt;li&gt;&lt;b&gt;Exit&lt;/b&gt; to terminate VirtualBox without saving the results of the conversion to disk.&lt;/li&gt;</source>
         <translation>&lt;li&gt;&lt;b&gt;Sulje&lt;/b&gt; VirtualBox tallentamatta muunnoksen tuloksia levylle.&lt;/li&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1810"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1807"/>
         <source>O&amp;verwrite</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
         <translation>&amp;Korvaa</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1900"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1897"/>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Tapahtui kriittinen virhe suoritettaessa virtuaalikonetta, ja virtuaalikoneen suoritus on keskeytetty.&lt;/p&gt;&lt;p&gt;Jos tarvitset apua ongelmassa, lue lisää yhteisöosiosta sivulta &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; tai etsi yhteystiedot tukisopimuksestasi. Toimita vikaraportin mukana lokitiedostosi sisältö &lt;tt&gt;VBox.log&lt;/tt&gt; sekä levykuvatiedosto &lt;tt&gt;VBox.png&lt;/tt&gt;, jotka löydät kansiosta &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, sekä kuvaus mitä olit tekemässä virheen sattuessa. Huomaa, että pääset käsiksi ylläoleviin tiedostoihin myös VirtualBoxin pääikkunan valikon &lt;b&gt;Kone&lt;/b&gt; kohdasta &lt;b&gt;Näytä loki&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Valitse &lt;b&gt;OK&lt;/b&gt;, jos haluat sammuttaa virtuaalikoneen, tai valitse &lt;b&gt;Älä huomioi&lt;/b&gt;, jos haluat jättää sen päälle vianetsintää varten. Huomaa, että vianetsintä vaatii erityisiä tietoja ja työkaluja, joten yleensä on parasta valita &lt;b&gt;OK&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2157"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2153"/>
         <source>hard disk</source>
         <comment>failed to close ...</comment>
         <translation>kiintolevy</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2159"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2155"/>
         <source>CD/DVD image</source>
         <comment>failed to close ...</comment>
         <translation>CD/DVD-levykuva</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2161"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2157"/>
         <source>floppy image</source>
         <comment>failed to close ...</comment>
         <translation>levykkeen levykuva</translation>
@@ -5718,6 +5861,7 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation type="obsolete">Näyttää virtuaalilevyjen hallinnan valintaikkunan</translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1314"/>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1321"/>
         <source>&amp;Preferences...</source>
         <comment>global settings</comment>
@@ -5862,11 +6006,13 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation>O&amp;hje</translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1412"/>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1525"/>
         <source>&amp;Snapshots</source>
         <translation>&amp;Palautuspisteet</translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1426"/>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1529"/>
         <source>D&amp;escription</source>
         <translation>Ku&amp;vaus</translation>
@@ -5891,6 +6037,7 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation>Siirry valitun virtuaalikoneen ikkunaan</translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1452"/>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1539"/>
         <source>S&amp;tart</source>
         <translation>&amp;Käynnistä</translation>
@@ -5900,6 +6047,7 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation type="obsolete">Käynnistä</translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1454"/>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1541"/>
         <source>Start the selected virtual machine</source>
         <translation>Käynnistä valittu virtuaalikone</translation>
@@ -5954,6 +6102,7 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation>Jatka virtuaalikoneen suorittamista</translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1352"/>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1472"/>
         <source>&amp;Pause</source>
         <translation>&amp;Keskeytä</translation>
@@ -5963,6 +6112,7 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation type="obsolete">Keskeytä</translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1354"/>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1475"/>
         <source>Suspend the execution of the virtual machine</source>
         <translation>Keskeytä virtuaalikoneen suoritus</translation>
@@ -6382,12 +6532,12 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
 <context>
     <name>VBoxSwitchMenu</name>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="5643"/>
+        <location filename="../src/VBoxGlobal.cpp" line="5639"/>
         <source>Disable</source>
         <translation>Ei käytössä</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="5643"/>
+        <location filename="../src/VBoxGlobal.cpp" line="5639"/>
         <source>Enable</source>
         <translation>Käytössä</translation>
     </message>
@@ -6552,13 +6702,13 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
 <context>
     <name>VBoxUSBMenu</name>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="5573"/>
+        <location filename="../src/VBoxGlobal.cpp" line="5569"/>
         <source>&lt;no available devices&gt;</source>
         <comment>USB devices</comment>
         <translation>&lt;ei laitteita saatavilla&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="5575"/>
+        <location filename="../src/VBoxGlobal.cpp" line="5571"/>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
         <translation>Tuettuja laitteita ei ole yhdistettynä isäntätietokoneeseen</translation>
@@ -6823,11 +6973,14 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>&lt;p&gt;Jos ylläolevat tiedot ovat oikein, paina nappia &lt;b&gt;Viimeistele&lt;/b&gt;. Kun olet painanut tätä nappia, valittu media liitetään virtuaalikoneeseen ja virtuaalikone käynnistetään.&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="198"/>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="542"/>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="805"/>
         <source>&lt; &amp;Back</source>
         <translation>&lt; &amp;Takaisin</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="205"/>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="549"/>
         <source>&amp;Next &gt;</source>
         <translation>&amp;Seuraava &gt;</translation>
@@ -6860,6 +7013,8 @@ p, li { white-space: pre-wrap; }
         <translation>Lähde</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="228"/>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="572"/>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="835"/>
         <source>Cancel</source>
         <translation>Peru</translation>
@@ -6877,16 +7032,19 @@ p, li { white-space: pre-wrap; }
         <translation>%1 - tietoja istunnosta</translation>
     </message>
     <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="169"/>
         <location filename="../ui/VBoxVMInformationDlg.ui" line="41"/>
         <source>&amp;Details</source>
         <translation>&amp;Yksityiskohdat</translation>
     </message>
     <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="170"/>
         <location filename="../ui/VBoxVMInformationDlg.ui" line="76"/>
         <source>&amp;Runtime</source>
         <translation>&amp;Suoritusympäristö</translation>
     </message>
     <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="183"/>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="214"/>
         <source>DMA Transfers</source>
         <translation>DMA-siirrot</translation>
@@ -6897,22 +7055,26 @@ p, li { white-space: pre-wrap; }
         <translation>PIO-siirrot</translation>
     </message>
     <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="187"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="216"/>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="237"/>
         <source>Data Read</source>
         <translation>Luettu tieto</translation>
     </message>
     <message>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="189"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="218"/>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="239"/>
         <source>Data Written</source>
         <translation>Kirjoitettu tieto</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="273"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="274"/>
         <source>Data Transmitted</source>
         <translation>Lähetetty tieto</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="275"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="276"/>
         <source>Data Received</source>
         <translation>Vastaanotettu tieto</translation>
     </message>
@@ -6925,22 +7087,22 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Ei käytössä</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="472"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="473"/>
         <source>Runtime Attributes</source>
         <translation>Suoritusympäristön ominaisuudet</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="473"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="474"/>
         <source>Screen Resolution</source>
         <translation>Näytön tarkkuus</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="550"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="551"/>
         <source>CD/DVD-ROM Statistics</source>
         <translation>CD/DVD-ROM-tilastot</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="560"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="561"/>
         <source>Network Adapter Statistics</source>
         <translation>Verkkosovittimen tilastot</translation>
     </message>
@@ -6949,45 +7111,45 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Ei liitetty</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="455"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="456"/>
         <source>Version %1.%2</source>
         <comment>guest additions</comment>
         <translation>Versio %1.%2</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="457"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="458"/>
         <source>Not Detected</source>
         <comment>guest additions</comment>
         <translation>Ei havaittu</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="460"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="461"/>
         <source>Not Detected</source>
         <comment>guest os type</comment>
         <translation>Ei havaittu</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="476"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="477"/>
         <source>Guest Additions</source>
         <translation>Asiakaskoneen lisäosat</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="477"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="478"/>
         <source>Guest OS Type</source>
         <translation>Asiakaskäyttöjärjestelmän tyyppi</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="487"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="488"/>
         <source>Hard Disk Statistics</source>
         <translation>Kiintolevytilastot</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="543"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="544"/>
         <source>No Hard Disks</source>
         <translation>Ei kiintolevyjä</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="577"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="578"/>
         <source>No Network Adapters</source>
         <translation>Ei verkkosovittimia</translation>
     </message>
@@ -7056,11 +7218,13 @@ p, li { white-space: pre-wrap; }
         <translation>Siirry valitun virtuaalikoneen ikkunaan</translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1857"/>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1912"/>
         <source>S&amp;tart</source>
         <translation>&amp;Käynnistä</translation>
     </message>
     <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1859"/>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1914"/>
         <source>Start the selected virtual machine</source>
         <translation>Käynnistä valittu virtuaalikone</translation>
@@ -8056,27 +8220,30 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsGeneral</name>
     <message>
-        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="435"/>
+        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="431"/>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
         <translation>olet antanut enemmän kuin &lt;b&gt;%1 %&lt;/b&gt; järjestelmän muistista (&lt;b&gt;%2&lt;/b&gt;) virtuaalikoneelle. Tietokoneen isäntäkäyttöjärjestelmälle ei kää käytettäväksi tarpeeksi muistia, valitse pienempi arvo.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="445"/>
+        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="441"/>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
         <translation>olet antanut enemmän kuin &lt;b&gt;%1%&lt;/b&gt; järjestelmän muistista (&lt;b&gt;%2&lt;/b&gt;) virtuaalikoneelle. Saattaa olla, ettei isäntäjärjestelmän ohjelmille jää tarpeeksi muistia käytettäväksi. Jatka omalla riskillä.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="466"/>
+        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="462"/>
         <source>there is a 64 bits guest OS type assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else your guest will fail to detect a 64 bits CPU and will not be able to boot, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
         <translation>tähän virtuaalikoneeseen on liitetty 64-bittinen virtuaalikäyttöjärjestelmäasiakas, joka vaatii isäntäjärjestelmän virtualisointitoiminnot (VT-x/AMD-V). Jos nämä ominaisuudet eivät ole käytössä, virtuaalikone ei löydä 64-bittistä prosessoria eikä pysty käynnistymään, joten tämä tämä toiminto otetaan käyttöön automaattisesti kun hyväksyt asetukset painamalla OK.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="520"/>
+        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="513"/>
+        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="514"/>
+        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="515"/>
+        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="516"/>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="546"/>
+        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="542"/>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
         <translation>Näytä polku, jonne tämän virtuaalikoneen palautuspisteet tallennetaan. Huomaa, että palautuspisteet voivat viedä paljon levytilaa.</translation>
     </message>
@@ -8106,21 +8273,25 @@ p, li { white-space: pre-wrap; }
         <translation>Järjestelmä&amp;muistin koko</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="153"/>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="230"/>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
         <translation>Määrittää virtuaalikoneelle annetun muistin määrän. Jos annat liian paljon muistia, virtuaalikone ei välttämättä käynnisty.</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="174"/>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="349"/>
         <source>&lt;</source>
         <translation>&lt;</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="200"/>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="375"/>
         <source>&gt;</source>
         <translation>&gt;</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="243"/>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="418"/>
         <source>MB</source>
         <translation>MB</translation>
@@ -8131,6 +8302,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Videomuistin määrä</translation>
     </message>
     <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="328"/>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="405"/>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
         <translation>Säätää virtuaalikoneen videomuistin määrää.</translation>
@@ -8294,7 +8466,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Olet määrittänyt enemmän kuin &lt;b&gt;50%&lt;/b&gt; isäntäkoneen muistista (&lt;b&gt;%1&lt;/b&gt;) virtuaalikoneelle. Isäntäkoneen käyttöjärjestelmälle ei välttämättä jää tarpeeksi muistia käyttöön. Jatka näin omalla riskilläsi.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="455"/>
+        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="451"/>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation>Olet määrittänyt vähemmän kuin &lt;b&gt;%1&lt;/b&gt; videomuistia. Tämä on vähemmän kuin minimmäismäärä, joka vaaditaan virtuaalikoneen kokoruututilaan tai saumattomaan tilaan.</translation>
     </message>
@@ -8312,37 +8484,37 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsHD</name>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="781"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="782"/>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
         <translation>Kohteelle &lt;i&gt;%1&lt;/i&gt; ei ole valittu kiintolevyä</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="792"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="793"/>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
         <translation>&lt;i&gt;%1&lt;/i&gt; käyttää kiintolevyä, joka on jo liitetty virtuaalikoneeseen &lt;i&gt;%2&lt;/2&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="815"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="816"/>
         <source>&amp;Add Attachment</source>
         <translation>&amp;Lisää liitos</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="816"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="817"/>
         <source>&amp;Remove Attachment</source>
         <translation>&amp;Poista liitos</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="817"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="818"/>
         <source>&amp;Select Hard Disk</source>
         <translation>&amp;Valitse kiintolevy</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="826"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="827"/>
         <source>Adds a new hard disk attachment.</source>
         <translation>Lisää uuden kiintolevyliitoksen.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="827"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="828"/>
         <source>Removes the highlighted hard disk attachment.</source>
         <translation>Poistaa korostetun kiintolevyliitoksen.</translation>
     </message>
@@ -8375,7 +8547,7 @@ p, li { white-space: pre-wrap; }
         <translation>Näyttää luettelon virtuaalikoneeseen liitetyistä kiintolevyistä. Napsauta hiirellä tai paina &lt;tt&gt;välilyöntiä&lt;/tt&gt; korostetun kohdan päällä ja valitse pudotusvalikosta haluttu arvo. Voit lisätä ja poistaa kiintolevyliitoksia kontekstivalikosta tai oikealla olevista napeista.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="828"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="829"/>
         <source>Invokes the Virtual Media Manager to select a hard disk to attach to the currently highlighted slot.</source>
         <translation>Käynnistää virtuaalimedioiden hallinnan, jolla voit valita korostettuun paikkaan liitettävän kiintolevyn.</translation>
     </message>
@@ -8393,56 +8565,69 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsNetwork</name>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="204"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="177"/>
+        <source>no bridged network adapter is selected</source>
+        <translation type="unfinished">sillattua verkkosovitinta ei ole valittu</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="184"/>
+        <source>no internal network name is specified</source>
+        <translation type="unfinished">sisäisen verkon nimeä ei ole annettu</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="191"/>
+        <source>no host-only network adapter is selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="309"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="311"/>
+        <source>Not selected</source>
+        <comment>network adapter name</comment>
+        <translation type="unfinished">Ei valittu</translation>
+    </message>
+    <message>
         <source>Adapter</source>
         <comment>network</comment>
-        <translation>Sovitin</translation>
+        <translation type="obsolete">Sovitin</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="205"/>
         <source>Not selected</source>
         <comment>adapter</comment>
-        <translation>Ei valittu</translation>
+        <translation type="obsolete">Ei valittu</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="197"/>
         <source>Network</source>
         <comment>internal</comment>
-        <translation>Verkko</translation>
+        <translation type="obsolete">Verkko</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="198"/>
         <source>Not selected</source>
         <comment>network</comment>
-        <translation>Ei valittu</translation>
+        <translation type="obsolete">Ei valittu</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="215"/>
         <source>MAC Address</source>
-        <translation>MAC-osoite</translation>
+        <translation type="obsolete">MAC-osoite</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="216"/>
         <source>Not selected</source>
         <comment>address</comment>
-        <translation>Ei valittu</translation>
+        <translation type="obsolete">Ei valittu</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="218"/>
         <source>Cable</source>
-        <translation>Kaapeli</translation>
+        <translation type="obsolete">Kaapeli</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="219"/>
         <source>Connected</source>
         <comment>cable</comment>
-        <translation>Liitetty</translation>
+        <translation type="obsolete">Liitetty</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="219"/>
         <source>Not connected</source>
         <comment>cable</comment>
-        <translation>Ei liitetty</translation>
+        <translation type="obsolete">Ei liitetty</translation>
     </message>
     <message>
         <source>Select TAP setup application</source>
@@ -8488,8 +8673,22 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="117"/>
+        <source>Open additional options dialog for current attachment type.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="127"/>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">&amp;Nimi:</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="140"/>
+        <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Open extended settings dialog for current attachment type.</source>
-        <translation>Avaa tämänhetkisen liitostavan lisäasetukset.</translation>
+        <translation type="obsolete">Avaa tämänhetkisen liitostavan lisäasetukset.</translation>
     </message>
     <message>
         <source>&amp;Network Name:</source>
@@ -8563,107 +8762,96 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsNetworkDetails</name>
     <message>
-        <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="155"/>
         <source>no bridged network adapter is selected</source>
-        <translation>sillattua verkkosovitinta ei ole valittu</translation>
+        <translation type="obsolete">sillattua verkkosovitinta ei ole valittu</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="162"/>
         <source>no internal network name is specified</source>
-        <translation>sisäisen verkon nimeä ei ole annettu</translation>
+        <translation type="obsolete">sisäisen verkon nimeä ei ole annettu</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="169"/>
         <source>no host-only adapter is selected</source>
-        <translation>laitteiston sisäistä verkkosovitinta ei ole valittu</translation>
+        <translation type="obsolete">laitteiston sisäistä verkkosovitinta ei ole valittu</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="212"/>
         <source>Basic Details</source>
-        <translation>Perustiedot</translation>
+        <translation type="obsolete">Perustiedot</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="215"/>
         <source>Bridged Network Details</source>
-        <translation>Sillatun verkon tiedot</translation>
+        <translation type="obsolete">Sillatun verkon tiedot</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="218"/>
         <source>Internal Network Details</source>
-        <translation>Sisäisen verkon tiedot</translation>
+        <translation type="obsolete">Sisäisen verkon tiedot</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="221"/>
         <source>Host-only Network Details</source>
-        <translation>Laitteiston sisäisen verkon yksityiskohdat</translation>
+        <translation type="obsolete">Laitteiston sisäisen verkon yksityiskohdat</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetworkDetails.cpp" line="226"/>
         <source>Not selected</source>
-        <translation>Ei valittu</translation>
+        <translation type="obsolete">Ei valittu</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="39"/>
         <source>Host Settings</source>
-        <translation>Laitteen asetukset</translation>
+        <translation type="obsolete">Laitteen asetukset</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="46"/>
         <source>&amp;Bridged Network Adapter:</source>
-        <translation>&amp;Sillatun verkon sovitun:</translation>
+        <translation type="obsolete">&amp;Sillatun verkon sovitun:</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="65"/>
         <source>Displays the name of the host network adapter selected for bridged networking.</source>
-        <translation>Näyttää sillatulle verkolle valitun isäntäkoneen verkkosovittimen nimen.</translation>
+        <translation type="obsolete">Näyttää sillatulle verkolle valitun isäntäkoneen verkkosovittimen nimen.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="72"/>
         <source>Internal &amp;Network:</source>
-        <translation>Sisäinen &amp;verkko:</translation>
+        <translation type="obsolete">Sisäinen &amp;verkko:</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="91"/>
         <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation>Näyttää tälle sovittimelle valitun sisäisen verkon nimen.</translation>
+        <translation type="obsolete">Näyttää tälle sovittimelle valitun sisäisen verkon nimen.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="101"/>
         <source>Host-only &amp;Network Adapter:</source>
-        <translation>Laitteiston &amp;sisäinen verkkosovitin:</translation>
+        <translation type="obsolete">Laitteiston &amp;sisäinen verkkosovitin:</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="120"/>
         <source>Displays the name of the VirtualBox network adapter selected for host-only networking.</source>
-        <translation>Näyttää laitteiston sisäiselle verkkosovittimelle valitun VirtualBoxin verkkosovittimen nimen.</translation>
+        <translation type="obsolete">Näyttää laitteiston sisäiselle verkkosovittimelle valitun VirtualBoxin verkkosovittimen nimen.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="133"/>
         <source>Guest Settings</source>
-        <translation>Vierasjärjestelmän asetukset</translation>
+        <translation type="obsolete">Vierasjärjestelmän asetukset</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="156"/>
+        <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="30"/>
+        <source>Additional Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="36"/>
         <source>Guest &amp;MAC Address:</source>
         <translation>Vierasjärjestelmän &amp;MAC-osoite:</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="175"/>
+        <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="55"/>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation>Näyttää tämän sovittimen MAC-osoitteen. Arvo sisältää tasan 12 merkkiä joukosta (0-9,A-F). Huomaa, että toisen merkin täytyy olla parillinen numero.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="182"/>
+        <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="62"/>
         <source>Generates a new random MAC address.</source>
         <translation>Luo uuden satunnaisen MAC-osoitteen.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="195"/>
+        <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="75"/>
         <source>&amp;Cable connected</source>
         <translation>&amp;Kaapeli liitetty</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="198"/>
+        <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="78"/>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation>Ilmaisee, onko virtuaalinen verkkokaapeli liitetty virtuaalikoneeseen käynnistettäessä.</translation>
     </message>
