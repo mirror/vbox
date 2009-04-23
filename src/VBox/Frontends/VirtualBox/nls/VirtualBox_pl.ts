@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS language="pl" version="2.0">
+<TS version="2.0" language="pl">
 <context>
     <name>@@@</name>
     <message>
@@ -130,6 +130,10 @@
     <message>
         <source>Unknown %2 error during initialization of the Runtime</source>
         <translation>Nieznany błąd %2 w czasie inicjalizacji środowiska wykonawczego</translation>
+    </message>
+    <message>
+        <source>Kernel driver not accessible</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -444,23 +448,23 @@ Wersja %1</translation>
     <name>VBoxAddNIDialog</name>
     <message>
         <source>Add Host Interface</source>
-        <translation>Dodaj interfejs gospodarza</translation>
+        <translation type="obsolete">Dodaj interfejs gospodarza</translation>
     </message>
     <message>
         <source>Interface Name</source>
-        <translation>Nazwa interfejsu</translation>
+        <translation type="obsolete">Nazwa interfejsu</translation>
     </message>
     <message>
         <source>Descriptive name of the new network interface</source>
-        <translation>Opisowa nazwa nowego interfejsu sieciowego</translation>
+        <translation type="obsolete">Opisowa nazwa nowego interfejsu sieciowego</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation>&amp;OK</translation>
+        <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Anuluj</translation>
+        <translation type="obsolete">Anuluj</translation>
     </message>
 </context>
 <context>
@@ -834,7 +838,7 @@ Wersja %1</translation>
     </message>
     <message>
         <source>Reset the virtual machine</source>
-        <translation>Resetuje maszynę wirtualną ("twardy reset")</translation>
+        <translation>Resetuje maszynę wirtualną (&quot;twardy reset&quot;)</translation>
     </message>
     <message>
         <source>ACPI S&amp;hutdown</source>
@@ -1333,6 +1337,10 @@ Wersja %1</translation>
         <source>Sun VirtualBox</source>
         <translation>Sun VirtualBox</translation>
     </message>
+    <message>
+        <source>&lt;qt&gt;Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxDiskImageManagerDlg</name>
@@ -1715,6 +1723,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Export &gt;</source>
         <translation>&amp;Eksportuj &gt;</translation>
+    </message>
+    <message>
+        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Write legacy OVF 0.9</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3062,7 +3078,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Bridged network, %1</source>
         <comment>details report (network)</comment>
-        <translation>Sieć mostkowana (bridged), %1</translation>
+        <translation type="obsolete">Sieć mostkowana (bridged), %1</translation>
     </message>
     <message>
         <source>Internal network, &apos;%1&apos;</source>
@@ -3072,7 +3088,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Host-only network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation>Sieć izolowana (host-only), &apos;%1&apos;</translation>
+        <translation type="obsolete">Sieć izolowana (host-only), &apos;%1&apos;</translation>
     </message>
     <message>
         <source>SCSI</source>
@@ -3082,12 +3098,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Bridged Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>Sieć mostkowana (bridged)</translation>
+        <translation type="obsolete">Sieć mostkowana (bridged)</translation>
     </message>
     <message>
         <source>Host-only Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>Sieć izolowana (host-only)</translation>
+        <translation type="obsolete">Sieć izolowana (host-only)</translation>
     </message>
     <message>
         <source>PIIX3</source>
@@ -3118,6 +3134,31 @@ p, li { white-space: pre-wrap; }
         <source>BusLogic</source>
         <comment>StorageControllerType</comment>
         <translation>BusLogic</translation>
+    </message>
+    <message>
+        <source>Bridged adapter, %1</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host-only adapter, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Intel PRO/1000 MT Server (82545EM)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bridged Adapter</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host-only Adapter</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4834,16 +4875,16 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
         <translation>&lt;p&gt;Nie udało się odnaleźć pliku obrazu CD z Dodatkami (VirtualBox Guest Additions) &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; lub &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Pobrać go teraz przez Internet?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href="%1"&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nie udało się pobrać obrazu CD z Dodatkami (VirtualBox Guest Additions) z &lt;nobr&gt;&lt;a href="%1"&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nie udało się pobrać obrazu CD z Dodatkami (VirtualBox Guest Additions) z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href="%1"&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Pobrać obraz CD z Dodatkami (VirtualBox Guest Additions) z &lt;nobr&gt;&lt;a href="%1"&gt;%2&lt;/a&gt;&lt;/nobr&gt; (o rozmiarze %3 bajtów)?&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Pobrać obraz CD z Dodatkami (VirtualBox Guest Additions) z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (o rozmiarze %3 bajtów)?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href="%1"&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Obraz CD z Dodatkami (VirtualBox Guest Additions) został pobrany z &lt;nobr&gt;&lt;a href="%1"&gt;%2&lt;/a&gt;&lt;/nobr&gt; i zapisany lokalnie jako &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Zarejestrować go i zamontować w wirtualnym napędzie CD/DVD?&lt;/p&gt;</translation>
+        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Obraz CD z Dodatkami (VirtualBox Guest Additions) został pobrany z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; i zapisany lokalnie jako &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Zarejestrować go i zamontować w wirtualnym napędzie CD/DVD?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
@@ -5348,7 +5389,7 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Usunąć wybrany interfejs sieciowy gospodarza &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Uwaga:&lt;/b&gt; Interfejs ten może być używany przez jedną lub więcej kart sieciowych podłączonych do tej lub innej maszyny wirtualnej. Po jego usunięciu karty te nie będą pracować, dopóki ich ustawienia nie zostaną poprawione przez wybranie innej nazwy interfejsu sieciowego bądź zmianę sposobu podłączenia kart do sieci gospodarza.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Usunąć wybrany interfejs sieciowy gospodarza &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Uwaga:&lt;/b&gt; Interfejs ten może być używany przez jedną lub więcej kart sieciowych podłączonych do tej lub innej maszyny wirtualnej. Po jego usunięciu karty te nie będą pracować, dopóki ich ustawienia nie zostaną poprawione przez wybranie innej nazwy interfejsu sieciowego bądź zmianę sposobu podłączenia kart do sieci gospodarza.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create the host-only network interface.</source>
@@ -5385,6 +5426,10 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
     <message>
         <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nie udało się wyeksportować urządzenia programowego &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting this host-only network will lead to the deleting of the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8358,7 +8403,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>you have assigned more than &lt;b&gt;75%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation>maszynie wirtualnej przydzielono więcej niż &lt;b&gt;75%&lt;/b&gt; pamięci (&lt;b&gt;%1&lt;/b&gt;) tego komputera. Nie pozostało dość pamięci dla systemu operacyjnego gospodarza. Proszę wybrać mniejszy rozmiar.</translation>
+        <translation type="obsolete">maszynie wirtualnej przydzielono więcej niż &lt;b&gt;75%&lt;/b&gt; pamięci (&lt;b&gt;%1&lt;/b&gt;) tego komputera. Nie pozostało dość pamięci dla systemu operacyjnego gospodarza. Proszę wybrać mniejszy rozmiar.</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
@@ -8387,6 +8432,10 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <source>Enable Nested Pa&amp;ging</source>
         <translation>Włącz &amp;zagnieżdżone stronicowanie</translation>
+    </message>
+    <message>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8533,45 +8582,45 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <source>Adapter</source>
         <comment>network</comment>
-        <translation>Karta</translation>
+        <translation type="obsolete">Karta</translation>
     </message>
     <message>
         <source>Not selected</source>
         <comment>adapter</comment>
-        <translation>Nie wybrano</translation>
+        <translation type="obsolete">Nie wybrano</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>internal</comment>
-        <translation>Sieć</translation>
+        <translation type="obsolete">Sieć</translation>
     </message>
     <message>
         <source>Not selected</source>
         <comment>network</comment>
-        <translation>Nie wybrano</translation>
+        <translation type="obsolete">Nie wybrano</translation>
     </message>
     <message>
         <source>MAC Address</source>
-        <translation>Adres MAC</translation>
+        <translation type="obsolete">Adres MAC</translation>
     </message>
     <message>
         <source>Not selected</source>
         <comment>address</comment>
-        <translation>Nie wybrano</translation>
+        <translation type="obsolete">Nie wybrano</translation>
     </message>
     <message>
         <source>Cable</source>
-        <translation>Kabel</translation>
+        <translation type="obsolete">Kabel</translation>
     </message>
     <message>
         <source>Connected</source>
         <comment>cable</comment>
-        <translation>Podłączony</translation>
+        <translation type="obsolete">Podłączony</translation>
     </message>
     <message>
         <source>Not connected</source>
         <comment>cable</comment>
-        <translation>Odłączony</translation>
+        <translation type="obsolete">Odłączony</translation>
     </message>
     <message>
         <source>Adapter &amp;Type:</source>
@@ -8579,74 +8628,103 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Open extended settings dialog for current attachment type.</source>
-        <translation>Otwiera okno ustawień rozszerzonych dla bieżącego typu karty.</translation>
+        <translation type="obsolete">Otwiera okno ustawień rozszerzonych dla bieżącego typu karty.</translation>
+    </message>
+    <message>
+        <source>no bridged network adapter is selected</source>
+        <translation type="unfinished">nie wybrano karty sieci mostkowanej</translation>
+    </message>
+    <message>
+        <source>no internal network name is specified</source>
+        <translation type="unfinished">nie podano nazwy sieci wewnętrznej</translation>
+    </message>
+    <message>
+        <source>no host-only network adapter is selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not selected</source>
+        <comment>network adapter name</comment>
+        <translation type="unfinished">Nie wybrano</translation>
+    </message>
+    <message>
+        <source>Open additional options dialog for current attachment type.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">&amp;Nazwa:</translation>
+    </message>
+    <message>
+        <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsNetworkDetails</name>
     <message>
         <source>no bridged network adapter is selected</source>
-        <translation>nie wybrano karty sieci mostkowanej</translation>
+        <translation type="obsolete">nie wybrano karty sieci mostkowanej</translation>
     </message>
     <message>
         <source>no internal network name is specified</source>
-        <translation>nie podano nazwy sieci wewnętrznej</translation>
+        <translation type="obsolete">nie podano nazwy sieci wewnętrznej</translation>
     </message>
     <message>
         <source>no host-only adapter is selected</source>
-        <translation>nie wybrano karty sieci izolowanej</translation>
+        <translation type="obsolete">nie wybrano karty sieci izolowanej</translation>
     </message>
     <message>
         <source>Basic Details</source>
-        <translation>Szczegóły podstawowe</translation>
+        <translation type="obsolete">Szczegóły podstawowe</translation>
     </message>
     <message>
         <source>Bridged Network Details</source>
-        <translation>Szczegóły sieci mostkowanej (bridged)</translation>
+        <translation type="obsolete">Szczegóły sieci mostkowanej (bridged)</translation>
     </message>
     <message>
         <source>Internal Network Details</source>
-        <translation>Szczegóły sieci wewnętrznej (internal)</translation>
+        <translation type="obsolete">Szczegóły sieci wewnętrznej (internal)</translation>
     </message>
     <message>
         <source>Host-only Network Details</source>
-        <translation>Szczegóły sieci izolowanej (host-only)</translation>
+        <translation type="obsolete">Szczegóły sieci izolowanej (host-only)</translation>
     </message>
     <message>
         <source>Not selected</source>
-        <translation>Nie wybrano</translation>
+        <translation type="obsolete">Nie wybrano</translation>
     </message>
     <message>
         <source>Host Settings</source>
-        <translation>Ustawienia gospodarza</translation>
+        <translation type="obsolete">Ustawienia gospodarza</translation>
     </message>
     <message>
         <source>&amp;Bridged Network Adapter:</source>
-        <translation>&amp;Mostkowana karta sieciowa:</translation>
+        <translation type="obsolete">&amp;Mostkowana karta sieciowa:</translation>
     </message>
     <message>
         <source>Displays the name of the host network adapter selected for bridged networking.</source>
-        <translation>Zawiera nazwę karty sieciowej gospodarza wybranej dla połączenia mostkowanego (bridged).</translation>
+        <translation type="obsolete">Zawiera nazwę karty sieciowej gospodarza wybranej dla połączenia mostkowanego (bridged).</translation>
     </message>
     <message>
         <source>Internal &amp;Network:</source>
-        <translation>Sieć &amp;wewnętrzna:</translation>
+        <translation type="obsolete">Sieć &amp;wewnętrzna:</translation>
     </message>
     <message>
         <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation>Zawiera nazwę wewnętrznej sieci wybranej dla tej karty sieciowej.</translation>
+        <translation type="obsolete">Zawiera nazwę wewnętrznej sieci wybranej dla tej karty sieciowej.</translation>
     </message>
     <message>
         <source>Host-only &amp;Network Adapter:</source>
-        <translation>Karta sieci &amp;izolowanej:</translation>
+        <translation type="obsolete">Karta sieci &amp;izolowanej:</translation>
     </message>
     <message>
         <source>Displays the name of the VirtualBox network adapter selected for host-only networking.</source>
-        <translation>Zawiera nazwę karty sieciowej VirtualBox wybranej dla połączenia izolowanego (host-only).</translation>
+        <translation type="obsolete">Zawiera nazwę karty sieciowej VirtualBox wybranej dla połączenia izolowanego (host-only).</translation>
     </message>
     <message>
         <source>Guest Settings</source>
-        <translation>Ustawienia gościa</translation>
+        <translation type="obsolete">Ustawienia gościa</translation>
     </message>
     <message>
         <source>Guest &amp;MAC Address:</source>
@@ -8667,6 +8745,10 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation>Decyduje o tym, czy kabel będzie podłączany do karty sieciowej przy starcie maszyny wirtualnej czy nie.</translation>
+    </message>
+    <message>
+        <source>Additional Options</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

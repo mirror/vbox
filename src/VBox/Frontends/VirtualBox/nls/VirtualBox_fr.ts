@@ -1,4 +1,6 @@
-<!DOCTYPE TS><TS>
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE TS>
+<TS version="2.0">
 <context>
     <name>@@@</name>
     <message>
@@ -522,23 +524,23 @@ Version %1</source>
     <name>VBoxAddNIDialog</name>
     <message>
         <source>Add Host Interface</source>
-        <translation>Ajouter une interface hôte</translation>
+        <translation type="obsolete">Ajouter une interface hôte</translation>
     </message>
     <message>
         <source>Interface Name</source>
-        <translation>Nom de l&apos;interface</translation>
+        <translation type="obsolete">Nom de l&apos;interface</translation>
     </message>
     <message>
         <source>Descriptive name of the new network interface</source>
-        <translation>Nom descriptif de la nouvelle interface</translation>
+        <translation type="obsolete">Nom descriptif de la nouvelle interface</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation>&amp;OK</translation>
+        <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Annuler</translation>
+        <translation type="obsolete">Annuler</translation>
     </message>
 </context>
 <context>
@@ -2807,7 +2809,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Bridged network, %1</source>
         <comment>details report (network)</comment>
-        <translation>Accès par pont, %1</translation>
+        <translation type="obsolete">Accès par pont, %1</translation>
     </message>
     <message>
         <source>Internal network, &apos;%1&apos;</source>
@@ -2817,7 +2819,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Host-only network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation>Réseau privé hôte, &apos;%1&apos;</translation>
+        <translation type="obsolete">Réseau privé hôte, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>SCSI</source>
@@ -2827,12 +2829,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Bridged Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>Accès par pont</translation>
+        <translation type="obsolete">Accès par pont</translation>
     </message>
     <message>
         <source>Host-only Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>Réseau privé hôte</translation>
+        <translation type="obsolete">Réseau privé hôte</translation>
     </message>
     <message>
         <source>PIIX3</source>
@@ -2868,6 +2870,26 @@ p, li { white-space: pre-wrap; }
         <source>Intel PRO/1000 MT Server (82545EM)</source>
         <comment>NetworkAdapterType</comment>
         <translation>Serveur Intel PRO/1000 MT (82545EM)</translation>
+    </message>
+    <message>
+        <source>Bridged adapter, %1</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host-only adapter, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bridged Adapter</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host-only Adapter</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4476,7 +4498,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Désirez-vous éliminer l&apos;interface réseau &lt;nobr&gt;&lt;b&gt;%1&lt;b&gt; sélectionnée ?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note :&lt;/b&gt; cette interface pourait être utilisée par une ou plusieurs cartes réseau de cette ou d&apos;autres machines virtuelles. Si vous éliminez cette interface, les cartes virtuelles ne fonctionneront plus jusqu&apos;à ce que vous les reconfigurez avec un autre nom d&apos;interface ou un autre type d&apos;accès.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Désirez-vous éliminer l&apos;interface réseau &lt;nobr&gt;&lt;b&gt;%1&lt;b&gt; sélectionnée ?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note :&lt;/b&gt; cette interface pourait être utilisée par une ou plusieurs cartes réseau de cette ou d&apos;autres machines virtuelles. Si vous éliminez cette interface, les cartes virtuelles ne fonctionneront plus jusqu&apos;à ce que vous les reconfigurez avec un autre nom d&apos;interface ou un autre type d&apos;accès.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create the host-only network interface.</source>
@@ -4549,6 +4571,10 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <source>Failed to create appliance.</source>
         <translation>Échec de création de l&apos;application virtuelle.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting this host-only network will lead to the deleting of the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6140,17 +6166,17 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Open extended settings dialog for current attachment type.</source>
-        <translation>Ouvrir la boîte de dialogue préférences étendues pour le type d&apos;accès actuel.</translation>
+        <translation type="obsolete">Ouvrir la boîte de dialogue préférences étendues pour le type d&apos;accès actuel.</translation>
     </message>
     <message>
         <source>Adapter</source>
         <comment>network</comment>
-        <translation>Interface </translation>
+        <translation type="obsolete">Interface </translation>
     </message>
     <message>
         <source>Network</source>
         <comment>internal</comment>
-        <translation>Réseau </translation>
+        <translation type="obsolete">Réseau </translation>
     </message>
     <message>
         <source>Interface</source>
@@ -6159,11 +6185,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>MAC Address</source>
-        <translation>Adresse MAC</translation>
+        <translation type="obsolete">Adresse MAC</translation>
     </message>
     <message>
         <source>Cable</source>
-        <translation>Cable</translation>
+        <translation type="obsolete">Cable</translation>
     </message>
     <message>
         <source>connected</source>
@@ -6173,38 +6199,67 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Not selected</source>
         <comment>adapter</comment>
-        <translation>Non séléctionnée</translation>
+        <translation type="obsolete">Non séléctionnée</translation>
     </message>
     <message>
         <source>Not selected</source>
         <comment>network</comment>
-        <translation>Non sélectionné</translation>
+        <translation type="obsolete">Non sélectionné</translation>
     </message>
     <message>
         <source>Not selected</source>
         <comment>address</comment>
-        <translation>Non sélectionnée</translation>
+        <translation type="obsolete">Non sélectionnée</translation>
     </message>
     <message>
         <source>Connected</source>
         <comment>cable</comment>
-        <translation>Connecté</translation>
+        <translation type="obsolete">Connecté</translation>
     </message>
     <message>
         <source>Not connected</source>
         <comment>cable</comment>
-        <translation>Non connecté</translation>
+        <translation type="obsolete">Non connecté</translation>
+    </message>
+    <message>
+        <source>no bridged network adapter is selected</source>
+        <translation type="unfinished">aucune interface réseau pour accès par pont n&apos;a été sélectionné</translation>
+    </message>
+    <message>
+        <source>no internal network name is specified</source>
+        <translation type="unfinished">aucun nom de réseau interne n&apos;a été spécifié</translation>
+    </message>
+    <message>
+        <source>no host-only network adapter is selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not selected</source>
+        <comment>network adapter name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open additional options dialog for current attachment type.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">&amp;Nom : </translation>
+    </message>
+    <message>
+        <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsNetworkDetails</name>
     <message>
         <source>no bridged network adapter is selected</source>
-        <translation>aucune interface réseau pour accès par pont n&apos;a été sélectionné</translation>
+        <translation type="obsolete">aucune interface réseau pour accès par pont n&apos;a été sélectionné</translation>
     </message>
     <message>
         <source>no internal network name is specified</source>
-        <translation>aucun nom de réseau interne n&apos;a été spécifié</translation>
+        <translation type="obsolete">aucun nom de réseau interne n&apos;a été spécifié</translation>
     </message>
     <message>
         <source>no host-only interface is selected</source>
@@ -6224,19 +6279,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Basic Details</source>
-        <translation>Détails de base</translation>
+        <translation type="obsolete">Détails de base</translation>
     </message>
     <message>
         <source>Bridged Network Details</source>
-        <translation>Détails accès par pont</translation>
+        <translation type="obsolete">Détails accès par pont</translation>
     </message>
     <message>
         <source>Internal Network Details</source>
-        <translation>Détails réseau interne</translation>
+        <translation type="obsolete">Détails réseau interne</translation>
     </message>
     <message>
         <source>Host-only Network Details</source>
-        <translation>Détails réseau privé hôte</translation>
+        <translation type="obsolete">Détails réseau privé hôte</translation>
     </message>
     <message>
         <source>Not Selected</source>
@@ -6249,23 +6304,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Host Settings</source>
-        <translation>Paramètrage hôte</translation>
+        <translation type="obsolete">Paramètrage hôte</translation>
     </message>
     <message>
         <source>&amp;Bridged Network Adapter:</source>
-        <translation>Carte réseau pour l&apos;accès par &amp;pont :</translation>
+        <translation type="obsolete">Carte réseau pour l&apos;accès par &amp;pont :</translation>
     </message>
     <message>
         <source>Displays the name of the host network adapter selected for bridged networking.</source>
-        <translation>Affiche le nom de la carte réseau hôte séléctionné pour l&apos;accès réseau par pont.</translation>
+        <translation type="obsolete">Affiche le nom de la carte réseau hôte séléctionné pour l&apos;accès réseau par pont.</translation>
     </message>
     <message>
         <source>Internal &amp;Network:</source>
-        <translation>&amp;Réseau interne :</translation>
+        <translation type="obsolete">&amp;Réseau interne :</translation>
     </message>
     <message>
         <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation>Affiche le nom du réseau interne affecté à cete carte.</translation>
+        <translation type="obsolete">Affiche le nom du réseau interne affecté à cete carte.</translation>
     </message>
     <message>
         <source>Host-only &amp;Network Interface:</source>
@@ -6337,7 +6392,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Guest Settings</source>
-        <translation>Paramètrage invité</translation>
+        <translation type="obsolete">Paramètrage invité</translation>
     </message>
     <message>
         <source>Guest &amp;MAC Address:</source>
@@ -6361,20 +6416,24 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>no host-only adapter is selected</source>
-        <translation>aucune interface réseau privé hôte n&apos;a été séléctionnée</translation>
+        <translation type="obsolete">aucune interface réseau privé hôte n&apos;a été séléctionnée</translation>
     </message>
     <message>
         <source>Host-only &amp;Network Adapter:</source>
-        <translation>Interface &amp;réseau privé hôte :</translation>
+        <translation type="obsolete">Interface &amp;réseau privé hôte :</translation>
     </message>
     <message>
         <source>Displays the name of the VirtualBox network adapter selected for host-only networking.</source>
-        <translation>Affiche le nom de l&apos;interface réseau VirtualBox séléctionnée pour l&apos;accès privé hôte.</translation>
+        <translation type="obsolete">Affiche le nom de l&apos;interface réseau VirtualBox séléctionnée pour l&apos;accès privé hôte.</translation>
     </message>
     <message>
         <source>Not selected</source>
         <comment>Host-only Network Details, network adapter chooser</comment>
         <translation type="obsolete">Non sélectionnée</translation>
+    </message>
+    <message>
+        <source>Additional Options</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

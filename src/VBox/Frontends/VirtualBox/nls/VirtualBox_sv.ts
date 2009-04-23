@@ -106,6 +106,10 @@
         <source>Unknown %2 error during initialization of the Runtime</source>
         <translation>Okänt %2-fel under initiering av körtiden</translation>
     </message>
+    <message>
+        <source>Kernel driver not accessible</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QIArrowSplitter</name>
@@ -410,23 +414,23 @@ Version %1</translation>
     <name>VBoxAddNIDialog</name>
     <message>
         <source>Add Host Interface</source>
-        <translation>Lägg till värdgränssnitt</translation>
+        <translation type="obsolete">Lägg till värdgränssnitt</translation>
     </message>
     <message>
         <source>Interface Name</source>
-        <translation>Gränssnittsnamn</translation>
+        <translation type="obsolete">Gränssnittsnamn</translation>
     </message>
     <message>
         <source>Descriptive name of the new network interface</source>
-        <translation>Beskrivande namn på det nya nätverksgränssnittet</translation>
+        <translation type="obsolete">Beskrivande namn på det nya nätverksgränssnittet</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation>&amp;OK</translation>
+        <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Avbryt</translation>
+        <translation type="obsolete">Avbryt</translation>
     </message>
 </context>
 <context>
@@ -1012,6 +1016,10 @@ Version %1</translation>
         <source>Sun VirtualBox</source>
         <translation>Sun VirtualBox</translation>
     </message>
+    <message>
+        <source>&lt;qt&gt;Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxDiskImageManagerDlg</name>
@@ -1322,6 +1330,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Export &gt;</source>
         <translation>&amp;Exportera &gt;</translation>
+    </message>
+    <message>
+        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Write legacy OVF 0.9</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2644,7 +2660,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Bridged network, %1</source>
         <comment>details report (network)</comment>
-        <translation>Bryggat nätverk, %1</translation>
+        <translation type="obsolete">Bryggat nätverk, %1</translation>
     </message>
     <message>
         <source>Internal network, &apos;%1&apos;</source>
@@ -2654,7 +2670,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Host-only network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation>Endast-värd-nätverk, &apos;%1&apos;</translation>
+        <translation type="obsolete">Endast-värd-nätverk, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>SCSI</source>
@@ -2664,12 +2680,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Bridged Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>Bryggat nätverk</translation>
+        <translation type="obsolete">Bryggat nätverk</translation>
     </message>
     <message>
         <source>Host-only Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>Endast-värd-nätverk</translation>
+        <translation type="obsolete">Endast-värd-nätverk</translation>
     </message>
     <message>
         <source>PIIX3</source>
@@ -2700,6 +2716,31 @@ p, li { white-space: pre-wrap; }
         <source>BusLogic</source>
         <comment>StorageControllerType</comment>
         <translation>BusLogic</translation>
+    </message>
+    <message>
+        <source>Bridged adapter, %1</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host-only adapter, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Intel PRO/1000 MT Server (82545EM)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bridged Adapter</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host-only Adapter</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4220,7 +4261,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vill du ta bort det markerade värdnätverksgränssnittet &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Observera:&lt;/b&gt; Det här gränssnittet kan användas av en eller flera nätverkskort på den här eller andra virtuella maskiner. Efter att det har tagits bort kommer dessa kort inte längre att fungera förrän du har ändrat deras inställningar, antingen genom att välja ett annat gränssnittsnamn eller en annan anslutningstyp för kortet.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Vill du ta bort det markerade värdnätverksgränssnittet &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Observera:&lt;/b&gt; Det här gränssnittet kan användas av en eller flera nätverkskort på den här eller andra virtuella maskiner. Efter att det har tagits bort kommer dessa kort inte längre att fungera förrän du har ändrat deras inställningar, antingen genom att välja ett annat gränssnittsnamn eller en annan anslutningstyp för kortet.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create the host-only network interface.</source>
@@ -4257,6 +4298,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Misslyckades med att importera appliance &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting this host-only network will lead to the deleting of the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5799,45 +5844,45 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Adapter</source>
         <comment>network</comment>
-        <translation>Adapter</translation>
+        <translation type="obsolete">Adapter</translation>
     </message>
     <message>
         <source>Not selected</source>
         <comment>adapter</comment>
-        <translation>Inte vald</translation>
+        <translation type="obsolete">Inte vald</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>internal</comment>
-        <translation>Nätverk</translation>
+        <translation type="obsolete">Nätverk</translation>
     </message>
     <message>
         <source>Not selected</source>
         <comment>network</comment>
-        <translation>Inte vald</translation>
+        <translation type="obsolete">Inte vald</translation>
     </message>
     <message>
         <source>MAC Address</source>
-        <translation>MAC-adress</translation>
+        <translation type="obsolete">MAC-adress</translation>
     </message>
     <message>
         <source>Not selected</source>
         <comment>address</comment>
-        <translation>Inte vald</translation>
+        <translation type="obsolete">Inte vald</translation>
     </message>
     <message>
         <source>Cable</source>
-        <translation>Kabel</translation>
+        <translation type="obsolete">Kabel</translation>
     </message>
     <message>
         <source>Connected</source>
         <comment>cable</comment>
-        <translation>Ansluten</translation>
+        <translation type="obsolete">Ansluten</translation>
     </message>
     <message>
         <source>Not connected</source>
         <comment>cable</comment>
-        <translation>Inte ansluten</translation>
+        <translation type="obsolete">Inte ansluten</translation>
     </message>
     <message>
         <source>Adapter &amp;Type:</source>
@@ -5845,74 +5890,103 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Open extended settings dialog for current attachment type.</source>
-        <translation>Öppna utökade inställningar för aktuell anslutningstyp.</translation>
+        <translation type="obsolete">Öppna utökade inställningar för aktuell anslutningstyp.</translation>
+    </message>
+    <message>
+        <source>no bridged network adapter is selected</source>
+        <translation type="unfinished">inget bryggat nätverkskort har valts</translation>
+    </message>
+    <message>
+        <source>no internal network name is specified</source>
+        <translation type="unfinished">inget internt nätverksnamn har angivits</translation>
+    </message>
+    <message>
+        <source>no host-only network adapter is selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not selected</source>
+        <comment>network adapter name</comment>
+        <translation type="unfinished">Inte vald</translation>
+    </message>
+    <message>
+        <source>Open additional options dialog for current attachment type.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">&amp;Namn:</translation>
+    </message>
+    <message>
+        <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsNetworkDetails</name>
     <message>
         <source>no bridged network adapter is selected</source>
-        <translation>inget bryggat nätverkskort har valts</translation>
+        <translation type="obsolete">inget bryggat nätverkskort har valts</translation>
     </message>
     <message>
         <source>no internal network name is specified</source>
-        <translation>inget internt nätverksnamn har angivits</translation>
+        <translation type="obsolete">inget internt nätverksnamn har angivits</translation>
     </message>
     <message>
         <source>no host-only adapter is selected</source>
-        <translation>inget endast-värd-kort har valts</translation>
+        <translation type="obsolete">inget endast-värd-kort har valts</translation>
     </message>
     <message>
         <source>Basic Details</source>
-        <translation>Grundläggande detaljer</translation>
+        <translation type="obsolete">Grundläggande detaljer</translation>
     </message>
     <message>
         <source>Bridged Network Details</source>
-        <translation>Detaljer för bryggat nätverk</translation>
+        <translation type="obsolete">Detaljer för bryggat nätverk</translation>
     </message>
     <message>
         <source>Internal Network Details</source>
-        <translation>Detaljer för internt nätverk</translation>
+        <translation type="obsolete">Detaljer för internt nätverk</translation>
     </message>
     <message>
         <source>Host-only Network Details</source>
-        <translation>Detaljer för endast-värd-nätverk</translation>
+        <translation type="obsolete">Detaljer för endast-värd-nätverk</translation>
     </message>
     <message>
         <source>Not selected</source>
-        <translation>Inte vald</translation>
+        <translation type="obsolete">Inte vald</translation>
     </message>
     <message>
         <source>Host Settings</source>
-        <translation>Värdinställningar</translation>
+        <translation type="obsolete">Värdinställningar</translation>
     </message>
     <message>
         <source>&amp;Bridged Network Adapter:</source>
-        <translation>Kort för &amp;bryggat nätverk:</translation>
+        <translation type="obsolete">Kort för &amp;bryggat nätverk:</translation>
     </message>
     <message>
         <source>Displays the name of the host network adapter selected for bridged networking.</source>
-        <translation>Visar namnet på värdens nätverkskort som valts för bryggat nätverk.</translation>
+        <translation type="obsolete">Visar namnet på värdens nätverkskort som valts för bryggat nätverk.</translation>
     </message>
     <message>
         <source>Internal &amp;Network:</source>
-        <translation>Internt &amp;nätverk:</translation>
+        <translation type="obsolete">Internt &amp;nätverk:</translation>
     </message>
     <message>
         <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation>Visar namnet på det interna nätverket som har valts för detta kort.</translation>
+        <translation type="obsolete">Visar namnet på det interna nätverket som har valts för detta kort.</translation>
     </message>
     <message>
         <source>Host-only &amp;Network Adapter:</source>
-        <translation>Kort för endast-värd-&amp;nätverk:</translation>
+        <translation type="obsolete">Kort för endast-värd-&amp;nätverk:</translation>
     </message>
     <message>
         <source>Displays the name of the VirtualBox network adapter selected for host-only networking.</source>
-        <translation>Visar namnet på VirtualBox nätverkskort som valts för endast-värd-nätverk.</translation>
+        <translation type="obsolete">Visar namnet på VirtualBox nätverkskort som valts för endast-värd-nätverk.</translation>
     </message>
     <message>
         <source>Guest Settings</source>
-        <translation>Gästinställningar</translation>
+        <translation type="obsolete">Gästinställningar</translation>
     </message>
     <message>
         <source>Guest &amp;MAC Address:</source>
@@ -5933,6 +6007,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation>Indikerar huruvida den virtuella nätverkskabeln är ansluten när maskinen startar upp eller inte.</translation>
+    </message>
+    <message>
+        <source>Additional Options</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

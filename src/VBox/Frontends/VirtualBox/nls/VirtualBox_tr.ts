@@ -132,6 +132,10 @@
         <source>Unknown %2 error during initialization of the Runtime</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Kernel driver not accessible</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QIArrowSplitter</name>
@@ -444,23 +448,23 @@ Version %1</source>
     <name>VBoxAddNIDialog</name>
     <message>
         <source>Add Host Interface</source>
-        <translation>Sunucu Arayüzü Ekle</translation>
+        <translation type="obsolete">Sunucu Arayüzü Ekle</translation>
     </message>
     <message>
         <source>Interface Name</source>
-        <translation>Arayüz Adı</translation>
+        <translation type="obsolete">Arayüz Adı</translation>
     </message>
     <message>
         <source>Descriptive name of the new network interface</source>
-        <translation>Yeni ağ arayüzü için tanımlayıcı isim</translation>
+        <translation type="obsolete">Yeni ağ arayüzü için tanımlayıcı isim</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation>&amp;TAMAM</translation>
+        <translation type="obsolete">&amp;TAMAM</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Vazgeç</translation>
+        <translation type="obsolete">Vazgeç</translation>
     </message>
 </context>
 <context>
@@ -1216,6 +1220,10 @@ Version %1</source>
         <source>Sun VirtualBox</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&lt;qt&gt;Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxDiskImageManagerDlg</name>
@@ -1587,6 +1595,14 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Export &gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Write legacy OVF 0.9</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2938,33 +2954,13 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Pasifleştirilmiş</translation>
     </message>
     <message>
-        <source>Bridged network, %1</source>
-        <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Internal network, &apos;%1&apos;</source>
-        <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Host-only network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>SCSI</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Bridged Network</source>
-        <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Host-only Network</source>
-        <comment>NetworkAttachmentType</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2995,6 +2991,31 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>BusLogic</source>
         <comment>StorageControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bridged adapter, %1</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host-only adapter, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Intel PRO/1000 MT Server (82545EM)</source>
+        <comment>NetworkAdapterType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bridged Adapter</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host-only Adapter</source>
+        <comment>NetworkAttachmentType</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5130,7 +5151,7 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Seçilen ağ arayüzünü kaldırmak istiyor musunuz &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Not:&lt;/b&gt; Bu arayüz bir ya da birden fazla ağ bağdaştırıcısı tarafından ya da bir ya da birden fazla sanal makine tarafından kullanılıyor olabilir. Bu arayüz kaldırıldıktan sonra bu bağdaştırıcılar siz ayarlarını yeni bir arayüz adı ya da ekleme tipi seçerek düzeltene kadar çalışmayacaktır. &lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Seçilen ağ arayüzünü kaldırmak istiyor musunuz &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Not:&lt;/b&gt; Bu arayüz bir ya da birden fazla ağ bağdaştırıcısı tarafından ya da bir ya da birden fazla sanal makine tarafından kullanılıyor olabilir. Bu arayüz kaldırıldıktan sonra bu bağdaştırıcılar siz ayarlarını yeni bir arayüz adı ya da ekleme tipi seçerek düzeltene kadar çalışmayacaktır. &lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create the host-only network interface.</source>
@@ -5166,6 +5187,10 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
     </message>
     <message>
         <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting this host-only network will lead to the deleting of the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8136,57 +8161,17 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <source>Adapter</source>
         <comment>network</comment>
-        <translation type="unfinished">Bağdaştırıcı</translation>
-    </message>
-    <message>
-        <source>Not selected</source>
-        <comment>adapter</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Bağdaştırıcı</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>internal</comment>
-        <translation type="unfinished">Ağ</translation>
-    </message>
-    <message>
-        <source>Not selected</source>
-        <comment>network</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>MAC Address</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Not selected</source>
-        <comment>address</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cable</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Connected</source>
-        <comment>cable</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Not connected</source>
-        <comment>cable</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Ağ</translation>
     </message>
     <message>
         <source>Adapter &amp;Type:</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Open extended settings dialog for current attachment type.</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>VBoxVMSettingsNetworkDetails</name>
     <message>
         <source>no bridged network adapter is selected</source>
         <translation type="unfinished"></translation>
@@ -8196,60 +8181,32 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>no host-only adapter is selected</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Basic Details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Bridged Network Details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Internal Network Details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Host-only Network Details</source>
+        <source>no host-only network adapter is selected</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Not selected</source>
+        <comment>network adapter name</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Host Settings</source>
+        <source>Open additional options dialog for current attachment type.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Bridged Network Adapter:</source>
-        <translation type="unfinished"></translation>
+        <source>&amp;Name:</source>
+        <translation type="unfinished">&amp;İsim:</translation>
     </message>
     <message>
-        <source>Displays the name of the host network adapter selected for bridged networking.</source>
+        <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Internal &amp;Network:</source>
-        <translation type="unfinished"></translation>
-    </message>
+</context>
+<context>
+    <name>VBoxVMSettingsNetworkDetails</name>
     <message>
         <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation type="unfinished">Bu bağdaştırıcı için seçilen iç ağ adını gösterir.</translation>
-    </message>
-    <message>
-        <source>Host-only &amp;Network Adapter:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Displays the name of the VirtualBox network adapter selected for host-only networking.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Guest Settings</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Bu bağdaştırıcı için seçilen iç ağ adını gösterir.</translation>
     </message>
     <message>
         <source>Guest &amp;MAC Address:</source>
@@ -8270,6 +8227,10 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation type="unfinished">Sanal ağ kablosunun başlangıçta makineye takılı olup olmadığını gösterir.</translation>
+    </message>
+    <message>
+        <source>Additional Options</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
