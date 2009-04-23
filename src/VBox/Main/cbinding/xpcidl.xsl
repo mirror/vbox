@@ -542,8 +542,8 @@ NSPR_API(PRStatus) PR_NotifyAllCondVar(PRCondVar *cvar);
 typedef struct PRCListStr PRCList;
 
 struct PRCListStr {
-    PRCList	*next;
-    PRCList	*prev;
+    PRCList *next;
+    PRCList *prev;
 };
 
 #ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
@@ -595,11 +595,11 @@ PL_DestroyEventQueue(PLEventQueue* self);
 PR_EXTERN(PRMonitor*)
 PL_GetEventQueueMonitor(PLEventQueue* self);
 
-#define PL_ENTER_EVENT_QUEUE_MONITOR(queue)	\
-	PR_EnterMonitor(PL_GetEventQueueMonitor(queue))
+#define PL_ENTER_EVENT_QUEUE_MONITOR(queue) \
+    PR_EnterMonitor(PL_GetEventQueueMonitor(queue))
 
-#define PL_EXIT_EVENT_QUEUE_MONITOR(queue)	\
-	PR_ExitMonitor(PL_GetEventQueueMonitor(queue))
+#define PL_EXIT_EVENT_QUEUE_MONITOR(queue)  \
+    PR_ExitMonitor(PL_GetEventQueueMonitor(queue))
 
 PR_EXTERN(PRStatus) PL_PostEvent(PLEventQueue* self, PLEvent* event);
 PR_EXTERN(void*) PL_PostSynchronousEvent(PLEventQueue* self, PLEvent* event);
@@ -621,8 +621,8 @@ typedef void* (PR_CALLBACK *PLHandleEventProc)(PLEvent* self);
 typedef void (PR_CALLBACK *PLDestroyEventProc)(PLEvent* self);
 PR_EXTERN(void)
 PL_InitEvent(PLEvent* self, void* owner,
-			 PLHandleEventProc handler,
-			 PLDestroyEventProc destructor);
+             PLHandleEventProc handler,
+             PLDestroyEventProc destructor);
 PR_EXTERN(void*) PL_GetEventOwner(PLEvent* self);
 PR_EXTERN(void) PL_HandleEvent(PLEvent* self);
 PR_EXTERN(void) PL_DestroyEvent(PLEvent* self);
@@ -630,11 +630,11 @@ PR_EXTERN(void) PL_DequeueEvent(PLEvent* self, PLEventQueue* queue);
 PR_EXTERN(void) PL_FavorPerformanceHint(PRBool favorPerformanceOverEventStarvation, PRUint32 starvationDelay);
 
 struct PLEvent {
-    PRCList				link;
-    PLHandleEventProc	handler;
-    PLDestroyEventProc	destructor;
-    void*				owner;
-    void*				synchronousResult;
+    PRCList             link;
+    PLHandleEventProc   handler;
+    PLDestroyEventProc  destructor;
+    void*               owner;
+    void*               synchronousResult;
     PRLock*             lock;
     PRCondVar*          condVar;
     PRBool              handled;
