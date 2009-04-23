@@ -6072,8 +6072,8 @@ with UUID %2!</source>
         <translation>切換到所選虛擬機器的視窗</translation>
     </message>
     <message>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;h3&gt;歡迎使用 VirtualBox！&lt;/h3&gt;&lt;p&gt;此視窗的剩餘部份，預定要顯示您電腦上所有虛擬機器的清單。清單目前為空，因為您尚未建立任何虛擬機器。&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;為了要建立新的虛擬機器，請按下位於視窗頂端主工具列中的 &lt;b&gt;新增&lt;/b&gt; 按鈕。&lt;/p&gt;&lt;p&gt;您可以按下 &lt;b&gt;F1&lt;/b&gt; 鍵以得到立即的說明，或是造訪 &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; 以獲得最新的資訊與消息。&lt;/p&gt;</translation>
+        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;h3&gt;歡迎使用 VirtualBox！&lt;/h3&gt;&lt;p&gt;此視窗的剩餘部份，預定要顯示您電腦上所有虛擬機器的清單。清單目前為空，因為您尚未建立任何虛擬機器。&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;為了要建立新的虛擬機器，請按下位於視窗頂端主工具列中的 &lt;b&gt;新增&lt;/b&gt; 按鈕。&lt;/p&gt;&lt;p&gt;您可以按下 &lt;b&gt;%1&lt;/b&gt; 鍵以得到立即的說明，或是造訪 &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; 以獲得最新的資訊與消息。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Machine</source>
@@ -6124,7 +6124,7 @@ with UUID %2!</source>
         <translation type="unfinished">暫停虛擬機器的執行</translation>
     </message>
     <message>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
+        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

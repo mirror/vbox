@@ -1512,10 +1512,10 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
                      "<p>In order to create a new virtual machine, press the "
                      "<b>New</b> button in the main tool bar located "
                      "at the top of the window.</p>"
-                     "<p>You can press the <b>F1</b> key to get instant help, "
+                     "<p>You can press the <b>%1</b> key to get instant help, "
                      "or visit "
                      "<a href=http://www.virtualbox.org>www.virtualbox.org</a> "
-                     "for the latest information and news.</p>"));
+                     "for the latest information and news.</p>").arg (QKeySequence (QKeySequence::HelpContents).toString (QKeySequence::NativeText)));
             mVmRefreshAction->setEnabled (false);
         }
 
