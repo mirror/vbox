@@ -366,6 +366,9 @@ endif
 
 ifdef VBOX_WITH_EFI
 DevicesR3_DEFS          += VBOX_WITH_EFI
+ ifdef VBOX_WITH_ALT_EFITHUNK
+  DevicesR3_DEFS        += VBOX_WITH_ALT_EFITHUNK
+ endif
 DevicesR3_SOURCES       += EFI/DevEFI.cpp
 
 EFI/DevEFI.cpp_INCS       += EFI/tools/include
