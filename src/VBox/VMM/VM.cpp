@@ -1171,7 +1171,7 @@ VMMR3DECL(int)   VMR3Resume(PVM pVM)
         return VERR_INVALID_PARAMETER;
     }
 
-        /*
+    /*
      * Request the operation in EMT.
      */
     PVMREQ pReq;
@@ -1705,7 +1705,7 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
      * We're done in this thread (EMT).
      */
     ASMAtomicUoWriteBool(&pVM->pUVM->vm.s.fTerminateEMT, true);
-    ASMAtomicWriteU32(&pVM->fForcedActions, VM_FF_TERMINATE);
+    ASMAtomicWriteU32(&pVM->fGlobalForcedActions, VM_FF_TERMINATE);
     LogFlow(("vmR3Destroy: returning %Rrc\n", VINF_EM_TERMINATE));
     return VINF_EM_TERMINATE;
 }

@@ -116,7 +116,7 @@ VMMRCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
         Assert(rc == VERR_PATCH_NOT_FOUND);
     }
 
-    VM_FF_SET(pVM, VM_FF_CSAM_PENDING_ACTION);
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_CSAM_PENDING_ACTION);
 
     /* Note that pvFault might be a different address in case of aliases. So use pvRange + offset instead!. */
     pVM->csam.s.pvDirtyBasePage[pVM->csam.s.cDirtyPages] = (RTRCPTR)((RTGCUINTPTR)pvRange + offRange);

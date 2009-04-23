@@ -122,8 +122,8 @@ VMMDECL(void) PDMQueueInsertEx(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem, uint64
     }
     else */
     {
-        VM_FF_SET(pVM, VM_FF_TO_R3);
-        Log2(("PDMQueueInsertEx: Setting VM_FF_TO_R3\n"));
+        VMCPU_FF_SET(VMMGetCpu0(pVM), VMCPU_FF_TO_R3);
+        Log2(("PDMQueueInsertEx: Setting VMCPU_FF_TO_R3\n"));
     }
 #endif
 }

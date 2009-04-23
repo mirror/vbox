@@ -190,7 +190,7 @@ VMMDECL(void) PATMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rawRC)
     {
         if (CTXSUFF(pVM->patm.s.pGCState)->GCPtrInhibitInterrupts == (RTRCPTR)pCtxCore->eip)
         {
-            EMSetInhibitInterruptsPC(pVM, VMMGetCpu0(pVM), pCtxCore->eip);
+            EMSetInhibitInterruptsPC(VMMGetCpu0(pVM), pCtxCore->eip);
         }
         CTXSUFF(pVM->patm.s.pGCState)->GCPtrInhibitInterrupts = 0;
 

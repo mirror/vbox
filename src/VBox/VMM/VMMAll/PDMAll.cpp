@@ -39,19 +39,21 @@
  * Gets the pending interrupt.
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pVCpu           VMCPU handle.
  * @param   pu8Interrupt    Where to store the interrupt on success.
  */
-VMMDECL(int) PDMGetInterrupt(PVM pVM, uint8_t *pu8Interrupt)
+VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
 {
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+
     pdmLock(pVM);
 
     /*
      * The local APIC has a higer priority than the PIC.
      */
-    if (VM_FF_ISSET(pVM, VM_FF_INTERRUPT_APIC))
+    if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_APIC))
     {
-        VM_FF_CLEAR(pVM, VM_FF_INTERRUPT_APIC);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_APIC);
         Assert(pVM->pdm.s.Apic.CTX_SUFF(pDevIns));
         Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnGetInterrupt));
         int i = pVM->pdm.s.Apic.CTX_SUFF(pfnGetInterrupt)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns));
@@ -67,9 +69,9 @@ VMMDECL(int) PDMGetInterrupt(PVM pVM, uint8_t *pu8Interrupt)
     /*
      * Check the PIC.
      */
-    if (VM_FF_ISSET(pVM, VM_FF_INTERRUPT_PIC))
+    if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_PIC))
     {
-        VM_FF_CLEAR(pVM, VM_FF_INTERRUPT_PIC);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_PIC);
         Assert(pVM->pdm.s.Pic.CTX_SUFF(pDevIns));
         Assert(pVM->pdm.s.Pic.CTX_SUFF(pfnGetInterrupt));
         int i = pVM->pdm.s.Pic.CTX_SUFF(pfnGetInterrupt)(pVM->pdm.s.Pic.CTX_SUFF(pDevIns));

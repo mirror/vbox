@@ -709,7 +709,7 @@ VMMDECL(int) PGMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCPtrPage)
             &&  PGMGstGetPage(pVCpu, GCPtrPage, NULL, NULL) != VERR_PAGE_TABLE_NOT_PRESENT)
         {
             LogFlow(("PGMGCInvalidatePage: Conflict!\n"));
-            VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
             STAM_COUNTER_INC(&pVM->pgm.s.StatRCInvlPgConflict);
             return VINF_PGM_SYNC_CR3;
         }
@@ -1610,9 +1610,9 @@ VMMDECL(int) PGMFlushTLB(PVMCPU pVCpu, uint64_t cr3, bool fGlobal)
      * Always flag the necessary updates; necessary for hardware acceleration
      */
     /** @todo optimize this, it shouldn't always be necessary. */
-    VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3_NON_GLOBAL);
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
     if (fGlobal)
-        VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
     LogFlow(("PGMFlushTLB: cr3=%RX64 OldCr3=%RX64 fGlobal=%d\n", cr3, pVCpu->pgm.s.GCPhysCR3, fGlobal));
 
     /*
@@ -1650,7 +1650,7 @@ VMMDECL(int) PGMFlushTLB(PVMCPU pVCpu, uint64_t cr3, bool fGlobal)
         else
         {
             AssertMsg(rc == VINF_PGM_SYNC_CR3, ("%Rrc\n", rc));
-            Assert(VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3_NON_GLOBAL | VM_FF_PGM_SYNC_CR3));
+            Assert(VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_PGM_SYNC_CR3));
             pVCpu->pgm.s.GCPhysCR3 = GCPhysOldCR3;
             pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_MAP_CR3;
             if (!pVM->pgm.s.fMappingsFixed)
@@ -1770,8 +1770,8 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
     if (pVCpu->pgm.s.enmGuestMode <= PGMMODE_PROTECTED)
     {
         Assert((cr0 & (X86_CR0_PG | X86_CR0_PE)) != (X86_CR0_PG | X86_CR0_PE));
-        VM_FF_CLEAR(pVM, VM_FF_PGM_SYNC_CR3);
-        VM_FF_CLEAR(pVM, VM_FF_PGM_SYNC_CR3_NON_GLOBAL);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
         return VINF_SUCCESS;
     }
 
@@ -1779,7 +1779,7 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
     if (!(cr4 & X86_CR4_PGE))
         fGlobal = true;
     LogFlow(("PGMSyncCR3: cr0=%RX64 cr3=%RX64 cr4=%RX64 fGlobal=%d[%d,%d]\n", cr0, cr3, cr4, fGlobal,
-             VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3), VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3_NON_GLOBAL)));
+             VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3), VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL)));
 
 #ifdef PGMPOOL_WITH_MONITORING
     /*
@@ -1846,8 +1846,8 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
     {
         if (!(pVCpu->pgm.s.fSyncFlags & PGM_SYNC_ALWAYS))
         {
-            VM_FF_CLEAR(pVM, VM_FF_PGM_SYNC_CR3);
-            VM_FF_CLEAR(pVM, VM_FF_PGM_SYNC_CR3_NON_GLOBAL);
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
         }
 
         /*

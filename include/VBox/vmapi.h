@@ -431,7 +431,7 @@ VMMR3DECL(int)  VMR3ReqWait(PVMREQ pReq, unsigned cMillies);
 VMMR3DECL(int)  VMR3ReqProcessU(PUVM pUVM, VMREQDEST enmDest);
 VMMR3DECL(void) VMR3NotifyFF(PVM pVM, bool fNotifiedREM);
 VMMR3DECL(void) VMR3NotifyFFU(PUVM pUVM, bool fNotifiedREM);
-VMMR3DECL(int)  VMR3WaitHalted(PVM pVM, bool fIgnoreInterrupts);
+VMMR3DECL(int)  VMR3WaitHalted(PVM pVM, PVMCPU pVCpu, bool fIgnoreInterrupts);
 VMMR3DECL(int)  VMR3WaitU(PUVM pUVM);
 VMMR3DECL(RTCPUID)          VMR3GetVMCPUId(PVM pVM);
 VMMR3DECL(RTTHREAD)         VMR3GetVMCPUThread(PVM pVM);

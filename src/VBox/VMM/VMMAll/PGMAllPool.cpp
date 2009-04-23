@@ -328,7 +328,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                         if ((uShw.pPDPae->a[iShw + i].u & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == (PGM_PDFLAGS_MAPPING | X86_PDE_P))
                         {
                             Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
-                            VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+                            VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
                             LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShwPdpt=%#x iShw=%#x!\n", iShwPdpt, iShw+i));
                             break;
                         }
@@ -356,7 +356,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                                 if ((uShw.pPDPae->a[iShw2].u & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == (PGM_PDFLAGS_MAPPING | X86_PDE_P))
                                 {
                                     Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
-                                    VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+                                    VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
                                     LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShwPdpt=%#x iShw2=%#x!\n", iShwPdpt, iShw2));
                                     break;
                                 }
@@ -436,7 +436,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                 if (uShw.pPD->a[iShw].u & PGM_PDFLAGS_MAPPING)
                 {
                     Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
-                    VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+                    VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
                     STAM_COUNTER_INC(&(pVCpu->pgm.s.StatRZGuestCR3WriteConflict));
                     LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
                     break;
@@ -470,7 +470,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                         {
                             Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
                             STAM_COUNTER_INC(&(pVCpu->pgm.s.StatRZGuestCR3WriteConflict));
-                            VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+                            VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
                             LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
                             break;
                         }
@@ -493,7 +493,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                 }
 #if 0 /* useful when running PGMAssertCR3(), a bit too troublesome for general use (TLBs). */
                 if (    uShw.pPD->a[iShw].n.u1Present
-                    &&  !VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3))
+                    &&  !VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3))
                 {
                     LogFlow(("pgmPoolMonitorChainChanging: iShw=%#x: %RX32 -> freeing it!\n", iShw, uShw.pPD->a[iShw].u));
 # ifdef IN_RC       /* TLB load - we're pushing things a bit... */
@@ -514,7 +514,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                 if (uShw.pPDPae->a[iShw].u & PGM_PDFLAGS_MAPPING)
                 {
                     Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
-                    VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+                    VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
                     STAM_COUNTER_INC(&(pVCpu->pgm.s.StatRZGuestCR3WriteConflict));
                     LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
                     break;
@@ -552,7 +552,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                         &&  uShw.pPDPae->a[iShw2].u & PGM_PDFLAGS_MAPPING)
                     {
                         Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
-                        VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+                        VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
                         STAM_COUNTER_INC(&(pVCpu->pgm.s.StatRZGuestCR3WriteConflict));
                         LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
                         break;
@@ -593,7 +593,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                     {
                         Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
                         STAM_COUNTER_INC(&(pVCpu->pgm.s.StatRZGuestCR3WriteConflict));
-                        VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+                        VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
                         LogFlow(("pgmPoolMonitorChainChanging: Detected pdpt conflict at iShw=%#x!\n", iShw));
                         break;
                     }
@@ -625,7 +625,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                             {
                                 Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
                                 STAM_COUNTER_INC(&(pVCpu->pgm.s.StatRZGuestCR3WriteConflict));
-                                VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+                                VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
                                 LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
                                 break;
                             }
@@ -691,7 +691,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                  * Hopefully this doesn't happen very often:
                  * - messing with the bits of pd pointers without changing the physical address
                  */
-                if (!VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3))
+                if (!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3))
                 {
                     uShw.pv = PGMPOOL_PAGE_2_LOCKED_PTR(pVM, pPage);
                     const unsigned iShw = off / sizeof(X86PDPE);
@@ -724,7 +724,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                  * Hopefully this doesn't happen very often:
                  * - messing with the bits of pd pointers without changing the physical address
                  */
-                if (!VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3))
+                if (!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3))
                 {
                     uShw.pv = PGMPOOL_PAGE_2_LOCKED_PTR(pVM, pPage);
                     const unsigned iShw = off / sizeof(X86PDPE);
@@ -1721,7 +1721,7 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         /** @todo we should probably deal with out-of-memory conditions here, but for now increasing
          * the heap size should suffice. */
         AssertFatalRC(rc);
-        Assert(!(pVM->pgm.s.fGlobalSyncFlags & PGM_GLOBAL_SYNC_CLEAR_PGM_POOL) || VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
+        Assert(!(pVM->pgm.s.fGlobalSyncFlags & PGM_GLOBAL_SYNC_CLEAR_PGM_POOL) || VMCPU_FF_ISSET(VMMGetCpu(pVM), VMCPU_FF_PGM_SYNC_CR3));
     }
     pPage->fMonitored = true;
     return rc;
@@ -1818,8 +1818,8 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     {
         rc = PGMHandlerPhysicalDeregister(pVM, pPage->GCPhys & ~(RTGCPHYS)(PAGE_SIZE - 1));
         AssertFatalRC(rc);
-        AssertMsg(!(pVM->pgm.s.fGlobalSyncFlags & PGM_GLOBAL_SYNC_CLEAR_PGM_POOL) || VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3),
-                  ("%#x %#x\n", pVM->pgm.s.fGlobalSyncFlags, pVM->fForcedActions));
+        AssertMsg(!(pVM->pgm.s.fGlobalSyncFlags & PGM_GLOBAL_SYNC_CLEAR_PGM_POOL) || VMCPU_FF_ISSET(VMMGetCpu(pVM), VMCPU_FF_PGM_SYNC_CR3),
+                  ("%#x %#x\n", pVM->pgm.s.fGlobalSyncFlags, pVM->fGlobalForcedActions));
     }
     pPage->fMonitored = false;
 
@@ -2080,7 +2080,7 @@ int pgmPoolSyncCR3(PVM pVM)
         pgmPoolClearAll(pVM);
 # else  /* !IN_RING3 */
         LogFlow(("SyncCR3: PGM_GLOBAL_SYNC_CLEAR_PGM_POOL is set -> VINF_PGM_SYNC_CR3\n"));
-        VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3); /** @todo no need to do global sync, right? */
+        VMCPU_FF_SET(VMMGetCpu(pVM), VMCPU_FF_PGM_SYNC_CR3); /** @todo no need to do global sync, right? */
         return VINF_PGM_SYNC_CR3;
 # endif /* !IN_RING3 */
     }
@@ -2712,8 +2712,13 @@ int pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs)
 
     if (rc == VINF_PGM_GCPHYS_ALIASED)
     {
+        Assert(pVM->cCPUs == 1);    /* @todo check */
         pVM->pgm.s.fGlobalSyncFlags |= PGM_GLOBAL_SYNC_CLEAR_PGM_POOL;
-        VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+        for (unsigned i=0;i<pVM->cCPUs;i++)
+        {
+            PVMCPU pVCpu = &pVM->aCpus[i];
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
+        }
         rc = VINF_PGM_SYNC_CR3;
     }
 
@@ -3770,26 +3775,6 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 
 #endif /* PGMPOOL_WITH_USER_TRACKING */
 #ifdef IN_RING3
-
-/**
- * Flushes all the special root pages as part of a pgmPoolFlushAllInt operation.
- *
- * @param   pPool       The pool.
- */
-static void pgmPoolFlushAllSpecialRoots(PPGMPOOL pPool)
-{
-    /*
-     * These special pages are all mapped into the indexes 1..PGMPOOL_IDX_FIRST.
-     */
-    Assert(NIL_PGMPOOL_IDX == 0);
-
-    /*
-     * Paranoia (to be removed), flag a global CR3 sync.
-     */
-    VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
-}
-
-
 /**
  * Flushes the entire cache.
  *
@@ -3822,8 +3807,11 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
      */
     /** @todo Need to synchronize this across all VCPUs! */
     Assert(pVM->cCPUs == 1);
-    PVMCPU pVCpu = &pVM->aCpus[0];  /* to get it compiled... */
-    pgmR3ExitShadowModeBeforePoolFlush(pVM, pVCpu);
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+        pgmR3ExitShadowModeBeforePoolFlush(pVM, pVCpu);
+    }
 
     /*
      * Nuke the free list and reinsert all pages into it.
@@ -3928,10 +3916,8 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
 #endif
 
     /*
-     * Flush all the special root pages.
      * Reinsert active pages into the hash and ensure monitoring chains are correct.
      */
-    pgmPoolFlushAllSpecialRoots(pPool);
     for (unsigned i = PGMPOOL_IDX_FIRST_SPECIAL; i < PGMPOOL_IDX_FIRST; i++)
     {
         PPGMPOOLPAGE pPage = &pPool->aPages[i];
@@ -3965,11 +3951,15 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
 #endif
     }
 
-    /*
-     * Re-enter the shadowing mode and assert Sync CR3 FF.
-     */
-    pgmR3ReEnterShadowModeAfterPoolFlush(pVM, pVCpu);
-    VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+        /*
+         * Re-enter the shadowing mode and assert Sync CR3 FF.
+         */
+        pgmR3ReEnterShadowModeAfterPoolFlush(pVM, pVCpu);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
+    }
 
     STAM_PROFILE_STOP(&pPool->StatFlushAllInt, a);
 }

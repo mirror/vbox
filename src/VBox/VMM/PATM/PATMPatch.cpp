@@ -286,7 +286,7 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PPATC
 
                 case PATM_VM_FORCEDACTIONS:
                     /* @todo dirty assumptions when correcting this fixup during saved state loading. */
-                    dest = pVM->pVMRC + RT_OFFSETOF(VM, fForcedActions);
+                    dest = pVM->pVMRC + RT_OFFSETOF(VM, aCpus[0].fLocalForcedActions);
                     break;
 
                 case PATM_TEMP_EAX:

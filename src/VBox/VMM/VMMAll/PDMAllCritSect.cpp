@@ -202,7 +202,7 @@ VMMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
     AssertFatal(i < RT_ELEMENTS(pVM->pdm.s.apQueuedCritSectsLeaves));
     pVM->pdm.s.apQueuedCritSectsLeaves[i] = MMHyperCCToR3(pVM, pCritSect);
     VM_FF_SET(pVM, VM_FF_PDM_CRITSECT);
-    VM_FF_SET(pVM, VM_FF_TO_R3);
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
     STAM_REL_COUNTER_INC(&pVM->pdm.s.StatQueuedCritSectLeaves);
     STAM_REL_COUNTER_INC(&pCritSect->s.StatContentionRZUnlock);
 #endif /* !IN_RING3 */

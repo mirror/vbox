@@ -213,7 +213,11 @@ VMMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, uint32_t fFlags, 
         pVM->pgm.s.pMappingsR0 = MMHyperR3ToR0(pVM, pNew);
     }
 
-    VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
+    }
     return VINF_SUCCESS;
 }
 
@@ -266,7 +270,11 @@ VMMR3DECL(int)  PGMR3UnmapPT(PVM pVM, RTGCPTR GCPtr)
             pgmR3MapClearPDEs(pVM, pCur, pCur->GCPtr >> X86_PD_SHIFT);
             MMHyperFree(pVM, pCur);
 
-            VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+            for (unsigned i=0;i<pVM->cCPUs;i++)
+            {
+                PVMCPU pVCpu = &pVM->aCpus[i];
+                VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
+            }
             return VINF_SUCCESS;
         }
 
@@ -648,7 +656,7 @@ VMMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
         pVCpu->pgm.s.fSyncFlags       &= ~PGM_SYNC_MONITOR_CR3;
-        VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
     }
     return VINF_SUCCESS;
 }
@@ -683,7 +691,7 @@ VMMR3DECL(int) PGMR3MappingsDisable(PVM pVM)
         PVMCPU pVCpu = &pVM->aCpus[i];
 
         pVCpu->pgm.s.fSyncFlags       &= ~PGM_SYNC_MONITOR_CR3;
-        VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
     }
     return VINF_SUCCESS;
 }
@@ -711,7 +719,7 @@ VMMR3DECL(int) PGMR3MappingsUnfix(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
-        VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
     }
     return VINF_SUCCESS;
 }

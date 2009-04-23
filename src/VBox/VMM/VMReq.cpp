@@ -627,6 +627,8 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
 
         for (unsigned i=0;i<pUVM->pVM->cCPUs;i++)
         {
+            PVMCPU pVCpu = &pUVM->pVM->aCpus[i];
+
             if (   !pUVMCPU
                 ||  pUVMCPU->idCpu != i)
             {
@@ -645,7 +647,7 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
                  * Notify EMT.
                  */
                 if (pUVM->pVM)
-                    VMCPU_FF_SET(pUVM->pVM, VM_FF_REQUEST, i);
+                    VMCPU_FF_SET(pVCpu, VM_FF_REQUEST);
                 /* @todo: VMR3NotifyFFU*/
                 AssertFailed();
                 VMR3NotifyFFU(pUVM, false);
@@ -673,6 +675,7 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
         &&  pUVMCPU->idCpu != (unsigned)pReq->enmDest)
     {
         RTCPUID  idTarget = (RTCPUID)pReq->enmDest;
+        PVMCPU   pVCpu = &pUVM->pVM->aCpus[idTarget];
         unsigned fFlags = ((VMREQ volatile *)pReq)->fFlags;     /* volatile paranoia */
 
         /*
@@ -690,7 +693,7 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
          * Notify EMT.
          */
         if (pUVM->pVM)
-            VMCPU_FF_SET(pUVM->pVM, VM_FF_REQUEST, idTarget);
+            VMCPU_FF_SET(pVCpu, VM_FF_REQUEST);
         /* @todo: VMR3NotifyFFU*/
         AssertFailed();
         VMR3NotifyFFU(pUVM, false);
@@ -850,7 +853,11 @@ VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMREQDEST enmDest)
         {
             ppReqs = (void * volatile *)&pUVM->aCpus[enmDest].vm.s.pReqs;
             if (RT_LIKELY(pUVM->pVM))
-                VMCPU_FF_CLEAR(pUVM->pVM, enmDest, VM_FF_REQUEST);
+            {
+                PVMCPU pVCpu = &pUVM->pVM->aCpus[enmDest];
+
+                VMCPU_FF_CLEAR(pVCpu, VM_FF_REQUEST);
+            }
         }
 
         PVMREQ pReqs = (PVMREQ)ASMAtomicXchgPtr(ppReqs, NULL);

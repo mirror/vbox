@@ -2146,11 +2146,11 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
             !=  (val    & (X86_CR4_OSFSXR|X86_CR4_OSXMMEEXCPT|X86_CR4_PCE|X86_CR4_MCE|X86_CR4_PAE|X86_CR4_DE|X86_CR4_TSD|X86_CR4_PVI|X86_CR4_VME)))
         {
             Log(("emInterpretMovCRx: CR4: %#RX64->%#RX64 => R3\n", oldval, val));
-            VM_FF_SET(pVM, VM_FF_TO_R3);
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
         }
 # endif
         if ((val ^ oldval) & X86_CR4_VME)
-            VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
 
         rc2 = PGMChangeMode(pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR4(pVCpu), CPUMGetGuestEFER(pVCpu));
         return rc2 == VINF_SUCCESS ? rc : rc2;
@@ -2522,7 +2522,7 @@ static int emInterpretSti(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCT
     Assert(pvFault == SELMToFlat(pVM, DIS_SELREG_CS, pRegFrame, (RTGCPTR)pRegFrame->rip));
 
     pVCpu->em.s.GCPtrInhibitInterrupts = pRegFrame->eip + pDISState->opsize;
-    VM_FF_SET(pVM, VM_FF_INHIBIT_INTERRUPTS);
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
 
     return VINF_SUCCESS;
 }
@@ -3306,14 +3306,13 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pD
 /**
  * Sets the PC for which interrupts should be inhibited.
  *
- * @param   pVM         The VM handle.
  * @param   pVCpu       The VMCPU handle.
  * @param   PC          The PC.
  */
-VMMDECL(void) EMSetInhibitInterruptsPC(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR PC)
+VMMDECL(void) EMSetInhibitInterruptsPC(PVMCPU pVCpu, RTGCUINTPTR PC)
 {
     pVCpu->em.s.GCPtrInhibitInterrupts = PC;
-    VM_FF_SET(pVM, VM_FF_INHIBIT_INTERRUPTS);
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
 }
 
 
@@ -3327,11 +3326,10 @@ VMMDECL(void) EMSetInhibitInterruptsPC(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR PC)
  *      - POP SS
  *
  * @returns The PC for which interrupts should be inhibited.
- * @param   pVM         VM handle.
  * @param   pVCpu       The VMCPU handle.
  *
  */
-VMMDECL(RTGCUINTPTR) EMGetInhibitInterruptsPC(PVM pVM, PVMCPU pVCpu)
+VMMDECL(RTGCUINTPTR) EMGetInhibitInterruptsPC(PVMCPU pVCpu)
 {
     return pVCpu->em.s.GCPtrInhibitInterrupts;
 }

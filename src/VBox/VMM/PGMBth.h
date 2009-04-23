@@ -173,7 +173,7 @@ PGM_BTH_DECL(int, Enter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
     if (rc == VERR_PGM_POOL_FLUSHED)
     {
         Log(("Bth-Enter: PGM pool flushed -> signal sync cr3\n"));
-        Assert(VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
+        Assert(VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
         return VINF_PGM_SYNC_CR3;
     }
     AssertRCReturn(rc, rc);

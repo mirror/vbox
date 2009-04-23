@@ -34,20 +34,20 @@
 %include "VBox/stam.mac"
 
 ;/** This action forces the VM to service check and pending interrups on the APIC. */
-%define VM_FF_INTERRUPT_APIC            (1 << 0)
+%define VMCPU_FF_INTERRUPT_APIC            (1 << 0)
 ;/** This action forces the VM to service check and pending interrups on the PIC. */
-%define VM_FF_INTERRUPT_PIC             (1 << 1)
+%define VMCPU_FF_INTERRUPT_PIC             (1 << 1)
 ;/** This action forces the VM to schedule and run pending timer (TM). */
-%define VM_FF_TIMER                     (1 << 2)
+%define VMCPU_FF_TIMER                     (1 << 2)
 ;/** This action forces the VM to service pending requests from other
 ; * thread or requests which must be executed in another context. */
-%define VM_FF_REQUEST                   (1 << 9)
+%define VMCPU_FF_REQUEST                   (1 << 9)
 
 ;;
 ; This is part of  the VM structure.
 struc VM
     .enmVMState         resd 1
-    .fForcedActions     resd 1
+    .fGlobalForcedActions resd 1
     .paVMPagesR3        RTR3PTR_RES 1
     .pSession           RTR0PTR_RES 1
     .pUVM               RTR3PTR_RES 1
@@ -104,18 +104,18 @@ endstruc
 ;;
 ; This is part of  the VMCPU structure.
 struc VMCPU
-    .fForcedActions     resd 1
-    .enmState           resd 1
-    .pVMR3              RTR3PTR_RES 1
-    .pVMR0              RTR0PTR_RES 1
-    .pVMRC              RTRCPTR_RES 1
-    .idCpu              resd 1
+    .fLocalForcedActions resd 1
+    .enmState            resd 1
+    .pVMR3               RTR3PTR_RES 1
+    .pVMR0               RTR0PTR_RES 1
+    .pVMRC               RTRCPTR_RES 1
+    .idCpu               resd 1
 
-    .hNativeThread      RTR0PTR_RES 1
+    .hNativeThread       RTR0PTR_RES 1
 
     alignb 64
 
-    .cpum               resb 2048
+    .cpum                resb 4096
 endstruc
 
 

@@ -295,7 +295,7 @@ VMMR3DECL(int) DBGFR3VMMForcedAction(PVM pVM)
     /*
      * Clear the FF DBGF request flag.
      */
-    Assert(pVM->fForcedActions & VM_FF_DBGF);
+    Assert(pVM->fGlobalForcedActions & VM_FF_DBGF);
     VM_FF_CLEAR(pVM, VM_FF_DBGF);
 
     /*

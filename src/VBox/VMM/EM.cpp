@@ -925,7 +925,7 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
              */
             if (VM_FF_ISPENDING(pVM, VM_FF_REQUEST | VM_FF_TIMER | VM_FF_PDM_QUEUES | VM_FF_DBGF | VM_FF_TERMINATE | VM_FF_RESET))
             {
-                LogFlow(("emR3RemExecute: Skipping run, because FF is set. %#x\n", pVM->fForcedActions));
+                LogFlow(("emR3RemExecute: Skipping run, because FF is set. %#x\n", pVM->fGlobalForcedActions));
                 goto l_REMDoForcedActions;
             }
         }
@@ -942,7 +942,8 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         /*
          * Deal with high priority post execution FFs before doing anything else.
          */
-        if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK))
+        if (    VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK)
+            ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
             rc = emR3HighPriorityPostForcedActions(pVM, pVCpu, rc);
 
         /*
@@ -972,7 +973,8 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 #ifdef VBOX_HIGH_RES_TIMERS_HACK
         TMTimerPoll(pVM);
 #endif
-        if (VM_FF_ISPENDING(pVM, VM_FF_ALL_BUT_RAW_MASK & ~(VM_FF_CSAM_PENDING_ACTION | VM_FF_CSAM_SCAN_PAGE)))
+        if (    VM_FF_ISPENDING(pVM, VM_FF_ALL_BUT_RAW_MASK)
+            ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_ALL_BUT_RAW_MASK & ~(VMCPU_FF_CSAM_PENDING_ACTION | VMCPU_FF_CSAM_SCAN_PAGE)))
         {
 l_REMDoForcedActions:
             if (fInREMState)
@@ -1036,7 +1038,7 @@ static int emR3RawResumeHyper(PVM pVM, PVMCPU pVCpu)
     rc = VMMR3ResumeHyper(pVM, pVCpu);
     Log(("emR3RawStep: cs:eip=%RTsel:%RGr efl=%RGr - returned from GC with rc=%Rrc\n", pCtx->cs, pCtx->eip, pCtx->eflags, rc));
     rc = CPUMRawLeave(pVCpu, NULL, rc);
-    VM_FF_CLEAR(pVM, VM_FF_RESUME_GUEST_MASK);
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
 
     /*
      * Deal with the return code.
@@ -1072,7 +1074,8 @@ static int emR3RawStep(PVM pVM, PVMCPU pVCpu)
         /*
          * Check vital forced actions, but ignore pending interrupts and timers.
          */
-        if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK))
+        if (    VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
+            ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
             rc = emR3RawForcedActions(pVM, pVCpu, pCtx);
             if (rc != VINF_SUCCESS)
@@ -1105,7 +1108,7 @@ static int emR3RawStep(PVM pVM, PVMCPU pVCpu)
     } while (   rc == VINF_SUCCESS
              || rc == VINF_EM_RAW_INTERRUPT);
     rc = CPUMRawLeave(pVCpu, NULL, rc);
-    VM_FF_CLEAR(pVM, VM_FF_RESUME_GUEST_MASK);
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
 
     /*
      * Make sure the trap flag is cleared.
@@ -1141,12 +1144,13 @@ static int emR3HwAccStep(PVM pVM, PVMCPU pVCpu)
 
     int         rc;
     PCPUMCTX    pCtx   = pVCpu->em.s.pCtx;
-    VM_FF_CLEAR(pVM, (VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_TSS));
+    VMCPU_FF_CLEAR(pVCpu, (VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_TSS));
 
     /*
      * Check vital forced actions, but ignore pending interrupts and timers.
      */
-    if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK))
+    if (    VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
+        ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
     {
         rc = emR3RawForcedActions(pVM, pVCpu, pCtx);
         if (rc != VINF_SUCCESS)
@@ -1166,7 +1170,7 @@ static int emR3HwAccStep(PVM pVM, PVMCPU pVCpu)
         rc = VMMR3HwAccRunGC(pVM, pVCpu);
     } while (   rc == VINF_SUCCESS
              || rc == VINF_EM_RAW_INTERRUPT);
-    VM_FF_CLEAR(pVM, VM_FF_RESUME_GUEST_MASK);
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
 
     /*
      * Make sure the trap flag is cleared.
@@ -2112,7 +2116,7 @@ int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
 
                 case OP_STI:
                     pCtx->eflags.u32 |= X86_EFL_IF;
-                    EMSetInhibitInterruptsPC(pVM, pVCpu, pCtx->rip + Cpu.opsize);
+                    EMSetInhibitInterruptsPC(pVCpu, pCtx->rip + Cpu.opsize);
                     Assert(Cpu.opsize == 1);
                     pCtx->rip += Cpu.opsize;
                     STAM_PROFILE_STOP(&pVCpu->em.s.StatPrivEmu, a);
@@ -2359,8 +2363,8 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
          * do here is to execute the pending forced actions.
          */
         case VINF_PGM_SYNC_CR3:
-            AssertMsg(VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL),
-                      ("VINF_PGM_SYNC_CR3 and no VM_FF_PGM_SYNC_CR3*!\n"));
+            AssertMsg(VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL),
+                      ("VINF_PGM_SYNC_CR3 and no VMCPU_FF_PGM_SYNC_CR3*!\n"));
             rc = VINF_SUCCESS;
             break;
 
@@ -2586,7 +2590,7 @@ static int emR3RawForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /*
      * Sync selector tables.
      */
-    if (VM_FF_ISPENDING(pVM, VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT))
+    if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT))
     {
         int rc = SELMR3UpdateFromCPUM(pVM, pVCpu);
         if (RT_FAILURE(rc))
@@ -2600,13 +2604,13 @@ static int emR3RawForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
      * and PGMShwModifyPage, so we're in for trouble if for instance a
      * PGMSyncCR3+pgmPoolClearAll is pending.
      */
-    if (VM_FF_ISPENDING(pVM, VM_FF_TRPM_SYNC_IDT))
+    if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TRPM_SYNC_IDT))
     {
-        if (   VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3)
+        if (   VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3)
             && EMIsRawRing0Enabled(pVM)
             && CSAMIsEnabled(pVM))
         {
-            int rc = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
+            int rc = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
             if (RT_FAILURE(rc))
                 return rc;
         }
@@ -2619,7 +2623,7 @@ static int emR3RawForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /*
      * Sync TSS.
      */
-    if (VM_FF_ISPENDING(pVM, VM_FF_SELM_SYNC_TSS))
+    if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_SELM_SYNC_TSS))
     {
         int rc = SELMR3SyncTSS(pVM, pVCpu);
         if (RT_FAILURE(rc))
@@ -2629,13 +2633,13 @@ static int emR3RawForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /*
      * Sync page directory.
      */
-    if (VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL))
+    if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
     {
-        int rc = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
+        int rc = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
         if (RT_FAILURE(rc))
             return rc;
 
-        Assert(!VM_FF_ISPENDING(pVM, VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT));
+        Assert(!VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT));
 
         /* Prefetch pages for EIP and ESP. */
         /** @todo This is rather expensive. Should investigate if it really helps at all. */
@@ -2649,12 +2653,12 @@ static int emR3RawForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 AssertLogRelMsgReturn(RT_FAILURE(rc), ("%Rrc\n", rc), VERR_IPE_UNEXPECTED_INFO_STATUS);
                 return rc;
             }
-            rc = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
+            rc = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
             if (RT_FAILURE(rc))
                 return rc;
         }
         /** @todo maybe prefetch the supervisor stack page as well */
-        Assert(!VM_FF_ISPENDING(pVM, VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT));
+        Assert(!VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT));
     }
 
     /*
@@ -2725,7 +2729,7 @@ static int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         AssertMsg(   (pCtx->eflags.u32 & X86_EFL_IF)
                   || PATMShouldUseRawMode(pVM, (RTGCPTR)pCtx->eip),
                   ("Tried to execute code with IF at EIP=%08x!\n", pCtx->eip));
-        if (    !VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL)
+        if (    !VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL)
             &&  PGMMapHasConflicts(pVM))
         {
             PGMMapCheck(pVM);
@@ -2737,7 +2741,8 @@ static int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         /*
          * Process high priority pre-execution raw-mode FFs.
          */
-        if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK))
+        if (    VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
+            ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
             rc = emR3RawForcedActions(pVM, pVCpu, pCtx);
             if (rc != VINF_SUCCESS)
@@ -2766,7 +2771,8 @@ static int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
             STAM_PROFILE_ADV_SUSPEND(&pVCpu->em.s.StatRAWEntry, b);
             CSAMR3CheckCodeEx(pVM, CPUMCTX2CORE(pCtx), pCtx->eip);
             STAM_PROFILE_ADV_RESUME(&pVCpu->em.s.StatRAWEntry, b);
-            if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK))
+            if (    VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
+                ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
             {
                 rc = emR3RawForcedActions(pVM, pVCpu, pCtx);
                 if (rc != VINF_SUCCESS)
@@ -2816,15 +2822,16 @@ static int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * execution FFs before doing anything else.
          */
         rc = CPUMRawLeave(pVCpu, NULL, rc);
-        VM_FF_CLEAR(pVM, VM_FF_RESUME_GUEST_MASK);
-        if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK))
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
+        if (    VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK)
+            ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
             rc = emR3HighPriorityPostForcedActions(pVM, pVCpu, rc);
 
 #ifdef VBOX_STRICT
         /*
          * Assert TSS consistency & rc vs patch code.
          */
-        if (   !VM_FF_ISPENDING(pVM, VM_FF_SELM_SYNC_TSS | VM_FF_SELM_SYNC_GDT) /* GDT implies TSS at the moment. */
+        if (   !VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_SELM_SYNC_GDT) /* GDT implies TSS at the moment. */
             &&  EMIsRawRing0Enabled(pVM))
             SELMR3CheckTSS(pVM);
         switch (rc)
@@ -2848,7 +2855,7 @@ static int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         /*
          * Let's go paranoid!
          */
-        if (    !VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL)
+        if (    !VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL)
             &&  PGMMapHasConflicts(pVM))
         {
             PGMMapCheck(pVM);
@@ -2883,7 +2890,8 @@ static int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         TMTimerPoll(pVM);
 #endif
         STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatRAWTail, d);
-        if (VM_FF_ISPENDING(pVM, ~VM_FF_HIGH_PRIORITY_PRE_RAW_MASK | VM_FF_PGM_NO_MEMORY))
+        if (    VM_FF_ISPENDING(pVM, ~VM_FF_HIGH_PRIORITY_PRE_RAW_MASK | VM_FF_PGM_NO_MEMORY)
+            ||  VMCPU_FF_ISPENDING(pVCpu, ~VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
             Assert(pCtx->eflags.Bits.u1VM || (pCtx->ss & X86_SEL_RPL) != 1);
 
@@ -2952,8 +2960,9 @@ static int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         /*
          * Process high priority pre-execution raw-mode FFs.
          */
-        VM_FF_CLEAR(pVM, (VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_TSS)); /* not relevant in HWACCM mode; shouldn't be set really. */
-        if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK))
+        VMCPU_FF_CLEAR(pVCpu, (VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_TSS)); /* not relevant in HWACCM mode; shouldn't be set really. */
+        if (    VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
+            ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
             rc = emR3RawForcedActions(pVM, pVCpu, pCtx);
             if (rc != VINF_SUCCESS)
@@ -2989,8 +2998,9 @@ static int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         /*
          * Deal with high priority post execution FFs before doing anything else.
          */
-        VM_FF_CLEAR(pVM, VM_FF_RESUME_GUEST_MASK);
-        if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK))
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
+        if (    VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK)
+            ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
             rc = emR3HighPriorityPostForcedActions(pVM, pVCpu, rc);
 
         /*
@@ -3193,8 +3203,8 @@ static int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
     if (VM_FF_ISPENDING(pVM, VM_FF_PDM_CRITSECT))
         PDMR3CritSectFF(pVM);
 
-    if (VM_FF_ISPENDING(pVM, VM_FF_CSAM_PENDING_ACTION))
-        CSAMR3DoPendingAction(pVM);
+    if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_CSAM_PENDING_ACTION))
+        CSAMR3DoPendingAction(pVM, pVCpu);
 
     if (VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
     {
@@ -3245,7 +3255,8 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
     /*
      * Post execution chunk first.
      */
-    if (VM_FF_ISPENDING(pVM, VM_FF_NORMAL_PRIORITY_POST_MASK))
+    if (    VM_FF_ISPENDING(pVM, VM_FF_NORMAL_PRIORITY_POST_MASK)
+        ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_NORMAL_PRIORITY_POST_MASK))
     {
         /*
          * Termination request.
@@ -3279,15 +3290,16 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * CSAM page scanning.
          */
-        if (VM_FF_IS_PENDING_EXCEPT(pVM, VM_FF_CSAM_SCAN_PAGE, VM_FF_PGM_NO_MEMORY))
+        if (    !VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)
+            &&  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_CSAM_SCAN_PAGE))
         {
             PCPUMCTX pCtx = pVCpu->em.s.pCtx;
 
             /** @todo: check for 16 or 32 bits code! (D bit in the code selector) */
-            Log(("Forced action VM_FF_CSAM_SCAN_PAGE\n"));
+            Log(("Forced action VMCPU_FF_CSAM_SCAN_PAGE\n"));
 
             CSAMR3CheckCodeEx(pVM, CPUMCTX2CORE(pCtx), pCtx->eip);
-            VM_FF_CLEAR(pVM, VM_FF_CSAM_SCAN_PAGE);
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_CSAM_SCAN_PAGE);
         }
 
         /*
@@ -3302,7 +3314,8 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         }
 
         /* check that we got them all  */
-        Assert(!(VM_FF_NORMAL_PRIORITY_POST_MASK & ~(VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_RESET | VM_FF_CSAM_SCAN_PAGE | VM_FF_PGM_NO_MEMORY)));
+        Assert(!(VM_FF_NORMAL_PRIORITY_POST_MASK & ~(VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_RESET | VM_FF_PGM_NO_MEMORY)));
+        Assert(!(VMCPU_FF_NORMAL_PRIORITY_POST_MASK & ~(VMCPU_FF_CSAM_SCAN_PAGE)));
     }
 
     /*
@@ -3350,7 +3363,8 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
      * High priority pre execution chunk last.
      * (Executed in ascending priority order.)
      */
-    if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_MASK))
+    if (    VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_MASK)
+        ||  VMCPU_FF_ISPENDING(pVCpu, VM_FF_HIGH_PRIORITY_PRE_MASK))
     {
         /*
          * Timers before interrupts.
@@ -3361,17 +3375,18 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * The instruction following an emulated STI should *always* be executed!
          */
-        if (VM_FF_IS_PENDING_EXCEPT(pVM, VM_FF_INHIBIT_INTERRUPTS, VM_FF_PGM_NO_MEMORY))
+        if (    !VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)
+            &&  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
         {
-            Log(("VM_FF_EMULATED_STI at %RGv successor %RGv\n", (RTGCPTR)CPUMGetGuestRIP(pVCpu), EMGetInhibitInterruptsPC(pVM, pVCpu)));
-            if (CPUMGetGuestEIP(pVCpu) != EMGetInhibitInterruptsPC(pVM, pVCpu))
+            Log(("VM_FF_EMULATED_STI at %RGv successor %RGv\n", (RTGCPTR)CPUMGetGuestRIP(pVCpu), EMGetInhibitInterruptsPC(pVCpu)));
+            if (CPUMGetGuestEIP(pVCpu) != EMGetInhibitInterruptsPC(pVCpu))
             {
                 /* Note: we intentionally don't clear VM_FF_INHIBIT_INTERRUPTS here if the eip is the same as the inhibited instr address.
                  *  Before we are able to execute this instruction in raw mode (iret to guest code) an external interrupt might
                  *  force a world switch again. Possibly allowing a guest interrupt to be dispatched in the process. This could
                  *  break the guest. Sounds very unlikely, but such timing sensitive problem are not as rare as you might think.
                  */
-                VM_FF_CLEAR(pVM, VM_FF_INHIBIT_INTERRUPTS);
+                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
             }
             if (HWACCMR3IsActive(pVM))
                 rc2 = VINF_EM_RESCHEDULE_HWACC;
@@ -3384,13 +3399,14 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * Interrupts.
          */
-        if (    !VM_FF_ISPENDING(pVM, VM_FF_INHIBIT_INTERRUPTS | VM_FF_PGM_NO_MEMORY)
+        if (    !VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)
+            &&  !VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
             &&  (!rc || rc >= VINF_EM_RESCHEDULE_HWACC)
             &&  !TRPMHasTrap(pVCpu) /* an interrupt could already be scheduled for dispatching in the recompiler. */
             &&  PATMAreInterruptsEnabled(pVM)
             &&  !HWACCMR3IsEventPending(pVM))
         {
-            if (VM_FF_ISPENDING(pVM, VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC))
+            if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
             {
                 /* Note: it's important to make sure the return code from TRPMR3InjectEvent isn't ignored! */
                 /** @todo this really isn't nice, should properly handle this */
@@ -3463,7 +3479,8 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 
 #endif
         /* check that we got them all  */
-        Assert(!(VM_FF_HIGH_PRIORITY_PRE_MASK & ~(VM_FF_TIMER | VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC | VM_FF_DBGF | VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL | VM_FF_SELM_SYNC_TSS | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT | VM_FF_TERMINATE | VM_FF_DEBUG_SUSPEND | VM_FF_INHIBIT_INTERRUPTS | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY)));
+        Assert(!(VM_FF_HIGH_PRIORITY_PRE_MASK & ~(VM_FF_TIMER | VM_FF_DBGF | VM_FF_TERMINATE | VM_FF_DEBUG_SUSPEND | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY)));
+        Assert(!(VMCPU_FF_HIGH_PRIORITY_PRE_MASK & ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_INHIBIT_INTERRUPTS)));
     }
 
 #undef UPDATE_RC
@@ -3795,7 +3812,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 case EMSTATE_HALTED:
                 {
                     STAM_REL_PROFILE_START(&pVCpu->em.s.StatHalted, y);
-                    rc = VMR3WaitHalted(pVM, !(CPUMGetGuestEFlags(pVCpu) & X86_EFL_IF));
+                    rc = VMR3WaitHalted(pVM, pVCpu, !(CPUMGetGuestEFlags(pVCpu) & X86_EFL_IF));
                     STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatHalted, y);
                     break;
                 }

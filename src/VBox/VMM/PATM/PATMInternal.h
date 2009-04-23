@@ -40,6 +40,7 @@
 # define PATM_SSM_VERSION_GETPUTMEM          53
 #else
 # define PATM_SSM_VERSION                    54
+# define PATM_SSM_VERSION_FIXUP_HACK         54
 # define PATM_SSM_VERSION_VER16              53
 #endif
 
@@ -133,6 +134,16 @@
 /** Size of memory allocated for patch statistics. */
 #define PATM_STAT_MEMSIZE                   (PATM_STAT_MAX_COUNTERS*sizeof(STAMRATIOU32))
 
+/** aCpus[0].fLocalForcedActions fixup (must be uneven to avoid theoretical clashes with valid pointers) */
+#define PATM_FIXUP_CPU_FF_ACTION            0xffffff01
+/** default cpuid pointer fixup */
+#define PATM_FIXUP_CPUID_DEFAULT            0xffffff03
+/** standard cpuid pointer fixup */
+#define PATM_FIXUP_CPUID_STANDARD           0xffffff05
+/** extended cpuid pointer fixup */
+#define PATM_FIXUP_CPUID_EXTENDED           0xffffff07
+/** centaur cpuid pointer fixup */
+#define PATM_FIXUP_CPUID_CENTAUR            0xffffff09
 
 typedef struct
 {

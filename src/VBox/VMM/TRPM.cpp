@@ -563,7 +563,8 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
     /*
      * Default action when entering raw mode for the first time
      */
-    VM_FF_SET(pVM, VM_FF_TRPM_SYNC_IDT);
+    PVMCPU pVCpu = &pVM->aCpus[0];  /* raw mode implies on VCPU */
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT);
     return 0;
 }
 
@@ -752,7 +753,8 @@ VMMR3DECL(void) TRPMR3Reset(PVM pVM)
     /*
      * Default action when entering raw mode for the first time
      */
-    VM_FF_SET(pVM, VM_FF_TRPM_SYNC_IDT);
+    PVMCPU pVCpu = &pVM->aCpus[0];  /* raw mode implies on VCPU */
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT);
 }
 
 
@@ -786,7 +788,8 @@ static DECLCALLBACK(int) trpmR3Save(PVM pVM, PSSMHANDLE pSSM)
         SSMR3PutGCUInt(pSSM,    pTrpmCpu->uPrevVector);
     }
     SSMR3PutBool(pSSM,      pTrpm->fDisableMonitoring);
-    SSMR3PutUInt(pSSM,      VM_FF_ISSET(pVM, VM_FF_TRPM_SYNC_IDT));
+    PVMCPU pVCpu = &pVM->aCpus[0];  /* raw mode implies 1 VCPU */
+    SSMR3PutUInt(pSSM,      VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT));
     SSMR3PutMem(pSSM,       &pTrpm->au32IdtPatched[0], sizeof(pTrpm->au32IdtPatched));
     SSMR3PutU32(pSSM, ~0);              /* separator. */
 
@@ -885,7 +888,10 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     }
     if (fSyncIDT)
-        VM_FF_SET(pVM, VM_FF_TRPM_SYNC_IDT);
+    {
+        PVMCPU pVCpu = &pVM->aCpus[0];  /* raw mode implies 1 VCPU */
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT);
+    }
     /* else: cleared by reset call above. */
 
     SSMR3GetMem(pSSM, &pTrpm->au32IdtPatched[0], sizeof(pTrpm->au32IdtPatched));
@@ -937,7 +943,7 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
 
 /**
  * Check if gate handlers were updated
- * (callback for the VM_FF_TRPM_SYNC_IDT forced action).
+ * (callback for the VMCPU_FF_TRPM_SYNC_IDT forced action).
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
@@ -951,7 +957,7 @@ VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM, PVMCPU pVCpu)
 
     if (pVM->trpm.s.fDisableMonitoring)
     {
-        VM_FF_CLEAR(pVM, VM_FF_TRPM_SYNC_IDT);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TRPM_SYNC_IDT);
         return VINF_SUCCESS;    /* Nothing to do */
     }
 
@@ -1039,7 +1045,7 @@ VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM, PVMCPU pVCpu)
     /*
      * Clear the FF and we're done.
      */
-    VM_FF_CLEAR(pVM, VM_FF_TRPM_SYNC_IDT);
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TRPM_SYNC_IDT);
     STAM_PROFILE_STOP(&pVM->trpm.s.StatSyncIDT, a);
     return VINF_SUCCESS;
 }
@@ -1077,7 +1083,8 @@ VMMR3DECL(void) TRPMR3DisableMonitoring(PVM pVM)
     }
 #endif
 
-    VM_FF_CLEAR(pVM, VM_FF_TRPM_SYNC_IDT);
+    PVMCPU pVCpu = &pVM->aCpus[0];  /* raw mode implies on VCPU */
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TRPM_SYNC_IDT);
 
     pVM->trpm.s.fDisableMonitoring = true;
 }
@@ -1103,7 +1110,7 @@ static DECLCALLBACK(int) trpmR3GuestIDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void
 {
     Assert(enmAccessType == PGMACCESSTYPE_WRITE);
     Log(("trpmR3GuestIDTWriteHandler: write to %RGv size %d\n", GCPtr, cbBuf));
-    VM_FF_SET(pVM, VM_FF_TRPM_SYNC_IDT);
+    VMCPU_FF_SET(VMMGetCpu(pVM), VMCPU_FF_TRPM_SYNC_IDT);
     return VINF_PGM_HANDLER_DO_DEFAULT;
 }
 
@@ -1431,7 +1438,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
 
     pCtx = CPUMQueryGuestCtxPtr(pVCpu);
     Assert(!PATMIsPatchGCAddr(pVM, (RTGCPTR)pCtx->eip));
-    Assert(!VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS));
+    Assert(!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
 
     /* Currently only useful for external hardware interrupts. */
     Assert(enmEvent == TRPM_HARDWARE_INT);
@@ -1446,7 +1453,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
 # endif
 
         uint8_t u8Interrupt;
-        rc = PDMGetInterrupt(pVM, &u8Interrupt);
+        rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
         Log(("TRPMR3InjectEvent: u8Interrupt=%d (%#x) rc=%Rrc\n", u8Interrupt, u8Interrupt, rc));
         if (RT_SUCCESS(rc))
         {
@@ -1474,7 +1481,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
                     rc = TRPMForwardTrap(pVCpu, CPUMCTX2CORE(pCtx), u8Interrupt, 0, TRPM_TRAP_NO_ERRORCODE, enmEvent, -1);
                     if (rc == VINF_SUCCESS /* Don't use RT_SUCCESS */)
                     {
-                        Assert(!VM_FF_ISPENDING(pVM, VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_TSS));
+                        Assert(!VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_TSS));
 
                         STAM_COUNTER_INC(&pVM->trpm.s.paStatForwardedIRQR3[u8Interrupt]);
                         return VINF_EM_RESCHEDULE_RAW;
@@ -1491,7 +1498,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
         if (HWACCMR3IsActive(pVM))
         {
             uint8_t u8Interrupt;
-            rc = PDMGetInterrupt(pVM, &u8Interrupt);
+            rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
             Log(("TRPMR3InjectEvent: u8Interrupt=%d (%#x) rc=%Rrc\n", u8Interrupt, u8Interrupt, rc));
             if (RT_SUCCESS(rc))
             {

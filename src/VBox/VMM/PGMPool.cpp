@@ -127,6 +127,8 @@ static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *
  */
 int pgmR3PoolInit(PVM pVM)
 {
+    AssertCompile(NIL_PGMPOOL_IDX == 0);
+
     /*
      * Query Pool config.
      */

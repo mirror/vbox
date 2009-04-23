@@ -47,12 +47,13 @@ static DECLCALLBACK(void) pdmR3PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMR3;
-    LogFlow(("pdmR3PicHlp_SetInterruptFF: caller='%s'/%d: VM_FF_INTERRUPT_PIC %d -> 1\n",
-             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VMCPU_FF_ISSET(pVM, 0, VM_FF_INTERRUPT_PIC)));
+    PVMCPU pVCpu = &pVM->aCpus[0];  /* for PIC we always deliver to CPU 0, MP use APIC */
 
-    /* for PIC we always deliver to CPU 0, MP use APIC */
-    VMCPU_FF_SET(pVM, 0, VM_FF_INTERRUPT_PIC);
-    REMR3NotifyInterruptSet(pVM, VMMGetCpu(pVM));
+    LogFlow(("pdmR3PicHlp_SetInterruptFF: caller='%s'/%d: VM_FF_INTERRUPT_PIC %d -> 1\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_PIC)));
+
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC);
+    REMR3NotifyInterruptSet(pVM, pVCpu);
     VMR3NotifyFF(pVM, true); /** @todo SMP: notify the right cpu. */
 }
 
@@ -61,12 +62,14 @@ static DECLCALLBACK(void) pdmR3PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) pdmR3PicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3PicHlp_ClearInterruptFF: caller='%s'/%d: VM_FF_INTERRUPT_PIC %d -> 0\n",
-             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VMCPU_FF_ISSET(pDevIns->Internal.s.pVMR3, 0, VM_FF_INTERRUPT_PIC)));
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    PVMCPU pVCpu = &pVM->aCpus[0];  /* for PIC we always deliver to CPU 0, MP use APIC */
 
-    /* for PIC we always deliver to CPU 0, MP use APIC */
-    VMCPU_FF_CLEAR(pDevIns->Internal.s.pVMR3, 0, VM_FF_INTERRUPT_PIC);
-    REMR3NotifyInterruptClear(pDevIns->Internal.s.pVMR3, VMMGetCpu(pDevIns->Internal.s.pVMR3));
+    LogFlow(("pdmR3PicHlp_ClearInterruptFF: caller='%s'/%d: VM_FF_INTERRUPT_PIC %d -> 0\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_PIC)));
+
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_PIC);
+    REMR3NotifyInterruptClear(pVM, pVCpu);
 }
 
 
@@ -145,11 +148,15 @@ static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUI
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMR3;
-    LogFlow(("pdmR3ApicHlp_SetInterruptFF: caller='%s'/%d: VM_FF_INTERRUPT(%d) %d -> 1\n",
-             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, idCpu, VMCPU_FF_ISSET(pVM, idCpu, VM_FF_INTERRUPT_APIC)));
+    PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
-    VMCPU_FF_SET(pVM, idCpu, VM_FF_INTERRUPT_APIC);
-    REMR3NotifyInterruptSet(pVM, VMMGetCpu(pVM));
+    AssertReturnVoid(idCpu < pVM->cCPUs);
+
+    LogFlow(("pdmR3ApicHlp_SetInterruptFF: caller='%s'/%d: VM_FF_INTERRUPT(%d) %d -> 1\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, idCpu, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_APIC)));
+
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC);
+    REMR3NotifyInterruptSet(pVM, pVCpu);
     VMR3NotifyFF(pVM, true);  /** @todo SMP: notify the right cpu. */
 }
 
@@ -158,11 +165,16 @@ static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUI
 static DECLCALLBACK(void) pdmR3ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, VMCPUID idCpu)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3ApicHlp_ClearInterruptFF: caller='%s'/%d: VM_FF_INTERRUPT(%d) %d -> 0\n",
-             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, idCpu, VMCPU_FF_ISSET(pDevIns->Internal.s.pVMR3, idCpu, VM_FF_INTERRUPT_APIC)));
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
-    VMCPU_FF_CLEAR(pDevIns->Internal.s.pVMR3, idCpu, VM_FF_INTERRUPT_APIC);
-    REMR3NotifyInterruptClear(pDevIns->Internal.s.pVMR3, VMMGetCpu(pDevIns->Internal.s.pVMR3));
+    AssertReturnVoid(idCpu < pVM->cCPUs);
+
+    LogFlow(("pdmR3ApicHlp_ClearInterruptFF: caller='%s'/%d: VM_FF_INTERRUPT(%d) %d -> 0\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, idCpu, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_APIC)));
+
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_APIC);
+    REMR3NotifyInterruptClear(pVM, pVCpu);
 }
 
 
