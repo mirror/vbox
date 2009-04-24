@@ -76,7 +76,12 @@ vboxfs_loaded()
 
 check_root()
 {
-    if test `/usr/xpg4/bin/id -u` -ne 0; then
+    # the reason we don't use "-u" is that some versions of id are old and do not
+    # support this option (eg. Solaris 10) and do not have a "--version" to check it either
+    # so go with the uglier but more generic approach
+    idbin=`which id`
+    isroot=`$idbin | grep "uid=0"`
+    if test -z "$isroot"; then
         abort "This program must be run with administrator privileges.  Aborting"
     fi
 }
