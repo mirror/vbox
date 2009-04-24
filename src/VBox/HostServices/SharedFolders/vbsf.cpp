@@ -39,6 +39,11 @@
 #undef LogFlow
 #define LogFlow Log
 
+/**
+ * @todo find a better solution for supporting the execute bit for non-windows
+ * guests on windows host. Search for "0111" to find all the relevant places.
+ */
+
 void vbsfStripLastComponent (char *pszFullPath, uint32_t cbFullPathRoot)
 {
     RTUNICP cp;
@@ -767,6 +772,9 @@ static int vbsfOpenFile (const char *pszPath, SHFLCREATEPARMS *pParms)
             /** @todo Possible race left here. */
             if (RT_SUCCESS(RTPathQueryInfo (pszPath, &info, RTFSOBJATTRADD_NOTHING)))
             {
+#ifdef RT_OS_WINDOWS
+                info.fMode |= 0111;
+#endif
                 pParms->Info = info;
             }
             pParms->Result = SHFL_FILE_EXISTS;
@@ -840,6 +848,9 @@ static int vbsfOpenFile (const char *pszPath, SHFLCREATEPARMS *pParms)
         rc = RTFileQueryInfo (pHandle->file.Handle, &info, RTFSOBJATTRADD_NOTHING);
         if (RT_SUCCESS(rc))
         {
+#ifdef RT_OS_WINDOWS
+            info.fMode |= 0111;
+#endif
             pParms->Info = info;
         }
     }
@@ -1037,6 +1048,9 @@ static int vbsfLookupFile(char *pszPath, SHFLCREATEPARMS *pParms)
     {
         case VINF_SUCCESS:
         {
+#ifdef RT_OS_WINDOWS
+            info.fMode |= 0111;
+#endif
             pParms->Info = info;
             pParms->Result = SHFL_FILE_EXISTS;
             break;
@@ -1423,6 +1437,9 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
             return VINF_SUCCESS;    /* Return directly and don't free pDirEntry */
         }
 
+#ifdef RT_OS_WINDOWS
+        pDirEntry->Info.fMode |= 0111;
+#endif
         pSFDEntry->Info = pDirEntry->Info;
         pSFDEntry->cucShortName = 0;
 
@@ -1530,6 +1547,10 @@ int vbsfQueryFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle,
     else
     {
         rc = RTFileQueryInfo(pHandle->file.Handle, pObjInfo, RTFSOBJATTRADD_NOTHING);
+#ifdef RT_OS_WINDOWS
+        if (RT_SUCCESS(rc) && RTFS_IS_FILE(pObjInfo->Info.fMode))
+            pObjInfo->Info.fMode |= 0111;
+#endif
     }
     if (rc == VINF_SUCCESS)
     {
@@ -1652,6 +1673,9 @@ static int vbsfSetEndOfFile(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE H
         rc = RTFileQueryInfo(pHandle->file.Handle, &fileinfo, RTFSOBJATTRADD_NOTHING);
         if (rc == VINF_SUCCESS)
         {
+#ifdef RT_OS_WINDOWS
+            fileinfo.fMode |= 0111;
+#endif
             *pSFDEntry = fileinfo;
             *pcbBuffer = sizeof(RTFSOBJINFO);
         }
