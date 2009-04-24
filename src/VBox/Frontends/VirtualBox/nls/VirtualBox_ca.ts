@@ -134,7 +134,7 @@
     <message>
         <location filename="../src/main.cpp" line="546"/>
         <source>Kernel driver not accessible</source>
-        <translation type="unfinished"></translation>
+        <translation>No es pot accedir al controlador del nucli</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="549"/>
@@ -1156,7 +1156,7 @@ Versió %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="2079"/>
         <source>&lt;qt&gt;Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Indica l&apos;estat de les característiques de virtualització per maquinari utilitzades per aquesta màquina:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="2100"/>
@@ -1895,12 +1895,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="445"/>
         <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation type="unfinished"></translation>
+        <translation>Escriu en format OVF 0.9 original per ser compatible amb altres productes de virtualització.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="448"/>
         <source>&amp;Write legacy OVF 0.9</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Escriu en format OVF 0.9 original</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="486"/>
@@ -2670,7 +2670,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxGlobal.cpp" line="2923"/>
         <source>Bridged Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Adaptador pont</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1788"/>
@@ -2717,13 +2717,13 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxGlobal.cpp" line="1899"/>
         <source>Bridged adapter, %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Adaptador pont, %1</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1905"/>
         <source>Host-only adapter, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Adaptador de només l&apos;amfitrió, &apos;%1&apos;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1911"/>
@@ -3031,7 +3031,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxGlobal.cpp" line="2916"/>
         <source>Intel PRO/1000 MT Server (82545EM)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Intel PRO/1000 MT Server (82545EM)</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2919"/>
@@ -3060,7 +3060,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxGlobal.cpp" line="2927"/>
         <source>Host-only Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Adaptador de només l&apos;amfitrió</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2952"/>
@@ -6233,7 +6233,7 @@ pas i connectar discos durs més endavant, fent servir el diàleg de configuraci
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1226"/>
         <source>&lt;p&gt;Deleting this host-only network will lead to the deleting of the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Eliminant aquesta xarxa de només l&apos;amfitrió suposarà l&apos;eliminació de la interfície de només amfitrió en la que està basada. Voleu eliminar aquesta interfície (de només l&apos;amfitrió) &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota: aquesta interfície pot estar en ús per un o més adaptadors de xarxa que pertanyin a alguna de les vostres màquines virtuals. Després d&apos;eliminar-se, aquests adaptadors no podran fer-se servir fins que corregiu els paràmetres a cadascun triant una interfície diferent o un tipus d&apos;adjunció diferent.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1778"/>
@@ -6535,7 +6535,7 @@ pas i connectar discos durs més endavant, fent servir el diàleg de configuraci
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1326"/>
         <source>E&amp;xit</source>
-        <translation type="unfinished">&amp;Surt</translation>
+        <translation>&amp;Surt</translation>
     </message>
     <message>
         <source>F1</source>
@@ -9761,24 +9761,24 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="177"/>
         <source>no bridged network adapter is selected</source>
-        <translation type="unfinished">no hi ha cap adaptador de xarxa en pont seleccionat</translation>
+        <translation>no hi ha cap adaptador de xarxa en pont seleccionat</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="184"/>
         <source>no internal network name is specified</source>
-        <translation type="unfinished">no hi ha cap nom de xarxa interna especificat</translation>
+        <translation>no hi ha cap nom de xarxa interna especificat</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="191"/>
         <source>no host-only network adapter is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>no s&apos;ha seleccionat cap adaptador de només l&apos;amfitrió</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="309"/>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="311"/>
         <source>Not selected</source>
         <comment>network adapter name</comment>
-        <translation type="unfinished">No seleccionat</translation>
+        <translation>No seleccionat</translation>
     </message>
     <message>
         <source>Adapter</source>
@@ -9868,17 +9868,17 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="117"/>
         <source>Open additional options dialog for current attachment type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Obre el diàleg d&apos;opcions addicionals per a l&apos;actual tipus d&apos;adjunció.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="127"/>
         <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;Nom:</translation>
+        <translation>&amp;Nom:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="140"/>
         <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Selecciona el nom de l&apos;adaptador de xarxa si el tipus d&apos;adjunció és equivalent a &lt;b&gt;Adaptador en pont&lt;/b&gt; o &lt;b&gt;Adaptador de només l&apos;amfitrió&lt;/b&gt; i el nom de la xarxa interna si el tipus d&apos;adjunció és equivalent a &lt;b&gt;Xarxa interna&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Open extended settings dialog for current attachment type.</source>
@@ -10022,7 +10022,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="30"/>
         <source>Additional Options</source>
-        <translation type="unfinished"></translation>
+        <translation>Opcions addicionals</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="36"/>

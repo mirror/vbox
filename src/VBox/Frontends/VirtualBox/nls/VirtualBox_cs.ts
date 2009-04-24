@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
-<TS version="2.0" language="cs">
+<!DOCTYPE TS><TS version="1.1" language="cs">
 <defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
@@ -134,7 +133,7 @@
     <message>
         <location filename="../src/main.cpp" line="546"/>
         <source>Kernel driver not accessible</source>
-        <translation type="unfinished"></translation>
+        <translation>Ovladač jádra je nedostupný</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="549"/>
@@ -191,55 +190,46 @@
         <translation>Vpravo </translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="306"/>
         <location filename="../src/QIHotKeyEdit.cpp" line="360"/>
         <source>Left Shift</source>
         <translation>Levý Shift</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="307"/>
         <location filename="../src/QIHotKeyEdit.cpp" line="361"/>
         <source>Right Shift</source>
         <translation>Pravý Shift</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="308"/>
         <location filename="../src/QIHotKeyEdit.cpp" line="362"/>
         <source>Left Ctrl</source>
         <translation>Levý Ctrl</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="309"/>
         <location filename="../src/QIHotKeyEdit.cpp" line="363"/>
         <source>Right Ctrl</source>
         <translation>Pravý Ctrl</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="310"/>
         <location filename="../src/QIHotKeyEdit.cpp" line="364"/>
         <source>Left Alt</source>
         <translation>Levý Alt</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="311"/>
         <location filename="../src/QIHotKeyEdit.cpp" line="365"/>
         <source>Right Alt</source>
         <translation>Pravý Alt</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="312"/>
         <location filename="../src/QIHotKeyEdit.cpp" line="366"/>
         <source>Left WinKey</source>
         <translation>Levá klávesa Win</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="313"/>
         <location filename="../src/QIHotKeyEdit.cpp" line="367"/>
         <source>Right WinKey</source>
         <translation>Pravá klávesa Win</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="314"/>
         <location filename="../src/QIHotKeyEdit.cpp" line="368"/>
         <source>Menu key</source>
         <translation>Klávesa Menu</translation>
@@ -250,22 +240,16 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="315"/>
         <location filename="../src/QIHotKeyEdit.cpp" line="370"/>
         <source>Caps Lock</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="316"/>
         <location filename="../src/QIHotKeyEdit.cpp" line="371"/>
         <source>Scroll Lock</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="422"/>
-        <location filename="../src/QIHotKeyEdit.cpp" line="430"/>
-        <location filename="../src/QIHotKeyEdit.cpp" line="443"/>
-        <location filename="../src/QIHotKeyEdit.cpp" line="485"/>
         <location filename="../src/QIHotKeyEdit.cpp" line="602"/>
         <source>&lt;key_%1&gt;</source>
         <translation>&lt;klávesa_%1&gt;</translation>
@@ -676,7 +660,6 @@ Verze %1</translation>
         <translation>Verze</translation>
     </message>
     <message>
-        <location filename="../src/VBoxApplianceEditorWgt.cpp" line="186"/>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="780"/>
         <source>Description</source>
         <translation>Popis</translation>
@@ -752,7 +735,6 @@ Verze %1</translation>
         <translation>Neznámý hardware</translation>
     </message>
     <message>
-        <location filename="../src/VBoxApplianceEditorWgt.cpp" line="221"/>
         <location filename="../src/VBoxApplianceEditorWgt.cpp" line="392"/>
         <source>MB</source>
         <translation>MB</translation>
@@ -961,7 +943,6 @@ Verze %1</translation>
         <translation>Resetuje virtuální počítač</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1662"/>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1664"/>
         <source>ACPI S&amp;hutdown</source>
         <translation>ACPI &amp;vypnutí</translation>
@@ -1201,7 +1182,7 @@ Verze %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="2079"/>
         <source>&lt;qt&gt;Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Indikuje stav virtualizačních rozšíření použitých tímto virtuálním počítačem:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="2100"/>
@@ -1253,7 +1234,6 @@ Verze %1</translation>
         <translation type="obsolete">&lt;p&gt;Nelze najít CD obraz Přídavků pro hosta VirtualBoxu &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; nebo &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="3030"/>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3078"/>
         <source>Host Drive </source>
         <translation>Hostitelská jednotka </translation>
@@ -1877,27 +1857,21 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Vyberte prosím virtuální počítač, který bude exportován do appliance. Můžete vybrat více než jeden. Uvědomte si prosím, že tyto virtuální počítače budou před exportem vypnuty.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxExportApplianceWzd.ui" line="151"/>
-        <location filename="../ui/VBoxExportApplianceWzd.ui" line="318"/>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="479"/>
         <source>&lt; &amp;Back</source>
         <translation>&lt; &amp;Zpět</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxExportApplianceWzd.ui" line="158"/>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="325"/>
         <source>&amp;Next &gt;</source>
         <translation>&amp;Další &gt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxExportApplianceWzd.ui" line="181"/>
-        <location filename="../ui/VBoxExportApplianceWzd.ui" line="348"/>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="509"/>
         <source>Cancel</source>
         <translation>Zrušit</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxExportApplianceWzd.ui" line="202"/>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="369"/>
         <source>Appliance Export Settings</source>
         <translation>Nastavení exportu appliance</translation>
@@ -1920,12 +1894,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="445"/>
         <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation type="unfinished"></translation>
+        <translation>Uložení ve starších formátu OVF 0.9 pro zachování kompatibility s jinými virtualizačními produkty.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="448"/>
         <source>&amp;Write legacy OVF 0.9</source>
-        <translation type="unfinished"></translation>
+        <translation>Uložit ve &amp;formátu OVF 0.9</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="486"/>
@@ -2122,7 +2096,6 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxGLSettingsLanguage</name>
     <message>
-        <location filename="../src/VBoxGLSettingsLanguage.cpp" line="88"/>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="89"/>
         <source> (built-in)</source>
         <comment>Language</comment>
@@ -2253,8 +2226,6 @@ p, li { white-space: pre-wrap; }
         <translation>IPv4 adresa</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGLSettingsNetwork.cpp" line="202"/>
-        <location filename="../src/VBoxGLSettingsNetwork.cpp" line="212"/>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="231"/>
         <source>Not set</source>
         <comment>address</comment>
@@ -2266,7 +2237,6 @@ p, li { white-space: pre-wrap; }
         <translation>IPv4 síťová maska</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGLSettingsNetwork.cpp" line="205"/>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="234"/>
         <source>Not set</source>
         <comment>mask</comment>
@@ -2321,7 +2291,6 @@ p, li { white-space: pre-wrap; }
         <translation>Spodní hranice</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGLSettingsNetwork.cpp" line="237"/>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="240"/>
         <source>Not set</source>
         <comment>bound</comment>
@@ -2348,7 +2317,6 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Upravit síť mezi hostem</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGLSettingsNetwork.cpp" line="403"/>
         <location filename="../src/VBoxGLSettingsNetwork.cpp" line="448"/>
         <source>Performing</source>
         <comment>creating/removing host-only network</comment>
@@ -2572,9 +2540,6 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;nobr&gt;%3 MB&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1611"/>
-        <location filename="../src/VBoxGlobal.cpp" line="1617"/>
-        <location filename="../src/VBoxGlobal.cpp" line="1635"/>
         <location filename="../src/VBoxGlobal.cpp" line="1641"/>
         <source>General</source>
         <comment>details report</comment>
@@ -2611,7 +2576,6 @@ p, li { white-space: pre-wrap; }
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1627"/>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="476"/>
         <source>Nested Paging</source>
         <comment>details report</comment>
@@ -2654,14 +2618,12 @@ p, li { white-space: pre-wrap; }
         <translation>Zakázáno</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1751"/>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="451"/>
         <source>Enabled</source>
         <comment>details report (Nested Paging)</comment>
         <translation>Povolen</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1752"/>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="452"/>
         <source>Disabled</source>
         <comment>details report (Nested Paging)</comment>
@@ -2695,7 +2657,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxGlobal.cpp" line="2923"/>
         <source>Bridged Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Síťový most</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1788"/>
@@ -2742,16 +2704,15 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxGlobal.cpp" line="1899"/>
         <source>Bridged adapter, %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Karta použitá v síťovém mostu, %1</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1905"/>
         <source>Host-only adapter, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Síť pouze s hostem,&apos;%1&apos;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1911"/>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="634"/>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
@@ -3041,7 +3002,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxGlobal.cpp" line="2916"/>
         <source>Intel PRO/1000 MT Server (82545EM)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2919"/>
@@ -3070,7 +3031,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxGlobal.cpp" line="2927"/>
         <source>Host-only Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Síť pouze s hostem</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2952"/>
@@ -3148,7 +3109,6 @@ p, li { white-space: pre-wrap; }
         <translation>Vyberte složku</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="4191"/>
         <location filename="../src/VBoxGlobal.cpp" line="4405"/>
         <source>Select a file</source>
         <translation>Vyberte soubor</translation>
@@ -3282,8 +3242,6 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Vlastní pevný disk</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1626"/>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="2091"/>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="475"/>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
@@ -3296,16 +3254,12 @@ p, li { white-space: pre-wrap; }
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1746"/>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="2084"/>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="448"/>
         <source>Enabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
         <translation>Povoleno</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1747"/>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="2085"/>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="449"/>
         <source>Disabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
@@ -3960,7 +3914,6 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Pro import appliance potřebujete soubor, který ji popisuje. Aktuálně aplikace VirtualBox podporuje Open Virtualzation Format (OVF). Pro pokračování vyberte soubor níže:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxImportApplianceWzd.ui" line="164"/>
         <location filename="../ui/VBoxImportApplianceWzd.ui" line="331"/>
         <source>&lt; &amp;Back</source>
         <translation>&lt; &amp;Zpět</translation>
@@ -3971,7 +3924,6 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Další &gt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxImportApplianceWzd.ui" line="194"/>
         <location filename="../ui/VBoxImportApplianceWzd.ui" line="361"/>
         <source>Cancel</source>
         <translation>Zrušit</translation>
@@ -4198,27 +4150,16 @@ p, li { white-space: pre-wrap; }
         <translation>Aktualizuje seznam médií</translation>
     </message>
     <message>
-        <location filename="../src/VBoxMediaManagerDlg.cpp" line="654"/>
-        <location filename="../src/VBoxMediaManagerDlg.cpp" line="658"/>
-        <location filename="../src/VBoxMediaManagerDlg.cpp" line="661"/>
-        <location filename="../ui/VBoxMediaManagerDlg.ui" line="114"/>
-        <location filename="../ui/VBoxMediaManagerDlg.ui" line="219"/>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="310"/>
         <source>Location</source>
         <translation>Umístění</translation>
     </message>
     <message>
-        <location filename="../src/VBoxMediaManagerDlg.cpp" line="655"/>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="131"/>
         <source>Type (Format)</source>
         <translation>Typ (formát)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxMediaManagerDlg.cpp" line="656"/>
-        <location filename="../src/VBoxMediaManagerDlg.cpp" line="659"/>
-        <location filename="../src/VBoxMediaManagerDlg.cpp" line="662"/>
-        <location filename="../ui/VBoxMediaManagerDlg.ui" line="148"/>
-        <location filename="../ui/VBoxMediaManagerDlg.ui" line="236"/>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="327"/>
         <source>Attached to</source>
         <translation>Připojeno k</translation>
@@ -4290,8 +4231,6 @@ p, li { white-space: pre-wrap; }
         <translation>Pevné &amp;disky</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxMediaManagerDlg.ui" line="81"/>
-        <location filename="../ui/VBoxMediaManagerDlg.ui" line="191"/>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="279"/>
         <source>Name</source>
         <translation>Název</translation>
@@ -4312,7 +4251,6 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;CD/DVD obrazy</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxMediaManagerDlg.ui" line="196"/>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="284"/>
         <source>Size</source>
         <translation>Velikost</translation>
@@ -4478,16 +4416,11 @@ jako velikost virtuálního pevného disku.&lt;/p&gt;</translation>
         <translation type="obsolete">&lt;p&gt;Tento průvodce vám pomůže vytvořit nový virtuální pevný disk pro váš virtuální počítač.&lt;/p&gt;&lt;p&gt;Pro přechod na další stránku průvodce použijte tlačítko &lt;b&gt;Další&lt;/b&gt; a pro návrat na předchozí stránku použijte tlačítko &lt;b&gt;Zpět&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="176"/>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="384"/>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="684"/>
         <location filename="../ui/VBoxNewHDWzd.ui" line="898"/>
         <source>&lt; &amp;Back</source>
         <translation>&lt; &amp;Zpět</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="183"/>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="391"/>
         <location filename="../ui/VBoxNewHDWzd.ui" line="691"/>
         <source>&amp;Next &gt;</source>
         <translation>&amp;Další &gt;</translation>
@@ -4538,9 +4471,6 @@ jako velikost virtuálního pevného disku.&lt;/p&gt;</translation>
         <translation>Bytů</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="206"/>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="414"/>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="714"/>
         <location filename="../ui/VBoxNewHDWzd.ui" line="928"/>
         <source>Cancel</source>
         <translation>Zrušit</translation>
@@ -4783,18 +4713,11 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <translation>&lt;p&gt;Tento průvodce vás provede nezbytnými kroky pro vytvoření nového virtuálního počítače pro VirtualBox.&lt;/p&gt;&lt;p&gt;Použijte tlačítko &lt;b&gt;Další&lt;/b&gt; pro přechod na následující stránku průvodce a tlačítko &lt;b&gt;Zpět&lt;/b&gt; pro návrat na předchozí stránku.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="173"/>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="385"/>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="673"/>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="905"/>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1113"/>
         <source>&lt; &amp;Back</source>
         <translation>&lt; &amp;Zpět</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="180"/>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="392"/>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="680"/>
         <location filename="../ui/VBoxNewVMWzd.ui" line="912"/>
         <source>&amp;Next &gt;</source>
         <translation>&amp;Další &gt;</translation>
@@ -4824,8 +4747,6 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <translation>&amp;Dokončit</translation>
     </message>
     <message>
-        <location filename="../src/VBoxNewVMWzd.cpp" line="164"/>
-        <location filename="../src/VBoxNewVMWzd.cpp" line="166"/>
         <location filename="../src/VBoxNewVMWzd.cpp" line="180"/>
         <source>MB</source>
         <comment>megabytes</comment>
@@ -4856,10 +4777,6 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <translation>Bootovací pevný disk</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="203"/>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="415"/>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="703"/>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="935"/>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1143"/>
         <source>Cancel</source>
         <translation>Zrušit</translation>
@@ -4993,7 +4910,6 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <translation type="obsolete">Nepodařilo se načíst nastavení virtuálního počítače &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="590"/>
         <location filename="../src/VBoxProblemReporter.cpp" line="604"/>
         <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nepodařilo se spustit virtuální počítač &lt;b&gt;%1&lt;/b&gt;.</translation>
@@ -5009,19 +4925,16 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <translation>Nepodařilo se obnovit virtuální počítač &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="650"/>
         <location filename="../src/VBoxProblemReporter.cpp" line="664"/>
         <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nepodařilo se uložit stav virtuálního počítače &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="676"/>
         <location filename="../src/VBoxProblemReporter.cpp" line="690"/>
         <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nepodařilo se vytvořit snímek virtuálního počítače &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="702"/>
         <location filename="../src/VBoxProblemReporter.cpp" line="714"/>
         <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nepodařilo se zastavit virtuální počítač &lt;b&gt;%1&lt;/b&gt;.</translation>
@@ -5037,19 +4950,16 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <translation>Nepodařilo se zahodit uložený stav počítače &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="788"/>
         <location filename="../src/VBoxProblemReporter.cpp" line="801"/>
         <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation>Nepodařilo se zahodit snímek &lt;b&gt;%1&lt;/b&gt; virtuálního počítače &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="813"/>
         <location filename="../src/VBoxProblemReporter.cpp" line="826"/>
         <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nepodařilo se zahodit aktuální stav virtuálního počítače &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="837"/>
         <location filename="../src/VBoxProblemReporter.cpp" line="850"/>
         <source>Failed to discard the current snapshot and the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nepodařilo se zahodit aktuální snímek a stav virtuálního počítače &lt;b&gt;%1&lt;/b&gt;.</translation>
@@ -5149,25 +5059,21 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <translation type="obsolete">Nepodařilo se vytvořit hostitelské síťové rozhraní &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1259"/>
         <location filename="../src/VBoxProblemReporter.cpp" line="1268"/>
         <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nepodařilo se odstranit hostitelské síťové rozhraní &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1280"/>
         <location filename="../src/VBoxProblemReporter.cpp" line="1292"/>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation>Nepodařilo se připojit USB zařízení &lt;b&gt;%1&lt;/b&gt; k virtuálnímu počítači &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1306"/>
         <location filename="../src/VBoxProblemReporter.cpp" line="1318"/>
         <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation>Nepodařilo se odpojit USB zařízení &lt;b&gt;%1&lt;/b&gt; od virtuálního počítače &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1334"/>
         <location filename="../src/VBoxProblemReporter.cpp" line="1370"/>
         <source>Failed to create a shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Nepodařilo se vytvořit sdílenou složku &lt;b&gt;%1&lt;/b&gt; (vede do &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) pro virtuální počítač &lt;b&gt;%3&lt;/b&gt;.</translation>
@@ -5233,7 +5139,6 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <translation>Nepodařilo se vytvořit applianci.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2017"/>
         <location filename="../src/VBoxProblemReporter.cpp" line="2034"/>
         <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nepodařilo se připravit applianci &lt;b&gt;%1&lt;/b&gt; pro export.</translation>
@@ -5526,7 +5431,6 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <translation>Připojit</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1576"/>
         <location filename="../src/VBoxProblemReporter.cpp" line="1609"/>
         <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
         <comment>additional message box paragraph</comment>
@@ -5923,7 +5827,6 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <translation type="obsolete">&lt;p&gt;Chcete odstranit vybrané hostitelské síťové rozhraní &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Poznámka:&lt;/b&gt; Toto rozhraní může být používáno jednou nebo více síťovými kartami tohoto nebo jiného virtuálního počítače. Po jeho odstranění nebudou tyto karty fungovat, dokud neopravíte jejich nastavení vybráním jiného rozhraní nebo jiného typu připojení karty.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1243"/>
         <location filename="../src/VBoxProblemReporter.cpp" line="1251"/>
         <source>Failed to create the host-only network interface.</source>
         <translation>Vytvoření sítě pouze s hostem selhalo.</translation>
@@ -5960,8 +5863,6 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <translation>Ví&amp;ce</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1741"/>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1766"/>
         <location filename="../src/VBoxProblemReporter.cpp" line="1810"/>
         <source>E&amp;xit</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
@@ -5970,7 +5871,7 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1226"/>
         <source>&lt;p&gt;Deleting this host-only network will lead to the deleting of the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Odstranění této sítě s hostitelem dojde také k odstranění rozhraní, na kterém je síť nastavena. Opravdu chcete odebrat rozhraní pro síť pouze s hostitelem &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Poznámka:&lt;/b&gt;toto rozhraní může být použito v jednom nebo i více virtuálních rozhraních patřících virtuálním počítačům. Po odebrání nebudou tato síťová rozhraní použitelná do chvíle, než provedete jejich správné nastavení buď volbou jiného názvu rozhraní nebo jiného typu síťového rozhraní.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1778"/>
@@ -6140,7 +6041,6 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <translation type="obsolete">Zobrazí Správce virtuálních disků</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1314"/>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1321"/>
         <source>&amp;Preferences...</source>
         <comment>global settings</comment>
@@ -6273,13 +6173,11 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <translation>&amp;Nápověda</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1412"/>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1525"/>
         <source>&amp;Snapshots</source>
         <translation>Sní&amp;mky</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1426"/>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1529"/>
         <source>D&amp;escription</source>
         <translation>&amp;Popis</translation>
@@ -6304,7 +6202,6 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <translation>Přepne do okna virtuálního počítače</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1452"/>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1539"/>
         <source>S&amp;tart</source>
         <translation>&amp;Spustit</translation>
@@ -6314,7 +6211,6 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <translation type="obsolete">Spustit</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1454"/>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1541"/>
         <source>Start the selected virtual machine</source>
         <translation>Spustí vybraný virtuální počítač</translation>
@@ -6361,7 +6257,6 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <translation>Obnoví chod virtuálního počítače</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1352"/>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1472"/>
         <source>&amp;Pause</source>
         <translation>&amp;Pauza</translation>
@@ -6392,7 +6287,6 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <translation>Exportuje applianci virtálních počítačů z aplikace VirtualBox</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1354"/>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1475"/>
         <source>Suspend the execution of the virtual machine</source>
         <translation>Pozastaví chod virtuálního počítače</translation>
@@ -7272,14 +7166,11 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation>&lt;p&gt;Pokud je to v pořádku, stiskněte tlačítko &lt;b&gt;Dokončit&lt;/b&gt;. Po jeho stisku bude vybrané médium připojeno k virtuálnímu počítači a počítač jej začne načítat.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="198"/>
-        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="542"/>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="805"/>
         <source>&lt; &amp;Back</source>
         <translation>&lt; &amp;Zpět</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="205"/>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="549"/>
         <source>&amp;Next &gt;</source>
         <translation>&amp;Další &gt;</translation>
@@ -7312,8 +7203,6 @@ p, li { white-space: pre-wrap; }
         <translation>Zdroj</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="228"/>
-        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="572"/>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="835"/>
         <source>Cancel</source>
         <translation>Zrušit</translation>
@@ -7331,19 +7220,16 @@ p, li { white-space: pre-wrap; }
         <translation>%1 - Informace o sezení</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="169"/>
         <location filename="../ui/VBoxVMInformationDlg.ui" line="41"/>
         <source>&amp;Details</source>
         <translation>&amp;Detaily</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="170"/>
         <location filename="../ui/VBoxVMInformationDlg.ui" line="76"/>
         <source>&amp;Runtime</source>
         <translation>&amp;Runtime</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="183"/>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="214"/>
         <source>DMA Transfers</source>
         <translation>DMA přenosy</translation>
@@ -7354,15 +7240,11 @@ p, li { white-space: pre-wrap; }
         <translation>PIO přenosy</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="187"/>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="216"/>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="237"/>
         <source>Data Read</source>
         <translation>Přečteno dat</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="189"/>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="218"/>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="239"/>
         <source>Data Written</source>
         <translation>Zapsáno dat</translation>
@@ -7518,13 +7400,11 @@ p, li { white-space: pre-wrap; }
         <translation>Přepne do okna vybraného virtuálního počítače</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1857"/>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1912"/>
         <source>S&amp;tart</source>
         <translation>&amp;Spustit</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1859"/>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1914"/>
         <source>Start the selected virtual machine</source>
         <translation>Spustí vybraný virtuální počítač</translation>
@@ -8613,9 +8493,6 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
         <translation>toto je 64bitový hostovaný operační systém, který potřebuje mít povolenou podporu virtualizace (VT-x/AMD-V), jinak nebude detekováno 64bitové CPU a virtuální počítač se nespustí. Po nastavení vlastností virtuálního počítače a stisknutí tlačítka OK bude tato podpora automaticky povolena.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="513"/>
-        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="514"/>
-        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="515"/>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="516"/>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
@@ -8659,25 +8536,21 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
         <translation>&amp;Velikost operační paměti</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="153"/>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="230"/>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
         <translation>Ovládá množství paměti poskytnuté virtuálnímu počítači. Když přiřadíte příliš, nemusí počítač naběhnout.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="174"/>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="349"/>
         <source>&lt;</source>
         <translation>&lt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="200"/>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="375"/>
         <source>&gt;</source>
         <translation>&gt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="243"/>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="418"/>
         <source>MB</source>
         <translation>MB</translation>
@@ -8688,7 +8561,6 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
         <translation>Velikost &amp;video paměti</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="328"/>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="405"/>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
         <translation>Ovládá množství videopaměti poskytnuté virtuálnímu počítači.</translation>
@@ -8957,24 +8829,23 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="177"/>
         <source>no bridged network adapter is selected</source>
-        <translation type="unfinished">není vybráno síťové rozhraní pro přemostění</translation>
+        <translation>není vybráno síťové rozhraní pro přemostění</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="184"/>
         <source>no internal network name is specified</source>
-        <translation type="unfinished">není zadán název interní sítě</translation>
+        <translation>není zadán název interní sítě</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="191"/>
         <source>no host-only network adapter is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>není vybráno síťové rozhraní pro síť mezi hostitelem</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="309"/>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="311"/>
         <source>Not selected</source>
         <comment>network adapter name</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nevybráno</translation>
     </message>
     <message>
         <source>Adapter</source>
@@ -9064,17 +8935,17 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="117"/>
         <source>Open additional options dialog for current attachment type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Otevře dialog pro rozšířená nastavení pro aktuální typ připojení.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="127"/>
         <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;Název:</translation>
+        <translation>&amp;Název:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="140"/>
         <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zvolte název síťového rozhraní pokud je připojení typu &lt;b&gt;Síťový most&lt;/b&gt; nebo &lt;b&gt;Síť pouze s hostitelem&lt;/b&gt; a název vnitřní sítě pokud je typ připojení &lt;b&gt;Vnitřní síť&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Open extended settings dialog for current attachment type.</source>
@@ -9218,7 +9089,7 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="30"/>
         <source>Additional Options</source>
-        <translation type="unfinished"></translation>
+        <translation>Další možnosti nastavení</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="36"/>
