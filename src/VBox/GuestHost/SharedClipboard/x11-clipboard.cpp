@@ -651,7 +651,8 @@ static int vboxClipboardThread(RTTHREAD self, void *pvUser)
     XtAppAddTimeOut(pCtx->appContext, 200 /* ms */,
                     vboxClipboardPollX11ForTargets, pCtx);
 
-    XtAppMainLoop(pCtx->appContext);
+    while (XtAppGetExitFlag(pCtx->appContext) == FALSE)
+        XtAppProcessEvent(pCtx->appContext, XtIMAll);
     pCtx->formatList.clear();
     LogRel(("Shared clipboard: host clipboard thread terminated successfully\n"));
     return VINF_SUCCESS;
