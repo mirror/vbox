@@ -178,13 +178,13 @@ VMMDECL(bool) PGMPhysIsGCPhysNormal(PVM pVM, RTGCPHYS GCPhys)
  */
 VMMDECL(int) PGMPhysGCPhys2HCPhys(PVM pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhys)
 {
+    pgmLock(pVM);
     PPGMPAGE pPage;
     int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    *pHCPhys = PGM_PAGE_GET_HCPHYS(pPage) | (GCPhys & PAGE_OFFSET_MASK);
-    return VINF_SUCCESS;
+    if (RT_SUCCESS(rc))
+        *pHCPhys = PGM_PAGE_GET_HCPHYS(pPage) | (GCPhys & PAGE_OFFSET_MASK);
+    pgmUnlock(pVM);
+    return rc;
 }
 
 
