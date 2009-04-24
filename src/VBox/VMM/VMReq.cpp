@@ -613,13 +613,19 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
                      pReq->enmType, VMREQTYPE_INVALID + 1, VMREQTYPE_MAX - 1),
                     VERR_VM_REQUEST_INVALID_TYPE);
 
+/** @todo SMP: Temporary hack until the unicast and broadcast cases has been
+ *        implemented correctly below. It asserts + hangs now. */
+if (pReq->enmDest != VMREQDEST_ANY)
+    pReq->enmDest = VMREQDEST_ANY;
+
+
     /*
      * Are we the EMT or not?
      * Also, store pVM (and fFlags) locally since pReq may be invalid after queuing it.
      */
     int     rc      = VINF_SUCCESS;
     PUVM    pUVM    = ((VMREQ volatile *)pReq)->pUVM;                 /* volatile paranoia */
-    PUVMCPU pUVMCPU = (PUVMCPU)RTTlsGet(pUVM->vm.s.idxTLS);
+    PUVMCPU pUVCpu  = (PUVMCPU)RTTlsGet(pUVM->vm.s.idxTLS);
 
     if (pReq->enmDest == VMREQDEST_BROADCAST)
     {
@@ -629,8 +635,8 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
         {
             PVMCPU pVCpu = &pUVM->pVM->aCpus[i];
 
-            if (   !pUVMCPU
-                ||  pUVMCPU->idCpu != i)
+            if (   !pUVCpu
+                ||  pUVCpu->idCpu != i)
             {
                 /*
                  * Insert it.
@@ -670,11 +676,11 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
             }
         } /* for each VMCPU */
     }
-    else
-    if (    pReq->enmDest  != VMREQDEST_ANY  /* for a specific VMCPU? */
-        &&  pUVMCPU->idCpu != (unsigned)pReq->enmDest)
+    else if (   pReq->enmDest != VMREQDEST_ANY  /* for a specific VMCPU? */
+             && (   !pUVCpu /* not an EMT */
+                 || pUVCpu->idCpu != (unsigned)pReq->enmDest))
     {
-        RTCPUID  idTarget = (RTCPUID)pReq->enmDest;
+        RTCPUID  idTarget = (RTCPUID)pReq->enmDest;     Assert(idTarget < pUVM->cCpus);
         PVMCPU   pVCpu = &pUVM->pVM->aCpus[idTarget];
         unsigned fFlags = ((VMREQ volatile *)pReq)->fFlags;     /* volatile paranoia */
 
@@ -706,7 +712,7 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
         LogFlow(("VMR3ReqQueue: returns %Rrc\n", rc));
     }
     else if (    pReq->enmDest == VMREQDEST_ANY
-             &&  !pUVMCPU /* only EMT threads have a valid pointer stored in the TLS slot. */)
+             &&  !pUVCpu /* only EMT threads have a valid pointer stored in the TLS slot. */)
     {
         unsigned fFlags = ((VMREQ volatile *)pReq)->fFlags;     /* volatile paranoia */
 
@@ -737,7 +743,7 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
     }
     else
     {
-        Assert(pUVMCPU);
+        Assert(pUVCpu);
 
         /*
          * The requester was EMT, just execute it.
