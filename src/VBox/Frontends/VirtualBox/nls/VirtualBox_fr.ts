@@ -1,6 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
-<TS version="2.0">
+<!DOCTYPE TS><TS>
 <context>
     <name>@@@</name>
     <message>
@@ -2874,22 +2872,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Bridged adapter, %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Pont avec l&apos;interface %1</translation>
     </message>
     <message>
         <source>Host-only adapter, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Interface réseau privé hôte, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Bridged Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Accès par pont</translation>
     </message>
     <message>
         <source>Host-only Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Accès privé hôte</translation>
     </message>
 </context>
 <context>
@@ -4574,7 +4572,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;Deleting this host-only network will lead to the deleting of the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Si vous enlevez ce réseau privé hôte, l&apos;interface réseau privé hôte corréspondant sera également enlevée.  Voulez vous enlever l&apos;interface privée &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note :&lt;/b&gt; cette interface pourrait également être utilisé par une ou plusieurs interfaces réseau de vos machines virtuelles.  Si vous l&apos;enlevez, ces interfaces ne serront plus utilisables jusqu&apos;à ce que vous corrigez leurs paramètres en choisissant une autre interface privé hôte ou un autre mode d&apos;accès.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -6223,32 +6221,32 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>no bridged network adapter is selected</source>
-        <translation type="unfinished">aucune interface réseau pour accès par pont n&apos;a été sélectionné</translation>
+        <translation>aucune interface réseau n&apos;a été sélectionné pour le pont</translation>
     </message>
     <message>
         <source>no internal network name is specified</source>
-        <translation type="unfinished">aucun nom de réseau interne n&apos;a été spécifié</translation>
+        <translation>aucun nom de réseau interne n&apos;a été spécifié</translation>
     </message>
     <message>
         <source>no host-only network adapter is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>aucune interface réseau privé hôte n&apos;a été sélectionnée</translation>
     </message>
     <message>
         <source>Not selected</source>
         <comment>network adapter name</comment>
-        <translation type="unfinished"></translation>
+        <translation>Non sélectionné</translation>
     </message>
     <message>
         <source>Open additional options dialog for current attachment type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ouvre la boîte de dialogue options supplémentaires pour le mode d&apos;accès actuel.</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;Nom : </translation>
+        <translation>&amp;Nom : </translation>
     </message>
     <message>
         <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Choisi le nom de l&apos;interface réseau pour le mode &lt;b&gt;accès en pont&lt;/b&gt; ou le mode &lt;b&gt;accès privé hôte&lt;/b&gt; et le nom du réseau interne pour le mode d&apos;accès &lt;b&gt;réseau interne&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
@@ -6433,7 +6431,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Additional Options</source>
-        <translation type="unfinished"></translation>
+        <translation>Options supplémentaires</translation>
     </message>
 </context>
 <context>
