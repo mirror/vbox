@@ -761,7 +761,7 @@ snapshot-puel:
 	    echo; \
 	    exit 1; \
 	 fi
-	@if [ -z "$(PASSWORD) ]; then \
+	@if [ -z "$(PASSWORD)" ]; then \
 	    echo; \
 	    echo "Please specify a password with PASSWORD=..."; \
 	    echo; \
@@ -798,7 +798,6 @@ snapshot-puel:
 	    -x!$(ZIPROOT)/src/VBox/Installer/linux/debian \
 	    -x!$(ZIPROOT)/src/VBox/Installer/linux/rpm \
 	    -x!$(ZIPROOT)/tools \
-	    -pfoo \
 	    $(ZIPPATH)/$(ZIPNAME) \
 	    $(ZIPROOT))
 	$(QUIET)$(RM) $(ZIPPATH)/$(ZIPROOT)
