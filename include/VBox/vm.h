@@ -435,6 +435,19 @@ typedef struct VMCPU *PVMCPU;
 # define VM_IS_EMT(pVM)                     (VMR3GetVMCPUNativeThread(pVM) == RTThreadNativeSelf())
 #endif
 
+/** @def VMCPU_IS_EMT
+ * Checks if the current thread is the emulation thread (EMT) for the specified
+ * virtual CPU.
+ */
+#ifdef IN_RC
+# define VMCPU_IS_EMT(pVCpu)                true
+#elif defined(IN_RING0)
+# define VMCPU_IS_EMT(pVCpu)                fixme - need to call HWACCM I think... /** @todo SMP */
+#else
+/** @todo need to rework this macro for the case of multiple emulation threads for SMP */
+# define VMCPU_IS_EMT(pVCpu)                ((pVCpu)->hNativeThread == RTThreadNativeSelf())
+#endif
+
 /** @def VM_ASSERT_EMT
  * Asserts that the current thread IS the emulation thread (EMT).
  */
@@ -446,6 +459,21 @@ typedef struct VMCPU *PVMCPU;
 # define VM_ASSERT_EMT(pVM) \
     AssertMsg(VM_IS_EMT(pVM), \
         ("Not emulation thread! Thread=%RTnthrd ThreadEMT=%RTnthrd\n", RTThreadNativeSelf(), VMR3GetVMCPUNativeThread(pVM)))
+#endif
+
+/** @def VMCPU_ASSERT_EMT
+ * Asserts that the current thread IS the emulation thread (EMT) of the
+ * specified virtual CPU.
+ */
+#ifdef IN_RC
+# define VMCPU_ASSERT_EMT(pVCpu)            Assert(VMCPU_IS_EMT(pVCpu))
+#elif defined(IN_RING0)
+# define VMCPU_ASSERT_EMT(pVCpu)            Assert(VMCPU_IS_EMT(pVCpu))
+#else
+# define VMCPU_ASSERT_EMT(pVCpu) \
+    AssertMsg(VMCPU_IS_EMT(pVCpu), \
+              ("Not emulation thread! Thread=%RTnthrd ThreadEMT=%RTnthrd idCpu=%#x\n", \
+              RTThreadNativeSelf(), (pVCpu)->hNativeThread, (pVCpu)->idCpu))
 #endif
 
 /** @def VM_ASSERT_EMT_RETURN
@@ -460,6 +488,21 @@ typedef struct VMCPU *PVMCPU;
     AssertMsgReturn(VM_IS_EMT(pVM), \
         ("Not emulation thread! Thread=%RTnthrd ThreadEMT=%RTnthrd\n", RTThreadNativeSelf(), VMR3GetVMCPUNativeThread(pVM)), \
         (rc))
+#endif
+
+/** @def VMCPU_ASSERT_EMT_RETURN
+ * Asserts that the current thread IS the emulation thread (EMT) and returns if it isn't.
+ */
+#ifdef IN_RC
+# define VMCPU_ASSERT_EMT_RETURN(pVCpu, rc) AssertReturn(VMCPU_IS_EMT(pVCpu), (rc))
+#elif defined(IN_RING0)
+# define VMCPU_ASSERT_EMT_RETURN(pVCpu, rc) AssertReturn(VMCPU_IS_EMT(pVCpu), (rc))
+#else
+# define VMCPU_ASSERT_EMT_RETURN(pVCpu, rc) \
+    AssertMsg(VMCPU_IS_EMT(pVCpu), \
+              ("Not emulation thread! Thread=%RTnthrd ThreadEMT=%RTnthrd idCpu=%#x\n", \
+               RTThreadNativeSelf(), (pVCpu)->hNativeThread, (pVCpu)->idCpu), \
+              (rc))
 #endif
 
 
@@ -485,7 +528,29 @@ typedef struct VMCPU *PVMCPU;
                         ("state %s, expected %s\n", VMGetStateName(pVM->enmVMState), VMGetStateName(_enmState)), \
                         (rc))
 
+/** @def VM_ASSERT_VALID_EXT_RETURN
+ * Asserts a the VM handle is valid for external access, i.e. not being
+ * destroy or terminated.
+ */
+#define VM_ASSERT_VALID_EXT_RETURN(pVM, rc) \
+        AssertMsgReturn(    RT_VALID_ALIGNED_PTR(pVM, PAGE_SIZE) \
+                        &&  (unsigned)(pVM)->enmVMState < (unsigned)VMSTATE_DESTROYING, \
+                        ("pVM=%p state %s\n", (pVM), RT_VALID_ALIGNED_PTR(pVM, PAGE_SIZE) \
+                         ? VMGetStateName(pVM->enmVMState) : ""), \
+                        (rc))
 
+/** @def VMCPU_ASSERT_VALID_EXT_RETURN
+ * Asserts a the VMCPU handle is valid for external access, i.e. not being
+ * destroy or terminated.
+ */
+#define VMCPU_ASSERT_VALID_EXT_RETURN(pVCpu, rc) \
+        AssertMsgReturn(    RT_VALID_ALIGNED_PTR(pVCpu, 64) \
+                        &&  RT_VALID_ALIGNED_PTR((pVCpu)->CTX_SUFF(pVM), PAGE_SIZE) \
+                        &&  (unsigned)(pVCpu)->CTX_SUFF(pVM)->enmVMState < (unsigned)VMSTATE_DESTROYING, \
+                        ("pVCpu=%p pVM=%p state %s\n", (pVCpu), RT_VALID_ALIGNED_PTR(pVCpu, 64) ? (pVCpu)->CTX_SUFF(pVM) : NULL, \
+                         RT_VALID_ALIGNED_PTR(pVCpu, 64) && RT_VALID_ALIGNED_PTR((pVCpu)->CTX_SUFF(pVM), PAGE_SIZE) \
+                         ? VMGetStateName((pVCpu)->pVMR3->enmVMState) : ""), \
+                        (rc))
 
 
 /** This is the VM structure.
