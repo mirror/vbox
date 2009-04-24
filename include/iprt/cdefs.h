@@ -1535,31 +1535,43 @@
 
 /** @def VALID_PTR
  * Pointer validation macro.
- * @param   ptr
+ * @param   ptr         The pointer.
  */
 #if defined(RT_ARCH_AMD64)
 # ifdef IN_RING3
 #  if defined(RT_OS_DARWIN) /* first 4GB is reserved for legacy kernel. */
-#   define VALID_PTR(ptr)   (   (uintptr_t)(ptr) >= _4G \
-                             && !((uintptr_t)(ptr) & 0xffff800000000000ULL) )
+#   define RT_VALID_PTR(ptr)    (   (uintptr_t)(ptr) >= _4G \
+                                 && !((uintptr_t)(ptr) & 0xffff800000000000ULL) )
 #  elif defined(RT_OS_SOLARIS) /* The kernel only used the top 2TB, but keep it simple. */
-#   define VALID_PTR(ptr)   (   (uintptr_t)(ptr) + 0x1000U >= 0x2000U \
-                             && (   ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0xffff800000000000ULL \
-                                 || ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0) )
+#   define RT_VALID_PTR(ptr)    (   (uintptr_t)(ptr) + 0x1000U >= 0x2000U \
+                                 && (   ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0xffff800000000000ULL \
+                                     || ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0) )
 #  else
-#   define VALID_PTR(ptr)   (   (uintptr_t)(ptr) + 0x1000U >= 0x2000U \
-                             && !((uintptr_t)(ptr) & 0xffff800000000000ULL) )
+#   define RT_VALID_PTR(ptr)    (   (uintptr_t)(ptr) + 0x1000U >= 0x2000U \
+                                 && !((uintptr_t)(ptr) & 0xffff800000000000ULL) )
 #  endif
 # else /* !IN_RING3 */
-#  define VALID_PTR(ptr)    (   (uintptr_t)(ptr) + 0x1000U >= 0x2000U \
-                             && (   ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0xffff800000000000ULL \
-                                 || ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0) )
+#  define RT_VALID_PTR(ptr)     (   (uintptr_t)(ptr) + 0x1000U >= 0x2000U \
+                                 && (   ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0xffff800000000000ULL \
+                                     || ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0) )
 # endif /* !IN_RING3 */
 #elif defined(RT_ARCH_X86)
-# define VALID_PTR(ptr)     ( (uintptr_t)(ptr) + 0x1000U >= 0x2000U )
+# define RT_VALID_PTR(ptr)      ( (uintptr_t)(ptr) + 0x1000U >= 0x2000U )
 #else
 # error "Architecture identifier missing / not implemented."
 #endif
+
+/** Old name for RT_VALID_PTR.  */
+#define VALID_PTR(ptr)      RT_VALID_PTR(ptr)
+
+/** @def RT_VALID_ALIGNED_PTR
+ * Pointer validation macro that also checks the alignment.
+ * @param   ptr         The pointer.
+ * @param   align       The alignment, must be a power of two.
+ */
+#define RT_VALID_ALIGNED_PTR(ptr, align)   \
+    (   !((uintptr_t)(ptr) & (uintptr_t)((align) - 1)) \
+     && VALID_PTR(ptr) )
 
 
 /** @def VALID_PHYS32
