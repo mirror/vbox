@@ -1530,14 +1530,20 @@ STDMETHODIMP Appliance::Interpret()
                     else if (!ea.strAdapterType.compare("E1000", Utf8Str::CaseInsensitive) ||
                              !ea.strAdapterType.compare("E10000", Utf8Str::CaseInsensitive)) // VMWare accidentally write this with VirtualCenter 3.5
                     {
-                        /* If the default adapter is already one of the three
-                         * E1000 adapters use the default one. If not use the
-                         * I82545EM as fallback. */
-//                         if (!(defaultAdapterVBox == NetworkAdapterType_I82540EM ||
-//                               defaultAdapterVBox == NetworkAdapterType_I82543GC ||
-//                               defaultAdapterVBox == NetworkAdapterType_I82545EM))
-                        // always use this one since it's what VMware uses
-                        nwAdapterVBox = NetworkAdapterType_I82545EM;
+                        /* Check if this OVF was written by VirtualBox */
+                        if (vsysThis.strVirtualSystemType.contains("virtualbox", Utf8Str::CaseInsensitive))
+                        {
+                            /* If the default adapter is already one of the three
+                             * E1000 adapters use the default one. If not use the
+                             * I82545EM as fallback. */
+                            if (!(defaultAdapterVBox == NetworkAdapterType_I82540EM ||
+                                  defaultAdapterVBox == NetworkAdapterType_I82543GC ||
+                                  defaultAdapterVBox == NetworkAdapterType_I82545EM))
+                            nwAdapterVBox = NetworkAdapterType_I82540EM;
+                        }
+                        else
+                            /* Always use this one since it's what VMware uses */
+                            nwAdapterVBox = NetworkAdapterType_I82545EM;
                     }
 #endif /* VBOX_WITH_E1000 */
 
