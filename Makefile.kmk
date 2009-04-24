@@ -699,7 +699,6 @@ additions-packing:
 
 #
 # Generate VirtualBox-OSE-x.x.x.tar.bz2 (OSE) tarballs for distribution
-# Generate VirtualBox-x.x.x.tar.bz2 (PUEL) for internal use only
 # - includes kBuild
 # - must be executed on an OSE checkout
 #
@@ -710,29 +709,20 @@ TARBALLPATH ?= $(abspath $(PATH_ROOT)/..)
 TARBALLROOT ?= VirtualBox-$(VBOX_VERSION_STRING)
 # the name of the tarball file
 TARBALLNAME ?= VirtualBox-$(VBOX_VERSION_STRING).tar.bz2
-snapshot-ose snapshot-puel:
+snapshot-ose:
 	@$(call MSG_L1,Creating tarball $(TARBALLPATH)/$(TARBALLNAME))
-	@if [ "$@" = "snapshot-ose" ]; then \
-	    if [ -d "$(PATH_ROOT)/src/VBox/Devices/USB" ]; then \
-	        echo; \
-		echo "Found USB stuff, refused to build OSE tarball!"; \
-		echo; \
-		exit 1; \
-	    fi; \
-	    if [ -z "$(VBOX_OSE)" ]; then \
-	        echo; \
-		echo "Please do 'kmk snapshot-ose VBOX_OSE=1'"; \
-		echo; \
-		exit 1; \
-	    fi; \
-	 else \
-	    if [ ! -d "$(PATH_ROOT)/src/VBox/Devices/USB" ]; then \
-	        echo; \
-		echo "Did not find USB stuff, is this an OSE branch?"; \
-		echo; \
-		exit 1; \
-	    fi; \
-	 fi
+	@if [ -d "$(PATH_ROOT)/src/VBox/Devices/USB" ]; then \
+	    echo; \
+	    echo "Found USB stuff, refused to build OSE tarball!"; \
+	    echo; \
+	    exit 1; \
+	fi; \
+	if [ -z "$(VBOX_OSE)" ]; then \
+	    echo; \
+	    echo "Please do 'kmk snapshot-ose VBOX_OSE=1'"; \
+	    echo; \
+	    exit 1; \
+	fi; \
 	$(QUIET)$(MKDIR) -p $(TARBALLPATH)
 	$(QUIET)$(RM) -f $(TARBALLPATH)/$(TARBALLROOT)
 	$(QUIET)$(LN_SYMLINK) $(PATH_ROOT) $(TARBALLPATH)/$(TARBALLROOT)
@@ -744,29 +734,74 @@ snapshot-ose snapshot-puel:
 	    --exclude=$(TARBALLROOT)/build.log \
 	    --exclude=$(TARBALLROOT)/AutoConfig.kmk \
 	    --exclude=$(TARBALLROOT)/LocalConfig.kmk \
-	    --exclude=$(TARBALLROOT)/doc/Devices \
-	    --exclude=$(TARBALLROOT)/doc/\*pdf \
-	    --exclude=$(TARBALLROOT)/doc/L4VM \
-	    --exclude=$(TARBALLROOT)/doc/VMM \
-	    --exclude=$(TARBALLROOT)/doc/licenses_old \
-	    --exclude=$(TARBALLROOT)/doc/manual/de_DE \
-	    --exclude=$(TARBALLROOT)/doc/manual/fr_FR \
-	    --exclude=$(TARBALLROOT)/ChangeLog\* \
-	    $(if $(VBOX_OSE),,--exclude=$(TARBALLROOT)/COPYING) \
-	    --exclude=$(TARBALLROOT)/webtools \
 	    --exclude=$(TARBALLROOT)/prebuild \
-	    --exclude=$(TARBALLROOT)/src/tests \
-	    --exclude=$(TARBALLROOT)/src/VBox/Artwork \
-	    --exclude=$(TARBALLROOT)/src/VBox/Installer/AMI \
-	    --exclude=$(TARBALLROOT)/src/VBox/Installer/Avanquest \
-	    --exclude=$(TARBALLROOT)/src/VBox/Installer/Encore \
-	    --exclude=$(TARBALLROOT)/src/VBox/Installer/linux/debian \
-	    --exclude=$(TARBALLROOT)/src/VBox/Installer/linux/rpm \
-	    $(if $(VBOX_OSE),,--exclude=$(TARBALLROOT)/tools) \
 	    -C $(TARBALLPATH) \
 	    -f $(TARBALLPATH)/$(TARBALLNAME) \
 	    $(TARBALLROOT)
 	$(QUIET)$(RM) $(TARBALLPATH)/$(TARBALLROOT)
+
+
+#
+# Generate VirtualBox-x.x.x.tar.bz2 (PUEL) zip archives for internal use only
+# - includes kBuild
+# - must be executed on an OSE checkout
+#
+
+# the path where to store the zip archive
+ZIPPATH ?= $(abspath $(PATH_ROOT)/..)
+# the root directory inside the zip archive
+ZIPROOT ?= VirtualBox-$(VBOX_VERSION_STRING)
+# the name of the zip archive
+ZIPNAME ?= VirtualBox-$(VBOX_VERSION_STRING).zip
+snapshot-puel:
+	@$(call MSG_L1,Creating zip $(ZIPPATH)/$(ZIPNAME))
+	@if [ ! -d "$(PATH_ROOT)/src/VBox/Devices/USB" ]; then \
+	    echo; \
+	    echo "Did not find USB stuff, is this an OSE branch?"; \
+	    echo; \
+	    exit 1; \
+	 fi
+	@if [ -z "$(PASSWORD) ]; then \
+	    echo; \
+	    echo "Please specify a password with PASSWORD=..."; \
+	    echo; \
+	    exit 1; \
+	 fi
+	$(QUIET)$(MKDIR) -p $(ZIPPATH)
+	$(QUIET)$(RM) -f $(ZIPPATH)/$(ZIPROOT)
+	$(QUIET)$(LN_SYMLINK) $(PATH_ROOT) $(ZIPPATH)/$(ZIPROOT)
+	$(QUIET)(cd $(ZIPPATH); 7z a \
+	    -l -tzip -mmt=on -mx=7 -p$(PASSWORD) \
+	    -xr!.svn \
+	    -x!$(ZIPROOT)/out \
+	    -x!$(ZIPROOT)/env.sh \
+	    -x!$(ZIPROOT)/configure.log \
+	    -x!$(ZIPROOT)/build.log \
+	    -x!$(ZIPROOT)/AutoConfig.kmk \
+	    -x!$(ZIPROOT)/LocalConfig.kmk \
+	    -x!$(ZIPROOT)/doc/Devices \
+	    -x!$(ZIPROOT)/doc/\*pdf \
+	    -x!$(ZIPROOT)/doc/L4VM \
+	    -x!$(ZIPROOT)/doc/VMM \
+	    -x!$(ZIPROOT)/doc/licenses_old \
+	    -x!$(ZIPROOT)/doc/manual/de_DE \
+	    -x!$(ZIPROOT)/doc/manual/fr_FR \
+	    -x!$(ZIPROOT)/ChangeLog\* \
+	    -x!$(ZIPROOT)/COPYING \
+	    -x!$(ZIPROOT)/webtools \
+	    -x!$(ZIPROOT)/prebuild \
+	    -x!$(ZIPROOT)/src/tests \
+	    -x!$(ZIPROOT)/src/VBox/Artwork \
+	    -x!$(ZIPROOT)/src/VBox/Installer/AMI \
+	    -x!$(ZIPROOT)/src/VBox/Installer/Avanquest \
+	    -x!$(ZIPROOT)/src/VBox/Installer/Encore \
+	    -x!$(ZIPROOT)/src/VBox/Installer/linux/debian \
+	    -x!$(ZIPROOT)/src/VBox/Installer/linux/rpm \
+	    -x!$(ZIPROOT)/tools \
+	    -pfoo \
+	    $(ZIPPATH)/$(ZIPNAME) \
+	    $(ZIPROOT))
+	$(QUIET)$(RM) $(ZIPPATH)/$(ZIPROOT)
 
 
 #
