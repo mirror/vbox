@@ -743,6 +743,17 @@ snapshot-ose snapshot-puel:
 	    --exclude=$(TARBALLROOT)/configure.log \
 	    --exclude=$(TARBALLROOT)/AutoConfig.kmk \
 	    --exclude=$(TARBALLROOT)/LocalConfig.kmk \
+	    --exclude=$(TARBALLROOT)/doc/Devices \
+	    --exclude=$(TARBALLROOT)/doc/manual/de_DE \
+	    --exclude=$(TARBALLROOT)/doc/manual/fr_FR \
+	    --exclude=$(TARBALLROOT)/doc/l4vm \
+	    --exclude=$(TARBALLROOT)/src/tests \
+	    --exclude=$(TARBALLROOT)/src/VBox/Installer/AMI \
+	    --exclude=$(TARBALLROOT)/src/VBox/Installer/Avanquest \
+	    --exclude=$(TARBALLROOT)/src/VBox/Installer/Encore \
+	    --exclude=$(TARBALLROOT)/src/VBox/Installer/linux/debian \
+	    --exclude=$(TARBALLROOT)/src/VBox/Installer/linux/rpm \
+	    $(if $(VBOX_OSE),,--exclude=$(TARBALLROOT)/tools) \
 	    -C $(TARBALLPATH) \
 	    -f $(TARBALLPATH)/$(TARBALLNAME) \
 	    $(TARBALLROOT)
