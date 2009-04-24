@@ -473,6 +473,15 @@
 #endif
 
 
+/** @def RT_NOTHING
+ * A macro that expands to nothing.
+ * This is primarily intended as a dummy argument for macros to avoid the
+ * undefined behavior passing empty arguments to an macro (ISO C90 and C++98,
+ * gcc v4.4 warns about it).
+ */
+#define RT_NOTHING
+
+
 /** @def RTCALL
  * The standard calling convention for the Runtime interfaces.
  */
