@@ -698,24 +698,43 @@ additions-packing:
 
 
 #
-# Generate VirtualBox-OSE-x.x.x.tar.bz2 tarballs for distribution
-#
+# Generate VirtualBox-OSE-x.x.x.tar.bz2 (OSE) tarballs for distribution
+# Generate VirtualBox-x.x.x.tar.bz2 (PUEL) for internal use only
 # - includes kBuild
 # - must be executed on an OSE checkout
 #
 
 # the path where to store the tarball
-TARBALLPATH ?= $(shell cd $(PATH_ROOT)/..; pwd)
-#TARBALLPATH ?= $(abspath $(PATH_ROOT)/..) - this should also do the trick without spawning a shell.
+TARBALLPATH ?= $(abspath $(PATH_ROOT)/..)
 # the root directory inside the tarball
 TARBALLROOT ?= VirtualBox-$(VBOX_VERSION_STRING)
 # the name of the tarball file
 TARBALLNAME ?= VirtualBox-$(VBOX_VERSION_STRING).tar.bz2
-snapshot:
+snapshot-ose snapshot-puel:
 	@$(call MSG_L1,Creating tarball $(TARBALLPATH)/$(TARBALLNAME))
-	@if [ -d "$(PATH_ROOT)/src/VBox/Devices/USB" ]; then echo; echo "Found USB stuff, refused to build OSE tarball!"; echo; exit 1; fi
+	@if [ "$@" = "snapshot-ose" ]; then \
+	    if [ -d "$(PATH_ROOT)/src/VBox/Devices/USB" ]; then \
+	        echo; \
+		echo "Found USB stuff, refused to build OSE tarball!"; \
+		echo; \
+		exit 1; \
+	    fi; \
+	    if [ -z "$(VBOX_OSE)" ]; then \
+	        echo; \
+		echo "Please do 'kmk snapshot-ose VBOX_OSE=1'"; \
+		echo; \
+		exit 1; \
+	    fi; \
+	 else \
+	    if [ ! -d "$(PATH_ROOT)/src/VBox/Devices/USB" ]; then \
+	        echo; \
+		echo "Did not find USB stuff, is this an OSE branch?"; \
+		echo; \
+		exit 1; \
+	    fi; \
+	 fi
 	$(QUIET)$(MKDIR) -p $(TARBALLPATH)
-	$(QUIET)$(RM) -f $(wildcard $(TARBALLPATH)/VirtualBox*)
+	$(QUIET)$(RM) -f $(TARBALLPATH)/$(TARBALLROOT)
 	$(QUIET)$(LN_SYMLINK) $(PATH_ROOT) $(TARBALLPATH)/$(TARBALLROOT)
 	$(QUIET)tar -cjh --owner 0 --group 0 --totals \
 	    --exclude=.svn \
