@@ -118,6 +118,18 @@ struct VBOXHDD
 };
 
 
+/**
+ * VBox parent read descriptor, used internally for compaction.
+ */
+typedef struct VDPARENTSTATEDESC
+{
+    /** Pointer to disk descriptor. */
+    PVBOXHDD pDisk;
+    /** Pointer to image descriptor. */
+    PVDIMAGE pImage;
+} VDPARENTSTATEDESC, *PVDPARENTSTATEDESC;
+
+
 extern VBOXHDDBACKEND g_RawBackend;
 extern VBOXHDDBACKEND g_VmdkBackend;
 extern VBOXHDDBACKEND g_VDIBackend;
@@ -303,6 +315,17 @@ static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
     } while (cbRead != 0 && RT_SUCCESS(rc));
 
     return rc;
+}
+
+/**
+ * internal: parent image read wrapper for compacting.
+ */
+static int vdParentRead(void *pvUser, uint64_t uOffset, void *pvBuf,
+                        size_t cbRead)
+{
+    PVDPARENTSTATEDESC pParentState = (PVDPARENTSTATEDESC)pvUser;
+    return vdReadHelper(pParentState->pDisk, pParentState->pImage, uOffset,
+                        pvBuf, cbRead);
 }
 
 /**
@@ -2118,9 +2141,8 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
  * @return  VBox status code.
  * @return  VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @return  VERR_VD_IMAGE_READ_ONLY if image is not writable.
- * @return  VERR_NOT_SUPPORTED if this kind of image cannot be compacted.
- * @return  VERR_NOT_IMPLEMENTED if this kind of image can be compacted, but
- *                               the code for this isn't implemented yet.
+ * @return  VERR_NOT_SUPPORTED if this kind of image can be compacted, but
+ *                             the code for this isn't implemented yet.
  * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
@@ -2128,7 +2150,77 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
 VBOXDDU_DECL(int) VDCompact(PVBOXHDD pDisk, unsigned nImage,
                             PVDINTERFACE pVDIfsOperation)
 {
-    return VERR_NOT_SUPPORTED;
+    int rc;
+    void *pvBuf = NULL;
+    void *pvTmp = NULL;
+
+    LogFlowFunc(("pDisk=%#p nImage=%u pVDIfsOperation=%#p\n",
+                 pDisk, nImage, pVDIfsOperation));
+
+    PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
+                                              VDINTERFACETYPE_PROGRESS);
+    PVDINTERFACEPROGRESS pCbProgress = NULL;
+    if (pIfProgress)
+        pCbProgress = VDGetInterfaceProgress(pIfProgress);
+
+    do {
+        /* Check arguments. */
+        AssertMsgBreakStmt(VALID_PTR(pDisk), ("pDisk=%#p\n", pDisk),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE,
+                  ("u32Signature=%08x\n", pDisk->u32Signature));
+
+        PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
+
+        /* If there is no compact callback for not file based backends then
+         * the backend doesn't need compaction. No need to make much fuss about
+         * this. For file based ones signal this as not yet supported. */
+        if (!pImage->Backend->pfnCompact)
+        {
+            if (pImage->Backend->uBackendCaps & VD_CAP_FILE)
+                rc = VERR_NOT_SUPPORTED;
+            else
+                rc = VINF_SUCCESS;
+            break;
+        }
+
+        /* Insert interface for reading parent state into per-operation list,
+         * if there is a parent image. */
+        VDINTERFACE IfOpParent;
+        VDINTERFACEPARENTSTATE ParentCb;
+        VDPARENTSTATEDESC ParentUser;
+        if (pImage->pPrev)
+        {
+            ParentCb.cbSize = sizeof(ParentCb);
+            ParentCb.enmInterface = VDINTERFACETYPE_PARENTSTATE;
+            ParentCb.pfnParentRead = vdParentRead;
+            ParentUser.pDisk = pDisk;
+            ParentUser.pImage = pImage->pPrev;
+            rc = VDInterfaceAdd(&IfOpParent, "VDCompact_ParentState", VDINTERFACETYPE_PARENTSTATE,
+                                &ParentCb, &ParentUser, &pVDIfsOperation);
+            AssertRC(rc);
+        }
+
+        rc = pImage->Backend->pfnCompact(pImage->pvBackendData,
+                                         0, 99,
+                                         pVDIfsOperation);
+    } while (0);
+
+    if (pvBuf)
+        RTMemTmpFree(pvBuf);
+    if (pvTmp)
+        RTMemTmpFree(pvTmp);
+
+    if (RT_SUCCESS(rc))
+    {
+        if (pCbProgress && pCbProgress->pfnProgress)
+            pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */, 100,
+                                     pIfProgress->pvUser);
+    }
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
 }
 
 /**

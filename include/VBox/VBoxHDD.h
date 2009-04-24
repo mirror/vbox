@@ -222,6 +222,8 @@ typedef enum VDINTERFACETYPE
     VDINTERFACETYPE_CONFIG,
     /** Interface for TCP network stack. Per-disk. */
     VDINTERFACETYPE_TCPNET,
+    /** Interface for getting parent image state. Per-operation. */
+    VDINTERFACETYPE_PARENTSTATE,
     /** invalid interface. */
     VDINTERFACETYPE_INVALID
 } VDINTERFACETYPE;
@@ -978,6 +980,64 @@ DECLINLINE(PVDINTERFACETCPNET) VDGetInterfaceTcpNet(PVDINTERFACE pInterface)
                     ("A non TCP network stack callback table attached to a TCP network stack interface descriptor\n"), NULL);
 
     return pInterfaceTcpNet;
+}
+
+/**
+ * Interface to get the parent state.
+ *
+ * Per operation interface. Optional, present only if there is a parent, and
+ * used only internally for compacting.
+ */
+typedef struct VDINTERFACEPARENTSTATE
+{
+    /**
+     * Size of the parent state interface.
+     */
+    uint32_t    cbSize;
+
+    /**
+     * Interface type.
+     */
+    VDINTERFACETYPE enmInterface;
+
+    /**
+     * Read data callback.
+     *
+     * @return  VBox status code.
+     * @return  VERR_VD_NOT_OPENED if no image is opened in HDD container.
+     * @param   pvUser          The opaque data passed for the operation.
+     * @param   uOffset         Offset of first reading byte from start of disk.
+     *                          Must be aligned to a sector boundary.
+     * @param   pvBuf           Pointer to buffer for reading data.
+     * @param   cbRead          Number of bytes to read.
+     *                          Must be aligned to a sector boundary.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnParentRead, (void *pvUser, uint64_t uOffset, void *pvBuf, size_t cbRead));
+
+} VDINTERFACEPARENTSTATE, *PVDINTERFACEPARENTSTATE;
+
+
+/**
+ * Get parent state interface from opaque callback table.
+ *
+ * @return Pointer to the callback table.
+ * @param  pInterface Pointer to the interface descriptor.
+ */
+DECLINLINE(PVDINTERFACEPARENTSTATE) VDGetInterfaceParentState(PVDINTERFACE pInterface)
+{
+    /* Check that the interface descriptor is a parent state interface. */
+    AssertMsgReturn(   (pInterface->enmInterface == VDINTERFACETYPE_PARENTSTATE)
+                    && (pInterface->cbSize == sizeof(VDINTERFACE)),
+                    ("Not a parent state interface"), NULL);
+
+    PVDINTERFACEPARENTSTATE pInterfaceParentState = (PVDINTERFACEPARENTSTATE)pInterface->pCallbacks;
+
+    /* Do basic checks. */
+    AssertMsgReturn(   (pInterfaceParentState->cbSize == sizeof(VDINTERFACEPARENTSTATE))
+                    && (pInterfaceParentState->enmInterface == VDINTERFACETYPE_PARENTSTATE),
+                    ("A non parent state callback table attached to a parent state interface descriptor\n"), NULL);
+
+    return pInterfaceParentState;
 }
 
 

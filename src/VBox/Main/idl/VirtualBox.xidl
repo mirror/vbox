@@ -9616,6 +9616,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <link to="MediaState_LockedRead"/> state for the duration of this
         operation.
 
+        Please note that the results can be either returned straight away,
+        or later as the result of the background operation via the object
+        returned via the @a progress parameter.
+
         <result name="VBOX_E_NOT_SUPPORTED">
           Hard disk format does not support compacting (but potentially
           needs it).
