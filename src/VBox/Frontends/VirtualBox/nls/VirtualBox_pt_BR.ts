@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.0" language="pt">
+<TS version="2.0" language="pt_BR">
 <defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
@@ -27,7 +27,7 @@
     <message>
         <source>Sun Microsystems, Inc.</source>
         <comment>Comma-separated list of translators</comment>
-        <translation>Érico Mendonça &lt;erico.mendonca@gmail.com&gt;</translation>
+        <translation>Érico Mendonça &lt;erico.mendonca@gmail.com&gt;.</translation>
     </message>
 </context>
 <context>
@@ -134,7 +134,7 @@
     </message>
     <message>
         <source>Kernel driver not accessible</source>
-        <translation type="unfinished"></translation>
+        <translation>Módulo de kernel não está acessível</translation>
     </message>
 </context>
 <context>
@@ -1344,7 +1344,7 @@ Versão %1</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Indica o estado dos recursos de virtualização utilizados por esta máquina virtual:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -1779,11 +1779,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation type="unfinished"></translation>
+        <translation>Grave no formato antigo OVF 0.9 para compatibilidade com outros produtos de virtualização.</translation>
     </message>
     <message>
         <source>&amp;Write legacy OVF 0.9</source>
-        <translation type="unfinished"></translation>
+        <translation>Gravar em formato antigo OVF 0.9 (&amp;W)</translation>
     </message>
 </context>
 <context>
@@ -3201,27 +3201,27 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Bridged adapter, %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Placa em modo Bridge, %1</translation>
     </message>
     <message>
         <source>Host-only adapter, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Placa de rede exclusiva de hospedeiro (host-only), &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Intel PRO/1000 MT Server (82545EM)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Intel PRO/1000 T Server (82543GC)</translation>
     </message>
     <message>
         <source>Bridged Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Placa em modo Bridge</translation>
     </message>
     <message>
         <source>Host-only Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Placa de rede exclusiva de hospedeiro (host-only)</translation>
     </message>
 </context>
 <context>
@@ -5582,7 +5582,7 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Deleting this host-only network will lead to the deleting of the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ao apagar esta rede exclusiva de hospedeiro, a interface de rede associada será removida também. Você deseja remover a placa de rede (exclusiva do hospedeiro) &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota:&lt;/b&gt; esta interface de rede pode estar em uso por uma ou mais placas de rede que pertençam a uma de suas VMs. Após sua remoção, estas placas não poderão mais ser utilizadas até que você corrija suas configurações, seja escolhendo um nome de interface diferente ou um tipo de conexão diferente para a placa.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -9098,32 +9098,32 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
     </message>
     <message>
         <source>no bridged network adapter is selected</source>
-        <translation type="unfinished">nenhuma placa de rede em modo bridge foi selecionada</translation>
+        <translation>nenhuma placa de rede em modo bridge foi selecionada</translation>
     </message>
     <message>
         <source>no internal network name is specified</source>
-        <translation type="unfinished">nenhum nome para a rede interna foi especificado</translation>
+        <translation>nenhum nome para a rede interna foi especificado</translation>
     </message>
     <message>
         <source>no host-only network adapter is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>nenhuma placa de rede exclusiva do hospedeiro foi selecionada</translation>
     </message>
     <message>
         <source>Not selected</source>
         <comment>network adapter name</comment>
-        <translation type="unfinished"></translation>
+        <translation>Não selecionada</translation>
     </message>
     <message>
         <source>Open additional options dialog for current attachment type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Abrir o diálogo de configurações adicionais para o tipo de conexão selecionado.</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;Nome:</translation>
+        <translation>&amp;Nome:</translation>
     </message>
     <message>
         <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleciona o nome da placa de rede se o tipo de conexão for equivalente a &lt;b&gt;Placa de Rede em Modo Bridge&lt;/b&gt; ou &lt;b&gt;Placa de Rede Exclusiva de Hospedeiro&lt;/b&gt; ou o nome da rede interna caso o tipo de conexão seja equivalente a &lt;b&gt;Rede Interna&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
@@ -9214,7 +9214,7 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
     </message>
     <message>
         <source>Additional Options</source>
-        <translation type="unfinished"></translation>
+        <translation>Opções Adicionais</translation>
     </message>
 </context>
 <context>
