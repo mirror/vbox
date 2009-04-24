@@ -291,25 +291,27 @@ static DECLCALLBACK(int) dbgfR3DisasGetSymbol(PCDISCPUSTATE pCpu, uint32_t u32Se
 
 
 /**
- * Disassembles the one instruction according to the specified flags and address.
+ * Disassembles the one instruction according to the specified flags and
+ * address, internal worker executing on the EMT of the specified virtual CPU.
  *
  * @returns VBox status code.
- * @param       pVM             VM handle.
- * @param       pVCpu           VMCPU handle.
+ * @param       pVM             The VM handle.
+ * @param       pVCpu           The virtual CPU handle.
  * @param       Sel             The code selector. This used to determin the 32/16 bit ness and
  *                              calculation of the actual instruction address.
- * @param       GCPtr           The code address relative to the base of Sel.
+ * @param       pGCPtr          Pointer to the variable holding the code address
+ *                              relative to the base of Sel.
  * @param       fFlags          Flags controlling where to start and how to format.
  *                              A combination of the DBGF_DISAS_FLAGS_* \#defines.
  * @param       pszOutput       Output buffer.
  * @param       cchOutput       Size of the output buffer.
  * @param       pcbInstr        Where to return the size of the instruction.
  */
-VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, PVMCPU pVCpu, RTSEL Sel, RTGCPTR GCPtr, unsigned fFlags, char *pszOutput, uint32_t cchOutput, uint32_t *pcbInstr)
+static DECLCALLBACK(int)
+dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, unsigned fFlags,
+                         char *pszOutput, uint32_t cchOutput, uint32_t *pcbInstr)
 {
-    /* If not specified, assume CPU 0. */
-    if (!pVCpu)
-        pVCpu = &pVM->aCpus[0];
+    RTGCPTR GCPtr = *pGCPtr;
 
     /*
      * Get the Sel and GCPtr if fFlags requests that.
@@ -513,17 +515,61 @@ VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, PVMCPU pVCpu, RTSEL Sel, RTGCPTR GCPt
 
 
 /**
+ * Disassembles the one instruction according to the specified flags and address.
+ *
+ * @returns VBox status code.
+ * @param   pVM             VM handle.
+ * @param   pVCpu           The virtual CPU handle, defaults to CPU 0 if NULL.
+ * @param   Sel             The code selector. This used to determin the 32/16 bit ness and
+ *                          calculation of the actual instruction address.
+ * @param   GCPtr           The code address relative to the base of Sel.
+ * @param   fFlags          Flags controlling where to start and how to format.
+ *                          A combination of the DBGF_DISAS_FLAGS_* \#defines.
+ * @param   pszOutput       Output buffer.
+ * @param   cchOutput       Size of the output buffer.
+ * @param   pcbInstr        Where to return the size of the instruction.
+ *
+ * @remarks May have to switch to the EMT of the virtual CPU in order to do
+ *          address conversion.
+ */
+VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, PVMCPU pVCpu, RTSEL Sel, RTGCPTR GCPtr, unsigned fFlags,
+                                  char *pszOutput, uint32_t cchOutput, uint32_t *pcbInstr)
+{
+    /* If not specified, assume CPU 0. */
+    if (!pVCpu)
+        pVCpu = &pVM->aCpus[0];
+
+    int rc;
+    if (VMCPU_IS_EMT(pVCpu)) /* not necessary, but it's faster. */
+        rc = dbgfR3DisasInstrExOnVCpu(pVM, pVCpu, Sel, &GCPtr, fFlags, pszOutput, cchOutput, pcbInstr);
+    else
+    {
+        PVMREQ pReq = NULL;
+        rc = VMR3ReqCall(pVCpu->pVMR3, VMREQDEST_FROM_VMCPU(pVCpu), &pReq, RT_INDEFINITE_WAIT,
+                         (PFNRT)dbgfR3DisasInstrExOnVCpu, 8,
+                         pVM, pVCpu, Sel, &GCPtr, fFlags, pszOutput, cchOutput, pcbInstr);
+        if (RT_SUCCESS(rc))
+        {
+            rc = pReq->iStatus;
+            VMR3ReqFree(pReq);
+        }
+    }
+    return rc;
+}
+
+
+/**
  * Disassembles an instruction.
  * Addresses will be tried resolved to symbols
  *
  * @returns VBox status code.
- * @param       pVM             VM handle.
- * @param       pVCpu           VMCPU handle.
- * @param       Sel             The code selector. This used to determin the 32/16 bit ness and
- *                              calculation of the actual instruction address.
- * @param       GCPtr           The code address relative to the base of Sel.
- * @param       pszOutput       Output buffer.
- * @param       cchOutput        Size of the output buffer.
+ * @param   pVM             VM handle.
+ * @param   pVCpu           The virtual CPU handle, defaults to CPU 0 if NULL.
+ * @param   Sel             The code selector. This used to determin the 32/16 bit ness and
+ *                          calculation of the actual instruction address.
+ * @param   GCPtr           The code address relative to the base of Sel.
+ * @param   pszOutput       Output buffer.
+ * @param   cchOutput        Size of the output buffer.
  */
 VMMR3DECL(int) DBGFR3DisasInstr(PVM pVM, PVMCPU pVCpu, RTSEL Sel, RTGCPTR GCPtr, char *pszOutput, uint32_t cchOutput)
 {
@@ -536,9 +582,9 @@ VMMR3DECL(int) DBGFR3DisasInstr(PVM pVM, PVMCPU pVCpu, RTSEL Sel, RTGCPTR GCPtr,
  * All registers and data will be displayed. Addresses will be attempted resolved to symbols.
  *
  * @returns VBox status code.
- * @param       pVM             VM handle.
- * @param       pszOutput       Output buffer.
- * @param       cchOutput       Size of the output buffer.
+ * @param   pVM             VM handle.
+ * @param   pszOutput       Output buffer.
+ * @param   cchOutput       Size of the output buffer.
  */
 VMMR3DECL(int) DBGFR3DisasInstrCurrent(PVM pVM, char *pszOutput, uint32_t cchOutput)
 {
@@ -551,8 +597,8 @@ VMMR3DECL(int) DBGFR3DisasInstrCurrent(PVM pVM, char *pszOutput, uint32_t cchOut
  * All registers and data will be displayed. Addresses will be attempted resolved to symbols.
  *
  * @returns VBox status code.
- * @param       pVM             VM handle.
- * @param       pszPrefix       Short prefix string to the dissassembly string. (optional)
+ * @param   pVM             VM handle.
+ * @param   pszPrefix       Short prefix string to the dissassembly string. (optional)
  */
 VMMR3DECL(int) DBGFR3DisasInstrCurrentLogInternal(PVM pVM, const char *pszPrefix)
 {
@@ -575,11 +621,11 @@ VMMR3DECL(int) DBGFR3DisasInstrCurrentLogInternal(PVM pVM, const char *pszPrefix
  * Addresses will be attempted resolved to symbols.
  *
  * @returns VBox status code.
- * @param       pVM             VM handle.
- * @param       pVCpu           VMCPU handle.
- * @param       Sel             The code selector. This used to determin the 32/16 bit-ness and
- *                              calculation of the actual instruction address.
- * @param       GCPtr           The code address relative to the base of Sel.
+ * @param   pVM             VM handle.
+ * @param   pVCpu           The virtual CPU handle, defaults to CPU 0 if NULL.
+ * @param   Sel             The code selector. This used to determin the 32/16 bit-ness and
+ *                          calculation of the actual instruction address.
+ * @param   GCPtr           The code address relative to the base of Sel.
  */
 VMMR3DECL(int) DBGFR3DisasInstrLogInternal(PVM pVM, PVMCPU pVCpu, RTSEL Sel, RTGCPTR GCPtr)
 {
