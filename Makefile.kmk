@@ -741,6 +741,7 @@ snapshot-ose snapshot-puel:
 	    --exclude=$(TARBALLROOT)/out \
 	    --exclude=$(TARBALLROOT)/env.sh \
 	    --exclude=$(TARBALLROOT)/configure.log \
+	    --exclude=$(TARBALLROOT)/build.log \
 	    --exclude=$(TARBALLROOT)/AutoConfig.kmk \
 	    --exclude=$(TARBALLROOT)/LocalConfig.kmk \
 	    --exclude=$(TARBALLROOT)/doc/Devices \
@@ -750,10 +751,12 @@ snapshot-ose snapshot-puel:
 	    --exclude=$(TARBALLROOT)/doc/licenses_old \
 	    --exclude=$(TARBALLROOT)/doc/manual/de_DE \
 	    --exclude=$(TARBALLROOT)/doc/manual/fr_FR \
-	    --exclude=$(TARBALLROOT)/ChangeLog \
+	    --exclude=$(TARBALLROOT)/ChangeLog\* \
 	    $(if $(VBOX_OSE),,--exclude=$(TARBALLROOT)/COPYING) \
 	    --exclude=$(TARBALLROOT)/webtools \
+	    --exclude=$(TARBALLROOT)/prebuild \
 	    --exclude=$(TARBALLROOT)/src/tests \
+	    --exclude=$(TARBALLROOT)/src/VBox/Artwork \
 	    --exclude=$(TARBALLROOT)/src/VBox/Installer/AMI \
 	    --exclude=$(TARBALLROOT)/src/VBox/Installer/Avanquest \
 	    --exclude=$(TARBALLROOT)/src/VBox/Installer/Encore \
