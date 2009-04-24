@@ -158,15 +158,14 @@ typedef struct VBOXHDDBACKEND
      * boundary.
      *
      * @returns VBox status code.
-     * @returns VINF_VD_BLOCK_FREE if this image contains no data for this block.
-     * @returns VINF_VD_BLOCK_ZERO if this image contains a zero data block.
+     * @returns VERR_VD_BLOCK_FREE if this image contains no data for this block.
      * @param   pvBackendData   Opaque state data for this image.
-     * @param   off             Offset to start reading from.
+     * @param   uOffset         Offset to start reading from.
      * @param   pvBuf           Where to store the read bits.
      * @param   cbRead          Number of bytes to read.
      * @param   pcbActuallyRead Pointer to returned number of bytes read.
      */
-    DECLR3CALLBACKMEMBER(int, pfnRead, (void *pvBackendData, uint64_t off, void *pvBuf,
+    DECLR3CALLBACKMEMBER(int, pfnRead, (void *pvBackendData, uint64_t uOffset, void *pvBuf,
                                         size_t cbRead, size_t *pcbActuallyRead));
 
     /**
@@ -174,19 +173,19 @@ typedef struct VBOXHDDBACKEND
      * boundary.
      *
      * @returns VBox status code.
-     * @returns VINF_VD_BLOCK_FREE if this image contains no data for this block and
+     * @returns VERR_VD_BLOCK_FREE if this image contains no data for this block and
      *          this is not a full-block write. The write must be repeated with
      *          the correct amount of prefix/postfix data read from the images below
      *          in the image stack. This might not be the most convenient interface,
      *          but it works with arbitrary block sizes, especially when the image
      *          stack uses different block sizes.
      * @param   pvBackendData   Opaque state data for this image.
-     * @param   off             Offset to start writing to.
+     * @param   uOffset         Offset to start writing to.
      * @param   pvBuf           Where to retrieve the written bits.
      * @param   cbWrite         Number of bytes to write.
      * @param   pcbWriteProcess Pointer to returned number of bytes that could
      *                          be processed. In case the function returned
-     *                          VINF_VD_BLOCK_FREE this is the number of bytes
+     *                          VERR_VD_BLOCK_FREE this is the number of bytes
      *                          that could be written in a full block write,
      *                          when prefixed/postfixed by the appropriate
      *                          amount of (previously read) padding data.
@@ -197,7 +196,7 @@ typedef struct VBOXHDDBACKEND
      * @param   fWrite          Flags which affect write behavior. Combination
      *                          of the VD_WRITE_* flags.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWrite, (void *pvBackendData, uint64_t off,
+    DECLR3CALLBACKMEMBER(int, pfnWrite, (void *pvBackendData, uint64_t uOffset,
                                          const void *pvBuf, size_t cbWrite,
                                          size_t *pcbWriteProcess, size_t *pcbPreRead,
                                          size_t *pcbPostRead, unsigned fWrite));
@@ -494,6 +493,21 @@ typedef struct VBOXHDDBACKEND
      *  image-based hard disks. Mandatory for backends with no
      *  VD_CAP_FILE and NULL otherwise. */
     DECLR3CALLBACKMEMBER(int, pfnComposeName, (PVDINTERFACE pConfig, char **pszName));
+
+    /**
+     * Compact the image. The pointer may be NULL, indicating that this
+     * isn't supported yet (for file-based images) or not necessary.
+     *
+     * @returns VBox status code.
+     * @returns VERR_NOT_SUPPORTED if this image cannot be compacted yet.
+     * @param   pvBackendData   Opaque state data for this image.
+     * @param   uPercentStart   Starting value for progress percentage.
+     * @param   uPercentSpan    Span for varying progress percentage.
+     * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnCompact, (void *pvBackendData,
+                                           unsigned uPercentStart, unsigned uPercentSpan,
+                                           PVDINTERFACE pVDIfsOperation));
 
 } VBOXHDDBACKEND;
 

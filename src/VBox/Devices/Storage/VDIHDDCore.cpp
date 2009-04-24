@@ -1777,47 +1777,47 @@ static void vdiDump(void *pBackendData)
     }
 }
 
-static int vdiGetTimeStamp(void *pvBackendData, PRTTIMESPEC pTimeStamp)
+static int vdiGetTimeStamp(void *pBackendData, PRTTIMESPEC pTimeStamp)
 {
     int rc = VERR_NOT_IMPLEMENTED;
     LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
-static int vdiGetParentTimeStamp(void *pvBackendData, PRTTIMESPEC pTimeStamp)
+static int vdiGetParentTimeStamp(void *pBackendData, PRTTIMESPEC pTimeStamp)
 {
     int rc = VERR_NOT_IMPLEMENTED;
     LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
-static int vdiSetParentTimeStamp(void *pvBackendData, PCRTTIMESPEC pTimeStamp)
+static int vdiSetParentTimeStamp(void *pBackendData, PCRTTIMESPEC pTimeStamp)
 {
     int rc = VERR_NOT_IMPLEMENTED;
     LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
-static int vdiGetParentFilename(void *pvBackendData, char **ppszParentFilename)
+static int vdiGetParentFilename(void *pBackendData, char **ppszParentFilename)
 {
     int rc = VERR_NOT_IMPLEMENTED;
     LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
-static int vdiSetParentFilename(void *pvBackendData, const char *pszParentFilename)
+static int vdiSetParentFilename(void *pBackendData, const char *pszParentFilename)
 {
     int rc = VERR_NOT_IMPLEMENTED;
     LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
 
-static bool vdiIsAsyncIOSupported(void *pvBackendData)
+static bool vdiIsAsyncIOSupported(void *pBackendData)
 {
     return false;
 }
 
-static int vdiAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
+static int vdiAsyncRead(void *pBackendData, uint64_t uOffset, size_t cbRead,
                         PPDMDATASEG paSeg, unsigned cSeg, void *pvUser)
 {
     int rc = VERR_NOT_IMPLEMENTED;
@@ -1825,10 +1825,238 @@ static int vdiAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
     return rc;
 }
 
-static int vdiAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
+static int vdiAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbWrite,
                          PPDMDATASEG paSeg, unsigned cSeg, void *pvUser)
 {
     int rc = VERR_NOT_IMPLEMENTED;
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
+/** @copydoc VBOXHDDBACKEND::pfnCompact */
+static int vdiCompact(void *pBackendData, unsigned uPercentStart,
+                      unsigned uPercentSpan, PVDINTERFACE pVDIfsOperation)
+{
+    PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
+    int rc = VINF_SUCCESS;
+    void *pvBuf = NULL, *pvTmp = NULL;
+    unsigned *paBlocks2 = NULL;
+
+    int (*pfnParentRead)(void *, uint64_t, void *, size_t) = NULL;
+    void *pvParent = NULL;
+    PVDINTERFACE pIfParentState = VDInterfaceGet(pVDIfsOperation,
+                                                 VDINTERFACETYPE_PARENTSTATE);
+    PVDINTERFACEPARENTSTATE pCbParentState = NULL;
+    if (pIfParentState)
+    {
+        pCbParentState = VDGetInterfaceParentState(pIfParentState);
+        if (pCbParentState)
+            pfnParentRead = pCbParentState->pfnParentRead;
+        pvParent = pIfParentState->pvUser;
+    }
+
+    PFNVMPROGRESS pfnProgress = NULL;
+    void *pvUser = NULL;
+    PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
+                                              VDINTERFACETYPE_PROGRESS);
+    PVDINTERFACEPROGRESS pCbProgress = NULL;
+    if (pIfProgress)
+    {
+        pCbProgress = VDGetInterfaceProgress(pIfProgress);
+        if (pCbProgress)
+            pfnProgress = pCbProgress->pfnProgress;
+        pvUser = pIfProgress->pvUser;
+    }
+
+    do {
+        AssertBreakStmt(pImage, rc = VERR_INVALID_PARAMETER);
+
+        AssertBreakStmt(!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY),
+                        rc = VERR_VD_IMAGE_READ_ONLY);
+
+        unsigned cBlocks;
+        unsigned cBlocksToMove = 0;
+        size_t cbBlock;
+        cBlocks = getImageBlocks(&pImage->Header);
+        cbBlock = getImageBlockSize(&pImage->Header);
+        if (pfnParentRead)
+        {
+            pvBuf = RTMemTmpAlloc(cbBlock);
+            AssertBreakStmt(VALID_PTR(pvBuf), rc = VERR_NO_MEMORY);
+        }
+        pvTmp = RTMemTmpAlloc(cbBlock);
+        AssertBreakStmt(VALID_PTR(pvTmp), rc = VERR_NO_MEMORY);
+
+        uint64_t cbFile;
+        rc = RTFileGetSize(pImage->File, &cbFile);
+        AssertRCBreak(rc);
+        unsigned cBlocksAllocated = (unsigned)((cbFile - pImage->offStartData - pImage->offStartBlockData) >> pImage->uShiftOffset2Index);
+
+        /* Allocate block array for back resolving. */
+        paBlocks2 = (unsigned *)RTMemAlloc(sizeof(unsigned *) * cBlocksAllocated);
+        AssertBreakStmt(VALID_PTR(paBlocks2), rc = VERR_NO_MEMORY);
+        /* Fill out back resolving, check/fix allocation errors before
+         * compacting the image, just to be on the safe side. Update the
+         * image contents straight away, as this enables cancelling. */
+        for (unsigned i = 0; i < cBlocks; i++)
+            paBlocks2[i] = VDI_IMAGE_BLOCK_FREE;
+        rc = VINF_SUCCESS;
+        for (unsigned i = 0; i < cBlocks; i++)
+        {
+            VDIIMAGEBLOCKPOINTER ptrBlock = pImage->paBlocks[i];
+            if (IS_VDI_IMAGE_BLOCK_ALLOCATED(ptrBlock))
+            {
+                if (ptrBlock < cBlocksAllocated)
+                {
+                    if (paBlocks2[ptrBlock] == VDI_IMAGE_BLOCK_FREE)
+                        paBlocks2[ptrBlock] = i;
+                    else
+                    {
+                        LogFunc(("Freed cross-linked block %u in file \"%s\"\n",
+                                 i, pImage->pszFilename));
+                        pImage->paBlocks[i] = VDI_IMAGE_BLOCK_FREE;
+                        rc = vdiUpdateBlockInfo(pImage, i);
+                        if (RT_FAILURE(rc))
+                            break;
+                    }
+                }
+                else
+                {
+                    LogFunc(("Freed out of bounds reference for block %u in file \"%s\"\n",
+                             i, pImage->pszFilename));
+                    pImage->paBlocks[i] = VDI_IMAGE_BLOCK_FREE;;
+                    rc = vdiUpdateBlockInfo(pImage, i);
+                    if (RT_FAILURE(rc))
+                        break;
+                }
+            }
+        }
+        if (RT_FAILURE(rc))
+            break;
+
+        /* Find redundant information and update the block pointers
+         * accordingly, creating bubbles. Keep disk up to date, as this
+         * enables cancelling. */
+        for (unsigned i = 0; i < cBlocks; i++)
+        {
+            VDIIMAGEBLOCKPOINTER ptrBlock = pImage->paBlocks[i];
+            if (IS_VDI_IMAGE_BLOCK_ALLOCATED(ptrBlock))
+            {
+                /* Block present in image file, read relevant data. */
+                uint64_t u64Offset = (uint64_t)ptrBlock * pImage->cbTotalBlockData
+                                   + (pImage->offStartData + pImage->offStartBlockData);
+                rc = RTFileReadAt(pImage->File, u64Offset, pvTmp, cbBlock, NULL);
+                if (RT_FAILURE(rc))
+                    break;
+
+                if (ASMBitFirstSet((volatile void *)pvTmp, (uint32_t)cbBlock * 8) == -1)
+                {
+                    pImage->paBlocks[i] = VDI_IMAGE_BLOCK_ZERO;
+                    rc = vdiUpdateBlockInfo(pImage, i);
+                    if (RT_FAILURE(rc))
+                        break;
+                    paBlocks2[ptrBlock] = VDI_IMAGE_BLOCK_FREE;
+                    /* Adjust progress info, one block to be relocated. */
+                    cBlocksToMove++;
+                }
+                else if (pfnParentRead)
+                {
+                    rc = pfnParentRead(pvParent, i * cbBlock, pvBuf, cbBlock);
+                    if (RT_FAILURE(rc))
+                        break;
+                    if (memcmp(pvTmp, pvBuf, cbBlock))
+                    {
+                        pImage->paBlocks[i] = VDI_IMAGE_BLOCK_FREE;
+                        rc = vdiUpdateBlockInfo(pImage, i);
+                        if (RT_FAILURE(rc))
+                            break;
+                        paBlocks2[ptrBlock] = VDI_IMAGE_BLOCK_FREE;
+                        /* Adjust progress info, one block to be relocated. */
+                        cBlocksToMove++;
+                    }
+                }
+            }
+
+            if (pCbProgress && pCbProgress->pfnProgress)
+            {
+                rc = pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */,
+                                              (uint64_t)i * uPercentSpan / (cBlocks + cBlocksToMove) + uPercentStart,
+                                              pIfProgress->pvUser);
+                if (RT_FAILURE(rc))
+                    break;
+            }
+        }
+        if (RT_FAILURE(rc))
+            break;
+
+        /* Fill bubbles with other data (if available). */
+        unsigned cBlocksMoved = 0;
+        unsigned uBlockUsedPos = cBlocksAllocated;
+        for (unsigned i = 0; i < cBlocksAllocated; i++)
+        {
+            unsigned uBlock = paBlocks2[i];
+            if (uBlock == VDI_IMAGE_BLOCK_FREE)
+            {
+                unsigned uBlockData;
+                do {
+                    uBlockUsedPos--;
+                    uBlockData = paBlocks2[uBlockUsedPos];
+                } while (uBlockUsedPos > i && uBlockData == VDI_IMAGE_BLOCK_FREE);
+                /* Terminate early if there is no block which needs copying. */
+                if (uBlockUsedPos == i)
+                    break;
+                uint64_t u64Offset = (uint64_t)uBlockUsedPos * pImage->cbTotalBlockData
+                                   + (pImage->offStartData + pImage->offStartBlockData);
+                rc = RTFileReadAt(pImage->File, u64Offset, pvTmp, cbBlock, NULL);
+                u64Offset = (uint64_t)i * pImage->cbTotalBlockData
+                          + (pImage->offStartData + pImage->offStartBlockData);
+                rc = RTFileWriteAt(pImage->File, u64Offset, pvTmp, cbBlock, NULL);
+                pImage->paBlocks[uBlockData] = i;
+                setImageBlocksAllocated(&pImage->Header, cBlocksAllocated - cBlocksMoved);
+                rc = vdiUpdateBlockInfo(pImage, uBlockData);
+                if (RT_FAILURE(rc))
+                    break;
+                paBlocks2[i] = uBlockData;
+                paBlocks2[uBlockUsedPos] = VDI_IMAGE_BLOCK_FREE;
+                cBlocksMoved++;
+            }
+
+            if (pCbProgress && pCbProgress->pfnProgress)
+            {
+                rc = pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */,
+                                              (uint64_t)(cBlocks + cBlocksMoved) * uPercentSpan / (cBlocks + cBlocksToMove) + uPercentStart,
+                                              pIfProgress->pvUser);
+                if (RT_FAILURE(rc))
+                    break;
+            }
+        }
+        if (RT_FAILURE(rc))
+            break;
+
+        /* Update image header. */
+        setImageBlocksAllocated(&pImage->Header, uBlockUsedPos);
+        vdiUpdateHeader(pImage);
+
+        /* Truncate the image to the proper size to finish compacting. */
+        rc = RTFileSetSize(pImage->File,
+                           (uint64_t)uBlockUsedPos * pImage->cbTotalBlockData
+                           + (pImage->offStartData + pImage->offStartBlockData));
+    } while (0);
+
+    if (paBlocks2)
+        RTMemTmpFree(paBlocks2);
+    if (pvTmp)
+        RTMemTmpFree(pvTmp);
+    if (pvBuf)
+        RTMemTmpFree(pvBuf);
+
+    if (RT_SUCCESS(rc) && pCbProgress && pCbProgress->pfnProgress)
+    {
+        pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */,
+                                 uPercentStart + uPercentSpan,
+                                 pIfProgress->pvUser);
+    }
+
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -1926,6 +2154,8 @@ VBOXHDDBACKEND g_VDIBackend =
     /* pfnComposeLocation */
     genericFileComposeLocation,
     /* pfnComposeName */
-    genericFileComposeName
+    genericFileComposeName,
+    /* pfnCompact */
+    vdiCompact
 };
 
