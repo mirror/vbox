@@ -773,7 +773,7 @@ static int vbsfOpenFile (const char *pszPath, SHFLCREATEPARMS *pParms)
             if (RT_SUCCESS(RTPathQueryInfo (pszPath, &info, RTFSOBJATTRADD_NOTHING)))
             {
 #ifdef RT_OS_WINDOWS
-                info.fMode |= 0111;
+                info.Attr.fMode |= 0111;
 #endif
                 pParms->Info = info;
             }
@@ -849,7 +849,7 @@ static int vbsfOpenFile (const char *pszPath, SHFLCREATEPARMS *pParms)
         if (RT_SUCCESS(rc))
         {
 #ifdef RT_OS_WINDOWS
-            info.fMode |= 0111;
+            info.Attr.fMode |= 0111;
 #endif
             pParms->Info = info;
         }
@@ -1049,7 +1049,7 @@ static int vbsfLookupFile(char *pszPath, SHFLCREATEPARMS *pParms)
         case VINF_SUCCESS:
         {
 #ifdef RT_OS_WINDOWS
-            info.fMode |= 0111;
+            info.Attr.fMode |= 0111;
 #endif
             pParms->Info = info;
             pParms->Result = SHFL_FILE_EXISTS;
@@ -1438,7 +1438,7 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
         }
 
 #ifdef RT_OS_WINDOWS
-        pDirEntry->Info.fMode |= 0111;
+        pDirEntry->Info.Attr.fMode |= 0111;
 #endif
         pSFDEntry->Info = pDirEntry->Info;
         pSFDEntry->cucShortName = 0;
@@ -1548,8 +1548,8 @@ int vbsfQueryFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle,
     {
         rc = RTFileQueryInfo(pHandle->file.Handle, pObjInfo, RTFSOBJATTRADD_NOTHING);
 #ifdef RT_OS_WINDOWS
-        if (RT_SUCCESS(rc) && RTFS_IS_FILE(pObjInfo->Info.fMode))
-            pObjInfo->Info.fMode |= 0111;
+        if (RT_SUCCESS(rc) && RTFS_IS_FILE(pObjInfo->Attr.fMode))
+            pObjInfo->Attr.fMode |= 0111;
 #endif
     }
     if (rc == VINF_SUCCESS)
@@ -1674,7 +1674,7 @@ static int vbsfSetEndOfFile(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE H
         if (rc == VINF_SUCCESS)
         {
 #ifdef RT_OS_WINDOWS
-            fileinfo.fMode |= 0111;
+            fileinfo.Attr.fMode |= 0111;
 #endif
             *pSFDEntry = fileinfo;
             *pcbBuffer = sizeof(RTFSOBJINFO);
