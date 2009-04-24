@@ -280,6 +280,10 @@ typedef enum VMREQDEST
     VMREQDEST_ANY           = 0x1001
 } VMREQDEST;
 
+/** Makes a VMREQDEST value from a VMCPU pointer. */
+#define VMREQDEST_FROM_VMCPU(pVCpu)     ((VMREQDEST)(pVCpu)->idCpu)
+
+
 /**
  * VM Request packet.
  *
