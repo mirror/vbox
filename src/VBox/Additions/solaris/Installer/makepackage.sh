@@ -85,7 +85,7 @@ filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxguest.conf=vboxgues
 filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxfsmount=vboxfsmount"'         '$3 = "etc/fs/vboxfs/mount=vboxfsmount"; $6="sys"'
 
 # this is required for amd64-specific package where we do not build 32-bit binaries
-filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/vboxfsmount=vboxfsmount"'   '$3 = "etc/fs/vboxfs/mount=amd64/vboxfsmount"; $6="sys"'
+filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/vboxfsmount=amd64/vboxfsmount"'   '$3 = "etc/fs/vboxfs/mount=amd64/vboxfsmount"; $6="sys"'
 
 # crogl 32-bit opengl fixup
 filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/VBoxOGL.so=VBoxOGL.so"'                             '$3 = "usr/lib/VBoxOGL.so=VBoxOGL.so"; $6="sys"'
