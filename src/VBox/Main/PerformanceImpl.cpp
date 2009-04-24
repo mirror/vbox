@@ -488,14 +488,15 @@ void PerformanceCollector::unregisterBaseMetricsFor (const ComPtr <IUnknown> &aO
 
     AutoWriteLock alock (this);
     LogAleksey(("{%p} " LOG_FN_FMT ": before remove_if: m.baseMetrics.size()=%d\n", this, __PRETTY_FUNCTION__, m.baseMetrics.size()));
-    BaseMetricList::iterator it = std::remove_if (
-        m.baseMetrics.begin(), m.baseMetrics.end(), std::bind2nd (
-            std::mem_fun (&pm::BaseMetric::associatedWith), aObject));
-    /* Delete the content of the list as well */
-    BaseMetricList::iterator it1 = it;
-    for (;it1 != m.baseMetrics.end(); ++it1)
-        delete *it1;
-    m.baseMetrics.erase(it, m.baseMetrics.end());
+    BaseMetricList::iterator it;
+    for (it = m.baseMetrics.begin(); it != m.baseMetrics.end();)
+        if ((*it)->associatedWith(aObject))
+        {
+            delete *it;
+            m.baseMetrics.erase(it++);
+        }
+        else
+            ++it;
     LogAleksey(("{%p} " LOG_FN_FMT ": after remove_if: m.baseMetrics.size()=%d\n", this, __PRETTY_FUNCTION__, m.baseMetrics.size()));
     //LogFlowThisFuncLeave();
 }
@@ -508,14 +509,15 @@ void PerformanceCollector::unregisterMetricsFor (const ComPtr <IUnknown> &aObjec
 
     AutoWriteLock alock (this);
     LogAleksey(("{%p} " LOG_FN_FMT ": obj=%p\n", this, __PRETTY_FUNCTION__, (void *)aObject));
-    MetricList::iterator it = std::remove_if (
-        m.metrics.begin(), m.metrics.end(), std::bind2nd (
-            std::mem_fun (&pm::Metric::associatedWith), aObject));
-    /* Delete the content of the list as well */
-    MetricList::iterator it1 = it;
-    for (;it1 != m.metrics.end(); ++it1)
-        delete *it1;
-    m.metrics.erase(it, m.metrics.end());
+    MetricList::iterator it;
+    for (it = m.metrics.begin(); it != m.metrics.end();)
+        if ((*it)->associatedWith(aObject))
+        {
+            delete *it;
+            m.metrics.erase(it++);
+        }
+        else
+            ++it;
     //LogFlowThisFuncLeave();
 }
 
