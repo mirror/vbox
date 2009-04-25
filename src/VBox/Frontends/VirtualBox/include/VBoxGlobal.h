@@ -292,9 +292,13 @@ public:
 #ifdef VBOX_WITH_DEBUGGER_GUI
     bool isDebuggerEnabled() const { return mDbgEnabled; }
     bool isDebuggerAutoShowEnabled() const { return mDbgAutoShow; }
+    bool isDebuggerAutoShowCommandLineEnabled() const { return mDbgAutoShowCommandLine; }
+    bool isDebuggerAutoShowStatisticsEnabled() const { return mDbgAutoShowStatistics; }
     RTLDRMOD getDebuggerModule() const { return mhVBoxDbg; }
 #else
     bool isDebuggerAutoShowEnabled() const { return false; }
+    bool isDebuggerAutoShowCommandLineEnabled() const { return false; }
+    bool isDebuggerAutoShowStatisticsEnabled() const { return false; }
 #endif
 
     /* VBox enum to/from string/icon/color convertors */
@@ -864,6 +868,10 @@ private:
     /** Whether to show the debugger automatically with the console.
      * Use --debug or the env.var. VBOX_GUI_DBG_AUTO_SHOW to enable. */
     bool mDbgAutoShow;
+    /** Whether to show the command line window when mDbgAutoShow is set. */
+    bool mDbgAutoShowCommandLine;
+    /** Whether to show the statistics window when mDbgAutoShow is set. */
+    bool mDbgAutoShowStatistics;
     /** VBoxDbg module handle. */
     RTLDRMOD mhVBoxDbg;
 #endif

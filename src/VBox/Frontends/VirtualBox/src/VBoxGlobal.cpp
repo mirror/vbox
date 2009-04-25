@@ -5346,7 +5346,8 @@ void VBoxGlobal::init()
 # else
     mDbgEnabled = RTEnvExist("VBOX_GUI_DBG_ENABLED");
 # endif
-    mDbgAutoShow = RTEnvExist("VBOX_GUI_DBG_AUTO_SHOW");
+    mDbgAutoShow = mDbgAutoShowCommandLine = mDbgAutoShowStatistics
+        = RTEnvExist("VBOX_GUI_DBG_AUTO_SHOW");
 #endif
 
     int argc = qApp->argc();
@@ -5403,12 +5404,24 @@ void VBoxGlobal::init()
         else if (!::strcmp( arg, "-debug") || !::strcmp (arg, "--debug"))
         {
             mDbgEnabled = true;
-            mDbgAutoShow = true;
+            mDbgAutoShow = mDbgAutoShowCommandLine = mDbgAutoShowStatistics = true;
+        }
+        else if (!::strcmp (arg, "--debug-command-line"))
+        {
+            mDbgEnabled = true;
+            mDbgAutoShow = mDbgAutoShowCommandLine = true;
+        }
+        else if (!::strcmp (arg, "--debug-statistics"))
+        {
+            mDbgEnabled = true;
+            mDbgAutoShow = mDbgAutoShowStatistics = true;
         }
         else if (!::strcmp (arg, "-no-debug") || !::strcmp (arg, "--no-debug"))
         {
             mDbgEnabled = false;
             mDbgAutoShow = false;
+            mDbgAutoShowCommandLine = false;
+            mDbgAutoShowStatistics = false;
         }
 #endif
         /** @todo add an else { msgbox(syntax error); exit(1); } here, pretty please... */
@@ -5427,14 +5440,14 @@ void VBoxGlobal::init()
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* setup the debugger gui. */
     if (RTEnvExist("VBOX_GUI_NO_DEBUGGER"))
-        mDbgEnabled = mDbgAutoShow = false;
+        mDbgEnabled = mDbgAutoShow =  mDbgAutoShowCommandLine = mDbgAutoShowStatistics = false;
     if (mDbgEnabled)
     {
         int rc = SUPR3HardenedLdrLoadAppPriv("VBoxDbg", &mhVBoxDbg);
         if (RT_FAILURE(rc))
         {
             mhVBoxDbg = NIL_RTLDRMOD;
-            mDbgAutoShow = false;
+            mDbgAutoShow =  mDbgAutoShowCommandLine = mDbgAutoShowStatistics = false;
             LogRel(("Failed to load VBoxDbg, rc=%Rrc\n", rc));
         }
     }

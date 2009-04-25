@@ -1074,8 +1074,10 @@ void VBoxConsoleWnd::finalizeOpenView()
             rct = desktop->availableGeometry(pos());
         move (QPoint (rct.x(), rct.y()));
 
-        dbgShowStatistics();
-        dbgShowCommandLine();
+        if (vboxGlobal().isDebuggerAutoShowStatisticsEnabled())
+            dbgShowStatistics();
+        if (vboxGlobal().isDebuggerAutoShowCommandLineEnabled())
+            dbgShowCommandLine();
     }
 #endif
 
