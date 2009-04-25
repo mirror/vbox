@@ -35,10 +35,6 @@ extern DECLEXPORT(const unsigned char)  g_abNetBiosBinary[];
 extern DECLEXPORT(const unsigned)       g_cbNetBiosBinary;
 extern DECLEXPORT(const unsigned char)  g_abVmiBiosBinary[];
 extern DECLEXPORT(const unsigned)       g_cbVmiBiosBinary;
-# ifdef VBOX_WITH_EFI
-extern DECLEXPORT(const unsigned char)  g_abEfiThunkBinary[];
-extern DECLEXPORT(const unsigned)       g_cbEfiThunkBinary;
-# endif
 #else  /* !IN_VBOXDD2 */
 extern DECLIMPORT(const unsigned char)  g_abPcBiosBinary[];
 extern DECLIMPORT(const unsigned)       g_cbPcBiosBinary;
@@ -48,10 +44,6 @@ extern DECLIMPORT(const unsigned char)  g_abNetBiosBinary[];
 extern DECLIMPORT(const unsigned)       g_cbNetBiosBinary;
 extern DECLIMPORT(const unsigned char)  g_abVmiBiosBinary[];
 extern DECLIMPORT(const unsigned)       g_cbVmiBiosBinary;
-# ifdef VBOX_WITH_EFI
-extern DECLIMPORT(const unsigned char)  g_abEfiThunkBinary[];
-extern DECLIMPORT(const unsigned)       g_cbEfiThunkBinary;
-# endif
 #endif /* !IN_VBOXDD2 */
 extern const PDMDEVREG g_DeviceAPIC;
 extern const PDMDEVREG g_DeviceIOAPIC;

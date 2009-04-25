@@ -40,6 +40,9 @@
 *******************************************************************************/
 const void *g_apvVBoxDDDependencies[] =
 {
+#ifdef VBOX_WITH_EFI
+    &g_abEfiThunkBinary[0],
+#endif
     NULL,
 };
 
