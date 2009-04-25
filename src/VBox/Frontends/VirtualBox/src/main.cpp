@@ -237,6 +237,8 @@ static void showHelp()
 # ifdef VBOX_WITH_DEBUGGER_GUI
             "  --dbg                      enable the GUI debug menu\n"
             "  --debug                    like --dbg and show debug windows at VM startup\n"
+            "  --debug-command-line       like --dbg and show command line window at VM startup\n"
+            "  --debug-statistics         like --dbg and show statistics window at VM startup\n"
             "  --no-debug                 disable the GUI debug menu and debug windows\n"
             "\n"
             "The following environment variables are evaluated:\n"
