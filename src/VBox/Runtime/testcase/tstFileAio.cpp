@@ -62,97 +62,129 @@ void tstFileAioTestReadWriteBasic(RTFILE File, bool fWrite, void *pvTestBuf, siz
         void            *apvBuf[TSTFILEAIO_MAX_REQS_IN_FLIGHT];
         RTFOFF           Offset = 0;
         size_t           cbLeft = cbTestFile;
+        int cRun = 0;
 
-        /* Initialize buffers. */
-        for (unsigned i = 0; i < RT_ELEMENTS(apvBuf); i++)
+        /* Associate file with context.*/
+        rc = RTFileAioCtxAssociateWithFile(hAioContext, File);
+        if (RT_SUCCESS(rc))
         {
-            apvBuf[i] = RTMemPageAllocZ(cbTestBuf);
-
-            if (fWrite)
-                memcpy(apvBuf[i], pvTestBuf, cbTestBuf);
-        }
-
-        /* Initialize requests. */
-        for (unsigned i = 0; i < RT_ELEMENTS(aReqs); i++)
-            RTFileAioReqCreate(&aReqs[i]);
-
-        while (cbLeft)
-        {
-            int cReqs = 0;
-
-            for (unsigned i = 0; i < RT_ELEMENTS(aReqs); i++)
+            /* Initialize buffers. */
+            for (unsigned i = 0; i < RT_ELEMENTS(apvBuf); i++)
             {
-                size_t cbTransfer = (cbLeft < cbTestBuf) ? cbLeft : cbTestBuf;
-
-                if (!cbTransfer)
-                    break;
+                apvBuf[i] = RTMemPageAllocZ(cbTestBuf);
 
                 if (fWrite)
-                    rc = RTFileAioReqPrepareWrite(aReqs[i], File, Offset, apvBuf[i],
-                                                  cbTransfer, apvBuf[i]);
-                else
-                    rc = RTFileAioReqPrepareRead(aReqs[i], File, Offset, apvBuf[i],
-                                                 cbTransfer, apvBuf[i]);
-
-                cbLeft -= cbTransfer;
-                Offset += cbTransfer;
-                cReqs++;
+                    memcpy(apvBuf[i], pvTestBuf, cbTestBuf);
             }
 
-            rc = RTFileAioCtxSubmit(hAioContext, aReqs, cReqs);
-            if (RT_FAILURE(rc))
-            {
-                RTPrintf("tstFileAio: FATAL ERROR - Failed to submit tasks. rc=%Rrc\n", rc);
-                cErrors++;
-                break;
-            }
+            /* Initialize requests. */
+            for (unsigned i = 0; i < RT_ELEMENTS(aReqs); i++)
+                RTFileAioReqCreate(&aReqs[i]);
 
-            /* Wait */
-            RTFILEAIOREQ aReqsCompleted[TSTFILEAIO_MAX_REQS_IN_FLIGHT];
-            uint32_t cCompleted = 0;
-            rc = RTFileAioCtxWait(hAioContext, cReqs, RT_INDEFINITE_WAIT,
-                                  aReqsCompleted, TSTFILEAIO_MAX_REQS_IN_FLIGHT,
-                                  &cCompleted);
-            if (RT_FAILURE(rc))
+            while (cbLeft)
             {
-                RTPrintf("tstFileAio: FATAL ERROR - Waiting failed. rc=%Rrc\n", rc);
-                cErrors++;
-                break;
-            }
+                int cReqs = 0;
+                size_t cReqsSubmitted = 0;
 
-            if (!fWrite)
-            {
-                for (uint32_t i = 0; i < cCompleted; i++)
+                for (unsigned i = 0; i < RT_ELEMENTS(aReqs); i++)
                 {
-                    /* Compare that we read the right stuff. */
-                    void *pvBuf = RTFileAioReqGetUser(aReqsCompleted[i]);
+                    size_t cbTransfer = (cbLeft < cbTestBuf) ? cbLeft : cbTestBuf;
 
-                    if (memcmp(pvBuf, pvTestBuf, cbTestBuf) != 0)
-                    {
-                        RTPrintf("tstFileAio: FATAL ERROR - Unexpected content in memory.\n");
-                        cErrors++;
+                    if (!cbTransfer)
                         break;
-                    }
-                    memset(pvBuf, 0, cbTestBuf);
+
+                    if (fWrite)
+                        rc = RTFileAioReqPrepareWrite(aReqs[i], File, Offset, apvBuf[i],
+                                                      cbTransfer, apvBuf[i]);
+                    else
+                        rc = RTFileAioReqPrepareRead(aReqs[i], File, Offset, apvBuf[i],
+                                                     cbTransfer, apvBuf[i]);
+
+                    cbLeft -= cbTransfer;
+                    Offset += cbTransfer;
+                    cReqs++;
                 }
+
+                rc = RTFileAioCtxSubmit(hAioContext, aReqs, cReqs, &cReqsSubmitted);
+                if (RT_FAILURE(rc))
+                {
+                    RTPrintf("tstFileAio: FATAL ERROR - Failed to submit tasks after %d runs. rc=%Rrc\n", cRun, rc);
+                    cErrors++;
+                    break;
+                }
+                else if (cReqs != cReqsSubmitted)
+                {
+                    RTPrintf("tstFileAio: FATAL ERROR - Submitted tasks but the result is not equal to the number of submitted tasks\n", rc);
+                    cErrors++;
+                    break;
+                }
+
+                /* Wait */
+                RTFILEAIOREQ aReqsCompleted[TSTFILEAIO_MAX_REQS_IN_FLIGHT];
+                uint32_t cCompleted = 0;
+                rc = RTFileAioCtxWait(hAioContext, cReqs, RT_INDEFINITE_WAIT,
+                                      aReqsCompleted, TSTFILEAIO_MAX_REQS_IN_FLIGHT,
+                                      &cCompleted);
+                if (RT_FAILURE(rc))
+                {
+                    RTPrintf("tstFileAio: FATAL ERROR - Waiting failed. rc=%Rrc\n", rc);
+                    cErrors++;
+                    break;
+                }
+
+                if (!fWrite)
+                {
+                    for (uint32_t i = 0; i < cCompleted; i++)
+                    {
+                        /* Compare that we read the right stuff. */
+                        void *pvBuf = RTFileAioReqGetUser(aReqsCompleted[i]);
+
+                        size_t cbTransfered;
+                        int rcReq = RTFileAioReqGetRC(aReqsCompleted[i], &cbTransfered);
+                        if (RT_FAILURE(rcReq) || (cbTransfered != cbTestBuf))
+                        {
+                            RTPrintf("tstFileAio: FATAL ERROR - Request %d failed with rc=%Rrc cbTransfered=%d.\n",
+                                     i, rcReq, cbTransfered);
+                            cErrors++;
+                            rc = rcReq;
+                            break;
+                        }
+
+                        if (memcmp(pvBuf, pvTestBuf, cbTestBuf) != 0)
+                        {
+                            RTPrintf("tstFileAio: FATAL ERROR - Unexpected content in memory.\n");
+                            cErrors++;
+                            break;
+                        }
+                        memset(pvBuf, 0, cbTestBuf);
+                    }
+                }
+                cRun++;
+                if (RT_FAILURE(rc))
+                    break;
             }
+
+            /* Free buffers. */
+            for (unsigned i = 0; i < RT_ELEMENTS(apvBuf); i++)
+                RTMemPageFree(apvBuf[i]);
+
+            /* Free requests. */
+            for (unsigned i = 0; i < RT_ELEMENTS(aReqs); i++)
+                RTFileAioReqDestroy(aReqs[i]);
+
+            NanoTS = RTTimeNanoTS() - NanoTS;
+            unsigned SpeedKBs = cbTestFile / (NanoTS / 1000000000.0) / 1024;
+
+            RTPrintf("tstFileAio: Completed simple %s test: %d.%03d MB/sec\n",
+                     fWrite ? "write" : "read",
+                     SpeedKBs / 1000,
+                     SpeedKBs % 1000);
         }
-
-        /* Free buffers. */
-        for (unsigned i = 0; i < RT_ELEMENTS(apvBuf); i++)
-            RTMemPageFree(apvBuf[i]);
-
-        /* Free requests. */
-        for (unsigned i = 0; i < RT_ELEMENTS(aReqs); i++)
-            RTFileAioReqDestroy(aReqs[i]);
-
-        NanoTS = RTTimeNanoTS() - NanoTS;
-        unsigned SpeedKBs = cbTestFile / (NanoTS / 1000000000.0) / 1024;
-
-        RTPrintf("tstFileAio: Completed simple %s test: %d.%03d MB/sec\n",
-                 fWrite ? "write" : "read",
-                 SpeedKBs / 1000,
-                 SpeedKBs % 1000);
+        else
+        {
+            RTPrintf("tstFileAio: FATAL ERROR - Failed to asssociate file with async I/O context. rc=%Rrc\n", rc);
+            cErrors++;
+        }
 
         rc = RTFileAioCtxDestroy(hAioContext);
         if (RT_FAILURE(rc))
@@ -189,9 +221,21 @@ int main()
     /* Basic write test. */
     RTPrintf("tstFileAio: Preparing test file, this can take some time and needs quite a bit of harddisk\n");
     tstFileAioTestReadWriteBasic(File, true, pvTestBuf, 64*_1K, 100*_1M);
-    tstFileAioTestReadWriteBasic(File, false, pvTestBuf, 64*_1K, 100*_1M);
-
+    /* Reopen the file. */
     RTFileClose(File);
+    rc = RTFileOpen(&File, "tstFileAio#1.tst", RTFILE_O_READWRITE | RTFILE_O_DENY_NONE | RTFILE_O_ASYNC_IO);
+    if (RT_SUCCESS(rc))
+    {
+        tstFileAioTestReadWriteBasic(File, false, pvTestBuf, 64*_1K, 100*_1M);
+        RTFileClose(File);
+    }
+    else
+    {
+        RTPrintf("tstFileAio: FATAL ERROR - Failed to open file #1. rc=%Rrc\n", rc);
+        cErrors++;
+    }
+
+    /* Cleanup */
     RTMemFree(pvTestBuf);
     RTFileDelete("tstFileAio#1.tst");
     /*

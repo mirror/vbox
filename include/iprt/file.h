@@ -786,9 +786,10 @@ RTDECL(void) RTFileReadAllFree(void *pvFile, size_t cbFile);
  * which will set up a request to read from the given file or
  * RTFileAioReqPrepareWrite() which will write to a given file.
  *
- * The second object is the context. Requests are associated with a context
- * during RTFileAioCtxSubmit() which will also submit the requests to the
- * operating system.
+ * The second object is the context. A file is associated with a context
+ * and requests for this file may complete only on the context the file
+ * was associated with and not on the context given in RTFileAioCtxSubmit()
+ * (see below for further information).
  * RTFileAioCtxWait() is used to wait for completion of requests which were
  * associated with the context. While waiting for requests the thread can not
  * respond to global state changes. Thatswhy the API provides a way to let
@@ -810,7 +811,7 @@ RTDECL(void) RTFileReadAllFree(void *pvFile, size_t cbFile);
  * Because the host APIs are quite different on every OS and every API has other limitations
  * there are some things to consider to make the code as portable as possible.
  *
- * The only restriction at the moment is that every buffer has to be aligned to a 512 byte boundary.
+ * The first restriction at the moment is that every buffer has to be aligned to a 512 byte boundary.
  * This limitation comes from the Linux io_* interface. To use the interface the file
  * must be opened with O_DIRECT. This flag disables the kernel cache too which may
  * degrade performance but is unfortunately the only way to make asynchronous
@@ -821,6 +822,19 @@ RTDECL(void) RTFileReadAllFree(void *pvFile, size_t cbFile);
  * for the 2.4 kernel series. Since 2.6 the 512 byte boundary seems to be used by all
  * file systems. So Linus comment about this flag is comprehensible but Linux
  * lacks an alternative at the moment.
+ *
+ * The next limitation applies only to Windows. Reqeusts are not assoicated with the
+ * I/O context they are associated with but with the file the request is for.
+ * The file needs to be associated with exactly one I/O completion port and requests
+ * for this file will only arrive at that context after they completed and not on
+ * the context the request was submitted.
+ * To associate a file with a specific context RTFileAioCtxAssociateWithFile() is
+ * used. It is only implemented on Windows and does nothing on the other platforms.
+ * If the file needs to be associated with different context for some reason
+ * the file must be closed first. After it was opened again the new context
+ * can be associated with the other context.
+ * This can't be done by the API because there is no way to retrieve the flags
+ * the file was opened with.
  */
 
 /**
@@ -962,22 +976,36 @@ RTDECL(int) RTFileAioCtxDestroy(RTFILEAIOCTX hAioCtx);
 RTDECL(uint32_t) RTFileAioCtxGetMaxReqCount(RTFILEAIOCTX hAioCtx);
 
 /**
- * Submits a set of requests to an async I/O context for processing.
+ * Associates a file with a async I/O context.
+ * Requests for this file will arrive at the completion port
+ * associated with the file.
  *
- * @todo Is it possible to call this API while another thread is in
- *       RTFileAioCtxWait?
+ * @returns IPRT status code.
+ *
+ * @param   hAioCtx        The async I/O context handle.
+ * @param   hFile          The file handle.
+ */
+RTDECL(int) RTFileAioCtxAssociateWithFile(RTFILEAIOCTX hAioCtx, RTFILE hFile);
+
+/**
+ * Submits a set of requests to an async I/O context for processing.
  *
  * @returns IPRT status code.
  *
  * @param   hAioCtx         The async I/O context handle.
  * @param   pahReqs         Pointer to an array of request handles.
  * @param   cReqs           The number of entries in the array.
+ * @param   pcReqs          Where to store the number of requests
+ *                          successfully submitted before an error
+ *                          occured. If VINF_SUCCESS is returned
+ *                          the value equals cReqs. This value is always
+ *                          set.
  *
  * @remarks @a cReqs uses the type size_t while it really is a uint32_t, this is
  *          to avoid annoying warnings when using RT_ELEMENTS and similar
  *          macros.
  */
-RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ phReqs, size_t cReqs);
+RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size_t cReqs, size_t *pcReqs);
 
 /**
  * Waits for request completion.
