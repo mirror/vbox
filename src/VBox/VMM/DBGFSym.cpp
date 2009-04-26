@@ -24,7 +24,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DBGF
-#if defined(RT_OS_WINDOWS) && 0 //defined(DEBUG_bird) // enabled this is you want to debug win32 guests or the hypervisor.
+#if defined(RT_OS_WINDOWS) && 1 //defined(DEBUG_bird) // enabled this is you want to debug win32 guests or the hypervisor.
 # include <Windows.h>
 # define _IMAGEHLP64
 # include <DbgHelp.h>
@@ -54,7 +54,8 @@
 *   Internal Functions                                                         *
 *******************************************************************************/
 #ifdef HAVE_DBGHELP
-static DECLCALLBACK(int) dbgfR3EnumModules(PVM pVM, const char *pszFilename, const char *pszName, RTUINTPTR ImageBase, size_t cbImage, bool fGC);
+static DECLCALLBACK(int) dbgfR3EnumModules(PVM pVM, const char *pszFilename, const char *pszName,
+                                           RTUINTPTR ImageBase, size_t cbImage, bool fRC, void *pvArg);
 static int win32Error(PVM pVM);
 #endif
 
@@ -352,7 +353,7 @@ int dbgfR3SymLazyInit(PVM pVM)
         /*
          * Enumerate all modules loaded by PDM and add them to the symbol database.
          */
-        PDMR3EnumModules(pVM, dbgfR3EnumModules, NULL);
+        PDMR3LdrEnumModules(pVM, dbgfR3EnumModules, NULL);
         return VINF_SUCCESS;
     }
     return win32Error(pVM);
@@ -374,14 +375,16 @@ int dbgfR3SymLazyInit(PVM pVM)
  * @param   pszName         Module name. (short and unique)
  * @param   ImageBase       Address where to executable image is loaded.
  * @param   cbImage         Size of the executable image.
- * @param   fGC             Set if guest context, clear if host context.
+ * @param   fRC             Set if guest context, clear if host context.
  * @param   pvArg           User argument.
  */
-static DECLCALLBACK(int) dbgfR3EnumModules(PVM pVM, const char *pszFilename, const char *pszName, RTUINTPTR ImageBase, size_t cbImage, bool fGC)
+static DECLCALLBACK(int) dbgfR3EnumModules(PVM pVM, const char *pszFilename, const char *pszName,
+                                           RTUINTPTR ImageBase, size_t cbImage, bool fRC, void *pvArg)
 {
-    if (fGC)
+    if (fRC)
     {
-        DWORD64 LoadedImageBase = SymLoadModule64(pVM, NULL, (char *)(void *)pszFilename, (char *)(void *)pszName, ImageBase, cbImage);
+        DWORD64 LoadedImageBase = SymLoadModule64(pVM, NULL, (char *)(void *)pszFilename,
+                                                  (char *)(void *)pszName, ImageBase, (DWORD)cbImage);
         if (!LoadedImageBase)
             Log(("SymLoadModule64(,,%s,,) -> lasterr=%d\n", pszFilename, GetLastError()));
         else
