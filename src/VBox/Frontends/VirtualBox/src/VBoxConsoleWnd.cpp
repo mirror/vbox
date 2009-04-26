@@ -998,7 +998,8 @@ void VBoxConsoleWnd::finalizeOpenView()
     }
 
     /* start the VM */
-    CProgress progress = vboxGlobal().isDebuggerAutoShowEnabled()
+    CProgress progress =    vboxGlobal().isStartPausedEnabled()
+                         || vboxGlobal().isDebuggerAutoShowEnabled()
                        ? cconsole.PowerUpPaused()
                        : cconsole.PowerUp();
 
@@ -1078,6 +1079,9 @@ void VBoxConsoleWnd::finalizeOpenView()
             dbgShowStatistics();
         if (vboxGlobal().isDebuggerAutoShowCommandLineEnabled())
             dbgShowCommandLine();
+
+        if (!vboxGlobal().isStartPausedEnabled())
+            console->pause (false);
     }
 #endif
 

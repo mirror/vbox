@@ -5348,6 +5348,7 @@ void VBoxGlobal::init()
 # endif
     mDbgAutoShow = mDbgAutoShowCommandLine = mDbgAutoShowStatistics
         = RTEnvExist("VBOX_GUI_DBG_AUTO_SHOW");
+    mStartPaused = false;
 #endif
 
     int argc = qApp->argc();
@@ -5405,16 +5406,19 @@ void VBoxGlobal::init()
         {
             mDbgEnabled = true;
             mDbgAutoShow = mDbgAutoShowCommandLine = mDbgAutoShowStatistics = true;
+            mStartPaused = true;
         }
         else if (!::strcmp (arg, "--debug-command-line"))
         {
             mDbgEnabled = true;
             mDbgAutoShow = mDbgAutoShowCommandLine = true;
+            mStartPaused = true;
         }
         else if (!::strcmp (arg, "--debug-statistics"))
         {
             mDbgEnabled = true;
             mDbgAutoShow = mDbgAutoShowStatistics = true;
+            mStartPaused = true;
         }
         else if (!::strcmp (arg, "-no-debug") || !::strcmp (arg, "--no-debug"))
         {
@@ -5422,6 +5426,15 @@ void VBoxGlobal::init()
             mDbgAutoShow = false;
             mDbgAutoShowCommandLine = false;
             mDbgAutoShowStatistics = false;
+        }
+        /* Not quite debug options, but they're only useful with the debugger bits. */
+        else if (!::strcmp (arg, "--start-paused"))
+        {
+            mStartPaused = true;
+        }
+        else if (!::strcmp (arg, "--start-running"))
+        {
+            mStartPaused = false;
         }
 #endif
         /** @todo add an else { msgbox(syntax error); exit(1); } here, pretty please... */
