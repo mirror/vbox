@@ -240,6 +240,8 @@ static void showHelp()
             "  --debug-command-line       like --dbg and show command line window at VM startup\n"
             "  --debug-statistics         like --dbg and show statistics window at VM startup\n"
             "  --no-debug                 disable the GUI debug menu and debug windows\n"
+            "  --start-paused             start the VM in the paused state\n"
+            "  --start-running            start the VM running (for overriding --debug*)\n"
             "\n"
             "The following environment variables are evaluated:\n"
             "  VBOX_GUI_DBG_ENABLED       enable the GUI debug menu if set\n"

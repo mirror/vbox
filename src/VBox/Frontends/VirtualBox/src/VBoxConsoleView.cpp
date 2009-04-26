@@ -976,8 +976,21 @@ VBoxConsoleView::~VBoxConsoleView()
 
 QSize VBoxConsoleView::sizeHint() const
 {
+#ifdef VBOX_WITH_DEBUGGER /** @todo figure out a more proper fix. */
+    /* HACK ALERT! Really ugly workaround for the resizing to 9x1 done
+     *             by DevVGA if provoked before power on.  */
+    QSize fb(mFrameBuf->width(), mFrameBuf->height());
+    if (    (   fb.width()  < 16
+             || fb.height() < 16)
+        &&  (   vboxGlobal().isStartPausedEnabled()
+             || vboxGlobal().isDebuggerAutoShowEnabled()) )
+        fb = QSize(640, 480);
+    return QSize (fb.width() + frameWidth() * 2,
+                  fb.height() + frameWidth() * 2);
+#else
     return QSize (mFrameBuf->width() + frameWidth() * 2,
                   mFrameBuf->height() + frameWidth() * 2);
+#endif
 }
 
 /**

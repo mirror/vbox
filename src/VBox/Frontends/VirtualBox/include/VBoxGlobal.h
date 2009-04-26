@@ -295,10 +295,14 @@ public:
     bool isDebuggerAutoShowCommandLineEnabled() const { return mDbgAutoShowCommandLine; }
     bool isDebuggerAutoShowStatisticsEnabled() const { return mDbgAutoShowStatistics; }
     RTLDRMOD getDebuggerModule() const { return mhVBoxDbg; }
+
+    bool isStartPausedEnabled() const { return mStartPaused; }
 #else
     bool isDebuggerAutoShowEnabled() const { return false; }
     bool isDebuggerAutoShowCommandLineEnabled() const { return false; }
     bool isDebuggerAutoShowStatisticsEnabled() const { return false; }
+
+    bool isStartPausedEnabled() const { false; }
 #endif
 
     /* VBox enum to/from string/icon/color convertors */
@@ -874,6 +878,9 @@ private:
     bool mDbgAutoShowStatistics;
     /** VBoxDbg module handle. */
     RTLDRMOD mhVBoxDbg;
+
+    /** Whether to start the VM in paused state or not. */
+    bool mStartPaused;
 #endif
 
 #if defined (Q_WS_WIN32)
