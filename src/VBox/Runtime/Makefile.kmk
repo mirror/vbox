@@ -584,6 +584,10 @@ ifdef RT_ASYNC_IO_CODE
 	r3/linux/fileaio-linux.cpp
  RuntimeR3_SOURCES.solaris += \
 	r3/solaris/fileaio-solaris.cpp
+ RuntimeR3_SOURCES.win += \
+	r3/win/fileaio-win.cpp
+ RuntimeR3_SOURCES.freebsd += \
+	r3/freebsd/fileaio-freebsd.cpp
 endif
 
 ## PORTME: Porters add their selection of platform specific files for Ring-3 here.
