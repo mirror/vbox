@@ -457,6 +457,8 @@ RTDECL(int) RTFileAioCtxCreate(PRTFILEAIOCTX phAioCtx, uint32_t cAioReqsMax)
         pCtxInt->u32Magic     = RTFILEAIOCTX_MAGIC;
         *phAioCtx = (RTFILEAIOCTX)pCtxInt;
     }
+    else
+        RTMemFree(pCtxInt);
 
     return rc;
 }
@@ -499,12 +501,19 @@ RTDECL(uint32_t) RTFileAioCtxGetMaxReqCount(RTFILEAIOCTX hAioCtx)
     return pCtxInt->cRequestsMax;
 }
 
+RTDECL(int) RTFileAioCtxAssociateWithFile(RTFILEAIOCTS hAioCtx, RTFILE hFile)
+{
+    /* Nothing to do. */
+    return VINF_SUCCESS;
+}
 
-RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size_t cReqs)
+RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size_t cReqs, size_t *pcReqs)
 {
     /*
      * Parameter validation.
      */
+    AssertPtrReturn(pcReqs, VERR_INVALID_POINTER);
+    *pcReqs = 0;
     PRTFILEAIOCTXINTERNAL pCtxInt = hAioCtx;
     RTFILEAIOCTX_VALID_RETURN(pCtxInt);
     AssertReturn(cReqs > 0,  VERR_INVALID_PARAMETER);
@@ -538,6 +547,8 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
     int rc = rtFileAsyncIoLinuxSubmit(pCtxInt->AioContext, cReqs, (PLNXKAIOIOCB *)pahReqs);
     if (RT_FAILURE(rc))
         ASMAtomicSubS32(&pCtxInt->cRequests, cReqs);
+    else
+        *pcReqs = cReqs;
 
     return rc;
 }
