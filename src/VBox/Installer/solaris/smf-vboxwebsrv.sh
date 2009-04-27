@@ -90,7 +90,7 @@ case $VW_OPT in
             fi
         else
             echo "Failed to find prctl to bump VBoxSVC semaphore id limit."
-            echo "As a result, not more than 99 VMs can be started."
+            echo "As a result, not more than 100 VMs can be started."
         fi
     ;;
     stop)
