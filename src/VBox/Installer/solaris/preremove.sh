@@ -50,7 +50,7 @@ if test "$currentzone" = "global"; then
     # remove nwam entry for vboxnet
     if test -f /etc/nwam/llp; then
         sed -e '/vboxnet/d' /etc/nwam/llp > /etc/nwam/llp.vbox
-        mv -f /etc/nwa/llp.vbox /etc/nwam/llp
+        mv -f /etc/nwam/llp.vbox /etc/nwam/llp
     fi
 
     # remove devlink.tab entry for vboxusbmon
