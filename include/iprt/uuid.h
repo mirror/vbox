@@ -139,6 +139,34 @@ RTDECL(int)  RTUuidToStr(PCRTUUID pUuid, char *pszString, size_t cchString);
  */
 RTDECL(int)  RTUuidFromStr(PRTUUID pUuid, const char *pszString);
 
+/**
+ * Converts binary UUID to its UTF-16 string representation.
+ *
+ * @note See note in RTUuidToStr.
+ *
+ * @sa RTUUID::Gen
+ *
+ * @returns iprt status code.
+ * @param   pUuid           Uuid to convert.
+ * @param   pwszString      Where to store result string.
+ * @param   cwcString       pszString buffer length, must be >=
+ *                          RTUUID_STR_LENGTH.
+ */
+RTDECL(int)  RTUuidToUtf16(PCRTUUID pUuid, PRTUTF16 pwszString, size_t cwcString);
+
+/**
+ * Converts UUID from its UTF-16 string representation to binary format.
+ *
+ * @note See note in RTUuidFromStr.
+ *
+ * @sa RTUUID::Gen
+ *
+ * @returns iprt status code.
+ * @param   pUuid           Where to store result Uuid.
+ * @param   pwszString      String with UUID text data.
+ */
+RTDECL(int)  RTUuidFromUtf16(PRTUUID pUuid, PCRTUTF16 pwszString);
+
 /** @} */
 
 __END_DECLS
