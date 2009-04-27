@@ -778,4 +778,3 @@ RTDECL(int) RTDirRemoveRecursive(const char *pszPath)
     return rc;
 }
 
-
