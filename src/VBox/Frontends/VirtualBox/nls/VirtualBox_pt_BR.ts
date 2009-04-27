@@ -1292,10 +1292,6 @@ Versão %1</translation>
         <translation type="obsolete">Abrir o formulário de registro do VirtualBox</translation>
     </message>
     <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
-    </message>
-    <message>
         <source>Session I&amp;nformation Dialog</source>
         <translation>Diálogo de I&amp;nformações sobre a Sessão</translation>
     </message>
@@ -5920,10 +5916,6 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     <message>
         <source>Open VirtualBox registration form</source>
         <translation type="obsolete">Abrir o formulário de registro do VirtualBox</translation>
-    </message>
-    <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
     </message>
     <message>
         <source>R&amp;esume</source>

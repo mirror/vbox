@@ -1563,10 +1563,6 @@ Versión %1</translation>
         <translation type="obsolete">Abrir el formulario de registro de VirtualBox</translation>
     </message>
     <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">VirtualBox xVM de Sun</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1676"/>
         <source>Session I&amp;nformation Dialog</source>
         <translation>Diálogo de I&amp;nformación de Sesión</translation>
@@ -6847,10 +6843,6 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     <message>
         <source>Open VirtualBox registration form</source>
         <translation type="obsolete">Abrir el formulario de registro de VirtualBox</translation>
-    </message>
-    <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">VirtualBox xVM de Sun</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1462"/>

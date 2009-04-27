@@ -1287,10 +1287,6 @@ Wersja %1</translation>
         <translation type="obsolete">Otwiera formularz rejestracji programu VirtualBox</translation>
     </message>
     <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
-    </message>
-    <message>
         <source>Session I&amp;nformation Dialog</source>
         <translation>I&amp;nformacje o sesji</translation>
     </message>
@@ -5727,10 +5723,6 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
     <message>
         <source>Open VirtualBox registration form</source>
         <translation type="obsolete">Otwiera formularz rejestracji programu VirtualBox</translation>
-    </message>
-    <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
     </message>
     <message>
         <source>R&amp;esume</source>

@@ -1160,10 +1160,6 @@ Version %1</source>
         <translation type="obsolete">VirtualBox 登録フォームを開く</translation>
     </message>
     <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
-    </message>
-    <message>
         <source>Session I&amp;nformation Dialog</source>
         <translation>セッション情報ダイアログ(&amp;N)</translation>
     </message>
@@ -5518,10 +5514,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>Open VirtualBox registration form</source>
         <translation type="obsolete">VirtualBox 登録フォームを開く</translation>
-    </message>
-    <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
     </message>
     <message>
         <source>R&amp;esume</source>

@@ -1255,10 +1255,6 @@ Verzió %1</translation>
         <translation type="obsolete">A regisztrációs űrlap megnyitása</translation>
     </message>
     <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
-    </message>
-    <message>
         <source>Session I&amp;nformation Dialog</source>
         <translation>Munkamenet i&amp;nformációk</translation>
     </message>
@@ -5454,10 +5450,6 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <message>
         <source>Open VirtualBox registration form</source>
         <translation type="obsolete">A regisztrációs űrlap megnyitása</translation>
-    </message>
-    <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
     </message>
     <message>
         <source>R&amp;esume</source>

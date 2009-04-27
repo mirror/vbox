@@ -1273,10 +1273,6 @@ Versão %1</translation>
         <translation type="obsolete">Abrir formulário de registo VirtualBox</translation>
     </message>
     <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">VirtualBox xVM Sun</translation>
-    </message>
-    <message>
         <source>Session I&amp;nformation Dialog</source>
         <translation>Diálogo de I&amp;nformação da Sessão</translation>
     </message>
@@ -5775,10 +5771,6 @@ diálogo de Configurações da MV.&lt;/p&gt;</translation>
     <message>
         <source>Open VirtualBox registration form</source>
         <translation type="obsolete">Abre o formulário de registo do VirtualBox</translation>
-    </message>
-    <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">VirtualBox xVM Sun</translation>
     </message>
     <message>
         <source>R&amp;esume</source>

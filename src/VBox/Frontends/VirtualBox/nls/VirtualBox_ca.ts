@@ -1411,10 +1411,6 @@ Versió %1</translation>
         <translation type="obsolete">Obre el formulari de registre del VirtualBox</translation>
     </message>
     <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1676"/>
         <source>Session I&amp;nformation Dialog</source>
         <translation>D&amp;iàleg informatiu de la sessió</translation>
@@ -6688,10 +6684,6 @@ pas i connectar discos durs més endavant, fent servir el diàleg de configuraci
     <message>
         <source>Virtual &amp;Disk Manager...</source>
         <translation type="obsolete">Gestor de &amp;Discs Virtuals...</translation>
-    </message>
-    <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1462"/>

@@ -1399,10 +1399,6 @@ Version %1</source>
         <translation type="obsolete">Avaa VirtualBoxin rekisteröintilomakkeen</translation>
     </message>
     <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1676"/>
         <source>Session I&amp;nformation Dialog</source>
         <translation>Näytä &amp;tietoikkuna</translation>
@@ -6082,10 +6078,6 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
     <message>
         <source>Open VirtualBox registration form</source>
         <translation type="obsolete">Avaa VirtualBoxin rekisteröintilomakkeen</translation>
-    </message>
-    <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1462"/>

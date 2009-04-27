@@ -1161,10 +1161,6 @@ verzia %1</translation>
         <translation type="obsolete">Otvorí formulár na registráciu VirtualBox</translation>
     </message>
     <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
-    </message>
-    <message>
         <source>Session I&amp;nformation Dialog</source>
         <translation>I&amp;nformačné okno o relácii</translation>
     </message>
@@ -5416,10 +5412,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     <message>
         <source>Open VirtualBox registration form</source>
         <translation type="obsolete">Otvoriť registračný formulár VirtualBoxu</translation>
-    </message>
-    <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
     </message>
     <message>
         <source>R&amp;esume</source>

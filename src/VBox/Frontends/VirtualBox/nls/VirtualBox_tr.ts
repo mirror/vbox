@@ -1170,10 +1170,6 @@ Version %1</source>
         <translation type="obsolete">VirtualBox kayıt formunu aç</translation>
     </message>
     <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM Virtualbox</translation>
-    </message>
-    <message>
         <source>Session I&amp;nformation Dialog</source>
         <translation>Oturum &amp;Bilgileri Penceresi</translation>
     </message>
@@ -5525,10 +5521,6 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
     <message>
         <source>Open VirtualBox registration form</source>
         <translation type="obsolete">VirtualBox kayıt formunu aç</translation>
-    </message>
-    <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
     </message>
     <message>
         <source>R&amp;esume</source>

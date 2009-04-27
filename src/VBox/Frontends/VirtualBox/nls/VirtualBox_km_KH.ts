@@ -929,10 +929,6 @@
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;គ្មាន​ថត​បាន​ចែករំលែក​ទេ&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
-    </message>
-    <message>
         <source>Session I&amp;nformation Dialog</source>
         <translation>ប្រអប់​ព័ត៌មាន​សម័យ</translation>
     </message>
@@ -3975,10 +3971,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Show the log files of the selected virtual machine</source>
         <translation>បង្ហាញ​​ឯកសារ​កំណត់ហេតុ​របស់​ម៉ាស៊ីន​និម្មិត​ដែល​បានជ្រើស</translation>
-    </message>
-    <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
