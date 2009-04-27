@@ -130,10 +130,16 @@ debian/modules-stamp: debian/build-stamp
 	        make -C $(builddir)/bin/src/vboxnetflt KBUILD_VERBOSE= KERN_DIR=$$d/build MODULE_DIR=$$d all && \
 	        install -D -m 0644 -g 0 -o 0 \
 	            $(builddir)/bin/src/vboxnetflt/vboxnetflt.ko $(moddir)/$$(basename $$d)/vboxnetflt.ko; \
+	        make -C $(builddir)/bin/src/vboxnetadp KERN_DIR=$$d/build MODULE_DIR=$$d clean && \
+		(cp $(builddir)/bin/src/vboxdrv/Module.symvers $(builddir)/bin/src/vboxnetadp || true) && \
+	        make -C $(builddir)/bin/src/vboxnetadp KBUILD_VERBOSE= KERN_DIR=$$d/build MODULE_DIR=$$d all && \
+	        install -D -m 0644 -g 0 -o 0 \
+	            $(builddir)/bin/src/vboxnetadp/vboxnetadp.ko $(moddir)/$$(basename $$d)/vboxnetadp.ko; \
 	    fi; \
 	done
 	make -C $(builddir)/bin/src/vboxdrv clean
 	make -C $(builddir)/bin/src/vboxnetflt clean
+	make -C $(builddir)/bin/src/vboxnetadp clean
 	touch debian/modules-stamp
 
 clean:
@@ -201,6 +207,8 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 		$$d/vboxdrv.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxdrv.ko; \
 	    install -D -g 0 -o 0 -m 0644 \
 		$$d/vboxnetflt.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxnetflt.ko; \
+	    install -D -g 0 -o 0 -m 0644 \
+		$$d/vboxnetadp.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxnetadp.ko; \
 	    done)
 ifeq ($(ose),)
 	$(if $(NOQT),,mv $(archdir)/kchmviewer $(prefix)/usr/lib/$(package))
@@ -225,7 +233,8 @@ endif
 	    usr/bin/VBox                        usr/bin/VBoxHeadless \
 	    $(if $(ose),,usr/bin/VBox           usr/bin/vboxwebsrv) \
 	    usr/share/virtualbox/src/vboxdrv    usr/src/vboxdrv-$(ver) \
-	    usr/share/virtualbox/src/vboxnetflt usr/src/vboxnetflt-$(ver)
+	    usr/share/virtualbox/src/vboxnetflt usr/src/vboxnetflt-$(ver) \
+	    usr/share/virtualbox/src/vboxnetadp usr/src/vboxnetadp-$(ver)
 	dh_desktop
 	dh_installmenu
 	$(if $(NOMODS),,dh_installmodules)
@@ -262,7 +271,7 @@ endif
 	  -Valsa=$(if $(HEADLESS),,libasound2) \
 	  -Vpulse=$(if $(HEADLESS),,libpulse0) \
 	  -Vsdlttf=$(if $(HEADLESS),,libsdl-ttf2.0-0) \
-	  -Vdkms=$(if $(filter _Ubuntu_gutsy _Ubuntu_hardy _Ubuntu_intrepid,$(debrel)),dkms,)
+	  -Vdkms=$(if $(filter _Ubuntu_gutsy _Ubuntu_hardy _Ubuntu_intrepid _Ubuntu_jaunty,$(debrel)),dkms,)
 	dh_md5sums
 	dh_builddeb
 endif
