@@ -384,7 +384,7 @@ static int vdWriteHelperStandard(PVBOXHDD pDisk, PVDIMAGE pImage,
     /* Read the data that goes before the write to fill the block. */
     if (cbPreRead)
     {
-        rc = vdReadHelper(pDisk, pImage->pPrev, uOffset - cbPreRead, pvTmp,
+        rc = vdReadHelper(pDisk, pImage, uOffset - cbPreRead, pvTmp,
                           cbPreRead);
         if (RT_FAILURE(rc))
             return rc;
@@ -419,7 +419,7 @@ static int vdWriteHelperStandard(PVBOXHDD pDisk, PVDIMAGE pImage,
             memcpy((char *)pvTmp + cbPreRead + cbThisWrite,
                    (char *)pvBuf + cbThisWrite, cbWriteCopy);
         if (cbReadImage)
-            rc = vdReadHelper(pDisk, pImage->pPrev,
+            rc = vdReadHelper(pDisk, pImage,
                               uOffset + cbThisWrite + cbWriteCopy,
                               (char *)pvTmp + cbPreRead + cbThisWrite + cbWriteCopy,
                               cbReadImage);
@@ -480,7 +480,7 @@ static int vdWriteHelperOptimized(PVBOXHDD pDisk, PVDIMAGE pImage,
 
     /* Read the entire data of the block so that we can compare whether it will
      * be modified by the write or not. */
-    rc = vdReadHelper(pDisk, pImage->pPrev, uOffset - cbPreRead, pvTmp,
+    rc = vdReadHelper(pDisk, pImage, uOffset - cbPreRead, pvTmp,
                       cbPreRead + cbThisWrite + cbPostRead - cbFill);
     if (RT_FAILURE(rc))
         return rc;
