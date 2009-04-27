@@ -1339,10 +1339,6 @@ Versiunea %1</translation>
         <translation type="obsolete">Deschide formularul de înregistrare VirtualBox</translation>
     </message>
     <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
-    </message>
-    <message>
         <source>Session I&amp;nformation Dialog</source>
         <translation>Dialog i&amp;nformații despre sesiune</translation>
     </message>
@@ -6044,10 +6040,6 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     <message>
         <source>Open VirtualBox registration form</source>
         <translation type="obsolete">Deschide formularul de înregistrare VirtualBox</translation>
-    </message>
-    <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
     </message>
     <message>
         <source>R&amp;esume</source>

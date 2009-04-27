@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
-<TS version="2.0" language="sr_YU">
+<!DOCTYPE TS><TS version="1.1" language="sr_YU">
+<defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
     <message>
@@ -68,42 +68,42 @@
     </message>
     <message>
         <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.&lt;br/&gt;&lt;br/&gt;There are known problems with Linux 2.6.29. If you are running such a kernel, please edit /usr/src/vboxdrv-*/Makefile and enable &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. After that, re-compile the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root.</source>
-        <translation type="unfinished"></translation>
+        <translation>Грешка пошто драјвер језгра није могао да допуни меморију или је имало грешке у мапирању.&lt;br/&gt;&lt;br/&gt;Ово су познате грешке са Linux 2.6.29. Ако користите то језгро, уредити /usr/src/vboxdrv-*/Makefile и упалити &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. После тога, поново компулујте језгро са &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;као root.</translation>
     </message>
     <message>
         <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Re-setup the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox Linux kernel driver (vboxdrv) или није учитан или нема довољно права са /dev/vboxdrv. Поново поставити модул са&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;као root. Корисници Ubuntu, Fedora или Mandriva требају да прво инсталирају DKMS пакет. Пакет компилује vboxdrv ако потребно према промене језгра.</translation>
     </message>
     <message>
         <source>Make sure the kernel module has been loaded successfully.</source>
-        <translation type="unfinished"></translation>
+        <translation>Проверити да модул језгра је успешно учитан.</translation>
     </message>
     <message>
         <source>VirtualBox - Runtime Error</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox - Грешка рада</translation>
     </message>
     <message>
         <source>&lt;b&gt;Cannot access the kernel driver!&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Не може да се приступи драјву језгра!&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
         <source>Unknown %2 error during initialization of the Runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>Непозната %2 грешка при иницијализовања &apos;Runtime&apos;</translation>
     </message>
     <message>
-        <source>Kernel driver not accessible</source>
-        <translation type="unfinished"></translation>
+        <source>?????? ??????? ???? ????????</source>
+        <translation></translation>
     </message>
 </context>
 <context>
     <name>QIArrowSplitter</name>
     <message>
         <source>&amp;Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Назад</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation type="unfinished">Даље</translation>
+        <translation>Даље</translation>
     </message>
 </context>
 <context>
@@ -334,11 +334,11 @@
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Детаљи</translation>
     </message>
     <message>
         <source>&amp;Details (%1 of %2)</source>
-        <translation type="unfinished"></translation>
+        <translation>Детаљи (%1 одf %2)</translation>
     </message>
 </context>
 <context>
@@ -427,107 +427,107 @@
     <name>VBoxApplianceEditorWgt</name>
     <message>
         <source>Virtual System %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуелни систем %1</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Име</translation>
+        <translation>Име</translation>
     </message>
     <message>
         <source>Product</source>
-        <translation type="unfinished"></translation>
+        <translation>Производ</translation>
     </message>
     <message>
         <source>Product-URL</source>
-        <translation type="unfinished"></translation>
+        <translation>УРЛ производа</translation>
     </message>
     <message>
         <source>Vendor</source>
-        <translation type="unfinished"></translation>
+        <translation>Продавач</translation>
     </message>
     <message>
         <source>Vendor-URL</source>
-        <translation type="unfinished"></translation>
+        <translation>УРЛ продавача</translation>
     </message>
     <message>
         <source>Version</source>
-        <translation type="unfinished"></translation>
+        <translation>Верзија</translation>
     </message>
     <message>
         <source>Description</source>
-        <translation type="unfinished"></translation>
+        <translation>Опис</translation>
     </message>
     <message>
         <source>License</source>
-        <translation type="unfinished"></translation>
+        <translation>Лиценца</translation>
     </message>
     <message>
         <source>Guest OS Type</source>
-        <translation type="unfinished">Тип ОС госта</translation>
+        <translation>Тип ОС госта</translation>
     </message>
     <message>
         <source>CPU</source>
-        <translation type="unfinished"></translation>
+        <translation>ЦПУ</translation>
     </message>
     <message>
         <source>RAM</source>
-        <translation type="unfinished"></translation>
+        <translation>РАМ</translation>
     </message>
     <message>
         <source>Hard Disk Controller IDE</source>
-        <translation type="unfinished"></translation>
+        <translation>IDE контролер хард диска</translation>
     </message>
     <message>
         <source>Hard Disk Controller SATA</source>
-        <translation type="unfinished"></translation>
+        <translation>SATA контролер хард диска</translation>
     </message>
     <message>
         <source>Hard Disk Controller SCSI</source>
-        <translation type="unfinished"></translation>
+        <translation>SCSI контролер хард диска</translation>
     </message>
     <message>
         <source>DVD</source>
-        <translation type="unfinished"></translation>
+        <translation>ДВД</translation>
     </message>
     <message>
         <source>Floppy</source>
-        <translation type="unfinished">Флопи</translation>
+        <translation>Флопи</translation>
     </message>
     <message>
         <source>Network Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>Мрежни адаптер</translation>
     </message>
     <message>
         <source>USB Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>USB контролер</translation>
     </message>
     <message>
         <source>Sound Card</source>
-        <translation type="unfinished"></translation>
+        <translation>Звучна картица</translation>
     </message>
     <message>
         <source>Virtual Disk Image</source>
-        <translation type="unfinished"></translation>
+        <translation>Слика виртуелног диска</translation>
     </message>
     <message>
         <source>Unknown Hardware Item</source>
-        <translation type="unfinished"></translation>
+        <translation>Непознат хардвер</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished">МБ</translation>
+        <translation>МБ</translation>
     </message>
     <message>
         <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Оригинално:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Конфигурација</translation>
     </message>
     <message>
         <source>Warnings:</source>
-        <translation type="unfinished"></translation>
+        <translation>Пажње:</translation>
     </message>
 </context>
 <context>
@@ -929,10 +929,6 @@
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Нема дељене фасцикле&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
-    </message>
-    <message>
         <source>Session I&amp;nformation Dialog</source>
         <translation>Информација сесије</translation>
     </message>
@@ -977,11 +973,11 @@
     </message>
     <message>
         <source>Sun VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun VirtualBox</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Статус виртуализације коришчен са виртуелне машине:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -995,34 +991,34 @@
     <name>VBoxEmptyFileSelector</name>
     <message>
         <source>&amp;Choose...</source>
-        <translation type="unfinished"></translation>
+        <translation>Одабери...</translation>
     </message>
 </context>
 <context>
     <name>VBoxExportApplianceWzd</name>
     <message>
         <source>Select a file to export into</source>
-        <translation type="unfinished"></translation>
+        <translation>Одабрати датотеку за извоз</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Отвори Virtualization Format (%1)</translation>
     </message>
     <message>
         <source>Appliance</source>
-        <translation type="unfinished"></translation>
+        <translation>Средства</translation>
     </message>
     <message>
         <source>Exporting Appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Извоз средства...</translation>
     </message>
     <message>
         <source>Appliance Export Wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Помоћник извоза средства</translation>
     </message>
     <message>
         <source>Welcome to the Appliance Export Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation>Добродошли у помоћнику извоза средства!</translation>
     </message>
     <message>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -1032,19 +1028,19 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that should be exported to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;p, li { white-space: pre-wrap; }&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Аистент помаже у процесу извоза средства. &lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Користити &lt;span style=&quot; font-weight:600;&quot;&gt;Даље&lt;/span&gt; за следећи лист асистента и &lt;span style=&quot; font-weight:600;&quot;&gt;Назад&lt;/span&gt; за предходни лист.&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Одабрати виртуелну машину што треба да се извезе. Можете више да одаберете. Те машине морају да су угашене пре извоза.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished">&lt; &amp;Назад</translation>
+        <translation>&lt; &amp;Назад</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished">&amp;Даље &gt;</translation>
+        <translation>&amp;Даље &gt;</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Поништи</translation>
+        <translation>Поништи</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
@@ -1052,27 +1048,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the shown properties by double-clicking on the items.</source>
-        <translation type="unfinished"></translation>
+        <translation>Овде можете да промените додатне вредности виртуелних машина. Можете променити цечину поставке преко дуплог-клика.</translation>
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation type="unfinished"></translation>
+        <translation>Врати стандардно</translation>
     </message>
     <message>
         <source>Please specify a filename into which the appliance information will be written. Currently VirtualBox supports the Open Virtualization Format (OVF).</source>
-        <translation type="unfinished"></translation>
+        <translation>Унети датотеку где информације требају да буду писане. За сада VirtualBox подржава &apos;Open Virtualization Format (OVF)&apos;.</translation>
     </message>
     <message>
         <source>&amp;Export &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Извоз &gt;</translation>
     </message>
     <message>
         <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation type="unfinished"></translation>
+        <translation>Писати у OVF 0.9 формат за компатибилност са другим програмима виртуализације.</translation>
     </message>
     <message>
         <source>&amp;Write legacy OVF 0.9</source>
-        <translation type="unfinished"></translation>
+        <translation>Писати OVF 0.9</translation>
     </message>
 </context>
 <context>
@@ -1158,7 +1154,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Network</source>
-        <translation type="unfinished">Мрежа</translation>
+        <translation>Мрежа</translation>
     </message>
 </context>
 <context>
@@ -1197,11 +1193,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the Dock Icon will reflect the VM window content in realtime.</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Dock Icon Realtime Preview</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -1283,239 +1279,239 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>%1 network</source>
         <comment>&lt;adapter name&gt; network</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 мрежа</translation>
     </message>
     <message>
         <source>host IPv4 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>хост IPv4 адреса од &lt;b&gt;%1&lt;/b&gt; је погрешна</translation>
     </message>
     <message>
         <source>host IPv4 network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>хост IPv4 мрежна маска од &lt;b&gt;%1&lt;/b&gt; је погрешна</translation>
     </message>
     <message>
         <source>host IPv6 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>хост IPv6 адреса од &lt;b&gt;%1&lt;/b&gt; је погрешна</translation>
     </message>
     <message>
         <source>DHCP server address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP сервер адреса од &lt;b&gt;%1&lt;/b&gt; је погрешна</translation>
     </message>
     <message>
         <source>DHCP server network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP маска од &lt;b&gt;%1&lt;/b&gt; је погрешна</translation>
     </message>
     <message>
         <source>DHCP lower address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP нижи скок од &lt;b&gt;%1&lt;/b&gt; је погрешан</translation>
     </message>
     <message>
         <source>DHCP upper address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP горњи скок од &lt;b&gt;%1&lt;/b&gt; је погрешан</translation>
     </message>
     <message>
         <source>Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>Адаптер</translation>
     </message>
     <message>
         <source>Automatically configured</source>
         <comment>interface</comment>
-        <translation type="unfinished"></translation>
+        <translation>Аутоматско конфигурисан</translation>
     </message>
     <message>
         <source>Manually configured</source>
         <comment>interface</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ручно конфигурисан</translation>
     </message>
     <message>
         <source>IPv4 Address</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv4 адреса</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>address</comment>
-        <translation type="unfinished"></translation>
+        <translation>Није постављено</translation>
     </message>
     <message>
         <source>IPv4 Network Mask</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv4 мрежна маска</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>mask</comment>
-        <translation type="unfinished"></translation>
+        <translation>Није постављено</translation>
     </message>
     <message>
         <source>IPv6 Address</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6 адреса</translation>
     </message>
     <message>
         <source>IPv6 Network Mask Length</source>
-        <translation type="unfinished"></translation>
+        <translation>Дужина IPv6 мрежне маске</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>length</comment>
-        <translation type="unfinished"></translation>
+        <translation>Није постављено</translation>
     </message>
     <message>
         <source>DHCP Server</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP сервер</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>server</comment>
-        <translation type="unfinished"></translation>
+        <translation>Упаљено</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>server</comment>
-        <translation type="unfinished"></translation>
+        <translation>Угашено</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation type="unfinished"></translation>
+        <translation>Адреса</translation>
     </message>
     <message>
         <source>Network Mask</source>
-        <translation type="unfinished"></translation>
+        <translation>;режна маска</translation>
     </message>
     <message>
         <source>Lower Bound</source>
-        <translation type="unfinished"></translation>
+        <translation>Нижи скок</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>bound</comment>
-        <translation type="unfinished"></translation>
+        <translation>Није постављено</translation>
     </message>
     <message>
         <source>Upper Bound</source>
-        <translation type="unfinished"></translation>
+        <translation>Горљи скок</translation>
     </message>
     <message>
         <source>&amp;Add host-only network</source>
-        <translation type="unfinished"></translation>
+        <translation>Додај само хост мрежу</translation>
     </message>
     <message>
         <source>&amp;Remove host-only network</source>
-        <translation type="unfinished"></translation>
+        <translation>Уклони само хост мрежу</translation>
     </message>
     <message>
         <source>&amp;Edit host-only network</source>
-        <translation type="unfinished"></translation>
+        <translation>Уреди само хост мрежу</translation>
     </message>
     <message>
         <source>Performing</source>
         <comment>creating/removing host-only network</comment>
-        <translation type="unfinished"></translation>
+        <translation>У току</translation>
     </message>
     <message>
         <source>&amp;Host-only Networks:</source>
-        <translation type="unfinished"></translation>
+        <translation>Хост мреже:</translation>
     </message>
     <message>
         <source>Lists all available host-only networks.</source>
-        <translation type="unfinished"></translation>
+        <translation>Листа сва хост мреже.</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Име</translation>
+        <translation>Име</translation>
     </message>
 </context>
 <context>
     <name>VBoxGLSettingsNetworkDetails</name>
     <message>
         <source>Host-only Network Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Детаљи хост мреже</translation>
     </message>
     <message>
         <source>&amp;Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>Адаптер</translation>
     </message>
     <message>
         <source>Manual &amp;Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Ручна конфигурација</translation>
     </message>
     <message>
         <source>Use manual configuration for this host-only network adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Користи ручну конфигурацију</translation>
     </message>
     <message>
         <source>&amp;IPv4 Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv4 адреса:</translation>
     </message>
     <message>
         <source>Displays the host IPv4 address for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Покажи IPv4 адресу са овај адаптер.</translation>
     </message>
     <message>
         <source>IPv4 Network &amp;Mask:</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv4 мрежна маска:</translation>
     </message>
     <message>
         <source>Displays the host IPv4 network mask for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Покажи IPv4 маску са овај адаптер.</translation>
     </message>
     <message>
         <source>I&amp;Pv6 Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6 адреса:</translation>
     </message>
     <message>
         <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>Покажи IPv6 адресу са овај адаптер ако је IPv6 подржено.</translation>
     </message>
     <message>
         <source>IPv6 Network Mask &amp;Length:</source>
-        <translation type="unfinished"></translation>
+        <translation>Дужина IPv6 мрежне маске:</translation>
     </message>
     <message>
         <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>Покажи IPv6 дужину маске за овај адаптер ако је IPv6 подржено.</translation>
     </message>
     <message>
         <source>&amp;DHCP Server</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP сервер</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
-        <translation type="unfinished"></translation>
+        <translation>Упали сервер</translation>
     </message>
     <message>
         <source>Indicates whether the DHCP Server is enabled on machine startup or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показује да ли је DHCP сервер покренут са машином.</translation>
     </message>
     <message>
         <source>Server Add&amp;ress:</source>
-        <translation type="unfinished"></translation>
+        <translation>Адреса сервера:</translation>
     </message>
     <message>
         <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показује адресу DHCP сервера.</translation>
     </message>
     <message>
         <source>Server &amp;Mask:</source>
-        <translation type="unfinished"></translation>
+        <translation>Маска сервера:</translation>
     </message>
     <message>
         <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показује маску DHCP сервера.</translation>
     </message>
     <message>
         <source>&amp;Lower Address Bound:</source>
-        <translation type="unfinished"></translation>
+        <translation>Адреса нижег скока:</translation>
     </message>
     <message>
         <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показује адресу нижег скока DHCP сервера.</translation>
     </message>
     <message>
         <source>&amp;Upper Address Bound:</source>
-        <translation type="unfinished"></translation>
+        <translation>Адреса вишег скока:</translation>
     </message>
     <message>
         <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показује адресу вишег скока DHCP сервера.</translation>
     </message>
 </context>
 <context>
@@ -2336,82 +2332,82 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation type="unfinished">Подметнуто записивање</translation>
+        <translation>Подметнуто записивање</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (Nested Paging)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Упаљено</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (Nested Paging)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Угашено</translation>
     </message>
     <message>
         <source>Internal network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Интерна мрежа, %1</translation>
     </message>
     <message>
         <source>SCSI</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
+        <translation>SCSI</translation>
     </message>
     <message>
         <source>PIIX3</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished">PIIX3</translation>
+        <translation>PIIX3</translation>
     </message>
     <message>
         <source>PIIX4</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished">PIIX4</translation>
+        <translation>PIIX4</translation>
     </message>
     <message>
         <source>ICH6</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>ICH6</translation>
     </message>
     <message>
         <source>AHCI</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>AHCI</translation>
     </message>
     <message>
         <source>Lsilogic</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Lsilogic</translation>
     </message>
     <message>
         <source>BusLogic</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>BusLogic</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Мост адаптер, %1</translation>
     </message>
     <message>
         <source>Host-only adapter, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Само хост адаптер, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Intel PRO/1000 MT Server (82545EM)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Intel PRO/1000 MT Server (82545EM)</translation>
     </message>
     <message>
         <source>Bridged Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Мост адаптер</translation>
     </message>
     <message>
         <source>Host-only Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Само хост адаптер</translation>
     </message>
 </context>
 <context>
@@ -2433,26 +2429,26 @@ p, li { white-space: pre-wrap; }
     <name>VBoxImportApplianceWgt</name>
     <message>
         <source>Importing Appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Увоз средства...</translation>
     </message>
 </context>
 <context>
     <name>VBoxImportApplianceWzd</name>
     <message>
         <source>Select an appliance to import</source>
-        <translation type="unfinished"></translation>
+        <translation>Одабрати средство за увоз</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Open Virtualization Format (%1)</translation>
     </message>
     <message>
         <source>Appliance Import Wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Асистент увоза средства</translation>
     </message>
     <message>
         <source>Welcome to the Appliance Import Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation>Добродошли у асистенту увоза средства!</translation>
     </message>
     <message>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -2462,23 +2458,24 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through importing an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;In order to import an appliance, you have to select a file describing the appliance first. Currently VirtualBox supports the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;p, li { white-space: pre-wrap; }&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Аистент помаже у процесу извоза средства. &lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Користити &lt;span style=&quot; font-weight:600;&quot;&gt;Даље&lt;/span&gt; за следећи лист асистента и &lt;span style=&quot; font-weight:600;&quot;&gt;Назад&lt;/span&gt; за предходни лист.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;За увоз средства требате да одаберете датотеку која описујее средство. За сада VirtualBox подржава &apos;Open Virtualization Format (OVF)&apos;. за наставак, одабрати датотеку за увоз:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished">&lt; &amp;Назад</translation>
+        <translation>&lt; &amp;Назад</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished">&amp;Даље &gt;</translation>
+        <translation>&amp;Даље &gt;</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Поништи</translation>
+        <translation>Поништи</translation>
     </message>
     <message>
         <source>Appliance Import Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Параметри увоза средства</translation>
     </message>
     <message>
         <source>These are the virtual machines as described in the appliance with their suggested mappings for importing into VirtualBox. You can change many of the shown properties by double-clicking on the items and disable others by using the check boxes below.</source>
@@ -2486,46 +2483,46 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation type="unfinished"></translation>
+        <translation>Врати стандардно</translation>
     </message>
     <message>
         <source>&amp;Import &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Увоз &gt;</translation>
     </message>
 </context>
 <context>
     <name>VBoxImportLicenseViewer</name>
     <message>
         <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Виртуелном систему &quot;%1&quot; је потребно да потврдите лиценцу.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Кликнути &lt;b&gt;Прихватам&lt;/b&gt; за наставак или &lt;b&gt;Одбацујем&lt;/b&gt; за поништавање увоза.</translation>
     </message>
     <message>
         <source>Software License Agreement</source>
-        <translation type="unfinished"></translation>
+        <translation>Лиценца</translation>
     </message>
     <message>
         <source>&amp;Disagree</source>
-        <translation type="unfinished"></translation>
+        <translation>Одбацујем</translation>
     </message>
     <message>
         <source>&amp;Agree</source>
-        <translation type="unfinished"></translation>
+        <translation>Прихватам</translation>
     </message>
     <message>
         <source>&amp;Print...</source>
-        <translation type="unfinished"></translation>
+        <translation>Штампај...</translation>
     </message>
     <message>
         <source>&amp;Save...</source>
-        <translation type="unfinished"></translation>
+        <translation>Сачувај...</translation>
     </message>
     <message>
         <source>Text (*.txt)</source>
-        <translation type="unfinished"></translation>
+        <translation>Текст (*.txt)</translation>
     </message>
     <message>
         <source>Save license to file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Сачуван лиценцу у...</translation>
     </message>
 </context>
 <context>
@@ -2547,7 +2544,7 @@ p, li { white-space: pre-wrap; }
     <name>VBoxLineTextEdit</name>
     <message>
         <source>&amp;Edit</source>
-        <translation type="unfinished"></translation>
+        <translation>Уреди</translation>
     </message>
 </context>
 <context>
@@ -3019,11 +3016,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Create new hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Креирај нов хард диск</translation>
     </message>
     <message>
         <source>&amp;Use existing hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Користи постојећи хард диск</translation>
     </message>
 </context>
 <context>
@@ -3697,64 +3694,64 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;The file already exists in &quot;%2&quot;. Replacing it will overwrite its contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Датотека именована &lt;b&gt;%1&lt;/b&gt; већ постоји. Сигурно је преписати?&lt;br /&gt;&lt;br /&gt;Датотека већ постоји у &quot;%2&quot;. Преписивање ће преписати садржај.</translation>
     </message>
     <message>
         <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Датотеке већ постоје:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Сигурно их преписати?.</translation>
     </message>
     <message>
         <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove the file yourself and try again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Погрешан уклон датотеке &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Покушати да је ручно уклоните и покушати поново.</translation>
     </message>
     <message>
         <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
-        <translation type="unfinished"></translation>
+        <translation>Актуелно имате пре-верзију &apos;VirtualBox&apos;-а. Ова верзија није добра за коришћење за продукцију.</translation>
     </message>
     <message>
         <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не можете да приступите USB на хосту, пошто ни USB систем (usbfs) ни DBus нису доступни. Ако желите да користите USB уређаје, требате да то поправите и да поново покренете VirtualBox.</translation>
     </message>
     <message>
         <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not use the ACPI subsystem.</source>
-        <translation type="unfinished"></translation>
+        <translation>Пробате да угасите гост са ACPI дугме. То није могуће пошто гост не користи ACPI под-систем.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VT-x/AMD-V убрзавање је упаљено, али не радиl.Ваш 64-битни гост неће наћи 64-битни CPU и неће моићи да покрене.&lt;/p&gt;&lt;p&gt;Проверити да се упалили VT-x/AMD-V у BIOS хоста.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Close VM</source>
-        <translation type="unfinished"></translation>
+        <translation>Затвори ВМ</translation>
     </message>
     <message>
         <source>Continue</source>
-        <translation type="unfinished">Настави</translation>
+        <translation>Настави</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you wish to delete the selected snapshot and saved state?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Сигурно избрисати одабран снимак и сачувати статус?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="unfinished">Одбаци</translation>
+        <translation>Одбаци</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Поништи</translation>
+        <translation>Поништи</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Имате хард дискови привезани на додатном контролер. Ако га угасите, сви ти хард дискови ће бити изкључени.&lt;/p&gt;&lt;p&gt;Сигурно изкључити додатни адаптер?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Имате хард дискови привезани на додатном контролер. Ако га промените, сви ти хард дискови ће бити изкључени.&lt;/p&gt;&lt;p&gt;Сигурно променити додатни адаптер?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Change</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>Промени</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
@@ -3762,11 +3759,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to create the host-only network interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Погршна креација хост мрежног интерфејса.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ваша VirtualBox параметра ће бити конвертирана у новој верзији потребно за нову верзију VirtualBox-а.&lt;/p&gt;&lt;p&gt;Стиснути &lt;b&gt;У реду&lt;/b&gt; За покретање VirtualBox или &lt;b&gt;Излаз&lt;/b&gt; ако желите да прекинете VirtualBox без друге акције.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to open appliance.</source>
@@ -3798,14 +3795,14 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Deleting this host-only network will lead to the deleting of the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Брисање овог мрежног хоста ће избрисати хост интерфејс где је ова мрежа. Да ли желите да уклоните (хост мрежни) интерфејс &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Белешка:&lt;/b&gt; интерфејс је можда коришћен. После његовог уклона, ти адаптери неће моћи да се користе док не промените друго име интерфејса или други тип интерфејса.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>VBoxProgressDialog</name>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Поништи</translation>
     </message>
 </context>
 <context>
@@ -3982,10 +3979,6 @@ p, li { white-space: pre-wrap; }
         <translation>Покажи зурнал одабране виртуелне машине</translation>
     </message>
     <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
-    </message>
-    <message>
         <source>R&amp;esume</source>
         <translation>Настави</translation>
     </message>
@@ -4003,7 +3996,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation>&lt;h3&gt;Добродошли у VirtualBox!&lt;/h3&gt;&lt;p&gt;Леви део прозор показује списак виртуелне машине са рачунара. Списак је празан пошто нисте још креирали виртуелну машину.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;За креацију нове виртуелне машине, стиснути &lt;b&gt;Ново&lt;/b&gt; са главне траке која је на горњи део прозора.&lt;/p&gt;&lt;p&gt;Можете да стиснете &lt;b&gt;%1&lt;/b&gt; за инстантни помоћ, или ићи на &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; за задње информације и новости.&lt;/p&gt;</translation>
+        <translation>&lt;h3&gt;Добродошли у VirtualBox!&lt;/h3&gt;&lt;p&gt;Леви део прозор показује списак виртуелне машине са рачунара. Списак је празан пошто нисте још креирали виртуелну машину.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;За креацију нове виртуелне машине, стиснути &lt;b&gt;Ново&lt;/b&gt; са главне траке која је на горњи део прозора.&lt;/p&gt;&lt;p&gt;Можете да стиснете &lt;b&gt;F1&lt;/b&gt; за инстантни помоћ, или ићи на &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; за задње информације и новости.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Virtual Media Manager...</source>
@@ -4020,27 +4013,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Sun VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Import Appliance...</source>
-        <translation type="unfinished"></translation>
+        <translation>Увоз средства...</translation>
     </message>
     <message>
         <source>Import an appliance into VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Увоз средства у VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Export Appliance...</source>
-        <translation type="unfinished"></translation>
+        <translation>Извоз средства...</translation>
     </message>
     <message>
         <source>Export an appliance out of VM&apos;s from VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Извези средство са ВМ од VirtualBox-а</translation>
     </message>
     <message>
         <source>Re&amp;fresh</source>
-        <translation type="unfinished">Ос&amp;вежи</translation>
+        <translation>Ос&amp;вежи</translation>
     </message>
 </context>
 <context>
@@ -4063,7 +4056,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
-        <translation type="unfinished">На &lt;b&gt;%1&lt;/b&gt; лист, %2</translation>
+        <translation>На &lt;b&gt;%1&lt;/b&gt; лист, %2</translation>
     </message>
 </context>
 <context>
@@ -4226,23 +4219,23 @@ p, li { white-space: pre-wrap; }
     <name>VBoxTextEditor</name>
     <message>
         <source>Edit text</source>
-        <translation type="unfinished"></translation>
+        <translation>уреди текст</translation>
     </message>
     <message>
         <source>&amp;Replace...</source>
-        <translation type="unfinished"></translation>
+        <translation>Промени...</translation>
     </message>
     <message>
         <source>Replaces the current text with the content of a given file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Промени актуелни текст са садржајом датотеке.</translation>
     </message>
     <message>
         <source>Text (*.txt);;All (*.*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Текст (*.txt);;Све (*.*)</translation>
     </message>
     <message>
         <source>Select a file to open...</source>
-        <translation type="unfinished"></translation>
+        <translation>Одабрати датотеку...</translation>
     </message>
 </context>
 <context>
@@ -5094,23 +5087,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation type="unfinished"></translation>
+        <translation>поставили сте више од &lt;b&gt;%1%&lt;/b&gt; меморије рачунара (&lt;b&gt;%2&lt;/b&gt;) виртуелној машини. Није остављено довољно меморије за рад оперативног система. Одабрати мању количину.</translation>
     </message>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
-        <translation type="unfinished"></translation>
+        <translation>поставили сте више од &lt;b&gt;%1%&lt;/b&gt; меморије рачунара (&lt;b&gt;%2&lt;/b&gt;) виртуелној машини. Није остављено довољно меморије за рад оперативног система. Наставити на ваш ризик.</translation>
     </message>
     <message>
         <source>there is a 64 bits guest OS type assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else your guest will fail to detect a 64 bits CPU and will not be able to boot, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>64 битни ОС је постављен за ову ВМ, што је потребно да VT-x/AMD-V буде упаљено, инаће хост неће наћи 64 битни ЦПУ и неће моћи да се покрене, тако да ће ово бити аутоматско упаљено када прихватите ВМ параметри стискањем У реду.</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation type="unfinished"></translation>
+        <translation>На одабрано, машина ће пробати да користи Intel VT-x и AMD-V.</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
-        <translation type="unfinished"></translation>
+        <translation>Упали подметнуто записивање</translation>
     </message>
 </context>
 <context>
@@ -5173,11 +5166,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, enables an additional virtual controller (either SATA or SCSI) of this machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Када унето, упали додатни виртуелни контролер (SATA или SCSI) за ову машину.</translation>
     </message>
     <message>
         <source>&amp;Enable Additional Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Упали додатни контролер</translation>
     </message>
 </context>
 <context>
@@ -5212,7 +5205,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation>Контролише рад овог адаптера према праву мрежу хоста.</translation>
+        <translation>Контролише како овај виртуелни адаптер је прикачен према праву мрежу хоста.</translation>
     </message>
     <message>
         <source>&amp;Network Name:</source>
@@ -5289,36 +5282,36 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Adapter &amp;Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>Тип адаптера:</translation>
     </message>
     <message>
         <source>no bridged network adapter is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>мрежни мост адаптер одабран</translation>
     </message>
     <message>
         <source>no internal network name is specified</source>
-        <translation type="unfinished"></translation>
+        <translation>није унето интерно име мреже</translation>
     </message>
     <message>
         <source>no host-only network adapter is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>није одабран хост мрежни адаптер</translation>
     </message>
     <message>
         <source>Not selected</source>
         <comment>network adapter name</comment>
-        <translation type="unfinished"></translation>
+        <translation>Није одабрано</translation>
     </message>
     <message>
         <source>Open additional options dialog for current attachment type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Додатне опције за актуелног типа прикључка.</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">Име:</translation>
+        <translation>Име:</translation>
     </message>
     <message>
         <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Одабрати име мрежног адаптера ако је тиш &lt;b&gt;Мост адаптер&lt;/b&gt; или &lt;b&gt;Саом хост адаптер&lt;/b&gt; и име интерне мреже је &lt;b&gt;Интерна мрежа&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
@@ -5329,27 +5322,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Guest &amp;MAC Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>Погоди МАК адресу:</translation>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="unfinished">Показује MAC адресу адаптера. Садржава 12 слова од {0-9,A-F}. Друго слова мора да буде дигитални.</translation>
+        <translation>Показује MAC адресу адаптера. Садржава 12 слова од {0-9,A-F}. Друго слова мора да буде дигитални.</translation>
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
-        <translation type="unfinished">Генерише нову MAC адресу.</translation>
+        <translation>Генерише нову MAC адресу.</translation>
     </message>
     <message>
         <source>&amp;Cable connected</source>
-        <translation type="unfinished"></translation>
+        <translation>Привезан каблом</translation>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="unfinished">Показује да ли је виртуелни мрежни кабал прикључен или не.</translation>
+        <translation>Показује да ли је виртуелни мрежни кабал прикључен или не.</translation>
     </message>
     <message>
         <source>Additional Options</source>
-        <translation type="unfinished"></translation>
+        <translation>Додатне опције</translation>
     </message>
 </context>
 <context>

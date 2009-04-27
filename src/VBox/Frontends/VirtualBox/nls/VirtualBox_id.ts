@@ -1170,10 +1170,6 @@ Versi %1</translation>
         <translation type="obsolete">Buka formulir registrasi VirtualBox</translation>
     </message>
     <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
-    </message>
-    <message>
         <source>Session I&amp;nformation Dialog</source>
         <translation>Dialog I&amp;nformasi Sesi </translation>
     </message>
@@ -5635,10 +5631,6 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     <message>
         <source>Open VirtualBox registration form</source>
         <translation type="obsolete">Buka formulir registrasi VirtualBox</translation>
-    </message>
-    <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
     </message>
     <message>
         <source>R&amp;esume</source>

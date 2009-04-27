@@ -966,10 +966,6 @@ Version %1</translation>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Inga delade mappar&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
-    </message>
-    <message>
         <source>Session I&amp;nformation Dialog</source>
         <translation>Sessionsi&amp;nformation</translation>
     </message>
@@ -4499,10 +4495,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Show the log files of the selected virtual machine</source>
         <translation>Visa loggfilerna för den markerade virtuella maskinen</translation>
-    </message>
-    <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
     </message>
     <message>
         <source>R&amp;esume</source>

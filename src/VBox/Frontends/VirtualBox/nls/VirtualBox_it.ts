@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
 <TS version="2.0" language="it">
-<defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
     <message>
@@ -535,11 +534,11 @@ Versione %1</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation>Scaricamento in corso dell&apos;immagine CD di VirtualBox Guest Addition da &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation>Scaricamento in corso dell&apos;immagine CD di VirtualBox Guest Additions da &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation>Annulla lo scaricamento dell&apos;immagine CD di VirtualBox Guest Addition</translation>
+        <translation>Annulla lo scaricamento dell&apos;immagine CD di VirtualBox Guest Additions</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
@@ -547,7 +546,7 @@ Versione %1</translation>
     </message>
     <message>
         <source>Select folder to save Guest Additions image to</source>
-        <translation>Selezionare la cartella dove salvare l&apos;immagine di Guest Addition</translation>
+        <translation>Selezionare la cartella dove salvare l&apos;immagine di Guest Additions</translation>
     </message>
 </context>
 <context>
@@ -747,7 +746,7 @@ Versione %1</translation>
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Salva lo stato di esecuzione corrente della macchina virtuale sul disco fisico del PC host.&lt;/p&gt;&lt;p&gt;Al prossimo riavvio della macchina, sarà ripristinato dallo stato salvato e continuerà l&apos;esecuzione dallo stesso punto in cui lo hai salvato, permettendoti di continuare immediatamente il tuo lavoro.&lt;/p&gt;&lt;p&gt;Nota che il salvaggio dello stato della macchina potrebbe richiedere del tempo, a seconda del tipo di sistema operativo guest e del quantitativo di memoria assegnata alla macchina virtuale.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Salva lo stato di esecuzione corrente della macchina virtuale sul disco fisico del PC host.&lt;/p&gt;&lt;p&gt;Al prossimo riavvio della macchina, sarà ripristinato dallo stato salvato e continuerà l&apos;esecuzione dallo stesso punto in cui lo hai salvato, permettendoti di continuare immediatamente il tuo lavoro.&lt;/p&gt;&lt;p&gt;Nota che il salvataggio dello stato della macchina potrebbe richiedere del tempo, a seconda del tipo di sistema operativo guest e del quantitativo di memoria assegnata alla macchina virtuale.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
@@ -807,7 +806,7 @@ Versione %1</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
-        <translation>Ridimensiona automaticamente lo schermo Guest quando la finestra viene ridimensionata (richiede le Guest Addition)</translation>
+        <translation>Ridimensiona automaticamente lo schermo Guest quando la finestra viene ridimensionata (richiede le Guest Additions)</translation>
     </message>
     <message>
         <source>&amp;Adjust Window Size</source>
@@ -839,7 +838,7 @@ Versione %1</translation>
     </message>
     <message>
         <source>Reset the virtual machine</source>
-        <translation>Reset della macchina virtuale</translation>
+        <translation>Ripristina la macchina virtuale</translation>
     </message>
     <message>
         <source>ACPI S&amp;hutdown</source>
@@ -924,11 +923,11 @@ Versione %1</translation>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
-        <translation>&amp;Installa Guest Addition...</translation>
+        <translation>&amp;Installa Guest Additions...</translation>
     </message>
     <message>
         <source>Mount the Guest Additions installation image</source>
-        <translation>Monta l&apos;immagine per l&apos;installazione delle Guest Addition</translation>
+        <translation>Monta l&apos;immagine per l&apos;installazione delle Guest Additions</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
@@ -1288,10 +1287,6 @@ Versione %1</translation>
         <translation type="obsolete">Apri il modulo di registrazione di VirtualBox</translation>
     </message>
     <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
-    </message>
-    <message>
         <source>Session I&amp;nformation Dialog</source>
         <translation>Finestra I&amp;nformazioni di sessione</translation>
     </message>
@@ -1316,11 +1311,11 @@ Versione %1</translation>
     </message>
     <message>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Indica se il ridimensionamento automatico dello schermo guest è Attivo (&lt;img src=:/auto_resize_on_16px.png/&gt;) o Inattivo (&lt;img src=:/auto_resize_off_16px.png/&gt;). Nota che questa funzione richiede che le Guest Addition siano installate sul sistema guest.</translation>
+        <translation>Indica se il ridimensionamento automatico dello schermo guest è Attivo (&lt;img src=:/auto_resize_on_16px.png/&gt;) o Inattivo (&lt;img src=:/auto_resize_off_16px.png/&gt;). Nota che questa funzione richiede che le Guest Additions siano installate sul sistema guest.</translation>
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Indica se il puntatore del mouse dell&apos;host è acquisito dal sistema guest:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;il puntatore non è acquisito&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;il puntatore è acquisito&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;l&apos;integrazione del mouse (MI) è Attiva&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI è Inattiva, il puntatore è acquisito&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI è Inattiva, il puntatore non è acquisito&lt;/nobr&gt;&lt;br&gt;Nota che la funzionalità di integrazione del mouse richiede che le Guest Addition siano installate sul sistema guest.</translation>
+        <translation>Indica se il puntatore del mouse dell&apos;host è acquisito dal sistema guest:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;il puntatore non è acquisito&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;il puntatore è acquisito&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;l&apos;integrazione del mouse (MI) è Attiva&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI è Inattiva, il puntatore è acquisito&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI è Inattiva, il puntatore non è acquisito&lt;/nobr&gt;&lt;br&gt;Nota che la funzionalità di integrazione del mouse richiede che le Guest Additions siano installate sul sistema guest.</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
@@ -1697,7 +1692,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that should be exported to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
@@ -1858,7 +1853,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the application will provide an icon with the context menu in the system tray.</source>
-        <translation>Se marcata, l&apos;applicazione fornira un&apos;icona con menu contestuale nel vassoio di sistema.</translation>
+        <translation>Se marcata, l&apos;applicazione fornirà un&apos;icona con menu contestuale nel vassoio di sistema.</translation>
     </message>
     <message>
         <source>&amp;Show System Tray Icon</source>
@@ -2444,7 +2439,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Aborted</source>
         <comment>MachineState</comment>
-        <translation>Abortita</translation>
+        <translation>Interrotta</translation>
     </message>
     <message>
         <source>Running</source>
@@ -2519,7 +2514,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Hard Disk</source>
         <comment>DeviceType</comment>
-        <translation>Hard Disk</translation>
+        <translation>Disco fisso</translation>
     </message>
     <message>
         <source>Network</source>
@@ -2718,7 +2713,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Select a directory</source>
-        <translation>Seleziona una directory</translation>
+        <translation>Seleziona una cartella</translation>
     </message>
     <message>
         <source>Select a file</source>
@@ -4225,11 +4220,11 @@ come dimensione dell&apos;hard disk virtuale.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Hard disk images (*.vdi)</source>
-        <translation>Immagini hard disk (*.vdi)</translation>
+        <translation>Immagini disco fisso (*.vdi)</translation>
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
-        <translation>Seleziona un file per la nuova immagine hard disk</translation>
+        <translation>Seleziona un file per la nuova immagine di disco fisso</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
@@ -4433,7 +4428,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>Virtual Hard Disk</source>
-        <translation>Hard disk virtuale</translation>
+        <translation>Disco fisso virtuale</translation>
     </message>
     <message>
         <source>
@@ -4624,7 +4619,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
-        <translation>Fallimento nell&apos;apertura di &lt;tt&gt;%1&lt;/tt&gt;. Assicurati che il tuo ambiente desktop possa gestire correttamente URL di questo tipo.</translation>
+        <translation>Apertura di &lt;tt&gt;%1&lt;/tt&gt;non riuscita. Assicurati che il tuo ambiente desktop possa gestire correttamente URL di questo tipo.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -4919,7 +4914,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Impossibile recuperare il file della lingua &lt;b&gt;%1&lt;/b&gt; nella directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;La lingua sarà temporaneamente reimpostata a quella predefinita di sistema. Apri la finestra delle &lt;b&gt;Impostazioni&lt;/b&gt; dal menu &lt;b&gt;File&lt;/b&gt; della finestra principale di VirtualBox, e scegli una delle lingue esistenti nella pagina &lt;b&gt;Lingua&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Impossibile recuperare il file della lingua &lt;b&gt;%1&lt;/b&gt; nella cartella &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;La lingua sarà temporaneamente reimpostata a quella predefinita di sistema. Apri la finestra delle &lt;b&gt;Impostazioni&lt;/b&gt; dal menu &lt;b&gt;File&lt;/b&gt; della finestra principale di VirtualBox, e scegli una delle lingue esistenti nella pagina &lt;b&gt;Lingua&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
@@ -4927,7 +4922,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Le Guest Addition installate nel sistema Guest sono obsolete: la versione installata è %1, quella attesa è %2. Alcune funzionalità che richiedono Guest Addition (Integrazione mouse, auto-ridimensionamento dello schermo) probabilmente smetteranno di funzionare correttamente.&lt;/p&gt;&lt;p&gt;Aggiorna le Guest Addition alla versione attuale scegliendo &lt;b&gt;Installa Guest Addition&lt;/b&gt; dal menu &lt;b&gt;Dispositivi&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Le Guest Additions installate nel sistema Guest sono obsolete: la versione installata è %1, quella attesa è %2. Alcune funzionalità che richiedono Guest Additions (Integrazione mouse, auto-ridimensionamento dello schermo) probabilmente smetteranno di funzionare correttamente.&lt;/p&gt;&lt;p&gt;Aggiorna le Guest Additions alla versione attuale scegliendo &lt;b&gt;Installa Guest Additions&lt;/b&gt; dal menu &lt;b&gt;Dispositivi&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
@@ -4939,7 +4934,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Impossibile modificare il percorso della cartella per gli snapshot della macchina virtuale &lt;b&gt;%1&lt;b&gt; al valore &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+        <translation>Impossibile modificare il percorso della cartella per le istantanee della macchina virtuale &lt;b&gt;%1&lt;b&gt; al valore &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the VM to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
@@ -4975,7 +4970,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the color quality of the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color quality to see if this message disappears or you can simply disable the message now if you are sure the required color quality (%4&amp;nbsp;bit) is not available in the given guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La finestra della macchina virtuale è ottimizzata per lavorare in modalità colore a &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt;, ma la qualità colore del display virtuale è impostata attualmente a &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Apri la finestra delle proprietà dello schermp nel sistema guest e scegli una modalità colore a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt;, se disponibile, per ottenere le migliori prestazioni dal sottosistema video virtuale.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;: alcuni sistemi operativi, come OS/2, possono lavorare effettivamente in modalità 32&amp;nbsp;bit, ma la segnalano come 24&amp;nbsp;bit (16 milioni di colori). Puoi provare a selezionare una qualità di colore diversa per vedere se questo messaggio scompare, oppure semplicemente disabilitare il messaggio ora se sei sicuro che la qualità colore richiesta (%4&amp;nbsp;bit) non sia disponibile nel sistema guest.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;La finestra della macchina virtuale è ottimizzata per lavorare in modalità colore a &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt;, ma la qualità del colore dello schermo virtuale è impostata attualmente a &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Apri la finestra delle proprietà dello schermo nel sistema guest e scegli una modalità di colore a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt;, se disponibile, per ottenere le migliori prestazioni dal sottosistema video virtuale.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;: alcuni sistemi operativi, come OS/2, possono lavorare effettivamente in modalità 32&amp;nbsp;bit, ma la segnalano come 24&amp;nbsp;bit (16 milioni di colori). Puoi provare a selezionare una qualità di colore diversa per vedere se questo messaggio scompare, oppure semplicemente disabilitare il messaggio ora se sei sicuro che la qualità di colore richiesta (%4&amp;nbsp;bit) non sia disponibile nel sistema guest.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
@@ -5140,7 +5135,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;When the machine is reset, unsaved data of all applications running inside it will be lost.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vuoi veramente resettare la macchina virtuale?&lt;/p&gt;&lt;p&gt;Tutti i dati non salvati di tutte le applicazioni in esecuzione saranno persi.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vuoi davvero ripristinare la macchina virtuale?&lt;/p&gt;&lt;p&gt;Tutti i dati non salvati di tutte le applicazioni in esecuzione saranno persi.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -5177,11 +5172,11 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Impossibile abilitare la modalità trasparente per memoria video insufficente nel sistema guest.&lt;/p&gt;&lt;p&gt;È necessario configurare la macchina virtuale assegnandole almeno &lt;b&gt;%1&lt;/b&gt; di memoria video.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Impossibile abilitare la modalità trasparente per memoria video insufficiente nel sistema guest.&lt;/p&gt;&lt;p&gt;È necessario configurare la macchina virtuale assegnandole almeno &lt;b&gt;%1&lt;/b&gt; di memoria video.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Impossibile abilitare la modalità a pieno schermo per memoria video insufficente nel sistema guest.&lt;/p&gt;&lt;p&gt;È necessario configurare la macchina virtuale assegnandole almeno &lt;b&gt;%1&lt;/b&gt; di memoria video.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;Ignora&lt;/b&gt; per passare comunque alla modalità a pieno schermo oppure premere &lt;b&gt;Annulla&lt;/b&gt; per annullare l&apos;operazione.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Impossibile abilitare la modalità a pieno schermo per memoria video insufficiente nel sistema guest.&lt;/p&gt;&lt;p&gt;È necessario configurare la macchina virtuale assegnandole almeno &lt;b&gt;%1&lt;/b&gt; di memoria video.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;Ignora&lt;/b&gt; per passare comunque alla modalità a pieno schermo oppure premere &lt;b&gt;Annulla&lt;/b&gt; per annullare l&apos;operazione.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
@@ -5193,7 +5188,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;L&apos;opzione &lt;b&gt;Acquiszione automatica della tastiera&lt;/b&gt; è attiva. La macchina virtuale &lt;b&gt;acquisirà&lt;/b&gt; automaticamente la tastiera ogni volta che la finestra della MV è attiva e la renderà indisponibile alle applicazioni in esecuzione sulla macchina host: quando la tastiera è acquisita, tutte le combinazioni di tasti (incluse quelle di sistema come Alt-Tab) saranno inviate alla MV.&lt;/p&gt;&lt;p&gt;Puoi premere il &lt;b&gt;tasto host&lt;/b&gt; in qualunque momento per &lt;b&gt;liberare&lt;/b&gt; la tastiera e il mouse (se acquisiti) e restituirli alle solite operazioni. Il tasto host assegnato è mostrato nella barra di stato nella parte bassa della finestra della macchina virtuale, accanto all&apos;icona&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;. Questa icona, insieme a quella del mouse posizionata accanto, indica lo stato di acquisizione della tastiera e del mouse.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;L&apos;opzione &lt;b&gt;Acquisizione automatica della tastiera&lt;/b&gt; è attiva. La macchina virtuale &lt;b&gt;acquisirà&lt;/b&gt; automaticamente la tastiera ogni volta che la finestra della MV è attiva e la renderà indisponibile alle applicazioni in esecuzione sulla macchina host: quando la tastiera è acquisita, tutte le combinazioni di tasti (incluse quelle di sistema come Alt-Tab) saranno inviate alla MV.&lt;/p&gt;&lt;p&gt;Puoi premere il &lt;b&gt;tasto host&lt;/b&gt; in qualunque momento per &lt;b&gt;liberare&lt;/b&gt; la tastiera e il mouse (se acquisiti) e restituirli alle solite operazioni. Il tasto host assegnato è mostrato nella barra di stato nella parte bassa della finestra della macchina virtuale, accanto all&apos;icona&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;. Questa icona, insieme a quella del mouse posizionata accanto, indica lo stato di acquisizione della tastiera e del mouse.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
@@ -5427,7 +5422,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not use the ACPI subsystem.</source>
-        <translation>Stai cercando di spegnere il guesto con il pulsante di alimentazione ACPI. Al momento non è possibile perché il guest non usa il sottosistema ACPI.</translation>
+        <translation>Stai cercando di spegnere il guest con il pulsante di alimentazione ACPI. Al momento non è possibile perché il guest non usa il sottosistema ACPI.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
@@ -5848,10 +5843,6 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
         <translation type="obsolete">Apri il modulo di registrazione di VirtualBox</translation>
     </message>
     <message>
-        <source>Sun xVM VirtualBox</source>
-        <translation type="obsolete">Sun xVM VirtualBox</translation>
-    </message>
-    <message>
         <source>R&amp;esume</source>
         <translation>Ripr&amp;endi</translation>
     </message>
@@ -6130,7 +6121,7 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
     <name>VBoxSnapshotsWgt</name>
     <message>
         <source>[snapshot]</source>
-        <translation>[snapshot]</translation>
+        <translation>[istantanea]</translation>
     </message>
     <message>
         <source>VBoxSnapshotsWgt</source>
@@ -6216,7 +6207,7 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
     </message>
     <message>
         <source>The current state differs from the state stored in the current snapshot</source>
-        <translation>Lo stato attuale differisce da quello memorizzato nello snapshot attuale</translation>
+        <translation>Lo stato attuale differisce da quello memorizzato nell&apos;istantanea attuale</translation>
     </message>
     <message>
         <source>The current state is identical to the state stored in the current snapshot</source>
@@ -6240,12 +6231,12 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
     <message>
         <source>Taken at %1</source>
         <comment>Snapshot (time)</comment>
-        <translation>Preso alle %1</translation>
+        <translation>Presa alle %1</translation>
     </message>
     <message>
         <source>Taken on %1</source>
         <comment>Snapshot (date + time)</comment>
-        <translation>Preso il %1</translation>
+        <translation>Presa il %1</translation>
     </message>
     <message>
         <source>%1 since %2</source>
@@ -6254,7 +6245,7 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation>Snapshot %1</translation>
+        <translation>Istantanea %1</translation>
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
@@ -6320,7 +6311,7 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
     <name>VBoxTakeSnapshotDlg</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
-        <translation>Crea uno snapshot della macchina virtuale</translation>
+        <translation>Crea una istantanea della macchina virtuale</translation>
     </message>
     <message>
         <source>Snapshot &amp;Name</source>
@@ -6714,7 +6705,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleziona il media che contiene il programma di setup per il sistema operativo che vuoi installare. Tale media dev&apos;essere avviabile, altrimenti il programma di setup non verrà lanciato.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Seleziona il media che contiene il programma di installazione per il sistema operativo che vuoi installare. Tale supporto deve essere avviabile, altrimenti il programma di installazione non verrà lanciato.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Media Source</source>
@@ -6778,15 +6769,15 @@ qualsiasi valore.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of the media you would like to use for booting an operating system.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Selezionate il tipo di media che volete utilizzare per il boot di un sistema operativo.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Selezionate il tipo di supporto che volete utilizzare per l&apos;avvio di un sistema operativo.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Selezionate il media che contiene il sistema operativo con il quale volete lavorare. Tale media dev&apos;essere bootabile, altrimenti non si riuscirà a lanciare il sistema operativo.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Selezionate il supporto che contiene il sistema operativo con il quale volete lavorare. Tale supporto deve essere avviabile, altrimenti non si riuscirà a lanciare il sistema operativo.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;È stato selezionato il seguente media per effettuare il boot di un sistema operativo:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;È stato selezionato il seguente supporto per avviare un sistema operativo:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
@@ -6968,7 +6959,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Guest Additions</source>
-        <translation>Guest Addition</translation>
+        <translation>Guest Additions</translation>
     </message>
     <message>
         <source>Guest OS Type</source>
@@ -8669,7 +8660,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
     </message>
     <message>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Definisce la modalità di condivisione degli appunti tra il sistema guest e quello host. Nota che questa caratteristica richiede che le Guest Addition siano installate nel sistema guest.</translation>
+        <translation>Definisce la modalità di condivisione degli appunti tra il sistema guest e quello host. Nota che questa caratteristica richiede che le Guest Additions siano installate nel sistema guest.</translation>
     </message>
     <message>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
@@ -9160,7 +9151,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
     </message>
     <message>
         <source>Duplicate port path is entered </source>
-        <translation>È stato immesso un percordo di porta duplicato </translation>
+        <translation>È stato immesso un percorso di porta duplicato </translation>
     </message>
 </context>
 <context>
@@ -9207,7 +9198,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
     </message>
     <message>
         <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
-        <translation>Elenca tutte le cartelle condivise accessibili a questa macchina. Utilizza &apos;net use x: \\vboxsvr\share&apos; per accedere alla cartella condivisa con nome &lt;i&gt;share&lt;/i&gt; da un sistema operativo tipo DOS, o &apos;mount -t vboxsf share mount_point&apos; per accedervi da un sistema Linux. Questa funzionalità richiede le Guest Addition.</translation>
+        <translation>Elenca tutte le cartelle condivise accessibili a questa macchina. Utilizza &apos;net use x: \\vboxsvr\share&apos; per accedere alla cartella condivisa con nome &lt;i&gt;share&lt;/i&gt; da un sistema operativo tipo DOS, o &apos;mount -t vboxsf share mount_point&apos; per accedervi da un sistema Linux. Questa funzionalità richiede le Guest Additions.</translation>
     </message>
     <message>
         <source>Name</source>
@@ -9471,7 +9462,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
     </message>
     <message>
         <source>Defines the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
-        <translation>Definisce il filtro del numero di revisione. Il formato della stringa di &lt;i&gt;corrispondenza esatta&lt;/i&gt; è &lt;tt&gt;IIFF&lt;/tt&gt; dove &lt;tt&gt;è&lt;/tt&gt; è una cifra decimale della parte intera e &lt;tt&gt;F&lt;/tt&gt; è una cifra deimale della parte frazionaria. Una stringa vuota corrisponderà a ogni valore.</translation>
+        <translation>Definisce il filtro del numero di revisione. Il formato della stringa di &lt;i&gt;corrispondenza esatta&lt;/i&gt; è &lt;tt&gt;IIFF&lt;/tt&gt; dove &lt;tt&gt;è&lt;/tt&gt; è una cifra decimale della parte intera e &lt;tt&gt;F&lt;/tt&gt; è una cifra decimale della parte frazionaria. Una stringa vuota corrisponderà a ogni valore.</translation>
     </message>
     <message>
         <source>&amp;Manufacturer:</source>
