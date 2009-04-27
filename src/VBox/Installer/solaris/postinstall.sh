@@ -45,10 +45,12 @@ if test "$currentzone" = "global"; then
                 rc=$?
 
                 # nwam/dhcpagent fix
-                if test "$rc" -eq 0 && test -f /etc/nwam/llp; then
-                    sed -e '/vboxnet/d' /etc/nwam/llp > /etc/nwam/llp.vbox
-                    echo "vboxnet0	static 192.168.56.1" >> /etc/nwam/llp.vbox
-                    mv -f /etc/nwam/llp.vbox /etc/nwam/llp
+                nwamfile=/etc/nwam/llp
+                nwambackupfile=$nwamfile.vbox
+                if test "$rc" -eq 0 && test -f "$nwamfile"; then
+                    sed -e '/vboxnet/d' $nwamfile > $nwambackupfile
+                    echo "vboxnet0	static 192.168.56.1" >> $nwambackupfile
+                    mv -f $nwambackupfile $nwamfile
                 fi
             fi
 
