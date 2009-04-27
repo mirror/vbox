@@ -369,11 +369,17 @@ DevicesR3_DEFS          += VBOX_WITH_EFI
  ifdef VBOX_WITH_ALT_EFITHUNK
   DevicesR3_DEFS        += VBOX_WITH_ALT_EFITHUNK
  endif
+ifeq ($(USERNAME),bird)  # My build is too big, so I had to make some private adjustments.
+EFI_FV_BLK_SIZE	        =   0x10000
+EFI_FV_BLK_NUM          =   0x2a
+EFI_FV_LOAD_ADDRESS     =  0x1000000
+else
 EFI_FV_BLK_SIZE			= 0x10000
 EFI_FV_BLK_NUM			= 15
 EFI_FV_LOAD_ADDRESS		= 0x100000
+endif
 DevicesR3_SOURCES       += EFI/DevEFI.cpp
-EFI/DevEFI.cpp_DEFS += EFI_FV_BLK_SIZE=$(EFI_FV_BLK_SIZE) 
+EFI/DevEFI.cpp_DEFS += EFI_FV_BLK_SIZE=$(EFI_FV_BLK_SIZE)
 EFI/DevEFI.cpp_DEFS += EFI_FV_BLK_NUM=$(EFI_FV_BLK_NUM)
 EFI/DevEFI.cpp_DEFS += EFI_FV_LOAD_ADDRESS=$(EFI_FV_LOAD_ADDRESS)
 
