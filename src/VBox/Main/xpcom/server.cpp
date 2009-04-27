@@ -64,24 +64,6 @@
 # include <sys/resource.h>
 #endif
 
-// for the backtrace signal handler
-#if defined(DEBUG) && defined(RT_OS_LINUX)
-# define USE_BACKTRACE
-#endif
-#if defined(USE_BACKTRACE)
-# include <execinfo.h>
-// get REG_EIP/RIP from ucontext.h
-# ifndef __USE_GNU
-#  define __USE_GNU
-# endif
-# include <ucontext.h>
-# ifdef RT_ARCH_AMD64
-#  define REG_PC REG_RIP
-# else
-#  define REG_PC REG_EIP
-# endif
-#endif
-
 /////////////////////////////////////////////////////////////////////////////
 // VirtualBox component instantiation
 /////////////////////////////////////////////////////////////////////////////
@@ -784,40 +766,6 @@ static void signal_handler (int /* sig */)
     }
 }
 
-#if defined(USE_BACKTRACE)
-/**
- * the signal handler that prints out a backtrace of the call stack.
- * the code is taken from http://www.linuxjournal.com/article/6391.
- */
-static void bt_sighandler (int sig, siginfo_t *info, void *secret)
-{
-
-    void *trace[16];
-    char **messages = (char **)NULL;
-    int i, trace_size = 0;
-    ucontext_t *uc = (ucontext_t *)secret;
-
-    // Do something useful with siginfo_t
-    if (sig == SIGSEGV)
-        Log (("Got signal %d, faulty address is %p, from %p\n",
-               sig, info->si_addr, uc->uc_mcontext.gregs[REG_PC]));
-    else
-        Log (("Got signal %d\n", sig));
-
-    trace_size = backtrace (trace, 16);
-    // overwrite sigaction with caller's address
-    trace[1] = (void *) uc->uc_mcontext.gregs [REG_PC];
-
-    messages = backtrace_symbols (trace, trace_size);
-    // skip first stack frame (points here)
-    Log (("[bt] Execution path:\n"));
-    for (i = 1; i < trace_size; ++i)
-        Log (("[bt] %s\n", messages[i]));
-
-    exit (0);
-}
-#endif
-
 int main (int argc, char **argv)
 {
     const struct option options[] =
@@ -1012,19 +960,6 @@ int main (int argc, char **argv)
     }
 
 #endif // ifdef RT_OS_OS2
-
-#if defined(USE_BACKTRACE)
-    {
-        /* install our signal handler to backtrace the call stack */
-        struct sigaction sa;
-        sa.sa_sigaction = bt_sighandler;
-        sigemptyset (&sa.sa_mask);
-        sa.sa_flags = SA_RESTART | SA_SIGINFO;
-        sigaction (SIGSEGV, &sa, NULL);
-        sigaction (SIGBUS, &sa, NULL);
-        sigaction (SIGUSR1, &sa, NULL);
-    }
-#endif
 
     /*
      * Initialize the VBox runtime without loading
