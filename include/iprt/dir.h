@@ -75,12 +75,20 @@ RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode);
 RTDECL(int) RTDirCreateFullPath(const char *pszPath, RTFMODE fMode);
 
 /**
- * Removes a directory.
+ * Removes a directory (only if not empty).
  *
  * @returns iprt status code.
  * @param   pszPath   Path to the directory to remove.
  */
 RTDECL(int) RTDirRemove(const char *pszPath);
+
+/**
+ * Removes a directory recursively.
+ *
+ * @returns iprt status code.
+ * @param   pszPath   Path to the directory to remove recursively.
+ */
+RTDECL(int) RTDirRemoveRecursive(const char *pszPath);
 
 
 /** Pointer to an open directory (sort of handle). */
