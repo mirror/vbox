@@ -90,6 +90,9 @@ typedef R0PTRTYPE(struct GVM *)     PGVM;
 /** Pointer to a ring-3 (user mode) VM structure. */
 typedef R3PTRTYPE(struct UVM *)     PUVM;
 
+/** Pointer to a ring-3 (user mode) VMCPU structure. */
+typedef R3PTRTYPE(struct UVMCPU *)  PUVMCPU;
+
 /** Virtual CPU ID. */
 typedef uint32_t VMCPUID;
 /** Pointer to a virtual CPU ID. */
