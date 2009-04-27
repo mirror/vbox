@@ -85,6 +85,8 @@ typedef struct VMCPU
     /** The CPU state. */
     VMCPUSTATE volatile     enmState;
 
+    /** Pointer to the ring-3 UVMCPU structure. */
+    PUVMCPU                 pUVCpu;
     /** Ring-3 Host Context VM Pointer. */
     PVMR3                   pVMR3;
     /** Ring-0 Host Context VM Pointer. */
@@ -104,7 +106,7 @@ typedef struct VMCPU
      *          data could be lumped together at the end with a < 64 byte padding
      *          following it (to grow into and align the struct size).
      *   */
-    uint32_t                au32Alignment[HC_ARCH_BITS == 32 ? 9 : 6];
+    uint32_t                au32Alignment[HC_ARCH_BITS == 32 ? 8 : 4];
 
     /** CPUM part. */
     union
@@ -282,8 +284,10 @@ typedef struct VMCPU *PVMCPU;
 /** Normal priority VMCPU post-execution actions. */
 #define VMCPU_FF_NORMAL_PRIORITY_POST_MASK      (VMCPU_FF_CSAM_SCAN_PAGE)
 
-/** Normal priority actions. */
+/** Normal priority VM actions. */
 #define VM_FF_NORMAL_PRIORITY_MASK              (VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA | VM_FF_REM_HANDLER_NOTIFY)
+/** Normal priority VMCPU actions. */
+#define VMCPU_FF_NORMAL_PRIORITY_MASK           (VMCPU_FF_REQUEST)
 
 /** Flags to clear before resuming guest execution. */
 #define VMCPU_FF_RESUME_GUEST_MASK              (VMCPU_FF_TO_R3)
@@ -323,11 +327,7 @@ typedef struct VMCPU *PVMCPU;
  * @param   pVCpu     VMCPU Handle.
  * @param   fFlag   The flag to set.
  */
-#if 1 //def VBOX_WITH_SMP_GUESTS
-# define VMCPU_FF_SET(pVCpu, fFlag)    ASMAtomicOrU32(&(pVCpu)->fLocalForcedActions, (fFlag))
-#else
-# define VMCPU_FF_SET(pVCpu, fFlag)    ASMAtomicOrU32(&(pVCpu)->CTX_SUFF(pVM)->fGlobalForcedActions, (fFlag))
-#endif
+#define VMCPU_FF_SET(pVCpu, fFlag)    ASMAtomicOrU32(&(pVCpu)->fLocalForcedActions, (fFlag))
 
 /** @def VM_FF_CLEAR
  * Clears a force action flag.
@@ -350,11 +350,7 @@ typedef struct VMCPU *PVMCPU;
  * @param   pVCpu     VMCPU Handle.
  * @param   fFlag   The flag to clear.
  */
-#if 1 //def VBOX_WITH_SMP_GUESTS
-# define VMCPU_FF_CLEAR(pVCpu, fFlag)  ASMAtomicAndU32(&(pVCpu)->fLocalForcedActions, ~(fFlag))
-#else
-# define VMCPU_FF_CLEAR(pVCpu, fFlag)  ASMAtomicAndU32(&(pVCpu)->CTX_SUFF(pVM)->fGlobalForcedActions, ~(fFlag))
-#endif
+#define VMCPU_FF_CLEAR(pVCpu, fFlag)  ASMAtomicAndU32(&(pVCpu)->fLocalForcedActions, ~(fFlag))
 
 /** @def VM_FF_ISSET
  * Checks if a force action flag is set.
@@ -370,11 +366,7 @@ typedef struct VMCPU *PVMCPU;
  * @param   pVCpu     VMCPU Handle.
  * @param   fFlag   The flag to check.
  */
-#if 1 //def VBOX_WITH_SMP_GUESTS
-# define VMCPU_FF_ISSET(pVCpu, fFlag)  (((pVCpu)->fLocalForcedActions & (fFlag)) == (fFlag))
-#else
-# define VMCPU_FF_ISSET(pVCpu, fFlag)  (((pVCpu)->CTX_SUFF(pVM)->fGlobalForcedActions & (fFlag)) == (fFlag))
-#endif
+#define VMCPU_FF_ISSET(pVCpu, fFlag)  (((pVCpu)->fLocalForcedActions & (fFlag)) == (fFlag))
 
 /** @def VM_FF_ISPENDING
  * Checks if one or more force action in the specified set is pending.
@@ -390,11 +382,7 @@ typedef struct VMCPU *PVMCPU;
  * @param   pVCpu     VMCPU Handle.
  * @param   fFlags  The flags to check for.
  */
-#if 1 //def VBOX_WITH_SMP_GUESTS
-# define VMCPU_FF_ISPENDING(pVCpu, fFlags) ((pVCpu)->fLocalForcedActions & (fFlags))
-#else
-# define VMCPU_FF_ISPENDING(pVCpu, fFlags) ((pVCpu)->CTX_SUFF(pVM)->fGlobalForcedActions & (fFlags))
-#endif
+#define VMCPU_FF_ISPENDING(pVCpu, fFlags) ((pVCpu)->fLocalForcedActions & (fFlags))
 
 /** @def VM_FF_ISPENDING
  * Checks if one or more force action in the specified set is pending while one
@@ -414,11 +402,7 @@ typedef struct VMCPU *PVMCPU;
  * @param   fFlags  The flags to check for.
  * @param   fExcpt  The flags that should not be set.
  */
-#if 1 //def VBOX_WITH_SMP_GUESTS
-# define VMCPU_FF_IS_PENDING_EXCEPT(pVCpu, fFlags, fExcpt) ( ((pVCpu)->fLocalForcedActions & (fFlags)) && !((pVCpu)->fLocalForcedActions & (fExcpt)) )
-#else
-# define VMCPU_FF_IS_PENDING_EXCEPT(pVCpu, fFlags, fExcpt) ( ((pVCpu)->CTX_SUFF(pVM)->fGlobalForcedActions & (fFlags)) && !((pVCpu)->CTX_SUFF(pVM)->fGlobalForcedActions & (fExcpt)) )
-#endif
+#define VMCPU_FF_IS_PENDING_EXCEPT(pVCpu, fFlags, fExcpt) ( ((pVCpu)->fLocalForcedActions & (fFlags)) && !((pVCpu)->fLocalForcedActions & (fExcpt)) )
 
 /** @def VM_IS_EMT
  * Checks if the current thread is the emulation thread (EMT).

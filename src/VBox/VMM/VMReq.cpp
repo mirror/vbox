@@ -400,7 +400,7 @@ VMMR3DECL(int) VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType, VMREQD
                      enmType, VMREQTYPE_INVALID + 1, VMREQTYPE_MAX - 1),
                     VERR_VM_REQUEST_INVALID_TYPE);
     AssertPtrReturn(ppReq, VERR_INVALID_POINTER);
-    AssertMsgReturn(enmDest == VMREQDEST_ANY || enmDest == VMREQDEST_BROADCAST || (unsigned)enmDest < pUVM->pVM->cCPUs, ("Invalid destination %d (max=%d)\n", enmDest, pUVM->pVM->cCPUs), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(enmDest == VMREQDEST_ANY || enmDest == VMREQDEST_BROADCAST || (unsigned)enmDest < pUVM->cCpus, ("Invalid destination %d (max=%d)\n", enmDest, pUVM->cCpus), VERR_INVALID_PARAMETER);
 
     /*
      * Try get a recycled packet.
@@ -613,12 +613,6 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
                      pReq->enmType, VMREQTYPE_INVALID + 1, VMREQTYPE_MAX - 1),
                     VERR_VM_REQUEST_INVALID_TYPE);
 
-/** @todo SMP: Temporary hack until the unicast and broadcast cases has been
- *        implemented correctly below. It asserts + hangs now. */
-if (pReq->enmDest != VMREQDEST_ANY)
-    pReq->enmDest = VMREQDEST_ANY;
-
-
     /*
      * Are we the EMT or not?
      * Also, store pVM (and fFlags) locally since pReq may be invalid after queuing it.
@@ -631,7 +625,7 @@ if (pReq->enmDest != VMREQDEST_ANY)
     {
         unsigned fFlags = ((VMREQ volatile *)pReq)->fFlags;     /* volatile paranoia */
 
-        for (unsigned i=0;i<pUVM->pVM->cCPUs;i++)
+        for (unsigned i=0;i<pUVM->cCpus;i++)
         {
             PVMCPU pVCpu = &pUVM->pVM->aCpus[i];
 
@@ -654,9 +648,7 @@ if (pReq->enmDest != VMREQDEST_ANY)
                  */
                 if (pUVM->pVM)
                     VMCPU_FF_SET(pVCpu, VMCPU_FF_REQUEST);
-                /* @todo: VMR3NotifyFFU*/
-                AssertFailed();
-                VMR3NotifyFFU(pUVM, false);
+                VMR3NotifyCpuFFU(pUVCpu, false);
 
                 /*
                  * Wait and return.
@@ -684,6 +676,9 @@ if (pReq->enmDest != VMREQDEST_ANY)
         PVMCPU   pVCpu = &pUVM->pVM->aCpus[idTarget];
         unsigned fFlags = ((VMREQ volatile *)pReq)->fFlags;     /* volatile paranoia */
 
+        /* Fetch the right UVMCPU */
+        pUVCpu = &pUVM->aCpus[idTarget];
+
         /*
          * Insert it.
          */
@@ -700,9 +695,7 @@ if (pReq->enmDest != VMREQDEST_ANY)
          */
         if (pUVM->pVM)
             VMCPU_FF_SET(pVCpu, VMCPU_FF_REQUEST);
-        /* @todo: VMR3NotifyFFU*/
-        AssertFailed();
-        VMR3NotifyFFU(pUVM, false);
+        VMR3NotifyCpuFFU(pUVCpu, false);
 
         /*
          * Wait and return.
@@ -732,7 +725,7 @@ if (pReq->enmDest != VMREQDEST_ANY)
          */
         if (pUVM->pVM)
             VM_FF_SET(pUVM->pVM, VM_FF_REQUEST);
-        VMR3NotifyFFU(pUVM, false);
+        VMR3NotifyGlobalFFU(pUVM, false);
 
         /*
          * Wait and return.
@@ -839,7 +832,7 @@ VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMREQDEST enmDest)
     /*
      * Process loop.
      *
-     * We do not repeat the outer loop if we've got an informationtional status code
+     * We do not repeat the outer loop if we've got an informational status code
      * since that code needs processing by our caller.
      */
     int rc = VINF_SUCCESS;
@@ -859,11 +852,7 @@ VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMREQDEST enmDest)
         {
             ppReqs = (void * volatile *)&pUVM->aCpus[enmDest].vm.s.pReqs;
             if (RT_LIKELY(pUVM->pVM))
-            {
-                PVMCPU pVCpu = &pUVM->pVM->aCpus[enmDest];
-
-                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_REQUEST);
-            }
+                VMCPU_FF_CLEAR(&pUVM->pVM->aCpus[enmDest], VMCPU_FF_REQUEST);
         }
 
         PVMREQ pReqs = (PVMREQ)ASMAtomicXchgPtr(ppReqs, NULL);

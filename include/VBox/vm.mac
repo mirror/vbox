@@ -106,6 +106,7 @@ endstruc
 struc VMCPU
     .fLocalForcedActions resd 1
     .enmState            resd 1
+    .pUVCpu              RTR3PTR_RES 1
     .pVMR3               RTR3PTR_RES 1
     .pVMR0               RTR0PTR_RES 1
     .pVMRC               RTRCPTR_RES 1

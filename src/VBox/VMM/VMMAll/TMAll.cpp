@@ -145,7 +145,7 @@ DECLINLINE(void) tmSchedule(PTMTIMER pTimer)
         VM_FF_SET(pVM, VM_FF_TIMER);
 #ifdef IN_RING3
         REMR3NotifyTimerPending(pVM);
-        VMR3NotifyFF(pVM, true);
+        VMR3NotifyGlobalFF(pVM, true);
 #endif
     }
 }

@@ -347,7 +347,7 @@ DECLINLINE(uint64_t) tmVirtualGet(PVM pVM, bool fCheckTimers)
             STAM_COUNTER_INC(&pVM->tm.s.StatVirtualGetSetFF);
 #ifdef IN_RING3
             REMR3NotifyTimerPending(pVM);
-            VMR3NotifyFF(pVM, true);
+            VMR3NotifyGlobalFF(pVM, true);
 #endif
         }
     }
@@ -421,7 +421,7 @@ VMMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
             VM_FF_SET(pVM, VM_FF_TIMER);
 #ifdef IN_RING3
             REMR3NotifyTimerPending(pVM);
-            VMR3NotifyFF(pVM, true);
+            VMR3NotifyGlobalFF(pVM, true);
 #endif
             STAM_COUNTER_INC(&pVM->tm.s.StatVirtualGetSyncSetFF);
         }
@@ -498,7 +498,7 @@ VMMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
                 VM_FF_SET(pVM, VM_FF_TIMER);
 #ifdef IN_RING3
                 REMR3NotifyTimerPending(pVM);
-                VMR3NotifyFF(pVM, true);
+                VMR3NotifyGlobalFF(pVM, true);
 #endif
                 STAM_COUNTER_INC(&pVM->tm.s.StatVirtualGetSyncSetFF);
                 Log4(("TM: %RU64/%RU64: exp tmr=>ff\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
@@ -525,7 +525,7 @@ VMMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
                 VM_FF_SET(pVM, VM_FF_TIMER);
 #ifdef IN_RING3
                 REMR3NotifyTimerPending(pVM);
-                VMR3NotifyFF(pVM, true);
+                VMR3NotifyGlobalFF(pVM, true);
 #endif
                 STAM_COUNTER_INC(&pVM->tm.s.StatVirtualGetSyncSetFF);
                 Log4(("TM: %RU64/%RU64: exp tmr=>ff (!)\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));

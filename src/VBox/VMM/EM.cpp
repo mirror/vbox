@@ -3360,6 +3360,32 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
     }
 
     /*
+     * Normal priority then. (per-VCPU)
+     * (Executed in no particular order.)
+     */
+    if (    !VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)
+        &&  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_NORMAL_PRIORITY_MASK))
+    {
+        /*
+         * Requests from other threads.
+         */
+        if (VM_FF_IS_PENDING_EXCEPT(pVM, VM_FF_REQUEST, VM_FF_PGM_NO_MEMORY))
+        {
+            rc2 = VMR3ReqProcessU(pVM->pUVM, (VMREQDEST)pVCpu->idCpu);
+            if (rc2 == VINF_EM_OFF || rc2 == VINF_EM_TERMINATE)
+            {
+                Log2(("emR3ForcedActions: returns %Rrc\n", rc2));
+                STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatForcedActions, a);
+                return rc2;
+            }
+            UPDATE_RC();
+        }
+
+        /* check that we got them all  */
+        Assert(!(VMCPU_FF_NORMAL_PRIORITY_MASK & ~(VMCPU_FF_REQUEST)));
+    }
+
+    /*
      * High priority pre execution chunk last.
      * (Executed in ascending priority order.)
      */

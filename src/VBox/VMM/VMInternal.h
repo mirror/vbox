@@ -261,120 +261,11 @@ typedef struct VMINTUSERPERVM
      * Mainly for creation and destruction.. */
     PSUPDRVSESSION                  pSession;
 
-    /** Wait event semaphore. */
-    RTSEMEVENT                      EventSemWait;
-    /** Wait/Idle indicator. */
-    bool volatile                   fWait;
     /** Force EMT to terminate. */
     bool volatile                   fTerminateEMT;
     /** If set the EMT does the final VM cleanup when it exits.
      * If clear the VMR3Destroy() caller does so. */
     bool                            fEMTDoesTheCleanup;
-
-    /** @name Generic Halt data
-     * @{
-     */
-    /** The current halt method.
-     * Can be selected by CFGM option 'VM/HaltMethod'. */
-    VMHALTMETHOD                    enmHaltMethod;
-    /** The index into g_aHaltMethods of the current halt method. */
-    uint32_t volatile               iHaltMethod;
-    /** The average time (ns) between two halts in the last second. (updated once per second) */
-    uint32_t                        HaltInterval;
-    /** The average halt frequency for the last second. (updated once per second) */
-    uint32_t                        HaltFrequency;
-    /** The number of halts in the current period. */
-    uint32_t                        cHalts;
-    uint32_t                        padding; /**< alignment padding. */
-    /** When we started counting halts in cHalts (RTTimeNanoTS). */
-    uint64_t                        u64HaltsStartTS;
-    /** @} */
-
-    /** Union containing data and config for the different halt algorithms. */
-    union
-    {
-       /**
-        * Method 1 & 2 - Block whenever possible, and when lagging behind
-        * switch to spinning with regular blocking every 5-200ms (defaults)
-        * depending on the accumulated lag. The blocking interval is adjusted
-        * with the average oversleeping of the last 64 times.
-        *
-        * The difference between 1 and 2 is that we use native absolute
-        * time APIs for the blocking instead of the millisecond based IPRT
-        * interface.
-        */
-        struct
-        {
-            /** How many times we've blocked while cBlockedNS and cBlockedTooLongNS has been accumulating. */
-            uint32_t                cBlocks;
-            /** Avg. time spend oversleeping when blocking. (Re-calculated every so often.) */
-            uint64_t                cNSBlockedTooLongAvg;
-            /** Total time spend oversleeping when blocking. */
-            uint64_t                cNSBlockedTooLong;
-            /** Total time spent blocking. */
-            uint64_t                cNSBlocked;
-            /** The timestamp (RTTimeNanoTS) of the last block. */
-            uint64_t                u64LastBlockTS;
-
-            /** When we started spinning relentlessly in order to catch up some of the oversleeping.
-             * This is 0 when we're not spinning. */
-            uint64_t                u64StartSpinTS;
-
-            /** The max interval without blocking (when spinning). */
-            uint32_t                u32MinBlockIntervalCfg;
-            /** The minimum interval between blocking (when spinning). */
-            uint32_t                u32MaxBlockIntervalCfg;
-            /** The value to divide the current lag by to get the raw blocking interval (when spinning). */
-            uint32_t                u32LagBlockIntervalDivisorCfg;
-            /** When to start spinning (lag / nano secs). */
-            uint32_t                u32StartSpinningCfg;
-            /** When to stop spinning (lag / nano secs). */
-            uint32_t                u32StopSpinningCfg;
-        }                           Method12;
-
-#if 0
-       /**
-        * Method 3 & 4 - Same as method 1 & 2 respectivly, except that we
-        * sprinkle it with yields.
-        */
-       struct
-       {
-           /** How many times we've blocked while cBlockedNS and cBlockedTooLongNS has been accumulating. */
-           uint32_t                 cBlocks;
-           /** Avg. time spend oversleeping when blocking. (Re-calculated every so often.) */
-           uint64_t                 cBlockedTooLongNSAvg;
-           /** Total time spend oversleeping when blocking. */
-           uint64_t                 cBlockedTooLongNS;
-           /** Total time spent blocking. */
-           uint64_t                 cBlockedNS;
-           /** The timestamp (RTTimeNanoTS) of the last block. */
-           uint64_t                 u64LastBlockTS;
-
-           /** How many times we've yielded while cBlockedNS and cBlockedTooLongNS has been accumulating. */
-           uint32_t                 cYields;
-           /** Avg. time spend oversleeping when yielding. */
-           uint32_t                 cYieldTooLongNSAvg;
-           /** Total time spend oversleeping when yielding. */
-           uint64_t                 cYieldTooLongNS;
-           /** Total time spent yielding. */
-           uint64_t                 cYieldedNS;
-           /** The timestamp (RTTimeNanoTS) of the last block. */
-           uint64_t                 u64LastYieldTS;
-
-           /** When we started spinning relentlessly in order to catch up some of the oversleeping. */
-           uint64_t                 u64StartSpinTS;
-       }                            Method34;
-#endif
-    }                               Halt;
-
-    /** Profiling the halted state; yielding vs blocking.
-     * @{ */
-    STAMPROFILE                     StatHaltYield;
-    STAMPROFILE                     StatHaltBlock;
-    STAMPROFILE                     StatHaltTimers;
-    STAMPROFILE                     StatHaltPoll;
-    /** @} */
-
 
     /** List of registered reset callbacks. */
     PVMATRESET                      pAtReset;
@@ -395,6 +286,43 @@ typedef struct VMINTUSERPERVM
     PVMATRUNTIMEERROR               pAtRuntimeError;
     /** List of registered error callbacks. */
     PVMATRUNTIMEERROR              *ppAtRuntimeErrorNext;
+
+    /** @name Generic Halt data
+     * @{
+     */
+    /** The current halt method.
+     * Can be selected by CFGM option 'VM/HaltMethod'. */
+    VMHALTMETHOD                    enmHaltMethod;
+    /** The index into g_aHaltMethods of the current halt method. */
+    uint32_t volatile               iHaltMethod;
+    /** @} */
+
+    union
+    {
+       /**
+        * Method 1 & 2 - Block whenever possible, and when lagging behind
+        * switch to spinning with regular blocking every 5-200ms (defaults)
+        * depending on the accumulated lag. The blocking interval is adjusted
+        * with the average oversleeping of the last 64 times.
+        *
+        * The difference between 1 and 2 is that we use native absolute
+        * time APIs for the blocking instead of the millisecond based IPRT
+        * interface.
+        */
+        struct
+        {
+            /** The max interval without blocking (when spinning). */
+            uint32_t                u32MinBlockIntervalCfg;
+            /** The minimum interval between blocking (when spinning). */
+            uint32_t                u32MaxBlockIntervalCfg;
+            /** The value to divide the current lag by to get the raw blocking interval (when spinning). */
+            uint32_t                u32LagBlockIntervalDivisorCfg;
+            /** When to start spinning (lag / nano secs). */
+            uint32_t                u32StartSpinningCfg;
+            /** When to stop spinning (lag / nano secs). */
+            uint32_t                u32StopSpinningCfg;
+        }                           Method12;
+    }                               Halt;
 
     /** Pointer to the DBGC instance data. */
     void                           *pvDBGC;
@@ -434,11 +362,6 @@ typedef struct VMINTUSERPERVMCPU
     /** @name Generic Halt data
      * @{
      */
-    /** The current halt method.
-     * Can be selected by CFGM option 'VM/HaltMethod'. */
-    VMHALTMETHOD                    enmHaltMethod;
-    /** The index into g_aHaltMethods of the current halt method. */
-    uint32_t volatile               iHaltMethod;
     /** The average time (ns) between two halts in the last second. (updated once per second) */
     uint32_t                        HaltInterval;
     /** The average halt frequency for the last second. (updated once per second) */
@@ -479,17 +402,6 @@ typedef struct VMINTUSERPERVMCPU
             /** When we started spinning relentlessly in order to catch up some of the oversleeping.
              * This is 0 when we're not spinning. */
             uint64_t                u64StartSpinTS;
-
-            /** The max interval without blocking (when spinning). */
-            uint32_t                u32MinBlockIntervalCfg;
-            /** The minimum interval between blocking (when spinning). */
-            uint32_t                u32MaxBlockIntervalCfg;
-            /** The value to divide the current lag by to get the raw blocking interval (when spinning). */
-            uint32_t                u32LagBlockIntervalDivisorCfg;
-            /** When to start spinning (lag / nano secs). */
-            uint32_t                u32StartSpinningCfg;
-            /** When to stop spinning (lag / nano secs). */
-            uint32_t                u32StopSpinningCfg;
         }                           Method12;
 
 #if 0
@@ -534,9 +446,6 @@ typedef struct VMINTUSERPERVMCPU
     STAMPROFILE                     StatHaltTimers;
     STAMPROFILE                     StatHaltPoll;
     /** @} */
-
-    /** Pointer to the DBGC instance data. */
-    void                           *pvDBGC;
 
     /** vmR3EmulationThread longjmp buffer. Must be last in the structure. */
     jmp_buf                         emtJumpEnv;
