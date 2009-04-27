@@ -3151,20 +3151,23 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigne
     pPdeDst = &pPDDst->a[iPDDst];
 # endif
 
+# if defined(IN_RC)
+    /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
+    PGMDynLockHCPage(pVM, (uint8_t *)pPdeDst);
+# endif
+
     if (!pPdeDst->n.u1Present)
     {
-# if defined(IN_RC)
-        /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
-        PGMDynLockHCPage(pVM, (uint8_t *)pPdeDst);
-# endif
         rc = PGM_BTH_NAME(SyncPT)(pVCpu, iPDSrc, pPDSrc, GCPtrPage);
-# if defined(IN_RC)
-        /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
-        PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
-# endif
         AssertRC(rc);
         if (rc != VINF_SUCCESS)
+        {
+# if defined(IN_RC)
+            /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
+            PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
+# endif
             return rc;
+        }
     }
 
 # if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
@@ -3201,9 +3204,13 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigne
         else
         {
             Log(("PGMVerifyAccess: access violation for %RGv rc=%d\n", GCPtrPage, rc));
-            return VINF_EM_RAW_GUEST_TRAP;
+            rc = VINF_EM_RAW_GUEST_TRAP;
         }
     }
+# if defined(IN_RC)
+    /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
+    PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
+# endif
     return rc;
 
 #else /* PGM_GST_TYPE != PGM_TYPE_32BIT */

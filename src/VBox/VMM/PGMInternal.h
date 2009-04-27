@@ -2448,8 +2448,8 @@ typedef struct PGM
 /// @todo    STAMCOUNTER StatR3PageHandyAllocs;              /**< R3: The number of times we've executed GMMR3AllocateHandyPages. */
 
     /* RC only: */
-    STAMCOUNTER StatRCDynMapCacheMisses;            /**< RC: The number of dynamic page mapping cache hits */
-    STAMCOUNTER StatRCDynMapCacheHits;              /**< RC: The number of dynamic page mapping cache misses */
+    STAMCOUNTER StatRCDynMapCacheMisses;            /**< RC: The number of dynamic page mapping cache misses */
+    STAMCOUNTER StatRCDynMapCacheHits;              /**< RC: The number of dynamic page mapping cache hits */
     STAMCOUNTER StatRCInvlPgConflict;               /**< RC: Number of times PGMInvalidatePage() detected a mapping conflict. */
     STAMCOUNTER StatRCInvlPgSyncMonCR3;             /**< RC: Number of times PGMInvalidatePage() ran into PGM_SYNC_MONITOR_CR3. */
 
