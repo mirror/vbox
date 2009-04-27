@@ -324,6 +324,7 @@ RuntimeR3_SOURCES.win = \
 	generic/mppresent-generic.cpp \
 	generic/semnoint-generic.cpp \
 	generic/semsrw-generic.cpp \
+	generic/uuid-generic.cpp \
 	generic/RTProcIsRunningByName-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
 	r3/posix/env-posix.cpp \
@@ -348,7 +349,6 @@ RuntimeR3_SOURCES.win = \
 	r3/win/tls-win.cpp \
 	r3/win/utf16locale-win.cpp \
 	r3/win/utf8-win.cpp \
-	r3/win/uuid-win.cpp \
 	r3/win/RTUuidCreate-win.cpp \
 	win/errmsgwin.cpp \
 	win/RTErrConvertFromWin32.cpp
