@@ -91,6 +91,7 @@ space=quit
 mail= 
 " >> /tmp/vbox.autoinstall
 
+        # check gnome-terminal, use it if it exists.
         if test -f "/usr/bin/gnome-terminal"; then
             # use su/pfexec
             if test -z "$subin"; then
@@ -98,8 +99,15 @@ mail=
             else
                 /usr/bin/gnome-terminal --title "Installing VirtualBox Additions: Root password required." --command "/bin/sh -c '$subin - root -c \"$pkgaddbin -G -d $installfile -n -a /tmp/vbox.autoinstall SUNWvboxguest\"; /bin/echo press ENTER to close this window; /bin/read'"
             fi
+        elif test -f "/usr/X11/bin/xterm"; then
+            # use xterm
+            if test -z "$subin"; then
+                /usr/X11/bin/xterm -title "Installing VirtualBox Additions" -e "$pfexecbin $pkgaddbin -G -d $installfile -n -a /tmp/vbox.autoinstall SUNWvboxguest; /bin/echo press ENTER to close this window; /bin/read"
+            else
+                /usr/X11/bin/xterm -title "Installing VirtualBox Additions: Root password required." -e "$subin - root -c \"$pkgaddbin -G -d $installfile -n -a /tmp/vbox.autoinstall SUNWvboxguest\"; /bin/echo press ENTER to close this window; /bin/read"
+            fi
         else
-            echo "gnome-terminal not found."
+            echo "No suitable terminal not found. -- install additions using pkgadd -d."
         fi
 
         # remove temporary autoinstall file
