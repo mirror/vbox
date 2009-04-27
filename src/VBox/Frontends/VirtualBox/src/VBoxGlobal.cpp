@@ -696,7 +696,7 @@ static VBoxDefs::RenderMode vboxGetRenderMode (const char *aModeStr)
     /* Quartz2DMode doesn't refresh correctly on 32-bit Snow Leopard, use image mode. */
     char szRelease[80];
     if (    RT_SUCCESS(RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szRelease, sizeof(szRelease)))
-        &&  !strncmp(szRelease, "10."))
+        &&  !strncmp(szRelease, "10.", 3))
         mode = VBoxDefs::QImageMode;
 # endif
 #elif (defined (Q_WS_WIN32) || defined (Q_WS_PM) || defined (Q_WS_X11)) && defined (VBOX_GUI_USE_QIMAGE)
