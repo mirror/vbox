@@ -319,6 +319,16 @@ static int vboxClipboardGetCTextFromX11(VBOXCLIPBOARDCONTEXTX11 *pCtx,
     LogFlowFunc (("converting COMPOUND TEXT to Utf-16LE.  cbSrcLen=%d, cb=%d, pu8SrcText=%.*s\n",
                    cbSrcLen, cb, cbSrcLen, reinterpret_cast<char *>(pValue)));
     *pcbActual = 0;  /* Only set this to the right value on success. */
+    /** @todo quick fix for 2.2, do this properly. */
+    if (cbSrcLen == 0)
+    {
+        XtFree(reinterpret_cast<char *>(pValue));
+        if (cb < 2)
+            return VERR_BUFFER_OVERFLOW;
+        *(PRTUTF16) pv = 0;
+        *pcbActual = 2;
+        return VINF_SUCCESS;
+    }
     /* First convert the compound text to Utf8 */
     property.value = reinterpret_cast<unsigned char *>(pValue);
     property.encoding = clipGetAtom(pCtx->widget, "COMPOUND_TEXT");
