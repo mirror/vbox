@@ -33,6 +33,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/uuid.h>
+#include <iprt/test.h>
 #include <iprt/stream.h>
 #include <iprt/err.h>
 #include <iprt/string.h>
@@ -42,43 +43,59 @@
 int main(int argc, char **argv)
 {
     int rc;
-    int cErrors = 0;
-
-    rc = RTR3Init();
-    if (rc)
+    RTTEST hTest;
+    if (    RT_FAILURE(rc = RTR3Init())
+        ||  RT_FAILURE(rc = RTTestCreate("tstUuid", &hTest)))
     {
-        RTPrintf("RTR3Init failed: %Rrc\n", rc);
+        RTPrintf("tstUuid: RTR3Init or RTTestCreate failed: %Rrc\n", rc);
         return 1;
     }
+    RTTestBanner(hTest);
 
-#define CHECK_RC()      \
-    do { if (RT_FAILURE(rc)) { RTPrintf("tstUuid(%d): rc=%Rrc!\n", __LINE__, rc); cErrors++; } } while (0)
-#define CHECK_EXPR(expr) \
-    do { const bool f = !!(expr); if (!f) { RTPrintf("tstUuid(%d): %s!\n", __LINE__, #expr); cErrors++; } } while (0)
 
+#define CHECK_RC() \
+    do { if (RT_FAILURE(rc)) { RTTestFailed(hTest, "line %d: rc=%Rrc", __LINE__, rc); } } while (0)
+
+    RTTestSub(hTest, "RTUuidClear & RTUuisIsNull");
     RTUUID UuidNull;
     rc = RTUuidClear(&UuidNull); CHECK_RC();
-    CHECK_EXPR(RTUuidIsNull(&UuidNull));
-    CHECK_EXPR(RTUuidCompare(&UuidNull, &UuidNull) == 0);
 
+    RTTEST_CHECK(hTest, RTUuidIsNull(&UuidNull));
+    RTTEST_CHECK(hTest, RTUuidCompare(&UuidNull, &UuidNull) == 0);
+
+    RTTestSub(hTest, "RTUuidCreate");
     RTUUID Uuid;
     rc = RTUuidCreate(&Uuid); CHECK_RC();
-    CHECK_EXPR(!RTUuidIsNull(&Uuid));
-    CHECK_EXPR(RTUuidCompare(&Uuid, &Uuid) == 0);
-    CHECK_EXPR(RTUuidCompare(&Uuid, &UuidNull) > 0);
-    CHECK_EXPR(RTUuidCompare(&UuidNull, &Uuid) < 0);
+    RTTEST_CHECK(hTest, !RTUuidIsNull(&Uuid));
+    RTTEST_CHECK(hTest, RTUuidCompare(&Uuid, &Uuid) == 0);
+    RTTEST_CHECK(hTest, RTUuidCompare(&Uuid, &UuidNull) > 0);
+    RTTEST_CHECK(hTest, RTUuidCompare(&UuidNull, &Uuid) < 0);
 
+    RTTestSub(hTest, "RTUuidToStr");
     char sz[RTUUID_STR_LENGTH];
     rc = RTUuidToStr(&Uuid, sz, sizeof(sz)); CHECK_RC();
+    RTTEST_CHECK(hTest, strlen(sz) == RTUUID_STR_LENGTH - 1);
+    RTTestPrintf(hTest, RTTESTLVL_INFO, "UUID=%s\n", sz);
+
+    RTTestSub(hTest, "RTUuidFromStr");
     RTUUID Uuid2;
     rc = RTUuidFromStr(&Uuid2, sz); CHECK_RC();
-    CHECK_EXPR(RTUuidCompare(&Uuid, &Uuid2) == 0);
+    RTTEST_CHECK(hTest, RTUuidCompare(&Uuid, &Uuid2) == 0);
 
-    RTPrintf("tstUuid: Created {%s}\n", sz);
+    RTTestSub(hTest, "RTUuidToUtf16");
+    RTUTF16 wsz[RTUUID_STR_LENGTH];
+    rc = RTUuidToUtf16(&Uuid, wsz, sizeof(wsz)); CHECK_RC();
+    RTTEST_CHECK(hTest, RTUtf16Len(wsz) == RTUUID_STR_LENGTH - 1);
+
+    RTTestSub(hTest, "RTUuidFromUtf16");
+    rc = RTUuidFromUtf16(&Uuid2, wsz); CHECK_RC();
+    RTTEST_CHECK(hTest, RTUuidCompare(&Uuid, &Uuid2) == 0);
+
 
     /*
      * Check the binary representation.
      */
+    RTTestSub(hTest, "Binary representation");
     RTUUID Uuid3;
     Uuid3.au8[0]  = 0x01;
     Uuid3.au8[1]  = 0x23;
@@ -100,14 +117,15 @@ int main(int argc, char **argv)
     Uuid3.Gen.u16TimeHiAndVersion = (Uuid3.Gen.u16TimeHiAndVersion & 0x0fff) | 0x4000;
     const char *pszUuid3 = "67452301-ab89-4fcd-90b2-547698badcfe";
     rc = RTUuidToStr(&Uuid3, sz, sizeof(sz)); CHECK_RC();
-    CHECK_EXPR(strcmp(sz, pszUuid3) == 0);
+    RTTEST_CHECK(hTest, strcmp(sz, pszUuid3) == 0);
     rc = RTUuidFromStr(&Uuid, pszUuid3); CHECK_RC();
-    CHECK_EXPR(RTUuidCompare(&Uuid, &Uuid3) == 0);
-    CHECK_EXPR(memcmp(&Uuid3, &Uuid, sizeof(Uuid)) == 0);
+    RTTEST_CHECK(hTest, RTUuidCompare(&Uuid, &Uuid3) == 0);
+    RTTEST_CHECK(hTest, memcmp(&Uuid3, &Uuid, sizeof(Uuid)) == 0);
 
     /*
      * checking the clock seq and time hi and version bits...
      */
+    RTTestSub(hTest, "Clock seq, time hi, version bits");
     RTUUID Uuid4Changes;
     Uuid4Changes.au64[0] = 0;
     Uuid4Changes.au64[1] = 0;
@@ -166,21 +184,17 @@ int main(int argc, char **argv)
     RTUUID Uuid4Fixed;
     Uuid4Fixed.au64[0] = ~Uuid4Changes.au64[0];
     Uuid4Fixed.au64[1] = ~Uuid4Changes.au64[1];
-    RTPrintf("tstUuid: fixed bits: %RTuuid (mask)\n", &Uuid4Fixed);
-    RTPrintf("tstUuid:        raw: %.*Rhxs\n", sizeof(Uuid4Fixed), &Uuid4Fixed);
+    RTTestPrintf(hTest, RTTESTLVL_INFO, "fixed bits: %RTuuid (mask)\n", &Uuid4Fixed);
+    RTTestPrintf(hTest, RTTESTLVL_INFO, "tstUuid:        raw: %.*Rhxs\n", sizeof(Uuid4Fixed), &Uuid4Fixed);
 
     Uuid4Prev.au64[0] &= Uuid4Fixed.au64[0];
     Uuid4Prev.au64[1] &= Uuid4Fixed.au64[1];
-    RTPrintf("tstUuid: fixed bits: %RTuuid (value)\n", &Uuid4Prev);
-    RTPrintf("tstUuid:        raw: %.*Rhxs\n", sizeof(Uuid4Prev), &Uuid4Prev);
+    RTTestPrintf(hTest, RTTESTLVL_INFO, "tstUuid: fixed bits: %RTuuid (value)\n", &Uuid4Prev);
+    RTTestPrintf(hTest, RTTESTLVL_INFO, "tstUuid:        raw: %.*Rhxs\n", sizeof(Uuid4Prev), &Uuid4Prev);
 
     /*
      * Summary.
      */
-    if (!cErrors)
-        RTPrintf("tstUuid: SUCCESS {%s}\n", sz);
-    else
-        RTPrintf("tstUuid: FAILED - %d errors\n", cErrors);
-    return !!cErrors;
+    return RTTestSummaryAndDestroy(hTest);
 }
 
