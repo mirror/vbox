@@ -1891,6 +1891,12 @@ static int vdiCompact(void *pBackendData, unsigned uPercentStart,
         rc = RTFileGetSize(pImage->File, &cbFile);
         AssertRCBreak(rc);
         unsigned cBlocksAllocated = (unsigned)((cbFile - pImage->offStartData - pImage->offStartBlockData) >> pImage->uShiftOffset2Index);
+        if (cBlocksAllocated == 0)
+        {
+            /* No data blocks in this image, no need to compact. */
+            rc = VINF_SUCCESS;
+            break;
+        }
 
         /* Allocate block array for back resolving. */
         paBlocks2 = (unsigned *)RTMemAlloc(sizeof(unsigned *) * cBlocksAllocated);
@@ -1964,7 +1970,7 @@ static int vdiCompact(void *pBackendData, unsigned uPercentStart,
                     rc = pfnParentRead(pvParent, i * cbBlock, pvBuf, cbBlock);
                     if (RT_FAILURE(rc))
                         break;
-                    if (memcmp(pvTmp, pvBuf, cbBlock))
+                    if (!memcmp(pvTmp, pvBuf, cbBlock))
                     {
                         pImage->paBlocks[i] = VDI_IMAGE_BLOCK_FREE;
                         rc = vdiUpdateBlockInfo(pImage, i);
@@ -1997,11 +2003,12 @@ static int vdiCompact(void *pBackendData, unsigned uPercentStart,
             unsigned uBlock = paBlocks2[i];
             if (uBlock == VDI_IMAGE_BLOCK_FREE)
             {
-                unsigned uBlockData;
-                do {
+                unsigned uBlockData = VDI_IMAGE_BLOCK_FREE;
+                while (uBlockUsedPos > i && uBlockData == VDI_IMAGE_BLOCK_FREE)
+                {
                     uBlockUsedPos--;
                     uBlockData = paBlocks2[uBlockUsedPos];
-                } while (uBlockUsedPos > i && uBlockData == VDI_IMAGE_BLOCK_FREE);
+                }
                 /* Terminate early if there is no block which needs copying. */
                 if (uBlockUsedPos == i)
                     break;
