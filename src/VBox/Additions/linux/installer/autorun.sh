@@ -46,7 +46,7 @@ if test "$ostype" = "Linux"; then
 elif test "$ostype" = "SunOS"; then
 
     # check for combined package
-    installfile="$path/VBoxSolarisAdditions-amd64.pkg"
+    installfile="$path/VBoxSolarisAdditions.pkg"
     if test -f "$installfile"; then
 
         # check for pkgadd bin
