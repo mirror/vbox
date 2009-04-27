@@ -394,7 +394,8 @@ static void vboxClipboardGetCText(XtPointer pValue, size_t cbSourceLen)
     {
         XtFree(reinterpret_cast<char *>(pValue));
         vboxClipboardSendData(VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
-                              NULL, 0);        
+                              NULL, 0);
+        return;
     }
     /* First convert the compound text to Utf8 */
     property.value = reinterpret_cast<unsigned char *>(pValue);
