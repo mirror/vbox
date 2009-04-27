@@ -63,6 +63,35 @@ case $VW_OPT in
             echo "vboxwebsrv failed with $VW_EXIT."
             VW_EXIT=1
         fi
+
+        # Bump per-process semaphore limit of VBoxSVC
+        PRCTLBIN=`which prctl`
+        if test ! -f "$PRTCLBIN"; then
+            # Wait for VBoxSVC to spawn
+            TRIES=0
+            while test $TRIES -le 3; do
+                VBOXSVC_PID=`ps -eo pid,fname | grep VBoxSVC | grep -v grep | cut -f 1 -d " "`
+                if test $VBOXSVC_PID -ge 0; then
+                    $PRCTLBIN -r -n project.max-sem-ids -v 1024 $VBOXSVC_PID
+                    if test $? -eq 0; then
+                        echo "Successfully bumped VBoxSVC (pid $VBOXSVC_PID) semaphore id limit to 1024."
+                    else
+                        echo "Failed to bump VBoxSVC (pid $VBOXSVC_PID) semaphore id limit."
+                    fi
+                    break
+                else
+                    sleep 1
+                fi
+                TRIES=`expr $TRIES + 1`
+            done
+            if test $TRIES -eq 3; then
+                echo "Stopped waiting for VBoxSVC to spawn..."
+                echo "Failed to bump VBoxSVC process' semaphore id limit."
+            fi
+        else
+            echo "Failed to find prctl to bump VBoxSVC semaphore id limit."
+            echo "As a result, not more than 99 VMs can be started."
+        fi
     ;;
     stop)
         # Kill service contract
