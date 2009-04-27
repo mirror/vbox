@@ -42,13 +42,26 @@
  */
 VMMR0DECL(void) TRPMR0DispatchHostInterrupt(PVM pVM)
 {
+    /*
+     * Get the active interrupt vector number.
+     */
     PVMCPU pVCpu = VMMGetCpu0(pVM);
     RTUINT uActiveVector = pVCpu->trpm.s.uActiveVector;
-
     pVCpu->trpm.s.uActiveVector = ~0;
     AssertMsgReturnVoid(uActiveVector < 256, ("uActiveVector=%#x is invalid! (More assertions to come, please enjoy!)\n", uActiveVector));
 
-#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+#if HC_ARCH_BITS == 64 && defined(RT_OS_DARWIN)
+    /*
+     * Do it the simple and safe way.
+     *
+     * This is a workaround for an optimization bug in the code below
+     * or a gcc 4.2 on mac (snow leopard seed 314).
+     */
+    trpmR0DispatchHostInterruptSimple(uActiveVector);
+
+#else  /* The complicated way: */
+
+# ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     /*
      * Check if we're in long mode or not.
      */
@@ -58,31 +71,31 @@ VMMR0DECL(void) TRPMR0DispatchHostInterrupt(PVM pVM)
         trpmR0DispatchHostInterruptSimple(uActiveVector);
         return;
     }
-#endif
+# endif
 
     /*
      * Get the handler pointer (16:32 ptr) / (16:48 ptr).
      */
     RTIDTR      Idtr;
     ASMGetIDTR(&Idtr);
-#if HC_ARCH_BITS == 32
+# if HC_ARCH_BITS == 32
     PVBOXIDTE   pIdte = &((PVBOXIDTE)Idtr.pIdt)[uActiveVector];
-#else
+# else
     PVBOXIDTE   pIdte = &((PVBOXIDTE)Idtr.pIdt)[uActiveVector * 2];
-#endif
+# endif
     AssertMsgReturnVoid(pIdte->Gen.u1Present, ("The IDT entry (%d) is not present!\n", uActiveVector));
     AssertMsgReturnVoid(    pIdte->Gen.u3Type1 == VBOX_IDTE_TYPE1
                         ||  pIdte->Gen.u5Type2 == VBOX_IDTE_TYPE2_INT_32,
                         ("The IDT entry (%d) is not 32-bit int gate! type1=%#x type2=%#x\n",
                          uActiveVector, pIdte->Gen.u3Type1, pIdte->Gen.u5Type2));
-#if HC_ARCH_BITS == 32
+# if HC_ARCH_BITS == 32
     RTFAR32   pfnHandler;
     pfnHandler.off = VBOXIDTE_OFFSET(*pIdte);
     pfnHandler.sel = pIdte->Gen.u16SegSel;
 
     const RTR0UINTREG uRSP = ~(RTR0UINTREG)0;
 
-#else /* 64-bit: */
+# else /* 64-bit: */
     RTFAR64   pfnHandler;
     pfnHandler.off = VBOXIDTE_OFFSET(*pIdte);
     pfnHandler.off |= (uint64_t)(*(uint32_t *)(pIdte + 1)) << 32; //cleanup!
@@ -95,11 +108,12 @@ VMMR0DECL(void) TRPMR0DispatchHostInterrupt(PVM pVM)
         return;
     }
 
-#endif
+# endif
 
     /*
      * Dispatch it.
      */
     trpmR0DispatchHostInterrupt(pfnHandler.off, pfnHandler.sel, uRSP);
+#endif
 }
 
