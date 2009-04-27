@@ -165,8 +165,11 @@ static int collectNetIfInfo(Bstr &strName, Guid &guid, PNETIFINFO pInfo)
         HRESULT hr = VBoxNetCfgWinGetAdapterSettings((const GUID *)guid.raw(), &Settings);
         if(hr == S_OK)
         {
-            pInfo->IPAddress.u = Settings.ip;
-            pInfo->IPNetMask.u = Settings.mask;
+            if(Settings.ip)
+            {
+                pInfo->IPAddress.u = Settings.ip;
+                pInfo->IPNetMask.u = Settings.mask;
+            }
             pInfo->bDhcpEnabled = Settings.bDhcp;
         }
         else
