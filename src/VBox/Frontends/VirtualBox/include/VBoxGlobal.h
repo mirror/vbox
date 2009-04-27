@@ -302,7 +302,7 @@ public:
     bool isDebuggerAutoShowCommandLineEnabled() const { return false; }
     bool isDebuggerAutoShowStatisticsEnabled() const { return false; }
 
-    bool isStartPausedEnabled() const { false; }
+    bool isStartPausedEnabled() const { return false; }
 #endif
 
     /* VBox enum to/from string/icon/color convertors */
