@@ -359,7 +359,7 @@ int handleList(HandlerArg *a)
                 RTPrintf("HardwareAddress: %lS\n", HardwareAddress.raw());
                 HostNetworkInterfaceMediumType_T Type;
                 networkInterface->COMGETTER(MediumType)(&Type);
-                RTPrintf("MediumType:            %s\n", getHostIfMediumTypeText(Type));
+                RTPrintf("MediumType:      %s\n", getHostIfMediumTypeText(Type));
                 HostNetworkInterfaceStatus_T Status;
                 networkInterface->COMGETTER(Status)(&Status);
                 RTPrintf("Status:          %s\n", getHostIfStatusText(Status));
