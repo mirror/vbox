@@ -500,20 +500,16 @@ void VBoxRegistrationDlg::revalidate (QIWidgetValidator *aWval)
     if (mRbOld->isChecked())
     {
         /* Check for fields correctness */
-        if (mLeOldEmail->validator()->validate (mLeOldEmail->text(), pos) != QValidator::Acceptable ||
-            mLeOldPassword->validator()->validate (mLeOldPassword->text(), pos) != QValidator::Acceptable)
+        if (!isFieldValid (mLeOldEmail) || !isFieldValid (mLeOldPassword))
             valid = false;
     }
     if (mRbNew->isChecked())
     {
         /* Check for fields correctness */
-        if (mLeNewFirstName->validator()->validate (mLeNewFirstName->text(), pos) != QValidator::Acceptable ||
-            mLeNewLastName->validator()->validate (mLeNewLastName->text(), pos) != QValidator::Acceptable ||
-            mLeNewCompany->validator()->validate (mLeNewCompany->text(), pos) != QValidator::Acceptable ||
-            mLeNewCountry->validator()->validate (mLeNewCountry->text(), pos) != QValidator::Acceptable ||
-            mLeNewEmail->validator()->validate (mLeNewEmail->text(), pos) != QValidator::Acceptable ||
-            mLeNewPassword->validator()->validate (mLeNewPassword->text(), pos) != QValidator::Acceptable ||
-            mLeNewPassword2->validator()->validate (mLeNewPassword2->text(), pos) != QValidator::Acceptable)
+        if (!isFieldValid (mLeNewFirstName) || !isFieldValid (mLeNewLastName) ||
+            !isFieldValid (mLeNewCompany) || !isFieldValid (mLeNewCountry) ||
+            !isFieldValid (mLeNewEmail) ||
+            !isFieldValid (mLeNewPassword) || !isFieldValid (mLeNewPassword2))
             valid = false;
 
         /* Check for password correctness */
@@ -561,5 +557,12 @@ void VBoxRegistrationDlg::finish()
                                             data.data());
 
     QIAbstractWizard::accept();
+}
+
+bool VBoxRegistrationDlg::isFieldValid (QLineEdit *aLe) const
+{
+    QString text (aLe->text());
+    int position;
+    return aLe->validator()->validate (text, position) == QValidator::Acceptable;
 }
 
