@@ -72,7 +72,7 @@ VMMDECL(VMCPUID) VMMGetCpuId(PVM pVM)
     return VMR3GetVMCPUId(pVM);
 
 #else  /* IN_RING0 */
-    return HWACCMGetVMCPUId(pVM);
+    return HWACCMR0GetVMCPUId(pVM);
 #endif /* IN_RING0 */
 }
 
@@ -100,7 +100,7 @@ VMMDECL(PVMCPU) VMMGetCpu(PVM pVM)
     return &pVM->aCpus[VMR3GetVMCPUId(pVM)];
 
 #else  /* IN_RING0 */
-    return &pVM->aCpus[HWACCMGetVMCPUId(pVM)];
+    return HWACCMR0GetVMCPU(pVM);
 #endif /* IN_RING0 */
 }
 
