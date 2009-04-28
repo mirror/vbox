@@ -94,7 +94,8 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
                 break;
             }
 
-            if (pUVM->vm.s.pReqs)
+            if (    pUVM->vm.s.pReqs
+                &&  pUVCpu->idCpu == 0 /* Only the first VCPU may initialize the VM during early init */)
             {
                 /*
                  * Service execute in EMT request.
