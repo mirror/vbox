@@ -1078,6 +1078,8 @@ VMMR3DECL(int) VMMR3RawRunGC(PVM pVM, PVMCPU pVCpu)
 {
     Log2(("VMMR3RawRunGC: (cs:eip=%04x:%08x)\n", CPUMGetGuestCS(pVCpu), CPUMGetGuestEIP(pVCpu)));
 
+    AssertReturn(pVM->cCPUs == 1, VERR_RAW_MODE_INVALID_SMP);
+
     /*
      * Set the EIP and ESP.
      */
@@ -1209,7 +1211,7 @@ VMMR3DECL(int) VMMR3CallRC(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, ...)
 VMMR3DECL(int) VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list args)
 {
     /* Raw mode implies 1 VCPU. */
-    Assert(pVM->cCPUs == 1);
+    AssertReturn(pVM->cCPUs == 1, VERR_RAW_MODE_INVALID_SMP);
     PVMCPU pVCpu = &pVM->aCpus[0];
 
     Log2(("VMMR3CallGCV: RCPtrEntry=%RRv cArgs=%d\n", RCPtrEntry, cArgs));
@@ -1328,6 +1330,7 @@ VMMR3DECL(int) VMMR3CallR0(PVM pVM, uint32_t uOperation, uint64_t u64Arg, PSUPVM
 VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM, PVMCPU pVCpu)
 {
     Log(("VMMR3ResumeHyper: eip=%RRv esp=%RRv\n", CPUMGetHyperEIP(pVCpu), CPUMGetHyperESP(pVCpu)));
+    AssertReturn(pVM->cCPUs == 1, VERR_RAW_MODE_INVALID_SMP);
 
     /*
      * We hide log flushes (outer) and hypervisor interrupts (inner).

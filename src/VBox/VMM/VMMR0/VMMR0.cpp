@@ -551,6 +551,12 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperat
                 int rc;
                 bool fVTxDisabled;
 
+                if (RT_UNLIKELY(pVM->cCPUs > 1))
+                {
+                    pVM->vmm.s.iLastGZRc = VERR_RAW_MODE_INVALID_SMP;
+                    return;
+                }
+
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
                 if (RT_UNLIKELY(!PGMGetHyperCR3(pVCpu)))
                 {

@@ -633,13 +633,11 @@ int pgmMapActivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
     /* Note. A log flush (in RC) can cause problems when called from MapCR3 (inconsistent state will trigger assertions). */
     Log4(("pgmMapActivateCR3: fixed mappings=%d idxShwPageCR3=%#x\n", pVM->pgm.s.fMappingsFixed, pShwPageCR3 ? pShwPageCR3->idx : NIL_PGMPOOL_IDX));
 
-    Assert(pVM->cCPUs == 1);
-
-#ifdef DEBUG
+#ifdef VBOX_STRICT
     /* This only applies to raw mode where we only support 1 VCPU. */
     PVMCPU pVCpu = &pVM->aCpus[0];
-#endif
     Assert(pShwPageCR3 && pShwPageCR3 == pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
+#endif
 
     /*
      * Iterate mappings.
