@@ -72,10 +72,10 @@ HRESULT readAndChangeMachineSettings (IMachine *machine, IMachine *readonlyMachi
     printf ("Name: {%ls}\n", name.raw());
 
     printf("Getting machine GUID...\n");
-    Guid guid;
+    Bstr guid;    
     CHECK_RC (machine->COMGETTER(Id) (guid.asOutParam()));
     if (SUCCEEDED (rc) && !guid.isEmpty()) {
-        printf ("Guid::toString(): {%s}\n", (const char *) guid.toString());
+        printf ("Guid::toString(): {%s}\n", Utf8Str(guid).c_str());
     } else {
         printf ("WARNING: there's no GUID!");
     }

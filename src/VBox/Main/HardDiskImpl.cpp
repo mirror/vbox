@@ -1537,7 +1537,7 @@ STDMETHODIMP HardDisk::CreateDiffStorage (IHardDisk *aTarget,
     return rc;
 }
 
-STDMETHODIMP HardDisk::MergeTo (IN_GUID /* aTargetId */, IProgress ** /* aProgress */)
+STDMETHODIMP HardDisk::MergeTo (IN_BSTR /* aTargetId */, IProgress ** /* aProgress */)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());

@@ -2662,7 +2662,7 @@ void VBoxConsoleWnd::vmTakeSnapshot()
     int maxSnapShotIndex = 0;
     QString snapShotName = tr ("Snapshot %1");
     QRegExp regExp (QString ("^") + snapShotName.arg ("([0-9]+)") + QString ("$"));
-    CSnapshot index = cmachine.GetSnapshot (QUuid());
+    CSnapshot index = cmachine.GetSnapshot (QString::null);
     while (!index.isNull())
     {
         /* Check the current snapshot name */
@@ -2892,7 +2892,7 @@ void VBoxConsoleWnd::devicesInstallGuestAdditions()
 void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    QUuid uuid;
+    QString uuid;
 
     CDVDImage image = vbox.FindDVDImage (aSource);
     if (image.isNull())

@@ -1005,7 +1005,7 @@
         The execution state of the given machine has changed.
         <see>IMachine::state</see>
       </desc>
-      <param name="machineId" type="uuid" dir="in">
+      <param name="machineId" type="wstring" dir="in">
         <desc>ID of the machine this event relates to.</desc>
       </param>
       <param name="state" type="MachineState" dir="in">
@@ -1017,7 +1017,7 @@
       <desc>
         Any of the settings of the given machine has changed.
       </desc>
-      <param name="machineId" type="uuid" dir="in">
+      <param name="machineId" type="wstring" dir="in">
         <desc>ID of the machine this event relates to.</desc>
       </param>
     </method>
@@ -1028,7 +1028,7 @@
         either the given machine or (if null) global extra data.
         This gives the chance to veto against changes.
       </desc>
-      <param name="machineId" type="uuid" dir="in">
+      <param name="machineId" type="wstring" dir="in">
         <desc>
           ID of the machine this event relates to
           (null ID for global extra data change requests).
@@ -1063,7 +1063,7 @@
         Notification when machine specific or global extra data
         has changed.
       </desc>
-      <param name="machineId" type="uuid" dir="in">
+      <param name="machineId" type="wstring" dir="in">
         <desc>
           ID of the machine this event relates to.
           Null for global extra data changes.
@@ -1108,7 +1108,7 @@
         application will do required cleanup based on the
         @a mediaId value.
       </desc>
-      <param name="mediaId" type="uuid" dir="in">
+      <param name="mediaId" type="wstring" dir="in">
         <desc>ID of the media this event relates to.</desc>
       </param>
       <param name="mediaType" type="DeviceType" dir="in">
@@ -1127,7 +1127,7 @@
         The given machine was registered or unregistered
         within this VirtualBox installation.
       </desc>
-      <param name="machineId" type="uuid" dir="in">
+      <param name="machineId" type="wstring" dir="in">
         <desc>ID of the machine this event relates to.</desc>
       </param>
       <param name="registered" type="boolean" dir="in">
@@ -1143,7 +1143,7 @@
         The state of the session for the given machine was changed.
         <see>IMachine::sessionState</see>
       </desc>
-      <param name="machineId" type="uuid" dir="in">
+      <param name="machineId" type="wstring" dir="in">
         <desc>ID of the machine this event relates to.</desc>
       </param>
       <param name="state" type="SessionState" dir="in">
@@ -1156,10 +1156,10 @@
         A new snapshot of the machine has been taken.
         <see>ISnapshot</see>
       </desc>
-      <param name="machineId" type="uuid" dir="in">
+      <param name="machineId" type="wstring" dir="in">
         <desc>ID of the machine this event relates to.</desc>
       </param>
-      <param name="snapshotId" type="uuid" dir="in">
+      <param name="snapshotId" type="wstring" dir="in">
         <desc>ID of the new snapshot.</desc>
       </param>
     </method>
@@ -1176,10 +1176,10 @@
 
         <see>ISnapshot</see>
       </desc>
-      <param name="machineId" type="uuid" dir="in">
+      <param name="machineId" type="wstring" dir="in">
         <desc>ID of the machine this event relates to.</desc>
       </param>
-      <param name="snapshotId" type="uuid" dir="in">
+      <param name="snapshotId" type="wstring" dir="in">
         <desc>
           ID of the discarded snapshot. <tt>null</tt> means the
           current machine state has been discarded (restored from
@@ -1193,10 +1193,10 @@
         Snapshot properties (name and/or description) have been changed.
         <see>ISnapshot</see>
       </desc>
-      <param name="machineId" type="uuid" dir="in">
+      <param name="machineId" type="wstring" dir="in">
         <desc>ID of the machine this event relates to.</desc>
       </param>
-      <param name="snapshotId" type="uuid" dir="in">
+      <param name="snapshotId" type="wstring" dir="in">
         <desc>ID of the changed snapshot.</desc>
       </param>
     </method>
@@ -1205,7 +1205,7 @@
       <desc>
         Notification when a guest property has changed.
       </desc>
-      <param name="machineId" type="uuid" dir="in">
+      <param name="machineId" type="wstring" dir="in">
         <desc>
           ID of the machine this event relates to.
         </desc>
@@ -1625,7 +1625,7 @@
       <param name="baseFolder" type="wstring" dir="in">
         <desc>Base machine folder (optional).</desc>
       </param>
-      <param name="id" type="uuid" dir="in">
+      <param name="id" type="wstring" dir="in">
         <desc>Machine UUID (optional).</desc>
       </param>
       <param name="machine" type="IMachine" dir="return">
@@ -1685,7 +1685,7 @@
       <param name="settingsFile" type="wstring" dir="in">
         <desc>Name of the machine settings file.</desc>
       </param>
-      <param name="id" type="uuid" dir="in">
+      <param name="id" type="wstring" dir="in">
         <desc>Machine UUID (optional).</desc>
       </param>
       <param name="machine" type="IMachine" dir="return">
@@ -1762,7 +1762,7 @@
         </result>
 
       </desc>
-      <param name="id" type="uuid" dir="in"/>
+      <param name="id" type="wstring" dir="in"/>
       <param name="machine" type="IMachine" dir="return"/>
     </method>
 
@@ -1819,7 +1819,7 @@
         </result>
 
       </desc>
-      <param name="id" type="uuid" dir="in">
+      <param name="id" type="wstring" dir="in">
         <desc>UUID of the machine to unregister.</desc>
       </param>
       <param name="machine" type="IMachine" dir="return">
@@ -1973,7 +1973,7 @@
         </result>
 
       </desc>
-      <param name="id" type="uuid" dir="in">
+      <param name="id" type="wstring" dir="in">
         <desc>UUID of the hard disk to look for.</desc>
       </param>
       <param name="hardDisk" type="IHardDisk" dir="return">
@@ -2050,7 +2050,7 @@
           Full path to the file that contains a valid CD/DVD image.
         </desc>
       </param>
-      <param name="id" type="uuid" dir="in">
+      <param name="id" type="wstring" dir="in">
         <desc>
           UUID to assign to the given image within this VirtualBox installation.
           If an empty (null) UUID is specified, the system will randomly
@@ -2075,7 +2075,7 @@
         </result>
 
       </desc>
-      <param name="id" type="uuid" dir="in">
+      <param name="id" type="wstring" dir="in">
         <desc>UUID of the image to look for.</desc>
       </param>
       <param name="image" type="IDVDImage" dir="return">
@@ -2150,7 +2150,7 @@
           Full path to the file that contains a valid floppy image.
         </desc>
       </param>
-      <param name="id" type="uuid" dir="in">
+      <param name="id" type="wstring" dir="in">
         <desc>
           UUID to assign to the given image file within this VirtualBox
           installation. If an empty (null) UUID is specified, the system will
@@ -2175,7 +2175,7 @@
         </result>
 
       </desc>
-      <param name="id" type="uuid" dir="in">
+      <param name="id" type="wstring" dir="in">
         <desc>UUID of the image to look for.</desc>
       </param>
       <param name="image" type="IFloppyImage" dir="return">
@@ -2452,7 +2452,7 @@
           </note>
         </desc>
       </param>
-      <param name="machineId" type="uuid" dir="in">
+      <param name="machineId" type="wstring" dir="in">
         <desc>ID of the virtual machine to open a session with.</desc>
       </param>
     </method>
@@ -2544,7 +2544,7 @@
           represent an already open session).
         </desc>
       </param>
-      <param name="machineId" type="uuid" dir="in">
+      <param name="machineId" type="wstring" dir="in">
         <desc>ID of the virtual machine to open a session with.</desc>
       </param>
       <param name="type" type="wstring" dir="in">
@@ -2610,7 +2610,7 @@
           </note>
         </desc>
       </param>
-      <param name="machineId" type="uuid" dir="in">
+      <param name="machineId" type="wstring" dir="in">
         <desc>ID of the virtual machine to open a session with.</desc>
       </param>
     </method>
@@ -3605,7 +3605,7 @@
         get a <link to="IInternalSessionControl::onUSBDeviceAttach"/>
         notification.
       </desc>
-      <param name="id" type="uuid" dir="in"/>
+      <param name="id" type="wstring" dir="in"/>
     </method>
 
     <method name="detachUSBDevice">
@@ -3621,7 +3621,7 @@
           as if it were just attached to the host computer.
         </note>
       </desc>
-      <param name="id" type="uuid" dir="in"/>
+      <param name="id" type="wstring" dir="in"/>
       <param name="done" type="boolean" dir="in"/>
     </method>
 
@@ -3781,7 +3781,7 @@
       <param name="initiator" type="IConsole" dir="in">
         <desc>The console object that initiated this call.</desc>
       </param>
-      <param name="id" type="uuid" dir="in">
+      <param name="id" type="wstring" dir="in">
         <desc>UUID of the snapshot to discard.</desc>
       </param>
       <param name="machineState" type="MachineState" dir="out">
@@ -4155,7 +4155,7 @@
       </desc>
     </attribute>
 
-    <attribute name="id" type="uuid" readonly="yes">
+    <attribute name="id" type="wstring" readonly="yes">
       <desc>UUID of the virtual machine.</desc>
     </attribute>
 
@@ -4649,7 +4649,7 @@
         </result>
 
       </desc>
-      <param name="id" type="uuid" dir="in">
+      <param name="id" type="wstring" dir="in">
         <desc>UUID of the hard disk to attach.</desc>
       </param>
       <param name="name" type="wstring" dir="in">
@@ -5119,7 +5119,7 @@
         </result>
 
       </desc>
-      <param name="id" type="uuid" dir="in">
+      <param name="id" type="wstring" dir="in">
         <desc>UUID of the snapshot to get</desc>
       </param>
       <param name="snapshot" type="ISnapshot" dir="return">
@@ -5152,7 +5152,7 @@
           implemented.
         </note>
       </desc>
-      <param name="id" type="uuid" dir="in">
+      <param name="id" type="wstring" dir="in">
         <desc>UUID of the snapshot to set as the current snapshot.</desc>
       </param>
     </method>
@@ -6369,7 +6369,7 @@
           Virtual machine does not have a USB controller.
         </result>
       </desc>
-      <param name="id" type="uuid" dir="in">
+      <param name="id" type="wstring" dir="in">
         <desc>UUID of the host USB device to attach.</desc>
       </param>
     </method>
@@ -6393,7 +6393,7 @@
           USB device not attached to this virtual machine.
         </result>
       </desc>
-      <param name="id" type="uuid" dir="in">
+      <param name="id" type="wstring" dir="in">
         <desc>UUID of the USB device to detach.</desc>
       </param>
       <param name="device" type="IUSBDevice" dir="return">
@@ -6432,7 +6432,7 @@
 
         <see>IUSBDevice::id</see>
       </desc>
-      <param name="id" type="uuid" dir="in">
+      <param name="id" type="wstring" dir="in">
         <desc>UUID of the USB device to search for.</desc>
       </param>
       <param name="device" type="IUSBDevice" dir="return">
@@ -6605,7 +6605,7 @@
           Virtual machine is running.
         </result>
       </desc>
-      <param name="id" type="uuid" dir="in">
+      <param name="id" type="wstring" dir="in">
         <desc>UUID of the snapshot to discard.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
@@ -6879,7 +6879,7 @@
       <desc>Returns the host network interface name.</desc>
     </attribute>
 
-    <attribute name="id" type="uuid" readonly="yes">
+    <attribute name="id" type="wstring" readonly="yes">
       <desc>Returns the interface UUID.</desc>
     </attribute>
 
@@ -7134,7 +7134,7 @@
           No host network interface matching @a id found.
         </result>
       </desc>
-      <param name="id" type="uuid" dir="in">
+      <param name="id" type="wstring" dir="in">
         <desc>
           Adapter GUID.
         </desc>
@@ -7297,7 +7297,7 @@
           correspond to any host network interface.
         </note>
       </desc>
-      <param name="id" type="uuid" dir="in">
+      <param name="id" type="wstring" dir="in">
         <desc>GUID of the host network interface to search for.</desc>
       </param>
       <param name="networkInterface" type="IHostNetworkInterface" dir="return">
@@ -7326,7 +7326,7 @@
 
         <see>IHostUSBDevice::id</see>
       </desc>
-      <param name="id" type="uuid" dir="in">
+      <param name="id" type="wstring" dir="in">
         <desc>UUID of the USB device to search for.</desc>
       </param>
       <param name="device" type="IHostUSBDevice" dir="return">
@@ -7859,7 +7859,7 @@
         <link to="#waitForCompletion" />.
     </desc>
 
-    <attribute name="id" type="uuid" readonly="yes">
+    <attribute name="id" type="wstring" readonly="yes">
       <desc>ID of the task.</desc>
     </attribute>
 
@@ -7905,7 +7905,7 @@
       <desc>Whether the task has been canceled.</desc>
     </attribute>
 
-    <attribute name="resultCode" type="result" readonly="yes">
+    <attribute name="resultCode" type="long" readonly="yes">
       <desc>
         Result code of the progress task.
         Valid only if <link to="#completed"/> is true.
@@ -8146,7 +8146,7 @@
 
     </desc>
 
-    <attribute name="id" type="uuid" readonly="yes">
+    <attribute name="id" type="wstring" readonly="yes">
       <desc>UUID of the snapshot.</desc>
     </attribute>
 
@@ -8358,7 +8358,7 @@
       check media accessibility right away or not.
     </desc>
 
-    <attribute name="id" type="uuid" readonly="yes">
+    <attribute name="id" type="wstring" readonly="yes">
       <desc>
         UUID of the medium. For a newly created medium, this value is a randomly
         generated UUID.
@@ -8488,7 +8488,7 @@
       </desc>
     </attribute>
 
-    <attribute name="machineIds" type="uuid" safearray="yes" readonly="yes">
+    <attribute name="machineIds" type="wstring" safearray="yes" readonly="yes">
       <desc>
         Array of UUIDs of all machines this medium is attached to.
 
@@ -8521,12 +8521,12 @@
         to the given machine at all, neither in the current state nor in one of
         the snapshots.
       </desc>
-      <param name="machineId" type="uuid" dir="in">
+      <param name="machineId" type="wstring" dir="in">
         <desc>
           UUID of the machine to query.
         </desc>
       </param>
-      <param name="snapshotIds" type="uuid" safearray="yes" dir="return">
+      <param name="snapshotIds" type="wstring" safearray="yes" dir="return">
         <desc>
           Array of snapshot UUIDs of the given machine using this medium.
         </desc>
@@ -9551,7 +9551,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           duration of this operation.
         </note>
       </desc>
-      <param name="targetId" type="uuid" dir="in">
+      <param name="targetId" type="wstring" dir="in">
         <desc>UUID of the target ancestor or descendant hard disk.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
@@ -9941,7 +9941,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </result>
 
       </desc>
-      <param name="imageId" type="uuid" dir="in"/>
+      <param name="imageId" type="wstring" dir="in"/>
     </method>
 
     <method name="captureHostDrive">
@@ -10007,7 +10007,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </result>
 
       </desc>
-      <param name="imageId" type="uuid" dir="in"/>
+      <param name="imageId" type="wstring" dir="in"/>
     </method>
 
     <method name="captureHostDrive">
@@ -11524,7 +11524,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       attached to a running virtual machine's USB controller.
     </desc>
 
-    <attribute name="id" type="uuid" readonly="yes">
+    <attribute name="id" type="wstring" readonly="yes">
       <desc>
         Unique USB device ID. This ID is built from #vendorId,
         #productId, #revision and #serialNumber.
@@ -12442,7 +12442,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </result>
 
       </desc>
-      <param name="id" type="uuid" dir="in"/>
+      <param name="id" type="wstring" dir="in"/>
       <param name="error" type="IVirtualBoxErrorInfo" dir="in"/>
     </method>
 

@@ -51,7 +51,7 @@ DEFINE_EMPTY_CTOR_DTOR (MediumBase)
 // IMedium properties
 ////////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP MediumBase::COMGETTER(Id) (OUT_GUID aId)
+STDMETHODIMP MediumBase::COMGETTER(Id) (BSTR *aId)
 {
     CheckComArgOutPointerValid (aId);
 
@@ -60,7 +60,7 @@ STDMETHODIMP MediumBase::COMGETTER(Id) (OUT_GUID aId)
 
     AutoReadLock alock (this);
 
-    m.id.cloneTo (aId);
+    m.id.toUtf16().cloneTo (aId);
 
     return S_OK;
 }
@@ -203,7 +203,7 @@ STDMETHODIMP MediumBase::COMGETTER(LastAccessError) (BSTR *aLastAccessError)
     return S_OK;
 }
 
-STDMETHODIMP MediumBase::COMGETTER(MachineIds) (ComSafeGUIDArrayOut (aMachineIds))
+STDMETHODIMP MediumBase::COMGETTER(MachineIds) (ComSafeArrayOut (BSTR,aMachineIds))
 {
     if (ComSafeGUIDArrayOutIsNull (aMachineIds))
         return E_POINTER;
@@ -213,7 +213,7 @@ STDMETHODIMP MediumBase::COMGETTER(MachineIds) (ComSafeGUIDArrayOut (aMachineIds
 
     AutoReadLock alock (this);
 
-    com::SafeGUIDArray machineIds;
+    com::SafeArray<BSTR> machineIds;
 
     if (m.backRefs.size() != 0)
     {
@@ -223,11 +223,11 @@ STDMETHODIMP MediumBase::COMGETTER(MachineIds) (ComSafeGUIDArrayOut (aMachineIds
         for (BackRefList::const_iterator it = m.backRefs.begin();
              it != m.backRefs.end(); ++ it, ++ i)
         {
-            machineIds [i] = it->machineId;
+             it->machineId.toUtf16().detachTo(&machineIds [i]);
         }
     }
 
-    machineIds.detachTo (ComSafeGUIDArrayOutArg (aMachineIds));
+    machineIds.detachTo (ComSafeArrayOutArg (aMachineIds));
 
     return S_OK;
 }
@@ -235,8 +235,8 @@ STDMETHODIMP MediumBase::COMGETTER(MachineIds) (ComSafeGUIDArrayOut (aMachineIds
 // IMedium methods
 ////////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP MediumBase::GetSnapshotIds (IN_GUID aMachineId,
-                                         ComSafeGUIDArrayOut (aSnapshotIds))
+STDMETHODIMP MediumBase::GetSnapshotIds (IN_BSTR aMachineId,
+                                         ComSafeArrayOut (BSTR, aSnapshotIds))
 {
     CheckComArgExpr (aMachineId, Guid (aMachineId).isEmpty() == false);
     CheckComArgOutSafeArrayPointerValid (aSnapshotIds);
@@ -246,12 +246,13 @@ STDMETHODIMP MediumBase::GetSnapshotIds (IN_GUID aMachineId,
 
     AutoReadLock alock (this);
 
-    com::SafeGUIDArray snapshotIds;
+    com::SafeArray<BSTR> snapshotIds;
 
+    Guid id(aMachineId);
     for (BackRefList::const_iterator it = m.backRefs.begin();
          it != m.backRefs.end(); ++ it)
     {
-        if (it->machineId == aMachineId)
+        if (it->machineId == id)
         {
             size_t size = it->snapshotIds.size();
 
@@ -266,13 +267,13 @@ STDMETHODIMP MediumBase::GetSnapshotIds (IN_GUID aMachineId,
 
                 size_t j = 0;
                 if (it->inCurState)
-                    snapshotIds [j ++] = it->machineId;
+                    it->machineId.toUtf16().detachTo(&snapshotIds [j ++]);
 
                 for (BackRef::GuidList::const_iterator jt =
                         it->snapshotIds.begin();
                      jt != it->snapshotIds.end(); ++ jt, ++ j)
                 {
-                    snapshotIds [j] = *jt;
+                     (*jt).toUtf16().detachTo(&snapshotIds [j]);
                 }
             }
 
@@ -280,7 +281,7 @@ STDMETHODIMP MediumBase::GetSnapshotIds (IN_GUID aMachineId,
         }
     }
 
-    snapshotIds.detachTo (ComSafeGUIDArrayOutArg (aSnapshotIds));
+    snapshotIds.detachTo (ComSafeArrayOutArg (aSnapshotIds));
 
     return S_OK;
 }

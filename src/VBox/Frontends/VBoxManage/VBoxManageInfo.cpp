@@ -51,19 +51,19 @@ void showSnapshots(ComPtr<ISnapshot> rootSnapshot, VMINFO_DETAILS details, const
 {
     /* start with the root */
     Bstr name;
-    Guid uuid;
+    Bstr uuid;
     rootSnapshot->COMGETTER(Name)(name.asOutParam());
     rootSnapshot->COMGETTER(Id)(uuid.asOutParam());
     if (details == VMINFO_MACHINEREADABLE)
     {
         /* print with hierarchical numbering */
         RTPrintf("SnapshotName%lS=\"%lS\"\n", prefix.raw(), name.raw());
-        RTPrintf("SnapshotUUID%lS=\"%s\"\n", prefix.raw(), uuid.toString().raw());
+        RTPrintf("SnapshotUUID%lS=\"%s\"\n", prefix.raw(), Utf8Str(uuid).raw());
     }
     else
     {
         /* print with indentation */
-        RTPrintf("   %lSName: %lS (UUID: %s)\n", prefix.raw(), name.raw(), uuid.toString().raw());
+        RTPrintf("   %lSName: %lS (UUID: %s)\n", prefix.raw(), name.raw(), Utf8Str(uuid).raw());
     }
 
     /* get the children */
@@ -135,13 +135,13 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
     CHECK_ERROR (machine, COMGETTER(Accessible) (&accessible));
     CheckComRCReturnRC (rc);
 
-    Guid uuid;
+    Bstr uuid;
     rc = machine->COMGETTER(Id) (uuid.asOutParam());
 
     if (!accessible)
     {
         if (details == VMINFO_COMPACT)
-            RTPrintf("\"<inaccessible>\" {%s}\n", uuid.toString().raw());
+            RTPrintf("\"<inaccessible>\" {%s}\n", Utf8Str(uuid).raw());
         else
         {
             if (details == VMINFO_MACHINEREADABLE)
@@ -149,9 +149,9 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
             else
                 RTPrintf ("Name:            <inaccessible!>\n");
             if (details == VMINFO_MACHINEREADABLE)
-                RTPrintf ("UUID=\"%s\"\n", uuid.toString().raw());
+                RTPrintf ("UUID=\"%s\"\n", Utf8Str(uuid).raw());
             else
-                RTPrintf ("UUID:            %s\n", uuid.toString().raw());
+                RTPrintf ("UUID:            %s\n", Utf8Str(uuid).raw());
             if (details != VMINFO_MACHINEREADABLE)
             {
                 Bstr settingsFilePath;
@@ -173,7 +173,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
 
     if (details == VMINFO_COMPACT)
     {
-        RTPrintf("\"%lS\" {%s}\n", machineName.raw(), uuid.toString().raw());
+        RTPrintf("\"%lS\" {%s}\n", machineName.raw(), Utf8Str(uuid).raw());
         return S_OK;
     }
 
@@ -194,9 +194,9 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         RTPrintf("Guest OS:        %lS\n", osName.raw());
 
     if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("UUID=\"%s\"\n", uuid.toString().raw());
+        RTPrintf("UUID=\"%s\"\n", Utf8Str(uuid).raw());
     else
-        RTPrintf("UUID:            %s\n", uuid.toString().raw());
+        RTPrintf("UUID:            %s\n", Utf8Str(uuid).raw());
 
     Bstr settingsFilePath;
     rc = machine->COMGETTER(SettingsFilePath)(settingsFilePath.asOutParam());
@@ -397,15 +397,15 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                     {
                         Bstr imagePath;
                         floppyImage->COMGETTER(Location)(imagePath.asOutParam());
-                        Guid imageGuid;
+                        Bstr imageGuid;
                         floppyImage->COMGETTER(Id)(imageGuid.asOutParam());
                         if (details == VMINFO_MACHINEREADABLE)
                         {
-                            RTPrintf("FloppyImageUUID=\"%s\"\n", imageGuid.toString().raw());
+                            RTPrintf("FloppyImageUUID=\"%s\"\n", Utf8Str(imageGuid).raw());
                             pszFloppy = Utf8StrFmt("%lS", imagePath.raw());
                         }
                         else
-                            pszFloppy = Utf8StrFmt("%lS (UUID: %s)", imagePath.raw(), imageGuid.toString().raw());
+                            pszFloppy = Utf8StrFmt("%lS (UUID: %s)", imagePath.raw(), Utf8Str(imageGuid).raw());
                     }
                     break;
                 }
@@ -481,10 +481,10 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                 if (details == VMINFO_MACHINEREADABLE)
                 {
                     RTPrintf("sataport%d=\"%lS\"\n", i, filePath.raw());
-                    RTPrintf("SataPortImageUUID%d=\"%s\"\n", i, uuid.toString().raw());
+                    RTPrintf("SataPortImageUUID%d=\"%s\"\n", i, Utf8Str(uuid).raw());
                 }
                 else
-                    RTPrintf("SATA %d:          %lS (UUID: %s)\n", i, filePath.raw(), uuid.toString().raw());
+                    RTPrintf("SATA %d:          %lS (UUID: %s)\n", i, filePath.raw(), Utf8Str(uuid).raw());
             }
             else
             {
@@ -538,10 +538,10 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         if (details == VMINFO_MACHINEREADABLE)
         {
             RTPrintf("hda=\"%lS\"\n", filePath.raw());
-            RTPrintf("HdaImageUUID=\"%s\"\n", uuid.toString().raw());
+            RTPrintf("HdaImageUUID=\"%s\"\n", Utf8Str(uuid).raw());
         }
         else
-            RTPrintf("Primary master:  %lS (UUID: %s)\n", filePath.raw(), uuid.toString().raw());
+            RTPrintf("Primary master:  %lS (UUID: %s)\n", filePath.raw(), Utf8Str(uuid).raw());
     }
     else
     {
@@ -556,10 +556,10 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         if (details == VMINFO_MACHINEREADABLE)
         {
             RTPrintf("hdb=\"%lS\"\n", filePath.raw());
-            RTPrintf("HdbImageUUID=\"%s\"\n", uuid.toString().raw());
+            RTPrintf("HdbImageUUID=\"%s\"\n", Utf8Str(uuid).raw());
         }
         else
-            RTPrintf("Primary slave:   %lS (UUID: %s)\n", filePath.raw(), uuid.toString().raw());
+            RTPrintf("Primary slave:   %lS (UUID: %s)\n", filePath.raw(), Utf8Str(uuid).raw());
     }
     else
     {
@@ -574,10 +574,10 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         if (details == VMINFO_MACHINEREADABLE)
         {
             RTPrintf("hdd=\"%lS\"\n", filePath.raw());
-            RTPrintf("HddImageUUID=\"%s\"\n", uuid.toString().raw());
+            RTPrintf("HddImageUUID=\"%s\"\n", Utf8Str(uuid).raw());
         }
         else
-            RTPrintf("Secondary slave: %lS (UUID: %s)\n", filePath.raw(), uuid.toString().raw());
+            RTPrintf("Secondary slave: %lS (UUID: %s)\n", filePath.raw(), Utf8Str(uuid).raw());
     }
     else
     {
@@ -599,10 +599,10 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                 if (details == VMINFO_MACHINEREADABLE)
                 {
                     RTPrintf("dvd=\"%lS\"\n", filePath.raw());
-                    RTPrintf("DvdImageUUID=\"%s\"\n", uuid.toString().raw());
+                    RTPrintf("DvdImageUUID=\"%s\"\n", Utf8Str(uuid).raw());
                 }
                 else
-                    RTPrintf("DVD:             %lS (UUID: %s)\n", filePath.raw(), uuid.toString().raw());
+                    RTPrintf("DVD:             %lS (UUID: %s)\n", filePath.raw(), Utf8Str(uuid).raw());
             }
         }
         else
@@ -1224,7 +1224,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                         ComPtr <IHostUSBDevice> dev = coll[index];
 
                         /* Query info. */
-                        Guid id;
+                        Bstr id;
                         CHECK_ERROR_RET (dev, COMGETTER(Id)(id.asOutParam()), rc);
                         USHORT usVendorId;
                         CHECK_ERROR_RET (dev, COMGETTER(VendorId)(&usVendorId), rc);
@@ -1238,7 +1238,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                                      "USBRemoteVendorId%zu=\"%#06x\"\n"
                                      "USBRemoteProductId%zu=\"%#06x\"\n"
                                      "USBRemoteRevision%zu=\"%#04x%02x\"\n",
-                                     index + 1, id.toString().raw(),
+                                     index + 1, Utf8Str(id).raw(),
                                      index + 1, usVendorId,
                                      index + 1, usProductId,
                                      index + 1, bcdRevision >> 8, bcdRevision & 0xff);
@@ -1247,7 +1247,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                                      "VendorId:           0x%04x (%04X)\n"
                                      "ProductId:          0x%04x (%04X)\n"
                                      "Revision:           %u.%u (%02u%02u)\n",
-                                     id.toString().raw(),
+                                     Utf8Str(id).raw(),
                                      usVendorId, usVendorId, usProductId, usProductId,
                                      bcdRevision >> 8, bcdRevision & 0xff,
                                      bcdRevision >> 8, bcdRevision & 0xff);
@@ -1313,7 +1313,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                         ComPtr <IUSBDevice> dev = coll[index];
 
                         /* Query info. */
-                        Guid id;
+                        Bstr id;
                         CHECK_ERROR_RET (dev, COMGETTER(Id)(id.asOutParam()), rc);
                         USHORT usVendorId;
                         CHECK_ERROR_RET (dev, COMGETTER(VendorId)(&usVendorId), rc);
@@ -1327,7 +1327,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                                      "USBAttachedVendorId%zu=\"%#06x\"\n"
                                      "USBAttachedProductId%zu=\"%#06x\"\n"
                                      "USBAttachedRevision%zu=\"%#04x%02x\"\n",
-                                     index + 1, id.toString().raw(),
+                                     index + 1, Utf8Str(id).raw(),
                                      index + 1, usVendorId,
                                      index + 1, usProductId,
                                      index + 1, bcdRevision >> 8, bcdRevision & 0xff);
@@ -1336,7 +1336,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                                      "VendorId:           0x%04x (%04X)\n"
                                      "ProductId:          0x%04x (%04X)\n"
                                      "Revision:           %u.%u (%02u%02u)\n",
-                                     id.toString().raw(),
+                                     Utf8Str(id).raw(),
                                      usVendorId, usVendorId, usProductId, usProductId,
                                      bcdRevision >> 8, bcdRevision & 0xff,
                                      bcdRevision >> 8, bcdRevision & 0xff);
@@ -1825,7 +1825,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
      * snapshots
      */
     ComPtr<ISnapshot> snapshot;
-    rc = machine->GetSnapshot(Guid(), snapshot.asOutParam());
+    rc = machine->GetSnapshot(Bstr(), snapshot.asOutParam());
     if (SUCCEEDED(rc) && snapshot)
     {
         if (details != VMINFO_MACHINEREADABLE)
@@ -1911,7 +1911,7 @@ int handleShowVMInfo(HandlerArg *a)
 
     /* try to find the given machine */
     ComPtr <IMachine> machine;
-    Guid uuid (VMNameOrUuid);
+    Bstr uuid (VMNameOrUuid);
     if (!uuid.isEmpty())
     {
         CHECK_ERROR (a->virtualBox, GetMachine (uuid, machine.asOutParam()));

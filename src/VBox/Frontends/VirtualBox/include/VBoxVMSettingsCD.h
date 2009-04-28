@@ -64,7 +64,7 @@ private:
     CMachine mMachine;
     QIWidgetValidator *mValidator;
     QVector<CHostDVDDrive> mHostCDs;
-    QUuid mUuidIsoCD;
+    QString mUuidIsoCD;
     QRadioButton *mLastSelected;
 };
 

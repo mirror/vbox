@@ -868,7 +868,7 @@ STDMETHODIMP Machine::COMSETTER(Description) (IN_BSTR aDescription)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMGETTER(Id) (OUT_GUID aId)
+STDMETHODIMP Machine::COMGETTER(Id) (BSTR *aId)
 {
     CheckComArgOutPointerValid (aId);
 
@@ -877,7 +877,7 @@ STDMETHODIMP Machine::COMGETTER(Id) (OUT_GUID aId)
 
     AutoReadLock alock (this);
 
-    mData->mUuid.cloneTo (aId);
+    mData->mUuid.toUtf16().cloneTo (aId);
 
     return S_OK;
 }
@@ -1886,7 +1886,7 @@ STDMETHODIMP Machine::GetBootOrder (ULONG aPosition, DeviceType_T *aDevice)
     return S_OK;
 }
 
-STDMETHODIMP Machine::AttachHardDisk(IN_GUID aId,
+STDMETHODIMP Machine::AttachHardDisk(IN_BSTR aId,
                                      IN_BSTR aControllerName, LONG aControllerPort,
                                      LONG aDevice)
 {
@@ -1953,7 +1953,7 @@ STDMETHODIMP Machine::AttachHardDisk(IN_GUID aId,
             hd->locationFull().raw(), aDevice, aControllerPort, aControllerName);
     }
 
-    Guid id = aId;
+    Guid id(aId);
 
     /* find a hard disk by UUID */
     ComObjPtr<HardDisk> hd;
@@ -2798,7 +2798,7 @@ STDMETHODIMP Machine::DeleteSettings()
     return S_OK;
 }
 
-STDMETHODIMP Machine::GetSnapshot (IN_GUID aId, ISnapshot **aSnapshot)
+STDMETHODIMP Machine::GetSnapshot (IN_BSTR aId, ISnapshot **aSnapshot)
 {
     CheckComArgOutPointerValid (aSnapshot);
 
@@ -2807,7 +2807,7 @@ STDMETHODIMP Machine::GetSnapshot (IN_GUID aId, ISnapshot **aSnapshot)
 
     AutoReadLock alock (this);
 
-    Guid id = aId;
+    Guid id(aId);
     ComObjPtr <Snapshot> snapshot;
 
     HRESULT rc = findSnapshot (id, snapshot, true /* aSetError */);
@@ -2834,7 +2834,7 @@ STDMETHODIMP Machine::FindSnapshot (IN_BSTR aName, ISnapshot **aSnapshot)
     return rc;
 }
 
-STDMETHODIMP Machine::SetCurrentSnapshot (IN_GUID /* aId */)
+STDMETHODIMP Machine::SetCurrentSnapshot (IN_BSTR /* aId */)
 {
     /// @todo (dmik) don't forget to set
     //  mData->mCurrentStateModified to FALSE
@@ -8736,7 +8736,7 @@ STDMETHODIMP SessionMachine::RunUSBDeviceFilters (IUSBDevice *aUSBDevice,
 /**
  *  @note Locks the same as Host::captureUSBDevice() does.
  */
-STDMETHODIMP SessionMachine::CaptureUSBDevice (IN_GUID aId)
+STDMETHODIMP SessionMachine::CaptureUSBDevice (IN_BSTR aId)
 {
     LogFlowThisFunc (("\n"));
 
@@ -8750,7 +8750,7 @@ STDMETHODIMP SessionMachine::CaptureUSBDevice (IN_GUID aId)
 
     USBProxyService *service = mParent->host()->usbProxyService();
     AssertReturn (service, E_FAIL);
-    return service->captureDeviceForVM (this, aId);
+    return service->captureDeviceForVM (this, Guid(aId));
 #else
     return E_NOTIMPL;
 #endif
@@ -8759,7 +8759,7 @@ STDMETHODIMP SessionMachine::CaptureUSBDevice (IN_GUID aId)
 /**
  *  @note Locks the same as Host::detachUSBDevice() does.
  */
-STDMETHODIMP SessionMachine::DetachUSBDevice (IN_GUID aId, BOOL aDone)
+STDMETHODIMP SessionMachine::DetachUSBDevice (IN_BSTR aId, BOOL aDone)
 {
     LogFlowThisFunc (("\n"));
 
@@ -8769,7 +8769,7 @@ STDMETHODIMP SessionMachine::DetachUSBDevice (IN_GUID aId, BOOL aDone)
 #ifdef VBOX_WITH_USB
     USBProxyService *service = mParent->host()->usbProxyService();
     AssertReturn (service, E_FAIL);
-    return service->detachDeviceFromVM (this, aId, !!aDone);
+    return service->detachDeviceFromVM (this, Guid(aId), !!aDone);
 #else
     return E_NOTIMPL;
 #endif
@@ -8929,7 +8929,7 @@ STDMETHODIMP SessionMachine::BeginSavingState (IProgress *aProgress, BSTR *aStat
                   E_FAIL);
 
     /* memorize the progress ID and add it to the global collection */
-    Guid progressId;
+    Bstr progressId;
     HRESULT rc = aProgress->COMGETTER(Id) (progressId.asOutParam());
     AssertComRCReturn (rc, rc);
     rc = mParent->addProgress (aProgress);
@@ -8946,7 +8946,7 @@ STDMETHODIMP SessionMachine::BeginSavingState (IProgress *aProgress, BSTR *aStat
 
     /* fill in the snapshot data */
     mSnapshotData.mLastState = mData->mMachineState;
-    mSnapshotData.mProgressId = progressId;
+    mSnapshotData.mProgressId = Guid(progressId);
     mSnapshotData.mStateFilePath = stateFilePath;
 
     /* set the state to Saving (this is expected by Console::SaveState()) */
@@ -9215,12 +9215,12 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot (BOOL aSuccess)
  *  @note Locks mParent + this + children objects for writing!
  */
 STDMETHODIMP SessionMachine::DiscardSnapshot (
-    IConsole *aInitiator, IN_GUID aId,
+    IConsole *aInitiator, IN_BSTR aId,
     MachineState_T *aMachineState, IProgress **aProgress)
 {
     LogFlowThisFunc (("\n"));
 
-    Guid id = aId;
+    Guid id(aId);
     AssertReturn (aInitiator && !id.isEmpty(), E_INVALIDARG);
     AssertReturn (aMachineState && aProgress, E_POINTER);
 
@@ -9981,7 +9981,7 @@ HRESULT SessionMachine::onUSBDeviceAttach (IUSBDevice *aDevice,
 /**
  *  @note The calls shall hold no locks. Will temporarily lock this object for reading.
  */
-HRESULT SessionMachine::onUSBDeviceDetach (IN_GUID aId,
+HRESULT SessionMachine::onUSBDeviceDetach (IN_BSTR aId,
                                            IVirtualBoxErrorInfo *aError)
 {
     LogFlowThisFunc (("\n"));

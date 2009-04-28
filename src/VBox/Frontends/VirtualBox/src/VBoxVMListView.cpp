@@ -451,7 +451,7 @@ void VBoxVMModel::clear()
 /**
  *  Returns the list item with the given UUID.
  */
-VBoxVMItem *VBoxVMModel::itemById (const QUuid &aId) const
+VBoxVMItem *VBoxVMModel::itemById (const QString &aId) const
 {
     foreach (VBoxVMItem *item, mVMItemList)
         if (item->id() == aId)
@@ -464,7 +464,7 @@ VBoxVMItem *VBoxVMModel::itemByRow (int aRow) const
     return mVMItemList.at (aRow);
 }
 
-QModelIndex VBoxVMModel::indexById (const QUuid &aId) const
+QModelIndex VBoxVMModel::indexById (const QString &aId) const
 {
     int row = rowById (aId);
     if (row >= 0)
@@ -473,7 +473,7 @@ QModelIndex VBoxVMModel::indexById (const QUuid &aId) const
         return QModelIndex();
 }
 
-int VBoxVMModel::rowById (const QUuid &aId) const
+int VBoxVMModel::rowById (const QString &aId) const
 {
     for (int i=0; i < mVMItemList.count(); ++i)
     {
@@ -623,7 +623,7 @@ void VBoxVMListView::selectItemByRow (int row)
     setCurrentIndex (model()->index (row, 0));
 }
 
-void VBoxVMListView::selectItemById (const QUuid &aID)
+void VBoxVMListView::selectItemById (const QString &aID)
 {
     if (VBoxVMModel *m = qobject_cast <VBoxVMModel*> (model()))
     {

@@ -164,14 +164,14 @@ void Snapshot::discard()
 // ISnapshot methods
 ////////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP Snapshot::COMGETTER(Id) (OUT_GUID aId)
+STDMETHODIMP Snapshot::COMGETTER(Id) (BSTR *aId)
 {
     CheckComArgOutPointerValid(aId);
 
     AutoWriteLock alock (this);
     CHECK_READY();
 
-    mData.mId.cloneTo (aId);
+    mData.mId.toUtf16().cloneTo (aId);
     return S_OK;
 }
 

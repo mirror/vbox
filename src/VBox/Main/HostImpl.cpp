@@ -1236,7 +1236,7 @@ Host::CreateHostOnlyNetworkInterface (IHostNetworkInterface **aHostNetworkInterf
 }
 
 STDMETHODIMP
-Host::RemoveHostOnlyNetworkInterface (IN_GUID aId,
+Host::RemoveHostOnlyNetworkInterface (IN_BSTR aId,
                                   IHostNetworkInterface **aHostNetworkInterface,
                                   IProgress **aProgress)
 {
@@ -1255,7 +1255,7 @@ Host::RemoveHostOnlyNetworkInterface (IN_GUID aId,
                 Guid (aId).raw());
     }
 
-    int r = NetIfRemoveHostOnlyNetworkInterface (mParent, aId, aHostNetworkInterface, aProgress);
+    int r = NetIfRemoveHostOnlyNetworkInterface (mParent, Guid(aId), aHostNetworkInterface, aProgress);
     if(RT_SUCCESS(r))
     {
         return S_OK;
@@ -2333,7 +2333,7 @@ STDMETHODIMP Host::FindHostNetworkInterfaceByName(IN_BSTR name, IHostNetworkInte
 #endif
 }
 
-STDMETHODIMP Host::FindHostNetworkInterfaceById(IN_GUID id, IHostNetworkInterface **networkInterface)
+STDMETHODIMP Host::FindHostNetworkInterfaceById(IN_BSTR id, IHostNetworkInterface **networkInterface)
 {
 #ifndef VBOX_WITH_HOSTNETIF_API
     return E_NOTIMPL;
@@ -2355,9 +2355,9 @@ STDMETHODIMP Host::FindHostNetworkInterfaceById(IN_GUID id, IHostNetworkInterfac
     std::list <ComObjPtr <HostNetworkInterface> >::iterator it;
     for (it = list.begin(); it != list.end(); ++it)
     {
-        Guid g;
+        Bstr g;
         (*it)->COMGETTER(Id) (g.asOutParam());
-        if (g == Guid(id))
+        if (g == id)
             found = *it;
     }
 
@@ -2433,7 +2433,7 @@ STDMETHODIMP Host::FindUSBDeviceByAddress (IN_BSTR aAddress, IHostUSBDevice **aD
 #endif  /* !VBOX_WITH_USB */
 }
 
-STDMETHODIMP Host::FindUSBDeviceById (IN_GUID aId, IHostUSBDevice **aDevice)
+STDMETHODIMP Host::FindUSBDeviceById (IN_BSTR aId, IHostUSBDevice **aDevice)
 {
 #ifdef VBOX_WITH_USB
     CheckComArgExpr(aId, Guid (aId).isEmpty() == false);
@@ -2447,7 +2447,7 @@ STDMETHODIMP Host::FindUSBDeviceById (IN_GUID aId, IHostUSBDevice **aDevice)
 
     for (size_t i = 0; i < devsvec.size(); ++i)
     {
-        Guid id;
+        Bstr id;
         rc = devsvec[i]->COMGETTER(Id) (id.asOutParam());
         CheckComRCReturnRC (rc);
         if (id == aId)

@@ -247,7 +247,7 @@ int SVCHlpClient::read (Guid &aGuid)
     Utf8Str guidStr;
     int vrc = read (guidStr);
     if (RT_SUCCESS (vrc))
-        aGuid = Guid (guidStr);
+        aGuid = Guid (guidStr.c_str());
     return vrc;
 }
 

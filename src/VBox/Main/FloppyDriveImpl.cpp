@@ -253,7 +253,7 @@ STDMETHODIMP FloppyDrive::COMGETTER(State) (DriveState_T *aState)
 // IFloppyDrive methods
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP FloppyDrive::MountImage (IN_GUID aImageId)
+STDMETHODIMP FloppyDrive::MountImage (IN_BSTR aImageId)
 {
     Guid imageId = aImageId;
     CheckComArgExpr(aImageId, !imageId.isEmpty());
@@ -450,7 +450,7 @@ HRESULT FloppyDrive::loadSettings (const settings::Key &aMachineNode)
     if (!(typeNode = floppyDriveNode.findKey ("Image")).isNull())
     {
         Guid uuid = typeNode.value <Guid> ("uuid");
-        rc = MountImage (uuid);
+        rc = MountImage (uuid.toUtf16());
         CheckComRCReturnRC (rc);
     }
     else if (!(typeNode = floppyDriveNode.findKey ("HostDrive")).isNull())
@@ -520,13 +520,13 @@ HRESULT FloppyDrive::saveSettings (settings::Key &aMachineNode)
         {
             Assert (!m->image.isNull());
 
-            Guid id;
+            Bstr id;
             HRESULT rc = m->image->COMGETTER(Id) (id.asOutParam());
             AssertComRC (rc);
             Assert (!id.isEmpty());
 
             Key imageNode = node.createKey ("Image");
-            imageNode.setValue <Guid> ("uuid", id);
+            imageNode.setValue <Guid> ("uuid", Guid(id));
             break;
         }
         case DriveState_HostDriveCaptured:

@@ -54,8 +54,9 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(SharedFolder)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(ISharedFolder)
+        COM_INTERFACE_ENTRY  (ISupportErrorInfo)
+        COM_INTERFACE_ENTRY  (ISharedFolder)
+        COM_INTERFACE_ENTRY2 (IDispatch, ISharedFolder)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS

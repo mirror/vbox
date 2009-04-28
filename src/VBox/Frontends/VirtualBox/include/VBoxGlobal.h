@@ -24,6 +24,7 @@
 #define __VBoxGlobal_h__
 
 #include "COMDefs.h"
+#include "VBox/com/Guid.h"
 
 #include "VBoxGlobalSettings.h"
 #include "VBoxMedium.h"
@@ -50,47 +51,47 @@ class QToolButton;
 class VBoxMachineStateChangeEvent : public QEvent
 {
 public:
-    VBoxMachineStateChangeEvent (const QUuid &aId, KMachineState aState)
+    VBoxMachineStateChangeEvent (const QString &aId, KMachineState aState)
         : QEvent ((QEvent::Type) VBoxDefs::MachineStateChangeEventType)
         , id (aId), state (aState)
         {}
 
-    const QUuid id;
+    const QString id;
     const KMachineState state;
 };
 
 class VBoxMachineDataChangeEvent : public QEvent
 {
 public:
-    VBoxMachineDataChangeEvent (const QUuid &aId)
+    VBoxMachineDataChangeEvent (const QString &aId)
         : QEvent ((QEvent::Type) VBoxDefs::MachineDataChangeEventType)
         , id (aId)
         {}
 
-    const QUuid id;
+    const QString id;
 };
 
 class VBoxMachineRegisteredEvent : public QEvent
 {
 public:
-    VBoxMachineRegisteredEvent (const QUuid &aId, bool aRegistered)
+    VBoxMachineRegisteredEvent (const QString &aId, bool aRegistered)
         : QEvent ((QEvent::Type) VBoxDefs::MachineRegisteredEventType)
         , id (aId), registered (aRegistered)
         {}
 
-    const QUuid id;
+    const QString id;
     const bool registered;
 };
 
 class VBoxSessionStateChangeEvent : public QEvent
 {
 public:
-    VBoxSessionStateChangeEvent (const QUuid &aId, KSessionState aState)
+    VBoxSessionStateChangeEvent (const QString &aId, KSessionState aState)
         : QEvent ((QEvent::Type) VBoxDefs::SessionStateChangeEventType)
         , id (aId), state (aState)
         {}
 
-    const QUuid id;
+    const QString id;
     const KSessionState state;
 };
 
@@ -100,7 +101,7 @@ public:
 
     enum What { Taken, Discarded, Changed };
 
-    VBoxSnapshotEvent (const QUuid &aMachineId, const QUuid &aSnapshotId,
+    VBoxSnapshotEvent (const QString &aMachineId, const QString &aSnapshotId,
                        What aWhat)
         : QEvent ((QEvent::Type) VBoxDefs::SnapshotEventType)
         , what (aWhat)
@@ -109,8 +110,8 @@ public:
 
     const What what;
 
-    const QUuid machineId;
-    const QUuid snapshotId;
+    const QString machineId;
+    const QString snapshotId;
 };
 
 class VBoxCanShowRegDlgEvent : public QEvent
@@ -284,7 +285,7 @@ public:
     void trayIconShowSelector();
     bool trayIconInstall();
 #endif
-    QUuid managedVMUuid() const { return vmUuid; }
+    QString managedVMUuid() const { return vmUuid; }
 
     VBoxDefs::RenderMode vmRenderMode() const { return vm_render_mode; }
     const char *vmRenderModeStr() const { return vm_render_mode_str; }
@@ -608,12 +609,12 @@ public:
     void checkForAutoConvertedSettingsAfterRefresh()
     { checkForAutoConvertedSettings (true); }
 
-    CSession openSession (const QUuid &aId, bool aExisting = false);
+    CSession openSession (const QString &aId, bool aExisting = false);
 
     /** Shortcut to openSession (aId, true). */
-    CSession openExistingSession (const QUuid &aId) { return openSession (aId, true); }
+    CSession openExistingSession (const QString &aId) { return openSession (aId, true); }
 
-    bool startMachine (const QUuid &id);
+    bool startMachine (const QString &id);
 
     void startEnumeratingMedia();
 
@@ -633,7 +634,7 @@ public:
 
     void addMedium (const VBoxMedium &);
     void updateMedium (const VBoxMedium &);
-    void removeMedium (VBoxDefs::MediaType, const QUuid &);
+    void removeMedium (VBoxDefs::MediaType, const QString &);
 
     bool findMedium (const CMedium &, VBoxMedium &) const;
 
@@ -794,7 +795,7 @@ signals:
     void mediumUpdated (const VBoxMedium &);
 
     /** Emitted when the media is removed using #removeMedia(). */
-    void mediumRemoved (VBoxDefs::MediaType, const QUuid &);
+    void mediumRemoved (VBoxDefs::MediaType, const QString &);
 
     /* signals emitted when the VirtualBox callback is called by the server
      * (note that currently these signals are emitted only when the application
@@ -851,7 +852,7 @@ private:
 #endif
     VBoxUpdateDlg *mUpdDlg;
 
-    QUuid vmUuid;
+    QString vmUuid;
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
     bool mIsTrayMenu : 1; /*< Tray icon active/desired? */

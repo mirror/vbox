@@ -112,7 +112,7 @@ void VBoxVMSettingsFD::getFrom (const CMachine &aMachine)
             AssertMsg (!src.isNull(), ("Image file must not be null"));
             QFileInfo fi (src);
             mRbIsoFD->setChecked (true);
-            mUuidIsoFD = QUuid (img.GetId());
+            mUuidIsoFD = QString (img.GetId());
             mRbHostFD->setAutoExclusive (true);
             mRbIsoFD->setAutoExclusive (true);
             break;
@@ -238,7 +238,7 @@ void VBoxVMSettingsFD::onRbChange()
 
 void VBoxVMSettingsFD::onCbChange()
 {
-    mUuidIsoFD = mGbFD->isChecked() ? mCbIsoFD->id() : QUuid();
+    mUuidIsoFD = mGbFD->isChecked() ? mCbIsoFD->id() : QString::null;
     emit fdChanged();
     if (mValidator)
         mValidator->revalidate();
@@ -246,13 +246,13 @@ void VBoxVMSettingsFD::onCbChange()
 
 void VBoxVMSettingsFD::showMediaManager()
 {
-    QUuid oldId = mUuidIsoFD;
+    QString oldId = mUuidIsoFD;
     VBoxMediaManagerDlg dlg (this);
 
     dlg.setup (VBoxDefs::MediaType_Floppy, true /* aDoSelect */,
                false /* aRefresh */, mMachine, mCbIsoFD->id());
 
-    QUuid newId = dlg.exec() == QDialog::Accepted ?
+    QString newId = dlg.exec() == QDialog::Accepted ?
                   dlg.selectedId() : mCbIsoFD->id();
     if (oldId != newId)
     {

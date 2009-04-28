@@ -285,17 +285,17 @@ public:
 
     NS_DECL_ISUPPORTS
 
-    STDMETHOD(OnMachineStateChange)(IN_GUID machineId, MachineState_T state)
+    STDMETHOD(OnMachineStateChange)(IN_BSTR machineId, MachineState_T state)
     {
         return S_OK;
     }
 
-    STDMETHOD(OnMachineDataChange)(IN_GUID machineId)
+    STDMETHOD(OnMachineDataChange)(IN_BSTR machineId)
     {
         return S_OK;
     }
 
-    STDMETHOD(OnExtraDataCanChange)(IN_GUID machineId, IN_BSTR key, IN_BSTR value,
+    STDMETHOD(OnExtraDataCanChange)(IN_BSTR machineId, IN_BSTR key, IN_BSTR value,
                                     BSTR *error, BOOL *changeAllowed)
     {
         /* we never disagree */
@@ -305,7 +305,7 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnExtraDataChange)(IN_GUID machineId, IN_BSTR key, IN_BSTR value)
+    STDMETHOD(OnExtraDataChange)(IN_BSTR machineId, IN_BSTR key, IN_BSTR value)
     {
 #ifdef VBOX_SECURELABEL
         Assert(key);
@@ -314,10 +314,9 @@ public:
             /*
              * check if we're interested in the message
              */
-            Guid ourGuid;
-            Guid messageGuid = machineId;
+            Bstr ourGuid;
             gMachine->COMGETTER(Id)(ourGuid.asOutParam());
-            if (ourGuid == messageGuid)
+            if (ourGuid == machineId)
             {
                 Bstr keyString = key;
                 if (keyString && keyString == VBOXSDL_SECURELABEL_EXTRADATA)
@@ -336,7 +335,7 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnMediaRegistered) (IN_GUID mediaId, DeviceType_T mediaType,
+    STDMETHOD(OnMediaRegistered) (IN_BSTR mediaId, DeviceType_T mediaType,
                                   BOOL registered)
     {
         NOREF (mediaId);
@@ -345,32 +344,32 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnMachineRegistered)(IN_GUID machineId, BOOL registered)
+    STDMETHOD(OnMachineRegistered)(IN_BSTR machineId, BOOL registered)
     {
         return S_OK;
     }
 
-    STDMETHOD(OnSessionStateChange)(IN_GUID machineId, SessionState_T state)
+    STDMETHOD(OnSessionStateChange)(IN_BSTR machineId, SessionState_T state)
     {
         return S_OK;
     }
 
-    STDMETHOD(OnSnapshotTaken) (IN_GUID aMachineId, IN_GUID aSnapshotId)
+    STDMETHOD(OnSnapshotTaken) (IN_BSTR aMachineId, IN_BSTR aSnapshotId)
     {
         return S_OK;
     }
 
-    STDMETHOD(OnSnapshotDiscarded) (IN_GUID aMachineId, IN_GUID aSnapshotId)
+    STDMETHOD(OnSnapshotDiscarded) (IN_BSTR aMachineId, IN_BSTR aSnapshotId)
     {
         return S_OK;
     }
 
-    STDMETHOD(OnSnapshotChange) (IN_GUID aMachineId, IN_GUID aSnapshotId)
+    STDMETHOD(OnSnapshotChange) (IN_BSTR aMachineId, IN_BSTR aSnapshotId)
     {
         return S_OK;
     }
 
-    STDMETHOD(OnGuestPropertyChange)(IN_GUID machineId, IN_BSTR key, IN_BSTR value, IN_BSTR flags)
+    STDMETHOD(OnGuestPropertyChange)(IN_BSTR machineId, IN_BSTR key, IN_BSTR value, IN_BSTR flags)
     {
         return S_OK;
     }
@@ -915,7 +914,7 @@ static bool checkForAutoConvertedSettings (ComPtr<IVirtualBox> virtualBox,
             for (std::list <ComPtr <IMachine> >::const_iterator m = cvtMachines.begin();
                  m != cvtMachines.end(); ++ m)
             {
-                Guid id;
+                Bstr id;
                 CHECK_ERROR_BREAK((*m), COMGETTER(Id) (id.asOutParam()));
 
                 /* open a session for the VM */
@@ -1663,7 +1662,9 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         rc = virtualBox->FindMachine(bstrVMName, aMachine.asOutParam());
         if ((rc == S_OK) && aMachine)
         {
-            aMachine->COMGETTER(Id)(uuid.asOutParam());
+            Bstr id;
+            aMachine->COMGETTER(Id)(id.asOutParam());
+            uuid = Guid(id);
         }
         else
         {
@@ -1681,7 +1682,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     rc = RTSemEventCreate(&g_EventSemSDLEvents);
     AssertReleaseRC(rc);
 
-    rc = virtualBox->OpenSession(session, uuid);
+    rc = virtualBox->OpenSession(session, uuid.toUtf16());
     if (FAILED(rc))
     {
         com::ErrorInfo info;
@@ -1742,7 +1743,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             /*
              * Go and attach it!
              */
-            Guid uuid;
+            Bstr uuid;
             hardDisk->COMGETTER(Id)(uuid.asOutParam());
             gMachine->DetachHardDisk(Bstr("IDE"), 0, 0);
             gMachine->AttachHardDisk(uuid, Bstr("IDE"), 0, 0);
@@ -1801,13 +1802,12 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             {
                 /* try to add to the list */
                 RTPrintf ("Adding floppy image '%S'...\n", fdaFile);
-                Guid uuid;
-                CHECK_ERROR_BREAK (virtualBox, OpenFloppyImage (medium, uuid,
+                CHECK_ERROR_BREAK (virtualBox, OpenFloppyImage (medium, Bstr(),
                                                                 image.asOutParam()));
             }
 
             /* attach */
-            Guid uuid;
+            Bstr uuid;
             image->COMGETTER(Id)(uuid.asOutParam());
             CHECK_ERROR_BREAK (drive, MountImage (uuid));
         }
@@ -1862,13 +1862,12 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             {
                 /* try to add to the list */
                 RTPrintf ("Adding ISO image '%S'...\n", cdromFile);
-                Guid uuid;
-                CHECK_ERROR_BREAK (virtualBox, OpenDVDImage (medium, uuid,
+                CHECK_ERROR_BREAK (virtualBox, OpenDVDImage (medium, Bstr(),
                                                              image.asOutParam()));
             }
 
             /* attach */
-            Guid uuid;
+            Bstr uuid;
             image->COMGETTER(Id)(uuid.asOutParam());
             CHECK_ERROR_BREAK (drive, MountImage (uuid));
         }

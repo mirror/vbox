@@ -63,6 +63,7 @@ public:
 
     BEGIN_COM_MAP (PerformanceMetric)
         COM_INTERFACE_ENTRY (IPerformanceMetric)
+        COM_INTERFACE_ENTRY (IDispatch)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS
@@ -135,6 +136,7 @@ public:
     BEGIN_COM_MAP(PerformanceCollector)
         COM_INTERFACE_ENTRY(ISupportErrorInfo)
         COM_INTERFACE_ENTRY(IPerformanceCollector)
+        COM_INTERFACE_ENTRY(IDispatch)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS

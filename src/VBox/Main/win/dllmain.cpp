@@ -27,6 +27,8 @@
 #include <atlbase.h>
 #include <atlcom.h>
 
+#include <iprt/initterm.h>
+
 CComModule _Module;
 
 BEGIN_OBJECT_MAP(ObjectMap)
@@ -43,6 +45,9 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
     {
         _Module.Init(ObjectMap, hInstance, &LIBID_VirtualBox);
         DisableThreadLibraryCalls(hInstance);
+
+        // idempotent, so doesn't harm, and needed for COM embedding scenario
+        RTR3Init();        
     }
     else if (dwReason == DLL_PROCESS_DETACH)
         _Module.Term();

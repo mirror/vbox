@@ -1896,7 +1896,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
                                tr("Missing VM name"));
             const Utf8Str &strNameVBox = vsdeName.front()->strVbox;
             rc = pVirtualBox->CreateMachine(Bstr(strNameVBox), Bstr(strOsTypeVBox),
-                                                 Bstr(), Guid(),
+                                                 Bstr(), Bstr(),
                                                  pNewMachine.asOutParam());
             if (FAILED(rc)) throw rc;
 
@@ -2171,9 +2171,10 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
             rc = pVirtualBox->RegisterMachine(pNewMachine);
             if (FAILED(rc)) throw rc;
 
-            Guid newMachineId;
-            rc = pNewMachine->COMGETTER(Id)(newMachineId.asOutParam());
+            Bstr newMachineId_;
+            rc = pNewMachine->COMGETTER(Id)(newMachineId_.asOutParam());
             if (FAILED(rc)) throw rc;
+            Guid newMachineId(newMachineId_);
 
             // store new machine for roll-back in case of errors
             llMachinesRegistered.push_back(newMachineId);
@@ -2191,7 +2192,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
                 {
                     /* In order to attach hard disks we need to open a session
                      * for the new machine */
-                    rc = pVirtualBox->OpenSession(session, newMachineId);
+                    rc = pVirtualBox->OpenSession(session, newMachineId_);
                     if (FAILED(rc)) throw rc;
                     fSessionOpen = true;
 
@@ -2317,10 +2318,10 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
                         ComPtr<IMachine> sMachine;
                         rc = session->COMGETTER(Machine)(sMachine.asOutParam());
                         if (FAILED(rc)) throw rc;
-                        Guid hdId;
+                        Bstr hdId;
                         rc = dstHdVBox->COMGETTER(Id)(hdId.asOutParam());
                         if (FAILED(rc)) throw rc;
-
+                         
                         /* For now we assume we have one controller of every type only */
                         HardDiskController hdc = (*vsysThis.mapControllers.find(vd.idController)).second;
 
@@ -2432,7 +2433,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
              ++itM)
         {
             const MyHardDiskAttachment &mhda = *itM;
-            rc2 = pVirtualBox->OpenSession(session, mhda.uuid);
+            rc2 = pVirtualBox->OpenSession(session, Bstr(mhda.uuid));
             if (SUCCEEDED(rc2))
             {
                 ComPtr<IMachine> sMachine;
@@ -2466,7 +2467,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
         {
             const Guid &guid = *itID;
             ComPtr<IMachine> failedMachine;
-            rc2 = pVirtualBox->UnregisterMachine(guid, failedMachine.asOutParam());
+            rc2 = pVirtualBox->UnregisterMachine(guid.toUtf16(), failedMachine.asOutParam());
             if (SUCCEEDED(rc2))
                 rc2 = failedMachine->DeleteSettings();
         }

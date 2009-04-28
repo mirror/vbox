@@ -64,7 +64,7 @@ private:
     CMachine mMachine;
     QIWidgetValidator *mValidator;
     QVector<CHostFloppyDrive> mHostFDs;
-    QUuid mUuidIsoFD;
+    QString mUuidIsoFD;
     QRadioButton *mLastSelected;
 };
 

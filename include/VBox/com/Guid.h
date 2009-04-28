@@ -77,6 +77,13 @@ public:
         ::RTUuidFromStr (&uuid, that);
     }
 
+    Guid (const Bstr &that)
+    {
+        ::RTUuidClear (&uuid);
+        if (!that.isNull())
+           ::RTUuidFromUtf16(&uuid, that.raw());
+    }
+
     Guid &operator= (const Guid &that)
     {
         ::memcpy (&uuid, &that.uuid, sizeof (RTUUID));
@@ -106,6 +113,16 @@ public:
         char buf [RTUUID_STR_LENGTH];
         ::RTUuidToStr (&uuid, buf, RTUUID_STR_LENGTH);
         return Utf8Str (buf);
+    }
+
+    Bstr toUtf16 () const
+    {
+        if (isEmpty())
+          return Bstr();
+
+        RTUTF16 buf [RTUUID_STR_LENGTH];
+        ::RTUuidToUtf16 (&uuid, buf, RTUUID_STR_LENGTH);
+        return Bstr (buf);
     }
 
     bool isEmpty() const { return ::RTUuidIsNull (&uuid); }
@@ -190,6 +207,19 @@ private:
 
     RTUUID uuid;
 };
+
+inline Bstr asGuidStr(const Bstr& str)
+{
+   Guid guid(str);
+   return  guid.isEmpty() ? Bstr() : guid.toUtf16();
+}
+
+inline bool isValidGuid(const Bstr& str)
+{
+   Guid guid(str);
+   return  !guid.isEmpty();
+}
+
 
 /* work around error C2593 of the stupid MSVC 7.x ambiguity resolver */
 WORKAROUND_MSVC7_ERROR_C2593_FOR_BOOL_OP (Guid)

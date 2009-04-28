@@ -34,19 +34,19 @@ class VBoxMediaComboBox : public QComboBox
 
 public:
 
-    typedef QMap <QUuid, QUuid> BaseToDiffMap;
+    typedef QMap <QString, QString> BaseToDiffMap;
 
     VBoxMediaComboBox (QWidget *aParent);
 
     void refresh();
     void repopulate();
 
-    QUuid id (int = -1) const;
+    QString id (int = -1) const;
     QString location (int = -1) const;
 
-    void setCurrentItem (const QUuid &aItemId);
+    void setCurrentItem (const QString &aItemId);
     void setType (VBoxDefs::MediaType aMediaType);
-    void setMachineId (const QUuid &aMachineId = QUuid());
+    void setMachineId (const QString &aMachineId = QString::null);
 
     void setShowDiffs (bool aShowDiffs);
     bool showDiffs() const { return mShowDiffs; }
@@ -58,7 +58,7 @@ protected slots:
 
     void mediumAdded (const VBoxMedium &);
     void mediumUpdated (const VBoxMedium &);
-    void mediumRemoved (VBoxDefs::MediaType, const QUuid &);
+    void mediumRemoved (VBoxDefs::MediaType, const QString &);
 
     void processActivated (int aIndex);
 //    void processIndexChanged (int aIndex);
@@ -74,7 +74,7 @@ protected:
     void appendItem (const VBoxMedium &);
     void replaceItem (int, const VBoxMedium &);
 
-    bool findMediaIndex (const QUuid &aId, int &aIndex);
+    bool findMediaIndex (const QString &aId, int &aIndex);
 
     VBoxDefs::MediaType mType;
 
@@ -82,11 +82,11 @@ protected:
     struct Medium
     {
         Medium() {}
-        Medium (const QUuid &aId, const QString &aLocation,
+        Medium (const QString &aId, const QString &aLocation,
                 const QString aToolTip)
             : id (aId), location (aLocation), toolTip (aToolTip) {}
 
-        QUuid id;
+        QString id;
         QString location;
         QString toolTip;
     };
@@ -94,11 +94,11 @@ protected:
     typedef QVector <Medium> Media;
     Media mMedia;
 
-    QUuid mLastId;
+    QString mLastId;
 
     bool mShowDiffs : 1;
 
-    QUuid mMachineId;
+    QString mMachineId;
 };
 
 #endif /* __VBoxMediaComboBox_h__ */

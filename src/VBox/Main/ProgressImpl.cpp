@@ -199,7 +199,7 @@ void ProgressBase::protectedUninit (AutoUninitSpan &aAutoUninitSpan)
 // IProgress properties
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP ProgressBase::COMGETTER(Id) (OUT_GUID aId)
+STDMETHODIMP ProgressBase::COMGETTER(Id) (BSTR *aId)
 {
     CheckComArgOutPointerValid(aId);
 
@@ -207,7 +207,7 @@ STDMETHODIMP ProgressBase::COMGETTER(Id) (OUT_GUID aId)
     CheckComRCReturnRC(autoCaller.rc());
 
     /* mId is constant during life time, no need to lock */
-    mId.cloneTo (aId);
+    mId.toUtf16().cloneTo (aId);
 
     return S_OK;
 }

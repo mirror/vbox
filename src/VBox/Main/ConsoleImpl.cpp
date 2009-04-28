@@ -484,8 +484,10 @@ int Console::VRDPClientLogon (uint32_t u32ClientId, const char *pszUser, const c
         return VERR_ACCESS_DENIED;
     }
 
-    Guid uuid;
-    HRESULT hrc = mMachine->COMGETTER (Id) (uuid.asOutParam());
+    Bstr id;
+    HRESULT hrc = mMachine->COMGETTER (Id) (id.asOutParam());
+    Guid uuid = Guid(id);
+    
     AssertComRCReturn (hrc, VERR_ACCESS_DENIED);
 
     VRDPAuthType_T authType = VRDPAuthType_Null;
@@ -735,8 +737,8 @@ void Console::VRDPClientDisconnect (uint32_t u32ClientId,
         }
     }
 #endif /* VBOX_WITH_VRDP */
-
-    Guid uuid;
+       
+    Bstr uuid;
     HRESULT hrc = mMachine->COMGETTER (Id) (uuid.asOutParam());
     AssertComRC (hrc);
 
@@ -1951,7 +1953,7 @@ STDMETHODIMP Console::GetDeviceActivity (DeviceType_T aDeviceType,
     return S_OK;
 }
 
-STDMETHODIMP Console::AttachUSBDevice (IN_GUID aId)
+STDMETHODIMP Console::AttachUSBDevice (IN_BSTR aId)
 {
 #ifdef VBOX_WITH_USB
     AutoCaller autoCaller (this);
@@ -1992,7 +1994,7 @@ STDMETHODIMP Console::AttachUSBDevice (IN_GUID aId)
 #endif  /* !VBOX_WITH_USB */
 }
 
-STDMETHODIMP Console::DetachUSBDevice (IN_GUID aId, IUSBDevice **aDevice)
+STDMETHODIMP Console::DetachUSBDevice (IN_BSTR aId, IUSBDevice **aDevice)
 {
 #ifdef VBOX_WITH_USB
     CheckComArgOutPointerValid(aDevice);
@@ -2005,9 +2007,10 @@ STDMETHODIMP Console::DetachUSBDevice (IN_GUID aId, IUSBDevice **aDevice)
     /* Find it. */
     ComObjPtr <OUSBDevice> device;
     USBDeviceList::iterator it = mUSBDevices.begin();
+    Guid uuid(aId);
     while (it != mUSBDevices.end())
     {
-        if ((*it)->id() == aId)
+        if ((*it)->id() == uuid)
         {
             device = *it;
             break;
@@ -2087,7 +2090,7 @@ STDMETHODIMP Console::FindUSBDeviceByAddress(IN_BSTR aAddress, IUSBDevice **aDev
 #endif  /* !VBOX_WITH_USB */
 }
 
-STDMETHODIMP Console::FindUSBDeviceById(IN_GUID aId, IUSBDevice **aDevice)
+STDMETHODIMP Console::FindUSBDeviceById(IN_BSTR aId, IUSBDevice **aDevice)
 {
 #ifdef VBOX_WITH_USB
     CheckComArgExpr(aId, Guid (aId).isEmpty() == false);
@@ -2101,7 +2104,7 @@ STDMETHODIMP Console::FindUSBDeviceById(IN_GUID aId, IUSBDevice **aDevice)
 
     for (size_t i = 0; i < devsvec.size(); ++i)
     {
-        Guid id;
+        Bstr id;
         rc = devsvec[i]->COMGETTER(Id) (id.asOutParam());
         CheckComRCReturnRC (rc);
         if (id == aId)
@@ -2418,7 +2421,7 @@ STDMETHODIMP Console::TakeSnapshot (IN_BSTR aName, IN_BSTR aDescription,
     return rc;
 }
 
-STDMETHODIMP Console::DiscardSnapshot (IN_GUID aId, IProgress **aProgress)
+STDMETHODIMP Console::DiscardSnapshot (IN_BSTR aId, IProgress **aProgress)
 {
     CheckComArgExpr(aId, Guid (aId).isEmpty() == false);
     CheckComArgOutPointerValid(aProgress);
@@ -3557,7 +3560,7 @@ HRESULT Console::onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *a
  *
  *  @note Locks this object for writing.
  */
-HRESULT Console::onUSBDeviceDetach (IN_GUID aId,
+HRESULT Console::onUSBDeviceDetach (IN_BSTR aId,
                                     IVirtualBoxErrorInfo *aError)
 {
 #ifdef VBOX_WITH_USB
@@ -5468,9 +5471,10 @@ HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, ULONG aMaskedIfs)
 
     Utf8Str Address (BstrAddress);
 
-    Guid Uuid;
-    hrc = aHostDevice->COMGETTER (Id) (Uuid.asOutParam());
+    Bstr id;
+    hrc = aHostDevice->COMGETTER (Id) (id.asOutParam());
     ComAssertComRCRetRC (hrc);
+    Guid uuid(id);
 
     BOOL fRemote = FALSE;
     hrc = aHostDevice->COMGETTER (Remote) (&fRemote);
@@ -5481,7 +5485,7 @@ HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, ULONG aMaskedIfs)
     CheckComRCReturnRC (autoVMCaller.rc());
 
     LogFlowThisFunc (("Proxying USB device '%s' {%RTuuid}...\n",
-                      Address.raw(), Uuid.ptr()));
+                      Address.raw(), uuid.ptr()));
 
     /* leave the lock before a VMR3* call (EMT will call us back)! */
     alock.leave();
@@ -5489,7 +5493,7 @@ HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, ULONG aMaskedIfs)
 /** @todo just do everything here and only wrap the PDMR3Usb call. That'll offload some notification stuff from the EMT thread. */
     PVMREQ pReq = NULL;
     int vrc = VMR3ReqCall (mpVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
-                           (PFNRT) usbAttachCallback, 6, this, aHostDevice, Uuid.ptr(), fRemote, Address.raw(), aMaskedIfs);
+                           (PFNRT) usbAttachCallback, 6, this, aHostDevice, uuid.ptr(), fRemote, Address.raw(), aMaskedIfs);
     if (VBOX_SUCCESS (vrc))
         vrc = pReq->iStatus;
     VMR3ReqFree (pReq);
@@ -5502,7 +5506,7 @@ HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, ULONG aMaskedIfs)
     if (VBOX_FAILURE (vrc))
     {
         LogWarningThisFunc (("Failed to create proxy device for '%s' {%RTuuid} (%Rrc)\n",
-                             Address.raw(), Uuid.ptr(), vrc));
+                             Address.raw(), uuid.ptr(), vrc));
 
         switch (vrc)
         {
@@ -6232,7 +6236,7 @@ void Console::processRemoteUSBDevices (uint32_t u32ClientId, VRDPUSBDEVICEDESC *
         /* Detach the device from VM. */
         if (device->captured ())
         {
-            Guid uuid;
+            Bstr uuid;
             device->COMGETTER (Id) (uuid.asOutParam());
             onUSBDeviceDetach (uuid, NULL);
         }

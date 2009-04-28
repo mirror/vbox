@@ -78,9 +78,9 @@ class DiskValue
 {
 public:
     DiskValue()
-        : id (QUuid())
+        : id (QString::null)
         , name (QString::null), tip (QString::null), pix (QPixmap()) {}
-    DiskValue (const QUuid &aId);
+    DiskValue (const QString &aId);
     DiskValue (const DiskValue &aOther)
         : id (aOther.id)
         , name (aOther.name), tip (aOther.tip), pix (aOther.pix) {}
@@ -104,7 +104,7 @@ public:
         return ! (*this == aOther);
     }
 
-    QUuid   id;
+    QString id;
     QString name;
     QString tip;
     QPixmap pix;
@@ -381,8 +381,8 @@ private:
     void showEvent (QShowEvent *aEvent);
 
     /* private functions */
-    QUuid getWithMediaManager (const QUuid &aInitialId = QUuid());
-    QUuid getWithNewHDWizard();
+    QString getWithMediaManager (const QString &aInitialId = QString::null);
+    QString getWithNewHDWizard();
     int maxNameLength() const;
     void prepareComboboxes();
     void removeFocus();

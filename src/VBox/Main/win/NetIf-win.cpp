@@ -1024,8 +1024,8 @@ int NetIfGetConfig(HostNetworkInterface * pIf, NETIFINFO *pInfo)
     HRESULT hr = pIf->COMGETTER(Name)(name.asOutParam());
     if(hr == S_OK)
     {
-        GUID                IfGuid;
-        hr = pIf->COMGETTER(Id)(&IfGuid);
+        Bstr                IfGuid;
+        hr = pIf->COMGETTER(Id)(IfGuid.asOutParam());
         Assert(hr == S_OK);
         if (hr == S_OK)
         {
@@ -1155,8 +1155,8 @@ int NetIfEnableStaticIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf, ULON
     return VERR_NOT_IMPLEMENTED;
 #else
     HRESULT rc;
-    GUID guid;
-    rc = pIf->COMGETTER(Id) (&guid);
+    Bstr guid;
+    rc = pIf->COMGETTER(Id) (guid.asOutParam());
     if(SUCCEEDED(rc))
     {
 //        ComPtr<VirtualBox> vBox;
@@ -1184,7 +1184,7 @@ int NetIfEnableStaticIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf, ULON
                     AssertReturn (d.get(), E_OUTOFMEMORY);
 
                     d->msgCode = SVCHlpMsg::EnableStaticIpConfig;
-                    d->guid = guid;
+                    d->guid = Guid(guid);
                     d->iface = pIf;
                     d->u.StaticIP.IPAddress = ip;
                     d->u.StaticIP.IPNetMask = mask;
@@ -1217,8 +1217,8 @@ int NetIfEnableStaticIpConfigV6(VirtualBox *vBox, HostNetworkInterface * pIf, IN
     return VERR_NOT_IMPLEMENTED;
 #else
     HRESULT rc;
-    GUID guid;
-    rc = pIf->COMGETTER(Id) (&guid);
+    Bstr guid;
+    rc = pIf->COMGETTER(Id) (guid.asOutParam());
     if(SUCCEEDED(rc))
     {
 //        ComPtr<VirtualBox> vBox;
@@ -1279,8 +1279,8 @@ int NetIfEnableDynamicIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf)
     return VERR_NOT_IMPLEMENTED;
 #else
     HRESULT rc;
-    GUID guid;
-    rc = pIf->COMGETTER(Id) (&guid);
+    Bstr guid;
+    rc = pIf->COMGETTER(Id) (guid.asOutParam());
     if(SUCCEEDED(rc))
     {
 //        ComPtr<VirtualBox> vBox;
@@ -1339,8 +1339,8 @@ int NetIfDhcpRediscover(VirtualBox *vBox, HostNetworkInterface * pIf)
     return VERR_NOT_IMPLEMENTED;
 #else
     HRESULT rc;
-    GUID guid;
-    rc = pIf->COMGETTER(Id) (&guid);
+    Bstr guid;
+    rc = pIf->COMGETTER(Id) (guid.asOutParam());
     if(SUCCEEDED(rc))
     {
 //        ComPtr<VirtualBox> vBox;

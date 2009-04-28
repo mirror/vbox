@@ -227,7 +227,7 @@ void VBoxExportApplianceWzd::addListViewVMItems (const QString& aSelectName)
         {
             icon = vboxGlobal().vmGuestOSTypeIcon (m->GetOSTypeId()).scaled (16, 16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
             name = m->GetName();
-            uuid = m->GetId().toString();
+            uuid = m->GetId();
             enabled = m->GetSessionState() == KSessionState_Closed;
         }
         else

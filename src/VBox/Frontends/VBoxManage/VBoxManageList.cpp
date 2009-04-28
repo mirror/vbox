@@ -335,9 +335,9 @@ int handleList(HandlerArg *a)
                 Bstr interfaceName;
                 networkInterface->COMGETTER(Name)(interfaceName.asOutParam());
                 RTPrintf("Name:            %lS\n", interfaceName.raw());
-                Guid interfaceGuid;
+                Bstr interfaceGuid;
                 networkInterface->COMGETTER(Id)(interfaceGuid.asOutParam());
-                RTPrintf("GUID:            %lS\n", Bstr(interfaceGuid.toString()).raw());
+                RTPrintf("GUID:            %lS\n", interfaceGuid);
                 BOOL bDhcpEnabled;
                 networkInterface->COMGETTER(DhcpEnabled)(&bDhcpEnabled);
                 RTPrintf("Dhcp:            %s\n", bDhcpEnabled ? "Enabled" : "Disabled");
@@ -510,9 +510,9 @@ int handleList(HandlerArg *a)
             for (size_t i = 0; i < hdds.size(); ++ i)
             {
                 ComPtr<IHardDisk> hdd = hdds[i];
-                Guid uuid;
+                Bstr uuid;
                 hdd->COMGETTER(Id)(uuid.asOutParam());
-                RTPrintf("UUID:         %s\n", uuid.toString().raw());
+                RTPrintf("UUID:         %s\n", Utf8Str(uuid).raw());
                 Bstr format;
                 hdd->COMGETTER(Format)(format.asOutParam());
                 RTPrintf("Format:       %lS\n", format.raw());
@@ -524,7 +524,7 @@ int handleList(HandlerArg *a)
                 /// @todo NEWMEDIA print the full state value
                 hdd->COMGETTER(State)(&enmState);
                 RTPrintf("Accessible:   %s\n", enmState != MediaState_Inaccessible ? "yes" : "no");
-                com::SafeGUIDArray machineIds;
+                com::SafeArray<BSTR> machineIds;
                 hdd->COMGETTER(MachineIds)(ComSafeArrayAsOutParam(machineIds));
                 for (size_t j = 0; j < machineIds.size(); ++ j)
                 {
@@ -534,9 +534,9 @@ int handleList(HandlerArg *a)
                     Bstr name;
                     machine->COMGETTER(Name)(name.asOutParam());
                     machine->COMGETTER(Id)(uuid.asOutParam());
-                    RTPrintf("%s%lS (UUID: %RTuuid)\n",
+                    RTPrintf("%s%lS (UUID: %lS)\n",
                             j == 0 ? "Usage:        " : "              ",
-                            name.raw(), &machineIds[j]);
+                            name.raw(), machineIds[j]);
                 }
                 /// @todo NEWMEDIA check usage in snapshots too
                 /// @todo NEWMEDIA also list children and say 'differencing' for
@@ -553,9 +553,9 @@ int handleList(HandlerArg *a)
             for (size_t i = 0; i < dvds.size(); ++ i)
             {
                 ComPtr<IDVDImage> dvdImage = dvds[i];
-                Guid uuid;
+                Bstr uuid;
                 dvdImage->COMGETTER(Id)(uuid.asOutParam());
-                RTPrintf("UUID:       %s\n", uuid.toString().raw());
+                RTPrintf("UUID:       %s\n", Utf8Str(uuid).raw());
                 Bstr filePath;
                 dvdImage->COMGETTER(Location)(filePath.asOutParam());
                 RTPrintf("Path:       %lS\n", filePath.raw());
@@ -575,9 +575,9 @@ int handleList(HandlerArg *a)
             for (size_t i = 0; i < floppies.size(); ++ i)
             {
                 ComPtr<IFloppyImage> floppyImage = floppies[i];
-                Guid uuid;
+                Bstr uuid;
                 floppyImage->COMGETTER(Id)(uuid.asOutParam());
-                RTPrintf("UUID:       %s\n", uuid.toString().raw());
+                RTPrintf("UUID:       %s\n", Utf8Str(uuid).raw());
                 Bstr filePath;
                 floppyImage->COMGETTER(Location)(filePath.asOutParam());
                 RTPrintf("Path:       %lS\n", filePath.raw());
@@ -611,7 +611,7 @@ int handleList(HandlerArg *a)
                     ComPtr <IHostUSBDevice> dev = CollPtr[i];
 
                     /* Query info. */
-                    Guid id;
+                    Bstr id;
                     CHECK_ERROR_RET (dev, COMGETTER(Id)(id.asOutParam()), 1);
                     USHORT usVendorId;
                     CHECK_ERROR_RET (dev, COMGETTER(VendorId)(&usVendorId), 1);
@@ -624,7 +624,7 @@ int handleList(HandlerArg *a)
                             "VendorId:           0x%04x (%04X)\n"
                             "ProductId:          0x%04x (%04X)\n"
                             "Revision:           %u.%u (%02u%02u)\n",
-                            id.toString().raw(),
+                            Utf8Str(id).raw(),
                             usVendorId, usVendorId, usProductId, usProductId,
                             bcdRevision >> 8, bcdRevision & 0xff,
                             bcdRevision >> 8, bcdRevision & 0xff);

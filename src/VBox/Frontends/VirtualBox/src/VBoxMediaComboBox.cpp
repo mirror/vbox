@@ -25,14 +25,13 @@
 #include <QFileInfo>
 #include <QDir>
 #include <QAbstractItemView>
-#include <QUuid>
 
 VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent)
     : QComboBox (aParent)
     , mType (VBoxDefs::MediaType_Invalid)
-    , mLastId (QUuid())
+    , mLastId (QString::null)
     , mShowDiffs (false)
-    , mMachineId (QUuid())
+    , mMachineId (QString::null)
 {
     /* Setup the elide mode */
     view()->setTextElideMode (Qt::ElideRight);
@@ -51,8 +50,8 @@ VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent)
              this, SLOT (mediumAdded (const VBoxMedium &)));
     connect (&vboxGlobal(), SIGNAL (mediumUpdated (const VBoxMedium &)),
              this, SLOT (mediumUpdated (const VBoxMedium &)));
-    connect (&vboxGlobal(), SIGNAL (mediumRemoved (VBoxDefs::MediaType, const QUuid &)),
-             this, SLOT (mediumRemoved (VBoxDefs::MediaType, const QUuid &)));
+    connect (&vboxGlobal(), SIGNAL (mediumRemoved (VBoxDefs::MediaType, const QString &)),
+             this, SLOT (mediumRemoved (VBoxDefs::MediaType, const QString &)));
 
     /* Setup other connections */
     connect (this, SIGNAL (activated (int)),
@@ -100,9 +99,9 @@ void VBoxMediaComboBox::repopulate()
         refresh();
 }
 
-QUuid VBoxMediaComboBox::id (int aIndex /*= -1*/) const
+QString VBoxMediaComboBox::id (int aIndex /*= -1*/) const
 {
-    QUuid uuidNull; /* gcc-3.3 hack */
+    QString uuidNull; /* gcc-3.3 hack */
     AssertReturn (aIndex == -1 ||
                   (aIndex >= 0 && aIndex < mMedia.size()),
                   uuidNull);
@@ -119,7 +118,7 @@ QString VBoxMediaComboBox::location (int aIndex /*= -1*/) const
     return mMedia [aIndex == -1 ? currentIndex() : aIndex].location;
 }
 
-void VBoxMediaComboBox::setCurrentItem (const QUuid &aId)
+void VBoxMediaComboBox::setCurrentItem (const QString &aId)
 {
     mLastId = aId;
 
@@ -138,7 +137,7 @@ void VBoxMediaComboBox::setType (VBoxDefs::MediaType aType)
     mType = aType;
 }
 
-void VBoxMediaComboBox::setMachineId (const QUuid &aMachineId)
+void VBoxMediaComboBox::setMachineId (const QString &aMachineId)
 {
     mMachineId = aMachineId;
 }
@@ -220,7 +219,7 @@ void VBoxMediaComboBox::mediumUpdated (const VBoxMedium &aMedium)
 }
 
 void VBoxMediaComboBox::mediumRemoved (VBoxDefs::MediaType aType,
-                                       const QUuid &aId)
+                                       const QString &aId)
 {
     if (mType != aType)
         return;
@@ -257,7 +256,7 @@ void VBoxMediaComboBox::addNoMediaItem()
     AssertReturnVoid (mMedia.size() == 0);
 
     mMedia.append (
-        Medium (QUuid(), QString::null,
+        Medium (QString::null, QString::null,
                 tr ("No media available. Use the Virtual Media "
                     "Manager to add media of the corresponding type.")));
     insertItem (-1, tr ("<no media>"));
@@ -338,7 +337,7 @@ void VBoxMediaComboBox::replaceItem (int aIndex, const VBoxMedium &aMedium)
  * @param aId       Media ID to search for.
  * @param aIndex    Where to store the found media index.
  */
-bool VBoxMediaComboBox::findMediaIndex (const QUuid &aId, int &aIndex)
+bool VBoxMediaComboBox::findMediaIndex (const QString &aId, int &aIndex)
 {
     aIndex = 0;
 
