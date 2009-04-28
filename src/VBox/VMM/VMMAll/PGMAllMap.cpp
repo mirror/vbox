@@ -220,12 +220,12 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
 {
     Log4(("pgmMapSetShadowPDEs new pde %x (mappings enabled %d)\n", iNewPDE, pgmMapAreMappingsEnabled(&pVM->pgm.s)));
 
-    if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
+    if (    !pgmMapAreMappingsEnabled(&pVM->pgm.s)
+        ||  pVM->cCPUs > 1)
         return;
 
     /* This only applies to raw mode where we only support 1 VCPU. */
-    PVMCPU pVCpu = &pVM->aCpus[0];
-
+    PVMCPU pVCpu = VMMGetCpu0(pVM);
     if (!pVCpu->pgm.s.CTX_SUFF(pShwPageCR3))
         return;    /* too early */
 
@@ -386,13 +386,14 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
 {
     Log(("pgmMapClearShadowPDEs: old pde %x (cPTs=%x) (mappings enabled %d) fDeactivateCR3=%RTbool\n", iOldPDE, pMap->cPTs, pgmMapAreMappingsEnabled(&pVM->pgm.s), fDeactivateCR3));
 
-    if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
+    if (    !pgmMapAreMappingsEnabled(&pVM->pgm.s)
+        ||  pVM->cCPUs > 1)
         return;
 
-    /* This only applies to raw mode where we only support 1 VCPU. */
-    PVMCPU pVCpu = &pVM->aCpus[0];
-
     Assert(pShwPageCR3);
+
+    /* This only applies to raw mode where we only support 1 VCPU. */
+    PVMCPU pVCpu = VMMGetCpu0(pVM);
 # ifdef IN_RC
     Assert(pShwPageCR3 != pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
 # endif
@@ -598,8 +599,7 @@ VMMDECL(void) PGMMapCheck(PVM pVM)
     Assert(pVM->cCPUs == 1);
 
     /* This only applies to raw mode where we only support 1 VCPU. */
-    PVMCPU pVCpu = &pVM->aCpus[0];
-
+    PVMCPU pVCpu = VMMGetCpu0(pVM);
     Assert(pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
 
     /*
@@ -627,15 +627,15 @@ int pgmMapActivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
     /*
      * Can skip this if mappings are disabled.
      */
-    if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
+    if (    !pgmMapAreMappingsEnabled(&pVM->pgm.s)
+        ||  pVM->cCPUs > 1)
         return VINF_SUCCESS;
 
     /* Note. A log flush (in RC) can cause problems when called from MapCR3 (inconsistent state will trigger assertions). */
     Log4(("pgmMapActivateCR3: fixed mappings=%d idxShwPageCR3=%#x\n", pVM->pgm.s.fMappingsFixed, pShwPageCR3 ? pShwPageCR3->idx : NIL_PGMPOOL_IDX));
 
 #ifdef VBOX_STRICT
-    /* This only applies to raw mode where we only support 1 VCPU. */
-    PVMCPU pVCpu = &pVM->aCpus[0];
+    PVMCPU pVCpu = VMMGetCpu0(pVM);
     Assert(pShwPageCR3 && pShwPageCR3 == pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
 #endif
 
@@ -663,7 +663,8 @@ int pgmMapDeactivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
     /*
      * Can skip this if mappings are disabled.
      */
-    if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
+    if (    !pgmMapAreMappingsEnabled(&pVM->pgm.s)
+        ||  pVM->cCPUs > 1)
         return VINF_SUCCESS;
 
     Assert(pShwPageCR3);
