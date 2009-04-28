@@ -531,6 +531,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
         for (uint32_t i = 0; i < pVM->cCPUs; i++)
         {
             pVM->aCpus[i].pUVCpu        = &pUVM->aCpus[i];
+            pVM->aCpus[i].idCpu         = i;
             pVM->aCpus[i].hNativeThread = pUVM->aCpus[i].vm.s.NativeThreadEMT;
             Assert(pVM->aCpus[i].hNativeThread != NIL_RTNATIVETHREAD);
 
