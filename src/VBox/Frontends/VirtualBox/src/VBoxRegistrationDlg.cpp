@@ -35,30 +35,18 @@ class VBoxRegistrationData
 {
 public:
 
-    VBoxRegistrationData (const QString &aData)
-        : mIsValid (false), mIsRegistered (false)
-        , mData (aData)
+    VBoxRegistrationData (const QString &aString, bool aEncode)
+        : mIsValid (aEncode), mIsRegistered (aEncode)
         , mTriesLeft (3 /* the initial tries value */)
     {
-        decode (aData);
-    }
-
-    VBoxRegistrationData (const QString &aName, const QString &aEmail,
-                          const QString &aIsPrivate)
-        : mIsValid (true), mIsRegistered (true)
-        , mName (aName), mEmail (aEmail), mIsPrivate (aIsPrivate)
-        , mTriesLeft (0)
-    {
-        encode (aName, aEmail, aIsPrivate);
+        aEncode ? encode (aString) : decode (aString);
     }
 
     bool isValid() const { return mIsValid; }
     bool isRegistered() const { return mIsRegistered; }
 
     const QString &data() const { return mData; }
-    const QString &name() const { return mName; }
-    const QString &email() const { return mEmail; }
-    const QString &isPrivate() const { return mIsPrivate; }
+    const QString &account() const { return mAccount; }
 
     uint triesLeft() const { return mTriesLeft; }
 
@@ -66,15 +54,16 @@ private:
 
     void decode (const QString &aData)
     {
-        mIsValid = mIsRegistered = false;
-
         if (aData.isEmpty())
             return;
 
-        if (aData.startsWith ("triesLeft="))
+        mData = aData;
+
+        /* Decoding number of left tries */
+        if (mData.startsWith ("triesLeft="))
         {
             bool ok = false;
-            uint triesLeft = aData.section ('=', 1, 1).toUInt (&ok);
+            uint triesLeft = mData.section ('=', 1, 1).toUInt (&ok);
             if (!ok)
                 return;
             mTriesLeft = triesLeft;
@@ -83,7 +72,7 @@ private:
         }
 
         /* Decoding CRC32 */
-        QString data = aData;
+        QString data = mData;
         QString crcData = data.right (2 * sizeof (ulong));
         ulong crcNeed = 0;
         for (long i = 0; i < crcData.length(); i += 2)
@@ -104,22 +93,28 @@ private:
         if (crcNeed != crcNow)
             return;
 
-        /* Initialize values */
-        QStringList dataList = result.split ("|");
-        mName = dataList [0];
-        mEmail = dataList [1];
-        mIsPrivate = dataList [2];
+        /* Split values list */
+        QStringList list (result.split ("|"));
 
+        /* Ignore the old format */
+        if (list.size() > 1)
+            return;
+
+        /* Result value */
         mIsValid = true;
         mIsRegistered = true;
+        mAccount = list [0];
     }
 
-    void encode (const QString &aName, const QString &aEmail,
-                 const QString &aPrivate)
+    void encode (const QString &aAccount)
     {
+        if (aAccount.isEmpty())
+            return;
+
+        mAccount = aAccount;
+
         /* Encoding data */
-        QString data = QString ("%1|%2|%3")
-            .arg (aName).arg (aEmail).arg (aPrivate);
+        QString data = QString ("%1").arg (mAccount);
         mData = QString::null;
         for (long i = 0; i < data.length(); ++ i)
         {
@@ -177,29 +172,27 @@ private:
     bool mIsValid : 1;
     bool mIsRegistered : 1;
 
-    QString mData;
-    QString mName;
-    QString mEmail;
-    QString mIsPrivate;
-
     uint mTriesLeft;
+
+    QString mAccount;
+    QString mData;
 };
 
 /* Static member to check if registration dialog necessary. */
 bool VBoxRegistrationDlg::hasToBeShown()
 {
-    VBoxRegistrationData regData (vboxGlobal().virtualBox().
-        GetExtraData (VBoxDefs::GUI_RegistrationData));
+    VBoxRegistrationData data (vboxGlobal().virtualBox().
+        GetExtraData (VBoxDefs::GUI_RegistrationData), false);
 
-    return (!regData.isValid()) ||
-           (!regData.isRegistered() && regData.triesLeft() > 0);
+    return (!data.isValid()) ||
+           (!data.isRegistered() && data.triesLeft() > 0);
 }
 
 VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf, QWidget * /* aParent */)
     : QIWithRetranslateUI <QIAbstractWizard> (0)
     , mSelf (aSelf)
     , mWvalReg (0)
-    , mUrl ("http://registration.virtualbox.org/register762.php")
+    , mUrl ("http://registration.virtualbox.org/register763.php")
     , mHttp (new QIHttp (this, mUrl.host()))
 {
     /* Store external pointer to this dialog */
@@ -211,6 +204,11 @@ VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf, QWidget *
     /* Apply window icons */
     setWindowIcon (vboxGlobal().iconSetFull (QSize (32, 32), QSize (16, 16),
                                              ":/register_32px.png", ":/register_16px.png"));
+
+    /* Setup widgets */
+    QSizePolicy sp (mTextRegInfo->sizePolicy());
+    sp.setHeightForWidth (true);
+    mTextRegInfo->setSizePolicy (sp);
 
     /* Initialize wizard hdr */
     initializeWizardHdr();
@@ -228,25 +226,72 @@ VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf, QWidget *
                                 "\\x000E-\\x007F]))*\"))"
                       "@"
                       "[a-zA-Z0-9\\-]+(\\.[a-zA-Z0-9\\-]+)*");
-    mLeName->setValidator (new QRegExpValidator (nameExp, this));
-    mLeEmail->setValidator (new QRegExpValidator (emailExp, this));
-    mLeName->setMaxLength (50);
-    mLeEmail->setMaxLength (50);
+    QRegExp passwordExp ("[a-zA-Z0-9_\\-\\+=`~!@#$%^&\\*\\(\\)?\\[\\]:;,\\./]+");
 
-    /* Setup other connections */
+    mLeOldEmail->setMaxLength (50);
+    mLeOldEmail->setValidator (new QRegExpValidator (emailExp, this));
+
+    mLeOldPassword->setMaxLength (20);
+    mLeOldPassword->setValidator (new QRegExpValidator (passwordExp, this));
+
+    mLeNewFirstName->setMaxLength (50);
+
+   mLeNewFirstName->setValidator (new QRegExpValidator (nameExp, this));
+
+    mLeNewLastName->setMaxLength (50);
+    mLeNewLastName->setValidator (new QRegExpValidator (nameExp, this));
+
+    mLeNewCompany->setMaxLength (50);
+    mLeNewCompany->setValidator (new QRegExpValidator (nameExp, this));
+
+    mLeNewCountry->setMaxLength (50);
+    mLeNewCountry->setValidator (new QRegExpValidator (nameExp, this));
+
+    mLeNewEmail->setMaxLength (50);
+    mLeNewEmail->setValidator (new QRegExpValidator (emailExp, this));
+
+    mLeNewPassword->setMaxLength (20);
+    mLeNewPassword->setValidator (new QRegExpValidator (passwordExp, this));
+
+    mLeNewPassword2->setMaxLength (20);
+    mLeNewPassword2->setValidator (new QRegExpValidator (passwordExp, this));
+
+    /* Setup validation */
     mWvalReg = new QIWidgetValidator (mPageReg, this);
     connect (mWvalReg, SIGNAL (validityChanged (const QIWidgetValidator *)),
              this, SLOT (enableNext (const QIWidgetValidator *)));
     connect (mWvalReg, SIGNAL (isValidRequested (QIWidgetValidator *)),
              this, SLOT (revalidate (QIWidgetValidator *)));
+
+    connect (mRbOld, SIGNAL (toggled (bool)), mWvalReg, SLOT (revalidate()));
+    connect (mRbNew, SIGNAL (toggled (bool)), mWvalReg, SLOT (revalidate()));
+
+    connect (mLeOldEmail, SIGNAL (textEdited (const QString &)),
+             this, SLOT (tuneRadioButton (const QString &)));
+    connect (mLeOldPassword, SIGNAL (textEdited (const QString &)),
+             this, SLOT (tuneRadioButton (const QString &)));
+    connect (mLeNewFirstName, SIGNAL (textEdited (const QString &)),
+             this, SLOT (tuneRadioButton (const QString &)));
+    connect (mLeNewLastName, SIGNAL (textEdited (const QString &)),
+             this, SLOT (tuneRadioButton (const QString &)));
+    connect (mLeNewCompany, SIGNAL (textEdited (const QString &)),
+             this, SLOT (tuneRadioButton (const QString &)));
+    connect (mLeNewCountry, SIGNAL (textEdited (const QString &)),
+             this, SLOT (tuneRadioButton (const QString &)));
+    connect (mLeNewEmail, SIGNAL (textEdited (const QString &)),
+             this, SLOT (tuneRadioButton (const QString &)));
+    connect (mLeNewPassword, SIGNAL (textEdited (const QString &)),
+             this, SLOT (tuneRadioButton (const QString &)));
+    connect (mLeNewPassword2, SIGNAL (textEdited (const QString &)),
+             this, SLOT (tuneRadioButton (const QString &)));
+
+    /* Setup other connections */
     connect (vboxGlobal().mainWindow(), SIGNAL (closing()), this, SLOT (reject()));
 
     /* Setup initial dialog parameters. */
-    VBoxRegistrationData regData (vboxGlobal().virtualBox().
-        GetExtraData (VBoxDefs::GUI_RegistrationData));
-    mLeName->setText (regData.name());
-    mLeEmail->setText (regData.email());
-    mCbUse->setChecked (regData.isPrivate() == "yes");
+    VBoxRegistrationData data (vboxGlobal().virtualBox().
+        GetExtraData (VBoxDefs::GUI_RegistrationData), false);
+    mLeOldEmail->setText (data.account());
 
     /* Update the next button state for pages with validation
      * (validityChanged() connected to enableNext() will do the job) */
@@ -256,10 +301,18 @@ VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf, QWidget *
     initializeWizardFtr();
 
     retranslateUi();
+
+    /* Fix minimum possible size */
+    resize (minimumSizeHint());
+    qApp->processEvents();
+    setFixedSize (size());
 }
 
 VBoxRegistrationDlg::~VBoxRegistrationDlg()
 {
+    /* Unset busy cursor */
+    unsetCursor();
+
     /* Erase dialog handle in config file. */
     vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_RegistrationDlgWinID,
                                             QString::null);
@@ -274,15 +327,44 @@ void VBoxRegistrationDlg::retranslateUi()
     Ui::VBoxRegistrationDlg::retranslateUi (this);
 }
 
+void VBoxRegistrationDlg::tuneRadioButton (const QString &aNewText)
+{
+    QList <QLineEdit*> oldSet;
+    oldSet << mLeOldEmail << mLeOldPassword;
+
+    QList <QLineEdit*> newSet;
+    newSet << mLeNewFirstName << mLeNewLastName
+           << mLeNewCompany << mLeNewCountry
+           << mLeNewEmail << mLeNewPassword << mLeNewPassword2;
+
+    QLineEdit *le = qobject_cast <QLineEdit*> (sender());
+
+    if (le && !aNewText.isEmpty() && oldSet.contains (le))
+        mRbOld->setChecked (true);
+    else if (le && !aNewText.isEmpty() && newSet.contains (le))
+        mRbNew->setChecked (true);
+
+    mWvalReg->revalidate();
+}
+
 /* Post the handshake request into the register site. */
 void VBoxRegistrationDlg::accept()
 {
     /* Disable control elements */
-    mLeName->setEnabled (false);
-    mLeEmail->setEnabled (false);
-    mCbUse->setEnabled (false);
+    mLeOldEmail->setEnabled (false);
+    mLeOldPassword->setEnabled (false);
+    mLeNewFirstName->setEnabled (false);
+    mLeNewLastName->setEnabled (false);
+    mLeNewCompany->setEnabled (false);
+    mLeNewCountry->setEnabled (false);
+    mLeNewEmail->setEnabled (false);
+    mLeNewPassword->setEnabled (false);
+    mLeNewPassword2->setEnabled (false);
     finishButton()->setEnabled (false);
     cancelButton()->setEnabled (false);
+
+    /* Set busy cursor */
+    setCursor (QCursor (Qt::BusyCursor));
 
     /* Perform connection handshake */
     QTimer::singleShot (0, this, SLOT (handshakeStart()));
@@ -291,11 +373,11 @@ void VBoxRegistrationDlg::accept()
 void VBoxRegistrationDlg::reject()
 {
     /* Decrement the triesLeft. */
-    VBoxRegistrationData regData (vboxGlobal().virtualBox().
-                                  GetExtraData (VBoxDefs::GUI_RegistrationData));
-    if (!regData.isValid() || !regData.isRegistered())
+    VBoxRegistrationData data (vboxGlobal().virtualBox().
+                               GetExtraData (VBoxDefs::GUI_RegistrationData), false);
+    if (!data.isValid() || !data.isRegistered())
     {
-        uint triesLeft = regData.triesLeft();
+        uint triesLeft = data.triesLeft();
         if (triesLeft)
         {
             -- triesLeft;
@@ -344,12 +426,28 @@ void VBoxRegistrationDlg::registrationStart()
 {
     /* Compose query */
     QUrl url (mUrl);
+
+    /* Basic set */
     url.addQueryItem ("version", vboxGlobal().virtualBox().GetVersion());
     url.addQueryItem ("key", mKey);
     url.addQueryItem ("platform", vboxGlobal().platformInfo());
-    url.addQueryItem ("name", mLeName->text());
-    url.addQueryItem ("email", mLeEmail->text());
-    url.addQueryItem ("private", mCbUse->isChecked() ? "1" : "0");
+
+    if (mRbOld->isChecked())
+    {
+        /* Light set */
+        url.addQueryItem ("email", mLeOldEmail->text());
+        url.addQueryItem ("password", mLeOldPassword->text());
+    }
+    else if (mRbNew->isChecked())
+    {
+        /* Full set */
+        url.addQueryItem ("email", mLeNewEmail->text());
+        url.addQueryItem ("password", mLeNewPassword->text());
+        url.addQueryItem ("firstname", mLeNewFirstName->text());
+        url.addQueryItem ("lastname", mLeNewLastName->text());
+        url.addQueryItem ("company", mLeNewCompany->text());
+        url.addQueryItem ("country", mLeNewCountry->text());
+    }
 
     /* Registration */
     mHttp->disconnect (this);
@@ -378,20 +476,48 @@ void VBoxRegistrationDlg::registrationResponse (bool aError)
 
 void VBoxRegistrationDlg::revalidate (QIWidgetValidator *aWval)
 {
-    bool valid = aWval->isOtherValid();
-    /* do individual validations for pages here */
+    bool valid = true;
+    int pos = 0;
+
+    if (mRbOld->isChecked())
+    {
+        /* Check for fields correctness */
+        if (mLeOldEmail->validator()->validate (mLeOldEmail->text(), pos) != QValidator::Acceptable ||
+            mLeOldPassword->validator()->validate (mLeOldPassword->text(), pos) != QValidator::Acceptable)
+            valid = false;
+    }
+    if (mRbNew->isChecked())
+    {
+        /* Check for fields correctness */
+        if (mLeNewFirstName->validator()->validate (mLeNewFirstName->text(), pos) != QValidator::Acceptable ||
+            mLeNewLastName->validator()->validate (mLeNewLastName->text(), pos) != QValidator::Acceptable ||
+            mLeNewCompany->validator()->validate (mLeNewCompany->text(), pos) != QValidator::Acceptable ||
+            mLeNewCountry->validator()->validate (mLeNewCountry->text(), pos) != QValidator::Acceptable ||
+            mLeNewEmail->validator()->validate (mLeNewEmail->text(), pos) != QValidator::Acceptable ||
+            mLeNewPassword->validator()->validate (mLeNewPassword->text(), pos) != QValidator::Acceptable ||
+            mLeNewPassword2->validator()->validate (mLeNewPassword2->text(), pos) != QValidator::Acceptable)
+            valid = false;
+
+        /* Check for password correctness */
+        if (mLeNewPassword->text() != mLeNewPassword2->text())
+            valid = false;
+    }
+
     aWval->setOtherValid (valid);
 }
 
 void VBoxRegistrationDlg::enableNext (const QIWidgetValidator *aWval)
 {
-    finishButton()->setEnabled (aWval->isValid());
+    /* Validate all the subscribed widgets */
+    aWval->isValid();
+    /* But control dialog only with necessary */
+    finishButton()->setEnabled (aWval->isOtherValid());
 }
 
 void VBoxRegistrationDlg::onPageShow()
 {
     Assert (mPageStack->currentWidget() == mPageReg);
-    mLeName->setFocus();
+    mLeOldEmail->setFocus();
 }
 
 /* This wrapper displays an error message box (unless aReason is QString::null)
@@ -409,10 +535,12 @@ void VBoxRegistrationDlg::abortRequest (const QString &aReason)
 
 void VBoxRegistrationDlg::finish()
 {
-    VBoxRegistrationData regData (mLeName->text(), mLeEmail->text(),
-                                  mCbUse->isChecked() ? "yes" : "no");
+    QString acc (mRbOld->isChecked() ? mLeOldEmail->text() :
+                 mRbNew->isChecked() ? mLeNewEmail->text() : QString::null);
+
+    VBoxRegistrationData data (acc, true);
     vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_RegistrationData,
-                                            regData.data());
+                                            data.data());
 
     QIAbstractWizard::accept();
 }

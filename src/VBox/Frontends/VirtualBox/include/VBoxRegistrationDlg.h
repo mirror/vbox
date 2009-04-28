@@ -51,6 +51,8 @@ protected:
 
 private slots:
 
+    void tuneRadioButton (const QString &aNewText);
+
     void accept();
     void reject();
 

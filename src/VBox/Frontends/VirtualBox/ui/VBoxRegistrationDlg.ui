@@ -22,8 +22,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>564</width>
-    <height>394</height>
+    <width>639</width>
+    <height>513</height>
    </rect>
   </property>
   <property name="windowTitle" >
@@ -48,8 +48,8 @@
       <number>0</number>
      </property>
      <widget class="QWidget" name="mPageReg" >
-      <layout class="QVBoxLayout" >
-       <item>
+      <layout class="QGridLayout" name="gridLayout" >
+       <item row="0" column="0" colspan="4" >
         <widget class="QLabel" name="mPageSummaryHdr" >
          <property name="font" >
           <font>
@@ -64,141 +64,337 @@
          </property>
         </widget>
        </item>
-       <item>
+       <item row="1" column="0" colspan="4" >
         <widget class="Line" name="line11" >
          <property name="orientation" >
           <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
-       <item>
-        <layout class="QHBoxLayout" >
-         <item>
-          <widget class="QLabel" name="mLogoSummary" >
-           <property name="sizePolicy" >
-            <sizepolicy vsizetype="Minimum" hsizetype="Maximum" >
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="autoFillBackground" >
-            <bool>true</bool>
-           </property>
-           <property name="pixmap" >
-            <pixmap resource="../VirtualBox.qrc" >:/vmw_new_user.png</pixmap>
-           </property>
-           <property name="alignment" >
-            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <layout class="QVBoxLayout" >
-           <item>
-            <widget class="QILabel" name="mTextRegInfo" >
-             <property name="sizePolicy" >
-              <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize" >
-              <size>
-               <width>300</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="text" >
-              <string>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</string>
-             </property>
-             <property name="wordWrap" >
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <spacer>
-             <property name="orientation" >
-              <enum>Qt::Vertical</enum>
-             </property>
-             <property name="sizeType" >
-              <enum>QSizePolicy::Expanding</enum>
-             </property>
-             <property name="sizeHint" >
-              <size>
-               <width>10</width>
-               <height>0</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
-            <layout class="QGridLayout" >
-             <item row="0" column="0" >
-              <widget class="QLabel" name="mTxName" >
-               <property name="text" >
-                <string>&amp;Name</string>
-               </property>
-               <property name="buddy" >
-                <cstring>mLeName</cstring>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1" >
-              <widget class="QLineEdit" name="mLeName" >
-               <property name="whatsThis" >
-                <string>Enter your full name using Latin characters.</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="0" >
-              <widget class="QLabel" name="mTxEmail" >
-               <property name="text" >
-                <string>&amp;E-mail</string>
-               </property>
-               <property name="buddy" >
-                <cstring>mLeEmail</cstring>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1" >
-              <widget class="QLineEdit" name="mLeEmail" >
-               <property name="whatsThis" >
-                <string>Enter your valid e-mail address.</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0" colspan="2" >
-              <widget class="QCheckBox" name="mCbUse" >
-               <property name="whatsThis" >
-                <string>Check this box if you do not want to receive mail from Sun Microsystems at the e-mail address specified above.</string>
-               </property>
-               <property name="text" >
-                <string>&amp;Please do not use this information to contact me</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-          </layout>
-         </item>
-        </layout>
+       <item rowspan="15" row="2" column="0" >
+        <widget class="QLabel" name="mLogoSummary" >
+         <property name="sizePolicy" >
+          <sizepolicy vsizetype="Minimum" hsizetype="Maximum" >
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="autoFillBackground" >
+          <bool>true</bool>
+         </property>
+         <property name="pixmap" >
+          <pixmap resource="../VirtualBox.qrc" >:/vmw_new_user.png</pixmap>
+         </property>
+         <property name="alignment" >
+          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+         </property>
+        </widget>
        </item>
-       <item>
+       <item row="2" column="1" colspan="3" >
+        <widget class="QILabel" name="mTextRegInfo" >
+         <property name="sizePolicy" >
+          <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize" >
+          <size>
+           <width>500</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="text" >
+          <string>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use the Latin characters to fill the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</string>
+         </property>
+         <property name="wordWrap" >
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1" colspan="3" >
+        <widget class="Line" name="line14" >
+         <property name="orientation" >
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1" colspan="3" >
+        <widget class="QRadioButton" name="mRbOld" >
+         <property name="text" >
+          <string>I &amp;have a Sun Online account already:</string>
+         </property>
+         <property name="checked" >
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item rowspan="2" row="5" column="1" >
+        <spacer name="mHorizontalSpacer1" >
+         <property name="orientation" >
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeType" >
+          <enum>QSizePolicy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0" >
+          <size>
+           <width>20</width>
+           <height>0</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="5" column="2" >
+        <widget class="QLabel" name="mTxOldEmail" >
+         <property name="text" >
+          <string>&amp;E-mail:</string>
+         </property>
+         <property name="alignment" >
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <property name="buddy" >
+          <cstring>mLeOldEmail</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="3" >
+        <widget class="QLineEdit" name="mLeOldEmail" >
+         <property name="whatsThis" >
+          <string>Enter your valid e-mail address.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="2" >
+        <widget class="QLabel" name="mTxOldPassword" >
+         <property name="text" >
+          <string>&amp;Password:</string>
+         </property>
+         <property name="alignment" >
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <property name="buddy" >
+          <cstring>mLeOldPassword</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="3" >
+        <widget class="QLineEdit" name="mLeOldPassword" >
+         <property name="whatsThis" >
+          <string>Enter your valid e-mail address.</string>
+         </property>
+         <property name="echoMode" >
+          <enum>QLineEdit::Password</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="1" colspan="3" >
+        <widget class="Line" name="line13" >
+         <property name="orientation" >
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="1" colspan="3" >
+        <widget class="QRadioButton" name="mRbNew" >
+         <property name="text" >
+          <string>I &amp;would like to register creating a new Sun Online account:</string>
+         </property>
+        </widget>
+       </item>
+       <item rowspan="8" row="9" column="1" >
+        <spacer name="mHorizontalSpacer2" >
+         <property name="orientation" >
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeType" >
+          <enum>QSizePolicy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0" >
+          <size>
+           <width>20</width>
+           <height>0</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="9" column="2" >
+        <widget class="QLabel" name="mTxNewFirstName" >
+         <property name="text" >
+          <string>&amp;First Name:</string>
+         </property>
+         <property name="alignment" >
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <property name="buddy" >
+          <cstring>mLeNewFirstName</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="3" >
+        <widget class="QLineEdit" name="mLeNewFirstName" >
+         <property name="whatsThis" >
+          <string>Enter your full name using Latin characters.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="10" column="2" >
+        <widget class="QLabel" name="mTxNewLastName" >
+         <property name="text" >
+          <string>&amp;Last Name:</string>
+         </property>
+         <property name="alignment" >
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <property name="buddy" >
+          <cstring>mLeNewLastName</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="10" column="3" >
+        <widget class="QLineEdit" name="mLeNewLastName" >
+         <property name="whatsThis" >
+          <string>Enter your full name using Latin characters.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="2" >
+        <widget class="QLabel" name="mTxNewCompany" >
+         <property name="text" >
+          <string>&amp;Company:</string>
+         </property>
+         <property name="alignment" >
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <property name="buddy" >
+          <cstring>mLeNewCompany</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="3" >
+        <widget class="QLineEdit" name="mLeNewCompany" >
+         <property name="whatsThis" >
+          <string>Enter your full name using Latin characters.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="12" column="2" >
+        <widget class="QLabel" name="mTxNewCountry" >
+         <property name="text" >
+          <string>Co&amp;untry:</string>
+         </property>
+         <property name="alignment" >
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <property name="buddy" >
+          <cstring>mLeNewCountry</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="12" column="3" >
+        <widget class="QLineEdit" name="mLeNewCountry" >
+         <property name="whatsThis" >
+          <string>Enter your full name using Latin characters.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="13" column="2" colspan="2" >
+        <spacer name="mVerticalSpacer2" >
+         <property name="orientation" >
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeType" >
+          <enum>QSizePolicy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0" >
+          <size>
+           <width>0</width>
+           <height>5</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="14" column="2" >
+        <widget class="QLabel" name="mTxNewEmail" >
+         <property name="text" >
+          <string>E-&amp;mail:</string>
+         </property>
+         <property name="alignment" >
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <property name="buddy" >
+          <cstring>mLeNewEmail</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="14" column="3" >
+        <widget class="QLineEdit" name="mLeNewEmail" >
+         <property name="whatsThis" >
+          <string>Enter your full name using Latin characters.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="15" column="2" >
+        <widget class="QLabel" name="mTxNewPassword" >
+         <property name="text" >
+          <string>P&amp;assword:</string>
+         </property>
+         <property name="alignment" >
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <property name="buddy" >
+          <cstring>mLeNewPassword</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="15" column="3" >
+        <widget class="QLineEdit" name="mLeNewPassword" >
+         <property name="whatsThis" >
+          <string>Enter your full name using Latin characters.</string>
+         </property>
+         <property name="echoMode" >
+          <enum>QLineEdit::Password</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="16" column="2" >
+        <widget class="QLabel" name="mTxNewPassword2" >
+         <property name="text" >
+          <string>Co&amp;nfirm Password:</string>
+         </property>
+         <property name="alignment" >
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <property name="buddy" >
+          <cstring>mLeNewPassword2</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="16" column="3" >
+        <widget class="QLineEdit" name="mLeNewPassword2" >
+         <property name="whatsThis" >
+          <string>Enter your full name using Latin characters.</string>
+         </property>
+         <property name="echoMode" >
+          <enum>QLineEdit::Password</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="17" column="0" colspan="4" >
         <widget class="Line" name="line12" >
          <property name="orientation" >
           <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
-       <item>
+       <item row="18" column="0" colspan="4" >
         <layout class="QHBoxLayout" >
          <item>
-          <spacer>
+          <spacer name="mHorizontalSpacer1" >
            <property name="orientation" >
             <enum>Qt::Horizontal</enum>
            </property>
-           <property name="sizeHint" >
+           <property name="sizeHint" stdset="0" >
             <size>
              <width>0</width>
              <height>0</height>
@@ -209,7 +405,7 @@
          <item>
           <widget class="QPushButton" name="mBtnFinish" >
            <property name="text" >
-            <string>C&amp;onfirm</string>
+            <string>&amp;Register</string>
            </property>
            <property name="default" >
             <bool>true</bool>
@@ -217,14 +413,14 @@
           </widget>
          </item>
          <item>
-          <spacer>
+          <spacer name="mHorizontalSpacer2" >
            <property name="orientation" >
             <enum>Qt::Horizontal</enum>
            </property>
            <property name="sizeType" >
             <enum>QSizePolicy::Fixed</enum>
            </property>
-           <property name="sizeHint" >
+           <property name="sizeHint" stdset="0" >
             <size>
              <width>5</width>
              <height>0</height>
@@ -233,7 +429,7 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="mBtnCancel4" >
+          <widget class="QPushButton" name="mBtnCancel" >
            <property name="text" >
             <string>Cancel</string>
            </property>
@@ -256,7 +452,7 @@
  </customwidgets>
  <tabstops>
   <tabstop>mBtnFinish</tabstop>
-  <tabstop>mBtnCancel4</tabstop>
+  <tabstop>mBtnCancel</tabstop>
  </tabstops>
  <resources>
   <include location="../VirtualBox.qrc" />
