@@ -351,7 +351,7 @@ static int patmReinit(PVM pVM)
     AssertReleaseMsg(pVM->patm.s.pPatchMemGC, ("Impossible! MMHyperHC2GC(%p) failed!\n", pVM->patm.s.pPatchMemHC));
 
     /* Needed for future patching of sldt/sgdt/sidt/str etc. */
-    pVM->patm.s.pCPUMCtxGC = VM_RC_ADDR(pVM, CPUMQueryGuestCtxPtr(VMMGetCpu0(pVM)));
+    pVM->patm.s.pCPUMCtxGC = VM_RC_ADDR(pVM, CPUMQueryGuestCtxPtr(VMMGetCpu(pVM)));
 
     Assert(pVM->patm.s.PatchLookupTreeHC);
     Assert(pVM->patm.s.PatchLookupTreeGC == MMHyperR3ToRC(pVM, pVM->patm.s.PatchLookupTreeHC));
@@ -431,7 +431,7 @@ VMMR3DECL(void) PATMR3Relocate(PVM pVM)
 
         RTAvloU32DoWithAll(&pVM->patm.s.PatchLookupTreeHC->PatchTree, true, RelocatePatches, (void *)pVM);
 
-        pCtx = CPUMQueryGuestCtxPtr(VMMGetCpu0(pVM));
+        pCtx = CPUMQueryGuestCtxPtr(VMMGetCpu(pVM));
 
         /* If we are running patch code right now, then also adjust EIP. */
         if (PATMIsPatchGCAddr(pVM, pCtx->eip))
