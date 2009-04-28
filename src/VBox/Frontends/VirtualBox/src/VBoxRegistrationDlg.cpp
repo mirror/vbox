@@ -310,9 +310,6 @@ VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf, QWidget *
 
 VBoxRegistrationDlg::~VBoxRegistrationDlg()
 {
-    /* Unset busy cursor */
-    unsetCursor();
-
     /* Erase dialog handle in config file. */
     vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_RegistrationDlgWinID,
                                             QString::null);
@@ -390,6 +387,29 @@ void VBoxRegistrationDlg::reject()
     QIAbstractWizard::reject();
 }
 
+void VBoxRegistrationDlg::reinit()
+{
+    /* Read all the dirty data */
+    mHttp->disconnect (this);
+    mHttp->readAll();
+
+    /* Enable control elements */
+    mLeOldEmail->setEnabled (true);
+    mLeOldPassword->setEnabled (true);
+    mLeNewFirstName->setEnabled (true);
+    mLeNewLastName->setEnabled (true);
+    mLeNewCompany->setEnabled (true);
+    mLeNewCountry->setEnabled (true);
+    mLeNewEmail->setEnabled (true);
+    mLeNewPassword->setEnabled (true);
+    mLeNewPassword2->setEnabled (true);
+    finishButton()->setEnabled (true);
+    cancelButton()->setEnabled (true);
+
+    /* Unset busy cursor */
+    unsetCursor();
+}
+
 void VBoxRegistrationDlg::handshakeStart()
 {
     /* Compose query */
@@ -397,7 +417,6 @@ void VBoxRegistrationDlg::handshakeStart()
     url.addQueryItem ("version", vboxGlobal().virtualBox().GetVersion());
 
     /* Handshake */
-    mHttp->disconnect (this);
     connect (mHttp, SIGNAL (allIsDone (bool)), this, SLOT (handshakeResponse (bool)));
     mHttp->post (url.toEncoded());
 }
@@ -450,7 +469,6 @@ void VBoxRegistrationDlg::registrationStart()
     }
 
     /* Registration */
-    mHttp->disconnect (this);
     connect (mHttp, SIGNAL (allIsDone (bool)), this, SLOT (registrationResponse (bool)));
     mHttp->post (url.toEncoded());
 }
@@ -471,7 +489,7 @@ void VBoxRegistrationDlg::registrationResponse (bool aError)
     vboxProblem().showRegisterResult (this, data);
 
     /* Close the dialog */
-    data == "OK" ? finish() : reject();
+    data == "OK" ? finish() : reinit();
 }
 
 void VBoxRegistrationDlg::revalidate (QIWidgetValidator *aWval)
@@ -530,7 +548,7 @@ void VBoxRegistrationDlg::abortRequest (const QString &aReason)
         vboxProblem().cannotConnectRegister (this, mUrl.toString(), aReason);
 
     /* Allows all the queued signals to be processed before quit. */
-    QTimer::singleShot (0, this, SLOT (reject()));
+    QTimer::singleShot (0, this, SLOT (reinit()));
 }
 
 void VBoxRegistrationDlg::finish()
