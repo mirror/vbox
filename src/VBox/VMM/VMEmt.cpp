@@ -236,6 +236,7 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
 }
 
 
+#if 0 /* not used */
 /**
  * Wait for VM to be resumed. Handle events like vmR3EmulationThread does.
  * In case the VM is stopped, clean up and long jump to the main EMT loop.
@@ -341,7 +342,7 @@ VMMR3DECL(int) VMR3WaitForResume(PVM pVM)
     /* Return to the main loop in vmR3EmulationThread, which will clean up for us. */
     longjmp(pUVCpu->vm.s.emtJumpEnv, 1);
 }
-
+#endif
 
 /**
  * Gets the name of a halt method.
