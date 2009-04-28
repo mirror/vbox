@@ -255,7 +255,7 @@ STDMETHODIMP FloppyDrive::COMGETTER(State) (DriveState_T *aState)
 
 STDMETHODIMP FloppyDrive::MountImage (IN_BSTR aImageId)
 {
-    Guid imageId = aImageId;
+    Guid imageId(aImageId);
     CheckComArgExpr(aImageId, !imageId.isEmpty());
 
     AutoCaller autoCaller (this);
