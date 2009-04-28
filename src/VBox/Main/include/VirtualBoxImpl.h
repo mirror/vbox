@@ -421,6 +421,8 @@ private:
 
             const Bstr mName;
             RTFILE mHandle;
+            /** Flag indicating that the config file is read-only. */
+            BOOL mReadonly;
         };
 
         // const data members not requiring locking

@@ -151,6 +151,8 @@ public:
         const Guid mUuid;
         BOOL mRegistered;
 
+        /** Flag indicating that the config file is read-only. */
+        BOOL mConfigFileReadonly;
         Bstr mConfigFile;
         Bstr mConfigFileFull;
 
