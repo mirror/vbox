@@ -64,16 +64,18 @@ VMMDECL(VMCPUID) VMMGetCpuId(PVM pVM)
     /* Only emulation thread(s) allowed to ask for CPU id */
     VM_ASSERT_EMT(pVM);
 
-#if defined(IN_RC)
-    /* There is only one CPU if we're in GC. */
-    return 0;
+    /* Shortcut for one CPU */
+    if (pVM->cCPUs == 1)
+        return 0;
 
-#elif defined(IN_RING3)
+#if defined(IN_RING3)
     return VMR3GetVMCPUId(pVM);
-
-#else  /* IN_RING0 */
+#elif defined(IN_RING0)
     return HWACCMR0GetVMCPUId(pVM);
 #endif /* IN_RING0 */
+
+    AssertFailed();
+    return 0;
 }
 
 /**
@@ -92,16 +94,18 @@ VMMDECL(PVMCPU) VMMGetCpu(PVM pVM)
     /* Only emulation thread(s) allowed to ask for CPU id */
     VM_ASSERT_EMT(pVM);
 
-#if defined(IN_RC)
-    /* There is only one CPU if we're in GC. */
-    return &pVM->aCpus[0];
+    /* Shortcut for one CPU */
+    if (pVM->cCPUs == 1)
+        return &pVM->aCpus[0];
 
-#elif defined(IN_RING3)
+#ifdef IN_RING3
     return &pVM->aCpus[VMR3GetVMCPUId(pVM)];
-
-#else  /* IN_RING0 */
+#elif defined(IN_RING0)
     return HWACCMR0GetVMCPU(pVM);
 #endif /* IN_RING0 */
+
+    AssertFailed();
+    return &pVM->aCpus[0];
 }
 
 /**
