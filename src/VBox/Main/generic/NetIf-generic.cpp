@@ -26,6 +26,10 @@
 #include <iprt/path.h>
 #include <iprt/param.h>
 
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
+# include <cstdio>
+#endif
+
 #include "HostNetworkInterfaceImpl.h"
 #include "ProgressImpl.h"
 #include "VirtualBoxImpl.h"
