@@ -142,12 +142,11 @@ void listVMs(IVirtualBox *virtualBox)
                     printf("\tName:        <inaccessible>\n");
                 }
 
-                nsID *iid = nsnull;
-                machine->GetId(&iid);
-                const char *uuidString = nsIDToString(iid);
+                nsXPIDLString iid;
+                machine->GetId(getter_Copies(iid));
+                const char *uuidString = ToNewCString(iid);
                 printf("\tUUID:        %s\n", uuidString);
                 free((void*)uuidString);
-                nsMemory::Free(iid);
 
                 if (isAccessible)
                 {
@@ -193,10 +192,9 @@ void createVM(IVirtualBox *virtualBox)
      * First create a unnamed new VM. It will be unconfigured and not be saved
      * in the configuration until we explicitely choose to do so.
      */
-    nsID VMuuid = {0};
     nsCOMPtr <IMachine> machine;
     rc = virtualBox->CreateMachine(NS_LITERAL_STRING("A brand new name").get(),
-                                   nsnull, nsnull, VMuuid, getter_AddRefs(machine));
+                                   nsnull, nsnull, nsnull, getter_AddRefs(machine));
     if (NS_FAILED(rc))
     {
         printf("Error: could not create machine! rc=%08X\n", rc);
@@ -271,10 +269,9 @@ void createVM(IVirtualBox *virtualBox)
             return;
         }
 
-        nsID *machineUUID = nsnull;
-        machine->GetId(&machineUUID);
-        rc = virtualBox->OpenSession(session, *machineUUID);
-        nsMemory::Free(machineUUID);
+        nsXPIDLString machineUUID;
+        machine->GetId(getter_Copies(machineUUID));
+        rc = virtualBox->OpenSession(session, machineUUID);
         if (NS_FAILED(rc))
         {
             printf("Error, could not open session! rc=0x%x\n", rc);
@@ -328,7 +325,7 @@ void createVM(IVirtualBox *virtualBox)
              * Here we wait forever (timeout -1)  which is potentially dangerous.
              */
             rc = progress->WaitForCompletion(-1);
-            nsresult resultCode;
+            PRInt32 resultCode;
             progress->GetResultCode(&resultCode);
             if (NS_FAILED(rc) || NS_FAILED(resultCode))
             {
@@ -342,13 +339,12 @@ void createVM(IVirtualBox *virtualBox)
                  * by UUID, so query that one fist. The UUID has been assigned automatically
                  * when we've created the image.
                  */
-                nsID *vdiUUID = nsnull;
-                hardDisk->GetId(&vdiUUID);
-                rc = machine->AttachHardDisk(*vdiUUID,
+                nsXPIDLString vdiUUID;
+                hardDisk->GetId(getter_Copies(vdiUUID));
+                rc = machine->AttachHardDisk(vdiUUID,
                                              NS_LITERAL_STRING("IDE").get(), // controler identifier
                                              0,                              // channel number on the controller
                                              0);                             // device number on the controller
-                nsMemory::Free(vdiUUID);
                 if (NS_FAILED(rc))
                 {
                     printf("Error: could not attach hard disk! rc=%08X\n", rc);
@@ -363,11 +359,10 @@ void createVM(IVirtualBox *virtualBox)
      * has to be registered and then mounted to the VM's DVD drive and selected
      * as the boot device.
      */
-    nsID uuid = {0};
     nsCOMPtr<IDVDImage> dvdImage;
 
     rc = virtualBox->OpenDVDImage(NS_LITERAL_STRING("/home/achimha/isoimages/winnt4ger.iso").get(),
-                                  uuid, /* NULL UUID, i.e. a new one will be created */
+                                  nsnull, /* NULL UUID, i.e. a new one will be created */
                                   getter_AddRefs(dvdImage));
     if (NS_FAILED(rc))
     {
@@ -378,12 +373,11 @@ void createVM(IVirtualBox *virtualBox)
         /*
          * Now assign it to our VM
          */
-        nsID *isoUUID = nsnull;
-        dvdImage->GetId(&isoUUID);
+        nsXPIDLString isoUUID;
+        dvdImage->GetId(getter_Copies(isoUUID));
         nsCOMPtr<IDVDDrive> dvdDrive;
         machine->GetDVDDrive(getter_AddRefs(dvdDrive));
-        rc = dvdDrive->MountImage(*isoUUID);
-        nsMemory::Free(isoUUID);
+        rc = dvdDrive->MountImage(isoUUID);
         if (NS_FAILED(rc))
         {
             printf("Error: could not mount ISO image! rc=%08X\n", rc);

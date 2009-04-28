@@ -6911,10 +6911,10 @@ DECLCALLBACK (int) Console::saveStateThread (RTTHREAD Thread, void *pvUser)
         rc = task->mServerProgress->WaitForCompletion (-1);
         if (SUCCEEDED (rc))
         {
-            HRESULT result = S_OK;
-            rc = task->mServerProgress->COMGETTER(ResultCode) (&result);
+            LONG iRc = S_OK;
+            rc = task->mServerProgress->COMGETTER(ResultCode) (&iRc);
             if (SUCCEEDED (rc))
-                rc = result;
+                rc = iRc;
         }
     }
 
