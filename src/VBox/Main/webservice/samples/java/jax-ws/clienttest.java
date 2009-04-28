@@ -29,8 +29,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 /* Somewhat ugly way to support versioning */
-import com.sun.xml.ws.commons.virtualbox{VBOX_API_SUFFIX}.*;
-import org.virtualbox{VBOX_API_SUFFIX}.*;
+import com.sun.xml.ws.commons.virtualbox_2_2.*;
+import org.virtualbox_2_2.*;
 
 import java.util.*;
 import javax.xml.ws.Holder;
@@ -55,18 +55,18 @@ public class clienttest
     class Desktop
     {
         String name;
-        UUID   uuid;
+        String uuid;
 
         Desktop(int n)
         {
             name = "Mach"+n;
-            uuid = UUID.randomUUID();
+            uuid = UUID.randomUUID().toString();
         }
         String getName()
         {
             return name;
         }
-        UUID getId()
+        String getId()
         {
             return uuid;
         }
@@ -91,7 +91,7 @@ public class clienttest
     public void test2()
     {
         ISession session = mgr.getSessionObject(vbox);
-        UUID id = UUID.fromString("bc8b6219-2775-42c4-f1b2-b48b3c177294");
+        String id = "bc8b6219-2775-42c4-f1b2-b48b3c177294";
         vbox.openSession(session, id);
         IMachine mach = session.getMachine();
         IBIOSSettings bios = mach.getBIOSSettings();
@@ -202,7 +202,7 @@ public class clienttest
             // first assume we were given a UUID
             try
             {
-                oMachine = vbox.getMachine(UUID.fromString(strVM));
+                oMachine = vbox.getMachine(strVM);
             }
             catch (Exception e)
             {
@@ -221,7 +221,7 @@ public class clienttest
             }
             else
             {
-                UUID uuid = oMachine.getId();
+                String uuid = oMachine.getId();
                 String sessionType = "gui";
                 String env = "DISPLAY=:0.0";
                 IProgress oProgress =
