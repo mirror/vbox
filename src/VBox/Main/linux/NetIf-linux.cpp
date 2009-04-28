@@ -161,6 +161,19 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
         }
         close(sock);
     }
+    else
+        rc = VERR_INTERNAL_ERROR;
 
+    return rc;
+}
+
+int NetIfGetConfigByName(IN_BSTR aName, NETIFINFO *pInfo)
+{
+    int rc = VINF_SUCCESS;
+    int sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sock < 0)
+        return VERR_NOT_IMPLEMENTED;
+    rc = getInterfaceInfo(sock, Utf8Str(aName).c_str(), pInfo);
+    close(sock);
     return rc;
 }
