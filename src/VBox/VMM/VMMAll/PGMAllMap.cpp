@@ -497,12 +497,12 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
                 AssertFailed();
                 break;
         }
-#ifdef IN_RC
-        /* Unlock dynamic mappings again. */
-        if (pCurrentShwPdpt)
-            PGMDynUnlockHCPage(pVM, (uint8_t *)pCurrentShwPdpt);
-#endif
     }
+#ifdef IN_RC
+    /* Unlock dynamic mappings again. */
+    if (pCurrentShwPdpt)
+        PGMDynUnlockHCPage(pVM, (uint8_t *)pCurrentShwPdpt);
+#endif
 }
 #endif /* !IN_RING0 */
 
