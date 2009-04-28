@@ -7561,13 +7561,35 @@ HRESULT Machine::lockConfig()
                               Utf8Str (mData->mConfigFileFull),
                               RTFILE_O_READWRITE | RTFILE_O_OPEN |
                               RTFILE_O_DENY_WRITE);
-        if (RT_FAILURE (vrc))
+        if (RT_FAILURE (vrc) && (vrc != VERR_FILE_NOT_FOUND))
         {
-            mData->mHandleCfgFile = NIL_RTFILE;
+            /* Open the associated config file only with read access. */
+            vrc = RTFileOpen (&mData->mHandleCfgFile,
+                              Utf8Str (mData->mConfigFileFull),
+                              RTFILE_O_READ | RTFILE_O_OPEN |
+                              RTFILE_O_DENY_NONE);
+            if (RT_FAILURE (vrc))
+            {
+                /* We even cannot open it in read mode, so there's seriously
+                   something wrong. */
+                rc = setError (E_FAIL,
+                        tr ("Could not even open settings file '%ls' in read mode (%Rrc)"),
+                        mData->mConfigFile.raw(), vrc);
+            }
+            else
+            {
+                mData->mConfigFileReadonly = TRUE;
+            }
+        }
+        else
+        {
+            mData->mConfigFileReadonly = FALSE;
+        }
 
-            rc = setError (VBOX_E_FILE_ERROR,
-                tr ("Could not lock the settings file '%ls' (%Rrc)"),
-                mData->mConfigFileFull.raw(), vrc);
+        if (RT_FAILURE(vrc)) 
+        {    
+            mData->mHandleCfgFile = NIL_RTFILE;
+            mData->mConfigFileReadonly = FALSE;
         }
     }
 
@@ -7594,6 +7616,7 @@ HRESULT Machine::unlockConfig()
         RTFileClose (mData->mHandleCfgFile);
         /** @todo flush the directory. */
         mData->mHandleCfgFile = NIL_RTFILE;
+        mData->mConfigFileReadonly = FALSE;
     }
 
     LogFlowThisFunc (("\n"));

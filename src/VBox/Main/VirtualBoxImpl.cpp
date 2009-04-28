@@ -4079,30 +4079,46 @@ HRESULT VirtualBox::lockConfig()
 
     Assert (!isConfigLocked());
     if (!isConfigLocked())
-    {
-        /* open the associated config file */
+    {   
+        /* Open the associated config file. */
         int vrc = RTFileOpen (&mData.mCfgFile.mHandle,
-                             Utf8Str (mData.mCfgFile.mName),
-                             RTFILE_O_READWRITE | RTFILE_O_OPEN |
-                             RTFILE_O_DENY_WRITE);
-        if (RT_FAILURE (vrc))
+                              Utf8Str (mData.mCfgFile.mName),
+                              RTFILE_O_READWRITE | RTFILE_O_OPEN |
+                              RTFILE_O_DENY_WRITE);
+        if (RT_FAILURE (vrc) && (vrc != VERR_FILE_NOT_FOUND))
         {
-            mData.mCfgFile.mHandle = NIL_RTFILE;
-
-            /*
-             *  It is OK if the file is not found, it will be created by
-             *  init(). Otherwise return an error.
-             */
-            if (vrc != VERR_FILE_NOT_FOUND)
+            /* Open the associated config file only with read access. */
+            vrc = RTFileOpen (&mData.mCfgFile.mHandle,
+                              Utf8Str (mData.mCfgFile.mName),
+                              RTFILE_O_READ | RTFILE_O_OPEN |
+                              RTFILE_O_DENY_NONE);
+            if (RT_FAILURE (vrc))
+            {
+                /* We even cannot open it in read mode, so there's seriously
+                   something wrong. */
                 rc = setError (E_FAIL,
-                    tr ("Could not lock the settings file '%ls' (%Rrc)"),
-                    mData.mCfgFile.mName.raw(), vrc);
+                        tr ("Could not even open settings file '%ls' in read mode (%Rrc)"),
+                        mData.mCfgFile.mName.raw(), vrc);
+            }
+            else
+            {
+                mData.mCfgFile.mReadonly = TRUE;
+            }
+        }
+        else
+        {
+            mData.mCfgFile.mReadonly = FALSE;
+        }
+
+        if (RT_FAILURE(vrc)) 
+        {    
+            mData.mCfgFile.mHandle = NIL_RTFILE;
+            mData.mCfgFile.mReadonly = FALSE;
         }
 
         LogFlowThisFunc (("mCfgFile.mName='%ls', mCfgFile.mHandle=%d, rc=%08X\n",
                           mData.mCfgFile.mName.raw(), mData.mCfgFile.mHandle, rc));
     }
-
     return rc;
 }
 
@@ -4126,6 +4142,7 @@ HRESULT VirtualBox::unlockConfig()
         RTFileClose (mData.mCfgFile.mHandle);
         /** @todo flush the directory too. */
         mData.mCfgFile.mHandle = NIL_RTFILE;
+        mData.mCfgFile.mReadonly = FALSE;
         LogFlowThisFunc (("\n"));
     }
 
