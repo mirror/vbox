@@ -383,7 +383,7 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
         EM_REG_COUNTER_USED(&pStats->StatSysCall,                "/EM/CPU%d/R3/PrivInst/Syscall",            "Number of syscall instructions.");
         EM_REG_COUNTER_USED(&pStats->StatSysRet,                 "/EM/CPU%d/R3/PrivInst/Sysret",             "Number of sysret instructions.");
 
-        EM_REG_COUNTER(&pVCpu->em.s.StatTotalClis,               "/EM/Cli/Total",              "Total number of cli instructions executed.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatTotalClis,               "/EM/CPU%d/Cli/Total",                      "Total number of cli instructions executed.");
         pVCpu->em.s.pCliStatTree = 0;
 
         /* these should be considered for release statistics. */
