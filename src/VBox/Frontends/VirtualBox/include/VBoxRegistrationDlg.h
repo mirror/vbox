@@ -55,6 +55,7 @@ private slots:
 
     void accept();
     void reject();
+    void reinit();
 
     void handshakeStart();
     void handshakeResponse (bool aError);
