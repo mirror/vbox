@@ -43,7 +43,7 @@ public:
 
     QString name() const { return mName; }
     QIcon osIcon() const { return mAccessible ? vboxGlobal().vmGuestOSTypeIcon (mOSTypeId) : QPixmap (":/os_other.png"); }
-    QUuid id() const { return mId; }
+    QString id() const { return mId; }
 
     QString sessionStateName() const;
     QIcon sessionStateIcon() const { return mAccessible ? vboxGlobal().toIcon (mState) : QPixmap (":/state_aborted_16px.png"); }
@@ -69,7 +69,7 @@ private:
     CMachine mMachine;
 
     /* Cached machine data (to minimize server requests) */
-    QUuid mId;
+    QString mId;
     QString mSettingsFile;
 
     bool mAccessible;
@@ -112,11 +112,11 @@ public:
 
     void clear();
 
-    VBoxVMItem *itemById (const QUuid &aId) const;
+    VBoxVMItem *itemById (const QString &aId) const;
     VBoxVMItem *itemByRow (int aRow) const;
-    QModelIndex indexById (const QUuid &aId) const;
+    QModelIndex indexById (const QString &aId) const;
 
-    int rowById (const QUuid &aId) const;;
+    int rowById (const QString &aId) const;;
 
     void sort (Qt::SortOrder aOrder = Qt::AscendingOrder) { sort (0, aOrder); }
 
@@ -147,7 +147,7 @@ public:
     VBoxVMListView (QWidget *aParent = 0);
 
     void selectItemByRow (int row);
-    void selectItemById (const QUuid &aID);
+    void selectItemById (const QString &aID);
     void ensureSomeRowSelected (int aRowHint);
     VBoxVMItem * selectedItem() const;
 

@@ -177,14 +177,14 @@ void VBoxMedium::refresh()
 
     mCurStateMachineIds.clear();
 
-    QVector <QUuid> machineIds = mMedium.GetMachineIds();
+    QVector <QString> machineIds = mMedium.GetMachineIds();
     if (machineIds.size() > 0)
     {
         QString usage;
 
         CVirtualBox vbox = vboxGlobal().virtualBox();
 
-        for (QVector <QUuid>::ConstIterator it = machineIds.begin();
+        for (QVector <QString>::ConstIterator it = machineIds.begin();
              it != machineIds.end(); ++ it)
         {
             CMachine machine = vbox.GetMachine (*it);
@@ -192,8 +192,8 @@ void VBoxMedium::refresh()
             QString name = machine.GetName();
             QString snapshots;
 
-            QVector <QUuid> snapIds = mMedium.GetSnapshotIds (*it);
-            for (QVector <QUuid>::ConstIterator jt = snapIds.begin();
+            QVector <QString> snapIds = mMedium.GetSnapshotIds (*it);
+            for (QVector <QString>::ConstIterator jt = snapIds.begin();
                  jt != snapIds.end(); ++ jt)
             {
                 if (*jt == *it)

@@ -91,7 +91,7 @@ public:
     typedef std::list <BackRef> BackRefList;
 
     // IMedium properties
-    STDMETHOD(COMGETTER(Id)) (OUT_GUID aId);
+    STDMETHOD(COMGETTER(Id)) (BSTR *aId);
     STDMETHOD(COMGETTER(Description)) (BSTR *aDescription);
     STDMETHOD(COMSETTER(Description)) (IN_BSTR aDescription);
     STDMETHOD(COMGETTER(State)) (MediaState_T *aState);
@@ -100,11 +100,11 @@ public:
     STDMETHOD(COMGETTER(Name)) (BSTR *aName);
     STDMETHOD(COMGETTER(Size)) (ULONG64 *aSize);
     STDMETHOD(COMGETTER(LastAccessError)) (BSTR *aLastAccessError);
-    STDMETHOD(COMGETTER(MachineIds)) (ComSafeGUIDArrayOut (aMachineIds));
+    STDMETHOD(COMGETTER(MachineIds)) (ComSafeArrayOut (BSTR, aMachineIds));
 
     // IMedium methods
-    STDMETHOD(GetSnapshotIds) (IN_GUID aMachineId,
-                               ComSafeGUIDArrayOut (aSnapshotIds));
+    STDMETHOD(GetSnapshotIds) (IN_BSTR aMachineId,
+                               ComSafeArrayOut (BSTR, aSnapshotIds));
     STDMETHOD(LockRead) (MediaState_T *aState);
     STDMETHOD(UnlockRead) (MediaState_T *aState);
     STDMETHOD(LockWrite) (MediaState_T *aState);
@@ -253,9 +253,10 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP (DVDImage)
-        COM_INTERFACE_ENTRY (ISupportErrorInfo)
+        COM_INTERFACE_ENTRY  (ISupportErrorInfo)
         COM_INTERFACE_ENTRY2 (IMedium, ImageMediumBase)
-        COM_INTERFACE_ENTRY (IDVDImage)
+        COM_INTERFACE_ENTRY  (IDVDImage)
+        COM_INTERFACE_ENTRY2 (IDispatch, IDVDImage)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS
@@ -306,9 +307,10 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP (FloppyImage)
-        COM_INTERFACE_ENTRY (ISupportErrorInfo)
+        COM_INTERFACE_ENTRY  (ISupportErrorInfo)
         COM_INTERFACE_ENTRY2 (IMedium, ImageMediumBase)
-        COM_INTERFACE_ENTRY (IFloppyImage)
+        COM_INTERFACE_ENTRY  (IFloppyImage)
+        COM_INTERFACE_ENTRY2 (IDispatch, IFloppyImage)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS

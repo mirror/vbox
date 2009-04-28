@@ -38,8 +38,17 @@ except Exception,e:
     traceback.print_exc()
     sys.exit(1)
 
-ctx = {'mgr':mgr, 'vb':vbox, 'ifaces':win32com.client.constants, 
-       'remote':False, 'perf':PerfCollector(vbox) }
+# fake constants, while get resolved constants issues for real
+# win32com.client.constants doesn't work for some reasons
+class DummyInterfaces: pass
+class SessionState:pass
+
+DummyInterfaces.SessionState=SessionState()
+DummyInterfaces.SessionState.Open = 2
+
+ctx = {'mgr':mgr, 'vb':vbox, 'ifaces':DummyInterfaces(),
+#'ifaces':win32com.client.constants, 
+       'remote':False, 'type':'mscom' }
 
 interpret(ctx)
 

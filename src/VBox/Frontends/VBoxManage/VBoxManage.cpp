@@ -280,7 +280,7 @@ static int handleUnregisterVM(HandlerArg *a)
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    rc = a->virtualBox->GetMachine(Guid(VMName), machine.asOutParam());
+    rc = a->virtualBox->GetMachine(Guid(VMName).toUtf16(), machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
@@ -288,7 +288,7 @@ static int handleUnregisterVM(HandlerArg *a)
     }
     if (machine)
     {
-        Guid uuid;
+        Bstr uuid;
         machine->COMGETTER(Id)(uuid.asOutParam());
         machine = NULL;
         CHECK_ERROR(a->virtualBox, UnregisterMachine(uuid, machine.asOutParam()));
@@ -372,24 +372,24 @@ static int handleCreateVM(HandlerArg *a)
 
         if (!settingsFile)
             CHECK_ERROR_BREAK(a->virtualBox,
-                CreateMachine(name, osTypeId, baseFolder, Guid(id), machine.asOutParam()));
+                CreateMachine(name, osTypeId, baseFolder, Guid(id).toUtf16(), machine.asOutParam()));
         else
             CHECK_ERROR_BREAK(a->virtualBox,
-                CreateLegacyMachine(name, osTypeId, settingsFile, Guid(id), machine.asOutParam()));
+                CreateLegacyMachine(name, osTypeId, settingsFile, Guid(id).toUtf16(), machine.asOutParam()));
 
         CHECK_ERROR_BREAK(machine, SaveSettings());
         if (fRegister)
         {
             CHECK_ERROR_BREAK(a->virtualBox, RegisterMachine(machine));
         }
-        Guid uuid;
+        Bstr uuid;
         CHECK_ERROR_BREAK(machine, COMGETTER(Id)(uuid.asOutParam()));
         CHECK_ERROR_BREAK(machine, COMGETTER(SettingsFilePath)(settingsFile.asOutParam()));
         RTPrintf("Virtual machine '%ls' is created%s.\n"
                  "UUID: %s\n"
                  "Settings file: '%ls'\n",
                  name.raw(), fRegister ? " and registered" : "",
-                 uuid.toString().raw(), settingsFile.raw());
+                 Utf8Str(uuid).raw(), settingsFile.raw());
     }
     while (0);
 
@@ -499,7 +499,7 @@ static int handleStartVM(HandlerArg *a)
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    rc = a->virtualBox->GetMachine(Guid(VMName), machine.asOutParam());
+    rc = a->virtualBox->GetMachine(Guid(VMName).toUtf16(), machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
@@ -507,7 +507,7 @@ static int handleStartVM(HandlerArg *a)
     }
     if (machine)
     {
-        Guid uuid;
+        Bstr uuid;
         machine->COMGETTER(Id)(uuid.asOutParam());
 
 
@@ -560,14 +560,14 @@ static int handleControlVM(HandlerArg *a)
 
     /* try to find the given machine */
     ComPtr <IMachine> machine;
-    Guid uuid (a->argv[0]);
-    if (!uuid.isEmpty())
+    Bstr uuid (a->argv[0]);
+    if (!Guid(uuid).isEmpty())
     {
         CHECK_ERROR (a->virtualBox, GetMachine (uuid, machine.asOutParam()));
     }
     else
     {
-        CHECK_ERROR (a->virtualBox, FindMachine (Bstr(a->argv[0]), machine.asOutParam()));
+        CHECK_ERROR (a->virtualBox, FindMachine (uuid, machine.asOutParam()));
         if (SUCCEEDED (rc))
             machine->COMGETTER(Id) (uuid.asOutParam());
     }
@@ -787,8 +787,8 @@ static int handleControlVM(HandlerArg *a)
 
             bool attach = !strcmp(a->argv[1], "usbattach");
 
-            Guid usbId = a->argv [2];
-            if (usbId.isEmpty())
+            Bstr usbId = a->argv [2];
+            if (Guid(usbId).isEmpty())
             {
                 // assume address
                 if (attach)
@@ -903,7 +903,7 @@ static int handleControlVM(HandlerArg *a)
             else
             {
                 /* first assume it's a UUID */
-                Guid uuid(a->argv[2]);
+                Bstr uuid(a->argv[2]);
                 ComPtr<IDVDImage> dvdImage;
                 rc = a->virtualBox->GetDVDImage(uuid, dvdImage.asOutParam());
                 if (FAILED(rc) || !dvdImage)
@@ -913,7 +913,7 @@ static int handleControlVM(HandlerArg *a)
                     /* not registered, do that on the fly */
                     if (!dvdImage)
                     {
-                        Guid emptyUUID;
+                        Bstr emptyUUID;
                         CHECK_ERROR(a->virtualBox, OpenDVDImage(Bstr(a->argv[2]), emptyUUID, dvdImage.asOutParam()));
                     }
                 }
@@ -965,7 +965,7 @@ static int handleControlVM(HandlerArg *a)
             else
             {
                 /* first assume it's a UUID */
-                Guid uuid(a->argv[2]);
+                Bstr uuid(a->argv[2]);
                 ComPtr<IFloppyImage> floppyImage;
                 rc = a->virtualBox->GetFloppyImage(uuid, floppyImage.asOutParam());
                 if (FAILED(rc) || !floppyImage)
@@ -975,7 +975,7 @@ static int handleControlVM(HandlerArg *a)
                     /* not registered, do that on the fly */
                     if (!floppyImage)
                     {
-                        Guid emptyUUID;
+                        Bstr emptyUUID;
                         CHECK_ERROR(a->virtualBox, OpenFloppyImage(Bstr(a->argv[2]), emptyUUID, floppyImage.asOutParam()));
                     }
                 }
@@ -1064,7 +1064,7 @@ static int handleDiscardState(HandlerArg *a)
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    rc = a->virtualBox->GetMachine(Guid(a->argv[0]), machine.asOutParam());
+    rc = a->virtualBox->GetMachine(Bstr(a->argv[0]), machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
@@ -1075,7 +1075,7 @@ static int handleDiscardState(HandlerArg *a)
         do
         {
             /* we have to open a session for this task */
-            Guid guid;
+            Bstr guid;
             machine->COMGETTER(Id)(guid.asOutParam());
             CHECK_ERROR_BREAK(a->virtualBox, OpenSession(a->session, guid));
             do
@@ -1102,7 +1102,7 @@ static int handleAdoptdState(HandlerArg *a)
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    rc = a->virtualBox->GetMachine(Guid(a->argv[0]), machine.asOutParam());
+    rc = a->virtualBox->GetMachine(Bstr(a->argv[0]), machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
@@ -1113,7 +1113,7 @@ static int handleAdoptdState(HandlerArg *a)
         do
         {
             /* we have to open a session for this task */
-            Guid guid;
+            Bstr guid;
             machine->COMGETTER(Id)(guid.asOutParam());
             CHECK_ERROR_BREAK(a->virtualBox, OpenSession(a->session, guid));
             do
@@ -1172,7 +1172,7 @@ static int handleGetExtraData(HandlerArg *a)
     {
         ComPtr<IMachine> machine;
         /* assume it's a UUID */
-        rc = a->virtualBox->GetMachine(Guid(a->argv[0]), machine.asOutParam());
+        rc = a->virtualBox->GetMachine(Bstr(a->argv[0]), machine.asOutParam());
         if (FAILED(rc) || !machine)
         {
             /* must be a name */
@@ -1234,7 +1234,7 @@ static int handleSetExtraData(HandlerArg *a)
     {
         ComPtr<IMachine> machine;
         /* assume it's a UUID */
-        rc = a->virtualBox->GetMachine(Guid(a->argv[0]), machine.asOutParam());
+        rc = a->virtualBox->GetMachine(Bstr(a->argv[0]), machine.asOutParam());
         if (FAILED(rc) || !machine)
         {
             /* must be a name */
@@ -1330,7 +1330,7 @@ static int handleSharedFolder (HandlerArg *a)
 
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    rc = a->virtualBox->GetMachine(Guid(a->argv[1]), machine.asOutParam());
+    rc = a->virtualBox->GetMachine(Bstr(a->argv[1]), machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
@@ -1338,7 +1338,7 @@ static int handleSharedFolder (HandlerArg *a)
     }
     if (!machine)
         return 1;
-    Guid uuid;
+    Bstr uuid;
     machine->COMGETTER(Id)(uuid.asOutParam());
 
     if (!strcmp(a->argv[0], "add"))
@@ -1504,7 +1504,7 @@ static int handleVMStatistics(HandlerArg *a)
 
     /* try to find the given machine */
     ComPtr <IMachine> machine;
-    Guid uuid (a->argv[0]);
+    Bstr uuid (a->argv[0]);
     if (!uuid.isEmpty())
         CHECK_ERROR(a->virtualBox, GetMachine(uuid, machine.asOutParam()));
     else
@@ -1699,7 +1699,7 @@ static bool checkForAutoConvertedSettings (ComPtr<IVirtualBox> virtualBox,
             for (std::list <ComPtr <IMachine> >::const_iterator m = cvtMachines.begin();
                  m != cvtMachines.end(); ++ m)
             {
-                Guid id;
+                Bstr id;
                 CHECK_ERROR_BREAK((*m), COMGETTER(Id) (id.asOutParam()));
 
                 /* open a session for the VM */

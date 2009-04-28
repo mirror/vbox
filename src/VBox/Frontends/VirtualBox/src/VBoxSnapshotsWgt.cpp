@@ -102,7 +102,7 @@ public:
     }
 
     CSnapshot snapshot() const { return mSnapshot; }
-    QUuid snapshotId() const { return mId; }
+    QString snapshotId() const { return mId; }
 
     void recache()
     {
@@ -209,7 +209,7 @@ private:
     CSnapshot mSnapshot;
     CMachine mMachine;
 
-    QUuid mId;
+    QString mId;
     bool mOnline;
     QString mDesc;
     QDateTime mTimestamp;
@@ -345,7 +345,7 @@ void VBoxSnapshotsWgt::setMachine (const CMachine &aMachine)
 
     if (aMachine.isNull())
     {
-        mMachineId = QUuid();
+        mMachineId = QString::null;
         mSessionState = KSessionState_Null;
     }
     else
@@ -455,7 +455,7 @@ void VBoxSnapshotsWgt::discardSnapshot()
         static_cast<SnapshotWgtItem*> (mTreeWidget->selectedItems() [0]);
     AssertReturn (item, (void) 0);
 
-    QUuid snapId = item->snapshotId();
+    QString snapId = item->snapshotId();
     AssertReturn (!snapId.isNull(), (void) 0);
 
     /* Open a direct session (this call will handle all errors) */
@@ -709,7 +709,7 @@ void VBoxSnapshotsWgt::refreshAll (bool aKeepSelected /* = true */)
 {
     SnapshotEditBlocker guardBlock (mEditProtector);
 
-    QUuid selected, selectedFirstChild;
+    QString selected, selectedFirstChild;
     if (aKeepSelected)
     {
         SnapshotWgtItem *cur = mTreeWidget->selectedItems().isEmpty() ? 0 :
@@ -734,7 +734,7 @@ void VBoxSnapshotsWgt::refreshAll (bool aKeepSelected /* = true */)
     /* get the first snapshot */
     if (mMachine.GetSnapshotCount() > 0)
     {
-        CSnapshot snapshot = mMachine.GetSnapshot (QUuid());
+        CSnapshot snapshot = mMachine.GetSnapshot (QString::null);
 
         populateSnapshots (snapshot, 0);
         Assert (mCurSnapshotItem);
@@ -768,7 +768,7 @@ void VBoxSnapshotsWgt::refreshAll (bool aKeepSelected /* = true */)
     mTreeWidget->resizeColumnToContents (0);
 }
 
-SnapshotWgtItem* VBoxSnapshotsWgt::findItem (const QUuid &aSnapshotId)
+SnapshotWgtItem* VBoxSnapshotsWgt::findItem (const QString &aSnapshotId)
 {
     QTreeWidgetItemIterator it (mTreeWidget);
     while (*it)

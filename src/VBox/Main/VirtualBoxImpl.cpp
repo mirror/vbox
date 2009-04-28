@@ -783,7 +783,7 @@ VirtualBox::COMGETTER(DHCPServers) (ComSafeArrayOut (IDHCPServer *, aDHCPServers
 STDMETHODIMP VirtualBox::CreateMachine (IN_BSTR aName,
                                         IN_BSTR aOsTypeId,
                                         IN_BSTR aBaseFolder,
-                                        IN_GUID aId,
+                                        IN_BSTR aId,
                                         IMachine **aMachine)
 {
     LogFlowThisFuncEnter();
@@ -821,7 +821,7 @@ STDMETHODIMP VirtualBox::CreateMachine (IN_BSTR aName,
     CheckComRCReturnRC (rc);
 
     /* Create UUID if an empty one was specified. */
-    Guid id = aId;
+    Guid id(aId);
     if (id.isEmpty())
         id.create();
 
@@ -865,7 +865,7 @@ STDMETHODIMP VirtualBox::CreateMachine (IN_BSTR aName,
 STDMETHODIMP VirtualBox::CreateLegacyMachine (IN_BSTR aName,
                                               IN_BSTR aOsTypeId,
                                               IN_BSTR aSettingsFile,
-                                              IN_GUID aId,
+                                              IN_BSTR aId,
                                               IMachine **aMachine)
 {
     CheckComArgStrNotEmptyOrNull (aName);
@@ -888,7 +888,7 @@ STDMETHODIMP VirtualBox::CreateLegacyMachine (IN_BSTR aName,
     CheckComRCReturnRC (rc);
 
     /* Create UUID if an empty one was specified. */
-    Guid id = aId;
+    Guid id(aId);
     if (id.isEmpty())
         id.create();
 
@@ -999,7 +999,7 @@ STDMETHODIMP VirtualBox::RegisterMachine (IMachine *aMachine)
 }
 
 /** @note Locks objects! */
-STDMETHODIMP VirtualBox::GetMachine (IN_GUID aId, IMachine **aMachine)
+STDMETHODIMP VirtualBox::GetMachine (IN_BSTR aId, IMachine **aMachine)
 {
     CheckComArgOutSafeArrayPointerValid(aMachine);
 
@@ -1067,10 +1067,10 @@ STDMETHODIMP VirtualBox::FindMachine (IN_BSTR aName, IMachine **aMachine)
 }
 
 /** @note Locks objects! */
-STDMETHODIMP VirtualBox::UnregisterMachine (IN_GUID aId,
+STDMETHODIMP VirtualBox::UnregisterMachine (IN_BSTR  aId,
                                             IMachine **aMachine)
 {
-    Guid id = aId;
+    Guid id(aId);
     if (id.isEmpty())
         return E_INVALIDARG;
 
@@ -1170,7 +1170,7 @@ STDMETHODIMP VirtualBox::OpenHardDisk(IN_BSTR aLocation,
     return rc;
 }
 
-STDMETHODIMP VirtualBox::GetHardDisk(IN_GUID aId,
+STDMETHODIMP VirtualBox::GetHardDisk(IN_BSTR   aId,
                                      IHardDisk **aHardDisk)
 {
     CheckComArgOutSafeArrayPointerValid(aHardDisk);
@@ -1178,7 +1178,7 @@ STDMETHODIMP VirtualBox::GetHardDisk(IN_GUID aId,
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    Guid id = aId;
+    Guid id(aId);
     ComObjPtr<HardDisk> hardDisk;
     HRESULT rc = findHardDisk(&id, NULL, true /* setError */, &hardDisk);
 
@@ -1207,7 +1207,7 @@ STDMETHODIMP VirtualBox::FindHardDisk(IN_BSTR aLocation,
 }
 
 /** @note Doesn't lock anything. */
-STDMETHODIMP VirtualBox::OpenDVDImage (IN_BSTR aLocation, IN_GUID aId,
+STDMETHODIMP VirtualBox::OpenDVDImage (IN_BSTR aLocation, IN_BSTR aId,
                                        IDVDImage **aDVDImage)
 {
     CheckComArgStrNotEmptyOrNull(aLocation);
@@ -1218,7 +1218,7 @@ STDMETHODIMP VirtualBox::OpenDVDImage (IN_BSTR aLocation, IN_GUID aId,
 
     HRESULT rc = VBOX_E_FILE_ERROR;
 
-    Guid id = aId;
+    Guid id(aId);
     /* generate an UUID if not specified */
     if (id.isEmpty())
         id.create();
@@ -1238,14 +1238,14 @@ STDMETHODIMP VirtualBox::OpenDVDImage (IN_BSTR aLocation, IN_GUID aId,
 }
 
 /** @note Locks objects! */
-STDMETHODIMP VirtualBox::GetDVDImage (IN_GUID aId, IDVDImage **aDVDImage)
+STDMETHODIMP VirtualBox::GetDVDImage (IN_BSTR aId, IDVDImage **aDVDImage)
 {
     CheckComArgOutSafeArrayPointerValid(aDVDImage);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    Guid id = aId;
+    Guid id(aId);
     ComObjPtr <DVDImage> image;
     HRESULT rc = findDVDImage (&id, NULL, true /* setError */, &image);
 
@@ -1274,7 +1274,7 @@ STDMETHODIMP VirtualBox::FindDVDImage (IN_BSTR aLocation, IDVDImage **aDVDImage)
 }
 
 /** @note Doesn't lock anything. */
-STDMETHODIMP VirtualBox::OpenFloppyImage (IN_BSTR aLocation, IN_GUID aId,
+STDMETHODIMP VirtualBox::OpenFloppyImage (IN_BSTR aLocation, IN_BSTR aId,
                                           IFloppyImage **aFloppyImage)
 {
     CheckComArgStrNotEmptyOrNull(aLocation);
@@ -1285,7 +1285,7 @@ STDMETHODIMP VirtualBox::OpenFloppyImage (IN_BSTR aLocation, IN_GUID aId,
 
     HRESULT rc = VBOX_E_FILE_ERROR;
 
-    Guid id = aId;
+    Guid id(aId);
     /* generate an UUID if not specified */
     if (id.isEmpty())
         id.create();
@@ -1305,7 +1305,7 @@ STDMETHODIMP VirtualBox::OpenFloppyImage (IN_BSTR aLocation, IN_GUID aId,
 }
 
 /** @note Locks objects! */
-STDMETHODIMP VirtualBox::GetFloppyImage (IN_GUID aId,
+STDMETHODIMP VirtualBox::GetFloppyImage (IN_BSTR aId,
                                          IFloppyImage **aFloppyImage)
 
 {
@@ -1314,7 +1314,7 @@ STDMETHODIMP VirtualBox::GetFloppyImage (IN_GUID aId,
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    Guid id = aId;
+    Guid id(aId);
     ComObjPtr<FloppyImage> image;
     HRESULT rc = findFloppyImage (&id, NULL, true /* setError */, &image);
 
@@ -1695,16 +1695,16 @@ STDMETHODIMP VirtualBox::SetExtraData (IN_BSTR aKey, IN_BSTR aValue)
 /**
  *  @note Locks objects!
  */
-STDMETHODIMP VirtualBox::OpenSession (ISession *aSession, IN_GUID aMachineId)
+STDMETHODIMP VirtualBox::OpenSession (ISession *aSession, IN_BSTR aMachineId)
 {
     CheckComArgNotNull(aSession);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    Guid id = aMachineId;
+    Guid id(aMachineId);
     ComObjPtr <Machine> machine;
-
+ 
     HRESULT rc = findMachine (id, true /* setError */, &machine);
     CheckComRCReturnRC (rc);
 
@@ -1733,7 +1733,7 @@ STDMETHODIMP VirtualBox::OpenSession (ISession *aSession, IN_GUID aMachineId)
         updateClientWatcher();
 
         /* fire an event */
-        onSessionStateChange (aMachineId, SessionState_Open);
+        onSessionStateChange (id, SessionState_Open);
     }
 
     return rc;
@@ -1743,11 +1743,14 @@ STDMETHODIMP VirtualBox::OpenSession (ISession *aSession, IN_GUID aMachineId)
  *  @note Locks objects!
  */
 STDMETHODIMP VirtualBox::OpenRemoteSession (ISession *aSession,
-                                            IN_GUID aMachineId,
+                                            IN_BSTR aMachineId,
                                             IN_BSTR aType,
                                             IN_BSTR aEnvironment,
                                             IProgress **aProgress)
 {
+    LogRel(("remotesession=%s\n", Utf8Str(aMachineId).c_str()));    
+
+    CheckComArgNotNull(aMachineId);
     CheckComArgNotNull(aSession);
     CheckComArgNotNull(aType);
     CheckComArgOutSafeArrayPointerValid(aProgress);
@@ -1755,7 +1758,7 @@ STDMETHODIMP VirtualBox::OpenRemoteSession (ISession *aSession,
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    Guid id = aMachineId;
+    Guid id(aMachineId);
     ComObjPtr <Machine> machine;
 
     HRESULT rc = findMachine (id, true /* setError */, &machine);
@@ -1792,7 +1795,7 @@ STDMETHODIMP VirtualBox::OpenRemoteSession (ISession *aSession,
         updateClientWatcher();
 
         /* fire an event */
-        onSessionStateChange (aMachineId, SessionState_Spawning);
+        onSessionStateChange (id, SessionState_Spawning);
     }
 
     return rc;
@@ -1802,14 +1805,14 @@ STDMETHODIMP VirtualBox::OpenRemoteSession (ISession *aSession,
  *  @note Locks objects!
  */
 STDMETHODIMP VirtualBox::OpenExistingSession (ISession *aSession,
-                                              IN_GUID aMachineId)
+                                              IN_BSTR  aMachineId)
 {
     CheckComArgNotNull(aSession);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    Guid id = aMachineId;
+    Guid id(aMachineId);
     ComObjPtr <Machine> machine;
 
     HRESULT rc = findMachine (id, true /* setError */, &machine);
@@ -1974,14 +1977,16 @@ HRESULT VirtualBox::addProgress (IProgress *aProgress)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    Guid id;
+    Bstr id;
     HRESULT rc = aProgress->COMGETTER(Id) (id.asOutParam());
     AssertComRCReturnRC (rc);
 
     /* protect mProgressOperations */
     AutoWriteLock safeLock (mSafeLock);
 
-    mData.mProgressOperations.insert (ProgressMap::value_type (id, aProgress));
+    printf("adding  %s\n", Utf8Str(id).c_str()); 
+
+    mData.mProgressOperations.insert (ProgressMap::value_type (Guid(id), aProgress));
     return S_OK;
 }
 
@@ -2312,19 +2317,19 @@ struct MachineEvent : public VirtualBox::CallbackEvent
         {
             case DataChanged:
                 LogFlow (("OnMachineDataChange: id={%RTuuid}\n", id.ptr()));
-                aCallback->OnMachineDataChange (id);
+                aCallback->OnMachineDataChange (id.toUtf16());
                 break;
 
             case StateChanged:
                 LogFlow (("OnMachineStateChange: id={%RTuuid}, state=%d\n",
                           id.ptr(), state));
-                aCallback->OnMachineStateChange (id, state);
+                aCallback->OnMachineStateChange (id.toUtf16(), state);
                 break;
 
             case Registered:
                 LogFlow (("OnMachineRegistered: id={%RTuuid}, registered=%d\n",
                           id.ptr(), registered));
-                aCallback->OnMachineRegistered (id, registered);
+                aCallback->OnMachineRegistered (id.toUtf16(), registered);
                 break;
         }
     }
@@ -2372,9 +2377,10 @@ BOOL VirtualBox::onExtraDataCanChange (const Guid &aId, IN_BSTR aKey, IN_BSTR aV
 
     BOOL allowChange = TRUE;
     CallbackList::iterator it = list.begin();
+    Bstr id = aId.toUtf16();
     while ((it != list.end()) && allowChange)
     {
-        HRESULT rc = (*it++)->OnExtraDataCanChange (aId, aKey, aValue,
+        HRESULT rc = (*it++)->OnExtraDataCanChange (id, aKey, aValue,
                                                     aError.asOutParam(), &allowChange);
         if (FAILED (rc))
         {
@@ -2404,7 +2410,7 @@ struct ExtraDataEvent : public VirtualBox::CallbackEvent
     {
         LogFlow (("OnExtraDataChange: machineId={%RTuuid}, key='%ls', val='%ls'\n",
                   machineId.ptr(), key.raw(), val.raw()));
-        aCallback->OnExtraDataChange (machineId, key, val);
+        aCallback->OnExtraDataChange (machineId.toUtf16(), key, val);
     }
 
     Guid machineId;
@@ -2438,7 +2444,7 @@ struct SessionEvent : public VirtualBox::CallbackEvent
     {
         LogFlow (("OnSessionStateChange: machineId={%RTuuid}, sessionState=%d\n",
                   machineId.ptr(), sessionState));
-        aCallback->OnSessionStateChange (machineId, sessionState);
+        aCallback->OnSessionStateChange (machineId.toUtf16(), sessionState);
     }
 
     Guid machineId;
@@ -2467,24 +2473,27 @@ struct SnapshotEvent : public VirtualBox::CallbackEvent
 
     void handleCallback (const ComPtr <IVirtualBoxCallback> &aCallback)
     {
+        Bstr mid = machineId.toUtf16();
+	Bstr sid = snapshotId.toUtf16();
+	
         switch (what)
         {
             case Taken:
                 LogFlow (("OnSnapshotTaken: machineId={%RTuuid}, snapshotId={%RTuuid}\n",
                           machineId.ptr(), snapshotId.ptr()));
-                aCallback->OnSnapshotTaken (machineId, snapshotId);
+                aCallback->OnSnapshotTaken (mid, sid);
                 break;
 
             case Discarded:
                 LogFlow (("OnSnapshotDiscarded: machineId={%RTuuid}, snapshotId={%RTuuid}\n",
                           machineId.ptr(), snapshotId.ptr()));
-                aCallback->OnSnapshotDiscarded (machineId, snapshotId);
+                aCallback->OnSnapshotDiscarded (mid, sid);
                 break;
 
             case Changed:
                 LogFlow (("OnSnapshotChange: machineId={%RTuuid}, snapshotId={%RTuuid}\n",
                           machineId.ptr(), snapshotId.ptr()));
-                aCallback->OnSnapshotChange (machineId, snapshotId);
+                aCallback->OnSnapshotChange (mid, sid);
                 break;
         }
     }
@@ -2532,7 +2541,7 @@ struct GuestPropertyEvent : public VirtualBox::CallbackEvent
     {
         LogFlow (("OnGuestPropertyChange: machineId={%RTuuid}, name='%ls', value='%ls', flags='%ls'\n",
                   machineId.ptr(), name.raw(), value.raw(), flags.raw()));
-        aCallback->OnGuestPropertyChange (machineId, name, value, flags);
+        aCallback->OnGuestPropertyChange (machineId.toUtf16(), name, value, flags);
     }
 
     Guid machineId;

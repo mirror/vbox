@@ -76,16 +76,16 @@ public slots:
     void vmNew();
     void vmSettings (const QString &aCategory = QString::null,
                      const QString &aControl = QString::null,
-                     const QUuid & = QUuid_null);
-    void vmDelete (const QUuid & = QUuid_null);
-    void vmStart (const QUuid & = QUuid_null);
-    void vmDiscard (const QUuid & = QUuid_null);
-    void vmPause (bool, const QUuid & = QUuid_null);
-    void vmRefresh (const QUuid & = QUuid_null);
-    void vmShowLogs (const QUuid & = QUuid_null);
+                     const QString & = QString::null);
+    void vmDelete (const QString & = QString::null);
+    void vmStart (const QString & = QString::null);
+    void vmDiscard (const QString & = QString::null);
+    void vmPause (bool, const QString & = QString::null);
+    void vmRefresh (const QString & = QString::null);
+    void vmShowLogs (const QString & = QString::null);
 
     void refreshVMList();
-    void refreshVMItem (const QUuid &aID, bool aDetails,
+    void refreshVMItem (const QString &aID, bool aDetails,
                                           bool aSnapshots,
                                           bool aDescription);
 
@@ -188,7 +188,7 @@ private:
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
 
-Q_DECLARE_METATYPE(QUuid);
+Q_DECLARE_METATYPE(QString);
 
 class VBoxTrayIcon : public QSystemTrayIcon
 {

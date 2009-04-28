@@ -766,7 +766,7 @@ int handleExportAppliance(HandlerArg *a)
                     // must be machine: try UUID or name
                     ComPtr<IMachine> machine;
                     /* assume it's a UUID */
-                    rc = a->virtualBox->GetMachine(Guid(strMachine), machine.asOutParam());
+                    rc = a->virtualBox->GetMachine(Bstr(strMachine), machine.asOutParam());
                     if (FAILED(rc) || !machine)
                     {
                         /* must be a name */

@@ -111,7 +111,7 @@ void VBoxVMSettingsCD::getFrom (const CMachine &aMachine)
             AssertMsg (!src.isNull(), ("Image file must not be null"));
             QFileInfo fi (src);
             mRbIsoCD->setChecked (true);
-            mUuidIsoCD = QUuid (img.GetId());
+            mUuidIsoCD = QString(img.GetId());
             mRbHostCD->setAutoExclusive (true);
             mRbIsoCD->setAutoExclusive (true);
             break;
@@ -242,7 +242,7 @@ void VBoxVMSettingsCD::onRbChange()
 
 void VBoxVMSettingsCD::onCbChange()
 {
-    mUuidIsoCD = mGbCD->isChecked() ? mCbIsoCD->id() : QUuid();
+    mUuidIsoCD = mGbCD->isChecked() ? mCbIsoCD->id() : QString::null;
     emit cdChanged();
     if (mValidator)
         mValidator->revalidate();
@@ -250,13 +250,13 @@ void VBoxVMSettingsCD::onCbChange()
 
 void VBoxVMSettingsCD::showMediaManager()
 {
-    QUuid oldId = mUuidIsoCD;
+    QString oldId = mUuidIsoCD;
     VBoxMediaManagerDlg dlg (this);
 
     dlg.setup (VBoxDefs::MediaType_DVD, true /* aDoSelect */,
                false /* aRefresh */, mMachine, mCbIsoCD->id());
 
-    QUuid newId = dlg.exec() == QDialog::Accepted ?
+    QString newId = dlg.exec() == QDialog::Accepted ?
                   dlg.selectedId() : mCbIsoCD->id();
     if (oldId != newId)
     {

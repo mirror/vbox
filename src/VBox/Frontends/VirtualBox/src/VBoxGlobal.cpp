@@ -84,6 +84,7 @@
 #endif
 
 #include <VBox/sup.h>
+#include <VBox/com/Guid.h>
 
 #include <iprt/asm.h>
 #include <iprt/err.h>
@@ -210,27 +211,27 @@ public:
     // some property) directly from the callback method will definitely cause
     // a deadlock.
 
-    STDMETHOD(OnMachineStateChange) (IN_GUID id, MachineState_T state)
+    STDMETHOD(OnMachineStateChange) (IN_BSTR id, MachineState_T state)
     {
-        postEvent (new VBoxMachineStateChangeEvent (COMBase::ToQUuid (id),
+        postEvent (new VBoxMachineStateChangeEvent (QString::fromUtf16(id),
                                                     (KMachineState) state));
         return S_OK;
     }
 
-    STDMETHOD(OnMachineDataChange) (IN_GUID id)
+    STDMETHOD(OnMachineDataChange) (IN_BSTR id)
     {
-        postEvent (new VBoxMachineDataChangeEvent (COMBase::ToQUuid (id)));
+        postEvent (new VBoxMachineDataChangeEvent (QString::fromUtf16(id)));
         return S_OK;
     }
 
-    STDMETHOD(OnExtraDataCanChange)(IN_GUID id,
+    STDMETHOD(OnExtraDataCanChange)(IN_BSTR id,
                                     IN_BSTR key, IN_BSTR value,
                                     BSTR *error, BOOL *allowChange)
     {
         if (!error || !allowChange)
             return E_INVALIDARG;
 
-        if (COMBase::ToQUuid (id).isNull())
+        if (com::asGuidStr(id).isNull())
         {
             /* it's a global extra data key someone wants to change */
             QString sKey = QString::fromUtf16 (key);
@@ -309,10 +310,10 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnExtraDataChange) (IN_GUID id,
+    STDMETHOD(OnExtraDataChange) (IN_BSTR id,
                                   IN_BSTR key, IN_BSTR value)
     {
-        if (COMBase::ToQUuid (id).isNull())
+        if (com::asGuidStr(id).isNull())
         {
             QString sKey = QString::fromUtf16 (key);
             QString sVal = QString::fromUtf16 (value);
@@ -393,7 +394,7 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnMediaRegistered) (IN_GUID id, DeviceType_T type,
+    STDMETHOD(OnMediaRegistered) (IN_BSTR id, DeviceType_T type,
                                   BOOL registered)
     {
         /** @todo */
@@ -403,45 +404,45 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnMachineRegistered) (IN_GUID id, BOOL registered)
+    STDMETHOD(OnMachineRegistered) (IN_BSTR id, BOOL registered)
     {
-        postEvent (new VBoxMachineRegisteredEvent (COMBase::ToQUuid (id),
+        postEvent (new VBoxMachineRegisteredEvent (QString::fromUtf16(id),
                                                    registered));
         return S_OK;
     }
 
-    STDMETHOD(OnSessionStateChange) (IN_GUID id, SessionState_T state)
+    STDMETHOD(OnSessionStateChange) (IN_BSTR id, SessionState_T state)
     {
-        postEvent (new VBoxSessionStateChangeEvent (COMBase::ToQUuid (id),
+        postEvent (new VBoxSessionStateChangeEvent (QString::fromUtf16(id),
                                                     (KSessionState) state));
         return S_OK;
     }
 
-    STDMETHOD(OnSnapshotTaken) (IN_GUID aMachineId, IN_GUID aSnapshotId)
+    STDMETHOD(OnSnapshotTaken) (IN_BSTR aMachineId, IN_BSTR aSnapshotId)
     {
-        postEvent (new VBoxSnapshotEvent (COMBase::ToQUuid (aMachineId),
-                                          COMBase::ToQUuid (aSnapshotId),
+        postEvent (new VBoxSnapshotEvent (QString::fromUtf16(aMachineId),
+                                          QString::fromUtf16(aSnapshotId),
                                           VBoxSnapshotEvent::Taken));
         return S_OK;
     }
 
-    STDMETHOD(OnSnapshotDiscarded) (IN_GUID aMachineId, IN_GUID aSnapshotId)
+    STDMETHOD(OnSnapshotDiscarded) (IN_BSTR aMachineId, IN_BSTR aSnapshotId)
     {
-        postEvent (new VBoxSnapshotEvent (COMBase::ToQUuid (aMachineId),
-                                          COMBase::ToQUuid (aSnapshotId),
+        postEvent (new VBoxSnapshotEvent (QString::fromUtf16(aMachineId),
+                                          QString::fromUtf16(aSnapshotId),
                                           VBoxSnapshotEvent::Discarded));
         return S_OK;
     }
 
-    STDMETHOD(OnSnapshotChange) (IN_GUID aMachineId, IN_GUID aSnapshotId)
+    STDMETHOD(OnSnapshotChange) (IN_BSTR aMachineId, IN_BSTR aSnapshotId)
     {
-        postEvent (new VBoxSnapshotEvent (COMBase::ToQUuid (aMachineId),
-                                          COMBase::ToQUuid (aSnapshotId),
+        postEvent (new VBoxSnapshotEvent (QString::fromUtf16(aMachineId),
+                                          QString::fromUtf16(aSnapshotId),
                                           VBoxSnapshotEvent::Changed));
         return S_OK;
     }
 
-    STDMETHOD(OnGuestPropertyChange) (IN_GUID /* id */,
+    STDMETHOD(OnGuestPropertyChange) (IN_BSTR /* id */,
                                       IN_BSTR /* key */,
                                       IN_BSTR /* value */,
                                       IN_BSTR /* flags */)
@@ -2368,7 +2369,7 @@ bool VBoxGlobal::checkForAutoConvertedSettings (bool aAfterRefresh /*= false*/)
  *                      which is already running, @c false to open a new direct
  *                      session.
  */
-CSession VBoxGlobal::openSession (const QUuid &aId, bool aExisting /* = false */)
+CSession VBoxGlobal::openSession (const QString &aId, bool aExisting /* = false */)
 {
     CSession session;
     session.createInstance (CLSID_Session);
@@ -2404,7 +2405,7 @@ CSession VBoxGlobal::openSession (const QUuid &aId, bool aExisting /* = false */
 /**
  *  Starts a machine with the given ID.
  */
-bool VBoxGlobal::startMachine (const QUuid &id)
+bool VBoxGlobal::startMachine (const QString &id)
 {
     AssertReturn (mValid, false);
 
@@ -2701,7 +2702,7 @@ void VBoxGlobal::updateMedium (const VBoxMedium &aMedium)
  *
  * @sa #currentMediaList()
  */
-void VBoxGlobal::removeMedium (VBoxDefs::MediaType aType, const QUuid &aId)
+void VBoxGlobal::removeMedium (VBoxDefs::MediaType aType, const QString &aId)
 {
     VBoxMediaList::Iterator it;
     for (it = mMediaList.begin(); it != mMediaList.end(); ++ it)
@@ -5372,10 +5373,10 @@ void VBoxGlobal::init()
             if (++i < argc)
             {
                 QString param = QString (qApp->argv() [i]);
-                QUuid uuid = QUuid (param);
+                QUuid uuid = QUuid(param);         
                 if (!uuid.isNull())
                 {
-                    vmUuid = uuid;
+                    vmUuid = param;
                 }
                 else
                 {

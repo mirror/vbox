@@ -134,7 +134,7 @@ public:
     const CDVDImage &dvdImage() const { return mDVDImage; }
     const CFloppyImage &floppyImage() const { return mFloppyImage; }
 
-    QUuid id() const { return mId; }
+    QString id() const { return mId; }
 
     QString location (bool aNoDiffs = false) const
         { return aNoDiffs ? root().mLocation : mLocation; }
@@ -178,14 +178,14 @@ public:
      * Returns @c true if this medium is attached to the given machine in the
      * current state.
      */
-    bool isAttachedInCurStateTo (const QUuid &aMachineId) const
+    bool isAttachedInCurStateTo (const QString &aMachineId) const
         { return mCurStateMachineIds.indexOf (aMachineId) >= 0; }
 
     /**
      * Returns a vector of IDs of all machines this medium is attached
      * to in their current state (i.e. excluding snapshots).
      */
-    const QList <QUuid> &curStateMachineIds() const
+    const QList <QString> &curStateMachineIds() const
         { return mCurStateMachineIds; }
 
     /**
@@ -234,7 +234,7 @@ private:
     CDVDImage mDVDImage;
     CFloppyImage mFloppyImage;
 
-    QUuid mId;
+    QString mId;
     QString mLocation;
     QString mName;
     QString mSize;
@@ -249,7 +249,7 @@ private:
     bool mIsReadOnly        : 1;
     bool mIsUsedInSnapshots : 1;
 
-    QList <QUuid> mCurStateMachineIds;
+    QList <QString> mCurStateMachineIds;
 
     VBoxMedium *mParent;
 

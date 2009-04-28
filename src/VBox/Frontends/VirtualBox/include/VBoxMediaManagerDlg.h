@@ -51,12 +51,12 @@ public:
     void setup (VBoxDefs::MediaType aType, bool aDoSelect,
                 bool aRefresh = true,
                 const CMachine &aSessionMachine = CMachine(),
-                const QUuid &aSelectId = QUuid(),
+                const QString &aSelectId = QString::null,
                 bool aShowDiffs = true);
 
     static void showModeless (QWidget *aParent = NULL, bool aRefresh = true);
 
-    QUuid selectedId() const;
+    QString selectedId() const;
     QString selectedLocation() const;
 
     bool showDiffs() const { return mShowDiffs; };
@@ -76,7 +76,7 @@ private slots:
 
     void mediumAdded (const VBoxMedium &aMedium);
     void mediumUpdated (const VBoxMedium &aMedium);
-    void mediumRemoved (VBoxDefs::MediaType aType, const QUuid &aId);
+    void mediumRemoved (VBoxDefs::MediaType aType, const QString &aId);
 
     void mediumEnumStarted();
     void mediumEnumerated (const VBoxMedium &aMedium);
@@ -87,7 +87,7 @@ private slots:
     void doRemoveMedium();
     void doReleaseMedium();
 
-    bool releaseMediumFrom (const VBoxMedium &aMedium, const QUuid &aMachineId);
+    bool releaseMediumFrom (const VBoxMedium &aMedium, const QString &aMachineId);
 
     void processCurrentChanged (int index = -1);
     void processCurrentChanged (QTreeWidgetItem *aItem, QTreeWidgetItem *aPrevItem = 0);
@@ -116,7 +116,7 @@ private:
 
     void updateTabIcons (MediaItem *aItem, ItemAction aAction);
 
-    MediaItem* searchItem (QTreeWidget *aTree, const QUuid &aId) const;
+    MediaItem* searchItem (QTreeWidget *aTree, const QString &aId) const;
 
     bool checkMediumFor (MediaItem *aItem, Action aAction);
 
@@ -161,13 +161,13 @@ private:
 
     /* Machine */
     CMachine mSessionMachine;
-    QUuid mSessionMachineId;
+    QString  mSessionMachineId;
     bool mHardDisksInaccessible;
     bool mDVDImagesInaccessible;
     bool mFloppyImagesInaccessible;
-    QUuid mHDSelectedId;
-    QUuid mDVDSelectedId;
-    QUuid mFloppySelectedId;
+    QString mHDSelectedId;
+    QString mDVDSelectedId;
+    QString mFloppySelectedId;
 };
 
 #endif /* __VBoxMediaManagerDlg_h__ */

@@ -203,7 +203,7 @@ void VBoxNewVMWzd::showMediaManager()
 
     if (dlg.exec() == QDialog::Accepted)
     {
-        QUuid newId = dlg.selectedId();
+        QString newId = dlg.selectedId();
         if (mHDCombo->id() != newId)
         {
             ensureNewHardDiskDeleted();
@@ -354,7 +354,7 @@ bool VBoxNewVMWzd::constructMachine()
     /* Create a machine with the default settings file location */
     if (mMachine.isNull())
     {
-        mMachine = vbox.CreateMachine (mLeName->text(), typeId, QString::null, QUuid());
+        mMachine = vbox.CreateMachine (mLeName->text(), typeId, QString::null, QString::null);
         if (!vbox.isOk())
         {
             vboxProblem().cannotCreateMachine (vbox, this);
@@ -398,7 +398,7 @@ bool VBoxNewVMWzd::constructMachine()
     if (mGbHDA->isChecked())
     {
         bool success = false;
-        QUuid machineId = mMachine.GetId();
+        QString machineId = mMachine.GetId();
         CSession session = vboxGlobal().openSession (machineId);
         if (!session.isNull())
         {
@@ -439,7 +439,7 @@ void VBoxNewVMWzd::ensureNewHardDiskDeleted()
     if (!mHardDisk.isNull())
     {
         /* Remember ID as it may be lost after the deletion */
-        QUuid id = mHardDisk.GetId();
+        QString id = mHardDisk.GetId();
 
         bool success = false;
 

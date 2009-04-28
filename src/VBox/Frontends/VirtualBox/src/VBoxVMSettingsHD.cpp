@@ -66,7 +66,7 @@ private:
 };
 
 /** Type to store disk data */
-DiskValue::DiskValue (const QUuid &aId)
+DiskValue::DiskValue (const QString &aId)
     : id (aId)
     , name (QString::null), tip (QString::null), pix (QPixmap())
 {
@@ -633,7 +633,7 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
              HDSettings::instance(), SLOT (update()));
     connect (&vboxGlobal(), SIGNAL (mediumUpdated (const VBoxMedium &)),
              HDSettings::instance(), SLOT (update()));
-    connect (&vboxGlobal(), SIGNAL (mediumRemoved (VBoxDefs::MediaType, const QUuid &)),
+    connect (&vboxGlobal(), SIGNAL (mediumRemoved (VBoxDefs::MediaType, const QString &)),
              HDSettings::instance(), SLOT (update()));
 
     /* Install global event filter */
@@ -840,7 +840,7 @@ void VBoxVMSettingsHD::addAttachment()
      * happens if the user just pressed & hold the shortcut combination. */
     mNewAction->setEnabled (false);
 
-    QUuid newId;
+    QString newId;
 
     {   /* Clear the focus */
         FocusGuardBlock guard (mTwAts);
@@ -861,7 +861,7 @@ void VBoxVMSettingsHD::addAttachment()
             /* Ask the user for method to add new disk */
             int confirm = vboxProblem().confirmRunNewHDWzdOrVDM (this);
             newId = confirm == QIMessageBox::Yes ? getWithNewHDWizard() :
-                    confirm == QIMessageBox::No ? getWithMediaManager() : QUuid();
+                    confirm == QIMessageBox::No ? getWithMediaManager() : QString::null;
         }
     }   /* Clear the focus */
 
@@ -929,7 +929,7 @@ void VBoxVMSettingsHD::showMediaManager()
     DiskValue current (mModel->data (mTwAts->currentIndex(), Qt::EditRole)
                        .value <DiskValue>());
 
-    QUuid id = getWithMediaManager (current.id);
+    QString id = getWithMediaManager (current.id);
 
     if (!id.isNull())
     {
@@ -1147,7 +1147,7 @@ void VBoxVMSettingsHD::showEvent (QShowEvent *aEvent)
         current->setFocus (Qt::TabFocusReason);
 }
 
-QUuid VBoxVMSettingsHD::getWithMediaManager (const QUuid &aInitialId)
+QString VBoxVMSettingsHD::getWithMediaManager (const QString &aInitialId)
 {
     /* Run Media Manager */
     VBoxMediaManagerDlg dlg (this);
@@ -1158,15 +1158,15 @@ QUuid VBoxVMSettingsHD::getWithMediaManager (const QUuid &aInitialId)
                aInitialId,
                HDSettings::instance()->showDiffs());
 
-    return dlg.exec() == QDialog::Accepted ? dlg.selectedId() : QUuid();
+    return dlg.exec() == QDialog::Accepted ? dlg.selectedId() : QString::null;
 }
 
-QUuid VBoxVMSettingsHD::getWithNewHDWizard()
+QString VBoxVMSettingsHD::getWithNewHDWizard()
 {
     /* Run New HD Wizard */
     VBoxNewHDWzd dlg (this);
 
-    return dlg.exec() == QDialog::Accepted ? dlg.hardDisk().GetId() : QUuid();
+    return dlg.exec() == QDialog::Accepted ? dlg.hardDisk().GetId() : QString::null;
 }
 
 int VBoxVMSettingsHD::maxNameLength() const

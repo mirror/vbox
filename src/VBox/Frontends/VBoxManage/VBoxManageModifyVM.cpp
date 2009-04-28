@@ -838,8 +838,8 @@ int handleModifyVM(HandlerArg *a)
 
     /* try to find the given machine */
     ComPtr <IMachine> machine;
-    Guid uuid (a->argv[0]);
-    if (!uuid.isEmpty())
+    Bstr uuid (a->argv[0]);
+    if (!Guid(uuid).isEmpty())
     {
         CHECK_ERROR (a->virtualBox, GetMachine (uuid, machine.asOutParam()));
     }
@@ -1105,7 +1105,7 @@ int handleModifyVM(HandlerArg *a)
             else
             {
                 /* first guess is that it's a UUID */
-                Guid uuid(hdds[0]);
+                Bstr uuid(hdds[0]);
                 ComPtr<IHardDisk> hardDisk;
                 rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
                 /* not successful? Then it must be a filename */
@@ -1138,7 +1138,7 @@ int handleModifyVM(HandlerArg *a)
             else
             {
                 /* first guess is that it's a UUID */
-                Guid uuid(hdds[1]);
+                Bstr uuid(hdds[1]);
                 ComPtr<IHardDisk> hardDisk;
                 rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
                 /* not successful? Then it must be a filename */
@@ -1171,7 +1171,7 @@ int handleModifyVM(HandlerArg *a)
             else
             {
                 /* first guess is that it's a UUID */
-                Guid uuid(hdds[2]);
+                Bstr uuid(hdds[2]);
                 ComPtr<IHardDisk> hardDisk;
                 rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
                 /* not successful? Then it must be a filename */
@@ -1239,7 +1239,7 @@ int handleModifyVM(HandlerArg *a)
             else
             {
                 /* first assume it's a UUID */
-                Guid uuid(dvd);
+                Bstr uuid(dvd);
                 ComPtr<IDVDImage> dvdImage;
                 rc = a->virtualBox->GetDVDImage(uuid, dvdImage.asOutParam());
                 if (FAILED(rc) || !dvdImage)
@@ -1249,7 +1249,7 @@ int handleModifyVM(HandlerArg *a)
                     /* not registered, do that on the fly */
                     if (!dvdImage)
                     {
-                        Guid emptyUUID;
+                        Bstr emptyUUID;
                         CHECK_ERROR(a->virtualBox, OpenDVDImage(Bstr(dvd), emptyUUID, dvdImage.asOutParam()));
                     }
                 }
@@ -1337,7 +1337,7 @@ int handleModifyVM(HandlerArg *a)
                 else
                 {
                     /* first assume it's a UUID */
-                    Guid uuid(floppy);
+                    Bstr uuid(floppy);
                     ComPtr<IFloppyImage> floppyImage;
                     rc = a->virtualBox->GetFloppyImage(uuid, floppyImage.asOutParam());
                     if (FAILED(rc) || !floppyImage)
@@ -1347,7 +1347,7 @@ int handleModifyVM(HandlerArg *a)
                         /* not registered, do that on the fly */
                         if (!floppyImage)
                         {
-                            Guid emptyUUID;
+                            Bstr emptyUUID;
                             CHECK_ERROR(a->virtualBox, OpenFloppyImage(Bstr(floppy), emptyUUID, floppyImage.asOutParam()));
                         }
                     }
@@ -1888,7 +1888,7 @@ int handleModifyVM(HandlerArg *a)
                 else
                 {
                     /* first guess is that it's a UUID */
-                    Guid uuid(hdds[i]);
+                    Bstr uuid(hdds[i]);
                     ComPtr<IHardDisk> hardDisk;
                     rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
                     /* not successful? Then it must be a filename */
@@ -1977,7 +1977,7 @@ int handleModifyVM(HandlerArg *a)
                 else
                 {
                     /* first guess is that it's a UUID */
-                    Guid uuid(hdds[i]);
+                    Bstr uuid(hdds[i]);
                     ComPtr<IHardDisk> hardDisk;
                     rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
                     /* not successful? Then it must be a filename */

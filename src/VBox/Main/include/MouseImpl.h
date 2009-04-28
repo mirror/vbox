@@ -63,8 +63,9 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(Mouse)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IMouse)
+        COM_INTERFACE_ENTRY  (ISupportErrorInfo)
+        COM_INTERFACE_ENTRY  (IMouse)
+        COM_INTERFACE_ENTRY2 (IDispatch, IMouse)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS

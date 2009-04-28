@@ -246,9 +246,9 @@ STDMETHODIMP DVDDrive::COMSETTER(Passthrough) (BOOL aPassthrough)
 // IDVDDrive methods
 ////////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP DVDDrive::MountImage (IN_GUID aImageId)
+STDMETHODIMP DVDDrive::MountImage (IN_BSTR aImageId)
 {
-    Guid imageId = aImageId;
+    Guid imageId(aImageId);
     CheckComArgExpr(aImageId, !imageId.isEmpty());
 
     AutoCaller autoCaller (this);
@@ -443,7 +443,7 @@ HRESULT DVDDrive::loadSettings (const settings::Key &aMachineNode)
     if (!(typeNode = dvdDriveNode.findKey ("Image")).isNull())
     {
         Guid uuid = typeNode.value <Guid> ("uuid");
-        rc = MountImage (uuid);
+        rc = MountImage (uuid.toUtf16());
         CheckComRCReturnRC (rc);
     }
     else if (!(typeNode = dvdDriveNode.findKey ("HostDrive")).isNull())
@@ -513,13 +513,13 @@ HRESULT DVDDrive::saveSettings (settings::Key &aMachineNode)
         {
             Assert (!m->image.isNull());
 
-            Guid id;
+            Bstr id;
             HRESULT rc = m->image->COMGETTER(Id) (id.asOutParam());
             AssertComRC (rc);
             Assert (!id.isEmpty());
 
             Key imageNode = node.createKey ("Image");
-            imageNode.setValue <Guid> ("uuid", id);
+            imageNode.setValue <Guid> ("uuid", Guid(id));
             break;
         }
         case DriveState_HostDriveCaptured:

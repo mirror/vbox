@@ -39,6 +39,7 @@ public:
 
     BEGIN_COM_MAP(InternalFramebuffer)
         COM_INTERFACE_ENTRY(IFramebuffer)
+        COM_INTERFACE_ENTRY(IDispatch)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS

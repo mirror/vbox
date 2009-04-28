@@ -92,6 +92,7 @@ public:
     BEGIN_COM_MAP(Console)
         COM_INTERFACE_ENTRY(ISupportErrorInfo)
         COM_INTERFACE_ENTRY(IConsole)
+        COM_INTERFACE_ENTRY(IDispatch)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS
@@ -136,15 +137,15 @@ public:
     STDMETHOD(DiscardSavedState)();
     STDMETHOD(GetDeviceActivity) (DeviceType_T aDeviceType,
                                  DeviceActivity_T *aDeviceActivity);
-    STDMETHOD(AttachUSBDevice) (IN_GUID aId);
-    STDMETHOD(DetachUSBDevice) (IN_GUID aId, IUSBDevice **aDevice);
+    STDMETHOD(AttachUSBDevice) (IN_BSTR aId);
+    STDMETHOD(DetachUSBDevice) (IN_BSTR aId, IUSBDevice **aDevice);
     STDMETHOD(FindUSBDeviceByAddress) (IN_BSTR aAddress, IUSBDevice **aDevice);
-    STDMETHOD(FindUSBDeviceById) (IN_GUID aId, IUSBDevice **aDevice);
+    STDMETHOD(FindUSBDeviceById) (IN_BSTR aId, IUSBDevice **aDevice);
     STDMETHOD(CreateSharedFolder) (IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable);
     STDMETHOD(RemoveSharedFolder) (IN_BSTR aName);
     STDMETHOD(TakeSnapshot) (IN_BSTR aName, IN_BSTR aDescription,
                              IProgress **aProgress);
-    STDMETHOD(DiscardSnapshot) (IN_GUID aId, IProgress **aProgress);
+    STDMETHOD(DiscardSnapshot) (IN_BSTR aId, IProgress **aProgress);
     STDMETHOD(DiscardCurrentState) (IProgress **aProgress);
     STDMETHOD(DiscardCurrentSnapshotAndState) (IProgress **aProgress);
     STDMETHOD(RegisterCallback) (IConsoleCallback *aCallback);
@@ -183,7 +184,7 @@ public:
     HRESULT onUSBControllerChange();
     HRESULT onSharedFolderChange (BOOL aGlobal);
     HRESULT onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs);
-    HRESULT onUSBDeviceDetach (IN_GUID aId, IVirtualBoxErrorInfo *aError);
+    HRESULT onUSBDeviceDetach (IN_BSTR aId, IVirtualBoxErrorInfo *aError);
     HRESULT getGuestProperty (IN_BSTR aKey, BSTR *aValue, ULONG64 *aTimestamp, BSTR *aFlags);
     HRESULT setGuestProperty (IN_BSTR aKey, IN_BSTR aValue, IN_BSTR aFlags);
     HRESULT enumerateGuestProperties (IN_BSTR aPatterns, ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues), ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags));

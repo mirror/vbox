@@ -64,9 +64,11 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP (HardDisk)
-        COM_INTERFACE_ENTRY (ISupportErrorInfo)
+        COM_INTERFACE_ENTRY  (ISupportErrorInfo)
         COM_INTERFACE_ENTRY2 (IMedium, MediumBase)
-        COM_INTERFACE_ENTRY (IHardDisk)
+        COM_INTERFACE_ENTRY  (IHardDisk)
+        COM_INTERFACE_ENTRY2 (IDispatch, IHardDisk)
+        COM_INTERFACE_ENTRY2 (IDispatch, MediumBase)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS
@@ -123,7 +125,7 @@ public:
     STDMETHOD(CreateDiffStorage) (IHardDisk *aTarget,
                                   HardDiskVariant_T aVariant,
                                   IProgress **aProgress);
-    STDMETHOD(MergeTo) (IN_GUID aTargetId, IProgress **aProgress);
+    STDMETHOD(MergeTo) (IN_BSTR aTargetId, IProgress **aProgress);
     STDMETHOD(CloneTo) (IHardDisk *aTarget, HardDiskVariant_T aVariant,
                         IHardDisk *aParent, IProgress **aProgress);
     STDMETHOD(Compact) (IProgress **aProgress);

@@ -190,8 +190,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     ComPtr<IBIOSSettings> biosSettings;
     hrc = pMachine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());             H();
 
-    Guid uuid;
-    hrc = pMachine->COMGETTER(Id)(uuid.asOutParam());                               H();
+    Bstr id;
+    hrc = pMachine->COMGETTER(Id)(id.asOutParam());                               H();
+    Guid uuid(id);
     PCRTUUID pUuid = uuid.raw();
 
     ULONG cRamMBs;
@@ -1526,13 +1527,14 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                                                               HifName.raw());
                     }
 
-                    Guid hostIFGuid;
-                    hrc = hostInterface->COMGETTER(Id)(hostIFGuid.asOutParam());
+                    Bstr hostIFGuid_;
+                    hrc = hostInterface->COMGETTER(Id)(hostIFGuid_.asOutParam());
                     if(FAILED(hrc))
                     {
                         LogRel(("NetworkAttachmentType_Bridged: COMGETTER(Id) failed, hrc (0x%x)", hrc));
                         H();
                     }
+                    Guid hostIFGuid(hostIFGuid_);
 
                     INetCfg              *pNc;
                     ComPtr<INetCfgComponent> pAdaptorComponent;
@@ -1851,13 +1853,14 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 }
 
 
-                Guid hostIFGuid;
-                hrc = hostInterface->COMGETTER(Id)(hostIFGuid.asOutParam());
+                Bstr hostIFGuid_;
+                hrc = hostInterface->COMGETTER(Id)(hostIFGuid_.asOutParam());
                 if(FAILED(hrc))
                 {
                     LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(Id) failed, hrc (0x%x)", hrc));
                     H();
                 }
+                Guid hostIFGuid(hostIFGuid_);
 
                 INetCfg              *pNc;
                 ComPtr<INetCfgComponent> pAdaptorComponent;

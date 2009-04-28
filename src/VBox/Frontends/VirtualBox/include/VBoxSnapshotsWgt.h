@@ -72,12 +72,12 @@ private slots:
 private:
 
     void refreshAll (bool aKeepSelected = true);
-    SnapshotWgtItem* findItem (const QUuid &aSnapshotId);
+    SnapshotWgtItem* findItem (const QString &aSnapshotId);
     SnapshotWgtItem* curStateItem();
     void populateSnapshots (const CSnapshot &aSnapshot, QTreeWidgetItem *aItem);
 
     CMachine         mMachine;
-    QUuid            mMachineId;
+    QString          mMachineId;
     KSessionState    mSessionState;
     SnapshotWgtItem *mCurSnapshotItem;
     QMenu           *mContextMenu;

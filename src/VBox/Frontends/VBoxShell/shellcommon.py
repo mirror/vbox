@@ -176,9 +176,10 @@ def startVm(ctx,mach,type):
     if int(rc) == 0:
         # we ignore exceptions to allow starting VM even if
         # perf collector cannot be started
-        try:
+        if perf:
+          try:
             perf.setup(['*'], [mach], 10, 15)
-        except:
+          except Exception,e:
             print e
             if g_verbose:
                 traceback.print_exc()
@@ -191,7 +192,11 @@ def startVm(ctx,mach,type):
             print session.QueryErrorObject(rc)
 
 def getMachines(ctx):
-    return ctx['vb'].getMachines()
+    # XPCOM brigde has trouble with array attributes
+    if ctx['type'] == 'xpcom':
+       return ctx['vb'].getMachines()
+    else:
+       return ctx['vb'].machines
 
 def asState(var):
     if var:
@@ -200,6 +205,8 @@ def asState(var):
         return 'off'
 
 def guestStats(ctx,mach):
+    if not ctx['perf']:
+        return
     for metric in ctx['perf'].query(["*"], [mach]):
         print metric['name'], metric['values_as_string']
 
@@ -426,7 +433,8 @@ def hostCmd(ctx, args):
    for i in range(0,cnt):
       print "Processor #%d speed: %dMHz" %(i,host.getProcessorSpeed(i))
 
-   for metric in ctx['perf'].query(["*"], [host]):
+   if ctx['perf']:
+     for metric in ctx['perf'].query(["*"], [host]):
        print metric['name'], metric['values_as_string']
 
    return 0
@@ -487,15 +495,20 @@ def interpret(ctx):
     vbox = ctx['vb']
     print "Running VirtualBox version %s" %(vbox.version)
 
-    ctx['perf'] = PerfCollector(vbox)
+    # MSCOM doesn't work with collector yet
+    if ctx['type'] != 'mscom':
+       ctx['perf'] = PerfCollector(vbox)
+    else:
+       ctx['perf'] = None
 
     autoCompletion(commands, ctx)
 
     # to allow to print actual host information, we collect info for
     # last 150 secs maximum, (sample every 10 secs and keep up to 15 samples)
-    try:
+    if ctx['perf']:
+      try:
         ctx['perf'].setup(['*'], [vbox.host], 10, 15)
-    except:
+      except:
         pass
 
     while True:
@@ -515,6 +528,7 @@ def interpret(ctx):
 
     try:
         # There is no need to disable metric collection. This is just an example.
-        ctx['perf'].disable(['*'], [vbox.host])
+        if ct['perf']:
+           ctx['perf'].disable(['*'], [vbox.host])
     except:
         pass

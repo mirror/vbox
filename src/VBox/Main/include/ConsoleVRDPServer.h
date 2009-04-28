@@ -248,6 +248,7 @@ public:
     BEGIN_COM_MAP(RemoteDisplayInfo)
         COM_INTERFACE_ENTRY(ISupportErrorInfo)
         COM_INTERFACE_ENTRY(IRemoteDisplayInfo)
+        COM_INTERFACE_ENTRY(IDispatch)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS

@@ -64,6 +64,7 @@ public:
     BEGIN_COM_MAP(Host)
         COM_INTERFACE_ENTRY(ISupportErrorInfo)
         COM_INTERFACE_ENTRY(IHost)
+        COM_INTERFACE_ENTRY(IDispatch)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS
@@ -95,7 +96,7 @@ public:
     // IHost methods
     STDMETHOD(CreateHostOnlyNetworkInterface) (IHostNetworkInterface **aHostNetworkInterface,
                                            IProgress **aProgress);
-    STDMETHOD(RemoveHostOnlyNetworkInterface) (IN_GUID aId,
+    STDMETHOD(RemoveHostOnlyNetworkInterface) (IN_BSTR aId,
                                            IHostNetworkInterface **aHostNetworkInterface,
                                            IProgress **aProgress);
     STDMETHOD(CreateUSBDeviceFilter) (IN_BSTR aName, IHostUSBDeviceFilter **aFilter);
@@ -105,10 +106,10 @@ public:
     STDMETHOD(FindHostDVDDrive) (IN_BSTR aName, IHostDVDDrive **aDrive);
     STDMETHOD(FindHostFloppyDrive) (IN_BSTR aName, IHostFloppyDrive **aDrive);
     STDMETHOD(FindHostNetworkInterfaceByName) (IN_BSTR aName, IHostNetworkInterface **networkInterface);
-    STDMETHOD(FindHostNetworkInterfaceById) (IN_GUID id, IHostNetworkInterface **networkInterface);
+    STDMETHOD(FindHostNetworkInterfaceById) (IN_BSTR id, IHostNetworkInterface **networkInterface);
     STDMETHOD(FindHostNetworkInterfacesOfType) (HostNetworkInterfaceType_T type, ComSafeArrayOut (IHostNetworkInterface *, aNetworkInterfaces));
     STDMETHOD(FindUSBDeviceByAddress) (IN_BSTR aAddress, IHostUSBDevice **aDevice);
-    STDMETHOD(FindUSBDeviceById) (IN_GUID aId, IHostUSBDevice **aDevice);
+    STDMETHOD(FindUSBDeviceById) (IN_BSTR aId, IHostUSBDevice **aDevice);
 
     // public methods only for internal purposes
 

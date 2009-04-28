@@ -233,7 +233,7 @@ int handleUSBFilter (HandlerArg *a)
                     else
                     {
                         /* assume it's a UUID of a machine */
-                        rc = a->virtualBox->GetMachine(Guid(a->argv[i]), cmd.mMachine.asOutParam());
+                        rc = a->virtualBox->GetMachine(Bstr(a->argv[i]), cmd.mMachine.asOutParam());
                         if (FAILED(rc) || !cmd.mMachine)
                         {
                             /* must be a name */
@@ -387,7 +387,7 @@ int handleUSBFilter (HandlerArg *a)
                     else
                     {
                         /* assume it's a UUID of a machine */
-                        rc = a->virtualBox->GetMachine(Guid(a->argv[i]), cmd.mMachine.asOutParam());
+                        rc = a->virtualBox->GetMachine(Bstr(a->argv[i]), cmd.mMachine.asOutParam());
                         if (FAILED(rc) || !cmd.mMachine)
                         {
                             /* must be a name */
@@ -415,7 +415,7 @@ int handleUSBFilter (HandlerArg *a)
         CHECK_ERROR_RET (a->virtualBox, COMGETTER(Host) (host.asOutParam()), 1);
     else
     {
-        Guid uuid;
+        Bstr uuid;
         cmd.mMachine->COMGETTER(Id)(uuid.asOutParam());
         /* open a session for the VM */
         CHECK_ERROR_RET (a->virtualBox, OpenSession(a->session, uuid), 1);

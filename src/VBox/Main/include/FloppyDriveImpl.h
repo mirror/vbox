@@ -69,6 +69,7 @@ public:
     BEGIN_COM_MAP(FloppyDrive)
         COM_INTERFACE_ENTRY(ISupportErrorInfo)
         COM_INTERFACE_ENTRY(IFloppyDrive)
+        COM_INTERFACE_ENTRY(IDispatch)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS
@@ -90,7 +91,7 @@ public:
     STDMETHOD(COMGETTER(State)) (DriveState_T *aState);
 
     // IFloppyDrive methods
-    STDMETHOD(MountImage) (IN_GUID aImageId);
+    STDMETHOD(MountImage) (IN_BSTR aImageId);
     STDMETHOD(CaptureHostDrive) (IHostFloppyDrive *aHostFloppyDrive);
     STDMETHOD(Unmount)();
     STDMETHOD(GetImage) (IFloppyImage **aFloppyImage);

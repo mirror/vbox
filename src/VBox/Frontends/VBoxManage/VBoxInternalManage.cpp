@@ -413,7 +413,7 @@ static int CmdLoadSyms(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, C
      */
     ComPtr<IMachine> machine;
     /* assume it's a UUID */
-    rc = aVirtualBox->GetMachine(Guid(argv[0]), machine.asOutParam());
+    rc = aVirtualBox->GetMachine(Bstr(argv[0]), machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */

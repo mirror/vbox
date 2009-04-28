@@ -68,8 +68,9 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(ParallelPort)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IParallelPort)
+        COM_INTERFACE_ENTRY  (ISupportErrorInfo)
+        COM_INTERFACE_ENTRY  (IParallelPort)
+        COM_INTERFACE_ENTRY2 (IDispatch, IParallelPort)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS

@@ -65,7 +65,7 @@ protected:
 public:
 
     // IProgress properties
-    STDMETHOD(COMGETTER(Id)) (OUT_GUID aId);
+    STDMETHOD(COMGETTER(Id)) (BSTR *aId);
     STDMETHOD(COMGETTER(Description)) (BSTR *aDescription);
     STDMETHOD(COMGETTER(Initiator)) (IUnknown **aInitiator);
 
@@ -145,8 +145,9 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP (Progress)
-        COM_INTERFACE_ENTRY (ISupportErrorInfo)
-        COM_INTERFACE_ENTRY (IProgress)
+        COM_INTERFACE_ENTRY  (ISupportErrorInfo)
+        COM_INTERFACE_ENTRY  (IProgress)
+        COM_INTERFACE_ENTRY2 (IDispatch, IProgress)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS
@@ -316,8 +317,9 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP (CombinedProgress)
-        COM_INTERFACE_ENTRY (ISupportErrorInfo)
-        COM_INTERFACE_ENTRY (IProgress)
+        COM_INTERFACE_ENTRY  (ISupportErrorInfo)
+        COM_INTERFACE_ENTRY  (IProgress)
+        COM_INTERFACE_ENTRY2 (IDispatch, IProgress)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS

@@ -82,8 +82,9 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(NetworkAdapter)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(INetworkAdapter)
+        COM_INTERFACE_ENTRY  (ISupportErrorInfo)
+        COM_INTERFACE_ENTRY  (INetworkAdapter)
+        COM_INTERFACE_ENTRY2 (IDispatch, INetworkAdapter)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS

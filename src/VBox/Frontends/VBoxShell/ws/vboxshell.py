@@ -31,7 +31,7 @@ except Exception, e:
    sys.exit(1)
 
 ctx = {'mgr':mgr, 'vb':vbox, 'ifaces': g_reflectionInfo, 'remote': True,
-       'perf':PerfCollector(vbox)}
+       'type':'ws'}
 
 interpret(ctx)
 

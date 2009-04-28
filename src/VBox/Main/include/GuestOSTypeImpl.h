@@ -44,6 +44,7 @@ public:
     BEGIN_COM_MAP(GuestOSType)
         COM_INTERFACE_ENTRY(ISupportErrorInfo)
         COM_INTERFACE_ENTRY(IGuestOSType)
+        COM_INTERFACE_ENTRY(IDispatch)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS

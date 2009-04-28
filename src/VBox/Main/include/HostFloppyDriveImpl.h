@@ -41,6 +41,7 @@ public:
     BEGIN_COM_MAP(HostFloppyDrive)
         COM_INTERFACE_ENTRY(ISupportErrorInfo)
         COM_INTERFACE_ENTRY(IHostFloppyDrive)
+        COM_INTERFACE_ENTRY(IDispatch)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS

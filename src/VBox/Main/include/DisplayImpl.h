@@ -100,6 +100,7 @@ public:
     BEGIN_COM_MAP(Display)
         COM_INTERFACE_ENTRY(ISupportErrorInfo)
         COM_INTERFACE_ENTRY(IDisplay)
+        COM_INTERFACE_ENTRY2(IDispatch,IDisplay)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS

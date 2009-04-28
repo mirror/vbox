@@ -642,7 +642,7 @@ STDMETHODIMP Session::OnUSBDeviceAttach (IUSBDevice *aDevice,
     return mConsole->onUSBDeviceAttach (aDevice, aError, aMaskedIfs);
 }
 
-STDMETHODIMP Session::OnUSBDeviceDetach (IN_GUID aId,
+STDMETHODIMP Session::OnUSBDeviceDetach (IN_BSTR aId,
                                          IVirtualBoxErrorInfo *aError)
 {
     LogFlowThisFunc (("\n"));

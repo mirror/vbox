@@ -89,8 +89,9 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(StorageController)
-        COM_INTERFACE_ENTRY (ISupportErrorInfo)
-        COM_INTERFACE_ENTRY (IStorageController)
+        COM_INTERFACE_ENTRY  (ISupportErrorInfo)
+        COM_INTERFACE_ENTRY  (IStorageController)
+        COM_INTERFACE_ENTRY2 (IDispatch, IStorageController)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS

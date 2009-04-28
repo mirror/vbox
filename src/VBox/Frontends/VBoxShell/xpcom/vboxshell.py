@@ -42,7 +42,7 @@ except xpcom.Exception, e:
     sys.exit(1)
 
 ctx = {'mgr':mgr, 'vb':vbox, 'ifaces':xpcom.components.interfaces, 
-       'remote':False, 'perf':PerfCollector(vbox)}
+       'remote':False, 'type':'xpcom' }
 
 interpret(ctx)
 

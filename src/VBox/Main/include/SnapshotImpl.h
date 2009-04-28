@@ -58,8 +58,9 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(Snapshot)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(ISnapshot)
+        COM_INTERFACE_ENTRY  (ISupportErrorInfo)
+        COM_INTERFACE_ENTRY  (ISnapshot)
+        COM_INTERFACE_ENTRY2 (IDispatch, ISnapshot)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS
@@ -76,7 +77,7 @@ public:
     void discard();
 
     // ISnapshot properties
-    STDMETHOD(COMGETTER(Id)) (OUT_GUID aId);
+    STDMETHOD(COMGETTER(Id)) (BSTR *aId);
     STDMETHOD(COMGETTER(Name)) (BSTR *aName);
     STDMETHOD(COMSETTER(Name)) (IN_BSTR aName);
     STDMETHOD(COMGETTER(Description)) (BSTR *aDescription);
