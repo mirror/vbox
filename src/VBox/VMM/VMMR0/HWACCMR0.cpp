@@ -953,6 +953,9 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM, PVMCPU pVCpu)
     AssertReturn(!ASMAtomicReadBool(&HWACCMR0Globals.fSuspended), VERR_HWACCM_SUSPEND_PENDING);
     ASMAtomicWriteBool(&pCpu->fInUse, true);
 
+    AssertMsg(pVCpu->hwaccm.s.idEnteredCpu == NIL_RTCPUID, ("%d", (int)pVCpu->hwaccm.s.idEnteredCpu));
+    pVCpu->hwaccm.s.idEnteredCpu = idCpu;
+
     pCtx = CPUMQueryGuestCtxPtr(pVCpu);
 
     /* Always load the guest's FPU/XMM state on-demand. */
@@ -981,13 +984,12 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM, PVMCPU pVCpu)
     /* keep track of the CPU owning the VMCS for debugging scheduling weirdness and ring-3 calls. */
     if (RT_SUCCESS(rc))
     {
-        AssertMsg(pVCpu->hwaccm.s.idEnteredCpu == NIL_RTCPUID, ("%d", (int)pVCpu->hwaccm.s.idEnteredCpu));
-        pVCpu->hwaccm.s.idEnteredCpu = idCpu;
-
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
         PGMDynMapMigrateAutoSet(pVCpu);
 #endif
     }
+    else
+        pVCpu->hwaccm.s.idEnteredCpu = NIL_RTCPUID;
     return rc;
 }
 
@@ -1169,6 +1171,43 @@ VMMR0DECL(PHWACCM_CPUINFO) HWACCMR0GetCurrentCpu()
 VMMR0DECL(PHWACCM_CPUINFO) HWACCMR0GetCurrentCpuEx(RTCPUID idCpu)
 {
     return &HWACCMR0Globals.aCpuInfo[idCpu];
+}
+
+/**
+ * Returns the VMCPU of the current EMT thread.
+ *
+ * @param   pVM         The VM to operate on.
+ */
+VMMR0DECL(PVMCPU)  HWACCMR0GetVMCPU(PVM pVM)
+{
+    /* RTMpCpuId had better be cheap. */
+    RTCPUID idHostCpu = RTMpCpuId();
+
+    /** @todo optimize for large number of VCPUs when that becomes more common. */
+    for (unsigned idCpu=0;idCpu<pVM->cCPUs;idCpu++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[idCpu];
+
+        if (pVCpu->hwaccm.s.idEnteredCpu == idHostCpu)
+            return pVCpu;
+    }
+    AssertReleaseFailed();
+    return 0;
+}
+
+/**
+ * Returns the VMCPU id of the current EMT thread.
+ *
+ * @param   pVM         The VM to operate on.
+ */
+VMMR0DECL(VMCPUID) HWACCMR0GetVMCPUId(PVM pVM)
+{
+    PVMCPU pVCpu = HWACCMR0GetVMCPU(pVM);
+    if (pVCpu)
+        return pVCpu->idCpu;
+
+    AssertReleaseFailed();
+    return 0;
 }
 
 /**

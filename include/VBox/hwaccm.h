@@ -83,7 +83,6 @@ VMMDECL(int)     HWACCMFlushTLB(PVM pVM);
 VMMDECL(int)     HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys);
 VMMDECL(bool)    HWACCMIsNestedPagingActive(PVM pVM);
 VMMDECL(PGMMODE) HWACCMGetShwPagingMode(PVM pVM);
-VMMDECL(RTCPUID) HWACCMGetVMCPUId(PVM pVM);
 #else
 /* Nop in GC */
 # define HWACCMFlushTLB(pVM)                    do { } while (0)
@@ -102,6 +101,10 @@ VMMR0DECL(int)  HWACCMR0TermVM(PVM pVM);
 VMMR0DECL(int)  HWACCMR0EnableAllCpus(PVM pVM);
 VMMR0DECL(int)  HWACCMR0EnterSwitcher(PVM pVM, bool *pfVTxDisabled);
 VMMR0DECL(int)  HWACCMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled);
+
+VMMR0DECL(PVMCPU)  HWACCMR0GetVMCPU(PVM pVM);
+VMMR0DECL(VMCPUID) HWACCMR0GetVMCPUId(PVM pVM);
+
 /** @} */
 #endif /* IN_RING0 */
 
