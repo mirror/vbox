@@ -1512,15 +1512,27 @@ void VBoxProblemReporter::cannotConnectRegister (QWidget *aParent,
 void VBoxProblemReporter::showRegisterResult (QWidget *aParent,
                                               const QString &aResult)
 {
-    aResult == "OK" ?
+    if (aResult == "OK")
+    {
+        /* On successful registration attempt */
         message (aParent, Info,
                  tr ("<p>Congratulations! You have been successfully registered "
                      "as a user of VirtualBox.</p>"
                      "<p>Thank you for finding time to fill out the "
-                     "registration form!</p>")) :
+                     "registration form!</p>"));
+    }
+    else
+    {
+        QString parsed;
+
+        /* Else parse and translate special key-words */
+        if (aResult == "AUTHFAILED")
+            parsed = tr ("<p>Invalid e-mail address or password specified.</p>");
+
         message (aParent, Error,
-                 tr ("<p>Failed to register the VirtualBox product</p><p>%1</p>")
-                 .arg (aResult));
+                 tr ("<p>Failed to register the VirtualBox product.</p><p>%1</p>")
+                 .arg (parsed.isNull() ? aResult : parsed));
+    }
 }
 
 void VBoxProblemReporter::showUpdateSuccess (QWidget *aParent,
