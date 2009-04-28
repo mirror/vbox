@@ -29,8 +29,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 /* Somewhat ugly way to support versioning */
-import com.sun.xml.ws.commons.virtualbox_2_2.*;
-import org.virtualbox_2_2.*;
+import com.sun.xml.ws.commons.virtualbox{VBOX_API_SUFFIX}.*;
+import org.virtualbox{VBOX_API_SUFFIX}.*;
 
 import java.util.*;
 import javax.xml.ws.Holder;
