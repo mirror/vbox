@@ -73,6 +73,8 @@ private:
     void abortRequest (const QString &aReason);
     void finish();
 
+    bool isFieldValid (QLineEdit *aLe) const;
+
     VBoxRegistrationDlg **mSelf;
     QIWidgetValidator    *mWvalReg;
     QUrl                  mUrl;
