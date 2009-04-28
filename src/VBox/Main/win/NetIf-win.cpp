@@ -1040,6 +1040,11 @@ int NetIfGetConfig(HostNetworkInterface * pIf, NETIFINFO *pInfo)
 #endif
 }
 
+int NetIfGetConfigByName(IN_BSTR /* aName */, NETIFINFO *)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
 int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVBox,
                                   IHostNetworkInterface **aHostNetworkInterface,
                                   IProgress **aProgress)

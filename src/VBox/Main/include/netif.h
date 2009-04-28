@@ -29,6 +29,8 @@
 #define VBOXNET_IPV4ADDR_DEFAULT "192.168.56.1"
 #define VBOXNET_IPV4MASK_DEFAULT "255.255.255.0"
 
+#define VBOXNET_MAX_SHORT_NAME 50
+
 #if 1
 /**
  * Encapsulation type.
@@ -66,7 +68,7 @@ typedef struct NETIFINFO
     NETIFTYPE      enmMediumType;
     NETIFSTATUS    enmStatus;
     RTUUID         Uuid;
-    char           szShortName[50];
+    char           szShortName[VBOXNET_MAX_SHORT_NAME];
     char           szName[1];
 } NETIFINFO;
 
@@ -83,6 +85,7 @@ int NetIfEnableDynamicIpConfig(VirtualBox *pVbox, HostNetworkInterface * pIf);
 int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVbox, IHostNetworkInterface **aHostNetworkInterface, IProgress **aProgress);
 int NetIfRemoveHostOnlyNetworkInterface (VirtualBox *pVbox, IN_GUID aId, IHostNetworkInterface **aHostNetworkInterface, IProgress **aProgress);
 int NetIfGetConfig(HostNetworkInterface * pIf, NETIFINFO *);
+int NetIfGetConfigByName(IN_BSTR aName, NETIFINFO *pInfo);
 int NetIfDhcpRediscover(VirtualBox *pVbox, HostNetworkInterface * pIf);
 
 DECLINLINE(Bstr) composeIPv6Address(PRTNETADDRIPV6 aAddrPtr)
