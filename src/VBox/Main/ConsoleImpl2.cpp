@@ -204,9 +204,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     uint32_t const cbRamHole = MM_RAM_HOLE_SIZE_DEFAULT;
 
     ULONG cCpus = 1;
-#ifdef VBOX_WITH_SMP_GUESTS
     hrc = pMachine->COMGETTER(CPUCount)(&cCpus);                                    H();
-#endif
 
     /*
      * Get root node first.

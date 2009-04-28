@@ -6357,10 +6357,9 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
 
 #endif /* VBOX_WITH_VRDP */
 
+        ComPtr <IMachine> pMachine = console->machine();
         ULONG cCpus = 1;
-#ifdef VBOX_WITH_SMP_GUESTS
         pMachine->COMGETTER(CPUCount)(&cCpus);
-#endif
 
         /*
          * Create the VM
