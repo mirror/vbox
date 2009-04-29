@@ -168,6 +168,7 @@ namespace pm
     public:
         BaseMetric(CollectorHAL *hal, const char *name, ComPtr<IUnknown> object)
             : mHAL(hal), mPeriod(0), mLength(0), mName(name), mObject(object), mLastSampleTaken(0), mEnabled(false) {};
+        virtual ~BaseMetric() {};
 
         virtual void init(ULONG period, ULONG length) = 0;
         virtual void preCollect(CollectorHints& hints) = 0;
@@ -204,6 +205,8 @@ namespace pm
     public:
         HostCpuLoad(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *user, SubMetric *kernel, SubMetric *idle)
         : BaseMetric(hal, "CPU/Load", object), mUser(user), mKernel(kernel), mIdle(idle) {};
+        ~HostCpuLoad() { delete mUser; delete mKernel; delete mIdle; };
+
         void init(ULONG period, ULONG length);
 
         void collect();
@@ -237,6 +240,7 @@ namespace pm
     public:
         HostCpuMhz(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *mhz)
         : BaseMetric(hal, "CPU/MHz", object), mMHz(mhz) {};
+        ~HostCpuMhz() { delete mMHz; };
 
         void init(ULONG period, ULONG length);
         void preCollect(CollectorHints& /* hints */) {}
@@ -254,6 +258,7 @@ namespace pm
     public:
         HostRamUsage(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *total, SubMetric *used, SubMetric *available)
         : BaseMetric(hal, "RAM/Usage", object), mTotal(total), mUsed(used), mAvailable(available) {};
+        ~HostRamUsage() { delete mTotal; delete mUsed; delete mAvailable; };
 
         void init(ULONG period, ULONG length);
         void preCollect(CollectorHints& hints);
@@ -273,6 +278,7 @@ namespace pm
     public:
         MachineCpuLoad(CollectorHAL *hal, ComPtr<IUnknown> object, RTPROCESS process, SubMetric *user, SubMetric *kernel)
         : BaseMetric(hal, "CPU/Load", object), mProcess(process), mUser(user), mKernel(kernel) {};
+        ~MachineCpuLoad() { delete mUser; delete mKernel; };
 
         void init(ULONG period, ULONG length);
         void collect();
@@ -305,6 +311,7 @@ namespace pm
     public:
         MachineRamUsage(CollectorHAL *hal, ComPtr<IUnknown> object, RTPROCESS process, SubMetric *used)
         : BaseMetric(hal, "RAM/Usage", object), mProcess(process), mUsed(used) {};
+        ~MachineRamUsage() { delete mUsed; };
 
         void init(ULONG period, ULONG length);
         void preCollect(CollectorHints& hints);
