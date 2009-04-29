@@ -101,12 +101,12 @@ void VBoxMediaComboBox::repopulate()
 
 QString VBoxMediaComboBox::id (int aIndex /*= -1*/) const
 {
-    QString uuidNull; /* gcc-3.3 hack */
     AssertReturn (aIndex == -1 ||
                   (aIndex >= 0 && aIndex < mMedia.size()),
-                  uuidNull);
+                  QString::null);
 
-    return mMedia [aIndex == -1 ? currentIndex() : aIndex].id;
+    if (aIndex == -1) aIndex = currentIndex();
+    return aIndex == -1 ? QString::null : mMedia [aIndex].id;
 }
 
 QString VBoxMediaComboBox::location (int aIndex /*= -1*/) const
@@ -115,7 +115,8 @@ QString VBoxMediaComboBox::location (int aIndex /*= -1*/) const
                   (aIndex >= 0 && aIndex < mMedia.size()),
                   QString::null);
 
-    return mMedia [aIndex == -1 ? currentIndex() : aIndex].location;
+    if (aIndex == -1) aIndex = currentIndex();
+    return aIndex == -1 ? QString::null : mMedia [aIndex].location;
 }
 
 void VBoxMediaComboBox::setCurrentItem (const QString &aId)
