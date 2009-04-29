@@ -458,7 +458,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
         return VINF_SUCCESS;    /* nothing to do */
 
     /* Enable VT-x or AMD-V on all host CPUs. */
-    rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_ENABLE, 0, NULL);
+    rc = SUPCallVMMR0Ex(pVM->pVMR0, 0 /* VCPU 0 */, VMMR0_DO_HWACC_ENABLE, 0, NULL);
     if (RT_FAILURE(rc))
     {
         LogRel(("HWACCMR3InitFinalize: SUPCallVMMR0Ex VMMR0_DO_HWACC_ENABLE failed with %Rrc\n", rc));
@@ -827,7 +827,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable = NULL;
             }
 
-            rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_SETUP_VM, 0, NULL);
+            rc = SUPCallVMMR0Ex(pVM->pVMR0, 0 /* VCPU 0 */, VMMR0_DO_HWACC_SETUP_VM, 0, NULL);
             AssertRC(rc);
             if (rc == VINF_SUCCESS)
             {
@@ -935,7 +935,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             if (pVM->hwaccm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING)
                 pVM->hwaccm.s.fNestedPaging = pVM->hwaccm.s.fAllowNestedPaging;
 
-            rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_SETUP_VM, 0, NULL);
+            rc = SUPCallVMMR0Ex(pVM->pVMR0, 0 /* VCPU 0 */, VMMR0_DO_HWACC_SETUP_VM, 0, NULL);
             AssertRC(rc);
             if (rc == VINF_SUCCESS)
             {
