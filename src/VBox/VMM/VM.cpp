@@ -1628,15 +1628,12 @@ VMMR3DECL(int)   VMR3Destroy(PVM pVM)
         /*
          * Request EMT to do the larger part of the destruction. (in reverse order as VCPU 0 does the real cleanup)
          */
-        for (int idCpu = pVM->cCPUs - 1;idCpu>=0;idCpu--)
-        {
-            PVMREQ pReq = NULL;
-            int rc = VMR3ReqCallU(pUVM, (VMREQDEST)idCpu, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3Destroy, 1, pVM);
-            if (RT_SUCCESS(rc))
-                rc = pReq->iStatus;
-            AssertRC(rc);
-            VMR3ReqFree(pReq);
-        }
+        PVMREQ pReq = NULL;
+        int rc = VMR3ReqCallU(pUVM, VMREQDEST_BROADCAST_REVERSE, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3Destroy, 1, pVM);
+        if (RT_SUCCESS(rc))
+            rc = pReq->iStatus;
+        AssertRC(rc);
+        VMR3ReqFree(pReq);
 
         /*
          * Now do the final bit where the heap and VM structures are freed up.

@@ -400,7 +400,7 @@ VMMR3DECL(int) VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType, VMREQD
                      enmType, VMREQTYPE_INVALID + 1, VMREQTYPE_MAX - 1),
                     VERR_VM_REQUEST_INVALID_TYPE);
     AssertPtrReturn(ppReq, VERR_INVALID_POINTER);
-    AssertMsgReturn(enmDest == VMREQDEST_ANY || enmDest == VMREQDEST_BROADCAST || (unsigned)enmDest < pUVM->cCpus, ("Invalid destination %d (max=%d)\n", enmDest, pUVM->cCpus), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(enmDest == VMREQDEST_ANY || enmDest == VMREQDEST_BROADCAST || enmDest == VMREQDEST_BROADCAST_REVERSE || (unsigned)enmDest < pUVM->cCpus, ("Invalid destination %d (max=%d)\n", enmDest, pUVM->cCpus), VERR_INVALID_PARAMETER);
 
     /*
      * Try get a recycled packet.
@@ -623,50 +623,27 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
 
     if (pReq->enmDest == VMREQDEST_BROADCAST)
     {
-        unsigned fFlags = ((VMREQ volatile *)pReq)->fFlags;     /* volatile paranoia */
-
-        for (unsigned i=0;i<pUVM->cCpus;i++)
+        for (unsigned i = 0; i < pUVM->cCpus; i++)
         {
-            PVMCPU pVCpu = &pUVM->pVM->aCpus[i];
-
-            if (   !pUVCpu
-                ||  pUVCpu->idCpu != i)
-            {
-                /*
-                 * Insert it.
-                 */
-                pReq->enmState = VMREQSTATE_QUEUED;
-                PVMREQ pNext;
-                do
-                {
-                    pNext = pUVM->aCpus[i].vm.s.pReqs;
-                    pReq->pNext = pNext;
-                } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pUVM->aCpus[i].vm.s.pReqs, (void *)pReq, (void *)pNext));
-
-                /*
-                 * Notify EMT.
-                 */
-                if (pUVM->pVM)
-                    VMCPU_FF_SET(pVCpu, VMCPU_FF_REQUEST);
-                VMR3NotifyCpuFFU(&pUVM->aCpus[i], false);
-
-                /*
-                 * Wait and return.
-                 */
-                if (!(fFlags & VMREQFLAGS_NO_WAIT))
-                    rc = VMR3ReqWait(pReq, cMillies);
-                LogFlow(("VMR3ReqQueue: returns %Rrc\n", rc));
-            }
-            else
-            {
-                /*
-                 * The requester was EMT, just execute it.
-                 */
-                pReq->enmState = VMREQSTATE_QUEUED;
-                rc = vmR3ReqProcessOneU(pUVM, pReq);
-                LogFlow(("VMR3ReqQueue: returns %Rrc (processed)\n", rc));
-            }
-        } /* for each VMCPU */
+            /* Reinit some members. */
+            pReq->enmState = VMREQSTATE_ALLOCATED;
+            pReq->enmDest = (VMREQDEST)i;
+            rc = VMR3ReqQueue(pReq, cMillies);
+            if (RT_FAILURE(rc))
+                break;
+        }
+    }
+    else if (pReq->enmDest == VMREQDEST_BROADCAST_REVERSE)
+    {
+        for (int i = pUVM->cCpus-1; i >= 0; i--)
+        {
+            /* Reinit some members. */
+            pReq->enmState = VMREQSTATE_ALLOCATED;
+            pReq->enmDest  = (VMREQDEST)i;
+            rc = VMR3ReqQueue(pReq, cMillies);
+            if (RT_FAILURE(rc))
+                break;
+        }
     }
     else if (   pReq->enmDest != VMREQDEST_ANY  /* for a specific VMCPU? */
              && (   !pUVCpu /* not an EMT */
