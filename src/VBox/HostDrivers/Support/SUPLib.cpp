@@ -581,7 +581,7 @@ SUPR3DECL(int) SUPCallVMMR0Fast(PVMR0 pVMR0, unsigned uOperation, unsigned idCpu
 }
 
 
-SUPR3DECL(int) SUPCallVMMR0Ex(PVMR0 pVMR0, unsigned idCpu, unsigned uOperation, uint64_t u64Arg, PSUPVMMR0REQHDR pReqHdr)
+SUPR3DECL(int) SUPCallVMMR0Ex(PVMR0 pVMR0, unsigned uOperation, uint64_t u64Arg, PSUPVMMR0REQHDR pReqHdr)
 {
     /*
      * The following operations don't belong here.
@@ -608,7 +608,6 @@ SUPR3DECL(int) SUPCallVMMR0Ex(PVMR0 pVMR0, unsigned idCpu, unsigned uOperation, 
         Req.Hdr.fFlags = SUPREQHDR_FLAGS_DEFAULT;
         Req.Hdr.rc = VERR_INTERNAL_ERROR;
         Req.u.In.pVMR0 = pVMR0;
-        Req.u.In.idCpu = idCpu;
         Req.u.In.uOperation = uOperation;
         Req.u.In.u64Arg = u64Arg;
         rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_CALL_VMMR0(0), &Req, SUP_IOCTL_CALL_VMMR0_SIZE(0));
@@ -629,7 +628,6 @@ SUPR3DECL(int) SUPCallVMMR0Ex(PVMR0 pVMR0, unsigned idCpu, unsigned uOperation, 
         pReq->Hdr.fFlags = SUPREQHDR_FLAGS_DEFAULT;
         pReq->Hdr.rc = VERR_INTERNAL_ERROR;
         pReq->u.In.pVMR0 = pVMR0;
-        pReq->u.In.idCpu = idCpu;
         pReq->u.In.uOperation = uOperation;
         pReq->u.In.u64Arg = u64Arg;
         memcpy(&pReq->abReqPkt[0], pReqHdr, cbReq);
@@ -644,7 +642,7 @@ SUPR3DECL(int) SUPCallVMMR0Ex(PVMR0 pVMR0, unsigned idCpu, unsigned uOperation, 
 }
 
 
-SUPR3DECL(int) SUPCallVMMR0(PVMR0 pVMR0, unsigned idCpu, unsigned uOperation, void *pvArg)
+SUPR3DECL(int) SUPCallVMMR0(PVMR0 pVMR0, unsigned uOperation, void *pvArg)
 {
     /*
      * The following operations don't belong here.
@@ -654,7 +652,7 @@ SUPR3DECL(int) SUPCallVMMR0(PVMR0 pVMR0, unsigned idCpu, unsigned uOperation, vo
                     &&  uOperation != SUP_VMMR0_DO_NOP,
                     ("%#x\n", uOperation),
                     VERR_INTERNAL_ERROR);
-    return SUPCallVMMR0Ex(pVMR0, idCpu, uOperation, (uintptr_t)pvArg, NULL);
+    return SUPCallVMMR0Ex(pVMR0, uOperation, (uintptr_t)pvArg, NULL);
 }
 
 

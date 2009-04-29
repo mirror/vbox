@@ -123,7 +123,7 @@ int main(int argc, char **argv)
                      */
                     for (i = cIterations; i > 0; i--)
                     {
-                        rc = SUPCallVMMR0(pVMR0, 0, VMMR0_DO_SLOW_NOP, NULL);
+                        rc = SUPCallVMMR0(pVMR0, VMMR0_DO_SLOW_NOP, NULL);
                         if (rc != VINF_SUCCESS)
                         {
                             RTPrintf("tstInt: SUPCallVMMR0 -> rc=%Rrc i=%d Expected VINF_SUCCESS!\n", rc, i);
@@ -173,7 +173,7 @@ int main(int argc, char **argv)
                         for (i = 0; i < 1000000; i++)
                         {
                             uint64_t OneStartTick = ASMReadTSC();
-                            rc = SUPCallVMMR0Ex(pVMR0, 0, VMMR0_DO_SLOW_NOP, 0, NULL);
+                            rc = SUPCallVMMR0Ex(pVMR0, VMMR0_DO_SLOW_NOP, 0, NULL);
                             uint64_t Ticks = ASMReadTSC() - OneStartTick;
                             if (Ticks < MinTicks)
                                 MinTicks = Ticks;
