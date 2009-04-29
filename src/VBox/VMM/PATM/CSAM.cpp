@@ -1427,11 +1427,12 @@ static int csamFlushPage(PVM pVM, RTRCPTR addr, bool fRemovePage)
     int rc;
     RTGCPHYS GCPhys = 0;
     uint64_t fFlags = 0;
-    Assert(pVM->cCPUs == 1);
-    PVMCPU pVCpu = VMMGetCpu0(pVM);
+    Assert(pVM->cCPUs == 1 || !CSAMIsEnabled(pVM));
 
     if (!CSAMIsEnabled(pVM))
         return VINF_SUCCESS;
+
+    PVMCPU pVCpu = VMMGetCpu0(pVM);
 
     STAM_PROFILE_START(&pVM->csam.s.StatTimeFlushPage, a);
 
