@@ -148,7 +148,7 @@ static DECLCALLBACK(void) supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uin
 static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvUser);
 
 #ifdef RT_WITH_W64_UNWIND_HACK
-DECLASM(int)    supdrvNtWrapVMMR0EntryEx(PFNRT pfnVMMR0EntryEx, PVM pVM, unsigned uOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION pSession);
+DECLASM(int)    supdrvNtWrapVMMR0EntryEx(PFNRT pfnVMMR0EntryEx, PVM pVM, unsigned idCpu, unsigned uOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION pSession);
 DECLASM(int)    supdrvNtWrapVMMR0EntryFast(PFNRT pfnVMMR0EntryFast, PVM pVM, unsigned idCpu, unsigned uOperation);
 DECLASM(void)   supdrvNtWrapObjDestructor(PFNRT pfnDestruction, void *pvObj, void *pvUser1, void *pvUser2);
 DECLASM(void *) supdrvNtWrapQueryFactoryInterface(PFNRT pfnQueryFactoryInterface, struct SUPDRVFACTORY const *pSupDrvFactory, PSUPDRVSESSION pSession, const char *pszInterfaceUuid);
@@ -1327,9 +1327,9 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
                 /* execute */
                 if (RT_LIKELY(pDevExt->pfnVMMR0EntryEx))
 #ifdef RT_WITH_W64_UNWIND_HACK
-                    pReq->Hdr.rc = supdrvNtWrapVMMR0EntryEx((PFNRT)pDevExt->pfnVMMR0EntryEx, pReq->u.In.pVMR0, pReq->u.In.uOperation, NULL, pReq->u.In.u64Arg, pSession);
+                    pReq->Hdr.rc = supdrvNtWrapVMMR0EntryEx((PFNRT)pDevExt->pfnVMMR0EntryEx, pReq->u.In.pVMR0, pReq->u.In.idCpu, pReq->u.In.uOperation, NULL, pReq->u.In.u64Arg, pSession);
 #else
-                    pReq->Hdr.rc = pDevExt->pfnVMMR0EntryEx(pReq->u.In.pVMR0, pReq->u.In.uOperation, NULL, pReq->u.In.u64Arg, pSession);
+                    pReq->Hdr.rc = pDevExt->pfnVMMR0EntryEx(pReq->u.In.pVMR0, pReq->u.In.idCpu, pReq->u.In.uOperation, NULL, pReq->u.In.u64Arg, pSession);
 #endif
                 else
                     pReq->Hdr.rc = VERR_WRONG_ORDER;
@@ -1345,9 +1345,9 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
                 /* execute */
                 if (RT_LIKELY(pDevExt->pfnVMMR0EntryEx))
 #ifdef RT_WITH_W64_UNWIND_HACK
-                    pReq->Hdr.rc = supdrvNtWrapVMMR0EntryEx((PFNRT)pDevExt->pfnVMMR0EntryEx, pReq->u.In.pVMR0, pReq->u.In.uOperation, pVMMReq, pReq->u.In.u64Arg, pSession);
+                    pReq->Hdr.rc = supdrvNtWrapVMMR0EntryEx((PFNRT)pDevExt->pfnVMMR0EntryEx, pReq->u.In.pVMR0, pReq->u.In.idCpu, pReq->u.In.uOperation, pVMMReq, pReq->u.In.u64Arg, pSession);
 #else
-                    pReq->Hdr.rc = pDevExt->pfnVMMR0EntryEx(pReq->u.In.pVMR0, pReq->u.In.uOperation, pVMMReq, pReq->u.In.u64Arg, pSession);
+                    pReq->Hdr.rc = pDevExt->pfnVMMR0EntryEx(pReq->u.In.pVMR0, pReq->u.In.idCpu, pReq->u.In.uOperation, pVMMReq, pReq->u.In.u64Arg, pSession);
 #endif
                 else
                     pReq->Hdr.rc = VERR_WRONG_ORDER;

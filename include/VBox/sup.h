@@ -446,10 +446,11 @@ SUPR3DECL(int) SUPSetVMForFastIOCtl(PVMR0 pVMR0);
  *
  * @returns error code specific to uFunction.
  * @param   pVMR0       Pointer to the Ring-0 (Host Context) mapping of the VM structure.
+ * @param   idCpu       VMCPU id.
  * @param   uOperation  Operation to execute.
  * @param   pvArg       Argument.
  */
-SUPR3DECL(int) SUPCallVMMR0(PVMR0 pVMR0, unsigned uOperation, void *pvArg);
+SUPR3DECL(int) SUPCallVMMR0(PVMR0 pVMR0, unsigned idCpu, unsigned uOperation, void *pvArg);
 
 /**
  * Variant of SUPCallVMMR0, except that this takes the fast ioclt path
@@ -458,9 +459,9 @@ SUPR3DECL(int) SUPCallVMMR0(PVMR0 pVMR0, unsigned uOperation, void *pvArg);
  * @returns VBox status code.
  * @param   pVMR0       The ring-0 VM handle.
  * @param   uOperation  The operation; only the SUP_VMMR0_DO_* ones are valid.
- * @param   idCPU       VMCPU id.
+ * @param   idCpu       VMCPU id.
  */
-SUPR3DECL(int) SUPCallVMMR0Fast(PVMR0 pVMR0, unsigned uOperation, unsigned idCPU);
+SUPR3DECL(int) SUPCallVMMR0Fast(PVMR0 pVMR0, unsigned uOperation, unsigned idCpu);
 
 /**
  * Calls the HC R0 VMM entry point, in a safer but slower manner than SUPCallVMMR0.
@@ -471,13 +472,14 @@ SUPR3DECL(int) SUPCallVMMR0Fast(PVMR0 pVMR0, unsigned uOperation, unsigned idCPU
  *
  * @returns error code specific to uFunction.
  * @param   pVMR0       Pointer to the Ring-0 (Host Context) mapping of the VM structure.
+ * @param   idCpu       VMCPU id.
  * @param   uOperation  Operation to execute.
  * @param   u64Arg      Constant argument.
  * @param   pReqHdr     Pointer to a request header. Optional.
  *                      This will be copied in and out of kernel space. There currently is a size
  *                      limit on this, just below 4KB.
  */
-SUPR3DECL(int) SUPCallVMMR0Ex(PVMR0 pVMR0, unsigned uOperation, uint64_t u64Arg, PSUPVMMR0REQHDR pReqHdr);
+SUPR3DECL(int) SUPCallVMMR0Ex(PVMR0 pVMR0, unsigned idCpu, unsigned uOperation, uint64_t u64Arg, PSUPVMMR0REQHDR pReqHdr);
 
 /**
  * Calls a ring-0 service.
