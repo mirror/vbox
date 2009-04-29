@@ -271,13 +271,16 @@ typedef enum VMREQFLAGS
 typedef enum VMREQDEST
 {
     /** Request packet for VCPU 0. */
-    VMREQDEST_CPU0          = 0,
+    VMREQDEST_CPU0              = 0,
 
     /** Request packet for all VMCPU threads. */
-    VMREQDEST_BROADCAST     = 0x1000,
+    VMREQDEST_BROADCAST         = 0x1000,
+
+    /** Request packet for all VMCPU threads. (sent in reverse order) */
+    VMREQDEST_BROADCAST_REVERSE = 0x1001,
 
     /** Request packet for any VMCPU thread. */
-    VMREQDEST_ANY           = 0x1001
+    VMREQDEST_ANY               = 0x1002
 } VMREQDEST;
 
 /** Makes a VMREQDEST value from a VMCPU pointer. */
