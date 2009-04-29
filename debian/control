@@ -8,7 +8,8 @@ Build-Depends: debhelper (>= 5), libz-dev, libssl-dev, libqt4-dev,
   bcc, iasl, xsltproc, linux-headers-generic, wine, java2-runtime,
   lsb-release, g++-multilib [amd64], libc6-dev-i386 [amd64],
   ia32-libs [amd64], libasound-dev, libpulse-dev, libxml2-dev,
-  libxslt1-dev, python-dev
+  libxslt1-dev, python-dev, gsoap, libcap2-dev, libgl1-mesa-dev,
+  libglu1-mesa-dev, libxmu-dev, libxext-dev
 
 Package: virtualbox-ose
 Architecture: i386 amd64
