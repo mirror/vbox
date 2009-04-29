@@ -3041,11 +3041,11 @@ void VBoxGlobal::adoptLabelPixmap (QLabel *aLabel)
     aLabel->setPalette (pal);
 }
 
-extern const char *gVBoxLangSubDir = "/nls";
-extern const char *gVBoxLangFileBase = "VirtualBox_";
-extern const char *gVBoxLangFileExt = ".qm";
-extern const char *gVBoxLangIDRegExp = "(([a-z]{2})(?:_([A-Z]{2}))?)|(C)";
-extern const char *gVBoxBuiltInLangName   = "C";
+const char *gVBoxLangSubDir = "/nls";
+const char *gVBoxLangFileBase = "VirtualBox_";
+const char *gVBoxLangFileExt = ".qm";
+const char *gVBoxLangIDRegExp = "(([a-z]{2})(?:_([A-Z]{2}))?)|(C)";
+const char *gVBoxBuiltInLangName   = "C";
 
 class VBoxTranslator : public QTranslator
 {
