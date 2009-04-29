@@ -227,6 +227,27 @@ VMMDECL(bool) PDMCritSectIsOwner(PCPDMCRITSECT pCritSect)
 #endif
 }
 
+/**
+ * Checks the specified VCPU is the owner of the critical section.
+ *
+ * @returns true if owner.
+ * @returns false if not owner.
+ * @param   pCritSect   The critical section.
+ * @param   idCpu       VCPU id
+ */
+VMMDECL(bool) PDMCritSectIsOwnerEx(PCPDMCRITSECT pCritSect, VMCPUID idCpu)
+{
+#ifdef IN_RING3
+    NOREF(idCpu);
+    return RTCritSectIsOwner(&pCritSect->s.Core);
+#else
+    PVM pVM = pCritSect->s.CTX_SUFF(pVM);
+    Assert(pVM);
+    Assert(idCpu < pVM->cCPUs);
+    return pCritSect->s.Core.NativeThreadOwner == pVM->aCpus[idCpu].hNativeThread;
+#endif
+}
+
 
 /**
  * Checks if a critical section is initialized or not.

@@ -719,6 +719,12 @@ static int vmmR0EntryExWorker(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperati
                         pVM, pVM->enmVMState, pVM->pVMR0, enmOperation);
             return VERR_INVALID_POINTER;
         }
+
+        if (RT_UNLIKELY(idCpu >= pVM->cCPUs))
+        {
+            SUPR0Printf("vmmR0EntryExWorker: Invalid idCpu (%d vs cCPUs=%d\n", idCpu, pVM->cCPUs);
+            return VERR_INVALID_PARAMETER;
+        }
     }
 
     switch (enmOperation)
@@ -830,7 +836,7 @@ static int vmmR0EntryExWorker(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperati
          * PGM wrappers.
          */
         case VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES:
-            return PGMR0PhysAllocateHandyPages(pVM);
+            return PGMR0PhysAllocateHandyPages(pVM, &pVM->aCpus[idCpu]);
 
         /*
          * GMM wrappers.

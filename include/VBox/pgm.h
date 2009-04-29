@@ -435,7 +435,7 @@ VMMDECL(void)       PGMDynMapPopAutoSubset(PVMCPU pVCpu, uint32_t iPrevSubset);
  * @ingroup grp_pgm
  * @{
  */
-VMMR0DECL(int)      PGMR0PhysAllocateHandyPages(PVM pVM);
+VMMR0DECL(int)      PGMR0PhysAllocateHandyPages(PVM pVM, PVMCPU pVCpu);
 VMMR0DECL(int)      PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPHYS pvFault);
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
 VMMR0DECL(int)      PGMR0DynMapInit(void);
