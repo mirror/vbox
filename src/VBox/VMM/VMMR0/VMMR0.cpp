@@ -690,7 +690,6 @@ DECLINLINE(bool) vmmR0IsValidSession(PVM pVM, PSUPDRVSESSION pClaimedSession, PS
  *
  * @returns VBox status code.
  * @param   pVM             The VM to operate on.
- * @param   idCpu           VMCPU id.
  * @param   enmOperation    Which operation to execute.
  * @param   pReqHdr         This points to a SUPVMMR0REQHDR packet. Optional.
  *                          The support driver validates this if it's present.
@@ -698,7 +697,7 @@ DECLINLINE(bool) vmmR0IsValidSession(PVM pVM, PSUPDRVSESSION pClaimedSession, PS
  * @param   pSession        The session of the caller.
  * @remarks Assume called with interrupts _enabled_.
  */
-static int vmmR0EntryExWorker(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReqHdr, uint64_t u64Arg, PSUPDRVSESSION pSession)
+static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReqHdr, uint64_t u64Arg, PSUPDRVSESSION pSession)
 {
     /*
      * Common VM pointer validation.
@@ -992,12 +991,11 @@ static int vmmR0EntryExWorker(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperati
 
 
 /**
- * Argument for vmmR0EntryExWrapper containing the arguments for VMMR0EntryEx.
+ * Argument for vmmR0EntryExWrapper containing the argument s ofr VMMR0EntryEx.
  */
 typedef struct VMMR0ENTRYEXARGS
 {
     PVM                 pVM;
-    unsigned            idCpu;
     VMMR0OPERATION      enmOperation;
     PSUPVMMR0REQHDR     pReq;
     uint64_t            u64Arg;
@@ -1015,7 +1013,6 @@ typedef VMMR0ENTRYEXARGS *PVMMR0ENTRYEXARGS;
 static int vmmR0EntryExWrapper(void *pvArgs)
 {
     return vmmR0EntryExWorker(((PVMMR0ENTRYEXARGS)pvArgs)->pVM,
-                              ((PVMMR0ENTRYEXARGS)pvArgs)->idCpu,
                               ((PVMMR0ENTRYEXARGS)pvArgs)->enmOperation,
                               ((PVMMR0ENTRYEXARGS)pvArgs)->pReq,
                               ((PVMMR0ENTRYEXARGS)pvArgs)->u64Arg,
@@ -1028,14 +1025,13 @@ static int vmmR0EntryExWrapper(void *pvArgs)
  *
  * @returns VBox status code.
  * @param   pVM             The VM to operate on.
- * @param   idCpu           VMCPU id.
  * @param   enmOperation    Which operation to execute.
  * @param   pReq            This points to a SUPVMMR0REQHDR packet. Optional.
  * @param   u64Arg          Some simple constant argument.
  * @param   pSession        The session of the caller.
  * @remarks Assume called with interrupts _enabled_.
  */
-VMMR0DECL(int) VMMR0EntryEx(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION pSession)
+VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION pSession)
 {
     /*
      * Requests that should only happen on the EMT thread will be
@@ -1063,7 +1059,6 @@ VMMR0DECL(int) VMMR0EntryEx(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperation
                 /** @todo validate this EMT claim... GVM knows. */
                 VMMR0ENTRYEXARGS Args;
                 Args.pVM = pVM;
-                Args.idCpu = idCpu;
                 Args.enmOperation = enmOperation;
                 Args.pReq = pReq;
                 Args.u64Arg = u64Arg;
@@ -1075,7 +1070,7 @@ VMMR0DECL(int) VMMR0EntryEx(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperation
                 break;
         }
     }
-    return vmmR0EntryExWorker(pVM, idCpu, enmOperation, pReq, u64Arg, pSession);
+    return vmmR0EntryExWorker(pVM, enmOperation, pReq, u64Arg, pSession);
 }
 
 

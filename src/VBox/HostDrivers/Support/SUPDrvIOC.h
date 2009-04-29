@@ -187,7 +187,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  *          - Remove SUPR0PageAlloc in favor of SUPR0PageAllocEx, removing
  *            and renaming the related IOCtls too.
  */
-#define SUPDRV_IOC_VERSION                              0x000b0000
+#define SUPDRV_IOC_VERSION                              0x000a0009
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -526,10 +526,12 @@ typedef struct SUPCALLVMMR0
         {
             /** The VM handle. */
             PVMR0           pVMR0;
-            /** VCPU id. */
-            uint32_t        idCpu;
             /** Which operation to execute. */
             uint32_t        uOperation;
+#if R0_ARCH_BITS == 64
+            /** Alignment. */
+            uint32_t        u32Reserved;
+#endif
             /** Argument to use when no request packet is supplied. */
             uint64_t        u64Arg;
         } In;

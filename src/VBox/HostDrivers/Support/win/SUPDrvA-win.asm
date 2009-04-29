@@ -169,15 +169,14 @@ NtWrapDrv2DynFunctionWithAllRegParams   supdrvNtWrap, RTPowerSignalEvent
 
 
 ;;
-; @cproto DECLASM(int) supdrvNtWrapVMMR0EntryEx(PFNRT pfnVMMR0EntryEx, PVM pVM, unsigned idCpu, unsigned uOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION pSession);
+; @cproto DECLASM(int) supdrvNtWrapVMMR0EntryEx(PFNRT pfnVMMR0EntryEx, PVM pVM, unsigned uOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION pSession);
 ;
 ; @param    pfnVMMR0EntryEx     rcx
 ; @param    pVM                 rdx
-; @param    idCpu               r8
-; @param    uOperation          r9
-; @param    pReq                [rsp + 28h] / [rbp + 30h]
-; @param    u64Arg              [rsp + 30h] / [rbp + 38h]
-; @param    pSession            [rsp + 38h] / [rbp + 40h]
+; @param    uOperation          r8
+; @param    pReq                r9
+; @param    u64Arg              [rsp + 28h] / [rbp + 30h]
+; @param    pSession            [rsp + 30h] / [rbp + 38h]
 ;
 BEGINPROC supdrvNtWrapVMMR0EntryEx
         NtWrapProlog supdrvNtWrapVMMR0EntryEx
@@ -190,8 +189,6 @@ BEGINPROC supdrvNtWrapVMMR0EntryEx
         mov     r9, [rbp + 30h]
         mov     r11, [rbp + 38h]
         mov     [rsp + 20h], r11
-        mov     r11, [rbp + 40h]
-        mov     [rsp + 28h], r11
         call    rax
 
         NtWrapDestroyMarker

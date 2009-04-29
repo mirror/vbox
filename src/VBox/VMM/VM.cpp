@@ -510,7 +510,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
     CreateVMReq.pVMR0           = NIL_RTR0PTR;
     CreateVMReq.pVMR3           = NULL;
     CreateVMReq.cCPUs           = cCPUs;
-    rc = SUPCallVMMR0Ex(NIL_RTR0PTR, 0 /* VCPU 0 */, VMMR0_DO_GVMM_CREATE_VM, 0, &CreateVMReq.Hdr);
+    rc = SUPCallVMMR0Ex(NIL_RTR0PTR, VMMR0_DO_GVMM_CREATE_VM, 0, &CreateVMReq.Hdr);
     if (RT_SUCCESS(rc))
     {
         PVM pVM = pUVM->pVM = CreateVMReq.pVMR3;
@@ -655,7 +655,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
         }
 
         /* Tell GVMM that it can destroy the VM now. */
-        int rc2 = SUPCallVMMR0Ex(CreateVMReq.pVMR0, 0 /* VCPU 0 */, VMMR0_DO_GVMM_DESTROY_VM, 0, NULL);
+        int rc2 = SUPCallVMMR0Ex(CreateVMReq.pVMR0, VMMR0_DO_GVMM_DESTROY_VM, 0, NULL);
         AssertRC(rc2);
         pUVM->pVM = NULL;
     }
@@ -1747,7 +1747,7 @@ void vmR3DestroyFinalBitFromEMT(PUVM pUVM)
         /*
          * Tell GVMM to destroy the VM and free its resources.
          */
-        int rc = SUPCallVMMR0Ex(pUVM->pVM->pVMR0, 0 /* VCPU 0 */, VMMR0_DO_GVMM_DESTROY_VM, 0, NULL);
+        int rc = SUPCallVMMR0Ex(pUVM->pVM->pVMR0, VMMR0_DO_GVMM_DESTROY_VM, 0, NULL);
         AssertRC(rc);
         pUVM->pVM = NULL;
     }

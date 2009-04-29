@@ -311,7 +311,7 @@ static void doXmitFrame(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF 
     SendReq.Hdr.cbReq = sizeof(SendReq);
     SendReq.pSession = pSession;
     SendReq.hIf = hIf;
-    rc = SUPCallVMMR0Ex(NIL_RTR0PTR, 0 /* VPCU 0 */, VMMR0_DO_INTNET_IF_SEND, 0, &SendReq.Hdr);
+    rc = SUPCallVMMR0Ex(NIL_RTR0PTR, VMMR0_DO_INTNET_IF_SEND, 0, &SendReq.Hdr);
     if (RT_FAILURE(rc))
     {
         RTPrintf("tstIntNet-1: SUPCallVMMR0Ex(,VMMR0_DO_INTNET_IF_SEND,) failed, rc=%Rrc\n", rc);
@@ -541,7 +541,7 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
         WaitReq.pSession = pSession;
         WaitReq.hIf = hIf;
         WaitReq.cMillies = cMillies - (uint32_t)cElapsedMillies;
-        int rc = SUPCallVMMR0Ex(NIL_RTR0PTR, 0 /* VPCU 0 */, VMMR0_DO_INTNET_IF_WAIT, 0, &WaitReq.Hdr);
+        int rc = SUPCallVMMR0Ex(NIL_RTR0PTR, VMMR0_DO_INTNET_IF_WAIT, 0, &WaitReq.Hdr);
         if (rc == VERR_TIMEOUT)
             break;
         if (RT_FAILURE(rc))
@@ -881,7 +881,7 @@ int main(int argc, char **argv)
     RTPrintf("tstIntNet-1: attempting to open/create network \"%s\" with NetFlt trunk \"%s\"...\n",
              OpenReq.szNetwork, OpenReq.szTrunk);
     RTStrmFlush(g_pStdOut);
-    rc = SUPCallVMMR0Ex(NIL_RTR0PTR, 0 /* VPCU 0 */, VMMR0_DO_INTNET_OPEN, 0, &OpenReq.Hdr);
+    rc = SUPCallVMMR0Ex(NIL_RTR0PTR, VMMR0_DO_INTNET_OPEN, 0, &OpenReq.Hdr);
     if (RT_SUCCESS(rc))
     {
         RTPrintf("tstIntNet-1: successfully opened/created \"%s\" with NetFlt trunk \"%s\" - hIf=%#x\n",
@@ -897,7 +897,7 @@ int main(int argc, char **argv)
         GetRing3BufferReq.pSession = pSession;
         GetRing3BufferReq.hIf = OpenReq.hIf;
         GetRing3BufferReq.pRing3Buf = NULL;
-        rc = SUPCallVMMR0Ex(NIL_RTR0PTR, 0 /* VPCU 0 */, VMMR0_DO_INTNET_IF_GET_RING3_BUFFER, 0, &GetRing3BufferReq.Hdr);
+        rc = SUPCallVMMR0Ex(NIL_RTR0PTR, VMMR0_DO_INTNET_IF_GET_RING3_BUFFER, 0, &GetRing3BufferReq.Hdr);
         if (RT_SUCCESS(rc))
         {
             PINTNETBUF pBuf = GetRing3BufferReq.pRing3Buf;
@@ -912,7 +912,7 @@ int main(int argc, char **argv)
                 PromiscReq.pSession     = pSession;
                 PromiscReq.hIf          = OpenReq.hIf;
                 PromiscReq.fPromiscuous = true;
-                rc = SUPCallVMMR0Ex(NIL_RTR0PTR, 0 /* VPCU 0 */, VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE, 0, &PromiscReq.Hdr);
+                rc = SUPCallVMMR0Ex(NIL_RTR0PTR, VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE, 0, &PromiscReq.Hdr);
                 if (RT_SUCCESS(rc))
                     RTPrintf("tstIntNet-1: interface in promiscuous mode\n");
             }
@@ -927,7 +927,7 @@ int main(int argc, char **argv)
                 ActiveReq.pSession = pSession;
                 ActiveReq.hIf = OpenReq.hIf;
                 ActiveReq.fActive = true;
-                rc = SUPCallVMMR0Ex(NIL_RTR0PTR, 0 /* VPCU 0 */, VMMR0_DO_INTNET_IF_SET_ACTIVE, 0, &ActiveReq.Hdr);
+                rc = SUPCallVMMR0Ex(NIL_RTR0PTR, VMMR0_DO_INTNET_IF_SET_ACTIVE, 0, &ActiveReq.Hdr);
                 if (RT_SUCCESS(rc))
                 {
                     /*
