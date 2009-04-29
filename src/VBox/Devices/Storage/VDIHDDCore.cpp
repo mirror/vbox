@@ -1904,7 +1904,7 @@ static int vdiCompact(void *pBackendData, unsigned uPercentStart,
         /* Fill out back resolving, check/fix allocation errors before
          * compacting the image, just to be on the safe side. Update the
          * image contents straight away, as this enables cancelling. */
-        for (unsigned i = 0; i < cBlocks; i++)
+        for (unsigned i = 0; i < cBlocksAllocated; i++)
             paBlocks2[i] = VDI_IMAGE_BLOCK_FREE;
         rc = VINF_SUCCESS;
         for (unsigned i = 0; i < cBlocks; i++)
@@ -1930,7 +1930,7 @@ static int vdiCompact(void *pBackendData, unsigned uPercentStart,
                 {
                     LogFunc(("Freed out of bounds reference for block %u in file \"%s\"\n",
                              i, pImage->pszFilename));
-                    pImage->paBlocks[i] = VDI_IMAGE_BLOCK_FREE;;
+                    pImage->paBlocks[i] = VDI_IMAGE_BLOCK_FREE;
                     rc = vdiUpdateBlockInfo(pImage, i);
                     if (RT_FAILURE(rc))
                         break;
