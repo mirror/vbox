@@ -369,7 +369,7 @@ DevicesR3_DEFS          += VBOX_WITH_EFI
  ifdef VBOX_WITH_ALT_EFITHUNK
   DevicesR3_DEFS        += VBOX_WITH_ALT_EFITHUNK
  endif
-ifndef VBOX_WITH_ALT_EFITHUNK # (EFI/Firmware2)
+ifdef VBOX_WITH_ALT_EFITHUNK # (EFI/Firmware2)
 EFI_FV_BLK_SIZE	        =   0x10000
 EFI_FV_BLK_NUM          =   0x2a
 EFI_FV_LOAD_ADDRESS     =  0x1000000
