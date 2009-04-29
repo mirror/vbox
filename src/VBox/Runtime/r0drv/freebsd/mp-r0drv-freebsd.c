@@ -223,7 +223,7 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
     Args.cHits = 0;
 #if __FreeBSD_version >= 700000
     Mask = (cpumask_t)1 << idCpu;
-    smp_rendezvous_smp(Mask, NULL, rtmpOnSpecificFreeBSDWrapper, NULL, &Args);
+    smp_rendezvous_cpus(Mask, NULL, rtmpOnSpecificFreeBSDWrapper, NULL, &Args);
 #else
     smp_rendezvous(NULL, rtmpOnSpecificFreeBSDWrapper, NULL, &Args);
 #endif
