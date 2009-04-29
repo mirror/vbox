@@ -648,7 +648,7 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
                  */
                 if (pUVM->pVM)
                     VMCPU_FF_SET(pVCpu, VMCPU_FF_REQUEST);
-                VMR3NotifyCpuFFU(pUVCpu, false);
+                VMR3NotifyCpuFFU(&pUVM->aCpus[i], false);
 
                 /*
                  * Wait and return.

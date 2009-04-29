@@ -1626,14 +1626,17 @@ VMMR3DECL(int)   VMR3Destroy(PVM pVM)
     else
     {
         /*
-         * Request EMT to do the larger part of the destruction.
+         * Request EMT to do the larger part of the destruction. (in reverse order as VCPU 0 does the real cleanup)
          */
-        PVMREQ pReq = NULL;
-        int rc = VMR3ReqCallU(pUVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3Destroy, 1, pVM);
-        if (RT_SUCCESS(rc))
-            rc = pReq->iStatus;
-        AssertRC(rc);
-        VMR3ReqFree(pReq);
+        for (int idCpu = pVM->cCPUs - 1;idCpu>=0;idCpu--)
+        {
+            PVMREQ pReq = NULL;
+            int rc = VMR3ReqCallU(pUVM, (VMREQDEST)idCpu, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3Destroy, 1, pVM);
+            if (RT_SUCCESS(rc))
+                rc = pReq->iStatus;
+            AssertRC(rc);
+            VMR3ReqFree(pReq);
+        }
 
         /*
          * Now do the final bit where the heap and VM structures are freed up.
@@ -1658,9 +1661,15 @@ VMMR3DECL(int)   VMR3Destroy(PVM pVM)
 DECLCALLBACK(int) vmR3Destroy(PVM pVM)
 {
     PUVM pUVM = pVM->pUVM;
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+
     NOREF(pUVM);
     LogFlow(("vmR3Destroy: pVM=%p pUVM=%p\n", pVM, pUVM));
     VM_ASSERT_EMT(pVM);
+
+    /* Only VCPU 0 does the full cleanup. */
+    if (pVCpu->idCpu != 0)
+        return VINF_EM_TERMINATE;
 
     /*
      * Dump statistics to the log.
@@ -1738,6 +1747,12 @@ void vmR3DestroyFinalBitFromEMT(PUVM pUVM)
 {
     if (pUVM->pVM)
     {
+        PVMCPU pVCpu = VMMGetCpu(pUVM->pVM);
+
+        /* VCPU 0 does all the cleanup work. */
+        if (pVCpu->idCpu != 0)
+            return;
+
         /*
          * Modify state and then terminate MM.
          * (MM must be delayed until this point so we don't destroy the callbacks and the request packet.)
@@ -1855,6 +1870,32 @@ static void vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait)
         }
         /* give them a chance to respond before we free the request memory. */
         RTThreadSleep(32);
+    }
+
+    /* 
+     * Now all queued VCPU requests (again, there shouldn't be any).
+     */
+    for (VMCPUID i = 0; i < pUVM->cCpus; i++)
+    {
+        PUVMCPU pUVCpu = &pUVM->aCpus[i];
+
+        for (unsigned i = 0; i < 10; i++)
+        {
+            PVMREQ pReqHead = (PVMREQ)ASMAtomicXchgPtr((void *volatile *)&pUVCpu->vm.s.pReqs, NULL);
+            AssertMsg(!pReqHead, ("This isn't supposed to happen! VMR3Destroy caller has to serialize this.\n"));
+            if (!pReqHead)
+                break;
+            for (PVMREQ pReq = pReqHead; pReq; pReq = pReq->pNext)
+            {
+                ASMAtomicUoWriteSize(&pReq->iStatus, VERR_INTERNAL_ERROR);
+                ASMAtomicWriteSize(&pReq->enmState, VMREQSTATE_INVALID);
+                RTSemEventSignal(pReq->EventSem);
+                RTThreadSleep(2);
+                RTSemEventDestroy(pReq->EventSem);
+            }
+            /* give them a chance to respond before we free the request memory. */
+            RTThreadSleep(32);
+        }
     }
 
     /*
