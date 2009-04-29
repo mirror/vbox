@@ -298,7 +298,7 @@ VMMDECL(int) PATMSetMMIOPatchInfo(PVM pVM, RTGCPHYS GCPhys, RTRCPTR pCachedData)
  */
 VMMDECL(bool) PATMAreInterruptsEnabled(PVM pVM)
 {
-    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(VMMGetCpu0(pVM));
+    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(VMMGetCpu(pVM));
 
     return PATMAreInterruptsEnabledByCtxCore(pVM, CPUMCTX2CORE(pCtx));
 }
