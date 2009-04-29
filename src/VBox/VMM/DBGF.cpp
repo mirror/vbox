@@ -385,7 +385,7 @@ static DBGFEVENTCTX dbgfR3FigureEventCtx(PVM pVM)
  */
 static int dbgfR3EventPrologue(PVM pVM, DBGFEVENTTYPE enmEvent)
 {
-    PVMCPU pVCpu = VMMGetCpu0(pVM);
+    PVMCPU pVCpu = VMMGetCpu(pVM);
 
     /*
      * Check if a debugger is attached.
