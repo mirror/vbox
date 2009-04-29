@@ -233,7 +233,8 @@ public:
         process.setProcessState (QProcess::NotRunning);
 #ifdef Q_WS_X11
         int status;
-        waitpid(process.pid(), &status, 0);
+        if (process.pid() > 0)
+            waitpid(process.pid(), &status, 0);
 #endif
         return result;
     }
