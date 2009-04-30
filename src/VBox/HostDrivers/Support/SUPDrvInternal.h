@@ -239,7 +239,7 @@ __END_DECLS
 
 
 /* dprintf */
-#if (defined(DEBUG) && !defined(NO_LOGGING)) || defined(RT_OS_FREEBSD)
+#if (defined(DEBUG) && !defined(NO_LOGGING))
 # ifdef LOG_TO_COM
 #  include <VBox/log.h>
 #  define dprintf(a) RTLogComPrintf a
