@@ -815,7 +815,7 @@ typedef struct VM
 #ifdef ___EMInternal_h
         struct EM   s;
 #endif
-        char        padding[64];         /* multiple of 32 */
+        char        padding[256];         /* multiple of 32 */
     } em;
 
     /** TM part. */
