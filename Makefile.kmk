@@ -625,7 +625,7 @@ ifeq ($(KBUILD_TARGET),win)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.amd64)
 else
 	$(call MSG_L1,Building Windows/amd64 additions)
-	$(VBOX_KMK_TIME) ssh vbox@192.168.27.5 "cd e:/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_ADDITIONS_BUILD.amd64)
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.5 "cd e:/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_ADDITIONS_BUILD.amd64)"
 endif
 
 additions-build-win.x86:
