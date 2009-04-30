@@ -1984,8 +1984,6 @@ HRESULT VirtualBox::addProgress (IProgress *aProgress)
     /* protect mProgressOperations */
     AutoWriteLock safeLock (mSafeLock);
 
-    printf("adding  %s\n", Utf8Str(id).c_str()); 
-
     mData.mProgressOperations.insert (ProgressMap::value_type (Guid(id), aProgress));
     return S_OK;
 }
