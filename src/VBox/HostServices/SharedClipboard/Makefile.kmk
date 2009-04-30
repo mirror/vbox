@@ -39,7 +39,7 @@ VBoxSharedClipboard_SOURCES.darwin = \
 	darwin.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-helper.cpp \
 	darwin-pasteboard.cpp
-if1of ($(KBUILD_TARGET), linux solaris) ## @todo X11
+if1of ($(KBUILD_TARGET), linux solaris freebsd) ## @todo X11
  ifndef VBOX_HEADLESS
   VBoxSharedClipboard_SOURCES += \
   	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-helper.cpp \
