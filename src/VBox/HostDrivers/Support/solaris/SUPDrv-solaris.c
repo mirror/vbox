@@ -54,6 +54,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/spinlock.h>
 #include <iprt/mp.h>
+#include <iprt/power.h>
 #include <iprt/process.h>
 #include <iprt/thread.h>
 #include <iprt/initterm.h>
@@ -319,6 +320,11 @@ static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
 #endif
 
             /*
+             * Register for suspend/resume notifications
+             */
+            rc = ddi_prop_update_string(DDI_DEV_T_ANY, pDip, "pm-hardware-state", "needs-suspend-resume");
+
+            /*
              * Register ourselves as a character device, pseudo-driver
              */
 #ifdef VBOX_WITH_HARDENING
@@ -342,11 +348,14 @@ static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
 
         case DDI_RESUME:
         {
+#if 0
             RTSemFastMutexRequest(g_DevExt.mtxGip);
             if (g_DevExt.pGipTimer)
                 RTTimerStart(g_DevExt.pGipTimer, 0);
 
             RTSemFastMutexRelease(g_DevExt.mtxGip);
+#endif
+            RTPowerSignalEvent(RTPOWEREVENT_RESUME);
             return DDI_SUCCESS;
         }
 
@@ -388,12 +397,16 @@ static int VBoxDrvSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
 
         case DDI_SUSPEND:
         {
+#if 0
             RTSemFastMutexRequest(g_DevExt.mtxGip);
             if (g_DevExt.pGipTimer && g_DevExt.cGipUsers > 0)
                 RTTimerStop(g_DevExt.pGipTimer);
 
             RTSemFastMutexRelease(g_DevExt.mtxGip);
+#endif
+            RTPowerSignalEvent(RTPOWEREVENT_SUSPEND);
             return DDI_SUCCESS;
+
         }
 
         default:
