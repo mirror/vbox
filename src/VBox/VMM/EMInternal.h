@@ -28,6 +28,7 @@
 #include <VBox/stam.h>
 #include <VBox/patm.h>
 #include <VBox/dis.h>
+#include <VBox/pdmcritsect.h>
 #include <iprt/avl.h>
 #include <setjmp.h>
 
@@ -288,6 +289,14 @@ typedef struct EM
     /** Offset to the VM structure.
      * See EM2VM(). */
     RTUINT                  offVM;
+
+    /** Id of the VCPU that last executed code in the recompiler. */
+    VMCPUID                 idLastRemCpu;
+
+    /** PGM critical section.
+     * This protects recompiler usage
+     */
+    PDMCRITSECT             CritSectREM;
 } EM;
 /** Pointer to EM VM instance data. */
 typedef EM *PEM;
