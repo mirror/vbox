@@ -53,9 +53,6 @@ endif
 # Main targets.
 #
 LIBRARIES += DevicesR3 Drivers ServicesR0
-ifdef VBOX_USE_NAT
-LIBRARIES += NatAlias
-endif
 DLLS      += VBoxDDU VBoxDD VBoxDD2
 SYSMODS   += VBoxDDGC VBoxDD2GC VBoxDDR0 VBoxDD2R0
 
@@ -193,10 +190,6 @@ endif
 ifeq ($(KBUILD_TARGET),l4)
  VBoxDD_LIBS           += \
 	$(L4_LIBDIR)/libl4sys.p.a
-endif
-
-ifdef VBOX_USE_NAT
- VBoxDD_LIBS          += $(PATH_LIB)/NatAlias$(VBOX_SUFF_LIB)
 endif
 
 ifdef VBOX_WITH_NETFLT
