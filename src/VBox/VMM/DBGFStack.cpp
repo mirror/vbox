@@ -399,7 +399,7 @@ static int dbgfR3StackWalkBeginCommon(PVM pVM,
                              ? CPUMGetGuestCtxCore(VMMGetCpuById(pVM, idCpu))
                              : CPUMGetHyperCtxCore(VMMGetCpuById(pVM, idCpu));
     PVMREQ          pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_FROM_ID(idCpu), &pReq, RT_INDEFINITE_WAIT,
+    int rc = VMR3ReqCall(pVM, idCpu, &pReq, RT_INDEFINITE_WAIT,
                          (PFNRT)dbgfR3StackWalkCtxFull, 9,
                          pVM, idCpu, pCtxCore, fGuest,
                          pAddrFrame, pAddrStack, pAddrPC, enmReturnType, ppFirstFrame);

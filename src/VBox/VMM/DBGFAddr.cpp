@@ -234,7 +234,7 @@ VMMR3DECL(int)  DBGFR3AddrToPhys(PVM pVM, VMCPUID idCpu, PDBGFADDRESS pAddress, 
         else
         {
             PVMREQ pReq = NULL;
-            rc = VMR3ReqCall(pVCpu->pVMR3, VMREQDEST_FROM_VMCPU(pVCpu), &pReq, RT_INDEFINITE_WAIT,
+            rc = VMR3ReqCall(pVCpu->pVMR3, pVCpu->idCpu, &pReq, RT_INDEFINITE_WAIT,
                              (PFNRT)dbgfR3AddrToPhysOnVCpu, 3, pVCpu, pAddress, pGCPhys);
             if (RT_SUCCESS(rc))
             {
@@ -399,7 +399,7 @@ VMMR3DECL(int)  DBGFR3AddrToVolatileR3Ptr(PVM pVM, VMCPUID idCpu, PDBGFADDRESS p
      * Convert it.
      */
     PVMREQ pReq = NULL;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_FROM_ID(idCpu), &pReq, RT_INDEFINITE_WAIT,
+    int rc = VMR3ReqCall(pVM, idCpu, &pReq, RT_INDEFINITE_WAIT,
                          (PFNRT)dbgfR3AddrToVolatileR3PtrOnVCpu, 5, pVM, idCpu, pAddress, fReadOnly, ppvR3Ptr);
     if (RT_SUCCESS(rc))
     {

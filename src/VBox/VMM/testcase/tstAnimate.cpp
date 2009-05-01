@@ -835,9 +835,9 @@ int main(int argc, char **argv)
          */
         PVMREQ pReq1 = NULL;
         if (FileRawMem != NIL_RTFILE)
-            rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq1, RT_INDEFINITE_WAIT, (PFNRT)loadMem, 3, pVM, FileRawMem, &offRawMem);
+            rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq1, RT_INDEFINITE_WAIT, (PFNRT)loadMem, 3, pVM, FileRawMem, &offRawMem);
         else
-            rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq1, RT_INDEFINITE_WAIT, (PFNRT)SSMR3Load, 4, pVM, pszSavedState, SSMAFTER_DEBUG_IT, NULL, NULL);
+            rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq1, RT_INDEFINITE_WAIT, (PFNRT)SSMR3Load, 4, pVM, pszSavedState, SSMAFTER_DEBUG_IT, NULL, NULL);
         AssertReleaseRC(rc);
         rc = pReq1->iStatus;
         VMR3ReqFree(pReq1);
@@ -848,7 +848,7 @@ int main(int argc, char **argv)
              */
             if (FileScript != NIL_RTFILE)
             {
-                rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq1, RT_INDEFINITE_WAIT, (PFNRT)scriptRun, 2, pVM, FileScript);
+                rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq1, RT_INDEFINITE_WAIT, (PFNRT)scriptRun, 2, pVM, FileScript);
                 AssertReleaseRC(rc);
                 rc = pReq1->iStatus;
                 VMR3ReqFree(pReq1);
@@ -876,7 +876,7 @@ int main(int argc, char **argv)
                     rc = REMR3DisasEnableStepping(pVM, true);
                     if (RT_SUCCESS(rc))
                     {
-                        rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq1, RT_INDEFINITE_WAIT, (PFNRT)EMR3RawSetMode, 2, pVM, EMRAW_NONE);
+                        rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq1, RT_INDEFINITE_WAIT, (PFNRT)EMR3RawSetMode, 2, pVM, EMRAW_NONE);
                         AssertReleaseRC(rc);
                         VMR3ReqFree(pReq1);
 

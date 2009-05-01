@@ -148,7 +148,7 @@ VMMR3DECL(int) PGMR3PhysReadExternal(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size
                     pgmUnlock(pVM);
 
                     PVMREQ pReq = NULL;
-                    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
+                    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
                                          (PFNRT)pgmR3PhysReadExternalEMT, 4, pVM, &GCPhys, pvBuf, cbRead);
                     if (RT_SUCCESS(rc))
                     {
@@ -284,7 +284,7 @@ VMMDECL(int) PGMR3PhysWriteExternal(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf,
                     pgmUnlock(pVM);
 
                     PVMREQ pReq = NULL;
-                    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
+                    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
                                          (PFNRT)pgmR3PhysWriteExternalEMT, 4, pVM, &GCPhys, pvBuf, cbWrite);
                     if (RT_SUCCESS(rc))
                     {
@@ -446,7 +446,7 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrExternal(PVM pVM, RTGCPHYS GCPhys, void **pp
                 pgmUnlock(pVM);
 
                 PVMREQ pReq = NULL;
-                rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
+                rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
                                  (PFNRT)pgmR3PhysGCPhys2CCPtrDelegated, 4, pVM, &GCPhys, ppv, pLock);
                 if (RT_SUCCESS(rc))
                 {

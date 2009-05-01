@@ -100,7 +100,7 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
                 /*
                  * Service execute in EMT request.
                  */
-                rc = VMR3ReqProcessU(pUVM, VMREQDEST_ANY);
+                rc = VMR3ReqProcessU(pUVM, VMCPUID_ANY);
                 Log(("vmR3EmulationThread: Req rc=%Rrc, VM state %d -> %d\n", rc, enmBefore, pUVM->pVM ? pUVM->pVM->enmVMState : VMSTATE_CREATING));
             }
             else
@@ -109,8 +109,8 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
                 /*
                  * Service execute in EMT request.
                  */
-                rc = VMR3ReqProcessU(pUVM, (VMREQDEST)pUVCpu->idCpu);
-                Log(("vmR3EmulationThread: Req (cpu=%d) rc=%Rrc, VM state %d -> %d\n", pUVCpu->idCpu, rc, enmBefore, pUVM->pVM ? pUVM->pVM->enmVMState : VMSTATE_CREATING));
+                rc = VMR3ReqProcessU(pUVM, pUVCpu->idCpu);
+                Log(("vmR3EmulationThread: Req (cpu=%u) rc=%Rrc, VM state %d -> %d\n", pUVCpu->idCpu, rc, enmBefore, pUVM->pVM ? pUVM->pVM->enmVMState : VMSTATE_CREATING));
             }
             else
             {
@@ -144,7 +144,7 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
                 /*
                  * Service execute in EMT request.
                  */
-                rc = VMR3ReqProcessU(pUVM, VMREQDEST_ANY);
+                rc = VMR3ReqProcessU(pUVM, VMCPUID_ANY);
                 Log(("vmR3EmulationThread: Req rc=%Rrc, VM state %d -> %d\n", rc, enmBefore, pVM->enmVMState));
             }
             else if (pUVCpu->vm.s.pReqs)
@@ -152,8 +152,8 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
                 /*
                  * Service execute in EMT request.
                  */
-                rc = VMR3ReqProcessU(pUVM, (VMREQDEST)pUVCpu->idCpu);
-                Log(("vmR3EmulationThread: Req (cpu=%d)rc=%Rrc, VM state %d -> %d\n", pUVCpu->idCpu, rc, enmBefore, pVM->enmVMState));
+                rc = VMR3ReqProcessU(pUVM, pUVCpu->idCpu);
+                Log(("vmR3EmulationThread: Req (cpu=%u) rc=%Rrc, VM state %d -> %d\n", pUVCpu->idCpu, rc, enmBefore, pVM->enmVMState));
             }
             else if (VM_FF_ISSET(pVM, VM_FF_DBGF))
             {
@@ -279,7 +279,7 @@ VMMR3DECL(int) VMR3WaitForResume(PVM pVM)
             /*
              * Service execute in EMT request.
              */
-            rc = VMR3ReqProcessU(pUVM, VMREQDEST_ANY);
+            rc = VMR3ReqProcessU(pUVM, VMCPUID_ANY);
             Log(("vmR3EmulationThread: Req rc=%Rrc, VM state %d -> %d\n", rc, enmBefore, pVM->enmVMState));
         }
         else if (pUVCpu->vm.s.pReqs)
@@ -287,8 +287,8 @@ VMMR3DECL(int) VMR3WaitForResume(PVM pVM)
             /*
              * Service execute in EMT request.
              */
-            rc = VMR3ReqProcessU(pUVM, (VMREQDEST)pUVCpu->idCpu);
-            Log(("vmR3EmulationThread: Req (cpu=%d)rc=%Rrc, VM state %d -> %d\n", pUVCpu->idCpu, rc, enmBefore, pVM->enmVMState));
+            rc = VMR3ReqProcessU(pUVM, pUVCpu->idCpu);
+            Log(("vmR3EmulationThread: Req (cpu=%u) rc=%Rrc, VM state %d -> %d\n", pUVCpu->idCpu, rc, enmBefore, pVM->enmVMState));
         }
         else if (VM_FF_ISSET(pVM, VM_FF_DBGF))
         {

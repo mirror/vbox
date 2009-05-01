@@ -1407,7 +1407,7 @@ static void ataSuspendRedo(PATACONTROLLER pCtl)
     int         rc;
 
     pCtl->fRedoIdle = true;
-    rc = VMR3ReqCall(PDMDevHlpGetVM(pDevIns), VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
+    rc = VMR3ReqCall(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
                      (PFNRT)PDMDevHlpVMSuspend, 1, pDevIns);
     AssertReleaseRC(rc);
     VMR3ReqFree(pReq);
@@ -2887,7 +2887,7 @@ static void atapiParseCmdVirtualATAPI(ATADevState *s)
                         PVMREQ pReq;
 
                         PDMCritSectLeave(&pCtl->lock);
-                        rc = VMR3ReqCall(PDMDevHlpGetVM(pDevIns), VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
+                        rc = VMR3ReqCall(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
                                          (PFNRT)s->pDrvMount->pfnUnmount, 2, s->pDrvMount, false);
                         AssertReleaseRC(rc);
                         VMR3ReqFree(pReq);

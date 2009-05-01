@@ -98,15 +98,20 @@ typedef uint32_t VMCPUID;
 /** Pointer to a virtual CPU ID. */
 typedef VMCPUID *PVMCPUID;
 /** @name Special CPU ID values.
+ * Most of these are for request scheduling.
+ *
  * @{ */
 /** All virtual CPUs. */
-#define VMCPUID_ALL         UINT32_C(0xffffffff)
-/** Any virtual CPU, preferrably an idle one.
+#define VMCPUID_ALL         UINT32_C(0xfffffff2)
+/** All virtual CPUs, descending order. */
+#define VMCPUID_ALL_REVERSE UINT32_C(0xfffffff3)
+/** Any virtual CPU.
  * Intended for scheduling a VM request or some other task. */
-#define VMCPUID_ANY_IDLE    UINT32_C(0xfffffffe)
+#define VMCPUID_ANY         UINT32_C(0xfffffff4)
 /** The NIL value. */
-#define NIL_VMCPUID         UINT32_C(0xfffffff0)
+#define NIL_VMCPUID         UINT32_C(0xfffffffd)
 /** @} */
+
 
 /** VM State
  */

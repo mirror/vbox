@@ -238,7 +238,7 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCPUs, PFNVMATERROR pfnVMAtError, void *pvU
              * Call vmR3CreateU in the EMT thread and wait for it to finish.
              */
             PVMREQ pReq;
-            rc = VMR3ReqCallU(pUVM, VMREQDEST_ANY /* can't use CPU0 here as it's too early (pVM==0) */, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3CreateU,
+            rc = VMR3ReqCallU(pUVM, VMCPUID_ANY /* can't use CPU0 here as it's too early (pVM==0) */, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3CreateU,
                               4, pUVM, cCPUs, pfnCFGMConstructor, pvUserCFGM);
             if (RT_SUCCESS(rc))
             {
@@ -1034,7 +1034,7 @@ VMMR3DECL(int)   VMR3PowerOn(PVM pVM)
      * Request the operation in EMT.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3PowerOn, 1, pVM);
+    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3PowerOn, 1, pVM);
     if (RT_SUCCESS(rc))
     {
         rc = pReq->iStatus;
@@ -1104,7 +1104,7 @@ VMMR3DECL(int) VMR3Suspend(PVM pVM)
      * Request the operation in EMT.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Suspend, 1, pVM);
+    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Suspend, 1, pVM);
     if (RT_SUCCESS(rc))
     {
         rc = pReq->iStatus;
@@ -1191,7 +1191,7 @@ VMMR3DECL(int)   VMR3Resume(PVM pVM)
      * Request the operation in EMT.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Resume, 1, pVM);
+    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Resume, 1, pVM);
     if (RT_SUCCESS(rc))
     {
         rc = pReq->iStatus;
@@ -1272,7 +1272,7 @@ VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgr
      * Request the operation in EMT.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Save, 4, pVM, pszFilename, pfnProgress, pvUser);
+    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Save, 4, pVM, pszFilename, pfnProgress, pvUser);
     if (RT_SUCCESS(rc))
     {
         rc = pReq->iStatus;
@@ -1367,7 +1367,7 @@ VMMR3DECL(int)   VMR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnPro
      * Request the operation in EMT.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Load, 4, pVM, pszFilename, pfnProgress, pvUser);
+    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Load, 4, pVM, pszFilename, pfnProgress, pvUser);
     if (RT_SUCCESS(rc))
     {
         rc = pReq->iStatus;
@@ -1456,7 +1456,7 @@ VMMR3DECL(int)   VMR3PowerOff(PVM pVM)
      * Request the operation in EMT.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3PowerOff, 1, pVM);
+    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3PowerOff, 1, pVM);
     if (RT_SUCCESS(rc))
     {
         rc = pReq->iStatus;
@@ -1629,7 +1629,7 @@ VMMR3DECL(int)   VMR3Destroy(PVM pVM)
          * Request EMT to do the larger part of the destruction. (in reverse order as VCPU 0 does the real cleanup)
          */
         PVMREQ pReq = NULL;
-        int rc = VMR3ReqCallU(pUVM, VMREQDEST_BROADCAST_REVERSE, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3Destroy, 1, pVM);
+        int rc = VMR3ReqCallU(pUVM, VMCPUID_ALL_REVERSE, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3Destroy, 1, pVM);
         if (RT_SUCCESS(rc))
             rc = pReq->iStatus;
         AssertRC(rc);
@@ -2076,7 +2076,7 @@ VMMR3DECL(int)   VMR3Reset(PVM pVM)
      * and wait for it to be processed.
      */
     PVMREQ pReq = NULL;
-    rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, 0, (PFNRT)vmR3Reset, 1, pVM);
+    rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, 0, (PFNRT)vmR3Reset, 1, pVM);
     while (rc == VERR_TIMEOUT)
         rc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
     if (RT_SUCCESS(rc))
@@ -2596,7 +2596,7 @@ VMMR3DECL(int)   VMR3AtStateRegister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvU
      * Make sure we're in EMT (to avoid the logging).
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtStateRegisterU, 3, pVM->pUVM, pfnAtState, pvUser);
+    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtStateRegisterU, 3, pVM->pUVM, pfnAtState, pvUser);
     if (RT_FAILURE(rc))
         return rc;
     rc = pReq->iStatus;
@@ -2665,7 +2665,7 @@ VMMR3DECL(int)   VMR3AtStateDeregister(PVM pVM, PFNVMATSTATE pfnAtState, void *p
      * Make sure we're in EMT (to avoid the logging).
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtStateDeregisterU, 3, pVM->pUVM, pfnAtState, pvUser);
+    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtStateDeregisterU, 3, pVM->pUVM, pfnAtState, pvUser);
     if (RT_FAILURE(rc))
         return rc;
     rc = pReq->iStatus;
@@ -2767,7 +2767,7 @@ VMMR3DECL(int)   VMR3AtErrorRegisterU(PUVM pUVM, PFNVMATERROR pfnAtError, void *
      * Make sure we're in EMT (to avoid the logging).
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCallU(pUVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3AtErrorRegisterU, 3, pUVM, pfnAtError, pvUser);
+    int rc = VMR3ReqCallU(pUVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3AtErrorRegisterU, 3, pUVM, pfnAtError, pvUser);
     if (RT_FAILURE(rc))
         return rc;
     rc = pReq->iStatus;
@@ -2836,7 +2836,7 @@ VMMR3DECL(int)   VMR3AtErrorDeregister(PVM pVM, PFNVMATERROR pfnAtError, void *p
      * Make sure we're in EMT (to avoid the logging).
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtErrorDeregisterU, 3, pVM->pUVM, pfnAtError, pvUser);
+    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtErrorDeregisterU, 3, pVM->pUVM, pfnAtError, pvUser);
     if (RT_FAILURE(rc))
         return rc;
     rc = pReq->iStatus;
@@ -3052,7 +3052,7 @@ VMMR3DECL(int)   VMR3AtRuntimeErrorRegister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRu
      * Make sure we're in EMT (to avoid the logging).
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtRuntimeErrorRegisterU, 3, pVM->pUVM, pfnAtRuntimeError, pvUser);
+    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtRuntimeErrorRegisterU, 3, pVM->pUVM, pfnAtRuntimeError, pvUser);
     if (RT_FAILURE(rc))
         return rc;
     rc = pReq->iStatus;
@@ -3121,7 +3121,7 @@ VMMR3DECL(int)   VMR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIMEERROR pfnAt
      * Make sure we're in EMT (to avoid the logging).
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtRuntimeErrorDeregisterU, 3, pVM->pUVM, pfnAtRuntimeError, pvUser);
+    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtRuntimeErrorDeregisterU, 3, pVM->pUVM, pfnAtRuntimeError, pvUser);
     if (RT_FAILURE(rc))
         return rc;
     rc = pReq->iStatus;
