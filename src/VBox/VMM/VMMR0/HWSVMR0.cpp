@@ -1323,7 +1323,7 @@ ResumeExecution:
             /* Note that we don't support guest and host-initiated debugging at the same time. */
             Assert(DBGFIsStepping(pVCpu));
 
-            rc = DBGFR0Trap01Handler(pVM, pVCpu, CPUMCTX2CORE(pCtx), pCtx->dr[6]);
+            rc = DBGFRZTrap01Handler(pVM, pVCpu, CPUMCTX2CORE(pCtx), pCtx->dr[6]);
             if (rc == VINF_EM_RAW_GUEST_TRAP)
             {
                 Log(("Trap %x (debug) at %016RX64\n", vector, pCtx->rip));

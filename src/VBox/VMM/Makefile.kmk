@@ -332,7 +332,6 @@ VMMGC_SOURCES   = \
 	VMMGC/CPUMGC.cpp \
 	VMMGC/CPUMGCA.asm \
 	VMMGC/EMGCA.asm \
-	VMMGC/DBGFGC.cpp \
 	VMMGC/IOMGC.cpp \
 	VMMGC/MMRamGC.cpp \
 	VMMGC/MMRamGCA.asm \
@@ -344,10 +343,11 @@ VMMGC_SOURCES   = \
 	VMMGC/TRPMGCHandlersA.asm \
 	VMMGC/VMMGC.cpp \
 	VMMGC/VMMGCA.asm \
+	VMMGC/HWACCMGCA.asm \
+	VMMRZ/DBGFRZ.cpp \
 	VMMAll/CPUMAllRegs.cpp \
 	VMMAll/CPUMAllA.asm \
 	VMMAll/DBGFAll.cpp \
-	VMMGC/HWACCMGCA.asm \
 	VMMAll/IOMAll.cpp \
 	VMMAll/IOMAllMMIO.cpp \
 	VMMAll/EMAll.cpp \
@@ -426,7 +426,6 @@ VMMR0_SYSSUFF   = .r0
 VMMR0_SOURCES   = \
 	VMMR0/CPUMR0.cpp \
 	VMMR0/CPUMR0A.asm \
-	VMMR0/DBGFR0.cpp \
 	VMMR0/GMMR0.cpp \
 	VMMR0/GVMMR0.cpp \
 	VMMR0/HWACCMR0.cpp \
@@ -439,6 +438,7 @@ VMMR0_SOURCES   = \
 	VMMR0/TRPMR0A.asm \
 	VMMR0/VMMR0.cpp \
 	VMMR0/VMMR0A.asm \
+	VMMRZ/DBGFRZ.cpp \
 	VMMAll/CPUMAllA.asm \
 	VMMAll/CPUMAllRegs.cpp \
 	VMMAll/CPUMStack.cpp \
