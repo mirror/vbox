@@ -1026,7 +1026,7 @@ VMMR3DECL(void) VMR3NotifyGlobalFF(PVM pVM, bool fNotifiedREM)
 VMMR3DECL(void) VMR3NotifyCpuFF(PVMCPU pVCpu, bool fNotifiedREM)
 {
     PUVMCPU pUVCpu = pVCpu->pUVCpu;
-    PUVM    pUVM    = pUVCpu->pUVM;
+    PUVM    pUVM   = pUVCpu->pUVM;
 
     LogFlow(("VMR3NotifyCpuFF:\n"));
     g_aHaltMethods[pUVM->vm.s.iHaltMethod].pfnNotifyFF(pUVCpu, fNotifiedREM);
@@ -1047,7 +1047,7 @@ VMMR3DECL(void) VMR3NotifyGlobalFFU(PUVM pUVM, bool fNotifiedREM)
 {
     LogFlow(("VMR3NotifyGlobalFFU:\n"));
     /** @todo might want to have a 2nd look at this (SMP) */
-    for (unsigned iCpu=0;iCpu<pUVM->cCpus;iCpu++)
+    for (unsigned iCpu = 0; iCpu < pUVM->cCpus; iCpu++)
     {
         PUVMCPU pUVCpu = &pUVM->aCpus[iCpu];
         g_aHaltMethods[pUVM->vm.s.iHaltMethod].pfnNotifyFF(pUVCpu, fNotifiedREM);
@@ -1111,7 +1111,7 @@ VMMR3DECL(int) VMR3WaitHalted(PVM pVM, PVMCPU pVCpu, bool fIgnoreInterrupts)
     /*
      * Record halt averages for the last second.
      */
-    PUVMCPU pUVCpu = pVCpu->pUVCpu;    
+    PUVMCPU pUVCpu = pVCpu->pUVCpu;
     uint64_t u64Now = RTTimeNanoTS();
     int64_t off = u64Now - pUVCpu->vm.s.u64HaltsStartTS;
     if (off > 1000000000)
