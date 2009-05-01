@@ -285,7 +285,8 @@ typedef enum VMREQDEST
 
 /** Makes a VMREQDEST value from a VMCPU pointer. */
 #define VMREQDEST_FROM_VMCPU(pVCpu)     ((VMREQDEST)(pVCpu)->idCpu)
-
+/** Makes a VMREQDEST value from a virtual CPU ID. */
+#define VMREQDEST_FROM_ID(idCpu)        ((VMREQDEST)(idCpu))
 
 /**
  * VM Request packet.
