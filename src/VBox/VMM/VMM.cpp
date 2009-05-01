@@ -1523,105 +1523,119 @@ static int vmmR3ServiceCallHostRequest(PVM pVM)
  */
 static DECLCALLBACK(void) vmmR3InfoFF(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    int         c;
+    uint32_t    f;
+#define PRINT_FLAG(prf,flag) do { \
+        if (f & (prf##flag)) \
+        { \
+            static const char *s_psz = #flag; \
+            if (!(c % 6)) \
+                pHlp->pfnPrintf(pHlp, "%s\n    %s", c ? "," : "", s_psz); \
+            else \
+                pHlp->pfnPrintf(pHlp, ", %s", s_psz); \
+            c++; \
+            f &= ~(prf##flag); \
+        } \
+    } while (0)
+
+#define PRINT_GROUP(prf,grp,sfx) do { \
+        if (f & (prf##grp##sfx)) \
+        { \
+            static const char *s_psz = #grp; \
+            if (!(c % 5)) \
+                pHlp->pfnPrintf(pHlp, "%s    %s", c ? ",\n" : "  Groups:\n", s_psz); \
+            else \
+                pHlp->pfnPrintf(pHlp, ", %s", s_psz); \
+            c++; \
+        } \
+    } while (0)
+
+    /*
+     * The global flags.
+     */
     const uint32_t fGlobalForcedActions = pVM->fGlobalForcedActions;
-
-    pHlp->pfnPrintf(pHlp, "Forced action Flags: %#RX32", fGlobalForcedActions);
-    for (unsigned i=0;i<pVM->cCPUs;i++)
-    {
-        PVMCPU pVCpu = &pVM->aCpus[i];
-
-        pHlp->pfnPrintf(pHlp, "CPU %d: Forced action Flags: %#RX32", pVCpu->fLocalForcedActions);
-    }
+    pHlp->pfnPrintf(pHlp, "Global FFs: %#RX32", fGlobalForcedActions);
 
     /* show the flag mnemonics  */
-    int c = 0;
-    uint32_t f = fGlobalForcedActions;
-#define PRINT_FLAG(flag) do { \
-        if (f & (flag)) \
-        { \
-            static const char *s_psz = #flag; \
-            if (!(c % 6)) \
-                pHlp->pfnPrintf(pHlp, "%s\n    %s", c ? "," : "", s_psz + 6); \
-            else \
-                pHlp->pfnPrintf(pHlp, ", %s", s_psz + 6); \
-            c++; \
-            f &= ~(flag); \
-        } \
-    } while (0)
-    PRINT_FLAG(VM_FF_TIMER);
-    PRINT_FLAG(VM_FF_PDM_QUEUES);
-    PRINT_FLAG(VM_FF_PDM_DMA);
-    PRINT_FLAG(VM_FF_PDM_CRITSECT);
-    PRINT_FLAG(VM_FF_DBGF);
-    PRINT_FLAG(VM_FF_REQUEST);
-    PRINT_FLAG(VM_FF_TERMINATE);
-    PRINT_FLAG(VM_FF_RESET);
-    PRINT_FLAG(VM_FF_PGM_NEED_HANDY_PAGES);
-    PRINT_FLAG(VM_FF_PGM_NO_MEMORY);
-    PRINT_FLAG(VM_FF_REM_HANDLER_NOTIFY);
-    PRINT_FLAG(VM_FF_DEBUG_SUSPEND);
-    for (unsigned i=0;i<pVM->cCPUs;i++)
-    {
-        PVMCPU pVCpu = &pVM->aCpus[i];
-
-        f = pVCpu->fLocalForcedActions;
-#define PRINT_CPU_FLAG(flag) do { \
-        if (f & (flag)) \
-        { \
-            static const char *s_psz = #flag; \
-            if (!(c % 6)) \
-                pHlp->pfnPrintf(pHlp, "CPU %d: %s\n    %s", i, c ? "," : "", s_psz + 6); \
-            else \
-                pHlp->pfnPrintf(pHlp, ", %s", s_psz + 6); \
-            c++; \
-            f &= ~(flag); \
-        } \
-    } while (0)
-
-        PRINT_CPU_FLAG(VMCPU_FF_INTERRUPT_APIC);
-        PRINT_CPU_FLAG(VMCPU_FF_INTERRUPT_PIC);
-        PRINT_CPU_FLAG(VMCPU_FF_PGM_SYNC_CR3);
-        PRINT_CPU_FLAG(VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
-        PRINT_CPU_FLAG(VMCPU_FF_TRPM_SYNC_IDT);
-        PRINT_CPU_FLAG(VMCPU_FF_SELM_SYNC_TSS);
-        PRINT_CPU_FLAG(VMCPU_FF_SELM_SYNC_GDT);
-        PRINT_CPU_FLAG(VMCPU_FF_SELM_SYNC_LDT);
-        PRINT_CPU_FLAG(VMCPU_FF_INHIBIT_INTERRUPTS);
-        PRINT_CPU_FLAG(VMCPU_FF_CSAM_SCAN_PAGE);
-        PRINT_CPU_FLAG(VMCPU_FF_CSAM_PENDING_ACTION);
-        PRINT_CPU_FLAG(VMCPU_FF_TO_R3);
-    }
-
+    c = 0;
+    f = fGlobalForcedActions;
+    PRINT_FLAG(VM_FF_,TIMER);
+    PRINT_FLAG(VM_FF_,PDM_QUEUES);
+    PRINT_FLAG(VM_FF_,PDM_DMA);
+    PRINT_FLAG(VM_FF_,PDM_CRITSECT);
+    PRINT_FLAG(VM_FF_,DBGF);
+    PRINT_FLAG(VM_FF_,REQUEST);
+    PRINT_FLAG(VM_FF_,TERMINATE);
+    PRINT_FLAG(VM_FF_,RESET);
+    PRINT_FLAG(VM_FF_,PGM_NEED_HANDY_PAGES);
+    PRINT_FLAG(VM_FF_,PGM_NO_MEMORY);
+    PRINT_FLAG(VM_FF_,REM_HANDLER_NOTIFY);
+    PRINT_FLAG(VM_FF_,DEBUG_SUSPEND);
     if (f)
         pHlp->pfnPrintf(pHlp, "%s\n    Unknown bits: %#RX32\n", c ? "," : "", f);
     else
         pHlp->pfnPrintf(pHlp, "\n");
-#undef PRINT_FLAG
-#undef PRINT_CPU_FLAG
 
     /* the groups */
     c = 0;
-#define PRINT_GROUP(grp) do { \
-        if (fGlobalForcedActions & (grp)) \
-        { \
-            static const char *s_psz = #grp; \
-            if (!(c % 5)) \
-                pHlp->pfnPrintf(pHlp, "%s    %s", c ? ",\n" : "Groups:\n", s_psz + 6); \
-            else \
-                pHlp->pfnPrintf(pHlp, ", %s", s_psz + 6); \
-            c++; \
-        } \
-    } while (0)
-    PRINT_GROUP(VM_FF_EXTERNAL_SUSPENDED_MASK);
-    PRINT_GROUP(VM_FF_EXTERNAL_HALTED_MASK);
-    PRINT_GROUP(VM_FF_HIGH_PRIORITY_PRE_MASK);
-    PRINT_GROUP(VM_FF_HIGH_PRIORITY_PRE_RAW_MASK);
-    PRINT_GROUP(VM_FF_HIGH_PRIORITY_POST_MASK);
-    PRINT_GROUP(VM_FF_NORMAL_PRIORITY_POST_MASK);
-    PRINT_GROUP(VM_FF_NORMAL_PRIORITY_MASK);
-    PRINT_GROUP(VM_FF_ALL_BUT_RAW_MASK);
+    f = fGlobalForcedActions;
+    PRINT_GROUP(VM_FF_,EXTERNAL_SUSPENDED,_MASK);
+    PRINT_GROUP(VM_FF_,EXTERNAL_HALTED,_MASK);
+    PRINT_GROUP(VM_FF_,HIGH_PRIORITY_PRE,_MASK);
+    PRINT_GROUP(VM_FF_,HIGH_PRIORITY_PRE_RAW,_MASK);
+    PRINT_GROUP(VM_FF_,HIGH_PRIORITY_POST,_MASK);
+    PRINT_GROUP(VM_FF_,NORMAL_PRIORITY_POST,_MASK);
+    PRINT_GROUP(VM_FF_,NORMAL_PRIORITY,_MASK);
+    PRINT_GROUP(VM_FF_,ALL_BUT_RAW,_MASK);
     if (c)
         pHlp->pfnPrintf(pHlp, "\n");
+
+    /*
+     * Per CPU flags.
+     */
+    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
+    {
+        const uint32_t fLocalForcedActions = pVM->aCpus[i].fLocalForcedActions;
+        pHlp->pfnPrintf(pHlp, "CPU %u FFs: %#RX32", i, f);
+
+        /* show the flag mnemonics */
+        c = 0;
+        f = fLocalForcedActions;
+        PRINT_FLAG(VMCPU_FF_,INTERRUPT_APIC);
+        PRINT_FLAG(VMCPU_FF_,INTERRUPT_PIC);
+        PRINT_FLAG(VMCPU_FF_,PGM_SYNC_CR3);
+        PRINT_FLAG(VMCPU_FF_,PGM_SYNC_CR3_NON_GLOBAL);
+        PRINT_FLAG(VMCPU_FF_,TRPM_SYNC_IDT);
+        PRINT_FLAG(VMCPU_FF_,SELM_SYNC_TSS);
+        PRINT_FLAG(VMCPU_FF_,SELM_SYNC_GDT);
+        PRINT_FLAG(VMCPU_FF_,SELM_SYNC_LDT);
+        PRINT_FLAG(VMCPU_FF_,INHIBIT_INTERRUPTS);
+        PRINT_FLAG(VMCPU_FF_,CSAM_SCAN_PAGE);
+        PRINT_FLAG(VMCPU_FF_,CSAM_PENDING_ACTION);
+        PRINT_FLAG(VMCPU_FF_,TO_R3);
+        if (f)
+            pHlp->pfnPrintf(pHlp, "%s\n    Unknown bits: %#RX32\n", c ? "," : "", f);
+        else
+            pHlp->pfnPrintf(pHlp, "\n");
+
+        /* the groups */
+        c = 0;
+        f = fLocalForcedActions;
+        PRINT_GROUP(VMCPU_FF_,EXTERNAL_SUSPENDED,_MASK);
+        PRINT_GROUP(VMCPU_FF_,EXTERNAL_HALTED,_MASK);
+        PRINT_GROUP(VMCPU_FF_,HIGH_PRIORITY_PRE,_MASK);
+        PRINT_GROUP(VMCPU_FF_,HIGH_PRIORITY_PRE_RAW,_MASK);
+        PRINT_GROUP(VMCPU_FF_,HIGH_PRIORITY_POST,_MASK);
+        PRINT_GROUP(VMCPU_FF_,NORMAL_PRIORITY_POST,_MASK);
+        PRINT_GROUP(VMCPU_FF_,NORMAL_PRIORITY,_MASK);
+        PRINT_GROUP(VMCPU_FF_,RESUME_GUEST,_MASK);
+        PRINT_GROUP(VMCPU_FF_,HWACCM_TO_R3,_MASK);
+        PRINT_GROUP(VMCPU_FF_,ALL_BUT_RAW,_MASK);
+        if (c)
+            pHlp->pfnPrintf(pHlp, "\n");
+    }
+
+#undef PRINT_FLAG
 #undef PRINT_GROUP
 }
 
