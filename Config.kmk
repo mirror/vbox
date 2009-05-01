@@ -240,9 +240,6 @@ ifdef VBOX_ONLY_SDK
  VBOX_WITHOUT_ADDITIONS=1
 endif
 
-## Enable new TCG-based recompiler
-VBOX_WITH_NEW_RECOMPILER = 1
-
 # Don't create the additions ISO.
 # (Used by the additions build server, don't invert it.)
 #VBOX_WITHOUT_ADDITIONS_ISO = 1

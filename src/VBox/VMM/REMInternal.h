@@ -210,19 +210,11 @@ typedef struct REM
     /** Padding the CPUX86State structure to 32 byte. */
     uint32_t                abPadding[HC_ARCH_BITS == 32 ? 6 : 4];
 
-#ifdef VBOX_WITH_NEW_RECOMPILER
 #if GC_ARCH_BITS == 32
 # define REM_ENV_SIZE        (HC_ARCH_BITS == 32 ? 0xff00 : 0xff00)
 #else
 # define REM_ENV_SIZE        (HC_ARCH_BITS == 32 ? 0xff00 : 0xff00)
 #endif
-#else  /* !VBOX_WITH_NEW_RECOMPILER */
-#if GC_ARCH_BITS == 32
-# define REM_ENV_SIZE        (HC_ARCH_BITS == 32 ? 0x6550 : 0xb4a0)
-#else
-# define REM_ENV_SIZE        (HC_ARCH_BITS == 32 ? 0x9440 : 0xd4a0)
-#endif
-#endif /* !VBOX_WITH_NEW_RECOMILER */
 
     /** Recompiler CPU state. */
 #ifdef REM_INCLUDE_CPU_H
@@ -251,11 +243,7 @@ void    remR3ProtectCode(CPUState *env, RTGCPTR GCPtr);
 void    remR3ChangeCpuMode(CPUState *env);
 void    remR3DmaRun(CPUState *env);
 void    remR3TimersRun(CPUState *env);
-# ifdef VBOX_WITH_NEW_RECOMPILER
 int     remR3NotifyTrap(CPUState *env, uint32_t uTrap, uint32_t uErrorCode, RTGCPTR pvNextEIP);
-# else
-int remR3NotifyTrap(CPUState *env, uint32_t uTrap, uint32_t uErrorCode, uint32_t pvNextEIP);
-# endif
 void    remR3TrapStat(CPUState *env, uint32_t uTrap);
 void    remR3CpuId(CPUState *env, unsigned uOperator, void *pvEAX, void *pvEBX, void *pvECX, void *pvEDX);
 void    remR3RecordCall(CPUState *env);

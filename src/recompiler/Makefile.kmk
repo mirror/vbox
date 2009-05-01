@@ -108,7 +108,6 @@ $(REM_MOD)_DEFS            = $(if $(VBOX_GCC_BUGGY_REGPARM),GCC_WITH_BUGGY_REGPA
 endif # !win
 $(REM_MOD)_DEFS           += IN_REM_R3 REM_INCLUDE_CPU_H
 #$(REM_MOD)_DEFS           += REM_PHYS_ADDR_IN_TLB
-$(REM_MOD)_DEFS           += VBOX_WITH_NEW_RECOMPILER
 #$(REM_MOD)_DEFS           += DEBUG_ALL_LOGGING DEBUG_DISAS DEBUG_PCALL DEBUG_EXEC DEBUG_FLUSH DEBUG_IOPORT DEBUG_SIGNAL DEBUG_TLB_CHECK DEBUG_TB_INVALIDATE DEBUG_TLB  # Enables huge amounts of debug logging.
 #$(REM_MOD)_DEFS           += DEBUG_TMP_LOGGING # log qemu parts to "/tmp/vbox-qemu.log" - does not work with VBoxREM2.
 $(REM_MOD)_DEFS.linux      = _GNU_SOURCE
@@ -205,7 +204,6 @@ DLLS += VBoxREMWrapper
 VBoxREMWrapper_TEMPLATE    = VBOXR3
 VBoxREMWrapper_NAME        = VBoxREM
 VBoxREMWrapper_DEFS        = IN_REM_R3 $(if $(VBOX_WITH_VMI),VBOX_WITH_VMI,)
-VBoxREMWrapper_DEFS       += VBOX_WITH_NEW_RECOMPILER
  ifdef VBOX_USE_REM64
 VBoxREMWrapper_DEFS       += VBOX_USE_BITNESS_SELECTOR
  endif
@@ -298,7 +296,6 @@ testmath_CFLAGS         = -Wall -g
 testmath_CFLAGS.release = -O3
 testmath_LDFLAGS        = -g
 testmath_DEFS           = MATHTEST_STANDALONE
-testmath_DEFS          += VBOX_WITH_NEW_RECOMPILER
 testmath_SOURCES        = Sun/testmath.c
 
 
