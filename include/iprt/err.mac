@@ -25,6 +25,7 @@
 %define VERR_THREAD_IS_DEAD    (-29)
 %define VERR_THREAD_NOT_WAITABLE    (-30)
 %define VERR_PAGE_TABLE_NOT_PRESENT    (-31)
+%define VERR_INVALID_CONTEXT    (-32)
 %define VERR_TIMER_BUSY    (-33)
 %define VERR_ADDRESS_CONFLICT    (-34)
 %define VERR_UNRESOLVED_ERROR    (-35)
