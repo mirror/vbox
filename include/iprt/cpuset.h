@@ -170,7 +170,7 @@ DECLINLINE(bool) RTCpuSetIsMemberByIndex(PCRTCPUSET pSet, int iCpu)
  */
 DECLINLINE(bool) RTCpuSetIsEqual(PCRTCPUSET pSet1, PCRTCPUSET pSet2)
 {
-    return *pSet1 == *pSet2;
+    return *pSet1 == *pSet2 ? true : false;
 }
 
 
