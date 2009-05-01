@@ -104,6 +104,8 @@ typedef VMCPUID *PVMCPUID;
 /** Any virtual CPU, preferrably an idle one.
  * Intended for scheduling a VM request or some other task. */
 #define VMCPUID_ANY_IDLE    UINT32_C(0xfffffffe)
+/** The NIL value. */
+#define NIL_VMCPUID         UINT32_C(0xfffffff0)
 /** @} */
 
 /** VM State
