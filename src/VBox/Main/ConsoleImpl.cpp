@@ -487,7 +487,7 @@ int Console::VRDPClientLogon (uint32_t u32ClientId, const char *pszUser, const c
     Bstr id;
     HRESULT hrc = mMachine->COMGETTER (Id) (id.asOutParam());
     Guid uuid = Guid(id);
-    
+
     AssertComRCReturn (hrc, VERR_ACCESS_DENIED);
 
     VRDPAuthType_T authType = VRDPAuthType_Null;
@@ -737,7 +737,7 @@ void Console::VRDPClientDisconnect (uint32_t u32ClientId,
         }
     }
 #endif /* VBOX_WITH_VRDP */
-       
+
     Bstr uuid;
     HRESULT hrc = mMachine->COMGETTER (Id) (uuid.asOutParam());
     AssertComRC (hrc);
@@ -4270,9 +4270,9 @@ HRESULT Console::consoleInitReleaseLog (const ComPtr <IMachine> aMachine)
         if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
             RTLogRelLogger(loggerRelease, 0, ~0U, "OS Service Pack: %s\n", szTmp);
         /* the package type is interesting for Linux distributions */
-        RTLogRelLogger    (loggerRelease, 0, ~0U, 
-                          "Process ID: %u\n"
-                          "Package type: %s"
+        RTLogRelLogger(loggerRelease, 0, ~0U,
+                       "Process ID: %u\n"
+                       "Package type: %s"
 #ifdef VBOX_OSE
                        " (OSE)"
 #endif
