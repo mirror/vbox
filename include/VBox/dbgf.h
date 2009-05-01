@@ -113,13 +113,13 @@ typedef const DBGFADDRESS *PCDBGFADDRESS;
 #define DBGFADDRESS_IS_HMA(pAddress)     ( !!((pAddress)->fFlags & DBGFADDRESS_FLAGS_HMA) )
 /** @} */
 
-VMMR3DECL(int)  DBGFR3AddrFromSelOff(PVM pVM, VMCPUID idCpu, PDBGFADDRESS pAddress, RTSEL Sel, RTUINTPTR off);
+VMMR3DECL(int)          DBGFR3AddrFromSelOff(PVM pVM, VMCPUID idCpu, PDBGFADDRESS pAddress, RTSEL Sel, RTUINTPTR off);
 VMMR3DECL(PDBGFADDRESS) DBGFR3AddrFromFlat(PVM pVM, PDBGFADDRESS pAddress, RTGCUINTPTR FlatPtr);
 VMMR3DECL(PDBGFADDRESS) DBGFR3AddrFromPhys(PVM pVM, PDBGFADDRESS pAddress, RTGCPHYS PhysAddr);
-VMMR3DECL(bool) DBGFR3AddrIsValid(PVM pVM, PCDBGFADDRESS pAddress);
-VMMR3DECL(int)  DBGFR3AddrToPhys(PVM pVM, VMCPUID idCpu, PDBGFADDRESS pAddress, PRTGCPHYS pGCPhys);
-VMMR3DECL(int)  DBGFR3AddrToHostPhys(PVM pVM, VMCPUID idCpu, PDBGFADDRESS pAddress, PRTHCPHYS pHCPhys);
-VMMR3DECL(int)  DBGFR3AddrToVolatileR3Ptr(PVM pVM, VMCPUID idCpu, PDBGFADDRESS pAddress, bool fReadOnly, void **ppvR3Ptr);
+VMMR3DECL(bool)         DBGFR3AddrIsValid(PVM pVM, PCDBGFADDRESS pAddress);
+VMMR3DECL(int)          DBGFR3AddrToPhys(PVM pVM, VMCPUID idCpu, PDBGFADDRESS pAddress, PRTGCPHYS pGCPhys);
+VMMR3DECL(int)          DBGFR3AddrToHostPhys(PVM pVM, VMCPUID idCpu, PDBGFADDRESS pAddress, PRTHCPHYS pHCPhys);
+VMMR3DECL(int)          DBGFR3AddrToVolatileR3Ptr(PVM pVM, VMCPUID idCpu, PDBGFADDRESS pAddress, bool fReadOnly, void **ppvR3Ptr);
 VMMR3DECL(PDBGFADDRESS) DBGFR3AddrAdd(PDBGFADDRESS pAddress, RTGCUINTPTR uAddend);
 VMMR3DECL(PDBGFADDRESS) DBGFR3AddrSub(PDBGFADDRESS pAddress, RTGCUINTPTR uSubtrahend);
 
@@ -224,7 +224,7 @@ typedef struct DBGFEVENT
         struct
         {
             /** The GC return code. */
-            int         rc;
+            int                     rc;
         } FatalError;
 
         /** Source location. */
@@ -237,7 +237,7 @@ typedef struct DBGFEVENT
             /** Message. */
             R3PTRTYPE(const char *) pszMessage;
             /** Line number. */
-            unsigned    uLine;
+            unsigned                uLine;
         } Src;
 
         /** Assertion messages. */
@@ -253,7 +253,7 @@ typedef struct DBGFEVENT
         struct DBGFEVENTBP
         {
             /** The identifier of the breakpoint which was hit. */
-            RTUINT      iBp;
+            RTUINT                  iBp;
         } Bp;
         /** Padding for ensuring that the structure is 8 byte aligned. */
         uint64_t        au64Padding[4];
@@ -531,9 +531,9 @@ typedef DECLCALLBACK(int) FNDBGFINFOENUM(PVM pVM, const char *pszName, const cha
 /** Pointer to a FNDBGFINFOENUM function. */
 typedef FNDBGFINFOENUM *PFNDBGFINFOENUM;
 
-VMMR3DECL(int) DBGFR3InfoEnum(PVM pVM, PFNDBGFINFOENUM pfnCallback, void *pvUser);
-VMMR3DECL(PCDBGFINFOHLP) DBGFR3InfoLogHlp(void);
-VMMR3DECL(PCDBGFINFOHLP) DBGFR3InfoLogRelHlp(void);
+VMMR3DECL(int)              DBGFR3InfoEnum(PVM pVM, PFNDBGFINFOENUM pfnCallback, void *pvUser);
+VMMR3DECL(PCDBGFINFOHLP)    DBGFR3InfoLogHlp(void);
+VMMR3DECL(PCDBGFINFOHLP)    DBGFR3InfoLogRelHlp(void);
 
 
 
@@ -625,6 +625,8 @@ typedef enum DBGFRETRUNTYPE
     DBGFRETURNTYPE_IRET32_V86,
     /** @todo 64-bit iret return. */
     DBGFRETURNTYPE_IRET64,
+    /** The end of the valid return types. */
+    DBGFRETURNTYPE_END,
     /** The usual 32-bit blowup. */
     DBGFRETURNTYPE_32BIT_HACK = 0x7fffffff
 } DBGFRETURNTYPE;
@@ -658,6 +660,8 @@ DECLINLINE(unsigned) DBGFReturnTypeSize(DBGFRETURNTYPE enmRetType)
 
 /** Pointer to stack frame info. */
 typedef struct DBGFSTACKFRAME *PDBGFSTACKFRAME;
+/** Pointer to const stack frame info. */
+typedef struct DBGFSTACKFRAME const  *PCDBGFSTACKFRAME;
 /**
  * Info about a stack frame.
  */
@@ -713,10 +717,10 @@ typedef struct DBGFSTACKFRAME
 
     /** Pointer to the next frame.
      * Might not be used in some cases, so consider it internal. */
-    PDBGFSTACKFRAME pNext;
+    PCDBGFSTACKFRAME pNextInternal;
     /** Pointer to the first frame.
      * Might not be used in some cases, so consider it internal. */
-    PDBGFSTACKFRAME pFirst;
+    PCDBGFSTACKFRAME pFirstInternal;
 } DBGFSTACKFRAME;
 
 /** @name DBGFSTACKFRAME Flags.
@@ -733,10 +737,16 @@ typedef struct DBGFSTACKFRAME
 #define DBGFSTACKFRAME_FLAGS_MAX_DEPTH  RT_BIT(3)
 /** @} */
 
-VMMR3DECL(int) DBGFR3StackWalkBeginGuest(PVM pVM, PDBGFSTACKFRAME pFrame);
-VMMR3DECL(int) DBGFR3StackWalkBeginHyper(PVM pVM, PDBGFSTACKFRAME pFrame);
-VMMR3DECL(int) DBGFR3StackWalkNext(PVM pVM, PDBGFSTACKFRAME pFrame);
-VMMR3DECL(void) DBGFR3StackWalkEnd(PVM pVM, PDBGFSTACKFRAME pFrame);
+VMMR3DECL(int)              DBGFR3StackWalkBeginGuest(PVM pVM, VMCPUID idCpu, PCDBGFSTACKFRAME *ppFirstFrame);
+VMMR3DECL(int)              DBGFR3StackWalkBeginHyper(PVM pVM, VMCPUID idCpu, PCDBGFSTACKFRAME *ppFirstFrame);
+VMMR3DECL(int)              DBGFR3StackWalkBeginGuestEx(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddrFrame,
+                                                        PCDBGFADDRESS pAddrStack,PCDBGFADDRESS pAddrPC,
+                                                        DBGFRETURNTYPE enmReturnType, PCDBGFSTACKFRAME *ppFirstFrame);
+VMMR3DECL(int)              DBGFR3StackWalkBeginHyperEx(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddrFrame,
+                                                        PCDBGFADDRESS pAddrStack,PCDBGFADDRESS pAddrPC,
+                                                        DBGFRETURNTYPE enmReturnType, PCDBGFSTACKFRAME *ppFirstFrame);
+VMMR3DECL(PCDBGFSTACKFRAME) DBGFR3StackWalkNext(PCDBGFSTACKFRAME pCurrent);
+VMMR3DECL(void)             DBGFR3StackWalkEnd(PCDBGFSTACKFRAME pFirstFrame);
 
 
 
