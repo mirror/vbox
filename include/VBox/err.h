@@ -75,6 +75,12 @@
 #define VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT (-1014)
 /** Raw mode doesn't support SMP. */
 #define VERR_RAW_MODE_INVALID_SMP           (-1015)
+/** Invalid VM handle. */
+#define VERR_INVALID_VM_HANDLE              (-1016)
+/** Invalid VM handle. */
+#define VERR_INVALID_VMCPU_HANDLE           (-1017)
+/** Invalid Virtual CPU ID. */
+#define VERR_INVALID_CPU_ID                 (-1018)
 /** @} */
 
 
