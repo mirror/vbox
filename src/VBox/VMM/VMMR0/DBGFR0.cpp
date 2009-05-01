@@ -43,10 +43,11 @@
  *          other codes are passed execution to host context.
  *
  * @param   pVM         The VM handle.
+ * @param   pVCpu       The virtual CPU handle.
  * @param   pRegFrame   Pointer to the register frame for the trap.
  * @param   uDr6        The DR6 register value.
  */
-VMMR0DECL(int) DBGFR0Trap01Handler(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCUINTREG uDr6)
+VMMR0DECL(int) DBGFR0Trap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCUINTREG uDr6)
 {
     /** @todo Intel docs say that X86_DR6_BS has the highest priority... */
     /*
@@ -60,8 +61,8 @@ VMMR0DECL(int) DBGFR0Trap01Handler(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCUINTREG 
             if (    ((uint32_t)uDr6 & RT_BIT_32(iBp))
                 &&  pVM->dbgf.s.aHwBreakpoints[iBp].enmType == DBGFBPTYPE_REG)
             {
-                pVM->dbgf.s.iActiveBp = pVM->dbgf.s.aHwBreakpoints[iBp].iBp;
-                pVM->dbgf.s.fSingleSteppingRaw = false;
+                pVCpu->dbgf.s.iActiveBp = pVM->dbgf.s.aHwBreakpoints[iBp].iBp;
+                pVCpu->dbgf.s.fSingleSteppingRaw = false;
                 LogFlow(("DBGFR0Trap03Handler: hit hw breakpoint %d at %04x:%RGv\n",
                          pVM->dbgf.s.aHwBreakpoints[iBp].iBp, pRegFrame->cs, pRegFrame->rip));
 
@@ -75,9 +76,9 @@ VMMR0DECL(int) DBGFR0Trap01Handler(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCUINTREG 
      * Are we single stepping or is it the guest?
      */
     if (    (uDr6 & X86_DR6_BS)
-        &&  (pVM->dbgf.s.fSingleSteppingRaw))
+        &&  (pVCpu->dbgf.s.fSingleSteppingRaw))
     {
-        pVM->dbgf.s.fSingleSteppingRaw = false;
+        pVCpu->dbgf.s.fSingleSteppingRaw = false;
         LogFlow(("DBGFR0Trap01Handler: single step at %04x:%RGv\n", pRegFrame->cs, pRegFrame->rip));
         return VINF_EM_DBG_STEPPED;
     }
@@ -102,9 +103,10 @@ VMMR0DECL(int) DBGFR0Trap01Handler(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCUINTREG 
  *          other codes are passed execution to host context.
  *
  * @param   pVM         The VM handle.
+ * @param   pVCpu       The virtual CPU handle.
  * @param   pRegFrame   Pointer to the register frame for the trap.
  */
-VMMR0DECL(int) DBGFR0Trap03Handler(PVM pVM, PCPUMCTXCORE pRegFrame)
+VMMR0DECL(int) DBGFR0Trap03Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
     /*
      * Get the trap address and look it up in the breakpoint table.
@@ -123,7 +125,7 @@ VMMR0DECL(int) DBGFR0Trap03Handler(PVM pVM, PCPUMCTXCORE pRegFrame)
                 &&  pVM->dbgf.s.aBreakpoints[iBp].enmType == DBGFBPTYPE_INT3)
             {
                 pVM->dbgf.s.aBreakpoints[iBp].cHits++;
-                pVM->dbgf.s.iActiveBp = pVM->dbgf.s.aBreakpoints[iBp].iBp;
+                pVCpu->dbgf.s.iActiveBp = pVM->dbgf.s.aBreakpoints[iBp].iBp;
 
                 LogFlow(("DBGFR0Trap03Handler: hit breakpoint %d at %RGv (%04x:%RGv) cHits=0x%RX64\n",
                          pVM->dbgf.s.aBreakpoints[iBp].iBp, pPc, pRegFrame->cs, pRegFrame->rip,

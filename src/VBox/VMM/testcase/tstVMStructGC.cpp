@@ -126,9 +126,11 @@ int main()
     GEN_CHECK_OFF(DBGF, cBreakpoints);
     GEN_CHECK_OFF(DBGF, aHwBreakpoints);
     GEN_CHECK_OFF(DBGF, aBreakpoints);
-    GEN_CHECK_OFF(DBGF, iActiveBp);
-    GEN_CHECK_OFF(DBGF, fSingleSteppingRaw);
     GEN_CHECK_SIZE(DBGFEVENT);
+
+    GEN_CHECK_SIZE(DBGFCPU);
+    GEN_CHECK_OFF(DBGFCPU, iActiveBp);
+    GEN_CHECK_OFF(DBGFCPU, fSingleSteppingRaw);
 
     GEN_CHECK_SIZE(EM);
     GEN_CHECK_OFF(EM, offVM);

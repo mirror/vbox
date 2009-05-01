@@ -1091,7 +1091,7 @@ static void vmxR0UpdateExceptionBitmap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
 #ifdef DEBUG /* till after branching, enable it by default then. */
     /* Intercept X86_XCPT_DB if stepping is enabled */
-    if (DBGFIsStepping(pVM))
+    if (DBGFIsStepping(pVCpu))
         u32TrapMask |= RT_BIT(X86_XCPT_DB);
     /** @todo Don't trap it unless the debugger has armed breakpoints.  */
     u32TrapMask |= RT_BIT(X86_XCPT_BP);
@@ -1550,7 +1550,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         /* Sync the debug state now if any breakpoint is armed. */
         if (    (pCtx->dr[7] & (X86_DR7_ENABLED_MASK|X86_DR7_GD))
             &&  !CPUMIsGuestDebugStateActive(pVCpu)
-            &&  !DBGFIsStepping(pVM))
+            &&  !DBGFIsStepping(pVCpu))
         {
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatDRxArmed);
 
@@ -2465,11 +2465,11 @@ ResumeExecution:
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestDB);
 
                 /* Note that we don't support guest and host-initiated debugging at the same time. */
-                Assert(DBGFIsStepping(pVM) || CPUMIsGuestInRealModeEx(pCtx));
+                Assert(DBGFIsStepping(pVCpu) || CPUMIsGuestInRealModeEx(pCtx));
 
                 uDR6  = X86_DR6_INIT_VAL;
                 uDR6 |= (exitQualification & (X86_DR6_B0|X86_DR6_B1|X86_DR6_B2|X86_DR6_B3|X86_DR6_BD|X86_DR6_BS));
-                rc = DBGFR0Trap01Handler(pVM, CPUMCTX2CORE(pCtx), uDR6);
+                rc = DBGFR0Trap01Handler(pVM, pVCpu, CPUMCTX2CORE(pCtx), uDR6);
                 if (rc == VINF_EM_RAW_GUEST_TRAP)
                 {
                     /** @todo this isn't working, but we'll never get here normally. */
@@ -2503,7 +2503,7 @@ ResumeExecution:
 #ifdef DEBUG /* till after branching, enable by default after that. */
             case X86_XCPT_BP:   /* Breakpoint. */
             {
-                rc = DBGFR0Trap03Handler(pVM, CPUMCTX2CORE(pCtx));
+                rc = DBGFR0Trap03Handler(pVM, pVCpu, CPUMCTX2CORE(pCtx));
                 if (rc == VINF_EM_RAW_GUEST_TRAP)
                 {
                     Log(("Guest #BP at %04x:%RGv\n", pCtx->cs, pCtx->rip));
@@ -3081,7 +3081,7 @@ ResumeExecution:
 
     case VMX_EXIT_DRX_MOVE:             /* 29 Debug-register accesses. */
     {
-        if (!DBGFIsStepping(pVM))
+        if (!DBGFIsStepping(pVCpu))
         {
             /* Disable drx move intercepts. */
             pVCpu->hwaccm.s.vmx.proc_ctls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT;

@@ -385,6 +385,7 @@ static DBGFEVENTCTX dbgfR3FigureEventCtx(PVM pVM)
  */
 static int dbgfR3EventPrologue(PVM pVM, DBGFEVENTTYPE enmEvent)
 {
+    /** @todo SMP */
     PVMCPU pVCpu = VMMGetCpu(pVM);
 
     /*
@@ -560,9 +561,12 @@ VMMR3DECL(int) DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent)
     /*
      * Send the event and process the reply communication.
      */
+    /** @todo SMP */
+    PVMCPU pVCpu = VMMGetCpu0(pVM);
+
     pVM->dbgf.s.DbgEvent.enmType = enmEvent;
-    RTUINT iBp = pVM->dbgf.s.DbgEvent.u.Bp.iBp = pVM->dbgf.s.iActiveBp;
-    pVM->dbgf.s.iActiveBp = ~0U;
+    RTUINT iBp = pVM->dbgf.s.DbgEvent.u.Bp.iBp = pVCpu->dbgf.s.iActiveBp;
+    pVCpu->dbgf.s.iActiveBp = ~0U;
     if (iBp != ~0U)
         pVM->dbgf.s.DbgEvent.enmCtx = DBGFEVENTCTX_RAW;
     else
@@ -767,7 +771,9 @@ static int dbgfR3VMMCmd(PVM pVM, DBGFCMD enmCmd, PDBGFCMDDATA pCmdData, bool *pf
         {
             Log2(("Single step\n"));
             rc = VINF_EM_DBG_STEP;
-            pVM->dbgf.s.fSingleSteppingRaw = true;
+            /** @todo SMP */
+            PVMCPU pVCpu = VMMGetCpu0(pVM);
+            pVCpu->dbgf.s.fSingleSteppingRaw = true;
             fSendEvent = false;
             fResume = true;
             break;
@@ -1051,18 +1057,21 @@ VMMR3DECL(int) DBGFR3Resume(PVM pVM)
  *
  * @returns VBox status.
  * @param   pVM     VM handle.
+ * @param   idCpu   The ID of the CPU to single step on.
  */
-VMMR3DECL(int) DBGFR3Step(PVM pVM)
+VMMR3DECL(int) DBGFR3Step(PVM pVM, VMCPUID idCpu)
 {
     /*
      * Check state.
      */
     AssertReturn(pVM->dbgf.s.fAttached, VERR_DBGF_NOT_ATTACHED);
     AssertReturn(RTSemPongIsSpeaker(&pVM->dbgf.s.PingPong), VERR_SEM_OUT_OF_TURN);
+    AssertReturn(idCpu < pVM->cCPUs, VERR_INVALID_PARAMETER);
 
     /*
      * Send the ping back to the emulation thread telling it to run.
      */
+/** @todo SMP (idCpu) */
     dbgfR3SetCmd(pVM, DBGFCMD_SINGLE_STEP);
     int rc = RTSemPong(&pVM->dbgf.s.PingPong);
     AssertRC(rc);
@@ -1071,20 +1080,23 @@ VMMR3DECL(int) DBGFR3Step(PVM pVM)
 
 
 /**
- * Call this to single step rawmode or recompiled mode.
+ * Call this to single step programatically.
  *
  * You must pass down the return code to the EM loop! That's
  * where the actual single stepping take place (at least in the
  * current implementation).
  *
  * @returns VINF_EM_DBG_STEP
- * @thread  EMT
+ *
+ * @param   pVCpu       The virtual CPU handle.
+ *
+ * @thread  VCpu EMT
  */
-VMMR3DECL(int) DBGFR3PrgStep(PVM pVM)
+VMMR3DECL(int) DBGFR3PrgStep(PVMCPU pVCpu)
 {
-    VM_ASSERT_EMT(pVM);
+    VMCPU_ASSERT_EMT(pVCpu);
 
-    pVM->dbgf.s.fSingleSteppingRaw = true;
+    pVCpu->dbgf.s.fSingleSteppingRaw = true;
     return VINF_EM_DBG_STEP;
 }
 

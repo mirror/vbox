@@ -1241,7 +1241,7 @@ int emR3SingleStepExecRaw(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
     Log(("Single step BEGIN:\n"));
     for (uint32_t i = 0; i < cIterations; i++)
     {
-        DBGFR3PrgStep(pVM);
+        DBGFR3PrgStep(pVCpu);
         DBGFR3DisasInstrCurrentLog(pVM, "RSS: ");
         rc = emR3RawStep(pVM, pVCpu);
         if (rc != VINF_SUCCESS)
@@ -1263,7 +1263,7 @@ static int emR3SingleStepExecHwAcc(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
     Log(("Single step BEGIN:\n"));
     for (uint32_t i = 0; i < cIterations; i++)
     {
-        DBGFR3PrgStep(pVM);
+        DBGFR3PrgStep(pVCpu);
         DBGFR3DisasInstrCurrentLog(pVM, "RSS: ");
         rc = emR3HwAccStep(pVM, pVCpu);
         if (    rc != VINF_SUCCESS
@@ -1286,7 +1286,7 @@ static int emR3SingleStepExecRem(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
     Log(("Single step BEGIN:\n"));
     for (uint32_t i = 0; i < cIterations; i++)
     {
-        DBGFR3PrgStep(pVM);
+        DBGFR3PrgStep(pVCpu);
         DBGFR3DisasInstrCurrentLog(pVM, "RSS: ");
         emR3RemStep(pVM, pVCpu);
         if (emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx) != EMSTATE_REM)

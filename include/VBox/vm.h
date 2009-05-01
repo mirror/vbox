@@ -116,14 +116,6 @@ typedef struct VMCPU
 #endif
         char                padding[4096];      /* multiple of 64 */
     } cpum;
-    /** VMM part. */
-    union
-    {
-#ifdef ___VMMInternal_h
-        struct VMMCPU       s;
-#endif
-        char                padding[64];        /* multiple of 64 */
-    } vmm;
 
     /** PGM part. */
     union
@@ -131,7 +123,7 @@ typedef struct VMCPU
 #ifdef ___PGMInternal_h
         struct PGMCPU       s;
 #endif
-        char                padding[32*1024];       /* multiple of 64 */
+        char                padding[32*1024];   /* multiple of 64 */
     } pgm;
 
     /** HWACCM part. */
@@ -149,7 +141,7 @@ typedef struct VMCPU
 #ifdef ___EMInternal_h
         struct EMCPU        s;
 #endif
-        char                padding[2048];        /* multiple of 64 */
+        char                padding[2048];      /* multiple of 64 */
     } em;
 
     /** TRPM part. */
@@ -158,7 +150,7 @@ typedef struct VMCPU
 #ifdef ___TRPMInternal_h
         struct TRPMCPU      s;
 #endif
-        char                padding[64];        /* multiple of 64 */
+        char                padding[128];       /* multiple of 64 */
     } trpm;
 
     /** TM part. */
@@ -169,6 +161,27 @@ typedef struct VMCPU
 #endif
         char                padding[64];        /* multiple of 64 */
     } tm;
+
+    /** VMM part.
+     * @todo Combine this with other tiny structures. */
+    union
+    {
+#ifdef ___VMMInternal_h
+        struct VMMCPU       s;
+#endif
+        char                padding[64];        /* multiple of 64 */
+    } vmm;
+
+    /** DBGF part.
+     * @todo Combine this with other tiny structures. */
+    union
+    {
+#ifdef ___DBGFInternal_h
+        struct DBGFCPU      s;
+#endif
+        uint8_t             padding[64];        /* multiple of 64 */
+    } dbgf;
+
 } VMCPU;
 
 /** Pointer to a VMCPU. */

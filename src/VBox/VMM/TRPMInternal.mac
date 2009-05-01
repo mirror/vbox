@@ -71,6 +71,7 @@ endstruc
 
 struc TRPMCPU
     .offVM              resd 1
+    .offVMCpu           resd 1
     .uActiveVector      resd 1
     .enmActiveType      resd 1
     .uActiveErrorCode   RTGCPTR_RES 1

@@ -380,16 +380,18 @@ static int dbgfR3BpInt3Arm(PVM pVM, PDBGFBP pBp)
     /** @todo should actually use physical address here! */
 
     /* @todo SMP support! */
-    PVMCPU pVCpu = &pVM->aCpus[0];
+    VMCPUID idCpu = 0;
 
     /*
      * Save current byte and write int3 instruction.
      */
-    int rc = DBGFR3ReadGCVirt(pVM, pVCpu, &pBp->u.Int3.bOrg, pBp->GCPtr, 1);
+    DBGFADDRESS Addr;
+    DBGFR3AddrFromFlat(pVM, &Addr, pBp->GCPtr);
+    int rc = DBGFR3MemRead(pVM, idCpu, &Addr, &pBp->u.Int3.bOrg, 1);
     if (RT_SUCCESS(rc))
     {
         static const uint8_t s_bInt3 = 0xcc;
-        rc = DBGFR3WriteGCVirt(pVM, pVCpu,  pBp->GCPtr, &s_bInt3, 1);
+        rc = DBGFR3MemWrite(pVM, idCpu, &Addr, &s_bInt3, 1);
     }
     return rc;
 }
@@ -406,16 +408,18 @@ static int dbgfR3BpInt3Arm(PVM pVM, PDBGFBP pBp)
 static int dbgfR3BpInt3Disarm(PVM pVM, PDBGFBP pBp)
 {
     /* @todo SMP support! */
-    PVMCPU pVCpu = &pVM->aCpus[0];
+    VMCPUID idCpu = 0;
 
     /*
      * Check that the current byte is the int3 instruction, and restore the original one.
      * We currently ignore invalid bytes.
      */
-    uint8_t bCurrent;
-    int rc = DBGFR3ReadGCVirt(pVM, pVCpu, &bCurrent, pBp->GCPtr, 1);
+    DBGFADDRESS     Addr;
+    DBGFR3AddrFromFlat(pVM, &Addr, pBp->GCPtr);
+    uint8_t         bCurrent;
+    int rc = DBGFR3MemRead(pVM, idCpu, &Addr, &bCurrent, 1);
     if (bCurrent == 0xcc)
-        rc = DBGFR3WriteGCVirt(pVM, pVCpu,  pBp->GCPtr, &pBp->u.Int3.bOrg, 1);
+        rc = DBGFR3MemWrite(pVM, idCpu, &Addr, &pBp->u.Int3.bOrg, 1);
     return rc;
 }
 
@@ -437,8 +441,9 @@ static int dbgfR3BpInt3Disarm(PVM pVM, PDBGFBP pBp)
  * @thread  Any thread.
  */
 VMMR3DECL(int) DBGFR3BpSetReg(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable,
-                               uint8_t fType, uint8_t cb, PRTUINT piBp)
+                              uint8_t fType, uint8_t cb, PRTUINT piBp)
 {
+    /** @todo SMP - broadcast, VT-x/AMD-V. */
     /*
      * This must be done in EMT.
      */
@@ -587,7 +592,7 @@ static int dbgfR3BpRegArm(PVM pVM, PDBGFBP pBp)
  */
 static int dbgfR3BpRegDisarm(PVM pVM, PDBGFBP pBp)
 {
-    /* @todo SMP support! */
+    /** @todo SMP support! */
     PVMCPU pVCpu = &pVM->aCpus[0];
 
     Assert(!pBp->fEnabled);
