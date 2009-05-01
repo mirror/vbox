@@ -90,9 +90,6 @@ tstVMStructGC_DEFS      = IN_VMM_RC IN_DIS IN_RT_RC IN_RT_GC
 ifdef VBOX_WITH_R0_LOGGING
 tstVMStructGC_DEFS     += VBOX_WITH_R0_LOGGING
 endif
-ifdef VBOX_WITH_NEW_RECOMPILER
-tstVMStructGC_DEFS     += VBOX_WITH_NEW_RECOMPILER
-endif
 tstVMStructGC_SOURCES   = tstVMStructGC.cpp
 tstVMStructGC_INCS      = $(VBOX_PATH_VMM_SRC) $(VBOX_PATH_VMM_SRC)/PATM
 
@@ -104,9 +101,6 @@ tstVMStructSize.cpp_DEPS= $(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructGC.h
 ifdef VBOX_WITH_R0_LOGGING
 tstVMStructSize_DEFS   += VBOX_WITH_R0_LOGGING
 endif
-ifdef VBOX_WITH_NEW_RECOMPILER
-tstVMStructSize_DEFS   += VBOX_WITH_NEW_RECOMPILER
-endif
 ifdef VBOX_WITH_VMI
 tstVMStructSize_DEFS   += VBOX_WITH_VMI
 tstVMStructSize_INCS   += $(VBOX_PATH_VMM_SRC)/PARAV
@@ -117,9 +111,6 @@ tstAsmStructs_DEFS      = IN_VMM_R3 IN_DIS
 ifdef VBOX_WITH_R0_LOGGING
 tstAsmStructs_DEFS     += VBOX_WITH_R0_LOGGING
 endif
-ifdef VBOX_WITH_NEW_RECOMPILER
-tstAsmStruct_DEFS      += VBOX_WITH_NEW_RECOMPILER
-endif
 tstAsmStructs_INCS      = $(VBOX_PATH_VMM_SRC) $(VBOX_VMM_TESTCASE_OUT_DIR)
 tstAsmStructs_SOURCES   = tstAsmStructs.cpp
 
@@ -127,9 +118,6 @@ tstAsmStructsGC_TEMPLATE= VBOXGCEXE
 tstAsmStructsGC_DEFS    = IN_VMM_RC IN_DIS IN_RT_RC IN_RT_GC
 ifdef VBOX_WITH_R0_LOGGING
 tstAsmStructsGC_DEFS   += VBOX_WITH_R0_LOGGING
-endif
-ifdef VBOX_WITH_NEW_RECOMPILER
-tstAsmStructGC_DEFS    += VBOX_WITH_NEW_RECOMPILER
 endif
 tstAsmStructsGC_INCS    = $(VBOX_PATH_VMM_SRC) $(VBOX_VMM_TESTCASE_OUT_DIR)
 tstAsmStructsGC_SOURCES = tstAsmStructs.cpp

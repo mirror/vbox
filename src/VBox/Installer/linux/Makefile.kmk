@@ -134,12 +134,6 @@ VBOX_LNX_STRIP_OBJ = \
 	VBoxDDR0.r0 \
 	VMMGC.gc \
 	VMMR0.r0
-ifeq ($(KBUILD_TARGET_ARCH),amd64)
- ifndef VBOX_WITH_NEW_RECOMPILER
-  VBOX_LNX_STRIP_OBJ += \
-	 VBoxREM2.rel
- endif
-endif
 
 # Do not strip anything of these files
 VBOX_LNX_NO_STRIP = \

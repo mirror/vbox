@@ -36,11 +36,7 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS && !VBOX_ONLY_SDK
  include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
  include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
  include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
- ifdef VBOX_WITH_NEW_RECOMPILER
-  include $(PATH_SUB_CURRENT)/recompiler_new/Makefile.kmk
- else
-  include $(PATH_SUB_CURRENT)/recompiler/Makefile.kmk
- endif
+ include $(PATH_SUB_CURRENT)/recompiler/Makefile.kmk
  ifneq ($(wildcard $(PATH_SUB_CURRENT)/apps),)
   include $(PATH_SUB_CURRENT)/apps/Makefile.kmk
  endif
@@ -67,13 +63,7 @@ else ifdef VBOX_ONLY_SDK
 
 else  # !VBOX_ONLY_ADDITIONS
  # Build IPRT first because xpcom (IPC, nspr, python) depends on it.
- SUBDIRS = VBox/Runtime	bldprogs libs VBox
-
- ifdef VBOX_WITH_NEW_RECOMPILER
-   SUBDIRS += recompiler_new
- else
-   SUBDIRS += recompiler
- endif
+ SUBDIRS = VBox/Runtime	bldprogs libs VBox recompiler
  ifneq ($(wildcard apps),)
   SUBDIRS += apps
  endif

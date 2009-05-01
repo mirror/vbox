@@ -221,10 +221,6 @@ SOLARIS_STRIP_BIN_32 = \
 	VBoxREM32.so \
 	VBoxREM64.so
 
-ifndef VBOX_WITH_NEW_RECOMPILER
- SOLARIS_STRIP_OBJ_64 = VBoxREM2.rel
-endif
-
 VBOX_SOL_PYTHON_DIR_64 = 64
 
 # Do not strip anything of these files
@@ -353,7 +349,6 @@ ifdef VBOX_WITH_COMBINED_PACKAGE
 	$(addprefix $(SOLARIS_VBOXINST_DIR_32)/,$(SOLARIS_NO_STRIP)) \
 	$(addprefix $(SOLARIS_VBOXINST_DIR_32)/,$(SOLARIS_QTLIBS)) \
 	$(addprefix $(SOLARIS_VBOXINST_DIR_32)/,$(SOLARIS_STRIP_BIN_32)) \
-	$(if $(VBOX_WITH_NEW_RECOMPILER),,$(addprefix $(SOLARIS_VBOXINST_DIR_64)/,$(SOLARIS_STRIP_OBJ_64))) \
 	$(addprefix $(SOLARIS_OUT_BIN_32)/,VBoxPython.so) \
 	$(addprefix $(SOLARIS_OUT_BIN_64)/,VBoxPython.so)
  SOLARIS_DBG_DEPFILES = $(addprefix $(SOLARIS_DBG_DIR_64)/,$(SOLARIS_DBG_FILES)) \
