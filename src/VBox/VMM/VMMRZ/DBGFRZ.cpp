@@ -1,12 +1,10 @@
 /* $Id$ */
 /** @file
- * DBGF - Debugger Facility, R0 part.
- *
- * Almost identical to DBGFGC.cpp, except for the fInHyper stuff.
+ * DBGF - Debugger Facility, RZ part.
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,6 +23,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP LOG_GROUP_DBGF
 #include <VBox/dbgf.h>
 #include <VBox/selm.h>
 #include <VBox/log.h>
@@ -47,8 +46,14 @@
  * @param   pRegFrame   Pointer to the register frame for the trap.
  * @param   uDr6        The DR6 register value.
  */
-VMMR0DECL(int) DBGFR0Trap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCUINTREG uDr6)
+VMMRZDECL(int) DBGFRZTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCUINTREG uDr6)
 {
+#ifdef IN_RC
+    const bool fInHyper = !(pRegFrame->ss & X86_SEL_RPL) && !pRegFrame->eflags.Bits.u1VM;
+#else
+    const bool fInHyper = false;
+#endif
+
     /** @todo Intel docs say that X86_DR6_BS has the highest priority... */
     /*
      * A breakpoint?
@@ -63,10 +68,10 @@ VMMR0DECL(int) DBGFR0Trap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
             {
                 pVCpu->dbgf.s.iActiveBp = pVM->dbgf.s.aHwBreakpoints[iBp].iBp;
                 pVCpu->dbgf.s.fSingleSteppingRaw = false;
-                LogFlow(("DBGFR0Trap03Handler: hit hw breakpoint %d at %04x:%RGv\n",
+                LogFlow(("DBGFRZTrap03Handler: hit hw breakpoint %d at %04x:%RGv\n",
                          pVM->dbgf.s.aHwBreakpoints[iBp].iBp, pRegFrame->cs, pRegFrame->rip));
 
-                return VINF_EM_DBG_BREAKPOINT;
+                return fInHyper ? VINF_EM_DBG_HYPER_BREAKPOINT : VINF_EM_DBG_BREAKPOINT;
             }
         }
     }
@@ -76,11 +81,11 @@ VMMR0DECL(int) DBGFR0Trap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
      * Are we single stepping or is it the guest?
      */
     if (    (uDr6 & X86_DR6_BS)
-        &&  (pVCpu->dbgf.s.fSingleSteppingRaw))
+        &&  (fInHyper || pVCpu->dbgf.s.fSingleSteppingRaw))
     {
         pVCpu->dbgf.s.fSingleSteppingRaw = false;
-        LogFlow(("DBGFR0Trap01Handler: single step at %04x:%RGv\n", pRegFrame->cs, pRegFrame->rip));
-        return VINF_EM_DBG_STEPPED;
+        LogFlow(("DBGFRZTrap01Handler: single step at %04x:%RGv\n", pRegFrame->cs, pRegFrame->rip));
+        return fInHyper ? VINF_EM_DBG_HYPER_STEPPED : VINF_EM_DBG_STEPPED;
     }
 
     /*
@@ -89,9 +94,9 @@ VMMR0DECL(int) DBGFR0Trap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
      */
     AssertMsg(uDr6 & X86_DR6_BS, ("hey! we're not doing guest BPs yet! dr6=%RTreg %04x:%RGv\n",
                                   uDr6, pRegFrame->cs, pRegFrame->rip));
-    /** @todo virtualize DRx. */
-    LogFlow(("DBGFR0Trap01Handler: guest debug event %RTreg at %04x:%RGv!\n", uDr6, pRegFrame->cs, pRegFrame->rip));
-    return VINF_EM_RAW_GUEST_TRAP;
+
+    LogFlow(("DBGFRZTrap01Handler: guest debug event %RTreg at %04x:%RGv!\n", uDr6, pRegFrame->cs, pRegFrame->rip));
+    return fInHyper ? VERR_INTERNAL_ERROR : VINF_EM_RAW_GUEST_TRAP;
 }
 
 
@@ -106,8 +111,14 @@ VMMR0DECL(int) DBGFR0Trap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
  * @param   pVCpu       The virtual CPU handle.
  * @param   pRegFrame   Pointer to the register frame for the trap.
  */
-VMMR0DECL(int) DBGFR0Trap03Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
+VMMRZDECL(int) DBGFRZTrap03Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
+#ifdef IN_RC
+    const bool fInHyper = !(pRegFrame->ss & X86_SEL_RPL) && !pRegFrame->eflags.Bits.u1VM;
+#else
+    const bool fInHyper = false;
+#endif
+
     /*
      * Get the trap address and look it up in the breakpoint table.
      * Don't bother if we don't have any breakpoints.
@@ -116,7 +127,12 @@ VMMR0DECL(int) DBGFR0Trap03Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
     {
         RTGCPTR pPc;
         int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid,
-                                              (RTGCPTR)pRegFrame->rip /* no -1 in R0 */, &pPc);
+#ifdef IN_RC
+                                              (RTGCPTR)((RTGCUINTPTR)pRegFrame->eip - 1),
+#else
+                                              (RTGCPTR)pRegFrame->rip /* no -1 in R0 */,
+#endif
+                                              &pPc);
         AssertRCReturn(rc, rc);
 
         for (unsigned iBp = 0; iBp < RT_ELEMENTS(pVM->dbgf.s.aBreakpoints); iBp++)
@@ -127,14 +143,18 @@ VMMR0DECL(int) DBGFR0Trap03Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
                 pVM->dbgf.s.aBreakpoints[iBp].cHits++;
                 pVCpu->dbgf.s.iActiveBp = pVM->dbgf.s.aBreakpoints[iBp].iBp;
 
-                LogFlow(("DBGFR0Trap03Handler: hit breakpoint %d at %RGv (%04x:%RGv) cHits=0x%RX64\n",
+                LogFlow(("DBGFRZTrap03Handler: hit breakpoint %d at %RGv (%04x:%RGv) cHits=0x%RX64\n",
                          pVM->dbgf.s.aBreakpoints[iBp].iBp, pPc, pRegFrame->cs, pRegFrame->rip,
                          pVM->dbgf.s.aBreakpoints[iBp].cHits));
-                return VINF_EM_DBG_BREAKPOINT;
+                return fInHyper
+                     ? VINF_EM_DBG_HYPER_BREAKPOINT
+                     : VINF_EM_DBG_BREAKPOINT;
             }
         }
     }
 
-    return VINF_EM_RAW_GUEST_TRAP;
+    return fInHyper
+         ? VINF_EM_DBG_HYPER_ASSERTION
+         : VINF_EM_RAW_GUEST_TRAP;
 }
 

@@ -44,23 +44,13 @@ __BEGIN_DECLS
  * @{
  */
 
-#ifdef IN_RC
-/** @addgroup grp_dbgf_gc  The RC DBGF API
+#if defined(IN_RC)|| defined(IN_RING0)
+/** @addgroup grp_dbgf_rz  The RZ DBGF API
  * @ingroup grp_dbgf
  * @{
  */
-VMMRCDECL(int) DBGFGCTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCUINTREG uDr6);
-VMMRCDECL(int) DBGFGCTrap03Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
-/** @} */
-#endif
-
-#ifdef IN_RING0
-/** @addgroup grp_dbgf_gc  The R0 DBGF API
- * @ingroup grp_dbgf
- * @{
- */
-VMMR0DECL(int) DBGFR0Trap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCUINTREG uDr6);
-VMMR0DECL(int) DBGFR0Trap03Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
+VMMRCDECL(int) DBGFRZTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCUINTREG uDr6);
+VMMRCDECL(int) DBGFRZTrap03Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
 /** @} */
 #endif
 

@@ -283,7 +283,7 @@ DECLASM(int) TRPMGCTrap01Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     /*
      * Now leave the rest to the DBGF.
      */
-    int rc = DBGFGCTrap01Handler(pVM, pVCpu, pRegFrame, uDr6);
+    int rc = DBGFRZTrap01Handler(pVM, pVCpu, pRegFrame, uDr6);
     if (rc == VINF_EM_RAW_GUEST_TRAP)
         CPUMSetGuestDR6(pVCpu, uDr6);
 
@@ -345,7 +345,7 @@ DECLASM(int) TRPMGCTrap03Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
             return rc;
         }
     }
-    rc = DBGFGCTrap03Handler(pVM, pVCpu, pRegFrame);
+    rc = DBGFRZTrap03Handler(pVM, pVCpu, pRegFrame);
 
     /* anything we should do with this? Schedule it in GC? */
     rc = trpmGCExitTrap(pVM, pVCpu, rc, pRegFrame);

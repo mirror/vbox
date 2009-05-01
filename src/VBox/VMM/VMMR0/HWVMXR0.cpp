@@ -2469,7 +2469,7 @@ ResumeExecution:
 
                 uDR6  = X86_DR6_INIT_VAL;
                 uDR6 |= (exitQualification & (X86_DR6_B0|X86_DR6_B1|X86_DR6_B2|X86_DR6_B3|X86_DR6_BD|X86_DR6_BS));
-                rc = DBGFR0Trap01Handler(pVM, pVCpu, CPUMCTX2CORE(pCtx), uDR6);
+                rc = DBGFRZTrap01Handler(pVM, pVCpu, CPUMCTX2CORE(pCtx), uDR6);
                 if (rc == VINF_EM_RAW_GUEST_TRAP)
                 {
                     /** @todo this isn't working, but we'll never get here normally. */
@@ -2500,10 +2500,9 @@ ResumeExecution:
                 break;
             }
 
-#ifdef DEBUG /* till after branching, enable by default after that. */
             case X86_XCPT_BP:   /* Breakpoint. */
             {
-                rc = DBGFR0Trap03Handler(pVM, pVCpu, CPUMCTX2CORE(pCtx));
+                rc = DBGFRZTrap03Handler(pVM, pVCpu, CPUMCTX2CORE(pCtx));
                 if (rc == VINF_EM_RAW_GUEST_TRAP)
                 {
                     Log(("Guest #BP at %04x:%RGv\n", pCtx->cs, pCtx->rip));
@@ -2516,7 +2515,6 @@ ResumeExecution:
                 Log(("Debugger BP at %04x:%RGv (rc=%Rrc)\n", pCtx->cs, pCtx->rip, rc));
                 break;
             }
-#endif
 
             case X86_XCPT_GP:   /* General protection failure exception.*/
             {
