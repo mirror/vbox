@@ -191,7 +191,7 @@ VMMDECL(void) PDMQueueFlush(PPDMQUEUE pQueue)
 
 #else /* IN_RING3: */
     PVMREQ pReq;
-    VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)PDMR3QueueFlushWorker, 2, pVM, pQueue);
+    VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)PDMR3QueueFlushWorker, 2, pVM, pQueue);
     VMR3ReqFree(pReq);
 #endif
 }

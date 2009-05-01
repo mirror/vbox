@@ -243,7 +243,7 @@ STDMETHODIMP HostUSB::AttachUSBDevice (HostUSBDevice *hostDevice)
 
     LogFlowMember (("Console::AttachUSBDevice: Proxying USB device '%s' %RTuuid...\n", Address.c_str(), &Uuid));
     PVMREQ pReq;
-    vrc = VMR3ReqCall (mpVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
+    vrc = VMR3ReqCall (mpVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
                        (PFNRT)pRhConfig->pfnCreateProxyDevice,
                        5, pRhConfig, &Uuid, fRemote,
                        Address.c_str(), pvRemote);
@@ -302,7 +302,7 @@ STDMETHODIMP HostUSB::DetachUSBDevice (HostUSBDevice *aDevice)
             RTUUID Uuid = aDevice->id();
             LogFlowMember (("Console::DetachUSBDevice: Detaching USB proxy device %RTuuid...\n", &Uuid));
             PVMREQ pReq;
-            vrc = VMR3ReqCall (mpVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)pRhConfig->pfnDestroyProxyDevice,
+            vrc = VMR3ReqCall (mpVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)pRhConfig->pfnDestroyProxyDevice,
                                2, pRhConfig, &Uuid);
             if (RT_SUCCESS (vrc))
                 vrc = pReq->iStatus;

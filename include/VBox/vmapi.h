@@ -265,28 +265,6 @@ typedef enum VMREQFLAGS
     VMREQFLAGS_NO_WAIT      = 2
 } VMREQFLAGS;
 
-/**
- * Request destination
- */
-typedef enum VMREQDEST
-{
-    /** Request packet for VCPU 0. */
-    VMREQDEST_CPU0              = 0,
-
-    /** Request packet for all VMCPU threads. */
-    VMREQDEST_BROADCAST         = 0x1000,
-
-    /** Request packet for all VMCPU threads. (sent in reverse order) */
-    VMREQDEST_BROADCAST_REVERSE = 0x1001,
-
-    /** Request packet for any VMCPU thread. */
-    VMREQDEST_ANY               = 0x1002
-} VMREQDEST;
-
-/** Makes a VMREQDEST value from a VMCPU pointer. */
-#define VMREQDEST_FROM_VMCPU(pVCpu)     ((VMREQDEST)(pVCpu)->idCpu)
-/** Makes a VMREQDEST value from a virtual CPU ID. */
-#define VMREQDEST_FROM_ID(idCpu)        ((VMREQDEST)(idCpu))
 
 /**
  * VM Request packet.
@@ -317,7 +295,7 @@ typedef struct VMREQ
     /** Request type. */
     VMREQTYPE               enmType;
     /** Request destination. */
-    VMREQDEST               enmDest;
+    VMCPUID                 idDstCpu;
     /** Request specific data. */
     union VMREQ_U
     {
@@ -425,18 +403,18 @@ VMMR3DECL(void) VMR3SetErrorWorker(PVM pVM);
 VMMR3DECL(int)  VMR3AtRuntimeErrorRegister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser);
 VMMR3DECL(int)  VMR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser);
 VMMR3DECL(int)  VMR3SetRuntimeErrorWorker(PVM pVM);
-VMMR3DECL(int)  VMR3ReqCall(PVM pVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...);
-VMMR3DECL(int)  VMR3ReqCallVoidU(PUVM pUVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...);
-VMMR3DECL(int)  VMR3ReqCallVoid(PVM pVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...);
-VMMR3DECL(int)  VMR3ReqCallEx(PVM pVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
-VMMR3DECL(int)  VMR3ReqCallU(PUVM pUVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
-VMMR3DECL(int)  VMR3ReqCallVU(PUVM pUVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args);
-VMMR3DECL(int)  VMR3ReqAlloc(PVM pVM, PVMREQ *ppReq, VMREQTYPE enmType, VMREQDEST enmDest);
-VMMR3DECL(int)  VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType, VMREQDEST enmDest);
+VMMR3DECL(int)  VMR3ReqCall(PVM pVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...);
+VMMR3DECL(int)  VMR3ReqCallVoidU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...);
+VMMR3DECL(int)  VMR3ReqCallVoid(PVM pVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...);
+VMMR3DECL(int)  VMR3ReqCallEx(PVM pVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
+VMMR3DECL(int)  VMR3ReqCallU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
+VMMR3DECL(int)  VMR3ReqCallVU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args);
+VMMR3DECL(int)  VMR3ReqAlloc(PVM pVM, PVMREQ *ppReq, VMREQTYPE enmType, VMCPUID idDstCpu);
+VMMR3DECL(int)  VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType, VMCPUID idDstCpu);
 VMMR3DECL(int)  VMR3ReqFree(PVMREQ pReq);
 VMMR3DECL(int)  VMR3ReqQueue(PVMREQ pReq, unsigned cMillies);
 VMMR3DECL(int)  VMR3ReqWait(PVMREQ pReq, unsigned cMillies);
-VMMR3DECL(int)  VMR3ReqProcessU(PUVM pUVM, VMREQDEST enmDest);
+VMMR3DECL(int)  VMR3ReqProcessU(PUVM pUVM, VMCPUID idDstCpu);
 VMMR3DECL(void) VMR3NotifyGlobalFF(PVM pVM, bool fNotifiedREM);
 VMMR3DECL(void) VMR3NotifyGlobalFFU(PUVM pUVM, bool fNotifiedREM);
 VMMR3DECL(void) VMR3NotifyCpuFF(PVMCPU pVCpu, bool fNotifiedREM);

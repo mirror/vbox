@@ -122,7 +122,7 @@ VMMR3DECL(int) DBGFR3MemScan(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, RTG
     AssertReturn(idCpu < pVM->cCPUs, VERR_INVALID_PARAMETER);
 
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_FROM_ID(idCpu), &pReq, RT_INDEFINITE_WAIT,
+    int rc = VMR3ReqCall(pVM, idCpu, &pReq, RT_INDEFINITE_WAIT,
                          (PFNRT)dbgfR3MemScan, 7, pVM, idCpu, pAddress, &cbRange, pabNeedle, cbNeedle, pHitAddress);
     if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
@@ -204,7 +204,7 @@ VMMR3DECL(int) DBGFR3MemRead(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, voi
     AssertReturn(idCpu < pVM->cCPUs, VERR_INVALID_PARAMETER);
 
     PVMREQ pReq;
-    int rc = VMR3ReqCallU(pVM->pUVM, VMREQDEST_FROM_ID(idCpu), &pReq, RT_INDEFINITE_WAIT, 0,
+    int rc = VMR3ReqCallU(pVM->pUVM, idCpu, &pReq, RT_INDEFINITE_WAIT, 0,
                           (PFNRT)dbgfR3MemRead, 5, pVM, idCpu, pAddress, pvBuf, cbRead);
     if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
@@ -289,7 +289,7 @@ VMMR3DECL(int) DBGFR3MemReadString(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddres
      * Pass it on to the EMT.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCallU(pVM->pUVM, VMREQDEST_FROM_ID(idCpu), &pReq, RT_INDEFINITE_WAIT, 0,
+    int rc = VMR3ReqCallU(pVM->pUVM, idCpu, &pReq, RT_INDEFINITE_WAIT, 0,
                           (PFNRT)dbgfR3MemReadString, 5, pVM, idCpu, pAddress, pszBuf, cchBuf);
     if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
@@ -372,7 +372,7 @@ VMMR3DECL(int) DBGFR3MemWrite(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, vo
     AssertReturn(idCpu < pVM->cCPUs, VERR_INVALID_PARAMETER);
 
     PVMREQ pReq;
-    int rc = VMR3ReqCallU(pVM->pUVM, VMREQDEST_FROM_ID(idCpu), &pReq, RT_INDEFINITE_WAIT, 0,
+    int rc = VMR3ReqCallU(pVM->pUVM, idCpu, &pReq, RT_INDEFINITE_WAIT, 0,
                           (PFNRT)dbgfR3MemWrite, 5, pVM, idCpu, pAddress, pvBuf, cbWrite);
     if (RT_SUCCESS(rc))
         rc = pReq->iStatus;

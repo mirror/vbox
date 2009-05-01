@@ -362,7 +362,7 @@ int main(int argc, char **argv)
         if (fPowerOn)
         {
             PVMREQ pReq;
-            rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)VMR3PowerOn, 1, pVM);
+            rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)VMR3PowerOn, 1, pVM);
             if (RT_SUCCESS(rc))
             {
                 rc = pReq->iStatus;
@@ -377,7 +377,7 @@ int main(int argc, char **argv)
                     /*
                      * Power Off the VM.
                      */
-                    rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)VMR3PowerOff, 1, pVM);
+                    rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)VMR3PowerOff, 1, pVM);
                     if (RT_SUCCESS(rc))
                     {
                         rc = pReq->iStatus;

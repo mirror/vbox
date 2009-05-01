@@ -60,7 +60,9 @@ static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq);
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
  * @param   pVM             The VM handle.
- * @param   enmDest         Destination of the request packet (global or per VCPU).
+ * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
+ *                          one of the following special values:
+ *                              VMCPUID_ANY, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happends.
  * @param   cMillies        Number of milliseconds to wait for the request to
@@ -71,11 +73,11 @@ static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq);
  *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
  */
-VMMR3DECL(int) VMR3ReqCall(PVM pVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
+VMMR3DECL(int) VMR3ReqCall(PVM pVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
 {
     va_list va;
     va_start(va, cArgs);
-    int rc = VMR3ReqCallVU(pVM->pUVM, enmDest, ppReq, cMillies, VMREQFLAGS_VBOX_STATUS, pfnFunction, cArgs, va);
+    int rc = VMR3ReqCallVU(pVM->pUVM, idDstCpu, ppReq, cMillies, VMREQFLAGS_VBOX_STATUS, pfnFunction, cArgs, va);
     va_end(va);
     return rc;
 }
@@ -94,7 +96,9 @@ VMMR3DECL(int) VMR3ReqCall(PVM pVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned c
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
  * @param   pUVM            Pointer to the user mode VM structure.
- * @param   enmDest         Destination of the request packet (global or per VCPU).
+ * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
+ *                          one of the following special values:
+ *                              VMCPUID_ANY, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happends.
  * @param   cMillies        Number of milliseconds to wait for the request to
@@ -105,11 +109,11 @@ VMMR3DECL(int) VMR3ReqCall(PVM pVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned c
  *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
  */
-VMMR3DECL(int) VMR3ReqCallVoidU(PUVM pUVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
+VMMR3DECL(int) VMR3ReqCallVoidU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
 {
     va_list va;
     va_start(va, cArgs);
-    int rc = VMR3ReqCallVU(pUVM, enmDest, ppReq, cMillies, VMREQFLAGS_VOID, pfnFunction, cArgs, va);
+    int rc = VMR3ReqCallVU(pUVM, idDstCpu, ppReq, cMillies, VMREQFLAGS_VOID, pfnFunction, cArgs, va);
     va_end(va);
     return rc;
 }
@@ -128,7 +132,9 @@ VMMR3DECL(int) VMR3ReqCallVoidU(PUVM pUVM, VMREQDEST enmDest, PVMREQ *ppReq, uns
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
  * @param   pVM             The VM handle.
- * @param   enmDest         Destination of the request packet (global or per VCPU).
+ * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
+ *                          one of the following special values:
+ *                              VMCPUID_ANY, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happends.
  * @param   cMillies        Number of milliseconds to wait for the request to
@@ -139,11 +145,11 @@ VMMR3DECL(int) VMR3ReqCallVoidU(PUVM pUVM, VMREQDEST enmDest, PVMREQ *ppReq, uns
  *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
  */
-VMMR3DECL(int) VMR3ReqCallVoid(PVM pVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
+VMMR3DECL(int) VMR3ReqCallVoid(PVM pVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
 {
     va_list va;
     va_start(va, cArgs);
-    int rc = VMR3ReqCallVU(pVM->pUVM, enmDest, ppReq, cMillies, VMREQFLAGS_VOID, pfnFunction, cArgs, va);
+    int rc = VMR3ReqCallVU(pVM->pUVM, idDstCpu, ppReq, cMillies, VMREQFLAGS_VOID, pfnFunction, cArgs, va);
     va_end(va);
     return rc;
 }
@@ -162,7 +168,9 @@ VMMR3DECL(int) VMR3ReqCallVoid(PVM pVM, VMREQDEST enmDest, PVMREQ *ppReq, unsign
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
  * @param   pVM             The VM handle.
- * @param   enmDest         Destination of the request packet (global or per VCPU).
+ * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
+ *                          one of the following special values:
+ *                              VMCPUID_ANY, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happends, unless fFlags
  *                          contains VMREQFLAGS_NO_WAIT when it will be optional and always NULL.
@@ -175,11 +183,11 @@ VMMR3DECL(int) VMR3ReqCallVoid(PVM pVM, VMREQDEST enmDest, PVMREQ *ppReq, unsign
  *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
  */
-VMMR3DECL(int) VMR3ReqCallEx(PVM pVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...)
+VMMR3DECL(int) VMR3ReqCallEx(PVM pVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...)
 {
     va_list va;
     va_start(va, cArgs);
-    int rc = VMR3ReqCallVU(pVM->pUVM, enmDest, ppReq, cMillies, fFlags, pfnFunction, cArgs, va);
+    int rc = VMR3ReqCallVU(pVM->pUVM, idDstCpu, ppReq, cMillies, fFlags, pfnFunction, cArgs, va);
     va_end(va);
     return rc;
 }
@@ -198,7 +206,9 @@ VMMR3DECL(int) VMR3ReqCallEx(PVM pVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
  * @param   pUVM            Pointer to the user mode VM structure.
- * @param   enmDest         Destination of the request packet (global or per VCPU).
+ * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
+ *                          one of the following special values:
+ *                              VMCPUID_ANY, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happends, unless fFlags
  *                          contains VMREQFLAGS_NO_WAIT when it will be optional and always NULL.
@@ -211,11 +221,11 @@ VMMR3DECL(int) VMR3ReqCallEx(PVM pVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned
  *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
  */
-VMMR3DECL(int) VMR3ReqCallU(PUVM pUVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...)
+VMMR3DECL(int) VMR3ReqCallU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...)
 {
     va_list va;
     va_start(va, cArgs);
-    int rc = VMR3ReqCallVU(pUVM, enmDest, ppReq, cMillies, fFlags, pfnFunction, cArgs, va);
+    int rc = VMR3ReqCallVU(pUVM, idDstCpu, ppReq, cMillies, fFlags, pfnFunction, cArgs, va);
     va_end(va);
     return rc;
 }
@@ -234,7 +244,9 @@ VMMR3DECL(int) VMR3ReqCallU(PUVM pUVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigne
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
  * @param   pUVM            Pointer to the user mode VM structure.
- * @param   enmDest         Destination of the request packet (global or per VCPU).
+ * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
+ *                          one of the following special values:
+ *                              VMCPUID_ANY, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happends, unless fFlags
  *                          contains VMREQFLAGS_NO_WAIT when it will be optional and always NULL.
@@ -247,7 +259,7 @@ VMMR3DECL(int) VMR3ReqCallU(PUVM pUVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigne
  *                          Stuff which differs in size from uintptr_t is gonna make trouble, so don't try!
  * @param   Args            Argument vector.
  */
-VMMR3DECL(int) VMR3ReqCallVU(PUVM pUVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args)
+VMMR3DECL(int) VMR3ReqCallVU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args)
 {
     LogFlow(("VMR3ReqCallV: cMillies=%d fFlags=%#x pfnFunction=%p cArgs=%d\n", cMillies, fFlags, pfnFunction, cArgs));
 
@@ -270,7 +282,7 @@ VMMR3DECL(int) VMR3ReqCallVU(PUVM pUVM, VMREQDEST enmDest, PVMREQ *ppReq, unsign
     /*
      * Allocate request
      */
-    int rc = VMR3ReqAllocU(pUVM, &pReq, VMREQTYPE_INTERNAL, enmDest);
+    int rc = VMR3ReqAllocU(pUVM, &pReq, VMREQTYPE_INTERNAL, idDstCpu);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -369,11 +381,13 @@ static void vmr3ReqJoinFree(PVMINTUSERPERVM pVMInt, PVMREQ pList)
  * @param   pVM             VM handle.
  * @param   ppReq           Where to store the pointer to the allocated packet.
  * @param   enmType         Package type.
- * @param   enmDest         Destination of the request packet (global or per VCPU).
+ * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
+ *                          one of the following special values:
+ *                              VMCPUID_ANY, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  */
-VMMR3DECL(int) VMR3ReqAlloc(PVM pVM, PVMREQ *ppReq, VMREQTYPE enmType, VMREQDEST enmDest)
+VMMR3DECL(int) VMR3ReqAlloc(PVM pVM, PVMREQ *ppReq, VMREQTYPE enmType, VMCPUID idDstCpu)
 {
-    return VMR3ReqAllocU(pVM->pUVM, ppReq, enmType, enmDest);
+    return VMR3ReqAllocU(pVM->pUVM, ppReq, enmType, idDstCpu);
 }
 
 
@@ -388,9 +402,11 @@ VMMR3DECL(int) VMR3ReqAlloc(PVM pVM, PVMREQ *ppReq, VMREQTYPE enmType, VMREQDEST
  * @param   pUVM            Pointer to the user mode VM structure.
  * @param   ppReq           Where to store the pointer to the allocated packet.
  * @param   enmType         Package type.
- * @param   enmDest         Destination of the request packet (global or per VCPU).
+ * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
+ *                          one of the following special values:
+ *                              VMCPUID_ANY, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  */
-VMMR3DECL(int) VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType, VMREQDEST enmDest)
+VMMR3DECL(int) VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType, VMCPUID idDstCpu)
 {
     /*
      * Validate input.
@@ -400,11 +416,11 @@ VMMR3DECL(int) VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType, VMREQD
                      enmType, VMREQTYPE_INVALID + 1, VMREQTYPE_MAX - 1),
                     VERR_VM_REQUEST_INVALID_TYPE);
     AssertPtrReturn(ppReq, VERR_INVALID_POINTER);
-    AssertMsgReturn(    enmDest == VMREQDEST_ANY
-                    ||  enmDest == VMREQDEST_BROADCAST
-                    ||  enmDest == VMREQDEST_BROADCAST_REVERSE
-                    || (unsigned)enmDest < pUVM->cCpus,
-                    ("Invalid destination %d (max=%d)\n", enmDest, pUVM->cCpus), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(    idDstCpu == VMCPUID_ANY
+                    ||  idDstCpu < pUVM->cCpus
+                    ||  idDstCpu == VMCPUID_ALL
+                    ||  idDstCpu == VMCPUID_ALL_REVERSE,
+                    ("Invalid destination %u (max=%u)\n", idDstCpu, pUVM->cCpus), VERR_INVALID_PARAMETER);
 
     /*
      * Try get a recycled packet.
@@ -475,7 +491,7 @@ VMMR3DECL(int) VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType, VMREQD
             pReq->iStatus  = VERR_VM_REQUEST_STATUS_STILL_PENDING;
             pReq->fFlags   = VMREQFLAGS_VBOX_STATUS;
             pReq->enmType  = enmType;
-            pReq->enmDest  = enmDest;
+            pReq->idDstCpu = idDstCpu;
 
             *ppReq = pReq;
             STAM_COUNTER_INC(&pUVM->vm.s.StatReqAllocRecycled);
@@ -512,7 +528,7 @@ VMMR3DECL(int) VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType, VMREQD
     pReq->fEventSemClear = true;
     pReq->fFlags   = VMREQFLAGS_VBOX_STATUS;
     pReq->enmType  = enmType;
-    pReq->enmDest  = enmDest;
+    pReq->idDstCpu = idDstCpu;
 
     *ppReq = pReq;
     STAM_COUNTER_INC(&pUVM->vm.s.StatReqAllocNew);
@@ -625,7 +641,7 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
     PUVM    pUVM    = ((VMREQ volatile *)pReq)->pUVM;                 /* volatile paranoia */
     PUVMCPU pUVCpu  = (PUVMCPU)RTTlsGet(pUVM->vm.s.idxTLS);
 
-    if (pReq->enmDest == VMREQDEST_BROADCAST)
+    if (pReq->idDstCpu == VMCPUID_ALL)
     {
         /* One-by-one. */
         Assert(!(pReq->fFlags & VMREQFLAGS_NO_WAIT));
@@ -633,13 +649,13 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
         {
             /* Reinit some members. */
             pReq->enmState = VMREQSTATE_ALLOCATED;
-            pReq->enmDest = (VMREQDEST)i;
+            pReq->idDstCpu = i;
             rc = VMR3ReqQueue(pReq, cMillies);
             if (RT_FAILURE(rc))
                 break;
         }
     }
-    else if (pReq->enmDest == VMREQDEST_BROADCAST_REVERSE)
+    else if (pReq->idDstCpu == VMCPUID_ALL_REVERSE)
     {
         /* One-by-one. */
         Assert(!(pReq->fFlags & VMREQFLAGS_NO_WAIT));
@@ -647,17 +663,17 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
         {
             /* Reinit some members. */
             pReq->enmState = VMREQSTATE_ALLOCATED;
-            pReq->enmDest  = (VMREQDEST)i;
+            pReq->idDstCpu = i;
             rc = VMR3ReqQueue(pReq, cMillies);
             if (RT_FAILURE(rc))
                 break;
         }
     }
-    else if (   pReq->enmDest != VMREQDEST_ANY  /* for a specific VMCPU? */
-             && (   !pUVCpu /* not an EMT */
-                 || pUVCpu->idCpu != (unsigned)pReq->enmDest))
+    else if (   pReq->idDstCpu != VMCPUID_ANY  /* for a specific VMCPU? */
+             && (   !pUVCpu                    /* and it's not the current thread. */
+                 || pUVCpu->idCpu != pReq->idDstCpu))
     {
-        RTCPUID  idTarget = (RTCPUID)pReq->enmDest;     Assert(idTarget < pUVM->cCpus);
+        VMCPUID  idTarget = pReq->idDstCpu;     Assert(idTarget < pUVM->cCpus);
         PVMCPU   pVCpu = &pUVM->pVM->aCpus[idTarget];
         unsigned fFlags = ((VMREQ volatile *)pReq)->fFlags;     /* volatile paranoia */
 
@@ -689,7 +705,7 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
             rc = VMR3ReqWait(pReq, cMillies);
         LogFlow(("VMR3ReqQueue: returns %Rrc\n", rc));
     }
-    else if (    pReq->enmDest == VMREQDEST_ANY
+    else if (    pReq->idDstCpu == VMCPUID_ANY
              &&  !pUVCpu /* only EMT threads have a valid pointer stored in the TLS slot. */)
     {
         unsigned fFlags = ((VMREQ volatile *)pReq)->fFlags;     /* volatile paranoia */
@@ -808,11 +824,13 @@ VMMR3DECL(int) VMR3ReqWait(PVMREQ pReq, unsigned cMillies)
  * @returns VBox status code.
  *
  * @param   pUVM            Pointer to the user mode VM structure.
- * @param   enmDest         Destination of the request packet (global or per VCPU).
+ * @param   idDstCpu        Pass VMCPUID_ANY to process the common request queue
+ *                          and the CPU ID for a CPU specific one. In the latter
+ *                          case the calling thread must be the EMT of that CPU.
  */
-VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMREQDEST enmDest)
+VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMCPUID idDstCpu)
 {
-    LogFlow(("VMR3ReqProcessU: (enmVMState=%d) enmDest=%d\n", pUVM->pVM ? pUVM->pVM->enmVMState : VMSTATE_CREATING, enmDest));
+    LogFlow(("VMR3ReqProcessU: (enmVMState=%d) idDstCpu=%d\n", pUVM->pVM ? pUVM->pVM->enmVMState : VMSTATE_CREATING, idDstCpu));
 
     /*
      * Process loop.
@@ -826,8 +844,8 @@ VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMREQDEST enmDest)
         /*
          * Get pending requests.
          */
-        void *volatile *ppReqs;
-        if (enmDest == VMREQDEST_ANY)
+        void * volatile *ppReqs;
+        if (idDstCpu == VMCPUID_ANY)
         {
             ppReqs = (void * volatile *)&pUVM->vm.s.pReqs;
             if (RT_LIKELY(pUVM->pVM))
@@ -835,11 +853,12 @@ VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMREQDEST enmDest)
         }
         else
         {
-            ppReqs = (void * volatile *)&pUVM->aCpus[enmDest].vm.s.pReqs;
+            Assert(idDstCpu < pUVM->cCpus);
+            Assert(pUVM->aCpus[idDstCpu].vm.s.NativeThreadEMT == RTThreadNativeSelf());
+            ppReqs = (void * volatile *)&pUVM->aCpus[idDstCpu].vm.s.pReqs;
             if (RT_LIKELY(pUVM->pVM))
-                VMCPU_FF_CLEAR(&pUVM->pVM->aCpus[enmDest], VMCPU_FF_REQUEST);
+                VMCPU_FF_CLEAR(&pUVM->pVM->aCpus[idDstCpu], VMCPU_FF_REQUEST);
         }
-
         PVMREQ pReqs = (PVMREQ)ASMAtomicXchgPtr(ppReqs, NULL);
         if (!pReqs)
             break;

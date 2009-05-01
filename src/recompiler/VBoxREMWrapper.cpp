@@ -932,7 +932,7 @@ static const REMPARMDESC g_aArgsTRPMSetFaultAddress[] =
 static const REMPARMDESC g_aArgsVMR3ReqCall[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(VMREQDEST), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(VMCPUID), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PVMREQ *), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(unsigned), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(void *), NULL },
