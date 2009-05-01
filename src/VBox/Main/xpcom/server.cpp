@@ -771,12 +771,12 @@ int main (int argc, char **argv)
     const struct option options[] =
     {
         { "automate",       no_argument,        NULL, 'a' },
-#ifdef RT_OS_DARWIN
+# if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
         { "auto-shutdown",  no_argument,        NULL, 'A' },
 #endif
         { "daemonize",      no_argument,        NULL, 'd' },
         { "pidfile",        required_argument,  NULL, 'p' },
-#ifdef RT_OS_DARWIN
+# if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
         { "pipe",           required_argument,  NULL, 'P' },
 #endif
         { NULL,             0,                  NULL,  0  }
@@ -805,7 +805,7 @@ int main (int argc, char **argv)
                 break;
             }
 
-#ifdef RT_OS_DARWIN
+# if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
             /* Used together with '-P', see below. Internal use only. */
             case 'A':
             {
@@ -826,7 +826,7 @@ int main (int argc, char **argv)
                 break;
             }
 
-#ifdef RT_OS_DARWIN
+# if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
             /* we need to exec on darwin, this is just an internal
              * hack for passing the pipe fd along to the final child. */
             case 'P':
@@ -932,12 +932,17 @@ int main (int argc, char **argv)
         /* close the reading end of the pipe */
         close(daemon_pipe_fds[0]);
 
-# ifdef RT_OS_DARWIN
+# if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
         /*
          * On leopard we're no longer allowed to use some of the core API's
          * after forking - this will cause us to hit an int3.
          * So, we'll have to execv VBoxSVC once again and hand it the pipe
          * and all other relevant options.
+         *
+         * On FreeBSD the fork approach doesn't work. The child fails
+         * during initialization of XPCOM for some unknown reason and
+         * exits making it impossible to autostart VBoxSVC when starting
+         * a frontend (debugger and strace don't contain any useful info).
          */
         const char *apszArgs[7];
         unsigned i = 0;
