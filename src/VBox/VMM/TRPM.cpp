@@ -466,11 +466,12 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
     pVM->trpm.s.offVM              = RT_OFFSETOF(VM, trpm);
     pVM->trpm.s.offTRPMCPU         = RT_OFFSETOF(VM, aCpus[0].trpm) - RT_OFFSETOF(VM, trpm);
 
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
         pVCpu->trpm.s.offVM         = RT_OFFSETOF(VM, aCpus[i].trpm);
+        pVCpu->trpm.s.offVMCpu      = RT_OFFSETOF(VMCPU, trpm);
         pVCpu->trpm.s.uActiveVector = ~0;
     }
 

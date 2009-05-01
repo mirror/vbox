@@ -72,22 +72,17 @@ __BEGIN_DECLS
  * @returns Pointer to the VM structure the TRPM is part of.
  * @param   pTRPM   Pointer to TRPM instance data.
  */
-#define TRPM2VM(pTRPM)          ( (PVM)((char*)pTRPM - pTRPM->offVM) )
+#define TRPM_2_VM(pTRPM)            ( (PVM)((uint8_t *)(pTRPM) - (pTRPM)->offVM) )
 #endif
-
-/**
- * Converts a TRPMCPU pointer into a VM pointer.
- * @returns Pointer to the VM structure the TRPMCPU is part of.
- * @param   pTRPM   Pointer to TRPMCPU instance data.
- */
-#define TRPMCPU2VM(pTrpmCpu)    ( (PVM)((char*)pTrpmCpu - pTrpmCpu->offVM) )
 
 /**
  * Converts a TRPM pointer into a TRPMCPU pointer.
  * @returns Pointer to the VM structure the TRPMCPU is part of.
  * @param   pTRPM   Pointer to TRPMCPU instance data.
+ * @remarks Raw-mode only, not SMP safe.
  */
-#define TRPM2TRPMCPU(pTrpmCpu)     ( (PTRPMCPU)((char*)pTrpmCpu + pTrpmCpu->offTRPMCPU) )
+#define TRPM_2_TRPMCPU(pTrpmCpu)     ( (PTRPMCPU)((uint8_t *)(pTrpmCpu) + (pTrpmCpu)->offTRPMCPU) )
+
 
 /**
  * TRPM Data (part of VM)
@@ -98,7 +93,7 @@ __BEGIN_DECLS
 typedef struct TRPM
 {
     /** Offset to the VM structure.
-     * See TRPM2VM(). */
+     * See TRPM_2_VM(). */
     RTINT                   offVM;
     /** Offset to the TRPMCPU structure.
      * See TRPM2TRPMCPU(). */
@@ -177,11 +172,33 @@ typedef struct TRPM
 typedef TRPM *PTRPM;
 
 
+/**
+ * Converts a TRPMCPU pointer into a VM pointer.
+ * @returns Pointer to the VM structure the TRPMCPU is part of.
+ * @param   pTRPM   Pointer to TRPMCPU instance data.
+ */
+#define TRPMCPU_2_VM(pTrpmCpu)      ( (PVM)((uint8_t *)(pTrpmCpu) - (pTrpmCpu)->offVM) )
+
+/**
+ * Converts a TRPMCPU pointer into a VMCPU pointer.
+ * @returns Pointer to the VMCPU structure the TRPMCPU is part of.
+ * @param   pTRPM   Pointer to TRPMCPU instance data.
+ */
+#define TRPMCPU_2_VMCPU(pTrpmCpu)   ( (PVMCPU)((uint8_t *)(pTrpmCpu) - (pTrpmCpu)->offVMCpu) )
+
+
+/**
+ * Per CPU data for TRPM.
+ */
 typedef struct TRPMCPU
 {
-    /** Offset to the VM structure.
-     * See TRPMCPU2VM(). */
-    RTINT                   offVM;
+    /** Offset into the VM structure.
+     * See TRPMCPU_2_VM(). */
+    uint32_t                offVM;
+    /** Offset into the VMCPU structure.
+     * See TRPMCPU_2_VMCPU().  */
+    uint32_t                offVMCpu;
+
     /** Active Interrupt or trap vector number.
      * If not ~0U this indicates that we're currently processing
      * a interrupt, trap, fault, abort, whatever which have arrived

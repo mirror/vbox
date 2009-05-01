@@ -559,16 +559,16 @@ VMMR3DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, 
  * @retval  VERR_INVALID_ARGUMENT if any other arguments are invalid.
  *
  * @param   pVM             Pointer to the shared VM structure.
+ * @param   pVCpu           The CPU context to search in.
  * @param   GCPtr           Where to start searching.
  * @param   cbRange         The number of bytes to search. Max 256 bytes.
  * @param   pabNeedle       The byte string to search for.
  * @param   cbNeedle        The length of the byte string.
  * @param   pGCPtrHit       Where to store the address of the first occurence on success.
  */
-VMMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, RTGCPTR GCPtr, RTGCPTR cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PRTGCUINTPTR pGCPtrHit)
+VMMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RTGCPTR cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PRTGCUINTPTR pGCPtrHit)
 {
-    /** @todo SMP support! */
-    PVMCPU pVCpu = &pVM->aCpus[0];
+    VMCPU_ASSERT_EMT(pVCpu);
 
     /*
      * Validate and adjust the input a bit.

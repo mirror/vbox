@@ -40,18 +40,20 @@
 /**
  * Read stack memory.
  */
-DECLINLINE(int) dbgfR3Read(PVM pVM, void *pvBuf, RTGCUINTPTR GCPtr, size_t cb, size_t *pcbRead)
+DECLINLINE(int) dbgfR3Read(PVM pVM, void *pvBuf, PCDBGFADDRESS pSrcAddr, size_t cb, size_t *pcbRead)
 {
-    /* @todo SMP support! */
-    PVMCPU pVCpu = &pVM->aCpus[0];
+    /** @todo SMP support! */
+    VMCPUID idCpu = 0;
 
-    int rc = DBGFR3ReadGCVirt(pVM, pVCpu, pvBuf, GCPtr, cb);
+    int rc = DBGFR3MemRead(pVM, idCpu, pSrcAddr, pvBuf, cb);
     if (RT_FAILURE(rc))
     {
+        /* fallback: byte by byte and zero the ones we fail to read. */
         size_t cbRead;
         for (cbRead = 0; cbRead < cb; cbRead++)
         {
-            rc = DBGFR3ReadGCVirt(pVM, pVCpu, (uint8_t *)pvBuf + cbRead, GCPtr + cbRead, 1);
+            DBGFADDRESS Addr = *pSrcAddr;
+            rc = DBGFR3MemRead(pVM, idCpu, DBGFR3AddrAdd(&Addr, cbRead), (uint8_t *)pvBuf + cbRead, 1);
             if (RT_FAILURE(rc))
                 break;
         }
@@ -82,6 +84,8 @@ DECLINLINE(int) dbgfR3Read(PVM pVM, void *pvBuf, RTGCUINTPTR GCPtr, size_t cb, s
  */
 static int dbgfR3StackWalk(PVM pVM, PDBGFSTACKFRAME pFrame)
 {
+    VMCPUID idCpu = 0; /** @todo SMP */
+
     /*
      * Stop if we got a read error in the previous run.
      */
@@ -119,8 +123,8 @@ static int dbgfR3StackWalk(PVM pVM, PDBGFSTACKFRAME pFrame)
     Assert(DBGFADDRESS_IS_VALID(&pFrame->AddrFrame));
     int rc = dbgfR3Read(pVM, u.pv,
                         pFrame->fFlags & DBGFSTACKFRAME_FLAGS_ALL_VALID
-                        ? pFrame->AddrReturnFrame.FlatPtr
-                        : pFrame->AddrFrame.FlatPtr,
+                        ? &pFrame->AddrReturnFrame
+                        : &pFrame->AddrFrame,
                         cbRead, &cbRead);
     if (    RT_FAILURE(rc)
         ||  cbRead < cbRetAddr + cbStackItem)
@@ -205,28 +209,28 @@ static int dbgfR3StackWalk(PVM pVM, PDBGFSTACKFRAME pFrame)
                 DBGFR3AddrFromFlat(pVM, &pFrame->AddrReturnPC, *uRet.pu64);
             break;
         case DBGFRETURNTYPE_FAR16:
-            DBGFR3AddrFromSelOff(pVM, &pFrame->AddrReturnPC, uRet.pu16[1], uRet.pu16[0]);
+            DBGFR3AddrFromSelOff(pVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[1], uRet.pu16[0]);
             break;
         case DBGFRETURNTYPE_FAR32:
-            DBGFR3AddrFromSelOff(pVM, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
+            DBGFR3AddrFromSelOff(pVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
             break;
         case DBGFRETURNTYPE_FAR64:
-            DBGFR3AddrFromSelOff(pVM, &pFrame->AddrReturnPC, uRet.pu16[4], uRet.pu64[0]);
+            DBGFR3AddrFromSelOff(pVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[4], uRet.pu64[0]);
             break;
         case DBGFRETURNTYPE_IRET16:
-            DBGFR3AddrFromSelOff(pVM, &pFrame->AddrReturnPC, uRet.pu16[1], uRet.pu16[0]);
+            DBGFR3AddrFromSelOff(pVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[1], uRet.pu16[0]);
             break;
         case DBGFRETURNTYPE_IRET32:
-            DBGFR3AddrFromSelOff(pVM, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
+            DBGFR3AddrFromSelOff(pVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
             break;
         case DBGFRETURNTYPE_IRET32_PRIV:
-            DBGFR3AddrFromSelOff(pVM, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
+            DBGFR3AddrFromSelOff(pVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
             break;
         case DBGFRETURNTYPE_IRET32_V86:
-            DBGFR3AddrFromSelOff(pVM, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
+            DBGFR3AddrFromSelOff(pVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
             break;
         case DBGFRETURNTYPE_IRET64:
-            DBGFR3AddrFromSelOff(pVM, &pFrame->AddrReturnPC, uRet.pu16[4], uRet.pu64[0]);
+            DBGFR3AddrFromSelOff(pVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[4], uRet.pu64[0]);
             break;
         default:
             AssertMsgFailed(("enmReturnType=%d\n", pFrame->enmReturnType));
@@ -250,6 +254,8 @@ static int dbgfR3StackWalk(PVM pVM, PDBGFSTACKFRAME pFrame)
  */
 static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PVM pVM, PDBGFSTACKFRAME pFrame, PCCPUMCTXCORE pCtxCore, bool fGuest)
 {
+    VMCPUID idCpu = 0; /** @todo SMP */
+
     pFrame->pNext = NULL;
     pFrame->pFirst = NULL;
 
@@ -268,7 +274,7 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PVM pVM, PDBGFSTACKFRAME pFrame,
 
     int rc = VINF_SUCCESS;
     if (!DBGFADDRESS_IS_VALID(&pCur->AddrPC))
-        rc = DBGFR3AddrFromSelOff(pVM, &pCur->AddrPC, pCtxCore->cs, pCtxCore->eip);
+        rc = DBGFR3AddrFromSelOff(pVM, idCpu, &pCur->AddrPC, pCtxCore->cs, pCtxCore->eip);
     if (RT_SUCCESS(rc) /*&& pCur->enmReturnType == DBGFRETURNTYPE_INVALID*/)
     {
         switch (pCur->AddrPC.fFlags & DBGFADDRESS_FLAGS_TYPE_MASK)
@@ -283,9 +289,9 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PVM pVM, PDBGFSTACKFRAME pFrame,
     if (RT_SUCCESS(rc) && DBGFADDRESS_IS_FAR16(&pCur->AddrPC) && fGuest)
         u64Mask = UINT16_MAX;
     if (RT_SUCCESS(rc) && !DBGFADDRESS_IS_VALID(&pCur->AddrStack))
-        rc = DBGFR3AddrFromSelOff(pVM, &pCur->AddrStack, pCtxCore->ss, pCtxCore->esp & u64Mask);
+        rc = DBGFR3AddrFromSelOff(pVM, idCpu, &pCur->AddrStack, pCtxCore->ss, pCtxCore->esp & u64Mask);
     if (RT_SUCCESS(rc) && !DBGFADDRESS_IS_VALID(&pCur->AddrFrame))
-        rc = DBGFR3AddrFromSelOff(pVM, &pCur->AddrFrame, pCtxCore->ss, pCtxCore->ebp & u64Mask);
+        rc = DBGFR3AddrFromSelOff(pVM, idCpu, &pCur->AddrFrame, pCtxCore->ss, pCtxCore->ebp & u64Mask);
 
     /*
      * The first frame.

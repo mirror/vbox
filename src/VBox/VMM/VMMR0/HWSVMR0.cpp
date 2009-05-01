@@ -736,7 +736,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         /* Sync the debug state now if any breakpoint is armed. */
         if (    (pCtx->dr[7] & (X86_DR7_ENABLED_MASK|X86_DR7_GD))
             &&  !CPUMIsGuestDebugStateActive(pVCpu)
-            &&  !DBGFIsStepping(pVM))
+            &&  !DBGFIsStepping(pVCpu))
         {
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatDRxArmed);
 
@@ -813,7 +813,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
 #ifdef DEBUG
     /* Intercept X86_XCPT_DB if stepping is enabled */
-    if (DBGFIsStepping(pVM))
+    if (DBGFIsStepping(pVCpu))
         pVMCB->ctrl.u32InterceptException |=  RT_BIT(X86_XCPT_DB);
     else
         pVMCB->ctrl.u32InterceptException &= ~RT_BIT(X86_XCPT_DB);
@@ -890,7 +890,7 @@ ResumeExecution:
     /* Check for pending actions that force us to go back to ring 3. */
 #ifdef DEBUG
     /* Intercept X86_XCPT_DB if stepping is enabled */
-    if (!DBGFIsStepping(pVM))
+    if (!DBGFIsStepping(pVCpu))
 #endif
     {
         if (    VM_FF_ISPENDING(pVM, VM_FF_HWACCM_TO_R3_MASK)
@@ -1321,9 +1321,9 @@ ResumeExecution:
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestDB);
 
             /* Note that we don't support guest and host-initiated debugging at the same time. */
-            Assert(DBGFIsStepping(pVM));
+            Assert(DBGFIsStepping(pVCpu));
 
-            rc = DBGFR0Trap01Handler(pVM, CPUMCTX2CORE(pCtx), pCtx->dr[6]);
+            rc = DBGFR0Trap01Handler(pVM, pVCpu, CPUMCTX2CORE(pCtx), pCtx->dr[6]);
             if (rc == VINF_EM_RAW_GUEST_TRAP)
             {
                 Log(("Trap %x (debug) at %016RX64\n", vector, pCtx->rip));
@@ -1773,7 +1773,7 @@ ResumeExecution:
         Log2(("SVM: %RGv mov dr%d, x\n", (RTGCPTR)pCtx->rip, exitCode - SVM_EXIT_WRITE_DR0));
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitDRxWrite);
 
-        if (!DBGFIsStepping(pVM))
+        if (!DBGFIsStepping(pVCpu))
         {
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatDRxContextSwitch);
 
@@ -1813,7 +1813,7 @@ ResumeExecution:
         Log2(("SVM: %RGv mov x, dr%d\n", (RTGCPTR)pCtx->rip, exitCode - SVM_EXIT_READ_DR0));
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitDRxRead);
 
-        if (!DBGFIsStepping(pVM))
+        if (!DBGFIsStepping(pVCpu))
         {
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatDRxContextSwitch);
 

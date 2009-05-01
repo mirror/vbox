@@ -100,7 +100,7 @@ __END_DECLS
         if (sizeof(p->member.s) > sizeof(p->member.padding)) \
         { \
             printf("padding of %s::%s is too small, padding=%d struct=%d correct=%d\n", #strct, #member, \
-                   (int)sizeof(p->member.padding), (int)sizeof(p->member.s), (int)RT_ALIGN_Z(sizeof(p->member.s), 32)); \
+                   (int)sizeof(p->member.padding), (int)sizeof(p->member.s), (int)RT_ALIGN_Z(sizeof(p->member.s), 64)); \
             rc++; \
         } \
     } while (0)
@@ -115,7 +115,7 @@ __END_DECLS
         if (sizeof(p->s) > sizeof(p->padding)) \
         { \
             printf("padding of %s is too small, padding=%d struct=%d correct=%d\n", #strct, \
-                   (int)sizeof(p->padding), (int)sizeof(p->s), (int)RT_ALIGN_Z(sizeof(p->s), 32)); \
+                   (int)sizeof(p->padding), (int)sizeof(p->s), (int)RT_ALIGN_Z(sizeof(p->s), 64)); \
             rc++; \
         } \
     } while (0)
