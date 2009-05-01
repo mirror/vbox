@@ -770,8 +770,7 @@ VMMR3DECL(void)             DBGFR3StackWalkEnd(PCDBGFSTACKFRAME pFirstFrame);
 /** Special flat selector. */
 #define DBGF_SEL_FLAT                       1
 
-VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, PVMCPU pVCpu, RTSEL Sel, RTGCPTR GCPtr, unsigned fFlags, char *pszOutput, uint32_t cchOutput, uint32_t *pcbInstr);
-VMMR3DECL(int) DBGFR3DisasInstr(PVM pVM, PVMCPU pVCpu, RTSEL Sel, RTGCPTR GCPtr, char *pszOutput, uint32_t cbOutput);
+VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, VMCPUID idCpu, RTSEL Sel, RTGCPTR GCPtr, unsigned fFlags, char *pszOutput, uint32_t cchOutput, uint32_t *pcbInstr);
 VMMR3DECL(int) DBGFR3DisasInstrCurrent(PVM pVM, char *pszOutput, uint32_t cbOutput);
 VMMR3DECL(int) DBGFR3DisasInstrCurrentLogInternal(PVM pVM, const char *pszPrefix);
 
@@ -790,11 +789,12 @@ VMMR3DECL(int) DBGFR3DisasInstrCurrentLogInternal(PVM pVM, const char *pszPrefix
 # define DBGFR3DisasInstrCurrentLog(pVM, pszPrefix) do { } while (0)
 #endif
 
-VMMR3DECL(int) DBGFR3DisasInstrLogInternal(PVM pVM, PVMCPU pVCpu, RTSEL Sel, RTGCPTR GCPtr);
+VMMR3DECL(int) DBGFR3DisasInstrLogInternal(PVM pVM, RTSEL Sel, RTGCPTR GCPtr);
 
 /** @def DBGFR3DisasInstrLog
  * Disassembles the specified guest context instruction and writes it to the log.
  * Addresses will be attempted resolved to symbols.
+ * @thread Any EMT.
  */
 #ifdef LOG_ENABLED
 # define DBGFR3DisasInstrLog(pVM, Sel, GCPtr) \

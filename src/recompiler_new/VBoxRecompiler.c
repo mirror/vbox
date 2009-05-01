@@ -1392,7 +1392,7 @@ bool remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, int *piExce
         STAM_COUNTER_INC(&gStatRefuseCanExecute);
         return false;
     }
-    
+
     Assert(env->pVCpu && PGMPhysIsA20Enabled(env->pVCpu));
     *piException = EXCP_EXECUTE_RAW;
     return true;
@@ -3708,7 +3708,7 @@ void target_disas(FILE *phFile, target_ulong uCode, target_ulong cb, int fFlags)
             char        szBuf[256];
             uint32_t    cbInstr;
             int rc = DBGFR3DisasInstrEx(pVM,
-                                        pVCpu,
+                                        pVCpu->idCpu,
                                         cs,
                                         eip,
                                         0,

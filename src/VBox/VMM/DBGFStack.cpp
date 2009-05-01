@@ -291,7 +291,7 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PVM pVM, VMCPUID idCpu, PCCPUMCT
             fAddrMask = UINT32_MAX;
         else if (DBGFADDRESS_IS_FLAT(&pCur->AddrPC))
         {
-            CPUMMODE CpuMode = CPUMGetGuestMode(VMMGetCpuEx(pVM, idCpu));
+            CPUMMODE CpuMode = CPUMGetGuestMode(VMMGetCpuById(pVM, idCpu));
             if (CpuMode == CPUMMODE_REAL)
                 fAddrMask = UINT16_MAX;
             else if (CpuMode == CPUMMODE_PROTECTED)
@@ -396,8 +396,8 @@ static int dbgfR3StackWalkBeginCommon(PVM pVM,
      * Get the CPUM context pointer and pass it on the specified EMT.
      */
     PCCPUMCTXCORE   pCtxCore = fGuest
-                             ? CPUMGetGuestCtxCore(VMMGetCpuEx(pVM, idCpu))
-                             : CPUMGetHyperCtxCore(VMMGetCpuEx(pVM, idCpu));
+                             ? CPUMGetGuestCtxCore(VMMGetCpuById(pVM, idCpu))
+                             : CPUMGetHyperCtxCore(VMMGetCpuById(pVM, idCpu));
     PVMREQ          pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_FROM_ID(idCpu), &pReq, RT_INDEFINITE_WAIT,
                          (PFNRT)dbgfR3StackWalkCtxFull, 9,

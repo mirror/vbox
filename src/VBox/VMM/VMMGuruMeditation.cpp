@@ -323,7 +323,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
 
                 /* Disassemble the instruction. */
                 char szInstr[256];
-                rc2 = DBGFR3DisasInstrEx(pVM, pVCpu, 0, 0, DBGF_DISAS_FLAGS_CURRENT_HYPER, &szInstr[0], sizeof(szInstr), NULL);
+                rc2 = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, 0, 0, DBGF_DISAS_FLAGS_CURRENT_HYPER, &szInstr[0], sizeof(szInstr), NULL);
                 if (RT_SUCCESS(rc2))
                     pHlp->pfnPrintf(pHlp,
                                     "!! %s\n", szInstr);

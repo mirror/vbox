@@ -1869,7 +1869,7 @@ static void vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait)
         RTThreadSleep(32);
     }
 
-    /* 
+    /*
      * Now all queued VCPU requests (again, there shouldn't be any).
      */
     for (VMCPUID i = 0; i < pUVM->cCpus; i++)
@@ -3316,17 +3316,18 @@ DECLCALLBACK(int) vmR3SetRuntimeErrorV(PVM pVM, uint32_t fFlags, const char *psz
 
 
 /**
- * Returns the VMCPU id of the current EMT thread.
+ * Gets the ID virtual of the virtual CPU assoicated with the calling thread.
+ *
+ * @returns The CPU ID. NIL_VMCPUID if the thread isn't an EMT.
  *
  * @param   pVM             The VM handle.
- * @thread  EMT
  */
 VMMR3DECL(RTCPUID) VMR3GetVMCPUId(PVM pVM)
 {
     PUVMCPU pUVCpu = (PUVMCPU)RTTlsGet(pVM->pUVM->vm.s.idxTLS);
-
-    AssertMsg(pUVCpu, ("RTTlsGet %d failed!\n", pVM->pUVM->vm.s.idxTLS));
-    return pUVCpu->idCpu;
+    return pUVCpu
+         ? pUVCpu->idCpu
+         : NIL_VMCPUID;
 }
 
 

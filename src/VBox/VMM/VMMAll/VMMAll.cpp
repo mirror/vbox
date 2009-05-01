@@ -47,66 +47,58 @@ VMMDECL(RTRCPTR) VMMGetStackRC(PVM pVM)
 
 
 /**
- * Gets the current virtual CPU ID.
+ * Gets the ID virtual of the virtual CPU assoicated with the calling thread.
  *
- * @returns The CPU ID.
+ * @returns The CPU ID. NIL_VMCPUID if the thread isn't an EMT.
+ *
  * @param   pVM         Pointer to the shared VM handle.
- * @thread  EMT
  */
 VMMDECL(VMCPUID) VMMGetCpuId(PVM pVM)
 {
-#ifdef IN_RING3
-    /* Only emulation thread(s) allowed to ask for CPU id */
-    if (!VM_IS_EMT(pVM))
-        return 0;
-#endif
-
-    /* Only emulation thread(s) allowed to ask for CPU id */
-    VM_ASSERT_EMT(pVM);
-
-    /* Shortcut for one CPU */
-    if (pVM->cCPUs == 1)
-        return 0;
-
 #if defined(IN_RING3)
     return VMR3GetVMCPUId(pVM);
-#elif defined(IN_RING0)
-    return HWACCMR0GetVMCPUId(pVM);
-#endif /* IN_RING0 */
 
-    AssertFailed();
+#elif defined(IN_RING0)
+    /* ASSUME that only EMTs calls this function in R0. */
+    VM_ASSERT_EMT(pVM);
+    if (pVM->cCPUs == 1)
+        return 0;
+    return HWACCMR0GetVMCPUId(pVM);
+
+#else /* RC: Always EMT(0) */
     return 0;
+#endif
 }
 
+
 /**
- * Returns the VMCPU of the current EMT thread.
+ * Returns the VMCPU of the calling EMT.
  *
- * @returns The VMCPU pointer.
+ * @returns The VMCPU pointer. NULL if not an EMT.
+ *
  * @param   pVM         The VM to operate on.
  */
 VMMDECL(PVMCPU) VMMGetCpu(PVM pVM)
 {
 #ifdef IN_RING3
-    /* Only emulation thread(s) allowed to ask for CPU id */
-    if (!VM_IS_EMT(pVM))
-        return &pVM->aCpus[0];
-#endif
-    /* Only emulation thread(s) allowed to ask for CPU id */
-    VM_ASSERT_EMT(pVM);
+    VMCPUID idCpu = VMR3GetVMCPUId(pVM);
+    if (idCpu == NIL_VMCPUID)
+        return NULL;
+    Assert(idCpu < pVM->cCPUs);
+    return &pVM->aCpus[VMR3GetVMCPUId(pVM)];
 
-    /* Shortcut for one CPU */
+#elif defined(IN_RING0)
+    /* ASSUME that only EMTs calls this function in R0. */
+    VM_ASSERT_EMT(pVM);
     if (pVM->cCPUs == 1)
         return &pVM->aCpus[0];
-
-#ifdef IN_RING3
-    return &pVM->aCpus[VMR3GetVMCPUId(pVM)];
-#elif defined(IN_RING0)
     return HWACCMR0GetVMCPU(pVM);
-#endif /* IN_RING0 */
 
-    AssertFailed();
+#else /* RC: Always EMT(0) */
     return &pVM->aCpus[0];
+#endif /* IN_RING0 */
 }
+
 
 /**
  * Returns the VMCPU of the first EMT thread.
@@ -120,17 +112,21 @@ VMMDECL(PVMCPU) VMMGetCpu0(PVM pVM)
     return &pVM->aCpus[0];
 }
 
+
 /**
  * Returns the VMCPU of the specified virtual CPU.
  *
- * @returns The VMCPU pointer.
+ * @returns The VMCPU pointer. NULL if idCpu is invalid.
+ *
  * @param   pVM         The VM to operate on.
+ * @param   idCpu       The ID of the virtual CPU.
  */
-VMMDECL(PVMCPU) VMMGetCpuEx(PVM pVM, RTCPUID idCpu)
+VMMDECL(PVMCPU) VMMGetCpuById(PVM pVM, RTCPUID idCpu)
 {
     AssertReturn(idCpu < pVM->cCPUs, NULL);
     return &pVM->aCpus[idCpu];
 }
+
 
 /**
  * Gets the VBOX_SVN_REV.
@@ -145,6 +141,7 @@ VMMDECL(uint32_t) VMMGetSvnRev(void)
     return VBOX_SVN_REV;
 }
 
+
 /**
  * Queries the current switcher
  *
@@ -155,3 +152,4 @@ VMMDECL(VMMSWITCHER) VMMGetSwitcher(PVM pVM)
 {
     return pVM->vmm.s.enmSwitcher;
 }
+
