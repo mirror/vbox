@@ -337,8 +337,8 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
                 fDoneHyper = true;
 
                 /* Callstack. */
-                DBGFSTACKFRAME Frame = {0};
-                rc2 = DBGFR3StackWalkBeginHyper(pVM, &Frame);
+                PCDBGFSTACKFRAME pFirstFrame;
+                rc2 = DBGFR3StackWalkBeginHyper(pVM, 0, &pFirstFrame);
                 if (RT_SUCCESS(rc2))
                 {
                     pHlp->pfnPrintf(pHlp,
@@ -346,37 +346,36 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
                                     "!! Call Stack:\n"
                                     "!!\n"
                                     "EBP      Ret EBP  Ret CS:EIP    Arg0     Arg1     Arg2     Arg3     CS:EIP        Symbol [line]\n");
-                    do
+                    for (PCDBGFSTACKFRAME pFrame = pFirstFrame;
+                         pFrame;
+                         pFrame = DBGFR3StackWalkNext(pFrame))
                     {
                         pHlp->pfnPrintf(pHlp,
                                         "%08RX32 %08RX32 %04RX32:%08RX32 %08RX32 %08RX32 %08RX32 %08RX32",
-                                        (uint32_t)Frame.AddrFrame.off,
-                                        (uint32_t)Frame.AddrReturnFrame.off,
-                                        (uint32_t)Frame.AddrReturnPC.Sel,
-                                        (uint32_t)Frame.AddrReturnPC.off,
-                                        Frame.Args.au32[0],
-                                        Frame.Args.au32[1],
-                                        Frame.Args.au32[2],
-                                        Frame.Args.au32[3]);
-                        pHlp->pfnPrintf(pHlp, " %RTsel:%08RGv", Frame.AddrPC.Sel, Frame.AddrPC.off);
-                        if (Frame.pSymPC)
+                                        (uint32_t)pFrame->AddrFrame.off,
+                                        (uint32_t)pFrame->AddrReturnFrame.off,
+                                        (uint32_t)pFrame->AddrReturnPC.Sel,
+                                        (uint32_t)pFrame->AddrReturnPC.off,
+                                        pFrame->Args.au32[0],
+                                        pFrame->Args.au32[1],
+                                        pFrame->Args.au32[2],
+                                        pFrame->Args.au32[3]);
+                        pHlp->pfnPrintf(pHlp, " %RTsel:%08RGv", pFrame->AddrPC.Sel, pFrame->AddrPC.off);
+                        if (pFrame->pSymPC)
                         {
-                            RTGCINTPTR offDisp = Frame.AddrPC.FlatPtr - Frame.pSymPC->Value;
+                            RTGCINTPTR offDisp = pFrame->AddrPC.FlatPtr - pFrame->pSymPC->Value;
                             if (offDisp > 0)
-                                pHlp->pfnPrintf(pHlp, " %s+%llx", Frame.pSymPC->szName, (int64_t)offDisp);
+                                pHlp->pfnPrintf(pHlp, " %s+%llx", pFrame->pSymPC->szName, (int64_t)offDisp);
                             else if (offDisp < 0)
-                                pHlp->pfnPrintf(pHlp, " %s-%llx", Frame.pSymPC->szName, -(int64_t)offDisp);
+                                pHlp->pfnPrintf(pHlp, " %s-%llx", pFrame->pSymPC->szName, -(int64_t)offDisp);
                             else
-                                pHlp->pfnPrintf(pHlp, " %s", Frame.pSymPC->szName);
+                                pHlp->pfnPrintf(pHlp, " %s", pFrame->pSymPC->szName);
                         }
-                        if (Frame.pLinePC)
-                            pHlp->pfnPrintf(pHlp, " [%s @ 0i%d]", Frame.pLinePC->szFilename, Frame.pLinePC->uLineNo);
+                        if (pFrame->pLinePC)
+                            pHlp->pfnPrintf(pHlp, " [%s @ 0i%d]", pFrame->pLinePC->szFilename, pFrame->pLinePC->uLineNo);
                         pHlp->pfnPrintf(pHlp, "\n");
-
-                        /* next */
-                        rc2 = DBGFR3StackWalkNext(pVM, &Frame);
-                    } while (RT_SUCCESS(rc2));
-                    DBGFR3StackWalkEnd(pVM, &Frame);
+                    }
+                    DBGFR3StackWalkEnd(pFirstFrame);
                 }
 
                 /* raw stack */
