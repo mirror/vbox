@@ -68,7 +68,7 @@ VMMR3DECL(int) DBGFR3AddrFromSelOff(PVM pVM, VMCPUID idCpu, PDBGFADDRESS pAddres
     if (Sel != DBGF_SEL_FLAT)
     {
         SELMSELINFO SelInfo;
-        int rc = SELMR3GetSelectorInfo(pVM, VMMGetCpuEx(pVM, idCpu), Sel, &SelInfo);
+        int rc = SELMR3GetSelectorInfo(pVM, VMMGetCpuById(pVM, idCpu), Sel, &SelInfo);
         if (RT_FAILURE(rc))
             return rc;
 
@@ -228,7 +228,7 @@ VMMR3DECL(int)  DBGFR3AddrToPhys(PVM pVM, VMCPUID idCpu, PDBGFADDRESS pAddress, 
     }
     else
     {
-        PVMCPU pVCpu = VMMGetCpuEx(pVM, idCpu);
+        PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
         if (VMCPU_IS_EMT(pVCpu))
             rc = dbgfR3AddrToPhysOnVCpu(pVCpu, pAddress, pGCPhys);
         else
@@ -343,7 +343,7 @@ static DECLCALLBACK(int) dbgfR3AddrToVolatileR3PtrOnVCpu(PVM pVM, VMCPUID idCpu,
         }
         else
         {
-            PVMCPU pVCpu = VMMGetCpuEx(pVM, idCpu);
+            PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
             if (fReadOnly)
                 rc = PGMPhysGCPtr2CCPtrReadOnly(pVCpu, pAddress->FlatPtr, (void const **)ppvR3Ptr, &Lock);
             else

@@ -68,6 +68,7 @@ VMMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
     PVM pVM = pCritSect->s.CTX_SUFF(pVM);
     Assert(pVM);
     PVMCPU pVCpu = VMMGetCpu(pVM);
+    Assert(pVCpu);
 
     /*
      * Try to take the lock.
@@ -222,7 +223,7 @@ VMMDECL(bool) PDMCritSectIsOwner(PCPDMCRITSECT pCritSect)
     return RTCritSectIsOwner(&pCritSect->s.Core);
 #else
     PVM pVM = pCritSect->s.CTX_SUFF(pVM);
-    Assert(pVM);
+    Assert(pVM); Assert(VMMGetCpu(pVM));
     return pCritSect->s.Core.NativeThreadOwner == VMMGetCpu(pVM)->hNativeThread;
 #endif
 }

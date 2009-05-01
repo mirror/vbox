@@ -225,6 +225,7 @@ static DECLCALLBACK(void) pdmR3ApicHlp_Unlock(PPDMDEVINS pDevIns)
 static DECLCALLBACK(VMCPUID) pdmR3ApicHlp_GetCpuId(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
     return VMMGetCpuId(pDevIns->Internal.s.pVMR3);
 }
 

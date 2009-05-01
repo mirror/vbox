@@ -2693,7 +2693,8 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(int, pfnCMOSRead,(PPDMDEVINS pDevIns, unsigned iReg, uint8_t *pu8Value));
 
     /**
-     * Get CPUID.
+     * Get the specified CPUID leaf for the virtual CPU associated with the calling
+     * thread.
      *
      * @param   pDevIns             Device instance.
      * @param   iLeaf               The CPUID leaf to get.
@@ -2701,6 +2702,7 @@ typedef struct PDMDEVHLPR3
      * @param   pEbx                Where to store the EBX value.
      * @param   pEcx                Where to store the ECX value.
      * @param   pEdx                Where to store the EDX value.
+     * @thread  EMT.
      */
     DECLR3CALLBACKMEMBER(void, pfnGetCpuId,(PPDMDEVINS pDevIns, uint32_t iLeaf, uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx));
 

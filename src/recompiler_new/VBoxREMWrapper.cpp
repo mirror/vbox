@@ -556,7 +556,7 @@ static const REMPARMDESC g_aArgsDBGCRegisterCommands[] =
 static const REMPARMDESC g_aArgsDBGFR3DisasInstrEx[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(VMCPUID), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(RTSEL), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(RTGCPTR), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(unsigned), NULL },

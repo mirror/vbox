@@ -1256,7 +1256,8 @@ static DECLCALLBACK(PVM) pdmR3DevHlp_GetVM(PPDMDEVINS pDevIns)
 static DECLCALLBACK(PVMCPU) pdmR3DevHlp_GetVMCPU(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3DevHlp_GetVMCPU: caller='%s'/%d for CPU %d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VMMGetCpuId(pDevIns->Internal.s.pVMR3)));
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+    LogFlow(("pdmR3DevHlp_GetVMCPU: caller='%s'/%d for CPU %u\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VMMGetCpuId(pDevIns->Internal.s.pVMR3)));
     return VMMGetCpu(pDevIns->Internal.s.pVMR3);
 }
 
@@ -2163,13 +2164,14 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysReadGCVirt(PPDMDEVINS pDevIns, void *pv
     LogFlow(("pdmR3DevHlp_PhysReadGCVirt: caller='%s'/%d: pvDst=%p GCVirt=%RGv cb=%#x\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pvDst, GCVirtSrc, cb));
 
-    if (!VM_IS_EMT(pVM))
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    if (!pVCpu)
         return VERR_ACCESS_DENIED;
 #if defined(VBOX_STRICT) && defined(PDM_DEVHLP_DEADLOCK_DETECTION)
     /** @todo SMP. */
 #endif
 
-    int rc = PGMPhysSimpleReadGCPtr(VMMGetCpu(pVM), pvDst, GCVirtSrc, cb);
+    int rc = PGMPhysSimpleReadGCPtr(pVCpu, pvDst, GCVirtSrc, cb);
 
     LogFlow(("pdmR3DevHlp_PhysReadGCVirt: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
 
@@ -2186,13 +2188,14 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysWriteGCVirt(PPDMDEVINS pDevIns, RTGCPTR
     LogFlow(("pdmR3DevHlp_PhysWriteGCVirt: caller='%s'/%d: GCVirtDst=%RGv pvSrc=%p cb=%#x\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCVirtDst, pvSrc, cb));
 
-    if (!VM_IS_EMT(pVM))
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    if (!pVCpu)
         return VERR_ACCESS_DENIED;
 #if defined(VBOX_STRICT) && defined(PDM_DEVHLP_DEADLOCK_DETECTION)
     /** @todo SMP. */
 #endif
 
-    int rc = PGMPhysSimpleWriteGCPtr(VMMGetCpu(pVM), GCVirtDst, pvSrc, cb);
+    int rc = PGMPhysSimpleWriteGCPtr(pVCpu, GCVirtDst, pvSrc, cb);
 
     LogFlow(("pdmR3DevHlp_PhysWriteGCVirt: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
 
@@ -2209,13 +2212,14 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPtr2GCPhys(PPDMDEVINS pDevIns, RTGCPT
     LogFlow(("pdmR3DevHlp_PhysGCPtr2GCPhys: caller='%s'/%d: GCPtr=%RGv pGCPhys=%p\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPtr, pGCPhys));
 
-    if (!VM_IS_EMT(pVM))
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    if (!pVCpu)
         return VERR_ACCESS_DENIED;
 #if defined(VBOX_STRICT) && defined(PDM_DEVHLP_DEADLOCK_DETECTION)
     /** @todo SMP. */
 #endif
 
-    int rc = PGMPhysGCPtr2GCPhys(VMMGetCpu(pVM), GCPtr, pGCPhys);
+    int rc = PGMPhysGCPtr2GCPhys(pVCpu, GCPtr, pGCPhys);
 
     LogFlow(("pdmR3DevHlp_PhysGCPtr2GCPhys: caller='%s'/%d: returns %Rrc *pGCPhys=%RGp\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc, *pGCPhys));
 
@@ -2255,7 +2259,6 @@ static DECLCALLBACK(void) pdmR3DevHlp_A20Set(PPDMDEVINS pDevIns, bool fEnable)
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
     LogFlow(("pdmR3DevHlp_A20Set: caller='%s'/%d: fEnable=%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, fEnable));
-    //Assert(*(unsigned *)&fEnable <= 1);
     PGMR3PhysSetA20(VMMGetCpu(pDevIns->Internal.s.pVMR3), fEnable);
 }
 
@@ -2530,6 +2533,8 @@ static DECLCALLBACK(void) pdmR3DevHlp_GetCpuId(PPDMDEVINS pDevIns, uint32_t iLea
                                                uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+
     LogFlow(("pdmR3DevHlp_GetCpuId: caller='%s'/%d: iLeaf=%d pEax=%p pEbx=%p pEcx=%p pEdx=%p\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, iLeaf, pEax, pEbx, pEcx, pEdx));
     AssertPtr(pEax); AssertPtr(pEbx); AssertPtr(pEcx); AssertPtr(pEdx);
