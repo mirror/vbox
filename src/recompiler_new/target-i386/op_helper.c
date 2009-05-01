@@ -1678,7 +1678,7 @@ void raise_interrupt(int intno, int is_int, int error_code,
                      int next_eip_addend)
 {
 #if defined(VBOX) && defined(DEBUG)
-    NOT_DMIK(Log2(("raise_interrupt: %x %x %x %RGv\n", intno, is_int, error_code, env->eip + next_eip_addend)));
+    Log2(("raise_interrupt: %x %x %x %RGv\n", intno, is_int, error_code, env->eip + next_eip_addend));
 #endif
     if (!is_int) {
         helper_svm_check_intercept_param(SVM_EXIT_EXCP_BASE + intno, error_code);

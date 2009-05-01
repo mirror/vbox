@@ -276,13 +276,23 @@
  * context part of the virtual machine monitor or not.
  */
 /** @def VMMRCDECL
- * Guest context VMM export or import declaration.
+ * Raw-mode context VMM export or import declaration.
  * @param   type    The return type of the function declaration.
  */
 #ifdef IN_VMM_RC
 # define VMMRCDECL(type)    DECLEXPORT(type) VBOXCALL
 #else
 # define VMMRCDECL(type)    DECLIMPORT(type) VBOXCALL
+#endif
+
+/** @def VMMRZDECL
+ * Ring-0 and Raw-mode context VMM export or import declaration.
+ * @param   type    The return type of the function declaration.
+ */
+#if defined(IN_VMM_R0) || defined(IN_VMM_RC)
+# define VMMRZDECL(type)    DECLEXPORT(type) VBOXCALL
+#else
+# define VMMRZDECL(type)    DECLIMPORT(type) VBOXCALL
 #endif
 
 /** @def VMMDECL
@@ -308,19 +318,6 @@
 # define VBOXDDU_DECL(type) DECLEXPORT(type) VBOXCALL
 #else
 # define VBOXDDU_DECL(type) DECLIMPORT(type) VBOXCALL
-#endif
-
-
-
-/** @def NOT_DMIK(expr)
- * Turns the given expression into NOOP when DEBUG_dmik is defined. Evaluates
- * the expression normally otherwise.
- * @param expr  Expression to guard.
- */
-#if defined(DEBUG_dmik)
-# define NOT_DMIK(expr)     do { } while (0)
-#else
-# define NOT_DMIK(expr)     expr
 #endif
 
 

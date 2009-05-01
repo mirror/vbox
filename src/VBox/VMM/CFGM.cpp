@@ -140,7 +140,7 @@ VMMR3DECL(int) CFGMR3Init(PVM pVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *
         CFGMR3Dump(CFGMR3GetRoot(pVM));
     }
     else
-        NOT_DMIK(AssertMsgFailed(("Constructor failed with rc=%Rrc pfnCFGMConstructor=%p\n", rc, pfnCFGMConstructor)));
+        AssertMsgFailed(("Constructor failed with rc=%Rrc pfnCFGMConstructor=%p\n", rc, pfnCFGMConstructor));
 
     return rc;
 }
