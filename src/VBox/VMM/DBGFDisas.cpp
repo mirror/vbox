@@ -372,7 +372,7 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, unsi
 
         if (CPUMAreHiddenSelRegsValid(pVM))
         {   /* Assume the current CS defines the execution mode. */
-            pCtxCore   = CPUMGetGuestCtxCore(VMMGetCpu(pVM));  /* @todo SMP support!! */
+            pCtxCore   = CPUMGetGuestCtxCore(pVCpu);
             pHiddenSel = (CPUMSELREGHID *)&pCtxCore->csHid;
 
             SelInfo.Raw.Gen.u1Present       = pHiddenSel->Attr.n.u1Present;
@@ -539,10 +539,14 @@ VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, VMCPUID idCpu, RTSEL Sel, RTGCPTR GCP
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(idCpu < pVM->cCPUs, VERR_INVALID_CPU_ID);
 
+    /*
+     * Optimize the common case where we're called on the EMT of idCpu since
+     * we're using this all the time when logging.
+     */
     int     rc;
     PVMCPU  pVCpu = VMMGetCpu(pVM);
     if (    pVCpu
-        &&  pVCpu->idCpu == idCpu) /* not necessary, but it's faster. */
+        &&  pVCpu->idCpu == idCpu)
         rc = dbgfR3DisasInstrExOnVCpu(pVM, pVCpu, Sel, &GCPtr, fFlags, pszOutput, cchOutput, pcbInstr);
     else
     {
