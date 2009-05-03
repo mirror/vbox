@@ -1899,49 +1899,6 @@ typedef const X86FXSTATE *PCX86FXSTATE;
  */
 
 /**
- * Generic descriptor table entry
- */
-#pragma pack(1)
-typedef struct X86DESCGENERIC
-{
-    /** Limit - Low word. */
-    unsigned    u16LimitLow : 16;
-    /** Base address - lowe word.
-     * Don't try set this to 24 because MSC is doing studing things then. */
-    unsigned    u16BaseLow : 16;
-    /** Base address - first 8 bits of high word. */
-    unsigned    u8BaseHigh1 : 8;
-    /** Segment Type. */
-    unsigned    u4Type : 4;
-    /** Descriptor Type. System(=0) or code/data selector */
-    unsigned    u1DescType : 1;
-    /** Descriptor Privelege level. */
-    unsigned    u2Dpl : 2;
-    /** Flags selector present(=1) or not. */
-    unsigned    u1Present : 1;
-    /** Segment limit 16-19. */
-    unsigned    u4LimitHigh : 4;
-    /** Available for system software. */
-    unsigned    u1Available : 1;
-    /** 32 bits mode: Reserved - 0, long mode: Long Attribute Bit. */
-    unsigned    u1Long : 1;
-    /** This flags meaning depends on the segment type. Try make sense out
-     * of the intel manual yourself.  */
-    unsigned    u1DefBig : 1;
-    /** Granularity of the limit. If set 4KB granularity is used, if
-     * clear byte. */
-    unsigned    u1Granularity : 1;
-    /** Base address - highest 8 bits. */
-    unsigned    u8BaseHigh2 : 8;
-} X86DESCGENERIC;
-#pragma pack()
-/** Pointer to a generic descriptor entry. */
-typedef X86DESCGENERIC *PX86DESCGENERIC;
-/** Pointer to a const generic descriptor entry. */
-typedef const X86DESCGENERIC *PCX86DESCGENERIC;
-
-
-/**
  * Descriptor attributes.
  */
 typedef struct X86DESCATTRBITS
@@ -1978,12 +1935,87 @@ typedef union X86DESCATTR
     X86DESCATTRBITS    n;
 } X86DESCATTR;
 #pragma pack()
-
 /** Pointer to descriptor attributes. */
 typedef X86DESCATTR *PX86DESCATTR;
 /** Pointer to const descriptor attributes. */
 typedef const X86DESCATTR *PCX86DESCATTR;
 
+
+/**
+ * Generic descriptor table entry
+ */
+#pragma pack(1)
+typedef struct X86DESCGENERIC
+{
+    /** Limit - Low word. */
+    unsigned    u16LimitLow : 16;
+    /** Base address - lowe word.
+     * Don't try set this to 24 because MSC is doing stupid things then. */
+    unsigned    u16BaseLow : 16;
+    /** Base address - first 8 bits of high word. */
+    unsigned    u8BaseHigh1 : 8;
+    /** Segment Type. */
+    unsigned    u4Type : 4;
+    /** Descriptor Type. System(=0) or code/data selector */
+    unsigned    u1DescType : 1;
+    /** Descriptor Privelege level. */
+    unsigned    u2Dpl : 2;
+    /** Flags selector present(=1) or not. */
+    unsigned    u1Present : 1;
+    /** Segment limit 16-19. */
+    unsigned    u4LimitHigh : 4;
+    /** Available for system software. */
+    unsigned    u1Available : 1;
+    /** 32 bits mode: Reserved - 0, long mode: Long Attribute Bit. */
+    unsigned    u1Long : 1;
+    /** This flags meaning depends on the segment type. Try make sense out
+     * of the intel manual yourself.  */
+    unsigned    u1DefBig : 1;
+    /** Granularity of the limit. If set 4KB granularity is used, if
+     * clear byte. */
+    unsigned    u1Granularity : 1;
+    /** Base address - highest 8 bits. */
+    unsigned    u8BaseHigh2 : 8;
+} X86DESCGENERIC;
+#pragma pack()
+/** Pointer to a generic descriptor entry. */
+typedef X86DESCGENERIC *PX86DESCGENERIC;
+/** Pointer to a const generic descriptor entry. */
+typedef const X86DESCGENERIC *PCX86DESCGENERIC;
+
+/**
+ * Call-, Interrupt-, Trap- or Task-gate descriptor (legacy).
+ */
+typedef struct X86DESCGATE
+{
+    /** Target code segment offset - Low word.
+     * Ignored if task-gate. */
+    unsigned    u16OffsetLow : 16;
+    /** Target code segment selector for call-, interrupt- and trap-gates,
+     * TSS selector if task-gate. */
+    unsigned    u16Sel : 16;
+    /** Number of parameters for a call-gate.
+     * Ignored if interrupt-, trap- or task-gate. */
+    unsigned    u4ParmCount : 4;
+    /** Reserved / ignored. */
+    unsigned    u4Reserved : 4;
+    /** Segment Type. */
+    unsigned    u4Type : 4;
+    /** Descriptor Type (0 = system). */
+    unsigned    u1DescType : 1;
+    /** Descriptor Privelege level. */
+    unsigned    u2Dpl : 2;
+    /** Flags selector present(=1) or not. */
+    unsigned    u1Present : 1;
+    /** Target code segment offset - High word.
+     * Ignored if task-gate. */
+    unsigned    u16OffsetHigh : 16;
+} X86DESCGATE;
+AssertCompileSize(X86DESCGATE, 8);
+/** Pointer to a Call-, Interrupt-, Trap- or Task-gate descriptor entry. */
+typedef X86DESCGATE *PX86DESCGATE;
+/** Pointer to a const Call-, Interrupt-, Trap- or Task-gate descriptor entry. */
+typedef const X86DESCGATE *PCX86DESCGATE;
 
 /**
  * Descriptor table entry.
@@ -1993,10 +2025,8 @@ typedef union X86DESC
 {
     /** Generic descriptor view. */
     X86DESCGENERIC  Gen;
-#if 0
-    /** IDT view. */
-    VBOXIDTE        Idt;
-#endif
+    /** Gate descriptor view. */
+    X86DESCGATE     Gate;
 
     /** 8 bit unsigned interger view. */
     uint8_t         au8[8];
@@ -2005,12 +2035,12 @@ typedef union X86DESC
     /** 32 bit unsigned interger view. */
     uint32_t        au32[2];
 } X86DESC;
+AssertCompileSize(X86DESC, 8);
 #pragma pack()
 /** Pointer to descriptor table entry. */
 typedef X86DESC *PX86DESC;
 /** Pointer to const descriptor table entry. */
 typedef const X86DESC *PCX86DESC;
-
 
 /** @def X86DESC_BASE
  * Return the base address of a descriptor.
@@ -2037,7 +2067,7 @@ typedef struct X86DESC64GENERIC
     /** Limit - Low word - *IGNORED*. */
     unsigned    u16LimitLow : 16;
     /** Base address - lowe word. - *IGNORED*
-     * Don't try set this to 24 because MSC is doing studing things then. */
+     * Don't try set this to 24 because MSC is doing stupid things then. */
     unsigned    u16BaseLow : 16;
     /** Base address - first 8 bits of high word. - *IGNORED* */
     unsigned    u8BaseHigh1 : 8;
@@ -2077,6 +2107,8 @@ typedef const X86DESC64GENERIC *PCX86DESC64GENERIC;
 
 /**
  * System descriptor table entry (64 bits)
+ *
+ * @remarks This is, save a couple of comments, identical to X86DESC64GENERIC...
  */
 #pragma pack(1)
 typedef struct X86DESC64SYSTEM
@@ -2084,7 +2116,7 @@ typedef struct X86DESC64SYSTEM
     /** Limit - Low word. */
     unsigned    u16LimitLow     : 16;
     /** Base address - lowe word.
-     * Don't try set this to 24 because MSC is doing studing things then. */
+     * Don't try set this to 24 because MSC is doing stupid things then. */
     unsigned    u16BaseLow      : 16;
     /** Base address - first 8 bits of high word. */
     unsigned    u8BaseHigh1     : 8;
@@ -2117,10 +2149,48 @@ typedef struct X86DESC64SYSTEM
     unsigned    u19Reserved     : 19;
 } X86DESC64SYSTEM;
 #pragma pack()
-/** Pointer to a generic descriptor entry. */
+/** Pointer to a system descriptor entry. */
 typedef X86DESC64SYSTEM *PX86DESC64SYSTEM;
-/** Pointer to a const generic descriptor entry. */
+/** Pointer to a const system descriptor entry. */
 typedef const X86DESC64SYSTEM *PCX86DESC64SYSTEM;
+
+/**
+ * Call-, Interrupt-, Trap- or Task-gate descriptor (64-bit).
+ */
+typedef struct X86DESC64GATE
+{
+    /** Target code segment offset - Low word. */
+    unsigned    u16OffsetLow : 16;
+    /** Target code segment selector. */
+    unsigned    u16Sel : 16;
+    /** Interrupt stack table for interrupt- and trap-gates.
+     * Ignored by call-gates. */
+    unsigned    u3IST : 3;
+    /** Reserved / ignored. */
+    unsigned    u5Reserved : 5;
+    /** Segment Type. */
+    unsigned    u4Type : 4;
+    /** Descriptor Type (0 = system). */
+    unsigned    u1DescType : 1;
+    /** Descriptor Privelege level. */
+    unsigned    u2Dpl : 2;
+    /** Flags selector present(=1) or not. */
+    unsigned    u1Present : 1;
+    /** Target code segment offset - High word.
+     * Ignored if task-gate. */
+    unsigned    u16OffsetHigh : 16;
+    /** Target code segment offset - Top dword.
+     * Ignored if task-gate. */
+    unsigned    u32OffsetTop : 32;
+    /** Reserved / ignored / must be zero.
+     * For call-gates bits 8 thru 12 must be zero, the other gates ignores this. */
+    unsigned    u32Reserved : 32;
+} X86DESC64GATE;
+AssertCompileSize(X86DESC64GATE, 16);
+/** Pointer to a Call-, Interrupt-, Trap- or Task-gate descriptor entry. */
+typedef X86DESC64GATE *PX86DESC64GATE;
+/** Pointer to a const Call-, Interrupt-, Trap- or Task-gate descriptor entry. */
+typedef const X86DESC64GATE *PCX86DESC64GATE;
 
 
 /**
@@ -2133,9 +2203,8 @@ typedef union X86DESC64
     X86DESC64GENERIC    Gen;
     /** System descriptor view. */
     X86DESC64SYSTEM     System;
-#if 0
+    /** Gate descriptor view. */
     X86DESC64GATE       Gate;
-#endif
 
     /** 8 bit unsigned interger view. */
     uint8_t             au8[16];
@@ -2146,6 +2215,7 @@ typedef union X86DESC64
     /** 64 bit unsigned interger view. */
     uint64_t            au64[2];
 } X86DESC64;
+AssertCompileSize(X86DESC64, 16);
 #pragma pack()
 /** Pointer to descriptor table entry. */
 typedef X86DESC64 *PX86DESC64;
@@ -2160,7 +2230,7 @@ typedef X86DESC     X86DESCHC;
 typedef X86DESC     *PX86DESCHC;
 #endif
 
-/** @def X86DESC_LIMIT
+/** @def X86DESC64_BASE
  * Return the base of a 64-bit descriptor.
  */
 #define X86DESC64_BASE(desc) \
