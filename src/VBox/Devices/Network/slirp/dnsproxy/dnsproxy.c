@@ -197,7 +197,11 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
 #endif
     struct sockaddr_in addr;
     struct request *req = NULL;
+#ifndef VBOX
     struct sockaddr_in fromaddr;
+#else
+    struct sockaddr_in fromaddr = { 0, };
+#endif
     int byte = 0;
 
     ++all_queries;
