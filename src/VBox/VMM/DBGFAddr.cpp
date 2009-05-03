@@ -67,6 +67,7 @@ VMMR3DECL(int) DBGFR3AddrFromSelOff(PVM pVM, VMCPUID idCpu, PDBGFADDRESS pAddres
     pAddress->off = off;
     if (Sel != DBGF_SEL_FLAT)
     {
+        /** @todo cannot call this on a foreign thread. */
         SELMSELINFO SelInfo;
         int rc = SELMR3GetSelectorInfo(pVM, VMMGetCpuById(pVM, idCpu), Sel, &SelInfo);
         if (RT_FAILURE(rc))
