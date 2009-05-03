@@ -78,38 +78,38 @@ int main()
     /*
      * RTTimeNanoTS, RTTimeProgramNanoTS, RTTimeMilliTS, and RTTimeProgramMilliTS.
      */
-    ITERATE(, RTTimeNanoTS();, , 1000000);
+    ITERATE(RT_NOTHING, RTTimeNanoTS();, RT_NOTHING, 1000000);
     PrintResult(u64TotalTS, u64MaxTS, u64MinTS, i, "RTTimeNanoTS");
 
-    ITERATE(, RTTimeProgramNanoTS();, , 1000000);
+    ITERATE(RT_NOTHING, RTTimeProgramNanoTS();, RT_NOTHING, 1000000);
     PrintResult(u64TotalTS, u64MaxTS, u64MinTS, i, "RTTimeProgramNanoTS");
 
-    ITERATE(, RTTimeMilliTS();, , 1000000);
+    ITERATE(RT_NOTHING, RTTimeMilliTS();, RT_NOTHING, 1000000);
     PrintResult(u64TotalTS, u64MaxTS, u64MinTS, i, "RTTimeMilliTS");
 
-    ITERATE(, RTTimeProgramMilliTS();, , 1000000);
+    ITERATE(RT_NOTHING, RTTimeProgramMilliTS();, RT_NOTHING, 1000000);
     PrintResult(u64TotalTS, u64MaxTS, u64MinTS, i, "RTTimeProgramMilliTS");
 
     /*
      * RTTimeNow
      */
     RTTIMESPEC Time;
-    ITERATE(, RTTimeNow(&Time);, , 1000000);
+    ITERATE(RT_NOTHING, RTTimeNow(&Time);, RT_NOTHING, 1000000);
     PrintResult(u64TotalTS, u64MaxTS, u64MinTS, i, "RTTimeNow");
 
     /*
      * RTLogDefaultInstance()
      */
-    ITERATE(, RTLogDefaultInstance();, , 1000000);
+    ITERATE(RT_NOTHING, RTLogDefaultInstance();, RT_NOTHING, 1000000);
     PrintResult(u64TotalTS, u64MaxTS, u64MinTS, i, "RTLogDefaultInstance");
 
     /*
      * RTThreadSelf and RTThreadNativeSelf
      */
-    ITERATE(, RTThreadSelf();, , 1000000);
+    ITERATE(RT_NOTHING, RTThreadSelf();, RT_NOTHING, 1000000);
     PrintResult(u64TotalTS, u64MaxTS, u64MinTS, i, "RTThreadSelf");
 
-    ITERATE(, RTThreadNativeSelf();, , 1000000);
+    ITERATE(RT_NOTHING, RTThreadNativeSelf();, RT_NOTHING, 1000000);
     PrintResult(u64TotalTS, u64MaxTS, u64MinTS, i, "RTThreadNativeSelf");
 
     RTPrintf("tstPrtRT: DONE\n");
