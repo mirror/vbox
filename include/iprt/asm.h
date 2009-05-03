@@ -69,6 +69,7 @@
 #  pragma intrinsic(__indword)
 #  pragma intrinsic(__indwordstring)
 #  pragma intrinsic(__invlpg)
+#  pragma intrinsic(__wbinvd)
 #  pragma intrinsic(__stosd)
 #  pragma intrinsic(__stosw)
 #  pragma intrinsic(__stosb)
@@ -227,7 +228,7 @@ DECLASM(void) ASMGetIDTR(PRTIDTR pIdtr);
 DECLINLINE(void) ASMGetIDTR(PRTIDTR pIdtr)
 {
 # if RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__ ("sidt %0" : "=m" (*pIdtr));
+    __asm__ __volatile__("sidt %0" : "=m" (*pIdtr));
 # else
     __asm
     {
@@ -254,7 +255,7 @@ DECLASM(void) ASMSetIDTR(const RTIDTR *pIdtr);
 DECLINLINE(void) ASMSetIDTR(const RTIDTR *pIdtr)
 {
 # if RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__ ("lidt %0" : : "m" (*pIdtr));
+    __asm__ __volatile__("lidt %0" : : "m" (*pIdtr));
 # else
     __asm
     {
@@ -281,7 +282,7 @@ DECLASM(void) ASMGetGDTR(PRTGDTR pGdtr);
 DECLINLINE(void) ASMGetGDTR(PRTGDTR pGdtr)
 {
 # if RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__ ("sgdt %0" : "=m" (*pGdtr));
+    __asm__ __volatile__("sgdt %0" : "=m" (*pGdtr));
 # else
     __asm
     {
@@ -549,7 +550,7 @@ DECLINLINE(uint64_t) ASMReadTSC(void)
 {
     RTUINT64U u;
 # if RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__ ("rdtsc\n\t" : "=a" (u.s.Lo), "=d" (u.s.Hi));
+    __asm__ __volatile__("rdtsc\n\t" : "=a" (u.s.Lo), "=d" (u.s.Hi));
 # else
 #  if RT_INLINE_ASM_USES_INTRIN
     u.u = __rdtsc();
@@ -1243,9 +1244,9 @@ DECLINLINE(void) ASMSetCR3(RTCCUINTREG uCR3)
 
 # elif RT_INLINE_ASM_GNU_STYLE
 #  ifdef RT_ARCH_AMD64
-    __asm__ __volatile__ ("movq %0, %%cr3\n\t" : : "r" (uCR3));
+    __asm__ __volatile__("movq %0, %%cr3\n\t" : : "r" (uCR3));
 #  else
-    __asm__ __volatile__ ("movl %0, %%cr3\n\t" : : "r" (uCR3));
+    __asm__ __volatile__("movl %0, %%cr3\n\t" : : "r" (uCR3));
 #  endif
 # else
     __asm
@@ -1277,13 +1278,13 @@ DECLINLINE(void) ASMReloadCR3(void)
 # elif RT_INLINE_ASM_GNU_STYLE
     RTCCUINTREG u;
 #  ifdef RT_ARCH_AMD64
-    __asm__ __volatile__ ("movq %%cr3, %0\n\t"
-                          "movq %0, %%cr3\n\t"
-                          : "=r" (u));
+    __asm__ __volatile__("movq %%cr3, %0\n\t"
+                         "movq %0, %%cr3\n\t"
+                         : "=r" (u));
 #  else
-    __asm__ __volatile__ ("movl %%cr3, %0\n\t"
-                          "movl %0, %%cr3\n\t"
-                          : "=r" (u));
+    __asm__ __volatile__("movl %%cr3, %0\n\t"
+                         "movl %0, %%cr3\n\t"
+                         : "=r" (u));
 #  endif
 # else
     __asm
@@ -1357,9 +1358,9 @@ DECLINLINE(void) ASMSetCR4(RTCCUINTREG uCR4)
 
 # elif RT_INLINE_ASM_GNU_STYLE
 #  ifdef RT_ARCH_AMD64
-    __asm__ __volatile__ ("movq %0, %%cr4\n\t" : : "r" (uCR4));
+    __asm__ __volatile__("movq %0, %%cr4\n\t" : : "r" (uCR4));
 #  else
-    __asm__ __volatile__ ("movl %0, %%cr4\n\t" : : "r" (uCR4));
+    __asm__ __volatile__("movl %0, %%cr4\n\t" : : "r" (uCR4));
 #  endif
 # else
     __asm
@@ -1481,6 +1482,25 @@ DECLINLINE(RTCCUINTREG) ASMIntDisableFlags(void)
     }
 # endif
     return xFlags;
+}
+#endif
+
+
+/**
+ * Halts the CPU until interrupted.
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(void) ASMHalt(void);
+#else
+DECLINLINE(void) ASMHalt(void)
+{
+# if RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("hlt\n\t");
+# else
+    __asm {
+        hlt
+    }
+# endif
 }
 #endif
 
@@ -2108,7 +2128,7 @@ DECLINLINE(void) ASMSetDR7(RTCCUINTREG uDRVal)
  * trapping instruction, etc.
  */
 #if RT_INLINE_ASM_GNU_STYLE
-# define ASMCompilerBarrier()   do { __asm__ __volatile__ ("" : : : "memory"); } while (0)
+# define ASMCompilerBarrier()   do { __asm__ __volatile__("" : : : "memory"); } while (0)
 #elif RT_INLINE_ASM_USES_INTRIN
 # define ASMCompilerBarrier()   do { _ReadWriteBarrier(); } while (0)
 #else /* 2003 should have _ReadWriteBarrier() but I guess we're at 2002 level then... */
@@ -4669,6 +4689,50 @@ DECLINLINE(void) ASMInvalidatePage(void *pv)
 #endif
 
 
+/**
+ * Write back the internal caches and invalidate them.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(void) ASMWriteBackAndInvalidateCaches(void);
+#else
+DECLINLINE(void) ASMWriteBackAndInvalidateCaches(void)
+{
+# if RT_INLINE_ASM_USES_INTRIN
+    __wbinvd();
+
+# elif RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("wbinvd");
+# else
+    __asm
+    {
+        wbinvd
+    }
+# endif
+}
+#endif
+
+
+/**
+ * Invalidate internal and (perhaps) external caches without first
+ * flushing dirty cache lines. Use with extreme care.
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(void) ASMInvalidateInternalCaches(void);
+#else
+DECLINLINE(void) ASMInvalidateInternalCaches(void)
+{
+# if RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("invd");
+# else
+    __asm
+    {
+        invd
+    }
+# endif
+}
+#endif
+
+
 #if defined(PAGE_SIZE) && !defined(NT_INCLUDED)
 # if PAGE_SIZE != 0x1000
 #  error "PAGE_SIZE is not 0x1000!"
@@ -4695,21 +4759,21 @@ DECLINLINE(void) ASMMemZeroPage(volatile void *pv)
 #  elif RT_INLINE_ASM_GNU_STYLE
     RTCCUINTREG uDummy;
 #   ifdef RT_ARCH_AMD64
-    __asm__ __volatile__ ("rep stosq"
-                          : "=D" (pv),
-                            "=c" (uDummy)
-                          : "0" (pv),
-                            "c" (0x1000 >> 3),
-                            "a" (0)
-                          : "memory");
+    __asm__ __volatile__("rep stosq"
+                         : "=D" (pv),
+                           "=c" (uDummy)
+                         : "0" (pv),
+                           "c" (0x1000 >> 3),
+                           "a" (0)
+                         : "memory");
 #   else
-    __asm__ __volatile__ ("rep stosl"
-                          : "=D" (pv),
-                            "=c" (uDummy)
-                          : "0" (pv),
-                            "c" (0x1000 >> 2),
-                            "a" (0)
-                          : "memory");
+    __asm__ __volatile__("rep stosl"
+                         : "=D" (pv),
+                           "=c" (uDummy)
+                         : "0" (pv),
+                           "c" (0x1000 >> 2),
+                           "a" (0)
+                         : "memory");
 #   endif
 #  else
     __asm
@@ -4751,13 +4815,13 @@ DECLINLINE(void) ASMMemZero32(volatile void *pv, size_t cb)
         __stosd((unsigned long *)pv, 0, cb / 4);
 
 # elif RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__ ("rep stosl"
-                          : "=D" (pv),
-                            "=c" (cb)
-                          : "0" (pv),
-                            "1" (cb >> 2),
-                            "a" (0)
-                          : "memory");
+    __asm__ __volatile__("rep stosl"
+                         : "=D" (pv),
+                           "=c" (cb)
+                         : "0" (pv),
+                           "1" (cb >> 2),
+                           "a" (0)
+                         : "memory");
 # else
     __asm
     {
@@ -4799,13 +4863,13 @@ DECLINLINE(void) ASMMemFill32(volatile void *pv, size_t cb, uint32_t u32)
         __stosd((unsigned long *)pv, u32, cb / 4);
 
 # elif RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__ ("rep stosl"
-                          : "=D" (pv),
-                            "=c" (cb)
-                          : "0" (pv),
-                            "1" (cb >> 2),
-                            "a" (u32)
-                          : "memory");
+    __asm__ __volatile__("rep stosl"
+                         : "=D" (pv),
+                           "=c" (cb)
+                         : "0" (pv),
+                           "1" (cb >> 2),
+                           "a" (u32)
+                         : "memory");
 # else
     __asm
     {
@@ -5242,9 +5306,9 @@ DECLINLINE(void) ASMProbeReadBuffer(const void *pvBuf, size_t cbBuf)
  */
 #if RT_INLINE_ASM_GNU_STYLE
 # ifndef __L4ENV__
-#  define ASMBreakpoint()       do { __asm__ __volatile__ ("int3\n\tnop"); } while (0)
+#  define ASMBreakpoint()       do { __asm__ __volatile__("int3\n\tnop"); } while (0)
 # else
-#  define ASMBreakpoint()       do { __asm__ __volatile__ ("int3; jmp 1f; 1:"); } while (0)
+#  define ASMBreakpoint()       do { __asm__ __volatile__("int3; jmp 1f; 1:"); } while (0)
 # endif
 #else
 # define ASMBreakpoint()        __debugbreak()
@@ -5272,11 +5336,11 @@ DECLINLINE(void) ASMBitSet(volatile void *pvBitmap, int32_t iBit)
     _bittestandset((long *)pvBitmap, iBit);
 
 # elif RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__ ("btsl %1, %0"
-                          : "=m" (*(volatile long *)pvBitmap)
-                          : "Ir" (iBit),
-                            "m" (*(volatile long *)pvBitmap)
-                          : "memory");
+    __asm__ __volatile__("btsl %1, %0"
+                         : "=m" (*(volatile long *)pvBitmap)
+                         : "Ir" (iBit),
+                           "m" (*(volatile long *)pvBitmap)
+                         : "memory");
 # else
     __asm
     {
@@ -5309,11 +5373,11 @@ DECLINLINE(void) ASMAtomicBitSet(volatile void *pvBitmap, int32_t iBit)
 # if RT_INLINE_ASM_USES_INTRIN
     _interlockedbittestandset((long *)pvBitmap, iBit);
 # elif RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__ ("lock; btsl %1, %0"
-                          : "=m" (*(volatile long *)pvBitmap)
-                          : "Ir" (iBit),
-                            "m" (*(volatile long *)pvBitmap)
-                          : "memory");
+    __asm__ __volatile__("lock; btsl %1, %0"
+                         : "=m" (*(volatile long *)pvBitmap)
+                         : "Ir" (iBit),
+                           "m" (*(volatile long *)pvBitmap)
+                         : "memory");
 # else
     __asm
     {
@@ -5347,11 +5411,11 @@ DECLINLINE(void) ASMBitClear(volatile void *pvBitmap, int32_t iBit)
     _bittestandreset((long *)pvBitmap, iBit);
 
 # elif RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__ ("btrl %1, %0"
-                          : "=m" (*(volatile long *)pvBitmap)
-                          : "Ir" (iBit),
-                            "m" (*(volatile long *)pvBitmap)
-                          : "memory");
+    __asm__ __volatile__("btrl %1, %0"
+                         : "=m" (*(volatile long *)pvBitmap)
+                         : "Ir" (iBit),
+                           "m" (*(volatile long *)pvBitmap)
+                         : "memory");
 # else
     __asm
     {
@@ -5383,11 +5447,11 @@ DECLASM(void) ASMAtomicBitClear(volatile void *pvBitmap, int32_t iBit);
 DECLINLINE(void) ASMAtomicBitClear(volatile void *pvBitmap, int32_t iBit)
 {
 # if RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__ ("lock; btrl %1, %0"
-                          : "=m" (*(volatile long *)pvBitmap)
-                          : "Ir" (iBit),
-                            "m" (*(volatile long *)pvBitmap)
-                          : "memory");
+    __asm__ __volatile__("lock; btrl %1, %0"
+                         : "=m" (*(volatile long *)pvBitmap)
+                         : "Ir" (iBit),
+                           "m" (*(volatile long *)pvBitmap)
+                         : "memory");
 # else
     __asm
     {
@@ -5420,11 +5484,11 @@ DECLINLINE(void) ASMBitToggle(volatile void *pvBitmap, int32_t iBit)
 # if RT_INLINE_ASM_USES_INTRIN
     _bittestandcomplement((long *)pvBitmap, iBit);
 # elif RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__ ("btcl %1, %0"
-                          : "=m" (*(volatile long *)pvBitmap)
-                          : "Ir" (iBit),
-                            "m" (*(volatile long *)pvBitmap)
-                          : "memory");
+    __asm__ __volatile__("btcl %1, %0"
+                         : "=m" (*(volatile long *)pvBitmap)
+                         : "Ir" (iBit),
+                           "m" (*(volatile long *)pvBitmap)
+                         : "memory");
 # else
     __asm
     {
@@ -5455,11 +5519,11 @@ DECLASM(void) ASMAtomicBitToggle(volatile void *pvBitmap, int32_t iBit);
 DECLINLINE(void) ASMAtomicBitToggle(volatile void *pvBitmap, int32_t iBit)
 {
 # if RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__ ("lock; btcl %1, %0"
-                          : "=m" (*(volatile long *)pvBitmap)
-                          : "Ir" (iBit),
-                            "m" (*(volatile long *)pvBitmap)
-                          : "memory");
+    __asm__ __volatile__("lock; btcl %1, %0"
+                         : "=m" (*(volatile long *)pvBitmap)
+                         : "Ir" (iBit),
+                           "m" (*(volatile long *)pvBitmap)
+                         : "memory");
 # else
     __asm
     {
@@ -5496,14 +5560,14 @@ DECLINLINE(bool) ASMBitTestAndSet(volatile void *pvBitmap, int32_t iBit)
     rc.u8 = _bittestandset((long *)pvBitmap, iBit);
 
 # elif RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__ ("btsl %2, %1\n\t"
-                          "setc %b0\n\t"
-                          "andl $1, %0\n\t"
-                          : "=q" (rc.u32),
-                            "=m" (*(volatile long *)pvBitmap)
-                          : "Ir" (iBit),
-                            "m" (*(volatile long *)pvBitmap)
-                          : "memory");
+    __asm__ __volatile__("btsl %2, %1\n\t"
+                         "setc %b0\n\t"
+                         "andl $1, %0\n\t"
+                         : "=q" (rc.u32),
+                           "=m" (*(volatile long *)pvBitmap)
+                         : "Ir" (iBit),
+                           "m" (*(volatile long *)pvBitmap)
+                         : "memory");
 # else
     __asm
     {
@@ -5542,14 +5606,14 @@ DECLINLINE(bool) ASMAtomicBitTestAndSet(volatile void *pvBitmap, int32_t iBit)
 # if RT_INLINE_ASM_USES_INTRIN
     rc.u8 = _interlockedbittestandset((long *)pvBitmap, iBit);
 # elif RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__ ("lock; btsl %2, %1\n\t"
-                          "setc %b0\n\t"
-                          "andl $1, %0\n\t"
-                          : "=q" (rc.u32),
-                            "=m" (*(volatile long *)pvBitmap)
-                          : "Ir" (iBit),
-                            "m" (*(volatile long *)pvBitmap)
-                          : "memory");
+    __asm__ __volatile__("lock; btsl %2, %1\n\t"
+                         "setc %b0\n\t"
+                         "andl $1, %0\n\t"
+                         : "=q" (rc.u32),
+                           "=m" (*(volatile long *)pvBitmap)
+                         : "Ir" (iBit),
+                           "m" (*(volatile long *)pvBitmap)
+                         : "memory");
 # else
     __asm
     {
@@ -5589,14 +5653,14 @@ DECLINLINE(bool) ASMBitTestAndClear(volatile void *pvBitmap, int32_t iBit)
     rc.u8 = _bittestandreset((long *)pvBitmap, iBit);
 
 # elif RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__ ("btrl %2, %1\n\t"
-                          "setc %b0\n\t"
-                          "andl $1, %0\n\t"
-                          : "=q" (rc.u32),
-                            "=m" (*(volatile long *)pvBitmap)
-                          : "Ir" (iBit),
-                            "m" (*(volatile long *)pvBitmap)
-                          : "memory");
+    __asm__ __volatile__("btrl %2, %1\n\t"
+                         "setc %b0\n\t"
+                         "andl $1, %0\n\t"
+                         : "=q" (rc.u32),
+                           "=m" (*(volatile long *)pvBitmap)
+                         : "Ir" (iBit),
+                           "m" (*(volatile long *)pvBitmap)
+                         : "memory");
 # else
     __asm
     {
@@ -5637,14 +5701,14 @@ DECLINLINE(bool) ASMAtomicBitTestAndClear(volatile void *pvBitmap, int32_t iBit)
     rc.u8 = _interlockedbittestandreset((long *)pvBitmap, iBit);
 
 # elif RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__ ("lock; btrl %2, %1\n\t"
-                          "setc %b0\n\t"
-                          "andl $1, %0\n\t"
-                          : "=q" (rc.u32),
-                            "=m" (*(volatile long *)pvBitmap)
-                          : "Ir" (iBit),
-                            "m" (*(volatile long *)pvBitmap)
-                          : "memory");
+    __asm__ __volatile__("lock; btrl %2, %1\n\t"
+                         "setc %b0\n\t"
+                         "andl $1, %0\n\t"
+                         : "=q" (rc.u32),
+                           "=m" (*(volatile long *)pvBitmap)
+                         : "Ir" (iBit),
+                           "m" (*(volatile long *)pvBitmap)
+                         : "memory");
 # else
     __asm
     {
@@ -5684,14 +5748,14 @@ DECLINLINE(bool) ASMBitTestAndToggle(volatile void *pvBitmap, int32_t iBit)
     rc.u8 = _bittestandcomplement((long *)pvBitmap, iBit);
 
 # elif RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__ ("btcl %2, %1\n\t"
-                          "setc %b0\n\t"
-                          "andl $1, %0\n\t"
-                          : "=q" (rc.u32),
-                            "=m" (*(volatile long *)pvBitmap)
-                          : "Ir" (iBit),
-                            "m" (*(volatile long *)pvBitmap)
-                          : "memory");
+    __asm__ __volatile__("btcl %2, %1\n\t"
+                         "setc %b0\n\t"
+                         "andl $1, %0\n\t"
+                         : "=q" (rc.u32),
+                           "=m" (*(volatile long *)pvBitmap)
+                         : "Ir" (iBit),
+                           "m" (*(volatile long *)pvBitmap)
+                         : "memory");
 # else
     __asm
     {
@@ -5728,14 +5792,14 @@ DECLINLINE(bool) ASMAtomicBitTestAndToggle(volatile void *pvBitmap, int32_t iBit
 {
     union { bool f; uint32_t u32; uint8_t u8; } rc;
 # if RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__ ("lock; btcl %2, %1\n\t"
-                          "setc %b0\n\t"
-                          "andl $1, %0\n\t"
-                          : "=q" (rc.u32),
-                            "=m" (*(volatile long *)pvBitmap)
-                          : "Ir" (iBit),
-                            "m" (*(volatile long *)pvBitmap)
-                          : "memory");
+    __asm__ __volatile__("lock; btcl %2, %1\n\t"
+                         "setc %b0\n\t"
+                         "andl $1, %0\n\t"
+                         : "=q" (rc.u32),
+                           "=m" (*(volatile long *)pvBitmap)
+                         : "Ir" (iBit),
+                           "m" (*(volatile long *)pvBitmap)
+                         : "memory");
 # else
     __asm
     {
@@ -5775,13 +5839,13 @@ DECLINLINE(bool) ASMBitTest(const volatile void *pvBitmap, int32_t iBit)
     rc.u32 = _bittest((long *)pvBitmap, iBit);
 # elif RT_INLINE_ASM_GNU_STYLE
 
-    __asm__ __volatile__ ("btl %2, %1\n\t"
-                          "setc %b0\n\t"
-                          "andl $1, %0\n\t"
-                          : "=q" (rc.u32)
-                          : "m" (*(const volatile long *)pvBitmap),
-                            "Ir" (iBit)
-                          : "memory");
+    __asm__ __volatile__("btl %2, %1\n\t"
+                         "setc %b0\n\t"
+                         "andl $1, %0\n\t"
+                         : "=q" (rc.u32)
+                         : "m" (*(const volatile long *)pvBitmap),
+                           "Ir" (iBit)
+                         : "memory");
 # else
     __asm
     {
