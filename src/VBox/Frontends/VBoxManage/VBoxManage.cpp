@@ -161,10 +161,10 @@ void showProgress(ComPtr<IProgress> progress)
     }
 
     /* complete the line. */
-    HRESULT rc;
-    if (SUCCEEDED(progress->COMGETTER(ResultCode)(&rc)))
+    LONG iRc;
+    if (SUCCEEDED(progress->COMGETTER(ResultCode)(&iRc)))
     {
-        if (SUCCEEDED(rc))
+        if (SUCCEEDED(iRc))
             RTPrintf("100%%\n");
         else
             RTPrintf("FAILED\n");
@@ -530,9 +530,9 @@ static int handleStartVM(HandlerArg *a)
         CHECK_ERROR_RET(progress, COMGETTER(Completed)(&completed), rc);
         ASSERT(completed);
 
-        HRESULT resultCode;
-        CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&resultCode), rc);
-        if (FAILED(resultCode))
+        LONG iRc;
+        CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
+        if (FAILED(iRc))
         {
             ComPtr <IVirtualBoxErrorInfo> errorInfo;
             CHECK_ERROR_RET(progress, COMGETTER(ErrorInfo)(errorInfo.asOutParam()), 1);
@@ -610,8 +610,9 @@ static int handleControlVM(HandlerArg *a)
 
             showProgress(progress);
 
-            progress->COMGETTER(ResultCode)(&rc);
-            if (FAILED(rc))
+            LONG iRc;
+            progress->COMGETTER(ResultCode)(&iRc);
+            if (FAILED(iRc))
             {
                 com::ProgressErrorInfo info(progress);
                 if (info.isBasicAvailable())
