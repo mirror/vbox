@@ -337,7 +337,7 @@ int handleList(HandlerArg *a)
                 RTPrintf("Name:            %lS\n", interfaceName.raw());
                 Bstr interfaceGuid;
                 networkInterface->COMGETTER(Id)(interfaceGuid.asOutParam());
-                RTPrintf("GUID:            %lS\n", interfaceGuid);
+                RTPrintf("GUID:            %lS\n", interfaceGuid.raw());
                 BOOL bDhcpEnabled;
                 networkInterface->COMGETTER(DhcpEnabled)(&bDhcpEnabled);
                 RTPrintf("Dhcp:            %s\n", bDhcpEnabled ? "Enabled" : "Disabled");
