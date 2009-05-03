@@ -4292,23 +4292,46 @@ void hw_error(const char *pszFormat, ...)
  */
 void cpu_abort(CPUState *env, const char *pszFormat, ...)
 {
-    va_list args;
+    va_list va;
     PVM     pVM;
     PVMCPU  pVCpu;
+    char    szMsg[256];
 
     /*
      * Bitch about it.
      */
-#ifndef _MSC_VER
-    /** @todo: MSVC is right - it's not valid C */
     RTLogFlags(NULL, "nodisabled nobuffered");
+    RTLogFlush(NULL);
+
+    va_start(va, pszFormat);
+#if defined(RT_OS_WINDOWS) && ARCH_BITS == 64
+    /* It's a bit complicated when mixing MSC and GCC on AMD64. This is a bit ugly, but it works. */
+    unsigned    cArgs     = 0;
+    uintptr_t   auArgs[6] = {0,0,0,0,0,0};
+    const char *psz       = strchr(pszFormat, '%');
+    while (psz && cArgs < 6)
+    {
+        auArgs[cArgs++] = va_arg(va, uintptr_t);
+        psz = strchr(psz + 1, '%');
+    }
+    switch (cArgs)
+    {
+        case 1: RTStrPrintf(szMsg, sizeof(szMsg), pszFormat, auArgs[0]); break;
+        case 2: RTStrPrintf(szMsg, sizeof(szMsg), pszFormat, auArgs[0], auArgs[1]); break;
+        case 3: RTStrPrintf(szMsg, sizeof(szMsg), pszFormat, auArgs[0], auArgs[1], auArgs[2]); break;
+        case 4: RTStrPrintf(szMsg, sizeof(szMsg), pszFormat, auArgs[0], auArgs[1], auArgs[2], auArgs[3]); break;
+        case 5: RTStrPrintf(szMsg, sizeof(szMsg), pszFormat, auArgs[0], auArgs[1], auArgs[2], auArgs[3], auArgs[4]); break;
+        case 6: RTStrPrintf(szMsg, sizeof(szMsg), pszFormat, auArgs[0], auArgs[1], auArgs[2], auArgs[3], auArgs[4], auArgs[5]); break;
+        default:
+        case 0: RTStrPrintf(szMsg, sizeof(szMsg), "%s", pszFormat); break;
+    }
+#else
+    RTStrPrintfV(szMsg, sizeof(szMsg), pszFormat, va);
 #endif
-    va_start(args, pszFormat);
-    RTLogPrintf("fatal error in recompiler cpu: %N\n", pszFormat, &args);
-    va_end(args);
-    va_start(args, pszFormat);
-    AssertReleaseMsgFailed(("fatal error in recompiler cpu: %N\n", pszFormat, &args));
-    va_end(args);
+    va_end(va);
+
+    RTLogPrintf("fatal error in recompiler cpu: %s\n", szMsg);
+    RTLogRelPrintf("fatal error in recompiler cpu: %s\n", szMsg);
 
     /*
      * If we're in REM context we'll sync back the state before 'jumping' to
