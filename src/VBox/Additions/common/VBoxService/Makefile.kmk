@@ -31,12 +31,17 @@ endif
 #
 VBoxService_TEMPLATE      = VBOXGUESTR3EXE
 VBoxService_DEFS          = VBOXSERVICE_TIMESYNC
+VBoxService_DEFS.win     += _WIN32_WINNT=0x0501
 VBoxService_DEFS.os2      = VBOX_WITH_HGCM VBOXSERVICE_CLIPBOARD
+ifdef VBOX_WITH_GUEST_PROPS
+ VBoxService_DEFS.win    += VBOX_WITH_GUEST_PROPS VBOXSERVICE_VMINFO
+endif
 VBoxService_SOURCES       = \
 	VBoxService.cpp \
 	VBoxServiceTimeSync.cpp
 VBoxService_SOURCES.win   = \
-	VBoxService-win.cpp
+	VBoxService-win.cpp \
+	VBoxServiceVMInfo.cpp
 VBoxService_SOURCES.os2   = \
 	VBoxService-os2.def \
 	VBoxServiceClipboard-os2.cpp

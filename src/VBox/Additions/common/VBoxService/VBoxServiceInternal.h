@@ -129,6 +129,7 @@ extern int VBoxServiceWinUninstall(void);
 extern VBOXSERVICE g_TimeSync;
 extern VBOXSERVICE g_Clipboard;
 extern VBOXSERVICE g_Control;
+extern VBOXSERVICE g_VMInfo;
 
 __END_DECLS
 

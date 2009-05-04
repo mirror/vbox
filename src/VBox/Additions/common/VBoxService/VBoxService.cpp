@@ -81,6 +81,9 @@ static struct
 #ifdef VBOXSERVICE_CLIPBOARD
     { &g_Clipboard, NIL_RTTHREAD, false, false, false, true },
 #endif
+#ifdef VBOXSERVICE_VMINFO
+    { &g_VMInfo, NIL_RTTHREAD, false, false, false, true },
+#endif
 };
 
 
