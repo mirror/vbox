@@ -51,10 +51,16 @@
 #include <iprt/spinlock.h>
 #include <iprt/process.h>
 #include <iprt/assert.h>
+#include <iprt/uuid.h>
 #include <VBox/log.h>
 #include <iprt/alloc.h>
 #include <iprt/err.h>
 
+#ifdef VBOX_WITH_HARDENING
+# define VBOXDRV_PERM 0600
+#else
+# define VBOXDRV_PERM 0666
+#endif
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -85,6 +91,7 @@ static moduledata_t         g_VBoxDrvFreeBSDModule =
 
 /** Declare the module as a pseudo device. */
 DECLARE_MODULE(vboxdrv,     g_VBoxDrvFreeBSDModule, SI_SUB_PSEUDO, SI_ORDER_ANY);
+MODULE_VERSION(vboxdrv, 1); 
 
 /**
  * The /dev/vboxdrv character device entry points.
@@ -109,8 +116,16 @@ static volatile uint32_t    g_cUsers;
 /** The device extention. */
 static SUPDRVDEVEXT         g_VBoxDrvFreeBSDDevExt;
 
-
-
+/** Just a dummy global structure containing a bunch of
+ * function pointers to code which is wanted in the link.
+ */
+static PFNRT g_apfnVBoxDrvFreeBSDDeps[] =
+{
+    /* Needed for vboxnetflt. */
+    (PFNRT)RTUuidFromStr,
+    (PFNRT)RTUuidCompareStr,
+    NULL
+};
 
 /**
  * Module event handler.
@@ -242,10 +257,10 @@ static void VBoxDrvFreeBSDClone(void *pvArg, struct ucred *pCred, char *pszName,
     dprintf(("VBoxDrvFreeBSDClone: clone_create -> %d; iUnit=%d\n", rc, iUnit));
     if (rc)
     {
-#ifdef VBOX_WITH_HARDENING
-        *ppDev = make_dev(&g_VBoxDrvFreeBSDChrDevSW, unit2minor(iUnit), UID_ROOT, GID_WHEEL, 0600, "vboxdrv%d", iUnit);
+#if __FreeBSD_version > 800061
+        *ppDev = make_dev(&g_VBoxDrvFreeBSDChrDevSW, iUnit, UID_ROOT, GID_WHEEL, VBOXDRV_PERM, "vboxdrv%d", iUnit);
 #else
-        *ppDev = make_dev(&g_VBoxDrvFreeBSDChrDevSW, unit2minor(iUnit), UID_ROOT, GID_WHEEL, 0666, "vboxdrv%d", iUnit);
+        *ppDev = make_dev(&g_VBoxDrvFreeBSDChrDevSW, unit2minor(iUnit), UID_ROOT, GID_WHEEL, VBOXDRV_PERM, "vboxdrv%d", iUnit);
 #endif
         if (*ppDev)
         {
@@ -545,7 +560,7 @@ int VBOXCALL SUPDrvFreeBSDIDC(uint32_t uReq, PSUPDRVIDCREQHDR pReq)
     {
         if (RT_UNLIKELY(!VALID_PTR(pReq->pSession)))
             return VERR_INVALID_PARAMETER;
-        if (RT_UNLIKELY(pSession->pDevExt != &g_VBoxDrvFreeBSDModule))
+        if (RT_UNLIKELY(pSession->pDevExt != &g_VBoxDrvFreeBSDDevExt))
             return VERR_INVALID_PARAMETER;
     }
     else if (RT_UNLIKELY(uReq != SUPDRV_IDC_REQ_CONNECT))
@@ -554,7 +569,7 @@ int VBOXCALL SUPDrvFreeBSDIDC(uint32_t uReq, PSUPDRVIDCREQHDR pReq)
     /*
      * Do the job.
      */
-    return supdrvIDC(uReq, &g_VBoxDrvFreeBSDModule, pSession, pReq);
+    return supdrvIDC(uReq, &g_VBoxDrvFreeBSDDevExt, pSession, pReq);
 }
 
 
