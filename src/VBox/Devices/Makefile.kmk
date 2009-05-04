@@ -135,7 +135,7 @@ ifdef VBOX_WITH_AHCI
  VBoxDD_DEFS           += VBOX_WITH_AHCI
 endif
 ifdef VBOX_WITH_ISCSI
- VBoxDD_DEFS           += VBOX_WITH_ISCSI
+ VBoxDD_DEFS           +=  VBOX_WITH_ISCSI
  ifdef VBOX_WITH_INIP
   VBoxDD_DEFS          += VBOX_WITH_INIP
  endif
@@ -625,9 +625,9 @@ endif
 ifdef VBOX_WITH_FAULT_INJECTION
 Drivers_DEFS      += VBOX_WITH_FAULT_INJECTION
 endif
+
 Drivers_INCS      := \
-	$(PATH_SUB_CURRENT) \
-	Network/slirp
+	$(PATH_SUB_CURRENT)
 Drivers_SOURCES    = \
 	Audio/audio.c \
 	Audio/audiosniffer.c \
@@ -650,6 +650,9 @@ Drivers_SOURCES    = \
 	Network/DrvNetSniffer.cpp \
 	Network/Pcap.cpp
 
+Drivers_INCS += Network/slirp
+
+ifndef VBOX_WITH_NAT_SERVICE
 VBOX_SLIRP_SOURCES = \
 	Network/DrvNAT.cpp \
 	Network/slirp/bootp.c \
@@ -673,30 +676,34 @@ VBOX_SLIRP_SOURCES = \
 
 VBOX_WITH_SLIRP_DNS_PROXY=1
 
-ifdef VBOX_WITH_SLIRP_DNS_PROXY
+ ifdef VBOX_WITH_SLIRP_DNS_PROXY
 VBOX_SLIRP_SOURCES += \
 	Network/slirp/dnsproxy/hash.c \
 	Network/slirp/dnsproxy/dnsproxy.c
-endif
+ endif
 
 # some day will be deleted
 VBOX_WITH_MULTI_DNS=1
 
 Drivers_SOURCES += $(VBOX_SLIRP_SOURCES)
-define def_vbox_slirp_cflags
-  $(file)_DEFS += \
+ define def_vbox_slirp_cflags
+   $(file)_DEFS += \
       $(if $(VBOX_WITH_SLIRP_MEMORY_CHECK),RTMEM_WRAP_TO_EF_APIS,) \
       $(if $(VBOX_WITH_DEBUG_NAT_SOCKETS),VBOX_WITH_DEBUG_NAT_SOCKETS,)	\
       $(if $(VBOX_WITH_MULTI_DNS),VBOX_WITH_MULTI_DNS,)	\
       $(if $(VBOX_WITH_SLIRP_DNS_PROXY),VBOX_WITH_SLIRP_DNS_PROXY,)	\
       $(if $(VBOX_WITH_SLIRP_MT),VBOX_WITH_SLIRP_MT,)
- ifeq ($(KBUILD_TARGET),win)
-  $(file)_CFLAGS = -wd4018
- else
-  $(file)_CFLAGS = -Wno-sign-compare
- endif
-endef
+  ifeq ($(KBUILD_TARGET),win)
+   $(file)_CFLAGS = -wd4018
+  else
+   $(file)_CFLAGS = -Wno-sign-compare
+  endif
+ endef
 $(foreach file,$(VBOX_SLIRP_SOURCES),$(eval $(def_vbox_slirp_cflags)))
+else
+Drivers_DEFS += VBOX_WITH_NAT_SERVICE
+VBoxDD_DEFS  += VBOX_WITH_NAT_SERVICE
+endif
 
 # -- OS specific --
 
