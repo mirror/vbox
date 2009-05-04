@@ -28,13 +28,6 @@
 # include <process.h> /**@todo what's this here for?  */
 #endif
 
-/** @todo just move this into the windows specific code, it's not needed
- *        here. */
-/** The service name. */
-#define VBOXSERVICE_NAME           "VBoxService"
-/** The friendly service name. */
-#define VBOXSERVICE_FRIENDLY_NAME  "VBoxService"
-
 /**
  * A service descriptor.
  */
@@ -97,22 +90,29 @@ typedef VBOXSERVICE *PVBOXSERVICE;
 /** Pointer to a const VBOXSERVICE. */
 typedef VBOXSERVICE const *PCVBOXSERVICE;
 
+#ifdef RT_OS_WINDOWS
+/** The service name (needed for mutex creation on Windows). */
+#define VBOXSERVICE_NAME           L"VBoxService"
+/** The friendly service name. */
+#define VBOXSERVICE_FRIENDLY_NAME  L"VBoxService"
+/** The following constant may be defined by including NtStatus.h. */
+#define STATUS_SUCCESS ((NTSTATUS)0x00000000L)
+/** Structure for storing the looked up user information. */
+typedef struct
+{
+    TCHAR szUser [_MAX_PATH];
+    TCHAR szAuthenticationPackage [_MAX_PATH];
+    TCHAR szLogonDomain [_MAX_PATH];
+} VBOXSERVICEVMINFOUSER;
+/** Function prototypes for dynamic loading. */
+typedef DWORD (WINAPI* fnWTSGetActiveConsoleSessionId)();
+#endif
 
 __BEGIN_DECLS
 
 extern char *g_pszProgName;
 extern int g_cVerbosity;
 extern uint32_t g_DefaultInterval;
-/** Windows SCM stuff.
- *  @todo document each of them individually, this comment only documents
- *  g_vboxServiceStatusCode on windows. On the other platforms it will be
- *  dangling.
- *  @todo all this should be moved to -win.cpp and exposed via functions. */
-#ifdef RT_OS_WINDOWS
-extern DWORD                 g_rcWinService;
-extern SERVICE_STATUS_HANDLE g_hWinServiceStatus;
-extern SERVICE_TABLE_ENTRY const g_aServiceTable[];     /** @todo generate on the fly, see comment in main() from the enabled sub services. */
-#endif
 
 extern int VBoxServiceSyntax(const char *pszFormat, ...);
 extern int VBoxServiceError(const char *pszFormat, ...);
@@ -121,15 +121,28 @@ extern int VBoxServiceArgUInt32(int argc, char **argv, const char *psz, int *pi,
 extern unsigned VBoxServiceGetStartedServices(void);
 extern int VBoxServiceStartServices(unsigned iMain);
 extern int VBoxServiceStopServices(void);
-#ifdef RT_OS_WINDOWS
-extern int VBoxServiceWinInstall(void);
-extern int VBoxServiceWinUninstall(void);
-#endif
 
+#ifdef RT_OS_WINDOWS
 extern VBOXSERVICE g_TimeSync;
 extern VBOXSERVICE g_Clipboard;
 extern VBOXSERVICE g_Control;
 extern VBOXSERVICE g_VMInfo;
+
+extern DWORD                 g_rcWinService;
+extern SERVICE_STATUS_HANDLE g_hWinServiceStatus;
+extern SERVICE_TABLE_ENTRY const g_aServiceTable[];     /** @todo generate on the fly, see comment in main() from the enabled sub services. */
+
+extern int VBoxServiceWinInstall(void);
+extern int VBoxServiceWinUninstall(void);
+/** Detects wheter a user is logged on based on the
+ *  enumerated processes. */
+extern BOOL VboxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER* a_pUserInfo,
+                                           PLUID a_pSession,
+                                           PLUID a_pLuid,
+                                           DWORD a_dwNumOfProcLUIDs);
+/** Gets logon user IDs from enumerated processes. */
+extern DWORD VboxServiceVMInfoWinGetLUIDsFromProcesses(PLUID *ppLuid);
+#endif
 
 __END_DECLS
 
