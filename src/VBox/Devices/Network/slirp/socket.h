@@ -82,6 +82,10 @@ struct socket
     void (* so_timeout)(PNATState pData, struct socket *so, void *arg);
     void *so_timeout_arg;
 #endif
+#ifdef VBOX_WITH_NAT_SERVICE
+    /* storage of source ether address */
+    unsigned char so_ethaddr[6]; 
+#endif
 };
 
 #ifdef VBOX_WITH_SLIRP_MT

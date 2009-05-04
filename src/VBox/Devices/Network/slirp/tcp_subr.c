@@ -123,6 +123,15 @@ tcp_respond(PNATState pData, struct tcpcb *tp, struct tcpiphdr *ti, struct mbuf 
     {
         if ((m = m_get(pData)) == NULL)
             return;
+#ifdef VBOX_WITH_NAT_SERVICE
+        {
+            struct ethhdr *eh0, *eh;
+            Assert(tp->t_socket->so_m);
+            eh0 = (struct ethhdr *)tp->t_socket->so_m->m_dat;
+            eh = (struct ethhdr *)m->m_dat;
+            memcpy(eh->h_source, eh0->h_source, ETH_ALEN);
+        }
+#endif
 #ifdef TCP_COMPAT_42
         tlen = 1;
 #else

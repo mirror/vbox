@@ -27,7 +27,11 @@ typedef struct NATState *PNATState;
 extern "C" {
 #endif
 
+#ifndef VBOX_WITH_NAT_SERVICE
 int slirp_init(PNATState *, const char *, uint32_t, bool, void *);
+#else
+int slirp_init(PNATState *, uint32_t, uint32_t, bool, void *);
+#endif
 void slirp_register_timers(PNATState pData, PPDMDRVINS pDrvIns);
 void slirp_term(PNATState);
 void slirp_link_up(PNATState);

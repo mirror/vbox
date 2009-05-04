@@ -195,6 +195,16 @@ static const uint8_t special_ethaddr[6] =
     0x52, 0x54, 0x00, 0x12, 0x35, 0x00
 };
 
+static const uint8_t broadcast_ethaddr[6] =
+{
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+};
+
+static const uint8_t zerro_ethaddr[6] =
+{
+    0x0, 0x0, 0x0, 0x0, 0x0, 0x0
+};
+
 #ifdef RT_OS_WINDOWS
 # ifndef VBOX_WITH_MULTI_DNS
 static int get_dns_addr_domain(PNATState pData, bool fVerbose,
@@ -586,8 +596,13 @@ int get_dns_addr(PNATState pData, struct in_addr *pdns_addr)
     return get_dns_addr_domain(pData, false, pdns_addr, NULL);
 }
 
+#ifndef VBOX_WITH_NAT_SERVICE
 int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
                bool fPassDomain, void *pvUser)
+#else
+int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
+               bool fPassDomain, void *pvUser)
+#endif
 {
     int fNATfailed = 0;
     int rc;
@@ -626,7 +641,11 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
     /* Initialise mbufs *after* setting the MTU */
     m_init(pData);
 
+#ifndef VBOX_WITH_NAT_SERVICE
     inet_aton(pszNetAddr, &special_addr);
+#else
+    special_addr.s_addr = u32NetAddr;
+#endif
     alias_addr.s_addr = special_addr.s_addr | htonl(CTL_ALIAS);
     /* @todo: add ability to configure this staff */
 
@@ -1365,6 +1384,7 @@ tcp_input_close:
     STAM_PROFILE_STOP(&pData->StatPoll, a);
 }
 
+#ifndef VBOX_WITH_NAT_SERVICE
 #define ETH_ALEN        6
 #define ETH_HLEN        14
 
@@ -1378,6 +1398,7 @@ struct ethhdr
     unsigned short  h_proto;                    /* packet type ID field */
 };
 AssertCompileSize(struct ethhdr, 14);
+#endif
 
 struct arphdr
 {
@@ -1406,12 +1427,22 @@ static void arp_input(PNATState pData, struct mbuf *m)
     int ar_op;
     struct ex_list *ex_ptr;
     uint32_t htip;
+    uint32_t tip;
     struct mbuf *mr;
     eh = mtod(m, struct ethhdr *);
     ah = (struct arphdr *)&eh[1];
     htip = ntohl(*(uint32_t*)ah->ar_tip);
+    tip = *(uint32_t*)ah->ar_tip;
 
     mr = m_get(pData);
+#ifdef VBOX_WITH_NAT_SERVICE
+    reh = mtod(mr, struct ethhdr *);
+    memcpy(reh->h_source, eh->h_source, ETH_ALEN); /* XXX: if_encap will swap src and dst*/ 
+    Log4(("NAT: arp:[%hhx:%hhx:%hhx:%hhx:%hhx:%hhx]->[%hhx:%hhx:%hhx:%hhx:%hhx:%hhx]\n",
+        reh->h_source[0], reh->h_source[1], reh->h_source[2], reh->h_source[3], reh->h_source[4], reh->h_source[5], 
+        reh->h_dest[0], reh->h_dest[1], reh->h_dest[2], reh->h_dest[3], reh->h_dest[4], reh->h_dest[5]));
+    Log4(("NAT: arp: %R[IP4]\n", &tip));
+#endif
     mr->m_data += if_maxlinkhdr;
     mr->m_len = sizeof(struct arphdr);
     rah = mtod(mr, struct arphdr *);
@@ -1420,6 +1451,9 @@ static void arp_input(PNATState pData, struct mbuf *m)
     switch(ar_op)
     {
         case ARPOP_REQUEST:
+#ifdef VBOX_WITH_NAT_SERVICE
+            if (tip == special_addr.s_addr) goto arp_ok;
+#endif
             if ((htip & pData->netmask) == ntohl(special_addr.s_addr))
             {
                 if (   CTL_CHECK(htip, CTL_DNS)
@@ -1428,8 +1462,10 @@ static void arp_input(PNATState pData, struct mbuf *m)
                     goto arp_ok;
                 for (ex_ptr = exec_list; ex_ptr; ex_ptr = ex_ptr->ex_next)
                 {
-                    if ((htip & ~pData->netmask) == ex_ptr->ex_addr)
+                    if ((htip & ~pData->netmask) == ex_ptr->ex_addr) 
+                    {
                         goto arp_ok;
+                    }
                 }
                 return;
         arp_ok:
@@ -1466,12 +1502,22 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
     struct mbuf *m;
     int proto;
     static bool fWarnedIpv6;
+    struct ethhdr *eh = (struct ethhdr*)pkt;
 
     if (pkt_len < ETH_HLEN)
     {
         LogRel(("NAT: packet having size %d has been ingnored\n", pkt_len));
         return;
     }
+    Log4(("NAT: in:[%hhx:%hhx:%hhx:%hhx:%hhx:%hhx]->[%hhx:%hhx:%hhx:%hhx:%hhx:%hhx]\n",
+        eh->h_source[0], eh->h_source[1], eh->h_source[2], eh->h_source[3], eh->h_source[4], eh->h_source[5], 
+        eh->h_dest[0], eh->h_dest[1], eh->h_dest[2], eh->h_dest[3], eh->h_dest[4], eh->h_dest[5]));
+#ifdef VBOX_WITH_NAT_SERVICE
+    if (memcmp(eh->h_source, special_ethaddr, ETH_ALEN) == 0) 
+    {
+        goto drop;
+    }
+#endif
 
     m = m_get(pData);
     if (!m)
@@ -1515,6 +1561,7 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
             m_free(pData, m);
             break;
     }
+    drop:
     RTMemFree((void *)pkt);
 }
 
@@ -1528,10 +1575,21 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m)
     m->m_len += ETH_HLEN;
     eh = mtod(m, struct ethhdr *);
 
+#ifndef VBOX_WITH_NAT_SERVICE
     memcpy(eh->h_dest, client_ethaddr, ETH_ALEN);
     memcpy(eh->h_source, special_ethaddr, ETH_ALEN - 1);
     /* XXX: not correct */
     eh->h_source[5] = CTL_ALIAS;
+#else
+    Assert((caddr_t)eh == (caddr_t)m->m_dat); 
+    if (memcmp(eh->h_source, special_ethaddr, ETH_ALEN) != 0) 
+    {
+        memcpy(eh->h_dest, eh->h_source, ETH_ALEN);
+        memcpy(eh->h_source, special_ethaddr, ETH_ALEN);
+        Assert(memcmp(eh->h_dest, special_ethaddr, ETH_ALEN) != 0);
+        Assert(memcmp(eh->h_dest, zerro_ethaddr, ETH_ALEN) != 0);
+    }
+#endif
     eh->h_proto = htons(eth_proto);
 #if 0
     slirp_output(pData->pvUser, m, mtod(m, uint8_t *), m->m_len);
@@ -1570,7 +1628,9 @@ int slirp_add_exec(PNATState pData, int do_pty, const char *args, int addr_low_b
 
 void slirp_set_ethaddr(PNATState pData, const uint8_t *ethaddr)
 {
+#ifndef VBOX_WITH_NAT_SERVICE
     memcpy(client_ethaddr, ethaddr, ETH_ALEN);
+#endif
 }
 
 #if defined(RT_OS_WINDOWS)

@@ -62,6 +62,7 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
     DEBUG_CALL("ip_output");
     DEBUG_ARG("so = %lx", (long)so);
     DEBUG_ARG("m0 = %lx", (long)m0);
+    Assert(m->m_data == m->m_dat + if_maxlinkhdr);
 
 #if 0 /* We do no options */
     if (opt)
@@ -102,6 +103,14 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
         ip->ip_sum = 0;
         ip->ip_sum = cksum(m, hlen);
 
+#ifdef VBOX_WITH_NAT_SERVICE
+        {
+            struct ethhdr *eh, *eh0;
+            eh = (struct ethhdr *)m->m_dat;
+            eh0 = (struct ethhdr *)m0->m_dat;
+            memcpy(eh->h_source, eh0->h_source, ETH_ALEN);
+        }
+#endif
         if_output(pData, so, m);
         goto done;
     }
@@ -136,6 +145,10 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
         mhlen = sizeof (struct ip);
         for (off = hlen + len; off < (u_int16_t)ip->ip_len; off += len)
         {
+#ifdef VBOX_WITH_NAT_SERVICE
+            struct ethhdr *eh0;
+            struct ethhdr *eh;
+#endif
             register struct ip *mhip;
             m = m_get(pData);
             if (m == 0)
@@ -144,6 +157,11 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
                 ipstat.ips_odropped++;
                 goto sendorfree;
             }
+#ifdef VBOX_WITH_NAT_SERVICE
+            eh0 = (struct ethhdr *)m0->m_dat; 
+            eh = (struct ethhdr *)m->m_dat;
+            memcpy(eh->h_source, eh0->h_source, ETH_ALEN);
+#endif
             m->m_data += if_maxlinkhdr;
             mhip = mtod(m, struct ip *);
             *mhip = *ip;

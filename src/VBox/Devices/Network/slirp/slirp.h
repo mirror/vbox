@@ -355,4 +355,21 @@ do {                                                                        \
 #else
 #define DO_ALIAS(paddr) do {} while (0)
 #endif
+
+
+# ifdef VBOX_WITH_NAT_SERVICE
+#  define ETH_ALEN        6
+#  define ETH_HLEN        14
+
+#  define ARPOP_REQUEST   1               /* ARP request                  */
+#  define ARPOP_REPLY     2               /* ARP reply                    */
+
+struct ethhdr
+{
+    unsigned char   h_dest[ETH_ALEN];           /* destination eth addr */
+    unsigned char   h_source[ETH_ALEN];         /* source ether addr    */
+    unsigned short  h_proto;                    /* packet type ID field */
+};
+AssertCompileSize(struct ethhdr, 14);
+# endif
 #endif

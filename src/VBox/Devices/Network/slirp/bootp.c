@@ -126,10 +126,18 @@ static void dhcp_decode(const uint8_t *buf, int size,
     }
 }
 
+#ifndef VBOX_WITH_NAT_SERVICE
 static void bootp_reply(PNATState pData, struct bootp_t *bp)
+#else
+static void bootp_reply(PNATState pData, struct mbuf *m0)
+#endif
 {
     BOOTPClient *bc;
-    struct mbuf *m;
+    struct mbuf *m; /* XXX: @todo vasily - it'd be better to reuse this mbuf here */
+#ifdef VBOX_WITH_NAT_SERVICE
+    struct bootp_t *bp = mtod(m0, struct bootp_t *);
+    struct ethhdr *eh;
+#endif
     struct bootp_t *rbp;
     struct sockaddr_in saddr, daddr;
 #ifndef VBOX_WITH_MULTI_DNS
@@ -171,11 +179,17 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
         && dhcp_msg_type != DHCPREQUEST)
         return;
 
+#ifndef VBOX_WITH_NAT_SERVICE
     /* XXX: this is a hack to get the client mac address */
     memcpy(client_ethaddr, bp->bp_hwaddr, 6);
+#endif
 
     if ((m = m_get(pData)) == NULL)
         return;
+#ifdef VBOX_WITH_NAT_SERVICE
+    eh = mtod(m, struct ethhdr *);
+    memcpy(eh->h_source, bp->bp_hwaddr, ETH_ALEN); /* XXX: if_encap just swap source with dest*/
+#endif
     m->m_data += if_maxlinkhdr; /*reserve ether header */
     rbp = mtod(m, struct bootp_t *);
     memset(rbp, 0, sizeof(struct bootp_t));
@@ -194,7 +208,11 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
                 Log(("no address left\n"));
                 return;
             }
+#ifdef VBOX_WITH_NAT_SERVICE
+            memcpy(bc->macaddr, bp->bp_hwaddr, 6);
+#else
             memcpy(bc->macaddr, client_ethaddr, 6);
+#endif
         }
     }
     else
@@ -214,7 +232,12 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
         RTStrPrintf((char*)rbp->bp_file, sizeof(rbp->bp_file), "%s", bootp_filename);
 
     /* Address/port of the DHCP server. */
+#ifndef VBOX_WITH_NAT_SERVICE
     saddr.sin_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS);
+#else
+    saddr.sin_addr.s_addr = special_addr.s_addr;
+#endif
+
     saddr.sin_port = htons(BOOTP_SERVER);
 
     daddr.sin_port = htons(BOOTP_CLIENT);
@@ -349,5 +372,9 @@ void bootp_input(PNATState pData, struct mbuf *m)
     struct bootp_t *bp = mtod(m, struct bootp_t *);
 
     if (bp->bp_op == BOOTP_REQUEST)
+#ifndef VBOX_WITH_NAT_SERVICE
         bootp_reply(pData, bp);
+#else
+        bootp_reply(pData, m);
+#endif
 }
