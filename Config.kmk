@@ -430,6 +430,8 @@ ifdef VBOX_WITH_HARDENING
   VBOX_PATH_APP_PRIVATE      = /opt/VirtualBox/$(if-expr $(KBUILD_TARGET_ARCH) == "amd64",amd64,i386)
  else ifeq ($(KBUILD_TARGET),darwin)
   VBOX_PATH_APP_PRIVATE      = /Applications/VirtualBox.app/Contents/MacOS
+ else ifeq ($(KBUILD_TARGET),freebsd)
+  VBOX_PATH_APP_PRIVATE      = /usr/local/lib/virtualbox
  endif
 endif
 # Where the architecture specific application files are (going to be) installed.
@@ -458,7 +460,7 @@ endif
 # depending on the location of the object.)
 #VBOX_WITH_RUNPATH = /usr/lib/virtualbox
 ifdef VBOX_WITH_HARDENING
- if1of ($(KBUILD_TARGET), solaris)
+ if1of ($(KBUILD_TARGET), solaris freebsd)
   VBOX_WITH_RUNPATH = $(VBOX_PATH_APP_PRIVATE)
  endif
 endif
