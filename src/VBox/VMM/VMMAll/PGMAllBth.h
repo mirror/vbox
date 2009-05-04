@@ -921,6 +921,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     && PGM_SHW_TYPE != PGM_TYPE_EPT
     int rc;
     PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
     LogFlow(("InvalidatePage %RGv\n", GCPtrPage));
     /*
@@ -1057,14 +1058,12 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
 # endif /* IN_RING3 */
 
 # if PGM_GST_TYPE == PGM_TYPE_AMD64
-    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
-
     /* Fetch the pgm pool shadow descriptor. */
-    PPGMPOOLPAGE pShwPdpt = pgmPoolGetPageByHCPhys(pVM, pPml4eDst->u & X86_PML4E_PG_MASK);
+    PPGMPOOLPAGE pShwPdpt = pgmPoolGetPage(pPool, pPml4eDst->u & X86_PML4E_PG_MASK);
     Assert(pShwPdpt);
 
     /* Fetch the pgm pool shadow descriptor. */
-    PPGMPOOLPAGE pShwPde = pgmPoolGetPageByHCPhys(pVM, pPdptDst->a[iPdpt].u & SHW_PDPE_PG_MASK);
+    PPGMPOOLPAGE pShwPde = pgmPoolGetPage(pPool, pPdptDst->a[iPdpt].u & SHW_PDPE_PG_MASK);
     Assert(pShwPde);
 
     Assert(pPml4eDst->n.u1Present && (pPml4eDst->u & SHW_PDPT_MASK));
@@ -1148,7 +1147,6 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     }
 # endif /* PGM_GST_TYPE == PGM_TYPE_AMD64 */
 
-
     /*
      * Deal with the Guest PDE.
      */
@@ -1194,7 +1192,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
             /*
              * 4KB - page.
              */
-            PPGMPOOLPAGE    pShwPage = pgmPoolGetPageByHCPhys(pVM, PdeDst.u & SHW_PDE_PG_MASK);
+            PPGMPOOLPAGE    pShwPage = pgmPoolGetPage(pPool, PdeDst.u & SHW_PDE_PG_MASK);
             RTGCPHYS        GCPhys   = PdeSrc.u & GST_PDE_PG_MASK;
 # if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
             /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. */
@@ -1240,7 +1238,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
              * 2/4MB - page.
              */
             /* Before freeing the page, check if anything really changed. */
-            PPGMPOOLPAGE    pShwPage = pgmPoolGetPageByHCPhys(pVM, PdeDst.u & SHW_PDE_PG_MASK);
+            PPGMPOOLPAGE    pShwPage = pgmPoolGetPage(pPool, PdeDst.u & SHW_PDE_PG_MASK);
             RTGCPHYS        GCPhys   = GST_GET_PDE_BIG_PG_GCPHYS(PdeSrc);
 # if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
             /* Select the right PDE as we're emulating a 4MB page directory with two 2 MB shadow PDEs.*/
@@ -1596,7 +1594,8 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GST
  */
 PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned cPages, unsigned uErr)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PVM      pVM = pVCpu->CTX_SUFF(pVM);
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     LogFlow(("SyncPage: GCPtrPage=%RGv cPages=%u uErr=%#x\n", GCPtrPage, cPages, uErr));
 
 #if    (   PGM_GST_TYPE == PGM_TYPE_32BIT  \
@@ -1651,14 +1650,13 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
     Assert(pPDDst && pPdptDst);
     PX86PDEPAE      pPdeDst = &pPDDst->a[iPDDst];
 # endif
-
     SHWPDE          PdeDst   = *pPdeDst;
     AssertMsg(PdeDst.n.u1Present, ("%p=%llx\n", pPdeDst, (uint64_t)PdeDst.u));
-    PPGMPOOLPAGE    pShwPage = pgmPoolGetPageByHCPhys(pVM, PdeDst.u & SHW_PDE_PG_MASK);
+    PPGMPOOLPAGE    pShwPage = pgmPoolGetPage(pPool, PdeDst.u & SHW_PDE_PG_MASK);
 
 # if PGM_GST_TYPE == PGM_TYPE_AMD64
     /* Fetch the pgm pool shadow descriptor. */
-    PPGMPOOLPAGE    pShwPde  = pgmPoolGetPageByHCPhys(pVM, pPdptDst->a[iPdpt].u & X86_PDPE_PG_MASK);
+    PPGMPOOLPAGE    pShwPde  = pgmPoolGetPage(pPool, pPdptDst->a[iPdpt].u & X86_PDPE_PG_MASK);
     Assert(pShwPde);
 # endif
 
@@ -1899,7 +1897,6 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
      * Mark the PDE not present. Restart the instruction and let #PF call SyncPT.
      * Yea, I'm lazy.
      */
-    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     pgmPoolFreeByPage(pPool, pShwPage, pShwPde->idx, iPDDst);
 
     pPdeDst->u = 0;
@@ -1952,8 +1949,8 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
     PdeDst = pPDDst->a[iPDDst];
 # endif
     AssertMsg(PdeDst.n.u1Present, ("%#llx\n", (uint64_t)PdeDst.u));
-    PPGMPOOLPAGE    pShwPage = pgmPoolGetPageByHCPhys(pVM, PdeDst.u & SHW_PDE_PG_MASK);
-    PSHWPT pPTDst = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
+    PPGMPOOLPAGE  pShwPage = pgmPoolGetPage(pPool, PdeDst.u & SHW_PDE_PG_MASK);
+    PSHWPT        pPTDst   = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
 
     Assert(cPages == 1 || !(uErr & X86_TRAP_PF_P));
     if (    cPages > 1
@@ -2067,6 +2064,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
     unsigned uPageFaultLevel;
     int rc;
     PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
     STAM_PROFILE_START(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyBitTracking), a);
     LogFlow(("CheckPageFault: GCPtrPage=%RGv uErr=%#x PdeSrc=%08x\n", GCPtrPage, uErr, pPdeSrc->u));
@@ -2248,7 +2246,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
                 /*
                  * Map shadow page table.
                  */
-                PPGMPOOLPAGE    pShwPage = pgmPoolGetPageByHCPhys(pVM, pPdeDst->u & SHW_PDE_PG_MASK);
+                PPGMPOOLPAGE    pShwPage = pgmPoolGetPage(pPool, pPdeDst->u & SHW_PDE_PG_MASK);
                 if (pShwPage)
                 {
                     PSHWPT      pPTDst   = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
@@ -2290,7 +2288,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
                  && (pPdeSrc->n.u1Write & pPteSrc->n.u1Write)
                  && pPdeDst->n.u1Present)
         {
-            PPGMPOOLPAGE    pShwPage = pgmPoolGetPageByHCPhys(pVM, pPdeDst->u & SHW_PDE_PG_MASK);
+            PPGMPOOLPAGE    pShwPage = pgmPoolGetPage(pPool, pPdeDst->u & SHW_PDE_PG_MASK);
             PSHWPT          pPTDst   = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
             PSHWPTE         pPteDst  = &pPTDst->a[(GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK];
             if (    pPteDst->n.u1Present
@@ -2366,7 +2364,8 @@ l_UpperLevelPageFault:
  */
 PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtrPage)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PVM      pVM   = pVCpu->CTX_SUFF(pVM);
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
     STAM_PROFILE_START(&pVCpu->pgm.s.CTX_MID_Z(Stat,SyncPT), a);
     STAM_COUNTER_INC(&pVCpu->pgm.s.StatSyncPtPD[iPDSrc]);
@@ -2420,7 +2419,7 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
 
 # if PGM_GST_TYPE == PGM_TYPE_AMD64
     /* Fetch the pgm pool shadow descriptor. */
-    PPGMPOOLPAGE pShwPde = pgmPoolGetPageByHCPhys(pVM, pPdptDst->a[iPdpt].u & X86_PDPE_PG_MASK);
+    PPGMPOOLPAGE pShwPde = pgmPoolGetPage(pPool, pPdptDst->a[iPdpt].u & X86_PDPE_PG_MASK);
     Assert(pShwPde);
 # endif
 
@@ -2835,7 +2834,7 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
     PSHWPDE         pPdeDst = &pPDDst->a[iPDDst];
 
     /* Fetch the pgm pool shadow descriptor. */
-    PPGMPOOLPAGE    pShwPde = pgmPoolGetPageByHCPhys(pVM, pPdptDst->a[iPdpt].u & X86_PDPE_PG_MASK);
+    PPGMPOOLPAGE    pShwPde = pgmPoolGetPage(pPool, pPdptDst->a[iPdpt].u & X86_PDPE_PG_MASK);
     Assert(pShwPde);
 
 # elif PGM_SHW_TYPE == PGM_TYPE_EPT
@@ -2854,7 +2853,7 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
     PSHWPDE         pPdeDst = &pPDDst->a[iPDDst];
 
     /* Fetch the pgm pool shadow descriptor. */
-    PPGMPOOLPAGE pShwPde = pgmPoolGetPageByHCPhys(pVM, pPdptDst->a[iPdpt].u & EPT_PDPTE_PG_MASK);
+    PPGMPOOLPAGE pShwPde = pgmPoolGetPage(pPool, pPdptDst->a[iPdpt].u & EPT_PDPTE_PG_MASK);
     Assert(pShwPde);
 # endif
     SHWPDE          PdeDst = *pPdeDst;
@@ -3384,6 +3383,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
 #else
     unsigned cErrors = 0;
     PVM      pVM     = pVCpu->CTX_SUFF(pVM);
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
 #if PGM_GST_TYPE == PGM_TYPE_PAE
     /** @todo currently broken; crashes below somewhere */
@@ -3453,10 +3453,6 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
         cPDEs = RT_MIN(cb >> SHW_PD_SHIFT, 1);
 
 /** @todo call the other two PGMAssert*() functions. */
-
-# if PGM_GST_TYPE == PGM_TYPE_AMD64 || PGM_GST_TYPE == PGM_TYPE_PAE
-    PPGMPOOL        pPool       = pVM->pgm.s.CTX_SUFF(pPool);
-# endif
 
 # if PGM_GST_TYPE == PGM_TYPE_AMD64
     unsigned iPml4 = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
@@ -3626,7 +3622,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
                         )
                 {
                     HCPhysShw = PdeDst.u & SHW_PDE_PG_MASK;
-                    PPGMPOOLPAGE pPoolPage = pgmPoolGetPageByHCPhys(pVM, HCPhysShw);
+                    PPGMPOOLPAGE pPoolPage = pgmPoolGetPage(pPool, HCPhysShw);
                     if (!pPoolPage)
                     {
                         AssertMsgFailed(("Invalid page table address %RHp at %RGv! PdeDst=%#RX64\n",

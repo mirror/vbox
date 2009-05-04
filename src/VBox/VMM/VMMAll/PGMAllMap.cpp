@@ -232,6 +232,8 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
     PGMMODE enmShadowMode = PGMGetShadowMode(pVCpu);
     Assert(enmShadowMode <= PGMMODE_PAE_NX);
 
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+
     /*
      * Insert the page tables into the shadow page directories.
      */
@@ -309,7 +311,7 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                 /*
                  * Mark the page as locked; disallow flushing.
                  */
-                PPGMPOOLPAGE    pPoolPagePd = pgmPoolGetPageByHCPhys(pVM, pShwPdpt->a[iPdPt].u & X86_PDPE_PG_MASK);
+                PPGMPOOLPAGE    pPoolPagePd = pgmPoolGetPage(pPool, pShwPdpt->a[iPdPt].u & X86_PDPE_PG_MASK);
                 AssertFatal(pPoolPagePd);
                 if (!pgmPoolIsPageLocked(&pVM->pgm.s, pPoolPagePd))
                     pgmPoolLockPage(pVM->pgm.s.CTX_SUFF(pPool), pPoolPagePd);
@@ -398,6 +400,8 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
     Assert(pShwPageCR3 != pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
 # endif
 
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+
     PX86PDPT pCurrentShwPdpt = NULL;
     if (    PGMGetGuestMode(pVCpu) >= PGMMODE_PAE
         &&  pShwPageCR3 != pVCpu->pgm.s.CTX_SUFF(pShwPageCR3))
@@ -485,7 +489,7 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
                 if (    fDeactivateCR3
                     ||  !(pShwPdpt->a[iPdpt].u & PGM_PLXFLAGS_MAPPING))
                 {
-                    PPGMPOOLPAGE pPoolPagePd = pgmPoolGetPageByHCPhys(pVM, pShwPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
+                    PPGMPOOLPAGE pPoolPagePd = pgmPoolGetPage(pPool, pShwPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
                     AssertFatal(pPoolPagePd);
                     if (pgmPoolIsPageLocked(&pVM->pgm.s, pPoolPagePd))
                         pgmPoolUnlockPage(pVM->pgm.s.CTX_SUFF(pPool), pPoolPagePd);
@@ -522,6 +526,7 @@ static void pgmMapCheckShadowPDEs(PVM pVM, PVMCPU pVCpu, PPGMPOOLPAGE pShwPageCR
 
     uint32_t i = pMap->cPTs;
     PGMMODE  enmShadowMode = PGMGetShadowMode(pVCpu);
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
     iPDE += i;
     while (i-- > 0)
@@ -569,7 +574,7 @@ static void pgmMapCheckShadowPDEs(PVM pVM, PVMCPU pVCpu, PPGMPOOLPAGE pShwPageCR
                            pShwPdpt->a[iPdpt].u,
                            iPDE, iPdpt, iPaePDE, pMap->GCPtr, R3STRING(pMap->pszDesc) ));
 
-                PCPGMPOOLPAGE   pPoolPagePd = pgmPoolGetPageByHCPhys(pVM, pShwPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
+                PCPGMPOOLPAGE   pPoolPagePd = pgmPoolGetPage(pPool, pShwPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
                 AssertFatal(pPoolPagePd);
                 AssertMsg(pPoolPagePd->fLocked, (".idx=%d .type=%d\n", pPoolPagePd->idx, pPoolPagePd->enmKind));
                 break;
