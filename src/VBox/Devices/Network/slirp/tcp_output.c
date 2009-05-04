@@ -449,11 +449,6 @@ send:
         }
 #endif
         m->m_data += if_maxlinkhdr;
-#ifndef VBOX_WITH_NAT_SERVICE
-        /* XXX: it's shouldn't be here at all need to be deleted */
-        m->m_data += sizeof(struct ip) 
-                   + sizeof(struct tcphdr);
-#endif
         m->m_len = hdrlen;
     }
 
