@@ -1987,10 +1987,8 @@ VMMDECL(int) SELMGetLDTFromSel(PVM pVM, RTSEL SelLdt, PRTGCPTR ppvLdt, unsigned 
  * @param   Sel         The selector to get info about.
  * @param   pSelInfo    Where to store the information.
  */
-static int selmR3GetSelectorInfo64(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PSELMSELINFO pSelInfo)
+static int selmR3GetSelectorInfo64(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PDBGFSELINFO pSelInfo)
 {
-    pSelInfo->fHyper = false;
-
     /*
      * Read it from the guest descriptor table.
      */
@@ -2008,7 +2006,7 @@ static int selmR3GetSelectorInfo64(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PSELMSELINF
     else
     {
         /*
-         * LDT - must locate the LDT first...
+         * LDT - must locate the LDT first.
          */
         RTSEL SelLdt = CPUMGetGuestLDTR(pVCpu);
         if (    (unsigned)(SelLdt & X86_SEL_MASK) < sizeof(X86DESC) /* the first selector is invalid, right? */
@@ -2023,13 +2021,13 @@ static int selmR3GetSelectorInfo64(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PSELMSELINF
         if (Desc.Gen.u1Present == 0)
             return VERR_SELECTOR_NOT_PRESENT;
         if (    Desc.Gen.u1DescType == 1
-            ||  Desc.Gen.u4Type != X86_SEL_TYPE_SYS_LDT)
+            ||  Desc.Gen.u4Type != AMD64_SEL_TYPE_SYS_LDT)
             return VERR_INVALID_SELECTOR;
 
-        unsigned cbLimit = X86DESC_LIMIT(Desc);
+        uint32_t cbLimit = X86DESC_LIMIT(Desc);
         if (Desc.Gen.u1Granularity)
             cbLimit = (cbLimit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
-        if ((unsigned)(Sel & X86_SEL_MASK) + sizeof(X86DESC) - 1 > cbLimit)
+        if ((uint32_t)(Sel & X86_SEL_MASK) + sizeof(X86DESC) - 1 > cbLimit)
             return VERR_INVALID_SELECTOR;
 
         /* calc the descriptor location. */
@@ -2040,20 +2038,122 @@ static int selmR3GetSelectorInfo64(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PSELMSELINF
     /* read the descriptor. */
     int rc = PGMPhysSimpleReadGCPtr(pVCpu, &Desc, GCPtrDesc, sizeof(Desc));
     if (RT_FAILURE(rc))
-        return rc;
+    {
+        rc = PGMPhysSimpleReadGCPtr(pVCpu, &Desc, GCPtrDesc, sizeof(X86DESC));
+        if (RT_FAILURE(rc))
+            return rc;
+        Desc.au64[1] = 0;
+    }
 
     /*
      * Extract the base and limit
+     * (We ignore the present bit here, which is probably a bit silly...)
      */
-    pSelInfo->Sel = Sel;
-    pSelInfo->Raw64 = Desc;
-    pSelInfo->cbLimit = X86DESC_LIMIT(Desc);
-    if (Desc.Gen.u1Granularity)
-        pSelInfo->cbLimit = (pSelInfo->cbLimit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
-    pSelInfo->GCPtrBase = X86DESC64_BASE(Desc);
-    pSelInfo->fRealMode = false;
+    pSelInfo->Sel    = Sel;
+    pSelInfo->fFlags = DBGFSELINFO_FLAGS_LONG_MODE;
+    pSelInfo->Raw64  = Desc;
+    if (Desc.Gen.u1DescType)
+    {
+        if (    Desc.Gen.u1Long
+            &&  Desc.Gen.u1DefBig
+            &&  (Desc.Gen.u4Type & X86_SEL_TYPE_CODE))
+        {
+            /* 64-bit code selectors are wide open. It's not possible to
+               detect 64-bit data or stack selectors without also dragging
+               in assumptions about current CS. So, the selinfo user needs
+               to deal with this in the context the info is used unfortunately.
+               Note. We ignore the segment limit hacks that was added by AMD. */
+            pSelInfo->GCPtrBase = 0;
+            pSelInfo->cbLimit   = ~(RTGCUINTPTR)0;
+        }
+        else
+        {
+            pSelInfo->cbLimit = X86DESC_LIMIT(Desc);
+            if (Desc.Gen.u1Granularity)
+                pSelInfo->cbLimit = (pSelInfo->cbLimit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
+            pSelInfo->GCPtrBase = X86DESC_BASE(Desc);
+        }
+        pSelInfo->SelGate = 0;
+    }
+    else if (   Desc.Gen.u4Type == AMD64_SEL_TYPE_SYS_LDT
+             || Desc.Gen.u4Type == AMD64_SEL_TYPE_SYS_TSS_AVAIL
+             || Desc.Gen.u4Type == AMD64_SEL_TYPE_SYS_TSS_BUSY)
+    {
+        /* Note. LDT descriptors are weird in long mode, we ignore the footnote
+           in the AMD manual here as a simplification. */
+        pSelInfo->GCPtrBase = X86DESC64_BASE(Desc);
+        pSelInfo->cbLimit = X86DESC_LIMIT(Desc);
+        if (Desc.Gen.u1Granularity)
+            pSelInfo->cbLimit = (pSelInfo->cbLimit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
+        pSelInfo->SelGate = 0;
+    }
+    else if (   Desc.Gen.u4Type == AMD64_SEL_TYPE_SYS_CALL_GATE
+             || Desc.Gen.u4Type == AMD64_SEL_TYPE_SYS_TRAP_GATE
+             || Desc.Gen.u4Type == AMD64_SEL_TYPE_SYS_INT_GATE)
+    {
+        pSelInfo->cbLimit   = X86DESC64_BASE(Desc);
+        pSelInfo->GCPtrBase = Desc.Gate.u16OffsetLow
+                            | ((uint32_t)Desc.Gate.u16OffsetHigh << 16)
+                            | ((uint64_t)Desc.Gate.u32OffsetTop << 32);
+        pSelInfo->SelGate   = Desc.Gate.u16Sel;
+        pSelInfo->fFlags   |= DBGFSELINFO_FLAGS_GATE;
+    }
+    else
+    {
+        pSelInfo->cbLimit   = 0;
+        pSelInfo->GCPtrBase = 0;
+        pSelInfo->SelGate   = 0;
+        pSelInfo->fFlags   |= DBGFSELINFO_FLAGS_INVALID;
+    }
+    if (!Desc.Gen.u1Present)
+        pSelInfo->fFlags |= DBGFSELINFO_FLAGS_NOT_PRESENT;
 
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Worker for selmR3GetSelectorInfo32 and SELMR3GetShadowSelectorInfo that
+ * interprets a legacy descriptor table entry and fills in the selector info
+ * structure from it.
+ *
+ * @param  pSelInfo     Where to store the selector info. Only the fFlags and
+ *                      Sel members have been initialized.
+ * @param  pDesc        The legacy descriptor to parse.
+ */
+DECLINLINE(void) selmR3SelInfoFromDesc32(PDBGFSELINFO pSelInfo, PCX86DESC pDesc)
+{
+    pSelInfo->Raw64.au64[1] = 0;
+    pSelInfo->Raw = *pDesc;
+    if (    pDesc->Gen.u1DescType
+        ||  !(pDesc->Gen.u4Type & 4))
+    {
+        pSelInfo->cbLimit = X86DESC_LIMIT(*pDesc);
+        if (pDesc->Gen.u1Granularity)
+            pSelInfo->cbLimit = (pSelInfo->cbLimit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
+        pSelInfo->GCPtrBase = X86DESC_BASE(*pDesc);
+        pSelInfo->SelGate = 0;
+    }
+    else if (pDesc->Gen.u4Type != X86_SEL_TYPE_SYS_UNDEFINED4)
+    {
+        pSelInfo->cbLimit = 0;
+        if (pDesc->Gen.u4Type == X86_SEL_TYPE_SYS_TASK_GATE)
+            pSelInfo->GCPtrBase = 0;
+        else
+            pSelInfo->GCPtrBase = pDesc->Gate.u16OffsetLow
+                                | (uint32_t)pDesc->Gate.u16OffsetHigh << 16;
+        pSelInfo->SelGate = pDesc->Gate.u16Sel;
+        pSelInfo->fFlags |= DBGFSELINFO_FLAGS_GATE;
+    }
+    else
+    {
+        pSelInfo->cbLimit = 0;
+        pSelInfo->GCPtrBase = 0;
+        pSelInfo->SelGate = 0;
+        pSelInfo->fFlags |= DBGFSELINFO_FLAGS_INVALID;
+    }
+    if (!pDesc->Gen.u1Present)
+        pSelInfo->fFlags |= DBGFSELINFO_FLAGS_NOT_PRESENT;
 }
 
 
@@ -2069,11 +2169,12 @@ static int selmR3GetSelectorInfo64(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PSELMSELINF
  * @param   Sel         The selector to get info about.
  * @param   pSelInfo    Where to store the information.
  */
-static int selmR3GetSelectorInfo32(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PSELMSELINFO pSelInfo)
+static int selmR3GetSelectorInfo32(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PDBGFSELINFO pSelInfo)
 {
     /*
      * Read the descriptor entry
      */
+    pSelInfo->fFlags = 0;
     X86DESC Desc;
     if (    !(Sel & X86_SEL_LDT)
         && (    pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS] == (Sel & X86_SEL_MASK)
@@ -2086,7 +2187,12 @@ static int selmR3GetSelectorInfo32(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PSELMSELINF
         /*
          * Hypervisor descriptor.
          */
-        pSelInfo->fHyper = true;
+        pSelInfo->fFlags = DBGFSELINFO_FLAGS_HYPER;
+        if (CPUMIsGuestInProtectedMode(pVCpu))
+            pSelInfo->fFlags |= DBGFSELINFO_FLAGS_PROT_MODE;
+        else
+            pSelInfo->fFlags |= DBGFSELINFO_FLAGS_REAL_MODE;
+
         Desc = pVM->selm.s.paGdtR3[Sel >> X86_SEL_SHIFT];
     }
     else if (CPUMIsGuestInProtectedMode(pVCpu))
@@ -2094,7 +2200,7 @@ static int selmR3GetSelectorInfo32(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PSELMSELINF
         /*
          * Read it from the guest descriptor table.
          */
-        pSelInfo->fHyper = false;
+        pSelInfo->fFlags = DBGFSELINFO_FLAGS_PROT_MODE;
 
         VBOXGDTR    Gdtr;
         RTGCPTR     GCPtrDesc;
@@ -2151,22 +2257,18 @@ static int selmR3GetSelectorInfo32(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PSELMSELINF
         pSelInfo->Sel       = Sel;
         pSelInfo->GCPtrBase = Sel << 4;
         pSelInfo->cbLimit   = 0xffff;
-        pSelInfo->fHyper    = false;
-        pSelInfo->fRealMode = true;
-        memset(&pSelInfo->Raw, 0, sizeof(pSelInfo->Raw));
+        pSelInfo->fFlags    = DBGFSELINFO_FLAGS_REAL_MODE;
+        pSelInfo->Raw64.au64[0] = 0;
+        pSelInfo->Raw64.au64[1] = 0;
+        pSelInfo->SelGate   = 0;
         return VINF_SUCCESS;
     }
 
     /*
-     * Extract the base and limit
+     * Extract the base and limit or sel:offset for gates.
      */
     pSelInfo->Sel = Sel;
-    pSelInfo->Raw = Desc;
-    pSelInfo->cbLimit = X86DESC_LIMIT(Desc);
-    if (Desc.Gen.u1Granularity)
-        pSelInfo->cbLimit = (pSelInfo->cbLimit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
-    pSelInfo->GCPtrBase = X86DESC_BASE(Desc);
-    pSelInfo->fRealMode = false;
+    selmR3SelInfoFromDesc32(pSelInfo, &Desc);
 
     return VINF_SUCCESS;
 }
@@ -2174,8 +2276,9 @@ static int selmR3GetSelectorInfo32(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PSELMSELINF
 
 /**
  * Gets information about a selector.
- * Intended for the debugger mostly and will prefer the guest
- * descriptor tables over the shadow ones.
+ *
+ * Intended for the debugger mostly and will prefer the guest descriptor tables
+ * over the shadow ones.
  *
  * @returns VINF_SUCCESS on success.
  * @returns VERR_INVALID_SELECTOR if the selector isn't fully inside the descriptor table.
@@ -2185,10 +2288,11 @@ static int selmR3GetSelectorInfo32(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PSELMSELINF
  * @returns Other VBox status code on other errors.
  *
  * @param   pVM         VM handle.
+ * @param   pVCpu       The virtual CPU handle.
  * @param   Sel         The selector to get info about.
  * @param   pSelInfo    Where to store the information.
  */
-VMMR3DECL(int) SELMR3GetSelectorInfo(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PSELMSELINFO pSelInfo)
+VMMR3DECL(int) SELMR3GetSelectorInfo(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PDBGFSELINFO pSelInfo)
 {
     AssertPtr(pSelInfo);
     if (CPUMIsGuestInLongMode(pVCpu))
@@ -2200,8 +2304,8 @@ VMMR3DECL(int) SELMR3GetSelectorInfo(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PSELMSELI
 /**
  * Gets information about a selector from the shadow tables.
  *
- * This is intended to be faster than the SELMR3GetSelectorInfo() method, but requires
- * that the caller ensures that the shadow tables are up to date.
+ * This is intended to be faster than the SELMR3GetSelectorInfo() method, but
+ * requires that the caller ensures that the shadow tables are up to date.
  *
  * @returns VINF_SUCCESS on success.
  * @returns VERR_INVALID_SELECTOR if the selector isn't fully inside the descriptor table.
@@ -2213,26 +2317,30 @@ VMMR3DECL(int) SELMR3GetSelectorInfo(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PSELMSELI
  * @param   pVM         VM handle.
  * @param   Sel         The selector to get info about.
  * @param   pSelInfo    Where to store the information.
+ *
+ * @remarks Don't use this when in hardware assisted virtualization mode.
  */
-VMMR3DECL(int) SELMR3GetShadowSelectorInfo(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
+VMMR3DECL(int) SELMR3GetShadowSelectorInfo(PVM pVM, RTSEL Sel, PDBGFSELINFO pSelInfo)
 {
     Assert(pSelInfo);
 
     /*
      * Read the descriptor entry
      */
-    X86DESC    Desc;
+    X86DESC Desc;
     if (!(Sel & X86_SEL_LDT))
     {
         /*
          * Global descriptor.
          */
         Desc = pVM->selm.s.paGdtR3[Sel >> X86_SEL_SHIFT];
-        pSelInfo->fHyper = pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS] == (Sel & X86_SEL_MASK)
-                        || pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS] == (Sel & X86_SEL_MASK)
-                        || pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64] == (Sel & X86_SEL_MASK)
-                        || pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS] == (Sel & X86_SEL_MASK)
-                        || pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] == (Sel & X86_SEL_MASK);
+        pSelInfo->fFlags =    pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS] == (Sel & X86_SEL_MASK)
+                           || pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS] == (Sel & X86_SEL_MASK)
+                           || pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64] == (Sel & X86_SEL_MASK)
+                           || pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS] == (Sel & X86_SEL_MASK)
+                           || pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] == (Sel & X86_SEL_MASK)
+                         ? DBGFSELINFO_FLAGS_HYPER
+                         : 0;
         /** @todo check that the GDT offset is valid. */
     }
     else
@@ -2244,19 +2352,18 @@ VMMR3DECL(int) SELMR3GetShadowSelectorInfo(PVM pVM, RTSEL Sel, PSELMSELINFO pSel
         Desc = paLDT[Sel >> X86_SEL_SHIFT];
         /** @todo check if the LDT page is actually available. */
         /** @todo check that the LDT offset is valid. */
-        pSelInfo->fHyper = false;
+        pSelInfo->fFlags = 0;
     }
+    if (CPUMIsGuestInProtectedMode(VMMGetCpu0(pVM)))
+        pSelInfo->fFlags |= DBGFSELINFO_FLAGS_PROT_MODE;
+    else
+        pSelInfo->fFlags |= DBGFSELINFO_FLAGS_REAL_MODE;
 
     /*
-     * Extract the base and limit
+     * Extract the base and limit or sel:offset for gates.
      */
     pSelInfo->Sel = Sel;
-    pSelInfo->Raw = Desc;
-    pSelInfo->cbLimit = X86DESC_LIMIT(Desc);
-    if (Desc.Gen.u1Granularity)
-        pSelInfo->cbLimit = (pSelInfo->cbLimit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
-    pSelInfo->GCPtrBase = X86DESC_BASE(Desc);
-    pSelInfo->fRealMode = false;
+    selmR3SelInfoFromDesc32(pSelInfo, &Desc);
 
     return VINF_SUCCESS;
 }

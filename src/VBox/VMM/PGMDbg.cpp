@@ -134,6 +134,7 @@ VMMR3DECL(int) PGMR3DbgHCPhys2GCPhys(PVM pVM, RTHCPHYS HCPhys, PRTGCPHYS pGCPhys
  * @param   fFlags      Flags, MBZ.
  * @param   pcbRead     For store the actual number of bytes read, pass NULL if
  *                      partial reads are unwanted.
+ * @todo    Unused?
  */
 VMMR3DECL(int) PGMR3DbgReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, size_t cb, uint32_t fFlags, size_t *pcbRead)
 {
@@ -185,6 +186,7 @@ VMMR3DECL(int) PGMR3DbgReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, size
  * @param   fFlags      Flags, MBZ.
  * @param   pcbWritten  For store the actual number of bytes written, pass NULL
  *                      if partial writes are unwanted.
+ * @todo    Unused?
  */
 VMMR3DECL(int) PGMR3DbgWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *pvSrc, size_t cb, uint32_t fFlags, size_t *pcbWritten)
 {
@@ -235,6 +237,7 @@ VMMR3DECL(int) PGMR3DbgWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *pvSr
  * @param   fFlags      Flags, MBZ.
  * @param   pcbRead     For store the actual number of bytes read, pass NULL if
  *                      partial reads are unwanted.
+ * @todo    Unused?
  */
 VMMR3DECL(int) PGMR3DbgReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb, uint32_t fFlags, size_t *pcbRead)
 {
@@ -290,6 +293,7 @@ VMMR3DECL(int) PGMR3DbgReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t 
  * @param   fFlags      Flags, MBZ.
  * @param   pcbWritten  For store the actual number of bytes written, pass NULL
  *                      if partial writes are unwanted.
+ * @todo    Unused?
  */
 VMMR3DECL(int) PGMR3DbgWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, void const *pvSrc, size_t cb, uint32_t fFlags, size_t *pcbWritten)
 {

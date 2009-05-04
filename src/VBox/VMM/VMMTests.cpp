@@ -451,7 +451,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
 #define SYNC_SEL(pHyperCtx, reg)                                                        \
         if (pHyperCtx->reg)                                                             \
         {                                                                               \
-            SELMSELINFO selInfo;                                                        \
+            DBGFSELINFO selInfo;                                                        \
             int rc = SELMR3GetShadowSelectorInfo(pVM, pHyperCtx->reg, &selInfo);        \
             AssertRC(rc);                                                               \
                                                                                         \

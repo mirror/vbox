@@ -2331,10 +2331,10 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPT
         }
         else
         {
-            SELMSELINFO SelInfo;
+            DBGFSELINFO SelInfo;
 
             rc = SELMR3GetShadowSelectorInfo(pVM, pCtx->cs, &SelInfo);
-            if (!RT_SUCCESS(rc))
+            if (RT_FAILURE(rc))
             {
                 AssertMsgFailed(("SELMR3GetShadowSelectorInfo failed for %04X:%RGv rc=%d\n", pCtx->cs, GCPtrPC, rc));
                 return rc;
@@ -2343,8 +2343,8 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPT
             /*
              * Validate the selector.
              */
-            rc = SELMSelInfoValidateCS(&SelInfo, pCtx->ss);
-            if (!RT_SUCCESS(rc))
+            rc = DBGFR3SelInfoValidateCS(&SelInfo, pCtx->ss);
+            if (RT_FAILURE(rc))
             {
                 AssertMsgFailed(("SELMSelInfoValidateCS failed for %04X:%RGv rc=%d\n", pCtx->cs, GCPtrPC, rc));
                 return rc;

@@ -26,6 +26,8 @@
 #define LOG_GROUP LOG_GROUP_DBGF
 #include <VBox/dbgf.h>
 #include <VBox/pgm.h>
+#include <VBox/selm.h>
+#include <VBox/hwaccm.h>
 #include "DBGFInternal.h"
 #include <VBox/vm.h>
 #include <VBox/err.h>
@@ -381,5 +383,113 @@ VMMR3DECL(int) DBGFR3MemWrite(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, vo
     return rc;
 }
 
+
+/**
+ * Worker for DBGFR3SelQueryInfo that calls into SELM.
+ */
+static DECLCALLBACK(int) dbgfR3SelQueryInfo(PVM pVM, VMCPUID idCpu, RTSEL Sel, uint32_t fFlags, PDBGFSELINFO pSelInfo)
+{
+    /*
+     * Make the query.
+     */
+    int rc;
+    if (!(fFlags & DBGFSELQI_FLAGS_DT_GUEST))
+    {
+        PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
+        VMCPU_ASSERT_EMT(pVCpu);
+        rc = SELMR3GetSelectorInfo(pVM, pVCpu, Sel, pSelInfo);
+    }
+    else
+    {
+        if (HWACCMIsEnabled(pVM))
+            rc = VERR_INVALID_STATE;
+        else
+            rc = SELMR3GetShadowSelectorInfo(pVM, Sel, pSelInfo);
+    }
+    return rc;
+}
+
+
+/**
+ * Gets information about a selector.
+ *
+ * Intended for the debugger mostly and will prefer the guest
+ * descriptor tables over the shadow ones.
+ *
+ * @returns VBox status code, the following are the common ones.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_INVALID_SELECTOR if the selector isn't fully inside the
+ *          descriptor table.
+ * @retval  VERR_SELECTOR_NOT_PRESENT if the selector wasn't present.
+ * @retval  VERR_PAGE_TABLE_NOT_PRESENT or VERR_PAGE_NOT_PRESENT if the
+ *          pagetable or page backing the selector table wasn't present.
+ *
+ * @param   pVM         VM handle.
+ * @param   idCpu       The ID of the virtual CPU context.
+ * @param   Sel         The selector to get info about.
+ * @param   fFlags      Flags, see DBGFQSEL_FLAGS_*.
+ * @param   pSelInfo    Where to store the information. This will always be
+ *                      updated.
+ *
+ * @remarks This is a wrapper around SELMR3GetSelectorInfo and
+ *          SELMR3GetShadowSelectorInfo.
+ */
+VMMR3DECL(int) DBGFR3SelQueryInfo(PVM pVM, VMCPUID idCpu, RTSEL Sel, uint32_t fFlags, PDBGFSELINFO pSelInfo)
+{
+    AssertReturn(idCpu < pVM->cCPUs, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~(DBGFSELQI_FLAGS_DT_GUEST | DBGFSELQI_FLAGS_DT_SHADOW)), VERR_INVALID_PARAMETER);
+
+    /* Clear the return data here on this thread. */
+    memset(pSelInfo, 0, sizeof(*pSelInfo));
+
+    /*
+     * Dispatch the request to a worker running on the target CPU.
+     */
+    PVMREQ pReq;
+    int rc = VMR3ReqCallU(pVM->pUVM, idCpu, &pReq, RT_INDEFINITE_WAIT, 0,
+                          (PFNRT)dbgfR3SelQueryInfo, 5, pVM, idCpu, Sel, fFlags, pSelInfo);
+    if (RT_SUCCESS(rc))
+        rc = pReq->iStatus;
+    VMR3ReqFree(pReq);
+
+    return rc;
+}
+
+
+/**
+ * Validates a CS selector.
+ *
+ * @returns VBox status code.
+ * @param   pSelInfo    Pointer to the selector information for the CS selector.
+ * @param   SelCPL      The selector defining the CPL (SS).
+ */
+VMMDECL(int) DBGFR3SelInfoValidateCS(PCDBGFSELINFO pSelInfo, RTSEL SelCPL)
+{
+    /*
+     * Check if present.
+     */
+    if (pSelInfo->Raw.Gen.u1Present)
+    {
+        /*
+         * Type check.
+         */
+        if (    pSelInfo->Raw.Gen.u1DescType == 1
+            &&  (pSelInfo->Raw.Gen.u4Type & X86_SEL_TYPE_CODE))
+        {
+            /*
+             * Check level.
+             */
+            unsigned uLevel = RT_MAX(SelCPL & X86_SEL_RPL, pSelInfo->Sel & X86_SEL_RPL);
+            if (    !(pSelInfo->Raw.Gen.u4Type & X86_SEL_TYPE_CONF)
+                ?   uLevel <= pSelInfo->Raw.Gen.u2Dpl
+                :   uLevel >= pSelInfo->Raw.Gen.u2Dpl /* hope I got this right now... */
+                    )
+                return VINF_SUCCESS;
+            return VERR_INVALID_RPL;
+        }
+        return VERR_NOT_CODE_SELECTOR;
+    }
+    return VERR_SELECTOR_NOT_PRESENT;
+}
 
 
