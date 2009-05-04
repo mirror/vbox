@@ -136,7 +136,7 @@ RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI EventMultiSem)
     {
         ASMAtomicXchgU32(&pThis->cWaking, pThis->cWaking + pThis->cWaiters);
         ASMAtomicXchgU32(&pThis->cWaiters, 0);
-        cv_signal(&pThis->Cnd);
+        cv_broadcast(&pThis->Cnd);
     }
 
     mutex_exit(&pThis->Mtx);
