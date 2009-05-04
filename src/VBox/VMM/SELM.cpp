@@ -2280,11 +2280,14 @@ static int selmR3GetSelectorInfo32(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PDBGFSELINF
  * Intended for the debugger mostly and will prefer the guest descriptor tables
  * over the shadow ones.
  *
- * @returns VINF_SUCCESS on success.
- * @returns VERR_INVALID_SELECTOR if the selector isn't fully inside the descriptor table.
- * @returns VERR_SELECTOR_NOT_PRESENT if the selector wasn't present.
- * @returns VERR_PAGE_TABLE_NOT_PRESENT or VERR_PAGE_NOT_PRESENT if the pagetable or page
- *          backing the selector table wasn't present.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_INVALID_SELECTOR if the selector isn't fully inside the
+ *          descriptor table.
+ * @retval  VERR_SELECTOR_NOT_PRESENT if the LDT is invalid or not present. This
+ *          is not returned if the selector itself isn't present, you have to
+ *          check that for yourself (see DBGFSELINFO::fFlags).
+ * @retval  VERR_PAGE_TABLE_NOT_PRESENT or VERR_PAGE_NOT_PRESENT if the
+ *          pagetable or page backing the selector table wasn't present.
  * @returns Other VBox status code on other errors.
  *
  * @param   pVM         VM handle.
@@ -2307,11 +2310,14 @@ VMMR3DECL(int) SELMR3GetSelectorInfo(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PDBGFSELI
  * This is intended to be faster than the SELMR3GetSelectorInfo() method, but
  * requires that the caller ensures that the shadow tables are up to date.
  *
- * @returns VINF_SUCCESS on success.
- * @returns VERR_INVALID_SELECTOR if the selector isn't fully inside the descriptor table.
- * @returns VERR_SELECTOR_NOT_PRESENT if the selector wasn't present.
- * @returns VERR_PAGE_TABLE_NOT_PRESENT or VERR_PAGE_NOT_PRESENT if the pagetable or page
- *          backing the selector table wasn't present.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_INVALID_SELECTOR if the selector isn't fully inside the
+ *          descriptor table.
+ * @retval  VERR_SELECTOR_NOT_PRESENT if the LDT is invalid or not present. This
+ *          is not returned if the selector itself isn't present, you have to
+ *          check that for yourself (see DBGFSELINFO::fFlags).
+ * @retval  VERR_PAGE_TABLE_NOT_PRESENT or VERR_PAGE_NOT_PRESENT if the
+ *          pagetable or page backing the selector table wasn't present.
  * @returns Other VBox status code on other errors.
  *
  * @param   pVM         VM handle.
