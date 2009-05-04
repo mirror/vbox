@@ -55,6 +55,9 @@
 #include <sys/types.h>
 #include <sys/dlpi.h>
 #include <sys/types.h>
+#ifdef VBOX_WITH_NETFLT_SOLARIS_DLPISTYLE2
+# include <sys/time.h>
+#endif
 #include <sys/param.h>
 #include <sys/ethernet.h>
 #include <sys/stat.h>
@@ -94,6 +97,10 @@
 /** The module descriptions as seen in 'modinfo'. */
 #define DEVICE_DESC_DRV          "VirtualBox NetDrv"
 #define DEVICE_DESC_MOD          "VirtualBox NetMod"
+
+#ifdef VBOX_WITH_NETFLT_SOLARIS_DLPISTYLE2
+# define ISDIGIT(c)              ((c) >= '0' && (c) <= '9')
+#endif
 
 /** @todo Remove the below hackery once done! */
 #if defined(DEBUG_ramshankar) && defined(LOG_ENABLED)
@@ -1281,7 +1288,6 @@ static int vboxNetFltSolarisPromiscReq(queue_t *pQueue, bool fPromisc)
  *
  * @returns VBox status code.
  * @param   pQueue      Pointer to the read queue.
- * @param   pMsg        Pointer to the request message.
  */
 static int vboxNetFltSolarisPhysAddrReq(queue_t *pQueue)
 {
@@ -1421,6 +1427,42 @@ static void vboxNetFltSolarisCloseDev(vnode_t *pVNodeHeld, TIUSER *pUser)
     t_kclose(pUser, 0);
     VN_RELE(pVNodeHeld);
 }
+
+#ifdef VBOX_WITH_NETFLT_SOLARIS_DLPISTYLE2
+/**
+ * Set the DLPI style-2 PPA via an attach request.
+ *
+ * @returns VBox status code.
+ * @param   hDevice        Layered device handle.
+ * @param   PPA            Physical Point of Attachment (PPA) number.
+ */
+static int vboxNetFltSolarisAttachReq(ldi_handle_t hDevice, int PPA)
+{
+    int rc;
+    t_uscalar_t Cmd = DL_ATTACH_REQ;
+    size_t cbReq = DL_ATTACH_REQ_SIZE;
+    mblk_t *pAttachMsg = mexchange(NULL, NULL, cbReq, M_PROTO, Cmd);
+    if (RT_UNLIKELY(!pAttachMsg))
+        return VERR_NO_MEMORY;
+
+    dl_attach_req_t *pAttachReq = (dl_attach_req_t *)pAttachMsg->b_rptr;
+    pAttachReq->dl_ppa = PPA;
+
+    rc = ldi_putmsg(hDevice, pAttachMsg);
+    if (!rc)
+    {
+        rc = ldi_getmsg(hDevice, &pAttachMsg, NULL);
+        if (!rc)
+            return VINF_SUCCESS;
+        else
+            LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachReq ldi_getmsg failed. rc=%d\n", rc));
+    }
+    else
+        LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachReq ldi_putmsg failed. rc=%d\n", rc));
+
+    return VERR_GENERAL_FAILURE;
+}
+#endif
 
 
 /**
@@ -1638,6 +1680,67 @@ static int vboxNetFltSolarisDetermineModPos(bool fAttach, vnode_t *pVNode, int *
 }
 
 
+#ifdef VBOX_WITH_NETFLT_SOLARIS_DLPISTYLE2
+/**
+ * Opens up the DLPI style 2 link that requires explicit PPA attach
+ * phase. 
+ *
+ * @param   pThis       The instance.
+ */
+static int vboxNetFltSolarisOpenStyle2(PVBOXNETFLTINS pThis, ldi_ident_t *pDevId)
+{
+    /*
+     * Strip out PPA from the device name, eg: "ce3".
+     */
+    char *pszDev = RTStrDup(pThis->szName);
+    char *pszEnd = strchr(pszDev, '\0');
+    int PPALen = 0;
+    while (--pszEnd > pszDev)
+    {
+        if (!ISDIGIT(*pszEnd))
+            break;
+        PPALen++;
+    }
+    pszEnd++;
+
+    char szDev[128];
+    RTStrPrintf(szDev, sizeof(szDev), "/dev/%s", pszDev);
+    RTStrFree(pszDev);
+
+    int rc;
+    long PPA;
+    if (   pszEnd
+        && ddi_strtol(pszEnd, NULL, 10, &PPA) == 0)
+    {
+        pszEnd -= PPALen;
+        *pszEnd = '\0';
+        /*
+         * Try open the device as DPLI style 2.
+         */
+        rc = ldi_open_by_name(szDev, FREAD | FWRITE, kcred, &pThis->u.s.hIface, *pDevId);
+        if (!rc)
+        {
+            /*
+             * Attach the PPA explictly.
+             */
+            rc = dl_attach(pThis->u.s.hIface, (int)PPA, NULL);
+            if (!rc)
+                return VINF_SUCCESS;
+
+            ldi_close(pThis->u.s.hIface, FREAD | FWRITE, kcred);
+            LogRel((DEVICE_NAME ":vboxNetFltSolarisOpenStyle2 dl_attach failed. rc=%d\n", rc));
+        }
+        else
+            LogRel((DEVICE_NAME ":vboxNetFltSolarisOpenStyle2 Failed to open szDev=%s\n", szDev));
+    }
+    else
+        LogRel((DEVICE_NAME ":vboxNetFltSolarisOpenStyle2 Failed to construct PPA.\n"));
+
+    return VERR_INTNET_FLT_IF_FAILED;
+}
+#endif
+
+
 /**
  * Opens up dedicated stream on top of the interface.
  * As a side-effect, the stream gets opened during
@@ -1651,7 +1754,7 @@ static int vboxNetFltSolarisOpenStream(PVBOXNETFLTINS pThis)
     DevId = ldi_ident_from_anon();
     int ret;
 
-    /** @todo support DLPI style 2.*/
+    /** @todo enable and test DLPI style 2.*/
     /*
      * Try style-1 open first.
      */
@@ -1667,6 +1770,18 @@ static int vboxNetFltSolarisOpenStream(PVBOXNETFLTINS pThis)
         RTStrPrintf(szDev, sizeof(szDev), "/dev/%s", pThis->szName);
         rc = ldi_open_by_name(szDev, FREAD | FWRITE, kcred, &pThis->u.s.hIface, DevId);
     }
+
+#ifdef VBOX_WITH_NETFLT_SOLARIS_DLPISTYLE2
+    if (rc)
+    {
+        /*
+         * Try DLPI style 2.
+         */        
+        rc = vboxNetFltSolarisOpenStyle2(pThis, &DevId);
+        if (RT_FAILURE(rc))
+            LogRel((DEVICE_NAME ":vboxNetFltSolarisOpenStream vboxNetFltSolarisOpenStyle2 failed. rc=%d\n", rc));
+    }
+#endif
 
     ldi_ident_release(DevId);
     if (rc)
