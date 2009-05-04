@@ -222,10 +222,12 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvRawImage);
     if (RT_FAILURE(rc))
         return rc;
-#ifndef RT_OS_L4
+#if !defined(RT_OS_L4) 
+# if !defined(VBOX_WITH_NAT_SERVICE) 
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvNAT);
     if (RT_FAILURE(rc))
         return rc;
+# endif
 #endif
 #if defined(RT_OS_LINUX)
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostInterface);
