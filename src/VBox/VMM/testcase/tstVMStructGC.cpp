@@ -768,7 +768,7 @@ int main()
     GEN_CHECK_OFF(TMCPU, u64TSCOffset);
     GEN_CHECK_OFF(TMCPU, u64TSC);
     GEN_CHECK_OFF(TM, cTSCTicksPerSecond);
-    GEN_CHECK_OFF(TM, fVirtualTicking);
+    GEN_CHECK_OFF(TM, cVirtualTicking);
     GEN_CHECK_OFF(TM, fVirtualWarpDrive);
     GEN_CHECK_OFF(TM, fVirtualSyncTicking);
     GEN_CHECK_OFF(TM, fVirtualSyncCatchUp);
