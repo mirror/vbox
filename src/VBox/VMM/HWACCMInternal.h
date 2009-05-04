@@ -478,10 +478,6 @@ typedef struct HWACCMCPU
     /* Current ASID in use by the VM */
     RTUINT                      uCurrentASID;
 
-    /** To keep track of pending TLB shootdown pages. (SMP guest only) */
-    RTGCPTR                     aTlbShootdownPages[HWACCM_MAX_TLB_SHOOTDOWN_PAGES];
-    RTUINT                      cTlbShootdownPages;
-
     struct
     {
         /** R0 memory object for the VM control structure (VMCS). */
@@ -574,6 +570,11 @@ typedef struct HWACCMCPU
     /** The CPU ID of the CPU currently owning the VMCS. Set in
      * HWACCMR0Enter and cleared in HWACCMR0Leave. */
     RTCPUID                 idEnteredCpu;
+
+    /** To keep track of pending TLB shootdown pages. (SMP guest only) */
+    RTGCPTR                 aTlbShootdownPages[HWACCM_MAX_TLB_SHOOTDOWN_PAGES];
+    RTUINT                  cTlbShootdownPages;
+
     RTUINT                  padding2[1];
 
     STAMPROFILEADV          StatEntry;
