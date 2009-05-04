@@ -377,6 +377,21 @@ send:
             error = 1;
             goto out;
         }
+#ifdef VBOX_WITH_NAT_SERVICE
+        {
+            struct ethhdr *eh, *eh0;
+            eh = (struct ethhdr *)m->m_dat;
+            if (so->so_m)
+            {
+                eh0 = (struct ethhdr *)so->so_m->m_dat;
+                memcpy(eh->h_source, eh0->h_source, ETH_ALEN);
+            }
+            else 
+            {
+                memcpy(eh->h_source, so->so_ethaddr, ETH_ALEN);
+            }
+        }
+#endif
         m->m_data += if_maxlinkhdr;
         m->m_len = hdrlen;
 
@@ -426,9 +441,19 @@ send:
             error = 1;
             goto out;
         }
+#ifdef VBOX_WITH_NAT_SERVICE
+        {
+            struct ethhdr *eh;
+            eh = (struct ethhdr *)m->m_dat;
+            memcpy(eh->h_source, so->so_ethaddr, ETH_ALEN);
+        }
+#endif
         m->m_data += if_maxlinkhdr;
+#ifndef VBOX_WITH_NAT_SERVICE
+        /* XXX: it's shouldn't be here at all need to be deleted */
         m->m_data += sizeof(struct ip) 
                    + sizeof(struct tcphdr);
+#endif
         m->m_len = hdrlen;
     }
 
@@ -576,6 +601,7 @@ send:
      * to handle ttl and tos; we could keep them in
      * the template, but need a way to checksum without them.
      */
+    Assert(m->m_len == (hdrlen + len));
     m->m_len = hdrlen + len; /* XXX Needed? m_len should be correct */
 
     {
@@ -588,6 +614,18 @@ send:
 #if 0
         error = ip_output(m, tp->t_inpcb->inp_options, &tp->t_inpcb->inp_route,
                          so->so_options & SO_DONTROUTE, 0);
+#endif
+#ifdef VBOX_WITH_NAT_SERVICE
+        {
+            struct ethhdr *eh0, *eh;
+            eh = (struct ethhdr *)m->m_dat;
+
+            if (so->so_m != NULL)
+            {
+                eh0 = (struct ethhdr *)so->so_m->m_dat;
+                memcpy(eh->h_source, eh0->h_source, ETH_ALEN);
+            }
+        }
 #endif
         error = ip_output(pData, so, m);
 

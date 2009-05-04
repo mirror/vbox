@@ -538,6 +538,12 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
         goto end_error;                    /* get mbuf */
     {
         int new_m_size;
+#ifdef VBOX_WITH_NAT_SERVICE
+        struct ethhdr *eh, *eh0;
+        eh0 = (struct ethhdr *)msrc->m_dat;
+        eh = (struct ethhdr *)m->m_dat;
+        memcpy(eh->h_source, eh0->h_source, ETH_ALEN);
+#endif
         m->m_data += if_maxlinkhdr;
         new_m_size = sizeof(struct ip) + ICMP_MINLEN + msrc->m_len + ICMP_MAXDATALEN;
         if (new_m_size>m->m_size)

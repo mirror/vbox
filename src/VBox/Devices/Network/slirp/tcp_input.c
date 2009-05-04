@@ -289,10 +289,17 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
     if (m == NULL)
     {
         so = inso;
-
+        Log4(("NAT: tcp_input: %R[natsock]\n", so));
+        Assert(so->so_m);
         /* Re-set a few variables */
         tp = sototcpcb(so);
         m = so->so_m;
+#ifdef VBOX_WITH_NAT_SERVICE
+        {
+            struct ethhdr *eh = (struct ethhdr *)m->m_dat;
+            memcpy(so->so_ethaddr, eh->h_source, ETH_ALEN);
+        }
+#endif
         so->so_m = 0;
         ti = so->so_ti;
         tiwin = ti->ti_win;
@@ -473,7 +480,14 @@ findso:
             RTMemFree(so); /* Not sofree (if it failed, it's not insqued) */
             goto dropwithreset;
         }
-        
+#ifdef VBOX_WITH_NAT_SERVICE
+        Assert(m);
+        so->so_m = m; /* save the initial packet */
+        {
+            struct ethhdr *eh0;
+            eh0 = (struct ethhdr *)m->m_dat;
+        }
+#endif        
         SOCKET_LOCK(so); 
         sbreserve(&so->so_snd, tcp_sndspace);
         sbreserve(&so->so_rcv, tcp_rcvspace);
@@ -775,6 +789,13 @@ findso:
                  * XXX Some OS's don't tell us whether the connect()
                  * succeeded or not.  So we must time it out.
                  */
+#ifdef VBOX_WITH_NAT_SERVICE
+                Assert(m);
+                {
+                    struct ethhdr *eh0;
+                    eh0 = (struct ethhdr *)m->m_dat;
+                }
+#endif
                 so->so_m = m;
                 so->so_ti = ti;
                 tp->t_timer[TCPT_KEEP] = TCPTV_KEEP_INIT;

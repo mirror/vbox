@@ -125,7 +125,9 @@ typedef struct NATState
     struct in_addr tftp_server;
     struct in_addr loopback_addr;
     uint32_t netmask;
+#ifndef VBOX_WITH_NAT_SERVICE
     uint8_t client_ethaddr[6];
+#endif
     struct ex_list *exec_list;
     char slirp_hostname[33];
     bool fPassDomain;
