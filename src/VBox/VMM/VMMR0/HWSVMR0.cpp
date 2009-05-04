@@ -1027,7 +1027,19 @@ ResumeExecution:
 
         Assert(!pVM->hwaccm.s.svm.fAlwaysFlushTLB || pVCpu->hwaccm.s.fForceTLBFlush);
         pVMCB->ctrl.TLBCtrl.n.u1TLBFlush = pVCpu->hwaccm.s.fForceTLBFlush;
+
+        if (    !pVM->hwaccm.s.svm.fAlwaysFlushTLB
+            &&  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TLB_SHOOTDOWN))
+        {
+            /* Deal with pending TLB shootdown actions which were queued when we were not executing code. */
+            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTlbShootdown);
+            for (unsigned i=0;i<pVCpu->hwaccm.s.cTlbShootdownPages;i++)
+                SVMR0InvlpgA(pVCpu->hwaccm.s.aTlbShootdownPages[i], pVMCB->ctrl.TLBCtrl.n.u32ASID);
+        }
     }
+    pVCpu->hwaccm.s.cTlbShootdownPages = 0;
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
+
     AssertMsg(pVCpu->hwaccm.s.cTLBFlushes == pCpu->cTLBFlushes, ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVCpu->hwaccm.s.cTLBFlushes, pCpu->cTLBFlushes));
     AssertMsg(pCpu->uCurrentASID >= 1 && pCpu->uCurrentASID < pVM->hwaccm.s.uMaxASID, ("cpu%d uCurrentASID = %x\n", pCpu->idCpu, pCpu->uCurrentASID));
     AssertMsg(pVCpu->hwaccm.s.uCurrentASID >= 1 && pVCpu->hwaccm.s.uCurrentASID < pVM->hwaccm.s.uMaxASID, ("cpu%d VM uCurrentASID = %x\n", pCpu->idCpu, pVCpu->hwaccm.s.uCurrentASID));
