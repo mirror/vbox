@@ -58,6 +58,8 @@ static int usage(const char *argv0)
             "  -min <n>     check if <binaryfile> is not smaller than <n>KB\n"
             "  -max <n>     check if <binaryfile> is not bigger than <n>KB\n"
             "  -mask <n>    check if size of binaryfile is <n>-aligned\n"
+            "  -width <n>   number of bytes per line (default: 16)\n"
+            "  -break <n>   break every <n> lines    (default: -1)\n"
             "  -ascii       show ASCII representation of binary as comment\n",
             argv0);
 
@@ -74,7 +76,9 @@ int main(int argc, char *argv[])
     size_t        uMask = 0;
     int           fAscii = 0;
     int           fExport = 0;
-    unsigned char abLine[16];
+    long          iBreakEvery = -1;
+    unsigned char abLine[32];
+    size_t        cbLine = 16;
     size_t        off;
     size_t        cbRead;
     size_t        cbBin;
@@ -83,7 +87,7 @@ int main(int argc, char *argv[])
     if (argc < 2)
         return usage(argv[0]);
 
-    for (i=1; i<argc; i++)
+    for (i = 1; i < argc; i++)
     {
         if (!strcmp(argv[i], "-min"))
         {
@@ -111,11 +115,35 @@ int main(int argc, char *argv[])
         {
             fExport = 1;
         }
+        else if (!strcmp(argv[i], "-width"))
+        {
+            if (++i >= argc)
+                return usage(argv[0]);
+            cbLine = strtoul(argv[i], NULL, 0);
+            if (cbLine == 0 || cbLine > sizeof(abLine))
+            {
+                fprintf(stderr, "%s: '%s' is too wide, max %u\n",
+                        argv[0], argv[i], (unsigned)sizeof(abLine));
+                return 1;
+            }
+        }
+        else if (!strcmp(argv[i], "-break"))
+        {
+            if (++i >= argc)
+                return usage(argv[0]);
+            iBreakEvery = strtol(argv[i], NULL, 0);
+            if (iBreakEvery <= 0 && iBreakEvery != -1)
+            {
+                fprintf(stderr, "%s: -break value '%s' is not >= 1 or -1.\n",
+                        argv[0], argv[i], (unsigned)sizeof(abLine));
+                return 1;
+            }
+        }
         else if (i == argc - 3)
             break;
         else
         {
-            fprintf(stderr, "%s: syntax error: Unknown argument '%s'\n", 
+            fprintf(stderr, "%s: syntax error: Unknown argument '%s'\n",
                     argv[0], argv[i]);
             return usage(argv[0]);
         }
@@ -161,30 +189,36 @@ int main(int argc, char *argv[])
     {
         /* the binary data */
         off = 0;
-        while ((cbRead = fread(&abLine[0], 1, sizeof(abLine), pFileIn)) > 0)
+        while ((cbRead = fread(&abLine[0], 1, cbLine, pFileIn)) > 0)
         {
             size_t i;
+
+            if (    iBreakEvery > 0
+                &&  off
+                && (off / cbLine) % iBreakEvery == 0)
+                fprintf(pFileOut, "\n");
+
             fprintf(pFileOut, "   ");
             for (i = 0; i < cbRead; i++)
                 fprintf(pFileOut, " 0x%02x,", abLine[i]);
-            for (; i < sizeof(abLine); i++)
+            for (; i < cbLine; i++)
                 fprintf(pFileOut, "      ");
             if (fAscii)
             {
                 fprintf(pFileOut, " /* 0x%08lx: ", (long)off);
                 for (i = 0; i < cbRead; i++)
                     /* be careful with '/' prefixed/followed by a '*'! */
-                    fprintf(pFileOut, "%c", 
+                    fprintf(pFileOut, "%c",
                             isprint(abLine[i]) && abLine[i] != '/' ? abLine[i] : '.');
-                for (; i < sizeof(abLine); i++)
+                for (; i < cbLine; i++)
                     fprintf(pFileOut, " ");
                 fprintf(pFileOut, " */");
             }
             fprintf(pFileOut, "\n");
-    
+
             off += cbRead;
         }
-    
+
         /* check for errors */
         if (ferror(pFileIn) && !feof(pFileIn))
             fprintf(stderr, "%s: read error\n", argv[0]);
@@ -199,7 +233,7 @@ int main(int argc, char *argv[])
                     "%sconst unsigned%s g_cb%s = sizeof(g_ab%s);\n"
                     "/* end of file */\n",
                     fExport ? "DECLEXPORT(" : "", fExport ? ")" : "", argv[i], argv[i]);
-    
+
             /* flush output and check for error. */
             fflush(pFileOut);
             if (ferror(pFileOut))
