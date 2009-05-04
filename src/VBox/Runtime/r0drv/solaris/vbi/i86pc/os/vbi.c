@@ -58,6 +58,8 @@
 
 #include "vbi.h"
 
+#define VBIPROC() ((proc_t *)vbi_proc())
+
 /*
  * We have to use dl_lookup to find contig_free().
  */
@@ -253,7 +255,7 @@ vbi_unmap(void *va, size_t size)
 		hat_unload(kas.a_hat, va, size, HAT_UNLOAD | HAT_UNLOAD_UNLOCK);
 		vmem_free(heap_arena, va, size);
 	} else {
-		struct as *as = curproc->p_as;
+		struct as *as = VBIPROC()->p_as;
 
 		as_rangelock(as);
 		(void) as_unmap(as, va, size);
@@ -378,7 +380,9 @@ vbi_tod(void)
 void *
 vbi_proc(void)
 {
-	return (curproc);
+	proc_t *p;
+	drv_getparm(UPROCP, &p);
+	return (p);
 }
 
 void
@@ -397,7 +401,7 @@ vbi_thread_create(void *func, void *arg, size_t len, int priority)
 	kthread_t *t;
 
 	t = thread_create(NULL, NULL, (void (*)())func, arg, len,
-	    curproc, TS_RUN, priority);
+	    VBIPROC(), TS_RUN, priority);
 	return (t);
 }
 
@@ -541,7 +545,7 @@ vbi_lock_va(void *addr, size_t len, void **handle)
 	 */
 	*handle = NULL;
 	if (!IS_KERNEL(addr)) {
-		err = as_fault(curproc->p_as->a_hat, curproc->p_as,
+		err = as_fault(VBIPROC()->p_as->a_hat, VBIPROC()->p_as,
 		    (caddr_t)addr, len, F_SOFTLOCK, S_WRITE);
 		if (err != 0) {
 			VBI_VERBOSE("vbi_lock_va() failed to lock");
@@ -556,8 +560,8 @@ void
 vbi_unlock_va(void *addr, size_t len, void *handle)
 {
 	if (!IS_KERNEL(addr))
-		as_fault(curproc->p_as->a_hat, curproc->p_as, (caddr_t)addr,
-		    len, F_SOFTUNLOCK, S_WRITE);
+		as_fault(VBIPROC()->p_as->a_hat, VBIPROC()->p_as,
+		    (caddr_t)addr, len, F_SOFTUNLOCK, S_WRITE);
 }
 
 uint64_t
@@ -570,7 +574,7 @@ vbi_va_to_pa(void *addr)
 	if (IS_KERNEL(v))
 		hat = kas.a_hat;
 	else
-		hat = curproc->p_as->a_hat;
+		hat = VBIPROC()->p_as->a_hat;
 	pfn = hat_getpfnum(hat, (caddr_t)(v & PAGEMASK));
 	if (pfn == PFN_INVALID)
 		return (-(uint64_t)1);
@@ -824,7 +828,7 @@ static struct seg_ops segvbi_ops = {
 int
 vbi_user_map(caddr_t *va, uint_t prot, uint64_t *palist, size_t len)
 {
-	struct as *as = curproc->p_as;
+	struct as *as = VBIPROC()->p_as;
 	struct segvbi_crargs args;
 	int error = 0;
 

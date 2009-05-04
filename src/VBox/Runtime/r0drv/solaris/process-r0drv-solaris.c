@@ -38,14 +38,16 @@
 
 RTDECL(RTPROCESS) RTProcSelf(void)
 {
-    /* use ddi_get_pid()? */
-    struct pid *pPidInfo = curproc->p_pidp;
-    return pPidInfo->pid_id;
+    pid_t pid = -1;
+    drv_getparm(PPID, &pid);
+    return (RTPROCESS)pid;
 }
 
 
 RTR0DECL(RTR0PROCESS) RTR0ProcHandleSelf(void)
 {
-    return (RTR0PROCESS)curproc;
+    proc_t *p = NULL;
+    drv_getparm(UPROCP, &p);
+    return (RTR0PROCESS)p;
 }
 
