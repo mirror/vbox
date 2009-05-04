@@ -1720,7 +1720,7 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
                                           pPool->pszAccessHandler);
         /** @todo we should probably deal with out-of-memory conditions here, but for now increasing
          * the heap size should suffice. */
-        AssertFatalRC(rc);
+        AssertFatalMsgRC(rc, ("PGMHandlerPhysicalRegisterEx %RGp failed with %Rrc\n", GCPhysPage, rc));
         Assert(!(pVM->pgm.s.fGlobalSyncFlags & PGM_GLOBAL_SYNC_CLEAR_PGM_POOL) || VMCPU_FF_ISSET(VMMGetCpu(pVM), VMCPU_FF_PGM_SYNC_CR3));
     }
     pPage->fMonitored = true;
