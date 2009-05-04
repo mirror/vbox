@@ -59,7 +59,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
-
+#include <stdio.h>
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -85,7 +85,7 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
     for (unsigned iUnit = 0; iUnit < 1024; iUnit++)
     {
         errno = 0;
-        RTStrPrintf(szDevice, sizeof(szDevice), DEVICE_NAME "%d", iUnit);
+        snprintf(szDevice, sizeof(szDevice), DEVICE_NAME "%d", iUnit);
         hDevice = open(szDevice, O_RDWR, 0);
         if (hDevice >= 0 || errno != EBUSY)
             break;
