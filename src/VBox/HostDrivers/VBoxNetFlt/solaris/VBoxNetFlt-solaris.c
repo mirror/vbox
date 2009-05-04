@@ -41,6 +41,10 @@
 #include <iprt/spinlock.h>
 #include <iprt/crc32.h>
 #include <iprt/err.h>
+#define VBOX_WITH_NETFLT_SOLARIS_DLPISTYLE2
+#ifdef VBOX_WITH_NETFLT_SOLARIS_DLPISTYLE2
+# include <iprt/ctype.h>
+#endif
 
 #include <inet/ip.h>
 #include <net/if.h>
@@ -97,10 +101,6 @@
 /** The module descriptions as seen in 'modinfo'. */
 #define DEVICE_DESC_DRV          "VirtualBox NetDrv"
 #define DEVICE_DESC_MOD          "VirtualBox NetMod"
-
-#ifdef VBOX_WITH_NETFLT_SOLARIS_DLPISTYLE2
-# define ISDIGIT(c)              ((c) >= '0' && (c) <= '9')
-#endif
 
 /** @todo Remove the below hackery once done! */
 #if defined(DEBUG_ramshankar) && defined(LOG_ENABLED)
@@ -1697,7 +1697,7 @@ static int vboxNetFltSolarisOpenStyle2(PVBOXNETFLTINS pThis, ldi_ident_t *pDevId
     int PPALen = 0;
     while (--pszEnd > pszDev)
     {
-        if (!ISDIGIT(*pszEnd))
+        if (!RT_C_IS_DIGIT(*pszEnd))
             break;
         PPALen++;
     }
