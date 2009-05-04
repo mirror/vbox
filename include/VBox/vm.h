@@ -257,6 +257,8 @@ typedef struct VMCPU *PVMCPU;
 #define VMCPU_FF_SELM_SYNC_LDT              RT_BIT_32(23)
 /** Inhibit interrupts pending. See EMGetInhibitInterruptsPC(). */
 #define VMCPU_FF_INHIBIT_INTERRUPTS         RT_BIT_32(24)
+/** Check for pending TLB shootdown actions. */
+#define VMCPU_FF_TLB_SHOOTDOWN              RT_BIT_32(25)
 /** CSAM needs to scan the page that's being executed */
 #define VMCPU_FF_CSAM_SCAN_PAGE             RT_BIT_32(26)
 /** CSAM needs to do some homework. */

@@ -122,6 +122,9 @@ __BEGIN_DECLS
 /** Maxium resume loops allowed in ring 0 (safety precaution) */
 #define HWACCM_MAX_RESUME_LOOPS             1024
 
+/** Maximum number of page flushes we are willing to remember before considering a full TLB flush. */
+#define HWACCM_MAX_TLB_SHOOTDOWN_PAGES      16
+
 /** Size for the EPT identity page table (1024 4 MB pages to cover the entire address space). */
 #define HWACCM_EPT_IDENTITY_PG_TABLE_SIZE   PAGE_SIZE
 /** Size of the TSS structure + 2 pages for the IO bitmap + end byte. */
@@ -475,6 +478,10 @@ typedef struct HWACCMCPU
     /* Current ASID in use by the VM */
     RTUINT                      uCurrentASID;
 
+    /** To keep track of pending TLB shootdown pages. (SMP guest only) */
+    RTGCPTR                     aTlbShootdownPages[HWACCM_MAX_TLB_SHOOTDOWN_PAGES];
+    unsigned                    cTlbShootdownPages;
+
     struct
     {
         /** R0 memory object for the VM control structure (VMCS). */
@@ -631,6 +638,7 @@ typedef struct HWACCMCPU
     STAMCOUNTER             StatFlushTLBCRxChange;
     STAMCOUNTER             StatFlushASID;
     STAMCOUNTER             StatFlushTLBInvlpga;
+    STAMCOUNTER             StatTlbShootdown;
 
     STAMCOUNTER             StatSwitchGuestIrq;
     STAMCOUNTER             StatSwitchToR3;

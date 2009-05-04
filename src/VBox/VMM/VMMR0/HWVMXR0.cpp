@@ -1828,10 +1828,25 @@ static void vmxR0SetupTLBEPT(PVM pVM, PVMCPU pVCpu)
         Assert(!pCpu->fFlushTLB);
 
     pVCpu->hwaccm.s.idLastCpu = pCpu->idCpu;
-    pCpu->fFlushTLB         = false;
+    pCpu->fFlushTLB           = false;
 
     if (pVCpu->hwaccm.s.fForceTLBFlush)
+    {
         vmxR0FlushEPT(pVM, pVCpu, pVM->hwaccm.s.vmx.enmFlushContext, 0);
+    }
+    else
+    if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TLB_SHOOTDOWN))
+    {
+        /* Deal with pending TLB shootdown actions which were queued when we were not executing code. */
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTlbShootdown);
+        for (unsigned i=0;i<pVCpu->hwaccm.s.cTlbShootdownPages;i++)
+        {
+            /* aTlbShootdownPages contains physical addresses in this case. */
+            vmxR0FlushEPT(pVM, pVCpu, pVM->hwaccm.s.vmx.enmFlushContext, pVCpu->hwaccm.s.aTlbShootdownPages[i]);
+        }
+    }
+    pVCpu->hwaccm.s.cTlbShootdownPages = 0;
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
 
 #ifdef VBOX_WITH_STATISTICS
     if (pVCpu->hwaccm.s.fForceTLBFlush)
@@ -1894,10 +1909,19 @@ static void vmxR0SetupTLBVPID(PVM pVM, PVMCPU pVCpu)
     else
     {
         Assert(!pCpu->fFlushTLB);
+        Assert(pVCpu->hwaccm.s.uCurrentASID && pCpu->uCurrentASID);
 
-        if (!pCpu->uCurrentASID || !pVCpu->hwaccm.s.uCurrentASID)
-            pVCpu->hwaccm.s.uCurrentASID = pCpu->uCurrentASID = 1;
+        if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TLB_SHOOTDOWN))
+        {
+            /* Deal with pending TLB shootdown actions which were queued when we were not executing code. */
+            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTlbShootdown);
+            for (unsigned i=0;i<pVCpu->hwaccm.s.cTlbShootdownPages;i++)
+                vmxR0FlushVPID(pVM, pVCpu, pVM->hwaccm.s.vmx.enmFlushContext, pVCpu->hwaccm.s.aTlbShootdownPages[i]);
+        }
     }
+    pVCpu->hwaccm.s.cTlbShootdownPages = 0;
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
+
     AssertMsg(pVCpu->hwaccm.s.cTLBFlushes == pCpu->cTLBFlushes, ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVCpu->hwaccm.s.cTLBFlushes, pCpu->cTLBFlushes));
     AssertMsg(pCpu->uCurrentASID >= 1 && pCpu->uCurrentASID < pVM->hwaccm.s.uMaxASID, ("cpu%d uCurrentASID = %x\n", pCpu->idCpu, pCpu->uCurrentASID));
     AssertMsg(pVCpu->hwaccm.s.uCurrentASID >= 1 && pVCpu->hwaccm.s.uCurrentASID < pVM->hwaccm.s.uMaxASID, ("cpu%d VM uCurrentASID = %x\n", pCpu->idCpu, pVCpu->hwaccm.s.uCurrentASID));
