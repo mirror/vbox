@@ -111,7 +111,11 @@ static void rtThreadNativeMain(void *pvThreadInt)
 
     rc = rtThreadMain(pThreadInt, (RTNATIVETHREAD)Self, &pThreadInt->szName[0]);
 
+#if __FreeBSD_version >= 800002
+    kproc_exit(rc);
+#else
     kthread_exit(rc);
+#endif
 }
 
 
@@ -120,7 +124,11 @@ int rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
     int rc;
     struct proc *pProc;
 
+#if __FreeBSD_version >= 800002
+    rc = kproc_create(rtThreadNativeMain, pThreadInt, &pProc, RFHIGHPID, 0, "%s", pThreadInt->szName);
+#else
     rc = kthread_create(rtThreadNativeMain, pThreadInt, &pProc, RFHIGHPID, 0, "%s", pThreadInt->szName);
+#endif
     if (!rc)
     {
         *pNativeThread = (RTNATIVETHREAD)FIRST_THREAD_IN_PROC(pProc);
