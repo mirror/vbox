@@ -965,7 +965,6 @@ static int vmR3InitGC(PVM pVM)
  */
 static int vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 {
-
     return VINF_SUCCESS;
 }
 
@@ -1034,7 +1033,7 @@ VMMR3DECL(int)   VMR3PowerOn(PVM pVM)
      * Request the operation in EMT.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3PowerOn, 1, pVM);
+    int rc = VMR3ReqCall(pVM, 0 /* VCPU 0 */, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3PowerOn, 1, pVM);
     if (RT_SUCCESS(rc))
     {
         rc = pReq->iStatus;
@@ -1101,15 +1100,17 @@ VMMR3DECL(int) VMR3Suspend(PVM pVM)
     }
 
     /*
-     * Request the operation in EMT.
+     * Request the operation in EMT. (in reverse order as VCPU 0 does the actual work)
      */
-    PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Suspend, 1, pVM);
+    PVMREQ pReq = NULL;
+    int rc = VMR3ReqCall(pVM, VMCPUID_ALL_REVERSE, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Suspend, 1, pVM);
     if (RT_SUCCESS(rc))
     {
         rc = pReq->iStatus;
         VMR3ReqFree(pReq);
     }
+    else
+        Assert(pReq == NULL);
 
     LogFlow(("VMR3Suspend: returns %Rrc\n", rc));
     return rc;
@@ -1154,6 +1155,11 @@ static DECLCALLBACK(int) vmR3Suspend(PVM pVM)
         return VERR_VM_INVALID_VM_STATE;
     }
 
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    /* Only VCPU 0 does the actual work. */
+    if (pVCpu->idCpu != 0)
+        return VINF_EM_SUSPEND;
+
     /*
      * Change the state, notify the components and resume the execution.
      */
@@ -1188,15 +1194,17 @@ VMMR3DECL(int)   VMR3Resume(PVM pVM)
     }
 
     /*
-     * Request the operation in EMT.
+     * Request the operation in EMT. (in VCPU order as VCPU 0 does the actual work)
      */
-    PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Resume, 1, pVM);
+    PVMREQ pReq = NULL;
+    int rc = VMR3ReqCall(pVM, VMCPUID_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Resume, 1, pVM);
     if (RT_SUCCESS(rc))
     {
         rc = pReq->iStatus;
         VMR3ReqFree(pReq);
     }
+    else
+        Assert(pReq == NULL);
 
     LogFlow(("VMR3Resume: returns %Rrc\n", rc));
     return rc;
@@ -1223,6 +1231,11 @@ static DECLCALLBACK(int) vmR3Resume(PVM pVM)
         AssertMsgFailed(("Invalid VM state %d\n", pVM->enmVMState));
         return VERR_VM_INVALID_VM_STATE;
     }
+
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    /* Only VCPU 0 does the actual work. */
+    if (pVCpu->idCpu != 0)
+        return VINF_EM_RESUME;
 
     /*
      * Change the state, notify the components and resume the execution.
@@ -1272,7 +1285,7 @@ VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgr
      * Request the operation in EMT.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Save, 4, pVM, pszFilename, pfnProgress, pvUser);
+    int rc = VMR3ReqCall(pVM, 0 /* VCPU 0 */, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Save, 4, pVM, pszFilename, pfnProgress, pvUser);
     if (RT_SUCCESS(rc))
     {
         rc = pReq->iStatus;
@@ -1367,7 +1380,7 @@ VMMR3DECL(int)   VMR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnPro
      * Request the operation in EMT.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Load, 4, pVM, pszFilename, pfnProgress, pvUser);
+    int rc = VMR3ReqCall(pVM, 0 /* VCPU 0 */, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Load, 4, pVM, pszFilename, pfnProgress, pvUser);
     if (RT_SUCCESS(rc))
     {
         rc = pReq->iStatus;
@@ -1453,15 +1466,17 @@ VMMR3DECL(int)   VMR3PowerOff(PVM pVM)
     }
 
     /*
-     * Request the operation in EMT.
+     * Request the operation in EMT. (in reverse order as VCPU 0 does the actual work)
      */
-    PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3PowerOff, 1, pVM);
+    PVMREQ pReq = NULL;
+    int rc = VMR3ReqCall(pVM, VMCPUID_ALL_REVERSE, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3PowerOff, 1, pVM);
     if (RT_SUCCESS(rc))
     {
         rc = pReq->iStatus;
         VMR3ReqFree(pReq);
     }
+    else
+        Assert(pReq == NULL);
 
     LogFlow(("VMR3PowerOff: returns %Rrc\n", rc));
     return rc;
@@ -1491,6 +1506,11 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
         AssertMsgFailed(("Invalid VM state %d\n", pVM->enmVMState));
         return VERR_VM_INVALID_VM_STATE;
     }
+
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    /* Only VCPU 0 does the actual work. */
+    if (pVCpu->idCpu != 0)
+        return VINF_EM_TERMINATE;
 
     /*
      * For debugging purposes, we will log a summary of the guest state at this point.
@@ -1615,13 +1635,27 @@ VMMR3DECL(int)   VMR3Destroy(PVM pVM)
     vmR3AtDtor(pVM);
 
     /*
-     * If we are the EMT we'll delay the cleanup till later.
+     * If we are the EMT of VCPU 0, then we'll delay the cleanup till later.
      */
-    if (VM_IS_EMT(pVM))
+    if (VMMGetCpuId(pVM) == 0)
     {
         pUVM->vm.s.fEMTDoesTheCleanup = true;
         pUVM->vm.s.fTerminateEMT = true;
         VM_FF_SET(pVM, VM_FF_TERMINATE);
+
+        /* Inform all other VCPUs too. */
+        for (VMCPUID idCpu = 1; idCpu < pVM->cCPUs; idCpu++)
+        {
+            /*
+             * Request EMT to do the larger part of the destruction.
+             */
+            PVMREQ pReq = NULL;
+            int rc = VMR3ReqCallU(pUVM, idCpu, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3Destroy, 1, pVM);
+            if (RT_SUCCESS(rc))
+                rc = pReq->iStatus;
+            AssertRC(rc);
+            VMR3ReqFree(pReq);
+        }
     }
     else
     {
@@ -2073,14 +2107,17 @@ VMMR3DECL(int)   VMR3Reset(PVM pVM)
 
     /*
      * Queue reset request to the emulation thread
-     * and wait for it to be processed.
+     * and wait for it to be processed. (in reverse order as VCPU 0 does the real cleanup)
      */
     PVMREQ pReq = NULL;
-    rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, 0, (PFNRT)vmR3Reset, 1, pVM);
+    rc = VMR3ReqCall(pVM, VMCPUID_ALL_REVERSE, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Reset, 1, pVM);
+    /** @note Can this really happen?? */
     while (rc == VERR_TIMEOUT)
         rc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
+
     if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
+    AssertRC(rc);
     VMR3ReqFree(pReq);
 
     return rc;
@@ -2111,6 +2148,12 @@ static void vmR3CheckIntegrity(PVM pVM)
  */
 static DECLCALLBACK(int) vmR3Reset(PVM pVM)
 {
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+
+    /* Only VCPU 0 does the full cleanup. */
+    if (pVCpu->idCpu != 0)
+        return VINF_EM_RESET;
+
     /*
      * As a safety precaution we temporarily change the state while resetting.
      * (If VMR3Reset was not called from EMT we might have change state... let's ignore that fact for now.)
