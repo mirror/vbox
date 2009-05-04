@@ -67,14 +67,18 @@ VMMR3DECL(int) DBGFR3AddrFromSelOff(PVM pVM, VMCPUID idCpu, PDBGFADDRESS pAddres
     pAddress->off = off;
     if (Sel != DBGF_SEL_FLAT)
     {
-        /** @todo cannot call this on a foreign thread. */
-        SELMSELINFO SelInfo;
-        int rc = SELMR3GetSelectorInfo(pVM, VMMGetCpuById(pVM, idCpu), Sel, &SelInfo);
+        DBGFSELINFO SelInfo;
+        int rc = DBGFR3SelQueryInfo(pVM, idCpu, Sel, DBGFSELQI_FLAGS_DT_GUEST, &SelInfo);
         if (RT_FAILURE(rc))
             return rc;
+        if (SelInfo.fFlags & (DBGFSELINFO_FLAGS_INVALID | DBGFSELINFO_FLAGS_NOT_PRESENT))
+            return SelInfo.fFlags & DBGFSELINFO_FLAGS_NOT_PRESENT
+                 ? VERR_SELECTOR_NOT_PRESENT
+                 : VERR_INVALID_SELECTOR;
 
+        /** @todo This all goes voodoo in long mode. */
         /* check limit. */
-        if (SELMSelInfoIsExpandDown(&SelInfo))
+        if (DBGFSelInfoIsExpandDown(&SelInfo))
         {
             if (    !SelInfo.Raw.Gen.u1Granularity
                 &&  off > UINT32_C(0xffff))
@@ -86,7 +90,8 @@ VMMR3DECL(int) DBGFR3AddrFromSelOff(PVM pVM, VMCPUID idCpu, PDBGFADDRESS pAddres
             return VERR_OUT_OF_SELECTOR_BOUNDS;
 
         pAddress->FlatPtr = SelInfo.GCPtrBase + off;
-        /** @todo fix this flat selector test! */
+
+        /** @todo fix all these selector tests! */
         if (    !SelInfo.GCPtrBase
             &&  SelInfo.Raw.Gen.u1Granularity
             &&  SelInfo.Raw.Gen.u1DefBig)

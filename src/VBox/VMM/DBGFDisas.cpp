@@ -97,7 +97,7 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(RTUINTPTR pSrc, uint8_t *pDest, ui
  * @param   GCPtr       The GC pointer (selector offset).
  * @param   pState      The disas CPU state.
  */
-static int dbgfR3DisasInstrFirst(PVM pVM, PVMCPU pVCpu, PSELMSELINFO pSelInfo, PGMMODE enmMode, RTGCPTR GCPtr, PDBGFDISASSTATE pState)
+static int dbgfR3DisasInstrFirst(PVM pVM, PVMCPU pVCpu, PDBGFSELINFO pSelInfo, PGMMODE enmMode, RTGCPTR GCPtr, PDBGFDISASSTATE pState)
 {
     pState->GCPtrSegBase    = pSelInfo->GCPtrBase;
     pState->GCPtrSegEnd     = pSelInfo->cbLimit + 1 + (RTGCUINTPTR)pSelInfo->GCPtrBase;
@@ -254,8 +254,8 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(RTUINTPTR PtrSrc, uint8_t *pu8Dst,
  */
 static DECLCALLBACK(int) dbgfR3DisasGetSymbol(PCDISCPUSTATE pCpu, uint32_t u32Sel, RTUINTPTR uAddress, char *pszBuf, size_t cchBuf, RTINTPTR *poff, void *pvUser)
 {
-    PDBGFDISASSTATE pState = (PDBGFDISASSTATE)pCpu;
-    PCSELMSELINFO   pSelInfo = (PCSELMSELINFO)pvUser;
+    PDBGFDISASSTATE pState   = (PDBGFDISASSTATE)pCpu;
+    PCDBGFSELINFO   pSelInfo = (PCDBGFSELINFO)pvUser;
     DBGFSYMBOL      Sym;
     RTGCINTPTR      off;
     int             rc;
@@ -336,17 +336,23 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, unsi
      * Since the selector flags in the CPUMCTX structures aren't up to date unless
      * we recently visited REM, we'll not search for the selector there.
      */
-    SELMSELINFO SelInfo;
+    DBGFSELINFO SelInfo;
     const PGMMODE enmMode = PGMGetGuestMode(pVCpu);
     bool fRealModeAddress = false;
 
     if (    pHiddenSel
         &&  CPUMAreHiddenSelRegsValid(pVM))
     {
+        SelInfo.Sel                 = Sel;
+        SelInfo.SelGate             = 0;
         SelInfo.GCPtrBase           = pHiddenSel->u64Base;
         SelInfo.cbLimit             = pHiddenSel->u32Limit;
-        SelInfo.fHyper              = false;
-        SelInfo.fRealMode           = !!((pCtxCore && pCtxCore->eflags.Bits.u1VM) || enmMode == PGMMODE_REAL);
+        SelInfo.fFlags              = PGMMODE_IS_LONG_MODE(enmMode)
+                                    ? DBGFSELINFO_FLAGS_LONG_MODE
+                                    : enmMode != PGMMODE_REAL && (!pCtxCore || !pCtxCore->eflags.Bits.u1VM)
+                                    ? DBGFSELINFO_FLAGS_PROT_MODE
+                                    : DBGFSELINFO_FLAGS_REAL_MODE;
+
         SelInfo.Raw.au32[0]         = 0;
         SelInfo.Raw.au32[1]         = 0;
         SelInfo.Raw.Gen.u16LimitLow = 0xffff;
@@ -357,14 +363,19 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, unsi
         SelInfo.Raw.Gen.u1Long      = pHiddenSel->Attr.n.u1Long;
         SelInfo.Raw.Gen.u1DescType  = pHiddenSel->Attr.n.u1DescType;
         SelInfo.Raw.Gen.u4Type      = pHiddenSel->Attr.n.u4Type;
-        fRealModeAddress            = SelInfo.fRealMode;
+        fRealModeAddress            = !!(SelInfo.fFlags & DBGFSELINFO_FLAGS_REAL_MODE);
     }
     else if (Sel == DBGF_SEL_FLAT)
     {
+        SelInfo.Sel                 = Sel;
+        SelInfo.SelGate             = 0;
         SelInfo.GCPtrBase           = 0;
         SelInfo.cbLimit             = ~0;
-        SelInfo.fHyper              = false;
-        SelInfo.fRealMode           = false;
+        SelInfo.fFlags              = PGMMODE_IS_LONG_MODE(enmMode)
+                                    ? DBGFSELINFO_FLAGS_LONG_MODE
+                                    : enmMode != PGMMODE_REAL
+                                    ? DBGFSELINFO_FLAGS_PROT_MODE
+                                    : DBGFSELINFO_FLAGS_REAL_MODE;
         SelInfo.Raw.au32[0]         = 0;
         SelInfo.Raw.au32[1]         = 0;
         SelInfo.Raw.Gen.u16LimitLow = 0xffff;
@@ -395,10 +406,11 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, unsi
              && (   (pCtxCore && pCtxCore->eflags.Bits.u1VM)
                  || enmMode == PGMMODE_REAL) )
     {   /* V86 mode or real mode - real mode addressing */
+        SelInfo.Sel                 = Sel;
+        SelInfo.SelGate             = 0;
         SelInfo.GCPtrBase           = Sel * 16;
         SelInfo.cbLimit             = ~0;
-        SelInfo.fHyper              = false;
-        SelInfo.fRealMode           = true;
+        SelInfo.fFlags              = DBGFSELINFO_FLAGS_REAL_MODE;
         SelInfo.Raw.au32[0]         = 0;
         SelInfo.Raw.au32[1]         = 0;
         SelInfo.Raw.Gen.u16LimitLow = 0xffff;

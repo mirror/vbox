@@ -2394,13 +2394,14 @@ VMMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
             RTRCPTR pHandler;
             CSAMP2GLOOKUPREC cacheRec = {0};            /* Cache record for PATMGCVirtToHCVirt. */
             PCSAMPAGE pPage = NULL;
-            SELMSELINFO selInfo;
+            DBGFSELINFO selInfo;
 
             pHandler = VBOXIDTE_OFFSET(*pGuestIdte);
             pHandler = SELMToFlatBySel(pVM, pGuestIdte->Gen.u16SegSel, pHandler);
 
             rc = SELMR3GetSelectorInfo(pVM, pVCpu, pGuestIdte->Gen.u16SegSel, &selInfo);
             if (    RT_FAILURE(rc)
+                ||  (selInfo.fFlags & (DBGFSELINFO_FLAGS_NOT_PRESENT | DBGFSELINFO_FLAGS_INVALID))
                 ||  selInfo.GCPtrBase != 0
                 ||  selInfo.cbLimit != ~0U
                )

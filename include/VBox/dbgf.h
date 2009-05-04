@@ -34,6 +34,7 @@
 #include <VBox/types.h>
 #include <VBox/vmm.h>
 #include <VBox/log.h>                   /* LOG_ENABLED */
+#include <VBox/dbgfsel.h>
 
 #include <iprt/stdarg.h>
 
@@ -811,6 +812,17 @@ VMMR3DECL(int) DBGFR3MemScan(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, RTG
 VMMR3DECL(int) DBGFR3MemRead(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, void *pvBuf, size_t cbRead);
 VMMR3DECL(int) DBGFR3MemReadString(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, char *pszBuf, size_t cbBuf);
 VMMR3DECL(int) DBGFR3MemWrite(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, void const *pvBuf, size_t cbRead);
+
+
+/** @name DBGFR3SelQueryInfo flags.
+ * @{ */
+/** Get the info from the guest descriptor table. */
+#define DBGFSELQI_FLAGS_DT_GUEST        UINT32_C(0)
+/** Get the info from the shadow descriptor table.
+ * Only works in raw-mode.  */
+#define DBGFSELQI_FLAGS_DT_SHADOW       UINT32_C(1)
+/** @} */
+VMMR3DECL(int) DBGFR3SelQueryInfo(PVM pVM, VMCPUID idCpu, RTSEL Sel, uint32_t fFlags, PDBGFSELINFO pSelInfo);
 
 
 /**
