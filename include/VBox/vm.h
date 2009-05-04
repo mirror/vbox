@@ -36,6 +36,7 @@
 #include <VBox/stam.h>
 #include <VBox/vmapi.h>
 #include <VBox/sup.h>
+#include <VBox/vmm.h>
 
 
 /** @defgroup grp_vm    The Virtual Machine
@@ -427,11 +428,8 @@ typedef struct VMCPU *PVMCPU;
  */
 #ifdef IN_RC
 # define VM_IS_EMT(pVM)                     true
-#elif defined(IN_RING0)
-# define VM_IS_EMT(pVM)                     true
 #else
-/** @todo need to rework this macro for the case of multiple emulation threads for SMP */
-# define VM_IS_EMT(pVM)                     (VMR3GetVMCPUNativeThread(pVM) == RTThreadNativeSelf())
+# define VM_IS_EMT(pVM)                     (VMMGetCpu(pVM) != NULL)
 #endif
 
 /** @def VMCPU_IS_EMT
@@ -440,11 +438,8 @@ typedef struct VMCPU *PVMCPU;
  */
 #ifdef IN_RC
 # define VMCPU_IS_EMT(pVCpu)                true
-#elif defined(IN_RING0)
-# define VMCPU_IS_EMT(pVCpu)                fixme - need to call HWACCM I think... /** @todo SMP */
 #else
-/** @todo need to rework this macro for the case of multiple emulation threads for SMP */
-# define VMCPU_IS_EMT(pVCpu)                ((pVCpu)->hNativeThread == RTThreadNativeSelf())
+# define VMCPU_IS_EMT(pVCpu)                (pVCpu && (pVCpu == VMMGetCpu(pVCpu->CTX_SUFF(pVM))))
 #endif
 
 /** @def VM_ASSERT_EMT

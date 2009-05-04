@@ -525,7 +525,7 @@ static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *
      * Just to make life more interesting, we'll have to deal with the async threads too.
      * We cannot flush a page if we're in an async thread because of REM notifications.
      */
-    if (!VM_IS_EMT(pVM))
+    if (!pVCpu)
     {
         Log(("pgmR3PoolAccessHandler: async thread, requesting EMT to flush the page: %p:{.Core=%RHp, .idx=%d, .GCPhys=%RGp, .enmType=%d}\n",
              pPage, pPage->Core.Key, pPage->idx, pPage->GCPhys, pPage->enmKind));
