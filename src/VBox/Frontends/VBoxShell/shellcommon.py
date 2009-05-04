@@ -171,9 +171,9 @@ def startVm(ctx,mach,type):
     progress = vb.openRemoteSession(session, uuid, type, "")
     progress.waitForCompletion(-1)
     completed = progress.completed
-    rc = progress.resultCode
+    rc = int(progress.resultCode)
     print "Completed:", completed, "rc:",hex(rc&0xffffffff)
-    if int(rc) == 0:
+    if rc == 0:
         # we ignore exceptions to allow starting VM even if
         # perf collector cannot be started
         if perf:
