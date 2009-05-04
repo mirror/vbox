@@ -44,7 +44,7 @@
 # include <avformat.h>
 #endif /* DEBUG not defined */
 
-class FFmpegFB : public IFramebuffer
+class FFmpegFB : VBOX_SCRIPTABLE_IMPL(IFramebuffer)
 {
 public:
     FFmpegFB(ULONG width, ULONG height, ULONG bitrate, com::Bstr filename);
