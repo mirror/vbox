@@ -2925,7 +2925,6 @@ void            pgmR3PoolReset(PVM pVM);
 int             pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **ppv);
 #endif
 int             pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, uint32_t iUserTable, PPPGMPOOLPAGE ppPage);
-PPGMPOOLPAGE    pgmPoolGetPageByHCPhys(PVM pVM, RTHCPHYS HCPhys);
 void            pgmPoolFree(PVM pVM, RTHCPHYS HCPhys, uint16_t iUser, uint32_t iUserTable);
 void            pgmPoolFreeByPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint32_t iUserTable);
 int             pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
@@ -2968,6 +2967,9 @@ PX86PD          pgmGstLazyMap32BitPD(PPGMCPU pPGM);
 PX86PDPT        pgmGstLazyMapPaePDPT(PPGMCPU pPGM);
 PX86PDPAE       pgmGstLazyMapPaePD(PPGMCPU pPGM, uint32_t iPdpt);
 PX86PML4        pgmGstLazyMapPml4(PPGMCPU pPGM);
+
+/* Forward decl */
+DECLINLINE(PPGMPOOLPAGE) pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys);
 
 __END_DECLS
 
@@ -4035,7 +4037,7 @@ DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGMCPU pPGM, RTGCPTR GCPtr)
         return NULL;
 
     /* Fetch the pgm pool shadow descriptor. */
-    PPGMPOOLPAGE    pShwPde = pgmPoolGetPageByHCPhys(PGMCPU2VM(pPGM), pPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
+    PPGMPOOLPAGE pShwPde = pgmPoolGetPage(PGMCPU2PGM(pPGM)->CTX_SUFF(pPool), pPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
     AssertReturn(pShwPde, NULL);
 
     return (PX86PDPAE)PGMPOOL_PAGE_2_PTR_BY_PGMCPU(pPGM, pShwPde);
@@ -4057,7 +4059,7 @@ DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGMCPU pPGM, PX86PDPT pPdpt, RTGCPTR GC
         return NULL;
 
     /* Fetch the pgm pool shadow descriptor. */
-    PPGMPOOLPAGE    pShwPde = pgmPoolGetPageByHCPhys(PGMCPU2VM(pPGM), pPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
+    PPGMPOOLPAGE    pShwPde = pgmPoolGetPage(PGMCPU2PGM(pPGM)->CTX_SUFF(pPool), pPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
     AssertReturn(pShwPde, NULL);
 
     return (PX86PDPAE)PGMPOOL_PAGE_2_PTR_BY_PGMCPU(pPGM, pShwPde);

@@ -3979,6 +3979,8 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
  */
 int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 {
+    PVM pVM = pPool->CTX_SUFF(pVM);
+
     int rc = VINF_SUCCESS;
     STAM_PROFILE_START(&pPool->StatFlushPage, f);
     LogFlow(("pgmPoolFlushPage: pPage=%p:{.Key=%RHp, .idx=%d, .enmKind=%s, .GCPhys=%RGp}\n",
@@ -3994,10 +3996,12 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         return VINF_SUCCESS;
     }
 
+    pgmLock(pVM);
+
     /*
      * Quietly reject any attempts at flushing the currently active shadow CR3 mapping
      */
-    if (pgmPoolIsPageLocked(&pPool->CTX_SUFF(pVM)->pgm.s, pPage))
+    if (pgmPoolIsPageLocked(&pVM->pgm.s, pPage))
     {
         AssertMsg(   pPage->enmKind == PGMPOOLKIND_64BIT_PML4
                   || pPage->enmKind == PGMPOOLKIND_PAE_PDPT
@@ -4008,14 +4012,15 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
                   || pPage->enmKind == PGMPOOLKIND_PAE_PD1_FOR_32BIT_PD
                   || pPage->enmKind == PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD
                   || pPage->enmKind == PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD,
-                  ("Can't free the shadow CR3! (%RHp vs %RHp kind=%d\n", PGMGetHyperCR3(VMMGetCpu(pPool->CTX_SUFF(pVM))), pPage->Core.Key, pPage->enmKind));
+                  ("Can't free the shadow CR3! (%RHp vs %RHp kind=%d\n", PGMGetHyperCR3(VMMGetCpu(pVM)), pPage->Core.Key, pPage->enmKind));
         Log(("pgmPoolFlushPage: current active shadow CR3, rejected. enmKind=%s idx=%d\n", pgmPoolPoolKindToStr(pPage->enmKind), pPage->idx));
+        pgmUnlock(pVM);
         return VINF_SUCCESS;
     }
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     /* Start a subset so we won't run out of mapping space. */
-    PVMCPU pVCpu = VMMGetCpu(pPool->CTX_SUFF(pVM));
+    PVMCPU pVCpu = VMMGetCpu(pVM);
     uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
 #endif
 
@@ -4065,6 +4070,7 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     pPage->fReusedFlushPending = false;
 
     pPool->cUsedPages--;
+    pgmUnlock(pVM);
     STAM_PROFILE_STOP(&pPool->StatFlushPage, f);
     return rc;
 }
@@ -4083,10 +4089,13 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  */
 void pgmPoolFreeByPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint32_t iUserTable)
 {
+    PVM pVM = pPool->CTX_SUFF(pVM);
+
     STAM_PROFILE_START(&pPool->StatFree, a);
     LogFlow(("pgmPoolFreeByPage: pPage=%p:{.Key=%RHp, .idx=%d, enmKind=%s} iUser=%#x iUserTable=%#x\n",
              pPage, pPage->Core.Key, pPage->idx, pgmPoolPoolKindToStr(pPage->enmKind), iUser, iUserTable));
     Assert(pPage->idx >= PGMPOOL_IDX_FIRST);
+    pgmLock(pVM);
 #ifdef PGMPOOL_WITH_USER_TRACKING
     pgmPoolTrackFreeUser(pPool, pPage, iUser, iUserTable);
 #endif
@@ -4094,6 +4103,7 @@ void pgmPoolFreeByPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint3
     if (!pPage->fCached)
 #endif
         pgmPoolFlushPage(pPool, pPage);
+    pgmUnlock(pVM);
     STAM_PROFILE_STOP(&pPool->StatFree, a);
 }
 
@@ -4300,26 +4310,6 @@ void pgmPoolFree(PVM pVM, RTHCPHYS HCPhys, uint16_t iUser, uint32_t iUserTable)
     pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, HCPhys), iUser, iUserTable);
 }
 
-
-/**
- * Gets a in-use page in the pool by it's physical address.
- *
- * @returns Pointer to the page.
- * @param   pVM     The VM handle.
- * @param   HCPhys  The HC physical address of the shadow page.
- * @remark  This function will NEVER return NULL. It will assert if HCPhys is invalid.
- */
-PPGMPOOLPAGE pgmPoolGetPageByHCPhys(PVM pVM, RTHCPHYS HCPhys)
-{
-    /** @todo profile this! */
-    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
-    PPGMPOOLPAGE pPage = pgmPoolGetPage(pPool, HCPhys);
-#ifndef DEBUG_bird /* extremely noisy */
-    Log5(("pgmPoolGetPageByHCPhys: HCPhys=%RHp -> %p:{.idx=%d .GCPhys=%RGp .enmKind=%s}\n",
-          HCPhys, pPage, pPage->idx, pPage->GCPhys, pgmPoolPoolKindToStr(pPage->enmKind)));
-#endif
-    return pPage;
-}
 
 #ifdef IN_RING3
 /**
