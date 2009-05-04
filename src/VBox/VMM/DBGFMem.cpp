@@ -420,7 +420,9 @@ static DECLCALLBACK(int) dbgfR3SelQueryInfo(PVM pVM, VMCPUID idCpu, RTSEL Sel, u
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_INVALID_SELECTOR if the selector isn't fully inside the
  *          descriptor table.
- * @retval  VERR_SELECTOR_NOT_PRESENT if the selector wasn't present.
+ * @retval  VERR_SELECTOR_NOT_PRESENT if the LDT is invalid or not present. This
+ *          is not returned if the selector itself isn't present, you have to
+ *          check that for yourself (see DBGFSELINFO::fFlags).
  * @retval  VERR_PAGE_TABLE_NOT_PRESENT or VERR_PAGE_NOT_PRESENT if the
  *          pagetable or page backing the selector table wasn't present.
  *
