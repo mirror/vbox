@@ -122,20 +122,21 @@ extern unsigned VBoxServiceGetStartedServices(void);
 extern int VBoxServiceStartServices(unsigned iMain);
 extern int VBoxServiceStopServices(void);
 
-#ifdef RT_OS_WINDOWS
 extern VBOXSERVICE g_TimeSync;
 extern VBOXSERVICE g_Clipboard;
 extern VBOXSERVICE g_Control;
 extern VBOXSERVICE g_VMInfo;
 
-extern DWORD                 g_rcWinService;
+#ifdef RT_OS_WINDOWS
+extern DWORD g_rcWinService;
 extern SERVICE_STATUS_HANDLE g_hWinServiceStatus;
 extern SERVICE_TABLE_ENTRY const g_aServiceTable[];     /** @todo generate on the fly, see comment in main() from the enabled sub services. */
 
+/** Installs the service into the registry. */
 extern int VBoxServiceWinInstall(void);
+/** Uninstalls the service from the registry. */
 extern int VBoxServiceWinUninstall(void);
-/** Detects wheter a user is logged on based on the
- *  enumerated processes. */
+/** Detects wheter a user is logged on based on the enumerated processes. */
 extern BOOL VboxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER* a_pUserInfo,
                                            PLUID a_pSession,
                                            PLUID a_pLuid,
