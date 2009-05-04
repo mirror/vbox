@@ -310,7 +310,7 @@ typedef struct TM
     uint64_t                    cTSCTicksPerSecond;
 
     /** Virtual time ticking enabled indicator (counter for each VCPU). (TMCLOCK_VIRTUAL) */
-    uint32_t                    cVirtualTicking;
+    uint32_t volatile           cVirtualTicking;
     /** Virtual time is not running at 100%. */
     bool                        fVirtualWarpDrive;
     /** Virtual timer synchronous time ticking enabled indicator (bool). (TMCLOCK_VIRTUAL_SYNC) */
