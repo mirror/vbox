@@ -996,7 +996,7 @@ static DECLCALLBACK(int) tmR3Save(PVM pVM, PSSMHANDLE pSSM)
         PVMCPU pVCpu = &pVM->aCpus[i];
         Assert(!pVCpu->tm.s.fTSCTicking);
     }
-    Assert(!pVM->tm.s.fVirtualTicking);
+    Assert(!pVM->tm.s.cVirtualTicking);
     Assert(!pVM->tm.s.fVirtualSyncTicking);
 #endif
 
@@ -1047,7 +1047,7 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         PVMCPU pVCpu = &pVM->aCpus[i];
         Assert(!pVCpu->tm.s.fTSCTicking);
     }
-    Assert(!pVM->tm.s.fVirtualTicking);
+    Assert(!pVM->tm.s.cVirtualTicking);
     Assert(!pVM->tm.s.fVirtualSyncTicking);
 #endif
 
@@ -1063,7 +1063,7 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     /*
      * Load the virtual clock.
      */
-    pVM->tm.s.fVirtualTicking = false;
+    pVM->tm.s.cVirtualTicking = 0;
     /* the virtual clock. */
     uint64_t u64Hz;
     int rc = SSMR3GetU64(pSSM, &u64Hz);
@@ -1645,7 +1645,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
     PTMTIMER pNext = TMTIMER_GET_HEAD(pQueue);
     if (RT_UNLIKELY(!pNext))
     {
-        Assert(pVM->tm.s.fVirtualSyncTicking || !pVM->tm.s.fVirtualTicking);
+        Assert(pVM->tm.s.fVirtualSyncTicking || !pVM->tm.s.cVirtualTicking);
         return;
     }
     STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncRun);
@@ -1781,7 +1781,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
      * and start/adjust catch-up if necessary.
      */
     if (    !pVM->tm.s.fVirtualSyncTicking
-        &&  pVM->tm.s.fVirtualTicking)
+        &&  pVM->tm.s.cVirtualTicking)
     {
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncRunRestart);
 
@@ -2149,7 +2149,7 @@ static DECLCALLBACK(void) tmR3InfoClocks(PVM pVM, PCDBGFINFOHLP pHlp, const char
     pHlp->pfnPrintf(pHlp,
                     " Virtual: %18RU64 (%#016RX64) %RU64Hz %s",
                     u64Virtual, u64Virtual, TMVirtualGetFreq(pVM),
-                    pVM->tm.s.fVirtualTicking ? "ticking" : "paused");
+                    pVM->tm.s.cVirtualTicking ? "ticking" : "paused");
     if (pVM->tm.s.fVirtualWarpDrive)
         pHlp->pfnPrintf(pHlp, " WarpDrive %RU32 %%", pVM->tm.s.u32VirtualWarpDrivePercentage);
     pHlp->pfnPrintf(pHlp, "\n");

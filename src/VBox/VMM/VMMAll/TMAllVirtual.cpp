@@ -326,7 +326,7 @@ DECLINLINE(uint64_t) tmVirtualGetRaw(PVM pVM)
 DECLINLINE(uint64_t) tmVirtualGet(PVM pVM, bool fCheckTimers)
 {
     uint64_t u64;
-    if (RT_LIKELY(pVM->tm.s.fVirtualTicking))
+    if (RT_LIKELY(pVM->tm.s.cVirtualTicking))
     {
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualGet);
         u64 = tmVirtualGetRaw(pVM);
@@ -412,7 +412,7 @@ VMMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
         /*
          * Query the virtual clock and do the usual expired timer check.
          */
-        Assert(pVM->tm.s.fVirtualTicking);
+        Assert(pVM->tm.s.cVirtualTicking);
         u64 = tmVirtualGetRaw(pVM);
         if (    fCheckTimers
             &&  !VM_FF_ISSET(pVM, VM_FF_TIMER)
@@ -516,7 +516,7 @@ VMMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
          * This is a safeguard against timer queue runner leaving the virtual sync clock stopped.
          */
         if (    fCheckTimers
-            &&  pVM->tm.s.fVirtualTicking
+            &&  pVM->tm.s.cVirtualTicking
             &&  !VM_FF_ISSET(pVM, VM_FF_TIMER))
         {
             const uint64_t u64Expire = pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire;
@@ -596,19 +596,20 @@ VMMDECL(uint64_t) TMVirtualGetFreq(PVM pVM)
  */
 VMMDECL(int) TMVirtualResume(PVM pVM)
 {
-    if (!pVM->tm.s.fVirtualTicking)
+    /** @note this is done only in specific cases (vcpu 0 init, termination, debug, out of memory conditions; 
+     *  there is at least a race for fVirtualSyncTicking. 
+     */
+    if (ASMAtomicIncU32(&pVM->tm.s.cVirtualTicking) == 1)
     {
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualResume);
-        pVM->tm.s.u64VirtualRawPrev = 0;
-        pVM->tm.s.u64VirtualWarpDriveStart = tmVirtualGetRawNanoTS(pVM);
-        pVM->tm.s.u64VirtualOffset = pVM->tm.s.u64VirtualWarpDriveStart - pVM->tm.s.u64Virtual;
-        pVM->tm.s.fVirtualTicking = true;
-        pVM->tm.s.fVirtualSyncTicking = true;
+        pVM->tm.s.u64VirtualRawPrev         = 0;
+        pVM->tm.s.u64VirtualWarpDriveStart  = tmVirtualGetRawNanoTS(pVM);
+        pVM->tm.s.u64VirtualOffset          = pVM->tm.s.u64VirtualWarpDriveStart - pVM->tm.s.u64Virtual;
+        pVM->tm.s.fVirtualSyncTicking       = true;
         return VINF_SUCCESS;
     }
-
-    AssertFailed();
-    return VERR_INTERNAL_ERROR;
+    AssertReturn(pVM->tm.s.cVirtualTicking < pVM->cCPUs, VERR_INTERNAL_ERROR);
+    return VINF_SUCCESS;
 }
 
 
@@ -621,17 +622,18 @@ VMMDECL(int) TMVirtualResume(PVM pVM)
  */
 VMMDECL(int) TMVirtualPause(PVM pVM)
 {
-    if (pVM->tm.s.fVirtualTicking)
+    /** @note this is done only in specific cases (vcpu 0 init, termination, debug, out of memory conditions; 
+     *  there is at least a race for fVirtualSyncTicking. 
+     */
+    if (ASMAtomicDecU32(&pVM->tm.s.cVirtualTicking) == 0)
     {
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualPause);
-        pVM->tm.s.u64Virtual = tmVirtualGetRaw(pVM);
-        pVM->tm.s.fVirtualSyncTicking = false;
-        pVM->tm.s.fVirtualTicking = false;
+        pVM->tm.s.u64Virtual            = tmVirtualGetRaw(pVM);
+        pVM->tm.s.fVirtualSyncTicking   = false;
         return VINF_SUCCESS;
     }
-
-    AssertFailed();
-    return VERR_INTERNAL_ERROR;
+    AssertReturn(pVM->tm.s.cVirtualTicking < pVM->cCPUs, VERR_INTERNAL_ERROR);
+    return VINF_SUCCESS;
 }
 
 
@@ -695,7 +697,7 @@ static DECLCALLBACK(int) tmVirtualSetWarpDrive(PVM pVM, uint32_t u32Percent)
      * If the time is running we'll have to pause it before we can change
      * the warp drive settings.
      */
-    bool fPaused = pVM->tm.s.fVirtualTicking;
+    bool fPaused = !!pVM->tm.s.cVirtualTicking;
     if (fPaused)
     {
         int rc = TMVirtualPause(pVM);
