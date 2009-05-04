@@ -480,7 +480,7 @@ typedef struct HWACCMCPU
 
     /** To keep track of pending TLB shootdown pages. (SMP guest only) */
     RTGCPTR                     aTlbShootdownPages[HWACCM_MAX_TLB_SHOOTDOWN_PAGES];
-    unsigned                    cTlbShootdownPages;
+    RTUINT                      cTlbShootdownPages;
 
     struct
     {
@@ -574,6 +574,7 @@ typedef struct HWACCMCPU
     /** The CPU ID of the CPU currently owning the VMCS. Set in
      * HWACCMR0Enter and cleared in HWACCMR0Leave. */
     RTCPUID                 idEnteredCpu;
+    RTUINT                  padding2[1];
 
     STAMPROFILEADV          StatEntry;
     STAMPROFILEADV          StatExit1;
