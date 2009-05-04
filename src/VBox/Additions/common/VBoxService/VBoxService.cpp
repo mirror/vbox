@@ -373,7 +373,7 @@ int main(int argc, char **argv)
     }
 
 #ifdef RT_OS_WINDOWS
-    /* Make sure only one instance of VBoxService runs at a time. Create a global mutex for that.    
+    /* Make sure only one instance of VBoxService runs at a time. Create a global mutex for that.
        Do not use a global namespace ("Global\\") for mutex name here, will blow up NT4 compatibility! */
     HANDLE hMutexAppRunning = CreateMutex (NULL, FALSE, VBOXSERVICE_NAME);
     if (   hMutexAppRunning != NULL
@@ -561,7 +561,7 @@ int main(int argc, char **argv)
         /* Run the app just like a console one if not daemonized. */
 #endif
         /** @todo Make the main thread responsive to signal so it can shutdown/restart the threads on non-SIGKILL signals. */
-    
+
         /*
          * Start the service, enter the main threads run loop and stop them again when it returns.
          */
@@ -576,7 +576,7 @@ int main(int argc, char **argv)
      * Release instance mutex if we got it.
      */
     if (hMutexAppRunning != NULL)
-    {    
+    {
         ::CloseHandle(hMutexAppRunning);
         hMutexAppRunning = NULL;
     }
