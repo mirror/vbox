@@ -67,6 +67,14 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
 #ifdef LOG_ENABLED
 static const char *pgmPoolPoolKindToStr(uint8_t enmKind);
 #endif
+
+void            pgmPoolTrackFlushGCPhysPT(PVM pVM, PPGMPAGE pPhysPage, uint16_t iShw, uint16_t cRefs);
+void            pgmPoolTrackFlushGCPhysPTs(PVM pVM, PPGMPAGE pPhysPage, uint16_t iPhysExt);
+int             pgmPoolTrackFlushGCPhysPTsSlow(PVM pVM, PPGMPAGE pPhysPage);
+PPGMPOOLPHYSEXT pgmPoolTrackPhysExtAlloc(PVM pVM, uint16_t *piPhysExt);
+void            pgmPoolTrackPhysExtFree(PVM pVM, uint16_t iPhysExt);
+void            pgmPoolTrackPhysExtFreeList(PVM pVM, uint16_t iPhysExt);
+
 __END_DECLS
 
 
