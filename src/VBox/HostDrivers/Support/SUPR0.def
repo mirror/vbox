@@ -73,6 +73,7 @@ EXPORTS
     RTR0MemObjIsMapping
     RTR0MemObjGetPagePhysAddr
     RTR0MemObjFree
+    RTProcSelf
     ; broken - RTSemMutexCreate
     ; broken - RTSemMutexRequest
     ; broken - RTSemMutexRelease
@@ -109,6 +110,7 @@ EXPORTS
     RTMpOnAll
     RTMpOnOthers
     RTMpOnSpecific
+    RTMpPokeCpu
     RTMpIsCpuOnline
     RTMpGetCount
     RTMpCpuIdToSetIndex
