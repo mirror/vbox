@@ -104,9 +104,7 @@ extern const PDMDRVREG g_DrvISCSITransportTcp;
 extern const PDMDRVREG g_DrvHostInterface;
 #endif
 extern const PDMDRVREG g_DrvIntNet;
-#ifndef VBOX_WITH_NAT_SERVICE
 extern const PDMDRVREG g_DrvNAT;
-#endif
 extern const PDMDRVREG g_DrvNetSniffer;
 extern const PDMDRVREG g_DrvAUDIO;
 extern const PDMDRVREG g_DrvACPI;
