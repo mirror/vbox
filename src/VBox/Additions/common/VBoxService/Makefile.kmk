@@ -39,10 +39,10 @@ endif
 VBoxService_SOURCES       = \
 	VBoxService.cpp \
 	VBoxServiceTimeSync.cpp \
+	VBoxServiceVMInfo.cpp \
 	VBoxServiceUtils.cpp
 VBoxService_SOURCES.win   = \
 	VBoxService-win.cpp \
-	VBoxServiceVMInfo.cpp \
 	VBoxServiceVMInfo-win.cpp
 VBoxService_SOURCES.os2   = \
 	VBoxService-os2.def \
