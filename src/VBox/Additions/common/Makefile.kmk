@@ -28,7 +28,7 @@ include $(PATH_SUB_CURRENT)/VBoxControl/Makefile.kmk
 if1of ($(KBUILD_TARGET), freebsd linux os2 solaris)
  include $(PATH_SUB_CURRENT)/VBoxGuest/Makefile.kmk
 endif
-if1of ($(KBUILD_TARGET), freebsd os2 solaris)
+if1of ($(KBUILD_TARGET), win freebsd os2 solaris)
  include $(PATH_SUB_CURRENT)/VBoxService/Makefile.kmk
 endif
 ifdef VBOX_WITH_CROGL
