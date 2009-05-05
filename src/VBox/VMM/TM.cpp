@@ -1479,7 +1479,7 @@ static DECLCALLBACK(void) tmR3TimerCallback(PRTTIMER pTimer, void *pvUser, uint6
     {
         VM_FF_SET(pVM, VM_FF_TIMER);
         REMR3NotifyTimerPending(pVM);
-        VMR3NotifyGlobalFF(pVM, true);
+        VMR3NotifyGlobalFFU(pVM->pUVM, VMNOTIFYFF_FLAGS_DONE_REM);
         STAM_COUNTER_INC(&pVM->tm.s.StatTimerCallbackSetFF);
     }
 }

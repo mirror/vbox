@@ -43,6 +43,7 @@
 #include <iprt/thread.h>
 #include <iprt/time.h>
 
+
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -835,17 +836,17 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Wait(PUVMCPU pUVCpu)
 /**
  * The global 1 halt method - VMR3NotifyFF() worker.
  *
- * @param   pUVCpu         Pointer to the user mode VMCPU structure.
- * @param   fNotifiedREM    See VMR3NotifyFF().
+ * @param   pUVCpu          Pointer to the user mode VMCPU structure.
+ * @param   fFlags          Notification flags, VMNOTIFYFF_FLAGS_*.
  */
-static DECLCALLBACK(void) vmR3HaltGlobal1NotifyFF(PUVMCPU pUVCpu, bool fNotifiedREM)
+static DECLCALLBACK(void) vmR3HaltGlobal1NotifyCpuFF(PUVMCPU pUVCpu, uint32_t fFlags)
 {
     if (pUVCpu->vm.s.fWait)
     {
         int rc = SUPCallVMMR0Ex(pUVCpu->pVM->pVMR0, pUVCpu->idCpu, VMMR0_DO_GVMM_SCHED_WAKE_UP, 0, NULL);
         AssertRC(rc);
     }
-    else if (!fNotifiedREM)
+    else if (!(fFlags & VMNOTIFYFF_FLAGS_DONE_REM))
         REMR3NotifyFF(pUVCpu->pVM);
 }
 
@@ -909,16 +910,17 @@ static DECLCALLBACK(int) vmR3BootstrapWait(PUVMCPU pUVCpu)
 /**
  * Bootstrap VMR3NotifyFF() worker.
  *
- * @param   pUVCpu         Pointer to the user mode VMCPU structure.
- * @param   fNotifiedREM    See VMR3NotifyFF().
+ * @param   pUVCpu          Pointer to the user mode VMCPU structure.
+ * @param   fFlags          Notification flags, VMNOTIFYFF_FLAGS_*.
  */
-static DECLCALLBACK(void) vmR3BootstrapNotifyFF(PUVMCPU pUVCpu, bool fNotifiedREM)
+static DECLCALLBACK(void) vmR3BootstrapNotifyCpuFF(PUVMCPU pUVCpu, uint32_t fFlags)
 {
     if (pUVCpu->vm.s.fWait)
     {
         int rc = RTSemEventSignal(pUVCpu->vm.s.EventSemWait);
         AssertRC(rc);
     }
+    NOREF(fFlags);
 }
 
 
@@ -970,17 +972,17 @@ static DECLCALLBACK(int) vmR3DefaultWait(PUVMCPU pUVCpu)
 /**
  * Default VMR3NotifyFF() worker.
  *
- * @param   pUVCpu         Pointer to the user mode VMCPU structure.
- * @param   fNotifiedREM    See VMR3NotifyFF().
+ * @param   pUVCpu          Pointer to the user mode VMCPU structure.
+ * @param   fFlags          Notification flags, VMNOTIFYFF_FLAGS_*.
  */
-static DECLCALLBACK(void) vmR3DefaultNotifyFF(PUVMCPU pUVCpu, bool fNotifiedREM)
+static DECLCALLBACK(void) vmR3DefaultNotifyCpuFF(PUVMCPU pUVCpu, uint32_t fFlags)
 {
     if (pUVCpu->vm.s.fWait)
     {
         int rc = RTSemEventSignal(pUVCpu->vm.s.EventSemWait);
         AssertRC(rc);
     }
-    else if (!fNotifiedREM)
+    else if (!(fFlags & VMNOTIFYFF_FLAGS_DONE_REM))
         REMR3NotifyFF(pUVCpu->pVM);
 }
 
@@ -1001,14 +1003,16 @@ static const struct VMHALTMETHODDESC
     DECLR3CALLBACKMEMBER(int,  pfnHalt,(PUVMCPU pUVCpu, const uint32_t fMask, uint64_t u64Now));
     /** The wait function. */
     DECLR3CALLBACKMEMBER(int,  pfnWait,(PUVMCPU pUVCpu));
-    /** The notifyFF function. */
-    DECLR3CALLBACKMEMBER(void, pfnNotifyFF,(PUVMCPU pUVCpu, bool fNotifiedREM));
+    /** The NotifyCpuFF function. */
+    DECLR3CALLBACKMEMBER(void, pfnNotifyCpuFF,(PUVMCPU pUVCpu, uint32_t fFlags));
+    /** The NotifyGlobalFF function. */
+    DECLR3CALLBACKMEMBER(void, pfnNotifyGlobalFF,(PUVM pUVM, uint32_t fFlags));
 } g_aHaltMethods[] =
 {
-    { VMHALTMETHOD_BOOTSTRAP, NULL,                 NULL,                   NULL,                   vmR3BootstrapWait,      vmR3BootstrapNotifyFF },
-    { VMHALTMETHOD_OLD,     NULL,                   NULL,                   vmR3HaltOldDoHalt,      vmR3DefaultWait,        vmR3DefaultNotifyFF },
-    { VMHALTMETHOD_1,       vmR3HaltMethod1Init,    NULL,                   vmR3HaltMethod1Halt,    vmR3DefaultWait,        vmR3DefaultNotifyFF },
-    { VMHALTMETHOD_GLOBAL_1,vmR3HaltGlobal1Init,    NULL,                   vmR3HaltGlobal1Halt,    vmR3HaltGlobal1Wait,    vmR3HaltGlobal1NotifyFF },
+    { VMHALTMETHOD_BOOTSTRAP, NULL,                NULL,   NULL,                vmR3BootstrapWait,   vmR3BootstrapNotifyCpuFF,   NULL },
+    { VMHALTMETHOD_OLD,       NULL,                NULL,   vmR3HaltOldDoHalt,   vmR3DefaultWait,     vmR3DefaultNotifyCpuFF,     NULL },
+    { VMHALTMETHOD_1,         vmR3HaltMethod1Init, NULL,   vmR3HaltMethod1Halt, vmR3DefaultWait,     vmR3DefaultNotifyCpuFF,     NULL },
+    { VMHALTMETHOD_GLOBAL_1,  vmR3HaltGlobal1Init, NULL,   vmR3HaltGlobal1Halt, vmR3HaltGlobal1Wait, vmR3HaltGlobal1NotifyCpuFF, NULL },
 };
 
 
@@ -1018,65 +1022,21 @@ static const struct VMHALTMETHODDESC
  * This function is called by thread other than EMT to make
  * sure EMT wakes up and promptly service an FF request.
  *
- * @param   pVM             VM handle.
- * @param   pVCpu           VMCPU handle (NULL if all/global notification)
- * @param   fNotifiedREM    Set if REM have already been notified. If clear the
- *                          generic REMR3NotifyFF() method is called.
- */
-VMMR3DECL(void) VMR3NotifyGlobalFF(PVM pVM, bool fNotifiedREM)
-{
-    PUVM pUVM = pVM->pUVM;
-
-    LogFlow(("VMR3NotifyFF:\n"));
-    /** @todo might want to have a 2nd look at this (SMP) */
-    for (unsigned iCpu=0;iCpu<pVM->cCPUs;iCpu++)
-    {
-        PUVMCPU pUVCpu = pVM->aCpus[iCpu].pUVCpu;
-        g_aHaltMethods[pUVM->vm.s.iHaltMethod].pfnNotifyFF(pUVCpu, fNotifiedREM);
-    }
-}
-
-/**
- * Notify the emulation thread (EMT) about pending Forced Action (FF).
- *
- * This function is called by thread other than EMT to make
- * sure EMT wakes up and promptly service an FF request.
- *
- * @param   pVM             VM handle.
- * @param   pVCpu           VMCPU handle (NULL if all/global notification)
- * @param   fNotifiedREM    Set if REM have already been notified. If clear the
- *                          generic REMR3NotifyFF() method is called.
- */
-VMMR3DECL(void) VMR3NotifyCpuFF(PVMCPU pVCpu, bool fNotifiedREM)
-{
-    PUVMCPU pUVCpu = pVCpu->pUVCpu;
-    PUVM    pUVM   = pUVCpu->pUVM;
-
-    LogFlow(("VMR3NotifyCpuFF:\n"));
-    g_aHaltMethods[pUVM->vm.s.iHaltMethod].pfnNotifyFF(pUVCpu, fNotifiedREM);
-}
-
-
-/**
- * Notify the emulation thread (EMT) about pending Forced Action (FF).
- *
- * This function is called by thread other than EMT to make
- * sure EMT wakes up and promptly service an FF request.
- *
  * @param   pUVM            Pointer to the user mode VM structure.
- * @param   fNotifiedREM    Set if REM have already been notified. If clear the
- *                          generic REMR3NotifyFF() method is called.
+ * @param   fFlags          Notification flags, VMNOTIFYFF_FLAGS_*.
  */
-VMMR3DECL(void) VMR3NotifyGlobalFFU(PUVM pUVM, bool fNotifiedREM)
+VMMR3DECL(void) VMR3NotifyGlobalFFU(PUVM pUVM, uint32_t fFlags)
 {
     LogFlow(("VMR3NotifyGlobalFFU:\n"));
-    /** @todo might want to have a 2nd look at this (SMP) */
-    for (unsigned iCpu = 0; iCpu < pUVM->cCpus; iCpu++)
-    {
-        PUVMCPU pUVCpu = &pUVM->aCpus[iCpu];
-        g_aHaltMethods[pUVM->vm.s.iHaltMethod].pfnNotifyFF(pUVCpu, fNotifiedREM);
-    }
+    uint32_t iHaldMethod = pUVM->vm.s.iHaltMethod;
+
+    if (g_aHaltMethods[iHaldMethod].pfnNotifyGlobalFF) /** @todo make mandatory. */
+        g_aHaltMethods[iHaldMethod].pfnNotifyGlobalFF(pUVM, fFlags);
+    else
+        for (VMCPUID iCpu = 0; iCpu < pUVM->cCpus; iCpu++)
+            g_aHaltMethods[iHaldMethod].pfnNotifyCpuFF(&pUVM->aCpus[iCpu], fFlags);
 }
+
 
 /**
  * Notify the emulation thread (EMT) about pending Forced Action (FF).
@@ -1085,15 +1045,14 @@ VMMR3DECL(void) VMR3NotifyGlobalFFU(PUVM pUVM, bool fNotifiedREM)
  * sure EMT wakes up and promptly service an FF request.
  *
  * @param   pUVM            Pointer to the user mode VM structure.
- * @param   fNotifiedREM    Set if REM have already been notified. If clear the
- *                          generic REMR3NotifyFF() method is called.
+ * @param   fFlags          Notification flags, VMNOTIFYFF_FLAGS_*.
  */
-VMMR3DECL(void) VMR3NotifyCpuFFU(PUVMCPU pUVCpu, bool fNotifiedREM)
+VMMR3DECL(void) VMR3NotifyCpuFFU(PUVMCPU pUVCpu, uint32_t fFlags)
 {
     PUVM pUVM = pUVCpu->pUVM;
 
     LogFlow(("VMR3NotifyCpuFFU:\n"));
-    g_aHaltMethods[pUVM->vm.s.iHaltMethod].pfnNotifyFF(pUVCpu, fNotifiedREM);
+    g_aHaltMethods[pUVM->vm.s.iHaltMethod].pfnNotifyCpuFF(pUVCpu, fFlags);
 }
 
 
