@@ -206,7 +206,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MinGuestCPUCount)(ULONG *minCPUCount)
     CheckComRCReturnRC (autoCaller.rc());
 
     /* no need to lock, this is const */
-    *minCPUCount = SchemaDefs::MinCPUCount;
+    *minCPUCount = SchemaDefs::MinCPUCount; // VMM_MIN_CPU_COUNT
 
     return S_OK;
 }
@@ -220,7 +220,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxGuestCPUCount)(ULONG *maxCPUCount)
     CheckComRCReturnRC (autoCaller.rc());
 
     /* no need to lock, this is const */
-    *maxCPUCount = 1; // SchemaDefs::MaxCPUCount;
+    *maxCPUCount = 1; // SchemaDefs::MaxCPUCount; // VMM_MAX_CPU_COUNT
 
     return S_OK;
 }
