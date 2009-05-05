@@ -1692,7 +1692,8 @@ static int vboxNetFltSolarisOpenStyle2(PVBOXNETFLTINS pThis, ldi_ident_t *pDevId
     /*
      * Strip out PPA from the device name, eg: "ce3".
      */
-    char *pszDev = RTStrDup(pThis->szName);
+    char *pszDev = RTMemAllocZ(strlen(pThis->szName));
+    memcpy(pszDev, pThis->szName, strlen(pThis->szName));
     char *pszEnd = strchr(pszDev, '\0');
     int PPALen = 0;
     while (--pszEnd > pszDev)
@@ -1705,7 +1706,7 @@ static int vboxNetFltSolarisOpenStyle2(PVBOXNETFLTINS pThis, ldi_ident_t *pDevId
 
     char szDev[128];
     RTStrPrintf(szDev, sizeof(szDev), "/dev/%s", pszDev);
-    RTStrFree(pszDev);
+    RTMemFree(pszDev);
 
     int rc;
     long PPA;
