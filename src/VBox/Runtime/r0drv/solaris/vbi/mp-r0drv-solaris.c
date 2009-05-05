@@ -203,14 +203,14 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
     int rc;
     RTMPARGS Args;
 
+    /* The caller is supposed to have disabled preemption, but take no chances. */
+    vbi_preempt_disable();
+
     Args.pfnWorker = pfnWorker;
     Args.pvUser1 = pvUser1;
     Args.pvUser2 = pvUser2;
-    Args.idCpu = RTMpCpuId(); /** @todo should disable pre-emption before doing this.... */
+    Args.idCpu = RTMpCpuId();
     Args.cHits = 0;
-
-    /* HERE JOE - this looks broken, explain to Knut */
-    vbi_preempt_disable();
 
     vbi_execute_on_others(rtmpOnOthersSolarisWrapper, &Args);
 
@@ -258,7 +258,6 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
     Args.idCpu = idCpu;
     Args.cHits = 0;
 
-    /* TBD HERE JOE again.. perhaps broken */
     vbi_preempt_disable();
 
     vbi_execute_on_one(rtmpOnSpecificSolarisWrapper, &Args, idCpu);
