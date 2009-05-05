@@ -579,6 +579,9 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_FILE_AIO_COMPLETED             (-131)
 /** The I/O context couldn't be destroyed because there are still pending requests. */
 #define VERR_FILE_AIO_BUSY                  (-132)
+/** The requests couldn't be submitted because that would exceed the capacity of the context. */
+#define VERR_FILE_AIO_LIMIT_EXCEEDED        (-133)
+
 /** @} */
 
 
