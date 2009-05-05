@@ -256,10 +256,11 @@ DECLASM(int)    UNWIND_WRAP(RTThreadUserWaitNoResume)(RTTHREAD Thread, unsigned 
 /* RTMpGetOnlineSet       - not necessary */
 /* RTMpGetSet             - not necessary */
 /* RTMpIsCpuOnline        - not necessary */
+DECLASM(int)   UNWIND_WRAP(RTMpIsCpuWorkPending)(void);
 DECLASM(int)   UNWIND_WRAP(RTMpOnAll)(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2);
 DECLASM(int)   UNWIND_WRAP(RTMpOnOthers)(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2);
 DECLASM(int)   UNWIND_WRAP(RTMpOnSpecific)(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2);
-DECLASM(int)   UNWIND_WRAP(RTMpIsCpuWorkPending)(void);
+DECLASM(int)   UNWIND_WRAP(RTMpPokeCpu)(RTCPUID idCpu);
 /* RTLogRelDefaultInstance - not necessary. */
 DECLASM(int)   UNWIND_WRAP(RTLogSetDefaultInstanceThread)(PRTLOGGER pLogger, uintptr_t uKey);
 /* RTLogLogger            - can't wrap this buster.  */
@@ -403,6 +404,7 @@ static SUPFUNC g_aFunctions[] =
     { "RTMpOnAll",                              (void *)UNWIND_WRAP(RTMpOnAll) },
     { "RTMpOnOthers",                           (void *)UNWIND_WRAP(RTMpOnOthers) },
     { "RTMpOnSpecific",                         (void *)UNWIND_WRAP(RTMpOnSpecific) },
+    { "RTMpPokeCpu",                            (void *)UNWIND_WRAP(RTMpPokeCpu) },
     { "RTPowerNotificationRegister",            (void *)RTPowerNotificationRegister },
     { "RTPowerNotificationDeregister",          (void *)RTPowerNotificationDeregister },
     { "RTLogRelDefaultInstance",                (void *)RTLogRelDefaultInstance },
