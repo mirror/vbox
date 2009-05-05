@@ -501,7 +501,7 @@ RTDECL(uint32_t) RTFileAioCtxGetMaxReqCount(RTFILEAIOCTX hAioCtx)
     return pCtxInt->cRequestsMax;
 }
 
-RTDECL(int) RTFileAioCtxAssociateWithFile(RTFILEAIOCTS hAioCtx, RTFILE hFile)
+RTDECL(int) RTFileAioCtxAssociateWithFile(RTFILEAIOCTX hAioCtx, RTFILE hFile)
 {
     /* Nothing to do. */
     return VINF_SUCCESS;
