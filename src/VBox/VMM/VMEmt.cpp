@@ -846,7 +846,14 @@ static DECLCALLBACK(void) vmR3HaltGlobal1NotifyCpuFF(PUVMCPU pUVCpu, uint32_t fF
         int rc = SUPCallVMMR0Ex(pUVCpu->pVM->pVMR0, pUVCpu->idCpu, VMMR0_DO_GVMM_SCHED_WAKE_UP, 0, NULL);
         AssertRC(rc);
     }
-    else if (!(fFlags & VMNOTIFYFF_FLAGS_DONE_REM))
+    else if (   (fFlags & VMNOTIFYFF_FLAGS_POKE)
+             && pUVCpu->pUVM->pVM
+             && pUVCpu->pUVM->pVM->aCpus[pUVCpu->idCpu].enmState == VMCPUSTATE_RUN_EXEC) /** @todo make this easier to access. (pUVCpu->pVCpu) */
+    {
+        int rc = SUPCallVMMR0Ex(pUVCpu->pVM->pVMR0, pUVCpu->idCpu, VMMR0_DO_GVMM_SCHED_POKE, 0, NULL);
+        AssertRC(rc);
+    }
+    else if (!(fFlags & VMNOTIFYFF_FLAGS_DONE_REM)) /** @todo use VMCPUSTATE_RUN_EXEC_REM */
         REMR3NotifyFF(pUVCpu->pVM);
 }
 
