@@ -38,7 +38,8 @@ ifdef VBOX_WITH_GUEST_PROPS
 endif
 VBoxService_SOURCES       = \
 	VBoxService.cpp \
-	VBoxServiceTimeSync.cpp
+	VBoxServiceTimeSync.cpp \
+	VBoxServiceUtils.cpp
 VBoxService_SOURCES.win   = \
 	VBoxService-win.cpp \
 	VBoxServiceVMInfo.cpp \
