@@ -304,8 +304,6 @@ int cpu_exec(CPUState *env1)
         if (setjmp(env->jmp_env) == 0)
         {
             env->current_tb = NULL;
-            VMMR3Unlock(env->pVM);
-            VMMR3Lock(env->pVM);
 
             /*
              * Check for fatal errors first
