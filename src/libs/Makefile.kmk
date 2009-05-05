@@ -45,6 +45,12 @@ if !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_SDK) \
  include $(PATH_SUB_CURRENT)/libpng-1.2.8/Makefile.kmk
 endif # !VBOX_ONLY_DOCS
 
+# Libcurl for inet access
+if defined(VBOX_WITH_LIBCURL) && !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_SDK) \
+ && "$(SDK_VBOX_LIBCURL_INCS)" == "$(PATH_ROOT)/src/libs/curl-7.19.4/include"
+ include $(PATH_SUB_CURRENT)/curl-7.19.4/Makefile.kmk
+endif
+
 # The kStuff lib used by IPRT and the debugger.
 ifdef IPRT_WITH_KSTUFF
  include $(PATH_SUB_CURRENT)/kStuff/Makefile.kmk

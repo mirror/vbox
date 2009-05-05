@@ -98,6 +98,8 @@ INCZ=""
 LIBZ="-lz"
 INCPNG=""
 LIBPNG="-lpng"
+INCCURL=""
+LIBCURL="-lcurl"
 PKGCONFIG="`which_wrapper pkg-config`"
 PYTHONDIR="/usr /usr/local"
 QT4DIR="/usr/lib/qt4 /usr/share/qt4 /usr/lib64/qt4 /usr /usr/local"
@@ -919,6 +921,38 @@ EOF
     if test_execute; then
       cnf_append "SDK_VBOX_LIBPNG_LIBS" "`strip_l "$LIBPNG"`"
       cnf_append "SDK_VBOX_LIBPNG_INCS" "$INCPNG"
+    fi
+  fi
+}
+
+#
+# Check for libcurl, needed by S3
+#
+check_curl()
+{
+  test_header libcurl
+  cat > $ODIR.tmp_src.cc << EOF
+#include <cstdio>
+#include <curl/curl.h>
+extern "C" int main(void)
+{
+  printf("found version %s", LIBCURL_VERSION);
+#if LIBCURL_VERSION_MAJOR >= 7 && LIBCURL_VERSION_MINOR >= 19
+  printf(", OK.\n");
+  return 0;
+#else
+  printf(", expected version 7.19.0 or higher\n");
+  return 1;
+#endif
+}
+EOF
+  [ -n "$INCCURL" ] && I_INCCURL=`prefix_I "$INCCURL"`
+#  if test_compile "$LIBCURL $I_INCCURL" libcurl libcurl nofatal; then
+  if test_compile "$LIBCURL $I_INCCURL" libcurl libcurl; then
+#    if test_execute nofatal; then
+    if test_execute; then
+      cnf_append "SDK_VBOX_LIBCURL_LIBS" "`strip_l "$LIBCURL"`"
+      cnf_append "SDK_VBOX_LIBCURL_INCS" "$INCCURL"
     fi
   fi
 }
@@ -2132,6 +2166,7 @@ check_gcc
 [ "$OS" != "darwin" -a $OSE -eq 0 ] && check_ssl
 [ "$OS" != "darwin"  ] && check_z
 [ "$OS" != "darwin" -a "$OS" != "freebsd" ] && check_png
+[ "$OS" != "darwin" -a $OSE -eq 0 ] && check_curl
 [ $OSE -eq 0 -a "$OS" = "linux" ] && check_pam
 [ $WITH_SDL -eq 1 ]    && check_sdl
 [ $WITH_SDL_TTF -eq 1 -a $OSE -eq 0 ] && check_sdl_ttf
