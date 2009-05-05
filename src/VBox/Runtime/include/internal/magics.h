@@ -94,6 +94,10 @@
 #define RTTIMER_MAGIC               0x19370910
 /** Magic number for timer low resolution handles. (Saki Hiwatari) */
 #define RTTIMERLR_MAGIC             0x19610715
+/** The value of RTS3::u32Magic. (Edgar Wallace) */
+#define RTS3_MAGIC                 0x18750401
+/** The value of RTS3::u32Magic after RTS3Destroy().  */
+#define RTS3_MAGIC_DEAD            0x19320210
 
 /** @} */
 
