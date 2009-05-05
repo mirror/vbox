@@ -262,7 +262,9 @@ typedef enum VMREQFLAGS
     /** Return type mask. */
     VMREQFLAGS_RETURN_MASK  = 1,
     /** Caller does not wait on the packet, EMT will free it. */
-    VMREQFLAGS_NO_WAIT      = 2
+    VMREQFLAGS_NO_WAIT      = 2,
+    /** Poke the destination EMT(s) if executing guest code. Use with care. */
+    VMREQFLAGS_POKE         = 4
 } VMREQFLAGS;
 
 
