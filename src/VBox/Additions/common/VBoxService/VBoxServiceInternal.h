@@ -103,13 +103,13 @@ typedef struct
     TCHAR szUser [_MAX_PATH];
     TCHAR szAuthenticationPackage [_MAX_PATH];
     TCHAR szLogonDomain [_MAX_PATH];
-} VBOXSERVICEVMINFOUSER;
+} VBOXSERVICEVMINFOUSER, *PVBOXSERVICEVMINFOUSER;
 /** Structure for the file information lookup. */
 typedef struct
 {
     TCHAR* pszFilePath;
     TCHAR* pszFileName;
-} VBOXSERVICEVMINFOFILE;
+} VBOXSERVICEVMINFOFILE, *PVBOXSERVICEVMINFOFILE;
 /** Function prototypes for dynamic loading. */
 typedef DWORD (WINAPI* fnWTSGetActiveConsoleSessionId)();
 #endif
