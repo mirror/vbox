@@ -232,3 +232,36 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
          : VERR_CPU_NOT_FOUND;
 }
 
+
+#if __FreeBSD_version >= 700000
+/**
+ * Dummy callback for RTMpPokeCpu.
+ * @param   pvArg   Ignored
+ */
+static void rtmpFreeBSDPokeCallback(void *pvArg)
+{
+    NOREF(pvArg);
+}
+
+
+RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
+{
+    cpumask_t   Mask;
+
+    /* Will panic if no rendezvouing cpus, so make sure the cpu is online. */
+    if (!RTMpIsCpuOnline(idCpu))
+        return VERR_CPU_NOT_FOUND;
+
+    Mask = (cpumask_t)1 << idCpu;
+    smp_rendezvous_cpus(Mask, NULL, rtmpFreeBSDPokeCallback, NULL, NULL);
+
+    return VINF_SUCCESS;
+}
+
+#else  /* < 7.0 */
+RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
+{
+    return VERR_NOT_SUPPORTED;
+}
+#endif /* < 7.0 */
+

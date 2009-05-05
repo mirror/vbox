@@ -319,3 +319,43 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
     return rc;
 }
 
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+/**
+ * Dummy callback used by RTMpPokeCpu.
+ *
+ * @param   pvInfo      Ignored.
+ */
+static void rtmpLinuxPokeCpuCallback(void *pvInfo)
+{
+    NOREF(pvInfo);
+}
+#endif
+
+
+RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+    int rc;
+
+    if (!RTMpIsCpuPossible(idCpu))
+        return VERR_CPU_NOT_FOUND;
+    if (!RTMpIsCpuOnline(idCpu))
+        return VERR_CPU_OFFLINE;
+
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+    rc = smp_call_function_single(idCpu, rtmpLinuxPokeCpuCallback, NULL, 0 /* wait */);
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+    rc = smp_call_function_single(idCpu, rtmpLinuxPokeCpuCallback, NULL, 0 /* retry */, 0 /* wait */);
+# else  /* older kernels */
+#  error oops
+# endif /* older kernels */
+    Assert(rc == 0);
+    return VINF_SUCCESS;
+
+#else  /* older kernels */
+    /* no unicast here? */
+    return VERR_NOT_SUPPORTED;
+#endif /* older kernels */
+}
+
