@@ -1042,6 +1042,7 @@ RuntimeR0Drv_SOURCES    = \
 	common/string/strformattype.cpp \
 	common/string/strprintf.cpp \
 	common/string/strtonum.cpp \
+	common/string/string.cpp \
 	common/table/avlpv.cpp \
 	generic/RTLogWriteStdErr-stub-generic.cpp \
 	generic/RTLogWriteUser-generic.cpp \
