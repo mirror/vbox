@@ -588,6 +588,8 @@ ifdef RT_ASYNC_IO_CODE
 	r3/win/fileaio-win.cpp
  RuntimeR3_SOURCES.freebsd += \
 	r3/freebsd/fileaio-freebsd.cpp
+ RuntimeR3_SOURCES.darwin += \
+	r3/posix/fileaio-posix.cpp
 endif
 
 ## PORTME: Porters add their selection of platform specific files for Ring-3 here.

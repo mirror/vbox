@@ -142,6 +142,11 @@ RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, unsigned fOpen
     if (fOpen & RTFILE_O_WRITE_THROUGH)
         fOpenMode |= O_SYNC;
 #endif
+#if defined(O_DIRECT) && defined(RT_OS_LINUX)
+    /* O_DIRECT is mandatory to get async I/O working on Linux. */
+    if (fOpen & RTFILE_O_ASYNC_IO)
+        fOpenMode |= O_DIRECT;
+#endif
 
     /* create/truncate file */
     switch (fOpen & RTFILE_O_ACTION_MASK)
