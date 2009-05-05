@@ -137,6 +137,8 @@ GVMMR0DECL(PVM)     GVMMR0GetVMByHandle(uint32_t hGVM);
 GVMMR0DECL(PVM)     GVMMR0GetVMByEMT(RTNATIVETHREAD hEMT);
 GVMMR0DECL(int)     GVMMR0SchedHalt(PVM pVM, VMCPUID idCpu, uint64_t u64ExpireGipTime);
 GVMMR0DECL(int)     GVMMR0SchedWakeUp(PVM pVM, VMCPUID idCpu);
+GVMMR0DECL(int)     GVMMR0SchedPoke(PVM pVM, VMCPUID idCpu);
+GVMMR0DECL(int)     GVMMR0SchedWakeUpAndPokeCpus(PVM pVM, PCVMCPUSET pSleepSet, PCVMCPUSET pPokeSet);
 GVMMR0DECL(int)     GVMMR0SchedPoll(PVM pVM, VMCPUID idCpu, bool fYield);
 GVMMR0DECL(int)     GVMMR0QueryStatistics(PGVMMSTATS pStats, PSUPDRVSESSION pSession, PVM pVM);
 GVMMR0DECL(int)     GVMMR0ResetStatistics(PCGVMMSTATS pStats, PSUPDRVSESSION pSession, PVM pVM);
@@ -162,6 +164,25 @@ typedef struct GVMMCREATEVMREQ
 typedef GVMMCREATEVMREQ *PGVMMCREATEVMREQ;
 
 GVMMR0DECL(int)     GVMMR0CreateVMReq(PGVMMCREATEVMREQ pReq);
+
+
+/**
+ * Request buffer for GVMMR0SchedWakeUpAndPokeCpusReq / VMMR0_DO_GVMM_SCHED_WAKE_UP_AND_POKE_CPUS.
+ * @see GVMMR0SchedWakeUpAndPokeCpus.
+ */
+typedef struct GVMMSCHEDWAKEUPANDPOKECPUSREQ /* nice and unreadable... */
+{
+    /** The header. */
+    SUPVMMR0REQHDR  Hdr;
+    /** The sleeper set. */
+    VMCPUSET        SleepSet;
+    /** The set of virtual CPUs to poke. */
+    VMCPUSET        PokeSet;
+} GVMMSCHEDWAKEUPANDPOKECPUSREQ;
+/** Pointer to a GVMMR0QueryStatisticsReq / VMMR0_DO_GVMM_QUERY_STATISTICS request buffer. */
+typedef GVMMSCHEDWAKEUPANDPOKECPUSREQ *PGVMMSCHEDWAKEUPANDPOKECPUSREQ;
+
+GVMMR0DECL(int)     GVMMR0SchedWakeUpAndPokeCpusReq(PVM pVM, PGVMMSCHEDWAKEUPANDPOKECPUSREQ pReq);
 
 
 /**
