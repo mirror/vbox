@@ -122,7 +122,7 @@ DECLINLINE(DBGFCMD) dbgfR3SetCmd(PVM pVM, DBGFCMD enmCmd)
         AssertMsg(pVM->dbgf.s.enmVMMCmd == DBGFCMD_NO_COMMAND, ("enmCmd=%d enmVMMCmd=%d\n", enmCmd, pVM->dbgf.s.enmVMMCmd));
         rc = (DBGFCMD)ASMAtomicXchgU32((uint32_t volatile *)(void *)&pVM->dbgf.s.enmVMMCmd, enmCmd);
         VM_FF_SET(pVM, VM_FF_DBGF);
-        VMR3NotifyGlobalFF(pVM, false /* didn't notify REM */);
+        VMR3NotifyGlobalFFU(pVM->pUVM, 0 /* didn't notify REM */);
     }
     return rc;
 }

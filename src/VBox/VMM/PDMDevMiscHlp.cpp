@@ -54,7 +54,7 @@ static DECLCALLBACK(void) pdmR3PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
 
     VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC);
     REMR3NotifyInterruptSet(pVM, pVCpu);
-    VMR3NotifyCpuFF(pVCpu, true);
+    VMR3NotifyCpuFFU(pVCpu->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM);
 }
 
 
@@ -157,7 +157,7 @@ static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUI
 
     VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC);
     REMR3NotifyInterruptSet(pVM, pVCpu);
-    VMR3NotifyCpuFF(pVCpu, true);
+    VMR3NotifyCpuFFU(pVCpu->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM);
 }
 
 

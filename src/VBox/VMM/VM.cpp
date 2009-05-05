@@ -1868,7 +1868,7 @@ static void vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait)
         ASMAtomicUoWriteBool(&pUVM->aCpus[i].vm.s.fTerminateEMT, true);
         if (pUVM->pVM)
             VM_FF_SET(pUVM->pVM, VM_FF_TERMINATE);
-        VMR3NotifyGlobalFFU(pUVM, true /* fNotifiedREM */);
+        VMR3NotifyGlobalFFU(pUVM, VMNOTIFYFF_FLAGS_DONE_REM);
         RTSemEventSignal(pUVM->aCpus[i].vm.s.EventSemWait);
     }
 

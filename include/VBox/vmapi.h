@@ -415,10 +415,16 @@ VMMR3DECL(int)  VMR3ReqFree(PVMREQ pReq);
 VMMR3DECL(int)  VMR3ReqQueue(PVMREQ pReq, unsigned cMillies);
 VMMR3DECL(int)  VMR3ReqWait(PVMREQ pReq, unsigned cMillies);
 VMMR3DECL(int)  VMR3ReqProcessU(PUVM pUVM, VMCPUID idDstCpu);
-VMMR3DECL(void) VMR3NotifyGlobalFF(PVM pVM, bool fNotifiedREM);
-VMMR3DECL(void) VMR3NotifyGlobalFFU(PUVM pUVM, bool fNotifiedREM);
-VMMR3DECL(void) VMR3NotifyCpuFF(PVMCPU pVCpu, bool fNotifiedREM);
-VMMR3DECL(void) VMR3NotifyCpuFFU(PUVMCPU pUVMCpu, bool fNotifiedREM);
+VMMR3DECL(void) VMR3NotifyGlobalFFU(PUVM pUVM, uint32_t fFlags);
+VMMR3DECL(void) VMR3NotifyCpuFFU(PUVMCPU pUVMCpu, uint32_t fFlags);
+/** @name Flags for VMR3NotifyCpuFFU and VMR3NotifyGlobalFFU.
+ * @{ */
+/** Whether we've done REM or not. */
+#define VMNOTIFYFF_FLAGS_DONE_REM   RT_BIT_32(0)
+/** Whether we should poke the CPU if it's executing guest code. */
+#define VMNOTIFYFF_FLAGS_POKE       RT_BIT_32(1)
+/** @} */
+
 VMMR3DECL(int)  VMR3WaitHalted(PVM pVM, PVMCPU pVCpu, bool fIgnoreInterrupts);
 VMMR3DECL(int)  VMR3WaitU(PUVMCPU pUVMCpu);
 VMMR3DECL(RTCPUID)          VMR3GetVMCPUId(PVM pVM);

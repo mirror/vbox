@@ -347,7 +347,7 @@ DECLINLINE(uint64_t) tmVirtualGet(PVM pVM, bool fCheckTimers)
             STAM_COUNTER_INC(&pVM->tm.s.StatVirtualGetSetFF);
 #ifdef IN_RING3
             REMR3NotifyTimerPending(pVM);
-            VMR3NotifyGlobalFF(pVM, true);
+            VMR3NotifyGlobalFFU(pVM->pUVM, VMNOTIFYFF_FLAGS_DONE_REM);
 #endif
         }
     }
@@ -421,7 +421,7 @@ VMMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
             VM_FF_SET(pVM, VM_FF_TIMER);
 #ifdef IN_RING3
             REMR3NotifyTimerPending(pVM);
-            VMR3NotifyGlobalFF(pVM, true);
+            VMR3NotifyGlobalFFU(pVM->pUVM, VMNOTIFYFF_FLAGS_DONE_REM);
 #endif
             STAM_COUNTER_INC(&pVM->tm.s.StatVirtualGetSyncSetFF);
         }
@@ -498,7 +498,7 @@ VMMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
                 VM_FF_SET(pVM, VM_FF_TIMER);
 #ifdef IN_RING3
                 REMR3NotifyTimerPending(pVM);
-                VMR3NotifyGlobalFF(pVM, true);
+                VMR3NotifyGlobalFFU(pVM->pUVM, VMNOTIFYFF_FLAGS_DONE_REM);
 #endif
                 STAM_COUNTER_INC(&pVM->tm.s.StatVirtualGetSyncSetFF);
                 Log4(("TM: %RU64/%RU64: exp tmr=>ff\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
@@ -525,7 +525,7 @@ VMMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
                 VM_FF_SET(pVM, VM_FF_TIMER);
 #ifdef IN_RING3
                 REMR3NotifyTimerPending(pVM);
-                VMR3NotifyGlobalFF(pVM, true);
+                VMR3NotifyGlobalFFU(pVM->pUVM, VMNOTIFYFF_FLAGS_DONE_REM);
 #endif
                 STAM_COUNTER_INC(&pVM->tm.s.StatVirtualGetSyncSetFF);
                 Log4(("TM: %RU64/%RU64: exp tmr=>ff (!)\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
@@ -596,8 +596,8 @@ VMMDECL(uint64_t) TMVirtualGetFreq(PVM pVM)
  */
 VMMDECL(int) TMVirtualResume(PVM pVM)
 {
-    /** @note this is done only in specific cases (vcpu 0 init, termination, debug, out of memory conditions; 
-     *  there is at least a race for fVirtualSyncTicking. 
+    /** @note this is done only in specific cases (vcpu 0 init, termination, debug, out of memory conditions;
+     *  there is at least a race for fVirtualSyncTicking.
      */
     if (ASMAtomicIncU32(&pVM->tm.s.cVirtualTicking) == 1)
     {
@@ -622,8 +622,8 @@ VMMDECL(int) TMVirtualResume(PVM pVM)
  */
 VMMDECL(int) TMVirtualPause(PVM pVM)
 {
-    /** @note this is done only in specific cases (vcpu 0 init, termination, debug, out of memory conditions; 
-     *  there is at least a race for fVirtualSyncTicking. 
+    /** @note this is done only in specific cases (vcpu 0 init, termination, debug, out of memory conditions;
+     *  there is at least a race for fVirtualSyncTicking.
      */
     if (ASMAtomicDecU32(&pVM->tm.s.cVirtualTicking) == 0)
     {
