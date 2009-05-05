@@ -130,6 +130,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
      */
 
     /** @todo the quoting is not yet implemented! */
+    /** @todo error checking! */
 
     BOOL accessible = FALSE;
     CHECK_ERROR (machine, COMGETTER(Accessible) (&accessible));
@@ -218,6 +219,13 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         RTPrintf("vram=%u\n", vramSize);
     else
         RTPrintf("VRAM size:       %uMB\n", vramSize);
+
+    ULONG numCpus;
+    rc = machine->COMGETTER(CPUCount)(&numCpus);
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("cpus=%u\n", numCpus);
+    else
+        RTPrintf("Number of CPUs:  %u\n", numCpus);
 
     ComPtr <IBIOSSettings> biosSettings;
     machine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());

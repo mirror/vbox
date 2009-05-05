@@ -65,6 +65,7 @@ int handleModifyVM(HandlerArg *a)
     char *nestedpaging = NULL;
     char *vtxvpid = NULL;
     char *pae = NULL;
+    uint32_t numCpus = UINT32_MAX;
     char *ioapic = NULL;
     uint32_t monitorcount = ~0;
     char *accelerate3d = NULL;
@@ -219,6 +220,15 @@ int handleModifyVM(HandlerArg *a)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             pae = a->argv[i];
+        }
+        else if (!strcmp(a->argv[i], "--cpus"))
+        {
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
+            i++;
+            numCpus = RTStrToUInt32(a->argv[i]);
+            if (numCpus == UINT32_MAX)
+                return errorArgument("The number of cpus cannot be 0.", a->argv[i]);
         }
         else if (   !strcmp(a->argv[i], "--monitorcount")
                  || !strcmp(a->argv[i], "-monitorcount"))
@@ -989,6 +999,10 @@ int handleModifyVM(HandlerArg *a)
                 rc = E_FAIL;
                 break;
             }
+        }
+        if (numCpus != UINT32_MAX)
+        {
+            CHECK_ERROR(machine, COMSETTER(CPUCount)(numCpus));
         }
         if (monitorcount != ~0U)
         {
