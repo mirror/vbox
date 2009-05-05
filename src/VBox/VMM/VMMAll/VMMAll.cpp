@@ -59,8 +59,6 @@ VMMDECL(VMCPUID) VMMGetCpuId(PVM pVM)
     return VMR3GetVMCPUId(pVM);
 
 #elif defined(IN_RING0)
-    /* ASSUME that only EMTs calls this function in R0. */
-    VM_ASSERT_EMT(pVM);
     if (pVM->cCPUs == 1)
         return 0;
     return HWACCMR0GetVMCPUId(pVM);
@@ -88,8 +86,6 @@ VMMDECL(PVMCPU) VMMGetCpu(PVM pVM)
     return &pVM->aCpus[VMR3GetVMCPUId(pVM)];
 
 #elif defined(IN_RING0)
-    /* ASSUME that only EMTs calls this function in R0. */
-    VM_ASSERT_EMT(pVM);
     if (pVM->cCPUs == 1)
         return &pVM->aCpus[0];
     return HWACCMR0GetVMCPU(pVM);
