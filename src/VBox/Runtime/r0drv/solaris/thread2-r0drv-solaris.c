@@ -36,6 +36,7 @@
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/thread.h>
+#include <iprt/process.h>
 
 #include "internal/thread.h"
 
