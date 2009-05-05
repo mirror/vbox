@@ -1191,8 +1191,7 @@ VMMR0DECL(PVMCPU)  HWACCMR0GetVMCPU(PVM pVM)
         if (pVCpu->hwaccm.s.idEnteredCpu == idHostCpu)
             return pVCpu;
     }
-    AssertReleaseFailed();
-    return 0;
+    return NULL;
 }
 
 /**
@@ -1206,7 +1205,6 @@ VMMR0DECL(VMCPUID) HWACCMR0GetVMCPUId(PVM pVM)
     if (pVCpu)
         return pVCpu->idCpu;
 
-    AssertReleaseFailed();
     return 0;
 }
 

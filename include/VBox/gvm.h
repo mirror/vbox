@@ -35,6 +35,28 @@
 #include <VBox/types.h>
 #include <iprt/thread.h>
 
+/** @defgroup grp_gvm   GVMCPU - The Global VMCPU Data
+ * @{
+ */
+
+typedef struct GVMCPU
+{
+    /* VCPU id (0 - (pVM->cCPUs - 1) */
+    uint32_t        idCpu;
+
+    /** The GVMM per vcpu data. */
+    struct
+    {
+#ifdef ___GVMMR0Internal_h
+        struct GVMMPERVCPU  s;
+#endif
+        uint8_t             padding[64];
+    } gvmm;
+} GVMCPU;
+/** Pointer to the GVMCPU data. */
+typedef GVMCPU *PGVMCPU;
+
+/** @} */
 
 /** @defgroup grp_gvm   GVM - The Global VM Data
  * @{
@@ -59,6 +81,9 @@ typedef struct GVM
     RTNATIVETHREAD  hEMT;
     /** The ring-0 mapping of the VM structure. */
     PVM             pVM;
+    /** Number of VCPUs (same as pVM->cCPUs) */
+    uint32_t        cCPUs;
+    uint32_t        padding;
 
     /** The GVMM per vm data. */
     struct
@@ -78,6 +103,8 @@ typedef struct GVM
         uint8_t             padding[256];
     } gmm;
 
+    /** GVMCPU array for the configured number of virtual CPUs. */
+    GVMCPU          aCpus[1];
 } GVM;
 
 /** The GVM::u32Magic value (Wayne Shorter). */
