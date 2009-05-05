@@ -1692,8 +1692,7 @@ static int vboxNetFltSolarisOpenStyle2(PVBOXNETFLTINS pThis, ldi_ident_t *pDevId
     /*
      * Strip out PPA from the device name, eg: "ce3".
      */
-    char *pszDev = RTMemAllocZ(strlen(pThis->szName));
-    memcpy(pszDev, pThis->szName, strlen(pThis->szName));
+    char *pszDev = RTStrDup(pThis->szName);
     char *pszEnd = strchr(pszDev, '\0');
     int PPALen = 0;
     while (--pszEnd > pszDev)
@@ -1704,17 +1703,15 @@ static int vboxNetFltSolarisOpenStyle2(PVBOXNETFLTINS pThis, ldi_ident_t *pDevId
     }
     pszEnd++;
 
-    char szDev[128];
-    RTStrPrintf(szDev, sizeof(szDev), "/dev/%s", pszDev);
-    RTMemFree(pszDev);
-
     int rc;
     long PPA;
     if (   pszEnd
         && ddi_strtol(pszEnd, NULL, 10, &PPA) == 0)
     {
-        pszEnd -= PPALen;
         *pszEnd = '\0';
+        char szDev[128];
+        RTStrPrintf(szDev, sizeof(szDev), "/dev/%s", pszDev);
+
         /*
          * Try open the device as DPLI style 2.
          */
@@ -1726,7 +1723,10 @@ static int vboxNetFltSolarisOpenStyle2(PVBOXNETFLTINS pThis, ldi_ident_t *pDevId
              */
             rc = dl_attach(pThis->u.s.hIface, (int)PPA, NULL);
             if (!rc)
+            {
+                RTStrFree(pszDev);
                 return VINF_SUCCESS;
+            }
 
             ldi_close(pThis->u.s.hIface, FREAD | FWRITE, kcred);
             LogRel((DEVICE_NAME ":vboxNetFltSolarisOpenStyle2 dl_attach failed. rc=%d\n", rc));
@@ -1737,6 +1737,7 @@ static int vboxNetFltSolarisOpenStyle2(PVBOXNETFLTINS pThis, ldi_ident_t *pDevId
     else
         LogRel((DEVICE_NAME ":vboxNetFltSolarisOpenStyle2 Failed to construct PPA.\n"));
 
+    RTStrFree(pszDev);
     return VERR_INTNET_FLT_IF_FAILED;
 }
 #endif
