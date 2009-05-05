@@ -51,6 +51,7 @@
 #if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
 # include <iprt/crc32.h>
 # include <iprt/net.h>
+# include <iprt/string.h>
 #endif
 /* VBox/x86.h not compatible with the Linux kernel sources */
 #ifdef RT_OS_LINUX
@@ -438,6 +439,8 @@ PFNRT g_apfnVBoxDrvIPRTDeps[] =
     (PFNRT)RTUuidCompare,
     (PFNRT)RTUuidCompareStr,
     (PFNRT)RTUuidFromStr,
+    (PFNRT)RTStrDup,
+    (PFNRT)RTStrFree,
     NULL
 };
 #endif  /* RT_OS_DARWIN || RT_OS_SOLARIS */
