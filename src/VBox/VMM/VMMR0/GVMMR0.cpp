@@ -44,12 +44,14 @@
 #include <VBox/gvm.h>
 #include <VBox/vm.h>
 #include <VBox/vmm.h>
+#include <VBox/param.h>
 #include <VBox/err.h>
 #include <iprt/alloc.h>
 #include <iprt/semaphore.h>
 #include <iprt/time.h>
 #include <VBox/log.h>
 #include <iprt/thread.h>
+#include <iprt/process.h>
 #include <iprt/param.h>
 #include <iprt/string.h>
 #include <iprt/assert.h>
@@ -78,9 +80,13 @@ typedef struct GVMHANDLE
     void               *pvObj;
     /** The session this VM is associated with. */
     PSUPDRVSESSION      pSession;
-    /** The ring-0 handle of the EMT thread (VCPU 0).
-     * This is used for assertions and similar cases where we need to find the VM handle. */
-    RTNATIVETHREAD      hEMTCpu0;
+    /** The ring-0 handle of the EMT0 thread.
+     * This is used for ownership checks as well as looking up a VM handle by thread
+     * at times like assertions. */
+    RTNATIVETHREAD      hEMT0;
+    /** The process ID of the handle owner.
+     * This is used for access checks. */
+    RTPROCESS           ProcId;
 } GVMHANDLE;
 /** Pointer to a global VM handle. */
 typedef GVMHANDLE *PGVMHANDLE;
@@ -520,8 +526,10 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
         ||  cCpus > VMCPU_MAX_CPU_COUNT)
         return VERR_INVALID_PARAMETER;
 
-    RTNATIVETHREAD hEMT = RTThreadNativeSelf();
-    AssertReturn(hEMT != NIL_RTNATIVETHREAD, VERR_INTERNAL_ERROR);
+    RTNATIVETHREAD hEMT0 = RTThreadNativeSelf();
+    AssertReturn(hEMT0 != NIL_RTNATIVETHREAD, VERR_INTERNAL_ERROR);
+    RTNATIVETHREAD ProcId = RTProcSelf();
+    AssertReturn(ProcId != NIL_RTPROCESS, VERR_INTERNAL_ERROR);
 
     /*
      * The whole allocation process is protected by the lock.
@@ -560,7 +568,8 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                 pHandle->pVM      = NULL;
                 pHandle->pGVM     = NULL;
                 pHandle->pSession = pSession;
-                pHandle->hEMTCpu0 = NIL_RTNATIVETHREAD;
+                pHandle->hEMT0    = NIL_RTNATIVETHREAD;
+                pHandle->ProcId   = NIL_RTPROCESS;
 
                 gvmmR0UsedUnlock(pGVMM);
 
@@ -640,9 +649,10 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
 
                                         pHandle->pVM        = pVM;
                                         pHandle->pGVM       = pGVM;
-                                        pHandle->hEMTCpu0   = hEMT;
+                                        pHandle->hEMT0      = hEMT0;
+                                        pHandle->ProcId     = ProcId;
                                         pGVM->pVM           = pVM;
-                                        pGVM->aCpus[0].hEMT = hEMT;
+                                        pGVM->aCpus[0].hEMT = hEMT0;
 
                                         gvmmR0UsedUnlock(pGVMM);
                                         gvmmR0CreateDestroyUnlock(pGVMM);
@@ -838,8 +848,11 @@ GVMMR0DECL(int) GVMMR0DestroyVM(PVM pVM)
     PGVMHANDLE pHandle = &pGVMM->aHandles[hGVM];
     AssertReturn(pHandle->pVM == pVM, VERR_NOT_OWNER);
 
+    RTPROCESS      ProcId = RTProcSelf();
     RTNATIVETHREAD hSelf = RTThreadNativeSelf();
-    AssertReturn(pHandle->hEMTCpu0 == hSelf || pHandle->hEMTCpu0 == NIL_RTNATIVETHREAD, VERR_NOT_OWNER);
+    AssertReturn(   (   pHandle->hEMT0  == hSelf
+                     && pHandle->ProcId == ProcId)
+                 || pHandle->hEMT0 == NIL_RTNATIVETHREAD, VERR_NOT_OWNER);
 
     /*
      * Lookup the handle and destroy the object.
@@ -851,8 +864,9 @@ GVMMR0DECL(int) GVMMR0DestroyVM(PVM pVM)
 
     /* be careful here because we might theoretically be racing someone else cleaning up. */
     if (    pHandle->pVM == pVM
-        &&  (   pHandle->hEMTCpu0 == hSelf
-             || pHandle->hEMTCpu0 == NIL_RTNATIVETHREAD)
+        &&  (   (   pHandle->hEMT0  == hSelf
+                 && pHandle->ProcId == ProcId)
+             || pHandle->hEMT0 == NIL_RTNATIVETHREAD)
         &&  VALID_PTR(pHandle->pvObj)
         &&  VALID_PTR(pHandle->pSession)
         &&  VALID_PTR(pHandle->pGVM)
@@ -866,8 +880,8 @@ GVMMR0DECL(int) GVMMR0DestroyVM(PVM pVM)
     }
     else
     {
-        SUPR0Printf("GVMMR0DestroyVM: pHandle=%p:{.pVM=%p, hEMTCpu0=%p, .pvObj=%p} pVM=%p hSelf=%p\n",
-                    pHandle, pHandle->pVM, pHandle->hEMTCpu0, pHandle->pvObj, pVM, hSelf);
+        SUPR0Printf("GVMMR0DestroyVM: pHandle=%p:{.pVM=%p, .hEMT0=%p, .ProcId=%u, .pvObj=%p} pVM=%p hSelf=%p\n",
+                    pHandle, pHandle->pVM, pHandle->hEMT0, pHandle->ProcId, pHandle->pvObj, pVM, hSelf);
         gvmmR0CreateDestroyUnlock(pGVMM);
         rc = VERR_INTERNAL_ERROR;
     }
@@ -1048,7 +1062,8 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
     ASMAtomicXchgPtr((void * volatile *)&pHandle->pVM, NULL);
     ASMAtomicXchgPtr((void * volatile *)&pHandle->pvObj, NULL);
     ASMAtomicXchgPtr((void * volatile *)&pHandle->pSession, NULL);
-    ASMAtomicXchgSize(&pHandle->hEMTCpu0, NIL_RTNATIVETHREAD);
+    ASMAtomicXchgSize(&pHandle->hEMT0, NIL_RTNATIVETHREAD);
+    ASMAtomicXchgSize(&pHandle->ProcId, NIL_RTPROCESS);
 
     gvmmR0UsedUnlock(pGVMM);
     gvmmR0CreateDestroyUnlock(pGVMM);
@@ -1120,6 +1135,9 @@ GVMMR0DECL(PGVM) GVMMR0ByHandle(uint32_t hGVM)
 /**
  * Lookup a GVM structure by the shared VM structure.
  *
+ * The calling thread must be in the same process as the VM. All current lookups
+ * are by threads inside the same process, so this will not be an issue.
+ *
  * @returns VBox status code.
  * @param   pVM             The shared VM structure (the ring-0 mapping).
  * @param   ppGVM           Where to store the GVM pointer.
@@ -1132,6 +1150,7 @@ GVMMR0DECL(PGVM) GVMMR0ByHandle(uint32_t hGVM)
  */
 static int gvmmR0ByVM(PVM pVM, PGVM *ppGVM, PGVMM *ppGVMM, bool fTakeUsedLock)
 {
+    RTPROCESS ProcId = RTProcSelf();
     PGVMM pGVMM;
     GVMM_GET_VALID_INSTANCE(pGVMM, VERR_INTERNAL_ERROR);
 
@@ -1162,6 +1181,7 @@ static int gvmmR0ByVM(PVM pVM, PGVM *ppGVM, PGVMM *ppGVMM, bool fTakeUsedLock)
 
         pGVM = pHandle->pGVM;
         if (RT_UNLIKELY(    pHandle->pVM != pVM
+                        ||  pHandle->ProcId != ProcId
                         ||  !VALID_PTR(pHandle->pvObj)
                         ||  !VALID_PTR(pGVM)
                         ||  pGVM->pVM != pVM))
@@ -1173,6 +1193,8 @@ static int gvmmR0ByVM(PVM pVM, PGVM *ppGVM, PGVMM *ppGVMM, bool fTakeUsedLock)
     else
     {
         if (RT_UNLIKELY(pHandle->pVM != pVM))
+            return VERR_INVALID_HANDLE;
+        if (RT_UNLIKELY(pHandle->ProcId != ProcId))
             return VERR_INVALID_HANDLE;
         if (RT_UNLIKELY(!VALID_PTR(pHandle->pvObj)))
             return VERR_INVALID_HANDLE;
@@ -1201,8 +1223,8 @@ static int gvmmR0ByVM(PVM pVM, PGVM *ppGVM, PGVMM *ppGVMM, bool fTakeUsedLock)
  */
 GVMMR0DECL(PGVM) GVMMR0ByVM(PVM pVM)
 {
-    PGVMM pGVMM;
     PGVM pGVM;
+    PGVMM pGVMM;
     int rc = gvmmR0ByVM(pVM, &pGVM, &pGVMM, false /* fTakeUsedLock */);
     if (RT_SUCCESS(rc))
         return pGVM;
@@ -1212,8 +1234,8 @@ GVMMR0DECL(PGVM) GVMMR0ByVM(PVM pVM)
 
 
 /**
- * Lookup a GVM structure by the shared VM structure
- * and ensuring that the caller is the EMT thread.
+ * Lookup a GVM structure by the shared VM structure and ensuring that the
+ * caller is an EMT thread.
  *
  * @returns VBox status code.
  * @param   pVM         The shared VM structure (the ring-0 mapping).
@@ -1244,6 +1266,8 @@ static int gvmmR0ByVMAndEMT(PVM pVM, VMCPUID idCpu, PGVM *ppGVM, PGVMM *ppGVMM)
      */
     PGVMHANDLE pHandle = &pGVMM->aHandles[hGVM];
     AssertReturn(pHandle->pVM == pVM, VERR_NOT_OWNER);
+    RTPROCESS ProcId = RTProcSelf();
+    AssertReturn(pHandle->ProcId == ProcId, VERR_NOT_OWNER);
     AssertPtrReturn(pHandle->pvObj, VERR_INTERNAL_ERROR);
 
     PGVM pGVM = pHandle->pGVM;
@@ -1314,6 +1338,7 @@ GVMMR0DECL(PVM) GVMMR0GetVMByEMT(RTNATIVETHREAD hEMT)
 
     if (hEMT == NIL_RTNATIVETHREAD)
         hEMT = RTThreadNativeSelf();
+    RTPROCESS ProcId = RTProcSelf();
 
     /*
      * Search the handles in a linear fashion as we don't dare to take the lock (assert).
@@ -1321,18 +1346,21 @@ GVMMR0DECL(PVM) GVMMR0GetVMByEMT(RTNATIVETHREAD hEMT)
     for (unsigned i = 1; i < RT_ELEMENTS(pGVMM->aHandles); i++)
     {
         if (    pGVMM->aHandles[i].iSelf == i
+            &&  pGVMM->aHandles[i].ProcId == ProcId
             &&  VALID_PTR(pGVMM->aHandles[i].pvObj)
             &&  VALID_PTR(pGVMM->aHandles[i].pVM)
             &&  VALID_PTR(pGVMM->aHandles[i].pGVM))
         {
-            if (pGVMM->aHandles[i].hEMTCpu0 == hEMT)
+            if (pGVMM->aHandles[i].hEMT0 == hEMT)
                 return pGVMM->aHandles[i].pVM;
 
-            /** @todo this isn't safe as GVM may be deallocated while we're running.
-             * Will change this to use RTPROCESS on the handle level as storing all the
-             * thread handles there doesn't scale very well. */
+            /* This is fearly safe with the current process per VM approach. */
             PGVM pGVM = pGVMM->aHandles[i].pGVM;
-            for (VMCPUID idCpu = 0; idCpu < pGVM->cCpus; idCpu++)
+            VMCPUID const cCpus = pGVM->cCpus;
+            if (    cCpus < 1
+                ||  cCpus > VMM_MAX_CPUS)
+                continue;
+            for (VMCPUID idCpu = 1; idCpu < cCpus; idCpu++)
                 if (pGVM->aCpus[idCpu].hEMT == hEMT)
                     return pGVMM->aHandles[i].pVM;
         }
