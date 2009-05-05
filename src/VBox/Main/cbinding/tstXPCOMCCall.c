@@ -30,35 +30,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-static char *nsIDToString(nsID *guid);
 static void listVMs(IVirtualBox *virtualBox, ISession *session, nsIEventQueue *queue);
-static void registerCallBack(IVirtualBox *virtualBox, ISession *session, nsID *machineId, nsIEventQueue *queue);
-static void startVM(IVirtualBox *virtualBox, ISession *session, nsID *id, nsIEventQueue *queue);
+static void registerCallBack(IVirtualBox *virtualBox, ISession *session, PRUnichar *machineId, nsIEventQueue *queue);
+static void startVM(IVirtualBox *virtualBox, ISession *session, PRUnichar *id, nsIEventQueue *queue);
 
 int volatile g_refcount = 0;
-
-/**
- * Helper function to convert an nsID into a human readable string.
- *
- * @returns result string, allocated. Has to be freed using free()
- * @param   guid Pointer to nsID that will be converted.
- */
-static char *nsIDToString(nsID *guid)
-{
-    /* Avoid magic number 39. Yes, sizeof "literal" includes the NUL byte. */
-    char *res = malloc(sizeof "{12345678-1234-1234-1234-123456789012}");
-
-    if (res != NULL)
-    {
-        sprintf(res, "{%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x}",
-                (unsigned)guid->m0, (unsigned)guid->m1, (unsigned)guid->m2,
-                (unsigned)guid->m3[0], (unsigned)guid->m3[1],
-                (unsigned)guid->m3[2], (unsigned)guid->m3[3],
-                (unsigned)guid->m3[4], (unsigned)guid->m3[5],
-                (unsigned)guid->m3[6], (unsigned)guid->m3[7]);
-    }
-    return res;
-}
 
 /**
  * Callback functions
@@ -274,7 +250,7 @@ static nsresult QueryInterface(nsISupports *pThis, const nsID *iid, void **resul
  * @param   id         identifies the machine to start
  * @param   queue      handle to the event queue
  */
-static void registerCallBack(IVirtualBox *virtualBox, ISession *session, nsID *machineId, nsIEventQueue *queue)
+static void registerCallBack(IVirtualBox *virtualBox, ISession *session, PRUnichar *machineId, nsIEventQueue *queue)
 {
     IConsole *console = NULL;
     nsresult rc;
@@ -401,17 +377,16 @@ static void listVMs(IVirtualBox *virtualBox, ISession *session, nsIEventQueue *q
             printf("\tName:        <inaccessible>\n");
         }
 
-
         {
-            nsID  *iid = NULL;
-            char  *uuidString;
+            PRUnichar *uuidUtf16 = NULL;
+            char      *uuidUtf8  = NULL;
 
-            machine->vtbl->GetId(machine, &iid);
-            uuidString = nsIDToString(iid);
-            printf("\tUUID:        %s\n", uuidString);
+            machine->vtbl->GetId(machine, &uuidUtf16);
+            g_pVBoxFuncs->pfnUtf16ToUtf8(uuidUtf16, &uuidUtf8);
+            printf("\tUUID:        %s\n", uuidUtf8);
 
-            free(uuidString);
-            g_pVBoxFuncs->pfnComUnallocMem(iid);
+            g_pVBoxFuncs->pfnUtf8Free(uuidUtf8);
+            g_pVBoxFuncs->pfnUtf16Free(uuidUtf16);
         }
 
         if (isAccessible)
@@ -469,12 +444,12 @@ static void listVMs(IVirtualBox *virtualBox, ISession *session, nsIEventQueue *q
 
         if (machine)
         {
-            nsID  *iid = NULL;
+            PRUnichar *uuidUtf16 = NULL;
 
-            machine->vtbl->GetId(machine, &iid);
-            startVM(virtualBox, session, iid, queue);
+            machine->vtbl->GetId(machine, &uuidUtf16);
+            startVM(virtualBox, session, uuidUtf16, queue);
 
-            g_pVBoxFuncs->pfnComUnallocMem(iid);
+            g_pVBoxFuncs->pfnUtf16Free(uuidUtf16);
         }
     }
 
@@ -502,7 +477,7 @@ static void listVMs(IVirtualBox *virtualBox, ISession *session, nsIEventQueue *q
  * @param   queue      handle to the event queue
  */
 
-static void startVM(IVirtualBox *virtualBox, ISession *session, nsID *id, nsIEventQueue *queue)
+static void startVM(IVirtualBox *virtualBox, ISession *session, PRUnichar *id, nsIEventQueue *queue)
 {
     nsresult rc;
     IMachine  *machine    = NULL;
@@ -538,7 +513,7 @@ static void startVM(IVirtualBox *virtualBox, ISession *session, nsID *id, nsIEve
     else
     {
         PRBool completed;
-        nsresult resultCode;
+        PRInt32 resultCode;
 
         printf("Waiting for the remote session to open...\n");
         progress->vtbl->WaitForCompletion(progress, -1);
