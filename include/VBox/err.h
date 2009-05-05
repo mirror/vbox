@@ -1252,10 +1252,12 @@
  */
 /** The GVM is out of VM handle space. */
 #define VERR_GVM_TOO_MANY_VMS                       (-3900)
-/** The EMT thread was not blocked at the time of the call.  */
+/** The EMT was not blocked at the time of the call.  */
 #define VINF_GVM_NOT_BLOCKED                        3901
-/** RTThreadYield was called during a GVMMR0ShcedPoll call. */
-#define VINF_GVM_YIELDED                            3902
+/** The EMT was not busy running guest code at the time of the call. */
+#define VINF_GVM_NOT_BUSY_IN_GC                     3902
+/** RTThreadYield was called during a GVMMR0SchedPoll call. */
+#define VINF_GVM_YIELDED                            3903
 /** @} */
 
 

@@ -189,6 +189,10 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_GVMM_SCHED_HALT,
     /** Call GVMMR0SchedWakeUp(). */
     VMMR0_DO_GVMM_SCHED_WAKE_UP,
+    /** Call GVMMR0SchedPoke(). */
+    VMMR0_DO_GVMM_SCHED_POKE,
+    /** Call GVMMR0SchedWakeUpAndPokeCpus(). */
+    VMMR0_DO_GVMM_SCHED_WAKE_UP_AND_POKE_CPUS,
     /** Call GVMMR0SchedPoll(). */
     VMMR0_DO_GVMM_SCHED_POLL,
     /** Call GVMMR0QueryStatistics(). */

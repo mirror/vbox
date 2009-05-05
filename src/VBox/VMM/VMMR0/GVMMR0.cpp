@@ -1567,10 +1567,54 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PVM pVM, VMCPUID idCpu, uint64_t u64ExpireGipTim
 
 
 /**
+ * Worker for GVMMR0SchedWakeUp and GVMMR0SchedWakeUpAndPokeCpus that wakes up
+ * the a sleeping EMT.
+ *
+ * @retval  VINF_SUCCESS if successfully woken up.
+ * @retval  VINF_GVM_NOT_BLOCKED if the EMT wasn't blocked.
+ *
+ * @param   pGVM                The global (ring-0) VM structure.
+ * @param   pGVCpu              The global (ring-0) VCPU structure.
+ */
+DECLINLINE(int) gvmmR0SchedWakeUpOne(PGVM pGVM, PGVMCPU pGVCpu)
+{
+    int rc;
+    pGVM->gvmm.s.StatsSched.cWakeUpCalls++;
+
+    /*
+     * Signal the semaphore regardless of whether it's current blocked on it.
+     *
+     * The reason for this is that there is absolutely no way we can be 100%
+     * certain that it isn't *about* go to go to sleep on it and just got
+     * delayed a bit en route. So, we will always signal the semaphore when
+     * the it is flagged as halted in the VMM.
+     */
+/** @todo we can optimize some of that by means of the pVCpu->enmState now. */
+    if (pGVCpu->gvmm.s.u64HaltExpire)
+    {
+        rc = VINF_SUCCESS;
+        ASMAtomicXchgU64(&pGVCpu->gvmm.s.u64HaltExpire, 0);
+    }
+    else
+    {
+        rc = VINF_GVM_NOT_BLOCKED;
+        pGVM->gvmm.s.StatsSched.cWakeUpNotHalted++;
+    }
+
+    int rc2 = RTSemEventMultiSignal(pGVCpu->gvmm.s.HaltEventMulti);
+    AssertRC(rc2);
+
+    return rc;
+}
+
+
+/**
  * Wakes up the halted EMT thread so it can service a pending request.
  *
- * @returns VINF_SUCCESS if not yielded.
- *          VINF_GVM_NOT_BLOCKED if the EMT thread wasn't blocked.
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS if successfully woken up.
+ * @retval  VINF_GVM_NOT_BLOCKED if the EMT wasn't blocked.
+ *
  * @param   pVM                 Pointer to the shared VM structure.
  * @param   idCpu               The Virtual CPU ID of the EMT to wake up.
  * @thread  Any but EMT.
@@ -1587,30 +1631,10 @@ GVMMR0DECL(int) GVMMR0SchedWakeUp(PVM pVM, VMCPUID idCpu)
     {
         if (idCpu < pGVM->cCpus)
         {
-            PGVMCPU pCurGVCpu = &pGVM->aCpus[idCpu];
-            pGVM->gvmm.s.StatsSched.cWakeUpCalls++;
-
             /*
-             * Signal the semaphore regardless of whether it's current blocked on it.
-             *
-             * The reason for this is that there is absolutely no way we can be 100%
-             * certain that it isn't *about* go to go to sleep on it and just got
-             * delayed a bit en route. So, we will always signal the semaphore when
-             * the it is flagged as halted in the VMM.
+             * Do the actual job.
              */
-            if (pCurGVCpu->gvmm.s.u64HaltExpire)
-            {
-                rc = VINF_SUCCESS;
-                ASMAtomicXchgU64(&pCurGVCpu->gvmm.s.u64HaltExpire, 0);
-            }
-            else
-            {
-                rc = VINF_GVM_NOT_BLOCKED;
-                pGVM->gvmm.s.StatsSched.cWakeUpNotHalted++;
-            }
-
-            int rc2 = RTSemEventMultiSignal(pCurGVCpu->gvmm.s.HaltEventMulti);
-            AssertRC(rc2);
+            rc = gvmmR0SchedWakeUpOne(pGVM, &pGVM->aCpus[idCpu]);
 
             /*
              * While we're here, do a round of scheduling.
@@ -1618,7 +1642,6 @@ GVMMR0DECL(int) GVMMR0SchedWakeUp(PVM pVM, VMCPUID idCpu)
             Assert(ASMGetFlags() & X86_EFL_IF);
             const uint64_t u64Now = RTTimeNanoTS(); /* (GIP time) */
             pGVM->gvmm.s.StatsSched.cWakeUpWakeUps += gvmmR0SchedDoWakeUps(pGVMM, u64Now);
-
         }
         else
             rc = VERR_INVALID_CPU_ID;
@@ -1630,6 +1653,131 @@ GVMMR0DECL(int) GVMMR0SchedWakeUp(PVM pVM, VMCPUID idCpu)
     LogFlow(("GVMMR0SchedWakeUp: returns %Rrc\n", rc));
     return rc;
 }
+
+
+/**
+ * Worker common to GVMMR0SchedPoke and GVMMR0SchedWakeUpAndPokeCpus that pokes
+ * the Virtual CPU if it's still busy executing guest code.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS if poked successfully.
+ * @retval  VINF_GVM_NOT_BUSY_IN_GC if the EMT wasn't busy in GC.
+ *
+ * @param   pGVM                The global (ring-0) VM structure.
+ * @param   pVCpu               The Virtual CPU handle.
+ */
+DECLINLINE(int) gvmmR0SchedPokeOne(PGVM pGVM, PVMCPU pVCpu)
+{
+    if (pVCpu->enmState != VMCPUSTATE_RUN_EXEC)
+        return VINF_GVM_NOT_BUSY_IN_GC;
+
+    /** @todo do the actual poking, need to get the current cpu id from HWACC or
+     *        somewhere and then call RTMpPokeCpu(). */
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Pokes an EMT if it's still busy running guest code.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS if poked successfully.
+ * @retval  VINF_GVM_NOT_BUSY_IN_GC if the EMT wasn't busy in GC.
+ *
+ * @param   pVM                 Pointer to the shared VM structure.
+ * @param   idCpu               The ID of the virtual CPU to poke.
+ */
+GVMMR0DECL(int) GVMMR0SchedPoke(PVM pVM, VMCPUID idCpu)
+{
+    /*
+     * Validate input and take the UsedLock.
+     */
+    PGVM pGVM;
+    PGVMM pGVMM;
+    int rc = gvmmR0ByVM(pVM, &pGVM, &pGVMM, true /* fTakeUsedLock */);
+    if (RT_SUCCESS(rc))
+    {
+        if (idCpu < pGVM->cCpus)
+            rc = gvmmR0SchedPokeOne(pGVM, &pVM->aCpus[idCpu]);
+        else
+            rc = VERR_INVALID_CPU_ID;
+
+        int rc2 = gvmmR0UsedUnlock(pGVMM);
+        AssertRC(rc2);
+    }
+
+    LogFlow(("GVMMR0SchedWakeUpAndPokeCpus: returns %Rrc\n", rc));
+    return rc;
+
+}
+
+
+/**
+ * Wakes up a set of halted EMT threads so they can service pending request.
+ *
+ * @returns VBox status code, no informational stuff.
+ *
+ * @param   pVM                 Pointer to the shared VM structure.
+ * @param   pSleepSet           The set of sleepers to wake up.
+ * @param   pPokeSet            The set of CPUs to poke.
+ */
+GVMMR0DECL(int) GVMMR0SchedWakeUpAndPokeCpus(PVM pVM, PCVMCPUSET pSleepSet, PCVMCPUSET pPokeSet)
+{
+    AssertPtrReturn(pSleepSet, VERR_INVALID_POINTER);
+    AssertPtrReturn(pPokeSet, VERR_INVALID_POINTER);
+    RTNATIVETHREAD hSelf = RTThreadNativeSelf();
+
+    /*
+     * Validate input and take the UsedLock.
+     */
+    PGVM pGVM;
+    PGVMM pGVMM;
+    int rc = gvmmR0ByVM(pVM, &pGVM, &pGVMM, true /* fTakeUsedLock */);
+    if (RT_SUCCESS(rc))
+    {
+        rc = VINF_SUCCESS;
+        VMCPUID idCpu = pGVM->cCpus;
+        while (idCpu-- > 0)
+        {
+            /* Don't try poke or wake up ourselves. */
+            if (pGVM->aCpus[idCpu].hEMT == hSelf)
+                continue;
+
+            /* just ignore errors for now. */
+            if (VMCPUSET_IS_PRESENT(pSleepSet, idCpu))
+                gvmmR0SchedWakeUpOne(pGVM, &pGVM->aCpus[idCpu]);
+            else if (VMCPUSET_IS_PRESENT(pPokeSet, idCpu))
+                gvmmR0SchedPokeOne(pGVM, &pVM->aCpus[idCpu]);
+        }
+
+        int rc2 = gvmmR0UsedUnlock(pGVMM);
+        AssertRC(rc2);
+    }
+
+    LogFlow(("GVMMR0SchedWakeUpAndPokeCpus: returns %Rrc\n", rc));
+    return rc;
+}
+
+
+/**
+ * VMMR0 request wrapper for GVMMR0SchedWakeUpAndPokeCpus.
+ *
+ * @returns see GVMMR0SchedWakeUpAndPokeCpus.
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   pReq            The request packet.
+ */
+GVMMR0DECL(int) GVMMR0SchedWakeUpAndPokeCpusReq(PVM pVM, PGVMMSCHEDWAKEUPANDPOKECPUSREQ pReq)
+{
+    /*
+     * Validate input and pass it on.
+     */
+    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
+    AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
+
+    return GVMMR0SchedWakeUpAndPokeCpus(pVM, &pReq->SleepSet, &pReq->PokeSet);
+}
+
 
 
 /**
