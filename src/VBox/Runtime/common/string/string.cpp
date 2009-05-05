@@ -46,7 +46,7 @@
  * @param   pszString      Pointer to buffer with string to free.
  *                         NULL is accepted.
  */
-RTR3DECL(void)  RTStrFree(char *pszString)
+RTDECL(void)  RTStrFree(char *pszString)
 {
     if (pszString)
         RTMemTmpFree(pszString);
@@ -59,7 +59,7 @@ RTR3DECL(void)  RTStrFree(char *pszString)
  * @returns Pointer to the allocated UTF-8 string.
  * @param   pszString       UTF-8 string to duplicate.
  */
-RTR3DECL(char *) RTStrDup(const char *pszString)
+RTDECL(char *) RTStrDup(const char *pszString)
 {
     Assert(VALID_PTR(pszString));
     size_t cch = strlen(pszString) + 1;
@@ -78,7 +78,7 @@ RTR3DECL(char *) RTStrDup(const char *pszString)
  *                          The returned pointer must be freed using RTStrFree().
  * @param   pszString       UTF-8 string to duplicate.
  */
-RTR3DECL(int)  RTStrDupEx(char **ppszString, const char *pszString)
+RTDECL(int)  RTStrDupEx(char **ppszString, const char *pszString)
 {
     Assert(VALID_PTR(ppszString));
     Assert(VALID_PTR(pszString));
