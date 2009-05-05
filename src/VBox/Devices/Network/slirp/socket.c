@@ -520,6 +520,7 @@ sorecvfrom(PNATState pData, struct socket *so)
          * XXX Shouldn't FIONREAD packets destined for port 53,
          * but I don't know the max packet size for DNS lookups
          */
+#if 0
         len = M_FREEROOM(m);
         /* if (so->so_fport != htons(53)) */
         {
@@ -532,7 +533,9 @@ sorecvfrom(PNATState pData, struct socket *so)
                 len = M_FREEROOM(m);
             }
         }
-
+#else
+        len = m->m_size - (if_maxlinkhdr + sizeof(struct udpiphdr)); /* get max free room here*/
+#endif
         m->m_len = recvfrom(so->s, m->m_data, len, 0,
                             (struct sockaddr *)&addr, &addrlen);
         Log2((" did recvfrom %d, errno = %d-%s\n",
