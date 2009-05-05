@@ -745,12 +745,12 @@ static int vmmR0EntryExWorker(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperati
         case VMMR0_DO_GVMM_SCHED_HALT:
             if (pReqHdr)
                 return VERR_INVALID_PARAMETER;
-            return GVMMR0SchedHalt(pVM, u64Arg);
+            return GVMMR0SchedHalt(pVM, idCpu, u64Arg);
 
         case VMMR0_DO_GVMM_SCHED_WAKE_UP:
             if (pReqHdr || u64Arg)
                 return VERR_INVALID_PARAMETER;
-            return GVMMR0SchedWakeUp(pVM);
+            return GVMMR0SchedWakeUp(pVM, idCpu);
 
         case VMMR0_DO_GVMM_SCHED_POLL:
             if (pReqHdr || u64Arg > 1)
