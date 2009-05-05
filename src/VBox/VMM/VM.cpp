@@ -236,10 +236,15 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCPUs, PFNVMATERROR pfnVMAtError, void *pvU
         {
             /*
              * Call vmR3CreateU in the EMT thread and wait for it to finish.
+             *
+             * Note! VMCPUID_ANY is used here because VMR3ReqQueueU would have trouble
+             *       submitting a request to a specific VCPU without a pVM. So, to make
+             *       sure init is running on EMT(0), vmR3EmulationThreadWithId makes sure
+             *       that only EMT(0) is servicing VMCPUID_ANY requests when pVM is NULL.
              */
             PVMREQ pReq;
-            rc = VMR3ReqCallU(pUVM, VMCPUID_ANY /* can't use CPU0 here as it's too early (pVM==0) */, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3CreateU,
-                              4, pUVM, cCPUs, pfnCFGMConstructor, pvUserCFGM);
+            rc = VMR3ReqCallU(pUVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3CreateU, 4,
+                              pUVM, cCPUs, pfnCFGMConstructor, pvUserCFGM);
             if (RT_SUCCESS(rc))
             {
                 rc = pReq->iStatus;
@@ -378,20 +383,20 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCPUs, PFNVMATERROR pfnVMAtError, void *pvU
  * will terminate that.
  *
  * @returns VBox status code.
- * @param   cCPUs   Number of virtual CPUs
+ * @param   cCpus   Number of virtual CPUs
  * @param   ppUVM   Where to store the UVM pointer.
  */
-static int vmR3CreateUVM(uint32_t cCPUs, PUVM *ppUVM)
+static int vmR3CreateUVM(uint32_t cCpus, PUVM *ppUVM)
 {
     uint32_t i;
 
     /*
      * Create and initialize the UVM.
      */
-    PUVM pUVM = (PUVM)RTMemAllocZ(RT_OFFSETOF(UVM, aCpus[cCPUs]));
+    PUVM pUVM = (PUVM)RTMemAllocZ(RT_OFFSETOF(UVM, aCpus[cCpus]));
     AssertReturn(pUVM, VERR_NO_MEMORY);
     pUVM->u32Magic = UVM_MAGIC;
-    pUVM->cCpus = cCPUs;
+    pUVM->cCpus = cCpus;
 
     AssertCompile(sizeof(pUVM->vm.s) <= sizeof(pUVM->vm.padding));
 
@@ -403,7 +408,7 @@ static int vmR3CreateUVM(uint32_t cCPUs, PUVM *ppUVM)
     pUVM->vm.s.enmHaltMethod = VMHALTMETHOD_BOOTSTRAP;
 
     /* Initialize the VMCPU array in the UVM. */
-    for (i = 0; i < cCPUs; i++)
+    for (i = 0; i < cCpus; i++)
     {
         pUVM->aCpus[i].pUVM   = pUVM;
         pUVM->aCpus[i].idCpu  = i;
@@ -415,7 +420,7 @@ static int vmR3CreateUVM(uint32_t cCPUs, PUVM *ppUVM)
     if (RT_SUCCESS(rc))
     {
         /* Allocate a halt method event semaphore for each VCPU. */
-        for (i = 0; i < cCPUs; i++)
+        for (i = 0; i < cCpus; i++)
         {
             rc = RTSemEventCreate(&pUVM->aCpus[i].vm.s.EventSemWait);
             if (RT_FAILURE(rc))
@@ -439,7 +444,7 @@ static int vmR3CreateUVM(uint32_t cCPUs, PUVM *ppUVM)
                         /*
                          * Start the emulation threads for all VMCPUs.
                          */
-                        for (i = 0; i < cCPUs; i++)
+                        for (i = 0; i < cCpus; i++)
                         {
                             rc = RTThreadCreate(&pUVM->aCpus[i].vm.s.ThreadEMT, vmR3EmulationThread, &pUVM->aCpus[i], _1M,
                                                 RTTHREADTYPE_EMULATION, RTTHREADFLAGS_WAITABLE, "EMT");
@@ -466,9 +471,10 @@ static int vmR3CreateUVM(uint32_t cCPUs, PUVM *ppUVM)
                 }
                 STAMR3TermUVM(pUVM);
             }
-            for (i = 0; i < cCPUs; i++)
+            for (i = 0; i < cCpus; i++)
             {
                 RTSemEventDestroy(pUVM->aCpus[i].vm.s.EventSemWait);
+                pUVM->aCpus[i].vm.s.EventSemWait = NIL_RTSEMEVENT;
             }
         }
         RTTlsFree(pUVM->vm.s.idxTLS);
@@ -483,7 +489,7 @@ static int vmR3CreateUVM(uint32_t cCPUs, PUVM *ppUVM)
  *
  * @thread EMT
  */
-static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM)
+static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM)
 {
     int rc = VINF_SUCCESS;
 
@@ -509,7 +515,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
     CreateVMReq.pSession        = pUVM->vm.s.pSession;
     CreateVMReq.pVMR0           = NIL_RTR0PTR;
     CreateVMReq.pVMR3           = NULL;
-    CreateVMReq.cCPUs           = cCPUs;
+    CreateVMReq.cCpus           = cCpus;
     rc = SUPCallVMMR0Ex(NIL_RTR0PTR, 0 /* VCPU 0 */, VMMR0_DO_GVMM_CREATE_VM, 0, &CreateVMReq.Hdr);
     if (RT_SUCCESS(rc))
     {
@@ -517,7 +523,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
         AssertRelease(VALID_PTR(pVM));
         AssertRelease(pVM->pVMR0 == CreateVMReq.pVMR0);
         AssertRelease(pVM->pSession == pUVM->vm.s.pSession);
-        AssertRelease(pVM->cCPUs == cCPUs);
+        AssertRelease(pVM->cCPUs == cCpus);
         AssertRelease(pVM->offVMCPU == RT_UOFFSETOF(VM, aCpus));
 
         Log(("VMR3Create: Created pUVM=%p pVM=%p pVMR0=%p hSelf=%#x cCPUs=%RU32\n",
@@ -570,10 +576,10 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
                 uint32_t cCPUsCfg;
                 rc = CFGMR3QueryU32Def(CFGMR3GetRoot(pVM), "NumCPUs", &cCPUsCfg, 1);
                 AssertLogRelMsgRC(rc, ("Configuration error: Querying \"NumCPUs\" as integer failed, rc=%Rrc\n", rc));
-                if (RT_SUCCESS(rc) && cCPUsCfg != cCPUs)
+                if (RT_SUCCESS(rc) && cCPUsCfg != cCpus)
                 {
                     AssertLogRelMsgFailed(("Configuration error: \"NumCPUs\"=%RU32 and VMR3CreateVM::cCPUs=%RU32 does not match!\n",
-                                           cCPUsCfg, cCPUs));
+                                           cCPUsCfg, cCpus));
                     rc = VERR_INVALID_PARAMETER;
                 }
             }
@@ -666,6 +672,22 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
     return rc;
 }
 
+/**
+ * Register the calling EMT with GVM.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   idCpu       The Virtual CPU ID.
+ */
+static DECLCALLBACK(int) vmR3RegisterEMT(PVM pVM, VMCPUID idCpu)
+{
+    Assert(VMMGetCpuId(pVM) == idCpu);
+    int rc = SUPCallVMMR0Ex(pVM->pVMR0, idCpu, VMMR0_DO_GVMM_REGISTER_VMCPU, 0, NULL);
+    if (RT_FAILURE(rc))
+        LogRel(("idCpu=%u rc=%Rrc\n", idCpu, rc));
+    return rc;
+}
+
 
 /**
  * Initializes all R3 components of the VM
@@ -673,6 +695,21 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
 static int vmR3InitRing3(PVM pVM, PUVM pUVM)
 {
     int rc;
+
+    /*
+     * Register the other EMTs with GVM.
+     */
+    for (VMCPUID idCpu = 1; idCpu < pVM->cCPUs; idCpu++)
+    {
+        PVMREQ pReq;
+        rc = VMR3ReqCallU(pUVM, idCpu, &pReq, RT_INDEFINITE_WAIT, 0 /*fFlags*/,
+                          (PFNRT)vmR3RegisterEMT, 2, pVM, idCpu);
+        if (RT_SUCCESS(rc))
+            rc = pReq->iStatus;
+        VMR3ReqFree(pReq);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
 
     /*
      * Init all R3 components, the order here might be important.

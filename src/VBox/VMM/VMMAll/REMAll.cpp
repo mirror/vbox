@@ -57,7 +57,9 @@ VMMDECL(int) REMNotifyInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
     else
     {
         /* Tell the recompiler to flush its TLB. */
+#ifndef DEBUG_bird /* temporary */
         Assert(pVM->cCPUs == 1); /* @todo SMP */
+#endif
         CPUMSetChangedFlags(VMMGetCpu(pVM), CPUM_CHANGED_GLOBAL_TLB_FLUSH);
         pVM->rem.s.cInvalidatedPages = 0;
     }

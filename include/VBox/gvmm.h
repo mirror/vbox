@@ -124,20 +124,20 @@ GVMMR0DECL(void)    GVMMR0Term(void);
 GVMMR0DECL(int)     GVMMR0SetConfig(PSUPDRVSESSION pSession, const char *pszName, uint64_t u64Value);
 GVMMR0DECL(int)     GVMMR0QueryConfig(PSUPDRVSESSION pSession, const char *pszName, uint64_t *pu64Value);
 
-GVMMR0DECL(int)     GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCPUs, PVM *ppVM);
+GVMMR0DECL(int)     GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppVM);
 GVMMR0DECL(int)     GVMMR0InitVM(PVM pVM);
 GVMMR0DECL(void)    GVMMR0DoneInitVM(PVM pVM);
 GVMMR0DECL(bool)    GVMMR0DoingTermVM(PVM pVM, PGVM pGVM);
 GVMMR0DECL(int)     GVMMR0DestroyVM(PVM pVM);
-GVMMR0DECL(int)     GVMMR0RegisterVCpu(PVM pVM, unsigned idCpu);
+GVMMR0DECL(int)     GVMMR0RegisterVCpu(PVM pVM, VMCPUID idCpu);
 GVMMR0DECL(PGVM)    GVMMR0ByHandle(uint32_t hGVM);
 GVMMR0DECL(PGVM)    GVMMR0ByVM(PVM pVM);
-GVMMR0DECL(int)     GVMMR0ByVMAndEMT(PVM pVM, unsigned idCpu, PGVM *ppGVM);
+GVMMR0DECL(int)     GVMMR0ByVMAndEMT(PVM pVM, VMCPUID idCpu, PGVM *ppGVM);
 GVMMR0DECL(PVM)     GVMMR0GetVMByHandle(uint32_t hGVM);
 GVMMR0DECL(PVM)     GVMMR0GetVMByEMT(RTNATIVETHREAD hEMT);
-GVMMR0DECL(int)     GVMMR0SchedHalt(PVM pVM, unsigned idCpu, uint64_t u64ExpireGipTime);
-GVMMR0DECL(int)     GVMMR0SchedWakeUp(PVM pVM, unsigned idCpu);
-GVMMR0DECL(int)     GVMMR0SchedPoll(PVM pVM, unsigned idCpu, bool fYield);
+GVMMR0DECL(int)     GVMMR0SchedHalt(PVM pVM, VMCPUID idCpu, uint64_t u64ExpireGipTime);
+GVMMR0DECL(int)     GVMMR0SchedWakeUp(PVM pVM, VMCPUID idCpu);
+GVMMR0DECL(int)     GVMMR0SchedPoll(PVM pVM, VMCPUID idCpu, bool fYield);
 GVMMR0DECL(int)     GVMMR0QueryStatistics(PGVMMSTATS pStats, PSUPDRVSESSION pSession, PVM pVM);
 GVMMR0DECL(int)     GVMMR0ResetStatistics(PCGVMMSTATS pStats, PSUPDRVSESSION pSession, PVM pVM);
 
@@ -152,7 +152,7 @@ typedef struct GVMMCREATEVMREQ
     /** The support driver session. (IN) */
     PSUPDRVSESSION  pSession;
     /** Number of virtual CPUs for the new VM. (IN) */
-    uint32_t        cCPUs;
+    uint32_t        cCpus;
     /** Pointer to the ring-3 mapping of the shared VM structure on return. (OUT) */
     PVMR3           pVMR3;
     /** Pointer to the ring-0 mapping of the shared VM structure on return. (OUT) */

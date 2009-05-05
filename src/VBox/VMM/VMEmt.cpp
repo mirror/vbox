@@ -43,19 +43,37 @@
 #include <iprt/thread.h>
 #include <iprt/time.h>
 
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu);
+
 
 /**
- * The emulation thread.
+ * The emulation thread main function.
  *
  * @returns Thread exit code.
  * @param   ThreadSelf  The handle to the executing thread.
- * @param   pvArgs      Pointer to the user mode VM structure (UVM).
+ * @param   pvArgs      Pointer to the user mode per-VCpu structure (UVMPCU).
  */
 DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
 {
     PUVMCPU pUVCpu = (PUVMCPU)pvArgs;
-    PUVM    pUVM    = pUVCpu->pUVM;
-    RTCPUID idCpu   = pUVCpu->idCpu;
+    return vmR3EmulationThreadWithId(ThreadSelf, pUVCpu, pUVCpu->idCpu);
+}
+
+
+/**
+ * The emulation thread main function, with Virtual CPU ID for debugging.
+ *
+ * @returns Thread exit code.
+ * @param   ThreadSelf  The handle to the executing thread.
+ * @param   pUVCpu      Pointer to the user mode per-VCpu structure.
+ * @param   idCpu       The virtual CPU ID, for backtrace purposes.
+ */
+int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu)
+{
+    PUVM    pUVM = pUVCpu->pUVM;
     int     rc;
 
     AssertReleaseMsg(VALID_PTR(pUVM) && pUVM->u32Magic == UVM_MAGIC,
@@ -94,20 +112,24 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
                 break;
             }
 
+            /*
+             * Only the first VCPU may initialize the VM during early init
+             * and must therefore service all VMCPUID_ANY requests.
+             * See also VMR3Create
+             */
             if (    pUVM->vm.s.pReqs
-                &&  pUVCpu->idCpu == 0 /* Only the first VCPU may initialize the VM during early init */)
+                &&  pUVCpu->idCpu == 0)
             {
                 /*
-                 * Service execute in EMT request.
+                 * Service execute in any EMT request.
                  */
                 rc = VMR3ReqProcessU(pUVM, VMCPUID_ANY);
                 Log(("vmR3EmulationThread: Req rc=%Rrc, VM state %d -> %d\n", rc, enmBefore, pUVM->pVM ? pUVM->pVM->enmVMState : VMSTATE_CREATING));
             }
-            else
-            if (pUVCpu->vm.s.pReqs)
+            else if (pUVCpu->vm.s.pReqs)
             {
                 /*
-                 * Service execute in EMT request.
+                 * Service execute in specific EMT request.
                  */
                 rc = VMR3ReqProcessU(pUVM, pUVCpu->idCpu);
                 Log(("vmR3EmulationThread: Req (cpu=%u) rc=%Rrc, VM state %d -> %d\n", pUVCpu->idCpu, rc, enmBefore, pUVM->pVM ? pUVM->pVM->enmVMState : VMSTATE_CREATING));
@@ -142,7 +164,7 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
             if (pUVM->vm.s.pReqs)
             {
                 /*
-                 * Service execute in EMT request.
+                 * Service execute in any EMT request.
                  */
                 rc = VMR3ReqProcessU(pUVM, VMCPUID_ANY);
                 Log(("vmR3EmulationThread: Req rc=%Rrc, VM state %d -> %d\n", rc, enmBefore, pVM->enmVMState));
@@ -150,7 +172,7 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
             else if (pUVCpu->vm.s.pReqs)
             {
                 /*
-                 * Service execute in EMT request.
+                 * Service execute in specific EMT request.
                  */
                 rc = VMR3ReqProcessU(pUVM, pUVCpu->idCpu);
                 Log(("vmR3EmulationThread: Req (cpu=%u) rc=%Rrc, VM state %d -> %d\n", pUVCpu->idCpu, rc, enmBefore, pVM->enmVMState));
@@ -691,6 +713,7 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVMCPU pUVCpu, const uint32_t fMas
     PUVM    pUVM  = pUVCpu->pUVM;
     PVMCPU  pVCpu = pUVCpu->pVCpu;
     PVM     pVM   = pUVCpu->pVM;
+    Assert(VMMGetCpu(pVM) == pVCpu);
 
     /*
      * Halt loop.
@@ -774,6 +797,7 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Wait(PUVMCPU pUVCpu)
 
     PVM    pVM   = pUVCpu->pUVM->pVM;
     PVMCPU pVCpu = VMMGetCpu(pVM);
+    Assert(pVCpu->idCpu == pUVCpu->idCpu);
 
     int rc = VINF_SUCCESS;
     for (;;)
