@@ -120,6 +120,8 @@
  */
 /** VMM stack size. */
 #define VMM_STACK_SIZE              8192U
+/** Max number of Virtual CPUs. */
+#define VMM_MAX_CPUS                255
 /** @} */
 
 
