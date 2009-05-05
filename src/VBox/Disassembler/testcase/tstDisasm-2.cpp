@@ -989,7 +989,7 @@ int main(int argc, char **argv)
              */
             void   *pvFile;
             size_t  cbFile;
-            rc = RTFileReadAllEx(argv[iArg], off, cbMax, 0, &pvFile, &cbFile);
+            rc = RTFileReadAllEx(argv[iArg], off, cbMax, RTFILE_RDALL_O_DENY_NONE, &pvFile, &cbFile);
             if (RT_FAILURE(rc))
             {
                 RTStrmPrintf(g_pStdErr, "%s: %s: %Rrc\n", argv0, argv[iArg], rc);

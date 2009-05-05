@@ -713,7 +713,7 @@ RTDECL(int) RTFileReadAll(const char *pszFilename, void **ppvFile, size_t *pcbFi
  * @param   off             The offset to start reading at.
  * @param   cbMax           The maximum number of bytes to read into memory. Specify RTFOFF_MAX
  *                          to read to the end of the file.
- * @param   fFlags          Flags for the future, must be 0.
+ * @param   fFlags          See RTFILE_RDALL_*.
  * @param   ppvFile         Where to store the pointer to the memory on successful return.
  * @param   pcbFile         Where to store the size of the file on successful return.
  *
@@ -745,7 +745,7 @@ RTDECL(int) RTFileReadAllByHandle(RTFILE File, void **ppvFile, size_t *pcbFile);
  * @param   off             The offset to start reading at.
  * @param   cbMax           The maximum number of bytes to read into memory. Specify RTFOFF_MAX
  *                          to read to the end of the file.
- * @param   fFlags          Flags for the future, must be 0.
+ * @param   fFlags          See RTFILE_RDALL_*.
  * @param   ppvFile         Where to store the pointer to the memory on successful return.
  * @param   pcbFile         Where to store the size of the file on successful return.
  *
@@ -762,6 +762,19 @@ RTDECL(int) RTFileReadAllByHandleEx(RTFILE File, RTFOFF off, RTFOFF cbMax, uint3
  */
 RTDECL(void) RTFileReadAllFree(void *pvFile, size_t cbFile);
 
+/** @name RTFileReadAllEx and RTFileReadAllHandleEx flags
+ * The open flags are ignored by RTFileReadAllHandleEx.
+ * @{ */
+#define RTFILE_RDALL_O_DENY_NONE            RTFILE_O_DENY_NONE
+#define RTFILE_RDALL_O_DENY_READ            RTFILE_O_DENY_READ
+#define RTFILE_RDALL_O_DENY_WRITE           RTFILE_O_DENY_WRITE
+#define RTFILE_RDALL_O_DENY_READWRITE       RTFILE_O_DENY_READWRITE
+#define RTFILE_RDALL_O_DENY_ALL             RTFILE_O_DENY_ALL
+#define RTFILE_RDALL_O_DENY_NOT_DELETE      RTFILE_O_DENY_NOT_DELETE
+#define RTFILE_RDALL_O_DENY_MASK            RTFILE_O_DENY_MASK
+/** Mask of valid flags. */
+#define RTFILE_RDALL_VALID_MASK             RTFILE_RDALL_O_DENY_MASK
+/** @} */
 
 
 /** @page pg_rt_asyncio RT File async I/O API
