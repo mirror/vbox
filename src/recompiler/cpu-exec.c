@@ -529,7 +529,9 @@ int cpu_exec(CPUState *env1)
         /* NULL the current_tb here so cpu_interrupt() doesn't do
            anything unnecessary (like crashing during emulate single instruction). */
         env->current_tb = NULL;
-        TMTimerPoll(env1->pVM);
+        /* don't use env1->pVM here, the code wouldn't run with gcc-4.4/amd64
+         * anymore, see #3883 */
+        TMTimerPoll(env->pVM);
 #endif
     } /* for(;;) */
 
