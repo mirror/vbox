@@ -268,7 +268,7 @@ VMMR3DECL(int) VMR3ReqCallVU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigne
      */
     AssertPtrReturn(pfnFunction, VERR_INVALID_POINTER);
     AssertPtrReturn(pUVM, VERR_INVALID_POINTER);
-    AssertReturn(!(fFlags & ~(VMREQFLAGS_RETURN_MASK | VMREQFLAGS_NO_WAIT)), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~(VMREQFLAGS_RETURN_MASK | VMREQFLAGS_NO_WAIT | VMREQFLAGS_POKE)), VERR_INVALID_PARAMETER);
     if (!(fFlags & VMREQFLAGS_NO_WAIT) || ppReq)
     {
         AssertPtrReturn(ppReq, VERR_INVALID_POINTER);
@@ -632,6 +632,7 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
                     ("Invalid package type %d valid range %d-%d inclusivly. This was verified on alloc too...\n",
                      pReq->enmType, VMREQTYPE_INVALID + 1, VMREQTYPE_MAX - 1),
                     VERR_VM_REQUEST_INVALID_TYPE);
+    Assert(!(pReq->fFlags & ~(VMREQFLAGS_RETURN_MASK | VMREQFLAGS_NO_WAIT | VMREQFLAGS_POKE)));
 
     /*
      * Are we the EMT or not?
@@ -696,7 +697,7 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
          */
         if (pUVM->pVM)
             VMCPU_FF_SET(pVCpu, VMCPU_FF_REQUEST);
-        VMR3NotifyCpuFFU(pUVCpu, 0);
+        VMR3NotifyCpuFFU(pUVCpu, fFlags & VMREQFLAGS_POKE ? VMNOTIFYFF_FLAGS_POKE : 0);
 
         /*
          * Wait and return.
@@ -726,7 +727,7 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
          */
         if (pUVM->pVM)
             VM_FF_SET(pUVM->pVM, VM_FF_REQUEST);
-        VMR3NotifyGlobalFFU(pUVM, 0);
+        VMR3NotifyGlobalFFU(pUVM, fFlags & VMREQFLAGS_POKE ? VMNOTIFYFF_FLAGS_POKE : 0);
 
         /*
          * Wait and return.
