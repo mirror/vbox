@@ -62,6 +62,7 @@
 #include <iprt/thread.h>
 #include "internal/fileaio.h"
 
+#define _LINUX_BYTEORDER_SWABB_H
 #include <linux/aio_abi.h>
 #include <unistd.h>
 #include <sys/syscall.h>
