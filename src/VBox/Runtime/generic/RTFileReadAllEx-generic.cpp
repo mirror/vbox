@@ -40,10 +40,10 @@
 
 RTDECL(int) RTFileReadAllEx(const char *pszFilename, RTFOFF off, RTFOFF cbMax, uint32_t fFlags, void **ppvFile, size_t *pcbFile)
 {
-    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~RTFILE_RDALL_VALID_MASK), VERR_INVALID_PARAMETER);
 
     RTFILE File;
-    int rc = RTFileOpen(&File, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    int rc = RTFileOpen(&File, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | (fFlags & RTFILE_RDALL_O_DENY_MASK));
     if (RT_SUCCESS(rc))
     {
         rc = RTFileReadAllByHandleEx(File, off, cbMax, fFlags, ppvFile, pcbFile);
