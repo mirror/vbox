@@ -261,7 +261,7 @@ VMMR3DECL(int) VMR3ReqCallU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned
  */
 VMMR3DECL(int) VMR3ReqCallVU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args)
 {
-    LogFlow(("VMR3ReqCallV: cMillies=%d fFlags=%#x pfnFunction=%p cArgs=%d\n", cMillies, fFlags, pfnFunction, cArgs));
+    LogFlow(("VMR3ReqCallV: idDstCpu=%u cMillies=%d fFlags=%#x pfnFunction=%p cArgs=%d\n", idDstCpu, cMillies, fFlags, pfnFunction, cArgs));
 
     /*
      * Validate input.
