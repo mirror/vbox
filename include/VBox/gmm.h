@@ -265,16 +265,16 @@ GMMR0DECL(int)  GMMR0Init(void);
 GMMR0DECL(void) GMMR0Term(void);
 GMMR0DECL(void) GMMR0InitPerVMData(PGVM pGVM);
 GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM);
-GMMR0DECL(int)  GMMR0InitialReservation(PVM pVM, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages,
+GMMR0DECL(int)  GMMR0InitialReservation(PVM pVM, unsigned idCpu, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages,
                                         GMMOCPOLICY enmPolicy, GMMPRIORITY enmPriority);
-GMMR0DECL(int)  GMMR0UpdateReservation(PVM pVM, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages);
-GMMR0DECL(int)  GMMR0AllocateHandyPages(PVM pVM, uint32_t cPagesToUpdate, uint32_t cPagesToAlloc, PGMMPAGEDESC paPages);
-GMMR0DECL(int)  GMMR0AllocatePages(PVM pVM, uint32_t cPages, PGMMPAGEDESC paPages, GMMACCOUNT enmAccount);
-GMMR0DECL(int)  GMMR0FreePages(PVM pVM, uint32_t cPages, PGMMFREEPAGEDESC paPages, GMMACCOUNT enmAccount);
-GMMR0DECL(int)  GMMR0BalloonedPages(PVM pVM, uint32_t cBalloonedPages, uint32_t cPagesToFree, PGMMFREEPAGEDESC paPages, bool fCompleted);
-GMMR0DECL(int)  GMMR0DeflatedBalloon(PVM pVM, uint32_t cPages);
-GMMR0DECL(int)  GMMR0MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3);
-GMMR0DECL(int)  GMMR0SeedChunk(PVM pVM, RTR3PTR pvR3);
+GMMR0DECL(int)  GMMR0UpdateReservation(PVM pVM, unsigned idCpu, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages);
+GMMR0DECL(int)  GMMR0AllocateHandyPages(PVM pVM, unsigned idCpu, uint32_t cPagesToUpdate, uint32_t cPagesToAlloc, PGMMPAGEDESC paPages);
+GMMR0DECL(int)  GMMR0AllocatePages(PVM pVM, unsigned idCpu, uint32_t cPages, PGMMPAGEDESC paPages, GMMACCOUNT enmAccount);
+GMMR0DECL(int)  GMMR0FreePages(PVM pVM, unsigned idCpu, uint32_t cPages, PGMMFREEPAGEDESC paPages, GMMACCOUNT enmAccount);
+GMMR0DECL(int)  GMMR0BalloonedPages(PVM pVM, unsigned idCpu, uint32_t cBalloonedPages, uint32_t cPagesToFree, PGMMFREEPAGEDESC paPages, bool fCompleted);
+GMMR0DECL(int)  GMMR0DeflatedBalloon(PVM pVM, unsigned idCpu, uint32_t cPages);
+GMMR0DECL(int)  GMMR0MapUnmapChunk(PVM pVM, unsigned idCpu, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3);
+GMMR0DECL(int)  GMMR0SeedChunk(PVM pVM, unsigned idCpu, RTR3PTR pvR3);
 
 
 
@@ -295,7 +295,7 @@ typedef struct GMMINITIALRESERVATIONREQ
 /** Pointer to a GMMR0InitialReservationReq / VMMR0_DO_GMM_INITIAL_RESERVATION request buffer. */
 typedef GMMINITIALRESERVATIONREQ *PGMMINITIALRESERVATIONREQ;
 
-GMMR0DECL(int)  GMMR0InitialReservationReq(PVM pVM, PGMMINITIALRESERVATIONREQ pReq);
+GMMR0DECL(int)  GMMR0InitialReservationReq(PVM pVM, unsigned idCpu, PGMMINITIALRESERVATIONREQ pReq);
 
 
 /**
@@ -313,7 +313,7 @@ typedef struct GMMUPDATERESERVATIONREQ
 /** Pointer to a GMMR0InitialReservationReq / VMMR0_DO_GMM_INITIAL_RESERVATION request buffer. */
 typedef GMMUPDATERESERVATIONREQ *PGMMUPDATERESERVATIONREQ;
 
-GMMR0DECL(int)  GMMR0UpdateReservationReq(PVM pVM, PGMMUPDATERESERVATIONREQ pReq);
+GMMR0DECL(int)  GMMR0UpdateReservationReq(PVM pVM, unsigned idCpu, PGMMUPDATERESERVATIONREQ pReq);
 
 
 /**
@@ -334,7 +334,7 @@ typedef struct GMMALLOCATEPAGESREQ
 /** Pointer to a GMMR0AllocatePagesReq / VMMR0_DO_GMM_ALLOCATE_PAGES request buffer. */
 typedef GMMALLOCATEPAGESREQ *PGMMALLOCATEPAGESREQ;
 
-GMMR0DECL(int)  GMMR0AllocatePagesReq(PVM pVM, PGMMALLOCATEPAGESREQ pReq);
+GMMR0DECL(int)  GMMR0AllocatePagesReq(PVM pVM, unsigned idCpu, PGMMALLOCATEPAGESREQ pReq);
 
 
 /**
@@ -355,7 +355,7 @@ typedef struct GMMFREEPAGESREQ
 /** Pointer to a GMMR0FreePagesReq / VMMR0_DO_GMM_FREE_PAGES request buffer. */
 typedef GMMFREEPAGESREQ *PGMMFREEPAGESREQ;
 
-GMMR0DECL(int)  GMMR0FreePagesReq(PVM pVM, PGMMFREEPAGESREQ pReq);
+GMMR0DECL(int)  GMMR0FreePagesReq(PVM pVM, unsigned idCpu, PGMMFREEPAGESREQ pReq);
 
 
 /**
@@ -378,7 +378,7 @@ typedef struct GMMBALLOONEDPAGESREQ
 /** Pointer to a GMMR0BalloonedPagesReq / VMMR0_DO_GMM_BALLOONED_PAGES request buffer. */
 typedef GMMBALLOONEDPAGESREQ *PGMMBALLOONEDPAGESREQ;
 
-GMMR0DECL(int)  GMMR0BalloonedPagesReq(PVM pVM, PGMMBALLOONEDPAGESREQ pReq);
+GMMR0DECL(int)  GMMR0BalloonedPagesReq(PVM pVM, unsigned idCpu, PGMMBALLOONEDPAGESREQ pReq);
 
 
 /**
@@ -399,7 +399,7 @@ typedef struct GMMMAPUNMAPCHUNKREQ
 /** Pointer to a GMMR0MapUnmapChunkReq / VMMR0_DO_GMM_MAP_UNMAP_CHUNK request buffer. */
 typedef GMMMAPUNMAPCHUNKREQ *PGMMMAPUNMAPCHUNKREQ;
 
-GMMR0DECL(int)  GMMR0MapUnmapChunkReq(PVM pVM, PGMMMAPUNMAPCHUNKREQ pReq);
+GMMR0DECL(int)  GMMR0MapUnmapChunkReq(PVM pVM, unsigned idCpu, PGMMMAPUNMAPCHUNKREQ pReq);
 
 
 #ifdef IN_RING3

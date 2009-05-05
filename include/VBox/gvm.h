@@ -44,8 +44,11 @@ typedef struct GVMCPU
     /* VCPU id (0 - (pVM->cCPUs - 1) */
     uint32_t        idCpu;
 
+    /** Handle to the EMT thread. */
+    RTNATIVETHREAD  hEMT;
+
     /** The GVMM per vcpu data. */
-    struct
+    union
     {
 #ifdef ___GVMMR0Internal_h
         struct GVMMPERVCPU  s;
@@ -77,8 +80,6 @@ typedef struct GVM
     uint32_t        u32Magic;
     /** The global VM handle for this VM. */
     uint32_t        hSelf;
-    /** Handle to the EMT thread. */
-    RTNATIVETHREAD  hEMT;
     /** The ring-0 mapping of the VM structure. */
     PVM             pVM;
     /** Number of VCPUs (same as pVM->cCPUs) */
@@ -86,7 +87,7 @@ typedef struct GVM
     uint32_t        padding;
 
     /** The GVMM per vm data. */
-    struct
+    union
     {
 #ifdef ___GVMMR0Internal_h
         struct GVMMPERVM    s;
@@ -95,7 +96,7 @@ typedef struct GVM
     } gvmm;
 
     /** The GMM per vm data. */
-    struct
+    union
     {
 #ifdef ___GMMR0Internal_h
         struct GMMPERVM     s;

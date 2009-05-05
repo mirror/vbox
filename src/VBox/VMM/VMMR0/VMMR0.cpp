@@ -755,7 +755,7 @@ static int vmmR0EntryExWorker(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperati
         case VMMR0_DO_GVMM_SCHED_POLL:
             if (pReqHdr || u64Arg > 1)
                 return VERR_INVALID_PARAMETER;
-            return GVMMR0SchedPoll(pVM, !!u64Arg);
+            return GVMMR0SchedPoll(pVM, idCpu, !!u64Arg);
 
         case VMMR0_DO_GVMM_QUERY_STATISTICS:
             if (u64Arg)
@@ -844,37 +844,42 @@ static int vmmR0EntryExWorker(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperati
         case VMMR0_DO_GMM_INITIAL_RESERVATION:
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
-            return GMMR0InitialReservationReq(pVM, (PGMMINITIALRESERVATIONREQ)pReqHdr);
+            return GMMR0InitialReservationReq(pVM, idCpu, (PGMMINITIALRESERVATIONREQ)pReqHdr);
+
         case VMMR0_DO_GMM_UPDATE_RESERVATION:
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
-            return GMMR0UpdateReservationReq(pVM, (PGMMUPDATERESERVATIONREQ)pReqHdr);
+            return GMMR0UpdateReservationReq(pVM, idCpu, (PGMMUPDATERESERVATIONREQ)pReqHdr);
 
         case VMMR0_DO_GMM_ALLOCATE_PAGES:
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
-            return GMMR0AllocatePagesReq(pVM, (PGMMALLOCATEPAGESREQ)pReqHdr);
+            return GMMR0AllocatePagesReq(pVM, idCpu, (PGMMALLOCATEPAGESREQ)pReqHdr);
+
         case VMMR0_DO_GMM_FREE_PAGES:
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
-            return GMMR0FreePagesReq(pVM, (PGMMFREEPAGESREQ)pReqHdr);
+            return GMMR0FreePagesReq(pVM, idCpu, (PGMMFREEPAGESREQ)pReqHdr);
+
         case VMMR0_DO_GMM_BALLOONED_PAGES:
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
-            return GMMR0BalloonedPagesReq(pVM, (PGMMBALLOONEDPAGESREQ)pReqHdr);
+            return GMMR0BalloonedPagesReq(pVM, idCpu, (PGMMBALLOONEDPAGESREQ)pReqHdr);
+
         case VMMR0_DO_GMM_DEFLATED_BALLOON:
             if (pReqHdr)
                 return VERR_INVALID_PARAMETER;
-            return GMMR0DeflatedBalloon(pVM, (uint32_t)u64Arg);
+            return GMMR0DeflatedBalloon(pVM, idCpu, (uint32_t)u64Arg);
 
         case VMMR0_DO_GMM_MAP_UNMAP_CHUNK:
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
-            return GMMR0MapUnmapChunkReq(pVM, (PGMMMAPUNMAPCHUNKREQ)pReqHdr);
+            return GMMR0MapUnmapChunkReq(pVM, idCpu, (PGMMMAPUNMAPCHUNKREQ)pReqHdr);
+
         case VMMR0_DO_GMM_SEED_CHUNK:
             if (pReqHdr)
                 return VERR_INVALID_PARAMETER;
-            return GMMR0SeedChunk(pVM, (RTR3PTR)u64Arg);
+            return GMMR0SeedChunk(pVM, idCpu, (RTR3PTR)u64Arg);
 
         /*
          * A quick GCFGM mock-up.
