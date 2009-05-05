@@ -274,3 +274,10 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
          : VERR_CPU_NOT_FOUND;
 }
 
+
+RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
+{
+    /* no unicast IPI */
+    return VERR_NOT_SUPPORTED;
+}
+
