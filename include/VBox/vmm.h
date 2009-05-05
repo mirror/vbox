@@ -155,10 +155,6 @@ VMMR3DECL(int)      VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va
 VMMR3DECL(int)      VMMR3CallR0(PVM pVM, uint32_t uOperation, uint64_t u64Arg, PSUPVMMR0REQHDR pReqHdr);
 VMMR3DECL(int)      VMMR3ResumeHyper(PVM pVM, PVMCPU pVCpu);
 VMMR3DECL(void)     VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr);
-VMMR3DECL(int)      VMMR3Lock(PVM pVM);
-VMMR3DECL(int)      VMMR3Unlock(PVM pVM);
-VMMR3DECL(RTNATIVETHREAD) VMMR3LockGetOwner(PVM pVM);
-VMMR3DECL(bool)     VMMR3LockIsOwner(PVM pVM);
 VMMR3DECL(void)     VMMR3YieldSuspend(PVM pVM);
 VMMR3DECL(void)     VMMR3YieldStop(PVM pVM);
 VMMR3DECL(void)     VMMR3YieldResume(PVM pVM);

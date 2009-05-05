@@ -2854,9 +2854,7 @@ static int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          */
         STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatRAWEntry, b);
         STAM_PROFILE_START(&pVCpu->em.s.StatRAWExec, c);
-        VMMR3Unlock(pVM);
         rc = VMMR3RawRunGC(pVM, pVCpu);
-        VMMR3Lock(pVM);
         STAM_PROFILE_STOP(&pVCpu->em.s.StatRAWExec, c);
         STAM_PROFILE_ADV_START(&pVCpu->em.s.StatRAWTail, d);
 
@@ -3038,9 +3036,7 @@ static int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          */
         STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatHwAccEntry, a);
         STAM_PROFILE_START(&pVCpu->em.s.StatHwAccExec, x);
-        VMMR3Unlock(pVM);
         rc = VMMR3HwAccRunGC(pVM, pVCpu);
-        VMMR3Lock(pVM);
         STAM_PROFILE_STOP(&pVCpu->em.s.StatHwAccExec, x);
 
         /*
@@ -3593,8 +3589,6 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
     VM_ASSERT_EMT(pVM);
     Assert(pVCpu->em.s.enmState == EMSTATE_NONE || pVCpu->em.s.enmState == EMSTATE_SUSPENDED);
 
-    VMMR3Lock(pVM);
-
     int rc = setjmp(pVCpu->em.s.u.FatalLongJump);
     if (rc == 0)
     {
@@ -3753,7 +3747,6 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     Log2(("EMR3ExecuteVM: returns VINF_EM_OFF (%d -> %d)\n", pVCpu->em.s.enmState, EMSTATE_TERMINATING));
                     TMVirtualPause(pVM);
                     TMCpuTickPause(pVCpu);
-                    VMMR3Unlock(pVM);
                     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
                     return rc;
 
@@ -3777,7 +3770,6 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     pVCpu->em.s.enmState = EMSTATE_SUSPENDED;
                     TMVirtualPause(pVM);
                     TMCpuTickPause(pVCpu);
-                    VMMR3Unlock(pVM);
                     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
 
                     rc = VMSetRuntimeError(pVM, VMSETRTERR_FLAGS_SUSPEND, "HostMemoryLow",
@@ -3849,13 +3841,6 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     break;
             }
 
-
-            /*
-             * Any waiters can now be woken up
-             */
-            VMMR3Unlock(pVM);
-            VMMR3Lock(pVM);
-
             STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x); /* (skip this in release) */
             STAM_PROFILE_ADV_START(&pVCpu->em.s.StatTotal, x);
 
@@ -3913,7 +3898,6 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 case EMSTATE_SUSPENDED:
                     TMVirtualPause(pVM);
                     TMCpuTickPause(pVCpu);
-                    VMMR3Unlock(pVM);
                     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
                     return VINF_EM_SUSPEND;
 
@@ -3964,7 +3948,6 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     TMCpuTickPause(pVCpu);
                     VMMR3FatalDump(pVM, pVCpu, rc);
                     emR3Debug(pVM, pVCpu, rc);
-                    VMMR3Unlock(pVM);
                     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
                     return rc;
                 }
@@ -3979,7 +3962,6 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     pVCpu->em.s.enmState = EMSTATE_GURU_MEDITATION;
                     TMVirtualPause(pVM);
                     TMCpuTickPause(pVCpu);
-                    VMMR3Unlock(pVM);
                     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
                     return VERR_EM_INTERNAL_ERROR;
             }
@@ -3995,7 +3977,6 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
         TMCpuTickPause(pVCpu);
         VMMR3FatalDump(pVM, pVCpu, rc);
         emR3Debug(pVM, pVCpu, rc);
-        VMMR3Unlock(pVM);
         STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
         /** @todo change the VM state! */
         return rc;

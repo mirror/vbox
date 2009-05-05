@@ -181,17 +181,13 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
 #endif
             if (RT_SUCCESS(rc))
             {
-                rc = RTCritSectInit(&pVM->vmm.s.CritSectVMLock);
-                if (RT_SUCCESS(rc))
-                {
-                    /*
-                     * Debug info and statistics.
-                     */
-                    DBGFR3InfoRegisterInternal(pVM, "ff", "Displays the current Forced actions Flags.", vmmR3InfoFF);
-                    vmmR3InitRegisterStats(pVM);
+                /*
+                 * Debug info and statistics.
+                 */
+                DBGFR3InfoRegisterInternal(pVM, "ff", "Displays the current Forced actions Flags.", vmmR3InfoFF);
+                vmmR3InitRegisterStats(pVM);
 
-                    return VINF_SUCCESS;
-                }
+                return VINF_SUCCESS;
             }
         }
         /** @todo: Need failure cleanup. */
@@ -1007,64 +1003,6 @@ static DECLCALLBACK(void) vmmR3YieldEMT(PVM pVM, PTMTIMER pTimer, void *pvUser)
 #endif
     }
     TMTimerSetMillies(pTimer, pVM->vmm.s.cYieldEveryMillies);
-}
-
-
-/**
- * Acquire global VM lock.
- *
- * @returns VBox status code
- * @param   pVM         The VM to operate on.
- *
- * @remarks The global VMM lock isn't really used for anything any longer.
- */
-VMMR3DECL(int) VMMR3Lock(PVM pVM)
-{
-    return RTCritSectEnter(&pVM->vmm.s.CritSectVMLock);
-}
-
-
-/**
- * Release global VM lock.
- *
- * @returns VBox status code
- * @param   pVM         The VM to operate on.
- *
- * @remarks The global VMM lock isn't really used for anything any longer.
- */
-VMMR3DECL(int) VMMR3Unlock(PVM pVM)
-{
-    return RTCritSectLeave(&pVM->vmm.s.CritSectVMLock);
-}
-
-
-/**
- * Return global VM lock owner.
- *
- * @returns Thread id of owner.
- * @returns NIL_RTTHREAD if no owner.
- * @param   pVM         The VM to operate on.
- *
- * @remarks The global VMM lock isn't really used for anything any longer.
- */
-VMMR3DECL(RTNATIVETHREAD) VMMR3LockGetOwner(PVM pVM)
-{
-    return RTCritSectGetOwner(&pVM->vmm.s.CritSectVMLock);
-}
-
-
-/**
- * Checks if the current thread is the owner of the global VM lock.
- *
- * @returns true if owner.
- * @returns false if not owner.
- * @param   pVM         The VM to operate on.
- *
- * @remarks The global VMM lock isn't really used for anything any longer.
- */
-VMMR3DECL(bool) VMMR3LockIsOwner(PVM pVM)
-{
-    return RTCritSectIsOwner(&pVM->vmm.s.CritSectVMLock);
 }
 
 
