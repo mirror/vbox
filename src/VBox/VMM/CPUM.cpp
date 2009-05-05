@@ -1022,7 +1022,7 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
         }
 
         if (    !pVM->cCPUs
-            ||  pVM->cCPUs > VMCPU_MAX_CPU_COUNT
+            ||  pVM->cCPUs > VMM_MAX_CPU_COUNT
             ||  (   u32Version == CPUM_SAVED_STATE_VERSION_VER2_0
                  && pVM->cCPUs != 1))
         {

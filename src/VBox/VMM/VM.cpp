@@ -214,7 +214,7 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCPUs, PFNVMATERROR pfnVMAtError, void *pvU
     /*
      * Validate input.
      */
-    AssertLogRelMsgReturn(cCPUs > 0 && cCPUs <= VMCPU_MAX_CPU_COUNT, ("%RU32\n", cCPUs), VERR_INVALID_PARAMETER);
+    AssertLogRelMsgReturn(cCPUs > 0 && cCPUs <= VMM_MAX_CPU_COUNT, ("%RU32\n", cCPUs), VERR_INVALID_PARAMETER);
 
     /*
      * Create the UVM so we can register the at-error callback

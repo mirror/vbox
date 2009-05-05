@@ -43,9 +43,6 @@
  * @{
  */
 
-/** Maximum number of virtual CPUs per VM. */
-#define VMCPU_MAX_CPU_COUNT    255
-
 /**
  * The state of a virtual CPU.
  *

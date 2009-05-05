@@ -523,7 +523,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
     *ppVM = NULL;
 
     if (    cCpus == 0
-        ||  cCpus > VMCPU_MAX_CPU_COUNT)
+        ||  cCpus > VMM_MAX_CPU_COUNT)
         return VERR_INVALID_PARAMETER;
 
     RTNATIVETHREAD hEMT0 = RTThreadNativeSelf();
@@ -1358,7 +1358,7 @@ GVMMR0DECL(PVM) GVMMR0GetVMByEMT(RTNATIVETHREAD hEMT)
             PGVM pGVM = pGVMM->aHandles[i].pGVM;
             VMCPUID const cCpus = pGVM->cCpus;
             if (    cCpus < 1
-                ||  cCpus > VMM_MAX_CPUS)
+                ||  cCpus > VMM_MAX_CPU_COUNT)
                 continue;
             for (VMCPUID idCpu = 1; idCpu < cCpus; idCpu++)
                 if (pGVM->aCpus[idCpu].hEMT == hEMT)
