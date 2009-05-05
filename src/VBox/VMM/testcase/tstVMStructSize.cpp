@@ -298,6 +298,13 @@ int main()
     CHECK_MEMBER_ALIGNMENT(HWACCMCPU, vmx.proc_ctls, 8);
     CHECK_MEMBER_ALIGNMENT(HWACCMCPU, Event.intInfo, 8);
 
+    /* Make sure the set is large enough and has the correct size. */
+    CHECK_SIZE(VMCPUSET, 32);
+    if (sizeof(VMCPUSET) * 8 < VMM_MAX_CPU_COUNT)
+    {
+        printf("error: VMCPUSET is too small for VMM_MAX_CPU_COUNT=%u!\n", VMM_MAX_CPU_COUNT);
+        rc++;
+    }
 
     /*
      * Compare HC and GC.

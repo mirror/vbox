@@ -112,6 +112,32 @@ typedef VMCPUID *PVMCPUID;
 #define NIL_VMCPUID         UINT32_C(0xfffffffd)
 /** @} */
 
+/**
+ * Virtual CPU set.
+ */
+typedef struct VMCPUSET
+{
+    /** The bitmap data.  */
+    uint32_t    au32Bitmap[256/32];
+} VMCPUSET;
+/** Pointer to a Virtual CPU set. */
+typedef VMCPUSET *PVMCPUSET;
+/** Pointer to a const Virtual CPU set. */
+typedef VMCPUSET const *PCVMCPUSET;
+
+/** Tests if a valid CPU ID is present in the set.. */
+#define VMCPUSET_IS_PRESENT(pSet, idCpu)    ASMBitTest( &(pSet)->au32Bitmap, (idCpu))
+/** Adds a CPU to the set. */
+#define VMCPUSET_ADD(pSet, idCpu)           ASMBitSet(  &(pSet)->au32Bitmap, (idCpu))
+/** Deletes a CPU from the set. */
+#define VMCPUSET_DEL(pSet, idCpu)           ASMBitClear(&(pSet)->au32Bitmap, (idCpu))
+/** Empties the set. */
+#define VMCPUSET_EMPTY(pSet, idCpu)         memset(&(pSet)->au32Bitmap, '\0', sizeof((pSet)->au32Bitmap))
+/** Filles the set. */
+#define VMCPUSET_FILL(pSet, idCpu)          memset(&(pSet)->au32Bitmap, 0xff, sizeof((pSet)->au32Bitmap))
+/** Filles the set. */
+#define VMCPUSET_IS_EQUAL(pSet1, pSet2)     (memcmp(&(pSet1)->au32Bitmap, &(pSet2)->au32Bitmap, sizeof((pSet1)->au32Bitmap)) == 0)
+
 
 /** VM State
  */
