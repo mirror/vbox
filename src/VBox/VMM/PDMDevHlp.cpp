@@ -2324,39 +2324,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMPowerOff(PPDMDEVINS pDevIns)
     return rc;
 }
 
-
-/** @copydoc PDMDEVHLPR3::pfnLockVM */
-static DECLCALLBACK(int) pdmR3DevHlp_LockVM(PPDMDEVINS pDevIns)
-{
-    return VMMR3Lock(pDevIns->Internal.s.pVMR3);
-}
-
-
-/** @copydoc PDMDEVHLPR3::pfnUnlockVM */
-static DECLCALLBACK(int) pdmR3DevHlp_UnlockVM(PPDMDEVINS pDevIns)
-{
-    return VMMR3Unlock(pDevIns->Internal.s.pVMR3);
-}
-
-
-/** @copydoc PDMDEVHLPR3::pfnAssertVMLock */
-static DECLCALLBACK(bool) pdmR3DevHlp_AssertVMLock(PPDMDEVINS pDevIns, const char *pszFile, unsigned iLine, const char *pszFunction)
-{
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    if (VMMR3LockIsOwner(pVM))
-        return true;
-
-    RTNATIVETHREAD NativeThreadOwner = VMMR3LockGetOwner(pVM);
-    RTTHREAD ThreadOwner = RTThreadFromNative(NativeThreadOwner);
-    char szMsg[100];
-    RTStrPrintf(szMsg, sizeof(szMsg), "AssertVMLocked '%s'/%d ThreadOwner=%RTnthrd/%RTthrd/'%s' Self='%s'\n",
-                pDevIns->pDevReg->szDeviceName, pDevIns->iInstance,
-                NativeThreadOwner, ThreadOwner, RTThreadGetName(ThreadOwner), RTThreadSelfName());
-    AssertMsg1(szMsg, iLine, pszFile, pszFunction);
-    AssertBreakpoint();
-    return false;
-}
-
 /** @copydoc PDMDEVHLPR3::pfnDMARegister */
 static DECLCALLBACK(int) pdmR3DevHlp_DMARegister(PPDMDEVINS pDevIns, unsigned uChannel, PFNDMATRANSFERHANDLER pfnTransferHandler, void *pvUser)
 {
@@ -2764,9 +2731,6 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_VMReset,
     pdmR3DevHlp_VMSuspend,
     pdmR3DevHlp_VMPowerOff,
-    pdmR3DevHlp_LockVM,
-    pdmR3DevHlp_UnlockVM,
-    pdmR3DevHlp_AssertVMLock,
     pdmR3DevHlp_DMARegister,
     pdmR3DevHlp_DMAReadMemory,
     pdmR3DevHlp_DMAWriteMemory,
@@ -2982,34 +2946,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_VMPowerOff(PPDMDEVINS pDevIns)
     AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
     return VERR_ACCESS_DENIED;
 }
-
-
-/** @copydoc PDMDEVHLPR3::pfnLockVM */
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_LockVM(PPDMDEVINS pDevIns)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
-    return VERR_ACCESS_DENIED;
-}
-
-
-/** @copydoc PDMDEVHLPR3::pfnUnlockVM */
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_UnlockVM(PPDMDEVINS pDevIns)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
-    return VERR_ACCESS_DENIED;
-}
-
-
-/** @copydoc PDMDEVHLPR3::pfnAssertVMLock */
-static DECLCALLBACK(bool) pdmR3DevHlp_Untrusted_AssertVMLock(PPDMDEVINS pDevIns, const char *pszFile, unsigned iLine, const char *pszFunction)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
-    return false;
-}
-
 
 /** @copydoc PDMDEVHLPR3::pfnDMARegister */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_DMARegister(PPDMDEVINS pDevIns, unsigned uChannel, PFNDMATRANSFERHANDLER pfnTransferHandler, void *pvUser)
@@ -3257,9 +3193,6 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_Untrusted_VMReset,
     pdmR3DevHlp_Untrusted_VMSuspend,
     pdmR3DevHlp_Untrusted_VMPowerOff,
-    pdmR3DevHlp_Untrusted_LockVM,
-    pdmR3DevHlp_Untrusted_UnlockVM,
-    pdmR3DevHlp_Untrusted_AssertVMLock,
     pdmR3DevHlp_Untrusted_DMARegister,
     pdmR3DevHlp_Untrusted_DMAReadMemory,
     pdmR3DevHlp_Untrusted_DMAWriteMemory,

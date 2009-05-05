@@ -787,8 +787,6 @@ VMMR3DECL(int) VMR3ReqWait(PVMREQ pReq, unsigned cMillies)
      */
     PUVM pUVM = pReq->pUVM;
     NOREF(pUVM);
-    AssertMsg(!pUVM->pVM || !VMMR3LockIsOwner(pUVM->pVM),
-              ("Waiting for EMT to process a request, but we own the global VM lock!?!?!?!\n"));
 
     /*
      * Wait on the package.

@@ -5576,21 +5576,10 @@ PDMBOTHCBDECL(int) ataIOPortRead2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
 static bool ataWaitForAllAsyncIOIsIdle(PPDMDEVINS pDevIns, unsigned cMillies)
 {
     PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
-    bool            fVMLocked;
     uint64_t        u64Start;
     PATACONTROLLER  pCtl;
     bool            fAllIdle = false;
 
-    /* The only way to deal cleanly with the VM lock is to check whether
-     * it is owned now (it always is owned by EMT, which is the current
-     * thread). Since this function is called several times during VM
-     * shutdown, and the VM lock is only held for the first call (which
-     * can be either from ataPowerOff or ataSuspend), there is no other
-     * reasonable solution. */
-    fVMLocked = VMMR3LockIsOwner(PDMDevHlpGetVM(pDevIns));
-
-    if (fVMLocked)
-        pDevIns->pDevHlpR3->pfnUnlockVM(pDevIns);
     /*
      * Wait for any pending async operation to finish
      */
@@ -5623,9 +5612,6 @@ static bool ataWaitForAllAsyncIOIsIdle(PPDMDEVINS pDevIns, unsigned cMillies)
         /* Sleep for a bit. */
         RTThreadSleep(100);
     }
-
-    if (fVMLocked)
-        pDevIns->pDevHlpR3->pfnLockVM(pDevIns);
 
     if (!fAllIdle)
         LogRel(("PIIX3 ATA: Ctl#%d is still executing, DevSel=%d AIOIf=%d CmdIf0=%#04x CmdIf1=%#04x\n",

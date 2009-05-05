@@ -2573,33 +2573,6 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(int, pfnVMPowerOff,(PPDMDEVINS pDevIns));
 
     /**
-     * Acquire global VM lock
-     *
-     * @returns VBox status code
-     * @param   pDevIns             Device instance.
-     */
-    DECLR3CALLBACKMEMBER(int , pfnLockVM,(PPDMDEVINS pDevIns));
-
-    /**
-     * Release global VM lock
-     *
-     * @returns VBox status code
-     * @param   pDevIns             Device instance.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnUnlockVM,(PPDMDEVINS pDevIns));
-
-    /**
-     * Check that the current thread owns the global VM lock.
-     *
-     * @returns boolean
-     * @param   pDevIns             Device instance.
-     * @param   pszFile             Filename of the assertion location.
-     * @param   iLine               Linenumber of the assertion location.
-     * @param   pszFunction         Function of the assertion location.
-     */
-    DECLR3CALLBACKMEMBER(bool, pfnAssertVMLock,(PPDMDEVINS pDevIns, const char *pszFile, unsigned iLine, const char *pszFunction));
-
-    /**
      * Register transfer function for DMA channel.
      *
      * @returns VBox status code.

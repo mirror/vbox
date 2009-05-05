@@ -195,7 +195,6 @@ int main()
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[1].cpum.s.Hyper, 64);
     CHECK_MEMBER_ALIGNMENT(VM, cpum.s.GuestEntry, 64);
 
-    CHECK_MEMBER_ALIGNMENT(VM, vmm.s.CritSectVMLock, 8);
     CHECK_MEMBER_ALIGNMENT(VM, vmm.s.CallHostR0JmpBuf, 8);
     CHECK_MEMBER_ALIGNMENT(VM, vmm.s.StatRunRC, 8);
     CHECK_MEMBER_ALIGNMENT(VM, StatTotalQemuToGC, 8);

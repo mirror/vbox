@@ -249,10 +249,6 @@ typedef struct VMM
     uint32_t                    cbRCRelLogger;
     /** @} */
 
-
-    /** Global VM critical section. */
-    RTCRITSECT                  CritSectVMLock;
-
     /** The EMT yield timer. */
     PTMTIMERR3                  pYieldTimer;
     /** The period to the next timeout when suspended or stopped.
