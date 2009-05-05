@@ -243,11 +243,19 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     }
     else
         fHWVirtExEnabled = (hwVirtExEnabled == TSBool_True);
+    if (cCpus > 1) /** @todo SMP: This isn't nice, but things won't work on mac otherwise. */
+        fHWVirtExEnabled = TSBool_True;
+
 #ifdef RT_OS_DARWIN
     rc = CFGMR3InsertInteger(pRoot, "HwVirtExtForced",      fHWVirtExEnabled);      RC_CHECK();
 #else
-    /* With more than 4GB PGM will use different RAMRANGE sizes for raw mode and hv mode to optimize lookup times. */
-    rc = CFGMR3InsertInteger(pRoot, "HwVirtExtForced",      fHWVirtExEnabled && cbRam > (_4G - cbRamHole)); RC_CHECK();
+    /* - With more than 4GB PGM will use different RAMRANGE sizes for raw
+         mode and hv mode to optimize lookup times.
+       - With more than one virtual CPU, raw-mode isn't a fallback option. */
+    BOOL fHwVirtExtForced = fHWVirtExEnabled
+                         && (   cbRam > (_4G - cbRamHole)
+                             || cCpus > 1);
+    rc = CFGMR3InsertInteger(pRoot, "HwVirtExtForced",      fHwVirtExtForced);      RC_CHECK();
 #endif
 
     PCFGMNODE pHWVirtExt;
