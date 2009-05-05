@@ -42,7 +42,7 @@ VBoxService_SOURCES       = \
 	VBoxServiceVMInfo.cpp \
 	VBoxServiceUtils.cpp
 VBoxService_SOURCES.win   = \
-	VBoxService.rc \
+	VBoxService-win.rc \
 	VBoxService-win.cpp \
 	VBoxServiceVMInfo-win.cpp
 VBoxService_SOURCES.os2   = \
@@ -60,12 +60,12 @@ ifdef VBOX_WITH_GUEST_PROPS
 endif
 
 # The icon is configurable.
-VBoxService.rc_INCS = $(PATH_VBoxService)
-VBoxService.rc_DEPS = $(PATH_VBoxService)/VBoxService-icon.rc
-VBoxService.rc_CLEAN = $(PATH_VBoxService)/VBoxService-icon.rc
+VBoxService-win.rc_INCS = $(PATH_VBoxService)
+VBoxService-win.rc_DEPS = $(PATH_VBoxService)/VBoxService-win-icon.rc
+VBoxService-win.rc_CLEAN = $(PATH_VBoxService)/VBoxService-win-icon.rc
 
 # Icon include file.
-$$(PATH_VBoxService)/VBoxService-icon.rc: $(VBOX_WINDOWS_ADDITIONS_ICON_FILE) $$(VBoxService_PATH)/Makefile.kmk | $$(dir $$@)
+$$(PATH_VBoxService)/VBoxService-win-icon.rc: $(VBOX_WINDOWS_ADDITIONS_ICON_FILE) $$(VBoxService_PATH)/Makefile.kmk | $$(dir $$@)
 	$(RM) -f $@
 	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ADDITIONS_ICON_FILE))"'
 

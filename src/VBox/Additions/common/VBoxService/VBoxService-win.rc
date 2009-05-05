@@ -21,7 +21,7 @@
 
 #include <windows.h>
 #include <VBox/version.h>
-#include "resource.h"
+#include "VBoxServiceResource-win.h"
 
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
@@ -54,5 +54,5 @@ BEGIN
    END
 END
 
-#include "VBoxService-icon.rc"
+#include "VBoxService-win-icon.rc"
 
