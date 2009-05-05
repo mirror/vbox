@@ -999,13 +999,13 @@ static const struct VMHALTMETHODDESC
     DECLR3CALLBACKMEMBER(int,  pfnInit,(PUVM pUVM));
     /** The term function. */
     DECLR3CALLBACKMEMBER(void, pfnTerm,(PUVM pUVM));
-    /** The halt function. */
+    /** The VMR3WaitHaltedU function. */
     DECLR3CALLBACKMEMBER(int,  pfnHalt,(PUVMCPU pUVCpu, const uint32_t fMask, uint64_t u64Now));
-    /** The wait function. */
+    /** The VMR3WaitU function. */
     DECLR3CALLBACKMEMBER(int,  pfnWait,(PUVMCPU pUVCpu));
-    /** The NotifyCpuFF function. */
+    /** The VMR3NotifyCpuFFU function. */
     DECLR3CALLBACKMEMBER(void, pfnNotifyCpuFF,(PUVMCPU pUVCpu, uint32_t fFlags));
-    /** The NotifyGlobalFF function. */
+    /** The VMR3NotifyGlobalFFU function. */
     DECLR3CALLBACKMEMBER(void, pfnNotifyGlobalFF,(PUVM pUVM, uint32_t fFlags));
 } g_aHaltMethods[] =
 {
@@ -1226,6 +1226,10 @@ int vmR3SetHaltMethodU(PUVM pUVM, VMHALTMETHOD enmHaltMethod)
         g_aHaltMethods[pUVM->vm.s.iHaltMethod].pfnTerm(pUVM);
         pUVM->vm.s.enmHaltMethod = VMHALTMETHOD_INVALID;
     }
+
+/** @todo SMP: Need rendezvous thing here, the other EMTs must not be
+ *        sleeping when we switch the notification method or we'll never
+ *        manage to wake them up properly and end up relying on timeouts... */
 
     /*
      * Init the new one.

@@ -297,6 +297,8 @@ typedef struct VMINTUSERPERVM
     uint32_t volatile               iHaltMethod;
     /** @} */
 
+    /** @todo Do NOT add new members here or resue the current, we need to store the config for
+     *  each halt method seperately because we're racing on SMP guest rigs. */
     union
     {
        /**
