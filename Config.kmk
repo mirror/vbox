@@ -1840,6 +1840,16 @@ if1of ($(KBUILD_TARGET), linux solaris)
  VBOX_OPENSSL_ALL=1
 endif
 
+ifndef OSE
+ if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.x86 darwin.amd64)
+  VBOX_WITH_LIBCURL=1
+  SDK_VBOX_LIBCURL       = .
+  SDK_VBOX_LIBCURL_INCS ?= $(PATH_ROOT)/src/libs/curl-7.19.4/include
+  SDK_VBOX_LIBCURL_LIBS ?= $(PATH_LIB)/VBox-libcurl$(VBOX_SUFF_LIB)
+  SDK_VBOX_LIBCURL_DEFS ?= BUILDING_LIBCURL
+ endif
+endif
+
 SDK_VBOX_FFMPEG       = .
 if1of ($(KBUILD_TARGET), win os2 darwin linux)
  SDK_VBOX_FFMPEG_INCS ?= \
