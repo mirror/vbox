@@ -1251,15 +1251,7 @@ static int gvmmR0ByVMAndEMT(PVM pVM, VMCPUID idCpu, PGVM *ppGVM, PGVMM *ppGVMM)
     AssertReturn(pGVM->pVM == pVM, VERR_INTERNAL_ERROR);
     RTNATIVETHREAD hAllegedEMT = RTThreadNativeSelf();
     AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_CPU_ID);
-#ifdef DEBUG_bird /* did bad stuff to my box just now, take it easy. */
-    if (RT_UNLIKELY(pGVM->aCpus[idCpu].hEMT != hAllegedEMT))
-    {
-        SUPR0Printf("gvmmR0ByVMAndEMT: %x != %x idCpu=%u\n", pGVM->aCpus[idCpu].hEMT, hAllegedEMT, idCpu);
-        return VERR_INTERNAL_ERROR;
-    }
-#else
     AssertReturn(pGVM->aCpus[idCpu].hEMT == hAllegedEMT, VERR_INTERNAL_ERROR);
-#endif
 
     *ppGVM = pGVM;
     *ppGVMM = pGVMM;
