@@ -1691,12 +1691,16 @@ uint16_t slirp_get_service(int proto, uint16_t dport, uint16_t sport)
     hsport = ntohs(sport);
     Log2(("proto: %d, dport: %d sport: %d\n", proto, hdport, hsport));
     service = 0;
-#if 0
+#if 1
     /* Always return 0 here */
     switch (hdport)
     {
         case 500:
-                /* service = sport; */
+                if (hsport != 500) /* vpnc by default try operate in src:500/dst:500 mode*/
+                /* Not sure why this make Cisco VPN client's connection more stable, 
+                 * at least on some servers
+                 */
+                    service = sport;  
         break;
     }
 #endif
