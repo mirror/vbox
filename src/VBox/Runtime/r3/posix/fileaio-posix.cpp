@@ -46,8 +46,16 @@
 
 #include <aio.h>
 #include <errno.h>
+#include <time.h>
 
-#define AIO_MAXIMUM_REQUESTS_PER_CONTEXT 64
+/*
+ * Linux does not define this value.
+ * Just define it with really big
+ * value.
+ */
+#ifndef AIO_LISTIO_MAX
+# define AIO_LISTIO_MAX UINT32_MAX
+#endif
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -416,69 +424,125 @@ RTDECL(int) RTFileAioCtxAssociateWithFile(RTFILEAIOCTX hAioCtx, RTFILE hFile)
     return VINF_SUCCESS;
 }
 
-RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ phReqs, size_t cReqs, size_t *pcReqs)
+RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size_t cReqs, size_t *pcReqs)
 {
+    int rc = VINF_SUCCESS;
     PRTFILEAIOCTXINTERNAL pCtxInt = hAioCtx;
 
     /* Parameter checks */
     AssertPtrReturn(pCtxInt, VERR_INVALID_HANDLE);
     AssertReturn(cReqs != 0, VERR_INVALID_POINTER);
-    AssertPtrReturn(phReqs,  VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pahReqs,  VERR_INVALID_PARAMETER);
 
     /* Check that we don't exceed the limit */
     if (ASMAtomicUoReadS32(&pCtxInt->cRequests) + cReqs > pCtxInt->cMaxRequests)
         return VERR_FILE_AIO_LIMIT_EXCEEDED;
 
     PRTFILEAIOREQINTERNAL pHead = NULL;
-    for (size_t i = 0; i < cReqs; i++)
-    {
-        PRTFILEAIOREQINTERNAL pReqInt = phReqs[i];
 
-        pReqInt->pCtxInt = pCtxInt;
-        /* Link them together. */
-        pReqInt->pNext = pHead;
-        pHead = pReqInt;
+    do
+    {
+        int rcPosix = 0;
+        size_t cReqsSubmit = 0;
+        size_t i = 0;
+        PRTFILEAIOREQINTERNAL pReqInt;
+
+        while (   (i < cReqs)
+               && (i < AIO_LISTIO_MAX))
+        {
+            pReqInt = pahReqs[i];
+            RTFILEAIOREQ_VALID_RETURN(pReqInt);
+
+            pReqInt->pCtxInt = pCtxInt;
+
+            /* Link them together. */
+            pReqInt->pNext = pHead;
+            pHead = pReqInt;
+
+            if (pReqInt->fFlush)
+                break;
+
+            cReqsSubmit++;
+            i++;
+        }
+
+        if (cReqsSubmit)
+        {
+            rcPosix = lio_listio(LIO_NOWAIT, (struct aiocb **)pahReqs, cReqsSubmit, NULL);
+            if (RT_UNLIKELY(rcPosix < 0))
+            {
+                rc = RTErrConvertFromErrno(errno);
+                break;
+            }
+
+            ASMAtomicAddS32(&pCtxInt->cRequests, cReqsSubmit);
+            cReqs   -= cReqsSubmit;
+            pahReqs += cReqsSubmit;
+            *pcReqs += cReqsSubmit;
+        }
+
+        /* Check if we have a flush request now. */
+        if (cReqs)
+        {
+            pReqInt = pahReqs[0];
+            RTFILEAIOREQ_VALID_RETURN(pReqInt);
+
+            if (pReqInt->fFlush)
+            {
+                /*
+                 * lio_listio does not work with flush requests so
+                 * we have to use aio_fsync directly.
+                 */
+                 rcPosix = aio_fsync(O_SYNC, &pReqInt->AioCB);
+                 if (RT_UNLIKELY(rcPosix < 0))
+                 {
+                    rc = RTErrConvertFromErrno(errno);
+                    break;
+                 }
+
+                ASMAtomicIncS32(&pCtxInt->cRequests);
+                cReqs--;
+                pahReqs++;
+                *pcReqs++;
+            }
+        }
+    } while (cReqs);
+
+    if (pHead)
+    {
+        /*
+         * Forward successfully submitted requests to the thread waiting for requests.
+         * We search for a free slot first and if we don't find one
+         * we will grab the first one and append our list to the existing entries.
+         */
+        unsigned iSlot = 0;
+        while (  (iSlot < RT_ELEMENTS(pCtxInt->apReqsNewHead))
+               && !ASMAtomicCmpXchgPtr((void * volatile *)&pCtxInt->apReqsNewHead[iSlot], pHead, NULL))
+            iSlot++;
+
+        if (iSlot == RT_ELEMENTS(pCtxInt->apReqsNewHead))
+        {
+            /* Nothing found. */
+            PRTFILEAIOREQINTERNAL pOldHead = (PRTFILEAIOREQINTERNAL)ASMAtomicXchgPtr((void * volatile *)&pCtxInt->apReqsNewHead[0],
+                                                                                      NULL);
+
+            /* Find the end of the current head and link the old list to the current. */
+            PRTFILEAIOREQINTERNAL pTail = pHead;
+            while (pTail->pNext)
+                pTail = pTail->pNext;
+
+            pTail->pNext = pOldHead;
+
+            ASMAtomicXchgPtr((void * volatile *)&pCtxInt->apReqsNewHead[0], pHead);
+        }
+
+        /* Set the internal wakeup flag and wakeup the thread if possible. */
+        bool fWokenUp = ASMAtomicXchgBool(&pCtxInt->fWokenUpInternal, true);
+        if (!fWokenUp)
+            rtFileAioCtxWakeup(pCtxInt);
     }
 
-    int rcPosix = lio_listio(LIO_NOWAIT, (struct aiocb **)phReqs, cReqs, NULL);
-    if (RT_UNLIKELY(rcPosix < 0))
-        return RTErrConvertFromErrno(errno);
-
-    ASMAtomicAddS32(&pCtxInt->cRequests, cReqs);
-    *pcReqs = cReqs;
-
-    /*
-     * Forward them to the thread waiting for requests.
-     * We search for a free slot first and if we don't find one
-     * we will grab the first one and append our list to the existing entries.
-     */
-    unsigned iSlot = 0;
-    while (  (iSlot < RT_ELEMENTS(pCtxInt->apReqsNewHead))
-           && !ASMAtomicCmpXchgPtr((void * volatile *)&pCtxInt->apReqsNewHead[iSlot], pHead, NULL))
-        iSlot++;
-
-    if (iSlot == RT_ELEMENTS(pCtxInt->apReqsNewHead))
-    {
-        /* Nothing found. */
-        PRTFILEAIOREQINTERNAL pOldHead = (PRTFILEAIOREQINTERNAL)ASMAtomicXchgPtr((void * volatile *)&pCtxInt->apReqsNewHead[0],
-                                                                                  NULL);
-
-        /* Find the end of the current head and link the old list to the current. */
-        PRTFILEAIOREQINTERNAL pTail = pHead;
-        while (pTail->pNext)
-            pTail = pTail->pNext;
-
-        pTail->pNext = pOldHead;
-
-        ASMAtomicXchgPtr((void * volatile *)&pCtxInt->apReqsNewHead[0], pHead);
-    }
-
-    /* Set the internal wakeup flag and wakeup the thread if possible. */
-    bool fWokenUp = ASMAtomicXchgBool(&pCtxInt->fWokenUpInternal, true);
-    if (!fWokenUp)
-        rtFileAioCtxWakeup(pCtxInt);
-
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
