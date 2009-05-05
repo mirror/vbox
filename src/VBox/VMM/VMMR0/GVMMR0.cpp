@@ -1053,6 +1053,33 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
     LogFlow(("gvmmR0HandleObjDestructor: returns\n"));
 }
 
+/**
+ * Register a new VCPU EMT thread (VCPU 0 is automatically registered during VM creation)
+ *
+ * @returns VBox status code
+ * @param   pVM             The shared VM structure (the ring-0 mapping).
+ * @param   idCpu           VCPU id
+ */
+GVMMR0DECL(int) GVMMR0RegisterVCpu(PVM pVM, unsigned idCpu)
+{
+    AssertReturn(idCpu < pVM->cCPUs, VERR_INVALID_CPU_ID);
+
+    /*
+     * Validate the VM structure, state and handle.
+     */
+    PGVMM   pGVMM;
+    PGVM    pGVM;
+    PGVMCPU pCurGVCpu;
+
+    int rc = gvmmR0ByVMAndEMT(pVM, idCpu, &pGVM, &pGVMM);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    AssertReturn(!pGVM->aCpus[idCpu].hEMT, VERR_ACCESS_DENIED);
+
+    pGVM->aCpus[idCpu].hEMT = RTThreadNativeSelf();
+    return VINF_SUCCESS;
+}
 
 /**
  * Lookup a GVM structure by its handle.

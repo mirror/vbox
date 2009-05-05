@@ -195,6 +195,8 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_GVMM_QUERY_STATISTICS,
     /** Call GVMMR0ResetStatistics(). */
     VMMR0_DO_GVMM_RESET_STATISTICS,
+    /** Call GVMMR0RegisterVCpu(). */
+    VMMR0_DO_GVMM_REGISTER_VMCPU,
 
     /** Call VMMR0 Per VM Init. */
     VMMR0_DO_VMMR0_INIT,

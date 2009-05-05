@@ -742,6 +742,11 @@ static int vmmR0EntryExWorker(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperati
                 return VERR_INVALID_PARAMETER;
             return GVMMR0DestroyVM(pVM);
 
+        case VMMR0_DO_GVMM_REGISTER_VMCPU:
+            if (!pVM)
+                return VERR_INVALID_PARAMETER;
+            return GVMMR0RegisterVCpu(pVM, idCpu);
+
         case VMMR0_DO_GVMM_SCHED_HALT:
             if (pReqHdr)
                 return VERR_INVALID_PARAMETER;
