@@ -457,13 +457,13 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
                                                                                         \
             pHyperCtx->reg##Hid.u64Base              = selInfo.GCPtrBase;               \
             pHyperCtx->reg##Hid.u32Limit             = selInfo.cbLimit;                 \
-            pHyperCtx->reg##Hid.Attr.n.u1Present     = selInfo.Raw.Gen.u1Present;       \
-            pHyperCtx->reg##Hid.Attr.n.u1DefBig      = selInfo.Raw.Gen.u1DefBig;        \
-            pHyperCtx->reg##Hid.Attr.n.u1Granularity = selInfo.Raw.Gen.u1Granularity;   \
-            pHyperCtx->reg##Hid.Attr.n.u4Type        = selInfo.Raw.Gen.u4Type;          \
-            pHyperCtx->reg##Hid.Attr.n.u2Dpl         = selInfo.Raw.Gen.u2Dpl;           \
-            pHyperCtx->reg##Hid.Attr.n.u1DescType    = selInfo.Raw.Gen.u1DescType;      \
-            pHyperCtx->reg##Hid.Attr.n.u1Long        = selInfo.Raw.Gen.u1Long;          \
+            pHyperCtx->reg##Hid.Attr.n.u1Present     = selInfo.u.Raw.Gen.u1Present;     \
+            pHyperCtx->reg##Hid.Attr.n.u1DefBig      = selInfo.u.Raw.Gen.u1DefBig;      \
+            pHyperCtx->reg##Hid.Attr.n.u1Granularity = selInfo.u.Raw.Gen.u1Granularity; \
+            pHyperCtx->reg##Hid.Attr.n.u4Type        = selInfo.u.Raw.Gen.u4Type;        \
+            pHyperCtx->reg##Hid.Attr.n.u2Dpl         = selInfo.u.Raw.Gen.u2Dpl;         \
+            pHyperCtx->reg##Hid.Attr.n.u1DescType    = selInfo.u.Raw.Gen.u1DescType;    \
+            pHyperCtx->reg##Hid.Attr.n.u1Long        = selInfo.u.Raw.Gen.u1Long;        \
         }
 
 /* execute the switch. */

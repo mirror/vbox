@@ -2352,7 +2352,7 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPT
             State.GCPtrSegBase    = SelInfo.GCPtrBase;
             State.GCPtrSegEnd     = SelInfo.cbLimit + 1 + (RTGCUINTPTR)SelInfo.GCPtrBase;
             State.cbSegLimit      = SelInfo.cbLimit;
-            pCpu->mode            = SelInfo.Raw.Gen.u1DefBig ? CPUMODE_32BIT : CPUMODE_16BIT;
+            pCpu->mode            = SelInfo.u.Raw.Gen.u1DefBig ? CPUMODE_32BIT : CPUMODE_16BIT;
         }
     }
     else

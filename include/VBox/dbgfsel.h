@@ -53,7 +53,7 @@ typedef struct DBGFSELINFO
     {
         X86DESC     Raw;
         X86DESC64   Raw64;
-    };
+    } u;
     /** The selector. */
     RTSEL           Sel;
     /** The target selector for a gate.
@@ -94,8 +94,8 @@ typedef const DBGFSELINFO *PCDBGFSELINFO;
  */
 DECLINLINE(bool) DBGFSelInfoIsExpandDown(PCDBGFSELINFO pSelInfo)
 {
-    return (pSelInfo)->Raw.Gen.u1DescType
-        && ((pSelInfo)->Raw.Gen.u4Type & (X86_SEL_TYPE_DOWN | X86_SEL_TYPE_CODE)) == X86_SEL_TYPE_DOWN;
+    return (pSelInfo)->u.Raw.Gen.u1DescType
+        && ((pSelInfo)->u.Raw.Gen.u4Type & (X86_SEL_TYPE_DOWN | X86_SEL_TYPE_CODE)) == X86_SEL_TYPE_DOWN;
 }
 
 
