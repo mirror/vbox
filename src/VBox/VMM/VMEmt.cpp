@@ -731,15 +731,25 @@ static DECLCALLBACK(void) vmR3HaltGlobal1NotifyCpuFF(PUVMCPU pUVCpu, uint32_t fF
         int rc = SUPCallVMMR0Ex(pUVCpu->pVM->pVMR0, pUVCpu->idCpu, VMMR0_DO_GVMM_SCHED_WAKE_UP, 0, NULL);
         AssertRC(rc);
     }
-    else if (   (fFlags & VMNOTIFYFF_FLAGS_POKE)
-             && pUVCpu->pVCpu
-             && pUVCpu->pVCpu->enmState == VMCPUSTATE_STARTED_EXEC)
+    else if (   (   (fFlags & VMNOTIFYFF_FLAGS_POKE)
+                 || !(fFlags & VMNOTIFYFF_FLAGS_DONE_REM))
+             && pUVCpu->pVCpu)
     {
-        int rc = SUPCallVMMR0Ex(pUVCpu->pVM->pVMR0, pUVCpu->idCpu, VMMR0_DO_GVMM_SCHED_POKE, 0, NULL);
-        AssertRC(rc);
+        VMCPUSTATE enmState = VMCPU_GET_STATE(pUVCpu->pVCpu);
+        if (enmState == VMCPUSTATE_STARTED_EXEC)
+        {
+            if (fFlags & VMNOTIFYFF_FLAGS_POKE)
+            {
+                int rc = SUPCallVMMR0Ex(pUVCpu->pVM->pVMR0, pUVCpu->idCpu, VMMR0_DO_GVMM_SCHED_POKE, 0, NULL);
+                AssertRC(rc);
+            }
+        }
+        else if (enmState == VMCPUSTATE_STARTED_EXEC_REM)
+        {
+            if (!(fFlags & VMNOTIFYFF_FLAGS_DONE_REM))
+                REMR3NotifyFF(pUVCpu->pVM);
+        }
     }
-    else if (!(fFlags & VMNOTIFYFF_FLAGS_DONE_REM)) /** @todo use VMCPUSTATE_RUN_EXEC_REM */
-        REMR3NotifyFF(pUVCpu->pVM);
 }
 
 
@@ -874,7 +884,9 @@ static DECLCALLBACK(void) vmR3DefaultNotifyCpuFF(PUVMCPU pUVCpu, uint32_t fFlags
         int rc = RTSemEventSignal(pUVCpu->vm.s.EventSemWait);
         AssertRC(rc);
     }
-    else if (!(fFlags & VMNOTIFYFF_FLAGS_DONE_REM))
+    else if (   !(fFlags & VMNOTIFYFF_FLAGS_DONE_REM)
+             && pUVCpu->pVCpu
+             && pUVCpu->pVCpu->enmState == VMCPUSTATE_STARTED_EXEC_REM)
         REMR3NotifyFF(pUVCpu->pVM);
 }
 
