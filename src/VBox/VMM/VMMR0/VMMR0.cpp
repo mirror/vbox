@@ -525,19 +525,18 @@ VMMR0DECL(int) VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg)
  *
  * @param   pVM             The VM to operate on.
  *                          The return code is stored in pVM->vmm.s.iLastGZRc.
- * @param   idCpu           VMCPU id.
+ * @param   idCpu           The Virtual CPU ID of the calling EMT.
  * @param   enmOperation    Which operation to execute.
  * @remarks Assume called with interrupts _enabled_.
  */
-VMMR0DECL(void) VMMR0EntryFast(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperation)
+VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation)
 {
-    PVMCPU pVCpu = &pVM->aCpus[idCpu];
-
     if (RT_UNLIKELY(idCpu >= pVM->cCPUs))
     {
         pVM->vmm.s.iLastGZRc = VERR_INVALID_PARAMETER;
         return;
     }
+    PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
     switch (enmOperation)
     {
@@ -551,8 +550,8 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperat
             if (RT_LIKELY(!pVM->vmm.s.fSwitcherDisabled))
             {
                 RTCCUINTREG uFlags = ASMIntDisableFlags();
-                int rc;
-                bool fVTxDisabled;
+                int         rc;
+                bool        fVTxDisabled;
 
                 if (RT_UNLIKELY(pVM->cCPUs > 1))
                 {
@@ -576,10 +575,16 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperat
                     return;
                 }
 
+                ASMAtomicWriteU32(&pVCpu->idHostCpu, RTMpCpuId());
+                VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
+
                 TMNotifyStartOfExecution(pVCpu);
                 rc = pVM->vmm.s.pfnHostToGuestR0(pVM);
                 pVM->vmm.s.iLastGZRc = rc;
                 TMNotifyEndOfExecution(pVCpu);
+
+                VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
+                ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
 
                 /* Re-enable VT-x if previously turned off. */
                 HWACCMR0LeaveSwitcher(pVM, fVTxDisabled);
@@ -613,13 +618,14 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperat
         case VMMR0_DO_HWACC_RUN:
         {
             int rc;
-            PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
             STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
 
 #ifndef RT_OS_WINDOWS /** @todo check other hosts */
             RTCCUINTREG uFlags = ASMIntDisableFlags();
 #endif
+            ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
+
             if (!HWACCMR0SuspendPending())
             {
                 rc = HWACCMR0Enter(pVM, pVCpu);
@@ -636,6 +642,8 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperat
                 rc = VINF_EM_RAW_INTERRUPT;
             }
             pVM->vmm.s.iLastGZRc = rc;
+
+            ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
 #ifndef RT_OS_WINDOWS /** @todo check other hosts */
             ASMSetFlags(uFlags);
 #endif
@@ -693,7 +701,8 @@ DECLINLINE(bool) vmmR0IsValidSession(PVM pVM, PSUPDRVSESSION pClaimedSession, PS
  *
  * @returns VBox status code.
  * @param   pVM             The VM to operate on.
- * @param   idCpu           VMCPU id.
+ * @param   idCpu           Virtual CPU ID argument. Must be NIL_VMCPUID if pVM
+ *                          is NIL_RTR0PTR, and may be NIL_VMCPUID if it isn't
  * @param   enmOperation    Which operation to execute.
  * @param   pReqHdr         This points to a SUPVMMR0REQHDR packet. Optional.
  *                          The support driver validates this if it's present.
@@ -701,7 +710,7 @@ DECLINLINE(bool) vmmR0IsValidSession(PVM pVM, PSUPDRVSESSION pClaimedSession, PS
  * @param   pSession        The session of the caller.
  * @remarks Assume called with interrupts _enabled_.
  */
-static int vmmR0EntryExWorker(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReqHdr, uint64_t u64Arg, PSUPDRVSESSION pSession)
+static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReqHdr, uint64_t u64Arg, PSUPDRVSESSION pSession)
 {
     /*
      * Common VM pointer validation.
@@ -723,12 +732,18 @@ static int vmmR0EntryExWorker(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperati
             return VERR_INVALID_POINTER;
         }
 
-        if (RT_UNLIKELY(idCpu >= pVM->cCPUs))
+        if (RT_UNLIKELY(idCpu >= pVM->cCPUs && idCpu != NIL_VMCPUID))
         {
-            SUPR0Printf("vmmR0EntryExWorker: Invalid idCpu (%d vs cCPUs=%d\n", idCpu, pVM->cCPUs);
+            SUPR0Printf("vmmR0EntryExWorker: Invalid idCpu (%u vs cCPUs=%u)\n", idCpu, pVM->cCPUs);
             return VERR_INVALID_PARAMETER;
         }
     }
+    else if (RT_UNLIKELY(idCpu != NIL_VMCPUID))
+    {
+        SUPR0Printf("vmmR0EntryExWorker: Invalid idCpu=%u\n", idCpu);
+        return VERR_INVALID_PARAMETER;
+    }
+
 
     switch (enmOperation)
     {
@@ -736,7 +751,7 @@ static int vmmR0EntryExWorker(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperati
          * GVM requests
          */
         case VMMR0_DO_GVMM_CREATE_VM:
-            if (pVM || u64Arg)
+            if (pVM || u64Arg || idCpu != NIL_VMCPUID)
                 return VERR_INVALID_PARAMETER;
             return GVMMR0CreateVMReq((PGVMMCREATEVMREQ)pReqHdr);
 
@@ -816,7 +831,7 @@ static int vmmR0EntryExWorker(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperati
         }
 
         /*
-         * Switch to GC to execute Hypervisor function.
+         * Switch to RC to execute Hypervisor function.
          */
         case VMMR0_DO_CALL_HYPERVISOR:
         {
@@ -854,6 +869,8 @@ static int vmmR0EntryExWorker(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperati
          * PGM wrappers.
          */
         case VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES:
+            if (idCpu == NIL_VMCPUID)
+                return VERR_INVALID_CPU_ID;
             return PGMR0PhysAllocateHandyPages(pVM, &pVM->aCpus[idCpu]);
 
         /*
@@ -906,7 +923,7 @@ static int vmmR0EntryExWorker(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperati
         case VMMR0_DO_GCFGM_SET_VALUE:
         case VMMR0_DO_GCFGM_QUERY_VALUE:
         {
-            if (pVM || !pReqHdr || u64Arg)
+            if (pVM || !pReqHdr || u64Arg || idCpu != NIL_VMCPUID)
                 return VERR_INVALID_PARAMETER;
             PGCFGMVALUEREQ pReq = (PGCFGMVALUEREQ)pReqHdr;
             if (pReq->Hdr.cbReq != sizeof(*pReq))
@@ -934,7 +951,7 @@ static int vmmR0EntryExWorker(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperati
         case VMMR0_DO_INTNET_OPEN:
         {
             PINTNETOPENREQ pReq = (PINTNETOPENREQ)pReqHdr;
-            if (u64Arg || !pReq || !vmmR0IsValidSession(pVM, pReq->pSession, pSession))
+            if (u64Arg || !pReq || !vmmR0IsValidSession(pVM, pReq->pSession, pSession) || idCpu != NIL_VMCPUID)
                 return VERR_INVALID_PARAMETER;
             if (!g_pIntNet)
                 return VERR_NOT_SUPPORTED;
@@ -942,49 +959,49 @@ static int vmmR0EntryExWorker(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperati
         }
 
         case VMMR0_DO_INTNET_IF_CLOSE:
-            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFCLOSEREQ)pReqHdr)->pSession, pSession))
+            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFCLOSEREQ)pReqHdr)->pSession, pSession) || idCpu != NIL_VMCPUID)
                 return VERR_INVALID_PARAMETER;
             if (!g_pIntNet)
                 return VERR_NOT_SUPPORTED;
             return INTNETR0IfCloseReq(g_pIntNet, pSession, (PINTNETIFCLOSEREQ)pReqHdr);
 
         case VMMR0_DO_INTNET_IF_GET_RING3_BUFFER:
-            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFGETRING3BUFFERREQ)pReqHdr)->pSession, pSession))
+            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFGETRING3BUFFERREQ)pReqHdr)->pSession, pSession) || idCpu != NIL_VMCPUID)
                 return VERR_INVALID_PARAMETER;
             if (!g_pIntNet)
                 return VERR_NOT_SUPPORTED;
             return INTNETR0IfGetRing3BufferReq(g_pIntNet, pSession, (PINTNETIFGETRING3BUFFERREQ)pReqHdr);
 
         case VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE:
-            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFSETPROMISCUOUSMODEREQ)pReqHdr)->pSession, pSession))
+            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFSETPROMISCUOUSMODEREQ)pReqHdr)->pSession, pSession) || idCpu != NIL_VMCPUID)
                 return VERR_INVALID_PARAMETER;
             if (!g_pIntNet)
                 return VERR_NOT_SUPPORTED;
             return INTNETR0IfSetPromiscuousModeReq(g_pIntNet, pSession, (PINTNETIFSETPROMISCUOUSMODEREQ)pReqHdr);
 
         case VMMR0_DO_INTNET_IF_SET_MAC_ADDRESS:
-            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFSETMACADDRESSREQ)pReqHdr)->pSession, pSession))
+            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFSETMACADDRESSREQ)pReqHdr)->pSession, pSession) || idCpu != NIL_VMCPUID)
                 return VERR_INVALID_PARAMETER;
             if (!g_pIntNet)
                 return VERR_NOT_SUPPORTED;
             return INTNETR0IfSetMacAddressReq(g_pIntNet, pSession, (PINTNETIFSETMACADDRESSREQ)pReqHdr);
 
         case VMMR0_DO_INTNET_IF_SET_ACTIVE:
-            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFSETACTIVEREQ)pReqHdr)->pSession, pSession))
+            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFSETACTIVEREQ)pReqHdr)->pSession, pSession) || idCpu != NIL_VMCPUID)
                 return VERR_INVALID_PARAMETER;
             if (!g_pIntNet)
                 return VERR_NOT_SUPPORTED;
             return INTNETR0IfSetActiveReq(g_pIntNet, pSession, (PINTNETIFSETACTIVEREQ)pReqHdr);
 
         case VMMR0_DO_INTNET_IF_SEND:
-            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFSENDREQ)pReqHdr)->pSession, pSession))
+            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFSENDREQ)pReqHdr)->pSession, pSession) || idCpu != NIL_VMCPUID)
                 return VERR_INVALID_PARAMETER;
             if (!g_pIntNet)
                 return VERR_NOT_SUPPORTED;
             return INTNETR0IfSendReq(g_pIntNet, pSession, (PINTNETIFSENDREQ)pReqHdr);
 
         case VMMR0_DO_INTNET_IF_WAIT:
-            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFWAITREQ)pReqHdr)->pSession, pSession))
+            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFWAITREQ)pReqHdr)->pSession, pSession) || idCpu != NIL_VMCPUID)
                 return VERR_INVALID_PARAMETER;
             if (!g_pIntNet)
                 return VERR_NOT_SUPPORTED;
@@ -1007,6 +1024,8 @@ static int vmmR0EntryExWorker(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperati
 
 #if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         case VMMR0_DO_TEST_SWITCHER3264:
+            if (idCpu == NIL_VMCPUID)
+                return VERR_INVALID_CPU_ID;
             return HWACCMR0TestSwitcher3264(pVM);
 #endif
         default:
@@ -1026,7 +1045,7 @@ static int vmmR0EntryExWorker(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperati
 typedef struct VMMR0ENTRYEXARGS
 {
     PVM                 pVM;
-    unsigned            idCpu;
+    VMCPUID             idCpu;
     VMMR0OPERATION      enmOperation;
     PSUPVMMR0REQHDR     pReq;
     uint64_t            u64Arg;
@@ -1057,21 +1076,23 @@ static int vmmR0EntryExWrapper(void *pvArgs)
  *
  * @returns VBox status code.
  * @param   pVM             The VM to operate on.
- * @param   idCpu           VMCPU id.
+ * @param   idCpu           Virtual CPU ID argument. Must be NIL_VMCPUID if pVM
+ *                          is NIL_RTR0PTR, and may be NIL_VMCPUID if it isn't
  * @param   enmOperation    Which operation to execute.
  * @param   pReq            This points to a SUPVMMR0REQHDR packet. Optional.
  * @param   u64Arg          Some simple constant argument.
  * @param   pSession        The session of the caller.
  * @remarks Assume called with interrupts _enabled_.
  */
-VMMR0DECL(int) VMMR0EntryEx(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION pSession)
+VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION pSession)
 {
     /*
      * Requests that should only happen on the EMT thread will be
      * wrapped in a setjmp so we can assert without causing trouble.
      */
     if (    VALID_PTR(pVM)
-        &&  pVM->pVMR0)
+        &&  pVM->pVMR0
+        &&  idCpu < pVM->cCPUs)
     {
         switch (enmOperation)
         {

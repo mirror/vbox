@@ -516,7 +516,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
     CreateVMReq.pVMR0           = NIL_RTR0PTR;
     CreateVMReq.pVMR3           = NULL;
     CreateVMReq.cCpus           = cCpus;
-    rc = SUPCallVMMR0Ex(NIL_RTR0PTR, 0 /* VCPU 0 */, VMMR0_DO_GVMM_CREATE_VM, 0, &CreateVMReq.Hdr);
+    rc = SUPCallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_GVMM_CREATE_VM, 0, &CreateVMReq.Hdr);
     if (RT_SUCCESS(rc))
     {
         PVM pVM = pUVM->pVM = CreateVMReq.pVMR3;

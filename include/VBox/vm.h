@@ -105,6 +105,9 @@ typedef struct VMCPU
     VMCPUID                 idCpu;
     /** The native thread handle. */
     RTNATIVETHREAD          hNativeThread;
+    /** Which host CPU ID is this EMT running on.
+     * Only valid when in RC or HWACCMR0 with scheduling disabled. */
+    RTCPUID volatile        idHostCpu;
 
     /** Align the next bit on a 64-byte boundary.
      *
@@ -113,7 +116,7 @@ typedef struct VMCPU
      *          data could be lumped together at the end with a < 64 byte padding
      *          following it (to grow into and align the struct size).
      *   */
-    uint32_t                au32Alignment[HC_ARCH_BITS == 32 ? 8 : 4];
+    uint32_t                au32Alignment[HC_ARCH_BITS == 32 ? 7 : 3];
 
     /** CPUM part. */
     union
