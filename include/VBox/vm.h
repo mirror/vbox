@@ -160,14 +160,13 @@ typedef struct VMCPU
         char                padding[64];        /* multiple of 64 */
     } tm;
 
-    /** VMM part.
-     * @todo Combine this with other tiny structures. */
+    /** VMM part. */
     union
     {
 #ifdef ___VMMInternal_h
         struct VMMCPU       s;
 #endif
-        char                padding[64];        /* multiple of 64 */
+        char                padding[256];       /* multiple of 64 */
     } vmm;
 
     /** DBGF part.

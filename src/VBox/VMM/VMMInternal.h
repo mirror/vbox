@@ -214,15 +214,6 @@ typedef struct VMM
     R0PTRTYPE(PFNVMMSWITCHERHC) pfnHostToGuestR0;
     /** @}  */
 
-    /** VMM stack, pointer to the top of the stack in R3.
-     * Stack is allocated from the hypervisor heap and is page aligned
-     * and always writable in RC. */
-    R3PTRTYPE(uint8_t *)        pbEMTStackR3;
-    /** Pointer to the bottom of the stack - needed for doing relocations. */
-    RCPTRTYPE(uint8_t *)        pbEMTStackRC;
-    /** Pointer to the bottom of the stack - needed for doing relocations. */
-    RCPTRTYPE(uint8_t *)        pbEMTStackBottomRC;
-
     /** @name Logging
      * @{
      */
@@ -261,19 +252,6 @@ typedef struct VMM
 #endif
     /** The timestamp of the previous yield. (nano) */
     uint64_t                    u64LastYield;
-
-    /** @name CallHost
-     * @todo SMP: per vCPU
-     * @{ */
-    /** The pending operation. */
-    VMMCALLHOST                 enmCallHostOperation;
-    /** The result of the last operation. */
-    int32_t                     rcCallHost;
-    /** The argument to the operation. */
-    uint64_t                    u64CallHostArg;
-    /** The Ring-0 jmp buffer. */
-    VMMR0JMPBUF                 CallHostR0JmpBuf;
-    /** @} */
 
     /** Buffer for storing the standard assertion message for a ring-0 assertion.
      * Used for saving the assertion message text for the release log and guru
@@ -352,6 +330,28 @@ typedef struct VMMCPU
     /** Offset to the VMCPU structure.
      * See VMM2VMCPU(). */
     RTINT                       offVMCPU;
+
+    /** VMM stack, pointer to the top of the stack in R3.
+     * Stack is allocated from the hypervisor heap and is page aligned
+     * and always writable in RC. */
+    R3PTRTYPE(uint8_t *)        pbEMTStackR3;
+    /** Pointer to the bottom of the stack - needed for doing relocations. */
+    RCPTRTYPE(uint8_t *)        pbEMTStackRC;
+    /** Pointer to the bottom of the stack - needed for doing relocations. */
+    RCPTRTYPE(uint8_t *)        pbEMTStackBottomRC;
+
+    /** @name CallHost
+     * @{ */
+    /** The pending operation. */
+    VMMCALLHOST                 enmCallHostOperation;
+    /** The result of the last operation. */
+    int32_t                     rcCallHost;
+    /** The argument to the operation. */
+    uint64_t                    u64CallHostArg;
+    /** The Ring-0 jmp buffer. */
+    VMMR0JMPBUF                 CallHostR0JmpBuf;
+    /** @} */
+
 } VMMCPU;
 /** Pointer to VMMCPU. */
 typedef VMMCPU *PVMMCPU;

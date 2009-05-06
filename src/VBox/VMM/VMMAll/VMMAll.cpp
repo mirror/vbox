@@ -27,6 +27,7 @@
 #include <VBox/vmm.h>
 #include "VMMInternal.h"
 #include <VBox/vm.h>
+#include <VBox/vmm.h>
 #include <VBox/param.h>
 #include <VBox/hwaccm.h>
 
@@ -42,7 +43,10 @@
  */
 VMMDECL(RTRCPTR) VMMGetStackRC(PVM pVM)
 {
-    return (RTRCPTR)pVM->vmm.s.pbEMTStackBottomRC;
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    Assert(pVCpu);
+
+    return (RTRCPTR)pVCpu->vmm.s.pbEMTStackBottomRC;
 }
 
 

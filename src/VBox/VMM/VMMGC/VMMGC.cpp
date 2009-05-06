@@ -243,12 +243,14 @@ VMMRCDECL(void) VMMGCGuestToHost(PVM pVM, int rc)
  */
 VMMRCDECL(int) VMMGCCallHost(PVM pVM, VMMCALLHOST enmOperation, uint64_t uArg)
 {
+    PVMCPU pVCpu = VMMGetCpu0(pVM);
+
 /** @todo profile this! */
-    pVM->vmm.s.enmCallHostOperation = enmOperation;
-    pVM->vmm.s.u64CallHostArg = uArg;
-    pVM->vmm.s.rcCallHost = VERR_INTERNAL_ERROR;
+    pVCpu->vmm.s.enmCallHostOperation = enmOperation;
+    pVCpu->vmm.s.u64CallHostArg = uArg;
+    pVCpu->vmm.s.rcCallHost = VERR_INTERNAL_ERROR;
     pVM->vmm.s.pfnGuestToHostRC(VINF_VMM_CALL_HOST);
-    return pVM->vmm.s.rcCallHost;
+    return pVCpu->vmm.s.rcCallHost;
 }
 
 
