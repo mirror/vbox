@@ -1271,6 +1271,11 @@ static DECLCALLBACK(int) vmR3Resume(PVM pVM)
 {
     LogFlow(("vmR3Resume: pVM=%p\n", pVM));
 
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    /* Only VCPU 0 does the actual work (*before* the others wake up). */
+    if (pVCpu->idCpu != 0)
+        return VINF_EM_RESUME;
+
     /*
      * Validate input.
      */
@@ -1279,11 +1284,6 @@ static DECLCALLBACK(int) vmR3Resume(PVM pVM)
         AssertMsgFailed(("Invalid VM state %d\n", pVM->enmVMState));
         return VERR_VM_INVALID_VM_STATE;
     }
-
-    PVMCPU pVCpu = VMMGetCpu(pVM);
-    /* Only VCPU 0 does the actual work (*before* the others wake up). */
-    if (pVCpu->idCpu != 0)
-        return VINF_EM_RESUME;
 
     /*
      * Change the state, notify the components and resume the execution.
