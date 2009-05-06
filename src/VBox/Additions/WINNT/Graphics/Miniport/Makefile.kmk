@@ -58,6 +58,7 @@ VBoxVideo_SOURCES     += \
 	VBoxVideoHGSMI.cpp
 VBoxVideo_LIBS         += \
 	$(VBOX_PATH_ADDITIONS_LIB)/HGSMIGuestR0Lib$(VBOX_SUFF_LIB)
+VBoxVideo_DEFS += VBOX_WITH_HGSMI
 endif
 
 include	$(KBUILD_PATH)/subfooter.kmk

@@ -54,7 +54,7 @@ BOOL vboxVbvaEnable (PPDEV ppdev)
     ULONG ulEnable = TRUE;
 
     DISPDBG((1, "VBoxDisp::vboxVbvaEnable called\n"));
-    
+
     if (!ghsemHwBuffer)
     {
         return FALSE;
@@ -387,11 +387,11 @@ BOOL vboxVbvaEnable (PPDEV ppdev)
     BOOL bRc = FALSE;
 
     DISPDBG((1, "VBoxDisp::vboxVbvaEnable called\n"));
-    
+
     if (ppdev->bHGSMISupported)
     {
         VBVABUFFER *pVBVA = (VBVABUFFER *)((uint8_t *)ppdev->pjScreen + ppdev->layout.offVBVABuffer);
-        
+
         pVBVA->u32HostEvents      = 0;
         pVBVA->u32SupportedOrders = 0;
         pVBVA->off32Data          = 0;
@@ -405,7 +405,7 @@ BOOL vboxVbvaEnable (PPDEV ppdev)
         ppdev->fHwBufferOverflow = FALSE;
         ppdev->pRecord           = NULL;
         ppdev->pVBVA             = pVBVA;
-        
+
         bRc = vboxVBVAInformHost (ppdev, TRUE);
     }
 
@@ -688,4 +688,33 @@ void VBoxProcessDisplayInfo (PPDEV ppdev)
 
     return;
 }
+
+# ifdef VBOX_WITH_VIDEOHWACCEL
+
+VBVAVHWACMD_HDR* vboxVHWACreateCommand (PPDEV ppdev, VBVAVHWACMD_LENGTH cbCmd)
+{
+    VBVAVHWACMD_HDR* pHdr = (VBVAVHWACMD_HDR*)HGSMIHeapAlloc (&ppdev->hgsmiDisplayHeap,
+                              cbCmd,
+                              HGSMI_CH_VBVA,
+                              VBVA_VHWA_CMD);
+    if (!pHdr)
+    {
+        DISPDBG((0, "VBoxDISP::vboxVHWACreateCommand: HGSMIHeapAlloc failed\n"));
+    }
+
+    return pHdr;
+}
+
+void vboxVHWAFreeCommand (PPDEV ppdev, VBVAVHWACMD_HDR* pCmd)
+{
+    HGSMIHeapFree (&ppdev->hgsmiDisplayHeap, pCmd);
+}
+
+void vboxVHWASubmitCommand (PPDEV ppdev, VBVAVHWACMD_HDR* pCmd)
+{
+    vboxHGSMIBufferSubmit (ppdev, pCmd);
+}
+
+# endif
+
 #endif /* VBOX_WITH_HGSMI */

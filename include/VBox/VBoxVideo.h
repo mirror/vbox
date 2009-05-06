@@ -287,6 +287,80 @@ typedef struct _VBVABUFFER
 #define VBVA_INFO_SCREEN  6
 #define VBVA_ENABLE       7
 #define VBVA_MOUSE_POINTER_SHAPE 8
+#ifdef VBOX_WITH_VIDEOHWACCEL
+# define VBVA_INFO_VHWA   9
+# define VBVA_VHWA_CMD    10
+
+typedef enum
+{
+    VBVAVHWACMD_TYPE_SURF_CREATE = 1,
+    VBVAVHWACMD_TYPE_SURF_DESTROY
+} VBVAVHWACMD_TYPE;
+
+typedef struct _VBVAVHWACMD_HDR
+{
+    VBVAVHWACMD_TYPE enmCmd;
+    char body[1];
+} VBVAVHWACMD_HDR;
+
+#define VBVAVHWACMD_SIZE(_tCmd) (RT_OFFSETOF(VBVAVHWACMD_HDR, body) + sizeof(_tCmd))
+typedef unsigned int VBVAVHWACMD_LENGTH;
+typedef uint64_t VBVAVHWA_SURFHANDLE;
+#define VBVAVHWA_SURFHANDLE_INVALID 0
+#define VBVAVHWACMD_BODY(_p, _t) ((_t*)(_p)->body)
+
+typedef struct _VBVAVHWA_RECTL
+{
+    int16_t x;
+    int16_t y;
+    uint16_t w;
+    uint16_t h;
+} VBVAVHWA_RECTL;
+
+#define VBVAVHWASURF_PRIMARY      0x00000001
+#define VBVAVHWASURF_OVERLAY      0x00000002
+
+typedef struct _VBVAVHWA_SURFINFO
+{
+    uint32_t surfChars;
+    VBVAVHWA_RECTL rectl;
+} VBVAVHWA_SURFINFO;
+
+typedef struct _VBVAVHWACMD_SURF_CREATE
+{
+    union
+    {
+        struct
+        {
+            VBVAVHWA_SURFINFO SurfInfo;
+        } in;
+
+        struct
+        {
+            int rc;
+            VBVAVHWA_SURFHANDLE hSurf;
+        } out;
+    } u;
+} VBVAVHWACMD_SURF_CREATE;
+
+typedef struct _VBVAVHWACMD_SURF_DESTROY
+{
+    union
+    {
+        struct
+        {
+            VBVAVHWA_SURFHANDLE hSurf;
+        } in;
+
+        struct
+        {
+            int rc;
+        } out;
+    } u;
+} VBVAVHWACMD_SURF_DESTROY;
+
+#endif
+
 
 /* VBVACONF32::u32Index */
 #define VBOX_VBVA_CONF32_MONITOR_COUNT  0
@@ -377,7 +451,7 @@ typedef struct _VBVAMOUSEPOINTERSHAPE
 {
     /* The host result. */
     uint32_t u32Result;
-    
+
     /* VBOX_MOUSE_POINTER_* bit flags. */
     uint32_t fu32Flags;
 
