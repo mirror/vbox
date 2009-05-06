@@ -286,6 +286,7 @@ typedef struct _VBVABUFFER
 #define VBVA_FLUSH        5
 #define VBVA_INFO_SCREEN  6
 #define VBVA_ENABLE       7
+#define VBVA_MOUSE_POINTER_SHAPE 8
 
 /* VBVACONF32::u32Index */
 #define VBOX_VBVA_CONF32_MONITOR_COUNT  0
@@ -371,6 +372,55 @@ typedef struct _VBVAENABLE
     uint32_t u32Offset;
 
 } VBVAENABLE;
+
+typedef struct _VBVAMOUSEPOINTERSHAPE
+{
+    /* The host result. */
+    uint32_t u32Result;
+    
+    /* VBOX_MOUSE_POINTER_* bit flags. */
+    uint32_t fu32Flags;
+
+    /* X coordinate of the hot spot. */
+    uint32_t u32HotX;
+
+    /* Y coordinate of the hot spot. */
+    uint32_t u32HotY;
+
+    /* Width of the pointer in pixels. */
+    uint32_t u32Width;
+
+    /* Height of the pointer in scanlines. */
+    uint32_t u32Height;
+
+    /* Pointer data.
+     *
+     ****
+     * The data consists of 1 bpp AND mask followed by 32 bpp XOR (color) mask.
+     *
+     * For pointers without alpha channel the XOR mask pixels are 32 bit values: (lsb)BGR0(msb).
+     * For pointers with alpha channel the XOR mask consists of (lsb)BGRA(msb) 32 bit values.
+     *
+     * Guest driver must create the AND mask for pointers with alpha channel, so if host does not
+     * support alpha, the pointer could be displayed as a normal color pointer. The AND mask can
+     * be constructed from alpha values. For example alpha value >= 0xf0 means bit 0 in the AND mask.
+     *
+     * The AND mask is 1 bpp bitmap with byte aligned scanlines. Size of AND mask,
+     * therefore, is cbAnd = (width + 7) / 8 * height. The padding bits at the
+     * end of any scanline are undefined.
+     *
+     * The XOR mask follows the AND mask on the next 4 bytes aligned offset:
+     * uint8_t *pXor = pAnd + (cbAnd + 3) & ~3
+     * Bytes in the gap between the AND and the XOR mask are undefined.
+     * XOR mask scanlines have no gap between them and size of XOR mask is:
+     * cXor = width * 4 * height.
+     ****
+     *
+     * Preallocate 4 bytes for accessing actual data as p->au8Data.
+     */
+    uint8_t au8Data[4];
+
+} VBVAMOUSEPOINTERSHAPE;
 
 #pragma pack()
 
