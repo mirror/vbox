@@ -2106,6 +2106,8 @@ ResumeExecution:
 
     /** @todo check timers?? */
 
+    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
+
     /* TPR caching using CR8 is only available in 64 bits mode */
     /* Note the 32 bits exception for AMD (X86_CPUID_AMD_FEATURE_ECX_CR8L), but that appears missing in Intel CPUs */
     /* Note: we can't do this in LoadGuestState as PDMApicGetTPR can jump back to ring 3 (lock)!!!!! */
@@ -2220,6 +2222,7 @@ ResumeExecution:
     TMNotifyStartOfExecution(pVCpu);
     rc = pVCpu->hwaccm.s.vmx.pfnStartVM(pVCpu->hwaccm.s.fResumeVM, pCtx, &pVCpu->hwaccm.s.vmx.VMCSCache, pVM, pVCpu);
     TMNotifyEndOfExecution(pVCpu);
+    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
 
     AssertMsg(!pVCpu->hwaccm.s.vmx.VMCSCache.Write.cValidEntries, ("pVCpu->hwaccm.s.vmx.VMCSCache.Write.cValidEntries=%d\n", pVCpu->hwaccm.s.vmx.VMCSCache.Write.cValidEntries));
 
@@ -3513,6 +3516,9 @@ end:
         pVCpu->hwaccm.s.vmx.lasterror.idEnteredCpu   = pVCpu->hwaccm.s.idEnteredCpu;
         pVCpu->hwaccm.s.vmx.lasterror.idCurrentCpu   = RTMpCpuId();
     }
+
+    /* Just set the correct state here instead of trying to catch every goto above. */
+    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
 
     STAM_STATS({
         if (fStatExit2Started)      STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2, y);
