@@ -3595,11 +3595,8 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
         /*
          * Start the virtual time.
          */
-        if (pVCpu->idCpu == 0)
-        {
-            rc = TMVirtualResume(pVM);
-            Assert(rc == VINF_SUCCESS);
-        }
+        rc = TMVirtualResume(pVM);
+        Assert(rc == VINF_SUCCESS);
         rc = TMCpuTickResume(pVCpu);
         Assert(rc == VINF_SUCCESS);
 
