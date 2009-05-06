@@ -3518,7 +3518,7 @@ end:
     }
 
     /* Just set the correct state here instead of trying to catch every goto above. */
-    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
+    VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED, VMCPUSTATE_STARTED_EXEC);
 
     STAM_STATS({
         if (fStatExit2Started)      STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2, y);
