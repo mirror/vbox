@@ -913,6 +913,8 @@ ResumeExecution:
         goto end;
     }
 
+    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
+
     /* When external interrupts are pending, we should exit the VM when IF is set. */
     /* Note! *After* VM_FF_INHIBIT_INTERRUPTS check!!! */
     rc = SVMR0CheckPendingInterrupt(pVM, pVCpu, pVMCB, pCtx);
@@ -1069,6 +1071,7 @@ ResumeExecution:
     TMNotifyStartOfExecution(pVCpu);
     pVCpu->hwaccm.s.svm.pfnVMRun(pVM->hwaccm.s.svm.pVMCBHostPhys, pVCpu->hwaccm.s.svm.pVMCBPhys, pCtx, pVM, pVCpu);
     TMNotifyEndOfExecution(pVCpu);
+    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
     STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatInGC, x);
 
     /*
@@ -2125,6 +2128,9 @@ end:
     /* translate into a less severe return code */
     if (rc == VERR_EM_INTERPRETER)
         rc = VINF_EM_RAW_EMULATE_INSTR;
+
+    /* Just set the correct state here instead of trying to catch every goto above. */
+    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
     return rc;
