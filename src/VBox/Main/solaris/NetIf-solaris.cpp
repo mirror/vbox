@@ -393,7 +393,7 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
 }
 #endif
 
-int NetIfGetConfigByName(IN_BSTR aName, NETIFINFO *pInfo)
+int NetIfGetConfigByName(PNETIFINFO pInfo)
 {
     return VERR_NOT_IMPLEMENTED;
 }

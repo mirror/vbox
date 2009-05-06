@@ -169,21 +169,30 @@ int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVBox, IHostNetworkInterfac
                     if (pLast >= szBuf && *pLast == '\n')
                         *pLast = 0;
 
-                    NETIFINFO Info;
-                    Bstr IfName(szBuf);
-                    rc = NetIfGetConfigByName(IfName, &Info);
-                    if (RT_FAILURE(rc))
-                    {
-                        progress->notifyComplete(E_FAIL, COM_IIDOF(IHostNetworkInterface), HostNetworkInterface::getComponentName(),
-                                                 "Failed to get config info for %s (as reported by '" VBOXNETADPCTL_NAME " add').\n", szBuf);
-                    }
+                    size_t cbNameLen = strlen(szBuf) + 1;
+                    PNETIFINFO pInfo = (PNETIFINFO)RTMemAllocZ(RT_OFFSETOF(NETIFINFO, szName[cbNameLen]));
+                    if (!pInfo)
+                        rc = VERR_NO_MEMORY;
                     else
                     {
-                        /* create a new uninitialized host interface object */
-                        ComObjPtr <HostNetworkInterface> iface;
-                        iface.createObject();
-                        iface->init(IfName, HostNetworkInterfaceType_HostOnly, &Info);
-                        iface.queryInterfaceTo (aHostNetworkInterface);
+                        strcpy(pInfo->szShortName, szBuf);
+                        strcpy(pInfo->szName, szBuf);
+                        rc = NetIfGetConfigByName(pInfo);
+                        if (RT_FAILURE(rc))
+                        {
+                            progress->notifyComplete(E_FAIL, COM_IIDOF(IHostNetworkInterface), HostNetworkInterface::getComponentName(),
+                                                     "Failed to get config info for %s (as reported by '" VBOXNETADPCTL_NAME " add').\n", szBuf);
+                        }
+                        else
+                        {
+                            Bstr IfName(szBuf);
+                            /* create a new uninitialized host interface object */
+                            ComObjPtr <HostNetworkInterface> iface;
+                            iface.createObject();
+                            iface->init(IfName, HostNetworkInterfaceType_HostOnly, pInfo);
+                            iface.queryInterfaceTo (aHostNetworkInterface);
+                        }
+                        RTMemFree(pInfo);
                     }
                 }
                 if ((rc = pclose(fp)) != 0)

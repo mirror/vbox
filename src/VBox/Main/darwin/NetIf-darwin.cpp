@@ -339,9 +339,100 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
     return rc;
 }
 
-int NetIfGetConfigByName(IN_BSTR aName, NETIFINFO *pInfo)
+int NetIfGetConfigByName(PNETIFINFO pInfo)
 {
-    return VERR_NOT_IMPLEMENTED;
+    int rc = VINF_SUCCESS;
+    size_t cbNeeded;
+    char *pBuf, *pNext;
+    int aiMib[6];
+    
+    aiMib[0] = CTL_NET;
+    aiMib[1] = PF_ROUTE;
+    aiMib[2] = 0;
+    aiMib[3] = 0;	/* address family */
+    aiMib[4] = NET_RT_IFLIST;
+    aiMib[5] = 0;
+
+    if (sysctl(aiMib, 6, NULL, &cbNeeded, NULL, 0) < 0)
+    {
+        Log(("NetIfList: Failed to get estimate for list size (errno=%d).\n", errno));
+        return RTErrConvertFromErrno(errno);
+    }
+    if ((pBuf = (char*)malloc(cbNeeded)) == NULL)
+        return VERR_NO_MEMORY;
+    if (sysctl(aiMib, 6, pBuf, &cbNeeded, NULL, 0) < 0)
+    {
+        free(pBuf);
+        Log(("NetIfList: Failed to retrieve interface table (errno=%d).\n", errno));
+        return RTErrConvertFromErrno(errno);
+    }
+
+    int sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
+    if (sock < 0)
+    {
+        free(pBuf);
+        Log(("NetIfList: socket() -> %d\n", errno));
+        return RTErrConvertFromErrno(errno);
+    }
+
+    char *pEnd = pBuf + cbNeeded;
+    for (pNext = pBuf; pNext < pEnd;)
+    {
+        struct if_msghdr *pIfMsg = (struct if_msghdr *)pNext;
+
+        if (pIfMsg->ifm_type != RTM_IFINFO)
+        {
+            Log(("NetIfList: Got message %u while expecting %u.\n",
+                 pIfMsg->ifm_type, RTM_IFINFO));
+            rc = VERR_INTERNAL_ERROR;
+            break;
+        }
+        struct sockaddr_dl *pSdl = (struct sockaddr_dl *)(pIfMsg + 1);
+
+        bool fSkip = !!strcmp(pInfo->szShortName, pSdl->sdl_data);
+
+        pNext += pIfMsg->ifm_msglen;
+        while (pNext < pEnd)
+        {
+            struct ifa_msghdr *pIfAddrMsg = (struct ifa_msghdr *)pNext;
+
+            if (pIfAddrMsg->ifam_type != RTM_NEWADDR)
+                break;
+            if (!fSkip)
+                extractAddresses(pIfAddrMsg->ifam_addrs, (char *)(pIfAddrMsg + 1), pIfAddrMsg->ifam_msglen + (char *)pIfAddrMsg, pInfo);
+            pNext += pIfAddrMsg->ifam_msglen;
+        }
+
+        if (!fSkip && pSdl->sdl_type == IFT_ETHER)
+        {
+            size_t cbNameLen = pSdl->sdl_nlen + 1;
+            memcpy(pInfo->MACAddress.au8, LLADDR(pSdl), sizeof(pInfo->MACAddress.au8));
+            pInfo->enmMediumType = NETIF_T_ETHERNET;
+            /* Generate UUID from name and MAC address. */
+            RTUUID uuid;
+            RTUuidClear(&uuid);
+            memcpy(&uuid, pInfo->szShortName, RT_MIN(cbNameLen, sizeof(uuid)));
+            uuid.Gen.u8ClockSeqHiAndReserved = (uuid.Gen.u8ClockSeqHiAndReserved & 0x3f) | 0x80;
+            uuid.Gen.u16TimeHiAndVersion = (uuid.Gen.u16TimeHiAndVersion & 0x0fff) | 0x4000;
+            memcpy(uuid.Gen.au8Node, pInfo->MACAddress.au8, sizeof(uuid.Gen.au8Node));
+            pInfo->Uuid = uuid;
+
+            struct ifreq IfReq;
+            strcpy(IfReq.ifr_name, pInfo->szShortName);
+            if (ioctl(sock, SIOCGIFFLAGS, &IfReq) < 0)
+            {
+                Log(("NetIfList: ioctl(SIOCGIFFLAGS) -> %d\n", errno));
+                pInfo->enmStatus = NETIF_S_UNKNOWN;
+            }
+            else
+                pInfo->enmStatus = (IfReq.ifr_flags & IFF_UP) ? NETIF_S_UP : NETIF_S_DOWN;
+
+            return VINF_SUCCESS;
+        }
+    }
+    close(sock);
+    free(pBuf);
+    return rc;
 }
 
 #endif

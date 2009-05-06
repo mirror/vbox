@@ -1040,7 +1040,7 @@ int NetIfGetConfig(HostNetworkInterface * pIf, NETIFINFO *pInfo)
 #endif
 }
 
-int NetIfGetConfigByName(IN_BSTR /* aName */, NETIFINFO *)
+int NetIfGetConfigByName(PNETIFINFO)
 {
     return VERR_NOT_IMPLEMENTED;
 }
