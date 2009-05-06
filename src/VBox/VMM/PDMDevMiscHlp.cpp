@@ -229,6 +229,18 @@ static DECLCALLBACK(VMCPUID) pdmR3ApicHlp_GetCpuId(PPDMDEVINS pDevIns)
     return VMMGetCpuId(pDevIns->Internal.s.pVMR3);
 }
 
+/** @copydoc PDMAPICHLPR3::pfnSendSipi */
+static DECLCALLBACK(void) pdmR3ApicHlp_SendSipi(PPDMDEVINS pDevIns, VMCPUID idCpu, int iVector)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    PVMCPU pCpu = VMMGetCpuById(pVM, idCpu);
+    CPUMSetGuestCS(pCpu, iVector * 0x100);
+    CPUMSetGuestEIP(pCpu, 0);
+    /** @todo: how do I unhalt VCPU? */
+}
 
 /** @copydoc PDMAPICHLPR3::pfnGetRCHelpers */
 static DECLCALLBACK(PCPDMAPICHLPRC) pdmR3ApicHlp_GetRCHelpers(PPDMDEVINS pDevIns)
@@ -272,6 +284,7 @@ const PDMAPICHLPR3 g_pdmR3DevApicHlp =
     pdmR3ApicHlp_Lock,
     pdmR3ApicHlp_Unlock,
     pdmR3ApicHlp_GetCpuId,
+    pdmR3ApicHlp_SendSipi,
     pdmR3ApicHlp_GetRCHelpers,
     pdmR3ApicHlp_GetR0Helpers,
     PDM_APICHLPR3_VERSION /* the end */
