@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
             if (iBreakEvery <= 0 && iBreakEvery != -1)
             {
                 fprintf(stderr, "%s: -break value '%s' is not >= 1 or -1.\n",
-                        argv[0], argv[i], (unsigned)sizeof(abLine));
+                        argv[0], argv[i]);
                 return 1;
             }
         }
