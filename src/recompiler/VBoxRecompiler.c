@@ -2193,6 +2193,7 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
     /*
      * We're now in REM mode.
      */
+    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_REM);
     pVM->rem.s.fInREM = true;
     pVM->rem.s.fInStateSync = false;
     pVM->rem.s.cCanExecuteRaw = 0;
@@ -2444,6 +2445,7 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
     /*
      * We're not longer in REM mode.
      */
+    VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED, VMCPUSTATE_STARTED_EXEC_REM);
     pVM->rem.s.fInREM    = false;
     pVM->rem.s.pCtx      = NULL;
     pVM->rem.s.Env.pVCpu = NULL;
