@@ -79,20 +79,24 @@ VMMDECL(VMCPUID) VMMGetCpuId(PVM pVM)
  *
  * @param   pVM         The VM to operate on.
  * @param   idCpu       Virtual CPU to perform SIPI on
- * @param   iVector     SIPI vector
+ * @param   uVector     SIPI vector
  */
-DECLCALLBACK(int) vmmR3SendSipi(PVM pVM, VMCPUID idCpu, int iVector)
+DECLCALLBACK(int) vmmR3SendSipi(PVM pVM, VMCPUID idCpu, uint32_t uVector)
 {
     PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
     VMCPU_ASSERT_EMT(pVCpu);
 
     /** @todo what are we supposed to do if the processor is already running? */
+    CPUMSetGuestCS(pVCpu, uVector * 0x100);
+    CPUMSetGuestEIP(pVCpu, 0);
+
+# if 1 /* If we keep the EMSTATE_WAIT_SIPI method, then move this to EM.cpp. */
+    return VINF_EM_RESCHEDULE;
+# else /* And if we go the VMCPU::enmState way it can stay here. */
     VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STOPPED);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
-
-    CPUMSetGuestCS(pVCpu, iVector * 0x100);
-    CPUMSetGuestEIP(pVCpu, 0);
     return VINF_SUCCESS;
+# endif
 }
 #endif /* IN_RING3 */
 
@@ -112,7 +116,7 @@ VMMDECL(void) VMMSendSipi(PVM pVM, VMCPUID idCpu, int iVector) /** @todo why is 
 #ifdef IN_RING3
     PVMREQ pReq;
     int rc = VMR3ReqCallU(pVM->pUVM, idCpu, &pReq, RT_INDEFINITE_WAIT, 0,
-                          (PFNRT)vmmR3SendSipi, 3, pVM, idCpu, iVector);
+                          (PFNRT)vmmR3SendSipi, 3, pVM, idCpu, (uint32_t)iVector);
     AssertRC(rc);
     VMR3ReqFree(pReq);
 #else
