@@ -241,6 +241,9 @@ BOOLEAN VBoxHGSMIIsSupported (void);
 VOID VBoxSetupDisplaysHGSMI (PDEVICE_EXTENSION PrimaryExtension,
                              PVIDEO_PORT_CONFIG_INFO pConfigInfo,
                              ULONG AdapterMemorySize);
+BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION PrimaryExtension,
+                                PVIDEO_POINTER_ATTRIBUTES pointerAttr,
+                                uint32_t cbLength);
 #endif /* VBOX_WITH_HGSMI */
 } /* extern "C" */
 

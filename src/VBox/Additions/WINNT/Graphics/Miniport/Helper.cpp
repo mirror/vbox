@@ -284,6 +284,7 @@ winVersion_t vboxQueryWinVersion()
     return winVersion;
 }
 
+#ifndef VBOX_WITH_HGSMI
 /**
  * Sends the pointer shape to the VMMDev
  *
@@ -358,3 +359,4 @@ BOOLEAN vboxUpdatePointerShape(PVIDEO_POINTER_ATTRIBUTES pointerAttr, uint32_t c
 
     return bRC;
 }
+#endif /* VBOX_WITH_HGSMI */

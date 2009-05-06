@@ -434,8 +434,8 @@ BOOL vboxHwBufferBeginUpdate (PPDEV ppdev)
 {
     BOOL bRc = FALSE;
 
-    DISPDBG((1, "VBoxDisp::vboxHwBufferBeginUpdate called flags = 0x%08X\n",
-             ppdev->pVBVA? ppdev->pVBVA->u32HostEvents: -1));
+    // DISPDBG((1, "VBoxDisp::vboxHwBufferBeginUpdate called flags = 0x%08X\n",
+    //          ppdev->pVBVA? ppdev->pVBVA->u32HostEvents: -1));
 
     if (   ppdev->pVBVA
         && (ppdev->pVBVA->u32HostEvents & VBVA_F_MODE_ENABLED))
@@ -468,7 +468,7 @@ BOOL vboxHwBufferBeginUpdate (PPDEV ppdev)
 
             ppdev->pVBVA->indexRecordFree = indexRecordNext;
 
-            DISPDBG((1, "VBoxDisp::vboxHwBufferBeginUpdate indexRecordNext = %d\n", indexRecordNext));
+            // DISPDBG((1, "VBoxDisp::vboxHwBufferBeginUpdate indexRecordNext = %d\n", indexRecordNext));
 
             /* Remember which record we are using. */
             ppdev->pRecord = pRecord;
@@ -484,7 +484,7 @@ void vboxHwBufferEndUpdate (PPDEV ppdev)
 {
     VBVARECORD *pRecord;
 
-    DISPDBG((1, "VBoxDisp::vboxHwBufferEndUpdate called\n"));
+    // DISPDBG((1, "VBoxDisp::vboxHwBufferEndUpdate called\n"));
 
     VBVA_ASSERT(ppdev->pVBVA);
 
@@ -585,8 +585,8 @@ static BOOL vboxHwBufferWrite (PPDEV ppdev, const void *p, uint32_t cb)
     {
         uint32_t cbChunk = cb;
 
-        DISPDBG((1, "VBoxDisp::vboxHwBufferWrite pVBVA->off32Free %d, pRecord->cbRecord 0x%08X, cbHwBufferAvail %d, cb %d, cbWritten %d\n",
-                    pVBVA->off32Free, pRecord->cbRecord, cbHwBufferAvail, cb, cbWritten));
+        // DISPDBG((1, "VBoxDisp::vboxHwBufferWrite pVBVA->off32Free %d, pRecord->cbRecord 0x%08X, cbHwBufferAvail %d, cb %d, cbWritten %d\n",
+        //             pVBVA->off32Free, pRecord->cbRecord, cbHwBufferAvail, cb, cbWritten));
 
         if (cbChunk >= cbHwBufferAvail)
         {
