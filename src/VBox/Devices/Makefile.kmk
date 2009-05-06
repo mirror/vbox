@@ -37,7 +37,7 @@ ifndef VBOX_OSE
  include $(PATH_SUB_CURRENT)/Storage/VBoxHDDFormats/Makefile.kmk
 endif
 ifdef VBOX_WITH_EFI
- include $(PATH_SUB_CURRENT)/EFI/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/EFI/Thunk/Makefile.kmk
 endif
 ifdef VBOX_WITH_INTEL_PXE
  include $(PATH_SUB_CURRENT)/PC/PXE/Makefile.kmk
@@ -197,7 +197,7 @@ ifdef VBOX_WITH_NETFLT
 endif
 
 ifdef VBOX_WITH_EFI
- VBoxDD_LIBS          += $(PATH_LIB)/EfiThunk$(VBOX_SUFF_LIB)
+ VBoxDD_LIBS          += $(PATH_LIB)/EfiThunkBin$(VBOX_SUFF_LIB)
 endif
 
 ifeq ($(KBUILD_TARGET),solaris)
