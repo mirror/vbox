@@ -44,10 +44,6 @@ __BEGIN_DECLS
 /** The saved state version. */
 #define EM_SAVED_STATE_VERSION                      2
 
-/** Enable for tracing in raw mode.
- * @remark SvL: debugging help primarily for myself. */
-#define DEBUG_TRACING_ENABLED
-
 /**
  * Cli node structure
  */
@@ -313,21 +309,19 @@ typedef struct EMCPU
 
     /** Execution Manager State. */
     EMSTATE volatile        enmState;
+
+    /** Previous Execution Manager State. */
+    EMSTATE                 enmPrevState;
+
     /** Force raw-mode execution.
      * This is used to prevent REM from trying to execute patch code.
      * The flag is cleared upon entering emR3RawExecute() and updated in certain return paths. */
     bool                    fForceRAW;
 
-#ifdef DEBUG_TRACING_ENABLED
-    /** @see DEBUG_TRACING_ENABLED */
-    bool                    fTracing;
-#endif
-
-    uint8_t                 u8Padding[GC_ARCH_BITS == 64 ? 6 : 2];
+    uint8_t                 u8Padding[3];
 
     /** Inhibit interrupts for this instruction. Valid only when VM_FF_INHIBIT_INTERRUPTS is set. */
     RTGCUINTPTR             GCPtrInhibitInterrupts;
-
 
     /** Pointer to the PATM status structure. (R3 Ptr) */
     R3PTRTYPE(PPATMGCSTATE) pPatmGCState;
