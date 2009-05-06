@@ -198,10 +198,7 @@ typedef struct VMM
     bool                        fSwitcherDisabled;
     /** Array of offsets to the different switchers within the core code. */
     RTUINT                      aoffSwitchers[VMMSWITCHER_MAX];
-    uint32_t                    u32Padding0; /**< Alignment padding. */
 
-    /** The last RC/R0 return code. */
-    RTINT                       iLastGZRc;
     /** Resume Guest Execution. See CPUMGCResumeGuest(). */
     RTRCPTR                     pfnCPUMRCResumeGuest;
     /** Resume Guest Execution in V86 mode. See CPUMGCResumeGuestV86(). */
@@ -327,7 +324,9 @@ typedef struct VMMCPU
     /** Offset to the VMCPU structure.
      * See VMM2VMCPU(). */
     RTINT                       offVMCPU;
-    RTINT                       offDummy;
+
+    /** The last RC/R0 return code. */
+    int32_t                     iLastGZRc;
 
     /** VMM stack, pointer to the top of the stack in R3.
      * Stack is allocated from the hypervisor heap and is page aligned

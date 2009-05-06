@@ -871,7 +871,7 @@ int main()
     GEN_CHECK_OFF(VMM, pfnCallTrampolineRC);
     GEN_CHECK_OFF(VMM, pfnCPUMRCResumeGuest);
     GEN_CHECK_OFF(VMM, pfnCPUMRCResumeGuestV86);
-    GEN_CHECK_OFF(VMM, iLastGZRc);
+    GEN_CHECK_OFF(VMMCPU, iLastGZRc);
     GEN_CHECK_OFF(VMMCPU, pbEMTStackR3);
     GEN_CHECK_OFF(VMMCPU, pbEMTStackRC);
     GEN_CHECK_OFF(VMMCPU, pbEMTStackBottomRC);

@@ -532,10 +532,7 @@ VMMR0DECL(int) VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg)
 VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation)
 {
     if (RT_UNLIKELY(idCpu >= pVM->cCPUs))
-    {
-        pVM->vmm.s.iLastGZRc = VERR_INVALID_PARAMETER;
         return;
-    }
     PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
     switch (enmOperation)
@@ -555,14 +552,14 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
 
                 if (RT_UNLIKELY(pVM->cCPUs > 1))
                 {
-                    pVM->vmm.s.iLastGZRc = VERR_RAW_MODE_INVALID_SMP;
+                    pVCpu->vmm.s.iLastGZRc = VERR_RAW_MODE_INVALID_SMP;
                     return;
                 }
 
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
                 if (RT_UNLIKELY(!PGMGetHyperCR3(pVCpu)))
                 {
-                    pVM->vmm.s.iLastGZRc = VERR_PGM_NO_CR3_SHADOW_ROOT;
+                    pVCpu->vmm.s.iLastGZRc = VERR_PGM_NO_CR3_SHADOW_ROOT;
                     return;
                 }
 #endif
@@ -571,7 +568,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                 rc = HWACCMR0EnterSwitcher(pVM, &fVTxDisabled);
                 if (RT_FAILURE(rc))
                 {
-                    pVM->vmm.s.iLastGZRc = rc;
+                    pVCpu->vmm.s.iLastGZRc = rc;
                     return;
                 }
 
@@ -580,7 +577,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
 
                 TMNotifyStartOfExecution(pVCpu);
                 rc = pVM->vmm.s.pfnHostToGuestR0(pVM);
-                pVM->vmm.s.iLastGZRc = rc;
+                pVCpu->vmm.s.iLastGZRc = rc;
                 TMNotifyEndOfExecution(pVCpu);
 
                 VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
@@ -603,7 +600,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
             else
             {
                 Assert(!pVM->vmm.s.fSwitcherDisabled);
-                pVM->vmm.s.iLastGZRc = VERR_NOT_SUPPORTED;
+                pVCpu->vmm.s.iLastGZRc = VERR_NOT_SUPPORTED;
             }
             break;
         }
@@ -641,7 +638,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                 /* System is about to go into suspend mode; go back to ring 3. */
                 rc = VINF_EM_RAW_INTERRUPT;
             }
-            pVM->vmm.s.iLastGZRc = rc;
+            pVCpu->vmm.s.iLastGZRc = rc;
 
             ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
 #ifndef RT_OS_WINDOWS /** @todo check other hosts */
@@ -659,7 +656,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
          * For profiling.
          */
         case VMMR0_DO_NOP:
-            pVM->vmm.s.iLastGZRc = VINF_SUCCESS;
+            pVCpu->vmm.s.iLastGZRc = VINF_SUCCESS;
             break;
 
         /*
@@ -667,7 +664,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
          */
         default:
             AssertMsgFailed(("%#x\n", enmOperation));
-            pVM->vmm.s.iLastGZRc = VERR_NOT_SUPPORTED;
+            pVCpu->vmm.s.iLastGZRc = VERR_NOT_SUPPORTED;
             break;
     }
 }
