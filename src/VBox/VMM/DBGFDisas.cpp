@@ -108,12 +108,12 @@ static int dbgfR3DisasInstrFirst(PVM pVM, PVMCPU pVCpu, PDBGFSELINFO pSelInfo, P
     pState->pVM             = pVM;
     pState->pVCpu           = pVCpu;
     pState->fLocked         = false;
-    pState->f64Bits         = enmMode >= PGMMODE_AMD64 && pSelInfo->Raw.Gen.u1Long;
+    pState->f64Bits         = enmMode >= PGMMODE_AMD64 && pSelInfo->u.Raw.Gen.u1Long;
     uint32_t cbInstr;
     int rc = DISCoreOneEx(GCPtr,
                           pState->f64Bits
                           ? CPUMODE_64BIT
-                          : pSelInfo->Raw.Gen.u1DefBig
+                          : pSelInfo->u.Raw.Gen.u1DefBig
                           ? CPUMODE_32BIT
                           : CPUMODE_16BIT,
                           dbgfR3DisasInstrRead,
@@ -343,84 +343,84 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, unsi
     if (    pHiddenSel
         &&  CPUMAreHiddenSelRegsValid(pVM))
     {
-        SelInfo.Sel                 = Sel;
-        SelInfo.SelGate             = 0;
-        SelInfo.GCPtrBase           = pHiddenSel->u64Base;
-        SelInfo.cbLimit             = pHiddenSel->u32Limit;
-        SelInfo.fFlags              = PGMMODE_IS_LONG_MODE(enmMode)
-                                    ? DBGFSELINFO_FLAGS_LONG_MODE
-                                    : enmMode != PGMMODE_REAL && (!pCtxCore || !pCtxCore->eflags.Bits.u1VM)
-                                    ? DBGFSELINFO_FLAGS_PROT_MODE
-                                    : DBGFSELINFO_FLAGS_REAL_MODE;
+        SelInfo.Sel                     = Sel;
+        SelInfo.SelGate                 = 0;
+        SelInfo.GCPtrBase               = pHiddenSel->u64Base;
+        SelInfo.cbLimit                 = pHiddenSel->u32Limit;
+        SelInfo.fFlags                  = PGMMODE_IS_LONG_MODE(enmMode)
+                                        ? DBGFSELINFO_FLAGS_LONG_MODE
+                                        : enmMode != PGMMODE_REAL && (!pCtxCore || !pCtxCore->eflags.Bits.u1VM)
+                                        ? DBGFSELINFO_FLAGS_PROT_MODE
+                                        : DBGFSELINFO_FLAGS_REAL_MODE;
 
-        SelInfo.Raw.au32[0]         = 0;
-        SelInfo.Raw.au32[1]         = 0;
-        SelInfo.Raw.Gen.u16LimitLow = 0xffff;
-        SelInfo.Raw.Gen.u4LimitHigh = 0xf;
-        SelInfo.Raw.Gen.u1Present   = pHiddenSel->Attr.n.u1Present;
-        SelInfo.Raw.Gen.u1Granularity = pHiddenSel->Attr.n.u1Granularity;;
-        SelInfo.Raw.Gen.u1DefBig    = pHiddenSel->Attr.n.u1DefBig;
-        SelInfo.Raw.Gen.u1Long      = pHiddenSel->Attr.n.u1Long;
-        SelInfo.Raw.Gen.u1DescType  = pHiddenSel->Attr.n.u1DescType;
-        SelInfo.Raw.Gen.u4Type      = pHiddenSel->Attr.n.u4Type;
-        fRealModeAddress            = !!(SelInfo.fFlags & DBGFSELINFO_FLAGS_REAL_MODE);
+        SelInfo.u.Raw.au32[0]           = 0;
+        SelInfo.u.Raw.au32[1]           =  0;
+        SelInfo.u.Raw.Gen.u16LimitLow   = 0xffff;
+        SelInfo.u.Raw.Gen.u4LimitHigh   = 0xf;
+        SelInfo.u.Raw.Gen.u1Present     = pHiddenSel->Attr.n.u1Present;
+        SelInfo.u.Raw.Gen.u1Granularity = pHiddenSel->Attr.n.u1Granularity;;
+        SelInfo.u.Raw.Gen.u1DefBig      = pHiddenSel->Attr.n.u1DefBig;
+        SelInfo.u.Raw.Gen.u1Long        = pHiddenSel->Attr.n.u1Long;
+        SelInfo.u.Raw.Gen.u1DescType    = pHiddenSel->Attr.n.u1DescType;
+        SelInfo.u.Raw.Gen.u4Type        = pHiddenSel->Attr.n.u4Type;
+        fRealModeAddress                = !!(SelInfo.fFlags & DBGFSELINFO_FLAGS_REAL_MODE);
     }
     else if (Sel == DBGF_SEL_FLAT)
     {
-        SelInfo.Sel                 = Sel;
-        SelInfo.SelGate             = 0;
-        SelInfo.GCPtrBase           = 0;
-        SelInfo.cbLimit             = ~0;
-        SelInfo.fFlags              = PGMMODE_IS_LONG_MODE(enmMode)
-                                    ? DBGFSELINFO_FLAGS_LONG_MODE
-                                    : enmMode != PGMMODE_REAL
-                                    ? DBGFSELINFO_FLAGS_PROT_MODE
-                                    : DBGFSELINFO_FLAGS_REAL_MODE;
-        SelInfo.Raw.au32[0]         = 0;
-        SelInfo.Raw.au32[1]         = 0;
-        SelInfo.Raw.Gen.u16LimitLow = 0xffff;
-        SelInfo.Raw.Gen.u4LimitHigh = 0xf;
+        SelInfo.Sel                     = Sel;
+        SelInfo.SelGate                 = 0;
+        SelInfo.GCPtrBase               = 0;
+        SelInfo.cbLimit                 = ~0;
+        SelInfo.fFlags                  = PGMMODE_IS_LONG_MODE(enmMode)
+                                        ? DBGFSELINFO_FLAGS_LONG_MODE
+                                        : enmMode != PGMMODE_REAL
+                                        ? DBGFSELINFO_FLAGS_PROT_MODE
+                                        : DBGFSELINFO_FLAGS_REAL_MODE;
+        SelInfo.u.Raw.au32[0]           = 0;
+        SelInfo.u.Raw.au32[1]           = 0;
+        SelInfo.u.Raw.Gen.u16LimitLow   = 0xffff;
+        SelInfo.u.Raw.Gen.u4LimitHigh   = 0xf;
 
         if (CPUMAreHiddenSelRegsValid(pVM))
         {   /* Assume the current CS defines the execution mode. */
             pCtxCore   = CPUMGetGuestCtxCore(pVCpu);
             pHiddenSel = (CPUMSELREGHID *)&pCtxCore->csHid;
 
-            SelInfo.Raw.Gen.u1Present       = pHiddenSel->Attr.n.u1Present;
-            SelInfo.Raw.Gen.u1Granularity   = pHiddenSel->Attr.n.u1Granularity;;
-            SelInfo.Raw.Gen.u1DefBig        = pHiddenSel->Attr.n.u1DefBig;
-            SelInfo.Raw.Gen.u1Long          = pHiddenSel->Attr.n.u1Long;
-            SelInfo.Raw.Gen.u1DescType      = pHiddenSel->Attr.n.u1DescType;
-            SelInfo.Raw.Gen.u4Type          = pHiddenSel->Attr.n.u4Type;
+            SelInfo.u.Raw.Gen.u1Present     = pHiddenSel->Attr.n.u1Present;
+            SelInfo.u.Raw.Gen.u1Granularity = pHiddenSel->Attr.n.u1Granularity;;
+            SelInfo.u.Raw.Gen.u1DefBig      = pHiddenSel->Attr.n.u1DefBig;
+            SelInfo.u.Raw.Gen.u1Long        = pHiddenSel->Attr.n.u1Long;
+            SelInfo.u.Raw.Gen.u1DescType    = pHiddenSel->Attr.n.u1DescType;
+            SelInfo.u.Raw.Gen.u4Type        = pHiddenSel->Attr.n.u4Type;
         }
         else
         {
-            SelInfo.Raw.Gen.u1Present   = 1;
-            SelInfo.Raw.Gen.u1Granularity = 1;
-            SelInfo.Raw.Gen.u1DefBig    = 1;
-            SelInfo.Raw.Gen.u1DescType  = 1;
-            SelInfo.Raw.Gen.u4Type      = X86_SEL_TYPE_EO;
+            SelInfo.u.Raw.Gen.u1Present     = 1;
+            SelInfo.u.Raw.Gen.u1Granularity = 1;
+            SelInfo.u.Raw.Gen.u1DefBig      = 1;
+            SelInfo.u.Raw.Gen.u1DescType    = 1;
+            SelInfo.u.Raw.Gen.u4Type        = X86_SEL_TYPE_EO;
         }
     }
     else if (   !(fFlags & DBGF_DISAS_FLAGS_CURRENT_HYPER)
              && (   (pCtxCore && pCtxCore->eflags.Bits.u1VM)
                  || enmMode == PGMMODE_REAL) )
     {   /* V86 mode or real mode - real mode addressing */
-        SelInfo.Sel                 = Sel;
-        SelInfo.SelGate             = 0;
-        SelInfo.GCPtrBase           = Sel * 16;
-        SelInfo.cbLimit             = ~0;
-        SelInfo.fFlags              = DBGFSELINFO_FLAGS_REAL_MODE;
-        SelInfo.Raw.au32[0]         = 0;
-        SelInfo.Raw.au32[1]         = 0;
-        SelInfo.Raw.Gen.u16LimitLow = 0xffff;
-        SelInfo.Raw.Gen.u4LimitHigh = 0xf;
-        SelInfo.Raw.Gen.u1Present   = 1;
-        SelInfo.Raw.Gen.u1Granularity = 1;
-        SelInfo.Raw.Gen.u1DefBig    = 0; /* 16 bits */
-        SelInfo.Raw.Gen.u1DescType  = 1;
-        SelInfo.Raw.Gen.u4Type      = X86_SEL_TYPE_EO;
-        fRealModeAddress            = true;
+        SelInfo.Sel                     = Sel;
+        SelInfo.SelGate                 = 0;
+        SelInfo.GCPtrBase               = Sel * 16;
+        SelInfo.cbLimit                 = ~0;
+        SelInfo.fFlags                  = DBGFSELINFO_FLAGS_REAL_MODE;
+        SelInfo.u.Raw.au32[0]           = 0;
+        SelInfo.u.Raw.au32[1]           = 0;
+        SelInfo.u.Raw.Gen.u16LimitLow   = 0xffff;
+        SelInfo.u.Raw.Gen.u4LimitHigh   = 0xf;
+        SelInfo.u.Raw.Gen.u1Present     = 1;
+        SelInfo.u.Raw.Gen.u1Granularity = 1;
+        SelInfo.u.Raw.Gen.u1DefBig      = 0; /* 16 bits */
+        SelInfo.u.Raw.Gen.u1DescType    = 1;
+        SelInfo.u.Raw.Gen.u4Type        = X86_SEL_TYPE_EO;
+        fRealModeAddress                = true;
     }
     else
     {

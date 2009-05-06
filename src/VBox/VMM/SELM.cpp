@@ -2049,9 +2049,9 @@ static int selmR3GetSelectorInfo64(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PDBGFSELINF
      * Extract the base and limit
      * (We ignore the present bit here, which is probably a bit silly...)
      */
-    pSelInfo->Sel    = Sel;
-    pSelInfo->fFlags = DBGFSELINFO_FLAGS_LONG_MODE;
-    pSelInfo->Raw64  = Desc;
+    pSelInfo->Sel     = Sel;
+    pSelInfo->fFlags  = DBGFSELINFO_FLAGS_LONG_MODE;
+    pSelInfo->u.Raw64 = Desc;
     if (Desc.Gen.u1DescType)
     {
         if (    Desc.Gen.u1Long
@@ -2123,8 +2123,8 @@ static int selmR3GetSelectorInfo64(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PDBGFSELINF
  */
 DECLINLINE(void) selmR3SelInfoFromDesc32(PDBGFSELINFO pSelInfo, PCX86DESC pDesc)
 {
-    pSelInfo->Raw64.au64[1] = 0;
-    pSelInfo->Raw = *pDesc;
+    pSelInfo->u.Raw64.au64[1] = 0;
+    pSelInfo->u.Raw = *pDesc;
     if (    pDesc->Gen.u1DescType
         ||  !(pDesc->Gen.u4Type & 4))
     {
@@ -2258,8 +2258,8 @@ static int selmR3GetSelectorInfo32(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PDBGFSELINF
         pSelInfo->GCPtrBase = Sel << 4;
         pSelInfo->cbLimit   = 0xffff;
         pSelInfo->fFlags    = DBGFSELINFO_FLAGS_REAL_MODE;
-        pSelInfo->Raw64.au64[0] = 0;
-        pSelInfo->Raw64.au64[1] = 0;
+        pSelInfo->u.Raw64.au64[0] = 0;
+        pSelInfo->u.Raw64.au64[1] = 0;
         pSelInfo->SelGate   = 0;
         return VINF_SUCCESS;
     }
