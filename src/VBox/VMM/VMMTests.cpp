@@ -74,7 +74,7 @@ static int vmmR3DoGCTest(PVM pVM, VMMGCOPERATION enmTestcase, unsigned uVariatio
     Assert(CPUMGetHyperCR3(pVCpu) && CPUMGetHyperCR3(pVCpu) == PGMGetHyperCR3(pVCpu));
     rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
     if (RT_LIKELY(rc == VINF_SUCCESS))
-        rc = pVM->vmm.s.iLastGZRc;
+        rc = pVCpu->vmm.s.iLastGZRc;
     return rc;
 }
 
@@ -114,7 +114,7 @@ static int vmmR3DoTrapTest(PVM pVM, uint8_t u8Trap, unsigned uVariation, int rcE
     Assert(CPUMGetHyperCR3(pVCpu) && CPUMGetHyperCR3(pVCpu) == PGMGetHyperCR3(pVCpu));
     rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
     if (RT_LIKELY(rc == VINF_SUCCESS))
-        rc = pVM->vmm.s.iLastGZRc;
+        rc = pVCpu->vmm.s.iLastGZRc;
     bool fDump = false;
     if (rc != rcExpect)
     {
@@ -362,7 +362,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         {
             rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
             if (RT_LIKELY(rc == VINF_SUCCESS))
-                rc = pVM->vmm.s.iLastGZRc;
+                rc = pVCpu->vmm.s.iLastGZRc;
             if (RT_FAILURE(rc))
             {
                 Log(("VMM: GC returned fatal %Rra in iteration %d\n", rc, i));
@@ -416,7 +416,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
             uint64_t TickThisStart = ASMReadTSC();
             rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
             if (RT_LIKELY(rc == VINF_SUCCESS))
-                rc = pVM->vmm.s.iLastGZRc;
+                rc = pVCpu->vmm.s.iLastGZRc;
             uint64_t TickThisElapsed = ASMReadTSC() - TickThisStart;
             if (RT_FAILURE(rc))
             {

@@ -1070,7 +1070,7 @@ VMMR3DECL(int) VMMR3RawRunGC(PVM pVM, PVMCPU pVCpu)
 #else
             rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
             if (RT_LIKELY(rc == VINF_SUCCESS))
-                rc = pVM->vmm.s.iLastGZRc;
+                rc = pVCpu->vmm.s.iLastGZRc;
 #endif
         } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
 
@@ -1121,7 +1121,7 @@ VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM, PVMCPU pVCpu)
 #else
             rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_HWACC_RUN, pVCpu->idCpu);
             if (RT_LIKELY(rc == VINF_SUCCESS))
-                rc = pVM->vmm.s.iLastGZRc;
+                rc = pVCpu->vmm.s.iLastGZRc;
 #endif
         } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
 
@@ -1210,7 +1210,7 @@ VMMR3DECL(int) VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list
 #else
             rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
             if (RT_LIKELY(rc == VINF_SUCCESS))
-                rc = pVM->vmm.s.iLastGZRc;
+                rc = pVCpu->vmm.s.iLastGZRc;
 #endif
         } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
 
@@ -1314,7 +1314,7 @@ VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM, PVMCPU pVCpu)
 #else
             rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
             if (RT_LIKELY(rc == VINF_SUCCESS))
-                rc = pVM->vmm.s.iLastGZRc;
+                rc = pVCpu->vmm.s.iLastGZRc;
 #endif
         } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
 
