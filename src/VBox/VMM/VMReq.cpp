@@ -826,6 +826,8 @@ VMMR3DECL(int) VMR3ReqWait(PVMREQ pReq, unsigned cMillies)
  * @param   idDstCpu        Pass VMCPUID_ANY to process the common request queue
  *                          and the CPU ID for a CPU specific one. In the latter
  *                          case the calling thread must be the EMT of that CPU.
+ *
+ * @note    SMP safe (multiple EMTs trying to satisfy VM_FF_REQUESTs).
  */
 VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMCPUID idDstCpu)
 {
@@ -836,9 +838,6 @@ VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMCPUID idDstCpu)
      *
      * We do not repeat the outer loop if we've got an informational status code
      * since that code needs processing by our caller.
-     */
-    /**
-     * @note SMP safe (multiple EMTs trying to satisfy VM_FF_REQUESTs)
      */
     int rc = VINF_SUCCESS;
     while (rc <= VINF_SUCCESS)
