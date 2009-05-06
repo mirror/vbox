@@ -290,32 +290,30 @@ bool dbgfR3WaitForAttach(PVM pVM, DBGFEVENTTYPE enmEvent)
  */
 VMMR3DECL(int) DBGFR3VMMForcedAction(PVM pVM)
 {
-    PVMCPU pVCpu = VMMGetCpu(pVM);
-
-    /*
-     * Clear the FF DBGF request flag.
-     */
-    Assert(pVM->fGlobalForcedActions & VM_FF_DBGF);
-    VM_FF_CLEAR(pVM, VM_FF_DBGF);
-
-    /*
-     * Commands?
-     */
     int rc = VINF_SUCCESS;
-    if (pVM->dbgf.s.enmVMMCmd != DBGFCMD_NO_COMMAND)
+
+    if (VM_FF_TESTANDCLEAR(pVM, VM_FF_DBGF_BIT))
     {
-        /** @todo stupid GDT/LDT sync hack. go away! */
-        SELMR3UpdateFromCPUM(pVM, pVCpu);
+        PVMCPU pVCpu = VMMGetCpu(pVM);
 
         /*
-         * Process the command.
+         * Commands?
          */
-        bool            fResumeExecution;
-        DBGFCMDDATA     CmdData = pVM->dbgf.s.VMMCmdData;
-        DBGFCMD         enmCmd = dbgfR3SetCmd(pVM, DBGFCMD_NO_COMMAND);
-        rc = dbgfR3VMMCmd(pVM, enmCmd, &CmdData, &fResumeExecution);
-        if (!fResumeExecution)
-            rc = dbgfR3VMMWait(pVM);
+        if (pVM->dbgf.s.enmVMMCmd != DBGFCMD_NO_COMMAND)
+        {
+            /** @todo stupid GDT/LDT sync hack. go away! */
+            SELMR3UpdateFromCPUM(pVM, pVCpu);
+
+            /*
+             * Process the command.
+             */
+            bool            fResumeExecution;
+            DBGFCMDDATA     CmdData = pVM->dbgf.s.VMMCmdData;
+            DBGFCMD         enmCmd = dbgfR3SetCmd(pVM, DBGFCMD_NO_COMMAND);
+            rc = dbgfR3VMMCmd(pVM, enmCmd, &CmdData, &fResumeExecution);
+            if (!fResumeExecution)
+                rc = dbgfR3VMMWait(pVM);
+        }
     }
     return rc;
 }
