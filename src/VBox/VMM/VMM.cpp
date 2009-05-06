@@ -218,7 +218,7 @@ static int vmmR3InitStacks(PVM pVM)
 {
     int rc = VINF_SUCCESS;
 
-    for (unsigned idCpu = 0; idCpu < pVM->cCPUs; idCpu++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCPUs; idCpu++)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
@@ -391,7 +391,7 @@ VMMR3DECL(int) VMMR3InitFinalize(PVM pVM)
 {
     int rc = VINF_SUCCESS;
 
-    for (unsigned idCpu = 0; idCpu < pVM->cCPUs; idCpu++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCPUs; idCpu++)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
@@ -659,7 +659,7 @@ VMMR3DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * The stack.
      */
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -668,7 +668,6 @@ VMMR3DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
         pVCpu->vmm.s.pbEMTStackRC       = MMHyperR3ToRC(pVM, pVCpu->vmm.s.pbEMTStackR3);
         pVCpu->vmm.s.pbEMTStackBottomRC = pVCpu->vmm.s.pbEMTStackRC + VMM_STACK_SIZE;
     }
-
 
     /*
      * All the switchers.
@@ -825,22 +824,24 @@ static DECLCALLBACK(int) vmmR3Save(PVM pVM, PSSMHANDLE pSSM)
 {
     LogFlow(("vmmR3Save:\n"));
 
-    for (unsigned i=0;i<pVM->cCPUs;i++)
-    {
-        PVMCPU pVCpu = &pVM->aCpus[i];
+    /*
+     * The hypervisor stack.
+     * Note! See note in vmmR3Load (remove this on version change).
+     */
+    PVMCPU pVCpu0 = &pVM->aCpus[0];
+    SSMR3PutRCPtr(pSSM, pVCpu0->vmm.s.pbEMTStackBottomRC);
+    RTRCPTR RCPtrESP = CPUMGetHyperESP(pVCpu0);
+    AssertMsg(pVCpu0->vmm.s.pbEMTStackBottomRC - RCPtrESP <= VMM_STACK_SIZE, ("Bottom %RRv ESP=%RRv\n", pVCpu0->vmm.s.pbEMTStackBottomRC, RCPtrESP));
+    SSMR3PutRCPtr(pSSM, RCPtrESP);
+    SSMR3PutMem(pSSM, pVCpu0->vmm.s.pbEMTStackR3, VMM_STACK_SIZE);
 
-        /*
-         * The hypervisor stack.
-         * Note! See not in vmmR3Load.
-         */
-        SSMR3PutRCPtr(pSSM, pVCpu->vmm.s.pbEMTStackBottomRC);
+    /*
+     * Save the started/stopped state of all CPUs except 0 as it will always
+     * be running. This avoids breaking the saved state version. :-)
+     */
+    for (VMCPUID i = 1; i < pVM->cCPUs; i++)
+        SSMR3PutBool(pSSM, VMCPUSTATE_IS_STARTED(VMCPU_GET_STATE(&pVM->aCpus[i])));
 
-        RTRCPTR RCPtrESP = CPUMGetHyperESP(pVCpu);
-        AssertMsg(pVCpu->vmm.s.pbEMTStackBottomRC - RCPtrESP <= VMM_STACK_SIZE, ("Bottom %RRv ESP=%RRv\n", pVCpu->vmm.s.pbEMTStackBottomRC, RCPtrESP));
-        SSMR3PutRCPtr(pSSM, RCPtrESP);
-
-        SSMR3PutMem(pSSM, pVCpu->vmm.s.pbEMTStackR3, VMM_STACK_SIZE);
-    }
     return SSMR3PutU32(pSSM, ~0); /* terminator */
 }
 
@@ -879,13 +880,17 @@ static DECLCALLBACK(int) vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     int rc = SSMR3GetRCPtr(pSSM, &RCPtrESP);
     if (RT_FAILURE(rc))
         return rc;
+    SSMR3GetMem(pSSM, pVM->aCpus[0].vmm.s.pbEMTStackR3, VMM_STACK_SIZE);
 
-    /* restore the stack.  */
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    /* Restore the VMCPU states. VCPU 0 is always started. */
+    VMCPU_SET_STATE(&pVM->aCpus[0], VMCPUSTATE_STARTED);
+    for (VMCPUID i = 1; i < pVM->cCPUs; i++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
-
-        SSMR3GetMem(pSSM, pVCpu->vmm.s.pbEMTStackR3, VMM_STACK_SIZE);
+        bool fStarted;
+        rc = SSMR3GetBool(pSSM, &fStarted);
+        if (RT_FAILURE(rc))
+            return rc;
+        VMCPU_SET_STATE(&pVM->aCpus[i], fStarted ? VMCPUSTATE_STARTED : VMCPUSTATE_STOPPED);
     }
 
     /* terminator */
