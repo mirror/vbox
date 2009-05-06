@@ -202,9 +202,11 @@ typedef struct VMCPU *PVMCPU;
 /** This action forces the VM to schedule and run pending timer (TM). */
 #define VM_FF_TIMER                         RT_BIT_32(2)
 /** PDM Queues are pending. */
-#define VM_FF_PDM_QUEUES                    RT_BIT_32(3)
+#define VM_FF_PDM_QUEUES_BIT                3
+#define VM_FF_PDM_QUEUES                    RT_BIT_32(VM_FF_PDM_QUEUES_BIT)
 /** PDM DMA transfers are pending. */
-#define VM_FF_PDM_DMA                       RT_BIT_32(4)
+#define VM_FF_PDM_DMA_BIT                   4
+#define VM_FF_PDM_DMA                       RT_BIT_32(VM_FF_PDM_DMA_BIT)
 /** PDM critical section unlocking is pending, process promptly upon return to R3. */
 #define VM_FF_PDM_CRITSECT                  RT_BIT_32(5)
 /** This action forces the VM to call DBGF so DBGF can service debugger
@@ -388,6 +390,16 @@ typedef struct VMCPU *PVMCPU;
  * @param   fFlags  The flags to check for.
  */
 #define VM_FF_ISPENDING(pVM, fFlags)        ((pVM)->fGlobalForcedActions & (fFlags))
+
+/** @def VM_FF_TESTANDCLEAR
+ * Checks if one (!) force action in the specified set is pending and clears it atomically
+ *
+ * @returns true if the bit was set.
+ * @returns false if the bit was clear.
+ * @param   pVM     VM Handle.
+ * @param   iBit    Bit position to check and clear
+ */
+#define VM_FF_TESTANDCLEAR(pVM, iBit)        (ASMBitTestAndClear(&(pVM)->fGlobalForcedActions, iBit))
 
 /** @def VMCPU_FF_ISPENDING
  * Checks if one or more force action in the specified set is pending for the given VCPU.

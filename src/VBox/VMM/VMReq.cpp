@@ -837,6 +837,9 @@ VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMCPUID idDstCpu)
      * We do not repeat the outer loop if we've got an informational status code
      * since that code needs processing by our caller.
      */
+    /**
+     * @note SMP safe (multiple EMTs trying to satisfy VM_FF_REQUESTs)
+     */
     int rc = VINF_SUCCESS;
     while (rc <= VINF_SUCCESS)
     {

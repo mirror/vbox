@@ -616,17 +616,20 @@ VMMR3DECL(void) PDMR3QueueFlushAll(PVM pVM)
     VM_ASSERT_EMT(pVM);
     LogFlow(("PDMR3QueuesFlush:\n"));
 
-    VM_FF_CLEAR(pVM, VM_FF_PDM_QUEUES);
-    for (PPDMQUEUE pCur = pVM->pdm.s.pQueuesForced; pCur; pCur = pCur->pNext)
+    /* Use atomic test and clear to prevent useless checks; pdmR3QueueFlush is SMP safe. */
+    if (VM_FF_TESTANDCLEAR(pVM, VM_FF_PDM_QUEUES_BIT))
     {
-        if (    pCur->pPendingR3
-            ||  pCur->pPendingR0
-            ||  pCur->pPendingRC)
+        for (PPDMQUEUE pCur = pVM->pdm.s.pQueuesForced; pCur; pCur = pCur->pNext)
         {
-            if (    pdmR3QueueFlush(pCur)
-                &&  pCur->pPendingR3)
-                /* new items arrived while flushing. */
-                pdmR3QueueFlush(pCur);
+            if (    pCur->pPendingR3
+                ||  pCur->pPendingR0
+                ||  pCur->pPendingRC)
+            {
+                if (    pdmR3QueueFlush(pCur)
+                    &&  pCur->pPendingR3)
+                    /* new items arrived while flushing. */
+                    pdmR3QueueFlush(pCur);
+            }
         }
     }
 }
