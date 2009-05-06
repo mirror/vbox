@@ -161,7 +161,7 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
 
         pVCpu->em.s.offVMCPU = RT_OFFSETOF(VMCPU, em.s);
 
-        pVCpu->em.s.enmState     = EMSTATE_NONE;
+        pVCpu->em.s.enmState     = (i == 0) ? EMSTATE_NONE : EMSTATE_WAIT_SIPI;
         pVCpu->em.s.fForceRAW    = false;
 
         pVCpu->em.s.pCtx         = CPUMQueryGuestCtxPtr(pVCpu);
@@ -633,6 +633,7 @@ VMMR3DECL(const char *) EMR3GetStateName(EMSTATE enmState)
         case EMSTATE_REM:               return "EMSTATE_REM";
         case EMSTATE_PARAV:             return "EMSTATE_PARAV";
         case EMSTATE_HALTED:            return "EMSTATE_HALTED";
+        case EMSTATE_WAIT_SIPI:         return "EMSTATE_WAIT_SIPI";
         case EMSTATE_SUSPENDED:         return "EMSTATE_SUSPENDED";
         case EMSTATE_TERMINATING:       return "EMSTATE_TERMINATING";
         case EMSTATE_DEBUG_GUEST_RAW:   return "EMSTATE_DEBUG_GUEST_RAW";
@@ -3102,6 +3103,12 @@ static EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     if (pVCpu->em.s.fForceRAW)
         return EMSTATE_RAW;
 
+    /*
+     * We stay in the wait for SIPI state unless explicitly told otherwise. 
+     */
+    if (pVCpu->em.s.enmState == EMSTATE_WAIT_SIPI)
+        return EMSTATE_WAIT_SIPI;
+
     /* !!! THIS MUST BE IN SYNC WITH remR3CanExecuteRaw !!! */
     /* !!! THIS MUST BE IN SYNC WITH remR3CanExecuteRaw !!! */
     /* !!! THIS MUST BE IN SYNC WITH remR3CanExecuteRaw !!! */
@@ -3587,7 +3594,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
     LogFlow(("EMR3ExecuteVM: pVM=%p enmVMState=%d  enmState=%d (%s) fForceRAW=%d\n", pVM, pVM->enmVMState,
              pVCpu->em.s.enmState, EMR3GetStateName(pVCpu->em.s.enmState), pVCpu->em.s.fForceRAW));
     VM_ASSERT_EMT(pVM);
-    Assert(pVCpu->em.s.enmState == EMSTATE_NONE || pVCpu->em.s.enmState == EMSTATE_SUSPENDED);
+    Assert(pVCpu->em.s.enmState == EMSTATE_NONE || pVCpu->em.s.enmState == EMSTATE_WAIT_SIPI || pVCpu->em.s.enmState == EMSTATE_SUSPENDED);
 
     int rc = setjmp(pVCpu->em.s.u.FatalLongJump);
     if (rc == 0)
@@ -3730,8 +3737,8 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     }
                     else
                     {
-                        /* All other VCPUs go into the halted state until woken up again. */
-                        pVCpu->em.s.enmState = EMSTATE_HALTED;
+                        /* All other VCPUs go into the wait for SIPI state. */
+                        pVCpu->em.s.enmState = EMSTATE_WAIT_SIPI;
                     }
                     break;
                 }
@@ -3878,6 +3885,12 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     break;
 #endif
 
+                /*
+                 * Application processor execution halted until SIPI.
+                 */
+                case EMSTATE_WAIT_SIPI:
+                    Assert(!(CPUMGetGuestEFlags(pVCpu) & X86_EFL_IF));
+                    /* no break */
                 /*
                  * hlt - execution halted until interrupt.
                  */
