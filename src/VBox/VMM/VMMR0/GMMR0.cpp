@@ -1047,7 +1047,7 @@ static DECLCALLBACK(int) gmmR0CleanupVMScanChunk(PAVLU32NODECORE pNode, void *pv
  *
  * @thread  The creator thread / EMT.
  */
-GMMR0DECL(int) GMMR0InitialReservation(PVM pVM, unsigned idCpu, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages,
+GMMR0DECL(int) GMMR0InitialReservation(PVM pVM, VMCPUID idCpu, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages,
                                        GMMOCPOLICY enmPolicy, GMMPRIORITY enmPriority)
 {
     LogFlow(("GMMR0InitialReservation: pVM=%p cBasePages=%#llx cShadowPages=%#x cFixedPages=%#x enmPolicy=%d enmPriority=%d\n",
@@ -1058,11 +1058,10 @@ GMMR0DECL(int) GMMR0InitialReservation(PVM pVM, unsigned idCpu, uint64_t cBasePa
      */
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
-    PGVM pGVM = GVMMR0ByVM(pVM);
-    if (RT_UNLIKELY(!pGVM))
-        return VERR_INVALID_PARAMETER;
-    if (RT_UNLIKELY(pGVM->aCpus[idCpu].hEMT != RTThreadNativeSelf()))
-        return VERR_NOT_OWNER;
+    PGVM pGVM;
+    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    if (RT_FAILURE(rc))
+        return rc;
 
     AssertReturn(cBasePages, VERR_INVALID_PARAMETER);
     AssertReturn(cShadowPages, VERR_INVALID_PARAMETER);
@@ -1070,7 +1069,7 @@ GMMR0DECL(int) GMMR0InitialReservation(PVM pVM, unsigned idCpu, uint64_t cBasePa
     AssertReturn(enmPolicy > GMMOCPOLICY_INVALID && enmPolicy < GMMOCPOLICY_END, VERR_INVALID_PARAMETER);
     AssertReturn(enmPriority > GMMPRIORITY_INVALID && enmPriority < GMMPRIORITY_END, VERR_INVALID_PARAMETER);
 
-    int rc = RTSemFastMutexRequest(pGMM->Mtx);
+    rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
 
     if (    !pGVM->gmm.s.Reserved.cBasePages
@@ -1114,7 +1113,7 @@ GMMR0DECL(int) GMMR0InitialReservation(PVM pVM, unsigned idCpu, uint64_t cBasePa
  * @param   idCpu           VCPU id
  * @param   pReq            The request packet.
  */
-GMMR0DECL(int) GMMR0InitialReservationReq(PVM pVM, unsigned idCpu, PGMMINITIALRESERVATIONREQ pReq)
+GMMR0DECL(int) GMMR0InitialReservationReq(PVM pVM, VMCPUID idCpu, PGMMINITIALRESERVATIONREQ pReq)
 {
     /*
      * Validate input and pass it on.
@@ -1143,7 +1142,7 @@ GMMR0DECL(int) GMMR0InitialReservationReq(PVM pVM, unsigned idCpu, PGMMINITIALRE
  *
  * @thread  EMT.
  */
-GMMR0DECL(int) GMMR0UpdateReservation(PVM pVM, unsigned idCpu, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages)
+GMMR0DECL(int) GMMR0UpdateReservation(PVM pVM, VMCPUID idCpu, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages)
 {
     LogFlow(("GMMR0UpdateReservation: pVM=%p cBasePages=%#llx cShadowPages=%#x cFixedPages=%#x\n",
              pVM, cBasePages, cShadowPages, cFixedPages));
@@ -1153,17 +1152,16 @@ GMMR0DECL(int) GMMR0UpdateReservation(PVM pVM, unsigned idCpu, uint64_t cBasePag
      */
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
-    PGVM pGVM = GVMMR0ByVM(pVM);
-    if (RT_UNLIKELY(!pGVM))
-        return VERR_INVALID_PARAMETER;
-    if (RT_UNLIKELY(pGVM->aCpus[idCpu].hEMT != RTThreadNativeSelf()))
-        return VERR_NOT_OWNER;
+    PGVM pGVM;
+    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    if (RT_FAILURE(rc))
+        return rc;
 
     AssertReturn(cBasePages, VERR_INVALID_PARAMETER);
     AssertReturn(cShadowPages, VERR_INVALID_PARAMETER);
     AssertReturn(cFixedPages, VERR_INVALID_PARAMETER);
 
-    int rc = RTSemFastMutexRequest(pGMM->Mtx);
+    rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
 
     if (    pGVM->gmm.s.Reserved.cBasePages
@@ -1206,7 +1204,7 @@ GMMR0DECL(int) GMMR0UpdateReservation(PVM pVM, unsigned idCpu, uint64_t cBasePag
  * @param   idCpu           VCPU id
  * @param   pReq            The request packet.
  */
-GMMR0DECL(int) GMMR0UpdateReservationReq(PVM pVM, unsigned idCpu, PGMMUPDATERESERVATIONREQ pReq)
+GMMR0DECL(int) GMMR0UpdateReservationReq(PVM pVM, VMCPUID idCpu, PGMMUPDATERESERVATIONREQ pReq)
 {
     /*
      * Validate input and pass it on.
@@ -1850,7 +1848,7 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
  *                              See GMMPAGEDESC for details on what is expected on input.
  * @thread  EMT.
  */
-GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, unsigned idCpu, uint32_t cPagesToUpdate, uint32_t cPagesToAlloc, PGMMPAGEDESC paPages)
+GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesToUpdate, uint32_t cPagesToAlloc, PGMMPAGEDESC paPages)
 {
     LogFlow(("GMMR0AllocateHandyPages: pVM=%p cPagesToUpdate=%#x cPagesToAlloc=%#x paPages=%p\n",
              pVM, cPagesToUpdate, cPagesToAlloc, paPages));
@@ -1861,11 +1859,10 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, unsigned idCpu, uint32_t cPagesT
      */
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
-    PGVM pGVM = GVMMR0ByVM(pVM);
-    if (RT_UNLIKELY(!pGVM))
-        return VERR_INVALID_PARAMETER;
-    if (RT_UNLIKELY(pGVM->aCpus[idCpu].hEMT != RTThreadNativeSelf()))
-        return VERR_NOT_OWNER;
+    PGVM pGVM;
+    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    if (RT_FAILURE(rc))
+        return rc;
 
     AssertPtrReturn(paPages, VERR_INVALID_PARAMETER);
     AssertMsgReturn(    (cPagesToUpdate && cPagesToUpdate < 1024)
@@ -1897,7 +1894,7 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, unsigned idCpu, uint32_t cPagesT
         AssertMsgReturn(paPages[iPage].idSharedPage == NIL_GMM_PAGEID, ("#%#x: %#x\n", iPage, paPages[iPage].idSharedPage),  VERR_INVALID_PARAMETER);
     }
 
-    int rc = RTSemFastMutexRequest(pGMM->Mtx);
+    rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
 
     /* No allocations before the initial reservation has been made! */
@@ -2033,7 +2030,7 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, unsigned idCpu, uint32_t cPagesT
  *
  * @thread  EMT.
  */
-GMMR0DECL(int) GMMR0AllocatePages(PVM pVM, unsigned idCpu, uint32_t cPages, PGMMPAGEDESC paPages, GMMACCOUNT enmAccount)
+GMMR0DECL(int) GMMR0AllocatePages(PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMPAGEDESC paPages, GMMACCOUNT enmAccount)
 {
     LogFlow(("GMMR0AllocatePages: pVM=%p cPages=%#x paPages=%p enmAccount=%d\n", pVM, cPages, paPages, enmAccount));
 
@@ -2042,11 +2039,10 @@ GMMR0DECL(int) GMMR0AllocatePages(PVM pVM, unsigned idCpu, uint32_t cPages, PGMM
      */
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
-    PGVM pGVM = GVMMR0ByVM(pVM);
-    if (RT_UNLIKELY(!pGVM))
-        return VERR_INVALID_PARAMETER;
-    if (RT_UNLIKELY(pGVM->aCpus[idCpu].hEMT != RTThreadNativeSelf()))
-        return VERR_NOT_OWNER;
+    PGVM pGVM;
+    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    if (RT_FAILURE(rc))
+        return rc;
 
     AssertPtrReturn(paPages, VERR_INVALID_PARAMETER);
     AssertMsgReturn(enmAccount > GMMACCOUNT_INVALID && enmAccount < GMMACCOUNT_END, ("%d\n", enmAccount), VERR_INVALID_PARAMETER);
@@ -2065,7 +2061,7 @@ GMMR0DECL(int) GMMR0AllocatePages(PVM pVM, unsigned idCpu, uint32_t cPages, PGMM
         AssertMsgReturn(paPages[iPage].idSharedPage == NIL_GMM_PAGEID, ("#%#x: %#x\n", iPage, paPages[iPage].idSharedPage), VERR_INVALID_PARAMETER);
     }
 
-    int rc = RTSemFastMutexRequest(pGMM->Mtx);
+    rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
 
     /* No allocations before the initial reservation has been made! */
@@ -2103,7 +2099,7 @@ GMMR0DECL(int) GMMR0AllocatePages(PVM pVM, unsigned idCpu, uint32_t cPages, PGMM
  * @param   idCpu           VCPU id
  * @param   pReq            The request packet.
  */
-GMMR0DECL(int) GMMR0AllocatePagesReq(PVM pVM, unsigned idCpu, PGMMALLOCATEPAGESREQ pReq)
+GMMR0DECL(int) GMMR0AllocatePagesReq(PVM pVM, VMCPUID idCpu, PGMMALLOCATEPAGESREQ pReq)
 {
     /*
      * Validate input and pass it on.
@@ -2429,7 +2425,7 @@ static int gmmR0FreePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMFREEPAGEDES
  * @param   enmAccount          The account this relates to.
  * @thread  EMT.
  */
-GMMR0DECL(int) GMMR0FreePages(PVM pVM, unsigned idCpu, uint32_t cPages, PGMMFREEPAGEDESC paPages, GMMACCOUNT enmAccount)
+GMMR0DECL(int) GMMR0FreePages(PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMFREEPAGEDESC paPages, GMMACCOUNT enmAccount)
 {
     LogFlow(("GMMR0FreePages: pVM=%p cPages=%#x paPages=%p enmAccount=%d\n", pVM, cPages, paPages, enmAccount));
 
@@ -2438,11 +2434,10 @@ GMMR0DECL(int) GMMR0FreePages(PVM pVM, unsigned idCpu, uint32_t cPages, PGMMFREE
      */
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
-    PGVM pGVM = GVMMR0ByVM(pVM);
-    if (RT_UNLIKELY(!pGVM))
-        return VERR_INVALID_PARAMETER;
-    if (RT_UNLIKELY(pGVM->aCpus[idCpu].hEMT != RTThreadNativeSelf()))
-        return VERR_NOT_OWNER;
+    PGVM pGVM;
+    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    if (RT_FAILURE(rc))
+        return rc;
 
     AssertPtrReturn(paPages, VERR_INVALID_PARAMETER);
     AssertMsgReturn(enmAccount > GMMACCOUNT_INVALID && enmAccount < GMMACCOUNT_END, ("%d\n", enmAccount), VERR_INVALID_PARAMETER);
@@ -2456,7 +2451,7 @@ GMMR0DECL(int) GMMR0FreePages(PVM pVM, unsigned idCpu, uint32_t cPages, PGMMFREE
     /*
      * Take the semaphore and call the worker function.
      */
-    int rc = RTSemFastMutexRequest(pGMM->Mtx);
+    rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
 
     rc = gmmR0FreePages(pGMM, pGVM, cPages, paPages, enmAccount);
@@ -2475,7 +2470,7 @@ GMMR0DECL(int) GMMR0FreePages(PVM pVM, unsigned idCpu, uint32_t cPages, PGMMFREE
  * @param   idCpu           VCPU id
  * @param   pReq            The request packet.
  */
-GMMR0DECL(int) GMMR0FreePagesReq(PVM pVM, unsigned idCpu, PGMMFREEPAGESREQ pReq)
+GMMR0DECL(int) GMMR0FreePagesReq(PVM pVM, VMCPUID idCpu, PGMMFREEPAGESREQ pReq)
 {
     /*
      * Validate input and pass it on.
@@ -2517,7 +2512,7 @@ GMMR0DECL(int) GMMR0FreePagesReq(PVM pVM, unsigned idCpu, PGMMFREEPAGESREQ pReq)
  *                              not triggered by the GMM, don't set this.
  * @thread  EMT.
  */
-GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, unsigned idCpu, uint32_t cBalloonedPages, uint32_t cPagesToFree, PGMMFREEPAGEDESC paPages, bool fCompleted)
+GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, uint32_t cBalloonedPages, uint32_t cPagesToFree, PGMMFREEPAGEDESC paPages, bool fCompleted)
 {
     LogFlow(("GMMR0BalloonedPages: pVM=%p cBalloonedPages=%#x cPagestoFree=%#x paPages=%p enmAccount=%d fCompleted=%RTbool\n",
              pVM, cBalloonedPages, cPagesToFree, paPages, fCompleted));
@@ -2527,11 +2522,10 @@ GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, unsigned idCpu, uint32_t cBalloonedP
      */
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
-    PGVM pGVM = GVMMR0ByVM(pVM);
-    if (RT_UNLIKELY(!pGVM))
-        return VERR_INVALID_PARAMETER;
-    if (RT_UNLIKELY(pGVM->aCpus[idCpu].hEMT != RTThreadNativeSelf()))
-        return VERR_NOT_OWNER;
+    PGVM pGVM;
+    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    if (RT_FAILURE(rc))
+        return rc;
 
     AssertPtrReturn(paPages, VERR_INVALID_PARAMETER);
     AssertMsgReturn(cBalloonedPages < RT_BIT(32 - PAGE_SHIFT), ("%#x\n", cBalloonedPages), VERR_INVALID_PARAMETER);
@@ -2545,7 +2539,7 @@ GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, unsigned idCpu, uint32_t cBalloonedP
     /*
      * Take the sempahore and do some more validations.
      */
-    int rc = RTSemFastMutexRequest(pGMM->Mtx);
+    rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
     if (pGVM->gmm.s.Allocated.cBasePages >= cPagesToFree)
     {
@@ -2603,7 +2597,7 @@ GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, unsigned idCpu, uint32_t cBalloonedP
  * @param   idCpu           VCPU id
  * @param   pReq            The request packet.
  */
-GMMR0DECL(int) GMMR0BalloonedPagesReq(PVM pVM, unsigned idCpu, PGMMBALLOONEDPAGESREQ pReq)
+GMMR0DECL(int) GMMR0BalloonedPagesReq(PVM pVM, VMCPUID idCpu, PGMMBALLOONEDPAGESREQ pReq)
 {
     /*
      * Validate input and pass it on.
@@ -2632,7 +2626,7 @@ GMMR0DECL(int) GMMR0BalloonedPagesReq(PVM pVM, unsigned idCpu, PGMMBALLOONEDPAGE
  * @param   cPages              The number of pages that was let out of the balloon.
  * @thread  EMT.
  */
-GMMR0DECL(int) GMMR0DeflatedBalloon(PVM pVM, unsigned idCpu, uint32_t cPages)
+GMMR0DECL(int) GMMR0DeflatedBalloon(PVM pVM, VMCPUID idCpu, uint32_t cPages)
 {
     LogFlow(("GMMR0DeflatedBalloon: pVM=%p cPages=%#x\n", pVM, cPages));
 
@@ -2641,18 +2635,17 @@ GMMR0DECL(int) GMMR0DeflatedBalloon(PVM pVM, unsigned idCpu, uint32_t cPages)
      */
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
-    PGVM pGVM = GVMMR0ByVM(pVM);
-    if (RT_UNLIKELY(!pGVM))
-        return VERR_INVALID_PARAMETER;
-    if (RT_UNLIKELY(pGVM->aCpus[idCpu].hEMT != RTThreadNativeSelf()))
-        return VERR_NOT_OWNER;
+    PGVM pGVM;
+    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    if (RT_FAILURE(rc))
+        return rc;
 
     AssertMsgReturn(cPages < RT_BIT(32 - PAGE_SHIFT), ("%#x\n", cPages), VERR_INVALID_PARAMETER);
 
     /*
      * Take the sempahore and do some more validations.
      */
-    int rc = RTSemFastMutexRequest(pGMM->Mtx);
+    rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
 
     if (pGVM->gmm.s.cBalloonedPages < cPages)
@@ -2823,7 +2816,7 @@ static int gmmR0MapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, PRTR3PTR ppvR3)
  * @param   ppvR3           Where to store the address of the mapped chunk. NULL is ok if nothing to map.
  * @thread  EMT
  */
-GMMR0DECL(int) GMMR0MapUnmapChunk(PVM pVM, unsigned idCpu, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3)
+GMMR0DECL(int) GMMR0MapUnmapChunk(PVM pVM, VMCPUID idCpu, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3)
 {
     LogFlow(("GMMR0MapUnmapChunk: pVM=%p idChunkMap=%#x idChunkUnmap=%#x ppvR3=%p\n",
              pVM, idChunkMap, idChunkUnmap, ppvR3));
@@ -2833,11 +2826,10 @@ GMMR0DECL(int) GMMR0MapUnmapChunk(PVM pVM, unsigned idCpu, uint32_t idChunkMap, 
      */
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
-    PGVM pGVM = GVMMR0ByVM(pVM);
-    if (RT_UNLIKELY(!pGVM))
-        return VERR_INVALID_PARAMETER;
-    if (RT_UNLIKELY(pGVM->aCpus[idCpu].hEMT != RTThreadNativeSelf()))
-        return VERR_NOT_OWNER;
+    PGVM pGVM;
+    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    if (RT_FAILURE(rc))
+        return rc;
 
     AssertCompile(NIL_GMM_CHUNKID == 0);
     AssertMsgReturn(idChunkMap <= GMM_CHUNKID_LAST, ("%#x\n", idChunkMap), VERR_INVALID_PARAMETER);
@@ -2861,7 +2853,7 @@ GMMR0DECL(int) GMMR0MapUnmapChunk(PVM pVM, unsigned idCpu, uint32_t idChunkMap, 
      * that it pushes the user virtual address space to within a chunk of
      * it it's limits, so, no problem here.
      */
-    int rc = RTSemFastMutexRequest(pGMM->Mtx);
+    rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
 
     PGMMCHUNK pMap = NULL;
@@ -2908,7 +2900,7 @@ GMMR0DECL(int) GMMR0MapUnmapChunk(PVM pVM, unsigned idCpu, uint32_t idChunkMap, 
  * @param   idCpu           VCPU id
  * @param   pReq            The request packet.
  */
-GMMR0DECL(int)  GMMR0MapUnmapChunkReq(PVM pVM, unsigned idCpu, PGMMMAPUNMAPCHUNKREQ pReq)
+GMMR0DECL(int)  GMMR0MapUnmapChunkReq(PVM pVM, VMCPUID idCpu, PGMMMAPUNMAPCHUNKREQ pReq)
 {
     /*
      * Validate input and pass it on.
@@ -2932,18 +2924,17 @@ GMMR0DECL(int)  GMMR0MapUnmapChunkReq(PVM pVM, unsigned idCpu, PGMMMAPUNMAPCHUNK
  * @param   idCpu           VCPU id
  * @param   pvR3            Pointer to the chunk size memory block to lock down.
  */
-GMMR0DECL(int) GMMR0SeedChunk(PVM pVM, unsigned idCpu, RTR3PTR pvR3)
+GMMR0DECL(int) GMMR0SeedChunk(PVM pVM, VMCPUID idCpu, RTR3PTR pvR3)
 {
     /*
      * Validate input and get the basics.
      */
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
-    PGVM pGVM = GVMMR0ByVM(pVM);
-    if (RT_UNLIKELY(!pGVM))
-        return VERR_INVALID_PARAMETER;
-    if (RT_UNLIKELY(pGVM->aCpus[idCpu].hEMT != RTThreadNativeSelf()))
-        return VERR_NOT_OWNER;
+    PGVM pGVM;
+    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    if (RT_FAILURE(rc))
+        return rc;
 
     AssertPtrReturn(pvR3, VERR_INVALID_POINTER);
     AssertReturn(!(PAGE_OFFSET_MASK & pvR3), VERR_INVALID_POINTER);
@@ -2958,7 +2949,7 @@ GMMR0DECL(int) GMMR0SeedChunk(PVM pVM, unsigned idCpu, RTR3PTR pvR3)
      * Lock the memory before taking the semaphore.
      */
     RTR0MEMOBJ MemObj;
-    int rc = RTR0MemObjLockUser(&MemObj, pvR3, GMM_CHUNK_SIZE, NIL_RTR0PROCESS);
+    rc = RTR0MemObjLockUser(&MemObj, pvR3, GMM_CHUNK_SIZE, NIL_RTR0PROCESS);
     if (RT_SUCCESS(rc))
     {
         /*

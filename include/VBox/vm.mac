@@ -46,77 +46,78 @@
 ;;
 ; This is part of  the VM structure.
 struc VM
-    .enmVMState         resd 1
-    .fGlobalForcedActions resd 1
-    .paVMPagesR3        RTR3PTR_RES 1
-    .pSession           RTR0PTR_RES 1
-    .pUVM               RTR3PTR_RES 1
-    .pVMR3              RTR3PTR_RES 1
-    .pVMR0              RTR0PTR_RES 1
-    .pVMRC              RTRCPTR_RES 1
-    .hSelf              resd 1
-    .cCPUs              resd 1
-    .cbSelf             resd 1
-    .offVMCPU           resd 1
-    .u32Reserved        resd 6
+    .enmVMState             resd 1
+    .fGlobalForcedActions   resd 1
+    .paVMPagesR3            RTR3PTR_RES 1
+    .pSession               RTR0PTR_RES 1
+    .pUVM                   RTR3PTR_RES 1
+    .pVMR3                  RTR3PTR_RES 1
+    .pVMR0                  RTR0PTR_RES 1
+    .pVMRC                  RTRCPTR_RES 1
+    .hSelf                  resd 1
+    .cCPUs                  resd 1
+    .cbSelf                 resd 1
+    .offVMCPU               resd 1
+    .u32Reserved            resd 6
 
     .pfnVMMGCGuestToHostAsmGuestCtx RTRCPTR_RES 1
     .pfnVMMGCGuestToHostAsmHyperCtx RTRCPTR_RES 1
     .pfnVMMGCGuestToHostAsm         RTRCPTR_RES 1
 
-    .uPadding1          RTHCPTR_RES 1
-    .uPadding2          RTHCPTR_RES 1
+    .uPadding1              RTHCPTR_RES 1
+    .uPadding2              RTHCPTR_RES 1
 
-    .fRawR3Enabled      resb 1
-    .fRawR0Enabled      resb 1
-    .fPATMEnabled       resb 1
-    .fCSAMEnabled       resb 1
-    .fHWACCMEnabled     resb 1
-    .fHwVirtExtForced   resb 1
-    .fPARAVEnabled      resb 1
+    .fRawR3Enabled          resb 1
+    .fRawR0Enabled          resb 1
+    .fPATMEnabled           resb 1
+    .fCSAMEnabled           resb 1
+    .fHWACCMEnabled         resb 1
+    .fHwVirtExtForced       resb 1
+    .fPARAVEnabled          resb 1
 
     alignb 8
 
-    .StatTotalQemuToGC  resb STAMPROFILEADV_size
-    .StatTotalGCToQemu  resb STAMPROFILEADV_size
-    .StatTotalInGC      resb STAMPROFILEADV_size
-    .StatTotalInQemu    resb STAMPROFILEADV_size
-    .StatSwitcherToGC   resb STAMPROFILEADV_size
-    .StatSwitcherToHC   resb STAMPROFILEADV_size
-    .StatSwitcherSaveRegs resb STAMPROFILEADV_size
-    .StatSwitcherSysEnter resb STAMPROFILEADV_size
-    .StatSwitcherDebug    resb STAMPROFILEADV_size
-    .StatSwitcherCR0      resb STAMPROFILEADV_size
-    .StatSwitcherCR4      resb STAMPROFILEADV_size
-    .StatSwitcherJmpCR3   resb STAMPROFILEADV_size
-    .StatSwitcherRstrRegs resb STAMPROFILEADV_size
-    .StatSwitcherLgdt     resb STAMPROFILEADV_size
-    .StatSwitcherLidt     resb STAMPROFILEADV_size
-    .StatSwitcherLldt     resb STAMPROFILEADV_size
-    .StatSwitcherTSS      resb STAMPROFILEADV_size
+    .StatTotalQemuToGC      resb STAMPROFILEADV_size
+    .StatTotalGCToQemu      resb STAMPROFILEADV_size
+    .StatTotalInGC          resb STAMPROFILEADV_size
+    .StatTotalInQemu        resb STAMPROFILEADV_size
+    .StatSwitcherToGC       resb STAMPROFILEADV_size
+    .StatSwitcherToHC       resb STAMPROFILEADV_size
+    .StatSwitcherSaveRegs   resb STAMPROFILEADV_size
+    .StatSwitcherSysEnter   resb STAMPROFILEADV_size
+    .StatSwitcherDebug      resb STAMPROFILEADV_size
+    .StatSwitcherCR0        resb STAMPROFILEADV_size
+    .StatSwitcherCR4        resb STAMPROFILEADV_size
+    .StatSwitcherJmpCR3     resb STAMPROFILEADV_size
+    .StatSwitcherRstrRegs   resb STAMPROFILEADV_size
+    .StatSwitcherLgdt       resb STAMPROFILEADV_size
+    .StatSwitcherLidt       resb STAMPROFILEADV_size
+    .StatSwitcherLldt       resb STAMPROFILEADV_size
+    .StatSwitcherTSS        resb STAMPROFILEADV_size
 
     alignb 64
-    .cpum                 resb 2048
-    .vmm                  resb 1024
+    .cpum                   resb 2048
+    .vmm                    resb 1024
 
 endstruc
 
 ;;
 ; This is part of  the VMCPU structure.
 struc VMCPU
-    .fLocalForcedActions resd 1
-    .enmState            resd 1
-    .pUVCpu              RTR3PTR_RES 1
-    .pVMR3               RTR3PTR_RES 1
-    .pVMR0               RTR0PTR_RES 1
-    .pVMRC               RTRCPTR_RES 1
-    .idCpu               resd 1
+    .fLocalForcedActions    resd 1
+    .enmState               resd 1
+    .pUVCpu                 RTR3PTR_RES 1
+    .pVMR3                  RTR3PTR_RES 1
+    .pVMR0                  RTR0PTR_RES 1
+    .pVMRC                  RTRCPTR_RES 1
+    .idCpu                  resd 1
 
-    .hNativeThread       RTR0PTR_RES 1
+    .hNativeThread          RTR0PTR_RES 1
+    .idHostCpu              resd 1
 
     alignb 64
 
-    .cpum                resb 4096
+    .cpum                   resb 4096
 endstruc
 
 

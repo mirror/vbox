@@ -57,6 +57,7 @@
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 #include <iprt/memobj.h>
+#include <iprt/mp.h>
 
 
 /*******************************************************************************
@@ -1515,7 +1516,6 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PVM pVM, VMCPUID idCpu, uint64_t u64ExpireGipTim
     pGVM->gvmm.s.StatsSched.cHaltCalls++;
 
     PGVMCPU pCurGVCpu = &pGVM->aCpus[idCpu];
-    Assert(idCpu < pGVM->cCpus);
     Assert(!pCurGVCpu->gvmm.s.u64HaltExpire);
 
     /*
@@ -1578,7 +1578,6 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PVM pVM, VMCPUID idCpu, uint64_t u64ExpireGipTim
  */
 DECLINLINE(int) gvmmR0SchedWakeUpOne(PGVM pGVM, PGVMCPU pGVCpu)
 {
-    int rc;
     pGVM->gvmm.s.StatsSched.cWakeUpCalls++;
 
     /*
@@ -1590,6 +1589,7 @@ DECLINLINE(int) gvmmR0SchedWakeUpOne(PGVM pGVM, PGVMCPU pGVCpu)
      * the it is flagged as halted in the VMM.
      */
 /** @todo we can optimize some of that by means of the pVCpu->enmState now. */
+    int rc;
     if (pGVCpu->gvmm.s.u64HaltExpire)
     {
         rc = VINF_SUCCESS;
@@ -1668,12 +1668,17 @@ GVMMR0DECL(int) GVMMR0SchedWakeUp(PVM pVM, VMCPUID idCpu)
  */
 DECLINLINE(int) gvmmR0SchedPokeOne(PGVM pGVM, PVMCPU pVCpu)
 {
-    if (pVCpu->enmState != VMCPUSTATE_STARTED_EXEC)
+    pGVM->gvmm.s.StatsSched.cPokeCalls++;
+
+    RTCPUID idHostCpu = pVCpu->idHostCpu;
+    if (    idHostCpu == NIL_RTCPUID
+        ||  VMCPU_GET_STATE(pVCpu) != VMCPUSTATE_STARTED_EXEC)
+    {
+        pGVM->gvmm.s.StatsSched.cPokeNotBusy++;
         return VINF_GVM_NOT_BUSY_IN_GC;
+    }
 
-    /** @todo do the actual poking, need to get the current cpu id from HWACC or
-     *        somewhere and then call RTMpPokeCpu(). */
-
+    RTMpPokeCpu(idHostCpu);
     return VINF_SUCCESS;
 }
 
@@ -1899,6 +1904,9 @@ GVMMR0DECL(int) GVMMR0QueryStatistics(PGVMMSTATS pStats, PSUPDRVSESSION pSession
             pStats->SchedSum.cWakeUpNotHalted  += pGVM->gvmm.s.StatsSched.cWakeUpNotHalted;
             pStats->SchedSum.cWakeUpWakeUps    += pGVM->gvmm.s.StatsSched.cWakeUpWakeUps;
 
+            pStats->SchedSum.cPokeCalls        += pGVM->gvmm.s.StatsSched.cPokeCalls;
+            pStats->SchedSum.cPokeNotBusy      += pGVM->gvmm.s.StatsSched.cPokeNotBusy;
+
             pStats->SchedSum.cPollCalls        += pGVM->gvmm.s.StatsSched.cPollCalls;
             pStats->SchedSum.cPollHalts        += pGVM->gvmm.s.StatsSched.cPollHalts;
             pStats->SchedSum.cPollWakeUps      += pGVM->gvmm.s.StatsSched.cPollWakeUps;
@@ -1969,6 +1977,8 @@ GVMMR0DECL(int) GVMMR0ResetStatistics(PCGVMMSTATS pStats, PSUPDRVSESSION pSessio
         MAYBE_RESET_FIELD(cWakeUpCalls);
         MAYBE_RESET_FIELD(cWakeUpNotHalted);
         MAYBE_RESET_FIELD(cWakeUpWakeUps);
+        MAYBE_RESET_FIELD(cPokeCalls);
+        MAYBE_RESET_FIELD(cPokeNotBusy);
         MAYBE_RESET_FIELD(cPollCalls);
         MAYBE_RESET_FIELD(cPollHalts);
         MAYBE_RESET_FIELD(cPollWakeUps);
@@ -2008,6 +2018,8 @@ GVMMR0DECL(int) GVMMR0ResetStatistics(PCGVMMSTATS pStats, PSUPDRVSESSION pSessio
                 MAYBE_RESET_FIELD(cWakeUpCalls);
                 MAYBE_RESET_FIELD(cWakeUpNotHalted);
                 MAYBE_RESET_FIELD(cWakeUpWakeUps);
+                MAYBE_RESET_FIELD(cPokeCalls);
+                MAYBE_RESET_FIELD(cPokeNotBusy);
                 MAYBE_RESET_FIELD(cPollCalls);
                 MAYBE_RESET_FIELD(cPollHalts);
                 MAYBE_RESET_FIELD(cPollWakeUps);

@@ -149,8 +149,8 @@ static DECLCALLBACK(void) supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uin
 static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvUser);
 
 #ifdef RT_WITH_W64_UNWIND_HACK
-DECLASM(int)    supdrvNtWrapVMMR0EntryEx(PFNRT pfnVMMR0EntryEx, PVM pVM, unsigned idCpu, unsigned uOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION pSession);
-DECLASM(int)    supdrvNtWrapVMMR0EntryFast(PFNRT pfnVMMR0EntryFast, PVM pVM, unsigned idCpu, unsigned uOperation);
+DECLASM(int)    supdrvNtWrapVMMR0EntryEx(PFNRT pfnVMMR0EntryEx, PVM pVM, VMCPUID idCpu, unsigned uOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION pSession);
+DECLASM(int)    supdrvNtWrapVMMR0EntryFast(PFNRT pfnVMMR0EntryFast, PVM pVM, VMCPUID idCpu, unsigned uOperation);
 DECLASM(void)   supdrvNtWrapObjDestructor(PFNRT pfnDestruction, void *pvObj, void *pvUser1, void *pvUser2);
 DECLASM(void *) supdrvNtWrapQueryFactoryInterface(PFNRT pfnQueryFactoryInterface, struct SUPDRVFACTORY const *pSupDrvFactory, PSUPDRVSESSION pSession, const char *pszInterfaceUuid);
 DECLASM(int)    supdrvNtWrapModuleInit(PFNRT pfnModuleInit);
@@ -926,7 +926,7 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
  * @param   pDevExt     Device extention.
  * @param   pSession    Session data.
  */
-int VBOXCALL supdrvIOCtlFast(uintptr_t uIOCtl, unsigned idCpu, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
+int VBOXCALL supdrvIOCtlFast(uintptr_t uIOCtl, VMCPUID idCpu, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
 {
     /*
      * We check the two prereqs after doing this only to allow the compiler to optimize things better.

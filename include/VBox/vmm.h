@@ -113,7 +113,7 @@ VMMDECL(RTRCPTR)     VMMGetStackRC(PVM pVM);
 VMMDECL(VMCPUID)     VMMGetCpuId(PVM pVM);
 VMMDECL(PVMCPU)      VMMGetCpu(PVM pVM);
 VMMDECL(PVMCPU)      VMMGetCpu0(PVM pVM);
-VMMDECL(PVMCPU)      VMMGetCpuById(PVM pVM, RTCPUID idCpu);
+VMMDECL(PVMCPU)      VMMGetCpuById(PVM pVM, VMCPUID idCpu);
 VMMDECL(uint32_t)    VMMGetSvnRev(void);
 VMMDECL(VMMSWITCHER) VMMGetSwitcher(PVM pVM);
 VMMDECL(void)        VMMSendSipi(PVM pVM, VMCPUID idCpu, int iVector);
@@ -297,8 +297,8 @@ typedef struct GCFGMVALUEREQ
 typedef GCFGMVALUEREQ *PGCFGMVALUEREQ;
 
 VMMR0DECL(int)      VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg);
-VMMR0DECL(void)     VMMR0EntryFast(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperation);
-VMMR0DECL(int)      VMMR0EntryEx(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION);
+VMMR0DECL(void)     VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation);
+VMMR0DECL(int)      VMMR0EntryEx(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION);
 VMMR0DECL(int)      VMMR0TermVM(PVM pVM, PGVM pGVM);
 VMMR0DECL(int)      VMMR0CallHost(PVM pVM, VMMCALLHOST enmOperation, uint64_t uArg);
 VMMR0DECL(void)     VMMR0LogFlushDisable(PVMCPU pVCpu);
