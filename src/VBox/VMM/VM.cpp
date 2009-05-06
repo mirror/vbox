@@ -1547,7 +1547,7 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
     PVMCPU pVCpu = VMMGetCpu(pVM);
     /* Only VCPU 0 does the actual work. */
     if (pVCpu->idCpu != 0)
-        return VINF_EM_TERMINATE;
+        return VINF_EM_OFF;
 
     /*
      * For debugging purposes, we will log a summary of the guest state at this point.
