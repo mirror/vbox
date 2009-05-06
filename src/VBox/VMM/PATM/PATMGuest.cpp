@@ -159,7 +159,7 @@ int PATMPatchSysenterXP(PVM pVM, RTGCPTR32 pInstrGC, PPATMPATCHREC pPatchRec)
         return VERR_PATCHING_REFUSED;
     }
 
-#ifdef DEBUG
+#ifdef LOG_ENABLED
     Log(("Sysenter Patch code ----------------------------------------------------------\n"));
     patmr3DisasmCodeStream(pVM, pInstrGC, pInstrGC, patmr3DisasmCallback, pPatch);
     Log(("Sysenter Patch code ends -----------------------------------------------------\n"));
