@@ -608,7 +608,7 @@ VMMDECL(int) TMVirtualResume(PVM pVM)
         pVM->tm.s.fVirtualSyncTicking       = true;
         return VINF_SUCCESS;
     }
-    AssertReturn(pVM->tm.s.cVirtualTicking < pVM->cCPUs, VERR_INTERNAL_ERROR);
+    AssertMsgReturn(pVM->tm.s.cVirtualTicking <= pVM->cCPUs, ("%d vs %d\n", pVM->tm.s.cVirtualTicking, pVM->cCPUs), VERR_INTERNAL_ERROR);
     return VINF_SUCCESS;
 }
 
@@ -632,7 +632,7 @@ VMMDECL(int) TMVirtualPause(PVM pVM)
         pVM->tm.s.fVirtualSyncTicking   = false;
         return VINF_SUCCESS;
     }
-    AssertReturn(pVM->tm.s.cVirtualTicking < pVM->cCPUs, VERR_INTERNAL_ERROR);
+    AssertMsgReturn(pVM->tm.s.cVirtualTicking <= pVM->cCPUs, ("%d vs %d\n", pVM->tm.s.cVirtualTicking, pVM->cCPUs), VERR_INTERNAL_ERROR);
     return VINF_SUCCESS;
 }
 
