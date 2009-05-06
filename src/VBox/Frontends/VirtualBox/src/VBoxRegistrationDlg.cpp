@@ -495,7 +495,6 @@ void VBoxRegistrationDlg::registrationResponse (bool aError)
 void VBoxRegistrationDlg::revalidate (QIWidgetValidator *aWval)
 {
     bool valid = true;
-    int pos = 0;
 
     if (mRbOld->isChecked())
     {
