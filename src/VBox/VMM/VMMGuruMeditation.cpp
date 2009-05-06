@@ -384,8 +384,8 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
                                 "!! Raw stack (mind the direction). pbEMTStackRC=%RRv pbEMTStackBottomRC=%RRv\n"
                                 "!!\n"
                                 "%.*Rhxd\n",
-                                pVM->vmm.s.pbEMTStackRC, pVM->vmm.s.pbEMTStackBottomRC,
-                                VMM_STACK_SIZE, pVM->vmm.s.pbEMTStackR3);
+                                pVCpu->vmm.s.pbEMTStackRC, pVCpu->vmm.s.pbEMTStackBottomRC,
+                                VMM_STACK_SIZE, pVCpu->vmm.s.pbEMTStackR3);
             } /* !HWACCMR3IsActive */
             break;
         }

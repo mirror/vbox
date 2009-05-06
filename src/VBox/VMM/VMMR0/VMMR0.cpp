@@ -307,13 +307,15 @@ VMMR0DECL(int) VMMR0TermVM(PVM pVM, PGVM pGVM)
  */
 VMMR0DECL(int) VMMR0CallHost(PVM pVM, VMMCALLHOST enmOperation, uint64_t uArg)
 {
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+
 /** @todo profile this! */
-    pVM->vmm.s.enmCallHostOperation = enmOperation;
-    pVM->vmm.s.u64CallHostArg = uArg;
-    pVM->vmm.s.rcCallHost = VERR_INTERNAL_ERROR;
-    int rc = vmmR0CallHostLongJmp(&pVM->vmm.s.CallHostR0JmpBuf, VINF_VMM_CALL_HOST);
+    pVCpu->vmm.s.enmCallHostOperation = enmOperation;
+    pVCpu->vmm.s.u64CallHostArg = uArg;
+    pVCpu->vmm.s.rcCallHost = VERR_INTERNAL_ERROR;
+    int rc = vmmR0CallHostLongJmp(&pVCpu->vmm.s.CallHostR0JmpBuf, VINF_VMM_CALL_HOST);
     if (rc == VINF_SUCCESS)
-        rc = pVM->vmm.s.rcCallHost;
+        rc = pVCpu->vmm.s.rcCallHost;
     return rc;
 }
 
@@ -322,9 +324,10 @@ VMMR0DECL(int) VMMR0CallHost(PVM pVM, VMMCALLHOST enmOperation, uint64_t uArg)
 /**
  * Record return code statistics
  * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
  * @param   rc          The status code.
  */
-static void vmmR0RecordRC(PVM pVM, int rc)
+static void vmmR0RecordRC(PVM pVM, PVMCPU pVCpu, int rc)
 {
     /*
      * Collect statistics.
@@ -437,7 +440,7 @@ static void vmmR0RecordRC(PVM pVM, int rc)
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetInterruptPending);
             break;
         case VINF_VMM_CALL_HOST:
-            switch (pVM->vmm.s.enmCallHostOperation)
+            switch (pVCpu->vmm.s.enmCallHostOperation)
             {
                 case VMMCALLHOST_PDM_LOCK:
                     STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallPDMLock);
@@ -589,7 +592,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperat
 
 #ifdef VBOX_WITH_STATISTICS
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
-                vmmR0RecordRC(pVM, rc);
+                vmmR0RecordRC(pVM, pVCpu, rc);
 #endif
             }
             else
@@ -622,7 +625,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperat
                 rc = HWACCMR0Enter(pVM, pVCpu);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = vmmR0CallHostSetJmp(&pVM->vmm.s.CallHostR0JmpBuf, HWACCMR0RunGuestCode, pVM, pVCpu); /* this may resume code. */
+                    rc = vmmR0CallHostSetJmp(&pVCpu->vmm.s.CallHostR0JmpBuf, HWACCMR0RunGuestCode, pVM, pVCpu); /* this may resume code. */
                     int rc2 = HWACCMR0Leave(pVM, pVCpu);
                     AssertRC(rc2);
                 }
@@ -638,7 +641,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperat
 #endif
 
 #ifdef VBOX_WITH_STATISTICS
-            vmmR0RecordRC(pVM, rc);
+            vmmR0RecordRC(pVM, pVCpu, rc);
 #endif
             /* No special action required for external interrupts, just return. */
             break;
@@ -1083,7 +1086,9 @@ VMMR0DECL(int) VMMR0EntryEx(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperation
             case VMMR0_DO_VMMR0_INIT:
             case VMMR0_DO_VMMR0_TERM:
             {
-                if (!pVM->vmm.s.CallHostR0JmpBuf.pvSavedStack)
+                PVMCPU pVCpu = &pVM->aCpus[idCpu];
+
+                if (!pVCpu->vmm.s.CallHostR0JmpBuf.pvSavedStack)
                     break;
 
                 /** @todo validate this EMT claim... GVM knows. */
@@ -1094,7 +1099,7 @@ VMMR0DECL(int) VMMR0EntryEx(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperation
                 Args.pReq = pReq;
                 Args.u64Arg = u64Arg;
                 Args.pSession = pSession;
-                return vmmR0CallHostSetJmpEx(&pVM->vmm.s.CallHostR0JmpBuf, vmmR0EntryExWrapper, &Args);
+                return vmmR0CallHostSetJmpEx(&pVCpu->vmm.s.CallHostR0JmpBuf, vmmR0EntryExWrapper, &Args);
             }
 
             default:
@@ -1140,15 +1145,17 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
         return;
     }
 
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+
     /*
      * Check that the jump buffer is armed.
      */
 #ifdef RT_ARCH_X86
-    if (    !pVM->vmm.s.CallHostR0JmpBuf.eip
-        ||  pVM->vmm.s.CallHostR0JmpBuf.fInRing3Call)
+    if (    !pVCpu->vmm.s.CallHostR0JmpBuf.eip
+        ||  pVCpu->vmm.s.CallHostR0JmpBuf.fInRing3Call)
 #else
-    if (    !pVM->vmm.s.CallHostR0JmpBuf.rip
-        ||  pVM->vmm.s.CallHostR0JmpBuf.fInRing3Call)
+    if (    !pVCpu->vmm.s.CallHostR0JmpBuf.rip
+        ||  pVCpu->vmm.s.CallHostR0JmpBuf.fInRing3Call)
 #endif
     {
 #ifdef DEBUG
@@ -1199,12 +1206,14 @@ DECLEXPORT(bool) RTCALL RTAssertShouldPanic(void)
     PVM pVM = GVMMR0GetVMByEMT(NIL_RTNATIVETHREAD);
     if (pVM)
     {
+        PVMCPU pVCpu = VMMGetCpu(pVM);
+
 #ifdef RT_ARCH_X86
-        if (    pVM->vmm.s.CallHostR0JmpBuf.eip
-            &&  !pVM->vmm.s.CallHostR0JmpBuf.fInRing3Call)
+        if (    pVCpu->vmm.s.CallHostR0JmpBuf.eip
+            &&  !pVCpu->vmm.s.CallHostR0JmpBuf.fInRing3Call)
 #else
-        if (    pVM->vmm.s.CallHostR0JmpBuf.rip
-            &&  !pVM->vmm.s.CallHostR0JmpBuf.fInRing3Call)
+        if (    pVCpu->vmm.s.CallHostR0JmpBuf.rip
+            &&  !pVCpu->vmm.s.CallHostR0JmpBuf.fInRing3Call)
 #endif
         {
             int rc = VMMR0CallHost(pVM, VMMCALLHOST_VM_R0_ASSERTION, 0);
