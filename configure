@@ -2130,12 +2130,6 @@ if [ $WITH_OPENGL -eq 0 ]; then
 fi
 
 if [ "$OS" = "darwin" ]; then
-  # On Darwin we want to build against Qt4 only. WITH_QT4 is enabled by
-  # default so disable Qt3. --disable-qt disables both Qt3 and Qt4 GUI now,
-  # --disable-qt4 disables only the Qt4 GUI (which is not appropriate for
-  # Darwin as we disable the Qt3 here anyway.
-  # (Qt3 builds for Intel Macs are usually not threaded or for X11. And they
-  #  don't contain our patches, which means the result isn't really usable.)
   BUILD_LIBXSLT=1
   BUILD_LIBXML2=1
 fi
@@ -2175,7 +2169,7 @@ check_gcc
 # TODO check for libxdamange-dev (X11/extensions/Xdamage.h, additions only)
 [ $WITH_X11    -eq 1 ] && check_xcursor
 [ $WITH_OPENGL -eq 1 ] && check_xmu
-[ $WITH_OPENGL -eq 1 ] && check_mesa
+[ "$OS" != "darwin" -a $WITH_OPENGL -eq 1 ] && check_mesa
 [ $WITH_QT4    -eq 1 ] && check_qt4
 [ $WITH_PYTHON -eq 1 -a "$OS" != "darwin" ] && check_python
 
