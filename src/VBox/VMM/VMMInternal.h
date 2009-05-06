@@ -330,6 +330,7 @@ typedef struct VMMCPU
     /** Offset to the VMCPU structure.
      * See VMM2VMCPU(). */
     RTINT                       offVMCPU;
+    RTINT                       offDummy;
 
     /** VMM stack, pointer to the top of the stack in R3.
      * Stack is allocated from the hypervisor heap and is page aligned
