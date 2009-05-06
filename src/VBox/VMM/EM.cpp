@@ -3705,6 +3705,10 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case VINF_EM_RESUME:
                     Log2(("EMR3ExecuteVM: VINF_EM_RESUME: %d -> VINF_EM_RESCHEDULE\n", pVCpu->em.s.enmState));
+                    /* Don't reschedule in the halted or wait for SIPI case. */
+                    if (    pVCpu->em.s.enmPrevState == EMSTATE_WAIT_SIPI
+                        ||  pVCpu->em.s.enmPrevState == EMSTATE_HALTED)
+                        break;
                     /* fall through and get scheduled. */
 
                 /*
