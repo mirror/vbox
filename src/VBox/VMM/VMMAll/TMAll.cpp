@@ -45,6 +45,49 @@
 
 
 /**
+ * Try take the EMT/TM lock, wait in ring-3 return VERR_SEM_BUSY in R0/RC.
+ *
+ * @retval  VINF_SUCCESS on success (always in ring-3).
+ * @retval  VERR_SEM_BUSY in RC and R0 if the semaphore is busy.
+ *
+ * @param   pVM         The VM handle.
+ */
+int tmLock(PVM pVM)
+{
+    VM_ASSERT_EMT(pVM);
+    int rc = PDMCritSectEnter(&pVM->tm.s.EmtLock, VERR_SEM_BUSY);
+    return rc;
+}
+
+
+/**
+ * Try take the EMT/TM lock, no waiting.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_SEM_BUSY if busy.
+ *
+ * @param   pVM         The VM handle.
+ */
+int tmTryLock(PVM pVM)
+{
+    VM_ASSERT_EMT(pVM);
+    int rc = PDMCritSectTryEnter(&pVM->tm.s.EmtLock);
+    return rc;
+}
+
+
+/**
+ * Release EMT/TM lock.
+ *
+ * @param   pVM         The VM handle.
+ */
+void tmUnlock(PVM pVM)
+{
+    PDMCritSectLeave(&pVM->tm.s.EmtLock);
+}
+
+
+/**
  * Notification that execution is about to start.
  *
  * This call must always be paired with a TMNotifyEndOfExecution call.
@@ -128,7 +171,8 @@ VMMDECL(void) TMNotifyEndOfHalt(PVMCPU pVCpu)
 DECLINLINE(void) tmSchedule(PTMTIMER pTimer)
 {
     PVM pVM = pTimer->CTX_SUFF(pVM);
-    if (VM_IS_EMT(pVM))
+    if (    VM_IS_EMT(pVM)
+        &&  RT_SUCCESS(tmTryLock(pVM)))
     {
         STAM_PROFILE_START(&pVM->tm.s.CTXALLSUFF(StatScheduleOne), a);
         PTMTIMERQUEUE pQueue = &pVM->tm.s.CTX_SUFF(paTimerQueues)[pTimer->enmClock];
@@ -138,6 +182,7 @@ DECLINLINE(void) tmSchedule(PTMTIMER pTimer)
         tmTimerQueuesSanityChecks(pVM, "tmSchedule");
 #endif
         STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatScheduleOne), a);
+        tmUnlock(pVM);
     }
     else if (!VM_FF_ISSET(pVM, VM_FF_TIMER))  /**@todo only do this when arming the timer. */
     {
@@ -225,12 +270,18 @@ DECLINLINE(bool) tmTimerTryWithLink(PTMTIMER pTimer, TMTIMERSTATE enmStateNew, T
  */
 VMMDECL(uint64_t) TMTimerPoll(PVM pVM)
 {
+    int rc = tmLock(pVM); /* play safe for now */
+
     /*
      * Return straight away if the timer FF is already set.
      */
     if (VM_FF_ISSET(pVM, VM_FF_TIMER))
     {
         STAM_COUNTER_INC(&pVM->tm.s.StatPollAlreadySet);
+#ifndef IN_RING3
+        if (RT_SUCCESS(rc))
+#endif
+            tmUnlock(pVM);
         return 0;
     }
 
@@ -246,8 +297,12 @@ VMMDECL(uint64_t) TMTimerPoll(PVM pVM)
     const int64_t i64Delta1 = u64Expire1 - u64Now;
     if (i64Delta1 <= 0)
     {
-        LogFlow(("TMTimerPoll: expire1=%RU64 <= now=%RU64\n", u64Expire1, u64Now));
         STAM_COUNTER_INC(&pVM->tm.s.StatPollVirtual);
+        LogFlow(("TMTimerPoll: expire1=%RU64 <= now=%RU64\n", u64Expire1, u64Now));
+#ifndef IN_RING3
+        if (RT_SUCCESS(rc))
+#endif
+            tmUnlock(pVM);
         VM_FF_SET(pVM, VM_FF_TIMER);
 #ifdef IN_RING3
         REMR3NotifyTimerPending(pVM);
@@ -286,8 +341,12 @@ VMMDECL(uint64_t) TMTimerPoll(PVM pVM)
     int64_t i64Delta2 = u64Expire2 - u64VirtualSyncNow;
     if (i64Delta2 <= 0)
     {
-        LogFlow(("TMTimerPoll: expire2=%RU64 <= now=%RU64\n", u64Expire2, u64Now));
         STAM_COUNTER_INC(&pVM->tm.s.StatPollVirtualSync);
+#ifndef IN_RING3
+        if (RT_SUCCESS(rc))
+#endif
+            tmUnlock(pVM);
+        LogFlow(("TMTimerPoll: expire2=%RU64 <= now=%RU64\n", u64Expire2, u64Now));
         VM_FF_SET(pVM, VM_FF_TIMER);
 #ifdef IN_RING3
         REMR3NotifyTimerPending(pVM);
@@ -301,6 +360,10 @@ VMMDECL(uint64_t) TMTimerPoll(PVM pVM)
      * Return the time left to the next event.
      */
     STAM_COUNTER_INC(&pVM->tm.s.StatPollMiss);
+#ifndef IN_RING3
+    if (RT_SUCCESS(rc))
+#endif
+        tmUnlock(pVM);
     return RT_MIN(i64Delta1, i64Delta2);
 }
 
@@ -319,12 +382,18 @@ VMMDECL(uint64_t) TMTimerPoll(PVM pVM)
  */
 VMMDECL(uint64_t) TMTimerPollGIP(PVM pVM, uint64_t *pu64Delta)
 {
+    int rc = tmLock(pVM); /* play safe for now. */
+
     /*
      * Return straight away if the timer FF is already set.
      */
     if (VM_FF_ISSET(pVM, VM_FF_TIMER))
     {
         STAM_COUNTER_INC(&pVM->tm.s.StatPollAlreadySet);
+#ifndef IN_RING3
+        if (RT_SUCCESS(rc))
+#endif
+            tmUnlock(pVM);
         *pu64Delta = 0;
         return 0;
     }
@@ -332,17 +401,21 @@ VMMDECL(uint64_t) TMTimerPollGIP(PVM pVM, uint64_t *pu64Delta)
     /*
      * Get current time and check the expire times of the two relevant queues.
      */
-    const uint64_t u64Now = TMVirtualGet(pVM);
+    const uint64_t  u64Now = TMVirtualGet(pVM);
 
     /*
      * TMCLOCK_VIRTUAL
      */
-    const uint64_t u64Expire1 = pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire;
-    const int64_t i64Delta1 = u64Expire1 - u64Now;
+    const uint64_t  u64Expire1 = pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire;
+    const int64_t   i64Delta1  = u64Expire1 - u64Now;
     if (i64Delta1 <= 0)
     {
-        LogFlow(("TMTimerPoll: expire1=%RU64 <= now=%RU64\n", u64Expire1, u64Now));
         STAM_COUNTER_INC(&pVM->tm.s.StatPollVirtual);
+#ifndef IN_RING3
+        if (RT_SUCCESS(rc))
+#endif
+            tmUnlock(pVM);
+        LogFlow(("TMTimerPoll: expire1=%RU64 <= now=%RU64\n", u64Expire1, u64Now));
         VM_FF_SET(pVM, VM_FF_TIMER);
 #ifdef IN_RING3
         REMR3NotifyTimerPending(pVM);
@@ -356,8 +429,8 @@ VMMDECL(uint64_t) TMTimerPollGIP(PVM pVM, uint64_t *pu64Delta)
      * This isn't quite as stright forward if in a catch-up, not only do
      * we have to adjust the 'now' but when have to adjust the delta as well.
      */
-    const uint64_t u64Expire2 = pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire;
-    uint64_t u64VirtualSyncNow;
+    const uint64_t  u64Expire2 = pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire;
+    uint64_t        u64VirtualSyncNow;
     if (!pVM->tm.s.fVirtualSyncTicking)
         u64VirtualSyncNow = pVM->tm.s.u64VirtualSync;
     else
@@ -379,11 +452,16 @@ VMMDECL(uint64_t) TMTimerPollGIP(PVM pVM, uint64_t *pu64Delta)
             u64VirtualSyncNow = u64Now - off;
         }
     }
+
     int64_t i64Delta2 = u64Expire2 - u64VirtualSyncNow;
     if (i64Delta2 <= 0)
     {
-        LogFlow(("TMTimerPoll: expire2=%RU64 <= now=%RU64\n", u64Expire2, u64Now));
         STAM_COUNTER_INC(&pVM->tm.s.StatPollVirtualSync);
+#ifndef IN_RING3
+        if (RT_SUCCESS(rc))
+#endif
+            tmUnlock(pVM);
+        LogFlow(("TMTimerPoll: expire2=%RU64 <= now=%RU64\n", u64Expire2, u64Now));
         VM_FF_SET(pVM, VM_FF_TIMER);
 #ifdef IN_RING3
         REMR3NotifyTimerPending(pVM);
@@ -409,6 +487,11 @@ VMMDECL(uint64_t) TMTimerPollGIP(PVM pVM, uint64_t *pu64Delta)
         u64GipTime /= pVM->tm.s.u32VirtualWarpDrivePercentage;
         u64GipTime += pVM->tm.s.u64VirtualWarpDriveStart;
     }
+
+#ifndef IN_RING3
+    if (RT_SUCCESS(rc))
+#endif
+        tmUnlock(pVM);
     return u64GipTime;
 }
 #endif
@@ -1290,6 +1373,8 @@ const char *tmTimerState(TMTIMERSTATE enmState)
  *
  * @param   pQueue      The timer queue.
  * @param   pTimer      The timer that needs scheduling.
+ *
+ * @remarks Called while owning the lock.
  */
 DECLINLINE(void) tmTimerQueueScheduleOne(PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
 {
@@ -1484,10 +1569,12 @@ DECLINLINE(void) tmTimerQueueScheduleOne(PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
  *
  * @param   pVM             The VM to run the timers for.
  * @param   pQueue          The queue to schedule.
+ *
+ * @remarks Called while owning the lock.
  */
 void tmTimerQueueSchedule(PVM pVM, PTMTIMERQUEUE pQueue)
 {
-    VM_ASSERT_EMT(pVM);
+    TM_ASSERT_EMT_LOCK(pVM);
 
     /*
      * Dequeue the scheduling list and iterate it.
@@ -1522,9 +1609,13 @@ void tmTimerQueueSchedule(PVM pVM, PTMTIMERQUEUE pQueue)
  * Checks that the timer queues are sane.
  *
  * @param   pVM     VM handle.
+ *
+ * @remarks Called while owning the lock.
  */
 void tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere)
 {
+    TM_ASSERT_EMT_LOCK(pVM);
+
     /*
      * Check the linking of the active lists.
      */

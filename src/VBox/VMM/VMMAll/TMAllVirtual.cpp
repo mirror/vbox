@@ -336,6 +336,7 @@ DECLINLINE(uint64_t) tmVirtualGet(PVM pVM, bool fCheckTimers)
          */
         if (    fCheckTimers
             &&  !VM_FF_ISSET(pVM, VM_FF_TIMER)
+            &&  !pVM->tm.s.fRunningQueues
             &&  (   pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire <= u64
                  || (   pVM->tm.s.fVirtualSyncTicking
                      && pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire <= u64 - pVM->tm.s.offVirtualSync
@@ -370,7 +371,7 @@ DECLINLINE(uint64_t) tmVirtualGet(PVM pVM, bool fCheckTimers)
  */
 VMMDECL(uint64_t) TMVirtualGet(PVM pVM)
 {
-    return TMVirtualGetEx(pVM, true /* check timers */);
+    return tmVirtualGet(pVM, true /* check timers */);
 }
 
 
@@ -402,8 +403,6 @@ VMMDECL(uint64_t) TMVirtualGetEx(PVM pVM, bool fCheckTimers)
  */
 VMMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
 {
-    VM_ASSERT_EMT(pVM);
-
     uint64_t u64;
     if (pVM->tm.s.fVirtualSyncTicking)
     {
@@ -448,6 +447,8 @@ VMMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
         uint64_t off = pVM->tm.s.offVirtualSync;
         if (pVM->tm.s.fVirtualSyncCatchUp)
         {
+            int rc = tmTryLock(pVM); /** @todo SMP: Here be dragons... Need to get back to this later. */
+
             const uint64_t u64Prev = pVM->tm.s.u64VirtualSyncCatchUpPrev;
             uint64_t u64Delta = u64 - u64Prev;
             if (RT_LIKELY(!(u64Delta >> 32)))
@@ -478,6 +479,9 @@ VMMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
                     pVM->tm.s.u64VirtualSyncCatchUpPrev = u64;
                 Log(("TMVirtualGetSync: u64Delta=%RX64\n", u64Delta));
             }
+
+            if (RT_SUCCESS(rc))
+                tmUnlock(pVM);
         }
 
         /*
@@ -490,8 +494,13 @@ VMMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
         if (u64 >= u64Expire)
         {
             u64 = u64Expire;
-            ASMAtomicXchgU64(&pVM->tm.s.u64VirtualSync, u64);
-            ASMAtomicXchgBool(&pVM->tm.s.fVirtualSyncTicking, false);
+            int rc = tmTryLock(pVM); /** @todo SMP: Here be dragons... Need to get back to this later. */
+            if (RT_SUCCESS(rc))
+            {
+                ASMAtomicXchgU64(&pVM->tm.s.u64VirtualSync, u64);
+                ASMAtomicXchgBool(&pVM->tm.s.fVirtualSyncTicking, false);
+                tmUnlock(pVM);
+            }
             if (    fCheckTimers
                 &&  !VM_FF_ISSET(pVM, VM_FF_TIMER))
             {
@@ -596,16 +605,22 @@ VMMDECL(uint64_t) TMVirtualGetFreq(PVM pVM)
  */
 VMMDECL(int) TMVirtualResume(PVM pVM)
 {
-    /** @note this is done only in specific cases (vcpu 0 init, termination, debug, out of memory conditions;
-     *  there is at least a race for fVirtualSyncTicking.
+    /*
+     * Note! this is done only in specific cases (vcpu 0 init, termination, debug,
+     * out of memory conditions; there is at least a race for fVirtualSyncTicking.
      */
     if (ASMAtomicIncU32(&pVM->tm.s.cVirtualTicking) == 1)
     {
+        int rc = tmLock(pVM); /* paranoia */
+
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualResume);
         pVM->tm.s.u64VirtualRawPrev         = 0;
         pVM->tm.s.u64VirtualWarpDriveStart  = tmVirtualGetRawNanoTS(pVM);
         pVM->tm.s.u64VirtualOffset          = pVM->tm.s.u64VirtualWarpDriveStart - pVM->tm.s.u64Virtual;
         pVM->tm.s.fVirtualSyncTicking       = true;
+
+        if (RT_SUCCESS(rc))
+            tmUnlock(pVM);
         return VINF_SUCCESS;
     }
     AssertMsgReturn(pVM->tm.s.cVirtualTicking <= pVM->cCPUs, ("%d vs %d\n", pVM->tm.s.cVirtualTicking, pVM->cCPUs), VERR_INTERNAL_ERROR);
@@ -622,14 +637,20 @@ VMMDECL(int) TMVirtualResume(PVM pVM)
  */
 VMMDECL(int) TMVirtualPause(PVM pVM)
 {
-    /** @note this is done only in specific cases (vcpu 0 init, termination, debug, out of memory conditions;
-     *  there is at least a race for fVirtualSyncTicking.
+    /*
+     * Note! this is done only in specific cases (vcpu 0 init, termination, debug,
+     * out of memory conditions; there is at least a race for fVirtualSyncTicking.
      */
     if (ASMAtomicDecU32(&pVM->tm.s.cVirtualTicking) == 0)
     {
+        int rc = tmLock(pVM); /* paranoia */
+
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualPause);
         pVM->tm.s.u64Virtual            = tmVirtualGetRaw(pVM);
         pVM->tm.s.fVirtualSyncTicking   = false;
+
+        if (RT_SUCCESS(rc))
+            tmUnlock(pVM);
         return VINF_SUCCESS;
     }
     AssertMsgReturn(pVM->tm.s.cVirtualTicking <= pVM->cCPUs, ("%d vs %d\n", pVM->tm.s.cVirtualTicking, pVM->cCPUs), VERR_INTERNAL_ERROR);
@@ -692,6 +713,7 @@ static DECLCALLBACK(int) tmVirtualSetWarpDrive(PVM pVM, uint32_t u32Percent)
     AssertMsgReturn(u32Percent >= 2 && u32Percent <= 20000,
                     ("%RX32 is not between 2 and 20000 (inclusive).\n", u32Percent),
                     VERR_INVALID_PARAMETER);
+    tmLock(pVM);
 
     /*
      * If the time is running we'll have to pause it before we can change
@@ -701,9 +723,9 @@ static DECLCALLBACK(int) tmVirtualSetWarpDrive(PVM pVM, uint32_t u32Percent)
     if (fPaused)
     {
         int rc = TMVirtualPause(pVM);
-        AssertRCReturn(rc, rc);
+        AssertRC(rc);
         rc = TMCpuTickPause(pVCpu);
-        AssertRCReturn(rc, rc);
+        AssertRC(rc);
     }
 
     pVM->tm.s.u32VirtualWarpDrivePercentage = u32Percent;
@@ -714,11 +736,12 @@ static DECLCALLBACK(int) tmVirtualSetWarpDrive(PVM pVM, uint32_t u32Percent)
     if (fPaused)
     {
         int rc = TMVirtualResume(pVM);
-        AssertRCReturn(rc, rc);
+        AssertRC(rc);
         rc = TMCpuTickResume(pVCpu);
-        AssertRCReturn(rc, rc);
+        AssertRC(rc);
     }
 
+    tmUnlock(pVM);
     return VINF_SUCCESS;
 }
 
