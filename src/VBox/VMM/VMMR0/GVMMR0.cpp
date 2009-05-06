@@ -1668,7 +1668,7 @@ GVMMR0DECL(int) GVMMR0SchedWakeUp(PVM pVM, VMCPUID idCpu)
  */
 DECLINLINE(int) gvmmR0SchedPokeOne(PGVM pGVM, PVMCPU pVCpu)
 {
-    if (pVCpu->enmState != VMCPUSTATE_RUN_EXEC)
+    if (pVCpu->enmState != VMCPUSTATE_STARTED_EXEC)
         return VINF_GVM_NOT_BUSY_IN_GC;
 
     /** @todo do the actual poking, need to get the current cpu id from HWACC or

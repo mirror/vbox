@@ -672,6 +672,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
     return rc;
 }
 
+
 /**
  * Register the calling EMT with GVM.
  *
@@ -1094,8 +1095,13 @@ static DECLCALLBACK(int) vmR3PowerOn(PVM pVM)
 {
     LogFlow(("vmR3PowerOn: pVM=%p\n", pVM));
 
+    /*
+     * EMT(0) does the actual power on work *before* the other EMTs
+     * get here, they just need to set their state to STARTED so they
+     * get out of the EMT loop and into EM.
+     */
     PVMCPU pVCpu = VMMGetCpu(pVM);
-    /* Only VCPU 0 does the actual work. */
+    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
     if (pVCpu->idCpu != 0)
         return VINF_SUCCESS;
 
@@ -1198,7 +1204,7 @@ static DECLCALLBACK(int) vmR3Suspend(PVM pVM)
     }
 
     PVMCPU pVCpu = VMMGetCpu(pVM);
-    /* Only VCPU 0 does the actual work. */
+    /* Only VCPU 0 does the actual work (*after* all the other CPUs has been here). */
     if (pVCpu->idCpu != 0)
         return VINF_EM_SUSPEND;
 
@@ -1275,7 +1281,7 @@ static DECLCALLBACK(int) vmR3Resume(PVM pVM)
     }
 
     PVMCPU pVCpu = VMMGetCpu(pVM);
-    /* Only VCPU 0 does the actual work. */
+    /* Only VCPU 0 does the actual work (*before* the others wake up). */
     if (pVCpu->idCpu != 0)
         return VINF_EM_RESUME;
 
@@ -1375,7 +1381,6 @@ static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, PFNVMPROGRES
     /*
      * Change the state and perform the save.
      */
-    /** @todo implement progress support in SSM */
     vmR3SetState(pVM, VMSTATE_SAVING);
     int rc = SSMR3Save(pVM, pszFilename, SSMAFTER_CONTINUE, pfnProgress,  pvUser);
     vmR3SetState(pVM, VMSTATE_SUSPENDED);
@@ -1549,8 +1554,12 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
         return VERR_VM_INVALID_VM_STATE;
     }
 
+    /*
+     * EMT(0) does the actual power off work here *after* all the other EMTs
+     * have been thru and entered the STOPPED state.
+     */
     PVMCPU pVCpu = VMMGetCpu(pVM);
-    /* Only VCPU 0 does the actual work. */
+    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STOPPED);
     if (pVCpu->idCpu != 0)
         return VINF_EM_OFF;
 
@@ -2153,10 +2162,6 @@ VMMR3DECL(int)   VMR3Reset(PVM pVM)
      */
     PVMREQ pReq = NULL;
     rc = VMR3ReqCall(pVM, VMCPUID_ALL_REVERSE, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Reset, 1, pVM);
-    /** @note Can this really happen?? */
-    while (rc == VERR_TIMEOUT)
-        rc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
-
     if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     AssertRC(rc);
@@ -2182,7 +2187,7 @@ static void vmR3CheckIntegrity(PVM pVM)
 /**
  * Reset request processor.
  *
- * This is called by the emulation thread as a response to the
+ * This is called by the emulation threads as a response to the
  * reset request issued by VMR3Reset().
  *
  * @returns VBox status code.
@@ -2192,7 +2197,11 @@ static DECLCALLBACK(int) vmR3Reset(PVM pVM)
 {
     PVMCPU pVCpu = VMMGetCpu(pVM);
 
-    /* Only VCPU 0 does the full cleanup. */
+    /*
+     * EMT(0) does the full cleanup *after* all the other EMTs has been
+     * thru here and been told to enter the EMSTATE_WAIT_SIPI state.
+     */
+    VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STARTED);
     if (pVCpu->idCpu != 0)
         return VINF_EM_RESET;
 

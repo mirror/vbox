@@ -44,26 +44,35 @@
  */
 
 /**
- * The state of a virtual CPU.
+ * The state of a Virtual CPU.
  *
- * The VM running states are a sub-states of the VMSTATE_RUNNING state. While
- * VMCPUSTATE_NOT_RUNNING is a place holder for the other VM states.
+ * The basic state indicated here is whether the CPU has been started or not. In
+ * addition, there are sub-states when started for assisting scheduling (GVMM
+ * mostly).
+ *
+ * The transision out of the STOPPED state is done by a vmR3PowerOn.
+ * The transision back to the STOPPED state is done by vmR3PowerOff.
+ *
+ * (Alternatively we could let vmR3PowerOn start CPU 0 only and let the SPIP
+ * handling switch on the other CPUs. Then vmR3Reset would stop all but CPU 0.)
  */
 typedef enum VMCPUSTATE
 {
     /** The customary invalid zero. */
     VMCPUSTATE_INVALID = 0,
 
-    /** Running guest code (VM running). */
-    VMCPUSTATE_RUN_EXEC,
-    /** Running guest code in the recompiler (VM running). */
-    VMCPUSTATE_RUN_EXEC_REM,
-    /** Halted (VM running). */
-    VMCPUSTATE_RUN_HALTED,
-    /** All the other bits we do while running a VM (VM running). */
-    VMCPUSTATE_RUN_MISC,
-    /** VM not running, we're servicing requests or whatever. */
-    VMCPUSTATE_NOT_RUNNING,
+    /** Virtual CPU has not yet been started.  */
+    VMCPUSTATE_STOPPED,
+
+    /** CPU started. */
+    VMCPUSTATE_STARTED,
+    /** Executing guest code and can be poked. */
+    VMCPUSTATE_STARTED_EXEC,
+    /** Executing guest code in the recompiler. */
+    VMCPUSTATE_STARTED_EXEC_REM,
+    /** Halted. */
+    VMCPUSTATE_STARTED_HALTED,
+
     /** The end of valid virtual CPU states. */
     VMCPUSTATE_END,
 
@@ -181,10 +190,28 @@ typedef struct VMCPU
 
 } VMCPU;
 
-/** Pointer to a VMCPU. */
-#ifndef ___VBox_types_h
-typedef struct VMCPU *PVMCPU;
-#endif
+
+/** @name Operations on VMCPU::enmState
+ * @{ */
+/** Gets the VMCPU state. */
+#define VMCPU_GET_STATE(pVCpu)              ( (pVCpu)->enmState )
+/** Sets the VMCPU state. */
+#define VMCPU_SET_STATE(pVCpu, enmNewState) \
+    ASMAtomicWriteU32((uint32_t volatile *)&(pVCpu)->enmState, (enmNewState))
+/** Checks the VMCPU state. */
+#define VMCPU_ASSERT_STATE(pVCpu, enmExpectedState) \
+    do { \
+        VMCPUSTATE enmState = VMCPU_GET_STATE(pVCpu); \
+        AssertMsg(enmState == (enmExpectedState), \
+                  ("enmState=%d  enmExpectedState=%d idCpu=%u\n", \
+                  enmState, enmExpectedState, (pVCpu)->idCpu)); \
+    } while (0)
+/** Tests if the state means that the CPU is started. */
+#define VMCPUSTATE_IS_STARTED(enmState)     ( (enmState) > VMCPUSTATE_STOPPED )
+/** Tests if the state means that the CPU is stopped. */
+#define VMCPUSTATE_IS_STOPPED(enmState)     ( (enmState) == VMCPUSTATE_STOPPED )
+/** @} */
+
 
 /** The name of the Guest Context VMM Core module. */
 #define VMMGC_MAIN_MODULE_NAME          "VMMGC.gc"
@@ -449,7 +476,7 @@ typedef struct VMCPU *PVMCPU;
 #ifdef IN_RC
 # define VMCPU_IS_EMT(pVCpu)                true
 #else
-# define VMCPU_IS_EMT(pVCpu)                (pVCpu && (pVCpu == VMMGetCpu(pVCpu->CTX_SUFF(pVM))))
+# define VMCPU_IS_EMT(pVCpu)                ((pVCpu) && ((pVCpu) == VMMGetCpu((pVCpu)->CTX_SUFF(pVM))))
 #endif
 
 /** @def VM_ASSERT_EMT
@@ -522,14 +549,14 @@ typedef struct VMCPU *PVMCPU;
  */
 #define VM_ASSERT_STATE(pVM, _enmState) \
         AssertMsg((pVM)->enmVMState == (_enmState), \
-                  ("state %s, expected %s\n", VMGetStateName(pVM->enmVMState), VMGetStateName(_enmState)))
+                  ("state %s, expected %s\n", VMGetStateName((pVM)->enmVMState), VMGetStateName(_enmState)))
 
 /** @def VM_ASSERT_STATE_RETURN
  * Asserts a certain VM state and returns if it doesn't match.
  */
 #define VM_ASSERT_STATE_RETURN(pVM, _enmState, rc) \
         AssertMsgReturn((pVM)->enmVMState == (_enmState), \
-                        ("state %s, expected %s\n", VMGetStateName(pVM->enmVMState), VMGetStateName(_enmState)), \
+                        ("state %s, expected %s\n", VMGetStateName((pVM)->enmVMState), VMGetStateName(_enmState)), \
                         (rc))
 
 /** @def VM_ASSERT_VALID_EXT_RETURN
@@ -898,11 +925,6 @@ typedef struct VM
      * Must be aligned on a 64-byte boundrary.  */
     VMCPU       aCpus[1];
 } VM;
-
-/** Pointer to a VM. */
-#ifndef ___VBox_types_h
-typedef struct VM *PVM;
-#endif
 
 
 #ifdef IN_RC

@@ -448,9 +448,6 @@ typedef struct VMINTUSERPERVMCPU
     STAMPROFILE                     StatHaltTimers;
     STAMPROFILE                     StatHaltPoll;
     /** @} */
-
-    /** vmR3EmulationThread longjmp buffer. Must be last in the structure. */
-    jmp_buf                         emtJumpEnv;
 } VMINTUSERPERVMCPU;
 
 /** Pointer to the VM internal data kept in the UVM. */

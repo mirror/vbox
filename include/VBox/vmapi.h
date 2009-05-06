@@ -375,7 +375,6 @@ VMMR3DECL(int)  VMR3PowerOff(PVM pVM);
 VMMR3DECL(int)  VMR3Destroy(PVM pVM);
 VMMR3DECL(void) VMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
 VMMR3DECL(PVM)  VMR3EnumVMs(PVM pVMPrev);
-VMMR3DECL(int)  VMR3WaitForResume(PVM pVM);
 
 /**
  * VM destruction callback.
