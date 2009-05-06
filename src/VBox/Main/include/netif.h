@@ -85,7 +85,7 @@ int NetIfEnableDynamicIpConfig(VirtualBox *pVbox, HostNetworkInterface * pIf);
 int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVbox, IHostNetworkInterface **aHostNetworkInterface, IProgress **aProgress);
 int NetIfRemoveHostOnlyNetworkInterface (VirtualBox *pVbox, IN_GUID aId, IHostNetworkInterface **aHostNetworkInterface, IProgress **aProgress);
 int NetIfGetConfig(HostNetworkInterface * pIf, NETIFINFO *);
-int NetIfGetConfigByName(IN_BSTR aName, NETIFINFO *pInfo);
+int NetIfGetConfigByName(PNETIFINFO pInfo);
 int NetIfDhcpRediscover(VirtualBox *pVbox, HostNetworkInterface * pIf);
 
 DECLINLINE(Bstr) composeIPv6Address(PRTNETADDRIPV6 aAddrPtr)
