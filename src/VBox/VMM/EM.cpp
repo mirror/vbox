@@ -162,6 +162,7 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
         pVCpu->em.s.offVMCPU = RT_OFFSETOF(VMCPU, em.s);
 
         pVCpu->em.s.enmState     = (i == 0) ? EMSTATE_NONE : EMSTATE_WAIT_SIPI;
+        pVCpu->em.s.enmPrevState = EMSTATE_NONE;
         pVCpu->em.s.fForceRAW    = false;
 
         pVCpu->em.s.pCtx         = CPUMQueryGuestCtxPtr(pVCpu);
@@ -3614,7 +3615,17 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
 
         /* Reschedule right away to start in the right state. */
         rc = VINF_SUCCESS;
-        pVCpu->em.s.enmState = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);
+
+        /** @todo doesn't work for the save/restore case */
+        if (    pVCpu->em.s.enmState == EMSTATE_SUSPENDED
+            &&  (   pVCpu->em.s.enmPrevState == EMSTATE_WAIT_SIPI
+                 || pVCpu->em.s.enmPrevState == EMSTATE_HALTED))
+        {
+            /* Pause->Resume: Restore the old wait state or else we'll start executing code. */
+            pVCpu->em.s.enmState = pVCpu->em.s.enmPrevState;
+        }
+        else
+            pVCpu->em.s.enmState = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);
 
         STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatTotal, x);
         for (;;)
@@ -3720,7 +3731,8 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case VINF_EM_SUSPEND:
                     Log2(("EMR3ExecuteVM: VINF_EM_SUSPEND: %d -> %d\n", pVCpu->em.s.enmState, EMSTATE_SUSPENDED));
-                    pVCpu->em.s.enmState = EMSTATE_SUSPENDED;
+                    pVCpu->em.s.enmPrevState = pVCpu->em.s.enmState;
+                    pVCpu->em.s.enmState     = EMSTATE_SUSPENDED;
                     break;
 
                 /*
