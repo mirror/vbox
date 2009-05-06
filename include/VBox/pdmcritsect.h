@@ -60,12 +60,12 @@ typedef const PDMCRITSECT *PCPDMCRITSECT;
 
 VMMR3DECL(int)  PDMR3CritSectInit(PVM pVM, PPDMCRITSECT pCritSect, const char *pszName);
 VMMDECL(int)    PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy);
+VMMDECL(int)    PDMCritSectTryEnter(PPDMCRITSECT pCritSect);
 VMMR3DECL(int)  PDMR3CritSectEnterEx(PPDMCRITSECT pCritSect, bool fCallHost);
 VMMDECL(void)   PDMCritSectLeave(PPDMCRITSECT pCritSect);
 VMMDECL(bool)   PDMCritSectIsOwner(PCPDMCRITSECT pCritSect);
 VMMDECL(bool)   PDMCritSectIsOwnerEx(PCPDMCRITSECT pCritSect, VMCPUID idCpu);
 VMMDECL(bool)   PDMCritSectIsInitialized(PCPDMCRITSECT pCritSect);
-VMMR3DECL(int)  PDMR3CritSectTryEnter(PPDMCRITSECT pCritSect);
 VMMR3DECL(int)  PDMR3CritSectScheduleExitEvent(PPDMCRITSECT pCritSect, RTSEMEVENT EventToSignal);
 VMMR3DECL(int)  PDMR3CritSectDelete(PPDMCRITSECT pCritSect);
 VMMDECL(int)    PDMR3CritSectTerm(PVM pVM);

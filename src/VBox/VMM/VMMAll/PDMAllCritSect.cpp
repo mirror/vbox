@@ -76,7 +76,7 @@ VMMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
     if (ASMAtomicCmpXchgS32(&pCritSect->s.Core.cLockers, 0, -1))
     {
         pCritSect->s.Core.cNestings = 1;
-        Assert(pVCpu->hNativeThread);
+        Assert(pVCpu->hNativeThread != NIL_RTNATIVETHREAD);
         ASMAtomicXchgSize(&pCritSect->s.Core.NativeThreadOwner, pVCpu->hNativeThread);
         STAM_PROFILE_ADV_START(&pCritSect->s.StatLocked, l);
         return VINF_SUCCESS;
@@ -98,6 +98,60 @@ VMMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
     LogFlow(("PDMCritSectEnter: locked => R3 (%Rrc)\n", rcBusy));
     STAM_REL_COUNTER_INC(&pCritSect->s.StatContentionRZLock);
     return rcBusy;
+#endif /* !IN_RING3 */
+}
+
+
+/**
+ * Try enter a critical section.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_SEM_BUSY if the critsect was owned.
+ * @retval  VERR_SEM_NESTED if nested enter on a no nesting section. (Asserted.)
+ * @retval  VERR_SEM_DESTROYED if RTCritSectDelete was called while waiting.
+ *
+ * @param   pCritSect   The critical section.
+ */
+VMMDECL(int) PDMCritSectTryEnter(PPDMCRITSECT pCritSect)
+{
+#ifdef IN_RING3
+    return RTCritSectTryEnter(&pCritSect->s.Core);
+#else   /* !IN_RING3 (same code as PDMCritSectEnter except for the log statement) */
+    AssertMsgReturn(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC, ("%RX32\n", pCritSect->s.Core.u32Magic),
+                    VERR_SEM_DESTROYED);
+    PVM pVM = pCritSect->s.CTX_SUFF(pVM);
+    Assert(pVM);
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    Assert(pVCpu);
+
+    /*
+     * Try to take the lock.
+     */
+    if (ASMAtomicCmpXchgS32(&pCritSect->s.Core.cLockers, 0, -1))
+    {
+        pCritSect->s.Core.cNestings = 1;
+        Assert(pVCpu->hNativeThread != NIL_RTNATIVETHREAD);
+        ASMAtomicXchgSize(&pCritSect->s.Core.NativeThreadOwner, pVCpu->hNativeThread);
+        STAM_PROFILE_ADV_START(&pCritSect->s.StatLocked, l);
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Nested?
+     */
+    if (pCritSect->s.Core.NativeThreadOwner == pVCpu->hNativeThread)
+    {
+        pCritSect->s.Core.cNestings++;
+        ASMAtomicIncS32(&pCritSect->s.Core.cLockers);
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Failed.
+     */
+    LogFlow(("PDMCritSectTryEnter: locked\n"));
+    STAM_REL_COUNTER_INC(&pCritSect->s.StatContentionRZLock);
+    return VERR_SEM_BUSY;
 #endif /* !IN_RING3 */
 }
 

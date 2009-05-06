@@ -315,21 +315,6 @@ VMMR3DECL(void) PDMR3CritSectFF(PVM pVM)
 
 
 /**
- * Try enter a critical section.
- *
- * @returns VINF_SUCCESS on success.
- * @returns VERR_SEM_BUSY if the critsect was owned.
- * @returns VERR_SEM_NESTED if nested enter on a no nesting section. (Asserted.)
- * @returns VERR_SEM_DESTROYED if RTCritSectDelete was called while waiting.
- * @param   pCritSect   The critical section.
- */
-VMMR3DECL(int) PDMR3CritSectTryEnter(PPDMCRITSECT pCritSect)
-{
-    return RTCritSectTryEnter(&pCritSect->s.Core);
-}
-
-
-/**
  * Schedule a event semaphore for signalling upon critsect exit.
  *
  * @returns VINF_SUCCESS on success.
