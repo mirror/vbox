@@ -34,6 +34,11 @@
 # (We have to support basic cross building (ARCH=i386|x86_64).)
 # While at it, warn about BUILD_* vars found to help with user problems.
 #
+ifeq ($(filter-out x86_64 amd64 AMD64,$(shell uname -m)),)
+ BUILD_TARGET_ARCH_DEF := amd64
+else
+ BUILD_TARGET_ARCH_DEF := x86
+endif
 ifneq ($(filter-out amd64 x86,$(BUILD_TARGET_ARCH)),)
  $(warning Ignoring unknown BUILD_TARGET_ARCH value '$(BUILD_TARGET_ARCH)'.)
  BUILD_TARGET_ARCH :=
@@ -45,15 +50,13 @@ ifeq ($(BUILD_TARGET_ARCH),)
   ifeq ($(ARCH),i386)
    BUILD_TARGET_ARCH := x86
   else
-   ifeq ($(filter-out x86_64 amd64 AMD64,$(shell uname -m)),)
-    BUILD_TARGET_ARCH := amd64
-   else
-    BUILD_TARGET_ARCH := x86
-   endif
+   BUILD_TARGET_ARCH := $(BUILD_TARGET_ARCH_DEF)
   endif
  endif
 else
- $(warning Using BUILD_TARGET_ARCH='$(BUILD_TARGET_ARCH)' from the $(origin BUILD_TARGET_ARCH).)
+ ifneq ($(BUILD_TARGET_ARCH),$(BUILD_TARGET_ARCH_DEF))
+  $(warning Using BUILD_TARGET_ARCH='$(BUILD_TARGET_ARCH)' from the $(origin BUILD_TARGET_ARCH).)
+ endif
 endif
 
 ifneq ($(filter-out release profile debug strict,$(BUILD_TYPE)),)
@@ -63,7 +66,9 @@ endif
 ifeq ($(BUILD_TYPE),)
  BUILD_TYPE := release
 else
- $(warning Using BUILD_TYPE='$(BUILD_TYPE)' from the $(origin BUILD_TYPE).)
+ ifneq ($(BUILD_TYPE),release)
+  $(warning Using BUILD_TYPE='$(BUILD_TYPE)' from the $(origin BUILD_TYPE).)
+ endif
 endif
 
 # override is required by the Debian guys
