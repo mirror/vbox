@@ -87,17 +87,10 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
      * The request loop.
      */
     rc = VINF_SUCCESS;
-    volatile VMSTATE enmBefore = VMSTATE_CREATING; /* volatile because of setjmp */
     Log(("vmR3EmulationThread: Emulation thread starting the days work... Thread=%#x pUVM=%p\n", ThreadSelf, pUVM));
+    VMSTATE enmBefore = VMSTATE_CREATED; /* (only used for logging atm.) */
     for (;;)
     {
-        /* Requested to exit the EMT thread out of sync? (currently only VMR3WaitForResume) */
-        if (setjmp(pUVCpu->vm.s.emtJumpEnv) != 0)
-        {
-            rc = VINF_SUCCESS;
-            break;
-        }
-
         /*
          * During early init there is no pVM, so make a special path
          * for that to keep things clearly separate.
@@ -147,7 +140,6 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
         }
         else
         {
-
             /*
              * Pending requests which needs servicing?
              *
@@ -215,23 +207,24 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
         }
 
         /*
-         * Some requests (both VMR3Req* and the DBGF) can potentially
-         * resume or start the VM, in that case we'll get a change in
-         * VM status indicating that we're now running.
+         * Some requests (both VMR3Req* and the DBGF) can potentially resume
+         * or start the VM, in that case we'll get a change in VM status
+         * indicating that we're now running.
          */
         if (    RT_SUCCESS(rc)
-            &&  pUVM->pVM
-            &&  enmBefore != pUVM->pVM->enmVMState
-            &&  pUVM->pVM->enmVMState == VMSTATE_RUNNING)
+            &&  pUVM->pVM)
         {
-            PVM    pVM   = pUVM->pVM;
+            PVM     pVM  = pUVM->pVM;
             PVMCPU pVCpu = &pVM->aCpus[idCpu];
-
-            rc = EMR3ExecuteVM(pVM, pVCpu);
-            Log(("vmR3EmulationThread: EMR3ExecuteVM() -> rc=%Rrc, enmVMState=%d\n", rc, pVM->enmVMState));
-            if (   EMGetState(pVCpu) == EMSTATE_GURU_MEDITATION
-                && pVM->enmVMState == VMSTATE_RUNNING)
-                vmR3SetState(pVM, VMSTATE_GURU_MEDITATION);
+            if (    pVM->enmVMState == VMSTATE_RUNNING
+                &&  VMCPUSTATE_IS_STARTED(VMCPU_GET_STATE(pVCpu)))
+            {
+                rc = EMR3ExecuteVM(pVM, pVCpu);
+                Log(("vmR3EmulationThread: EMR3ExecuteVM() -> rc=%Rrc, enmVMState=%d\n", rc, pVM->enmVMState));
+                if (   EMGetState(pVCpu) == EMSTATE_GURU_MEDITATION
+                    && pVM->enmVMState == VMSTATE_RUNNING)
+                    vmR3SetState(pVM, VMSTATE_GURU_MEDITATION);
+            }
         }
 
     } /* forever */
@@ -259,114 +252,6 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
     return rc;
 }
 
-
-#if 0 /* not used */
-/**
- * Wait for VM to be resumed. Handle events like vmR3EmulationThread does.
- * In case the VM is stopped, clean up and long jump to the main EMT loop.
- *
- * @returns VINF_SUCCESS or doesn't return
- * @param   pVM             VM handle.
- */
-VMMR3DECL(int) VMR3WaitForResume(PVM pVM)
-{
-    /*
-     * The request loop.
-     */
-    PUVMCPU pUVCpu;
-    PUVM    pUVM = pVM->pUVM;
-    VMSTATE enmBefore;
-    int     rc;
-
-    pUVCpu = (PUVMCPU)RTTlsGet(pUVM->vm.s.idxTLS);
-    AssertReturn(pUVCpu, VERR_INTERNAL_ERROR);
-
-    for (;;)
-    {
-
-        /*
-         * Pending requests which needs servicing?
-         *
-         * We check for state changes in addition to status codes when
-         * servicing requests. (Look after the ifs.)
-         */
-        enmBefore = pVM->enmVMState;
-        if (    VM_FF_ISSET(pVM, VM_FF_TERMINATE)
-            ||  pUVM->vm.s.fTerminateEMT)
-        {
-            rc = VINF_EM_TERMINATE;
-            break;
-        }
-        else if (pUVM->vm.s.pReqs)
-        {
-            /*
-             * Service execute in EMT request.
-             */
-            rc = VMR3ReqProcessU(pUVM, VMCPUID_ANY);
-            Log(("vmR3EmulationThread: Req rc=%Rrc, VM state %d -> %d\n", rc, enmBefore, pVM->enmVMState));
-        }
-        else if (pUVCpu->vm.s.pReqs)
-        {
-            /*
-             * Service execute in EMT request.
-             */
-            rc = VMR3ReqProcessU(pUVM, pUVCpu->idCpu);
-            Log(("vmR3EmulationThread: Req (cpu=%u) rc=%Rrc, VM state %d -> %d\n", pUVCpu->idCpu, rc, enmBefore, pVM->enmVMState));
-        }
-        else if (VM_FF_ISSET(pVM, VM_FF_DBGF))
-        {
-            /*
-             * Service the debugger request.
-             */
-            rc = DBGFR3VMMForcedAction(pVM);
-            Log(("vmR3EmulationThread: Dbg rc=%Rrc, VM state %d -> %d\n", rc, enmBefore, pVM->enmVMState));
-        }
-        else if (VM_FF_TESTANDCLEAR(pVM, VM_FF_RESET_BIT))
-        {
-            /*
-             * Service a delay reset request.
-             */
-            rc = VMR3Reset(pVM);
-            VM_FF_CLEAR(pVM, VM_FF_RESET);
-            Log(("vmR3EmulationThread: Reset rc=%Rrc, VM state %d -> %d\n", rc, enmBefore, pVM->enmVMState));
-        }
-        else
-        {
-            /*
-             * Nothing important is pending, so wait for something.
-             */
-            rc = VMR3WaitU(pUVCpu);
-            if (RT_FAILURE(rc))
-                break;
-        }
-
-        /*
-         * Check for termination requests, these are extremely high priority.
-         */
-        if (    rc == VINF_EM_TERMINATE
-            ||  VM_FF_ISSET(pVM, VM_FF_TERMINATE)
-            ||  pUVM->vm.s.fTerminateEMT)
-            break;
-
-        /*
-         * Some requests (both VMR3Req* and the DBGF) can potentially
-         * resume or start the VM, in that case we'll get a change in
-         * VM status indicating that we're now running.
-         */
-        if (    RT_SUCCESS(rc)
-            &&  enmBefore != pVM->enmVMState
-            &&  pVM->enmVMState == VMSTATE_RUNNING)
-        {
-            /* Only valid exit reason. */
-            return VINF_SUCCESS;
-        }
-
-    } /* forever */
-
-    /* Return to the main loop in vmR3EmulationThread, which will clean up for us. */
-    longjmp(pUVCpu->vm.s.emtJumpEnv, 1);
-}
-#endif
 
 /**
  * Gets the name of a halt method.
@@ -847,8 +732,8 @@ static DECLCALLBACK(void) vmR3HaltGlobal1NotifyCpuFF(PUVMCPU pUVCpu, uint32_t fF
         AssertRC(rc);
     }
     else if (   (fFlags & VMNOTIFYFF_FLAGS_POKE)
-             && pUVCpu->pUVM->pVM
-             && pUVCpu->pUVM->pVM->aCpus[pUVCpu->idCpu].enmState == VMCPUSTATE_RUN_EXEC) /** @todo make this easier to access. (pUVCpu->pVCpu) */
+             && pUVCpu->pVCpu
+             && pUVCpu->pVCpu->enmState == VMCPUSTATE_STARTED_EXEC)
     {
         int rc = SUPCallVMMR0Ex(pUVCpu->pVM->pVMR0, pUVCpu->idCpu, VMMR0_DO_GVMM_SCHED_POKE, 0, NULL);
         AssertRC(rc);
@@ -1124,8 +1009,11 @@ VMMR3DECL(int) VMR3WaitHalted(PVM pVM, PVMCPU pVCpu, bool fIgnoreInterrupts)
     /*
      * Do the halt.
      */
+    Assert(VMCPU_GET_STATE(pVCpu) == VMCPUSTATE_STARTED);
+    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HALTED);
     PUVM pUVM = pUVCpu->pUVM;
     int rc = g_aHaltMethods[pUVM->vm.s.iHaltMethod].pfnHalt(pUVCpu, fMask, u64Now);
+    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
 
     /*
      * Notify TM and resume the yielder
