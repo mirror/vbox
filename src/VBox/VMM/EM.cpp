@@ -3329,7 +3329,6 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         {
             rc2 = VMR3Reset(pVM);
             UPDATE_RC();
-            VM_FF_CLEAR(pVM, VM_FF_RESET);
         }
 
         /*
