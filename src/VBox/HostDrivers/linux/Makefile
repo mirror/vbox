@@ -33,11 +33,13 @@ all:
 	    echo "*** Building 'vboxnetflt' module ***"; \
 	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxnetflt; \
 	    cp vboxnetflt/vboxnetflt.ko .; \
+	    echo; \
 	fi
 	@if [ -d vboxnetadp ]; then \
 	    echo "*** Building 'vboxnetadp' module ***"; \
 	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxnetadp; \
 	    cp vboxnetadp/vboxnetadp.ko .; \
+	    echo; \
 	fi
 
 
