@@ -186,7 +186,7 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
                 rc = DBGFR3VMMForcedAction(pVM);
                 Log(("vmR3EmulationThread: Dbg rc=%Rrc, VM state %d -> %d\n", rc, enmBefore, pVM->enmVMState));
             }
-            else if (VM_FF_ISSET(pVM, VM_FF_RESET))
+            else if (VM_FF_TESTANDCLEAR(pVM, VM_FF_RESET_BIT))
             {
                 /*
                  * Service a delayed reset request.
