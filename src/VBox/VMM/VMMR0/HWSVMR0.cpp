@@ -905,7 +905,8 @@ ResumeExecution:
     }
 
     /* Pending request packets might contain actions that need immediate attention, such as pending hardware interrupts. */
-    if (VM_FF_ISPENDING(pVM, VM_FF_REQUEST))
+    if (    VM_FF_ISPENDING(pVM, VM_FF_REQUEST)
+        ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
     {
         STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatEntry, x);
         rc = VINF_EM_PENDING_REQUEST;
