@@ -1424,7 +1424,22 @@ EOF
           fi
           test_header "Qt4 devtools"
           for q in $QT4DIR; do
-            if which_wrapper "$q/bin/moc" > /dev/null; then
+            # first try it with a suffix, some platforms use that
+            if which_wrapper "$q/bin/moc-qt4" > /dev/null; then
+              moc_ver=`$q/bin/moc-qt4 -v 2>&1|sed 's+^.*(Qt \(.*\))+\1+'`
+              if [ $? -ne 0 ]; then
+                log_failure "not found"
+                fail
+              else
+                log_success "found version $moc_ver"
+                cnf_append "VBOX_PATH_QT4" "$q"
+                cnf_append "PATH_SDK_QT4" "$q"
+                cnf_append "PATH_TOOL_QT4" "$q"
+                cnf_append "PATH_TOOL_QT4_BIN" "$q/bin"
+                cnf_append "TOOL_QT4_BIN_SUFF" "-qt4"
+                return
+              fi
+            elif which_wrapper "$q/bin/moc" > /dev/null; then
               moc_ver=`$q/bin/moc -v 2>&1|sed 's+^.*(Qt \(.*\))+\1+'`
               if [ $? -ne 0 ]; then
                 log_failure "not found"
