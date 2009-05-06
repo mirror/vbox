@@ -2245,6 +2245,7 @@ DECLCALLBACK(void) Display::displayProcessAdapterDataCallback(PPDMIDISPLAYCONNEC
             pFBInfo->u32InformationSize = 0;
         }
     }
+#ifndef VBOX_WITH_HGSMI
     else
     {
          uint8_t *pu8 = (uint8_t *)pvVRAM;
@@ -2335,6 +2336,7 @@ DECLCALLBACK(void) Display::displayProcessAdapterDataCallback(PPDMIDISPLAYCONNEC
              pu8 += pHdr->u16Length;
          }
     }
+#endif /* !VBOX_WITH_HGSMI */
 }
 
 /**
