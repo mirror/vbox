@@ -212,14 +212,16 @@ typedef struct VMCPU *PVMCPU;
 /** This action forces the VM to call DBGF so DBGF can service debugger
  * requests in the emulation thread.
  * This action flag stays asserted till DBGF clears it.*/
-#define VM_FF_DBGF                          RT_BIT_32(8)
+#define VM_FF_DBGF_BIT                      8
+#define VM_FF_DBGF                          RT_BIT_32(VM_FF_DBGF_BIT)
 /** This action forces the VM to service pending requests from other
  * thread or requests which must be executed in another context. */
 #define VM_FF_REQUEST                       RT_BIT_32(9)
 /** Terminate the VM immediately. */
 #define VM_FF_TERMINATE                     RT_BIT_32(10)
 /** Reset the VM. (postponed) */
-#define VM_FF_RESET                         RT_BIT_32(11)
+#define VM_FF_RESET_BIT                     11
+#define VM_FF_RESET                         RT_BIT_32(VM_FF_RESET_BIT)
 /** PGM needs to allocate handy pages. */
 #define VM_FF_PGM_NEED_HANDY_PAGES          RT_BIT_32(18)
 /** PGM is out of memory.

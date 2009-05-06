@@ -3325,7 +3325,7 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * Postponed reset request.
          */
-        if (VM_FF_ISPENDING(pVM, VM_FF_RESET))
+        if (VM_FF_TESTANDCLEAR(pVM, VM_FF_RESET_BIT))
         {
             rc2 = VMR3Reset(pVM);
             UPDATE_RC();
