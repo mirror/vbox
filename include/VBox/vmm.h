@@ -116,6 +116,7 @@ VMMDECL(PVMCPU)      VMMGetCpu0(PVM pVM);
 VMMDECL(PVMCPU)      VMMGetCpuById(PVM pVM, RTCPUID idCpu);
 VMMDECL(uint32_t)    VMMGetSvnRev(void);
 VMMDECL(VMMSWITCHER) VMMGetSwitcher(PVM pVM);
+VMMDECL(void)        VMMSendSipi(PVM pVM, VMCPUID idCpu, int iVector);
 
 /** @def VMMIsHwVirtExtForced
  * Checks if forced to use the hardware assisted virtualization extensions.

@@ -74,6 +74,22 @@ VMMDECL(VMCPUID) VMMGetCpuId(PVM pVM)
 
 
 /**
+ * Sends SIPI to the virtual CPU by setting CS:EIP into vector-dependent state
+ * and unhalting processor
+ *
+ * @param   pVM         The VM to operate on.
+ * @param   idCpu       Virtual CPU to perform SIPI on
+ * @param   iVector     SIPI vector
+ */
+VMMDECL(void) VMMSendSipi(PVM pVM, VMCPUID idCpu, int iVector)
+{
+    PVMCPU pCpu = VMMGetCpuById(pVM, idCpu);
+    CPUMSetGuestCS(pCpu, iVector * 0x100);
+    CPUMSetGuestEIP(pCpu, 0);
+    /** @todo: how do I unhalt VCPU? */
+}
+
+/**
  * Returns the VMCPU of the calling EMT.
  *
  * @returns The VMCPU pointer. NULL if not an EMT.

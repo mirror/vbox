@@ -363,6 +363,16 @@ DECLINLINE(void) cpuClearInterrupt(APICDeviceInfo* dev, APICState *s)
                                                  getCpuFromLapic(dev, s));
 }
 
+DECLINLINE(void) cpuSendSipi(APICDeviceInfo* dev, APICState *s, int vector)
+{
+    Log2(("apic: send SIPI vector=%d\n", vector));
+    dev->CTX_SUFF(pApicHlp)->pfnSendSipi(dev->CTX_SUFF(pDevIns),
+                                         getCpuFromLapic(dev, s),
+                                         vector);
+}
+
+
+
 DECLINLINE(uint32_t) getApicEnableBits(APICDeviceInfo* dev)
 {
     switch (dev->enmVersion)
@@ -1080,6 +1090,7 @@ static void apic_startup(APICDeviceInfo* dev, APICState *s, int vector_num)
 #else
     /** @todo: init CPUs */
     LogRel(("[SMP] apic_startup: %d on CPUs %d\n", vector_num, s->id));
+    cpuSendSipi(dev, s, vector_num);
 #endif
 }
 static void apic_deliver(APICDeviceInfo* dev, APICState *s,

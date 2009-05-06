@@ -93,6 +93,7 @@ static DECLCALLBACK(void) pdmR0ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, PDMAPIC
 static DECLCALLBACK(int)  pdmR0ApicHlp_Lock(PPDMDEVINS pDevIns, int rc);
 static DECLCALLBACK(void) pdmR0ApicHlp_Unlock(PPDMDEVINS pDevIns);
 static DECLCALLBACK(VMCPUID) pdmR0ApicHlp_GetCpuId(PPDMDEVINS pDevIns);
+static DECLCALLBACK(void) pdmR0ApicHlp_SendSipi(PPDMDEVINS pDevIns, VMCPUID idCpu, int iVector);
 /** @} */
 
 
@@ -169,6 +170,7 @@ extern DECLEXPORT(const PDMAPICHLPR0) g_pdmR0ApicHlp =
     pdmR0ApicHlp_Lock,
     pdmR0ApicHlp_Unlock,
     pdmR0ApicHlp_GetCpuId,
+    pdmR0ApicHlp_SendSipi,
     PDM_APICHLPR0_VERSION
 };
 
@@ -502,6 +504,12 @@ static DECLCALLBACK(VMCPUID) pdmR0ApicHlp_GetCpuId(PPDMDEVINS pDevIns)
     return VMMGetCpuId(pDevIns->Internal.s.pVMR0);
 }
 
+/** @copydoc PDMAPICHLPR0::pfnSendSipi */
+static DECLCALLBACK(void) pdmR0ApicHlp_SendSipi(PPDMDEVINS pDevIns, VMCPUID idCpu, int iVector)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return VMMSendSipi(pDevIns->Internal.s.pVMR0, idCpu, iVector);
+}
 
 /** @copydoc PDMIOAPICHLPR0::pfnApicBusDeliver */
 static DECLCALLBACK(void) pdmR0IoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
