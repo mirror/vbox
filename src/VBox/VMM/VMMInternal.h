@@ -247,9 +247,6 @@ typedef struct VMM
     uint32_t                    cYieldResumeMillies;
     /** The EMT yield timer interval (milliseconds). */
     uint32_t                    cYieldEveryMillies;
-#if HC_ARCH_BITS == 32
-    RTR3PTR                     pR3Padding1; /**< Alignment padding. */
-#endif
     /** The timestamp of the previous yield. (nano) */
     uint64_t                    u64LastYield;
 
@@ -347,6 +344,9 @@ typedef struct VMMCPU
     VMMCALLHOST                 enmCallHostOperation;
     /** The result of the last operation. */
     int32_t                     rcCallHost;
+#if HC_ARCH_BITS == 32
+    uint32_t                    padding;
+#endif
     /** The argument to the operation. */
     uint64_t                    u64CallHostArg;
     /** The Ring-0 jmp buffer. */
