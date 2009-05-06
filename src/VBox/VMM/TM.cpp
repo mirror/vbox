@@ -263,6 +263,12 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     AssertReturn(pVM->tm.s.VirtualGetRawDataR0.pu64Prev, VERR_INTERNAL_ERROR);
     /* The rest is done in TMR3InitFinalize since it's too early to call PDM. */
 
+    /*
+     * Init the lock.
+     */
+    rc = PDMR3CritSectInit(pVM, &pVM->tm.s.EmtLock, "TM EMT Lock");
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
      * Get our CFGM node, create it if necessary.
@@ -922,6 +928,7 @@ VMMR3DECL(void) TMR3Reset(PVM pVM)
 {
     LogFlow(("TMR3Reset:\n"));
     VM_ASSERT_EMT(pVM);
+    tmLock(pVM);
 
     /*
      * Abort any pending catch up.
@@ -953,7 +960,9 @@ VMMR3DECL(void) TMR3Reset(PVM pVM)
 #ifdef VBOX_STRICT
     tmTimerQueuesSanityChecks(pVM, "TMR3Reset");
 #endif
+
     VM_FF_CLEAR(pVM, VM_FF_TIMER);
+    tmUnlock(pVM);
 }
 
 
@@ -987,11 +996,9 @@ VMMR3DECL(int) TMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPtrVa
  */
 static DECLCALLBACK(int) tmR3Save(PVM pVM, PSSMHANDLE pSSM)
 {
-    unsigned i;
-
     LogFlow(("tmR3Save:\n"));
 #ifdef VBOX_STRICT
-    for (i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
         Assert(!pVCpu->tm.s.fTSCTicking);
@@ -1017,7 +1024,7 @@ static DECLCALLBACK(int) tmR3Save(PVM pVM, PSSMHANDLE pSSM)
     /* real time clock */
     SSMR3PutU64(pSSM, TMCLOCK_FREQ_REAL);
 
-    for (i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -1038,11 +1045,10 @@ static DECLCALLBACK(int) tmR3Save(PVM pVM, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
 {
-    unsigned i;
     LogFlow(("tmR3Load:\n"));
 
 #ifdef VBOX_STRICT
-    for (i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
         Assert(!pVCpu->tm.s.fTSCTicking);
@@ -1105,7 +1111,7 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     }
 
     /* the cpu tick clock. */
-    for (i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -1181,6 +1187,7 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, const char *pszDesc, PPTMT
     pTimer->pszDesc         = pszDesc;
 
     /* insert into the list of created timers. */
+    tmLock(pVM);
     pTimer->pBigPrev        = NULL;
     pTimer->pBigNext        = pVM->tm.s.pCreated;
     pVM->tm.s.pCreated      = pTimer;
@@ -1189,6 +1196,7 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, const char *pszDesc, PPTMT
 #ifdef VBOX_STRICT
     tmTimerQueuesSanityChecks(pVM, "tmR3TimerCreate");
 #endif
+    tmUnlock(pVM);
 
     *ppTimer = pTimer;
     return VINF_SUCCESS;
@@ -1331,6 +1339,7 @@ VMMR3DECL(int) TMR3TimerDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
     if (!pDevIns)
         return VERR_INVALID_PARAMETER;
 
+    tmLock(pVM);
     PTMTIMER    pCur = pVM->tm.s.pCreated;
     while (pCur)
     {
@@ -1343,6 +1352,8 @@ VMMR3DECL(int) TMR3TimerDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
             AssertRC(rc);
         }
     }
+    tmUnlock(pVM);
+
     LogFlow(("TMR3TimerDestroyDevice: returns VINF_SUCCESS\n"));
     return VINF_SUCCESS;
 }
@@ -1361,6 +1372,7 @@ VMMR3DECL(int) TMR3TimerDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
     if (!pDrvIns)
         return VERR_INVALID_PARAMETER;
 
+    tmLock(pVM);
     PTMTIMER    pCur = pVM->tm.s.pCreated;
     while (pCur)
     {
@@ -1373,6 +1385,8 @@ VMMR3DECL(int) TMR3TimerDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
             AssertRC(rc);
         }
     }
+    tmUnlock(pVM);
+
     LogFlow(("TMR3TimerDestroyDriver: returns VINF_SUCCESS\n"));
     return VINF_SUCCESS;
 }
@@ -1475,6 +1489,7 @@ static DECLCALLBACK(void) tmR3TimerCallback(PRTTIMER pTimer, void *pvUser, uint6
             ||  tmR3AnyExpiredTimers(pVM)
             )
         && !VM_FF_ISSET(pVM, VM_FF_TIMER)
+        && !pVM->tm.s.fRunningQueues
        )
     {
         VM_FF_SET(pVM, VM_FF_TIMER);
@@ -1496,13 +1511,16 @@ static DECLCALLBACK(void) tmR3TimerCallback(PRTTIMER pTimer, void *pvUser, uint6
  */
 VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
 {
+    /*
+     * Only one EMT should be doing this at a time.
+     */
+    VM_FF_CLEAR(pVM, VM_FF_TIMER);
+    if (!ASMBitTestAndSet(&pVM->tm.s.fRunningQueues, 0))
+        return;
+
     STAM_PROFILE_START(&pVM->tm.s.StatDoQueues, a);
     Log2(("TMR3TimerQueuesDo:\n"));
-
-    /* SMP: quick hack to fend of the wildlife... */ /** @todo SMP */
-    if (    pVM->cCPUs > 1
-        &&  VMMGetCpuId(pVM) != 0)
-        return;
+    tmLock(pVM);
 
     /*
      * Process the queues.
@@ -1543,9 +1561,6 @@ VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
     tmR3TimerQueueRun(pVM, &pVM->tm.s.paTimerQueuesR3[TMCLOCK_REAL]);
     STAM_PROFILE_ADV_STOP(&pVM->tm.s.StatDoQueuesRun, r3);
 
-    /* done. */
-    VM_FF_CLEAR(pVM, VM_FF_TIMER);
-
 #ifdef VBOX_STRICT
     /* check that we didn't screwup. */
     tmTimerQueuesSanityChecks(pVM, "TMR3TimerQueuesDo");
@@ -1553,6 +1568,10 @@ VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
 
     Log2(("TMR3TimerQueuesDo: returns void\n"));
     STAM_PROFILE_STOP(&pVM->tm.s.StatDoQueues, a);
+
+    /* done */
+    ASMAtomicBitClear(&pVM->tm.s.fRunningQueues, 0);
+    tmUnlock(pVM);
 }
 
 
@@ -2042,6 +2061,7 @@ static DECLCALLBACK(void) tmR3TimerInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
                                                 "Time",
                                                 "Expire",
                                                 "State");
+    tmLock(pVM);
     for (PTMTIMERR3 pTimer = pVM->tm.s.pCreated; pTimer; pTimer = pTimer->pBigNext)
     {
         pHlp->pfnPrintf(pHlp,
@@ -2056,6 +2076,7 @@ static DECLCALLBACK(void) tmR3TimerInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
                         tmTimerState(pTimer->enmState),
                         pTimer->pszDesc);
     }
+    tmUnlock(pVM);
 }
 
 
@@ -2082,6 +2103,7 @@ static DECLCALLBACK(void) tmR3TimerInfoActive(PVM pVM, PCDBGFINFOHLP pHlp, const
                                                 "State");
     for (unsigned iQueue = 0; iQueue < TMCLOCK_MAX; iQueue++)
     {
+        tmLock(pVM);
         for (PTMTIMERR3 pTimer = TMTIMER_GET_HEAD(&pVM->tm.s.paTimerQueuesR3[iQueue]);
              pTimer;
              pTimer = TMTIMER_GET_NEXT(pTimer))
@@ -2104,6 +2126,7 @@ static DECLCALLBACK(void) tmR3TimerInfoActive(PVM pVM, PCDBGFINFOHLP pHlp, const
                             tmTimerState(pTimer->enmState),
                             pTimer->pszDesc);
         }
+        tmUnlock(pVM);
     }
 }
 
@@ -2122,9 +2145,9 @@ static DECLCALLBACK(void) tmR3InfoClocks(PVM pVM, PCDBGFINFOHLP pHlp, const char
     /*
      * Read the times first to avoid more than necessary time variation.
      */
-    const uint64_t u64Virtual = TMVirtualGet(pVM);
+    const uint64_t u64Virtual     = TMVirtualGet(pVM);
     const uint64_t u64VirtualSync = TMVirtualSyncGet(pVM);
-    const uint64_t u64Real = TMRealGet(pVM);
+    const uint64_t u64Real        = TMRealGet(pVM);
 
     for (unsigned i = 0; i < pVM->cCPUs; i++)
     {

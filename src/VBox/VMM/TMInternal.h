@@ -27,6 +27,7 @@
 #include <iprt/time.h>
 #include <iprt/timer.h>
 #include <VBox/stam.h>
+#include <VBox/pdmcritsect.h>
 
 __BEGIN_DECLS
 
@@ -418,8 +419,11 @@ typedef struct TM
     /** Interval in milliseconds of the pTimer timer. */
     uint32_t                    u32TimerMillies;
 
-    /** Alignment padding to ensure that the statistics are 64-bit aligned when using GCC. */
-    uint32_t                    u32Padding1;
+    /** Makes sure only one EMT is running the queues. */
+    bool volatile               fRunningQueues;
+
+    /** Lock serializing EMT access to TM. */
+    PDMCRITSECT                 EmtLock;
 
     /** TMR3TimerQueuesDo
      * @{ */
@@ -516,6 +520,12 @@ typedef struct TMCPU
 } TMCPU;
 /** Pointer to TM VMCPU instance data. */
 typedef TMCPU *PTMCPU;
+
+int                     tmLock(PVM pVM);
+int                     tmTryLock(PVM pVM);
+void                    tmUnlock(PVM pVM);
+/** Checks that the caller owns the EMT lock.  */
+#define TM_ASSERT_EMT_LOCK(pVM) Assert(PDMCritSectIsOwner(&pVM->tm.s.EmtLock))
 
 const char             *tmTimerState(TMTIMERSTATE enmState);
 void                    tmTimerQueueSchedule(PVM pVM, PTMTIMERQUEUE pQueue);
