@@ -1329,7 +1329,7 @@ VMMR3DECL(int) PDMR3QueryLun(PVM pVM, const char *pszDevice, unsigned iInstance,
  */
 VMMR3DECL(void) PDMR3DmaRun(PVM pVM)
 {
-    /** @note Not really SMP safe; restrict it to VCPU 0? */
+    /** @note Not really SMP safe; restrict it to VCPU 0. */
     if (VMMGetCpuId(pVM) != 0)
         return;
 
