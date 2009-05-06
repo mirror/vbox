@@ -198,7 +198,7 @@ VMMR3DECL(int) PDMR3QueueCreateDevice(PVM pVM, PPDMDEVINS pDevIns, RTUINT cbItem
     /*
      * Validate input.
      */
-    VM_ASSERT_EMT(pVM);
+    VMCPU_ASSERT_EMT(&pVM->aCpus[0]);
     if (!pfnCallback)
     {
         AssertMsgFailed(("No consumer callback!\n"));
@@ -247,7 +247,7 @@ VMMR3DECL(int) PDMR3QueueCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, RTUINT cbItem
     /*
      * Validate input.
      */
-    VM_ASSERT_EMT(pVM);
+    VMCPU_ASSERT_EMT(&pVM->aCpus[0]);
     if (!pfnCallback)
     {
         AssertMsgFailed(("No consumer callback!\n"));
@@ -296,7 +296,7 @@ VMMR3DECL(int) PDMR3QueueCreateInternal(PVM pVM, RTUINT cbItem, RTUINT cItems, u
     /*
      * Validate input.
      */
-    VM_ASSERT_EMT(pVM);
+    VMCPU_ASSERT_EMT(&pVM->aCpus[0]);
     if (!pfnCallback)
     {
         AssertMsgFailed(("No consumer callback!\n"));
@@ -342,7 +342,7 @@ VMMR3DECL(int) PDMR3QueueCreateExternal(PVM pVM, RTUINT cbItem, RTUINT cItems, u
     /*
      * Validate input.
      */
-    VM_ASSERT_EMT(pVM);
+    VMCPU_ASSERT_EMT(&pVM->aCpus[0]);
     if (!pfnCallback)
     {
         AssertMsgFailed(("No consumer callback!\n"));
@@ -386,7 +386,7 @@ VMMR3DECL(int) PDMR3QueueDestroy(PPDMQUEUE pQueue)
         return VERR_INVALID_PARAMETER;
     Assert(pQueue && pQueue->pVMR3);
     PVM pVM = pQueue->pVMR3;
-    VM_ASSERT_EMT(pVM);
+    VMCPU_ASSERT_EMT(&pVM->aCpus[0]);
 
     /*
      * Unlink it.
@@ -470,7 +470,7 @@ VMMR3DECL(int) PDMR3QueueDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
      */
     if (!pDevIns)
         return VERR_INVALID_PARAMETER;
-    VM_ASSERT_EMT(pVM);
+    VMCPU_ASSERT_EMT(&pVM->aCpus[0]);
 
     /*
      * Unlink it.
@@ -519,7 +519,7 @@ VMMR3DECL(int) PDMR3QueueDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
      */
     if (!pDrvIns)
         return VERR_INVALID_PARAMETER;
-    VM_ASSERT_EMT(pVM);
+    VMCPU_ASSERT_EMT(&pVM->aCpus[0]);
 
     /*
      * Unlink it.
