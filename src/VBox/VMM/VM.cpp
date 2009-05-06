@@ -1067,10 +1067,10 @@ VMMR3DECL(int)   VMR3PowerOn(PVM pVM)
     }
 
     /*
-     * Request the operation in EMT.
+     * Request the operation in EMT (in order as VCPU 0 does all the work)
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, 0 /* VCPU 0 */, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3PowerOn, 1, pVM);
+    int rc = VMR3ReqCall(pVM, VMCPUID_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3PowerOn, 1, pVM);
     if (RT_SUCCESS(rc))
     {
         rc = pReq->iStatus;
@@ -1102,6 +1102,11 @@ static DECLCALLBACK(int) vmR3PowerOn(PVM pVM)
         AssertMsgFailed(("Invalid VM state %d\n", pVM->enmVMState));
         return VERR_VM_INVALID_VM_STATE;
     }
+
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    /* Only VCPU 0 does the actual work. */
+    if (pVCpu->idCpu != 0)
+        return VINF_SUCCESS;
 
     /*
      * Change the state, notify the components and resume the execution.
