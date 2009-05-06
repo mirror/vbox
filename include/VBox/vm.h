@@ -201,6 +201,9 @@ typedef struct VMCPU
 /** Sets the VMCPU state. */
 #define VMCPU_SET_STATE(pVCpu, enmNewState) \
     ASMAtomicWriteU32((uint32_t volatile *)&(pVCpu)->enmState, (enmNewState))
+/** Cmpares and sets the VMCPU state. */
+#define VMCPU_CMPXCHG_STATE(pVCpu, enmNewState, enmOldState) \
+    ASMAtomicCmpXchgU32((uint32_t volatile *)&(pVCpu)->enmState, (enmNewState), (enmOldState))
 /** Checks the VMCPU state. */
 #define VMCPU_ASSERT_STATE(pVCpu, enmExpectedState) \
     do { \
