@@ -348,7 +348,7 @@ RTR3DECL(int) RTTestFailureDetails(RTTEST hTest, const char *pszFormat, ...);
  * @param   expr        The expression to evaluate.
  * @param   rcRet       What to return on failure.
  */
-#define RTTEST_CHECK_RET(hTest, expr, rc) \
+#define RTTEST_CHECK_RET(hTest, expr, rcRet) \
     do { if (!(expr)) { \
             RTTestFailed((hTest), "line %u: %s", __LINE__, #expr); \
             return (rcRet); \
@@ -543,7 +543,7 @@ RTR3DECL(int) RTTestIFailureDetails(const char *pszFormat, ...);
  * @param   expr        The expression to evaluate.
  * @param   rcRet       What to return on failure.
  */
-#define RTTESTI_CHECK_RET(expr, rc) \
+#define RTTESTI_CHECK_RET(expr, rcRet) \
     do { if (!(expr)) { \
             RTTestIFailed("line %u: %s", __LINE__, #expr); \
             return (rcRet); \
