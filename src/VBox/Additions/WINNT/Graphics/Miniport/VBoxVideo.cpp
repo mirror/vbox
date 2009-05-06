@@ -1206,6 +1206,9 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
       /* Setup the Device Extension and if possible secondary displays. */
       VBoxSetupDisplays((PDEVICE_EXTENSION)HwDeviceExtension, ConfigInfo, AdapterMemorySize);
 #else
+      /* Initialize VBoxGuest library, which is used for requests which go through VMMDev. */
+      rc = VbglInit ();
+
       /* Guest supports only HGSMI, the old VBVA via VMMDev is not supported. Old 
        * code will be ifdef'ed and later removed.
        * The host will however support both old and new interface to keep compatibility
@@ -1497,7 +1500,11 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
                  */
                 PointerAttributes.Enable = VBOX_MOUSE_POINTER_VISIBLE;
 
+#ifndef VBOX_WITH_HGSMI
                 Result = vboxUpdatePointerShape(&PointerAttributes, sizeof (PointerAttributes));
+#else
+                Result = vboxUpdatePointerShape((PDEVICE_EXTENSION)HwDeviceExtension, &PointerAttributes, sizeof (PointerAttributes));
+#endif/* VBOX_WITH_HGSMI */
 
                 if (!Result)
                     dprintf(("VBoxVideo::VBoxVideoStartIO: Could not hide hardware pointer -> fallback\n"));
@@ -1525,7 +1532,11 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
                  */
                 PointerAttributes.Enable = 0;
 
+#ifndef VBOX_WITH_HGSMI
                 Result = vboxUpdatePointerShape(&PointerAttributes, sizeof (PointerAttributes));
+#else
+                Result = vboxUpdatePointerShape((PDEVICE_EXTENSION)HwDeviceExtension, &PointerAttributes, sizeof (PointerAttributes));
+#endif/* VBOX_WITH_HGSMI */
 
                 if (!Result)
                     dprintf(("VBoxVideo::VBoxVideoStartIO: Could not hide hardware pointer -> fallback\n"));
@@ -1568,7 +1579,11 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
                          pPointerAttributes->Row));
                 dprintf(("\tBytes attached: %d\n", RequestPacket->InputBufferLength - sizeof(VIDEO_POINTER_ATTRIBUTES)));
 #endif
+#ifndef VBOX_WITH_HGSMI
                 Result = vboxUpdatePointerShape(pPointerAttributes, RequestPacket->InputBufferLength);
+#else
+                Result = vboxUpdatePointerShape((PDEVICE_EXTENSION)HwDeviceExtension, pPointerAttributes, RequestPacket->InputBufferLength);
+#endif/* VBOX_WITH_HGSMI */
                 if (!Result)
                     dprintf(("VBoxVideo::VBoxVideoStartIO: Could not set hardware pointer -> fallback\n"));
             } else
