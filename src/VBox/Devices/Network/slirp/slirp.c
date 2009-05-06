@@ -1515,7 +1515,10 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
 #ifdef VBOX_WITH_NAT_SERVICE
     if (memcmp(eh->h_source, special_ethaddr, ETH_ALEN) == 0) 
     {
-        goto drop;
+        /* @todo vasily: add ether logging routine in debug.c */
+        Log(("NAT: packet was addressed to other MAC\n"));
+        RTMemFree((void *)pkt);
+        return;
     }
 #endif
 
@@ -1561,7 +1564,6 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
             m_free(pData, m);
             break;
     }
-    drop:
     RTMemFree((void *)pkt);
 }
 
@@ -1574,6 +1576,12 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m)
     m->m_data -= if_maxlinkhdr;
     m->m_len += ETH_HLEN;
     eh = mtod(m, struct ethhdr *);
+    
+    if((caddr_t)eh != (caddr_t)m->m_dat)
+    {
+        LogRel(("NAT: ethernet detects corruption of the packet"));
+        AssertMsg((caddr_t)eh == (caddr_t)m->m_dat, ("!!Ethernet frame corrupted!!"));
+    }
 
 #ifndef VBOX_WITH_NAT_SERVICE
     memcpy(eh->h_dest, client_ethaddr, ETH_ALEN);
@@ -1581,7 +1589,6 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m)
     /* XXX: not correct */
     eh->h_source[5] = CTL_ALIAS;
 #else
-    Assert((caddr_t)eh == (caddr_t)m->m_dat); 
     if (memcmp(eh->h_source, special_ethaddr, ETH_ALEN) != 0) 
     {
         memcpy(eh->h_dest, eh->h_source, ETH_ALEN);
