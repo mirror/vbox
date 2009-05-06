@@ -61,6 +61,8 @@ typedef enum EMSTATE
     EMSTATE_REM,
     /** Execution is halted. (waiting for interrupt) */
     EMSTATE_HALTED,
+    /** Application processor execution is halted. (waiting for startup IPI (SIPI)) */
+    EMSTATE_WAIT_SIPI,
     /** Execution is suspended. */
     EMSTATE_SUSPENDED,
     /** The VM is terminating. */
