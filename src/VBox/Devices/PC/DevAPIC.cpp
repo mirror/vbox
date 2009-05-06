@@ -1073,6 +1073,11 @@ static void apic_init_ipi(APICState *s)
     s->initial_count = 0;
     s->initial_count_load_time = 0;
     s->next_time = 0;
+
+#ifdef VBOX
+    /** @todo reset CPU, activate wait for sipi mode for application processors */
+    /** Must be dealt with in ring 3 */
+#endif
 }
 
 
