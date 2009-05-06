@@ -32,6 +32,9 @@ VBoxDisp_DEFS        = _WIN32_WINNT=0x0501 LOG_TO_BACKDOOR VBOX_WITH_DDRAW VBOX_
 VBoxDisp_INCS        = ../../include
 VBoxDisp_DEFS        += VBOX_VBVA_ADJUST_RECT
 #VBoxDisp_DEFS        += LOG_ENABLED
+ifdef VBOX_WITH_VIDEOHWACCEL
+VBoxDisp_DEFS        += VBOX_WITH_VIDEOHWACCEL
+endif
 #VBoxDisp_DEFS        += STAT_sunlover
 VBoxDisp_SOURCES     = \
 	color.c \
@@ -58,6 +61,7 @@ VBoxDisp_LIBS = \
 ifdef VBOX_WITH_HGSMI
 VBoxDisp_LIBS         += \
 	$(VBOX_PATH_ADDITIONS_LIB)/HGSMIGuestR0Lib$(VBOX_SUFF_LIB)
+VBoxDisp_DEFS += VBOX_WITH_HGSMI
 endif
 
 include	$(KBUILD_PATH)/subfooter.kmk

@@ -192,6 +192,11 @@ ifeq ($(KBUILD_TARGET),l4)
 	$(L4_LIBDIR)/libl4sys.p.a
 endif
 
+ifdef VBOX_WITH_HGSMI
+ VBoxDD_LIBS           += \
+	$(PATH_LIB)/HGSMIHostR3Lib$(VBOX_SUFF_LIB)
+endif
+
 ifdef VBOX_WITH_NETFLT
  VBoxDD_LIBS.win      += $(PATH_LIB)/WinNetConfig.lib
 endif
@@ -287,6 +292,19 @@ ifdef VBOX_WITH_E1000
 	Network/DevE1000Phy.cpp \
 	Network/DevEEPROM.cpp
 endif
+
+ifdef VBOX_WITH_HGSMI
+ DevicesR3_DEFS         += VBOX_WITH_HGSMI
+ DevicesR3_SOURCES      += \
+	Graphics/DevVGA_VBVA.cpp \
+	Graphics/HGSMI/HGSMIHost.cpp \
+	Graphics/HGSMI/HGSMIHostHlp.cpp
+ 
+endif
+ifdef VBOX_WITH_VIDEOHWACCEL
+ DevicesR3_DEFS         += VBOX_WITH_VIDEOHWACCEL
+endif
+
 
 ifdef VBOX_WITH_INIP
 DevicesR3_INCS         += \
@@ -450,6 +468,13 @@ VBoxDDGC_SOURCES       += \
 
 endif
 
+ifdef VBOX_WITH_HGSMI
+ VBoxDDGC_DEFS         += VBOX_WITH_HGSMI
+endif
+ifdef VBOX_WITH_VIDEOHWACCEL
+ VBoxDDGC_DEFS         += VBOX_WITH_VIDEOHWACCEL
+endif
+
 ifdef VBOX_WITH_AHCI
 VBoxDDGC_DEFS          += VBOX_WITH_AHCI IN_AHCI_GC
 VBoxDDGC_SOURCES       += \
@@ -543,6 +568,14 @@ VBoxDDR0_DEFS          += VBOX_WITH_LSILOGIC
 VBoxDDR0_SOURCES       += \
 	Storage/DevLsiLogicSCSI.cpp
 endif
+
+ifdef VBOX_WITH_HGSMI
+ VBoxDDR0_DEFS         += VBOX_WITH_HGSMI
+endif
+ifdef VBOX_WITH_VIDEOHWACCEL
+ VBoxDDGC_DEFS         += VBOX_WITH_VIDEOHWACCEL
+endif
+
 
 ifdef VBOX_WITH_HPET
 VBoxDDR0_DEFS          += VBOX_WITH_HPET

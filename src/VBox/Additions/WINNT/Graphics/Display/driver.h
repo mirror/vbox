@@ -74,16 +74,16 @@ typedef struct _SSB
 typedef struct _VRAMLAYOUT
 {
     ULONG cbVRAM;
-    
+
     ULONG offFrameBuffer;
     ULONG cbFrameBuffer;
-    
+
     ULONG offDDRAWHeap; //@todo
     ULONG cbDDRAWHeap;
-    
+
     ULONG offVBVABuffer;
     ULONG cbVBVABuffer;
-    
+
     ULONG offDisplayInformation;
     ULONG cbDisplayInformation;
 } VRAMLAYOUT;
@@ -110,7 +110,7 @@ struct  _PDEV
     POINTL  ptlDevOrg;                  // Device origin for DualView (0,0 for primary view).
     ULONG   ulMode;                     // Mode the mini-port driver is in.
     LONG    lDeltaScreen;               // Distance from one scan to the next.
-    
+
     PVOID   pOffscreenList;             // linked list of DCI offscreen surfaces.
     FLONG   flRed;                      // For bitfields device, Red Mask
     FLONG   flGreen;                    // For bitfields device, Green Mask
@@ -127,7 +127,7 @@ struct  _PDEV
     PALETTEENTRY *pPal;                 // If this is pal managed, this is the pal
     BOOL    bSupportDCI;                // Does the miniport support DCI?
     FLONG   flHooks;
-    
+
 #ifndef VBOX_WITH_HGSMI
     VBVAENABLERESULT vbva;
     uint32_t         u32VRDPResetFlag;
@@ -164,16 +164,20 @@ struct  _PDEV
     HGSMIHEAP hgsmiDisplayHeap;
     VBVABUFFER *pVBVA; /* Pointer to the pjScreen + layout->offVBVABuffer. NULL if VBVA is not enabled. */
 #endif /* VBOX_WITH_HGSMI */
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    BOOLEAN bVHWAEnabled;
+#endif
 };
 
-#ifdef VBOX_WITH_OPENGL 
-typedef struct 
-{ 
-    DWORD dwVersion; 
-    DWORD dwDriverVersion; 
-    WCHAR szDriverName[256]; 
-} OPENGL_INFO, *POPENGL_INFO; 
-#endif 
+#ifdef VBOX_WITH_OPENGL
+typedef struct
+{
+    DWORD dwVersion;
+    DWORD dwDriverVersion;
+    WCHAR szDriverName[256];
+} OPENGL_INFO, *POPENGL_INFO;
+#endif
 
 #ifndef VBOX_WITH_HGSMI
 /* The global semaphore handle for all driver instances. */
@@ -244,6 +248,12 @@ void VBoxUpdateDisplayInfo (PPDEV ppdev);
 
 void drvLoadEng (void);
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+VBVAVHWACMD_HDR* vboxVHWACreateCommand (PPDEV ppdev, VBVAVHWACMD_LENGTH cbCmd);
+void vboxVHWAFreeCommand (PPDEV ppdev, VBVAVHWACMD_HDR* pCmd);
+void vboxVHWASubmitCommand (PPDEV ppdev, VBVAVHWACMD_HDR* pCmd);
+#endif
+
 BOOL bIsScreenSurface (SURFOBJ *pso);
 
 __inline SURFOBJ *getSurfObj (SURFOBJ *pso)
@@ -251,7 +261,7 @@ __inline SURFOBJ *getSurfObj (SURFOBJ *pso)
     if (pso)
     {
         PPDEV ppdev = (PPDEV)pso->dhpdev;
-    
+
         if (ppdev)
         {
             if (ppdev->psoScreenBitmap && pso->hsurf == ppdev->hsurfScreen)
@@ -261,7 +271,7 @@ __inline SURFOBJ *getSurfObj (SURFOBJ *pso)
             }
         }
     }
-    
+
     return pso;
 }
 
@@ -275,7 +285,7 @@ __inline int format2BytesPerPixel(const SURFOBJ *pso)
         case BMF_24BPP: return 3;
         case BMF_32BPP: return 4;
     }
-    
+
     return 0;
 }
 
@@ -289,7 +299,7 @@ void vbvaReportDirtyRect (PPDEV ppdev, RECTL *prcl);
 
 #define VRDP_TEXT_MAX_GLYPH_SIZE 0x100
 #define VRDP_TEXT_MAX_GLYPHS     0xfe
- 
+
 BOOL vboxReportText (PPDEV ppdev,
                      VRDPCLIPRECTS *pClipRects,
                      STROBJ   *pstro,
