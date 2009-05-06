@@ -17,8 +17,8 @@
 # additional information or have any questions.
 #
 
-PATH_XPCOM     = ../..
-PATH_BIN       = ../../..
+PATH_XPCOM     = ..
+PATH_BIN       = ../../../../
 
 # This setting must be the same as used when building VBoxXPCOM.so.
 # If you get a lot of unresolved symbols, try commenting it out.
@@ -26,10 +26,10 @@ VBOX_WITH_XPCOM_NAMESPACE_CLEANUP=1
 
 PATH_XPCOM_IDL = $(PATH_XPCOM)/idl
 INCS_XPCOM     = $(PATH_XPCOM)/include \
-                 $(PATH_XPCOM)/include/xpcom/nsprpub \
-                 $(PATH_XPCOM)/include/xpcom/string \
-                 $(PATH_XPCOM)/include/xpcom/xpcom \
-                 $(PATH_XPCOM)/include/xpcom/ipcd
+                 $(PATH_XPCOM)/include/nsprpub \
+                 $(PATH_XPCOM)/include/string \
+                 $(PATH_XPCOM)/include/xpcom \
+                 $(PATH_XPCOM)/include/ipcd
 
 ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
  DEFS_XPCOM   += VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
