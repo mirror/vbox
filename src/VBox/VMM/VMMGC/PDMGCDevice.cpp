@@ -490,12 +490,16 @@ static DECLCALLBACK(VMCPUID) pdmRCApicHlp_GetCpuId(PPDMDEVINS pDevIns)
     return VMMGetCpuId(pDevIns->Internal.s.pVMRC);
 }
 
-/** @copydoc PDMAPICHLPR3::pfnSendSipi */
+
+/** @copydoc PDMAPICHLPRC::pfnSendSipi */
 static DECLCALLBACK(void) pdmRCApicHlp_SendSipi(PPDMDEVINS pDevIns, VMCPUID idCpu, int iVector)
 {
     /* we shall never send a SIPI in raw mode */
     AssertFailed();
 }
+
+
+
 
 /** @copydoc PDMIOAPICHLPRC::pfnApicBusDeliver */
 static DECLCALLBACK(void) pdmRCIoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
