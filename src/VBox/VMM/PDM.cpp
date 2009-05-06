@@ -1329,12 +1329,18 @@ VMMR3DECL(int) PDMR3QueryLun(PVM pVM, const char *pszDevice, unsigned iInstance,
  */
 VMMR3DECL(void) PDMR3DmaRun(PVM pVM)
 {
-    VM_FF_CLEAR(pVM, VM_FF_PDM_DMA);
-    if (pVM->pdm.s.pDmac)
+    /** @note Not really SMP safe; restrict it to VCPU 0? */
+    if (VMMGetCpuId(pVM) != 0)
+        return;
+
+    if (VM_FF_TESTANDCLEAR(pVM, VM_FF_PDM_DMA_BIT))
     {
-        bool fMore = pVM->pdm.s.pDmac->Reg.pfnRun(pVM->pdm.s.pDmac->pDevIns);
-        if (fMore)
-            VM_FF_SET(pVM, VM_FF_PDM_DMA);
+        if (pVM->pdm.s.pDmac)
+        {
+            bool fMore = pVM->pdm.s.pDmac->Reg.pfnRun(pVM->pdm.s.pDmac->pDevIns);
+            if (fMore)
+                VM_FF_SET(pVM, VM_FF_PDM_DMA);
+        }
     }
 }
 
