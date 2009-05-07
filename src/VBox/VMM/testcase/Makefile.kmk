@@ -30,7 +30,7 @@ ifneq ($(KBUILD_TARGET),win)
 PROGRAMS   += tstVMMFork
 endif
 ifdef VBOX_WITH_TESTCASES
- PROGRAMS  += tstCFGM tstSSM tstMMHyperHeap tstVMM-2 tstVMREQ tstMicro tstCompiler tstVMMR0CallHost-1
+ PROGRAMS  += tstCFGM tstSSM tstMMHyperHeap tstVMREQ tstMicro tstCompiler tstVMMR0CallHost-1
  ifneq ($(KBUILD_TARGET),l4)
   PROGRAMS += tstAnimate
  endif
@@ -156,10 +156,6 @@ tstVMM-HwAccm_LIBS      = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 tstVMMFork_TEMPLATE     = VBOXR3EXE
 tstVMMFork_SOURCES      = tstVMMFork.cpp
 tstVMMFork_LIBS         = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
-
-tstVMM-2_TEMPLATE       = VBOXR3EXE
-tstVMM-2_SOURCES        = tstVMM-2.cpp
-tstVMM-2_LIBS           = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 
 tstVMMR0CallHost-1_TEMPLATE = VBOXR3EXE
 tstVMMR0CallHost-1_INCS  = $(VBOX_PATH_VMM_SRC)
