@@ -1640,6 +1640,7 @@ void tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere)
                 case TMTIMERSTATE_PENDING_STOP:
                 case TMTIMERSTATE_PENDING_STOP_DESTROY:
                 case TMTIMERSTATE_PENDING_RESCHEDULE:
+                case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
                     break;
                 default:
                     AssertMsgFailed(("%s: Invalid state enmState=%d %s\n", pszWhere, enmState, tmTimerState(enmState)));
