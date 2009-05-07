@@ -488,6 +488,9 @@ static DECLCALLBACK(VMCPUID) pdmRCApicHlp_GetCpuId(PPDMDEVINS pDevIns)
     return VMMGetCpuId(pDevIns->Internal.s.pVMRC);
 }
 
+
+
+
 /** @copydoc PDMIOAPICHLPRC::pfnApicBusDeliver */
 static DECLCALLBACK(int) pdmRCIoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                         uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode)
