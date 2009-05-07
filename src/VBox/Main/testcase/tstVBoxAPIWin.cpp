@@ -57,6 +57,11 @@
 #include <stdio.h>
 #include "VirtualBox.h"
 
+#define SAFE_RELEASE(x) \
+    if (x) { \
+        x->Release(); \
+        x = NULL; \
+    }
 
 int listVMs(IVirtualBox *virtualBox)
 {
@@ -95,11 +100,12 @@ int listVMs(IVirtualBox *virtualBox)
     return 0;
 }
 
+
 int testErrorInfo(IVirtualBox *virtualBox)
 {
     HRESULT rc;
 
-    /* try to find a machine that doesn't exist */
+    /* Try to find a machine that doesn't exist */
     IMachine *machine = NULL;
     BSTR machineName = SysAllocString(L"Foobar");
 
@@ -132,8 +138,115 @@ int testErrorInfo(IVirtualBox *virtualBox)
         }
     }
 
-    if (machine)
-        machine->Release();
+    SAFE_RELEASE(machine);
+    SysFreeString(machineName);
+
+    return 0;
+}
+
+
+int testStartVM(IVirtualBox *virtualBox)
+{
+    HRESULT rc;
+
+    /* Try to start a VM called "WinXP SP2". */
+    IMachine *machine = NULL;
+    BSTR machineName = SysAllocString(L"WinXP SP2");
+
+    rc = virtualBox->FindMachine(machineName, &machine);
+
+    if (FAILED(rc))
+    {
+        IErrorInfo *errorInfo;
+
+        rc = GetErrorInfo(0, &errorInfo);
+
+        if (FAILED(rc))
+            printf("Error getting error info! rc = 0x%x\n", rc);
+        else
+        {
+            BSTR errorDescription = NULL;
+
+            rc = errorInfo->GetDescription(&errorDescription);
+
+            if (FAILED(rc) || !errorDescription)
+                printf("Error getting error description! rc = 0x%x\n", rc);
+            else
+            {
+                printf("Successfully retrieved error description: %S\n", errorDescription);
+
+                SysFreeString(errorDescription);
+            }
+
+            SAFE_RELEASE(errorInfo);
+        }
+    }
+    else
+    {
+        ISession *session = NULL;
+        IConsole *console = NULL;
+        IProgress *progress = NULL;
+        BSTR sessiontype = SysAllocString(L"gui");
+        BSTR guid;
+
+        do
+        {
+            rc = machine->get_Id(&guid); /* Get the GUID of the machine. */
+            if (!SUCCEEDED(rc))
+            {
+                printf("Error retrieving machine ID! rc = 0x%x\n", rc);
+                break;
+            }
+
+            /* Create the session object. */
+            rc = CoCreateInstance(CLSID_Session,        /* the VirtualBox base object */
+                                  NULL,                 /* no aggregation */
+                                  CLSCTX_INPROC_SERVER, /* the object lives in a server process on this machine */
+                                  IID_ISession,         /* IID of the interface */
+                                  (void**)&session);
+            if (!SUCCEEDED(rc))
+            {
+                printf("Error creating Session instance! rc = 0x%x\n", rc);
+                break;
+            }
+    
+            /* Start a VM session using the delivered VBox GUI. */
+            rc = virtualBox->OpenRemoteSession (session, guid, sessiontype,
+                                                NULL, &progress);
+            if (!SUCCEEDED(rc))
+            {
+                printf("Could not open remote session! rc = 0x%x\n", rc);
+                break;
+            }
+    
+            /* Wait until VM is running. */
+            printf ("Starting VM, please wait ...\n");
+            rc = progress->WaitForCompletion (-1);
+    
+            /* Get console object. */
+            session->get_Console(&console);
+
+            /* Bring console window to front. */
+            machine->ShowConsoleWindow(0);
+
+            printf ("Press enter to power off VM and close the session...\n");
+            getchar();
+
+            /* Power down the machine. */
+            rc = console->PowerDown();
+
+            /* Close the session. */
+            rc = session->Close();  
+            
+        } while (0);
+
+        SAFE_RELEASE(console);
+        SAFE_RELEASE(progress);
+        SAFE_RELEASE(session);
+        SysFreeString(guid);
+        SysFreeString(sessiontype);
+        SAFE_RELEASE(machine);
+    }
 
     SysFreeString(machineName);
 
@@ -148,10 +261,10 @@ int main(int argc, char *argv[])
 
     do
     {
-        /* initialize the COM subsystem */
+        /* Initialize the COM subsystem. */
         CoInitialize(NULL);
 
-        /* instantiate the VirtualBox root object */
+        /* Instantiate the VirtualBox root object. */
         rc = CoCreateInstance(CLSID_VirtualBox,       /* the VirtualBox base object */
                               NULL,                   /* no aggregation */
                               CLSCTX_LOCAL_SERVER,    /* the object lives in a server process on this machine */
@@ -168,7 +281,10 @@ int main(int argc, char *argv[])
 
         testErrorInfo(virtualBox);
 
-        /* release the VirtualBox object */
+        /* Enable the following line to get a VM started. */
+        //testStartVM(virtualBox);
+
+        /* Release the VirtualBox object. */
         virtualBox->Release();
 
     } while (0);
