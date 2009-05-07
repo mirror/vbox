@@ -26,6 +26,7 @@
 #include <VBox/types.h>
 #include <iprt/time.h>
 #include <iprt/timer.h>
+#include <iprt/assert.h>
 #include <VBox/stam.h>
 #include <VBox/pdmcritsect.h>
 
@@ -165,7 +166,7 @@ typedef struct TMTIMER
     /** Timer state. */
     volatile TMTIMERSTATE   enmState;
     /** Timer relative offset to the next timer in the schedule list. */
-    int32_t                 offScheduleNext;
+    int32_t volatile        offScheduleNext;
 
     /** Timer relative offset to the next timer in the chain. */
     int32_t                 offNext;
@@ -188,6 +189,7 @@ typedef struct TMTIMER
     RTRCPTR                 padding0; /**< pad structure to multiple of 8 bytes. */
 #endif
 } TMTIMER;
+AssertCompileMemberSize(TMTIMER, enmState, sizeof(uint32_t));
 
 
 /**
@@ -195,11 +197,14 @@ typedef struct TMTIMER
  */
 #if 1
 # define TM_SET_STATE(pTimer, state) \
-    ASMAtomicXchgSize(&(pTimer)->enmState, state)
+    ASMAtomicWriteU32((uint32_t volatile *)&(pTimer)->enmState, state)
 #else
 # define TM_SET_STATE(pTimer, state) \
-    do { Log(("%s: %p: %d -> %d\n", __FUNCTION__, (pTimer), (pTimer)->enmState, state)); \
-         ASMAtomicXchgSize(&(pTimer)->enmState, state);\
+    do { \
+        uint32_t uOld1 = (pTimer)->enmState; \
+        Log(("%s: %p: %d -> %d\n", __FUNCTION__, (pTimer), (pTimer)->enmState, state)); \
+        uint32_t uOld2 = ASMAtomicXchgU32((uint32_t volatile *)&(pTimer)->enmState, state); \
+        Assert(uOld1 == uOld2); \
     } while (0)
 #endif
 
@@ -208,10 +213,10 @@ typedef struct TMTIMER
  */
 #if 1
 # define TM_TRY_SET_STATE(pTimer, StateNew, StateOld, fRc) \
-    ASMAtomicCmpXchgSize(&(pTimer)->enmState, StateNew, StateOld, fRc)
+    (fRc) = ASMAtomicCmpXchgU32((uint32_t volatile *)&(pTimer)->enmState, StateNew, StateOld)
 #else
 # define TM_TRY_SET_STATE(pTimer, StateNew, StateOld, fRc) \
-    do { ASMAtomicCmpXchgSize(&(pTimer)->enmState, StateNew, StateOld, fRc); \
+    do { (fRc) = ASMAtomicCmpXchgU32((uint32_t volatile *)&(pTimer)->enmState, StateNew, StateOld); \
          Log(("%s: %p: %d -> %d %RTbool\n", __FUNCTION__, (pTimer), StateOld, StateNew, fRc)); \
     } while (0)
 #endif
