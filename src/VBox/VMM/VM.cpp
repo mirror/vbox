@@ -446,8 +446,9 @@ static int vmR3CreateUVM(uint32_t cCpus, PUVM *ppUVM)
                          */
                         for (i = 0; i < cCpus; i++)
                         {
-                            rc = RTThreadCreate(&pUVM->aCpus[i].vm.s.ThreadEMT, vmR3EmulationThread, &pUVM->aCpus[i], _1M,
-                                                RTTHREADTYPE_EMULATION, RTTHREADFLAGS_WAITABLE, "EMT");
+                            rc = RTThreadCreateF(&pUVM->aCpus[i].vm.s.ThreadEMT, vmR3EmulationThread, &pUVM->aCpus[i], _1M,
+                                                 RTTHREADTYPE_EMULATION, RTTHREADFLAGS_WAITABLE,
+                                                 cCpus > 1 ? "EMT-%u" : "EMT", i);
                             if (RT_FAILURE(rc))
                                 break;
 
