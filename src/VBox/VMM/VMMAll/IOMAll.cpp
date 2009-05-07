@@ -49,7 +49,7 @@
  */
 int iomLock(PVM pVM)
 {
-    Assert(!PGMIsLocked(pVM));
+    Assert(!PGMIsLockOwner(pVM));
     int rc = PDMCritSectEnter(&pVM->iom.s.EmtLock, VERR_SEM_BUSY);
     return rc;
 }
