@@ -64,6 +64,7 @@ VMMDECL(int)    PDMCritSectTryEnter(PPDMCRITSECT pCritSect);
 VMMR3DECL(int)  PDMR3CritSectEnterEx(PPDMCRITSECT pCritSect, bool fCallHost);
 VMMDECL(void)   PDMCritSectLeave(PPDMCRITSECT pCritSect);
 VMMDECL(bool)   PDMCritSectIsOwner(PCPDMCRITSECT pCritSect);
+VMMDECL(bool)   PDMCritSectIsLocked(PCPDMCRITSECT pCritSect);
 VMMDECL(bool)   PDMCritSectIsOwnerEx(PCPDMCRITSECT pCritSect, VMCPUID idCpu);
 VMMDECL(bool)   PDMCritSectIsInitialized(PCPDMCRITSECT pCritSect);
 VMMR3DECL(int)  PDMR3CritSectScheduleExitEvent(PPDMCRITSECT pCritSect, RTSEMEVENT EventToSignal);
