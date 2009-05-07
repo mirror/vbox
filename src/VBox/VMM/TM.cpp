@@ -110,6 +110,8 @@
  *    - Employ a thread which periodically (100Hz) polls all the timer queues.
  *
  *
+ * @image html TMTIMER-Statechart-Diagram.gif
+ *
  * @section sec_tm_timer    Logging
  *
  * Level 2: Logs a most of the timer state transitions and queue servicing.
