@@ -282,7 +282,7 @@ static int vboxClipboardGetUtf8FromX11(VBOXCLIPBOARDCONTEXTX11 *pCtx,
     /* First convert the UTF8 to UTF16 */
     int rc = RTStrToUtf16Ex(pu8SrcText, cbSrcLen, &pu16SrcText, 0, &cwSrcLen);
     if (RT_SUCCESS(rc))
-        rc = vboxClipboardWriteUtf16LE(pCtx, pu16SrcText, cwSrcLen,
+        rc = vboxClipboardWriteUtf16LE(pCtx, pu16SrcText, cwSrcLen + 1,
                                        pv, cb, pcbActual);
     XtFree(reinterpret_cast<char *>(pValue));
     RTUtf16Free(pu16SrcText);
@@ -359,7 +359,7 @@ static int vboxClipboardGetCTextFromX11(VBOXCLIPBOARDCONTEXTX11 *pCtx,
     if (RT_SUCCESS(rc))
         rc = RTStrToUtf16Ex(*ppu8SrcText, cbSrcLen, &pu16SrcText, 0, &cwSrcLen);
     if (RT_SUCCESS(rc))
-        rc = vboxClipboardWriteUtf16LE(pCtx, pu16SrcText, cwSrcLen,
+        rc = vboxClipboardWriteUtf16LE(pCtx, pu16SrcText, cwSrcLen + 1,
                                        pv, cb, pcbActual);
     if (ppu8SrcText != NULL)
         XFreeStringList(ppu8SrcText);
@@ -624,6 +624,21 @@ static void vboxClipboardGetTargetsFromX11(Widget,
     XtFree(reinterpret_cast<char *>(pValue));
 }
 
+enum { TIMER_FREQ = 200 /* ms */ };
+
+static void vboxClipboardPollX11ForTargets(XtPointer pUserData,
+                                           XtIntervalId * /* hTimerId */);
+static void clipSchedulePoller(VBOXCLIPBOARDCONTEXTX11 *pCtx,
+                               XtTimerCallbackProc proc);
+
+#ifndef TESTCASE
+void clipSchedulePoller(VBOXCLIPBOARDCONTEXTX11 *pCtx,
+                        XtTimerCallbackProc proc)
+{
+    XtAppAddTimeOut(pCtx->appContext, TIMER_FREQ, proc, pCtx);
+}
+#endif
+
 /**
  * This timer callback is called every 200ms to check the contents of the X11
  * clipboard.
@@ -632,8 +647,8 @@ static void vboxClipboardGetTargetsFromX11(Widget,
  * @todo  Use the XFIXES extension to check for new clipboard data when
  *        available.
  */
-static void vboxClipboardPollX11ForTargets(XtPointer pUserData,
-                                           XtIntervalId * /* hTimerId */)
+void vboxClipboardPollX11ForTargets(XtPointer pUserData,
+                                    XtIntervalId * /* hTimerId */)
 {
     VBOXCLIPBOARDCONTEXTX11 *pCtx =
             reinterpret_cast<VBOXCLIPBOARDCONTEXTX11 *>(pUserData);
@@ -649,10 +664,10 @@ static void vboxClipboardPollX11ForTargets(XtPointer pUserData,
                             CurrentTime);
     }
     /* Re-arm our timer */
-    XtAppAddTimeOut(pCtx->appContext, 200 /* ms */,
-                    vboxClipboardPollX11ForTargets, pCtx);
+    clipSchedulePoller(pCtx, vboxClipboardPollX11ForTargets);
 }
 
+#ifndef TESTCASE
 /**
  * The main loop of our clipboard reader.
  * @note  X11 backend code.
@@ -663,15 +678,12 @@ static int vboxClipboardThread(RTTHREAD self, void *pvUser)
 
     VBOXCLIPBOARDCONTEXTX11 *pCtx =
             reinterpret_cast<VBOXCLIPBOARDCONTEXTX11 *>(pvUser);
-    /* Set up a timer to poll the host clipboard */
-    XtAppAddTimeOut(pCtx->appContext, 200 /* ms */,
-                    vboxClipboardPollX11ForTargets, pCtx);
-
     while (XtAppGetExitFlag(pCtx->appContext) == FALSE)
         XtAppProcessEvent(pCtx->appContext, XtIMAll);
     LogRel(("Shared clipboard: host clipboard thread terminated successfully\n"));
     return VINF_SUCCESS;
 }
+#endif
 
 /** X11 specific uninitialisation for the shared clipboard.
  * @note  X11 backend code.
@@ -758,6 +770,8 @@ static int vboxClipboardInitX11 (VBOXCLIPBOARDCONTEXTX11 *pCtx)
     {
         XtSetMappedWhenManaged(pCtx->widget, false);
         XtRealizeWidget(pCtx->widget);
+        /* Set up a timer to poll the host clipboard */
+        clipSchedulePoller(pCtx, vboxClipboardPollX11ForTargets);
     }
     /* Create the pipes */
     int pipes[2];
@@ -765,9 +779,10 @@ static int vboxClipboardInitX11 (VBOXCLIPBOARDCONTEXTX11 *pCtx)
     {
         pCtx->wakeupPipeRead = pipes[0];
         pCtx->wakeupPipeWrite = pipes[1];
-        XtAppAddInput(pCtx->appContext, pCtx->wakeupPipeRead,
-                      (XtPointer) XtInputReadMask, vboxClipboardStopWorker,
-                      (XtPointer) pCtx);
+        if (!XtAppAddInput(pCtx->appContext, pCtx->wakeupPipeRead,
+                           (XtPointer) XtInputReadMask,
+                           vboxClipboardStopWorker, (XtPointer) pCtx))
+            rc = VERR_NO_MEMORY;  /* What failure means is not doc'ed. */
     }
     else
         rc = RTErrConvertFromErrno(errno);
@@ -856,6 +871,7 @@ int VBoxX11ClipboardStartX11(VBOXCLIPBOARDCONTEXTX11 *pCtx)
         return VINF_SUCCESS;
 
     rc = vboxClipboardInitX11(pCtx);
+#ifndef TESTCASE
     if (RT_SUCCESS(rc))
     {
         rc = RTThreadCreate(&pCtx->thread, vboxClipboardThread, pCtx, 0,
@@ -863,6 +879,7 @@ int VBoxX11ClipboardStartX11(VBOXCLIPBOARDCONTEXTX11 *pCtx)
         if (RT_FAILURE(rc))
             LogRel(("Failed to initialise the shared clipboard X11 backend.\n"));
     }
+#endif
     if (RT_SUCCESS(rc))
     {
         pCtx->fOwnsClipboard = false;
@@ -1122,7 +1139,7 @@ static Boolean vboxClipboardConvertToUtf8ForX11(VBOXCLIPBOARDCONTEXTX11
     RTMemFree(pvVBox);
     *atomTypeReturn = clipGetAtom(pCtx->widget, "UTF8_STRING");
     *pValReturn = reinterpret_cast<XtPointer>(pu8DestText);
-    *pcLenReturn = cbDestLen;
+    *pcLenReturn = cbDestLen + 1;
     *piFormatReturn = 8;
     return true;
 }
@@ -1252,7 +1269,7 @@ static Boolean vboxClipboardConvertToCTextForX11(VBOXCLIPBOARDCONTEXTX11
     RTMemFree(pvVBox);
     *atomTypeReturn = property.encoding;
     *pValReturn = reinterpret_cast<XtPointer>(property.value);
-    *pcLenReturn = property.nitems;
+    *pcLenReturn = property.nitems + 1;
     *piFormatReturn = property.format;
     return true;
 }
@@ -1348,6 +1365,16 @@ static void vboxClipboardReturnToX11(Widget widget, Atom *)
     pCtx->notifyVBox = true;
 }
 
+static void clipSchedule(XtAppContext app_context, XtTimerCallbackProc proc,
+                         XtPointer client_data);
+#ifndef TESTCASE
+void clipSchedule(XtAppContext app_context, XtTimerCallbackProc proc,
+                  XtPointer client_data)
+{
+    XtAppAddTimeOut(app_context, 0, proc, client_data);
+}
+#endif
+
 /** Structure used to pass information about formats that VBox supports */
 typedef struct _VBOXCLIPBOARDFORMATS
 {
@@ -1428,8 +1455,8 @@ void VBoxX11ClipboardAnnounceVBoxFormat(VBOXCLIPBOARDCONTEXTX11 *pCtx,
     {
         pFormats->pCtx = pCtx;
         pFormats->formats = u32Formats;
-        XtAppAddTimeOut(pCtx->appContext, 0, vboxClipboardAnnounceWorker,
-                        (XtPointer) pFormats);
+        clipSchedule(pCtx->appContext, vboxClipboardAnnounceWorker,
+                     (XtPointer) pFormats);
     }
 }
 
@@ -1517,8 +1544,8 @@ int VBoxX11ClipboardReadX11Data(VBOXCLIPBOARDCONTEXTX11 *pCtx,
     if (RT_SUCCESS(rc))
     {
         /* We use this to schedule a worker function on the event thread. */
-        XtAppAddTimeOut(pCtx->appContext, 0, vboxClipboardReadX11Worker,
-                        (XtPointer) &request);
+        clipSchedule(pCtx->appContext, vboxClipboardReadX11Worker,
+                     (XtPointer) &request);
         rc = RTSemEventWait(request.finished, RT_INDEFINITE_WAIT);
         if (RT_SUCCESS(rc))
             rc = request.rc;
@@ -1531,291 +1558,739 @@ int VBoxX11ClipboardReadX11Data(VBOXCLIPBOARDCONTEXTX11 *pCtx,
 
 #include <iprt/initterm.h>
 #include <iprt/stream.h>
+#include <poll.h>
 
-enum { MAX_ATTEMPTS = 10 };
+#define TEST_NAME "tstClipboardX11"
+#define TEST_WIDGET (Widget)0xffff
 
-static VBOXCLIPBOARDCONTEXTX11 *g_pCtxTestX11;
-static VBOXCLIPBOARDCONTEXTX11 *g_pCtxTestVBox;
+/* Our X11 clipboard target poller */
+static XtTimerCallbackProc g_pfnPoller = NULL;
+/* User data for the poller function. */
+static XtPointer g_pPollerData = NULL;
 
-/** Quick Utf16 string class, initialised from a Utf8 string */
-class testUtf16String
+/* For the testcase, we install the poller function in a global variable
+ * which is called when the testcase updates the X11 targets. */
+void clipSchedulePoller(VBOXCLIPBOARDCONTEXTX11 *pCtx,
+                        XtTimerCallbackProc proc)
 {
-    /** Stores the Utf16 data.  NULL if something went wrong. */
-    PRTUTF16 mData;
-    /** Stores the size in bytes of the data.  0 if something went wrong. */
-    size_t mSize;
-public:
-    /** Constructor
-     * @param aString the Utf8 representation of the string data
-     */
-    testUtf16String(const char *aString)
+    g_pfnPoller = proc;
+    g_pPollerData = (XtPointer)pCtx;
+}
+
+static bool clipPollTargets()
+{
+    if (!g_pfnPoller)
+        return false;
+    g_pfnPoller(g_pPollerData, NULL);
+    return true;
+}
+
+/* For the purpose of the test case, we just execute the procedure to be
+ * scheduled, as we are running single threaded. */
+void clipSchedule(XtAppContext app_context, XtTimerCallbackProc proc,
+                  XtPointer client_data)
+{
+    proc(client_data, NULL);
+}
+
+void XtFree(char *ptr)
+{ RTMemFree((void *) ptr); }
+
+/* The data in the simulated VBox clipboard */
+static int g_vboxDataRC = VINF_SUCCESS;
+static void *g_vboxDatapv = NULL;
+static uint32_t g_vboxDatacb = 0;
+
+/* Set empty data in the simulated VBox clipboard. */
+static void clipEmptyVBox(VBOXCLIPBOARDCONTEXTX11 *pCtx, int retval)
+{
+    g_vboxDataRC = retval;
+    g_vboxDatapv = NULL;
+    g_vboxDatacb = 0;
+    VBoxX11ClipboardAnnounceVBoxFormat(pCtx, 0);
+}
+
+/* Set the data in the simulated VBox clipboard. */
+static int clipSetVBoxUtf16(VBOXCLIPBOARDCONTEXTX11 *pCtx, int retval,
+                            const char *pcszData)
+{
+    PRTUTF16 pwszData = NULL;
+    size_t cwData = 0;
+    int rc = RTStrToUtf16Ex(pcszData, RTSTR_MAX, &pwszData, 0, &cwData);
+    if (RT_FAILURE(rc))
+        return rc;
+    size_t cb = cwData * 2 + 2;
+    void *pv = RTMemDup(pwszData, cb);
+    RTUtf16Free(pwszData);
+    if (pv == NULL)
+        return VERR_NO_MEMORY;
+    if (g_vboxDatapv)
+        RTMemFree(g_vboxDatapv);
+    g_vboxDataRC = retval;
+    g_vboxDatapv = pv;
+    g_vboxDatacb = cb;
+    VBoxX11ClipboardAnnounceVBoxFormat(pCtx,
+                                       VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+    return VINF_SUCCESS;
+}
+
+/* Return the data in the simulated VBox clipboard. */
+int VBoxX11ClipboardReadVBoxData(VBOXCLIPBOARDCONTEXT *pCtx,
+                                 uint32_t u32Format, void **ppv,
+                                 uint32_t *pcb)
+{
+    *pcb = g_vboxDatacb;
+    if (g_vboxDatapv != NULL)
     {
-        int rc = RTStrToUtf16(aString, &mData);
-        if (RT_FAILURE(rc))
+        void *pv = RTMemDup(g_vboxDatapv, g_vboxDatacb);
+        *ppv = pv;
+        return pv != NULL ? g_vboxDataRC : VERR_NO_MEMORY;
+    }
+    *ppv = NULL;
+    return g_vboxDataRC;
+}
+
+Display *XtDisplay(Widget w)
+{ return (Display *) 0xffff; }
+
+int XmbTextListToTextProperty(Display *display, char **list, int count,
+                              XICCEncodingStyle style,
+                              XTextProperty *text_prop_return)
+{
+    /* We don't fully reimplement this API for obvious reasons. */
+    AssertReturn(count == 1, XLocaleNotSupported);
+    AssertReturn(style == XCompoundTextStyle, XLocaleNotSupported);
+    /* We simplify the conversion by only accepting ASCII. */
+    for (unsigned i = 0; (*list)[i] != 0; ++i)
+        AssertReturn(((*list)[i] & 0x80) == 0, XLocaleNotSupported);
+    text_prop_return->value =
+            (unsigned char*)RTMemDup(*list, strlen(*list) + 1);
+    text_prop_return->encoding = clipGetAtom(NULL, "COMPOUND_TEXT");
+    text_prop_return->format = 8;
+    text_prop_return->nitems = strlen(*list);
+    return 0;
+}
+
+int Xutf8TextListToTextProperty(Display *display, char **list, int count,
+                                XICCEncodingStyle style,
+                                XTextProperty *text_prop_return)
+{
+    return XmbTextListToTextProperty(display, list, count, style,
+                                     text_prop_return);
+}
+
+int XmbTextPropertyToTextList(Display *display,
+                              const XTextProperty *text_prop,
+                              char ***list_return, int *count_return)
+{
+    int rc = 0;
+    if (text_prop->nitems == 0)
+    {
+        *list_return = NULL;
+        *count_return = 0;
+        return 0;
+    }
+    /* Only accept simple ASCII properties */
+    for (unsigned i = 0; i < text_prop->nitems; ++i)
+        AssertReturn(!(text_prop->value[i] & 0x80), XConverterNotFound);
+    char **ppList = (char **)RTMemAlloc(sizeof(char *));
+    char *pValue = (char *)RTMemDup(text_prop->value, text_prop->nitems + 1);
+    if (ppList)
+        *ppList = pValue;
+    if (!ppList || !pValue)
+    {
+        RTMemFree(ppList);
+        RTMemFree(pValue);
+        rc = XNoMemory;
+    }
+    else
+    {
+        /* NULL-terminate the string */
+        pValue[text_prop->nitems] = '\0';
+        *count_return = 1;
+        *list_return = ppList;
+    }
+    return rc;
+}
+
+int Xutf8TextPropertyToTextList(Display *display,
+                                const XTextProperty *text_prop,
+                                char ***list_return, int *count_return)
+{
+    return XmbTextPropertyToTextList(display, text_prop, list_return,
+                                     count_return);
+}
+
+void XtAppSetExitFlag(XtAppContext app_context) {}
+
+void XtDestroyWidget(Widget w) {}
+
+XtAppContext XtCreateApplicationContext(void) { return (XtAppContext)0xffff; }
+
+void XtDestroyApplicationContext(XtAppContext app_context) {}
+
+void XtToolkitInitialize(void) {}
+
+Boolean XtToolkitThreadInitialize(void) { return True; }
+
+Display *XtOpenDisplay(XtAppContext app_context,
+                       _Xconst _XtString display_string,
+                       _Xconst _XtString application_name,
+                       _Xconst _XtString application_class,
+                       XrmOptionDescRec *options, Cardinal num_options,
+                       int *argc, char **argv)
+{ return (Display *)0xffff; }
+
+Widget XtVaAppCreateShell(_Xconst _XtString application_name,
+                          _Xconst _XtString application_class,
+                          WidgetClass widget_class, Display *display, ...)
+{ return TEST_WIDGET; }
+
+void XtSetMappedWhenManaged(Widget widget, _XtBoolean mapped_when_managed) {}
+
+void XtRealizeWidget(Widget widget) {}
+
+XtInputId XtAppAddInput(XtAppContext app_context, int source,
+                        XtPointer condition, XtInputCallbackProc proc,
+                        XtPointer closure)
+{ return 0xffff; }
+
+/* Atoms we need other than the formats we support. */
+static const char *g_apszSupAtoms[] =
+{
+    "PRIMARY", "CLIPBOARD", "TARGETS", "MULTIPLE", "TIMESTAMP"
+};
+
+/* This just looks for the atom names in a couple of tables and returns an
+ * index with an offset added. */
+Boolean XtConvertAndStore(Widget widget, _Xconst _XtString from_type,
+                          XrmValue* from, _Xconst _XtString to_type,
+                          XrmValue* to_in_out)
+{
+    Boolean rc = False;
+    /* What we support is: */
+    AssertReturn(from_type == XtRString, False);
+    AssertReturn(to_type == XtRAtom, False);
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aFormats); ++i)
+        if (!strcmp(from->addr, g_aFormats[i].pcszAtom))
         {
-            mData = NULL;
-            mSize = 0;
-            return;
+            *(Atom *)(to_in_out->addr) = (Atom) (i + 0x1000);
+            rc = True;
         }
-        mSize = RTUtf16Len(mData) * 2 + 2;
-    }
-    /** Destructor */
-    ~testUtf16String()
+    for (unsigned i = 0; i < RT_ELEMENTS(g_apszSupAtoms); ++i)
+        if (!strcmp(from->addr, g_apszSupAtoms[i]))
+        {
+            *(Atom *)(to_in_out->addr) = (Atom) (i + 0x2000);
+            rc = True;
+        }
+    Assert(rc == True);  /* Have we missed any atoms? */
+    return rc;
+}
+
+/* The current values of the X selection, which will be returned to the
+ * XtGetSelectionValue callback. */
+static Atom g_selTarget = 0;
+static Atom g_selType = 0;
+static const void *g_pSelData = NULL;
+static unsigned long g_cSelData = 0;
+static int g_selFormat = 0;
+
+void XtGetSelectionValue(Widget widget, Atom selection, Atom target,
+                         XtSelectionCallbackProc callback,
+                         XtPointer closure, Time time)
+{
+    unsigned long count = 0;
+    int format = 0;
+    Atom type = XA_STRING;
+    if (   (   selection != clipGetAtom(NULL, "PRIMARY")
+            && selection != clipGetAtom(NULL, "CLIPBOARD")
+            && selection != clipGetAtom(NULL, "TARGETS"))
+        || (   target != g_selTarget
+            && target != clipGetAtom(NULL, "TARGETS")))
     {
-        RTUtf16Free(mData);
+        /* Otherwise this is probably a caller error. */
+        Assert(target != g_selTarget);
+        callback(NULL, closure, &selection, &type, NULL, &count, &format);
+                /* Could not convert to target. */
+        return;
     }
-    /** Getter for the data */
-    PCRTUTF16 getData() { return mData; }
-    /** Getter for the data size */
-    size_t getSize() { return mSize; }
-};
+    XtPointer pValue = NULL;
+    if (target == clipGetAtom(NULL, "TARGETS"))
+    {
+        pValue = (XtPointer) RTMemDup(&g_selTarget, sizeof(g_selTarget));
+        type = XA_ATOM;
+        count = 1;
+        format = 32;
+    }
+    else
+    {
+        pValue = (XtPointer) g_pSelData ? RTMemDup(g_pSelData, g_cSelData)
+                                        : NULL;
+        type = g_selType;
+        count = g_pSelData ? g_cSelData : 0;
+        format = g_selFormat;
+    }
+    if (!pValue)
+    {
+        count = 0;
+        format = 0;
+    }
+    callback(NULL, closure, &selection, &type, pValue,
+             &count, &format);
+}
 
-/** Parameters for a test run. */
-static struct testData
+/* The formats currently on offer from X11 via the shared clipboard */
+static uint32_t g_fX11Formats = 0;
+
+void VBoxX11ClipboardReportX11Formats(VBOXCLIPBOARDCONTEXT* pCtx,
+                                      uint32_t u32Formats)
 {
-    /** The string data we are offering. */
-    testUtf16String data;
-    /** The size of the buffer to receive the request data */
-    uint32_t cchBuffer;
-    /** The format we request the data in */
-    PCRTUTF16 getData() { return data.getData(); }
-    /** Getter for the Utf16 string data size in bytes */
-    size_t getSize() { return data.getSize(); }
-    /** Is the test expected to produce a buffer overflow? */
-    bool overflow() { return cchBuffer < getSize(); }
-} g_sTestData[] =
+    g_fX11Formats = u32Formats;
+}
+
+static uint32_t clipQueryFormats()
 {
-    { "Hello world\r\n", 256 },
-    { "Goodbye world", 28 },
-    { "", 2 },
-    /* This should produce a buffer overflow */
-    { "Goodbye world", 27 },
-};
+    return g_fX11Formats;
+}
 
-/** Which line of the table above are we currently testing? */
-size_t g_testNum = 0;
-enum { MAX_TESTS = RT_ELEMENTS(g_sTestData) };
-/** Are we doing a timeout test?  Ugly, but whatever. */
-static bool g_testTimeout = false;
+/* Does our clipboard code currently own the selection? */
+static bool g_ownsSel = false;
+/* The procedure that is called when we should convert the selection to a
+ * given format. */
+static XtConvertSelectionProc g_pfnSelConvert = NULL;
+/* The procedure which is called when we lose the selection. */
+static XtLoseSelectionProc g_pfnSelLose = NULL;
+/* The procedure which is called when the selection transfer has completed. */
+static XtSelectionDoneProc g_pfnSelDone = NULL;
 
-/** @todo the current code can't test the following conditions:
- *         * the X11 clipboard offers non-Utf8 text
- *         * the X11 clipboard offers invalid Utf8 text
- */
-/** @todo stress test our context store code?  Probably not important... */
+Boolean XtOwnSelection(Widget widget, Atom selection, Time time,
+                       XtConvertSelectionProc convert,
+                       XtLoseSelectionProc lose,
+                       XtSelectionDoneProc done)
+{
+    if (selection != clipGetAtom(NULL, "CLIPBOARD"))
+        return True;  /* We don't really care about this. */
+    g_ownsSel = true;  /* Always succeed. */
+    g_pfnSelConvert = convert;
+    g_pfnSelLose = lose;
+    g_pfnSelDone = done;
+    return True;
+}
+
+void XtDisownSelection(Widget widget, Atom selection, Time time)
+{
+    g_ownsSel = false;
+    g_pfnSelConvert = NULL;
+    g_pfnSelLose = NULL;
+    g_pfnSelDone = NULL;
+}
+
+/* Request the shared clipboard to convert its data to a given format. */
+static bool clipConvertSelection(const char *pcszTarget, Atom *type,
+                                 XtPointer *value, unsigned long *length,
+                                 int *format)
+{
+    Atom target = clipGetAtom(NULL, pcszTarget);
+    if (target == 0)
+        return false;
+    /* Initialise all return values in case we make a quick exit. */
+    *type = XA_STRING;
+    *value = NULL;
+    *length = 0;
+    *format = 0;
+    if (!g_ownsSel)
+        return false;
+    if (!g_pfnSelConvert)
+        return false;
+    Atom clipAtom = clipGetAtom(NULL, "CLIPBOARD");
+    if (!g_pfnSelConvert(TEST_WIDGET, &clipAtom, &target, type,
+                         value, length, format))
+        return false;
+    if (g_pfnSelDone)
+        g_pfnSelDone(TEST_WIDGET, &clipAtom, &target);
+    return true;
+}
+
+/* Set the current X selection data */
+static void clipSetSelectionValues(const char *pcszTarget, Atom type,
+                                   const void *data,
+                                   unsigned long count, int format)
+{
+    Atom clipAtom = clipGetAtom(NULL, "CLIPBOARD");
+    g_selTarget = clipGetAtom(NULL, pcszTarget);
+    g_selType = type;
+    g_pSelData = data;
+    g_cSelData = count;
+    g_selFormat = format;
+    if (g_pfnSelLose)
+        g_pfnSelLose(TEST_WIDGET, &clipAtom);
+    g_ownsSel = false;
+    g_fX11Formats = 0;
+}
+
+char *XtMalloc(Cardinal size) { return (char *) RTMemAlloc(size); }
+
+char *XGetAtomName(Display *display, Atom atom)
+{
+    AssertReturn((unsigned)atom < RT_ELEMENTS(g_aFormats) + 1, NULL);
+    const char *pcszName = NULL;
+    if (atom < 0x1000)
+        return NULL;
+    else if (0x1000 <= atom && atom < 0x2000)
+    {
+        unsigned index = atom - 0x1000;
+        AssertReturn(index < RT_ELEMENTS(g_aFormats), NULL);
+        pcszName = g_aFormats[index].pcszAtom;
+    }
+    else
+    {
+        unsigned index = atom - 0x2000;
+        AssertReturn(index < RT_ELEMENTS(g_apszSupAtoms), NULL);
+        pcszName = g_apszSupAtoms[index];
+    }
+    return (char *)RTMemDup(pcszName, sizeof(pcszName) + 1);
+}
+
+int XFree(void *data)
+{
+    RTMemFree(data);
+    return 0;
+}
+
+void XFreeStringList(char **list)
+{
+    if (list)
+        RTMemFree(*list);
+    RTMemFree(list);
+}
+
+const char XtStrings [] = "";
+_WidgetClassRec* applicationShellWidgetClass;
+const char XtShellStrings [] = "";
+
+#define MAX_BUF_SIZE 256
+
+static bool testStringFromX11(VBOXCLIPBOARDCONTEXTX11 *pCtx, uint32_t cbBuf,
+                              const char *pcszExp, int rcExp)
+{
+    bool retval = false;
+    AssertReturn(cbBuf <= MAX_BUF_SIZE, false);
+    if (!clipPollTargets())
+        RTPrintf("Failed to poll for targets\n");
+    else if (clipQueryFormats() != VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+        RTPrintf("Wrong targets reported: %02X\n", clipQueryFormats());
+    else
+    {
+        char pc[MAX_BUF_SIZE];
+        uint32_t cbActual;
+        int rc = VBoxX11ClipboardReadX11Data(pCtx,
+                                     VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
+                                     (void *) pc, cbBuf, &cbActual);
+        if (rc != rcExp)
+            RTPrintf("Wrong return code, expected %Rrc, got %Rrc\n", rcExp,
+                     rc);
+        else if (RT_FAILURE(rcExp))
+            retval = true;
+        else
+        {
+            RTUTF16 wcExp[MAX_BUF_SIZE / 2];
+            RTUTF16 *pwcExp = wcExp;
+            size_t cwc = 0;
+            rc = RTStrToUtf16Ex(pcszExp, RTSTR_MAX, &pwcExp,
+                                RT_ELEMENTS(wcExp), &cwc);
+            size_t cbExp = cwc * 2 + 2;
+            AssertRC(rc);
+            if (RT_SUCCESS(rc))
+            {
+                if (cbActual != cbExp)
+                {
+                    RTPrintf("Returned string is the wrong size, string \"%.*ls\", size %u\n",
+                             RT_MIN(MAX_BUF_SIZE, cbActual), pc, cbActual);
+                    RTPrintf("Expected \"%s\", size %u\n", pcszExp,
+                             cbExp);
+                }
+                else
+                {
+                    if (memcmp(pc, wcExp, cbExp) == 0)
+                        retval = true;
+                    else
+                        RTPrintf("Returned string \"%.*ls\" does not match expected string \"%s\"\n",
+                                 MAX_BUF_SIZE, pc, pcszExp);
+                }
+            }
+        }
+    }
+    if (!retval)
+        RTPrintf("Expected: string \"%s\", rc %Rrc (buffer size %u)\n",
+                 pcszExp, rcExp, cbBuf);
+    return retval;
+}
+
+static bool testStringFromVBox(VBOXCLIPBOARDCONTEXTX11 *pCtx,
+                               const char *pcszTarget, Atom typeExp,
+                               const void *valueExp, unsigned long lenExp,
+                               int formatExp)
+{
+    bool retval = false;
+    Atom type;
+    XtPointer value = NULL;
+    unsigned long length;
+    int format;
+    if (clipConvertSelection(pcszTarget, &type, &value, &length, &format))
+    {
+        if (   type != typeExp
+            || length != lenExp
+            || format != formatExp
+            || memcmp((const void *) value, (const void *)valueExp,
+                      lenExp))
+        {
+            RTPrintf("Bad data: type %d, (expected %d), length %u, (%u), format %d (%d),\n",
+                     type, typeExp, length, lenExp, format, formatExp);
+            RTPrintf("value \"%.*s\" (\"%.*s\")", RT_MIN(length, 20), value,
+                     RT_MIN(lenExp, 20), valueExp);
+        }
+        else
+            retval = true;
+    }
+    else
+        RTPrintf("Conversion failed\n");
+    XtFree((char *)value);
+    if (!retval)
+        RTPrintf("Conversion to %s, expected \"%s\"\n", pcszTarget, valueExp);
+    return retval;
+}
+
+static bool testStringFromVBoxFailed(VBOXCLIPBOARDCONTEXTX11 *pCtx,
+                                     const char *pcszTarget)
+{
+    bool retval = false;
+    Atom type;
+    XtPointer value = NULL;
+    unsigned long length;
+    int format;
+    if (!clipConvertSelection(pcszTarget, &type, &value, &length, &format))
+        retval = true;
+    XtFree((char *)value);
+    if (!retval)
+    {
+        RTPrintf("Conversion to target %s, should have failed but didn't\n",
+                 pcszTarget);
+        RTPrintf("Returned type %d, length %u, format %d, value \"%.*s\"\n",
+                 type, length, format, RT_MIN(length, 20), value);
+    }
+    return retval;
+}
+
+int main()
+{
+    RTR3Init();
+    VBOXCLIPBOARDCONTEXTX11 *pCtx = VBoxX11ClipboardConstructX11(NULL);
+    unsigned cErrs = 0;
+    char pc[MAX_BUF_SIZE];
+    uint32_t cbActual;
+    int rc = VBoxX11ClipboardStartX11(pCtx);
+    AssertRCReturn(rc, 1);
+
+    /***********/
+    RTPrintf(TEST_NAME ": TESTING reading Utf-8 from X11\n");
+    clipSetSelectionValues("UTF8_STRING", XA_STRING, "hello world",
+                           sizeof("hello world"), 8);
+    if (!testStringFromX11(pCtx, 256, "hello world", VINF_SUCCESS))
+        ++cErrs;
+    if (!testStringFromX11(pCtx, sizeof("hello world") * 2, "hello world",
+                           VINF_SUCCESS))
+        ++cErrs;
+    if (!testStringFromX11(pCtx, sizeof("hello world") * 2 - 1, "hello world",
+                           VERR_BUFFER_OVERFLOW))
+        ++cErrs;
+    if (!testStringFromX11(pCtx, 0, "hello world", VERR_BUFFER_OVERFLOW))
+        ++cErrs;
+    clipSetSelectionValues("UTF8_STRING", XA_STRING, "hello world\n",
+                           sizeof("hello world\n"), 8);
+    if (!testStringFromX11(pCtx, sizeof("hello world\r\n") * 2,
+                           "hello world\r\n", VINF_SUCCESS))
+        ++cErrs;
+    clipSetSelectionValues("UTF8_STRING", XA_STRING, "hello world\n",
+                           sizeof("hello world\n"), 8);
+    if (!testStringFromX11(pCtx, sizeof("hello world\r\n") * 2,
+                           "hello world\r\n", VINF_SUCCESS))
+        ++cErrs;
+    clipSetSelectionValues("UTF8_STRING", XA_STRING, "",
+                           sizeof(""), 8);
+    if (!testStringFromX11(pCtx, sizeof("") * 2, "", VINF_SUCCESS))
+        ++cErrs;
+    /* This next one is Utf-8 only. */
+    clipSetSelectionValues("UTF8_STRING", XA_STRING,
+                           "100\xE2\x82\xAC" /* 100 Euro */,
+                           sizeof("100\xE2\x82\xAC"), 8);
+    if (!testStringFromX11(pCtx, sizeof("100\xE2\x82\xAC") * 2,
+                           "100\xE2\x82\xAC", VINF_SUCCESS))
+        ++cErrs;
+
+    /***********/
+    RTPrintf(TEST_NAME ": TESTING reading compound text from X11\n");
+    clipSetSelectionValues("COMPOUND_TEXT", XA_STRING, "hello world",
+                           sizeof("hello world"), 8);
+    if (!testStringFromX11(pCtx, 256, "hello world", VINF_SUCCESS))
+        ++cErrs;
+    if (!testStringFromX11(pCtx, sizeof("hello world") * 2, "hello world",
+                           VINF_SUCCESS))
+        ++cErrs;
+    if (!testStringFromX11(pCtx, sizeof("hello world") * 2 - 1, "hello world",
+                           VERR_BUFFER_OVERFLOW))
+        ++cErrs;
+    if (!testStringFromX11(pCtx, 0, "hello world", VERR_BUFFER_OVERFLOW))
+        ++cErrs;
+    clipSetSelectionValues("COMPOUND_TEXT", XA_STRING, "hello world\n",
+                           sizeof("hello world\n"), 8);
+    if (!testStringFromX11(pCtx, sizeof("hello world\r\n") * 2,
+                           "hello world\r\n", VINF_SUCCESS))
+        ++cErrs;
+    clipSetSelectionValues("COMPOUND_TEXT", XA_STRING, "hello world\n",
+                           sizeof("hello world\n"), 8);
+    if (!testStringFromX11(pCtx, sizeof("hello world\r\n") * 2,
+                           "hello world\r\n", VINF_SUCCESS))
+        ++cErrs;
+    clipSetSelectionValues("COMPOUND_TEXT", XA_STRING, "",
+                           sizeof(""), 8);
+    if (!testStringFromX11(pCtx, sizeof("") * 2, "", VINF_SUCCESS))
+        ++cErrs;
+
+    /***********/
+    RTPrintf(TEST_NAME ": TESTING X11 timeout\n");
+    clipSetSelectionValues("UTF8_STRING", XT_CONVERT_FAIL, "hello world",
+                           sizeof("hello world"), 8);
+    if (!testStringFromX11(pCtx, 256, "hello world", VERR_TIMEOUT))
+        ++cErrs;
+
+    /***********/
+    RTPrintf(TEST_NAME ": TESTING a data request from an empty X11 clipboard\n");
+    clipSetSelectionValues("UTF8_STRING", XA_STRING, NULL,
+                           0, 8);
+    rc = VBoxX11ClipboardReadX11Data(pCtx,
+                                     VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
+                                     (void *) pc, sizeof(pc), &cbActual);
+    if (rc != VERR_NO_DATA)
+    {
+        RTPrintf("Returned %Rrc instead of VERR_NO_DATA\n", rc);
+        ++cErrs;
+    }
+
+    /***********/
+    RTPrintf(TEST_NAME ": TESTING a request for an invalid host format from X11\n");
+    rc = VBoxX11ClipboardReadX11Data(pCtx, 0xffff, (void *) pc,
+                                     sizeof(pc), &cbActual);
+    if (rc != VERR_NOT_IMPLEMENTED)
+    {
+        RTPrintf("Returned %Rrc instead of VERR_NOT_IMPLEMENTED\n", rc);
+        ++cErrs;
+    }
+
+    /***********/
+    RTPrintf(TEST_NAME ": TESTING reading Utf-8 from VBox\n");
+    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello world");
+    if (!testStringFromVBox(pCtx, "UTF8_STRING",
+                            clipGetAtom(NULL, "UTF8_STRING"),
+                            "hello world", sizeof("hello world"), 8))
+        ++cErrs;
+    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello world\r\n");
+    if (!testStringFromVBox(pCtx, "UTF8_STRING",
+                            clipGetAtom(NULL, "UTF8_STRING"),
+                            "hello world\n", sizeof("hello world\n"), 8))
+        ++cErrs;
+    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "");
+    if (!testStringFromVBox(pCtx, "UTF8_STRING",
+                            clipGetAtom(NULL, "UTF8_STRING"),
+                            "", sizeof(""), 8))
+        ++cErrs;
+    /* This next one is Utf-8 only. */
+    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "100\xE2\x82\xAC" /* 100 Euro */);
+    if (!testStringFromVBox(pCtx, "UTF8_STRING",
+                            clipGetAtom(NULL, "UTF8_STRING"),
+                            "100\xE2\x82\xAC", sizeof("100\xE2\x82\xAC"), 8))
+        ++cErrs;
+
+    /***********/
+    RTPrintf(TEST_NAME ": TESTING reading COMPOUND TEXT from VBox\n");
+    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello world");
+    if (!testStringFromVBox(pCtx, "COMPOUND_TEXT",
+                            clipGetAtom(NULL, "COMPOUND_TEXT"),
+                            "hello world", sizeof("hello world"), 8))
+        ++cErrs;
+    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello world\r\n");
+    if (!testStringFromVBox(pCtx, "COMPOUND_TEXT",
+                            clipGetAtom(NULL, "COMPOUND_TEXT"),
+                            "hello world\n", sizeof("hello world\n"), 8))
+        ++cErrs;
+    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "");
+    if (!testStringFromVBox(pCtx, "COMPOUND_TEXT",
+                            clipGetAtom(NULL, "COMPOUND_TEXT"),
+                            "", sizeof(""), 8))
+        ++cErrs;
+
+    /***********/
+    RTPrintf(TEST_NAME ": TESTING reading from VBox with timeout\n");
+    clipEmptyVBox(pCtx, VERR_TIMEOUT);
+    if (!testStringFromVBoxFailed(pCtx, "UTF8_STRING"))
+        ++cErrs;
+
+    /***********/
+    RTPrintf(TEST_NAME ": TESTING reading from VBox with no data\n");
+    clipEmptyVBox(pCtx, VINF_SUCCESS);
+    if (!testStringFromVBoxFailed(pCtx, "UTF8_STRING"))
+        ++cErrs;
+    if (cErrs > 0)
+        RTPrintf("Failed with %u error(s)\n", cErrs);
+    return cErrs > 0 ? 1 : 0;
+}
+
+#endif
+
+#ifdef SMOKETEST
+
+/* This is a simple test case that just starts a copy of the X11 clipboard
+ * backend, checks the X11 clipboard and exits.  If ever needed I will add an
+ * interactive mode in which the user can read and copy to the clipboard from
+ * the command line. */
+
+#include <iprt/initterm.h>
+#include <iprt/stream.h>
+
+#define TEST_NAME "tstClipboardX11Smoke"
 
 int VBoxX11ClipboardReadVBoxData(VBOXCLIPBOARDCONTEXT *pCtx,
                                  uint32_t u32Format, void **ppv,
                                  uint32_t *pcb)
 {
-    LogFlowFunc(("pCtx = %p\n", pCtx));
-    /* This should only ever be called for the second "test" clipboard. */
-    AssertReturn(pCtx == (VBOXCLIPBOARDCONTEXT *)g_pCtxTestX11
-                         /* Magic cookie */, VERR_WRONG_ORDER);
-    /* Timeout test hack */
-    if (g_testTimeout)
-    {
-        RTThreadSleep(200);
-        /* Try to return data after we have been timed out. */
-        *ppv = RTMemDup((const void *) "Scribblings", sizeof("Scribblings"));
-        *pcb = sizeof("Scribblings");
-        LogFlowFunc(("sleep finished, returning\n"));
-        return VINF_SUCCESS;
-    }
-    /* Sanity. */
-    AssertReturn(g_testNum < MAX_TESTS, VERR_WRONG_ORDER);
-    testData *pData = &g_sTestData[g_testNum];
-    AssertPtrReturn(pData->getData(), VERR_NO_MEMORY);
-    AssertReturn(pData->getSize(), VERR_WRONG_ORDER);
-    void *retval = RTMemDup((const void *) pData->getData(),
-                            pData->getSize());
-    AssertPtrReturn(retval, VERR_NO_MEMORY);
-    *ppv = (void *) retval;
-    *pcb = pData->getSize();
-    LogFlowFunc(("returning\n"));
-    return VINF_SUCCESS;
+    return VERR_NO_DATA;
 }
 
-/** As long as our test is running, we grab back the clipboard if X11 ever
- * tries to take it away.  I hope we don't end up with a tug of war... */
 void VBoxX11ClipboardReportX11Formats(VBOXCLIPBOARDCONTEXT *pCtx,
                                       uint32_t u32Formats)
-{
-    LogFlowFunc(("pCtx = %p\n", pCtx));
-    if (pCtx == (VBOXCLIPBOARDCONTEXT *)g_pCtxTestX11) /* Magic cookie */
-        VBoxX11ClipboardAnnounceVBoxFormat(g_pCtxTestVBox,
-                        VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-}
-
-/** Initial tests that can be done while the clipboard contents are still
- * invalid.
- * @returns boolean success value
- * @note    prints status information to stdout
- */
-bool testInvalid(void)
-{
-    bool fSuccess = true;
-    char pc[256];
-    uint32_t cbActual;
-    RTPrintf("tstClipboardX11:  TESTING a request for an invalid data format\n");
-    int rc = VBoxX11ClipboardReadX11Data(g_pCtxTestX11, 0xffff, (void *) pc,
-                                         sizeof(pc), &cbActual);
-    RTPrintf("Returned %Rrc - %s\n", rc,
-             rc == VERR_NOT_IMPLEMENTED ? "SUCCESS" : "FAILURE");
-    if (rc != VERR_NOT_IMPLEMENTED)
-        fSuccess = false;
-    RTPrintf("tstClipboardX11:  TESTING a request for data from an empty clipboard\n");
-    VBoxX11ClipboardAnnounceVBoxFormat(g_pCtxTestX11,
-                                      VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-    VBoxX11ClipboardAnnounceVBoxFormat(g_pCtxTestX11,
-                                       0);
-    rc = VBoxX11ClipboardReadX11Data(g_pCtxTestX11,
-                                     VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
-                                     (void *) pc, sizeof(pc), &cbActual);
-    RTPrintf("Returned %Rrc - %s\n", rc,
-             rc == VERR_NO_DATA ? "SUCCESS" : "FAILURE");
-    if (rc != VERR_NO_DATA)
-        fSuccess = false;
-    return fSuccess;
-}
-
-/** Tests an entry in the table above.
- * @returns boolean success value
- * @note    prints status information to stdout
- */
-bool testEntry(testData *pData)
-{
-    bool fSuccess = false;
-    char pc[256];
-    uint32_t cbActual;
-    for (int i = 0; (i < MAX_ATTEMPTS) && !fSuccess; ++i)
-    {
-        VBoxX11ClipboardAnnounceVBoxFormat(g_pCtxTestVBox,
-                                      VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-        int rc = VBoxX11ClipboardReadX11Data(g_pCtxTestX11,
-                        VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
-                                             (void *) pc, sizeof(pc),
-                                             &cbActual);
-        AssertRCReturn(rc, 1);
-        /* Did we expect and get an overflow? */
-        if (   RT_SUCCESS(rc)
-            && (cbActual == pData->getSize())
-            && pData->overflow())
-            fSuccess = true;
-        /* Did we expect a string and get it? */
-        else if (   RT_SUCCESS(rc)
-                 && (memcmp(pc, pData->getData(),
-                            pData->getSize()) == 0))
-            fSuccess = true;
-        else
-            RTThreadSleep(50);
-        if (fSuccess)
-            RTPrintf("text %ls, %sretval %Rrc - SUCCESS\n",
-                     pData->getData(),
-                     pData->overflow() ? "buffer overflow as expected, "
-                                       : "", rc);
-        else
-            RTPrintf("text %ls, retval %Rrc, attempt %d of %d\n",
-                     pData->getData(), rc, i + 1,
-                     MAX_ATTEMPTS);
-    }
-    if (!fSuccess)
-        RTPrintf("FAILURE.  Last string obtained was %.*lS\n",
-                 RT_MIN(cbActual / 2, 20), pc);
-    return fSuccess;
-}
+{}
 
 int main()
 {
     int rc = VINF_SUCCESS;
-    int status = 0;
-    g_debugClipboard = true;
+    RTR3Init();
     /* We can't test anything without an X session, so just return success
      * in that case. */
     if (!RTEnvGet("DISPLAY"))
+    {
+        RTPrintf(TEST_NAME ": X11 not available, not running test\n");
         return 0;
-    RTR3Init();
-    g_pCtxTestX11 = VBoxX11ClipboardConstructX11(NULL);
-    g_pCtxTestVBox =
-        VBoxX11ClipboardConstructX11((VBOXCLIPBOARDCONTEXT *)g_pCtxTestX11);
-    rc = VBoxX11ClipboardStartX11(g_pCtxTestVBox);
-    AssertRCReturn(rc, 1);
-    bool fSuccess = false;
-    /* Test a request for an invalid data format and data from an empty
-     * clipboard */
-    for (unsigned i = 0; (i < MAX_ATTEMPTS) && !fSuccess; ++i)
-    {
-        rc = VBoxX11ClipboardStartX11(g_pCtxTestX11);
-        AssertRCReturn(rc, 1);
-        fSuccess = testInvalid();
-        VBoxX11ClipboardStopX11(g_pCtxTestX11);
-        if (!fSuccess)
-        {
-            RTPrintf("attempt %d of %d\n", i + 1, MAX_ATTEMPTS + 1);
-            RTThreadSleep(50);
-        }
     }
-    if (!fSuccess)
-        status = 1;
-    rc = VBoxX11ClipboardStartX11(g_pCtxTestX11);
+    RTPrintf(TEST_NAME ": TESTING\n");
+    VBOXCLIPBOARDCONTEXTX11 *pCtx = VBoxX11ClipboardConstructX11(NULL);
+    AssertReturn(pCtx, 1);
+    rc = VBoxX11ClipboardStartX11(pCtx);
     AssertRCReturn(rc, 1);
-    /* Claim the clipboard and make sure we get it */
-    VBoxX11ClipboardAnnounceVBoxFormat(g_pCtxTestVBox,
-                    VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-    for (unsigned i = 0;
-            i < 255
-         && g_pCtxTestX11->X11TextFormat == INVALID;
-         ++i)
-        RTThreadSleep(50);
-    AssertReturn(g_pCtxTestX11->X11TextFormat != INVALID, 1);
-    /* Do general purpose clipboard tests */
-    for (int i = 0; i < 2; ++i)
-    {
-        g_testUtf8 = (i == 0);
-        g_testCText = (i == 1);
-        RTPrintf("tstClipboardX11: TESTING sending and receiving of %s\n",
-                 i == 0 ? "Utf-8" : "COMPOUND TEXT");
-        for (g_testNum = 0; g_testNum < MAX_TESTS; ++g_testNum)
-        {
-            if (!testEntry(&g_sTestData[g_testNum]))
-                status = 1;
-        }
-    }
-    /* Finally test timeouts. */
-    XtAppSetSelectionTimeout(g_pCtxTestX11->appContext, 10);
-    RTPrintf("tstClipboardX11: TESTING the clipboard timeout\n");
-    rc = VINF_SUCCESS;
-    g_testTimeout = true;
-    for (unsigned i = 0; (i < MAX_ATTEMPTS) && (rc != VERR_TIMEOUT); ++i)
-    {
-        char pc[256];
-        uint32_t cbActual;
-        VBoxX11ClipboardAnnounceVBoxFormat(g_pCtxTestVBox,
-                                      VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-        rc = VBoxX11ClipboardReadX11Data(g_pCtxTestX11,
-                    VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
-                                         (void *) pc, sizeof(pc), &cbActual);
-        AssertMsg(   RT_SUCCESS(rc)
-                  || (rc == VERR_TIMEOUT)
-                  || (rc == VERR_NO_DATA),
-                  ("rc = %Rrc\n", rc));
-        if (rc == VERR_TIMEOUT)
-            RTPrintf("SUCCESS\n");
-        else
-        {
-            RTPrintf("Attempt %d of %d\n", i + 1, MAX_ATTEMPTS);
-            RTThreadSleep(50);
-        }
-    }
-    if (rc != VERR_TIMEOUT)
-        status = 1;
-    rc = VBoxX11ClipboardStopX11(g_pCtxTestX11);
+    /* Give the clipboard time to synchronise. */
+    RTThreadSleep(500);
+    rc = VBoxX11ClipboardStopX11(pCtx);
     AssertRCReturn(rc, 1);
-    rc = VBoxX11ClipboardStopX11(g_pCtxTestVBox);
-    AssertRCReturn(rc, 1);
-    VBoxX11ClipboardDestructX11(g_pCtxTestX11);
-    VBoxX11ClipboardDestructX11(g_pCtxTestVBox);
-    return status;
+    VBoxX11ClipboardDestructX11(pCtx);
+    return 0;
 }
 
-#endif /* TESTCASE defined */
+#endif /* SMOKETEST defined */

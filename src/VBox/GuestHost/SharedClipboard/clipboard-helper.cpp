@@ -31,18 +31,18 @@ int vboxClipboardUtf16GetWinSize(PRTUTF16 pwszSrc, size_t cwSrc, size_t *pcwDest
 
     LogFlowFunc(("pwszSrc=%.*ls, cwSrc=%u\n", cwSrc, pwszSrc, cwSrc));
     AssertLogRelMsgReturn(pwszSrc != NULL, ("vboxClipboardUtf16GetWinSize: received a null Utf16 string, returning VERR_INVALID_PARAMETER\n"), VERR_INVALID_PARAMETER);
+    if (cwSrc == 0)
+    {
+        *pcwDest = 0;
+        LogFlowFunc(("empty source string, returning\n"));
+        return VINF_SUCCESS;
+    }
 /** @todo convert the remainder of the Assert stuff to AssertLogRel. */
     /* We only take little endian Utf16 */
     if (pwszSrc[0] == UTF16BEMARKER)
     {
         LogRel(("vboxClipboardUtf16GetWinSize: received a big endian Utf16 string, returning VERR_INVALID_PARAMETER\n"));
         AssertReturn(pwszSrc[0] != UTF16BEMARKER, VERR_INVALID_PARAMETER);
-    }
-    if (cwSrc == 0)
-    {
-        *pcwDest = 0;
-        LogFlowFunc(("empty source string, returning\n"));
-        return VINF_SUCCESS;
     }
     cwDest = 0;
     /* Calculate the size of the destination text string. */
@@ -78,12 +78,6 @@ int vboxClipboardUtf16LinToWin(PRTUTF16 pwszSrc, size_t cwSrc, PRTUTF16 pu16Dest
         LogRel(("vboxClipboardUtf16LinToWin: received an invalid pointer, pwszSrc=%p, pu16Dest=%p, returning VERR_INVALID_PARAMETER\n", pwszSrc, pu16Dest));
         AssertReturn(VALID_PTR(pwszSrc) && VALID_PTR(pu16Dest), VERR_INVALID_PARAMETER);
     }
-    /* We only take little endian Utf16 */
-    if (pwszSrc[0] == UTF16BEMARKER)
-    {
-        LogRel(("vboxClipboardUtf16LinToWin: received a big endian Utf16 string, returning VERR_INVALID_PARAMETER\n"));
-        AssertReturn(pwszSrc[0] != UTF16BEMARKER, VERR_INVALID_PARAMETER);
-    }
     if (cwSrc == 0)
     {
         if (cwDest == 0)
@@ -94,6 +88,12 @@ int vboxClipboardUtf16LinToWin(PRTUTF16 pwszSrc, size_t cwSrc, PRTUTF16 pu16Dest
         pu16Dest[0] = 0;
         LogFlowFunc(("empty source string, returning\n"));
         return VINF_SUCCESS;
+    }
+    /* We only take little endian Utf16 */
+    if (pwszSrc[0] == UTF16BEMARKER)
+    {
+        LogRel(("vboxClipboardUtf16LinToWin: received a big endian Utf16 string, returning VERR_INVALID_PARAMETER\n"));
+        AssertReturn(pwszSrc[0] != UTF16BEMARKER, VERR_INVALID_PARAMETER);
     }
     /* Don't copy the endian marker. */
     for (i = (pwszSrc[0] == UTF16LEMARKER ? 1 : 0), j = 0; i < cwSrc; ++i, ++j)
@@ -154,17 +154,17 @@ int vboxClipboardUtf16GetLinSize(PRTUTF16 pwszSrc, size_t cwSrc, size_t *pcwDest
         LogRel(("vboxClipboardUtf16GetLinSize: received an invalid Utf16 string %p.  Returning VERR_INVALID_PARAMETER.\n", pwszSrc));
         AssertReturn(VALID_PTR(pwszSrc), VERR_INVALID_PARAMETER);
     }
-    /* We only take little endian Utf16 */
-    if (pwszSrc[0] == UTF16BEMARKER)
-    {
-        LogRel(("vboxClipboardUtf16GetLinSize: received a big endian Utf16 string.  Returning VERR_INVALID_PARAMETER.\n"));
-        AssertReturn(pwszSrc[0] != UTF16BEMARKER, VERR_INVALID_PARAMETER);
-    }
     if (cwSrc == 0)
     {
         LogFlowFunc(("empty source string, returning VINF_SUCCESS\n"));
         *pcwDest = 0;
         return VINF_SUCCESS;
+    }
+    /* We only take little endian Utf16 */
+    if (pwszSrc[0] == UTF16BEMARKER)
+    {
+        LogRel(("vboxClipboardUtf16GetLinSize: received a big endian Utf16 string.  Returning VERR_INVALID_PARAMETER.\n"));
+        AssertReturn(pwszSrc[0] != UTF16BEMARKER, VERR_INVALID_PARAMETER);
     }
     /* Calculate the size of the destination text string. */
     /* Is this Utf16 or Utf16-LE? */
