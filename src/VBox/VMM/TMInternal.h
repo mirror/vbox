@@ -521,11 +521,18 @@ typedef struct TMCPU
 /** Pointer to TM VMCPU instance data. */
 typedef TMCPU *PTMCPU;
 
+#if 0 /* enable this to rule out locking bugs on single cpu guests. */
+# define tmLock(pVM)             VINF_SUCCESS
+# define tmTryLock(pVM)          VINF_SUCCESS
+# define tmUnlock(pVM)           ((void)0)
+# define TM_ASSERT_EMT_LOCK(pVM) VM_ASSERT_EMT(pVM)
+#else
 int                     tmLock(PVM pVM);
 int                     tmTryLock(PVM pVM);
 void                    tmUnlock(PVM pVM);
 /** Checks that the caller owns the EMT lock.  */
 #define TM_ASSERT_EMT_LOCK(pVM) Assert(PDMCritSectIsOwner(&pVM->tm.s.EmtLock))
+#endif
 
 const char             *tmTimerState(TMTIMERSTATE enmState);
 void                    tmTimerQueueSchedule(PVM pVM, PTMTIMERQUEUE pQueue);
