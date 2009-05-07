@@ -387,7 +387,7 @@ static int vboxClipboardGetLatin1FromX11(VBOXCLIPBOARDCONTEXTX11 *pCtx,
                                          unsigned cbSourceLen, void *pv,
                                          unsigned cb, uint32_t *pcbActual)
 {
-    unsigned cwDestLen = cbSourceLen + 1;
+    unsigned cwDestLen = cbSourceLen;
     char *pu8SourceText = reinterpret_cast<char *>(pValue);
     PRTUTF16 pu16DestText = reinterpret_cast<PRTUTF16>(pv);
     int rc = VINF_SUCCESS;
@@ -2026,6 +2026,58 @@ static bool testStringFromX11(VBOXCLIPBOARDCONTEXTX11 *pCtx, uint32_t cbBuf,
     return retval;
 }
 
+static bool testLatin1FromX11(VBOXCLIPBOARDCONTEXTX11 *pCtx, uint32_t cbBuf,
+                              const char *pcszExp, int rcExp)
+{
+    bool retval = false;
+    AssertReturn(cbBuf <= MAX_BUF_SIZE, false);
+    if (!clipPollTargets())
+        RTPrintf("Failed to poll for targets\n");
+    else if (clipQueryFormats() != VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+        RTPrintf("Wrong targets reported: %02X\n", clipQueryFormats());
+    else
+    {
+        char pc[MAX_BUF_SIZE];
+        uint32_t cbActual;
+        int rc = VBoxX11ClipboardReadX11Data(pCtx,
+                                     VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
+                                     (void *) pc, cbBuf, &cbActual);
+        if (rc != rcExp)
+            RTPrintf("Wrong return code, expected %Rrc, got %Rrc\n", rcExp,
+                     rc);
+        else if (RT_FAILURE(rcExp))
+            retval = true;
+        else
+        {
+            RTUTF16 wcExp[MAX_BUF_SIZE / 2];
+            RTUTF16 *pwcExp = wcExp;
+            size_t cwc;
+            for (cwc = 0; cwc == 0 || pcszExp[cwc - 1] != '\0'; ++cwc)
+                wcExp[cwc] = pcszExp[cwc];
+            size_t cbExp = cwc * 2;
+            if (cbActual != cbExp)
+            {
+                RTPrintf("Returned string is the wrong size, string \"%.*ls\", size %u\n",
+                         RT_MIN(MAX_BUF_SIZE, cbActual), pc, cbActual);
+                RTPrintf("Expected \"%s\", size %u\n", pcszExp,
+                         cbExp);
+            }
+            else
+            {
+                if (memcmp(pc, wcExp, cbExp) == 0)
+                    retval = true;
+                else
+                    RTPrintf("Returned string \"%.*ls\" does not match expected string \"%s\"\n",
+                             MAX_BUF_SIZE, pc, pcszExp);
+            }
+        }
+    }
+    if (!retval)
+        RTPrintf("Expected: string \"%s\", rc %Rrc (buffer size %u)\n",
+                 pcszExp, rcExp, cbBuf);
+    return retval;
+}
+
 static bool testStringFromVBox(VBOXCLIPBOARDCONTEXTX11 *pCtx,
                                const char *pcszTarget, Atom typeExp,
                                const void *valueExp, unsigned long lenExp,
@@ -2110,11 +2162,6 @@ int main()
     if (!testStringFromX11(pCtx, sizeof("hello world\r\n") * 2,
                            "hello world\r\n", VINF_SUCCESS))
         ++cErrs;
-    clipSetSelectionValues("UTF8_STRING", XA_STRING, "hello world\n",
-                           sizeof("hello world\n"), 8);
-    if (!testStringFromX11(pCtx, sizeof("hello world\r\n") * 2,
-                           "hello world\r\n", VINF_SUCCESS))
-        ++cErrs;
     clipSetSelectionValues("UTF8_STRING", XA_STRING, "",
                            sizeof(""), 8);
     if (!testStringFromX11(pCtx, sizeof("") * 2, "", VINF_SUCCESS))
@@ -2146,14 +2193,29 @@ int main()
     if (!testStringFromX11(pCtx, sizeof("hello world\r\n") * 2,
                            "hello world\r\n", VINF_SUCCESS))
         ++cErrs;
-    clipSetSelectionValues("COMPOUND_TEXT", XA_STRING, "hello world\n",
-                           sizeof("hello world\n"), 8);
-    if (!testStringFromX11(pCtx, sizeof("hello world\r\n") * 2,
-                           "hello world\r\n", VINF_SUCCESS))
-        ++cErrs;
     clipSetSelectionValues("COMPOUND_TEXT", XA_STRING, "",
                            sizeof(""), 8);
     if (!testStringFromX11(pCtx, sizeof("") * 2, "", VINF_SUCCESS))
+        ++cErrs;
+
+    /***********/
+    RTPrintf(TEST_NAME ": TESTING reading Latin1 from X11\n");
+    clipSetSelectionValues("STRING", XA_STRING, "Georges Dupr\xEA",
+                           sizeof("Georges Dupr\xEA"), 8);
+    if (!testLatin1FromX11(pCtx, 256, "Georges Dupr\xEA", VINF_SUCCESS))
+        ++cErrs;
+    if (!testLatin1FromX11(pCtx, sizeof("Georges Dupr\xEA") * 2,
+                           "Georges Dupr\xEA", VINF_SUCCESS))
+        ++cErrs;
+    if (!testLatin1FromX11(pCtx, sizeof("Georges Dupr\xEA") * 2 - 1,
+                           "Georges Dupr\xEA", VERR_BUFFER_OVERFLOW))
+        ++cErrs;
+    if (!testLatin1FromX11(pCtx, 0, "Georges Dupr\xEA", VERR_BUFFER_OVERFLOW))
+        ++cErrs;
+    clipSetSelectionValues("TEXT", XA_STRING, "Georges Dupr\xEA\n",
+                           sizeof("Georges Dupr\xEA\n"), 8);
+    if (!testLatin1FromX11(pCtx, sizeof("Georges Dupr\xEA\r\n") * 2,
+                           "Georges Dupr\xEA\r\n", VINF_SUCCESS))
         ++cErrs;
 
     /***********/
