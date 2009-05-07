@@ -1410,7 +1410,7 @@ VMMR3DECL(int) PDMR3UnregisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys)
 VMMR3DECL(int) PDMR3VMMDevHeapAlloc(PVM pVM, unsigned cbSize, RTR3PTR *ppv)
 {
 #ifdef DEBUG_bird
-    if (cbSize && cbSize <= pVM->pdm.s.cbVMMDevHeapLeft)
+    if (!cbSize || cbSize > pVM->pdm.s.cbVMMDevHeapLeft)
         return VERR_NO_MEMORY;
 #else
     AssertReturn(cbSize && cbSize <= pVM->pdm.s.cbVMMDevHeapLeft, VERR_NO_MEMORY);
