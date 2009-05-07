@@ -1705,7 +1705,7 @@ static int AUD_init (PPDMDRVINS pDrvIns, const char *drvname)
     }
     else {
         /* XXX */
-        rc = TMTimerDestroy (s->ts);
+        rc = TMR3TimerDestroy (s->ts);
         return rc;
     }
 

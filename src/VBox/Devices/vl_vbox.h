@@ -89,7 +89,7 @@ typedef struct TMTIMER QEMUTimer;
 #define ticks_per_sec                           TMCpuTicksPerSecond((PVM)cpu_single_env->pVM)
 #define qemu_get_clock(enmClock)                TMR3Clock((PVM)cpu_single_env->pVM, enmClock)
 #define qemu_new_timer(clock, callback, user)   (QEMUTimer *)TMR3TimerCreateExternal((PVM)cpu_single_env->pVM, clock, callback, user, __FUNCTION__ )
-#define qemu_free_timer(timer)                  TMTimerDestroy(timer)
+#define qemu_free_timer(timer)                  TMR3TimerDestroy(timer)
 #define qemu_del_timer(timer)                   TMTimerStop(timer)
 #define qemu_mod_timer(timer, expire)           TMTimerSet(timer, (uint64_t)expire)
 #define qemu_timer_pending(timer)               TMTimerIsActive(timer)

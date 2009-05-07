@@ -180,7 +180,6 @@ typedef FNTMTIMEREXT *PFNTMTIMEREXT;
 VMMDECL(PTMTIMERR3) TMTimerR3Ptr(PTMTIMER pTimer);
 VMMDECL(PTMTIMERR0) TMTimerR0Ptr(PTMTIMER pTimer);
 VMMDECL(PTMTIMERRC) TMTimerRCPtr(PTMTIMER pTimer);
-VMMDECL(int)      TMTimerDestroy(PTMTIMER pTimer);
 VMMDECL(int)      TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire);
 VMMDECL(int)      TMTimerSetMillies(PTMTIMER pTimer, uint32_t cMilliesToNext);
 VMMDECL(int)      TMTimerSetMicro(PTMTIMER pTimer, uint64_t cMicrosToNext);
@@ -222,6 +221,7 @@ VMMR3DECL(int)    TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enm
 VMMR3DECL(int)    TMR3TimerCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, const char *pszDesc, PPTMTIMERR3 ppTimer);
 VMMR3DECL(int)    TMR3TimerCreateInternal(PVM pVM, TMCLOCK enmClock, PFNTMTIMERINT pfnCallback, void *pvUser, const char *pszDesc, PPTMTIMERR3 ppTimer);
 VMMR3DECL(PTMTIMERR3) TMR3TimerCreateExternal(PVM pVM, TMCLOCK enmClock, PFNTMTIMEREXT pfnCallback, void *pvUser, const char *pszDesc);
+VMMR3DECL(int)    TMR3TimerDestroy(PTMTIMER pTimer);
 VMMR3DECL(int)    TMR3TimerDestroyDevice(PVM pVM, PPDMDEVINS pDevIns);
 VMMR3DECL(int)    TMR3TimerDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns);
 VMMR3DECL(int)    TMR3TimerSave(PTMTIMERR3 pTimer, PSSMHANDLE pSSM);
