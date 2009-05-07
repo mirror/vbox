@@ -719,6 +719,83 @@ VMMR3DECL(int) CPUMR3TermCPU(PVM pVM)
     return 0;
 }
 
+VMMR3DECL(void) CPUMR3ResetCpu(PVMCPU pVCpu)
+{
+    /* @todo anything different for VCPU > 0? */
+    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
+
+    /*
+     * Initialize everything to ZERO first.
+     */
+    uint32_t    fUseFlags =  pVCpu->cpum.s.fUseFlags & ~CPUM_USED_FPU_SINCE_REM;
+    memset(pCtx, 0, sizeof(*pCtx));
+    pVCpu->cpum.s.fUseFlags  = fUseFlags;
+
+    pCtx->cr0                       = X86_CR0_CD | X86_CR0_NW | X86_CR0_ET;  //0x60000010
+    pCtx->eip                       = 0x0000fff0;
+    pCtx->edx                       = 0x00000600;   /* P6 processor */
+    pCtx->eflags.Bits.u1Reserved0   = 1;
+
+    pCtx->cs                        = 0xf000;
+    pCtx->csHid.u64Base             = UINT64_C(0xffff0000);
+    pCtx->csHid.u32Limit            = 0x0000ffff;
+    pCtx->csHid.Attr.n.u1DescType   = 1; /* code/data segment */
+    pCtx->csHid.Attr.n.u1Present    = 1;
+    pCtx->csHid.Attr.n.u4Type       = X86_SEL_TYPE_READ | X86_SEL_TYPE_CODE;
+
+    pCtx->dsHid.u32Limit            = 0x0000ffff;
+    pCtx->dsHid.Attr.n.u1DescType   = 1; /* code/data segment */
+    pCtx->dsHid.Attr.n.u1Present    = 1;
+    pCtx->dsHid.Attr.n.u4Type       = X86_SEL_TYPE_RW;
+
+    pCtx->esHid.u32Limit            = 0x0000ffff;
+    pCtx->esHid.Attr.n.u1DescType   = 1; /* code/data segment */
+    pCtx->esHid.Attr.n.u1Present    = 1;
+    pCtx->esHid.Attr.n.u4Type       = X86_SEL_TYPE_RW;
+
+    pCtx->fsHid.u32Limit            = 0x0000ffff;
+    pCtx->fsHid.Attr.n.u1DescType   = 1; /* code/data segment */
+    pCtx->fsHid.Attr.n.u1Present    = 1;
+    pCtx->fsHid.Attr.n.u4Type       = X86_SEL_TYPE_RW;
+
+    pCtx->gsHid.u32Limit            = 0x0000ffff;
+    pCtx->gsHid.Attr.n.u1DescType   = 1; /* code/data segment */
+    pCtx->gsHid.Attr.n.u1Present    = 1;
+    pCtx->gsHid.Attr.n.u4Type       = X86_SEL_TYPE_RW;
+
+    pCtx->ssHid.u32Limit            = 0x0000ffff;
+    pCtx->ssHid.Attr.n.u1Present    = 1;
+    pCtx->ssHid.Attr.n.u1DescType   = 1; /* code/data segment */
+    pCtx->ssHid.Attr.n.u4Type       = X86_SEL_TYPE_RW;
+
+    pCtx->idtr.cbIdt                = 0xffff;
+    pCtx->gdtr.cbGdt                = 0xffff;
+
+    pCtx->ldtrHid.u32Limit          = 0xffff;
+    pCtx->ldtrHid.Attr.n.u1Present  = 1;
+    pCtx->ldtrHid.Attr.n.u4Type     = X86_SEL_TYPE_SYS_LDT;
+
+    pCtx->trHid.u32Limit            = 0xffff;
+    pCtx->trHid.Attr.n.u1Present    = 1;
+    pCtx->trHid.Attr.n.u4Type       = X86_SEL_TYPE_SYS_286_TSS_BUSY;
+
+    pCtx->dr[6]                     = X86_DR6_INIT_VAL;
+    pCtx->dr[7]                     = X86_DR7_INIT_VAL;
+
+    pCtx->fpu.FTW                   = 0xff;         /* All tags are set, i.e. the regs are empty. */
+    pCtx->fpu.FCW                   = 0x37f;
+
+    /* Intel 64 and IA-32 Architectures Software Developer's Manual Volume 3A, Table 8-1. IA-32 Processor States Following Power-up, Reset, or INIT */
+    pCtx->fpu.MXCSR                 = 0x1F80;
+
+    /* Init PAT MSR */
+    pCtx->msrPAT                    = UINT64_C(0x0007040600070406); /** @todo correct? */
+
+    /* Reset EFER; see AMD64 Architecture Programmer's Manual Volume 2: Table 14-1. Initial Processor State
+    * The Intel docs don't mention it.
+    */
+    pCtx->msrEFER                   = 0;
+}
 
 /**
  * Resets the CPU.
@@ -728,84 +805,13 @@ VMMR3DECL(int) CPUMR3TermCPU(PVM pVM)
  */
 VMMR3DECL(void) CPUMR3Reset(PVM pVM)
 {
-    /* @todo anything different for VCPU > 0? */
     for (unsigned i=0;i<pVM->cCPUs;i++)
     {
-        PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(&pVM->aCpus[i]);
-
-        /*
-         * Initialize everything to ZERO first.
-         */
-        uint32_t    fUseFlags =  pVM->aCpus[i].cpum.s.fUseFlags & ~CPUM_USED_FPU_SINCE_REM;
-        memset(pCtx, 0, sizeof(*pCtx));
-        pVM->aCpus[i].cpum.s.fUseFlags  = fUseFlags;
-
-        pCtx->cr0                       = X86_CR0_CD | X86_CR0_NW | X86_CR0_ET;  //0x60000010
-        pCtx->eip                       = 0x0000fff0;
-        pCtx->edx                       = 0x00000600;   /* P6 processor */
-        pCtx->eflags.Bits.u1Reserved0   = 1;
-
-        pCtx->cs                        = 0xf000;
-        pCtx->csHid.u64Base             = UINT64_C(0xffff0000);
-        pCtx->csHid.u32Limit            = 0x0000ffff;
-        pCtx->csHid.Attr.n.u1DescType   = 1; /* code/data segment */
-        pCtx->csHid.Attr.n.u1Present    = 1;
-        pCtx->csHid.Attr.n.u4Type       = X86_SEL_TYPE_READ | X86_SEL_TYPE_CODE;
-
-        pCtx->dsHid.u32Limit            = 0x0000ffff;
-        pCtx->dsHid.Attr.n.u1DescType   = 1; /* code/data segment */
-        pCtx->dsHid.Attr.n.u1Present    = 1;
-        pCtx->dsHid.Attr.n.u4Type       = X86_SEL_TYPE_RW;
-
-        pCtx->esHid.u32Limit            = 0x0000ffff;
-        pCtx->esHid.Attr.n.u1DescType   = 1; /* code/data segment */
-        pCtx->esHid.Attr.n.u1Present    = 1;
-        pCtx->esHid.Attr.n.u4Type       = X86_SEL_TYPE_RW;
-
-        pCtx->fsHid.u32Limit            = 0x0000ffff;
-        pCtx->fsHid.Attr.n.u1DescType   = 1; /* code/data segment */
-        pCtx->fsHid.Attr.n.u1Present    = 1;
-        pCtx->fsHid.Attr.n.u4Type       = X86_SEL_TYPE_RW;
-
-        pCtx->gsHid.u32Limit            = 0x0000ffff;
-        pCtx->gsHid.Attr.n.u1DescType   = 1; /* code/data segment */
-        pCtx->gsHid.Attr.n.u1Present    = 1;
-        pCtx->gsHid.Attr.n.u4Type       = X86_SEL_TYPE_RW;
-
-        pCtx->ssHid.u32Limit            = 0x0000ffff;
-        pCtx->ssHid.Attr.n.u1Present    = 1;
-        pCtx->ssHid.Attr.n.u1DescType   = 1; /* code/data segment */
-        pCtx->ssHid.Attr.n.u4Type       = X86_SEL_TYPE_RW;
-
-        pCtx->idtr.cbIdt                = 0xffff;
-        pCtx->gdtr.cbGdt                = 0xffff;
-
-        pCtx->ldtrHid.u32Limit          = 0xffff;
-        pCtx->ldtrHid.Attr.n.u1Present  = 1;
-        pCtx->ldtrHid.Attr.n.u4Type     = X86_SEL_TYPE_SYS_LDT;
-
-        pCtx->trHid.u32Limit            = 0xffff;
-        pCtx->trHid.Attr.n.u1Present    = 1;
-        pCtx->trHid.Attr.n.u4Type       = X86_SEL_TYPE_SYS_286_TSS_BUSY;
-
-        pCtx->dr[6]                     = X86_DR6_INIT_VAL;
-        pCtx->dr[7]                     = X86_DR7_INIT_VAL;
-
-        pCtx->fpu.FTW                   = 0xff;         /* All tags are set, i.e. the regs are empty. */
-        pCtx->fpu.FCW                   = 0x37f;
-
-        /* Intel 64 and IA-32 Architectures Software Developer's Manual Volume 3A, Table 8-1. IA-32 Processor States Following Power-up, Reset, or INIT */
-        pCtx->fpu.MXCSR                 = 0x1F80;
-
-        /* Init PAT MSR */
-        pCtx->msrPAT                    = UINT64_C(0x0007040600070406); /** @todo correct? */
-
-        /* Reset EFER; see AMD64 Architecture Programmer's Manual Volume 2: Table 14-1. Initial Processor State
-        * The Intel docs don't mention it.
-        */
-        pCtx->msrEFER                   = 0;
+        CPUMR3ResetCpu(&pVM->aCpus[i]);
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
+        PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(&pVM->aCpus[i]);
+
         /* Magic marker for searching in crash dumps. */
         strcpy((char *)pVM->aCpus[i].cpum.s.aMagic, "CPUMCPU Magic");
         pVM->aCpus[i].cpum.s.uMagic     = UINT64_C(0xDEADBEEFDEADBEEF);

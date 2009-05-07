@@ -1176,9 +1176,8 @@ DECLCALLBACK(int) vmmR3SendInitIpi(PVM pVM, VMCPUID idCpu)
     PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
     VMCPU_ASSERT_EMT(pVCpu);
 
-    /** @todo: reset CPU and halt till SIPI */
-
-    return VINF_SUCCESS;
+    CPUMR3ResetCpu(pVCpu);
+    return VINF_EM_WAIT_SIPI;
 }
 
 /**
