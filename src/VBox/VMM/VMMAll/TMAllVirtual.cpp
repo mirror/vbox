@@ -41,11 +41,6 @@
 #include <iprt/asm.h>
 
 
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
-static DECLCALLBACK(int) tmVirtualSetWarpDrive(PVM pVM, uint32_t u32Percent);
-
 
 /**
  * Helper function that's used by the assembly routines when something goes bust.
@@ -654,94 +649,6 @@ VMMDECL(int) TMVirtualPause(PVM pVM)
         return VINF_SUCCESS;
     }
     AssertMsgReturn(pVM->tm.s.cVirtualTicking <= pVM->cCPUs, ("%d vs %d\n", pVM->tm.s.cVirtualTicking, pVM->cCPUs), VERR_INTERNAL_ERROR);
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Gets the current warp drive percent.
- *
- * @returns The warp drive percent.
- * @param   pVM         The VM handle.
- */
-VMMDECL(uint32_t) TMVirtualGetWarpDrive(PVM pVM)
-{
-    return pVM->tm.s.u32VirtualWarpDrivePercentage;
-}
-
-
-/**
- * Sets the warp drive percent of the virtual time.
- *
- * @returns VBox status code.
- * @param   pVM         The VM handle.
- * @param   u32Percent  The new percentage. 100 means normal operation.
- */
-VMMDECL(int) TMVirtualSetWarpDrive(PVM pVM, uint32_t u32Percent)
-{
-/** @todo This isn't a feature specific to virtual time, move to TM level. (It
- * should affect the TMR3UCTNow as well! */
-#ifdef IN_RING3
-    PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)tmVirtualSetWarpDrive, 2, pVM, u32Percent);
-    if (RT_SUCCESS(rc))
-        rc = pReq->iStatus;
-    VMR3ReqFree(pReq);
-    return rc;
-#else
-
-    return tmVirtualSetWarpDrive(pVM, u32Percent);
-#endif
-}
-
-
-/**
- * EMT worker for tmVirtualSetWarpDrive.
- *
- * @returns VBox status code.
- * @param   pVM         The VM handle.
- * @param   u32Percent  See TMVirtualSetWarpDrive().
- * @internal
- */
-static DECLCALLBACK(int) tmVirtualSetWarpDrive(PVM pVM, uint32_t u32Percent)
-{
-    PVMCPU pVCpu = VMMGetCpu(pVM);
-
-    /*
-     * Validate it.
-     */
-    AssertMsgReturn(u32Percent >= 2 && u32Percent <= 20000,
-                    ("%RX32 is not between 2 and 20000 (inclusive).\n", u32Percent),
-                    VERR_INVALID_PARAMETER);
-    tmLock(pVM);
-
-    /*
-     * If the time is running we'll have to pause it before we can change
-     * the warp drive settings.
-     */
-    bool fPaused = !!pVM->tm.s.cVirtualTicking;
-    if (fPaused)
-    {
-        int rc = TMVirtualPause(pVM);
-        AssertRC(rc);
-        rc = TMCpuTickPause(pVCpu);
-        AssertRC(rc);
-    }
-
-    pVM->tm.s.u32VirtualWarpDrivePercentage = u32Percent;
-    pVM->tm.s.fVirtualWarpDrive = u32Percent != 100;
-    LogRel(("TM: u32VirtualWarpDrivePercentage=%RI32 fVirtualWarpDrive=%RTbool\n",
-            pVM->tm.s.u32VirtualWarpDrivePercentage, pVM->tm.s.fVirtualWarpDrive));
-
-    if (fPaused)
-    {
-        int rc = TMVirtualResume(pVM);
-        AssertRC(rc);
-        rc = TMCpuTickResume(pVCpu);
-        AssertRC(rc);
-    }
-
-    tmUnlock(pVM);
     return VINF_SUCCESS;
 }
 

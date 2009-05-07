@@ -862,7 +862,7 @@ int main(int argc, char **argv)
                      */
                     if (u32WarpDrive != 100)
                     {
-                        rc = TMVirtualSetWarpDrive(pVM, u32WarpDrive);
+                        rc = TMR3SetWarpDrive(pVM, u32WarpDrive);
                         if (RT_FAILURE(rc))
                             RTPrintf("warning: TMVirtualSetWarpDrive(,%u) -> %Rrc\n", u32WarpDrive, rc);
                     }

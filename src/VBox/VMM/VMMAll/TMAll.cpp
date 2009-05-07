@@ -1713,3 +1713,15 @@ void tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere)
 }
 #endif /* !VBOX_STRICT */
 
+
+/**
+ * Gets the current warp drive percent.
+ *
+ * @returns The warp drive percent.
+ * @param   pVM         The VM handle.
+ */
+VMMDECL(uint32_t) TMGetWarpDrive(PVM pVM)
+{
+    return pVM->tm.s.u32VirtualWarpDrivePercentage;
+}
+
