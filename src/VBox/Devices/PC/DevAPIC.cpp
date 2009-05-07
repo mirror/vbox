@@ -362,6 +362,7 @@ DECLINLINE(void) cpuClearInterrupt(APICDeviceInfo* dev, APICState *s)
     dev->CTX_SUFF(pApicHlp)->pfnClearInterruptFF(dev->CTX_SUFF(pDevIns),
                                                  getCpuFromLapic(dev, s));
 }
+
 #ifdef IN_RING3
 DECLINLINE(void) cpuSendSipi(APICDeviceInfo* dev, APICState *s, int vector)
 {
@@ -370,6 +371,14 @@ DECLINLINE(void) cpuSendSipi(APICDeviceInfo* dev, APICState *s, int vector)
     dev->pApicHlpR3->pfnSendSipi(dev->pDevInsR3,
                                  getCpuFromLapic(dev, s),
                                  vector);
+}
+
+DECLINLINE(void) cpuSendInitIpi(APICDeviceInfo* dev, APICState *s)
+{
+    Log2(("apic: send init IPI\n"));
+
+    dev->pApicHlpR3->pfnSendInitIpi(dev->pDevInsR3,
+                                    getCpuFromLapic(dev, s));
 }
 #endif
 
@@ -415,7 +424,7 @@ static APICState *first_local_apic = NULL;
 static int last_apic_id = 0;
 #endif /* !VBOX */
 
-static void apic_init_ipi(APICState *s);
+static void apic_init_ipi(APICDeviceInfo* dev, APICState *s);
 static void apic_set_irq(APICDeviceInfo* dev, APICState *s, int vector_num, int trigger_mode);
 static bool apic_update_irq(APICDeviceInfo* dev, APICState *s);
 
@@ -430,7 +439,7 @@ PDMBOTHCBDECL(void) apicSetBase(PPDMDEVINS pDevIns, uint64_t val);
 PDMBOTHCBDECL(uint64_t) apicGetBase(PPDMDEVINS pDevIns);
 PDMBOTHCBDECL(void) apicSetTPR(PPDMDEVINS pDevIns, uint8_t val);
 PDMBOTHCBDECL(uint8_t) apicGetTPR(PPDMDEVINS pDevIns);
-PDMBOTHCBDECL(void) apicBusDeliverCallback(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode,
+PDMBOTHCBDECL(int)  apicBusDeliverCallback(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode,
                                            uint8_t u8DeliveryMode, uint8_t iVector, uint8_t u8Polarity,
                                            uint8_t u8TriggerMode);
 PDMBOTHCBDECL(int)  apicWriteMSR(PPDMDEVINS pDevIns, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Value);
@@ -450,10 +459,10 @@ static void apic_bus_deliver(uint32_t deliver_bitmask, uint8_t delivery_mode,
 {
     APICState *apic_iter;
 #else /* VBOX */
-static void apic_bus_deliver(APICDeviceInfo* dev,
-                             uint32_t deliver_bitmask, uint8_t delivery_mode,
-                             uint8_t vector_num, uint8_t polarity,
-                             uint8_t trigger_mode)
+static int apic_bus_deliver(APICDeviceInfo* dev,
+                            uint32_t deliver_bitmask, uint8_t delivery_mode,
+                            uint8_t vector_num, uint8_t polarity,
+                            uint8_t trigger_mode)
 {
 #endif /* VBOX */
 
@@ -469,7 +478,7 @@ static void apic_bus_deliver(APICDeviceInfo* dev,
                 APICState* apic = getLapicById(dev, d);
                 apic_set_irq(dev, apic, vector_num, trigger_mode);
             }
-            return;
+            return VINF_SUCCESS;
         }
         case APIC_DM_FIXED:
             /* XXX: arbitration */
@@ -479,38 +488,46 @@ static void apic_bus_deliver(APICDeviceInfo* dev,
             /** @todo: what do we really do with SMI */
             foreach_apic(dev, deliver_bitmask,
                          cpuSetInterrupt(dev, apic));
-            return;
+            return VINF_SUCCESS;
 
         case APIC_DM_NMI:
             /** @todo: what do we really do with NMI */
             foreach_apic(dev, deliver_bitmask,
                          cpuSetInterrupt(dev, apic));
-            return;
+            return VINF_SUCCESS;
 
         case APIC_DM_INIT:
             /* normal INIT IPI sent to processors */
 #ifdef VBOX
+#ifdef IN_RING3
             foreach_apic(dev, deliver_bitmask,
-                         apic_init_ipi(apic));
+                         apic_init_ipi(dev, apic));
+            return VINF_SUCCESS;
+#else
+            /* We shall send init IPI only in R3, R0 calls should be
+               rescheduled to R3 */
+            return  VINF_IOM_HC_MMIO_READ_WRITE;
+#endif /* IN_RING3 */
+
 #else
             for (apic_iter = first_local_apic; apic_iter != NULL;
                  apic_iter = apic_iter->next_apic) {
                 apic_init_ipi(apic_iter);
             }
 #endif
-            return;
 
         case APIC_DM_EXTINT:
             /* handled in I/O APIC code */
             break;
 
         default:
-            return;
+            return VINF_SUCCESS;
     }
 
 #ifdef VBOX
     foreach_apic(dev, deliver_bitmask,
                        apic_set_irq (dev, apic, vector_num, trigger_mode));
+    return VINF_SUCCESS;
 #else  /* VBOX */
     for (apic_iter = first_local_apic; apic_iter != NULL;
          apic_iter = apic_iter->next_apic) {
@@ -671,7 +688,7 @@ PDMBOTHCBDECL(uint8_t) apicGetTPR(PPDMDEVINS pDevIns)
 PDMBOTHCBDECL(int) apicWriteMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t u64Value)
 {
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
-    int rv = VINF_SUCCESS;
+    int rc = VINF_SUCCESS;
 
     if (dev->enmVersion < PDMAPICVERSION_X2APIC)
         return VERR_EM_INTERPRETER;
@@ -717,7 +734,7 @@ PDMBOTHCBDECL(int) apicWriteMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32R
             /* Here one of the differences with regular APIC: ICR is single 64-bit register */
             apic->icr[0] = (uint32_t)u64Value;
             apic->icr[1] = (uint32_t)(u64Value >> 32);
-            rv = apic_deliver(dev, apic, (apic->icr[1] >> 24) & 0xff, (apic->icr[0] >> 11) & 1,
+            rc = apic_deliver(dev, apic, (apic->icr[1] >> 24) & 0xff, (apic->icr[0] >> 11) & 1,
                              (apic->icr[0] >>  8) & 7, (apic->icr[0] & 0xff),
                              (apic->icr[0] >> 14) & 1, (apic->icr[0] >> 15) & 1);
             break;
@@ -749,12 +766,12 @@ PDMBOTHCBDECL(int) apicWriteMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32R
         {
             /* Self IPI, see x2APIC book 2.4.5 */
             int vector = u64Value & 0xff;
-            apic_bus_deliver(dev,
-                             1 << getLapicById(dev, idCpu)->id /* Self */,
-                             0 /* Delivery mode - fixed */,
-                             vector,
-                             0 /* Polarity - conform to the bus */,
-                             0 /* Trigger mode - edge */);
+            rc = apic_bus_deliver(dev,
+                                  1 << getLapicById(dev, idCpu)->id /* Self */,
+                                  0 /* Delivery mode - fixed */,
+                                  vector,
+                                  0 /* Polarity - conform to the bus */,
+                                  0 /* Trigger mode - edge */);
             break;
         }
         default:
@@ -763,7 +780,7 @@ PDMBOTHCBDECL(int) apicWriteMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32R
             break;
     }
 
-    return rv;
+    return rc;
 }
 PDMBOTHCBDECL(int) apicReadMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t *pu64Value)
 {
@@ -853,15 +870,15 @@ PDMBOTHCBDECL(int) apicReadMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Re
  * More or less private interface between IOAPIC, only PDM is responsible
  * for connecting the two devices.
  */
-PDMBOTHCBDECL(void) apicBusDeliverCallback(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode,
+PDMBOTHCBDECL(int) apicBusDeliverCallback(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode,
                                            uint8_t u8DeliveryMode, uint8_t iVector, uint8_t u8Polarity,
                                            uint8_t u8TriggerMode)
 {
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     LogFlow(("apicBusDeliverCallback: pDevIns=%p u8Dest=%#x u8DestMode=%#x u8DeliveryMode=%#x iVector=%#x u8Polarity=%#x u8TriggerMode=%#x\n",
              pDevIns, u8Dest, u8DestMode, u8DeliveryMode, iVector, u8Polarity, u8TriggerMode));
-    apic_bus_deliver(dev, apic_get_delivery_bitmask(dev, u8Dest, u8DestMode),
-                     u8DeliveryMode, iVector, u8Polarity, u8TriggerMode);
+    return apic_bus_deliver(dev, apic_get_delivery_bitmask(dev, u8Dest, u8DestMode),
+                            u8DeliveryMode, iVector, u8Polarity, u8TriggerMode);
 }
 
 #endif /* VBOX */
@@ -1052,7 +1069,8 @@ static uint32_t apic_get_delivery_bitmask(APICDeviceInfo *dev, uint8_t dest, uin
     return mask;
 }
 
-static void apic_init_ipi(APICState *s)
+#ifdef IN_RING3
+static void apic_init_ipi(APICDeviceInfo* dev, APICState *s)
 {
     int i;
 
@@ -1074,12 +1092,10 @@ static void apic_init_ipi(APICState *s)
     s->next_time = 0;
 
 #ifdef VBOX
-    /** @todo reset CPU, activate wait for sipi mode for application processors */
-    /** Must be dealt with in ring 3 */
+    cpuSendInitIpi(dev, s);
 #endif
 }
 
-#ifdef IN_RING3
 /* send a SIPI message to the CPU to start it */
 static void apic_startup(APICDeviceInfo* dev, APICState *s, int vector_num)
 {
@@ -1097,7 +1113,7 @@ static void apic_startup(APICDeviceInfo* dev, APICState *s, int vector_num)
     cpuSendSipi(dev, s, vector_num);
 #endif
 }
-#endif
+#endif /* IN_RING3 */
 
 static int  apic_deliver(APICDeviceInfo* dev, APICState *s,
                          uint8_t dest, uint8_t dest_mode,
@@ -1141,19 +1157,13 @@ static int  apic_deliver(APICDeviceInfo* dev, APICState *s,
                 int trig_mode = (s->icr[0] >> 15) & 1;
                 int level = (s->icr[0] >> 14) & 1;
                 if (level == 0 && trig_mode == 1) {
-#ifdef VBOX
                     foreach_apic(dev, deliver_bitmask,
                                        apic->arb_id = apic->id);
-                    return VINF_SUCCESS;
-#else /* !VBOX */
-                    for (apic_iter = first_local_apic; apic_iter != NULL;
-                         apic_iter = apic_iter->next_apic) {
-                        if (deliver_bitmask & (1 << apic_iter->id)) {
-                            apic_iter->arb_id = apic_iter->id;
-                        }
-                    }
+#ifndef VBOX
                     return;
-#endif /* !VBOX */
+#else
+                    return VINF_SUCCESS;
+#endif
                 }
             }
             break;
@@ -1170,12 +1180,11 @@ static int  apic_deliver(APICDeviceInfo* dev, APICState *s,
             return;
 #else
 # ifdef IN_RING3
-            
             foreach_apic(dev, deliver_bitmask,
                          apic_startup(dev, apic, vector_num));
             return VINF_SUCCESS;
 # else
-            /* We shall send SIPI only in R3, R0 calls should be 
+            /* We shall send SIPI only in R3, R0 calls should be
                rescheduled to R3 */
             return  VINF_IOM_HC_MMIO_WRITE;
 # endif
@@ -1186,9 +1195,8 @@ static int  apic_deliver(APICDeviceInfo* dev, APICState *s,
     apic_bus_deliver(deliver_bitmask, delivery_mode, vector_num, polarity,
                      trigger_mode);
 #else /* VBOX */
-    apic_bus_deliver(dev, deliver_bitmask, delivery_mode, vector_num, polarity,
-                     trigger_mode);
-    return VINF_SUCCESS;
+    return apic_bus_deliver(dev, deliver_bitmask, delivery_mode, vector_num,
+                            polarity, trigger_mode);
 #endif /* VBOX */
 }
 
@@ -1455,7 +1463,7 @@ static void apic_mem_writel(void *opaque, target_phys_addr_t addr, uint32_t val)
 #else /* VBOX */
 static int apic_mem_writel(APICDeviceInfo* dev, APICState *s, target_phys_addr_t addr, uint32_t val)
 {
-    int rv = VINF_SUCCESS;
+    int rc = VINF_SUCCESS;
 #endif /* VBOX */
     int index;
 
@@ -1519,7 +1527,7 @@ static int apic_mem_writel(APICDeviceInfo* dev, APICState *s, target_phys_addr_t
 
     case 0x30:
         s->icr[0] = val;
-        rv = apic_deliver(dev, s, (s->icr[1] >> 24) & 0xff, 
+        rc = apic_deliver(dev, s, (s->icr[1] >> 24) & 0xff,
                           (s->icr[0] >> 11) & 1,
                           (s->icr[0] >> 8) & 7, (s->icr[0] & 0xff),
                           (s->icr[0] >> 14) & 1, (s->icr[0] >> 15) & 1);
@@ -1569,7 +1577,7 @@ static int apic_mem_writel(APICDeviceInfo* dev, APICState *s, target_phys_addr_t
         break;
     }
 #ifdef VBOX
-    return rv;
+    return rc;
 #endif
 }
 
@@ -1782,13 +1790,16 @@ static void ioapic_service(IOAPICState *s)
                 apic_bus_deliver(apic_get_delivery_bitmask(dest, dest_mode),
                                  delivery_mode, vector, polarity, trig_mode);
 #else /* VBOX */
-                s->CTX_SUFF(pIoApicHlp)->pfnApicBusDeliver(s->CTX_SUFF(pDevIns),
+                int rc = s->CTX_SUFF(pIoApicHlp)->pfnApicBusDeliver(s->CTX_SUFF(pDevIns),
                                                            dest,
                                                            dest_mode,
                                                            delivery_mode,
                                                            vector,
                                                            polarity,
                                                            trig_mode);
+                /* We must be sure that attempts to reschedule in R3 
+                   never get here */
+                Assert(rc == VINF_SUCCESS);
 #endif /* VBOX */
             }
         }
@@ -2154,7 +2165,7 @@ static DECLCALLBACK(void) apicReset(PPDMDEVINS pDevIns)
 
     TMTimerStop(s->CTX_SUFF(pTimer));
 
-    apic_init_ipi(s);
+    apic_init_ipi(dev, s);
     /* malc, I've removed the initing duplicated in apic_init_ipi(). This
      * arb_id was left over.. */
     s->arb_id = 0;

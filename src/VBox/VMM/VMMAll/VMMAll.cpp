@@ -99,6 +99,16 @@ DECLCALLBACK(int) vmmR3SendSipi(PVM pVM, VMCPUID idCpu, uint32_t uVector)
 # endif
 }
 
+DECLCALLBACK(int) vmmR3SendInitIpi(PVM pVM, VMCPUID idCpu)
+{
+    PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
+    VMCPU_ASSERT_EMT(pVCpu);
+
+    /** @todo: reset CPU and halt till SIPI */
+
+    return VINF_SUCCESS;
+}
+
 /**
  * Sends SIPI to the virtual CPU by setting CS:EIP into vector-dependent state
  * and unhalting processor
@@ -114,6 +124,23 @@ VMMR3DECL(void) VMMR3SendSipi(PVM pVM, VMCPUID idCpu,  uint32_t uVector)
     PVMREQ pReq;
     int rc = VMR3ReqCallU(pVM->pUVM, idCpu, &pReq, RT_INDEFINITE_WAIT, 0,
                           (PFNRT)vmmR3SendSipi, 3, pVM, idCpu, uVector);
+    AssertRC(rc);
+    VMR3ReqFree(pReq);
+}
+
+/**
+ * Sends init IPI to the virtual CPU.
+ *
+ * @param   pVM         The VM to operate on.
+ * @param   idCpu       Virtual CPU to perform int IPI on
+ */
+VMMR3DECL(void) VMMR3SendInitIpi(PVM pVM, VMCPUID idCpu)
+{
+    AssertReturnVoid(idCpu < pVM->cCPUs);
+
+    PVMREQ pReq;
+    int rc = VMR3ReqCallU(pVM->pUVM, idCpu, &pReq, RT_INDEFINITE_WAIT, 0,
+                          (PFNRT)vmmR3SendInitIpi, 2, pVM, idCpu);
     AssertRC(rc);
     VMR3ReqFree(pReq);
 }

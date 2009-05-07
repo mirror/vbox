@@ -416,7 +416,7 @@ typedef struct PDMAPIC
     /** @copydoc PDMAPICREG::pfnReadMSRR3 */
     DECLR3CALLBACKMEMBER(int,       pfnReadMSRR3, (PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t *pu64Value));
     /** @copydoc PDMAPICREG::pfnBusDeliverR3 */
-    DECLR3CALLBACKMEMBER(void,      pfnBusDeliverR3,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
+    DECLR3CALLBACKMEMBER(int,       pfnBusDeliverR3,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                      uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode));
 
     /** Pointer to the APIC device instance - R0 Ptr. */
@@ -438,7 +438,7 @@ typedef struct PDMAPIC
     /** @copydoc PDMAPICREG::pfnReadMSRR3 */
     DECLR0CALLBACKMEMBER(uint32_t,  pfnReadMSRR0, (PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t *pu64Value));
     /** @copydoc PDMAPICREG::pfnBusDeliverR3 */
-    DECLR0CALLBACKMEMBER(void,      pfnBusDeliverR0,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
+    DECLR0CALLBACKMEMBER(int,       pfnBusDeliverR0,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                      uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode));
 
     /** Pointer to the APIC device instance - RC Ptr. */
@@ -460,7 +460,7 @@ typedef struct PDMAPIC
     /** @copydoc PDMAPICREG::pfnReadMSRR3 */
     DECLRCCALLBACKMEMBER(uint32_t,  pfnReadMSRRC, (PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t *pu64Value));
     /** @copydoc PDMAPICREG::pfnBusDeliverR3 */
-    DECLRCCALLBACKMEMBER(void,      pfnBusDeliverRC,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
+    DECLRCCALLBACKMEMBER(int,       pfnBusDeliverRC,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                      uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode));
 } PDMAPIC;
 

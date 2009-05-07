@@ -97,7 +97,7 @@ static DECLCALLBACK(VMCPUID) pdmRCApicHlp_GetCpuId(PPDMDEVINS pDevIns);
 /** @name I/O APIC RC Helpers
  * @{
  */
-static DECLCALLBACK(void) pdmRCIoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
+static DECLCALLBACK(int) pdmRCIoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                         uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode);
 static DECLCALLBACK(int) pdmRCIoApicHlp_Lock(PPDMDEVINS pDevIns, int rc);
 static DECLCALLBACK(void) pdmRCIoApicHlp_Unlock(PPDMDEVINS pDevIns);
@@ -489,7 +489,7 @@ static DECLCALLBACK(VMCPUID) pdmRCApicHlp_GetCpuId(PPDMDEVINS pDevIns)
 }
 
 /** @copydoc PDMIOAPICHLPRC::pfnApicBusDeliver */
-static DECLCALLBACK(void) pdmRCIoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
+static DECLCALLBACK(int) pdmRCIoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                         uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -497,7 +497,8 @@ static DECLCALLBACK(void) pdmRCIoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint
     LogFlow(("pdmRCIoApicHlp_ApicBusDeliver: caller=%p/%d: u8Dest=%RX8 u8DestMode=%RX8 u8DeliveryMode=%RX8 iVector=%RX8 u8Polarity=%RX8 u8TriggerMode=%RX8\n",
              pDevIns, pDevIns->iInstance, u8Dest, u8DestMode, u8DeliveryMode, iVector, u8Polarity, u8TriggerMode));
     if (pVM->pdm.s.Apic.pfnBusDeliverRC)
-        pVM->pdm.s.Apic.pfnBusDeliverRC(pVM->pdm.s.Apic.pDevInsRC, u8Dest, u8DestMode, u8DeliveryMode, iVector, u8Polarity, u8TriggerMode);
+        return pVM->pdm.s.Apic.pfnBusDeliverRC(pVM->pdm.s.Apic.pDevInsRC, u8Dest, u8DestMode, u8DeliveryMode, iVector, u8Polarity, u8TriggerMode);
+    return VINF_SUCCESS;
 }
 
 

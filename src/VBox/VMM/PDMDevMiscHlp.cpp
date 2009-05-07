@@ -220,7 +220,6 @@ static DECLCALLBACK(void) pdmR3ApicHlp_Unlock(PPDMDEVINS pDevIns)
     pdmUnlock(pDevIns->Internal.s.pVMR3);
 }
 
-
 /** @copydoc PDMAPICHLPR3::pfnGetCpuId */
 static DECLCALLBACK(VMCPUID) pdmR3ApicHlp_GetCpuId(PPDMDEVINS pDevIns)
 {
@@ -238,6 +237,13 @@ static DECLCALLBACK(void) pdmR3ApicHlp_SendSipi(PPDMDEVINS pDevIns, VMCPUID idCp
     VMMR3SendSipi(pDevIns->Internal.s.pVMR3, idCpu, uVector);
 }
 
+/** @copydoc PDMAPICHLPR3::pfnSendInitIpi */
+static DECLCALLBACK(void) pdmR3ApicHlp_SendInitIpi(PPDMDEVINS pDevIns, VMCPUID idCpu)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+    VMMR3SendInitIpi(pDevIns->Internal.s.pVMR3, idCpu);
+}
 
 /** @copydoc PDMAPICHLPR3::pfnGetRCHelpers */
 static DECLCALLBACK(PCPDMAPICHLPRC) pdmR3ApicHlp_GetRCHelpers(PPDMDEVINS pDevIns)
@@ -282,6 +288,7 @@ const PDMAPICHLPR3 g_pdmR3DevApicHlp =
     pdmR3ApicHlp_Unlock,
     pdmR3ApicHlp_GetCpuId,
     pdmR3ApicHlp_SendSipi,
+    pdmR3ApicHlp_SendInitIpi,
     pdmR3ApicHlp_GetRCHelpers,
     pdmR3ApicHlp_GetR0Helpers,
     PDM_APICHLPR3_VERSION /* the end */
@@ -297,7 +304,7 @@ const PDMAPICHLPR3 g_pdmR3DevApicHlp =
  */
 
 /** @copydoc PDMIOAPICHLPR3::pfnApicBusDeliver */
-static DECLCALLBACK(void) pdmR3IoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
+static DECLCALLBACK(int) pdmR3IoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                         uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -305,7 +312,8 @@ static DECLCALLBACK(void) pdmR3IoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint
     LogFlow(("pdmR3IoApicHlp_ApicBusDeliver: caller='%s'/%d: u8Dest=%RX8 u8DestMode=%RX8 u8DeliveryMode=%RX8 iVector=%RX8 u8Polarity=%RX8 u8TriggerMode=%RX8\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, u8Dest, u8DestMode, u8DeliveryMode, iVector, u8Polarity, u8TriggerMode));
     if (pVM->pdm.s.Apic.pfnBusDeliverR3)
-        pVM->pdm.s.Apic.pfnBusDeliverR3(pVM->pdm.s.Apic.pDevInsR3, u8Dest, u8DestMode, u8DeliveryMode, iVector, u8Polarity, u8TriggerMode);
+        return pVM->pdm.s.Apic.pfnBusDeliverR3(pVM->pdm.s.Apic.pDevInsR3, u8Dest, u8DestMode, u8DeliveryMode, iVector, u8Polarity, u8TriggerMode);
+    return VINF_SUCCESS;
 }
 
 
