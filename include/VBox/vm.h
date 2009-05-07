@@ -346,8 +346,11 @@ typedef struct VMCPU
 /** VMCPU Flags that cause the HWACCM loops to go back to ring-3. */
 #define VMCPU_FF_HWACCM_TO_R3_MASK               (VMCPU_FF_TO_R3)
 
-/** All the forced flags. */
+/** All the forced VM flags. */
 #define VM_FF_ALL_MASK                          (~0U)
+/** All the forced VMCPU flags. */
+#define VMCPU_FF_ALL_MASK                       (~0U)
+
 /** All the forced VM flags. */
 #define VM_FF_ALL_BUT_RAW_MASK                  (~(VM_FF_HIGH_PRIORITY_PRE_RAW_MASK | VM_FF_PDM_CRITSECT) | VM_FF_PGM_NO_MEMORY)
 /** All the forced VMCPU flags. */
