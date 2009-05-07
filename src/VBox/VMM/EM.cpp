@@ -3067,7 +3067,8 @@ static int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 #ifdef VBOX_HIGH_RES_TIMERS_HACK
         TMTimerPoll(pVM);
 #endif
-        if (VM_FF_ISPENDING(pVM, VM_FF_ALL_MASK))
+        if (    VM_FF_ISPENDING(pVM, VM_FF_ALL_MASK)
+            ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_ALL_MASK))
         {
             rc = emR3ForcedActions(pVM, pVCpu, rc);
             if (    rc != VINF_SUCCESS
