@@ -2938,7 +2938,6 @@ void            pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPoo
 void            pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GCPhysFault, CTXTYPE(RTGCPTR, RTHCPTR, RTGCPTR) pvAddress, PDISCPUSTATE pCpu);
 int             pgmPoolMonitorChainFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 void            pgmPoolMonitorModifiedInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
-void            pgmPoolMonitorModifiedClearAll(PVM pVM);
 #endif
 
 int             pgmR3ExitShadowModeBeforePoolFlush(PVM pVM, PVMCPU pVCpu);
