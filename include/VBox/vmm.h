@@ -116,7 +116,6 @@ VMMDECL(PVMCPU)      VMMGetCpu0(PVM pVM);
 VMMDECL(PVMCPU)      VMMGetCpuById(PVM pVM, VMCPUID idCpu);
 VMMDECL(uint32_t)    VMMGetSvnRev(void);
 VMMDECL(VMMSWITCHER) VMMGetSwitcher(PVM pVM);
-VMMDECL(void)        VMMSendSipi(PVM pVM, VMCPUID idCpu, int iVector);
 
 /** @def VMMIsHwVirtExtForced
  * Checks if forced to use the hardware assisted virtualization extensions.
@@ -159,6 +158,7 @@ VMMR3DECL(void)     VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr);
 VMMR3DECL(void)     VMMR3YieldSuspend(PVM pVM);
 VMMR3DECL(void)     VMMR3YieldStop(PVM pVM);
 VMMR3DECL(void)     VMMR3YieldResume(PVM pVM);
+VMMR3DECL(void)     VMMR3SendSipi(PVM pVM, VMCPUID idCpu, uint32_t uVector);
 /** @} */
 #endif /* IN_RING3 */
 

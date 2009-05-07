@@ -91,7 +91,6 @@ static DECLCALLBACK(void) pdmRCApicHlp_ChangeFeature(PPDMDEVINS pDevIns, PDMAPIC
 static DECLCALLBACK(int) pdmRCApicHlp_Lock(PPDMDEVINS pDevIns, int rc);
 static DECLCALLBACK(void) pdmRCApicHlp_Unlock(PPDMDEVINS pDevIns);
 static DECLCALLBACK(VMCPUID) pdmRCApicHlp_GetCpuId(PPDMDEVINS pDevIns);
-static DECLCALLBACK(void) pdmRCApicHlp_SendSipi(PPDMDEVINS pDevIns, VMCPUID idCpu, int iVector);
 /** @} */
 
 
@@ -167,7 +166,6 @@ extern DECLEXPORT(const PDMAPICHLPRC) g_pdmRCApicHlp =
     pdmRCApicHlp_Lock,
     pdmRCApicHlp_Unlock,
     pdmRCApicHlp_GetCpuId,
-    pdmRCApicHlp_SendSipi,
     PDM_APICHLPRC_VERSION
 };
 
@@ -489,17 +487,6 @@ static DECLCALLBACK(VMCPUID) pdmRCApicHlp_GetCpuId(PPDMDEVINS pDevIns)
     PDMDEV_ASSERT_DEVINS(pDevIns);
     return VMMGetCpuId(pDevIns->Internal.s.pVMRC);
 }
-
-
-/** @copydoc PDMAPICHLPRC::pfnSendSipi */
-static DECLCALLBACK(void) pdmRCApicHlp_SendSipi(PPDMDEVINS pDevIns, VMCPUID idCpu, int iVector)
-{
-    /* we shall never send a SIPI in raw mode */
-    AssertFailed();
-}
-
-
-
 
 /** @copydoc PDMIOAPICHLPRC::pfnApicBusDeliver */
 static DECLCALLBACK(void) pdmRCIoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,

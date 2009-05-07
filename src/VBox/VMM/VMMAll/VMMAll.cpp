@@ -98,8 +98,6 @@ DECLCALLBACK(int) vmmR3SendSipi(PVM pVM, VMCPUID idCpu, uint32_t uVector)
     return VINF_SUCCESS;
 # endif
 }
-#endif /* IN_RING3 */
-
 
 /**
  * Sends SIPI to the virtual CPU by setting CS:EIP into vector-dependent state
@@ -107,22 +105,19 @@ DECLCALLBACK(int) vmmR3SendSipi(PVM pVM, VMCPUID idCpu, uint32_t uVector)
  *
  * @param   pVM         The VM to operate on.
  * @param   idCpu       Virtual CPU to perform SIPI on
- * @param   iVector     SIPI vector
+ * @param   uVector     SIPI vector
  */
-VMMDECL(void) VMMSendSipi(PVM pVM, VMCPUID idCpu, int iVector) /** @todo why is iVector signed? */
+VMMR3DECL(void) VMMR3SendSipi(PVM pVM, VMCPUID idCpu,  uint32_t uVector)
 {
     AssertReturnVoid(idCpu < pVM->cCPUs);
 
-#ifdef IN_RING3
     PVMREQ pReq;
     int rc = VMR3ReqCallU(pVM->pUVM, idCpu, &pReq, RT_INDEFINITE_WAIT, 0,
-                          (PFNRT)vmmR3SendSipi, 3, pVM, idCpu, (uint32_t)iVector);
+                          (PFNRT)vmmR3SendSipi, 3, pVM, idCpu, uVector);
     AssertRC(rc);
     VMR3ReqFree(pReq);
-#else
-    AssertMsgFailed(("has to be done in ring-3, fix the code.\n"));
-#endif
 }
+#endif /* IN_RING3 */
 
 
 /**

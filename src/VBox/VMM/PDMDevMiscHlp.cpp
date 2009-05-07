@@ -231,18 +231,11 @@ static DECLCALLBACK(VMCPUID) pdmR3ApicHlp_GetCpuId(PPDMDEVINS pDevIns)
 
 
 /** @copydoc PDMAPICHLPR3::pfnSendSipi */
-static DECLCALLBACK(void) pdmR3ApicHlp_SendSipi(PPDMDEVINS pDevIns, VMCPUID idCpu, int iVector) /** @todo why signed? */
+static DECLCALLBACK(void) pdmR3ApicHlp_SendSipi(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t uVector)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    PVMCPU pCpu = VMMGetCpuById(pVM, idCpu);
-    CPUMSetGuestCS(pCpu, iVector * 0x100);
-    CPUMSetGuestEIP(pCpu, 0);
-    /** @todo: how do I unhalt VCPU?
-     *  bird: See VMMSendSipi. */
-
+    VMMR3SendSipi(pDevIns->Internal.s.pVMR3, idCpu, uVector);
 }
 
 

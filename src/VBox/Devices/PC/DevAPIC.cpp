@@ -319,10 +319,10 @@ typedef struct
 } APICDeviceInfo;
 
 static void apic_eoi(APICDeviceInfo *dev, APICState* s);
-static void apic_deliver(APICDeviceInfo* dev, APICState *s,
-                         uint8_t dest, uint8_t dest_mode,
-                         uint8_t delivery_mode, uint8_t vector_num,
-                         uint8_t polarity, uint8_t trigger_mode);
+static int apic_deliver(APICDeviceInfo* dev, APICState *s,
+                        uint8_t dest, uint8_t dest_mode,
+                        uint8_t delivery_mode, uint8_t vector_num,
+                        uint8_t polarity, uint8_t trigger_mode);
 static void apic_timer_update(APICDeviceInfo* dev, APICState *s,
                               int64_t current_time);
 static int apic_get_arb_pri(APICState *s);
@@ -362,16 +362,16 @@ DECLINLINE(void) cpuClearInterrupt(APICDeviceInfo* dev, APICState *s)
     dev->CTX_SUFF(pApicHlp)->pfnClearInterruptFF(dev->CTX_SUFF(pDevIns),
                                                  getCpuFromLapic(dev, s));
 }
-
+#ifdef IN_RING3
 DECLINLINE(void) cpuSendSipi(APICDeviceInfo* dev, APICState *s, int vector)
 {
     Log2(("apic: send SIPI vector=%d\n", vector));
-    dev->CTX_SUFF(pApicHlp)->pfnSendSipi(dev->CTX_SUFF(pDevIns),
-                                         getCpuFromLapic(dev, s),
-                                         vector);
+
+    dev->pApicHlpR3->pfnSendSipi(dev->pDevInsR3,
+                                 getCpuFromLapic(dev, s),
+                                 vector);
 }
-
-
+#endif
 
 DECLINLINE(uint32_t) getApicEnableBits(APICDeviceInfo* dev)
 {
@@ -671,12 +671,12 @@ PDMBOTHCBDECL(uint8_t) apicGetTPR(PPDMDEVINS pDevIns)
 PDMBOTHCBDECL(int) apicWriteMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t u64Value)
 {
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
+    int rv = VINF_SUCCESS;
 
     if (dev->enmVersion < PDMAPICVERSION_X2APIC)
         return VERR_EM_INTERPRETER;
 
     uint32_t index = (u32Reg - MSR_IA32_APIC_START) & 0xff;
-    //LogRel(("nike: WRMSR on %d: to %x written %llx\n", idCpu, index, u64Value));
 
     APICState* apic = getLapicById(dev, idCpu);
 
@@ -717,9 +717,9 @@ PDMBOTHCBDECL(int) apicWriteMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32R
             /* Here one of the differences with regular APIC: ICR is single 64-bit register */
             apic->icr[0] = (uint32_t)u64Value;
             apic->icr[1] = (uint32_t)(u64Value >> 32);
-            apic_deliver(dev, apic, (apic->icr[1] >> 24) & 0xff, (apic->icr[0] >> 11) & 1,
-                         (apic->icr[0] >>  8) & 7, (apic->icr[0] & 0xff),
-                         (apic->icr[0] >> 14) & 1, (apic->icr[0] >> 15) & 1);
+            rv = apic_deliver(dev, apic, (apic->icr[1] >> 24) & 0xff, (apic->icr[0] >> 11) & 1,
+                             (apic->icr[0] >>  8) & 7, (apic->icr[0] & 0xff),
+                             (apic->icr[0] >> 14) & 1, (apic->icr[0] >> 15) & 1);
             break;
         case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37:
         {
@@ -763,7 +763,7 @@ PDMBOTHCBDECL(int) apicWriteMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32R
             break;
     }
 
-    return VINF_SUCCESS;
+    return rv;
 }
 PDMBOTHCBDECL(int) apicReadMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t *pu64Value)
 {
@@ -773,7 +773,6 @@ PDMBOTHCBDECL(int) apicReadMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Re
         return VERR_EM_INTERPRETER;
 
     uint32_t index = (u32Reg - MSR_IA32_APIC_START) & 0xff;
-    //LogRel(("nike: RDMSR on %d: read from %x\n", idCpu, index));
     APICState* apic = getLapicById(dev, idCpu);
     uint64_t val = 0;
 
@@ -1080,7 +1079,7 @@ static void apic_init_ipi(APICState *s)
 #endif
 }
 
-
+#ifdef IN_RING3
 /* send a SIPI message to the CPU to start it */
 static void apic_startup(APICDeviceInfo* dev, APICState *s, int vector_num)
 {
@@ -1098,7 +1097,9 @@ static void apic_startup(APICDeviceInfo* dev, APICState *s, int vector_num)
     cpuSendSipi(dev, s, vector_num);
 #endif
 }
-static void apic_deliver(APICDeviceInfo* dev, APICState *s,
+#endif
+
+static int  apic_deliver(APICDeviceInfo* dev, APICState *s,
                          uint8_t dest, uint8_t dest_mode,
                          uint8_t delivery_mode, uint8_t vector_num,
                          uint8_t polarity, uint8_t trigger_mode)
@@ -1143,6 +1144,7 @@ static void apic_deliver(APICDeviceInfo* dev, APICState *s,
 #ifdef VBOX
                     foreach_apic(dev, deliver_bitmask,
                                        apic->arb_id = apic->id);
+                    return VINF_SUCCESS;
 #else /* !VBOX */
                     for (apic_iter = first_local_apic; apic_iter != NULL;
                          apic_iter = apic_iter->next_apic) {
@@ -1150,8 +1152,8 @@ static void apic_deliver(APICDeviceInfo* dev, APICState *s,
                             apic_iter->arb_id = apic_iter->id;
                         }
                     }
-#endif /* !VBOX */
                     return;
+#endif /* !VBOX */
                 }
             }
             break;
@@ -1165,11 +1167,19 @@ static void apic_deliver(APICDeviceInfo* dev, APICState *s,
                     /* apic_startup(apic_iter); */
                 }
             }
+            return;
 #else
+# ifdef IN_RING3
+            
             foreach_apic(dev, deliver_bitmask,
                          apic_startup(dev, apic, vector_num));
+            return VINF_SUCCESS;
+# else
+            /* We shall send SIPI only in R3, R0 calls should be 
+               rescheduled to R3 */
+            return  VINF_IOM_HC_MMIO_WRITE;
+# endif
 #endif /* !VBOX */
-            return;
     }
 
 #ifndef VBOX
@@ -1178,6 +1188,7 @@ static void apic_deliver(APICDeviceInfo* dev, APICState *s,
 #else /* VBOX */
     apic_bus_deliver(dev, deliver_bitmask, delivery_mode, vector_num, polarity,
                      trigger_mode);
+    return VINF_SUCCESS;
 #endif /* VBOX */
 }
 
@@ -1444,6 +1455,7 @@ static void apic_mem_writel(void *opaque, target_phys_addr_t addr, uint32_t val)
 #else /* VBOX */
 static int apic_mem_writel(APICDeviceInfo* dev, APICState *s, target_phys_addr_t addr, uint32_t val)
 {
+    int rv = VINF_SUCCESS;
 #endif /* VBOX */
     int index;
 
@@ -1507,9 +1519,10 @@ static int apic_mem_writel(APICDeviceInfo* dev, APICState *s, target_phys_addr_t
 
     case 0x30:
         s->icr[0] = val;
-        apic_deliver(dev, s, (s->icr[1] >> 24) & 0xff, (s->icr[0] >> 11) & 1,
-                     (s->icr[0] >> 8) & 7, (s->icr[0] & 0xff),
-                     (s->icr[0] >> 14) & 1, (s->icr[0] >> 15) & 1);
+        rv = apic_deliver(dev, s, (s->icr[1] >> 24) & 0xff, 
+                          (s->icr[0] >> 11) & 1,
+                          (s->icr[0] >> 8) & 7, (s->icr[0] & 0xff),
+                          (s->icr[0] >> 14) & 1, (s->icr[0] >> 15) & 1);
         break;
     case 0x31:
         s->icr[1] = val;
@@ -1556,7 +1569,7 @@ static int apic_mem_writel(APICDeviceInfo* dev, APICState *s, target_phys_addr_t
         break;
     }
 #ifdef VBOX
-    return VINF_SUCCESS;
+    return rv;
 #endif
 }
 
@@ -2161,9 +2174,6 @@ static DECLCALLBACK(void) apicReset(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) apicRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
-#ifdef VBOX_WITH_SMP_GUESTS
-    LogRel(("[SMP]: relocate apic on %llx\n", offDelta));
-#endif
     dev->pDevInsRC  = PDMDEVINS_2_RCPTR(pDevIns);
     dev->pApicHlpRC = dev->pApicHlpR3->pfnGetRCHelpers(pDevIns);
     dev->pLapicsRC  = MMHyperR3ToRC(PDMDevHlpGetVM(pDevIns), dev->pLapicsR3);
@@ -2736,4 +2746,3 @@ const PDMDEVREG g_DeviceIOAPIC =
 
 #endif /* IN_RING3 */
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
-
