@@ -1797,7 +1797,7 @@ static void ioapic_service(IOAPICState *s)
                                                            vector,
                                                            polarity,
                                                            trig_mode);
-                /* We must be sure that attempts to reschedule in R3 
+                /* We must be sure that attempts to reschedule in R3
                    never get here */
                 Assert(rc == VINF_SUCCESS);
 #endif /* VBOX */
@@ -2037,7 +2037,7 @@ PDMBOTHCBDECL(int) apicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
     APICState *s = getLapic(dev);
 
 #ifdef VBOX_WITH_SMP_GUESTS
-    LogRel(("[SMP] apicMMIORead at %llx\n", (uint64_t)GCPhysAddr));
+    Log(("[SMP] apicMMIORead at %llx\n", (uint64_t)GCPhysAddr));
 #endif
 
     /** @todo: add LAPIC range validity checks (different LAPICs can theoretically have
@@ -2091,7 +2091,7 @@ PDMBOTHCBDECL(int) apicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
     APICState *s = getLapic(dev);
 
 #ifdef VBOX_WITH_SMP_GUESTS
-    LogRel(("[SMP] apicMMIOWrite at %llx\n", (uint64_t)GCPhysAddr));
+    Log(("[SMP] apicMMIOWrite at %llx\n", (uint64_t)GCPhysAddr));
 #endif
 
     /** @todo: add LAPIC range validity checks (multiple LAPICs can theoretically have
