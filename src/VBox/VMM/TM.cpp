@@ -1515,8 +1515,11 @@ VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
      * Only one EMT should be doing this at a time.
      */
     VM_FF_CLEAR(pVM, VM_FF_TIMER);
-    if (!ASMBitTestAndSet(&pVM->tm.s.fRunningQueues, 0))
+    if (ASMBitTestAndSet(&pVM->tm.s.fRunningQueues, 0))
+    {
+        Assert(pVM->cCPUs > 1);
         return;
+    }
 
     STAM_PROFILE_START(&pVM->tm.s.StatDoQueues, a);
     Log2(("TMR3TimerQueuesDo:\n"));
