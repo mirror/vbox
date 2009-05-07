@@ -36,6 +36,7 @@
 #include <iprt/test.h>
 #include <iprt/getopt.h>
 #include <iprt/ctype.h>
+#include <iprt/string.h>
 
 
 /*******************************************************************************
