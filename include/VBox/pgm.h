@@ -284,6 +284,7 @@ typedef enum PGMMODE
       || (enmProt) == PGMROMPROT_READ_ROM_WRITE_RAM )
 
 VMMDECL(bool)       PGMIsLocked(PVM pVM);
+VMMDECL(bool)       PGMIsLockOwner(PVM pVM);
 
 VMMDECL(int)        PGMRegisterStringFormatTypes(void);
 VMMDECL(void)       PGMDeregisterStringFormatTypes(void);
