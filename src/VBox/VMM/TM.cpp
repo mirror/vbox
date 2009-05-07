@@ -1612,7 +1612,7 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
     {
         PTMTIMER pTimer = pNext;
         pNext = TMTIMER_GET_NEXT(pTimer);
-        Log2(("tmR3TimerQueueRun: pTimer=%p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .pszDesc=%s}\n",
+        Log2(("tmR3TimerQueueRun: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .pszDesc=%s}\n",
               pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, pTimer->u64Expire, u64Now, pTimer->pszDesc));
         bool fRc;
         TM_TRY_SET_STATE(pTimer, TMTIMERSTATE_EXPIRED, TMTIMERSTATE_ACTIVE, fRc);
@@ -1761,7 +1761,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
     {
         PTMTIMER pTimer = pNext;
         pNext = TMTIMER_GET_NEXT(pTimer);
-        Log2(("tmR3TimerQueueRun: pTimer=%p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .pszDesc=%s}\n",
+        Log2(("tmR3TimerQueueRun: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .pszDesc=%s}\n",
               pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, pTimer->u64Expire, u64Now, pTimer->pszDesc));
         bool fRc;
         TM_TRY_SET_STATE(pTimer, TMTIMERSTATE_EXPIRED, TMTIMERSTATE_ACTIVE, fRc);
@@ -1934,7 +1934,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
  */
 VMMR3DECL(int) TMR3TimerSave(PTMTIMERR3 pTimer, PSSMHANDLE pSSM)
 {
-    LogFlow(("TMR3TimerSave: pTimer=%p:{enmState=%s, .pszDesc={%s}} pSSM=%p\n", pTimer, tmTimerState(pTimer->enmState), pTimer->pszDesc, pSSM));
+    LogFlow(("TMR3TimerSave: %p:{enmState=%s, .pszDesc={%s}} pSSM=%p\n", pTimer, tmTimerState(pTimer->enmState), pTimer->pszDesc, pSSM));
     switch (pTimer->enmState)
     {
         case TMTIMERSTATE_STOPPED:
@@ -1977,7 +1977,7 @@ VMMR3DECL(int) TMR3TimerSave(PTMTIMERR3 pTimer, PSSMHANDLE pSSM)
 VMMR3DECL(int) TMR3TimerLoad(PTMTIMERR3 pTimer, PSSMHANDLE pSSM)
 {
     Assert(pTimer); Assert(pSSM); VM_ASSERT_EMT(pTimer->pVMR3);
-    LogFlow(("TMR3TimerLoad: pTimer=%p:{enmState=%s, .pszDesc={%s}} pSSM=%p\n", pTimer, tmTimerState(pTimer->enmState), pTimer->pszDesc, pSSM));
+    LogFlow(("TMR3TimerLoad: %p:{enmState=%s, .pszDesc={%s}} pSSM=%p\n", pTimer, tmTimerState(pTimer->enmState), pTimer->pszDesc, pSSM));
 
     /*
      * Load the state and validate it.
