@@ -300,6 +300,15 @@ extern int vbi_is_preempt_enabled(void);
 
 /* end of interfaces defined for version 3 */
 
+/* begin interfaces defined for version 4 */
+
+/*
+ * poke the given cpu with an IPI
+ */
+extern void vbi_poke_cpu(int);
+
+/* end of interfaces defined for version 4 */
+
 #ifdef	__cplusplus
 }
 #endif

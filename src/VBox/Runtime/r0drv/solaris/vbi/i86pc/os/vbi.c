@@ -110,7 +110,7 @@ typedef struct vbi_cpuset {
  * module linkage stuff
  */
 static struct modlmisc vbi_modlmisc = {
-	&mod_miscops, "VirtualBox Interfaces V3"
+	&mod_miscops, "VirtualBox Interfaces V4"
 };
 
 static struct modlinkage vbi_modlinkage = {
@@ -1053,15 +1053,22 @@ vbi_gtimer_end(vbi_gtimer_t *t)
 	kmem_free(t, sizeof (*t));
 }
 
-/*
- * This is revision 3 of the interface. As more functions are added,
- * they should go after this point in the file and the revision level
- * increased. Also change vbi_modlmisc at the top of the file.
- */
-uint_t vbi_revision_level = 3;
-
 int
 vbi_is_preempt_enabled(void)
 {
 	return (curthread->t_preempt == 0);
+}
+
+/*
+ * This is revision 4 of the interface. As more functions are added,
+ * they should go after this point in the file and the revision level
+ * increased. Also change vbi_modlmisc at the top of the file.
+ */
+uint_t vbi_revision_level = 4;
+
+void
+vbi_poke_cpu(int c)
+{
+	if (c < ncpus)
+		poke_cpu(c);
 }

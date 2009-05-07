@@ -1315,7 +1315,7 @@ RuntimeR0Drv_SOURCES.solaris = \
 
 ifdef VBOX_WITH_SOLARIS_VBI
  RuntimeR0Drv_SOURCES.solaris += \
-	r0drv/generic/RTMpPokeCpu-r0drv-generic.cpp \
+	r0drv/solaris/vbi/RTMpPokeCpu-r0drv-solaris.c \
 	r0drv/solaris/vbi/mpnotification-r0drv-solaris.c \
  	r0drv/solaris/vbi/alloc-r0drv-solaris.c \
  	r0drv/solaris/vbi/memobj-r0drv-solaris.c \
@@ -1353,12 +1353,12 @@ else  # !VBOX_WITH_SOLARIS_VBI
   	generic/RTMpIsCpuOnline-generic.cpp \
 	r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.cpp \
   	r0drv/generic/RTMpOn-r0drv-generic.cpp \
-	r0drv/generic/RTMpPokeCpu-r0drv-generic.cpp
+	r0drv/solaris/RTMpPokeCpu-r0drv-solaris.c
  else
   # Use mp-r0drv-solaris.c.
   RuntimeR0Drv_SOURCES.solaris += \
  	r0drv/solaris/mp-r0drv-solaris.c \
-	r0drv/generic/RTMpPokeCpu-r0drv-generic.cpp
+	r0drv/solaris/RTMpPokeCpu-r0drv-solaris.c
 # 	r0drv/solaris/mpnotification-r0drv-solaris.c
  endif
 
