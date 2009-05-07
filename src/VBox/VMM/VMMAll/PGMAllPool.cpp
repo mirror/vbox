@@ -1913,6 +1913,7 @@ static void pgmPoolMonitorModifiedRemove(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  */
 void pgmPoolMonitorModifiedClearAll(PVM pVM)
 {
+    pgmLock(pVM);
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     LogFlow(("pgmPoolMonitorModifiedClearAll: cModifiedPages=%d\n", pPool->cModifiedPages));
 
@@ -1930,6 +1931,7 @@ void pgmPoolMonitorModifiedClearAll(PVM pVM)
     }
     AssertMsg(cPages == pPool->cModifiedPages, ("%d != %d\n", cPages, pPool->cModifiedPages));
     pPool->cModifiedPages = 0;
+    pgmUnlock(pVM);
 }
 
 
@@ -2077,21 +2079,23 @@ int pgmPoolSyncCR3(PVM pVM)
      * to monitor a page which was mapped by too many shadowed page tables. This operation
      * sometimes refered to as a 'lightweight flush'.
      */
-    if (!(pVM->pgm.s.fGlobalSyncFlags & PGM_GLOBAL_SYNC_CLEAR_PGM_POOL))
-        pgmPoolMonitorModifiedClearAll(pVM);
-    else
-    {
 # ifdef IN_RING3 /* Don't flush in ring-0 or raw mode, it's taking too long. */
+    if (ASMBitTestAndClear(&pVM->pgm.s.fGlobalSyncFlags, PGM_GLOBAL_SYNC_CLEAR_PGM_POOL))
+    {
         /** @todo SMP support! */
         Assert(pVM->cCPUs == 1);
-        pVM->pgm.s.fGlobalSyncFlags &= ~PGM_GLOBAL_SYNC_CLEAR_PGM_POOL;
         pgmPoolClearAll(pVM);
 # else  /* !IN_RING3 */
+    if (pVM->pgm.s.fGlobalSyncFlags & PGM_GLOBAL_SYNC_CLEAR_PGM_POOL)
+    {
         LogFlow(("SyncCR3: PGM_GLOBAL_SYNC_CLEAR_PGM_POOL is set -> VINF_PGM_SYNC_CR3\n"));
         VMCPU_FF_SET(VMMGetCpu(pVM), VMCPU_FF_PGM_SYNC_CR3); /** @todo no need to do global sync, right? */
         return VINF_PGM_SYNC_CR3;
 # endif /* !IN_RING3 */
     }
+    else
+        pgmPoolMonitorModifiedClearAll(pVM);
+
     return VINF_SUCCESS;
 }
 
