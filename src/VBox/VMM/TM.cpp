@@ -165,6 +165,7 @@ static DECLCALLBACK(int)    tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versi
 static DECLCALLBACK(void)   tmR3TimerCallback(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
 static void                 tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue);
 static void                 tmR3TimerQueueRunVirtualSync(PVM pVM);
+static DECLCALLBACK(int)    tmR3SetWarpDrive(PVM pVM, uint32_t u32Percent);
 static DECLCALLBACK(void)   tmR3TimerInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void)   tmR3TimerInfoActive(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void)   tmR3InfoClocks(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
@@ -2043,6 +2044,83 @@ VMMR3DECL(PRTTIMESPEC) TMR3UTCNow(PVM pVM, PRTTIMESPEC pTime)
     RTTimeSpecAddNano(pTime, pVM->tm.s.offUTC);
     return pTime;
 }
+
+
+/**
+ * Sets the warp drive percent of the virtual time.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   u32Percent  The new percentage. 100 means normal operation.
+ *
+ * @todo    Move to Ring-3!
+ */
+VMMDECL(int) TMR3SetWarpDrive(PVM pVM, uint32_t u32Percent)
+{
+    PVMREQ pReq;
+    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
+                         (PFNRT)tmR3SetWarpDrive, 2, pVM, u32Percent);
+    if (RT_SUCCESS(rc))
+        rc = pReq->iStatus;
+    VMR3ReqFree(pReq);
+    return rc;
+}
+
+
+/**
+ * EMT worker for TMR3SetWarpDrive.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   u32Percent  See TMR3SetWarpDrive().
+ * @internal
+ */
+static DECLCALLBACK(int) tmR3SetWarpDrive(PVM pVM, uint32_t u32Percent)
+{
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+
+    /*
+     * Validate it.
+     */
+    AssertMsgReturn(u32Percent >= 2 && u32Percent <= 20000,
+                    ("%RX32 is not between 2 and 20000 (inclusive).\n", u32Percent),
+                    VERR_INVALID_PARAMETER);
+    tmLock(pVM); /* paranoia */
+
+/** @todo This isn't a feature specific to virtual time, move the variables to
+ * TM level and make it affect TMR3UCTNow as well! */
+
+    /*
+     * If the time is running we'll have to pause it before we can change
+     * the warp drive settings.
+     */
+    bool fPaused = !!pVM->tm.s.cVirtualTicking;
+    if (fPaused)
+    {
+        int rc = TMVirtualPause(pVM);
+        AssertRC(rc);
+        rc = TMCpuTickPause(pVCpu);
+        AssertRC(rc);
+    }
+
+    pVM->tm.s.u32VirtualWarpDrivePercentage = u32Percent;
+    pVM->tm.s.fVirtualWarpDrive = u32Percent != 100;
+    LogRel(("TM: u32VirtualWarpDrivePercentage=%RI32 fVirtualWarpDrive=%RTbool\n",
+            pVM->tm.s.u32VirtualWarpDrivePercentage, pVM->tm.s.fVirtualWarpDrive));
+
+    if (fPaused)
+    {
+        int rc = TMVirtualResume(pVM);
+        AssertRC(rc);
+        rc = TMCpuTickResume(pVCpu);
+        AssertRC(rc);
+    }
+
+    tmUnlock(pVM);
+    return VINF_SUCCESS;
+}
+
+
 
 
 /**

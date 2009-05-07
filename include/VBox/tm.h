@@ -77,6 +77,11 @@ VMMDECL(void)     TMNotifyEndOfExecution(PVMCPU pVCpu);
 VMMDECL(void)     TMNotifyStartOfHalt(PVMCPU pVCpu);
 VMMDECL(void)     TMNotifyEndOfHalt(PVMCPU pVCpu);
 
+VMMDECL(uint32_t) TMGetWarpDrive(PVM pVM);
+#ifdef IN_RING3
+VMMR3DECL(int)    TMR3SetWarpDrive(PVM pVM, uint32_t u32Percent);
+#endif
+
 
 /** @name Real Clock Methods
  * @{
@@ -104,8 +109,6 @@ VMMDECL(uint64_t) TMVirtualToMilli(PVM pVM, uint64_t u64VirtualTicks);
 VMMDECL(uint64_t) TMVirtualFromNano(PVM pVM, uint64_t u64NanoTS);
 VMMDECL(uint64_t) TMVirtualFromMicro(PVM pVM, uint64_t u64MicroTS);
 VMMDECL(uint64_t) TMVirtualFromMilli(PVM pVM, uint64_t u64MilliTS);
-VMMDECL(uint32_t) TMVirtualGetWarpDrive(PVM pVM);
-VMMDECL(int)      TMVirtualSetWarpDrive(PVM pVM, uint32_t u32Percent);
 /** @} */
 
 
