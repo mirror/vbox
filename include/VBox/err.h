@@ -163,8 +163,10 @@
 #define VINF_EM_RESCHEDULE                  1118
 /** PARAV call */
 #define VINF_EM_RESCHEDULE_PARAV            1119
+/** Go back into wait for SIPI mode */
+#define VINF_EM_WAIT_SIPI                   1120
 /** Last scheduling related status code. (inclusive) */
-#define VINF_EM_LAST                        1119
+#define VINF_EM_LAST                        1120
 
 /** Reason for leaving GC: Guest trap which couldn't be handled in GC.
  * The trap is generally forwared to the REM and executed there. */

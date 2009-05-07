@@ -988,6 +988,7 @@ VMMR3DECL(void)         CPUMR3Relocate(PVM pVM);
 VMMR3DECL(int)          CPUMR3Term(PVM pVM);
 VMMR3DECL(int)          CPUMR3TermCPU(PVM pVM);
 VMMR3DECL(void)         CPUMR3Reset(PVM pVM);
+VMMR3DECL(void)         CPUMR3ResetCpu(PVMCPU pVCpu);
 # ifdef DEBUG
 VMMR3DECL(void)         CPUMR3SaveEntryCtx(PVM pVM);
 # endif
