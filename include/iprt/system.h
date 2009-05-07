@@ -73,6 +73,72 @@ typedef enum RTSYSOSINFO
  */
 RTDECL(int) RTSystemQueryOSInfo(RTSYSOSINFO enmInfo, char *pszInfo, size_t cchInfo);
 
+/**
+ * Queries the total amount of RAM accessible to the system.
+ *
+ * This figure should not include memory that is installed but not used,
+ * nor memory that will be slow to bring online. The definition of 'slow'
+ * here is slower than swapping out a MB of pages to disk.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS and *pcb on sucess.
+ * @retval  VERR_ACCESS_DENIED if the information isn't accessible to the
+ *          caller.
+ *
+ * @param   pcb             Where to store the result (in bytes).
+ */
+RTDECL(int) RTSystemQueryTotalRam(uint64_t *pcb);
+
+/**
+ * Queries the amount of RAM that is currently locked down or in some other
+ * way made impossible to virtualize within reasonably short time.
+ *
+ * The purposes of this API is, when combined with RTSystemQueryTotalRam, to
+ * be able to determin an absolute max limit for how much fixed memory it is
+ * (theoretically) possible to allocate (or lock down).
+ *
+ * The kind memory covered by this function includes:
+ *      - locked (wired) memory - like for instance RTR0MemObjLockUser
+ *        and RTR0MemObjLockKernel makes,
+ *      - kernel pools and heaps - like for instance the ring-0 variant
+ *        of RTMemAlloc taps into,
+ *      - fixed (not pagable) kernel allocations - like for instance
+ *        all the RTR0MemObjAlloc* functions makes,
+ *      - any similar memory that isn't easily swapped out, discarded,
+ *        or flushed to disk.
+ *
+ * This works against the value returned by RTSystemQueryTotalRam, and
+ * the value reported by this function can never be larger than what a
+ * call to RTSystemQueryTotalRam returns.
+ *
+ * The short time term here is relative to swapping to disk like in
+ * RTSystemQueryTotalRam. This could mean that (part of) the dirty buffers
+ * in the dynamic I/O cache could be included in the total. If the dynamic
+ * I/O cache isn't likely to either flush buffers when the load increases
+ * and put them back into normal circulation, they should be included in
+ * the memory accounted for here.
+ *
+ * @retval  VINF_SUCCESS and *pcb on sucess.
+ * @retval  VERR_NOT_SUPPORTED if the information isn't available on the
+ *          system in general. The caller must handle this scenario.
+ * @retval  VERR_ACCESS_DENIED if the information isn't accessible to the
+ *          caller.
+ *
+ * @param   pcb             Where to store the result (in bytes).
+ *
+ * @remarks This function could've been inverted and called
+ *          RTSystemQueryAvailableRam, but that might give impression that
+ *          it would be possible to allocate the amount of memory it
+ *          indicates for a single purpose, something which would be very
+ *          improbable on most systems.
+ *
+ * @remarks We might have to add another output parameter to this function
+ *          that indicates if some of the memory kinds listed above cannot
+ *          be accounted for on the system and therefore is not include in
+ *          the returned amount.
+ */
+RTDECL(int) RTSystemQueryUnavailableRam(uint64_t *pcb);
+
 
 /** @} */
 
