@@ -1158,15 +1158,6 @@ typedef struct PDMAPICHLPRC
      */
     DECLRCCALLBACKMEMBER(VMCPUID, pfnGetCpuId,(PPDMDEVINS pDevIns));
 
-    /**
-     * Sends SIPI to given virtual CPU.
-     *
-     * @param   pDevIns         The APIC device instance.
-     * @param   idCpu           Virtual CPU to perform SIPI on
-     * @param   iVector         SIPI vector
-     */
-    DECLRCCALLBACKMEMBER(void,  pfnSendSipi,(PPDMDEVINS pDevIns, VMCPUID idCpu, int iVector));
-
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
 } PDMAPICHLPRC;
@@ -1234,15 +1225,6 @@ typedef struct PDMAPICHLPR0
      * @param   pDevIns         The APIC device instance.
      */
     DECLR0CALLBACKMEMBER(VMCPUID, pfnGetCpuId,(PPDMDEVINS pDevIns));
-
-    /**
-     * Sends SIPI to given virtual CPU.
-     *
-     * @param   pDevIns         The APIC device instance.
-     * @param   idCpu           Virtual CPU to perform SIPI on
-     * @param   iVector         SIPI vector
-     */
-    DECLR0CALLBACKMEMBER(void,    pfnSendSipi,(PPDMDEVINS pDevIns, VMCPUID idCpu, int iVector));
 
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
@@ -1318,7 +1300,7 @@ typedef struct PDMAPICHLPR3
      * @param   idCpu           Virtual CPU to perform SIPI on
      * @param   iVector         SIPI vector
      */
-    DECLR3CALLBACKMEMBER(void,    pfnSendSipi,(PPDMDEVINS pDevIns, VMCPUID idCpu, int iVector));
+    DECLR3CALLBACKMEMBER(void,    pfnSendSipi,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t uVector));
 
     /**
      * Gets the address of the RC APIC helpers.
