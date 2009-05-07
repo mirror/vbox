@@ -551,7 +551,7 @@ VMMDECL(int) TMTimerDestroy(PTMTIMER pTimer)
          * Change to any of the DESTROY states if valid.
          */
         TMTIMERSTATE enmState = pTimer->enmState;
-        Log2(("TMTimerDestroy: pTimer=%p:{.enmState=%s, .pszDesc='%s'} cRetries=%d\n",
+        Log2(("TMTimerDestroy: %p:{.enmState=%s, .pszDesc='%s'} cRetries=%d\n",
               pTimer, tmTimerState(enmState), R3STRING(pTimer->pszDesc), cRetries));
         switch (enmState)
         {
@@ -652,7 +652,7 @@ VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
          * Change to any of the SET_EXPIRE states if valid and then to SCHEDULE or RESCHEDULE.
          */
         TMTIMERSTATE    enmState = pTimer->enmState;
-        Log2(("TMTimerSet: pTimer=%p:{.enmState=%s, .pszDesc='%s'} cRetries=%d u64Expire=%llu\n",
+        Log2(("TMTimerSet: %p:{.enmState=%s, .pszDesc='%s'} cRetries=%d u64Expire=%llu\n",
               pTimer, tmTimerState(enmState), R3STRING(pTimer->pszDesc), cRetries, u64Expire));
         switch (enmState)
         {
@@ -678,8 +678,6 @@ VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
             case TMTIMERSTATE_PENDING_STOP_SCHEDULE:
                 if (tmTimerTry(pTimer, TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE, enmState))
                 {
-                    Assert(!pTimer->offPrev);
-                    Assert(!pTimer->offNext);
                     pTimer->u64Expire = u64Expire;
                     TM_SET_STATE(pTimer, TMTIMERSTATE_PENDING_SCHEDULE);
                     tmSchedule(pTimer);
@@ -864,7 +862,7 @@ VMMDECL(int) TMTimerStop(PTMTIMER pTimer)
          * Change to any of the SET_EXPIRE states if valid and then to SCHEDULE or RESCHEDULE.
          */
         TMTIMERSTATE    enmState = pTimer->enmState;
-        Log2(("TMTimerStop: pTimer=%p:{.enmState=%s, .pszDesc='%s'} cRetries=%d\n",
+        Log2(("TMTimerStop: %p:{.enmState=%s, .pszDesc='%s'} cRetries=%d\n",
               pTimer, tmTimerState(enmState), R3STRING(pTimer->pszDesc), cRetries));
         switch (enmState)
         {
@@ -1350,19 +1348,22 @@ const char *tmTimerState(TMTIMERSTATE enmState)
 {
     switch (enmState)
     {
-#define CASE(state) case state: return #state + sizeof("TMTIMERSTATE_") - 1
-        CASE(TMTIMERSTATE_STOPPED);
-        CASE(TMTIMERSTATE_ACTIVE);
-        CASE(TMTIMERSTATE_EXPIRED);
-        CASE(TMTIMERSTATE_PENDING_STOP);
-        CASE(TMTIMERSTATE_PENDING_STOP_SCHEDULE);
-        CASE(TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE);
-        CASE(TMTIMERSTATE_PENDING_SCHEDULE);
-        CASE(TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE);
-        CASE(TMTIMERSTATE_PENDING_RESCHEDULE);
-        CASE(TMTIMERSTATE_PENDING_STOP_DESTROY);
-        CASE(TMTIMERSTATE_PENDING_DESTROY);
-        CASE(TMTIMERSTATE_FREE);
+#define CASE(num, state) \
+            case TMTIMERSTATE_##state: \
+                AssertCompile(TMTIMERSTATE_##state == (num)); \
+                return #num "-" #state
+        CASE( 1,STOPPED);
+        CASE( 2,ACTIVE);
+        CASE( 3,EXPIRED);
+        CASE( 4,PENDING_STOP);
+        CASE( 5,PENDING_STOP_SCHEDULE);
+        CASE( 6,PENDING_SCHEDULE_SET_EXPIRE);
+        CASE( 7,PENDING_SCHEDULE);
+        CASE( 8,PENDING_RESCHEDULE_SET_EXPIRE);
+        CASE( 9,PENDING_RESCHEDULE);
+        CASE(10,PENDING_STOP_DESTROY);
+        CASE(11,PENDING_DESTROY);
+        CASE(12,FREE);
         default:
             AssertMsgFailed(("Invalid state enmState=%d\n", enmState));
             return "Invalid state!";
@@ -1599,10 +1600,10 @@ void tmTimerQueueSchedule(PVM pVM, PTMTIMERQUEUE pQueue)
         /*
          * Do the scheduling.
          */
-        Log2(("tmTimerQueueSchedule: pTimer=%p:{.enmState=%s, .enmClock=%d, .enmType=%d, .pszDesc=%s}\n",
+        Log2(("tmTimerQueueSchedule: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, .pszDesc=%s}\n",
               pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, R3STRING(pTimer->pszDesc)));
         tmTimerQueueScheduleOne(pQueue, pTimer);
-        Log2(("tmTimerQueueSchedule: new %s\n", tmTimerState(pTimer->enmState)));
+        Log2(("tmTimerQueueSchedule: %p: new %s\n", pTimer, tmTimerState(pTimer->enmState)));
     } /* foreach timer in current schedule batch. */
 }
 
@@ -1635,7 +1636,9 @@ void tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere)
             switch (enmState)
             {
                 case TMTIMERSTATE_ACTIVE:
-                    AssertMsg(!pCur->offScheduleNext, ("%s: %RI32\n", pszWhere, pCur->offScheduleNext));
+                    AssertMsg(  !pCur->offScheduleNext
+                              || pCur->enmState != TMTIMERSTATE_ACTIVE,
+                              ("%s: %RI32\n", pszWhere, pCur->offScheduleNext));
                     break;
                 case TMTIMERSTATE_PENDING_STOP:
                 case TMTIMERSTATE_PENDING_STOP_DESTROY:
