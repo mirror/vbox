@@ -2871,7 +2871,8 @@ typedef PGMCPU *PPGMCPU;
 /** Check guest mapping in SyncCR3. */
 #define PGM_SYNC_MAP_CR3                        RT_BIT(3)
 /** Clear the page pool (a light weight flush). */
-#define PGM_GLOBAL_SYNC_CLEAR_PGM_POOL          RT_BIT(8)
+#define PGM_GLOBAL_SYNC_CLEAR_PGM_POOL_BIT      8
+#define PGM_GLOBAL_SYNC_CLEAR_PGM_POOL          RT_BIT(PGM_GLOBAL_SYNC_CLEAR_PGM_POOL_BIT)
 /** @} */
 
 
