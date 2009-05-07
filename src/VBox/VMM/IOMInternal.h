@@ -27,6 +27,7 @@
 #include <VBox/iom.h>
 #include <VBox/stam.h>
 #include <VBox/pgm.h>
+#include <VBox/pdmcritsect.h>
 #include <VBox/param.h>
 #include <iprt/avl.h>
 
@@ -326,6 +327,9 @@ typedef struct IOM
     RTRCPTR                         padding;
 #endif
 
+    /** Lock serializing EMT access to IOM. */
+    PDMCRITSECT                     EmtLock;
+
     /** @name Caching of I/O Port and MMIO ranges and statistics.
      * (Saves quite some time in rep outs/ins instruction emulation.)
      * @{ */
@@ -521,9 +525,14 @@ DECLINLINE(PIOMMMIOSTATS) iomMMIOGetStats(PIOM pIOM, RTGCPHYS GCPhys, PIOMMMIORA
 }
 #endif
 
+/* IOM locking helpers. */
+int     iomLock(PVM pVM);
+int     iomTryLock(PVM pVM);
+void    iomUnlock(PVM pVM);
+
 /* Disassembly helpers used in IOMAll.cpp & IOMAllMMIO.cpp */
-bool iomGetRegImmData(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRegFrame, uint64_t *pu64Data, unsigned *pcbSize);
-bool iomSaveDataToReg(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRegFrame, uint64_t u32Data);
+bool    iomGetRegImmData(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRegFrame, uint64_t *pu64Data, unsigned *pcbSize);
+bool    iomSaveDataToReg(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRegFrame, uint64_t u32Data);
 
 __END_DECLS
 
