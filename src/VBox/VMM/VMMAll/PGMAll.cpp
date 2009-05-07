@@ -2019,6 +2019,17 @@ VMMDECL(const char *) PGMGetModeName(PGMMODE enmMode)
 
 
 /**
+ * Check if the PGM lock is currently taken.
+ *
+ * @returns bool locked/not locked
+ * @param   pVM         The VM to operate on.
+ */
+VMMDECL(bool) PGMIsLocked(PVM pVM)
+{
+    return PDMCritSectIsLocked(&pVM->pgm.s.CritSect);
+}
+
+/**
  * Acquire the PGM lock.
  *
  * @returns VBox status code

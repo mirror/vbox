@@ -303,6 +303,18 @@ VMMDECL(bool) PDMCritSectIsOwnerEx(PCPDMCRITSECT pCritSect, VMCPUID idCpu)
 #endif
 }
 
+/**
+ * Checks if somebody currently owns the critical section. 
+ * Note: This doesn't prove that no deadlocks will occur later on; it's just a debugging tool
+ *
+ * @returns true if locked.
+ * @returns false if not locked.
+ * @param   pCritSect   The critical section.
+ */
+VMMDECL(bool) PDMCritSectIsLocked(PCPDMCRITSECT pCritSect)
+{
+    return pCritSect->s.Core.NativeThreadOwner != NIL_RTNATIVETHREAD;
+}
 
 /**
  * Checks if a critical section is initialized or not.
