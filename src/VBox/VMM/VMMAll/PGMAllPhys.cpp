@@ -1419,7 +1419,11 @@ static int pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *pv
 
         Log5(("pgmPhysReadHandler: GCPhys=%RGp cb=%#x pPage=%R[pgmpage] phys %s\n", GCPhys, cb, pPage, R3STRING(pPhys->pszDesc) ));
         STAM_PROFILE_START(&pPhys->Stat, h);
+        Assert(PGMIsLockOwner(pVM));
+        /* Release the PGM lock as MMIO handlers take the IOM lock. (deadlock prevention) */
+        pgmUnlock(pVM);
         rc = pPhys->CTX_SUFF(pfnHandler)(pVM, GCPhys, (void *)pvSrc, pvBuf, cb, PGMACCESSTYPE_READ, pPhys->CTX_SUFF(pvUser));
+        pgmLock(pVM);
         STAM_PROFILE_STOP(&pPhys->Stat, h);
         AssertLogRelMsg(rc == VINF_SUCCESS || rc == VINF_PGM_HANDLER_DO_DEFAULT, ("rc=%Rrc GCPhys=%RGp\n", rc, GCPhys));
 #else
@@ -1645,7 +1649,11 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
             if (RT_SUCCESS(rc))
             {
                 STAM_PROFILE_START(&pCur->Stat, h);
+                Assert(PGMIsLockOwner(pVM));
+                /* Release the PGM lock as MMIO handlers take the IOM lock. (deadlock prevention) */
+                pgmUnlock(pVM);
                 rc = pCur->CTX_SUFF(pfnHandler)(pVM, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, pCur->CTX_SUFF(pvUser));
+                pgmLock(pVM);
                 STAM_PROFILE_STOP(&pCur->Stat, h);
                 if (rc == VINF_PGM_HANDLER_DO_DEFAULT)
                     memcpy(pvDst, pvBuf, cbRange);
@@ -1844,7 +1852,11 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
 #ifdef IN_RING3
             Log5(("pgmPhysWriteHandler: GCPhys=%RGp cbRange=%#x pPage=%R[pgmpage] phys %s\n", GCPhys, cbRange, pPage, R3STRING(pPhys->pszDesc) ));
             STAM_PROFILE_START(&pPhys->Stat, h);
+            Assert(PGMIsLockOwner(pVM));
+            /* Release the PGM lock as MMIO handlers take the IOM lock. (deadlock prevention) */
+            pgmUnlock(pVM);
             rc = pPhys->CTX_SUFF(pfnHandler)(pVM, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, pPhys->CTX_SUFF(pvUser));
+            pgmLock(pVM);
             STAM_PROFILE_STOP(&pPhys->Stat, h);
             AssertLogRelMsg(rc == VINF_SUCCESS || rc == VINF_PGM_HANDLER_DO_DEFAULT, ("rc=%Rrc GCPhys=%RGp pPage=%R[pgmpage] %s\n", rc, GCPhys, pPage, pPhys->pszDesc));
             pPhys = NULL;
@@ -1901,7 +1913,11 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
             Log5(("pgmPhysWriteHandler: GCPhys=%RGp cbRange=%#x pPage=%R[pgmpage] phys/virt %s/%s\n", GCPhys, cbRange, pPage, R3STRING(pPhys->pszDesc), R3STRING(pVirt->pszDesc) ));
 
             STAM_PROFILE_START(&pPhys->Stat, h);
+            Assert(PGMIsLockOwner(pVM));
+            /* Release the PGM lock as MMIO handlers take the IOM lock. (deadlock prevention) */
+            pgmUnlock(pVM);
             rc = pPhys->CTX_SUFF(pfnHandler)(pVM, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, pPhys->CTX_SUFF(pvUser));
+            pgmLock(pVM);
             STAM_PROFILE_STOP(&pPhys->Stat, h);
             AssertLogRelMsg(rc == VINF_SUCCESS || rc == VINF_PGM_HANDLER_DO_DEFAULT, ("rc=%Rrc GCPhys=%RGp pPage=%R[pgmpage] %s\n", rc, GCPhys, pPage, pPhys->pszDesc));
             if (pVirt->pfnHandlerR3)
