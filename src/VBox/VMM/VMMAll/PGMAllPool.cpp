@@ -2080,7 +2080,7 @@ int pgmPoolSyncCR3(PVM pVM)
      * sometimes refered to as a 'lightweight flush'.
      */
 # ifdef IN_RING3 /* Don't flush in ring-0 or raw mode, it's taking too long. */
-    if (ASMBitTestAndClear(&pVM->pgm.s.fGlobalSyncFlags, PGM_GLOBAL_SYNC_CLEAR_PGM_POOL))
+    if (ASMBitTestAndClear(&pVM->pgm.s.fGlobalSyncFlags, PGM_GLOBAL_SYNC_CLEAR_PGM_POOL_BIT))
     {
         /** @todo SMP support! */
         Assert(pVM->cCPUs == 1);
