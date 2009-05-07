@@ -1026,7 +1026,7 @@ typedef struct PDMAPICREG
      * way of doing this would involve some way of querying GC interfaces
      * and relocating them. Perhaps doing some kind of device init in GC...
      *
-     * @returns The current TPR.
+     * @returns status code.
      * @param   pDevIns         Device instance of the APIC.
      * @param   u8Dest          See APIC implementation.
      * @param   u8DestMode      See APIC implementation.
@@ -1035,7 +1035,7 @@ typedef struct PDMAPICREG
      * @param   u8Polarity      See APIC implementation.
      * @param   u8TriggerMode   See APIC implementation.
      */
-    DECLR3CALLBACKMEMBER(void, pfnBusDeliverR3,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
+    DECLR3CALLBACKMEMBER(int,  pfnBusDeliverR3,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                 uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode));
 
     /** The name of the RC GetInterrupt entry point. */
@@ -1301,6 +1301,15 @@ typedef struct PDMAPICHLPR3
      * @param   iVector         SIPI vector
      */
     DECLR3CALLBACKMEMBER(void,    pfnSendSipi,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t uVector));
+    
+    /**
+     * Sends init IPI to given virtual CPU, should result in reset and 
+     * halting till SIPI.
+     *
+     * @param   pDevIns         The APIC device instance.
+     * @param   idCpu           Virtual CPU to perform SIPI on
+     */
+    DECLR3CALLBACKMEMBER(void,    pfnSendInitIpi,(PPDMDEVINS pDevIns, VMCPUID idCpu));
 
     /**
      * Gets the address of the RC APIC helpers.
@@ -1379,7 +1388,7 @@ typedef struct PDMIOAPICHLPRC
      *
      * See comments about this hack on PDMAPICREG::pfnBusDeliverR3.
      *
-     * @returns The current TPR.
+     * @returns status code.
      * @param   pDevIns         Device instance of the IOAPIC.
      * @param   u8Dest          See APIC implementation.
      * @param   u8DestMode      See APIC implementation.
@@ -1388,7 +1397,7 @@ typedef struct PDMIOAPICHLPRC
      * @param   u8Polarity      See APIC implementation.
      * @param   u8TriggerMode   See APIC implementation.
      */
-    DECLRCCALLBACKMEMBER(void, pfnApicBusDeliver,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
+    DECLRCCALLBACKMEMBER(int, pfnApicBusDeliver,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                   uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode));
 
     /**
@@ -1433,7 +1442,7 @@ typedef struct PDMIOAPICHLPR0
      *
      * See comments about this hack on PDMAPICREG::pfnBusDeliverR3.
      *
-     * @returns The current TPR.
+     * @returns status code.
      * @param   pDevIns         Device instance of the IOAPIC.
      * @param   u8Dest          See APIC implementation.
      * @param   u8DestMode      See APIC implementation.
@@ -1442,7 +1451,7 @@ typedef struct PDMIOAPICHLPR0
      * @param   u8Polarity      See APIC implementation.
      * @param   u8TriggerMode   See APIC implementation.
      */
-    DECLR0CALLBACKMEMBER(void, pfnApicBusDeliver,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
+    DECLR0CALLBACKMEMBER(int, pfnApicBusDeliver,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                   uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode));
 
     /**
@@ -1486,7 +1495,7 @@ typedef struct PDMIOAPICHLPR3
      *
      * See comments about this hack on PDMAPICREG::pfnBusDeliverR3.
      *
-     * @returns The current TPR.
+     * @returns status code
      * @param   pDevIns         Device instance of the IOAPIC.
      * @param   u8Dest          See APIC implementation.
      * @param   u8DestMode      See APIC implementation.
@@ -1495,7 +1504,7 @@ typedef struct PDMIOAPICHLPR3
      * @param   u8Polarity      See APIC implementation.
      * @param   u8TriggerMode   See APIC implementation.
      */
-    DECLR3CALLBACKMEMBER(void, pfnApicBusDeliver,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
+    DECLR3CALLBACKMEMBER(int, pfnApicBusDeliver,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                   uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode));
 
     /**

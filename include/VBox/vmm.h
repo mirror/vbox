@@ -159,6 +159,7 @@ VMMR3DECL(void)     VMMR3YieldSuspend(PVM pVM);
 VMMR3DECL(void)     VMMR3YieldStop(PVM pVM);
 VMMR3DECL(void)     VMMR3YieldResume(PVM pVM);
 VMMR3DECL(void)     VMMR3SendSipi(PVM pVM, VMCPUID idCpu, uint32_t uVector);
+VMMR3DECL(void)     VMMR3SendInitIpi(PVM pVM, VMCPUID idCpu);
 /** @} */
 #endif /* IN_RING3 */
 
