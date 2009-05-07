@@ -44,6 +44,8 @@
 #endif
 
 
+#ifndef tmLock
+
 /**
  * Try take the EMT/TM lock, wait in ring-3 return VERR_SEM_BUSY in R0/RC.
  *
@@ -86,6 +88,7 @@ void tmUnlock(PVM pVM)
     PDMCritSectLeave(&pVM->tm.s.EmtLock);
 }
 
+#endif /* ! macros */
 
 /**
  * Notification that execution is about to start.
