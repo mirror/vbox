@@ -29,7 +29,7 @@
  * The configuration is normally created via a callback passed to VMR3Create()
  * via the pfnCFGMConstructor parameter. To make testcase writing a bit simpler,
  * we allow the callback to be NULL, in which case a simple default
- * configuration will be created by cfgmR3CreateDefaultTree(). The
+ * configuration will be created by CFGMR3ConstructDefaultTree(). The
  * Console::configConstructor() method in Main/ConsoleImpl2.cpp creates the
  * configuration from the XML.
  *
@@ -75,7 +75,6 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static int  cfgmR3CreateDefaultTree(PVM pVM);
 static void cfgmR3DumpPath(PCFGMNODE pNode, PCDBGFINFOHLP pHlp);
 static void cfgmR3Dump(PCFGMNODE pRoot, unsigned iLevel, PCDBGFINFOHLP pHlp);
 static DECLCALLBACK(void) cfgmR3Info(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
@@ -113,27 +112,22 @@ VMMR3DECL(int) CFGMR3Init(PVM pVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *
     AssertRCReturn(rc,rc);
 
     /*
-     * Create the configuration tree.
+     * Root Node.
      */
-    if (pfnCFGMConstructor)
-    {
-        /*
-         * Root Node.
-         */
-        PCFGMNODE pRoot = (PCFGMNODE)MMR3HeapAllocZ(pVM, MM_TAG_CFGM, sizeof(*pRoot));
-        if (!pRoot)
-            return VERR_NO_MEMORY;
-        pRoot->pVM           = pVM;
-        pRoot->cchName       = 0;
-        pVM->cfgm.s.pRoot   = pRoot;
+    PCFGMNODE pRoot = (PCFGMNODE)MMR3HeapAllocZ(pVM, MM_TAG_CFGM, sizeof(*pRoot));
+    if (!pRoot)
+        return VERR_NO_MEMORY;
+    pRoot->pVM        = pVM;
+    pRoot->cchName    = 0;
+    pVM->cfgm.s.pRoot = pRoot;
 
         /*
-         * Call the constructor.
+         * Call the constructor if specified, if not use the default one.
          */
+    if (pfnCFGMConstructor)
         rc = pfnCFGMConstructor(pVM, pvUser);
-    }
     else
-        rc = cfgmR3CreateDefaultTree(pVM);
+        rc = CFGMR3ConstructDefaultTree(pVM);
     if (RT_SUCCESS(rc))
     {
         Log(("CFGMR3Init: Successfully constructed the configuration\n"));
@@ -739,29 +733,22 @@ VMMR3DECL(int) CFGMR3QueryBytes(PCFGMNODE pNode, const char *pszName, void *pvDa
 
 
 /**
- * Creates the default configuration.
- * This assumes an empty tree.
+ * Populates the CFGM tree with the default configuration.
+ *
+ * This assumes an empty tree and is intended for testcases and such that only
+ * need to do very small adjustments to the config.
  *
  * @returns VBox status code.
  * @param   pVM     VM handle.
  */
-static int cfgmR3CreateDefaultTree(PVM pVM)
+VMMR3DECL(int) CFGMR3ConstructDefaultTree(PVM pVM)
 {
     int rc;
     int rcAll = VINF_SUCCESS;
 #define UPDATERC() do { if (RT_FAILURE(rc) && RT_SUCCESS(rcAll)) rcAll = rc; } while (0)
 
-    /*
-     * Root level.
-     */
-    PCFGMNODE pRoot = (PCFGMNODE)MMR3HeapAllocZ(pVM, MM_TAG_CFGM, sizeof(*pRoot));
-    if (!pRoot)
-        return VERR_NO_MEMORY;
-    pRoot->pVM           = pVM;
-    pRoot->cchName       = 0;
-
-    Assert(!pVM->cfgm.s.pRoot);
-    pVM->cfgm.s.pRoot   = pRoot;
+    PCFGMNODE pRoot = CFGMR3GetRoot(pVM);
+    AssertReturn(pRoot, VERR_WRONG_ORDER);
 
     /*
      * Create VM default values.

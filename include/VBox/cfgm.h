@@ -97,6 +97,7 @@ VMMR3DECL(int)          CFGMR3Term(PVM pVM);
 
 
 VMMR3DECL(PCFGMNODE)    CFGMR3CreateTree(PVM pVM);
+VMMR3DECL(int)          CFGMR3ConstructDefaultTree(PVM pVM);
 VMMR3DECL(void)         CFGMR3Dump(PCFGMNODE pRoot);
 VMMR3DECL(int)          CFGMR3InsertSubTree(PCFGMNODE pNode, const char *pszName, PCFGMNODE pSubTree, PCFGMNODE *ppChild);
 VMMR3DECL(int)          CFGMR3InsertNode(PCFGMNODE pNode, const char *pszName, PCFGMNODE *ppChild);
