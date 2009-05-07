@@ -1351,7 +1351,7 @@ VMMR3DECL(int) TMR3TimerDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
         if (    pDestroy->enmType == TMTIMERTYPE_DEV
             &&  pDestroy->u.Dev.pDevIns == pDevIns)
         {
-            int rc = TMTimerDestroy(pDestroy);
+            int rc = TMR3TimerDestroy(pDestroy);
             AssertRC(rc);
         }
     }
@@ -1384,7 +1384,7 @@ VMMR3DECL(int) TMR3TimerDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
         if (    pDestroy->enmType == TMTIMERTYPE_DRV
             &&  pDestroy->u.Drv.pDrvIns == pDrvIns)
         {
-            int rc = TMTimerDestroy(pDestroy);
+            int rc = TMR3TimerDestroy(pDestroy);
             AssertRC(rc);
         }
     }

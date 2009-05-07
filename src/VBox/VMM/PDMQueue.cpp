@@ -126,7 +126,7 @@ static int pdmR3QueueCreate(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMil
             if (RT_FAILURE(rc))
             {
                 AssertMsgFailed(("TMTimerSetMillies failed rc=%Rrc\n", rc));
-                int rc2 = TMTimerDestroy(pQueue->pTimer); AssertRC(rc2);
+                int rc2 = TMR3TimerDestroy(pQueue->pTimer); AssertRC(rc2);
             }
         }
         else
@@ -437,7 +437,7 @@ VMMR3DECL(int) PDMR3QueueDestroy(PPDMQUEUE pQueue)
      */
     if (pQueue->pTimer)
     {
-        TMTimerDestroy(pQueue->pTimer);
+        TMR3TimerDestroy(pQueue->pTimer);
         pQueue->pTimer = NULL;
     }
     if (pQueue->pVMRC)
