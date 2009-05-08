@@ -720,12 +720,12 @@ const AttributeNode* ElementNode::findAttribute(const char *pcszMatch) const
  * @param str out: attribute value
  * @return TRUE if attribute was found and str was thus updated.
  */
-bool ElementNode::getAttributeValue(const char *pcszMatch, com::Utf8Str &str) const
+bool ElementNode::getAttributeValue(const char *pcszMatch, const char *&ppcsz) const
 {
     const Node* pAttr;
     if ((pAttr = findAttribute(pcszMatch)))
     {
-        str = pAttr->getValue();
+        ppcsz = pAttr->getValue();
         return true;
     }
 
@@ -744,9 +744,9 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, com::Utf8Str &str) co
  */
 bool ElementNode::getAttributeValue(const char *pcszMatch, int64_t &i) const
 {
-    com::Utf8Str str;
-    if (    (getAttributeValue(pcszMatch, str))
-         && (VINF_SUCCESS == RTStrToInt64Ex(str.c_str(), NULL, 10, &i))
+    const char *pcsz;
+    if (    (getAttributeValue(pcszMatch, pcsz))
+         && (VINF_SUCCESS == RTStrToInt64Ex(pcsz, NULL, 10, &i))
        )
         return true;
 
@@ -765,9 +765,9 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, int64_t &i) const
  */
 bool ElementNode::getAttributeValue(const char *pcszMatch, uint64_t &i) const
 {
-    com::Utf8Str str;
-    if (    (getAttributeValue(pcszMatch, str))
-         && (VINF_SUCCESS == RTStrToUInt64Ex(str.c_str(), NULL, 10, &i))
+    const char *pcsz;
+    if (    (getAttributeValue(pcszMatch, pcsz))
+         && (VINF_SUCCESS == RTStrToUInt64Ex(pcsz, NULL, 10, &i))
        )
         return true;
 
