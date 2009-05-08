@@ -787,9 +787,7 @@ VBoxRT_SOURCES                += \
 endif
 VBoxRT_SOURCES.$(KBUILD_TARGET) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET))
 VBoxRT_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
-VBoxRT_SOURCES.win            += r3/win/dllmain-win.cpp
-VBoxRT_SOURCES.win.x86        += r3/win/VBoxRT-win32.def
-VBoxRT_SOURCES.win.amd64      += r3/win/VBoxRT-win64.def
+VBoxRT_SOURCES.win            += r3/win/dllmain-win.cpp $(VBoxRT_0_OUTDIR)/VBoxRT.def
 VBoxRT_INCS                    = $(RuntimeR3_INCS)
 VBoxRT_INCS.$(KBUILD_TARGET)   = $(RuntimeR3_INCS.$(KBUILD_TARGET))
 VBoxRT_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) = $(RuntimeR3_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
@@ -802,8 +800,14 @@ ifdef IPRT_WITH_KSTUFF
    	$(PATH_LIB)/VBox-kStuff$(VBOX_SUFF_LIB)
 endif
 ifdef VBOX_WITH_LIBXML2_IN_VBOXRT
- VBoxRT_LIBS                  += \
+ ifndef	SDK_VBOX_LIBXML2_LIBS
+  VBoxRT_LIBS                 += \
 	$(PATH_LIB)/VBox-libxml2$(VBOX_SUFF_LIB)
+ endif
+ ifndef	SDK_VBOX_OPENSSL_LIBS
+  VBoxRT_LIBS                 += \
+	$(PATH_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB)
+ endif
 endif
 VBoxRT_LIBS.darwin             = \
 	iconv
@@ -827,6 +831,17 @@ VBoxRT_LIBS                   += \
 endif
 VBoxRT_LIBS.l4                 = \
 	$(PATH_LIB)/RuntimeR3L4$(VBOX_SUFF_LIB)
+
+ifdef VBOX_WITH_LIBXML2_IN_VBOXRT
+VBox/VBoxRTDeps.cpp_DEFS = VBOX_WITH_LIBXML2_IN_VBOXRT
+endif
+
+$$(VBoxRT_0_OUTDIR)/VBoxRT.def: \
+		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-$$(if-expr $$(KBUILD_TARGET_ARCH) == amd64,win64,x86).def \
+		$(if-expr defined(VBOX_WITH_LIBXML2_IN_VBOXRT),$(PATH_SUB_CURRENT)/r3/win/VBoxRT-openssl.def,)
+	$(RM) -f -- $@
+	$(REDIRECT) -wto $@ -- $(CAT_EXT) $^
+
 
 #
 # HACK ALLERT! Make testcase run during build on SELinux boxes.
