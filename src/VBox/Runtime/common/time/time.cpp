@@ -234,6 +234,7 @@ DECLINLINE(bool) rtTimeIsLeapYear(int32_t i32Year)
             ||  i32Year % 400 == 0);
 }
 
+
 /**
  * Checks if a year is a leap year or not.
  *
