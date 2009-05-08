@@ -992,7 +992,8 @@ VMMR3DECL(int) VMR3WaitHalted(PVM pVM, PVMCPU pVCpu, bool fIgnoreInterrupts)
      * The yielder is suspended while we're halting, while TM might have clock(s) running
      * only at certain times and need to be notified..
      */
-    VMMR3YieldSuspend(pVM);
+    if (pVCpu->idCpu == 0)
+        VMMR3YieldSuspend(pVM);
     TMNotifyStartOfHalt(pVCpu);
 
     /*
@@ -1031,7 +1032,8 @@ VMMR3DECL(int) VMR3WaitHalted(PVM pVM, PVMCPU pVCpu, bool fIgnoreInterrupts)
      * Notify TM and resume the yielder
      */
     TMNotifyEndOfHalt(pVCpu);
-    VMMR3YieldResume(pVM);
+    if (pVCpu->idCpu == 0)
+        VMMR3YieldResume(pVM);
 
     LogFlow(("VMR3WaitHalted: returns %Rrc (FF %#x)\n", rc, pVM->fGlobalForcedActions));
     return rc;
