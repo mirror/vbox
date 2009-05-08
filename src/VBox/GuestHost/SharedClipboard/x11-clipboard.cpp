@@ -20,6 +20,12 @@
  * additional information or have any questions.
  */
 
+/* Note: to automatically run regression tests on the shared clipboard, set
+ * the make variable VBOX_RUN_X11_CLIPBOARD_TEST=1 while building.  If you
+ * often make changes to the clipboard code, setting this variable in
+ * LocalConfig.kmk will cause the tests to be run every time the code is
+ * changed. */
+
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 
 #include <errno.h>
@@ -387,7 +393,6 @@ static int vboxClipboardGetLatin1FromX11(VBOXCLIPBOARDCONTEXTX11 *pCtx,
                                          unsigned cbSourceLen, void *pv,
                                          unsigned cb, uint32_t *pcbActual)
 {
-    unsigned cwDestLen = cbSourceLen;
     char *pu8SourceText = reinterpret_cast<char *>(pValue);
     PRTUTF16 pu16DestText = reinterpret_cast<PRTUTF16>(pv);
     int rc = VINF_SUCCESS;
@@ -395,9 +400,15 @@ static int vboxClipboardGetLatin1FromX11(VBOXCLIPBOARDCONTEXTX11 *pCtx,
     LogFlowFunc (("converting Latin1 to Utf-16LE.  Original is %.*s\n",
                   cbSourceLen, pu8SourceText));
     *pcbActual = 0;  /* Only set this to the right value on success. */
-    for (unsigned i = 0; i < cbSourceLen; i++)
+    unsigned cwDestLen = 0;
+    for (unsigned i = 0; i < cbSourceLen && pu8SourceText[i] != '\0'; i++)
+    {
+        ++cwDestLen;
         if (pu8SourceText[i] == LINEFEED)
             ++cwDestLen;
+    }
+    /* Leave space for the terminator */
+    ++cwDestLen;
     if (cb < cwDestLen * 2)
     {
         /* Not enough buffer space provided - report the amount needed. */
@@ -1057,6 +1068,7 @@ static int vboxClipboardReadVBoxData (VBOXCLIPBOARDCONTEXTX11 *pCtx,
  */
 static Boolean vboxClipboardConvertToUtf8ForX11(VBOXCLIPBOARDCONTEXTX11
                                                                       *pCtx,
+                                                Atom *atomTarget,
                                                 Atom *atomTypeReturn,
                                                 XtPointer *pValReturn,
                                                 unsigned long *pcLenReturn,
@@ -1137,7 +1149,7 @@ static Boolean vboxClipboardConvertToUtf8ForX11(VBOXCLIPBOARDCONTEXTX11
     }
     LogFlowFunc (("converted string is %.*s. Returning.\n", cbDestLen, pu8DestText));
     RTMemFree(pvVBox);
-    *atomTypeReturn = clipGetAtom(pCtx->widget, "UTF8_STRING");
+    *atomTypeReturn = *atomTarget;
     *pValReturn = reinterpret_cast<XtPointer>(pu8DestText);
     *pcLenReturn = cbDestLen + 1;
     *piFormatReturn = 8;
@@ -1335,7 +1347,8 @@ static Boolean vboxClipboardConvertForX11(Widget widget, Atom *atomSelection,
                                                  pValReturn, pcLenReturn,
                                                  piFormatReturn);
     case UTF8:
-        return vboxClipboardConvertToUtf8ForX11(pCtx, atomTypeReturn,
+        return vboxClipboardConvertToUtf8ForX11(pCtx, atomTarget,
+                                                atomTypeReturn,
                                                 pValReturn, pcLenReturn,
                                                 piFormatReturn);
     case CTEXT:
@@ -1612,14 +1625,14 @@ static void clipEmptyVBox(VBOXCLIPBOARDCONTEXTX11 *pCtx, int retval)
 
 /* Set the data in the simulated VBox clipboard. */
 static int clipSetVBoxUtf16(VBOXCLIPBOARDCONTEXTX11 *pCtx, int retval,
-                            const char *pcszData)
+                            const char *pcszData, size_t cb)
 {
     PRTUTF16 pwszData = NULL;
     size_t cwData = 0;
     int rc = RTStrToUtf16Ex(pcszData, RTSTR_MAX, &pwszData, 0, &cwData);
     if (RT_FAILURE(rc))
         return rc;
-    size_t cb = cwData * 2 + 2;
+    AssertReturn(cb <= cwData * 2 + 2, VERR_BUFFER_OVERFLOW);
     void *pv = RTMemDup(pwszData, cb);
     RTUtf16Free(pwszData);
     if (pv == NULL)
@@ -2143,89 +2156,126 @@ int main()
     int rc = VBoxX11ClipboardStartX11(pCtx);
     AssertRCReturn(rc, 1);
 
-    /***********/
+    /*** Utf-8 from X11 ***/
     RTPrintf(TEST_NAME ": TESTING reading Utf-8 from X11\n");
+    /* Simple test */
     clipSetSelectionValues("UTF8_STRING", XA_STRING, "hello world",
                            sizeof("hello world"), 8);
     if (!testStringFromX11(pCtx, 256, "hello world", VINF_SUCCESS))
         ++cErrs;
+    /* Receiving buffer of the exact size needed */
     if (!testStringFromX11(pCtx, sizeof("hello world") * 2, "hello world",
                            VINF_SUCCESS))
         ++cErrs;
+    /* Buffer one too small */
     if (!testStringFromX11(pCtx, sizeof("hello world") * 2 - 1, "hello world",
                            VERR_BUFFER_OVERFLOW))
         ++cErrs;
+    /* Zero-size buffer */
     if (!testStringFromX11(pCtx, 0, "hello world", VERR_BUFFER_OVERFLOW))
         ++cErrs;
-    clipSetSelectionValues("UTF8_STRING", XA_STRING, "hello world\n",
-                           sizeof("hello world\n"), 8);
-    if (!testStringFromX11(pCtx, sizeof("hello world\r\n") * 2,
-                           "hello world\r\n", VINF_SUCCESS))
+    /* With an embedded carriage return */
+    clipSetSelectionValues("text/plain;charset=UTF-8", XA_STRING,
+                           "hello\nworld", sizeof("hello\nworld"), 8);
+    if (!testStringFromX11(pCtx, sizeof("hello\r\nworld") * 2,
+                           "hello\r\nworld", VINF_SUCCESS))
         ++cErrs;
-    clipSetSelectionValues("UTF8_STRING", XA_STRING, "",
+    /* An empty string */
+    clipSetSelectionValues("text/plain;charset=utf-8", XA_STRING, "",
                            sizeof(""), 8);
     if (!testStringFromX11(pCtx, sizeof("") * 2, "", VINF_SUCCESS))
         ++cErrs;
-    /* This next one is Utf-8 only. */
-    clipSetSelectionValues("UTF8_STRING", XA_STRING,
+    /* With an embedded Utf-8 character. */
+    clipSetSelectionValues("STRING", XA_STRING,
                            "100\xE2\x82\xAC" /* 100 Euro */,
                            sizeof("100\xE2\x82\xAC"), 8);
     if (!testStringFromX11(pCtx, sizeof("100\xE2\x82\xAC") * 2,
                            "100\xE2\x82\xAC", VINF_SUCCESS))
         ++cErrs;
+    /* A non-zero-terminated string */
+    clipSetSelectionValues("TEXT", XA_STRING,
+                           "hello world", sizeof("hello world") - 2, 8);
+    if (!testStringFromX11(pCtx, sizeof("hello world") * 2 - 2,
+                           "hello worl", VINF_SUCCESS))
+        ++cErrs;
 
-    /***********/
+    /*** COMPOUND TEXT from X11 ***/
     RTPrintf(TEST_NAME ": TESTING reading compound text from X11\n");
+    /* Simple test */
     clipSetSelectionValues("COMPOUND_TEXT", XA_STRING, "hello world",
                            sizeof("hello world"), 8);
     if (!testStringFromX11(pCtx, 256, "hello world", VINF_SUCCESS))
         ++cErrs;
+    /* Receiving buffer of the exact size needed */
     if (!testStringFromX11(pCtx, sizeof("hello world") * 2, "hello world",
                            VINF_SUCCESS))
         ++cErrs;
+    /* Buffer one too small */
     if (!testStringFromX11(pCtx, sizeof("hello world") * 2 - 1, "hello world",
                            VERR_BUFFER_OVERFLOW))
         ++cErrs;
+    /* Zero-size buffer */
     if (!testStringFromX11(pCtx, 0, "hello world", VERR_BUFFER_OVERFLOW))
         ++cErrs;
-    clipSetSelectionValues("COMPOUND_TEXT", XA_STRING, "hello world\n",
-                           sizeof("hello world\n"), 8);
-    if (!testStringFromX11(pCtx, sizeof("hello world\r\n") * 2,
-                           "hello world\r\n", VINF_SUCCESS))
+    /* With an embedded carriage return */
+    clipSetSelectionValues("COMPOUND_TEXT", XA_STRING, "hello\nworld",
+                           sizeof("hello\nworld"), 8);
+    if (!testStringFromX11(pCtx, sizeof("hello\r\nworld") * 2,
+                           "hello\r\nworld", VINF_SUCCESS))
         ++cErrs;
+    /* An empty string */
     clipSetSelectionValues("COMPOUND_TEXT", XA_STRING, "",
                            sizeof(""), 8);
     if (!testStringFromX11(pCtx, sizeof("") * 2, "", VINF_SUCCESS))
         ++cErrs;
+    /* A non-zero-terminated string */
+    clipSetSelectionValues("COMPOUND_TEXT", XA_STRING,
+                           "hello world", sizeof("hello world") - 2, 8);
+    if (!testStringFromX11(pCtx, sizeof("hello world") * 2 - 2,
+                           "hello worl", VINF_SUCCESS))
+        ++cErrs;
 
-    /***********/
+    /*** Latin1 from X11 ***/
     RTPrintf(TEST_NAME ": TESTING reading Latin1 from X11\n");
+    /* Simple test */
     clipSetSelectionValues("STRING", XA_STRING, "Georges Dupr\xEA",
                            sizeof("Georges Dupr\xEA"), 8);
     if (!testLatin1FromX11(pCtx, 256, "Georges Dupr\xEA", VINF_SUCCESS))
         ++cErrs;
+    /* Receiving buffer of the exact size needed */
     if (!testLatin1FromX11(pCtx, sizeof("Georges Dupr\xEA") * 2,
                            "Georges Dupr\xEA", VINF_SUCCESS))
         ++cErrs;
+    /* Buffer one too small */
     if (!testLatin1FromX11(pCtx, sizeof("Georges Dupr\xEA") * 2 - 1,
                            "Georges Dupr\xEA", VERR_BUFFER_OVERFLOW))
         ++cErrs;
+    /* Zero-size buffer */
     if (!testLatin1FromX11(pCtx, 0, "Georges Dupr\xEA", VERR_BUFFER_OVERFLOW))
         ++cErrs;
-    clipSetSelectionValues("TEXT", XA_STRING, "Georges Dupr\xEA\n",
-                           sizeof("Georges Dupr\xEA\n"), 8);
-    if (!testLatin1FromX11(pCtx, sizeof("Georges Dupr\xEA\r\n") * 2,
-                           "Georges Dupr\xEA\r\n", VINF_SUCCESS))
+    /* With an embedded carriage return */
+    clipSetSelectionValues("TEXT", XA_STRING, "Georges\nDupr\xEA",
+                           sizeof("Georges\nDupr\xEA"), 8);
+    if (!testLatin1FromX11(pCtx, sizeof("Georges\r\nDupr\xEA") * 2,
+                           "Georges\r\nDupr\xEA", VINF_SUCCESS))
+        ++cErrs;
+    /* A non-zero-terminated string */
+    clipSetSelectionValues("text/plain", XA_STRING,
+                           "Georges Dupr\xEA!",
+                           sizeof("Georges Dupr\xEA!") - 2, 8);
+    if (!testLatin1FromX11(pCtx, sizeof("Georges Dupr\xEA!") * 2 - 2,
+                           "Georges Dupr\xEA", VINF_SUCCESS))
         ++cErrs;
 
-    /***********/
+
+    /*** Timeout from X11 ***/
     RTPrintf(TEST_NAME ": TESTING X11 timeout\n");
     clipSetSelectionValues("UTF8_STRING", XT_CONVERT_FAIL, "hello world",
                            sizeof("hello world"), 8);
     if (!testStringFromX11(pCtx, 256, "hello world", VERR_TIMEOUT))
         ++cErrs;
 
-    /***********/
+    /*** No data in X11 clipboard ***/
     RTPrintf(TEST_NAME ": TESTING a data request from an empty X11 clipboard\n");
     clipSetSelectionValues("UTF8_STRING", XA_STRING, NULL,
                            0, 8);
@@ -2238,7 +2288,7 @@ int main()
         ++cErrs;
     }
 
-    /***********/
+    /*** request for an invalid VBox format from X11 ***/
     RTPrintf(TEST_NAME ": TESTING a request for an invalid host format from X11\n");
     rc = VBoxX11ClipboardReadX11Data(pCtx, 0xffff, (void *) pc,
                                      sizeof(pc), &cbActual);
@@ -2248,55 +2298,80 @@ int main()
         ++cErrs;
     }
 
-    /***********/
+    /*** Utf-8 from VBox ***/
     RTPrintf(TEST_NAME ": TESTING reading Utf-8 from VBox\n");
-    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello world");
+    /* Simple test */
+    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello world",
+                     sizeof("hello world") * 2);
     if (!testStringFromVBox(pCtx, "UTF8_STRING",
                             clipGetAtom(NULL, "UTF8_STRING"),
                             "hello world", sizeof("hello world"), 8))
         ++cErrs;
-    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello world\r\n");
-    if (!testStringFromVBox(pCtx, "UTF8_STRING",
-                            clipGetAtom(NULL, "UTF8_STRING"),
-                            "hello world\n", sizeof("hello world\n"), 8))
+    /* With an embedded carriage return */
+    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello\r\nworld",
+                     sizeof("hello\r\nworld") * 2);
+    if (!testStringFromVBox(pCtx, "text/plain;charset=UTF-8",
+                            clipGetAtom(NULL, "text/plain;charset=UTF-8"),
+                            "hello\nworld", sizeof("hello\nworld"), 8))
         ++cErrs;
-    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "");
-    if (!testStringFromVBox(pCtx, "UTF8_STRING",
-                            clipGetAtom(NULL, "UTF8_STRING"),
+    /* An empty string */
+    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "", 2);
+    if (!testStringFromVBox(pCtx, "text/plain;charset=utf-8",
+                            clipGetAtom(NULL, "text/plain;charset=utf-8"),
                             "", sizeof(""), 8))
         ++cErrs;
-    /* This next one is Utf-8 only. */
-    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "100\xE2\x82\xAC" /* 100 Euro */);
-    if (!testStringFromVBox(pCtx, "UTF8_STRING",
-                            clipGetAtom(NULL, "UTF8_STRING"),
+    /* With an embedded Utf-8 character. */
+    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "100\xE2\x82\xAC" /* 100 Euro */,
+                     10);
+    if (!testStringFromVBox(pCtx, "STRING",
+                            clipGetAtom(NULL, "STRING"),
                             "100\xE2\x82\xAC", sizeof("100\xE2\x82\xAC"), 8))
         ++cErrs;
+    /* A non-zero-terminated string */
+    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello world",
+                     sizeof("hello world") * 2 - 4);
+    if (!testStringFromVBox(pCtx, "TEXT",
+                            clipGetAtom(NULL, "TEXT"),
+                            "hello worl", sizeof("hello worl"), 8))
+        ++cErrs;
 
-    /***********/
+    /*** COMPOUND TEXT from VBox ***/
     RTPrintf(TEST_NAME ": TESTING reading COMPOUND TEXT from VBox\n");
-    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello world");
+    /* Simple test */
+    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello world",
+                     sizeof("hello world") * 2);
     if (!testStringFromVBox(pCtx, "COMPOUND_TEXT",
                             clipGetAtom(NULL, "COMPOUND_TEXT"),
                             "hello world", sizeof("hello world"), 8))
         ++cErrs;
-    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello world\r\n");
+    /* With an embedded carriage return */
+    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello\r\nworld",
+                     sizeof("hello\r\nworld") * 2);
     if (!testStringFromVBox(pCtx, "COMPOUND_TEXT",
                             clipGetAtom(NULL, "COMPOUND_TEXT"),
-                            "hello world\n", sizeof("hello world\n"), 8))
+                            "hello\nworld", sizeof("hello\nworld"), 8))
         ++cErrs;
-    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "");
+    /* An empty string */
+    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "", 2);
     if (!testStringFromVBox(pCtx, "COMPOUND_TEXT",
                             clipGetAtom(NULL, "COMPOUND_TEXT"),
                             "", sizeof(""), 8))
         ++cErrs;
+    /* A non-zero-terminated string */
+    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello world",
+                     sizeof("hello world") * 2 - 4);
+    if (!testStringFromVBox(pCtx, "COMPOUND_TEXT",
+                            clipGetAtom(NULL, "COMPOUND_TEXT"),
+                            "hello worl", sizeof("hello worl"), 8))
+        ++cErrs;
 
-    /***********/
+    /*** Timeout from VBox ***/
     RTPrintf(TEST_NAME ": TESTING reading from VBox with timeout\n");
     clipEmptyVBox(pCtx, VERR_TIMEOUT);
     if (!testStringFromVBoxFailed(pCtx, "UTF8_STRING"))
         ++cErrs;
 
-    /***********/
+    /*** No data in VBox clipboard ***/
     RTPrintf(TEST_NAME ": TESTING reading from VBox with no data\n");
     clipEmptyVBox(pCtx, VINF_SUCCESS);
     if (!testStringFromVBoxFailed(pCtx, "UTF8_STRING"))
