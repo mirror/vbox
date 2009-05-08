@@ -1491,7 +1491,7 @@
 #endif
 
 
-/** Size Constants
+/** @defgroup grp_rt_cdefs_size     Size Constants
  * (Of course, these are binary computer terms, not SI.)
  * @{
  */
@@ -1532,6 +1532,55 @@
 /** 2 E (Exa)  (2 305 843 009 213 693 952). */
 #define _2E             0x2000000000000000ULL
 /** @} */
+
+
+/** @defgroup grp_rt_cdefs_dbgtype  Debug Info Types
+ * @{ */
+/** Other format. */
+#define RT_DBGTYPE_OTHER        RT_BIT_32(0)
+/** Stabs. */
+#define RT_DBGTYPE_STABS        RT_BIT_32(1)
+/** Debug With Arbitrary Record Format (DWARF). */
+#define RT_DBGTYPE_DWARF        RT_BIT_32(2)
+/** Microsoft Codeview debug info. */
+#define RT_DBGTYPE_CODEVIEW     RT_BIT_32(3)
+/** Watcom debug info. */
+#define RT_DBGTYPE_WATCOM       RT_BIT_32(4)
+/** IBM High Level Language debug info. */
+#define RT_DBGTYPE_HLL          RT_BIT_32(5)
+/** Old OS/2 and Windows symbol file. */
+#define RT_DBGTYPE_SYM          RT_BIT_32(6)
+/** Map file. */
+#define RT_DBGTYPE_MAP          RT_BIT_32(7)
+/** @} */
+
+
+/** @defgroup grp_rt_cdefs_exetype  Executable Image Types
+ * @{ */
+/** Some other format. */
+#define RT_EXETYPE_OTHER        RT_BIT_32(0)
+/** Portable Executable. */
+#define RT_EXETYPE_PE           RT_BIT_32(1)
+/** Linear eXecutable. */
+#define RT_EXETYPE_LX           RT_BIT_32(2)
+/** Linear Executable. */
+#define RT_EXETYPE_LE           RT_BIT_32(3)
+/** New Executable. */
+#define RT_EXETYPE_NE           RT_BIT_32(4)
+/** DOS Executable (Mark Zbikowski). */
+#define RT_EXETYPE_MZ           RT_BIT_32(5)
+/** COM Executable. */
+#define RT_EXETYPE_COM          RT_BIT_32(6)
+/** a.out Executable. */
+#define RT_EXETYPE_AOUT         RT_BIT_32(7)
+/** Executable and Linkable Format. */
+#define RT_EXETYPE_ELF          RT_BIT_32(8)
+/** Mach-O Executable (including FAT ones). */
+#define RT_EXETYPE_MACHO        RT_BIT_32(9)
+/** TE from UEFI. */
+#define RT_EXETYPE_TE           RT_BIT_32(9)
+/** @} */
+
 
 /** @def VALID_PTR
  * Pointer validation macro.

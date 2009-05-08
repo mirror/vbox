@@ -1167,7 +1167,7 @@ typedef RTCPUSET                                   *PRTCPUSET;
 typedef RTCPUSET const                             *PCRTCPUSET;
 
 /** A handle table handle. */
-typedef struct RTHANDLETABLEINT                    *RTHANDLETABLE;
+typedef R3R0PTRTYPE(struct RTHANDLETABLEINT *)      RTHANDLETABLE;
 /** A pointer to a handle table handle. */
 typedef RTHANDLETABLE                              *PRTHANDLETABLE;
 /** @def NIL_RTHANDLETABLE
@@ -1175,7 +1175,7 @@ typedef RTHANDLETABLE                              *PRTHANDLETABLE;
 #define NIL_RTHANDLETABLE                           ((RTHANDLETABLE)0)
 
 /** A handle to a low resolution timer. */
-typedef struct RTTIMERLRINT                        *RTTIMERLR;
+typedef R3R0PTRTYPE(struct RTTIMERLRINT *)          RTTIMERLR;
 /** A pointer to a low resolution timer handle. */
 typedef RTTIMERLR                                  *PRTTIMERLR;
 /** @def NIL_RTTIMERLR
@@ -1183,11 +1183,25 @@ typedef RTTIMERLR                                  *PRTTIMERLR;
 #define NIL_RTTIMERLR                               ((RTTIMERLR)0)
 
 /** Handle to a random number generator. */
-typedef struct RTRANDINT                           *RTRAND;
+typedef R3R0PTRTYPE(struct RTRANDINT *)             RTRAND;
 /** Pointer to a random number generator handle. */
 typedef RTRAND                                     *PRTRAND;
 /** NIL random number genrator handle value. */
 #define NIL_RTRAND                                  ((RTRAND)0)
+
+/** Debug address space handle. */
+typedef R3R0PTRTYPE(struct RTDBGASINT *)            RTDBGAS;
+/** Pointer to a debug address space handle. */
+typedef RTDBGAS                                    *PRTDBGAS;
+/** NIL debug address space handle. */
+#define NIL_RTDBGAS                                 ((PRTDBGAS)0)
+
+/** Debug module handle. */
+typedef R3R0PTRTYPE(struct RTDBGMODINT *)           RTDBGMOD;
+/** Pointer to a debug module handle. */
+typedef RTDBGMOD                                   *PRTDBGMOD;
+/** NIL debug module handle. */
+#define NIL_RTDBGMOD                                ((PRTDBGMOD)0)
 
 
 /**
