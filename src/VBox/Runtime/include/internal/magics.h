@@ -34,8 +34,14 @@
 /** @name Magic Numbers.
  * @{ */
 
-/** The value of RTENVINTERNAL::u32Magic. (Rumiko Takahashi) */
-#define RTENV_MAGIC                 0x19571010
+/** Magic number for RTDBGMODINT::u32Magic. (Charles Lloyd) */
+#define RTDBGAS_MAGIC               0x19380315
+/** Magic number for RTDBGMODINT::u32Magic. (Keith Jarrett) */
+#define RTDBGMOD_MAGIC              0x19450508
+/** Magic number for RTDBGMODVTIMG::u32Magic. (Jack DeJohnette) */
+#define RTDBGMODVTDBG_MAGIC         0x19420809
+/** Magic number for RTDBGMODVTIMG::u32Magic. (Cecil McBee) */
+#define RTDBGMODVTIMG_MAGIC         0x19350419
 /** The value of RTDIR::u32Magic. (Michael Ende) */
 #define RTDIR_MAGIC                 0x19291112
 /** The value of RTDIR::u32Magic after RTDirClose().  */
@@ -46,6 +52,8 @@
 #define RTFILEAIOCTX_MAGIC_DEAD     0x19370315
 /** The value of RTFILEAIOREQINT::u32Magic. (Stephen Edwin King)  */
 #define RTFILEAIOREQ_MAGIC          0x19470921
+/** The value of RTENVINTERNAL::u32Magic. (Rumiko Takahashi) */
+#define RTENV_MAGIC                 0x19571010
 /** Magic number for RTHANDLETABLEINT::u32Magic. (Hitomi Kanehara) */
 #define RTHANDLETABLE_MAGIC         0x19830808
 /** Magic number for RTHEAPSIMPLEINTERNAL::u32Magic. (Kyoichi Katayama) */
