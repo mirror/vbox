@@ -98,6 +98,25 @@ RTR3DECL(int) RTStrmOpenF(const char *pszMode, PRTSTREAM *ppStream, const char *
 RTR3DECL(int) RTStrmClose(PRTSTREAM pStream);
 
 /**
+ * Get the pending error of the stream.
+ *
+ * @returns iprt status code. of the stream.
+ * @param   pStream         The stream.
+ */
+RTR3DECL(int) RTStrmError(PRTSTREAM pStream);
+
+/**
+ * Clears stream error condition.
+ *
+ * All stream operations save RTStrmClose and this will fail
+ * while an error is asserted on the stream
+ *
+ * @returns iprt status code.
+ * @param   pStream         The stream.
+ */
+RTR3DECL(int) RTStrmClearError(PRTSTREAM pStream);
+
+/**
  * Reads from a file stream.
  *
  * @returns iprt status code.
