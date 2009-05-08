@@ -44,8 +44,8 @@ struct _VBOXCLIPBOARDCONTEXT;
 typedef struct _VBOXCLIPBOARDCONTEXT VBOXCLIPBOARDCONTEXT;
 
 /** Opaque data structure for the X11/VBox backend code. */
-struct _VBOXCLIPBOARDCONTEXTX11;
-typedef struct _VBOXCLIPBOARDCONTEXTX11 VBOXCLIPBOARDCONTEXTX11;
+struct _CLIPBACKEND;
+typedef struct _CLIPBACKEND CLIPBACKEND;
 
 /** A structure containing information about where to store a request
  * for the X11 clipboard contents. */
@@ -67,20 +67,20 @@ struct _VBOXCLIPBOARDREQUEST
     /** Semaphore which is signalled when the request is completed */
     RTSEMEVENT finished;
     /** The clipboard context this request is associated with */
-    VBOXCLIPBOARDCONTEXTX11 *pCtx;
+    CLIPBACKEND *pCtx;
 };
 
 typedef struct _VBOXCLIPBOARDREQUEST VBOXCLIPBOARDREQUEST;
 
 /* APIs exported by the X11 backend */
-extern VBOXCLIPBOARDCONTEXTX11 *VBoxX11ClipboardConstructX11
+extern CLIPBACKEND *VBoxX11ClipboardConstructX11
                                         (VBOXCLIPBOARDCONTEXT *pFrontend);
-extern void VBoxX11ClipboardDestructX11(VBOXCLIPBOARDCONTEXTX11 *pBackend);
-extern int VBoxX11ClipboardStartX11(VBOXCLIPBOARDCONTEXTX11 *pBackend);
-extern int VBoxX11ClipboardStopX11(VBOXCLIPBOARDCONTEXTX11 *pBackend);
-extern void VBoxX11ClipboardAnnounceVBoxFormat(VBOXCLIPBOARDCONTEXTX11
+extern void VBoxX11ClipboardDestructX11(CLIPBACKEND *pBackend);
+extern int VBoxX11ClipboardStartX11(CLIPBACKEND *pBackend);
+extern int VBoxX11ClipboardStopX11(CLIPBACKEND *pBackend);
+extern void VBoxX11ClipboardAnnounceVBoxFormat(CLIPBACKEND
                                                *pBackend, uint32_t u32Formats);
-extern int VBoxX11ClipboardReadX11Data(VBOXCLIPBOARDCONTEXTX11 *pBackend,
+extern int VBoxX11ClipboardReadX11Data(CLIPBACKEND *pBackend,
                                        uint32_t u32Format,
                                        void *pv, uint32_t cb,
                                        uint32_t *pcbActual);

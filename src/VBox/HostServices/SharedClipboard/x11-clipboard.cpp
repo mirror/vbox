@@ -64,7 +64,7 @@ struct _VBOXCLIPBOARDCONTEXT
     VBOXCLIPBOARDREQFROMVBOX *pReq;
     
     /** Pointer to the opaque X11 backend structure */
-    VBOXCLIPBOARDCONTEXTX11 *pBackend;
+    CLIPBACKEND *pBackend;
     /** Pointer to the VBox host client data structure. */
     VBOXCLIPBOARDCLIENTDATA *pClient;
     /** We set this when we start shutting down as a hint not to post any new
@@ -214,7 +214,7 @@ void vboxClipboardDestroy (void)
 int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient)
 {
     int rc = VINF_SUCCESS;
-    VBOXCLIPBOARDCONTEXTX11 *pBackend = NULL;
+    CLIPBACKEND *pBackend = NULL;
 
     LogRel(("Starting host clipboard service\n"));
     VBOXCLIPBOARDCONTEXT *pCtx =
