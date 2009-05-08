@@ -54,13 +54,6 @@
 #include <VBox/GuestHost/clipboard-helper.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 
-/** Do we want to test Utf8 by disabling other text formats? */
-static bool g_testUtf8 = false;
-/** Do we want to test compount text by disabling other text formats? */
-static bool g_testCText = false;
-/** Are we currently debugging the clipboard code? */
-static bool g_debugClipboard = false;
-
 /** The different clipboard formats which we support. */
 enum CLIPFORMAT
 {
@@ -78,9 +71,9 @@ static struct _CLIPFORMATTABLE
      */
     const char *pcszAtom;
     /** The format corresponding to the name */
-    CLIPFORMAT enmFormat;
+    CLIPFORMAT  enmFormat;
     /** The corresponding VBox clipboard format */
-    uint32_t   u32VBoxFormat;
+    uint32_t    u32VBoxFormat;
 } g_aFormats[] =
 {
     { "UTF8_STRING", UTF8, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT },
@@ -547,7 +540,6 @@ static void vboxClipboardGetTargetsFromX11(Widget,
     Atom *atomTargets = reinterpret_cast<Atom *>(pValue);
     unsigned cAtoms = *pcLen;
     CLIPFORMAT enmBestTarget = INVALID;
-    CLIPFORMAT enmRequiredTarget = INVALID;
     Atom atomBestTarget = None;
 
     Log3 (("%s: called\n", __PRETTY_FUNCTION__));
@@ -561,12 +553,6 @@ static void vboxClipboardGetTargetsFromX11(Widget,
         return;
     }
 
-    /* Debugging stuff */
-    if (g_testUtf8)
-        enmRequiredTarget = UTF8;
-    else if (g_testCText)
-        enmRequiredTarget = CTEXT;
-
     for (unsigned i = 0; i < cAtoms; ++i)
     {
         for (unsigned j = 0; j < RT_ELEMENTS(g_aFormats); ++j)
@@ -575,10 +561,7 @@ static void vboxClipboardGetTargetsFromX11(Widget,
                                           g_aFormats[j].pcszAtom);
             if (atomTargets[i] == formatAtom)
             {
-                if (   enmBestTarget < g_aFormats[j].enmFormat
-                    /* debugging stuff */
-                    && (   enmRequiredTarget == INVALID
-                        || enmRequiredTarget == g_aFormats[j].enmFormat))
+                if (   enmBestTarget < g_aFormats[j].enmFormat)
                 {
                     enmBestTarget = g_aFormats[j].enmFormat;
                     atomBestTarget = formatAtom;
@@ -586,46 +569,11 @@ static void vboxClipboardGetTargetsFromX11(Widget,
                 break;
             }
         }
-        if (g_debugClipboard)
-        {
-            char *szAtomName = XGetAtomName(XtDisplay(pCtx->widget),
-                                            atomTargets[i]);
-            if (szAtomName != 0)
-            {
-                Log2 (("%s: the host offers target %s\n", __PRETTY_FUNCTION__,
-                       szAtomName));
-                XFree(szAtomName);
-            }
-        }
     }
     pCtx->atomX11TextFormat = atomBestTarget;
     if ((enmBestTarget != pCtx->X11TextFormat) || (pCtx->notifyVBox == true))
     {
         uint32_t u32Formats = 0;
-        if (g_debugClipboard)
-        {
-            if (atomBestTarget != None)
-            {
-                char *szAtomName = XGetAtomName(XtDisplay(pCtx->widget),
-                                                atomBestTarget);
-                Log2 (("%s: switching to host text target %s.  Available targets are:\n",
-                       __PRETTY_FUNCTION__, szAtomName));
-                XFree(szAtomName);
-            }
-            else
-                Log2(("%s: no supported host text target found.  Available targets are:\n",
-                      __PRETTY_FUNCTION__));
-            for (unsigned i = 0; i < cAtoms; ++i)
-            {
-                char *szAtomName = XGetAtomName(XtDisplay(pCtx->widget),
-                                                atomTargets[i]);
-                if (szAtomName != 0)
-                {
-                    Log2 (("%s:     %s\n", __PRETTY_FUNCTION__, szAtomName));
-                    XFree(szAtomName);
-                }
-            }
-        }
         pCtx->X11TextFormat = enmBestTarget;
         if (enmBestTarget != INVALID)
             u32Formats |= VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
@@ -826,22 +774,6 @@ VBOXCLIPBOARDCONTEXTX11 *VBoxX11ClipboardConstructX11
         return pCtx;
     }
 
-    if (RTEnvGet("VBOX_CBTEST_UTF8"))
-    {
-        g_testUtf8 = true;
-        LogRel(("Host clipboard: testing Utf8\n"));
-    }
-    else if (RTEnvGet("VBOX_CBTEST_CTEXT"))
-    {
-        g_testCText = true;
-        LogRel(("Host clipboard: testing compound text\n"));
-    }
-    else if (RTEnvGet("VBOX_CBDEBUG"))
-    {
-        g_debugClipboard = true;
-        LogRel(("Host clipboard: enabling additional debugging output\n"));
-    }
-
     g_fHaveX11 = true;
 
     LogRel(("Initializing X11 clipboard backend\n"));
@@ -981,24 +913,6 @@ static Boolean vboxClipboardConvertTargetsForX11(VBOXCLIPBOARDCONTEXTX11
     atomTargets[cTargets] = clipGetAtom(pCtx->widget, "TARGETS");
     atomTargets[cTargets + 1] = clipGetAtom(pCtx->widget, "MULTIPLE");
     atomTargets[cTargets + 2] = clipGetAtom(pCtx->widget, "TIMESTAMP");
-    if (g_debugClipboard)
-    {
-        for (unsigned i = 0; i < cTargets + 3; i++)
-        {
-            char *szAtomName = XGetAtomName(XtDisplay(pCtx->widget), atomTargets[i]);
-            if (szAtomName != 0)
-            {
-                Log2 (("%s: returning target %s\n", __PRETTY_FUNCTION__,
-                       szAtomName));
-                XFree(szAtomName);
-            }
-            else
-            {
-                Log(("%s: invalid atom %d in the list!\n", __PRETTY_FUNCTION__,
-                     atomTargets[i]));
-            }
-        }
-    }
     *atomTypeReturn = XA_ATOM;
     *pValReturn = reinterpret_cast<XtPointer>(atomTargets);
     *pcLenReturn = cTargets + 3;
@@ -1310,19 +1224,6 @@ static Boolean vboxClipboardConvertForX11(Widget widget, Atom *atomSelection,
     {
         LogFlowFunc(("rc = false\n"));
         return false;
-    }
-    if (g_debugClipboard)
-    {
-        char *szAtomName = XGetAtomName(XtDisplay(pCtx->widget), *atomTarget);
-        if (szAtomName != 0)
-        {
-            Log2 (("%s: request for format %s\n", __PRETTY_FUNCTION__, szAtomName));
-            XFree(szAtomName);
-        }
-        else
-        {
-            LogFunc (("request for invalid target atom %d!\n", *atomTarget));
-        }
     }
     if (*atomTarget == clipGetAtom(pCtx->widget, "TARGETS"))
     {
