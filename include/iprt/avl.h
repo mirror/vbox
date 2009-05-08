@@ -121,6 +121,7 @@ RTDECL(PAVLULNODECORE)  RTAvlULGet(PPAVLULNODECORE ppTree, AVLULKEY Key);
 RTDECL(PAVLULNODECORE)  RTAvlULGetBestFit(PPAVLULNODECORE ppTree, AVLULKEY Key, bool fAbove);
 RTDECL(PAVLULNODECORE)  RTAvlULRemoveBestFit(PPAVLULNODECORE ppTree, AVLULKEY Key, bool fAbove);
 RTDECL(int)             RTAvlULDoWithAll(PPAVLULNODECORE ppTree, int fFromLeft, PAVLULCALLBACK pfnCallBack, void *pvParam);
+RTDECL(int)             RTAvlULDestroy(PPAVLULNODECORE pTree, PAVLULCALLBACK pfnCallBack, void *pvParam);
 
 /** @} */
 
@@ -703,8 +704,9 @@ RTDECL(bool)                    RTAvloIOPortInsert(PAVLOIOPORTTREE pTree, PAVLOI
 RTDECL(PAVLOIOPORTNODECORE)     RTAvloIOPortRemove(PAVLOIOPORTTREE pTree, RTIOPORT Key);
 RTDECL(PAVLOIOPORTNODECORE)     RTAvloIOPortGet(PAVLOIOPORTTREE pTree, RTIOPORT Key);
 RTDECL(int)                     RTAvloIOPortDoWithAll(PAVLOIOPORTTREE pTree, int fFromLeft, PAVLOIOPORTCALLBACK pfnCallBack, void *pvParam);
+RTDECL(PAVLOIOPORTNODECORE)     RTAvloIOPortGetBestFit(PAVLOIOPORTTREE ppTree, RTIOPORT Key, bool fAbove);
+RTDECL(PAVLOIOPORTNODECORE)     RTAvloIOPortRemoveBestFit(PAVLOIOPORTTREE ppTree, RTIOPORT Key, bool fAbove);
 RTDECL(int)                     RTAvloIOPortDestroy(PAVLOIOPORTTREE pTree, PAVLOIOPORTCALLBACK pfnCallBack, void *pvParam);
-
 /** @} */
 
 
