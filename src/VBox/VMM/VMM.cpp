@@ -958,6 +958,7 @@ VMMR3DECL(int) VMMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPtrV
  */
 VMMR3DECL(void) VMMR3YieldSuspend(PVM pVM)
 {
+    VMCPU_ASSERT_EMT(&pVM->aCpus[0]);
     if (!pVM->vmm.s.cYieldResumeMillies)
     {
         uint64_t u64Now = TMTimerGet(pVM->vmm.s.pYieldTimer);
