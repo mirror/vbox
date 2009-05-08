@@ -502,6 +502,10 @@ int main(int argc, char **argv)
                 }
             } while (psz && *++psz);
         }
+        else
+        {
+            /* @todo put in here commands without dashes (- or --). */
+        }
     }
 
     /*
