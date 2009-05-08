@@ -90,13 +90,8 @@ typedef enum TMTIMERSTATE
     /** Timer is modified and is now pending rescheduling.
      * Currently in the ScheduleTimers list and the active list. */
     TMTIMERSTATE_PENDING_RESCHEDULE,
-    /** Timer is destroyed but needs to be replaced from the
-     * active to the free list.
-     * Currently in the ScheduleTimers list and the active list. */
-    TMTIMERSTATE_PENDING_STOP_DESTROY,
-    /** Timer is destroyed but needs moving to the free list.
-     * Currently in the ScheduleTimers list. */
-    TMTIMERSTATE_PENDING_DESTROY,
+    /** Timer is being destroyed. */
+    TMTIMERSTATE_DESTROY,
     /** Timer is free. */
     TMTIMERSTATE_FREE
 } TMTIMERSTATE;

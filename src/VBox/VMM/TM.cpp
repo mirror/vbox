@@ -1956,8 +1956,7 @@ VMMR3DECL(int) TMR3TimerSave(PTMTIMERR3 pTimer, PSSMHANDLE pSSM)
             return SSMR3PutU64(pSSM, pTimer->u64Expire);
 
         case TMTIMERSTATE_EXPIRED:
-        case TMTIMERSTATE_PENDING_DESTROY:
-        case TMTIMERSTATE_PENDING_STOP_DESTROY:
+        case TMTIMERSTATE_DESTROY:
         case TMTIMERSTATE_FREE:
             AssertMsgFailed(("Invalid timer state %d %s (%s)\n", pTimer->enmState, tmTimerState(pTimer->enmState), pTimer->pszDesc));
             return SSMR3HandleSetStatus(pSSM, VERR_TM_INVALID_STATE);

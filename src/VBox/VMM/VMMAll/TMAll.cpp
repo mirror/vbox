@@ -543,94 +543,154 @@ VMMDECL(PTMTIMERRC) TMTimerRCPtr(PTMTIMER pTimer)
  * @returns VBox status.
  * @param   pTimer          Timer handle as returned by one of the create functions.
  */
-VMMR3DECL(int) TMR3TimerDestroy(PTMTIMER pTimer)
+VMMR3DECL(int) TMR3TimerDestroy(TMTIMER *pTimer)
 {
-    int cRetries = 1000;
-    do
+    /*
+     * Be extra careful here.
+     */
+    if (!pTimer)
+        return VINF_SUCCESS;
+    AssertPtr(pTimer);
+    Assert((unsigned)pTimer->enmClock < (unsigned)TMCLOCK_MAX);
+
+    PVM             pVM      = pTimer->CTX_SUFF(pVM);
+    PTMTIMERQUEUE   pQueue   = &pVM->tm.s.CTX_SUFF(paTimerQueues)[pTimer->enmClock];
+    bool            fActive  = false;
+    bool            fPending = false;
+
+    /*
+     * The rest of the game happens behind the lock, just
+     * like create does. All the work is done here.
+     */
+    tmLock(pVM);
+    for (int cRetries = 1000;; cRetries--)
     {
         /*
-         * Change to any of the DESTROY states if valid.
+         * Change to the DESTROY state.
          */
-        TMTIMERSTATE enmState = pTimer->enmState;
+        TMTIMERSTATE enmState    = pTimer->enmState;
+        TMTIMERSTATE enmNewState = enmState;
         Log2(("TMTimerDestroy: %p:{.enmState=%s, .pszDesc='%s'} cRetries=%d\n",
               pTimer, tmTimerState(enmState), R3STRING(pTimer->pszDesc), cRetries));
         switch (enmState)
         {
-            case TMTIMERSTATE_EXPIRED:
-                if (!VM_IS_EMT(pTimer->CTX_SUFF(pVM)))
-                {
-                    AssertMsgFailed(("Attempted timer destruction from other thread while expire pending! (%s)\n", R3STRING(pTimer->pszDesc)));
-                    return VERR_INVALID_PARAMETER;
-                }
-                /* fall thru */
             case TMTIMERSTATE_STOPPED:
-                if (tmTimerTryWithLink(pTimer, TMTIMERSTATE_PENDING_DESTROY, enmState))
-                {
-                    tmSchedule(pTimer);
-                    return VINF_SUCCESS;
-                }
+            case TMTIMERSTATE_EXPIRED:
                 break;
 
             case TMTIMERSTATE_ACTIVE:
-                if (tmTimerTryWithLink(pTimer, TMTIMERSTATE_PENDING_STOP_DESTROY, enmState))
-                {
-                    tmSchedule(pTimer);
-                    return VINF_SUCCESS;
-                }
+                fActive     = true;
                 break;
 
             case TMTIMERSTATE_PENDING_STOP:
             case TMTIMERSTATE_PENDING_STOP_SCHEDULE:
-                if (tmTimerTry(pTimer, TMTIMERSTATE_PENDING_STOP_DESTROY, enmState))
-                {
-                    tmSchedule(pTimer);
-                    return VINF_SUCCESS;
-                }
-                break;
-
-            case TMTIMERSTATE_PENDING_DESTROY:
-            case TMTIMERSTATE_PENDING_STOP_DESTROY:
-                AssertMsgFailed(("How many times do you think you can destroy the same timer... (%s)\n", R3STRING(pTimer->pszDesc)));
-                return VERR_INVALID_PARAMETER;
-
             case TMTIMERSTATE_PENDING_RESCHEDULE:
-                if (tmTimerTry(pTimer, TMTIMERSTATE_PENDING_STOP_DESTROY, enmState))
-                {
-                    tmSchedule(pTimer);
-                    return VINF_SUCCESS;
-                }
+                fActive     = true;
+                fPending    = true;
                 break;
 
             case TMTIMERSTATE_PENDING_SCHEDULE:
-                if (tmTimerTry(pTimer, TMTIMERSTATE_PENDING_DESTROY, enmState))
-                {
-                    tmSchedule(pTimer);
-                    return VINF_SUCCESS;
-                }
+                fPending    = true;
                 break;
 
+            /*
+             * This shouldn't happen as the caller should make sure there are no races.
+             */
             case TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE:
             case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
-#ifdef IN_RING3
+                AssertMsgFailed(("%p:.enmState=%s %s\n", pTimer, tmTimerState(enmState), pTimer->pszDesc));
+                tmUnlock(pVM);
                 if (!RTThreadYield())
                     RTThreadSleep(1);
-#endif
-                break;
+                AssertMsgReturn(cRetries > 0, ("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, pTimer->pszDesc),
+                                VERR_TM_UNSTABLE_STATE);
+                tmLock(pVM);
+                continue;
 
             /*
              * Invalid states.
              */
             case TMTIMERSTATE_FREE:
-                AssertMsgFailed(("Invalid timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
-                return VERR_TM_INVALID_STATE;
+            case TMTIMERSTATE_DESTROY:
+                tmUnlock(pVM);
+                AssertLogRelMsgFailedReturn(("pTimer=%p %s\n", pTimer, tmTimerState(enmState)), VERR_TM_INVALID_STATE);
+
             default:
                 AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
+                tmUnlock(pVM);
                 return VERR_TM_UNKNOWN_STATE;
         }
-    } while (cRetries-- > 0);
 
-    AssertMsgFailed(("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, R3STRING(pTimer->pszDesc)));
-    return VERR_INTERNAL_ERROR;
+        /*
+         * Try switch to the destroy state.
+         * This should always succeed as the caller should make sure there are no race.
+         */
+        if (tmTimerTry(pTimer, TMTIMERSTATE_DESTROY, enmState))
+            break;
+        AssertMsgFailed(("%p:.enmState=%s %s\n", pTimer, tmTimerState(enmState), pTimer->pszDesc));
+        tmUnlock(pVM);
+        AssertMsgReturn(cRetries > 0, ("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, pTimer->pszDesc),
+                        VERR_TM_UNSTABLE_STATE);
+        tmLock(pVM);
+    }
+
+    /*
+     * Unlink from the active list.
+     */
+    if (fActive)
+    {
+        const PTMTIMER pPrev = TMTIMER_GET_PREV(pTimer);
+        const PTMTIMER pNext = TMTIMER_GET_NEXT(pTimer);
+        if (pPrev)
+            TMTIMER_SET_NEXT(pPrev, pNext);
+        else
+        {
+            TMTIMER_SET_HEAD(pQueue, pNext);
+            pQueue->u64Expire = pNext ? pNext->u64Expire : INT64_MAX;
+        }
+        if (pNext)
+            TMTIMER_SET_PREV(pNext, pPrev);
+        pTimer->offNext = 0;
+        pTimer->offPrev = 0;
+    }
+
+    /*
+     * Unlink from the schedule list by running it.
+     */
+    if (fPending)
+    {
+        Log3(("TMR3TimerDestroy: tmTimerQueueSchedule\n"));
+        STAM_PROFILE_START(&pVM->tm.s.CTXALLSUFF(StatScheduleOne), a);
+        Assert(pQueue->offSchedule);
+        tmTimerQueueSchedule(pVM, pQueue);
+    }
+
+    /*
+     * Read to move the timer from the created list and onto the free list.
+     */
+    Assert(!pTimer->offNext); Assert(!pTimer->offPrev); Assert(!pTimer->offScheduleNext);
+
+    /* unlink from created list */
+    if (pTimer->pBigPrev)
+        pTimer->pBigPrev->pBigNext = pTimer->pBigNext;
+    else
+        pVM->tm.s.pCreated         = pTimer->pBigNext;
+    if (pTimer->pBigNext)
+        pTimer->pBigNext->pBigPrev = pTimer->pBigPrev;
+    pTimer->pBigNext = 0;
+    pTimer->pBigPrev = 0;
+
+    /* free */
+    Log2(("TM: Inserting %p into the free list ahead of %p!\n", pTimer, pVM->tm.s.pFree));
+    TM_SET_STATE(pTimer, TMTIMERSTATE_FREE);
+    pTimer->pBigNext = pVM->tm.s.pFree;
+    pVM->tm.s.pFree = pTimer;
+
+#ifdef VBOX_STRICT
+    tmTimerQueuesSanityChecks(pVM, "TMR3TimerDestroy");
+#endif
+    tmUnlock(pVM);
+    return VINF_SUCCESS;
 }
 #endif /* IN_RING3 */
 
@@ -726,8 +786,7 @@ VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
             /*
              * Invalid states.
              */
-            case TMTIMERSTATE_PENDING_DESTROY:
-            case TMTIMERSTATE_PENDING_STOP_DESTROY:
+            case TMTIMERSTATE_DESTROY:
             case TMTIMERSTATE_FREE:
                 AssertMsgFailed(("Invalid timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
                 return VERR_TM_INVALID_STATE;
@@ -917,8 +976,7 @@ VMMDECL(int) TMTimerStop(PTMTIMER pTimer)
             /*
              * Invalid states.
              */
-            case TMTIMERSTATE_PENDING_DESTROY:
-            case TMTIMERSTATE_PENDING_STOP_DESTROY:
+            case TMTIMERSTATE_DESTROY:
             case TMTIMERSTATE_FREE:
                 AssertMsgFailed(("Invalid timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
                 return VERR_TM_INVALID_STATE;
@@ -1272,8 +1330,7 @@ VMMDECL(uint64_t) TMTimerGetExpire(PTMTIMER pTimer)
             /*
              * Invalid states.
              */
-            case TMTIMERSTATE_PENDING_DESTROY:
-            case TMTIMERSTATE_PENDING_STOP_DESTROY:
+            case TMTIMERSTATE_DESTROY:
             case TMTIMERSTATE_FREE:
                 AssertMsgFailed(("Invalid timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
                 Log2(("TMTimerGetExpire: returns ~0 (pTimer=%p:{.enmState=%s, .pszDesc='%s'})\n",
@@ -1324,8 +1381,7 @@ VMMDECL(bool) TMTimerIsActive(PTMTIMER pTimer)
         /*
          * Invalid states.
          */
-        case TMTIMERSTATE_PENDING_DESTROY:
-        case TMTIMERSTATE_PENDING_STOP_DESTROY:
+        case TMTIMERSTATE_DESTROY:
         case TMTIMERSTATE_FREE:
             AssertMsgFailed(("Invalid timer state %s (%s)\n", tmTimerState(enmState), R3STRING(pTimer->pszDesc)));
             Log2(("TMTimerIsActive: returns false (pTimer=%p:{.enmState=%s, .pszDesc='%s'})\n",
@@ -1361,9 +1417,8 @@ const char *tmTimerState(TMTIMERSTATE enmState)
         CASE( 7,PENDING_SCHEDULE);
         CASE( 8,PENDING_RESCHEDULE_SET_EXPIRE);
         CASE( 9,PENDING_RESCHEDULE);
-        CASE(10,PENDING_STOP_DESTROY);
-        CASE(11,PENDING_DESTROY);
-        CASE(12,FREE);
+        CASE(10,DESTROY);
+        CASE(11,FREE);
         default:
             AssertMsgFailed(("Invalid state enmState=%d\n", enmState));
             return "Invalid state!";
@@ -1495,53 +1550,11 @@ DECLINLINE(void) tmTimerQueueScheduleOne(PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
                 return;
 
             /*
-             * Stop & destroy the timer.
+             * The timer is pending destruction by TMR3TimerDestroy, our caller.
+             * Nothing to do here.
              */
-            case TMTIMERSTATE_PENDING_STOP_DESTROY:
-            {
-                const PTMTIMER pPrev = TMTIMER_GET_PREV(pTimer);
-                const PTMTIMER pNext = TMTIMER_GET_NEXT(pTimer);
-                if (pPrev)
-                    TMTIMER_SET_NEXT(pPrev, pNext);
-                else
-                {
-                    TMTIMER_SET_HEAD(pQueue, pNext);
-                    pQueue->u64Expire = pNext ? pNext->u64Expire : INT64_MAX;
-                }
-                if (pNext)
-                    TMTIMER_SET_PREV(pNext, pPrev);
-                pTimer->offNext = 0;
-                pTimer->offPrev = 0;
-                /* fall thru */
-            }
-
-            /*
-             * Destroy the timer.
-             */
-            case TMTIMERSTATE_PENDING_DESTROY:
-            {
-                Assert(!pTimer->offNext); Assert(!pTimer->offPrev);
-                PVM pVM = pTimer->CTX_SUFF(pVM);
-                const PTMTIMER pBigPrev = (PTMTIMER)(pTimer->pBigPrev ? MMHyperR3ToCC(pVM, pTimer->pBigPrev) : NULL);
-                const PTMTIMER pBigNext = (PTMTIMER)(pTimer->pBigNext ? MMHyperR3ToCC(pVM, pTimer->pBigNext) : NULL);
-
-                /* unlink from created list */
-                if (pBigPrev)
-                    pBigPrev->pBigNext = pTimer->pBigNext;
-                else
-                    pVM->tm.s.pCreated = pTimer->pBigNext;
-                if (pBigNext)
-                    pBigNext->pBigPrev = pTimer->pBigPrev;
-                pTimer->pBigNext = 0;
-                pTimer->pBigPrev = 0;
-
-                /* free */
-                Log2(("TM: Inserting %p into the free list ahead of %p!\n", pTimer, pVM->tm.s.pFree));
-                pTimer->pBigNext = pVM->tm.s.pFree;
-                pVM->tm.s.pFree = (PTMTIMERR3)MMHyperCCToR3(pVM, pTimer);
-                TM_SET_STATE(pTimer, TMTIMERSTATE_FREE);
-                return;
-            }
+            case TMTIMERSTATE_DESTROY:
+                break;
 
             /*
              * Postpone these until they get into the right state.
@@ -1641,7 +1654,6 @@ void tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere)
                               ("%s: %RI32\n", pszWhere, pCur->offScheduleNext));
                     break;
                 case TMTIMERSTATE_PENDING_STOP:
-                case TMTIMERSTATE_PENDING_STOP_DESTROY:
                 case TMTIMERSTATE_PENDING_RESCHEDULE:
                 case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
                     break;
@@ -1668,7 +1680,6 @@ void tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere)
         {
             case TMTIMERSTATE_ACTIVE:
             case TMTIMERSTATE_PENDING_STOP:
-            case TMTIMERSTATE_PENDING_STOP_DESTROY:
             case TMTIMERSTATE_PENDING_RESCHEDULE:
             case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
             {
@@ -1680,7 +1691,6 @@ void tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere)
                 break;
             }
 
-            case TMTIMERSTATE_PENDING_DESTROY:
             case TMTIMERSTATE_PENDING_SCHEDULE:
             case TMTIMERSTATE_PENDING_STOP_SCHEDULE:
             case TMTIMERSTATE_STOPPED:
@@ -1704,6 +1714,7 @@ void tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere)
                 break;
 
             /* shouldn't get here! */
+            case TMTIMERSTATE_DESTROY:
             default:
                 AssertMsgFailed(("Invalid state enmState=%d %s\n", enmState, tmTimerState(enmState)));
                 break;
