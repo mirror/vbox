@@ -34,6 +34,9 @@
 #include <VBox/sup.h>
 #include <iprt/system.h>
 #include <iprt/assert.h>
+#ifdef VBOX_WITH_LIBXML2_IN_VBOXRT
+# include <libxml/xmlmodule.h>
+#endif
 
 
 /*******************************************************************************
@@ -43,6 +46,9 @@ PFNRT g_VBoxRTDeps[] =
 {
     (PFNRT)SUPR3Init,
     (PFNRT)SUPPageLock,
+#ifdef VBOX_WITH_LIBXML2_IN_VBOXRT
+    (PFNRT)xmlModuleOpen,
+#endif
     (PFNRT)RTAssertShouldPanic
 };
 

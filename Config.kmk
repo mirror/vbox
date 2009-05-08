@@ -1789,9 +1789,9 @@ VBOXLNX32GUEST_SUFF_LIB = .a
 SDK_VBOX_LIBXML2          = .
 #if1of ($(KBUILD_TARGET),win os2 solaris)
  SDK_VBOX_LIBXML2_INCS   ?= $(PATH_ROOT)/src/libs/libxml2-2.6.30/include
- SDK_VBOX_LIBXML2_LIBS   ?= $(PATH_LIB)/VBox-libxml2$(VBOX_SUFF_LIB)
  ifndef VBOX_WITH_LIBXML2_IN_VBOXRT
   SDK_VBOX_LIBXML2_DEFS  ?= LIBXML_STATIC
+  SDK_VBOX_LIBXML2_LIBS  ?= $(PATH_LIB)/VBox-libxml2$(VBOX_SUFF_LIB)
  endif
  SDK_VBOX_LIBXML2_DEFS.win += WIN32 _WINDOWS _MBCS
 #else if1of ($(KBUILD_TARGET),linux)
@@ -1838,7 +1838,9 @@ endif
 SDK_VBOX_OPENSSL      = .
 SDK_VBOX_OPENSSL_DEFAULT_INCS := $(PATH_OUT)/obj/crypto-headers/include
 SDK_VBOX_OPENSSL_INCS ?= $(SDK_VBOX_OPENSSL_DEFAULT_INCS)
-SDK_VBOX_OPENSSL_LIBS ?= $(PATH_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB)
+ifndef VBOX_WITH_LIBXML2_IN_VBOXRT
+ SDK_VBOX_OPENSSL_LIBS ?= $(PATH_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB)
+endif
 # Build entire openssl library, not just the minimal subset.
 if1of ($(KBUILD_TARGET), linux solaris)
  VBOX_OPENSSL_ALL=1
