@@ -25,7 +25,11 @@ include $(KBUILD_PATH)/subheader.kmk
 LIBRARIES += VBox-libxml2
 VBox-libxml2_TEMPLATE       = VBOXR3
 VBox-libxml2_SDKS           = VBOX_ZLIB
+ifdef VBOX_WITH_LIBXML2_IN_VBOXRT
+VBox-libxml2_DEFS           = _REENTRANT # the latter triggers thread support, see xmlversion-default.h and win32xmlversion.h.
+else
 VBox-libxml2_DEFS           = LIBXML_STATIC _REENTRANT # the latter triggers thread support, see xmlversion-default.h and win32xmlversion.h.
+endif
 VBox-libxml2_DEFS.win       = WIN32 _WINDOWS _MBCS _CRT_SECURE_NO_DEPRECATE _CRT_NONSTDC_NO_DEPRECATE \
                               LIBXML_STATIC_FOR_DLL HAVE_WIN32_THREADS HAVE_ZLIB_H
 VBox-libxml2_CFLAGS.win.amd64 = -wd4267
