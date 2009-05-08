@@ -35,33 +35,31 @@ struct ARGDEF
 # define DHCP_EXECUTABLE_NAME "VBoxNetDHCP"
 #endif
 
-static const ARGDEF g_aArgDefs[] = {
-        {DHCPCFG_NAME, "--name"},
-        {DHCPCFG_NETNAME, "--network"},
-        {DHCPCFG_TRUNKTYPE, "--trunk-type"},
-        {DHCPCFG_TRUNKNAME, "--trunk-name"},
-        {DHCPCFG_MACADDRESS, "--mac-address"},
-        {DHCPCFG_IPADDRESS, "--ip-address"},
-        {DHCPCFG_LEASEDB, "--lease-db"},
-        {DHCPCFG_VERBOSE, "--verbose"},
-        {DHCPCFG_BEGINCONFIG, "--begin-config"},
-        {DHCPCFG_GATEWAY, "--gateway"},
-        {DHCPCFG_LOWERIP, "--lower-ip"},
-        {DHCPCFG_UPPERIP, "--upper-ip"},
-        {DHCPCFG_NETMASK, "--netmask"},
-        {DHCPCFG_HELP, "--help"},
-        {DHCPCFG_VERSION, "--version"}
+static const ARGDEF g_aArgDefs[] =
+{
+    {DHCPCFG_NAME, "--name"},
+    {DHCPCFG_NETNAME, "--network"},
+    {DHCPCFG_TRUNKTYPE, "--trunk-type"},
+    {DHCPCFG_TRUNKNAME, "--trunk-name"},
+    {DHCPCFG_MACADDRESS, "--mac-address"},
+    {DHCPCFG_IPADDRESS, "--ip-address"},
+    {DHCPCFG_LEASEDB, "--lease-db"},
+    {DHCPCFG_VERBOSE, "--verbose"},
+    {DHCPCFG_BEGINCONFIG, "--begin-config"},
+    {DHCPCFG_GATEWAY, "--gateway"},
+    {DHCPCFG_LOWERIP, "--lower-ip"},
+    {DHCPCFG_UPPERIP, "--upper-ip"},
+    {DHCPCFG_NETMASK, "--netmask"},
+    {DHCPCFG_HELP, "--help"},
+    {DHCPCFG_VERSION, "--version"}
 };
 
 static const ARGDEF * getArgDef(DHCPCFG type)
 {
     for (unsigned i = 0; i < RT_ELEMENTS(g_aArgDefs); i++)
-    {
         if(g_aArgDefs[i].Type == type)
-        {
             return &g_aArgDefs[i];
-        }
-    }
+
     return NULL;
 }
 
@@ -72,40 +70,37 @@ void DHCPServerRunner::detachFromServer()
 
 int DHCPServerRunner::start()
 {
-    if(isRunning())
+    if (isRunning())
         return VINF_ALREADY_INITIALIZED;
 
     const char * args[DHCPCFG_NOTOPT_MAXVAL * 2];
 
     /* get the path to the executable */
-//    const char *exePath = DHCP_EXECUTABLE_NAME;
     char exePathBuf [RTPATH_MAX];
-    char *exePath = RTProcGetExecutableName (exePathBuf, RTPATH_MAX);
-    char *substrSl = strrchr( exePath, '/');
-    char *substrBs = strrchr( exePath, '\\');
+    const char *exePath = RTProcGetExecutableName (exePathBuf, RTPATH_MAX);
+    char *substrSl = strrchr(exePathBuf, '/');
+    char *substrBs = strrchr(exePathBuf, '\\');
     char *suffix = substrSl ? substrSl : substrBs;
 
-    if(suffix)
+    if (suffix)
     {
         suffix++;
         strcpy(suffix, DHCP_EXECUTABLE_NAME);
     }
     else
-    {
         exePath = DHCP_EXECUTABLE_NAME;
-    }
 
     int index = 0;
 
     args[index++] = exePath;
 
-    for(int i = 0; i < DHCPCFG_NOTOPT_MAXVAL; i++)
+    for (unsigned i = 0; i < DHCPCFG_NOTOPT_MAXVAL; i++)
     {
-        if(!mOptions[i].isNull())
+        if (!mOptions[i].isNull())
         {
             const ARGDEF * pArgDef = getArgDef((DHCPCFG)i);
             args[index++] = pArgDef->Name;
-            if(!mOptions[i].isEmpty())
+            if (!mOptions[i].isEmpty())
             {
                 args[index++] = mOptions[i].raw();
             }
@@ -116,15 +111,14 @@ int DHCPServerRunner::start()
 
     int rc = RTProcCreate (exePath, args, RTENV_DEFAULT, 0, &mProcess);
     if (RT_FAILURE (rc))
-    {
         mProcess = NIL_RTPROCESS;
-    }
+
     return rc;
 }
 
 int DHCPServerRunner::stop()
 {
-    if(!isRunning())
+    if (!isRunning())
         return VINF_OBJECT_DESTROYED;
 
     int rc = RTProcTerminate(mProcess);
