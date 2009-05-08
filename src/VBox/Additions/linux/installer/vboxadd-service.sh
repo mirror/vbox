@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Sun VirtualBox
-# Linux Additions timesync daemon init script
+# Linux Additions Guest Additions service daemon init script.
 #
 # Copyright (C) 2006-2009 Sun Microsystems, Inc.
 #
@@ -19,15 +19,15 @@
 #
 
 # chkconfig: 35 35 65
-# description: VirtualBox Additions timesync
+# description: VirtualBox Additions service
 #
 ### BEGIN INIT INFO
-# Provides:       vboxadd-timesync
+# Provides:       vboxadd-service
 # Required-Start: vboxadd
 # Required-Stop:  vboxadd
 # Default-Start:  2 3 4 5
 # Default-Stop:   0 1 6
-# Description:    VirtualBox Additions timesync
+# Description:    VirtualBox Additions Service
 ### END INIT INFO
 
 PATH=$PATH:/bin:/sbin:/usr/sbin
@@ -35,29 +35,29 @@ PATH=$PATH:/bin:/sbin:/usr/sbin
 system=unknown
 if [ -f /etc/redhat-release ]; then
     system=redhat
-    PIDFILE="/var/lock/subsys/vboxadd-timesync"
+    PIDFILE="/var/lock/subsys/vboxadd-service"
 elif [ -f /etc/SuSE-release ]; then
     system=suse
-    PIDFILE="/var/lock/subsys/vboxadd-timesync"
+    PIDFILE="/var/lock/subsys/vboxadd-service"
 elif [ -f /etc/debian_version ]; then
     system=debian
-    PIDFILE="/var/run/vboxadd-timesync"
+    PIDFILE="/var/run/vboxadd-service"
 elif [ -f /etc/gentoo-release ]; then
     system=gentoo
-    PIDFILE="/var/run/vboxadd-timesync"
+    PIDFILE="/var/run/vboxadd-service"
 elif [ -f /etc/arch-release ]; then
      system=arch
-     PIDFILE="/var/run/vboxadd-timesync"
+     PIDFILE="/var/run/vboxadd-service"
 elif [ -f /etc/slackware-version ]; then
     system=slackware
-    PIDFILE="/var/run/vboxadd-timesync"
+    PIDFILE="/var/run/vboxadd-service"
 elif [ -f /etc/lfs-release ]; then
     system=lfs
-    PIDFILE="/var/run/vboxadd-timesync.pid"
+    PIDFILE="/var/run/vboxadd-service.pid"
 else
     system=other
     if [ -d /var/run -a -w /var/run ]; then
-        PIDFILE="/var/run/vboxadd-timesync"
+        PIDFILE="/var/run/vboxadd-service"
     fi
 fi
 
@@ -236,7 +236,7 @@ if [ "$system" = "other" ]; then
     }
 fi
 
-binary=/usr/sbin/vboxadd-timesync
+binary=/usr/sbin/vboxadd-service
 
 test -x "$binary" || {
     echo "Cannot run $binary"
@@ -256,7 +256,7 @@ start() {
         }
         daemon $binary --daemonize
         RETVAL=$?
-        test $RETVAL -eq 0 && echo `pidof vboxadd-timesync` > $PIDFILE
+        test $RETVAL -eq 0 && echo `pidof vboxadd-service` > $PIDFILE
         succ_msg
     fi
     return $RETVAL
@@ -282,7 +282,7 @@ restart() {
 }
 
     status() {
-        echo -n "Checking for vboxadd-timesync"
+        echo -n "Checking for vboxadd-service"
         if [ -f $PIDFILE ]; then
             echo " ...running"
         else

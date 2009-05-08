@@ -26,7 +26,6 @@ include	$(KBUILD_PATH)/subheader.kmk
 # Include sub-makefiles.
 #
 include $(PATH_SUB_CURRENT)/module/Makefile.kmk
-include $(PATH_SUB_CURRENT)/daemon/Makefile.kmk
 include $(PATH_SUB_CURRENT)/sharedfolders/Makefile.kmk
 include $(PATH_SUB_CURRENT)/drm/Makefile.kmk
 
@@ -83,11 +82,11 @@ include	$(KBUILD_PATH)/subfooter.kmk
 #
 $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 		$(INSTARGET_vboxmod-bin) \
-		$(PATH_BIN)/additions/vboxadd-timesync \
+		$(PATH_BIN)/additions/VBoxService \
 		$(PATH_BIN)/additions/VBoxClient \
 		$(PATH_BIN)/additions/VBoxControl \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/VBoxRandR.sh \
-		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/vboxadd-timesync.sh \
+		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/vboxadd-service.sh \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/98vboxadd-xclient \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/vboxclient.desktop \
 		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/vboxadd.sh \
@@ -144,7 +143,7 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/Makefile.include.footer  $(VBOX_LNX_ADD_INS_OUT_DIR)/module/test_drm
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/Makefile.test.drm  $(VBOX_LNX_ADD_INS_OUT_DIR)/module/test_drm/Makefile
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/test_drm.c     $(VBOX_LNX_ADD_INS_OUT_DIR)/module/test_drm/
-	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/vboxadd-timesync           $(VBOX_LNX_ADD_INS_OUT_DIR)/vboxadd-timesync
+	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/VBoxService                $(VBOX_LNX_ADD_INS_OUT_DIR)/vboxadd-service
 	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/VBoxClient                 $(VBOX_LNX_ADD_INS_OUT_DIR)/VBoxClient
 	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/VBoxControl                $(VBOX_LNX_ADD_INS_OUT_DIR)/VBoxControl
 	$(QUIET)$(SED) \
@@ -158,7 +157,7 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_ADD_INS_OUT_DIR)/install_.sh $(VBOX_LNX_ADD_INS_OUT_DIR)/install.sh
 	$(QUIET)$(RM) $(VBOX_LNX_ADD_INS_OUT_DIR)/install_.sh
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/VBoxRandR.sh          $(VBOX_LNX_ADD_INS_OUT_DIR)
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/vboxadd-timesync.sh $(VBOX_LNX_ADD_INS_OUT_DIR)
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/vboxadd-service.sh  $(VBOX_LNX_ADD_INS_OUT_DIR)
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/98vboxadd-xclient     $(VBOX_LNX_ADD_INS_OUT_DIR)
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_X11_ADDITION_INSTALLER)/vboxclient.desktop    $(VBOX_LNX_ADD_INS_OUT_DIR)
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/vboxadd.sh          $(VBOX_LNX_ADD_INS_OUT_DIR)
