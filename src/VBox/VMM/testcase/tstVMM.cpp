@@ -107,8 +107,8 @@ DECLCALLBACK(int) tstTMWorker(PVM pVM, RTTEST hTest)
             if (    cLeft == RT_ELEMENTS(apTimers) / 2
                 &&  TMTimerIsActive(pTimer))
             {
-//                rc = TMTimerStop(pTimer);
-//                RTTEST_CHECK_MSG(hTest, RT_SUCCESS(rc), (hTest, "TMTimerStop: %Rrc\n",  rc));
+                rc = TMTimerStop(pTimer);
+                RTTEST_CHECK_MSG(hTest, RT_SUCCESS(rc), (hTest, "TMTimerStop: %Rrc\n",  rc));
             }
             else
             {
