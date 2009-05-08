@@ -109,6 +109,18 @@ typedef enum VMMCALLHOST
     VMMCALLHOST_32BIT_HACK = 0x7fffffff
 } VMMCALLHOST;
 
+/**
+ * VMMR3AtomicExecuteHandler callback function.
+ *
+ * @returns VBox status code.
+ * @param   pVM     Pointer to the shared VM structure. 
+ * @param   pvUser  User specified argument
+ */
+typedef DECLCALLBACK(int) FNATOMICHANDLER(PVM pVM, void *pvUser);
+/** Pointer to a FNMMATOMICHANDLER(). */
+typedef FNATOMICHANDLER *PFNATOMICHANDLER;
+
+
 VMMDECL(RTRCPTR)     VMMGetStackRC(PVM pVM);
 VMMDECL(VMCPUID)     VMMGetCpuId(PVM pVM);
 VMMDECL(PVMCPU)      VMMGetCpu(PVM pVM);
@@ -124,7 +136,8 @@ VMMDECL(VMMSWITCHER) VMMGetSwitcher(PVM pVM);
  * using hardware assisted virtualization.
  *
  * @returns true / false.
- * @param   pVM     Pointer to the shared VM structure. */
+ * @param   pVM     Pointer to the shared VM structure. 
+ */
 #define VMMIsHwVirtExtForced(pVM)   ((pVM)->fHwVirtExtForced)
 
 
@@ -160,6 +173,7 @@ VMMR3DECL(void)     VMMR3YieldStop(PVM pVM);
 VMMR3DECL(void)     VMMR3YieldResume(PVM pVM);
 VMMR3DECL(void)     VMMR3SendSipi(PVM pVM, VMCPUID idCpu, uint32_t uVector);
 VMMR3DECL(void)     VMMR3SendInitIpi(PVM pVM, VMCPUID idCpu);
+VMMR3DECL(int)      VMMR3AtomicExecuteHandler(PVM pVM, PFNATOMICHANDLER pfnHandler, void *pvUser);
 /** @} */
 #endif /* IN_RING3 */
 
