@@ -395,9 +395,12 @@ int main(int argc, char **argv)
     for (int i = 1; i < argc; i++)
     {
         const char *psz = argv[i];
+        if (*psz != '-')
+            return VBoxServiceSyntax("Unknown argument '%s'\n", psz);
+        psz++;
 
-        /* Translate long argument to short. */
-        if (*psz+1 == '-')
+        /* translate long argument to short */
+        if (*psz == '-')
         {
             psz++;
             size_t cch = strlen(psz);
@@ -446,66 +449,64 @@ int main(int argc, char **argv)
                         if (rc != -1)
                             return rc;
                     }
+                if (!fFound)
+                    return VBoxServiceSyntax("Unknown option '%s'\n", argv[i]);
                 continue;
             }
 #undef MATCHES
         }
-        else if (*psz == '-')
+
+        /* handle the string of short options. */
+        do
         {
-            /* Handle the string of short options. */
-            do
+            switch (*psz)
             {
-                switch (*psz)
+                case 'i':
+                    rc = VBoxServiceArgUInt32(argc, argv, psz + 1, &i,
+                                              &g_DefaultInterval, 1, (UINT32_MAX / 1000) - 1);
+                    if (rc)
+                        return rc;
+                    psz = NULL;
+                    break;
+
+                case 'f':
+                    fDaemonize = false;
+                    break;
+
+                case 'v':
+                    g_cVerbosity++;
+                    break;
+
+                case 'h':
+                case '?':
+                    return VBoxServiceUsage();
+
+#ifdef RT_OS_WINDOWS
+                case 'r':
+                    return VBoxServiceWinInstall();
+
+                case 'u':
+                    return VBoxServiceWinUninstall();
+#endif
+
+                default:
                 {
-                    case 'i':
-                        rc = VBoxServiceArgUInt32(argc, argv, psz + 1, &i,
-                                                  &g_DefaultInterval, 1, (UINT32_MAX / 1000) - 1);
-                        if (rc)
-                            return rc;
-                        psz = NULL;
-                        break;
-
-                    case 'f':
-                        fDaemonize = false;
-                        break;
-
-                    case 'v':
-                        g_cVerbosity++;
-                        break;
-
-                    case 'h':
-                    case '?':
-                        return VBoxServiceUsage();
-
-    #ifdef RT_OS_WINDOWS
-                    case 'r':
-                        return VBoxServiceWinInstall();
-
-                    case 'u':
-                        return VBoxServiceWinUninstall();
-    #endif
-
-                    default:
+                    bool fFound = false;
+                    for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
                     {
-                        bool fFound = false;
-                        for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
-                        {
-                            rc = g_aServices[j].pDesc->pfnOption(&psz, argc, argv, &i);
-                            fFound = rc == 0;
-                            if (fFound)
-                                break;
-                            if (rc != -1)
-                                return rc;
-                        }
-                        break;
+                        rc = g_aServices[j].pDesc->pfnOption(&psz, argc, argv, &i);
+                        fFound = rc == 0;
+                        if (fFound)
+                            break;
+                        if (rc != -1)
+                            return rc;
                     }
+                    if (!fFound)
+                        return VBoxServiceSyntax("Unknown option '%c' (%s)\n", *psz, argv[i]);
+                    break;
                 }
-            } while (psz && *++psz);
-        }
-        else
-        {
-            /* @todo put in here commands without dashes (- or --). */
-        }
+            }
+        } while (psz && *++psz);
     }
 
     /*
