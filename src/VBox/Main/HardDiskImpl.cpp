@@ -4434,6 +4434,10 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
             /* Everything is explicitly unlocked when the task exits,
              * as the task destruction also destroys the source chain. */
 
+            /* Make sure the source chain is released early. It could happen
+             * that we get a death lock in Appliance::Import when Medium::Close
+             * is called & the source chain is released at the same time. */
+            task->d.source.reset();
             break;
         }
 
