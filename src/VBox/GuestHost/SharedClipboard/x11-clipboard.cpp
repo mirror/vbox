@@ -136,7 +136,7 @@ struct _CLIPBACKEND
  * we should never need more than one.  For the testcase it is convenient to
  * have a second instance that the first can interact with in order to have
  * a more controlled environment. */
-enum { CLIPBOARD_NUM_CONTEXTS = 20 };
+enum { CLIP_MAX_CONTEXTS = 20 };
 
 /** Array of structures for mapping Xt widgets to context pointers.  We
  * need this because the widget clipboard callbacks do not pass user data. */
@@ -145,10 +145,10 @@ static struct {
     Widget widget;
     /** The context associated with the widget */
     CLIPBACKEND *pCtx;
-} g_contexts[CLIPBOARD_NUM_CONTEXTS];
+} g_contexts[CLIP_MAX_CONTEXTS];
 
 /** Register a new X11 clipboard context. */
-static int vboxClipboardAddContext(CLIPBACKEND *pCtx)
+static int clipRegisterContext(CLIPBACKEND *pCtx)
 {
     bool found = false;
     AssertReturn(pCtx != NULL, VERR_INVALID_PARAMETER);
@@ -170,7 +170,7 @@ static int vboxClipboardAddContext(CLIPBACKEND *pCtx)
 }
 
 /** Unregister an X11 clipboard context. */
-static void vboxClipboardRemoveContext(CLIPBACKEND *pCtx)
+static void clipUnregisterContext(CLIPBACKEND *pCtx)
 {
     bool found = false;
     AssertReturnVoid(pCtx != NULL);
@@ -190,7 +190,7 @@ static void vboxClipboardRemoveContext(CLIPBACKEND *pCtx)
 }
 
 /** Find an X11 clipboard context. */
-static CLIPBACKEND *vboxClipboardFindContext(Widget widget)
+static CLIPBACKEND *clipLookupContext(Widget widget)
 {
     AssertReturn(widget != NULL, NULL);
     for (unsigned i = 0; i < RT_ELEMENTS(g_contexts); ++i)
@@ -222,210 +222,217 @@ static Atom clipGetAtom(Widget widget, const char *pszName)
 /* Are we actually connected to the X server? */
 static bool g_fHaveX11;
 
-static int vboxClipboardWriteUtf16LE(CLIPBACKEND *pCtx,
-                                     PRTUTF16 pu16SrcText,
-                                     size_t cwSrcLen,
-                                     void *pv, unsigned cb,
-                                     uint32_t *pcbActual)
+/**
+ * Massage generic Utf16 with CR end-of-lines into the format Windows expects
+ * and put the result in a user-supplied buffer.
+ * @returns  IPRT status code
+ * @returns  VERR_BUFFER_OVERFLOW  if the buffer is not large enough
+ * @param  pwcSrc     The source Utf16
+ * @param  cwcSrc     The number of 16bit elements in @a pwcSrc, not counting
+ *                    the terminating zero
+ * @param  pvBuf      The buffer to write the result into
+ * @param  cbBuf      The size of the buffer
+ * @param  pcbActual  On success, where to store the number of bytes written.
+ *                    On overflow, the buffer size needed.  Undefined
+ *                    otherwise.  Optional
+ */
+static int clipUtf16ToWinTxt(RTUTF16 *pwcSrc, size_t cwcSrc,
+                             void *pvBuf, unsigned cbBuf, uint32_t *pcbActual)
 {
-    size_t cwDestLen;
-    PRTUTF16 pu16DestText = reinterpret_cast<PRTUTF16>(pv);
-    int rc = VINF_SUCCESS;
-    /* Check how much longer will the converted text will be. */
-    rc = vboxClipboardUtf16GetWinSize(pu16SrcText, cwSrcLen, &cwDestLen);
-    if (RT_SUCCESS(rc) && (cb < cwDestLen * 2))
+    LogFlowFunc(("pwcSrc=%p, cwcSrc=%u, pvBuf=%p, cbBuf=%u", pwcSrc, cwcSrc,
+                 pvBuf, cbBuf));
+    AssertPtrReturn(pwcSrc, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    if (pcbActual)
+        *pcbActual = 0;
+    PRTUTF16 pwcDest = reinterpret_cast<PRTUTF16>(pvBuf);
+    size_t cwcDest;
+    int rc = vboxClipboardUtf16GetWinSize(pwcSrc, cwcSrc + 1, &cwcDest);
+    if (RT_SUCCESS(rc) && (cbBuf < cwcDest * 2))
     {
-        /* Not enough buffer space provided - report the amount needed. */
-        LogFlowFunc (("guest buffer too small: size %d bytes, needed %d.  Returning.\n",
-                       cb, cwDestLen * 2));
-        *pcbActual = cwDestLen * 2;
         rc = VERR_BUFFER_OVERFLOW;
+        if (pcbActual)
+            *pcbActual = cwcDest * 2;
     }
-    /* Convert the text. */
     if (RT_SUCCESS(rc))
-        rc = vboxClipboardUtf16LinToWin(pu16SrcText, cwSrcLen, pu16DestText, cb / 2);
+        rc = vboxClipboardUtf16LinToWin(pwcSrc, cwcSrc + 1, pwcDest,
+                                        cbBuf / 2);
     if (RT_SUCCESS(rc))
     {
-        LogFlowFunc (("converted string is %.*ls\n", cwDestLen, pu16DestText));
-        *pcbActual = cwDestLen * 2;
+        LogFlowFunc (("converted string is %.*ls\n", cwcDest, pwcDest));
+        if (pcbActual)
+            *pcbActual = cwcDest * 2;
     }
+    LogFlowFunc(("returning %Rrc\n", rc));
+    if (pcbActual)
+        LogFlowFunc(("*pcbActual=%u\n", *pcbActual));
     return rc;
 }
 
 /**
- * Convert the UTF-8 text obtained from the X11 clipboard to UTF-16LE with
- * Windows EOLs, place it in the buffer supplied and signal that data has
- * arrived.
- *
- * @param pValue      Source UTF-8 text
- * @param cbSourceLen Length in 8-bit bytes of the source text
- * @param pv          Where to store the converted data
- * @param cb          Length in bytes of the buffer pointed to by pv
- * @param pcbActual   Where to store the size of the converted data
- * @param pClient     Pointer to the client context structure
- * @note  X11 backend code, called from the Xt callback when we wish to read
- *        the X11 clipboard.
+ * Convert Utf-8 text with CR end-of-lines into Utf-16 as Windows expects it
+ * and put the result in a user-supplied buffer.
+ * @returns  IPRT status code
+ * @returns  VERR_BUFFER_OVERFLOW  if the buffer is not large enough
+ * @param  pcSrc      The source Utf-8
+ * @param  cbSrc      The size of the source in bytes, not counting the
+ *                    terminating zero
+ * @param  pvBuf      The buffer to write the result into
+ * @param  cbBuf      The size of the buffer
+ * @param  pcbActual  On success, where to store the number of bytes written.
+ *                    On overflow, the buffer size needed.  Undefined
+ *                    otherwise.  Optional
  */
-static int vboxClipboardGetUtf8FromX11(CLIPBACKEND *pCtx,
-                                       XtPointer pValue, unsigned cbSrcLen,
-                                       void *pv, unsigned cb,
-                                       uint32_t *pcbActual)
+static int clipUtf8ToWinTxt(const char *pcSrc, unsigned cbSrc, void *pvBuf,
+                            unsigned cbBuf, uint32_t *pcbActual)
 {
-    size_t cwSrcLen;
-    char *pu8SrcText = reinterpret_cast<char *>(pValue);
-    PRTUTF16 pu16SrcText = NULL;
-
-    LogFlowFunc (("converting Utf-8 to Utf-16LE.  cbSrcLen=%d, cb=%d, pu8SrcText=%.*s\n",
-                   cbSrcLen, cb, cbSrcLen, pu8SrcText));
-    *pcbActual = 0;  /* Only set this to the right value on success. */
-    /* First convert the UTF8 to UTF16 */
-    int rc = RTStrToUtf16Ex(pu8SrcText, cbSrcLen, &pu16SrcText, 0, &cwSrcLen);
+    LogFlowFunc (("pcSrc = %.*s, cbSrc=%d, cbBuf=%d\n", cbSrc, pcSrc, cbSrc,
+                  cbBuf));
+    AssertPtrReturn(pcSrc, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    if (pcbActual)
+        *pcbActual = 0;
+    /* Intermediate conversion to UTF16 */
+    size_t cwcTmp;
+    PRTUTF16 pwcTmp = NULL;
+    int rc = RTStrToUtf16Ex(pcSrc, cbSrc, &pwcTmp, 0, &cwcTmp);
     if (RT_SUCCESS(rc))
-        rc = vboxClipboardWriteUtf16LE(pCtx, pu16SrcText, cwSrcLen + 1,
-                                       pv, cb, pcbActual);
-    XtFree(reinterpret_cast<char *>(pValue));
-    RTUtf16Free(pu16SrcText);
+        rc = clipUtf16ToWinTxt(pwcTmp, cwcTmp, pvBuf, cbBuf, pcbActual);
+    RTUtf16Free(pwcTmp);
     LogFlowFunc(("Returning %Rrc\n", rc));
+    if (pcbActual)
+        LogFlowFunc(("*pcbActual=%u\n", *pcbActual));
     return rc;
 }
 
 /**
- * Convert the COMPOUND_TEXT obtained from the X11 clipboard to UTF-16LE with
- * Windows EOLs, place it in the buffer supplied and signal that data has
- * arrived.
- *
- * @param pValue      Source COMPOUND_TEXT
- * @param cbSourceLen Length in 8-bit bytes of the source text
- * @param pv          Where to store the converted data
- * @param cb          Length in bytes of the buffer pointed to by pv
- * @param pcbActual   Where to store the size of the converted data
- * @param pClient     Pointer to the client context structure
- * @note  X11 backend code, called from the Xt callback when we wish to read
- *        the X11 clipboard.
+ * Convert COMPOUND TEXT with CR end-of-lines into Utf-16 as Windows expects
+ * it and put the result in a user-supplied buffer.
+ * @returns  IPRT status code
+ * @returns  VERR_BUFFER_OVERFLOW  if the buffer is not large enough
+ * @param  widget     An Xt widget, necessary because we use Xt/Xlib for the
+ *                    conversion
+ * @param  pcSrc      The source text
+ * @param  cbSrc      The size of the source in bytes, not counting the
+ *                    terminating zero
+ * @param  pvBuf      The buffer to write the result into
+ * @param  cbBuf      The size of the buffer
+ * @param  pcbActual  On success, where to store the number of bytes written.
+ *                    On overflow, the buffer size needed.  Undefined
+ *                    otherwise.  Optional
  */
-static int vboxClipboardGetCTextFromX11(CLIPBACKEND *pCtx,
-                                        XtPointer pValue, unsigned cbSrcLen,
-                                        void *pv, unsigned cb,
-                                        uint32_t *pcbActual)
+static int clipCTextToWinTxt(Widget widget, unsigned char *pcSrc,
+                             unsigned cbSrc, void *pvBuf, unsigned cbBuf,
+                             uint32_t *pcbActual)
 {
-    size_t cwSrcLen;
-    char **ppu8SrcText = NULL;
-    PRTUTF16 pu16SrcText = NULL;
-    XTextProperty property;
-    int rc = VINF_SUCCESS;
-    int cProps;
+    LogFlowFunc (("widget=%p, pcSrc=%.*s, cbSrc=%u, pvBuf=%p, cbBuf=%u\n",
+                  widget, cbSrc, (char *) pcSrc, cbSrc, pvBuf, cbBuf));
+    AssertReturn(widget, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcSrc, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
 
-    LogFlowFunc (("converting COMPOUND TEXT to Utf-16LE.  cbSrcLen=%d, cb=%d, pu8SrcText=%.*s\n",
-                   cbSrcLen, cb, cbSrcLen, reinterpret_cast<char *>(pValue)));
-    *pcbActual = 0;  /* Only set this to the right value on success. */
-    /** @todo quick fix for 2.2, do this properly. */
-    if (cbSrcLen == 0)
+    /* Special case as X*TextProperty* can't seem to handle empty strings. */
+    if (cbSrc == 0)
     {
-        XtFree(reinterpret_cast<char *>(pValue));
-        if (cb < 2)
-            return VERR_BUFFER_OVERFLOW;
-        *(PRTUTF16) pv = 0;
         *pcbActual = 2;
+        if (cbBuf < 2)
+            return VERR_BUFFER_OVERFLOW;
+        *(PRTUTF16) pvBuf = 0;
         return VINF_SUCCESS;
     }
-    /* First convert the compound text to Utf8 */
-    property.value = reinterpret_cast<unsigned char *>(pValue);
-    property.encoding = clipGetAtom(pCtx->widget, "COMPOUND_TEXT");
+
+    if (pcbActual)
+        *pcbActual = 0;
+    /* Intermediate conversion to Utf8 */
+    int rc = VINF_SUCCESS;
+    XTextProperty property;
+    char **ppcTmp = NULL;
+    int cProps;
+
+    property.value = pcSrc;
+    property.encoding = clipGetAtom(widget, "COMPOUND_TEXT");
     property.format = 8;
-    property.nitems = cbSrcLen;
-#ifdef RT_OS_SOLARIS
-    int xrc = XmbTextPropertyToTextList(XtDisplay(pCtx->widget), &property,
-                                        &ppu8SrcText, &cProps);
+    property.nitems = cbSrc;
+#ifdef X_HAVE_UTF8_STRING
+    int xrc = Xutf8TextPropertyToTextList(XtDisplay(widget), &property,
+                                          &ppcTmp, &cProps);
 #else
-    int xrc = Xutf8TextPropertyToTextList(XtDisplay(pCtx->widget),
-                                          &property, &ppu8SrcText, &cProps);
+    int xrc = XmbTextPropertyToTextList(XtDisplay(widget), &property,
+                                        &ppcTmp, &cProps);
 #endif
-    XtFree(reinterpret_cast<char *>(pValue));
     if (xrc < 0)
-        switch(xrc)
-        {
-        case XNoMemory:
-            rc = VERR_NO_MEMORY;
-            break;
-        case XLocaleNotSupported:
-        case XConverterNotFound:
-            rc = VERR_NOT_SUPPORTED;
-            break;
-        default:
-            rc = VERR_UNRESOLVED_ERROR;
-        }
+        rc = (  xrc == XNoMemory           ? VERR_NO_MEMORY
+              : xrc == XLocaleNotSupported ? VERR_NOT_SUPPORTED
+              : xrc == XConverterNotFound  ? VERR_NOT_SUPPORTED
+              :                              VERR_UNRESOLVED_ERROR);
     /* Now convert the UTF8 to UTF16 */
     if (RT_SUCCESS(rc))
-        rc = RTStrToUtf16Ex(*ppu8SrcText, cbSrcLen, &pu16SrcText, 0, &cwSrcLen);
-    if (RT_SUCCESS(rc))
-        rc = vboxClipboardWriteUtf16LE(pCtx, pu16SrcText, cwSrcLen + 1,
-                                       pv, cb, pcbActual);
-    if (ppu8SrcText != NULL)
-        XFreeStringList(ppu8SrcText);
-    RTUtf16Free(pu16SrcText);
+        rc = clipUtf8ToWinTxt(*ppcTmp, strlen(*ppcTmp), pvBuf, cbBuf,
+                              pcbActual);
+    if (ppcTmp != NULL)
+        XFreeStringList(ppcTmp);
     LogFlowFunc(("Returning %Rrc\n", rc));
+    if (pcbActual)
+        LogFlowFunc(("*pcbActual=%u\n", *pcbActual));
     return rc;
 }
 
 /**
- * Convert the Latin1 text obtained from the X11 clipboard to UTF-16LE with
- * Windows EOLs, place it in the buffer supplied and signal that data has
- * arrived.
- *
- * @param pValue      Source Latin1 text
- * @param cbSourceLen Length in 8-bit bytes of the source text
- * @param pv          Where to store the converted data
- * @param cb          Length in bytes of the buffer pointed to by cb
- * @param pcbActual   Where to store the size of the converted data
- * @param pClient     Pointer to the client context structure
- * @note  X11 backend code, called from the Xt callback when we wish to read
- *        the X11 clipboard.
+ * Convert Latin-1 text with CR end-of-lines into Utf-16 as Windows expects
+ * it and put the result in a user-supplied buffer.
+ * @returns  IPRT status code
+ * @returns  VERR_BUFFER_OVERFLOW  if the buffer is not large enough
+ * @param  pcSrc      The source text
+ * @param  cbSrc      The size of the source in bytes, not counting the
+ *                    terminating zero
+ * @param  pvBuf      The buffer to write the result into
+ * @param  cbBuf      The size of the buffer
+ * @param  pcbActual  On success, where to store the number of bytes written.
+ *                    On overflow, the buffer size needed.  Undefined
+ *                    otherwise.  Optional
  */
-static int vboxClipboardGetLatin1FromX11(CLIPBACKEND *pCtx,
-                                         XtPointer pValue,
-                                         unsigned cbSourceLen, void *pv,
-                                         unsigned cb, uint32_t *pcbActual)
+static int clipLatin1ToWinTxt(char *pcSrc, unsigned cbSrc, void *pvBuf,
+                              size_t cbBuf, uint32_t *pcbActual)
 {
-    char *pu8SourceText = reinterpret_cast<char *>(pValue);
-    PRTUTF16 pu16DestText = reinterpret_cast<PRTUTF16>(pv);
+    LogFlowFunc (("pcSrc=%.*s, cbSrc=%u, pvBuf=%p, cbBuf=%u\n", cbSrc,
+                  (char *) pcSrc, cbSrc, pvBuf, cbBuf));
+    AssertPtrReturn(pcSrc, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     int rc = VINF_SUCCESS;
 
-    LogFlowFunc (("converting Latin1 to Utf-16LE.  Original is %.*s\n",
-                  cbSourceLen, pu8SourceText));
-    *pcbActual = 0;  /* Only set this to the right value on success. */
-    unsigned cwDestLen = 0;
-    for (unsigned i = 0; i < cbSourceLen && pu8SourceText[i] != '\0'; i++)
-    {
-        ++cwDestLen;
-        if (pu8SourceText[i] == LINEFEED)
-            ++cwDestLen;
-    }
-    /* Leave space for the terminator */
-    ++cwDestLen;
-    if (cb < cwDestLen * 2)
-    {
-        /* Not enough buffer space provided - report the amount needed. */
-        LogFlowFunc (("guest buffer too small: size %d bytes\n", cb));
-        *pcbActual = cwDestLen * 2;
+    /* Calculate the space needed */
+    unsigned cwcDest = 0;
+    for (unsigned i = 0; i < cbSrc && pcSrc[i] != '\0'; ++i)
+        if (pcSrc[i] == LINEFEED)
+            cwcDest += 2;
+        else
+            ++cwcDest;
+    ++cwcDest;  /* Leave space for the terminator */
+    if (pcbActual)
+        *pcbActual = cwcDest * 2;
+    if (cbBuf < cwcDest * 2)
         rc = VERR_BUFFER_OVERFLOW;
-    }
+
+    /* And do the convertion, bearing in mind that Latin-1 expands "naturally"
+     * to Utf-16. */
     if (RT_SUCCESS(rc))
     {
-        for (unsigned i = 0, j = 0; i < cbSourceLen; ++i, ++j)
-            if (pu8SourceText[i] != LINEFEED)
-                pu16DestText[j] = pu8SourceText[i];  /* latin1 < utf-16LE */
+        PRTUTF16 pwcDest = (PRTUTF16) pvBuf;
+        for (unsigned i = 0, j = 0; i < cbSrc; ++i, ++j)
+            if (pcSrc[i] != LINEFEED)
+                pwcDest[j] = pcSrc[i];
             else
             {
-                pu16DestText[j] = CARRIAGERETURN;
+                pwcDest[j] = CARRIAGERETURN;
+                pwcDest[j + 1] = LINEFEED;
                 ++j;
-                pu16DestText[j] = LINEFEED;
             }
-        pu16DestText[cwDestLen - 1] = 0;
-        *pcbActual = cwDestLen * 2;
-        LogFlowFunc (("converted text is %.*ls\n", cwDestLen, pu16DestText));
+        pwcDest[cwcDest - 1] = '\0';  /* Make sure we are zero-terminated. */
+        LogFlowFunc (("converted text is %.*ls\n", cwcDest, pwcDest));
     }
-    XtFree(reinterpret_cast<char *>(pValue));
     LogFlowFunc(("Returning %Rrc\n", rc));
+    if (pcbActual)
+        LogFlowFunc(("*pcbActual=%u\n", *pcbActual));
     return rc;
 }
 
@@ -476,10 +483,11 @@ static void vboxClipboardGetDataFromX11(Widget, XtPointer pClientData,
     switch (pCtx->X11TextFormat)
     {
     case CTEXT:
-        pRequest->rc = vboxClipboardGetCTextFromX11(pCtx, pValue, cTextLen,
-                                                    pRequest->pv,
-                                                    pRequest->cb,
-                                                    pRequest->pcbActual);
+        pRequest->rc = clipCTextToWinTxt(pCtx->widget,
+                                         (unsigned char *)pValue, cTextLen,
+                                         pRequest->pv, pRequest->cb,
+                                         pRequest->pcbActual);
+        XtFree(reinterpret_cast<char *>(pValue));
         RTSemEventSignal(pRequest->finished);
         break;
     case UTF8:
@@ -491,21 +499,19 @@ static void vboxClipboardGetDataFromX11(Widget, XtPointer pClientData,
         if ((pCtx->X11TextFormat == UTF8)
             && (RTStrUniLenEx(pu8SourceText, *pcLen, &cStringLen) == VINF_SUCCESS))
         {
-            pRequest->rc = vboxClipboardGetUtf8FromX11(pCtx, pValue,
-                                                       cTextLen,
-                                                       pRequest->pv,
-                                                       pRequest->cb,
-                                                       pRequest->pcbActual);
+            pRequest->rc = clipUtf8ToWinTxt((const char *)pValue, cTextLen,
+                                            pRequest->pv, pRequest->cb,
+                                            pRequest->pcbActual);
+            XtFree(reinterpret_cast<char *>(pValue));
             RTSemEventSignal(pRequest->finished);
             break;
         }
         else
         {
-            pRequest->rc = vboxClipboardGetLatin1FromX11(pCtx, pValue,
-                                                         cTextLen,
-                                                         pRequest->pv,
-                                                         pRequest->cb,
-                                                        pRequest->pcbActual);
+            pRequest->rc = clipLatin1ToWinTxt((char *) pValue, cTextLen,
+                                              pRequest->pv, pRequest->cb,
+                                              pRequest->pcbActual);
+            XtFree(reinterpret_cast<char *>(pValue));
             RTSemEventSignal(pRequest->finished);
             break;
         }
@@ -654,7 +660,7 @@ static void vboxClipboardUninitX11(CLIPBACKEND *pCtx)
     {
         /* Valid widget + invalid appcontext = bug.  But don't return yet. */
         AssertPtr(pCtx->appContext);
-        vboxClipboardRemoveContext(pCtx);
+        clipUnregisterContext(pCtx);
         XtDestroyWidget(pCtx->widget);
     }
     pCtx->widget = NULL;
@@ -723,7 +729,7 @@ static int vboxClipboardInitX11 (CLIPBACKEND *pCtx)
             rc = VERR_NO_MEMORY;
         }
         else
-            rc = vboxClipboardAddContext(pCtx);
+            rc = clipRegisterContext(pCtx);
     }
     if (RT_SUCCESS(rc))
     {
@@ -1212,7 +1218,7 @@ static Boolean vboxClipboardConvertForX11(Widget widget, Atom *atomSelection,
                                           int *piFormatReturn)
 {
     CLIPFORMAT enmFormat = INVALID;
-    CLIPBACKEND *pCtx = vboxClipboardFindContext(widget);
+    CLIPBACKEND *pCtx = clipLookupContext(widget);
 
     LogFlowFunc(("\n"));
     /* Drop requests that we receive too late. */
@@ -1270,7 +1276,7 @@ static Boolean vboxClipboardConvertForX11(Widget widget, Atom *atomSelection,
  */
 static void vboxClipboardReturnToX11(Widget widget, Atom *)
 {
-    CLIPBACKEND *pCtx = vboxClipboardFindContext(widget);
+    CLIPBACKEND *pCtx = clipLookupContext(widget);
     LogFlowFunc (("called, giving X11 clipboard ownership\n"));
     /* These should be set to the right values as soon as we start polling */
     pCtx->X11TextFormat = INVALID;
