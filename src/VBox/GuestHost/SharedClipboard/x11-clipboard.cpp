@@ -1614,7 +1614,12 @@ int XmbTextPropertyToTextList(Display *display,
     for (unsigned i = 0; i < text_prop->nitems; ++i)
         AssertReturn(!(text_prop->value[i] & 0x80), XConverterNotFound);
     char **ppList = (char **)RTMemAlloc(sizeof(char *));
-    char *pValue = (char *)RTMemDup(text_prop->value, text_prop->nitems + 1);
+    char *pValue = (char *)RTMemAlloc(text_prop->nitems + 1);
+    if (pValue)
+    {
+        memcpy(pValue, text_prop->value, text_prop->nitems);
+        pValue[text_prop->nitems] = 0;
+    }
     if (ppList)
         *ppList = pValue;
     if (!ppList || !pValue)
@@ -1730,7 +1735,7 @@ void XtGetSelectionValue(Widget widget, Atom selection, Atom target,
     {
         /* Otherwise this is probably a caller error. */
         Assert(target != g_selTarget);
-        callback(NULL, closure, &selection, &type, NULL, &count, &format);
+        callback(widget, closure, &selection, &type, NULL, &count, &format);
                 /* Could not convert to target. */
         return;
     }
@@ -1755,7 +1760,7 @@ void XtGetSelectionValue(Widget widget, Atom selection, Atom target,
         count = 0;
         format = 0;
     }
-    callback(NULL, closure, &selection, &type, pValue,
+    callback(widget, closure, &selection, &type, pValue,
              &count, &format);
 }
 
