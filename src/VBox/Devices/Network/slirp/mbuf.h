@@ -141,4 +141,9 @@ void m_adj _P((struct mbuf *, int));
 int m_copy _P((struct mbuf *, struct mbuf *, int, int));
 struct mbuf * dtom _P((PNATState, void *));
 
+/*
+ * this macro should be used for validation and copying of Ethernet header where it really requred
+ */
+#define MBUF_HEAD(m) ((caddr_t)(((m)->m_flags & M_EXT) ? (m)->m_ext : (m)->m_dat))
+
 #endif

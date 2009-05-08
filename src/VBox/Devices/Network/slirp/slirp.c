@@ -1577,10 +1577,10 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m)
     m->m_len += ETH_HLEN;
     eh = mtod(m, struct ethhdr *);
     
-    if((caddr_t)eh != (caddr_t)m->m_dat)
+    if(MBUF_HEAD(m) != m->m_data)
     {
         LogRel(("NAT: ethernet detects corruption of the packet"));
-        AssertMsg((caddr_t)eh == (caddr_t)m->m_dat, ("!!Ethernet frame corrupted!!"));
+        AssertMsgFailed(("!!Ethernet frame corrupted!!"));
     }
 
 #ifndef VBOX_WITH_NAT_SERVICE
