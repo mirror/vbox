@@ -1109,7 +1109,7 @@ static void apic_startup(APICDeviceInfo* dev, APICState *s, int vector_num)
     env->halted = 0;
 #else
     /** @todo: init CPUs */
-    LogRel(("[SMP] apic_startup: %d on CPUs %d\n", vector_num, s->id));
+    Log(("[SMP] apic_startup: %d on CPUs %d\n", vector_num, s->id));
     cpuSendSipi(dev, s, vector_num);
 #endif
 }
@@ -2036,9 +2036,7 @@ PDMBOTHCBDECL(int) apicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     APICState *s = getLapic(dev);
 
-#ifdef VBOX_WITH_SMP_GUESTS
     Log(("[SMP] apicMMIORead at %llx\n", (uint64_t)GCPhysAddr));
-#endif
 
     /** @todo: add LAPIC range validity checks (different LAPICs can theoretically have
                different physical addresses, see #3092) */
@@ -2090,9 +2088,7 @@ PDMBOTHCBDECL(int) apicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     APICState *s = getLapic(dev);
 
-#ifdef VBOX_WITH_SMP_GUESTS
     Log(("[SMP] apicMMIOWrite at %llx\n", (uint64_t)GCPhysAddr));
-#endif
 
     /** @todo: add LAPIC range validity checks (multiple LAPICs can theoretically have
                different physical addresses, see #3092) */
