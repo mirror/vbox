@@ -25,7 +25,7 @@
 *
 * Module Name: ddenable.c
 *
-* Content:    
+* Content:
 *
 * Copyright (c) 1994-1998 3Dlabs Inc. Ltd. All rights reserved.
 * Copyright (c) 1995-1999 Microsoft Corporation.  All rights reserved.
@@ -36,11 +36,13 @@
 #undef CO_E_NOTINITIALIZED
 #include <winerror.h>
 
-
 #if 0
 static DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface);
 #endif
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+void getDDHALInfo(PPDEV pDev, DD_HALINFO* pHALInfo);
+#endif
 
 /**
  * DrvGetDirectDrawInfo
@@ -48,7 +50,7 @@ static DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface);
  * The DrvGetDirectDrawInfo function returns the capabilities of the graphics hardware.
  *
  * Parameters:
- * 
+ *
  * dhpdev
  *     Handle to the PDEV returned by the driver’s DrvEnablePDEV routine.
  * pHalInfo
@@ -60,7 +62,7 @@ static DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface);
  * pdwNumFourCCCodes
  *     Points to the location in which the driver should return the number of DWORDs pointed to by pdwFourCC.
  * pdwFourCC
- *     Points to an array of DWORDs in which the driver should return information about each FOURCC that it supports. The driver should ignore this parameter when it is NULL. 
+ *     Points to an array of DWORDs in which the driver should return information about each FOURCC that it supports. The driver should ignore this parameter when it is NULL.
  *
  * Return Value:
  *
@@ -88,11 +90,19 @@ BOOL APIENTRY DrvGetDirectDrawInfo(
 
     /* Setup the HAL driver caps. */
     pHalInfo->dwSize    = sizeof(DD_HALINFO);
+#ifndef VBOX_WITH_VIDEOHWACCEL
     pHalInfo->dwFlags   = 0;
+#endif
 
-    if (!(pvmList && pdwFourCC)) 
+    if (!(pvmList && pdwFourCC))
     {
+#ifdef VBOX_WITH_VIDEOHWACCEL
+        memset(pHalInfo, 0, sizeof(DD_HALINFO));
+        pHalInfo->dwSize    = sizeof(DD_HALINFO);
+#else
         memset(&pHalInfo->ddCaps, 0, sizeof(DDNTCORECAPS));
+#endif
+
         pHalInfo->ddCaps.dwSize         = sizeof(DDNTCORECAPS);
         pHalInfo->ddCaps.dwVidMemTotal  = pDev->layout.cbDDRAWHeap;
         pHalInfo->ddCaps.dwVidMemFree   = pHalInfo->ddCaps.dwVidMemTotal;
@@ -104,7 +114,7 @@ BOOL APIENTRY DrvGetDirectDrawInfo(
         pHalInfo->ddCaps.dwCaps2 |= DDCAPS2_WIDESURFACES;
 
         pHalInfo->ddCaps.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
-        
+
         /* Create primary surface attributes */
         pHalInfo->vmiData.pvPrimary                 = pDev->pjScreen;
         pHalInfo->vmiData.fpPrimary                 = 0;
@@ -135,8 +145,22 @@ BOOL APIENTRY DrvGetDirectDrawInfo(
         pHalInfo->vmiData.dwOffscreenAlign          = 4;
         pHalInfo->vmiData.dwZBufferAlign            = 4;
         pHalInfo->vmiData.dwTextureAlign            = 4;
+
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+        pHalInfo->vmiData.dwOverlayAlign = 4;
+
+#if 1
+        /* teesting */
+        pDev->bVHWAEnabled = TRUE;
+#endif
+        if(pDev->bVHWAEnabled)
+        {
+            getDDHALInfo(pDev, pHalInfo);
+        }
+#endif
     }
-    
+
     cHeaps = 0;
 
     /* Do we have sufficient videomemory to create an off-screen heap for DDraw? */
@@ -170,13 +194,32 @@ BOOL APIENTRY DrvGetDirectDrawInfo(
             pVm->dwFlags        = VIDMEM_ISLINEAR ;
             pVm->fpStart        = pDev->layout.offDDRAWHeap;
             pVm->fpEnd          = pDev->layout.offDDRAWHeap + pDev->layout.cbDDRAWHeap - 1; /* inclusive */
-
+#ifndef VBOX_WITH_VIDEOHWACCEL
             pVm->ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+#endif
             DISPDBG((0, "fpStart %x fpEnd %x\n", pVm->fpStart, pVm->fpEnd));
 
             pVm++;
         }
     }
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    if(pDev->bVHWAEnabled)
+    {
+        // TODO: filter out hw-unsupported fourccs
+#define FOURCC_YUV422  (MAKEFOURCC('Y','U','Y','2'))
+#define FOURCC_YUV411  (MAKEFOURCC('Y','4','1','1'))
+
+        static DWORD fourCC[] =  { FOURCC_YUV422, FOURCC_YUV411 };  // The FourCC's we support
+
+        *pdwNumFourCCCodes = sizeof( fourCC ) / sizeof( fourCC[0] );
+
+        if (pdwFourCC)
+        {
+            memcpy(pdwFourCC, fourCC, sizeof(fourCC));
+        }
+    }
+#endif
 
 #if 0 /* not mandatory */
     /* DX5 and up */
@@ -197,11 +240,11 @@ BOOL APIENTRY DrvGetDirectDrawInfo(
 
 /**
  * DrvEnableDirectDraw
- * 
+ *
  * The DrvEnableDirectDraw function enables hardware for DirectDraw use.
- * 
+ *
  * Parameters
- * 
+ *
  * dhpdev
  *     Handle to the PDEV returned by the driver’s DrvEnablePDEV routine.
  * pCallBacks
@@ -209,10 +252,10 @@ BOOL APIENTRY DrvGetDirectDrawInfo(
  * pSurfaceCallBacks
  *     Points to the DD_SURFACECALLBACKS structure to be initialized by the driver.
  * pPaletteCallBacks
- *     Points to the DD_PALETTECALLBACKS structure to be initialized by the driver. 
- * 
+ *     Points to the DD_PALETTECALLBACKS structure to be initialized by the driver.
+ *
  * Return Value
- * 
+ *
  * DrvEnableDirectDraw returns TRUE if it succeeds; otherwise, it returns FALSE.
  *
  */
@@ -223,6 +266,11 @@ BOOL APIENTRY DrvEnableDirectDraw(
     DD_PALETTECALLBACKS    *pPaletteCallBacks
     )
 {
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    PPDEV pDev = (PPDEV)dhpdev;
+
+#endif
+
     DISPDBG((0, "%s: %p, %p, %p, %p\n", __FUNCTION__, dhpdev, pCallBacks, pSurfaceCallBacks, pPaletteCallBacks));
 
     /* Fill in the HAL Callback pointers */
@@ -235,7 +283,7 @@ BOOL APIENTRY DrvEnableDirectDraw(
     pCallBacks->MapMemory             = DdMapMemory;
     // pCallBacks->WaitForVerticalBlank  = DdWaitForVerticalBlank;
     // pCallBacks->GetScanLine           = DdGetScanLine;
-    // DDHAL_CB32_WAITFORVERTICALBLANK | DDHAL_CB32_GETSCANLINE 
+    // DDHAL_CB32_WAITFORVERTICALBLANK | DDHAL_CB32_GETSCANLINE
     /* Note: pCallBacks->SetMode & pCallBacks->DestroyDriver are unused in Windows 2000 and up */
 
     /* Fill in the Surface Callback pointers */
@@ -261,16 +309,46 @@ BOOL APIENTRY DrvEnableDirectDraw(
     pPaletteCallBacks->dwSize           = sizeof(DD_PALETTECALLBACKS);
     pPaletteCallBacks->dwFlags          = 0;
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    if(pDev->bVHWAEnabled)
+    {
+        //TODO: filter out those we do not need in case not supported by hw
+        pSurfaceCallBacks->DestroySurface = DdDestroySurface;
+//        pSurfaceCallBacks->Lock = DdLock;
+//        pSurfaceCallBacks->Unlock = DdUnlock;
+        pSurfaceCallBacks->GetBltStatus = DdGetBltStatus;
+        pSurfaceCallBacks->GetFlipStatus = DdGetFlipStatus;
+        pSurfaceCallBacks->SetColorKey = DdSetColorKey;
+        pSurfaceCallBacks->Flip = DdFlip;
+        pSurfaceCallBacks->Blt = DdBlt;
+
+        pSurfaceCallBacks->dwFlags |= DDHAL_SURFCB32_DESTROYSURFACE     |
+                         DDHAL_SURFCB32_FLIP
+//                         | DDHAL_SURFCB32_LOCK
+                         | DDHAL_SURFCB32_BLT                |
+                         DDHAL_SURFCB32_GETBLTSTATUS       |
+                         DDHAL_SURFCB32_GETFLIPSTATUS      |
+                         DDHAL_SURFCB32_SETCOLORKEY
+//                         | DDHAL_SURFCB32_UNLOCK
+                         ;
+
+        pSurfaceCallBacks->UpdateOverlay = DdUpdateOverlay;   // Now supporting overlays.
+        pSurfaceCallBacks->SetOverlayPosition = DdSetOverlayPosition;
+        pSurfaceCallBacks->dwFlags |=
+                         DDHAL_SURFCB32_UPDATEOVERLAY      | // Now supporting
+                         DDHAL_SURFCB32_SETOVERLAYPOSITION ; // overlays.
+    }
+#endif
     return TRUE;
 }
 
 /**
  * DrvDisableDirectDraw
- * 
+ *
  * The DrvDisableDirectDraw function disables hardware for DirectDraw use.
- * 
+ *
  * Parameters
- * 
+ *
  * dhpdev
  *     Handle to the PDEV returned by the driver’s DrvEnablePDEV routine.
  *
@@ -282,16 +360,16 @@ VOID APIENTRY DrvDisableDirectDraw( DHPDEV dhpdev)
 
 /**
  * DdGetDriverInfo
- * 
+ *
  * The DdGetDriverInfo function queries the driver for additional DirectDraw and Direct3D functionality that the driver supports.
- * 
+ *
  * Parameters
  * lpGetDriverInfo
  *     Points to a DD_GETDRIVERINFODATA structure that contains the information required to perform the query.
- * 
+ *
  * Return Value
- * 
- * DdGetDriverInfo must return DDHAL_DRIVER_HANDLED. 
+ *
+ * DdGetDriverInfo must return DDHAL_DRIVER_HANDLED.
  *
  */
 DWORD CALLBACK DdGetDriverInfo(DD_GETDRIVERINFODATA *lpData)
@@ -309,37 +387,37 @@ DWORD CALLBACK DdGetDriverInfo(DD_GETDRIVERINFODATA *lpData)
     {
         DISPDBG((0, " -> GUID_D3DCallbacks3\n"));
     }
-    else 
+    else
     if (IsEqualIID(&lpData->guidInfo, &GUID_D3DExtendedCaps))
     {
         DISPDBG((0, " -> GUID_D3DExtendedCaps\n"));
     }
-    else 
+    else
     if (IsEqualIID(&lpData->guidInfo, &GUID_ZPixelFormats))
     {
         DISPDBG((0, " -> GUID_ZPixelFormats\n"));
     }
-    else 
+    else
     if (IsEqualIID(&(lpData->guidInfo), &GUID_D3DParseUnknownCommandCallback))
     {
         DISPDBG((0, " -> GUID_D3DParseUnknownCommandCallback\n"));
     }
-    else 
+    else
     if (IsEqualIID(&(lpData->guidInfo), &GUID_Miscellaneous2Callbacks))
     {
         DISPDBG((0, " -> GUID_Miscellaneous2Callbacks\n"));
     }
-    else 
+    else
     if (IsEqualIID(&(lpData->guidInfo), &GUID_UpdateNonLocalHeap))
     {
         DISPDBG((0, " -> GUID_UpdateNonLocalHeap\n"));
     }
-    else 
+    else
     if (IsEqualIID(&(lpData->guidInfo), &GUID_GetHeapAlignment))
     {
         DISPDBG((0, " -> GUID_GetHeapAlignment\n"));
     }
-    else 
+    else
     if (IsEqualIID(&(lpData->guidInfo), &GUID_NTPrivateDriverCaps))
     {
         DD_NTPRIVATEDRIVERCAPS DDPrivateDriverCaps;
@@ -357,7 +435,7 @@ DWORD CALLBACK DdGetDriverInfo(DD_GETDRIVERINFODATA *lpData)
         memcpy(lpData->lpvData, &DDPrivateDriverCaps, dwSize);
         lpData->ddRVal = DD_OK;
     }
-    else 
+    else
     if (IsEqualIID(&(lpData->guidInfo), &GUID_DDMoreSurfaceCaps))
     {
         DD_MORESURFACECAPS DDMoreSurfaceCaps;
@@ -394,17 +472,17 @@ DWORD CALLBACK DdGetDriverInfo(DD_GETDRIVERINFODATA *lpData)
 
         lpData->ddRVal = DD_OK;
     }
-    else 
+    else
     if (IsEqualIID(&(lpData->guidInfo), &GUID_DDStereoMode))
     {
         DISPDBG((0, " -> GUID_DDStereoMode\n"));
     }
-    else 
+    else
     if (IsEqualIID(&(lpData->guidInfo), &GUID_NonLocalVidMemCaps))
     {
         DISPDBG((0, " -> GUID_NonLocalVidMemCaps\n"));
-    } 
-    else 
+    }
+    else
     if (IsEqualIID(&lpData->guidInfo, &GUID_NTCallbacks))
     {
         DD_NTCALLBACKS NtCallbacks;
@@ -474,18 +552,18 @@ DWORD CALLBACK DdGetDriverInfo(DD_GETDRIVERINFODATA *lpData)
 
 /**
  * DdCreateSurface
- * 
+ *
  * The DdCreateSurface callback function creates a DirectDraw surface.
- * 
+ *
  * lpCreateSurface
  *     Points to a DD_CREATESURFACEDATA structure that contains the information required to create a surface.
- * 
+ *
  * Return Value
- * 
+ *
  * DdCreateSurface returns one of the following callback codes:
  * DDHAL_DRIVER_HANDLED
  * DDHAL_DRIVER_NOTHANDLED
- * 
+ *
  */
 DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface)
 {
@@ -498,7 +576,7 @@ DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface)
     DISPDBG((0, "%s: %p\n", __FUNCTION__, pDev));
 
     lpSurfaceLocal                  = lpCreateSurface->lplpSList[0];
-    lpSurfaceGlobal                 = lpSurfaceLocal->lpGbl;    
+    lpSurfaceGlobal                 = lpSurfaceLocal->lpGbl;
     lpSurfaceDesc                   = lpCreateSurface->lpDDSurfaceDesc;
 
     lpSurfaceGlobal->dwReserved1    = 0;
@@ -509,7 +587,7 @@ DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface)
         lPitch = lpSurfaceGlobal->wWidth/2;
         lPitch = (lPitch + 31) & ~31;
     }
-    else 
+    else
     if (lpSurfaceDesc->ddpfPixelFormat.dwFlags & DDPF_PALETTEINDEXED8)
     {
         lBpp = 8;
@@ -542,7 +620,7 @@ DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface)
         DISPDBG((0, "-> secondary surface\n"));
         lpSurfaceGlobal->fpVidMem       = DDHAL_PLEASEALLOC_BLOCKSIZE;
     }
-    
+
     lpSurfaceDesc->lPitch   = lpSurfaceGlobal->lPitch;
     lpSurfaceDesc->dwFlags |= DDSD_PITCH;
 
@@ -552,18 +630,18 @@ DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface)
 
 /**
  * DdCanCreateSurface
- * 
+ *
  * The DdCanCreateSurface callback function indicates whether the driver can create a surface of the specified surface description.
- * 
- * 
+ *
+ *
  * Parameters
  * lpCanCreateSurface
  *     Points to the DD_CANCREATESURFACEDATA structure containing the information required for the driver to determine whether a surface can be created.
- * 
+ *
  * Return Value
- * 
+ *
  * DdCanCreateSurface returns one of the following callback codes:
- * 
+ *
  * DDHAL_DRIVER_HANDLED
  * DDHAL_DRIVER_NOTHANDLED
  *
@@ -589,12 +667,16 @@ DWORD APIENTRY DdCanCreateSurface(PDD_CANCREATESURFACEDATA lpCanCreateSurface)
         return DDHAL_DRIVER_HANDLED;
     }
 
+#ifndef VBOX_WITH_VIDEOHWACCEL
     if (lpCanCreateSurface->bIsDifferentPixelFormat && (lpDDS->ddpfPixelFormat.dwFlags & DDPF_FOURCC))
     {
         DISPDBG((0, "FOURCC not supported\n"));
         lpCanCreateSurface->ddRVal = DDERR_INVALIDPIXELFORMAT;
         return DDHAL_DRIVER_HANDLED;
     }
+#else
+    /* TODO: filter out unsupported formats */
+#endif
 
     lpCanCreateSurface->ddRVal = DD_OK;
     return DDHAL_DRIVER_HANDLED;
@@ -604,43 +686,43 @@ DWORD APIENTRY DdCanCreateSurface(PDD_CANCREATESURFACEDATA lpCanCreateSurface)
 //
 // DdMapMemory
 //
-// Maps application-modifiable portions of the frame buffer into the 
+// Maps application-modifiable portions of the frame buffer into the
 // user-mode address space of the specified process, or unmaps memory.
 //
-// DdMapMemory is called to perform memory mapping before the first call to 
-// DdLock. The handle returned by the driver in fpProcess will be passed to 
-// every DdLock call made on the driver. 
+// DdMapMemory is called to perform memory mapping before the first call to
+// DdLock. The handle returned by the driver in fpProcess will be passed to
+// every DdLock call made on the driver.
 //
-// DdMapMemory is also called to unmap memory after the last DdUnLock call is 
+// DdMapMemory is also called to unmap memory after the last DdUnLock call is
 // made.
 //
 // To prevent driver crashes, the driver must not map any portion of the frame
 // buffer that must not be modified by an application.
 //
 // Parameters
-//      lpMapMemory 
-//          Points to a DD_MAPMEMORYDATA structure that contains details for 
-//          the memory mapping or unmapping operation. 
+//      lpMapMemory
+//          Points to a DD_MAPMEMORYDATA structure that contains details for
+//          the memory mapping or unmapping operation.
 //
-//          .lpDD 
-//              Points to a DD_DIRECTDRAW_GLOBAL structure that represents 
-//              the driver. 
-//          .bMap 
-//              Specifies the memory operation that the driver should perform. 
-//              A value of TRUE indicates that the driver should map memory; 
-//              FALSE means that the driver should unmap memory. 
-//          .hProcess 
-//              Specifies a handle to the process whose address space is 
-//              affected. 
-//          .fpProcess 
-//              Specifies the location in which the driver should return the 
-//              base address of the process's memory mapped space when bMap 
-//              is TRUE. When bMap is FALSE, fpProcess contains the base 
+//          .lpDD
+//              Points to a DD_DIRECTDRAW_GLOBAL structure that represents
+//              the driver.
+//          .bMap
+//              Specifies the memory operation that the driver should perform.
+//              A value of TRUE indicates that the driver should map memory;
+//              FALSE means that the driver should unmap memory.
+//          .hProcess
+//              Specifies a handle to the process whose address space is
+//              affected.
+//          .fpProcess
+//              Specifies the location in which the driver should return the
+//              base address of the process's memory mapped space when bMap
+//              is TRUE. When bMap is FALSE, fpProcess contains the base
 //              address of the memory to be unmapped by the driver.
-//          .ddRVal 
-//              Specifies the location in which the driver writes the return 
-//              value of the DdMapMemory callback. A return code of DD_OK 
-//              indicates success. 
+//          .ddRVal
+//              Specifies the location in which the driver writes the return
+//              value of the DdMapMemory callback. A return code of DD_OK
+//              indicates success.
 //
 //-----------------------------------------------------------------------------
 
@@ -682,13 +764,13 @@ DWORD CALLBACK DdMapMemory(PDD_MAPMEMORYDATA lpMapMemory)
             DISPDBG((0, "Failed IOCTL_VIDEO_SHARE_MEMORY\n"));
 
             lpMapMemory->ddRVal = DDERR_GENERIC;
-     
+
             DISPDBG((0, "DdMapMemory: Exit GEN, DDHAL_DRIVER_HANDLED\n"));
-            
+
             return(DDHAL_DRIVER_HANDLED);
         }
 
-        lpMapMemory->fpProcess = 
+        lpMapMemory->fpProcess =
                             (FLATPTR) ShareMemoryInformation.VirtualAddress;
     }
     else
@@ -717,17 +799,17 @@ DWORD CALLBACK DdMapMemory(PDD_MAPMEMORYDATA lpMapMemory)
 
 /**
  * DdLock
- * 
+ *
  * The DdLock callback function locks a specified area of surface memory and provides a valid pointer to a block of memory associated with a surface.
- * 
+ *
  * Parameters
  * lpLock
  *     Points to a DD_LOCKDATA structure that contains the information required to perform the lockdown.
- * 
+ *
  * Return Value
- * 
+ *
  * DdLock returns one of the following callback codes:
- * 
+ *
  * DDHAL_DRIVER_HANDLED
  * DDHAL_DRIVER_NOTHANDLED
  *
@@ -735,7 +817,7 @@ DWORD CALLBACK DdMapMemory(PDD_MAPMEMORYDATA lpMapMemory)
 DWORD APIENTRY DdLock(PDD_LOCKDATA lpLock)
 {
     PPDEV pDev = (PPDEV)lpLock->lpDD->dhpdev;
-    
+
     PDD_SURFACE_LOCAL lpSurfaceLocal = lpLock->lpDDSurface;
 
     DISPDBG((0, "%s: %p bHasRect = %d fpProcess = %p\n", __FUNCTION__, pDev, lpLock->bHasRect, lpLock->fpProcess));
@@ -773,17 +855,17 @@ DWORD APIENTRY DdLock(PDD_LOCKDATA lpLock)
 
 /**
  * DdUnlock
- * 
+ *
  * The DdUnLock callback function releases the lock held on the specified surface.
- * 
+ *
  * Parameters
  * lpUnlock
- *     Points to a DD_UNLOCKDATA structure that contains the information required to perform the lock release. * 
- * 
+ *     Points to a DD_UNLOCKDATA structure that contains the information required to perform the lock release. *
+ *
  * Return Value
- * 
+ *
  * DdLock returns one of the following callback codes:
- * 
+ *
  * DDHAL_DRIVER_HANDLED
  * DDHAL_DRIVER_NOTHANDLED
  *
@@ -796,7 +878,7 @@ DWORD APIENTRY DdUnlock(PDD_UNLOCKDATA lpUnlock)
     if (pDev->ddLock.bLocked)
     {
         DISPDBG((0, "%d,%d %dx%d\n", pDev->ddLock.rArea.left, pDev->ddLock.rArea.top, pDev->ddLock.rArea.right - pDev->ddLock.rArea.left, pDev->ddLock.rArea.bottom - pDev->ddLock.rArea.top));
-        
+
 #ifndef VBOX_WITH_HGSMI
         if (pDev->pInfo && vboxHwBufferBeginUpdate (pDev))
         {
@@ -852,17 +934,17 @@ DWORD APIENTRY DdUnlock(PDD_UNLOCKDATA lpUnlock)
 
 /**
  * DdDestroySurface
- * 
+ *
  * The DdDestroySurface callback function destroys a DirectDraw surface.
- * 
+ *
  * Parameters
  * lpDestroySurface
  *     Points to a DD_DESTROYSURFACEDATA structure that contains the information needed to destroy a surface.
- * 
+ *
  * Return Value
- * 
+ *
  * DdDestroySurface returns one of the following callback codes:
- * 
+ *
  * DDHAL_DRIVER_HANDLED
  * DDHAL_DRIVER_NOTHANDLED
  *
@@ -955,6 +1037,417 @@ DWORD APIENTRY DdFreeDriverMemory(PDD_FREEDRIVERMEMORYDATA lpFreeDriverMemory)
     lpFreeDriverMemory->ddRVal = DDERR_OUTOFMEMORY;
     return DDHAL_DRIVER_HANDLED;
 }
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+DWORD APIENTRY DdSetColorKey(PDD_SETCOLORKEYDATA  lpSetColorKey)
+{
+    DISPDBG((0, "%s\n", __FUNCTION__));
+    lpSetColorKey->ddRVal = DD_OK;
+    return DDHAL_DRIVER_HANDLED;
+}
+
+DWORD APIENTRY DdAddAttachedSurface(PDD_ADDATTACHEDSURFACEDATA  lpAddAttachedSurface)
+{
+    DISPDBG((0, "%s\n", __FUNCTION__));
+    lpAddAttachedSurface->ddRVal = DD_OK;
+    return DDHAL_DRIVER_HANDLED;
+}
+
+DWORD APIENTRY DdBlt(PDD_BLTDATA  lpBlt)
+{
+    DISPDBG((0, "%s\n", __FUNCTION__));
+    lpBlt->ddRVal = DD_OK;
+    return DDHAL_DRIVER_HANDLED;
+}
+
+//DWORD APIENTRY DdDestroySurface(PDD_DESTROYSURFACEDATA  lpDestroySurface)
+//{
+//    DISPDBG((0, "%s\n", __FUNCTION__));
+//    lpDestroySurface->ddRVal = DD_OK;
+//    return DDHAL_DRIVER_HANDLED;
+//}
+
+DWORD APIENTRY DdFlip(PDD_FLIPDATA  lpFlip)
+{
+    DISPDBG((0, "%s\n", __FUNCTION__));
+    lpFlip->ddRVal = DD_OK;
+    return DDHAL_DRIVER_HANDLED;
+}
+
+DWORD APIENTRY DdGetBltStatus(PDD_GETBLTSTATUSDATA  lpGetBltStatus)
+{
+    DISPDBG((0, "%s\n", __FUNCTION__));
+
+    if(lpGetBltStatus->dwFlags == DDGBS_CANBLT)
+    {
+        lpGetBltStatus->ddRVal = DD_OK;
+    }
+    else
+    {
+        lpGetBltStatus->ddRVal = DD_OK;
+    }
+
+    return DDHAL_DRIVER_HANDLED;
+}
+
+DWORD APIENTRY DdGetFlipStatus(PDD_GETFLIPSTATUSDATA  lpGetFlipStatus)
+{
+    DISPDBG((0, "%s\n", __FUNCTION__));
+    if(lpGetFlipStatus->dwFlags == DDGFS_CANFLIP)
+    {
+        lpGetFlipStatus->ddRVal = DD_OK;
+    }
+    else
+    {
+        lpGetFlipStatus->ddRVal = DD_OK;
+    }
+
+    return DDHAL_DRIVER_HANDLED;
+}
+
+DWORD APIENTRY DdSetOverlayPosition(PDD_SETOVERLAYPOSITIONDATA  lpSetOverlayPosition)
+{
+    DISPDBG((0, "%s\n", __FUNCTION__));
+
+    lpSetOverlayPosition->ddRVal = DD_OK;
+    return DDHAL_DRIVER_HANDLED;
+}
+
+DWORD APIENTRY DdUpdateOverlay(PDD_UPDATEOVERLAYDATA  lpUpdateOverlay)
+{
+    DISPDBG((0, "%s\n", __FUNCTION__));
+
+    lpUpdateOverlay->ddRVal = DD_OK;
+    return DDHAL_DRIVER_HANDLED;
+}
+
+//-----------------------------------------------------------------------------
+// setupRops
+//
+// Build array for supported ROPS
+//-----------------------------------------------------------------------------
+static void
+setupRops(
+    LPBYTE proplist,
+    LPDWORD proptable,
+    int cnt )
+{
+    int         i;
+    DWORD       idx;
+    DWORD       bit;
+    DWORD       rop;
+
+    for(i=0; i<cnt; i++)
+    {
+        rop = proplist[i];
+        idx = rop / 32;
+        bit = 1L << ((DWORD)(rop % 32));
+        proptable[idx] |= bit;
+    }
+
+} // setupRops
+
+//-----------------------------------------------------------------------------
+//
+// Function: __GetDDHALInfo
+//
+// Returns: void
+//
+// Description:
+//
+// Takes a pointer to a partially or fully filled in pThisDisplay and a pointer
+// to an empty DDHALINFO and fills in the DDHALINFO.  This eases porting to NT
+// and means that caps changes are done in only one place.  The pThisDisplay
+// may not be fully constructed here, so you should only:
+// a) Query the registry
+// b) DISPDBG
+// If you need to add anything to pThisDisplay for NT, you should fill it in
+// during the DrvGetDirectDraw call.
+//
+// The problem here is when the code is run on NT.  If there was any other way...
+//
+// The following caps have been found to cause NT to bail....
+// DDCAPS_GDI, DDFXCAPS_BLTMIRRORUPDOWN, DDFXCAPS_BLTMIRRORLEFTRIGHT
+//
+//
+//-----------------------------------------------------------------------------
+
+//
+// use bits to indicate which ROPs you support.
+//
+// DWORD 0, bit 0 == ROP 0
+// DWORD 8, bit 31 == ROP 255
+//
+
+//static DWORD ropsAGP[DD_ROP_SPACE] = { 0 };
+static BYTE ropListNT[] =
+{
+    SRCCOPY >> 16
+//        WHITENESS >> 16,
+//        BLACKNESS >> 16
+};
+
+static DWORD rops[DD_ROP_SPACE] = { 0 };
+
+void
+getDDHALInfo(
+    PPDEV pDev,
+    DD_HALINFO* pHALInfo)
+{
+    int i;
+
+    /* TODO: only enable features supported by the host backend & host hw
+     * for now this just combines all caps we might use */
+
+    // Setup the ROPS we do.
+    setupRops( ropListNT,
+                 rops,
+                 sizeof(ropListNT)/sizeof(ropListNT[0]));
+
+    // The most basic DirectDraw functionality
+    pHALInfo->ddCaps.dwCaps |=   DDCAPS_BLT
+                                 | DDCAPS_BLTQUEUE
+                                 | DDCAPS_BLTCOLORFILL
+//                                | DDCAPS_READSCANLINE
+                                ;
+
+    pHALInfo->ddCaps.ddsCaps.dwCaps |=   DDSCAPS_OFFSCREENPLAIN
+                                         | DDSCAPS_PRIMARYSURFACE
+                                         | DDSCAPS_FLIP;
+
+    pHALInfo->ddCaps.dwCaps |= DDCAPS_3D           |
+                               DDCAPS_BLTDEPTHFILL;
+
+    pHALInfo->ddCaps.ddsCaps.dwCaps |= DDSCAPS_3DDEVICE |
+                                       DDSCAPS_ZBUFFER |
+                                       DDSCAPS_ALPHA;
+    pHALInfo->ddCaps.dwCaps2 = 0;
+
+//#if DX7_TEXMANAGEMENT
+    // We need to set this bit up in order to be able to do
+    // out own texture management
+//    pHALInfo->ddCaps.dwCaps2 |= DDCAPS2_CANMANAGETEXTURE;
+//#if DX8_DDI
+//    pHALInfo->ddCaps.dwCaps2 |= DDCAPS2_CANMANAGERESOURCE;
+//#endif
+//#endif
+
+//#if DX8_DDI
+    // We need to flag we can run in windowed mode, otherwise we
+    // might get restricted by apps to run in fullscreen only
+    pHALInfo->ddCaps.dwCaps2 |= DDCAPS2_CANRENDERWINDOWED;
+//#endif
+
+//#if DX8_DDI
+    // We need to flag we support dynamic textures. That is , apps can
+        // lock with high frequency video memory textures without paying a
+        // penalty for it. Since on this sample driver we only support
+        // linear memory formats for textures we don't need to do anything
+        // else for this support. Otherwise we would have to keep two surfaces
+        // for textures created with the DDSCAPS2_HINTDYNAMIC hint in order
+        // to efficiently do the linear<->swizzled transformation or keep the
+        // texture permanantly in an unswizzled state.
+//        pHALInfo->ddCaps.dwCaps2 |= DDCAPS2_DYNAMICTEXTURES;
+    #if DX9_DDI
+        // Notice that dynamic textures MUST be supported in order to instantiate a DX9 device
+    #endif // DX9_DDI
+//#endif
+
+//    pHALInfo->ddCaps.dwFXCaps = 0;
+
+    // P3RX can do:
+    // 1. Stretching/Shrinking
+    // 2. YUV->RGB conversion
+    // 3. Mirroring in X and Y
+    // 4. ColorKeying from a source color and a source color space
+    pHALInfo->ddCaps.dwCaps |= DDCAPS_BLTSTRETCH
+                               | DDCAPS_BLTFOURCC
+                               | DDCAPS_COLORKEY
+//                               | DDCAPS_CANBLTSYSMEM
+                               ;
+
+    // Special effects caps
+    pHALInfo->ddCaps.dwFXCaps |= DDFXCAPS_BLTSTRETCHY  |
+                                DDFXCAPS_BLTSTRETCHX  |
+                                DDFXCAPS_BLTSTRETCHYN |
+                                DDFXCAPS_BLTSTRETCHXN |
+                                DDFXCAPS_BLTSHRINKY   |
+                                DDFXCAPS_BLTSHRINKX   |
+                                DDFXCAPS_BLTSHRINKYN  |
+                                DDFXCAPS_BLTSHRINKXN;
+
+    // ColorKey caps
+    pHALInfo->ddCaps.dwCKeyCaps |= DDCKEYCAPS_SRCBLT         |
+                                  DDCKEYCAPS_SRCBLTCLRSPACE |
+                                  DDCKEYCAPS_DESTBLT        |
+                                  DDCKEYCAPS_DESTBLTCLRSPACE;
+
+//    pHALInfo->ddCaps.dwSVBCaps = DDCAPS_BLT;
+
+//    // We can do a texture from sysmem to video mem.
+//    pHALInfo->ddCaps.dwSVBCKeyCaps |= DDCKEYCAPS_DESTBLT         |
+//                                     DDCKEYCAPS_DESTBLTCLRSPACE;
+    pHALInfo->ddCaps.dwSVBFXCaps = 0;
+
+//    // Fill in the sysmem->vidmem rops (only can copy);
+//    for( i=0;i<DD_ROP_SPACE;i++ )
+//    {
+//        pHALInfo->ddCaps.dwSVBRops[i] = rops[i];
+//    }
+
+    //mirroring with blitting
+    pHALInfo->ddCaps.dwFXCaps |= DDFXCAPS_BLTMIRRORUPDOWN  |
+                                DDFXCAPS_BLTMIRRORLEFTRIGHT;
+
+    pHALInfo->ddCaps.dwCKeyCaps |=  DDCKEYCAPS_SRCBLTCLRSPACEYUV;
+
+    pHALInfo->ddCaps.ddsCaps.dwCaps |= DDSCAPS_TEXTURE;
+
+//#if DX7_STEREO
+//    // Report the stereo capability back to runtime
+//    pHALInfo->ddCaps.dwCaps2 |= DDCAPS2_STEREO;
+//    pHALInfo->ddCaps.dwSVCaps = DDSVCAPS_STEREOSEQUENTIAL;
+//#endif
+
+    // Z Buffer is only 16 Bits
+//    pHALInfo->ddCaps.dwZBufferBitDepths = DDBD_16;
+//    pHALInfo->ddCaps.ddsCaps.dwCaps |= DDSCAPS_MIPMAP;
+
+        pHALInfo->ddCaps.ddsCaps.dwCaps |= DDSCAPS_LOCALVIDMEM;
+
+    {
+//#ifdef SUPPORT_VIDEOPORT
+//        // We support 1 video port.  Must set CurrVideoPorts to 0
+//        // We can't do interleaved bobbing yet - maybe in the future.
+//        pHALInfo->ddCaps.dwCaps2 |= DDCAPS2_VIDEOPORT            |
+//                                    DDCAPS2_CANBOBNONINTERLEAVED;
+//
+//        pHALInfo->ddCaps.dwMaxVideoPorts = 1;
+//        pHALInfo->ddCaps.dwCurrVideoPorts = 0;
+//
+//
+//#endif // SUPPORT_VIDEOPORT
+
+
+        {
+            // Overlay is free to use.
+            pHALInfo->ddCaps.dwMaxVisibleOverlays = 1;
+            pHALInfo->ddCaps.dwCurrVisibleOverlays = 0;
+
+            pHALInfo->ddCaps.dwCaps |=  DDCAPS_OVERLAY          |
+                                        DDCAPS_OVERLAYFOURCC    |
+                                        DDCAPS_OVERLAYSTRETCH   |
+                                        DDCAPS_COLORKEYHWASSIST |
+                                        DDCAPS_OVERLAYCANTCLIP;
+
+            pHALInfo->ddCaps.dwCKeyCaps |= DDCKEYCAPS_SRCOVERLAY           |
+                                           DDCKEYCAPS_SRCOVERLAYONEACTIVE  |
+                                           DDCKEYCAPS_SRCOVERLAYYUV        |
+                                           DDCKEYCAPS_DESTOVERLAY          |
+                                           DDCKEYCAPS_DESTOVERLAYONEACTIVE |
+                                           DDCKEYCAPS_DESTOVERLAYYUV;
+
+            pHALInfo->ddCaps.ddsCaps.dwCaps |= DDSCAPS_OVERLAY;
+
+            pHALInfo->ddCaps.dwFXCaps |= DDFXCAPS_OVERLAYSHRINKX   |
+                                         DDFXCAPS_OVERLAYSHRINKXN  |
+                                         DDFXCAPS_OVERLAYSHRINKY   |
+                                         DDFXCAPS_OVERLAYSHRINKYN  |
+                                         DDFXCAPS_OVERLAYSTRETCHX  |
+                                         DDFXCAPS_OVERLAYSTRETCHXN |
+                                         DDFXCAPS_OVERLAYSTRETCHY  |
+                                         DDFXCAPS_OVERLAYSTRETCHYN;
+
+            // Indicates that Perm3 has no stretch ratio limitation
+            pHALInfo->ddCaps.dwMinOverlayStretch = 1;
+            pHALInfo->ddCaps.dwMaxOverlayStretch = 32000;
+        }
+    }
+
+//#ifdef W95_DDRAW
+//#ifdef USE_DD_CONTROL_COLOR
+//    // Enable colour control asc brightness, contrast, gamma.
+//    pHALInfo->ddCaps.dwCaps2 |= DDCAPS2_COLORCONTROLPRIMARY;
+//#endif
+//#endif
+
+    // Also permit surfaces wider than the display buffer.
+    pHALInfo->ddCaps.dwCaps2 |= DDCAPS2_WIDESURFACES;
+
+    // Enable copy blts betweemn Four CC formats for DShow acceleration
+    pHALInfo->ddCaps.dwCaps2 |= DDCAPS2_COPYFOURCC;
+
+    // Won't do Video-Sys mem Blits.
+    pHALInfo->ddCaps.dwVSBCaps = 0;
+    pHALInfo->ddCaps.dwVSBCKeyCaps = 0;
+    pHALInfo->ddCaps.dwVSBFXCaps = 0;
+    for( i=0;i<DD_ROP_SPACE;i++ )
+    {
+        pHALInfo->ddCaps.dwVSBRops[i] = 0;
+    }
+
+    // Won't do Sys-Sys mem Blits
+    pHALInfo->ddCaps.dwSSBCaps = 0;
+    pHALInfo->ddCaps.dwSSBCKeyCaps = 0;
+    pHALInfo->ddCaps.dwSSBFXCaps = 0;
+    for( i=0;i<DD_ROP_SPACE;i++ )
+    {
+        pHALInfo->ddCaps.dwSSBRops[i] = 0;
+    }
+
+    //
+    // bit depths supported for alpha and Z
+    //
+//    pHALInfo->ddCaps.dwAlphaBltConstBitDepths = DDBD_2 |
+//                                                DDBD_4 |
+//                                                DDBD_8;
+//
+//    pHALInfo->ddCaps.dwAlphaBltPixelBitDepths = DDBD_1 |
+//                                                DDBD_8;
+//    pHALInfo->ddCaps.dwAlphaBltSurfaceBitDepths = DDBD_1 |
+//                                                  DDBD_2 |
+//                                                  DDBD_4 |
+//                                                  DDBD_8;
+
+    // No alpha blending for overlays, so I'm not sure what these should be.
+    // Because we support 32bpp overlays, it's just that you can't use the
+    // alpha bits for blending. Pass.
+    pHALInfo->ddCaps.dwAlphaBltConstBitDepths = DDBD_2 |
+                                                DDBD_4 |
+                                                DDBD_8;
+
+    pHALInfo->ddCaps.dwAlphaBltPixelBitDepths = DDBD_1 |
+                                                DDBD_8;
+
+    pHALInfo->ddCaps.dwAlphaBltSurfaceBitDepths = DDBD_1 |
+                                                  DDBD_2 |
+                                                  DDBD_4 |
+                                                  DDBD_8;
+
+    //
+    // ROPS supported
+    //
+    for( i=0;i<DD_ROP_SPACE;i++ )
+    {
+        pHALInfo->ddCaps.dwRops[i] = rops[i];
+    }
+
+//Reenable:    // For DX5 and beyond we support this new informational callback.
+//    pHALInfo->GetDriverInfo = DdGetDriverInfo;
+//    pHALInfo->dwFlags |= DDHALINFO_GETDRIVERINFOSET;
+//
+//#if DX8_DDI
+//    // Flag our support for a new class of GUIDs that may come through
+//    // GetDriverInfo for DX8 drivers. (This support will be compulsory)
+//    pHALInfo->dwFlags |= DDHALINFO_GETDRIVERINFO2;
+//#endif DX8_DDI
+
+
+} // getDDHALInfo
+
+
+#endif
+
 
 
 #endif /* VBOX_WITH_DDRAW */
