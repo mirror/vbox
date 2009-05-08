@@ -599,36 +599,47 @@ HRESULT Appliance::HandleDiskSection(const char *pcszPath,
     {
         DiskImage d;
         const char *pcszBad = NULL;
-        if (!(pelmDisk->getAttributeValue("diskId", d.strDiskId)))
+        const char *pcszDiskId;
+        const char *pcszFormat;
+        if (!(pelmDisk->getAttributeValue("diskId", pcszDiskId)))
             pcszBad = "diskId";
-        else if (!(pelmDisk->getAttributeValue("format", d.strFormat)))
+        else if (!(pelmDisk->getAttributeValue("format", pcszFormat)))
             pcszBad = "format";
         else if (!(pelmDisk->getAttributeValue("capacity", d.iCapacity)))
             pcszBad = "capacity";
         else
         {
+            d.strDiskId = pcszDiskId;
+            d.strFormat = pcszFormat;
+
             if (!(pelmDisk->getAttributeValue("populatedSize", d.iPopulatedSize)))
                 // optional
                 d.iPopulatedSize = -1;
 
-            Utf8Str strFileRef;
-            if (pelmDisk->getAttributeValue("fileRef", strFileRef)) // optional
+            const char *pcszFileRef;
+            if (pelmDisk->getAttributeValue("fileRef", pcszFileRef)) // optional
             {
                 // look up corresponding /References/File nodes (list built above)
                 const xml::ElementNode *pFileElem;
                 if (    pReferencesElem
-                     && ((pFileElem = pReferencesElem->findChildElementFromId(strFileRef.c_str())))
+                     && ((pFileElem = pReferencesElem->findChildElementFromId(pcszFileRef)))
                    )
                 {
                     // copy remaining values from file node then
                     const char *pcszBadInFile = NULL;
-                    if (!(pFileElem->getAttributeValue("href", d.strHref)))
+                    const char *pcszHref;
+                    if (!(pFileElem->getAttributeValue("href", pcszHref)))
                         pcszBadInFile = "href";
                     else if (!(pFileElem->getAttributeValue("size", d.iSize)))
                         d.iSize = -1;       // optional
+
+                    d.strHref = pcszHref;
+
                     // if (!(pFileElem->getAttributeValue("size", d.iChunkSize))) TODO
                     d.iChunkSize = -1;       // optional
-                    pFileElem->getAttributeValue("compression", d.strCompression);
+                    const char *pcszCompression;
+                    if (pFileElem->getAttributeValue("compression", pcszCompression))
+                        d.strCompression = pcszCompression;
 
                     if (pcszBadInFile)
                         return setError(VBOX_E_FILE_ERROR,
@@ -641,7 +652,7 @@ HRESULT Appliance::HandleDiskSection(const char *pcszPath,
                     return setError(VBOX_E_FILE_ERROR,
                                     tr("Error reading \"%s\": cannot find References/File element for ID '%s' referenced by 'Disk' element, line %d"),
                                     pcszPath,
-                                    strFileRef.c_str(),
+                                    pcszFileRef,
                                     pelmDisk->getLineNumber());
             }
         }
@@ -2321,7 +2332,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
                         Bstr hdId;
                         rc = dstHdVBox->COMGETTER(Id)(hdId.asOutParam());
                         if (FAILED(rc)) throw rc;
-                         
+
                         /* For now we assume we have one controller of every type only */
                         HardDiskController hdc = (*vsysThis.mapControllers.find(vd.idController)).second;
 

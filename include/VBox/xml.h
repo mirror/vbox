@@ -101,38 +101,79 @@ class VBOXXML_CLASS Error : public std::exception
 {
 public:
 
-    Error(const char *aMsg = NULL)
-        : m(aMsg) {}
+    Error(const char *pcszMessage = NULL)
+        : m_pcsz(NULL)
+    {
+        copyFrom(pcszMessage);
+    }
 
-    virtual ~Error() throw() {}
+    Error(const Error &s)
+        : std::exception(s)
+    {
+        copyFrom(s.what());
+    }
 
-    void setWhat (const char *aMsg) { m = aMsg; }
+    virtual ~Error() throw()
+    {
+        cleanup();
+    }
 
-    const char* what() const throw() { return m.c_str(); }
+    void operator=(const Error &s)
+    {
+        cleanup();
+        copyFrom(s.what());
+    }
+
+    void setWhat(const char *pcszMessage)
+    {
+        cleanup();
+        copyFrom(pcszMessage);
+    }
+
+    virtual const char* what() const throw()
+    {
+        return m_pcsz;
+    }
 
 private:
+    Error() {};     // hide the default constructor to make sure the extended one above is always used
 
-//     Error() {};     // hide the default constructor to make sure the extended one above is always used
+    void cleanup()
+    {
+        if (m_pcsz)
+        {
+            RTStrFree(m_pcsz);
+            m_pcsz = NULL;
+        }
+    }
 
-    com::Utf8Str m;
+    void copyFrom(const char *pcszMessage)
+    {
+        if (pcszMessage)
+            m_pcsz = RTStrDup(pcszMessage);
+    }
+
+    char *m_pcsz;
 };
 
 class VBOXXML_CLASS LogicError : public Error
 {
 public:
 
-    LogicError (const char *aMsg = NULL)
+    LogicError(const char *aMsg = NULL)
         : xml::Error(aMsg)
     {}
 
-    LogicError (RT_SRC_POS_DECL);
+    LogicError(RT_SRC_POS_DECL);
 };
 
 class VBOXXML_CLASS RuntimeError : public Error
 {
 public:
 
-    RuntimeError (const char *aMsg = NULL) : Error (aMsg) {}
+    RuntimeError(const char *aMsg = NULL)
+        : xml::Error(aMsg)
+    {}
 };
 
 class VBOXXML_CLASS XmlError : public RuntimeError
@@ -497,7 +538,7 @@ public:
     const ElementNode* findChildElementFromId(const char *pcszId) const;
 
     const AttributeNode* findAttribute(const char *pcszMatch) const;
-    bool getAttributeValue(const char *pcszMatch, com::Utf8Str &str) const;
+    bool getAttributeValue(const char *pcszMatch, const char *&ppcsz) const;
     bool getAttributeValue(const char *pcszMatch, int64_t &i) const;
     bool getAttributeValue(const char *pcszMatch, uint64_t &i) const;
 
