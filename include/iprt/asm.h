@@ -113,6 +113,16 @@
 # define RT_INLINE_ASM_USES_INTRIN 0
 #endif
 
+/** @def RT_INLINE_ASM_GCC_4_3_3_X86
+ * Used to work around some 4.3.3 register allocation issues in this version
+ * of the compiler. */
+#ifdef __GNUC__
+# define RT_INLINE_ASM_GCC_4_3_3_X86 (__GNUC__ == 4 && __GNUC_MINOR__ == 1 && __GNUC_PATCHLEVEL__ == 3 && defined(__i386__))
+#endif
+#ifndef RT_INLINE_ASM_GCC_4_3_3_X86
+# define RT_INLINE_ASM_GCC_4_3_3_X86 0
+#endif
+
 
 
 /** @defgroup grp_asm       ASM - Assembly Routines
@@ -3087,7 +3097,8 @@ DECLINLINE(bool) ASMAtomicCmpXchgS32(volatile int32_t *pi32, const int32_t i32Ne
  * @param   u64New  The 64-bit value to assign to *pu64.
  * @param   u64Old  The value to compare with.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if (RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN) \
+ || (RT_INLINE_ASM_GCC_4_3_3_X86 && defined(IN_RING3) && defined(__PIC__))
 DECLASM(bool) ASMAtomicCmpXchgU64(volatile uint64_t *pu64, const uint64_t u64New, const uint64_t u64Old);
 #else
 DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t *pu64, const uint64_t u64New, uint64_t u64Old)
