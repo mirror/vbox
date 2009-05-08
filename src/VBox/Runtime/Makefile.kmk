@@ -780,7 +780,6 @@ VBoxRT_DEFS                    = $(filter-out RT_NO_GIP,$(RuntimeR3_DEFS)) IN_SU
 VBoxRT_DEFS.$(KBUILD_TYPE)     = $(RuntimeR3_DEFS.$(KBUILD_TYPE))
 VBoxRT_SOURCES                 = \
 	VBox/VBoxRTDeps.cpp \
-	common/misc/s3.cpp \
 	$(RuntimeR3_SOURCES)
 ifdef VBOX_WITH_LIBXML2_IN_VBOXRT
 VBoxRT_SOURCES                += \
@@ -801,6 +800,10 @@ VBoxRT_LIBS                    = \
 ifdef IPRT_WITH_KSTUFF
  VBoxRT_LIBS                  += \
    	$(PATH_LIB)/VBox-kStuff$(VBOX_SUFF_LIB)
+endif
+ifdef VBOX_WITH_LIBXML2_IN_VBOXRT
+ VBoxRT_LIBS                  += \
+	$(PATH_LIB)/VBox-libxml2$(VBOX_SUFF_LIB)
 endif
 VBoxRT_LIBS.darwin             = \
 	iconv
