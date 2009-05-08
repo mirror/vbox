@@ -1530,6 +1530,7 @@ static uint32_t g_vboxDatacb = 0;
 static void clipEmptyVBox(CLIPBACKEND *pCtx, int retval)
 {
     g_vboxDataRC = retval;
+    RTMemFree(g_vboxDatapv);
     g_vboxDatapv = NULL;
     g_vboxDatacb = 0;
     VBoxX11ClipboardAnnounceVBoxFormat(pCtx, 0);
