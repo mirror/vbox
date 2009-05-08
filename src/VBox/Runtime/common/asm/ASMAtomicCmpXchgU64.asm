@@ -51,11 +51,11 @@ BEGINPROC_EXPORTED ASMAtomicCmpXchgU64
         push    ebx
         push    edi
 
-        mov     ebx, dword ptr [ebp+0ch]
-        mov     ecx, dword ptr [ebp+0ch + 4]
+        mov     ebx, dword [ebp+0ch]
+        mov     ecx, dword [ebp+0ch + 4]
         mov     edi, [ebp+08h]
-        mov     eax, dword ptr [ebp+14h]
-        mov     edx, dword ptr [ebp+14h + 4]
+        mov     eax, dword [ebp+14h]
+        mov     edx, dword [ebp+14h + 4]
         lock cmpxchg8b [edi]
         setz    al
         movzx   eax, al

@@ -299,6 +299,10 @@ RuntimeR3_SOURCES       = \
  RuntimeR3_SOURCES += common/time/timesupref.cpp
 #endif
 
+# Some versions of GCC might require this.
+RuntimeR3_SOURCES.x86 += \
+	common/asm/ASMAtomicCmpXchgU64.asm
+
 ifdef IPRT_WITH_KSTUFF
  RuntimeR3_SOURCES += \
 	common/ldr/ldrkStuff.cpp
