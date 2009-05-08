@@ -443,14 +443,9 @@ int main(int argc, char **argv)
                     for (unsigned j = 0; !fFound && j < RT_ELEMENTS(g_aServices); j++)
                     {
                         rc = g_aServices[j].pDesc->pfnOption(NULL, argc, argv, &i);
-                        fFound = rc == 0;
-                        if (fFound)
-                            break;
-                        if (rc != -1)
+                        if (rc != 0)
                             return rc;
                     }
-                if (!fFound)
-                    return VBoxServiceSyntax("Unknown option '%s'\n", argv[i]);
                 continue;
             }
 #undef MATCHES
@@ -491,18 +486,12 @@ int main(int argc, char **argv)
 
                 default:
                 {
-                    bool fFound = false;
                     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
                     {
                         rc = g_aServices[j].pDesc->pfnOption(&psz, argc, argv, &i);
-                        fFound = rc == 0;
-                        if (fFound)
-                            break;
-                        if (rc != -1)
+                        if (rc != 0)
                             return rc;
                     }
-                    if (!fFound)
-                        return VBoxServiceSyntax("Unknown option '%c' (%s)\n", *psz, argv[i]);
                     break;
                 }
             }
