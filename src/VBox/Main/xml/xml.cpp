@@ -1080,7 +1080,7 @@ XmlParserBase::~XmlParserBase()
 struct XmlFileParser::Data
 {
     xmlParserCtxtPtr ctxt;
-    com::Utf8Str strXmlFilename;
+    ministring strXmlFilename;
 
     Data()
     {
@@ -1110,7 +1110,7 @@ XmlFileParser::~XmlFileParser()
 struct IOContext
 {
     File file;
-    com::Utf8Str error;
+    ministring error;
 
     IOContext(const char *pcszFilename, File::Mode mode)
         : file(mode, pcszFilename)
