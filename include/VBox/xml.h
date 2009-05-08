@@ -53,8 +53,6 @@
 # define VBOXXML_CLASS DECLIMPORT_CLASS
 #endif
 
-#include "VBox/com/string.h"
-
 /*
  * Shut up MSVC complaining that auto_ptr[_ref] template instantiations (as a
  * result of private data member declarations of some classes below) need to
@@ -90,6 +88,71 @@ typedef xmlError *xmlErrorPtr;
 
 namespace xml
 {
+
+// Little string class for XML only
+//////////////////////////////////////////////////////////////////////////////
+
+class ministring
+{
+public:
+    ministring()
+        : m_psz(NULL)
+    {
+    }
+
+    ministring(const ministring &s)
+        : m_psz(NULL)
+    {
+        copyFrom(s.c_str());
+    }
+
+    ministring(const char *pcsz)
+        : m_psz(NULL)
+    {
+        copyFrom(pcsz);
+    }
+
+    ~ministring()
+    {
+        cleanup();
+    }
+
+    void operator=(const char *pcsz)
+    {
+        cleanup();
+        copyFrom(pcsz);
+    }
+
+    void operator=(const ministring &s)
+    {
+        cleanup();
+        copyFrom(s.c_str());
+    }
+
+    const char* c_str() const
+    {
+        return m_psz;
+    }
+
+private:
+    void cleanup()
+    {
+        if (m_psz)
+        {
+            RTStrFree(m_psz);
+            m_psz = NULL;
+        }
+    }
+
+    void copyFrom(const char *pcsz)
+    {
+        if (pcsz)
+            m_psz = RTStrDup(pcsz);
+    }
+
+
+    char *m_psz;
+};
 
 // Exceptions
 //////////////////////////////////////////////////////////////////////////////
