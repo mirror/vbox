@@ -298,6 +298,17 @@ DECLINLINE(uint32_t) RTCritSectGetRecursion(PCRTCRITSECT pCritSect)
     return pCritSect->cNestings;
 }
 
+/**
+ * Gets the waiter count
+ *
+ * @returns The waiter count
+ * @param   pCritSect       The Critical section
+ */
+DECLINLINE(uint32_t) RTCritSectGetWaiters(PCRTCRITSECT pCritSect)
+{
+    return pCritSect->cLockers;
+}
+
 #endif /* IN_RING3 */
 /** @} */
 
