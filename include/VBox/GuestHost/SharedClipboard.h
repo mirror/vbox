@@ -47,31 +47,6 @@ typedef struct _VBOXCLIPBOARDCONTEXT VBOXCLIPBOARDCONTEXT;
 struct _CLIPBACKEND;
 typedef struct _CLIPBACKEND CLIPBACKEND;
 
-/** A structure containing information about where to store a request
- * for the X11 clipboard contents. */
-struct _VBOXCLIPBOARDREQUEST 
-{
-    /** The buffer to write X11 clipboard data to (valid during a request
-     * for the clipboard contents) */
-    void *pv;
-    /** The size of the buffer to write X11 clipboard data to (valid during
-     * a request for the clipboard contents) */
-    unsigned cb;
-    /** The size of the X11 clipboard data written to the buffer (valid
-     * during a request for the clipboard contents) */
-    uint32_t *pcbActual;
-    /** The format VBox would like the data in */
-    uint32_t format;
-    /** Return code for the request processing code */
-    int rc;
-    /** Semaphore which is signalled when the request is completed */
-    RTSEMEVENT finished;
-    /** The clipboard context this request is associated with */
-    CLIPBACKEND *pCtx;
-};
-
-typedef struct _VBOXCLIPBOARDREQUEST VBOXCLIPBOARDREQUEST;
-
 /* APIs exported by the X11 backend */
 extern CLIPBACKEND *VBoxX11ClipboardConstructX11
                                         (VBOXCLIPBOARDCONTEXT *pFrontend);
