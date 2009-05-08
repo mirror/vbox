@@ -220,26 +220,26 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
         ::LsaFreeReturnBuffer(pSessions);
 #else
         utmp* ut_user;
-		rc = utmpname(UTMP_FILE);
-		if (rc != 0)
-		{
-			VBoxServiceError("Could not set  UTMP file! Error: %ld", errno);
-		}
-		setutent();
-		while ((ut_user=getutent()))
-		{
-			/* Make sure we don't add user names which are not
-			 * part of type USER_PROCESS and don't add same users twice. */
-			if (   (ut_user->ut_type == USER_PROCESS)
-				&& (strstr(szUserList, ut_user->ut_user) == NULL))
-			{
-				if (uiUserCount > 0)
-					strcat(szUserList, ",");
-				strcat(szUserList, ut_user->ut_user);
-				uiUserCount++;
-			}
-		}
-		endutent();
+        rc = utmpname(UTMP_FILE);
+        if (rc != 0)
+        {
+            VBoxServiceError("Could not set  UTMP file! Error: %ld", errno);
+        }
+        setutent();
+        while ((ut_user=getutent()))
+        {
+            /* Make sure we don't add user names which are not
+             * part of type USER_PROCESS and don't add same users twice. */
+            if (   (ut_user->ut_type == USER_PROCESS)
+                && (strstr(szUserList, ut_user->ut_user) == NULL))
+            {
+                if (uiUserCount > 0)
+                    strcat(szUserList, ",");
+                strcat(szUserList, ut_user->ut_user);
+                uiUserCount++;
+            }
+        }
+        endutent();
 #endif /* !RT_OS_WINDOWS */
 
         VboxServiceWriteProp(g_VMInfoGuestPropSvcClientID, "GuestInfo/OS/LoggedInUsersList", (uiUserCount > 0) ? szUserList : NULL);
