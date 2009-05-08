@@ -62,10 +62,10 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
     DEBUG_CALL("ip_output");
     DEBUG_ARG("so = %lx", (long)so);
     DEBUG_ARG("m0 = %lx", (long)m0);
-    if(m->m_data != ((caddr_t)m->m_dat + if_maxlinkhdr))
+    if(m->m_data != (MBUF_HEAD(m) + if_maxlinkhdr))
     {
         LogRel(("NAT: ethernet detects corruption of the packet"));
-        AssertMsg(m->m_data == ((caddr_t)m->m_dat + if_maxlinkhdr), ("!!Ethernet frame corrupted!!"));
+        AssertMsgFailed(("!!Ethernet frame corrupted!!"));
     }
 
 #if 0 /* We do no options */
