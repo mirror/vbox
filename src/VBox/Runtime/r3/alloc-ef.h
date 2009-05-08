@@ -157,11 +157,11 @@ typedef struct RTMEMBLOCK
 
 /*******************************************************************************
 *   Internal Functions                                                         *
-*******************************************************************************/
+******************************************************************************/
 __BEGIN_DECLS
-RTDECL(void *) rtMemAlloc(const char *pszOp, RTMEMTYPE enmType, size_t cb, void *pvCaller, unsigned iLine, const char *pszFile, const char *pszFunction);
-RTDECL(void *) rtMemRealloc(const char *pszOp, RTMEMTYPE enmType, void *pvOld, size_t cbNew, void *pvCaller, unsigned iLine, const char *pszFile, const char *pszFunction);
-RTDECL(void) rtMemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *pvCaller, unsigned iLine, const char *pszFile, const char *pszFunction);
+void *  rtMemAlloc(const char *pszOp, RTMEMTYPE enmType, size_t cb, void *pvCaller, unsigned iLine, const char *pszFile, const char *pszFunction);
+void *  rtMemRealloc(const char *pszOp, RTMEMTYPE enmType, void *pvOld, size_t cbNew, void *pvCaller, unsigned iLine, const char *pszFile, const char *pszFunction);
+void    rtMemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *pvCaller, unsigned iLine, const char *pszFile, const char *pszFunction);
 __END_DECLS
 
 #endif
