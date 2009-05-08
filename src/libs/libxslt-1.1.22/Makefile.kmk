@@ -25,7 +25,6 @@ include $(KBUILD_PATH)/subheader.kmk
 LIBRARIES += VBox-libxslt
 VBox-libxslt_TEMPLATE       = VBOXR3
 VBox-libxslt_SDKS           = VBOX_LIBXML2 VBOX_ZLIB
-VBox-libxslt_DEFS           = LIBXML_STATIC
 VBox-libxslt_DEFS.win       = WIN32 _WINDOWS _MBCS _REENTRANT
 VBox-libxslt_CFLAGS.win.amd64 = -wd4267
 VBox-libxslt_INCS           = .
