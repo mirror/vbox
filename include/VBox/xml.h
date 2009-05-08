@@ -101,7 +101,7 @@ class VBOXXML_CLASS Error : public std::exception
 {
 public:
 
-    Error(const char *pcszMessage = NULL)
+    Error(const char *pcszMessage)
         : m_pcsz(NULL)
     {
         copyFrom(pcszMessage);
