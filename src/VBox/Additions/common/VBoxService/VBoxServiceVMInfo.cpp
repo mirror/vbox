@@ -30,8 +30,9 @@
 #include <windows.h>
 #include <Ntsecapi.h>
 #else
-# include <unistd.h>
 # include <errno.h>
+# include <unistd.h>
+# include <utmp.h>
 #endif
 
 #include <iprt/mem.h>
@@ -105,7 +106,7 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
     /* Get function pointers. */
     HMODULE hKernel32 = LoadLibrary(_T("kernel32"));
     if (NULL != hKernel32)
-    {    
+    {
         g_pfnWTSGetActiveConsoleSessionId = (fnWTSGetActiveConsoleSessionId)GetProcAddress(hKernel32, "WTSGetActiveConsoleSessionId");
         FreeLibrary(hKernel32);
     }
@@ -113,7 +114,7 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
 
     rc = VbglR3GuestPropConnect(&g_VMInfoGuestPropSvcClientID);
     if (!RT_SUCCESS(rc))
-    {    
+    {
         VBoxServiceError("Failed to connect to the guest property service! Error: %Rrc\n", rc);
     }
     else
@@ -180,31 +181,31 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
         NTSTATUS r = 0;
 
         char* pszTemp = NULL;
-    
+
         /* This function can report stale or orphaned interactive logon sessions of already logged
            off users (especially in Windows 2000). */
         r = ::LsaEnumerateLogonSessions(&ulCount, &pSessions);
         VBoxServiceVerbose(3, "Users: Found %ld users.\n", ulCount);
-    
+
         if (r != STATUS_SUCCESS)
         {
             VBoxServiceError("LsaEnumerate failed %lu\n", LsaNtStatusToWinError(r));
             return 1;
         }
-    
+
         PLUID pLuid = NULL;
         DWORD dwNumOfProcLUIDs = VboxServiceVMInfoWinGetLUIDsFromProcesses(&pLuid);
-    
+
         VBOXSERVICEVMINFOUSER userInfo;
         ZeroMemory (&userInfo, sizeof(VBOXSERVICEVMINFOUSER));
-    
+
         for (int i = 0; i<(int)ulCount; i++)
         {
             if (VboxServiceVMInfoWinIsLoggedIn(&userInfo, &pSessions[i], pLuid, dwNumOfProcLUIDs))
             {
                 if (uiUserCount > 0)
                     strcat (szUserList, ",");
-    
+
                 uiUserCount++;
 
                 RTUtf16ToUtf8(userInfo.szUser, &pszTemp);
@@ -212,13 +213,33 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
                 RTMemFree(pszTemp);
             }
         }
-    
+
         if (NULL != pLuid)
             ::LocalFree (pLuid);
 
         ::LsaFreeReturnBuffer(pSessions);
 #else
-        /** @todo Nothing here yet - Implement other platforms here. */
+        utmp* ut_user;
+		rc = utmpname(UTMP_FILE);
+		if (rc != 0)
+		{
+			VBoxServiceError("Could not set  UTMP file! Error: %ld", errno);
+		}
+		setutent();
+		while ((ut_user=getutent()))
+		{
+			/* Make sure we don't add user names which are not
+			 * part of type USER_PROCESS and don't add same users twice. */
+			if (   (ut_user->ut_type == USER_PROCESS)
+				&& (strstr(szUserList, ut_user->ut_user) == NULL))
+			{
+				if (uiUserCount > 0)
+					strcat(szUserList, ",");
+				strcat(szUserList, ut_user->ut_user);
+				uiUserCount++;
+			}
+		}
+		endutent();
 #endif /* !RT_OS_WINDOWS */
 
         VboxServiceWriteProp(g_VMInfoGuestPropSvcClientID, "GuestInfo/OS/LoggedInUsersList", (uiUserCount > 0) ? szUserList : NULL);
@@ -245,63 +266,63 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
             VBoxServiceError("Failed to get a socket: Error %d\n", WSAGetLastError());
             return -1;
         }
-    
+
         INTERFACE_INFO InterfaceList[20] = {0};
         unsigned long nBytesReturned = 0;
-        if (WSAIoctl(sd, 
-                     SIO_GET_INTERFACE_LIST, 
-                     0, 
-                     0, 
+        if (WSAIoctl(sd,
+                     SIO_GET_INTERFACE_LIST,
+                     0,
+                     0,
                      &InterfaceList,
-                     sizeof(InterfaceList), 
-                     &nBytesReturned, 
-                     0, 
+                     sizeof(InterfaceList),
+                     &nBytesReturned,
+                     0,
                      0) ==  SOCKET_ERROR)
         {
             VBoxServiceError("Failed calling WSAIoctl: Error: %d\n", WSAGetLastError());
             return -1;
         }
-    
+
         char szPropPath [_MAX_PATH] = {0};
         char szTemp [_MAX_PATH] = {0};
         int nNumInterfaces = nBytesReturned / sizeof(INTERFACE_INFO);
         int iCurIface = 0;
-    
+
         RTStrPrintf(szPropPath, sizeof(szPropPath), "GuestInfo/Net/Count");
         VboxServiceWritePropInt(g_VMInfoGuestPropSvcClientID, szPropPath, (nNumInterfaces > 1 ? nNumInterfaces-1 : 0));
-    
+
         /** @todo Use GetAdaptersInfo() and GetAdapterAddresses (IPv4 + IPv6) for more information. */
 
         for (int i = 0; i < nNumInterfaces; ++i)
         {
             if (InterfaceList[i].iiFlags & IFF_LOOPBACK)    /* Skip loopback device. */
                 continue;
-    
+
             sockaddr_in *pAddress;
             pAddress = (sockaddr_in *) & (InterfaceList[i].iiAddress);
             RTStrPrintf(szPropPath, sizeof(szPropPath), "GuestInfo/Net/%d/V4/IP", iCurIface);
             VboxServiceWriteProp(g_VMInfoGuestPropSvcClientID, szPropPath, inet_ntoa(pAddress->sin_addr));
-    
+
             pAddress = (sockaddr_in *) & (InterfaceList[i].iiBroadcastAddress);
             RTStrPrintf(szPropPath, sizeof(szPropPath), "GuestInfo/Net/%d/V4/Broadcast", iCurIface);
             VboxServiceWriteProp(g_VMInfoGuestPropSvcClientID, szPropPath, inet_ntoa(pAddress->sin_addr));
-    
+
             pAddress = (sockaddr_in *) & (InterfaceList[i].iiNetmask);
             RTStrPrintf(szPropPath, sizeof(szPropPath), "GuestInfo/Net/%d/V4/Netmask", iCurIface);
             VboxServiceWriteProp(g_VMInfoGuestPropSvcClientID, szPropPath, inet_ntoa(pAddress->sin_addr));
-    
+
             u_long nFlags = InterfaceList[i].iiFlags;
             if (nFlags & IFF_UP)
                 RTStrPrintf(szTemp, sizeof(szTemp), "Up");
             else
                 RTStrPrintf(szTemp, sizeof(szTemp), "Down");
-    
+
             RTStrPrintf(szPropPath, sizeof(szPropPath), "GuestInfo/Net/%d/Status", iCurIface);
             VboxServiceWriteProp(g_VMInfoGuestPropSvcClientID, szPropPath, szTemp);
-    
+
             iCurIface++;
         }
-    
+
         closesocket(sd);
 #endif /* !RT_OS_WINDOWS */
 
