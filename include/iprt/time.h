@@ -706,6 +706,15 @@ RTDECL(PRTTIME) RTTimeLocalNormalize(PRTTIME pTime);
 RTDECL(char *) RTTimeToString(PCRTTIME pTime, char *psz, size_t cb);
 
 /**
+ * Checks if a year is a leap year or not.
+ *
+ * @returns true if it's a leap year.
+ * @returns false if it's a common year.
+ * @param   i32Year     The year in question.
+ */
+RTDECL(bool) RTTimeIsLeapYear(int32_t i32Year);
+
+/**
  * Gets the current nanosecond timestamp.
  *
  * @returns nanosecond timestamp.
