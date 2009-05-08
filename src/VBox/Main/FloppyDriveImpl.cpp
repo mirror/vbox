@@ -369,7 +369,9 @@ STDMETHODIMP FloppyDrive::Unmount()
             /* leave the lock before informing callbacks */
             alock.unlock();
 
-            mParent->onFloppyDriveChange();
+            rc = mParent->onFloppyDriveChange();
+            if (FAILED (rc))
+                rollback();
         }
     }
 

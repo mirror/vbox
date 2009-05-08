@@ -362,7 +362,9 @@ STDMETHODIMP DVDDrive::Unmount()
             /* leave the lock before informing callbacks */
             alock.unlock();
 
-            mParent->onDVDDriveChange();
+            rc = mParent->onDVDDriveChange();
+            if (FAILED (rc))
+                rollback();
         }
     }
 
