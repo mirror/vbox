@@ -1759,6 +1759,16 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     int rc;
 
+#ifdef PGMPOOL_WITH_MONITORING
+    /*
+     * The pool may have pending stuff and even require a return to ring-3 to
+     * clear the whole thing.
+     */
+    rc = pgmPoolSyncCR3(pVM);
+    if (rc != VINF_SUCCESS)
+        return rc;
+#endif
+
     /*
      * We might be called when we shouldn't.
      *
@@ -1780,16 +1790,6 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
         fGlobal = true;
     LogFlow(("PGMSyncCR3: cr0=%RX64 cr3=%RX64 cr4=%RX64 fGlobal=%d[%d,%d]\n", cr0, cr3, cr4, fGlobal,
              VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3), VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL)));
-
-#ifdef PGMPOOL_WITH_MONITORING
-    /*
-     * The pool may have pending stuff and even require a return to ring-3 to
-     * clear the whole thing.
-     */
-    rc = pgmPoolSyncCR3(pVM);
-    if (rc != VINF_SUCCESS)
-        return rc;
-#endif
 
     /*
      * Check if we need to finish an aborted MapCR3 call (see PGMFlushTLB).

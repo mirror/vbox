@@ -2053,8 +2053,8 @@ void pgmPoolClearAll(PVM pVM)
     paPhysExts[cMaxPhysExts - 1].iNext = NIL_PGMPOOL_PHYSEXT_INDEX;
 #endif
 
-
     pPool->cPresent = 0;
+    PGM_INVL_GUEST_TLBS();
     STAM_PROFILE_STOP(&pPool->StatClearAll, c);
 }
 #endif /* IN_RING3 */
