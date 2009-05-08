@@ -769,6 +769,9 @@ RuntimeLnxHostR3_INCS          = \
 # VBoxRT - Shared Object / DLL version.
 #
 VBoxRT_TEMPLATE                = VBOXR3
+ifdef VBOX_WITH_LIBXML2_IN_VBOXRT
+VBoxRT_SDKS                    = VBOX_OPENSSL VBOX_LIBXML2 VBOX_LIBCURL
+endif
 VBoxRT_SDKS.win                = WINPSDK W2K3DDK VBOX_NTDLL
 ifeq ($(KBUILD_TARGET)$(VBOX_WITH_HARDENING),darwin)
 VBoxRT_INST                    = $(INST_DLL) $(INST_TESTCASE)
@@ -777,7 +780,12 @@ VBoxRT_DEFS                    = $(filter-out RT_NO_GIP,$(RuntimeR3_DEFS)) IN_SU
 VBoxRT_DEFS.$(KBUILD_TYPE)     = $(RuntimeR3_DEFS.$(KBUILD_TYPE))
 VBoxRT_SOURCES                 = \
 	VBox/VBoxRTDeps.cpp \
+	common/misc/s3.cpp \
 	$(RuntimeR3_SOURCES)
+ifdef VBOX_WITH_LIBXML2_IN_VBOXRT
+VBoxRT_SOURCES                += \
+	common/misc/s3.cpp
+endif
 VBoxRT_SOURCES.$(KBUILD_TARGET) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET))
 VBoxRT_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
 VBoxRT_SOURCES.win            += r3/win/dllmain-win.cpp

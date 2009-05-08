@@ -493,6 +493,8 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win)
 endif
 ## Use the new version of liblzf. Remove with the old liblzf.
 #VBOX_WITH_NEW_LIBLZF = 1
+## For experimenting with linking libxml2 into VBoxRT.
+#VBOX_WITH_LIBXML2_IN_VBOXRT = 1
 
 #
 # Branding
@@ -1788,7 +1790,9 @@ SDK_VBOX_LIBXML2          = .
 #if1of ($(KBUILD_TARGET),win os2 solaris)
  SDK_VBOX_LIBXML2_INCS   ?= $(PATH_ROOT)/src/libs/libxml2-2.6.30/include
  SDK_VBOX_LIBXML2_LIBS   ?= $(PATH_LIB)/VBox-libxml2$(VBOX_SUFF_LIB)
- SDK_VBOX_LIBXML2_DEFS   ?= LIBXML_STATIC
+ ifndef VBOX_WITH_LIBXML2_IN_VBOXRT
+  SDK_VBOX_LIBXML2_DEFS  ?= LIBXML_STATIC
+ endif
  SDK_VBOX_LIBXML2_DEFS.win += WIN32 _WINDOWS _MBCS
 #else if1of ($(KBUILD_TARGET),linux)
 # SDK_VBOX_LIBXML2_INCS      ?=
