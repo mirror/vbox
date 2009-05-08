@@ -138,6 +138,12 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
     else
         AssertMsgRCReturn(rc, ("Configuration error. Failed to query \"YieldEMTInterval\", rc=%Rrc\n", rc), rc);
 
+    /*
+     * Initialize the VMM sync critical section.
+     */
+    rc = RTCritSectInit(&pVM->vmm.s.CritSectSync);
+    AssertRCReturn(rc, rc);
+
     /* GC switchers are enabled by default. Turned off by HWACCM. */
     pVM->vmm.s.fSwitcherDisabled = false;
 
@@ -610,6 +616,8 @@ VMMR3DECL(int) VMMR3Term(PVM pVM)
         if (RT_SUCCESS(rc))
             rc = VERR_INTERNAL_ERROR;
     }
+
+    RTCritSectDelete(&pVM->vmm.s.CritSectSync);
 
 #ifdef VBOX_STRICT_VMM_STACK
     /*
@@ -1147,7 +1155,7 @@ VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM, PVMCPU pVCpu)
 }
 
 /**
- * On VCPU worker for VMMSendSipi.
+ * VCPU worker for VMMSendSipi.
  *
  * @param   pVM         The VM to operate on.
  * @param   idCpu       Virtual CPU to perform SIPI on
@@ -1214,6 +1222,60 @@ VMMR3DECL(void) VMMR3SendInitIpi(PVM pVM, VMCPUID idCpu)
                           (PFNRT)vmmR3SendInitIpi, 2, pVM, idCpu);
     AssertRC(rc);
     VMR3ReqFree(pReq);
+}
+
+
+/**
+ * VCPU worker for VMMR3SynchronizeAllVCpus.
+ *
+ * @param   pVM         The VM to operate on.
+ * @param   idCpu       Virtual CPU to perform SIPI on
+ * @param   uVector     SIPI vector
+ */
+DECLCALLBACK(int) vmmR3SyncVCpu(PVM pVM)
+{
+    /* Block until the job in the caller has finished. */
+    RTCritSectEnter(&pVM->vmm.s.CritSectSync);
+    RTCritSectLeave(&pVM->vmm.s.CritSectSync);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Atomically execute a callback handler
+ * Note: This is very expensive; avoid using it frequently!
+ *
+ * @param   pVM         The VM to operate on.
+ * @param   pfnHandler  Callback handler
+ * @param   pvUser      User specified parameter
+ */
+VMMR3DECL(int) VMMR3AtomicExecuteHandler(PVM pVM, PFNATOMICHANDLER pfnHandler, void *pvUser)
+{
+    int    rc;
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    AssertReturn(pVCpu, VERR_VM_THREAD_NOT_EMT);
+
+    /* Shortcut for the uniprocessor case. */
+    if (pVM->cCPUs == 1)
+        return pfnHandler(pVM, pvUser);
+
+    RTCritSectEnter(&pVM->vmm.s.CritSectSync);
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCPUs; idCpu++)
+    {
+        if (idCpu != pVCpu->idCpu)
+        {
+            rc = VMR3ReqCallU(pVM->pUVM, idCpu, NULL, 0, VMREQFLAGS_NO_WAIT,
+                              (PFNRT)vmmR3SyncVCpu, 1, pVM);
+            AssertRC(rc);
+        }
+    }
+    /* Wait until all other VCPUs are waiting for us. */
+    while (RTCritSectGetWaiters(&pVM->vmm.s.CritSectSync) != (pVM->cCPUs - 1))
+        RTThreadSleep(1);
+
+    rc = pfnHandler(pVM, pvUser);
+    RTCritSectLeave(&pVM->vmm.s.CritSectSync);
+    return rc;
 }
 
 
