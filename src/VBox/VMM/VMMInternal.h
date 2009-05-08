@@ -247,6 +247,11 @@ typedef struct VMM
     /** The timestamp of the previous yield. (nano) */
     uint64_t                    u64LastYield;
 
+    /** Critical section.
+     * Use for synchronizing all VCPUs
+     */
+    RTCRITSECT                 CritSectSync;
+
     /** Buffer for storing the standard assertion message for a ring-0 assertion.
      * Used for saving the assertion message text for the release log and guru
      * meditation dump. */
