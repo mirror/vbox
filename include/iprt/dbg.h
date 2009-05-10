@@ -23,6 +23,7 @@
 #define ___iprt_dbg_h
 
 #include <iprt/types.h>
+#include <iprt/stdarg.h>
 
 __BEGIN_DECLS
 
