@@ -1194,14 +1194,14 @@ typedef R3R0PTRTYPE(struct RTDBGASINT *)            RTDBGAS;
 /** Pointer to a debug address space handle. */
 typedef RTDBGAS                                    *PRTDBGAS;
 /** NIL debug address space handle. */
-#define NIL_RTDBGAS                                 ((PRTDBGAS)0)
+#define NIL_RTDBGAS                                 ((RTDBGAS)0)
 
 /** Debug module handle. */
 typedef R3R0PTRTYPE(struct RTDBGMODINT *)           RTDBGMOD;
 /** Pointer to a debug module handle. */
 typedef RTDBGMOD                                   *PRTDBGMOD;
 /** NIL debug module handle. */
-#define NIL_RTDBGMOD                                ((PRTDBGMOD)0)
+#define NIL_RTDBGMOD                                ((RTDBGMOD)0)
 
 
 /**

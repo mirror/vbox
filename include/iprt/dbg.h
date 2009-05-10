@@ -102,31 +102,324 @@ RTDECL(void)         RTDbgLineFree(PRTDBGLINE pLine);
 /** @defgroup grp_rt_dbgas      RTDbgAs - Debug Address Space
  * @{
  */
-RTDECL(int)         RTDbgAsCreate(PRTDBGAS phDbgAs, const char *pszName, RTUINTPTR FirstAddr, RTUINTPTR LastAddr);
-RTDECL(int)         RTDbgAsDestroy(PRTDBGAS phDbgAs);
 
-RTDECL(int)         RTDbgAsModuleLink(PRTDBGAS phDbgAs, RTDBGMOD hDbgMod, RTUINTPTR ImageAddr);
-RTDECL(int)         RTDbgAsModuleLinkSeg(PRTDBGAS phDbgAs, RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR SegAddr);
-RTDECL(int)         RTDbgAsModuleUnlink(PRTDBGAS phDbgAs, RTDBGMOD hDbgMod);
-RTDECL(int)         RTDbgAsModuleUnlinkByAddr(PRTDBGAS phDbgAs, RTUINTPTR ImageAddr);
-RTDECL(uint32_t)    RTDbgAsModuleCount(PRTDBGAS phDbgAs);
-RTDECL(RTDBGMOD)    RTDbgAsModuleByIndex(PRTDBGAS phDbgAs, uint32_t iModule);
-RTDECL(RTDBGMOD)    RTDbgAsModuleByName(PRTDBGAS phDbgAs, RTUINTPTR Addr);
-RTDECL(RTDBGMOD)    RTDbgAsModuleByAddr(PRTDBGAS phDbgAs, const char *pszName);
+/**
+ * Creates an empty address space.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   phDbgAs         Where to store the address space handle on success.
+ * @param   FirstAddr       The first address in the address space.
+ * @param   LastAddr        The last address in the address space.
+ * @param   pszName         The name of the address space.
+ */
+RTDECL(int) RTDbgAsCreate(PRTDBGAS phDbgAs, RTUINTPTR FirstAddr, RTUINTPTR LastAddr, const char *pszName);
 
-RTDECL(int)         RTDbgAsSymbolAdd(RTDBGAS hDbgAs, const char *pszSymbol, RTUINTPTR Addr, uint32_t cb);
-RTDECL(int)         RTDbgAsSymbolByName(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYMBOL pSymbol);
-RTDECL(int)         RTDbgAsSymbolByNameA(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYMBOL *ppSymbol);
+/**
+ * Variant of RTDbgAsCreate that takes a name format string.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   phDbgAs         Where to store the address space handle on success.
+ * @param   FirstAddr       The first address in the address space.
+ * @param   LastAddr        The last address in the address space.
+ * @param   pszNameFmt      The name format of the address space.
+ * @param   va              Format arguments.
+ */
+RTDECL(int) RTDbgAsCreateV(PRTDBGAS phDbgAs, RTUINTPTR FirstAddr, RTUINTPTR LastAddr, const char *pszNameFmt, va_list va);
+
+/**
+ * Variant of RTDbgAsCreate that takes a name format string.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   phDbgAs         Where to store the address space handle on success.
+ * @param   FirstAddr       The first address in the address space.
+ * @param   LastAddr        The last address in the address space.
+ * @param   pszNameFmt      The name format of the address space.
+ * @param   ...             Format arguments.
+ */
+RTDECL(int) RTDbgAsCreateF(PRTDBGAS phDbgAs, RTUINTPTR FirstAddr, RTUINTPTR LastAddr, const char *pszNameFmt, ...);
+
+/**
+ * Destroys the address space.
+ *
+ * This means unlinking all the modules it currently contains, potentially
+ * causing some or all of them to be destroyed as they are managed by
+ * reference counting.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hDbgAs          The address space handle. A NIL handle will
+ *                          be quietly ignored.
+ */
+RTDECL(int) RTDbgAsDestroy(RTDBGAS hDbgAs);
+
+/**
+ * Gets the name of an address space.
+ *
+ * @returns read only address space name.
+ *          NULL if hDbgAs is invalid.
+ *
+ * @param   hDbgAs          The address space handle.
+ */
+RTDECL(const char *) RTDbgAsName(RTDBGAS hDbgAs);
+
+/**
+ * Gets the first address in an address space.
+ *
+ * @returns The address.
+ *          0 if hDbgAs is invalid.
+ *
+ * @param   hDbgAs          The address space handle.
+ */
+RTDECL(RTUINTPTR) RTDbgAsFirstAddr(RTDBGAS hDbgAs);
+
+/**
+ * Gets the last address in an address space.
+ *
+ * @returns The address.
+ *          0 if hDbgAs is invalid.
+ *
+ * @param   hDbgAs          The address space handle.
+ */
+RTDECL(RTUINTPTR) RTDbgAsLastAddr(RTDBGAS hDbgAs);
+
+/**
+ * Gets the number of modules in the address space.
+ *
+ * This can be used together with RTDbgAsModuleByIndex
+ * to enumerate the modules.
+ *
+ * @returns The number of modules.
+ *
+ * @param   hDbgAs          The address space handle.
+ */
+RTDECL(uint32_t) RTDbgAsModuleCount(RTDBGAS hDbgAs);
+
+/**
+ * Links a module into the address space at the give address.
+ *
+ * The size of the mapping is determined using RTDbgModImageSize().
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_OUT_OF_RANGE if the specified address will put the module
+ *          outside the address space.
+ * @retval  VERR_ADDRESS_CONFLICT if the mapping clashes with existing mappings.
+ *
+ * @param   hDbgAs          The address space handle.
+ * @param   hDbgMod         The module handle of the module to be linked in.
+ * @param   ImageAddr       The address to link the module at.
+ */
+RTDECL(int) RTDbgAsModuleLink(RTDBGAS hDbgAs, RTDBGMOD hDbgMod, RTUINTPTR ImageAddr);
+
+/**
+ * Links a segment into the address space at the give address.
+ *
+ * The size of the mapping is determined using RTDbgModSegmentSize().
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_OUT_OF_RANGE if the specified address will put the module
+ *          outside the address space.
+ * @retval  VERR_ADDRESS_CONFLICT if the mapping clashes with existing mappings.
+ *
+ * @param   hDbgAs          The address space handle.
+ * @param   hDbgMod         The module handle.
+ * @param   iSeg            The segment number (0-based) of the segment to be
+ *                          linked in.
+ * @param   SegAddr         The address to link the segment at.
+ */
+RTDECL(int) RTDbgAsModuleLinkSeg(RTDBGAS hDbgAs, RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR SegAddr);
+
+/**
+ * Unlinks all the mappings of a module from the address space.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_FOUND if the module wasn't found.
+ *
+ * @param   hDbgAs          The address space handle.
+ * @param   hDbgMod         The module handle of the module to be unlinked.
+ */
+RTDECL(int) RTDbgAsModuleUnlink(RTDBGAS hDbgAs, RTDBGMOD hDbgMod);
+
+/**
+ * Unlinks the mapping at the specified address.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_FOUND if no module or segment is mapped at that address.
+ *
+ * @param   hDbgAs          The address space handle.
+ * @param   Addr            The address within the mapping to be unlinked.
+ */
+RTDECL(int) RTDbgAsModuleUnlinkByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr);
+
+/**
+ * Get a the handle of a module in the address space by is index.
+ *
+ * @returns A retained handle to the specified module. The caller must release
+ *          the returned reference.
+ *          NIL_RTDBGMOD if invalid index or handle.
+ *
+ * @param   hDbgAs          The address space handle.
+ * @param   iModule         The index of the module to get.
+ *
+ * @remarks The module indexes may change after calls to RTDbgAsModuleLink,
+ *          RTDbgAsModuleLinkSeg, RTDbgAsModuleUnlink and
+ *          RTDbgAsModuleUnlinkByAddr.
+ */
+RTDECL(RTDBGMOD) RTDbgAsModuleByIndex(RTDBGAS hDbgAs, uint32_t iModule);
+
+/**
+ * Queries mapping module information by handle.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_FOUND if no mapping was found at the specified address.
+ *
+ * @param   hDbgAs          The address space handle.
+ * @param   Addr            Address within the mapping of the module or segment.
+ * @param   phMod           Where to the return the retained module handle.
+ *                          Optional.
+ * @param   pAddr           Where to return the base address of the mapping.
+ *                          Optional.
+ * @param   piSeg           Where to return the segment index. This is set to
+ *                          NIL if the entire module is mapped as a single
+ *                          mapping. Optional.
+ */
+RTDECL(int) RTDbgAsModuleByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTDBGMOD phMod, PRTUINTPTR pAddr, PRTDBGSEGIDX piSeg);
+
+/**
+ * Queries mapping module information by name.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_FOUND if no mapping was found at the specified address.
+ * @retval  VERR_OUT_OF_RANGE if the name index was out of range.
+ *
+ * @param   hDbgAs          The address space handle.
+ * @param   pszName         The module name.
+ * @param   iName           There can be more than one module by the same name
+ *                          in an address space. This argument indicates which
+ *                          is ment. (0 based)
+ * @param   phMod           Where to the return the retained module handle.
+ */
+RTDECL(int) RTDbgAsModuleByName(RTDBGAS hDbgAs, const char *pszName, uint32_t iName, PRTDBGMOD phMod);
+
+/**
+ * Adds a symbol to a module in the address space.
+ *
+ * @returns IPRT status code. See RTDbgModSymbolAdd for more specific ones.
+ * @retval  VERR_INVALID_HANDLE if hDbgAs is invalid.
+ * @retval  VERR_NOT_FOUND if no module was found at the specified address.
+ *
+ * @param   hDbgAs          The address space handle.
+ * @param   pszSymbol       The symbol name.
+ * @param   Addr            The address of the symbol.
+ * @param   cb              The size of the symbol.
+ */
+RTDECL(int) RTDbgAsSymbolAdd(RTDBGAS hDbgAs, const char *pszSymbol, RTUINTPTR Addr, uint32_t cb);
+
+/**
+ * Query a symbol by address.
+ *
+ * @returns IPRT status code. See RTDbgModSymbolAddr for more specific ones.
+ * @retval  VERR_INVALID_HANDLE if hDbgAs is invalid.
+ * @retval  VERR_NOT_FOUND if the address couldn't be mapped to a module.
+ *
+ * @param   hDbgAs          The address space handle.
+ * @param   Addr            The address which closest symbol is requested.
+ * @param   poffDisp        Where to return the distance between the symbol
+ *                          and address. Optional.
+ * @param   pSymbol         Where to return the symbol info.
+ */
+RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGSYMBOL pSymbol);
+
+/**
+ * Query a symbol by address.
+ *
+ * @returns IPRT status code. See RTDbgModSymbolAddrA for more specific ones.
+ * @retval  VERR_INVALID_HANDLE if hDbgAs is invalid.
+ * @retval  VERR_NOT_FOUND if the address couldn't be mapped to a module.
+ *
+ * @param   hDbgAs          The address space handle.
+ * @param   Addr            The address which closest symbol is requested.
+ * @param   poffDisp        Where to return the distance between the symbol
+ *                          and address. Optional.
+ * @param   ppSymbol        Where to return the pointer to the allocated
+ *                          symbol info. Always set. Free with RTDbgSymbolFree.
+ */
+RTDECL(int) RTDbgAsSymbolByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGSYMBOL *ppSymbol);
+
+/**
+ * Query a symbol by name.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_SYMBOL_NOT_FOUND if not found.
+ *
+ * @param   hDbgAs          The address space handle.
+ * @param   pszSymbol       The symbol name.
+ * @param   pSymbol         Where to return the symbol info.
+ */
+RTDECL(int) RTDbgAsSymbolByName(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYMBOL pSymbol);
+
+/**
+ * Query a symbol by name.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_SYMBOL_NOT_FOUND if not found.
+ *
+ * @param   hDbgAs          The address space handle.
+ * @param   pszSymbol       The symbol name.
+ * @param   ppSymbol        Where to return the pointer to the allocated
+ *                          symbol info. Always set. Free with RTDbgSymbolFree.
+ */
+RTDECL(int) RTDbgAsSymbolByNameA(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYMBOL *ppSymbol);
+
+/**
+ * Query a line number by address.
+ *
+ * @returns IPRT status code. See RTDbgModSymbolAddrA for more specific ones.
+ * @retval  VERR_INVALID_HANDLE if hDbgAs is invalid.
+ * @retval  VERR_NOT_FOUND if the address couldn't be mapped to a module.
+ *
+ * @param   hDbgAs          The address space handle.
+ * @param   Addr            The address which closest symbol is requested.
+ * @param   poffDisp        Where to return the distance between the line
+ *                          number and address.
+ * @param   pLine           Where to return the line number information.
+ */
+RTDECL(int) RTDbgAs(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGLINE pLine);
+
+/**
+ * Query a line number by address.
+ *
+ * @returns IPRT status code. See RTDbgModSymbolAddrA for more specific ones.
+ * @retval  VERR_INVALID_HANDLE if hDbgAs is invalid.
+ * @retval  VERR_NOT_FOUND if the address couldn't be mapped to a module.
+ *
+ * @param   hDbgAs          The address space handle.
+ * @param   Addr            The address which closest symbol is requested.
+ * @param   poffDisp        Where to return the distance between the line
+ *                          number and address.
+ * @param   ppLine          Where to return the pointer to the allocated line
+ *                          number info. Always set. Free with RTDbgLineFree.
+ */
+RTDECL(int) RTDbgAsLineByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGLINE *ppLine);
+
+/** @todo Missing some bits here. */
+
 /** @} */
 
 
-/** @defgroup grp_rt_dbgmod     RTDbgMod - Debug Module Interperter
+/** @defgroup grp_rt_dbgmod     RTDbgMod - Debug Module Interpreter
  * @{
  */
 RTDECL(int)         RTDbgModCreate(PRTDBGMOD phDbgMod, const char *pszName, const char *pszImgFile, const char *pszDbgFile);
 RTDECL(int)         RTDbgModDestroy(RTDBGMOD hDbgMod);
-RTDECL(int)         RTDbgModRetain(RTDBGMOD hDbgMod);
-RTDECL(int)         RTDbgModRelease(RTDBGMOD hDbgMod);
+RTDECL(uint32_t)    RTDbgModRetain(RTDBGMOD hDbgMod);
+RTDECL(uint32_t)    RTDbgModRelease(RTDBGMOD hDbgMod);
+RTDECL(const char *) RTDbgModName(RTDBGMOD hDbgMod);
+RTDECL(RTUINTPTR)   RTDbgModImageSize(RTDBGMOD hDbgMod);
+RTDECL(RTUINTPTR)   RTDbgModSegmentSize(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg);
+RTDECL(RTDBGSEGIDX) RTDbgModSegmentCount(RTDBGMOD hDbgMod);
 
 RTDECL(int)         RTDbgModSymbolAdd(RTDBGMOD hDbgMod, const char *pszSymbol, RTDBGSEGIDX iSeg, RTUINTPTR off, uint32_t cb);
 RTDECL(uint32_t)    RTDbgModSymbolCount(RTDBGMOD hDbgMod);

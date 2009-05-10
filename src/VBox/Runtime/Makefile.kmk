@@ -196,6 +196,8 @@ RuntimeR3_SOURCES       = \
 	common/checksum/crc64.cpp \
 	common/checksum/md5.cpp \
 	common/checksum/ipv4.cpp \
+	common/dbg/dbgas.cpp \
+	common/dbg/dbgmod.cpp \
 	common/err/errmsg.cpp \
 	common/err/RTErrConvertFromErrno.cpp \
 	common/err/RTErrConvertToErrno.cpp \
@@ -259,6 +261,7 @@ RuntimeR3_SOURCES       = \
 	common/table/avlrogcptr.cpp \
 	common/table/avlroioport.cpp \
 	common/table/avlroogcptr.cpp \
+	common/table/avlruintptr.cpp \
 	common/table/avlu32.cpp \
 	common/table/avlul.cpp \
 	common/table/table.cpp \

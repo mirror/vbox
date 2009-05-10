@@ -210,7 +210,7 @@ typedef RTDBGMODVTDBG const *PCRTDBGMODVTDBG;
 /**
  * Debug module structure.
  */
-typedef struct RTDBGMOD
+typedef struct RTDBGMODINT
 {
     /** Magic value (RTDBGMOD_MAGIC). */
     uint32_t        u32Magic;
