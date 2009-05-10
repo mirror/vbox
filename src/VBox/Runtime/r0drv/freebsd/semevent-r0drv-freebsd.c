@@ -68,7 +68,7 @@ RTDECL(int)  RTSemEventCreate(PRTSEMEVENT pEventSem)
     Assert(sizeof(RTSEMEVENTINTERNAL) > sizeof(void *));
     AssertPtrReturn(pEventSem, VERR_INVALID_POINTER);
 
-    PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)RTMemAlloc(sizeof(*pEventInt));
+    PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)RTMemAllocZ(sizeof(*pEventInt));
     if (pEventInt)
     {
         pEventInt->u32Magic = RTSEMEVENT_MAGIC;
