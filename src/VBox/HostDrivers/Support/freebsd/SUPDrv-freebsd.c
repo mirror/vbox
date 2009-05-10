@@ -299,7 +299,11 @@ static int VBoxDrvFreeBSDOpen(struct cdev *pDev, int fOpen, struct thread *pTd, 
     PSUPDRVSESSION pSession;
     int rc;
 
+#if __FreeBSD_version < 800062
     dprintf(("VBoxDrvFreeBSDOpen: fOpen=%#x iUnit=%d\n", fOpen, minor2unit(minor(pDev))));
+#else
+    dprintf(("VBoxDrvFreeBSDOpen: fOpen=%#x iUnit=%d\n", fOpen, minor(pDev)));
+#endif
 
     /*
      * Let's be a bit picky about the flags...
@@ -351,7 +355,11 @@ static int VBoxDrvFreeBSDOpen(struct cdev *pDev, int fOpen, struct thread *pTd, 
 static int VBoxDrvFreeBSDClose(struct cdev *pDev, int fFile, int DevType, struct thread *pTd)
 {
     PSUPDRVSESSION pSession = (PSUPDRVSESSION)pDev->si_drv1;
+#if __FreeBSD_version < 800062
     dprintf(("VBoxDrvFreeBSDClose: fFile=%#x iUnit=%d pSession=%p\n", fFile, minor2unit(minor(pDev)), pSession));
+#else
+    dprintf(("VBoxDrvFreeBSDClose: fFile=%#x iUnit=%d pSession=%p\n", fFile, minor(pDev), pSession));
+#endif
 
     /*
      * Close the session if it's still hanging on to the device...
