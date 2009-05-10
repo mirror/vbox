@@ -573,7 +573,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_FILE_TOO_BIG                   (-128)
 /** No pending request the aio context has to wait for completion. */
 #define VERR_FILE_AIO_NO_REQUEST            (-129)
-/** The request could not be canceled because it is already processed. */
+/** The request could not be canceled or prepared for another transfer
+ *  because it is still in progress. */
 #define VERR_FILE_AIO_IN_PROGRESS           (-130)
 /** The request could not be canceled because it already completed. */
 #define VERR_FILE_AIO_COMPLETED             (-131)
@@ -581,7 +582,14 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_FILE_AIO_BUSY                  (-132)
 /** The requests couldn't be submitted because that would exceed the capacity of the context. */
 #define VERR_FILE_AIO_LIMIT_EXCEEDED        (-133)
-
+/** The request was canceled. */
+#define VERR_FILE_AIO_CANCELED              (-134)
+/** The request wasn't submitted so it can't be canceled. */
+#define VERR_FILE_AIO_NOT_SUBMITTED         (-135)
+/** A request was not prepared and thus could not be submitted. */
+#define VERR_FILE_AIO_NOT_PREPARED          (-136)
+/** Not all requests could be submitted due to ressource shortage. */
+#define VERR_FILE_AIO_INSUFFICIENT_RESSOURCES (-137)
 /** @} */
 
 

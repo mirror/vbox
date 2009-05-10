@@ -46,6 +46,7 @@
 #include <sys/types.h>
 #include <sys/event.h>
 #include <sys/time.h>
+#include <sys/sysctl.h>
 #include <aio.h>
 #include <errno.h>
 #include <unistd.h>
@@ -83,6 +84,8 @@ typedef struct RTFILEAIOREQINTERNAL
     /** The aio control block. Must be the FIRST
      *  element. */
     struct aiocb           AioCB;
+    /** Current state the request is in. */
+    RTFILEAIOREQSTATE      enmState;
     /** Flag whether this is a flush request. */
     bool                   fFlush;
     /** Opaque user data. */
@@ -106,6 +109,39 @@ typedef RTFILEAIOREQINTERNAL *PRTFILEAIOREQINTERNAL;
 /** The max number of events to get in one call. */
 #define AIO_MAXIMUM_REQUESTS_PER_CONTEXT 64
 
+RTR3DECL(int) RTFileAioGetLimits(PRTFILEAIOLIMITS pAioLimits)
+{
+    int rcBSD = 0;
+    AssertPtrReturn(pAioLimits, VERR_INVALID_POINTER);
+
+    /*
+     * The AIO API is implemented in a kernel module which is not
+     * loaded by default.
+     * If it is loaded there are additional sysctl parameters.
+     */
+    int cReqsOutstandingMax = 0;
+    size_t cbParameter = sizeof(int);
+
+    rcBSD = sysctlbyname("vfs.aio.max_aio_per_proc", /* name */
+                         &cReqsOutstandingMax,       /* Where to store the old value. */
+                         &cbParameter,               /* Size of the memory pointed to. */
+                         NULL,                       /* Where the new value is located. */
+                         NULL);                      /* Where the size of the new value is stored. */
+    if (rcBSD == -1)
+    {
+        /* ENOENT means the value is unknown thus the module is not loaded. */
+        if (errno == ENOENT)
+            return VERR_NOT_SUPPORTED;
+        else
+            return RTErrConvertFromErrno(errno);
+    }
+
+    pAioLimits->cReqsOutstandingMax = cReqsOutstandingMax;
+    pAioLimits->cbBufferAlignment   = 0;
+
+    return VINF_SUCCESS;
+}
+
 RTR3DECL(int) RTFileAioReqCreate(PRTFILEAIOREQ phReq)
 {
     AssertPtrReturn(phReq, VERR_INVALID_POINTER);
@@ -119,27 +155,30 @@ RTR3DECL(int) RTFileAioReqCreate(PRTFILEAIOREQ phReq)
     pReqInt->AioCB.aio_sigevent.sigev_value.sival_ptr = pReqInt;
     pReqInt->pCtxInt                   = NULL;
     pReqInt->u32Magic                  = RTFILEAIOREQ_MAGIC;
+    RTFILEAIOREQ_SET_STATE(pReqInt, COMPLETED);
 
     *phReq = (RTFILEAIOREQ)pReqInt;
 
     return VINF_SUCCESS;
 }
 
-RTDECL(void) RTFileAioReqDestroy(RTFILEAIOREQ hReq)
+RTDECL(int) RTFileAioReqDestroy(RTFILEAIOREQ hReq)
 {
     /*
      * Validate the handle and ignore nil.
      */
     if (hReq == NIL_RTFILEAIOREQ)
-        return;
+        return VINF_SUCCESS;
     PRTFILEAIOREQINTERNAL pReqInt = hReq;
-    RTFILEAIOREQ_VALID_RETURN_VOID(pReqInt);
+    RTFILEAIOREQ_VALID_RETURN(pReqInt);
+    RTFILEAIOREQ_NOT_STATE_RETURN_RC(pReqInt, SUBMITTED, VERR_FILE_AIO_IN_PROGRESS);
 
     /*
      * Trash the magic and free it.
      */
     ASMAtomicUoWriteU32(&pReqInt->u32Magic, ~RTFILEAIOREQ_MAGIC);
     RTMemFree(pReqInt);
+    return VINF_SUCCESS;
 }
 
 /**
@@ -155,6 +194,7 @@ DECLINLINE(int) rtFileAioReqPrepareTransfer(RTFILEAIOREQ hReq, RTFILE hFile,
      */
     PRTFILEAIOREQINTERNAL pReqInt = hReq;
     RTFILEAIOREQ_VALID_RETURN(pReqInt);
+    RTFILEAIOREQ_NOT_STATE_RETURN_RC(pReqInt, SUBMITTED, VERR_FILE_AIO_IN_PROGRESS);
     Assert(hFile != NIL_RTFILE);
     AssertPtr(pvBuf);
     Assert(off >= 0);
@@ -170,6 +210,7 @@ DECLINLINE(int) rtFileAioReqPrepareTransfer(RTFILEAIOREQ hReq, RTFILE hFile,
     pReqInt->pvUser               = pvUser;
     pReqInt->pCtxInt              = NULL;
     pReqInt->Rc                   = VERR_FILE_AIO_IN_PROGRESS;
+    RTFILEAIOREQ_SET_STATE(pReqInt, PREPARED);
 
     return VINF_SUCCESS;
 }
@@ -194,10 +235,12 @@ RTDECL(int) RTFileAioReqPrepareFlush(RTFILEAIOREQ hReq, RTFILE hFile, void *pvUs
 
     RTFILEAIOREQ_VALID_RETURN(pReqInt);
     Assert(hFile != NIL_RTFILE);
+    RTFILEAIOREQ_NOT_STATE_RETURN_RC(pReqInt, SUBMITTED, VERR_FILE_AIO_IN_PROGRESS);
 
     pReqInt->fFlush           = true;
     pReqInt->AioCB.aio_fildes = (int)hFile;
     pReqInt->pvUser           = pvUser;
+    RTFILEAIOREQ_SET_STATE(pReqInt, PREPARED);
 
     return VINF_SUCCESS;
 }
@@ -214,6 +257,8 @@ RTDECL(int) RTFileAioReqCancel(RTFILEAIOREQ hReq)
 {
     PRTFILEAIOREQINTERNAL pReqInt = hReq;
     RTFILEAIOREQ_VALID_RETURN(pReqInt);
+    RTFILEAIOREQ_STATE_RETURN_RC(pReqInt, SUBMITTED, VERR_FILE_AIO_NOT_SUBMITTED);
+
 
     int rcBSD = aio_cancel(pReqInt->AioCB.aio_fildes, &pReqInt->AioCB);
 
@@ -227,6 +272,8 @@ RTDECL(int) RTFileAioReqCancel(RTFILEAIOREQ hReq)
                   ("Invalid state. Request was canceled but wasn't submitted\n"));
 
         ASMAtomicDecS32(&pReqInt->pCtxInt->cRequests);
+        pReqInt->Rc = VERR_FILE_AIO_CANCELED;
+        RTFILEAIOREQ_SET_STATE(pReqInt, COMPLETED);
         return VINF_SUCCESS;
     }
     else if (rcBSD == AIO_ALLDONE)
@@ -242,8 +289,10 @@ RTDECL(int) RTFileAioReqGetRC(RTFILEAIOREQ hReq, size_t *pcbTransfered)
     PRTFILEAIOREQINTERNAL pReqInt = hReq;
     RTFILEAIOREQ_VALID_RETURN(pReqInt);
     AssertPtrNull(pcbTransfered);
+    RTFILEAIOREQ_NOT_STATE_RETURN_RC(pReqInt, SUBMITTED, VERR_FILE_AIO_IN_PROGRESS);
+    RTFILEAIOREQ_NOT_STATE_RETURN_RC(pReqInt, PREPARED, VERR_FILE_AIO_NOT_SUBMITTED);
 
-    if (  (pReqInt->Rc != VERR_FILE_AIO_IN_PROGRESS)
+    if (  (RT_SUCCESS(pReqInt->Rc))
         && (pcbTransfered))
         *pcbTransfered = pReqInt->cbTransfered;
 
@@ -305,13 +354,12 @@ RTDECL(int) RTFileAioCtxAssociateWithFile(RTFILEAIOCTX hAioCtx, RTFILE hFile)
     return VINF_SUCCESS;
 }
 
-RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size_t cReqs, size_t *pcReqs)
+RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size_t cReqs)
 {
     /*
      * Parameter validation.
      */
-    AssertPtrReturn(pcReqs, VERR_INVALID_POINTER);
-    *pcReqs = 0;
+    int rc = VINF_SUCCESS;
     PRTFILEAIOCTXINTERNAL pCtxInt = hAioCtx;
     RTFILEAIOCTX_VALID_RETURN(pCtxInt);
     AssertReturn(cReqs > 0,  VERR_INVALID_PARAMETER);
@@ -329,10 +377,23 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
                && (i < AIO_LISTIO_MAX))
         {
             pReqInt = pahReqs[i];
-            RTFILEAIOREQ_VALID_RETURN(pReqInt);
+            if (RTFILEAIOREQ_IS_NOT_VALID(pReqInt))
+            {
+                /* Undo everything and stop submitting. */
+                for (size_t iUndo = 0; iUndo < i; iUndo++)
+                {
+                    pReqInt = pahReqs[iUndo];
+                    RTFILEAIOREQ_SET_STATE(pReqInt, PREPARED);
+                    pReqInt->pCtxInt = NULL;
+                    pReqInt->AioCB.aio_sigevent.sigev_notify_kqueue = 0;
+                }
+                rc = VERR_INVALID_HANDLE;
+                break;
+            }
 
             pReqInt->AioCB.aio_sigevent.sigev_notify_kqueue = pCtxInt->iKQueue;
             pReqInt->pCtxInt                                = pCtxInt;
+            RTFILEAIOREQ_SET_STATE(pReqInt, SUBMITTED);
 
             if (pReqInt->fFlush)
                 break;
@@ -345,12 +406,38 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
         {
             rcBSD = lio_listio(LIO_NOWAIT, (struct aiocb **)pahReqs, cReqsSubmit, NULL);
             if (RT_UNLIKELY(rcBSD < 0))
-                return RTErrConvertFromErrno(errno);
+            {
+                if (rcBSD == EAGAIN)
+                    rc = VERR_FILE_AIO_INSUFFICIENT_RESSOURCES;
+                else
+                    rc = RTErrConvertFromErrno(errno);
+
+                /* Check which requests got actually submitted and which not. */
+                for (i = 0; i < cReqs; i++)
+                {
+                    pReqInt = pahReqs[i];
+                    rcBSD = aio_error(&pReqInt->AioCB);
+                    if (rcBSD == EINVAL)
+                    {
+                        /* Was not submitted. */
+                        RTFILEAIOREQ_SET_STATE(pReqInt, PREPARED);
+                        pReqInt->pCtxInt = NULL;
+                    }
+                    else if (rcBSD != EINPROGRESS)
+                    {
+                        /* The request encountered an error. */
+                        RTFILEAIOREQ_SET_STATE(pReqInt, COMPLETED);
+                        pReqInt->Rc = RTErrConvertFromErrno(rcBSD);
+                        pReqInt->pCtxInt      = NULL;
+                        pReqInt->cbTransfered = 0;
+                    }
+                }
+                break;
+            }
 
             ASMAtomicAddS32(&pCtxInt->cRequests, cReqsSubmit);
             cReqs   -= cReqsSubmit;
             pahReqs += cReqsSubmit;
-            *pcReqs += cReqsSubmit;
         }
 
         /* Check if we have a flush request now. */
@@ -367,17 +454,21 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
                  */
                  rcBSD = aio_fsync(O_SYNC, &pReqInt->AioCB);
                  if (RT_UNLIKELY(rcBSD < 0))
-                    return RTErrConvertFromErrno(errno);
+                 {
+                    RTFILEAIOREQ_SET_STATE(pReqInt, COMPLETED);
+                    pReqInt->Rc = RTErrConvertFromErrno(errno);
+                    pReqInt->cbTransfered = 0;
+                    return pReqInt->Rc;
+                 }
 
                 ASMAtomicIncS32(&pCtxInt->cRequests);
                 cReqs--;
                 pahReqs++;
-                *pcReqs++;
             }
         }
     } while (cReqs);
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMillisTimeout,
@@ -446,6 +537,8 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMi
         for (uint32_t i = 0; i < cDone; i++)
         {
             PRTFILEAIOREQINTERNAL pReqInt = (PRTFILEAIOREQINTERNAL)aKEvents[i].udata;
+            AssertPtr(pReqInt);
+            Assert(pReqInt->u32Magic == RTFILEAIOREQ_MAGIC);
 
             /*
              * Retrieve the status code here already because the
@@ -467,6 +560,7 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMi
                 pReqInt->Rc = VINF_SUCCESS;
                 pReqInt->cbTransfered = cbTransfered;
             }
+            RTFILEAIOREQ_SET_STATE(pReqInt, COMPLETED);
             pahReqs[cRequestsCompleted++] = (RTFILEAIOREQ)pReqInt;
         }
 
