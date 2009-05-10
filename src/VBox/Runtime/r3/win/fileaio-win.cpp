@@ -89,6 +89,8 @@ typedef struct RTFILEAIOREQINTERNAL
 {
     /** Overlapped structure. */
     OVERLAPPED            Overlapped;
+    /** Current state the request is in. */
+    RTFILEAIOREQSTATE     enmState;
     /** The file handle. */
     HANDLE                hFile;
     /** Kind of transfer Read/Write. */
@@ -121,6 +123,18 @@ typedef RTFILEAIOREQINTERNAL *PRTFILEAIOREQINTERNAL;
 /** Converts a pointer to an OVERLAPPED structure to a internal request. */
 #define OVERLAPPED_2_RTFILEAIOREQINTERNAL(pOverlapped) ( (PRTFILEAIOREQINTERNAL)((uintptr_t)(pOverlapped) - RT_OFFSETOF(RTFILEAIOREQINTERNAL, Overlapped)) )
 
+RTR3DECL(int) RTFileAioGetLimits(PRTFILEAIOLIMITS pAioLimits)
+{
+    int rcBSD = 0;
+    AssertPtrReturn(pAioLimits, VERR_INVALID_POINTER);
+
+    /* No limits known. */
+    pAioLimits->cReqsOutstandingMax = RTFILEAIO_UNLIMITED_REQS;
+    pAioLimits->cbBufferAlignment   = 0;
+
+    return VINF_SUCCESS;
+}
+
 RTR3DECL(int) RTFileAioReqCreate(PRTFILEAIOREQ phReq)
 {
     AssertPtrReturn(phReq, VERR_INVALID_POINTER);
@@ -132,27 +146,30 @@ RTR3DECL(int) RTFileAioReqCreate(PRTFILEAIOREQ phReq)
     pReqInt->pCtxInt    = NULL;
     pReqInt->fCompleted = false;
     pReqInt->u32Magic   = RTFILEAIOREQ_MAGIC;
+    RTFILEAIOREQ_SET_STATE(pReqInt, COMPLETED);
 
     *phReq = (RTFILEAIOREQ)pReqInt;
 
     return VINF_SUCCESS;
 }
 
-RTDECL(void) RTFileAioReqDestroy(RTFILEAIOREQ hReq)
+RTDECL(int) RTFileAioReqDestroy(RTFILEAIOREQ hReq)
 {
     /*
      * Validate the handle and ignore nil.
      */
     if (hReq == NIL_RTFILEAIOREQ)
-        return;
+        return VINF_SUCCESS;
     PRTFILEAIOREQINTERNAL pReqInt = hReq;
-    RTFILEAIOREQ_VALID_RETURN_VOID(pReqInt);
+    RTFILEAIOREQ_VALID_RETURN(pReqInt);
+    RTFILEAIOREQ_NOT_STATE_RETURN_RC(pReqInt, SUBMITTED, VERR_FILE_AIO_IN_PROGRESS);
 
     /*
      * Trash the magic and free it.
      */
     ASMAtomicUoWriteU32(&pReqInt->u32Magic, ~RTFILEAIOREQ_MAGIC);
     RTMemFree(pReqInt);
+    return VINF_SUCCESS;
 }
 
 /**
@@ -168,6 +185,7 @@ DECLINLINE(int) rtFileAioReqPrepareTransfer(RTFILEAIOREQ hReq, RTFILE hFile,
      */
     PRTFILEAIOREQINTERNAL pReqInt = hReq;
     RTFILEAIOREQ_VALID_RETURN(pReqInt);
+    RTFILEAIOREQ_NOT_STATE_RETURN_RC(pReqInt, SUBMITTED, VERR_FILE_AIO_IN_PROGRESS);
     Assert(hFile != NIL_RTFILE);
     AssertPtr(pvBuf);
     Assert(off >= 0);
@@ -203,6 +221,7 @@ RTDECL(int) RTFileAioReqPrepareFlush(RTFILEAIOREQ hReq, RTFILE hFile, void *pvUs
 {
     PRTFILEAIOREQINTERNAL pReqInt = hReq;
     RTFILEAIOREQ_VALID_RETURN(pReqInt);
+    RTFILEAIOREQ_NOT_STATE_RETURN_RC(pReqInt, SUBMITTED, VERR_FILE_AIO_IN_PROGRESS);
     AssertReturn(hFile != NIL_RTFILE, VERR_INVALID_HANDLE);
 
     /** @todo: Flushing is not available */
@@ -225,6 +244,7 @@ RTDECL(int) RTFileAioReqCancel(RTFILEAIOREQ hReq)
 {
     PRTFILEAIOREQINTERNAL pReqInt = hReq;
     RTFILEAIOREQ_VALID_RETURN(pReqInt);
+    RTFILEAIOREQ_STATE_RETURN_RC(pReqInt, SUBMITTED, VERR_FILE_AIO_NOT_SUBMITTED);
 
     /**
      * @todo r=aeichner It is not possible to cancel specific
@@ -233,14 +253,11 @@ RTDECL(int) RTFileAioReqCancel(RTFILEAIOREQ hReq)
      * calling thread and CancelIoEx which does what we need
      * is only available from Vista and up.
      * The solution is to return VERR_FILE_AIO_IN_PROGRESS
-     * if the request didn't completed yet.
+     * if the request didn't completed yet (checked above).
      * Shouldn't be a big issue because a request is normally
      * only canceled if it exceeds a timeout which is quite huge.
      */
-    if (pReqInt->fCompleted)
-        return VERR_FILE_AIO_COMPLETED;
-    else
-        return VERR_FILE_AIO_IN_PROGRESS;
+    return VERR_FILE_AIO_COMPLETED;
 }
 
 RTDECL(int) RTFileAioReqGetRC(RTFILEAIOREQ hReq, size_t *pcbTransfered)
@@ -248,15 +265,12 @@ RTDECL(int) RTFileAioReqGetRC(RTFILEAIOREQ hReq, size_t *pcbTransfered)
     int rc = VINF_SUCCESS;
     PRTFILEAIOREQINTERNAL pReqInt = hReq;
     RTFILEAIOREQ_VALID_RETURN(pReqInt);
+    RTFILEAIOREQ_NOT_STATE_RETURN_RC(pReqInt, SUBMITTED, VERR_FILE_AIO_IN_PROGRESS);
+    RTFILEAIOREQ_NOT_STATE_RETURN_RC(pReqInt, PREPARED, VERR_FILE_AIO_NOT_SUBMITTED);
 
-    if (pReqInt->fCompleted)
-    {
-        rc = pReqInt->Rc;
-        if (*pcbTransfered)
-            *pcbTransfered = pReqInt->cbTransfered;
-    }
-    else
-        rc = VERR_FILE_AIO_IN_PROGRESS;
+    rc = pReqInt->Rc;
+    if (pcbTransfered && RT_SUCCESS(rc))
+        *pcbTransfered = pReqInt->cbTransfered;
 
     return rc;
 }
@@ -324,13 +338,11 @@ RTDECL(uint32_t) RTFileAioCtxGetMaxReqCount(RTFILEAIOCTX hAioCtx)
     return RTFILEAIO_UNLIMITED_REQS;
 }
 
-RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size_t cReqs, size_t *pcReqs)
+RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size_t cReqs)
 {
     /*
      * Parameter validation.
      */
-    AssertPtrReturn(pcReqs, VERR_INVALID_POINTER);
-    *pcReqs = 0;
     int rc = VINF_SUCCESS;
     PRTFILEAIOCTXINTERNAL pCtxInt = hAioCtx;
     RTFILEAIOCTX_VALID_RETURN(pCtxInt);
@@ -360,12 +372,14 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
 
         if (RT_UNLIKELY(!fSucceeded && GetLastError() != ERROR_IO_PENDING))
         {
+            RTFILEAIOREQ_SET_STATE(pReqInt, COMPLETED);
             rc = RTErrConvertFromWin32(GetLastError());
+            pReqInt->Rc = rc;
             break;
         }
+        RTFILEAIOREQ_SET_STATE(pReqInt, SUBMITTED);
     }
 
-    *pcReqs = i;
     ASMAtomicAddS32(&pCtxInt->cRequests, i);
 
     return rc;
@@ -439,7 +453,7 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMi
             Assert(pReqInt->u32Magic == RTFILEAIOREQ_MAGIC);
 
             /* Mark the request as finished. */
-            pReqInt->fCompleted = true;
+            RTFILEAIOREQ_SET_STATE(pReqInt, COMPLETED);
 
             /* completion status. */
             DWORD cbTransfered;

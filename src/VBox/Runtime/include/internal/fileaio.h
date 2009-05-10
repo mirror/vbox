@@ -35,8 +35,30 @@
 #include "internal/magics.h"
 
 /*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+/**
+ * Defined request states.
+ */
+typedef enum RTFILEAIOREQSTATE
+{
+    /** Prepared. */
+    RTFILEAIOREQSTATE_PREPARED = 0,
+    /** Submitted. */
+    RTFILEAIOREQSTATE_SUBMITTED,
+    /** Completed. */
+    RTFILEAIOREQSTATE_COMPLETED,
+    /** Omni present 32bit hack. */
+    RTFILEAIOREQSTATE_32BIT_HACK = 0x7fffffff
+} RTFILEAIOREQSTATE;
+
+/*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
+
+/** Return true if the specified request is not valid, false otherwise. */
+#define RTFILEAIOREQ_IS_NOT_VALID(pReq) \
+    (RT_UNLIKELY(!VALID_PTR(pReq) || (pReq->u32Magic != RTFILEAIOREQ_MAGIC)))
 
 /** Validates a context handle and returns VERR_INVALID_HANDLE if not valid. */
 #define RTFILEAIOREQ_VALID_RETURN_RC(pReq, rc) \
@@ -64,6 +86,27 @@
 
 /** Validates a context handle and returns VERR_INVALID_HANDLE if not valid. */
 #define RTFILEAIOCTX_VALID_RETURN(pCtx) RTFILEAIOCTX_VALID_RETURN_RC((pCtx), VERR_INVALID_HANDLE)
+
+/** Checks if a request is in the specified state and returns the specified rc if not. */
+#define RTFILEAIOREQ_STATE_RETURN_RC(pReq, State, rc) \
+    do { \
+        if (RT_UNLIKELY(pReq->enmState != RTFILEAIOREQSTATE_##State)) \
+            return rc; \
+    } while (0)
+
+/** Checks if a request is not in the specified state and returns the specified rc if it is. */
+#define RTFILEAIOREQ_NOT_STATE_RETURN_RC(pReq, State, rc) \
+    do { \
+        if (RT_UNLIKELY(pReq->enmState == RTFILEAIOREQSTATE_##State)) \
+            return rc; \
+    } while (0)
+
+/** Sets the request into a specific state. */
+#define RTFILEAIOREQ_SET_STATE(pReq, State) \
+    do { \
+        pReq->enmState = RTFILEAIOREQSTATE_##State; \
+    } while (0)
+
 
 __BEGIN_DECLS
 

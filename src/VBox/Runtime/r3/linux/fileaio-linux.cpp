@@ -189,12 +189,12 @@ typedef struct RTFILEAIOREQINTERNAL
     /** The aio control block. This must be the FIRST elment in
      *  the structure! (see notes below) */
     LNXKAIOIOCB           AioCB;
+    /** Current state the request is in. */
+    RTFILEAIOREQSTATE     enmState;
     /** The I/O context this request is associated with. */
     aio_context_t         AioContext;
     /** Return code the request completed with. */
     int                   Rc;
-    /** Flag whether the request is in process or not. */
-    bool                  fFinished;
     /** Number of bytes actually trasnfered. */
     size_t                cbTransfered;
     /** Completion context we are assigned to. */
@@ -240,11 +240,13 @@ DECLINLINE(int) rtFileAsyncIoLinuxDestroy(aio_context_t AioContext)
 /**
  * Submits an array of I/O requests to the kernel.
  */
-DECLINLINE(int) rtFileAsyncIoLinuxSubmit(aio_context_t AioContext, long cReqs, LNXKAIOIOCB **ppIoCB)
+DECLINLINE(int) rtFileAsyncIoLinuxSubmit(aio_context_t AioContext, long cReqs, LNXKAIOIOCB **ppIoCB, int *pcSubmitted)
 {
     int rc = syscall(__NR_io_submit, AioContext, cReqs, ppIoCB);
     if (RT_UNLIKELY(rc == -1))
         return RTErrConvertFromErrno(errno);
+
+    *pcSubmitted = rc;
 
     return VINF_SUCCESS;
 }
@@ -275,6 +277,32 @@ DECLINLINE(int) rtFileAsyncIoLinuxGetEvents(aio_context_t AioContext, long cReqs
     return rc;
 }
 
+RTR3DECL(int) RTFileAioGetLimits(PRTFILEAIOLIMITS pAioLimits)
+{
+    int rc = VINF_SUCCESS;
+    AssertPtrReturn(pAioLimits, VERR_INVALID_POINTER);
+
+    /*
+     * Check if the API is implemented by creating a
+     * completion port.
+     */
+    aio_context_t AioContext = 0;
+    rc = rtFileAsyncIoLinuxCreate(1, &AioContext);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    rc = rtFileAsyncIoLinuxDestroy(AioContext);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* Supported - fill in the limits. The alignment is the only restriction. */
+    pAioLimits->cReqsOutstandingMax = RTFILEAIO_UNLIMITED_REQS;
+    pAioLimits->cbBufferAlignment   = 512;
+
+    return VINF_SUCCESS;
+}
+
+
 RTR3DECL(int) RTFileAioReqCreate(PRTFILEAIOREQ phReq)
 {
     AssertPtrReturn(phReq, VERR_INVALID_POINTER);
@@ -286,30 +314,32 @@ RTR3DECL(int) RTFileAioReqCreate(PRTFILEAIOREQ phReq)
     if (RT_UNLIKELY(!pReqInt))
         return VERR_NO_MEMORY;
 
-    pReqInt->fFinished = false;
     pReqInt->pCtxInt   = NULL;
     pReqInt->u32Magic  = RTFILEAIOREQ_MAGIC;
+    RTFILEAIOREQ_SET_STATE(pReqInt, COMPLETED);
 
     *phReq = (RTFILEAIOREQ)pReqInt;
     return VINF_SUCCESS;
 }
 
 
-RTDECL(void) RTFileAioReqDestroy(RTFILEAIOREQ hReq)
+RTDECL(int) RTFileAioReqDestroy(RTFILEAIOREQ hReq)
 {
     /*
      * Validate the handle and ignore nil.
      */
     if (hReq == NIL_RTFILEAIOREQ)
-        return;
+        return VINF_SUCCESS;
     PRTFILEAIOREQINTERNAL pReqInt = hReq;
-    RTFILEAIOREQ_VALID_RETURN_VOID(pReqInt);
+    RTFILEAIOREQ_VALID_RETURN(pReqInt);
+    RTFILEAIOREQ_NOT_STATE_RETURN_RC(pReqInt, SUBMITTED, VERR_FILE_AIO_IN_PROGRESS);
 
     /*
      * Trash the magic and free it.
      */
     ASMAtomicUoWriteU32(&pReqInt->u32Magic, ~RTFILEAIOREQ_MAGIC);
     RTMemFree(pReqInt);
+    return VINF_SUCCESS;
 }
 
 
@@ -326,6 +356,7 @@ DECLINLINE(int) rtFileAioReqPrepareTransfer(RTFILEAIOREQ hReq, RTFILE hFile,
      */
     PRTFILEAIOREQINTERNAL pReqInt = hReq;
     RTFILEAIOREQ_VALID_RETURN(pReqInt);
+    RTFILEAIOREQ_NOT_STATE_RETURN_RC(pReqInt, SUBMITTED, VERR_FILE_AIO_IN_PROGRESS);
     Assert(hFile != NIL_RTFILE);
     AssertPtr(pvBuf);
     Assert(off >= 0);
@@ -341,8 +372,8 @@ DECLINLINE(int) rtFileAioReqPrepareTransfer(RTFILEAIOREQ hReq, RTFILE hFile,
     pReqInt->AioCB.pvBuf       = pvBuf;
     pReqInt->AioCB.pvUser      = pvUser;
 
-    pReqInt->fFinished         = false;
     pReqInt->pCtxInt           = NULL;
+    RTFILEAIOREQ_SET_STATE(pReqInt, PREPARED);
 
     return VINF_SUCCESS;
 }
@@ -369,6 +400,7 @@ RTDECL(int) RTFileAioReqPrepareFlush(RTFILEAIOREQ hReq, RTFILE hFile, void *pvUs
     PRTFILEAIOREQINTERNAL pReqInt = hReq;
     RTFILEAIOREQ_VALID_RETURN(pReqInt);
     AssertReturn(hFile != NIL_RTFILE, VERR_INVALID_HANDLE);
+    RTFILEAIOREQ_NOT_STATE_RETURN_RC(pReqInt, SUBMITTED, VERR_FILE_AIO_IN_PROGRESS);
 
     /** @todo: Flushing is not neccessary on Linux because O_DIRECT is mandatory
      *         which disables caching.
@@ -396,6 +428,7 @@ RTDECL(int) RTFileAioReqCancel(RTFILEAIOREQ hReq)
 {
     PRTFILEAIOREQINTERNAL pReqInt = hReq;
     RTFILEAIOREQ_VALID_RETURN(pReqInt);
+    RTFILEAIOREQ_STATE_RETURN_RC(pReqInt, SUBMITTED, VERR_FILE_AIO_NOT_SUBMITTED);
 
     LNXKAIOIOEVENT AioEvent;
     int rc = rtFileAsyncIoLinuxCancel(pReqInt->AioContext, &pReqInt->AioCB, &AioEvent);
@@ -409,6 +442,8 @@ RTDECL(int) RTFileAioReqCancel(RTFILEAIOREQ hReq)
                   ("Invalid state. Request was canceled but wasn't submitted\n"));
 
         ASMAtomicDecS32(&pReqInt->pCtxInt->cRequests);
+        pReqInt->Rc = VERR_FILE_AIO_CANCELED;
+        RTFILEAIOREQ_SET_STATE(pReqInt, COMPLETED);
         return VINF_SUCCESS;
     }
     if (rc == VERR_TRY_AGAIN)
@@ -422,9 +457,8 @@ RTDECL(int) RTFileAioReqGetRC(RTFILEAIOREQ hReq, size_t *pcbTransfered)
     PRTFILEAIOREQINTERNAL pReqInt = hReq;
     RTFILEAIOREQ_VALID_RETURN(pReqInt);
     AssertPtrNull(pcbTransfered);
-
-    if (!pReqInt->fFinished)
-        return VERR_FILE_AIO_IN_PROGRESS;
+    RTFILEAIOREQ_NOT_STATE_RETURN_RC(pReqInt, SUBMITTED, VERR_FILE_AIO_IN_PROGRESS);
+    RTFILEAIOREQ_NOT_STATE_RETURN_RC(pReqInt, PREPARED, VERR_FILE_AIO_NOT_SUBMITTED);
 
     if (    pcbTransfered
         &&  RT_SUCCESS(pReqInt->Rc))
@@ -508,48 +542,95 @@ RTDECL(int) RTFileAioCtxAssociateWithFile(RTFILEAIOCTX hAioCtx, RTFILE hFile)
     return VINF_SUCCESS;
 }
 
-RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size_t cReqs, size_t *pcReqs)
+RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size_t cReqs)
 {
+    int rc = VINF_SUCCESS;
+
     /*
      * Parameter validation.
      */
-    AssertPtrReturn(pcReqs, VERR_INVALID_POINTER);
-    *pcReqs = 0;
     PRTFILEAIOCTXINTERNAL pCtxInt = hAioCtx;
     RTFILEAIOCTX_VALID_RETURN(pCtxInt);
     AssertReturn(cReqs > 0,  VERR_INVALID_PARAMETER);
     AssertPtrReturn(pahReqs, VERR_INVALID_POINTER);
     uint32_t i = cReqs;
+    PRTFILEAIOREQINTERNAL pReqInt = NULL;
 
     /*
      * Vaildate requests and associate with the context.
      */
     while (i-- > 0)
     {
-        PRTFILEAIOREQINTERNAL pReqInt = pahReqs[i];
-        RTFILEAIOREQ_VALID_RETURN(pReqInt);
+        pReqInt = pahReqs[i];
+        if (RTFILEAIOREQ_IS_NOT_VALID(pReqInt))
+        {
+            /* Undo everything and stop submitting. */
+            size_t iUndo = cReqs;
+            while (iUndo-- > i)
+            {
+                pReqInt = pahReqs[iUndo];
+                RTFILEAIOREQ_SET_STATE(pReqInt, PREPARED);
+                pReqInt->pCtxInt = NULL;
+            }
+            return VERR_INVALID_HANDLE;
+        }
 
         pReqInt->AioContext = pCtxInt->AioContext;
         pReqInt->pCtxInt    = pCtxInt;
+        RTFILEAIOREQ_SET_STATE(pReqInt, SUBMITTED);
     }
 
-    /*
-     * Add the submitted requests to the counter
-     * to prevent destroying the context while
-     * it is still used.
-     */
-    ASMAtomicAddS32(&pCtxInt->cRequests, cReqs);
+    do
+    {
+        /*
+         * We cast pahReqs to the Linux iocb structure to avoid copying the requests
+         * into a temporary array. This is possible because the iocb structure is
+         * the first element in the request structure (see PRTFILEAIOCTXINTERNAL).
+         */
+        int cReqsSubmitted = 0;
+        rc = rtFileAsyncIoLinuxSubmit(pCtxInt->AioContext, cReqs,
+                                      (PLNXKAIOIOCB *)pahReqs,
+                                      &cReqsSubmitted);
+        if (RT_FAILURE(rc))
+        {
+            /*
+             * We encountered an error.
+             * This means that the first IoCB
+             * is not correctly initialized
+             * (invalid buffer alignment or bad file descriptor).
+             * Revert every request into the prepared state except
+             * the first one which will switch to completed.
+             * Another reason could be insuffidient ressources.
+             */
+            i = cReqs;
+            while (i-- > 0)
+            {
+                /* Already validated. */
+                pReqInt = pahReqs[i];
+                pReqInt->pCtxInt    = NULL;
+                pReqInt->AioContext = 0;
+                RTFILEAIOREQ_SET_STATE(pReqInt, PREPARED);
+            }
 
-    /*
-     * We cast phReqs to the Linux iocb structure to avoid copying the requests
-     * into a temporary array. This is possible because the iocb structure is
-     * the first element in the request structure (see PRTFILEAIOCTXINTERNAL).
-     */
-    int rc = rtFileAsyncIoLinuxSubmit(pCtxInt->AioContext, cReqs, (PLNXKAIOIOCB *)pahReqs);
-    if (RT_FAILURE(rc))
-        ASMAtomicSubS32(&pCtxInt->cRequests, cReqs);
-    else
-        *pcReqs = cReqs;
+            if (rc == VERR_TRY_AGAIN)
+                return VERR_FILE_AIO_INSUFFICIENT_RESSOURCES;
+            else
+            {
+                /* The first request failed. */
+                pReqInt = pahReqs[0];
+                RTFILEAIOREQ_SET_STATE(pReqInt, COMPLETED);
+                pReqInt->Rc = rc;
+                pReqInt->cbTransfered = 0;
+                return rc;
+            }
+        }
+
+        /* Advance. */
+        cReqs   -= cReqsSubmitted;
+        pahReqs += cReqsSubmitted;
+        ASMAtomicAddS32(&pCtxInt->cRequests, cReqsSubmitted);
+
+    } while (cReqs);
 
     return rc;
 }
@@ -642,7 +723,7 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMi
             }
 
             /* Mark the request as finished. */
-            pReqInt->fFinished = true;
+            RTFILEAIOREQ_SET_STATE(pReqInt, COMPLETED);
 
             pahReqs[cRequestsCompleted++] = (RTFILEAIOREQ)pReqInt;
         }
