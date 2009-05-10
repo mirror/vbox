@@ -609,6 +609,56 @@ RTDECL(PAVLROOGCPTRNODECORE)    RTAvlrooGCPtrGetNextEqual(PAVLROOGCPTRNODECORE p
 /** @} */
 
 
+/** AVL tree of RTUINTPTR ranges.
+ * @{
+ */
+
+/**
+ * AVL Core node.
+ */
+typedef struct _AVLRUIntPtrNodeCore
+{
+    /** First key value in the range (inclusive). */
+    RTUINTPTR           Key;
+    /** Last key value in the range (inclusive). */
+    RTUINTPTR           KeyLast;
+    /** Offset to the left leaf node, relative to this field. */
+    struct _AVLRUIntPtrNodeCore *pLeft;
+    /** Offset to the right leaf node, relative to this field. */
+    struct _AVLRUIntPtrNodeCore *pRight;
+    /** Height of this tree: max(height(left), height(right)) + 1 */
+    unsigned char       uchHeight;
+} AVLRUINTPTRNODECORE, *PAVLRUINTPTRNODECORE;
+
+/** A offset base tree with RTUINTPTR keys. */
+typedef PAVLRUINTPTRNODECORE AVLRUINTPTRTREE;
+/** Pointer to a offset base tree with RTUINTPTR keys. */
+typedef AVLRUINTPTRTREE     *PAVLRUINTPTRTREE;
+
+/** Pointer to an internal tree pointer.
+ * In this case it's a pointer to a relative offset. */
+typedef AVLRUINTPTRTREE     *PPAVLRUINTPTRNODECORE;
+
+/** Callback function for RTAvlrUIntPtrDoWithAll() and RTAvlrUIntPtrDestroy(). */
+typedef DECLCALLBACK(int)    AVLRUINTPTRCALLBACK(PAVLRUINTPTRNODECORE pNode, void *pvUser);
+/** Pointer to callback function for RTAvlrUIntPtrDoWithAll() and RTAvlrUIntPtrDestroy(). */
+typedef AVLRUINTPTRCALLBACK *PAVLRUINTPTRCALLBACK;
+
+RTDECL(bool)                   RTAvlrUIntPtrInsert(     PAVLRUINTPTRTREE pTree, PAVLRUINTPTRNODECORE pNode);
+RTDECL(PAVLRUINTPTRNODECORE)   RTAvlrUIntPtrRemove(     PAVLRUINTPTRTREE pTree, RTUINTPTR Key);
+RTDECL(PAVLRUINTPTRNODECORE)   RTAvlrUIntPtrGet(        PAVLRUINTPTRTREE pTree, RTUINTPTR Key);
+RTDECL(PAVLRUINTPTRNODECORE)   RTAvlrUIntPtrGetBestFit( PAVLRUINTPTRTREE pTree, RTUINTPTR Key, bool fAbove);
+RTDECL(PAVLRUINTPTRNODECORE)   RTAvlrUIntPtrRangeGet(   PAVLRUINTPTRTREE pTree, RTUINTPTR Key);
+RTDECL(PAVLRUINTPTRNODECORE)   RTAvlrUIntPtrRangeRemove(PAVLRUINTPTRTREE pTree, RTUINTPTR Key);
+RTDECL(int)                    RTAvlrUIntPtrDoWithAll(  PAVLRUINTPTRTREE pTree, int fFromLeft, PAVLRUINTPTRCALLBACK pfnCallBack, void *pvParam);
+RTDECL(int)                    RTAvlrUIntPtrDestroy(    PAVLRUINTPTRTREE pTree, PAVLRUINTPTRCALLBACK pfnCallBack, void *pvParam);
+RTDECL(PAVLRUINTPTRNODECORE)   RTAvlrUIntPtrGetRoot(    PAVLRUINTPTRTREE pTree);
+RTDECL(PAVLRUINTPTRNODECORE)   RTAvlrUIntPtrGetLeft(    PAVLRUINTPTRNODECORE pNode);
+RTDECL(PAVLRUINTPTRNODECORE)   RTAvlrUIntPtrGetRight(   PAVLRUINTPTRNODECORE pNode);
+
+/** @} */
+
+
 /** AVL tree of RTHCPHYSes - using relative offsets internally.
  * @{
  */
