@@ -657,7 +657,7 @@ VMMR3DECL(int) DBGFR3ModuleLoad(PVM pVM, const char *pszFilename, RTGCUINTPTR Ad
     /*
      * Open the load file.
      */
-    FILE *pFile;
+    FILE *pFile = NULL;
     char szFoundFile[RTPATH_MAX];
     int rc = dbgfR3ModuleLocateAndOpen(pVM, pszFilename, szFoundFile, sizeof(szFoundFile), &pFile);
     if (pFile)
