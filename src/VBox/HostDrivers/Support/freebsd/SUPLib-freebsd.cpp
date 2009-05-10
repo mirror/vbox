@@ -161,7 +161,7 @@ int suplibOsUninstall(void)
 int suplibOsIOCtl(PSUPLIBDATA pThis, uintptr_t uFunction, void *pvReq, size_t cbReq)
 {
     if (RT_LIKELY(ioctl(pThis->hDevice, uFunction, pvReq) >= 0))
-	return VINF_SUCCESS;
+        return VINF_SUCCESS;
     return RTErrConvertFromErrno(errno);
 }
 
