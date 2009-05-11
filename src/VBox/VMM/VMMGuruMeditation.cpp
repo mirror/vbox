@@ -285,7 +285,52 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
              * The hypervisor dump is not relevant when we're in VT-x/AMD-V mode.
              */
             if (HWACCMR3IsActive(pVM))
+            {
                 pHlp->pfnPrintf(pHlp, "\n");
+#if 0
+                /* Callstack. */
+                PCDBGFSTACKFRAME pFirstFrame;
+                rc2 = DBGFR3StackWalkBegin(pVM, pVCpu->idCpu, DBGFCODETYPE_RING0, &pFirstFrame);
+                if (RT_SUCCESS(rc2))
+                {
+                    pHlp->pfnPrintf(pHlp,
+                                    "!!\n"
+                                    "!! Call Stack:\n"
+                                    "!!\n"
+                                    "EBP      Ret EBP  Ret CS:EIP    Arg0     Arg1     Arg2     Arg3     CS:EIP        Symbol [line]\n");
+                    for (PCDBGFSTACKFRAME pFrame = pFirstFrame;
+                         pFrame;
+                         pFrame = DBGFR3StackWalkNext(pFrame))
+                    {
+                        pHlp->pfnPrintf(pHlp,
+                                        "%08RX32 %08RX32 %04RX32:%08RX32 %08RX32 %08RX32 %08RX32 %08RX32",
+                                        (uint32_t)pFrame->AddrFrame.off,
+                                        (uint32_t)pFrame->AddrReturnFrame.off,
+                                        (uint32_t)pFrame->AddrReturnPC.Sel,
+                                        (uint32_t)pFrame->AddrReturnPC.off,
+                                        pFrame->Args.au32[0],
+                                        pFrame->Args.au32[1],
+                                        pFrame->Args.au32[2],
+                                        pFrame->Args.au32[3]);
+                        pHlp->pfnPrintf(pHlp, " %RTsel:%08RGv", pFrame->AddrPC.Sel, pFrame->AddrPC.off);
+                        if (pFrame->pSymPC)
+                        {
+                            RTGCINTPTR offDisp = pFrame->AddrPC.FlatPtr - pFrame->pSymPC->Value;
+                            if (offDisp > 0)
+                                pHlp->pfnPrintf(pHlp, " %s+%llx", pFrame->pSymPC->szName, (int64_t)offDisp);
+                            else if (offDisp < 0)
+                                pHlp->pfnPrintf(pHlp, " %s-%llx", pFrame->pSymPC->szName, -(int64_t)offDisp);
+                            else
+                                pHlp->pfnPrintf(pHlp, " %s", pFrame->pSymPC->szName);
+                        }
+                        if (pFrame->pLinePC)
+                            pHlp->pfnPrintf(pHlp, " [%s @ 0i%d]", pFrame->pLinePC->szFilename, pFrame->pLinePC->uLineNo);
+                        pHlp->pfnPrintf(pHlp, "\n");
+                    }
+                    DBGFR3StackWalkEnd(pFirstFrame);
+                }
+#endif
+            }
             else
             {
                 /*
@@ -338,7 +383,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
 
                 /* Callstack. */
                 PCDBGFSTACKFRAME pFirstFrame;
-                rc2 = DBGFR3StackWalkBeginHyper(pVM, 0, &pFirstFrame);
+                rc2 = DBGFR3StackWalkBegin(pVM, pVCpu->idCpu, DBGFCODETYPE_HYPER, &pFirstFrame);
                 if (RT_SUCCESS(rc2))
                 {
                     pHlp->pfnPrintf(pHlp,
