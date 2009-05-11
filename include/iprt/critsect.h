@@ -286,6 +286,7 @@ DECLINLINE(RTNATIVETHREAD) RTCritSectGetOwner(PCRTCRITSECT pCritSect)
     return pCritSect->NativeThreadOwner;
 }
 
+#endif /* IN_RING3 */
 
 /**
  * Gets the recursion depth.
@@ -309,7 +310,6 @@ DECLINLINE(int32_t) RTCritSectGetWaiters(PCRTCRITSECT pCritSect)
     return pCritSect->cLockers;
 }
 
-#endif /* IN_RING3 */
 /** @} */
 
 __END_DECLS

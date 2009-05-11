@@ -67,6 +67,7 @@ VMMDECL(bool)   PDMCritSectIsOwner(PCPDMCRITSECT pCritSect);
 VMMDECL(bool)   PDMCritSectIsLocked(PCPDMCRITSECT pCritSect);
 VMMDECL(bool)   PDMCritSectIsOwnerEx(PCPDMCRITSECT pCritSect, VMCPUID idCpu);
 VMMDECL(bool)   PDMCritSectIsInitialized(PCPDMCRITSECT pCritSect);
+VMMDECL(uint32_t) PDMCritSectGetRecursion(PCPDMCRITSECT pCritSect);
 VMMR3DECL(int)  PDMR3CritSectScheduleExitEvent(PPDMCRITSECT pCritSect, RTSEMEVENT EventToSignal);
 VMMR3DECL(int)  PDMR3CritSectDelete(PPDMCRITSECT pCritSect);
 VMMDECL(int)    PDMR3CritSectTerm(PVM pVM);
