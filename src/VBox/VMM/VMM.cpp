@@ -1296,7 +1296,7 @@ VMMR3DECL(int) VMMR3ReadR0Stack(PVM pVM, VMCPUID idCpu, RTHCUINTPTR pAddress, vo
     PVMCPU  pVCpu   = VMMGetCpuById(pVM, idCpu);
     AssertReturn(pVCpu, VERR_INVALID_PARAMETER);
 
-    RTHCUINTPTR offset = pAddress - pVCpu->vmm.s.CallHostR0JmpBuf.SpCheck;
+    RTHCUINTPTR offset = pVCpu->vmm.s.CallHostR0JmpBuf.SpCheck - pAddress;
     if (offset >= pVCpu->vmm.s.CallHostR0JmpBuf.cbSavedStack)
         return VERR_INVALID_POINTER;
 
