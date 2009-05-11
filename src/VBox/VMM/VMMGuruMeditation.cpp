@@ -292,15 +292,15 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
                 PCDBGFSTACKFRAME pFirstFrame;
                 DBGFADDRESS eip, ebp, esp;
 
-                eip.fFlags   = DBGFADDRESS_FLAGS_RING0;
+                eip.fFlags   = DBGFADDRESS_FLAGS_RING0 | DBGFADDRESS_FLAGS_VALID;
 #if HC_ARCH_BITS == 64
                 eip.FlatPtr = pVCpu->vmm.s.CallHostR0JmpBuf.rip;
 #else
                 eip.FlatPtr = pVCpu->vmm.s.CallHostR0JmpBuf.eip;
 #endif
-                ebp.fFlags   = DBGFADDRESS_FLAGS_RING0;
+                ebp.fFlags   = DBGFADDRESS_FLAGS_RING0 | DBGFADDRESS_FLAGS_VALID;
                 ebp.FlatPtr = pVCpu->vmm.s.CallHostR0JmpBuf.SavedEbp;
-                esp.fFlags   = DBGFADDRESS_FLAGS_RING0;
+                esp.fFlags   = DBGFADDRESS_FLAGS_RING0 | DBGFADDRESS_FLAGS_VALID;
                 esp.FlatPtr = pVCpu->vmm.s.CallHostR0JmpBuf.SavedEsp;
 
                 rc2 = DBGFR3StackWalkBeginEx(pVM, pVCpu->idCpu, DBGFCODETYPE_RING0, &ebp, &esp, &eip,
