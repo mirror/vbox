@@ -328,3 +328,14 @@ VMMDECL(bool) PDMCritSectIsInitialized(PCPDMCRITSECT pCritSect)
     return pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC;
 }
 
+
+/**
+ * Gets the recursion depth.
+ *
+ * @returns The recursion depth.
+ * @param   pCritSect   The critical section.
+ */
+VMMDECL(uint32_t) PDMCritSectGetRecursion(PCPDMCRITSECT pCritSect)
+{
+    return RTCritSectGetRecursion(&pCritSect->s.Core);
+}
