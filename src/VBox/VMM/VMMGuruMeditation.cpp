@@ -298,9 +298,12 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
 #else
                 eip.FlatPtr = eip.off = pVCpu->vmm.s.CallHostR0JmpBuf.eip;
 #endif
+                eip.Sel      = DBGF_SEL_FLAT;
                 ebp.fFlags   = DBGFADDRESS_FLAGS_RING0 | DBGFADDRESS_FLAGS_VALID;
                 ebp.FlatPtr  = ebp.off = pVCpu->vmm.s.CallHostR0JmpBuf.SavedEbp;
+                ebp.Sel      = DBGF_SEL_FLAT;
                 esp.fFlags   = DBGFADDRESS_FLAGS_RING0 | DBGFADDRESS_FLAGS_VALID;
+                esp.Sel      = DBGF_SEL_FLAT;
                 esp.FlatPtr  = esp.off = pVCpu->vmm.s.CallHostR0JmpBuf.SavedEsp;
 
                 rc2 = DBGFR3StackWalkBeginEx(pVM, pVCpu->idCpu, DBGFCODETYPE_RING0, &ebp, &esp, &eip,
