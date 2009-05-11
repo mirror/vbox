@@ -60,6 +60,8 @@ struc VMMR0JMPBUF
     .pvSavedStack   resq 1
     .SpCheck        resq 1
     .SpResume       resq 1
+    .SavedEsp       resq 1
+    .SavedEbp       resq 1
 %endif
 endstruc
 

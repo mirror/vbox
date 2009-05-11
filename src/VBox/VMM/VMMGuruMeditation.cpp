@@ -290,7 +290,21 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
 #if 0
                 /* Callstack. */
                 PCDBGFSTACKFRAME pFirstFrame;
-                rc2 = DBGFR3StackWalkBegin(pVM, pVCpu->idCpu, DBGFCODETYPE_RING0, &pFirstFrame);
+                DBGFADDRESS eip, ebp, esp;
+
+                eip.fFlags   = DBGFADDRESS_FLAGS_RING0;
+#if HC_ARCH_BITS == 64
+                eip.FlatPtr = pVCpu->vmm.s.CallHostR0JmpBuf.rip;
+#else
+                eip.FlatPtr = pVCpu->vmm.s.CallHostR0JmpBuf.eip;
+#endif
+                ebp.fFlags   = DBGFADDRESS_FLAGS_RING0;
+                ebp.FlatPtr = pVCpu->vmm.s.CallHostR0JmpBuf.SavedEbp;
+                esp.fFlags   = DBGFADDRESS_FLAGS_RING0;
+                esp.FlatPtr = pVCpu->vmm.s.CallHostR0JmpBuf.SavedEsp;
+
+                rc2 = DBGFR3StackWalkBeginEx(pVM, pVCpu->idCpu, DBGFCODETYPE_RING0, &ebp, &esp, &eip,
+                                             DBGFRETURNTYPE_INVALID, &pFirstFrame);
                 if (RT_SUCCESS(rc2))
                 {
                     pHlp->pfnPrintf(pHlp,

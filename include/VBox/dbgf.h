@@ -88,6 +88,8 @@ typedef const DBGFADDRESS *PCDBGFADDRESS;
 #define DBGFADDRESS_FLAGS_FLAT          3
 /** A physical address. */
 #define DBGFADDRESS_FLAGS_PHYS          4
+/** A physical address. */
+#define DBGFADDRESS_FLAGS_RING0         5
 /** The address type mask. */
 #define DBGFADDRESS_FLAGS_TYPE_MASK     7
 

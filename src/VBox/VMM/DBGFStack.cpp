@@ -99,6 +99,7 @@ static int dbgfR3StackWalk(PVM pVM, VMCPUID idCpu, PDBGFSTACKFRAME pFrame)
         case DBGFADDRESS_FLAGS_FAR16: cbStackItem = 2; break;
         case DBGFADDRESS_FLAGS_FAR32: cbStackItem = 4; break;
         case DBGFADDRESS_FLAGS_FAR64: cbStackItem = 8; break;
+        case DBGFADDRESS_FLAGS_RING0: cbStackItem = sizeof(RTHCUINTPTR); break;
         default:                      cbStackItem = 4; break; /// @todo 64-bit guests.
     }
 
@@ -280,6 +281,7 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PVM pVM, VMCPUID idCpu, PCCPUMCT
                 case DBGFADDRESS_FLAGS_FAR16: pCur->enmReturnType = DBGFRETURNTYPE_NEAR16; break;
                 case DBGFADDRESS_FLAGS_FAR32: pCur->enmReturnType = DBGFRETURNTYPE_NEAR32; break;
                 case DBGFADDRESS_FLAGS_FAR64: pCur->enmReturnType = DBGFRETURNTYPE_NEAR64; break;
+                case DBGFADDRESS_FLAGS_RING0: pCur->enmReturnType = (HC_ARCH_BITS == 64) ? DBGFRETURNTYPE_NEAR64 : DBGFRETURNTYPE_NEAR32; break;
                 default:                      pCur->enmReturnType = DBGFRETURNTYPE_NEAR32; break; /// @todo 64-bit guests
             }
 
@@ -404,10 +406,20 @@ static int dbgfR3StackWalkBeginCommon(PVM pVM,
     /*
      * Get the CPUM context pointer and pass it on the specified EMT.
      */
-    PCCPUMCTXCORE   pCtxCore = (enmCodeType == DBGFCODETYPE_GUEST)
-                             ? CPUMGetGuestCtxCore(VMMGetCpuById(pVM, idCpu))
-                             : CPUMGetHyperCtxCore(VMMGetCpuById(pVM, idCpu));
-    PVMREQ          pReq;
+    PCCPUMCTXCORE   pCtxCore;
+    switch (enmCodeType)
+    {
+    case DBGFCODETYPE_GUEST:
+        pCtxCore = CPUMGetGuestCtxCore(VMMGetCpuById(pVM, idCpu));
+        break;
+    case DBGFCODETYPE_HYPER:
+        pCtxCore = CPUMGetHyperCtxCore(VMMGetCpuById(pVM, idCpu));
+        break;
+    case DBGFCODETYPE_RING0:
+        pCtxCore = NULL;    /* No valid context present. */
+        break;
+    }
+    PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, idCpu, &pReq, RT_INDEFINITE_WAIT,
                          (PFNRT)dbgfR3StackWalkCtxFull, 9,
                          pVM, idCpu, pCtxCore, enmCodeType,
@@ -440,14 +452,14 @@ static int dbgfR3StackWalkBeginCommon(PVM pVM,
  * @param   enmReturnType   The return address type. (Optional)
  * @param   ppFirstFrame    Where to return the pointer to the first info frame.
  */
-VMMR3DECL(int) DBGFR3StackWalkBegintEx(PVM pVM,
-                                       VMCPUID idCpu,
-                                       DBGFCODETYPE enmCodeType,
-                                       PCDBGFADDRESS pAddrFrame,
-                                       PCDBGFADDRESS pAddrStack,
-                                       PCDBGFADDRESS pAddrPC,
-                                       DBGFRETURNTYPE enmReturnType,
-                                       PCDBGFSTACKFRAME *ppFirstFrame)
+VMMR3DECL(int) DBGFR3StackWalkBeginEx(PVM pVM,
+                                      VMCPUID idCpu,
+                                      DBGFCODETYPE enmCodeType,
+                                      PCDBGFADDRESS pAddrFrame,
+                                      PCDBGFADDRESS pAddrStack,
+                                      PCDBGFADDRESS pAddrPC,
+                                      DBGFRETURNTYPE enmReturnType,
+                                      PCDBGFSTACKFRAME *ppFirstFrame)
 {
     return dbgfR3StackWalkBeginCommon(pVM, idCpu, enmCodeType, pAddrFrame, pAddrStack, pAddrPC, enmReturnType, ppFirstFrame);
 }
