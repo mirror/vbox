@@ -38,6 +38,8 @@ struc VMMR0JMPBUF
     .pvSavedStack   resd 1
     .SpCheck        resd 1
     .SpResume       resd 1
+    .SavedEsp       resd 1
+    .SavedEbp       resd 1
 %endif
 %ifdef RT_ARCH_AMD64
     ; traditional jmp_buf
