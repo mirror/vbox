@@ -287,7 +287,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
             if (HWACCMR3IsActive(pVM))
             {
                 pHlp->pfnPrintf(pHlp, "\n");
-#if 0
+#if defined(RT_OS_WINDOWS) && HC_ARCH_BITS == 32
                 /* Callstack. */
                 PCDBGFSTACKFRAME pFirstFrame;
                 DBGFADDRESS eip, ebp, esp;
@@ -346,7 +346,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
                     }
                     DBGFR3StackWalkEnd(pFirstFrame);
                 }
-#endif
+#endif /* defined(RT_OS_WINDOWS) && HC_ARCH_BITS == 32 */
             }
             else
             {
