@@ -2577,12 +2577,18 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                         case HKEYSTATE_DOWN_2ND:
                             enmHKeyState = HKEYSTATE_NOT_IT;
                             ProcessKey(&EvHKeyDown1.key);
+                            /* ugly hack: small delay to ensure that the key event is
+                             * actually handled _prior_ to the mouse click event */
+                            RTThreadSleep(20);
                             break;
                         case HKEYSTATE_DOWN:
                             enmHKeyState = HKEYSTATE_NOT_IT;
                             ProcessKey(&EvHKeyDown1.key);
                             if (gHostKeySym2 != SDLK_UNKNOWN)
                                 ProcessKey(&EvHKeyDown2.key);
+                            /* ugly hack: small delay to ensure that the key event is
+                             * actually handled _prior_ to the mouse click event */
+                            RTThreadSleep(20);
                             break;
                         default:
                             break;
