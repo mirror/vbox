@@ -1300,7 +1300,7 @@ VMMR3DECL(int) VMMR3ReadR0Stack(PVM pVM, VMCPUID idCpu, RTHCUINTPTR pAddress, vo
     if (offset >= pVCpu->vmm.s.CallHostR0JmpBuf.cbSavedStack)
         return VERR_INVALID_POINTER;
 
-    memcpy(pvBuf, pVCpu->vmm.s.pbEMTStackR3 + offset, cbRead);
+    memcpy(pvBuf, pVCpu->vmm.s.pbEMTStackR3 + pVCpu->vmm.s.CallHostR0JmpBuf.cbSavedStack - offset, cbRead);
     return VINF_SUCCESS;
 }
 
