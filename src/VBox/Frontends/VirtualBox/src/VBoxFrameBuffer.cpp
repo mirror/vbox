@@ -44,7 +44,7 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI (VBoxFrameBuffer, IFramebuffer)
 #endif
 
 VBoxFrameBuffer::VBoxFrameBuffer (VBoxConsoleView *aView)
-    : mView (aView), mMutex (new QMutex (QMutex::Recursive))
+    : mView (aView)
     , mWdt (0), mHgt (0)
 #if defined (Q_OS_WIN32)
     , refcnt (0)
@@ -52,11 +52,13 @@ VBoxFrameBuffer::VBoxFrameBuffer (VBoxConsoleView *aView)
 {
     AssertMsg (mView, ("VBoxConsoleView must not be null\n"));
     mWinId = (mView && mView->viewport()) ? (ULONG64) mView->viewport()->winId() : 0;
+    int rc = RTCritSectInit(&mCritSect);
+    AssertRC(rc);
 }
 
 VBoxFrameBuffer::~VBoxFrameBuffer()
 {
-    delete mMutex;
+    RTCritSectDelete(&mCritSect);
 }
 
 // IFramebuffer implementation methods.

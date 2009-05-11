@@ -24,6 +24,7 @@
 #define ___VBoxFrameBuffer_h___
 
 #include "COMDefs.h"
+#include <iprt/critsect.h>
 
 /* Qt includes */
 #include <QImage>
@@ -221,8 +222,8 @@ public:
         return false;
     }
 
-    void lock() { mMutex->lock(); }
-    void unlock() { mMutex->unlock(); }
+    void lock() { RTCritSectEnter(&mCritSect); }
+    void unlock() { RTCritSectLeave(&mCritSect); }
 
     virtual uchar *address() = 0;
     virtual ulong bitsPerPixel() = 0;
@@ -253,7 +254,7 @@ public:
 protected:
 
     VBoxConsoleView *mView;
-    QMutex *mMutex;
+    RTCRITSECT mCritSect;
     int mWdt;
     int mHgt;
     uint64_t mWinId;
