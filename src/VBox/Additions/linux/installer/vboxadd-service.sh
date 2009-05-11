@@ -254,7 +254,7 @@ start() {
             echo "VirtualBox Additions module not loaded!"
             exit 1
         }
-        daemon $binary --daemonize
+        daemon $binary
         RETVAL=$?
         test $RETVAL -eq 0 && echo `pidof vboxadd-service` > $PIDFILE
         succ_msg
