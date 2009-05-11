@@ -206,7 +206,7 @@ VMMR3DECL(int) DBGFR3MemRead(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, voi
     AssertReturn(idCpu < pVM->cCPUs, VERR_INVALID_PARAMETER);
     if ((pAddress->fFlags & DBGFADDRESS_FLAGS_TYPE_MASK) == DBGFADDRESS_FLAGS_RING0)
     {
-        AssertCompile(sizeof(RTHCUINTPTR) == sizeof(pAddress->FlatPtr));
+        AssertCompile(sizeof(RTHCUINTPTR) <= sizeof(pAddress->FlatPtr));
         return VMMR3ReadR0Stack(pVM, idCpu, (RTHCUINTPTR)pAddress->FlatPtr, pvBuf, cbRead);
     }
     else
