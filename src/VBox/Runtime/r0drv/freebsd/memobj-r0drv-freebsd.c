@@ -98,7 +98,7 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             }
             else
             {
-                free(pMemFreeBSD->Core.pv, M_IPRTMOBJ);
+                contigfree(pMemFreeBSD->Core.pv, pMemFreeBSD->Core.cb, M_IPRTMOBJ);
                 if (pMemFreeBSD->pMappingObject)
                 {
                     rc = vm_map_remove(kernel_map,
@@ -185,8 +185,14 @@ int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
      * memory for the module bits:
      *      http://fxr.watson.org/fxr/source/kern/link_elf.c?v=RELENG62#L701
      */
-#if 0
-    pMemFreeBSD->Core.pv = malloc(cb, M_IPRTMOBJ, M_ZERO);
+#if 1
+    pMemFreeBSD->Core.pv = contigmalloc(cb,                   /* size */
+                                        M_IPRTMOBJ,           /* type */
+                                        M_NOWAIT | M_ZERO,    /* flags */
+                                        0,                    /* lowest physical address*/
+                                        _4G-1,                /* highest physical address */
+                                        PAGE_SIZE,            /* alignment. */
+                                        0);                   /* boundrary */
     if (pMemFreeBSD->Core.pv)
     {
         *ppMem = &pMemFreeBSD->Core;
