@@ -246,6 +246,7 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
         {
             LogFlowFunc (("CreateHostOnlyNetworkInterface:\n"));
             LogFlowFunc (("Network connection name = '%ls'\n", d->name.raw()));
+            AssertReturn (d->name.raw() != NULL, E_POINTER);
 
             /* write message and parameters */
             vrc = aClient->write (d->msgCode);
@@ -274,7 +275,7 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
                         vrc = aClient->read (guid);
                         if (RT_FAILURE (vrc)) break;
 
-                        LogFlowFunc (("Network connection GUID = {%RTuuid}\n", guid.raw()));
+                        LogFlowFunc (("Network connection GUID = {%RTuuid}, Name = %ls\n", guid.raw(), name.raw()));
 
                         /* initialize the object returned to the caller by
                          * CreateHostOnlyNetworkInterface() */
