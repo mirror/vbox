@@ -1168,7 +1168,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     /*
      * Not worth it, so flush it.
      *
-     * If we considered it to be reused, don't to back to ring-3
+     * If we considered it to be reused, don't go back to ring-3
      * to emulate failed instructions since we usually cannot
      * interpret then. This may be a bit risky, in which case
      * the reuse detection must be fixed.
@@ -1937,14 +1937,17 @@ void pgmPoolMonitorModifiedClearAll(PVM pVM)
 
 #ifdef IN_RING3
 /**
- * Clear all shadow pages and clear all modification counters.
+ * Callback to clear all shadow pages and clear all modification counters.
  *
+ * @returns VBox status code.
  * @param   pVM     The VM handle.
+ * @param   pvUser  Unused parameter
  * @remark  Should only be used when monitoring is available, thus placed in
  *          the PGMPOOL_WITH_MONITORING #ifdef.
  */
-void pgmPoolClearAll(PVM pVM)
+DECLCALLBACK(int) pgmPoolClearAll(PVM pVM, void *pvUser)
 {
+    NOREF(pvUser);
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     STAM_PROFILE_START(&pPool->StatClearAll, c);
     LogFlow(("pgmPoolClearAll: cUsedPages=%d\n", pPool->cUsedPages));
@@ -2056,6 +2059,7 @@ void pgmPoolClearAll(PVM pVM)
     pPool->cPresent = 0;
     PGM_INVL_GUEST_TLBS();
     STAM_PROFILE_STOP(&pPool->StatClearAll, c);
+    return VINF_SUCCESS;
 }
 #endif /* IN_RING3 */
 
@@ -2082,9 +2086,7 @@ int pgmPoolSyncCR3(PVM pVM)
 # ifdef IN_RING3 /* Don't flush in ring-0 or raw mode, it's taking too long. */
     if (ASMBitTestAndClear(&pVM->pgm.s.fGlobalSyncFlags, PGM_GLOBAL_SYNC_CLEAR_PGM_POOL_BIT))
     {
-        /** @todo SMP support! */
-        Assert(pVM->cCPUs == 1);
-        pgmPoolClearAll(pVM);
+        VMMR3AtomicExecuteHandler(pVM, pgmPoolClearAll, NULL);
 # else  /* !IN_RING3 */
     if (pVM->pgm.s.fGlobalSyncFlags & PGM_GLOBAL_SYNC_CLEAR_PGM_POOL)
     {
@@ -2724,7 +2726,6 @@ int pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs)
 
     if (rc == VINF_PGM_GCPHYS_ALIASED)
     {
-        Assert(pVM->cCPUs == 1);    /* @todo check */
         pVM->pgm.s.fGlobalSyncFlags |= PGM_GLOBAL_SYNC_CLEAR_PGM_POOL;
         for (unsigned i=0;i<pVM->cCPUs;i++)
         {

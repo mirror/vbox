@@ -248,7 +248,8 @@ static int dbgfR3StackWalk(PVM pVM, VMCPUID idCpu, PDBGFSTACKFRAME pFrame)
 /**
  * Walks the entire stack allocating memory as we walk.
  */
-static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PVM pVM, VMCPUID idCpu, PCCPUMCTXCORE pCtxCore, bool fGuest,
+static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PVM pVM, VMCPUID idCpu, PCCPUMCTXCORE pCtxCore, 
+                                                DBGFCODETYPE enmCodeType,
                                                 PCDBGFADDRESS pAddrFrame,
                                                 PCDBGFADDRESS pAddrStack,
                                                 PCDBGFADDRESS pAddrPC,
@@ -283,7 +284,10 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PVM pVM, VMCPUID idCpu, PCCPUMCT
             }
 
         uint64_t fAddrMask = UINT64_MAX;
-        if (!fGuest)
+        if (enmCodeType == DBGFCODETYPE_RING0)
+            fAddrMask = (HC_ARCH_BITS == 64) ? UINT64_MAX : UINT32_MAX;
+        else
+        if (enmCodeType == DBGFCODETYPE_HYPER)
             fAddrMask = UINT32_MAX;
         else if (DBGFADDRESS_IS_FAR16(&pCur->AddrPC))
             fAddrMask = UINT16_MAX;
@@ -371,13 +375,18 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PVM pVM, VMCPUID idCpu, PCCPUMCT
  */
 static int dbgfR3StackWalkBeginCommon(PVM pVM,
                                       VMCPUID idCpu,
-                                      bool fGuest,
+                                      DBGFCODETYPE enmCodeType,
                                       PCDBGFADDRESS pAddrFrame,
                                       PCDBGFADDRESS pAddrStack,
                                       PCDBGFADDRESS pAddrPC,
                                       DBGFRETURNTYPE enmReturnType,
                                       PCDBGFSTACKFRAME *ppFirstFrame)
 {
+#if HC_ARCH_BITS == 64
+    /** @todo Not implemented for 64 bits hosts yet */
+    if (enmCodeType == DBGFCODETYPE_RING0)
+        return VINF_SUCCESS;
+#endif
     /*
      * Validate parameters.
      */
@@ -395,13 +404,13 @@ static int dbgfR3StackWalkBeginCommon(PVM pVM,
     /*
      * Get the CPUM context pointer and pass it on the specified EMT.
      */
-    PCCPUMCTXCORE   pCtxCore = fGuest
+    PCCPUMCTXCORE   pCtxCore = (enmCodeType == DBGFCODETYPE_GUEST)
                              ? CPUMGetGuestCtxCore(VMMGetCpuById(pVM, idCpu))
                              : CPUMGetHyperCtxCore(VMMGetCpuById(pVM, idCpu));
     PVMREQ          pReq;
     int rc = VMR3ReqCall(pVM, idCpu, &pReq, RT_INDEFINITE_WAIT,
                          (PFNRT)dbgfR3StackWalkCtxFull, 9,
-                         pVM, idCpu, pCtxCore, fGuest,
+                         pVM, idCpu, pCtxCore, enmCodeType,
                          pAddrFrame, pAddrStack, pAddrPC, enmReturnType, ppFirstFrame);
     if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
@@ -424,21 +433,23 @@ static int dbgfR3StackWalkBeginCommon(PVM pVM,
  *
  * @param   pVM             The VM handle.
  * @param   idCpu           The ID of the virtual CPU which stack we want to walk.
+ * @param   enmCodeType     Code type
  * @param   pAddrFrame      Frame address to start at. (Optional)
  * @param   pAddrStack      Stack address to start at. (Optional)
  * @param   pAddrPC         Program counter to start at. (Optional)
  * @param   enmReturnType   The return address type. (Optional)
  * @param   ppFirstFrame    Where to return the pointer to the first info frame.
  */
-VMMR3DECL(int) DBGFR3StackWalkBeginGuestEx(PVM pVM,
-                                           VMCPUID idCpu,
-                                           PCDBGFADDRESS pAddrFrame,
-                                           PCDBGFADDRESS pAddrStack,
-                                           PCDBGFADDRESS pAddrPC,
-                                           DBGFRETURNTYPE enmReturnType,
-                                           PCDBGFSTACKFRAME *ppFirstFrame)
+VMMR3DECL(int) DBGFR3StackWalkBegintEx(PVM pVM,
+                                       VMCPUID idCpu,
+                                       DBGFCODETYPE enmCodeType,
+                                       PCDBGFADDRESS pAddrFrame,
+                                       PCDBGFADDRESS pAddrStack,
+                                       PCDBGFADDRESS pAddrPC,
+                                       DBGFRETURNTYPE enmReturnType,
+                                       PCDBGFSTACKFRAME *ppFirstFrame)
 {
-    return dbgfR3StackWalkBeginCommon(pVM, idCpu, true /*fGuest*/, pAddrFrame, pAddrStack, pAddrPC, enmReturnType, ppFirstFrame);
+    return dbgfR3StackWalkBeginCommon(pVM, idCpu, enmCodeType, pAddrFrame, pAddrStack, pAddrPC, enmReturnType, ppFirstFrame);
 }
 
 
@@ -454,63 +465,13 @@ VMMR3DECL(int) DBGFR3StackWalkBeginGuestEx(PVM pVM,
  *
  * @param   pVM             The VM handle.
  * @param   idCpu           The ID of the virtual CPU which stack we want to walk.
+ * @param   enmCodeType     Code type
  * @param   ppFirstFrame    Where to return the pointer to the first info frame.
  */
-VMMR3DECL(int) DBGFR3StackWalkBeginGuest(PVM pVM, VMCPUID idCpu, PCDBGFSTACKFRAME *ppFirstFrame)
+VMMR3DECL(int) DBGFR3StackWalkBegin(PVM pVM, VMCPUID idCpu, DBGFCODETYPE enmCodeType, PCDBGFSTACKFRAME *ppFirstFrame)
 {
-    return dbgfR3StackWalkBeginCommon(pVM, idCpu, true /*fGuest*/, NULL, NULL, NULL, DBGFRETURNTYPE_INVALID, ppFirstFrame);
+    return dbgfR3StackWalkBeginCommon(pVM, idCpu, enmCodeType, NULL, NULL, NULL, DBGFRETURNTYPE_INVALID, ppFirstFrame);
 }
-
-
-/**
- * Begins a hyper stack walk, extended version.
- *
- * This will walk the current stack, constructing a list of info frames which is
- * returned to the caller. The caller uses DBGFR3StackWalkNext to traverse the
- * list and DBGFR3StackWalkEnd to release it.
- *
- * @returns VINF_SUCCESS on success.
- * @returns VERR_NO_MEMORY if we're out of memory.
- *
- * @param   pVM             The VM handle.
- * @param   idCpu           The ID of the virtual CPU which stack we want to walk.
- * @param   pAddrFrame      Frame address to start at. (Optional)
- * @param   pAddrStack      Stack address to start at. (Optional)
- * @param   pAddrPC         Program counter to start at. (Optional)
- * @param   enmReturnType   The return address type. (Optional)
- * @param   ppFirstFrame    Where to return the pointer to the first info frame.
- */
-VMMR3DECL(int) DBGFR3StackWalkBeginHyperEx(PVM pVM,
-                                           VMCPUID idCpu,
-                                           PCDBGFADDRESS pAddrFrame,
-                                           PCDBGFADDRESS pAddrStack,
-                                           PCDBGFADDRESS pAddrPC,
-                                           DBGFRETURNTYPE enmReturnType,
-                                           PCDBGFSTACKFRAME *ppFirstFrame)
-{
-    return dbgfR3StackWalkBeginCommon(pVM, idCpu, false /*fGuest*/, pAddrFrame, pAddrStack, pAddrPC, enmReturnType, ppFirstFrame);
-}
-
-
-/**
- * Begins a hyper stack walk.
- *
- * This will walk the current stack, constructing a list of info frames which is
- * returned to the caller. The caller uses DBGFR3StackWalkNext to traverse the
- * list and DBGFR3StackWalkEnd to release it.
- *
- * @returns VINF_SUCCESS on success.
- * @returns VERR_NO_MEMORY if we're out of memory.
- *
- * @param   pVM             The VM handle.
- * @param   idCpu           The ID of the virtual CPU which stack we want to walk.
- * @param   ppFirstFrame    Where to return the pointer to the first info frame.
- */
-VMMR3DECL(int) DBGFR3StackWalkBeginHyper(PVM pVM, VMCPUID idCpu, PCDBGFSTACKFRAME *ppFirstFrame)
-{
-    return dbgfR3StackWalkBeginCommon(pVM, idCpu, false /*fGuest*/, NULL, NULL, NULL, DBGFRETURNTYPE_INVALID, ppFirstFrame);
-}
-
 
 /**
  * Gets the next stack frame.

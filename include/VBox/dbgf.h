@@ -738,14 +738,27 @@ typedef struct DBGFSTACKFRAME
 #define DBGFSTACKFRAME_FLAGS_MAX_DEPTH  RT_BIT(3)
 /** @} */
 
-VMMR3DECL(int)              DBGFR3StackWalkBeginGuest(PVM pVM, VMCPUID idCpu, PCDBGFSTACKFRAME *ppFirstFrame);
-VMMR3DECL(int)              DBGFR3StackWalkBeginHyper(PVM pVM, VMCPUID idCpu, PCDBGFSTACKFRAME *ppFirstFrame);
-VMMR3DECL(int)              DBGFR3StackWalkBeginGuestEx(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddrFrame,
-                                                        PCDBGFADDRESS pAddrStack,PCDBGFADDRESS pAddrPC,
-                                                        DBGFRETURNTYPE enmReturnType, PCDBGFSTACKFRAME *ppFirstFrame);
-VMMR3DECL(int)              DBGFR3StackWalkBeginHyperEx(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddrFrame,
-                                                        PCDBGFADDRESS pAddrStack,PCDBGFADDRESS pAddrPC,
-                                                        DBGFRETURNTYPE enmReturnType, PCDBGFSTACKFRAME *ppFirstFrame);
+/** @name DBGFCODETYPE
+ * @{ */
+typedef enum DBGFCODETYPE
+{
+    /** The usual invalid 0 value. */
+    DBGFCODETYPE_INVALID = 0,
+    /** Stack walk for guest code. */
+    DBGFCODETYPE_GUEST,
+    /** Stack walk for hypervisor code. */
+    DBGFCODETYPE_HYPER,
+    /** Stack walk for ring 0 code. */
+    DBGFCODETYPE_RING0,
+    /** The usual 32-bit blowup. */
+    DBGFCODETYPE_32BIT_HACK = 0x7fffffff
+} DBGFCODETYPE;
+/** @} */
+
+VMMR3DECL(int)              DBGFR3StackWalkBegin(PVM pVM, VMCPUID idCpu, DBGFCODETYPE enmCodeType, PCDBGFSTACKFRAME *ppFirstFrame);
+VMMR3DECL(int)              DBGFR3StackWalkBeginEx(PVM pVM, VMCPUID idCpu, DBGFCODETYPE enmCodeType, PCDBGFADDRESS pAddrFrame,
+                                                   PCDBGFADDRESS pAddrStack,PCDBGFADDRESS pAddrPC,
+                                                   DBGFRETURNTYPE enmReturnType, PCDBGFSTACKFRAME *ppFirstFrame);
 VMMR3DECL(PCDBGFSTACKFRAME) DBGFR3StackWalkNext(PCDBGFSTACKFRAME pCurrent);
 VMMR3DECL(void)             DBGFR3StackWalkEnd(PCDBGFSTACKFRAME pFirstFrame);
 
