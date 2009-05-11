@@ -156,6 +156,10 @@ typedef struct VMMR0JMPBUF
     RTHCUINTREG                 SpCheck;
     /** The esp we should resume execution with after the restore. */
     RTHCUINTREG                 SpResume;
+    /** ESP/RSP at the time of the jump to ring 3. */
+    RTHCUINTREG                 SavedEsp;
+    /** EBP/RBP at the time of the jump to ring 3. */
+    RTHCUINTREG                 SavedEbp;
 } VMMR0JMPBUF;
 /** Pointer to a ring-0 jump buffer. */
 typedef VMMR0JMPBUF *PVMMR0JMPBUF;
