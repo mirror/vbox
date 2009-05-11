@@ -304,7 +304,7 @@ DECLINLINE(uint32_t) RTCritSectGetRecursion(PCRTCRITSECT pCritSect)
  * @returns The waiter count
  * @param   pCritSect       The Critical section
  */
-DECLINLINE(uint32_t) RTCritSectGetWaiters(PCRTCRITSECT pCritSect)
+DECLINLINE(int32_t) RTCritSectGetWaiters(PCRTCRITSECT pCritSect)
 {
     return pCritSect->cLockers;
 }
