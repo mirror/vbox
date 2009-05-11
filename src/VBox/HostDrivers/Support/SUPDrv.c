@@ -48,7 +48,7 @@
 #include <VBox/param.h>
 #include <VBox/log.h>
 #include <VBox/err.h>
-#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
 # include <iprt/crc32.h>
 # include <iprt/net.h>
 # include <iprt/string.h>
@@ -426,7 +426,7 @@ static SUPFUNC g_aFunctions[] =
 #endif
 };
 
-#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
 /**
  * Drag in the rest of IRPT since we share it with the
  * rest of the kernel modules on darwin.
@@ -445,7 +445,7 @@ PFNRT g_apfnVBoxDrvIPRTDeps[] =
     (PFNRT)RTStrFree,
     NULL
 };
-#endif  /* RT_OS_DARWIN || RT_OS_SOLARIS */
+#endif  /* RT_OS_DARWIN || RT_OS_SOLARIS || RT_OS_SOLARIS */
 
 
 /**
