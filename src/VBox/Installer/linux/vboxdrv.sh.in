@@ -150,9 +150,6 @@ start()
 {
     begin_msg "Starting VirtualBox kernel module"
     if ! running vboxdrv; then
-        if ! find /lib/modules/`uname -r` -name "vboxdrv\.*" 2>/dev/null|grep -q vboxdrv; then
-            failure "No suitable module for running kernel found"
-        fi
         if ! rm -f $DEVICE; then
             failure "Cannot remove $DEVICE"
         fi
