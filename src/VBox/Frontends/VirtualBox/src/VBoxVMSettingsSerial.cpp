@@ -277,12 +277,17 @@ bool VBoxVMSettingsSerialPage::revalidate (QString &aWarning, QString &aTitle)
             valid = !path.isEmpty() && !paths.contains (path);
             if (!valid)
             {
-                aWarning = path.isEmpty() ?
-                    tr ("Port path is not specified ") :
-                    tr ("Duplicate port path is entered ");
-                aTitle += ": " +
-                    vboxGlobal().removeAccelMark (mTabWidget->tabText (mTabWidget->indexOf (tab)));
-                break;
+                if (!page->mGbSerial->isChecked())
+                    page->mCbMode->setCurrentIndex (KPortMode_Disconnected);
+                else
+                {
+                    aWarning = path.isEmpty() ?
+                        tr ("Port path is not specified ") :
+                        tr ("Duplicate port path is entered ");
+                    aTitle += ": " +
+                        vboxGlobal().removeAccelMark (mTabWidget->tabText (mTabWidget->indexOf (tab)));
+                    break;
+                }
             }
             paths << path;
         }
