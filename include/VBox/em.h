@@ -82,6 +82,7 @@ typedef enum EMSTATE
 } EMSTATE;
 
 VMMDECL(EMSTATE) EMGetState(PVMCPU pVCpu);
+VMMDECL(void)    EMSetState(PVMCPU pVCpu, EMSTATE enmNewState);
 
 /** @name Callback handlers for instruction emulation functions.
  * These are placed here because IOM wants to use them as well.

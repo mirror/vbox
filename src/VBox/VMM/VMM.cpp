@@ -1172,6 +1172,7 @@ DECLCALLBACK(int) vmmR3SendSipi(PVM pVM, VMCPUID idCpu, uint32_t uVector)
     CPUMSetGuestEIP(pVCpu, 0);
 
 # if 1 /* If we keep the EMSTATE_WAIT_SIPI method, then move this to EM.cpp. */
+    EMSetState(pVCpu, EMSTATE_HALTED);
     return VINF_EM_RESCHEDULE;
 # else /* And if we go the VMCPU::enmState way it can stay here. */
     VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STOPPED);
