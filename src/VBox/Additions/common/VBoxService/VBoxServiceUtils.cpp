@@ -36,7 +36,7 @@
 #include "VBoxServiceInternal.h"
 
 
-int VboxServiceWriteProp(uint32_t uiClientID, char *pszKey, char *pszValue)
+int VboxServiceWriteProp(uint32_t uiClientID, const char *pszKey, const char *pszValue)
 {
     int rc = VINF_SUCCESS;
     Assert(pszKey);
@@ -77,7 +77,7 @@ cleanup:
 }
 
 
-int VboxServiceWritePropInt(uint32_t uiClientID, char *pszKey, int32_t iValue)
+int VboxServiceWritePropInt(uint32_t uiClientID, const char *pszKey, int32_t iValue)
 {
     Assert(pszKey);
 
