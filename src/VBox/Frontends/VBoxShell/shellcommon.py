@@ -153,12 +153,20 @@ def createVm(ctx,name,kind,base):
     mach.saveSettings()
     print "created machine with UUID",mach.id
     vb.registerMachine(mach)
+    session.close()
 
 def removeVm(ctx,mach):
     mgr = ctx['mgr']
     vb = ctx['vb']
-    print "removing machine ",mach.name,"with UUID",mach.id
-    mach = vb.unregisterMachine(mach.id)
+    id = mach.id
+    print "removing machine ",mach.name,"with UUID",id
+    session = ctx['mgr'].getSessionObject(vb)
+    vb.openSession(session, id)
+    mach=session.machine
+    for d in mach.getHardDiskAttachments():
+        mach.detachHardDisk(d.controller, d.port, d.device)
+    session.close()
+    mach = vb.unregisterMachine(id)
     if mach:
          mach.deleteSettings()
 
