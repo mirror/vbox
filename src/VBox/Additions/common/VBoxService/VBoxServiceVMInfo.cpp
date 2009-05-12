@@ -370,7 +370,7 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
         	    return -1;
             }
  #ifdef RT_OS_SOLARIS
-            pAddress = (sockaddr_in *)&ifrequest[i].sin_addr;
+            pAddress = (sockaddr_in *)&ifrequest[i].ifr_addr;
  #else
             pAddress = (sockaddr_in *)&ifrequest[i].ifr_netmask;
  #endif
