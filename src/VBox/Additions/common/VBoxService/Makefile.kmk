@@ -39,12 +39,16 @@ endif
 VBoxService_SOURCES       = \
 	VBoxService.cpp \
 	VBoxServiceTimeSync.cpp \
-	VBoxServiceVMInfo.cpp \
 	VBoxServiceUtils.cpp
-VBoxService_SOURCES.win   = \
-	VBoxService-win.rc \
-	VBoxService-win.cpp \
+ifdef VBOX_WITH_GUEST_PROPS
+ VBoxService_SOURCES.win  = \
 	VBoxServiceVMInfo-win.cpp
+ VBoxService_SOURCES     += \
+	VBoxServiceVMInfo.cpp
+endif
+VBoxService_SOURCES.win  += \
+	VBoxService-win.rc \
+	VBoxService-win.cpp
 VBoxService_SOURCES.os2   = \
 	VBoxService-os2.def \
 	VBoxServiceClipboard-os2.cpp
