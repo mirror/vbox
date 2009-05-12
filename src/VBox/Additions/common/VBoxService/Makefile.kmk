@@ -57,6 +57,7 @@ ifdef VBOX_WITH_GUEST_PROPS
 	Secur32.lib \
 	WtsApi32.lib \
 	Psapi.lib
+ VBoxService_LIBS.solaris += nsl
 endif
 
 # The icon is configurable.
