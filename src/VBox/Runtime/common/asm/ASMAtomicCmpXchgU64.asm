@@ -1,3 +1,4 @@
+; $Id$
 ;; @file
 ; IPRT - ASMAtomicCmpXchgU64().
 ;
@@ -35,12 +36,14 @@
 BEGINCODE
 
 ;;
-; Atomically clears a bit in a bitmap.
+; Atomically compares and exchanges an unsigned 64-bit int.
 ;
-; @param   pu64     x86:ebp+8
-; @param   u64New   x86:ebp+c
-; @param   u64Old   x86:ebp+14
+; @param    pu64     x86:ebp+8
+; @param    u64New   x86:ebp+c
+; @param    u64Old   x86:ebp+14
 ;
+; @returns  bool result: true if succesfully exchanged, false if not.
+;           x86:al
 ;
 BEGINPROC_EXPORTED ASMAtomicCmpXchgU64
 %ifndef RT_ARCH_X86
@@ -65,5 +68,4 @@ BEGINPROC_EXPORTED ASMAtomicCmpXchgU64
         leave
         ret
 ENDPROC ASMAtomicCmpXchgU64
-
 
