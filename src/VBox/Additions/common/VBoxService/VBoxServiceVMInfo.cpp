@@ -369,7 +369,12 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
                 VBoxServiceError("Failed to ioctl(SIOCGIFBRDADDR) on socket: Error %d\n", errno);
         	    return -1;
             }
+ #ifdef RT_OS_SOLARIS
+            pAddress = (sockaddr_in *)&ifrequest[i].sin_addr;
+ #else
             pAddress = (sockaddr_in *)&ifrequest[i].ifr_netmask;
+ #endif
+
 #endif
             RTStrPrintf(szPropPath, sizeof(szPropPath), "GuestInfo/Net/%d/V4/Netmask", iCurIface);
             VboxServiceWriteProp(g_VMInfoGuestPropSvcClientID, szPropPath, inet_ntoa(pAddress->sin_addr));
