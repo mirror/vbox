@@ -1108,7 +1108,6 @@ static void apic_startup(APICDeviceInfo* dev, APICState *s, int vector_num)
                            0xffff, 0);
     env->halted = 0;
 #else
-    /** @todo: init CPUs */
     Log(("[SMP] apic_startup: %d on CPUs %d\n", vector_num, s->id));
     cpuSendSipi(dev, s, vector_num);
 #endif
