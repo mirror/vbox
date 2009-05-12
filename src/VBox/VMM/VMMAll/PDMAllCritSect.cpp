@@ -283,7 +283,8 @@ VMMDECL(bool) PDMCritSectIsOwner(PCPDMCRITSECT pCritSect)
         return false;
 
     /* Make sure the critical section is not scheduled to be unlocked. */
-    if (!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PDM_CRITSECT))
+    if (    !VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PDM_CRITSECT)
+        ||  RTCritSectGetRecursion(&pCritSect->s.Core) > 1)
         return true;
 
     for (unsigned i = 0; i < pVCpu->pdm.s.cQueuedCritSectLeaves; i++)
