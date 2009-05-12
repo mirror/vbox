@@ -1673,6 +1673,10 @@ static DECLCALLBACK(void) tmR3TimerCallback(PRTTIMER pTimer, void *pvUser, uint6
  */
 VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
 {
+    /** Note: temporarily restrict this to VCPU 0. */
+    if (VMMGetCpuId(pVM) != 0)
+        return;
+
     /*
      * Only one EMT should be doing this at a time.
      */
