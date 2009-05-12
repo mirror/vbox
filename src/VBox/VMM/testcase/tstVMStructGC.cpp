@@ -331,8 +331,8 @@ int main()
     GEN_CHECK_OFF(PDM, pDevHlpQueueR3);
     GEN_CHECK_OFF(PDM, pDevHlpQueueR0);
     GEN_CHECK_OFF(PDM, pDevHlpQueueRC);
-    GEN_CHECK_OFF(PDM, cQueuedCritSectLeaves);
-    GEN_CHECK_OFF(PDM, apQueuedCritSectsLeaves);
+    GEN_CHECK_OFF(PDMCPU, cQueuedCritSectLeaves);
+    GEN_CHECK_OFF(PDMCPU, apQueuedCritSectsLeaves);
     GEN_CHECK_OFF(PDM, pQueuesTimer);
     GEN_CHECK_OFF(PDM, pQueuesForced);
     GEN_CHECK_OFF(PDM, pQueueFlushR0);

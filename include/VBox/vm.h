@@ -181,6 +181,15 @@ typedef struct VMCPU
         char                padding[256];       /* multiple of 64 */
     } vmm;
 
+    /** PDM part. */
+    union
+    {
+#ifdef ___PDMInternal_h
+        struct PDMCPU       s;
+#endif
+        char                padding[128];       /* multiple of 64 */
+    } pdm;
+
     /** DBGF part.
      * @todo Combine this with other tiny structures. */
     union
@@ -239,8 +248,6 @@ typedef struct VMCPU
 /** PDM DMA transfers are pending. */
 #define VM_FF_PDM_DMA_BIT                   4
 #define VM_FF_PDM_DMA                       RT_BIT_32(VM_FF_PDM_DMA_BIT)
-/** PDM critical section unlocking is pending, process promptly upon return to R3. */
-#define VM_FF_PDM_CRITSECT                  RT_BIT_32(5)
 /** This action forces the VM to call DBGF so DBGF can service debugger
  * requests in the emulation thread.
  * This action flag stays asserted till DBGF clears it.*/
@@ -272,6 +279,8 @@ typedef struct VMCPU
 #define VMCPU_FF_INTERRUPT_PIC              RT_BIT_32(1)
 /** This action forces the VM to schedule and run pending timer (TM). (bogus for now; needed for PATM backwards compatibility) */
 #define VMCPU_FF_TIMER                      RT_BIT_32(2)
+/** PDM critical section unlocking is pending, process promptly upon return to R3. */
+#define VMCPU_FF_PDM_CRITSECT               RT_BIT_32(5)
 /** This action forces the VM to service pending requests from other
  * thread or requests which must be executed in another context. */
 #define VMCPU_FF_REQUEST                    RT_BIT_32(9)
@@ -324,9 +333,9 @@ typedef struct VMCPU
                                                  | VMCPU_FF_INHIBIT_INTERRUPTS)
 
 /** High priority post-execution actions. */
-#define VM_FF_HIGH_PRIORITY_POST_MASK           (VM_FF_PDM_CRITSECT | VM_FF_PGM_NO_MEMORY)
+#define VM_FF_HIGH_PRIORITY_POST_MASK           (VM_FF_PGM_NO_MEMORY)
 /** High priority post-execution actions. */
-#define VMCPU_FF_HIGH_PRIORITY_POST_MASK        (VMCPU_FF_CSAM_PENDING_ACTION)
+#define VMCPU_FF_HIGH_PRIORITY_POST_MASK        (VMCPU_FF_PDM_CRITSECT|VMCPU_FF_CSAM_PENDING_ACTION)
 
 /** Normal priority VM post-execution actions. */
 #define VM_FF_NORMAL_PRIORITY_POST_MASK         (VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_RESET | VM_FF_PGM_NO_MEMORY)
@@ -352,9 +361,9 @@ typedef struct VMCPU
 #define VMCPU_FF_ALL_MASK                       (~0U)
 
 /** All the forced VM flags. */
-#define VM_FF_ALL_BUT_RAW_MASK                  (~(VM_FF_HIGH_PRIORITY_PRE_RAW_MASK | VM_FF_PDM_CRITSECT) | VM_FF_PGM_NO_MEMORY)
+#define VM_FF_ALL_BUT_RAW_MASK                  (~(VM_FF_HIGH_PRIORITY_PRE_RAW_MASK) | VM_FF_PGM_NO_MEMORY)
 /** All the forced VMCPU flags. */
-#define VMCPU_FF_ALL_BUT_RAW_MASK               (~(VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK | VMCPU_FF_CSAM_PENDING_ACTION))
+#define VMCPU_FF_ALL_BUT_RAW_MASK               (~(VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK | VMCPU_FF_CSAM_PENDING_ACTION | VMCPU_FF_PDM_CRITSECT))
 
 /** @} */
 
