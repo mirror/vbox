@@ -971,8 +971,14 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                 RTPrintf("audio=\"none\"\n");
         }
         else
-            RTPrintf("Audio:           %s (Driver: %s, Controller: %s)\n",
-                    fEnabled ? "enabled" : "disabled", pszDrv, pszCtrl);
+        {
+            RTPrintf("Audio:           %s",
+                    fEnabled ? "enabled" : "disabled");
+            if (fEnabled)
+                RTPrintf(" (Driver: %s, Controller: %s)",
+                    pszDrv, pszCtrl);
+            RTPrintf("\n");
+        }
     }
 
     /* Shared clipboard */
