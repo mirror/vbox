@@ -610,7 +610,7 @@ VMMR3DECL(int) DBGFR3DisasInstrCurrentLogInternal(PVMCPU pVCpu, const char *pszP
     if (RT_FAILURE(rc))
         RTStrPrintf(szBuf, sizeof(szBuf), "DBGFR3DisasInstrCurrentLog failed with rc=%Rrc\n", rc);
     if (pszPrefix && *pszPrefix)
-        RTLogPrintf("%s: %s\n", pszPrefix, szBuf);
+        RTLogPrintf("%s-CPU%d: %s\n", pVCpu->idCpu, pszPrefix, szBuf);
     else
         RTLogPrintf("%s\n", szBuf);
     return rc;
