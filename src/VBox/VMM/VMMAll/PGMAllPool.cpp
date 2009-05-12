@@ -2256,9 +2256,10 @@ static int pgmPoolTrackAddUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUse
     PPGMPOOLUSER paUsers = pPool->CTX_SUFF(paUsers);
 
     Log3(("pgmPoolTrackAddUser GCPhys = %RGp iUser %x iUserTable %x\n", pPage->GCPhys, iUser, iUserTable));
+
 #  ifdef VBOX_STRICT
     /*
-     * Check that the entry doesn't already exists.
+     * Check that the entry doesn't already exists. We only allow multiple users of top-level paging structures (SHW_POOL_ROOT_IDX).
      */
     if (pPage->iUserHead != NIL_PGMPOOL_USER_INDEX)
     {
@@ -2266,7 +2267,8 @@ static int pgmPoolTrackAddUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUse
         do
         {
             Assert(i < pPool->cMaxUsers);
-            AssertMsg(paUsers[i].iUser != iUser || paUsers[i].iUserTable != iUserTable, ("%x %x vs new %x %x\n", paUsers[i].iUser, paUsers[i].iUserTable, iUser, iUserTable));
+            AssertMsg(iUser != PGMPOOL_IDX_PD || iUser != PGMPOOL_IDX_PDPT || iUser != PGMPOOL_IDX_NESTED_ROOT || iUser != PGMPOOL_IDX_AMD64_CR3 ||
+                      paUsers[i].iUser != iUser || paUsers[i].iUserTable != iUserTable, ("%x %x vs new %x %x\n", paUsers[i].iUser, paUsers[i].iUserTable, iUser, iUserTable));
             i = paUsers[i].iNext;
         } while (i != NIL_PGMPOOL_USER_INDEX);
     }
