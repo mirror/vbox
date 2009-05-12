@@ -565,7 +565,9 @@ VMMR3DECL(int) MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPage
         {
             for (size_t i = 0; i < cPages; i++)
             {
-                AssertReleaseReturn(paPages[i].Phys != 0 && paPages[i].Phys != NIL_RTHCPHYS && !(paPages[i].Phys & PAGE_OFFSET_MASK), VERR_INTERNAL_ERROR);
+                AssertReleaseMsgReturn(paPages[i].Phys != 0 && paPages[i].Phys != NIL_RTHCPHYS && !(paPages[i].Phys & PAGE_OFFSET_MASK),
+                                       ("i=%#zx Phys=%RHp %s\n", i, paPages[i].Phys, pszDesc),
+                                       VERR_INTERNAL_ERROR);
                 paHCPhysPages[i] = paPages[i].Phys;
             }
 
