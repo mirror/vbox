@@ -679,6 +679,11 @@ int handleModifyVM(HandlerArg *a)
                         return errorArgument("Uart pipe must start with \\\\.\\pipe\\");
 #endif
                 }
+                else if (!strcmp(a->argv[i], "file"))
+                {
+                    uarts_mode[n - 1] = a->argv[i];
+                    i++;
+                }
                 else
                 {
                     uarts_mode[n - 1] = (char*)"device";
