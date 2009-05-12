@@ -576,7 +576,7 @@ static void pgmMapCheckShadowPDEs(PVM pVM, PVMCPU pVCpu, PPGMPOOLPAGE pShwPageCR
 
                 PCPGMPOOLPAGE   pPoolPagePd = pgmPoolGetPage(pPool, pShwPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
                 AssertFatal(pPoolPagePd);
-                AssertMsg(pPoolPagePd->fLocked, (".idx=%d .type=%d\n", pPoolPagePd->idx, pPoolPagePd->enmKind));
+                AssertMsg(pPoolPagePd->cLocked, (".idx=%d .type=%d\n", pPoolPagePd->idx, pPoolPagePd->enmKind));
                 break;
             }
 
