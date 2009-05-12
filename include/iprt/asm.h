@@ -117,7 +117,7 @@
  * Used to work around some 4.3.3 register allocation issues in this version
  * of the compiler. */
 #ifdef __GNUC__
-# define RT_INLINE_ASM_GCC_4_3_3_X86 (__GNUC__ == 4 && __GNUC_MINOR__ == 1 && __GNUC_PATCHLEVEL__ == 3 && defined(__i386__))
+# define RT_INLINE_ASM_GCC_4_3_3_X86 (__GNUC__ == 4 && __GNUC_MINOR__ == 3 && __GNUC_PATCHLEVEL__ == 3 && defined(__i386__))
 #endif
 #ifndef RT_INLINE_ASM_GCC_4_3_3_X86
 # define RT_INLINE_ASM_GCC_4_3_3_X86 0
@@ -4023,7 +4023,8 @@ DECLINLINE(int32_t) ASMAtomicUoReadS32(volatile int32_t *pi32)
  *                  The memory pointed to must be writable.
  * @remark  This will fault if the memory is read-only!
  */
-#if RT_INLINE_ASM_EXTERNAL && !defined(RT_ARCH_AMD64)
+#if (RT_INLINE_ASM_EXTERNAL && !defined(RT_ARCH_AMD64)) \
+ || (RT_INLINE_ASM_GCC_4_3_3_X86 && defined(IN_RING3) && defined(__PIC__))
 DECLASM(uint64_t) ASMAtomicReadU64(volatile uint64_t *pu64);
 #else
 DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t *pu64)
