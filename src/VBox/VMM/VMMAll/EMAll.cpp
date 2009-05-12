@@ -84,11 +84,25 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pD
  * Get the current execution manager status.
  *
  * @returns Current status.
+ * @param   pVCpu         The VMCPU to operate on.
  */
 VMMDECL(EMSTATE) EMGetState(PVMCPU pVCpu)
 {
     return pVCpu->em.s.enmState;
 }
+
+/**
+ * Sets the current execution manager status. (use only when you know what you're doing!)
+ *
+ * @param   pVCpu         The VMCPU to operate on.
+ */
+VMMDECL(void)    EMSetState(PVMCPU pVCpu, EMSTATE enmNewState)
+{
+    /* Only allowed combination: */
+    Assert(pVCpu->em.s.enmState == EMSTATE_WAIT_SIPI && enmNewState == EMSTATE_HALTED);
+    pVCpu->em.s.enmState = enmNewState;
+}
+
 
 #ifndef IN_RC
 
