@@ -40,8 +40,8 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 
-/** Converts a pointer to DRVOUTPUTFILE::IMedia to a PDRVOUTPUTFILE. */
-#define PDMISTREAM_2_DRVOUTPUTFILE(pInterface) ( (PDRVOUTPUTFILE)((uintptr_t)pInterface - RT_OFFSETOF(DRVOUTPUTFILE, IStream)) )
+/** Converts a pointer to DRVRAWFILE::IMedia to a PDRVRAWFILE. */
+#define PDMISTREAM_2_DRVRAWFILE(pInterface) ( (PDRVRAWFILE)((uintptr_t)pInterface - RT_OFFSETOF(DRVRAWFILE, IStream)) )
 
 /** Converts a pointer to PDMDRVINS::IBase to a PPDMDRVINS. */
 #define PDMIBASE_2_DRVINS(pInterface)   ( (PPDMDRVINS)((uintptr_t)pInterface - RT_OFFSETOF(PDMDRVINS, IBase)) )
@@ -52,7 +52,7 @@
 /**
  * Raw file output driver instance data.
  */
-typedef struct DRVOUTPUTFILE
+typedef struct DRVRAWFILE
 {
     /** The stream interface. */
     PDMISTREAM          IStream;
@@ -62,9 +62,7 @@ typedef struct DRVOUTPUTFILE
     char                *pszLocation;
     /** Flag whether VirtualBox represents the server or client side. */
     RTFILE              OutputFile;
-    /** Flag to signal listening thread to shut down. */
-    bool                fShutdown;
-} DRVOUTPUTFILE, *PDRVOUTPUTFILE;
+} DRVRAWFILE, *PDRVRAWFILE;
 
 
 /*******************************************************************************
@@ -73,10 +71,10 @@ typedef struct DRVOUTPUTFILE
 
 
 /** @copydoc PDMISTREAM::pfnWrite */
-static DECLCALLBACK(int) drvOutputFileWrite(PPDMISTREAM pInterface, const void *pvBuf, size_t *pcbWrite)
+static DECLCALLBACK(int) drvRawFileWrite(PPDMISTREAM pInterface, const void *pvBuf, size_t *pcbWrite)
 {
     int rc = VINF_SUCCESS;
-    PDRVOUTPUTFILE pThis = PDMISTREAM_2_DRVOUTPUTFILE(pInterface);
+    PDRVRAWFILE pThis = PDMISTREAM_2_DRVRAWFILE(pInterface);
     LogFlow(("%s: pvBuf=%p *pcbWrite=%#x (%s)\n", __FUNCTION__, pvBuf, *pcbWrite, pThis->pszLocation));
 
     Assert(pvBuf);
@@ -103,10 +101,10 @@ static DECLCALLBACK(int) drvOutputFileWrite(PPDMISTREAM pInterface, const void *
  * @param   enmInterface        The requested interface identification.
  * @thread  Any thread.
  */
-static DECLCALLBACK(void *) drvOutputFileQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) drvRawFileQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_DRVINS(pInterface);
-    PDRVOUTPUTFILE pDrv = PDMINS_2_DATA(pDrvIns, PDRVOUTPUTFILE);
+    PDRVRAWFILE pDrv = PDMINS_2_DATA(pDrvIns, PDRVRAWFILE);
     switch (enmInterface)
     {
         case PDMINTERFACE_BASE:
@@ -129,11 +127,11 @@ static DECLCALLBACK(void *) drvOutputFileQueryInterface(PPDMIBASE pInterface, PD
  *                      of the driver instance. It's also found in pDrvIns->pCfgHandle, but like
  *                      iInstance it's expected to be used a bit in this function.
  */
-static DECLCALLBACK(int) drvOutputFileConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int) drvRawFileConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
     int rc;
     char *pszLocation = NULL;
-    PDRVOUTPUTFILE pThis = PDMINS_2_DATA(pDrvIns, PDRVOUTPUTFILE);
+    PDRVRAWFILE pThis = PDMINS_2_DATA(pDrvIns, PDRVRAWFILE);
 
     /*
      * Init the static parts.
@@ -141,11 +139,10 @@ static DECLCALLBACK(int) drvOutputFileConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     pThis->pDrvIns                      = pDrvIns;
     pThis->pszLocation                  = NULL;
     pThis->OutputFile                   = NIL_RTFILE;
-    pThis->fShutdown                    = false;
     /* IBase */
-    pDrvIns->IBase.pfnQueryInterface    = drvOutputFileQueryInterface;
+    pDrvIns->IBase.pfnQueryInterface    = drvRawFileQueryInterface;
     /* IStream */
-    pThis->IStream.pfnWrite             = drvOutputFileWrite;
+    pThis->IStream.pfnWrite             = drvRawFileWrite;
 
     /*
      * Read the configuration.
@@ -179,7 +176,7 @@ out:
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("RawFile#%d failed to initialize"), pDrvIns->iInstance);
     }
 
-    LogFlow(("drvOutputFileConstruct: location %s\n", pszLocation));
+    LogFlow(("drvRawFileConstruct: location %s\n", pszLocation));
     LogRel(("RawFile: location %s\n", pszLocation));
     return VINF_SUCCESS;
 }
@@ -193,9 +190,9 @@ out:
  *
  * @param   pDrvIns     The driver instance data.
  */
-static DECLCALLBACK(void) drvOutputFileDestruct(PPDMDRVINS pDrvIns)
+static DECLCALLBACK(void) drvRawFileDestruct(PPDMDRVINS pDrvIns)
 {
-    PDRVOUTPUTFILE pThis = PDMINS_2_DATA(pDrvIns, PDRVOUTPUTFILE);
+    PDRVRAWFILE pThis = PDMINS_2_DATA(pDrvIns, PDRVRAWFILE);
     LogFlow(("%s: %s\n", __FUNCTION__, pThis->pszLocation));
 
     if (pThis->pszLocation)
@@ -210,12 +207,10 @@ static DECLCALLBACK(void) drvOutputFileDestruct(PPDMDRVINS pDrvIns)
  *
  * @param   pDrvIns     The driver instance data.
  */
-static DECLCALLBACK(void) drvOutputFilePowerOff(PPDMDRVINS pDrvIns)
+static DECLCALLBACK(void) drvRawFilePowerOff(PPDMDRVINS pDrvIns)
 {
-    PDRVOUTPUTFILE pThis = PDMINS_2_DATA(pDrvIns, PDRVOUTPUTFILE);
+    PDRVRAWFILE pThis = PDMINS_2_DATA(pDrvIns, PDRVRAWFILE);
     LogFlow(("%s: %s\n", __FUNCTION__, pThis->pszLocation));
-
-    pThis->fShutdown = true;
 
     if (pThis->OutputFile != NIL_RTFILE)
         RTFileClose(pThis->OutputFile);
@@ -240,11 +235,11 @@ const PDMDRVREG g_DrvRawFile =
     /* cMaxInstances */
     ~0,
     /* cbInstance */
-    sizeof(DRVOUTPUTFILE),
+    sizeof(DRVRAWFILE),
     /* pfnConstruct */
-    drvOutputFileConstruct,
+    drvRawFileConstruct,
     /* pfnDestruct */
-    drvOutputFileDestruct,
+    drvRawFileDestruct,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */
@@ -258,5 +253,5 @@ const PDMDRVREG g_DrvRawFile =
     /* pfnDetach */
     NULL,
     /* pfnPowerOff */
-    drvOutputFilePowerOff,
+    drvRawFilePowerOff,
 };
