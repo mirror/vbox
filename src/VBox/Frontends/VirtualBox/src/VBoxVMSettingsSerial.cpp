@@ -51,6 +51,7 @@ VBoxVMSettingsSerial::VBoxVMSettingsSerial()
     mCbMode->addItem (""); /* KPortMode_Disconnected */
     mCbMode->addItem (""); /* KPortMode_HostPipe */
     mCbMode->addItem (""); /* KPortMode_HostDevice */
+    mCbMode->addItem (""); /* KPortMode_RawFile */
 
     /* Setup connections */
     connect (mGbSerial, SIGNAL (toggled (bool)),
@@ -146,6 +147,7 @@ void VBoxVMSettingsSerial::retranslateUi()
 
     mCbNumber->setItemText (mCbNumber->count() - 1, vboxGlobal().toCOMPortName (0, 0));
 
+    mCbMode->setItemText (3, vboxGlobal().toString (KPortMode_RawFile));
     mCbMode->setItemText (2, vboxGlobal().toString (KPortMode_HostDevice));
     mCbMode->setItemText (1, vboxGlobal().toString (KPortMode_HostPipe));
     mCbMode->setItemText (0, vboxGlobal().toString (KPortMode_Disconnected));

@@ -1950,7 +1950,8 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
                     QString data =
                         toCOMPortName (port.GetIRQ(), port.GetIOBase()) + ", ";
                     if (mode == KPortMode_HostPipe ||
-                        mode == KPortMode_HostDevice)
+                        mode == KPortMode_HostDevice ||
+                        mode == KPortMode_RawFile)
                         data += QString ("%1 (<nobr>%2</nobr>)")
                             .arg (vboxGlobal().toString (mode))
                             .arg (QDir::toNativeSeparators (port.GetPath()));
@@ -2884,6 +2885,7 @@ void VBoxGlobal::retranslateUi()
     mPortModeTypes [KPortMode_Disconnected] =   tr ("Disconnected", "PortMode");
     mPortModeTypes [KPortMode_HostPipe] =       tr ("Host Pipe", "PortMode");
     mPortModeTypes [KPortMode_HostDevice] =     tr ("Host Device", "PortMode");
+    mPortModeTypes [KPortMode_RawFile] =        tr ("Raw File", "PortMode");
 
     mUSBFilterActionTypes [KUSBDeviceFilterAction_Ignore] =
         tr ("Ignore", "USBFilterActionType");

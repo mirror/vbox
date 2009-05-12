@@ -659,6 +659,7 @@ Drivers_SOURCES    = \
 	PC/DrvACPI.cpp \
 	Serial/DrvChar.cpp \
 	Serial/DrvNamedPipe.cpp \
+	Serial/DrvRawFile.cpp \
 	Storage/DrvBlock.cpp \
 	Storage/DrvHostBase.cpp \
 	Storage/DrvHostDVD.cpp \

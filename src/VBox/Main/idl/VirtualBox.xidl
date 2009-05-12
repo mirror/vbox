@@ -11089,6 +11089,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="HostDevice"          value="2">
       <desc>Virtual device is attached to a host device.</desc>
     </const>
+    <const name="RawFile"             value="3">
+      <desc>Virtual device is attached to a raw file.</desc>
+    </const>
   </enum>
 
   <interface
