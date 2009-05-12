@@ -52,14 +52,13 @@ VBoxService_LIBS          = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3) \
 	$(VBOX_LIB_IPRT_GUEST_R3)
-VBoxService_LIBS.solaris = \
-	nsl
 ifdef VBOX_WITH_GUEST_PROPS
  VBoxService_LIBS.win    += \
 	Secur32.lib \
 	WtsApi32.lib \
 	Psapi.lib
- VBoxService_LIBS.solaris += nsl
+ VBoxService_LIBS.solaris += \
+	nsl
 endif
 
 # The icon is configurable.
