@@ -128,6 +128,8 @@ static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *
 int pgmR3PoolInit(PVM pVM)
 {
     AssertCompile(NIL_PGMPOOL_IDX == 0);
+    /* pPage->cLocked is an unsigned byte. */
+    AssertCompile(VMM_MAX_CPU_COUNT <= 255);
 
     /*
      * Query Pool config.
