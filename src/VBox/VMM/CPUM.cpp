@@ -2392,7 +2392,7 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPT
     {
         /* log it */
         if (pszPrefix)
-            Log(("%s: %s", pszPrefix, szOutput));
+            Log(("%s-CPU%d: %s", pszPrefix, pVCpu->idCpu, szOutput));
         else
             Log(("%s", szOutput));
 #endif
