@@ -1613,7 +1613,7 @@ typedef struct PGMPOOLPAGE
      * It's a hack required because of REMR3NotifyHandlerPhysicalDeregister. */
     bool volatile       fReusedFlushPending;
     /** Used to indicate that this page can't be flushed. Important for cr3 root pages or shadow pae pd pages). */
-    bool                fLocked;
+    uint8_t             cLocked;
 } PGMPOOLPAGE, *PPGMPOOLPAGE, **PPPGMPOOLPAGE;
 /** Pointer to a const pool page. */
 typedef PGMPOOLPAGE const *PCPGMPOOLPAGE;
@@ -4432,8 +4432,7 @@ DECLINLINE(void) pgmPoolCacheUsed(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  */
 DECLINLINE(void) pgmPoolLockPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 {
-    Assert(!pPage->fLocked);
-    pPage->fLocked = true;
+    pPage->cLocked++;
 }
 
 
@@ -4445,8 +4444,8 @@ DECLINLINE(void) pgmPoolLockPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  */
 DECLINLINE(void) pgmPoolUnlockPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 {
-    Assert(pPage->fLocked);
-    pPage->fLocked = false;
+    Assert(pPage->cLocked);
+    pPage->cLocked--;
 }
 
 
@@ -4458,7 +4457,7 @@ DECLINLINE(void) pgmPoolUnlockPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  */
 DECLINLINE(bool) pgmPoolIsPageLocked(PPGM pPGM, PPGMPOOLPAGE pPage)
 {
-    if (pPage->fLocked)
+    if (pPage->cLocked)
     {
         LogFlow(("pgmPoolIsPageLocked found root page %d\n", pPage->enmKind));
         if (pPage->cModifications)
