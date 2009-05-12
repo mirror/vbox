@@ -296,25 +296,25 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
         nNumInterfaces = nBytesReturned / sizeof(INTERFACE_INFO);
 #else
         int sd = socket(AF_INET, SOCK_DGRAM, 0);
-    	if (sd < 0) /* Socket invalid. */
-    	{
-    	    VBoxServiceError("Failed to get a socket: Error %d\n", errno);
+        if (sd < 0) /* Socket invalid. */
+        {
+            VBoxServiceError("Failed to get a socket: Error %d\n", errno);
             return -1;
         }
-        
+
         ifconf ifcfg;
         char buffer[1024] = {0};
         ifcfg.ifc_len = sizeof(buffer);
-    	ifcfg.ifc_buf = buffer;
-    	if (ioctl(sd, SIOCGIFCONF, &ifcfg) < 0)
-	    {
-	    	VBoxServiceError("Failed to ioctl(SIOCGIFCONF) on socket: Error %d\n", errno);
-	    	return -1;
-    	}
-    	
-    	ifreq* ifrequest = ifcfg.ifc_req;
-    	ifreq *ifreqitem = NULL;
-    	nNumInterfaces = ifcfg.ifc_len / sizeof(ifreq);
+        ifcfg.ifc_buf = buffer;
+        if (ioctl(sd, SIOCGIFCONF, &ifcfg) < 0)
+        {
+            VBoxServiceError("Failed to ioctl(SIOCGIFCONF) on socket: Error %d\n", errno);
+            return -1;
+        }
+
+        ifreq* ifrequest = ifcfg.ifc_req;
+        ifreq *ifreqitem = NULL;
+        nNumInterfaces = ifcfg.ifc_len / sizeof(ifreq);
 #endif
         char szPropPath [FILENAME_MAX] = {0};
         char szTemp [FILENAME_MAX] = {0};
@@ -328,7 +328,7 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
         {
             sockaddr_in *pAddress;
             u_long nFlags = 0;
-#ifdef RT_OS_WINDOWS        
+#ifdef RT_OS_WINDOWS
             if (InterfaceList[i].iiFlags & IFF_LOOPBACK) /* Skip loopback device. */
                 continue;
             nFlags = InterfaceList[i].iiFlags;
@@ -336,8 +336,8 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
 #else
             if (ioctl(sd, SIOCGIFFLAGS, &ifrequest[i]) < 0)
             {
-            	VBoxServiceError("Failed to ioctl(SIOCGIFFLAGS) on socket: Error %d\n", errno);
-            	return -1;
+                VBoxServiceError("Failed to ioctl(SIOCGIFFLAGS) on socket: Error %d\n", errno);
+                return -1;
             }
             if (ifrequest[i].ifr_flags & IFF_LOOPBACK) /* Skip loopback device. */
                 continue;
@@ -354,7 +354,7 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
             if (ioctl(sd, SIOCGIFBRDADDR, &ifrequest[i]) < 0)
             {
                 VBoxServiceError("Failed to ioctl(SIOCGIFBRDADDR) on socket: Error %d\n", errno);
-        	    return -1;
+                return -1;
             }
             pAddress = (sockaddr_in *)&ifrequest[i].ifr_broadaddr;
 #endif
@@ -367,7 +367,7 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
             if (ioctl(sd, SIOCGIFNETMASK, &ifrequest[i]) < 0)
             {
                 VBoxServiceError("Failed to ioctl(SIOCGIFBRDADDR) on socket: Error %d\n", errno);
-        	    return -1;
+                return -1;
             }
  #ifdef RT_OS_SOLARIS
             pAddress = (sockaddr_in *)&ifrequest[i].ifr_addr;
@@ -378,8 +378,7 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
 #endif
             RTStrPrintf(szPropPath, sizeof(szPropPath), "GuestInfo/Net/%d/V4/Netmask", iCurIface);
             VboxServiceWriteProp(g_VMInfoGuestPropSvcClientID, szPropPath, inet_ntoa(pAddress->sin_addr));
-            
-          
+
              if (nFlags & IFF_UP)
                 RTStrPrintf(szTemp, sizeof(szTemp), "Up");
             else
@@ -392,7 +391,7 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
         }
 #ifdef RT_OS_WINDOWS
         if (sd) closesocket(sd);
-#else        
+#else
         if (sd) close(sd);
 #endif /* !RT_OS_WINDOWS */
 
