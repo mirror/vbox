@@ -566,7 +566,7 @@ static const REMPARMDESC g_aArgsDBGFR3DisasInstrEx[] =
 };
 static const REMPARMDESC g_aArgsDBGFR3DisasInstrCurrentLogInternal[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(char *), NULL }
 };
 static const REMPARMDESC g_aArgsDBGFR3Info[] =

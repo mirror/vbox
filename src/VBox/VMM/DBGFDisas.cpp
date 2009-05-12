@@ -581,16 +581,15 @@ VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, VMCPUID idCpu, RTSEL Sel, RTGCPTR GCP
  * All registers and data will be displayed. Addresses will be attempted resolved to symbols.
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pVCpu           VMCPU handle.
  * @param   pszOutput       Output buffer.
  * @param   cchOutput       Size of the output buffer.
  */
-VMMR3DECL(int) DBGFR3DisasInstrCurrent(PVM pVM, char *pszOutput, uint32_t cchOutput)
+VMMR3DECL(int) DBGFR3DisasInstrCurrent(PVMCPU pVCpu, char *pszOutput, uint32_t cchOutput)
 {
     *pszOutput = '\0';
-    PVMCPU pVCpu = VMMGetCpu(pVM);
     AssertReturn(pVCpu, VERR_INVALID_CONTEXT);
-    return DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, 0, 0, DBGF_DISAS_FLAGS_CURRENT_GUEST,
+    return DBGFR3DisasInstrEx(pVCpu->pVMR3, pVCpu->idCpu, 0, 0, DBGF_DISAS_FLAGS_CURRENT_GUEST,
                               pszOutput, cchOutput, NULL);
 }
 
@@ -600,14 +599,14 @@ VMMR3DECL(int) DBGFR3DisasInstrCurrent(PVM pVM, char *pszOutput, uint32_t cchOut
  * All registers and data will be displayed. Addresses will be attempted resolved to symbols.
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pVCpu           VMCPU handle.
  * @param   pszPrefix       Short prefix string to the dissassembly string. (optional)
  */
-VMMR3DECL(int) DBGFR3DisasInstrCurrentLogInternal(PVM pVM, const char *pszPrefix)
+VMMR3DECL(int) DBGFR3DisasInstrCurrentLogInternal(PVMCPU pVCpu, const char *pszPrefix)
 {
     char szBuf[256];
     szBuf[0] = '\0';
-    int rc = DBGFR3DisasInstrCurrent(pVM, &szBuf[0], sizeof(szBuf));
+    int rc = DBGFR3DisasInstrCurrent(pVCpu, &szBuf[0], sizeof(szBuf));
     if (RT_FAILURE(rc))
         RTStrPrintf(szBuf, sizeof(szBuf), "DBGFR3DisasInstrCurrentLog failed with rc=%Rrc\n", rc);
     if (pszPrefix && *pszPrefix)
@@ -630,14 +629,11 @@ VMMR3DECL(int) DBGFR3DisasInstrCurrentLogInternal(PVM pVM, const char *pszPrefix
  *                          calculation of the actual instruction address.
  * @param   GCPtr           The code address relative to the base of Sel.
  */
-VMMR3DECL(int) DBGFR3DisasInstrLogInternal(PVM pVM, RTSEL Sel, RTGCPTR GCPtr)
+VMMR3DECL(int) DBGFR3DisasInstrLogInternal(PVMCPU pVCpu, RTSEL Sel, RTGCPTR GCPtr)
 {
-    PVMCPU pVCpu = VMMGetCpu(pVM);
-    AssertReturn(pVCpu, VERR_INVALID_CONTEXT);
-
     char szBuf[256];
     szBuf[0] = '\0';
-    int rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, Sel, GCPtr, 0, &szBuf[0], sizeof(szBuf), NULL);
+    int rc = DBGFR3DisasInstrEx(pVCpu->pVMR3, pVCpu->idCpu, Sel, GCPtr, 0, &szBuf[0], sizeof(szBuf), NULL);
     if (RT_FAILURE(rc))
         RTStrPrintf(szBuf, sizeof(szBuf), "DBGFR3DisasInstrLog(, %RTsel, %RGv) failed with rc=%Rrc\n", Sel, GCPtr, rc);
     RTLogPrintf("%s\n", szBuf);

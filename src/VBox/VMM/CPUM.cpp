@@ -1436,7 +1436,12 @@ static DECLCALLBACK(void) cpumR3InfoGuest(PVM pVM, PCDBGFINFOHLP pHlp, const cha
 static DECLCALLBACK(void) cpumR3InfoGuestInstr(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     char szInstruction[256];
-    int rc = DBGFR3DisasInstrCurrent(pVM, szInstruction, sizeof(szInstruction));
+    /* @todo SMP support! */
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    if (!pVCpu)
+        pVCpu = &pVM->aCpus[0];
+
+    int rc = DBGFR3DisasInstrCurrent(pVCpu, szInstruction, sizeof(szInstruction));
     if (RT_SUCCESS(rc))
         pHlp->pfnPrintf(pHlp, "\nCPUM: %s\n\n", szInstruction);
 }

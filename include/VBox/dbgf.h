@@ -787,25 +787,24 @@ VMMR3DECL(void)             DBGFR3StackWalkEnd(PCDBGFSTACKFRAME pFirstFrame);
 #define DBGF_SEL_FLAT                       1
 
 VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, VMCPUID idCpu, RTSEL Sel, RTGCPTR GCPtr, unsigned fFlags, char *pszOutput, uint32_t cchOutput, uint32_t *pcbInstr);
-VMMR3DECL(int) DBGFR3DisasInstrCurrent(PVM pVM, char *pszOutput, uint32_t cbOutput);
-VMMR3DECL(int) DBGFR3DisasInstrCurrentLogInternal(PVM pVM, const char *pszPrefix);
+VMMR3DECL(int) DBGFR3DisasInstrCurrent(PVMCPU pVCpu, char *pszOutput, uint32_t cbOutput);
+VMMR3DECL(int) DBGFR3DisasInstrCurrentLogInternal(PVMCPU pVCpu, const char *pszPrefix);
 
 /** @def DBGFR3DisasInstrCurrentLog
  * Disassembles the current guest context instruction and writes it to the log.
  * All registers and data will be displayed. Addresses will be attempted resolved to symbols.
  */
-/** @todo SMP */
 #ifdef LOG_ENABLED
-# define DBGFR3DisasInstrCurrentLog(pVM, pszPrefix) \
+# define DBGFR3DisasInstrCurrentLog(pVCpu, pszPrefix) \
     do { \
         if (LogIsEnabled()) \
-            DBGFR3DisasInstrCurrentLogInternal(pVM, pszPrefix); \
+            DBGFR3DisasInstrCurrentLogInternal(pVCpu, pszPrefix); \
     } while (0)
 #else
-# define DBGFR3DisasInstrCurrentLog(pVM, pszPrefix) do { } while (0)
+# define DBGFR3DisasInstrCurrentLog(pVCpu, pszPrefix) do { } while (0)
 #endif
 
-VMMR3DECL(int) DBGFR3DisasInstrLogInternal(PVM pVM, RTSEL Sel, RTGCPTR GCPtr);
+VMMR3DECL(int) DBGFR3DisasInstrLogInternal(PVMCPU pVCpu, RTSEL Sel, RTGCPTR GCPtr);
 
 /** @def DBGFR3DisasInstrLog
  * Disassembles the specified guest context instruction and writes it to the log.
@@ -813,13 +812,13 @@ VMMR3DECL(int) DBGFR3DisasInstrLogInternal(PVM pVM, RTSEL Sel, RTGCPTR GCPtr);
  * @thread Any EMT.
  */
 #ifdef LOG_ENABLED
-# define DBGFR3DisasInstrLog(pVM, Sel, GCPtr) \
+# define DBGFR3DisasInstrLog(pVCpu, Sel, GCPtr) \
     do { \
         if (LogIsEnabled()) \
-            DBGFR3DisasInstrLogInternal(pVM, Sel, GCPtr); \
+            DBGFR3DisasInstrLogInternal(pVCpu, Sel, GCPtr); \
     } while (0)
 #else
-# define DBGFR3DisasInstrLog(pVM, Sel, GCPtr) do { } while (0)
+# define DBGFR3DisasInstrLog(pVCpu, Sel, GCPtr) do { } while (0)
 #endif
 
 
