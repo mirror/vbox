@@ -186,11 +186,17 @@ tstIoCtl_SOURCES = tstIoCtl.cpp
 
 tstInlineAsm_SOURCES = tstInlineAsm.cpp
 
-tstInlineAsmPIC_SOURCES = tstInlineAsm.cpp
+tstInlineAsmPIC_SOURCES = \
+        tstInlineAsm.cpp \
+        ../common/asm/ASMAtomicCmpXchgU64.asm \
+        ../common/asm/ASMAtomicReadU64.asm
 tstInlineAsmPIC_CXXFLAGS = -fPIC
 tstInlineAsmPIC_DEFS = PIC
 
-tstInlineAsmPIC3_SOURCES = tstInlineAsm.cpp
+tstInlineAsmPIC3_SOURCES = \
+        tstInlineAsm.cpp \
+        ../common/asm/ASMAtomicCmpXchgU64.asm \
+        ../common/asm/ASMAtomicReadU64.asm
 tstInlineAsmPIC3_CXXFLAGS = -fPIC -fomit-frame-pointer -O3
 tstInlineAsmPIC3_DEFS = PIC
 
