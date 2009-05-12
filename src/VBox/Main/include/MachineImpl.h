@@ -793,6 +793,8 @@ protected:
 
     HRESULT saveStateSettings (int aFlags);
 
+    HRESULT getExtraData(const Utf8Str &aKey, Utf8Str &aValue);
+
     HRESULT createImplicitDiffs (const Bstr &aFolder,
                                  ComObjPtr <Progress> &aProgress,
                                  bool aOnline);
