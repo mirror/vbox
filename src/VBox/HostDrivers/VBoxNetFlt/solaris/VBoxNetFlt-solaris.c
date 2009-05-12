@@ -1409,10 +1409,10 @@ static void vboxNetFltSolarisCloseDev(vnode_t *pVNodeHeld, TIUSER *pUser)
     VN_RELE(pVNodeHeld);
 }
 
-#if 0
+
 /**
- * Set the DLPI style-2 PPA via an attach request.
- * Currently unused; dl_attach is used instead.
+ * Set the DLPI style-2 PPA via an attach request, Synchronous.
+ * Waits for request acknowledgement and verifies the result.
  *
  * @returns VBox status code.
  * @param   hDevice        Layered device handle.
@@ -1421,9 +1421,7 @@ static void vboxNetFltSolarisCloseDev(vnode_t *pVNodeHeld, TIUSER *pUser)
 static int vboxNetFltSolarisAttachReq(ldi_handle_t hDevice, int PPA)
 {
     int rc;
-    t_uscalar_t Cmd = DL_ATTACH_REQ;
-    size_t cbReq = DL_ATTACH_REQ_SIZE;
-    mblk_t *pAttachMsg = mexchange(NULL, NULL, cbReq, M_PROTO, Cmd);
+    mblk_t *pAttachMsg = mexchange(NULL, NULL, DL_ATTACH_REQ_SIZE, M_PROTO, DL_ATTACH_REQ);
     if (RT_UNLIKELY(!pAttachMsg))
         return VERR_NO_MEMORY;
 
@@ -1435,16 +1433,56 @@ static int vboxNetFltSolarisAttachReq(ldi_handle_t hDevice, int PPA)
     {
         rc = ldi_getmsg(hDevice, &pAttachMsg, NULL);
         if (!rc)
-            return VINF_SUCCESS;
+        {
+            /*
+             * Verify if the attach succeeded.
+             */
+            size_t cbMsg = MBLKL(pAttachMsg);
+            if (cbMsg >= sizeof(t_uscalar_t))
+            {
+                union DL_primitives *pPrim = (union DL_primitives *)pAttachMsg->b_rptr;
+                t_uscalar_t AckPrim = pPrim->dl_primitive;
+
+                if (   AckPrim == DL_OK_ACK                     /* Success! */
+                    && cbMsg == DL_OK_ACK_SIZE)
+                {
+                    rc = VINF_SUCCESS;
+                }
+                else if (  AckPrim == DL_ERROR_ACK              /* Error Ack. */
+                        && cbMsg == DL_ERROR_ACK_SIZE)
+                {
+                    LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachReq ldi_getmsg succeeded, but unsupported op.\n"));
+                    rc = VERR_NOT_SUPPORTED;
+                }
+                else                                            /* Garbled reply */
+                {
+                    LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachReq ldi_getmsg succeeded, but invalid op. expected %s recvd %s\n",
+                        dl_primstr(DL_OK_ACK), dl_primstr(AckPrim)));
+                    rc = VERR_INVALID_FUNCTION;
+                }
+            }
+            else
+            {
+                LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachReq ldi_getmsg succeeded, but invalid size %d expected %d\n", cbMsg,
+                            DL_OK_ACK_SIZE));
+                rc = VERR_INVALID_FUNCTION;
+            }
+        }
         else
+        {
             LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachReq ldi_getmsg failed. rc=%d\n", rc));
+            rc = VERR_INVALID_FUNCTION;
+        }
     }
     else
+    {
         LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachReq ldi_putmsg failed. rc=%d\n", rc));
+        rc = VERR_UNRESOLVED_ERROR;
+    }
 
-    return VERR_GENERAL_FAILURE;
+    freemsg(pAttachMsg);
+    return rc;
 }
-#endif
 
 
 /**
@@ -1707,11 +1745,11 @@ static int vboxNetFltSolarisOpenStyle2(PVBOXNETFLTINS pThis, ldi_ident_t *pDevId
             /*
              * Attach the PPA explictly.
              */
-            rc = dl_attach(pThis->u.s.hIface, (int)PPA, NULL);
-            if (!rc)
+            rc = vboxNetFltSolarisAttachReq(pThis->u.s.hIface, (int)PPA);
+            if (RT_SUCCESS(rc))
             {
                 RTStrFree(pszDev);
-                return VINF_SUCCESS;
+                return rc;
             }
 
             ldi_close(pThis->u.s.hIface, FREAD | FWRITE, kcred);
