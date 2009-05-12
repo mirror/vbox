@@ -30,7 +30,7 @@
 #include <windows.h>
 #include <Ntsecapi.h>
 #else
-#define __STDC_LIMIT_MACROS
+# define __STDC_LIMIT_MACROS
 # include <arpa/inet.h>
 # include <errno.h>
 # include <net/if.h>
@@ -39,6 +39,9 @@
 # include <sys/socket.h>
 # include <unistd.h>
 # include <utmp.h>
+# ifdef RT_OS_SOLARIS
+#  include <sys/sockio.h>
+# endif
 #endif
 
 #include <iprt/mem.h>
