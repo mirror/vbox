@@ -1413,10 +1413,14 @@ static DECLCALLBACK(void) cpumR3InfoGuest(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     CPUMDUMPTYPE enmType;
     const char *pszComment;
     cpumR3InfoParseArg(pszArgs, &enmType, &pszComment);
-    pHlp->pfnPrintf(pHlp, "Guest CPUM state: %s\n", pszComment);
 
     /* @todo SMP support! */
-    PVMCPU pVCpu = &pVM->aCpus[0];
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    if (!pVCpu)
+        pVCpu = &pVM->aCpus[0];
+
+    pHlp->pfnPrintf(pHlp, "Guest CPUM (VCPU %d) state: %s\n", pVCpu->idCpu, pszComment);
+
     PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
     cpumR3InfoOne(pVM, pCtx, CPUMCTX2CORE(pCtx), pHlp, enmType, "");
 }
