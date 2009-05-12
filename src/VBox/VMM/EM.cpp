@@ -1245,7 +1245,7 @@ int emR3SingleStepExecRaw(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
     for (uint32_t i = 0; i < cIterations; i++)
     {
         DBGFR3PrgStep(pVCpu);
-        DBGFR3DisasInstrCurrentLog(pVM, "RSS: ");
+        DBGFR3DisasInstrCurrentLog(pVCpu, "RSS: ");
         rc = emR3RawStep(pVM, pVCpu);
         if (rc != VINF_SUCCESS)
             break;
@@ -1267,7 +1267,7 @@ static int emR3SingleStepExecHwAcc(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
     for (uint32_t i = 0; i < cIterations; i++)
     {
         DBGFR3PrgStep(pVCpu);
-        DBGFR3DisasInstrCurrentLog(pVM, "RSS: ");
+        DBGFR3DisasInstrCurrentLog(pVCpu, "RSS: ");
         rc = emR3HwAccStep(pVM, pVCpu);
         if (    rc != VINF_SUCCESS
             ||  !HWACCMR3CanExecuteGuest(pVM, pVCpu->em.s.pCtx))
@@ -1290,7 +1290,7 @@ static int emR3SingleStepExecRem(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
     for (uint32_t i = 0; i < cIterations; i++)
     {
         DBGFR3PrgStep(pVCpu);
-        DBGFR3DisasInstrCurrentLog(pVM, "RSS: ");
+        DBGFR3DisasInstrCurrentLog(pVCpu, "RSS: ");
         emR3RemStep(pVM, pVCpu);
         if (emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx) != EMSTATE_REM)
             break;
@@ -1339,7 +1339,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
     if (pszPrefix)
     {
         DBGFR3InfoLog(pVM, "cpumguest", pszPrefix);
-        DBGFR3DisasInstrCurrentLog(pVM, pszPrefix);
+        DBGFR3DisasInstrCurrentLog(pVCpu, pszPrefix);
     }
 #endif /* LOG_ENABLED */
 
@@ -1618,7 +1618,7 @@ static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu)
     {
 #ifdef LOGGING_ENABLED
         DBGFR3InfoLog(pVM, "cpumguest", "Guest trap");
-        DBGFR3DisasInstrCurrentLog(pVM, "Guest trap");
+        DBGFR3DisasInstrCurrentLog(pVCpu, "Guest trap");
 #endif
         return VINF_EM_RESCHEDULE_HWACC;
     }
@@ -1741,7 +1741,7 @@ static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu)
 
 #ifdef LOG_ENABLED
     DBGFR3InfoLog(pVM, "cpumguest", "Guest trap");
-    DBGFR3DisasInstrCurrentLog(pVM, "Guest trap");
+    DBGFR3DisasInstrCurrentLog(pVCpu, "Guest trap");
 
     /* Get guest page information. */
     uint64_t    fFlags = 0;
@@ -1792,7 +1792,7 @@ int emR3RawRingSwitch(PVM pVM, PVMCPU pVCpu)
                                         (SELMGetCpuModeFromSelector(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid) == CPUMODE_32BIT) ? PATMFL_CODE32 : 0);
                 if (RT_SUCCESS(rc))
                 {
-                    DBGFR3DisasInstrCurrentLog(pVM, "Patched sysenter instruction");
+                    DBGFR3DisasInstrCurrentLog(pVCpu, "Patched sysenter instruction");
                     return VINF_EM_RESCHEDULE_RAW;
                 }
             }
@@ -1876,7 +1876,7 @@ static int emR3PatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret)
     {
 #ifdef LOG_ENABLED
         DBGFR3InfoLog(pVM, "cpumguest", "Trap in patch code");
-        DBGFR3DisasInstrCurrentLog(pVM, "Patch code");
+        DBGFR3DisasInstrCurrentLog(pVCpu, "Patch code");
 
         DISCPUSTATE Cpu;
         int         rc;
@@ -2048,7 +2048,7 @@ int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
 #ifdef LOG_ENABLED
                 DBGFR3InfoLog(pVM, "cpumguest", "PRIV");
 #endif
-                DBGFR3DisasInstrCurrentLog(pVM, "Patched privileged instruction");
+                DBGFR3DisasInstrCurrentLog(pVCpu, "Patched privileged instruction");
                 return VINF_SUCCESS;
             }
         }
@@ -2058,7 +2058,7 @@ int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
     if (!PATMIsPatchGCAddr(pVM, pCtx->eip))
     {
         DBGFR3InfoLog(pVM, "cpumguest", "PRIV");
-        DBGFR3DisasInstrCurrentLog(pVM, "Privileged instr: ");
+        DBGFR3DisasInstrCurrentLog(pVCpu, "Privileged instr: ");
     }
 #endif
 
@@ -2200,7 +2200,7 @@ int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
                     if (PATMIsPatchGCAddr(pVM, pCtx->eip))
                     {
                         DBGFR3InfoLog(pVM, "cpumguest", "PRIV");
-                        DBGFR3DisasInstrCurrentLog(pVM, "Privileged instr: ");
+                        DBGFR3DisasInstrCurrentLog(pVCpu, "Privileged instr: ");
                     }
 #endif
 

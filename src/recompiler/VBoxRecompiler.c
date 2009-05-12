@@ -3615,7 +3615,7 @@ bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
      * Disassemble to log.
      */
     if (fLog)
-        rc = DBGFR3DisasInstrCurrentLogInternal(pVM, pszPrefix);
+        rc = DBGFR3DisasInstrCurrentLogInternal(env->pVCpu, pszPrefix);
 
     return RT_SUCCESS(rc);
 }
