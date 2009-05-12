@@ -294,23 +294,23 @@ VMMR3DECL(int) PDMR3CritSectDelete(PPDMCRITSECT pCritSect)
 /**
  * Process the critical sections queued for ring-3 'leave'.
  *
- * @param   pVM         The VM handle.
+ * @param   pVCpu         The VMCPU handle.
  */
-VMMR3DECL(void) PDMR3CritSectFF(PVM pVM)
+VMMR3DECL(void) PDMR3CritSectFF(PVMCPU pVCpu)
 {
-    Assert(pVM->pdm.s.cQueuedCritSectLeaves > 0);
+    Assert(pVCpu->pdm.s.cQueuedCritSectLeaves > 0);
 
-    const RTUINT c = pVM->pdm.s.cQueuedCritSectLeaves;
+    const RTUINT c = pVCpu->pdm.s.cQueuedCritSectLeaves;
     for (RTUINT i = 0; i < c; i++)
     {
-        PPDMCRITSECT pCritSect = pVM->pdm.s.apQueuedCritSectsLeaves[i];
+        PPDMCRITSECT pCritSect = pVCpu->pdm.s.apQueuedCritSectsLeaves[i];
         int rc = RTCritSectLeave(&pCritSect->s.Core);
         LogFlow(("PDMR3CritSectFF: %p - %Rrc\n", pCritSect, rc));
         AssertRC(rc);
     }
 
-    pVM->pdm.s.cQueuedCritSectLeaves = 0;
-    VM_FF_CLEAR(pVM, VM_FF_PDM_CRITSECT);
+    pVCpu->pdm.s.cQueuedCritSectLeaves = 0;
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_PDM_CRITSECT);
 }
 
 

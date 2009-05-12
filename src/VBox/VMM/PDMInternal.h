@@ -796,6 +796,21 @@ typedef struct PDMASYNCCOMPLETIONTEMPLATE *PPDMASYNCCOMPLETIONTEMPLATE;
 /** Pointer to the main PDM Async completion structure. */
 typedef struct PDMASYNCCOMPLETIONMANAGER *PPDMASYNCCOMPLETIONMANAGER;
 
+
+/**
+ * PDM VMCPU Instance data.
+ * Changes to this must checked against the padding of the cfgm union in VMCPU!
+ */
+typedef struct PDMCPU
+{
+    /** The number of entries in the apQueuedCritSectsLeaves table that's currnetly in use. */
+    RTUINT                          cQueuedCritSectLeaves;
+    RTUINT                          uPadding0; /**< Alignment padding.*/
+    /** Critical sections queued in RC/R0 because of contention preventing leave to complete. (R3 Ptrs)
+     * We will return to Ring-3 ASAP, so this queue doesn't have to be very long. */
+    R3PTRTYPE(PPDMCRITSECT)         apQueuedCritSectsLeaves[8];
+} PDMCPU;
+
 /**
  * Converts a PDM pointer into a VM pointer.
  * @returns Pointer to the VM structure the PDM is part of.
@@ -849,11 +864,7 @@ typedef struct PDM
     /** Queue in which devhlp tasks are queued for R3 execution - RC Ptr. */
     RCPTRTYPE(PPDMQUEUE)            pDevHlpQueueRC;
 
-    /** The number of entries in the apQueuedCritSectsLeaves table that's currnetly in use. */
-    RTUINT                          cQueuedCritSectLeaves;
-    /** Critical sections queued in RC/R0 because of contention preventing leave to complete. (R3 Ptrs)
-     * We will return to Ring-3 ASAP, so this queue doesn't have to be very long. */
-    R3PTRTYPE(PPDMCRITSECT)         apQueuedCritSectsLeaves[8];
+    RTUINT                          uPadding1; /**< Alignment padding. */
 
     /** Linked list of timer driven PDM queues. */
     R3PTRTYPE(struct PDMQUEUE *)    pQueuesTimer;
@@ -866,7 +877,7 @@ typedef struct PDM
      * Only touched by EMT. */
     RCPTRTYPE(struct PDMQUEUE *)    pQueueFlushRC;
 #if HC_ARCH_BITS == 64
-    RTRCPTR                         padding0;
+    RTRCPTR                         uPadding2;
 #endif
 
     /** Head of the PDM Thread list. (singly linked) */
