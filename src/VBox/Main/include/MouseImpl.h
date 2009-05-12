@@ -105,6 +105,8 @@ private:
     struct DRVMAINMOUSE    *mpDrv;
 
     LONG uHostCaps;
+    uint32_t mLastAbsX;
+    uint32_t mLastAbsY;
 };
 
 #endif // ____H_MOUSEIMPL

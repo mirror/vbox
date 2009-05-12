@@ -58,6 +58,8 @@ DEFINE_EMPTY_CTOR_DTOR (Mouse)
 HRESULT Mouse::FinalConstruct()
 {
     mpDrv = NULL;
+    mLastAbsX = 0;
+    mLastAbsY = 0;
     return S_OK;
 }
 
@@ -314,8 +316,20 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz,
         if (buttonState & MouseButtonState_MiddleButton)
             fButtons |= PDMIMOUSEPORT_BUTTON_MIDDLE;
 
-        vrc = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, 1, 1, dz,
-                                          fButtons);
+        /* This is a workaround.  In order to alert the Guest Additions to the
+         * fact that the absolute pointer position has changed, we send a
+         * a minute movement event to the PS/2 mouse device.  But in order
+         * to avoid the mouse jiggling every time the use clicks, we check to
+         * see if the position has really changed since the last mouse event.
+         */
+        if ((mLastAbsX == mouseXAbs) && (mLastAbsY == mouseYAbs))
+            vrc = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, 0, 0, dz,
+                                              fButtons);
+        else
+            vrc = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, 1, 1, dz,
+                                              fButtons);
+        mLastAbsX = mouseXAbs;
+        mLastAbsY = mouseYAbs;
         if (RT_FAILURE (vrc))
             rc = setError (VBOX_E_IPRT_ERROR,
                 tr ("Could not send the mouse event to the virtual mouse (%Rrc)"),
