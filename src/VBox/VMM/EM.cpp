@@ -2743,7 +2743,7 @@ static int emR3RawForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * This function contains the raw-mode version of the inner
  * execution loop (the outer loop being in EMR3ExecuteVM()).
  *
- * @returns VBox status code. The most important ones are: ,
+ * @returns VBox status code. The most important ones are: VINF_EM_RESCHEDULE,
  *          VINF_EM_RESCHEDULE_REM, VINF_EM_SUSPEND, VINF_EM_RESET and VINF_EM_TERMINATE.
  *
  * @param   pVM         VM handle.
