@@ -848,6 +848,14 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                         else
                             RTPrintf(", disconnected\n");
                         break;
+                    case PortMode_RawFile:
+                        if (details == VMINFO_MACHINEREADABLE)
+                            RTPrintf("uartmode%d=\"%lS\"\n", currentUART + 1,
+                                     path.raw());
+                        else
+                            RTPrintf(", attached to raw file '%lS'\n",
+                                     path.raw());
+                        break;
                     case PortMode_HostPipe:
                         if (details == VMINFO_MACHINEREADABLE)
                             RTPrintf("uartmode%d=\"%s,%lS\"\n", currentUART + 1,

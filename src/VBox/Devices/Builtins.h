@@ -111,6 +111,7 @@ extern const PDMDRVREG g_DrvACPI;
 extern const PDMDRVREG g_DrvVUSBRootHub;
 extern const PDMDRVREG g_DrvChar;
 extern const PDMDRVREG g_DrvNamedPipe;
+extern const PDMDRVREG g_DrvRawFile;
 extern const PDMDRVREG g_DrvHostParallel;
 extern const PDMDRVREG g_DrvHostSerial;
 

@@ -203,7 +203,9 @@ HRESULT SerialPort::loadSettings (const settings::Key &aPortNode)
     mData->mIRQ = aPortNode.value <ULONG> ("IRQ");
     /* host mode (required) */
     const char *mode = aPortNode.stringValue ("hostMode");
-    if (strcmp (mode, "HostPipe") == 0)
+    if (strcmp (mode, "RawFile") == 0)
+        mData->mHostMode = PortMode_RawFile;
+    else if (strcmp (mode, "HostPipe") == 0)
         mData->mHostMode = PortMode_HostPipe;
     else if (strcmp (mode, "HostDevice") == 0)
         mData->mHostMode = PortMode_HostDevice;
@@ -259,6 +261,9 @@ HRESULT SerialPort::saveSettings (settings::Key &aPortNode)
             break;
         case PortMode_HostDevice:
             mode = "HostDevice";
+            break;
+        case PortMode_RawFile:
+            mode = "RawFile";
             break;
         default:
             ComAssertMsgFailedRet (("Invalid serial port mode: %d",
@@ -431,6 +436,13 @@ STDMETHODIMP SerialPort::COMSETTER(HostMode) (PortMode_T aHostMode)
     {
         switch (aHostMode)
         {
+            case PortMode_RawFile:
+                if (mData->mPath.isEmpty())
+                    return setError (E_INVALIDARG,
+                        tr ("Cannot set the raw file mode of the serial port %d "
+                            "because the file path is empty or null"),
+                        mData->mSlot);
+                break;
             case PortMode_HostPipe:
                 if (mData->mPath.isEmpty())
                     return setError (E_INVALIDARG,
@@ -610,7 +622,8 @@ HRESULT SerialPort::checkSetPath (CBSTR aPath)
     AssertReturn (isWriteLockOnCurrentThread(), E_FAIL);
 
     if ((mData->mHostMode == PortMode_HostDevice ||
-         mData->mHostMode == PortMode_HostPipe) &&
+         mData->mHostMode == PortMode_HostPipe ||
+         mData->mHostMode == PortMode_RawFile) &&
         (aPath == NULL || *aPath == '\0'))
         return setError (E_INVALIDARG,
             tr ("Path of the serial port %d may not be empty or null in "

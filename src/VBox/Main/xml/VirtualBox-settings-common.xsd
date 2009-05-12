@@ -246,6 +246,7 @@
 <xsd:simpleType name="TPortMode">
   <xsd:restriction base="xsd:string">
     <xsd:enumeration value="Disconnected"/>
+    <xsd:enumeration value="RawFile"/>
     <xsd:enumeration value="HostPipe"/>
     <xsd:enumeration value="HostDevice"/>
   </xsd:restriction>

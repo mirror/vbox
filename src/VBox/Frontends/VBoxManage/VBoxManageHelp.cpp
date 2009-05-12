@@ -180,6 +180,7 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--uartmode<1-N> disconnected|\n"
                  "                                             server <pipe>|\n"
                  "                                             client <pipe>|\n"
+                 "                                             file <file>|\n"
                  "                                             <devicename>]\n"
 #ifdef VBOX_WITH_MEM_BALLOONING
                  "                            [--guestmemoryballoon <balloonsize in MB>]\n"

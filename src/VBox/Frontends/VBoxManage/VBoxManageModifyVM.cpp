@@ -1731,6 +1731,10 @@ int handleModifyVM(HandlerArg *a)
                         CHECK_ERROR_RET(uart, COMSETTER(HostMode) (PortMode_HostPipe), 1);
                         CHECK_ERROR_RET(uart, COMSETTER(Server) (FALSE), 1);
                     }
+                    else if (!strcmp(uarts_mode[n], "file"))
+                    {
+                        CHECK_ERROR_RET(uart, COMSETTER(HostMode) (PortMode_RawFile), 1);
+                    }
                     else
                     {
                         CHECK_ERROR_RET(uart, COMSETTER(HostMode) (PortMode_HostDevice), 1);

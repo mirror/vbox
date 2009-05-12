@@ -332,9 +332,15 @@ static DECLCALLBACK(int) drvCharConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     if (!pThis->pDrvStream)
         return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_BELOW, RT_SRC_POS, N_("Char#%d has no stream interface below"), pDrvIns->iInstance);
 
-    rc = RTThreadCreate(&pThis->ReceiveThread, drvCharReceiveLoop, (void *)pThis, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "CharRecv");
-    if (RT_FAILURE(rc))
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("Char#%d cannot create receive thread"), pDrvIns->iInstance);
+    /* 
+     * Don't start the receive thread if the driver doesn't support reading
+     */
+    if (pThis->pDrvStream->pfnRead)
+    {
+        rc = RTThreadCreate(&pThis->ReceiveThread, drvCharReceiveLoop, (void *)pThis, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "CharRecv");
+        if (RT_FAILURE(rc))
+            return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("Char#%d cannot create receive thread"), pDrvIns->iInstance);
+    }
 
     rc = RTSemEventCreate(&pThis->SendSem);
     AssertRC(rc);
