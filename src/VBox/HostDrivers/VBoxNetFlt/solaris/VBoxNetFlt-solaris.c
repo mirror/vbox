@@ -1456,8 +1456,8 @@ static int vboxNetFltSolarisAttachReq(ldi_handle_t hDevice, int PPA)
                 }
                 else                                            /* Garbled reply */
                 {
-                    LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachReq ldi_getmsg succeeded, but invalid op. expected %s recvd %s\n",
-                        dl_primstr(DL_OK_ACK), dl_primstr(AckPrim)));
+                    LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachReq ldi_getmsg succeeded, but invalid op. expected %d recvd %d\n",
+                        DL_OK_ACK, AckPrim));
                     rc = VERR_INVALID_FUNCTION;
                 }
             }
