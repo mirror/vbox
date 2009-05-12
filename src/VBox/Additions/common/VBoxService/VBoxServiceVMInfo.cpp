@@ -30,7 +30,13 @@
 #include <windows.h>
 #include <Ntsecapi.h>
 #else
+#define __STDC_LIMIT_MACROS
+# include <arpa/inet.h>
 # include <errno.h>
+# include <net/if.h>
+# include <netinet/in.h>
+# include <sys/ioctl.h>
+# include <sys/socket.h>
 # include <unistd.h>
 # include <utmp.h>
 #endif
@@ -233,6 +239,7 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
             if (   (ut_user->ut_type == USER_PROCESS)
                 && (strstr(szUserList, ut_user->ut_user) == NULL))
             {
+                /** @todo Do we really want to filter out double user names? (Same user logged in twice) */
                 if (uiUserCount > 0)
                     strcat(szUserList, ",");
                 strcat(szUserList, ut_user->ut_user);
@@ -259,9 +266,10 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
 
         /* Get network configuration. */
         /** @todo Throw this code into a separate function/module? */
+       int nNumInterfaces = 0;
 #ifdef RT_OS_WINDOWS
         SOCKET sd = WSASocket(AF_INET, SOCK_DGRAM, 0, 0, 0, 0);
-        if (sd == SOCKET_ERROR)
+        if (sd == SOCKET_ERROR) /* Socket invalid. */
         {
             VBoxServiceError("Failed to get a socket: Error %d\n", WSAGetLastError());
             return -1;
@@ -279,40 +287,92 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
                      0,
                      0) ==  SOCKET_ERROR)
         {
-            VBoxServiceError("Failed calling WSAIoctl: Error: %d\n", WSAGetLastError());
+            VBoxServiceError("Failed to WSAIoctl() on socket: Error: %d\n", WSAGetLastError());
             return -1;
         }
-
-        char szPropPath [_MAX_PATH] = {0};
-        char szTemp [_MAX_PATH] = {0};
-        int nNumInterfaces = nBytesReturned / sizeof(INTERFACE_INFO);
+        nNumInterfaces = nBytesReturned / sizeof(INTERFACE_INFO);
+#else
+        int sd = socket(AF_INET, SOCK_DGRAM, 0);
+    	if (sd < 0) /* Socket invalid. */
+    	{
+    	    VBoxServiceError("Failed to get a socket: Error %d\n", errno);
+            return -1;
+        }
+        
+        ifconf ifcfg;
+        char buffer[1024] = {0};
+        ifcfg.ifc_len = sizeof(buffer);
+    	ifcfg.ifc_buf = buffer;
+    	if (ioctl(sd, SIOCGIFCONF, &ifcfg) < 0)
+	    {
+	    	VBoxServiceError("Failed to ioctl(SIOCGIFCONF) on socket: Error %d\n", errno);
+	    	return -1;
+    	}
+    	
+    	ifreq* ifrequest = ifcfg.ifc_req;
+    	ifreq *ifreqitem = NULL;
+    	nNumInterfaces = ifcfg.ifc_len / sizeof(ifreq);
+#endif
+        char szPropPath [FILENAME_MAX] = {0};
+        char szTemp [FILENAME_MAX] = {0};
         int iCurIface = 0;
 
         RTStrPrintf(szPropPath, sizeof(szPropPath), "GuestInfo/Net/Count");
         VboxServiceWritePropInt(g_VMInfoGuestPropSvcClientID, szPropPath, (nNumInterfaces > 1 ? nNumInterfaces-1 : 0));
 
         /** @todo Use GetAdaptersInfo() and GetAdapterAddresses (IPv4 + IPv6) for more information. */
-
         for (int i = 0; i < nNumInterfaces; ++i)
         {
-            if (InterfaceList[i].iiFlags & IFF_LOOPBACK)    /* Skip loopback device. */
-                continue;
-
             sockaddr_in *pAddress;
-            pAddress = (sockaddr_in *) & (InterfaceList[i].iiAddress);
+            u_long nFlags = 0;
+#ifdef RT_OS_WINDOWS        
+            if (InterfaceList[i].iiFlags & IFF_LOOPBACK) /* Skip loopback device. */
+                continue;
+            nFlags = InterfaceList[i].iiFlags;
+            pAddress = (sockaddr_in *)&(InterfaceList[i].iiAddress);
+#else
+            if (ioctl(sd, SIOCGIFFLAGS, &ifrequest[i]) < 0)
+            {
+            	VBoxServiceError("Failed to ioctl(SIOCGIFFLAGS) on socket: Error %d\n", errno);
+            	return -1;
+            }
+            if (ifrequest[i].ifr_flags & IFF_LOOPBACK) /* Skip loopback device. */
+                continue;
+            nFlags = ifrequest[i].ifr_flags;
+            pAddress = ((sockaddr_in *)&ifrequest[i].ifr_addr);
+#endif
+            Assert(pAddress);
             RTStrPrintf(szPropPath, sizeof(szPropPath), "GuestInfo/Net/%d/V4/IP", iCurIface);
             VboxServiceWriteProp(g_VMInfoGuestPropSvcClientID, szPropPath, inet_ntoa(pAddress->sin_addr));
 
+#ifdef RT_OS_WINDOWS
             pAddress = (sockaddr_in *) & (InterfaceList[i].iiBroadcastAddress);
+#else
+            if (ioctl(sd, SIOCGIFBRDADDR, &ifrequest[i]) < 0)
+            {
+                VBoxServiceError("Failed to ioctl(SIOCGIFBRDADDR) on socket: Error %d\n", errno);
+        	    return -1;
+            }
+            pAddress = (sockaddr_in *)&ifrequest[i].ifr_broadaddr;
+#endif
             RTStrPrintf(szPropPath, sizeof(szPropPath), "GuestInfo/Net/%d/V4/Broadcast", iCurIface);
             VboxServiceWriteProp(g_VMInfoGuestPropSvcClientID, szPropPath, inet_ntoa(pAddress->sin_addr));
 
-            pAddress = (sockaddr_in *) & (InterfaceList[i].iiNetmask);
+#ifdef RT_OS_WINDOWS
+            pAddress = (sockaddr_in *)&(InterfaceList[i].iiNetmask);
+#else
+            if (ioctl(sd, SIOCGIFNETMASK, &ifrequest[i]) < 0)
+            {
+                VBoxServiceError("Failed to ioctl(SIOCGIFBRDADDR) on socket: Error %d\n", errno);
+        	    return -1;
+            }
+            pAddress = (sockaddr_in *)&ifrequest[i].ifr_netmask;
+#endif
             RTStrPrintf(szPropPath, sizeof(szPropPath), "GuestInfo/Net/%d/V4/Netmask", iCurIface);
             VboxServiceWriteProp(g_VMInfoGuestPropSvcClientID, szPropPath, inet_ntoa(pAddress->sin_addr));
-
-            u_long nFlags = InterfaceList[i].iiFlags;
-            if (nFlags & IFF_UP)
+            
+          
+             if (nFlags & IFF_UP)
                 RTStrPrintf(szTemp, sizeof(szTemp), "Up");
             else
                 RTStrPrintf(szTemp, sizeof(szTemp), "Down");
@@ -322,8 +382,10 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
 
             iCurIface++;
         }
-
-        closesocket(sd);
+#ifdef RT_OS_WINDOWS
+        if (sd) closesocket(sd);
+#else        
+        if (sd) close(sd);
 #endif /* !RT_OS_WINDOWS */
 
         /*
