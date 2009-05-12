@@ -744,7 +744,7 @@ snapshot-ose:
 #
 # Generate VirtualBox-x.x.x.tar.bz2 (PUEL) zip archives for internal use only
 # - includes kBuild
-# - must be executed on an OSE checkout
+# - must be executed on an PUEL checkout
 #
 
 # the path where to store the zip archive
