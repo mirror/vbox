@@ -95,12 +95,13 @@ VMMDECL(uint64_t) TMRealGetFreq(PVM pVM);
  * @{
  */
 VMMDECL(uint64_t) TMVirtualGet(PVM pVM);
-VMMDECL(uint64_t) TMVirtualGetEx(PVM pVM, bool fCheckTimers);
+VMMDECL(uint64_t) TMVirtualGetNoCheck(PVM pVM);
 VMMDECL(uint64_t) TMVirtualSyncGetLag(PVM pVM);
 VMMDECL(uint32_t) TMVirtualSyncGetCatchUpPct(PVM pVM);
 VMMDECL(uint64_t) TMVirtualGetFreq(PVM pVM);
-VMMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers);
 VMMDECL(uint64_t) TMVirtualSyncGet(PVM pVM);
+VMMDECL(uint64_t) TMVirtualSyncGetNoCheck(PVM pVM);
+VMMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers);
 VMMDECL(int)      TMVirtualResume(PVM pVM);
 VMMDECL(int)      TMVirtualPause(PVM pVM);
 VMMDECL(uint64_t) TMVirtualToNano(PVM pVM, uint64_t u64VirtualTicks);
@@ -198,8 +199,8 @@ VMMDECL(uint64_t) TMTimerFromMicro(PTMTIMER pTimer, uint64_t u64MicroTS);
 VMMDECL(uint64_t) TMTimerFromMilli(PTMTIMER pTimer, uint64_t u64MilliTS);
 VMMDECL(int)      TMTimerStop(PTMTIMER pTimer);
 VMMDECL(bool)     TMTimerIsActive(PTMTIMER pTimer);
-VMMDECL(uint64_t) TMTimerPoll(PVM pVM);
-VMMDECL(uint64_t) TMTimerPollGIP(PVM pVM, uint64_t *pu64Delta);
+VMMDECL(uint64_t) TMTimerPoll(PVM pVM, PVMCPU pVCpu);
+VMMDECL(uint64_t) TMTimerPollGIP(PVM pVM, PVMCPU pVCpu, uint64_t *pu64Delta);
 
 /** @} */
 

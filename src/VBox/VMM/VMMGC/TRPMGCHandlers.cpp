@@ -156,8 +156,9 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
     {
         if (!(++s_iTimerPoll & 0xf))
         {
-            uint64_t cTicks = TMTimerPoll(pVM); NOREF(cTicks);
-            Log2(("TMTimerPoll at %08RX32 returned %RX64 (VM_FF_TIMER=%d)\n", pRegFrame->eip, cTicks, VM_FF_ISPENDING(pVM, VM_FF_TIMER)));
+            uint64_t cTicks = TMTimerPoll(pVM, pVCpu); NOREF(cTicks);
+            Log2(("TMTimerPoll at %08RX32 returned %RX64 (VM_FF_TM_VIRTUAL_SYNC=%d VM_FF_TM_VIRTUAL_SYNC=%d)\n", pRegFrame->eip, cTicks,
+                  VM_FF_ISPENDING(pVM, VM_FF_TM_VIRTUAL_SYNC), VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TIMER)));
         }
     }
     else
@@ -184,8 +185,8 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
      * Or pending (A)PIC interrupt? Windows XP will crash if we delay APIC interrupts.
      */
     if (    rc == VINF_SUCCESS
-        &&  (   VM_FF_ISPENDING(pVM, VM_FF_TIMER | VM_FF_REQUEST | VM_FF_PGM_NO_MEMORY)
-             || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TO_R3 | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_REQUEST | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL)
+        &&  (   VM_FF_ISPENDING(pVM, VM_FF_TM_VIRTUAL_SYNC | VM_FF_REQUEST | VM_FF_PGM_NO_MEMORY)
+             || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TIMER | VMCPU_FF_TO_R3 | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_REQUEST | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL)
             )
        )
     {
@@ -199,8 +200,11 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
             rc = VINF_EM_RAW_TO_R3;
         }
         /* Pending timer action. */
-        else if (VM_FF_ISPENDING(pVM, VM_FF_TIMER))
+        else if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TIMER))
             rc = VINF_EM_RAW_TIMER_PENDING;
+        /* The Virtual Sync clock has stopped. */
+        else if (VM_FF_ISPENDING(pVM, VM_FF_TM_VIRTUAL_SYNC))
+            rc = VINF_EM_RAW_TO_R3;
         /* Pending interrupt: dispatch it. */
         else if (    VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
                  && !VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)

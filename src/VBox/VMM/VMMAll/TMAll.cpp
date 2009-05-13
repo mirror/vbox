@@ -187,14 +187,20 @@ DECLINLINE(void) tmSchedule(PTMTIMER pTimer)
         STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatScheduleOne), a);
         tmUnlock(pVM);
     }
-    else if (!VM_FF_ISSET(pVM, VM_FF_TIMER))  /**@todo only do this when arming the timer. */
+    else
     {
-        STAM_COUNTER_INC(&pVM->tm.s.StatScheduleSetFF);
-        VM_FF_SET(pVM, VM_FF_TIMER);
+        /** @todo FIXME: don't use FF for scheduling! */
+        PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
+        if (!VMCPU_FF_ISSET(pVCpuDst, VMCPU_FF_TIMER))  /**@todo only do this when arming the timer. */
+        {
+            Log5(("TMAll(%u): FF: 0 -> 1\n", __LINE__));
+            VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
 #ifdef IN_RING3
-        REMR3NotifyTimerPending(pVM);
-        VMR3NotifyGlobalFFU(pVM->pUVM, VMNOTIFYFF_FLAGS_DONE_REM);
+            REMR3NotifyTimerPending(pVM, pVCpuDst);
+            VMR3NotifyCpuFFU(pVCpuDst->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM);
 #endif
+            STAM_COUNTER_INC(&pVM->tm.s.StatScheduleSetFF);
+        }
     }
 }
 
@@ -267,37 +273,47 @@ DECLINLINE(bool) tmTimerTryWithLink(PTMTIMER pTimer, TMTIMERSTATE enmStateNew, T
  *
  * This function is called before FFs are checked in the inner execution EM loops.
  *
- * @returns Virtual timer ticks to the next event.
+ * @returns Virtual timer ticks to the next event. (I.e. 0 means that an timer
+ *          has expired or some important rescheduling is pending.)
  * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVCpu       Pointer to the shared VMCPU structure of the caller.
  * @thread  The emulation thread.
  */
-VMMDECL(uint64_t) TMTimerPoll(PVM pVM)
+VMMDECL(uint64_t) TMTimerPoll(PVM pVM, PVMCPU pVCpu)
 {
-    int rc = tmLock(pVM); /* play safe for now */
+    static const uint64_t   s_u64OtherRet = 500000000; /* 500 ms for non-timer EMTs. */
+    PVMCPU  pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
+    STAM_COUNTER_INC(&pVM->tm.s.StatPoll);
 
     /*
-     * Return straight away if the timer FF is already set.
+     * Return straight away if the timer FF is already set ...
      */
-    if (VM_FF_ISSET(pVM, VM_FF_TIMER))
+    if (VMCPU_FF_ISSET(pVCpuDst, VMCPU_FF_TIMER))
     {
         STAM_COUNTER_INC(&pVM->tm.s.StatPollAlreadySet);
-#ifndef IN_RING3
-        if (RT_SUCCESS(rc))
-#endif
-            tmUnlock(pVM);
-        return 0;
+        return pVCpu == pVCpuDst ? 0 : s_u64OtherRet;
+    }
+
+    /*
+     * ... or if timers are being run.
+     */
+    if (pVM->tm.s.fRunningQueues)
+    {
+        STAM_COUNTER_INC(&pVM->tm.s.StatPollRunning);
+        return s_u64OtherRet;
     }
 
     /*
      * Get current time and check the expire times of the two relevant queues.
      */
-    const uint64_t u64Now = TMVirtualGet(pVM);
+    int             rc     = tmLock(pVM); /** @todo FIXME: Stop playing safe here... */
+    const uint64_t  u64Now = TMVirtualGetNoCheck(pVM);
 
     /*
      * TMCLOCK_VIRTUAL
      */
-    const uint64_t u64Expire1 = pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire;
-    const int64_t i64Delta1 = u64Expire1 - u64Now;
+    const uint64_t  u64Expire1 = pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire;
+    const int64_t   i64Delta1  = u64Expire1 - u64Now;
     if (i64Delta1 <= 0)
     {
         STAM_COUNTER_INC(&pVM->tm.s.StatPollVirtual);
@@ -306,11 +322,12 @@ VMMDECL(uint64_t) TMTimerPoll(PVM pVM)
         if (RT_SUCCESS(rc))
 #endif
             tmUnlock(pVM);
-        VM_FF_SET(pVM, VM_FF_TIMER);
+        Log5(("TMAll(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_ISPENDING(pVCpuDst, VMCPU_FF_TIMER)));
+        VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
 #ifdef IN_RING3
-        REMR3NotifyTimerPending(pVM);
+        REMR3NotifyTimerPending(pVM, pVCpuDst);
 #endif
-        return 0;
+        return pVCpu == pVCpuDst ? 0 : s_u64OtherRet;
     }
 
     /*
@@ -344,17 +361,22 @@ VMMDECL(uint64_t) TMTimerPoll(PVM pVM)
     int64_t i64Delta2 = u64Expire2 - u64VirtualSyncNow;
     if (i64Delta2 <= 0)
     {
+        if (    !pVM->tm.s.fRunningQueues
+            &&  !VMCPU_FF_ISSET(pVCpuDst, VMCPU_FF_TIMER))
+        {
+            Log5(("TMAll(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_ISPENDING(pVCpuDst, VMCPU_FF_TIMER)));
+            VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
+#ifdef IN_RING3
+            REMR3NotifyTimerPending(pVM, pVCpuDst);
+#endif
+        }
         STAM_COUNTER_INC(&pVM->tm.s.StatPollVirtualSync);
 #ifndef IN_RING3
         if (RT_SUCCESS(rc))
 #endif
             tmUnlock(pVM);
         LogFlow(("TMTimerPoll: expire2=%RU64 <= now=%RU64\n", u64Expire2, u64Now));
-        VM_FF_SET(pVM, VM_FF_TIMER);
-#ifdef IN_RING3
-        REMR3NotifyTimerPending(pVM);
-#endif
-        return 0;
+        return pVCpu == pVCpuDst ? 0 : s_u64OtherRet;
     }
     if (pVM->tm.s.fVirtualSyncCatchUp)
         i64Delta2 = ASMMultU64ByU32DivByU32(i64Delta2, 100, pVM->tm.s.u32VirtualSyncCatchUpPercentage + 100);
@@ -379,56 +401,73 @@ VMMDECL(uint64_t) TMTimerPoll(PVM pVM)
  * @returns The GIP timestamp of the next event.
  *          0 if the next event has already expired.
  * @param   pVM         Pointer to the shared VM structure.
- * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVCpu       Pointer to the shared VMCPU structure of the caller.
  * @param   pu64Delta   Where to store the delta.
  * @thread  The emulation thread.
  */
-VMMDECL(uint64_t) TMTimerPollGIP(PVM pVM, uint64_t *pu64Delta)
+VMMDECL(uint64_t) TMTimerPollGIP(PVM pVM, PVMCPU pVCpu, uint64_t *pu64Delta)
 {
-    int rc = tmLock(pVM); /* play safe for now. */
+    static const uint64_t   s_u64OtherRet = 500000000; /* 500 million GIP ticks for non-timer EMTs. */
+    PVMCPU                  pVCpuDst      = &pVM->aCpus[pVM->tm.s.idTimerCpu];
+    const uint64_t          u64Now        = TMVirtualGetNoCheck(pVM);
+    STAM_COUNTER_INC(&pVM->tm.s.StatPollGIP);
 
     /*
-     * Return straight away if the timer FF is already set.
+     * Return straight away if the timer FF is already set ...
      */
-    if (VM_FF_ISSET(pVM, VM_FF_TIMER))
+    if (VMCPU_FF_ISSET(pVCpuDst, VMCPU_FF_TIMER))
     {
-        STAM_COUNTER_INC(&pVM->tm.s.StatPollAlreadySet);
-#ifndef IN_RING3
-        if (RT_SUCCESS(rc))
-#endif
-            tmUnlock(pVM);
-        *pu64Delta = 0;
-        return 0;
+        STAM_COUNTER_INC(&pVM->tm.s.StatPollGIPAlreadySet);
+        if (pVCpuDst == pVCpu)
+        {
+            *pu64Delta = 0;
+            return 0;
+        }
+        *pu64Delta = s_u64OtherRet;
+        return u64Now + pVM->tm.s.u64VirtualOffset + s_u64OtherRet;
     }
 
     /*
-     * Get current time and check the expire times of the two relevant queues.
+     * ... or if timers are being run.
      */
-    const uint64_t  u64Now = TMVirtualGet(pVM);
+    if (pVM->tm.s.fRunningQueues)
+    {
+        STAM_COUNTER_INC(&pVM->tm.s.StatPollGIPRunning);
+        *pu64Delta = s_u64OtherRet;
+        return u64Now + pVM->tm.s.u64VirtualOffset + s_u64OtherRet;
+    }
+
+    int rc = tmLock(pVM); /** @todo FIXME: Stop playin safe... */
 
     /*
-     * TMCLOCK_VIRTUAL
+     * Check for TMCLOCK_VIRTUAL expiration.
      */
     const uint64_t  u64Expire1 = pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire;
     const int64_t   i64Delta1  = u64Expire1 - u64Now;
     if (i64Delta1 <= 0)
     {
-        STAM_COUNTER_INC(&pVM->tm.s.StatPollVirtual);
+        STAM_COUNTER_INC(&pVM->tm.s.StatPollGIPVirtual);
+        Log5(("TMAll(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_ISPENDING(pVCpuDst, VMCPU_FF_TIMER)));
+        VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
+#ifdef IN_RING3
+        REMR3NotifyTimerPending(pVM, pVCpuDst);
+#endif
 #ifndef IN_RING3
         if (RT_SUCCESS(rc))
 #endif
             tmUnlock(pVM);
         LogFlow(("TMTimerPoll: expire1=%RU64 <= now=%RU64\n", u64Expire1, u64Now));
-        VM_FF_SET(pVM, VM_FF_TIMER);
-#ifdef IN_RING3
-        REMR3NotifyTimerPending(pVM);
-#endif
-        *pu64Delta = 0;
-        return 0;
+        if (pVCpuDst == pVCpu)
+        {
+            *pu64Delta = 0;
+            return 0;
+        }
+        *pu64Delta = s_u64OtherRet;
+        return u64Now + pVM->tm.s.u64VirtualOffset + s_u64OtherRet;
     }
 
     /*
-     * TMCLOCK_VIRTUAL_SYNC
+     * Check for TMCLOCK_VIRTUAL_SYNC expiration.
      * This isn't quite as stright forward if in a catch-up, not only do
      * we have to adjust the 'now' but when have to adjust the delta as well.
      */
@@ -459,38 +498,56 @@ VMMDECL(uint64_t) TMTimerPollGIP(PVM pVM, uint64_t *pu64Delta)
     int64_t i64Delta2 = u64Expire2 - u64VirtualSyncNow;
     if (i64Delta2 <= 0)
     {
-        STAM_COUNTER_INC(&pVM->tm.s.StatPollVirtualSync);
+        if (!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TIMER))
+        {
+            Log5(("TMAll(%u): FF: 0 -> 1\n", __LINE__));
+            VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER /** @todo poke */);
+#ifdef IN_RING3
+            REMR3NotifyTimerPending(pVM, pVCpuDst);
+#endif
+        }
+        STAM_COUNTER_INC(&pVM->tm.s.StatPollGIPVirtualSync);
+
 #ifndef IN_RING3
         if (RT_SUCCESS(rc))
 #endif
             tmUnlock(pVM);
         LogFlow(("TMTimerPoll: expire2=%RU64 <= now=%RU64\n", u64Expire2, u64Now));
-        VM_FF_SET(pVM, VM_FF_TIMER);
-#ifdef IN_RING3
-        REMR3NotifyTimerPending(pVM);
-#endif
-        *pu64Delta = 0;
-        return 0;
+        if (pVCpuDst == pVCpu)
+        {
+            *pu64Delta = 0;
+            return 0;
+        }
+        *pu64Delta = s_u64OtherRet;
+        return u64Now + pVM->tm.s.u64VirtualOffset + s_u64OtherRet;
     }
     if (pVM->tm.s.fVirtualSyncCatchUp)
         i64Delta2 = ASMMultU64ByU32DivByU32(i64Delta2, 100, pVM->tm.s.u32VirtualSyncCatchUpPercentage + 100);
 
-    /*
-     * Return the GIP time of the next event.
-     * This is the reverse of what tmVirtualGetRaw is doing.
-     */
-    STAM_COUNTER_INC(&pVM->tm.s.StatPollMiss);
-    uint64_t u64GipTime = RT_MIN(i64Delta1, i64Delta2);
-    *pu64Delta = u64GipTime;
-    u64GipTime += u64Now + pVM->tm.s.u64VirtualOffset;
-    if (RT_UNLIKELY(!pVM->tm.s.fVirtualWarpDrive))
+    uint64_t u64GipTime;
+    if (pVCpuDst == pVCpu)
     {
-        u64GipTime -= pVM->tm.s.u64VirtualWarpDriveStart; /* the start is GIP time. */
-        u64GipTime *= 100;
-        u64GipTime /= pVM->tm.s.u32VirtualWarpDrivePercentage;
-        u64GipTime += pVM->tm.s.u64VirtualWarpDriveStart;
+        /*
+         * Return the GIP time of the next event.
+         * This is the reverse of what tmVirtualGetRaw is doing.
+         */
+        STAM_COUNTER_INC(&pVM->tm.s.StatPollGIPMiss);
+        u64GipTime = RT_MIN(i64Delta1, i64Delta2);
+        *pu64Delta = u64GipTime;
+        u64GipTime += u64Now + pVM->tm.s.u64VirtualOffset;
+        if (RT_UNLIKELY(!pVM->tm.s.fVirtualWarpDrive))
+        {
+            u64GipTime -= pVM->tm.s.u64VirtualWarpDriveStart; /* the start is GIP time. */
+            u64GipTime *= 100;
+            u64GipTime /= pVM->tm.s.u32VirtualWarpDrivePercentage;
+            u64GipTime += pVM->tm.s.u64VirtualWarpDriveStart;
+        }
     }
-
+    else
+    {
+        *pu64Delta = s_u64OtherRet;
+        u64GipTime = u64Now + pVM->tm.s.u64VirtualOffset + s_u64OtherRet;
+    }
 #ifndef IN_RING3
     if (RT_SUCCESS(rc))
 #endif

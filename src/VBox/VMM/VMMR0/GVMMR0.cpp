@@ -1661,6 +1661,7 @@ GVMMR0DECL(int) GVMMR0SchedWakeUpEx(PVM pVM, VMCPUID idCpu, bool fTakeUsedLock)
     return rc;
 }
 
+
 /**
  * Wakes up the halted EMT thread so it can service a pending request.
  *

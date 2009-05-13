@@ -112,7 +112,7 @@ VMMR3DECL(int) PATMR3Init(PVM pVM)
     Log(("PATMR3Init: Patch record size %d\n", sizeof(PATCHINFO)));
 
     /* These values can't change as they are hardcoded in patch code (old saved states!) */
-    AssertCompile(VM_FF_TIMER   == VMCPU_FF_TIMER);
+    AssertCompile(VMCPU_FF_TIMER == RT_BIT_32(2));
     AssertCompile(VM_FF_REQUEST == VMCPU_FF_REQUEST);
     AssertCompile(VMCPU_FF_INTERRUPT_APIC == RT_BIT_32(0));
     AssertCompile(VMCPU_FF_INTERRUPT_PIC == RT_BIT_32(1));

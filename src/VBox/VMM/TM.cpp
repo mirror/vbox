@@ -198,6 +198,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     pVM->tm.s.paTimerQueuesRC = MMHyperR3ToRC(pVM, pv);
 
     pVM->tm.s.offVM = RT_OFFSETOF(VM, tm.s);
+    pVM->tm.s.idTimerCpu = pVM->cCPUs - 1; /* The last CPU. */
     pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL].enmClock        = TMCLOCK_VIRTUAL;
     pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL].u64Expire       = INT64_MAX;
     pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL_SYNC].enmClock   = TMCLOCK_VIRTUAL_SYNC;
@@ -206,6 +207,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     pVM->tm.s.paTimerQueuesR3[TMCLOCK_REAL].u64Expire          = INT64_MAX;
     pVM->tm.s.paTimerQueuesR3[TMCLOCK_TSC].enmClock            = TMCLOCK_TSC;
     pVM->tm.s.paTimerQueuesR3[TMCLOCK_TSC].u64Expire           = INT64_MAX;
+
 
     /*
      * We directly use the GIP to calculate the virtual time. We map the
@@ -550,10 +552,19 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->tm.s.StatDoQueuesSchedule,                STAMTYPE_PROFILE_ADV, "/TM/DoQueues/Schedule",           STAMUNIT_TICKS_PER_CALL, "The scheduling part.");
     STAM_REG(pVM, &pVM->tm.s.StatDoQueuesRun,                     STAMTYPE_PROFILE_ADV, "/TM/DoQueues/Run",                STAMUNIT_TICKS_PER_CALL, "The run part.");
 
-    STAM_REG(pVM, &pVM->tm.s.StatPollAlreadySet,                      STAMTYPE_COUNTER, "/TM/PollAlreadySet",                  STAMUNIT_OCCURENCES, "TMTimerPoll calls where the FF was already set.");
-    STAM_REG(pVM, &pVM->tm.s.StatPollVirtual,                         STAMTYPE_COUNTER, "/TM/PollHitsVirtual",                 STAMUNIT_OCCURENCES, "The number of times TMTimerPoll found an expired TMCLOCK_VIRTUAL queue.");
-    STAM_REG(pVM, &pVM->tm.s.StatPollVirtualSync,                     STAMTYPE_COUNTER, "/TM/PollHitsVirtualSync",             STAMUNIT_OCCURENCES, "The number of times TMTimerPoll found an expired TMCLOCK_VIRTUAL_SYNC queue.");
-    STAM_REG(pVM, &pVM->tm.s.StatPollMiss,                            STAMTYPE_COUNTER, "/TM/PollMiss",                        STAMUNIT_OCCURENCES, "TMTimerPoll calls where nothing had expired.");
+    STAM_REG(pVM, &pVM->tm.s.StatPoll,                                STAMTYPE_COUNTER, "/TM/Poll",                            STAMUNIT_OCCURENCES, "TMTimerPoll calls.");
+    STAM_REG(pVM, &pVM->tm.s.StatPollAlreadySet,                      STAMTYPE_COUNTER, "/TM/Poll/AlreadySet",                 STAMUNIT_OCCURENCES, "TMTimerPoll calls where the FF was already set.");
+    STAM_REG(pVM, &pVM->tm.s.StatPollVirtual,                         STAMTYPE_COUNTER, "/TM/Poll/HitsVirtual",                STAMUNIT_OCCURENCES, "The number of times TMTimerPoll found an expired TMCLOCK_VIRTUAL queue.");
+    STAM_REG(pVM, &pVM->tm.s.StatPollVirtualSync,                     STAMTYPE_COUNTER, "/TM/Poll/HitsVirtualSync",            STAMUNIT_OCCURENCES, "The number of times TMTimerPoll found an expired TMCLOCK_VIRTUAL_SYNC queue.");
+    STAM_REG(pVM, &pVM->tm.s.StatPollMiss,                            STAMTYPE_COUNTER, "/TM/Poll/Miss",                       STAMUNIT_OCCURENCES, "TMTimerPoll calls where nothing had expired.");
+    STAM_REG(pVM, &pVM->tm.s.StatPollRunning,                         STAMTYPE_COUNTER, "/TM/Poll/Running",                    STAMUNIT_OCCURENCES, "TMTimerPoll calls where the queues were being run.");
+
+    STAM_REG(pVM, &pVM->tm.s.StatPollGIP,                             STAMTYPE_COUNTER, "/TM/PollGIP",                         STAMUNIT_OCCURENCES, "TMTimerPollGIP calls.");
+    STAM_REG(pVM, &pVM->tm.s.StatPollGIPAlreadySet,                   STAMTYPE_COUNTER, "/TM/PollGIP/AlreadySet",              STAMUNIT_OCCURENCES, "TMTimerPollGIP calls where the FF was already set.");
+    STAM_REG(pVM, &pVM->tm.s.StatPollGIPVirtual,                      STAMTYPE_COUNTER, "/TM/PollGIP/HitsVirtual",             STAMUNIT_OCCURENCES, "The number of times TMTimerPollGIP found an expired TMCLOCK_VIRTUAL queue.");
+    STAM_REG(pVM, &pVM->tm.s.StatPollGIPVirtualSync,                  STAMTYPE_COUNTER, "/TM/PollGIP/HitsVirtualSync",         STAMUNIT_OCCURENCES, "The number of times TMTimerPollGIP found an expired TMCLOCK_VIRTUAL_SYNC queue.");
+    STAM_REG(pVM, &pVM->tm.s.StatPollGIPMiss,                         STAMTYPE_COUNTER, "/TM/PollGIP/Miss",                    STAMUNIT_OCCURENCES, "TMTimerPollGIP calls where nothing had expired.");
+    STAM_REG(pVM, &pVM->tm.s.StatPollGIPRunning,                      STAMTYPE_COUNTER, "/TM/PollGIP/Running",                 STAMUNIT_OCCURENCES, "TMTimerPollGIP calls where the queues were being run.");
 
     STAM_REG(pVM, &pVM->tm.s.StatPostponedR3,                         STAMTYPE_COUNTER, "/TM/PostponedR3",                     STAMUNIT_OCCURENCES, "Postponed due to unschedulable state, in ring-3.");
     STAM_REG(pVM, &pVM->tm.s.StatPostponedRZ,                         STAMTYPE_COUNTER, "/TM/PostponedRZ",                     STAMUNIT_OCCURENCES, "Postponed due to unschedulable state, in ring-0 / RC.");
@@ -939,8 +950,8 @@ VMMR3DECL(void) TMR3Reset(PVM pVM)
      */
     if (pVM->tm.s.fVirtualSyncCatchUp)
     {
-        const uint64_t offVirtualNow = TMVirtualGetEx(pVM, false /* don't check timers */);
-        const uint64_t offVirtualSyncNow = TMVirtualSyncGetEx(pVM, false /* don't check timers */);
+        const uint64_t offVirtualNow = TMVirtualGetNoCheck(pVM);
+        const uint64_t offVirtualSyncNow = TMVirtualSyncGetNoCheck(pVM);
         if (pVM->tm.s.fVirtualSyncCatchUp)
         {
             STAM_PROFILE_ADV_STOP(&pVM->tm.s.StatVirtualSyncCatchup, c);
@@ -964,7 +975,8 @@ VMMR3DECL(void) TMR3Reset(PVM pVM)
     tmTimerQueuesSanityChecks(pVM, "TMR3Reset");
 #endif
 
-    VM_FF_CLEAR(pVM, VM_FF_TIMER);
+    PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
+    VMCPU_FF_CLEAR(pVCpuDst, VMCPU_FF_TIMER); /** @todo FIXME: this isn't right. */
     tmUnlock(pVM);
 }
 
@@ -1137,7 +1149,8 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     /*
      * Make sure timers get rescheduled immediately.
      */
-    VM_FF_SET(pVM, VM_FF_TIMER);
+    PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
+    VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
 
     return VINF_SUCCESS;
 }
@@ -1603,7 +1616,7 @@ DECLINLINE(bool) tmR3AnyExpiredTimers(PVM pVM)
      * Combine the time calculation for the first two since we're not on EMT
      * TMVirtualSyncGet only permits EMT.
      */
-    uint64_t u64Now = TMVirtualGet(pVM);
+    uint64_t u64Now = TMVirtualGetNoCheck(pVM);
     if (pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire <= u64Now)
         return true;
     u64Now = pVM->tm.s.fVirtualSyncTicking
@@ -1637,26 +1650,31 @@ DECLINLINE(bool) tmR3AnyExpiredTimers(PVM pVM)
  */
 static DECLCALLBACK(void) tmR3TimerCallback(PRTTIMER pTimer, void *pvUser, uint64_t /*iTick*/)
 {
-    PVM pVM = (PVM)pvUser;
+    PVM     pVM      = (PVM)pvUser;
+    PVMCPU  pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
+
+RTLogFlush(NULL);
+
     AssertCompile(TMCLOCK_MAX == 4);
 #ifdef DEBUG_Sander /* very annoying, keep it private. */
-    if (VM_FF_ISSET(pVM, VM_FF_TIMER))
+    if (VMCPU_FF_ISSET(pVCpuDst, VMCPU_FF_TIMER))
         Log(("tmR3TimerCallback: timer event still pending!!\n"));
 #endif
-    if (    !VM_FF_ISSET(pVM, VM_FF_TIMER)
-        &&  (   pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL_SYNC].offSchedule
+    if (    !VMCPU_FF_ISSET(pVCpuDst, VMCPU_FF_TIMER)
+        &&  (   pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL_SYNC].offSchedule /** @todo FIXME - reconsider offSchedule as a reason for running the timer queues. */
             ||  pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL].offSchedule
             ||  pVM->tm.s.paTimerQueuesR3[TMCLOCK_REAL].offSchedule
             ||  pVM->tm.s.paTimerQueuesR3[TMCLOCK_TSC].offSchedule
             ||  tmR3AnyExpiredTimers(pVM)
             )
-        && !VM_FF_ISSET(pVM, VM_FF_TIMER)
+        && !VMCPU_FF_ISSET(pVCpuDst, VMCPU_FF_TIMER)
         && !pVM->tm.s.fRunningQueues
        )
     {
-        VM_FF_SET(pVM, VM_FF_TIMER);
-        REMR3NotifyTimerPending(pVM);
-        VMR3NotifyGlobalFFU(pVM->pUVM, VMNOTIFYFF_FLAGS_DONE_REM);
+        Log5(("TM(%u): FF: 0 -> 1\n", __LINE__));
+        VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
+        REMR3NotifyTimerPending(pVM, pVCpuDst);
+        VMR3NotifyCpuFFU(pVCpuDst->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM /** @todo | VMNOTIFYFF_FLAGS_POKE ?*/);
         STAM_COUNTER_INC(&pVM->tm.s.StatTimerCallbackSetFF);
     }
 }
@@ -1673,15 +1691,16 @@ static DECLCALLBACK(void) tmR3TimerCallback(PRTTIMER pTimer, void *pvUser, uint6
  */
 VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
 {
-    /** Note: temporarily restrict this to VCPU 0. */
-    if (VMMGetCpuId(pVM) != 0)
-        return;
-
     /*
-     * Only one EMT should be doing this at a time.
+     * Only the dedicated timer EMT should do stuff here.
+     *
+     * The lock isn't really necessary any longer, but it might come
+     * in handy when dealing VM_FF_TM_VIRTUAL_SYNC later.
      */
-    VM_FF_CLEAR(pVM, VM_FF_TIMER);
-    if (ASMBitTestAndSet(&pVM->tm.s.fRunningQueues, 0))
+    Assert(pVM->tm.s.idTimerCpu < pVM->cCPUs);
+    PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
+    if (    VMMGetCpu(pVM) != pVCpuDst
+        ||  ASMBitTestAndSet(&pVM->tm.s.fRunningQueues, 0))
     {
         Assert(pVM->cCPUs > 1);
         return;
@@ -1690,6 +1709,11 @@ VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
     STAM_PROFILE_START(&pVM->tm.s.StatDoQueues, a);
     Log2(("TMR3TimerQueuesDo:\n"));
     tmLock(pVM);
+
+    /*
+     * Clear the FF before processing the queues but after obtaining the lock.
+     */
+    VMCPU_FF_CLEAR(pVCpuDst, VMCPU_FF_TIMER);
 
     /*
      * Process the queues.
@@ -1703,6 +1727,8 @@ VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
     STAM_PROFILE_ADV_START(&pVM->tm.s.StatDoQueuesRun, r1);
     tmR3TimerQueueRunVirtualSync(pVM);
     STAM_PROFILE_ADV_SUSPEND(&pVM->tm.s.StatDoQueuesRun, r1);
+    if (pVM->tm.s.fVirtualSyncTicking) /** @todo move into tmR3TimerQueueRunVirtualSync - FIXME */
+        VM_FF_CLEAR(pVM, VM_FF_TM_VIRTUAL_SYNC);
 
     /* TMCLOCK_VIRTUAL */
     STAM_PROFILE_ADV_RESUME(&pVM->tm.s.StatDoQueuesSchedule, s1);
@@ -1712,15 +1738,8 @@ VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
     tmR3TimerQueueRun(pVM, &pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL]);
     STAM_PROFILE_ADV_SUSPEND(&pVM->tm.s.StatDoQueuesRun, r2);
 
-#if 0 /** @todo if ever used, remove this and fix the stam prefixes on TMCLOCK_REAL below. */
     /* TMCLOCK_TSC */
-    STAM_PROFILE_ADV_RESUME(&pVM->tm.s.StatDoQueuesSchedule, s2);
-    tmTimerQueueSchedule(pVM, &pVM->tm.s.paTimerQueuesR3[TMCLOCK_TSC]);
-    STAM_PROFILE_ADV_SUSPEND(&pVM->tm.s.StatDoQueuesSchedule, s3);
-    STAM_PROFILE_ADV_RESUME(&pVM->tm.s.StatDoQueuesRun, r2);
-    tmR3TimerQueueRun(pVM, &pVM->tm.s.paTimerQueuesR3[TMCLOCK_TSC]);
-    STAM_PROFILE_ADV_SUSPEND(&pVM->tm.s.StatDoQueuesRun, r3);
-#endif
+    Assert(!pVM->tm.s.paTimerQueuesR3[TMCLOCK_TSC].offActive); /* not used */
 
     /* TMCLOCK_REAL */
     STAM_PROFILE_ADV_RESUME(&pVM->tm.s.StatDoQueuesSchedule, s2);
@@ -1739,9 +1758,14 @@ VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
     STAM_PROFILE_STOP(&pVM->tm.s.StatDoQueues, a);
 
     /* done */
-    ASMAtomicBitClear(&pVM->tm.s.fRunningQueues, 0);
     tmUnlock(pVM);
+    ASMAtomicBitClear(&pVM->tm.s.fRunningQueues, 0);
 }
+
+//__BEGIN_DECLS
+//int     iomLock(PVM pVM);
+//void    iomUnlock(PVM pVM);
+//__END_DECLS
 
 
 /**
@@ -1800,9 +1824,15 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
 
 
             /* fire */
+//            tmUnlock(pVM);
             switch (pTimer->enmType)
             {
-                case TMTIMERTYPE_DEV:       pTimer->u.Dev.pfnTimer(pTimer->u.Dev.pDevIns, pTimer); break;
+                case TMTIMERTYPE_DEV:
+//                    iomLock(pVM);
+                    pTimer->u.Dev.pfnTimer(pTimer->u.Dev.pDevIns, pTimer);
+//                    iomUnlock(pVM);
+                    break;
+
                 case TMTIMERTYPE_DRV:       pTimer->u.Drv.pfnTimer(pTimer->u.Drv.pDrvIns, pTimer); break;
                 case TMTIMERTYPE_INTERNAL:  pTimer->u.Internal.pfnTimer(pVM, pTimer, pTimer->u.Internal.pvUser); break;
                 case TMTIMERTYPE_EXTERNAL:  pTimer->u.External.pfnTimer(pTimer->u.External.pvUser); break;
@@ -1810,6 +1840,7 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
                     AssertMsgFailed(("Invalid timer type %d (%s)\n", pTimer->enmType, pTimer->pszDesc));
                     break;
             }
+//            tmLock(pVM);
 
             /* change the state if it wasn't changed already in the handler. */
             TM_TRY_SET_STATE(pTimer, TMTIMERSTATE_STOPPED, TMTIMERSTATE_EXPIRED, fRc);
@@ -1857,7 +1888,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
      * Without this frame we would 1) having to run timers much more frequently
      * and 2) lag behind at a steady rate.
      */
-    const uint64_t u64VirtualNow = TMVirtualGetEx(pVM, false /* don't check timers */);
+    const uint64_t u64VirtualNow = TMVirtualGetNoCheck(pVM);
     uint64_t u64Now;
     if (!pVM->tm.s.fVirtualSyncTicking)
     {
@@ -1981,7 +2012,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncRunRestart);
 
         /* calc the slack we've handed out. */
-        const uint64_t u64VirtualNow2 = TMVirtualGetEx(pVM, false /* don't check timers */);
+        const uint64_t u64VirtualNow2 = TMVirtualGetNoCheck(pVM);
         Assert(u64VirtualNow2 >= u64VirtualNow);
         AssertMsg(pVM->tm.s.u64VirtualSync >= u64Now, ("%RU64 < %RU64\n", pVM->tm.s.u64VirtualSync, u64Now));
         const uint64_t offSlack = pVM->tm.s.u64VirtualSync - u64Now;

@@ -504,7 +504,8 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
     PGMSyncCR3(pVCpu, pHyperCtx->cr0, CR3Phys, pHyperCtx->cr4, true);
 
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
-    VM_FF_CLEAR(pVM, VM_FF_TIMER);
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TIMER);
+    VM_FF_CLEAR(pVM, VM_FF_TM_VIRTUAL_SYNC);
     VM_FF_CLEAR(pVM, VM_FF_REQUEST);
 
     /*
@@ -555,7 +556,8 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
             pGuestCtx->cr3 = CR3Phys;
 
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
-            VM_FF_CLEAR(pVM, VM_FF_TIMER);
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TIMER);
+            VM_FF_CLEAR(pVM, VM_FF_TM_VIRTUAL_SYNC);
 
             uint64_t TickThisStart = ASMReadTSC();
             rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_HWACC_RUN, 0);

@@ -354,7 +354,7 @@ static DECLCALLBACKPTR(void, pfnREMR3NotifyHandlerPhysicalRegister)(PVM, PGMPHYS
 static DECLCALLBACKPTR(void, pfnREMR3NotifyHandlerPhysicalDeregister)(PVM, PGMPHYSHANDLERTYPE, RTGCPHYS, RTGCPHYS, bool, bool);
 static DECLCALLBACKPTR(void, pfnREMR3NotifyInterruptSet)(PVM, PVMCPU);
 static DECLCALLBACKPTR(void, pfnREMR3NotifyInterruptClear)(PVM, PVMCPU);
-static DECLCALLBACKPTR(void, pfnREMR3NotifyTimerPending)(PVM);
+static DECLCALLBACKPTR(void, pfnREMR3NotifyTimerPending)(PVM, PVMCPU);
 static DECLCALLBACKPTR(void, pfnREMR3NotifyDmaPending)(PVM);
 static DECLCALLBACKPTR(void, pfnREMR3NotifyQueuePending)(PVM);
 static DECLCALLBACKPTR(void, pfnREMR3NotifyFF)(PVM);
@@ -1057,7 +1057,7 @@ static const REMFNDESC g_aExports[] =
     { "REMR3NotifyHandlerPhysicalDeregister",   (void *)&pfnREMR3NotifyHandlerPhysicalDeregister,   &g_aArgsNotifyHandlerPhysicalDeregister[0], RT_ELEMENTS(g_aArgsNotifyHandlerPhysicalDeregister),   REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
     { "REMR3NotifyInterruptSet",                (void *)&pfnREMR3NotifyInterruptSet,                &g_aArgsVMandVMCPU[0],                      RT_ELEMENTS(g_aArgsVMandVMCPU),                        REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
     { "REMR3NotifyInterruptClear",              (void *)&pfnREMR3NotifyInterruptClear,              &g_aArgsVMandVMCPU[0],                      RT_ELEMENTS(g_aArgsVMandVMCPU),                        REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
-    { "REMR3NotifyTimerPending",                (void *)&pfnREMR3NotifyTimerPending,                &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
+    { "REMR3NotifyTimerPending",                (void *)&pfnREMR3NotifyTimerPending,                &g_aArgsVMandVMCPU[0],                      RT_ELEMENTS(g_aArgsVMandVMCPU),                        REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
     { "REMR3NotifyDmaPending",                  (void *)&pfnREMR3NotifyDmaPending,                  &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
     { "REMR3NotifyQueuePending",                (void *)&pfnREMR3NotifyQueuePending,                &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
     { "REMR3NotifyFF",                          (void *)&pfnREMR3NotifyFF,                          &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
@@ -1165,7 +1165,7 @@ static REMFNDESC g_aVMMImports[] =
     { "TMCpuTickResume",                        (void *)(uintptr_t)&TMCpuTickResume,                &g_aArgsVMCPU[0],                           RT_ELEMENTS(g_aArgsVMCPU),                             REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "TMNotifyEndOfExecution",                 (void *)(uintptr_t)&TMNotifyEndOfExecution,         &g_aArgsVMCPU[0],                           RT_ELEMENTS(g_aArgsVMCPU),                             REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "TMNotifyStartOfExecution",               (void *)(uintptr_t)&TMNotifyStartOfExecution,       &g_aArgsVMCPU[0],                           RT_ELEMENTS(g_aArgsVMCPU),                             REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
-    { "TMTimerPoll",                            (void *)(uintptr_t)&TMTimerPoll,                    &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(uint64_t),   NULL },
+    { "TMTimerPoll",                            (void *)(uintptr_t)&TMTimerPoll,                    &g_aArgsVMandVMCPU[0],                      RT_ELEMENTS(g_aArgsVMandVMCPU),                        REMFNDESC_FLAGS_RET_INT,    sizeof(uint64_t),   NULL },
     { "TMR3TimerQueuesDo",                      (void *)(uintptr_t)&TMR3TimerQueuesDo,              &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "TMVirtualPause",                         (void *)(uintptr_t)&TMVirtualPause,                 &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "TMVirtualResume",                        (void *)(uintptr_t)&TMVirtualResume,                &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
@@ -2279,11 +2279,11 @@ REMR3DECL(void) REMR3NotifyInterruptClear(PVM pVM, PVMCPU pVCpu)
 #endif
 }
 
-REMR3DECL(void) REMR3NotifyTimerPending(PVM pVM)
+REMR3DECL(void) REMR3NotifyTimerPending(PVM pVM, PVMCPU pVCpuDst)
 {
 #ifndef USE_REM_STUBS
     Assert(VALID_PTR(pfnREMR3NotifyTimerPending));
-    pfnREMR3NotifyTimerPending(pVM);
+    pfnREMR3NotifyTimerPending(pVM, pVCpuDst);
 #endif
 }
 
