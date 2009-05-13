@@ -174,35 +174,14 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
 {
     int rc;
+    size_t cPages = cb >> PAGE_SHIFT;
 
     /* create the object. */
     PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(sizeof(*pMemFreeBSD), RTR0MEMOBJTYPE_PAGE, NULL, cb);
     if (!pMemFreeBSD)
         return VERR_NO_MEMORY;
 
-    /*
-     * We've two options here both expressed nicely by how kld allocates
-     * memory for the module bits:
-     *      http://fxr.watson.org/fxr/source/kern/link_elf.c?v=RELENG62#L701
-     */
-#if 1
-    pMemFreeBSD->Core.pv = contigmalloc(cb,                   /* size */
-                                        M_IPRTMOBJ,           /* type */
-                                        M_NOWAIT | M_ZERO,    /* flags */
-                                        0,                    /* lowest physical address*/
-                                        _4G-1,                /* highest physical address */
-                                        PAGE_SIZE,            /* alignment. */
-                                        0);                   /* boundrary */
-    if (pMemFreeBSD->Core.pv)
-    {
-        *ppMem = &pMemFreeBSD->Core;
-        return VINF_SUCCESS;
-    }
-    rc = VERR_NO_MEMORY;
-    NOREF(fExecutable);
-
-#else
-    pMemFreeBSD->pObject = vm_object_allocate(OBJT_DEFAULT, cb >> PAGE_SHIFT);
+    pMemFreeBSD->pObject = vm_object_allocate(OBJT_DEFAULT, cPages);
     if (pMemFreeBSD->pObject)
     {
         vm_offset_t MapAddress = vm_map_min(kernel_map);
@@ -219,26 +198,67 @@ int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
                          FALSE);                        /* cow (copy-on-write) */
         if (rc == KERN_SUCCESS)
         {
-            rc = vm_map_wire(kernel_map,                /* map */
-                             MapAddress,                /* start */
-                             MapAddress + cb,           /* end */
-                             VM_MAP_WIRE_SYSTEM | VM_MAP_WIRE_NOHOLES);
-            if (rc == KERN_SUCCESS)
+            vm_offset_t AddressDst = MapAddress;
+
+            rc = VINF_SUCCESS;
+
+            VM_OBJECT_LOCK(pMemFreeBSD->pObject);
+            for (size_t iPage = 0; iPage < cPages; iPage++)
+            {
+                vm_pindex_t PageIndex = OFF_TO_IDX(AddressDst);
+                vm_page_t   pPage;
+
+                pPage = vm_page_alloc(pMemFreeBSD->pObject, PageIndex,
+                                      VM_ALLOC_NOBUSY | VM_ALLOC_SYSTEM |
+                                      VM_ALLOC_WIRED);
+                if (pPage)
+                {
+                    vm_page_lock_queues();
+                    vm_page_wire(pPage);
+                    vm_page_unlock_queues();
+                    /* Put the page into the page table now. */
+#if __FreeBSD_version >= 701105
+                    pmap_enter(kernel_map->pmap, AddressDst, VM_PROT_NONE, pPage,
+                               fExecutable
+                               ? VM_PROT_ALL
+                               : VM_PROT_RW,
+                               TRUE);
+#else
+                    pmap_enter(kernel_map->pmap, AddressDst, pPage,
+                               fExecutable
+                               ? VM_PROT_ALL
+                               : VM_PROT_RW,
+                               TRUE);
+#endif
+                }
+                else
+                {
+                    /*
+                     * Allocation failed. vm_map_remove will remove any
+                     * page already alocated.
+                     */
+                    rc = VERR_NO_MEMORY;
+                    break;
+                }
+                AddressDst += PAGE_SIZE;
+            }
+            VM_OBJECT_UNLOCK(pMemFreeBSD->pObject);
+
+            if (rc == VINF_SUCCESS)
             {
                 pMemFreeBSD->Core.pv = (void *)MapAddress;
                 *ppMem = &pMemFreeBSD->Core;
                 return VINF_SUCCESS;
             }
 
-           vm_map_remove(kernel_map,
-                         MapAddress,
-                         MapAddress + cb);
+            vm_map_remove(kernel_map,
+                          MapAddress,
+                          MapAddress + cb);
         }
         rc = VERR_NO_MEMORY; /** @todo fix translation (borrow from darwin) */
     }
     else
         rc = VERR_NO_MEMORY;
-#endif
 
     rtR0MemObjDelete(&pMemFreeBSD->Core);
     return rc;
@@ -591,69 +611,46 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
     vm_offset_t AddrR3 = round_page((vm_offset_t)pProc->p_vmspace->vm_daddr + lim_max(pProc, RLIMIT_DATA));
     PROC_UNLOCK(pProc);
 
-    /*
-     * Mapping into R3 is easy if the mem object has a associated VM object.
-     * If there is not such an object we have to get it from the address.
-     */
-    if (!pObjectToMap)
+    vm_object_t pObjectNew = vm_object_allocate(OBJT_PHYS, pMemToMap->cb >> PAGE_SHIFT);
+    if (!RT_UNLIKELY(pObjectNew))
+        return VERR_NO_MEMORY;
+
+    /* Insert the object in the map. */
+    rc = vm_map_find(pProcMap,              /* Map to insert the object in */
+                        pObjectNew  ,          /* Object to map */
+                        0,                     /* Start offset in the object */
+                        &AddrR3,               /* Start address IN/OUT */
+                        pMemToMap->cb,         /* Size of the mapping */
+                        TRUE,                  /* Whether a suitable address should be searched for first */
+                        ProtectionFlags,       /* protection flags */
+                        VM_PROT_ALL,           /* Maximum protection flags */
+                        0);                    /* Copy on write */
+
+    /* Map the memory page by page into the destination map. */
+    if (rc == KERN_SUCCESS)
     {
-        vm_object_t pObjectNew = vm_object_allocate(OBJT_PHYS, pMemToMap->cb >> PAGE_SHIFT);
-        if (!RT_UNLIKELY(pObjectNew))
-            return VERR_NO_MEMORY;
+        size_t         cLeft        = pMemToMap->cb >> PAGE_SHIFT;
+        vm_offset_t    AddrToMap    = (vm_offset_t)pMemToMap->pv;
+        pmap_t         pPhysicalMap = pProcMap->pmap;
+        vm_offset_t    AddrR3Dst    = AddrR3;
 
-        /* Insert the object in the map. */
-        rc = vm_map_find(pProcMap,              /* Map to insert the object in */
-                         pObjectNew  ,          /* Object to map */
-                         0,                     /* Start offset in the object */
-                         &AddrR3,               /* Start address IN/OUT */
-                         pMemToMap->cb,         /* Size of the mapping */
-                         TRUE,                  /* Whether a suitable address should be searched for first */
-                         ProtectionFlags,       /* protection flags */
-                         VM_PROT_ALL,           /* Maximum protection flags */
-                         0);                    /* Copy on write */
-        if (rc == KERN_SUCCESS)
+        /* Insert the memory page by page into the mapping. */
+        while (cLeft-- > 0)
         {
-            size_t         cLeft        = pMemToMap->cb >> PAGE_SHIFT;
-            vm_offset_t    AddrToMap    = (vm_offset_t)pMemToMap->pv;
-            pmap_t         pPhysicalMap = pProcMap->pmap;
-            vm_offset_t    AddrR3Dst    = AddrR3;
-
-            /* Insert the memory page by page into the mapping. */
-            while (cLeft-- > 0)
-            {
-                vm_page_t Page = PHYS_TO_VM_PAGE(vtophys(AddrToMap));
+            vm_page_t Page = PHYS_TO_VM_PAGE(vtophys(AddrToMap));
 
 #if __FreeBSD_version >= 701105
-                pmap_enter(pPhysicalMap, AddrR3Dst, VM_PROT_NONE, Page, ProtectionFlags, TRUE);
+            pmap_enter(pPhysicalMap, AddrR3Dst, VM_PROT_NONE, Page, ProtectionFlags, TRUE);
 #else
-                pmap_enter(pPhysicalMap, AddrR3Dst, Page, ProtectionFlags, TRUE);
+            pmap_enter(pPhysicalMap, AddrR3Dst, Page, ProtectionFlags, TRUE);
 #endif
-                AddrToMap += PAGE_SIZE;
-                AddrR3Dst += PAGE_SIZE;
-            }
-            pObjectToMap = pObjectNew;
+            AddrToMap += PAGE_SIZE;
+            AddrR3Dst += PAGE_SIZE;
         }
-        else
-            vm_object_deallocate(pObjectNew);
+        pObjectToMap = pObjectNew;
     }
     else
-    {
-        /*
-         * Reference the object. If this isn't done the object will removed from kernel space
-         * if the mapping is destroyed.
-         */
-        vm_object_reference(pObjectToMap);
-
-        rc = vm_map_find(pProcMap,              /* Map to insert the object in */
-                         pObjectToMap,          /* Object to map */
-                         0,                     /* Start offset in the object */
-                         &AddrR3,               /* Start address IN/OUT */
-                         pMemToMap->cb,         /* Size of the mapping */
-                         TRUE,                  /* Whether a suitable address should be searched for first */
-                         ProtectionFlags,       /* protection flags */
-                         VM_PROT_ALL,           /* Maximum protection flags */
-                         0);                    /* Copy on write */
-    }
+        vm_object_deallocate(pObjectNew);
 
     if (rc == KERN_SUCCESS)
     {
