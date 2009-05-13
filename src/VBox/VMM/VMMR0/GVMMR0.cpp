@@ -1637,18 +1637,24 @@ GVMMR0DECL(int) GVMMR0SchedWakeUpEx(PVM pVM, VMCPUID idCpu, bool fTakeUsedLock)
              */
             rc = gvmmR0SchedWakeUpOne(pGVM, &pGVM->aCpus[idCpu]);
 
-            /*
-             * While we're here, do a round of scheduling.
-             */
-            Assert(ASMGetFlags() & X86_EFL_IF);
-            const uint64_t u64Now = RTTimeNanoTS(); /* (GIP time) */
-            pGVM->gvmm.s.StatsSched.cWakeUpWakeUps += gvmmR0SchedDoWakeUps(pGVMM, u64Now);
+            if (fTakeUsedLock)
+            {
+                /*
+                 * While we're here, do a round of scheduling.
+                 */
+                Assert(ASMGetFlags() & X86_EFL_IF);
+                const uint64_t u64Now = RTTimeNanoTS(); /* (GIP time) */
+                pGVM->gvmm.s.StatsSched.cWakeUpWakeUps += gvmmR0SchedDoWakeUps(pGVMM, u64Now);
+            }
         }
         else
             rc = VERR_INVALID_CPU_ID;
 
-        int rc2 = gvmmR0UsedUnlock(pGVMM);
-        AssertRC(rc2);
+        if (fTakeUsedLock)
+        {
+            int rc2 = gvmmR0UsedUnlock(pGVMM);
+            AssertRC(rc2);
+        }
     }
 
     LogFlow(("GVMMR0SchedWakeUp: returns %Rrc\n", rc));
@@ -1724,8 +1730,11 @@ GVMMR0DECL(int) GVMMR0SchedPokeEx(PVM pVM, VMCPUID idCpu, bool fTakeUsedLock)
         else
             rc = VERR_INVALID_CPU_ID;
 
-        int rc2 = gvmmR0UsedUnlock(pGVMM);
-        AssertRC(rc2);
+        if (fTakeUsedLock)
+        {
+            int rc2 = gvmmR0UsedUnlock(pGVMM);
+            AssertRC(rc2);
+        }
     }
 
     LogFlow(("GVMMR0SchedWakeUpAndPokeCpus: returns %Rrc\n", rc));
