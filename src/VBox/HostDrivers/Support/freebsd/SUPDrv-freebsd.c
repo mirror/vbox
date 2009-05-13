@@ -43,8 +43,6 @@
 #include <sys/fcntl.h>
 #include <sys/conf.h>
 #include <sys/uio.h>
-#include <sys/proc.h>
-#include <sys/sched.h>
 
 #include "../SUPDrvInternal.h"
 #include <VBox/version.h>
@@ -395,14 +393,7 @@ static int VBoxDrvFreeBSDIOCtl(struct cdev *pDev, u_long ulCmd, caddr_t pvData, 
     if (    ulCmd == SUP_IOCTL_FAST_DO_RAW_RUN
         ||  ulCmd == SUP_IOCTL_FAST_DO_HWACC_RUN
         ||  ulCmd == SUP_IOCTL_FAST_DO_NOP)
-    {
-        sched_pin();
-        critical_enter();
-        int rc = supdrvIOCtlFast(ulCmd, *(uint32_t *)pvData, &g_VBoxDrvFreeBSDDevExt, pSession);
-        critical_exit();
-        sched_unpin();
-        return rc;
-    }
+        return supdrvIOCtlFast(ulCmd, *(uint32_t *)pvData, &g_VBoxDrvFreeBSDDevExt, pSession);
 
     return VBoxDrvFreeBSDIOCtlSlow(pSession, ulCmd, pvData, pTd);
 }
