@@ -1653,8 +1653,6 @@ static DECLCALLBACK(void) tmR3TimerCallback(PRTTIMER pTimer, void *pvUser, uint6
     PVM     pVM      = (PVM)pvUser;
     PVMCPU  pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
 
-RTLogFlush(NULL);
-
     AssertCompile(TMCLOCK_MAX == 4);
 #ifdef DEBUG_Sander /* very annoying, keep it private. */
     if (VMCPU_FF_ISSET(pVCpuDst, VMCPU_FF_TIMER))
