@@ -3211,7 +3211,7 @@ static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *
 
 
 /**
- * Serivce a VMMCALLHOST_PGM_LOCK call.
+ * Service a VMMCALLHOST_PGM_LOCK call.
  *
  * @returns VBox status code.
  * @param   pVM     The VM handle.
