@@ -35,6 +35,7 @@
 
 #include <VBox/log.h>
 #include <VBox/err.h>
+#include <VBox/gvmm.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
@@ -436,6 +437,21 @@ static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUI
     LogFlow(("pdmR0ApicHlp_SetInterruptFF: caller=%p/%d: VM_FF_INTERRUPT %d -> 1\n",
              pDevIns, pDevIns->iInstance, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_APIC)));
     VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC);
+
+    /* We need to wait up the target CPU. */
+    if (VMMGetCpuId(pVM) != idCpu)
+    {
+        switch(VMCPU_GET_STATE(pVCpu))
+        {
+        case VMCPUSTATE_STARTED_EXEC:
+            GVMMR0SchedPoke(pVM, pVCpu->idCpu);
+            break;
+
+        case VMCPUSTATE_STARTED_HALTED:
+            GVMMR0SchedWakeUp(pVM, pVCpu->idCpu);
+            break;
+        }
+    }
 }
 
 
