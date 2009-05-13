@@ -59,7 +59,7 @@ protected:
 
 private:
 
-    void updateAvailability();
+    bool isAvailable (GLSettingsPageIds aId);
 };
 
 /*
@@ -75,6 +75,7 @@ public:
     enum VMSettingsPageIds
     {
         GeneralId = 0,
+        DisplayId,
         StorageId,
         HDId,
         CDId,
@@ -85,8 +86,7 @@ public:
         SerialId,
         ParallelId,
         USBId,
-        SFId,
-        VRDPId
+        SFId
     };
 
     VBoxVMSettingsDlg (QWidget *aParent, const CMachine &aMachine,
@@ -108,7 +108,7 @@ private slots:
 
 private:
 
-    void updateAvailability();
+    bool isAvailable (VMSettingsPageIds aId);
 
     CMachine mMachine;
     bool mAllowResetFirstRunFlag;

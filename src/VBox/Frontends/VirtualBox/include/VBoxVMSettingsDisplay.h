@@ -1,11 +1,11 @@
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
- * VBoxVMSettingsVRDP class declaration
+ * VBoxVMSettingsDisplay class declaration
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,21 +20,21 @@
  * additional information or have any questions.
  */
 
-#ifndef __VBoxVMSettingsVRDP_h__
-#define __VBoxVMSettingsVRDP_h__
+#ifndef __VBoxVMSettingsDisplay_h__
+#define __VBoxVMSettingsDisplay_h__
 
-#include "VBoxSettingsPage.h"
-#include "VBoxVMSettingsVRDP.gen.h"
 #include "COMDefs.h"
+#include "VBoxSettingsPage.h"
+#include "VBoxVMSettingsDisplay.gen.h"
 
-class VBoxVMSettingsVRDP : public VBoxSettingsPage,
-                           public Ui::VBoxVMSettingsVRDP
+class VBoxVMSettingsDisplay : public VBoxSettingsPage,
+                              public Ui::VBoxVMSettingsDisplay
 {
     Q_OBJECT;
 
 public:
 
-    VBoxVMSettingsVRDP();
+    VBoxVMSettingsDisplay();
 
 protected:
 
@@ -42,10 +42,16 @@ protected:
     void putBackTo();
 
     void setValidator (QIWidgetValidator *aVal);
+    bool revalidate (QString &aWarning, QString &aTitle);
 
     void setOrderAfter (QWidget *aWidget);
 
     void retranslateUi();
+
+private slots:
+
+    void valueChangedVRAM (int aVal);
+    void textChangedVRAM (const QString &aText);
 
 private:
 
@@ -53,5 +59,5 @@ private:
     QIWidgetValidator *mValidator;
 };
 
-#endif // __VBoxVMSettingsVRDP_h__
+#endif // __VBoxVMSettingsDisplay_h__
 

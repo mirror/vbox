@@ -1,0 +1,375 @@
+<ui version="4.0" >
+ <comment>
+ VBox frontends: Qt4 GUI ("VirtualBox"):
+
+ Copyright (C) 2008-2009 Sun Microsystems, Inc.
+
+ This file is part of VirtualBox Open Source Edition (OSE), as
+ available from http://www.virtualbox.org. This file is free software;
+ you can redistribute it and/or modify it under the terms of the GNU
+ General Public License (GPL) as published by the Free Software
+ Foundation, in version 2 as it comes in the "COPYING" file of the
+ VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+
+ Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+ Clara, CA 95054 USA or visit http://www.sun.com if you need
+ additional information or have any questions.
+ </comment>
+ <class>VBoxVMSettingsDisplay</class>
+ <widget class="QWidget" name="VBoxVMSettingsDisplay" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>350</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <layout class="QVBoxLayout" name="mLtMain" >
+   <item>
+    <widget class="QTabWidget" name="mTwDisplay" >
+     <widget class="QWidget" name="mTabVideo" >
+      <attribute name="title" >
+       <string>&amp;Video</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="mLtVideoPage" >
+       <property name="spacing" >
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QWidget" native="1" name="mWtVideo" >
+         <property name="sizePolicy" >
+          <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <layout class="QGridLayout" name="mLtVideoItems" >
+          <property name="margin" >
+           <number>0</number>
+          </property>
+          <item row="0" column="0" >
+           <widget class="QLabel" name="mLbMemory" >
+            <property name="text" >
+             <string>Video &amp;Memory:</string>
+            </property>
+            <property name="alignment" >
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+            <property name="buddy" >
+             <cstring>mLeMemory</cstring>
+            </property>
+           </widget>
+          </item>
+          <item rowspan="2" row="0" column="1" >
+           <layout class="QVBoxLayout" name="mLtMemorySlider" >
+            <property name="spacing" >
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QSlider" name="mSlMemory" >
+              <property name="whatsThis" >
+               <string>Controls the amount of video memory provided to the virtual machine.</string>
+              </property>
+              <property name="orientation" >
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="tickPosition" >
+               <enum>QSlider::TicksBelow</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="mLtMemoryLegend" >
+              <item>
+               <widget class="QLabel" name="mLbMemoryMin" >
+                <property name="sizePolicy" >
+                 <sizepolicy vsizetype="Fixed" hsizetype="Fixed" >
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="mSpHor1" >
+                <property name="orientation" >
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0" >
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QLabel" name="mLbMemoryMax" >
+                <property name="sizePolicy" >
+                 <sizepolicy vsizetype="Fixed" hsizetype="Fixed" >
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="alignment" >
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+          <item row="0" column="2" >
+           <layout class="QHBoxLayout" name="mLtMemorySize" >
+            <property name="spacing" >
+             <number>4</number>
+            </property>
+            <item>
+             <widget class="QILineEdit" name="mLeMemory" >
+              <property name="whatsThis" >
+               <string>Controls the amount of video memory provided to the virtual machine.</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="mLbMemoryUnit" >
+              <property name="sizePolicy" >
+               <sizepolicy vsizetype="Fixed" hsizetype="Fixed" >
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text" >
+               <string>MB</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="2" column="0" >
+           <widget class="QLabel" name="mLbOptions" >
+            <property name="text" >
+             <string>Extended Features:</string>
+            </property>
+            <property name="alignment" >
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1" colspan="2" >
+           <widget class="QCheckBox" name="mCb3D" >
+            <property name="sizePolicy" >
+             <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="whatsThis" >
+             <string>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</string>
+            </property>
+            <property name="text" >
+             <string>Enable &amp;3D Acceleration</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="mSpVer1" >
+         <property name="orientation" >
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0" >
+          <size>
+           <width>20</width>
+           <height>0</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="mTabVRDP" >
+      <attribute name="title" >
+       <string>V&amp;RDP</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="mLtVRDPPage" >
+       <property name="spacing" >
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QWidget" native="1" name="mWtVRDP" >
+         <property name="sizePolicy" >
+          <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <layout class="QVBoxLayout" name="mLtVRDPItems" >
+          <property name="margin" >
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QCheckBox" name="mCbVRDP" >
+            <property name="whatsThis" >
+             <string>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</string>
+            </property>
+            <property name="text" >
+             <string>&amp;Enable Server</string>
+            </property>
+            <property name="checked" >
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QWidget" native="1" name="mWtVRDPServer" >
+            <property name="sizePolicy" >
+             <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <layout class="QGridLayout" name="mLtVRDPServerItems" >
+             <property name="margin" >
+              <number>0</number>
+             </property>
+             <item rowspan="3" row="1" column="0" >
+              <spacer name="mSpHor2" >
+               <property name="orientation" >
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeType" >
+                <enum>QSizePolicy::Fixed</enum>
+               </property>
+               <property name="sizeHint" stdset="0" >
+                <size>
+                 <width>20</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="1" column="1" >
+              <widget class="QLabel" name="mLbVRDPPort" >
+               <property name="text" >
+                <string>Server &amp;Port:</string>
+               </property>
+               <property name="alignment" >
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+               <property name="buddy" >
+                <cstring>mLeVRDPPort</cstring>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="2" >
+              <widget class="QLineEdit" name="mLeVRDPPort" >
+               <property name="whatsThis" >
+                <string>Displays the VRDP Server port number. You may specify &lt;tt>0&lt;/tt> (zero) to reset the port to the default value.</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1" >
+              <widget class="QLabel" name="mLbVRDPMethod" >
+               <property name="text" >
+                <string>Authentication &amp;Method:</string>
+               </property>
+               <property name="alignment" >
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+               <property name="buddy" >
+                <cstring>mCbVRDPMethod</cstring>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="2" >
+              <widget class="QComboBox" name="mCbVRDPMethod" >
+               <property name="sizePolicy" >
+                <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="whatsThis" >
+                <string>Defines the VRDP authentication method.</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1" >
+              <widget class="QLabel" name="mLbVRDPTimeout" >
+               <property name="text" >
+                <string>Authentication &amp;Timeout:</string>
+               </property>
+               <property name="alignment" >
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+               <property name="buddy" >
+                <cstring>mLeVRDPTimeout</cstring>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="2" >
+              <widget class="QLineEdit" name="mLeVRDPTimeout" >
+               <property name="whatsThis" >
+                <string>Specifies the timeout for guest authentication, in milliseconds.</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="mSpVer2" >
+         <property name="orientation" >
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0" >
+          <size>
+           <width>20</width>
+           <height>0</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+  <zorder>mTwDisplay</zorder>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QILineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>QILineEdit.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>mCbVRDP</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>mWtVRDPServer</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>80</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>159</x>
+     <y>88</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

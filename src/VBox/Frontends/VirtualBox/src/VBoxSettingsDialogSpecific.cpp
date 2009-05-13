@@ -35,6 +35,7 @@
 #include "VBoxGLSettingsNetwork.h"
 
 #include "VBoxVMSettingsGeneral.h"
+#include "VBoxVMSettingsDisplay.h"
 #include "VBoxVMSettingsHD.h"
 #include "VBoxVMSettingsCD.h"
 #include "VBoxVMSettingsFD.h"
@@ -44,7 +45,6 @@
 #include "VBoxVMSettingsParallel.h"
 #include "VBoxVMSettingsUSB.h"
 #include "VBoxVMSettingsSF.h"
-#include "VBoxVMSettingsVRDP.h"
 
 /* Qt includes */
 #include <QStackedWidget>
@@ -60,47 +60,62 @@ VBoxGLSettingsDlg::VBoxGLSettingsDlg (QWidget *aParent)
     VBoxSettingsPage *prefPage = NULL;
 
     /* General page */
-    prefPage = new VBoxGLSettingsGeneral();
-    addItem (":/machine_32px.png", ":/machine_disabled_32px.png", ":/machine_16px.png", ":/machine_disabled_16px.png",
-             GeneralId, "#general",
-             prefPage);
+    if (isAvailable (GeneralId))
+    {
+        prefPage = new VBoxGLSettingsGeneral();
+        addItem (":/machine_32px.png", ":/machine_disabled_32px.png",
+                 ":/machine_16px.png", ":/machine_disabled_16px.png",
+                 GeneralId, "#general", prefPage);
+    }
 
     /* Input page */
-    prefPage = new VBoxGLSettingsInput();
-    addItem (":/hostkey_32px.png", ":/hostkey_disabled_32px.png", ":/hostkey_16px.png", ":/hostkey_disabled_16px.png",
-             InputId, "#input",
-             prefPage);
+    if (isAvailable (InputId))
+    {
+        prefPage = new VBoxGLSettingsInput();
+        addItem (":/hostkey_32px.png", ":/hostkey_disabled_32px.png",
+                 ":/hostkey_16px.png", ":/hostkey_disabled_16px.png",
+                 InputId, "#input", prefPage);
+    }
 
     /* Update page */
-    prefPage = new VBoxGLSettingsUpdate();
-    addItem (":/refresh_32px.png", ":/refresh_disabled_32px.png", ":/refresh_16px.png", ":/refresh_disabled_16px.png",
-             UpdateId, "#update",
-             prefPage);
+    if (isAvailable (UpdateId))
+    {
+        prefPage = new VBoxGLSettingsUpdate();
+        addItem (":/refresh_32px.png", ":/refresh_disabled_32px.png",
+                 ":/refresh_16px.png", ":/refresh_disabled_16px.png",
+                 UpdateId, "#update", prefPage);
+    }
 
     /* Language page */
-    prefPage = new VBoxGLSettingsLanguage();
-    addItem (":/site_32px.png", ":/site_disabled_32px.png", ":/site_16px.png", ":/site_disabled_16px.png",
-             LanguageId, "#language",
-             prefPage);
+    if (isAvailable (LanguageId))
+    {
+        prefPage = new VBoxGLSettingsLanguage();
+        addItem (":/site_32px.png", ":/site_disabled_32px.png",
+                 ":/site_16px.png", ":/site_disabled_16px.png",
+                 LanguageId, "#language", prefPage);
+    }
 
 #ifdef ENABLE_GLOBAL_USB
     /* USB page */
-    prefPage = VBoxVMSettingsUSB (VBoxVMSettingsUSB::HostType);
-    addItem (":/usb_32px.png", ":/usb_disabled_32px.png", ":/usb_16px.png", ":/usb_disabled_16px.png"
-             USBId, "#usb",
-             prefPage);
+    if (isAvailable (USBId))
+    {
+        prefPage = new VBoxVMSettingsUSB (VBoxVMSettingsUSB::HostType);
+        addItem (":/usb_32px.png", ":/usb_disabled_32px.png",
+                 ":/usb_16px.png", ":/usb_disabled_16px.png",
+                 USBId, "#usb", prefPage);
+    }
 #endif
 
 #ifdef VBOX_WITH_NETFLT
     /* Network page */
-    prefPage = new VBoxGLSettingsNetwork();
-    addItem (":/nw_32px.png", ":/nw_disabled_32px.png", ":/nw_16px.png", ":/nw_disabled_16px.png",
-             NetworkId, "#language",
-             prefPage);
+    if (isAvailable (NetworkId))
+    {
+        prefPage = new VBoxGLSettingsNetwork();
+        addItem (":/nw_32px.png", ":/nw_disabled_32px.png",
+                 ":/nw_16px.png", ":/nw_disabled_16px.png",
+                 NetworkId, "#language", prefPage);
+    }
 #endif
-
-    /* Update Selector with available items */
-    updateAvailability();
 
     /* Applying language settings */
     retranslateUi();
@@ -169,9 +184,6 @@ void VBoxGLSettingsDlg::retranslateUi()
     mSelector->polish();
 
     VBoxSettingsDialog::retranslateUi();
-
-    /* Update Selector with available items */
-    updateAvailability();
 }
 
 QString VBoxGLSettingsDlg::dialogTitle() const
@@ -179,21 +191,32 @@ QString VBoxGLSettingsDlg::dialogTitle() const
     return tr ("VirtualBox - %1").arg (titleExtension());
 }
 
-void VBoxGLSettingsDlg::updateAvailability()
+bool VBoxGLSettingsDlg::isAvailable (GLSettingsPageIds aId)
 {
-    CHost host = vboxGlobal().virtualBox().GetHost();
+    /* Show the host error message for particular group if present.
+     * We don't use the generic cannotLoadGlobalConfig()
+     * call here because we want this message to be suppressible. */
+    switch (aId)
+    {
+        case USBId:
+        {
+            /* Show the host error message */
+            CHost host = vboxGlobal().virtualBox().GetHost();
+            if (!host.isReallyOk())
+                vboxProblem().cannotAccessUSB (host);
 
-    /* Show an error message (if there is any).
-     * This message box may be suppressed if the user wishes so. */
-    if (!host.isReallyOk())
-        vboxProblem().cannotAccessUSB (host);
+            /* Check if USB is implemented */
+            CHostUSBDeviceFilterVector coll = host.GetUSBDeviceFilters();
+            if (host.lastRC() == E_NOTIMPL)
+                return false;
 
-    CHostUSBDeviceFilterVector coll = host.GetUSBDeviceFilters();
-    if (host.lastRC() == E_NOTIMPL) {
-        /* Disable the USB controller category if the USB controller is
-         * not available (i.e. in VirtualBox OSE). */
-        mSelector->setVisibleById (USBId, false);
+            /* Break to common result */
+            break;
+        }
+        default:
+            break;
     }
+    return true;
 }
 
 VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
@@ -216,87 +239,126 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
     VBoxSettingsPage *prefPage = NULL;
 
     /* General page */
-    prefPage = new VBoxVMSettingsGeneral();
-    connect (prefPage, SIGNAL (tableChanged()), this, SLOT (resetFirstRunFlag()));
-    addItem (":/machine_32px.png", ":/machine_disabled_32px.png", ":/machine_16px.png", ":/machine_disabled_16px.png",
-             GeneralId, "#general",
-             prefPage);
+    if (isAvailable (GeneralId))
+    {
+        prefPage = new VBoxVMSettingsGeneral();
+        connect (prefPage, SIGNAL (tableChanged()), this, SLOT (resetFirstRunFlag()));
+        addItem (":/machine_32px.png", ":/machine_disabled_32px.png",
+                 ":/machine_16px.png", ":/machine_disabled_16px.png",
+                 GeneralId, "#general", prefPage);
+    }
+
+    /* Display page */
+    if (isAvailable (DisplayId))
+    {
+        prefPage = new VBoxVMSettingsDisplay();
+        addItem (":/vrdp_32px.png", ":/vrdp_disabled_32px.png",
+                 ":/vrdp_16px.png", ":/vrdp_disabled_16px.png",
+                 DisplayId, "#display", prefPage);
+    }
 
     /* Storage page */
-    addItem (":/hd_32px.png", ":/hd_disabled_32px.png", ":/hd_16px.png", ":/hd_disabled_16px.png",
-             StorageId, "#storage");
+    if (isAvailable (StorageId))
+    {
+        addItem (":/hd_32px.png", ":/hd_disabled_32px.png",
+                 ":/hd_16px.png", ":/hd_disabled_16px.png",
+                 StorageId, "#storage");
 
-    /* HD page */
-    prefPage = new VBoxVMSettingsHD();
-    connect (prefPage, SIGNAL (hdChanged()), this, SLOT (resetFirstRunFlag()));
-    addItem (":/hd_32px.png", ":/hd_disabled_32px.png", ":/hd_16px.png", ":/hd_disabled_16px.png",
-             HDId, "#hdds",
-             prefPage, StorageId);
+        /* HD page */
+        if (isAvailable (HDId))
+        {
+            prefPage = new VBoxVMSettingsHD();
+            connect (prefPage, SIGNAL (hdChanged()), this, SLOT (resetFirstRunFlag()));
+            addItem (":/hd_32px.png", ":/hd_disabled_32px.png",
+                     ":/hd_16px.png", ":/hd_disabled_16px.png",
+                     HDId, "#hdds", prefPage, StorageId);
+        }
 
-    /* CD page */
-    prefPage = new VBoxVMSettingsCD();
-    connect (prefPage, SIGNAL (cdChanged()), this, SLOT (resetFirstRunFlag()));
-    addItem (":/cd_32px.png", ":/cd_disabled_32px.png", ":/cd_16px.png", ":/cd_disabled_16px.png",
-             CDId, "#dvd",
-             prefPage, StorageId);
+        /* CD page */
+        if (isAvailable (CDId))
+        {
+            prefPage = new VBoxVMSettingsCD();
+            connect (prefPage, SIGNAL (cdChanged()), this, SLOT (resetFirstRunFlag()));
+            addItem (":/cd_32px.png", ":/cd_disabled_32px.png",
+                     ":/cd_16px.png", ":/cd_disabled_16px.png",
+                     CDId, "#dvd", prefPage, StorageId);
+        }
 
-    /* FD page */
-    prefPage = new VBoxVMSettingsFD();
-    connect (prefPage, SIGNAL (fdChanged()), this, SLOT (resetFirstRunFlag()));
-    addItem (":/fd_32px.png", ":/fd_disabled_32px.png", ":/fd_16px.png", ":/fd_disabled_16px.png",
-             FDId, "#floppy",
-             prefPage, StorageId);
+        /* FD page */
+        if (isAvailable (FDId))
+        {
+            prefPage = new VBoxVMSettingsFD();
+            connect (prefPage, SIGNAL (fdChanged()), this, SLOT (resetFirstRunFlag()));
+            addItem (":/fd_32px.png", ":/fd_disabled_32px.png",
+                     ":/fd_16px.png", ":/fd_disabled_16px.png",
+                     FDId, "#floppy", prefPage, StorageId);
+        }
+    }
 
     /* Audio page */
-    prefPage = new VBoxVMSettingsAudio();
-    addItem (":/sound_32px.png", ":/sound_disabled_32px.png", ":/sound_16px.png", ":/sound_disabled_16px.png",
-             AudioId, "#audio",
-             prefPage);
+    if (isAvailable (AudioId))
+    {
+        prefPage = new VBoxVMSettingsAudio();
+        addItem (":/sound_32px.png", ":/sound_disabled_32px.png",
+                 ":/sound_16px.png", ":/sound_disabled_16px.png",
+                 AudioId, "#audio", prefPage);
+    }
 
     /* Network page */
-    prefPage = new VBoxVMSettingsNetworkPage();
-    addItem (":/nw_32px.png", ":/nw_disabled_32px.png", ":/nw_16px.png", ":/nw_disabled_16px.png",
-             NetworkId, "#network",
-             prefPage);
+    if (isAvailable (NetworkId))
+    {
+        prefPage = new VBoxVMSettingsNetworkPage();
+        addItem (":/nw_32px.png", ":/nw_disabled_32px.png",
+                 ":/nw_16px.png", ":/nw_disabled_16px.png",
+                 NetworkId, "#network", prefPage);
+    }
 
     /* Ports page */
-    addItem (":/serial_port_32px.png", ":/serial_port_disabled_32px.png", ":/serial_port_16px.png", ":/serial_port_disabled_16px.png",
-             PortsId, "#ports");
+    if (isAvailable (PortsId))
+    {
+        addItem (":/serial_port_32px.png", ":/serial_port_disabled_32px.png",
+                 ":/serial_port_16px.png", ":/serial_port_disabled_16px.png",
+                 PortsId, "#ports");
 
-    /* USB page */
-    prefPage = new VBoxVMSettingsUSB (VBoxVMSettingsUSB::MachineType);
-    addItem (":/usb_32px.png", ":/usb_disabled_32px.png", ":/usb_16px.png", ":/usb_disabled_16px.png",
-             USBId, "#usb",
-             prefPage, PortsId);
+        /* USB page */
+        if (isAvailable (USBId))
+        {
+            prefPage = new VBoxVMSettingsUSB (VBoxVMSettingsUSB::MachineType);
+            addItem (":/usb_32px.png", ":/usb_disabled_32px.png",
+                     ":/usb_16px.png", ":/usb_disabled_16px.png",
+                     USBId, "#usb", prefPage, PortsId);
+        }
 
-    /* Serial page */
-    prefPage = new VBoxVMSettingsSerialPage();
-    addItem (":/serial_port_32px.png", ":/serial_port_disabled_32px.png", ":/serial_port_16px.png", ":/serial_port_disabled_16px.png",
-             SerialId, "#serialPorts",
-             prefPage, PortsId);
+        /* Serial page */
+        if (isAvailable (SerialId))
+        {
+            prefPage = new VBoxVMSettingsSerialPage();
+            addItem (":/serial_port_32px.png", ":/serial_port_disabled_32px.png",
+                     ":/serial_port_16px.png", ":/serial_port_disabled_16px.png",
+                     SerialId, "#serialPorts", prefPage, PortsId);
+        }
 
-    /* Parallel page */
-    prefPage = new VBoxVMSettingsParallelPage();
-    addItem (":/parallel_port_32px.png", ":/parallel_port_disabled_32px.png", ":/parallel_port_16px.png", ":/parallel_port_disabled_16px.png",
-             ParallelId, "#parallelPorts",
-             prefPage, PortsId);
+        /* Parallel page */
+        if (isAvailable (ParallelId))
+        {
+            prefPage = new VBoxVMSettingsParallelPage();
+            addItem (":/parallel_port_32px.png", ":/parallel_port_disabled_32px.png",
+                     ":/parallel_port_16px.png", ":/parallel_port_disabled_16px.png",
+                     ParallelId, "#parallelPorts", prefPage, PortsId);
+        }
+    }
 
     /* SFolders page */
-    prefPage = new VBoxVMSettingsSF (MachineType);
-    addItem (":/shared_folder_32px.png", ":/shared_folder_disabled_32px.png", ":/shared_folder_16px.png", ":/shared_folder_disabled_16px.png",
-             SFId, "#sfolders",
-             prefPage);
-
-    /* VRDP page */
-    prefPage = new VBoxVMSettingsVRDP();
-    addItem (":/vrdp_32px.png", ":/vrdp_disabled_32px.png", ":/vrdp_16px.png", ":/vrdp_disabled_16px.png",
-             VRDPId, "#vrdp",
-             prefPage);
+    if (isAvailable (SFId))
+    {
+        prefPage = new VBoxVMSettingsSF (MachineType);
+        addItem (":/shared_folder_32px.png", ":/shared_folder_disabled_32px.png", ":/shared_folder_16px.png", ":/shared_folder_disabled_16px.png",
+                 SFId, "#sfolders",
+                 prefPage);
+    }
 
     /* Applying language settings */
     retranslateUi();
-
-    /* First item as default */
 
     /* Setup Settings Dialog */
     if (!aCategory.isNull())
@@ -327,7 +389,9 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
                 w->setFocus();
             }
         }
-    }else
+    }
+    /* First item as default */
+    else
         mSelector->selectById (0);
 }
 
@@ -369,6 +433,9 @@ void VBoxVMSettingsDlg::retranslateUi()
     /* General page */
     mSelector->setItemText (GeneralId, tr ("General"));
 
+    /* Display page */
+    mSelector->setItemText (DisplayId, tr ("Display"));
+
     /* Storage page */
     mSelector->setItemText (StorageId, tr ("Storage"));
 
@@ -408,16 +475,10 @@ void VBoxVMSettingsDlg::retranslateUi()
     /* SFolders page */
     mSelector->setItemText (SFId, tr ("Shared Folders"));
 
-    /* VRDP page */
-    mSelector->setItemText (VRDPId, tr ("Remote Display"));
-
     /* Translate the selector */
     mSelector->polish();
 
     VBoxSettingsDialog::retranslateUi();
-
-    /* Update QTreeWidget with available items */
-    updateAvailability();
 
     /* Revalidate all pages to retranslate the warning messages also. */
     QList <QIWidgetValidator*> l = this->findChildren <QIWidgetValidator*> ();
@@ -446,37 +507,38 @@ void VBoxVMSettingsDlg::resetFirstRunFlag()
         mResetFirstRunFlag = true;
 }
 
-void VBoxVMSettingsDlg::updateAvailability()
+bool VBoxVMSettingsDlg::isAvailable (VMSettingsPageIds aId)
 {
     if (mMachine.isNull())
-        return;
+        return false;
 
-    /* Parallel Port Page (currently disabled) */
-    mSelector->setVisibleById (ParallelId, false);
-
-    /* USB Stuff */
-    CUSBController ctl = mMachine.GetUSBController();
-    /* Show an error message (if there is any).
-     * Note that we don't use the generic cannotLoadMachineSettings()
-     * call here because we want this message to be suppressable. */
-    if (!mMachine.isReallyOk())
-        vboxProblem().cannotAccessUSB (mMachine);
-    if (ctl.isNull())
+    /* Show the machine error message for particular group if present.
+     * We don't use the generic cannotLoadMachineSettings()
+     * call here because we want this message to be suppressible. */
+    switch (aId)
     {
-        /* Disable the USB controller category if the USB controller is
-         * not available (i.e. in VirtualBox OSE) */
-        mSelector->setVisibleById (USBId, false);
-    }
+        case ParallelId:
+        {
+            /* This page is currently disabled */
+            return false;
+        }
+        case USBId:
+        {
+            /* Show the host error message */
+            CUSBController ctl = mMachine.GetUSBController();
+            if (!mMachine.isReallyOk())
+                vboxProblem().cannotAccessUSB (mMachine);
 
-    /* VRDP Stuff */
-    CVRDPServer vrdp = mMachine.GetVRDPServer();
-    if (vrdp.isNull())
-    {
-        /* Disable the VRDP category if VRDP is
-         * not available (i.e. in VirtualBox OSE) */
-        mSelector->setVisibleById (VRDPId, false);
-        /* If mMachine has something to say, show the message */
-        vboxProblem().cannotLoadMachineSettings (mMachine, false /* strict */);
+            /* Check if USB is implemented */
+            if (ctl.isNull())
+                return false;
+
+            /* Break to common result */
+            break;
+        }
+        default:
+            break;
     }
+    return true;
 }
 

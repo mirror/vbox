@@ -593,8 +593,7 @@ public:
     QString toolTip (const CUSBDevice &aDevice) const;
     QString toolTip (const CUSBDeviceFilter &aFilter) const;
 
-    QString detailsReport (const CMachine &aMachine, bool aIsNewVM,
-                           bool aWithLinks);
+    QString detailsReport (const CMachine &aMachine, bool aWithLinks);
 
     QString platformInfo();
 
