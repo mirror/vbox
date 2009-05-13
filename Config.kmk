@@ -1324,8 +1324,7 @@ else
 endif
 
 # Makeself for the linux installers.
-VBOX_MAKESELF  ?= $(PATH_DEVTOOLS)/common/makeself/v2.1.4_1/makeself.sh
-#VBOX_MAKESELF  ?= $(PATH_DEVTOOLS)/common/makeself/v2.1.5_1/makeself.sh
+VBOX_MAKESELF  ?= $(PATH_DEVTOOLS)/common/makeself/v2.1.5/makeself.sh
 
 # Microsoft HTML Help Workshop.
 VBOX_PATH_HTML_HELP_WORKSHOP ?= $(PATH_DEVTOOLS)/win.x86/HTML_Help_Workshop/v1.3/
