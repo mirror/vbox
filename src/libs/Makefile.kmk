@@ -85,7 +85,7 @@ if defined(VBOX_WITH_MAIN) && !defined(VBOX_ONLY_DOCS)
 
 endif # VBOX_WITH_MAIN && !VBOX_ONLY_DOCS
 
-if defined(VBOX_WITH_CROGL) && !defined(VBOX_OSE)
+if defined(VBOX_WITH_CROGL) && !defined(VBOX_OSE) && !defined(VBOX_ONLY_DOCS)
  ifeq ($(KBUILD_TARGET),linux)
   include $(PATH_SUB_CURRENT)/mesa-7.2/Makefile.kmk
  endif
