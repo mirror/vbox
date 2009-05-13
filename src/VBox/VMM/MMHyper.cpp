@@ -73,7 +73,8 @@ int mmR3HyperInit(PVM pVM)
 
     /** @todo @bugref{1865}, @bugref{3202}: Change the cbHyperHeap default
      *        depending on whether VT-x/AMD-V is enabled or not! Don't waste
-     *        precious kernel space on heap for the PATM. */
+     *        precious kernel space on heap for the PATM. 
+     */
     uint32_t cbHyperHeap;
     int rc = CFGMR3QueryU32(CFGMR3GetChild(CFGMR3GetRoot(pVM), "MM"), "cbHyperHeap", &cbHyperHeap);
     if (rc == VERR_CFGM_NO_PARENT || rc == VERR_CFGM_VALUE_NOT_FOUND)
@@ -141,6 +142,20 @@ int mmR3HyperInit(PVM pVM)
 
 
 /**
+ * Cleans up the hypervisor heap.
+ *
+ * @returns VBox status.
+ */
+int mmR3HyperTerm(PVM pVM)
+{
+    if (pVM->mm.s.pHyperHeapR3)
+        PDMR3CritSectDelete(&pVM->mm.s.pHyperHeapR3->Lock);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Finalizes the HMA mapping.
  *
  * This is called later during init, most (all) HMA allocations should be done
@@ -153,12 +168,18 @@ VMMR3DECL(int) MMR3HyperInitFinalize(PVM pVM)
     LogFlow(("MMR3HyperInitFinalize:\n"));
 
     /*
+     * Initialize the hyper heap critical section.
+     */
+    int rc = PDMR3CritSectInit(pVM, &pVM->mm.s.pHyperHeapR3->Lock, "MM-HYPER");
+    AssertRC(rc);
+
+    /*
      * Adjust and create the HMA mapping.
      */
     while ((RTINT)pVM->mm.s.offHyperNextStatic + 64*_1K < (RTINT)pVM->mm.s.cbHyperArea - _4M)
         pVM->mm.s.cbHyperArea -= _4M;
-    int rc = PGMR3MapPT(pVM, pVM->mm.s.pvHyperAreaGC, pVM->mm.s.cbHyperArea, 0 /*fFlags*/,
-                        mmR3HyperRelocateCallback, NULL, "Hypervisor Memory Area");
+    rc = PGMR3MapPT(pVM, pVM->mm.s.pvHyperAreaGC, pVM->mm.s.cbHyperArea, 0 /*fFlags*/,
+                    mmR3HyperRelocateCallback, NULL, "Hypervisor Memory Area");
     if (RT_FAILURE(rc))
         return rc;
     pVM->mm.s.fPGMInitialized = true;
@@ -783,7 +804,6 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap, P
     return rc;
 }
 
-
 /**
  * Allocates a new heap.
  */
@@ -810,17 +830,6 @@ static int mmR3HyperHeapMap(PVM pVM, PMMHYPERHEAP pHeap, PRTGCPTR ppHeapGC)
     }
     return rc;
 }
-
-
-#if 0
-/**
- * Destroys a heap.
- */
-static int mmR3HyperHeapDestroy(PVM pVM, PMMHYPERHEAP pHeap)
-{
-    /* all this is dealt with when unlocking and freeing locked memory. */
-}
-#endif
 
 
 /**

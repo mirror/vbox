@@ -26,6 +26,7 @@
 #include <VBox/types.h>
 #include <VBox/sup.h>
 #include <VBox/stam.h>
+#include <VBox/pdmcritsect.h>
 #include <iprt/avl.h>
 #include <iprt/critsect.h>
 
@@ -322,6 +323,8 @@ typedef struct MMHYPERHEAP
 {
     /** The typical magic (MMHYPERHEAP_MAGIC). */
     uint32_t                u32Magic;
+    /** Lock protecting the heap. */
+    PDMCRITSECT             Lock;
     /** The heap size. (This structure is not included!) */
     uint32_t                cbHeap;
     /** The HC ring-3 address of the heap. */
@@ -782,6 +785,7 @@ int  mmR3UkHeapCreateU(PUVM pUVM, PMMUKHEAP *ppHeap);
 
 
 int  mmR3HyperInit(PVM pVM);
+int  mmR3HyperTerm(PVM pVM);
 int  mmR3HyperInitPaging(PVM pVM);
 
 const char *mmR3GetTagName(MMTAG enmTag);

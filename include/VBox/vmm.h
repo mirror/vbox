@@ -93,6 +93,8 @@ typedef enum VMMCALLHOST
     VMMCALLHOST_PGM_MAP_CHUNK,
     /** Allocates more handy pages. */
     VMMCALLHOST_PGM_ALLOCATE_HANDY_PAGES,
+    /** Acquire the MM hypervisor heap lock. */
+    VMMCALLHOST_MMHYPER_LOCK,
     /** Replay the REM handler notifications. */
     VMMCALLHOST_REM_REPLAY_HANDLER_NOTIFICATIONS,
     /** Flush the GC/R0 logger. */

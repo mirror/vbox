@@ -1581,6 +1581,15 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
         }
 
         /*
+         * Acquire the MM hypervisor heap lock.
+         */
+        case VMMCALLHOST_MMHYPER_LOCK:
+        {
+            pVCpu->vmm.s.rcCallHost = MMHyperLock(pVM);
+            break;
+        }
+
+        /*
          * Flush REM handler notifications.
          */
         case VMMCALLHOST_REM_REPLAY_HANDLER_NOTIFICATIONS:

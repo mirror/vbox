@@ -446,6 +446,9 @@ VMMR3DECL(int) MMR3Term(PVM pVM)
      */
     mmR3PagePoolTerm(pVM);
 
+    /* Clean up the hypervisor heap. */
+    mmR3HyperTerm(pVM);
+
     /*
      * Zero stuff to detect after termination use of the MM interface
      */

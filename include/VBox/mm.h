@@ -203,6 +203,8 @@ DECLINLINE(RTRCPTR) MMHyperCCToRC(PVM pVM, void *pv)
 VMMDECL(int)        MMHyperAlloc(PVM pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, void **ppv);
 VMMDECL(int)        MMHyperFree(PVM pVM, void *pv);
 VMMDECL(void)       MMHyperHeapCheck(PVM pVM);
+VMMDECL(int)        MMHyperLock(PVM pVM);
+VMMDECL(void)       MMHyperUnlock(PVM pVM);
 #ifdef DEBUG
 VMMDECL(void)       MMHyperHeapDump(PVM pVM);
 #endif
