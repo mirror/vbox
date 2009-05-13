@@ -187,7 +187,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  *          - Remove SUPR0PageAlloc in favor of SUPR0PageAllocEx, removing
  *            and renaming the related IOCtls too.
  */
-#define SUPDRV_IOC_VERSION                              0x000b0001
+#define SUPDRV_IOC_VERSION                              0x000c0001
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -231,7 +231,7 @@ typedef struct SUPCOOKIE
  * Query SUPR0 functions.
  * @{
  */
-#define SUP_IOCTL_QUERY_FUNCS(cFuncs)                   SUP_CTL_CODE_SIZE(2, SUP_IOCTL_QUERY_FUNCS_SIZE(cFuncs))
+#define SUP_IOCTL_QUERY_FUNCS(cFuncs)                   SUP_CTL_CODE_BIG(2) 
 #define SUP_IOCTL_QUERY_FUNCS_SIZE(cFuncs)              RT_UOFFSETOF(SUPQUERYFUNCS, u.Out.aFunctions[(cFuncs)])
 #define SUP_IOCTL_QUERY_FUNCS_SIZE_IN                   sizeof(SUPREQHDR)
 #define SUP_IOCTL_QUERY_FUNCS_SIZE_OUT(cFuncs)          SUP_IOCTL_QUERY_FUNCS_SIZE(cFuncs)
