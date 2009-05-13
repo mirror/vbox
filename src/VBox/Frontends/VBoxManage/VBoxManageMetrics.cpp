@@ -521,6 +521,7 @@ static int handleMetricsCollect(int argc, char *argv[],
             }
             RTPrintf("\n");
         }
+        RTStrmFlush(g_pStdOut);
     }
 
 #ifdef RT_OS_WINDOWS
