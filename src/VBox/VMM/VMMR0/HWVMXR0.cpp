@@ -710,7 +710,7 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, CPUMCTX *pCtx)
     /* Dispatch any pending interrupts. (injected before, but a VM exit occurred prematurely) */
     if (pVCpu->hwaccm.s.Event.fPending)
     {
-        Log(("Reinjecting event %RX64 %08x at %RGv cr2=%RX64\n", pVCpu->hwaccm.s.Event.intInfo, pVCpu->hwaccm.s.Event.errCode, (RTGCPTR)pCtx->rip, pCtx->cr2));
+        Log(("CPU%d: Reinjecting event %RX64 %08x at %RGv cr2=%RX64\n", pVCpu->idCpu, pVCpu->hwaccm.s.Event.intInfo, pVCpu->hwaccm.s.Event.errCode, (RTGCPTR)pCtx->rip, pCtx->cr2));
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatIntReinject);
         rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, pVCpu->hwaccm.s.Event.intInfo, 0, pVCpu->hwaccm.s.Event.errCode);
         AssertRC(rc);
@@ -755,7 +755,7 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, CPUMCTX *pCtx)
             uint8_t u8Interrupt;
 
             rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
-            Log(("Dispatch interrupt: u8Interrupt=%x (%d) rc=%Rrc cs:rip=%04X:%RGv\n", u8Interrupt, u8Interrupt, rc, pCtx->cs, (RTGCPTR)pCtx->rip));
+            Log(("CPU%d: Dispatch interrupt: u8Interrupt=%x (%d) rc=%Rrc cs:rip=%04X:%RGv\n", pVCpu->idCpu, u8Interrupt, u8Interrupt, rc, pCtx->cs, (RTGCPTR)pCtx->rip));
             if (RT_SUCCESS(rc))
             {
                 rc = TRPMAssertTrap(pVCpu, u8Interrupt, TRPM_HARDWARE_INT);

@@ -3024,7 +3024,7 @@ static int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * Log important stuff before entering GC.
          */
         if (TRPMHasTrap(pVCpu))
-            Log(("Pending hardware interrupt=0x%x cs:rip=%04X:%RGv\n", TRPMGetTrapNo(pVCpu), pCtx->cs, (RTGCPTR)pCtx->rip));
+            Log(("CPU%d: Pending hardware interrupt=0x%x cs:rip=%04X:%RGv\n", pVCpu->idCpu, TRPMGetTrapNo(pVCpu), pCtx->cs, (RTGCPTR)pCtx->rip));
 
         uint32_t cpl = CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx));
 
