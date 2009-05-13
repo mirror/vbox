@@ -24,7 +24,7 @@
 #define __VBoxDefs_h__
 
 /* Qt includes */
-#include <qevent.h>
+#include <QEvent>
 #include <QUuid>
 
 #define LOG_GROUP LOG_GROUP_GUI

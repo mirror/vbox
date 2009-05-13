@@ -33,6 +33,7 @@
 #include <QLineEdit>
 #include <QTimer>
 #include <QPushButton>
+#include <QFocusEvent>
 
 ////////////////////////////////////////////////////////////////////////////////
 // VBoxFilePathSelectorWidget

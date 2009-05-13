@@ -37,6 +37,7 @@
 #include <QStyleOptionFocusRect>
 #include <QStylePainter>
 #include <QToolButton>
+#include <QKeyEvent>
 
 /** @class QIRichToolButton
  *

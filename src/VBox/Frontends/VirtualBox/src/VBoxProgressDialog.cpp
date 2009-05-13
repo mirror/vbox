@@ -31,6 +31,7 @@
 /* Qt includes */
 #include <QProgressDialog>
 #include <QEventLoop>
+#include <QCloseEvent>
 
 const char *VBoxProgressDialog::sOpDescTpl = "%1... (%2/%3)";
 

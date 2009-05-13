@@ -50,6 +50,7 @@
 #include <QPainter>
 #include <QTimer>
 #include <QDir>
+#include <QHelpEvent>
 
 #include <math.h>
 

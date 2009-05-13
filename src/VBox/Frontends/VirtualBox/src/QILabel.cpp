@@ -34,6 +34,10 @@
 #include <QApplication>
 #include <QPainter>
 #include <QStyleOptionFocusRect>
+#include <QMouseEvent>
+#include <QMimeData>
+#include <QContextMenuEvent>
+#include <QFocusEvent>
 
 /* @todo: Compare the minimal size behavior in the qt3 & qt4 version. */
 
