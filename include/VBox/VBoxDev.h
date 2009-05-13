@@ -46,6 +46,8 @@ __BEGIN_DECLS
 #define VMMDEV_MOUSEGUESTNEEDSHOSTCUR                       RT_BIT(2)
 /** the host is NOT able to draw the cursor itself (e.g. L4 console) */
 #define VMMDEV_MOUSEHOSTCANNOTHWPOINTER                     RT_BIT(3)
+/** The guest can read VMMDev events to find out about pointer movement */
+#define VMMDEV_MOUSEGUESTUSESVMMDEV                         RT_BIT(4)
 /** @} */
 
 /** Flags for pfnSetCredentials

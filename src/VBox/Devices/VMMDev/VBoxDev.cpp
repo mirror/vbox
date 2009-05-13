@@ -656,6 +656,10 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                     pThis->mouseCapabilities |= VMMDEV_MOUSEGUESTNEEDSHOSTCUR;
                 else
                     pThis->mouseCapabilities &= ~VMMDEV_MOUSEGUESTNEEDSHOSTCUR;
+                if (mouseStatus->mouseFeatures & VBOXGUEST_MOUSE_GUEST_USES_VMMDEV)
+                    pThis->mouseCapabilities |= VMMDEV_MOUSEGUESTUSESVMMDEV;
+                else
+                    pThis->mouseCapabilities &= ~VMMDEV_MOUSEGUESTUSESVMMDEV;
 
                 /*
                  * Notify connector if something has changed
