@@ -1575,11 +1575,9 @@ QString VBoxGlobal::toolTip (const CUSBDeviceFilter &aFilter) const
  * Returns a details report on a given VM represented as a HTML table.
  *
  * @param aMachine      Machine to create a report for.
- * @param aIsNewVM      @c true when called by the New VM Wizard.
  * @param aWithLinks    @c true if section titles should be hypertext links.
  */
-QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
-                                   bool aWithLinks)
+QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
 {
     static const char *sTableTpl =
         "<table border=0 cellspacing=1 cellpadding=0>%1</table>";
@@ -1598,11 +1596,9 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
     static const char *sSectionItemTpl2 =
         "<tr><td width=40%><nobr>%1:</nobr></td><td/><td>%2</td></tr>";
 
-    static QString sGeneralBasicHrefTpl, sGeneralBasicBoldTpl;
     static QString sGeneralFullHrefTpl, sGeneralFullBoldTpl;
 
-    /* generate templates after every language change */
-
+    /* Generate general template after every language change */
     if (!mDetailReportTemplatesReady)
     {
         mDetailReportTemplatesReady = true;
@@ -1611,121 +1607,40 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
             = QString (sSectionItemTpl2).arg (tr ("Name", "details report"), "%1")
             + QString (sSectionItemTpl2).arg (tr ("OS Type", "details report"), "%2")
             + QString (sSectionItemTpl2).arg (tr ("Base Memory", "details report"),
-                                              tr ("<nobr>%3 MB</nobr>", "details report"));
-        sGeneralBasicHrefTpl = QString (sSectionHrefTpl)
-                .arg (2 + 3) /* rows */
-                .arg (":/machine_16px.png", /* icon */
-                      "#general", /* link */
-                      tr ("General", "details report"), /* title */
-                      generalItems); /* items */
-        sGeneralBasicBoldTpl = QString (sSectionBoldTpl)
-                .arg (2 + 3) /* rows */
-                .arg (":/machine_16px.png", /* icon */
-                      "#general", /* link */
-                      tr ("General", "details report"), /* title */
-                      generalItems); /* items */
-
-        generalItems
-           += QString (sSectionItemTpl2).arg (tr ("Video Memory", "details report"),
-                                              tr ("<nobr>%4 MB</nobr>", "details report"))
-            + QString (sSectionItemTpl2).arg (tr ("Boot Order", "details report"), "%5")
-            + QString (sSectionItemTpl2).arg (tr ("ACPI", "details report"), "%6")
-            + QString (sSectionItemTpl2).arg (tr ("IO APIC", "details report"), "%7")
-            + QString (sSectionItemTpl2).arg (tr ("VT-x/AMD-V", "details report"), "%8")
-            + QString (sSectionItemTpl2).arg (tr ("Nested Paging", "details report"), "%9")
-            + QString (sSectionItemTpl2).arg (tr ("PAE/NX", "details report"), "%10")
-            + QString (sSectionItemTpl2).arg (tr ("3D Acceleration", "details report"), "%11");
+                                              tr ("<nobr>%3 MB</nobr>", "details report"))
+            + QString (sSectionItemTpl2).arg (tr ("Boot Order", "details report"), "%4")
+            + QString (sSectionItemTpl2).arg (tr ("ACPI", "details report"), "%5")
+            + QString (sSectionItemTpl2).arg (tr ("IO APIC", "details report"), "%6")
+            + QString (sSectionItemTpl2).arg (tr ("VT-x/AMD-V", "details report"), "%7")
+            + QString (sSectionItemTpl2).arg (tr ("Nested Paging", "details report"), "%8")
+            + QString (sSectionItemTpl2).arg (tr ("PAE/NX", "details report"), "%9");
 
         sGeneralFullHrefTpl = QString (sSectionHrefTpl)
-            .arg (2 + 11) /* rows */
+            .arg (2 + 9) /* rows */
             .arg (":/machine_16px.png", /* icon */
                   "#general", /* link */
                   tr ("General", "details report"), /* title */
                   generalItems); /* items */
         sGeneralFullBoldTpl = QString (sSectionBoldTpl)
-            .arg (2 + 11) /* rows */
+            .arg (2 + 9) /* rows */
             .arg (":/machine_16px.png", /* icon */
                   "#general", /* link */
                   tr ("General", "details report"), /* title */
                   generalItems); /* items */
     }
 
-    /* common generated content */
+    /* Compose details report */
+    const QString &sectionTpl = aWithLinks ? sSectionHrefTpl : sSectionBoldTpl;
+    const QString &generalFullTpl = aWithLinks ? sGeneralFullHrefTpl : sGeneralFullBoldTpl;
 
-    const QString &sectionTpl = aWithLinks
-        ? sSectionHrefTpl
-        : sSectionBoldTpl;
+    QString report;
+    QString item;
 
-    QString hardDisks;
+    /* General */
     {
-        int rows = 2; /* including section header and footer */
-
-        CHardDiskAttachmentVector vec = aMachine.GetHardDiskAttachments();
-        for (int i = 0; i < vec.size(); ++ i)
-        {
-            CHardDiskAttachment hda = vec [i];
-            CHardDisk hd = hda.GetHardDisk();
-
-            /// @todo for the explaination of the below isOk() checks, see ***
-            /// in VBoxMedium::details().
-            if (hda.isOk())
-            {
-                const QString controller = hda.GetController();
-                KStorageBus bus;
-
-                CStorageController ctrl = aMachine.GetStorageControllerByName(controller);
-                bus = ctrl.GetBus();
-
-                LONG port   = hda.GetPort();
-                LONG device = hda.GetDevice();
-                hardDisks += QString (sSectionItemTpl2)
-                    .arg (toFullString (bus, port, device))
-                    .arg (details (hd, aIsNewVM));
-                ++ rows;
-            }
-        }
-
-        if (hardDisks.isNull())
-        {
-            hardDisks = QString (sSectionItemTpl1)
-                .arg (tr ("Not Attached", "details report (HDDs)"));
-            ++ rows;
-        }
-
-        hardDisks = sectionTpl
-            .arg (rows) /* rows */
-            .arg (":/hd_16px.png", /* icon */
-                  "#hdds", /* link */
-                  tr ("Hard Disks", "details report"), /* title */
-                  hardDisks); /* items */
-    }
-
-    /* compose details report */
-
-    const QString &generalBasicTpl = aWithLinks
-        ? sGeneralBasicHrefTpl
-        : sGeneralBasicBoldTpl;
-
-    const QString &generalFullTpl = aWithLinks
-        ? sGeneralFullHrefTpl
-        : sGeneralFullBoldTpl;
-
-    QString detailsReport;
-
-    if (aIsNewVM)
-    {
-        detailsReport
-            = generalBasicTpl
-                .arg (aMachine.GetName())
-                .arg (vmGuestOSTypeDescription (aMachine.GetOSTypeId()))
-                .arg (aMachine.GetMemorySize())
-            + hardDisks;
-    }
-    else
-    {
-        /* boot order */
+        /* Boot order */
         QString bootOrder;
-        for (ulong i = 1; i <= mVBox.GetSystemProperties().GetMaxBootPosition(); i++)
+        for (ulong i = 1; i <= mVBox.GetSystemProperties().GetMaxBootPosition(); ++ i)
         {
             KDeviceType device = aMachine.GetBootOrder (i);
             if (device == KDeviceType_Null)
@@ -1764,43 +1679,127 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
             ? tr ("Enabled", "details report (PAE/NX)")
             : tr ("Disabled", "details report (PAE/NX)");
 
-        /* 3D Acceleration */
+        /* General */
+        report = generalFullTpl
+                 .arg (aMachine.GetName())
+                 .arg (vmGuestOSTypeDescription (aMachine.GetOSTypeId()))
+                 .arg (aMachine.GetMemorySize())
+                 .arg (bootOrder)
+                 .arg (acpi)
+                 .arg (ioapic)
+                 .arg (virt)
+                 .arg (nested)
+                 .arg (pae);
+    }
+
+    /* Display */
+    {
+        /* Erase temp item */
+        item = QString::null;
+
+        int rows = 2; /* including section header and footer */
+
+        /* Video tab */
         QString acc3d = aMachine.GetAccelerate3DEnabled()
             ? tr ("Enabled", "details report (3D Acceleration)")
             : tr ("Disabled", "details report (3D Acceleration)");
 
-        /* General + Hard Disks */
-        detailsReport
-            = generalFullTpl
-                .arg (aMachine.GetName())
-                .arg (vmGuestOSTypeDescription (aMachine.GetOSTypeId()))
-                .arg (aMachine.GetMemorySize())
-                .arg (aMachine.GetVRAMSize())
-                .arg (bootOrder)
-                .arg (acpi)
-                .arg (ioapic)
-                .arg (virt)
-                .arg (nested)
-                .arg (pae)
-                .arg (acc3d)
-            + hardDisks;
+        item += QString (sSectionItemTpl2)
+                .arg (tr ("Video Memory", "details report"),
+                      tr ("<nobr>%1 MB</nobr>", "details report"))
+                .arg (aMachine.GetVRAMSize());
+        item += QString (sSectionItemTpl2)
+                .arg (tr ("3D Acceleration", "details report"), "%2")
+                .arg (acc3d);
 
-        QString item;
+        rows += 2;
 
-        /* DVD */
+        /* VRDP tab */
+        CVRDPServer srv = aMachine.GetVRDPServer();
+        if (!srv.isNull())
+        {
+            if (srv.GetEnabled())
+                item += QString (sSectionItemTpl2)
+                        .arg (tr ("VRDP Server Port", "details report (VRDP Server)"))
+                        .arg (srv.GetPort());
+            else
+                item += QString (sSectionItemTpl2)
+                        .arg (tr ("VRDP Server", "details report (VRDP Server)"))
+                        .arg (tr ("Disabled", "details report (VRDP Server)"));
+            ++ rows;
+        }
+
+        /* Full report */
+        report += sectionTpl
+            .arg (rows) /* rows */
+            .arg (":/vrdp_16px.png", /* icon */
+                  "#display", /* link */
+                  tr ("Display", "details report"), /* title */
+                  item); /* items */
+    }
+
+    /* Hard Disks */
+    {
+        /* Erase temp item */
+        item = QString::null;
+
+        int rows = 2; /* including section header and footer */
+
+        CHardDiskAttachmentVector vec = aMachine.GetHardDiskAttachments();
+        for (int i = 0; i < vec.size(); ++ i)
+        {
+            CHardDiskAttachment hda = vec [i];
+            CHardDisk hd = hda.GetHardDisk();
+
+            /// @todo for the explaination of the below isOk() checks, see ***
+            /// in VBoxMedium::details().
+            if (hda.isOk())
+            {
+                const QString controller = hda.GetController();
+                KStorageBus bus;
+
+                CStorageController ctrl = aMachine.GetStorageControllerByName(controller);
+                bus = ctrl.GetBus();
+
+                LONG port   = hda.GetPort();
+                LONG device = hda.GetDevice();
+                item += QString (sSectionItemTpl2)
+                        .arg (toFullString (bus, port, device))
+                        .arg (details (hd, false));
+                ++ rows;
+            }
+        }
+
+        if (item.isNull())
+        {
+            item = QString (sSectionItemTpl1)
+                   .arg (tr ("Not Attached", "details report (HDDs)"));
+            ++ rows;
+        }
+
+        report += sectionTpl
+            .arg (rows) /* rows */
+            .arg (":/hd_16px.png", /* icon */
+                  "#hdds", /* link */
+                  tr ("Hard Disks", "details report"), /* title */
+                  item); /* items */
+    }
+
+    /* DVD */
+    {
         CDVDDrive dvd = aMachine.GetDVDDrive();
         switch (dvd.GetState())
         {
             case KDriveState_NotMounted:
                 item = QString (sSectionItemTpl1)
-                    .arg (tr ("Not mounted", "details report (DVD)"));
+                       .arg (tr ("Not mounted", "details report (DVD)"));
                 break;
             case KDriveState_ImageMounted:
             {
                 CDVDImage img = dvd.GetImage();
                 item = QString (sSectionItemTpl2)
-                    .arg (tr ("Image", "details report (DVD)"),
-                          locationForHTML (img.GetName()));
+                       .arg (tr ("Image", "details report (DVD)"),
+                             locationForHTML (img.GetName()));
                 break;
             }
             case KDriveState_HostDriveCaptured:
@@ -1812,34 +1811,36 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
                     drvName :
                     QString ("%1 (%2)").arg (description, drvName);
                 item = QString (sSectionItemTpl2)
-                    .arg (tr ("Host Drive", "details report (DVD)"),
-                          fullName);
+                       .arg (tr ("Host Drive", "details report (DVD)"),
+                             fullName);
                 break;
             }
             default:
                 AssertMsgFailed (("Invalid DVD state: %d", dvd.GetState()));
         }
-        detailsReport += sectionTpl
+        report += sectionTpl
             .arg (2 + 1) /* rows */
             .arg (":/cd_16px.png", /* icon */
                   "#dvd", /* link */
                   tr ("CD/DVD-ROM", "details report"), /* title */
                   item); // items
+    }
 
-        /* Floppy */
+    /* Floppy */
+    {
         CFloppyDrive floppy = aMachine.GetFloppyDrive();
         switch (floppy.GetState())
         {
             case KDriveState_NotMounted:
                 item = QString (sSectionItemTpl1)
-                    .arg (tr ("Not mounted", "details report (floppy)"));
+                       .arg (tr ("Not mounted", "details report (floppy)"));
                 break;
             case KDriveState_ImageMounted:
             {
                 CFloppyImage img = floppy.GetImage();
                 item = QString (sSectionItemTpl2)
-                    .arg (tr ("Image", "details report (floppy)"),
-                          locationForHTML (img.GetName()));
+                       .arg (tr ("Image", "details report (floppy)"),
+                             locationForHTML (img.GetName()));
                 break;
             }
             case KDriveState_HostDriveCaptured:
@@ -1851,249 +1852,237 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
                     drvName :
                     QString ("%1 (%2)").arg (description, drvName);
                 item = QString (sSectionItemTpl2)
-                    .arg (tr ("Host Drive", "details report (floppy)"),
-                          fullName);
+                       .arg (tr ("Host Drive", "details report (floppy)"),
+                             fullName);
                 break;
             }
             default:
                 AssertMsgFailed (("Invalid floppy state: %d", floppy.GetState()));
         }
-        detailsReport += sectionTpl
+        report += sectionTpl
             .arg (2 + 1) /* rows */
             .arg (":/fd_16px.png", /* icon */
                   "#floppy", /* link */
                   tr ("Floppy", "details report"), /* title */
                   item); /* items */
+    }
 
-        /* audio */
-        {
-            CAudioAdapter audio = aMachine.GetAudioAdapter();
-            int rows = audio.GetEnabled() ? 3 : 2;
-            if (audio.GetEnabled())
-                item = QString (sSectionItemTpl2)
-                       .arg (tr ("Host Driver", "details report (audio)"),
-                             toString (audio.GetAudioDriver())) +
-                       QString (sSectionItemTpl2)
-                       .arg (tr ("Controller", "details report (audio)"),
-                             toString (audio.GetAudioController()));
-            else
-                item = QString (sSectionItemTpl1)
-                    .arg (tr ("Disabled", "details report (audio)"));
+    /* Audio */
+    {
+        CAudioAdapter audio = aMachine.GetAudioAdapter();
+        int rows = audio.GetEnabled() ? 3 : 2;
+        if (audio.GetEnabled())
+            item = QString (sSectionItemTpl2)
+                   .arg (tr ("Host Driver", "details report (audio)"),
+                         toString (audio.GetAudioDriver())) +
+                   QString (sSectionItemTpl2)
+                   .arg (tr ("Controller", "details report (audio)"),
+                         toString (audio.GetAudioController()));
+        else
+            item = QString (sSectionItemTpl1)
+                   .arg (tr ("Disabled", "details report (audio)"));
 
-            detailsReport += sectionTpl
-                .arg (rows + 1) /* rows */
-                .arg (":/sound_16px.png", /* icon */
-                      "#audio", /* link */
-                      tr ("Audio", "details report"), /* title */
-                      item); /* items */
-        }
-        /* network */
+        report += sectionTpl
+            .arg (rows + 1) /* rows */
+            .arg (":/sound_16px.png", /* icon */
+                  "#audio", /* link */
+                  tr ("Audio", "details report"), /* title */
+                  item); /* items */
+    }
+
+    /* Network */
+    {
+        /* Erase temp item */
+        item = QString::null;
+
+        ulong count = mVBox.GetSystemProperties().GetNetworkAdapterCount();
+        int rows = 2; /* including section header and footer */
+        for (ulong slot = 0; slot < count; slot ++)
         {
-            item = QString::null;
-            ulong count = mVBox.GetSystemProperties().GetNetworkAdapterCount();
-            int rows = 2; /* including section header and footer */
-            for (ulong slot = 0; slot < count; slot ++)
+            CNetworkAdapter adapter = aMachine.GetNetworkAdapter (slot);
+            if (adapter.GetEnabled())
             {
-                CNetworkAdapter adapter = aMachine.GetNetworkAdapter (slot);
-                if (adapter.GetEnabled())
-                {
-                    KNetworkAttachmentType type = adapter.GetAttachmentType();
-                    QString attType = toString (adapter.GetAdapterType())
-                                      .replace (QRegExp ("\\s\\(.+\\)"), " (%1)");
-                    /* don't use the adapter type string for types that have
-                     * an additional symbolic network/interface name field, use
-                     * this name instead */
-                    if (type == KNetworkAttachmentType_Bridged)
-                        attType = attType.arg (tr ("Bridged adapter, %1",
-                            "details report (network)").arg (adapter.GetHostInterface()));
-                    else if (type == KNetworkAttachmentType_Internal)
-                        attType = attType.arg (tr ("Internal network, '%1'",
-                            "details report (network)").arg (adapter.GetInternalNetwork()));
-                    else if (type == KNetworkAttachmentType_HostOnly)
-                        attType = attType.arg (tr ("Host-only adapter, '%1'",
-                            "details report (network)").arg (adapter.GetHostInterface()));
-                    else
-                        attType = attType.arg (vboxGlobal().toString (type));
+                KNetworkAttachmentType type = adapter.GetAttachmentType();
+                QString attType = toString (adapter.GetAdapterType())
+                                  .replace (QRegExp ("\\s\\(.+\\)"), " (%1)");
+                /* don't use the adapter type string for types that have
+                 * an additional symbolic network/interface name field, use
+                 * this name instead */
+                if (type == KNetworkAttachmentType_Bridged)
+                    attType = attType.arg (tr ("Bridged adapter, %1",
+                        "details report (network)").arg (adapter.GetHostInterface()));
+                else if (type == KNetworkAttachmentType_Internal)
+                    attType = attType.arg (tr ("Internal network, '%1'",
+                        "details report (network)").arg (adapter.GetInternalNetwork()));
+                else if (type == KNetworkAttachmentType_HostOnly)
+                    attType = attType.arg (tr ("Host-only adapter, '%1'",
+                        "details report (network)").arg (adapter.GetHostInterface()));
+                else
+                    attType = attType.arg (vboxGlobal().toString (type));
 
-                    item += QString (sSectionItemTpl2)
+                item += QString (sSectionItemTpl2)
                         .arg (tr ("Adapter %1", "details report (network)")
                               .arg (adapter.GetSlot() + 1))
                         .arg (attType);
-                    ++ rows;
-                }
-            }
-            if (item.isNull())
-            {
-                item = QString (sSectionItemTpl1)
-                    .arg (tr ("Disabled", "details report (network)"));
                 ++ rows;
             }
-
-            detailsReport += sectionTpl
-                .arg (rows) /* rows */
-                .arg (":/nw_16px.png", /* icon */
-                      "#network", /* link */
-                      tr ("Network", "details report"), /* title */
-                      item); /* items */
         }
-        /* serial ports */
+        if (item.isNull())
         {
-            item = QString::null;
-            ulong count = mVBox.GetSystemProperties().GetSerialPortCount();
-            int rows = 2; /* including section header and footer */
-            for (ulong slot = 0; slot < count; slot ++)
+            item = QString (sSectionItemTpl1)
+                   .arg (tr ("Disabled", "details report (network)"));
+            ++ rows;
+        }
+
+        report += sectionTpl
+            .arg (rows) /* rows */
+            .arg (":/nw_16px.png", /* icon */
+                  "#network", /* link */
+                  tr ("Network", "details report"), /* title */
+                  item); /* items */
+    }
+
+    /* Serial Ports */
+    {
+        /* Erase temp item */
+        item = QString::null;
+
+        ulong count = mVBox.GetSystemProperties().GetSerialPortCount();
+        int rows = 2; /* including section header and footer */
+        for (ulong slot = 0; slot < count; slot ++)
+        {
+            CSerialPort port = aMachine.GetSerialPort (slot);
+            if (port.GetEnabled())
             {
-                CSerialPort port = aMachine.GetSerialPort (slot);
-                if (port.GetEnabled())
-                {
-                    KPortMode mode = port.GetHostMode();
-                    QString data =
-                        toCOMPortName (port.GetIRQ(), port.GetIOBase()) + ", ";
-                    if (mode == KPortMode_HostPipe ||
-                        mode == KPortMode_HostDevice ||
-                        mode == KPortMode_RawFile)
-                        data += QString ("%1 (<nobr>%2</nobr>)")
+                KPortMode mode = port.GetHostMode();
+                QString data =
+                    toCOMPortName (port.GetIRQ(), port.GetIOBase()) + ", ";
+                if (mode == KPortMode_HostPipe ||
+                    mode == KPortMode_HostDevice ||
+                    mode == KPortMode_RawFile)
+                    data += QString ("%1 (<nobr>%2</nobr>)")
                             .arg (vboxGlobal().toString (mode))
                             .arg (QDir::toNativeSeparators (port.GetPath()));
-                    else
-                        data += toString (mode);
+                else
+                    data += toString (mode);
 
-                    item += QString (sSectionItemTpl2)
+                item += QString (sSectionItemTpl2)
                         .arg (tr ("Port %1", "details report (serial ports)")
                               .arg (port.GetSlot() + 1))
                         .arg (data);
-                    ++ rows;
-                }
-            }
-            if (item.isNull())
-            {
-                item = QString (sSectionItemTpl1)
-                    .arg (tr ("Disabled", "details report (serial ports)"));
                 ++ rows;
             }
-
-            detailsReport += sectionTpl
-                .arg (rows) /* rows */
-                .arg (":/serial_port_16px.png", /* icon */
-                      "#serialPorts", /* link */
-                      tr ("Serial Ports", "details report"), /* title */
-                      item); /* items */
         }
-        /* parallel ports */
+        if (item.isNull())
         {
-            item = QString::null;
-            ulong count = mVBox.GetSystemProperties().GetParallelPortCount();
-            int rows = 2; /* including section header and footer */
-            for (ulong slot = 0; slot < count; slot ++)
-            {
-                CParallelPort port = aMachine.GetParallelPort (slot);
-                if (port.GetEnabled())
-                {
-                    QString data =
-                        toLPTPortName (port.GetIRQ(), port.GetIOBase()) +
-                        QString (" (<nobr>%1</nobr>)")
-                        .arg (QDir::toNativeSeparators (port.GetPath()));
+            item = QString (sSectionItemTpl1)
+                   .arg (tr ("Disabled", "details report (serial ports)"));
+            ++ rows;
+        }
 
-                    item += QString (sSectionItemTpl2)
+        report += sectionTpl
+            .arg (rows) /* rows */
+            .arg (":/serial_port_16px.png", /* icon */
+                  "#serialPorts", /* link */
+                  tr ("Serial Ports", "details report"), /* title */
+                  item); /* items */
+    }
+
+    /* Parallel Ports */
+    {
+        /* Erase temp item */
+        item = QString::null;
+
+        ulong count = mVBox.GetSystemProperties().GetParallelPortCount();
+        int rows = 2; /* including section header and footer */
+        for (ulong slot = 0; slot < count; slot ++)
+        {
+            CParallelPort port = aMachine.GetParallelPort (slot);
+            if (port.GetEnabled())
+            {
+                QString data =
+                    toLPTPortName (port.GetIRQ(), port.GetIOBase()) +
+                    QString (" (<nobr>%1</nobr>)")
+                    .arg (QDir::toNativeSeparators (port.GetPath()));
+
+                item += QString (sSectionItemTpl2)
                         .arg (tr ("Port %1", "details report (parallel ports)")
                               .arg (port.GetSlot() + 1))
                         .arg (data);
-                    ++ rows;
-                }
-            }
-            if (item.isNull())
-            {
-                item = QString (sSectionItemTpl1)
-                    .arg (tr ("Disabled", "details report (parallel ports)"));
                 ++ rows;
             }
-
-            /* Temporary disabled */
-            QString dummy = sectionTpl /* detailsReport += sectionTpl */
-                .arg (rows) /* rows */
-                .arg (":/parallel_port_16px.png", /* icon */
-                      "#parallelPorts", /* link */
-                      tr ("Parallel Ports", "details report"), /* title */
-                      item); /* items */
         }
-        /* USB */
+        if (item.isNull())
         {
-            CUSBController ctl = aMachine.GetUSBController();
-            if (!ctl.isNull())
-            {
-                /* the USB controller may be unavailable (i.e. in VirtualBox OSE) */
-
-                if (ctl.GetEnabled())
-                {
-                    CUSBDeviceFilterVector coll = ctl.GetDeviceFilters();
-                    uint active = 0;
-                    for (int i = 0; i < coll.size(); ++i)
-                        if (coll[i].GetActive())
-                            active ++;
-
-                    item = QString (sSectionItemTpl2)
-                        .arg (tr ("Device Filters", "details report (USB)"),
-                              tr ("%1 (%2 active)", "details report (USB)")
-                                  .arg (coll.size()).arg (active));
-                }
-                else
-                    item = QString (sSectionItemTpl1)
-                        .arg (tr ("Disabled", "details report (USB)"));
-
-                detailsReport += sectionTpl
-                    .arg (2 + 1) /* rows */
-                    .arg (":/usb_16px.png", /* icon */
-                          "#usb", /* link */
-                          tr ("USB", "details report"), /* title */
-                          item); /* items */
-            }
+            item = QString (sSectionItemTpl1)
+                   .arg (tr ("Disabled", "details report (parallel ports)"));
+            ++ rows;
         }
-        /* Shared folders */
+
+        /* Temporary disabled */
+        QString dummy = sectionTpl /* report += sectionTpl */
+            .arg (rows) /* rows */
+            .arg (":/parallel_port_16px.png", /* icon */
+                  "#parallelPorts", /* link */
+                  tr ("Parallel Ports", "details report"), /* title */
+                  item); /* items */
+    }
+
+    /* USB */
+    {
+        CUSBController ctl = aMachine.GetUSBController();
+        if (!ctl.isNull())
         {
-            ulong count = aMachine.GetSharedFolders().size();
-            if (count > 0)
+            /* the USB controller may be unavailable (i.e. in VirtualBox OSE) */
+
+            if (ctl.GetEnabled())
             {
+                CUSBDeviceFilterVector coll = ctl.GetDeviceFilters();
+                uint active = 0;
+                for (int i = 0; i < coll.size(); ++i)
+                    if (coll[i].GetActive())
+                        active ++;
+
                 item = QString (sSectionItemTpl2)
-                    .arg (tr ("Shared Folders", "details report (shared folders)"))
-                    .arg (count);
+                       .arg (tr ("Device Filters", "details report (USB)"),
+                             tr ("%1 (%2 active)", "details report (USB)")
+                                 .arg (coll.size()).arg (active));
             }
             else
                 item = QString (sSectionItemTpl1)
-                    .arg (tr ("None", "details report (shared folders)"));
+                       .arg (tr ("Disabled", "details report (USB)"));
 
-            detailsReport += sectionTpl
+            report += sectionTpl
                 .arg (2 + 1) /* rows */
-                .arg (":/shared_folder_16px.png", /* icon */
-                      "#sfolders", /* link */
-                      tr ("Shared Folders", "details report"), /* title */
+                .arg (":/usb_16px.png", /* icon */
+                      "#usb", /* link */
+                      tr ("USB", "details report"), /* title */
                       item); /* items */
-        }
-        /* VRDP */
-        {
-            CVRDPServer srv = aMachine.GetVRDPServer();
-            if (!srv.isNull())
-            {
-                /* the VRDP server may be unavailable (i.e. in VirtualBox OSE) */
-
-                if (srv.GetEnabled())
-                    item = QString (sSectionItemTpl2)
-                        .arg (tr ("VRDP Server Port", "details report (VRDP)"))
-                        .arg (srv.GetPort());
-                else
-                    item = QString (sSectionItemTpl1)
-                        .arg (tr ("Disabled", "details report (VRDP)"));
-
-                detailsReport += sectionTpl
-                    .arg (2 + 1) /* rows */
-                    .arg (":/vrdp_16px.png", /* icon */
-                          "#vrdp", /* link */
-                          tr ("Remote Display", "details report"), /* title */
-                          item); /* items */
-            }
         }
     }
 
-    return QString (sTableTpl). arg (detailsReport);
+    /* Shared Folders */
+    {
+        ulong count = aMachine.GetSharedFolders().size();
+        if (count > 0)
+        {
+            item = QString (sSectionItemTpl2)
+                   .arg (tr ("Shared Folders", "details report (shared folders)"))
+                   .arg (count);
+        }
+        else
+            item = QString (sSectionItemTpl1)
+                   .arg (tr ("None", "details report (shared folders)"));
+
+        report += sectionTpl
+            .arg (2 + 1) /* rows */
+            .arg (":/shared_folder_16px.png", /* icon */
+                  "#sfolders", /* link */
+                  tr ("Shared Folders", "details report"), /* title */
+                  item); /* items */
+    }
+
+    return QString (sTableTpl). arg (report);
 }
 
 QString VBoxGlobal::platformInfo()
@@ -5375,7 +5364,7 @@ void VBoxGlobal::init()
             if (++i < argc)
             {
                 QString param = QString (qApp->argv() [i]);
-                QUuid uuid = QUuid(param);         
+                QUuid uuid = QUuid(param);
                 if (!uuid.isNull())
                 {
                     vmUuid = param;

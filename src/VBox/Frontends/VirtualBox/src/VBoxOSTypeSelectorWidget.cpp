@@ -38,6 +38,8 @@ VBoxOSTypeSelectorWidget::VBoxOSTypeSelectorWidget (QWidget *aParent)
     , mPxTypeIcon (new QLabel (this))
     , mCbFamily (new QComboBox (this))
     , mCbType (new QComboBox (this))
+    , mPolished (false)
+    , mLayoutPosition (-1)
 {
     /* Setup widgets */
     mTxFamilyName->setAlignment (Qt::AlignRight);
@@ -113,21 +115,29 @@ CGuestOSType VBoxOSTypeSelectorWidget::type() const
     return mType;
 }
 
+void VBoxOSTypeSelectorWidget::setLayoutPosition (int aPos)
+{
+    mLayoutPosition = aPos;
+}
+
 void VBoxOSTypeSelectorWidget::retranslateUi()
 {
     mTxFamilyName->setText (tr ("Operating &System:"));
     mCbFamily->setWhatsThis (tr ("Displays the operating system family that "
                                  "you plan to install into this virtual machine."));
-    mTxTypeName->setText (tr ("V&ersion:"));
+    mTxTypeName->setText (tr ("&Version:"));
     mCbType->setWhatsThis (tr ("Displays the operating system type that "
                                "you plan to install into this virtual "
                                "machine (called a guest operating system)."));
 }
 
-bool VBoxOSTypeSelectorWidget::event (QEvent *aEvent)
+void VBoxOSTypeSelectorWidget::showEvent (QShowEvent *aEvent)
 {
-    if (aEvent->type() == QEvent::Polish)
+    if (!mPolished)
     {
+        /* Finally polishing just before first show event */
+        mPolished = true;
+
         /* Layouting widgets */
         QVBoxLayout *layout1 = new QVBoxLayout();
         layout1->setSpacing (0);
@@ -137,14 +147,14 @@ bool VBoxOSTypeSelectorWidget::event (QEvent *aEvent)
         QGridLayout *layout2 = layout() ? static_cast <QGridLayout*> (layout()) :
                                           new QGridLayout (this);
         layout2->setMargin (0);
-        int row = layout2->rowCount();
+        int row = mLayoutPosition == -1 ? layout2->rowCount() : mLayoutPosition;
         layout2->addWidget (mTxFamilyName, row, 0);
         layout2->addWidget (mCbFamily, row, 1);
         layout2->addWidget (mTxTypeName, row + 1, 0);
         layout2->addWidget (mCbType, row + 1, 1);
         layout2->addLayout (layout1, row, 2, 2, 1);
     }
-    return QIWithRetranslateUI <QWidget>::event (aEvent);
+    QIWithRetranslateUI <QWidget>::showEvent (aEvent);
 }
 
 void VBoxOSTypeSelectorWidget::onFamilyChanged (int aIndex)

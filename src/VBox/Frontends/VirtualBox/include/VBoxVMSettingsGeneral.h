@@ -57,19 +57,16 @@ private slots:
     void valueChangedRAM (int aVal);
     void textChangedRAM (const QString &aText);
 
-    void valueChangedVRAM (int aVal);
-    void textChangedVRAM (const QString &aText);
-
-    void stateChangedVirt (int aState);
-
     void moveBootItemUp();
     void moveBootItemDown();
     void onCurrentBootItemChanged (QTreeWidgetItem *aItem,
                                    QTreeWidgetItem *aPrev = 0);
 
+    void stateChangedVirt (int aState);
+
 private:
 
-    void adjustBootOrderTWSize ();
+    void adjustBootOrderTWSize();
 
     bool eventFilter (QObject *aObject, QEvent *aEvent);
     void showEvent (QShowEvent *aEvent);

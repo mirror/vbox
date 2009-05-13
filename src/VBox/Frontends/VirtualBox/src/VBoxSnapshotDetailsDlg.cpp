@@ -82,8 +82,7 @@ void VBoxSnapshotDetailsDlg::retranslateUi()
 
     /* Compose summary */
     mTeSummary->setText (
-        vboxGlobal().detailsReport (machine, false /* isNewVM */,
-                                             false /* withLinks */));
+        vboxGlobal().detailsReport (machine, false /* withLinks */));
 }
 
 void VBoxSnapshotDetailsDlg::onNameChanged (const QString &aText)

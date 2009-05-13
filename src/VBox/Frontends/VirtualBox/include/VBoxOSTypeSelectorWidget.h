@@ -43,6 +43,8 @@ public:
     void setType (const CGuestOSType &aType);
     CGuestOSType type() const;
 
+    void setLayoutPosition (int aPos);
+
 signals:
 
     void osTypeChanged();
@@ -50,7 +52,7 @@ signals:
 protected:
 
     void retranslateUi();
-    bool event (QEvent *aEvent);
+    void showEvent (QShowEvent *aEvent);
 
 private slots:
 
@@ -67,6 +69,9 @@ private:
 
     CGuestOSType mType;
     QMap <QString, QString> mCurrentIds;
+
+    bool mPolished;
+    int mLayoutPosition;
 };
 
 #endif /* __VBoxOSTypeSelectorWidget_h__ */

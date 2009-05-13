@@ -944,7 +944,7 @@ void VBoxSelectorWnd::vmDelete (const QString &aUuid /*= QUuid_null*/)
 
 void VBoxSelectorWnd::vmStart (const QString &aUuid /*= QUuid_null*/)
 {
-    QUuid uuid (aUuid); 
+    QUuid uuid (aUuid);
     VBoxVMItem *item = uuid.isNull() ? mVMListView->selectedItem() :
                        mVMModel->itemById (aUuid);
 
@@ -1404,8 +1404,7 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
         if (aRefreshDetails)
         {
             mVmDetailsView->setDetailsText (
-                vboxGlobal().detailsReport (m, false /* isNewVM */,
-                                            modifyEnabled /* withLinks */));
+                vboxGlobal().detailsReport (m, modifyEnabled /* withLinks */));
         }
         if (aRefreshSnapshots)
         {

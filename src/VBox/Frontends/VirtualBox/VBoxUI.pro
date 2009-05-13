@@ -38,20 +38,20 @@ FORMS = \
     ui/VBoxVMFirstRunWzd.ui \
     ui/VBoxVMInformationDlg.ui \
     ui/VBoxVMLogViewer.ui \
-    ui/VBoxVMSettingsAudio.ui \
+    ui/VBoxVMSettingsGeneral.ui \
+    ui/VBoxVMSettingsDisplay.ui \
+    ui/VBoxVMSettingsHD.ui \
     ui/VBoxVMSettingsCD.ui \
     ui/VBoxVMSettingsFD.ui \
-    ui/VBoxVMSettingsGeneral.ui \
-    ui/VBoxVMSettingsHD.ui \
+    ui/VBoxVMSettingsAudio.ui \
     ui/VBoxVMSettingsNetwork.ui \
     ui/VBoxVMSettingsNetworkDetails.ui \
-    ui/VBoxVMSettingsParallel.ui \
-    ui/VBoxVMSettingsSF.ui \
-    ui/VBoxVMSettingsSFDetails.ui \
     ui/VBoxVMSettingsSerial.ui \
+    ui/VBoxVMSettingsParallel.ui \
     ui/VBoxVMSettingsUSB.ui \
     ui/VBoxVMSettingsUSBFilterDetails.ui \
-    ui/VBoxVMSettingsVRDP.ui \
+    ui/VBoxVMSettingsSF.ui \
+    ui/VBoxVMSettingsSFDetails.ui \
     ui/VBoxGLSettingsGeneral.ui \
     ui/VBoxGLSettingsInput.ui \
     ui/VBoxGLSettingsUpdate.ui \

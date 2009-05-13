@@ -347,8 +347,7 @@ void VBoxVMInformationDlg::updateDetails()
 {
     /* Details page update */
     mDetailsText->setText (
-        vboxGlobal().detailsReport (mSession.GetMachine(), false /* aIsNewVM */,
-                                    false /* aWithLinks */));
+        vboxGlobal().detailsReport (mSession.GetMachine(), false /* aWithLinks */));
 }
 
 void VBoxVMInformationDlg::processStatistics()

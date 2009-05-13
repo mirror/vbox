@@ -57,27 +57,22 @@ VBoxVMSettingsGeneral::VBoxVMSettingsGeneral()
     /* Apply UI decorations */
     Ui::VBoxVMSettingsGeneral::setupUi (this);
 
+    mOSTypeSelector->setLayoutPosition (1);
+
     /* Setup constants */
     CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
     const uint MinRAM = sys.GetMinGuestRAM();
     const uint MaxRAM = sys.GetMaxGuestRAM();
-    const uint MinVRAM = sys.GetMinGuestVRAM();
-    const uint MaxVRAM = sys.GetMaxGuestVRAM();
 
     /* Setup validators */
     mLeName->setValidator (new QRegExpValidator (QRegExp (".+"), this));
     mLeRam->setValidator (new QIntValidator (MinRAM, MaxRAM, this));
-    mLeVideo->setValidator (new QIntValidator (MinVRAM, MaxVRAM, this));
 
     /* Setup connections */
     connect (mSlRam, SIGNAL (valueChanged (int)),
              this, SLOT (valueChangedRAM (int)));
-    connect (mSlVideo, SIGNAL (valueChanged (int)),
-             this, SLOT (valueChangedVRAM (int)));
     connect (mLeRam, SIGNAL (textChanged (const QString&)),
              this, SLOT (textChangedRAM (const QString&)));
-    connect (mLeVideo, SIGNAL (textChanged (const QString&)),
-             this, SLOT (textChangedVRAM (const QString&)));
     connect (mTbBootItemUp, SIGNAL (clicked()),
              this, SLOT (moveBootItemUp()));
     connect (mTbBootItemDown, SIGNAL (clicked()),
@@ -113,17 +108,6 @@ VBoxVMSettingsGeneral::VBoxVMSettingsGeneral()
     /* Ensure mLeRam value and validation is updated */
     valueChangedRAM (mSlRam->value());
 
-    mSlVideo->setPageStep (calcPageStep (MaxVRAM));
-    mSlVideo->setSingleStep (mSlVideo->pageStep() / 4);
-    mSlVideo->setTickInterval (mSlVideo->pageStep());
-    /* Setup the scale so that ticks are at page step boundaries */
-    mSlVideo->setMinimum ((MinVRAM / mSlVideo->pageStep()) * mSlVideo->pageStep());
-    mSlVideo->setMaximum (MaxVRAM);
-    /* Limit min/max. size of QLineEdit */
-    mLeVideo->setFixedWidthByText (QString().fill ('9', 5));
-    /* Ensure mLeVideo value and validation is updated */
-    valueChangedVRAM (mSlVideo->value());
-
     /* Shared Clipboard mode */
     mCbClipboard->addItem (""); /* KClipboardMode_Disabled */
     mCbClipboard->addItem (""); /* KClipboardMode_HostToGuest */
@@ -134,11 +118,6 @@ VBoxVMSettingsGeneral::VBoxVMSettingsGeneral()
     mCbIDEController->addItem (""); /* KIDEControllerType_PIIX3 */
     mCbIDEController->addItem (""); /* KIDEControllerType_PIIX4 */
     mCbIDEController->addItem (""); /* KIDEControllerType_ICH6  */
-
-#ifdef QT_MAC_USE_COCOA
-    /* No OpenGL on Snow Leopard 64-bit yet */
-    mCb3D->setEnabled (false);
-#endif /* QT_MAC_USE_COCOA */
 
     qApp->installEventFilter (this);
 
@@ -159,9 +138,6 @@ void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
 
     /* RAM size */
     mSlRam->setValue (aMachine.GetMemorySize());
-
-    /* VRAM size */
-    mSlVideo->setValue (aMachine.GetVRAMSize());
 
     /* Boot-order */
     {
@@ -223,9 +199,6 @@ void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
     mCbPae->setEnabled (fPAESupported);
     mCbPae->setChecked (aMachine.GetPAEEnabled());
 
-    /* 3D Acceleration */
-    mCb3D->setChecked (aMachine.GetAccelerate3DEnabled());
-
     /* Snapshot folder */
     mPsSnapshot->setPath (aMachine.GetSnapshotFolder());
     mPsSnapshot->setHomeDir (QFileInfo (mMachine.GetSettingsFilePath()).absolutePath());
@@ -272,9 +245,6 @@ void VBoxVMSettingsGeneral::putBackTo()
     /* RAM size */
     mMachine.SetMemorySize (mSlRam->value());
 
-    /* VRAM size */
-    mMachine.SetVRAMSize (mSlVideo->value());
-
     /* boot order */
     {
         /* Search for checked items */
@@ -314,9 +284,6 @@ void VBoxVMSettingsGeneral::putBackTo()
 
     /* PAE/NX */
     mMachine.SetPAEEnabled (mCbPae->isChecked());
-
-    /* 3D Acceleration */
-    mMachine.SetAccelerate3DEnabled (mCb3D->isChecked());
 
     /* Saved state folder */
     if (mPsSnapshot->isModified())
@@ -424,9 +391,8 @@ bool VBoxVMSettingsGeneral::revalidate (QString &aWarning, QString & /* aTitle *
         warnPct = 0.90;
     }
 
-    /* System RAM & Video RAM sliders correlation test */
-    quint64 needBytes = VBoxGlobal::requiredVideoMemory (&mMachine);
-    if (mSlRam->value() + mSlVideo->value() > maxPct * fullSize)
+    /* System RAM amount test */
+    if (mSlRam->value() > maxPct * fullSize)
     {
         aWarning = tr (
             "you have assigned more than <b>%1%</b> of your computer's memory "
@@ -436,7 +402,7 @@ bool VBoxVMSettingsGeneral::revalidate (QString &aWarning, QString & /* aTitle *
             .arg (vboxGlobal().formatSize ((uint64_t)fullSize * _1M));
         return false;
     }
-    if (mSlRam->value() + mSlVideo->value() > warnPct * fullSize)
+    if (mSlRam->value() > warnPct * fullSize)
     {
         aWarning = tr (
             "you have assigned more than <b>%1%</b> of your computer's memory "
@@ -444,15 +410,6 @@ bool VBoxVMSettingsGeneral::revalidate (QString &aWarning, QString & /* aTitle *
             "left for your host operating system. Continue at your own risk.")
             .arg ((unsigned)(warnPct * 100))
             .arg (vboxGlobal().formatSize ((uint64_t)fullSize * _1M));
-        return true;
-    }
-    if ((quint64) mSlVideo->value() * _1M < needBytes)
-    {
-        aWarning = tr (
-            "you have assigned less than <b>%1</b> for video memory which is "
-            "the minimum amount required to switch the virtual machine to "
-            "fullscreen or seamless mode.")
-            .arg (vboxGlobal().formatSize (needBytes, 0, VBoxDefs::FormatSize_RoundUp));
         return true;
     }
 
@@ -480,11 +437,8 @@ void VBoxVMSettingsGeneral::setOrderAfter (QWidget *aWidget)
     setTabOrder (mLeName, mOSTypeSelector);
     setTabOrder (mOSTypeSelector, mSlRam);
     setTabOrder (mSlRam, mLeRam);
-    setTabOrder (mLeRam, mSlVideo);
-    setTabOrder (mSlVideo, mLeVideo);
-    setTabOrder (mLeVideo, mCb3D);
 
-    setTabOrder (mCb3D, mTwBootOrder);
+    setTabOrder (mLeRam, mTwBootOrder);
     setTabOrder (mTwBootOrder, mTbBootItemUp);
     setTabOrder (mTbBootItemUp, mTbBootItemDown);
     setTabOrder (mTbBootItemDown, mCbAcpi);
@@ -512,8 +466,6 @@ void VBoxVMSettingsGeneral::retranslateUi()
     CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
     mLbRamMin->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (sys.GetMinGuestRAM()));
     mLbRamMax->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (sys.GetMaxGuestRAM()));
-    mLbVideoMin->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (sys.GetMinGuestVRAM()));
-    mLbVideoMax->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (sys.GetMaxGuestVRAM()));
 
     /* Retranslate the boot order items */
     QTreeWidgetItemIterator it (mTwBootOrder);
@@ -554,21 +506,6 @@ void VBoxVMSettingsGeneral::valueChangedRAM (int aVal)
 void VBoxVMSettingsGeneral::textChangedRAM (const QString &aText)
 {
     mSlRam->setValue (aText.toInt());
-}
-
-void VBoxVMSettingsGeneral::valueChangedVRAM (int aVal)
-{
-    mLeVideo->setText (QString().setNum (aVal));
-}
-
-void VBoxVMSettingsGeneral::textChangedVRAM (const QString &aText)
-{
-    mSlVideo->setValue (aText.toInt());
-}
-
-void VBoxVMSettingsGeneral::stateChangedVirt (int /* aState */)
-{
-    mCbNestedPaging->setEnabled (mCbVirt->checkState());
 }
 
 void VBoxVMSettingsGeneral::moveBootItemUp()
@@ -615,6 +552,11 @@ void VBoxVMSettingsGeneral::onCurrentBootItemChanged (QTreeWidgetItem *aItem,
         mTwBootOrder->setFocus();
     mTbBootItemUp->setEnabled (upEnabled);
     mTbBootItemDown->setEnabled (downEnabled);
+}
+
+void VBoxVMSettingsGeneral::stateChangedVirt (int /* aState */)
+{
+    mCbNestedPaging->setEnabled (mCbVirt->checkState());
 }
 
 void VBoxVMSettingsGeneral::adjustBootOrderTWSize()

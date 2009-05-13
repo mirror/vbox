@@ -36,39 +36,22 @@
       <attribute name="title" >
        <string>&amp;Basic</string>
       </attribute>
-      <layout class="QGridLayout" >
-       <item row="0" column="0" colspan="2" >
-        <widget class="QILabelSeparator" name="mGbIdent" >
-         <property name="sizePolicy" >
-          <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text" >
-          <string>Identification</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0" >
-        <spacer>
-         <property name="orientation" >
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeType" >
-          <enum>QSizePolicy::Fixed</enum>
-         </property>
-         <property name="sizeHint" >
-          <size>
-           <width>20</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="1" column="1" >
+      <layout class="QVBoxLayout" >
+       <item>
         <widget class="VBoxOSTypeSelectorWidget" name="mOSTypeSelector" >
          <layout class="QGridLayout" >
+          <property name="leftMargin" >
+           <number>0</number>
+          </property>
+          <property name="topMargin" >
+           <number>0</number>
+          </property>
+          <property name="rightMargin" >
+           <number>0</number>
+          </property>
+          <property name="bottomMargin" >
+           <number>0</number>
+          </property>
           <item row="0" column="0" >
            <widget class="QLabel" name="mLbName" >
             <property name="text" >
@@ -89,131 +72,82 @@
             </property>
            </widget>
           </item>
-         </layout>
-        </widget>
-       </item>
-       <item row="2" column="0" colspan="2" >
-        <widget class="QILabelSeparator" name="mGbRam" >
-         <property name="sizePolicy" >
-          <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text" >
-          <string>Base &amp;Memory Size</string>
-         </property>
-         <property name="buddy" >
-          <cstring>mLeRam</cstring>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0" >
-        <spacer>
-         <property name="orientation" >
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeType" >
-          <enum>QSizePolicy::Fixed</enum>
-         </property>
-         <property name="sizeHint" >
-          <size>
-           <width>20</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="3" column="1" >
-        <widget class="QWidget" native="1" name="widget_3" >
-         <property name="sizePolicy" >
-          <sizepolicy vsizetype="Maximum" hsizetype="Preferred" >
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <layout class="QHBoxLayout" >
-          <property name="leftMargin" >
-           <number>0</number>
-          </property>
-          <property name="topMargin" >
-           <number>0</number>
-          </property>
-          <property name="rightMargin" >
-           <number>0</number>
-          </property>
-          <property name="bottomMargin" >
-           <number>0</number>
-          </property>
-          <item>
-           <layout class="QVBoxLayout" >
-            <item>
-             <widget class="QSlider" name="mSlRam" >
-              <property name="whatsThis" >
-               <string>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</string>
+          <item row="3" column="0" >
+           <widget class="QLabel" name="mLbRam" >
+            <property name="text" >
+             <string>Base &amp;Memory:</string>
+            </property>
+            <property name="alignment" >
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+            <property name="buddy" >
+             <cstring>mLeRam</cstring>
+            </property>
+           </widget>
+          </item>
+          <item rowspan="2" row="3" column="1" colspan="2" >
+           <layout class="QGridLayout" >
+            <item rowspan="2" row="0" column="0" >
+             <layout class="QVBoxLayout" >
+              <property name="spacing" >
+               <number>0</number>
               </property>
-              <property name="orientation" >
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="tickPosition" >
-               <enum>QSlider::TicksBelow</enum>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <layout class="QHBoxLayout" >
               <item>
-               <widget class="QLabel" name="mLbRamMin" >
-                <property name="sizePolicy" >
-                 <sizepolicy vsizetype="Fixed" hsizetype="Fixed" >
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
+               <widget class="QSlider" name="mSlRam" >
+                <property name="whatsThis" >
+                 <string>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</string>
                 </property>
-                <property name="text" >
-                 <string>&lt;</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <spacer>
                 <property name="orientation" >
                  <enum>Qt::Horizontal</enum>
                 </property>
-                <property name="sizeHint" >
-                 <size>
-                  <width>0</width>
-                  <height>0</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item>
-               <widget class="QLabel" name="mLbRamMax" >
-                <property name="sizePolicy" >
-                 <sizepolicy vsizetype="Fixed" hsizetype="Fixed" >
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="text" >
-                 <string>></string>
-                </property>
-                <property name="alignment" >
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                <property name="tickPosition" >
+                 <enum>QSlider::TicksBelow</enum>
                 </property>
                </widget>
               </item>
+              <item>
+               <layout class="QHBoxLayout" >
+                <item>
+                 <widget class="QLabel" name="mLbRamMin" >
+                  <property name="sizePolicy" >
+                   <sizepolicy vsizetype="Fixed" hsizetype="Fixed" >
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer>
+                  <property name="orientation" >
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" >
+                   <size>
+                    <width>0</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item>
+                 <widget class="QLabel" name="mLbRamMax" >
+                  <property name="sizePolicy" >
+                   <sizepolicy vsizetype="Fixed" hsizetype="Fixed" >
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="alignment" >
+                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
              </layout>
             </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QVBoxLayout" >
-            <property name="spacing" >
-             <number>0</number>
-            </property>
-            <item>
+            <item row="0" column="1" >
              <layout class="QHBoxLayout" >
               <property name="spacing" >
                <number>4</number>
@@ -232,7 +166,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QLabel" name="mLbRam" >
+               <widget class="QLabel" name="mLbRamUnit" >
                 <property name="sizePolicy" >
                  <sizepolicy vsizetype="Fixed" hsizetype="Fixed" >
                   <horstretch>0</horstretch>
@@ -246,219 +180,12 @@
               </item>
              </layout>
             </item>
-            <item>
-             <spacer>
-              <property name="orientation" >
-               <enum>Qt::Vertical</enum>
-              </property>
-              <property name="sizeType" >
-               <enum>QSizePolicy::Expanding</enum>
-              </property>
-              <property name="sizeHint" >
-               <size>
-                <width>20</width>
-                <height>0</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
            </layout>
           </item>
          </layout>
         </widget>
        </item>
-       <item row="4" column="0" colspan="2" >
-        <widget class="QILabelSeparator" name="mGbVideo" >
-         <property name="sizePolicy" >
-          <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text" >
-          <string>&amp;Video Memory Size</string>
-         </property>
-         <property name="buddy" >
-          <cstring>mLeVideo</cstring>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0" >
-        <spacer>
-         <property name="orientation" >
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeType" >
-          <enum>QSizePolicy::Fixed</enum>
-         </property>
-         <property name="sizeHint" >
-          <size>
-           <width>20</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="5" column="1" >
-        <widget class="QWidget" native="1" name="widget_2" >
-         <property name="sizePolicy" >
-          <sizepolicy vsizetype="Maximum" hsizetype="Preferred" >
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <layout class="QHBoxLayout" >
-          <property name="leftMargin" >
-           <number>0</number>
-          </property>
-          <property name="topMargin" >
-           <number>0</number>
-          </property>
-          <property name="rightMargin" >
-           <number>0</number>
-          </property>
-          <property name="bottomMargin" >
-           <number>0</number>
-          </property>
-          <item>
-           <layout class="QVBoxLayout" >
-            <item>
-             <widget class="QSlider" name="mSlVideo" >
-              <property name="whatsThis" >
-               <string>Controls the amount of video memory provided to the virtual machine.</string>
-              </property>
-              <property name="orientation" >
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="tickPosition" >
-               <enum>QSlider::TicksBelow</enum>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <layout class="QHBoxLayout" >
-              <item>
-               <widget class="QLabel" name="mLbVideoMin" >
-                <property name="sizePolicy" >
-                 <sizepolicy vsizetype="Fixed" hsizetype="Fixed" >
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="text" >
-                 <string>&lt;</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <spacer>
-                <property name="orientation" >
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" >
-                 <size>
-                  <width>0</width>
-                  <height>0</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item>
-               <widget class="QLabel" name="mLbVideoMax" >
-                <property name="sizePolicy" >
-                 <sizepolicy vsizetype="Fixed" hsizetype="Fixed" >
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="text" >
-                 <string>></string>
-                </property>
-                <property name="alignment" >
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QVBoxLayout" >
-            <property name="spacing" >
-             <number>0</number>
-            </property>
-            <item>
-             <layout class="QHBoxLayout" >
-              <property name="spacing" >
-               <number>4</number>
-              </property>
-              <item>
-               <widget class="QILineEdit" name="mLeVideo" >
-                <property name="sizePolicy" >
-                 <sizepolicy vsizetype="Fixed" hsizetype="Maximum" >
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="whatsThis" >
-                 <string>Controls the amount of video memory provided to the virtual machine.</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="mLbVideo" >
-                <property name="sizePolicy" >
-                 <sizepolicy vsizetype="Fixed" hsizetype="Fixed" >
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="text" >
-                 <string>MB</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <spacer>
-              <property name="orientation" >
-               <enum>Qt::Vertical</enum>
-              </property>
-              <property name="sizeType" >
-               <enum>QSizePolicy::Expanding</enum>
-              </property>
-              <property name="sizeHint" >
-               <size>
-                <width>20</width>
-                <height>0</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item row="6" column="1" >
-        <widget class="QCheckBox" name="mCb3D" >
-         <property name="sizePolicy" >
-          <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="whatsThis" >
-          <string>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</string>
-         </property>
-         <property name="text" >
-          <string>Enable &amp;3D Acceleration</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="1" >
+       <item>
         <spacer>
          <property name="orientation" >
           <enum>Qt::Vertical</enum>
@@ -466,7 +193,7 @@
          <property name="sizeHint" >
           <size>
            <width>20</width>
-           <height>31</height>
+           <height>0</height>
           </size>
          </property>
         </spacer>
