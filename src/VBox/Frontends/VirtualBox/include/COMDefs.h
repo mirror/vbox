@@ -83,6 +83,7 @@
 #include <QString>
 #include <QUuid>
 #include <QVector>
+#include <QMetaType>
 
 #include <iprt/memory> // for auto_copy_ptr
 

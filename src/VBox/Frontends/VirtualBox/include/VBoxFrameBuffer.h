@@ -30,6 +30,8 @@
 #include <QImage>
 #include <QPixmap>
 #include <QMutex>
+#include <QPaintEvent>
+#include <QMoveEvent>
 
 #if defined (VBOX_GUI_USE_SDL)
 #include <SDL.h>

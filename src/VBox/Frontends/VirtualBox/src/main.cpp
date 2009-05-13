@@ -40,9 +40,9 @@
 
 #include <QCleanlooksStyle>
 #include <QPlastiqueStyle>
-#include <qmessagebox.h>
-#include <qlocale.h>
-#include <qtranslator.h>
+#include <QMessageBox>
+#include <QLocale>
+#include <QTranslator>
 
 #include <iprt/err.h>
 #include <iprt/initterm.h>

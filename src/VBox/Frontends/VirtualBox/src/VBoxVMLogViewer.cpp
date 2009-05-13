@@ -37,6 +37,7 @@
 #include <QFileDialog>
 #include <QDateTime>
 #include <QPushButton>
+#include <QKeyEvent>
 
 VBoxVMLogViewer::LogViewersMap VBoxVMLogViewer::mSelfArray = LogViewersMap();
 

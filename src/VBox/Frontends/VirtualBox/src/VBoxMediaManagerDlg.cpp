@@ -36,7 +36,9 @@
 #include <QUrl>
 #include <QProgressBar>
 #include <QTimer>
-
+#include <QCloseEvent>
+#include <QDragEnterEvent>
+#include <QDropEvent>
 
 class AddVDMUrlsEvent: public QEvent
 {
