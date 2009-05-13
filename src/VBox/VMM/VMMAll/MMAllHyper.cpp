@@ -164,19 +164,16 @@ static int mmHyperLock(PVM pVM)
 #ifdef IN_RING3
     if (!PDMCritSectIsInitialized(&pHeap->Lock))
         return VINF_SUCCESS;     /* early init */
-
-    int rc = PDMCritSectEnter(&pHeap->Lock, VERR_INTERNAL_ERROR);
 #else
     Assert(PDMCritSectIsInitialized(&pHeap->Lock));
-    int rc = PDMCritSectEnter(&pHeap->Lock, VERR_GENERAL_FAILURE);
-    if (rc == VERR_GENERAL_FAILURE)
-    {
-# ifdef IN_RC
+#endif
+    int rc = PDMCritSectEnter(&pHeap->Lock, VERR_SEM_BUSY);
+#ifdef IN_RC
+    if (rc == VERR_SEM_BUSY)
         rc = VMMGCCallHost(pVM, VMMCALLHOST_MMHYPER_LOCK, 0);
-# else
+#elif defined(IN_RING0)
+    if (rc == VERR_SEM_BUSY)
         rc = VMMR0CallHost(pVM, VMMCALLHOST_MMHYPER_LOCK, 0);
-# endif
-    }
 #endif
     AssertRC(rc);
     return rc;
