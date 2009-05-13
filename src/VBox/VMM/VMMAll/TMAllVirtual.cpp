@@ -329,22 +329,27 @@ DECLINLINE(uint64_t) tmVirtualGet(PVM pVM, bool fCheckTimers)
         /*
          * Use the chance to check for expired timers.
          */
-        if (    fCheckTimers
-            &&  !VM_FF_ISSET(pVM, VM_FF_TIMER)
-            &&  !pVM->tm.s.fRunningQueues
-            &&  (   pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire <= u64
-                 || (   pVM->tm.s.fVirtualSyncTicking
-                     && pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire <= u64 - pVM->tm.s.offVirtualSync
-                    )
-                )
-           )
+        if (fCheckTimers)
         {
-            VM_FF_SET(pVM, VM_FF_TIMER);
-            STAM_COUNTER_INC(&pVM->tm.s.StatVirtualGetSetFF);
+            PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
+            if (    !VMCPU_FF_ISSET(pVCpuDst, VMCPU_FF_TIMER)
+                &&  !pVM->tm.s.fRunningQueues
+                &&  (   pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire <= u64
+                     || (   pVM->tm.s.fVirtualSyncTicking
+                         && pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire <= u64 - pVM->tm.s.offVirtualSync
+                        )
+                    )
+                &&  !pVM->tm.s.fRunningQueues
+               )
+            {
+                STAM_COUNTER_INC(&pVM->tm.s.StatVirtualGetSetFF);
+                Log5(("TMAllVirtual(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_ISPENDING(pVCpuDst, VMCPU_FF_TIMER)));
+                VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
 #ifdef IN_RING3
-            REMR3NotifyTimerPending(pVM);
-            VMR3NotifyGlobalFFU(pVM->pUVM, VMNOTIFYFF_FLAGS_DONE_REM);
+                REMR3NotifyTimerPending(pVM, pVCpuDst);
+                VMR3NotifyCpuFFU(pVCpuDst->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM);
 #endif
+            }
         }
     }
     else
@@ -371,20 +376,19 @@ VMMDECL(uint64_t) TMVirtualGet(PVM pVM)
 
 
 /**
- * Gets the current TMCLOCK_VIRTUAL time
+ * Gets the current TMCLOCK_VIRTUAL time without checking
+ * timers or anything.
+ *
+ * Meaning, this has no side effect on FFs like TMVirtualGet may have.
  *
  * @returns The timestamp.
- * @param   pVM             VM handle.
- * @param   fCheckTimers    Check timers or not
+ * @param   pVM     VM handle.
  *
- * @remark  While the flow of time will never go backwards, the speed of the
- *          progress varies due to inaccurate RTTimeNanoTS and TSC. The latter can be
- *          influenced by power saving (SpeedStep, PowerNow!), while the former
- *          makes use of TSC and kernel timers.
+ * @remarks See TMVirtualGet.
  */
-VMMDECL(uint64_t) TMVirtualGetEx(PVM pVM, bool fCheckTimers)
+VMMDECL(uint64_t) TMVirtualGetNoCheck(PVM pVM)
 {
-    return tmVirtualGet(pVM, fCheckTimers);
+    return tmVirtualGet(pVM, false /*fCheckTimers*/);
 }
 
 
@@ -396,28 +400,33 @@ VMMDECL(uint64_t) TMVirtualGetEx(PVM pVM, bool fCheckTimers)
  * @param   fCheckTimers    Check timers or not
  * @thread  EMT.
  */
-VMMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
+DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
 {
-    uint64_t u64;
+    STAM_COUNTER_INC(&pVM->tm.s.StatVirtualGetSync);
+    uint64_t    u64;
+
     if (pVM->tm.s.fVirtualSyncTicking)
     {
-        STAM_COUNTER_INC(&pVM->tm.s.StatVirtualGetSync);
+        PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
 
         /*
          * Query the virtual clock and do the usual expired timer check.
          */
         Assert(pVM->tm.s.cVirtualTicking);
         u64 = tmVirtualGetRaw(pVM);
-        if (    fCheckTimers
-            &&  !VM_FF_ISSET(pVM, VM_FF_TIMER)
-            &&  pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire <= u64)
+        if (fCheckTimers)
         {
-            VM_FF_SET(pVM, VM_FF_TIMER);
+            if (    !VMCPU_FF_ISSET(pVCpuDst, VMCPU_FF_TIMER)
+                &&  pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire <= u64)
+            {
+                Log5(("TMAllVirtual(%u): FF: 0 -> 1\n", __LINE__));
+                VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
 #ifdef IN_RING3
-            REMR3NotifyTimerPending(pVM);
-            VMR3NotifyGlobalFFU(pVM->pUVM, VMNOTIFYFF_FLAGS_DONE_REM);
+                REMR3NotifyTimerPending(pVM, pVCpuDst);
+                VMR3NotifyCpuFFU(pVCpuDst->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM /** @todo |VMNOTIFYFF_FLAGS_POKE*/);
 #endif
-            STAM_COUNTER_INC(&pVM->tm.s.StatVirtualGetSyncSetFF);
+                STAM_COUNTER_INC(&pVM->tm.s.StatVirtualGetSyncSetFF);
+            }
         }
 
         /*
@@ -489,20 +498,22 @@ VMMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
         if (u64 >= u64Expire)
         {
             u64 = u64Expire;
-            int rc = tmTryLock(pVM); /** @todo SMP: Here be dragons... Need to get back to this later. */
+            int rc = tmTryLock(pVM); /** @todo SMP: Here be dragons... Need to get back to this later. FIXME */
             if (RT_SUCCESS(rc))
             {
                 ASMAtomicXchgU64(&pVM->tm.s.u64VirtualSync, u64);
                 ASMAtomicXchgBool(&pVM->tm.s.fVirtualSyncTicking, false);
+                VM_FF_SET(pVM, VM_FF_TM_VIRTUAL_SYNC);
                 tmUnlock(pVM);
             }
             if (    fCheckTimers
-                &&  !VM_FF_ISSET(pVM, VM_FF_TIMER))
+                &&  !VMCPU_FF_ISSET(pVCpuDst, VMCPU_FF_TIMER))
             {
-                VM_FF_SET(pVM, VM_FF_TIMER);
+                Log5(("TMAllVirtual(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_ISPENDING(pVCpuDst, VMCPU_FF_TIMER)));
+                VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
 #ifdef IN_RING3
-                REMR3NotifyTimerPending(pVM);
-                VMR3NotifyGlobalFFU(pVM->pUVM, VMNOTIFYFF_FLAGS_DONE_REM);
+                REMR3NotifyTimerPending(pVM, pVCpuDst);
+                VMR3NotifyCpuFFU(pVCpuDst->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM);
 #endif
                 STAM_COUNTER_INC(&pVM->tm.s.StatVirtualGetSyncSetFF);
                 Log4(("TM: %RU64/%RU64: exp tmr=>ff\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
@@ -515,27 +526,8 @@ VMMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
     {
         u64 = pVM->tm.s.u64VirtualSync;
 
-        /*
-         * If it looks like a halt caused by pending timers, make sure the FF is raised.
-         * This is a safeguard against timer queue runner leaving the virtual sync clock stopped.
-         */
-        if (    fCheckTimers
-            &&  pVM->tm.s.cVirtualTicking
-            &&  !VM_FF_ISSET(pVM, VM_FF_TIMER))
-        {
-            const uint64_t u64Expire = pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire;
-            if (u64 >= u64Expire)
-            {
-                VM_FF_SET(pVM, VM_FF_TIMER);
-#ifdef IN_RING3
-                REMR3NotifyTimerPending(pVM);
-                VMR3NotifyGlobalFFU(pVM->pUVM, VMNOTIFYFF_FLAGS_DONE_REM);
-#endif
-                STAM_COUNTER_INC(&pVM->tm.s.StatVirtualGetSyncSetFF);
-                Log4(("TM: %RU64/%RU64: exp tmr=>ff (!)\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
-            }
-        }
     }
+
     return u64;
 }
 
@@ -546,10 +538,41 @@ VMMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
  * @returns The timestamp.
  * @param   pVM             VM handle.
  * @thread  EMT.
+ * @remarks May set the timer and virtual sync FFs.
  */
 VMMDECL(uint64_t) TMVirtualSyncGet(PVM pVM)
 {
-    return TMVirtualSyncGetEx(pVM, true /* check timers */);
+    return tmVirtualSyncGetEx(pVM, true /* check timers */);
+}
+
+
+/**
+ * Gets the current TMCLOCK_VIRTUAL_SYNC time without checking timers running on
+ * TMCLOCK_VIRTUAL.
+ *
+ * @returns The timestamp.
+ * @param   pVM             VM handle.
+ * @thread  EMT.
+ * @remarks May set the timer and virtual sync FFs.
+ */
+VMMDECL(uint64_t) TMVirtualSyncGetNoCheck(PVM pVM)
+{
+    return tmVirtualSyncGetEx(pVM, false /* check timers */);
+}
+
+
+/**
+ * Gets the current TMCLOCK_VIRTUAL_SYNC time.
+ *
+ * @returns The timestamp.
+ * @param   pVM     VM handle.
+ * @param   fCheckTimers    Check timers on the virtual clock or not.
+ * @thread  EMT.
+ * @remarks May set the timer and virtual sync FFs.
+ */
+VMMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
+{
+    return tmVirtualSyncGetEx(pVM, fCheckTimers);
 }
 
 

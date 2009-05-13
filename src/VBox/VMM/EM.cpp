@@ -968,8 +968,8 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
              * We might have missed the raising of VMREQ, TIMER and some other
              * imporant FFs while we were busy switching the state. So, check again.
              */
-            if (    VM_FF_ISPENDING(pVM, VM_FF_REQUEST | VM_FF_TIMER | VM_FF_PDM_QUEUES | VM_FF_DBGF | VM_FF_TERMINATE | VM_FF_RESET)
-                ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
+            if (    VM_FF_ISPENDING(pVM, VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_DBGF | VM_FF_TERMINATE | VM_FF_RESET)
+                ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TIMER | VMCPU_FF_REQUEST))
             {
                 LogFlow(("emR3RemExecute: Skipping run, because FF is set. %#x\n", pVM->fGlobalForcedActions));
                 goto l_REMDoForcedActions;
@@ -1017,8 +1017,9 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * Sync back the VM state before calling any of these.
          */
 #ifdef VBOX_HIGH_RES_TIMERS_HACK
-        TMTimerPoll(pVM);
+        TMTimerPoll(pVM, pVCpu);
 #endif
+        AssertCompile((VMCPU_FF_ALL_BUT_RAW_MASK & ~(VMCPU_FF_CSAM_PENDING_ACTION | VMCPU_FF_CSAM_SCAN_PAGE)) & VMCPU_FF_TIMER);
         if (    VM_FF_ISPENDING(pVM, VM_FF_ALL_BUT_RAW_MASK)
             ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_ALL_BUT_RAW_MASK & ~(VMCPU_FF_CSAM_PENDING_ACTION | VMCPU_FF_CSAM_SCAN_PAGE)))
         {
@@ -2937,7 +2938,7 @@ static int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * Check and execute forced actions.
          */
 #ifdef VBOX_HIGH_RES_TIMERS_HACK
-        TMTimerPoll(pVM);
+        TMTimerPoll(pVM, pVCpu);
 #endif
         STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatRAWTail, d);
         if (    VM_FF_ISPENDING(pVM, ~VM_FF_HIGH_PRIORITY_PRE_RAW_MASK | VM_FF_PGM_NO_MEMORY)
@@ -3078,7 +3079,7 @@ static int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * Check and execute forced actions.
          */
 #ifdef VBOX_HIGH_RES_TIMERS_HACK
-        TMTimerPoll(pVM);
+        TMTimerPoll(pVM, pVCpu);
 #endif
         if (    VM_FF_ISPENDING(pVM, VM_FF_ALL_MASK)
             ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_ALL_MASK))
@@ -3120,7 +3121,7 @@ static EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         return EMSTATE_RAW;
 
     /*
-     * We stay in the wait for SIPI state unless explicitly told otherwise. 
+     * We stay in the wait for SIPI state unless explicitly told otherwise.
      */
     if (pVCpu->em.s.enmState == EMSTATE_WAIT_SIPI)
         return EMSTATE_WAIT_SIPI;
@@ -3381,8 +3382,8 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         }
 
         /* check that we got them all  */
-        Assert(!(VM_FF_NORMAL_PRIORITY_POST_MASK & ~(VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_RESET | VM_FF_PGM_NO_MEMORY)));
-        Assert(!(VMCPU_FF_NORMAL_PRIORITY_POST_MASK & ~(VMCPU_FF_CSAM_SCAN_PAGE)));
+        AssertCompile(VM_FF_NORMAL_PRIORITY_POST_MASK == (VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_RESET | VM_FF_PGM_NO_MEMORY));
+        AssertCompile(VMCPU_FF_NORMAL_PRIORITY_POST_MASK == VMCPU_FF_CSAM_SCAN_PAGE);
     }
 
     /*
@@ -3427,7 +3428,7 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         }
 
         /* check that we got them all  */
-        Assert(!(VM_FF_NORMAL_PRIORITY_MASK & ~(VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA | VM_FF_REM_HANDLER_NOTIFY)));
+        AssertCompile(VM_FF_NORMAL_PRIORITY_MASK == (VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA | VM_FF_REM_HANDLER_NOTIFY));
     }
 
     /*
@@ -3466,14 +3467,15 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * Timers before interrupts.
          */
-        if (VM_FF_IS_PENDING_EXCEPT(pVM, VM_FF_TIMER, VM_FF_PGM_NO_MEMORY))
+        if (    VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TIMER)
+            &&  !VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
             TMR3TimerQueuesDo(pVM);
 
         /*
          * The instruction following an emulated STI should *always* be executed!
          */
-        if (    !VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)
-            &&  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+        if (    VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+            &&  !VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
         {
             Log(("VM_FF_EMULATED_STI at %RGv successor %RGv\n", (RTGCPTR)CPUMGetGuestRIP(pVCpu), EMGetInhibitInterruptsPC(pVCpu)));
             if (CPUMGetGuestEIP(pVCpu) != EMGetInhibitInterruptsPC(pVCpu))
@@ -3575,9 +3577,14 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         }
 
 #endif
+        if (VM_FF_ISPENDING(pVM, VM_FF_TM_VIRTUAL_SYNC))
+        {
+            /** @todo FIXME */
+        }
+
         /* check that we got them all  */
-        Assert(!(VM_FF_HIGH_PRIORITY_PRE_MASK & ~(VM_FF_TIMER | VM_FF_DBGF | VM_FF_TERMINATE | VM_FF_DEBUG_SUSPEND | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY)));
-        Assert(!(VMCPU_FF_HIGH_PRIORITY_PRE_MASK & ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_INHIBIT_INTERRUPTS)));
+        AssertCompile(VM_FF_HIGH_PRIORITY_PRE_MASK == (VM_FF_TM_VIRTUAL_SYNC | VM_FF_DBGF | VM_FF_TERMINATE | VM_FF_DEBUG_SUSPEND | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY));
+        AssertCompile(VMCPU_FF_HIGH_PRIORITY_PRE_MASK == (VMCPU_FF_TIMER | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_INHIBIT_INTERRUPTS));
     }
 
 #undef UPDATE_RC
@@ -3745,7 +3752,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     pVCpu->em.s.enmState = EMSTATE_HALTED;
                     break;
 
-                /* 
+                /*
                  * Switch to the wait for SIPI state (application processor only)
                  */
                 case VINF_EM_WAIT_SIPI:

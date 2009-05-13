@@ -131,7 +131,7 @@ typedef struct REM
 
     /** In REM mode.
      * I.e. the correct CPU state and some other bits are with REM. */
-    bool                    fInREM;
+    bool volatile           fInREM;
     /** In REMR3State. */
     bool                    fInStateSync;
 
@@ -275,8 +275,8 @@ void remR3ProfileStart(int statcode);
 void remR3ProfileStop(int statcode);
 
 #else  /* !VBOX_WITH_STATISTICS */
-# define remR3ProfileStart(c)
-# define remR3ProfileStop(c)
+# define remR3ProfileStart(c)   do { } while (0)
+# define remR3ProfileStop(c)    do { } while (0)
 #endif /* !VBOX_WITH_STATISTICS */
 
 /** @} */

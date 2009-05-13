@@ -524,12 +524,20 @@ int cpu_exec(CPUState *env1)
             env_to_regs();
         }
 #ifdef VBOX_HIGH_RES_TIMERS_HACK
-        /* NULL the current_tb here so cpu_interrupt() doesn't do
-           anything unnecessary (like crashing during emulate single instruction). */
+        /* NULL the current_tb here so cpu_interrupt() doesn't do anything
+           unnecessary (like crashing during emulate single instruction).
+           Note! Don't use env1->pVM here, the code wouldn't run with
+                 gcc-4.4/amd64 anymore, see #3883. */
         env->current_tb = NULL;
-        /* don't use env1->pVM here, the code wouldn't run with gcc-4.4/amd64
-         * anymore, see #3883 */
-        TMTimerPoll(env->pVM);
+        if (    !(env->interrupt_request & (  CPU_INTERRUPT_EXIT | CPU_INTERRUPT_DEBUG | CPU_INTERRUPT_EXTERNAL_EXIT | CPU_INTERRUPT_RC
+                                            | CPU_INTERRUPT_SINGLE_INSTR | CPU_INTERRUPT_SINGLE_INSTR_IN_FLIGHT))
+            &&  (   (env->interrupt_request & CPU_INTERRUPT_EXTERNAL_TIMER)
+                 || !TMTimerPoll(env->pVM, env->pVCpu)) ) {
+            ASMAtomicAndS32((int32_t volatile *)&env->interrupt_request, ~CPU_INTERRUPT_EXTERNAL_TIMER);
+            remR3ProfileStart(STATS_QEMU_RUN_TIMERS);
+            TMR3TimerQueuesDo(env->pVM);
+            remR3ProfileStop(STATS_QEMU_RUN_TIMERS);
+        }
 #endif
     } /* for(;;) */
 

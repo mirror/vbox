@@ -1280,7 +1280,7 @@ VMMR3DECL(int) VMMR3AtomicExecuteHandler(PVM pVM, PFNATOMICHANDLER pfnHandler, v
         }
     }
     /* Wait until all other VCPUs are waiting for us. */
-    while (RTCritSectGetWaiters(&pVM->vmm.s.CritSectSync) != (pVM->cCPUs - 1))
+    while (RTCritSectGetWaiters(&pVM->vmm.s.CritSectSync) != (int32_t)(pVM->cCPUs - 1))
         RTThreadSleep(1);
 
     rc = pfnHandler(pVM, pvUser);
@@ -1692,7 +1692,7 @@ static DECLCALLBACK(void) vmmR3InfoFF(PVM pVM, PCDBGFINFOHLP pHlp, const char *p
     /* show the flag mnemonics  */
     c = 0;
     f = fGlobalForcedActions;
-    PRINT_FLAG(VM_FF_,TIMER);
+    PRINT_FLAG(VM_FF_,TM_VIRTUAL_SYNC);
     PRINT_FLAG(VM_FF_,PDM_QUEUES);
     PRINT_FLAG(VM_FF_,PDM_DMA);
     PRINT_FLAG(VM_FF_,DBGF);
@@ -1728,13 +1728,14 @@ static DECLCALLBACK(void) vmmR3InfoFF(PVM pVM, PCDBGFINFOHLP pHlp, const char *p
     for (VMCPUID i = 0; i < pVM->cCPUs; i++)
     {
         const uint32_t fLocalForcedActions = pVM->aCpus[i].fLocalForcedActions;
-        pHlp->pfnPrintf(pHlp, "CPU %u FFs: %#RX32", i, f);
+        pHlp->pfnPrintf(pHlp, "CPU %u FFs: %#RX32", i, fLocalForcedActions);
 
         /* show the flag mnemonics */
         c = 0;
         f = fLocalForcedActions;
         PRINT_FLAG(VMCPU_FF_,INTERRUPT_APIC);
         PRINT_FLAG(VMCPU_FF_,INTERRUPT_PIC);
+        PRINT_FLAG(VMCPU_FF_,TIMER);
         PRINT_FLAG(VMCPU_FF_,PDM_CRITSECT);
         PRINT_FLAG(VMCPU_FF_,PGM_SYNC_CR3);
         PRINT_FLAG(VMCPU_FF_,PGM_SYNC_CR3_NON_GLOBAL);

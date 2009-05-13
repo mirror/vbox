@@ -92,7 +92,7 @@ REMR3DECL(void) REMR3NotifyPendingInterrupt(PVM pVM, PVMCPU pVCpu, uint8_t u8Int
 REMR3DECL(uint32_t) REMR3QueryPendingInterrupt(PVM pVM, PVMCPU pVCpu);
 REMR3DECL(void) REMR3NotifyInterruptSet(PVM pVM, PVMCPU pVCpu);
 REMR3DECL(void) REMR3NotifyInterruptClear(PVM pVM, PVMCPU pVCpu);
-REMR3DECL(void) REMR3NotifyTimerPending(PVM pVM);
+REMR3DECL(void) REMR3NotifyTimerPending(PVM pVM, PVMCPU pVCpuDst);
 REMR3DECL(void) REMR3NotifyDmaPending(PVM pVM);
 REMR3DECL(void) REMR3NotifyQueuePending(PVM pVM);
 REMR3DECL(void) REMR3NotifyFF(PVM pVM);

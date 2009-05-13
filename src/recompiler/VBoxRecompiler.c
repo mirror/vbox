@@ -1649,6 +1649,7 @@ void remR3DmaRun(CPUState *env)
 void remR3TimersRun(CPUState *env)
 {
     LogFlow(("remR3TimersRun:\n"));
+    LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP_TM, ("remR3TimersRun\n"));
     remR3ProfileStop(STATS_QEMU_RUN_EMULATED_CODE);
     remR3ProfileStart(STATS_QEMU_RUN_TIMERS);
     TMR3TimerQueuesDo(env->pVM);
@@ -3835,18 +3836,30 @@ REMR3DECL(void) REMR3NotifyInterruptClear(PVM pVM, PVMCPU pVCpu)
  * Notification about pending timer(s).
  *
  * @param   pVM             VM Handle.
+ * @param   pVCpuDst        The target cpu for this notification.
+ *                          TM will not broadcast pending timer events, but use
+ *                          a decidated EMT for them. So, only interrupt REM
+ *                          execution if the given CPU is executing in REM.
  * @thread  Any.
  */
-REMR3DECL(void) REMR3NotifyTimerPending(PVM pVM)
+REMR3DECL(void) REMR3NotifyTimerPending(PVM pVM, PVMCPU pVCpuDst)
 {
 #ifndef DEBUG_bird
     LogFlow(("REMR3NotifyTimerPending: fInRem=%d\n", pVM->rem.s.fInREM));
 #endif
     if (pVM->rem.s.fInREM)
     {
-        ASMAtomicOrS32((int32_t volatile *)&cpu_single_env->interrupt_request,
-                       CPU_INTERRUPT_EXTERNAL_TIMER);
+        if (pVM->rem.s.Env.pVCpu == pVCpuDst)
+        {
+            LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP_TM, ("REMR3NotifyTimerPending: setting\n"));
+            ASMAtomicOrS32((int32_t volatile *)&pVM->rem.s.Env.interrupt_request,
+                           CPU_INTERRUPT_EXTERNAL_TIMER);
+        }
+        else
+            LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP_TM, ("REMR3NotifyTimerPending: pVCpu:%p != pVCpuDst:%p\n", pVM->rem.s.Env.pVCpu, pVCpuDst));
     }
+    else
+        LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP_TM, ("REMR3NotifyTimerPending: !fInREM; cpu state=%d\n", VMCPU_GET_STATE(pVCpuDst)));
 }
 
 
