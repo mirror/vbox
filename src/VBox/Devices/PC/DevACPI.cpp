@@ -139,21 +139,9 @@ enum
     SYSTEM_INFO_INDEX_CPU1_STATUS       = 6,
     SYSTEM_INFO_INDEX_CPU2_STATUS       = 7,
     SYSTEM_INFO_INDEX_CPU3_STATUS       = 8,
-    SYSTEM_INFO_INDEX_CPU4_STATUS       = 9,
-    SYSTEM_INFO_INDEX_CPU5_STATUS       = 10,
-    SYSTEM_INFO_INDEX_CPU6_STATUS       = 11,
-    SYSTEM_INFO_INDEX_CPU7_STATUS       = 12,
-    SYSTEM_INFO_INDEX_CPU8_STATUS       = 13,
-    SYSTEM_INFO_INDEX_CPU9_STATUS       = 14,
-    SYSTEM_INFO_INDEX_CPUA_STATUS       = 15,
-    SYSTEM_INFO_INDEX_CPUB_STATUS       = 16,
-    SYSTEM_INFO_INDEX_CPUC_STATUS       = 17,
-    SYSTEM_INFO_INDEX_CPUD_STATUS       = 18,
-    SYSTEM_INFO_INDEX_CPUE_STATUS       = 19,
-    SYSTEM_INFO_INDEX_CPUF_STATUS       = 20,
-    SYSTEM_INFO_INDEX_HIGH_MEMORY_LENGTH= 21,
-    SYSTEM_INFO_INDEX_RTC_STATUS        = 22,
-    SYSTEM_INFO_INDEX_END               = 23,
+    SYSTEM_INFO_INDEX_HIGH_MEMORY_LENGTH= 9,
+    SYSTEM_INFO_INDEX_RTC_STATUS        = 10,
+    SYSTEM_INFO_INDEX_END               = 11,
     SYSTEM_INFO_INDEX_INVALID           = 0x80,
     SYSTEM_INFO_INDEX_VALID             = 0x200
 };
@@ -1336,18 +1324,6 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
                 case SYSTEM_INFO_INDEX_CPU1_STATUS:
                 case SYSTEM_INFO_INDEX_CPU2_STATUS:
                 case SYSTEM_INFO_INDEX_CPU3_STATUS:
-                case SYSTEM_INFO_INDEX_CPU4_STATUS:
-                case SYSTEM_INFO_INDEX_CPU5_STATUS:
-                case SYSTEM_INFO_INDEX_CPU6_STATUS:
-                case SYSTEM_INFO_INDEX_CPU7_STATUS:
-                case SYSTEM_INFO_INDEX_CPU8_STATUS:
-                case SYSTEM_INFO_INDEX_CPU9_STATUS:
-                case SYSTEM_INFO_INDEX_CPUA_STATUS:
-                case SYSTEM_INFO_INDEX_CPUB_STATUS:
-                case SYSTEM_INFO_INDEX_CPUC_STATUS:
-                case SYSTEM_INFO_INDEX_CPUD_STATUS:
-                case SYSTEM_INFO_INDEX_CPUE_STATUS:
-                case SYSTEM_INFO_INDEX_CPUF_STATUS:
                     *pu32 = s->fShowCpu
                          && s->uSystemInfoIndex - SYSTEM_INFO_INDEX_CPU0_STATUS < s->cCpus
                           ?   STA_DEVICE_PRESENT_MASK

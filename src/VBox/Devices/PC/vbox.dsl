@@ -127,7 +127,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
     // known good configuration, as it remembers state, even if ACPI object gets disabled.
     Scope (\_PR)
     {
-        Processor (CPU0, /* Name */
+       Processor (CPU0, /* Name */
                    0x00, /* Id */
                    0x0,  /* Processor IO ports range start */
                    0x0   /* Processor IO ports range length */
@@ -159,102 +159,6 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
         {
            Method (_STA) { Return(\_SB.UCP3) }
         }
-        Processor (CPU4, /* Name */
-                   0x04, /* Id */
-                   0x0,  /* Processor IO ports range start */
-                   0x0   /* Processor IO ports range length */
-                   )
-        {
-           Method (_STA) { Return(\_SB.UCP4) }
-        }
-        Processor (CPU5, /* Name */
-                   0x05, /* Id */
-                   0x0,  /* Processor IO ports range start */
-                   0x0   /* Processor IO ports range length */
-                   )
-        {
-           Method (_STA) { Return(\_SB.UCP5) }
-        }
-        Processor (CPU6, /* Name */
-                   0x06, /* Id */
-                   0x0,  /* Processor IO ports range start */
-                   0x0   /* Processor IO ports range length */
-                   )
-        {
-           Method (_STA) { Return(\_SB.UCP6) }
-        }
-        Processor (CPU7, /* Name */
-                   0x07, /* Id */
-                   0x0,  /* Processor IO ports range start */
-                   0x0   /* Processor IO ports range length */
-                   )
-        {
-           Method (_STA) { Return(\_SB.UCP7) }
-        }
-        Processor (CPU8, /* Name */
-                   0x08, /* Id */
-                   0x0,  /* Processor IO ports range start */
-                   0x0   /* Processor IO ports range length */
-                   )
-        {
-           Method (_STA) { Return(\_SB.UCP8) }
-        }
-        Processor (CPU9, /* Name */
-                   0x09, /* Id */
-                   0x0,  /* Processor IO ports range start */
-                   0x0   /* Processor IO ports range length */
-                   )
-        {
-           Method (_STA) { Return(\_SB.UCP9) }
-        }
-        Processor (CPUA, /* Name */
-                   0x0A, /* Id */
-                   0x0,  /* Processor IO ports range start */
-                   0x0   /* Processor IO ports range length */
-                   )
-        {
-           Method (_STA) { Return(\_SB.UCPA) }
-        }
-        Processor (CPUB, /* Name */
-                   0x0B, /* Id */
-                   0x0,  /* Processor IO ports range start */
-                   0x0   /* Processor IO ports range length */
-                   )
-        {
-           Method (_STA) { Return(\_SB.UCPB) }
-        }
-        Processor (CPUC, /* Name */
-                   0x0C, /* Id */
-                   0x0,  /* Processor IO ports range start */
-                   0x0   /* Processor IO ports range length */
-                   )
-        {
-           Method (_STA) { Return(\_SB.UCPC) }
-        }
-        Processor (CPUD, /* Name */
-                   0x0D, /* Id */
-                   0x0,  /* Processor IO ports range start */
-                   0x0   /* Processor IO ports range length */
-                   )
-        {
-           Method (_STA) { Return(\_SB.UCPD) }
-        }
-        Processor (CPUE, /* Name */
-                   0x0E, /* Id */
-                   0x0,  /* Processor IO ports range start */
-                   0x0   /* Processor IO ports range length */
-                   )
-        {
-           Method (_STA) { Return(\_SB.UCPE) }
-        }
-        Processor (CPUF, /* Name */
-                   0x0F, /* Id */
-                   0x0,  /* Processor IO ports range start */
-                   0x0   /* Processor IO ports range length */
-                   )
-        {
-           Method (_STA) { Return(\_SB.UCPF) }
-        }
     }
 
     Scope (\_SB)
@@ -278,18 +182,6 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
             UCP1,  32,
             UCP2,  32,
             UCP3,  32,
-            UCP4,  32,
-            UCP5,  32,
-            UCP6,  32,
-            UCP7,  32,
-            UCP8,  32,
-            UCP9,  32,
-            UCPA,  32,
-            UCPB,  32,
-            UCPC,  32,
-            UCPD,  32,
-            UCPE,  32,
-            UCPF,  32,
             MEMH,  32,
             URTC,  32,
             Offset (0x80),
