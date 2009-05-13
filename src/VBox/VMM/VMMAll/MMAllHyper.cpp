@@ -157,7 +157,7 @@ static void mmHyperHeapCheck(PMMHYPERHEAP pHeap);
  *
  * @param   pVM     The VM handle.
  */
-VMMDECL(int) MMHyperLock(PVM pVM)
+static int mmHyperLock(PVM pVM)
 {
     PMMHYPERHEAP pHeap = pVM->mm.s.CTX_SUFF(pHyperHeap);
 
@@ -188,7 +188,7 @@ VMMDECL(int) MMHyperLock(PVM pVM)
  *
  * @param   pVM     The VM handle.
  */
-VMMDECL(void) MMHyperUnlock(PVM pVM)
+static void mmHyperUnlock(PVM pVM)
 {
     PMMHYPERHEAP pHeap = pVM->mm.s.CTX_SUFF(pHyperHeap);
 
@@ -335,12 +335,12 @@ VMMDECL(int) MMHyperAlloc(PVM pVM, size_t cb, unsigned uAlignment, MMTAG enmTag,
 {
     int rc;
 
-    rc = MMHyperLock(pVM);
+    rc = mmHyperLock(pVM);
     AssertRCReturn(rc, rc);
 
     rc = mmHyperAllocInternal(pVM, cb, uAlignment, enmTag, ppv);
 
-    MMHyperUnlock(pVM);
+    mmHyperUnlock(pVM);
     return rc;
 }
 
@@ -915,12 +915,12 @@ VMMDECL(int) MMHyperFree(PVM pVM, void *pv)
 {
     int rc;
 
-    rc = MMHyperLock(pVM);
+    rc = mmHyperLock(pVM);
     AssertRCReturn(rc, rc);
 
     rc = mmHyperFreeInternal(pVM, pv);
 
-    MMHyperUnlock(pVM);
+    mmHyperUnlock(pVM);
     return rc;
 }
 
@@ -1194,7 +1194,12 @@ static void mmHyperHeapCheck(PMMHYPERHEAP pHeap)
 VMMDECL(void) MMHyperHeapCheck(PVM pVM)
 {
 #ifdef MMHYPER_HEAP_STRICT
+    int rc;
+
+    rc = mmHyperLock(pVM);
+    AssertRC(rc);
     mmHyperHeapCheck(pVM->mm.s.CTX_SUFF(pHyperHeap));
+    mmHyperUnlock(pVM);
 #endif
 }
 

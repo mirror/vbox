@@ -1585,7 +1585,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
          */
         case VMMCALLHOST_MMHYPER_LOCK:
         {
-            pVCpu->vmm.s.rcCallHost = MMHyperLock(pVM);
+            pVCpu->vmm.s.rcCallHost = MMR3LockCall(pVM);
             break;
         }
 
