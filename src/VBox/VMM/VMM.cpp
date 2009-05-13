@@ -59,6 +59,7 @@
 #include <VBox/pgm.h>
 #include <VBox/cfgm.h>
 #include <VBox/pdmqueue.h>
+#include <VBox/pdmcritsect.h>
 #include <VBox/pdmapi.h>
 #include <VBox/cpum.h>
 #include <VBox/mm.h>
@@ -1523,6 +1524,12 @@ VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM, PVMCPU pVCpu)
  */
 static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
 {
+    /* We must also check for pending releases or else we can deadlock when acquiring a new lock here. 
+     * On return we go straight back to R0/GC.
+     */
+    if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PDM_CRITSECT))
+        PDMR3CritSectFF(pVCpu);
+
     switch (pVCpu->vmm.s.enmCallHostOperation)
     {
         /*
