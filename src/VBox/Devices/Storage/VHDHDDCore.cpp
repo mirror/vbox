@@ -35,7 +35,6 @@
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/rand.h>
-#include <iprt/stream.h>
 
 #define VHD_RELATIVE_MAX_PATH 512
 #define VHD_ABSOLUTE_MAX_PATH 512
