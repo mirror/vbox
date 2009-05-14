@@ -339,7 +339,7 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
         {
             if (status == DISP_CHANGE_BADMODE)
             {
-                Log(("ResizeDisplayDevice: Bad mode detected. No changes made.\n"));
+                Log(("ResizeDisplayDevice: Unsupported mode specified. No changes made.\n"));
             }
             else Log(("ResizeDisplayDevice: Mode can NOT be set! Error: %d\n", status));
         }
