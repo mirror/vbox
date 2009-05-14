@@ -418,6 +418,8 @@ static int dbgfR3StackWalkBeginCommon(PVM pVM,
     case DBGFCODETYPE_RING0:
         pCtxCore = NULL;    /* No valid context present. */
         break;
+    default:
+        AssertFailed();
     }
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, idCpu, &pReq, RT_INDEFINITE_WAIT,
