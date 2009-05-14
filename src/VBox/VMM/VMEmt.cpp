@@ -228,6 +228,7 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
                 if (   EMGetState(pVCpu) == EMSTATE_GURU_MEDITATION
                     && pVM->enmVMState == VMSTATE_RUNNING)
                 {
+                    Log(("Release locks owned by this EMT\n"));
                     /* Release owned locks to make sure other VCPUs can continue in case they were waiting for one. */
                     MMR3ReleaseOwnedLocks(pVM);
                     PGMR3ReleaseOwnedLocks(pVM);
