@@ -2681,11 +2681,14 @@ static int emInterpretMonitor(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCP
 /**
  * MWAIT Emulation.
  */
-static int emInterpretMWait(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+VMMDECL(int) EMInterpretMWait(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
     uint32_t u32Dummy, u32ExtFeatures, cpl;
 
-    Assert(pDISState->mode != CPUMODE_64BIT);    /** @todo check */
+    /* @todo bit 1 is supposed to tell the cpu to wake us up on interrupts even if IF is cleared. 
+     * Not sure which models. Intel docs say ecx and eax must be zero for Pentium 4 CPUs
+     * CPUID.05H.ECX[0] defines support for power management extensions (eax)
+     */
     if (pRegFrame->ecx != 0)
         return VERR_EM_INTERPRETER; /* illegal value. */
 
@@ -2700,6 +2703,13 @@ static int emInterpretMWait(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUM
 
     /** @todo not completely correct */
     return VINF_EM_HALT;
+}
+
+static int emInterpretMWait(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+{
+    Assert(pDISState->mode != CPUMODE_64BIT);    /** @todo check */
+
+    return EMInterpretMWait(pVM, pVCpu, pRegFrame);
 }
 
 

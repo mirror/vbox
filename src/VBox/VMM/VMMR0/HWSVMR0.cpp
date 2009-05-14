@@ -2032,6 +2032,26 @@ ResumeExecution:
         rc = VINF_EM_HALT;
         break;
 
+    case SVM_EXIT_MWAIT_UNCOND:
+        Log2(("SVM: mwait\n"));
+        rc = EMInterpretMWait(pVM, pVCpu, CPUMCTX2CORE(pCtx));
+        if (    rc == VINF_EM_HALT
+            ||  rc == VINF_SUCCESS)
+        {
+            /* Update EIP and continue execution. */
+            pCtx->rip += 3;     /* Note: hardcoded opcode size assumption! */
+
+            /** Check if external interrupts are pending; if so, don't switch back. */
+            if (    rc == VINF_SUCCESS
+                ||  (   rc == VINF_EM_HALT
+                     && pCtx->eflags.Bits.u1IF
+                     && VMCPU_FF_ISPENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC|VMCPU_FF_INTERRUPT_PIC)))
+               )
+                goto ResumeExecution;
+        }
+        AssertMsg(rc == VERR_EM_INTERPRETER || rc == VINF_EM_HALT, ("EMU: mwait failed with %Rrc\n", rc));
+        break;
+
     case SVM_EXIT_RSM:
     case SVM_EXIT_INVLPGA:
     case SVM_EXIT_VMRUN:
@@ -2079,7 +2099,6 @@ ResumeExecution:
 
     case SVM_EXIT_MONITOR:
     case SVM_EXIT_PAUSE:
-    case SVM_EXIT_MWAIT_UNCOND:
     case SVM_EXIT_MWAIT_ARMED:
     case SVM_EXIT_TASK_SWITCH:          /* can change CR3; emulate */
         rc = VINF_EM_RAW_EXCEPTION_PRIVILEGED;
