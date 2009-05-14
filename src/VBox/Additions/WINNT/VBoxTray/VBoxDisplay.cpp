@@ -373,7 +373,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
         waitEvent.u32EventMaskIn = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
         if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
         {
-            Log(("VBoxDisplayThread : DeviceIOControl succeded\n"));
+            /*Log(("VBoxDisplayThread : DeviceIOControl succeded\n"));*/
 
             if (NULL == pCtx) {
                 Log(("VBoxDisplayThread : Invalid context detected!\n"));
@@ -389,7 +389,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 0) == WAIT_OBJECT_0)
                 break;
 
-            Log(("VBoxDisplayThread : checking event\n"));
+            /*Log(("VBoxDisplayThread : checking event\n"));*/
 
             /* did we get the right event? */
             if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
