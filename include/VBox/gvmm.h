@@ -101,6 +101,7 @@ typedef struct GVMMSTATSSCHED
     uint64_t        cPollHalts;
     /** The number of wake ups done during GVMMR0SchedPoll. */
     uint64_t        cPollWakeUps;
+
     uint64_t        u64Alignment; /**< padding */
 } GVMMSTATSSCHED;
 /** Pointer to the GVMM scheduler statistics. */
@@ -117,8 +118,8 @@ typedef struct GVMMSTATS
     GVMMSTATSSCHED  SchedSum;
     /** The number of VMs accessible to the caller. */
     uint32_t        cVMs;
-    /** Alignment padding. */
-    uint32_t        u32Padding;
+    /** The number of emulation threads in those VMs. */
+    uint32_t        cEMTs;
 } GVMMSTATS;
 /** Pointer to the GVMM statistics. */
 typedef GVMMSTATS *PGVMMSTATS;
