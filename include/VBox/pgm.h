@@ -550,6 +550,9 @@ VMMR3DECL(int)      PGMR3PhysChunkMap(PVM pVM, uint32_t idChunk);
 VMMR3DECL(void)     PGMR3PhysChunkInvalidateTLB(PVM pVM);
 VMMR3DECL(int)      PGMR3PhysAllocateHandyPages(PVM pVM);
 
+
+VMMR3DECL(void)     PGMR3ReleaseOwnedLocks(PVM pVM);
+
 VMMR3DECL(int)      PGMR3CheckIntegrity(PVM pVM);
 
 VMMR3DECL(int)      PGMR3DbgR3Ptr2GCPhys(PVM pVM, RTR3PTR R3Ptr, PRTGCPHYS pGCPhys);

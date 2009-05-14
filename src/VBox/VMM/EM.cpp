@@ -3594,6 +3594,17 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
     return rc;
 }
 
+/**
+ * Release the IOM lock if owned by the current VCPU
+ *
+ * @param   pVM         The VM to operate on.
+ */
+VMMR3DECL(void) EMR3ReleaseOwnedLocks(PVM pVM)
+{
+    if (PDMCritSectIsOwner(&pVM->em.s.CritSectREM))
+        PDMCritSectLeave(&pVM->em.s.CritSectREM);
+}
+
 
 /**
  * Execute VM.

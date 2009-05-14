@@ -1440,3 +1440,14 @@ VMMR3DECL(int) PDMR3VMMDevHeapFree(PVM pVM, RTR3PTR pv)
     pVM->pdm.s.cbVMMDevHeapLeft = pVM->pdm.s.cbVMMDevHeap;
     return VINF_SUCCESS;
 }
+
+/**
+ * Release the PDM lock if owned by the current VCPU
+ *
+ * @param   pVM         The VM to operate on.
+ */
+VMMR3DECL(void) PDMR3ReleaseOwnedLocks(PVM pVM)
+{
+    if (PDMCritSectIsOwner(&pVM->pdm.s.CritSect))
+        PDMCritSectLeave(&pVM->pdm.s.CritSect);
+}

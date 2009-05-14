@@ -217,9 +217,12 @@ VMMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
     Assert(pCritSect->s.Core.cLockers >= 0);
     PVM pVM = pCritSect->s.CTX_SUFF(pVM);
     Assert(pVM);
+
+#ifdef VBOX_STRICT
     PVMCPU pVCpu = VMMGetCpu(pVM);
     Assert(pVCpu);
     AssertMsg(pCritSect->s.Core.NativeThreadOwner == pVCpu->hNativeThread, ("Owner %RX64 emt=%RX64\n", pCritSect->s.Core.NativeThreadOwner, pVCpu->hNativeThread));
+#endif
 
     /*
      * Deal with nested attempts first.
@@ -231,7 +234,9 @@ VMMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
         ASMAtomicDecS32(&pCritSect->s.Core.cLockers);
         return;
     }
-
+#ifndef VBOX_STRICT
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+#endif
     /*
      * Try leave it.
      */

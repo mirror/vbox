@@ -180,6 +180,8 @@ VMMR3DECL(int)      EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu);
 VMMR3DECL(int)      EMR3CheckRawForcedActions(PVM pVM, PVMCPU pVCpu);
 VMMR3DECL(int)      EMR3Interpret(PVM pVM);
 
+VMMR3DECL(void)     EMR3ReleaseOwnedLocks(PVM pVM);
+
 /**
  * Command argument for EMR3RawSetMode().
  *

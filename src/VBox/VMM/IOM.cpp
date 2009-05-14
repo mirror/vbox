@@ -1644,6 +1644,18 @@ VMMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
 
 
 /**
+ * Release the IOM lock if owned by the current VCPU
+ *
+ * @param   pVM         The VM to operate on.
+ */
+VMMR3DECL(void) IOMR3ReleaseOwnedLocks(PVM pVM)
+{
+    if (PDMCritSectIsOwner(&pVM->iom.s.EmtLock))
+        PDMCritSectLeave(&pVM->iom.s.EmtLock);
+}
+
+
+/**
  * Display a single MMIO range.
  *
  * @returns 0
