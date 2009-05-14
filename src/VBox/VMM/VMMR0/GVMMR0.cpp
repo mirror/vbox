@@ -114,6 +114,8 @@ typedef struct GVMM
     uint16_t volatile   cVMs;
 //    /** The number of halted EMT threads. */
 //    uint16_t volatile   cHaltedEMTs;
+    /** The number of EMTs. */
+    uint32_t volatile   cEMTs;
     /** The lock used to serialize VM creation, destruction and associated events that
      * isn't performance critical. Owners may acquire the list lock. */
     RTSEMFASTMUTEX      CreateDestroyLock;
@@ -126,10 +128,11 @@ typedef struct GVMM
      * The first entry is unused as it represents the NIL handle. */
     GVMHANDLE           aHandles[GVMM_MAX_HANDLES];
 
-    /** @gcfgm{/GVMM/cVMsMeansCompany, 32-bit, 0, UINT32_MAX, 1}
-     * The number of VMs that means we no longer consider ourselves alone on a CPU/Core.
+    /** @gcfgm{/GVMM/cEMTsMeansCompany, 32-bit, 0, UINT32_MAX, 1}
+     * The number of EMTs that means we no longer consider ourselves alone on a
+     * CPU/Core.
      */
-    uint32_t            cVMsMeansCompany;
+    uint32_t            cEMTsMeansCompany;
     /** @gcfgm{/GVMM/MinSleepAlone,32-bit, 0, 100000000, 750000, ns}
      * The minimum sleep time for when we're alone, in nano seconds.
      */
@@ -242,7 +245,7 @@ GVMMR0DECL(int) GVMMR0Init(void)
             }
 
             /* The default configuration values. */
-            pGVMM->cVMsMeansCompany  = 1;                           /** @todo should be adjusted to relative to the cpu count or something... */
+            pGVMM->cEMTsMeansCompany = 1;                           /** @todo should be adjusted to relative to the cpu count or something... */
             pGVMM->nsMinSleepAlone   = 750000 /* ns (0.750 ms) */;  /** @todo this should be adjusted to be 75% (or something) of the scheduler granularity... */
             pGVMM->nsMinSleepCompany =  15000 /* ns (0.015 ms) */;
             pGVMM->nsEarlyWakeUp1    =  25000 /* ns (0.025 ms) */;
@@ -290,7 +293,7 @@ GVMMR0DECL(void) GVMMR0Term(void)
     pGVMM->iFreeHead = 0;
     if (pGVMM->iUsedHead)
     {
-        SUPR0Printf("GVMMR0Term: iUsedHead=%#x! (cVMs=%#x)\n", pGVMM->iUsedHead, pGVMM->cVMs);
+        SUPR0Printf("GVMMR0Term: iUsedHead=%#x! (cVMs=%#x cEMTs=%#x)\n", pGVMM->iUsedHead, pGVMM->cVMs, pGVMM->cEMTs);
         pGVMM->iUsedHead = 0;
     }
 
@@ -324,10 +327,10 @@ GVMMR0DECL(int) GVMMR0SetConfig(PSUPDRVSESSION pSession, const char *pszName, ui
         return VERR_CFGM_VALUE_NOT_FOUND; /* borrow status codes from CFGM... */
     int rc = VINF_SUCCESS;
     pszName += sizeof("/GVMM/") - 1;
-    if (!strcmp(pszName, "cVMsMeansCompany"))
+    if (!strcmp(pszName, "cEMTsMeansCompany"))
     {
         if (u64Value <= UINT32_MAX)
-            pGVMM->cVMsMeansCompany = u64Value;
+            pGVMM->cEMTsMeansCompany = u64Value;
         else
             rc = VERR_OUT_OF_RANGE;
     }
@@ -392,8 +395,8 @@ GVMMR0DECL(int) GVMMR0QueryConfig(PSUPDRVSESSION pSession, const char *pszName, 
         return VERR_CFGM_VALUE_NOT_FOUND; /* borrow status codes from CFGM... */
     int rc = VINF_SUCCESS;
     pszName += sizeof("/GVMM/") - 1;
-    if (!strcmp(pszName, "cVMsMeansCompany"))
-        *pu64Value = pGVMM->cVMsMeansCompany;
+    if (!strcmp(pszName, "cEMTsMeansCompany"))
+        *pu64Value = pGVMM->cEMTsMeansCompany;
     else if (!strcmp(pszName, "MinSleepAlone"))
         *pu64Value = pGVMM->nsMinSleepAlone;
     else if (!strcmp(pszName, "MinSleepCompany"))
@@ -654,6 +657,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                                         pHandle->ProcId     = ProcId;
                                         pGVM->pVM           = pVM;
                                         pGVM->aCpus[0].hEMT = hEMT0;
+                                        pGVMM->cEMTs += cCpus;
 
                                         gvmmR0UsedUnlock(pGVMM);
                                         gvmmR0CreateDestroyUnlock(pGVMM);
@@ -996,8 +1000,6 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
     pHandle->iNext = 0;
     pGVMM->cVMs--;
 
-    gvmmR0UsedUnlock(pGVMM);
-
     /*
      * Do the global cleanup round.
      */
@@ -1005,6 +1007,9 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
     if (    VALID_PTR(pGVM)
         &&  pGVM->u32Magic == GVM_MAGIC)
     {
+        pGVMM->cEMTs -= pGVM->cCpus;
+        gvmmR0UsedUnlock(pGVMM);
+
         gvmmR0CleanupVM(pGVM);
 
         /*
@@ -1047,16 +1052,16 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
         /* the GVM structure itself. */
         pGVM->u32Magic |= UINT32_C(0x80000000);
         RTMemFree(pGVM);
+
+        /* Re-acquire the UsedLock before freeing the handle since we're updating handle fields. */
+        rc = gvmmR0UsedLock(pGVMM);
+        AssertRC(rc);
     }
-    /* else: GVMMR0CreateVM cleanup.  */
+    /* else: GVMMR0CreateVM cleanup. */
 
     /*
      * Free the handle.
-     * Reacquire the UsedLock here to since we're updating handle fields.
      */
-    rc = gvmmR0UsedLock(pGVMM);
-    AssertRC(rc);
-
     pHandle->iNext = pGVMM->iFreeHead;
     pGVMM->iFreeHead = iHandle;
     ASMAtomicXchgPtr((void * volatile *)&pHandle->pGVM, NULL);
@@ -1536,7 +1541,7 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PVM pVM, VMCPUID idCpu, uint64_t u64ExpireGipTim
      * Go to sleep if we must...
      */
     if (    u64Now < u64ExpireGipTime
-        &&  u64ExpireGipTime - u64Now > (pGVMM->cVMs > pGVMM->cVMsMeansCompany
+        &&  u64ExpireGipTime - u64Now > (pGVMM->cEMTs > pGVMM->cEMTsMeansCompany
                                          ? pGVMM->nsMinSleepCompany
                                          : pGVMM->nsMinSleepAlone))
     {
@@ -1920,6 +1925,7 @@ GVMMR0DECL(int) GVMMR0QueryStatistics(PGVMMSTATS pStats, PSUPDRVSESSION pSession
      * Enumerate the VMs and add the ones visibile to the statistics.
      */
     pStats->cVMs = 0;
+    pStats->cEMTs = 0;
     memset(&pStats->SchedSum, 0, sizeof(pStats->SchedSum));
 
     for (unsigned i = pGVMM->iUsedHead;
@@ -1934,6 +1940,7 @@ GVMMR0DECL(int) GVMMR0QueryStatistics(PGVMMSTATS pStats, PSUPDRVSESSION pSession
             &&  RT_SUCCESS(SUPR0ObjVerifyAccess(pvObj, pSession, NULL)))
         {
             pStats->cVMs++;
+            pStats->cEMTs += pGVM->cCpus;
 
             pStats->SchedSum.cHaltCalls        += pGVM->gvmm.s.StatsSched.cHaltCalls;
             pStats->SchedSum.cHaltBlocking     += pGVM->gvmm.s.StatsSched.cHaltBlocking;
