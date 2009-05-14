@@ -2669,6 +2669,7 @@ void pgmPoolTrackFlushGCPhysPTs(PVM pVM, PPGMPAGE pPhysPage, uint16_t iPhysExt)
  */
 int pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs)
 {
+    pgmLock(pVM);
     int rc = VINF_SUCCESS;
 #ifdef PGMPOOL_WITH_GCPHYS_TRACKING
     const uint16_t u16 = PGM_PAGE_GET_TRACKING(pPhysPage);
@@ -2741,7 +2742,7 @@ int pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs)
         }
         rc = VINF_PGM_SYNC_CR3;
     }
-
+    pgmUnlock(pVM);
     return rc;
 }
 
@@ -3152,6 +3153,7 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t i
  */
 uint16_t pgmPoolTrackPhysExtAddref(PVM pVM, uint16_t u16, uint16_t iShwPT)
 {
+    pgmLock(pVM);
     if (PGMPOOL_TD_GET_CREFS(u16) != PGMPOOL_TD_CREFS_PHYSEXT)
     {
         /*
@@ -3180,6 +3182,7 @@ uint16_t pgmPoolTrackPhysExtAddref(PVM pVM, uint16_t u16, uint16_t iShwPT)
     }
     else
         STAM_COUNTER_INC(&pVM->pgm.s.StatTrackAliasedLots);
+    pgmUnlock(pVM);
     return u16;
 }
 
@@ -3199,6 +3202,9 @@ void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMPAGE
     uint16_t iPhysExt = PGM_PAGE_GET_TD_IDX(pPhysPage);
     if (iPhysExt != PGMPOOL_TD_IDX_OVERFLOWED)
     {
+        PVM pVM = pPool->CTX_SUFF(pVM);
+        pgmLock(pVM);
+
         uint16_t        iPhysExtPrev = NIL_PGMPOOL_PHYSEXT_INDEX;
         PPGMPOOLPHYSEXT paPhysExts = pPool->CTX_SUFF(paPhysExts);
         do
@@ -3218,11 +3224,11 @@ void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMPAGE
                         if (paPhysExts[iPhysExt].aidx[i] != NIL_PGMPOOL_IDX)
                         {
                             Log2(("pgmPoolTrackPhysExtDerefGCPhys: pPhysPage=%R[pgmpage] idx=%d\n", pPhysPage, pPage->idx));
+                            pgmUnlock(pVM);
                             return;
                         }
 
                     /* we can free the node. */
-                    PVM pVM = pPool->CTX_SUFF(pVM);
                     const uint16_t iPhysExtNext = paPhysExts[iPhysExt].iNext;
                     if (    iPhysExtPrev == NIL_PGMPOOL_PHYSEXT_INDEX
                         &&  iPhysExtNext == NIL_PGMPOOL_PHYSEXT_INDEX)
@@ -3247,6 +3253,7 @@ void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMPAGE
                         pgmPoolTrackPhysExtFree(pVM, iPhysExt);
                     }
                     iPhysExt = iPhysExtNext;
+                    pgmUnlock(pVM);
                     return;
                 }
             }
@@ -3256,6 +3263,7 @@ void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMPAGE
             iPhysExt = paPhysExts[iPhysExt].iNext;
         } while (iPhysExt != NIL_PGMPOOL_PHYSEXT_INDEX);
 
+        pgmUnlock(pVM);
         AssertFatalMsgFailed(("not-found! cRefs=%d pPhysPage=%R[pgmpage] pPage=%p:{.idx=%d}\n", cRefs, pPhysPage, pPage, pPage->idx));
     }
     else /* nothing to do */
