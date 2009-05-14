@@ -177,7 +177,6 @@ VMMR3DECL(int) HWACCMR3Init(PVM pVM)
     pVM->hwaccm.s.vmx.fEnabled   = false;
     pVM->hwaccm.s.svm.fEnabled   = false;
 
-    pVM->hwaccm.s.fActive        = false;
     pVM->hwaccm.s.fNestedPaging  = false;
 
     /* Disabled by default. */
@@ -247,6 +246,13 @@ VMMR3DECL(int) HWACCMR3Init(PVM pVM)
 VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
 {
     LogFlow(("HWACCMR3InitCPU\n"));
+
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
+        pVCpu->hwaccm.s.fActive = false;
+    }
 
 #ifdef VBOX_WITH_STATISTICS
     /*
@@ -1177,6 +1183,7 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
         pVCpu->hwaccm.s.vmx.cr0_mask = 0;
         pVCpu->hwaccm.s.vmx.cr4_mask = 0;
 
+        pVCpu->hwaccm.s.fActive        = false;
         pVCpu->hwaccm.s.Event.fPending = false;
 
         /* Reset state information for real-mode emulation in VT-x. */
@@ -1248,11 +1255,11 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
     /* AMD-V supports real & protected mode with or without paging. */
     if (pVM->hwaccm.s.svm.fEnabled)
     {
-        pVM->hwaccm.s.fActive = true;
+        pVCpu->hwaccm.s.fActive = true;
         return true;
     }
 
-    pVM->hwaccm.s.fActive = false;
+    pVCpu->hwaccm.s.fActive = false;
 
     /* Note! The context supplied by REM is partial. If we add more checks here, be sure to verify that REM provides this info! */
 #ifdef HWACCM_VMX_EMULATE_REALMODE
@@ -1377,7 +1384,7 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
         if ((pCtx->cr4 & mask) != 0)
             return false;
 
-        pVM->hwaccm.s.fActive = true;
+        pVCpu->hwaccm.s.fActive = true;
         return true;
     }
 
@@ -1409,11 +1416,11 @@ VMMR3DECL(void) HWACCMR3NotifyEmulated(PVMCPU pVCpu)
  * Checks if we are currently using hardware accelerated raw mode.
  *
  * @returns boolean
- * @param   pVM         The VM to operate on.
+ * @param   pVCpu        The VMCPU to operate on.
  */
-VMMR3DECL(bool) HWACCMR3IsActive(PVM pVM)
+VMMR3DECL(bool) HWACCMR3IsActive(PVMCPU pVCpu)
 {
-    return pVM->hwaccm.s.fActive;
+    return pVCpu->hwaccm.s.fActive;
 }
 
 /**

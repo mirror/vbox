@@ -1458,7 +1458,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
         Log(("TRPMR3InjectEvent: u8Interrupt=%d (%#x) rc=%Rrc\n", u8Interrupt, u8Interrupt, rc));
         if (RT_SUCCESS(rc))
         {
-            if (HWACCMR3IsActive(pVM))
+            if (HWACCMIsEnabled(pVM))
             {
                 rc = TRPMAssertTrap(pVCpu, u8Interrupt, enmEvent);
                 AssertRC(rc);

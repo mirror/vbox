@@ -189,9 +189,6 @@ typedef struct HWACCM
     /** Set when we've initialized VMX or SVM. */
     bool                        fInitialized;
 
-    /** Set when we're using VMX/SVN at that moment. */
-    bool                        fActive;
-
     /** Set when hardware acceleration is allowed. */
     bool                        fAllowed;
 
@@ -209,7 +206,7 @@ typedef struct HWACCM
 
     /** Explicit alignment padding to make 32-bit gcc align u64RegisterMask
      *  naturally. */
-    bool                        padding[1];
+    bool                        padding[2];
 
     /** And mask for copying register contents. */
     uint64_t                    u64RegisterMask;
@@ -462,9 +459,8 @@ typedef struct HWACCMCPU
     /** Set if we need to flush the TLB during the world switch. */
     bool                        fForceTLBFlush;
 
-    /** Explicit alignment padding to make 32-bit gcc align u64RegisterMask
-     *  naturally. */
-    bool                        padding[1];
+    /** Set when we're using VT-x or AMD-V at that moment. */
+    bool                        fActive;
 
     /** HWACCM_CHANGED_* flags. */
     RTUINT                      fContextUseFlags;

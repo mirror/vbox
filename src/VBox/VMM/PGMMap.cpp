@@ -516,7 +516,7 @@ VMMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
 
     /* Ignore the additions mapping fix call in VT-x/AMD-V. */
     if (    pVM->pgm.s.fMappingsFixed
-        &&  HWACCMR3IsActive(pVM))
+        &&  HWACCMIsEnabled(pVM))
         return VINF_SUCCESS;
 
     /* Only applies to VCPU 0 as we don't support SMP guests with raw mode. */
@@ -709,7 +709,7 @@ VMMR3DECL(int) PGMR3MappingsUnfix(PVM pVM)
     Log(("PGMR3MappingsUnfix: fMappingsFixed=%d\n", pVM->pgm.s.fMappingsFixed));
 
     /* Ignore in VT-x/AMD-V mode. */
-    if (HWACCMR3IsActive(pVM))
+    if (HWACCMIsEnabled(pVM))
         return VINF_SUCCESS;
 
     pVM->pgm.s.fMappingsFixed    = false;
