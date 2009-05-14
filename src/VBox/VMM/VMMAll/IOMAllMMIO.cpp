@@ -1021,10 +1021,10 @@ static int iomInterpretXCHG(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
                 AssertMsg(fRc, ("Failed to store register value!\n")); NOREF(fRc);
             }
             else
-                AssertMsg(rc == VINF_IOM_HC_MMIO_WRITE || rc == VINF_PATM_HC_MMIO_PATCH_WRITE, ("rc=%Vrc\n", rc));
+                AssertMsg(rc == VINF_IOM_HC_MMIO_READ_WRITE || rc == VINF_IOM_HC_MMIO_WRITE || rc == VINF_PATM_HC_MMIO_PATCH_WRITE, ("rc=%Vrc\n", rc));
         }
         else
-            AssertMsg(rc == VINF_IOM_HC_MMIO_READ || rc == VINF_PATM_HC_MMIO_PATCH_READ, ("rc=%Vrc\n", rc));
+            AssertMsg(rc == VINF_IOM_HC_MMIO_READ_WRITE || rc == VINF_IOM_HC_MMIO_READ || rc == VINF_PATM_HC_MMIO_PATCH_READ, ("rc=%Vrc\n", rc));
     }
     else
     {
