@@ -527,6 +527,7 @@ static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *
      * Just to make life more interesting, we'll have to deal with the async threads too.
      * We cannot flush a page if we're in an async thread because of REM notifications.
      */
+    pgmLock(pVM);
     if (!pVCpu)
     {
         Log(("pgmR3PoolAccessHandler: async thread, requesting EMT to flush the page: %p:{.Core=%RHp, .idx=%d, .GCPhys=%RGp, .enmType=%d}\n",
@@ -534,11 +535,14 @@ static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *
         STAM_COUNTER_INC(&pPool->StatMonitorR3Async);
         if (!pPage->fReusedFlushPending)
         {
+            pgmUnlock(pVM);
             int rc = VMR3ReqCallEx(pPool->pVMR3, VMCPUID_ANY, NULL, 0, VMREQFLAGS_NO_WAIT | VMREQFLAGS_VOID, (PFNRT)pgmR3PoolFlushReusedPage, 2, pPool, pPage);
             AssertRCReturn(rc, rc);
+            pgmLock(pVM);
             pPage->fReusedFlushPending = true;
             pPage->cModifications += 0x1000;
         }
+
         pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhys, pvPhys, NULL);
         /** @todo r=bird: making unsafe assumption about not crossing entries here! */
         while (cbBuf > 4)
@@ -567,7 +571,7 @@ static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *
         pgmPoolMonitorChainFlush(pPool, pPage); /* ASSUME that VERR_PGM_POOL_CLEARED can be ignored here and that FFs will deal with it in due time. */
         STAM_PROFILE_STOP_EX(&pPool->StatMonitorR3, &pPool->StatMonitorR3FlushPage, a);
     }
-
+    pgmUnlock(pVM);
     return VINF_PGM_HANDLER_DO_DEFAULT;
 }
 
