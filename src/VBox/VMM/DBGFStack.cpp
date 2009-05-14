@@ -249,7 +249,7 @@ static int dbgfR3StackWalk(PVM pVM, VMCPUID idCpu, PDBGFSTACKFRAME pFrame)
 /**
  * Walks the entire stack allocating memory as we walk.
  */
-static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PVM pVM, VMCPUID idCpu, PCCPUMCTXCORE pCtxCore, 
+static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PVM pVM, VMCPUID idCpu, PCCPUMCTXCORE pCtxCore,
                                                 DBGFCODETYPE enmCodeType,
                                                 PCDBGFADDRESS pAddrFrame,
                                                 PCDBGFADDRESS pAddrStack,
@@ -409,17 +409,17 @@ static int dbgfR3StackWalkBeginCommon(PVM pVM,
     PCCPUMCTXCORE   pCtxCore;
     switch (enmCodeType)
     {
-    case DBGFCODETYPE_GUEST:
-        pCtxCore = CPUMGetGuestCtxCore(VMMGetCpuById(pVM, idCpu));
-        break;
-    case DBGFCODETYPE_HYPER:
-        pCtxCore = CPUMGetHyperCtxCore(VMMGetCpuById(pVM, idCpu));
-        break;
-    case DBGFCODETYPE_RING0:
-        pCtxCore = NULL;    /* No valid context present. */
-        break;
-    default:
-        AssertFailed();
+        case DBGFCODETYPE_GUEST:
+            pCtxCore = CPUMGetGuestCtxCore(VMMGetCpuById(pVM, idCpu));
+            break;
+        case DBGFCODETYPE_HYPER:
+            pCtxCore = CPUMGetHyperCtxCore(VMMGetCpuById(pVM, idCpu));
+            break;
+        case DBGFCODETYPE_RING0:
+            pCtxCore = NULL;    /* No valid context present. */
+            break;
+        default:
+            AssertFailedReturn(VERR_INVALID_PARAMETER);
     }
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, idCpu, &pReq, RT_INDEFINITE_WAIT,
