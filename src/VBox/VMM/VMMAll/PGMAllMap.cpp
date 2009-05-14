@@ -314,7 +314,7 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
                 PPGMPOOLPAGE    pPoolPagePd = pgmPoolGetPage(pPool, pShwPdpt->a[iPdPt].u & X86_PDPE_PG_MASK);
                 AssertFatal(pPoolPagePd);
                 if (!pgmPoolIsPageLocked(&pVM->pgm.s, pPoolPagePd))
-                    pgmPoolLockPage(pVM->pgm.s.CTX_SUFF(pPool), pPoolPagePd);
+                    pgmPoolLockPage(pPool, pPoolPagePd);
 #ifdef VBOX_STRICT
                 else if (pShwPaePd->a[iPaePde].u & PGM_PDFLAGS_MAPPING)
                 {
@@ -492,7 +492,7 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
                     PPGMPOOLPAGE pPoolPagePd = pgmPoolGetPage(pPool, pShwPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
                     AssertFatal(pPoolPagePd);
                     if (pgmPoolIsPageLocked(&pVM->pgm.s, pPoolPagePd))
-                        pgmPoolUnlockPage(pVM->pgm.s.CTX_SUFF(pPool), pPoolPagePd);
+                        pgmPoolUnlockPage(pPool, pPoolPagePd);
                 }
                 break;
             }

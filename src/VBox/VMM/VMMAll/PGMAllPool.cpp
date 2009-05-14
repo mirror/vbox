@@ -4344,6 +4344,28 @@ void pgmPoolFree(PVM pVM, RTHCPHYS HCPhys, uint16_t iUser, uint32_t iUserTable)
     pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, HCPhys), iUser, iUserTable);
 }
 
+/**
+ * Internal worker for finding a 'in-use' shadow page give by it's physical address.
+ *
+ * @returns Pointer to the shadow page structure.
+ * @param   pPool       The pool.
+ * @param   HCPhys      The HC physical address of the shadow page.
+ */
+PPGMPOOLPAGE pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys)
+{
+    PVM pVM = pPool->CTX_SUFF(pVM);
+
+    /*
+     * Look up the page.
+     */
+    pgmLock(pVM);
+    PPGMPOOLPAGE pPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, HCPhys & X86_PTE_PAE_PG_MASK);
+    pgmUnlock(pVM);
+
+    AssertFatalMsg(pPage && pPage->enmKind != PGMPOOLKIND_FREE, ("HCPhys=%RHp pPage=%p idx=%d\n", HCPhys, pPage, (pPage) ? pPage->idx : 0));
+    return pPage;
+}
+
 
 #ifdef IN_RING3
 /**

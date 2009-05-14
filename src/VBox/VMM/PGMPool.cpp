@@ -427,6 +427,8 @@ VMMR3DECL(int) PGMR3PoolGrow(PVM pVM)
     PPGMPOOL pPool = pVM->pgm.s.pPoolR3;
     AssertReturn(pPool->cCurPages < pPool->cMaxPages, VERR_INTERNAL_ERROR);
 
+    pgmLock(pVM);
+
     /*
      * How much to grow it by?
      */
@@ -443,6 +445,7 @@ VMMR3DECL(int) PGMR3PoolGrow(PVM pVM)
         if (!pPage->pvPageR3)
         {
             Log(("We're out of memory!! i=%d\n", i));
+            pgmUnlock(pVM);
             return i ? VINF_SUCCESS : VERR_NO_PAGE_MEMORY;
         }
         pPage->Core.Key  = MMPage2Phys(pVM, pPage->pvPageR3);
@@ -470,6 +473,7 @@ VMMR3DECL(int) PGMR3PoolGrow(PVM pVM)
         pPool->cCurPages = i + 1;
     }
 
+    pgmUnlock(pVM);
     Assert(pPool->cCurPages <= pPool->cMaxPages);
     return VINF_SUCCESS;
 }
