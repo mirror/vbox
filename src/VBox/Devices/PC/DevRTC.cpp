@@ -407,6 +407,7 @@ static void rtc_update_second(void *opaque)
 
         if (!(s->cmos_data[RTC_REG_B] & REG_B_SET)) {
             /* update in progress bit */
+            Log2(("RTC: UIP %x -> 1\n", !!(s->cmos_data[RTC_REG_A] & REG_A_UIP)));
             s->cmos_data[RTC_REG_A] |= REG_A_UIP;
         }
 
@@ -445,6 +446,7 @@ static void rtc_update_second2(void *opaque)
     }
 
     /* clear update in progress bit */
+    Log2(("RTC: UIP %x -> 0\n", !!(s->cmos_data[RTC_REG_A] & REG_A_UIP)));
     s->cmos_data[RTC_REG_A] &= ~REG_A_UIP;
 
     s->next_second_time += TMTimerGetFreq(s->CTX_SUFF(pSecondTimer));
