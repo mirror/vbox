@@ -96,6 +96,12 @@ typedef enum TMTIMERSTATE
     TMTIMERSTATE_FREE
 } TMTIMERSTATE;
 
+/** Predicate that returns true if the give state is pending scheduling or
+ *  rescheduling of any kind. Will reference the argument more than once! */
+#define TMTIMERSTATE_IS_PENDING_SCHEDULING(enmState) \
+    (   (enmState) <= TMTIMERSTATE_PENDING_RESCHEDULE \
+     && (enmState) >= TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE)
+
 
 /**
  * Internal representation of a timer.
@@ -421,17 +427,20 @@ typedef struct TM
     /** Interval in milliseconds of the pTimer timer. */
     uint32_t                    u32TimerMillies;
 
-    /** Makes sure only one EMT is running the queues. */
+    /** Indicates that queues are being run. */
     bool volatile               fRunningQueues;
+    /** Indicates that the virtual sync queue is being run. */
+    bool volatile               fRunningVirtualSyncQueue;
 
     /** Lock serializing EMT access to TM. */
     PDMCRITSECT                 EmtLock;
+    /** Lock serializing access to the VirtualSync clock. */
+    PDMCRITSECT                 VirtualSyncLock;
 
     /** TMR3TimerQueuesDo
      * @{ */
     STAMPROFILE                 StatDoQueues;
-    STAMPROFILEADV              StatDoQueuesSchedule;
-    STAMPROFILEADV              StatDoQueuesRun;
+    STAMPROFILEADV              aStatDoQueues[TMCLOCK_MAX];
     /** @} */
     /** tmSchedule
      * @{ */
@@ -491,6 +500,8 @@ typedef struct TM
     STAMCOUNTER                 aStatVirtualSyncCatchupInitial[TM_MAX_CATCHUP_PERIODS];
     STAMCOUNTER                 aStatVirtualSyncCatchupAdjust[TM_MAX_CATCHUP_PERIODS];
     /** @} */
+    /** TMR3VirtualSyncFF (non dedicated EMT). */
+    STAMPROFILE                 StatVirtualSyncFF;
     /** The timer callback. */
     STAMCOUNTER                 StatTimerCallbackSetFF;
 
@@ -535,9 +546,12 @@ typedef struct TMCPU
 typedef TMCPU *PTMCPU;
 
 #if 0 /* enable this to rule out locking bugs on single cpu guests. */
-# define tmLock(pVM)             VINF_SUCCESS
-# define tmTryLock(pVM)          VINF_SUCCESS
-# define tmUnlock(pVM)           ((void)0)
+# define tmLock(pVM)                VINF_SUCCESS
+# define tmTryLock(pVM)             VINF_SUCCESS
+# define tmUnlock(pVM)              ((void)0)
+# define tmVirtualSyncLock(pVM)     VINF_SUCCESS
+# define tmVirtualSyncTryLock(pVM)  VINF_SUCCESS
+# define tmVirtualSyncUnlock(pVM)   ((void)0)
 # define TM_ASSERT_EMT_LOCK(pVM) VM_ASSERT_EMT(pVM)
 #else
 int                     tmLock(PVM pVM);
@@ -545,6 +559,9 @@ int                     tmTryLock(PVM pVM);
 void                    tmUnlock(PVM pVM);
 /** Checks that the caller owns the EMT lock.  */
 #define TM_ASSERT_EMT_LOCK(pVM) Assert(PDMCritSectIsOwner(&pVM->tm.s.EmtLock))
+int                     tmVirtualSyncLock(PVM pVM);
+int                     tmVirtualSyncTryLock(PVM pVM);
+void                    tmVirtualSyncUnlock(PVM pVM);
 #endif
 
 const char             *tmTimerState(TMTIMERSTATE enmState);
