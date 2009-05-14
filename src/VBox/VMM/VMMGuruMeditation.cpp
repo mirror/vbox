@@ -265,7 +265,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
             RTGCUINT        uErrorCode = 0xdeadface;
             RTGCUINTPTR     uCR2       = 0xdeadface;
             int rc2 = TRPMQueryTrapAll(pVCpu, &u8TrapNo, &enmType, &uErrorCode, &uCR2);
-            if (!HWACCMR3IsActive(pVM))
+            if (!HWACCMIsEnabled(pVM))
             {
                 if (RT_SUCCESS(rc2))
                     pHlp->pfnPrintf(pHlp,
@@ -284,7 +284,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
             /*
              * The hypervisor dump is not relevant when we're in VT-x/AMD-V mode.
              */
-            if (HWACCMR3IsActive(pVM))
+            if (HWACCMIsEnabled(pVM))
             {
                 pHlp->pfnPrintf(pHlp, "\n");
 #if defined(RT_OS_WINDOWS) && HC_ARCH_BITS == 32
@@ -448,7 +448,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
                                 "%.*Rhxd\n",
                                 pVCpu->vmm.s.pbEMTStackRC, pVCpu->vmm.s.pbEMTStackBottomRC,
                                 VMM_STACK_SIZE, pVCpu->vmm.s.pbEMTStackR3);
-            } /* !HWACCMR3IsActive */
+            } /* !HWACCMIsEnabled */
             break;
         }
 

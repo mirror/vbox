@@ -126,7 +126,7 @@ VMMR3DECL(void) HWACCMR3CheckError(PVM pVM, int iStatusCode);
 VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx);
 VMMR3DECL(void) HWACCMR3NotifyScheduled(PVMCPU pVCpu);
 VMMR3DECL(void) HWACCMR3NotifyEmulated(PVMCPU pVCpu);
-VMMR3DECL(bool) HWACCMR3IsActive(PVM pVM);
+VMMR3DECL(bool) HWACCMR3IsActive(PVMCPU pVCpu);
 VMMR3DECL(bool) HWACCMR3IsNestedPagingActive(PVM pVM);
 VMMR3DECL(bool) HWACCMR3IsAllowed(PVM pVM);
 VMMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode);
