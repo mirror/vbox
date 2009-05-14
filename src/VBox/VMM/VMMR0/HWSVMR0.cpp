@@ -2024,6 +2024,7 @@ ResumeExecution:
 
     case SVM_EXIT_HLT:
         /** Check if external interrupts are pending; if so, don't switch back. */
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitHlt);
         pCtx->rip++;    /* skip hlt */
         if (    pCtx->eflags.Bits.u1IF
             &&  VMCPU_FF_ISPENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC|VMCPU_FF_INTERRUPT_PIC)))
@@ -2034,6 +2035,7 @@ ResumeExecution:
 
     case SVM_EXIT_MWAIT_UNCOND:
         Log2(("SVM: mwait\n"));
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitMwait);
         rc = EMInterpretMWait(pVM, pVCpu, CPUMCTX2CORE(pCtx));
         if (    rc == VINF_EM_HALT
             ||  rc == VINF_SUCCESS)
@@ -2083,6 +2085,7 @@ ResumeExecution:
         uint32_t cbSize;
 
         /* Note: the intel manual claims there's a REX version of RDMSR that's slightly different, so we play safe by completely disassembling the instruction. */
+        STAM_COUNTER_INC((pVMCB->ctrl.u64ExitInfo1 == 0) ? &pVCpu->hwaccm.s.StatExitRdmsr : &pVCpu->hwaccm.s.StatExitWrmsr);
         Log(("SVM: %s\n", (pVMCB->ctrl.u64ExitInfo1 == 0) ? "rdmsr" : "wrmsr"));
         rc = EMInterpretInstruction(pVM, pVCpu, CPUMCTX2CORE(pCtx), 0, &cbSize);
         if (rc == VINF_SUCCESS)

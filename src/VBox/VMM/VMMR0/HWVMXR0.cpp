@@ -3002,6 +3002,8 @@ ResumeExecution:
     {
         uint32_t cbSize;
 
+        STAM_COUNTER_INC((exitReason == VMX_EXIT_RDMSR) ? &pVCpu->hwaccm.s.StatExitRdmsr : &pVCpu->hwaccm.s.StatExitWrmsr);
+
         /* Note: the intel manual claims there's a REX version of RDMSR that's slightly different, so we play safe by completely disassembling the instruction. */
         Log2(("VMX: %s\n", (exitReason == VMX_EXIT_RDMSR) ? "rdmsr" : "wrmsr"));
         rc = EMInterpretInstruction(pVM, pVCpu, CPUMCTX2CORE(pCtx), 0, &cbSize);
@@ -3370,6 +3372,7 @@ ResumeExecution:
 
     case VMX_EXIT_HLT:                  /* 12 Guest software attempted to execute HLT. */
         /** Check if external interrupts are pending; if so, don't switch back. */
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitHlt);
         pCtx->rip++;    /* skip hlt */
         if (    pCtx->eflags.Bits.u1IF
             &&  VMCPU_FF_ISPENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC|VMCPU_FF_INTERRUPT_PIC)))
@@ -3380,6 +3383,7 @@ ResumeExecution:
 
     case VMX_EXIT_MWAIT:                /* 36 Guest software executed MWAIT. */
         Log2(("VMX: mwait\n"));
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitMwait);
         rc = EMInterpretMWait(pVM, pVCpu, CPUMCTX2CORE(pCtx));
         if (    rc == VINF_EM_HALT
             ||  rc == VINF_SUCCESS)
