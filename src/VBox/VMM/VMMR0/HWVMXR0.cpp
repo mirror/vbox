@@ -3378,6 +3378,26 @@ ResumeExecution:
         rc = VINF_EM_HALT;
         break;
 
+    case VMX_EXIT_MWAIT:                /* 36 Guest software executed MWAIT. */
+        Log2(("VMX: mwait\n"));
+        rc = EMInterpretMWait(pVM, pVCpu, CPUMCTX2CORE(pCtx));
+        if (    rc == VINF_EM_HALT
+            ||  rc == VINF_SUCCESS)
+        {
+            /* Update EIP and continue execution. */
+            pCtx->rip += cbInstr;
+
+            /** Check if external interrupts are pending; if so, don't switch back. */
+            if (    rc == VINF_SUCCESS
+                ||  (   rc == VINF_EM_HALT
+                     && pCtx->eflags.Bits.u1IF
+                     && VMCPU_FF_ISPENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC|VMCPU_FF_INTERRUPT_PIC)))
+               )
+                goto ResumeExecution;
+        }
+        AssertMsg(rc == VERR_EM_INTERPRETER || rc == VINF_EM_HALT, ("EMU: mwait failed with %Rrc\n", rc));
+        break;
+
     case VMX_EXIT_RSM:                  /* 17 Guest software attempted to execute RSM in SMM. */
         AssertFailed(); /* can't happen. */
         rc = VINF_EM_RAW_EXCEPTION_PRIVILEGED;
@@ -3425,7 +3445,6 @@ ResumeExecution:
         rc = VERR_EM_INTERPRETER;
         break;
 
-    case VMX_EXIT_MWAIT:                /* 36 Guest software executed MWAIT. */
     case VMX_EXIT_MONITOR:              /* 39 Guest software attempted to execute MONITOR. */
     case VMX_EXIT_PAUSE:                /* 40 Guest software attempted to execute PAUSE. */
         rc = VINF_EM_RAW_EXCEPTION_PRIVILEGED;
