@@ -782,7 +782,7 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, CPUMCTX *pCtx)
     }
 #endif
 
-    if (    pCtx->eflags.u32 & X86_EFL_IF
+    if (    (pCtx->eflags.u32 & X86_EFL_IF)
         && (!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
         && TRPMHasTrap(pVCpu)
        )
