@@ -168,13 +168,13 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
 
         if (DisplayDevice.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE)
         {
-            Log(("Found primary device. err %d\n", GetLastError ()));
+            Log(("ResizeDisplayDevice: Found primary device. err %d\n", GetLastError ()));
             NumDevices++;
         }
         else if (!(DisplayDevice.StateFlags & DISPLAY_DEVICE_MIRRORING_DRIVER))
         {
             
-            Log(("Found secondary device. err %d\n", GetLastError ()));
+            Log(("ResizeDisplayDevice: Found secondary device. err %d\n", GetLastError ()));
             NumDevices++;
         }
         
@@ -183,11 +183,11 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
         i++;
     }
     
-    Log(("Found total %d devices. err %d\n", NumDevices, GetLastError ()));
+    Log(("ResizeDisplayDevice: Found total %d devices. err %d\n", NumDevices, GetLastError ()));
     
     if (NumDevices == 0 || Id >= NumDevices)
     {
-        Log(("Requested identifier %d is invalid. err %d\n", Id, GetLastError ()));
+        Log(("ResizeDisplayDevice: Requested identifier %d is invalid. err %d\n", Id, GetLastError ()));
         return FALSE;
     }
     
@@ -205,20 +205,20 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
     i = 0;
     while (EnumDisplayDevices (NULL, i, &DisplayDevice, 0))
     { 
-        Log(("[%d(%d)] %s\n", i, DevNum, DisplayDevice.DeviceName));
+        Log(("ResizeDisplayDevice: [%d(%d)] %s\n", i, DevNum, DisplayDevice.DeviceName));
         
         BOOL bFetchDevice = FALSE;
 
         if (DisplayDevice.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE)
         {
-            Log(("Found primary device. err %d\n", GetLastError ()));
+            Log(("ResizeDisplayDevice: Found primary device. err %d\n", GetLastError ()));
             DevPrimaryNum = DevNum;
             bFetchDevice = TRUE;
         }
         else if (!(DisplayDevice.StateFlags & DISPLAY_DEVICE_MIRRORING_DRIVER))
         {
             
-            Log(("Found secondary device. err %d\n", GetLastError ()));
+            Log(("ResizeDisplayDevice: Found secondary device. err %d\n", GetLastError ()));
             bFetchDevice = TRUE;
         }
         
@@ -226,7 +226,7 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
         {
             if (DevNum >= NumDevices)
             {
-                Log(("%d >= %d\n", NumDevices, DevNum));
+                Log(("ResizeDisplayDevice: %d >= %d\n", NumDevices, DevNum));
                 return FALSE;
             }
         
@@ -237,11 +237,11 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
             if (!EnumDisplaySettings((LPSTR)DisplayDevice.DeviceName,
                  ENUM_REGISTRY_SETTINGS, &paDeviceModes[DevNum]))
             {
-                Log(("EnumDisplaySettings err %d\n", GetLastError ()));
+                Log(("ResizeDisplayDevice: EnumDisplaySettings err %d\n", GetLastError ()));
                 return FALSE;
             }
             
-            Log(("%dx%d at %d,%d\n",
+            Log(("ResizeDisplayDevice: %dx%d at %d,%d\n",
                     paDeviceModes[DevNum].dmPelsWidth,
                     paDeviceModes[DevNum].dmPelsHeight,
                     paDeviceModes[DevNum].dmPosition.x,
@@ -280,7 +280,7 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
         && paRects[Id].bottom - paRects[Id].top == Height
         && paDeviceModes[Id].dmBitsPerPel == BitsPerPixel)
     {
-        Log(("VBoxDisplayThread : already at desired resolution.\n"));
+        Log(("ResizeDisplayDevice: Already at desired resolution.\n"));
         return FALSE;
     }
 
@@ -288,7 +288,7 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
 #ifdef Log
     for (i = 0; i < NumDevices; i++)
     {
-        Log(("[%d]: %d,%d %dx%d\n",
+        Log(("ResizeDisplayDevice: [%d]: %d,%d %dx%d\n",
                 i, paRects[i].left, paRects[i].top,
                 paRects[i].right - paRects[i].left,
                 paRects[i].bottom - paRects[i].top));
@@ -302,6 +302,8 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
     ZeroMemory (&tempDevMode, sizeof (tempDevMode));
     tempDevMode.dmSize = sizeof(DEVMODE);
     EnumDisplaySettings(NULL, 0xffffff, &tempDevMode);
+    BOOL bUpdateMonitor = FALSE;
+    LONG status = 0;
 
     /* Assign the new rectangles to displays. */
     for (i = 0; i < NumDevices; i++)
@@ -320,25 +322,45 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
             paDeviceModes[i].dmBitsPerPel = BitsPerPixel;
         }
 
-        Log(("calling pfnChangeDisplaySettingsEx %x\n", gCtx.pfnChangeDisplaySettingsEx));     
-
-        gCtx.pfnChangeDisplaySettingsEx((LPSTR)paDisplayDevices[i].DeviceName, 
-                                        &paDeviceModes[i], NULL, CDS_NORESET | CDS_UPDATEREGISTRY, NULL); 
-
-        Log(("ChangeDisplaySettings position err %d\n", GetLastError ()));
+        /* Test if the mode can be set. */
+        Log(("ResizeDisplayDevice: Testing if the mode can be set ...\n"));
+        SetLastError(0);
+        status = gCtx.pfnChangeDisplaySettingsEx((LPSTR)paDisplayDevices[i].DeviceName, 
+                                                 &paDeviceModes[i], NULL, CDS_TEST, NULL);
+        if (status == DISP_CHANGE_SUCCESSFUL)
+        {
+            Log(("ResizeDisplayDevice: Mode can be set! Calling pfnChangeDisplaySettingsEx %x\n", gCtx.pfnChangeDisplaySettingsEx));         
+            gCtx.pfnChangeDisplaySettingsEx((LPSTR)paDisplayDevices[i].DeviceName, 
+                                            &paDeviceModes[i], NULL, CDS_NORESET | CDS_UPDATEREGISTRY, NULL);    
+            Log(("ResizeDisplayDevice: ChangeDisplaySettingsEx position err %d\n", GetLastError ()));
+            bUpdateMonitor = TRUE;
+        }
+        else
+        {
+            if (status == DISP_CHANGE_BADMODE)
+            {
+                Log(("ResizeDisplayDevice: Bad mode detected. No changes made.\n"));
+            }
+            else Log(("ResizeDisplayDevice: Mode can NOT be set! Error: %d\n", status));
+        }
     }
     
     /* A second call to ChangeDisplaySettings updates the monitor. */
-    LONG status = ChangeDisplaySettings(NULL, 0); 
-    Log(("ChangeDisplaySettings update status %d\n", status));
-    if (status == DISP_CHANGE_SUCCESSFUL || status == DISP_CHANGE_BADMODE)
+    if (bUpdateMonitor)
     {
-        /* Successfully set new video mode or our driver can not set the requested mode. Stop trying. */
-        return FALSE;
+        status = ChangeDisplaySettings(NULL, 0); 
+        Log(("ResizeDisplayDevice: ChangeDisplaySettings update status %d\n", status));
+        if (status == DISP_CHANGE_SUCCESSFUL || status == DISP_CHANGE_BADMODE)
+        {
+            /* Successfully set new video mode or our driver can not set the requested mode. Stop trying. */
+            return FALSE;
+        }
+
+        /* Retry the request. */
+        return TRUE;
     }
 
-    /* Retry the request. */
-    return TRUE;
+    return FALSE; /* Don't retry; maybe something went wrong. */
 }
 
 /**
