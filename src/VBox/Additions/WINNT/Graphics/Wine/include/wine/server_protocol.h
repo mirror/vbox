@@ -5,6 +5,15 @@
  * Edit server/protocol.def instead and re-run tools/make_requests
  */
 
+/*
+ * Sun LGPL Disclaimer: For the avoidance of doubt, except that if any license choice
+ * other than GPL or LGPL is available it will apply instead, Sun elects to use only
+ * the Lesser General Public License version 2.1 (LGPLv2) at this time for any software where
+ * a choice of LGPL license versions is made available with the language indicating
+ * that LGPLv2 or any later version may be used, or where a choice of which version
+ * of the LGPL is applied is otherwise unspecified.
+ */
+
 #ifndef __WINE_WINE_SERVER_PROTOCOL_H
 #define __WINE_WINE_SERVER_PROTOCOL_H
 
@@ -15,14 +24,20 @@
 #include <windef.h>
 #include <winbase.h>
 
-typedef void *obj_handle_t;
-typedef void *user_handle_t;
-typedef unsigned short atom_t;
+typedef unsigned int obj_handle_t;
+typedef unsigned int user_handle_t;
+typedef unsigned int atom_t;
 typedef unsigned int process_id_t;
 typedef unsigned int thread_id_t;
 typedef unsigned int data_size_t;
 typedef unsigned int ioctl_code_t;
+typedef unsigned __int64 lparam_t;
+typedef unsigned __int64 apc_param_t;
+typedef unsigned __int64 mem_size_t;
 typedef unsigned __int64 file_pos_t;
+typedef unsigned __int64 client_ptr_t;
+typedef unsigned __int64 affinity_t;
+typedef client_ptr_t mod_handle_t;
 
 struct request_header
 {
@@ -49,76 +64,141 @@ struct request_max_size
 
 
 
-struct debug_event_exception
+typedef union
 {
-    EXCEPTION_RECORD record;
-    int              first;
-};
-struct debug_event_create_thread
+    int code;
+    struct
+    {
+        int              code;
+        int              first;
+        unsigned int     exc_code;
+        unsigned int     flags;
+        client_ptr_t     record;
+        client_ptr_t     address;
+        int              nb_params;
+        int              __pad;
+        client_ptr_t     params[15];
+    } exception;
+    struct
+    {
+        int          code;
+        obj_handle_t handle;
+        client_ptr_t teb;
+        client_ptr_t start;
+    } create_thread;
+    struct
+    {
+        int          code;
+        obj_handle_t file;
+        obj_handle_t process;
+        obj_handle_t thread;
+        mod_handle_t base;
+        int          dbg_offset;
+        int          dbg_size;
+        client_ptr_t teb;
+        client_ptr_t start;
+        client_ptr_t name;
+        int          unicode;
+    } create_process;
+    struct
+    {
+        int          code;
+        int          exit_code;
+    } exit;
+    struct
+    {
+        int          code;
+        obj_handle_t handle;
+        mod_handle_t base;
+        int          dbg_offset;
+        int          dbg_size;
+        client_ptr_t name;
+        int          unicode;
+    } load_dll;
+    struct
+    {
+        int          code;
+        int          __pad;
+        mod_handle_t base;
+    } unload_dll;
+    struct
+    {
+        int          code;
+        int          unicode;
+        client_ptr_t string;
+        data_size_t  length;
+    } output_string;
+    struct
+    {
+        int          code;
+        int          error;
+        int          type;
+    } rip_info;
+} debug_event_t;
+
+
+enum cpu_type
 {
-    obj_handle_t handle;
-    void        *teb;
-    void        *start;
+    CPU_x86, CPU_x86_64, CPU_ALPHA, CPU_POWERPC, CPU_SPARC
 };
-struct debug_event_create_process
-{
-    obj_handle_t file;
-    obj_handle_t process;
-    obj_handle_t thread;
-    void        *base;
-    int          dbg_offset;
-    int          dbg_size;
-    void        *teb;
-    void        *start;
-    void        *name;
-    int          unicode;
-};
-struct debug_event_exit
-{
-    int          exit_code;
-};
-struct debug_event_load_dll
-{
-    obj_handle_t handle;
-    void        *base;
-    int          dbg_offset;
-    int          dbg_size;
-    void        *name;
-    int          unicode;
-};
-struct debug_event_unload_dll
-{
-    void       *base;
-};
-struct debug_event_output_string
-{
-    void       *string;
-    int         unicode;
-    int         length;
-};
-struct debug_event_rip_info
-{
-    int         error;
-    int         type;
-};
-union debug_event_data
-{
-    struct debug_event_exception      exception;
-    struct debug_event_create_thread  create_thread;
-    struct debug_event_create_process create_process;
-    struct debug_event_exit           exit;
-    struct debug_event_load_dll       load_dll;
-    struct debug_event_unload_dll     unload_dll;
-    struct debug_event_output_string  output_string;
-    struct debug_event_rip_info       rip_info;
-};
+typedef int cpu_type_t;
 
 
 typedef struct
 {
-    int                      code;
-    union debug_event_data   info;
-} debug_event_t;
+    cpu_type_t       cpu;
+    unsigned int     flags;
+    union
+    {
+        struct { unsigned int eip, ebp, esp, eflags, cs, ss; } i386_regs;
+        struct { unsigned __int64 rip, rbp, rsp;
+                 unsigned int cs, ss, flags, mxcsr; } x86_64_regs;
+        struct { unsigned __int64 fir;
+                 unsigned int psr; } alpha_regs;
+        struct { unsigned int iar, msr, ctr, lr, dar, dsisr, trap; } powerpc_regs;
+        struct { unsigned int psr, pc, npc, y, wim, tbr; } sparc_regs;
+    } ctl;
+    union
+    {
+        struct { unsigned int eax, ebx, ecx, edx, esi, edi; } i386_regs;
+        struct { unsigned __int64 rax,rbx, rcx, rdx, rsi, rdi,
+                                  r8, r9, r10, r11, r12, r13, r14, r15; } x86_64_regs;
+        struct { unsigned __int64 v0, t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12,
+                                  s0, s1, s2, s3, s4, s5, s6, a0, a1, a2, a3, a4, a5, at; } alpha_regs;
+        struct { unsigned int gpr[32], cr, xer; } powerpc_regs;
+        struct { unsigned int g[8], o[8], l[8], i[8]; } sparc_regs;
+    } integer;
+    union
+    {
+        struct { unsigned int ds, es, fs, gs; } i386_regs;
+        struct { unsigned int ds, es, fs, gs; } x86_64_regs;
+    } seg;
+    union
+    {
+        struct { unsigned int ctrl, status, tag, err_off, err_sel, data_off, data_sel, cr0npx;
+                 unsigned char regs[80]; } i386_regs;
+        struct { struct { unsigned __int64 low, high; } fpregs[32]; } x86_64_regs;
+        struct { unsigned __int64 f[32], fpcr, softfpcr; } alpha_regs;
+        struct { double fpr[32], fpscr; } powerpc_regs;
+    } fp;
+    union
+    {
+        struct { unsigned int dr0, dr1, dr2, dr3, dr6, dr7; } i386_regs;
+        struct { unsigned __int64 dr0, dr1, dr2, dr3, dr6, dr7; } x86_64_regs;
+        struct { unsigned int dr[8]; } powerpc_regs;
+    } debug;
+    union
+    {
+        unsigned char i386_regs[512];
+    } ext;
+} context_t;
+
+#define SERVER_CTX_CONTROL            0x01
+#define SERVER_CTX_INTEGER            0x02
+#define SERVER_CTX_SEGMENTS           0x04
+#define SERVER_CTX_FLOATING_POINT     0x08
+#define SERVER_CTX_DEBUG_REGISTERS    0x10
+#define SERVER_CTX_EXTENDED_REGISTERS 0x20
 
 
 struct send_fd
@@ -130,8 +210,9 @@ struct send_fd
 
 struct wake_up_reply
 {
-    void *cookie;
-    int   signaled;
+    client_ptr_t cookie;
+    int          signaled;
+    int          __pad;
 };
 
 
@@ -142,8 +223,8 @@ typedef __int64 timeout_t;
 typedef struct
 {
     atom_t         atom;
-    short          string;
-    obj_handle_t   handle;
+    int            string;
+    lparam_t       data;
 } property_data_t;
 
 
@@ -158,34 +239,44 @@ typedef struct
 
 typedef struct
 {
-    void           *callback;
-    void           *iosb;
-    void           *arg;
-    void           *apc;
+    obj_handle_t    handle;
     obj_handle_t    event;
-    unsigned long   cvalue;
+    client_ptr_t    callback;
+    client_ptr_t    iosb;
+    client_ptr_t    arg;
+    apc_param_t     cvalue;
 } async_data_t;
 
 
 
+struct hardware_msg_data
+{
+    lparam_t        info;
+    int             x;
+    int             y;
+    unsigned int    hw_id;
+    int             __pad;
+};
+
 struct callback_msg_data
 {
-    void           *callback;
-    unsigned long   data;
-    unsigned long   result;
+    client_ptr_t    callback;
+    lparam_t        data;
+    lparam_t        result;
 };
 
 struct winevent_msg_data
 {
     user_handle_t   hook;
     thread_id_t     tid;
-    void           *hook_proc;
+    client_ptr_t    hook_proc;
 
 };
 
 typedef union
 {
     unsigned char            bytes[1];
+    struct hardware_msg_data hardware;
     struct callback_msg_data callback;
     struct winevent_msg_data winevent;
 } message_data_t;
@@ -258,94 +349,101 @@ typedef union
     struct
     {
         enum apc_type    type;
-        void (__stdcall *func)(unsigned long,unsigned long,unsigned long);
-        unsigned long    args[3];
+        int              __pad;
+        client_ptr_t     func;
+        apc_param_t      args[3];
     } user;
     struct
     {
-        enum apc_type   type;
-        void (__stdcall *func)(void*, unsigned int, unsigned int);
+        enum apc_type    type;
+        int              __pad;
+        client_ptr_t     func;
         timeout_t        time;
-        void            *arg;
+        client_ptr_t     arg;
     } timer;
     struct
     {
         enum apc_type    type;
-        unsigned int   (*func)(void*, void*, unsigned int, unsigned long *);
-        void            *user;
-        void            *sb;
         unsigned int     status;
+        client_ptr_t     func;
+        client_ptr_t     user;
+        client_ptr_t     sb;
     } async_io;
     struct
     {
         enum apc_type    type;
-        void            *addr;
-        unsigned long    size;
-        unsigned int     zero_bits;
         unsigned int     op_type;
+        client_ptr_t     addr;
+        mem_size_t       size;
+        unsigned int     zero_bits;
         unsigned int     prot;
     } virtual_alloc;
     struct
     {
         enum apc_type    type;
-        void            *addr;
-        unsigned long    size;
         unsigned int     op_type;
+        client_ptr_t     addr;
+        mem_size_t       size;
     } virtual_free;
     struct
     {
         enum apc_type    type;
-        const void      *addr;
+        int              __pad;
+        client_ptr_t     addr;
     } virtual_query;
     struct
     {
         enum apc_type    type;
-        void            *addr;
-        unsigned long    size;
         unsigned int     prot;
+        client_ptr_t     addr;
+        mem_size_t       size;
     } virtual_protect;
     struct
     {
         enum apc_type    type;
-        const void      *addr;
-        unsigned long    size;
+        int              __pad;
+        client_ptr_t     addr;
+        mem_size_t       size;
     } virtual_flush;
     struct
     {
         enum apc_type    type;
-        void            *addr;
-        unsigned long    size;
+        int              __pad;
+        client_ptr_t     addr;
+        mem_size_t       size;
     } virtual_lock;
     struct
     {
         enum apc_type    type;
-        void            *addr;
-        unsigned long    size;
+        int              __pad;
+        client_ptr_t     addr;
+        mem_size_t       size;
     } virtual_unlock;
     struct
     {
         enum apc_type    type;
         obj_handle_t     handle;
-        void            *addr;
-        unsigned long    size;
+        client_ptr_t     addr;
+        mem_size_t       size;
         file_pos_t       offset;
-        unsigned int     zero_bits;
         unsigned int     alloc_type;
-        unsigned int     prot;
+        unsigned short   zero_bits;
+        unsigned short   prot;
     } map_view;
     struct
     {
         enum apc_type    type;
-        void            *addr;
+        int              __pad;
+        client_ptr_t     addr;
     } unmap_view;
     struct
     {
         enum apc_type    type;
-        void (__stdcall *func)(void*);
-        void            *arg;
-        unsigned long    reserve;
-        unsigned long    commit;
         int              suspend;
+        client_ptr_t     func;
+        client_ptr_t     arg;
+        mem_size_t       reserve;
+        mem_size_t       commit;
     } create_thread;
 } apc_call_t;
 
@@ -356,69 +454,70 @@ typedef union
     {
         enum apc_type    type;
         unsigned int     status;
-        unsigned long    total;
+        client_ptr_t     apc;
+        unsigned int     total;
     } async_io;
     struct
     {
         enum apc_type    type;
         unsigned int     status;
-        void            *addr;
-        unsigned long    size;
+        client_ptr_t     addr;
+        mem_size_t       size;
     } virtual_alloc;
     struct
     {
         enum apc_type    type;
         unsigned int     status;
-        void            *addr;
-        unsigned long    size;
+        client_ptr_t     addr;
+        mem_size_t       size;
     } virtual_free;
     struct
     {
         enum apc_type    type;
         unsigned int     status;
-        void            *base;
-        void            *alloc_base;
-        unsigned long    size;
-        unsigned int     state;
-        unsigned int     prot;
-        unsigned int     alloc_prot;
-        unsigned int     alloc_type;
+        client_ptr_t     base;
+        client_ptr_t     alloc_base;
+        mem_size_t       size;
+        unsigned short   state;
+        unsigned short   prot;
+        unsigned short   alloc_prot;
+        unsigned short   alloc_type;
     } virtual_query;
     struct
     {
         enum apc_type    type;
         unsigned int     status;
-        void            *addr;
-        unsigned long    size;
+        client_ptr_t     addr;
+        mem_size_t       size;
         unsigned int     prot;
     } virtual_protect;
     struct
     {
         enum apc_type    type;
         unsigned int     status;
-        const void      *addr;
-        unsigned long    size;
+        client_ptr_t     addr;
+        mem_size_t       size;
     } virtual_flush;
     struct
     {
         enum apc_type    type;
         unsigned int     status;
-        void            *addr;
-        unsigned long    size;
+        client_ptr_t     addr;
+        mem_size_t       size;
     } virtual_lock;
     struct
     {
         enum apc_type    type;
         unsigned int     status;
-        void            *addr;
-        unsigned long    size;
+        client_ptr_t     addr;
+        mem_size_t       size;
     } virtual_unlock;
     struct
     {
         enum apc_type    type;
         unsigned int     status;
-        void            *addr;
-        unsigned long    size;
+        client_ptr_t     addr;
+        mem_size_t       size;
     } map_view;
     struct
     {
@@ -463,6 +562,7 @@ struct new_process_reply
     obj_handle_t phandle;
     thread_id_t  tid;
     obj_handle_t thandle;
+    char __pad_28[4];
 };
 
 
@@ -518,9 +618,10 @@ struct get_startup_info_reply
 struct init_process_done_request
 {
     struct request_header __header;
-    void*        module;
-    void*        entry;
     int          gui;
+    mod_handle_t module;
+    client_ptr_t ldt_copy;
+    client_ptr_t entry;
 };
 struct init_process_done_reply
 {
@@ -535,21 +636,22 @@ struct init_thread_request
     int          unix_pid;
     int          unix_tid;
     int          debug_level;
-    void*        teb;
-    void*        peb;
-    void*        entry;
-    void*        ldt_copy;
+    client_ptr_t teb;
+    client_ptr_t entry;
     int          reply_fd;
     int          wait_fd;
+    cpu_type_t   cpu;
 };
 struct init_thread_reply
 {
     struct reply_header __header;
     process_id_t pid;
     thread_id_t  tid;
-    data_size_t  info_size;
     timeout_t    server_start;
+    data_size_t  info_size;
     int          version;
+    unsigned int all_cpus;
+    char __pad_36[4];
 };
 
 
@@ -564,6 +666,7 @@ struct terminate_process_reply
 {
     struct reply_header __header;
     int          self;
+    char __pad_12[4];
 };
 
 
@@ -593,12 +696,12 @@ struct get_process_info_reply
     struct reply_header __header;
     process_id_t pid;
     process_id_t ppid;
-    int          exit_code;
-    int          priority;
-    unsigned int affinity;
-    void*        peb;
+    affinity_t   affinity;
+    client_ptr_t peb;
     timeout_t    start_time;
     timeout_t    end_time;
+    int          exit_code;
+    int          priority;
 };
 
 
@@ -609,7 +712,7 @@ struct set_process_info_request
     obj_handle_t handle;
     int          mask;
     int          priority;
-    unsigned int affinity;
+    affinity_t   affinity;
 };
 struct set_process_info_reply
 {
@@ -631,13 +734,14 @@ struct get_thread_info_reply
     struct reply_header __header;
     process_id_t pid;
     thread_id_t  tid;
-    void*        teb;
-    int          exit_code;
-    int          priority;
-    unsigned int affinity;
+    client_ptr_t teb;
+    affinity_t   affinity;
     timeout_t    creation_time;
     timeout_t    exit_time;
+    int          exit_code;
+    int          priority;
     int          last;
+    char __pad_60[4];
 };
 
 
@@ -648,8 +752,9 @@ struct set_thread_info_request
     obj_handle_t handle;
     int          mask;
     int          priority;
-    unsigned int affinity;
+    affinity_t   affinity;
     obj_handle_t token;
+    char __pad_36[4];
 };
 struct set_thread_info_reply
 {
@@ -665,13 +770,13 @@ struct get_dll_info_request
 {
     struct request_header __header;
     obj_handle_t handle;
-    void*        base_address;
+    mod_handle_t base_address;
 };
 struct get_dll_info_reply
 {
     struct reply_header __header;
-    size_t       size;
-    void*        entry_point;
+    client_ptr_t entry_point;
+    data_size_t  size;
     data_size_t  filename_len;
     /* VARARG(filename,unicode_str); */
 };
@@ -687,6 +792,7 @@ struct suspend_thread_reply
 {
     struct reply_header __header;
     int          count;
+    char __pad_12[4];
 };
 
 
@@ -700,6 +806,7 @@ struct resume_thread_reply
 {
     struct reply_header __header;
     int          count;
+    char __pad_12[4];
 };
 
 
@@ -708,12 +815,13 @@ struct load_dll_request
 {
     struct request_header __header;
     obj_handle_t handle;
-    void*        base;
-    size_t       size;
+    mod_handle_t base;
+    client_ptr_t name;
+    data_size_t  size;
     int          dbg_offset;
     int          dbg_size;
-    void*        name;
     /* VARARG(filename,unicode_str); */
+    char __pad_44[4];
 };
 struct load_dll_reply
 {
@@ -725,7 +833,8 @@ struct load_dll_reply
 struct unload_dll_request
 {
     struct request_header __header;
-    void*        base;
+    char __pad_12[4];
+    mod_handle_t base;
 };
 struct unload_dll_reply
 {
@@ -737,8 +846,7 @@ struct unload_dll_reply
 struct queue_apc_request
 {
     struct request_header __header;
-    obj_handle_t thread;
-    obj_handle_t process;
+    obj_handle_t handle;
     apc_call_t   call;
 };
 struct queue_apc_reply
@@ -786,6 +894,7 @@ struct set_handle_info_reply
 {
     struct reply_header __header;
     int          old_flags;
+    char __pad_12[4];
 };
 
 
@@ -806,6 +915,7 @@ struct dup_handle_reply
     obj_handle_t handle;
     int          self;
     int          closed;
+    char __pad_20[4];
 };
 #define DUP_HANDLE_CLOSE_SOURCE  DUPLICATE_CLOSE_SOURCE
 #define DUP_HANDLE_SAME_ACCESS   DUPLICATE_SAME_ACCESS
@@ -824,6 +934,7 @@ struct open_process_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -839,6 +950,7 @@ struct open_thread_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -847,7 +959,7 @@ struct select_request
 {
     struct request_header __header;
     int          flags;
-    void*        cookie;
+    client_ptr_t cookie;
     obj_handle_t signal;
     obj_handle_t prev_apc;
     timeout_t    timeout;
@@ -857,9 +969,10 @@ struct select_request
 struct select_reply
 {
     struct reply_header __header;
-    obj_handle_t apc_handle;
     timeout_t    timeout;
     apc_call_t   call;
+    obj_handle_t apc_handle;
+    char __pad_60[4];
 };
 #define SELECT_ALL           1
 #define SELECT_ALERTABLE     2
@@ -880,6 +993,7 @@ struct create_event_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -888,6 +1002,7 @@ struct event_op_request
     struct request_header __header;
     obj_handle_t  handle;
     int           op;
+    char __pad_20[4];
 };
 struct event_op_reply
 {
@@ -909,6 +1024,7 @@ struct open_event_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -925,6 +1041,7 @@ struct create_mutex_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -938,6 +1055,7 @@ struct release_mutex_reply
 {
     struct reply_header __header;
     unsigned int prev_count;
+    char __pad_12[4];
 };
 
 
@@ -954,6 +1072,7 @@ struct open_mutex_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -971,6 +1090,7 @@ struct create_semaphore_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -985,6 +1105,7 @@ struct release_semaphore_reply
 {
     struct reply_header __header;
     unsigned int prev_count;
+    char __pad_12[4];
 };
 
 
@@ -1001,6 +1122,7 @@ struct open_semaphore_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -1021,6 +1143,7 @@ struct create_file_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -1039,6 +1162,7 @@ struct open_file_object_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -1054,6 +1178,7 @@ struct alloc_file_handle_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -1096,6 +1221,7 @@ struct flush_file_reply
 {
     struct reply_header __header;
     obj_handle_t event;
+    char __pad_12[4];
 };
 
 
@@ -1146,6 +1272,7 @@ struct create_socket_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -1161,6 +1288,7 @@ struct accept_socket_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -1195,6 +1323,7 @@ struct get_socket_event_reply
     unsigned int pmask;
     unsigned int state;
     /* VARARG(errors,ints); */
+    char __pad_20[4];
 };
 
 
@@ -1206,6 +1335,7 @@ struct enable_socket_event_request
     unsigned int mask;
     unsigned int sstate;
     unsigned int cstate;
+    char __pad_28[4];
 };
 struct enable_socket_event_reply
 {
@@ -1217,6 +1347,7 @@ struct set_socket_deferred_request
     struct request_header __header;
     obj_handle_t handle;
     obj_handle_t deferred;
+    char __pad_20[4];
 };
 struct set_socket_deferred_reply
 {
@@ -1243,6 +1374,7 @@ struct alloc_console_reply
 struct free_console_request
 {
     struct request_header __header;
+    char __pad_12[4];
 };
 struct free_console_reply
 {
@@ -1321,6 +1453,7 @@ struct open_console_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -1333,6 +1466,7 @@ struct get_console_wait_event_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -1345,6 +1479,7 @@ struct get_console_mode_reply
 {
     struct reply_header __header;
     int          mode;
+    char __pad_12[4];
 };
 
 
@@ -1354,6 +1489,7 @@ struct set_console_mode_request
     struct request_header __header;
     obj_handle_t handle;
     int          mode;
+    char __pad_20[4];
 };
 struct set_console_mode_reply
 {
@@ -1407,6 +1543,7 @@ struct get_console_input_info_reply
     int           output_cp;
     user_handle_t win;
     /* VARARG(title,unicode_str); */
+    char __pad_36[4];
 };
 
 
@@ -1435,6 +1572,7 @@ struct get_console_input_history_reply
     struct reply_header __header;
     int          total;
     /* VARARG(line,unicode_str); */
+    char __pad_12[4];
 };
 
 
@@ -1451,6 +1589,7 @@ struct create_console_output_reply
 {
     struct reply_header __header;
     obj_handle_t handle_out;
+    char __pad_12[4];
 };
 
 
@@ -1473,6 +1612,7 @@ struct set_console_output_info_request
     short int    win_bottom;
     short int    max_width;
     short int    max_height;
+    char __pad_46[2];
 };
 struct set_console_output_info_reply
 {
@@ -1508,6 +1648,7 @@ struct get_console_output_info_reply
     short int    win_bottom;
     short int    max_width;
     short int    max_height;
+    char __pad_34[6];
 };
 
 
@@ -1521,6 +1662,7 @@ struct write_console_input_reply
 {
     struct reply_header __header;
     int          written;
+    char __pad_12[4];
 };
 
 
@@ -1536,6 +1678,7 @@ struct read_console_input_reply
     struct reply_header __header;
     int          read;
     /* VARARG(rec,input_records); */
+    char __pad_12[4];
 };
 
 
@@ -1556,6 +1699,7 @@ struct write_console_output_reply
     int          written;
     int          width;
     int          height;
+    char __pad_20[4];
 };
 enum char_info_mode
 {
@@ -1582,6 +1726,7 @@ struct fill_console_output_reply
 {
     struct reply_header __header;
     int          written;
+    char __pad_12[4];
 };
 
 
@@ -1615,6 +1760,7 @@ struct move_console_output_request
     short int    y_dst;
     short int    w;
     short int    h;
+    char __pad_28[4];
 };
 struct move_console_output_reply
 {
@@ -1628,6 +1774,7 @@ struct send_console_signal_request
     struct request_header __header;
     int          signal;
     process_id_t group_id;
+    char __pad_20[4];
 };
 struct send_console_signal_reply
 {
@@ -1640,7 +1787,6 @@ struct read_directory_changes_request
 {
     struct request_header __header;
     unsigned int filter;
-    obj_handle_t handle;
     int          subtree;
     int          want_data;
     async_data_t async;
@@ -1661,6 +1807,7 @@ struct read_change_reply
     struct reply_header __header;
     int          action;
     /* VARARG(name,string); */
+    char __pad_12[4];
 };
 
 
@@ -1670,8 +1817,8 @@ struct create_mapping_request
     struct request_header __header;
     unsigned int access;
     unsigned int attributes;
-    file_pos_t   size;
     unsigned int protect;
+    mem_size_t   size;
     obj_handle_t file_handle;
     /* VARARG(objattr,object_attributes); */
 };
@@ -1679,6 +1826,7 @@ struct create_mapping_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 #define VPROT_READ       0x01
@@ -1709,6 +1857,7 @@ struct open_mapping_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -1722,10 +1871,10 @@ struct get_mapping_info_request
 struct get_mapping_info_reply
 {
     struct reply_header __header;
-    file_pos_t   size;
+    mem_size_t   size;
     int          protect;
     int          header_size;
-    void*        base;
+    client_ptr_t base;
     obj_handle_t mapping;
     obj_handle_t shared_file;
 };
@@ -1741,8 +1890,9 @@ struct get_mapping_committed_range_request
 struct get_mapping_committed_range_reply
 {
     struct reply_header __header;
-    file_pos_t   size;
+    mem_size_t   size;
     int          committed;
+    char __pad_20[4];
 };
 
 
@@ -1752,7 +1902,7 @@ struct add_mapping_committed_range_request
     struct request_header __header;
     obj_handle_t handle;
     file_pos_t   offset;
-    file_pos_t   size;
+    mem_size_t   size;
 };
 struct add_mapping_committed_range_reply
 {
@@ -1760,22 +1910,20 @@ struct add_mapping_committed_range_reply
 };
 
 
-#define SNAP_HEAPLIST   0x00000001
-#define SNAP_PROCESS    0x00000002
-#define SNAP_THREAD     0x00000004
-#define SNAP_MODULE     0x00000008
+#define SNAP_PROCESS    0x00000001
+#define SNAP_THREAD     0x00000002
 
 struct create_snapshot_request
 {
     struct request_header __header;
     unsigned int attributes;
-    int          flags;
-    process_id_t pid;
+    unsigned int flags;
 };
 struct create_snapshot_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -1792,8 +1940,6 @@ struct next_process_reply
     int          count;
     process_id_t pid;
     process_id_t ppid;
-    void*        heap;
-    void*        module;
     int          threads;
     int          priority;
     int          handles;
@@ -1816,23 +1962,7 @@ struct next_thread_reply
     thread_id_t  tid;
     int          base_pri;
     int          delta_pri;
-};
-
-
-
-struct next_module_request
-{
-    struct request_header __header;
-    obj_handle_t handle;
-    int          reset;
-};
-struct next_module_reply
-{
-    struct reply_header __header;
-    process_id_t pid;
-    void*        base;
-    size_t       size;
-    /* VARARG(filename,unicode_str); */
+    char __pad_28[4];
 };
 
 
@@ -1849,6 +1979,7 @@ struct wait_debug_event_reply
     thread_id_t   tid;
     obj_handle_t  wait;
     /* VARARG(event,debug_event); */
+    char __pad_20[4];
 };
 
 
@@ -1856,13 +1987,20 @@ struct wait_debug_event_reply
 struct queue_exception_event_request
 {
     struct request_header __header;
-    int              first;
-    /* VARARG(record,exc_event); */
+    int           first;
+    unsigned int  code;
+    unsigned int  flags;
+    client_ptr_t  record;
+    client_ptr_t  address;
+    data_size_t   len;
+    /* VARARG(params,uints64,len); */
+    /* VARARG(context,context); */
 };
 struct queue_exception_event_reply
 {
     struct reply_header __header;
     obj_handle_t     handle;
+    char __pad_12[4];
 };
 
 
@@ -1883,9 +2021,10 @@ struct get_exception_status_reply
 struct output_debug_string_request
 {
     struct request_header __header;
-    void*         string;
+    data_size_t   length;
+    client_ptr_t  string;
     int           unicode;
-    int           length;
+    char __pad_28[4];
 };
 struct output_debug_string_reply
 {
@@ -1913,6 +2052,7 @@ struct debug_process_request
     struct request_header __header;
     process_id_t pid;
     int          attach;
+    char __pad_20[4];
 };
 struct debug_process_reply
 {
@@ -1930,6 +2070,7 @@ struct debug_break_reply
 {
     struct reply_header __header;
     int          self;
+    char __pad_12[4];
 };
 
 
@@ -1950,7 +2091,7 @@ struct read_process_memory_request
 {
     struct request_header __header;
     obj_handle_t handle;
-    void*        addr;
+    client_ptr_t addr;
 };
 struct read_process_memory_reply
 {
@@ -1964,7 +2105,7 @@ struct write_process_memory_request
 {
     struct request_header __header;
     obj_handle_t handle;
-    void*        addr;
+    client_ptr_t addr;
     /* VARARG(data,bytes); */
 };
 struct write_process_memory_reply
@@ -1981,7 +2122,6 @@ struct create_key_request
     unsigned int access;
     unsigned int attributes;
     unsigned int options;
-    time_t       modif;
     data_size_t  namelen;
     /* VARARG(name,unicode_str,namelen); */
     /* VARARG(class,unicode_str); */
@@ -2006,6 +2146,7 @@ struct open_key_reply
 {
     struct reply_header __header;
     obj_handle_t hkey;
+    char __pad_12[4];
 };
 
 
@@ -2050,7 +2191,7 @@ struct enum_key_reply
     int          values;
     int          max_value;
     int          max_data;
-    time_t       modif;
+    timeout_t    modif;
     data_size_t  total;
     data_size_t  namelen;
     /* VARARG(name,unicode_str,namelen); */
@@ -2106,6 +2247,7 @@ struct enum_key_value_reply
     data_size_t  namelen;
     /* VARARG(name,unicode_str,namelen); */
     /* VARARG(data,bytes); */
+    char __pad_20[4];
 };
 
 
@@ -2129,6 +2271,7 @@ struct load_registry_request
     obj_handle_t hkey;
     obj_handle_t file;
     /* VARARG(name,unicode_str); */
+    char __pad_20[4];
 };
 struct load_registry_reply
 {
@@ -2154,6 +2297,7 @@ struct save_registry_request
     struct request_header __header;
     obj_handle_t hkey;
     obj_handle_t file;
+    char __pad_20[4];
 };
 struct save_registry_reply
 {
@@ -2169,6 +2313,7 @@ struct set_registry_notification_request
     obj_handle_t event;
     int          subtree;
     unsigned int filter;
+    char __pad_28[4];
 };
 struct set_registry_notification_reply
 {
@@ -2190,6 +2335,7 @@ struct create_timer_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -2206,6 +2352,7 @@ struct open_timer_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -2214,14 +2361,15 @@ struct set_timer_request
     struct request_header __header;
     obj_handle_t handle;
     timeout_t    expire;
+    client_ptr_t callback;
+    client_ptr_t arg;
     int          period;
-    void*        callback;
-    void*        arg;
 };
 struct set_timer_reply
 {
     struct reply_header __header;
     int          signaled;
+    char __pad_12[4];
 };
 
 
@@ -2234,6 +2382,7 @@ struct cancel_timer_reply
 {
     struct reply_header __header;
      int         signaled;
+    char __pad_12[4];
 };
 
 
@@ -2247,6 +2396,7 @@ struct get_timer_info_reply
     struct reply_header __header;
     timeout_t    when;
     int          signaled;
+    char __pad_20[4];
 };
 
 
@@ -2263,6 +2413,7 @@ struct get_thread_context_reply
     struct reply_header __header;
     int          self;
     /* VARARG(context,context); */
+    char __pad_12[4];
 };
 
 
@@ -2271,7 +2422,6 @@ struct set_thread_context_request
 {
     struct request_header __header;
     obj_handle_t handle;
-    unsigned int flags;
     int          suspend;
     /* VARARG(context,context); */
 };
@@ -2279,6 +2429,7 @@ struct set_thread_context_reply
 {
     struct reply_header __header;
     int          self;
+    char __pad_12[4];
 };
 
 
@@ -2295,6 +2446,7 @@ struct get_selector_entry_reply
     unsigned int  base;
     unsigned int  limit;
     unsigned char flags;
+    char __pad_17[7];
 };
 
 
@@ -2309,6 +2461,7 @@ struct add_atom_reply
 {
     struct reply_header __header;
     atom_t        atom;
+    char __pad_12[4];
 };
 
 
@@ -2318,6 +2471,7 @@ struct delete_atom_request
     struct request_header __header;
     obj_handle_t  table;
     atom_t        atom;
+    char __pad_20[4];
 };
 struct delete_atom_reply
 {
@@ -2336,6 +2490,7 @@ struct find_atom_reply
 {
     struct reply_header __header;
     atom_t       atom;
+    char __pad_12[4];
 };
 
 
@@ -2353,6 +2508,7 @@ struct get_atom_information_reply
     int          pinned;
     data_size_t  total;
     /* VARARG(name,unicode_str); */
+    char __pad_20[4];
 };
 
 
@@ -2376,6 +2532,7 @@ struct empty_atom_table_request
     struct request_header __header;
     obj_handle_t table;
     int          if_pinned;
+    char __pad_20[4];
 };
 struct empty_atom_table_reply
 {
@@ -2393,6 +2550,7 @@ struct init_atom_table_reply
 {
     struct reply_header __header;
     obj_handle_t table;
+    char __pad_12[4];
 };
 
 
@@ -2405,6 +2563,7 @@ struct get_msg_queue_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -2460,6 +2619,7 @@ struct get_process_idle_event_reply
 {
     struct reply_header __header;
     obj_handle_t event;
+    char __pad_12[4];
 };
 
 
@@ -2472,8 +2632,8 @@ struct send_message_request
     int             flags;
     user_handle_t   win;
     unsigned int    msg;
-    unsigned long   wparam;
-    unsigned long   lparam;
+    lparam_t        wparam;
+    lparam_t        lparam;
     timeout_t       timeout;
     /* VARARG(data,message_data); */
 };
@@ -2514,12 +2674,13 @@ struct send_hardware_message_request
     thread_id_t     id;
     user_handle_t   win;
     unsigned int    msg;
-    unsigned int    time;
-    unsigned long   wparam;
-    unsigned long   lparam;
-    unsigned long   info;
+    lparam_t        wparam;
+    lparam_t        lparam;
+    lparam_t        info;
     int             x;
     int             y;
+    unsigned int    time;
+    char __pad_60[4];
 };
 struct send_hardware_message_reply
 {
@@ -2543,15 +2704,11 @@ struct get_message_reply
 {
     struct reply_header __header;
     user_handle_t   win;
-    int             type;
     unsigned int    msg;
-    unsigned long   wparam;
-    unsigned long   lparam;
-    unsigned long   info;
-    int             x;
-    int             y;
+    lparam_t        wparam;
+    lparam_t        lparam;
+    int             type;
     unsigned int    time;
-    unsigned int    hw_id;
     unsigned int    active_hooks;
     data_size_t     total;
     /* VARARG(data,message_data); */
@@ -2562,8 +2719,8 @@ struct get_message_reply
 struct reply_message_request
 {
     struct request_header __header;
-    unsigned long   result;
     int             remove;
+    lparam_t        result;
     /* VARARG(data,bytes); */
 };
 struct reply_message_reply
@@ -2595,7 +2752,7 @@ struct get_message_reply_request
 struct get_message_reply_reply
 {
     struct reply_header __header;
-    unsigned long   result;
+    lparam_t        result;
     /* VARARG(data,bytes); */
 };
 
@@ -2607,13 +2764,13 @@ struct set_win_timer_request
     user_handle_t   win;
     unsigned int    msg;
     unsigned int    rate;
-    unsigned long   id;
-    unsigned long   lparam;
+    lparam_t        id;
+    lparam_t        lparam;
 };
 struct set_win_timer_reply
 {
     struct reply_header __header;
-    unsigned long   id;
+    lparam_t        id;
 };
 
 
@@ -2622,8 +2779,9 @@ struct kill_win_timer_request
 {
     struct request_header __header;
     user_handle_t   win;
+    lparam_t        id;
     unsigned int    msg;
-    unsigned long   id;
+    char __pad_28[4];
 };
 struct kill_win_timer_reply
 {
@@ -2641,6 +2799,7 @@ struct is_window_hung_reply
 {
     struct reply_header __header;
     int is_hung;
+    char __pad_12[4];
 };
 
 
@@ -2674,6 +2833,7 @@ struct set_serial_info_request
     unsigned int writeconst;
     unsigned int writemult;
     unsigned int eventmask;
+    char __pad_44[4];
 };
 struct set_serial_info_reply
 {
@@ -2687,10 +2847,10 @@ struct set_serial_info_reply
 struct register_async_request
 {
     struct request_header __header;
-    obj_handle_t handle;
     int          type;
-    int          count;
     async_data_t async;
+    int          count;
+    char __pad_60[4];
 };
 struct register_async_reply
 {
@@ -2717,9 +2877,9 @@ struct cancel_async_reply
 struct ioctl_request
 {
     struct request_header __header;
-    obj_handle_t   handle;
     ioctl_code_t   code;
     async_data_t   async;
+    int            blocking;
     /* VARARG(in_data,bytes); */
 };
 struct ioctl_reply
@@ -2736,7 +2896,7 @@ struct get_ioctl_result_request
 {
     struct request_header __header;
     obj_handle_t   handle;
-    void*          user_arg;
+    client_ptr_t   user_arg;
 };
 struct get_ioctl_result_reply
 {
@@ -2753,17 +2913,18 @@ struct create_named_pipe_request
     unsigned int   attributes;
     obj_handle_t   rootdir;
     unsigned int   options;
-    unsigned int   flags;
     unsigned int   maxinstances;
     unsigned int   outsize;
     unsigned int   insize;
     timeout_t      timeout;
+    unsigned int   flags;
     /* VARARG(name,unicode_str); */
 };
 struct create_named_pipe_reply
 {
     struct reply_header __header;
     obj_handle_t   handle;
+    char __pad_12[4];
 };
 
 
@@ -2786,6 +2947,7 @@ struct get_named_pipe_info_reply
     unsigned int   instances;
     unsigned int   outsize;
     unsigned int   insize;
+    char __pad_28[4];
 };
 
 
@@ -2796,7 +2958,7 @@ struct create_window_request
     user_handle_t  parent;
     user_handle_t  owner;
     atom_t         atom;
-    void*          instance;
+    mod_handle_t   instance;
     /* VARARG(class,unicode_str); */
 };
 struct create_window_reply
@@ -2806,7 +2968,7 @@ struct create_window_reply
     user_handle_t  parent;
     user_handle_t  owner;
     int            extra;
-    void*          class_ptr;
+    client_ptr_t   class_ptr;
 };
 
 
@@ -2873,27 +3035,28 @@ struct get_window_info_reply
 struct set_window_info_request
 {
     struct request_header __header;
-    unsigned int   flags;
+    unsigned short flags;
+    short int      is_unicode;
     user_handle_t  handle;
     unsigned int   style;
     unsigned int   ex_style;
     unsigned int   id;
-    int            is_unicode;
-    void*          instance;
-    unsigned long  user_data;
+    mod_handle_t   instance;
+    lparam_t       user_data;
     int            extra_offset;
     data_size_t    extra_size;
-    unsigned long  extra_value;
+    lparam_t       extra_value;
 };
 struct set_window_info_reply
 {
     struct reply_header __header;
     unsigned int   old_style;
     unsigned int   old_ex_style;
+    mod_handle_t   old_instance;
+    lparam_t       old_user_data;
+    lparam_t       old_extra_value;
     unsigned int   old_id;
-    void*          old_instance;
-    unsigned long  old_user_data;
-    unsigned long  old_extra_value;
+    char __pad_44[4];
 };
 #define SET_WIN_STYLE     0x01
 #define SET_WIN_EXSTYLE   0x02
@@ -2930,6 +3093,7 @@ struct get_window_parents_reply
     struct reply_header __header;
     int            count;
     /* VARARG(parents,user_handles); */
+    char __pad_12[4];
 };
 
 
@@ -2948,6 +3112,7 @@ struct get_window_children_reply
     struct reply_header __header;
     int            count;
     /* VARARG(children,user_handles); */
+    char __pad_12[4];
 };
 
 
@@ -2964,6 +3129,7 @@ struct get_window_children_from_point_reply
     struct reply_header __header;
     int            count;
     /* VARARG(children,user_handles); */
+    char __pad_12[4];
 };
 
 
@@ -3090,6 +3256,7 @@ struct get_window_region_reply
     struct reply_header __header;
     data_size_t    total_size;
     /* VARARG(region,rectangles); */
+    char __pad_12[4];
 };
 
 
@@ -3100,6 +3267,7 @@ struct set_window_region_request
     user_handle_t  window;
     int            redraw;
     /* VARARG(region,rectangles); */
+    char __pad_20[4];
 };
 struct set_window_region_reply
 {
@@ -3122,6 +3290,7 @@ struct get_update_region_reply
     unsigned int   flags;
     data_size_t    total_size;
     /* VARARG(region,rectangles); */
+    char __pad_20[4];
 };
 #define UPDATE_NONCLIENT       0x01
 #define UPDATE_ERASE           0x02
@@ -3153,6 +3322,7 @@ struct redraw_window_request
     user_handle_t  window;
     unsigned int   flags;
     /* VARARG(region,rectangles); */
+    char __pad_20[4];
 };
 struct redraw_window_reply
 {
@@ -3165,9 +3335,10 @@ struct set_window_property_request
 {
     struct request_header __header;
     user_handle_t  window;
+    lparam_t       data;
     atom_t         atom;
-    obj_handle_t   handle;
     /* VARARG(name,unicode_str); */
+    char __pad_28[4];
 };
 struct set_window_property_reply
 {
@@ -3186,7 +3357,7 @@ struct remove_window_property_request
 struct remove_window_property_reply
 {
     struct reply_header __header;
-    obj_handle_t   handle;
+    lparam_t       data;
 };
 
 
@@ -3201,7 +3372,7 @@ struct get_window_property_request
 struct get_window_property_reply
 {
     struct reply_header __header;
-    obj_handle_t   handle;
+    lparam_t       data;
 };
 
 
@@ -3216,6 +3387,7 @@ struct get_window_properties_reply
     struct reply_header __header;
     int            total;
     /* VARARG(props,properties); */
+    char __pad_12[4];
 };
 
 
@@ -3232,6 +3404,7 @@ struct create_winstation_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -3247,6 +3420,7 @@ struct open_winstation_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -3271,6 +3445,7 @@ struct get_process_winstation_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -3297,6 +3472,7 @@ struct enum_winstation_reply
     struct reply_header __header;
     unsigned int next;
     /* VARARG(name,unicode_str); */
+    char __pad_12[4];
 };
 
 
@@ -3313,6 +3489,7 @@ struct create_desktop_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -3330,6 +3507,7 @@ struct open_desktop_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -3355,6 +3533,7 @@ struct get_thread_desktop_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -3382,6 +3561,7 @@ struct enum_desktop_reply
     struct reply_header __header;
     unsigned int next;
     /* VARARG(name,unicode_str); */
+    char __pad_12[4];
 };
 
 
@@ -3434,6 +3614,7 @@ struct get_thread_input_reply
     user_handle_t  move_size;
     user_handle_t  caret;
     rectangle_t    rect;
+    char __pad_52[4];
 };
 
 
@@ -3446,6 +3627,7 @@ struct get_last_input_time_reply
 {
     struct reply_header __header;
     unsigned int time;
+    char __pad_12[4];
 };
 
 
@@ -3461,6 +3643,7 @@ struct get_key_state_reply
     struct reply_header __header;
     unsigned char  state;
     /* VARARG(keystate,bytes); */
+    char __pad_9[7];
 };
 
 
@@ -3487,6 +3670,7 @@ struct set_foreground_window_reply
     user_handle_t  previous;
     int            send_msg_old;
     int            send_msg_new;
+    char __pad_20[4];
 };
 
 
@@ -3499,6 +3683,7 @@ struct set_focus_window_reply
 {
     struct reply_header __header;
     user_handle_t  previous;
+    char __pad_12[4];
 };
 
 
@@ -3511,6 +3696,7 @@ struct set_active_window_reply
 {
     struct reply_header __header;
     user_handle_t  previous;
+    char __pad_12[4];
 };
 
 
@@ -3545,6 +3731,7 @@ struct set_caret_window_reply
     rectangle_t    old_rect;
     int            old_hide;
     int            old_state;
+    char __pad_36[4];
 };
 
 
@@ -3566,6 +3753,7 @@ struct set_caret_info_reply
     rectangle_t    old_rect;
     int            old_hide;
     int            old_state;
+    char __pad_36[4];
 };
 #define SET_CARET_POS        0x01
 #define SET_CARET_HIDE       0x02
@@ -3581,8 +3769,8 @@ struct set_hook_request
     thread_id_t    tid;
     int            event_min;
     int            event_max;
+    client_ptr_t   proc;
     int            flags;
-    void*          proc;
     int            unicode;
     /* VARARG(module,unicode_str); */
 };
@@ -3599,13 +3787,14 @@ struct remove_hook_request
 {
     struct request_header __header;
     user_handle_t  handle;
+    client_ptr_t   proc;
     int            id;
-    void*          proc;
 };
 struct remove_hook_reply
 {
     struct reply_header __header;
     unsigned int   active_hooks;
+    char __pad_12[4];
 };
 
 
@@ -3625,10 +3814,11 @@ struct start_hook_chain_reply
     user_handle_t  handle;
     process_id_t   pid;
     thread_id_t    tid;
-    void*          proc;
     int            unicode;
+    client_ptr_t   proc;
     unsigned int   active_hooks;
     /* VARARG(module,unicode_str); */
+    char __pad_36[4];
 };
 
 
@@ -3662,9 +3852,10 @@ struct get_hook_info_reply
     int            id;
     process_id_t   pid;
     thread_id_t    tid;
-    void*          proc;
+    client_ptr_t   proc;
     int            unicode;
     /* VARARG(module,unicode_str); */
+    char __pad_36[4];
 };
 
 
@@ -3675,16 +3866,17 @@ struct create_class_request
     int            local;
     atom_t         atom;
     unsigned int   style;
-    void*          instance;
+    mod_handle_t   instance;
     int            extra;
     int            win_extra;
-    void*          client_ptr;
+    client_ptr_t   client_ptr;
     /* VARARG(name,unicode_str); */
 };
 struct create_class_reply
 {
     struct reply_header __header;
     atom_t         atom;
+    char __pad_12[4];
 };
 
 
@@ -3693,13 +3885,13 @@ struct destroy_class_request
 {
     struct request_header __header;
     atom_t         atom;
-    void*          instance;
+    mod_handle_t   instance;
     /* VARARG(name,unicode_str); */
 };
 struct destroy_class_reply
 {
     struct reply_header __header;
-    void*          client_ptr;
+    client_ptr_t   client_ptr;
 };
 
 
@@ -3712,10 +3904,10 @@ struct set_class_info_request
     atom_t         atom;
     unsigned int   style;
     int            win_extra;
-    void*          instance;
+    mod_handle_t   instance;
     int            extra_offset;
     data_size_t    extra_size;
-    unsigned long  extra_value;
+    lparam_t       extra_value;
 };
 struct set_class_info_reply
 {
@@ -3724,8 +3916,8 @@ struct set_class_info_reply
     unsigned int   old_style;
     int            old_extra;
     int            old_win_extra;
-    void*          old_instance;
-    unsigned long  old_extra_value;
+    mod_handle_t   old_instance;
+    lparam_t       old_extra_value;
 };
 #define SET_CLASS_ATOM      0x0001
 #define SET_CLASS_STYLE     0x0002
@@ -3752,6 +3944,7 @@ struct set_clipboard_info_reply
     user_handle_t  old_owner;
     user_handle_t  old_viewer;
     unsigned int   seqno;
+    char __pad_28[4];
 };
 
 #define SET_CB_OPEN      0x001
@@ -3778,6 +3971,7 @@ struct open_token_reply
 {
     struct reply_header __header;
     obj_handle_t   token;
+    char __pad_12[4];
 };
 #define OPEN_TOKEN_THREAD   1
 #define OPEN_TOKEN_AS_SELF  2
@@ -3819,6 +4013,7 @@ struct adjust_token_privileges_reply
     struct reply_header __header;
     unsigned int  len;
     /* VARARG(privileges,LUID_AND_ATTRIBUTES); */
+    char __pad_12[4];
 };
 
 
@@ -3832,6 +4027,7 @@ struct get_token_privileges_reply
     struct reply_header __header;
     unsigned int  len;
     /* VARARG(privileges,LUID_AND_ATTRIBUTES); */
+    char __pad_12[4];
 };
 
 
@@ -3847,6 +4043,7 @@ struct check_token_privileges_reply
     struct reply_header __header;
     int           has_privileges;
     /* VARARG(privileges,LUID_AND_ATTRIBUTES); */
+    char __pad_12[4];
 };
 
 struct duplicate_token_request
@@ -3862,6 +4059,7 @@ struct duplicate_token_reply
 {
     struct reply_header __header;
     obj_handle_t  new_handle;
+    char __pad_12[4];
 };
 
 struct access_check_request
@@ -3882,6 +4080,7 @@ struct access_check_reply
     unsigned int    access_status;
     unsigned int    privileges_len;
     /* VARARG(privileges,LUID_AND_ATTRIBUTES); */
+    char __pad_20[4];
 };
 
 struct get_token_user_request
@@ -3894,6 +4093,7 @@ struct get_token_user_reply
     struct reply_header __header;
     data_size_t     user_len;
     /* VARARG(user,SID); */
+    char __pad_12[4];
 };
 
 struct get_token_groups_request
@@ -3906,6 +4106,31 @@ struct get_token_groups_reply
     struct reply_header __header;
     data_size_t     user_len;
     /* VARARG(user,token_groups); */
+    char __pad_12[4];
+};
+
+struct get_token_default_dacl_request
+{
+    struct request_header __header;
+    obj_handle_t    handle;
+};
+struct get_token_default_dacl_reply
+{
+    struct reply_header __header;
+    data_size_t     acl_len;
+    /* VARARG(acl,ACL); */
+    char __pad_12[4];
+};
+
+struct set_token_default_dacl_request
+{
+    struct request_header __header;
+    obj_handle_t    handle;
+    /* VARARG(acl,ACL); */
+};
+struct set_token_default_dacl_reply
+{
+    struct reply_header __header;
 };
 
 struct set_security_object_request
@@ -3914,6 +4139,7 @@ struct set_security_object_request
     obj_handle_t    handle;
     unsigned int    security_info;
     /* VARARG(sd,security_descriptor); */
+    char __pad_20[4];
 };
 struct set_security_object_reply
 {
@@ -3931,6 +4157,7 @@ struct get_security_object_reply
     struct reply_header __header;
     unsigned int    sd_len;
     /* VARARG(sd,security_descriptor); */
+    char __pad_12[4];
 };
 
 
@@ -3940,14 +4167,15 @@ struct create_mailslot_request
     unsigned int   access;
     unsigned int   attributes;
     obj_handle_t   rootdir;
-    unsigned int   max_msgsize;
     timeout_t      read_timeout;
+    unsigned int   max_msgsize;
     /* VARARG(name,unicode_str); */
 };
 struct create_mailslot_reply
 {
     struct reply_header __header;
     obj_handle_t   handle;
+    char __pad_12[4];
 };
 
 
@@ -3956,14 +4184,15 @@ struct set_mailslot_info_request
 {
     struct request_header __header;
     obj_handle_t   handle;
-    unsigned int   flags;
     timeout_t      read_timeout;
+    unsigned int   flags;
 };
 struct set_mailslot_info_reply
 {
     struct reply_header __header;
-    unsigned int   max_msgsize;
     timeout_t      read_timeout;
+    unsigned int   max_msgsize;
+    char __pad_20[4];
 };
 #define MAILSLOT_SET_READ_TIMEOUT  1
 
@@ -3981,6 +4210,7 @@ struct create_directory_reply
 {
     struct reply_header __header;
     obj_handle_t   handle;
+    char __pad_12[4];
 };
 
 
@@ -3997,6 +4227,7 @@ struct open_directory_reply
 {
     struct reply_header __header;
     obj_handle_t   handle;
+    char __pad_12[4];
 };
 
 
@@ -4010,9 +4241,10 @@ struct get_directory_entry_request
 struct get_directory_entry_reply
 {
     struct reply_header __header;
-    size_t         name_len;
+    data_size_t    name_len;
     /* VARARG(name,unicode_str,name_len); */
     /* VARARG(type,unicode_str); */
+    char __pad_12[4];
 };
 
 
@@ -4031,6 +4263,7 @@ struct create_symlink_reply
 {
     struct reply_header __header;
     obj_handle_t   handle;
+    char __pad_12[4];
 };
 
 
@@ -4047,6 +4280,7 @@ struct open_symlink_reply
 {
     struct reply_header __header;
     obj_handle_t   handle;
+    char __pad_12[4];
 };
 
 
@@ -4099,6 +4333,7 @@ struct get_token_impersonation_level_reply
 {
     struct reply_header __header;
     int            impersonation_level;
+    char __pad_12[4];
 };
 
 
@@ -4124,6 +4359,7 @@ struct create_device_manager_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -4134,14 +4370,15 @@ struct create_device_request
     unsigned int access;
     unsigned int attributes;
     obj_handle_t rootdir;
+    client_ptr_t user_ptr;
     obj_handle_t manager;
-    void*        user_ptr;
     /* VARARG(name,unicode_str); */
 };
 struct create_device_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -4171,7 +4408,7 @@ struct get_next_device_request_reply
     struct reply_header __header;
     obj_handle_t next;
     ioctl_code_t code;
-    void*        user_ptr;
+    client_ptr_t user_ptr;
     data_size_t  in_size;
     data_size_t  out_size;
     /* VARARG(next_data,bytes); */
@@ -4187,6 +4424,7 @@ struct make_process_system_reply
 {
     struct reply_header __header;
     obj_handle_t event;
+    char __pad_12[4];
 };
 
 
@@ -4222,6 +4460,7 @@ struct create_completion_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -4238,6 +4477,7 @@ struct open_completion_reply
 {
     struct reply_header __header;
     obj_handle_t handle;
+    char __pad_12[4];
 };
 
 
@@ -4246,9 +4486,9 @@ struct add_completion_request
 {
     struct request_header __header;
     obj_handle_t  handle;
-    unsigned long ckey;
-    unsigned long cvalue;
-    unsigned long information;
+    apc_param_t   ckey;
+    apc_param_t   cvalue;
+    unsigned int  information;
     unsigned int  status;
 };
 struct add_completion_reply
@@ -4266,9 +4506,9 @@ struct remove_completion_request
 struct remove_completion_reply
 {
     struct reply_header __header;
-    unsigned long ckey;
-    unsigned long cvalue;
-    unsigned long information;
+    apc_param_t   ckey;
+    apc_param_t   cvalue;
+    unsigned int  information;
     unsigned int  status;
 };
 
@@ -4283,6 +4523,7 @@ struct query_completion_reply
 {
     struct reply_header __header;
     unsigned int  depth;
+    char __pad_12[4];
 };
 
 
@@ -4291,8 +4532,9 @@ struct set_completion_info_request
 {
     struct request_header __header;
     obj_handle_t  handle;
+    apc_param_t   ckey;
     obj_handle_t  chandle;
-    unsigned long ckey;
+    char __pad_28[4];
 };
 struct set_completion_info_reply
 {
@@ -4305,9 +4547,9 @@ struct add_fd_completion_request
 {
     struct request_header __header;
     obj_handle_t   handle;
-    unsigned long  cvalue;
+    apc_param_t    cvalue;
     unsigned int   status;
-    unsigned long  information;
+    unsigned int   information;
 };
 struct add_fd_completion_reply
 {
@@ -4327,6 +4569,7 @@ struct get_window_layered_info_reply
     unsigned int   color_key;
     unsigned int   alpha;
     unsigned int   flags;
+    char __pad_20[4];
 };
 
 
@@ -4338,6 +4581,7 @@ struct set_window_layered_info_request
     unsigned int   color_key;
     unsigned int   alpha;
     unsigned int   flags;
+    char __pad_28[4];
 };
 struct set_window_layered_info_reply
 {
@@ -4425,7 +4669,6 @@ enum request
     REQ_create_snapshot,
     REQ_next_process,
     REQ_next_thread,
-    REQ_next_module,
     REQ_wait_debug_event,
     REQ_queue_exception_event,
     REQ_get_exception_status,
@@ -4555,6 +4798,8 @@ enum request
     REQ_access_check,
     REQ_get_token_user,
     REQ_get_token_groups,
+    REQ_get_token_default_dacl,
+    REQ_set_token_default_dacl,
     REQ_set_security_object,
     REQ_get_security_object,
     REQ_create_mailslot,
@@ -4669,7 +4914,6 @@ union generic_request
     struct create_snapshot_request create_snapshot_request;
     struct next_process_request next_process_request;
     struct next_thread_request next_thread_request;
-    struct next_module_request next_module_request;
     struct wait_debug_event_request wait_debug_event_request;
     struct queue_exception_event_request queue_exception_event_request;
     struct get_exception_status_request get_exception_status_request;
@@ -4799,6 +5043,8 @@ union generic_request
     struct access_check_request access_check_request;
     struct get_token_user_request get_token_user_request;
     struct get_token_groups_request get_token_groups_request;
+    struct get_token_default_dacl_request get_token_default_dacl_request;
+    struct set_token_default_dacl_request set_token_default_dacl_request;
     struct set_security_object_request set_security_object_request;
     struct get_security_object_request get_security_object_request;
     struct create_mailslot_request create_mailslot_request;
@@ -4911,7 +5157,6 @@ union generic_reply
     struct create_snapshot_reply create_snapshot_reply;
     struct next_process_reply next_process_reply;
     struct next_thread_reply next_thread_reply;
-    struct next_module_reply next_module_reply;
     struct wait_debug_event_reply wait_debug_event_reply;
     struct queue_exception_event_reply queue_exception_event_reply;
     struct get_exception_status_reply get_exception_status_reply;
@@ -5041,6 +5286,8 @@ union generic_reply
     struct access_check_reply access_check_reply;
     struct get_token_user_reply get_token_user_reply;
     struct get_token_groups_reply get_token_groups_reply;
+    struct get_token_default_dacl_reply get_token_default_dacl_reply;
+    struct set_token_default_dacl_reply set_token_default_dacl_reply;
     struct set_security_object_reply set_security_object_reply;
     struct get_security_object_reply get_security_object_reply;
     struct create_mailslot_reply create_mailslot_reply;
@@ -5072,6 +5319,6 @@ union generic_reply
     struct set_window_layered_info_reply set_window_layered_info_reply;
 };
 
-#define SERVER_PROTOCOL_VERSION 346
+#define SERVER_PROTOCOL_VERSION 386
 
 #endif /* __WINE_WINE_SERVER_PROTOCOL_H */

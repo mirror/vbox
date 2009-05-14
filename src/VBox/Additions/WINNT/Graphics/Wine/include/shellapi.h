@@ -32,7 +32,9 @@
 extern "C" {
 #endif /* defined(__cplusplus) */
 
+#ifndef _WIN64
 #include <pshpack1.h>
+#endif
 
 DECLARE_HANDLE(HDROP);
 
@@ -519,6 +521,8 @@ DWORD       WINAPI DoEnvironmentSubstW(LPWSTR, UINT);
 } /* extern "C" */
 #endif /* defined(__cplusplus) */
 
+#ifndef _WIN64
 #include <poppack.h>
+#endif
 
 #endif /* __WINE_SHELLAPI_H */

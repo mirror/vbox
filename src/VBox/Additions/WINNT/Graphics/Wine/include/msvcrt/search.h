@@ -26,46 +26,20 @@
  * that LGPLv2 or any later version may be used, or where a choice of which version
  * of the LGPL is applied is otherwise unspecified.
  */
+
 #ifndef __WINE_SEARCH_H
 #define __WINE_SEARCH_H
-#ifndef __WINE_USE_MSVCRT
-#define __WINE_USE_MSVCRT
-#endif
 
-#if defined(__x86_64__) && !defined(_WIN64)
-#define _WIN64
-#endif
-
-#if !defined(_MSC_VER) && !defined(__int64)
-# ifdef _WIN64
-#   define __int64 long
-# else
-#   define __int64 long long
-# endif
-#endif
-
-#ifndef _SIZE_T_DEFINED
-#ifdef _WIN64
-typedef unsigned __int64 size_t;
-#else
-typedef unsigned int size_t;
-#endif
-#define _SIZE_T_DEFINED
-#endif
-
+#include <crtdefs.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void*       _lfind(const void*,const void*,unsigned int*,unsigned int,
-                   int (*)(const void*,const void*));
-void*       _lsearch(const void*,void*,unsigned int*,unsigned int,
-                     int (*)(const void*,const void*));
-void*       bsearch(const void*,const void*,size_t,size_t,
-                            int (*)(const void*,const void*));
-void        qsort(void*,size_t,size_t,
-                          int (*)(const void*,const void*));
+void* __cdecl _lfind(const void*,const void*,unsigned int*,unsigned int,int (*)(const void*,const void*));
+void* __cdecl _lsearch(const void*,void*,unsigned int*,unsigned int,int (*)(const void*,const void*));
+void* __cdecl bsearch(const void*,const void*,size_t,size_t,int (*)(const void*,const void*));
+void  __cdecl qsort(void*,size_t,size_t,int (*)(const void*,const void*));
 
 #ifdef __cplusplus
 }

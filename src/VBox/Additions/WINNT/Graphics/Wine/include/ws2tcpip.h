@@ -29,7 +29,7 @@
 #define __WS2TCPIP__
 
 #include <winsock2.h>
-/* FIXME: #include <ws2ipdef.h> */
+#include <ws2ipdef.h>
 #include <limits.h>
 
 #ifdef USE_WS_PREFIX
@@ -37,9 +37,6 @@
 #else
 #define WS(x)    x
 #endif
-
-/* FIXME: This gets defined by some Unix (Linux) header and messes things */
-#undef s6_addr
 
 /* for addrinfo calls */
 typedef struct WS(addrinfo)
@@ -69,119 +66,6 @@ typedef struct WS(addrinfoW)
 typedef int WS(socklen_t);
 
 typedef ADDRINFOA ADDRINFO, *LPADDRINFO;
-
-/*
- * Multicast group information
- */
-
-struct WS(ip_mreq)
-{
-    struct WS(in_addr) imr_multiaddr;
-    struct WS(in_addr) imr_interface;
-};
-
-struct WS(ip_mreq_source) {
-    struct WS(in_addr) imr_multiaddr;
-    struct WS(in_addr) imr_sourceaddr;
-    struct WS(in_addr) imr_interface;
-};
-
-struct WS(ip_msfilter) {
-    struct WS(in_addr) imsf_multiaddr;
-    struct WS(in_addr) imsf_interface;
-    WS(u_long)         imsf_fmode;
-    WS(u_long)         imsf_numsrc;
-    struct WS(in_addr) imsf_slist[1];
-};
-
-typedef struct WS(in_addr6)
-{
-   WS(u_char) s6_addr[16]; /* IPv6 address */
-} IN6_ADDR, *PIN6_ADDR, *LPIN6_ADDR;
-
-typedef struct WS(sockaddr_in6)
-{
-   short   sin6_family;            /* AF_INET6 */
-   WS(u_short) sin6_port;          /* Transport level port number */
-   WS(u_long) sin6_flowinfo;       /* IPv6 flow information */
-   struct  WS(in_addr6) sin6_addr; /* IPv6 address */
-   WS(u_long) sin6_scope_id;       /* IPv6 scope id */
-} SOCKADDR_IN6,*PSOCKADDR_IN6, *LPSOCKADDR_IN6;
-
-typedef struct WS(sockaddr_in6_old)
-{
-   short   sin6_family;            /* AF_INET6 */
-   WS(u_short) sin6_port;              /* Transport level port number */
-   WS(u_long) sin6_flowinfo;          /* IPv6 flow information */
-   struct  WS(in_addr6) sin6_addr; /* IPv6 address */
-} SOCKADDR_IN6_OLD,*PSOCKADDR_IN6_OLD, *LPSOCKADDR_IN6_OLD;
-
-typedef union sockaddr_gen
-{
-   struct WS(sockaddr) Address;
-   struct WS(sockaddr_in)  AddressIn;
-   struct WS(sockaddr_in6_old) AddressIn6;
-} WS(sockaddr_gen);
-
-/* Structure to keep interface specific information */
-typedef struct _INTERFACE_INFO
-{
-    WS(u_long)        iiFlags;             /* Interface flags */
-    WS(sockaddr_gen)  iiAddress;           /* Interface address */
-    WS(sockaddr_gen)  iiBroadcastAddress;  /* Broadcast address */
-    WS(sockaddr_gen)  iiNetmask;           /* Network mask */
-} INTERFACE_INFO, * LPINTERFACE_INFO;
-
-/* Possible flags for the  iiFlags - bitmask  */
-#ifndef USE_WS_PREFIX
-#define IFF_UP                0x00000001 /* Interface is up */
-#define IFF_BROADCAST         0x00000002 /* Broadcast is  supported */
-#define IFF_LOOPBACK          0x00000004 /* this is loopback interface */
-#define IFF_POINTTOPOINT      0x00000008 /* this is point-to-point interface */
-#define IFF_MULTICAST         0x00000010 /* multicast is supported */
-#else
-#define WS_IFF_UP             0x00000001 /* Interface is up */
-#define WS_IFF_BROADCAST      0x00000002 /* Broadcast is  supported */
-#define WS_IFF_LOOPBACK       0x00000004 /* this is loopback interface */
-#define WS_IFF_POINTTOPOINT   0x00000008 /* this is point-to-point interface */
-#define WS_IFF_MULTICAST      0x00000010 /* multicast is supported */
-#endif /* USE_WS_PREFIX */
-
-#ifndef USE_WS_PREFIX
-#define IP_OPTIONS                      1
-#define IP_HDRINCL                      2
-#define IP_TOS                          3
-#define IP_TTL                          4
-#define IP_MULTICAST_IF                 9
-#define IP_MULTICAST_TTL                10
-#define IP_MULTICAST_LOOP               11
-#define IP_ADD_MEMBERSHIP               12
-#define IP_DROP_MEMBERSHIP              13
-#define IP_DONTFRAGMENT                 14
-#define IP_ADD_SOURCE_MEMBERSHIP        15
-#define IP_DROP_SOURCE_MEMBERSHIP       16
-#define IP_BLOCK_SOURCE                 17
-#define IP_UNBLOCK_SOURCE               18
-#define IP_PKTINFO                      19
-#define IP_RECEIVE_BROADCAST            22
-#else
-#define WS_IP_OPTIONS                   1
-#define WS_IP_HDRINCL                   2
-#define WS_IP_TOS                       3
-#define WS_IP_TTL                       4
-#define WS_IP_MULTICAST_IF              9
-#define WS_IP_MULTICAST_TTL             10
-#define WS_IP_MULTICAST_LOOP            11
-#define WS_IP_ADD_MEMBERSHIP            12
-#define WS_IP_DROP_MEMBERSHIP           13
-#define WS_IP_DONTFRAGMENT              14
-#define WS_IP_ADD_SOURCE_MEMBERSHIP     15
-#define WS_IP_DROP_SOURCE_MEMBERSHIP    16
-#define WS_IP_BLOCK_SOURCE              17
-#define WS_IP_UNBLOCK_SOURCE            18
-#define WS_IP_PKTINFO                   19
-#define WS_IP_RECEIVE_BROADCAST         22
-#endif /* USE_WS_PREFIX */
 
 /* Possible Windows flags for getaddrinfo() */
 #ifndef USE_WS_PREFIX
@@ -214,6 +98,14 @@ typedef struct _INTERFACE_INFO
 # define WS_EAI_SOCKTYPE	WSAESOCKTNOSUPPORT
 #endif
 
+#ifndef USE_WS_PREFIX
+# define NI_MAXHOST         1025
+# define NI_MAXSERV         32
+#else
+# define WS_NI_MAXHOST      1025
+# define WS_NI_MAXSERV      32
+#endif
+
 /* Possible Windows flags for getnameinfo() */
 #ifndef USE_WS_PREFIX
 # define NI_NOFQDN          0x01
@@ -234,6 +126,38 @@ typedef struct _INTERFACE_INFO
 extern "C" {
 #endif
 
+#define GAI_STRERROR_BUFFER_SIZE        1024
+
+static inline char *gai_strerrorA(int errcode)
+{
+    static char buffer[GAI_STRERROR_BUFFER_SIZE + 1];
+
+    /* FIXME: should format message from system, ignoring inserts in neutral
+     * language */
+    buffer[0] = '\0';
+
+    return buffer;
+}
+
+static inline WCHAR *gai_strerrorW(int errcode)
+{
+    static WCHAR buffer[GAI_STRERROR_BUFFER_SIZE + 1];
+
+    /* FIXME: should format message from system, ignoring inserts in neutral
+     * language */
+    buffer[0] = '\0';
+
+    return buffer;
+}
+
+#ifdef USE_WS_PREFIX
+# define WS_gai_strerror WINELIB_NAME_AW(gai_strerror)
+#elif defined(WINE_NO_UNICODE_MACROS)
+# define gai_strerror gai_strerrorA
+#else
+# define gai_strerror WINELIB_NAME_AW(gai_strerror)
+#endif
+
 void WINAPI WS(freeaddrinfo)(LPADDRINFO);
 #define     FreeAddrInfoA WS(freeaddrinfo)
 void WINAPI FreeAddrInfoW(PADDRINFOW);
@@ -246,6 +170,14 @@ int WINAPI  WS(getnameinfo)(const SOCKADDR*,WS(socklen_t),PCHAR,DWORD,PCHAR,DWOR
 #define     GetNameInfoA WS(getnameinfo)
 INT WINAPI  GetNameInfoW(const SOCKADDR*,WS(socklen_t),PWCHAR,DWORD,PWCHAR,DWORD,INT);
 #define     GetNameInfo WINELIB_NAME_AW(GetNameInfo)
+PCSTR WINAPI WS(inet_ntop)(INT,PVOID,PSTR,SIZE_T);
+#define     InetNtopA WS(inet_ntop)
+PCWSTR WINAPI InetNtopW(INT,PVOID,PWSTR,SIZE_T);
+#define     InetNtop WINELIB_NAME_AW(InetNtop)
+int WINAPI  WS(inet_pton)(INT,PCSTR,PVOID);
+#define     InetPtonA WS(inet_pton)
+int WINAPI  InetPtonW(INT,PCWSTR,PVOID);
+#define     InetPton WINELIB_NAME_AW(InetPton)
 
 /*
  * Ws2tcpip Function Typedefs

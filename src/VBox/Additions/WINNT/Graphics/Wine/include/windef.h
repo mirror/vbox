@@ -46,16 +46,17 @@ extern "C" {
 
 /* Calling conventions definitions */
 
-#if defined(__i386__) && !defined(_X86_)
-# define _X86_
-#endif
-
-#if defined(_X86_) && !defined(__i386__)
-# define __i386__
-#endif
-
 #if defined(__x86_64__) && !defined(_WIN64)
 #define _WIN64
+#endif
+
+#ifndef _WIN64
+# if defined(__i386__) && !defined(_X86_)
+#  define _X86_
+# endif
+# if defined(_X86_) && !defined(__i386__)
+#  define __i386__
+# endif
 #endif
 
 #ifndef __stdcall
@@ -91,6 +92,18 @@ extern "C" {
 #  define __cdecl
 # endif
 #endif /* __cdecl */
+
+#ifndef __ms_va_list
+# if defined(__x86_64__) && defined (__GNUC__)
+#  define __ms_va_list __builtin_ms_va_list
+#  define __ms_va_start(list,arg) __builtin_ms_va_start(list,arg)
+#  define __ms_va_end(list) __builtin_ms_va_end(list)
+# else
+#  define __ms_va_list va_list
+#  define __ms_va_start(list,arg) va_start(list,arg)
+#  define __ms_va_end(list) va_end(list)
+# endif
+#endif
 
 #ifdef __WINESRC__
 #define __ONLY_IN_WINELIB(x)	do_not_use_this_in_wine

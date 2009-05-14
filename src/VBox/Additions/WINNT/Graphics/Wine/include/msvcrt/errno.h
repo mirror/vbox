@@ -27,9 +27,8 @@
 
 #ifndef __WINE_ERRNO_H
 #define __WINE_ERRNO_H
-#ifndef __WINE_USE_MSVCRT
-#define __WINE_USE_MSVCRT
-#endif
+
+#include <crtdefs.h>
 
 #  define EPERM   1
 #  define ENOENT  2
@@ -75,7 +74,7 @@
 extern "C" {
 #endif
 
-extern int* _errno(void);
+extern int* __cdecl _errno(void);
 
 #ifdef __cplusplus
 }

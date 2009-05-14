@@ -19,6 +19,15 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+/*
+ * Sun LGPL Disclaimer: For the avoidance of doubt, except that if any license choice
+ * other than GPL or LGPL is available it will apply instead, Sun elects to use only
+ * the Lesser General Public License version 2.1 (LGPLv2) at this time for any software where
+ * a choice of LGPL license versions is made available with the language indicating
+ * that LGPLv2 or any later version may be used, or where a choice of which version
+ * of the LGPL is applied is otherwise unspecified.
+ */
+
 import "wtypes.idl";
 
 /*
@@ -94,13 +103,40 @@ typedef struct _SERVICE_DESCRIPTIONW {
    LPWSTR lpDescription;
 } SERVICE_DESCRIPTIONW,*LPSERVICE_DESCRIPTIONW;
 
-#define SERVICE_CONFIG_DESCRIPTION 1
+typedef enum _SC_ACTION_TYPE {
+    SC_ACTION_NONE        = 0,
+    SC_ACTION_RESTART     = 1,
+    SC_ACTION_REBOOT      = 2,
+    SC_ACTION_RUN_COMMAND = 3
+} SC_ACTION_TYPE;
+
+typedef struct _SC_ACTION {
+    SC_ACTION_TYPE  Type;
+    DWORD       Delay;
+} SC_ACTION,*LPSC_ACTION;
+
+typedef struct _SERVICE_FAILURE_ACTIONSW {
+    DWORD dwResetPeriod;
+    [unique] LPWSTR lpRebootMsg;
+    [unique] LPWSTR lpCommand;
+    DWORD cActions;
+    [size_is(cActions)] SC_ACTION *lpsaActions;
+} SERVICE_FAILURE_ACTIONSW,*LPSERVICE_FAILURE_ACTIONSW;
+
+#define SERVICE_CONFIG_DESCRIPTION              1
+#define SERVICE_CONFIG_FAILURE_ACTIONS          2
+#define SERVICE_CONFIG_DELAYED_AUTO_START_INFO  3
+#define SERVICE_CONFIG_FAILURE_ACTIONS_FLAG     4
+#define SERVICE_CONFIG_SERVICE_SID_INFO         5
+#define SERVICE_CONFIG_REQUIRED_PRIVILEGES_INFO 6
+#define SERVICE_CONFIG_PRESHUTDOWN_INFO         7
 
 cpp_quote("#endif")
 
 typedef [switch_type(DWORD)] union
 {
   [case (SERVICE_CONFIG_DESCRIPTION)] SERVICE_DESCRIPTIONW descr;
+  [case (SERVICE_CONFIG_FAILURE_ACTIONS)] SERVICE_FAILURE_ACTIONSW actions;
 } SERVICE_CONFIG2W;
 
     /* Compatible with Windows function 0x00 */
@@ -230,17 +266,15 @@ typedef [switch_type(DWORD)] union
     DWORD svcctl_GetServiceDisplayNameW(
         [in] SC_RPC_HANDLE hSCManager,
         [in] LPCWSTR lpServiceName,
-        [out,size_is(cchBufSize)] WCHAR lpBuffer[],
-        [in] DWORD cchBufSize,
-        [out] DWORD *cchLength);
+        [out,string,size_is(*cchBufSize+1)] WCHAR lpBuffer[],
+        [in,out] DWORD *cchBufSize);
 
     /* Compatible with Windows function 0x15 */
     DWORD svcctl_GetServiceKeyNameW(
         [in] SC_RPC_HANDLE hSCManager,
         [in] LPCWSTR lpServiceDisplayName,
-        [out,size_is(cchBufSize)] WCHAR lpBuffer[],
-        [in] DWORD cchBufSize,
-        [out] DWORD *cchLength);
+        [out,string,size_is(*cchBufSize+1)] WCHAR lpBuffer[],
+        [in,out] DWORD *cchBufSize);
 
     /* Not compatible with Windows function 0x16 */
     DWORD svcctl_SCSetServiceBitsA(/* FIXME */);
@@ -296,8 +330,14 @@ typedef [switch_type(DWORD)] union
     /* Not compatible with Windows function 0x26 */
     DWORD svcctl_QueryServiceConfig2A(/* FIXME */);
 
-    /* Not compatible with Windows function 0x27 */
-    DWORD svcctl_QueryServiceConfig2W(/* FIXME */);
+    /* Untested with Windows function 0x27 */
+    DWORD svcctl_QueryServiceConfig2W(
+        [in] SC_RPC_HANDLE hService,
+        [in] DWORD InfoLevel,
+        [out,size_is(cbBufSize)] BYTE lpBuffer[],
+        [in] DWORD cbBufSize,
+        [out] LPDWORD pcbBytesNeeded
+    );
 
     /* Untested with Windows function 0x28 */
     DWORD svcctl_QueryServiceStatusEx(

@@ -6,11 +6,19 @@
  * This file is in the public domain.
  */
 
+/*
+ * Sun LGPL Disclaimer: For the avoidance of doubt, except that if any license choice
+ * other than GPL or LGPL is available it will apply instead, Sun elects to use only
+ * the Lesser General Public License version 2.1 (LGPLv2) at this time for any software where
+ * a choice of LGPL license versions is made available with the language indicating
+ * that LGPLv2 or any later version may be used, or where a choice of which version
+ * of the LGPL is applied is otherwise unspecified.
+ */
+
 #ifndef __WINE_FLOAT_H
 #define __WINE_FLOAT_H
-#ifndef __WINE_USE_MSVCRT
-#define __WINE_USE_MSVCRT
-#endif
+
+#include <crtdefs.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -127,14 +135,14 @@ extern "C" {
 #define _FPE_STACKUNDERFLOW     0x8b
 #define _FPE_EXPLICITGEN        0x8c
 
-double _copysign (double, double);
-double _chgsign (double);
-double _scalb(double, long);
-double _logb(double);
-double _nextafter(double, double);
-int    _finite(double);
-int    _isnan(double);
-int    _fpclass(double);
+double __cdecl _copysign (double, double);
+double __cdecl _chgsign (double);
+double __cdecl _scalb(double, long);
+double __cdecl _logb(double);
+double __cdecl _nextafter(double, double);
+int    __cdecl _finite(double);
+int    __cdecl _isnan(double);
+int    __cdecl _fpclass(double);
 
 #ifdef __cplusplus
 }

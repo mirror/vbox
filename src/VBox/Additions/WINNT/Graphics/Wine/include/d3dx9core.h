@@ -25,10 +25,10 @@
  * of the LGPL is applied is otherwise unspecified.
  */
 
+#include <d3dx9.h>
+
 #ifndef __WINE_D3DX9CORE_H
 #define __WINE_D3DX9CORE_H
-
-#include <d3dx9.h>
 
 /**********************************************
  ***************** Definitions ****************

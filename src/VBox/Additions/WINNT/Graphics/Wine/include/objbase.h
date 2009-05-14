@@ -234,8 +234,9 @@
 #define THIS   void
 
 #define interface struct
-#define DECLARE_INTERFACE(iface)        interface iface
-#define DECLARE_INTERFACE_(iface,ibase) interface iface : public ibase
+#define DECLARE_INTERFACE(iface)        interface DECLSPEC_NOVTABLE iface
+#define DECLARE_INTERFACE_(iface,ibase) interface DECLSPEC_NOVTABLE iface : public ibase
+#define DECLARE_INTERFACE_IID_(iface, ibase, iid) interface DECLSPEC_UUID(iid) DECLSPEC_NOVTABLE iface : public ibase
 
 #define BEGIN_INTERFACE
 #define END_INTERFACE
@@ -275,6 +276,7 @@
          struct iface##Vtbl
 #endif
 #define DECLARE_INTERFACE_(iface,ibase) DECLARE_INTERFACE(iface)
+#define DECLARE_INTERFACE_IID_(iface, ibase, iid) DECLARE_INTERFACE_(iface, ibase)
 
 #define BEGIN_INTERFACE
 #define END_INTERFACE
@@ -317,7 +319,7 @@ extern "C" {
 #endif
 
 /*****************************************************************************
- *  Standard API
+ *	Standard API
  */
 DWORD WINAPI CoBuildVersion(void);
 
@@ -342,11 +344,11 @@ void WINAPI CoFreeUnusedLibrariesEx(DWORD dwUnloadDelay, DWORD dwReserved);
 
 HRESULT WINAPI CoCreateInstance(REFCLSID rclsid, LPUNKNOWN pUnkOuter, DWORD dwClsContext, REFIID iid, LPVOID *ppv);
 HRESULT WINAPI CoCreateInstanceEx(REFCLSID      rclsid,
-                  LPUNKNOWN     pUnkOuter,
-                  DWORD         dwClsContext,
-                  COSERVERINFO* pServerInfo,
-                  ULONG         cmq,
-                  MULTI_QI*     pResults);
+				  LPUNKNOWN     pUnkOuter,
+				  DWORD         dwClsContext,
+				  COSERVERINFO* pServerInfo,
+				  ULONG         cmq,
+				  MULTI_QI*     pResults);
 
 HRESULT WINAPI CoGetInstanceFromFile(COSERVERINFO* pServerInfo, CLSID* pClsid, IUnknown* punkOuter, DWORD dwClsCtx, DWORD grfMode, OLECHAR* pwszName, DWORD dwCount, MULTI_QI* pResults);
 HRESULT WINAPI CoGetInstanceFromIStorage(COSERVERINFO* pServerInfo, CLSID* pClsid, IUnknown* punkOuter, DWORD dwClsCtx, IStorage* pstg, DWORD dwCount, MULTI_QI* pResults);
@@ -400,6 +402,7 @@ BOOL WINAPI CoIsHandlerConnected(LPUNKNOWN pUnk);
 /* security */
 HRESULT WINAPI CoInitializeSecurity(PSECURITY_DESCRIPTOR pSecDesc, LONG cAuthSvc, SOLE_AUTHENTICATION_SERVICE* asAuthSvc, void* pReserved1, DWORD dwAuthnLevel, DWORD dwImpLevel, void* pReserved2, DWORD dwCapabilities, void* pReserved3);
 HRESULT WINAPI CoGetCallContext(REFIID riid, void** ppInterface);
+HRESULT WINAPI CoSwitchCallContext(IUnknown *pContext, IUnknown **ppOldContext);
 HRESULT WINAPI CoQueryAuthenticationServices(DWORD* pcAuthSvc, SOLE_AUTHENTICATION_SERVICE** asAuthSvc);
 
 HRESULT WINAPI CoQueryProxyBlanket(IUnknown* pProxy, DWORD* pwAuthnSvc, DWORD* pAuthzSvc, OLECHAR** pServerPrincName, DWORD* pAuthnLevel, DWORD* pImpLevel, RPC_AUTH_IDENTITY_HANDLE* pAuthInfo, DWORD* pCapabilities);
@@ -434,7 +437,7 @@ typedef enum tagCOWAIT_FLAGS
 HRESULT WINAPI CoWaitForMultipleHandles(DWORD dwFlags,DWORD dwTimeout,ULONG cHandles,LPHANDLE pHandles,LPDWORD lpdwindex);
 
 /*****************************************************************************
- *  GUID API
+ *	GUID API
  */
 HRESULT WINAPI StringFromCLSID(REFCLSID id, LPOLESTR*);
 HRESULT WINAPI CLSIDFromString(LPOLESTR, CLSID *);
@@ -444,7 +447,7 @@ HRESULT WINAPI ProgIDFromCLSID(REFCLSID clsid, LPOLESTR *lplpszProgID);
 INT WINAPI StringFromGUID2(REFGUID id, LPOLESTR str, INT cmax);
 
 /*****************************************************************************
- *  COM Server dll - exports
+ *	COM Server dll - exports
  */
 HRESULT WINAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID * ppv) DECLSPEC_HIDDEN;
 HRESULT WINAPI DllCanUnloadNow(void) DECLSPEC_HIDDEN;
@@ -457,13 +460,13 @@ HRESULT WINAPI DllUnregisterServer(void) DECLSPEC_HIDDEN;
 
 
 /*****************************************************************************
- *  Data Object
+ *	Data Object
  */
 HRESULT WINAPI CreateDataAdviseHolder(LPDATAADVISEHOLDER* ppDAHolder);
 HRESULT WINAPI CreateDataCache(LPUNKNOWN pUnkOuter, REFCLSID rclsid, REFIID iid, LPVOID* ppv);
 
 /*****************************************************************************
- *  Moniker API
+ *	Moniker API
  */
 HRESULT WINAPI BindMoniker(LPMONIKER pmk, DWORD grfOpt, REFIID iidResult, LPVOID* ppvResult);
 HRESULT WINAPI CoGetObject(LPCWSTR pszName, BIND_OPTS *pBindOptions, REFIID riid, void **ppv);
@@ -482,31 +485,31 @@ HRESULT WINAPI MonikerCommonPrefixWith(IMoniker* pmkThis,IMoniker* pmkOther,IMon
 HRESULT WINAPI MonikerRelativePathTo(LPMONIKER pmkSrc, LPMONIKER pmkDest, LPMONIKER * ppmkRelPath, BOOL dwReserved);
 
 /*****************************************************************************
- *  Storage API
+ *	Storage API
  */
-#define STGM_DIRECT     0x00000000
-#define STGM_TRANSACTED     0x00010000
-#define STGM_SIMPLE     0x08000000
-#define STGM_READ       0x00000000
-#define STGM_WRITE      0x00000001
-#define STGM_READWRITE      0x00000002
-#define STGM_SHARE_DENY_NONE    0x00000040
-#define STGM_SHARE_DENY_READ    0x00000030
-#define STGM_SHARE_DENY_WRITE   0x00000020
-#define STGM_SHARE_EXCLUSIVE    0x00000010
-#define STGM_PRIORITY       0x00040000
-#define STGM_DELETEONRELEASE    0x04000000
-#define STGM_CREATE     0x00001000
-#define STGM_CONVERT        0x00020000
-#define STGM_FAILIFTHERE    0x00000000
-#define STGM_NOSCRATCH      0x00100000
-#define STGM_NOSNAPSHOT     0x00200000
-#define STGM_DIRECT_SWMR    0x00400000
+#define STGM_DIRECT		0x00000000
+#define STGM_TRANSACTED		0x00010000
+#define STGM_SIMPLE		0x08000000
+#define STGM_READ		0x00000000
+#define STGM_WRITE		0x00000001
+#define STGM_READWRITE		0x00000002
+#define STGM_SHARE_DENY_NONE	0x00000040
+#define STGM_SHARE_DENY_READ	0x00000030
+#define STGM_SHARE_DENY_WRITE	0x00000020
+#define STGM_SHARE_EXCLUSIVE	0x00000010
+#define STGM_PRIORITY		0x00040000
+#define STGM_DELETEONRELEASE	0x04000000
+#define STGM_CREATE		0x00001000
+#define STGM_CONVERT		0x00020000
+#define STGM_FAILIFTHERE	0x00000000
+#define STGM_NOSCRATCH		0x00100000
+#define STGM_NOSNAPSHOT		0x00200000
+#define STGM_DIRECT_SWMR	0x00400000
 
-#define STGFMT_STORAGE      0
-#define STGFMT_FILE         3
-#define STGFMT_ANY      4
-#define STGFMT_DOCFILE  5
+#define STGFMT_STORAGE		0
+#define STGFMT_FILE 		3
+#define STGFMT_ANY 		4
+#define STGFMT_DOCFILE 	5
 
 typedef struct tagSTGOPTIONS
 {

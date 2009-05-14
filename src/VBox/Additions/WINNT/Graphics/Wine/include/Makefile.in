@@ -5,7 +5,8 @@ VPATH	  = @srcdir@
 MODULE	  = none
 
 PRIVATE_IDL_H_SRCS = \
-	wine/wined3d.idl
+	wine/wined3d.idl \
+	wine/winedxgi.idl
 
 PUBLIC_IDL_H_SRCS = \
 	activaut.idl \
@@ -18,6 +19,7 @@ PUBLIC_IDL_H_SRCS = \
 	bits1_5.idl \
 	comcat.idl \
 	control.idl \
+	ctxtcall.idl \
 	d3d10.idl \
 	ddstream.idl \
 	dimm.idl \
@@ -41,6 +43,7 @@ PUBLIC_IDL_H_SRCS = \
 	mlang.idl \
 	mmstream.idl \
 	mscoree.idl \
+	msctf.idl \
 	mshtmhst.idl \
 	mshtml.idl \
 	msinkaut.idl \
@@ -57,6 +60,7 @@ PUBLIC_IDL_H_SRCS = \
 	oledb.idl \
 	oleidl.idl \
 	optary.idl \
+	perhist.idl \
 	propidl.idl \
 	pstore.idl \
 	qedit.idl \
@@ -67,6 +71,7 @@ PUBLIC_IDL_H_SRCS = \
 	shobjidl.idl \
 	shtypes.idl \
 	strmif.idl \
+	textstor.idl \
 	tom.idl \
 	unknwn.idl \
 	urlhist.idl \
@@ -75,6 +80,7 @@ PUBLIC_IDL_H_SRCS = \
 	wine/itss.idl \
 	wine/svcctl.idl \
 	wtypes.idl \
+	wuapi.idl \
 	xmldom.idl \
 	xmldso.idl
 
@@ -86,6 +92,7 @@ SRCDIR_INCLUDES = \
 	$(PUBLIC_IDL_H_SRCS) \
 	accctrl.h \
 	aclapi.h \
+	aclui.h \
 	adshlp.h \
 	advpub.h \
 	appmgmt.h \
@@ -115,7 +122,9 @@ SRCDIR_INCLUDES = \
 	custcntl.h \
 	cvconst.h \
 	d3d.h \
+	d3d10effect.h \
 	d3d10misc.h \
+	d3d10shader.h \
 	d3d8.h \
 	d3d8caps.h \
 	d3d8types.h \
@@ -138,6 +147,7 @@ SRCDIR_INCLUDES = \
 	d3dx9core.h \
 	d3dx9math.h \
 	d3dx9math.inl \
+	d3dx9mesh.h \
 	d3dx9shader.h \
 	d3dx9tex.h \
 	dbghelp.h \
@@ -227,12 +237,14 @@ SRCDIR_INCLUDES = \
 	guiddef.h \
 	hlguids.h \
 	htmlhelp.h \
+	http.h \
 	i_cryptasn1tls.h \
 	icm.h \
 	icmpapi.h \
 	idispids.h \
 	imagehlp.h \
 	imm.h \
+	in6addr.h \
 	initguid.h \
 	intshcut.h \
 	ipexport.h \
@@ -258,6 +270,7 @@ SRCDIR_INCLUDES = \
 	lmuse.h \
 	lmuseflg.h \
 	lmwksta.h \
+	loadperf.h \
 	lzexpand.h \
 	mapi.h \
 	mapicode.h \
@@ -287,8 +300,10 @@ SRCDIR_INCLUDES = \
 	msidefs.h \
 	msiquery.h \
 	mssip.h \
+	mstcpip.h \
 	msvcrt/conio.h \
 	msvcrt/crtdbg.h \
+	msvcrt/crtdefs.h \
 	msvcrt/ctype.h \
 	msvcrt/direct.h \
 	msvcrt/dirent.h \
@@ -304,6 +319,7 @@ SRCDIR_INCLUDES = \
 	msvcrt/math.h \
 	msvcrt/mbctype.h \
 	msvcrt/mbstring.h \
+	msvcrt/memory.h \
 	msvcrt/process.h \
 	msvcrt/search.h \
 	msvcrt/setjmp.h \
@@ -441,6 +457,7 @@ SRCDIR_INCLUDES = \
 	winperf.h \
 	winreg.h \
 	winresrc.h \
+	winsafer.h \
 	winscard.h \
 	winsmcrd.h \
 	winsock.h \
@@ -457,6 +474,8 @@ SRCDIR_INCLUDES = \
 	wmistr.h \
 	wnaspi32.h \
 	wownt32.h \
+	ws2def.h \
+	ws2ipdef.h \
 	ws2spi.h \
 	ws2tcpip.h \
 	wshisotp.h \

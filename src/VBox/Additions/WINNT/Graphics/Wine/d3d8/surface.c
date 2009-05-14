@@ -99,11 +99,17 @@ static ULONG WINAPI IDirect3DSurface8Impl_Release(LPDIRECT3DSURFACE8 iface) {
 /* IDirect3DSurface8 IDirect3DResource8 Interface follow: */
 static HRESULT WINAPI IDirect3DSurface8Impl_GetDevice(LPDIRECT3DSURFACE8 iface, IDirect3DDevice8 **ppDevice) {
     IDirect3DSurface8Impl *This = (IDirect3DSurface8Impl *)iface;
+    IWineD3DDevice *wined3d_device;
     HRESULT hr;
     TRACE("(%p)->(%p)\n", This, ppDevice);
 
     EnterCriticalSection(&d3d8_cs);
-    hr = IDirect3DResource8Impl_GetDevice((LPDIRECT3DRESOURCE8) This, ppDevice);
+    hr = IWineD3DSurface_GetDevice(This->wineD3DSurface, &wined3d_device);
+    if (SUCCEEDED(hr))
+    {
+        IWineD3DDevice_GetParent(wined3d_device, (IUnknown **)ppDevice);
+        IWineD3DDevice_Release(wined3d_device);
+    }
     LeaveCriticalSection(&d3d8_cs);
     return hr;
 }
@@ -176,6 +182,9 @@ static HRESULT WINAPI IDirect3DSurface8Impl_GetDesc(LPDIRECT3DSURFACE8 iface, D3
     EnterCriticalSection(&d3d8_cs);
     hr = IWineD3DSurface_GetDesc(This->wineD3DSurface, &wined3ddesc);
     LeaveCriticalSection(&d3d8_cs);
+
+    if (SUCCEEDED(hr)) pDesc->Format = d3dformat_from_wined3dformat(pDesc->Format);
+
     return hr;
 }
 
@@ -215,7 +224,11 @@ static HRESULT WINAPI IDirect3DSurface8Impl_UnlockRect(LPDIRECT3DSURFACE8 iface)
     EnterCriticalSection(&d3d8_cs);
     hr = IWineD3DSurface_UnlockRect(This->wineD3DSurface);
     LeaveCriticalSection(&d3d8_cs);
-    return hr;
+    switch(hr)
+    {
+        case WINEDDERR_NOTLOCKED:       return D3DERR_INVALIDCALL;
+        default:                        return hr;
+    }
 }
 
 const IDirect3DSurface8Vtbl Direct3DSurface8_Vtbl =

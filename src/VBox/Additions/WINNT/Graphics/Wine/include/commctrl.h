@@ -1108,7 +1108,7 @@ static const WCHAR TOOLBARCLASSNAMEW[] = { 'T','o','o','l','b','a','r',
 #define TBSTYLE_EX_UNDOC1               0x00000004 /* similar to TBSTYLE_WRAPABLE */
 #define TBSTYLE_EX_MIXEDBUTTONS         0x00000008
 #define TBSTYLE_EX_HIDECLIPPEDBUTTONS   0x00000010 /* don't show partially obscured buttons */
-#define TBSTYLE_EX_DOUBLEBUFFER         0x00000080 /* Double Buffer the toolbar ??? */
+#define TBSTYLE_EX_DOUBLEBUFFER         0x00000080 /* Double Buffer the toolbar */
 
 #define TBIF_IMAGE              0x00000001
 #define TBIF_TEXT               0x00000002
@@ -1222,12 +1222,14 @@ static const WCHAR TOOLBARCLASSNAMEW[] = { 'T','o','o','l','b','a','r',
 #define TB_GETSTRING             WINELIB_NAME_AW(TB_GETSTRING)
 
 /* undocumented messages in Toolbar */
+#ifdef __WINESRC__
 #define TB_UNKWN45D              (WM_USER+93)
-#define TB_UNKWN45E              (WM_USER+94)
-#define TB_UNKWN460              (WM_USER+96)
-#define TB_UNKWN462              (WM_USER+98)
-#define TB_UNKWN463              (WM_USER+99)
+#define TB_SETHOTITEM2           (WM_USER+94)
+#define TB_SETLISTGAP            (WM_USER+96)
+#define TB_GETIMAGELISTCOUNT     (WM_USER+98)
+#define TB_GETIDEALSIZE          (WM_USER+99)
 #define TB_UNKWN464              (WM_USER+100)
+#endif
 
 #define TB_GETMETRICS            (WM_USER+101)
 #define TB_SETMETRICS            (WM_USER+102)
@@ -1606,7 +1608,7 @@ CreateToolbar(HWND, DWORD, UINT, INT, HINSTANCE,
 
 HWND WINAPI
 CreateToolbarEx(HWND, DWORD, UINT, INT,
-                HINSTANCE, UINT, LPCTBBUTTON,
+                HINSTANCE, UINT_PTR, LPCTBBUTTON,
                 INT, INT, INT, INT, INT, UINT);
 
 HBITMAP WINAPI
@@ -2388,10 +2390,10 @@ static const WCHAR WC_TREEVIEWW[] = { 'S','y','s',
 #define TVIF_INTEGRAL         0x0080
 #define TVIF_DI_SETITEM	      0x1000
 
-#define TVI_ROOT              ((HTREEITEM)0xffff0000)     /* -65536 */
-#define TVI_FIRST             ((HTREEITEM)0xffff0001)     /* -65535 */
-#define TVI_LAST              ((HTREEITEM)0xffff0002)     /* -65534 */
-#define TVI_SORT              ((HTREEITEM)0xffff0003)     /* -65533 */
+#define TVI_ROOT              ((HTREEITEM)-65536)
+#define TVI_FIRST             ((HTREEITEM)-65535)
+#define TVI_LAST              ((HTREEITEM)-65534)
+#define TVI_SORT              ((HTREEITEM)-65533)
 
 #define TVIS_FOCUSED          0x0001
 #define TVIS_SELECTED         0x0002
@@ -3154,6 +3156,7 @@ static const WCHAR WC_LISTVIEWW[] = { 'S','y','s',
 #define LVM_SETITEMTEXT         WINELIB_NAME_AW(LVM_SETITEMTEXT)
 #define LVM_SETITEMCOUNT        (LVM_FIRST+47)
 #define LVM_SORTITEMS           (LVM_FIRST+48)
+#define LVM_SORTITEMSEX         (LVM_FIRST+81)
 #define LVM_SETITEMPOSITION32   (LVM_FIRST+49)
 #define LVM_GETSELECTEDCOUNT    (LVM_FIRST+50)
 #define LVM_GETITEMSPACING      (LVM_FIRST+51)
@@ -3721,7 +3724,7 @@ typedef struct NMLVSCROLL
 { LVITEMA _LVi; _LVi.state = data; _LVi.stateMask = dataMask;\
   SNDMSGA(hwnd, LVM_SETITEMSTATE, (WPARAM)(UINT)i, (LPARAM) (LPLVITEMA)&_LVi);}
 #define ListView_GetItemState(hwnd,i,mask) \
-    (BOOL)SNDMSGA((hwnd),LVM_GETITEMSTATE,(WPARAM)(UINT)(i),(LPARAM)(UINT)(mask))
+    (UINT)SNDMSGA((hwnd),LVM_GETITEMSTATE,(WPARAM)(UINT)(i),(LPARAM)(UINT)(mask))
 #define ListView_GetCountPerPage(hwnd) \
     (BOOL)SNDMSGW((hwnd),LVM_GETCOUNTPERPAGE,0,0L)
 #define ListView_GetImageList(hwnd,iImageList) \
@@ -3749,6 +3752,8 @@ typedef struct NMLVSCROLL
     (HWND)SNDMSGA((hwnd), LVM_GETEDITCONTROL, 0, 0)
 #define ListView_GetTextColor(hwnd)  \
     (COLORREF)SNDMSGA((hwnd), LVM_GETTEXTCOLOR, 0, 0)
+#define ListView_GetTextBkColor(hwnd) \
+    (COLORREF)SNDMSGA((hwnd), LVM_GETTEXTBKCOLOR, 0, 0)
 #define ListView_GetBkColor(hwnd)  \
     (COLORREF)SNDMSGA((hwnd), LVM_GETBKCOLOR, 0, 0)
 #define ListView_GetItemA(hwnd,pitem) \
@@ -3779,6 +3784,9 @@ typedef struct NMLVSCROLL
 
 #define ListView_SortItems(hwndLV,_pfnCompare,_lPrm) \
     (BOOL)SNDMSGA((hwndLV),LVM_SORTITEMS,(WPARAM)(LPARAM)_lPrm,(LPARAM)(PFNLVCOMPARE)_pfnCompare)
+#define ListView_SortItemsEx(hwndLV, _pfnCompare, _lPrm) \
+  (BOOL)SNDMSGA((hwndLV), LVM_SORTITEMSEX, (WPARAM)(LPARAM)(_lPrm), (LPARAM)(PFNLVCOMPARE)(_pfnCompare))
+
 #define ListView_SetItemPosition(hwndLV, i, x, y) \
     (BOOL)SNDMSGA((hwndLV),LVM_SETITEMPOSITION,(WPARAM)(INT)(i),MAKELPARAM((x),(y)))
 #define ListView_GetSelectedCount(hwndLV) \
@@ -4251,7 +4259,7 @@ static const WCHAR WC_COMBOBOXEXW[] = { 'C','o','m','b','o',
 typedef struct tagCOMBOBOXEXITEMA
 {
     UINT mask;
-    int iItem;
+    INT_PTR iItem;
     LPSTR pszText;
     int cchTextMax;
     int iImage;
@@ -4265,7 +4273,7 @@ typedef COMBOBOXEXITEMA const *PCCOMBOEXITEMA; /* Yes, there's a BOX missing */
 typedef struct tagCOMBOBOXEXITEMW
 {
     UINT mask;
-    int iItem;
+    INT_PTR iItem;
     LPWSTR pszText;
     int cchTextMax;
     int iImage;
@@ -4466,7 +4474,7 @@ typedef struct tagNMIPADDRESS
 #define MAKEIPRANGE(low,high) \
     ((LPARAM)(WORD)(((BYTE)(high)<<8)+(BYTE)(low)))
 #define MAKEIPADDRESS(b1,b2,b3,b4) \
-    ((LPARAM)(((DWORD)(b1)<<24)+((DWORD)(b2)<16)+((DWORD)(b3)<<8)+((DWORD)(b4))))
+    ((LPARAM)(((DWORD)(b1)<<24)+((DWORD)(b2)<<16)+((DWORD)(b3)<<8)+((DWORD)(b4))))
 
 #define FIRST_IPADDRESS(x)	(((x)>>24)&0xff)
 #define SECOND_IPADDRESS(x)	(((x)>>16)&0xff)

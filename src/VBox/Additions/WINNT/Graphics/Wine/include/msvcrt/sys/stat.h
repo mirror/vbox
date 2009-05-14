@@ -5,22 +5,23 @@
  * Modified for Wine use by Jon Griffiths and Francois Gouget.
  * This file is in the public domain.
  */
+
+/*
+ * Sun LGPL Disclaimer: For the avoidance of doubt, except that if any license choice
+ * other than GPL or LGPL is available it will apply instead, Sun elects to use only
+ * the Lesser General Public License version 2.1 (LGPLv2) at this time for any software where
+ * a choice of LGPL license versions is made available with the language indicating
+ * that LGPLv2 or any later version may be used, or where a choice of which version
+ * of the LGPL is applied is otherwise unspecified.
+ */
+
 #ifndef __WINE_SYS_STAT_H
 #define __WINE_SYS_STAT_H
-#ifndef __WINE_USE_MSVCRT
-#define __WINE_USE_MSVCRT
-#endif
 
-#include <pshpack8.h>
-
+#include <crtdefs.h>
 #include <sys/types.h>
 
-#ifndef _WCHAR_T_DEFINED
-#define _WCHAR_T_DEFINED
-#ifndef __cplusplus
-typedef unsigned short wchar_t;
-#endif
-#endif
+#include <pshpack8.h>
 
 #ifndef _DEV_T_DEFINED
 typedef unsigned int _dev_t;
@@ -30,11 +31,6 @@ typedef unsigned int _dev_t;
 #ifndef _INO_T_DEFINED
 typedef unsigned short _ino_t;
 #define _INO_T_DEFINED
-#endif
-
-#ifndef _TIME_T_DEFINED
-typedef long time_t;
-#define _TIME_T_DEFINED
 #endif
 
 #ifndef _OFF_T_DEFINED
@@ -130,19 +126,19 @@ struct _stat64 {
 extern "C" {
 #endif
 
-int _fstat(int,struct _stat*);
-int _stat(const char*,struct _stat*);
-int _fstati64(int,struct _stati64*);
-int _stati64(const char*,struct _stati64*);
-int _fstat64(int,struct _stat64*);
-int _stat64(const char*,struct _stat64*);
-int _umask(int);
+int __cdecl _fstat(int,struct _stat*);
+int __cdecl _stat(const char*,struct _stat*);
+int __cdecl _fstati64(int,struct _stati64*);
+int __cdecl _stati64(const char*,struct _stati64*);
+int __cdecl _fstat64(int,struct _stat64*);
+int __cdecl _stat64(const char*,struct _stat64*);
+int __cdecl _umask(int);
 
 #ifndef _WSTAT_DEFINED
 #define _WSTAT_DEFINED
-int _wstat(const wchar_t*,struct _stat*);
-int _wstati64(const wchar_t*,struct _stati64*);
-int _wstat64(const wchar_t*,struct _stat64*);
+int __cdecl _wstat(const wchar_t*,struct _stat*);
+int __cdecl _wstati64(const wchar_t*,struct _stati64*);
+int __cdecl _wstat64(const wchar_t*,struct _stat64*);
 #endif /* _WSTAT_DEFINED */
 
 #ifdef __cplusplus

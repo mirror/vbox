@@ -17,6 +17,15 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+/*
+ * Sun LGPL Disclaimer: For the avoidance of doubt, except that if any license choice
+ * other than GPL or LGPL is available it will apply instead, Sun elects to use only
+ * the Lesser General Public License version 2.1 (LGPLv2) at this time for any software where
+ * a choice of LGPL license versions is made available with the language indicating
+ * that LGPLv2 or any later version may be used, or where a choice of which version
+ * of the LGPL is applied is otherwise unspecified.
+ */
+
 #include <msxmldid.h>
 
 #ifndef DO_NO_IMPORTS
@@ -37,10 +46,10 @@ uuid(65725580-9b5d-11d0-9bfe-00c04fc99c8e)
 interface IXMLElementCollection : IDispatch
 {
     [propput, id(DISPID_XMLELEMENTCOLLECTION_LENGTH)]
-    HRESULT length( [in] long v );
+    HRESULT length( [in] LONG v );
 
     [propget, id(DISPID_XMLELEMENTCOLLECTION_LENGTH)]
-    HRESULT length( [retval, out] long *p );
+    HRESULT length( [retval, out] LONG *p );
 
     [propget, id(DISPID_XMLELEMENTCOLLECTION_NEWENUM)]
     HRESULT _newEnum( [retval, out] IUnknown ** ppUnk );
@@ -86,7 +95,7 @@ interface IXMLElement : IDispatch
     HRESULT children( [retval, out] IXMLElementCollection **p );
 
     [propget, id(DISPID_XMLELEMENT_TYPE)]
-    HRESULT type( [retval, out] long *p );
+    HRESULT type( [retval, out] LONG *p );
 
     [propget, id(DISPID_XMLELEMENT_TEXT)]
     HRESULT text( [retval, out] BSTR *p );
@@ -97,8 +106,8 @@ interface IXMLElement : IDispatch
     [id(DISPID_XMLELEMENT_ADDCHILD)]
     HRESULT addChild(
             [in] IXMLElement *pChildElem,
-            [in] long lIndex,
-            [in] long lreserved );
+            [in] LONG lIndex,
+            [in] LONG lreserved );
 
     [id(DISPID_XMLELEMENT_REMOVECHILD)]
     HRESULT removeChild(
@@ -134,7 +143,7 @@ interface IXMLDocument : IDispatch
     HRESULT mimeType( [retval, out] BSTR *p );
 
     [propget, id(DISPID_XMLDOCUMENT_READYSTATE)]
-    HRESULT readyState( [retval, out] long *p );
+    HRESULT readyState( [retval, out] LONG *p );
 
     [propget, id(DISPID_XMLDOCUMENT_CHARSET)]
     HRESULT charset( [retval, out] BSTR *p );
@@ -191,7 +200,7 @@ interface IXMLElement2 : IDispatch
     HRESULT children([retval, out] IXMLElementCollection **pp);
 
     [propget, id(DISPID_XMLELEMENT_TYPE)]
-    HRESULT type([retval, out] long *plType);
+    HRESULT type([retval, out] LONG *plType);
 
     [propget, id(DISPID_XMLELEMENT_TEXT)]
     HRESULT text([retval, out] BSTR *p);
@@ -202,8 +211,8 @@ interface IXMLElement2 : IDispatch
     [id(DISPID_XMLELEMENT_ADDCHILD)]
     HRESULT addChild(
         [in] IXMLElement2 *pChildElem,
-        [in] long lIndex,
-        [in] long lReserved);
+        [in] LONG lIndex,
+        [in] LONG lReserved);
 
     [id(DISPID_XMLELEMENT_REMOVECHILD)]
     HRESULT removeChild([in]IXMLElement2 *pChildElem);
@@ -241,7 +250,7 @@ interface IXMLDocument2 : IDispatch
     HRESULT mimeType([retval, out] BSTR *p);
    
     [propget, id(DISPID_XMLDOCUMENT_READYSTATE)]
-    HRESULT readyState([retval, out]long *pl);
+    HRESULT readyState([retval, out]LONG *pl);
 
     [propget, id(DISPID_XMLDOCUMENT_CHARSET)]
     HRESULT charset([retval, out]BSTR *p);

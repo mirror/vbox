@@ -83,11 +83,17 @@ static ULONG WINAPI IDirect3DCubeTexture9Impl_Release(LPDIRECT3DCUBETEXTURE9 ifa
 /* IDirect3DCubeTexture9 IDirect3DResource9 Interface follow: */
 static HRESULT WINAPI IDirect3DCubeTexture9Impl_GetDevice(LPDIRECT3DCUBETEXTURE9 iface, IDirect3DDevice9** ppDevice) {
     IDirect3DCubeTexture9Impl *This = (IDirect3DCubeTexture9Impl *)iface;
+    IWineD3DDevice *wined3d_device;
     HRESULT hr;
     TRACE("(%p) Relay\n" , This);
 
     EnterCriticalSection(&d3d9_cs);
-    hr = IDirect3DResource9Impl_GetDevice((LPDIRECT3DRESOURCE9) This, ppDevice);
+    hr = IWineD3DCubeTexture_GetDevice(This->wineD3DCubeTexture, &wined3d_device);
+    if (SUCCEEDED(hr))
+    {
+        IWineD3DDevice_GetParent(wined3d_device, (IUnknown **)ppDevice);
+        IWineD3DDevice_Release(wined3d_device);
+    }
     LeaveCriticalSection(&d3d9_cs);
     return hr;
 }
@@ -185,7 +191,7 @@ static DWORD WINAPI IDirect3DCubeTexture9Impl_GetLOD(LPDIRECT3DCUBETEXTURE9 ifac
     TRACE("(%p) Relay\n", This);
 
     EnterCriticalSection(&d3d9_cs);
-    ret = IDirect3DBaseTexture9Impl_GetLOD((LPDIRECT3DBASETEXTURE9) This);
+    ret = IWineD3DCubeTexture_GetLOD(This->wineD3DCubeTexture);
     LeaveCriticalSection(&d3d9_cs);
     return ret;
 }
@@ -237,12 +243,13 @@ static HRESULT WINAPI IDirect3DCubeTexture9Impl_GetLevelDesc(LPDIRECT3DCUBETEXTU
     IDirect3DCubeTexture9Impl *This = (IDirect3DCubeTexture9Impl *)iface;
     WINED3DSURFACE_DESC    wined3ddesc;
     UINT                   tmpInt = -1;
+    WINED3DFORMAT format;
     HRESULT hr;
 
     TRACE("(%p) Relay\n", This);
 
     /* As d3d8 and d3d9 structures differ, pass in ptrs to where data needs to go */
-    wined3ddesc.Format              = (WINED3DFORMAT *)&pDesc->Format;
+    wined3ddesc.Format              = &format;
     wined3ddesc.Type                = (WINED3DRESOURCETYPE *) &pDesc->Type;
     wined3ddesc.Usage               = &pDesc->Usage;
     wined3ddesc.Pool                = (WINED3DPOOL *) &pDesc->Pool;
@@ -255,6 +262,9 @@ static HRESULT WINAPI IDirect3DCubeTexture9Impl_GetLevelDesc(LPDIRECT3DCUBETEXTU
     EnterCriticalSection(&d3d9_cs);
     hr = IWineD3DCubeTexture_GetLevelDesc(This->wineD3DCubeTexture, Level, &wined3ddesc);
     LeaveCriticalSection(&d3d9_cs);
+
+    if (SUCCEEDED(hr)) pDesc->Format = d3dformat_from_wined3dformat(format);
+
     return hr;
 }
 
@@ -357,21 +367,20 @@ HRESULT  WINAPI  IDirect3DDevice9Impl_CreateCubeTexture(LPDIRECT3DDEVICE9EX ifac
     object = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*object));
 
     if (NULL == object) {
-        FIXME("(%p) allocation of CubeTexture failed\n", This);
+        ERR("(%p) allocation of CubeTexture failed\n", This);
         return D3DERR_OUTOFVIDEOMEMORY;
     }
     object->lpVtbl = &Direct3DCubeTexture9_Vtbl;
     object->ref = 1;
     EnterCriticalSection(&d3d9_cs);
     hr = IWineD3DDevice_CreateCubeTexture(This->WineD3DDevice, EdgeLength, Levels, Usage,
-                                 (WINED3DFORMAT)Format, (WINED3DPOOL) Pool, &object->wineD3DCubeTexture, pSharedHandle, (IUnknown*)object,
-                                 D3D9CB_CreateSurface);
+            wined3dformat_from_d3dformat(Format), Pool, &object->wineD3DCubeTexture, (IUnknown *)object);
     LeaveCriticalSection(&d3d9_cs);
 
     if (hr != D3D_OK){
 
         /* free up object */
-        FIXME("(%p) call to IWineD3DDevice_CreateCubeTexture failed\n", This);
+        WARN("(%p) call to IWineD3DDevice_CreateCubeTexture failed\n", This);
         HeapFree(GetProcessHeap(), 0, object);
     } else {
         IDirect3DDevice9Ex_AddRef(iface);

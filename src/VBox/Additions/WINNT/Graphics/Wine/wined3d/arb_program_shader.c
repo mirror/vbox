@@ -10,6 +10,7 @@
  * Copyright 2006 Jason Green
  * Copyright 2006 Henri Verbeet
  * Copyright 2007-2008 Stefan Dösinger for CodeWeavers
+ * Copyright 2009 Henri Verbeet for CodeWeavers
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -49,10 +50,20 @@ WINE_DECLARE_DEBUG_CHANNEL(d3d);
 
 #define GLINFO_LOCATION      (*gl_info)
 
+/* We have to subtract any other PARAMs that we might use in our shader programs.
+ * ATI seems to count 2 implicit PARAMs when we use fog and NVIDIA counts 1,
+ * and we reference one row of the PROJECTION matrix which counts as 1 PARAM. */
+#define ARB_SHADER_RESERVED_VS_CONSTS 3
+
+/* The arb shader only loads the bump mapping environment matrix into the shader if it finds
+ * a free constant to do that, so only reduce the number of available constants by 2 for the fog states.
+ */
+#define ARB_SHADER_RESERVED_PS_CONSTS 2
+
 /* Internally used shader constants. Applications can use constants 0 to GL_LIMITS(vshader_constantsF) - 1,
  * so upload them above that
  */
-#define ARB_SHADER_PRIVCONST_BASE GL_LIMITS(vshader_constantsF)
+#define ARB_SHADER_PRIVCONST_BASE (GL_LIMITS(vshader_constantsF) - ARB_SHADER_RESERVED_VS_CONSTS)
 #define ARB_SHADER_PRIVCONST_POS ARB_SHADER_PRIVCONST_BASE + 0
 
 /* ARB_program_shader private data */
@@ -92,8 +103,8 @@ static unsigned int shader_arb_load_constantsF(IWineD3DBaseShaderImpl* This, con
         }
     }
     /* In 1.X pixel shaders constants are implicitly clamped in the range [-1;1] */
-    if(target_type == GL_FRAGMENT_PROGRAM_ARB &&
-       WINED3DSHADER_VERSION_MAJOR(This->baseShader.hex_version) == 1) {
+    if (target_type == GL_FRAGMENT_PROGRAM_ARB && This->baseShader.reg_maps.shader_version.major == 1)
+    {
         float lcl_const[4];
         for(i = 0; i < max_constants; i++) {
             if(!dirty_consts[i]) continue;
@@ -172,6 +183,16 @@ static unsigned int shader_arb_load_constantsF(IWineD3DBaseShaderImpl* This, con
 }
 
 /**
+ * Loads the texture dimensions for NP2 fixup into the currently set ARB_[vertex/fragment]_programs.
+ */
+static void shader_arb_load_np2fixup_constants(
+    IWineD3DDevice* device,
+    char usePixelShader,
+    char useVertexShader) {
+    /* not implemented */
+}
+
+/**
  * Loads the app-supplied constants into the currently set ARB_[vertex/fragment]_programs.
  * 
  * We only support float constants in ARB at the moment, so don't 
@@ -220,7 +241,8 @@ static void shader_arb_load_constants(
             GL_EXTCALL(glProgramEnvParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, psi->bumpenvmatconst[i].const_num, data));
             deviceImpl->activeContext->pshader_const_dirty[psi->bumpenvmatconst[i].const_num] = 1;
 
-            if(psi->luminanceconst[i].const_num != -1) {
+            if (psi->luminanceconst[i].const_num != WINED3D_CONST_NUM_UNUSED)
+            {
                 /* WINED3DTSS_BUMPENVLSCALE and WINED3DTSS_BUMPENVLOFFSET are next to each other.
                  * point gl to the scale, and load 4 floats. x = scale, y = offset, z and w are junk, we
                  * don't care about them. The pointers are valid for sure because the stateblock is bigger.
@@ -234,16 +256,59 @@ static void shader_arb_load_constants(
     }
 }
 
+static void shader_arb_update_float_vertex_constants(IWineD3DDevice *iface, UINT start, UINT count)
+{
+    IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *)iface;
+
+    /* We don't want shader constant dirtification to be an O(contexts), so just dirtify the active
+     * context. On a context switch the old context will be fully dirtified */
+    memset(This->activeContext->vshader_const_dirty + start, 1,
+            sizeof(*This->activeContext->vshader_const_dirty) * count);
+    This->highest_dirty_vs_const = max(This->highest_dirty_vs_const, start + count + 1);
+}
+
+static void shader_arb_update_float_pixel_constants(IWineD3DDevice *iface, UINT start, UINT count)
+{
+    IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *)iface;
+
+    /* We don't want shader constant dirtification to be an O(contexts), so just dirtify the active
+     * context. On a context switch the old context will be fully dirtified */
+    memset(This->activeContext->pshader_const_dirty + start, 1,
+            sizeof(*This->activeContext->pshader_const_dirty) * count);
+    This->highest_dirty_ps_const = max(This->highest_dirty_ps_const, start + count + 1);
+}
+
+static DWORD *local_const_mapping(IWineD3DBaseShaderImpl *This)
+{
+    DWORD *ret;
+    DWORD idx = 0;
+    const local_constant *lconst;
+
+    if(This->baseShader.load_local_constsF || list_empty(&This->baseShader.constantsF)) return NULL;
+
+    ret = HeapAlloc(GetProcessHeap(), 0, sizeof(DWORD) * This->baseShader.limits.temporary);
+    if(!ret) {
+        ERR("Out of memory\n");
+        return NULL;
+    }
+
+    LIST_FOR_EACH_ENTRY(lconst, &This->baseShader.constantsF, local_constant, entry) {
+        ret[lconst->idx] = idx++;
+    }
+    return ret;
+}
+
 /* Generate the variable & register declarations for the ARB_vertex_program output target */
 static void shader_generate_arb_declarations(IWineD3DBaseShader *iface, const shader_reg_maps *reg_maps,
-        SHADER_BUFFER *buffer, const WineD3D_GL_Info *gl_info)
+        SHADER_BUFFER *buffer, const WineD3D_GL_Info *gl_info, DWORD *lconst_map)
 {
     IWineD3DBaseShaderImpl* This = (IWineD3DBaseShaderImpl*) iface;
     IWineD3DDeviceImpl *device = (IWineD3DDeviceImpl *) This->baseShader.device;
     DWORD i, cur;
-    char pshader = shader_is_pshader_version(This->baseShader.hex_version);
+    char pshader = shader_is_pshader_version(reg_maps->shader_version.type);
     unsigned max_constantsF = min(This->baseShader.limits.constant_float, 
-            (pshader ? GL_LIMITS(pshader_constantsF) : GL_LIMITS(vshader_constantsF)));
+            (pshader ? GL_LIMITS(pshader_constantsF) - ARB_SHADER_RESERVED_PS_CONSTS :
+                       GL_LIMITS(vshader_constantsF) - ARB_SHADER_RESERVED_VS_CONSTS));
     UINT extra_constants_needed = 0;
     const local_constant *lconst;
 
@@ -285,13 +350,13 @@ static void shader_generate_arb_declarations(IWineD3DBaseShader *iface, const sh
          * the stateblock into the shader. If no constant is available don't load, texbem will then just sample the texture without applying
          * bump mapping.
          */
-        if(max_constantsF + extra_constants_needed < GL_LIMITS(pshader_constantsF)) {
+        if(max_constantsF + extra_constants_needed < GL_LIMITS(pshader_constantsF) - ARB_SHADER_RESERVED_PS_CONSTS) {
             ps->bumpenvmatconst[cur].const_num = max_constantsF + extra_constants_needed;
             shader_addline(buffer, "PARAM bumpenvmat%d = program.env[%d];\n",
                            i, ps->bumpenvmatconst[cur].const_num);
             extra_constants_needed++;
 
-            if(reg_maps->luminanceparams && max_constantsF + extra_constants_needed < GL_LIMITS(pshader_constantsF)) {
+            if(reg_maps->luminanceparams && max_constantsF + extra_constants_needed < GL_LIMITS(pshader_constantsF) - ARB_SHADER_RESERVED_PS_CONSTS) {
                 ((IWineD3DPixelShaderImpl *)This)->luminanceconst[cur].const_num = max_constantsF + extra_constants_needed;
                 shader_addline(buffer, "PARAM luminance%d = program.env[%d];\n",
                                i, ps->luminanceconst[cur].const_num);
@@ -300,32 +365,26 @@ static void shader_generate_arb_declarations(IWineD3DBaseShader *iface, const sh
                 FIXME("No free constant to load the luminance parameters\n");
             }
         } else {
-            FIXME("No free constant found to load environemnt bump mapping matrix into the shader. texbem instruction will not apply bump mapping\n");
+            FIXME("No free constant found to load environment bump mapping matrix into the shader. texbem instruction will not apply bump mapping\n");
         }
 
         ps->numbumpenvmatconsts = cur + 1;
     }
 
     if(device->stateBlock->renderState[WINED3DRS_SRGBWRITEENABLE] && pshader) {
-        shader_addline(buffer, "PARAM srgb_mul_low = {%f, %f, %f, 1.0};\n",
-                        srgb_mul_low, srgb_mul_low, srgb_mul_low);
-        shader_addline(buffer, "PARAM srgb_comparison =  {%f, %f, %f, %f};\n",
-                        srgb_cmp, srgb_cmp, srgb_cmp, srgb_cmp);
-        shader_addline(buffer, "PARAM srgb_pow =  {%f, %f, %f, 1.0};\n",
-                       srgb_pow, srgb_pow, srgb_pow);
-        shader_addline(buffer, "PARAM srgb_mul_hi =  {%f, %f, %f, 1.0};\n",
-                       srgb_mul_high, srgb_mul_high, srgb_mul_high);
-        shader_addline(buffer, "PARAM srgb_sub_hi =  {%f, %f, %f, 0.0};\n",
-                       srgb_sub_high, srgb_sub_high, srgb_sub_high);
+        shader_addline(buffer, "PARAM srgb_consts1 = {%f, %f, %f, %f};\n",
+                       srgb_mul_low, srgb_cmp, srgb_pow, srgb_mul_high);
+        shader_addline(buffer, "PARAM srgb_consts2 = {%f, %f, %f, %f};\n",
+                       srgb_sub_high, 0.0, 0.0, 0.0);
     }
 
     /* Load local constants using the program-local space,
      * this avoids reloading them each time the shader is used
      */
-    if(!This->baseShader.load_local_constsF) {
+    if(lconst_map) {
         LIST_FOR_EACH_ENTRY(lconst, &This->baseShader.constantsF, local_constant, entry) {
             shader_addline(buffer, "PARAM C%u = program.local[%u];\n", lconst->idx,
-                           lconst->idx);
+                           lconst_map[lconst->idx]);
         }
     }
 
@@ -335,13 +394,16 @@ static void shader_generate_arb_declarations(IWineD3DBaseShader *iface, const sh
      * local constants do not declare the loaded constants as an array because ARB compilers usually
      * do not optimize unused constants away
      */
-    if(This->baseShader.load_local_constsF || list_empty(&This->baseShader.constantsF)) {
+    if(This->baseShader.reg_maps.usesrelconstF) {
         /* Need to PARAM the environment parameters (constants) so we can use relative addressing */
         shader_addline(buffer, "PARAM C[%d] = { program.env[0..%d] };\n",
                     max_constantsF, max_constantsF - 1);
     } else {
         for(i = 0; i < max_constantsF; i++) {
-            if(!shader_constant_is_local(This, i)) {
+            DWORD idx, mask;
+            idx = i >> 5;
+            mask = 1 << (i & 0x1f);
+            if(!shader_constant_is_local(This, i) && (This->baseShader.reg_maps.constf[idx] & mask)) {
                 shader_addline(buffer, "PARAM C%d = program.env[%d];\n",i, i);
             }
         }
@@ -367,27 +429,31 @@ static const char * const shift_tab[] = {
     "coefdiv.x"  /* 15 (d2)   */
 };
 
-static void shader_arb_get_write_mask(const SHADER_OPCODE_ARG *arg, const DWORD param, char *write_mask)
+static void shader_arb_get_write_mask(const struct wined3d_shader_instruction *ins,
+        const struct wined3d_shader_dst_param *dst, char *write_mask)
 {
-    IWineD3DBaseShaderImpl *This = (IWineD3DBaseShaderImpl *) arg->shader;
     char *ptr = write_mask;
-    char vshader = shader_is_vshader_version(This->baseShader.hex_version);
+    char vshader = shader_is_vshader_version(ins->ctx->reg_maps->shader_version.type);
 
-    if(vshader && shader_get_regtype(param) == WINED3DSPR_ADDR) {
+    if (vshader && dst->reg.type == WINED3DSPR_ADDR)
+    {
         *ptr++ = '.';
         *ptr++ = 'x';
-    } else if ((param & WINED3DSP_WRITEMASK_ALL) != WINED3DSP_WRITEMASK_ALL) {
+    }
+    else if (dst->write_mask != WINED3DSP_WRITEMASK_ALL)
+    {
         *ptr++ = '.';
-        if (param & WINED3DSP_WRITEMASK_0) *ptr++ = 'x';
-        if (param & WINED3DSP_WRITEMASK_1) *ptr++ = 'y';
-        if (param & WINED3DSP_WRITEMASK_2) *ptr++ = 'z';
-        if (param & WINED3DSP_WRITEMASK_3) *ptr++ = 'w';
+        if (dst->write_mask & WINED3DSP_WRITEMASK_0) *ptr++ = 'x';
+        if (dst->write_mask & WINED3DSP_WRITEMASK_1) *ptr++ = 'y';
+        if (dst->write_mask & WINED3DSP_WRITEMASK_2) *ptr++ = 'z';
+        if (dst->write_mask & WINED3DSP_WRITEMASK_3) *ptr++ = 'w';
     }
 
     *ptr = '\0';
 }
 
-static void shader_arb_get_swizzle(const DWORD param, BOOL fixup, char *swizzle_str) {
+static void shader_arb_get_swizzle(const struct wined3d_shader_src_param *param, BOOL fixup, char *swizzle_str)
+{
     /* For registers of type WINED3DDECLTYPE_D3DCOLOR, data is stored as "bgra",
      * but addressed as "rgba". To fix this we need to swap the register's x
      * and z components. */
@@ -395,7 +461,7 @@ static void shader_arb_get_swizzle(const DWORD param, BOOL fixup, char *swizzle_
     char *ptr = swizzle_str;
 
     /* swizzle bits fields: wwzzyyxx */
-    DWORD swizzle = (param & WINED3DSP_SWIZZLE_MASK) >> WINED3DSP_SWIZZLE_SHIFT;
+    DWORD swizzle = param->swizzle;
     DWORD swizzle_x = swizzle & 0x03;
     DWORD swizzle_y = (swizzle >> 2) & 0x03;
     DWORD swizzle_z = (swizzle >> 4) & 0x03;
@@ -403,7 +469,8 @@ static void shader_arb_get_swizzle(const DWORD param, BOOL fixup, char *swizzle_
 
     /* If the swizzle is the default swizzle (ie, "xyzw"), we don't need to
      * generate a swizzle string. Unless we need to our own swizzling. */
-    if ((WINED3DSP_NOSWIZZLE >> WINED3DSP_SWIZZLE_SHIFT) != swizzle || fixup) {
+    if (swizzle != WINED3DSP_NOSWIZZLE || fixup)
+    {
         *ptr++ = '.';
         if (swizzle_x == swizzle_y && swizzle_x == swizzle_z && swizzle_x == swizzle_w) {
             *ptr++ = swizzle_chars[swizzle_x];
@@ -418,191 +485,130 @@ static void shader_arb_get_swizzle(const DWORD param, BOOL fixup, char *swizzle_
     *ptr = '\0';
 }
 
-static void pshader_get_register_name(IWineD3DBaseShader* iface,
-    const DWORD param, char* regstr) {
-
-    DWORD reg = param & WINED3DSP_REGNUM_MASK;
-    DWORD regtype = shader_get_regtype(param);
-    IWineD3DBaseShaderImpl *This = (IWineD3DBaseShaderImpl *) iface;
-
-    switch (regtype) {
-    case WINED3DSPR_TEMP:
-        sprintf(regstr, "R%u", reg);
-    break;
-    case WINED3DSPR_INPUT:
-        if (reg==0) {
-            strcpy(regstr, "fragment.color.primary");
-        } else {
-            strcpy(regstr, "fragment.color.secondary");
-        }
-    break;
-    case WINED3DSPR_CONST:
-        if(This->baseShader.load_local_constsF || list_empty(&This->baseShader.constantsF)) {
-            sprintf(regstr, "C[%u]", reg);
-        } else {
-            sprintf(regstr, "C%u", reg);
-        }
-    break;
-    case WINED3DSPR_TEXTURE: /* case WINED3DSPR_ADDR: */
-        sprintf(regstr,"T%u", reg);
-    break;
-    case WINED3DSPR_COLOROUT:
-        if (reg == 0)
-            sprintf(regstr, "TMP_COLOR");
-        else {
-            /* TODO: See GL_ARB_draw_buffers */
-            FIXME("Unsupported write to render target %u\n", reg);
-            sprintf(regstr, "unsupported_register");
-        }
-    break;
-    case WINED3DSPR_DEPTHOUT:
-        sprintf(regstr, "result.depth");
-    break;
-    case WINED3DSPR_ATTROUT:
-        sprintf(regstr, "oD[%u]", reg);
-    break;
-    case WINED3DSPR_TEXCRDOUT:
-        sprintf(regstr, "oT[%u]", reg);
-    break;
-    default:
-        FIXME("Unhandled register name Type(%d)\n", regtype);
-        sprintf(regstr, "unrecognized_register");
-    break;
-    }
-}
-
-/* TODO: merge with pixel shader */
-static void vshader_program_add_param(const SHADER_OPCODE_ARG *arg, const DWORD param, BOOL is_input, char *hwLine)
+static void shader_arb_get_register_name(IWineD3DBaseShader *iface, WINED3DSHADER_PARAM_REGISTER_TYPE register_type,
+        UINT register_idx, BOOL rel_addr, char *register_name, BOOL *is_color)
 {
-  IWineD3DVertexShaderImpl* This = (IWineD3DVertexShaderImpl*) arg->shader;
+    /* oPos, oFog and oPts in D3D */
+    static const char * const rastout_reg_names[] = {"TMP_OUT", "result.fogcoord", "result.pointsize"};
+    IWineD3DBaseShaderImpl *This = (IWineD3DBaseShaderImpl *)iface;
+    BOOL pshader = shader_is_pshader_version(This->baseShader.reg_maps.shader_version.type);
 
-  /* oPos, oFog and oPts in D3D */
-  static const char * const hwrastout_reg_names[] = { "TMP_OUT", "result.fogcoord", "result.pointsize" };
+    *is_color = FALSE;
 
-  DWORD reg = param & WINED3DSP_REGNUM_MASK;
-  DWORD regtype = shader_get_regtype(param);
-  char  tmpReg[255];
-  BOOL is_color = FALSE;
-
-  if ((param & WINED3DSP_SRCMOD_MASK) == WINED3DSPSM_NEG) {
-      strcat(hwLine, " -");
-  } else {
-      strcat(hwLine, " ");
-  }
-
-  switch (regtype) {
-  case WINED3DSPR_TEMP:
-    sprintf(tmpReg, "R%u", reg);
-    strcat(hwLine, tmpReg);
-    break;
-  case WINED3DSPR_INPUT:
-
-    if (vshader_input_is_color((IWineD3DVertexShader*) This, reg))
-        is_color = TRUE;
-
-    sprintf(tmpReg, "vertex.attrib[%u]", reg);
-    strcat(hwLine, tmpReg);
-    break;
-  case WINED3DSPR_CONST:
-      if(param & WINED3DSHADER_ADDRMODE_RELATIVE) {
-          if(reg >= This->rel_offset) {
-              sprintf(tmpReg, "C[A0.x + %u]", reg - This->rel_offset);
-          } else {
-              sprintf(tmpReg, "C[A0.x - %u]", -reg + This->rel_offset);
-          }
-      } else {
-          if(This->baseShader.load_local_constsF || list_empty(&This->baseShader.constantsF)) {
-              sprintf(tmpReg, "C[%u]", reg);
-          } else {
-              sprintf(tmpReg, "C%u", reg);
-          }
-      }
-    strcat(hwLine, tmpReg);
-    break;
-  case WINED3DSPR_ADDR: /*case D3DSPR_TEXTURE:*/
-    sprintf(tmpReg, "A%u", reg);
-    strcat(hwLine, tmpReg);
-    break;
-  case WINED3DSPR_RASTOUT:
-    sprintf(tmpReg, "%s", hwrastout_reg_names[reg]);
-    strcat(hwLine, tmpReg);
-    break;
-  case WINED3DSPR_ATTROUT:
-    if (reg==0) {
-       strcat(hwLine, "result.color.primary");
-    } else {
-       strcat(hwLine, "result.color.secondary");
-    }
-    break;
-  case WINED3DSPR_TEXCRDOUT:
-    sprintf(tmpReg, "result.texcoord[%u]", reg);
-    strcat(hwLine, tmpReg);
-    break;
-  default:
-    FIXME("Unknown reg type %d %d\n", regtype, reg);
-    strcat(hwLine, "unrecognized_register");
-    break;
-  }
-
-  if (!is_input) {
-    char write_mask[6];
-    shader_arb_get_write_mask(arg, param, write_mask);
-    strcat(hwLine, write_mask);
-  } else {
-    char swizzle[6];
-    shader_arb_get_swizzle(param, is_color, swizzle);
-    strcat(hwLine, swizzle);
-  }
-}
-
-static void shader_hw_sample(const SHADER_OPCODE_ARG *arg, DWORD sampler_idx, const char *dst_str,
-        const char *coord_reg, BOOL projected, BOOL bias)
-{
-    SHADER_BUFFER* buffer = arg->buffer;
-    DWORD sampler_type = arg->reg_maps->samplers[sampler_idx] & WINED3DSP_TEXTURETYPE_MASK;
-    const char *tex_type;
-
-    switch(sampler_type) {
-        case WINED3DSTT_1D:
-            tex_type = "1D";
+    switch (register_type)
+    {
+        case WINED3DSPR_TEMP:
+            sprintf(register_name, "R%u", register_idx);
             break;
 
-        case WINED3DSTT_2D:
-        {
-            IWineD3DBaseShaderImpl *This = (IWineD3DBaseShaderImpl *) arg->shader;
-            IWineD3DDeviceImpl *device = (IWineD3DDeviceImpl *) This->baseShader.device;
-            if(device->stateBlock->textures[sampler_idx] &&
-               IWineD3DBaseTexture_GetTextureDimensions(device->stateBlock->textures[sampler_idx]) == GL_TEXTURE_RECTANGLE_ARB) {
-                tex_type = "RECT";
-            } else {
-                tex_type = "2D";
+        case WINED3DSPR_INPUT:
+            if (pshader)
+            {
+                if (register_idx == 0) strcpy(register_name, "fragment.color.primary");
+                else strcpy(register_name, "fragment.color.secondary");
+            }
+            else
+            {
+                if (((IWineD3DVertexShaderImpl *)This)->cur_args->swizzle_map & (1 << register_idx)) *is_color = TRUE;
+                sprintf(register_name, "vertex.attrib[%u]", register_idx);
             }
             break;
-        }
 
-        case WINED3DSTT_VOLUME:
-            tex_type = "3D";
+        case WINED3DSPR_CONST:
+            if (!pshader && rel_addr)
+            {
+                UINT rel_offset = ((IWineD3DVertexShaderImpl *)This)->rel_offset;
+                if (register_idx >= rel_offset)
+                    sprintf(register_name, "C[A0.x + %u]", register_idx - rel_offset);
+                else
+                    sprintf(register_name, "C[A0.x - %u]", -register_idx + rel_offset);
+            }
+            else
+            {
+                if (This->baseShader.reg_maps.usesrelconstF)
+                    sprintf(register_name, "C[%u]", register_idx);
+                else
+                    sprintf(register_name, "C%u", register_idx);
+            }
             break;
 
-        case WINED3DSTT_CUBE:
-            tex_type = "CUBE";
+        case WINED3DSPR_TEXTURE: /* case WINED3DSPR_ADDR: */
+            if (pshader) sprintf(register_name, "T%u", register_idx);
+            else  sprintf(register_name, "A%u", register_idx);
+            break;
+
+        case WINED3DSPR_COLOROUT:
+            if (register_idx == 0)
+            {
+                strcpy(register_name, "TMP_COLOR");
+            }
+            else
+            {
+                /* TODO: See GL_ARB_draw_buffers */
+                FIXME("Unsupported write to render target %u\n", register_idx);
+                sprintf(register_name, "unsupported_register");
+            }
+            break;
+
+        case WINED3DSPR_RASTOUT:
+            sprintf(register_name, "%s", rastout_reg_names[register_idx]);
+            break;
+
+        case WINED3DSPR_DEPTHOUT:
+            strcpy(register_name, "result.depth");
+            break;
+
+        case WINED3DSPR_ATTROUT:
+            if (pshader) sprintf(register_name, "oD[%u]", register_idx);
+            else if (register_idx == 0) strcpy(register_name, "result.color.primary");
+            else strcpy(register_name, "result.color.secondary");
+            break;
+
+        case WINED3DSPR_TEXCRDOUT:
+            if (pshader) sprintf(register_name, "oT[%u]", register_idx);
+            else sprintf(register_name, "result.texcoord[%u]", register_idx);
             break;
 
         default:
-            ERR("Unexpected texture type %d\n", sampler_type);
-            tex_type = "";
+            FIXME("Unhandled register type %#x[%u]\n", register_type, register_idx);
+            sprintf(register_name, "unrecognized_register[%u]", register_idx);
+            break;
     }
+}
 
-    if (bias) {
-        /* Shouldn't be possible, but let's check for it */
-        if(projected) FIXME("Biased and Projected texture sampling\n");
-        /* TXB takes the 4th component of the source vector automatically, as d3d. Nothing more to do */
-        shader_addline(buffer, "TXB %s, %s, texture[%u], %s;\n", dst_str, coord_reg, sampler_idx, tex_type);
-    } else if (projected) {
-        shader_addline(buffer, "TXP %s, %s, texture[%u], %s;\n", dst_str, coord_reg, sampler_idx, tex_type);
-    } else {
-        shader_addline(buffer, "TEX %s, %s, texture[%u], %s;\n", dst_str, coord_reg, sampler_idx, tex_type);
-    }
+static void shader_arb_add_src_param(const struct wined3d_shader_instruction *ins,
+        const struct wined3d_shader_src_param *wined3d_src, char *str)
+{
+    char register_name[255];
+    char swizzle[6];
+    BOOL is_color;
+
+    if (wined3d_src->modifiers == WINED3DSPSM_NEG) strcat(str, " -");
+    else strcat(str, " ");
+
+    shader_arb_get_register_name(ins->ctx->shader, wined3d_src->reg.type,
+            wined3d_src->reg.idx, !!wined3d_src->reg.rel_addr, register_name, &is_color);
+    strcat(str, register_name);
+
+    shader_arb_get_swizzle(wined3d_src, is_color, swizzle);
+    strcat(str, swizzle);
+}
+
+static void shader_arb_add_dst_param(const struct wined3d_shader_instruction *ins,
+        const struct wined3d_shader_dst_param *wined3d_dst, char *str)
+{
+    char register_name[255];
+    char write_mask[6];
+    BOOL is_color;
+
+    strcat(str, " ");
+
+    shader_arb_get_register_name(ins->ctx->shader, wined3d_dst->reg.type,
+            wined3d_dst->reg.idx, !!wined3d_dst->reg.rel_addr, register_name, &is_color);
+    strcat(str, register_name);
+
+    shader_arb_get_write_mask(ins, wined3d_dst, write_mask);
+    strcat(str, write_mask);
 }
 
 static const char *shader_arb_get_fixup_swizzle(enum fixup_channel_source channel_source)
@@ -622,7 +628,7 @@ static const char *shader_arb_get_fixup_swizzle(enum fixup_channel_source channe
 }
 
 static void gen_color_correction(SHADER_BUFFER *buffer, const char *reg, DWORD dst_mask,
-        const char *one, const char *two, struct color_fixup_desc fixup)
+                                 const char *one, const char *two, struct color_fixup_desc fixup)
 {
     DWORD mask;
 
@@ -673,21 +679,73 @@ static void gen_color_correction(SHADER_BUFFER *buffer, const char *reg, DWORD d
     }
 }
 
-static void shader_arb_color_correction(const struct SHADER_OPCODE_ARG* arg, struct color_fixup_desc fixup)
+static void shader_hw_sample(const struct wined3d_shader_instruction *ins, DWORD sampler_idx,
+        const char *dst_str, const char *coord_reg, BOOL projected, BOOL bias)
 {
-    char reg[256];
-    pshader_get_register_name(arg->shader, arg->dst, reg);
-    gen_color_correction(arg->buffer, reg, arg->dst & WINED3DSP_WRITEMASK_ALL, "one", "coefmul.x", fixup);
+    SHADER_BUFFER *buffer = ins->ctx->buffer;
+    DWORD sampler_type = ins->ctx->reg_maps->sampler_type[sampler_idx];
+    const char *tex_type;
+    IWineD3DBaseShaderImpl *This = (IWineD3DBaseShaderImpl *)ins->ctx->shader;
+    IWineD3DDeviceImpl *device = (IWineD3DDeviceImpl *) This->baseShader.device;
+
+    switch(sampler_type) {
+        case WINED3DSTT_1D:
+            tex_type = "1D";
+            break;
+
+        case WINED3DSTT_2D:
+            if(device->stateBlock->textures[sampler_idx] &&
+               IWineD3DBaseTexture_GetTextureDimensions(device->stateBlock->textures[sampler_idx]) == GL_TEXTURE_RECTANGLE_ARB) {
+                tex_type = "RECT";
+            } else {
+                tex_type = "2D";
+            }
+            if (shader_is_pshader_version(ins->ctx->reg_maps->shader_version.type))
+            {
+               const IWineD3DPixelShaderImpl* const ps = (const IWineD3DPixelShaderImpl*)This;
+               if(ps->cur_args->np2_fixup & (1 << sampler_idx)) {
+                   FIXME("NP2 texcoord fixup is currently not implemented in ARB mode (use GLSL instead).\n");
+               }
+            }
+            break;
+
+        case WINED3DSTT_VOLUME:
+            tex_type = "3D";
+            break;
+
+        case WINED3DSTT_CUBE:
+            tex_type = "CUBE";
+            break;
+
+        default:
+            ERR("Unexpected texture type %d\n", sampler_type);
+            tex_type = "";
+    }
+
+    if (bias) {
+        /* Shouldn't be possible, but let's check for it */
+        if(projected) FIXME("Biased and Projected texture sampling\n");
+        /* TXB takes the 4th component of the source vector automatically, as d3d. Nothing more to do */
+        shader_addline(buffer, "TXB %s, %s, texture[%u], %s;\n", dst_str, coord_reg, sampler_idx, tex_type);
+    } else if (projected) {
+        shader_addline(buffer, "TXP %s, %s, texture[%u], %s;\n", dst_str, coord_reg, sampler_idx, tex_type);
+    } else {
+        shader_addline(buffer, "TEX %s, %s, texture[%u], %s;\n", dst_str, coord_reg, sampler_idx, tex_type);
+    }
+
+    if (shader_is_pshader_version(ins->ctx->reg_maps->shader_version.type))
+    {
+        IWineD3DPixelShaderImpl *ps = (IWineD3DPixelShaderImpl *)ins->ctx->shader;
+        gen_color_correction(buffer, dst_str, ins->dst[0].write_mask,
+                "one", "coefmul.x", ps->cur_args->color_fixup[sampler_idx]);
+    }
 }
 
-static void pshader_gen_input_modifier_line (
-    IWineD3DBaseShader *iface,
-    SHADER_BUFFER* buffer,
-    const DWORD instr,
-    int tmpreg,
-    char *outregstr) {
-
+static void pshader_gen_input_modifier_line(IWineD3DBaseShader *iface, SHADER_BUFFER *buffer,
+        const struct wined3d_shader_src_param *src, unsigned int tmpreg, char *outregstr)
+{
     /* Generate a line that does the input modifier computation and return the input register to use */
+    BOOL is_color = FALSE;
     char regstr[256];
     char swzstr[20];
     int insert_line;
@@ -696,10 +754,12 @@ static void pshader_gen_input_modifier_line (
     insert_line = 1;
 
     /* Get register name */
-    pshader_get_register_name(iface, instr, regstr);
-    shader_arb_get_swizzle(instr, FALSE, swzstr);
+    shader_arb_get_register_name(iface, src->reg.type,
+            src->reg.idx, !!src->reg.rel_addr, regstr, &is_color);
+    shader_arb_get_swizzle(src, is_color, swzstr);
 
-    switch (instr & WINED3DSP_SRCMOD_MASK) {
+    switch (src->modifiers)
+    {
     case WINED3DSPSM_NONE:
         sprintf(outregstr, "%s%s", regstr, swzstr);
         insert_line = 0;
@@ -747,39 +807,35 @@ static void pshader_gen_input_modifier_line (
         sprintf(outregstr, "T%c%s", 'A' + tmpreg, swzstr);
 }
 
-static inline void pshader_gen_output_modifier_line(SHADER_BUFFER *buffer, int saturate, const char *write_mask,
-        int shift, const char *regstr)
+static void pshader_hw_bem(const struct wined3d_shader_instruction *ins)
 {
-    /* Generate a line that does the output modifier computation */
-    shader_addline(buffer, "MUL%s %s%s, %s, %s;\n", saturate ? "_SAT" : "",
-        regstr, write_mask, regstr, shift_tab[shift]);
-}
-
-static void pshader_hw_bem(const SHADER_OPCODE_ARG *arg)
-{
-    IWineD3DPixelShaderImpl* This = (IWineD3DPixelShaderImpl*) arg->shader;
-
-    SHADER_BUFFER* buffer = arg->buffer;
+    IWineD3DPixelShaderImpl *This = (IWineD3DPixelShaderImpl *)ins->ctx->shader;
+    const struct wined3d_shader_dst_param *dst = &ins->dst[0];
+    SHADER_BUFFER *buffer = ins->ctx->buffer;
     char dst_name[50];
     char src_name[2][50];
     char dst_wmask[20];
-    DWORD sampler_code = arg->dst & WINED3DSP_REGNUM_MASK;
+    DWORD sampler_code = dst->reg.idx;
     BOOL has_bumpmat = FALSE;
+    BOOL is_color;
     int i;
 
     for(i = 0; i < This->numbumpenvmatconsts; i++) {
-        if(This->bumpenvmatconst[i].const_num != -1 && This->bumpenvmatconst[i].texunit == sampler_code) {
+        if (This->bumpenvmatconst[i].const_num != WINED3D_CONST_NUM_UNUSED
+                && This->bumpenvmatconst[i].texunit == sampler_code)
+        {
             has_bumpmat = TRUE;
             break;
         }
     }
 
-    pshader_get_register_name(arg->shader, arg->dst, dst_name);
-    shader_arb_get_write_mask(arg, arg->dst, dst_wmask);
+    shader_arb_get_register_name(ins->ctx->shader, dst->reg.type,
+            dst->reg.idx, !!dst->reg.rel_addr, dst_name, &is_color);
+    shader_arb_get_write_mask(ins, dst, dst_wmask);
     strcat(dst_name, dst_wmask);
 
-    pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[0], 0, src_name[0]);
-    pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[1], 1, src_name[1]);
+    pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[0], 0, src_name[0]);
+    pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[1], 1, src_name[1]);
 
     if(has_bumpmat) {
         /* Sampling the perturbation map in Tsrc was done already, including the signedness correction if needed */
@@ -794,109 +850,136 @@ static void pshader_hw_bem(const SHADER_OPCODE_ARG *arg)
     }
 }
 
-static void pshader_hw_cnd(const SHADER_OPCODE_ARG *arg)
+static void pshader_hw_cnd(const struct wined3d_shader_instruction *ins)
 {
-    IWineD3DBaseShaderImpl* shader = (IWineD3DBaseShaderImpl*) arg->shader;
-    SHADER_BUFFER* buffer = arg->buffer;
+    const struct wined3d_shader_dst_param *dst = &ins->dst[0];
+    SHADER_BUFFER *buffer = ins->ctx->buffer;
     char dst_wmask[20];
     char dst_name[50];
     char src_name[3][50];
-    BOOL sat = (arg->dst & WINED3DSP_DSTMOD_MASK) & WINED3DSPDM_SATURATE;
-    DWORD shift = (arg->dst & WINED3DSP_DSTSHIFT_MASK) >> WINED3DSP_DSTSHIFT_SHIFT;
+    BOOL sat = dst->modifiers & WINED3DSPDM_SATURATE;
+    BOOL is_color;
+    DWORD shader_version = WINED3D_SHADER_VERSION(ins->ctx->reg_maps->shader_version.major,
+            ins->ctx->reg_maps->shader_version.minor);
 
     /* FIXME: support output modifiers */
 
     /* Handle output register */
-    pshader_get_register_name(arg->shader, arg->dst, dst_name);
-    shader_arb_get_write_mask(arg, arg->dst, dst_wmask);
+    shader_arb_get_register_name(ins->ctx->shader, dst->reg.type,
+            dst->reg.idx, !!dst->reg.rel_addr, dst_name, &is_color);
+    shader_arb_get_write_mask(ins, dst, dst_wmask);
 
     /* Generate input register names (with modifiers) */
-    pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[0], 0, src_name[0]);
-    pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[1], 1, src_name[1]);
-    pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[2], 2, src_name[2]);
+    pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[0], 0, src_name[0]);
+    pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[1], 1, src_name[1]);
+    pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[2], 2, src_name[2]);
 
     /* The coissue flag changes the semantic of the cnd instruction in <= 1.3 shaders */
-    if (shader->baseShader.hex_version <= WINED3DPS_VERSION(1, 3) &&
-        arg->opcode_token & WINED3DSI_COISSUE) {
+    if (shader_version <= WINED3D_SHADER_VERSION(1, 3) && ins->coissue)
+    {
         shader_addline(buffer, "MOV%s %s%s, %s;\n", sat ? "_SAT" : "", dst_name, dst_wmask, src_name[1]);
     } else {
         shader_addline(buffer, "ADD TMP, -%s, coefdiv.x;\n", src_name[0]);
         shader_addline(buffer, "CMP%s %s%s, TMP, %s, %s;\n",
                                 sat ? "_SAT" : "", dst_name, dst_wmask, src_name[1], src_name[2]);
     }
-    if (shift != 0)
-        pshader_gen_output_modifier_line(buffer, FALSE, dst_wmask, shift, dst_name);
 }
 
-static void pshader_hw_cmp(const SHADER_OPCODE_ARG *arg)
+static void pshader_hw_cmp(const struct wined3d_shader_instruction *ins)
 {
-    SHADER_BUFFER* buffer = arg->buffer;
+    const struct wined3d_shader_dst_param *dst = &ins->dst[0];
+    SHADER_BUFFER *buffer = ins->ctx->buffer;
     char dst_wmask[20];
     char dst_name[50];
     char src_name[3][50];
-    DWORD shift = (arg->dst & WINED3DSP_DSTSHIFT_MASK) >> WINED3DSP_DSTSHIFT_SHIFT;
-    BOOL sat = (arg->dst & WINED3DSP_DSTMOD_MASK) & WINED3DSPDM_SATURATE;
+    BOOL sat = dst->modifiers & WINED3DSPDM_SATURATE;
+    BOOL is_color;
 
     /* FIXME: support output modifiers */
 
     /* Handle output register */
-    pshader_get_register_name(arg->shader, arg->dst, dst_name);
-    shader_arb_get_write_mask(arg, arg->dst, dst_wmask);
+    shader_arb_get_register_name(ins->ctx->shader, dst->reg.type,
+            dst->reg.idx, !!dst->reg.rel_addr, dst_name, &is_color);
+    shader_arb_get_write_mask(ins, dst, dst_wmask);
 
     /* Generate input register names (with modifiers) */
-    pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[0], 0, src_name[0]);
-    pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[1], 1, src_name[1]);
-    pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[2], 2, src_name[2]);
+    pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[0], 0, src_name[0]);
+    pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[1], 1, src_name[1]);
+    pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[2], 2, src_name[2]);
 
     shader_addline(buffer, "CMP%s %s%s, %s, %s, %s;\n", sat ? "_SAT" : "", dst_name, dst_wmask,
                    src_name[0], src_name[2], src_name[1]);
-
-    if (shift != 0)
-        pshader_gen_output_modifier_line(buffer, FALSE, dst_wmask, shift, dst_name);
 }
 
 /** Process the WINED3DSIO_DP2ADD instruction in ARB.
  * dst = dot2(src0, src1) + src2 */
-static void pshader_hw_dp2add(const SHADER_OPCODE_ARG *arg)
+static void pshader_hw_dp2add(const struct wined3d_shader_instruction *ins)
 {
-    SHADER_BUFFER* buffer = arg->buffer;
+    const struct wined3d_shader_dst_param *dst = &ins->dst[0];
+    SHADER_BUFFER *buffer = ins->ctx->buffer;
     char dst_wmask[20];
     char dst_name[50];
     char src_name[3][50];
-    DWORD shift = (arg->dst & WINED3DSP_DSTSHIFT_MASK) >> WINED3DSP_DSTSHIFT_SHIFT;
-    BOOL sat = (arg->dst & WINED3DSP_DSTMOD_MASK) & WINED3DSPDM_SATURATE;
+    BOOL sat = dst->modifiers & WINED3DSPDM_SATURATE;
+    BOOL is_color;
 
-    pshader_get_register_name(arg->shader, arg->dst, dst_name);
-    shader_arb_get_write_mask(arg, arg->dst, dst_wmask);
+    shader_arb_get_register_name(ins->ctx->shader, dst->reg.type,
+            dst->reg.idx, !!dst->reg.rel_addr, dst_name, &is_color);
+    shader_arb_get_write_mask(ins, dst, dst_wmask);
 
-    pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[0], 0, src_name[0]);
-    pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[1], 1, src_name[1]);
-    pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[2], 2, src_name[2]);
+    pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[0], 0, src_name[0]);
+    pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[1], 1, src_name[1]);
+    pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[2], 2, src_name[2]);
 
     /* Emulate a DP2 with a DP3 and 0.0 */
     shader_addline(buffer, "MOV TMP, %s;\n", src_name[0]);
     shader_addline(buffer, "MOV TMP.z, 0.0;\n");
     shader_addline(buffer, "DP3 TMP2, TMP, %s;\n", src_name[1]);
     shader_addline(buffer, "ADD%s %s%s, TMP2, %s;\n", sat ? "_SAT" : "", dst_name, dst_wmask, src_name[2]);
-
-    if (shift != 0)
-        pshader_gen_output_modifier_line(buffer, FALSE, dst_wmask, shift, dst_name);
 }
 
 /* Map the opcode 1-to-1 to the GL code */
-static void shader_hw_map2gl(const SHADER_OPCODE_ARG *arg)
+static void shader_hw_map2gl(const struct wined3d_shader_instruction *ins)
 {
-    IWineD3DBaseShaderImpl *shader = (IWineD3DBaseShaderImpl*)arg->shader;
-    CONST SHADER_OPCODE* curOpcode = arg->opcode;
-    SHADER_BUFFER* buffer = arg->buffer;
-    DWORD dst = arg->dst;
-    const DWORD *src = arg->src;
+    SHADER_BUFFER *buffer = ins->ctx->buffer;
+    const char *instruction;
     char arguments[256];
     unsigned int i;
 
-    if (shader_is_pshader_version(shader->baseShader.hex_version))
+    switch (ins->handler_idx)
+    {
+        case WINED3DSIH_ABS: instruction = "ABS"; break;
+        case WINED3DSIH_ADD: instruction = "ADD"; break;
+        case WINED3DSIH_CRS: instruction = "XPD"; break;
+        case WINED3DSIH_DP3: instruction = "DP3"; break;
+        case WINED3DSIH_DP4: instruction = "DP4"; break;
+        case WINED3DSIH_DST: instruction = "DST"; break;
+        case WINED3DSIH_EXP: instruction = "EX2"; break;
+        case WINED3DSIH_EXPP: instruction = "EXP"; break;
+        case WINED3DSIH_FRC: instruction = "FRC"; break;
+        case WINED3DSIH_LIT: instruction = "LIT"; break;
+        case WINED3DSIH_LOG: instruction = "LG2"; break;
+        case WINED3DSIH_LOGP: instruction = "LOG"; break;
+        case WINED3DSIH_LRP: instruction = "LRP"; break;
+        case WINED3DSIH_MAD: instruction = "MAD"; break;
+        case WINED3DSIH_MAX: instruction = "MAX"; break;
+        case WINED3DSIH_MIN: instruction = "MIN"; break;
+        case WINED3DSIH_MOV: instruction = "MOV"; break;
+        case WINED3DSIH_MUL: instruction = "MUL"; break;
+        case WINED3DSIH_NOP: instruction = "NOP"; break;
+        case WINED3DSIH_POW: instruction = "POW"; break;
+        case WINED3DSIH_SGE: instruction = "SGE"; break;
+        case WINED3DSIH_SLT: instruction = "SLT"; break;
+        case WINED3DSIH_SUB: instruction = "SUB"; break;
+        default: instruction = "";
+            FIXME("Unhandled opcode %#x\n", ins->handler_idx);
+            break;
+    }
+
+    if (shader_is_pshader_version(ins->ctx->reg_maps->shader_version.type))
     {
         /* Output token related */
+        const struct wined3d_shader_dst_param *dst;
         char output_rname[256];
         char output_wmask[20];
         char operands[4][100];
@@ -904,89 +987,91 @@ static void shader_hw_map2gl(const SHADER_OPCODE_ARG *arg)
         BOOL centroid = FALSE;
         BOOL partialprecision = FALSE;
         const char *modifier;
+        BOOL is_color;
         DWORD shift;
 
-        if (!curOpcode->num_params)
+        if (!(ins->dst_count + ins->src_count))
         {
-            ERR("Opcode \"%s\" has no parameters\n", curOpcode->name);
+            ERR("Opcode \"%#x\" has no parameters\n", ins->handler_idx);
             return;
         }
+        dst = &ins->dst[0];
 
         /* Process modifiers */
-        if (dst & WINED3DSP_DSTMOD_MASK)
+        if (dst->modifiers)
         {
-            DWORD mask = dst & WINED3DSP_DSTMOD_MASK;
+            DWORD mask = dst->modifiers;
 
             saturate = mask & WINED3DSPDM_SATURATE;
             centroid = mask & WINED3DSPDM_MSAMPCENTROID;
             partialprecision = mask & WINED3DSPDM_PARTIALPRECISION;
             mask &= ~(WINED3DSPDM_MSAMPCENTROID | WINED3DSPDM_PARTIALPRECISION | WINED3DSPDM_SATURATE);
             if (mask)
-                FIXME("Unrecognized modifier(%#x)\n", mask >> WINED3DSP_DSTMOD_SHIFT);
+                FIXME("Unrecognized modifier(%#x)\n", mask);
 
             if (centroid)
-                FIXME("Unhandled modifier(%#x)\n", mask >> WINED3DSP_DSTMOD_SHIFT);
+                FIXME("Unhandled modifier(%#x)\n", mask);
         }
-        shift = (dst & WINED3DSP_DSTSHIFT_MASK) >> WINED3DSP_DSTSHIFT_SHIFT;
+        shift = dst->shift;
         modifier = (saturate && !shift) ? "_SAT" : "";
 
         /* Generate input register names (with modifiers) */
-        for (i = 1; i < curOpcode->num_params; ++i)
-            pshader_gen_input_modifier_line(arg->shader, buffer, src[i-1], i-1, operands[i]);
+        for (i = 0; i < ins->src_count; ++i)
+        {
+            pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[i], i, operands[i + 1]);
+        }
 
         /* Handle output register */
-        pshader_get_register_name(arg->shader, dst, output_rname);
+        shader_arb_get_register_name(ins->ctx->shader, dst->reg.type,
+                dst->reg.idx, !!dst->reg.rel_addr, output_rname, &is_color);
         strcpy(operands[0], output_rname);
-        shader_arb_get_write_mask(arg, dst, output_wmask);
+        shader_arb_get_write_mask(ins, dst, output_wmask);
         strcat(operands[0], output_wmask);
 
         arguments[0] = '\0';
         strcat(arguments, operands[0]);
-        for (i = 1; i < curOpcode->num_params; i++)
+        for (i = 0; i < ins->src_count; ++i)
         {
             strcat(arguments, ", ");
-            strcat(arguments, operands[i]);
+            strcat(arguments, operands[i + 1]);
         }
-        shader_addline(buffer, "%s%s %s;\n", curOpcode->glname, modifier, arguments);
-
-        /* A shift requires another line. */
-        if (shift) pshader_gen_output_modifier_line(buffer, saturate, output_wmask, shift, output_rname);
+        shader_addline(buffer, "%s%s %s;\n", instruction, modifier, arguments);
     } else {
-        /* Note that vshader_program_add_param() adds spaces. */
+        /* Note that shader_arb_add_*_param() adds spaces. */
 
         arguments[0] = '\0';
-        if (curOpcode->num_params > 0)
+        if (ins->dst_count)
         {
-            vshader_program_add_param(arg, dst, FALSE, arguments);
-            for (i = 1; i < curOpcode->num_params; ++i)
+            shader_arb_add_dst_param(ins, &ins->dst[0], arguments);
+            for (i = 0; i < ins->src_count; ++i)
             {
                 strcat(arguments, ",");
-                vshader_program_add_param(arg, src[i-1], TRUE, arguments);
+                shader_arb_add_src_param(ins, &ins->src[i], arguments);
             }
         }
-        shader_addline(buffer, "%s%s;\n", curOpcode->glname, arguments);
+        shader_addline(buffer, "%s%s;\n", instruction, arguments);
     }
 }
 
-static void shader_hw_mov(const SHADER_OPCODE_ARG *arg)
+static void shader_hw_mov(const struct wined3d_shader_instruction *ins)
 {
-    IWineD3DBaseShaderImpl *shader = (IWineD3DBaseShaderImpl*)arg->shader;
+    IWineD3DBaseShaderImpl *shader = (IWineD3DBaseShaderImpl *)ins->ctx->shader;
 
-    if ((WINED3DSHADER_VERSION_MAJOR(shader->baseShader.hex_version) == 1
-            && !shader_is_pshader_version(shader->baseShader.hex_version)
-            && shader_get_regtype(arg->dst) == WINED3DSPR_ADDR)
-            || arg->opcode->opcode == WINED3DSIO_MOVA)
+    if ((ins->ctx->reg_maps->shader_version.major == 1
+            && !shader_is_pshader_version(ins->ctx->reg_maps->shader_version.type)
+            && ins->dst[0].reg.type == WINED3DSPR_ADDR)
+            || ins->handler_idx == WINED3DSIH_MOVA)
     {
-        SHADER_BUFFER *buffer = arg->buffer;
+        SHADER_BUFFER *buffer = ins->ctx->buffer;
         char src0_param[256];
 
-        if (arg->opcode->opcode == WINED3DSIO_MOVA)
+        if (ins->handler_idx == WINED3DSIH_MOVA)
             FIXME("mova should round\n");
 
         src0_param[0] = '\0';
         if (((IWineD3DVertexShaderImpl *)shader)->rel_offset)
         {
-            vshader_program_add_param(arg, arg->src[0], TRUE, src0_param);
+            shader_arb_add_src_param(ins, &ins->src[0], src0_param);
             shader_addline(buffer, "ADD TMP.x, %s, helper_const.z;\n", src0_param);
             shader_addline(buffer, "ARL A0.x, TMP.x;\n");
         }
@@ -994,40 +1079,34 @@ static void shader_hw_mov(const SHADER_OPCODE_ARG *arg)
         {
             /* Apple's ARB_vertex_program implementation does not accept an ARL source argument
              * with more than one component. Thus replicate the first source argument over all
-             * 4 components. For example, .xyzw -> .x (or better: .xxxx), .zwxy -> .z, etc)
-             */
-            DWORD parm = arg->src[0] & ~(WINED3DVS_SWIZZLE_MASK);
-            if((arg->src[0] & WINED3DVS_X_W) == WINED3DVS_X_W)
-                parm |= WINED3DVS_X_W | WINED3DVS_Y_W | WINED3DVS_Z_W | WINED3DVS_W_W;
-            else if((arg->src[0] & WINED3DVS_X_Z) == WINED3DVS_X_Z)
-                parm |= WINED3DVS_X_Z | WINED3DVS_Y_Z | WINED3DVS_Z_Z | WINED3DVS_W_Z;
-            else if((arg->src[0] & WINED3DVS_X_Y) == WINED3DVS_X_Y)
-                parm |= WINED3DVS_X_Y | WINED3DVS_Y_Y | WINED3DVS_Z_Y | WINED3DVS_W_Y;
-            else if((arg->src[0] & WINED3DVS_X_X) == WINED3DVS_X_X)
-                parm |= WINED3DVS_X_X | WINED3DVS_Y_X | WINED3DVS_Z_X | WINED3DVS_W_X;
-            vshader_program_add_param(arg, parm, TRUE, src0_param);
+             * 4 components. For example, .xyzw -> .x (or better: .xxxx), .zwxy -> .z, etc) */
+            struct wined3d_shader_src_param tmp_src = ins->src[0];
+            tmp_src.swizzle = (tmp_src.swizzle & 0x3) * 0x55;
+            shader_arb_add_src_param(ins, &tmp_src, src0_param);
             shader_addline(buffer, "ARL A0.x, %s;\n", src0_param);
         }
     }
     else
     {
-        shader_hw_map2gl(arg);
+        shader_hw_map2gl(ins);
     }
 }
 
-static void pshader_hw_texkill(const SHADER_OPCODE_ARG *arg)
+static void pshader_hw_texkill(const struct wined3d_shader_instruction *ins)
 {
-    IWineD3DPixelShaderImpl* This = (IWineD3DPixelShaderImpl*) arg->shader;
-    DWORD hex_version = This->baseShader.hex_version;
-    SHADER_BUFFER* buffer = arg->buffer;
+    const struct wined3d_shader_dst_param *dst = &ins->dst[0];
+    SHADER_BUFFER *buffer = ins->ctx->buffer;
     char reg_dest[40];
+    BOOL is_color;
 
     /* No swizzles are allowed in d3d's texkill. PS 1.x ignores the 4th component as documented,
      * but >= 2.0 honors it(undocumented, but tested by the d3d9 testsuit)
      */
-    pshader_get_register_name(arg->shader, arg->dst, reg_dest);
+    shader_arb_get_register_name(ins->ctx->shader, dst->reg.type,
+            dst->reg.idx, !!dst->reg.rel_addr, reg_dest, &is_color);
 
-    if(hex_version >= WINED3DPS_VERSION(2,0)) {
+    if (ins->ctx->reg_maps->shader_version.major >= 2)
+    {
         /* The arb backend doesn't claim ps 2.0 support, but try to eat what the app feeds to us */
         shader_addline(buffer, "KIL %s;\n", reg_dest);
     } else {
@@ -1040,46 +1119,46 @@ static void pshader_hw_texkill(const SHADER_OPCODE_ARG *arg)
     }
 }
 
-static void pshader_hw_tex(const SHADER_OPCODE_ARG *arg)
+static void pshader_hw_tex(const struct wined3d_shader_instruction *ins)
 {
-    IWineD3DPixelShaderImpl* This = (IWineD3DPixelShaderImpl*) arg->shader;
+    IWineD3DPixelShaderImpl *This = (IWineD3DPixelShaderImpl *)ins->ctx->shader;
     IWineD3DDeviceImpl* deviceImpl = (IWineD3DDeviceImpl*) This->baseShader.device;
-
-    DWORD dst = arg->dst;
-    const DWORD *src = arg->src;
-    SHADER_BUFFER* buffer = arg->buffer;
-    DWORD hex_version = This->baseShader.hex_version;
+    const struct wined3d_shader_dst_param *dst = &ins->dst[0];
+    BOOL is_color;
+    SHADER_BUFFER *buffer = ins->ctx->buffer;
+    DWORD shader_version = WINED3D_SHADER_VERSION(ins->ctx->reg_maps->shader_version.major,
+            ins->ctx->reg_maps->shader_version.minor);
     BOOL projected = FALSE, bias = FALSE;
 
     char reg_dest[40];
     char reg_coord[40];
-    DWORD reg_dest_code;
     DWORD reg_sampler_code;
 
     /* All versions have a destination register */
-    reg_dest_code = dst & WINED3DSP_REGNUM_MASK;
-    pshader_get_register_name(arg->shader, dst, reg_dest);
+    shader_arb_get_register_name(ins->ctx->shader, dst->reg.type,
+            dst->reg.idx, !!dst->reg.rel_addr, reg_dest, &is_color);
 
     /* 1.0-1.3: Use destination register as coordinate source.
        1.4+: Use provided coordinate source register. */
-   if (hex_version < WINED3DPS_VERSION(1,4))
+   if (shader_version < WINED3D_SHADER_VERSION(1,4))
       strcpy(reg_coord, reg_dest);
    else
-      pshader_gen_input_modifier_line(arg->shader, buffer, src[0], 0, reg_coord);
+      pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[0], 0, reg_coord);
 
   /* 1.0-1.4: Use destination register number as texture code.
      2.0+: Use provided sampler number as texure code. */
-  if (hex_version < WINED3DPS_VERSION(2,0))
-     reg_sampler_code = reg_dest_code;
+  if (shader_version < WINED3D_SHADER_VERSION(2,0))
+     reg_sampler_code = dst->reg.idx;
   else
-     reg_sampler_code = src[1] & WINED3DSP_REGNUM_MASK;
+     reg_sampler_code = ins->src[1].reg.idx;
 
   /* projection flag:
    * 1.1, 1.2, 1.3: Use WINED3DTSS_TEXTURETRANSFORMFLAGS
    * 1.4: Use WINED3DSPSM_DZ or WINED3DSPSM_DW on src[0]
    * 2.0+: Use WINED3DSI_TEXLD_PROJECT on the opcode
    */
-  if(hex_version < WINED3DPS_VERSION(1,4)) {
+  if (shader_version < WINED3D_SHADER_VERSION(1,4))
+  {
       DWORD flags = 0;
       if(reg_sampler_code < MAX_TEXTURES) {
         flags = deviceImpl->stateBlock->textureState[reg_sampler_code][WINED3DTSS_TEXTURETRANSFORMFLAGS];
@@ -1087,146 +1166,152 @@ static void pshader_hw_tex(const SHADER_OPCODE_ARG *arg)
       if (flags & WINED3DTTFF_PROJECTED) {
           projected = TRUE;
       }
-  } else if(hex_version < WINED3DPS_VERSION(2,0)) {
-      DWORD src_mod = arg->src[0] & WINED3DSP_SRCMOD_MASK;
+  }
+  else if (shader_version < WINED3D_SHADER_VERSION(2,0))
+  {
+      DWORD src_mod = ins->src[0].modifiers;
       if (src_mod == WINED3DSPSM_DZ) {
           projected = TRUE;
       } else if(src_mod == WINED3DSPSM_DW) {
           projected = TRUE;
       }
   } else {
-      if(arg->opcode_token & WINED3DSI_TEXLD_PROJECT) {
-          projected = TRUE;
-      }
-      if(arg->opcode_token & WINED3DSI_TEXLD_BIAS) {
-          bias = TRUE;
-      }
+      if (ins->flags & WINED3DSI_TEXLD_PROJECT) projected = TRUE;
+      if (ins->flags & WINED3DSI_TEXLD_BIAS) bias = TRUE;
   }
-  shader_hw_sample(arg, reg_sampler_code, reg_dest, reg_coord, projected, bias);
+  shader_hw_sample(ins, reg_sampler_code, reg_dest, reg_coord, projected, bias);
 }
 
-static void pshader_hw_texcoord(const SHADER_OPCODE_ARG *arg)
+static void pshader_hw_texcoord(const struct wined3d_shader_instruction *ins)
 {
-    IWineD3DPixelShaderImpl* This = (IWineD3DPixelShaderImpl*) arg->shader;
-    DWORD dst = arg->dst;
-    SHADER_BUFFER* buffer = arg->buffer;
-    DWORD hex_version = This->baseShader.hex_version;
+    const struct wined3d_shader_dst_param *dst = &ins->dst[0];
+    SHADER_BUFFER *buffer = ins->ctx->buffer;
+    DWORD shader_version = WINED3D_SHADER_VERSION(ins->ctx->reg_maps->shader_version.major,
+            ins->ctx->reg_maps->shader_version.minor);
 
     char tmp[20];
-    shader_arb_get_write_mask(arg, dst, tmp);
-    if (hex_version != WINED3DPS_VERSION(1,4)) {
-        DWORD reg = dst & WINED3DSP_REGNUM_MASK;
+    shader_arb_get_write_mask(ins, dst, tmp);
+    if (shader_version != WINED3D_SHADER_VERSION(1,4))
+    {
+        DWORD reg = dst->reg.idx;
         shader_addline(buffer, "MOV_SAT T%u%s, fragment.texcoord[%u];\n", reg, tmp, reg);
     } else {
-        DWORD reg1 = dst & WINED3DSP_REGNUM_MASK;
         char reg_src[40];
 
-        pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[0], 0, reg_src);
-        shader_addline(buffer, "MOV R%u%s, %s;\n", reg1, tmp, reg_src);
+        pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[0], 0, reg_src);
+        shader_addline(buffer, "MOV R%u%s, %s;\n", dst->reg.idx, tmp, reg_src);
    }
 }
 
-static void pshader_hw_texreg2ar(const SHADER_OPCODE_ARG *arg)
+static void pshader_hw_texreg2ar(const struct wined3d_shader_instruction *ins)
 {
-     SHADER_BUFFER* buffer = arg->buffer;
-     IWineD3DPixelShaderImpl* This = (IWineD3DPixelShaderImpl*) arg->shader;
+     SHADER_BUFFER *buffer = ins->ctx->buffer;
+     IWineD3DPixelShaderImpl *This = (IWineD3DPixelShaderImpl *)ins->ctx->shader;
      IWineD3DDeviceImpl* deviceImpl = (IWineD3DDeviceImpl*) This->baseShader.device;
      DWORD flags;
 
-     DWORD reg1 = arg->dst & WINED3DSP_REGNUM_MASK;
+     DWORD reg1 = ins->dst[0].reg.idx;
      char dst_str[8];
      char src_str[50];
 
      sprintf(dst_str, "T%u", reg1);
-     pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[0], 0, src_str);
-     shader_addline(buffer, "MOV TMP.r, %s.a;\n", src_str);
-     shader_addline(buffer, "MOV TMP.g, %s.r;\n", src_str);
+     pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[0], 0, src_str);
+     shader_addline(buffer, "MOV TMP.x, %s.w;\n", src_str);
+     shader_addline(buffer, "MOV TMP.y, %s.x;\n", src_str);
      flags = reg1 < MAX_TEXTURES ? deviceImpl->stateBlock->textureState[reg1][WINED3DTSS_TEXTURETRANSFORMFLAGS] : 0;
-     shader_hw_sample(arg, reg1, dst_str, "TMP", flags & WINED3DTTFF_PROJECTED, FALSE);
+     shader_hw_sample(ins, reg1, dst_str, "TMP", flags & WINED3DTTFF_PROJECTED, FALSE);
 }
 
-static void pshader_hw_texreg2gb(const SHADER_OPCODE_ARG *arg)
+static void pshader_hw_texreg2gb(const struct wined3d_shader_instruction *ins)
 {
-     SHADER_BUFFER* buffer = arg->buffer;
+     SHADER_BUFFER *buffer = ins->ctx->buffer;
 
-     DWORD reg1 = arg->dst & WINED3DSP_REGNUM_MASK;
+     DWORD reg1 = ins->dst[0].reg.idx;
      char dst_str[8];
      char src_str[50];
 
      sprintf(dst_str, "T%u", reg1);
-     pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[0], 0, src_str);
-     shader_addline(buffer, "MOV TMP.r, %s.g;\n", src_str);
-     shader_addline(buffer, "MOV TMP.g, %s.b;\n", src_str);
-     shader_hw_sample(arg, reg1, dst_str, "TMP", FALSE, FALSE);
+     pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[0], 0, src_str);
+     shader_addline(buffer, "MOV TMP.x, %s.y;\n", src_str);
+     shader_addline(buffer, "MOV TMP.y, %s.z;\n", src_str);
+     shader_hw_sample(ins, reg1, dst_str, "TMP", FALSE, FALSE);
 }
 
-static void pshader_hw_texreg2rgb(const SHADER_OPCODE_ARG *arg)
+static void pshader_hw_texreg2rgb(const struct wined3d_shader_instruction *ins)
 {
-    SHADER_BUFFER* buffer = arg->buffer;
-    DWORD reg1 = arg->dst & WINED3DSP_REGNUM_MASK;
+    SHADER_BUFFER *buffer = ins->ctx->buffer;
+    DWORD reg1 = ins->dst[0].reg.idx;
     char dst_str[8];
     char src_str[50];
 
     sprintf(dst_str, "T%u", reg1);
-    pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[0], 0, src_str);
-    shader_hw_sample(arg, reg1, dst_str, src_str, FALSE, FALSE);
+    pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[0], 0, src_str);
+    shader_hw_sample(ins, reg1, dst_str, src_str, FALSE, FALSE);
 }
 
-static void pshader_hw_texbem(const SHADER_OPCODE_ARG *arg)
+static void pshader_hw_texbem(const struct wined3d_shader_instruction *ins)
 {
-    IWineD3DPixelShaderImpl* This = (IWineD3DPixelShaderImpl*) arg->shader;
+    IWineD3DPixelShaderImpl *This = (IWineD3DPixelShaderImpl *)ins->ctx->shader;
+    const struct wined3d_shader_dst_param *dst = &ins->dst[0];
     BOOL has_bumpmat = FALSE;
     BOOL has_luminance = FALSE;
+    BOOL is_color;
     int i;
 
-    DWORD dst = arg->dst;
-    DWORD src = arg->src[0] & WINED3DSP_REGNUM_MASK;
-    SHADER_BUFFER* buffer = arg->buffer;
+    SHADER_BUFFER *buffer = ins->ctx->buffer;
 
     char reg_coord[40];
     DWORD reg_dest_code;
 
     /* All versions have a destination register */
-    reg_dest_code = dst & WINED3DSP_REGNUM_MASK;
+    reg_dest_code = dst->reg.idx;
     /* Can directly use the name because texbem is only valid for <= 1.3 shaders */
-    pshader_get_register_name(arg->shader, dst, reg_coord);
+    shader_arb_get_register_name(ins->ctx->shader, dst->reg.type,
+            dst->reg.idx, !!dst->reg.rel_addr, reg_coord, &is_color);
 
     for(i = 0; i < This->numbumpenvmatconsts; i++) {
-        if(This->bumpenvmatconst[i].const_num != -1 && reg_dest_code == This->bumpenvmatconst[i].texunit) {
+        if (This->bumpenvmatconst[i].const_num != WINED3D_CONST_NUM_UNUSED
+                && reg_dest_code == This->bumpenvmatconst[i].texunit)
+        {
             has_bumpmat = TRUE;
             break;
         }
     }
     for(i = 0; i < This->numbumpenvmatconsts; i++) {
-        if(This->luminanceconst[i].const_num != -1 && reg_dest_code == This->luminanceconst[i].texunit) {
+        if (This->luminanceconst[i].const_num != WINED3D_CONST_NUM_UNUSED
+                && reg_dest_code == This->luminanceconst[i].texunit)
+        {
             has_luminance = TRUE;
             break;
         }
     }
 
     if(has_bumpmat) {
+        DWORD src = ins->src[0].reg.idx;
+
         /* Sampling the perturbation map in Tsrc was done already, including the signedness correction if needed */
 
         shader_addline(buffer, "SWZ TMP2, bumpenvmat%d, x, z, 0, 0;\n", reg_dest_code);
-        shader_addline(buffer, "DP3 TMP.r, TMP2, T%u;\n", src);
+        shader_addline(buffer, "DP3 TMP.x, TMP2, T%u;\n", src);
         shader_addline(buffer, "SWZ TMP2, bumpenvmat%d, y, w, 0, 0;\n", reg_dest_code);
-        shader_addline(buffer, "DP3 TMP.g, TMP2, T%u;\n", src);
+        shader_addline(buffer, "DP3 TMP.y, TMP2, T%u;\n", src);
 
         /* with projective textures, texbem only divides the static texture coord, not the displacement,
          * so we can't let the GL handle this.
          */
         if (((IWineD3DDeviceImpl*) This->baseShader.device)->stateBlock->textureState[reg_dest_code][WINED3DTSS_TEXTURETRANSFORMFLAGS]
               & WINED3DTTFF_PROJECTED) {
-            shader_addline(buffer, "RCP TMP2.a, %s.a;\n", reg_coord);
-            shader_addline(buffer, "MUL TMP2.rg, %s, TMP2.a;\n", reg_coord);
-            shader_addline(buffer, "ADD TMP.rg, TMP, TMP2;\n");
+            shader_addline(buffer, "RCP TMP2.w, %s.w;\n", reg_coord);
+            shader_addline(buffer, "MUL TMP2.xy, %s, TMP2.w;\n", reg_coord);
+            shader_addline(buffer, "ADD TMP.xy, TMP, TMP2;\n");
         } else {
-            shader_addline(buffer, "ADD TMP.rg, TMP, %s;\n", reg_coord);
+            shader_addline(buffer, "ADD TMP.xy, TMP, %s;\n", reg_coord);
         }
 
-        shader_hw_sample(arg, reg_dest_code, reg_coord, "TMP", FALSE, FALSE);
+        shader_hw_sample(ins, reg_dest_code, reg_coord, "TMP", FALSE, FALSE);
 
-        if(arg->opcode->opcode == WINED3DSIO_TEXBEML && has_luminance) {
+        if (ins->handler_idx == WINED3DSIH_TEXBEML && has_luminance)
+        {
             shader_addline(buffer, "MAD TMP, T%u.z, luminance%d.x, luminance%d.y;\n",
                            src, reg_dest_code, reg_dest_code);
             shader_addline(buffer, "MUL %s, %s, TMP;\n", reg_coord, reg_coord);
@@ -1240,83 +1325,83 @@ static void pshader_hw_texbem(const SHADER_OPCODE_ARG *arg)
             tf = 0;
         }
         /* Without a bump matrix loaded, just sample with the unmodified coordinates */
-        shader_hw_sample(arg, reg_dest_code, reg_coord, reg_coord, tf & WINED3DTTFF_PROJECTED, FALSE);
+        shader_hw_sample(ins, reg_dest_code, reg_coord, reg_coord, tf & WINED3DTTFF_PROJECTED, FALSE);
     }
 }
 
-static void pshader_hw_texm3x2pad(const SHADER_OPCODE_ARG *arg)
+static void pshader_hw_texm3x2pad(const struct wined3d_shader_instruction *ins)
 {
-    DWORD reg = arg->dst & WINED3DSP_REGNUM_MASK;
-    SHADER_BUFFER* buffer = arg->buffer;
+    DWORD reg = ins->dst[0].reg.idx;
+    SHADER_BUFFER *buffer = ins->ctx->buffer;
     char src0_name[50];
 
-    pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[0], 0, src0_name);
+    pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[0], 0, src0_name);
     shader_addline(buffer, "DP3 TMP.x, T%u, %s;\n", reg, src0_name);
 }
 
-static void pshader_hw_texm3x2tex(const SHADER_OPCODE_ARG *arg)
+static void pshader_hw_texm3x2tex(const struct wined3d_shader_instruction *ins)
 {
-    IWineD3DPixelShaderImpl* This = (IWineD3DPixelShaderImpl*) arg->shader;
+    IWineD3DPixelShaderImpl *This = (IWineD3DPixelShaderImpl *)ins->ctx->shader;
     IWineD3DDeviceImpl* deviceImpl = (IWineD3DDeviceImpl*) This->baseShader.device;
     DWORD flags;
-    DWORD reg = arg->dst & WINED3DSP_REGNUM_MASK;
-    SHADER_BUFFER* buffer = arg->buffer;
+    DWORD reg = ins->dst[0].reg.idx;
+    SHADER_BUFFER *buffer = ins->ctx->buffer;
     char dst_str[8];
     char src0_name[50];
 
     sprintf(dst_str, "T%u", reg);
-    pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[0], 0, src0_name);
+    pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[0], 0, src0_name);
     shader_addline(buffer, "DP3 TMP.y, T%u, %s;\n", reg, src0_name);
     flags = reg < MAX_TEXTURES ? deviceImpl->stateBlock->textureState[reg][WINED3DTSS_TEXTURETRANSFORMFLAGS] : 0;
-    shader_hw_sample(arg, reg, dst_str, "TMP", flags & WINED3DTTFF_PROJECTED, FALSE);
+    shader_hw_sample(ins, reg, dst_str, "TMP", flags & WINED3DTTFF_PROJECTED, FALSE);
 }
 
-static void pshader_hw_texm3x3pad(const SHADER_OPCODE_ARG *arg)
+static void pshader_hw_texm3x3pad(const struct wined3d_shader_instruction *ins)
 {
-    IWineD3DPixelShaderImpl* This = (IWineD3DPixelShaderImpl*) arg->shader;
-    DWORD reg = arg->dst & WINED3DSP_REGNUM_MASK;
-    SHADER_BUFFER* buffer = arg->buffer;
+    IWineD3DPixelShaderImpl *This = (IWineD3DPixelShaderImpl *)ins->ctx->shader;
+    DWORD reg = ins->dst[0].reg.idx;
+    SHADER_BUFFER *buffer = ins->ctx->buffer;
     SHADER_PARSE_STATE* current_state = &This->baseShader.parse_state;
     char src0_name[50];
 
-    pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[0], 0, src0_name);
+    pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[0], 0, src0_name);
     shader_addline(buffer, "DP3 TMP.%c, T%u, %s;\n", 'x' + current_state->current_row, reg, src0_name);
     current_state->texcoord_w[current_state->current_row++] = reg;
 }
 
-static void pshader_hw_texm3x3tex(const SHADER_OPCODE_ARG *arg)
+static void pshader_hw_texm3x3tex(const struct wined3d_shader_instruction *ins)
 {
-    IWineD3DPixelShaderImpl* This = (IWineD3DPixelShaderImpl*) arg->shader;
+    IWineD3DPixelShaderImpl *This = (IWineD3DPixelShaderImpl *)ins->ctx->shader;
     IWineD3DDeviceImpl* deviceImpl = (IWineD3DDeviceImpl*) This->baseShader.device;
     DWORD flags;
-    DWORD reg = arg->dst & WINED3DSP_REGNUM_MASK;
-    SHADER_BUFFER* buffer = arg->buffer;
+    DWORD reg = ins->dst[0].reg.idx;
+    SHADER_BUFFER *buffer = ins->ctx->buffer;
     SHADER_PARSE_STATE* current_state = &This->baseShader.parse_state;
     char dst_str[8];
     char src0_name[50];
 
-    pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[0], 0, src0_name);
+    pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[0], 0, src0_name);
     shader_addline(buffer, "DP3 TMP.z, T%u, %s;\n", reg, src0_name);
 
     /* Sample the texture using the calculated coordinates */
     sprintf(dst_str, "T%u", reg);
     flags = reg < MAX_TEXTURES ? deviceImpl->stateBlock->textureState[reg][WINED3DTSS_TEXTURETRANSFORMFLAGS] : 0;
-    shader_hw_sample(arg, reg, dst_str, "TMP", flags & WINED3DTTFF_PROJECTED, FALSE);
+    shader_hw_sample(ins, reg, dst_str, "TMP", flags & WINED3DTTFF_PROJECTED, FALSE);
     current_state->current_row = 0;
 }
 
-static void pshader_hw_texm3x3vspec(const SHADER_OPCODE_ARG *arg)
+static void pshader_hw_texm3x3vspec(const struct wined3d_shader_instruction *ins)
 {
-    IWineD3DPixelShaderImpl* This = (IWineD3DPixelShaderImpl*) arg->shader;
+    IWineD3DPixelShaderImpl *This = (IWineD3DPixelShaderImpl *)ins->ctx->shader;
     IWineD3DDeviceImpl* deviceImpl = (IWineD3DDeviceImpl*) This->baseShader.device;
     DWORD flags;
-    DWORD reg = arg->dst & WINED3DSP_REGNUM_MASK;
-    SHADER_BUFFER* buffer = arg->buffer;
+    DWORD reg = ins->dst[0].reg.idx;
+    SHADER_BUFFER *buffer = ins->ctx->buffer;
     SHADER_PARSE_STATE* current_state = &This->baseShader.parse_state;
     char dst_str[8];
     char src0_name[50];
 
-    pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[0], 0, src0_name);
+    pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[0], 0, src0_name);
     shader_addline(buffer, "DP3 TMP.z, T%u, %s;\n", reg, src0_name);
 
     /* Construct the eye-ray vector from w coordinates */
@@ -1337,23 +1422,24 @@ static void pshader_hw_texm3x3vspec(const SHADER_OPCODE_ARG *arg)
     /* Sample the texture using the calculated coordinates */
     sprintf(dst_str, "T%u", reg);
     flags = reg < MAX_TEXTURES ? deviceImpl->stateBlock->textureState[reg][WINED3DTSS_TEXTURETRANSFORMFLAGS] : 0;
-    shader_hw_sample(arg, reg, dst_str, "TMP", flags & WINED3DTTFF_PROJECTED, FALSE);
+    shader_hw_sample(ins, reg, dst_str, "TMP", flags & WINED3DTTFF_PROJECTED, FALSE);
     current_state->current_row = 0;
 }
 
-static void pshader_hw_texm3x3spec(const SHADER_OPCODE_ARG *arg)
+static void pshader_hw_texm3x3spec(const struct wined3d_shader_instruction *ins)
 {
-    IWineD3DPixelShaderImpl* This = (IWineD3DPixelShaderImpl*) arg->shader;
+    IWineD3DPixelShaderImpl *This = (IWineD3DPixelShaderImpl *)ins->ctx->shader;
     IWineD3DDeviceImpl* deviceImpl = (IWineD3DDeviceImpl*) This->baseShader.device;
     DWORD flags;
-    DWORD reg = arg->dst & WINED3DSP_REGNUM_MASK;
-    DWORD reg3 = arg->src[1] & WINED3DSP_REGNUM_MASK;
+    DWORD reg = ins->dst[0].reg.idx;
     SHADER_PARSE_STATE* current_state = &This->baseShader.parse_state;
-    SHADER_BUFFER* buffer = arg->buffer;
+    SHADER_BUFFER *buffer = ins->ctx->buffer;
     char dst_str[8];
     char src0_name[50];
+    char src1_name[50];
 
-    pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[0], 0, src0_name);
+    pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[0], 0, src0_name);
+    pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[1], 1, src1_name);
     shader_addline(buffer, "DP3 TMP.z, T%u, %s;\n", reg, src0_name);
 
     /* Calculate reflection vector.
@@ -1364,100 +1450,107 @@ static void pshader_hw_texm3x3spec(const SHADER_OPCODE_ARG *arg)
      *
      * Which normalizes the normal vector
      */
-    shader_addline(buffer, "DP3 TMP.w, TMP, C[%u];\n", reg3);
+    shader_addline(buffer, "DP3 TMP.w, TMP, %s;\n", src1_name);
     shader_addline(buffer, "DP3 TMP2.w, TMP, TMP;\n");
     shader_addline(buffer, "RCP TMP2.w, TMP2.w;\n");
     shader_addline(buffer, "MUL TMP.w, TMP.w, TMP2.w;\n");
     shader_addline(buffer, "MUL TMP, TMP.w, TMP;\n");
-    shader_addline(buffer, "MAD TMP, coefmul.x, TMP, -C[%u];\n", reg3);
+    shader_addline(buffer, "MAD TMP, coefmul.x, TMP, -%s;\n", src1_name);
 
     /* Sample the texture using the calculated coordinates */
     sprintf(dst_str, "T%u", reg);
     flags = reg < MAX_TEXTURES ? deviceImpl->stateBlock->textureState[reg][WINED3DTSS_TEXTURETRANSFORMFLAGS] : 0;
-    shader_hw_sample(arg, reg, dst_str, "TMP", flags & WINED3DTTFF_PROJECTED, FALSE);
+    shader_hw_sample(ins, reg, dst_str, "TMP", flags & WINED3DTTFF_PROJECTED, FALSE);
     current_state->current_row = 0;
 }
 
-static void pshader_hw_texdepth(const SHADER_OPCODE_ARG *arg)
+static void pshader_hw_texdepth(const struct wined3d_shader_instruction *ins)
 {
-    SHADER_BUFFER* buffer = arg->buffer;
+    const struct wined3d_shader_dst_param *dst = &ins->dst[0];
+    SHADER_BUFFER *buffer = ins->ctx->buffer;
     char dst_name[50];
+    BOOL is_color;
 
     /* texdepth has an implicit destination, the fragment depth value. It's only parameter,
      * which is essentially an input, is the destination register because it is the first
      * parameter. According to the msdn, this must be register r5, but let's keep it more flexible
      * here
      */
-    pshader_get_register_name(arg->shader, arg->dst, dst_name);
+    shader_arb_get_register_name(ins->ctx->shader, dst->reg.type,
+            dst->reg.idx, !!dst->reg.rel_addr, dst_name, &is_color);
 
     /* According to the msdn, the source register(must be r5) is unusable after
      * the texdepth instruction, so we're free to modify it
      */
-    shader_addline(buffer, "MIN %s.g, %s.g, one.g;\n", dst_name, dst_name);
+    shader_addline(buffer, "MIN %s.y, %s.y, one.y;\n", dst_name, dst_name);
 
     /* How to deal with the special case dst_name.g == 0? if r != 0, then
      * the r * (1 / 0) will give infinity, which is clamped to 1.0, the correct
      * result. But if r = 0.0, then 0 * inf = 0, which is incorrect.
      */
-    shader_addline(buffer, "RCP %s.g, %s.g;\n", dst_name, dst_name);
-    shader_addline(buffer, "MUL TMP.x, %s.r, %s.g;\n", dst_name, dst_name);
-    shader_addline(buffer, "MIN TMP.x, TMP.x, one.r;\n");
+    shader_addline(buffer, "RCP %s.y, %s.y;\n", dst_name, dst_name);
+    shader_addline(buffer, "MUL TMP.x, %s.x, %s.y;\n", dst_name, dst_name);
+    shader_addline(buffer, "MIN TMP.x, TMP.x, one.x;\n");
     shader_addline(buffer, "MAX result.depth, TMP.x, 0.0;\n");
 }
 
 /** Process the WINED3DSIO_TEXDP3TEX instruction in ARB:
  * Take a 3-component dot product of the TexCoord[dstreg] and src,
  * then perform a 1D texture lookup from stage dstregnum, place into dst. */
-static void pshader_hw_texdp3tex(const SHADER_OPCODE_ARG *arg)
+static void pshader_hw_texdp3tex(const struct wined3d_shader_instruction *ins)
 {
-    SHADER_BUFFER* buffer = arg->buffer;
-    DWORD sampler_idx = arg->dst & WINED3DSP_REGNUM_MASK;
+    SHADER_BUFFER *buffer = ins->ctx->buffer;
+    DWORD sampler_idx = ins->dst[0].reg.idx;
     char src0[50];
     char dst_str[8];
 
-    pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[0], 0, src0);
+    pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[0], 0, src0);
     shader_addline(buffer, "MOV TMP, 0.0;\n");
     shader_addline(buffer, "DP3 TMP.x, T%u, %s;\n", sampler_idx, src0);
 
     sprintf(dst_str, "T%u", sampler_idx);
-    shader_hw_sample(arg, sampler_idx, dst_str, "TMP", FALSE /* Only one coord, can't be projected */, FALSE);
+    shader_hw_sample(ins, sampler_idx, dst_str, "TMP", FALSE /* Only one coord, can't be projected */, FALSE);
 }
 
 /** Process the WINED3DSIO_TEXDP3 instruction in ARB:
  * Take a 3-component dot product of the TexCoord[dstreg] and src. */
-static void pshader_hw_texdp3(const SHADER_OPCODE_ARG *arg)
+static void pshader_hw_texdp3(const struct wined3d_shader_instruction *ins)
 {
+    const struct wined3d_shader_dst_param *dst = &ins->dst[0];
     char src0[50];
     char dst_str[50];
     char dst_mask[6];
-    DWORD dstreg = arg->dst & WINED3DSP_REGNUM_MASK;
-    SHADER_BUFFER* buffer = arg->buffer;
+    SHADER_BUFFER *buffer = ins->ctx->buffer;
+    BOOL is_color;
 
     /* Handle output register */
-    pshader_get_register_name(arg->shader, arg->dst, dst_str);
-    shader_arb_get_write_mask(arg, arg->dst, dst_mask);
+    shader_arb_get_register_name(ins->ctx->shader, dst->reg.type,
+            dst->reg.idx, !!dst->reg.rel_addr, dst_str, &is_color);
+    shader_arb_get_write_mask(ins, dst, dst_mask);
 
-    pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[0], 0, src0);
-    shader_addline(buffer, "DP3 %s%s, T%u, %s;\n", dst_str, dst_mask, dstreg, src0);
+    pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[0], 0, src0);
+    shader_addline(buffer, "DP3 %s%s, T%u, %s;\n", dst_str, dst_mask, dst->reg.idx, src0);
 
     /* TODO: Handle output modifiers */
 }
 
 /** Process the WINED3DSIO_TEXM3X3 instruction in ARB
  * Perform the 3rd row of a 3x3 matrix multiply */
-static void pshader_hw_texm3x3(const SHADER_OPCODE_ARG *arg)
+static void pshader_hw_texm3x3(const struct wined3d_shader_instruction *ins)
 {
-    SHADER_BUFFER* buffer = arg->buffer;
+    const struct wined3d_shader_dst_param *dst = &ins->dst[0];
+    SHADER_BUFFER *buffer = ins->ctx->buffer;
     char dst_str[50];
     char dst_mask[6];
     char src0[50];
-    DWORD dst_reg = arg->dst & WINED3DSP_REGNUM_MASK;
+    BOOL is_color;
 
-    pshader_get_register_name(arg->shader, arg->dst, dst_str);
-    shader_arb_get_write_mask(arg, arg->dst, dst_mask);
+    shader_arb_get_register_name(ins->ctx->shader, dst->reg.type,
+            dst->reg.idx, !!dst->reg.rel_addr, dst_str, &is_color);
+    shader_arb_get_write_mask(ins, dst, dst_mask);
 
-    pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[0], 0, src0);
-    shader_addline(buffer, "DP3 TMP.z, T%u, %s;\n", dst_reg, src0);
+    pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[0], 0, src0);
+    shader_addline(buffer, "DP3 TMP.z, T%u, %s;\n", dst->reg.idx, src0);
     shader_addline(buffer, "MOV %s%s, TMP;\n", dst_str, dst_mask);
 
     /* TODO: Handle output modifiers */
@@ -1468,13 +1561,13 @@ static void pshader_hw_texm3x3(const SHADER_OPCODE_ARG *arg)
  * Calculate tmp0.y = TexCoord[dstreg] . src.xyz;  (tmp0.x has already been calculated)
  * depth = (tmp0.y == 0.0) ? 1.0 : tmp0.x / tmp0.y
  */
-static void pshader_hw_texm3x2depth(const SHADER_OPCODE_ARG *arg)
+static void pshader_hw_texm3x2depth(const struct wined3d_shader_instruction *ins)
 {
-    SHADER_BUFFER* buffer = arg->buffer;
-    DWORD dst_reg = arg->dst & WINED3DSP_REGNUM_MASK;
+    SHADER_BUFFER *buffer = ins->ctx->buffer;
+    DWORD dst_reg = ins->dst[0].reg.idx;
     char src0[50];
 
-    pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[0], 0, src0);
+    pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[0], 0, src0);
     shader_addline(buffer, "DP3 TMP.y, T%u, %s;\n", dst_reg, src0);
 
     /* How to deal with the special case dst_name.g == 0? if r != 0, then
@@ -1483,78 +1576,88 @@ static void pshader_hw_texm3x2depth(const SHADER_OPCODE_ARG *arg)
      */
     shader_addline(buffer, "RCP TMP.y, TMP.y;\n");
     shader_addline(buffer, "MUL TMP.x, TMP.x, TMP.y;\n");
-    shader_addline(buffer, "MIN TMP.x, TMP.x, one.r;\n");
+    shader_addline(buffer, "MIN TMP.x, TMP.x, one.x;\n");
     shader_addline(buffer, "MAX result.depth, TMP.x, 0.0;\n");
 }
 
 /** Handles transforming all WINED3DSIO_M?x? opcodes for
     Vertex/Pixel shaders to ARB_vertex_program codes */
-static void shader_hw_mnxn(const SHADER_OPCODE_ARG *arg)
+static void shader_hw_mnxn(const struct wined3d_shader_instruction *ins)
 {
     int i;
     int nComponents = 0;
-    SHADER_OPCODE_ARG tmpArg;
-    IWineD3DBaseShaderImpl *shader = (IWineD3DBaseShaderImpl *)arg->shader;
-    const SHADER_OPCODE *opcode_table = shader->baseShader.shader_ins;
-    DWORD shader_version = shader->baseShader.hex_version;
+    struct wined3d_shader_dst_param tmp_dst = {{0}};
+    struct wined3d_shader_src_param tmp_src[2] = {{{0}}};
+    struct wined3d_shader_instruction tmp_ins;
 
-    memset(&tmpArg, 0, sizeof(SHADER_OPCODE_ARG));
+    memset(&tmp_ins, 0, sizeof(tmp_ins));
 
     /* Set constants for the temporary argument */
-    tmpArg.shader      = arg->shader;
-    tmpArg.buffer      = arg->buffer;
-    tmpArg.src[0]      = arg->src[0];
-    tmpArg.src_addr[0] = arg->src_addr[0];
-    tmpArg.src_addr[1] = arg->src_addr[1];
-    tmpArg.reg_maps = arg->reg_maps;
+    tmp_ins.ctx = ins->ctx;
+    tmp_ins.dst_count = 1;
+    tmp_ins.dst = &tmp_dst;
+    tmp_ins.src_count = 2;
+    tmp_ins.src = tmp_src;
 
-    switch(arg->opcode->opcode) {
-    case WINED3DSIO_M4x4:
-        nComponents = 4;
-        tmpArg.opcode = shader_get_opcode(opcode_table, shader_version, WINED3DSIO_DP4);
-        break;
-    case WINED3DSIO_M4x3:
-        nComponents = 3;
-        tmpArg.opcode = shader_get_opcode(opcode_table, shader_version, WINED3DSIO_DP4);
-        break;
-    case WINED3DSIO_M3x4:
-        nComponents = 4;
-        tmpArg.opcode = shader_get_opcode(opcode_table, shader_version, WINED3DSIO_DP3);
-        break;
-    case WINED3DSIO_M3x3:
-        nComponents = 3;
-        tmpArg.opcode = shader_get_opcode(opcode_table, shader_version, WINED3DSIO_DP3);
-        break;
-    case WINED3DSIO_M3x2:
-        nComponents = 2;
-        tmpArg.opcode = shader_get_opcode(opcode_table, shader_version, WINED3DSIO_DP3);
-        break;
-    default:
-        break;
+    switch(ins->handler_idx)
+    {
+        case WINED3DSIH_M4x4:
+            nComponents = 4;
+            tmp_ins.handler_idx = WINED3DSIH_DP4;
+            break;
+        case WINED3DSIH_M4x3:
+            nComponents = 3;
+            tmp_ins.handler_idx = WINED3DSIH_DP4;
+            break;
+        case WINED3DSIH_M3x4:
+            nComponents = 4;
+            tmp_ins.handler_idx = WINED3DSIH_DP3;
+            break;
+        case WINED3DSIH_M3x3:
+            nComponents = 3;
+            tmp_ins.handler_idx = WINED3DSIH_DP3;
+            break;
+        case WINED3DSIH_M3x2:
+            nComponents = 2;
+            tmp_ins.handler_idx = WINED3DSIH_DP3;
+            break;
+        default:
+            FIXME("Unhandled opcode %#x\n", ins->handler_idx);
+            break;
     }
 
+    tmp_dst = ins->dst[0];
+    tmp_src[0] = ins->src[0];
+    tmp_src[1] = ins->src[1];
     for (i = 0; i < nComponents; i++) {
-        tmpArg.dst = ((arg->dst) & ~WINED3DSP_WRITEMASK_ALL)|(WINED3DSP_WRITEMASK_0<<i);
-        tmpArg.src[1] = arg->src[1]+i;
-        shader_hw_map2gl(&tmpArg);
+        tmp_dst.write_mask = WINED3DSP_WRITEMASK_0 << i;
+        shader_hw_map2gl(&tmp_ins);
+        ++tmp_src[1].reg.idx;
     }
 }
 
-static void vshader_hw_rsq_rcp(const SHADER_OPCODE_ARG *arg)
+static void vshader_hw_rsq_rcp(const struct wined3d_shader_instruction *ins)
 {
-    CONST SHADER_OPCODE* curOpcode = arg->opcode;
-    SHADER_BUFFER* buffer = arg->buffer;
-    DWORD dst = arg->dst;
-    DWORD src = arg->src[0];
-    DWORD swizzle = (src & WINED3DSP_SWIZZLE_MASK) >> WINED3DSP_SWIZZLE_SHIFT;
+    SHADER_BUFFER *buffer = ins->ctx->buffer;
+    const char *instruction;
 
     char tmpLine[256];
 
-    strcpy(tmpLine, curOpcode->glname); /* Opcode */
-    vshader_program_add_param(arg, dst, FALSE, tmpLine); /* Destination */
+    switch(ins->handler_idx)
+    {
+        case WINED3DSIH_RSQ: instruction = "RSQ"; break;
+        case WINED3DSIH_RCP: instruction = "RCP"; break;
+        default: instruction = "";
+            FIXME("Unhandled opcode %#x\n", ins->handler_idx);
+            break;
+    }
+
+    strcpy(tmpLine, instruction);
+    shader_arb_add_dst_param(ins, &ins->dst[0], tmpLine); /* Destination */
     strcat(tmpLine, ",");
-    vshader_program_add_param(arg, src, TRUE, tmpLine);
-    if ((WINED3DSP_NOSWIZZLE >> WINED3DSP_SWIZZLE_SHIFT) == swizzle) {
+    shader_arb_add_src_param(ins, &ins->src[0], tmpLine);
+    if (ins->src[0].swizzle == WINED3DSP_NOSWIZZLE)
+    {
         /* Dx sdk says .x is used if no swizzle is given, but our test shows that
          * .w is used
          */
@@ -1564,52 +1667,49 @@ static void vshader_hw_rsq_rcp(const SHADER_OPCODE_ARG *arg)
     shader_addline(buffer, "%s;\n", tmpLine);
 }
 
-static void shader_hw_nrm(const SHADER_OPCODE_ARG *arg)
+static void shader_hw_nrm(const struct wined3d_shader_instruction *ins)
 {
-    SHADER_BUFFER* buffer = arg->buffer;
+    const struct wined3d_shader_dst_param *dst = &ins->dst[0];
+    SHADER_BUFFER *buffer = ins->ctx->buffer;
     char dst_name[50];
     char src_name[50];
     char dst_wmask[20];
-    DWORD shift = (arg->dst & WINED3DSP_DSTSHIFT_MASK) >> WINED3DSP_DSTSHIFT_SHIFT;
-    BOOL sat = (arg->dst & WINED3DSP_DSTMOD_MASK) & WINED3DSPDM_SATURATE;
+    BOOL sat = dst->modifiers & WINED3DSPDM_SATURATE;
+    BOOL is_color;
 
-    pshader_get_register_name(arg->shader, arg->dst, dst_name);
-    shader_arb_get_write_mask(arg, arg->dst, dst_wmask);
+    shader_arb_get_register_name(ins->ctx->shader, dst->reg.type,
+            dst->reg.idx, !!dst->reg.rel_addr, dst_name, &is_color);
+    shader_arb_get_write_mask(ins, dst, dst_wmask);
 
-    pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[0], 0, src_name);
+    pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[0], 0, src_name);
     shader_addline(buffer, "DP3 TMP, %s, %s;\n", src_name, src_name);
     shader_addline(buffer, "RSQ TMP, TMP.x;\n");
     /* dst.w = src[0].w * 1 / (src.x^2 + src.y^2 + src.z^2)^(1/2) according to msdn*/
     shader_addline(buffer, "MUL%s %s%s, %s, TMP;\n", sat ? "_SAT" : "", dst_name, dst_wmask,
                    src_name);
-
-    if (shift != 0)
-        pshader_gen_output_modifier_line(buffer, FALSE, dst_wmask, shift, dst_name);
 }
 
-static void shader_hw_sincos(const SHADER_OPCODE_ARG *arg)
+static void shader_hw_sincos(const struct wined3d_shader_instruction *ins)
 {
     /* This instruction exists in ARB, but the d3d instruction takes two extra parameters which
      * must contain fixed constants. So we need a separate function to filter those constants and
      * can't use map2gl
      */
-    SHADER_BUFFER* buffer = arg->buffer;
+    const struct wined3d_shader_dst_param *dst = &ins->dst[0];
+    SHADER_BUFFER *buffer = ins->ctx->buffer;
     char dst_name[50];
     char src_name[50];
     char dst_wmask[20];
-    DWORD shift = (arg->dst & WINED3DSP_DSTSHIFT_MASK) >> WINED3DSP_DSTSHIFT_SHIFT;
-    BOOL sat = (arg->dst & WINED3DSP_DSTMOD_MASK) & WINED3DSPDM_SATURATE;
+    BOOL sat = dst->modifiers & WINED3DSPDM_SATURATE;
+    BOOL is_color;
 
-    pshader_get_register_name(arg->shader, arg->dst, dst_name);
-    shader_arb_get_write_mask(arg, arg->dst, dst_wmask);
+    shader_arb_get_register_name(ins->ctx->shader, dst->reg.type,
+            dst->reg.idx, !!dst->reg.rel_addr, dst_name, &is_color);
+    shader_arb_get_write_mask(ins, dst, dst_wmask);
 
-    pshader_gen_input_modifier_line(arg->shader, buffer, arg->src[0], 0, src_name);
+    pshader_gen_input_modifier_line(ins->ctx->shader, buffer, &ins->src[0], 0, src_name);
     shader_addline(buffer, "SCS%s %s%s, %s;\n", sat ? "_SAT" : "", dst_name, dst_wmask,
                    src_name);
-
-    if (shift != 0)
-        pshader_gen_output_modifier_line(buffer, FALSE, dst_wmask, shift, dst_name);
-
 }
 
 static GLuint create_arb_blt_vertex_program(const WineD3D_GL_Info *gl_info)
@@ -1640,7 +1740,7 @@ static GLuint create_arb_blt_vertex_program(const WineD3D_GL_Info *gl_info)
 static GLuint create_arb_blt_fragment_program(const WineD3D_GL_Info *gl_info, enum tex_types tex_type)
 {
     GLuint program_id = 0;
-    const char *blt_fprograms[tex_type_count] =
+    static const char * const blt_fprograms[tex_type_count] =
     {
         /* tex_1d */
         NULL,
@@ -1688,18 +1788,19 @@ static GLuint create_arb_blt_fragment_program(const WineD3D_GL_Info *gl_info, en
 
 static void shader_arb_select(IWineD3DDevice *iface, BOOL usePS, BOOL useVS) {
     IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *)iface;
-    struct shader_arb_priv *priv = (struct shader_arb_priv *) This->shader_priv;
+    struct shader_arb_priv *priv = This->shader_priv;
     const WineD3D_GL_Info *gl_info = &This->adapter->gl_info;
 
     if (useVS) {
-        TRACE("Using vertex shader\n");
-        IWineD3DVertexShaderImpl_CompileShader(This->stateBlock->vertexShader);
+        struct vs_compile_args compile_args;
 
-        priv->current_vprogram_id = ((IWineD3DVertexShaderImpl *)This->stateBlock->vertexShader)->prgId;
+        TRACE("Using vertex shader\n");
+        find_vs_compile_args((IWineD3DVertexShaderImpl *) This->stateBlock->vertexShader, This->stateBlock, &compile_args);
+        priv->current_vprogram_id = find_gl_vshader((IWineD3DVertexShaderImpl *) This->stateBlock->vertexShader, &compile_args);
 
         /* Bind the vertex program */
         GL_EXTCALL(glBindProgramARB(GL_VERTEX_PROGRAM_ARB, priv->current_vprogram_id));
-        checkGLcall("glBindProgramARB(GL_VERTEX_PROGRAM_ARB, vertexShader->prgId);");
+        checkGLcall("glBindProgramARB(GL_VERTEX_PROGRAM_ARB, priv->current_vprogram_id);");
 
         /* Enable OpenGL vertex programs */
         glEnable(GL_VERTEX_PROGRAM_ARB);
@@ -1720,7 +1821,7 @@ static void shader_arb_select(IWineD3DDevice *iface, BOOL usePS, BOOL useVS) {
 
         /* Bind the fragment program */
         GL_EXTCALL(glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, priv->current_fprogram_id));
-        checkGLcall("glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, pixelShader->prgId);");
+        checkGLcall("glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, priv->current_fprogram_id);");
 
         if(!priv->use_arbfp_fixed_func) {
             /* Enable OpenGL fragment programs */
@@ -1741,7 +1842,7 @@ static void shader_arb_select(IWineD3DDevice *iface, BOOL usePS, BOOL useVS) {
 
 static void shader_arb_select_depth_blt(IWineD3DDevice *iface, enum tex_types tex_type) {
     IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *)iface;
-    struct shader_arb_priv *priv = (struct shader_arb_priv *) This->shader_priv;
+    struct shader_arb_priv *priv = This->shader_priv;
     GLuint *blt_fprogram = &priv->depth_blt_fprogram_id[tex_type];
     const WineD3D_GL_Info *gl_info = &This->adapter->gl_info;
 
@@ -1756,7 +1857,7 @@ static void shader_arb_select_depth_blt(IWineD3DDevice *iface, enum tex_types te
 
 static void shader_arb_deselect_depth_blt(IWineD3DDevice *iface) {
     IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *)iface;
-    struct shader_arb_priv *priv = (struct shader_arb_priv *) This->shader_priv;
+    struct shader_arb_priv *priv = This->shader_priv;
     const WineD3D_GL_Info *gl_info = &This->adapter->gl_info;
 
     if (priv->current_vprogram_id) {
@@ -1786,19 +1887,12 @@ static void shader_arb_deselect_depth_blt(IWineD3DDevice *iface) {
     }
 }
 
-static void shader_arb_cleanup(IWineD3DDevice *iface) {
-    IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *)iface;
-    const WineD3D_GL_Info *gl_info = &This->adapter->gl_info;
-    if (GL_SUPPORT(ARB_VERTEX_PROGRAM)) glDisable(GL_VERTEX_PROGRAM_ARB);
-    if (GL_SUPPORT(ARB_FRAGMENT_PROGRAM)) glDisable(GL_FRAGMENT_PROGRAM_ARB);
-}
-
 static void shader_arb_destroy(IWineD3DBaseShader *iface) {
     IWineD3DBaseShaderImpl *baseShader = (IWineD3DBaseShaderImpl *) iface;
     const WineD3D_GL_Info *gl_info = &((IWineD3DDeviceImpl *)baseShader->baseShader.device)->adapter->gl_info;
-    char pshader = shader_is_pshader_version(baseShader->baseShader.hex_version);
 
-    if(pshader) {
+    if (shader_is_pshader_version(baseShader->baseShader.reg_maps.shader_version.type))
+    {
         IWineD3DPixelShaderImpl *This = (IWineD3DPixelShaderImpl *) iface;
         UINT i;
 
@@ -1811,16 +1905,22 @@ static void shader_arb_destroy(IWineD3DBaseShader *iface) {
         HeapFree(GetProcessHeap(), 0, This->gl_shaders);
         This->gl_shaders = NULL;
         This->num_gl_shaders = 0;
+        This->shader_array_size = 0;
     } else {
         IWineD3DVertexShaderImpl *This = (IWineD3DVertexShaderImpl *) iface;
+        UINT i;
 
         ENTER_GL();
-        GL_EXTCALL(glDeleteProgramsARB(1, &This->prgId));
-        checkGLcall("GL_EXTCALL(glDeleteProgramsARB(1, &This->prgId))");
-        ((IWineD3DVertexShaderImpl *) This)->prgId = 0;
+        for(i = 0; i < This->num_gl_shaders; i++) {
+            GL_EXTCALL(glDeleteProgramsARB(1, &This->gl_shaders[i].prgId));
+            checkGLcall("GL_EXTCALL(glDeleteProgramsARB(1, &This->gl_shaders[i].prgId))");
+        }
         LEAVE_GL();
+        HeapFree(GetProcessHeap(), 0, This->gl_shaders);
+        This->gl_shaders = NULL;
+        This->num_gl_shaders = 0;
+        This->shader_array_size = 0;
     }
-    baseShader->baseShader.is_compiled = FALSE;
 }
 
 static HRESULT shader_arb_alloc(IWineD3DDevice *iface) {
@@ -1832,7 +1932,7 @@ static HRESULT shader_arb_alloc(IWineD3DDevice *iface) {
 static void shader_arb_free(IWineD3DDevice *iface) {
     IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *)iface;
     const WineD3D_GL_Info *gl_info = &This->adapter->gl_info;
-    struct shader_arb_priv *priv = (struct shader_arb_priv *) This->shader_priv;
+    struct shader_arb_priv *priv = This->shader_priv;
     int i;
 
     if(priv->depth_blt_vprogram_id) {
@@ -1856,16 +1956,16 @@ static void arbfp_add_sRGB_correction(SHADER_BUFFER *buffer, const char *fragcol
     /* Perform sRGB write correction. See GLX_EXT_framebuffer_sRGB */
 
     /* Calculate the > 0.0031308 case */
-    shader_addline(buffer, "POW %s.x, %s.x, srgb_pow.x;\n", tmp1, fragcolor);
-    shader_addline(buffer, "POW %s.y, %s.y, srgb_pow.y;\n", tmp1, fragcolor);
-    shader_addline(buffer, "POW %s.z, %s.z, srgb_pow.z;\n", tmp1, fragcolor);
-    shader_addline(buffer, "MUL %s, %s, srgb_mul_hi;\n", tmp1, tmp1);
-    shader_addline(buffer, "SUB %s, %s, srgb_sub_hi;\n", tmp1, tmp1);
+    shader_addline(buffer, "POW %s.x, %s.x, srgb_consts1.z;\n", tmp1, fragcolor);
+    shader_addline(buffer, "POW %s.y, %s.y, srgb_consts1.z;\n", tmp1, fragcolor);
+    shader_addline(buffer, "POW %s.z, %s.z, srgb_consts1.z;\n", tmp1, fragcolor);
+    shader_addline(buffer, "MUL %s, %s, srgb_consts1.w;\n", tmp1, tmp1);
+    shader_addline(buffer, "SUB %s, %s, srgb_consts2.x;\n", tmp1, tmp1);
     /* Calculate the < case */
-    shader_addline(buffer, "MUL %s, srgb_mul_low, %s;\n", tmp2, fragcolor);
+    shader_addline(buffer, "MUL %s, srgb_consts1.x, %s;\n", tmp2, fragcolor);
     /* Get 1.0 / 0.0 masks for > 0.0031308 and < 0.0031308 */
-    shader_addline(buffer, "SLT %s, srgb_comparison, %s;\n", tmp3, fragcolor);
-    shader_addline(buffer, "SGE %s, srgb_comparison, %s;\n", tmp4, fragcolor);
+    shader_addline(buffer, "SLT %s, srgb_consts1.y, %s;\n", tmp3, fragcolor);
+    shader_addline(buffer, "SGE %s, srgb_consts1.y, %s;\n", tmp4, fragcolor);
     /* Store the components > 0.0031308 in the destination */
     shader_addline(buffer, "MUL %s, %s, %s;\n", fragcolor, tmp1, tmp3);
     /* Add the components that are < 0.0031308 */
@@ -1873,17 +1973,37 @@ static void arbfp_add_sRGB_correction(SHADER_BUFFER *buffer, const char *fragcol
     /* [0.0;1.0] clamping. Not needed, this is done implicitly */
 }
 
-static GLuint shader_arb_generate_pshader(IWineD3DPixelShader *iface, SHADER_BUFFER *buffer) {
+static GLuint shader_arb_generate_pshader(IWineD3DPixelShader *iface,
+        SHADER_BUFFER *buffer, const struct ps_compile_args *args)
+{
     IWineD3DPixelShaderImpl *This = (IWineD3DPixelShaderImpl *)iface;
     const shader_reg_maps* reg_maps = &This->baseShader.reg_maps;
     CONST DWORD *function = This->baseShader.function;
-    const char *fragcolor;
     const WineD3D_GL_Info *gl_info = &((IWineD3DDeviceImpl *)This->baseShader.device)->adapter->gl_info;
     const local_constant *lconst;
     GLuint retval;
+    const char *fragcolor;
+    DWORD *lconst_map = local_const_mapping((IWineD3DBaseShaderImpl *) This);
 
     /*  Create the hw ARB shader */
     shader_addline(buffer, "!!ARBfp1.0\n");
+
+    if (reg_maps->shader_version.major < 3)
+    {
+        switch(args->fog) {
+            case FOG_OFF:
+                break;
+            case FOG_LINEAR:
+                shader_addline(buffer, "OPTION ARB_fog_linear;\n");
+                break;
+            case FOG_EXP:
+                shader_addline(buffer, "OPTION ARB_fog_exp;\n");
+                break;
+            case FOG_EXP2:
+                shader_addline(buffer, "OPTION ARB_fog_exp2;\n");
+                break;
+        }
+    }
 
     shader_addline(buffer, "TEMP TMP;\n");     /* Used in matrix ops */
     shader_addline(buffer, "TEMP TMP2;\n");    /* Used in matrix ops */
@@ -1894,37 +2014,24 @@ static GLuint shader_arb_generate_pshader(IWineD3DPixelShader *iface, SHADER_BUF
     shader_addline(buffer, "PARAM coefmul = { 2, 4, 8, 16 };\n");
     shader_addline(buffer, "PARAM one = { 1.0, 1.0, 1.0, 1.0 };\n");
 
-    /* Base Declarations */
-    shader_generate_arb_declarations( (IWineD3DBaseShader*) This, reg_maps, buffer, &GLINFO_LOCATION);
-
-    /* We need two variables for fog blending */
-    shader_addline(buffer, "TEMP TMP_FOG;\n");
-    if (This->baseShader.hex_version >= WINED3DPS_VERSION(2,0)) {
-        shader_addline(buffer, "TEMP TMP_COLOR;\n");
-    }
-
-    /* Base Shader Body */
-    shader_generate_main( (IWineD3DBaseShader*) This, buffer, reg_maps, function);
-
-    /* calculate fog and blend it
-     * NOTE: state.fog.params.y and state.fog.params.z don't hold fog start s and end e but
-     * -1/(e-s) and e/(e-s) respectively.
-     */
-    shader_addline(buffer, "MAD_SAT TMP_FOG, fragment.fogcoord, state.fog.params.y, state.fog.params.z;\n");
-
-    if (This->baseShader.hex_version < WINED3DPS_VERSION(2,0)) {
+    if (reg_maps->shader_version.major < 2)
+    {
         fragcolor = "R0";
     } else {
+        shader_addline(buffer, "TEMP TMP_COLOR;\n");
         fragcolor = "TMP_COLOR";
     }
-    if(((IWineD3DDeviceImpl *)This->baseShader.device)->stateBlock->renderState[WINED3DRS_SRGBWRITEENABLE]) {
+
+    /* Base Declarations */
+    shader_generate_arb_declarations( (IWineD3DBaseShader*) This, reg_maps, buffer, &GLINFO_LOCATION, lconst_map);
+
+    /* Base Shader Body */
+    shader_generate_main((IWineD3DBaseShader *)This, buffer, reg_maps, function);
+
+    if(args->srgb_correction) {
         arbfp_add_sRGB_correction(buffer, fragcolor, "TMP", "TMP2", "TA", "TB");
     }
-    if (This->baseShader.hex_version < WINED3DPS_VERSION(3,0)) {
-        shader_addline(buffer, "LRP result.color.rgb, TMP_FOG.x, %s, state.fog.color;\n", fragcolor);
-        shader_addline(buffer, "MOV result.color.a, %s.a;\n", fragcolor);
-    }
-
+    shader_addline(buffer, "MOV result.color, %s;\n", fragcolor);
     shader_addline(buffer, "END\n");
 
     /* TODO: change to resource.glObjectHandle or something like that */
@@ -1947,24 +2054,29 @@ static GLuint shader_arb_generate_pshader(IWineD3DPixelShader *iface, SHADER_BUF
     }
 
     /* Load immediate constants */
-    if(!This->baseShader.load_local_constsF) {
+    if(lconst_map) {
         LIST_FOR_EACH_ENTRY(lconst, &This->baseShader.constantsF, local_constant, entry) {
             const float *value = (const float *)lconst->value;
-            GL_EXTCALL(glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, lconst->idx, value));
+            GL_EXTCALL(glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, lconst_map[lconst->idx], value));
             checkGLcall("glProgramLocalParameter4fvARB");
         }
+        HeapFree(GetProcessHeap(), 0, lconst_map);
     }
 
     return retval;
 }
 
-static void shader_arb_generate_vshader(IWineD3DVertexShader *iface, SHADER_BUFFER *buffer) {
+static GLuint shader_arb_generate_vshader(IWineD3DVertexShader *iface,
+        SHADER_BUFFER *buffer, const struct vs_compile_args *args)
+{
     IWineD3DVertexShaderImpl *This = (IWineD3DVertexShaderImpl *)iface;
     const shader_reg_maps *reg_maps = &This->baseShader.reg_maps;
     CONST DWORD *function = This->baseShader.function;
     IWineD3DDeviceImpl *device = (IWineD3DDeviceImpl *)This->baseShader.device;
     const WineD3D_GL_Info *gl_info = &device->adapter->gl_info;
     const local_constant *lconst;
+    GLuint ret;
+    DWORD *lconst_map = local_const_mapping((IWineD3DBaseShaderImpl *) This);
 
     /*  Create the hw ARB shader */
     shader_addline(buffer, "!!ARBvp1.0\n");
@@ -1978,7 +2090,7 @@ static void shader_arb_generate_vshader(IWineD3DVertexShader *iface, SHADER_BUFF
     shader_addline(buffer, "TEMP TMP;\n");
 
     /* Base Declarations */
-    shader_generate_arb_declarations( (IWineD3DBaseShader*) This, reg_maps, buffer, &GLINFO_LOCATION);
+    shader_generate_arb_declarations( (IWineD3DBaseShader*) This, reg_maps, buffer, &GLINFO_LOCATION, lconst_map);
 
     /* We need a constant to fixup the final position */
     shader_addline(buffer, "PARAM posFixup = program.env[%d];\n", ARB_SHADER_PRIVCONST_POS);
@@ -2009,11 +2121,18 @@ static void shader_arb_generate_vshader(IWineD3DVertexShader *iface, SHADER_BUFF
     }
 
     /* Base Shader Body */
-    shader_generate_main( (IWineD3DBaseShader*) This, buffer, reg_maps, function);
+    shader_generate_main((IWineD3DBaseShader *)This, buffer, reg_maps, function);
 
-    /* If this shader doesn't use fog copy the z coord to the fog coord so that we can use table fog */
-    if (!reg_maps->fog)
+    /* The D3DRS_FOGTABLEMODE render state defines if the shader-generated fog coord is used
+     * or if the fragment depth is used. If the fragment depth is used(FOGTABLEMODE != NONE),
+     * the fog frag coord is thrown away. If the fog frag coord is used, but not written by
+     * the shader, it is set to 0.0(fully fogged, since start = 1.0, end = 0.0)
+     */
+    if(args->fog_src == VS_FOG_Z) {
         shader_addline(buffer, "MOV result.fogcoord, TMP_OUT.z;\n");
+    } else if (!reg_maps->fog) {
+        shader_addline(buffer, "MOV result.fogcoord, helper_const.w;\n");
+    }
 
     /* Write the final position.
      *
@@ -2036,12 +2155,12 @@ static void shader_arb_generate_vshader(IWineD3DVertexShader *iface, SHADER_BUFF
     shader_addline(buffer, "END\n");
 
     /* TODO: change to resource.glObjectHandle or something like that */
-    GL_EXTCALL(glGenProgramsARB(1, &This->prgId));
+    GL_EXTCALL(glGenProgramsARB(1, &ret));
 
-    TRACE("Creating a hw vertex shader, prg=%d\n", This->prgId);
-    GL_EXTCALL(glBindProgramARB(GL_VERTEX_PROGRAM_ARB, This->prgId));
+    TRACE("Creating a hw vertex shader, prg=%d\n", ret);
+    GL_EXTCALL(glBindProgramARB(GL_VERTEX_PROGRAM_ARB, ret));
 
-    TRACE("Created hw vertex shader, prg=%d\n", This->prgId);
+    TRACE("Created hw vertex shader, prg=%d\n", ret);
     /* Create the program and check for errors */
     GL_EXTCALL(glProgramStringARB(GL_VERTEX_PROGRAM_ARB, GL_PROGRAM_FORMAT_ASCII_ARB,
                buffer->bsize, buffer->buffer));
@@ -2051,16 +2170,19 @@ static void shader_arb_generate_vshader(IWineD3DVertexShader *iface, SHADER_BUFF
         glGetIntegerv(GL_PROGRAM_ERROR_POSITION_ARB, &errPos);
         FIXME("HW VertexShader Error at position %d: %s\n",
               errPos, debugstr_a((const char *)glGetString(GL_PROGRAM_ERROR_STRING_ARB)));
-        This->prgId = -1;
-    }
-
-    /* Load immediate constants */
-    if(!This->baseShader.load_local_constsF) {
-        LIST_FOR_EACH_ENTRY(lconst, &This->baseShader.constantsF, local_constant, entry) {
-            const float *value = (const float *)lconst->value;
-            GL_EXTCALL(glProgramLocalParameter4fvARB(GL_VERTEX_PROGRAM_ARB, lconst->idx, value));
+        ret = -1;
+    } else {
+        /* Load immediate constants */
+        if(lconst_map) {
+            LIST_FOR_EACH_ENTRY(lconst, &This->baseShader.constantsF, local_constant, entry) {
+                const float *value = (const float *)lconst->value;
+                GL_EXTCALL(glProgramLocalParameter4fvARB(GL_VERTEX_PROGRAM_ARB, lconst_map[lconst->idx], value));
+            }
         }
     }
+    HeapFree(GetProcessHeap(), 0, lconst_map);
+
+    return ret;
 }
 
 static void shader_arb_get_caps(WINED3DDEVTYPE devtype, const WineD3D_GL_Info *gl_info, struct shader_caps *pCaps)
@@ -2073,13 +2195,14 @@ static void shader_arb_get_caps(WINED3DDEVTYPE devtype, const WineD3D_GL_Info *g
     if(GL_SUPPORT(ARB_VERTEX_PROGRAM)) {
         pCaps->VertexShaderVersion = WINED3DVS_VERSION(1,1);
         TRACE_(d3d_caps)("Hardware vertex shader version 1.1 enabled (ARB_PROGRAM)\n");
-        pCaps->MaxVertexShaderConst = GL_LIMITS(vshader_constantsF);
+        pCaps->MaxVertexShaderConst = GL_LIMITS(vshader_constantsF) - ARB_SHADER_RESERVED_VS_CONSTS;
     }
 
     if(GL_SUPPORT(ARB_FRAGMENT_PROGRAM)) {
         pCaps->PixelShaderVersion    = WINED3DPS_VERSION(1,4);
         pCaps->PixelShader1xMaxValue = 8.0;
         TRACE_(d3d_caps)("Hardware pixel shader version 1.4 enabled (ARB_PROGRAM)\n");
+        pCaps->MaxPixelShaderConst = GL_LIMITS(pshader_constantsF) - ARB_SHADER_RESERVED_PS_CONSTS;
     }
 }
 
@@ -2100,6 +2223,30 @@ static BOOL shader_arb_color_fixup_supported(struct color_fixup_desc fixup)
 
     TRACE("[FAILED]\n");
     return FALSE;
+}
+
+static void shader_arb_add_instruction_modifiers(const struct wined3d_shader_instruction *ins) {
+    BOOL saturate;
+    DWORD shift;
+    char write_mask[20], regstr[50];
+    SHADER_BUFFER *buffer = ins->ctx->buffer;
+    BOOL is_color = FALSE;
+    const struct wined3d_shader_dst_param *dst;
+
+    if (!ins->dst_count) return;
+
+    dst = &ins->dst[0];
+    shift = dst->shift;
+    if(shift == 0) return; /* Saturate alone is handled by the instructions */
+    saturate = dst->modifiers & WINED3DSPDM_SATURATE;
+
+    shader_arb_get_write_mask(ins, dst, write_mask);
+    shader_arb_get_register_name(ins->ctx->shader, dst->reg.type,
+                                 dst->reg.idx, !!dst->reg.rel_addr, regstr, &is_color);
+
+    /* Generate a line that does the output modifier computation */
+    shader_addline(buffer, "MUL%s %s%s, %s, %s;\n", saturate ? "_SAT" : "",
+                   regstr, write_mask, regstr, shift_tab[shift]);
 }
 
 static const SHADER_HANDLER shader_arb_instruction_handler_table[WINED3DSIH_TABLE_SIZE] =
@@ -2194,9 +2341,10 @@ const shader_backend_t arb_program_shader_backend = {
     shader_arb_select,
     shader_arb_select_depth_blt,
     shader_arb_deselect_depth_blt,
+    shader_arb_update_float_vertex_constants,
+    shader_arb_update_float_pixel_constants,
     shader_arb_load_constants,
-    shader_arb_cleanup,
-    shader_arb_color_correction,
+    shader_arb_load_np2fixup_constants,
     shader_arb_destroy,
     shader_arb_alloc,
     shader_arb_free,
@@ -2205,6 +2353,7 @@ const shader_backend_t arb_program_shader_backend = {
     shader_arb_generate_vshader,
     shader_arb_get_caps,
     shader_arb_color_fixup_supported,
+    shader_arb_add_instruction_modifiers,
 };
 
 /* ARB_fragment_program fixed function pipeline replacement definitions */
@@ -2244,7 +2393,7 @@ static HRESULT arbfp_alloc(IWineD3DDevice *iface) {
         This->fragment_priv = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(struct shader_arb_priv));
         if(!This->fragment_priv) return E_OUTOFMEMORY;
     }
-    priv = (struct shader_arb_priv *) This->fragment_priv;
+    priv = This->fragment_priv;
     priv->fragment_shaders = hash_table_create(ffp_frag_program_key_hash, ffp_frag_program_key_compare);
     priv->use_arbfp_fixed_func = TRUE;
     return WINED3D_OK;
@@ -2263,7 +2412,7 @@ static void arbfp_free_ffpshader(void *value, void *gli) {
 
 static void arbfp_free(IWineD3DDevice *iface) {
     IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *) iface;
-    struct shader_arb_priv *priv = (struct shader_arb_priv *) This->fragment_priv;
+    struct shader_arb_priv *priv = This->fragment_priv;
 
     hash_table_destroy(priv->fragment_shaders, arbfp_free_ffpshader, &This->adapter->gl_info);
     priv->use_arbfp_fixed_func = FALSE;
@@ -2319,7 +2468,7 @@ static void state_texfactor_arbfp(DWORD state, IWineD3DStateBlockImpl *statebloc
      * application provided constants
      */
     if(device->shader_backend == &arb_program_shader_backend) {
-        if(use_ps(device)) return;
+        if (use_ps(stateblock)) return;
 
         device = stateblock->wineD3DDevice;
         device->activeContext->pshader_const_dirty[ARB_FFP_CONST_TFACTOR] = 1;
@@ -2340,7 +2489,7 @@ static void state_arb_specularenable(DWORD state, IWineD3DStateBlockImpl *stateb
      * application provided constants
      */
     if(device->shader_backend == &arb_program_shader_backend) {
-        if(use_ps(device)) return;
+        if (use_ps(stateblock)) return;
 
         device = stateblock->wineD3DDevice;
         device->activeContext->pshader_const_dirty[ARB_FFP_CONST_SPECULAR_ENABLE] = 1;
@@ -2360,11 +2509,12 @@ static void state_arb_specularenable(DWORD state, IWineD3DStateBlockImpl *stateb
 }
 
 static void set_bumpmat_arbfp(DWORD state, IWineD3DStateBlockImpl *stateblock, WineD3DContext *context) {
-    DWORD stage = (state - STATE_TEXTURESTAGE(0, 0)) / WINED3D_HIGHEST_TEXTURE_STATE;
+    DWORD stage = (state - STATE_TEXTURESTAGE(0, 0)) / (WINED3D_HIGHEST_TEXTURE_STATE + 1);
     IWineD3DDeviceImpl *device = stateblock->wineD3DDevice;
     float mat[2][2];
 
-    if(use_ps(device)) {
+    if (use_ps(stateblock))
+    {
         if(stage != 0 &&
            ((IWineD3DPixelShaderImpl *) stateblock->pixelShader)->baseShader.reg_maps.bumpmat[stage]) {
             /* The pixel shader has to know the bump env matrix. Do a constants update if it isn't scheduled
@@ -2394,11 +2544,12 @@ static void set_bumpmat_arbfp(DWORD state, IWineD3DStateBlockImpl *stateblock, W
 }
 
 static void tex_bumpenvlum_arbfp(DWORD state, IWineD3DStateBlockImpl *stateblock, WineD3DContext *context) {
-    DWORD stage = (state - STATE_TEXTURESTAGE(0, 0)) / WINED3D_HIGHEST_TEXTURE_STATE;
+    DWORD stage = (state - STATE_TEXTURESTAGE(0, 0)) / (WINED3D_HIGHEST_TEXTURE_STATE + 1);
     IWineD3DDeviceImpl *device = stateblock->wineD3DDevice;
     float param[4];
 
-    if(use_ps(device)) {
+    if (use_ps(stateblock))
+    {
         if(stage != 0 &&
            ((IWineD3DPixelShaderImpl *) stateblock->pixelShader)->baseShader.reg_maps.luminanceparams[stage]) {
             /* The pixel shader has to know the luminance offset. Do a constants update if it
@@ -2490,7 +2641,7 @@ static const char *get_argreg(SHADER_BUFFER *buffer, DWORD argnum, unsigned int 
         if(argnum == 2) ret = "arg2";
     }
     if(arg & WINED3DTA_ALPHAREPLICATE) {
-        shader_addline(buffer, "MOV arg%u, %s.a;\n", argnum, ret);
+        shader_addline(buffer, "MOV arg%u, %s.w;\n", argnum, ret);
         if(argnum == 0) ret = "arg0";
         if(argnum == 1) ret = "arg1";
         if(argnum == 2) ret = "arg2";
@@ -2505,8 +2656,8 @@ static void gen_ffp_instr(SHADER_BUFFER *buffer, unsigned int stage, BOOL color,
     BOOL mul_final_dest = FALSE;
 
     if(color && alpha) dstmask = "";
-    else if(color) dstmask = ".rgb";
-    else dstmask = ".a";
+    else if(color) dstmask = ".xyz";
+    else dstmask = ".w";
 
     if(dst == tempreg) dstreg = "tempreg";
     else dstreg = "ret";
@@ -2517,7 +2668,7 @@ static void gen_ffp_instr(SHADER_BUFFER *buffer, unsigned int stage, BOOL color,
 
     switch(op) {
         case WINED3DTOP_DISABLE:
-            if(stage == 1) shader_addline(buffer, "MOV %s%s, fragment.color.primary;\n", dstreg, dstmask);
+            if(stage == 0) shader_addline(buffer, "MOV %s%s, fragment.color.primary;\n", dstreg, dstmask);
             break;
 
         case WINED3DTOP_SELECTARG2:
@@ -2562,42 +2713,42 @@ static void gen_ffp_instr(SHADER_BUFFER *buffer, unsigned int stage, BOOL color,
 
         case WINED3DTOP_BLENDCURRENTALPHA:
             arg0 = get_argreg(buffer, 0, stage, WINED3DTA_CURRENT);
-            shader_addline(buffer, "LRP %s%s, %s.a, %s, %s;\n", dstreg, dstmask, arg0, arg1, arg2);
+            shader_addline(buffer, "LRP %s%s, %s.w, %s, %s;\n", dstreg, dstmask, arg0, arg1, arg2);
             break;
         case WINED3DTOP_BLENDFACTORALPHA:
             arg0 = get_argreg(buffer, 0, stage, WINED3DTA_TFACTOR);
-            shader_addline(buffer, "LRP %s%s, %s.a, %s, %s;\n", dstreg, dstmask, arg0, arg1, arg2);
+            shader_addline(buffer, "LRP %s%s, %s.w, %s, %s;\n", dstreg, dstmask, arg0, arg1, arg2);
             break;
         case WINED3DTOP_BLENDTEXTUREALPHA:
             arg0 = get_argreg(buffer, 0, stage, WINED3DTA_TEXTURE);
-            shader_addline(buffer, "LRP %s%s, %s.a, %s, %s;\n", dstreg, dstmask, arg0, arg1, arg2);
+            shader_addline(buffer, "LRP %s%s, %s.w, %s, %s;\n", dstreg, dstmask, arg0, arg1, arg2);
             break;
         case WINED3DTOP_BLENDDIFFUSEALPHA:
             arg0 = get_argreg(buffer, 0, stage, WINED3DTA_DIFFUSE);
-            shader_addline(buffer, "LRP %s%s, %s.a, %s, %s;\n", dstreg, dstmask, arg0, arg1, arg2);
+            shader_addline(buffer, "LRP %s%s, %s.w, %s, %s;\n", dstreg, dstmask, arg0, arg1, arg2);
             break;
 
         case WINED3DTOP_BLENDTEXTUREALPHAPM:
             arg0 = get_argreg(buffer, 0, stage, WINED3DTA_TEXTURE);
-            shader_addline(buffer, "SUB arg0.a, const.x, %s.a;\n", arg0);
-            shader_addline(buffer, "MAD_SAT %s%s, %s, arg0.a, %s;\n", dstreg, dstmask, arg2, arg1);
+            shader_addline(buffer, "SUB arg0.w, const.x, %s.w;\n", arg0);
+            shader_addline(buffer, "MAD_SAT %s%s, %s, arg0.w, %s;\n", dstreg, dstmask, arg2, arg1);
             break;
 
         /* D3DTOP_PREMODULATE ???? */
 
         case WINED3DTOP_MODULATEINVALPHA_ADDCOLOR:
-            shader_addline(buffer, "SUB arg0.a, const.x, %s;\n", arg1);
-            shader_addline(buffer, "MAD_SAT %s%s, arg0.a, %s, %s;\n", dstreg, dstmask, arg2, arg1);
+            shader_addline(buffer, "SUB arg0.w, const.x, %s;\n", arg1);
+            shader_addline(buffer, "MAD_SAT %s%s, arg0.w, %s, %s;\n", dstreg, dstmask, arg2, arg1);
             break;
         case WINED3DTOP_MODULATEALPHA_ADDCOLOR:
-            shader_addline(buffer, "MAD_SAT %s%s, %s.a, %s, %s;\n", dstreg, dstmask, arg1, arg2, arg1);
+            shader_addline(buffer, "MAD_SAT %s%s, %s.w, %s, %s;\n", dstreg, dstmask, arg1, arg2, arg1);
             break;
         case WINED3DTOP_MODULATEINVCOLOR_ADDALPHA:
             shader_addline(buffer, "SUB arg0, const.x, %s;\n", arg1);
-            shader_addline(buffer, "MAD_SAT %s%s, arg0, %s, %s.a;\n", dstreg, dstmask, arg2, arg1);
+            shader_addline(buffer, "MAD_SAT %s%s, arg0, %s, %s.w;\n", dstreg, dstmask, arg2, arg1);
             break;
         case WINED3DTOP_MODULATECOLOR_ADDALPHA:
-            shader_addline(buffer, "MAD_SAT %s%s, %s, %s, %s.a;\n", dstreg, dstmask, arg1, arg2, arg1);
+            shader_addline(buffer, "MAD_SAT %s%s, %s, %s, %s.w;\n", dstreg, dstmask, arg1, arg2, arg1);
             break;
 
         case WINED3DTOP_DOTPRODUCT3:
@@ -2703,10 +2854,7 @@ static GLuint gen_arbfp_ffp_shader(const struct ffp_frag_settings *settings, IWi
     }
 
     /* Shader header */
-    buffer.bsize = 0;
-    buffer.lineNo = 0;
-    buffer.newline = TRUE;
-    buffer.buffer = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, SHADER_PGMSIZE);
+    shader_buffer_init(&buffer);
 
     shader_addline(&buffer, "!!ARBfp1.0\n");
 
@@ -2739,16 +2887,10 @@ static GLuint gen_arbfp_ffp_shader(const struct ffp_frag_settings *settings, IWi
         shader_addline(&buffer, "PARAM specular_enable = program.env[%u];\n", ARB_FFP_CONST_SPECULAR_ENABLE);
 
     if(settings->sRGB_write) {
-        shader_addline(&buffer, "PARAM srgb_mul_low = {%f, %f, %f, 1.0};\n",
-                       srgb_mul_low, srgb_mul_low, srgb_mul_low);
-        shader_addline(&buffer, "PARAM srgb_comparison =  {%f, %f, %f, %f};\n",
-                       srgb_cmp, srgb_cmp, srgb_cmp, srgb_cmp);
-        shader_addline(&buffer, "PARAM srgb_pow =  {%f, %f, %f, 1.0};\n",
-                       srgb_pow, srgb_pow, srgb_pow);
-        shader_addline(&buffer, "PARAM srgb_mul_hi =  {%f, %f, %f, 1.0};\n",
-                       srgb_mul_high, srgb_mul_high, srgb_mul_high);
-        shader_addline(&buffer, "PARAM srgb_sub_hi =  {%f, %f, %f, 0.0};\n",
-                       srgb_sub_high, srgb_sub_high, srgb_sub_high);
+        shader_addline(&buffer, "PARAM srgb_consts1 = {%f, %f, %f, %f};\n",
+                       srgb_mul_low, srgb_cmp, srgb_pow, srgb_mul_high);
+        shader_addline(&buffer, "PARAM srgb_consts2 = {%f, %f, %f, %f};\n",
+                       srgb_sub_high, 0.0, 0.0, 0.0);
     }
 
     /* Generate texture sampling instructions) */
@@ -2785,20 +2927,20 @@ static GLuint gen_arbfp_ffp_shader(const struct ffp_frag_settings *settings, IWi
            (settings->op[stage - 1].cop == WINED3DTOP_BUMPENVMAP ||
             settings->op[stage - 1].cop == WINED3DTOP_BUMPENVMAPLUMINANCE)) {
             shader_addline(&buffer, "SWZ arg1, bumpmat%u, x, z, 0, 0;\n", stage - 1);
-            shader_addline(&buffer, "DP3 ret.r, arg1, tex%u;\n", stage - 1);
+            shader_addline(&buffer, "DP3 ret.x, arg1, tex%u;\n", stage - 1);
             shader_addline(&buffer, "SWZ arg1, bumpmat%u, y, w, 0, 0;\n", stage - 1);
-            shader_addline(&buffer, "DP3 ret.g, arg1, tex%u;\n", stage - 1);
+            shader_addline(&buffer, "DP3 ret.y, arg1, tex%u;\n", stage - 1);
 
             /* with projective textures, texbem only divides the static texture coord, not the displacement,
              * so multiply the displacement with the dividing parameter before passing it to TXP
              */
             if (settings->op[stage].projected != proj_none) {
                 if(settings->op[stage].projected == proj_count4) {
-                    shader_addline(&buffer, "MOV ret.a, fragment.texcoord[%u].a;\n", stage);
-                    shader_addline(&buffer, "MUL ret.rgb, ret, fragment.texcoord[%u].a, fragment.texcoord[%u];\n", stage, stage);
+                    shader_addline(&buffer, "MOV ret.w, fragment.texcoord[%u].w;\n", stage);
+                    shader_addline(&buffer, "MUL ret.xyz, ret, fragment.texcoord[%u].w, fragment.texcoord[%u];\n", stage, stage);
                 } else {
-                    shader_addline(&buffer, "MOV ret.a, fragment.texcoord[%u].b;\n", stage);
-                    shader_addline(&buffer, "MAD ret.rgb, ret, fragment.texcoord[%u].b, fragment.texcoord[%u];\n", stage, stage);
+                    shader_addline(&buffer, "MOV ret.w, fragment.texcoord[%u].z;\n", stage);
+                    shader_addline(&buffer, "MAD ret.xyz, ret, fragment.texcoord[%u].z, fragment.texcoord[%u];\n", stage, stage);
                 }
             } else {
                 shader_addline(&buffer, "ADD ret, ret, fragment.texcoord[%u];\n", stage);
@@ -2807,13 +2949,13 @@ static GLuint gen_arbfp_ffp_shader(const struct ffp_frag_settings *settings, IWi
             shader_addline(&buffer, "%s%s tex%u, ret, texture[%u], %s;\n",
                            instr, sat, stage, stage, textype);
             if(settings->op[stage - 1].cop == WINED3DTOP_BUMPENVMAPLUMINANCE) {
-                shader_addline(&buffer, "MAD_SAT ret.r, tex%u.b, luminance%u.r, luminance%u.g;\n",
+                shader_addline(&buffer, "MAD_SAT ret.x, tex%u.z, luminance%u.x, luminance%u.y;\n",
                                stage - 1, stage - 1, stage - 1);
-                shader_addline(&buffer, "MUL tex%u, tex%u, ret.r;\n", stage, stage);
+                shader_addline(&buffer, "MUL tex%u, tex%u, ret.x;\n", stage, stage);
             }
         } else if(settings->op[stage].projected == proj_count3) {
             shader_addline(&buffer, "MOV ret, fragment.texcoord[%u];\n", stage);
-            shader_addline(&buffer, "MOV ret.a, ret.b;\n");
+            shader_addline(&buffer, "MOV ret.w, ret.z;\n");
             shader_addline(&buffer, "%s%s tex%u, ret, texture[%u], %s;\n",
                             instr, sat, stage, stage, textype);
         } else {
@@ -2823,7 +2965,7 @@ static GLuint gen_arbfp_ffp_shader(const struct ffp_frag_settings *settings, IWi
 
         sprintf(colorcor_dst, "tex%u", stage);
         gen_color_correction(&buffer, colorcor_dst, WINED3DSP_WRITEMASK_ALL, "const.x", "const.y",
-                settings->op[stage].color_correction);
+                settings->op[stage].color_fixup);
     }
 
     /* Generate the main shader */
@@ -2859,7 +3001,7 @@ static GLuint gen_arbfp_ffp_shader(const struct ffp_frag_settings *settings, IWi
                           settings->op[stage].cop, settings->op[stage].carg0,
                           settings->op[stage].carg1, settings->op[stage].carg2);
             if(stage == 0) {
-                shader_addline(&buffer, "MOV ret.a, fragment.color.primary.a;\n");
+                shader_addline(&buffer, "MOV ret.w, fragment.color.primary.w;\n");
             }
         } else if(op_equal) {
             gen_ffp_instr(&buffer, stage, TRUE, TRUE, settings->op[stage].dst,
@@ -2878,7 +3020,7 @@ static GLuint gen_arbfp_ffp_shader(const struct ffp_frag_settings *settings, IWi
     if(settings->sRGB_write) {
         shader_addline(&buffer, "MAD ret, fragment.color.secondary, specular_enable, %s;\n", final_combiner_src);
         arbfp_add_sRGB_correction(&buffer, "ret", "arg0", "arg1", "arg2", "tempreg");
-        shader_addline(&buffer, "MOV result.color.a, ret.a;\n");
+        shader_addline(&buffer, "MOV result.color.w, ret.w;\n");
     } else {
         shader_addline(&buffer, "MAD result.color, fragment.color.secondary, specular_enable, %s;\n", final_combiner_src);
     }
@@ -2897,18 +3039,20 @@ static GLuint gen_arbfp_ffp_shader(const struct ffp_frag_settings *settings, IWi
         FIXME("Fragment program error at position %d: %s\n", pos,
               debugstr_a((const char *)glGetString(GL_PROGRAM_ERROR_STRING_ARB)));
     }
-    HeapFree(GetProcessHeap(), 0, buffer.buffer);
+    shader_buffer_free(&buffer);
     return ret;
 }
 
 static void fragment_prog_arbfp(DWORD state, IWineD3DStateBlockImpl *stateblock, WineD3DContext *context) {
     IWineD3DDeviceImpl *device = stateblock->wineD3DDevice;
-    struct shader_arb_priv *priv = (struct shader_arb_priv *) device->fragment_priv;
-    BOOL use_pshader = use_ps(device);
-    BOOL use_vshader = use_vs(device);
+    struct shader_arb_priv *priv = device->fragment_priv;
+    BOOL use_pshader = use_ps(stateblock);
+    BOOL use_vshader = use_vs(stateblock);
     struct ffp_frag_settings settings;
     const struct arbfp_ffp_desc *desc;
     unsigned int i;
+
+    TRACE("state %#x, stateblock %p, context %p\n", state, stateblock, context);
 
     if(isStateDirty(context, STATE_RENDER(WINED3DRS_FOGENABLE))) {
         if(!use_pshader && device->shader_backend == &arb_program_shader_backend && context->last_was_pshader) {
@@ -2918,6 +3062,8 @@ static void fragment_prog_arbfp(DWORD state, IWineD3DStateBlockImpl *stateblock,
             }
             state_texfactor_arbfp(STATE_RENDER(WINED3DRS_TEXTUREFACTOR), stateblock, context);
             state_arb_specularenable(STATE_RENDER(WINED3DRS_SPECULARENABLE), stateblock, context);
+        } else if(use_pshader && !isStateDirty(context, device->StateTable[STATE_VSHADER].representative)) {
+            device->shader_backend->shader_select((IWineD3DDevice *)stateblock->wineD3DDevice, use_pshader, use_vshader);
         }
         return;
     }
@@ -2962,6 +3108,9 @@ static void fragment_prog_arbfp(DWORD state, IWineD3DStateBlockImpl *stateblock,
             state_texfactor_arbfp(STATE_RENDER(WINED3DRS_TEXTUREFACTOR), stateblock, context);
             state_arb_specularenable(STATE_RENDER(WINED3DRS_SPECULARENABLE), stateblock, context);
         }
+        context->last_was_pshader = FALSE;
+    } else {
+        context->last_was_pshader = TRUE;
     }
 
     /* Finally, select the shader. If a pixel shader is used, it will be set and enabled by the shader backend.
@@ -2970,8 +3119,8 @@ static void fragment_prog_arbfp(DWORD state, IWineD3DStateBlockImpl *stateblock,
      * type overwrites GL_ARB_fragment_program. This is currently the case with GLSL. If we really want to use
      * atifs or nvrc pixel shaders with arb fragment programs we'd have to disable GL_FRAGMENT_PROGRAM_ARB here
      *
-     * Don't call shader_select if the vertex shader is dirty, because some shader backends(GLSL) need both shaders
-     * to be compiled before activating them(needs some cleanups in the shader backend interface)
+     * Don't call shader_select if the vertex shader is dirty, because it will be called later on by the vertex
+     * shader handler
      */
     if(!isStateDirty(context, device->StateTable[STATE_VSHADER].representative)) {
         device->shader_backend->shader_select((IWineD3DDevice *)stateblock->wineD3DDevice, use_pshader, use_vshader);
@@ -2992,8 +3141,32 @@ static void fragment_prog_arbfp(DWORD state, IWineD3DStateBlockImpl *stateblock,
  * fragment_prog_arbfp function being called because FOGENABLE is dirty, which calls this function here
  */
 static void state_arbfp_fog(DWORD state, IWineD3DStateBlockImpl *stateblock, WineD3DContext *context) {
+    enum fogsource new_source;
+
+    TRACE("state %#x, stateblock %p, context %p\n", state, stateblock, context);
+
     if(!isStateDirty(context, STATE_PIXELSHADER)) {
         fragment_prog_arbfp(state, stateblock, context);
+    }
+
+    if(!stateblock->renderState[WINED3DRS_FOGENABLE]) return;
+
+    if(stateblock->renderState[WINED3DRS_FOGTABLEMODE] == WINED3DFOG_NONE) {
+        if(use_vs(stateblock)) {
+            new_source = FOGSOURCE_VS;
+        } else {
+            if(stateblock->renderState[WINED3DRS_FOGVERTEXMODE] == WINED3DFOG_NONE || context->last_was_rhw) {
+                new_source = FOGSOURCE_COORD;
+            } else {
+                new_source = FOGSOURCE_FFP;
+            }
+        }
+    } else {
+        new_source = FOGSOURCE_FFP;
+    }
+    if(new_source != context->fog_source) {
+        context->fog_source = new_source;
+        state_fogstartend(STATE_RENDER(WINED3DRS_FOGSTART), stateblock, context);
     }
 }
 
@@ -3127,19 +3300,23 @@ static const struct StateEntryTemplate arbfp_fragmentstate_template[] = {
     {STATE_TEXTURESTAGE(7, WINED3DTSS_BUMPENVMAT11),      { STATE_TEXTURESTAGE(7, WINED3DTSS_BUMPENVMAT00),     set_bumpmat_arbfp       }, 0                               },
     {STATE_TEXTURESTAGE(7, WINED3DTSS_BUMPENVLSCALE),     { STATE_TEXTURESTAGE(7, WINED3DTSS_BUMPENVLSCALE),    tex_bumpenvlum_arbfp    }, 0                               },
     {STATE_TEXTURESTAGE(7, WINED3DTSS_BUMPENVLOFFSET),    { STATE_TEXTURESTAGE(7, WINED3DTSS_BUMPENVLSCALE),    tex_bumpenvlum_arbfp    }, 0                               },
-    { STATE_SAMPLER(0),                                   { STATE_SAMPLER(0),                                   sampler_texdim          }, 0                               },
-    { STATE_SAMPLER(1),                                   { STATE_SAMPLER(1),                                   sampler_texdim          }, 0                               },
-    { STATE_SAMPLER(2),                                   { STATE_SAMPLER(2),                                   sampler_texdim          }, 0                               },
-    { STATE_SAMPLER(3),                                   { STATE_SAMPLER(3),                                   sampler_texdim          }, 0                               },
-    { STATE_SAMPLER(4),                                   { STATE_SAMPLER(4),                                   sampler_texdim          }, 0                               },
-    { STATE_SAMPLER(5),                                   { STATE_SAMPLER(5),                                   sampler_texdim          }, 0                               },
-    { STATE_SAMPLER(6),                                   { STATE_SAMPLER(6),                                   sampler_texdim          }, 0                               },
-    { STATE_SAMPLER(7),                                   { STATE_SAMPLER(7),                                   sampler_texdim          }, 0                               },
-    { STATE_PIXELSHADER,                                  { STATE_PIXELSHADER,                                  fragment_prog_arbfp     }, 0                               },
-    { STATE_RENDER(WINED3DRS_FOGENABLE),                  { STATE_RENDER(WINED3DRS_FOGENABLE),                  state_arbfp_fog         }, 0                               },
-    { STATE_RENDER(WINED3DRS_FOGTABLEMODE),               { STATE_RENDER(WINED3DRS_FOGENABLE),                  state_arbfp_fog         }, 0                               },
-    { STATE_RENDER(WINED3DRS_FOGVERTEXMODE),              { STATE_RENDER(WINED3DRS_FOGENABLE),                  state_arbfp_fog         }, 0                               },
-    { STATE_RENDER(WINED3DRS_SRGBWRITEENABLE),            { STATE_PIXELSHADER,                                  fragment_prog_arbfp     }, 0                               },
+    {STATE_SAMPLER(0),                                    { STATE_SAMPLER(0),                                   sampler_texdim          }, 0                               },
+    {STATE_SAMPLER(1),                                    { STATE_SAMPLER(1),                                   sampler_texdim          }, 0                               },
+    {STATE_SAMPLER(2),                                    { STATE_SAMPLER(2),                                   sampler_texdim          }, 0                               },
+    {STATE_SAMPLER(3),                                    { STATE_SAMPLER(3),                                   sampler_texdim          }, 0                               },
+    {STATE_SAMPLER(4),                                    { STATE_SAMPLER(4),                                   sampler_texdim          }, 0                               },
+    {STATE_SAMPLER(5),                                    { STATE_SAMPLER(5),                                   sampler_texdim          }, 0                               },
+    {STATE_SAMPLER(6),                                    { STATE_SAMPLER(6),                                   sampler_texdim          }, 0                               },
+    {STATE_SAMPLER(7),                                    { STATE_SAMPLER(7),                                   sampler_texdim          }, 0                               },
+    {STATE_PIXELSHADER,                                   { STATE_PIXELSHADER,                                  fragment_prog_arbfp     }, 0                               },
+    {STATE_RENDER(WINED3DRS_FOGENABLE),                   { STATE_RENDER(WINED3DRS_FOGENABLE),                  state_arbfp_fog         }, 0                               },
+    {STATE_RENDER(WINED3DRS_FOGTABLEMODE),                { STATE_RENDER(WINED3DRS_FOGENABLE),                  state_arbfp_fog         }, 0                               },
+    {STATE_RENDER(WINED3DRS_FOGVERTEXMODE),               { STATE_RENDER(WINED3DRS_FOGENABLE),                  state_arbfp_fog         }, 0                               },
+    {STATE_RENDER(WINED3DRS_FOGSTART),                    { STATE_RENDER(WINED3DRS_FOGSTART),                   state_fogstartend       }, 0                               },
+    {STATE_RENDER(WINED3DRS_FOGEND),                      { STATE_RENDER(WINED3DRS_FOGSTART),                   state_fogstartend       }, 0                               },
+    {STATE_RENDER(WINED3DRS_SRGBWRITEENABLE),             { STATE_PIXELSHADER,                                  fragment_prog_arbfp     }, 0                               },
+    {STATE_RENDER(WINED3DRS_FOGCOLOR),                    { STATE_RENDER(WINED3DRS_FOGCOLOR),                   state_fogcolor          }, 0                               },
+    {STATE_RENDER(WINED3DRS_FOGDENSITY),                  { STATE_RENDER(WINED3DRS_FOGDENSITY),                 state_fogdensity        }, 0                               },
     {STATE_TEXTURESTAGE(0,WINED3DTSS_TEXTURETRANSFORMFLAGS),{STATE_TEXTURESTAGE(0, WINED3DTSS_TEXTURETRANSFORMFLAGS), textransform      }, 0                               },
     {STATE_TEXTURESTAGE(1,WINED3DTSS_TEXTURETRANSFORMFLAGS),{STATE_TEXTURESTAGE(1, WINED3DTSS_TEXTURETRANSFORMFLAGS), textransform      }, 0                               },
     {STATE_TEXTURESTAGE(2,WINED3DTSS_TEXTURETRANSFORMFLAGS),{STATE_TEXTURESTAGE(2, WINED3DTSS_TEXTURETRANSFORMFLAGS), textransform      }, 0                               },
@@ -3148,7 +3325,7 @@ static const struct StateEntryTemplate arbfp_fragmentstate_template[] = {
     {STATE_TEXTURESTAGE(5,WINED3DTSS_TEXTURETRANSFORMFLAGS),{STATE_TEXTURESTAGE(5, WINED3DTSS_TEXTURETRANSFORMFLAGS), textransform      }, 0                               },
     {STATE_TEXTURESTAGE(6,WINED3DTSS_TEXTURETRANSFORMFLAGS),{STATE_TEXTURESTAGE(6, WINED3DTSS_TEXTURETRANSFORMFLAGS), textransform      }, 0                               },
     {STATE_TEXTURESTAGE(7,WINED3DTSS_TEXTURETRANSFORMFLAGS),{STATE_TEXTURESTAGE(7, WINED3DTSS_TEXTURETRANSFORMFLAGS), textransform      }, 0                               },
-    { STATE_RENDER(WINED3DRS_SPECULARENABLE),             { STATE_RENDER(WINED3DRS_SPECULARENABLE),             state_arb_specularenable}, 0                               },
+    {STATE_RENDER(WINED3DRS_SPECULARENABLE),              { STATE_RENDER(WINED3DRS_SPECULARENABLE),             state_arb_specularenable}, 0                               },
     {0 /* Terminate */,                                   { 0,                                                  0                       }, 0                               },
 };
 
@@ -3181,7 +3358,7 @@ static HRESULT arbfp_blit_alloc(IWineD3DDevice *iface) {
 }
 static void arbfp_blit_free(IWineD3DDevice *iface) {
     IWineD3DDeviceImpl *device = (IWineD3DDeviceImpl *) iface;
-    struct arbfp_blit_priv *priv = (struct arbfp_blit_priv *) device->blit_priv;
+    struct arbfp_blit_priv *priv = device->blit_priv;
 
     ENTER_GL();
     GL_EXTCALL(glDeleteProgramsARB(1, &priv->yuy2_rect_shader));
@@ -3200,11 +3377,11 @@ static BOOL gen_planar_yuv_read(SHADER_BUFFER *buffer, enum yuv_fixup yuv_fixup,
     const char *tex, *texinstr;
 
     if (yuv_fixup == YUV_FIXUP_UYVY) {
-        chroma = 'r';
-        *luminance = 'a';
+        chroma = 'x';
+        *luminance = 'w';
     } else {
-        chroma = 'a';
-        *luminance = 'r';
+        chroma = 'w';
+        *luminance = 'x';
     }
     switch(textype) {
         case GL_TEXTURE_2D:             tex = "2D";     texinstr = "TXP"; break;
@@ -3230,8 +3407,8 @@ static BOOL gen_planar_yuv_read(SHADER_BUFFER *buffer, enum yuv_fixup yuv_fixup,
      * So we have to get the sampling x position in non-normalized coordinates in integers
      */
     if(textype != GL_TEXTURE_RECTANGLE_ARB) {
-        shader_addline(buffer, "MUL texcrd.rg, fragment.texcoord[0], size.x;\n");
-        shader_addline(buffer, "MOV texcrd.a, size.x;\n");
+        shader_addline(buffer, "MUL texcrd.xy, fragment.texcoord[0], size.x;\n");
+        shader_addline(buffer, "MOV texcrd.w, size.x;\n");
     } else {
         shader_addline(buffer, "MOV texcrd, fragment.texcoord[0];\n");
     }
@@ -3253,9 +3430,9 @@ static BOOL gen_planar_yuv_read(SHADER_BUFFER *buffer, enum yuv_fixup yuv_fixup,
 
     /* Put the value into either of the chroma values */
     shader_addline(buffer, "SGE temp.x, texcrd2.x, coef.y;\n");
-    shader_addline(buffer, "MUL chroma.r, luminance.%c, temp.x;\n", chroma);
+    shader_addline(buffer, "MUL chroma.x, luminance.%c, temp.x;\n", chroma);
     shader_addline(buffer, "SLT temp.x, texcrd2.x, coef.y;\n");
-    shader_addline(buffer, "MUL chroma.g, luminance.%c, temp.x;\n", chroma);
+    shader_addline(buffer, "MUL chroma.y, luminance.%c, temp.x;\n", chroma);
 
     /* Sample pixel 2. If we read an even pixel(SLT above returned 1), sample
      * the pixel right to the current one. Otherwise, sample the left pixel.
@@ -3267,9 +3444,9 @@ static BOOL gen_planar_yuv_read(SHADER_BUFFER *buffer, enum yuv_fixup yuv_fixup,
 
     /* Put the value into the other chroma */
     shader_addline(buffer, "SGE temp.x, texcrd2.x, coef.y;\n");
-    shader_addline(buffer, "MAD chroma.g, luminance.%c, temp.x, chroma.g;\n", chroma);
+    shader_addline(buffer, "MAD chroma.y, luminance.%c, temp.x, chroma.y;\n", chroma);
     shader_addline(buffer, "SLT temp.x, texcrd2.x, coef.y;\n");
-    shader_addline(buffer, "MAD chroma.r, luminance.%c, temp.x, chroma.r;\n", chroma);
+    shader_addline(buffer, "MAD chroma.x, luminance.%c, temp.x, chroma.x;\n", chroma);
 
     /* TODO: If filtering is enabled, sample a 2nd pair of pixels left or right of
      * the current one and lerp the two U and V values
@@ -3389,7 +3566,7 @@ static BOOL gen_yv12_read(SHADER_BUFFER *buffer, GLenum textype, char *luminance
     }
     /* Read the texture, put the result into the output register */
     shader_addline(buffer, "TEX temp, texcrd, texture[0], %s;\n", tex);
-    shader_addline(buffer, "MOV chroma.r, temp.a;\n");
+    shader_addline(buffer, "MOV chroma.x, temp.w;\n");
 
     /* The other chroma value is 1/6th of the texture lower, from 5/6th to 6/6th
      * No need to clamp because we're just reusing the already clamped value from above
@@ -3400,7 +3577,7 @@ static BOOL gen_yv12_read(SHADER_BUFFER *buffer, GLenum textype, char *luminance
         shader_addline(buffer, "MAD texcrd.y, size.y, coef.w, texcrd.y;\n");
     }
     shader_addline(buffer, "TEX temp, texcrd, texture[0], %s;\n", tex);
-    shader_addline(buffer, "MOV chroma.g, temp.a;\n");
+    shader_addline(buffer, "MOV chroma.y, temp.w;\n");
 
     /* Sample the luminance value. It is in the top 2/3rd of the texture, so scale the y coordinate.
      * Clamp the y coordinate to prevent the chroma values from bleeding into the sampled luminance
@@ -3414,7 +3591,7 @@ static BOOL gen_yv12_read(SHADER_BUFFER *buffer, GLenum textype, char *luminance
         shader_addline(buffer, "MIN texcrd.y, temp.y, texcrd.y;\n");
         shader_addline(buffer, "TEX luminance, texcrd, texture[0], %s;\n", tex);
     } else {
-        /* Reading from texture_rectangles is pretty streightforward, just use the unmodified
+        /* Reading from texture_rectangles is pretty straightforward, just use the unmodified
          * texture coordinate. It is still a good idea to clamp it though, since the opengl texture
          * is bigger
          */
@@ -3432,13 +3609,10 @@ static GLuint gen_yuv_shader(IWineD3DDeviceImpl *device, enum yuv_fixup yuv_fixu
     GLenum shader;
     SHADER_BUFFER buffer;
     char luminance_component;
-    struct arbfp_blit_priv *priv = (struct arbfp_blit_priv *) device->blit_priv;
+    struct arbfp_blit_priv *priv = device->blit_priv;
 
     /* Shader header */
-    buffer.bsize = 0;
-    buffer.lineNo = 0;
-    buffer.newline = TRUE;
-    buffer.buffer = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, SHADER_PGMSIZE);
+    shader_buffer_init(&buffer);
 
     ENTER_GL();
     GL_EXTCALL(glGenProgramsARB(1, &shader));
@@ -3447,7 +3621,7 @@ static GLuint gen_yuv_shader(IWineD3DDeviceImpl *device, enum yuv_fixup yuv_fixu
     checkGLcall("glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, shader)");
     LEAVE_GL();
     if(!shader) {
-        HeapFree(GetProcessHeap(), 0, buffer.buffer);
+        shader_buffer_free(&buffer);
         return 0;
     }
 
@@ -3461,7 +3635,7 @@ static GLuint gen_yuv_shader(IWineD3DDeviceImpl *device, enum yuv_fixup yuv_fixu
      * contains the luminance and alpha the chroma. With UYVY it is vice versa. Thus
      * take the format into account when generating the read swizzles
      *
-     * Reading the Y value is streightforward - just sample the texture. The hardware
+     * Reading the Y value is straightforward - just sample the texture. The hardware
      * takes care of filtering in the horizontal and vertical direction.
      *
      * Reading the U and V values is harder. We have to avoid filtering horizontally,
@@ -3502,7 +3676,7 @@ static GLuint gen_yuv_shader(IWineD3DDeviceImpl *device, enum yuv_fixup yuv_fixu
         case YUV_FIXUP_YUY2:
             if (!gen_planar_yuv_read(&buffer, yuv_fixup, textype, &luminance_component))
             {
-                HeapFree(GetProcessHeap(), 0, buffer.buffer);
+                shader_buffer_free(&buffer);
                 return 0;
             }
             break;
@@ -3510,14 +3684,14 @@ static GLuint gen_yuv_shader(IWineD3DDeviceImpl *device, enum yuv_fixup yuv_fixu
         case YUV_FIXUP_YV12:
             if (!gen_yv12_read(&buffer, textype, &luminance_component))
             {
-                HeapFree(GetProcessHeap(), 0, buffer.buffer);
+                shader_buffer_free(&buffer);
                 return 0;
             }
             break;
 
         default:
             FIXME("Unsupported YUV fixup %#x\n", yuv_fixup);
-            HeapFree(GetProcessHeap(), 0, buffer.buffer);
+            shader_buffer_free(&buffer);
             return 0;
     }
 
@@ -3525,12 +3699,12 @@ static GLuint gen_yuv_shader(IWineD3DDeviceImpl *device, enum yuv_fixup yuv_fixu
      * http://www.fourcc.org/fccyvrgb.php. Note that the chroma
      * ranges from -0.5 to 0.5
      */
-    shader_addline(&buffer, "SUB chroma.rg, chroma, coef.y;\n");
+    shader_addline(&buffer, "SUB chroma.xy, chroma, coef.y;\n");
 
-    shader_addline(&buffer, "MAD result.color.r, chroma.r, yuv_coef.x, luminance.%c;\n", luminance_component);
-    shader_addline(&buffer, "MAD temp.r, -chroma.g, yuv_coef.y, luminance.%c;\n", luminance_component);
-    shader_addline(&buffer, "MAD result.color.g, -chroma.r, yuv_coef.z, temp.r;\n");
-    shader_addline(&buffer, "MAD result.color.b, chroma.g, yuv_coef.w, luminance.%c;\n", luminance_component);
+    shader_addline(&buffer, "MAD result.color.x, chroma.x, yuv_coef.x, luminance.%c;\n", luminance_component);
+    shader_addline(&buffer, "MAD temp.x, -chroma.y, yuv_coef.y, luminance.%c;\n", luminance_component);
+    shader_addline(&buffer, "MAD result.color.y, -chroma.x, yuv_coef.z, temp.x;\n");
+    shader_addline(&buffer, "MAD result.color.z, chroma.y, yuv_coef.w, luminance.%c;\n", luminance_component);
     shader_addline(&buffer, "END\n");
 
     ENTER_GL();
@@ -3542,7 +3716,7 @@ static GLuint gen_yuv_shader(IWineD3DDeviceImpl *device, enum yuv_fixup yuv_fixu
         FIXME("Fragment program error at position %d: %s\n", pos,
               debugstr_a((const char *)glGetString(GL_PROGRAM_ERROR_STRING_ARB)));
     }
-    HeapFree(GetProcessHeap(), 0, buffer.buffer);
+    shader_buffer_free(&buffer);
     LEAVE_GL();
 
     switch (yuv_fixup)
@@ -3566,20 +3740,19 @@ static GLuint gen_yuv_shader(IWineD3DDeviceImpl *device, enum yuv_fixup yuv_fixu
     return shader;
 }
 
-static HRESULT arbfp_blit_set(IWineD3DDevice *iface, WINED3DFORMAT fmt, GLenum textype, UINT width, UINT height) {
+static HRESULT arbfp_blit_set(IWineD3DDevice *iface, const struct GlPixelFormatDesc *format_desc,
+        GLenum textype, UINT width, UINT height)
+{
     GLenum shader;
     IWineD3DDeviceImpl *device = (IWineD3DDeviceImpl *) iface;
     float size[4] = {width, height, 1, 1};
-    struct arbfp_blit_priv *priv = (struct arbfp_blit_priv *) device->blit_priv;
-    const struct GlPixelFormatDesc *glDesc;
+    struct arbfp_blit_priv *priv = device->blit_priv;
     enum yuv_fixup yuv_fixup;
 
-    getFormatDescEntry(fmt, &GLINFO_LOCATION, &glDesc);
-
-    if (!is_yuv_fixup(glDesc->color_fixup))
+    if (!is_yuv_fixup(format_desc->color_fixup))
     {
         TRACE("Fixup:\n");
-        dump_color_fixup_desc(glDesc->color_fixup);
+        dump_color_fixup_desc(format_desc->color_fixup);
         /* Don't bother setting up a shader for unconverted formats */
         ENTER_GL();
         glEnable(textype);
@@ -3588,7 +3761,7 @@ static HRESULT arbfp_blit_set(IWineD3DDevice *iface, WINED3DFORMAT fmt, GLenum t
         return WINED3D_OK;
     }
 
-    yuv_fixup = get_yuv_fixup(glDesc->color_fixup);
+    yuv_fixup = get_yuv_fixup(format_desc->color_fixup);
 
     switch(yuv_fixup)
     {

@@ -16,6 +16,15 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+/*
+ * Sun LGPL Disclaimer: For the avoidance of doubt, except that if any license choice
+ * other than GPL or LGPL is available it will apply instead, Sun elects to use only
+ * the Lesser General Public License version 2.1 (LGPLv2) at this time for any software where
+ * a choice of LGPL license versions is made available with the language indicating
+ * that LGPLv2 or any later version may be used, or where a choice of which version
+ * of the LGPL is applied is otherwise unspecified.
+ */
+
 import "oaidl.idl";
 import "ocidl.idl";
 import "dxgi.idl";
@@ -1533,7 +1542,7 @@ interface ID3D10Multithread : IUnknown
         BOOL GetMultithreadProtected();
 }
 
-cpp_quote("#include <d3d10misc.h>")
-/* TODO: Include "d310effect.h" as soon as it exists */
-/* TODO: Include "d310shader.h" as soon as it exists */
+cpp_quote("#include \"d3d10misc.h\"")
+cpp_quote("#include \"d3d10shader.h\"")
+cpp_quote("#include \"d3d10effect.h\"")
 /* TODO: Include "d310sdklayers.h" as soon as it exists */

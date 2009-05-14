@@ -26,11 +26,11 @@
  * that LGPLv2 or any later version may be used, or where a choice of which version
  * of the LGPL is applied is otherwise unspecified.
  */
+
 #ifndef _WINE_SIGNAL_H
 #define _WINE_SIGNAL_H
-#ifndef __WINE_USE_MSVCRT
-#define __WINE_USE_MSVCRT
-#endif
+
+#include <crtdefs.h>
 
 #define SIGINT   2
 #define SIGILL   4
@@ -46,14 +46,14 @@
 extern "C" {
 #endif
 
-typedef void (*__sighandler_t)(int);
+typedef void (__cdecl *__sighandler_t)(int);
 
 #define SIG_DFL ((__sighandler_t)0)
 #define SIG_IGN ((__sighandler_t)1)
 #define SIG_ERR ((__sighandler_t)-1)
 
-__sighandler_t signal(int sig, __sighandler_t func);
-int raise(int sig);
+__sighandler_t __cdecl signal(int sig, __sighandler_t func);
+int __cdecl raise(int sig);
 
 #ifdef __cplusplus
 }

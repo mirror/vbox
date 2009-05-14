@@ -318,16 +318,16 @@ typedef struct _PROCESS_HEAP_ENTRY
 #define PROCESS_HEAP_ENTRY_MOVEABLE           0x0010
 #define PROCESS_HEAP_ENTRY_DDESHARE           0x0020
 
-#define INVALID_HANDLE_VALUE     ((HANDLE)~0UL)
-#define INVALID_FILE_SIZE        ((DWORD)~0UL)
-#define INVALID_SET_FILE_POINTER ((DWORD)~0UL)
-#define INVALID_FILE_ATTRIBUTES  ((DWORD)~0UL)
+#define INVALID_HANDLE_VALUE     ((HANDLE)~(ULONG_PTR)0)
+#define INVALID_FILE_SIZE        (~0u)
+#define INVALID_SET_FILE_POINTER (~0u)
+#define INVALID_FILE_ATTRIBUTES  (~0u)
 
 #define LOCKFILE_FAIL_IMMEDIATELY   1
 #define LOCKFILE_EXCLUSIVE_LOCK     2
 
-#define FLS_OUT_OF_INDEXES ((DWORD)~0UL)
-#define TLS_OUT_OF_INDEXES ((DWORD)~0UL)
+#define FLS_OUT_OF_INDEXES (~0u)
+#define TLS_OUT_OF_INDEXES (~0u)
 
 #define SHUTDOWN_NORETRY 1
 
@@ -785,7 +785,7 @@ typedef struct _SYSTEM_INFO
     DWORD	dwPageSize;
     LPVOID	lpMinimumApplicationAddress;
     LPVOID	lpMaximumApplicationAddress;
-    DWORD	dwActiveProcessorMask;
+    DWORD_PTR	dwActiveProcessorMask;
     DWORD	dwNumberOfProcessors;
     DWORD	dwProcessorType;
     DWORD	dwAllocationGranularity;
@@ -1190,6 +1190,8 @@ typedef struct tagCOMMTIMEOUTS {
 #define SET_TAPE_MEDIA_INFORMATION 0
 #define SET_TAPE_DRIVE_INFORMATION 1
 
+#define PROCESS_NAME_NATIVE        1
+
 typedef void (CALLBACK *PAPCFUNC)(ULONG_PTR);
 typedef void (CALLBACK *PTIMERAPCROUTINE)(LPVOID,DWORD,DWORD);
 
@@ -1278,6 +1280,10 @@ typedef struct _WIN32_STREAM_ID {
 #define DDD_EXACT_MATCH_ON_REMOVE   0x00000004
 #define DDD_NO_BROADCAST_SYSTEM     0x00000008
 #define DDD_LUID_BROADCAST_DRIVE    0x00000010
+
+#define LOGON_WITH_PROFILE          0x00000001
+#define LOGON_NETCREDENTIALS_ONLY   0x00000002
+#define LOGON_ZERO_PASSWORD_BUFFER  0x80000000
 
 WINBASEAPI BOOL        WINAPI ActivateActCtx(HANDLE,ULONG_PTR *);
 WINADVAPI  BOOL        WINAPI AddAccessAllowedAce(PACL,DWORD,DWORD,PSID);
@@ -1401,6 +1407,7 @@ WINBASEAPI BOOL        WINAPI CreateProcessW(LPCWSTR,LPWSTR,LPSECURITY_ATTRIBUTE
 WINADVAPI  BOOL        WINAPI CreateProcessAsUserA(HANDLE,LPCSTR,LPSTR,LPSECURITY_ATTRIBUTES,LPSECURITY_ATTRIBUTES,BOOL,DWORD,LPVOID,LPCSTR,LPSTARTUPINFOA,LPPROCESS_INFORMATION);
 WINADVAPI  BOOL        WINAPI CreateProcessAsUserW(HANDLE,LPCWSTR,LPWSTR,LPSECURITY_ATTRIBUTES,LPSECURITY_ATTRIBUTES,BOOL,DWORD,LPVOID,LPCWSTR,LPSTARTUPINFOW,LPPROCESS_INFORMATION);
 #define                       CreateProcessAsUser WINELIB_NAME_AW(CreateProcessAsUser)
+WINADVAPI  BOOL        WINAPI CreateProcessWithLogonW(LPCWSTR,LPCWSTR,LPCWSTR,DWORD,LPCWSTR,LPWSTR,DWORD,LPVOID,LPCWSTR,LPSTARTUPINFOW,LPPROCESS_INFORMATION);
 WINBASEAPI HANDLE      WINAPI CreateRemoteThread(HANDLE,LPSECURITY_ATTRIBUTES,SIZE_T,LPTHREAD_START_ROUTINE,LPVOID,DWORD,LPDWORD);
 WINADVAPI  BOOL        WINAPI CreateRestrictedToken(HANDLE,DWORD,DWORD,PSID_AND_ATTRIBUTES,DWORD,PLUID_AND_ATTRIBUTES,DWORD,PSID_AND_ATTRIBUTES,PHANDLE);
 WINBASEAPI HANDLE      WINAPI CreateSemaphoreA(LPSECURITY_ATTRIBUTES,LONG,LONG,LPCSTR);
@@ -1542,8 +1549,8 @@ WINBASEAPI BOOL        WINAPI FlsSetValue(DWORD,PVOID);
 WINBASEAPI BOOL        WINAPI FlushFileBuffers(HANDLE);
 WINBASEAPI BOOL        WINAPI FlushInstructionCache(HANDLE,LPCVOID,SIZE_T);
 WINBASEAPI BOOL        WINAPI FlushViewOfFile(LPCVOID,SIZE_T);
-WINBASEAPI DWORD       WINAPI FormatMessageA(DWORD,LPCVOID,DWORD,DWORD,LPSTR,DWORD,va_list*);
-WINBASEAPI DWORD       WINAPI FormatMessageW(DWORD,LPCVOID,DWORD,DWORD,LPWSTR,DWORD,va_list*);
+WINBASEAPI DWORD       WINAPI FormatMessageA(DWORD,LPCVOID,DWORD,DWORD,LPSTR,DWORD,__ms_va_list*);
+WINBASEAPI DWORD       WINAPI FormatMessageW(DWORD,LPCVOID,DWORD,DWORD,LPWSTR,DWORD,__ms_va_list*);
 #define                       FormatMessage WINELIB_NAME_AW(FormatMessage)
 WINBASEAPI BOOL        WINAPI FreeEnvironmentStringsA(LPSTR);
 WINBASEAPI BOOL        WINAPI FreeEnvironmentStringsW(LPWSTR);
@@ -1613,6 +1620,7 @@ WINBASEAPI LPWSTR      WINAPI GetEnvironmentStringsW(void);
 WINBASEAPI DWORD       WINAPI GetEnvironmentVariableA(LPCSTR,LPSTR,DWORD);
 WINBASEAPI DWORD       WINAPI GetEnvironmentVariableW(LPCWSTR,LPWSTR,DWORD);
 #define                       GetEnvironmentVariable WINELIB_NAME_AW(GetEnvironmentVariable)
+WINBASEAPI UINT        WINAPI GetErrorMode(void);
 WINBASEAPI BOOL        WINAPI GetExitCodeProcess(HANDLE,LPDWORD);
 WINBASEAPI BOOL        WINAPI GetExitCodeThread(HANDLE,LPDWORD);
 WINBASEAPI DWORD       WINAPI GetFileAttributesA(LPCSTR);
@@ -1965,6 +1973,9 @@ WINBASEAPI USHORT      WINAPI QueryDepthSList(PSLIST_HEADER);
 WINBASEAPI DWORD       WINAPI QueryDosDeviceA(LPCSTR,LPSTR,DWORD);
 WINBASEAPI DWORD       WINAPI QueryDosDeviceW(LPCWSTR,LPWSTR,DWORD);
 #define                       QueryDosDevice WINELIB_NAME_AW(QueryDosDevice)
+WINBASEAPI BOOL        WINAPI QueryFullProcessImageNameA(HANDLE,DWORD,LPSTR,PDWORD);
+WINBASEAPI BOOL        WINAPI QueryFullProcessImageNameW(HANDLE,DWORD,LPWSTR,PDWORD);
+#define                       QueryFullProcessImageName WINELIB_NAME_AW(QueryFullProcessImageName)
 WINBASEAPI BOOL        WINAPI QueryInformationJobObject(HANDLE,JOBOBJECTINFOCLASS,LPVOID,DWORD,DWORD*);
 WINBASEAPI BOOL        WINAPI QueryPerformanceCounter(LARGE_INTEGER*);
 WINBASEAPI BOOL        WINAPI QueryPerformanceFrequency(LARGE_INTEGER*);
@@ -2096,7 +2107,7 @@ WINBASEAPI DWORD       WINAPI SuspendThread(HANDLE);
 WINBASEAPI void        WINAPI SwitchToFiber(LPVOID);
 WINBASEAPI BOOL        WINAPI SwitchToThread(void);
 WINBASEAPI BOOL        WINAPI SystemTimeToFileTime(const SYSTEMTIME*,LPFILETIME);
-WINBASEAPI BOOL        WINAPI SystemTimeToTzSpecificLocalTime(LPTIME_ZONE_INFORMATION,LPSYSTEMTIME,LPSYSTEMTIME);
+WINBASEAPI BOOL        WINAPI SystemTimeToTzSpecificLocalTime(const TIME_ZONE_INFORMATION*,const SYSTEMTIME*,LPSYSTEMTIME);
 WINBASEAPI BOOL        WINAPI TerminateJobObject(HANDLE,UINT);
 WINBASEAPI BOOL        WINAPI TerminateProcess(HANDLE,DWORD);
 WINBASEAPI BOOL        WINAPI TerminateThread(HANDLE,DWORD);
@@ -2107,7 +2118,7 @@ WINBASEAPI BOOL        WINAPI TlsSetValue(DWORD,LPVOID);
 WINBASEAPI BOOL        WINAPI TransactNamedPipe(HANDLE,LPVOID,DWORD,LPVOID,DWORD,LPDWORD,LPOVERLAPPED);
 WINBASEAPI BOOL        WINAPI TransmitCommChar(HANDLE,CHAR);
 WINBASEAPI BOOL        WINAPI TryEnterCriticalSection(CRITICAL_SECTION *lpCrit);
-WINBASEAPI BOOL        WINAPI TzSpecificLocalTimeToSystemTime(LPTIME_ZONE_INFORMATION,LPSYSTEMTIME,LPSYSTEMTIME);
+WINBASEAPI BOOL        WINAPI TzSpecificLocalTimeToSystemTime(const TIME_ZONE_INFORMATION*,const SYSTEMTIME*,LPSYSTEMTIME);
 WINBASEAPI LONG        WINAPI UnhandledExceptionFilter(PEXCEPTION_POINTERS);
 WINBASEAPI BOOL        WINAPI UnlockFile(HANDLE,DWORD,DWORD,DWORD,DWORD);
 WINBASEAPI BOOL        WINAPI UnlockFileEx(HANDLE,DWORD,DWORD,DWORD,LPOVERLAPPED);
@@ -2320,13 +2331,14 @@ WINBASEAPI VOID        WINAPI _LeaveSysLevel(SYSLEVEL*);
 
 /* Wine internal functions */
 
-extern char *wine_get_unix_file_name( LPCWSTR dos );
-extern WCHAR *wine_get_dos_file_name( LPCSTR str );
+extern char * CDECL wine_get_unix_file_name( LPCWSTR dos );
+extern WCHAR * CDECL wine_get_dos_file_name( LPCSTR str );
 
 
-/* a few optimizations for i386/gcc */
+/* Interlocked functions */
 
-#if defined(__i386__) && defined(__GNUC__) && defined(__WINESRC__) && !defined(_NTSYSTEM_)
+#ifdef __i386__
+# if defined(__GNUC__) && !defined(_NTSYSTEM_)
 
 extern inline LONG WINAPI InterlockedCompareExchange( LONG volatile *dest, LONG xchg, LONG compare );
 extern inline LONG WINAPI InterlockedCompareExchange( LONG volatile *dest, LONG xchg, LONG compare )
@@ -2367,58 +2379,40 @@ extern inline LONG WINAPI InterlockedDecrement( LONG volatile *dest )
     return InterlockedExchangeAdd( dest, -1 ) - 1;
 }
 
-extern inline DWORD WINAPI GetLastError(void);
-extern inline DWORD WINAPI GetLastError(void)
+# else  /* __GNUC__ */
+
+WINBASEAPI LONG WINAPI InterlockedCompareExchange(LONG volatile*,LONG,LONG);
+WINBASEAPI LONG WINAPI InterlockedDecrement(LONG volatile*);
+WINBASEAPI LONG WINAPI InterlockedExchange(LONG volatile*,LONG);
+WINBASEAPI LONG WINAPI InterlockedExchangeAdd(LONG volatile*,LONG);
+WINBASEAPI LONG WINAPI InterlockedIncrement(LONG volatile*);
+
+# endif  /* __GNUC__ */
+
+static inline PVOID WINAPI InterlockedCompareExchangePointer( PVOID volatile *dest, PVOID xchg, PVOID compare )
 {
-    DWORD ret;
-    __asm__ __volatile__( ".byte 0x64\n\tmovl 0x34,%0" : "=r" (ret) );
+    return (PVOID)InterlockedCompareExchange( (LONG volatile*)dest, (LONG)xchg, (LONG)compare );
+}
+
+static inline PVOID WINAPI InterlockedExchangePointer( PVOID volatile *dest, PVOID val )
+{
+    return (PVOID)InterlockedExchange( (LONG volatile*)dest, (LONG)val );
+}
+
+#else  /* __i386__ */
+
+static inline LONG WINAPI InterlockedCompareExchange( LONG volatile *dest, LONG xchg, LONG compare )
+{
+#if defined(__x86_64__) && defined(__GNUC__)
+    LONG ret;
+    __asm__ __volatile__( "lock; cmpxchgl %2,(%1)"
+                          : "=a" (ret) : "r" (dest), "r" (xchg), "0" (compare) : "memory" );
     return ret;
+#else
+    extern int interlocked_cmpxchg( int *dest, int xchg, int compare );
+    return interlocked_cmpxchg( (int *)dest, xchg, compare );
+#endif
 }
-
-extern inline DWORD WINAPI GetCurrentProcessId(void);
-extern inline DWORD WINAPI GetCurrentProcessId(void)
-{
-    DWORD ret;
-    __asm__ __volatile__( ".byte 0x64\n\tmovl 0x20,%0" : "=r" (ret) );
-    return ret;
-}
-
-extern inline DWORD WINAPI GetCurrentThreadId(void);
-extern inline DWORD WINAPI GetCurrentThreadId(void)
-{
-    DWORD ret;
-    __asm__ __volatile__( ".byte 0x64\n\tmovl 0x24,%0" : "=r" (ret) );
-    return ret;
-}
-
-extern inline void WINAPI SetLastError( DWORD err );
-extern inline void WINAPI SetLastError( DWORD err )
-{
-    __asm__ __volatile__( ".byte 0x64\n\tmovl %0,0x34" : : "r" (err) : "memory" );
-}
-
-extern inline HANDLE WINAPI GetProcessHeap(void);
-extern inline HANDLE WINAPI GetProcessHeap(void)
-{
-    HANDLE *pdb;
-    __asm__ __volatile__( ".byte 0x64\n\tmovl 0x30,%0" : "=r" (pdb) );
-    return pdb[0x18 / sizeof(HANDLE)];  /* get dword at offset 0x18 in pdb */
-}
-
-#else  /* __i386__ && __GNUC__ && __WINESRC__ && !_NTSYSTEM_ */
-
-WINBASEAPI DWORD       WINAPI GetCurrentProcessId(void);
-WINBASEAPI DWORD       WINAPI GetCurrentThreadId(void);
-WINBASEAPI DWORD       WINAPI GetLastError(void);
-WINBASEAPI HANDLE      WINAPI GetProcessHeap(void);
-WINBASEAPI LONG        WINAPI InterlockedCompareExchange(LONG volatile*,LONG,LONG);
-WINBASEAPI LONG        WINAPI InterlockedDecrement(LONG volatile*);
-WINBASEAPI LONG        WINAPI InterlockedExchange(LONG volatile*,LONG);
-WINBASEAPI LONG        WINAPI InterlockedExchangeAdd(LONG volatile*,LONG);
-WINBASEAPI LONG        WINAPI InterlockedIncrement(LONG volatile*);
-WINBASEAPI VOID        WINAPI SetLastError(DWORD);
-
-#endif  /* __i386__ && __GNUC__ && __WINESRC__ && !_NTSYSTEM_ */
 
 static inline PVOID WINAPI InterlockedCompareExchangePointer( PVOID volatile *dest, PVOID xchg, PVOID compare )
 {
@@ -2428,7 +2422,21 @@ static inline PVOID WINAPI InterlockedCompareExchangePointer( PVOID volatile *de
                           : "=a" (ret) : "r" (dest), "r" (xchg), "0" (compare) : "memory" );
     return ret;
 #else
-    return (PVOID)InterlockedCompareExchange( (LONG volatile*)dest, (LONG)xchg, (LONG)compare );
+    extern void *interlocked_cmpxchg_ptr( void **dest, void *xchg, void *compare );
+    return interlocked_cmpxchg_ptr( (void **)dest, xchg, compare );
+#endif
+}
+
+static inline LONG WINAPI InterlockedExchange( LONG volatile *dest, LONG val )
+{
+#if defined(__x86_64__) && defined(__GNUC__)
+    LONG ret;
+    __asm__ __volatile__( "lock; xchgl %0,(%1)"
+                          : "=r" (ret) :"r" (dest), "0" (val) : "memory" );
+    return ret;
+#else
+    extern int interlocked_xchg( int *dest, int val );
+    return interlocked_xchg( (int *)dest, val );
 #endif
 }
 
@@ -2440,13 +2448,112 @@ static inline PVOID WINAPI InterlockedExchangePointer( PVOID volatile *dest, PVO
                           : "=r" (ret) :"r" (dest), "0" (val) : "memory" );
     return ret;
 #else
-    return (PVOID)InterlockedExchange( (LONG volatile*)dest, (LONG)val );
+    extern void *interlocked_xchg_ptr( void **dest, void *val );
+    return interlocked_xchg_ptr( (void **)dest, val );
 #endif
 }
 
+static inline LONG WINAPI InterlockedExchangeAdd( LONG volatile *dest, LONG incr )
+{
+#if defined(__x86_64__) && defined(__GNUC__)
+    LONG ret;
+    __asm__ __volatile__( "lock; xaddl %0,(%1)"
+                          : "=r" (ret) : "r" (dest), "0" (incr) : "memory" );
+    return ret;
+#else
+    extern int interlocked_xchg_add( int *dest, int incr );
+    return interlocked_xchg_add( (int *)dest, incr );
+#endif
+}
+
+static inline LONG WINAPI InterlockedIncrement( LONG volatile *dest )
+{
+    return InterlockedExchangeAdd( dest, 1 ) + 1;
+}
+
+static inline LONG WINAPI InterlockedDecrement( LONG volatile *dest )
+{
+    return InterlockedExchangeAdd( dest, -1 ) - 1;
+}
+
+#endif  /* __i386__ */
+
+/* A few optimizations for gcc */
+
+#if defined(__GNUC__) && !defined(__MINGW32__) && (defined(__i386__) || defined(__x86_64__))
+
+extern inline DWORD WINAPI GetLastError(void);
+extern inline DWORD WINAPI GetLastError(void)
+{
+    DWORD ret;
+#ifdef __x86_64__
+    __asm__ __volatile__( ".byte 0x65\n\tmovl 0x68,%0" : "=r" (ret) );
+#else
+    __asm__ __volatile__( ".byte 0x64\n\tmovl 0x34,%0" : "=r" (ret) );
+#endif
+    return ret;
+}
+
+extern inline DWORD WINAPI GetCurrentProcessId(void);
+extern inline DWORD WINAPI GetCurrentProcessId(void)
+{
+    DWORD ret;
+#ifdef __x86_64__
+    __asm__ __volatile__( ".byte 0x65\n\tmovl 0x40,%0" : "=r" (ret) );
+#else
+    __asm__ __volatile__( ".byte 0x64\n\tmovl 0x20,%0" : "=r" (ret) );
+#endif
+    return ret;
+}
+
+extern inline DWORD WINAPI GetCurrentThreadId(void);
+extern inline DWORD WINAPI GetCurrentThreadId(void)
+{
+    DWORD ret;
+#ifdef __x86_64__
+    __asm__ __volatile__( ".byte 0x65\n\tmovl 0x48,%0" : "=r" (ret) );
+#else
+    __asm__ __volatile__( ".byte 0x64\n\tmovl 0x24,%0" : "=r" (ret) );
+#endif
+    return ret;
+}
+
+extern inline void WINAPI SetLastError( DWORD err );
+extern inline void WINAPI SetLastError( DWORD err )
+{
+#ifdef __x86_64__
+    __asm__ __volatile__( ".byte 0x65\n\tmovl %0,0x68" : : "r" (err) : "memory" );
+#else
+    __asm__ __volatile__( ".byte 0x64\n\tmovl %0,0x34" : : "r" (err) : "memory" );
+#endif
+}
+
+extern inline HANDLE WINAPI GetProcessHeap(void);
+extern inline HANDLE WINAPI GetProcessHeap(void)
+{
+    HANDLE *pdb;
+#ifdef __x86_64__
+    __asm__ __volatile__( ".byte 0x65\n\tmovq 0x60,%0" : "=r" (pdb) );
+    return pdb[0x30 / sizeof(HANDLE)];  /* get dword at offset 0x30 in pdb */
+#else
+    __asm__ __volatile__( ".byte 0x64\n\tmovl 0x30,%0" : "=r" (pdb) );
+    return pdb[0x18 / sizeof(HANDLE)];  /* get dword at offset 0x18 in pdb */
+#endif
+}
+
+#else  /* __GNUC__ */
+
+WINBASEAPI DWORD       WINAPI GetCurrentProcessId(void);
+WINBASEAPI DWORD       WINAPI GetCurrentThreadId(void);
+WINBASEAPI DWORD       WINAPI GetLastError(void);
+WINBASEAPI HANDLE      WINAPI GetProcessHeap(void);
+WINBASEAPI VOID        WINAPI SetLastError(DWORD);
+
+#endif  /* __GNUC__ */
+
 #ifdef __WINESRC__
-#define GetCurrentProcess() ((HANDLE)0xffffffff)
-#define GetCurrentThread()  ((HANDLE)0xfffffffe)
+#define GetCurrentProcess() ((HANDLE)~(ULONG_PTR)0)
+#define GetCurrentThread()  ((HANDLE)~(ULONG_PTR)1)
 #endif
 
 /* WinMain(entry point) must be declared in winbase.h. */

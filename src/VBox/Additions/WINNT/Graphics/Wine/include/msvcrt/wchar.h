@@ -5,25 +5,26 @@
  * Modified for Wine use by Jon Griffiths and Francois Gouget.
  * This file is in the public domain.
  */
+
+/*
+ * Sun LGPL Disclaimer: For the avoidance of doubt, except that if any license choice
+ * other than GPL or LGPL is available it will apply instead, Sun elects to use only
+ * the Lesser General Public License version 2.1 (LGPLv2) at this time for any software where
+ * a choice of LGPL license versions is made available with the language indicating
+ * that LGPLv2 or any later version may be used, or where a choice of which version
+ * of the LGPL is applied is otherwise unspecified.
+ */
+
 #ifndef __WINE_WCHAR_H
 #define __WINE_WCHAR_H
-#ifndef __WINE_USE_MSVCRT
-#define __WINE_USE_MSVCRT
-#endif
+
+#include <crtdefs.h>
+#include <stdarg.h>
 
 #include <pshpack8.h>
 
-#include <stdarg.h>
-
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifndef _WCHAR_T_DEFINED
-#define _WCHAR_T_DEFINED
-#ifndef __cplusplus
-typedef unsigned short wchar_t;
-#endif
 #endif
 
 #ifndef NULL
@@ -37,18 +38,6 @@ typedef unsigned short wchar_t;
 #define WCHAR_MIN 0
 #define WCHAR_MAX ((wchar_t)-1)
 
-#if defined(__x86_64__) && !defined(_WIN64)
-#define _WIN64
-#endif
-
-#if !defined(_MSC_VER) && !defined(__int64)
-# ifdef _WIN64
-#   define __int64 long
-# else
-#   define __int64 long long
-# endif
-#endif
-
 #ifndef DECLSPEC_ALIGN
 # if defined(_MSC_VER) && (_MSC_VER >= 1300) && !defined(MIDL_PASS)
 #  define DECLSPEC_ALIGN(x) __declspec(align(x))
@@ -60,21 +49,6 @@ typedef unsigned short wchar_t;
 #endif
 
 typedef int mbstate_t;
-
-#ifndef _SIZE_T_DEFINED
-#ifdef _WIN64
-typedef unsigned __int64 size_t;
-#else
-typedef unsigned int size_t;
-#endif
-#define _SIZE_T_DEFINED
-#endif
-
-#ifndef _WCTYPE_T_DEFINED
-typedef unsigned short  wint_t;
-typedef unsigned short  wctype_t;
-#define _WCTYPE_T_DEFINED
-#endif
 
 #ifndef WEOF
 #define WEOF        (wint_t)(0xFFFF)
@@ -98,16 +72,6 @@ typedef unsigned short _ino_t;
 #ifndef _OFF_T_DEFINED
 typedef int _off_t;
 #define _OFF_T_DEFINED
-#endif
-
-#ifndef _TIME_T_DEFINED
-typedef long time_t;
-#define _TIME_T_DEFINED
-#endif
-
-#ifndef _TIME64_T_DEFINED
-#define _TIME64_T_DEFINED
-typedef __int64 __time64_t;
 #endif
 
 #ifndef _TM_DEFINED
@@ -237,198 +201,199 @@ struct _stat64 {
 
 #ifndef _WCTYPE_DEFINED
 #define _WCTYPE_DEFINED
-int is_wctype(wint_t,wctype_t);
-int isleadbyte(int);
-int iswalnum(wint_t);
-int iswalpha(wint_t);
-int iswascii(wint_t);
-int iswcntrl(wint_t);
-int iswctype(wint_t,wctype_t);
-int iswdigit(wint_t);
-int iswgraph(wint_t);
-int iswlower(wint_t);
-int iswprint(wint_t);
-int iswpunct(wint_t);
-int iswspace(wint_t);
-int iswupper(wint_t);
-int iswxdigit(wint_t);
-wchar_t towlower(wchar_t);
-wchar_t towupper(wchar_t);
+int     __cdecl is_wctype(wint_t,wctype_t);
+int     __cdecl isleadbyte(int);
+int     __cdecl iswalnum(wint_t);
+int     __cdecl iswalpha(wint_t);
+int     __cdecl iswascii(wint_t);
+int     __cdecl iswcntrl(wint_t);
+int     __cdecl iswctype(wint_t,wctype_t);
+int     __cdecl iswdigit(wint_t);
+int     __cdecl iswgraph(wint_t);
+int     __cdecl iswlower(wint_t);
+int     __cdecl iswprint(wint_t);
+int     __cdecl iswpunct(wint_t);
+int     __cdecl iswspace(wint_t);
+int     __cdecl iswupper(wint_t);
+int     __cdecl iswxdigit(wint_t);
+wchar_t __cdecl towlower(wchar_t);
+wchar_t __cdecl towupper(wchar_t);
 #endif /* _WCTYPE_DEFINED */
 
 #ifndef _WDIRECT_DEFINED
 #define _WDIRECT_DEFINED
-int              _wchdir(const wchar_t*);
-wchar_t* _wgetcwd(wchar_t*,int);
-wchar_t* _wgetdcwd(int,wchar_t*,int);
-int              _wmkdir(const wchar_t*);
-int              _wrmdir(const wchar_t*);
+int      __cdecl _wchdir(const wchar_t*);
+wchar_t* __cdecl _wgetcwd(wchar_t*,int);
+wchar_t* __cdecl _wgetdcwd(int,wchar_t*,int);
+int      __cdecl _wmkdir(const wchar_t*);
+int      __cdecl _wrmdir(const wchar_t*);
 #endif /* _WDIRECT_DEFINED */
 
 #ifndef _WIO_DEFINED
 #define _WIO_DEFINED
-int         _waccess(const wchar_t*,int);
-int         _wchmod(const wchar_t*,int);
-int         _wcreat(const wchar_t*,int);
-long        _wfindfirst(const wchar_t*,struct _wfinddata_t*);
-long        _wfindfirsti64(const wchar_t*, struct _wfinddatai64_t*);
-int         _wfindnext(long,struct _wfinddata_t*);
-int         _wfindnexti64(long, struct _wfinddatai64_t*);
-wchar_t*_wmktemp(wchar_t*);
-int         _wopen(const wchar_t*,int,...);
-int         _wrename(const wchar_t*,const wchar_t*);
-int         _wsopen(const wchar_t*,int,int,...);
-int         _wunlink(const wchar_t*);
+int      __cdecl _waccess(const wchar_t*,int);
+int      __cdecl _wchmod(const wchar_t*,int);
+int      __cdecl _wcreat(const wchar_t*,int);
+long     __cdecl _wfindfirst(const wchar_t*,struct _wfinddata_t*);
+long     __cdecl _wfindfirsti64(const wchar_t*, struct _wfinddatai64_t*);
+int      __cdecl _wfindnext(long,struct _wfinddata_t*);
+int      __cdecl _wfindnexti64(long, struct _wfinddatai64_t*);
+wchar_t* __cdecl _wmktemp(wchar_t*);
+int      __cdecl _wopen(const wchar_t*,int,...);
+int      __cdecl _wrename(const wchar_t*,const wchar_t*);
+int      __cdecl _wsopen(const wchar_t*,int,int,...);
+int      __cdecl _wunlink(const wchar_t*);
 #endif /* _WIO_DEFINED */
 
 #ifndef _WLOCALE_DEFINED
 #define _WLOCALE_DEFINED
-wchar_t* _wsetlocale(int,const wchar_t*);
+wchar_t* __cdecl _wsetlocale(int,const wchar_t*);
 #endif /* _WLOCALE_DEFINED */
 
 #ifndef _WPROCESS_DEFINED
 #define _WPROCESS_DEFINED
-int         _wexecl(const wchar_t*,const wchar_t*,...);
-int         _wexecle(const wchar_t*,const wchar_t*,...);
-int         _wexeclp(const wchar_t*,const wchar_t*,...);
-int         _wexeclpe(const wchar_t*,const wchar_t*,...);
-int         _wexecv(const wchar_t*,const wchar_t* const *);
-int         _wexecve(const wchar_t*,const wchar_t* const *,const wchar_t* const *);
-int         _wexecvp(const wchar_t*,const wchar_t* const *);
-int         _wexecvpe(const wchar_t*,const wchar_t* const *,const wchar_t* const *);
-int         _wspawnl(int,const wchar_t*,const wchar_t*,...);
-int         _wspawnle(int,const wchar_t*,const wchar_t*,...);
-int         _wspawnlp(int,const wchar_t*,const wchar_t*,...);
-int         _wspawnlpe(int,const wchar_t*,const wchar_t*,...);
-int         _wspawnv(int,const wchar_t*,const wchar_t* const *);
-int         _wspawnve(int,const wchar_t*,const wchar_t* const *,const wchar_t* const *);
-int         _wspawnvp(int,const wchar_t*,const wchar_t* const *);
-int         _wspawnvpe(int,const wchar_t*,const wchar_t* const *,const wchar_t* const *);
-int         _wsystem(const wchar_t*);
+int      __cdecl _wexecl(const wchar_t*,const wchar_t*,...);
+int      __cdecl _wexecle(const wchar_t*,const wchar_t*,...);
+int      __cdecl _wexeclp(const wchar_t*,const wchar_t*,...);
+int      __cdecl _wexeclpe(const wchar_t*,const wchar_t*,...);
+int      __cdecl _wexecv(const wchar_t*,const wchar_t* const *);
+int      __cdecl _wexecve(const wchar_t*,const wchar_t* const *,const wchar_t* const *);
+int      __cdecl _wexecvp(const wchar_t*,const wchar_t* const *);
+int      __cdecl _wexecvpe(const wchar_t*,const wchar_t* const *,const wchar_t* const *);
+int      __cdecl _wspawnl(int,const wchar_t*,const wchar_t*,...);
+int      __cdecl _wspawnle(int,const wchar_t*,const wchar_t*,...);
+int      __cdecl _wspawnlp(int,const wchar_t*,const wchar_t*,...);
+int      __cdecl _wspawnlpe(int,const wchar_t*,const wchar_t*,...);
+int      __cdecl _wspawnv(int,const wchar_t*,const wchar_t* const *);
+int      __cdecl _wspawnve(int,const wchar_t*,const wchar_t* const *,const wchar_t* const *);
+int      __cdecl _wspawnvp(int,const wchar_t*,const wchar_t* const *);
+int      __cdecl _wspawnvpe(int,const wchar_t*,const wchar_t* const *,const wchar_t* const *);
+int      __cdecl _wsystem(const wchar_t*);
 #endif /* _WPROCESS_DEFINED */
 
 #ifndef _WSTAT_DEFINED
 #define _WSTAT_DEFINED
-int _wstat(const wchar_t*,struct _stat*);
-int _wstati64(const wchar_t*,struct _stati64*);
-int _wstat64(const wchar_t*,struct _stat64*);
+int __cdecl _wstat(const wchar_t*,struct _stat*);
+int __cdecl _wstati64(const wchar_t*,struct _stati64*);
+int __cdecl _wstat64(const wchar_t*,struct _stat64*);
 #endif /* _WSTAT_DEFINED */
 
 #ifndef _WSTDIO_DEFINED
 #define _WSTDIO_DEFINED
-wint_t  _fgetwchar(void);
-wint_t  _fputwchar(wint_t);
-wchar_t*_getws(wchar_t*);
-int             _putws(const wchar_t*);
-int             _snwprintf(wchar_t*,size_t,const wchar_t*,...);
-int             _vsnwprintf(wchar_t*,size_t,const wchar_t*,va_list);
-FILE*   _wfdopen(int,const wchar_t*);
-FILE*   _wfopen(const wchar_t*,const wchar_t*);
-FILE*   _wfreopen(const wchar_t*,const wchar_t*,FILE*);
-FILE*   _wfsopen(const wchar_t*,const wchar_t*,int);
-void            _wperror(const wchar_t*);
-FILE*   _wpopen(const wchar_t*,const wchar_t*);
-int             _wremove(const wchar_t*);
-wchar_t*_wtempnam(const wchar_t*,const wchar_t*);
-wchar_t*_wtmpnam(wchar_t*);
+wint_t   __cdecl _fgetwchar(void);
+wint_t   __cdecl _fputwchar(wint_t);
+wchar_t* __cdecl _getws(wchar_t*);
+int      __cdecl _putws(const wchar_t*);
+int      __cdecl _snwprintf(wchar_t*,size_t,const wchar_t*,...);
+int      __cdecl _vscwprintf(const wchar_t*,__ms_va_list);
+int      __cdecl _vsnwprintf(wchar_t*,size_t,const wchar_t*,__ms_va_list);
+FILE*    __cdecl _wfdopen(int,const wchar_t*);
+FILE*    __cdecl _wfopen(const wchar_t*,const wchar_t*);
+FILE*    __cdecl _wfreopen(const wchar_t*,const wchar_t*,FILE*);
+FILE*    __cdecl _wfsopen(const wchar_t*,const wchar_t*,int);
+void     __cdecl _wperror(const wchar_t*);
+FILE*    __cdecl _wpopen(const wchar_t*,const wchar_t*);
+int      __cdecl _wremove(const wchar_t*);
+wchar_t* __cdecl _wtempnam(const wchar_t*,const wchar_t*);
+wchar_t* __cdecl _wtmpnam(wchar_t*);
 
-wint_t  fgetwc(FILE*);
-wchar_t*fgetws(wchar_t*,int,FILE*);
-wint_t  fputwc(wint_t,FILE*);
-int             fputws(const wchar_t*,FILE*);
-int             fwprintf(FILE*,const wchar_t*,...);
-int             fputws(const wchar_t*,FILE*);
-int             fwscanf(FILE*,const wchar_t*,...);
-wint_t  getwc(FILE*);
-wint_t  getwchar(void);
-wchar_t*getws(wchar_t*);
-wint_t  putwc(wint_t,FILE*);
-wint_t  putwchar(wint_t);
-int             putws(const wchar_t*);
-int             swprintf(wchar_t*,const wchar_t*,...);
-int             swscanf(const wchar_t*,const wchar_t*,...);
-wint_t  ungetwc(wint_t,FILE*);
-int             vfwprintf(FILE*,const wchar_t*,va_list);
-int             vswprintf(wchar_t*,const wchar_t*,va_list);
-int             vwprintf(const wchar_t*,va_list);
-int             wprintf(const wchar_t*,...);
-int             wscanf(const wchar_t*,...);
+wint_t   __cdecl fgetwc(FILE*);
+wchar_t* __cdecl fgetws(wchar_t*,int,FILE*);
+wint_t   __cdecl fputwc(wint_t,FILE*);
+int      __cdecl fputws(const wchar_t*,FILE*);
+int      __cdecl fwprintf(FILE*,const wchar_t*,...);
+int      __cdecl fputws(const wchar_t*,FILE*);
+int      __cdecl fwscanf(FILE*,const wchar_t*,...);
+wint_t   __cdecl getwc(FILE*);
+wint_t   __cdecl getwchar(void);
+wchar_t* __cdecl getws(wchar_t*);
+wint_t   __cdecl putwc(wint_t,FILE*);
+wint_t   __cdecl putwchar(wint_t);
+int      __cdecl putws(const wchar_t*);
+int      __cdecl swprintf(wchar_t*,const wchar_t*,...);
+int      __cdecl swscanf(const wchar_t*,const wchar_t*,...);
+wint_t   __cdecl ungetwc(wint_t,FILE*);
+int      __cdecl vfwprintf(FILE*,const wchar_t*,__ms_va_list);
+int      __cdecl vswprintf(wchar_t*,const wchar_t*,__ms_va_list);
+int      __cdecl vwprintf(const wchar_t*,__ms_va_list);
+int      __cdecl wprintf(const wchar_t*,...);
+int      __cdecl wscanf(const wchar_t*,...);
 #endif /* _WSTDIO_DEFINED */
 
 #ifndef _WSTDLIB_DEFINED
 #define _WSTDLIB_DEFINED
-wchar_t*_itow(int,wchar_t*,int);
-wchar_t*_i64tow(__int64,wchar_t*,int);
-wchar_t*_ltow(long,wchar_t*,int);
-wchar_t*_ui64tow(unsigned __int64,wchar_t*,int);
-wchar_t*_ultow(unsigned long,wchar_t*,int);
-wchar_t*_wfullpath(wchar_t*,const wchar_t*,size_t);
-wchar_t*_wgetenv(const wchar_t*);
-void            _wmakepath(wchar_t*,const wchar_t*,const wchar_t*,const wchar_t*,const wchar_t*);
-void            _wperror(const wchar_t*);
-int             _wputenv(const wchar_t*);
-void            _wsearchenv(const wchar_t*,const wchar_t*,wchar_t*);
-void            _wsplitpath(const wchar_t*,wchar_t*,wchar_t*,wchar_t*,wchar_t*);
-int             _wsystem(const wchar_t*);
-int             _wtoi(const wchar_t*);
-__int64         _wtoi64(const wchar_t*);
-long            _wtol(const wchar_t*);
+wchar_t* __cdecl _itow(int,wchar_t*,int);
+wchar_t* __cdecl _i64tow(__int64,wchar_t*,int);
+wchar_t* __cdecl _ltow(long,wchar_t*,int);
+wchar_t* __cdecl _ui64tow(unsigned __int64,wchar_t*,int);
+wchar_t* __cdecl _ultow(unsigned long,wchar_t*,int);
+wchar_t* __cdecl _wfullpath(wchar_t*,const wchar_t*,size_t);
+wchar_t* __cdecl _wgetenv(const wchar_t*);
+void     __cdecl _wmakepath(wchar_t*,const wchar_t*,const wchar_t*,const wchar_t*,const wchar_t*);
+void     __cdecl _wperror(const wchar_t*);
+int      __cdecl _wputenv(const wchar_t*);
+void     __cdecl _wsearchenv(const wchar_t*,const wchar_t*,wchar_t*);
+void     __cdecl _wsplitpath(const wchar_t*,wchar_t*,wchar_t*,wchar_t*,wchar_t*);
+int      __cdecl _wsystem(const wchar_t*);
+int      __cdecl _wtoi(const wchar_t*);
+__int64  __cdecl _wtoi64(const wchar_t*);
+long     __cdecl _wtol(const wchar_t*);
 
-size_t mbstowcs(wchar_t*,const char*,size_t);
-int            mbtowc(wchar_t*,const char*,size_t);
-double         wcstod(const wchar_t*,wchar_t**);
-long           wcstol(const wchar_t*,wchar_t**,int);
-size_t wcstombs(char*,const wchar_t*,size_t);
-unsigned long  wcstoul(const wchar_t*,wchar_t**,int);
-int            wctomb(char*,wchar_t);
+size_t        __cdecl mbstowcs(wchar_t*,const char*,size_t);
+int           __cdecl mbtowc(wchar_t*,const char*,size_t);
+double        __cdecl wcstod(const wchar_t*,wchar_t**);
+long          __cdecl wcstol(const wchar_t*,wchar_t**,int);
+size_t        __cdecl wcstombs(char*,const wchar_t*,size_t);
+unsigned long __cdecl wcstoul(const wchar_t*,wchar_t**,int);
+int           __cdecl wctomb(char*,wchar_t);
 #endif /* _WSTDLIB_DEFINED */
 
 #ifndef _WSTRING_DEFINED
 #define _WSTRING_DEFINED
-wchar_t*_wcsdup(const wchar_t*);
-int             _wcsicmp(const wchar_t*,const wchar_t*);
-int             _wcsicoll(const wchar_t*,const wchar_t*);
-wchar_t*_wcslwr(wchar_t*);
-int             _wcsnicmp(const wchar_t*,const wchar_t*,size_t);
-wchar_t*_wcsnset(wchar_t*,wchar_t,size_t);
-wchar_t*_wcsrev(wchar_t*);
-wchar_t*_wcsset(wchar_t*,wchar_t);
-wchar_t*_wcsupr(wchar_t*);
+wchar_t* __cdecl _wcsdup(const wchar_t*);
+int      __cdecl _wcsicmp(const wchar_t*,const wchar_t*);
+int      __cdecl _wcsicoll(const wchar_t*,const wchar_t*);
+wchar_t* __cdecl _wcslwr(wchar_t*);
+int      __cdecl _wcsnicmp(const wchar_t*,const wchar_t*,size_t);
+wchar_t* __cdecl _wcsnset(wchar_t*,wchar_t,size_t);
+wchar_t* __cdecl _wcsrev(wchar_t*);
+wchar_t* __cdecl _wcsset(wchar_t*,wchar_t);
+wchar_t* __cdecl _wcsupr(wchar_t*);
 
-wchar_t*wcscat(wchar_t*,const wchar_t*);
-wchar_t*wcschr(const wchar_t*,wchar_t);
-int             wcscmp(const wchar_t*,const wchar_t*);
-int             wcscoll(const wchar_t*,const wchar_t*);
-wchar_t*wcscpy(wchar_t*,const wchar_t*);
-size_t  wcscspn(const wchar_t*,const wchar_t*);
-size_t  wcslen(const wchar_t*);
-wchar_t*wcsncat(wchar_t*,const wchar_t*,size_t);
-int             wcsncmp(const wchar_t*,const wchar_t*,size_t);
-wchar_t*wcsncpy(wchar_t*,const wchar_t*,size_t);
-wchar_t*wcspbrk(const wchar_t*,const wchar_t*);
-wchar_t*wcsrchr(const wchar_t*,wchar_t wcFor);
-size_t  wcsspn(const wchar_t*,const wchar_t*);
-wchar_t*wcsstr(const wchar_t*,const wchar_t*);
-wchar_t*wcstok(wchar_t*,const wchar_t*);
-size_t  wcsxfrm(wchar_t*,const wchar_t*,size_t);
+wchar_t* __cdecl wcscat(wchar_t*,const wchar_t*);
+wchar_t* __cdecl wcschr(const wchar_t*,wchar_t);
+int      __cdecl wcscmp(const wchar_t*,const wchar_t*);
+int      __cdecl wcscoll(const wchar_t*,const wchar_t*);
+wchar_t* __cdecl wcscpy(wchar_t*,const wchar_t*);
+size_t   __cdecl wcscspn(const wchar_t*,const wchar_t*);
+size_t   __cdecl wcslen(const wchar_t*);
+wchar_t* __cdecl wcsncat(wchar_t*,const wchar_t*,size_t);
+int      __cdecl wcsncmp(const wchar_t*,const wchar_t*,size_t);
+wchar_t* __cdecl wcsncpy(wchar_t*,const wchar_t*,size_t);
+wchar_t* __cdecl wcspbrk(const wchar_t*,const wchar_t*);
+wchar_t* __cdecl wcsrchr(const wchar_t*,wchar_t wcFor);
+size_t   __cdecl wcsspn(const wchar_t*,const wchar_t*);
+wchar_t* __cdecl wcsstr(const wchar_t*,const wchar_t*);
+wchar_t* __cdecl wcstok(wchar_t*,const wchar_t*);
+size_t   __cdecl wcsxfrm(wchar_t*,const wchar_t*,size_t);
 #endif /* _WSTRING_DEFINED */
 
 #ifndef _WTIME_DEFINED
 #define _WTIME_DEFINED
-wchar_t*_wasctime(const struct tm*);
-size_t  wcsftime(wchar_t*,size_t,const wchar_t*,const struct tm*);
-wchar_t*_wctime(const time_t*);
-wchar_t*_wstrdate(wchar_t*);
-wchar_t*_wstrtime(wchar_t*);
+wchar_t* __cdecl _wasctime(const struct tm*);
+size_t   __cdecl wcsftime(wchar_t*,size_t,const wchar_t*,const struct tm*);
+wchar_t* __cdecl _wctime(const time_t*);
+wchar_t* __cdecl _wstrdate(wchar_t*);
+wchar_t* __cdecl _wstrtime(wchar_t*);
 #endif /* _WTIME_DEFINED */
 
-wchar_t btowc(int);
-size_t  mbrlen(const char *,size_t,mbstate_t*);
-size_t  mbrtowc(wchar_t*,const char*,size_t,mbstate_t*);
-size_t  mbsrtowcs(wchar_t*,const char**,size_t,mbstate_t*);
-size_t  wcrtomb(char*,wchar_t,mbstate_t*);
-size_t  wcsrtombs(char*,const wchar_t**,size_t,mbstate_t*);
-int             wctob(wint_t);
+wchar_t __cdecl btowc(int);
+size_t  __cdecl mbrlen(const char *,size_t,mbstate_t*);
+size_t  __cdecl mbrtowc(wchar_t*,const char*,size_t,mbstate_t*);
+size_t  __cdecl mbsrtowcs(wchar_t*,const char**,size_t,mbstate_t*);
+size_t  __cdecl wcrtomb(char*,wchar_t,mbstate_t*);
+size_t  __cdecl wcsrtombs(char*,const wchar_t**,size_t,mbstate_t*);
+int     __cdecl wctob(wint_t);
 
 #ifdef __cplusplus
 }
