@@ -114,14 +114,14 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
     {
 #endif /* VBOX_WITH_HGSMI */
         ppdev->iDevice = iDevice;
-    
+
         ppdev->layout.cbVRAM = pMemoryInformation->VideoRamLength;
-    
+
         ppdev->layout.offFrameBuffer = 0;
         ppdev->layout.cbFrameBuffer  = RT_ALIGN_32(pMemoryInformation->FrameBufferLength, 0x1000);
-    
+
         cbAvailable = ppdev->layout.cbVRAM - ppdev->layout.cbFrameBuffer;
-        
+
         if (cbAvailable <= u32DisplayInfoSize)
         {
 #ifndef VBOX_WITH_HGSMI
@@ -134,9 +134,9 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
         {
             ppdev->layout.offDisplayInformation = ppdev->layout.cbVRAM - u32DisplayInfoSize;
             ppdev->layout.cbDisplayInformation  = u32DisplayInfoSize;
-            
+
             cbAvailable -= ppdev->layout.cbDisplayInformation;
-            
+
             /* Use minimum 64K and maximum the cbFrameBuffer for the VBVA buffer. */
             for (ppdev->layout.cbVBVABuffer = ppdev->layout.cbFrameBuffer;
 #ifndef VBOX_WITH_HGSMI
@@ -151,7 +151,7 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
                     break;
                 }
             }
-            
+
             if (ppdev->layout.cbVBVABuffer >= cbAvailable)
             {
 #ifndef VBOX_WITH_HGSMI
@@ -164,15 +164,15 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
             {
                 /* Now the offscreen heap followed by the VBVA buffer. */
                 ppdev->layout.offDDRAWHeap = ppdev->layout.offFrameBuffer + ppdev->layout.cbFrameBuffer;
-                
+
                 cbAvailable -= ppdev->layout.cbVBVABuffer;
                 ppdev->layout.cbDDRAWHeap = cbAvailable;
-                
+
                 ppdev->layout.offVBVABuffer = ppdev->layout.offDDRAWHeap + ppdev->layout.cbDDRAWHeap;
             }
         }
     }
-    
+
 #ifndef VBOX_WITH_HGSMI
     if (!ppdev->bVBoxVideoSupported)
 #else
@@ -183,16 +183,16 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
 
         /* Setup a layout without both the VBVA buffer and the display information. */
         ppdev->layout.cbVRAM = pMemoryInformation->VideoRamLength;
-    
+
         ppdev->layout.offFrameBuffer = 0;
         ppdev->layout.cbFrameBuffer  = RT_ALIGN_32(pMemoryInformation->FrameBufferLength, 0x1000);
-    
+
         ppdev->layout.offDDRAWHeap = ppdev->layout.offFrameBuffer + ppdev->layout.cbFrameBuffer;
         ppdev->layout.cbDDRAWHeap  = ppdev->layout.cbVRAM - ppdev->layout.offDDRAWHeap;
-    
+
         ppdev->layout.offVBVABuffer = ppdev->layout.offDDRAWHeap + ppdev->layout.cbDDRAWHeap;
         ppdev->layout.cbVBVABuffer  = 0;
-    
+
         ppdev->layout.offDisplayInformation = ppdev->layout.offVBVABuffer + ppdev->layout.cbVBVABuffer;
         ppdev->layout.cbDisplayInformation  = 0;
     }
@@ -216,6 +216,7 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
         }
         else
         {
+#if 0
             /* Inform the host about the HGSMIHOSTEVENTS location. */
             void *p = HGSMIHeapAlloc (&ppdev->hgsmiDisplayHeap,
                                       sizeof (HGSMI_BUFFER_LOCATION),
@@ -241,6 +242,7 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
 
                 HGSMIHeapFree (&ppdev->hgsmiDisplayHeap, p);
             }
+#endif
         }
     }
 #endif /* VBOX_WITH_HGSMI */
@@ -274,7 +276,7 @@ static void vboxSetupDisplayInfo (PPDEV ppdev, VIDEO_MEMORY_INFORMATION *pMemory
 {
     VBOXDISPLAYINFO *pInfo;
     uint8_t *pu8;
-    
+
     pu8 = (uint8_t *)ppdev->pjScreen + ppdev->layout.offDisplayInformation;
 
     pInfo = (VBOXDISPLAYINFO *)pu8;
@@ -296,7 +298,7 @@ static void vboxSetupDisplayInfo (PPDEV ppdev, VIDEO_MEMORY_INFORMATION *pMemory
     pInfo->screen.u16Height    = 0;
     pInfo->screen.bitsPerPixel = 0;
     pInfo->screen.u8Flags      = VBOX_VIDEO_INFO_SCREEN_F_NONE;
-    
+
     pInfo->hdrHostEvents.u8Type     = VBOX_VIDEO_INFO_TYPE_HOST_EVENTS;
     pInfo->hdrHostEvents.u8Reserved = 0;
     pInfo->hdrHostEvents.u16Length  = sizeof (VBOXVIDEOINFOHOSTEVENTS);
@@ -340,7 +342,7 @@ BOOL bInitSURF(PPDEV ppdev, BOOL bFirst)
     DWORD MaxWidth, MaxHeight;
     VIDEO_MEMORY videoMemory;
     VIDEO_MEMORY_INFORMATION videoMemoryInformation;
-    ULONG RemappingNeeded = 0;  
+    ULONG RemappingNeeded = 0;
 
     //
     // Set the current mode into the hardware.
@@ -449,7 +451,7 @@ BOOL bInitSURF(PPDEV ppdev, BOOL bFirst)
         ppdev->pPointerAttributes->Column = 0;
         ppdev->pPointerAttributes->Row = 0;
         ppdev->pPointerAttributes->Enable = 0;
-        
+
         vboxInitVBoxVideo (ppdev, &videoMemoryInformation);
 
 #ifndef VBOX_WITH_HGSMI
@@ -461,9 +463,9 @@ BOOL bInitSURF(PPDEV ppdev, BOOL bFirst)
 #endif /* !VBOX_WITH_HGSMI */
     }
 
-        
+
     DISPDBG((1, "DISP bInitSURF: ppdev->ulBitCount %d\n", ppdev->ulBitCount));
-    
+
     if (   ppdev->ulBitCount == 16
         || ppdev->ulBitCount == 24
         || ppdev->ulBitCount == 32)
@@ -493,7 +495,7 @@ BOOL bInitSURF(PPDEV ppdev, BOOL bFirst)
     DISPDBG((1, "bInitSURF: %d,%d\n", ppdev->ptlDevOrg.x, ppdev->ptlDevOrg.y));
     VBoxProcessDisplayInfo (ppdev);
 #endif /* VBOX_WITH_HGSMI */
-    
+
     return(TRUE);
 }
 

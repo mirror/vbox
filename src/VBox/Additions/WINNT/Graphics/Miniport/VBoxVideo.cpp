@@ -29,6 +29,10 @@
 #include <VBox/VBoxGuestLib.h>
 #include <VBoxDisplay.h>
 
+#ifdef VBOX_WITH_HGSMI
+#include <iprt/initterm.h>
+#endif
+
 #if _MSC_VER >= 1400 /* bird: MS fixed swprintf to be standard-conforming... */
 #define _INC_SWPRINTF_INL_
 extern "C" int __cdecl swprintf(wchar_t *, const wchar_t *, ...);
@@ -58,6 +62,10 @@ ULONG DriverEntry(IN PVOID Context1, IN PVOID Context2)
 {
     VIDEO_HW_INITIALIZATION_DATA InitData;
     ULONG rc;
+
+#ifdef VBOX_WITH_HGSMI
+    RTR0Init(0);
+#endif
 
     dprintf(("VBoxVideo::DriverEntry. Built %s %s\n", __DATE__, __TIME__));
 
@@ -1209,7 +1217,7 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
       /* Initialize VBoxGuest library, which is used for requests which go through VMMDev. */
       rc = VbglInit ();
 
-      /* Guest supports only HGSMI, the old VBVA via VMMDev is not supported. Old 
+      /* Guest supports only HGSMI, the old VBVA via VMMDev is not supported. Old
        * code will be ifdef'ed and later removed.
        * The host will however support both old and new interface to keep compatibility
        * with old guest additions.

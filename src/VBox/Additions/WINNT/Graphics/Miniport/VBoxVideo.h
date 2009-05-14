@@ -24,7 +24,10 @@
 #include <iprt/assert.h>
 
 #ifdef VBOX_WITH_HGSMI
+#include <iprt/thread.h>
+
 #include <VBox/HGSMI/HGSMI.h>
+#include <VBox/HGSMI/HGSMIChSetup.h>
 #endif /* VBOX_WITH_HGSMI */
 
 __BEGIN_DECLS
@@ -87,17 +90,17 @@ typedef struct _DEVICE_EXTENSION
    union {
        /* Information that is only relevant to the primary device or is the same for all devices. */
        struct {
-           
+
            void *pvReqFlush;                   /* Pointer to preallocated generic request structure for
                                                 * VMMDevReq_VideoAccelFlush. Allocated when VBVA status
                                                 * is changed. Deallocated on HwReset.
                                                 */
 
-           
+
            ULONG ulVbvaEnabled;                /* Indicates that VBVA mode is enabled. */
-           
+
            BOOLEAN bVBoxVideoSupported;        /* TRUE if VBoxVideo extensions, including DualView, are supported by the host. */
-           
+
            int cDisplays;                      /* Number of displays. */
 
            ULONG cbVRAM;                       /* The VRAM size. */
@@ -106,31 +109,39 @@ typedef struct _DEVICE_EXTENSION
                                                 * It is at offset:
                                                 *   cbAdapterMemorySize - VBOX_VIDEO_ADAPTER_INFORMATION_SIZE - cbMiniportHeap
                                                 */
-           PVOID pvMiniportHeap;               /* The pointer to the miniport heap VRAM. 
+           PVOID pvMiniportHeap;               /* The pointer to the miniport heap VRAM.
                                                 * This is mapped by miniport separately.
                                                 */
+#ifdef VBOX_WITH_HGSMI
+           volatile HGSMIHOSTFLAGS * pHostFlags; /* HGSMI host flags */
+#endif
 
            PVOID pvAdapterInformation;         /* The pointer to the last 4K of VRAM.
                                                 * This is mapped by miniport separately.
                                                 */
-           
+
            ULONG ulMaxFrameBufferSize;         /* The size of the VRAM allocated for the a single framebuffer. */
-           
+
 #ifndef VBOX_WITH_HGSMI
            ULONG ulDisplayInformationSize;     /* The size of the Display information, which is at offset:
                                                 * ulFrameBufferOffset + ulMaxFrameBufferSize.
                                                 */
 #endif /* !VBOX_WITH_HGSMI */
-           
+
 #ifdef VBOX_WITH_HGSMI
            BOOLEAN bHGSMI;                     /* Whether HGSMI is enabled. */
 
            HGSMIAREA areaHostHeap;             /* Host heap VRAM area. */
 
+           HGSMICHANNELINFO channels;
+
            HGSMIHEAP hgsmiAdapterHeap;
+
+           volatile bool bPollingStop;
+           RTTHREAD PollingThread;
 #endif /* VBOX_WITH_HGSMI */
        } primary;
-   
+
        /* Secondary device information. */
        struct {
            BOOLEAN bEnabled;                   /* Device enabled flag */
@@ -232,7 +243,7 @@ int VBoxMapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension,
 
 void VBoxUnmapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension,
                              void **ppv);
-                             
+
 void VBoxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension);
 
 #ifdef VBOX_WITH_HGSMI
