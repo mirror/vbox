@@ -2961,9 +2961,6 @@ PX86PDPT        pgmGstLazyMapPaePDPT(PPGMCPU pPGM);
 PX86PDPAE       pgmGstLazyMapPaePD(PPGMCPU pPGM, uint32_t iPdpt);
 PX86PML4        pgmGstLazyMapPml4(PPGMCPU pPGM);
 
-/* Forward decl */
-DECLINLINE(PPGMPOOLPAGE) pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys);
-
 __END_DECLS
 
 
