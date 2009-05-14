@@ -430,14 +430,13 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
 {
     char buff[512];
     char buff2[256];
-    FILE *f;
+    FILE *f = NULL;
     int found = 0;
     struct in_addr tmp_addr;
 
 #ifdef RT_OS_OS2
     /* Try various locations. */
     char *etc = getenv("ETC");
-    f = NULL;
     if (etc)
     {
         snprintf(buff, sizeof(buff), "%s/RESOLV2", etc);
@@ -454,7 +453,22 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
         f = fopen(buff, "rt");
     }
 #else
+#ifndef DEBUG_vvl
     f = fopen("/etc/resolv.conf", "r");
+#else
+    char *home = getenv("HOME");
+    snprintf(buff, sizeof(buff), "%s/resolv.conf", home);
+    f = fopen(buff, "r");
+    if (f != NULL) 
+    {
+        Log(("NAT: DNS we're using %s\n", buff));
+    }
+    else
+    {
+        f = fopen("/etc/resolv.conf", "r");
+        Log(("NAT: DNS we're using %s\n", buff));
+    }
+#endif
 #endif
     if (!f)
         return -1;
