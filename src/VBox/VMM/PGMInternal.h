@@ -2931,6 +2931,7 @@ void            pgmPoolFreeByPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t i
 int             pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 void            pgmPoolFlushAll(PVM pVM);
 void            pgmPoolClearAll(PVM pVM);
+PPGMPOOLPAGE    pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys);
 int             pgmPoolSyncCR3(PVM pVM);
 int             pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs);
 uint16_t        pgmPoolTrackPhysExtAddref(PVM pVM, uint16_t u16, uint16_t iShwPT);
@@ -4335,24 +4336,6 @@ DECLINLINE(void) pgmHandlerVirtualClearPage(PPGM pPGM, PPGMVIRTHANDLER pCur, uns
  *
  * @returns Pointer to the shadow page structure.
  * @param   pPool       The pool.
- * @param   HCPhys      The HC physical address of the shadow page.
- */
-DECLINLINE(PPGMPOOLPAGE) pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys)
-{
-    /*
-     * Look up the page.
-     */
-    PPGMPOOLPAGE pPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, HCPhys & X86_PTE_PAE_PG_MASK);
-    AssertFatalMsg(pPage && pPage->enmKind != PGMPOOLKIND_FREE, ("HCPhys=%RHp pPage=%p idx=%d\n", HCPhys, pPage, (pPage) ? pPage->idx : 0));
-    return pPage;
-}
-
-
-/**
- * Internal worker for finding a 'in-use' shadow page give by it's physical address.
- *
- * @returns Pointer to the shadow page structure.
- * @param   pPool       The pool.
  * @param   idx         The pool page index.
  */
 DECLINLINE(PPGMPOOLPAGE) pgmPoolGetPageByIdx(PPGMPOOL pPool, unsigned idx)
@@ -4402,6 +4385,9 @@ DECLINLINE(void) pgmTrackDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPoolPage, PPG
  */
 DECLINLINE(void) pgmPoolCacheUsed(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 {
+    PVM pVM = pPool->CTX_SUFF(pVM);
+    pgmLock(pVM);
+
     /*
      * Move to the head of the age list.
      */
@@ -4421,6 +4407,7 @@ DECLINLINE(void) pgmPoolCacheUsed(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         pPool->iAgeHead = pPage->idx;
         pPool->aPages[pPage->iAgeNext].iAgePrev = pPage->idx;
     }
+    pgmUnlock(pVM);
 }
 #endif /* PGMPOOL_WITH_CACHE */
 
