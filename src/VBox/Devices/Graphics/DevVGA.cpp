@@ -3241,9 +3241,8 @@ PDMBOTHCBDECL(int) vgaIOPortReadVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
     NOREF(pvUser);
 
 #ifdef VBOX_WITH_HGSMI
-#ifdef IN_RING3
     VGAState *s = PDMINS_2_DATA(pDevIns, PVGASTATE);
-
+#ifdef IN_RING3
     if (s->vbe_index == VBE_DISPI_INDEX_VBVA_GUEST)
     {
         *pu32 = HGSMIGuestRead (s->pHGSMI);
@@ -3255,10 +3254,12 @@ PDMBOTHCBDECL(int) vgaIOPortReadVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
         return VINF_SUCCESS;
     }
 #else
-    if (   Port == VBE_DISPI_INDEX_VBVA_HOST
-        || Port == VBE_DISPI_INDEX_VBVA_GUEST)
+    if (   s->vbe_index == VBE_DISPI_INDEX_VBVA_HOST
+        || s->vbe_index == VBE_DISPI_INDEX_VBVA_GUEST)
     {
-       return VINF_IOM_HC_IOPORT_WRITE;
+        Log(("vgaIOPortWriteVBEData: %s - Switching to host...\n",
+             s->vbe_index == VBE_DISPI_INDEX_VBVA_HOST? "VBE_DISPI_INDEX_VBVA_HOST": "VBE_DISPI_INDEX_VBVA_GUEST"));
+        return VINF_IOM_HC_IOPORT_READ;
     }
 #endif /* !IN_RING3 */
 #endif /* VBOX_WITH_HGSMI */
@@ -5068,6 +5069,7 @@ static DECLCALLBACK(void) vgaPortSetRenderVRAM(PPDMIDISPLAYPORT pInterface, bool
 static DECLCALLBACK(void) vgaTimerRefresh(PPDMDEVINS pDevIns, PTMTIMER pTimer)
 {
     PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+
     if (pThis->pDrv)
         pThis->pDrv->pfnRefresh(pThis->pDrv);
     if (pThis->cMilliesRefreshInterval)

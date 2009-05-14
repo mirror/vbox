@@ -80,9 +80,8 @@ int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
     /*
      * Do the actual modification.
      */
-    NTSTATUS rc = KeSetPriorityThread((PKTHREAD)pThread->Core.Key, Priority);
-    AssertMsg(NT_SUCCESS(rc), ("%#x\n", rc));
-    return RTErrConvertFromNtStatus(rc);
+    /*KPRIORITY oldPririty = */KeSetPriorityThread((PKTHREAD)pThread->Core.Key, Priority);
+    return VINF_SUCCESS;
 }
 
 
