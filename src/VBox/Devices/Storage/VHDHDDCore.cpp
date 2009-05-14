@@ -35,16 +35,18 @@
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/rand.h>
+#include <iprt/stream.h>
 
 #define VHD_RELATIVE_MAX_PATH 512
 #define VHD_ABSOLUTE_MAX_PATH 512
 
 #define VHD_SECTOR_SIZE 512
-#define VHD_BLOCK_SIZE  0x00200000
+#define VHD_BLOCK_SIZE  (2 * _1M)
 
 /* This is common to all VHD disk types and is located at the end of the image */
 #pragma pack(1)
-typedef struct VHDFooter {
+typedef struct VHDFooter
+{
     char     Cookie[8];
     uint32_t Features;
     uint32_t Version;
@@ -324,7 +326,7 @@ static int vhdLocatorUpdate(PVHDIMAGE pImage, PVHDPLE pLocator, const char *pszF
             goto out;
     }
     rc = RTFileWriteAt(pImage->File, RT_BE2H_U64(pLocator->u64DataOffset), pvBuf,
-        RT_BE2H_U32(pLocator->u32DataSpace) * VHD_SECTOR_SIZE, NULL);
+                       RT_BE2H_U32(pLocator->u32DataSpace) * VHD_SECTOR_SIZE, NULL);
 
 out:
     if (pvBuf)
@@ -347,15 +349,13 @@ static int vhdDynamicHeaderUpdate(PVHDIMAGE pImage)
     if (RT_FAILURE(rc))
         return rc;
     if (memcmp(ddh.Cookie, VHD_DYNAMIC_DISK_HEADER_COOKIE, VHD_DYNAMIC_DISK_HEADER_COOKIE_SIZE) != 0)
-    {
         return VERR_VD_VHD_INVALID_HEADER;
-    }
+
     uint32_t u32Checksum = RT_BE2H_U32(ddh.Checksum);
     ddh.Checksum = 0;
     if (u32Checksum != vhdChecksum(&ddh, sizeof(ddh)))
-    {
         return VERR_VD_VHD_INVALID_HEADER;
-    }
+
     /* Update parent's timestamp. */
     ddh.ParentTimeStamp = RT_H2BE_U32(pImage->u32ParentTimeStamp);
     /* Update parent's filename. */
@@ -419,9 +419,8 @@ static int vhdOpenImage(PVHDIMAGE pImage, unsigned uOpenFlags)
     pImage->uCurrentEndOfFile = FileSize - sizeof(VHDFooter);
 
     rc = RTFileReadAt(File, pImage->uCurrentEndOfFile, &vhdFooter, sizeof(VHDFooter), NULL);
-    if (memcmp(vhdFooter.Cookie, VHD_FOOTER_COOKIE, VHD_FOOTER_COOKIE_SIZE) != 0) {
+    if (memcmp(vhdFooter.Cookie, VHD_FOOTER_COOKIE, VHD_FOOTER_COOKIE_SIZE) != 0)
         return VERR_VD_VHD_INVALID_HEADER;
-    }
 
     switch (RT_BE2H_U32(vhdFooter.DiskType))
     {
@@ -525,9 +524,9 @@ static int vhdLoadDynamicDisk(PVHDIMAGE pImage, uint64_t uDynamicDiskHeaderOffse
     LogFlowFunc(("BlockSize=%u\n", pImage->cbDataBlock));
     pImage->cBlockAllocationTableEntries = RT_BE2H_U32(vhdDynamicDiskHeader.MaxTableEntries);
     LogFlowFunc(("MaxTableEntries=%lu\n", pImage->cBlockAllocationTableEntries));
-    AssertMsg(!(pImage->cbDataBlock % 512), ("%s: Data block size is not a multiple of 512!!\n", __FUNCTION__));
+    AssertMsg(!(pImage->cbDataBlock % VHD_SECTOR_SIZE), ("%s: Data block size is not a multiple of %!\n", __FUNCTION__, VHD_SECTOR_SIZE));
 
-    pImage->cSectorsPerDataBlock = pImage->cbDataBlock / 512;
+    pImage->cSectorsPerDataBlock = pImage->cbDataBlock / VHD_SECTOR_SIZE;
     LogFlowFunc(("SectorsPerDataBlock=%u\n", pImage->cSectorsPerDataBlock));
 
     /*
@@ -535,7 +534,7 @@ static int vhdLoadDynamicDisk(PVHDIMAGE pImage, uint64_t uDynamicDiskHeaderOffse
      * We store the size of it to be able to calculate the real offset.
      */
     pImage->cbDataBlockBitmap = pImage->cSectorsPerDataBlock / 8;
-    pImage->cDataBlockBitmapSectors = pImage->cbDataBlockBitmap / 512;
+    pImage->cDataBlockBitmapSectors = pImage->cbDataBlockBitmap / VHD_SECTOR_SIZE;
     LogFlowFunc(("cbDataBlockBitmap=%u\n", pImage->cbDataBlockBitmap));
 
     pImage->pu8Bitmap = (uint8_t *)RTMemAllocZ(pImage->cbDataBlockBitmap);
@@ -565,9 +564,7 @@ static int vhdLoadDynamicDisk(PVHDIMAGE pImage, uint64_t uDynamicDiskHeaderOffse
         return VERR_NO_MEMORY;
 
     for (i = 0; i < pImage->cBlockAllocationTableEntries; i++)
-    {
         pImage->pBlockAllocationTable[i] = RT_BE2H_U32(pBlockAllocationTable[i]);
-    }
 
     RTMemFree(pBlockAllocationTable);
 
@@ -746,7 +743,7 @@ static unsigned vhdGetOpenFlags(void *pBackendData)
     else
         uOpenFlags = 0;
 
-    LogFlowFunc(("returned %d\n", uOpenFlags));
+    LogFlowFunc(("returned %#x\n", uOpenFlags));
     return uOpenFlags;
 }
 
@@ -848,7 +845,8 @@ static int vhdFreeImage(PVHDIMAGE pImage)
 
     /* Freeing a never allocated image (e.g. because the open failed) is
      * not signalled as an error. After all nothing bad happens. */
-    if (pImage) {
+    if (pImage)
+    {
         vhdFlush(pImage);
         RTFileClose(pImage->File);
         vhdFreeImageMemory(pImage);
@@ -865,7 +863,8 @@ static int vhdClose(void *pBackendData, bool fDelete)
 
     /* Freeing a never allocated image (e.g. because the open failed) is
      * not signalled as an error. After all nothing bad happens. */
-    if (pImage) {
+    if (pImage)
+    {
         if (fDelete)
         {
             /* No point in updating the file that is deleted anyway. */
@@ -899,8 +898,8 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
         /*
          * Get the data block first.
          */
-        uint32_t cBlockAllocationTableEntry = (uOffset / 512) / pImage->cSectorsPerDataBlock;
-        uint32_t cBATEntryIndex = (uOffset / 512) % pImage->cSectorsPerDataBlock;
+        uint32_t cBlockAllocationTableEntry = (uOffset / VHD_SECTOR_SIZE) / pImage->cSectorsPerDataBlock;
+        uint32_t cBATEntryIndex = (uOffset / VHD_SECTOR_SIZE) % pImage->cSectorsPerDataBlock;
         uint64_t uVhdOffset;
 
         LogFlowFunc(("cBlockAllocationTableEntry=%u cBatEntryIndex=%u\n", cBlockAllocationTableEntry, cBATEntryIndex));
@@ -916,18 +915,18 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
             return VERR_VD_BLOCK_FREE;
         }
 
-        uVhdOffset = ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry] + pImage->cDataBlockBitmapSectors + cBATEntryIndex) * 512;
+        uVhdOffset = ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry] + pImage->cDataBlockBitmapSectors + cBATEntryIndex) * VHD_SECTOR_SIZE;
         LogFlowFunc(("uVhdOffset=%llu cbRead=%u\n", uVhdOffset, cbRead));
 
         /*
          * Clip read range to remain in this data block.
          */
-        cbRead = RT_MIN(cbRead, (pImage->cbDataBlock - (cBATEntryIndex * 512)));
+        cbRead = RT_MIN(cbRead, (pImage->cbDataBlock - (cBATEntryIndex * VHD_SECTOR_SIZE)));
 
         /* Read in the block's bitmap. */
         rc = RTFileReadAt(pImage->File,
-            ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry]) * VHD_SECTOR_SIZE,
-            pImage->pu8Bitmap, pImage->cbDataBlockBitmap, NULL);
+                          ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry]) * VHD_SECTOR_SIZE,
+                          pImage->pu8Bitmap, pImage->cbDataBlockBitmap, NULL);
         if (RT_SUCCESS(rc))
         {
             uint32_t cSectors = 0;
@@ -1025,18 +1024,18 @@ static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, siz
     int rc = VINF_SUCCESS;
 
     LogFlowFunc(("pBackendData=%p uOffset=%llu pvBuf=%p cbToWrite=%u pcbWriteProcess=%p pcbPreRead=%p pcbPostRead=%p fWrite=%u\n",
-             pBackendData, uOffset, pvBuf, cbToWrite, pcbPreRead, pcbPostRead, fWrite));
+             pBackendData, uOffset, pvBuf, cbToWrite, pcbWriteProcess, pcbPreRead, pcbPostRead, fWrite));
 
     AssertPtr(pImage);
-    Assert(uOffset % 512 == 0);
-    Assert(cbToWrite % 512 == 0);
+    Assert(uOffset % VHD_SECTOR_SIZE == 0);
+    Assert(cbToWrite % VHD_SECTOR_SIZE == 0);
 
     if (pImage->pBlockAllocationTable)
     {
         /*
          * Get the data block first.
          */
-        uint32_t cSector = uOffset / 512;
+        uint32_t cSector = uOffset / VHD_SECTOR_SIZE;
         uint32_t cBlockAllocationTableEntry = cSector / pImage->cSectorsPerDataBlock;
         uint32_t cBATEntryIndex = cSector % pImage->cSectorsPerDataBlock;
         uint64_t uVhdOffset;
@@ -1065,7 +1064,7 @@ static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, siz
             /*
              * Set the new end of the file and link the new block into the BAT.
              */
-            pImage->pBlockAllocationTable[cBlockAllocationTableEntry] = pImage->uCurrentEndOfFile / 512;
+            pImage->pBlockAllocationTable[cBlockAllocationTableEntry] = pImage->uCurrentEndOfFile / VHD_SECTOR_SIZE;
             pImage->uCurrentEndOfFile += cbNewBlock;
             RTMemFree(pNewBlock);
         }
@@ -1073,12 +1072,12 @@ static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, siz
         /*
          * Calculate the real offset in the file.
          */
-        uVhdOffset = ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry] + pImage->cDataBlockBitmapSectors + cBATEntryIndex) * 512;
+        uVhdOffset = ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry] + pImage->cDataBlockBitmapSectors + cBATEntryIndex) * VHD_SECTOR_SIZE;
 
         /*
          * Clip write range.
          */
-        cbToWrite = RT_MIN(cbToWrite, (pImage->cbDataBlock - (cBATEntryIndex * 512)));
+        cbToWrite = RT_MIN(cbToWrite, (pImage->cbDataBlock - (cBATEntryIndex * VHD_SECTOR_SIZE)));
         RTFileWriteAt(pImage->File, uVhdOffset, pvBuf, cbToWrite, NULL);
 
         /* Read in the block's bitmap. */
@@ -1141,11 +1140,8 @@ static int vhdFlush(void *pBackendData)
         /*
          * The BAT entries have to be stored in big endian format.
          */
-        unsigned i = 0;
-        for (i = 0; i < pImage->cBlockAllocationTableEntries; i++)
-        {
+        for (unsigned i = 0; i < pImage->cBlockAllocationTableEntries; i++)
             pBlockAllocationTableToWrite[i] = RT_H2BE_U32(pImage->pBlockAllocationTable[i]);
-        }
 
         /*
          * Write the block allocation table after the copy of the disk footer and the dynamic disk header.
@@ -1389,7 +1385,7 @@ static int vhdSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
  */
 static void vhdSetDiskGeometry(PVHDIMAGE pImage, uint64_t cbSize)
 {
-    uint64_t u64TotalSectors = cbSize / 512;
+    uint64_t u64TotalSectors = cbSize / VHD_SECTOR_SIZE;
     uint32_t u32CylinderTimesHeads, u32Heads, u32SectorsPerTrack;
 
     if (u64TotalSectors > 65535 * 16 * 255)
