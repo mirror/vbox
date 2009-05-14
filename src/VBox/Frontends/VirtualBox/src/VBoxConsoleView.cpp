@@ -3416,25 +3416,28 @@ bool VBoxConsoleView::processHotKey (const QKeySequence &aKey,
     foreach (QAction *pAction, aData)
     {
         if (QMenu *menu = pAction->menu())
-            return processHotKey (aKey, menu->actions());
-
-        QString hotkey = VBoxGlobal::extractKeyFromActionText (pAction->text());
-        if (pAction->isEnabled() && !hotkey.isEmpty())
         {
-            if (aKey.matches (QKeySequence (hotkey)) == QKeySequence::ExactMatch)
-            {
-                /*
-                 *  we asynchronously post a special event instead of calling
-                 *  pAction->trigger() directly, to let key presses and
-                 *  releases be processed correctly by Qt first. Note: we
-                 *  assume that nobody will delete the menu item corresponding
-                 *  to the key sequence, so that the pointer to menu data
-                 *  posted along with the event will remain valid in the event
-                 *  handler, at least until the main window is closed.
-                 */
-                QApplication::postEvent (this,
-                                         new ActivateMenuEvent (pAction));
+            /* Process recursively for each sub-menu */
+            if (processHotKey (aKey, menu->actions()))
                 return true;
+        }
+        else
+        {
+            QString hotkey = VBoxGlobal::extractKeyFromActionText (pAction->text());
+            if (pAction->isEnabled() && !hotkey.isEmpty())
+            {
+                if (aKey.matches (QKeySequence (hotkey)) == QKeySequence::ExactMatch)
+                {
+                    /* We asynchronously post a special event instead of calling
+                     * pAction->trigger() directly, to let key presses and
+                     * releases be processed correctly by Qt first.
+                     * Note: we assume that nobody will delete the menu item
+                     * corresponding to the key sequence, so that the pointer to
+                     * menu data posted along with the event will remain valid in
+                     * the event handler, at least until the main window is closed. */
+                    QApplication::postEvent (this, new ActivateMenuEvent (pAction));
+                    return true;
+                }
             }
         }
     }

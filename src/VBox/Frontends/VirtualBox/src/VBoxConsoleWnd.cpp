@@ -1712,7 +1712,8 @@ void VBoxConsoleWnd::retranslateUi()
     mDevicesSFDialogAction->setStatusTip (
         tr ("Open the dialog to operate on shared folders"));
 
-    mDevicesInstallGuestToolsAction->setText (tr ("&Install Guest Additions..."));
+    mDevicesInstallGuestToolsAction->setText (VBoxGlobal::insertKeyToActionText (tr ("&Install Guest Additions..."),
+                                                                                 "D"));
     mDevicesInstallGuestToolsAction->setStatusTip (
         tr ("Mount the Guest Additions installation image"));
 
