@@ -276,7 +276,7 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
             if (fail_counter == 0)
                 LogRel(("NAT/dnsproxy: Empty DNS entry (suppressed 100 times)\n"));
             else 
-                fail_counter = (fail_counter == 100 ? 0 : fail_counter++);
+                fail_counter = (fail_counter == 100 ? 0 : fail_counter + 1);
             return;
             
         }
