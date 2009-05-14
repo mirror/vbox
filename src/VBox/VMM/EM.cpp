@@ -3565,6 +3565,12 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                 return rc;
         }
 
+        /*
+         * If the virtual sync clock is still stopped, make TM restart it.
+         */
+        if (VM_FF_ISPENDING(pVM, VM_FF_TM_VIRTUAL_SYNC))
+            TMR3VirtualSyncFF(pVM, pVCpu);
+
 #ifdef DEBUG
         /*
          * Debug, pause the VM.
@@ -3575,12 +3581,7 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             Log(("emR3ForcedActions: returns VINF_EM_SUSPEND\n"));
             return VINF_EM_SUSPEND;
         }
-
 #endif
-        if (VM_FF_ISPENDING(pVM, VM_FF_TM_VIRTUAL_SYNC))
-        {
-            /** @todo FIXME */
-        }
 
         /* check that we got them all  */
         AssertCompile(VM_FF_HIGH_PRIORITY_PRE_MASK == (VM_FF_TM_VIRTUAL_SYNC | VM_FF_DBGF | VM_FF_TERMINATE | VM_FF_DEBUG_SUSPEND | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY));

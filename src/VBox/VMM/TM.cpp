@@ -269,9 +269,12 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     /* The rest is done in TMR3InitFinalize since it's too early to call PDM. */
 
     /*
-     * Init the lock.
+     * Init the locks.
      */
     rc = PDMR3CritSectInit(pVM, &pVM->tm.s.EmtLock, "TM EMT Lock");
+    if (RT_FAILURE(rc))
+        return rc;
+    rc = PDMR3CritSectInit(pVM, &pVM->tm.s.VirtualSyncLock, "TM VirtualSync Lock");
     if (RT_FAILURE(rc))
         return rc;
 
@@ -549,8 +552,9 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataRC.cExpired,    STAMTYPE_U32, "/TM/GC/cExpired",                     STAMUNIT_OCCURENCES, "Times the TSC interval expired (overlaps 1ns steps).");
     STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataRC.cUpdateRaces,STAMTYPE_U32, "/TM/GC/cUpdateRaces",                 STAMUNIT_OCCURENCES, "Thread races when updating the previous timestamp.");
     STAM_REG(pVM, &pVM->tm.s.StatDoQueues,                            STAMTYPE_PROFILE, "/TM/DoQueues",                    STAMUNIT_TICKS_PER_CALL, "Profiling timer TMR3TimerQueuesDo.");
-    STAM_REG(pVM, &pVM->tm.s.StatDoQueuesSchedule,                STAMTYPE_PROFILE_ADV, "/TM/DoQueues/Schedule",           STAMUNIT_TICKS_PER_CALL, "The scheduling part.");
-    STAM_REG(pVM, &pVM->tm.s.StatDoQueuesRun,                     STAMTYPE_PROFILE_ADV, "/TM/DoQueues/Run",                STAMUNIT_TICKS_PER_CALL, "The run part.");
+    STAM_REG(pVM, &pVM->tm.s.aStatDoQueues[TMCLOCK_VIRTUAL],      STAMTYPE_PROFILE_ADV, "/TM/DoQueues/Virtual",            STAMUNIT_TICKS_PER_CALL, "Time spent on the virtual clock queue.");
+    STAM_REG(pVM, &pVM->tm.s.aStatDoQueues[TMCLOCK_VIRTUAL_SYNC], STAMTYPE_PROFILE_ADV, "/TM/DoQueues/VirtualSync",        STAMUNIT_TICKS_PER_CALL, "Time spent on the virtual sync clock queue.");
+    STAM_REG(pVM, &pVM->tm.s.aStatDoQueues[TMCLOCK_REAL],         STAMTYPE_PROFILE_ADV, "/TM/DoQueues/Real",               STAMUNIT_TICKS_PER_CALL, "Time spent on the real clock queue.");
 
     STAM_REG(pVM, &pVM->tm.s.StatPoll,                                STAMTYPE_COUNTER, "/TM/Poll",                            STAMUNIT_OCCURENCES, "TMTimerPoll calls.");
     STAM_REG(pVM, &pVM->tm.s.StatPollAlreadySet,                      STAMTYPE_COUNTER, "/TM/Poll/AlreadySet",                 STAMUNIT_OCCURENCES, "TMTimerPoll calls where the FF was already set.");
@@ -601,6 +605,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncCatchup,              STAMTYPE_PROFILE_ADV, "/TM/VirtualSync/CatchUp",    STAMUNIT_TICKS_PER_OCCURENCE, "Counting and measuring the times spent catching up.");
     STAM_REG(pVM, (void *)&pVM->tm.s.fVirtualSyncCatchUp,                  STAMTYPE_U8, "/TM/VirtualSync/CatchUpActive",             STAMUNIT_NONE, "Catch-Up active indicator.");
     STAM_REG(pVM, (void *)&pVM->tm.s.u32VirtualSyncCatchUpPercentage,     STAMTYPE_U32, "/TM/VirtualSync/CatchUpPercentage",          STAMUNIT_PCT, "The catch-up percentage. (+100/100 to get clock multiplier)");
+    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncFF,                       STAMTYPE_PROFILE, "/TM/VirtualSync/FF",         STAMUNIT_TICKS_PER_OCCURENCE, "Time spent in TMR3VirtualSyncFF by all but the dedicate timer EMT.");
     STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncGiveUp,                   STAMTYPE_COUNTER, "/TM/VirtualSync/GiveUp",              STAMUNIT_OCCURENCES, "Times the catch-up was abandoned.");
     STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncGiveUpBeforeStarting,     STAMTYPE_COUNTER, "/TM/VirtualSync/GiveUpBeforeStarting",STAMUNIT_OCCURENCES, "Times the catch-up was abandoned before even starting. (Typically debugging++.)");
     STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncRun,                      STAMTYPE_COUNTER, "/TM/VirtualSync/Run",                 STAMUNIT_OCCURENCES, "Times the virtual sync timer queue was considered.");
@@ -1691,73 +1696,69 @@ VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
 {
     /*
      * Only the dedicated timer EMT should do stuff here.
-     *
-     * The lock isn't really necessary any longer, but it might come
-     * in handy when dealing VM_FF_TM_VIRTUAL_SYNC later.
+     * (fRunningQueues is only used as an indicator.)
      */
     Assert(pVM->tm.s.idTimerCpu < pVM->cCPUs);
     PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
-    if (    VMMGetCpu(pVM) != pVCpuDst
-        ||  ASMBitTestAndSet(&pVM->tm.s.fRunningQueues, 0))
+    if (VMMGetCpu(pVM) != pVCpuDst)
     {
         Assert(pVM->cCPUs > 1);
         return;
     }
-
     STAM_PROFILE_START(&pVM->tm.s.StatDoQueues, a);
     Log2(("TMR3TimerQueuesDo:\n"));
+    Assert(!pVM->tm.s.fRunningQueues);
+    ASMAtomicWriteBool(&pVM->tm.s.fRunningQueues, true);
     tmLock(pVM);
-
-    /*
-     * Clear the FF before processing the queues but after obtaining the lock.
-     */
-    VMCPU_FF_CLEAR(pVCpuDst, VMCPU_FF_TIMER);
 
     /*
      * Process the queues.
      */
     AssertCompile(TMCLOCK_MAX == 4);
 
-    /* TMCLOCK_VIRTUAL_SYNC */
-    STAM_PROFILE_ADV_START(&pVM->tm.s.StatDoQueuesSchedule, s1);
-    tmTimerQueueSchedule(pVM, &pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL_SYNC]);
-    STAM_PROFILE_ADV_SUSPEND(&pVM->tm.s.StatDoQueuesSchedule, s1);
-    STAM_PROFILE_ADV_START(&pVM->tm.s.StatDoQueuesRun, r1);
+    /* TMCLOCK_VIRTUAL_SYNC (see also TMR3VirtualSyncFF) */
+    STAM_PROFILE_ADV_START(&pVM->tm.s.aStatDoQueues[TMCLOCK_VIRTUAL_SYNC], s1);
+    tmVirtualSyncLock(pVM);
+    ASMAtomicWriteBool(&pVM->tm.s.fRunningVirtualSyncQueue, true);
+    VMCPU_FF_CLEAR(pVCpuDst, VMCPU_FF_TIMER);   /* Clear the FF once we started working for real. */
+
+    if (pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL_SYNC].offSchedule)
+        tmTimerQueueSchedule(pVM, &pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL_SYNC]);
     tmR3TimerQueueRunVirtualSync(pVM);
-    STAM_PROFILE_ADV_SUSPEND(&pVM->tm.s.StatDoQueuesRun, r1);
     if (pVM->tm.s.fVirtualSyncTicking) /** @todo move into tmR3TimerQueueRunVirtualSync - FIXME */
         VM_FF_CLEAR(pVM, VM_FF_TM_VIRTUAL_SYNC);
 
+    ASMAtomicWriteBool(&pVM->tm.s.fRunningVirtualSyncQueue, false);
+    tmVirtualSyncUnlock(pVM);
+    STAM_PROFILE_ADV_STOP(&pVM->tm.s.aStatDoQueues[TMCLOCK_VIRTUAL_SYNC], s1);
+
     /* TMCLOCK_VIRTUAL */
-    STAM_PROFILE_ADV_RESUME(&pVM->tm.s.StatDoQueuesSchedule, s1);
-    tmTimerQueueSchedule(pVM, &pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL]);
-    STAM_PROFILE_ADV_SUSPEND(&pVM->tm.s.StatDoQueuesSchedule, s2);
-    STAM_PROFILE_ADV_RESUME(&pVM->tm.s.StatDoQueuesRun, r1);
+    STAM_PROFILE_ADV_START(&pVM->tm.s.aStatDoQueues[TMCLOCK_VIRTUAL], s2);
+    if (pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL].offSchedule)
+        tmTimerQueueSchedule(pVM, &pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL]);
     tmR3TimerQueueRun(pVM, &pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL]);
-    STAM_PROFILE_ADV_SUSPEND(&pVM->tm.s.StatDoQueuesRun, r2);
+    STAM_PROFILE_ADV_STOP(&pVM->tm.s.aStatDoQueues[TMCLOCK_VIRTUAL], s2);
 
     /* TMCLOCK_TSC */
     Assert(!pVM->tm.s.paTimerQueuesR3[TMCLOCK_TSC].offActive); /* not used */
 
     /* TMCLOCK_REAL */
-    STAM_PROFILE_ADV_RESUME(&pVM->tm.s.StatDoQueuesSchedule, s2);
-    tmTimerQueueSchedule(pVM, &pVM->tm.s.paTimerQueuesR3[TMCLOCK_REAL]);
-    STAM_PROFILE_ADV_STOP(&pVM->tm.s.StatDoQueuesSchedule, s3);
-    STAM_PROFILE_ADV_RESUME(&pVM->tm.s.StatDoQueuesRun, r2);
+    STAM_PROFILE_ADV_START(&pVM->tm.s.aStatDoQueues[TMCLOCK_REAL], s3);
+    if (pVM->tm.s.paTimerQueuesR3[TMCLOCK_REAL].offSchedule)
+        tmTimerQueueSchedule(pVM, &pVM->tm.s.paTimerQueuesR3[TMCLOCK_REAL]);
     tmR3TimerQueueRun(pVM, &pVM->tm.s.paTimerQueuesR3[TMCLOCK_REAL]);
-    STAM_PROFILE_ADV_STOP(&pVM->tm.s.StatDoQueuesRun, r3);
+    STAM_PROFILE_ADV_STOP(&pVM->tm.s.aStatDoQueues[TMCLOCK_REAL], s3);
 
 #ifdef VBOX_STRICT
     /* check that we didn't screwup. */
     tmTimerQueuesSanityChecks(pVM, "TMR3TimerQueuesDo");
 #endif
 
-    Log2(("TMR3TimerQueuesDo: returns void\n"));
-    STAM_PROFILE_STOP(&pVM->tm.s.StatDoQueues, a);
-
     /* done */
+    Log2(("TMR3TimerQueuesDo: returns void\n"));
+    ASMAtomicWriteBool(&pVM->tm.s.fRunningQueues, false);
     tmUnlock(pVM);
-    ASMAtomicBitClear(&pVM->tm.s.fRunningQueues, 0);
+    STAM_PROFILE_STOP(&pVM->tm.s.StatDoQueues, a);
 }
 
 //__BEGIN_DECLS
@@ -2114,6 +2115,77 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
         Assert(!(offNew & RT_BIT_64(63)));
         ASMAtomicXchgU64(&pVM->tm.s.offVirtualSync, offNew);
         ASMAtomicXchgBool(&pVM->tm.s.fVirtualSyncTicking, true);
+    }
+}
+
+
+/**
+ * Deals with stopped Virtual Sync clock.
+ *
+ * This is called by the forced action flag handling code in EM when it
+ * encounters the VM_FF_TM_VIRTUAL_SYNC flag. It is called by all VCPUs and they
+ * will block on the VirtualSyncLock until the pending timers has been executed
+ * and the clock restarted.
+ *
+ * @param   pVM             The VM to run the timers for.
+ * @param   pVCpu           The virtual CPU we're running at.
+ *
+ * @thread  EMTs
+ */
+VMMR3DECL(void) TMR3VirtualSyncFF(PVM pVM, PVMCPU pVCpu)
+{
+    Log2(("TMR3VirtualSyncFF:\n"));
+
+    /*
+     * The EMT doing the timers is diverted to them.
+     */
+    if (pVCpu->idCpu == pVM->tm.s.idTimerCpu)
+        TMR3TimerQueuesDo(pVM);
+    /*
+     * The other EMTs will block on the virtual sync lock and the first owner
+     * will run the queue and thus restarting the clock.
+     *
+     * Note! This is very suboptimal code wrt to resuming execution when there
+     *       are more than two Virtual CPUs, since they will all have to enter
+     *       the critical section one by one. But it's a very simple solution
+     *       which will have to do the job for now.
+     */
+    else
+    {
+        STAM_PROFILE_START(&pVM->tm.s.StatVirtualSyncFF, a);
+        tmVirtualSyncLock(pVM);
+        if (pVM->tm.s.fVirtualSyncTicking)
+        {
+            STAM_PROFILE_STOP(&pVM->tm.s.StatVirtualSyncFF, a); /* before the unlock! */
+            tmVirtualSyncUnlock(pVM);
+            Log2(("TMR3VirtualSyncFF: ticking\n"));
+        }
+        else
+        {
+            tmVirtualSyncUnlock(pVM);
+
+            /* try run it. */
+            tmLock(pVM);
+            tmVirtualSyncLock(pVM);
+            if (pVM->tm.s.fVirtualSyncTicking)
+                Log2(("TMR3VirtualSyncFF: ticking (2)\n"));
+            else
+            {
+                ASMAtomicWriteBool(&pVM->tm.s.fRunningVirtualSyncQueue, true);
+                Log2(("TMR3VirtualSyncFF: running queue\n"));
+
+                if (pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL_SYNC].offSchedule)
+                    tmTimerQueueSchedule(pVM, &pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL_SYNC]);
+                tmR3TimerQueueRunVirtualSync(pVM);
+                if (pVM->tm.s.fVirtualSyncTicking) /** @todo move into tmR3TimerQueueRunVirtualSync - FIXME */
+                    VM_FF_CLEAR(pVM, VM_FF_TM_VIRTUAL_SYNC);
+
+                ASMAtomicWriteBool(&pVM->tm.s.fRunningVirtualSyncQueue, false);
+            }
+            STAM_PROFILE_STOP(&pVM->tm.s.StatVirtualSyncFF, a); /* before the unlock! */
+            tmVirtualSyncUnlock(pVM);
+            tmUnlock(pVM);
+        }
     }
 }
 
