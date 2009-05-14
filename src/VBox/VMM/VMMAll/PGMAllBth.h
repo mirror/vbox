@@ -257,7 +257,9 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
         STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2SyncPT; });
         STAM_PROFILE_START(&pVCpu->pgm.s.StatRZTrap0eTimeSyncPT, f);
         LogFlow(("=>SyncPT %04x = %08x\n", iPDSrc, PdeSrc.au32[0]));
+        pgmLock(pVM);
         rc = PGM_BTH_NAME(SyncPT)(pVCpu, iPDSrc, pPDSrc, pvFault);
+        pgmUnlock(pVM);
         if (RT_SUCCESS(rc))
         {
             STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeSyncPT, f);
@@ -1160,7 +1162,9 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
              */
             Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
             Assert(PGMGetGuestMode(pVCpu) <= PGMMODE_PAE);
+            pgmLock(pVM);
             rc = PGM_BTH_NAME(SyncPT)(pVCpu, iPDSrc, pPDSrc, GCPtrPage);
+            pgmUnlock(pVM);
         }
         else if (   PdeSrc.n.u1User != PdeDst.n.u1User
                  || (!PdeSrc.n.u1Write && PdeDst.n.u1Write))
@@ -2371,6 +2375,8 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
     STAM_COUNTER_INC(&pVCpu->pgm.s.StatSyncPtPD[iPDSrc]);
     LogFlow(("SyncPT: GCPtrPage=%RGv\n", GCPtrPage));
 
+    Assert(PGMIsLocked(pVM));
+
 #if   (   PGM_GST_TYPE == PGM_TYPE_32BIT  \
        || PGM_GST_TYPE == PGM_TYPE_PAE    \
        || PGM_GST_TYPE == PGM_TYPE_AMD64) \
@@ -3011,8 +3017,13 @@ PGM_BTH_DECL(int, PrefetchPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         if (!(PdeDst.u & PGM_PDFLAGS_MAPPING))
         {
             if (!PdeDst.n.u1Present)
+            {
+                PVM pVM = pVCpu->CTX_SUFF(pVM);
                 /** r=bird: This guy will set the A bit on the PDE, probably harmless. */
+                pgmLock(pVM);
                 rc = PGM_BTH_NAME(SyncPT)(pVCpu, iPDSrc, pPDSrc, GCPtrPage);
+                pgmUnlock(pVM);
+            }
             else
             {
                 /** @note We used to sync PGM_SYNC_NR_PAGES pages, which triggered assertions in CSAM, because
@@ -3157,7 +3168,9 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigne
 
     if (!pPdeDst->n.u1Present)
     {
+        pgmLock(pVM);
         rc = PGM_BTH_NAME(SyncPT)(pVCpu, iPDSrc, pPDSrc, GCPtrPage);
+        pgmUnlock(pVM);
         AssertRC(rc);
         if (rc != VINF_SUCCESS)
         {
