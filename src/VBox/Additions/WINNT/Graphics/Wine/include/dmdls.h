@@ -16,7 +16,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
-
+ 
 /*
  * Sun LGPL Disclaimer: For the avoidance of doubt, except that if any license choice
  * other than GPL or LGPL is available it will apply instead, Sun elects to use only
@@ -25,7 +25,7 @@
  * that LGPLv2 or any later version may be used, or where a choice of which version
  * of the LGPL is applied is otherwise unspecified.
  */
- 
+
 #ifndef __WINE_DMUSIC_DLS_H
 #define __WINE_DMUSIC_DLS_H
 
@@ -34,10 +34,10 @@
 /*****************************************************************************
  * Typedef definitions
  */
-typedef long GCENT;
-typedef long PCENT;
-typedef long PERCENT;
-typedef long TCENT;
+typedef LONG GCENT;
+typedef LONG PCENT;
+typedef LONG PERCENT;
+typedef LONG TCENT;
 
 typedef LONGLONG REFERENCE_TIME, *LPREFERENCE_TIME;
 

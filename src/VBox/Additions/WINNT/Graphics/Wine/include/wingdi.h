@@ -780,6 +780,8 @@ typedef struct tagXFORM
 #define PROOF_QUALITY          2
 #define NONANTIALIASED_QUALITY 3
 #define ANTIALIASED_QUALITY    4
+#define CLEARTYPE_QUALITY          5
+#define CLEARTYPE_NATURAL_QUALITY  6
 
   /* lfPitchAndFamily pitch values */
 #define DEFAULT_PITCH       0x00
@@ -1306,7 +1308,11 @@ typedef struct
 #define GGO_UNHINTED        0x100
 
 #ifdef __WINESRC__
-#define WINE_GGO_GRAY16_BITMAP 0x7f
+#define WINE_GGO_GRAY16_BITMAP 0x10
+#define WINE_GGO_HRGB_BITMAP   0x11
+#define WINE_GGO_HBGR_BITMAP   0x12
+#define WINE_GGO_VRGB_BITMAP   0x13
+#define WINE_GGO_VBGR_BITMAP   0x14
 #endif
 
 typedef struct
@@ -1433,6 +1439,7 @@ typedef struct
 #define TT_ENABLED          0x0002
 
 #ifdef __WINESRC__
+#define WINE_TT_SUBPIXEL_RENDERING_ENABLED 0x4000
 #define WINE_TT_HINTER_ENABLED 0x8000
 #endif
 
@@ -1878,6 +1885,8 @@ typedef struct {
 #define BI_RLE8          1
 #define BI_RLE4          2
 #define BI_BITFIELDS     3
+#define BI_JPEG          4
+#define BI_PNG           5
 
 typedef struct tagBITMAPINFO
 {
@@ -3262,8 +3271,8 @@ typedef struct _BLENDFUNCTION
 #define GRADIENT_FILL_TRIANGLE    0x00000002
 #define GRADIENT_FILL_OP_FLAG     0x000000ff
 
-#define GDI_ERROR                               (0xFFFFFFFFL)
-#define HGDI_ERROR                              ((HANDLE)0xFFFFFFFFL)
+#define GDI_ERROR                               (~0u)
+#define HGDI_ERROR                              ((HANDLE)~(ULONG_PTR)0)
 
 /* AddFontResourceEx flags */
 #define FR_PRIVATE  0x10

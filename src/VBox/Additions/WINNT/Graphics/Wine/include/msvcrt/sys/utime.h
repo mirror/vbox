@@ -26,25 +26,13 @@
  * that LGPLv2 or any later version may be used, or where a choice of which version
  * of the LGPL is applied is otherwise unspecified.
  */
+
 #ifndef __WINE_SYS_UTIME_H
 #define __WINE_SYS_UTIME_H
-#ifndef __WINE_USE_MSVCRT
-#define __WINE_USE_MSVCRT
-#endif
+
+#include <crtdefs.h>
 
 #include <pshpack8.h>
-
-#ifndef _WCHAR_T_DEFINED
-#define _WCHAR_T_DEFINED
-#ifndef __cplusplus
-typedef unsigned short wchar_t;
-#endif
-#endif
-
-#ifndef _TIME_T_DEFINED
-typedef long time_t;
-#define _TIME_T_DEFINED
-#endif
 
 #ifndef _UTIMBUF_DEFINED
 #define _UTIMBUF_DEFINED
@@ -59,10 +47,9 @@ struct _utimbuf
 extern "C" {
 #endif
 
-int         _futime(int,struct _utimbuf*);
-int         _utime(const char*,struct _utimbuf*);
-
-int         _wutime(const wchar_t*,struct _utimbuf*);
+int __cdecl _futime(int,struct _utimbuf*);
+int __cdecl _utime(const char*,struct _utimbuf*);
+int __cdecl _wutime(const wchar_t*,struct _utimbuf*);
 
 #ifdef __cplusplus
 }

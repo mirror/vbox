@@ -5,44 +5,24 @@
  * Modified for Wine use by Jon Griffiths and Francois Gouget.
  * This file is in the public domain.
  */
+/*
+ * Sun LGPL Disclaimer: For the avoidance of doubt, except that if any license choice
+ * other than GPL or LGPL is available it will apply instead, Sun elects to use only
+ * the Lesser General Public License version 2.1 (LGPLv2) at this time for any software where
+ * a choice of LGPL license versions is made available with the language indicating
+ * that LGPLv2 or any later version may be used, or where a choice of which version
+ * of the LGPL is applied is otherwise unspecified.
+ */
+
 #ifndef __WINE_DIRECT_H
 #define __WINE_DIRECT_H
-#ifndef __WINE_USE_MSVCRT
-#define __WINE_USE_MSVCRT
-#endif
+
+#include <crtdefs.h>
 
 #include <pshpack8.h>
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifndef _WCHAR_T_DEFINED
-#define _WCHAR_T_DEFINED
-#ifndef __cplusplus
-typedef unsigned short wchar_t;
-#endif
-#endif
-
-#if defined(__x86_64__) && !defined(_WIN64)
-#define _WIN64
-#endif
-
-#if !defined(_MSC_VER) && !defined(__int64)
-# ifdef _WIN64
-#   define __int64 long
-# else
-#   define __int64 long long
-# endif
-#endif
-
-#ifndef _SIZE_T_DEFINED
-#ifdef _WIN64
-typedef unsigned __int64 size_t;
-#else
-typedef unsigned int size_t;
-#endif
-#define _SIZE_T_DEFINED
 #endif
 
 #ifndef _DISKFREE_T_DEFINED
@@ -55,22 +35,22 @@ struct _diskfree_t {
 };
 #endif /* _DISKFREE_T_DEFINED */
 
-int         _chdir(const char*);
-int         _chdrive(int);
-char*       _getcwd(char*,int);
-char*       _getdcwd(int,char*,int);
-int         _getdrive(void);
-unsigned long _getdrives(void);
-int         _mkdir(const char*);
-int         _rmdir(const char*);
+int           __cdecl _chdir(const char*);
+int           __cdecl _chdrive(int);
+char*         __cdecl _getcwd(char*,int);
+char*         __cdecl _getdcwd(int,char*,int);
+int           __cdecl _getdrive(void);
+unsigned long __cdecl _getdrives(void);
+int           __cdecl _mkdir(const char*);
+int           __cdecl _rmdir(const char*);
 
 #ifndef _WDIRECT_DEFINED
 #define _WDIRECT_DEFINED
-int              _wchdir(const wchar_t*);
-wchar_t* _wgetcwd(wchar_t*,int);
-wchar_t* _wgetdcwd(int,wchar_t*,int);
-int              _wmkdir(const wchar_t*);
-int              _wrmdir(const wchar_t*);
+int      __cdecl _wchdir(const wchar_t*);
+wchar_t* __cdecl _wgetcwd(wchar_t*,int);
+wchar_t* __cdecl _wgetdcwd(int,wchar_t*,int);
+int      __cdecl _wmkdir(const wchar_t*);
+int      __cdecl _wrmdir(const wchar_t*);
 #endif /* _WDIRECT_DEFINED */
 
 #ifdef __cplusplus

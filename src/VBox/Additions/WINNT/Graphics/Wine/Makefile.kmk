@@ -25,7 +25,7 @@ include $(KBUILD_PATH)/subheader.kmk
 
 DLLS += libWine
 
-libWine_TEMPLATE     = VBOXGUESTR3NPDLL
+libWine_TEMPLATE     = VBOXGUESTR3NPLIB
 libWine_DEFS         = __WINESRC__ WINE_UNICODE_API="" _REENTRANT WINE_NOWINSOCK USE_WIN32_OPENGL __i386__ \
     DLLDIR=\"\" \
     BINDIR=\"\" \
@@ -134,20 +134,23 @@ wined3d_SOURCES      := \
     wined3d/arb_program_shader.c \
     wined3d/ati_fragment_shader.c \
     wined3d/baseshader.c \
-    wined3d/basetexture.c \
+	wined3d/basetexture.c \
+	wined3d/buffer.c \
     wined3d/clipper.c \
     wined3d/context.c \
     wined3d/cubetexture.c \
     wined3d/device.c \
     wined3d/directx.c \
     wined3d/drawprim.c \
+	wined3d/gl_compat.c \
     wined3d/glsl_shader.c \
-    wined3d/indexbuffer.c \
     wined3d/nvidia_texture_shader.c \
     wined3d/palette.c \
     wined3d/pixelshader.c \
     wined3d/query.c \
     wined3d/resource.c \
+	wined3d/shader_sm1.c \
+	wined3d/shader_sm4.c \
     wined3d/state.c \
     wined3d/stateblock.c \
     wined3d/surface_base.c \
@@ -158,9 +161,9 @@ wined3d_SOURCES      := \
     wined3d/swapchain_base.c \
     wined3d/texture.c \
     wined3d/utils.c \
-    wined3d/vertexbuffer.c \
     wined3d/vertexdeclaration.c \
     wined3d/vertexshader.c \
+	wined3d/view.c \
     wined3d/volume.c \
     wined3d/volumetexture.c \
     wined3d/wined3d_main.c \
@@ -181,7 +184,6 @@ d3d8_DEFS         = __WINESRC__ WINE_UNICODE_API="" _REENTRANT WINE_NOWINSOCK US
     BIN_TO_DATADIR=\"\"
 d3d8_INCS         := $(PATH_SUB_CURRENT)/include
 d3d8_SOURCES      := \
-    d3d8/basetexture.c \
     d3d8/cubetexture.c \
     d3d8/d3d8_main.c \
     d3d8/device.c \
@@ -200,6 +202,40 @@ d3d8_SOURCES      := \
     d3d8/volumetexture.c \
     d3d8/d3d8.def
 d3d8_LIBS = \
+    $(PATH_LIB)/libWine$(VBOX_SUFF_LIB) \
+    $(PATH_LIB)/wined3d$(VBOX_SUFF_LIB)
+
+DLLS += d3d9
+
+d3d9_TEMPLATE     = VBOXGUESTR3NPDLL
+d3d9_DEFS         = __WINESRC__ WINE_UNICODE_API="" _REENTRANT WINE_NOWINSOCK USE_WIN32_OPENGL __i386__ _USE_MATH_DEFINES\
+    DLLDIR=\"\" \
+    BINDIR=\"\" \
+    LIB_TO_BINDIR=\"\" \
+    LIB_TO_DLLDIR=\"\" \
+    BIN_TO_DLLDIR=\"\" \
+    LIB_TO_DATADIR=\"\" \
+    BIN_TO_DATADIR=\"\"
+d3d9_INCS         := $(PATH_SUB_CURRENT)/include
+d3d9_SOURCES      := \
+    d3d9/cubetexture.c \
+    d3d9/d3d9_main.c \
+    d3d9/device.c \
+    d3d9/directx.c \
+    d3d9/indexbuffer.c \
+    d3d9/pixelshader.c \
+    d3d9/query.c \
+    d3d9/stateblock.c \
+    d3d9/surface.c \
+    d3d9/swapchain.c \
+    d3d9/texture.c \
+    d3d9/vertexbuffer.c \
+    d3d9/vertexdeclaration.c \
+    d3d9/vertexshader.c \
+    d3d9/volume.c \
+    d3d9/volumetexture.c \
+    d3d9/d3d9.def
+d3d9_LIBS = \
     $(PATH_LIB)/libWine$(VBOX_SUFF_LIB) \
     $(PATH_LIB)/wined3d$(VBOX_SUFF_LIB)
 

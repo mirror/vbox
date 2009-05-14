@@ -139,7 +139,7 @@ IWineGDISurfaceImpl_LockRect(IWineD3DSurface *iface,
     /* Already locked? */
     if(This->Flags & SFLAG_LOCKED)
     {
-        ERR("(%p) Surface already locked\n", This);
+        WARN("(%p) Surface already locked\n", This);
         /* What should I return here? */
         return WINED3DERR_INVALIDCALL;
     }
@@ -177,7 +177,7 @@ IWineGDISurfaceImpl_UnlockRect(IWineD3DSurface *iface)
     if (!(This->Flags & SFLAG_LOCKED))
     {
         WARN("trying to Unlock an unlocked surf@%p\n", This);
-        return WINED3DERR_INVALIDCALL;
+        return WINEDDERR_NOTLOCKED;
     }
 
     /* Can be useful for debugging */
@@ -298,7 +298,7 @@ const char* filename)
     IWineD3DSurfaceImpl *This = (IWineD3DSurfaceImpl *)iface;
     static char *output = NULL;
     static UINT size = 0;
-    const StaticPixelFormatDesc *formatEntry = getFormatDescEntry(This->resource.format, NULL, NULL);
+    const struct GlPixelFormatDesc *format_desc = This->resource.format_desc;
 
     if (This->pow2Width > size) {
         output = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, This->pow2Width * 3);
@@ -313,7 +313,8 @@ const char* filename)
     }
     fprintf(f, "P6\n%d %d\n255\n", This->pow2Width, This->pow2Height);
 
-    if (This->resource.format == WINED3DFMT_P8) {
+    if (This->resource.format_desc->format == WINED3DFMT_P8)
+    {
         unsigned char table[256][3];
         int i;
 
@@ -341,16 +342,16 @@ const char* filename)
     } else {
         int red_shift, green_shift, blue_shift, pix_width, alpha_shift;
 
-        pix_width = This->bytesPerPixel;
+        pix_width = format_desc->byte_count;
 
-        red_shift = get_shift(formatEntry->redMask);
-        green_shift = get_shift(formatEntry->greenMask);
-        blue_shift = get_shift(formatEntry->blueMask);
-        alpha_shift = get_shift(formatEntry->alphaMask);
+        red_shift = get_shift(format_desc->red_mask);
+        green_shift = get_shift(format_desc->green_mask);
+        blue_shift = get_shift(format_desc->blue_mask);
+        alpha_shift = get_shift(format_desc->alpha_mask);
 
         for (y = 0; y < This->pow2Height; y++) {
             const unsigned char *src = This->resource.allocatedMemory + (y * 1 * IWineD3DSurface_GetPitch(iface));
-            for (x = 0; x < This->pow2Width; x++) {	    
+            for (x = 0; x < This->pow2Width; x++) {
                 unsigned int color;
                 unsigned int comp;
                 int i;
@@ -361,11 +362,11 @@ const char* filename)
                 }
                 src += 1 * pix_width;
 
-                comp = color & formatEntry->redMask;
+                comp = color & format_desc->red_mask;
                 output[3 * x + 0] = red_shift > 0 ? comp >> red_shift : comp << -red_shift;
-                comp = color & formatEntry->greenMask;
+                comp = color & format_desc->green_mask;
                 output[3 * x + 1] = green_shift > 0 ? comp >> green_shift : comp << -green_shift;
-                comp = color & formatEntry->alphaMask;
+                comp = color & format_desc->alpha_mask;
                 output[3 * x + 2] = alpha_shift > 0 ? comp >> alpha_shift : comp << -alpha_shift;
             }
             fwrite(output, 3 * This->pow2Width, 1, f);
@@ -411,8 +412,9 @@ static HRESULT WINAPI IWineGDISurfaceImpl_GetDC(IWineD3DSurface *iface, HDC *pHD
         return hr;
     }
 
-    if(This->resource.format == WINED3DFMT_P8 ||
-       This->resource.format == WINED3DFMT_A8P8) {
+    if (This->resource.format_desc->format == WINED3DFMT_P8
+            || This->resource.format_desc->format == WINED3DFMT_A8P8)
+    {
         unsigned int n;
         const PALETTEENTRY *pal = NULL;
 
@@ -451,11 +453,11 @@ static HRESULT WINAPI IWineGDISurfaceImpl_ReleaseDC(IWineD3DSurface *iface, HDC 
     TRACE("(%p)->(%p)\n",This,hDC);
 
     if (!(This->Flags & SFLAG_DCINUSE))
-        return WINED3DERR_INVALIDCALL;
+        return WINEDDERR_NODC;
 
     if (This->hDC !=hDC) {
         WARN("Application tries to release an invalid DC(%p), surface dc is %p\n", hDC, This->hDC);
-        return WINED3DERR_INVALIDCALL;
+        return WINEDDERR_NODC;
     }
 
     /* we locked first, so unlock now */
@@ -547,14 +549,6 @@ static void WINAPI IWineGDISurfaceImpl_GetGlDesc(IWineD3DSurface *iface, glDescr
     IWineD3DSurfaceImpl *This = (IWineD3DSurfaceImpl *)iface;
     FIXME("(%p) : Should not be called on a GDI surface\n", This);
     *glDescription = NULL;
-}
-
-static HRESULT WINAPI IWineGDISurfaceImpl_AddDirtyRect(IWineD3DSurface *iface, CONST RECT* pDirtyRect) {
-    /* GDI surface data can only be in one location, the system memory dib section. So they are
-     * always clean by definition.
-     */
-    TRACE("No dirtification in GDI surfaces\n");
-    return WINED3D_OK;
 }
 
 static HRESULT WINAPI IWineGDISurfaceImpl_SetMem(IWineD3DSurface *iface, void *Mem) {
@@ -682,7 +676,6 @@ const IWineD3DSurfaceVtbl IWineGDISurface_Vtbl =
     IWineD3DBaseSurfaceImpl_SetClipper,
     IWineD3DBaseSurfaceImpl_GetClipper,
     /* Internal use: */
-    IWineGDISurfaceImpl_AddDirtyRect,
     IWineGDISurfaceImpl_LoadTexture,
     IWineD3DBaseSurfaceImpl_BindTexture,
     IWineGDISurfaceImpl_SaveSnapshot,

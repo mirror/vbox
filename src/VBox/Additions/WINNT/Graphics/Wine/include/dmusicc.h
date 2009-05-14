@@ -339,7 +339,7 @@ struct _DMUS_SYNTHSTATS {
 	DWORD dwCPUPerVoice;
 	DWORD dwLostNotes;
 	DWORD dwFreeMemory;
-	long  lPeakVolume;
+	LONG  lPeakVolume;
 };
 
 struct _DMUS_SYNTHSTATS8 {
@@ -350,7 +350,7 @@ struct _DMUS_SYNTHSTATS8 {
 	DWORD dwCPUPerVoice;
 	DWORD dwLostNotes;
 	DWORD dwFreeMemory;
-	long  lPeakVolume;
+	LONG  lPeakVolume;
 	DWORD dwSynthMemUse;
 };
 

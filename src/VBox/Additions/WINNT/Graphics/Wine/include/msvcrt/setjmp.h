@@ -26,11 +26,11 @@
  * that LGPLv2 or any later version may be used, or where a choice of which version
  * of the LGPL is applied is otherwise unspecified.
  */
+
 #ifndef __WINE_SETJMP_H
 #define __WINE_SETJMP_H
-#ifndef __WINE_USE_MSVCRT
-#define __WINE_USE_MSVCRT
-#endif
+
+#include <crtdefs.h>
 
 #include <pshpack8.h>
 
@@ -63,8 +63,8 @@ typedef _JBTYPE                    jmp_buf[_JBLEN];
 extern "C" {
 #endif
 
-int         _setjmp(jmp_buf);
-int         longjmp(jmp_buf,int);
+int __cdecl _setjmp(jmp_buf);
+int __cdecl longjmp(jmp_buf,int);
 
 #ifdef __cplusplus
 }

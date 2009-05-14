@@ -26,18 +26,22 @@
  * that LGPLv2 or any later version may be used, or where a choice of which version
  * of the LGPL is applied is otherwise unspecified.
  */
+
 #ifndef __WINE_MBCTYPE_H
 #define __WINE_MBCTYPE_H
-#ifndef __WINE_USE_MSVCRT
-#define __WINE_USE_MSVCRT
-#endif
+
+#include <crtdefs.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-unsigned char* __p__mbctype(void);
+#ifdef __i386__
+unsigned char* __cdecl __p__mbctype(void);
 #define _mbctype                   (__p__mbctype())
+#else
+extern unsigned char MSVCRT_mbctype[];
+#endif
 
 #define _MS     0x01
 #define _MP     0x02
@@ -59,24 +63,24 @@ unsigned char* __p__mbctype(void);
 #define _MB_CP_ANSI     -3
 #define _MB_CP_LOCALE   -4
 
-int         _getmbcp(void);
-int         _ismbbalnum(unsigned int);
-int         _ismbbalpha(unsigned int);
-int         _ismbbgraph(unsigned int);
-int         _ismbbkalnum(unsigned int);
-int         _ismbbkana(unsigned int);
-int         _ismbbkprint(unsigned int);
-int         _ismbbkpunct(unsigned int);
-int         _ismbbprint(unsigned int);
-int         _ismbbpunct(unsigned int);
-int         _setmbcp(int);
+int __cdecl _getmbcp(void);
+int __cdecl _ismbbalnum(unsigned int);
+int __cdecl _ismbbalpha(unsigned int);
+int __cdecl _ismbbgraph(unsigned int);
+int __cdecl _ismbbkalnum(unsigned int);
+int __cdecl _ismbbkana(unsigned int);
+int __cdecl _ismbbkprint(unsigned int);
+int __cdecl _ismbbkpunct(unsigned int);
+int __cdecl _ismbbprint(unsigned int);
+int __cdecl _ismbbpunct(unsigned int);
+int __cdecl _setmbcp(int);
 
 #ifndef _MBLEADTRAIL_DEFINED
 #define _MBLEADTRAIL_DEFINED
-int         _ismbblead(unsigned int);
-int         _ismbbtrail(unsigned int);
-int         _ismbslead(const unsigned char*,const unsigned char*);
-int         _ismbstrail(const unsigned char*,const unsigned char*);
+int __cdecl _ismbblead(unsigned int);
+int __cdecl _ismbbtrail(unsigned int);
+int __cdecl _ismbslead(const unsigned char*,const unsigned char*);
+int __cdecl _ismbstrail(const unsigned char*,const unsigned char*);
 #endif /* _MBLEADTRAIL_DEFINED */
 
 #ifdef __cplusplus

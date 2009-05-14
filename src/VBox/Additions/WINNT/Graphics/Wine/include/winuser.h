@@ -2087,9 +2087,9 @@ typedef struct tagMSG
 #define POINTSTOPOINT(pt, pts) { (pt).x = (pts).x; (pt).y = (pts).y; }
 #define POINTTOPOINTS(pt)      (MAKELONG((short)((pt).x), (short)((pt).y)))
 
-#define MAKELPARAM(low,high)   ((LPARAM)MAKELONG(low,high))
-#define MAKEWPARAM(low,high)   ((WPARAM)MAKELONG(low,high))
-#define MAKELRESULT(low,high)  ((LRESULT)MAKELONG(low,high))
+#define MAKELPARAM(low,high)   ((LPARAM)(DWORD)MAKELONG(low,high))
+#define MAKEWPARAM(low,high)   ((WPARAM)(DWORD)MAKELONG(low,high))
+#define MAKELRESULT(low,high)  ((LRESULT)(DWORD)MAKELONG(low,high))
 
 /* Cursors / Icons */
 
@@ -5077,8 +5077,8 @@ WINUSERAPI VOID        WINAPI mouse_event(DWORD,DWORD,DWORD,DWORD,ULONG_PTR);
 WINUSERAPI INT        WINAPIV wsprintfA(LPSTR,LPCSTR,...);
 WINUSERAPI INT        WINAPIV wsprintfW(LPWSTR,LPCWSTR,...);
 #define                       wsprintf WINELIB_NAME_AW(wsprintf)
-WINUSERAPI INT         WINAPI wvsprintfA(LPSTR,LPCSTR,va_list);
-WINUSERAPI INT         WINAPI wvsprintfW(LPWSTR,LPCWSTR,va_list);
+WINUSERAPI INT         WINAPI wvsprintfA(LPSTR,LPCSTR,__ms_va_list);
+WINUSERAPI INT         WINAPI wvsprintfW(LPWSTR,LPCWSTR,__ms_va_list);
 #define                       wvsprintf WINELIB_NAME_AW(wvsprintf)
 
 /* Undocumented functions */

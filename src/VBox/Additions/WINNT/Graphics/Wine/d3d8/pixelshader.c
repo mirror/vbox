@@ -65,32 +65,13 @@ static ULONG WINAPI IDirect3DPixelShader8Impl_Release(IDirect3DPixelShader8 * if
     TRACE("(%p) : ReleaseRef to %d\n", This, ref);
 
     if (ref == 0) {
+        EnterCriticalSection(&d3d8_cs);
         IWineD3DPixelShader_Release(This->wineD3DPixelShader);
+        LeaveCriticalSection(&d3d8_cs);
         HeapFree(GetProcessHeap(), 0, This);
     }
     return ref;
 }
-
-/* IDirect3DPixelShader8 Interface follow: */
-static HRESULT WINAPI IDirect3DPixelShader8Impl_GetDevice(IDirect3DPixelShader8 *iface, IDirect3DDevice8 **ppDevice) {
-    IDirect3DPixelShader8Impl *This = (IDirect3DPixelShader8Impl *)iface;
-    IWineD3DDevice *myDevice = NULL;
-
-    TRACE("(%p) : Relay\n", This);
-
-    IWineD3DPixelShader_GetDevice(This->wineD3DPixelShader, &myDevice);
-    IWineD3DDevice_GetParent(myDevice, (IUnknown **)ppDevice);
-    IWineD3DDevice_Release(myDevice);
-    TRACE("(%p) returning (%p)\n", This, *ppDevice);
-    return D3D_OK;
-}
-
-static HRESULT WINAPI IDirect3DPixelShader8Impl_GetFunction(IDirect3DPixelShader8 *iface, VOID *pData, UINT *pSizeOfData) {
-    IDirect3DPixelShader8Impl *This = (IDirect3DPixelShader8Impl *)iface;
-    TRACE("(%p) Relay\n", This);
-    return IWineD3DPixelShader_GetFunction(This->wineD3DPixelShader, pData, pSizeOfData);
-}
-
 
 const IDirect3DPixelShader8Vtbl Direct3DPixelShader8_Vtbl =
 {
@@ -98,7 +79,4 @@ const IDirect3DPixelShader8Vtbl Direct3DPixelShader8_Vtbl =
     IDirect3DPixelShader8Impl_QueryInterface,
     IDirect3DPixelShader8Impl_AddRef,
     IDirect3DPixelShader8Impl_Release,
-    /* IDirect3DPixelShader8 */
-    IDirect3DPixelShader8Impl_GetDevice,
-    IDirect3DPixelShader8Impl_GetFunction
 };

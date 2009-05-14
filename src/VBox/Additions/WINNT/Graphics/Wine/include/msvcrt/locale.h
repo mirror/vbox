@@ -26,18 +26,11 @@
  * that LGPLv2 or any later version may be used, or where a choice of which version
  * of the LGPL is applied is otherwise unspecified.
  */
+
 #ifndef __WINE_LOCALE_H
 #define __WINE_LOCALE_H
-#ifndef __WINE_USE_MSVCRT
-#define __WINE_USE_MSVCRT
-#endif
 
-#ifndef _WCHAR_T_DEFINED
-#define _WCHAR_T_DEFINED
-#ifndef __cplusplus
-typedef unsigned short wchar_t;
-#endif
-#endif
+#include <crtdefs.h>
 
 #define LC_ALL                 0
 #define LC_COLLATE             1
@@ -78,12 +71,12 @@ struct lconv
 extern "C" {
 #endif
 
-char*       setlocale(int,const char*);
-struct lconv* localeconv(void);
+char*         __cdecl setlocale(int,const char*);
+struct lconv* __cdecl localeconv(void);
 
 #ifndef _WLOCALE_DEFINED
 #define _WLOCALE_DEFINED
-wchar_t* _wsetlocale(int,const wchar_t*);
+wchar_t* __cdecl _wsetlocale(int,const wchar_t*);
 #endif /* _WLOCALE_DEFINED */
 
 #ifdef __cplusplus

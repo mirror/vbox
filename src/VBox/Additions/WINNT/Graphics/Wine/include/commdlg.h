@@ -35,7 +35,9 @@ extern "C" {
 #endif
 
 #include <prsht.h>
+#ifndef _WIN64
 #include <pshpack1.h>
+#endif
 
 #ifndef SNDMSG
 #ifdef __cplusplus
@@ -79,7 +81,7 @@ extern "C" {
 #define SAVE_DIALOG  1
 #define OPEN_DIALOG  2
 
-typedef UINT (CALLBACK *LPOFNHOOKPROC)(HWND,UINT,WPARAM,LPARAM);
+typedef UINT_PTR (CALLBACK *LPOFNHOOKPROC)(HWND,UINT,WPARAM,LPARAM);
 
 typedef struct tagOFNA {
 	DWORD		lStructSize;
@@ -156,7 +158,26 @@ typedef struct
 DECL_WINELIB_TYPE_AW(OFNOTIFY)
 DECL_WINELIB_TYPE_AW(LPOFNOTIFY)
 
-typedef UINT (CALLBACK *LPCCHOOKPROC) (HWND, UINT, WPARAM, LPARAM);
+typedef struct _OFNOTIFYEXA
+{
+        NMHDR           hdr;
+        LPOPENFILENAMEA lpOFN;
+        LPVOID          psf;
+        LPVOID          pidl;
+} OFNOTIFYEXA, *LPOFNOTIFYEXA;
+
+typedef struct _OFNOTIFYEXW
+{
+        NMHDR           hdr;
+        LPOPENFILENAMEW lpOFN;
+        LPVOID          psf;
+        LPVOID          pidl;
+} OFNOTIFYEXW, *LPOFNOTIFYEXW;
+
+DECL_WINELIB_TYPE_AW(OFNOTIFYEX)
+DECL_WINELIB_TYPE_AW(LPOFNOTIFYEX)
+
+typedef UINT_PTR (CALLBACK *LPCCHOOKPROC) (HWND, UINT, WPARAM, LPARAM);
 
 typedef struct {
 	DWORD		lStructSize;
@@ -198,7 +219,7 @@ DECL_WINELIB_TYPE_AW(LPCHOOSECOLOR)
 #define CC_SOLIDCOLOR            0x00000080
 #define CC_ANYCOLOR              0x00000100
 
-typedef UINT (CALLBACK *LPFRHOOKPROC)(HWND,UINT,WPARAM,LPARAM);
+typedef UINT_PTR (CALLBACK *LPFRHOOKPROC)(HWND,UINT,WPARAM,LPARAM);
 
 typedef struct {
 	DWORD		lStructSize;
@@ -421,7 +442,6 @@ static const WCHAR HELPMSGSTRINGW[] = { 'c','o','m','m','d','l','g','_',
 #endif
 #define HELPMSGSTRING   WINELIB_NAME_AW(HELPMSGSTRING)
 
-
 #define CD_LBSELNOITEMS -1
 #define CD_LBSELCHANGE   0
 #define CD_LBSELSUB      1
@@ -437,6 +457,7 @@ static const WCHAR HELPMSGSTRINGW[] = { 'c','o','m','m','d','l','g','_',
 #define CDN_HELP                (CDN_FIRST - 0x0004)
 #define CDN_FILEOK              (CDN_FIRST - 0x0005)
 #define CDN_TYPECHANGE          (CDN_FIRST - 0x0006)
+#define CDN_INCLUDEITEM         (CDN_FIRST - 0x0007)
 
 #define CDM_FIRST               (WM_USER + 100)
 #define CDM_LAST                (WM_USER + 200)
@@ -779,7 +800,9 @@ BOOL  WINAPI ChooseFontW(LPCHOOSEFONTW);
 void COMDLG32_SetCommDlgExtendedError(DWORD err);
 
 
+#ifndef _WIN64
 #include <poppack.h>
+#endif
 
 #ifdef __cplusplus
 }

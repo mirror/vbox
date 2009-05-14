@@ -26,11 +26,11 @@
  * that LGPLv2 or any later version may be used, or where a choice of which version
  * of the LGPL is applied is otherwise unspecified.
  */
+
 #ifndef __WINE_MALLOC_H
 #define __WINE_MALLOC_H
-#ifndef __WINE_USE_MSVCRT
-#define __WINE_USE_MSVCRT
-#endif
+
+#include <crtdefs.h>
 
 /* heap function constants */
 #define _HEAPEMPTY    -1
@@ -43,27 +43,6 @@
 #define _FREEENTRY     0
 #define _USEDENTRY     1
 
-#if defined(__x86_64__) && !defined(_WIN64)
-#define _WIN64
-#endif
-
-#if !defined(_MSC_VER) && !defined(__int64)
-# ifdef _WIN64
-#   define __int64 long
-# else
-#   define __int64 long long
-# endif
-#endif
-
-#ifndef _SIZE_T_DEFINED
-#ifdef _WIN64
-typedef unsigned __int64 size_t;
-#else
-typedef unsigned int size_t;
-#endif
-#define _SIZE_T_DEFINED
-#endif
-
 #ifndef _HEAPINFO_DEFINED
 #define _HEAPINFO_DEFINED
 typedef struct _heapinfo
@@ -74,35 +53,39 @@ typedef struct _heapinfo
 } _HEAPINFO;
 #endif /* _HEAPINFO_DEFINED */
 
-extern unsigned int* __p__amblksiz(void);
+#ifdef __i386__
+extern unsigned int* __cdecl __p__amblksiz(void);
 #define _amblksiz (*__p__amblksiz());
+#else
+extern unsigned int _amblksiz;
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void*       _expand(void*,size_t);
-int         _heapadd(void*,size_t);
-int         _heapchk(void);
-int         _heapmin(void);
-int         _heapset(unsigned int);
-size_t _heapused(size_t*,size_t*);
-int         _heapwalk(_HEAPINFO*);
-size_t _msize(void*);
+void*  __cdecl _expand(void*,size_t);
+int    __cdecl _heapadd(void*,size_t);
+int    __cdecl _heapchk(void);
+int    __cdecl _heapmin(void);
+int    __cdecl _heapset(unsigned int);
+size_t __cdecl _heapused(size_t*,size_t*);
+int    __cdecl _heapwalk(_HEAPINFO*);
+size_t __cdecl _msize(void*);
 
-void*       calloc(size_t,size_t);
-void        free(void*);
-void*       malloc(size_t);
-void*       realloc(void*,size_t);
+void*  __cdecl calloc(size_t,size_t);
+void   __cdecl free(void*);
+void*  __cdecl malloc(size_t);
+void*  __cdecl realloc(void*,size_t);
 
-void        _aligned_free(void*);
-void*       _aligned_malloc(size_t,size_t);
-void*       _aligned_offset_malloc(size_t,size_t,size_t);
-void*       _aligned_realloc(void*,size_t,size_t);
-void*       _aligned_offset_realloc(void*,size_t,size_t,size_t);
+void   __cdecl _aligned_free(void*);
+void*  __cdecl _aligned_malloc(size_t,size_t);
+void*  __cdecl _aligned_offset_malloc(size_t,size_t,size_t);
+void*  __cdecl _aligned_realloc(void*,size_t,size_t);
+void*  __cdecl _aligned_offset_realloc(void*,size_t,size_t,size_t);
 
-size_t _get_sbh_threshold(void);
-int _set_sbh_threshold(size_t size);
+size_t __cdecl _get_sbh_threshold(void);
+int    __cdecl _set_sbh_threshold(size_t size);
 
 #ifdef __cplusplus
 }

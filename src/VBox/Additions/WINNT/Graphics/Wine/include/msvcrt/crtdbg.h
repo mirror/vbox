@@ -17,7 +17,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
-
 /*
  * Sun LGPL Disclaimer: For the avoidance of doubt, except that if any license choice
  * other than GPL or LGPL is available it will apply instead, Sun elects to use only
@@ -26,11 +25,11 @@
  * that LGPLv2 or any later version may be used, or where a choice of which version
  * of the LGPL is applied is otherwise unspecified.
  */
+
 #ifndef __WINE_CRTDBG_H_
 #define __WINE_CRTDBG_H_
-#ifndef __WINE_USE_MSVCRT
-#define __WINE_USE_MSVCRT
-#endif
+
+#include <crtdefs.h>
 
 /* The debug API is not implemented in Winelib.
  * Redirect everything to the regular APIs.
@@ -94,14 +93,14 @@ extern int _crtAssertBusy;
 extern int _crtBreakAlloc;
 extern int _crtDbgFlag;
 
-int   _CrtCheckMemory(void);
-int   _CrtDbgReport(int reportType, const char *filename, int linenumber,
-                    const char *moduleName, const char *format, ...);
-int   _CrtDumpMemoryLeaks(void);
-int   _CrtSetBreakAlloc(int new);
-int   _CrtSetDbgFlag(int new);
-void *_CrtSetDumpClient(void *dumpClient);
-int   _CrtSetReportMode(int reportType, int reportMode);
+int   __cdecl _CrtCheckMemory(void);
+int   __cdecl _CrtDbgReport(int reportType, const char *filename, int linenumber,
+                            const char *moduleName, const char *format, ...);
+int   __cdecl _CrtDumpMemoryLeaks(void);
+int   __cdecl _CrtSetBreakAlloc(int new);
+int   __cdecl _CrtSetDbgFlag(int new);
+void *__cdecl _CrtSetDumpClient(void *dumpClient);
+int   __cdecl _CrtSetReportMode(int reportType, int reportMode);
 
 #ifdef __cplusplus
 }

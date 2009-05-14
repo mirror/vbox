@@ -1683,7 +1683,7 @@ DECLARE_INTERFACE_(IDirectDraw4,IUnknown)
 #define IDirectDraw4_GetAvailableVidMem(p,a,b,c) (p)->lpVtbl->GetAvailableVidMem(p,a,b,c)
 /*** IDirectDraw4 methods ***/
 #define IDirectDraw4_GetSurfaceFromDC(p,a,b)    (p)->lpVtbl->GetSurfaceFromDC(p,a,b)
-#define IDirectDraw4_RestoreAllSurfaces(pc)     (p)->lpVtbl->RestoreAllSurfaces(p)
+#define IDirectDraw4_RestoreAllSurfaces(p)      (p)->lpVtbl->RestoreAllSurfaces(p)
 #define IDirectDraw4_TestCooperativeLevel(p)    (p)->lpVtbl->TestCooperativeLevel(p)
 #define IDirectDraw4_GetDeviceIdentifier(p,a,b) (p)->lpVtbl->GetDeviceIdentifier(p,a,b)
 #else
@@ -2283,8 +2283,8 @@ DECLARE_INTERFACE_(IDirectDrawSurface4,IUnknown)
     STDMETHOD(BltBatch)(THIS_ LPDDBLTBATCH lpDDBltBatch, DWORD dwCount, DWORD dwFlags) PURE;
     STDMETHOD(BltFast)(THIS_ DWORD dwX, DWORD dwY, LPDIRECTDRAWSURFACE4 lpDDSrcSurface, LPRECT lpSrcRect, DWORD dwTrans) PURE;
     STDMETHOD(DeleteAttachedSurface)(THIS_ DWORD dwFlags, LPDIRECTDRAWSURFACE4 lpDDSAttachedSurface) PURE;
-    STDMETHOD(EnumAttachedSurfaces)(THIS_ LPVOID lpContext, LPDDENUMSURFACESCALLBACK lpEnumSurfacesCallback) PURE;
-    STDMETHOD(EnumOverlayZOrders)(THIS_ DWORD dwFlags, LPVOID lpContext, LPDDENUMSURFACESCALLBACK lpfnCallback) PURE;
+    STDMETHOD(EnumAttachedSurfaces)(THIS_ LPVOID lpContext, LPDDENUMSURFACESCALLBACK2 lpEnumSurfacesCallback) PURE;
+    STDMETHOD(EnumOverlayZOrders)(THIS_ DWORD dwFlags, LPVOID lpContext, LPDDENUMSURFACESCALLBACK2 lpfnCallback) PURE;
     STDMETHOD(Flip)(THIS_ LPDIRECTDRAWSURFACE4 lpDDSurfaceTargetOverride, DWORD dwFlags) PURE;
     STDMETHOD(GetAttachedSurface)(THIS_ LPDDSCAPS2 lpDDSCaps, LPDIRECTDRAWSURFACE4 *lplpDDAttachedSurface) PURE;
     STDMETHOD(GetBltStatus)(THIS_ DWORD dwFlags) PURE;

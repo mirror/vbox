@@ -636,7 +636,7 @@ struct _DMUS_IO_COMMAND {
 
 struct _DMUS_IO_TOOL_HEADER {
 	GUID   guidClassID;
-	long   lIndex;
+	LONG   lIndex;
 	DWORD  cPChannels;
 	FOURCC ckid;
 	FOURCC fccType;
@@ -694,12 +694,12 @@ struct _DMUS_IO_WAVE_HEADER {
 };
 
 struct _DMUS_IO_WAVE_TRACK_HEADER {
-	long  lVolume;
+	LONG  lVolume;
 	DWORD dwFlags;
 };
 
 struct _DMUS_IO_WAVE_PART_HEADER {
-    long  lVolume;
+    LONG  lVolume;
     DWORD dwVariations;
     DWORD dwPChannel;
     DWORD dwLockToPart;
@@ -708,8 +708,8 @@ struct _DMUS_IO_WAVE_PART_HEADER {
 };
 
 struct _DMUS_IO_WAVE_ITEM_HEADER  {
-	long           lVolume;
-	long           lPitch;
+	LONG           lVolume;
+	LONG           lPitch;
 	DWORD          dwVariations;
 	REFERENCE_TIME rtTime;
 	REFERENCE_TIME rtStartOffset;

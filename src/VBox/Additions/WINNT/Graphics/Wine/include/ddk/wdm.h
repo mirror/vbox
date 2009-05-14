@@ -141,6 +141,15 @@ typedef struct _IO_WORKITEM *PIO_WORKITEM;
 typedef struct _OBJECT_TYPE *POBJECT_TYPE;
 typedef struct _OBJECT_HANDLE_INFORMATION *POBJECT_HANDLE_INFORMATION;
 
+typedef struct _FAST_MUTEX
+{
+    LONG Count;
+    PKTHREAD Owner;
+    ULONG Contention;
+    KEVENT Gate;
+    ULONG OldIrql;
+} FAST_MUTEX, *PFAST_MUTEX;
+
 #define MAXIMUM_VOLUME_LABEL_LENGTH       (32 * sizeof(WCHAR))
 
 typedef struct _VPB {
@@ -1001,6 +1010,13 @@ typedef struct _KUSER_SHARED_DATA {
     } DUMMYUNIONNAME;
 } KSHARED_USER_DATA, *PKSHARED_USER_DATA;
 
+typedef enum _MM_SYSTEM_SIZE
+{
+    MmSmallSystem,
+    MmMediumSystem,
+    MmLargeSystem
+} MM_SYSTEMSIZE;
+
 NTSTATUS WINAPI ObCloseHandle(IN HANDLE handle);
 
 #define IoGetCurrentIrpStackLocation(_Irp) ((_Irp)->Tail.Overlay.CurrentStackLocation)
@@ -1026,6 +1042,7 @@ PVOID     WINAPI ExAllocatePoolWithQuotaTag(POOL_TYPE,SIZE_T,ULONG);
 void      WINAPI ExFreePool(PVOID);
 void      WINAPI ExFreePoolWithTag(PVOID,ULONG);
 
+NTSTATUS  WINAPI IoAllocateDriverObjectExtension(PDRIVER_OBJECT,PVOID,ULONG,PVOID*);
 PIRP      WINAPI IoAllocateIrp(CCHAR,BOOLEAN);
 NTSTATUS  WINAPI IoCreateDevice(DRIVER_OBJECT*,ULONG,UNICODE_STRING*,DEVICE_TYPE,ULONG,BOOLEAN,DEVICE_OBJECT**);
 NTSTATUS  WINAPI IoCreateDriver(UNICODE_STRING*,PDRIVER_INITIALIZE);
@@ -1036,6 +1053,7 @@ NTSTATUS  WINAPI IoDeleteSymbolicLink(UNICODE_STRING*);
 void      WINAPI IoFreeIrp(IRP*);
 PEPROCESS WINAPI IoGetCurrentProcess(void);
 NTSTATUS  WINAPI IoGetDeviceObjectPointer(UNICODE_STRING*,ACCESS_MASK,PFILE_OBJECT*,PDEVICE_OBJECT*);
+PVOID     WINAPI IoGetDriverObjectExtension(PDRIVER_OBJECT,PVOID);
 PDEVICE_OBJECT WINAPI IoGetRelatedDeviceObject(PFILE_OBJECT);
 void      WINAPI IoInitializeIrp(IRP*,USHORT,CCHAR);
 
@@ -1046,6 +1064,7 @@ ULONG     WINAPI KeQueryTimeIncrement(void);
 
 PVOID     WINAPI MmAllocateNonCachedMemory(SIZE_T);
 void      WINAPI MmFreeNonCachedMemory(PVOID,SIZE_T);
+MM_SYSTEMSIZE WINAPI MmQuerySystemSize(void);
 
 NTSTATUS  WINAPI ObReferenceObjectByHandle(HANDLE,ACCESS_MASK,POBJECT_TYPE,KPROCESSOR_MODE,PVOID*,POBJECT_HANDLE_INFORMATION);
 

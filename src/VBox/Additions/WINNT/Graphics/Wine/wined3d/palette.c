@@ -1,4 +1,4 @@
-/*		DirectDraw - IDirectPalette base interface
+/*              DirectDraw - IDirectPalette base interface
  *
  * Copyright 1997-2000 Marcus Meissner
  * Copyright 2000-2001 TransGaming Technologies Inc.
@@ -27,6 +27,7 @@
  * that LGPLv2 or any later version may be used, or where a choice of which version
  * of the LGPL is applied is otherwise unspecified.
  */
+
 #include "config.h"
 #include "winerror.h"
 #include "wine/debug.h"

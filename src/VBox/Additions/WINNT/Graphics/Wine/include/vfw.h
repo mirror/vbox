@@ -1428,7 +1428,7 @@ HWND VFWAPIV MCIWndCreateW(HWND, HINSTANCE, DWORD, LPCWSTR);
 #define MCIWndGetLength(hWnd)       (LONG)MCIWndSM(hWnd,MCIWNDM_GETLENGTH,0,0)
 #define MCIWndGetEnd(hWnd)          (LONG)MCIWndSM(hWnd,MCIWNDM_GETEND,0,0)
 
-#define MCIWndStep(hWnd,n)          (LONG)MCIWndSM(hWnd,MCI_STEP,0,(LPARAM)(long)(n))
+#define MCIWndStep(hWnd,n)          (LONG)MCIWndSM(hWnd,MCI_STEP,0,(LPARAM)(LONG)(n))
 
 #define MCIWndDestroy(hWnd)         (VOID)MCIWndSM(hWnd,WM_CLOSE,0,0)
 #define MCIWndSetZoom(hWnd,iZoom)   (VOID)MCIWndSM(hWnd,MCIWNDM_SETZOOM,0,(LPARAM)(UINT)(iZoom))
@@ -1695,9 +1695,9 @@ typedef struct videohdr_tag {
     DWORD       dwBufferLength;
     DWORD       dwBytesUsed;
     DWORD       dwTimeCaptured;
-    DWORD       dwUser;
+    DWORD_PTR   dwUser;
     DWORD       dwFlags;
-    DWORD       dwReserved[4];
+    DWORD_PTR   dwReserved[4];
 } VIDEOHDR, *PVIDEOHDR, *LPVIDEOHDR;
 
 #define VHDR_DONE       0x00000001
