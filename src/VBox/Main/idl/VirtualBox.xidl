@@ -11073,7 +11073,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
     name="PortMode"
-    uuid="b266f43c-2e93-46b3-812b-c20e600e867b"
+    uuid="533b5fe3-0185-4197-86a7-17e37dd39d76"
   >
     <desc>
       The PortMode enumeration represents possible communication modes for
