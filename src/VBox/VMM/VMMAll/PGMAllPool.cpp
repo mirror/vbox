@@ -4212,12 +4212,15 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
      *  (TRPMR3SyncIDT) because of FF priority. Try fix that?
      *  Assert(!(pVM->pgm.s.fGlobalSyncFlags & PGM_GLOBAL_SYNC_CLEAR_PGM_POOL)); */
 
+    pgmLock(pVM);
+
 #ifdef PGMPOOL_WITH_CACHE
     if (pPool->fCacheEnabled)
     {
         int rc2 = pgmPoolCacheAlloc(pPool, GCPhys, enmKind, iUser, iUserTable, ppPage);
         if (RT_SUCCESS(rc2))
         {
+            pgmUnlock(pVM);
             STAM_PROFILE_ADV_STOP(&pPool->StatAlloc, a);
             LogFlow(("pgmPoolAlloc: cached returns %Rrc *ppPage=%p:{.Key=%RHp, .idx=%d}\n", rc2, *ppPage, (*ppPage)->Core.Key, (*ppPage)->idx));
             return rc2;
@@ -4235,6 +4238,7 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
         rc = pgmPoolMakeMoreFreePages(pPool, enmKind, iUser);
         if (RT_FAILURE(rc))
         {
+            pgmUnlock(pVM);
             Log(("pgmPoolAlloc: returns %Rrc (Free)\n", rc));
             STAM_PROFILE_ADV_STOP(&pPool->StatAlloc, a);
             return rc;
@@ -4280,6 +4284,7 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
         pPage->GCPhys = NIL_RTGCPHYS;
         pPage->iNext = pPool->iFreeHead;
         pPool->iFreeHead = pPage->idx;
+        pgmUnlock(pVM);
         STAM_PROFILE_ADV_STOP(&pPool->StatAlloc, a);
         Log(("pgmPoolAlloc: returns %Rrc (Insert)\n", rc3));
         return rc3;
@@ -4303,6 +4308,7 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
     }
 
     *ppPage = pPage;
+    pgmUnlock(pVM);
     LogFlow(("pgmPoolAlloc: returns %Rrc *ppPage=%p:{.Key=%RHp, .idx=%d, .fCached=%RTbool, .fMonitored=%RTbool}\n",
              rc, pPage, pPage->Core.Key, pPage->idx, pPage->fCached, pPage->fMonitored));
     STAM_PROFILE_ADV_STOP(&pPool->StatAlloc, a);
