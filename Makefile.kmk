@@ -769,16 +769,23 @@ snapshot-puel:
 	 fi
 	$(QUIET)$(MKDIR) -p $(ZIPPATH)
 	$(QUIET)$(RM) -f $(ZIPPATH)/$(ZIPROOT)
+	$(QUIET)$(RM) -f $(ZIPPATH)/$(ZIPNAME)
 	$(QUIET)$(LN_SYMLINK) $(PATH_ROOT) $(ZIPPATH)/$(ZIPROOT)
 	$(QUIET)(cd $(ZIPPATH); 7z a \
 	    -l -tzip -mmt=on -mx=7 -p$(PASSWORD) \
 	    -xr!.svn \
-	    -x!$(ZIPROOT)/out \
-	    -x!$(ZIPROOT)/env.sh \
-	    -x!$(ZIPROOT)/configure.log \
-	    -x!$(ZIPROOT)/build.log \
-	    -x!$(ZIPROOT)/AutoConfig.kmk \
-	    -x!$(ZIPROOT)/LocalConfig.kmk \
+	    -i!$(ZIPROOT)/Config.kmk \
+	    -i!$(ZIPROOT)/Doxyfile.Core \
+	    -i!$(ZIPROOT)/Makefile.kmk \
+	    -i!$(ZIPROOT)/configure \
+	    -i!$(ZIPROOT)/configure.vbs \
+	    -i!$(ZIPROOT)/doc \
+	    -i!$(ZIPROOT)/include \
+	    -i!$(ZIPROOT)/kBuild \
+	    -i!$(ZIPROOT)/src \
+	    -i!$(ZIPROOT)/tools/env.sh \
+	    -i!$(ZIPROOT)/tools/linux.x86/bin/* \
+	    -i!$(ZIPROOT)/tools/linux.amd64/bin/* \
 	    -x!$(ZIPROOT)/doc/Devices \
 	    -x!$(ZIPROOT)/doc/\*pdf \
 	    -x!$(ZIPROOT)/doc/L4VM \
@@ -786,10 +793,6 @@ snapshot-puel:
 	    -x!$(ZIPROOT)/doc/licenses_old \
 	    -x!$(ZIPROOT)/doc/manual/de_DE \
 	    -x!$(ZIPROOT)/doc/manual/fr_FR \
-	    -x!$(ZIPROOT)/ChangeLog\* \
-	    -x!$(ZIPROOT)/COPYING \
-	    -x!$(ZIPROOT)/webtools \
-	    -x!$(ZIPROOT)/prebuild \
 	    -x!$(ZIPROOT)/src/tests \
 	    -x!$(ZIPROOT)/src/VBox/Artwork \
 	    -x!$(ZIPROOT)/src/VBox/Installer/AMI \
@@ -797,9 +800,7 @@ snapshot-puel:
 	    -x!$(ZIPROOT)/src/VBox/Installer/Encore \
 	    -x!$(ZIPROOT)/src/VBox/Installer/linux/debian \
 	    -x!$(ZIPROOT)/src/VBox/Installer/linux/rpm \
-	    -x!$(ZIPROOT)/tools \
-	    $(ZIPPATH)/$(ZIPNAME) \
-	    $(ZIPROOT))
+	    $(ZIPPATH)/$(ZIPNAME))
 	$(QUIET)$(RM) $(ZIPPATH)/$(ZIPROOT)
 
 
