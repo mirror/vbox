@@ -2029,7 +2029,6 @@ VMMDECL(bool) PGMIsLocked(PVM pVM)
     return PDMCritSectIsLocked(&pVM->pgm.s.CritSect);
 }
 
-
 /**
  * Check if this VCPU currently owns the PGM lock.
  *

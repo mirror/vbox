@@ -1089,6 +1089,19 @@ VMMR3DECL(int) MMR3HyperReadGCVirt(PVM pVM, void *pvDst, RTGCPTR GCPtr, size_t c
     return PGMR3MapRead(pVM, pvDst, GCPtr, cb);
 }
 
+/**
+ * Release the MM hypervisor heap lock if owned by the current VCPU
+ *
+ * @param   pVM         The VM to operate on.
+ */
+VMMR3DECL(void) MMR3ReleaseOwnedLocks(PVM pVM)
+{
+    PMMHYPERHEAP pHeap = pVM->mm.s.CTX_SUFF(pHyperHeap);
+
+    if (PDMCritSectIsOwner(&pHeap->Lock))
+        PDMCritSectLeave(&pHeap->Lock);
+}
+
 
 /**
  * Info handler for 'hma', it dumps the list of lookup records for the hypervisor memory area.

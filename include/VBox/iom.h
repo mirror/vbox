@@ -263,6 +263,9 @@ VMMR3DECL(int)  IOMR3MMIORegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                                     RCPTRTYPE(PFNIOMMMIOREAD)  pfnReadCallback,
                                     RCPTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback);
 VMMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange);
+
+VMMR3DECL(void) IOMR3ReleaseOwnedLocks(PVM pVM);
+
 /** @} */
 #endif /* IN_RING3 */
 
