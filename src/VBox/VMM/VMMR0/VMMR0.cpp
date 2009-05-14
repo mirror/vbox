@@ -188,9 +188,11 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev)
         return VERR_INVALID_PARAMETER;
 
     /*
-     * Register the EMT R0 logger instance.
+     * Register the EMT R0 logger instance for VCPU 0.
      */
-    PVMMR0LOGGER pR0Logger = pVM->vmm.s.pR0LoggerR0;
+    PVMCPU pVCpu = &pVM->aCpus[0];
+
+    PVMMR0LOGGER pR0Logger = pVCpu->vmm.s.pR0LoggerR0;
     if (pR0Logger)
     {
 #if 0 /* testing of the logger. */
@@ -758,9 +760,19 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
             return GVMMR0DestroyVM(pVM);
 
         case VMMR0_DO_GVMM_REGISTER_VMCPU:
+        {
             if (!pVM)
                 return VERR_INVALID_PARAMETER;
+
+#ifdef LOG_ENABLED
+            /* Register the ring 0 logger for this thread here as well. */
+            PVMCPU       pVCpu = &pVM->aCpus[idCpu];
+            PVMMR0LOGGER pR0Logger = pVCpu->vmm.s.pR0LoggerR0;
+            if (pR0Logger)
+                RTLogSetDefaultInstanceThread(&pR0Logger->Logger, (uintptr_t)pVM->pSession);
+#endif
             return GVMMR0RegisterVCpu(pVM, idCpu);
+        }
 
         case VMMR0_DO_GVMM_SCHED_HALT:
             if (pReqHdr)
@@ -1193,8 +1205,8 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
 VMMR0DECL(void) VMMR0LogFlushDisable(PVMCPU pVCpu)
 {
     PVM pVM = pVCpu->pVMR0;
-    if (pVM->vmm.s.pR0LoggerR0)
-        pVM->vmm.s.pR0LoggerR0->fFlushingDisabled = true;
+    if (pVCpu->vmm.s.pR0LoggerR0)
+        pVCpu->vmm.s.pR0LoggerR0->fFlushingDisabled = true;
 }
 
 
@@ -1206,8 +1218,8 @@ VMMR0DECL(void) VMMR0LogFlushDisable(PVMCPU pVCpu)
 VMMR0DECL(void) VMMR0LogFlushEnable(PVMCPU pVCpu)
 {
     PVM pVM = pVCpu->pVMR0;
-    if (pVM->vmm.s.pR0LoggerR0)
-        pVM->vmm.s.pR0LoggerR0->fFlushingDisabled = false;
+    if (pVCpu->vmm.s.pR0LoggerR0)
+        pVCpu->vmm.s.pR0LoggerR0->fFlushingDisabled = false;
 }
 
 

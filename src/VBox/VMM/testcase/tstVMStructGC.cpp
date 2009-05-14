@@ -877,8 +877,8 @@ int main()
     GEN_CHECK_OFF(VMMCPU, pbEMTStackBottomRC);
     GEN_CHECK_OFF(VMM, pRCLoggerRC);
     GEN_CHECK_OFF(VMM, pRCLoggerR3);
-    GEN_CHECK_OFF(VMM, pR0LoggerR0);
-    GEN_CHECK_OFF(VMM, pR0LoggerR3);
+    GEN_CHECK_OFF(VMMCPU, pR0LoggerR0);
+    GEN_CHECK_OFF(VMMCPU, pR0LoggerR3);
     GEN_CHECK_OFF(VMM, cbRCLogger);
     GEN_CHECK_OFF(VMM, pYieldTimer);
     GEN_CHECK_OFF(VMM, cYieldResumeMillies);

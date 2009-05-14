@@ -226,12 +226,6 @@ typedef struct VMM
     /** Pointer to the GC logger instance - R3 Ptr.
      * This is NULL if logging is disabled. */
     R3PTRTYPE(PRTLOGGERRC)      pRCLoggerR3;
-    /** Pointer to the R0 logger instance - R3 Ptr.
-     * This is NULL if logging is disabled. */
-    R3PTRTYPE(PVMMR0LOGGER)     pR0LoggerR3;
-    /** Pointer to the R0 logger instance - R0 Ptr.
-     * This is NULL if logging is disabled. */
-    R0PTRTYPE(PVMMR0LOGGER)     pR0LoggerR0;
     /** Pointer to the GC release logger instance - R3 Ptr. */
     R3PTRTYPE(PRTLOGGERRC)      pRCRelLoggerR3;
     /** Pointer to the GC release logger instance - RC Ptr. */
@@ -345,6 +339,13 @@ typedef struct VMMCPU
     RCPTRTYPE(uint8_t *)        pbEMTStackRC;
     /** Pointer to the bottom of the stack - needed for doing relocations. */
     RCPTRTYPE(uint8_t *)        pbEMTStackBottomRC;
+
+    /** Pointer to the R0 logger instance - R3 Ptr.
+     * This is NULL if logging is disabled. */
+    R3PTRTYPE(PVMMR0LOGGER)     pR0LoggerR3;
+    /** Pointer to the R0 logger instance - R0 Ptr.
+     * This is NULL if logging is disabled. */
+    R0PTRTYPE(PVMMR0LOGGER)     pR0LoggerR0;
 
     /** @name CallHost
      * @{ */
