@@ -184,8 +184,10 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     /*
      * Assert alignment and sizes.
      */
-    AssertRelease(!(RT_OFFSETOF(VM, tm.s) & 31));
-    AssertRelease(sizeof(pVM->tm.s) <= sizeof(pVM->tm.padding));
+    AssertCompileMemberAlignment(VM, tm.s, 32);
+    AssertCompile(sizeof(pVM->tm.s) <= sizeof(pVM->tm.padding));
+    AssertCompileMemberAlignment(TM, EmtLock, 8);
+    AssertCompileMemberAlignment(TM, VirtualSyncLock, 8);
 
     /*
      * Init the structure.

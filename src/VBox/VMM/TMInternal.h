@@ -431,6 +431,8 @@ typedef struct TM
     bool volatile               fRunningQueues;
     /** Indicates that the virtual sync queue is being run. */
     bool volatile               fRunningVirtualSyncQueue;
+    /* Alignment */
+    bool                        u8Alignment[2];
 
     /** Lock serializing EMT access to TM. */
     PDMCRITSECT                 EmtLock;
