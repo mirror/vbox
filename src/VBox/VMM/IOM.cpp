@@ -147,8 +147,9 @@ VMMR3DECL(int) IOMR3Init(PVM pVM)
     /*
      * Assert alignment and sizes.
      */
-    AssertRelease(!(RT_OFFSETOF(VM, iom.s) & 31));
-    AssertRelease(sizeof(pVM->iom.s) <= sizeof(pVM->iom.padding));
+    AssertCompileMemberAlignment(VM, iom.s, 32);
+    AssertCompile(sizeof(pVM->iom.s) <= sizeof(pVM->iom.padding));
+    AssertCompileMemberAlignment(IOM, EmtLock, 8);
 
     /*
      * Setup any fixed pointers and offsets.
