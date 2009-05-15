@@ -175,7 +175,7 @@ VMMR3DECL(int) PDMR3CritSectEnterEx(PPDMCRITSECT pCritSect, bool fCallHost)
         &&  pCritSect->s.Core.Strict.ThreadOwner != NIL_RTTHREAD)
     {
         RTThreadWriteLockDec(pCritSect->s.Core.Strict.ThreadOwner);
-        ASMAtomicUoWriteSize(&pCritSect->s.Core.Strict.ThreadOwner, NIL_RTTHREAD);
+        ASMAtomicXchgSize(&pCritSect->s.Core.Strict.ThreadOwner, NIL_RTTHREAD);
     }
     return rc;
 }
