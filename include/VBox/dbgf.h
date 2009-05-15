@@ -37,6 +37,7 @@
 #include <VBox/dbgfsel.h>
 
 #include <iprt/stdarg.h>
+#include <iprt/dbg.h>
 
 __BEGIN_DECLS
 
@@ -585,6 +586,56 @@ typedef DBGFLINE *PDBGFLINE;
 /** Pointer to const debug line number. */
 typedef const DBGFLINE *PCDBGFLINE;
 
+/** @name Address spaces aliases.
+ * @{ */
+/** The guest global address space. */
+#define DBGF_AS_GLOBAL              ((RTDBGAS)-1)
+/** The guest kernel address space.
+ * This is usually resolves to the same as DBGF_AS_GLOBAL. */
+#define DBGF_AS_KERNEL              ((RTDBGAS)-2)
+/** The physical address space. */
+#define DBGF_AS_PHYS                ((RTDBGAS)-3)
+/** Raw-mode context. */
+#define DBGF_AS_RC                  ((RTDBGAS)-4)
+/** Ring-0 context. */
+#define DBGF_AS_R0                  ((RTDBGAS)-5)
+/** Raw-mode context and then global guest context.
+ * When used for looking up information, it works as if the call was first made
+ * with DBGF_AS_RC and then on failure with DBGF_AS_GLOBAL. When called for
+ * making address space changes, it works as if DBGF_AS_RC was used. */
+#define DBGF_AS_RC_AND_GC_GLOBAL    ((RTDBGAS)-6)
+
+/** The first special one. */
+#define DBGF_AS_FIRST               DBGF_AS_RC_AND_GC_GLOBAL
+/** The last special one. */
+#define DBGF_AS_LAST                DBGF_AS_GLOBAL
+/** The number of special address space handles. */
+#define DBGF_AS_COUNT               ((uintptr_t)DBGF_AS_LAST - (uintptr_t)DBGF_AS_FIRST + 1U)
+/** Converts an alias handle to an array index. */
+#define DBGF_AS_ALIAS_2_INDEX(hAlias) \
+    ( (uintptr_t)(hAlias) - (uintptr_t)DBGF_AS_FIRST )
+/** Predicat macro that check if the specified handle is an alias. */
+#define DBGF_AS_IS_ALIAS(hAlias) \
+    ( DBGF_AS_ALIAS_2_INDEX(hAlias)  <  DBGF_AS_COUNT )
+/** Predicat macro that check if the specified alias is a fixed one or not. */
+#define DBGF_AS_IS_FIXED_ALIAS(hAlias) \
+    ( DBGF_AS_ALIAS_2_INDEX(hAlias)  <  (uintptr_t)DBGF_AS_PHYS - (uintptr_t)DBGF_AS_FIRST + 1U )
+
+/** @} */
+
+VMMR3DECL(int)          DBGFR3AsAdd(PVM pVM, RTDBGAS hDbgAs, RTPROCESS ProcId);
+VMMR3DECL(int)          DBGFR3AsDelete(PVM pVM, RTDBGAS hDbgAs);
+VMMR3DECL(int)          DBGFR3AsSetAlias(PVM pVM, RTDBGAS hAlias, RTDBGAS hAliasFor);
+VMMR3DECL(RTDBGAS)      DBGFR3AsResolve(PVM pVM, RTDBGAS hAlias);
+VMMR3DECL(RTDBGAS)      DBGFR3AsResolveAndRetain(PVM pVM, RTDBGAS hAlias);
+VMMR3DECL(RTDBGAS)      DBGFR3AsQueryByName(PVM pVM, const char *pszName);
+VMMR3DECL(RTDBGAS)      DBGFR3AsQueryByPid(PVM pVM, RTPROCESS ProcId);
+
+VMMR3DECL(int)          DBGFR3AsLoadImage(PVM pVM, RTDBGAS hDbgAs, const char *pszFilename, const char *pszModName, PCDBGFADDRESS pModAddress, RTDBGSEGIDX iModSeg, uint32_t fFlags);
+VMMR3DECL(int)          DBGFR3AsLoadMap(PVM pVM, RTDBGAS hDbgAs, const char *pszFilename, const char *pszModName, PCDBGFADDRESS pModAddress, RTDBGSEGIDX iModSeg, RTGCUINTPTR uSubtrahend, uint32_t fFlags);
+VMMR3DECL(int)          DBGFR3AsLinkModule(PVM pVM, RTDBGAS hDbgAs, RTDBGMOD hMod, PCDBGFADDRESS pModAddress, RTDBGSEGIDX iModSeg, uint32_t fFlags);
+
+/* The following are soon to be obsoleted: */
 VMMR3DECL(int)          DBGFR3ModuleLoad(PVM pVM, const char *pszFilename, RTGCUINTPTR AddressDelta, const char *pszName, RTGCUINTPTR ModuleAddress, unsigned cbImage);
 VMMR3DECL(void)         DBGFR3ModuleRelocate(PVM pVM, RTGCUINTPTR OldImageBase, RTGCUINTPTR NewImageBase, RTGCUINTPTR cbImage,
                                              const char *pszFilename, const char *pszName);

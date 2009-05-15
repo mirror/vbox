@@ -65,6 +65,7 @@ typedef enum MMTAG
     MM_TAG_CPUM_CTX,
 
     MM_TAG_DBGF,
+    MM_TAG_DBGF_AS,
     MM_TAG_DBGF_INFO,
     MM_TAG_DBGF_LINE,
     MM_TAG_DBGF_LINE_DUP,

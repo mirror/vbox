@@ -718,6 +718,7 @@ const char *mmR3GetTagName(MMTAG enmTag)
         TAG2STR(CSAM_PATCH);
 
         TAG2STR(DBGF);
+        TAG2STR(DBGF_AS);
         TAG2STR(DBGF_INFO);
         TAG2STR(DBGF_LINE);
         TAG2STR(DBGF_LINE_DUP);

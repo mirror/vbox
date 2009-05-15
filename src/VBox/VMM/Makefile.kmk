@@ -52,6 +52,7 @@ VMMR3_SOURCES   = \
 	CPUM.cpp \
 	DBGF.cpp \
 	DBGFAddr.cpp \
+	DBGFAddrSpace.cpp \
 	DBGFBp.cpp \
 	DBGFDisas.cpp \
 	DBGFInfo.cpp \
