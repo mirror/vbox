@@ -378,6 +378,11 @@ static int vhdDynamicHeaderUpdate(PVHDIMAGE pImage)
     ddh.Checksum = 0;
     ddh.Checksum = RT_H2BE_U32(vhdChecksum(&ddh, sizeof(ddh)));
     rc = RTFileWriteAt(pImage->File, pImage->u64DataOffset, &ddh, sizeof(ddh), NULL);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* Update the VHD footer copy. */
+    rc = RTFileWriteAt(pImage->File, 0, &pImage->vhdFooterCopy, sizeof(VHDFooter), NULL);
 
 out:
     return rc;
@@ -1220,7 +1225,8 @@ static int vhdSetUuid(void *pBackendData, PCRTUUID pUuid)
     if (pImage)
     {
         pImage->ImageUuid = *pUuid;
-        /**@todo: implement */
+        /* Update the footer copy. It will get written to disk when the image is closed. */
+        memcpy(&pImage->vhdFooterCopy.UniqueID, pUuid, 16);
         rc = VINF_SUCCESS;
     }
     else
