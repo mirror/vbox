@@ -187,6 +187,7 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev)
         ||  pVM->pVMR0 != pVM)
         return VERR_INVALID_PARAMETER;
 
+#ifdef LOG_ENABLED
     /*
      * Register the EMT R0 logger instance for VCPU 0.
      */
@@ -195,7 +196,7 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev)
     PVMMR0LOGGER pR0Logger = pVCpu->vmm.s.pR0LoggerR0;
     if (pR0Logger)
     {
-#if 0 /* testing of the logger. */
+# if 0 /* testing of the logger. */
         LogCom(("vmmR0InitVM: before %p\n", RTLogDefaultInstance()));
         LogCom(("vmmR0InitVM: pfnFlush=%p actual=%p\n", pR0Logger->Logger.pfnFlush, vmmR0LoggerFlush));
         LogCom(("vmmR0InitVM: pfnLogger=%p actual=%p\n", pR0Logger->Logger.pfnLogger, vmmR0LoggerWrapper));
@@ -203,7 +204,7 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev)
 
         RTLogSetDefaultInstanceThread(&pR0Logger->Logger, (uintptr_t)pVM->pSession);
         LogCom(("vmmR0InitVM: after %p reg\n", RTLogDefaultInstance()));
-        RTLogSetDefaultInstanceThread(NULL, 0);
+        RTLogSetDefaultInstanceThread(NULL, pVM->pSession);
         LogCom(("vmmR0InitVM: after %p dereg\n", RTLogDefaultInstance()));
 
         pR0Logger->Logger.pfnLogger("hello ring-0 logger\n");
@@ -215,7 +216,7 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev)
         LogCom(("vmmR0InitVM: after %p reg2\n", RTLogDefaultInstance()));
         pR0Logger->Logger.pfnLogger("hello ring-0 logger\n");
         LogCom(("vmmR0InitVM: returned succesfully from direct logger call (2). offScratch=%d\n", pR0Logger->Logger.offScratch));
-        RTLogSetDefaultInstanceThread(NULL, 0);
+        RTLogSetDefaultInstanceThread(NULL, pVM->pSession);
         LogCom(("vmmR0InitVM: after %p dereg2\n", RTLogDefaultInstance()));
 
         RTLogLoggerEx(&pR0Logger->Logger, 0, ~0U, "hello ring-0 logger (RTLogLoggerEx)\n");
@@ -224,10 +225,12 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev)
         RTLogSetDefaultInstanceThread(&pR0Logger->Logger, (uintptr_t)pVM->pSession);
         RTLogPrintf("hello ring-0 logger (RTLogPrintf)\n");
         LogCom(("vmmR0InitVM: RTLogPrintf returned fine offScratch=%d\n", pR0Logger->Logger.offScratch));
-#endif
+# endif
         Log(("Switching to per-thread logging instance %p (key=%p)\n", &pR0Logger->Logger, pVM->pSession));
         RTLogSetDefaultInstanceThread(&pR0Logger->Logger, (uintptr_t)pVM->pSession);
+        pR0Logger->fRegistered = true;
     }
+#endif /* LOG_ENABLED */
 
     /*
      * Initialize the per VM data for GVMM and GMM.
@@ -260,7 +263,7 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev)
             HWACCMR0TermVM(pVM);
         }
     }
-    RTLogSetDefaultInstanceThread(NULL, 0);
+    RTLogSetDefaultInstanceThread(NULL, (uintptr_t)pVM->pSession);
     return rc;
 }
 
@@ -294,7 +297,7 @@ VMMR0DECL(int) VMMR0TermVM(PVM pVM, PGVM pGVM)
     /*
      * Deregister the logger.
      */
-    RTLogSetDefaultInstanceThread(NULL, 0);
+    RTLogSetDefaultInstanceThread(NULL, (uintptr_t)pVM->pSession);
     return VINF_SUCCESS;
 }
 
@@ -625,6 +628,19 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
 #endif
             ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
 
+#ifdef LOG_ENABLED
+            if (pVCpu->idCpu > 0)
+            {
+                /* Lazy registration of ring 0 loggers. */
+                PVMMR0LOGGER pR0Logger = pVCpu->vmm.s.pR0LoggerR0;
+                if (    pR0Logger
+                    &&  !pR0Logger->fRegistered)
+                {
+                    RTLogSetDefaultInstanceThread(&pR0Logger->Logger, (uintptr_t)pVM->pSession);
+                    pR0Logger->fRegistered = true;
+                }
+            }
+#endif
             if (!HWACCMR0SuspendPending())
             {
                 rc = HWACCMR0Enter(pVM, pVCpu);
@@ -763,14 +779,6 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
         {
             if (!pVM)
                 return VERR_INVALID_PARAMETER;
-
-#ifdef LOG_ENABLED
-            /* Register the ring 0 logger for this thread here as well. */
-            PVMCPU       pVCpu = &pVM->aCpus[idCpu];
-            PVMMR0LOGGER pR0Logger = pVCpu->vmm.s.pR0LoggerR0;
-            if (pR0Logger)
-                RTLogSetDefaultInstanceThread(&pR0Logger->Logger, (uintptr_t)pVM->pSession);
-#endif
             return GVMMR0RegisterVCpu(pVM, idCpu);
         }
 
@@ -1139,7 +1147,7 @@ VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation,
     return vmmR0EntryExWorker(pVM, idCpu, enmOperation, pReq, u64Arg, pSession);
 }
 
-
+#ifdef LOG_ENABLED
 /**
  * Internal R0 logger worker: Flush logger.
  *
@@ -1195,8 +1203,9 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
     }
     VMMR0CallHost(pVM, VMMCALLHOST_VMM_LOGGER_FLUSH, 0);
 }
+#endif
 
-
+#ifdef LOG_ENABLED
 /**
  * Disables flushing of the ring-0 debug log.
  *
@@ -1221,7 +1230,7 @@ VMMR0DECL(void) VMMR0LogFlushEnable(PVMCPU pVCpu)
     if (pVCpu->vmm.s.pR0LoggerR0)
         pVCpu->vmm.s.pR0LoggerR0->fFlushingDisabled = false;
 }
-
+#endif
 
 /**
  * Jump back to ring-3 if we're the EMT and the longjmp is armed.

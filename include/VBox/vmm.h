@@ -34,6 +34,7 @@
 #include <VBox/types.h>
 #include <VBox/vmapi.h>
 #include <VBox/sup.h>
+#include <VBox/log.h>
 #include <iprt/stdarg.h>
 
 __BEGIN_DECLS
@@ -319,8 +320,14 @@ VMMR0DECL(void)     VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOpe
 VMMR0DECL(int)      VMMR0EntryEx(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION);
 VMMR0DECL(int)      VMMR0TermVM(PVM pVM, PGVM pGVM);
 VMMR0DECL(int)      VMMR0CallHost(PVM pVM, VMMCALLHOST enmOperation, uint64_t uArg);
+
+#ifdef LOG_ENABLED
 VMMR0DECL(void)     VMMR0LogFlushDisable(PVMCPU pVCpu);
 VMMR0DECL(void)     VMMR0LogFlushEnable(PVMCPU pVCpu);
+#else
+#define             VMMR0LogFlushDisable(pVCpu)     do { } while(0)
+#define             VMMR0LogFlushEnable(pVCpu)      do { } while(0)
+#endif
 
 /** @} */
 
