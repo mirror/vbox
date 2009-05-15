@@ -1227,6 +1227,9 @@ static int vhdSetUuid(void *pBackendData, PCRTUUID pUuid)
         pImage->ImageUuid = *pUuid;
         /* Update the footer copy. It will get written to disk when the image is closed. */
         memcpy(&pImage->vhdFooterCopy.UniqueID, pUuid, 16);
+        /* Update checksum. */
+        pImage->vhdFooterCopy.Checksum = 0;
+        pImage->vhdFooterCopy.Checksum = RT_H2BE_U32(vhdChecksum(&pImage->vhdFooterCopy, sizeof(VHDFooter)));
         rc = VINF_SUCCESS;
     }
     else
