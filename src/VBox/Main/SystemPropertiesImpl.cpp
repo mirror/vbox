@@ -220,7 +220,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxGuestCPUCount)(ULONG *maxCPUCount)
     CheckComRCReturnRC (autoCaller.rc());
 
     /* no need to lock, this is const */
-    *maxCPUCount = 1; // SchemaDefs::MaxCPUCount; // VMM_MAX_CPU_COUNT
+    *maxCPUCount = SchemaDefs::MaxCPUCount; // VMM_MAX_CPU_COUNT
 
     return S_OK;
 }
