@@ -1957,6 +1957,8 @@ DECLCALLBACK(int) pgmPoolClearAll(PVM pVM, void *pvUser)
     STAM_PROFILE_START(&pPool->StatClearAll, c);
     LogFlow(("pgmPoolClearAll: cUsedPages=%d\n", pPool->cUsedPages));
 
+    pgmLock(pVM);
+
     /*
      * Iterate all the pages until we've encountered all that in use.
      * This is simple but not quite optimal solution.
@@ -2062,6 +2064,7 @@ DECLCALLBACK(int) pgmPoolClearAll(PVM pVM, void *pvUser)
 #endif
 
     pPool->cPresent = 0;
+    pgmUnlock(pVM);
     PGM_INVL_GUEST_TLBS();
     STAM_PROFILE_STOP(&pPool->StatClearAll, c);
     return VINF_SUCCESS;
@@ -3019,6 +3022,7 @@ static void pgmPoolTrackClearPageUsers(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  */
 PPGMPOOLPHYSEXT pgmPoolTrackPhysExtAlloc(PVM pVM, uint16_t *piPhysExt)
 {
+    Assert(PGMIsLockOwner(pVM));
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     uint16_t iPhysExt = pPool->iPhysExtFreeHead;
     if (iPhysExt == NIL_PGMPOOL_PHYSEXT_INDEX)
@@ -3042,6 +3046,7 @@ PPGMPOOLPHYSEXT pgmPoolTrackPhysExtAlloc(PVM pVM, uint16_t *piPhysExt)
  */
 void pgmPoolTrackPhysExtFree(PVM pVM, uint16_t iPhysExt)
 {
+    Assert(PGMIsLockOwner(pVM));
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     Assert(iPhysExt < pPool->cMaxPhysExts);
     PPGMPOOLPHYSEXT pPhysExt = &pPool->CTX_SUFF(paPhysExts)[iPhysExt];
@@ -3060,6 +3065,7 @@ void pgmPoolTrackPhysExtFree(PVM pVM, uint16_t iPhysExt)
  */
 void pgmPoolTrackPhysExtFreeList(PVM pVM, uint16_t iPhysExt)
 {
+    Assert(PGMIsLockOwner(pVM));
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
     const uint16_t  iPhysExtStart = iPhysExt;
@@ -3092,6 +3098,7 @@ void pgmPoolTrackPhysExtFreeList(PVM pVM, uint16_t iPhysExt)
  */
 static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t iShwPT)
 {
+    Assert(PGMIsLockOwner(pVM));
     PPGMPOOL        pPool = pVM->pgm.s.CTX_SUFF(pPool);
     PPGMPOOLPHYSEXT paPhysExts = pPool->CTX_SUFF(paPhysExts);
 
