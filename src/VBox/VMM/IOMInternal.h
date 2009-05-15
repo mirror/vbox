@@ -323,7 +323,7 @@ typedef struct IOM
     R0PTRTYPE(PFNPGMR0PHYSHANDLER)  pfnMMIOHandlerR0;
     /** The RC address of IOMMMIOHandler. */
     RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnMMIOHandlerRC;
-#if GC_ARCH_BITS == 64
+#if HC_ARCH_BITS == 64
     RTRCPTR                         padding;
 #endif
 
