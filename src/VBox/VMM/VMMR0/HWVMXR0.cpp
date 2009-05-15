@@ -2280,6 +2280,7 @@ ResumeExecution:
         /* Ignore software exceptions (such as int3) as they're reoccur when we restart the instruction anyway. */
         &&  VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hwaccm.s.Event.intInfo) != VMX_EXIT_INTERRUPTION_INFO_TYPE_SWEXCPT)
     {
+        Assert(!pVCpu->hwaccm.s.Event.fPending);
         pVCpu->hwaccm.s.Event.fPending = true;
         /* Error code present? */
         if (VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(pVCpu->hwaccm.s.Event.intInfo))
