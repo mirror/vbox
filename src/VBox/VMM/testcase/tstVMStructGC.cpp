@@ -824,6 +824,8 @@ int main()
     GEN_CHECK_OFF(TM, paTimerQueuesR3);
     GEN_CHECK_OFF(TM, paTimerQueuesR0);
     GEN_CHECK_OFF(TM, paTimerQueuesRC);
+    GEN_CHECK_OFF(TM, EmtLock);
+    GEN_CHECK_OFF(TM, VirtualSyncLock);
     GEN_CHECK_OFF(TM, StatDoQueues);
     GEN_CHECK_OFF(TM, StatTimerCallbackSetFF);
     GEN_CHECK_SIZE(TMTIMER);
