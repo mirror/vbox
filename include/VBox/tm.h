@@ -76,11 +76,12 @@ VMMDECL(void)     TMNotifyStartOfExecution(PVMCPU pVCpu);
 VMMDECL(void)     TMNotifyEndOfExecution(PVMCPU pVCpu);
 VMMDECL(void)     TMNotifyStartOfHalt(PVMCPU pVCpu);
 VMMDECL(void)     TMNotifyEndOfHalt(PVMCPU pVCpu);
-
-VMMDECL(uint32_t) TMGetWarpDrive(PVM pVM);
 #ifdef IN_RING3
+VMMR3DECL(int)    TMR3NotifySuspend(PVM pVM, PVMCPU pVCpu);
+VMMR3DECL(int)    TMR3NotifyResume(PVM pVM, PVMCPU pVCpu);
 VMMR3DECL(int)    TMR3SetWarpDrive(PVM pVM, uint32_t u32Percent);
 #endif
+VMMDECL(uint32_t) TMGetWarpDrive(PVM pVM);
 
 
 /** @name Real Clock Methods
@@ -102,8 +103,6 @@ VMMDECL(uint64_t) TMVirtualGetFreq(PVM pVM);
 VMMDECL(uint64_t) TMVirtualSyncGet(PVM pVM);
 VMMDECL(uint64_t) TMVirtualSyncGetNoCheck(PVM pVM);
 VMMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers);
-VMMDECL(int)      TMVirtualResume(PVM pVM);
-VMMDECL(int)      TMVirtualPause(PVM pVM);
 VMMDECL(uint64_t) TMVirtualToNano(PVM pVM, uint64_t u64VirtualTicks);
 VMMDECL(uint64_t) TMVirtualToMicro(PVM pVM, uint64_t u64VirtualTicks);
 VMMDECL(uint64_t) TMVirtualToMilli(PVM pVM, uint64_t u64VirtualTicks);
@@ -116,9 +115,8 @@ VMMDECL(uint64_t) TMVirtualFromMilli(PVM pVM, uint64_t u64MilliTS);
 /** @name CPU Clock Methods
  * @{
  */
-VMMDECL(int)      TMCpuTickResume(PVMCPU pVCpu);
-VMMDECL(int)      TMCpuTickPause(PVMCPU pVCpu);
 VMMDECL(uint64_t) TMCpuTickGet(PVMCPU pVCpu);
+VMMDECL(uint64_t) TMCpuTickGetNoCheck(PVMCPU pVCpu);
 VMMDECL(bool)     TMCpuTickCanUseRealTSC(PVMCPU pVCpu, uint64_t *poffRealTSC);
 VMMDECL(int)      TMCpuTickSet(PVMCPU pVCpu, uint64_t u64Tick);
 VMMDECL(uint64_t) TMCpuTicksPerSecond(PVM pVM);

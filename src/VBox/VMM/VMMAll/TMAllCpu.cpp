@@ -77,24 +77,6 @@ int tmCpuTickResume(PVM pVM, PVMCPU pVCpu)
 
 
 /**
- * Resumes the CPU timestamp counter ticking.
- *
- * @returns VBox status code.
- * @param   pVCpu       The VMCPU to operate on.
- * @todo replace this with TMNotifyResume
- */
-VMMDECL(int) TMCpuTickResume(PVMCPU pVCpu)
-{
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-
-    if (!pVM->tm.s.fTSCTiedToExecution)
-        return tmCpuTickResume(pVM, pVCpu);
-    /* ignored */
-    return VINF_SUCCESS;
-}
-
-
-/**
  * Pauses the CPU timestamp counter ticking.
  *
  * @returns VBox status code.
@@ -106,7 +88,7 @@ int tmCpuTickPause(PVM pVM, PVMCPU pVCpu)
 {
     if (pVCpu->tm.s.fTSCTicking)
     {
-        pVCpu->tm.s.u64TSC = TMCpuTickGet(pVCpu);
+        pVCpu->tm.s.u64TSC = TMCpuTickGetNoCheck(pVCpu);
         pVCpu->tm.s.fTSCTicking = false;
         return VINF_SUCCESS;
     }
@@ -226,19 +208,19 @@ VMMDECL(bool) TMCpuTickCanUseRealTSC(PVMCPU pVCpu, uint64_t *poffRealTSC)
  * @returns Gets the CPU tsc.
  * @param   pVCpu       The VMCPU to operate on.
  */
-VMMDECL(uint64_t) TMCpuTickGet(PVMCPU pVCpu)
+DECLINLINE(uint64_t) tmCpuTickGetInternal(PVMCPU pVCpu, bool fCheckTimers)
 {
-    PVM      pVM = pVCpu->CTX_SUFF(pVM);
     uint64_t u64;
 
     if (RT_LIKELY(pVCpu->tm.s.fTSCTicking))
     {
+        PVM pVM = pVCpu->CTX_SUFF(pVM);
         if (pVM->tm.s.fTSCVirtualized)
         {
             if (pVM->tm.s.fTSCUseRealTSC)
                 u64 = ASMReadTSC();
             else
-                u64 = tmCpuTickGetRawVirtual(pVM, true /* check for pending timers */);
+                u64 = tmCpuTickGetRawVirtual(pVM, fCheckTimers);
             u64 -= pVCpu->tm.s.u64TSCOffset;
         }
         else
@@ -247,6 +229,30 @@ VMMDECL(uint64_t) TMCpuTickGet(PVMCPU pVCpu)
     else
         u64 = pVCpu->tm.s.u64TSC;
     return u64;
+}
+
+
+/**
+ * Read the current CPU timstamp counter.
+ *
+ * @returns Gets the CPU tsc.
+ * @param   pVCpu       The VMCPU to operate on.
+ */
+VMMDECL(uint64_t) TMCpuTickGet(PVMCPU pVCpu)
+{
+    return tmCpuTickGetInternal(pVCpu, true /* fCheckTimers */);
+}
+
+
+/**
+ * Read the current CPU timstamp counter, don't check for expired timers.
+ *
+ * @returns Gets the CPU tsc.
+ * @param   pVCpu       The VMCPU to operate on.
+ */
+VMMDECL(uint64_t) TMCpuTickGetNoCheck(PVMCPU pVCpu)
+{
+    return tmCpuTickGetInternal(pVCpu, false /* fCheckTimers */);
 }
 
 
