@@ -1475,19 +1475,19 @@ RTDECL(PRTLOGGER) RTLogSetDefaultInstance(PRTLOGGER pLogger)
 
 #ifdef IN_RING0
 /**
- * Changes the default logger instance for the specified thread.
+ * Changes the default logger instance for the current thread.
  *
  * @returns IPRT status code.
- * @param   hNativeThread   Thread handle
- * @param   pLogger         The logger instance. Pass NULL for deregistration.
- * @param   uKey            Associated key for cleanup purposes. If pLogger is NULL,
- *                          all instances with this key will be deregistered. So in
- *                          order to only deregister the instance associated with the
- *                          current thread use 0.
+ * @param   pLogger     The logger instance. Pass NULL for deregistration.
+ * @param   uKey        Associated key for cleanup purposes. If pLogger is NULL,
+ *                      all instances with this key will be deregistered. So in
+ *                      order to only deregister the instance associated with the
+ *                      current thread use 0.
  */
-RTDECL(int) RTLogSetDefaultInstanceThread(RTNATIVETHREAD hNativeThread, PRTLOGGER pLogger, uintptr_t uKey)
+RTDECL(int) RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t uKey)
 {
     int             rc;
+    RTNATIVETHREAD  Self = RTThreadNativeSelf();
     if (pLogger)
     {
         int32_t i;
@@ -1500,7 +1500,7 @@ RTDECL(int) RTLogSetDefaultInstanceThread(RTNATIVETHREAD hNativeThread, PRTLOGGE
          */
         i = RT_ELEMENTS(g_aPerThreadLoggers);
         while (i-- > 0)
-            if (g_aPerThreadLoggers[i].NativeThread == hNativeThread)
+            if (g_aPerThreadLoggers[i].NativeThread == Self)
             {
                 ASMAtomicXchgPtr((void * volatile *)&g_aPerThreadLoggers[i].uKey, (void *)uKey);
                 g_aPerThreadLoggers[i].pLogger = pLogger;
@@ -1524,7 +1524,7 @@ RTDECL(int) RTLogSetDefaultInstanceThread(RTNATIVETHREAD hNativeThread, PRTLOGGE
             {
                 AssertCompile(sizeof(RTNATIVETHREAD) == sizeof(void*));
                 if (    g_aPerThreadLoggers[i].NativeThread == NIL_RTNATIVETHREAD
-                    &&  ASMAtomicCmpXchgPtr((void * volatile *)&g_aPerThreadLoggers[i].NativeThread, (void *)hNativeThread, (void *)NIL_RTNATIVETHREAD))
+                    &&  ASMAtomicCmpXchgPtr((void * volatile *)&g_aPerThreadLoggers[i].NativeThread, (void *)Self, (void *)NIL_RTNATIVETHREAD))
                 {
                     ASMAtomicXchgPtr((void * volatile *)&g_aPerThreadLoggers[i].uKey, (void *)uKey);
                     ASMAtomicXchgPtr((void * volatile *)&g_aPerThreadLoggers[i].pLogger, pLogger);
@@ -1543,7 +1543,7 @@ RTDECL(int) RTLogSetDefaultInstanceThread(RTNATIVETHREAD hNativeThread, PRTLOGGE
          */
         int32_t i = RT_ELEMENTS(g_aPerThreadLoggers);
         while (i-- > 0)
-            if (    g_aPerThreadLoggers[i].NativeThread == hNativeThread
+            if (    g_aPerThreadLoggers[i].NativeThread == Self
                 ||  g_aPerThreadLoggers[i].uKey == uKey)
             {
                 ASMAtomicXchgPtr((void * volatile *)&g_aPerThreadLoggers[i].uKey, NULL);

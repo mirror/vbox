@@ -1231,17 +1231,16 @@ RTDECL(PRTLOGGER) RTLogSetDefaultInstance(PRTLOGGER pLogger);
 
 #ifdef IN_RING0
 /**
- * Changes the default logger instance for the specified thread.
+ * Changes the default logger instance for the current thread.
  *
  * @returns IPRT status code.
- * @param   hNativeThread   Thread handle
- * @param   pLogger         The logger instance. Pass NULL for deregistration.
- * @param   uKey            Associated key for cleanup purposes. If pLogger is NULL,
- *                          all instances with this key will be deregistered. So in
- *                          order to only deregister the instance associated with the
- *                          current thread use 0.
+ * @param   pLogger     The logger instance. Pass NULL for deregistration.
+ * @param   uKey        Associated key for cleanup purposes. If pLogger is NULL,
+ *                      all instances with this key will be deregistered. So in
+ *                      order to only deregister the instance associated with the
+ *                      current thread use 0.
  */
-RTDECL(int) RTLogSetDefaultInstanceThread(RTNATIVETHREAD hNativeThread, PRTLOGGER pLogger, uintptr_t uKey);
+RTDECL(int) RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t uKey);
 #endif /* IN_RING0 */
 
 
