@@ -102,6 +102,9 @@ typedef struct VMMR0LOGGER
     bool                        fCreated;
     /** Flag indicating whether we've disabled flushing (world switch) or not. */
     bool                        fFlushingDisabled;
+    /** Flag indicating whether we've registered the instance already. */
+    bool                        fRegistered;
+    bool                        a8Alignment;
 #if HC_ARCH_BITS == 32
     uint32_t                    u32Alignment;
 #endif
@@ -340,12 +343,14 @@ typedef struct VMMCPU
     /** Pointer to the bottom of the stack - needed for doing relocations. */
     RCPTRTYPE(uint8_t *)        pbEMTStackBottomRC;
 
+#ifdef LOG_ENABLED
     /** Pointer to the R0 logger instance - R3 Ptr.
      * This is NULL if logging is disabled. */
     R3PTRTYPE(PVMMR0LOGGER)     pR0LoggerR3;
     /** Pointer to the R0 logger instance - R0 Ptr.
      * This is NULL if logging is disabled. */
     R0PTRTYPE(PVMMR0LOGGER)     pR0LoggerR0;
+#endif
 
     /** @name CallHost
      * @{ */

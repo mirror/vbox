@@ -462,6 +462,7 @@ VMMR3DECL(int) VMMR3InitR0(PVM pVM)
     PVMCPU pVCpu = VMMGetCpu(pVM);
     Assert(pVCpu && pVCpu->idCpu == 0);
 
+#ifdef LOG_ENABLED
     /*
      * Initialize the ring-0 logger if we haven't done so yet.
      */
@@ -472,6 +473,7 @@ VMMR3DECL(int) VMMR3InitR0(PVM pVM)
         if (RT_FAILURE(rc))
             return rc;
     }
+#endif
 
     /*
      * Call Ring-0 entry with init code.
@@ -484,9 +486,14 @@ VMMR3DECL(int) VMMR3InitR0(PVM pVM)
 #else
         rc = SUPCallVMMR0Ex(pVM->pVMR0, 0 /* VCPU 0 */, VMMR0_DO_VMMR0_INIT, VMMGetSvnRev(), NULL);
 #endif
+        /*
+         * Flush the logs.
+         */
+#ifdef LOG_ENABLED
         if (    pVCpu->vmm.s.pR0LoggerR3
             &&  pVCpu->vmm.s.pR0LoggerR3->Logger.offScratch > 0)
             RTLogFlushToLogger(&pVCpu->vmm.s.pR0LoggerR3->Logger, NULL);
+#endif
         if (rc != VINF_VMM_CALL_HOST)
             break;
         rc = vmmR3ServiceCallHostRequest(pVM, pVCpu);
@@ -606,9 +613,14 @@ VMMR3DECL(int) VMMR3Term(PVM pVM)
 #else
         rc = SUPCallVMMR0Ex(pVM->pVMR0, 0 /* VCPU 0 */, VMMR0_DO_VMMR0_TERM, 0, NULL);
 #endif
+        /*
+         * Flush the logs.
+         */
+#ifdef LOG_ENABLED
         if (    pVCpu->vmm.s.pR0LoggerR3
             &&  pVCpu->vmm.s.pR0LoggerR3->Logger.offScratch > 0)
             RTLogFlushToLogger(&pVCpu->vmm.s.pR0LoggerR3->Logger, NULL);
+#endif
         if (rc != VINF_VMM_CALL_HOST)
             break;
         rc = vmmR3ServiceCallHostRequest(pVM, pVCpu);
@@ -754,6 +766,7 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
     }
 #endif /* VBOX_WITH_RC_RELEASE_LOGGING */
 
+#ifdef LOG_ENABLED
     /*
      * For the ring-0 EMT logger, we use a per-thread logger instance
      * in ring-0. Only initialize it once.
@@ -786,6 +799,7 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
             AssertRC(rc);
         }
     }
+#endif
     return rc;
 }
 
@@ -1443,9 +1457,14 @@ VMMR3DECL(int) VMMR3CallR0(PVM pVM, uint32_t uOperation, uint64_t u64Arg, PSUPVM
 #else
         rc = SUPCallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, uOperation, u64Arg, pReqHdr);
 #endif
+        /*
+         * Flush the logs.
+         */
+#ifdef LOG_ENABLED
         if (    pVCpu->vmm.s.pR0LoggerR3
             &&  pVCpu->vmm.s.pR0LoggerR3->Logger.offScratch > 0)
             RTLogFlushToLogger(&pVCpu->vmm.s.pR0LoggerR3->Logger, NULL);
+#endif
         if (rc != VINF_VMM_CALL_HOST)
             break;
         rc = vmmR3ServiceCallHostRequest(pVM, pVCpu);
