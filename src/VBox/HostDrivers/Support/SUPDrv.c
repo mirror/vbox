@@ -262,7 +262,7 @@ DECLASM(int)   UNWIND_WRAP(RTMpOnOthers)(PFNRTMPWORKER pfnWorker, void *pvUser1,
 DECLASM(int)   UNWIND_WRAP(RTMpOnSpecific)(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2);
 DECLASM(int)   UNWIND_WRAP(RTMpPokeCpu)(RTCPUID idCpu);
 /* RTLogRelDefaultInstance - not necessary. */
-DECLASM(int)   UNWIND_WRAP(RTLogSetDefaultInstanceThread)(RTNATIVETHREAD hNativeThread, PRTLOGGER pLogger, uintptr_t uKey);
+DECLASM(int)   UNWIND_WRAP(RTLogSetDefaultInstanceThread)(PRTLOGGER pLogger, uintptr_t uKey);
 /* RTLogLogger            - can't wrap this buster.  */
 /* RTLogLoggerEx          - can't wrap this buster. */
 DECLASM(void)  UNWIND_WRAP(RTLogLoggerExV)(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup, const char *pszFormat, va_list args);
@@ -726,7 +726,7 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
     /*
      * Remove logger instances related to this session.
      */
-    RTLogSetDefaultInstanceThread(NIL_RTNATIVETHREAD, NULL, (uintptr_t)pSession);
+    RTLogSetDefaultInstanceThread(NULL, (uintptr_t)pSession);
 
     /*
      * Release object references made in this session.
