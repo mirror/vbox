@@ -351,7 +351,7 @@ DECLINLINE(VMCPUID) getCpuFromLapic(APICDeviceInfo* dev, APICState *s)
 
 DECLINLINE(void) cpuSetInterrupt(APICDeviceInfo* dev, APICState *s)
 {
-    Log2(("apic: setting interrupt flag\n"));
+    Log2(("apic: setting interrupt flag for cpu %d\n", getCpuFromLapic(dev, s)));
     dev->CTX_SUFF(pApicHlp)->pfnSetInterruptFF(dev->CTX_SUFF(pDevIns),
                                                getCpuFromLapic(dev, s));
 }
@@ -1449,7 +1449,7 @@ static uint32_t apic_mem_readl(APICDeviceInfo* dev, APICState *s, target_phys_ad
         break;
     }
 #ifdef DEBUG_APIC
-    Log(("APIC read: %08x = %08x\n", (uint32_t)addr, val));
+    Log(("CPU%d: APIC read: %08x = %08x\n", s->phys_id, (uint32_t)addr, val));
 #endif
     return val;
 }
@@ -1474,7 +1474,7 @@ static int apic_mem_writel(APICDeviceInfo* dev, APICState *s, target_phys_addr_t
 #endif /* !VBOX */
 
 #ifdef DEBUG_APIC
-    Log(("APIC write: %08x = %08x\n", (uint32_t)addr, val));
+    Log(("CPU%d: APIC write: %08x = %08x\n", s->phys_id, (uint32_t)addr, val));
 #endif
 
     index = (addr >> 4) & 0xff;
@@ -2035,7 +2035,7 @@ PDMBOTHCBDECL(int) apicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     APICState *s = getLapic(dev);
 
-    Log(("apicMMIORead CPU%d at %llx\n", s->phys_id,  (uint64_t)GCPhysAddr));
+    Log(("CPU%d: apicMMIORead at %llx\n", s->phys_id,  (uint64_t)GCPhysAddr));
 
     /** @todo: add LAPIC range validity checks (different LAPICs can theoretically have
                different physical addresses, see #3092) */
@@ -2087,7 +2087,7 @@ PDMBOTHCBDECL(int) apicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     APICState *s = getLapic(dev);
 
-    Log(("apicMMIOWrite CPU%d at %llx\n", s->phys_id, (uint64_t)GCPhysAddr));
+    Log(("CPU%d: apicMMIOWrite at %llx\n", s->phys_id, (uint64_t)GCPhysAddr));
 
     /** @todo: add LAPIC range validity checks (multiple LAPICs can theoretically have
                different physical addresses, see #3092) */
