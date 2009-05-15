@@ -324,7 +324,7 @@ VMMR3DECL(int) PDMR3Init(PVM pVM)
      */
     AssertRelease(!(RT_OFFSETOF(VM, pdm.s) & 31));
     AssertRelease(sizeof(pVM->pdm.s) <= sizeof(pVM->pdm.padding));
-
+    AssertCompileMemberAlignment(PDM, CritSect, sizeof(uintptr_t));
     /*
      * Init the structure.
      */

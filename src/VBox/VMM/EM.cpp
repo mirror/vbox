@@ -126,7 +126,7 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
     AssertCompileMemberAlignment(VM, em.s, 32);
     AssertCompile(sizeof(pVM->em.s) <= sizeof(pVM->em.padding));
     AssertCompile(sizeof(pVM->aCpus[0].em.s.u.FatalLongJump) <= sizeof(pVM->aCpus[0].em.s.u.achPaddingFatalLongJump));
-    AssertCompileMemberAlignment(EM, CritSectREM, 8);
+    AssertCompileMemberAlignment(EM, CritSectREM, sizeof(uintptr_t));
 
     /*
      * Init the structure.
