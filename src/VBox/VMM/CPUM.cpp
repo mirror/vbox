@@ -317,7 +317,6 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        | 0;
     pCPUM->aGuestCpuIdStd[1].ecx      &= 0
                                        | X86_CPUID_FEATURE_ECX_SSE3
-                                       | X86_CPUID_FEATURE_ECX_MONITOR
                                        //| X86_CPUID_FEATURE_ECX_CPLDS - no CPL qualified debug store.
                                        //| X86_CPUID_FEATURE_ECX_VMX   - not virtualized.
                                        //| X86_CPUID_FEATURE_ECX_EST   - no extended speed step.
@@ -332,6 +331,10 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        /* ECX Bit 23 - POPCOUNT instruction. */
                                        //| X86_CPUID_FEATURE_ECX_POPCOUNT
                                        | 0;
+
+    /* Can't properly emulate monitor & mwait with guest SMP; force the guest to use hlt for idling VCPUs. */
+    if (pVM->cCPUs == 1)
+        pCPUM->aGuestCpuIdStd[1].ecx |= X86_CPUID_FEATURE_ECX_MONITOR;
 
     /* ASSUMES that this is ALWAYS the AMD define feature set if present. */
     pCPUM->aGuestCpuIdExt[1].edx      &= X86_CPUID_AMD_FEATURE_EDX_FPU
