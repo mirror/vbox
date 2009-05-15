@@ -149,7 +149,7 @@ VMMR3DECL(int) IOMR3Init(PVM pVM)
      */
     AssertCompileMemberAlignment(VM, iom.s, 32);
     AssertCompile(sizeof(pVM->iom.s) <= sizeof(pVM->iom.padding));
-    AssertCompileMemberAlignment(IOM, EmtLock, 8);
+    AssertCompileMemberAlignment(IOM, EmtLock, sizeof(uintptr_t));
 
     /*
      * Setup any fixed pointers and offsets.
