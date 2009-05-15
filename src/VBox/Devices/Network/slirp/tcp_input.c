@@ -290,12 +290,12 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
     {
         so = inso;
         Log4(("NAT: tcp_input: %R[natsock]\n", so));
-        Assert(so->so_m);
         /* Re-set a few variables */
         tp = sototcpcb(so);
         m = so->so_m;
 #ifdef VBOX_WITH_NAT_SERVICE
         {
+            Assert(m);
             struct ethhdr *eh = (struct ethhdr *)m->m_dat;
             memcpy(so->so_ethaddr, eh->h_source, ETH_ALEN);
         }
