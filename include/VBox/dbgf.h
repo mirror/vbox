@@ -610,7 +610,7 @@ typedef const DBGFLINE *PCDBGFLINE;
 /** The last special one. */
 #define DBGF_AS_LAST                DBGF_AS_GLOBAL
 /** The number of special address space handles. */
-#define DBGF_AS_COUNT               ((uintptr_t)DBGF_AS_LAST - (uintptr_t)DBGF_AS_FIRST + 1U)
+#define DBGF_AS_COUNT               (6U)
 /** Converts an alias handle to an array index. */
 #define DBGF_AS_ALIAS_2_INDEX(hAlias) \
     ( (uintptr_t)(hAlias) - (uintptr_t)DBGF_AS_FIRST )
