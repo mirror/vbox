@@ -34,13 +34,12 @@
 #include <iprt/dbg.h>
 #include <iprt/asm.h>
 #include <iprt/avl.h>
-#include <iprt/string.h>
-
-#include <iprt/mem.h>
-#include <iprt/err.h>
 #include <iprt/assert.h>
+#include <iprt/err.h>
+#include <iprt/mem.h>
 #include <iprt/param.h>
-//#include "internal/dbg.h"
+#include <iprt/string.h>
+#include <iprt/semaphore.h>
 #include "internal/magics.h"
 
 
@@ -101,6 +100,10 @@ typedef struct RTDBGASINT
 {
     /** Magic value (RTDBGAS_MAGIC). */
     uint32_t            u32Magic;
+    /** The number of reference to this address space. */
+    uint32_t volatile   cRefs;
+    /** Handle of the read-write lock. */
+    RTSEMRW             hLock;
     /** Number of modules in the module address space. */
     uint32_t            cModules;
     /** Pointer to the module table.
@@ -131,6 +134,35 @@ typedef RTDBGASINT *PRTDBGASINT;
     do { \
         AssertPtrReturn((pDbgAs), (rc)); \
         AssertReturn((pDbgAs)->u32Magic == RTDBGAS_MAGIC, (rc)); \
+        AssertReturn((pDbgAs)->cRefs > 0, (rc)); \
+    } while (0)
+
+/** Locks the address space for reading. */
+#define RTDBGAS_LOCK_READ(pDbgAs) \
+    do { \
+        int rcLock = RTSemRWRequestRead((pDbgAs)->hLock, RT_INDEFINITE_WAIT); \
+        AssertRC(rcLock); \
+    } while (0)
+
+/** Unlocks the address space after reading. */
+#define RTDBGAS_UNLOCK_READ(pDbgAs) \
+    do { \
+        int rcLock = RTSemRWReleaseRead((pDbgAs)->hLock); \
+        AssertRC(rcLock); \
+    } while (0)
+
+/** Locks the address space for writing. */
+#define RTDBGAS_LOCK_WRITE(pDbgAs) \
+    do { \
+        int rcLock = RTSemRWRequestWrite((pDbgAs)->hLock, RT_INDEFINITE_WAIT); \
+        AssertRC(rcLock); \
+    } while (0)
+
+/** Unlocks the address space after writing. */
+#define RTDBGAS_UNLOCK_WRITE(pDbgAs) \
+    do { \
+        int rcLock = RTSemRWReleaseWrite((pDbgAs)->hLock); \
+        AssertRC(rcLock); \
     } while (0)
 
 
@@ -138,6 +170,7 @@ typedef RTDBGASINT *PRTDBGASINT;
 *   Internal Functions                                                         *
 *******************************************************************************/
 static void rtDbgAsModuleUnlinkMod(PRTDBGASINT pDbgAs, PRTDBGASMOD pMod);
+static void rtDbgAsModuleUnlinkByMap(PRTDBGASINT pDbgAs, PRTDBGASMAP pMap);
 
 
 /**
@@ -169,6 +202,8 @@ RTDECL(int) RTDbgAsCreate(PRTDBGAS phDbgAs, RTUINTPTR FirstAddr, RTUINTPTR LastA
 
     /* initalize it. */
     pDbgAs->u32Magic    = RTDBGAS_MAGIC;
+    pDbgAs->cRefs       = 1;
+    pDbgAs->hLock       = NIL_RTSEMRW;
     pDbgAs->cModules    = 0;
     pDbgAs->paModules   = NULL;
     pDbgAs->ModTree     = NULL;
@@ -177,9 +212,16 @@ RTDECL(int) RTDbgAsCreate(PRTDBGAS phDbgAs, RTUINTPTR FirstAddr, RTUINTPTR LastA
     pDbgAs->FirstAddr   = FirstAddr;
     pDbgAs->LastAddr    = LastAddr;
     memcpy(pDbgAs->szName, pszName, cchName + 1);
+    int rc = RTSemRWCreate(&pDbgAs->hLock);
+    if (RT_SUCCESS(rc))
+    {
+        *phDbgAs = pDbgAs;
+        return VINF_SUCCESS;
+    }
 
-    *phDbgAs = pDbgAs;
-    return VINF_SUCCESS;
+    pDbgAs->u32Magic = 0;
+    RTMemFree(pDbgAs);
+    return rc;
 }
 
 
@@ -268,21 +310,10 @@ static DECLCALLBACK(int) rtDbgAsDestroyNameCallback(PRTSTRSPACECORE pStr, void *
  * causing some or all of them to be destroyed as they are managed by
  * reference counting.
  *
- * @returns IPRT status code.
- *
- * @param   hDbgAs          The address space handle. A NIL handle will
- *                          be quietly ignored.
+ * @param   pDbgAs          The address space instance to be destroyed.
  */
-RTDECL(int) RTDbgAsDestroy(RTDBGAS hDbgAs)
+static void rtDbgAsDestroy(PRTDBGASINT pDbgAs)
 {
-    /*
-     * Validate input.
-     */
-    if (hDbgAs == NIL_RTDBGAS)
-        return VINF_SUCCESS;
-    PRTDBGASINT pDbgAs = hDbgAs;
-    RTDBGAS_VALID_RETURN_RC(pDbgAs, VERR_INVALID_HANDLE);
-
     /*
      * Mark the address space invalid and release all the modules.
      */
@@ -301,8 +332,52 @@ RTDECL(int) RTDbgAsDestroy(RTDBGAS hDbgAs)
     pDbgAs->paModules = NULL;
 
     RTMemFree(pDbgAs);
+}
 
-    return VINF_SUCCESS;
+
+/**
+ * Retains a reference to the address space.
+ *
+ * @returns New reference count, UINT32_MAX on invalid handle (asserted).
+ *
+ * @param   hDbgAs          The address space handle.
+ *
+ * @remarks Will not take any locks.
+ */
+RTDECL(uint32_t) RTDbgAsRetain(RTDBGAS hDbgAs)
+{
+    PRTDBGASINT pDbgAs = hDbgAs;
+    RTDBGAS_VALID_RETURN_RC(pDbgAs, UINT32_MAX);
+    return ASMAtomicIncU32(&pDbgAs->cRefs);
+}
+
+
+/**
+ * Release a reference to the address space.
+ *
+ * When the reference count reaches zero, the address space is destroyed.
+ * That means unlinking all the modules it currently contains, potentially
+ * causing some or all of them to be destroyed as they are managed by
+ * reference counting.
+ *
+ * @returns New reference count, UINT32_MAX on invalid handle (asserted).
+ *
+ * @param   hDbgAs          The address space handle. The NIL handle is quietly
+ *                          ignored and 0 is returned.
+ *
+ * @remarks Will not take any locks.
+ */
+RTDECL(uint32_t) RTDbgAsRelease(RTDBGAS hDbgAs)
+{
+    if (hDbgAs == NIL_RTDBGAS)
+        return 0;
+    PRTDBGASINT pDbgAs = hDbgAs;
+    RTDBGAS_VALID_RETURN_RC(pDbgAs, UINT32_MAX);
+
+    uint32_t cRefs = ASMAtomicDecU32(&pDbgAs->cRefs);
+    if (!cRefs)
+        rtDbgAsDestroy(pDbgAs);
+    return cRefs;
 }
 
 
@@ -313,6 +388,8 @@ RTDECL(int) RTDbgAsDestroy(RTDBGAS hDbgAs)
  *          NULL if hDbgAs is invalid.
  *
  * @param   hDbgAs          The address space handle.
+ *
+ * @remarks Will not take any locks.
  */
 RTDECL(const char *) RTDbgAsName(RTDBGAS hDbgAs)
 {
@@ -329,6 +406,8 @@ RTDECL(const char *) RTDbgAsName(RTDBGAS hDbgAs)
  *          0 if hDbgAs is invalid.
  *
  * @param   hDbgAs          The address space handle.
+ *
+ * @remarks Will not take any locks.
  */
 RTDECL(RTUINTPTR) RTDbgAsFirstAddr(RTDBGAS hDbgAs)
 {
@@ -345,6 +424,8 @@ RTDECL(RTUINTPTR) RTDbgAsFirstAddr(RTDBGAS hDbgAs)
  *          0 if hDbgAs is invalid.
  *
  * @param   hDbgAs          The address space handle.
+ *
+ * @remarks Will not take any locks.
  */
 RTDECL(RTUINTPTR) RTDbgAsLastAddr(RTDBGAS hDbgAs)
 {
@@ -362,8 +443,10 @@ RTDECL(RTUINTPTR) RTDbgAsLastAddr(RTDBGAS hDbgAs)
  * @returns The number of modules.
  *
  * @param   hDbgAs          The address space handle.
+ *
+ * @remarks Will not take any locks.
  */
-RTDECL(uint32_t)    RTDbgAsModuleCount(RTDBGAS hDbgAs)
+RTDECL(uint32_t) RTDbgAsModuleCount(RTDBGAS hDbgAs)
 {
     PRTDBGASINT pDbgAs = hDbgAs;
     RTDBGAS_VALID_RETURN_RC(pDbgAs, 0);
@@ -381,21 +464,38 @@ RTDECL(uint32_t)    RTDbgAsModuleCount(RTDBGAS hDbgAs)
  * @param   Addr            The address we're linking it at.
  * @param   cb              The size of what we're linking.
  * @param   pszName         The name of the module.
+ * @param   fFlags          See RTDBGASLINK_FLAGS_*.
+ *
+ * @remarks The caller must have locked the address space for writing.
  */
 int rtDbgAsModuleLinkCommon(PRTDBGASINT pDbgAs, RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg,
-                            RTUINTPTR Addr, RTUINTPTR cb, const char *pszName)
+                            RTUINTPTR Addr, RTUINTPTR cb, const char *pszName, uint32_t fFlags)
 {
     /*
      * Check that the requested space is undisputed.
      */
-   PRTDBGASMAP pAdjMod = (PRTDBGASMAP)RTAvlrUIntPtrGetBestFit(&pDbgAs->MapTree, Addr, false /* fAbove */);
-   if (     pAdjMod
-       &&   pAdjMod->Core.KeyLast >= Addr)
-       return VERR_ADDRESS_CONFLICT;
-   pAdjMod = (PRTDBGASMAP)RTAvlrUIntPtrGetBestFit(&pDbgAs->MapTree, Addr, true /* fAbove */);
-   if (     pAdjMod
-       &&   pAdjMod->Core.Key >= Addr + cb - 1)
-       return VERR_ADDRESS_CONFLICT;
+    for (;;)
+    {
+        PRTDBGASMAP pAdjMod = (PRTDBGASMAP)RTAvlrUIntPtrGetBestFit(&pDbgAs->MapTree, Addr, false /* fAbove */);
+        if (     pAdjMod
+            &&   pAdjMod->Core.KeyLast >= Addr)
+        {
+            if (!(fFlags & RTDBGASLINK_FLAGS_REPLACE))
+                return VERR_ADDRESS_CONFLICT;
+            rtDbgAsModuleUnlinkByMap(pDbgAs, pAdjMod);
+            continue;
+        }
+        pAdjMod = (PRTDBGASMAP)RTAvlrUIntPtrGetBestFit(&pDbgAs->MapTree, Addr, true /* fAbove */);
+        if (     pAdjMod
+            &&   pAdjMod->Core.Key >= Addr + cb - 1)
+        {
+            if (!(fFlags & RTDBGASLINK_FLAGS_REPLACE))
+                return VERR_ADDRESS_CONFLICT;
+            rtDbgAsModuleUnlinkByMap(pDbgAs, pAdjMod);
+            continue;
+        }
+        break;
+    }
 
     /*
      * First, create or find the module table entry.
@@ -490,8 +590,6 @@ int rtDbgAsModuleLinkCommon(PRTDBGASINT pDbgAs, RTDBGMOD hDbgMod, RTDBGSEGIDX iS
 }
 
 
-
-
 /**
  * Links a module into the address space at the give address.
  *
@@ -505,8 +603,9 @@ int rtDbgAsModuleLinkCommon(PRTDBGASINT pDbgAs, RTDBGMOD hDbgMod, RTDBGSEGIDX iS
  * @param   hDbgAs          The address space handle.
  * @param   hDbgMod         The module handle of the module to be linked in.
  * @param   ImageAddr       The address to link the module at.
+ * @param   fFlags          See RTDBGASLINK_FLAGS_*.
  */
-RTDECL(int) RTDbgAsModuleLink(RTDBGAS hDbgAs, RTDBGMOD hDbgMod, RTUINTPTR ImageAddr)
+RTDECL(int) RTDbgAsModuleLink(RTDBGAS hDbgAs, RTDBGMOD hDbgMod, RTUINTPTR ImageAddr, uint32_t fFlags)
 {
     /*
      * Validate input.
@@ -525,11 +624,15 @@ RTDECL(int) RTDbgAsModuleLink(RTDBGAS hDbgAs, RTDBGMOD hDbgMod, RTUINTPTR ImageA
         ||  ImageAddr + cb - 1  > pDbgAs->LastAddr
         ||  ImageAddr + cb - 1  < ImageAddr)
         return VERR_OUT_OF_RANGE;
+    AssertReturn(!(fFlags & ~RTDBGASLINK_FLAGS_VALID_MASK), VERR_INVALID_PARAMETER);
 
     /*
      * Invoke worker common with RTDbgAsModuleLinkSeg.
      */
-    return rtDbgAsModuleLinkCommon(pDbgAs, hDbgMod, NIL_RTDBGSEGIDX, ImageAddr, cb, pszName);
+    RTDBGAS_LOCK_WRITE(pDbgAs);
+    int rc = rtDbgAsModuleLinkCommon(pDbgAs, hDbgMod, NIL_RTDBGSEGIDX, ImageAddr, cb, pszName, fFlags);
+    RTDBGAS_UNLOCK_WRITE(pDbgAs);
+    return rc;
 }
 
 
@@ -548,8 +651,9 @@ RTDECL(int) RTDbgAsModuleLink(RTDBGAS hDbgAs, RTDBGMOD hDbgMod, RTUINTPTR ImageA
  * @param   iSeg            The segment number (0-based) of the segment to be
  *                          linked in.
  * @param   SegAddr         The address to link the segment at.
+ * @param   fFlags          See RTDBGASLINK_FLAGS_*.
  */
-RTDECL(int) RTDbgAsModuleLinkSeg(RTDBGAS hDbgAs, RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR SegAddr)
+RTDECL(int) RTDbgAsModuleLinkSeg(RTDBGAS hDbgAs, RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR SegAddr, uint32_t fFlags)
 {
     /*
      * Validate input.
@@ -568,11 +672,15 @@ RTDECL(int) RTDbgAsModuleLinkSeg(RTDBGAS hDbgAs, RTDBGMOD hDbgMod, RTDBGSEGIDX i
         ||  SegAddr + cb - 1  > pDbgAs->LastAddr
         ||  SegAddr + cb - 1  < SegAddr)
         return VERR_OUT_OF_RANGE;
+    AssertReturn(!(fFlags & ~RTDBGASLINK_FLAGS_VALID_MASK), VERR_INVALID_PARAMETER);
 
     /*
      * Invoke worker common with RTDbgAsModuleLinkSeg.
      */
-    return rtDbgAsModuleLinkCommon(pDbgAs, hDbgMod, iSeg, SegAddr, cb, pszName);
+    RTDBGAS_LOCK_WRITE(pDbgAs);
+    int rc = rtDbgAsModuleLinkCommon(pDbgAs, hDbgMod, iSeg, SegAddr, cb, pszName, fFlags);
+    RTDBGAS_UNLOCK_WRITE(pDbgAs);
+    return rc;
 }
 
 
@@ -581,6 +689,8 @@ RTDECL(int) RTDbgAsModuleLinkSeg(RTDBGAS hDbgAs, RTDBGMOD hDbgMod, RTDBGSEGIDX i
  *
  * @param   pDbgAs          Pointer to the address space instance data.
  * @param   pMod            The module to unlink.
+ *
+ * @remarks The caller must have locked the address space for writing.
  */
 static void rtDbgAsModuleUnlinkMod(PRTDBGASINT pDbgAs, PRTDBGASMOD pMod)
 {
@@ -635,6 +745,8 @@ static void rtDbgAsModuleUnlinkMod(PRTDBGASINT pDbgAs, PRTDBGASMOD pMod)
  *
  * @param   pDbgAs          Pointer to the address space instance data.
  * @param   pMap            The map to unlink and free.
+ *
+ * @remarks The caller must have locked the address space for writing.
  */
 static void rtDbgAsModuleUnlinkMap(PRTDBGASINT pDbgAs, PRTDBGASMAP pMap)
 {
@@ -668,6 +780,28 @@ static void rtDbgAsModuleUnlinkMap(PRTDBGASINT pDbgAs, PRTDBGASMAP pMap)
 
 
 /**
+ * Worker for RTDbgAsModuleUnlinkByAddr and rtDbgAsModuleLinkCommon that
+ * unlinks a single mapping and releases the module if it's the last one.
+ *
+ * @param   pDbgAs      The address space instance.
+ * @param   pMap        The mapping to unlink.
+ *
+ * @remarks The caller must have locked the address space for writing.
+ */
+static void rtDbgAsModuleUnlinkByMap(PRTDBGASINT pDbgAs, PRTDBGASMAP pMap)
+{
+    /*
+     * Unlink it from the address space.
+     * Unlink the module as well if it's the last mapping it has.
+     */
+    PRTDBGASMOD pMod = pMap->pMod;
+    rtDbgAsModuleUnlinkMap(pDbgAs, pMap);
+    if (!pMod->pMapHead)
+        rtDbgAsModuleUnlinkMod(pDbgAs, pMod);
+}
+
+
+/**
  * Unlinks all the mappings of a module from the address space.
  *
  * @returns IPRT status code.
@@ -686,16 +820,22 @@ RTDECL(int) RTDbgAsModuleUnlink(RTDBGAS hDbgAs, RTDBGMOD hDbgMod)
     if (hDbgMod == NIL_RTDBGMOD)
         return VINF_SUCCESS;
 
+    RTDBGAS_LOCK_WRITE(pDbgAs);
     PRTDBGASMOD pMod = (PRTDBGASMOD)RTAvlPVGet(&pDbgAs->ModTree, hDbgMod);
     if (!pMod)
+    {
+        RTDBGAS_UNLOCK_WRITE(pDbgAs);
         return VERR_NOT_FOUND;
+    }
 
     /*
-     * Unmap all but
+     * Unmap all everything and release the module.
      */
     while (pMod->pMapHead)
         rtDbgAsModuleUnlinkMap(pDbgAs, pMod->pMapHead);
     rtDbgAsModuleUnlinkMod(pDbgAs, pMod);
+
+    RTDBGAS_UNLOCK_WRITE(pDbgAs);
     return VINF_SUCCESS;
 }
 
@@ -716,18 +856,21 @@ RTDECL(int) RTDbgAsModuleUnlinkByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr)
      */
     PRTDBGASINT pDbgAs = hDbgAs;
     RTDBGAS_VALID_RETURN_RC(pDbgAs, VERR_INVALID_HANDLE);
+
+    RTDBGAS_LOCK_WRITE(pDbgAs);
     PRTDBGASMAP pMap = (PRTDBGASMAP)RTAvlrUIntPtrRangeGet(&pDbgAs->MapTree, Addr);
     if (pMap)
+    {
+        RTDBGAS_UNLOCK_WRITE(pDbgAs);
         return VERR_NOT_FOUND;
+    }
 
     /*
-     * Unlink it from the address space.
-     * Unlink the module as well if it's the last mapping it has.
+     * Hand it to
      */
-    PRTDBGASMOD pMod = pMap->pMod;
-    rtDbgAsModuleUnlinkMap(pDbgAs, pMap);
-    if (!pMod->pMapHead)
-        rtDbgAsModuleUnlinkMod(pDbgAs, pMod);
+    rtDbgAsModuleUnlinkByMap(pDbgAs, pMap);
+
+    RTDBGAS_UNLOCK_WRITE(pDbgAs);
     return VINF_SUCCESS;
 }
 
@@ -753,14 +896,21 @@ RTDECL(RTDBGMOD) RTDbgAsModuleByIndex(RTDBGAS hDbgAs, uint32_t iModule)
      */
     PRTDBGASINT pDbgAs = hDbgAs;
     RTDBGAS_VALID_RETURN_RC(pDbgAs, NIL_RTDBGMOD);
+
+    RTDBGAS_LOCK_READ(pDbgAs);
     if (iModule >= pDbgAs->cModules)
+    {
+        RTDBGAS_UNLOCK_READ(pDbgAs);
         return NIL_RTDBGMOD;
+    }
 
     /*
      * Get, retain and return it.
      */
     RTDBGMOD hMod = (RTDBGMOD)pDbgAs->paModules[iModule].Core.Key;
     RTDbgModRetain(hMod);
+
+    RTDBGAS_UNLOCK_READ(pDbgAs);
     return hMod;
 }
 
@@ -788,9 +938,14 @@ RTDECL(int) RTDbgAsModuleByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTDBGMOD phMod,
      */
     PRTDBGASINT pDbgAs = hDbgAs;
     RTDBGAS_VALID_RETURN_RC(pDbgAs, VERR_INVALID_HANDLE);
+
+    RTDBGAS_LOCK_READ(pDbgAs);
     PRTDBGASMAP pMap = (PRTDBGASMAP)RTAvlrUIntPtrRangeGet(&pDbgAs->MapTree, Addr);
     if (pMap)
+    {
+        RTDBGAS_UNLOCK_READ(pDbgAs);
         return VERR_NOT_FOUND;
+    }
 
     /*
      * Set up the return values.
@@ -805,6 +960,8 @@ RTDECL(int) RTDbgAsModuleByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTDBGMOD phMod,
         *pAddr = pMap->Core.Key;
     if (piSeg)
         *piSeg = pMap->iSeg;
+
+    RTDBGAS_UNLOCK_READ(pDbgAs);
     return VINF_SUCCESS;
 }
 
@@ -831,16 +988,24 @@ RTDECL(int) RTDbgAsModuleByName(RTDBGAS hDbgAs, const char *pszName, uint32_t iN
     PRTDBGASINT pDbgAs = hDbgAs;
     RTDBGAS_VALID_RETURN_RC(pDbgAs, VERR_INVALID_HANDLE);
     AssertPtrReturn(phMod, VERR_INVALID_POINTER);
+
+    RTDBGAS_LOCK_READ(pDbgAs);
     PRTDBGASNAME pName = (PRTDBGASNAME)RTStrSpaceGet(&pDbgAs->NameSpace, pszName);
     if (!pName)
+    {
+        RTDBGAS_UNLOCK_READ(pDbgAs);
         return VERR_NOT_FOUND;
+    }
 
     PRTDBGASMOD pMod = pName->pHead;
     while (iName-- > 0)
     {
         pMod = pMod->pNextName;
         if (!pMod)
+        {
+            RTDBGAS_UNLOCK_READ(pDbgAs);
             return VERR_OUT_OF_RANGE;
+        }
     }
 
     /*
@@ -849,7 +1014,37 @@ RTDECL(int) RTDbgAsModuleByName(RTDBGAS hDbgAs, const char *pszName, uint32_t iN
     RTDBGMOD hMod = (RTDBGMOD)pMod->Core.Key;
     RTDbgModRetain(hMod);
     *phMod = hMod;
+
+    RTDBGAS_UNLOCK_READ(pDbgAs);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Internal worker that looks up and retains a module.
+ *
+ * @returns Module handle, NIL_RTDBGMOD if not found.
+ * @param   pDbgAs          The address space instance data.
+ * @param   Addr            Address within the module.
+ * @param   piSeg           where to return the segment index.
+ * @param   poffSeg         Where to return the segment offset.
+ */
+DECLINLINE(RTDBGMOD) rtDbgAsModuleByAddr(PRTDBGASINT pDbgAs, RTUINTPTR Addr, PRTDBGSEGIDX piSeg, PRTUINTPTR poffSeg)
+{
+    RTDBGMOD hMod = NIL_RTDBGMOD;
+
+    RTDBGAS_LOCK_READ(pDbgAs);
+    PRTDBGASMAP pMap = (PRTDBGASMAP)RTAvlrUIntPtrRangeGet(&pDbgAs->MapTree, Addr);
+    if (pMap)
+    {
+        hMod = (RTDBGMOD)pMap->pMod->Core.Key;
+        RTDbgModRetain(hMod);
+        *piSeg = pMap->iSeg;
+        *poffSeg = Addr - pMap->Core.Key;
+    }
+    RTDBGAS_UNLOCK_READ(pDbgAs);
+
+    return hMod;
 }
 
 
@@ -868,19 +1063,23 @@ RTDECL(int) RTDbgAsModuleByName(RTDBGAS hDbgAs, const char *pszName, uint32_t iN
 RTDECL(int) RTDbgAsSymbolAdd(RTDBGAS hDbgAs, const char *pszSymbol, RTUINTPTR Addr, uint32_t cb)
 {
     /*
-     * Validate input.
+    * Validate input and resolve the address.
      */
     PRTDBGASINT pDbgAs = hDbgAs;
     RTDBGAS_VALID_RETURN_RC(pDbgAs, VERR_INVALID_HANDLE);
-    PRTDBGASMAP pMap = (PRTDBGASMAP)RTAvlrUIntPtrRangeGet(&pDbgAs->MapTree, Addr);
-    if (pMap)
+
+    RTDBGSEGIDX iSeg;
+    RTUINTPTR offSeg;
+    RTDBGMOD hMod = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg);
+    if (hMod == NIL_RTDBGMOD)
         return VERR_NOT_FOUND;
 
     /*
      * Forward the call.
      */
-    RTDBGMOD hMod = (RTDBGMOD)pMap->pMod->Core.Key;
-    return RTDbgModSymbolAdd(hMod, pszSymbol, pMap->iSeg, Addr - pMap->Core.Key, cb);
+    int rc = RTDbgModSymbolAdd(hMod, pszSymbol, iSeg, offSeg, cb);
+    RTDbgModRelease(hMod);
+    return rc;
 }
 
 
@@ -900,19 +1099,23 @@ RTDECL(int) RTDbgAsSymbolAdd(RTDBGAS hDbgAs, const char *pszSymbol, RTUINTPTR Ad
 RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGSYMBOL pSymbol)
 {
     /*
-     * Validate input.
+     * Validate input and resolve the address.
      */
     PRTDBGASINT pDbgAs = hDbgAs;
     RTDBGAS_VALID_RETURN_RC(pDbgAs, VERR_INVALID_HANDLE);
-    PRTDBGASMAP pMap = (PRTDBGASMAP)RTAvlrUIntPtrRangeGet(&pDbgAs->MapTree, Addr);
-    if (pMap)
+
+    RTDBGSEGIDX iSeg;
+    RTUINTPTR offSeg;
+    RTDBGMOD hMod = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg);
+    if (hMod == NIL_RTDBGMOD)
         return VERR_NOT_FOUND;
 
     /*
      * Forward the call.
      */
-    RTDBGMOD hMod = (RTDBGMOD)pMap->pMod->Core.Key;
-    return RTDbgModSymbolByAddr(hMod, pMap->iSeg, Addr - pMap->Core.Key, poffDisp, pSymbol);
+    int rc = RTDbgModSymbolByAddr(hMod, iSeg, offSeg, poffDisp, pSymbol);
+    RTDbgModRelease(hMod);
+    return rc;
 }
 
 
@@ -933,19 +1136,54 @@ RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDi
 RTDECL(int) RTDbgAsSymbolByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGSYMBOL *ppSymbol)
 {
     /*
-     * Validate input.
+     * Validate input and resolve the address.
      */
     PRTDBGASINT pDbgAs = hDbgAs;
     RTDBGAS_VALID_RETURN_RC(pDbgAs, VERR_INVALID_HANDLE);
-    PRTDBGASMAP pMap = (PRTDBGASMAP)RTAvlrUIntPtrRangeGet(&pDbgAs->MapTree, Addr);
-    if (pMap)
+
+    RTDBGSEGIDX iSeg;
+    RTUINTPTR offSeg;
+    RTDBGMOD hMod = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg);
+    if (hMod == NIL_RTDBGMOD)
         return VERR_NOT_FOUND;
 
     /*
      * Forward the call.
      */
-    RTDBGMOD hMod = (RTDBGMOD)pMap->pMod->Core.Key;
-    return RTDbgModSymbolByAddrA(hMod, pMap->iSeg, Addr - pMap->Core.Key, poffDisp, ppSymbol);
+    int rc = RTDbgModSymbolByAddrA(hMod, iSeg, offSeg, poffDisp, ppSymbol);
+    RTDbgModRelease(hMod);
+    return rc;
+}
+
+
+/**
+ * Creates a snapshot of the module table on the temporary heap.
+ *
+ * The caller must release all the module handles before freeing the table
+ * using RTMemTmpFree.
+ *
+ * @returns Module table snaphot.
+ * @param   pDbgAs          The address space instance data.
+ * @param   pcModules       Where to return the number of modules.
+ */
+DECLINLINE(PRTDBGMOD) rtDbgAsSnapshotModuleTable(PRTDBGASINT pDbgAs, uint32_t *pcModules)
+{
+    RTDBGAS_LOCK_READ(pDbgAs);
+
+    uint32_t iMod = *pcModules = pDbgAs->cModules;
+    PRTDBGMOD paModules = (PRTDBGMOD)RTMemTmpAlloc(sizeof(paModules[0]) * RT_MAX(iMod, 1));
+    if (paModules)
+    {
+        while (iMod-- > 0)
+        {
+            RTDBGMOD hMod = paModules[iMod];
+            paModules[iMod] = hMod;
+            RTDbgModRetain(hMod);
+        }
+    }
+
+    RTDBGAS_UNLOCK_READ(pDbgAs);
+    return paModules;
 }
 
 
@@ -972,13 +1210,25 @@ RTDECL(int) RTDbgAsSymbolByName(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYM
     /*
      * Iterate the modules, looking for the symbol.
      */
-    for (uint32_t i = 0; i < pDbgAs->cModules; i++)
+    uint32_t cModules;
+    PRTDBGMOD paModules = rtDbgAsSnapshotModuleTable(pDbgAs, &cModules);
+    if (!paModules)
+        return VERR_NO_TMP_MEMORY;
+
+    for (uint32_t i = 0; i < cModules; i++)
     {
-        RTDBGMOD hMod = (RTDBGMOD)pDbgAs->paModules[i].Core.Key;
-        int rc = RTDbgModSymbolByName(hMod, pszSymbol, pSymbol);
+        int rc = RTDbgModSymbolByName(paModules[i], pszSymbol, pSymbol);
+        RTDbgModRelease(paModules[i]);
         if (RT_SUCCESS(rc))
+        {
+            for (i = i + 1; i < cModules; i++)
+                RTDbgModRelease(paModules[i]);
+            RTMemTmpFree(paModules);
             return rc;
+        }
     }
+
+    RTMemTmpFree(paModules);
     return VERR_SYMBOL_NOT_FOUND;
 }
 
@@ -1008,13 +1258,25 @@ RTDECL(int) RTDbgAsSymbolByNameA(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSY
     /*
      * Iterate the modules, looking for the symbol.
      */
-    for (uint32_t i = 0; i < pDbgAs->cModules; i++)
+    uint32_t cModules;
+    PRTDBGMOD paModules = rtDbgAsSnapshotModuleTable(pDbgAs, &cModules);
+    if (!paModules)
+        return VERR_NO_TMP_MEMORY;
+
+    for (uint32_t i = 0; i < cModules; i++)
     {
-        RTDBGMOD hMod = (RTDBGMOD)pDbgAs->paModules[i].Core.Key;
-        int rc = RTDbgModSymbolByNameA(hMod, pszSymbol, ppSymbol);
+        int rc = RTDbgModSymbolByNameA(paModules[i], pszSymbol, ppSymbol);
+        RTDbgModRelease(paModules[i]);
         if (RT_SUCCESS(rc))
+        {
+            for (i = i + 1; i < cModules; i++)
+                RTDbgModRelease(paModules[i]);
+            RTMemTmpFree(paModules);
             return rc;
+        }
     }
+
+    RTMemTmpFree(paModules);
     return VERR_SYMBOL_NOT_FOUND;
 }
 
@@ -1035,19 +1297,23 @@ RTDECL(int) RTDbgAsSymbolByNameA(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSY
 RTDECL(int) RTDbgAsLineByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGLINE pLine)
 {
     /*
-     * Validate input.
+     * Validate input and resolve the address.
      */
     PRTDBGASINT pDbgAs = hDbgAs;
     RTDBGAS_VALID_RETURN_RC(pDbgAs, VERR_INVALID_HANDLE);
-    PRTDBGASMAP pMap = (PRTDBGASMAP)RTAvlrUIntPtrRangeGet(&pDbgAs->MapTree, Addr);
-    if (pMap)
+
+    RTDBGSEGIDX iSeg;
+    RTUINTPTR offSeg;
+    RTDBGMOD hMod = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg);
+    if (hMod == NIL_RTDBGMOD)
         return VERR_NOT_FOUND;
 
     /*
      * Forward the call.
      */
-    RTDBGMOD hMod = (RTDBGMOD)pMap->pMod->Core.Key;
-    return RTDbgModLineByAddr(hMod, pMap->iSeg, Addr - pMap->Core.Key, poffDisp, pLine);
+    int rc = RTDbgModLineByAddr(hMod, iSeg, offSeg, poffDisp, pLine);
+    RTDbgModRelease(hMod);
+    return rc;
 }
 
 
@@ -1068,18 +1334,22 @@ RTDECL(int) RTDbgAsLineByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp
 RTDECL(int) RTDbgAsLineByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGLINE *ppLine)
 {
     /*
-     * Validate input.
+     * Validate input and resolve the address.
      */
     PRTDBGASINT pDbgAs = hDbgAs;
     RTDBGAS_VALID_RETURN_RC(pDbgAs, VERR_INVALID_HANDLE);
-    PRTDBGASMAP pMap = (PRTDBGASMAP)RTAvlrUIntPtrRangeGet(&pDbgAs->MapTree, Addr);
-    if (pMap)
+
+    RTDBGSEGIDX iSeg;
+    RTUINTPTR offSeg;
+    RTDBGMOD hMod = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg);
+    if (hMod == NIL_RTDBGMOD)
         return VERR_NOT_FOUND;
 
     /*
      * Forward the call.
      */
-    RTDBGMOD hMod = (RTDBGMOD)pMap->pMod->Core.Key;
-    return RTDbgModLineByAddrA(hMod, pMap->iSeg, Addr - pMap->Core.Key, poffDisp, ppLine);
+    int rc = RTDbgModLineByAddrA(hMod, iSeg, offSeg, poffDisp, ppLine);
+    RTDbgModRelease(hMod);
+    return rc;
 }
 

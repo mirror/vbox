@@ -261,6 +261,17 @@ typedef struct DBGF
      * @remark This is currently a fixed size array for reasons of simplicity. */
     DBGFBP                  aBreakpoints[32];
 
+    /** The address space database lock. */
+    RTSEMRW                 hAsDbLock;
+    /** The address space handle database.      (Protected by hAsDbLock.) */
+    R3PTRTYPE(AVLPVTREE)    AsHandleTree;
+    /** The address space process id database.  (Protected by hAsDbLock.) */
+    R3PTRTYPE(AVLU32TREE)   AsPidTree;
+    /** The address space name database.        (Protected by hAsDbLock.) */
+    R3PTRTYPE(RTSTRSPACE)   AsNameSpace;
+    /** Special address space aliases.          (Protected by hAsDbLock.) */
+    RTDBGAS volatile        ahAsAliases[DBGF_AS_COUNT];
+
     /** The current Guest OS digger. */
     R3PTRTYPE(PDBGFOS)      pCurOS;
     /** The head of the Guest OS digger instances. */
@@ -299,12 +310,15 @@ typedef struct DBGFCPU
 typedef DBGFCPU *PDBGFCPU;
 
 
-extern int  dbgfR3InfoInit(PVM pVM);
-extern int  dbgfR3InfoTerm(PVM pVM);
-extern void dbgfR3OSTerm(PVM pVM);
-extern int  dbgfR3SymInit(PVM pVM);
-extern int  dbgfR3SymTerm(PVM pVM);
-extern int  dbgfR3BpInit(PVM pVM);
+int  dbgfR3AsInit(PVM pVM);
+void dbgfR3AsTerm(PVM pVM);
+void dbgfR3AsRelocate(PVM pVM, RTGCUINTPTR offDelta);
+int  dbgfR3InfoInit(PVM pVM);
+int  dbgfR3InfoTerm(PVM pVM);
+void dbgfR3OSTerm(PVM pVM);
+int  dbgfR3SymInit(PVM pVM);
+int  dbgfR3SymTerm(PVM pVM);
+int  dbgfR3BpInit(PVM pVM);
 
 
 

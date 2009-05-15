@@ -41,6 +41,8 @@ typedef RTDBGSEGIDX        *PRTDBGSEGIDX;
 typedef RTDBGSEGIDX const  *PCRTDBGSEGIDX;
 /** NIL debug segment index. */
 #define NIL_RTDBGSEGIDX     UINT32_C(0xffffffff)
+/** The last normal segment index. */
+#define RTDBGSEGIDX_LAST    UINT32_C(0xffffffef)
 /** Special segment index that indicates that the offset is a relative
  * virtual address (RVA). I.e. an offset from the start of the module. */
 #define RTDBGSEGIDX_RVA     UINT32_C(0xfffffff0)
@@ -143,18 +145,32 @@ RTDECL(int) RTDbgAsCreateV(PRTDBGAS phDbgAs, RTUINTPTR FirstAddr, RTUINTPTR Last
 RTDECL(int) RTDbgAsCreateF(PRTDBGAS phDbgAs, RTUINTPTR FirstAddr, RTUINTPTR LastAddr, const char *pszNameFmt, ...);
 
 /**
- * Destroys the address space.
+ * Retains a reference to the address space.
  *
- * This means unlinking all the modules it currently contains, potentially
+ * @returns New reference count, UINT32_MAX on invalid handle (asserted).
+ *
+ * @param   hDbgAs          The address space handle.
+ *
+ * @remarks Will not take any locks.
+ */
+RTDECL(uint32_t) RTDbgAsRetain(RTDBGAS hDbgAs);
+
+/**
+ * Release a reference to the address space.
+ *
+ * When the reference count reaches zero, the address space is destroyed.
+ * That means unlinking all the modules it currently contains, potentially
  * causing some or all of them to be destroyed as they are managed by
  * reference counting.
  *
- * @returns IPRT status code.
+ * @returns New reference count, UINT32_MAX on invalid handle (asserted).
  *
- * @param   hDbgAs          The address space handle. A NIL handle will
- *                          be quietly ignored.
+ * @param   hDbgAs          The address space handle. The NIL handle is quietly
+ *                          ignored and 0 is returned.
+ *
+ * @remarks Will not take any locks.
  */
-RTDECL(int) RTDbgAsDestroy(RTDBGAS hDbgAs);
+RTDECL(uint32_t) RTDbgAsRelease(RTDBGAS hDbgAs);
 
 /**
  * Gets the name of an address space.
@@ -163,6 +179,8 @@ RTDECL(int) RTDbgAsDestroy(RTDBGAS hDbgAs);
  *          NULL if hDbgAs is invalid.
  *
  * @param   hDbgAs          The address space handle.
+ *
+ * @remarks Will not take any locks.
  */
 RTDECL(const char *) RTDbgAsName(RTDBGAS hDbgAs);
 
@@ -173,6 +191,8 @@ RTDECL(const char *) RTDbgAsName(RTDBGAS hDbgAs);
  *          0 if hDbgAs is invalid.
  *
  * @param   hDbgAs          The address space handle.
+ *
+ * @remarks Will not take any locks.
  */
 RTDECL(RTUINTPTR) RTDbgAsFirstAddr(RTDBGAS hDbgAs);
 
@@ -183,6 +203,8 @@ RTDECL(RTUINTPTR) RTDbgAsFirstAddr(RTDBGAS hDbgAs);
  *          0 if hDbgAs is invalid.
  *
  * @param   hDbgAs          The address space handle.
+ *
+ * @remarks Will not take any locks.
  */
 RTDECL(RTUINTPTR) RTDbgAsLastAddr(RTDBGAS hDbgAs);
 
@@ -195,8 +217,20 @@ RTDECL(RTUINTPTR) RTDbgAsLastAddr(RTDBGAS hDbgAs);
  * @returns The number of modules.
  *
  * @param   hDbgAs          The address space handle.
+ *
+ * @remarks Will not take any locks.
  */
 RTDECL(uint32_t) RTDbgAsModuleCount(RTDBGAS hDbgAs);
+
+/** @name Flags for RTDbgAsModuleLink and RTDbgAsModuleLinkSeg
+ * @{ */
+/** Replace all conflicting module.
+ * (The conflicting modules will be removed the address space and their
+ * references released.) */
+#define RTDBGASLINK_FLAGS_REPLACE       RT_BIT_32(0)
+/** Mask containing the valid flags. */
+#define RTDBGASLINK_FLAGS_VALID_MASK    UINT32_C(0x00000001)
+/** @} */
 
 /**
  * Links a module into the address space at the give address.
@@ -211,8 +245,9 @@ RTDECL(uint32_t) RTDbgAsModuleCount(RTDBGAS hDbgAs);
  * @param   hDbgAs          The address space handle.
  * @param   hDbgMod         The module handle of the module to be linked in.
  * @param   ImageAddr       The address to link the module at.
+ * @param   fFlags          See RTDBGASLINK_FLAGS_*.
  */
-RTDECL(int) RTDbgAsModuleLink(RTDBGAS hDbgAs, RTDBGMOD hDbgMod, RTUINTPTR ImageAddr);
+RTDECL(int) RTDbgAsModuleLink(RTDBGAS hDbgAs, RTDBGMOD hDbgMod, RTUINTPTR ImageAddr, uint32_t fFlags);
 
 /**
  * Links a segment into the address space at the give address.
@@ -229,8 +264,9 @@ RTDECL(int) RTDbgAsModuleLink(RTDBGAS hDbgAs, RTDBGMOD hDbgMod, RTUINTPTR ImageA
  * @param   iSeg            The segment number (0-based) of the segment to be
  *                          linked in.
  * @param   SegAddr         The address to link the segment at.
+ * @param   fFlags          See RTDBGASLINK_FLAGS_*.
  */
-RTDECL(int) RTDbgAsModuleLinkSeg(RTDBGAS hDbgAs, RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR SegAddr);
+RTDECL(int) RTDbgAsModuleLinkSeg(RTDBGAS hDbgAs, RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR SegAddr, uint32_t fFlags);
 
 /**
  * Unlinks all the mappings of a module from the address space.
@@ -413,8 +449,9 @@ RTDECL(int) RTDbgAsLineByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDis
 /** @defgroup grp_rt_dbgmod     RTDbgMod - Debug Module Interpreter
  * @{
  */
-RTDECL(int)         RTDbgModCreate(PRTDBGMOD phDbgMod, const char *pszName, const char *pszImgFile, const char *pszDbgFile);
-RTDECL(int)         RTDbgModDestroy(RTDBGMOD hDbgMod);
+RTDECL(int)         RTDbgModCreate(PRTDBGMOD phDbgMod, const char *pszName, RTUINTPTR cb, uint32_t fFlags);
+RTDECL(int)         RTDbgModCreateFromImage(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, uint32_t fFlags);
+RTDECL(int)         RTDbgModCreateFromMap(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, RTUINTPTR uSubtrahend, uint32_t fFlags);
 RTDECL(uint32_t)    RTDbgModRetain(RTDBGMOD hDbgMod);
 RTDECL(uint32_t)    RTDbgModRelease(RTDBGMOD hDbgMod);
 RTDECL(const char *) RTDbgModName(RTDBGMOD hDbgMod);
