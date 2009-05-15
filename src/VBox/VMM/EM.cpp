@@ -952,7 +952,6 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         /* Also sync the entire state. */
         CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
     }
-
     pVM->em.s.idLastRemCpu = pVCpu->idCpu;
 
     for (;;)
@@ -1465,6 +1464,11 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
     STAM_PROFILE_START(&pVCpu->em.s.StatREMEmu, a);
     Log(("EMINS: %04x:%RGv RSP=%RGv\n", pCtx->cs, (RTGCPTR)pCtx->rip, (RTGCPTR)pCtx->rsp));
     emR3RemLock(pVM);
+    /* Flush the recompiler TLB if the VCPU has changed. */
+    if (pVM->em.s.idLastRemCpu != pVCpu->idCpu)
+        CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
+    pVM->em.s.idLastRemCpu = pVCpu->idCpu;
+
     rc = REMR3EmulateInstruction(pVM, pVCpu);
     emR3RemUnlock(pVM);
     STAM_PROFILE_STOP(&pVCpu->em.s.StatREMEmu, a);
