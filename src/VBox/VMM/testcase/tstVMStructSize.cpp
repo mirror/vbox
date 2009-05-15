@@ -291,6 +291,9 @@ int main()
     PRINT_OFFSET(VM, StatGCToQemu);
 #endif
 
+    /* TM */
+    CHECK_MEMBER_ALIGNMENT(TM, EmtLock, 8);
+    CHECK_MEMBER_ALIGNMENT(TM, VirtualSyncLock, 8);
 
     /* hwaccm - 32-bit gcc won't align uint64_t naturally, so check. */
     CHECK_MEMBER_ALIGNMENT(HWACCM, u64RegisterMask, 8);
