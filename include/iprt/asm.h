@@ -2968,12 +2968,23 @@ DECLINLINE(RTR3PTR) ASMAtomicXchgR3Ptr(RTR3PTR volatile *ppvR3, RTR3PTR pvR3)
  *
  * @remarks This doesn't currently work for all handles (like RTFILE).
  */
-#define ASMAtomicXchgHandle(ph, hNew, phRes) \
-    do { \
-        *(void **)(phRes) = ASMAtomicXchgPtr((void * volatile *)(ph), (const void *)(hNew)); \
-        AssertCompile(sizeof(*ph) == sizeof(void *)); \
-        AssertCompile(sizeof(*phRes) == sizeof(void *)); \
-    } while (0)
+#if HC_ARCH_BITS == 32
+# define ASMAtomicXchgHandle(ph, hNew, phRes) \
+   do { \
+       *(uint32_t *)(phRes) = ASMAtomicXchgU32((uint32_t volatile *)(ph), (const uint32_t)(hNew)); \
+       AssertCompile(sizeof(*(ph))    == sizeof(uint32_t)); \
+       AssertCompile(sizeof(*(phRes)) == sizeof(uint32_t)); \
+   } while (0)
+#elif HC_ARCH_BITS == 64
+# define ASMAtomicXchgHandle(ph, hNew, phRes) \
+   do { \
+       *(uint64_t *)(phRes) = ASMAtomicXchgU64((uint64_t volatile *)(ph), (const uint64_t)(hNew)); \
+       AssertCompile(sizeof(*(ph))    == sizeof(uint64_t)); \
+       AssertCompile(sizeof(*(phRes)) == sizeof(uint64_t)); \
+   } while (0)
+#else
+# error HC_ARCH_BITS
+#endif
 
 
 /**
@@ -3234,11 +3245,21 @@ DECLINLINE(bool) ASMAtomicCmpXchgPtr(void * volatile *ppv, const void *pvNew, co
  *
  * @remarks This doesn't currently work for all handles (like RTFILE).
  */
-#define ASMAtomicCmpXchgHandle(ph, hNew, hOld, fRc) \
-    do { \
-        (fRc) = ASMAtomicCmpXchgPtr((void * volatile *)(ph), (void *)(hNew), (void *)(hOld)); \
-        AssertCompile(sizeof(*ph) == sizeof(void *)); \
-    } while (0)
+#if HC_ARCH_BITS == 32
+# define ASMAtomicCmpXchgHandle(ph, hNew, hOld, fRc) \
+   do { \
+       (fRc) = ASMAtomicCmpXchgU32((uint32_t volatile *)(ph), (const uint32_t)(hNew), (const uint32_t)(hOld)); \
+       AssertCompile(sizeof(*(ph)) == sizeof(uint32_t)); \
+   } while (0)
+#elif HC_ARCH_BITS == 64
+# define ASMAtomicCmpXchgHandle(ph, hNew, hOld, fRc) \
+   do { \
+       (fRc) = ASMAtomicCmpXchgU64((uint64_t volatile *)(ph), (const uint64_t)(hNew), (const uint64_t)(hOld)); \
+       AssertCompile(sizeof(*(ph)) == sizeof(uint64_t)); \
+   } while (0)
+#else
+# error HC_ARCH_BITS
+#endif
 
 
 /** @def ASMAtomicCmpXchgSize
@@ -3472,20 +3493,22 @@ DECLINLINE(bool) ASMAtomicCmpXchgExS64(volatile int64_t *pi64, const int64_t i64
  *
  * @remarks This doesn't currently work for all handles (like RTFILE).
  */
-#if ARCH_BITS == 32
+#if HC_ARCH_BITS == 32
 # define ASMAtomicCmpXchgExHandle(ph, hNew, hOld, fRc, phOldVal) \
     do { \
-        (fRc) = ASMAtomicCmpXchgExU32((volatile uint32_t *)(void *)(pu), (uint32_t)(uNew), (uint32_t)(uOld), (uint32_t *)(puOldVal)); \
-        AssertCompile(sizeof(*ph) == sizeof(void *)); \
-        AssertCompile(sizeof(*phOldVal) == sizeof(void *)); \
+        (fRc) = ASMAtomicCmpXchgExU32((volatile uint32_t *)(pu), (uint32_t)(uNew), (uint32_t)(uOld), (uint32_t *)(puOldVal)); \
+        AssertCompile(sizeof(*ph)       == sizeof(uint32_t)); \
+        AssertCompile(sizeof(*phOldVal) == sizeof(uint32_t)); \
     } while (0)
-#elif ARCH_BITS == 64
+#elif HC_ARCH_BITS == 64
 # define ASMAtomicCmpXchgExHandle(ph, hNew, hOld, fRc, phOldVal) \
     do { \
-        (fRc) = ASMAtomicCmpXchgExU64((volatile uint64_t *)(void *)(pu), (uint64_t)(uNew), (uint64_t)(uOld), (uint64_t *)(puOldVal)); \
-        AssertCompile(sizeof(*ph) == sizeof(void *)); \
-        AssertCompile(sizeof(*phOldVal) == sizeof(void *)); \
+        (fRc) = ASMAtomicCmpXchgExU64((volatile uint64_t *)(pu), (uint64_t)(uNew), (uint64_t)(uOld), (uint64_t *)(puOldVal)); \
+        AssertCompile(sizeof(*(ph))       == sizeof(uint64_t)); \
+        AssertCompile(sizeof(*(phOldVal)) == sizeof(uint64_t)); \
     } while (0)
+#else
+# error HC_ARCH_BITS
 #endif
 
 
@@ -4270,12 +4293,23 @@ DECLINLINE(bool) ASMAtomicUoReadBool(volatile bool *pf)
  *
  * @remarks This doesn't currently work for all handles (like RTFILE).
  */
-#define ASMAtomicReadHandle(ph, phRes) \
+#if HC_ARCH_BITS == 32
+# define ASMAtomicReadHandle(ph, phRes) \
     do { \
-        *(void **)(phRes) = ASMAtomicReadPtr((void * volatile *)(ph)); \
-        AssertCompile(sizeof(*ph) == sizeof(void *)); \
-        AssertCompile(sizeof(*phRes) == sizeof(void *)); \
+        *(uint32_t *)(phRes) = ASMAtomicReadU32((uint32_t volatile *)(ph)); \
+        AssertCompile(sizeof(*(ph))    == sizeof(uint32_t)); \
+        AssertCompile(sizeof(*(phRes)) == sizeof(uint32_t)); \
     } while (0)
+#elif HC_ARCH_BITS == 64
+# define ASMAtomicReadHandle(ph, phRes) \
+    do { \
+        *(uint64_t *)(phRes) = ASMAtomicReadU64((uint64_t volatile *)(ph)); \
+        AssertCompile(sizeof(*(ph))    == sizeof(uint64_t)); \
+        AssertCompile(sizeof(*(phRes)) == sizeof(uint64_t)); \
+    } while (0)
+#else
+# error HC_ARCH_BITS
+#endif
 
 
 /**
@@ -4286,12 +4320,23 @@ DECLINLINE(bool) ASMAtomicUoReadBool(volatile bool *pf)
  *
  * @remarks This doesn't currently work for all handles (like RTFILE).
  */
-#define ASMAtomicUoReadHandle(ph, phRes) \
+#if HC_ARCH_BITS == 32
+# define ASMAtomicUoReadHandle(ph, phRes) \
     do { \
-        *(void **)(phRes) = ASMAtomicUoReadPtr((void * volatile *)(ph)); \
-        AssertCompile(sizeof(*ph) == sizeof(void *)); \
-        AssertCompile(sizeof(*phRes) == sizeof(void *)); \
+        *(uint32_t *)(phRes) = ASMAtomicUoReadU32((uint32_t volatile *)(ph)); \
+        AssertCompile(sizeof(*(ph))    == sizeof(uint32_t)); \
+        AssertCompile(sizeof(*(phRes)) == sizeof(uint32_t)); \
     } while (0)
+#elif HC_ARCH_BITS == 64
+# define ASMAtomicUoReadHandle(ph, phRes) \
+    do { \
+        *(uint64_t *)(phRes) = ASMAtomicUoReadU64((uint64_t volatile *)(ph)); \
+        AssertCompile(sizeof(*(ph))    == sizeof(uint64_t)); \
+        AssertCompile(sizeof(*(phRes)) == sizeof(uint64_t)); \
+    } while (0)
+#else
+# error HC_ARCH_BITS
+#endif
 
 
 /**
@@ -4608,11 +4653,21 @@ DECLINLINE(void) ASMAtomicUoWritePtr(void * volatile *ppv, const void *pv)
  *
  * @remarks This doesn't currently work for all handles (like RTFILE).
  */
-#define ASMAtomicWriteHandle(ph, hNew) \
+#if HC_ARCH_BITS == 32
+# define ASMAtomicWriteHandle(ph, hNew) \
     do { \
-        ASMAtomicWritePtr((void * volatile *)(ph), (const void *)hNew); \
-        AssertCompile(sizeof(*ph) == sizeof(void*)); \
+        ASMAtomicWriteU32((uint32_t volatile *)(ph), (const uint32_t)(hNew)); \
+        AssertCompile(sizeof(*(ph)) == sizeof(uint32_t)); \
     } while (0)
+#elif HC_ARCH_BITS == 64
+# define ASMAtomicWriteHandle(ph, hNew) \
+    do { \
+        ASMAtomicWriteU64((uint64_t volatile *)(ph), (const uint64_t)(hNew)); \
+        AssertCompile(sizeof(*(ph)) == sizeof(uint64_t)); \
+    } while (0)
+#else
+# error HC_ARCH_BITS
+#endif
 
 
 /**
@@ -4623,11 +4678,21 @@ DECLINLINE(void) ASMAtomicUoWritePtr(void * volatile *ppv, const void *pv)
  *
  * @remarks This doesn't currently work for all handles (like RTFILE).
  */
-#define ASMAtomicUoWriteHandle(ph, hNew) \
+#if HC_ARCH_BITS == 32
+# define ASMAtomicUoWriteHandle(ph, hNew) \
     do { \
-        ASMAtomicUoWritePtr((void * volatile *)(ph), (const void *)hNew); \
-        AssertCompile(sizeof(*ph) == sizeof(void*)); \
+        ASMAtomicUoWriteU32((uint32_t volatile *)(ph), (const uint32_t)hNew); \
+        AssertCompile(sizeof(*(ph)) == sizeof(uint32_t)); \
     } while (0)
+#elif HC_ARCH_BITS == 64
+# define ASMAtomicUoWriteHandle(ph, hNew) \
+    do { \
+        ASMAtomicUoWriteU64((uint64_t volatile *)(ph), (const uint64_t)hNew); \
+        AssertCompile(sizeof(*(ph)) == sizeof(uint64_t)); \
+    } while (0)
+#else
+# error HC_ARCH_BITS
+#endif
 
 
 /**
