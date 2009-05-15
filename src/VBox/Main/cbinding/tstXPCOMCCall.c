@@ -29,10 +29,21 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <signal.h>
+#include <sys/poll.h>
 
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
 static void listVMs(IVirtualBox *virtualBox, ISession *session, nsIEventQueue *queue);
 static void registerCallBack(IVirtualBox *virtualBox, ISession *session, PRUnichar *machineId, nsIEventQueue *queue);
 static void startVM(IVirtualBox *virtualBox, ISession *session, PRUnichar *id, nsIEventQueue *queue);
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/** Set by signal handler. */
+static volatile int g_fStop = 0;
 
 int volatile g_refcount = 0;
 
@@ -211,17 +222,17 @@ static nsresult AddRef(nsISupports *pThis)
 {
     nsresult c;
 
-    printf("AddRef\n");
-    c = g_refcount++;
+    c = ++g_refcount;
+    printf("AddRef: %d\n", c);
     return c;
 }
 
 static nsresult Release(nsISupports *pThis)
 {
     nsresult c;
-    printf("Release\n");
 
-    c = g_refcount--;
+    c = --g_refcount;
+    printf("Release: %d\n", c);
     if (c == 0)
     {
         /* delete object */
@@ -235,11 +246,23 @@ static nsresult QueryInterface(nsISupports *pThis, const nsID *iid, void **resul
 {
     IConsoleCallback *that = (IConsoleCallback *)pThis;
 
-    printf("QueryInterface\n");
     /* match iid */
-    g_refcount++;
+    ++g_refcount;
+    printf("QueryInterface: %d\n", g_refcount);
     *resultp = that;
-    return 0;
+    return NS_OK;
+}
+
+/**
+ * Signal callback.
+ *
+ * @param  iSig     The signal number (ignored).
+ */
+static void sigIntHandler(int iSig)
+{
+    printf("sigIntHandler\n");
+    (void)iSig;
+    g_fStop = 1;
 }
 
 /**
@@ -294,14 +317,36 @@ static void registerCallBack(IVirtualBox *virtualBox, ISession *session, PRUnich
                 /* crude way to show how it works, but any
                  * great ideas anyone?
                  */
-                int run = 10000000;
-                while (run-- > 0) {
-                    queue->vtbl->ProcessPendingEvents(queue);
+                PRInt32 fd;
+
+                printf("Entering event loop, press Ctrl-C to terminate\n");
+                fflush(stdout);
+                signal(SIGINT, sigIntHandler);
+
+                fd = queue->vtbl->GetEventQueueSelectFD(queue);
+                if (fd >= 0) {
+                    while (!g_fStop) {
+                        struct pollfd   pfd;
+                        pfd.fd = fd;
+                        pfd.events = POLLIN | POLLERR | POLLHUP;
+                        pfd.revents = 0;
+                        poll(&pfd, 1, 250);
+                        rc = queue->vtbl->ProcessPendingEvents(queue);
+                    }
+                } else {
+                    while (!g_fStop) {
+                        PLEvent *pEvent = NULL;
+                        rc = queue->vtbl->WaitForEvent(queue, &pEvent);
+                        /*printf("event: %p rc=%x\n", (void *)pEvent, rc);*/
+                        if (NS_SUCCEEDED(rc))
+                            queue->vtbl->HandleEvent(queue, pEvent);
+                    }
                 }
+                signal(SIGINT, SIG_DFL);
             }
             console->vtbl->UnregisterCallback(console, consoleCallback);
+            consoleCallback->vtbl->nsisupports.Release((nsISupports *)consoleCallback);
         }
-        consoleCallback->vtbl->nsisupports.Release((nsISupports *)consoleCallback);
     }
     session->vtbl->Close((void *)session);
 }
@@ -592,7 +637,7 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
     g_pVBoxFuncs->pfnGetEventQueue(&queue);
-    printf("Got the event queue: %p\n", queue);
+    printf("Got the event queue: %p\n", (void *)queue);
 
     /*
      * Now ask for revision, version and home folder information of
