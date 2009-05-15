@@ -99,7 +99,11 @@ MODULE_VERSION(vboxdrv, 1);
 static struct cdevsw        g_VBoxDrvFreeBSDChrDevSW =
 {
     .d_version =        D_VERSION,
+#if __FreeBSD_version > 800061
+    .d_flags =          D_PSEUDO | D_TRACKCLOSE | D_NEEDMINOR,
+#else
     .d_flags =          D_PSEUDO | D_TRACKCLOSE,
+#endif
     .d_fdopen =         VBoxDrvFreeBSDOpen,
     .d_close =          VBoxDrvFreeBSDClose,
     .d_ioctl =          VBoxDrvFreeBSDIOCtl,
