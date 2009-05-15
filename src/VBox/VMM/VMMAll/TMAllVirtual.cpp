@@ -615,63 +615,43 @@ VMMDECL(uint64_t) TMVirtualGetFreq(PVM pVM)
 
 
 /**
- * Resumes the virtual clock.
+ * Worker for TMR3PauseClocks.
  *
- * @returns VINF_SUCCESS on success.
- * @returns VINF_INTERNAL_ERROR and VBOX_STRICT assertion if called out of order.
- * @param   pVM     VM handle.
+ * @returns VINF_SUCCESS or VERR_INTERNAL_ERROR (asserted).
+ * @param   pVM     The VM handle.
  */
-VMMDECL(int) TMVirtualResume(PVM pVM)
+int tmVirtualPauseLocked(PVM pVM)
 {
-    /*
-     * Note! this is done only in specific cases (vcpu 0 init, termination, debug,
-     * out of memory conditions; there is at least a race for fVirtualSyncTicking.
-     */
-    if (ASMAtomicIncU32(&pVM->tm.s.cVirtualTicking) == 1)
+    uint32_t c = ASMAtomicDecU32(&pVM->tm.s.cVirtualTicking);
+    AssertMsgReturn(c < pVM->cCPUs, ("%u vs %u\n", c, pVM->cCPUs), VERR_INTERNAL_ERROR);
+    if (c == 0)
     {
-        int rc = tmLock(pVM); /* paranoia */
-
-        STAM_COUNTER_INC(&pVM->tm.s.StatVirtualResume);
-        pVM->tm.s.u64VirtualRawPrev         = 0;
-        pVM->tm.s.u64VirtualWarpDriveStart  = tmVirtualGetRawNanoTS(pVM);
-        pVM->tm.s.u64VirtualOffset          = pVM->tm.s.u64VirtualWarpDriveStart - pVM->tm.s.u64Virtual;
-        pVM->tm.s.fVirtualSyncTicking       = true;
-
-        if (RT_SUCCESS(rc))
-            tmUnlock(pVM);
-        return VINF_SUCCESS;
+        STAM_COUNTER_INC(&pVM->tm.s.StatVirtualPause);
+        pVM->tm.s.u64Virtual = tmVirtualGetRaw(pVM);
+        ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncTicking, false);
     }
-    AssertMsgReturn(pVM->tm.s.cVirtualTicking <= pVM->cCPUs, ("%d vs %d\n", pVM->tm.s.cVirtualTicking, pVM->cCPUs), VERR_INTERNAL_ERROR);
     return VINF_SUCCESS;
 }
 
 
 /**
- * Pauses the virtual clock.
+ * Worker for TMR3ResumeClocks.
  *
- * @returns VINF_SUCCESS on success.
- * @returns VINF_INTERNAL_ERROR and VBOX_STRICT assertion if called out of order.
- * @param   pVM     VM handle.
+ * @returns VINF_SUCCESS or VERR_INTERNAL_ERROR (asserted).
+ * @param   pVM     The VM handle.
  */
-VMMDECL(int) TMVirtualPause(PVM pVM)
+int tmVirtualResumeLocked(PVM pVM)
 {
-    /*
-     * Note! this is done only in specific cases (vcpu 0 init, termination, debug,
-     * out of memory conditions; there is at least a race for fVirtualSyncTicking.
-     */
-    if (ASMAtomicDecU32(&pVM->tm.s.cVirtualTicking) == 0)
+    uint32_t c = ASMAtomicIncU32(&pVM->tm.s.cVirtualTicking);
+    AssertMsgReturn(c <= pVM->cCPUs, ("%u vs %u\n", c, pVM->cCPUs), VERR_INTERNAL_ERROR);
+    if (c == 1)
     {
-        int rc = tmLock(pVM); /* paranoia */
-
-        STAM_COUNTER_INC(&pVM->tm.s.StatVirtualPause);
-        pVM->tm.s.u64Virtual            = tmVirtualGetRaw(pVM);
-        pVM->tm.s.fVirtualSyncTicking   = false;
-
-        if (RT_SUCCESS(rc))
-            tmUnlock(pVM);
-        return VINF_SUCCESS;
+        STAM_COUNTER_INC(&pVM->tm.s.StatVirtualResume);
+        pVM->tm.s.u64VirtualRawPrev         = 0;
+        pVM->tm.s.u64VirtualWarpDriveStart  = tmVirtualGetRawNanoTS(pVM);
+        pVM->tm.s.u64VirtualOffset          = pVM->tm.s.u64VirtualWarpDriveStart - pVM->tm.s.u64Virtual;
+        ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncTicking, true);
     }
-    AssertMsgReturn(pVM->tm.s.cVirtualTicking <= pVM->cCPUs, ("%d vs %d\n", pVM->tm.s.cVirtualTicking, pVM->cCPUs), VERR_INTERNAL_ERROR);
     return VINF_SUCCESS;
 }
 

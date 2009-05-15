@@ -796,10 +796,8 @@ REMR3DECL(int) REMR3Step(PVM pVM, PVMCPU pVCpu)
     rc = cpu_exec(&pVM->rem.s.Env);
     if (rc == EXCP_DEBUG)
     {
-        TMCpuTickResume(pVCpu);
-        TMCpuTickPause(pVCpu);
-        TMVirtualResume(pVM);
-        TMVirtualPause(pVM);
+        TMR3NotifyResume(pVM, pVCpu);
+        TMR3NotifySuspend(pVM, pVCpu);
         rc = VINF_EM_DBG_STEPPED;
     }
     else

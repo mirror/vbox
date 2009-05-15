@@ -2312,6 +2312,71 @@ VMMR3DECL(PRTTIMESPEC) TMR3UTCNow(PVM pVM, PRTTIMESPEC pTime)
 
 
 /**
+ * Pauses all clocks except TMCLOCK_REAL.
+ *
+ * @returns VBox status code, all errors are asserted.
+ * @param   pVM         The VM handle.
+ * @param   pVCpu       The virtual CPU handle.
+ * @thread  EMT corrsponding to the virtual CPU handle.
+ */
+VMMR3DECL(int) TMR3NotifySuspend(PVM pVM, PVMCPU pVCpu)
+{
+    VMCPU_ASSERT_EMT(pVCpu);
+
+    /*
+     * The shared virtual clock (includes virtual sync which is tied to it).
+     */
+    tmLock(pVM);
+    int rc = tmVirtualPauseLocked(pVM);
+    tmUnlock(pVM);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Pause the TSC last since it is normally linked to the virtual
+     * sync clock, so the above code may actually stop both clock.
+     */
+    return tmCpuTickPause(pVM, pVCpu);
+}
+
+
+/**
+ * Resumes all clocks except TMCLOCK_REAL.
+ *
+ * @returns VBox status code, all errors are asserted.
+ * @param   pVM         The VM handle.
+ * @param   pVCpu       The virtual CPU handle.
+ * @thread  EMT corrsponding to the virtual CPU handle.
+ */
+VMMR3DECL(int) TMR3NotifyResume(PVM pVM, PVMCPU pVCpu)
+{
+    VMCPU_ASSERT_EMT(pVCpu);
+    int rc;
+
+    /*
+     * Resume the TSC first since it is normally linked to the virtual sync
+     * clock, so it may actually not be resumed until we've executed the code
+     * below.
+     */
+    if (!pVM->tm.s.fTSCTiedToExecution)
+    {
+        rc = tmCpuTickResume(pVM, pVCpu);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    /*
+     * The shared virtual clock (includes virtual sync which is tied to it).
+     */
+    tmLock(pVM);
+    rc = tmVirtualResumeLocked(pVM);
+    tmUnlock(pVM);
+
+    return rc;
+}
+
+
+/**
  * Sets the warp drive percent of the virtual time.
  *
  * @returns VBox status code.
@@ -2350,7 +2415,6 @@ static DECLCALLBACK(int) tmR3SetWarpDrive(PVM pVM, uint32_t u32Percent)
     AssertMsgReturn(u32Percent >= 2 && u32Percent <= 20000,
                     ("%RX32 is not between 2 and 20000 (inclusive).\n", u32Percent),
                     VERR_INVALID_PARAMETER);
-    tmLock(pVM); /* paranoia */
 
 /** @todo This isn't a feature specific to virtual time, move the variables to
  * TM level and make it affect TMR3UCTNow as well! */
@@ -2359,14 +2423,10 @@ static DECLCALLBACK(int) tmR3SetWarpDrive(PVM pVM, uint32_t u32Percent)
      * If the time is running we'll have to pause it before we can change
      * the warp drive settings.
      */
+    tmLock(pVM); /* paranoia */
     bool fPaused = !!pVM->tm.s.cVirtualTicking;
-    if (fPaused)
-    {
-        int rc = TMVirtualPause(pVM);
-        AssertRC(rc);
-        rc = TMCpuTickPause(pVCpu);
-        AssertRC(rc);
-    }
+    if (fPaused) /** @todo this isn't really working, but wtf. */
+        TMR3NotifySuspend(pVM, pVCpu);
 
     pVM->tm.s.u32VirtualWarpDrivePercentage = u32Percent;
     pVM->tm.s.fVirtualWarpDrive = u32Percent != 100;
@@ -2374,18 +2434,10 @@ static DECLCALLBACK(int) tmR3SetWarpDrive(PVM pVM, uint32_t u32Percent)
             pVM->tm.s.u32VirtualWarpDrivePercentage, pVM->tm.s.fVirtualWarpDrive));
 
     if (fPaused)
-    {
-        int rc = TMVirtualResume(pVM);
-        AssertRC(rc);
-        rc = TMCpuTickResume(pVCpu);
-        AssertRC(rc);
-    }
-
+        TMR3NotifyResume(pVM, pVCpu);
     tmUnlock(pVM);
     return VINF_SUCCESS;
 }
-
-
 
 
 /**

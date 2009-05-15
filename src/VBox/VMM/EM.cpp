@@ -3642,10 +3642,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
         /*
          * Start the virtual time.
          */
-        rc = TMVirtualResume(pVM);
-        Assert(rc == VINF_SUCCESS);
-        rc = TMCpuTickResume(pVCpu);
-        Assert(rc == VINF_SUCCESS);
+        TMR3NotifyResume(pVM, pVCpu);
 
         /*
          * The Outer Main Loop.
@@ -3814,8 +3811,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 case VINF_EM_OFF:
                     pVCpu->em.s.enmState = EMSTATE_TERMINATING;
                     Log2(("EMR3ExecuteVM: returns VINF_EM_OFF (%d -> %d)\n", pVCpu->em.s.enmState, EMSTATE_TERMINATING));
-                    TMVirtualPause(pVM);
-                    TMCpuTickPause(pVCpu);
+                    TMR3NotifySuspend(pVM, pVCpu);
                     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
                     return rc;
 
@@ -3825,8 +3821,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 case VINF_EM_TERMINATE:
                     pVCpu->em.s.enmState = EMSTATE_TERMINATING;
                     Log(("EMR3ExecuteVM returns VINF_EM_TERMINATE (%d -> %d)\n", pVCpu->em.s.enmState, EMSTATE_TERMINATING));
-                    TMVirtualPause(pVM);
-                    TMCpuTickPause(pVCpu);
+                    TMR3NotifySuspend(pVM, pVCpu);
                     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
                     return rc;
 
@@ -3837,8 +3832,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 case VINF_EM_NO_MEMORY:
                     Log2(("EMR3ExecuteVM: VINF_EM_NO_MEMORY: %d -> %d\n", pVCpu->em.s.enmState, EMSTATE_SUSPENDED));
                     pVCpu->em.s.enmState = EMSTATE_SUSPENDED;
-                    TMVirtualPause(pVM);
-                    TMCpuTickPause(pVCpu);
+                    TMR3NotifySuspend(pVM, pVCpu);
                     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
 
                     rc = VMSetRuntimeError(pVM, VMSETRTERR_FLAGS_SUSPEND, "HostMemoryLow",
@@ -3971,8 +3965,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  * Suspended - return to VM.cpp.
                  */
                 case EMSTATE_SUSPENDED:
-                    TMVirtualPause(pVM);
-                    TMCpuTickPause(pVCpu);
+                    TMR3NotifySuspend(pVM, pVCpu);
                     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
                     return VINF_EM_SUSPEND;
 
@@ -3981,11 +3974,9 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case EMSTATE_DEBUG_GUEST_REM:
                 case EMSTATE_DEBUG_GUEST_RAW:
-                    TMVirtualPause(pVM);
-                    TMCpuTickPause(pVCpu);
+                    TMR3NotifySuspend(pVM, pVCpu);
                     rc = emR3Debug(pVM, pVCpu, rc);
-                    TMVirtualResume(pVM);
-                    TMCpuTickResume(pVCpu);
+                    TMR3NotifyResume(pVM, pVCpu);
                     Log2(("EMR3ExecuteVM: enmr3Debug -> %Rrc (state %d)\n", rc, pVCpu->em.s.enmState));
                     break;
 
@@ -3994,8 +3985,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case EMSTATE_DEBUG_HYPER:
                 {
-                    TMVirtualPause(pVM);
-                    TMCpuTickPause(pVCpu);
+                    TMR3NotifySuspend(pVM, pVCpu);
                     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
 
                     rc = emR3Debug(pVM, pVCpu, rc);
@@ -4009,8 +3999,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     }
 
                     STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatTotal, x);
-                    TMVirtualResume(pVM);
-                    TMCpuTickResume(pVCpu);
+                    TMR3NotifyResume(pVM, pVCpu);
                     break;
                 }
 
@@ -4019,8 +4008,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case EMSTATE_GURU_MEDITATION:
                 {
-                    TMVirtualPause(pVM);
-                    TMCpuTickPause(pVCpu);
+                    TMR3NotifySuspend(pVM, pVCpu);
                     VMMR3FatalDump(pVM, pVCpu, rc);
                     emR3Debug(pVM, pVCpu, rc);
                     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
@@ -4035,8 +4023,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 default:
                     AssertMsgFailed(("EMR3ExecuteVM: Invalid state %d!\n", pVCpu->em.s.enmState));
                     pVCpu->em.s.enmState = EMSTATE_GURU_MEDITATION;
-                    TMVirtualPause(pVM);
-                    TMCpuTickPause(pVCpu);
+                    TMR3NotifySuspend(pVM, pVCpu);
                     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
                     return VERR_EM_INTERNAL_ERROR;
             }
@@ -4048,8 +4035,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
          * Fatal error.
          */
         LogFlow(("EMR3ExecuteVM: returns %Rrc (longjmp / fatal error)\n", rc));
-        TMVirtualPause(pVM);
-        TMCpuTickPause(pVCpu);
+        TMR3NotifySuspend(pVM, pVCpu);
         VMMR3FatalDump(pVM, pVCpu, rc);
         emR3Debug(pVM, pVCpu, rc);
         STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
