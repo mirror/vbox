@@ -106,8 +106,6 @@ BOOLEAN vboxLikesVideoMode(uint32_t width, uint32_t height, uint32_t bpp)
 {
     BOOLEAN bRC = FALSE;
 
-    dprintf(("VBoxVideo::vboxLikesVideoMode: width: %d, height: %d, bpp: %d\n", width, height, bpp));
-
     VMMDevVideoModeSupportedRequest *req = NULL;
 
     int rc = VbglGRAlloc((VMMDevRequestHeader**)&req, sizeof(VMMDevVideoModeSupportedRequest), VMMDevReq_VideoModeSupported);
@@ -137,7 +135,7 @@ BOOLEAN vboxLikesVideoMode(uint32_t width, uint32_t height, uint32_t bpp)
         VbglGRFree(&req->header);
     }
 
-    dprintf(("VBoxVideoMode::vboxLikesVideoMode: returning %d\n", bRC));
+    dprintf(("VBoxVideo::vboxLikesVideoMode: width: %d, height: %d, bpp: %d -> %s\n", width, height, bpp, (bRC == 1) ? "OK" : "FALSE"));
     return bRC;
 }
 
