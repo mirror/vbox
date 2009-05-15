@@ -587,8 +587,9 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
 
     STAM_REG(pVM, &pVM->tm.s.StatVirtualGet,                          STAMTYPE_COUNTER, "/TM/VirtualGet",                      STAMUNIT_OCCURENCES, "The number of times TMTimerGet was called when the clock was running.");
     STAM_REG(pVM, &pVM->tm.s.StatVirtualGetSetFF,                     STAMTYPE_COUNTER, "/TM/VirtualGetSetFF",                 STAMUNIT_OCCURENCES, "Times we set the FF when calling TMTimerGet.");
-    STAM_REG(pVM, &pVM->tm.s.StatVirtualGetSync,                      STAMTYPE_COUNTER, "/TM/VirtualGetSync",                  STAMUNIT_OCCURENCES, "The number of times TMTimerGetSync was called when the clock was running.");
-    STAM_REG(pVM, &pVM->tm.s.StatVirtualGetSyncSetFF,                 STAMTYPE_COUNTER, "/TM/VirtualGetSyncSetFF",             STAMUNIT_OCCURENCES, "Times we set the FF when calling TMTimerGetSync.");
+    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncGet,                      STAMTYPE_COUNTER, "/TM/VirtualSyncGet",                  STAMUNIT_OCCURENCES, "The number of times TMTimerSyncGet was called when the clock was running.");
+    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncGetSetFF,                 STAMTYPE_COUNTER, "/TM/VirtualSyncGetSetFF",             STAMUNIT_OCCURENCES, "Times we set the FF when calling TMTimerSyncGet.");
+    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncGetELoop,                 STAMTYPE_COUNTER, "/TM/VirtualSyncGetELoop",             STAMUNIT_OCCURENCES, "Times we give up because too many loops in TMTimerSyncGet.");
     STAM_REG(pVM, &pVM->tm.s.StatVirtualPause,                        STAMTYPE_COUNTER, "/TM/VirtualPause",                    STAMUNIT_OCCURENCES, "The number of times TMR3TimerPause was called.");
     STAM_REG(pVM, &pVM->tm.s.StatVirtualResume,                       STAMTYPE_COUNTER, "/TM/VirtualResume",                   STAMUNIT_OCCURENCES, "The number of times TMR3TimerResume was called.");
 
@@ -602,7 +603,6 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->tm.s.StatTSCNotTicking,                       STAMTYPE_COUNTER, "/TM/TSC/Intercept/NotTicking",        STAMUNIT_OCCURENCES, "TSC is not ticking.");
     STAM_REG(pVM, &pVM->tm.s.StatTSCSyncNotTicking,                   STAMTYPE_COUNTER, "/TM/TSC/Intercept/SyncNotTicking",    STAMUNIT_OCCURENCES, "VirtualSync isn't ticking.");
     STAM_REG(pVM, &pVM->tm.s.StatTSCWarp,                             STAMTYPE_COUNTER, "/TM/TSC/Intercept/Warp",              STAMUNIT_OCCURENCES, "Warpdrive is active.");
-
 
     STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncCatchup,              STAMTYPE_PROFILE_ADV, "/TM/VirtualSync/CatchUp",    STAMUNIT_TICKS_PER_OCCURENCE, "Counting and measuring the times spent catching up.");
     STAM_REG(pVM, (void *)&pVM->tm.s.fVirtualSyncCatchUp,                  STAMTYPE_U8, "/TM/VirtualSync/CatchUpActive",             STAMUNIT_NONE, "Catch-Up active indicator.");
@@ -953,7 +953,7 @@ VMMR3DECL(void) TMR3Reset(PVM pVM)
 
     /*
      * Abort any pending catch up.
-     * This isn't perfect,
+     * This isn't perfect...
      */
     if (pVM->tm.s.fVirtualSyncCatchUp)
     {
@@ -2423,7 +2423,7 @@ static DECLCALLBACK(int) tmR3SetWarpDrive(PVM pVM, uint32_t u32Percent)
      * If the time is running we'll have to pause it before we can change
      * the warp drive settings.
      */
-    tmLock(pVM); /* paranoia */
+    tmLock(pVM);
     bool fPaused = !!pVM->tm.s.cVirtualTicking;
     if (fPaused) /** @todo this isn't really working, but wtf. */
         TMR3NotifySuspend(pVM, pVCpu);
