@@ -125,7 +125,7 @@ DECLCALLBACK(int) EMReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned cb, void 
 
 # ifdef IN_RING0
     int rc = PGMPhysSimpleReadGCPtr(pVCpu, pDest, pSrc, cb);
-    AssertMsgRC(rc, ("PGMPhysSimpleReadGCPtr failed for pSrc=%RGv cb=%x\n", pSrc, cb));
+    AssertMsgRC(rc, ("PGMPhysSimpleReadGCPtr failed for pSrc=%RGv cb=%x rc=%d\n", pSrc, cb, rc));
 # else /* IN_RING3 */
     if (!PATMIsPatchGCAddr(pVM, pSrc))
     {
