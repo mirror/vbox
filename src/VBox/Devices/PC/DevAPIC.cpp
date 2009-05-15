@@ -1003,7 +1003,7 @@ static void apic_update_tpr(APICDeviceInfo *dev, APICState* s, uint32_t val)
 
 static void apic_set_irq(APICDeviceInfo *dev,  APICState* s, int vector_num, int trigger_mode)
 {
-    LogFlow(("apic_set_irq vector=%x, trigger_mode=%x\n", vector_num, trigger_mode));
+    LogFlow(("CPU%d: apic_set_irq vector=%x, trigger_mode=%x\n", s->phys_id, vector_num, trigger_mode));
     set_bit(s->irr, vector_num);
     if (trigger_mode)
         set_bit(s->tmr, vector_num);
@@ -1019,7 +1019,7 @@ static void apic_eoi(APICDeviceInfo *dev, APICState* s)
     if (isrv < 0)
         return;
     reset_bit(s->isr, isrv);
-    LogFlow(("apic_eoi isrv=%x\n", isrv));
+    LogFlow(("CPU%d: apic_eoi isrv=%x\n", s->phys_id, isrv));
     /* XXX: send the EOI packet to the APIC bus to allow the I/O APIC to
             set the remote IRR bit for level triggered interrupts. */
     apic_update_irq(dev, s);
@@ -1234,7 +1234,7 @@ PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns)
     reset_bit(s->irr, intno);
     set_bit(s->isr, intno);
     apic_update_irq(dev, s);
-    LogFlow(("apic_get_interrupt: returns %d\n", intno));
+    LogFlow(("CPU%d: apic_get_interrupt: returns %d\n", s->phys_id, intno));
  done:
     APIC_UNLOCK(dev);
     return intno;
