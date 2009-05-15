@@ -123,7 +123,7 @@
 /** Min number of Virtual CPUs. */
 #define VMM_MIN_CPU_COUNT           1
 /** Max number of Virtual CPUs. */
-#define VMM_MAX_CPU_COUNT           255
+#define VMM_MAX_CPU_COUNT           32
 
 /** @} */
 
