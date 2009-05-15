@@ -295,6 +295,12 @@ int main()
     CHECK_MEMBER_ALIGNMENT(TM, EmtLock, 8);
     CHECK_MEMBER_ALIGNMENT(TM, VirtualSyncLock, 8);
 
+    CHECK_MEMBER_ALIGNMENT(IOM, EmtLock, 8);
+    CHECK_MEMBER_ALIGNMENT(EM, CritSectREM, 8);
+    CHECK_MEMBER_ALIGNMENT(PGM, CritSect, 8);
+    CHECK_MEMBER_ALIGNMENT(PDM, CritSect, 8);
+    CHECK_MEMBER_ALIGNMENT(MMHYPERHEAP, Lock, 8);
+
     /* hwaccm - 32-bit gcc won't align uint64_t naturally, so check. */
     CHECK_MEMBER_ALIGNMENT(HWACCM, u64RegisterMask, 8);
     CHECK_MEMBER_ALIGNMENT(HWACCM, vmx.hostCR4, 8);
