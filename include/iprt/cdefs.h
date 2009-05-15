@@ -833,22 +833,22 @@
 
 
 /** @def RT_BIT
- * Make a bitmask for one integer sized bit.
- * @param   bit     Bit number.
+ * Convert a bit number into an integer bitmask (unsigned).
+ * @param   bit     The bit number.
  */
-#define RT_BIT(bit)                     (1U << (bit))
+#define RT_BIT(bit)                             ( 1U << (bit) )
 
 /** @def RT_BIT_32
- * Make a 32-bit bitmask for one bit.
- * @param   bit     Bit number.
+ * Convert a bit number into a 32-bit bitmask (unsigned).
+ * @param   bit     The bit number.
  */
-#define RT_BIT_32(bit)                  (UINT32_C(1) << (bit))
+#define RT_BIT_32(bit)                          ( UINT32_C(1) << (bit) )
 
 /** @def RT_BIT_64
- * Make a 64-bit bitmask for one bit.
- * @param   bit     Bit number.
+ * Convert a bit number into a 64-bit bitmask (unsigned).
+ * @param   bit     The bit number.
  */
-#define RT_BIT_64(bit)                  (UINT64_C(1) << (bit))
+#define RT_BIT_64(bit)                          ( UINT64_C(1) << (bit) )
 
 /** @def RT_ALIGN
  * Align macro.
@@ -864,7 +864,7 @@
  *
  *          In short: Don't use this macro. Use RT_ALIGN_T() instead.
  */
-#define RT_ALIGN(u, uAlignment)         ( ((u) + ((uAlignment) - 1)) & ~((uAlignment) - 1) )
+#define RT_ALIGN(u, uAlignment)                 ( ((u) + ((uAlignment) - 1)) & ~((uAlignment) - 1) )
 
 /** @def RT_ALIGN_T
  * Align macro.
@@ -873,7 +873,7 @@
  * @param   type        Integer type to use while aligning.
  * @remark  This macro is the preferred alignment macro, it doesn't have any of the pitfalls RT_ALIGN has.
  */
-#define RT_ALIGN_T(u, uAlignment, type) ( ((type)(u) + ((uAlignment) - 1)) & ~(type)((uAlignment) - 1) )
+#define RT_ALIGN_T(u, uAlignment, type)         ( ((type)(u) + ((uAlignment) - 1)) & ~(type)((uAlignment) - 1) )
 
 /** @def RT_ALIGN_32
  * Align macro for a 32-bit value.
@@ -909,7 +909,7 @@
  * @param   uAlignment  The alignment. Power of two!
  * @param   CastType    The type to cast the result to.
  */
-#define RT_ALIGN_PT(u, uAlignment, CastType)    ((CastType)RT_ALIGN_T(u, uAlignment, uintptr_t))
+#define RT_ALIGN_PT(u, uAlignment, CastType)    ( (CastType)RT_ALIGN_T(u, uAlignment, uintptr_t) )
 
 /** @def RT_ALIGN_R3PT
  * Align macro for ring-3 pointers with type cast.
@@ -917,7 +917,7 @@
  * @param   uAlignment  The alignment. Power of two!
  * @param   CastType    The type to cast the result to.
  */
-#define RT_ALIGN_R3PT(u, uAlignment, CastType)  ((CastType)RT_ALIGN_T(u, uAlignment, RTR3UINTPTR))
+#define RT_ALIGN_R3PT(u, uAlignment, CastType)  ( (CastType)RT_ALIGN_T(u, uAlignment, RTR3UINTPTR) )
 
 /** @def RT_ALIGN_R0PT
  * Align macro for ring-0 pointers with type cast.
@@ -925,7 +925,7 @@
  * @param   uAlignment  The alignment. Power of two!
  * @param   CastType    The type to cast the result to.
  */
-#define RT_ALIGN_R0PT(u, uAlignment, CastType)  ((CastType)RT_ALIGN_T(u, uAlignment, RTR0UINTPTR))
+#define RT_ALIGN_R0PT(u, uAlignment, CastType)  ( (CastType)RT_ALIGN_T(u, uAlignment, RTR0UINTPTR) )
 
 /** @def RT_ALIGN_GCPT
  * Align macro for GC pointers with type cast.
@@ -933,7 +933,7 @@
  * @param   uAlignment  The alignment. Power of two!
  * @param   CastType        The type to cast the result to.
  */
-#define RT_ALIGN_GCPT(u, uAlignment, CastType)  ((CastType)RT_ALIGN_T(u, uAlignment, RTGCUINTPTR))
+#define RT_ALIGN_GCPT(u, uAlignment, CastType)  ( (CastType)RT_ALIGN_T(u, uAlignment, RTGCUINTPTR) )
 
 
 /** @def RT_OFFSETOF
@@ -948,7 +948,7 @@
  * @param   type    Structure type.
  * @param   member  Member.
  */
-#define RT_OFFSETOF(type, member)   ( (int)(uintptr_t)&( ((type *)(void *)0)->member) )
+#define RT_OFFSETOF(type, member)               ( (int)(uintptr_t)&( ((type *)(void *)0)->member) )
 
 /** @def RT_UOFFSETOF
  * Our own special offsetof() variant, returns an unsigned result.
@@ -962,7 +962,7 @@
  * @param   type    Structure type.
  * @param   member  Member.
  */
-#define RT_UOFFSETOF(type, member)   ( (uintptr_t)&( ((type *)(void *)0)->member) )
+#define RT_UOFFSETOF(type, member)              ( (uintptr_t)&( ((type *)(void *)0)->member) )
 
 /** @def RT_OFFSETOF_ADD
  * RT_OFFSETOF with an addend.
@@ -982,7 +982,7 @@
  * @param   member  Member.
  * @param   addend  The addend to add to the offset.
  */
-#define RT_UOFFSETOF_ADD(type, member, addend)   ( (uintptr_t)&( ((type *)(void *)(uintptr_t)(addend))->member) )
+#define RT_UOFFSETOF_ADD(type, member, addend)  ( (uintptr_t)&( ((type *)(void *)(uintptr_t)(addend))->member) )
 
 /** @def RT_SIZEOFMEMB
  * Get the size of a structure member.
@@ -991,14 +991,23 @@
  * @param   type    Structure type.
  * @param   member  Member.
  */
-#define RT_SIZEOFMEMB(type, member) ( sizeof(((type *)(void *)0)->member) )
+#define RT_SIZEOFMEMB(type, member)             ( sizeof(((type *)(void *)0)->member) )
+
+/** @def RT_FROM_MEMBER
+ * Convert a pointer to a structure member into a pointer to the structure.
+ * @returns pointer to the structure.
+ * @param   pMember Pointer to the member.
+ * @param   Type    Strucutre type.
+ * @param   Member  Member name.
+ */
+#define RT_FROM_MEMBER(pMem, Type, Member)      ( (Type *) ((uint8_t *)(void *)(pMem) + RT_UOFFSETOF(Type, Member)) )
 
 /** @def RT_ELEMENTS
- * Calculates the number of elements in an array.
+ * Calculates the number of elements in a statically sized array.
  * @returns Element count.
  * @param   aArray      Array in question.
  */
-#define RT_ELEMENTS(aArray)         ( sizeof(aArray) / sizeof((aArray)[0]) )
+#define RT_ELEMENTS(aArray)                     ( sizeof(aArray) / sizeof((aArray)[0]) )
 
 #ifdef RT_OS_OS2
 /* Undefine RT_MAX since there is an unfortunate clash with the max
@@ -1012,7 +1021,7 @@
  * @param   Value1      Value 1
  * @param   Value2      Value 2
  */
-#define RT_MAX(Value1, Value2)  ((Value1) >= (Value2) ? (Value1) : (Value2))
+#define RT_MAX(Value1, Value2)                  ( (Value1) >= (Value2) ? (Value1) : (Value2) )
 
 /** @def RT_MIN
  * Finds the minimum value.
@@ -1020,60 +1029,60 @@
  * @param   Value1      Value 1
  * @param   Value2      Value 2
  */
-#define RT_MIN(Value1, Value2)  ((Value1) <= (Value2) ? (Value1) : (Value2))
+#define RT_MIN(Value1, Value2)                  ( (Value1) <= (Value2) ? (Value1) : (Value2) )
 
 /** @def RT_ABS
  * Get the absolute (non-negative) value.
  * @returns The absolute value of Value.
  * @param   Value       The value.
  */
-#define RT_ABS(Value)           ((Value) >= 0 ? (Value) : -(Value))
+#define RT_ABS(Value)                           ( (Value) >= 0 ? (Value) : -(Value) )
 
 /** @def RT_LODWORD
  * Gets the low dword (=uint32_t) of something. */
-#define RT_LODWORD(a)           ( (uint32_t)(a) )
+#define RT_LODWORD(a)                           ( (uint32_t)(a) )
 
 /** @def RT_HIDWORD
  * Gets the high dword (=uint32_t) of a 64-bit of something. */
-#define RT_HIDWORD(a)           ( (uint32_t)((a) >> 32) )
+#define RT_HIDWORD(a)                           ( (uint32_t)((a) >> 32) )
 
 /** @def RT_LOWORD
  * Gets the low word (=uint16_t) of something. */
-#define RT_LOWORD(a)            ((a) & 0xffff)
+#define RT_LOWORD(a)                            ( (a) & 0xffff )
 
 /** @def RT_HIWORD
  * Gets the high word (=uint16_t) of a 32-bit something. */
-#define RT_HIWORD(a)            ((a) >> 16)
+#define RT_HIWORD(a)                            ( (a) >> 16 )
 
 /** @def RT_LOBYTE
  * Gets the low byte of something. */
-#define RT_LOBYTE(a)            ((a) & 0xff)
+#define RT_LOBYTE(a)                            ( (a) & 0xff )
 
 /** @def RT_HIBYTE
  * Gets the low byte of a 16-bit something. */
-#define RT_HIBYTE(a)            ((a) >> 8)
+#define RT_HIBYTE(a)                            ( (a) >> 8 )
 
 /** @def RT_BYTE1
  * Gets first byte of something. */
-#define RT_BYTE1(a)             ((a) & 0xff)
+#define RT_BYTE1(a)                             ( (a) & 0xff )
 
 /** @def RT_BYTE2
  * Gets second byte of something. */
-#define RT_BYTE2(a)             (((a) >> 8) & 0xff)
+#define RT_BYTE2(a)                             ( ((a) >> 8) & 0xff )
 
 /** @def RT_BYTE3
  * Gets second byte of something. */
-#define RT_BYTE3(a)             (((a) >> 16) & 0xff)
+#define RT_BYTE3(a)                             ( ((a) >> 16) & 0xff )
 
 /** @def RT_BYTE4
  * Gets fourth byte of something. */
-#define RT_BYTE4(a)             (((a) >> 24) & 0xff)
+#define RT_BYTE4(a)                             ( ((a) >> 24) & 0xff )
 
 
 /** @def RT_MAKE_U64
  * Constructs a uint64_t value from two uint32_t values.
  */
-#define RT_MAKE_U64(Lo, Hi) ( (uint64_t)((uint32_t)(Hi)) << 32 | (uint32_t)(Lo) )
+#define RT_MAKE_U64(Lo, Hi)                     ( (uint64_t)((uint32_t)(Hi)) << 32 | (uint32_t)(Lo) )
 
 /** @def RT_MAKE_U64_FROM_U16
  * Constructs a uint64_t value from four uint16_t values.
