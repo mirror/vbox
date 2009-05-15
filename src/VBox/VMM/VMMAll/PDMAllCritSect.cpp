@@ -77,7 +77,7 @@ VMMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
     {
         pCritSect->s.Core.cNestings = 1;
         Assert(pVCpu->hNativeThread != NIL_RTNATIVETHREAD);
-        ASMAtomicXchgSize(&pCritSect->s.Core.NativeThreadOwner, pVCpu->hNativeThread);
+        ASMAtomicWriteHandle(&pCritSect->s.Core.NativeThreadOwner, pVCpu->hNativeThread);
         STAM_PROFILE_ADV_START(&pCritSect->s.StatLocked, l);
         return VINF_SUCCESS;
     }
@@ -131,7 +131,7 @@ VMMDECL(int) PDMCritSectTryEnter(PPDMCRITSECT pCritSect)
     {
         pCritSect->s.Core.cNestings = 1;
         Assert(pVCpu->hNativeThread != NIL_RTNATIVETHREAD);
-        ASMAtomicXchgSize(&pCritSect->s.Core.NativeThreadOwner, pVCpu->hNativeThread);
+        ASMAtomicWriteHandle(&pCritSect->s.Core.NativeThreadOwner, pVCpu->hNativeThread);
         STAM_PROFILE_ADV_START(&pCritSect->s.StatLocked, l);
         return VINF_SUCCESS;
     }
@@ -175,7 +175,7 @@ VMMR3DECL(int) PDMR3CritSectEnterEx(PPDMCRITSECT pCritSect, bool fCallHost)
         &&  pCritSect->s.Core.Strict.ThreadOwner != NIL_RTTHREAD)
     {
         RTThreadWriteLockDec(pCritSect->s.Core.Strict.ThreadOwner);
-        ASMAtomicXchgSize(&pCritSect->s.Core.Strict.ThreadOwner, NIL_RTTHREAD);
+        ASMAtomicWriteHandle(&pCritSect->s.Core.Strict.ThreadOwner, NIL_RTTHREAD);
     }
     return rc;
 }
@@ -243,13 +243,13 @@ VMMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
     if (pCritSect->s.Core.cLockers == 0)
     {
         STAM_PROFILE_ADV_STOP(&pCritSect->s.StatLocked, l);
-        ASMAtomicXchgSize(&pCritSect->s.Core.NativeThreadOwner, NIL_RTNATIVETHREAD);
+        ASMAtomicWriteHandle(&pCritSect->s.Core.NativeThreadOwner, NIL_RTNATIVETHREAD);
         if (ASMAtomicCmpXchgS32(&pCritSect->s.Core.cLockers, -1, 0))
             return;
 
         /* darn, someone raced in on us. */
         Assert(pVCpu->hNativeThread);
-        ASMAtomicXchgSize(&pCritSect->s.Core.NativeThreadOwner, pVCpu->hNativeThread);
+        ASMAtomicWriteHandle(&pCritSect->s.Core.NativeThreadOwner, pVCpu->hNativeThread);
         STAM_PROFILE_ADV_START(&pCritSect->s.StatLocked, l);
     }
     pCritSect->s.Core.cNestings = 1;
@@ -323,7 +323,7 @@ VMMDECL(bool) PDMCritSectIsOwnerEx(PCPDMCRITSECT pCritSect, VMCPUID idCpu)
 }
 
 /**
- * Checks if somebody currently owns the critical section. 
+ * Checks if somebody currently owns the critical section.
  * Note: This doesn't prove that no deadlocks will occur later on; it's just a debugging tool
  *
  * @returns true if locked.
