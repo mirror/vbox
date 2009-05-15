@@ -143,6 +143,11 @@ typedef struct _AVLU32NodeCore
     unsigned char           uchHeight;  /**< Height of this tree: max(height(left), height(right)) + 1 */
 } AVLU32NODECORE, *PAVLU32NODECORE, **PPAVLU32NODECORE;
 
+/** A tree with void pointer keys. */
+typedef PAVLU32NODECORE     AVLU32TREE;
+/** Pointer to a tree with void pointer keys. */
+typedef PPAVLU32NODECORE    PAVLU32TREE;
+
 /** Callback function for AVLU32DoWithAll() & AVLU32Destroy(). */
 typedef DECLCALLBACK(int) AVLU32CALLBACK(PAVLU32NODECORE, void*);
 /** Pointer to callback function for AVLU32DoWithAll() & AVLU32Destroy(). */
@@ -152,13 +157,13 @@ typedef AVLU32CALLBACK *PAVLU32CALLBACK;
 /*
  * Functions.
  */
-RTDECL(bool)            RTAvlU32Insert(PPAVLU32NODECORE ppTree, PAVLU32NODECORE pNode);
-RTDECL(PAVLU32NODECORE) RTAvlU32Remove(PPAVLU32NODECORE ppTree, AVLU32KEY Key);
-RTDECL(PAVLU32NODECORE) RTAvlU32Get(PPAVLU32NODECORE ppTree, AVLU32KEY Key);
-RTDECL(PAVLU32NODECORE) RTAvlU32GetBestFit(PPAVLU32NODECORE ppTree, AVLU32KEY Key, bool fAbove);
-RTDECL(PAVLU32NODECORE) RTAvlU32RemoveBestFit(PPAVLU32NODECORE ppTree, AVLU32KEY Key, bool fAbove);
-RTDECL(int)             RTAvlU32DoWithAll(PPAVLU32NODECORE ppTree, int fFromLeft, PAVLU32CALLBACK pfnCallBack, void *pvParam);
-RTDECL(int)             RTAvlU32Destroy(PPAVLU32NODECORE pTree, PAVLU32CALLBACK pfnCallBack, void *pvParam);
+RTDECL(bool)            RTAvlU32Insert(PAVLU32TREE pTree, PAVLU32NODECORE pNode);
+RTDECL(PAVLU32NODECORE) RTAvlU32Remove(PAVLU32TREE pTree, AVLU32KEY Key);
+RTDECL(PAVLU32NODECORE) RTAvlU32Get(PAVLU32TREE pTree, AVLU32KEY Key);
+RTDECL(PAVLU32NODECORE) RTAvlU32GetBestFit(PAVLU32TREE pTree, AVLU32KEY Key, bool fAbove);
+RTDECL(PAVLU32NODECORE) RTAvlU32RemoveBestFit(PAVLU32TREE pTree, AVLU32KEY Key, bool fAbove);
+RTDECL(int)             RTAvlU32DoWithAll(PAVLU32TREE pTree, int fFromLeft, PAVLU32CALLBACK pfnCallBack, void *pvParam);
+RTDECL(int)             RTAvlU32Destroy(PAVLU32TREE pTree, PAVLU32CALLBACK pfnCallBack, void *pvParam);
 
 /** @} */
 
