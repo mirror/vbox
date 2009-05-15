@@ -1147,7 +1147,6 @@ VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation,
     return vmmR0EntryExWorker(pVM, idCpu, enmOperation, pReq, u64Arg, pSession);
 }
 
-#ifdef LOG_ENABLED
 /**
  * Internal R0 logger worker: Flush logger.
  *
@@ -1156,6 +1155,7 @@ VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation,
  */
 VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
 {
+#ifdef LOG_ENABLED
     /*
      * Convert the pLogger into a VM handle and 'call' back to Ring-3.
      * (This is a bit paranoid code.)
@@ -1165,9 +1165,9 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
         ||  !VALID_PTR(pR0Logger + 1)
         ||  pLogger->u32Magic != RTLOGGER_MAGIC)
     {
-#ifdef DEBUG
+# ifdef DEBUG
         SUPR0Printf("vmmR0LoggerFlush: pLogger=%p!\n", pLogger);
-#endif
+# endif
         return;
     }
     if (pR0Logger->fFlushingDisabled)
@@ -1177,9 +1177,9 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
     if (    !VALID_PTR(pVM)
         ||  pVM->pVMR0 != pVM)
     {
-#ifdef DEBUG
+# ifdef DEBUG
         SUPR0Printf("vmmR0LoggerFlush: pVM=%p! pVMR0=%p! pLogger=%p\n", pVM, pVM->pVMR0, pLogger);
-#endif
+# endif
         return;
     }
 
@@ -1188,22 +1188,22 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
     /*
      * Check that the jump buffer is armed.
      */
-#ifdef RT_ARCH_X86
+# ifdef RT_ARCH_X86
     if (    !pVCpu->vmm.s.CallHostR0JmpBuf.eip
         ||  pVCpu->vmm.s.CallHostR0JmpBuf.fInRing3Call)
-#else
+# else
     if (    !pVCpu->vmm.s.CallHostR0JmpBuf.rip
         ||  pVCpu->vmm.s.CallHostR0JmpBuf.fInRing3Call)
-#endif
+# endif
     {
-#ifdef DEBUG
+# ifdef DEBUG
         SUPR0Printf("vmmR0LoggerFlush: Jump buffer isn't armed!\n");
-#endif
+# endif
         return;
     }
     VMMR0CallHost(pVM, VMMCALLHOST_VMM_LOGGER_FLUSH, 0);
-}
 #endif
+}
 
 #ifdef LOG_ENABLED
 /**
