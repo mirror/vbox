@@ -2306,9 +2306,6 @@ typedef struct PGM
 
     /** The address of the ring-0 mapping cache if we're making use of it.  */
     RTR0PTR                         pvR0DynMapUsed;
-#if HC_ARCH_BITS == 32
-    RTR0PTR                         R0PtrPadding0;  /**< Alignment. */
-#endif
 
     /** PGM critical section.
      * This protects the physical & virtual access handlers, ram ranges,
