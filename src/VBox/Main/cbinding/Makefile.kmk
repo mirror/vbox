@@ -100,6 +100,21 @@ if !defined(VBOX_ONLY_SDK) && defined(VBOX_WITH_XPCOM)
   tstXPCOMCGlue_LIBS = \
   	$(VBoxXPCOMCGlue_1_TARGET)
 
+  ifeq (disabled,1)
+   #
+   # The callback testcase.
+   #
+   PROGRAMS += tstXPCOMCCall
+   tstXPCOMCCall_TEMPLATE = VBOXR3EXE
+   tstXPCOMCCall_INCS = \
+   	$(VBOX_PATH_SDK)/bindings/xpcom/include
+   tstXPCOMCCall_INTERMEDIATES = \
+   	$(VBOX_PATH_SDK)/bindings/xpcom/include/VBoxCAPI_v2_5.h
+   tstXPCOMCCall_SOURCES = \
+   	tstXPCOMCCall.c
+   tstXPCOMCCall_LIBS = \
+   	$(VBoxXPCOMCGlue_1_TARGET)
+  endif
  endif
 
 endif # ! VBOX_ONLY_SDK
