@@ -947,7 +947,12 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 
     /* Flush the recompiler TLB if the VCPU has changed. */
     if (pVM->em.s.idLastRemCpu != pVCpu->idCpu)
+    {
         REMFlushTBs(pVM);
+        /* Also sync the entire state. */
+        CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
+    }
+
     pVM->em.s.idLastRemCpu = pVCpu->idCpu;
 
     for (;;)
