@@ -150,6 +150,7 @@ VMMR3DECL(int) PDMR3CritSectInit(PVM pVM, PPDMCRITSECT pCritSect, const char *ps
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
     AssertCompile(sizeof(pCritSect->padding) >= sizeof(pCritSect->s));
 #endif
+    Assert(RT_ALIGN_P(pCritSect, 8) == pCritSect);
     return pdmR3CritSectInitOne(pVM, &pCritSect->s, pCritSect, pszName);
 }
 
