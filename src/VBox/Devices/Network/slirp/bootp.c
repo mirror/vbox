@@ -156,6 +156,15 @@ static void bootp_reply(PNATState pData, struct mbuf *m0)
         memcpy(&be[1], (pvalue), (len));                        \
         (q) = (uint8_t *)(&be[1]) + (len);                      \
     }while(0)
+/* appending another value to tag, calculates len of whole block*/
+#define FILL_BOOTP_APP(head, q, tag, len, pvalue)               \
+    do {                                                        \
+        struct bootp_ext *be = (struct bootp_ext *)(head);      \
+        memcpy(q, (pvalue), (len));                             \
+        (q) += (len);                                           \
+        Assert(be->bpe_tag == (tag));                           \
+        be->bpe_len += (len);                                   \
+    }while(0)
 
     /* extract exact DHCP msg type */
     requested_ip.s_addr = 0xffffffff;
@@ -296,6 +305,7 @@ static void bootp_reply(PNATState pData, struct mbuf *m0)
         struct dns_entry *de = NULL;
         struct dns_domain_entry *dd = NULL;
         int added = 0;
+        uint8_t *q_dns_header = NULL;
 #endif
         uint32_t lease_time = htonl(LEASE_TIME);
         uint32_t netmask = htonl(pData->netmask);
@@ -312,13 +322,28 @@ static void bootp_reply(PNATState pData, struct mbuf *m0)
         {
             uint32_t addr = htonl(ntohl(special_addr.s_addr) | CTL_DNS);
             FILL_BOOTP_EXT(q, RFC1533_DNS, 4, &addr);
+            goto skip_dns_servers;
         }
-        else
 # endif
-        LIST_FOREACH(de, &pData->dns_list_head, de_list)
+
+
+        if (!LIST_EMPTY(&pData->dns_list_head)) 
         {
+            de = LIST_FIRST(&pData->dns_list_head);
+            q_dns_header = q;
             FILL_BOOTP_EXT(q, RFC1533_DNS, 4, &de->de_addr.s_addr);
         }
+
+        LIST_FOREACH(de, &pData->dns_list_head, de_list)
+        {
+            if (LIST_FIRST(&pData->dns_list_head) == de)
+                continue; /* first value with head we've ingected before */
+            FILL_BOOTP_APP(q_dns_header, q, RFC1533_DNS, 4, &de->de_addr.s_addr);
+        }
+
+#ifdef VBOX_WITH_SLIRP_DNS_PROXY
+        skip_dns_servers:
+#endif
         if (LIST_EMPTY(&pData->dns_domain_list_head))
         {
                 /* Microsoft dhcp client doen't like domain-less dhcp and trimmed packets*/
