@@ -1704,7 +1704,7 @@ STDMETHODIMP VirtualBox::OpenSession (ISession *aSession, IN_BSTR aMachineId)
 
     Guid id(aMachineId);
     ComObjPtr <Machine> machine;
- 
+
     HRESULT rc = findMachine (id, true /* setError */, &machine);
     CheckComRCReturnRC (rc);
 
@@ -1748,7 +1748,7 @@ STDMETHODIMP VirtualBox::OpenRemoteSession (ISession *aSession,
                                             IN_BSTR aEnvironment,
                                             IProgress **aProgress)
 {
-    LogRel(("remotesession=%s\n", Utf8Str(aMachineId).c_str()));    
+    LogRel(("remotesession=%s\n", Utf8Str(aMachineId).c_str()));
 
     CheckComArgNotNull(aMachineId);
     CheckComArgNotNull(aSession);
@@ -1848,6 +1848,14 @@ STDMETHODIMP VirtualBox::RegisterCallback (IVirtualBoxCallback *aCallback)
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
+
+#if 0 /** @todo r=bird,r=pritesh: must check that the interface id match correct or we might screw up with old code! */
+    void *dummy;
+    HRESULT hrc = aCallback->QueryInterface(NS_GET_IID(IVirtualBoxCallback), &dummy);
+    if (FAILED(hrc))
+        return hrc;
+    aCallback->Release();
+#endif
 
     AutoWriteLock alock (this);
     mData.mCallbacks.push_back (CallbackList::value_type (aCallback));
@@ -2473,7 +2481,7 @@ struct SnapshotEvent : public VirtualBox::CallbackEvent
     {
         Bstr mid = machineId.toUtf16();
 	Bstr sid = snapshotId.toUtf16();
-	
+
         switch (what)
         {
             case Taken:
@@ -4086,7 +4094,7 @@ HRESULT VirtualBox::lockConfig()
 
     Assert (!isConfigLocked());
     if (!isConfigLocked())
-    {   
+    {
         /* Open the associated config file. */
         int vrc = RTFileOpen (&mData.mCfgFile.mHandle,
                               Utf8Str (mData.mCfgFile.mName),
@@ -4117,8 +4125,8 @@ HRESULT VirtualBox::lockConfig()
             mData.mCfgFile.mReadonly = FALSE;
         }
 
-        if (RT_FAILURE(vrc)) 
-        {    
+        if (RT_FAILURE(vrc))
+        {
             mData.mCfgFile.mHandle = NIL_RTFILE;
             mData.mCfgFile.mReadonly = FALSE;
         }
