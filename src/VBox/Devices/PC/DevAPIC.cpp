@@ -1147,10 +1147,6 @@ static int  apic_deliver(APICDeviceInfo* dev, APICState *s,
     }
 
     switch (delivery_mode) {
-        case APIC_DM_LOWPRI:
-            /* XXX: serch for focus processor, arbitration */
-            dest = s->id;
-
         case APIC_DM_INIT:
             {
                 int trig_mode = (s->icr[0] >> 15) & 1;
@@ -1161,6 +1157,7 @@ static int  apic_deliver(APICDeviceInfo* dev, APICState *s,
 #ifndef VBOX
                     return;
 #else
+                    Log(("CPU%d: APIC_DM_INIT arbitration id(s) set\n", s->phys_id));
                     return VINF_SUCCESS;
 #endif
                 }
