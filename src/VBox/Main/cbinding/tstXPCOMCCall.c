@@ -262,24 +262,23 @@ static nsresult Release(nsISupports *pThis)
 
 static nsresult QueryInterface(nsISupports *pThis, const nsID *iid, void **resultp)
 {
-    IConsoleCallback *that = (IConsoleCallback *)pThis;
-    const nsID ivirtualboxCallbackUUID = IVIRTUALBOXCALLBACK_IID;
+    static const nsID ivirtualboxCallbackUUID = IVIRTUALBOXCALLBACK_IID;
+    static const nsID isupportIID = NS_ISUPPORTS_IID;
 
     /* match iid */
-    if (memcmp(iid, &ivirtualboxCallbackUUID, sizeof(nsID)) == 0)
+    if (    memcmp(iid, &ivirtualboxCallbackUUID, sizeof(nsID)) == 0
+        ||  memcmp(iid, &isupportIID, sizeof(nsID)) == 0)
     {
         ++g_refcount;
         printf("QueryInterface: %d\n", g_refcount);
-        *resultp = that;
+        *resultp = pThis;
         return NS_OK;
     }
-    else
-    {
-        printf("vboxCallback QueryInterface didn't find a matching interface\n");
-        printUUID(iid);
-        printUUID(&ivirtualboxCallbackUUID);
-        return NS_NOINTERFACE;
-    }
+
+    printf("vboxCallback QueryInterface didn't find a matching interface\n");
+    printUUID(iid);
+    printUUID(&ivirtualboxCallbackUUID);
+    return NS_NOINTERFACE;
 }
 
 /**
