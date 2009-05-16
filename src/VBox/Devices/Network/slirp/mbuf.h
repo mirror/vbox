@@ -73,7 +73,6 @@ struct m_hdr
 
     caddr_t mh_data;           /* Location of data */
     int     mh_len;            /* Amount of data in this mbuf */
-    void    *header;           /*XXX: in real BSD sources this field lays in pkthdr structure*/
 };
 
 /*
@@ -145,5 +144,7 @@ struct mbuf * dtom _P((PNATState, void *));
  * this macro should be used for validation and copying of Ethernet header where it really requred
  */
 #define MBUF_HEAD(m) ((caddr_t)(((m)->m_flags & M_EXT) ? (m)->m_ext : (m)->m_dat))
+
+#define MBUF_IP_HEADER(m) (caddr_t)(MBUF_HEAD(m) + if_maxlinkhdr)
 
 #endif

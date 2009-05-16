@@ -292,7 +292,6 @@ found:
      * ip_reass() will return a different mbuf.
      */
     ipstat.ips_fragments++;
-    m->m_hdr.header = ip;
 
     /* Previous ip_reass() started here. */
     /*
@@ -327,7 +326,7 @@ found:
         fp->ipq_nfrags++;
     }
 
-#define GETIP(m)    ((struct ip*)((m)->m_hdr.header))
+#define GETIP(m)    ((struct ip*)(MBUF_IP_HEADER(m)))
 
 
     /*
