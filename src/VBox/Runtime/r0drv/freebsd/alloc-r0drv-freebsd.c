@@ -51,16 +51,88 @@ MALLOC_DEFINE(M_IPRTCONT, "iprtcont", "IPRT - contiguous");
 
 PRTMEMHDR rtMemAlloc(size_t cb, uint32_t fFlags)
 {
-    PRTMEMHDR pHdr;
+    size_t cbAllocated = cb;
+    PRTMEMHDR pHdr = NULL;
 
-    /** @todo Just like OS/2, FreeBSD doesn't need this header. */
-    pHdr = (PRTMEMHDR)malloc(cb + sizeof(RTMEMHDR), M_IPRTHEAP,
-                             fFlags & RTMEMHDR_FLAG_ZEROED ? M_NOWAIT | M_ZERO : M_NOWAIT);
+    /*
+     * Things are a bit more complicated on AMD64 for executable memory
+     * because we need to be in the ~2GB..~0 range for code.
+     */
+#ifdef RT_ARCH_AMD64
+    if (fFlags & RTMEMHDR_FLAG_EXEC)
+    {
+        vm_offset_t Addr = KERNBASE;
+        cbAllocated = RT_ALIGN_Z(cb + sizeof(*pHdr), PAGE_SIZE);
+
+        /* Addr contains a start address vm_map_find will start searching for suitable space at. */
+        int rc = vm_map_find(kernel_map, NULL, 0, &Addr,
+                             cbAllocated,
+                             TRUE, VM_PROT_ALL, VM_PROT_ALL, 0);
+        if (rc == KERN_SUCCESS)
+        {
+            /* Add the pages. */
+            vm_offset_t AddressDst = Addr;
+            bool fSuccess = true;
+
+            do
+            {
+                vm_pindex_t PageIndex = OFF_TO_IDX(AddressDst);
+                vm_page_t   pPage;
+
+                pPage = vm_page_alloc(NULL, PageIndex,
+                                      VM_ALLOC_NOBUSY | VM_ALLOC_SYSTEM |
+                                      VM_ALLOC_WIRED  | VM_ALLOC_NOOBJ);
+                if (pPage)
+                {
+                    vm_page_lock_queues();
+                    vm_page_wire(pPage);
+                    vm_page_unlock_queues();
+                    /* Put the page into the page table now. */
+#if __FreeBSD_version >= 701105
+                    pmap_enter(kernel_map->pmap, AddressDst, VM_PROT_NONE, pPage,
+                               VM_PROT_ALL, TRUE);
+#else
+                    pmap_enter(kernel_map->pmap, AddressDst, pPage,
+                               VM_PROT_ALL, TRUE);
+#endif
+                }
+                else
+                {
+                    /*
+                     * Allocation failed. vm_map_remove will remove any
+                     * page already allocated.
+                     */
+                    fSuccess = false;
+                    break;
+                }
+                AddressDst += PAGE_SIZE;
+            } while(AddressDst < (Addr + cbAllocated));
+
+            if (fSuccess)
+            {
+                pHdr = (PRTMEMHDR)Addr;
+
+                if (fFlags & RTMEMHDR_FLAG_ZEROED)
+                    bzero(pHdr, cbAllocated);
+            }
+            else
+                vm_map_remove(kernel_map,
+                              Addr,
+                              Addr + cb);
+        }
+    }
+    else
+#endif
+    {
+        pHdr = (PRTMEMHDR)malloc(cb + sizeof(RTMEMHDR), M_IPRTHEAP,
+                                 fFlags & RTMEMHDR_FLAG_ZEROED ? M_NOWAIT | M_ZERO : M_NOWAIT);
+    }
+
     if (pHdr)
     {
         pHdr->u32Magic   = RTMEMHDR_MAGIC;
         pHdr->fFlags     = fFlags;
-        pHdr->cb         = cb;
+        pHdr->cb         = cbAllocated;
         pHdr->cbReq      = cb;
         return pHdr;
     }
@@ -71,7 +143,13 @@ PRTMEMHDR rtMemAlloc(size_t cb, uint32_t fFlags)
 void rtMemFree(PRTMEMHDR pHdr)
 {
     pHdr->u32Magic += 1;
-    free(pHdr, M_IPRTHEAP);
+
+#ifdef RT_ARCH_AMD64
+    if (pHdr->fFlags & RTMEMHDR_FLAG_EXEC)
+        vm_map_remove(kernel_map, (vm_offset_t)pHdr, ((vm_offset_t)pHdr) + pHdr->cb);
+    else
+#endif
+        free(pHdr, M_IPRTHEAP);
 }
 
 
