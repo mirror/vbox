@@ -484,7 +484,7 @@ ifdef VBOX_WITH_HARDENING
  endif
 endif
 # Use VBoxNetFlt for host interface networking.
-if1of ($(KBUILD_TARGET), darwin linux solaris win)
+if1of ($(KBUILD_TARGET), darwin linux solaris win freebsd)
  VBOX_WITH_NETFLT = 1
  VBOX_SOLARIS_NSL_RESOLVED = 1
  if1of ($(KBUILD_TARGET), darwin solaris linux)
@@ -2349,7 +2349,7 @@ define TOOL_FREEBSDKMODLD_LINK_SYSMOD_CMDS
 		| xargs -J% objcopy % $(out)
 
 ## Strip debug info (comment out if debugging or something).
-#	objcopy --strip-debug $(out)
+	objcopy --strip-debug $(out)
 endef
  else # x86
 TOOL_FREEBSDKMODLD_LINK_SYSMOD_OUTPUT = $(outbase).kld
