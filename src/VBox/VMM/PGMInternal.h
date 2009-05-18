@@ -2828,7 +2828,6 @@ typedef struct PGMCPU
     STAMCOUNTER StatR3DirtyPageBig;                 /**< R3: The number of pages marked read-only for dirty bit tracking. */
     STAMCOUNTER StatR3DirtyPageSkipped;             /**< R3: The number of pages already dirty or readonly. */
     STAMCOUNTER StatR3DirtyPageTrap;                /**< R3: The number of traps generated for dirty bit tracking. */
-    STAMCOUNTER StatR3DirtyPageStale;               /**< R3: The number of traps generated for dirty bit tracking (stale TLB entries). */
     STAMCOUNTER StatR3DirtyTrackRealPF;             /**< R3: The number of real pages faults during dirty bit tracking. */
     STAMCOUNTER StatR3DirtiedPage;                  /**< R3: The number of pages marked dirty because of write accesses. */
     STAMCOUNTER StatR3PageAlreadyDirty;             /**< R3: The number of pages already marked dirty because of write accesses. */
