@@ -450,8 +450,9 @@ static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUI
             case VMCPUSTATE_STARTED_HALTED:
                 GVMMR0SchedWakeUpEx(pVM, pVCpu->idCpu, false /* don't take the used lock */);
                 break;
+
             default:
-                break;
+                break; /* nothing to do in other states. */
         }
     }
 }
