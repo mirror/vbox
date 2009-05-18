@@ -1180,20 +1180,6 @@ enum MouseButtonState
 /* End of enum MouseButtonState Declaration */
 
 
-/* Start of enum FramebufferAccelerationOperation Declaration */
-#define FRAMEBUFFERACCELERATIONOPERATION_IID_STR "f0e5ebbe-dc8e-4e2d-916e-53baa3844df8"
-#define FRAMEBUFFERACCELERATIONOPERATION_IID { \
-    0xf0e5ebbe, 0xdc8e, 0x4e2d, \
-    { 0x91, 0x6e, 0x53, 0xba, 0xa3, 0x84, 0x4d, 0xf8 } \
-}
-enum FramebufferAccelerationOperation
-{
-    FramebufferAccelerationOperation_SolidFillAcceleration = 1,
-    FramebufferAccelerationOperation_ScreenCopyAcceleration = 2
-};
-/* End of enum FramebufferAccelerationOperation Declaration */
-
-
 /* Start of enum FramebufferPixelFormat Declaration */
 #define FRAMEBUFFERPIXELFORMAT_IID_STR "7acfd5ed-29e3-45e3-8136-73c9224f3d2d"
 #define FRAMEBUFFERPIXELFORMAT_IID { \
@@ -3756,39 +3742,12 @@ struct IFramebuffer_vtbl
         PRBool * finished
     );
 
-    nsresult (*OperationSupported)(
-        IFramebuffer *pThis,
-        PRUint32 operation,
-        PRBool * supported
-    );
-
     nsresult (*VideoModeSupported)(
         IFramebuffer *pThis,
         PRUint32 width,
         PRUint32 height,
         PRUint32 bpp,
         PRBool * supported
-    );
-
-    nsresult (*SolidFill)(
-        IFramebuffer *pThis,
-        PRUint32 x,
-        PRUint32 y,
-        PRUint32 width,
-        PRUint32 height,
-        PRUint32 color,
-        PRBool * handled
-    );
-
-    nsresult (*CopyScreenBits)(
-        IFramebuffer *pThis,
-        PRUint32 xDst,
-        PRUint32 yDst,
-        PRUint32 xSrc,
-        PRUint32 ySrc,
-        PRUint32 width,
-        PRUint32 height,
-        PRBool * handled
     );
 
     nsresult (*GetVisibleRegion)(

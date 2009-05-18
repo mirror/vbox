@@ -520,36 +520,6 @@ STDMETHODIMP VBoxSDLFB::RequestResize(ULONG aScreenId, ULONG pixelFormat, BYTE *
 }
 
 /**
- * Returns which acceleration operations are supported
- *
- * @returns   COM status code
- * @param     operation acceleration operation code
- * @supported result
- */
-STDMETHODIMP VBoxSDLFB::OperationSupported(FramebufferAccelerationOperation_T operation, BOOL *supported)
-{
-    if (!supported)
-        return E_POINTER;
-
-    // SDL gives us software surfaces, futile
-    *supported = false;
-#if 0
-    switch (operation)
-    {
-        case FramebufferAccelerationOperation_SolidFillAcceleration:
-            *supported = true;
-             break;
-        case FramebufferAccelerationOperation_ScreenCopyAcceleration:
-            *supported = true;
-             break;
-        default:
-            *supported = false;
-    }
-#endif
-    return S_OK;
-}
-
-/**
  * Returns whether we like the given video mode.
  *
  * @returns COM status code
@@ -580,41 +550,6 @@ STDMETHODIMP VBoxSDLFB::VideoModeSupported(ULONG width, ULONG height, ULONG bpp,
         /* anything will do */
         *supported = true;
     }
-    return S_OK;
-}
-
-STDMETHODIMP VBoxSDLFB::SolidFill(ULONG x, ULONG y, ULONG width, ULONG height,
-                                  ULONG color, BOOL *handled)
-{
-    if (!handled)
-        return E_POINTER;
-    // SDL gives us software surfaces, futile
-#if 0
-    printf("SolidFill: x: %d, y: %d, w: %d, h: %d, color: %d\n", x, y, width, height, color);
-    SDL_Rect rect = { (Sint16)x, (Sint16)y, (Sint16)width, (Sint16)height };
-    SDL_FillRect(mScreen, &rect, color);
-    //SDL_UpdateRect(mScreen, x, y, width, height);
-    *handled = true;
-#else
-    *handled = false;
-#endif
-    return S_OK;
-}
-
-STDMETHODIMP VBoxSDLFB::CopyScreenBits(ULONG xDst, ULONG yDst, ULONG xSrc, ULONG ySrc,
-                                       ULONG width, ULONG height, BOOL *handled)
-{
-    if (!handled)
-        return E_POINTER;
-    // SDL gives us software surfaces, futile
-#if 0
-    SDL_Rect srcRect = { (Sint16)xSrc, (Sint16)ySrc, (Sint16)width, (Sint16)height };
-    SDL_Rect dstRect = { (Sint16)xDst, (Sint16)yDst, (Sint16)width, (Sint16)height };
-    SDL_BlitSurface(mScreen, &srcRect, mScreen, &dstRect);
-    *handled = true;
-#else
-    *handled = false;
-#endif
     return S_OK;
 }
 
@@ -1557,25 +1492,6 @@ STDMETHODIMP VBoxSDLFBOverlay::RequestResize(ULONG aScreenId, ULONG pixelFormat,
 }
 
 /**
- * Queries whether we support a given accelerated opperation.  Since we do not currently
- * support any accelerated operations, we always return false in supported.
- *
- * @returns          COM status code
- * @param  operation The operation being queried
- * @retval supported Whether or not we support that operation
- */
-STDMETHODIMP VBoxSDLFBOverlay::OperationSupported(FramebufferAccelerationOperation_T
-                                                  operation, BOOL *supported)
-{
-    if (!supported)
-        return E_POINTER;
-    /* We currently do not support any acceleration here, and will probably not in
-       the forseeable future. */
-    *supported = false;
-    return S_OK;
-}
-
-/**
  * Returns whether we like the given video mode.
  *
  * @returns COM status code
@@ -1597,43 +1513,3 @@ STDMETHODIMP VBoxSDLFBOverlay::VideoModeSupported(ULONG width, ULONG height, ULO
         *supported = false;
     return S_OK;
 }
-
-/**
- * Fill an area of the framebuffer with solid colour
- *
- * @returns COM status code
- * @param   x       X co-ordinate of the area to fill, top-left corner
- * @param   y       Y co-ordinate of the area to fill, top-left corner
- * @param   width   width of the area to fill
- * @param   height  height of the area to fill
- * @param   color   colour with which to fill the area
- * @retval  handled whether we support this operation or not
- *
- * Since we currently do not have any way of doing this faster than
- * the VGA device, we simply false in handled.
- */
-STDMETHODIMP VBoxSDLFBOverlay::SolidFill(ULONG x, ULONG y, ULONG width,
-                                         ULONG height, ULONG color, BOOL *handled)
-{
-    LogFlow(("VBoxSDLFBOverlay::SolidFill called\n"));
-    if (!handled)
-        return E_POINTER;
-    *handled = false;
-    return S_OK;
-}
-
-/**
- * Since we currently do not have any way of doing this faster than
- * the VGA device, we simply false in handled.
- */
-STDMETHODIMP VBoxSDLFBOverlay::CopyScreenBits(ULONG xDst, ULONG yDst, ULONG xSrc,
-                                              ULONG ySrc, ULONG width,
-                                              ULONG height, BOOL *handled)
-{
-    LogFlow(("VBoxSDLFBOverlay::CopyScreenBits called.\n"));
-    if (!handled)
-        return E_POINTER;
-    *handled = false;
-    return S_OK;
-}
-

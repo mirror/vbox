@@ -105,12 +105,7 @@ public:
     STDMETHOD(RequestResize)(ULONG aScreenId, ULONG pixelFormat, BYTE *vram,
                              ULONG bitsPerPixel, ULONG bytesPerLine,
                              ULONG w, ULONG h, BOOL *finished);
-    STDMETHOD(OperationSupported)(FramebufferAccelerationOperation_T operation, BOOL *supported);
     STDMETHOD(VideoModeSupported)(ULONG width, ULONG height, ULONG bpp, BOOL *supported);
-    STDMETHOD(SolidFill)(ULONG x, ULONG y, ULONG width, ULONG height,
-                         ULONG color, BOOL *handled);
-    STDMETHOD(CopyScreenBits)(ULONG xDst, ULONG yDst, ULONG xSrc, ULONG ySrc,
-                              ULONG width, ULONG height, BOOL *handled);
 
     STDMETHOD(GetVisibleRegion)(BYTE *aRectangles, ULONG aCount, ULONG *aCountCopied);
     STDMETHOD(SetVisibleRegion)(BYTE *aRectangles, ULONG aCount);
@@ -277,13 +272,7 @@ public:
     STDMETHOD(RequestResize)(ULONG aScreenId, ULONG pixelFormat, ULONG vram,
                              ULONG bitsPerPixel, ULONG bytesPerLine,
                              ULONG w, ULONG h, BOOL *finished);
-    STDMETHOD(OperationSupported)(FramebufferAccelerationOperation_T operation,
-                                  BOOL *supported);
     STDMETHOD(VideoModeSupported)(ULONG width, ULONG height, ULONG bpp, BOOL *supported);
-    STDMETHOD(SolidFill)(ULONG x, ULONG y, ULONG width, ULONG height,
-                         ULONG color, BOOL *handled);
-    STDMETHOD(CopyScreenBits)(ULONG xDst, ULONG yDst, ULONG xSrc, ULONG ySrc,
-                              ULONG width, ULONG height, BOOL *handled);
 
     // internal public methods
     HRESULT init();

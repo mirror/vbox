@@ -598,25 +598,6 @@ STDMETHODIMP FFmpegFB::RequestResize(ULONG aScreenId, ULONG pixelFormat,
     return S_OK;
 }
 
-
-/**
- * Queries whether we support a given accelerated opperation.  Since we
- * do not have any way of performing accelerated operations, we always
- * return false in supported.
- *
- * @returns          COM status code
- * @param  operation The operation being queried
- * @retval supported Whether or not we support that operation
- */
-STDMETHODIMP FFmpegFB::OperationSupported(FramebufferAccelerationOperation_T operation,
-                                                     BOOL *supported)
-{
-    if (!supported)
-        return E_POINTER;
-    *supported = false;
-    return S_OK;
-}
-
 /**
  * Returns whether we like the given video mode.
  *
@@ -638,37 +619,6 @@ STDMETHODIMP FFmpegFB::VideoModeSupported(ULONG width, ULONG height,
     if (!supported)
         return E_POINTER;
     *supported = true;
-    return S_OK;
-}
-
-/**
- * Since we currently do not have any way of doing this faster than
- * the VGA device, we simply false in handled.  Behaviour taken from
- * src/VBox/RDP/server/framebuffer.cpp.
- */
-STDMETHODIMP FFmpegFB::SolidFill(ULONG x, ULONG y, ULONG width,
-                                 ULONG height, ULONG color, BOOL *handled)
-{
-    LogFlow(("FFmpeg::SolidFill called.\n"));
-    if (!handled)
-        return E_POINTER;
-    *handled = false;
-    return S_OK;
-}
-
-/**
- * Since we currently do not have any way of doing this faster than
- * the VGA device, we simply false in handled.  Behaviour taken from
- * src/VBox/RDP/server/framebuffer.cpp.
- */
-STDMETHODIMP FFmpegFB::CopyScreenBits(ULONG xDst, ULONG yDst, ULONG xSrc,
-                                      ULONG ySrc, ULONG width,
-                                      ULONG height, BOOL *handled)
-{
-    LogFlow(("FFmpeg::CopyScreenBits called.\n"));
-    if (!handled)
-        return E_POINTER;
-    *handled = false;
     return S_OK;
 }
 

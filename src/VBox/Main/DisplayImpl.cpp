@@ -1990,26 +1990,6 @@ DECLCALLBACK(int) Display::changeFramebuffer (Display *that, IFramebuffer *aFB,
     that->mInternalFramebuffer = aInternal;
     that->mSupportedAccelOps = 0;
 
-    /* determine which acceleration functions are supported by this framebuffer */
-    if (aFB && !aInternal)
-    {
-        HRESULT rc;
-        BOOL accelSupported = FALSE;
-        rc = aFB->OperationSupported (
-            FramebufferAccelerationOperation_SolidFillAcceleration, &accelSupported);
-        AssertComRC (rc);
-        if (accelSupported)
-            that->mSupportedAccelOps |=
-                FramebufferAccelerationOperation_SolidFillAcceleration;
-        accelSupported = FALSE;
-        rc = aFB->OperationSupported (
-            FramebufferAccelerationOperation_ScreenCopyAcceleration, &accelSupported);
-        AssertComRC (rc);
-        if (accelSupported)
-            that->mSupportedAccelOps |=
-                FramebufferAccelerationOperation_ScreenCopyAcceleration;
-    }
-
     that->mParent->consoleVRDPServer()->SendResize ();
 
     that->updateDisplayData (true /* aCheckParams */);
