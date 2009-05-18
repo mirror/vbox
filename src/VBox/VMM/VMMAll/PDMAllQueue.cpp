@@ -46,8 +46,6 @@
  * @returns NULL on failure. The queue is exhausted.
  * @param   pQueue      The queue handle.
  * @thread  Any thread.
- *
- * Note: SMP safe
  */
 VMMDECL(PPDMQUEUEITEMCORE) PDMQueueAlloc(PPDMQUEUE pQueue)
 {
@@ -75,8 +73,6 @@ VMMDECL(PPDMQUEUEITEMCORE) PDMQueueAlloc(PPDMQUEUE pQueue)
  * @param   pQueue      The queue handle.
  * @param   pItem       The item to insert.
  * @thread  Any thread.
- *
- * Note: SMP safe
  */
 VMMDECL(void) PDMQueueInsert(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem)
 {
@@ -195,7 +191,6 @@ VMMDECL(void) PDMQueueFlush(PPDMQUEUE pQueue)
 
 #else /* IN_RING3: */
     PVMREQ pReq;
-    Assert(!pdmIsLockOwner(pVM));
     VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)PDMR3QueueFlushWorker, 2, pVM, pQueue);
     VMR3ReqFree(pReq);
 #endif

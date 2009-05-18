@@ -91,14 +91,13 @@ static int pdmR3QueueCreate(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMil
     /*
      * Initialize the data fields.
      */
-    pQueue->pVMR3   = pVM;
-    pQueue->pVMR0   = fRZEnabled ? pVM->pVMR0 : NIL_RTR0PTR;
-    pQueue->pVMRC   = fRZEnabled ? pVM->pVMRC : NIL_RTRCPTR;
-    pQueue->enmType = PDMQUEUETYPE_UNINIT;
+    pQueue->pVMR3 = pVM;
+    pQueue->pVMR0 = fRZEnabled ? pVM->pVMR0 : NIL_RTR0PTR;
+    pQueue->pVMRC = fRZEnabled ? pVM->pVMRC : NIL_RTRCPTR;
     pQueue->cMilliesInterval = cMilliesInterval;
     //pQueue->pTimer = NULL;
-    pQueue->cbItem  = cbItem;
-    pQueue->cItems  = cItems;
+    pQueue->cbItem = cbItem;
+    pQueue->cItems = cItems;
     //pQueue->pPendingR3 = NULL;
     //pQueue->pPendingR0 = NULL;
     //pQueue->pPendingRC = NULL;
@@ -144,10 +143,8 @@ static int pdmR3QueueCreate(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMil
         /*
          * Insert into the queue list for timer driven queues.
          */
-        pdmLock(pVM);
         pQueue->pNext = pVM->pdm.s.pQueuesTimer;
         pVM->pdm.s.pQueuesTimer = pQueue;
-        pdmUnlock(pVM);
     }
     else
     {
@@ -161,7 +158,6 @@ static int pdmR3QueueCreate(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMil
          * - Update, the critical sections are no longer using queues, so this isn't a real
          *   problem any longer. The priority might be a nice feature for later though.
          */
-        pdmLock(pVM);
         if (!pVM->pdm.s.pQueuesForced)
             pVM->pdm.s.pQueuesForced = pQueue;
         else
@@ -171,7 +167,6 @@ static int pdmR3QueueCreate(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMil
                 pPrev = pPrev->pNext;
             pPrev->pNext = pQueue;
         }
-        pdmUnlock(pVM);
     }
 
     *ppQueue = pQueue;
@@ -396,7 +391,6 @@ VMMR3DECL(int) PDMR3QueueDestroy(PPDMQUEUE pQueue)
     /*
      * Unlink it.
      */
-    pdmLock(pVM);
     if (pQueue->pTimer)
     {
         if (pVM->pdm.s.pQueuesTimer != pQueue)
@@ -437,7 +431,6 @@ VMMR3DECL(int) PDMR3QueueDestroy(PPDMQUEUE pQueue)
     }
     pQueue->pNext = NULL;
     pQueue->pVMR3 = NULL;
-    pdmUnlock(pVM);
 
     /*
      * Destroy the timer and free it.
@@ -482,7 +475,6 @@ VMMR3DECL(int) PDMR3QueueDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
     /*
      * Unlink it.
      */
-    pdmLock(pVM);
     PPDMQUEUE pQueueNext = pVM->pdm.s.pQueuesTimer;
     PPDMQUEUE pQueue = pVM->pdm.s.pQueuesForced;
     do
@@ -505,8 +497,6 @@ VMMR3DECL(int) PDMR3QueueDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
         pQueue = pQueueNext;
         pQueueNext = NULL;
     } while (pQueue);
-
-    pdmUnlock(pVM);
 
     return VINF_SUCCESS;
 }
@@ -534,7 +524,6 @@ VMMR3DECL(int) PDMR3QueueDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
     /*
      * Unlink it.
      */
-    pdmLock(pVM);
     PPDMQUEUE pQueueNext = pVM->pdm.s.pQueuesTimer;
     PPDMQUEUE pQueue = pVM->pdm.s.pQueuesForced;
     do
@@ -557,7 +546,6 @@ VMMR3DECL(int) PDMR3QueueDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
         pQueue = pQueueNext;
         pQueueNext = NULL;
     } while (pQueue);
-    pdmUnlock(pVM);
 
     return VINF_SUCCESS;
 }
@@ -574,7 +562,6 @@ void pdmR3QueueRelocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * Process the queues.
      */
-    pdmLock(pVM);
     PPDMQUEUE pQueueNext = pVM->pdm.s.pQueuesTimer;
     PPDMQUEUE pQueue = pVM->pdm.s.pQueuesForced;
     do
@@ -614,7 +601,6 @@ void pdmR3QueueRelocate(PVM pVM, RTGCINTPTR offDelta)
         pQueue = pQueueNext;
         pQueueNext = NULL;
     } while (pQueue);
-    pdmUnlock(pVM);
 }
 
 
@@ -630,11 +616,9 @@ VMMR3DECL(void) PDMR3QueueFlushAll(PVM pVM)
     VM_ASSERT_EMT(pVM);
     LogFlow(("PDMR3QueuesFlush:\n"));
 
-    Assert(!pdmIsLockOwner(pVM));
     /* Use atomic test and clear to prevent useless checks; pdmR3QueueFlush is SMP safe. */
     if (VM_FF_TESTANDCLEAR(pVM, VM_FF_PDM_QUEUES_BIT))
     {
-        pdmLock(pVM);
         for (PPDMQUEUE pCur = pVM->pdm.s.pQueuesForced; pCur; pCur = pCur->pNext)
         {
             if (    pCur->pPendingR3
@@ -647,7 +631,6 @@ VMMR3DECL(void) PDMR3QueueFlushAll(PVM pVM)
                     pdmR3QueueFlush(pCur);
             }
         }
-        pdmUnlock(pVM);
     }
 }
 
@@ -669,7 +652,7 @@ static bool pdmR3QueueFlush(PPDMQUEUE pQueue)
     RTR0PTR           pItemsR0 = ASMAtomicXchgR0Ptr(&pQueue->pPendingR0, NIL_RTR0PTR);
 
     AssertMsg(pItems || pItemsRC || pItemsR0, ("ERROR: can't all be NULL now!\n"));
-    Assert(pdmIsLockOwner(pQueue->pVMR3));
+
 
     /*
      * Reverse the list (it's inserted in LIFO order to avoid semaphores, remember).
@@ -817,7 +800,6 @@ VMMR3DECL(void) PDMR3QueueFlushWorker(PVM pVM, PPDMQUEUE pQueue)
     Assert(pVM->pdm.s.pQueueFlushR0 || pVM->pdm.s.pQueueFlushRC || pQueue);
     VM_ASSERT_EMT(pVM);
 
-    pdmLock(pVM);
     /*
      * Flush the queue.
      */
@@ -849,7 +831,6 @@ VMMR3DECL(void) PDMR3QueueFlushWorker(PVM pVM, PPDMQUEUE pQueue)
                 break;
             }
     }
-    pdmUnlock(pVM);
 }
 
 
@@ -858,8 +839,6 @@ VMMR3DECL(void) PDMR3QueueFlushWorker(PVM pVM, PPDMQUEUE pQueue)
  *
  * @param   pQueue  The queue.
  * @param   pItem   The item.
- *
- * Note: SMP safe
  */
 DECLINLINE(void) pdmR3QueueFree(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem)
 {
@@ -892,16 +871,11 @@ static DECLCALLBACK(void) pdmR3QueueTimer(PVM pVM, PTMTIMER pTimer, void *pvUser
 {
     PPDMQUEUE pQueue = (PPDMQUEUE)pvUser;
     Assert(pTimer == pQueue->pTimer); NOREF(pTimer);
-    Assert(!pdmIsLockOwner(pVM));
 
     if (    pQueue->pPendingR3
         ||  pQueue->pPendingR0
         ||  pQueue->pPendingRC)
-    {
-        pdmLock(pVM);
         pdmR3QueueFlush(pQueue);
-        pdmUnlock(pVM);
-    }
     int rc = TMTimerSetMillies(pQueue->pTimer, pQueue->cMilliesInterval);
     AssertRC(rc);
 }
