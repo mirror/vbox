@@ -671,12 +671,10 @@ VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
                 {
                     Assert(!pTimer->offPrev);
                     Assert(!pTimer->offNext);
-/*
                     AssertMsg(      pTimer->enmClock != TMCLOCK_VIRTUAL_SYNC
                               ||    pTimer->CTX_SUFF(pVM)->tm.s.fVirtualSyncTicking
                               ||    u64Expire >= pTimer->CTX_SUFF(pVM)->tm.s.u64VirtualSync,
                               ("%RU64 < %RU64 %s\n", u64Expire, pTimer->CTX_SUFF(pVM)->tm.s.u64VirtualSync, R3STRING(pTimer->pszDesc)));
-*/
                     pTimer->u64Expire = u64Expire;
                     TM_SET_STATE(pTimer, TMTIMERSTATE_PENDING_SCHEDULE);
                     tmSchedule(pTimer);
