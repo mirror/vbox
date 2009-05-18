@@ -819,14 +819,13 @@ DECLINLINE(bool) pgmPoolMonitorIsForking(PPGMPOOL pPool, PDISCPUSTATE pCpu, unsi
  * @returns true if we consider the page as being reused for a different purpose.
  * @returns false if we consider it to still be a paging page.
  * @param   pVM         VM Handle.
- * @param   pPage       The page in question.
  * @param   pRegFrame   Trap register frame.
  * @param   pCpu        The disassembly info for the faulting instruction.
  * @param   pvFault     The fault address.
  *
  * @remark  The REP prefix check is left to the caller because of STOSD/W.
  */
-DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PPGMPOOLPAGE pPage, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu, RTGCPTR pvFault)
+DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu, RTGCPTR pvFault)
 {
 #ifndef IN_RC
     /** @todo could make this general, faulting close to rsp should be safe reuse heuristic. */
@@ -885,8 +884,6 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PPGMPOOLPAGE pPage, PCPUMCTXCOR
         return true;
     }
 
-    //if (pPage->fCR3Mix)
-    //    return false;
     return false;
 }
 
@@ -1126,7 +1123,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     if (    (   pPage->cModifications < 48   /** @todo #define */ /** @todo need to check that it's not mapping EIP. */ /** @todo adjust this! */
              || pgmPoolIsPageLocked(&pVM->pgm.s, pPage)
             )
-        &&  !(fReused = pgmPoolMonitorIsReused(pVM, pPage, pRegFrame, &Cpu, pvFault))
+        &&  !(fReused = pgmPoolMonitorIsReused(pVM, pRegFrame, &Cpu, pvFault))
         &&  !pgmPoolMonitorIsForking(pPool, &Cpu, GCPhysFault & PAGE_OFFSET_MASK))
     {
         /*
