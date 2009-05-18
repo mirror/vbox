@@ -1035,8 +1035,8 @@ static Boolean vboxClipboardConvertCText(Atom *atomTypeReturn, XtPointer *pValRe
         LogFlowFunc(("rc = false\n"));
         return false;
     }
-    LogFlow(("vboxClipboardConvertCText: original text is %.*ls\n", cwHostText, pu16HostText));
     cwHostText = cbHostText / 2;
+    LogFlow(("vboxClipboardConvertCText: original text is %.*ls\n", cwHostText, pu16HostText));
     cwGuestText = vboxClipboardUtf16GetLinSize(pu16HostText, cwHostText);
     pu16GuestText = reinterpret_cast<PRTUTF16>(RTMemAlloc(cwGuestText * 2));
     if (pu16GuestText == 0)
