@@ -1448,6 +1448,6 @@ VMMR3DECL(int) PDMR3VMMDevHeapFree(PVM pVM, RTR3PTR pv)
  */
 VMMR3DECL(void) PDMR3ReleaseOwnedLocks(PVM pVM)
 {
-    if (PDMCritSectIsOwner(&pVM->pdm.s.CritSect))
+    while (PDMCritSectIsOwner(&pVM->pdm.s.CritSect))
         PDMCritSectLeave(&pVM->pdm.s.CritSect);
 }

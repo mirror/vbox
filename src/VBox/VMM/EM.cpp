@@ -3611,7 +3611,7 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
  */
 VMMR3DECL(void) EMR3ReleaseOwnedLocks(PVM pVM)
 {
-    if (PDMCritSectIsOwner(&pVM->em.s.CritSectREM))
+    while (PDMCritSectIsOwner(&pVM->em.s.CritSectREM))
         PDMCritSectLeave(&pVM->em.s.CritSectREM);
 }
 
