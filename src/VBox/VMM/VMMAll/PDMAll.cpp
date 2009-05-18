@@ -348,17 +348,6 @@ void pdmUnlock(PVM pVM)
     PDMCritSectLeave(&pVM->pdm.s.CritSect);
 }
 
-/**
- * Check if this VCPU currently owns the PDM lock.
- *
- * @returns bool owner/not owner
- * @param   pVM         The VM to operate on.
- */
-bool pdmIsLockOwner(PVM pVM)
-{
-    return PDMCritSectIsOwner(&pVM->pdm.s.CritSect);
-}
-
 
 /**
  * Converts ring 3 VMM heap pointer to a guest physical address
