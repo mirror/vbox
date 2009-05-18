@@ -128,6 +128,8 @@ static nsresult OnStateChange(
 ) {
     printf("OnStateChange: %s\n", GetStateName(state));
     fflush(stdout);
+    if (state == MachineState_PoweredOff)
+        g_fStop = 1;
     return 0;
 }
 
@@ -275,7 +277,7 @@ static nsresult QueryInterface(nsISupports *pThis, const nsID *iid, void **resul
         return NS_OK;
     }
 
-    printf("vboxCallback QueryInterface didn't find a matching interface\n");
+    /* printf("vboxCallback QueryInterface didn't find a matching interface\n"); */
     printUUID(iid);
     printUUID(&ivirtualboxCallbackUUID);
     return NS_NOINTERFACE;
@@ -306,16 +308,16 @@ static void registerCallBack(IVirtualBox *virtualBox, ISession *session, PRUnich
     IConsole *console = NULL;
     nsresult rc;
 
-    rc = virtualBox->vtbl->OpenExistingSession(virtualBox, session, machineId);
-    session->vtbl->GetConsole(session, &console);
-    if (console) {
+    rc = session->vtbl->GetConsole(session, &console);
+    if ((NS_SUCCEEDED(rc)) && console)
+    {
         IConsoleCallback *consoleCallback = NULL;
 
         consoleCallback = calloc(1, sizeof(IConsoleCallback));
         consoleCallback->vtbl = calloc(1, sizeof(struct IConsoleCallback_vtbl));
 
-        if (consoleCallback && consoleCallback->vtbl) {
-
+        if (consoleCallback && consoleCallback->vtbl)
+        {
             consoleCallback->vtbl->nsisupports.AddRef = &AddRef;
             consoleCallback->vtbl->nsisupports.Release = &Release;
             consoleCallback->vtbl->nsisupports.QueryInterface = &QueryInterface;
@@ -339,21 +341,23 @@ static void registerCallBack(IVirtualBox *virtualBox, ISession *session, PRUnich
             consoleCallback->vtbl->OnShowWindow = &OnShowWindow;
             g_refcount = 1;
 
-            console->vtbl->RegisterCallback(console, consoleCallback);
-
+            rc = console->vtbl->RegisterCallback(console, consoleCallback);
+            if (NS_SUCCEEDED(rc))
             {
                 /* crude way to show how it works, but any
                  * great ideas anyone?
                  */
                 PRInt32 fd;
 
-                printf("Entering event loop, press Ctrl-C to terminate\n");
+                printf("Entering event loop, PowerOff the machine to exit or press Ctrl-C to terminate\n");
                 fflush(stdout);
                 signal(SIGINT, sigIntHandler);
 
                 fd = queue->vtbl->GetEventQueueSelectFD(queue);
-                if (fd >= 0) {
-                    while (!g_fStop) {
+                if (fd >= 0)
+                {
+                    while (!g_fStop)
+                    {
                         struct pollfd   pfd;
                         pfd.fd = fd;
                         pfd.events = POLLIN | POLLERR | POLLHUP;
@@ -361,8 +365,11 @@ static void registerCallBack(IVirtualBox *virtualBox, ISession *session, PRUnich
                         poll(&pfd, 1, 250);
                         rc = queue->vtbl->ProcessPendingEvents(queue);
                     }
-                } else {
-                    while (!g_fStop) {
+                }
+                else
+                {
+                    while (!g_fStop)
+                    {
                         PLEvent *pEvent = NULL;
                         rc = queue->vtbl->WaitForEvent(queue, &pEvent);
                         /*printf("event: %p rc=%x\n", (void *)pEvent, rc);*/
@@ -375,8 +382,11 @@ static void registerCallBack(IVirtualBox *virtualBox, ISession *session, PRUnich
             console->vtbl->UnregisterCallback(console, consoleCallback);
             consoleCallback->vtbl->nsisupports.Release((nsISupports *)consoleCallback);
         }
+        else
+        {
+            printf("Failed while allocating memory for console Callback.\n");
+        }
     }
-    session->vtbl->Close((void *)session);
 }
 
 /**
