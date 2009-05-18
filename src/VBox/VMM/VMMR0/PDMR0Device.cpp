@@ -443,13 +443,15 @@ static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUI
     {
         switch(VMCPU_GET_STATE(pVCpu))
         {
-        case VMCPUSTATE_STARTED_EXEC:
-            GVMMR0SchedPokeEx(pVM, pVCpu->idCpu, false /* don't take the used lock */);
-            break;
+            case VMCPUSTATE_STARTED_EXEC:
+                GVMMR0SchedPokeEx(pVM, pVCpu->idCpu, false /* don't take the used lock */);
+                break;
 
-        case VMCPUSTATE_STARTED_HALTED:
-            GVMMR0SchedWakeUpEx(pVM, pVCpu->idCpu, false /* don't take the used lock */);
-            break;
+            case VMCPUSTATE_STARTED_HALTED:
+                GVMMR0SchedWakeUpEx(pVM, pVCpu->idCpu, false /* don't take the used lock */);
+                break;
+            default:
+                AssertFailed();
         }
     }
 }
