@@ -919,6 +919,9 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
  * @remark  ASSUMES that the guest is updating before invalidating. This order
  *          isn't required by the CPU, so this is speculative and could cause
  *          trouble.
+ * @remark  No TLB shootdown is done on any other VCPU as we assume that
+ *          invlpg emulation is the *only* reason for calling this function.
+ *          Currently true, but keep in mind!
  *
  * @todo    Flush page or page directory only if necessary!
  * @todo    Add a #define for simply invalidating the page.
