@@ -1557,7 +1557,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GST
             if (!PteSrc.n.u1Global)
                 pShwPage->fSeenNonGlobal = true;
 #endif
-            *pPteDst = PteDst;
+            ASMAtomicWriteSize(pPteDst, PteDst.u);
         }
         /* else MMIO or invalid page, we must handle them manually in the #PF handler. */
         /** @todo count these. */
@@ -1576,7 +1576,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GST
             PGM_BTH_NAME(SyncPageWorkerTrackDeref)(pVCpu, pShwPage, pPteDst->u & SHW_PTE_PG_MASK);
         }
 #endif /* PGMPOOL_WITH_USER_TRACKING */
-        pPteDst->u = 0;
+        ASMAtomicWriteSize(pPteDst, 0);
         /** @todo count these. */
     }
 }
@@ -1874,7 +1874,7 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
                         PdeDst.au32[0] &= ~PGM_PDFLAGS_TRACK_DIRTY;
                         PdeDst.n.u1Write = PdeSrc.n.u1Write;
                     }
-                    *pPdeDst = PdeDst;
+                    ASMAtomicWriteSize(pPdeDst, PdeDst.u);
                     Log2(("SyncPage: BIG %RGv PdeSrc:{P=%d RW=%d U=%d raw=%08llx} GCPhys=%RGp%s\n",
                           GCPtrPage, PdeSrc.n.u1Present, PdeSrc.n.u1Write, PdeSrc.n.u1User, (uint64_t)PdeSrc.u, GCPhys,
                           PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY ? " Track-Dirty" : ""));
@@ -2527,7 +2527,7 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
                     PdeDst.b.u1Write = 0;
                 }
             }
-            *pPdeDst = PdeDst;
+            ASMAtomicWriteSize(pPdeDst, PdeDst.u);
 # if defined(IN_RC)
             PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
 # endif
@@ -2568,7 +2568,7 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
                  */
                 PdeDst.u = (PdeDst.u & (SHW_PDE_PG_MASK | X86_PDE_AVL_MASK))
                          | (PdeSrc.u & ~(GST_PDE_PG_MASK | X86_PDE_AVL_MASK | X86_PDE_PCD | X86_PDE_PWT | X86_PDE_PS | X86_PDE4M_G | X86_PDE4M_D));
-                *pPdeDst = PdeDst;
+                ASMAtomicWriteSize(pPdeDst, PdeDst.u);
 # if defined(IN_RC)
                 PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
 # endif
@@ -2674,7 +2674,7 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
                 PdeDst.u |= PGM_PDFLAGS_TRACK_DIRTY;
                 PdeDst.b.u1Write = 0;
             }
-            *pPdeDst = PdeDst;
+            ASMAtomicWriteSize(pPdeDst, PdeDst.u);
 # if defined(IN_RC)
             PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
 # endif
@@ -2901,7 +2901,7 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
     PdeDst.n.u1User     = 1;
     PdeDst.n.u1Accessed = 1;
 # endif
-    *pPdeDst = PdeDst;
+    ASMAtomicWriteSize(pPdeDst, PdeDst.u);
 
     rc = PGM_BTH_NAME(SyncPage)(pVCpu, PdeSrc, GCPtrPage, PGM_SYNC_NR_PAGES, 0 /* page not present */);
     STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,SyncPT), a);
