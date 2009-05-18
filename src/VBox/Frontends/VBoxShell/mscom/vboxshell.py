@@ -27,27 +27,65 @@ from shellcommon import interpret
 
 class LocalManager:
     def getSessionObject(self, vb):
-	return win32com.client.Dispatch("{3C02F46D-C9D2-4f11-A384-53F0CF917214}")
+        return win32com.client.Dispatch("{3C02F46D-C9D2-4f11-A384-53F0CF917214}")
 
 vbox = None
 mgr = LocalManager()
 try:
-	vbox = win32com.client.Dispatch("{B1A7A4F2-47B9-4A1E-82B2-07CCD5323C3F}")
+        vbox = win32com.client.Dispatch("{B1A7A4F2-47B9-4A1E-82B2-07CCD5323C3F}")
+        win32com.client.gencache.EnsureDispatch('VirtualBox.Session') 
 except Exception,e:
     print "COM exception: ",e
     traceback.print_exc()
     sys.exit(1)
 
-# fake constants, while get resolved constants issues for real
-# win32com.client.constants doesn't work for some reasons
-class DummyInterfaces: pass
-class SessionState:pass
+class ConstantFake:
+  def __init__(self, parent, name):
+        self.__dict__['_parent'] = parent
+        self.__dict__['_name'] = name
+        try:
+             self.__dict__['_depth']=parent.__dict__['_depth']+1
+        except:
+             self.__dict__['_depth']=0
+        self.__dict__['_klazz'] = self.__class__
+        if self.__dict__['_depth'] > 4:
+                raise AttributeError
 
-DummyInterfaces.SessionState=SessionState()
-DummyInterfaces.SessionState.Open = 2
+  def __getattr__(self, attr):
+    if attr.startswith("__"):
+        raise AttributeError
+        
+    try:
+        n = makeFullName(self) + "_" + attr
+        v = win32com.client.constants.__getattr__(n)
+        return v
+    except AttributeError,e:
+        return ConstantFake(self, attr)
 
-ctx = {'mgr':mgr, 'vb':vbox, 'ifaces':DummyInterfaces(),
-#'ifaces':win32com.client.constants, 
+def makeFullName(fake):
+        name = fake._name
+        parent = fake._parent
+        while parent != None:
+                name   = parent._name+'_'+name
+                parent = parent._parent
+        return name
+
+
+class InterfacesWrapper:
+  """COM constants name translator
+  """
+  def __init__(self):
+    pass
+
+  def __getattr__(self, a):
+    try:
+        return win32com.client.constants.__getattr__(a)
+    except AttributeError,e:
+        if a.startswith("__"):
+                raise e
+        return ConstantFake(None, a)
+
+ctx = {'mgr':mgr, 'vb':vbox, 'ifaces':InterfacesWrapper(),
        'remote':False, 'type':'mscom' }
 
 interpret(ctx)
