@@ -3025,6 +3025,9 @@ PGM_BTH_DECL(int, PrefetchPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
 
     if (PdeSrc.n.u1Present && PdeSrc.n.u1Accessed)
     {
+        PVM pVM = pVCpu->CTX_SUFF(pVM);
+        pgmLock(pVM);
+
 # if PGM_SHW_TYPE == PGM_TYPE_32BIT
         const X86PDE    PdeDst = pgmShwGet32BitPDE(&pVCpu->pgm.s, GCPtrPage);
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
@@ -3040,6 +3043,7 @@ PGM_BTH_DECL(int, PrefetchPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         int rc = pgmShwSyncPaePDPtr(pVCpu, GCPtrPage, &PdpeSrc, &pPDDst);
         if (rc != VINF_SUCCESS)
         {
+            pgmUnlock(pVM);
             AssertRC(rc);
             return rc;
         }
@@ -3065,6 +3069,7 @@ PGM_BTH_DECL(int, PrefetchPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         int rc = pgmShwSyncLongModePDPtr(pVCpu, GCPtrPage, pPml4eSrc, &PdpeSrc, &pPDDst);
         if (rc != VINF_SUCCESS)
         {
+            pgmUnlock(pVM);
             AssertRC(rc);
             return rc;
         }
@@ -3075,11 +3080,8 @@ PGM_BTH_DECL(int, PrefetchPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         {
             if (!PdeDst.n.u1Present)
             {
-                PVM pVM = pVCpu->CTX_SUFF(pVM);
                 /** r=bird: This guy will set the A bit on the PDE, probably harmless. */
-                pgmLock(pVM);
                 rc = PGM_BTH_NAME(SyncPT)(pVCpu, iPDSrc, pPDSrc, GCPtrPage);
-                pgmUnlock(pVM);
             }
             else
             {
@@ -3092,6 +3094,7 @@ PGM_BTH_DECL(int, PrefetchPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
                     rc = VINF_SUCCESS;
             }
         }
+        pgmUnlock(pVM);
     }
     return rc;
 
