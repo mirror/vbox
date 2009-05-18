@@ -612,8 +612,10 @@ typedef PDMMOD *PPDMMOD;
  */
 typedef enum PDMQUEUETYPE
 {
+    /** Uninitialized. */
+    PDMQUEUETYPE_UNINIT = 0,
     /** Device consumer. */
-    PDMQUEUETYPE_DEV = 1,
+    PDMQUEUETYPE_DEV,
     /** Driver consumer. */
     PDMQUEUETYPE_DRV,
     /** Internal consumer. */
@@ -1019,7 +1021,7 @@ int         pdmR3AsyncCompletionTerm(PVM pVM);
 void        pdmLock(PVM pVM);
 int         pdmLockEx(PVM pVM, int rc);
 void        pdmUnlock(PVM pVM);
-
+bool        pdmIsLockOwner(PVM pVM);
 /** @} */
 
 __END_DECLS
