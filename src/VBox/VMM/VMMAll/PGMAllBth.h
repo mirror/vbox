@@ -1220,7 +1220,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
                     /* This is very unlikely with caching/monitoring enabled. */
                     PGM_BTH_NAME(SyncPageWorkerTrackDeref)(pShwPage, pPT->a[iPTEDst].u & SHW_PTE_PG_MASK);
 #  endif
-                    pPT->a[iPTEDst].u = 0;
+                    ASMAtomicWriteSize(&pPT->a[iPTEDst], 0);
                 }
 # else /* Syncing it here isn't 100% safe and it's probably not worth spending time syncing it. */
                 rc = PGM_BTH_NAME(SyncPage)(pVCpu, PdeSrc, GCPtrPage, 1, 0);
