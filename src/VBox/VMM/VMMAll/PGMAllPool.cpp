@@ -1115,6 +1115,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     AssertRCReturn(rc, rc);
 
     pgmLock(pVM);
+    AssertMsg(PHYS_PAGE_ADDRESS(GCPhysFault) == PHYS_PAGE_ADDRESS(pPage->GCPhys), ("%RGp vs %RGp\n", PHYS_PAGE_ADDRESS(GCPhysFault), pPage->GCPhys));
 
     /*
      * Check if it's worth dealing with.
