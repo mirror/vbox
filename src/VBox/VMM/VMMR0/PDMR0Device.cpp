@@ -451,7 +451,7 @@ static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUI
                 GVMMR0SchedWakeUpEx(pVM, pVCpu->idCpu, false /* don't take the used lock */);
                 break;
             default:
-                AssertFailed();
+                break;
         }
     }
 }
