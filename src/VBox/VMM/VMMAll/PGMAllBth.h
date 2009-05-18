@@ -2179,6 +2179,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
                     STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyBitTracking), a);
                     return VINF_PGM_HANDLED_DIRTY_BIT_FAULT;
                 }
+# ifdef IN_RING0
                 else
                 /* Check for stale TLB entry; only applies to the SMP guest case. */
                 if (    pVM->cCPUs > 1
@@ -2202,6 +2203,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
                         }
                     }
                 }
+# endif /* IN_RING0 */
             }
         }
         STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyBitTracking), a);
@@ -2317,8 +2319,11 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
                             STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyBitTracking), a);
                             return VINF_PGM_HANDLED_DIRTY_BIT_FAULT;
                         }
+# ifdef IN_RING0
                         else
-                        if (    pPteDst->n.u1Write == 1 
+                        /* Check for stale TLB entry; only applies to the SMP guest case. */
+                        if (    pVM->cCPUs > 1
+                            &&  pPteDst->n.u1Write == 1 
                             &&  pPteDst->n.u1Accessed == 1)
                         {
                             /* Stale TLB entry. */
@@ -2328,6 +2333,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
                             STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyBitTracking), a);
                             return VINF_PGM_HANDLED_DIRTY_BIT_FAULT;
                         }
+# endif
                     }
                 }
                 else
