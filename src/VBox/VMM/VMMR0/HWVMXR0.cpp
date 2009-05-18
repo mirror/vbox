@@ -606,7 +606,7 @@ static int VMXR0InjectEvent(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t intIn
         LogFlow(("VMXR0InjectEvent: Injecting interrupt %d at %RGv error code=%08x\n", iGate, (RTGCPTR)pCtx->rip, errCode));
     else
     {
-        Log(("CPU%d: INJ-EI: %x at %RGv\n", pVCpu->idCpu, iGate, (RTGCPTR)pCtx->rip));
+        LogFlow(("INJ-EI: %x at %RGv\n", iGate, (RTGCPTR)pCtx->rip));
         Assert(VMX_EXIT_INTERRUPTION_INFO_TYPE(intInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_SW || !VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
         Assert(VMX_EXIT_INTERRUPTION_INFO_TYPE(intInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_SW || pCtx->eflags.u32 & X86_EFL_IF);
     }
@@ -1075,10 +1075,10 @@ static void vmxR0UpdateExceptionBitmap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(pCtx);
 
     u32TrapMask = HWACCM_VMX_TRAP_MASK;
-//#ifndef DEBUG
+#ifndef DEBUG
     if (pVM->hwaccm.s.fNestedPaging)
         u32TrapMask &= ~RT_BIT(X86_XCPT_PF);   /* no longer need to intercept #PF. */
-//#endif
+#endif
 
     /* Also catch floating point exceptions as we need to report them to the guest in a different way. */
     if (    CPUMIsGuestFPUStateActive(pVCpu) == true
@@ -2873,7 +2873,7 @@ ResumeExecution:
         if (exitQualification & VMX_EXIT_QUALIFICATION_EPT_ENTRY_PRESENT)
             errCode |= X86_TRAP_PF_P;
 
-        LogFlow(("EPT Page fault %x at %RGp error code %x\n", (uint32_t)exitQualification, GCPhys, errCode));
+        Log(("EPT Page fault %x at %RGp error code %x\n", (uint32_t)exitQualification, GCPhys, errCode));
 
         /* GCPhys contains the guest physical address of the page fault. */
         TRPMAssertTrap(pVCpu, X86_XCPT_PF, TRPM_TRAP);
