@@ -2162,21 +2162,46 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
             /* Mark guest page directory as dirty (BIG page only). */
             pPdeSrc->b.u1Dirty = 1;
 
-            if (    pPdeDst->n.u1Present
-                && (pPdeDst->u & PGM_PDFLAGS_TRACK_DIRTY))
+            if (pPdeDst->n.u1Present)
             {
-                STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyPageTrap));
-                Assert(pPdeSrc->b.u1Write);
+                if (pPdeDst->u & PGM_PDFLAGS_TRACK_DIRTY)
+                {
+                    STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyPageTrap));
+                    Assert(pPdeSrc->b.u1Write);
 
-                /* Note: No need to invalidate this entry on other VCPUs as a stale TLB entry will not harm; write access will simply
-                 *       fault again and take this path to only invalidate the entry.
-                 */
-                pPdeDst->n.u1Write      = 1;
-                pPdeDst->n.u1Accessed   = 1;
-                pPdeDst->au32[0]       &= ~PGM_PDFLAGS_TRACK_DIRTY;
-                PGM_INVL_BIG_PG(GCPtrPage);
-                STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyBitTracking), a);
-                return VINF_PGM_HANDLED_DIRTY_BIT_FAULT;
+                    /* Note: No need to invalidate this entry on other VCPUs as a stale TLB entry will not harm; write access will simply
+                     *       fault again and take this path to only invalidate the entry.
+                     */
+                    pPdeDst->n.u1Write      = 1;
+                    pPdeDst->n.u1Accessed   = 1;
+                    pPdeDst->au32[0]       &= ~PGM_PDFLAGS_TRACK_DIRTY;
+                    PGM_INVL_BIG_PG(GCPtrPage);
+                    STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyBitTracking), a);
+                    return VINF_PGM_HANDLED_DIRTY_BIT_FAULT;
+                }
+                else
+                /* Check for stale TLB entry; only applies to the SMP guest case. */
+                if (    pVM->cCPUs > 1
+                    &&  pPdeDst->n.u1Write
+                    &&  pPdeDst->n.u1Accessed)
+                {
+                    PPGMPOOLPAGE    pShwPage = pgmPoolGetPage(pPool, pPdeDst->u & SHW_PDE_PG_MASK);
+                    if (pShwPage)
+                    {
+                        PSHWPT      pPTDst   = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
+                        PSHWPTE     pPteDst  = &pPTDst->a[(GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK];
+                        if (    pPteDst->n.u1Present
+                            &&  pPteDst->n.u1Write)
+                        {
+                            /* Stale TLB entry. */
+                            STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyPageStale));
+                            PGM_INVL_PG(GCPtrPage);
+
+                            STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyBitTracking), a);
+                            return VINF_PGM_HANDLED_DIRTY_BIT_FAULT;
+                        }
+                    }
+                }
             }
         }
         STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyBitTracking), a);
