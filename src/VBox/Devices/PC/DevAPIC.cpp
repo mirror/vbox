@@ -2250,6 +2250,11 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
     Log(("APIC: cCpus=%d fR0Enabled=%RTbool fGCEnabled=%RTbool fIOAPIC=%RTbool\n", cCpus, fR0Enabled, fGCEnabled, fIOAPIC));
 
+    /* TODO: Current implementation is limited to 32 CPUs due to the use of 32 bits bitmasks. */
+    if (cCpus > 32)
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Invalid value for \"NumCPUs\""));
+
     /*
      * Init the data.
      */
