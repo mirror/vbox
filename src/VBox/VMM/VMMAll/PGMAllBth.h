@@ -1084,7 +1084,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         LogFlow(("InvalidatePage: Out-of-sync PML4E (P/GCPhys) at %RGv GCPhys=%RGp vs %RGp Pml4eSrc=%RX64 Pml4eDst=%RX64\n",
                  GCPtrPage, pShwPdpt->GCPhys, GCPhysPdpt, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
         pgmPoolFreeByPage(pPool, pShwPdpt, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPml4);
-        pPml4eDst->u = 0;
+        ASMAtomicWriteSize(pPml4eDst, 0);
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNPs));
         PGM_INVL_GUEST_TLBS();
         return VINF_SUCCESS;
@@ -1098,7 +1098,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         LogFlow(("InvalidatePage: Out-of-sync PML4E at %RGv Pml4eSrc=%RX64 Pml4eDst=%RX64\n",
                  GCPtrPage, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
         pgmPoolFreeByPage(pPool, pShwPdpt, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPml4);
-        pPml4eDst->u = 0;
+        ASMAtomicWriteSize(pPml4eDst, 0);
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDOutOfSync));
         PGM_INVL_GUEST_TLBS();
     }
@@ -1110,7 +1110,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         LogFlow(("InvalidatePage: Out-of-sync PML4E (A) at %RGv Pml4eSrc=%RX64 Pml4eDst=%RX64\n",
                  GCPtrPage, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
         pgmPoolFreeByPage(pPool, pShwPdpt, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPml4);
-        pPml4eDst->u = 0;
+        ASMAtomicWriteSize(pPml4eDst, 0);
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNAs));
         PGM_INVL_GUEST_TLBS();
     }
@@ -1124,7 +1124,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         LogFlow(("InvalidatePage: Out-of-sync PDPE (P/GCPhys) at %RGv GCPhys=%RGp vs %RGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
                     GCPtrPage, pShwPde->GCPhys, GCPhysPd, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
         pgmPoolFreeByPage(pPool, pShwPde, pShwPdpt->idx, iPdpt);
-        pPdpeDst->u = 0;
+        ASMAtomicWriteSize(pPdpeDst, 0);
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNPs));
         PGM_INVL_GUEST_TLBS();
         return VINF_SUCCESS;
@@ -1138,7 +1138,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         LogFlow(("InvalidatePage: Out-of-sync PDPE at %RGv PdpeSrc=%RX64 PdpeDst=%RX64\n",
                  GCPtrPage, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
         pgmPoolFreeByPage(pPool, pShwPde, pShwPdpt->idx, iPdpt);
-        pPdpeDst->u = 0;
+        ASMAtomicWriteSize(pPdpeDst, 0);
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDOutOfSync));
         PGM_INVL_GUEST_TLBS();
     }
@@ -1150,7 +1150,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         LogFlow(("InvalidatePage: Out-of-sync PDPE (A) at %RGv PdpeSrc=%RX64 PdpeDst=%RX64\n",
                  GCPtrPage, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
         pgmPoolFreeByPage(pPool, pShwPde, pShwPdpt->idx, iPdpt);
-        pPdpeDst->u = 0;
+        ASMAtomicWriteSize(pPdpeDst, 0);
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNAs));
         PGM_INVL_GUEST_TLBS();
     }
@@ -1182,7 +1182,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
             LogFlow(("InvalidatePage: Out-of-sync at %RGp PdeSrc=%RX64 PdeDst=%RX64\n",
                      GCPtrPage, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
             pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
-            pPdeDst->u = 0;
+            ASMAtomicWriteSize(pPdeDst, 0);
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDOutOfSync));
             PGM_INVL_GUEST_TLBS();
         }
@@ -1194,7 +1194,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
             LogFlow(("InvalidatePage: Out-of-sync (A) at %RGp PdeSrc=%RX64 PdeDst=%RX64\n",
                      GCPtrPage, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
             pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
-            pPdeDst->u = 0;
+            ASMAtomicWriteSize(pPdeDst, 0);
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNAs));
             PGM_INVL_GUEST_TLBS();
         }
@@ -1238,7 +1238,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
                 LogFlow(("InvalidatePage: Out-of-sync at %RGp PdeSrc=%RX64 PdeDst=%RX64 ShwGCPhys=%RGp iPDDst=%#x\n",
                          GCPtrPage, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u, pShwPage->GCPhys, iPDDst));
                 pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
-                pPdeDst->u = 0;
+                ASMAtomicWriteSize(pPdeDst, 0);
                 STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDOutOfSync));
                 PGM_INVL_GUEST_TLBS();
             }
@@ -1284,7 +1284,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
             LogFlow(("InvalidatePage: Out-of-sync PD at %RGp PdeSrc=%RX64 PdeDst=%RX64\n",
                      GCPtrPage, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
             pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
-            pPdeDst->u = 0;
+            ASMAtomicWriteSize(pPdeDst, 0);
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePage4MBPages));
             PGM_INVL_BIG_PG(GCPtrPage);
         }
@@ -1297,7 +1297,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         if (!(PdeDst.u & PGM_PDFLAGS_MAPPING))
         {
             pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
-            pPdeDst->u = 0;
+            ASMAtomicWriteSize(pPdeDst, 0);
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNPs));
             PGM_INVL_PG(GCPtrPage);
         }
@@ -1909,8 +1909,7 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
      * Yea, I'm lazy.
      */
     pgmPoolFreeByPage(pPool, pShwPage, pShwPde->idx, iPDDst);
-
-    pPdeDst->u = 0;
+    ASMAtomicWriteSize(pPdeDst, 0);
 
 # if defined(IN_RC)
     /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
