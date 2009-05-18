@@ -754,7 +754,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
             else /* uErr & X86_TRAP_PF_P: */
             {
                 /*
-                 * Write protected pages is make writable when the guest makes the first
+                 * Write protected pages are make writable when the guest makes the first
                  * write to it. This happens for pages that are shared, write monitored
                  * and not yet allocated.
                  *
@@ -1856,8 +1856,7 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
                         Log3(("SyncPage: write-protecting %RGp pPage=%R[pgmpage] at %RGv\n", GCPhys, pPage, GCPtrPage));
                     }
 
-                    pPTDst->a[iPTDst] = PteDst;
-
+                    ASMAtomicWriteSize(&pPTDst->a[iPTDst], PteDst.u);
 
                     /*
                      * If the page is not flagged as dirty and is writable, then make it read-only
