@@ -348,6 +348,7 @@ static void registerCallBack(IVirtualBox *virtualBox, ISession *session, PRUnich
                  * great ideas anyone?
                  */
                 PRInt32 fd;
+                int ret;
 
                 printf("Entering event loop, PowerOff the machine to exit or press Ctrl-C to terminate\n");
                 fflush(stdout);
@@ -358,12 +359,21 @@ static void registerCallBack(IVirtualBox *virtualBox, ISession *session, PRUnich
                 {
                     while (!g_fStop)
                     {
-                        struct pollfd   pfd;
+                        struct pollfd pfd;
+
                         pfd.fd = fd;
                         pfd.events = POLLIN | POLLERR | POLLHUP;
                         pfd.revents = 0;
-                        poll(&pfd, 1, 250);
-                        rc = queue->vtbl->ProcessPendingEvents(queue);
+
+                        ret = poll(&pfd, 1, 250);
+
+                        if (ret <= 0)
+                            continue;
+
+                        if (pfd.revents & POLLHUP)
+                            g_fStop = 1;
+
+                        queue->vtbl->ProcessPendingEvents(queue);
                     }
                 }
                 else
