@@ -4292,7 +4292,9 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
 #  endif
                         pVCpu->pgm.s.apGstPaePDsRC[i]     = (RCPTRTYPE(PX86PDPAE))GCPtr;
                         pVCpu->pgm.s.aGCPhysGstPaePDs[i]  = GCPhys;
-                        PGM_INVL_PG(GCPtr); /** @todo This ends up calling HWACCMInvalidatePage, is that correct? */
+#  ifdef IN_RC
+                        PGM_INVL_PG(GCPtr);
+#  endif
                         continue;
                     }
                     AssertMsgFailed(("pgmR3Gst32BitMapCR3: rc2=%d GCPhys=%RGp i=%d\n", rc2, GCPhys, i));
@@ -4304,7 +4306,9 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
 #  endif
                 pVCpu->pgm.s.apGstPaePDsRC[i]     = 0;
                 pVCpu->pgm.s.aGCPhysGstPaePDs[i]  = NIL_RTGCPHYS;
+#  ifdef IN_RC
                 PGM_INVL_PG(GCPtr); /** @todo this shouldn't be necessary? */
+#  endif
             }
 
 # elif PGM_GST_TYPE == PGM_TYPE_AMD64
