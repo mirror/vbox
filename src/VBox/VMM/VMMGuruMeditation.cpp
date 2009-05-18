@@ -29,6 +29,9 @@
 #include <VBox/dbgf.h>
 #include "VMMInternal.h"
 #include <VBox/vm.h>
+#include <VBox/mm.h>
+#include <VBox/iom.h>
+#include <VBox/em.h>
 
 #include <VBox/err.h>
 #include <VBox/param.h>
@@ -207,6 +210,13 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
     VMMR3FATALDUMPINFOHLP   Hlp;
     PCDBGFINFOHLP           pHlp = &Hlp.Core;
     vmmR3FatalDumpInfoHlpInit(&Hlp);
+
+    /* Release owned locks to make sure other VCPUs can continue in case they were waiting for one. */
+    MMR3ReleaseOwnedLocks(pVM);
+    PGMR3ReleaseOwnedLocks(pVM);
+    PDMR3ReleaseOwnedLocks(pVM);
+    IOMR3ReleaseOwnedLocks(pVM);
+    EMR3ReleaseOwnedLocks(pVM);
 
     /*
      * Header.
