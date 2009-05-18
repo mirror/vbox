@@ -932,6 +932,8 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
+    Assert(PGMIsLockOwner(pVM));
+
     LogFlow(("InvalidatePage %RGv\n", GCPtrPage));
     /*
      * Get the shadow PD entry and skip out if this PD isn't present.
