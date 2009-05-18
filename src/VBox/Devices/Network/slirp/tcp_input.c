@@ -295,8 +295,10 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
         m = so->so_m;
 #ifdef VBOX_WITH_NAT_SERVICE
         {
+            struct ethhdr *eh;
+
             Assert(m);
-            struct ethhdr *eh = (struct ethhdr *)m->m_dat;
+            eh = (struct ethhdr *)m->m_dat;
             memcpy(so->so_ethaddr, eh->h_source, ETH_ALEN);
         }
 #endif
