@@ -4062,7 +4062,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
  */
 VMMR3DECL(void) PGMR3ReleaseOwnedLocks(PVM pVM)
 {
-    if (PDMCritSectIsOwner(&pVM->pgm.s.CritSect))
+    while (PDMCritSectIsOwner(&pVM->pgm.s.CritSect))
         PDMCritSectLeave(&pVM->pgm.s.CritSect);
 }
 

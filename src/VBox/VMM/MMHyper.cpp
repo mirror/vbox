@@ -1098,7 +1098,7 @@ VMMR3DECL(void) MMR3ReleaseOwnedLocks(PVM pVM)
 {
     PMMHYPERHEAP pHeap = pVM->mm.s.CTX_SUFF(pHyperHeap);
 
-    if (PDMCritSectIsOwner(&pHeap->Lock))
+    while (pHeap && PDMCritSectIsOwner(&pHeap->Lock))
         PDMCritSectLeave(&pHeap->Lock);
 }
 
