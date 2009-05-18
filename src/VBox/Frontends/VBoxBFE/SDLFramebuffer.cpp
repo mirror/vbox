@@ -311,18 +311,6 @@ HRESULT SDLFramebuffer::RequestResize(ULONG w, ULONG h, BOOL *finished)
     return S_OK;
 }
 
-HRESULT SDLFramebuffer::SolidFill(ULONG x, ULONG y, ULONG width, ULONG height,
-                                  ULONG color, BOOL *handled)
-{
-    return E_NOTIMPL;
-}
-
-HRESULT SDLFramebuffer::CopyScreenBits(ULONG xDst, ULONG yDst, ULONG xSrc, ULONG ySrc,
-                                       ULONG width, ULONG height, BOOL *handled)
-{
-    return E_NOTIMPL;
-}
-
 HRESULT SDLFramebuffer::GetVisibleRegion(BYTE *aRectangles, ULONG aCount,
                                          ULONG *aCountCopied)
 {

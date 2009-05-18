@@ -10247,18 +10247,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
 
   <enum
-    name="FramebufferAccelerationOperation"
-    uuid="f0e5ebbe-dc8e-4e2d-916e-53baa3844df8"
-  >
-    <desc>
-      Frame buffer acceleration operation.
-    </desc>
-
-    <const name="SolidFillAcceleration"   value="1"/>
-    <const name="ScreenCopyAcceleration"  value="2"/>
-  </enum>
-
-  <enum
     name="FramebufferPixelFormat"
     uuid="7acfd5ed-29e3-45e3-8136-73c9224f3d2d"
   >
@@ -10287,7 +10275,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IFramebuffer" extends="$unknown"
-     uuid="af431304-5b09-40e2-94da-3c3cb03822c1"
+     uuid="3ce29e6d-835a-4283-8ee0-eb9971b81d81"
      wsmap="suppress"
      >
     <attribute name="address" type="octet" mod="ptr" readonly="yes">
@@ -10518,22 +10506,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="operationSupported">
-      <desc>
-        Returns whether the given acceleration operation is supported
-        by the IFramebuffer implementation. If not, the display object
-        will not attempt to call the corresponding IFramebuffer entry
-        point. Even if an operation is indicated as supported, the
-        IFramebuffer implementation always has the option to return non
-        supported from the corresponding acceleration method in which
-        case the operation will be performed by the display engine. This
-        allows for reduced IFramebuffer implementation complexity where
-        only common cases are handled.
-      </desc>
-      <param name="operation" type="FramebufferAccelerationOperation" dir="in"/>
-      <param name="supported" type="boolean" dir="return"/>
-    </method>
-
     <method name="videoModeSupported">
       <desc>
         Returns whether the frame buffer implementation is willing to
@@ -10548,31 +10520,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="height" type="unsigned long" dir="in"/>
       <param name="bpp" type="unsigned long" dir="in"/>
       <param name="supported" type="boolean" dir="return"/>
-    </method>
-
-    <method name="solidFill">
-      <desc>
-        Fills the specified rectangle on screen with a solid color.
-      </desc>
-      <param name="x" type="unsigned long" dir="in"/>
-      <param name="y" type="unsigned long" dir="in"/>
-      <param name="width" type="unsigned long" dir="in"/>
-      <param name="height" type="unsigned long" dir="in"/>
-      <param name="color" type="unsigned long" dir="in"/>
-      <param name="handled" type="boolean" dir="return"/>
-    </method>
-
-    <method name="copyScreenBits">
-      <desc>
-        Copies specified rectangle on the screen.
-      </desc>
-      <param name="xDst" type="unsigned long" dir="in"/>
-      <param name="yDst" type="unsigned long" dir="in"/>
-      <param name="xSrc" type="unsigned long" dir="in"/>
-      <param name="ySrc" type="unsigned long" dir="in"/>
-      <param name="width" type="unsigned long" dir="in"/>
-      <param name="height" type="unsigned long" dir="in"/>
-      <param name="handled" type="boolean" dir="return"/>
     </method>
 
     <method name="getVisibleRegion">

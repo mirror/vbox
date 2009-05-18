@@ -176,39 +176,12 @@ InternalFramebuffer::RequestResize(ULONG iScreenId, ULONG pixelFormat, BYTE *vra
     return S_OK;
 }
 
-STDMETHODIMP InternalFramebuffer::OperationSupported(FramebufferAccelerationOperation_T operation,
-                                                     BOOL *supported)
-{
-    CheckComArgOutPointerValid(supported);
-    /* no acceleration please, we're a slow fallback implementation! */
-    *supported = false;
-    return S_OK;
-}
-
 STDMETHODIMP InternalFramebuffer::VideoModeSupported(ULONG width, ULONG height, ULONG bpp,
                                                      BOOL *supported)
 {
     CheckComArgOutPointerValid(supported);
     /* whatever you want! */
     *supported = true;
-    return S_OK;
-}
-
-STDMETHODIMP InternalFramebuffer::SolidFill(ULONG x, ULONG y, ULONG width, ULONG height,
-                                             ULONG color, BOOL *handled)
-{
-    CheckComArgOutPointerValid(handled);
-    /* eek, what do you expect from us?! */
-    *handled = false;
-    return S_OK;
-}
-
-STDMETHODIMP InternalFramebuffer::CopyScreenBits(ULONG xDst, ULONG yDst, ULONG xSrc, ULONG ySrc,
-                                                 ULONG width, ULONG height, BOOL *handled)
-{
-    CheckComArgOutPointerValid(handled);
-    /* eek, what do you expect from us?! */
-    *handled = false;
     return S_OK;
 }
 

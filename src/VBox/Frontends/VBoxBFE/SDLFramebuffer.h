@@ -52,10 +52,6 @@ public:
     virtual HRESULT NotifyUpdate(ULONG x, ULONG y,
                             ULONG w, ULONG h, BOOL *finished);
     virtual HRESULT RequestResize(ULONG w, ULONG h, BOOL *finished);
-    virtual HRESULT SolidFill(ULONG x, ULONG y, ULONG width, ULONG height,
-                              ULONG color, BOOL *handled);
-    virtual HRESULT CopyScreenBits(ULONG xDst, ULONG yDst, ULONG xSrc, ULONG ySrc,
-                                   ULONG width, ULONG height, BOOL *handled);
     virtual HRESULT GetVisibleRegion(BYTE *aRectangles, ULONG aCount, ULONG *aCountCopied);
     virtual HRESULT SetVisibleRegion(BYTE *aRectangles, ULONG aCount);
 

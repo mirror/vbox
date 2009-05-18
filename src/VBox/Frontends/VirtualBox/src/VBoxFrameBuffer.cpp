@@ -186,17 +186,6 @@ STDMETHODIMP VBoxFrameBuffer::RequestResize (ULONG aScreenId, ULONG aPixelFormat
     return S_OK;
 }
 
-STDMETHODIMP
-VBoxFrameBuffer::OperationSupported (FramebufferAccelerationOperation_T aOperation,
-                                     BOOL *aSupported)
-{
-    NOREF(aOperation);
-    if (!aSupported)
-        return E_POINTER;
-    *aSupported = FALSE;
-    return S_OK;
-}
-
 /**
  * Returns whether we like the given video mode.
  *
@@ -227,38 +216,6 @@ STDMETHODIMP VBoxFrameBuffer::VideoModeSupported (ULONG aWidth, ULONG aHeight,
         *aSupported = FALSE;
     LogFlowThisFunc(("screenW=%lu, screenH=%lu -> aSupported=%s\n", 
                     screen.width(), screen.height(), *aSupported ? "TRUE" : "FALSE"));
-    return S_OK;
-}
-
-STDMETHODIMP VBoxFrameBuffer::SolidFill (ULONG aX, ULONG aY,
-                                         ULONG aWidth, ULONG aHeight,
-                                         ULONG aColor, BOOL *aHandled)
-{
-    NOREF(aX);
-    NOREF(aY);
-    NOREF(aWidth);
-    NOREF(aHeight);
-    NOREF(aColor);
-    if (!aHandled)
-        return E_POINTER;
-    *aHandled = FALSE;
-    return S_OK;
-}
-
-STDMETHODIMP VBoxFrameBuffer::CopyScreenBits (ULONG aXDst, ULONG aYDst,
-                                              ULONG aXSrc, ULONG aYSrc,
-                                              ULONG aWidth, ULONG aHeight,
-                                              BOOL *aHandled)
-{
-    NOREF(aXDst);
-    NOREF(aYDst);
-    NOREF(aXSrc);
-    NOREF(aYSrc);
-    NOREF(aWidth);
-    NOREF(aHeight);
-    if (!aHandled)
-        return E_POINTER;
-    *aHandled = FALSE;
     return S_OK;
 }
 

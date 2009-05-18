@@ -199,14 +199,8 @@ public:
                               ULONG aWidth, ULONG aHeight,
                               BOOL *aFinished);
 
-    STDMETHOD(OperationSupported)(FramebufferAccelerationOperation_T aOperation,
-                                  BOOL *aSupported);
     STDMETHOD(VideoModeSupported) (ULONG aWidth, ULONG aHeight, ULONG aBPP,
                                    BOOL *aSupported);
-    STDMETHOD(SolidFill) (ULONG aX, ULONG aY, ULONG aWidth, ULONG aHeight,
-                          ULONG aColor, BOOL *aHandled);
-    STDMETHOD(CopyScreenBits) (ULONG aXDst, ULONG aYDst, ULONG aXSrc, ULONG aYSrc,
-                               ULONG aWidth, ULONG aHeight, BOOL *aHandled);
 
     STDMETHOD(GetVisibleRegion)(BYTE *aRectangles, ULONG aCount, ULONG *aCountCopied);
     STDMETHOD(SetVisibleRegion)(BYTE *aRectangles, ULONG aCount);
