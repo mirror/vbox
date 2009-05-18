@@ -1835,7 +1835,6 @@ static void pgmR3InitStats(PVM pVM)
         PGM_REG_COUNTER(&pPGM->StatR3DirtyPageBig,                "/PGM/CPU%d/R3/DirtyPage/MarkBig",          "The number of 4MB pages marked read-only for dirty bit tracking.");
         PGM_REG_COUNTER(&pPGM->StatR3DirtyPageSkipped,            "/PGM/CPU%d/R3/DirtyPage/Skipped",          "The number of pages already dirty or readonly.");
         PGM_REG_COUNTER(&pPGM->StatR3DirtyPageTrap,               "/PGM/CPU%d/R3/DirtyPage/Trap",             "The number of traps generated for dirty bit tracking.");
-        PGM_REG_COUNTER(&pPGM->StatR3DirtyPageStale,              "/PGM/CPU%d/R3/DirtyPage/Stale",            "The number of traps generated for dirty bit tracking (stale tlb entries).");
         PGM_REG_COUNTER(&pPGM->StatR3DirtiedPage,                 "/PGM/CPU%d/R3/DirtyPage/SetDirty",         "The number of pages marked dirty because of write accesses.");
         PGM_REG_COUNTER(&pPGM->StatR3DirtyTrackRealPF,            "/PGM/CPU%d/R3/DirtyPage/RealPF",           "The number of real pages faults during dirty bit tracking.");
         PGM_REG_COUNTER(&pPGM->StatR3PageAlreadyDirty,            "/PGM/CPU%d/R3/DirtyPage/AlreadySet",       "The number of pages already marked dirty because of write accesses.");
