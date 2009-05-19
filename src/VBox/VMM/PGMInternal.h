@@ -352,7 +352,7 @@
 #endif
 
 /** @def PGM_INVL_VCPU_TLBS()
- * Invalidates all guest TLBs.
+ * Invalidates the TLBs of the specified VCPU
  */
 #ifdef IN_RC
 # define PGM_INVL_VCPU_TLBS(pVCpu)             ASMReloadCR3()
