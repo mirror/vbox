@@ -1581,6 +1581,8 @@ PDMBOTHCBDECL(void) e1kHardReset(E1KSTATE *pState)
     STATUS = 0x0081;    /* SPEED=10b (1000 Mb/s), FD=1b (Full Duplex) */
     EECD   = 0x0100;    /* EE_PRES=1b (EEPROM present) */
     CTRL   = 0x0a09;    /* FRCSPD=1b SPEED=10b LRST=1b FD=1b */
+    Assert(GET_BITS(RCTL, BSIZE) == 0);
+    pState->u16RxBSize = 2048;
 }
 
 /**
