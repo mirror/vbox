@@ -227,7 +227,7 @@ HRESULT SDLFramebuffer::getLineSize(ULONG *lineSize)
  *                   continuing with display updates.
  */
 HRESULT SDLFramebuffer::NotifyUpdate(ULONG x, ULONG y,
-                                     ULONG w, ULONG h, BOOL *finished)
+                                     ULONG w, ULONG h)
 {
     LogFlow(("SDLFramebuffer::NotifyUpdate: x = %d, y = %d, w = %d, h = %d\n",
              x, y, w, h));
@@ -257,12 +257,6 @@ HRESULT SDLFramebuffer::NotifyUpdate(ULONG x, ULONG y,
     update(x, y + mTopOffset, w, h);
 #endif /* !VBOXBFE_WITH_X11 */
 
-    /*
-     * The Display thread can continue as we will lock the framebuffer
-     * from the SDL thread when we get to actually doing the update.
-     */
-    if (finished)
-        *finished = TRUE;
     return S_OK;
 }
 

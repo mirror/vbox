@@ -54,7 +54,7 @@ public:
     uint32_t getHeight();
     uint32_t getBitsPerPixel();
 
-    STDMETHODIMP RegisterExternalFramebuffer(Framebuffer *Framebuffer);
+    STDMETHODIMP SetFramebuffer(unsigned iScreenID, Framebuffer *Framebuffer);
     STDMETHODIMP InvalidateAndUpdate();
     STDMETHODIMP ResizeCompleted();
 
@@ -83,10 +83,9 @@ private:
     struct DRVMAINDISPLAY  *mpDrv;
 
     Framebuffer *mFramebuffer;
-    bool mInternalFramebuffer, mFramebufferOpened;
+    bool mFramebufferOpened;
 
     ULONG mSupportedAccelOps;
-    RTSEMEVENTMULTI mUpdateSem;
 
     struct _VBVAMEMORY *mpVbvaMemory;
     bool        mfVideoAccelEnabled;

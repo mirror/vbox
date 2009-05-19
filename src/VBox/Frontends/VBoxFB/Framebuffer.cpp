@@ -186,7 +186,7 @@ NS_IMETHODIMP VBoxDirectFB::COMGETTER(UsesGuestVRAM) (BOOL *usesGuestVRAM)
 }
 
 NS_IMETHODIMP VBoxDirectFB::NotifyUpdate(uint32_t x, uint32_t y,
-                                         uint32_t w, uint32_t h, PRBool *finished)
+                                         uint32_t w, uint32_t h)
 {
     // we only need to take action if we have a memory framebuffer
     if (fbInternalSurface)
@@ -208,15 +208,14 @@ NS_IMETHODIMP VBoxDirectFB::NotifyUpdate(uint32_t x, uint32_t y,
             hostRectangle.h = (int)((float)blitRectangle.h * factorY);
             DFBCHECK(surface->StretchBlit(surface, fbInternalSurface,
                                           &blitRectangle, &hostRectangle));
-        } else
+        }
+        else
         {
             DFBCHECK(surface->Blit(surface, fbInternalSurface, &blitRectangle,
                                    x + ((screenWidth - fbWidth) / 2),
                                    y + (screenHeight - fbHeight) / 2));
         }
     }
-    if (finished)
-        *finished = true;
     return NS_OK;
 }
 

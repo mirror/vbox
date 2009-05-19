@@ -228,8 +228,7 @@ void VBoxDDRAWFrameBuffer::releaseObjects()
 
 /** @note This method is called on EMT from under this object's lock */
 STDMETHODIMP VBoxDDRAWFrameBuffer::NotifyUpdate (ULONG aX, ULONG aY,
-                                                 ULONG aW, ULONG aH,
-                                                 BOOL *aFinished)
+                                                 ULONG aW, ULONG aH)
 {
     LOGDDRAW(("DDRAW: NotifyUpdate %d,%d %dx%d\n", aX, aY, aW, aH));
 
@@ -242,8 +241,6 @@ STDMETHODIMP VBoxDDRAWFrameBuffer::NotifyUpdate (ULONG aX, ULONG aY,
     {
         drawRect (aX, aY, aW, aH);
     }
-
-    *aFinished = TRUE;
 
     return S_OK;
 }

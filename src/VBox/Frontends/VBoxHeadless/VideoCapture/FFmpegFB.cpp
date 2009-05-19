@@ -141,8 +141,7 @@ FFmpegFB::~FFmpegFB()
         if (mfUrlOpen)
         {
             /* Dummy update to make sure we get all the frame (timing). */
-            BOOL dummy;
-            NotifyUpdate(0, 0, 0, 0, &dummy);
+            NotifyUpdate(0, 0, 0, 0);
             /* Write the last pending frame before exiting */
             int rc = do_rgb_to_yuv_conversion();
             if (rc == S_OK)
@@ -430,10 +429,8 @@ STDMETHODIMP FFmpegFB::Unlock()
  *                 area which has been updated
  * @param w        width of the area which has been updated
  * @param h        height of the area which has been updated
- * @param finished
  */
-STDMETHODIMP FFmpegFB::NotifyUpdate(ULONG x, ULONG y, ULONG w, ULONG h,
-                                    BOOL *finished)
+STDMETHODIMP FFmpegFB::NotifyUpdate(ULONG x, ULONG y, ULONG w, ULONG h)
 {
     int rc;
     int64_t iCurrentTime = RTTimeMilliTS();
@@ -441,10 +438,7 @@ STDMETHODIMP FFmpegFB::NotifyUpdate(ULONG x, ULONG y, ULONG w, ULONG h,
     LogFlow(("FFmpeg::NotifyUpdate called: x=%lu, y=%lu, w=%lu, h=%lu\n",
               (unsigned long) x,  (unsigned long) y,  (unsigned long) w,
                (unsigned long) h));
-    if (!finished)
-        return E_POINTER;
-    /* For now we will do things synchronously */
-    *finished = true;
+
     /* We always leave at least one frame update pending, which we
        process when the time until the next frame has elapsed. */
     if (iCurrentTime - mLastTime >= 40)

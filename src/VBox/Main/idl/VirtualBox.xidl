@@ -10275,7 +10275,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IFramebuffer" extends="$unknown"
-     uuid="3ce29e6d-835a-4283-8ee0-eb9971b81d81"
+     uuid="faaf4c24-d534-4171-8781-c15d2b9fe8c3"
      wsmap="suppress"
      >
     <attribute name="address" type="octet" mod="ptr" readonly="yes">
@@ -10384,7 +10384,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="y" type="unsigned long" dir="in"/>
       <param name="width" type="unsigned long" dir="in"/>
       <param name="height" type="unsigned long" dir="in"/>
-      <param name="finished" type="boolean" dir="return"/>
     </method>
 
     <method name="requestResize">
@@ -10662,43 +10661,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         from <link to="IFramebuffer::bitsPerPixel"/>.
       </desc>
     </attribute>
-
-    <method name="setupInternalFramebuffer">
-      <desc>
-        Prepares an internally managed frame buffer.
-      </desc>
-      <param name="depth" type="unsigned long" dir="in"/>
-    </method>
-
-    <method name="lockFramebuffer">
-      <desc>
-        Requests access to the internal frame buffer.
-
-        <result name="VBOX_E_NOT_SUPPORTED">
-          Attempt to lock a non-internal frame buffer.
-        </result>
-
-      </desc>
-      <param name="address" type="octet" mod="ptr" dir="return"/>
-    </method>
-
-    <method name="unlockFramebuffer">
-      <desc>
-        Releases access to the internal frame buffer.
-
-        <result name="VBOX_E_NOT_SUPPORTED">
-          Attempt to unlock a non-internal frame buffer.
-        </result>
-
-      </desc>
-    </method>
-
-    <method name="registerExternalFramebuffer">
-      <desc>
-        Registers an external frame buffer.
-      </desc>
-      <param name="framebuffer" type="IFramebuffer" dir="in"/>
-    </method>
 
     <method name="setFramebuffer">
       <desc>

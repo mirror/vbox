@@ -49,8 +49,7 @@ public:
     virtual HRESULT getAddress(uintptr_t *address);
     virtual HRESULT getBitsPerPixel(ULONG *bitsPerPixel);
     virtual HRESULT getLineSize(ULONG *lineSize);
-    virtual HRESULT NotifyUpdate(ULONG x, ULONG y,
-                            ULONG w, ULONG h, BOOL *finished);
+    virtual HRESULT NotifyUpdate(ULONG x, ULONG y, ULONG w, ULONG h);
     virtual HRESULT RequestResize(ULONG w, ULONG h, BOOL *finished);
     virtual HRESULT GetVisibleRegion(BYTE *aRectangles, ULONG aCount, ULONG *aCountCopied);
     virtual HRESULT SetVisibleRegion(BYTE *aRectangles, ULONG aCount);

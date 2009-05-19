@@ -272,8 +272,7 @@ public:
     VBoxQImageFrameBuffer (VBoxConsoleView *aView);
 
     STDMETHOD(NotifyUpdate) (ULONG aX, ULONG aY,
-                             ULONG aW, ULONG aH,
-                             BOOL *aFinished);
+                             ULONG aW, ULONG aH);
 
     ulong pixelFormat() { return mPixelFormat; }
     bool usesGuestVRAM() { return mUsesGuestVRAM; }
@@ -307,8 +306,7 @@ public:
     virtual ~VBoxSDLFrameBuffer();
 
     STDMETHOD(NotifyUpdate) (ULONG aX, ULONG aY,
-                             ULONG aW, ULONG aH,
-                             BOOL *aFinished);
+                             ULONG aW, ULONG aH);
 
     uchar *address()
     {
@@ -363,8 +361,7 @@ public:
     virtual ~VBoxDDRAWFrameBuffer();
 
     STDMETHOD(NotifyUpdate) (ULONG aX, ULONG aY,
-                             ULONG aW, ULONG aH,
-                             BOOL *aFinished);
+                             ULONG aW, ULONG aH);
 
     uchar *address() { return (uchar *) mSurfaceDesc.lpSurface; }
     ulong bitsPerPixel() { return mSurfaceDesc.ddpfPixelFormat.dwRGBBitCount; }
@@ -421,8 +418,7 @@ public:
     virtual ~VBoxQuartz2DFrameBuffer ();
 
     STDMETHOD (NotifyUpdate) (ULONG aX, ULONG aY,
-                              ULONG aW, ULONG aH,
-                              BOOL *aFinished);
+                              ULONG aW, ULONG aH);
     STDMETHOD (SetVisibleRegion) (BYTE *aRectangles, ULONG aCount);
 
     uchar *address() { return mDataAddress; }

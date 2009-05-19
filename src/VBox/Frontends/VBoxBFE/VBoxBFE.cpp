@@ -802,7 +802,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char **envp)
 #endif
     if (!gConsole->initialized())
         goto leave;
-    gDisplay->RegisterExternalFramebuffer(gFramebuffer);
+    gDisplay->SetFramebuffer(0, gFramebuffer);
 
     /* start with something in the titlebar */
     gConsole->updateTitlebar();

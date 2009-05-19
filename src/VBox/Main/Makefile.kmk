@@ -569,7 +569,6 @@ VBoxC_SOURCES = \
 	KeyboardImpl.cpp \
 	MouseImpl.cpp \
 	DisplayImpl.cpp \
-	FramebufferImpl.cpp \
 	MachineDebuggerImpl.cpp \
 	VBoxDriversRegister.cpp \
 	AudioSnifferInterface.cpp \
