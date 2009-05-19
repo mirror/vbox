@@ -97,6 +97,9 @@ VMMDECL(int) HWACCMFlushAllTLBs(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
+        if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TLB_FLUSH))
+            continue;
+
         VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
         if (idThisCpu == idCpu)
             continue;
