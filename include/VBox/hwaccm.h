@@ -88,6 +88,7 @@ VMMDECL(PGMMODE) HWACCMGetShwPagingMode(PVM pVM);
 /* Nop in GC */
 # define HWACCMFlushTLB(pVCpu)                  do { } while (0)
 # define HWACCMIsNestedPagingActive(pVM)        false
+# define HWACCMFlushAllTLBs(pVM)                do { } while (0)
 #endif
 
 #ifdef IN_RING0
