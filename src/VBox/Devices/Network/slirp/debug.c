@@ -245,27 +245,34 @@ print_socket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     struct socket *so = (struct socket*)pvValue;
     uint32_t ip;
     struct sockaddr addr;
+    struct sockaddr_in *in_addr;
     socklen_t socklen = sizeof(struct sockaddr);
     int status = 0;
 
     AssertReturn(strcmp(pszType, "natsock") == 0, 0);
     if (so == NULL) 
-        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket is null");
+        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, 
+                "socket is null");
     if (so->so_state == SS_NOFDREF || so->s == -1) 
-        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket(%d) SS_NODREF",so->s);
+        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, 
+                "socket(%d) SS_NODREF",so->s);
     status = getsockname(so->s, &addr, &socklen);
 
     if(status != 0 || addr.sa_family != AF_INET)
     {
-        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket(%d) is invalid(probably closed)",so->s);
+        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, 
+                "socket(%d) is invalid(probably closed)",so->s);
     }
 
+    in_addr = (struct sockaddr_in *)&addr;
     ip = ntohl(so->so_faddr.s_addr);
     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket %4d:(proto:%u) "
-            "state=%04x ip=" IP4_ADDR_PRINTF_FORMAT ":%d name=" IP4_ADDR_PRINTF_FORMAT ":%d",
-            so->s, so->so_type, so->so_state, IP4_ADDR_PRINTF_DECOMP(ip), ntohs(so->so_fport),
-            IP4_ADDR_PRINTF_DECOMP(ntohl(((struct sockaddr_in *)&addr)->sin_addr.s_addr)),
-            ntohs(((struct sockaddr_in *)&addr)->sin_port));
+            "state=%04x ip=" IP4_ADDR_PRINTF_FORMAT ":%d "
+            "name=" IP4_ADDR_PRINTF_FORMAT ":%d",
+            so->s, so->so_type, so->so_state, IP4_ADDR_PRINTF_DECOMP(ip), 
+            ntohs(so->so_fport), 
+            IP4_ADDR_PRINTF_DECOMP(ntohl(in_addr->sin_addr.s_addr)),
+            ntohs(in_addr->sin_port));
 }
 
 static DECLCALLBACK(size_t)
@@ -281,13 +288,15 @@ print_networkevents(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
 
     AssertReturn(strcmp(pszType, "natwinnetevents") == 0, 0);
 
-    cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "events=%02x (", pNetworkEvents->lNetworkEvents);
+    cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "events=%02x (", 
+            pNetworkEvents->lNetworkEvents);
 # define DO_BIT(bit) \
-    if (pNetworkEvents->lNetworkEvents & FD_ ## bit) \
-    { \
-        cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s" #bit "(%d)", \
-                          fDelim ? "," : "", pNetworkEvents->iErrorCode[FD_ ## bit ## _BIT]); \
-        fDelim = true; \
+    if (pNetworkEvents->lNetworkEvents & FD_ ## bit)                        \
+    {                                                                       \
+        cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,                  \
+              "%s" #bit "(%d)", fDelim ? "," : "",                          \
+              pNetworkEvents->iErrorCode[FD_ ## bit ## _BIT]);              \
+        fDelim = true;                                                      \
     }
     DO_BIT(READ);
     DO_BIT(WRITE);
@@ -324,13 +333,15 @@ debug_init()
     if (!g_fFormatRegistered)
     {
         /*
-         * XXX Move this to IPRT using RTNETADDRIPV4. Use the specifier %RNAipv4.
+         * XXX(r - frank): Move this to IPRT using RTNETADDRIPV4. 
+         * Use the specifier %RNAipv4.
          */
         rc = RTStrFormatTypeRegister("IP4", print_ipv4_address, NULL);
         AssertRC(rc);
         rc = RTStrFormatTypeRegister("natsock", print_socket, NULL);
         AssertRC(rc);
-        rc = RTStrFormatTypeRegister("natwinnetevents", print_networkevents, NULL);
+        rc = RTStrFormatTypeRegister("natwinnetevents", 
+            print_networkevents, NULL);
         AssertRC(rc);
         g_fFormatRegistered = 1;
     }
