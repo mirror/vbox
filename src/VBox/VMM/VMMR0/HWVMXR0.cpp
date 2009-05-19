@@ -1968,6 +1968,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     RTGCUINTPTR errCode, instrInfo;
     bool        fSyncTPR = false;
     PHWACCM_CPUINFO pCpu = 0;
+    RTCCUINTREG uOldEFlags;
     unsigned    cResume = 0;
 #ifdef VBOX_STRICT
     RTCPUID  idCpuCheck;
@@ -2194,7 +2195,7 @@ ResumeExecution:
     /* Disable interrupts to make sure a poke will interrupt execution. 
      * This must be done *before* we check for TLB flushes; TLB shootdowns rely on this.
      */
-    RTCCUINTREG uOldEFlags = ASMIntDisableFlags();
+    uOldEFlags = ASMIntDisableFlags();
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
 
     /* Deal with tagged TLB setup and invalidation. */
