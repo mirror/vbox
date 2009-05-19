@@ -10633,7 +10633,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IDisplay" extends="$unknown"
-     uuid="09789f63-4525-48e5-a5e4-1080453b0eab"
+     uuid="f1efd4d1-45d4-4f21-a074-29c5a98de8e7"
      wsmap="suppress"
      >
     <desc>
