@@ -988,7 +988,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         AssertMsg(rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT || rc == VERR_PAGE_MAP_LEVEL4_NOT_PRESENT, ("Unexpected rc=%Rrc\n", rc));
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePageSkipped));
         if (!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3))
-            PGM_INVL_GUEST_TLBS(pVCpu);
+            PGM_INVL_VCPU_TLBS(pVCpu);
         return VINF_SUCCESS;
     }
     Assert(pPDDst);
@@ -1000,7 +1000,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     {
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePageSkipped));
         if (!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3))
-            PGM_INVL_GUEST_TLBS(pVCpu);
+            PGM_INVL_VCPU_TLBS(pVCpu);
         return VINF_SUCCESS;
     }
 
@@ -1091,7 +1091,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         pgmPoolFreeByPage(pPool, pShwPdpt, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPml4);
         ASMAtomicWriteSize(pPml4eDst, 0);
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNPs));
-        PGM_INVL_GUEST_TLBS(pVCpu);
+        PGM_INVL_VCPU_TLBS(pVCpu);
         return VINF_SUCCESS;
     }
     if (   pPml4eSrc->n.u1User != pPml4eDst->n.u1User
@@ -1105,7 +1105,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         pgmPoolFreeByPage(pPool, pShwPdpt, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPml4);
         ASMAtomicWriteSize(pPml4eDst, 0);
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDOutOfSync));
-        PGM_INVL_GUEST_TLBS(pVCpu);
+        PGM_INVL_VCPU_TLBS(pVCpu);
     }
     else if (!pPml4eSrc->n.u1Accessed)
     {
@@ -1117,7 +1117,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         pgmPoolFreeByPage(pPool, pShwPdpt, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPml4);
         ASMAtomicWriteSize(pPml4eDst, 0);
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNAs));
-        PGM_INVL_GUEST_TLBS(pVCpu);
+        PGM_INVL_VCPU_TLBS(pVCpu);
     }
 
     /* Check if the PDPT entry has changed. */
@@ -1131,7 +1131,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         pgmPoolFreeByPage(pPool, pShwPde, pShwPdpt->idx, iPdpt);
         ASMAtomicWriteSize(pPdpeDst, 0);
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNPs));
-        PGM_INVL_GUEST_TLBS(pVCpu);
+        PGM_INVL_VCPU_TLBS(pVCpu);
         return VINF_SUCCESS;
     }
     if (   PdpeSrc.lm.u1User != pPdpeDst->lm.u1User
@@ -1145,7 +1145,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         pgmPoolFreeByPage(pPool, pShwPde, pShwPdpt->idx, iPdpt);
         ASMAtomicWriteSize(pPdpeDst, 0);
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDOutOfSync));
-        PGM_INVL_GUEST_TLBS(pVCpu);
+        PGM_INVL_VCPU_TLBS(pVCpu);
     }
     else if (!PdpeSrc.lm.u1Accessed)
     {
@@ -1157,7 +1157,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         pgmPoolFreeByPage(pPool, pShwPde, pShwPdpt->idx, iPdpt);
         ASMAtomicWriteSize(pPdpeDst, 0);
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNAs));
-        PGM_INVL_GUEST_TLBS(pVCpu);
+        PGM_INVL_VCPU_TLBS(pVCpu);
     }
 # endif /* PGM_GST_TYPE == PGM_TYPE_AMD64 */
 
@@ -1189,7 +1189,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
             pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
             ASMAtomicWriteSize(pPdeDst, 0);
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDOutOfSync));
-            PGM_INVL_GUEST_TLBS(pVCpu);
+            PGM_INVL_VCPU_TLBS(pVCpu);
         }
         else if (!PdeSrc.n.u1Accessed)
         {
@@ -1201,7 +1201,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
             pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
             ASMAtomicWriteSize(pPdeDst, 0);
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNAs));
-            PGM_INVL_GUEST_TLBS(pVCpu);
+            PGM_INVL_VCPU_TLBS(pVCpu);
         }
         else if (!fIsBigPage)
         {
@@ -1245,7 +1245,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
                 pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
                 ASMAtomicWriteSize(pPdeDst, 0);
                 STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDOutOfSync));
-                PGM_INVL_GUEST_TLBS(pVCpu);
+                PGM_INVL_VCPU_TLBS(pVCpu);
             }
         }
         else
@@ -1919,7 +1919,7 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
     /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
     PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
 # endif
-    PGM_INVL_GUEST_TLBS(pVCpu);
+    PGM_INVL_VCPU_TLBS(pVCpu);
     return VINF_PGM_SYNCPAGE_MODIFIED_PDE;
 
 #elif (PGM_GST_TYPE == PGM_TYPE_REAL || PGM_GST_TYPE == PGM_TYPE_PROT) \

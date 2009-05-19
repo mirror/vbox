@@ -369,7 +369,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     if (RT_FAILURE(rc2))
     {
         if (fFlushTLBs)
-            PGM_INVL_GUEST_TLBS(pVCpu);
+            PGM_INVL_VCPU_TLBS(pVCpu);
         Assert(rc2 == VERR_EM_NO_MEMORY);
         return rc2;
     }
@@ -424,7 +424,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
 
     if (    fFlushTLBs
         &&  rc != VINF_PGM_GCPHYS_ALIASED)
-        PGM_INVL_GUEST_TLBS(pVCpu);
+        PGM_INVL_VCPU_TLBS(pVCpu);
     return rc;
 }
 

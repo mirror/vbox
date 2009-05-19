@@ -2681,7 +2681,7 @@ VMMR3DECL(int) PGMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMROM
     }
     pgmUnlock(pVM);
     if (fFlushTLB)
-        PGM_INVL_GUEST_TLBS(VMMGetCpu(pVM));
+        PGM_INVL_VCPU_TLBS(VMMGetCpu(pVM));
 
     return rc;
 }
