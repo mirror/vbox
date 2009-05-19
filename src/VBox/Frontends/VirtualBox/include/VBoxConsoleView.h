@@ -217,6 +217,10 @@ private:
 
     bool isRunning() { return mLastState == KMachineState_Running; }
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    void handleVHWACommand(struct _VBOXVHWACMD *pCommand);
+#endif
+
     static void dimImage (QImage &img);
 
 private slots:

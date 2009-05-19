@@ -37,6 +37,9 @@
 # include <VBox/vm.h>
 #endif
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+# include <VBox/VBoxVideo.h>
+#endif
 /**
  * Display driver instance data.
  */
@@ -50,6 +53,10 @@ typedef struct DRVMAINDISPLAY
     PPDMIDISPLAYPORT            pUpPort;
     /** Our display connector interface. */
     PDMIDISPLAYCONNECTOR        Connector;
+#if defined(VBOX_WITH_VIDEOHWACCEL)
+    /** VBVA callbacks */
+    PPDMDDISPLAYVBVACALLBACKS   pVBVACallbacks;
+#endif
 } DRVMAINDISPLAY, *PDRVMAINDISPLAY;
 
 /** Converts PDMIDISPLAYCONNECTOR pointer to a DRVMAINDISPLAY pointer. */
@@ -1684,6 +1691,16 @@ STDMETHODIMP Display::UpdateCompleted()
     return S_OK;
 }
 
+STDMETHODIMP Display::CompleteVHWACommand(BYTE *pCommand)
+{
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    mpDrv->pVBVACallbacks->pfnVHWACommandCompleteAsynch(mpDrv->pVBVACallbacks, (PVBOXVHWACMD)pCommand);
+    return S_OK;
+#else
+    return E_NOTIMPL;
+#endif
+}
+
 // private methods
 /////////////////////////////////////////////////////////////////////////////
 
@@ -2224,6 +2241,51 @@ DECLCALLBACK(void) Display::displayProcessDisplayDataCallback(PPDMIDISPLAYCONNEC
     }
 }
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+
+void Display::handleVHWACommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVHWACMD pCommand)
+{
+    unsigned id = (unsigned)pCommand->iDisplay;
+    int rc = VINF_SUCCESS;
+    if(id < mcMonitors)
+    {
+        IFramebuffer *pFramebuffer = maFramebuffers[id].pFramebuffer;
+
+        // if there is no framebuffer, this call is not interesting
+        if (pFramebuffer == NULL)
+            return;
+
+        pFramebuffer->Lock();
+
+        HRESULT hr = pFramebuffer->ProcessVHWACommand((BYTE*)pCommand);
+        if(FAILED(hr))
+        {
+            rc = VERR_GENERAL_FAILURE;
+        }
+
+        pFramebuffer->Unlock();
+
+    }
+    else
+    {
+        rc = VERR_INVALID_PARAMETER;
+    }
+
+    if(RT_FAILURE(rc))
+    {
+        /* tell the guest the command is complete */
+        pCommand->rc = rc;
+    }
+}
+
+DECLCALLBACK(void) Display::displayVHWACommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVHWACMD pCommand)
+{
+    PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
+
+    pDrv->pDisplay->handleVHWACommandProcess(pInterface, pCommand);
+}
+#endif
+
 /**
  * Queries an interface to the driver.
  *
@@ -2312,6 +2374,9 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle
     pData->Connector.pfnLFBModeChange   = Display::displayLFBModeChangeCallback;
     pData->Connector.pfnProcessAdapterData = Display::displayProcessAdapterDataCallback;
     pData->Connector.pfnProcessDisplayData = Display::displayProcessDisplayDataCallback;
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    pData->Connector.pfnVHWACommandProcess = Display::displayVHWACommandProcess;
+#endif
 
     /*
      * Get the IDisplayPort interface of the above driver/device.
@@ -2322,7 +2387,14 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle
         AssertMsgFailed(("Configuration error: No display port interface above!\n"));
         return VERR_PDM_MISSING_INTERFACE_ABOVE;
     }
-
+#if defined(VBOX_WITH_VIDEOHWACCEL)
+    pData->pVBVACallbacks = (PPDMDDISPLAYVBVACALLBACKS)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_DISPLAY_VBVA_CALLBACKS);
+    if (!pData->pVBVACallbacks)
+    {
+        AssertMsgFailed(("Configuration error: No VBVA callback interface above!\n"));
+        return VERR_PDM_MISSING_INTERFACE_ABOVE;
+    }
+#endif
     /*
      * Get the Display object pointer and update the mpDrv member.
      */

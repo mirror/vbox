@@ -4553,6 +4553,10 @@ static DECLCALLBACK(void *) vgaPortQueryInterface(PPDMIBASE pInterface, PDMINTER
             return &pThis->Base;
         case PDMINTERFACE_DISPLAY_PORT:
             return &pThis->Port;
+#if defined(VBOX_WITH_HGSMI) && defined(VBOX_WITH_VIDEOHWACCEL)
+        case PDMINTERFACE_DISPLAY_VBVA_CALLBACKS:
+            return &pThis->VBVACallbacks;
+#endif
         default:
             return NULL;
     }
@@ -5572,6 +5576,9 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     pThis->Port.pfnUpdateDisplayRect    = vgaPortUpdateDisplayRect;
     pThis->Port.pfnSetRenderVRAM        = vgaPortSetRenderVRAM;
 
+#if defined(VBOX_WITH_HGSMI) && defined(VBOX_WITH_VIDEOHWACCEL)
+    pThis->VBVACallbacks.pfnVHWACommandCompleteAsynch = vbvaVHWACommandCompleteAsynch;
+#endif
 
     /*
      * Allocate the VRAM and map the first 512KB of it into GC so we can speed up VGA support.

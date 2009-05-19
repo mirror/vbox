@@ -163,6 +163,9 @@ struct  _PDEV
     BOOLEAN bHGSMISupported;
     HGSMIHEAP hgsmiDisplayHeap;
     VBVABUFFER *pVBVA; /* Pointer to the pjScreen + layout->offVBVABuffer. NULL if VBVA is not enabled. */
+
+    HVBOXVIDEOHGSMI hMpHGSMI; /* context handler passed to miniport HGSMI callbacks */
+    PFNVBOXVIDEOHGSMICOMPLETION pfnHGSMICommandComplete; /* called to complete the command we receive from the miniport */
 #endif /* VBOX_WITH_HGSMI */
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -248,10 +251,14 @@ void VBoxUpdateDisplayInfo (PPDEV ppdev);
 
 void drvLoadEng (void);
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
-VBVAVHWACMD_HDR* vboxVHWACreateCommand (PPDEV ppdev, VBVAVHWACMD_LENGTH cbCmd);
-void vboxVHWAFreeCommand (PPDEV ppdev, VBVAVHWACMD_HDR* pCmd);
-void vboxVHWASubmitCommand (PPDEV ppdev, VBVAVHWACMD_HDR* pCmd);
+#ifdef VBOX_WITH_HGSMI
+DECLCALLBACK(int) vboxVHWACommandHanlder(void *pvHandler, uint16_t u16ChannelInfo, void *pvBuffer, HGSMISIZE cbBuffer);
+
+ #ifdef VBOX_WITH_VIDEOHWACCEL
+VBOXVHWACMD* vboxVHWACreateCommand (PPDEV ppdev, VBOXVHWACMD_LENGTH cbCmd);
+void vboxVHWAFreeCommand (PPDEV ppdev, VBOXVHWACMD* pCmd);
+void vboxVHWASubmitCommand (PPDEV ppdev, VBOXVHWACMD* pCmd);
+ #endif
 #endif
 
 BOOL bIsScreenSurface (SURFOBJ *pso);

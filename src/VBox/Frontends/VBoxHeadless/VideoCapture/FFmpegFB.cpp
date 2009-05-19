@@ -633,7 +633,10 @@ STDMETHODIMP FFmpegFB::SetVisibleRegion(BYTE *rectangles, ULONG /* count */)
     return S_OK;
 }
 
-
+STDMETHODIMP FFmpegFB::ProcessVHWACommand(BYTE *pCommand)
+{
+    return E_NOTIMPL;
+}
 // Private Methods
 //////////////////////////////////////////////////////////////////////////
 //

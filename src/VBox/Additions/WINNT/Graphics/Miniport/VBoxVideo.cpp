@@ -1874,6 +1874,75 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
 
             break;
         }
+        case IOCTL_VIDEO_HGSMI_QUERY_CALLBACKS:
+        {
+            dprintf(("VBoxVideo::VBoxVideoStartIO: IOCTL_VIDEO_HGSMI_QUERY_CALLBACKS\n"));
+
+            if (RequestPacket->OutputBufferLength < sizeof(HGSMIQUERYCALLBACKS))
+            {
+                dprintf(("VBoxVideo::VBoxVideoStartIO: Output buffer too small: %d needed: %d!!!\n",
+                         RequestPacket->OutputBufferLength, sizeof(HGSMIQUERYCALLBACKS)));
+                RequestPacket->StatusBlock->Status = ERROR_INSUFFICIENT_BUFFER;
+                return FALSE;
+            }
+
+            if (!pDevExt->pPrimary->u.primary.bHGSMI)
+            {
+                RequestPacket->StatusBlock->Status = ERROR_INVALID_FUNCTION;
+                return FALSE;
+            }
+
+            HGSMIQUERYCALLBACKS *pInfo = (HGSMIQUERYCALLBACKS *)RequestPacket->OutputBuffer;
+
+            pInfo->hContext = pDevExt->pPrimary;
+            pInfo->pfnCompletionHandler = hgsmiHostCmdHandlerComplete;
+
+            RequestPacket->StatusBlock->Information = sizeof(HGSMIQUERYCALLBACKS);
+            Result = TRUE;
+            break;
+        }
+        case IOCTL_VIDEO_HGSMI_HANDLER_REGISTER:
+        {
+            dprintf(("VBoxVideo::VBoxVideoStartIO: IOCTL_VIDEO_HGSMI_HANDLER_REGISTER\n"));
+
+            if (RequestPacket->InputBufferLength< sizeof(HGSMIHANDLERREGISTER))
+            {
+                dprintf(("VBoxVideo::VBoxVideoStartIO: Output buffer too small: %d needed: %d!!!\n",
+                         RequestPacket->InputBufferLength, sizeof(HGSMIHANDLERREGISTER)));
+                RequestPacket->StatusBlock->Status = ERROR_INSUFFICIENT_BUFFER;
+                return FALSE;
+            }
+
+            if (!pDevExt->pPrimary->u.primary.bHGSMI)
+            {
+                RequestPacket->StatusBlock->Status = ERROR_INVALID_FUNCTION;
+                return FALSE;
+            }
+
+            HGSMIHANDLERREGISTER *pInfo = (HGSMIHANDLERREGISTER *)RequestPacket->InputBuffer;
+
+            int rc = vboxHGSMIChannelDisplayRegister (pDevExt->pPrimary,
+                    pDevExt->iDevice, /* negative would mean this is a miniport handler */
+                    pInfo->u8Channel,
+                    pInfo->pfnHandler,
+                    pInfo->pvHandler);
+            if(RT_FAILURE(rc))
+            {
+                RequestPacket->StatusBlock->Status = ERROR_INVALID_NAME;
+            }
+            Result = TRUE;
+            break;
+        }
+        case IOCTL_VIDEO_HGSMI_HANDLER_DEREGISTER:
+        {
+            /* TODO: implement */
+            if (!pDevExt->pPrimary->u.primary.bHGSMI)
+            {
+                RequestPacket->StatusBlock->Status = ERROR_INVALID_FUNCTION;
+                return FALSE;
+            }
+            break;
+        }
 #endif /* VBOX_WITH_HGSMI */
 
         default:

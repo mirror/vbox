@@ -335,6 +335,11 @@ HRESULT SDLFramebuffer::SetVisibleRegion(BYTE *aRectangles, ULONG aCount)
     return S_OK;
 }
 
+HRESULT SDLFramebuffer::ProcessVHWACommand(BYTE *pCommand)
+{
+    return E_NOTIMPL;
+}
+
 //
 // Internal public methods
 //

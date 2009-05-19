@@ -433,6 +433,10 @@ else
 	src/darwin/VBoxUtils-darwin-carbon.cpp
 endif
 
+ifdef VBOX_WITH_VIDEOHWACCEL
+ VirtualBox_DEFS += VBOX_WITH_VIDEOHWACCEL
+endif
+
 # The Qt modules we're using.
 # (The include directory and lib/framework for each module will be added by the Qt4 unit.)
 VirtualBox_QT_MODULES = Core Gui Network

@@ -577,6 +577,10 @@ STDMETHODIMP VBoxSDLFB::SetVisibleRegion(BYTE *aRectangles, ULONG aCount)
     return S_OK;
 }
 
+STDMETHODIMP VBoxSDLFB::ProcessVHWACommand(BYTE *pCommand)
+{
+    return E_NOTIMPL;
+}
 //
 // Internal public methods
 //

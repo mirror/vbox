@@ -1371,6 +1371,14 @@
 
 /** @} */
 
+/** @name VBox Video HW Acceleration command status
+ * @{
+ */
+/** command processing is pending, a completion handler will be called */
+#define VINF_VHWA_CMD_PENDING                        4500
+
+/** @} */
+
 /* SED-END */
 
 

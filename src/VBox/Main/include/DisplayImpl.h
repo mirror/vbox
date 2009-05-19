@@ -117,6 +117,9 @@ public:
     // public methods only for internal purposes
     int handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM, uint32_t cbLine, int w, int h);
     void handleDisplayUpdate (int x, int y, int cx, int cy);
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    void handleVHWACommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVHWACMD pCommand);
+#endif
     IFramebuffer *getFramebuffer()
     {
         return maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN].pFramebuffer;
@@ -241,6 +244,8 @@ public:
     STDMETHOD(UpdateCompleted)();
     STDMETHOD(SetSeamlessMode)(BOOL enabled);
 
+    STDMETHOD(CompleteVHWACommand)(BYTE *pCommand);
+
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"Display"; }
 
@@ -264,6 +269,10 @@ private:
     static DECLCALLBACK(void)  displayLFBModeChangeCallback(PPDMIDISPLAYCONNECTOR pInterface, bool fEnabled);
     static DECLCALLBACK(void)  displayProcessAdapterDataCallback(PPDMIDISPLAYCONNECTOR pInterface, void *pvVRAM, uint32_t u32VRAMSize);
     static DECLCALLBACK(void)  displayProcessDisplayDataCallback(PPDMIDISPLAYCONNECTOR pInterface, void *pvVRAM, unsigned uScreenId);
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    static DECLCALLBACK(void) displayVHWACommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVHWACMD pCommand);
+#endif
 
     const ComObjPtr <Console, ComWeakRef> mParent;
     /** Pointer to the associated display driver. */

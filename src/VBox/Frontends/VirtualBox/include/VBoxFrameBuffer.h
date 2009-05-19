@@ -113,6 +113,20 @@ private:
     QRegion mReg;
 };
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+class VBoxVHWACommandProcessEvent : public QEvent
+{
+public:
+    VBoxVHWACommandProcessEvent (struct _VBOXVHWACMD * pCmd)
+        : QEvent ((QEvent::Type) VBoxDefs::VHWACommandProcessType)
+        , mpCmd (pCmd) {}
+    struct _VBOXVHWACMD * command() { return mpCmd; }
+private:
+    struct _VBOXVHWACMD * mpCmd;
+};
+
+#endif
+
 /////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -204,6 +218,8 @@ public:
 
     STDMETHOD(GetVisibleRegion)(BYTE *aRectangles, ULONG aCount, ULONG *aCountCopied);
     STDMETHOD(SetVisibleRegion)(BYTE *aRectangles, ULONG aCount);
+
+    STDMETHOD(ProcessVHWACommand)(BYTE *pCommand);
 
     ulong width() { return mWdt; }
     ulong height() { return mHgt; }

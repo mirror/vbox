@@ -259,6 +259,17 @@ STDMETHODIMP VBoxFrameBuffer::SetVisibleRegion (BYTE *aRectangles, ULONG aCount)
     return S_OK;
 }
 
+STDMETHODIMP VBoxFrameBuffer::ProcessVHWACommand(BYTE *pCommand)
+{
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    QApplication::postEvent (mView,
+                             new VBoxVHWACommandProcessEvent ((struct _VBOXVHWACMD*)pCommand));
+    return S_OK;
+#else
+    return E_NOTIMPL;
+#endif
+}
+
 //
 // VBoxQImageFrameBuffer class
 /////////////////////////////////////////////////////////////////////////////

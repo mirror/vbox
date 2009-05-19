@@ -10275,7 +10275,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IFramebuffer" extends="$unknown"
-     uuid="faaf4c24-d534-4171-8781-c15d2b9fe8c3"
+     uuid="b7ed347a-5765-40a0-ae1c-f543eb4ddeaf"
      wsmap="suppress"
      >
     <attribute name="address" type="octet" mod="ptr" readonly="yes">
@@ -10582,6 +10582,23 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <desc>Number of <tt>RTRECT</tt> elements in the @a rectangles array.</desc>
       </param>
     </method>
+    
+    <method name="processVHWACommand">
+      <desc>
+        Posts a Video HW Acceleration Command to the frame buffer for processing.
+        The commands used for 2D video acceleration (DDraw surface creation/destroying, blitting, scaling, color covnersion, overlaying, etc.)
+        are posted from quest to the host to be processed by the host hardware.
+        
+        <note>
+          The address of the provided command must be in the process space of
+          this IFramebuffer object.
+        </note>
+      </desc>
+    
+      <param name="command" type="octet" mod="ptr" dir="in">
+        <desc>Pointer to VBOXVHWACMD containing the command to execute.</desc>
+      </param>
+    </method>
 
   </interface>
 
@@ -10633,7 +10650,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IDisplay" extends="$unknown"
-     uuid="f1efd4d1-45d4-4f21-a074-29c5a98de8e7"
+     uuid="26881797-bc98-444d-ac69-820633b93ec7"
      wsmap="suppress"
      >
     <desc>
@@ -10793,6 +10810,16 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </result>
 
       </desc>
+    </method>
+
+    <method name="completeVHWACommand">
+      <desc>
+        Signals that the Video HW Acceleration command has completed.
+      </desc>
+ 
+      <param name="command" type="octet" mod="ptr" dir="in">
+        <desc>Pointer to VBOXVHWACMD containing the completed command.</desc>
+      </param>
     </method>
 
   </interface>
