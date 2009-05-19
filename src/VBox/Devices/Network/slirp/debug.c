@@ -237,6 +237,24 @@ print_ipv4_address(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
 }
 
 static DECLCALLBACK(size_t)
+print_ether_address(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                   const char *pszType, void const *pvValue,
+                   int cchWidth, int cchPrecision, unsigned fFlags,
+                   void *pvUser)
+{
+    char *ether = (char *)pvUser;
+
+    AssertReturn(strcmp(pszType, "ether") == 0, 0);
+    if (ether != NULL)
+        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, 
+            "[ether %hhx:%hhx:%hhx:%hhx:%hhx:%hhx]",
+            ether[0], ether[1], ether[2], 
+            ether[3], ether[4], ether[5]);
+    else
+        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "[ether null]");
+}
+
+static DECLCALLBACK(size_t)
 print_socket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
              const char *pszType, void const *pvValue,
              int cchWidth, int cchPrecision, unsigned fFlags,
@@ -337,6 +355,8 @@ debug_init()
          * Use the specifier %RNAipv4.
          */
         rc = RTStrFormatTypeRegister("IP4", print_ipv4_address, NULL);
+        AssertRC(rc);
+        rc = RTStrFormatTypeRegister("ether", print_ether_address, NULL);
         AssertRC(rc);
         rc = RTStrFormatTypeRegister("natsock", print_socket, NULL);
         AssertRC(rc);
