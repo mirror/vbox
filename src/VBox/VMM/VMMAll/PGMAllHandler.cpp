@@ -167,13 +167,13 @@ VMMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
         if (rc == VINF_PGM_SYNC_CR3)
             rc = VINF_PGM_GCPHYS_ALIASED;
         pVM->pgm.s.fPhysCacheFlushPending = true;
+        pgmUnlock(pVM);
         HWACCMFlushTLB(pVM);
 #ifndef IN_RING3
         REMNotifyHandlerPhysicalRegister(pVM, enmType, GCPhys, GCPhysLast - GCPhys + 1, !!pfnHandlerR3);
 #else
         REMR3NotifyHandlerPhysicalRegister(pVM, enmType, GCPhys, GCPhysLast - GCPhys + 1, !!pfnHandlerR3);
 #endif
-        pgmUnlock(pVM);
         if (rc != VINF_SUCCESS)
             Log(("PGMHandlerPhysicalRegisterEx: returns %Rrc (%RGp-%RGp)\n", rc, GCPhys, GCPhysLast));
         return rc;
@@ -267,10 +267,10 @@ VMMDECL(int)  PGMHandlerPhysicalDeregister(PVM pVM, RTGCPHYS GCPhys)
         /*
          * Clear the page bits and notify the REM about this change.
          */
-        HWACCMFlushTLB(pVM);
         pgmHandlerPhysicalResetRamFlags(pVM, pCur);
         pgmHandlerPhysicalDeregisterNotifyREM(pVM, pCur);
         pgmUnlock(pVM);
+        HWACCMFlushTLB(pVM);
         MMHyperFree(pVM, pCur);
         return VINF_SUCCESS;
     }
@@ -551,8 +551,8 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
                     REMR3NotifyHandlerPhysicalModify(pVM, pCur->enmType, GCPhysCurrent, GCPhys,
                                                      pCur->Core.KeyLast - GCPhys + 1, !!pCur->pfnHandlerR3, fRestoreAsRAM);
 #endif
-                    HWACCMFlushTLB(pVM);
                     pgmUnlock(pVM);
+                    HWACCMFlushTLB(pVM);
                     Log(("PGMHandlerPhysicalModify: GCPhysCurrent=%RGp -> GCPhys=%RGp GCPhysLast=%RGp\n",
                          GCPhysCurrent, GCPhys, GCPhysLast));
                     return VINF_SUCCESS;
@@ -1135,22 +1135,25 @@ int pgmHandlerVirtualFindByPhysAddr(PVM pVM, RTGCPHYS GCPhys, PPGMVIRTHANDLER *p
     STAM_PROFILE_START(&pVM->pgm.s.CTX_MID_Z(Stat,VirtHandlerSearchByPhys), a);
     Assert(ppVirt);
 
+    pgmLock(pVM);
     PPGMPHYS2VIRTHANDLER pCur;
     pCur = (PPGMPHYS2VIRTHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysToVirtHandlers, GCPhys);
     if (pCur)
     {
         /* found a match! */
+        *ppVirt = (PPGMVIRTHANDLER)((uintptr_t)pCur + pCur->offVirtHandler);
+        *piPage = pCur - &(*ppVirt)->aPhysToVirt[0];
+        pgmUnlock(pVM);
+
 #ifdef VBOX_STRICT_PGM_HANDLER_VIRTUAL
         AssertRelease(pCur->offNextAlias & PGMPHYS2VIRTHANDLER_IS_HEAD);
 #endif
-        *ppVirt = (PPGMVIRTHANDLER)((uintptr_t)pCur + pCur->offVirtHandler);
-        *piPage = pCur - &(*ppVirt)->aPhysToVirt[0];
-
         LogFlow(("PHYS2VIRT: found match for %RGp -> %RGv *piPage=%#x\n", GCPhys, (*ppVirt)->Core.Key, *piPage));
         STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,VirtHandlerSearchByPhys), a);
         return VINF_SUCCESS;
     }
 
+    pgmUnlock(pVM);
     *ppVirt = NULL;
     STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,VirtHandlerSearchByPhys), a);
     return VERR_PGM_HANDLER_NOT_FOUND;
@@ -1221,6 +1224,7 @@ DECLCALLBACK(int) pgmHandlerVirtualResetOne(PAVLROGCPTRNODECORE pNode, void *pvU
     PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)pNode;
     PVM             pVM = (PVM)pvUser;
 
+    Assert(PGMIsLockOwner(pVM));
     /*
      * Iterate the pages and apply the new state.
      */
