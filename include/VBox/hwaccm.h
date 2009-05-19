@@ -75,17 +75,17 @@ __BEGIN_DECLS
 #define HWACCMCanEmulateIoBlock(pVCpu)     (!CPUMIsGuestInPagedProtectedMode(pVCpu))
 #define HWACCMCanEmulateIoBlockEx(pCtx)    (!CPUMIsGuestInPagedProtectedModeEx(pCtx))
 
-VMMDECL(int)    HWACCMInvalidatePage(PVM pVM, RTGCPTR GCVirt);
+VMMDECL(int)    HWACCMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt);
 VMMDECL(bool)   HWACCMHasPendingIrq(PVM pVM);
 
 #ifndef IN_RC
-VMMDECL(int)     HWACCMFlushTLB(PVM pVM);
-VMMDECL(int)     HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys);
+VMMDECL(int)     HWACCMFlushTLB(PVMCPU pVCpu);
+VMMDECL(int)     HWACCMInvalidatePhysPage(PVMCPU pVCpu, RTGCPHYS GCPhys);
 VMMDECL(bool)    HWACCMIsNestedPagingActive(PVM pVM);
 VMMDECL(PGMMODE) HWACCMGetShwPagingMode(PVM pVM);
 #else
 /* Nop in GC */
-# define HWACCMFlushTLB(pVM)                    do { } while (0)
+# define HWACCMFlushTLB(pVCpu)                  do { } while (0)
 # define HWACCMIsNestedPagingActive(pVM)        false
 #endif
 

@@ -188,7 +188,7 @@ VMMDECL(int)  PGMMapModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
                     pCur->aPTs[iPT].CTX_SUFF(paPaePTs)[iPTE / 512].a[iPTE % 512].u |= fFlags & ~X86_PTE_PAE_PG_MASK;
 
                     /* invalidate tls */
-                    PGM_INVL_PG((RTGCUINTPTR)pCur->GCPtr + off);
+                    PGM_INVL_PG(VMMGetCpu(pVM), (RTGCUINTPTR)pCur->GCPtr + off);
 
                     /* next */
                     iPTE++;

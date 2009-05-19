@@ -3010,7 +3010,7 @@ VMMDECL(int) EMInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 
         /* AMD64 Architecture Programmer's Manual: 15.15 TLB Control; flush the TLB if MSR_K6_EFER_NXE, MSR_K6_EFER_LME or MSR_K6_EFER_LMA are changed. */
         if ((oldval & (MSR_K6_EFER_NXE|MSR_K6_EFER_LME|MSR_K6_EFER_LMA)) != (pCtx->msrEFER & (MSR_K6_EFER_NXE|MSR_K6_EFER_LME|MSR_K6_EFER_LMA)))
-            HWACCMFlushTLB(pVM);
+            HWACCMFlushTLB(pVCpu);
 
         break;
     }

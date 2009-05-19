@@ -331,11 +331,11 @@
  * @param   GCVirt      The virtual address of the page to invalidate.
  */
 #ifdef IN_RC
-# define PGM_INVL_PG(GCVirt)            ASMInvalidatePage((void *)(GCVirt))
+# define PGM_INVL_PG(pVCpu, GCVirt)             ASMInvalidatePage((void *)(GCVirt))
 #elif defined(IN_RING0)
-# define PGM_INVL_PG(GCVirt)            HWACCMInvalidatePage(pVM, (RTGCPTR)(GCVirt))
+# define PGM_INVL_PG(pVCpu, GCVirt)             HWACCMInvalidatePage(pVCpu, (RTGCPTR)(GCVirt))
 #else
-# define PGM_INVL_PG(GCVirt)            HWACCMInvalidatePage(pVM, (RTGCPTR)(GCVirt))
+# define PGM_INVL_PG(pVCpu, GCVirt)             HWACCMInvalidatePage(pVCpu, (RTGCPTR)(GCVirt))
 #endif
 
 /** @def PGM_INVL_BIG_PG
@@ -344,22 +344,22 @@
  * @param   GCVirt      The virtual address within the page directory to invalidate.
  */
 #ifdef IN_RC
-# define PGM_INVL_BIG_PG(GCVirt)        ASMReloadCR3()
+# define PGM_INVL_BIG_PG(pVCpu, GCVirt)         ASMReloadCR3()
 #elif defined(IN_RING0)
-# define PGM_INVL_BIG_PG(GCVirt)        HWACCMFlushTLB(pVM)
+# define PGM_INVL_BIG_PG(pVCpu, GCVirt)         HWACCMFlushTLB(pVCpu)
 #else
-# define PGM_INVL_BIG_PG(GCVirt)        HWACCMFlushTLB(pVM)
+# define PGM_INVL_BIG_PG(pVCpu, GCVirt)         HWACCMFlushTLB(pVCpu)
 #endif
 
 /** @def PGM_INVL_GUEST_TLBS()
  * Invalidates all guest TLBs.
  */
 #ifdef IN_RC
-# define PGM_INVL_GUEST_TLBS()          ASMReloadCR3()
+# define PGM_INVL_GUEST_TLBS(pVCpu)             ASMReloadCR3()
 #elif defined(IN_RING0)
-# define PGM_INVL_GUEST_TLBS()          HWACCMFlushTLB(pVM)
+# define PGM_INVL_GUEST_TLBS(pVCpu)             HWACCMFlushTLB(pVCpu)
 #else
-# define PGM_INVL_GUEST_TLBS()          HWACCMFlushTLB(pVM)
+# define PGM_INVL_GUEST_TLBS(pVCpu)             HWACCMFlushTLB(pVCpu)
 #endif
 
 /** Size of the GCPtrConflict array in PGMMAPPING.
