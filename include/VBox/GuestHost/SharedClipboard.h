@@ -36,7 +36,11 @@
 
 enum {
     /** The number of milliseconds before the clipboard times out. */
+#ifndef TESTCASE
     CLIPBOARD_TIMEOUT = 5000
+#else
+    CLIPBOARD_TIMEOUT = 1
+#endif
 };
 
 /** Opaque data structure for the X11/VBox frontend/glue code. */
@@ -47,23 +51,28 @@ typedef struct _VBOXCLIPBOARDCONTEXT VBOXCLIPBOARDCONTEXT;
 struct _CLIPBACKEND;
 typedef struct _CLIPBACKEND CLIPBACKEND;
 
+/** Opaque data structure used for asynchronously completing requests by VBox
+ * to read the X11 clipboard data. */
+struct _CLIPREADX11CBCONTEXT;
+typedef struct _CLIPREADX11CBCONTEXT CLIPREADX11CBCONTEXT;
+
 /* APIs exported by the X11 backend */
-extern CLIPBACKEND *VBoxX11ClipboardConstructX11
-                                        (VBOXCLIPBOARDCONTEXT *pFrontend);
-extern void VBoxX11ClipboardDestructX11(CLIPBACKEND *pBackend);
-extern int VBoxX11ClipboardStartX11(CLIPBACKEND *pBackend);
-extern int VBoxX11ClipboardStopX11(CLIPBACKEND *pBackend);
-extern void VBoxX11ClipboardAnnounceVBoxFormat(CLIPBACKEND
-                                               *pBackend, uint32_t u32Formats);
-extern int VBoxX11ClipboardReadX11Data(CLIPBACKEND *pBackend,
-                                       uint32_t u32Format,
-                                       void *pv, uint32_t cb,
-                                       uint32_t *pcbActual);
+extern CLIPBACKEND *ClipConstructX11(VBOXCLIPBOARDCONTEXT *pFrontend);
+extern void ClipDestructX11(CLIPBACKEND *pBackend);
+extern int ClipStartX11(CLIPBACKEND *pBackend);
+extern int ClipStopX11(CLIPBACKEND *pBackend);
+extern void ClipAnnounceFormatToX11(CLIPBACKEND *pBackend,
+                                    uint32_t u32Formats);
+extern int ClipRequestDataFromX11(CLIPBACKEND *pBackend, uint32_t u32Format,
+                                  void *pv, uint32_t cb,
+                                  CLIPREADX11CBCONTEXT *pCtx);
 
 /* APIs exported by the X11/VBox frontend */
-extern int VBoxX11ClipboardReadVBoxData(VBOXCLIPBOARDCONTEXT *pCtx,
+extern int ClipRequestDataForX11(VBOXCLIPBOARDCONTEXT *pCtx,
                                         uint32_t u32Format, void **ppv,
                                         uint32_t *pcb);
-extern void VBoxX11ClipboardReportX11Formats(VBOXCLIPBOARDCONTEXT *pCtx,
+extern void ClipReportX11Formats(VBOXCLIPBOARDCONTEXT *pCtx,
                                              uint32_t u32Formats);
+extern void ClipCompleteDataRequestFromX11(CLIPREADX11CBCONTEXT *pCtx, int rc,
+                                           uint32_t cbActual);
 #endif  /* ___GUESTHOST_VBOXCLIPBOARD__H */
