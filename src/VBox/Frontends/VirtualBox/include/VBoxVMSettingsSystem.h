@@ -1,11 +1,11 @@
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
- * VBoxVMSettingsGeneral class declaration
+ * VBoxVMSettingsSystem class declaration
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,23 +20,27 @@
  * additional information or have any questions.
  */
 
-#ifndef __VBoxVMSettingsGeneral_h__
-#define __VBoxVMSettingsGeneral_h__
+#ifndef __VBoxVMSettingsSystem_h__
+#define __VBoxVMSettingsSystem_h__
 
-#include "VBoxSettingsPage.h"
-#include "VBoxVMSettingsGeneral.gen.h"
 #include "COMDefs.h"
+#include "VBoxSettingsPage.h"
+#include "VBoxVMSettingsSystem.gen.h"
 
-class VBoxVMSettingsGeneral : public VBoxSettingsPage,
-                              public Ui::VBoxVMSettingsGeneral
+class VBoxVMSettingsSystem : public VBoxSettingsPage,
+                             public Ui::VBoxVMSettingsSystem
 {
     Q_OBJECT;
 
 public:
 
-    VBoxVMSettingsGeneral();
+    VBoxVMSettingsSystem();
 
-    bool is64BitOSTypeSelected() const;
+    bool isHWVirtExEnabled() const;
+
+signals:
+
+    void tableChanged();
 
 protected:
 
@@ -44,18 +48,34 @@ protected:
     void putBackTo();
 
     void setValidator (QIWidgetValidator *aVal);
+    bool revalidate (QString &aWarning, QString &aTitle);
 
     void setOrderAfter (QWidget *aWidget);
 
     void retranslateUi();
 
+private slots:
+
+    void valueChangedRAM (int aVal);
+    void textChangedRAM (const QString &aText);
+
+    void moveBootItemUp();
+    void moveBootItemDown();
+    void onCurrentBootItemChanged (QTreeWidgetItem *aItem,
+                                   QTreeWidgetItem *aPrev = 0);
+
+    void valueChangedCPU (int aVal);
+    void textChangedCPU (const QString &aText);
+
 private:
 
-    void showEvent (QShowEvent *aEvent);
+    bool eventFilter (QObject *aObject, QEvent *aEvent);
+
+    void adjustBootOrderTWSize();
 
     CMachine mMachine;
     QIWidgetValidator *mValidator;
 };
 
-#endif // __VBoxVMSettingsGeneral_h__
+#endif // __VBoxVMSettingsSystem_h__
 

@@ -132,8 +132,10 @@ void VBoxSettingsDialog::revalidate (QIWidgetValidator *aWval)
     QString warning;
     QString title = mSelector->itemTextByPage (page);
     bool valid = page->revalidate (warning, title);
+    if (valid && warning.isEmpty())
+        valid = correlate (page, warning);
     warning = warning.isEmpty() ? QString::null :
-        tr ("On the <b>%1</b> page, %2").arg (title, warning);
+              tr ("On the <b>%1</b> page, %2").arg (title, warning);
     aWval->setLastWarning (warning);
     valid ? setWarning (warning) : setError (warning);
 
@@ -271,6 +273,11 @@ void VBoxSettingsDialog::addItem (const QString &aBigIcon,
         mStack->addWidget (page);
     if (aPrefPage)
         attachValidator (aPrefPage);
+}
+
+bool VBoxSettingsDialog::correlate (QWidget*, QString&)
+{
+    return true;
 }
 
 void VBoxSettingsDialog::enableOk (const QIWidgetValidator*)

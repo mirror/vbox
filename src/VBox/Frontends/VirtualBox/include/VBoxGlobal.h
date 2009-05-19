@@ -927,8 +927,6 @@ private:
 
     QPixmap mWarningIcon, mErrorIcon;
 
-    mutable bool mDetailReportTemplatesReady;
-
     friend VBoxGlobal &vboxGlobal();
     friend class VBoxCallback;
 };

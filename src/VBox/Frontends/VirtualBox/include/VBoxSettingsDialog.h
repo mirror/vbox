@@ -74,6 +74,8 @@ protected:
                   int aId, const QString &aLink,
                   VBoxSettingsPage* aPrefPage = NULL, int aParentId = -1);
 
+    virtual bool correlate (QWidget *aPage, QString &aWarning);
+
     VBoxSettingsSelector *mSelector;
     QStackedWidget *mStack;
 

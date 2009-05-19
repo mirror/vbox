@@ -268,6 +268,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxMediaManagerDlg.h \
 	include/VBoxSettingsUtils.h \
 	include/VBoxVMSettingsGeneral.h \
+	include/VBoxVMSettingsSystem.h \
 	include/VBoxVMSettingsDisplay.h \
 	include/VBoxVMSettingsHD.h \
 	include/VBoxVMSettingsCD.h \
@@ -356,6 +357,7 @@ VirtualBox_SOURCES = \
 	src/VBoxSnapshotsWgt.cpp \
 	src/VBoxVMLogViewer.cpp \
 	src/VBoxVMSettingsGeneral.cpp \
+	src/VBoxVMSettingsSystem.cpp \
 	src/VBoxVMSettingsDisplay.cpp \
 	src/VBoxVMSettingsHD.cpp \
 	src/VBoxVMSettingsCD.cpp \

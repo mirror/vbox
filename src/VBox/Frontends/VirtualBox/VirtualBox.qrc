@@ -335,5 +335,7 @@
     <file alias="vmw_ovf_import.png">images/vmw_ovf_import.png</file>
     <file alias="connect_16px.png">images/connect_16px.png</file>
     <file alias="disconnect_16px.png">images/disconnect_16px.png</file>
+    <file alias="chipset_16px.png">images/chipset_16px.png</file>
+    <file alias="chipset_32px.png">images/chipset_32px.png</file>
  </qresource>
  </RCC>

@@ -384,7 +384,6 @@ private:
     QString getWithMediaManager (const QString &aInitialId = QString::null);
     QString getWithNewHDWizard();
     int maxNameLength() const;
-    void prepareComboboxes();
     void removeFocus();
     KStorageControllerType currentControllerType() const
     {
