@@ -1145,7 +1145,6 @@ RuntimeR0Drv_SOURCES.win = \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/mppresent-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
-	r0drv/generic/RTMpPokeCpu-r0drv-generic.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/mpnotification-r0drv.c \
 	r0drv/powernotification-r0drv.c \
