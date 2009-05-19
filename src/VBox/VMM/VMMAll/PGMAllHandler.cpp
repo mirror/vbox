@@ -168,7 +168,7 @@ VMMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
             rc = VINF_PGM_GCPHYS_ALIASED;
         pVM->pgm.s.fPhysCacheFlushPending = true;
         pgmUnlock(pVM);
-        HWACCMFlushTLB(VMMGetCpu(pVM));
+        HWACCMFlushAllTLBs(pVM);
 #ifndef IN_RING3
         REMNotifyHandlerPhysicalRegister(pVM, enmType, GCPhys, GCPhysLast - GCPhys + 1, !!pfnHandlerR3);
 #else
@@ -270,7 +270,7 @@ VMMDECL(int)  PGMHandlerPhysicalDeregister(PVM pVM, RTGCPHYS GCPhys)
         pgmHandlerPhysicalResetRamFlags(pVM, pCur);
         pgmHandlerPhysicalDeregisterNotifyREM(pVM, pCur);
         pgmUnlock(pVM);
-        HWACCMFlushTLB(VMMGetCpu(pVM));
+        HWACCMFlushAllTLBs(pVM);
         MMHyperFree(pVM, pCur);
         return VINF_SUCCESS;
     }
@@ -416,7 +416,7 @@ void pgmHandlerPhysicalResetAliasedPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
     if (fFlushTLBs && rc != VINF_PGM_SYNC_CR3)
         PGM_INVL_GUEST_TLBS(VMMGetCpu0(pVM));
 # else
-    HWACCMFlushTLB(VMMGetCpu(pVM));
+    HWACCMFlushAllTLBs(pVM);
 # endif
     pVM->pgm.s.fPhysCacheFlushPending = true;
 
@@ -552,7 +552,7 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
                                                      pCur->Core.KeyLast - GCPhys + 1, !!pCur->pfnHandlerR3, fRestoreAsRAM);
 #endif
                     pgmUnlock(pVM);
-                    HWACCMFlushTLB(VMMGetCpu(pVM));
+                    HWACCMFlushAllTLBs(pVM);
                     Log(("PGMHandlerPhysicalModify: GCPhysCurrent=%RGp -> GCPhys=%RGp GCPhysLast=%RGp\n",
                          GCPhysCurrent, GCPhys, GCPhysLast));
                     return VINF_SUCCESS;
@@ -847,7 +847,7 @@ VMMDECL(int)  PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
                      */
                     rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pCur, pRam);
                     pVM->pgm.s.fPhysCacheFlushPending = true;
-                    HWACCMFlushTLB(VMMGetCpu(pVM));
+                    HWACCMFlushAllTLBs(pVM);
                 }
 
                 rc = VINF_SUCCESS;
