@@ -592,17 +592,6 @@ sorecvfrom(PNATState pData, struct socket *so)
              * If this packet was destined for CTL_ADDR,
              * make it look like that's where it came from, done by udp_output
              */
-#ifdef VBOX_WITH_NAT_SERVICE
-            {
-                struct ethhdr *eh0;
-                struct ethhdr *eh;
-                Assert(so->so_m);
-                eh0 = (struct ethhdr *)so->so_m->m_dat;
-                eh = (struct ethhdr *)m->m_dat;
-
-                memcpy(eh->h_source, eh0->h_source, ETH_ALEN);
-            }
-#endif
             udp_output(pData, so, m, &addr);
             SOCKET_UNLOCK(so);
         } /* rx error */

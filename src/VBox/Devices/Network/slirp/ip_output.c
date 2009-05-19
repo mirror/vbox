@@ -44,6 +44,26 @@
 
 #include <slirp.h>
 
+#ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
+char * rt_lookup_in_cache(PNATState pData, uint32_t dst)
+{
+    int i;
+   /* temporary do for dhcp client */ 
+    for(i = 0; i < NB_ADDR; i++)
+    {
+        if (    bootp_clients[i].allocated 
+            && bootp_clients[i].addr.s_addr == dst)
+        {
+            return &bootp_clients[i].macaddr[0];
+        }
+    }
+    if (dst != 0)
+    {
+        return pData->slirp_ethaddr;
+    }
+   return NULL; 
+}
+#endif
 
 /*
  * IP output.  The packet in mbuf chain m contains a skeletal IP
@@ -106,15 +126,23 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
         ip->ip_off = htons((u_int16_t)ip->ip_off);
         ip->ip_sum = 0;
         ip->ip_sum = cksum(m, hlen);
-
-#ifdef VBOX_WITH_NAT_SERVICE
+#ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
+        /* Current TCP/IP stack hasn't routing information at 
+         * all so we need to calculate destination ethernet address 
+         */
         {
-            struct ethhdr *eh, *eh0;
-            eh = (struct ethhdr *)m->m_dat;
-            eh0 = (struct ethhdr *)m0->m_dat;
-            memcpy(eh->h_source, eh0->h_source, ETH_ALEN);
+            extern uint8_t zerro_ethaddr[ETH_ALEN];
+            struct ethhdr *eh;
+            eh = (struct ethhdr *)MBUF_HEAD(m);
+            if (memcmp(eh->h_source, zerro_ethaddr, ETH_ALEN) == 0) {
+                char *dst = rt_lookup_in_cache(pData, ip->ip_dst.s_addr); 
+                if (dst != NULL) {
+                    memcpy(eh->h_source, dst, ETH_ALEN); 
+                }
+            }
         }
 #endif
+
         if_output(pData, so, m);
         goto done;
     }
@@ -149,7 +177,7 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
         mhlen = sizeof (struct ip);
         for (off = hlen + len; off < (u_int16_t)ip->ip_len; off += len)
         {
-#ifdef VBOX_WITH_NAT_SERVICE
+#ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
             struct ethhdr *eh0;
             struct ethhdr *eh;
 #endif
@@ -162,11 +190,11 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
                 goto sendorfree;
             }
 #ifdef VBOX_WITH_NAT_SERVICE
-            eh0 = (struct ethhdr *)m0->m_dat; 
-            eh = (struct ethhdr *)m->m_dat;
+            eh0 = (struct ethhdr *)MBUF_HEAD(m0);
+            eh = (struct ethhdr *)MBUF_HEAD(m);
             memcpy(eh->h_source, eh0->h_source, ETH_ALEN);
 #endif
-            m->m_data += if_maxlinkhdr;
+            m_adj(m, if_maxlinkhdr);
             mhip = mtod(m, struct ip *);
             *mhip = *ip;
 
