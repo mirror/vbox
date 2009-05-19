@@ -168,7 +168,7 @@ VMMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
             rc = VINF_PGM_GCPHYS_ALIASED;
         pVM->pgm.s.fPhysCacheFlushPending = true;
         pgmUnlock(pVM);
-        HWACCMFlushTLB(pVM);
+        HWACCMFlushTLB(VMMGetCpu(pVM));
 #ifndef IN_RING3
         REMNotifyHandlerPhysicalRegister(pVM, enmType, GCPhys, GCPhysLast - GCPhys + 1, !!pfnHandlerR3);
 #else
@@ -236,7 +236,7 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
 
     if (fFlushTLBs && rc == VINF_SUCCESS)
     {
-        PGM_INVL_GUEST_TLBS();
+        PGM_INVL_GUEST_TLBS(VMMGetCpu(pVM));
         Log(("pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs: flushing guest TLBs\n"));
     }
     else
@@ -270,7 +270,7 @@ VMMDECL(int)  PGMHandlerPhysicalDeregister(PVM pVM, RTGCPHYS GCPhys)
         pgmHandlerPhysicalResetRamFlags(pVM, pCur);
         pgmHandlerPhysicalDeregisterNotifyREM(pVM, pCur);
         pgmUnlock(pVM);
-        HWACCMFlushTLB(pVM);
+        HWACCMFlushTLB(VMMGetCpu(pVM));
         MMHyperFree(pVM, pCur);
         return VINF_SUCCESS;
     }
@@ -414,9 +414,9 @@ void pgmHandlerPhysicalResetAliasedPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
     AssertLogRelRCReturnVoid(rc);
 # ifdef IN_RC
     if (fFlushTLBs && rc != VINF_PGM_SYNC_CR3)
-        PGM_INVL_GUEST_TLBS();
+        PGM_INVL_GUEST_TLBS(VMMGetCpu0(pVM));
 # else
-    HWACCMFlushTLB(pVM);
+    HWACCMFlushTLB(VMMGetCpu(pVM));
 # endif
     pVM->pgm.s.fPhysCacheFlushPending = true;
 
@@ -552,7 +552,7 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
                                                      pCur->Core.KeyLast - GCPhys + 1, !!pCur->pfnHandlerR3, fRestoreAsRAM);
 #endif
                     pgmUnlock(pVM);
-                    HWACCMFlushTLB(pVM);
+                    HWACCMFlushTLB(VMMGetCpu(pVM));
                     Log(("PGMHandlerPhysicalModify: GCPhysCurrent=%RGp -> GCPhys=%RGp GCPhysLast=%RGp\n",
                          GCPhysCurrent, GCPhys, GCPhysLast));
                     return VINF_SUCCESS;
@@ -847,7 +847,7 @@ VMMDECL(int)  PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
                      */
                     rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pCur, pRam);
                     pVM->pgm.s.fPhysCacheFlushPending = true;
-                    HWACCMFlushTLB(pVM);
+                    HWACCMFlushTLB(VMMGetCpu(pVM));
                 }
 
                 rc = VINF_SUCCESS;
@@ -919,7 +919,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageTempOff(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
             AssertRCReturn(rc, rc);
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
 #ifndef IN_RC
-            HWACCMInvalidatePhysPage(pVM, GCPhysPage);
+            HWACCMInvalidatePhysPage(VMMGetCpu(pVM), GCPhysPage);
 #endif
             return VINF_SUCCESS;
         }
@@ -1036,7 +1036,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
             LogFlow(("PGMHandlerPhysicalPageAlias: => %R[pgmpage]\n", pPage));
 
 #ifndef IN_RC
-            HWACCMInvalidatePhysPage(pVM, GCPhysPage);
+            HWACCMInvalidatePhysPage(VMMGetCpu(pVM), GCPhysPage);
 #endif
             return VINF_SUCCESS;
         }

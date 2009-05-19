@@ -937,7 +937,7 @@ static int pgmPoolAccessHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PPGM
         rc = rc2;
 
     /* See use in pgmPoolAccessHandlerSimple(). */
-    PGM_INVL_GUEST_TLBS();
+    PGM_INVL_GUEST_TLBS(pVCpu);
 
     LogFlow(("pgmPoolAccessHandlerPT: returns %Rrc (flushed)\n", rc));
     return rc;
@@ -1002,7 +1002,7 @@ DECLINLINE(int) pgmPoolAccessHandlerSTOSD(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE 
 
 #ifdef IN_RC
     /* See use in pgmPoolAccessHandlerSimple(). */
-    PGM_INVL_GUEST_TLBS();
+    PGM_INVL_GUEST_TLBS(pVCpu);
 #endif
 
     LogFlow(("pgmPoolAccessHandlerSTOSD: returns\n"));
@@ -1073,7 +1073,7 @@ DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool
      * At the moment, it's VITAL that it's done AFTER the instruction interpreting
      * because we need the stale TLBs in some cases (XP boot). This MUST be fixed properly!
      */
-    PGM_INVL_GUEST_TLBS();
+    PGM_INVL_GUEST_TLBS(pVCpu);
 #endif
 
     LogFlow(("pgmPoolAccessHandlerSimple: returns %Rrc cb=%d\n", rc, cb));
@@ -1297,7 +1297,7 @@ static int pgmPoolCacheFreeOne(PPGMPOOL pPool, uint16_t iUser)
      */
     int rc = pgmPoolFlushPage(pPool, pPage);
     if (rc == VINF_SUCCESS)
-        PGM_INVL_GUEST_TLBS(); /* see PT handler. */
+        PGM_INVL_GUEST_TLBS(VMMGetCpu(pVM)); /* see PT handler. */
     return rc;
 }
 
@@ -1466,7 +1466,7 @@ static int pgmPoolCacheAlloc(PPGMPOOL pPool, RTGCPHYS GCPhys, PGMPOOLKIND enmKin
                 {
                     STAM_COUNTER_INC(&pPool->StatCacheKindMismatches);
                     pgmPoolFlushPage(pPool, pPage);
-                    PGM_INVL_GUEST_TLBS(); /* see PT handler. */
+                    PGM_INVL_GUEST_TLBS(VMMGetCpu(pVM)); /* see PT handler. */
                     break;
                 }
             }
@@ -2063,7 +2063,7 @@ DECLCALLBACK(int) pgmPoolClearAll(PVM pVM, void *pvUser)
 
     pPool->cPresent = 0;
     pgmUnlock(pVM);
-    PGM_INVL_GUEST_TLBS();
+    PGM_INVL_GUEST_TLBS(VMMGetCpu(pVM));
     STAM_PROFILE_STOP(&pPool->StatClearAll, c);
     return VINF_SUCCESS;
 }

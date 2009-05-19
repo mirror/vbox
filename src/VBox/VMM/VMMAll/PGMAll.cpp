@@ -1866,7 +1866,7 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
      * Now flush the CR3 (guest context).
      */
     if (rc == VINF_SUCCESS)
-        PGM_INVL_GUEST_TLBS();
+        PGM_INVL_GUEST_TLBS(pVCpu);
     return rc;
 }
 
@@ -1923,7 +1923,7 @@ VMMDECL(int) PGMChangeMode(PVMCPU pVCpu, uint64_t cr0, uint64_t cr4, uint64_t ef
         return VINF_SUCCESS;
 
     /* Flush the TLB */
-    PGM_INVL_GUEST_TLBS();
+    PGM_INVL_GUEST_TLBS(pVCpu);
 
 #ifdef IN_RING3
     return PGMR3ChangeMode(pVM, pVCpu, enmGuestMode);

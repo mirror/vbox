@@ -47,13 +47,13 @@
  * Invalidates a guest page
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VMCPU to operate on.
  * @param   GCVirt      Page to invalidate
  */
-VMMDECL(int) HWACCMInvalidatePage(PVM pVM, RTGCPTR GCVirt)
+VMMDECL(int) HWACCMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
 {
 #ifdef IN_RING0
-    PVMCPU pVCpu = VMMGetCpu(pVM);
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (pVM->hwaccm.s.vmx.fSupported)
         return VMXR0InvalidatePage(pVM, pVCpu, GCVirt);
 
@@ -68,12 +68,10 @@ VMMDECL(int) HWACCMInvalidatePage(PVM pVM, RTGCPTR GCVirt)
  * Flushes the guest TLB
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VMCPU to operate on.
  */
-VMMDECL(int) HWACCMFlushTLB(PVM pVM)
+VMMDECL(int) HWACCMFlushTLB(PVMCPU pVCpu)
 {
-    PVMCPU pVCpu = VMMGetCpu(pVM);
-
     LogFlow(("HWACCMFlushTLB\n"));
 
     pVCpu->hwaccm.s.fForceTLBFlush = true;
@@ -114,23 +112,24 @@ VMMDECL(PGMMODE) HWACCMGetShwPagingMode(PVM pVM)
  * NOTE: Assumes the current instruction references this physical page though a virtual address!!
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VMCPU to operate on.
  * @param   GCPhys      Page to invalidate
  */
-VMMDECL(int) HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
+VMMDECL(int) HWACCMInvalidatePhysPage(PVMCPU pVCpu, RTGCPHYS GCPhys)
 {
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+
     if (!HWACCMIsNestedPagingActive(pVM))
         return VINF_SUCCESS;
 
 #ifdef IN_RING0
-    PVMCPU pVCpu = VMMGetCpu(pVM);
     if (pVM->hwaccm.s.vmx.fSupported)
         return VMXR0InvalidatePhysPage(pVM, pVCpu, GCPhys);
 
     Assert(pVM->hwaccm.s.svm.fSupported);
     SVMR0InvalidatePhysPage(pVM, pVCpu, GCPhys);
 #else
-    HWACCMFlushTLB(pVM);
+    HWACCMFlushTLB(pVCpu);
 #endif
     return VINF_SUCCESS;
 }

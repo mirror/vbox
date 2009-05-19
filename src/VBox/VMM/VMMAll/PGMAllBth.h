@@ -988,7 +988,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         AssertMsg(rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT || rc == VERR_PAGE_MAP_LEVEL4_NOT_PRESENT, ("Unexpected rc=%Rrc\n", rc));
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePageSkipped));
         if (!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3))
-            PGM_INVL_GUEST_TLBS();
+            PGM_INVL_GUEST_TLBS(pVCpu);
         return VINF_SUCCESS;
     }
     Assert(pPDDst);
@@ -1000,7 +1000,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     {
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePageSkipped));
         if (!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3))
-            PGM_INVL_GUEST_TLBS();
+            PGM_INVL_GUEST_TLBS(pVCpu);
         return VINF_SUCCESS;
     }
 
@@ -1091,7 +1091,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         pgmPoolFreeByPage(pPool, pShwPdpt, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPml4);
         ASMAtomicWriteSize(pPml4eDst, 0);
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNPs));
-        PGM_INVL_GUEST_TLBS();
+        PGM_INVL_GUEST_TLBS(pVCpu);
         return VINF_SUCCESS;
     }
     if (   pPml4eSrc->n.u1User != pPml4eDst->n.u1User
@@ -1105,7 +1105,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         pgmPoolFreeByPage(pPool, pShwPdpt, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPml4);
         ASMAtomicWriteSize(pPml4eDst, 0);
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDOutOfSync));
-        PGM_INVL_GUEST_TLBS();
+        PGM_INVL_GUEST_TLBS(pVCpu);
     }
     else if (!pPml4eSrc->n.u1Accessed)
     {
@@ -1117,7 +1117,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         pgmPoolFreeByPage(pPool, pShwPdpt, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPml4);
         ASMAtomicWriteSize(pPml4eDst, 0);
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNAs));
-        PGM_INVL_GUEST_TLBS();
+        PGM_INVL_GUEST_TLBS(pVCpu);
     }
 
     /* Check if the PDPT entry has changed. */
@@ -1131,7 +1131,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         pgmPoolFreeByPage(pPool, pShwPde, pShwPdpt->idx, iPdpt);
         ASMAtomicWriteSize(pPdpeDst, 0);
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNPs));
-        PGM_INVL_GUEST_TLBS();
+        PGM_INVL_GUEST_TLBS(pVCpu);
         return VINF_SUCCESS;
     }
     if (   PdpeSrc.lm.u1User != pPdpeDst->lm.u1User
@@ -1145,7 +1145,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         pgmPoolFreeByPage(pPool, pShwPde, pShwPdpt->idx, iPdpt);
         ASMAtomicWriteSize(pPdpeDst, 0);
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDOutOfSync));
-        PGM_INVL_GUEST_TLBS();
+        PGM_INVL_GUEST_TLBS(pVCpu);
     }
     else if (!PdpeSrc.lm.u1Accessed)
     {
@@ -1157,7 +1157,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         pgmPoolFreeByPage(pPool, pShwPde, pShwPdpt->idx, iPdpt);
         ASMAtomicWriteSize(pPdpeDst, 0);
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNAs));
-        PGM_INVL_GUEST_TLBS();
+        PGM_INVL_GUEST_TLBS(pVCpu);
     }
 # endif /* PGM_GST_TYPE == PGM_TYPE_AMD64 */
 
@@ -1189,7 +1189,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
             pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
             ASMAtomicWriteSize(pPdeDst, 0);
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDOutOfSync));
-            PGM_INVL_GUEST_TLBS();
+            PGM_INVL_GUEST_TLBS(pVCpu);
         }
         else if (!PdeSrc.n.u1Accessed)
         {
@@ -1201,7 +1201,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
             pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
             ASMAtomicWriteSize(pPdeDst, 0);
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNAs));
-            PGM_INVL_GUEST_TLBS();
+            PGM_INVL_GUEST_TLBS(pVCpu);
         }
         else if (!fIsBigPage)
         {
@@ -1233,7 +1233,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
                     rc = VINF_SUCCESS;
 # endif
                 STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePage4KBPages));
-                PGM_INVL_PG(GCPtrPage);
+                PGM_INVL_PG(pVCpu, GCPtrPage);
             }
             else
             {
@@ -1245,7 +1245,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
                 pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
                 ASMAtomicWriteSize(pPdeDst, 0);
                 STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDOutOfSync));
-                PGM_INVL_GUEST_TLBS();
+                PGM_INVL_GUEST_TLBS(pVCpu);
             }
         }
         else
@@ -1291,7 +1291,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
             pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
             ASMAtomicWriteSize(pPdeDst, 0);
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePage4MBPages));
-            PGM_INVL_BIG_PG(GCPtrPage);
+            PGM_INVL_BIG_PG(pVCpu, GCPtrPage);
         }
     }
     else
@@ -1304,7 +1304,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
             pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
             ASMAtomicWriteSize(pPdeDst, 0);
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNPs));
-            PGM_INVL_PG(GCPtrPage);
+            PGM_INVL_PG(pVCpu, GCPtrPage);
         }
         else
         {
@@ -1919,7 +1919,7 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
     /* Make sure the dynamic pPdeDst mapping will not be reused during this function. */
     PGMDynUnlockHCPage(pVM, (uint8_t *)pPdeDst);
 # endif
-    PGM_INVL_GUEST_TLBS();
+    PGM_INVL_GUEST_TLBS(pVCpu);
     return VINF_PGM_SYNCPAGE_MODIFIED_PDE;
 
 #elif (PGM_GST_TYPE == PGM_TYPE_REAL || PGM_GST_TYPE == PGM_TYPE_PROT) \
@@ -2180,7 +2180,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
                     pPdeDst->n.u1Write      = 1;
                     pPdeDst->n.u1Accessed   = 1;
                     pPdeDst->au32[0]       &= ~PGM_PDFLAGS_TRACK_DIRTY;
-                    PGM_INVL_BIG_PG(GCPtrPage);
+                    PGM_INVL_BIG_PG(pVCpu, GCPtrPage);
                     STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyBitTracking), a);
                     return VINF_PGM_HANDLED_DIRTY_BIT_FAULT;
                 }
@@ -2201,7 +2201,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
                         {
                             /* Stale TLB entry. */
                             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyPageStale));
-                            PGM_INVL_PG(GCPtrPage);
+                            PGM_INVL_PG(pVCpu, GCPtrPage);
 
                             STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyBitTracking), a);
                             return VINF_PGM_HANDLED_DIRTY_BIT_FAULT;
@@ -2319,7 +2319,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
                             pPteDst->n.u1Dirty    = 1;
                             pPteDst->n.u1Accessed = 1;
                             pPteDst->au32[0]     &= ~PGM_PTFLAGS_TRACK_DIRTY;
-                            PGM_INVL_PG(GCPtrPage);
+                            PGM_INVL_PG(pVCpu, GCPtrPage);
 
                             STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyBitTracking), a);
                             return VINF_PGM_HANDLED_DIRTY_BIT_FAULT;
@@ -2333,7 +2333,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
                         {
                             /* Stale TLB entry. */
                             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyPageStale));
-                            PGM_INVL_PG(GCPtrPage);
+                            PGM_INVL_PG(pVCpu, GCPtrPage);
 
                             STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyBitTracking), a);
                             return VINF_PGM_HANDLED_DIRTY_BIT_FAULT;
@@ -3388,7 +3388,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
      * Nested / EPT - almost no work.
      */
     /** @todo check if this is really necessary; the call does it as well... */
-    HWACCMFlushTLB(pVM);
+    HWACCMFlushTLB(pVCpu);
     return VINF_SUCCESS;
 
 #elif PGM_SHW_TYPE == PGM_TYPE_AMD64
@@ -4245,7 +4245,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
         if (RT_SUCCESS(rc))
         {
 # ifdef IN_RC
-            PGM_INVL_PG(pVM->pgm.s.GCPtrCR3Mapping);
+            PGM_INVL_PG(pVCpu, pVM->pgm.s.GCPtrCR3Mapping);
 # endif
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
             pVCpu->pgm.s.pGst32BitPdR3 = (R3PTRTYPE(PX86PD))HCPtrGuestCR3;
@@ -4298,7 +4298,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
                         pVCpu->pgm.s.apGstPaePDsRC[i]     = (RCPTRTYPE(PX86PDPAE))GCPtr;
                         pVCpu->pgm.s.aGCPhysGstPaePDs[i]  = GCPhys;
 #  ifdef IN_RC
-                        PGM_INVL_PG(GCPtr);
+                        PGM_INVL_PG(pVCpu, GCPtr);
 #  endif
                         continue;
                     }
@@ -4312,7 +4312,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
                 pVCpu->pgm.s.apGstPaePDsRC[i]     = 0;
                 pVCpu->pgm.s.aGCPhysGstPaePDs[i]  = NIL_RTGCPHYS;
 #  ifdef IN_RC
-                PGM_INVL_PG(GCPtr); /** @todo this shouldn't be necessary? */
+                PGM_INVL_PG(pVCpu, GCPtr); /** @todo this shouldn't be necessary? */
 #  endif
             }
 
