@@ -476,15 +476,6 @@ typedef struct TM
     STAMCOUNTER                 StatPollVirtual;
     STAMCOUNTER                 StatPollVirtualSync;
     /** @} */
-    /** TMTimerPollGIP
-     * @{ */
-    STAMCOUNTER                 StatPollGIP;
-    STAMCOUNTER                 StatPollGIPAlreadySet;
-    STAMCOUNTER                 StatPollGIPVirtual;
-    STAMCOUNTER                 StatPollGIPVirtualSync;
-    STAMCOUNTER                 StatPollGIPMiss;
-    STAMCOUNTER                 StatPollGIPRunning;
-    /** @} */
     /** TMTimerSet
      * @{ */
     STAMPROFILE                 StatTimerSetRZ;
