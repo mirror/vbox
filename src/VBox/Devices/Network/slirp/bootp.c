@@ -40,6 +40,9 @@ static BOOTPClient *get_new_addr(PNATState pData, struct in_addr *paddr)
             bc = &bootp_clients[i];
             bc->allocated = 1;
             paddr->s_addr = htonl(ntohl(special_addr.s_addr) | (i + START_ADDR));
+#ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
+            bc->addr.s_addr = paddr->s_addr;
+#endif
             return bc;
         }
     }
@@ -126,7 +129,7 @@ static void dhcp_decode(const uint8_t *buf, int size,
     }
 }
 
-#ifndef VBOX_WITH_NAT_SERVICE
+#ifndef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
 static void bootp_reply(PNATState pData, struct bootp_t *bp)
 #else
 static void bootp_reply(PNATState pData, struct mbuf *m0)
@@ -134,7 +137,7 @@ static void bootp_reply(PNATState pData, struct mbuf *m0)
 {
     BOOTPClient *bc;
     struct mbuf *m; /* XXX: @todo vasily - it'd be better to reuse this mbuf here */
-#ifdef VBOX_WITH_NAT_SERVICE
+#ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
     struct bootp_t *bp = mtod(m0, struct bootp_t *);
     struct ethhdr *eh;
 #endif
@@ -188,14 +191,14 @@ static void bootp_reply(PNATState pData, struct mbuf *m0)
         && dhcp_msg_type != DHCPREQUEST)
         return;
 
-#ifndef VBOX_WITH_NAT_SERVICE
+#ifndef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
     /* XXX: this is a hack to get the client mac address */
     memcpy(client_ethaddr, bp->bp_hwaddr, 6);
 #endif
 
     if ((m = m_get(pData)) == NULL)
         return;
-#ifdef VBOX_WITH_NAT_SERVICE
+#ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
     eh = mtod(m, struct ethhdr *);
     memcpy(eh->h_source, bp->bp_hwaddr, ETH_ALEN); /* XXX: if_encap just swap source with dest*/
 #endif
@@ -217,7 +220,7 @@ static void bootp_reply(PNATState pData, struct mbuf *m0)
                 Log(("no address left\n"));
                 return;
             }
-#ifdef VBOX_WITH_NAT_SERVICE
+#ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
             memcpy(bc->macaddr, bp->bp_hwaddr, 6);
 #else
             memcpy(bc->macaddr, client_ethaddr, 6);
@@ -241,7 +244,7 @@ static void bootp_reply(PNATState pData, struct mbuf *m0)
         RTStrPrintf((char*)rbp->bp_file, sizeof(rbp->bp_file), "%s", bootp_filename);
 
     /* Address/port of the DHCP server. */
-#ifndef VBOX_WITH_NAT_SERVICE
+#ifndef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
     saddr.sin_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS);
 #else
     saddr.sin_addr.s_addr = special_addr.s_addr;
@@ -397,7 +400,7 @@ void bootp_input(PNATState pData, struct mbuf *m)
     struct bootp_t *bp = mtod(m, struct bootp_t *);
 
     if (bp->bp_op == BOOTP_REQUEST)
-#ifndef VBOX_WITH_NAT_SERVICE
+#ifndef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
         bootp_reply(pData, bp);
 #else
         bootp_reply(pData, m);

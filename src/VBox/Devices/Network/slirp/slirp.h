@@ -357,7 +357,7 @@ do {                                                                        \
 #endif
 
 
-# ifdef VBOX_WITH_NAT_SERVICE
+# ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
 #  define ETH_ALEN        6
 #  define ETH_HLEN        14
 

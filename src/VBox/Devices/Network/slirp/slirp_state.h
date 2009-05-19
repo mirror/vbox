@@ -40,6 +40,9 @@ typedef struct
 {
     bool allocated;
     uint8_t macaddr[6];
+#ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
+    struct in_addr addr;
+#endif
 } BOOTPClient;
 
 
@@ -125,8 +128,10 @@ typedef struct NATState
     struct in_addr tftp_server;
     struct in_addr loopback_addr;
     uint32_t netmask;
-#ifndef VBOX_WITH_NAT_SERVICE
+#ifndef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
     uint8_t client_ethaddr[6];
+#else
+    uint8_t *slirp_ethaddr;
 #endif
     struct ex_list *exec_list;
     char slirp_hostname[33];
