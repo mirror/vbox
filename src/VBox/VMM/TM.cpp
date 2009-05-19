@@ -588,9 +588,11 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->tm.s.StatVirtualGet,                          STAMTYPE_COUNTER, "/TM/VirtualGet",                      STAMUNIT_OCCURENCES, "The number of times TMTimerGet was called when the clock was running.");
     STAM_REG(pVM, &pVM->tm.s.StatVirtualGetSetFF,                     STAMTYPE_COUNTER, "/TM/VirtualGetSetFF",                 STAMUNIT_OCCURENCES, "Times we set the FF when calling TMTimerGet.");
     STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncGet,                      STAMTYPE_COUNTER, "/TM/VirtualSyncGet",                  STAMUNIT_OCCURENCES, "The number of times tmVirtualSyncGetEx was called.");
-    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncGetSetFF,                 STAMTYPE_COUNTER, "/TM/VirtualSyncGetSetFF",             STAMUNIT_OCCURENCES, "Times we set the FF when calling tmVirtualSyncGetEx.");
-    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncGetELoop,                 STAMTYPE_COUNTER, "/TM/VirtualSyncGetELoop",             STAMUNIT_OCCURENCES, "Times we give up because too many loops in tmVirtualSyncGetEx.");
-    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncGetLocked,                STAMTYPE_COUNTER, "/TM/VirtualSyncGetLocked",            STAMUNIT_OCCURENCES, "Times we successfully acquired the lock in tmVirtualSyncGetEx.");
+    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncGetELoop,                 STAMTYPE_COUNTER, "/TM/VirtualSyncGet/ELoop",            STAMUNIT_OCCURENCES, "Times we give up because too many loops in tmVirtualSyncGetEx.");
+    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncGetExpired,               STAMTYPE_COUNTER, "/TM/VirtualSyncGet/Expired",          STAMUNIT_OCCURENCES, "Times tmVirtualSyncGetEx encountered an expired timer stopping the clock.");
+    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncGetLocked,                STAMTYPE_COUNTER, "/TM/VirtualSyncGet/Locked",           STAMUNIT_OCCURENCES, "Times we successfully acquired the lock in tmVirtualSyncGetEx.");
+    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncGetLockless,              STAMTYPE_COUNTER, "/TM/VirtualSyncGet/Lockless",         STAMUNIT_OCCURENCES, "Times tmVirtualSyncGetEx returned without needing to take the lock.");
+    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncGetSetFF,                 STAMTYPE_COUNTER, "/TM/VirtualSyncGet/SetFF",            STAMUNIT_OCCURENCES, "Times we set the FF when calling tmVirtualSyncGetEx.");
     STAM_REG(pVM, &pVM->tm.s.StatVirtualPause,                        STAMTYPE_COUNTER, "/TM/VirtualPause",                    STAMUNIT_OCCURENCES, "The number of times TMR3TimerPause was called.");
     STAM_REG(pVM, &pVM->tm.s.StatVirtualResume,                       STAMTYPE_COUNTER, "/TM/VirtualResume",                   STAMUNIT_OCCURENCES, "The number of times TMR3TimerResume was called.");
 
@@ -967,9 +969,9 @@ VMMR3DECL(void) TMR3Reset(PVM pVM)
             const uint64_t offOld = pVM->tm.s.offVirtualSyncGivenUp;
             const uint64_t offNew = offVirtualNow - offVirtualSyncNow;
             Assert(offOld <= offNew);
-            ASMAtomicXchgU64((uint64_t volatile *)&pVM->tm.s.offVirtualSyncGivenUp, offNew);
-            ASMAtomicXchgU64((uint64_t volatile *)&pVM->tm.s.offVirtualSync, offNew);
-            ASMAtomicXchgBool(&pVM->tm.s.fVirtualSyncCatchUp, false);
+            ASMAtomicWriteU64((uint64_t volatile *)&pVM->tm.s.offVirtualSyncGivenUp, offNew);
+            ASMAtomicWriteU64((uint64_t volatile *)&pVM->tm.s.offVirtualSync, offNew);
+            ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncCatchUp, false);
             LogRel(("TM: Aborting catch-up attempt on reset with a %RU64 ns lag on reset; new total: %RU64 ns\n", offNew - offOld, offNew));
         }
     }
@@ -1861,6 +1863,8 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
  * clock, thus this 2nd queue run funcion.
  *
  * @param   pVM             The VM to run the timers for.
+ *
+ * @remarks The caller must own both the TM/EMT and the Virtual Sync locks.
  */
 static void tmR3TimerQueueRunVirtualSync(PVM pVM)
 {
@@ -1890,8 +1894,9 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
      * Without this frame we would 1) having to run timers much more frequently
      * and 2) lag behind at a steady rate.
      */
-    const uint64_t u64VirtualNow = TMVirtualGetNoCheck(pVM);
-    uint64_t u64Now;
+    const uint64_t  u64VirtualNow  = TMVirtualGetNoCheck(pVM);
+    uint64_t const  offSyncGivenUp = pVM->tm.s.offVirtualSyncGivenUp;
+    uint64_t        u64Now;
     if (!pVM->tm.s.fVirtualSyncTicking)
     {
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncRunStoppedAlready);
@@ -1900,53 +1905,61 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
     }
     else
     {
-        /* Calc 'now'. (update order doesn't really matter here) */
-        uint64_t off = pVM->tm.s.offVirtualSync;
+        /* Calc 'now'. */
+        bool     fStopCatchup  = false;
+        bool     fUpdateStuff  = false;
+        uint64_t off           = pVM->tm.s.offVirtualSync;
         if (pVM->tm.s.fVirtualSyncCatchUp)
         {
             uint64_t u64Delta = u64VirtualNow - pVM->tm.s.u64VirtualSyncCatchUpPrev;
             if (RT_LIKELY(!(u64Delta >> 32)))
             {
                 uint64_t u64Sub = ASMMultU64ByU32DivByU32(u64Delta, pVM->tm.s.u32VirtualSyncCatchUpPercentage, 100);
-                if (off > u64Sub + pVM->tm.s.offVirtualSyncGivenUp)
+                if (off > u64Sub + offSyncGivenUp)
                 {
                     off -= u64Sub;
-                    Log4(("TM: %RU64/%RU64: sub %RU64 (run)\n", u64VirtualNow - off, off - pVM->tm.s.offVirtualSyncGivenUp, u64Sub));
+                    Log4(("TM: %RU64/%RU64: sub %RU64 (run)\n", u64VirtualNow - off, off - offSyncGivenUp, u64Sub));
                 }
                 else
                 {
                     STAM_PROFILE_ADV_STOP(&pVM->tm.s.StatVirtualSyncCatchup, c);
-                    ASMAtomicXchgBool(&pVM->tm.s.fVirtualSyncCatchUp, false);
-                    off = pVM->tm.s.offVirtualSyncGivenUp;
+                    fStopCatchup = true;
+                    off = offSyncGivenUp;
                     Log4(("TM: %RU64/0: caught up (run)\n", u64VirtualNow));
                 }
             }
-            ASMAtomicXchgU64(&pVM->tm.s.offVirtualSync, off);
-            pVM->tm.s.u64VirtualSyncCatchUpPrev = u64VirtualNow;
         }
         u64Now = u64VirtualNow - off;
 
         /* Check if stopped by expired timer. */
+        uint64_t u64Expire = pNext->u64Expire;
         if (u64Now >= pNext->u64Expire)
         {
             STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncRunStop);
             u64Now = pNext->u64Expire;
-            ASMAtomicXchgU64(&pVM->tm.s.u64VirtualSync, u64Now);
-            ASMAtomicXchgBool(&pVM->tm.s.fVirtualSyncTicking, false);
-            Log4(("TM: %RU64/%RU64: exp tmr (run)\n", u64Now, u64VirtualNow - u64Now - pVM->tm.s.offVirtualSyncGivenUp));
-
+            ASMAtomicWriteU64(&pVM->tm.s.u64VirtualSync, u64Now);
+            ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncTicking, false);
+            Log4(("TM: %RU64/%RU64: exp tmr (run)\n", u64Now, u64VirtualNow - u64Now - offSyncGivenUp));
+        }
+        else if (fUpdateStuff)
+        {
+            ASMAtomicWriteU64(&pVM->tm.s.offVirtualSync, off);
+            ASMAtomicWriteU64(&pVM->tm.s.u64VirtualSyncCatchUpPrev, u64VirtualNow);
+            if (fStopCatchup)
+                ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncCatchUp, false);
         }
     }
 
     /* calc end of frame. */
     uint64_t u64Max = u64Now + pVM->tm.s.u32VirtualSyncScheduleSlack;
-    if (u64Max > u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp)
-        u64Max = u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp;
+    if (u64Max > u64VirtualNow - offSyncGivenUp)
+        u64Max = u64VirtualNow - offSyncGivenUp;
 
     /* assert sanity */
-    Assert(u64Now <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp);
-    Assert(u64Max <= u64VirtualNow - pVM->tm.s.offVirtualSyncGivenUp);
+    Assert(u64Now <= u64VirtualNow - offSyncGivenUp);
+    Assert(u64Max <= u64VirtualNow - offSyncGivenUp);
     Assert(u64Now <= u64Max);
+    Assert(offSyncGivenUp == pVM->tm.s.offVirtualSyncGivenUp);
 
     /*
      * Process the expired timers moving the clock along as we progress.
@@ -1983,8 +1996,8 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
             AssertMsg(pTimer->u64Expire >= u64Prev, ("%RU64 < %RU64 %s\n", pTimer->u64Expire, u64Prev, pTimer->pszDesc));
             u64Prev = pTimer->u64Expire;
 #endif
-            ASMAtomicXchgSize(&pVM->tm.s.fVirtualSyncTicking, false);
-            ASMAtomicXchgU64(&pVM->tm.s.u64VirtualSync, pTimer->u64Expire);
+            ASMAtomicWriteU64(&pVM->tm.s.u64VirtualSync, pTimer->u64Expire);
+            ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncTicking, false);
 
             /* fire */
             switch (pTimer->enmType)
@@ -2031,7 +2044,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
 
         /* Let the time run a little bit while we were busy running timers(?). */
         uint64_t u64Elapsed;
-#define MAX_ELAPSED 30000 /* ns */
+#define MAX_ELAPSED 30000U /* ns */
         if (offSlack > MAX_ELAPSED)
             u64Elapsed = 0;
         else
@@ -2058,7 +2071,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
             {
                 /* stop */
                 STAM_PROFILE_ADV_STOP(&pVM->tm.s.StatVirtualSyncCatchup, c);
-                ASMAtomicXchgBool(&pVM->tm.s.fVirtualSyncCatchUp, false);
+                ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncCatchUp, false);
                 Log4(("TM: %RU64/%RU64: caught up\n", u64VirtualNow2 - offNew, offLag));
             }
             else if (offLag <= pVM->tm.s.u64VirtualSyncCatchUpGiveUpThreshold)
@@ -2071,7 +2084,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
                 if (pVM->tm.s.u32VirtualSyncCatchUpPercentage < pVM->tm.s.aVirtualSyncCatchUpPeriods[i].u32Percentage)
                 {
                     STAM_COUNTER_INC(&pVM->tm.s.aStatVirtualSyncCatchupAdjust[i]);
-                    ASMAtomicXchgU32(&pVM->tm.s.u32VirtualSyncCatchUpPercentage, pVM->tm.s.aVirtualSyncCatchUpPeriods[i].u32Percentage);
+                    ASMAtomicWriteU32(&pVM->tm.s.u32VirtualSyncCatchUpPercentage, pVM->tm.s.aVirtualSyncCatchUpPeriods[i].u32Percentage);
                     Log4(("TM: %RU64/%RU64: adj %u%%\n", u64VirtualNow2 - offNew, offLag, pVM->tm.s.u32VirtualSyncCatchUpPercentage));
                 }
                 pVM->tm.s.u64VirtualSyncCatchUpPrev = u64VirtualNow2;
@@ -2081,8 +2094,8 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
                 /* give up */
                 STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGiveUp);
                 STAM_PROFILE_ADV_STOP(&pVM->tm.s.StatVirtualSyncCatchup, c);
-                ASMAtomicXchgU64((uint64_t volatile *)&pVM->tm.s.offVirtualSyncGivenUp, offNew);
-                ASMAtomicXchgBool(&pVM->tm.s.fVirtualSyncCatchUp, false);
+                ASMAtomicWriteU64((uint64_t volatile *)&pVM->tm.s.offVirtualSyncGivenUp, offNew);
+                ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncCatchUp, false);
                 Log4(("TM: %RU64/%RU64: give up %u%%\n", u64VirtualNow2 - offNew, offLag, pVM->tm.s.u32VirtualSyncCatchUpPercentage));
                 LogRel(("TM: Giving up catch-up attempt at a %RU64 ns lag; new total: %RU64 ns\n", offLag, offNew));
             }
@@ -2098,15 +2111,15 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
                        &&   offLag >= pVM->tm.s.aVirtualSyncCatchUpPeriods[i + 1].u64Start)
                     i++;
                 STAM_COUNTER_INC(&pVM->tm.s.aStatVirtualSyncCatchupInitial[i]);
-                ASMAtomicXchgU32(&pVM->tm.s.u32VirtualSyncCatchUpPercentage, pVM->tm.s.aVirtualSyncCatchUpPeriods[i].u32Percentage);
-                ASMAtomicXchgBool(&pVM->tm.s.fVirtualSyncCatchUp, true);
+                ASMAtomicWriteU32(&pVM->tm.s.u32VirtualSyncCatchUpPercentage, pVM->tm.s.aVirtualSyncCatchUpPeriods[i].u32Percentage);
+                ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncCatchUp, true);
                 Log4(("TM: %RU64/%RU64: catch-up %u%%\n", u64VirtualNow2 - offNew, offLag, pVM->tm.s.u32VirtualSyncCatchUpPercentage));
             }
             else
             {
                 /* don't bother */
                 STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGiveUpBeforeStarting);
-                ASMAtomicXchgU64((uint64_t volatile *)&pVM->tm.s.offVirtualSyncGivenUp, offNew);
+                ASMAtomicWriteU64((uint64_t volatile *)&pVM->tm.s.offVirtualSyncGivenUp, offNew);
                 Log4(("TM: %RU64/%RU64: give up\n", u64VirtualNow2 - offNew, offLag));
                 LogRel(("TM: Not bothering to attempt catching up a %RU64 ns lag; new total: %RU64\n", offLag, offNew));
             }
@@ -2116,8 +2129,8 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
          * Update the offset and restart the clock.
          */
         Assert(!(offNew & RT_BIT_64(63)));
-        ASMAtomicXchgU64(&pVM->tm.s.offVirtualSync, offNew);
-        ASMAtomicXchgBool(&pVM->tm.s.fVirtualSyncTicking, true);
+        ASMAtomicWriteU64(&pVM->tm.s.offVirtualSync, offNew);
+        ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncTicking, true);
     }
 }
 
@@ -2306,7 +2319,7 @@ VMMR3DECL(int) TMR3TimerLoad(PTMTIMERR3 pTimer, PSSMHANDLE pSSM)
 VMMR3DECL(PRTTIMESPEC) TMR3UTCNow(PVM pVM, PRTTIMESPEC pTime)
 {
     RTTimeNow(pTime);
-    RTTimeSpecSubNano(pTime, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp);
+    RTTimeSpecSubNano(pTime, ASMAtomicReadU64(&pVM->tm.s.offVirtualSync) - ASMAtomicReadU64((uint64_t volatile *)&pVM->tm.s.offVirtualSyncGivenUp));
     RTTimeSpecAddNano(pTime, pVM->tm.s.offUTC);
     return pTime;
 }

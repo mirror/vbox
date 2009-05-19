@@ -393,6 +393,155 @@ VMMDECL(uint64_t) TMVirtualGetNoCheck(PVM pVM)
 
 
 /**
+ * tmVirtualSyncGetLocked worker for handling catch-up when owning the lock.
+ *
+ * @returns The timestamp.
+ * @param   pVM                 VM handle.
+ * @param   u64                 raw virtual time.
+ * @param   off                 offVirtualSync.
+ */
+DECLINLINE(uint64_t) tmVirtualSyncGetHandleCatchUpLocked(PVM pVM, uint64_t u64, uint64_t off)
+{
+    STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetLocked);
+
+    /*
+     * Don't make updates untill
+     */
+    bool            fUpdatePrev = true;
+    bool            fUpdateOff  = true;
+    bool            fStop       = false;
+    const uint64_t  u64Prev     = pVM->tm.s.u64VirtualSyncCatchUpPrev;
+    uint64_t        u64Delta    = u64 - u64Prev;
+    if (RT_LIKELY(!(u64Delta >> 32)))
+    {
+        uint64_t u64Sub = ASMMultU64ByU32DivByU32(u64Delta, pVM->tm.s.u32VirtualSyncCatchUpPercentage, 100);
+        if (off > u64Sub + pVM->tm.s.offVirtualSyncGivenUp)
+        {
+            off -= u64Sub;
+            Log4(("TM: %RU64/%RU64: sub %RU32\n", u64 - off, off - pVM->tm.s.offVirtualSyncGivenUp, u64Sub));
+        }
+        else
+        {
+            /* we've completely caught up. */
+            STAM_PROFILE_ADV_STOP(&pVM->tm.s.StatVirtualSyncCatchup, c);
+            off = pVM->tm.s.offVirtualSyncGivenUp;
+            fStop = true;
+            Log4(("TM: %RU64/0: caught up\n", u64));
+        }
+    }
+    else
+    {
+        /* More than 4 seconds since last time (or negative), ignore it. */
+        fUpdateOff = false;
+        fUpdatePrev = !(u64Delta & RT_BIT_64(63));
+        Log(("TMVirtualGetSync: u64Delta=%RX64\n", u64Delta));
+    }
+
+    /*
+     * Complete the calculation of the current TMCLOCK_VIRTUAL_SYNC time. The current
+     * approach is to never pass the head timer. So, when we do stop the clock and
+     * set the timer pending flag.
+     */
+    u64 -= off;
+    uint64_t u64Expire = ASMAtomicReadU64(&pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire);
+    if (u64 < u64Expire)
+    {
+        if (fUpdateOff)
+            ASMAtomicWriteU64(&pVM->tm.s.offVirtualSync, off);
+        if (fStop)
+            ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncCatchUp, false);
+        if (fUpdatePrev)
+            ASMAtomicWriteU64(&pVM->tm.s.u64VirtualSyncCatchUpPrev, u64);
+        tmVirtualSyncUnlock(pVM);
+    }
+    else
+    {
+        u64 = u64Expire;
+        ASMAtomicWriteU64(&pVM->tm.s.u64VirtualSync, u64);
+        ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncTicking, false);
+
+        VM_FF_SET(pVM, VM_FF_TM_VIRTUAL_SYNC);
+        PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
+        VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
+        Log5(("TMAllVirtual(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_ISPENDING(pVCpuDst, VMCPU_FF_TIMER)));
+        Log4(("TM: %RU64/%RU64: exp tmr=>ff\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
+        tmVirtualSyncUnlock(pVM);
+
+#ifdef IN_RING3
+        REMR3NotifyTimerPending(pVM, pVCpuDst);
+        VMR3NotifyCpuFFU(pVCpuDst->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM);
+#endif
+        STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetSetFF);
+        STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetExpired);
+    }
+    STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetLocked);
+
+    return u64;
+}
+
+
+/**
+ * tmVirtualSyncGetEx worker for when we get the lock.
+ *
+ * @returns timesamp.
+ * @param   pVM                 The VM handle.
+ * @param   u64                 The virtual clock timestamp.
+ */
+DECLINLINE(uint64_t) tmVirtualSyncGetLocked(PVM pVM, uint64_t u64)
+{
+    /*
+     * Not ticking?
+     */
+    if (!pVM->tm.s.fVirtualSyncTicking)
+    {
+        u64 = ASMAtomicUoReadU64(&pVM->tm.s.u64VirtualSync);
+        tmVirtualSyncUnlock(pVM);
+        STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetLocked);
+        return u64;
+    }
+
+    /*
+     * Handle catch up in a separate function.
+     */
+    uint64_t off = ASMAtomicUoReadU64(&pVM->tm.s.offVirtualSync);
+    if (ASMAtomicUoReadBool(&pVM->tm.s.fVirtualSyncCatchUp))
+        return tmVirtualSyncGetHandleCatchUpLocked(pVM, u64, off);
+
+    /*
+     * Complete the calculation of the current TMCLOCK_VIRTUAL_SYNC time. The current
+     * approach is to never pass the head timer. So, when we do stop the clock and
+     * set the timer pending flag.
+     */
+    u64 -= off;
+    uint64_t u64Expire = ASMAtomicReadU64(&pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire);
+    if (u64 < u64Expire)
+        tmVirtualSyncUnlock(pVM);
+    else
+    {
+        u64 = u64Expire;
+        ASMAtomicWriteU64(&pVM->tm.s.u64VirtualSync, u64);
+        ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncTicking, false);
+
+        VM_FF_SET(pVM, VM_FF_TM_VIRTUAL_SYNC);
+        PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
+        VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
+        Log5(("TMAllVirtual(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_ISPENDING(pVCpuDst, VMCPU_FF_TIMER)));
+        Log4(("TM: %RU64/%RU64: exp tmr=>ff\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
+        tmVirtualSyncUnlock(pVM);
+
+#ifdef IN_RING3
+        REMR3NotifyTimerPending(pVM, pVCpuDst);
+        VMR3NotifyCpuFFU(pVCpuDst->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM);
+#endif
+        STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetSetFF);
+        STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetExpired);
+    }
+    STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetLocked);
+    return u64;
+}
+
+
+/**
  * Gets the current TMCLOCK_VIRTUAL_SYNC time.
  *
  * @returns The timestamp.
@@ -429,6 +578,27 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
     }
 
     /*
+     * When the clock is ticking, not doing catch ups and not running into an
+     * expired time, we can get away without locking. Try this first.
+     */
+    uint64_t off;
+    if (    ASMAtomicUoReadBool(&pVM->tm.s.fVirtualSyncTicking)
+        &&  !ASMAtomicUoReadBool(&pVM->tm.s.fVirtualSyncCatchUp))
+    {
+        off = ASMAtomicReadU64(&pVM->tm.s.offVirtualSync);
+        if (    ASMAtomicUoReadBool(&pVM->tm.s.fVirtualSyncTicking)
+            &&  !ASMAtomicUoReadBool(&pVM->tm.s.fVirtualSyncCatchUp)
+            &&  off == ASMAtomicReadU64(&pVM->tm.s.offVirtualSync))
+        {
+            if (u64 - off < ASMAtomicReadU64(&pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire))
+            {
+                STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetLockless);
+                return u64 - off;
+            }
+        }
+    }
+
+    /*
      * Read the offset and adjust if we're playing catch-up.
      *
      * The catch-up adjusting work by us decrementing the offset by a percentage of
@@ -447,68 +617,34 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
      * any of the upper 32 bits set.
      */
     AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
-    int         cOuterTries = 42;
-    int         rcLock = tmVirtualSyncTryLock(pVM);
-    uint64_t    off;
+    int cOuterTries = 42;
     for (;; cOuterTries--)
     {
+        /* Try grab the lock, things get simpler when owning the lock. */
+        int rcLock = tmVirtualSyncTryLock(pVM);
+        if (RT_SUCCESS_NP(rcLock))
+            return tmVirtualSyncGetLocked(pVM, u64);
+
         /* Re-check the ticking flag. */
         if (!ASMAtomicReadBool(&pVM->tm.s.fVirtualSyncTicking))
         {
-            if (RT_SUCCESS(rcLock))
-                tmVirtualSyncUnlock(pVM);
-            return ASMAtomicUoReadU64(&pVM->tm.s.u64VirtualSync);
+            off = ASMAtomicReadU64(&pVM->tm.s.u64VirtualSync);
+            if (   ASMAtomicReadBool(&pVM->tm.s.fVirtualSyncTicking)
+                && cOuterTries > 0)
+                continue;
+            return off;
         }
 
-        off = ASMAtomicUoReadU64(&pVM->tm.s.offVirtualSync);
-        if (ASMAtomicUoReadBool(&pVM->tm.s.fVirtualSyncCatchUp))
+        off = ASMAtomicReadU64(&pVM->tm.s.offVirtualSync);
+        if (ASMAtomicReadBool(&pVM->tm.s.fVirtualSyncCatchUp))
         {
-            /* adjust the offset. */
-            if (RT_FAILURE(rcLock))
-                rcLock = tmVirtualSyncTryLock(pVM);
-            if (RT_SUCCESS(rcLock))
-            {
-                /* We own the lock and may make updates. */
-                const uint64_t u64Prev = pVM->tm.s.u64VirtualSyncCatchUpPrev;
-                uint64_t u64Delta = u64 - u64Prev;
-                if (RT_LIKELY(!(u64Delta >> 32)))
-                {
-                    uint64_t u64Sub = ASMMultU64ByU32DivByU32(u64Delta, pVM->tm.s.u32VirtualSyncCatchUpPercentage, 100);
-                    if (off > u64Sub + pVM->tm.s.offVirtualSyncGivenUp)
-                    {
-                        off -= u64Sub;
-                        ASMAtomicWriteU64(&pVM->tm.s.offVirtualSync, off);
-                        ASMAtomicWriteU64(&pVM->tm.s.u64VirtualSyncCatchUpPrev, u64);
-                        Log4(("TM: %RU64/%RU64: sub %RU32\n", u64 - off, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp, u64Sub));
-                    }
-                    else
-                    {
-                        /* we've completely caught up. */
-                        STAM_PROFILE_ADV_STOP(&pVM->tm.s.StatVirtualSyncCatchup, c);
-                        off = pVM->tm.s.offVirtualSyncGivenUp;
-                        ASMAtomicWriteU64(&pVM->tm.s.offVirtualSync, off);
-                        ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncCatchUp, false);
-                        ASMAtomicWriteU64(&pVM->tm.s.u64VirtualSyncCatchUpPrev, u64);
-                        Log4(("TM: %RU64/0: caught up\n", u64));
-                    }
-                }
-                else
-                {
-                    /* More than 4 seconds since last time (or negative), ignore it. */
-                    if (!(u64Delta & RT_BIT_64(63)))
-                        ASMAtomicWriteU64(&pVM->tm.s.u64VirtualSyncCatchUpPrev, u64);
-                    Log(("TMVirtualGetSync: u64Delta=%RX64\n", u64Delta));
-                }
-                break;
-            }
-
             /* No changes allowed, try get a consistent set of parameters. */
-            uint64_t const u64Prev    = ASMAtomicUoReadU64(&pVM->tm.s.u64VirtualSyncCatchUpPrev);
-            uint64_t const offGivenUp = ASMAtomicUoReadU64(&pVM->tm.s.offVirtualSyncGivenUp);
+            uint64_t const u64Prev    = ASMAtomicReadU64(&pVM->tm.s.u64VirtualSyncCatchUpPrev);
+            uint64_t const offGivenUp = ASMAtomicReadU64(&pVM->tm.s.offVirtualSyncGivenUp);
             uint32_t const u32Pct     = ASMAtomicReadU32(&pVM->tm.s.u32VirtualSyncCatchUpPercentage);
-            if (    (   u64Prev    == ASMAtomicUoReadU64(&pVM->tm.s.u64VirtualSyncCatchUpPrev)
-                     && offGivenUp == ASMAtomicUoReadU64(&pVM->tm.s.offVirtualSyncGivenUp)
-                     && u32Pct     == ASMAtomicUoReadU32(&pVM->tm.s.u32VirtualSyncCatchUpPercentage)
+            if (    (   u64Prev    == ASMAtomicReadU64(&pVM->tm.s.u64VirtualSyncCatchUpPrev)
+                     && offGivenUp == ASMAtomicReadU64(&pVM->tm.s.offVirtualSyncGivenUp)
+                     && u32Pct     == ASMAtomicReadU32(&pVM->tm.s.u32VirtualSyncCatchUpPercentage)
                      && ASMAtomicReadBool(&pVM->tm.s.fVirtualSyncCatchUp))
                 ||  cOuterTries <= 0)
             {
@@ -534,15 +670,18 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
                     Log(("TMVirtualGetSync: u64Delta=%RX64 (NoLock)\n", u64Delta));
 
                 /* Check that we're still running and in catch up. */
-                if (pVM->tm.s.fVirtualSyncCatchUp)
+                if (    ASMAtomicUoReadBool(&pVM->tm.s.fVirtualSyncTicking)
+                    &&  ASMAtomicReadBool(&pVM->tm.s.fVirtualSyncCatchUp))
                     break;
                 if (cOuterTries <= 0)
-                    break;
+                    break; /* enough */
             }
         }
-        else if (   off == ASMAtomicUoReadU64(&pVM->tm.s.offVirtualSync)
-                 && !ASMAtomicUoReadBool(&pVM->tm.s.fVirtualSyncCatchUp))
+        else if (   off == ASMAtomicReadU64(&pVM->tm.s.offVirtualSync)
+                 && !ASMAtomicReadBool(&pVM->tm.s.fVirtualSyncCatchUp))
             break; /* Got an consistent offset */
+        else if (cOuterTries <= 0)
+            break; /* enough */
     }
     if (cOuterTries <= 0)
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetELoop);
@@ -553,32 +692,14 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
      * set the timer pending flag.
      */
     u64 -= off;
-    const uint64_t u64Expire = ASMAtomicReadU64(&pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire);
+    uint64_t u64Expire = ASMAtomicReadU64(&pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire);
     if (u64 >= u64Expire)
     {
-        u64 = u64Expire;
         PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
-        if (RT_FAILURE(rcLock))
-            rcLock = tmVirtualSyncTryLock(pVM);
-        if (RT_SUCCESS(rcLock))
-        {
-            ASMAtomicWriteU64(&pVM->tm.s.u64VirtualSync, u64);
-            ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncTicking, false);
-            VM_FF_SET(pVM, VM_FF_TM_VIRTUAL_SYNC);
-            VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
-            Log5(("TMAllVirtual(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_ISPENDING(pVCpuDst, VMCPU_FF_TIMER)));
-            tmVirtualSyncUnlock(pVM);
-#ifdef IN_RING3
-            REMR3NotifyTimerPending(pVM, pVCpuDst);
-            VMR3NotifyCpuFFU(pVCpuDst->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM);
-#endif
-            STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetLocked);
-            STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetSetFF);
-            Log4(("TM: %RU64/%RU64: exp tmr=>ff\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
-        }
-        else if (!VMCPU_FF_ISSET(pVCpuDst, VMCPU_FF_TIMER))
+        if (!VMCPU_FF_ISSET(pVCpuDst, VMCPU_FF_TIMER))
         {
             Log5(("TMAllVirtual(%u): FF: %d -> 1 (NoLock)\n", __LINE__, VMCPU_FF_ISPENDING(pVCpuDst, VMCPU_FF_TIMER)));
+            VM_FF_SET(pVM, VM_FF_TM_VIRTUAL_SYNC); /* Hmm? */
             VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
 #ifdef IN_RING3
             REMR3NotifyTimerPending(pVM, pVCpuDst);
@@ -589,11 +710,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
         }
         else
             Log4(("TM: %RU64/%RU64: exp tmr (NoLock)\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
-    }
-    else if (RT_SUCCESS(rcLock))
-    {
-        tmVirtualSyncUnlock(pVM);
-        STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetLocked);
+        STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetExpired);
     }
 
     return u64;
