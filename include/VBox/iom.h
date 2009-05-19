@@ -215,6 +215,7 @@ VMMDECL(int)  IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t c
 VMMDECL(int)  IOMInterpretCheckPortIOAccess(PVM pVM, PCPUMCTXCORE pCtxCore, RTIOPORT Port, unsigned cb);
 VMMDECL(int)  IOMMMIOMapMMIO2Page(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapped, uint64_t fPageFlags);
 VMMDECL(int)  IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys);
+VMMDECL(bool) IOMIsLockOwner(PVM pVM);
 
 #ifdef IN_RC
 /** @defgroup grp_iom_gc    The IOM Guest Context API

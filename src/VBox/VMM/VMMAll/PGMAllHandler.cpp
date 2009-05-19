@@ -976,6 +976,8 @@ VMMDECL(int)  PGMHandlerPhysicalPageTempOff(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
  */
 VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage, RTGCPHYS GCPhysPageRemap)
 {
+///    Assert(!IOMIsLockOwner(pVM)); /* We mustn't own any other locks when calling this */
+
     /*
      * Lookup and validate the range.
      */

@@ -80,6 +80,18 @@ void iomUnlock(PVM pVM)
     PDMCritSectLeave(&pVM->iom.s.EmtLock);
 }
 
+
+/**
+ * Check if this VCPU currently owns the IOM lock.
+ *
+ * @returns bool owner/not owner
+ * @param   pVM         The VM to operate on.
+ */
+VMMDECL(bool) IOMIsLockOwner(PVM pVM)
+{
+    return PDMCritSectIsOwner(&pVM->iom.s.EmtLock);
+}
+
 /**
  * Returns the contents of register or immediate data of instruction's parameter.
  *

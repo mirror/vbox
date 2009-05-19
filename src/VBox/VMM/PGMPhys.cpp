@@ -1100,6 +1100,7 @@ int pgmR3PhysRamPreAllocate(PVM pVM)
  */
 int pgmR3PhysRamReset(PVM pVM)
 {
+    Assert(PGMIsLockOwner(pVM));
     /*
      * We batch up pages before freeing them.
      */
