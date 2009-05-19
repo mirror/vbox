@@ -368,17 +368,21 @@ VMMDECL(uint64_t) TMTimerPoll(PVM pVM, PVMCPU pVCpu)
     /*
      * TMCLOCK_VIRTUAL
      */
-    const uint64_t  u64Expire1 = pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire;
+    const uint64_t  u64Expire1 = ASMAtomicUoReadU64(&pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire);
     const int64_t   i64Delta1  = u64Expire1 - u64Now;
     if (i64Delta1 <= 0)
     {
-        STAM_COUNTER_INC(&pVM->tm.s.StatPollVirtual);
         LogFlow(("TMTimerPoll: expire1=%RU64 <= now=%RU64\n", u64Expire1, u64Now));
-        Log5(("TMAll(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_ISPENDING(pVCpuDst, VMCPU_FF_TIMER)));
-        VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
+        if (    !pVM->tm.s.fRunningQueues
+            &&  !VMCPU_FF_ISSET(pVCpuDst, VMCPU_FF_TIMER))
+        {
+            Log5(("TMAll(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_ISPENDING(pVCpuDst, VMCPU_FF_TIMER)));
+            VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
 #ifdef IN_RING3
-        REMR3NotifyTimerPending(pVM, pVCpuDst);
+            REMR3NotifyTimerPending(pVM, pVCpuDst);
 #endif
+        }
+        STAM_COUNTER_INC(&pVM->tm.s.StatPollVirtual);
         return pVCpu == pVCpuDst ? 0 : s_u64OtherRet;
     }
 
@@ -387,30 +391,133 @@ VMMDECL(uint64_t) TMTimerPoll(PVM pVM, PVMCPU pVCpu)
      * This isn't quite as stright forward if in a catch-up, not only do
      * we have to adjust the 'now' but when have to adjust the delta as well.
      */
-    int            rc         = tmVirtualSyncLock(pVM); /** @todo FIXME: Stop playing safe here... */
-    const uint64_t u64Expire2 = pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire;
+
+    /*
+     * Optimistic lockless approach.
+     */
     uint64_t u64VirtualSyncNow;
-    if (!pVM->tm.s.fVirtualSyncTicking)
-        u64VirtualSyncNow = pVM->tm.s.u64VirtualSync;
-    else
+    uint64_t u64Expire2 = ASMAtomicUoReadU64(&pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire);
+    if (ASMAtomicUoReadBool(&pVM->tm.s.fVirtualSyncTicking))
     {
-        if (!pVM->tm.s.fVirtualSyncCatchUp)
-            u64VirtualSyncNow = u64Now - pVM->tm.s.offVirtualSync;
-        else
+        if (!ASMAtomicUoReadBool(&pVM->tm.s.fVirtualSyncCatchUp))
         {
-            uint64_t off = pVM->tm.s.offVirtualSync;
-            uint64_t u64Delta = u64Now - pVM->tm.s.u64VirtualSyncCatchUpPrev;
-            if (RT_LIKELY(!(u64Delta >> 32)))
+            u64VirtualSyncNow = ASMAtomicReadU64(&pVM->tm.s.offVirtualSync);
+            if (RT_LIKELY(   ASMAtomicUoReadBool(&pVM->tm.s.fVirtualSyncTicking)
+                          && !ASMAtomicUoReadBool(&pVM->tm.s.fVirtualSyncCatchUp)
+                          && u64VirtualSyncNow == ASMAtomicReadU64(&pVM->tm.s.offVirtualSync)
+                          && u64Expire2 == ASMAtomicUoReadU64(&pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire)))
             {
-                uint64_t u64Sub = ASMMultU64ByU32DivByU32(u64Delta, pVM->tm.s.u32VirtualSyncCatchUpPercentage, 100);
-                if (off > u64Sub + pVM->tm.s.offVirtualSyncGivenUp)
-                    off -= u64Sub;
-                else
-                    off = pVM->tm.s.offVirtualSyncGivenUp;
+                u64VirtualSyncNow = u64Now - u64VirtualSyncNow;
+                if (u64VirtualSyncNow < u64Expire2)
+                {
+                    STAM_COUNTER_INC(&pVM->tm.s.StatPollSimple);
+                    STAM_COUNTER_INC(&pVM->tm.s.StatPollMiss);
+                    return pVCpu == pVCpuDst
+                         ? RT_MIN(i64Delta1, (int64_t)(u64Expire2 - u64VirtualSyncNow))
+                         : s_u64OtherRet;
+                }
+
+                if (    !pVM->tm.s.fRunningQueues
+                    &&  !VMCPU_FF_ISSET(pVCpuDst, VMCPU_FF_TIMER))
+                {
+                    Log5(("TMAll(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_ISPENDING(pVCpuDst, VMCPU_FF_TIMER)));
+                    VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
+#ifdef IN_RING3
+                    REMR3NotifyTimerPending(pVM, pVCpuDst);
+#endif
+                }
+
+                STAM_COUNTER_INC(&pVM->tm.s.StatPollVirtualSync);
+                STAM_COUNTER_INC(&pVM->tm.s.StatPollSimple);
+                LogFlow(("TMTimerPoll: expire2=%RU64 <= now=%RU64\n", u64Expire2, u64Now));
+                return pVCpu == pVCpuDst ? 0 : s_u64OtherRet;
             }
-            u64VirtualSyncNow = u64Now - off;
         }
     }
+    else
+    {
+        STAM_COUNTER_INC(&pVM->tm.s.StatPollVirtualSync);
+        STAM_COUNTER_INC(&pVM->tm.s.StatPollSimple);
+        LogFlow(("TMTimerPoll: stopped\n"));
+        return pVCpu == pVCpuDst ? 0 : s_u64OtherRet;
+    }
+
+    /*
+     * Complicated lockless approach.
+     */
+    uint64_t    off;
+    uint32_t    u32Pct = 0;
+    bool        fCatchUp;
+    int         cOuterTries = 42;
+    for (;; cOuterTries--)
+    {
+        fCatchUp   = ASMAtomicReadBool(&pVM->tm.s.fVirtualSyncCatchUp);
+        off        = ASMAtomicReadU64(&pVM->tm.s.offVirtualSync);
+        u64Expire2 = ASMAtomicReadU64(&pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire);
+        if (fCatchUp)
+        {
+            /* No changes allowed, try get a consistent set of parameters. */
+            uint64_t const u64Prev    = ASMAtomicReadU64(&pVM->tm.s.u64VirtualSyncCatchUpPrev);
+            uint64_t const offGivenUp = ASMAtomicReadU64(&pVM->tm.s.offVirtualSyncGivenUp);
+            u32Pct                    = ASMAtomicReadU32(&pVM->tm.s.u32VirtualSyncCatchUpPercentage);
+            if (    (   u64Prev    == ASMAtomicReadU64(&pVM->tm.s.u64VirtualSyncCatchUpPrev)
+                     && offGivenUp == ASMAtomicReadU64(&pVM->tm.s.offVirtualSyncGivenUp)
+                     && u32Pct     == ASMAtomicReadU32(&pVM->tm.s.u32VirtualSyncCatchUpPercentage)
+                     && off        == ASMAtomicReadU64(&pVM->tm.s.offVirtualSync)
+                     && u64Expire2 == ASMAtomicReadU64(&pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire)
+                     && ASMAtomicReadBool(&pVM->tm.s.fVirtualSyncCatchUp)
+                     && ASMAtomicReadBool(&pVM->tm.s.fVirtualSyncTicking))
+                ||  cOuterTries <= 0)
+            {
+                uint64_t u64Delta = u64Now - u64Prev;
+                if (RT_LIKELY(!(u64Delta >> 32)))
+                {
+                    uint64_t u64Sub = ASMMultU64ByU32DivByU32(u64Delta, u32Pct, 100);
+                    if (off > u64Sub + offGivenUp)
+                        off -= u64Sub;
+                    else /* we've completely caught up. */
+                        off = offGivenUp;
+                }
+                else
+                    /* More than 4 seconds since last time (or negative), ignore it. */
+                    Log(("TMVirtualGetSync: u64Delta=%RX64 (NoLock)\n", u64Delta));
+
+                /* Check that we're still running and in catch up. */
+                if (    ASMAtomicUoReadBool(&pVM->tm.s.fVirtualSyncTicking)
+                    &&  ASMAtomicReadBool(&pVM->tm.s.fVirtualSyncCatchUp))
+                    break;
+            }
+        }
+        else if (   off        == ASMAtomicReadU64(&pVM->tm.s.offVirtualSync)
+                 && u64Expire2 == ASMAtomicReadU64(&pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire)
+                 && !ASMAtomicReadBool(&pVM->tm.s.fVirtualSyncCatchUp)
+                 && ASMAtomicReadBool(&pVM->tm.s.fVirtualSyncTicking))
+            break; /* Got an consistent offset */
+
+        /* Repeat the initial checks before iterating. */
+        if (VMCPU_FF_ISSET(pVCpuDst, VMCPU_FF_TIMER))
+        {
+            STAM_COUNTER_INC(&pVM->tm.s.StatPollAlreadySet);
+            return pVCpu == pVCpuDst ? 0 : s_u64OtherRet;
+        }
+        if (ASMAtomicUoReadBool(&pVM->tm.s.fRunningQueues))
+        {
+            STAM_COUNTER_INC(&pVM->tm.s.StatPollRunning);
+            return s_u64OtherRet;
+        }
+        if (!ASMAtomicUoReadBool(&pVM->tm.s.fVirtualSyncTicking))
+        {
+            STAM_COUNTER_INC(&pVM->tm.s.StatPollVirtualSync);
+            LogFlow(("TMTimerPoll: stopped\n"));
+            return pVCpu == pVCpuDst ? 0 : s_u64OtherRet;
+        }
+        if (cOuterTries <= 0)
+            break; /* that's enough */
+    }
+    if (cOuterTries <= 0)
+        STAM_COUNTER_INC(&pVM->tm.s.StatPollELoop);
+    u64VirtualSyncNow = u64Now - off;
+
     int64_t i64Delta2 = u64Expire2 - u64VirtualSyncNow;
     if (i64Delta2 <= 0)
     {
@@ -424,25 +531,21 @@ VMMDECL(uint64_t) TMTimerPoll(PVM pVM, PVMCPU pVCpu)
 #endif
         }
         STAM_COUNTER_INC(&pVM->tm.s.StatPollVirtualSync);
-#ifndef IN_RING3
-        if (RT_SUCCESS(rc))
-#endif
-            tmVirtualSyncUnlock(pVM);
         LogFlow(("TMTimerPoll: expire2=%RU64 <= now=%RU64\n", u64Expire2, u64Now));
         return pVCpu == pVCpuDst ? 0 : s_u64OtherRet;
     }
-    if (pVM->tm.s.fVirtualSyncCatchUp)
-        i64Delta2 = ASMMultU64ByU32DivByU32(i64Delta2, 100, pVM->tm.s.u32VirtualSyncCatchUpPercentage + 100);
 
     /*
      * Return the time left to the next event.
      */
     STAM_COUNTER_INC(&pVM->tm.s.StatPollMiss);
-#ifndef IN_RING3
-    if (RT_SUCCESS(rc))
-#endif
-        tmVirtualSyncUnlock(pVM);
-    return RT_MIN(i64Delta1, i64Delta2);
+    if (pVCpu == pVCpuDst)
+    {
+        if (fCatchUp)
+            i64Delta2 = ASMMultU64ByU32DivByU32(i64Delta2, 100, u32Pct + 100);
+        return RT_MIN(i64Delta1, i64Delta2);
+    }
+    return s_u64OtherRet;
 }
 
 
