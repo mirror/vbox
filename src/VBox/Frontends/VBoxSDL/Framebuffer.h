@@ -109,6 +109,8 @@ public:
     STDMETHOD(GetVisibleRegion)(BYTE *aRectangles, ULONG aCount, ULONG *aCountCopied);
     STDMETHOD(SetVisibleRegion)(BYTE *aRectangles, ULONG aCount);
 
+    STDMETHOD(ProcessVHWACommand)(BYTE *pCommand);
+
     // internal public methods
     bool initialized() { return mfInitialized; }
     void resizeGuest();

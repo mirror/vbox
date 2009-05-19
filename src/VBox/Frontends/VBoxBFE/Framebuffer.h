@@ -49,6 +49,8 @@ public:
     virtual HRESULT GetVisibleRegion(BYTE *aRectangles, ULONG aCount, ULONG *aCountCopied) = 0;
     virtual HRESULT SetVisibleRegion(BYTE *aRectangles, ULONG aCount) = 0;
 
+    virtual HRESULT ProcessVHWACommand(BYTE *pCommand) = 0;
+
     virtual void    repaint() = 0;
     virtual void    resize() = 0;
 

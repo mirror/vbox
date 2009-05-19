@@ -28,6 +28,7 @@
 
 #include <VBox/HGSMI/HGSMI.h>
 #include <VBox/HGSMI/HGSMIChSetup.h>
+#include "VBoxHGSMI.h"
 #endif /* VBOX_WITH_HGSMI */
 
 __BEGIN_DECLS
@@ -255,6 +256,14 @@ VOID VBoxSetupDisplaysHGSMI (PDEVICE_EXTENSION PrimaryExtension,
 BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION PrimaryExtension,
                                 PVIDEO_POINTER_ATTRIBUTES pointerAttr,
                                 uint32_t cbLength);
+
+DECLCALLBACK(void) hgsmiHostCmdHandlerComplete (HVBOXVIDEOHGSMI hHGSMI, void * pvMem);
+
+int vboxHGSMIChannelDisplayRegister (PDEVICE_EXTENSION PrimaryExtension,
+        int iDisplay, /* negative would mean this is a miniport handler */
+        uint8_t u8Channel,
+        PFNHGSMICHANNELHANDLER pfnChannelHandler,
+        void *pvChannelHandler);
 #endif /* VBOX_WITH_HGSMI */
 } /* extern "C" */
 

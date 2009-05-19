@@ -125,6 +125,10 @@ struct VBoxDefs
 #endif
         AddVDMUrlsEventType,
         ChangeDockIconUpdateEventType
+#ifdef VBOX_WITH_VIDEOHWACCEL
+        ,
+        VHWACommandProcessType
+#endif
     };
 
     /** Size formatting types. */

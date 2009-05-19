@@ -251,6 +251,76 @@ typedef struct _VBOXVIDEOINFOQUERYCONF32
 } VBOXVIDEOINFOQUERYCONF32;
 #pragma pack()
 
+# ifdef VBOX_WITH_VIDEOHWACCEL
+#pragma pack(1)
+
+typedef enum
+{
+    VBOXVHWACMD_TYPE_SURF_CREATE = 1,
+    VBOXVHWACMD_TYPE_SURF_DESTROY
+} VBOXVHWACMD_TYPE;
+
+typedef struct _VBOXVHWACMD
+{
+    VBOXVHWACMD_TYPE enmCmd; /* command type */
+    int32_t rc; /* command result */
+    int32_t iDisplay; /* display index */
+    int32_t Reserved; /* reserved, must be null*/
+    char body[1];
+} VBOXVHWACMD;
+
+#define VBOXVHWACMD_SIZE(_tCmd) (RT_OFFSETOF(VBOXVHWACMD_HDR, body) + sizeof(_tCmd))
+typedef unsigned int VBOXVHWACMD_LENGTH;
+typedef uint64_t VBOXVHWA_SURFHANDLE;
+#define VBOXVHWACMD_SURFHANDLE_INVALID 0
+#define VBOXVHWACMD_BODY(_p, _t) ((_t*)(_p)->body)
+
+typedef struct _VBOXVHWA_RECTL
+{
+    int16_t x;
+    int16_t y;
+    uint16_t w;
+    uint16_t h;
+} VBOXVHWA_RECTL;
+
+#define VBOXVHWASURF_PRIMARY      0x00000001
+#define VBOXVHWASURF_OVERLAY      0x00000002
+
+typedef struct _VBOXVHWA_SURFINFO
+{
+    uint32_t surfChars;
+    VBOXVHWA_RECTL rectl;
+} VBOXVHWA_SURFINFO;
+
+typedef struct _VBOXVHWACMD_SURF_CREATE
+{
+    union
+    {
+        struct
+        {
+            VBOXVHWA_SURFINFO SurfInfo;
+        } in;
+
+        struct
+        {
+            VBOXVHWA_SURFHANDLE hSurf;
+        } out;
+    } u;
+} VBOXVHWACMD_SURF_CREATE;
+
+typedef struct _VBOXVHWACMD_SURF_DESTROY
+{
+    union
+    {
+        struct
+        {
+            VBOXVHWA_SURFHANDLE hSurf;
+        } in;
+    } u;
+} VBOXVHWACMD_SURF_DESTROY;
+#pragma pack()
+# endif /* #ifdef VBOX_WITH_VIDEOHWACCEL */
+
 #ifdef VBOX_WITH_HGSMI
 
 /* All structures are without alignment. */
@@ -278,7 +348,7 @@ typedef struct _VBVABUFFER
     uint8_t  au8Data[1]; /* variable size for the rest of the VBVABUFFER area in VRAM. */
 } VBVABUFFER;
 
-
+/* guest->host commands */
 #define VBVA_QUERY_CONF32 1
 #define VBVA_SET_CONF32   2
 #define VBVA_INFO_VIEW    3
@@ -287,80 +357,36 @@ typedef struct _VBVABUFFER
 #define VBVA_INFO_SCREEN  6
 #define VBVA_ENABLE       7
 #define VBVA_MOUSE_POINTER_SHAPE 8
-#ifdef VBOX_WITH_VIDEOHWACCEL
+# ifdef VBOX_WITH_VIDEOHWACCEL
 # define VBVA_INFO_VHWA   9
 # define VBVA_VHWA_CMD    10
+# endif /* # ifdef VBOX_WITH_VIDEOHWACCEL */
 
-typedef enum
-{
-    VBVAVHWACMD_TYPE_SURF_CREATE = 1,
-    VBVAVHWACMD_TYPE_SURF_DESTROY
-} VBVAVHWACMD_TYPE;
+/* host->guest commands */
+# ifdef VBOX_WITH_VIDEOHWACCEL
+# define VBVAHG_VHWA_CMDCOMPLETE 1
 
-typedef struct _VBVAVHWACMD_HDR
+typedef struct _VBVAHOSTCMDVHWACMDCOMPLETE
 {
-    VBVAVHWACMD_TYPE enmCmd;
+    uint32_t offCmd;
+}VBVAHOSTCMDVHWACMDCOMPLETE;
+# endif /* # ifdef VBOX_WITH_VIDEOHWACCEL */
+
+#pragma pack(1)
+typedef struct _VBVAHOSTCMD
+{
+    /* destination ID if >=0 specifies display index, otherwize the command is directed to the miniport */
+    int32_t iDstID;
+    uint32_t Reserved;
     char body[1];
-} VBVAVHWACMD_HDR;
+}VBVAHOSTCMD;
 
-#define VBVAVHWACMD_SIZE(_tCmd) (RT_OFFSETOF(VBVAVHWACMD_HDR, body) + sizeof(_tCmd))
-typedef unsigned int VBVAVHWACMD_LENGTH;
-typedef uint64_t VBVAVHWA_SURFHANDLE;
-#define VBVAVHWA_SURFHANDLE_INVALID 0
-#define VBVAVHWACMD_BODY(_p, _t) ((_t*)(_p)->body)
+#define VBVAHOSTCMD_SIZE(_size) (sizeof(VBVAHOSTCMD) + (_size))
+#define VBVAHOSTCMD_BODY(_pCmd, _tBody) ((_tBody*)(_pCmd)->body)
+#define VBVAHOSTCMD_HDR(_pBody) ((VBVAHOSTCMD*)(((uint8_t*)_pBody) - RT_OFFSETOF(VBVAHOSTCMD, body)))
+#define VBVAHOSTCMD_HDRSIZE (RT_OFFSETOF(VBVAHOSTCMD, body))
 
-typedef struct _VBVAVHWA_RECTL
-{
-    int16_t x;
-    int16_t y;
-    uint16_t w;
-    uint16_t h;
-} VBVAVHWA_RECTL;
-
-#define VBVAVHWASURF_PRIMARY      0x00000001
-#define VBVAVHWASURF_OVERLAY      0x00000002
-
-typedef struct _VBVAVHWA_SURFINFO
-{
-    uint32_t surfChars;
-    VBVAVHWA_RECTL rectl;
-} VBVAVHWA_SURFINFO;
-
-typedef struct _VBVAVHWACMD_SURF_CREATE
-{
-    union
-    {
-        struct
-        {
-            VBVAVHWA_SURFINFO SurfInfo;
-        } in;
-
-        struct
-        {
-            int rc;
-            VBVAVHWA_SURFHANDLE hSurf;
-        } out;
-    } u;
-} VBVAVHWACMD_SURF_CREATE;
-
-typedef struct _VBVAVHWACMD_SURF_DESTROY
-{
-    union
-    {
-        struct
-        {
-            VBVAVHWA_SURFHANDLE hSurf;
-        } in;
-
-        struct
-        {
-            int rc;
-        } out;
-    } u;
-} VBVAVHWACMD_SURF_DESTROY;
-
-#endif
-
+#pragma pack()
 
 /* VBVACONF32::u32Index */
 #define VBOX_VBVA_CONF32_MONITOR_COUNT  0

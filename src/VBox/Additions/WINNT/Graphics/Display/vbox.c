@@ -691,9 +691,9 @@ void VBoxProcessDisplayInfo (PPDEV ppdev)
 
 # ifdef VBOX_WITH_VIDEOHWACCEL
 
-VBVAVHWACMD_HDR* vboxVHWACreateCommand (PPDEV ppdev, VBVAVHWACMD_LENGTH cbCmd)
+VBOXVHWACMD* vboxVHWACreateCommand (PPDEV ppdev, VBOXVHWACMD_LENGTH cbCmd)
 {
-    VBVAVHWACMD_HDR* pHdr = (VBVAVHWACMD_HDR*)HGSMIHeapAlloc (&ppdev->hgsmiDisplayHeap,
+    VBOXVHWACMD* pHdr = (VBOXVHWACMD*)HGSMIHeapAlloc (&ppdev->hgsmiDisplayHeap,
                               cbCmd,
                               HGSMI_CH_VBVA,
                               VBVA_VHWA_CMD);
@@ -705,16 +705,57 @@ VBVAVHWACMD_HDR* vboxVHWACreateCommand (PPDEV ppdev, VBVAVHWACMD_LENGTH cbCmd)
     return pHdr;
 }
 
-void vboxVHWAFreeCommand (PPDEV ppdev, VBVAVHWACMD_HDR* pCmd)
+void vboxVHWAFreeCommand (PPDEV ppdev, VBOXVHWACMD* pCmd)
 {
     HGSMIHeapFree (&ppdev->hgsmiDisplayHeap, pCmd);
 }
 
-void vboxVHWASubmitCommand (PPDEV ppdev, VBVAVHWACMD_HDR* pCmd)
+void vboxVHWASubmitCommand (PPDEV ppdev, VBOXVHWACMD* pCmd)
+{
+    vboxHGSMIBufferSubmit (ppdev, pCmd);
+    if(pCmd->rc == VINF_VHWA_CMD_PENDING)
+    {
+
+    }
+}
+
+/* do not wait for completion */
+void vboxVHWASubmitCommandAssynch (PPDEV ppdev, VBOXVHWACMD* pCmd)
 {
     vboxHGSMIBufferSubmit (ppdev, pCmd);
 }
 
+static int vboxVHWAHanldeVHWACmdCompletion(PPDEV ppdev, void *pvBuffer, HGSMISIZE cbBuffer)
+{
+    Assert(0);
+
+    ppdev->pfnHGSMICommandComplete(ppdev->hMpHGSMI, pvBuffer);
+    return 0;
+}
+
 # endif
+
+DECLCALLBACK(int) vboxVHWACommandHanlder(void *pvHandler, uint16_t u16ChannelInfo, void *pvBuffer, HGSMISIZE cbBuffer)
+{
+    int rc = VINF_SUCCESS;
+    PPDEV ppdev = (PPDEV)pvHandler;
+
+    switch(u16ChannelInfo)
+    {
+# ifdef VBOX_WITH_VIDEOHWACCEL
+        case VBVAHG_VHWA_CMDCOMPLETE:
+        {
+            vboxVHWAHanldeVHWACmdCompletion(ppdev, pvBuffer, cbBuffer);
+            break;
+        }
+# endif
+        default:
+        {
+            ppdev->pfnHGSMICommandComplete(ppdev->hMpHGSMI, pvBuffer);
+        }
+
+    }
+    return rc;
+}
 
 #endif /* VBOX_WITH_HGSMI */

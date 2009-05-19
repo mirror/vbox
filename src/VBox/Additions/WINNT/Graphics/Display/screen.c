@@ -100,9 +100,47 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
                                                  &returnedDataLength);
     if (ppdev->bHGSMISupported)
     {
+        HGSMIQUERYCALLBACKS Callbacks;
+        DWORD err;
+        RtlZeroMemory(&Callbacks, sizeof(Callbacks));
+
         iDevice = info.iDevice;
         u32DisplayInfoSize = info.u32DisplayInfoSize;
         u32MinVBVABufferSize = info.u32MinVBVABufferSize;
+
+        err = EngDeviceIoControl(ppdev->hDriver,
+                IOCTL_VIDEO_HGSMI_QUERY_CALLBACKS,
+                NULL,
+                0,
+                &Callbacks,
+                sizeof(Callbacks),
+                &returnedDataLength);
+        Assert(!err);
+        if(!err)
+        {
+            HGSMIHANDLERREGISTER HandlerReg;
+            RtlZeroMemory(&HandlerReg, sizeof(HandlerReg));
+
+            ppdev->hMpHGSMI = Callbacks.hContext;
+            ppdev->pfnHGSMICommandComplete = Callbacks.pfnCompletionHandler;
+            HandlerReg.pfnHandler = vboxVHWACommandHanlder;
+            HandlerReg.pvHandler = ppdev;
+            HandlerReg.u8Channel = HGSMI_CH_VBVA;
+            err = EngDeviceIoControl(ppdev->hDriver,
+                    IOCTL_VIDEO_HGSMI_HANDLER_REGISTER,
+                    &HandlerReg,
+                    sizeof(HandlerReg),
+                    NULL,
+                    0,
+                    &returnedDataLength);
+            Assert(!err);
+        }
+
+        if(err)
+        {
+            ppdev->bHGSMISupported = FALSE;
+        }
+
     }
 #endif /* VBOX_WITH_HGSMI */
 

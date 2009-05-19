@@ -107,6 +107,8 @@ public:
     STDMETHOD(GetVisibleRegion)(BYTE *rectangles, ULONG count, ULONG *countCopied);
     STDMETHOD(SetVisibleRegion)(BYTE *rectangles, ULONG count);
 
+    STDMETHOD(ProcessVHWACommand)(BYTE *pCommand);
+
 private:
     /** true if url_fopen actually succeeded */
     bool mfUrlOpen;

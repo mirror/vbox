@@ -166,6 +166,8 @@ typedef enum PDMINTERFACE
     PDMINTERFACE_SCSI_PORT,
     /** PDMISCSICONNECTOR       - The SCSI command execution connector interface (Up) Coupled with PDMINTERFACE_SCSI_PORT. */
     PDMINTERFACE_SCSI_CONNECTOR,
+    /** PDMDDISPLAYVBVACALLBACKS       - The Display VBVA call-backs */
+    PDMINTERFACE_DISPLAY_VBVA_CALLBACKS,
 
     /** Maximum interface number. */
     PDMINTERFACE_MAX
@@ -424,6 +426,7 @@ typedef struct PDMIDISPLAYPORT
 
 } PDMIDISPLAYPORT;
 
+typedef struct _VBOXVHWACMD *PVBOXVHWACMD;
 
 /** Pointer to a display connector interface. */
 typedef struct PDMIDISPLAYCONNECTOR *PPDMIDISPLAYCONNECTOR;
@@ -525,6 +528,14 @@ typedef struct PDMIDISPLAYCONNECTOR
      */
     DECLR3CALLBACKMEMBER(void, pfnProcessDisplayData, (PPDMIDISPLAYCONNECTOR pInterface, void *pvVRAM, unsigned uScreenId));
 
+    /**
+     * Process the guest Video HW Acceleration command.
+     *
+     * @param   pInterface          Pointer to this interface.
+     * @param   pCmd                Video HW Acceleration Command to be processed.
+     * @thread  The emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnVHWACommandProcess, (PPDMIDISPLAYCONNECTOR pInterface, PVBOXVHWACMD pCmd));
 
     /** Read-only attributes.
      * For preformance reasons some readonly attributes are kept in the interface.
@@ -2586,6 +2597,20 @@ typedef struct PDMISCSICONNECTOR
      DECLR3CALLBACKMEMBER(int, pfnSCSIRequestSend, (PPDMISCSICONNECTOR pInterface, PPDMSCSIREQUEST pSCSIRequest));
 
 } PDMISCSICONNECTOR;
+
+typedef struct PDMDDISPLAYVBVACALLBACKS *PPDMDDISPLAYVBVACALLBACKS;
+/**
+ * Display VBVA callbacks
+ */
+typedef struct PDMDDISPLAYVBVACALLBACKS
+{
+    /**
+     * Informs guest about completion of processing the given Video HW Acceleration command,
+     * does not wait for the guest to process the command
+     */
+    DECLR3CALLBACKMEMBER(int, pfnVHWACommandCompleteAsynch, (PPDMDDISPLAYVBVACALLBACKS pInterface, PVBOXVHWACMD pCmd));
+}PDMDDISPLAYVBVACALLBACKS;
+
 /** @} */
 
 __END_DECLS

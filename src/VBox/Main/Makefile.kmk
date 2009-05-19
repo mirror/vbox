@@ -591,6 +591,10 @@ VBoxC_SOURCES += \
 	hgcm/HGCM.cpp
 endif
 
+ifdef VBOX_WITH_VIDEOHWACCEL
+VBoxC_DEFS += VBOX_WITH_VIDEOHWACCEL
+endif
+
 ifdef VBOX_WITH_USB
 VBoxC_SOURCES += \
 	RemoteUSBBackend.cpp

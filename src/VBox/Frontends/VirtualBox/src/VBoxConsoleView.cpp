@@ -92,6 +92,10 @@ const int XKeyRelease = KeyRelease;
 # include <VBox/err.h>
 #endif /* defined (Q_WS_MAC) */
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+#include <VBox/VBoxVideo.h>
+#endif
+
 #if defined (Q_WS_WIN32)
 
 static HHOOK gKbdHook = NULL;
@@ -1688,6 +1692,14 @@ bool VBoxConsoleView::event (QEvent *e)
                 return true;
             }
 #endif
+#ifdef VBOX_WITH_VIDEOHWACCEL
+            case VBoxDefs::VHWACommandProcessType:
+            {
+                VBoxVHWACommandProcessEvent *cmde = (VBoxVHWACommandProcessEvent *)e;
+                handleVHWACommand(cmde->command());
+                return true;
+            }
+#endif
             default:
                 break;
         }
@@ -1695,6 +1707,32 @@ bool VBoxConsoleView::event (QEvent *e)
 
     return QAbstractScrollArea::event (e);
 }
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+void VBoxConsoleView::handleVHWACommand(struct _VBOXVHWACMD *pCmd)
+{
+    switch(pCmd->enmCmd)
+    {
+        case VBOXVHWACMD_TYPE_SURF_CREATE:
+        {
+            VBOXVHWACMD_SURF_CREATE * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_CREATE);
+            pCmd->rc = VERR_NOT_IMPLEMENTED;
+            break;
+        } break;
+        case VBOXVHWACMD_TYPE_SURF_DESTROY:
+        {
+            VBOXVHWACMD_SURF_DESTROY * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_DESTROY);
+            pCmd->rc = VERR_NOT_IMPLEMENTED;
+            break;
+        } break;
+    }
+
+    CDisplay display = mConsole.GetDisplay();
+    Assert (!display.isNull());
+
+    display.CompleteVHWACommand((BYTE*)pCmd);
+}
+#endif
 
 bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
 {
