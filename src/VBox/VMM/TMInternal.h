@@ -457,9 +457,11 @@ typedef struct TM
     STAMCOUNTER                 StatVirtualGet;
     STAMCOUNTER                 StatVirtualGetSetFF;
     STAMCOUNTER                 StatVirtualSyncGet;
-    STAMCOUNTER                 StatVirtualSyncGetSetFF;
     STAMCOUNTER                 StatVirtualSyncGetELoop;
+    STAMCOUNTER                 StatVirtualSyncGetExpired;
+    STAMCOUNTER                 StatVirtualSyncGetLockless;
     STAMCOUNTER                 StatVirtualSyncGetLocked;
+    STAMCOUNTER                 StatVirtualSyncGetSetFF;
     STAMCOUNTER                 StatVirtualPause;
     STAMCOUNTER                 StatVirtualResume;
     /* @} */
