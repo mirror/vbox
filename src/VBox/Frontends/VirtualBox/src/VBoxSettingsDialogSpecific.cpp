@@ -35,6 +35,7 @@
 #include "VBoxGLSettingsNetwork.h"
 
 #include "VBoxVMSettingsGeneral.h"
+#include "VBoxVMSettingsSystem.h"
 #include "VBoxVMSettingsDisplay.h"
 #include "VBoxVMSettingsHD.h"
 #include "VBoxVMSettingsCD.h"
@@ -242,10 +243,19 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
     if (isAvailable (GeneralId))
     {
         prefPage = new VBoxVMSettingsGeneral();
-        connect (prefPage, SIGNAL (tableChanged()), this, SLOT (resetFirstRunFlag()));
         addItem (":/machine_32px.png", ":/machine_disabled_32px.png",
                  ":/machine_16px.png", ":/machine_disabled_16px.png",
                  GeneralId, "#general", prefPage);
+    }
+
+    /* System page */
+    if (isAvailable (SystemId))
+    {
+        prefPage = new VBoxVMSettingsSystem();
+        connect (prefPage, SIGNAL (tableChanged()), this, SLOT (resetFirstRunFlag()));
+        addItem (":/chipset_32px.png", ":/chipset_32px.png",
+                 ":/chipset_16px.png", ":/chipset_16px.png",
+                 SystemId, "#system", prefPage);
     }
 
     /* Display page */
@@ -397,6 +407,7 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
 
 void VBoxVMSettingsDlg::getFrom()
 {
+    /* Load all the settings pages */
     QList <VBoxSettingsPage*> pages = mSelector->settingPages();
     foreach (VBoxSettingsPage *page, pages)
         page->getFrom (mMachine);
@@ -409,9 +420,19 @@ void VBoxVMSettingsDlg::getFrom()
 
 void VBoxVMSettingsDlg::putBackTo()
 {
+    /* Commit all the settings pages */
     QList <VBoxSettingsPage*> pages = mSelector->settingPages();
     foreach (VBoxSettingsPage *page, pages)
         page->putBackTo();
+
+    /* Guest OS type & VT-x/AMD-V option correlation test */
+    VBoxVMSettingsGeneral *generalPage =
+        qobject_cast <VBoxVMSettingsGeneral*> (mSelector->idToPage (GeneralId));
+    VBoxVMSettingsSystem *systemPage =
+        qobject_cast <VBoxVMSettingsSystem*> (mSelector->idToPage (SystemId));
+    if (generalPage && systemPage &&
+        generalPage->is64BitOSTypeSelected() && !systemPage->isHWVirtExEnabled())
+        mMachine.SetHWVirtExEnabled (KTSBool_True);
 
     /* Clear the "GUI_FirstRun" extra data key in case if the boot order
      * and/or disk configuration were changed */
@@ -432,6 +453,9 @@ void VBoxVMSettingsDlg::retranslateUi()
 
     /* General page */
     mSelector->setItemText (GeneralId, tr ("General"));
+
+    /* System page */
+    mSelector->setItemText (SystemId, tr ("System"));
 
     /* Display page */
     mSelector->setItemText (DisplayId, tr ("Display"));
@@ -494,6 +518,37 @@ QString VBoxVMSettingsDlg::dialogTitle() const
         dialogTitle = tr ("%1 - %2").arg (mMachine.GetName())
                                     .arg (titleExtension());
     return dialogTitle;
+}
+
+bool VBoxVMSettingsDlg::correlate (QWidget *aPage, QString &aWarning)
+{
+    /* This method performs correlation option check between
+     * different pages of VM Settings dialog */
+
+    /* Guest OS type & VT-x/AMD-V option correlation test */
+    if (aPage == mSelector->idToPage (GeneralId) ||
+        aPage == mSelector->idToPage (SystemId))
+    {
+        VBoxVMSettingsGeneral *generalPage =
+            qobject_cast <VBoxVMSettingsGeneral*> (mSelector->idToPage (GeneralId));
+        VBoxVMSettingsSystem *systemPage =
+            qobject_cast <VBoxVMSettingsSystem*> (mSelector->idToPage (SystemId));
+
+        if (generalPage && systemPage &&
+            generalPage->is64BitOSTypeSelected() && !systemPage->isHWVirtExEnabled())
+        {
+            aWarning = tr (
+                "there is a 64 bits guest OS type assigned for this VM, which "
+                "requires virtualization feature (VT-x/AMD-V) to be enabled "
+                "too, else your guest will fail to detect a 64 bits CPU and "
+                "will not be able to boot, so this feature will be enabled "
+                "automatically when you'll accept VM Settings by pressing OK "
+                "button.");
+            return true;
+        }
+    }
+
+    return true;
 }
 
 void VBoxVMSettingsDlg::onMediaEnumerationDone()

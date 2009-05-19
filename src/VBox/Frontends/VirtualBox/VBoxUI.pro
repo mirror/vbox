@@ -39,6 +39,7 @@ FORMS = \
     ui/VBoxVMInformationDlg.ui \
     ui/VBoxVMLogViewer.ui \
     ui/VBoxVMSettingsGeneral.ui \
+    ui/VBoxVMSettingsSystem.ui \
     ui/VBoxVMSettingsDisplay.ui \
     ui/VBoxVMSettingsHD.ui \
     ui/VBoxVMSettingsCD.ui \

@@ -75,6 +75,7 @@ public:
     enum VMSettingsPageIds
     {
         GeneralId = 0,
+        SystemId,
         DisplayId,
         StorageId,
         HDId,
@@ -100,6 +101,8 @@ protected:
     void retranslateUi();
 
     QString dialogTitle() const;
+
+    bool correlate (QWidget *aPage, QString &aWarning);
 
 private slots:
 

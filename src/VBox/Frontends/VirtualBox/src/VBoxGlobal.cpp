@@ -758,7 +758,6 @@ VBoxGlobal::VBoxGlobal()
 #endif
     , mMediaEnumThread (NULL)
     , mVerString ("1.0")
-    , mDetailReportTemplatesReady (false)
 {
 }
 
@@ -1580,6 +1579,7 @@ QString VBoxGlobal::toolTip (const CUSBDeviceFilter &aFilter) const
  */
 QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
 {
+    /* Details templates */
     static const char *sTableTpl =
         "<table border=0 cellspacing=1 cellpadding=0>%1</table>";
     static const char *sSectionHrefTpl =
@@ -1597,48 +1597,31 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
     static const char *sSectionItemTpl2 =
         "<tr><td width=40%><nobr>%1:</nobr></td><td/><td>%2</td></tr>";
 
-    static QString sGeneralFullHrefTpl, sGeneralFullBoldTpl;
-
-    /* Generate general template after every language change */
-    if (!mDetailReportTemplatesReady)
-    {
-        mDetailReportTemplatesReady = true;
-
-        QString generalItems
-            = QString (sSectionItemTpl2).arg (tr ("Name", "details report"), "%1")
-            + QString (sSectionItemTpl2).arg (tr ("OS Type", "details report"), "%2")
-            + QString (sSectionItemTpl2).arg (tr ("Base Memory", "details report"),
-                                              tr ("<nobr>%3 MB</nobr>", "details report"))
-            + QString (sSectionItemTpl2).arg (tr ("Boot Order", "details report"), "%4")
-            + QString (sSectionItemTpl2).arg (tr ("ACPI", "details report"), "%5")
-            + QString (sSectionItemTpl2).arg (tr ("IO APIC", "details report"), "%6")
-            + QString (sSectionItemTpl2).arg (tr ("VT-x/AMD-V", "details report"), "%7")
-            + QString (sSectionItemTpl2).arg (tr ("Nested Paging", "details report"), "%8")
-            + QString (sSectionItemTpl2).arg (tr ("PAE/NX", "details report"), "%9");
-
-        sGeneralFullHrefTpl = QString (sSectionHrefTpl)
-            .arg (2 + 9) /* rows */
-            .arg (":/machine_16px.png", /* icon */
-                  "#general", /* link */
-                  tr ("General", "details report"), /* title */
-                  generalItems); /* items */
-        sGeneralFullBoldTpl = QString (sSectionBoldTpl)
-            .arg (2 + 9) /* rows */
-            .arg (":/machine_16px.png", /* icon */
-                  "#general", /* link */
-                  tr ("General", "details report"), /* title */
-                  generalItems); /* items */
-    }
+    const QString &sectionTpl = aWithLinks ? sSectionHrefTpl : sSectionBoldTpl;
 
     /* Compose details report */
-    const QString &sectionTpl = aWithLinks ? sSectionHrefTpl : sSectionBoldTpl;
-    const QString &generalFullTpl = aWithLinks ? sGeneralFullHrefTpl : sGeneralFullBoldTpl;
-
     QString report;
-    QString item;
 
     /* General */
     {
+        QString item = QString (sSectionItemTpl2).arg (tr ("Name", "details report"),
+                                                       aMachine.GetName())
+                     + QString (sSectionItemTpl2).arg (tr ("OS Type", "details report"),
+                                                       vmGuestOSTypeDescription (aMachine.GetOSTypeId()));
+
+        report += sectionTpl
+                  .arg (2 + 2) /* rows */
+                  .arg (":/machine_16px.png", /* icon */
+                        "#general", /* link */
+                        tr ("General", "details report"), /* title */
+                        item); /* items */
+    }
+
+    /* System */
+    {
+        /* BIOS Settings holder */
+        CBIOSSettings biosSettings = aMachine.GetBIOSSettings();
+
         /* Boot order */
         QString bootOrder;
         for (ulong i = 1; i <= mVBox.GetSystemProperties().GetMaxBootPosition(); ++ i)
@@ -1653,8 +1636,6 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
         if (bootOrder.isEmpty())
             bootOrder = toString (KDeviceType_Null);
 
-        CBIOSSettings biosSettings = aMachine.GetBIOSSettings();
-
         /* ACPI */
         QString acpi = biosSettings.GetACPIEnabled()
             ? tr ("Enabled", "details report (ACPI)")
@@ -1664,6 +1645,11 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
         QString ioapic = biosSettings.GetIOAPICEnabled()
             ? tr ("Enabled", "details report (IO APIC)")
             : tr ("Disabled", "details report (IO APIC)");
+
+        /* PAE/NX */
+        QString pae = aMachine.GetPAEEnabled()
+            ? tr ("Enabled", "details report (PAE/NX)")
+            : tr ("Disabled", "details report (PAE/NX)");
 
         /* VT-x/AMD-V */
         QString virt = aMachine.GetHWVirtExEnabled() == KTSBool_True ?
@@ -1675,43 +1661,43 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
             ? tr ("Enabled", "details report (Nested Paging)")
             : tr ("Disabled", "details report (Nested Paging)");
 
-        /* PAE/NX */
-        QString pae = aMachine.GetPAEEnabled()
-            ? tr ("Enabled", "details report (PAE/NX)")
-            : tr ("Disabled", "details report (PAE/NX)");
+        QString item = QString (sSectionItemTpl2).arg (tr ("Base Memory", "details report"),
+                                                       tr ("<nobr>%1 MB</nobr>", "details report"))
+                       .arg (aMachine.GetMemorySize())
+                     + QString (sSectionItemTpl2).arg (tr ("CPU Count", "details report"),
+                                                       tr ("<nobr>%1</nobr>", "details report"))
+                       .arg (aMachine.GetCPUCount())
+                     + QString (sSectionItemTpl2).arg (tr ("Boot Order", "details report"), bootOrder)
+                     + QString (sSectionItemTpl2).arg (tr ("ACPI", "details report"), acpi)
+                     + QString (sSectionItemTpl2).arg (tr ("IO APIC", "details report"), ioapic)
+                     + QString (sSectionItemTpl2).arg (tr ("PAE/NX", "details report"), pae)
+                     + QString (sSectionItemTpl2).arg (tr ("VT-x/AMD-V", "details report"), virt)
+                     + QString (sSectionItemTpl2).arg (tr ("Nested Paging", "details report"), nested);
 
-        /* General */
-        report = generalFullTpl
-                 .arg (aMachine.GetName())
-                 .arg (vmGuestOSTypeDescription (aMachine.GetOSTypeId()))
-                 .arg (aMachine.GetMemorySize())
-                 .arg (bootOrder)
-                 .arg (acpi)
-                 .arg (ioapic)
-                 .arg (virt)
-                 .arg (nested)
-                 .arg (pae);
+        report += sectionTpl
+                  .arg (2 + 8) /* rows */
+                  .arg (":/chipset_16px.png", /* icon */
+                        "#system", /* link */
+                        tr ("System", "details report"), /* title */
+                        item); /* items */
     }
 
     /* Display */
     {
-        /* Erase temp item */
-        item = QString::null;
-
-        int rows = 2; /* including section header and footer */
+        /* Rows including section header and footer */
+        int rows = 2;
 
         /* Video tab */
         QString acc3d = aMachine.GetAccelerate3DEnabled()
             ? tr ("Enabled", "details report (3D Acceleration)")
             : tr ("Disabled", "details report (3D Acceleration)");
 
-        item += QString (sSectionItemTpl2)
-                .arg (tr ("Video Memory", "details report"),
-                      tr ("<nobr>%1 MB</nobr>", "details report"))
-                .arg (aMachine.GetVRAMSize());
-        item += QString (sSectionItemTpl2)
-                .arg (tr ("3D Acceleration", "details report"), "%2")
-                .arg (acc3d);
+        QString item = QString (sSectionItemTpl2)
+                       .arg (tr ("Video Memory", "details report"),
+                             tr ("<nobr>%1 MB</nobr>", "details report"))
+                       .arg (aMachine.GetVRAMSize())
+                     + QString (sSectionItemTpl2)
+                       .arg (tr ("3D Acceleration", "details report"), acc3d);
 
         rows += 2;
 
@@ -1730,7 +1716,6 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
             ++ rows;
         }
 
-        /* Full report */
         report += sectionTpl
             .arg (rows) /* rows */
             .arg (":/vrdp_16px.png", /* icon */
@@ -1741,10 +1726,10 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
 
     /* Hard Disks */
     {
-        /* Erase temp item */
-        item = QString::null;
+        /* Rows including section header and footer */
+        int rows = 2;
 
-        int rows = 2; /* including section header and footer */
+        QString item;
 
         CHardDiskAttachmentVector vec = aMachine.GetHardDiskAttachments();
         for (int i = 0; i < vec.size(); ++ i)
@@ -1788,6 +1773,8 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
 
     /* DVD */
     {
+        QString item;
+
         CDVDDrive dvd = aMachine.GetDVDDrive();
         switch (dvd.GetState())
         {
@@ -1819,6 +1806,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
             default:
                 AssertMsgFailed (("Invalid DVD state: %d", dvd.GetState()));
         }
+
         report += sectionTpl
             .arg (2 + 1) /* rows */
             .arg (":/cd_16px.png", /* icon */
@@ -1829,6 +1817,8 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
 
     /* Floppy */
     {
+        QString item;
+
         CFloppyDrive floppy = aMachine.GetFloppyDrive();
         switch (floppy.GetState())
         {
@@ -1860,6 +1850,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
             default:
                 AssertMsgFailed (("Invalid floppy state: %d", floppy.GetState()));
         }
+
         report += sectionTpl
             .arg (2 + 1) /* rows */
             .arg (":/fd_16px.png", /* icon */
@@ -1870,6 +1861,8 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
 
     /* Audio */
     {
+        QString item;
+
         CAudioAdapter audio = aMachine.GetAudioAdapter();
         int rows = audio.GetEnabled() ? 3 : 2;
         if (audio.GetEnabled())
@@ -1893,8 +1886,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
 
     /* Network */
     {
-        /* Erase temp item */
-        item = QString::null;
+        QString item;
 
         ulong count = mVBox.GetSystemProperties().GetNetworkAdapterCount();
         int rows = 2; /* including section header and footer */
@@ -1945,8 +1937,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
 
     /* Serial Ports */
     {
-        /* Erase temp item */
-        item = QString::null;
+        QString item;
 
         ulong count = mVBox.GetSystemProperties().GetSerialPortCount();
         int rows = 2; /* including section header and footer */
@@ -1991,8 +1982,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
 
     /* Parallel Ports */
     {
-        /* Erase temp item */
-        item = QString::null;
+        QString item;
 
         ulong count = mVBox.GetSystemProperties().GetParallelPortCount();
         int rows = 2; /* including section header and footer */
@@ -2031,6 +2021,8 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
 
     /* USB */
     {
+        QString item;
+
         CUSBController ctl = aMachine.GetUSBController();
         if (!ctl.isNull())
         {
@@ -2064,6 +2056,8 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
 
     /* Shared Folders */
     {
+        QString item;
+
         ulong count = aMachine.GetSharedFolders().size();
         if (count > 0)
         {
@@ -2968,8 +2962,6 @@ void VBoxGlobal::retranslateUi()
 
     mErrorIcon = standardIcon (QStyle::SP_MessageBoxCritical, 0).pixmap (16, 16);
     Assert (!mErrorIcon.isNull());
-
-    mDetailReportTemplatesReady = false;
 
     /* refresh media properties since they contain some translations too  */
     for (VBoxMediaList::iterator it = mMediaList.begin();
