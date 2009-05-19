@@ -656,6 +656,36 @@
 #endif
 
 
+/** @def DECL_FORCE_INLINE
+ * How to declare a function as inline and try convince the compiler to always
+ * inline it regardless of optimization switches.
+ * @param   type    The return type of the function declaration.
+ * @remarks Use sparsely and with care. Don't use this macro on C++ methods.
+ */
+#ifdef __GNUC__
+# define DECL_FORCE_INLINE(type)    __attribute__((always_inline)) DECLINLINE(type)
+#elif defined(_MSC_VER)
+# define DECL_FORCE_INLINE(type)    __forceinline type
+#else
+# define DECL_FORCE_INLINE(type)    DECLINLINE(type)
+#endif
+
+
+/** @def DECL_NO_INLINE
+ * How to declare a function telling the compiler not to inline it.
+ * @param   scope   The function scope, static or RT_NOTHING.
+ * @param   type    The return type of the function declaration.
+ * @remarks Don't use this macro on C++ methods.
+ */
+#ifdef __GNUC__
+# define DECL_NO_INLINE(scope,type) __attribute__((noinline)) scope type
+#elif defined(_MSC_VER)
+# define DECL_NO_INLINE(scope,type) __declspec(noline) scope type
+#else
+# define DECL_NO_INLINE(scope,type) scope type
+#endif
+
+
 /** @def IN_RT_STATIC
  * Used to indicate whether we're linking against a static IPRT
  * or not. The IPRT symbols will be declared as hidden (if
