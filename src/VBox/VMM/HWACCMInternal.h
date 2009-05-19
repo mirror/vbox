@@ -640,6 +640,7 @@ typedef struct HWACCMCPU
     STAMCOUNTER             StatFlushASID;
     STAMCOUNTER             StatFlushTLBInvlpga;
     STAMCOUNTER             StatTlbShootdown;
+    STAMCOUNTER             StatTlbShootdownFlush;
 
     STAMCOUNTER             StatSwitchGuestIrq;
     STAMCOUNTER             StatSwitchToR3;

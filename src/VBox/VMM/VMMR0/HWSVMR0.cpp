@@ -913,8 +913,6 @@ ResumeExecution:
         goto end;
     }
 
-    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
-
     /* When external interrupts are pending, we should exit the VM when IF is set. */
     /* Note! *After* VM_FF_INHIBIT_INTERRUPTS check!!! */
     rc = SVMR0CheckPendingInterrupt(pVM, pVCpu, pVMCB, pCtx);
@@ -987,6 +985,12 @@ ResumeExecution:
         goto end;
     }
 
+    /* Disable interrupts to make sure a poke will interrupt execution. 
+     * This must be done *before* we check for TLB flushes; TLB shootdowns rely on this.
+     */
+    RTCCUINTREG uFlags = ASMIntDisableFlags();
+    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
+
     pCpu = HWACCMR0GetCurrentCpu();
     /* Force a TLB flush for the first world switch if the current cpu differs from the one we ran on last. */
     /* Note that this can happen both for start and resume due to long jumps back to ring 3. */
@@ -1001,6 +1005,10 @@ ResumeExecution:
         Assert(!pCpu->fFlushTLB || pVM->hwaccm.s.svm.fAlwaysFlushTLB);
 
     pVCpu->hwaccm.s.idLastCpu = pCpu->idCpu;
+
+    /* Check for tlb shootdown flushes. */
+    if (VMCPU_FF_TESTANDCLEAR(pVCpu, VMCPU_FF_TLB_FLUSH_BIT))
+        pVCpu->hwaccm.s.fForceTLBFlush = true;
 
     /* Make sure we flush the TLB when required. Switch ASID to achieve the same thing, but without actually flushing the whole TLB (which is expensive). */
     if (    pVCpu->hwaccm.s.fForceTLBFlush
@@ -1072,6 +1080,7 @@ ResumeExecution:
     pVCpu->hwaccm.s.svm.pfnVMRun(pVM->hwaccm.s.svm.pVMCBHostPhys, pVCpu->hwaccm.s.svm.pVMCBPhys, pCtx, pVM, pVCpu);
     TMNotifyEndOfExecution(pVCpu);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
+    ASMSetFlags(uFlags);
     STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatInGC, x);
 
     /*

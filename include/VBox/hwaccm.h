@@ -80,6 +80,7 @@ VMMDECL(bool)   HWACCMHasPendingIrq(PVM pVM);
 
 #ifndef IN_RC
 VMMDECL(int)     HWACCMFlushTLB(PVMCPU pVCpu);
+VMMDECL(int)     HWACCMFlushAllTLBs(PVM pVM);
 VMMDECL(int)     HWACCMInvalidatePhysPage(PVMCPU pVCpu, RTGCPHYS GCPhys);
 VMMDECL(bool)    HWACCMIsNestedPagingActive(PVM pVM);
 VMMDECL(PGMMODE) HWACCMGetShwPagingMode(PVM pVM);
