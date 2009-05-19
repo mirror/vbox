@@ -973,9 +973,11 @@ ResumeExecution:
      * NOTE: DO NOT DO ANYTHING AFTER THIS POINT THAT MIGHT JUMP BACK TO RING 3!
      *       (until the actual world switch)
      */
-
 #ifdef VBOX_STRICT
     idCpuCheck = RTMpCpuId();
+#endif
+#ifdef LOG_LOGGING
+    VMMR0LogFlushDisable(pVCpu);
 #endif
 
     /* Load the guest state; *must* be here as it sets up the shadow cr0 for lazy fpu syncing! */
@@ -1266,6 +1268,9 @@ ResumeExecution:
     }
 
     /* Note! NOW IT'S SAFE FOR LOGGING! */
+#ifdef LOG_LOGGING
+    VMMR0LogFlushEnable(pVCpu);
+#endif
 
     /* Take care of instruction fusing (sti, mov ss) (see 15.20.5 Interrupt Shadows) */
     if (pVMCB->ctrl.u64IntShadow & SVM_INTERRUPT_SHADOW_ACTIVE)

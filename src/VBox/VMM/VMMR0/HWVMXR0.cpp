@@ -1795,7 +1795,9 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 static void vmxR0SetupTLBDummy(PVM pVM, PVMCPU pVCpu)
 {
     NOREF(pVM);
-    NOREF(pVCpu);
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH);
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
+    pVCpu->hwaccm.s.cTlbShootdownPages = 0;
     return;
 }
 
