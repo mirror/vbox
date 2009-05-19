@@ -34,6 +34,7 @@
 #include <VBox/sup.h>
 #include <iprt/system.h>
 #include <iprt/assert.h>
+#include <iprt/asm.h>
 #ifdef VBOX_WITH_LIBXML2_IN_VBOXRT
 # include <libxml/xmlmodule.h>
 # include <libxml/globals.h>
@@ -63,6 +64,9 @@ PFNRT g_VBoxRTDeps[] =
     (PFNRT)i2d_X509,
     (PFNRT)RSA_generate_key,
 #endif
-    (PFNRT)RTAssertShouldPanic
+    (PFNRT)RTAssertShouldPanic,
+    (PFNRT)ASMAtomicReadU64,
+    (PFNRT)ASMAtomicCmpXchgU64,
+    NULL
 };
 
