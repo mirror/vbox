@@ -156,8 +156,8 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
     {
         if (!(++s_iTimerPoll & 0xf))
         {
-            uint64_t cTicks = TMTimerPoll(pVM, pVCpu); NOREF(cTicks);
-            Log2(("TMTimerPoll at %08RX32 returned %RX64 (VM_FF_TM_VIRTUAL_SYNC=%d VM_FF_TM_VIRTUAL_SYNC=%d)\n", pRegFrame->eip, cTicks,
+            TMTimerPollVoid(pVM, pVCpu);
+            Log2(("TMTimerPoll at %08RX32 - VM_FF_TM_VIRTUAL_SYNC=%d VM_FF_TM_VIRTUAL_SYNC=%d\n", pRegFrame->eip,
                   VM_FF_ISPENDING(pVM, VM_FF_TM_VIRTUAL_SYNC), VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TIMER)));
         }
     }
