@@ -532,7 +532,7 @@ int cpu_exec(CPUState *env1)
         if (    !(env->interrupt_request & (  CPU_INTERRUPT_EXIT | CPU_INTERRUPT_DEBUG | CPU_INTERRUPT_EXTERNAL_EXIT | CPU_INTERRUPT_RC
                                             | CPU_INTERRUPT_SINGLE_INSTR | CPU_INTERRUPT_SINGLE_INSTR_IN_FLIGHT))
             &&  (   (env->interrupt_request & CPU_INTERRUPT_EXTERNAL_TIMER)
-                 || !TMTimerPoll(env->pVM, env->pVCpu)) ) {
+                 || TMTimerPollBool(env->pVM, env->pVCpu)) ) {
             ASMAtomicAndS32((int32_t volatile *)&env->interrupt_request, ~CPU_INTERRUPT_EXTERNAL_TIMER);
             remR3ProfileStart(STATS_QEMU_RUN_TIMERS);
             TMR3TimerQueuesDo(env->pVM);

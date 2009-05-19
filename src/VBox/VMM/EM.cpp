@@ -1021,7 +1021,7 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * Sync back the VM state before calling any of these.
          */
 #ifdef VBOX_HIGH_RES_TIMERS_HACK
-        TMTimerPoll(pVM, pVCpu);
+        TMTimerPollVoid(pVM, pVCpu);
 #endif
         AssertCompile((VMCPU_FF_ALL_BUT_RAW_MASK & ~(VMCPU_FF_CSAM_PENDING_ACTION | VMCPU_FF_CSAM_SCAN_PAGE)) & VMCPU_FF_TIMER);
         if (    VM_FF_ISPENDING(pVM, VM_FF_ALL_BUT_RAW_MASK)
@@ -2947,7 +2947,7 @@ static int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * Check and execute forced actions.
          */
 #ifdef VBOX_HIGH_RES_TIMERS_HACK
-        TMTimerPoll(pVM, pVCpu);
+        TMTimerPollVoid(pVM, pVCpu);
 #endif
         STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatRAWTail, d);
         if (    VM_FF_ISPENDING(pVM, ~VM_FF_HIGH_PRIORITY_PRE_RAW_MASK | VM_FF_PGM_NO_MEMORY)
@@ -3088,7 +3088,7 @@ static int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * Check and execute forced actions.
          */
 #ifdef VBOX_HIGH_RES_TIMERS_HACK
-        TMTimerPoll(pVM, pVCpu);
+        TMTimerPollVoid(pVM, pVCpu);
 #endif
         if (    VM_FF_ISPENDING(pVM, VM_FF_ALL_MASK)
             ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_ALL_MASK))

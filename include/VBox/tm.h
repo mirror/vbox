@@ -197,7 +197,8 @@ VMMDECL(uint64_t) TMTimerFromMicro(PTMTIMER pTimer, uint64_t u64MicroTS);
 VMMDECL(uint64_t) TMTimerFromMilli(PTMTIMER pTimer, uint64_t u64MilliTS);
 VMMDECL(int)      TMTimerStop(PTMTIMER pTimer);
 VMMDECL(bool)     TMTimerIsActive(PTMTIMER pTimer);
-VMMDECL(uint64_t) TMTimerPoll(PVM pVM, PVMCPU pVCpu);
+VMMDECL(bool)     TMTimerPollBool(PVM pVM, PVMCPU pVCpu);
+VMMDECL(void)     TMTimerPollVoid(PVM pVM, PVMCPU pVCpu);
 VMMDECL(uint64_t) TMTimerPollGIP(PVM pVM, PVMCPU pVCpu, uint64_t *pu64Delta);
 
 /** @} */

@@ -429,7 +429,7 @@ DECL_FORCE_INLINE(uint64_t) tmTimerPollReturnHit(PVM pVM, PVMCPU pVCpu, PVMCPU p
  *
  * @remarks GIP uses ns ticks.
  */
-DECLINLINE(uint64_t) tmTimerPollInternal(PVM pVM, PVMCPU pVCpu, uint64_t *pu64Delta)
+DECL_FORCE_INLINE(uint64_t) tmTimerPollInternal(PVM pVM, PVMCPU pVCpu, uint64_t *pu64Delta)
 {
     PVMCPU                  pVCpuDst      = &pVM->aCpus[pVM->tm.s.idTimerCpu];
     const uint64_t          u64Now        = TMVirtualGetNoCheck(pVM);
@@ -634,18 +634,34 @@ DECLINLINE(uint64_t) tmTimerPollInternal(PVM pVM, PVMCPU pVCpu, uint64_t *pu64De
  *
  * This function is called before FFs are checked in the inner execution EM loops.
  *
- * @returns Virtual timer ticks to the next event. (I.e. 0 means that an timer
- *          has expired or some important rescheduling is pending.)
+ * @returns true if timers are pending, false if not.
+ *
  * @param   pVM         Pointer to the shared VM structure.
  * @param   pVCpu       Pointer to the shared VMCPU structure of the caller.
  * @thread  The emulation thread.
  */
-VMMDECL(uint64_t) TMTimerPoll(PVM pVM, PVMCPU pVCpu)
+VMMDECL(bool) TMTimerPollBool(PVM pVM, PVMCPU pVCpu)
 {
     AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
     uint64_t off = 0;
     tmTimerPollInternal(pVM, pVCpu, &off);
-    return off;
+    return off == 0;
+}
+
+
+/**
+ * Set FF if we've passed the next virtual event.
+ *
+ * This function is called before FFs are checked in the inner execution EM loops.
+ *
+ * @param   pVM         Pointer to the shared VM structure.
+ * @param   pVCpu       Pointer to the shared VMCPU structure of the caller.
+ * @thread  The emulation thread.
+ */
+VMMDECL(void) TMTimerPollVoid(PVM pVM, PVMCPU pVCpu)
+{
+    uint64_t off;
+    tmTimerPollInternal(pVM, pVCpu, &off);
 }
 
 

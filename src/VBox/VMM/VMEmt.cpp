@@ -301,7 +301,8 @@ static DECLCALLBACK(int) vmR3HaltOldDoHalt(PUVMCPU pUVCpu, const uint32_t fMask,
         if (    VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
             ||  VMCPU_FF_ISPENDING(pVCpu, fMask))
             break;
-        uint64_t u64NanoTS = TMVirtualToNano(pVM, TMTimerPoll(pVM, pVCpu));
+        uint64_t u64NanoTS;
+        TMTimerPollGIP(pVM, pVCpu, &u64NanoTS);
         if (    VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
             ||  VMCPU_FF_ISPENDING(pVCpu, fMask))
             break;
@@ -503,7 +504,8 @@ static DECLCALLBACK(int) vmR3HaltMethod1Halt(PUVMCPU pUVCpu, const uint32_t fMas
         /*
          * Estimate time left to the next event.
          */
-        uint64_t u64NanoTS = TMVirtualToNano(pVM, TMTimerPoll(pVM, pVCpu));
+        uint64_t u64NanoTS;
+        TMTimerPollGIP(pVM, pVCpu, &u64NanoTS);
         if (    VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
             ||  VMCPU_FF_ISPENDING(pVCpu, fMask))
             break;
