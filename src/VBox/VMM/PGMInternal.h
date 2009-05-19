@@ -351,15 +351,15 @@
 # define PGM_INVL_BIG_PG(pVCpu, GCVirt)         HWACCMFlushTLB(pVCpu)
 #endif
 
-/** @def PGM_INVL_GUEST_TLBS()
+/** @def PGM_INVL_VCPU_TLBS()
  * Invalidates all guest TLBs.
  */
 #ifdef IN_RC
-# define PGM_INVL_GUEST_TLBS(pVCpu)             ASMReloadCR3()
+# define PGM_INVL_VCPU_TLBS(pVCpu)             ASMReloadCR3()
 #elif defined(IN_RING0)
-# define PGM_INVL_GUEST_TLBS(pVCpu)             HWACCMFlushTLB(pVCpu)
+# define PGM_INVL_VCPU_TLBS(pVCpu)             HWACCMFlushTLB(pVCpu)
 #else
-# define PGM_INVL_GUEST_TLBS(pVCpu)             HWACCMFlushTLB(pVCpu)
+# define PGM_INVL_VCPU_TLBS(pVCpu)             HWACCMFlushTLB(pVCpu)
 #endif
 
 /** Size of the GCPtrConflict array in PGMMAPPING.

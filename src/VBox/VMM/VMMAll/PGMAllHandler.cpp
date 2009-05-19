@@ -236,7 +236,7 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
 
     if (fFlushTLBs && rc == VINF_SUCCESS)
     {
-        PGM_INVL_GUEST_TLBS(VMMGetCpu(pVM));
+        PGM_INVL_VCPU_TLBS(VMMGetCpu(pVM));
         Log(("pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs: flushing guest TLBs\n"));
     }
     else
@@ -414,7 +414,7 @@ void pgmHandlerPhysicalResetAliasedPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
     AssertLogRelRCReturnVoid(rc);
 # ifdef IN_RC
     if (fFlushTLBs && rc != VINF_PGM_SYNC_CR3)
-        PGM_INVL_GUEST_TLBS(VMMGetCpu0(pVM));
+        PGM_INVL_VCPU_TLBS(VMMGetCpu0(pVM));
 # else
     HWACCMFlushAllTLBs(pVM);
 # endif
