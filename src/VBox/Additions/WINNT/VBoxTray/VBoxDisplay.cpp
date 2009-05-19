@@ -232,6 +232,10 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
         
             paDisplayDevices[DevNum] = DisplayDevice;
             
+            /* First try to get the video mode stored in registry (ENUM_REGISTRY_SETTINGS).
+             * A secondary display could be not active at the moment and would not have
+             * a current video mode (ENUM_CURRENT_SETTINGS).
+             */
             ZeroMemory(&paDeviceModes[DevNum], sizeof(DEVMODE));
             paDeviceModes[DevNum].dmSize = sizeof(DEVMODE);
             if (!EnumDisplaySettings((LPSTR)DisplayDevice.DeviceName,
@@ -241,9 +245,26 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
                 return FALSE;
             }
             
-            Log(("ResizeDisplayDevice: %dx%d at %d,%d\n",
+            if (   paDeviceModes[DevNum].dmPelsWidth == 0
+                || paDeviceModes[DevNum].dmPelsHeight == 0)
+            {
+                /* No ENUM_REGISTRY_SETTINGS yet. Seen on Vista after installation.
+                 * Get the current video mode then.
+                 */
+                ZeroMemory(&paDeviceModes[DevNum], sizeof(DEVMODE));
+                paDeviceModes[DevNum].dmSize = sizeof(DEVMODE);
+                if (!EnumDisplaySettings((LPSTR)DisplayDevice.DeviceName,
+                     ENUM_CURRENT_SETTINGS, &paDeviceModes[DevNum]))
+                {
+                    Log(("EnumDisplaySettings(ENUM_CURRENT_SETTINGS) err %d\n", GetLastError ()));
+                    return FALSE;
+                }
+            }
+            
+            Log(("ResizeDisplayDevice: %dx%dx%d at %d,%d\n",
                     paDeviceModes[DevNum].dmPelsWidth,
                     paDeviceModes[DevNum].dmPelsHeight,
+                    paDeviceModes[DevNum].dmBitsPerPel,
                     paDeviceModes[DevNum].dmPosition.x,
                     paDeviceModes[DevNum].dmPosition.y));
                     
@@ -302,8 +323,6 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
     ZeroMemory (&tempDevMode, sizeof (tempDevMode));
     tempDevMode.dmSize = sizeof(DEVMODE);
     EnumDisplaySettings(NULL, 0xffffff, &tempDevMode);
-    BOOL bUpdateMonitor = FALSE;
-    LONG status = 0;
 
     /* Assign the new rectangles to displays. */
     for (i = 0; i < NumDevices; i++)
@@ -313,54 +332,42 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
         paDeviceModes[i].dmPelsWidth  = paRects[i].right - paRects[i].left;
         paDeviceModes[i].dmPelsHeight = paRects[i].bottom - paRects[i].top;
         
-        paDeviceModes[i].dmFields = DM_POSITION | DM_PELSHEIGHT | DM_PELSWIDTH;
+        /* On Vista one must specify DM_BITSPERPEL.
+         * Note that the current mode dmBitsPerPel is already in the DEVMODE structure.
+         */
+        paDeviceModes[i].dmFields = DM_POSITION | DM_PELSHEIGHT | DM_PELSWIDTH | DM_BITSPERPEL;
         
         if (   i == Id
             && BitsPerPixel != 0)
         {
-            paDeviceModes[i].dmFields |= DM_BITSPERPEL;
+            /* Change dmBitsPerPel if requested. */
             paDeviceModes[i].dmBitsPerPel = BitsPerPixel;
         }
 
-        /* Test if the mode can be set. */
-        Log(("ResizeDisplayDevice: Testing if the mode can be set ...\n"));
-        SetLastError(0);
-        status = gCtx.pfnChangeDisplaySettingsEx((LPSTR)paDisplayDevices[i].DeviceName, 
-                                                 &paDeviceModes[i], NULL, CDS_TEST, NULL);
-        if (status == DISP_CHANGE_SUCCESSFUL)
-        {
-            Log(("ResizeDisplayDevice: Mode can be set! Calling pfnChangeDisplaySettingsEx %x\n", gCtx.pfnChangeDisplaySettingsEx));         
-            gCtx.pfnChangeDisplaySettingsEx((LPSTR)paDisplayDevices[i].DeviceName, 
-                                            &paDeviceModes[i], NULL, CDS_NORESET | CDS_UPDATEREGISTRY, NULL);    
-            Log(("ResizeDisplayDevice: ChangeDisplaySettingsEx position err %d\n", GetLastError ()));
-            bUpdateMonitor = TRUE;
-        }
-        else
-        {
-            if (status == DISP_CHANGE_BADMODE)
-            {
-                Log(("ResizeDisplayDevice: Unsupported mode specified. No changes made.\n"));
-            }
-            else Log(("ResizeDisplayDevice: Mode can NOT be set! Error: %d\n", status));
-        }
+        Log(("ResizeDisplayDevice: pfnChangeDisplaySettingsEx %x: %dx%dx%d at %d,%d\n",
+              gCtx.pfnChangeDisplaySettingsEx,
+              paDeviceModes[i].dmPelsWidth,
+              paDeviceModes[i].dmPelsHeight,
+              paDeviceModes[i].dmBitsPerPel,
+              paDeviceModes[i].dmPosition.x,
+              paDeviceModes[i].dmPosition.y));
+
+        gCtx.pfnChangeDisplaySettingsEx((LPSTR)paDisplayDevices[i].DeviceName,
+                                        &paDeviceModes[i], NULL, CDS_NORESET | CDS_UPDATEREGISTRY, NULL);
+        Log(("ResizeDisplayDevice: ChangeDisplaySettingsEx position err %d\n", GetLastError ()));
     }
     
     /* A second call to ChangeDisplaySettings updates the monitor. */
-    if (bUpdateMonitor)
+    LONG status = ChangeDisplaySettings(NULL, 0); 
+    Log(("ResizeDisplayDevice: ChangeDisplaySettings update status %d\n", status));
+    if (status == DISP_CHANGE_SUCCESSFUL || status == DISP_CHANGE_BADMODE)
     {
-        status = ChangeDisplaySettings(NULL, 0); 
-        Log(("ResizeDisplayDevice: ChangeDisplaySettings update status %d\n", status));
-        if (status == DISP_CHANGE_SUCCESSFUL || status == DISP_CHANGE_BADMODE)
-        {
-            /* Successfully set new video mode or our driver can not set the requested mode. Stop trying. */
-            return FALSE;
-        }
-
-        /* Retry the request. */
-        return TRUE;
+        /* Successfully set new video mode or our driver can not set the requested mode. Stop trying. */
+        return FALSE;
     }
 
-    return FALSE; /* Don't retry; maybe something went wrong. */
+    /* Retry the request. */
+    return TRUE;
 }
 
 /**
