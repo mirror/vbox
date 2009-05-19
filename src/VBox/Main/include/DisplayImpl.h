@@ -231,10 +231,6 @@ public:
     STDMETHOD(COMGETTER(BitsPerPixel)) (ULONG *bitsPerPixel);
 
     // IDisplay methods
-    STDMETHOD(SetupInternalFramebuffer)(ULONG depth);
-    STDMETHOD(LockFramebuffer)(BYTE **address);
-    STDMETHOD(UnlockFramebuffer)();
-    STDMETHOD(RegisterExternalFramebuffer)(IFramebuffer *frameBuf);
     STDMETHOD(SetFramebuffer)(ULONG aScreenId, IFramebuffer *aFramebuffer);
     STDMETHOD(GetFramebuffer)(ULONG aScreenId, IFramebuffer **aFramebuffer, LONG *aXOrigin, LONG *aYOrigin);
     STDMETHOD(SetVideoModeHint)(ULONG width, ULONG height, ULONG bitsPerPixel, ULONG display);
@@ -255,7 +251,7 @@ private:
     void updateDisplayData (bool aCheckParams = false);
 
     static DECLCALLBACK(int) changeFramebuffer (Display *that, IFramebuffer *aFB,
-                                                bool aInternal, unsigned uScreenId);
+                                                unsigned uScreenId);
 
     static DECLCALLBACK(void*) drvQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface);
     static DECLCALLBACK(int)   drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle);
@@ -276,15 +272,11 @@ private:
     PPDMDEVINS              mpVMMDev;
     /** Set after the first attempt to find the VMM Device. */
     bool                    mfVMMDevInited;
-    bool mInternalFramebuffer;
 
     unsigned mcMonitors;
     DISPLAYFBINFO maFramebuffers[SchemaDefs::MaxGuestMonitors];
 
     bool mFramebufferOpened;
-    /** bitmask of acceleration operations supported by current framebuffer */
-    ULONG mSupportedAccelOps;
-    RTSEMEVENTMULTI mUpdateSem;
 
     /* arguments of the last handleDisplayResize() call */
     void *mLastAddress;

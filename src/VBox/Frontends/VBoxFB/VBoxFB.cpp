@@ -341,7 +341,7 @@ int main(int argc, char *argv[])
 
     // register our framebuffer
     frameBuffer = new VBoxDirectFB(dfb, surface);
-    display->RegisterExternalFramebuffer(frameBuffer);
+    display->SetFramebuffer(VBOX_VIDEO_PRIMARY_SCREEN, frameBuffer);
 
     /**
      * Start the VM execution thread

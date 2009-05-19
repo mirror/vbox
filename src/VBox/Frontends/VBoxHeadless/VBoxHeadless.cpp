@@ -45,6 +45,7 @@ using namespace com;
 #include <iprt/getopt.h>
 #include <iprt/env.h>
 #include <VBox/err.h>
+#include <VBox/VBoxVideo.h>
 
 #ifdef VBOX_FFMPEG
 #include <cstdlib>
@@ -743,7 +744,7 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
             {
                 Log2(("VBoxHeadless: Registering framebuffer\n"));
                 pFramebuffer->AddRef();
-                display->RegisterExternalFramebuffer(pFramebuffer);
+                display->SetFramebuffer(VBOX_VIDEO_PRIMARY_SCREEN, pFramebuffer);
             }
             if (!RT_SUCCESS(rrc) || (rcc != S_OK))
                 rc = E_FAIL;

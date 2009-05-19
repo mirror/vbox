@@ -20,6 +20,8 @@
  * additional information or have any questions.
  */
 
+#include <VBox/VBoxVideo.h>
+
 #include "VBoxConsoleView.h"
 #include "VBoxConsoleWnd.h"
 #include "VBoxUtils.h"
@@ -875,7 +877,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     if (mFrameBuf)
     {
         mFrameBuf->AddRef();
-        display.RegisterExternalFramebuffer (CFramebuffer (mFrameBuf));
+        display.SetFramebuffer (VBOX_VIDEO_PRIMARY_SCREEN, CFramebuffer (mFrameBuf));
     }
 
     /* setup the callback */
@@ -949,7 +951,7 @@ VBoxConsoleView::~VBoxConsoleView()
         /* detach our framebuffer from Display */
         CDisplay display = mConsole.GetDisplay();
         Assert (!display.isNull());
-        display.SetupInternalFramebuffer (0);
+        display.SetFramebuffer (VBOX_VIDEO_PRIMARY_SCREEN, CFramebuffer(NULL));
         /* release the reference */
         mFrameBuf->Release();
         mFrameBuf = NULL;

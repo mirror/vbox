@@ -92,15 +92,9 @@ VMDisplay::VMDisplay()
     mpu8VbvaPartial = NULL;
     mcbVbvaPartial = 0;
 
-    RTSemEventMultiCreate(&mUpdateSem);
-
-    // reset the event sems
-    RTSemEventMultiReset(mUpdateSem);
-
     // by default, we have an internal Framebuffer which is
     // NULL, i.e. a black hole for no display output
-    mFramebuffer = 0;
-    mInternalFramebuffer = true;
+    mFramebuffer = NULL;
     mFramebufferOpened = false;
 
     mu32ResizeStatus = ResizeStatus_Void;
@@ -109,7 +103,6 @@ VMDisplay::VMDisplay()
 VMDisplay::~VMDisplay()
 {
     mFramebuffer = 0;
-    RTSemEventMultiDestroy(mUpdateSem);
 }
 
 // public methods only for internal purposes
@@ -200,7 +193,7 @@ STDMETHODIMP VMDisplay::ResizeCompleted()
     LogFlow(("VMDisplay::ResizeCompleted\n"));
 
     // this is only valid for external framebuffers
-    if (mInternalFramebuffer)
+    if (!mFramebuffer)
         return E_FAIL;
 
     /* Set the flag indicating that the resize has completed and display data need to be updated. */
@@ -258,28 +251,8 @@ void VMDisplay::handleDisplayUpdate (int x, int y, int w, int h)
         return;
     }
 
-    // special processing for the internal Framebuffer
-    if (mInternalFramebuffer)
-    {
-        mFramebuffer->Unlock();
-    }
-    else
-    {
-        // callback into the Framebuffer to notify it
-        BOOL finished;
-
-        RTSemEventMultiReset(mUpdateSem);
-
-        mFramebuffer->NotifyUpdate(x, y, w, h, &finished);
-        mFramebuffer->Unlock();
-
-        if (!finished)
-        {
-            // the Framebuffer needs more time to process
-            // the event so we have to halt the VM until it's done
-            RTSemEventMultiWait(mUpdateSem, RT_INDEFINITE_WAIT);
-        }
-    }
+    mFramebuffer->NotifyUpdate(x, y, w, h);
+    mFramebuffer->Unlock();
 }
 
 // IDisplay properties
@@ -335,14 +308,13 @@ void VMDisplay::updatePointerShape(bool fVisible, bool fAlpha, uint32_t xHot, ui
  * @returns COM status code
  * @param Framebuffer external Framebuffer object
  */
-STDMETHODIMP VMDisplay::RegisterExternalFramebuffer(Framebuffer *Framebuffer)
+STDMETHODIMP VMDisplay::SetFramebuffer(unsigned iScreenID, Framebuffer *Framebuffer)
 {
     if (!Framebuffer)
         return E_POINTER;
 
     // free current Framebuffer (if there is any)
     mFramebuffer = 0;
-    mInternalFramebuffer = false;
     mFramebuffer = Framebuffer;
     updateDisplayData();
     return S_OK;

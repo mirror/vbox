@@ -407,7 +407,7 @@ STDMETHODIMP VBoxSDLFB::COMGETTER(WinId)(uint64_t *winId)
  *                   continuing with display updates.
  */
 STDMETHODIMP VBoxSDLFB::NotifyUpdate(ULONG x, ULONG y,
-                                     ULONG w, ULONG h, BOOL *finished)
+                                     ULONG w, ULONG h)
 {
     /*
      * The input values are in guest screen coordinates.
@@ -433,12 +433,6 @@ STDMETHODIMP VBoxSDLFB::NotifyUpdate(ULONG x, ULONG y,
     update(x, y, w, h, true /* fGuestRelative */);
 #endif /* !VBOXSDL_WITH_X11 */
 
-    /*
-     * The Display thread can continue as we will lock the framebuffer
-     * from the SDL thread when we get to actually doing the update.
-     */
-    if (finished)
-        *finished = TRUE;
     return S_OK;
 }
 
@@ -1453,9 +1447,9 @@ STDMETHODIMP VBoxSDLFBOverlay::Move(ULONG x, ULONG y)
  * checking to the parent.
  */
 STDMETHODIMP VBoxSDLFBOverlay::NotifyUpdate(ULONG x, ULONG y,
-                            ULONG w, ULONG h, BOOL *finished)
+                            ULONG w, ULONG h)
 {
-    return mParent->NotifyUpdate(x + mOverlayX, y + mOverlayY, w, h, finished);
+    return mParent->NotifyUpdate(x + mOverlayX, y + mOverlayY, w, h);
 }
 
 /**

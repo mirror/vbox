@@ -100,8 +100,7 @@ public:
     STDMETHOD(COMGETTER(Overlay)) (IFramebufferOverlay **aOverlay);
     STDMETHOD(COMGETTER(WinId)) (uint64_t *winId);
 
-    STDMETHOD(NotifyUpdate)(ULONG x, ULONG y,
-                            ULONG w, ULONG h, BOOL *finished);
+    STDMETHOD(NotifyUpdate)(ULONG x, ULONG y, ULONG w, ULONG h);
     STDMETHOD(RequestResize)(ULONG aScreenId, ULONG pixelFormat, BYTE *vram,
                              ULONG bitsPerPixel, ULONG bytesPerLine,
                              ULONG w, ULONG h, BOOL *finished);
@@ -267,8 +266,7 @@ public:
     STDMETHOD(Lock)();
     STDMETHOD(Unlock)();
     STDMETHOD(Move)(ULONG x, ULONG y);
-    STDMETHOD(NotifyUpdate)(ULONG x, ULONG y,
-                            ULONG w, ULONG h, BOOL *finished);
+    STDMETHOD(NotifyUpdate)(ULONG x, ULONG y, ULONG w, ULONG h);
     STDMETHOD(RequestResize)(ULONG aScreenId, ULONG pixelFormat, ULONG vram,
                              ULONG bitsPerPixel, ULONG bytesPerLine,
                              ULONG w, ULONG h, BOOL *finished);

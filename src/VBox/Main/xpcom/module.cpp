@@ -40,7 +40,6 @@
 #include "USBDeviceImpl.h"
 #include "RemoteUSBDeviceImpl.h"
 #include "SharedFolderImpl.h"
-#include "FramebufferImpl.h"
 #include "ProgressImpl.h"
 #include "NetworkAdapterImpl.h"
 
@@ -62,8 +61,6 @@ NS_DECL_CLASSINFO(Display)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Display, IDisplay)
 NS_DECL_CLASSINFO(MachineDebugger)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(MachineDebugger, IMachineDebugger)
-NS_DECL_CLASSINFO(InternalFramebuffer)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(InternalFramebuffer, IFramebuffer)
 NS_DECL_CLASSINFO(Progress)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Progress, IProgress)
 NS_DECL_CLASSINFO(CombinedProgress)

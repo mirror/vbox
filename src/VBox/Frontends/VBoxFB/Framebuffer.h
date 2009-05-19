@@ -43,7 +43,7 @@ public:
     NS_IMETHOD GetPixelFormat(ULONG *pixelFormat);
     NS_IMETHOD GetUsesGuestVRAM(BOOL *usesGuestVRAM);
     NS_IMETHOD NotifyUpdate(uint32_t x, uint32_t y,
-                           uint32_t w, uint32_t h, PRBool *finished);
+                            uint32_t w, uint32_t h);
     NS_IMETHOD RequestResize(ULONG aScreenId, ULONG pixelFormat, uint32_t vram,
                              uint32_t bitsPerPixel, uint32_t bytesPerLine,
                              uint32_t w, uint32_t h,

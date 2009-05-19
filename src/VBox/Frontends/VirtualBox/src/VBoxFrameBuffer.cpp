@@ -281,8 +281,7 @@ VBoxQImageFrameBuffer::VBoxQImageFrameBuffer (VBoxConsoleView *aView) :
 
 /** @note This method is called on EMT from under this object's lock */
 STDMETHODIMP VBoxQImageFrameBuffer::NotifyUpdate (ULONG aX, ULONG aY,
-                                                  ULONG aW, ULONG aH,
-                                                  BOOL *aFinished)
+                                                  ULONG aW, ULONG aH)
 {
     /* We're not on the GUI thread and update() isn't thread safe in
      * Qt 4.3.x on the Win, Qt 3.3.x on the Mac (4.2.x is),
@@ -291,8 +290,6 @@ STDMETHODIMP VBoxQImageFrameBuffer::NotifyUpdate (ULONG aX, ULONG aY,
     QApplication::postEvent (mView,
                              new VBoxRepaintEvent (aX, aY, aW, aH));
 
-    /* The update has been finished, return TRUE */
-    *aFinished = TRUE;
     return S_OK;
 }
 
@@ -464,8 +461,7 @@ VBoxSDLFrameBuffer::~VBoxSDLFrameBuffer()
 
 /** @note This method is called on EMT from under this object's lock */
 STDMETHODIMP VBoxSDLFrameBuffer::NotifyUpdate (ULONG aX, ULONG aY,
-                                               ULONG aW, ULONG aH,
-                                               BOOL *aFinished)
+                                               ULONG aW, ULONG aH)
 {
 #if !defined (Q_WS_WIN) && !defined (Q_WS_PM)
     /* we're not on the GUI thread and update() isn't thread safe in Qt 3.3.x
@@ -479,8 +475,6 @@ STDMETHODIMP VBoxSDLFrameBuffer::NotifyUpdate (ULONG aX, ULONG aY,
                                aY - mView->contentsY(),
                                aW, aH);
 #endif
-    /* the update has been finished, return TRUE */
-    *aFinished = TRUE;
     return S_OK;
 }
 

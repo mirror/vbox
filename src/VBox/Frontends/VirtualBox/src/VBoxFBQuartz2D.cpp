@@ -63,16 +63,12 @@ VBoxQuartz2DFrameBuffer::~VBoxQuartz2DFrameBuffer()
 
 /** @note This method is called on EMT from under this object's lock */
 STDMETHODIMP VBoxQuartz2DFrameBuffer::NotifyUpdate (ULONG aX, ULONG aY,
-                                                 ULONG aW, ULONG aH,
-                                                 BOOL *aFinished)
+                                                 ULONG aW, ULONG aH)
 {
 /*    Log (("Quartz2D: NotifyUpdate %d,%d %dx%d\n", aX, aY, aW, aH));*/
 
     QApplication::postEvent (mView,
                              new VBoxRepaintEvent (aX, aY, aW, aH));
-    /* the update has been finished, return TRUE */
-    *aFinished = TRUE;
-
     return S_OK;
 }
 

@@ -58,6 +58,7 @@ using namespace com;
 #include <VBox/param.h>
 #include <VBox/log.h>
 #include <VBox/version.h>
+#include <VBox/VBoxVideo.h>
 
 #include <iprt/alloca.h>
 #include <iprt/asm.h>
@@ -2036,7 +2037,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 #endif
 
     // register our framebuffer
-    rc = gDisplay->RegisterExternalFramebuffer(gpFrameBuffer);
+    rc = gDisplay->SetFramebuffer(VBOX_VIDEO_PRIMARY_SCREEN, gpFrameBuffer);
     if (rc != S_OK)
     {
         RTPrintf("Error: could not register framebuffer object!\n");
@@ -2884,7 +2885,7 @@ leave:
 
     LogFlow(("Releasing mouse, keyboard, vrdpserver, display, console...\n"));
     if (gDisplay)
-        gDisplay->SetupInternalFramebuffer(0);
+        gDisplay->SetFramebuffer(VBOX_VIDEO_PRIMARY_SCREEN, NULL);
     gMouse = NULL;
     gKeyboard = NULL;
     gVrdpServer = NULL;
