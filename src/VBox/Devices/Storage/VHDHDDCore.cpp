@@ -1045,15 +1045,29 @@ static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, siz
         uint64_t uVhdOffset;
 
         /*
+         * Clip write range.
+         */
+        cbToWrite = RT_MIN(cbToWrite, (pImage->cbDataBlock - (cBATEntryIndex * VHD_SECTOR_SIZE)));
+
+        /*
          * If the block is not allocated the content of the entry is ~0
          * and we need to allocate a new block. Note that while blocks are
          * allocated with a relatively big granularity, each sector has its
          * own bitmap entry, indicating whether it has been written or not.
          * So that means for the purposes of the higher level that the
-         * granularity is invisible.
+         * granularity is invisible. This means there's no need to return
+         * VERR_VD_BLOCK_FREE unless the block hasn't been allocated yet.
          */
         if (pImage->pBlockAllocationTable[cBlockAllocationTableEntry] == ~0U)
         {
+            /* Check if the block allocation should be suppressed. */
+            if (fWrite & VD_WRITE_NO_ALLOC)
+            {
+                *pcbPreRead = cBATEntryIndex * VHD_SECTOR_SIZE;
+                *pcbPostRead = pImage->cSectorsPerDataBlock * VHD_SECTOR_SIZE - cbToWrite - *pcbPreRead;
+                return VERR_VD_BLOCK_FREE;
+            }
+
             size_t  cbNewBlock = (pImage->cbDataBlock + pImage->cbDataBlockBitmap) * sizeof(uint8_t);
             uint8_t *pNewBlock = (uint8_t *)RTMemAllocZ(cbNewBlock);
 
@@ -1078,10 +1092,7 @@ static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, siz
          */
         uVhdOffset = ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry] + pImage->cDataBlockBitmapSectors + cBATEntryIndex) * VHD_SECTOR_SIZE;
 
-        /*
-         * Clip write range.
-         */
-        cbToWrite = RT_MIN(cbToWrite, (pImage->cbDataBlock - (cBATEntryIndex * VHD_SECTOR_SIZE)));
+        /* Write data. */
         RTFileWriteAt(pImage->File, uVhdOffset, pvBuf, cbToWrite, NULL);
 
         /* Read in the block's bitmap. */
