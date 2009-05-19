@@ -292,6 +292,11 @@ typedef struct VMCPU
 /** Same as VM_FF_PGM_SYNC_CR3 except that global pages can be skipped.
  * (NON-GLOBAL FLUSH) */
 #define VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL    RT_BIT_32(17)
+/** Check for pending TLB shootdown actions. */
+#define VMCPU_FF_TLB_SHOOTDOWN              RT_BIT_32(18)
+/** Check for pending TLB flush action. */
+#define VMCPU_FF_TLB_FLUSH_BIT              19
+#define VMCPU_FF_TLB_FLUSH                  RT_BIT_32(VMCPU_FF_TLB_FLUSH_BIT)
 /** Check the interupt and trap gates */
 #define VMCPU_FF_TRPM_SYNC_IDT              RT_BIT_32(20)
 /** Check Guest's TSS ring 0 stack */
@@ -302,8 +307,6 @@ typedef struct VMCPU
 #define VMCPU_FF_SELM_SYNC_LDT              RT_BIT_32(23)
 /** Inhibit interrupts pending. See EMGetInhibitInterruptsPC(). */
 #define VMCPU_FF_INHIBIT_INTERRUPTS         RT_BIT_32(24)
-/** Check for pending TLB shootdown actions. */
-#define VMCPU_FF_TLB_SHOOTDOWN              RT_BIT_32(25)
 /** CSAM needs to scan the page that's being executed */
 #define VMCPU_FF_CSAM_SCAN_PAGE             RT_BIT_32(26)
 /** CSAM needs to do some homework. */
@@ -450,10 +453,20 @@ typedef struct VMCPU
  */
 #define VM_FF_TESTANDCLEAR(pVM, iBit)        (ASMBitTestAndClear(&(pVM)->fGlobalForcedActions, iBit))
 
+/** @def VMCPU_FF_TESTANDCLEAR
+ * Checks if one (!) force action in the specified set is pending and clears it atomically
+ *
+ * @returns true if the bit was set.
+ * @returns false if the bit was clear.
+ * @param   pVCpu   VMCPU Handle.
+ * @param   iBit    Bit position to check and clear
+ */
+#define VMCPU_FF_TESTANDCLEAR(pVCpu, iBit)    (ASMBitTestAndClear(&(pVCpu)->fLocalForcedActions, iBit))
+
 /** @def VMCPU_FF_ISPENDING
  * Checks if one or more force action in the specified set is pending for the given VCPU.
  *
- * @param   pVCpu     VMCPU Handle.
+ * @param   pVCpu   VMCPU Handle.
  * @param   fFlags  The flags to check for.
  */
 #define VMCPU_FF_ISPENDING(pVCpu, fFlags) ((pVCpu)->fLocalForcedActions & (fFlags))

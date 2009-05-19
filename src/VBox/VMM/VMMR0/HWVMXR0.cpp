@@ -1827,6 +1827,10 @@ static void vmxR0SetupTLBEPT(PVM pVM, PVMCPU pVCpu)
     else
         Assert(!pCpu->fFlushTLB);
 
+    /* Check for tlb shootdown flushes. */
+    if (VMCPU_FF_TESTANDCLEAR(pVCpu, VMCPU_FF_TLB_FLUSH_BIT))
+        pVCpu->hwaccm.s.fForceTLBFlush = true;
+
     pVCpu->hwaccm.s.idLastCpu = pCpu->idCpu;
     pCpu->fFlushTLB           = false;
 
@@ -1886,6 +1890,10 @@ static void vmxR0SetupTLBVPID(PVM pVM, PVMCPU pVCpu)
         Assert(!pCpu->fFlushTLB);
 
     pVCpu->hwaccm.s.idLastCpu = pCpu->idCpu;
+
+    /* Check for tlb shootdown flushes. */
+    if (VMCPU_FF_TESTANDCLEAR(pVCpu, VMCPU_FF_TLB_FLUSH_BIT))
+        pVCpu->hwaccm.s.fForceTLBFlush = true;
 
     /* Make sure we flush the TLB when required. Switch ASID to achieve the same thing, but without actually flushing the whole TLB (which is expensive). */
     if (pVCpu->hwaccm.s.fForceTLBFlush)
@@ -2106,8 +2114,6 @@ ResumeExecution:
 
     /** @todo check timers?? */
 
-    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
-
     /* TPR caching using CR8 is only available in 64 bits mode */
     /* Note the 32 bits exception for AMD (X86_CPUID_AMD_FEATURE_ECX_CR8L), but that appears missing in Intel CPUs */
     /* Note: we can't do this in LoadGuestState as PDMApicGetTPR can jump back to ring 3 (lock)!!!!! */
@@ -2185,6 +2191,12 @@ ResumeExecution:
     if (rc != VINF_SUCCESS)
         goto end;
 
+    /* Disable interrupts to make sure a poke will interrupt execution. 
+     * This must be done *before* we check for TLB flushes; TLB shootdowns rely on this.
+     */
+    RTCCUINTREG uFlags = ASMIntDisableFlags();
+    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
+
     /* Deal with tagged TLB setup and invalidation. */
     pVM->hwaccm.s.vmx.pfnSetupTaggedTLB(pVM, pVCpu);
 
@@ -2223,6 +2235,7 @@ ResumeExecution:
     rc = pVCpu->hwaccm.s.vmx.pfnStartVM(pVCpu->hwaccm.s.fResumeVM, pCtx, &pVCpu->hwaccm.s.vmx.VMCSCache, pVM, pVCpu);
     TMNotifyEndOfExecution(pVCpu);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
+    ASMSetFlags(uFlags);
 
     AssertMsg(!pVCpu->hwaccm.s.vmx.VMCSCache.Write.cValidEntries, ("pVCpu->hwaccm.s.vmx.VMCSCache.Write.cValidEntries=%d\n", pVCpu->hwaccm.s.vmx.VMCSCache.Write.cValidEntries));
 
