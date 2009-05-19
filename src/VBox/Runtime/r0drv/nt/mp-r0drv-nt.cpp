@@ -352,7 +352,7 @@ RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
     {
         for (unsigned i = 0; i < RT_ELEMENTS(aPokeDpcs); i++)
         {
-            KeInitializeDpc(&aPokeDpcs[i], rtmpNtDPCWrapper, NULL);
+            KeInitializeDpc(&aPokeDpcs[i], rtMpNtPokeCpuDummy, NULL);
             KeSetImportanceDpc(&aPokeDpcs[i], HighImportance);
             KeSetTargetProcessorDpc(&aPokeDpcs[i], (int)i);
         }
