@@ -68,5 +68,33 @@ endif
 VBoxSharedClipboard_LDFLAGS.darwin = \
 	-framework ApplicationServices -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxSharedClipboard.dylib
 
-include $(KBUILD_PATH)/subfooter.kmk
+ifdef VBOX_WITH_TESTCASES
+ ifndef VBOX_ONLY_ADDITIONS
+#
+# Case conversion testcase.
+#
+  if1of ($(KBUILD_TARGET),freebsd linux netbsd openbsd solaris)
+   PROGRAMS += tstClipboardX11-2
+   tstClipboardX11-2_TEMPLATE = VBOXR3TSTEXE
+   tstClipboardX11-2_DEFS     = VBOX_WITH_HGCM TESTCASE
+   tstClipboardX11-2_SOURCES  = x11-clipboard.cpp
+   tstClipboardX11-2_LIBS     = $(LIB_RUNTIME)
 
+# Set this in LocalConfig.kmk if you are working on the X11 clipboard service
+# to automatically run the testcase at build time.
+   ifdef VBOX_RUN_X11_CLIPBOARD_TEST
+    ifndef VBOX_ONLY_SDK
+     TESTING  += $(PATH_tstClipboardX11-2)/tstClipboardX11-2.run
+     OTHERS += $(PATH_tstClipboardX11-2)/tstClipboardX11-2.run
+$$(PATH_tstClipboardX11-2)/tstClipboardX11-2.run: \
+        $$(INSTARGET_tstClipboardX11-2)
+	export VBOX_LOG_DEST=nofile; $(INSTARGET_tstClipboardX11-2) quiet
+	$(QUIET)$(APPEND) -t "$@" "done"
+    endif
+   endif
+
+  endif # 1of ($(KBUILD_TARGET),freebsd linux netbsd openbsd solaris)
+ endif # ! VBOX_ONLY_ADDITIONS
+endif # VBOX_WITH_TESTCASES
+
+include $(KBUILD_PATH)/subfooter.kmk

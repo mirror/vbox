@@ -34,18 +34,8 @@
 
 #include "VBoxClipboard.h"
 
-/** A request for clipboard data from VBox */
-typedef struct _VBOXCLIPBOARDREQFROMVBOX
-{
-    /** Data received */
-    void *pv;
-    /** The size of the data */
-    uint32_t cb;
-    /** Format of the data */
-    uint32_t format;
-    /** A semaphore for waiting for the data */
-    RTSEMEVENT finished;
-} VBOXCLIPBOARDREQFROMVBOX;
+struct _VBOXCLIPBOARDREQFROMVBOX;
+typedef struct _VBOXCLIPBOARDREQFROMVBOX VBOXCLIPBOARDREQFROMVBOX;
 
 /** Global context information used by the host glue for the X11 clipboard
  * backend */
@@ -72,113 +62,13 @@ struct _VBOXCLIPBOARDCONTEXT
     bool fShuttingDown;
 };
 
-static int vboxClipboardWaitForReq(VBOXCLIPBOARDCONTEXT *pCtx,
-                                   VBOXCLIPBOARDREQFROMVBOX *pReq,
-                                   uint32_t u32Format)
-{
-    int rc = VINF_SUCCESS;
-    LogFlowFunc(("pCtx=%p, pReq=%p, u32Format=%02X\n", pCtx, pReq, u32Format));
-    /* Request data from VBox */
-    vboxSvcClipboardReportMsg(pCtx->pClient,
-                              VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
-                              u32Format);
-    /* Which will signal us when it is ready.  We use a timeout here
-     * because we can't be sure that the guest will behave correctly.
-     */
-    rc = RTSemEventWait(pReq->finished, CLIPBOARD_TIMEOUT);
-    /* If the request hasn't yet completed then we cancel it.  We use
-     * the critical section to prevent these operations colliding. */
-    RTCritSectEnter(&pCtx->clipboardMutex);
-    /* The data may have arrived between the semaphore timing out and
-     * our grabbing the mutex. */
-    if (rc == VERR_TIMEOUT && pReq->pv != NULL)
-        rc = VINF_SUCCESS;
-    if (pCtx->pReq == pReq)
-        pCtx->pReq = NULL;
-    Assert(pCtx->pReq == NULL);
-    RTCritSectLeave(&pCtx->clipboardMutex);
-    LogFlowFunc(("returning %Rrc\n", rc));
-    return rc;
-}
-
-/** Post a request for clipboard data to VBox/the guest and wait for it to be
- * completed. */
-static int vboxClipboardPostAndWaitForReq(VBOXCLIPBOARDCONTEXT *pCtx,
-                                          VBOXCLIPBOARDREQFROMVBOX *pReq,
-                                          uint32_t u32Format)
-{
-    int rc = VINF_SUCCESS;
-    LogFlowFunc(("pCtx=%p, pReq=%p, u32Format=%02X\n", pCtx, pReq,
-                 u32Format));
-    /* Start by "posting" the request for the next invocation of
-     * vboxClipboardWriteData. */
-    RTCritSectEnter(&pCtx->clipboardMutex);
-    if (pCtx->pReq != NULL)
-    {
-        /* This would be a violation of the protocol, see the comments in the
-         * context structure definition. */
-        Assert(false);
-        rc = VERR_WRONG_ORDER;
-    }
-    else
-        pCtx->pReq = pReq;
-    RTCritSectLeave(&pCtx->clipboardMutex);
-    if (RT_SUCCESS(rc))
-        rc = vboxClipboardWaitForReq(pCtx, pReq, u32Format);
-    LogFlowFunc(("returning %Rrc\n", rc));
-    return rc;
-}
-
-/**
- * Send a request to VBox to transfer the contents of its clipboard to X11.
- *
- * @param  pCtx      Pointer to the host clipboard structure
- * @param  u32Format The format in which the data should be transfered
- * @param  ppv       On success and if pcb > 0, this will point to a buffer
- *                   to be freed with RTMemFree containing the data read.
- * @param  pcb       On success, this contains the number of bytes of data
- *                   returned
- * @note   Host glue code.
- */
-int VBoxX11ClipboardReadVBoxData (VBOXCLIPBOARDCONTEXT *pCtx,
-                                   uint32_t u32Format, void **ppv,
-                                   uint32_t *pcb)
-{
-    VBOXCLIPBOARDREQFROMVBOX request = { NULL };
-
-    LogFlowFunc(("pCtx=%p, u32Format=%02X, ppv=%p, pcb=%p\n", pCtx,
-                 u32Format, ppv, pcb));
-    if (pCtx->fShuttingDown)
-    {
-        /* The shared clipboard is disconnecting. */
-        LogFunc(("host requested guest clipboard data after guest had disconnected.\n"));
-        return VERR_WRONG_ORDER;
-    }
-    int rc = RTSemEventCreate(&request.finished);
-    if (RT_SUCCESS(rc))
-    {
-        rc = vboxClipboardPostAndWaitForReq(pCtx, &request,
-                                            u32Format);
-        RTSemEventDestroy(request.finished);
-    }
-    if (RT_SUCCESS(rc))
-    {
-        *ppv = request.pv;
-        *pcb = request.cb;
-    }
-    LogFlowFunc(("returning %Rrc\n", rc));
-    if (RT_SUCCESS(rc))
-        LogFlowFunc(("*ppv=%.*ls, *pcb=%u\n", *pcb / 2, *ppv, *pcb));
-    return rc;
-}
-
 /**
  * Report formats available in the X11 clipboard to VBox.
  * @param  pCtx        Opaque context pointer for the glue code
  * @param  u32Formats  The formats available
  * @note  Host glue code
  */
-void VBoxX11ClipboardReportX11Formats(VBOXCLIPBOARDCONTEXT *pCtx,
+void ClipReportX11Formats(VBOXCLIPBOARDCONTEXT *pCtx,
                                       uint32_t u32Formats)
 {
     LogFlowFunc(("called.  pCtx=%p, u32Formats=%02X\n", pCtx, u32Formats));
@@ -224,7 +114,7 @@ int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient)
     else
     {
         RTCritSectInit(&pCtx->clipboardMutex);
-        pBackend = VBoxX11ClipboardConstructX11(pCtx);
+        pBackend = ClipConstructX11(pCtx);
         if (pBackend == NULL)
             rc = VERR_NO_MEMORY;
         else
@@ -232,10 +122,10 @@ int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient)
             pCtx->pBackend = pBackend;
             pClient->pCtx = pCtx;
             pCtx->pClient = pClient;
-            rc = VBoxX11ClipboardStartX11(pBackend);
+            rc = ClipStartX11(pBackend);
         }
         if (RT_FAILURE(rc) && pBackend)
-            VBoxX11ClipboardStopX11(pCtx->pBackend);
+            ClipStopX11(pCtx->pBackend);
         if (RT_FAILURE(rc))
             RTCritSectDelete(&pCtx->clipboardMutex);
     }
@@ -279,13 +169,13 @@ void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA *pClient)
     pCtx->fShuttingDown = true;
     /* If there is a currently pending request, release it immediately. */
     vboxClipboardWriteData(pClient, NULL, 0, 0);
-    int rc = VBoxX11ClipboardStopX11(pCtx->pBackend);
+    int rc = ClipStopX11(pCtx->pBackend);
     /** @todo handle this slightly more reasonably, or be really sure
      *        it won't go wrong. */
     AssertRC(rc);
     if (RT_SUCCESS(rc))  /* And if not? */
     {
-        VBoxX11ClipboardDestructX11(pCtx->pBackend);
+        ClipDestructX11(pCtx->pBackend);
         RTCritSectDelete(&pCtx->clipboardMutex);
         RTMemFree(pCtx);
     }
@@ -303,18 +193,34 @@ void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient,
 {
     LogFlowFunc(("called.  pClient=%p, u32Formats=%02X\n", pClient,
                  u32Formats));
-    VBoxX11ClipboardAnnounceVBoxFormat (pClient->pCtx->pBackend, u32Formats);
+    ClipAnnounceFormatToX11 (pClient->pCtx->pBackend, u32Formats);
 }
+
+struct _CLIPREADX11CBCONTEXT
+{
+    /** HGCM call data */
+    VBOXHGCMCALLHANDLE callHandle;
+    /** HGCM call parameters */
+    VBOXHGCMSVCPARM *paParms;
+};
 
 /**
  * Called when VBox wants to read the X11 clipboard.
  *
+ * @returns VINF_SUCCESS on successful completion
+ * @returns VINF_HGCM_ASYNC_EXECUTE if the operation will complete
+ *          asynchronously
+ * @returns iprt status code on failure
  * @param  pClient   Context information about the guest VM
  * @param  u32Format The format that the guest would like to receive the data in
  * @param  pv        Where to write the data to
  * @param  cb        The size of the buffer to write the data to
  * @param  pcbActual Where to write the actual size of the written data
- * @note   Host glue code
+ * @note   We always fail or complete asynchronously
+ * @note   On success allocates a CLIPREADX11CBCONTEXT structure which must be
+ *         freed in ClipCompleteDataRequestFromX11 when it is called back from
+ *         the backend code.
+ *         
  */
 int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient,
                            uint32_t u32Format, void *pv, uint32_t cb,
@@ -322,12 +228,154 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient,
 {
     LogFlowFunc(("pClient=%p, u32Format=%02X, pv=%p, cb=%u, pcbActual=%p",
                  pClient, u32Format, pv, cb, pcbActual));
-    int rc = VBoxX11ClipboardReadX11Data(pClient->pCtx->pBackend, u32Format,
-                                         pv, cb, pcbActual);
+    
+    int rc = VINF_SUCCESS;
+    CLIPREADX11CBCONTEXT *pCtx
+            = (CLIPREADX11CBCONTEXT *)RTMemAlloc(sizeof(*pCtx));
+    if (!pCtx)
+        rc = VERR_NO_MEMORY;
+    if (RT_SUCCESS(rc))
+    {
+        pCtx->callHandle = pClient->asyncRead.callHandle;
+        pCtx->paParms = pClient->asyncRead.paParms;
+        rc = ClipRequestDataFromX11(pClient->pCtx->pBackend, u32Format, pv,
+                                    cb, pCtx);
+        if (RT_SUCCESS(rc))
+            rc = VINF_HGCM_ASYNC_EXECUTE;
+    }
+    LogFlowFunc(("returning %Rrc\n", rc));
+    return rc;
+}
+
+/**
+ * Complete a request from VBox for the X11 clipboard data.  The data should
+ * be written to the buffer provided in the initial request.
+ * @param  pCtx  request context information
+ * @param  rc    the completion status of the request
+ * @param  cbActual  on successful completion, the number of bytes of data
+ *                   actually written, on buffer overflow the size of the
+ *                   buffer needed, ignored otherwise
+ * @todo   change this to deal with the buffer issues rather than offloading
+ *         them onto the caller
+ */
+void ClipCompleteDataRequestFromX11(CLIPREADX11CBCONTEXT *pCtx, int rc,
+                                    uint32_t cbActual)
+{
+    vboxSvcClipboardCompleteReadData(pCtx->callHandle, pCtx->paParms, rc,
+                                 cbActual);
+    RTMemFree(pCtx);
+}
+
+/** A request for clipboard data from VBox */
+struct _VBOXCLIPBOARDREQFROMVBOX
+{
+    /** Data received */
+    void *pv;
+    /** The size of the data */
+    uint32_t cb;
+    /** Format of the data */
+    uint32_t format;
+    /** A semaphore for waiting for the data */
+    RTSEMEVENT finished;
+};
+
+/** Wait for clipboard data requested from VBox to arrive. */
+static int clipWaitForDataFromVBox(VBOXCLIPBOARDCONTEXT *pCtx,
+                                   VBOXCLIPBOARDREQFROMVBOX *pReq,
+                                   uint32_t u32Format)
+{
+    int rc = VINF_SUCCESS;
+    LogFlowFunc(("pCtx=%p, pReq=%p, u32Format=%02X\n", pCtx, pReq, u32Format));
+    /* Request data from VBox */
+    vboxSvcClipboardReportMsg(pCtx->pClient,
+                              VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
+                              u32Format);
+    /* Which will signal us when it is ready.  We use a timeout here
+     * because we can't be sure that the guest will behave correctly.
+     */
+    rc = RTSemEventWait(pReq->finished, CLIPBOARD_TIMEOUT);
+    /* If the request hasn't yet completed then we cancel it.  We use
+     * the critical section to prevent these operations colliding. */
+    RTCritSectEnter(&pCtx->clipboardMutex);
+    /* The data may have arrived between the semaphore timing out and
+     * our grabbing the mutex. */
+    if (rc == VERR_TIMEOUT && pReq->pv != NULL)
+        rc = VINF_SUCCESS;
+    if (pCtx->pReq == pReq)
+        pCtx->pReq = NULL;
+    Assert(pCtx->pReq == NULL);
+    RTCritSectLeave(&pCtx->clipboardMutex);
+    LogFlowFunc(("returning %Rrc\n", rc));
+    return rc;
+}
+
+/** Post a request for clipboard data to VBox/the guest and wait for it to be
+ * completed. */
+static int clipRequestDataFromVBox(VBOXCLIPBOARDCONTEXT *pCtx,
+                                          VBOXCLIPBOARDREQFROMVBOX *pReq,
+                                          uint32_t u32Format)
+{
+    int rc = VINF_SUCCESS;
+    LogFlowFunc(("pCtx=%p, pReq=%p, u32Format=%02X\n", pCtx, pReq,
+                 u32Format));
+    /* Start by "posting" the request for the next invocation of
+     * vboxClipboardWriteData. */
+    RTCritSectEnter(&pCtx->clipboardMutex);
+    if (pCtx->pReq != NULL)
+    {
+        /* This would be a violation of the protocol, see the comments in the
+         * context structure definition. */
+        Assert(false);
+        rc = VERR_WRONG_ORDER;
+    }
+    else
+        pCtx->pReq = pReq;
+    RTCritSectLeave(&pCtx->clipboardMutex);
+    if (RT_SUCCESS(rc))
+        rc = clipWaitForDataFromVBox(pCtx, pReq, u32Format);
+    LogFlowFunc(("returning %Rrc\n", rc));
+    return rc;
+}
+
+/**
+ * Send a request to VBox to transfer the contents of its clipboard to X11.
+ *
+ * @param  pCtx      Pointer to the host clipboard structure
+ * @param  u32Format The format in which the data should be transfered
+ * @param  ppv       On success and if pcb > 0, this will point to a buffer
+ *                   to be freed with RTMemFree containing the data read.
+ * @param  pcb       On success, this contains the number of bytes of data
+ *                   returned
+ * @note   Host glue code.
+ */
+int ClipRequestDataForX11 (VBOXCLIPBOARDCONTEXT *pCtx,
+                                   uint32_t u32Format, void **ppv,
+                                   uint32_t *pcb)
+{
+    VBOXCLIPBOARDREQFROMVBOX request = { NULL };
+
+    LogFlowFunc(("pCtx=%p, u32Format=%02X, ppv=%p, pcb=%p\n", pCtx,
+                 u32Format, ppv, pcb));
+    if (pCtx->fShuttingDown)
+    {
+        /* The shared clipboard is disconnecting. */
+        LogFunc(("host requested guest clipboard data after guest had disconnected.\n"));
+        return VERR_WRONG_ORDER;
+    }
+    int rc = RTSemEventCreate(&request.finished);
+    if (RT_SUCCESS(rc))
+    {
+        rc = clipRequestDataFromVBox(pCtx, &request, u32Format);
+        RTSemEventDestroy(request.finished);
+    }
+    if (RT_SUCCESS(rc))
+    {
+        *ppv = request.pv;
+        *pcb = request.cb;
+    }
     LogFlowFunc(("returning %Rrc\n", rc));
     if (RT_SUCCESS(rc))
-        LogFlowFunc(("*pv=%.*ls, *pcbActual=%u\n", *pcbActual / 2, pv,
-                     *pcbActual));
+        LogFlowFunc(("*ppv=%.*ls, *pcb=%u\n", *pcb / 2, *ppv, *pcb));
     return rc;
 }
 
@@ -364,7 +412,185 @@ void vboxClipboardWriteData (VBOXCLIPBOARDCLIENTDATA *pClient,
         }
         /* Signal that the request has been completed. */
         RTSemEventSignal(pReq->finished);
+        pCtx->pReq = NULL;
     }
-    pCtx->pReq = NULL;
     RTCritSectLeave(&pCtx->clipboardMutex);
 }
+
+#ifdef TESTCASE
+#include <iprt/initterm.h>
+#include <iprt/stream.h>
+
+#define TEST_NAME "tstClipboardX11-2"
+
+struct _CLIPBACKEND
+{
+    uint32_t formats;
+    struct _READDATA
+    {
+        uint32_t format;
+        void *pv;
+        uint32_t cb;
+        CLIPREADX11CBCONTEXT *pCtx;
+        int rc;
+    } readData;
+    struct _COMPLETEREAD
+    {
+        int rc;
+        uint32_t cbActual;
+    } completeRead;
+    struct _WRITEDATA
+    {
+        void *pv;
+        uint32_t cb;
+        uint32_t format;
+        bool timeout;
+    } writeData;
+    struct _REPORTDATA
+    {
+        uint32_t format;
+    } reportData;
+};
+
+void vboxSvcClipboardReportMsg (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Msg, uint32_t u32Formats)
+{
+    CLIPBACKEND *pBackend = pClient->pCtx->pBackend;
+    if (   (u32Msg == VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA)
+        && !pBackend->writeData.timeout)
+        vboxClipboardWriteData(pClient, pBackend->writeData.pv,
+                               pBackend->writeData.cb,
+                               pBackend->writeData.format);
+    else
+        return;
+}
+
+void vboxSvcClipboardCompleteReadData(VBOXHGCMCALLHANDLE callHandle, VBOXHGCMSVCPARM *paParms, int rc, uint32_t cbActual)
+{
+    CLIPBACKEND *pBackend = (CLIPBACKEND *)callHandle;
+    pBackend->completeRead.rc = rc;
+    pBackend->completeRead.cbActual = cbActual;
+}
+
+CLIPBACKEND *ClipConstructX11(VBOXCLIPBOARDCONTEXT *pFrontend)
+{
+    return (CLIPBACKEND *)RTMemAllocZ(sizeof(CLIPBACKEND));
+}
+
+void ClipDestructX11(CLIPBACKEND *pBackend)
+{
+    RTMemFree(pBackend);
+}
+
+int ClipStartX11(CLIPBACKEND *pBackend)
+{
+    return VINF_SUCCESS;
+}
+
+int ClipStopX11(CLIPBACKEND *pBackend)
+{
+    return VINF_SUCCESS;
+}
+
+void ClipAnnounceFormatToX11(CLIPBACKEND *pBackend,
+                                    uint32_t u32Formats)
+{
+    pBackend->formats = u32Formats;
+}
+
+extern int ClipRequestDataFromX11(CLIPBACKEND *pBackend, uint32_t u32Format,
+                                  void *pv, uint32_t cb,
+                                  CLIPREADX11CBCONTEXT *pCtx)
+{
+    pBackend->readData.format = u32Format;
+    pBackend->readData.pv = pv;
+    pBackend->readData.cb = cb;
+    pBackend->readData.pCtx = pCtx;
+    return pBackend->readData.rc;
+}
+
+int main()
+{
+    VBOXCLIPBOARDCLIENTDATA client;
+    unsigned cErrors = 0;
+    int rc = RTR3Init();
+    RTPrintf(TEST_NAME ": TESTING\n");
+    AssertRCReturn(rc, 1);
+    rc = vboxClipboardConnect(&client);
+    CLIPBACKEND *pBackend = client.pCtx->pBackend;
+    AssertRCReturn(rc, 1);
+    vboxClipboardFormatAnnounce(&client,
+                                VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+    if (pBackend->formats != VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+    {
+        RTPrintf(TEST_NAME ": vboxClipboardFormatAnnounce failed with VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT\n");
+        ++cErrors;
+    }
+    pBackend->readData.rc = VINF_SUCCESS;
+    client.asyncRead.callHandle = (VBOXHGCMCALLHANDLE)pBackend;
+    client.asyncRead.paParms = (VBOXHGCMSVCPARM *)&client;
+    uint32_t u32Dummy;
+    rc = vboxClipboardReadData(&client, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
+                               &u32Dummy, 42, &u32Dummy);
+    if (rc != VINF_HGCM_ASYNC_EXECUTE)
+    {
+        RTPrintf(TEST_NAME ": vboxClipboardReadData returned %Rrc\n", rc);
+        ++cErrors;
+    }
+    else
+    {
+        if (   pBackend->readData.format !=
+                       VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT
+            || pBackend->readData.pv != &u32Dummy
+            || pBackend->readData.cb != 42)
+        {
+            RTPrintf(TEST_NAME ": format=%u, pv=%p, cb=%u\n",
+                     pBackend->readData.format, pBackend->readData.pv,
+                     pBackend->readData.cb);
+            ++cErrors;
+        }
+        else
+        {
+            ClipCompleteDataRequestFromX11(pBackend->readData.pCtx,
+                                           VERR_NO_DATA, 43);
+            if (   pBackend->completeRead.rc != VERR_NO_DATA
+                || pBackend->completeRead.cbActual != 43)
+            {
+                RTPrintf(TEST_NAME ": rc=%Rrc, cbActual=%u\n",
+                         pBackend->completeRead.rc,
+                         pBackend->completeRead.cbActual);
+                ++cErrors;
+            }
+        }
+    }
+    void *pv;
+    uint32_t cb;
+    pBackend->writeData.pv = (void *)"testing";
+    pBackend->writeData.cb = sizeof("testing");
+    pBackend->writeData.format = 1234;
+    pBackend->reportData.format = 4321;  /* XX this should be handled! */
+    rc = ClipRequestDataForX11(client.pCtx, 23, &pv, &cb);
+    if (   rc != VINF_SUCCESS
+        || strcmp((const char *)pv, "testing") != 0
+        || cb != sizeof("testing"))
+    {
+        RTPrintf("rc=%Rrc, pv=%p, cb=%u\n", rc, pv, cb);
+        ++cErrors;
+    }
+    else
+        RTMemFree(pv);
+    pBackend->writeData.timeout = true;
+    rc = ClipRequestDataForX11(client.pCtx, 23, &pv, &cb);
+    if (rc != VERR_TIMEOUT)
+    {
+        RTPrintf("rc=%Rrc\n", rc);
+        ++cErrors;
+    }
+    /* Data arriving after a timeout should *not* cause any segfaults or
+     * memory leaks.  Check with Valgrind! */
+    vboxClipboardWriteData(&client, (void *)"tested", sizeof("tested"), 999);
+    vboxClipboardDisconnect(&client);
+    if (cErrors > 0)
+        RTPrintf(TEST_NAME ": errors: %u\n", cErrors);
+    return cErrors > 0 ? 1 : 0;
+}
+#endif  /* TESTCASE */
