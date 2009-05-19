@@ -988,7 +988,7 @@ ResumeExecution:
     /* Disable interrupts to make sure a poke will interrupt execution. 
      * This must be done *before* we check for TLB flushes; TLB shootdowns rely on this.
      */
-    RTCCUINTREG uFlags = ASMIntDisableFlags();
+    RTCCUINTREG uOldEFlags = ASMIntDisableFlags();
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
 
     pCpu = HWACCMR0GetCurrentCpu();
@@ -1080,7 +1080,7 @@ ResumeExecution:
     pVCpu->hwaccm.s.svm.pfnVMRun(pVM->hwaccm.s.svm.pVMCBHostPhys, pVCpu->hwaccm.s.svm.pVMCBPhys, pCtx, pVM, pVCpu);
     TMNotifyEndOfExecution(pVCpu);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
-    ASMSetFlags(uFlags);
+    ASMSetFlags(uOldEFlags);
     STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatInGC, x);
 
     /*
@@ -2399,13 +2399,13 @@ DECLASM(int) SVMR0VMSwitcherRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PC
 VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTRCPTR pfnHandler, uint32_t cbParam, uint32_t *paParam)
 {
     int             rc;
-    RTHCUINTREG     uFlags;
+    RTHCUINTREG     uOldEFlags;
 
     /* @todo This code is not guest SMP safe (hyper stack) */
     AssertReturn(pVM->cCPUs == 1, VERR_ACCESS_DENIED);
     Assert(pfnHandler);
 
-    uFlags = ASMIntDisableFlags();
+    uOldEFlags = ASMIntDisableFlags();
 
     CPUMSetHyperESP(pVCpu, VMMGetStackRC(pVM));
     CPUMSetHyperEIP(pVCpu, pfnHandler);
@@ -2417,7 +2417,7 @@ VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     rc = pVM->hwaccm.s.pfnHost32ToGuest64R0(pVM);
     STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatWorldSwitch3264, z);
 
-    ASMSetFlags(uFlags);
+    ASMSetFlags(uOldEFlags);
     return rc;
 }
 
