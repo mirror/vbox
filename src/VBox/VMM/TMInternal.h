@@ -469,10 +469,12 @@ typedef struct TM
      * @{ */
     STAMCOUNTER                 StatPoll;
     STAMCOUNTER                 StatPollAlreadySet;
-    STAMCOUNTER                 StatPollVirtual;
-    STAMCOUNTER                 StatPollVirtualSync;
+    STAMCOUNTER                 StatPollELoop;
     STAMCOUNTER                 StatPollMiss;
     STAMCOUNTER                 StatPollRunning;
+    STAMCOUNTER                 StatPollSimple;
+    STAMCOUNTER                 StatPollVirtual;
+    STAMCOUNTER                 StatPollVirtualSync;
     /** @} */
     /** TMTimerPollGIP
      * @{ */
