@@ -207,6 +207,7 @@ static int VBoxDrvFreeBSDUnload(void)
     /*
      * Reserve what we did in VBoxDrvFreeBSDInit.
      */
+    EVENTHANDLER_DEREGISTER(dev_clone, g_VBoxDrvFreeBSDEHTag);
     clone_cleanup(&g_pVBoxDrvFreeBSDClones);
 
     supdrvDeleteDevExt(&g_VBoxDrvFreeBSDDevExt);
