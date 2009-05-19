@@ -50,6 +50,11 @@ typedef struct _VBOXCLIPBOARDCLIENTDATA
     } async;
 
     struct {
+        VBOXHGCMCALLHANDLE callHandle;
+        VBOXHGCMSVCPARM *paParms;
+    } asyncRead;
+
+    struct {
          void *pv;
          uint32_t cb;
          uint32_t u32Format;
@@ -67,6 +72,10 @@ bool vboxSvcClipboardLock (void);
 void vboxSvcClipboardUnlock (void);
 
 void vboxSvcClipboardReportMsg (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Msg, uint32_t u32Formats);
+
+/** Complete a request from the guest for clipboard data that we decided
+ * to handle asynchronously. */
+void vboxSvcClipboardCompleteReadData(VBOXHGCMCALLHANDLE callHandle, VBOXHGCMSVCPARM *paParms, int rc, uint32_t cbActual);
 
 
 /*

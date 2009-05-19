@@ -494,10 +494,14 @@ static DECLCALLBACK(void) svcCall (void *,
                         }
                         else
                         {
+                            pClient->asyncRead.callHandle = callHandle;
+                            pClient->asyncRead.paParms = paParms;
                             rc = vboxClipboardReadData (pClient, u32Format, pv, cb, &cbActual);
                         }
 
-                        if (RT_SUCCESS (rc))
+                        if (rc == VINF_HGCM_ASYNC_EXECUTE)
+                            fAsynchronousProcessing = true;
+                        else if (RT_SUCCESS (rc))
                         {
                             VBoxHGCMParmUInt32Set (&paParms[2], cbActual);
                         }
@@ -573,6 +577,12 @@ static DECLCALLBACK(void) svcCall (void *,
     {
         g_pHelpers->pfnCallComplete (callHandle, rc);
     }
+}
+
+void vboxSvcClipboardCompleteReadData(VBOXHGCMCALLHANDLE callHandle, VBOXHGCMSVCPARM *paParms, int rc, uint32_t cbActual)
+{
+    VBoxHGCMParmUInt32Set (&paParms[2], cbActual);
+    g_pHelpers->pfnCallComplete (callHandle, rc);
 }
 
 /*
