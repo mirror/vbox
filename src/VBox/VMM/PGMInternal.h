@@ -362,6 +362,17 @@
 # define PGM_INVL_VCPU_TLBS(pVCpu)             HWACCMFlushTLB(pVCpu)
 #endif
 
+/** @def PGM_INVL_ALL_VCPU_TLBS()
+ * Invalidates the TLBs of all VCPUs
+ */
+#ifdef IN_RC
+# define PGM_INVL_ALL_VCPU_TLBS(pVM)            ASMReloadCR3()
+#elif defined(IN_RING0)
+# define PGM_INVL_ALL_VCPU_TLBS(pVM)            HWACCMFlushAllTLBs(pVM)
+#else
+# define PGM_INVL_ALL_VCPU_TLBS(pVM)            HWACCMFlushAllTLBs(pVM)
+#endif
+
 /** Size of the GCPtrConflict array in PGMMAPPING.
  * @remarks Must be a power of two. */
 #define PGMMAPPING_CONFLICT_MAX         8
