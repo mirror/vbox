@@ -286,6 +286,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     int rc;
 
+    Assert(PGMIsLockOwner(pVM));
     /*
      * Walk page tables and pages till we're done.
      */
@@ -355,7 +356,10 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64
         {
             if (pPT->a[iPTE].n.u1Present)
             {
-                pPT->a[iPTE].u = (pPT->a[iPTE].u & (fMask | SHW_PTE_PG_MASK)) | (fFlags & ~SHW_PTE_PG_MASK);
+                SHWPTE Pte;
+
+                Pte.u = (pPT->a[iPTE].u & (fMask | SHW_PTE_PG_MASK)) | (fFlags & ~SHW_PTE_PG_MASK);
+                ASMAtomicWriteSize(&pPT->a[iPTE], Pte.u);
                 Assert(pPT->a[iPTE].n.u1Present);
 # if PGM_SHW_TYPE == PGM_TYPE_EPT
                 HWACCMInvalidatePhysPage(pVCpu, (RTGCPHYS)GCPtr);
