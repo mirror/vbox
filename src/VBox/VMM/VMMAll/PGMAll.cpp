@@ -838,7 +838,11 @@ VMMDECL(int) PGMShwModifyPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t f
     /*
      * Call worker.
      */
-    return PGM_SHW_PFN(ModifyPage, pVCpu)(pVCpu, GCPtr, cb, fFlags, fMask);
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    pgmLock(pVM);
+    int rc = PGM_SHW_PFN(ModifyPage, pVCpu)(pVCpu, GCPtr, cb, fFlags, fMask);
+    pgmUnlock(pVM);
+    return rc;
 }
 
 /**
