@@ -343,7 +343,6 @@ static int pgmPhysEnsureHandyPage(PVM pVM)
  */
 int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
 {
-    PVMCPU pVCpu = VMMGetCpu(pVM);
     LogFlow(("pgmPhysAllocPage: %R[pgmpage] %RGp\n", pPage, GCPhys));
 
     /*
@@ -369,7 +368,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     if (RT_FAILURE(rc2))
     {
         if (fFlushTLBs)
-            PGM_INVL_VCPU_TLBS(pVCpu);
+            PGM_INVL_ALL_VCPU_TLBS(pVM);
         Assert(rc2 == VERR_EM_NO_MEMORY);
         return rc2;
     }
@@ -424,7 +423,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
 
     if (    fFlushTLBs
         &&  rc != VINF_PGM_GCPHYS_ALIASED)
-        PGM_INVL_VCPU_TLBS(pVCpu);
+        PGM_INVL_ALL_VCPU_TLBS(pVM);
     return rc;
 }
 
