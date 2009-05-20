@@ -51,11 +51,6 @@ typedef struct _VBOXCLIPBOARDCONTEXT VBOXCLIPBOARDCONTEXT;
 struct _CLIPBACKEND;
 typedef struct _CLIPBACKEND CLIPBACKEND;
 
-/** Opaque data structure used for asynchronously completing requests by VBox
- * to read the X11 clipboard data. */
-struct _CLIPREADX11CBCONTEXT;
-typedef struct _CLIPREADX11CBCONTEXT CLIPREADX11CBCONTEXT;
-
 /* APIs exported by the X11 backend */
 extern CLIPBACKEND *ClipConstructX11(VBOXCLIPBOARDCONTEXT *pFrontend);
 extern void ClipDestructX11(CLIPBACKEND *pBackend);
@@ -64,8 +59,7 @@ extern int ClipStopX11(CLIPBACKEND *pBackend);
 extern void ClipAnnounceFormatToX11(CLIPBACKEND *pBackend,
                                     uint32_t u32Formats);
 extern int ClipRequestDataFromX11(CLIPBACKEND *pBackend, uint32_t u32Format,
-                                  void *pv, uint32_t cb,
-                                  CLIPREADX11CBCONTEXT *pCtx);
+                                  void *pv, uint32_t cb);
 
 /* APIs exported by the X11/VBox frontend */
 extern int ClipRequestDataForX11(VBOXCLIPBOARDCONTEXT *pCtx,
@@ -73,6 +67,6 @@ extern int ClipRequestDataForX11(VBOXCLIPBOARDCONTEXT *pCtx,
                                         uint32_t *pcb);
 extern void ClipReportX11Formats(VBOXCLIPBOARDCONTEXT *pCtx,
                                              uint32_t u32Formats);
-extern void ClipCompleteDataRequestFromX11(CLIPREADX11CBCONTEXT *pCtx, int rc,
+extern void ClipCompleteDataRequestFromX11(VBOXCLIPBOARDCONTEXT *pCtx, int rc,
                                            uint32_t cbActual);
 #endif  /* ___GUESTHOST_VBOXCLIPBOARD__H */

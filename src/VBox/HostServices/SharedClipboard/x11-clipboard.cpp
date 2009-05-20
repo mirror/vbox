@@ -196,14 +196,6 @@ void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient,
     ClipAnnounceFormatToX11 (pClient->pCtx->pBackend, u32Formats);
 }
 
-struct _CLIPREADX11CBCONTEXT
-{
-    /** HGCM call data */
-    VBOXHGCMCALLHANDLE callHandle;
-    /** HGCM call parameters */
-    VBOXHGCMSVCPARM *paParms;
-};
-
 /**
  * Called when VBox wants to read the X11 clipboard.
  *
@@ -229,20 +221,10 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient,
     LogFlowFunc(("pClient=%p, u32Format=%02X, pv=%p, cb=%u, pcbActual=%p",
                  pClient, u32Format, pv, cb, pcbActual));
     
-    int rc = VINF_SUCCESS;
-    CLIPREADX11CBCONTEXT *pCtx
-            = (CLIPREADX11CBCONTEXT *)RTMemAlloc(sizeof(*pCtx));
-    if (!pCtx)
-        rc = VERR_NO_MEMORY;
+    int rc = ClipRequestDataFromX11(pClient->pCtx->pBackend, u32Format, pv,
+                                    cb);
     if (RT_SUCCESS(rc))
-    {
-        pCtx->callHandle = pClient->asyncRead.callHandle;
-        pCtx->paParms = pClient->asyncRead.paParms;
-        rc = ClipRequestDataFromX11(pClient->pCtx->pBackend, u32Format, pv,
-                                    cb, pCtx);
-        if (RT_SUCCESS(rc))
-            rc = VINF_HGCM_ASYNC_EXECUTE;
-    }
+        rc = VINF_HGCM_ASYNC_EXECUTE;
     LogFlowFunc(("returning %Rrc\n", rc));
     return rc;
 }
@@ -258,12 +240,10 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient,
  * @todo   change this to deal with the buffer issues rather than offloading
  *         them onto the caller
  */
-void ClipCompleteDataRequestFromX11(CLIPREADX11CBCONTEXT *pCtx, int rc,
+void ClipCompleteDataRequestFromX11(VBOXCLIPBOARDCONTEXT *pCtx, int rc,
                                     uint32_t cbActual)
 {
-    vboxSvcClipboardCompleteReadData(pCtx->callHandle, pCtx->paParms, rc,
-                                 cbActual);
-    RTMemFree(pCtx);
+    vboxSvcClipboardCompleteReadData(pCtx->pClient, rc, cbActual);
 }
 
 /** A request for clipboard data from VBox */
@@ -431,7 +411,6 @@ struct _CLIPBACKEND
         uint32_t format;
         void *pv;
         uint32_t cb;
-        CLIPREADX11CBCONTEXT *pCtx;
         int rc;
     } readData;
     struct _COMPLETEREAD
@@ -464,9 +443,9 @@ void vboxSvcClipboardReportMsg (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Ms
         return;
 }
 
-void vboxSvcClipboardCompleteReadData(VBOXHGCMCALLHANDLE callHandle, VBOXHGCMSVCPARM *paParms, int rc, uint32_t cbActual)
+void vboxSvcClipboardCompleteReadData(VBOXCLIPBOARDCLIENTDATA *pClient, int rc, uint32_t cbActual)
 {
-    CLIPBACKEND *pBackend = (CLIPBACKEND *)callHandle;
+    CLIPBACKEND *pBackend = pClient->pCtx->pBackend;
     pBackend->completeRead.rc = rc;
     pBackend->completeRead.cbActual = cbActual;
 }
@@ -498,13 +477,11 @@ void ClipAnnounceFormatToX11(CLIPBACKEND *pBackend,
 }
 
 extern int ClipRequestDataFromX11(CLIPBACKEND *pBackend, uint32_t u32Format,
-                                  void *pv, uint32_t cb,
-                                  CLIPREADX11CBCONTEXT *pCtx)
+                                  void *pv, uint32_t cb)
 {
     pBackend->readData.format = u32Format;
     pBackend->readData.pv = pv;
     pBackend->readData.cb = cb;
-    pBackend->readData.pCtx = pCtx;
     return pBackend->readData.rc;
 }
 
@@ -550,8 +527,7 @@ int main()
         }
         else
         {
-            ClipCompleteDataRequestFromX11(pBackend->readData.pCtx,
-                                           VERR_NO_DATA, 43);
+            ClipCompleteDataRequestFromX11(client.pCtx, VERR_NO_DATA, 43);
             if (   pBackend->completeRead.rc != VERR_NO_DATA
                 || pBackend->completeRead.cbActual != 43)
             {
