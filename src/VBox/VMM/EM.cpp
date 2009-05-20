@@ -3969,7 +3969,6 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  * Application processor execution halted until SIPI.
                  */
                 case EMSTATE_WAIT_SIPI:
-                    Assert(!(CPUMGetGuestEFlags(pVCpu) & X86_EFL_IF));
                     /* no break */
                 /*
                  * hlt - execution halted until interrupt.
