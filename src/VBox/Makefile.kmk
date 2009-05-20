@@ -44,7 +44,7 @@ else ifdef VBOX_ONLY_SDK
   include $(PATH_SUB_CURRENT)/RDP/Makefile.kmk
  endif
  include $(PATH_SUB_CURRENT)/Installer/Makefile.kmk
- include $(PATH_SUB_CURRENT)/Frontends/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/Frontends/VBoxShell/Makefile.kmk
 
 else
  ifdef VBOX_WITH_MAIN
