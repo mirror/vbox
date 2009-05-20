@@ -3806,200 +3806,7 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     pPage->fZeroed = true;
     PGMPOOL_UNLOCK_PTR(pPool->CTX_SUFF(pVM), pvShw);
 }
-
 #endif /* PGMPOOL_WITH_USER_TRACKING */
-#ifdef IN_RING3
-/**
- * Flushes the entire cache.
- *
- * It will assert a global CR3 flush (FF) and assumes the caller is aware of this
- * and execute this CR3 flush.
- *
- * @param   pPool       The pool.
- *
- * @remark Only used during reset now, we might want to rename and/or move it.
- */
-static void pgmPoolFlushAllInt(PPGMPOOL pPool)
-{
-    PVM pVM = pPool->CTX_SUFF(pVM);
-
-    Assert(PGMIsLockOwner(pVM));
-    STAM_PROFILE_START(&pPool->StatFlushAllInt, a);
-    LogFlow(("pgmPoolFlushAllInt:\n"));
-
-    /*
-     * If there are no pages in the pool, there is nothing to do.
-     */
-    if (pPool->cCurPages <= PGMPOOL_IDX_FIRST)
-    {
-        STAM_PROFILE_STOP(&pPool->StatFlushAllInt, a);
-        return;
-    }
-
-    /*
-     * Exit the shadow mode since we're going to clear everything,
-     * including the root page.
-     */
-    /** @todo Need to synchronize this across all VCPUs! */
-    Assert(pVM->cCPUs == 1);
-    for (unsigned i=0;i<pVM->cCPUs;i++)
-    {
-        PVMCPU pVCpu = &pVM->aCpus[i];
-        pgmR3ExitShadowModeBeforePoolFlush(pVM, pVCpu);
-    }
-
-    /*
-     * Nuke the free list and reinsert all pages into it.
-     */
-    for (unsigned i = pPool->cCurPages - 1; i >= PGMPOOL_IDX_FIRST; i--)
-    {
-        PPGMPOOLPAGE pPage = &pPool->aPages[i];
-
-        Assert(pPage->Core.Key == MMPage2Phys(pVM, pPage->pvPageR3));
-#ifdef PGMPOOL_WITH_MONITORING
-        if (pPage->fMonitored)
-            pgmPoolMonitorFlush(pPool, pPage);
-        pPage->iModifiedNext = NIL_PGMPOOL_IDX;
-        pPage->iModifiedPrev = NIL_PGMPOOL_IDX;
-        pPage->iMonitoredNext = NIL_PGMPOOL_IDX;
-        pPage->iMonitoredPrev = NIL_PGMPOOL_IDX;
-        pPage->cModifications = 0;
-#endif
-        pPage->GCPhys    = NIL_RTGCPHYS;
-        pPage->enmKind   = PGMPOOLKIND_FREE;
-        Assert(pPage->idx == i);
-        pPage->iNext     = i + 1;
-        pPage->fZeroed   = false;       /* This could probably be optimized, but better safe than sorry. */
-        pPage->fSeenNonGlobal = false;
-        pPage->fMonitored= false;
-        pPage->fCached   = false;
-        pPage->fReusedFlushPending = false;
-#ifdef PGMPOOL_WITH_USER_TRACKING
-        pPage->iUserHead = NIL_PGMPOOL_USER_INDEX;
-#else
-        pPage->fCR3Mix = false;
-#endif
-#ifdef PGMPOOL_WITH_CACHE
-        pPage->iAgeNext  = NIL_PGMPOOL_IDX;
-        pPage->iAgePrev  = NIL_PGMPOOL_IDX;
-#endif
-        pPage->cLocked   = 0;
-    }
-    pPool->aPages[pPool->cCurPages - 1].iNext = NIL_PGMPOOL_IDX;
-    pPool->iFreeHead = PGMPOOL_IDX_FIRST;
-    pPool->cUsedPages = 0;
-
-#ifdef PGMPOOL_WITH_USER_TRACKING
-    /*
-     * Zap and reinitialize the user records.
-     */
-    pPool->cPresent = 0;
-    pPool->iUserFreeHead = 0;
-    PPGMPOOLUSER paUsers = pPool->CTX_SUFF(paUsers);
-    const unsigned cMaxUsers = pPool->cMaxUsers;
-    for (unsigned i = 0; i < cMaxUsers; i++)
-    {
-        paUsers[i].iNext = i + 1;
-        paUsers[i].iUser = NIL_PGMPOOL_IDX;
-        paUsers[i].iUserTable = 0xfffffffe;
-    }
-    paUsers[cMaxUsers - 1].iNext = NIL_PGMPOOL_USER_INDEX;
-#endif
-
-#ifdef PGMPOOL_WITH_GCPHYS_TRACKING
-    /*
-     * Clear all the GCPhys links and rebuild the phys ext free list.
-     */
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
-         pRam;
-         pRam = pRam->CTX_SUFF(pNext))
-    {
-        unsigned iPage = pRam->cb >> PAGE_SHIFT;
-        while (iPage-- > 0)
-            PGM_PAGE_SET_TRACKING(&pRam->aPages[iPage], 0);
-    }
-
-    pPool->iPhysExtFreeHead = 0;
-    PPGMPOOLPHYSEXT paPhysExts = pPool->CTX_SUFF(paPhysExts);
-    const unsigned cMaxPhysExts = pPool->cMaxPhysExts;
-    for (unsigned i = 0; i < cMaxPhysExts; i++)
-    {
-        paPhysExts[i].iNext = i + 1;
-        paPhysExts[i].aidx[0] = NIL_PGMPOOL_IDX;
-        paPhysExts[i].aidx[1] = NIL_PGMPOOL_IDX;
-        paPhysExts[i].aidx[2] = NIL_PGMPOOL_IDX;
-    }
-    paPhysExts[cMaxPhysExts - 1].iNext = NIL_PGMPOOL_PHYSEXT_INDEX;
-#endif
-
-#ifdef PGMPOOL_WITH_MONITORING
-    /*
-     * Just zap the modified list.
-     */
-    pPool->cModifiedPages = 0;
-    pPool->iModifiedHead = NIL_PGMPOOL_IDX;
-#endif
-
-#ifdef PGMPOOL_WITH_CACHE
-    /*
-     * Clear the GCPhys hash and the age list.
-     */
-    for (unsigned i = 0; i < RT_ELEMENTS(pPool->aiHash); i++)
-        pPool->aiHash[i] = NIL_PGMPOOL_IDX;
-    pPool->iAgeHead = NIL_PGMPOOL_IDX;
-    pPool->iAgeTail = NIL_PGMPOOL_IDX;
-#endif
-
-    /*
-     * Reinsert active pages into the hash and ensure monitoring chains are correct.
-     */
-    for (unsigned i = PGMPOOL_IDX_FIRST_SPECIAL; i < PGMPOOL_IDX_FIRST; i++)
-    {
-        PPGMPOOLPAGE pPage = &pPool->aPages[i];
-        pPage->iNext = NIL_PGMPOOL_IDX;
-#ifdef PGMPOOL_WITH_MONITORING
-        pPage->iModifiedNext = NIL_PGMPOOL_IDX;
-        pPage->iModifiedPrev = NIL_PGMPOOL_IDX;
-        pPage->cModifications = 0;
-        /* ASSUMES that we're not sharing with any of the other special pages (safe for now). */
-        pPage->iMonitoredNext = NIL_PGMPOOL_IDX;
-        pPage->iMonitoredPrev = NIL_PGMPOOL_IDX;
-        if (pPage->fMonitored)
-        {
-            int rc = PGMHandlerPhysicalChangeCallbacks(pVM, pPage->GCPhys & ~(RTGCPHYS)(PAGE_SIZE - 1),
-                                                       pPool->pfnAccessHandlerR3, MMHyperCCToR3(pVM, pPage),
-                                                       pPool->pfnAccessHandlerR0, MMHyperCCToR0(pVM, pPage),
-                                                       pPool->pfnAccessHandlerRC, MMHyperCCToRC(pVM, pPage),
-                                                       pPool->pszAccessHandler);
-            AssertFatalRCSuccess(rc);
-# ifdef PGMPOOL_WITH_CACHE
-            pgmPoolHashInsert(pPool, pPage);
-# endif
-        }
-#endif
-#ifdef PGMPOOL_WITH_USER_TRACKING
-        Assert(pPage->iUserHead == NIL_PGMPOOL_USER_INDEX); /* for now */
-#endif
-#ifdef PGMPOOL_WITH_CACHE
-        Assert(pPage->iAgeNext == NIL_PGMPOOL_IDX);
-        Assert(pPage->iAgePrev == NIL_PGMPOOL_IDX);
-#endif
-    }
-
-    for (unsigned i=0;i<pVM->cCPUs;i++)
-    {
-        PVMCPU pVCpu = &pVM->aCpus[i];
-        /*
-         * Re-enter the shadowing mode and assert Sync CR3 FF.
-         */
-        pgmR3ReEnterShadowModeAfterPoolFlush(pVM, pVCpu);
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
-    }
-
-    STAM_PROFILE_STOP(&pPool->StatFlushAllInt, a);
-}
-
-#endif /* IN_RING3 */
 
 /**
  * Flushes a pool page.
@@ -4382,10 +4189,182 @@ PPGMPOOLPAGE pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys)
  *
  * @param   pPool       The pool.
  */
-void pgmPoolFlushAll(PVM pVM)
+void pgmR3PoolReset(PVM pVM)
 {
-    LogFlow(("pgmPoolFlushAll:\n"));
-    pgmPoolFlushAllInt(pVM->pgm.s.CTX_SUFF(pPool));
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+
+    Assert(PGMIsLockOwner(pVM));
+    STAM_PROFILE_START(&pPool->StatFlushAllInt, a);
+    LogFlow(("pgmPoolFlushAllInt:\n"));
+
+    /*
+     * If there are no pages in the pool, there is nothing to do.
+     */
+    if (pPool->cCurPages <= PGMPOOL_IDX_FIRST)
+    {
+        STAM_PROFILE_STOP(&pPool->StatFlushAllInt, a);
+        return;
+    }
+
+    /*
+     * Exit the shadow mode since we're going to clear everything,
+     * including the root page.
+     */
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+        pgmR3ExitShadowModeBeforePoolFlush(pVM, pVCpu);
+    }
+
+    /*
+     * Nuke the free list and reinsert all pages into it.
+     */
+    for (unsigned i = pPool->cCurPages - 1; i >= PGMPOOL_IDX_FIRST; i--)
+    {
+        PPGMPOOLPAGE pPage = &pPool->aPages[i];
+
+        Assert(pPage->Core.Key == MMPage2Phys(pVM, pPage->pvPageR3));
+#ifdef PGMPOOL_WITH_MONITORING
+        if (pPage->fMonitored)
+            pgmPoolMonitorFlush(pPool, pPage);
+        pPage->iModifiedNext = NIL_PGMPOOL_IDX;
+        pPage->iModifiedPrev = NIL_PGMPOOL_IDX;
+        pPage->iMonitoredNext = NIL_PGMPOOL_IDX;
+        pPage->iMonitoredPrev = NIL_PGMPOOL_IDX;
+        pPage->cModifications = 0;
+#endif
+        pPage->GCPhys    = NIL_RTGCPHYS;
+        pPage->enmKind   = PGMPOOLKIND_FREE;
+        Assert(pPage->idx == i);
+        pPage->iNext     = i + 1;
+        pPage->fZeroed   = false;       /* This could probably be optimized, but better safe than sorry. */
+        pPage->fSeenNonGlobal = false;
+        pPage->fMonitored= false;
+        pPage->fCached   = false;
+        pPage->fReusedFlushPending = false;
+#ifdef PGMPOOL_WITH_USER_TRACKING
+        pPage->iUserHead = NIL_PGMPOOL_USER_INDEX;
+#else
+        pPage->fCR3Mix = false;
+#endif
+#ifdef PGMPOOL_WITH_CACHE
+        pPage->iAgeNext  = NIL_PGMPOOL_IDX;
+        pPage->iAgePrev  = NIL_PGMPOOL_IDX;
+#endif
+        pPage->cLocked   = 0;
+    }
+    pPool->aPages[pPool->cCurPages - 1].iNext = NIL_PGMPOOL_IDX;
+    pPool->iFreeHead = PGMPOOL_IDX_FIRST;
+    pPool->cUsedPages = 0;
+
+#ifdef PGMPOOL_WITH_USER_TRACKING
+    /*
+     * Zap and reinitialize the user records.
+     */
+    pPool->cPresent = 0;
+    pPool->iUserFreeHead = 0;
+    PPGMPOOLUSER paUsers = pPool->CTX_SUFF(paUsers);
+    const unsigned cMaxUsers = pPool->cMaxUsers;
+    for (unsigned i = 0; i < cMaxUsers; i++)
+    {
+        paUsers[i].iNext = i + 1;
+        paUsers[i].iUser = NIL_PGMPOOL_IDX;
+        paUsers[i].iUserTable = 0xfffffffe;
+    }
+    paUsers[cMaxUsers - 1].iNext = NIL_PGMPOOL_USER_INDEX;
+#endif
+
+#ifdef PGMPOOL_WITH_GCPHYS_TRACKING
+    /*
+     * Clear all the GCPhys links and rebuild the phys ext free list.
+     */
+    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
+         pRam;
+         pRam = pRam->CTX_SUFF(pNext))
+    {
+        unsigned iPage = pRam->cb >> PAGE_SHIFT;
+        while (iPage-- > 0)
+            PGM_PAGE_SET_TRACKING(&pRam->aPages[iPage], 0);
+    }
+
+    pPool->iPhysExtFreeHead = 0;
+    PPGMPOOLPHYSEXT paPhysExts = pPool->CTX_SUFF(paPhysExts);
+    const unsigned cMaxPhysExts = pPool->cMaxPhysExts;
+    for (unsigned i = 0; i < cMaxPhysExts; i++)
+    {
+        paPhysExts[i].iNext = i + 1;
+        paPhysExts[i].aidx[0] = NIL_PGMPOOL_IDX;
+        paPhysExts[i].aidx[1] = NIL_PGMPOOL_IDX;
+        paPhysExts[i].aidx[2] = NIL_PGMPOOL_IDX;
+    }
+    paPhysExts[cMaxPhysExts - 1].iNext = NIL_PGMPOOL_PHYSEXT_INDEX;
+#endif
+
+#ifdef PGMPOOL_WITH_MONITORING
+    /*
+     * Just zap the modified list.
+     */
+    pPool->cModifiedPages = 0;
+    pPool->iModifiedHead = NIL_PGMPOOL_IDX;
+#endif
+
+#ifdef PGMPOOL_WITH_CACHE
+    /*
+     * Clear the GCPhys hash and the age list.
+     */
+    for (unsigned i = 0; i < RT_ELEMENTS(pPool->aiHash); i++)
+        pPool->aiHash[i] = NIL_PGMPOOL_IDX;
+    pPool->iAgeHead = NIL_PGMPOOL_IDX;
+    pPool->iAgeTail = NIL_PGMPOOL_IDX;
+#endif
+
+    /*
+     * Reinsert active pages into the hash and ensure monitoring chains are correct.
+     */
+    for (unsigned i = PGMPOOL_IDX_FIRST_SPECIAL; i < PGMPOOL_IDX_FIRST; i++)
+    {
+        PPGMPOOLPAGE pPage = &pPool->aPages[i];
+        pPage->iNext = NIL_PGMPOOL_IDX;
+#ifdef PGMPOOL_WITH_MONITORING
+        pPage->iModifiedNext = NIL_PGMPOOL_IDX;
+        pPage->iModifiedPrev = NIL_PGMPOOL_IDX;
+        pPage->cModifications = 0;
+        /* ASSUMES that we're not sharing with any of the other special pages (safe for now). */
+        pPage->iMonitoredNext = NIL_PGMPOOL_IDX;
+        pPage->iMonitoredPrev = NIL_PGMPOOL_IDX;
+        if (pPage->fMonitored)
+        {
+            int rc = PGMHandlerPhysicalChangeCallbacks(pVM, pPage->GCPhys & ~(RTGCPHYS)(PAGE_SIZE - 1),
+                                                       pPool->pfnAccessHandlerR3, MMHyperCCToR3(pVM, pPage),
+                                                       pPool->pfnAccessHandlerR0, MMHyperCCToR0(pVM, pPage),
+                                                       pPool->pfnAccessHandlerRC, MMHyperCCToRC(pVM, pPage),
+                                                       pPool->pszAccessHandler);
+            AssertFatalRCSuccess(rc);
+# ifdef PGMPOOL_WITH_CACHE
+            pgmPoolHashInsert(pPool, pPage);
+# endif
+        }
+#endif
+#ifdef PGMPOOL_WITH_USER_TRACKING
+        Assert(pPage->iUserHead == NIL_PGMPOOL_USER_INDEX); /* for now */
+#endif
+#ifdef PGMPOOL_WITH_CACHE
+        Assert(pPage->iAgeNext == NIL_PGMPOOL_IDX);
+        Assert(pPage->iAgePrev == NIL_PGMPOOL_IDX);
+#endif
+    }
+
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+        /*
+         * Re-enter the shadowing mode and assert Sync CR3 FF.
+         */
+        pgmR3ReEnterShadowModeAfterPoolFlush(pVM, pVCpu);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
+    }
+
+    STAM_PROFILE_STOP(&pPool->StatFlushAllInt, a);
 }
 #endif /* IN_RING3 */
 

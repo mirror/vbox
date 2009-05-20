@@ -403,18 +403,6 @@ void pgmR3PoolRelocate(PVM pVM)
 
 
 /**
- * Reset notification.
- *
- * This will flush the pool.
- * @param   pVM     The VM handle.
- */
-void pgmR3PoolReset(PVM pVM)
-{
-    pgmPoolFlushAll(pVM);
-}
-
-
-/**
  * Grows the shadow page pool.
  *
  * I.e. adds more pages to it, assuming that hasn't reached cMaxPages yet.
