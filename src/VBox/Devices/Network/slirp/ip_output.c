@@ -48,7 +48,11 @@
 char * rt_lookup_in_cache(PNATState pData, uint32_t dst)
 {
     int i;
-   /* temporary do for dhcp client */ 
+   /* @todo (r - vasily) to quick ramp up on routing rails 
+    * we use information from DHCP server leasings, this 
+    * code couldn't detect any changes in network topology 
+    * and should be borrowed from other places 
+    */
     for(i = 0; i < NB_ADDR; i++)
     {
         if (    bootp_clients[i].allocated 
@@ -78,6 +82,11 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
     register struct mbuf *m = m0;
     register int hlen = sizeof(struct ip );
     int len, off, error = 0;
+#ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
+    extern uint8_t zerro_ethaddr[ETH_ALEN];
+    struct ethhdr *eh;
+    uint8_t *eth_dst;
+#endif
 
     DEBUG_CALL("ip_output");
     DEBUG_ARG("so = %lx", (long)so);
@@ -116,6 +125,16 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
         goto bad;
     }
 #endif
+#ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
+      /* Current TCP/IP stack hasn't routing information at 
+       * all so we need to calculate destination ethernet address 
+       */
+     eh = (struct ethhdr *)MBUF_HEAD(m);
+     if (memcmp(eh->h_source, zerro_ethaddr, ETH_ALEN) == 0) {
+         eth_dst = rt_lookup_in_cache(pData, ip->ip_dst.s_addr); 
+     }
+       
+#endif
 
     /*
      * If small enough for interface, can just send directly.
@@ -127,19 +146,8 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
         ip->ip_sum = 0;
         ip->ip_sum = cksum(m, hlen);
 #ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
-        /* Current TCP/IP stack hasn't routing information at 
-         * all so we need to calculate destination ethernet address 
-         */
-        {
-            extern uint8_t zerro_ethaddr[ETH_ALEN];
-            struct ethhdr *eh;
-            eh = (struct ethhdr *)MBUF_HEAD(m);
-            if (memcmp(eh->h_source, zerro_ethaddr, ETH_ALEN) == 0) {
-                char *dst = rt_lookup_in_cache(pData, ip->ip_dst.s_addr); 
-                if (dst != NULL) {
-                    memcpy(eh->h_source, dst, ETH_ALEN); 
-                }
-            }
+        if (eth_dst != NULL) {
+            memcpy(eh->h_source, eth_dst, ETH_ALEN); 
         }
 #endif
 
@@ -177,10 +185,6 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
         mhlen = sizeof (struct ip);
         for (off = hlen + len; off < (u_int16_t)ip->ip_len; off += len)
         {
-#ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
-            struct ethhdr *eh0;
-            struct ethhdr *eh;
-#endif
             register struct ip *mhip;
             m = m_get(pData);
             if (m == 0)
@@ -189,14 +193,16 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
                 ipstat.ips_odropped++;
                 goto sendorfree;
             }
-#ifdef VBOX_WITH_NAT_SERVICE
-            eh0 = (struct ethhdr *)MBUF_HEAD(m0);
-            eh = (struct ethhdr *)MBUF_HEAD(m);
-            memcpy(eh->h_source, eh0->h_source, ETH_ALEN);
-#endif
             m_adj(m, if_maxlinkhdr);
             mhip = mtod(m, struct ip *);
             *mhip = *ip;
+#ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
+            /* we've calculated eth_dst for first packet */
+            eh = (struct ethhdr *)MBUF_HEAD(m);
+            if (eth_dst != NULL) {
+                memcpy(eh->h_source, eth_dst, ETH_ALEN); 
+            }
+#endif
 
 #if 0 /* No options */
             if (hlen > sizeof (struct ip))
