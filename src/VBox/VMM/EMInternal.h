@@ -42,7 +42,8 @@ __BEGIN_DECLS
  */
 
 /** The saved state version. */
-#define EM_SAVED_STATE_VERSION                      2
+#define EM_SAVED_STATE_VERSION                          3
+#define EM_SAVED_STATE_VERSION_PRE_SMP                  2
 
 /**
  * Cli node structure

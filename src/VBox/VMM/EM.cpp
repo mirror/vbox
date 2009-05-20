@@ -518,6 +518,11 @@ static DECLCALLBACK(int) emR3Save(PVM pVM, PSSMHANDLE pSSM)
 
         int rc = SSMR3PutBool(pSSM, pVCpu->em.s.fForceRAW);
         AssertRCReturn(rc, rc);
+
+        Assert(pVCpu->em.s.enmState     == EMSTATE_SUSPENDED);
+        Assert(pVCpu->em.s.enmPrevState != EMSTATE_SUSPENDED);
+        rc = SSMR3PutU32(pSSM, pVCpu->em.s.enmPrevState);
+        AssertRCReturn(rc, rc);
     }
     return VINF_SUCCESS;
 }
@@ -538,7 +543,8 @@ static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     /*
      * Validate version.
      */
-    if (u32Version != EM_SAVED_STATE_VERSION)
+    if (    u32Version != EM_SAVED_STATE_VERSION
+        &&  u32Version != EM_SAVED_STATE_VERSION_PRE_SMP)
     {
         AssertMsgFailed(("emR3Load: Invalid version u32Version=%d (current %d)!\n", u32Version, EM_SAVED_STATE_VERSION));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -555,6 +561,18 @@ static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         if (RT_FAILURE(rc))
             pVCpu->em.s.fForceRAW = false;
 
+        if (u32Version > EM_SAVED_STATE_VERSION_PRE_SMP)
+        {
+            EMSTATE     enmState;
+            uint32_t    u32;
+            rc = SSMR3GetU32(pSSM, &u32);
+            AssertRCReturn(rc, rc);
+
+            enmState = (EMSTATE)u32;
+            Assert(enmState != EMSTATE_SUSPENDED);
+            pVCpu->em.s.enmState     = enmState;
+            pVCpu->em.s.enmPrevState = EMSTATE_NONE;
+        }
         Assert(!pVCpu->em.s.pCliStatTree);
     }
     return rc;
@@ -3656,7 +3674,6 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
         /* Reschedule right away to start in the right state. */
         rc = VINF_SUCCESS;
 
-        /** @todo doesn't work for the save/restore case */
         if (    pVCpu->em.s.enmState == EMSTATE_SUSPENDED
             &&  (   pVCpu->em.s.enmPrevState == EMSTATE_WAIT_SIPI
                  || pVCpu->em.s.enmPrevState == EMSTATE_HALTED))
