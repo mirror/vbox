@@ -525,8 +525,11 @@ void VBoxVMSettingsSystem::adjustBootOrderTWSize()
         iv->sizeHintForRow (0) * mTwBootOrder->topLevelItemCount() + 2 * mTwBootOrder->frameWidth());
 
     /* Update the layout system */
-    mLtBootOrder->activate();
-    mLtBootOrder->update();
+    if (mTabMotherboard->layout())
+    {
+        mTabMotherboard->layout()->activate();
+        mTabMotherboard->layout()->update();
+    }
 }
 
 void VBoxVMSettingsSystem::valueChangedCPU (int aVal)
