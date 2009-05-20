@@ -1352,8 +1352,6 @@ struct _CLIPREADX11CBREQ
     /** The size of the buffer to write X11 clipboard data to (valid during
      * a request for the clipboard contents) */
     unsigned mSize;
-    /** The opaque context structure for completing the request */
-    CLIPREADX11CBCONTEXT *mReadCtx;
     /** The format VBox would like the data in */
     uint32_t mFormat;
     /** The text format we requested from X11 if we requested text */
@@ -1424,7 +1422,7 @@ static void clipConvertX11CB(Widget widget, XtPointer pClientData,
     else
         rc = VERR_NOT_IMPLEMENTED;
     XtFree((char *)pvSrc);
-    ClipCompleteDataRequestFromX11(pReq->mReadCtx, rc, cbActual);
+    ClipCompleteDataRequestFromX11(pReq->mCtx->pFrontend, rc, cbActual);
     RTMemFree(pReq);
     if (RT_SUCCESS(rc))
         /* The other end may want to cache the data, so pretend we have new
@@ -1478,7 +1476,7 @@ static void vboxClipboardReadX11Worker(XtPointer pUserData,
     {
         /* The clipboard callback was never scheduled, so we must signal
          * that the request processing is finished and clean up ourselves. */
-        ClipCompleteDataRequestFromX11(pReq->mReadCtx, rc, 0);
+        ClipCompleteDataRequestFromX11(pReq->mCtx->pFrontend, rc, 0);
         RTMemFree(pReq);
     }
     LogFlowFunc(("status %Rrc\n", rc));
@@ -1497,7 +1495,7 @@ static void vboxClipboardReadX11Worker(XtPointer pUserData,
  * @note   We allocate a request structure which must be freed by the worker
  */
 int ClipRequestDataFromX11(CLIPBACKEND *pCtx, uint32_t u32Format, void *pv,
-                           uint32_t cb, CLIPREADX11CBCONTEXT *pReadCtx)
+                           uint32_t cb)
 {
     /*
      * Immediately return if we are not connected to the X server.
@@ -1512,7 +1510,6 @@ int ClipRequestDataFromX11(CLIPBACKEND *pCtx, uint32_t u32Format, void *pv,
     {
         pReq->mBuffer = pv;
         pReq->mSize = cb;
-        pReq->mReadCtx = pReadCtx;
         pReq->mFormat = u32Format;
         pReq->mCtx = pCtx;
         /* We use this to schedule a worker function on the event thread. */
@@ -1952,17 +1949,20 @@ void XFreeStringList(char **list)
     RTMemFree(list);
 }
 
-struct _CLIPREADX11CBCONTEXT
-{
-    int rc;
-    uint32_t cbActual;
-};
+static int g_completedRC = VINF_SUCCESS;
+static int g_completedActual = 0;
 
-void ClipCompleteDataRequestFromX11(CLIPREADX11CBCONTEXT *pCtx, int rc,
+void ClipCompleteDataRequestFromX11(VBOXCLIPBOARDCONTEXT *pCtx, int rc,
                                     uint32_t cbActual)
 {
-    pCtx->rc = rc;
-    pCtx->cbActual = cbActual;
+    g_completedRC = rc;
+    g_completedActual = cbActual;
+}
+
+static void clipGetCompletedRequest(int *prc, uint32_t *pcbActual)
+{
+    *prc = g_completedRC;
+    *pcbActual = g_completedActual;
 }
 
 const char XtStrings [] = "";
@@ -1983,12 +1983,11 @@ static bool testStringFromX11(CLIPBACKEND *pCtx, uint32_t cbBuf,
     else
     {
         char pc[MAX_BUF_SIZE];
-        CLIPREADX11CBCONTEXT readCtx;
-        uint32_t cbActual = 0;
         ClipRequestDataFromX11(pCtx, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
-                               (void *) pc, cbBuf, &readCtx);
-        int rc = readCtx.rc;
-        cbActual = readCtx.cbActual;
+                               (void *) pc, cbBuf);
+        int rc = VINF_SUCCESS;
+        uint32_t cbActual = 0;
+        clipGetCompletedRequest(&rc, &cbActual);
         if (rc != rcExp)
             RTPrintf("Wrong return code, expected %Rrc, got %Rrc\n", rcExp,
                      rc);
@@ -2041,12 +2040,11 @@ static bool testLatin1FromX11(CLIPBACKEND *pCtx, uint32_t cbBuf,
     else
     {
         char pc[MAX_BUF_SIZE];
-        CLIPREADX11CBCONTEXT readCtx;
-        uint32_t cbActual = 0;
         ClipRequestDataFromX11(pCtx, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
-                               (void *) pc, cbBuf, &readCtx);
-        int rc = readCtx.rc;
-        cbActual = readCtx.cbActual;
+                               (void *) pc, cbBuf);
+        int rc = VINF_SUCCESS;
+        uint32_t cbActual = 0;
+        clipGetCompletedRequest(&rc, &cbActual);
         if (rc != rcExp)
             RTPrintf("Wrong return code, expected %Rrc, got %Rrc\n", rcExp,
                      rc);
@@ -2271,11 +2269,9 @@ int main()
     RTPrintf(TEST_NAME ": TESTING a data request from an empty X11 clipboard\n");
     clipSetSelectionValues("UTF8_STRING", XA_STRING, NULL,
                            0, 8);
-    CLIPREADX11CBCONTEXT readCtx;
     ClipRequestDataFromX11(pCtx, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
-                           (void *) pc, sizeof(pc), &readCtx);
-    rc = readCtx.rc;
-    cbActual = readCtx.cbActual;
+                           (void *) pc, sizeof(pc));
+    clipGetCompletedRequest(&rc, &cbActual);
     if (rc != VERR_NO_DATA)
     {
         RTPrintf("Returned %Rrc instead of VERR_NO_DATA\n", rc);
@@ -2284,9 +2280,8 @@ int main()
 
     /*** request for an invalid VBox format from X11 ***/
     RTPrintf(TEST_NAME ": TESTING a request for an invalid VBox format from X11\n");
-    ClipRequestDataFromX11(pCtx, 0xffff, (void *) pc, sizeof(pc), &readCtx);
-    rc = readCtx.rc;
-    cbActual = readCtx.cbActual;
+    ClipRequestDataFromX11(pCtx, 0xffff, (void *) pc, sizeof(pc));
+    clipGetCompletedRequest(&rc, &cbActual);
     if (rc != VERR_NOT_IMPLEMENTED)
     {
         RTPrintf("Returned %Rrc instead of VERR_NOT_IMPLEMENTED\n", rc);
@@ -2441,7 +2436,7 @@ void ClipReportX11Formats(VBOXCLIPBOARDCONTEXT *pCtx,
                                       uint32_t u32Formats)
 {}
 
-void ClipCompleteDataRequestFromX11(CLIPREADX11CBCONTEXT *pCtx, int rc,
+void ClipCompleteDataRequestFromX11(VBOXCLIPBOARDCONTEXT *pCtx, int rc,
                                     uint32_t cbActual)
 {}
 

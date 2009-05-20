@@ -20,6 +20,60 @@
  * additional information or have any questions.
  */
 
+
+/** @page pg_hostclip       The Shared Clipboard Host Service
+ *
+ * The shared clipboard host service provides a proxy between the host's
+ * clipboard and a similar proxy running on a guest.  The service is split
+ * into a platform-independant core and platform-specific backends.  The
+ * service defines two communication protocols - one to communicate with the
+ * clipboard service running on the guest, and one to communicate with the
+ * backend.  These will be described in a very skeletal fashion here.
+ *
+ * @section sec_hostclip_guest_proto  The guest communication protocol
+ *
+ * The guest clipboard service communicates with the host service via HGCM
+ * (the host service runs as an HGCM service).  The guest clipboard must
+ * connect to the host service before all else (Windows hosts currently only
+ * support one simultaneous connection).  Once it has connected, it can send
+ * HGCM messages to the host services, some of which will receive replies from
+ * the host.  The host can only reply to a guest message, it cannot initiate
+ * any communication.  The guest can in theory send any number of messages in
+ * parallel (see the descriptions of the messages for the practice), and the
+ * host will receive these in sequence, and may reply to them at once
+ * (releasing the caller in the guest) or defer the reply until later.
+ *
+ * There are currently four messages defined.  The first is
+ * VBOX_SHARED_CLIPBOARD_FN_GET_HOST_MSG, which waits for a message from the
+ * host.  Host messages currently defined are
+ * VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT (unused),
+ * VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA (request that the guest send the
+ * contents of its clipboard to the host) and
+ * VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS (to notify the guest that new
+ * clipboard data is available).  If a host message is sent while the guest is
+ * not waiting, it will be queued until the guest requests it.  At most one
+ * host message of each type will be kept in the queue.  The host code only
+ * supports a single simultaneous VBOX_SHARED_CLIPBOARD_FN_GET_HOST_MSG call
+ * from the guest.
+ *
+ * The second guest message is VBOX_SHARED_CLIPBOARD_FN_FORMATS, which tells
+ * the host that the guest has new clipboard data available.  The third is
+ * VBOX_SHARED_CLIPBOARD_FN_READ_DATA, which asks the host to send its
+ * clipboard data and waits until it arrives.  The host supports at most one
+ * simultaneous VBOX_SHARED_CLIPBOARD_FN_READ_DATA call from the guest - if a
+ * second call is made before the first has returned, the first will be
+ * aborted.
+ *
+ * The last guest message is VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA, which is
+ * used to send the contents of the guest clipboard to the host.  This call
+ * should be used after the host has requested data from the guest.
+ *
+ * @section sec_hostclip_backend_proto  The communication protocol with the
+ *                                      platform-specific backend
+ *
+ * This section may be written in the future :)
+ */
+
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include <VBox/HostServices/VBoxClipboardExt.h>
 
@@ -494,13 +548,28 @@ static DECLCALLBACK(void) svcCall (void *,
                         }
                         else
                         {
-                            pClient->asyncRead.callHandle = callHandle;
-                            pClient->asyncRead.paParms = paParms;
+                            /* Release any other pending read, as we only
+                             * support one pending read at one time. */
+                            vboxSvcClipboardCompleteReadData(pClient, VERR_NO_DATA, 0);
                             rc = vboxClipboardReadData (pClient, u32Format, pv, cb, &cbActual);
                         }
 
+                        /* Remember our read request until it is completed.
+                         * See the protocol description above for more
+                         * information. */
                         if (rc == VINF_HGCM_ASYNC_EXECUTE)
-                            fAsynchronousProcessing = true;
+                        {
+                            if (vboxSvcClipboardLock())
+                            {
+                                pClient->asyncRead.callHandle = callHandle;
+                                pClient->asyncRead.paParms    = paParms;
+                                pClient->fReadPending         = true;
+                                fAsynchronousProcessing = true;
+                                vboxSvcClipboardUnlock();
+                            }
+                            else
+                                rc = VERR_NOT_SUPPORTED;
+                        }
                         else if (RT_SUCCESS (rc))
                         {
                             VBoxHGCMParmUInt32Set (&paParms[2], cbActual);
@@ -579,10 +648,27 @@ static DECLCALLBACK(void) svcCall (void *,
     }
 }
 
-void vboxSvcClipboardCompleteReadData(VBOXHGCMCALLHANDLE callHandle, VBOXHGCMSVCPARM *paParms, int rc, uint32_t cbActual)
+/** If the client in the guest is waiting for a read operation to complete
+ * then complete it, otherwise return.  See the protocol description in the
+ * shared clipboard module description. */
+void vboxSvcClipboardCompleteReadData(VBOXCLIPBOARDCLIENTDATA *pClient, int rc, uint32_t cbActual)
 {
-    VBoxHGCMParmUInt32Set (&paParms[2], cbActual);
-    g_pHelpers->pfnCallComplete (callHandle, rc);
+    VBOXHGCMCALLHANDLE callHandle = NULL;
+    VBOXHGCMSVCPARM *paParms = NULL;
+    bool fReadPending = false;
+    if (vboxSvcClipboardLock())  /* if not can we do anything useful? */
+    {
+        callHandle   = pClient->asyncRead.callHandle;
+        paParms      = pClient->asyncRead.paParms;
+        fReadPending = pClient->fReadPending;
+        pClient->fReadPending = false;
+        vboxSvcClipboardUnlock();
+    }
+    if (fReadPending)
+    {
+        VBoxHGCMParmUInt32Set (&paParms[2], cbActual);
+        g_pHelpers->pfnCallComplete (callHandle, rc);
+    }
 }
 
 /*
@@ -632,6 +718,44 @@ static DECLCALLBACK(int) svcHostCall (void *,
     return rc;
 }
 
+/** This structure corresponds to the original layout of the
+ * VBOXCLIPBOARDCLIENTDATA structure.  As the structure was saved as a whole
+ * when saving state, we need to remember it forever in order to preserve
+ * compatibility.
+ * @todo the first person who needs to make an incompatible change to the
+ *       saved state should switch to saving individual data members.  So far,
+ *       there are only three we care about anyway! */
+typedef struct _CLIPSAVEDSTATEDATA
+{
+    struct _CLIPSAVEDSTATEDATA *pNext;
+    struct _CLIPSAVEDSTATEDATA *pPrev;
+
+    VBOXCLIPBOARDCONTEXT *pCtx;
+
+    uint32_t u32ClientID;
+
+    bool fAsync: 1; /* Guest is waiting for a message. */
+
+    bool fMsgQuit: 1;
+    bool fMsgReadData: 1;
+    bool fMsgFormats: 1;
+
+    struct {
+        VBOXHGCMCALLHANDLE callHandle;
+        VBOXHGCMSVCPARM *paParms;
+    } async;
+
+    struct {
+         void *pv;
+         uint32_t cb;
+         uint32_t u32Format;
+    } data;
+
+    uint32_t u32AvailableFormats;
+    uint32_t u32RequestedFormat;
+
+} CLIPSAVEDSTATEDATA;
+
 static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
 {
     /* If there are any pending requests, they must be completed here. Since
@@ -649,11 +773,17 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
 
     VBOXCLIPBOARDCLIENTDATA *pClient = (VBOXCLIPBOARDCLIENTDATA *)pvClient;
 
+    CLIPSAVEDSTATEDATA savedState = { 0 };
     /* Save client structure length & contents */
-    int rc = SSMR3PutU32(pSSM, sizeof(*pClient));
+    int rc = SSMR3PutU32(pSSM, sizeof(savedState));
     AssertRCReturn(rc, rc);
 
-    rc = SSMR3PutMem(pSSM, pClient, sizeof(*pClient));
+    savedState.u32ClientID        = pClient->u32ClientID;
+    savedState.fMsgQuit           = pClient->fMsgQuit;
+    savedState.fMsgReadData       = pClient->fMsgReadData;
+    savedState.fMsgFormats        = pClient->fMsgFormats;
+    savedState.u32RequestedFormat = pClient->u32RequestedFormat;
+    rc = SSMR3PutMem(pSSM, &savedState, sizeof(savedState));
     AssertRCReturn(rc, rc);
 
     if (pClient->fAsync)
@@ -661,6 +791,8 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
         g_pHelpers->pfnCallComplete (pClient->async.callHandle, VINF_SUCCESS /* error code is not important here. */);
         pClient->fAsync = false;
     }
+
+    vboxSvcClipboardCompleteReadData(pClient, VINF_SUCCESS, 0);
 
     return VINF_SUCCESS;
 }
@@ -679,27 +811,27 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     int rc = SSMR3GetU32(pSSM, &len);
     AssertRCReturn(rc, rc);
 
-    if (len != sizeof(VBOXCLIPBOARDCLIENTDATA))
+    if (len != sizeof(CLIPSAVEDSTATEDATA))
     {
-        Log(("Client len mismatch: %d %d\n", len, sizeof (VBOXCLIPBOARDCLIENTDATA)));
+        Log(("Client data size mismatch: expected %d, got %d\n", sizeof (CLIPSAVEDSTATEDATA), len));
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     }
 
-    VBOXCLIPBOARDCLIENTDATA client;
-    rc = SSMR3GetMem(pSSM, &client, sizeof(client));
+    CLIPSAVEDSTATEDATA savedState;
+    rc = SSMR3GetMem(pSSM, &savedState, sizeof(savedState));
     AssertRCReturn(rc, rc);
 
     /* Verify the loaded clients data and update the pClient. */
-    if (pClient->u32ClientID != client.u32ClientID)
+    if (pClient->u32ClientID != savedState.u32ClientID)
     {
-        Log(("Client ID mismatch: %d %d\n", pClient->u32ClientID, client.u32ClientID));
+        Log(("Client ID mismatch: expected %d, got %d\n", pClient->u32ClientID, savedState.u32ClientID));
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     }
 
-    pClient->fMsgQuit     = client.fMsgQuit;
-    pClient->fMsgReadData = client.fMsgReadData;
-    pClient->fMsgFormats  = client.fMsgFormats;
-    pClient->u32RequestedFormat = client.u32RequestedFormat;
+    pClient->fMsgQuit           = savedState.fMsgQuit;
+    pClient->fMsgReadData       = savedState.fMsgReadData;
+    pClient->fMsgFormats        = savedState.fMsgFormats;
+    pClient->u32RequestedFormat = savedState.u32RequestedFormat;
 
     /* Actual host data are to be reported to guest (SYNC). */
     vboxClipboardSync (pClient);
