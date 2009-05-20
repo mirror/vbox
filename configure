@@ -84,6 +84,7 @@ GENISOIMAGE="genisoimage"
 MKISOFS="mkisofs"
 BUILD_LIBXML2=
 BUILD_LIBXSLT=
+BUILD_LIBCURL=
 LIBCRYPTO="-lcrypto"
 LIBPTHREAD="-lpthread"
 LIBCAP="-lcap"
@@ -930,8 +931,9 @@ EOF
 #
 check_curl()
 {
-  test_header libcurl
-  cat > $ODIR.tmp_src.cc << EOF
+  if [ -z "$BUILD_LIBCURL" ]; then
+    test_header libcurl
+    cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <curl/curl.h>
 extern "C" int main(void)
@@ -946,13 +948,12 @@ extern "C" int main(void)
 #endif
 }
 EOF
-  [ -n "$INCCURL" ] && I_INCCURL=`prefix_I "$INCCURL"`
-#  if test_compile "$LIBCURL $I_INCCURL" libcurl libcurl nofatal; then
-  if test_compile "$LIBCURL $I_INCCURL" libcurl libcurl; then
-#    if test_execute nofatal; then
-    if test_execute; then
-      cnf_append "SDK_VBOX_LIBCURL_LIBS" "`strip_l "$LIBCURL"`"
-      cnf_append "SDK_VBOX_LIBCURL_INCS" "$INCCURL"
+    [ -n "$INCCURL" ] && I_INCCURL=`prefix_I "$INCCURL"`
+    if test_compile "$LIBCURL $I_INCCURL" libcurl libcurl; then
+      if test_execute; then
+        cnf_append "SDK_VBOX_LIBCURL_LIBS" "`strip_l "$LIBCURL"`"
+        cnf_append "SDK_VBOX_LIBCURL_INCS" "$INCCURL"
+      fi
     fi
   fi
 }
@@ -1887,6 +1888,7 @@ Configuration:
   --enable-webservice      enable the webservice stuff
   --build-libxml2          build libxml2 from sources
   --build-libxslt          build libxslt from sources
+  --build-curl             build libcurl from sources (PUEL only)
   --setup-wine             setup a Wine directory and register the hhc hack
 
 Paths:
@@ -2010,6 +2012,9 @@ for option in $*; do
       ;;
     --build-libxslt)
       BUILD_LIBXSLT=1
+      ;;
+    --build-libcurl)
+      BUILD_LIBCURL=1
       ;;
     --build-headless)
       HEADLESS=1
@@ -2147,6 +2152,7 @@ fi
 if [ "$OS" = "darwin" ]; then
   BUILD_LIBXSLT=1
   BUILD_LIBXML2=1
+  BUILD_LIBCURL=1
 fi
 
 # emit disable directives corresponding to any --disable-xxx options.
@@ -2175,7 +2181,7 @@ check_gcc
 [ "$OS" != "darwin" -a $OSE -eq 0 ] && check_ssl
 [ "$OS" != "darwin"  ] && check_z
 [ "$OS" != "darwin" -a "$OS" != "freebsd" ] && check_png
-[ "$OS" != "darwin" -a $OSE -eq 0 ] && check_curl
+[ $OSE -eq 0 ] && check_curl
 [ $OSE -eq 0 -a "$OS" = "linux" ] && check_pam
 [ $WITH_SDL -eq 1 ]    && check_sdl
 [ $WITH_SDL_TTF -eq 1 -a $OSE -eq 0 ] && check_sdl_ttf
