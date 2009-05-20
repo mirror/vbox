@@ -1391,7 +1391,6 @@ ifdef VBOX_WITH_PYTHON
   DLLS += VBoxPython
  endif
  INSTALLS += VBoxPython-inst-py-xpcom
- INSTALLS += VBoxPython-inst-sample
 endif
 
 # Python Client Module - the C++/XPCOM bits.
@@ -1468,12 +1467,6 @@ VBoxPython-inst-py-xpcom_SOURCES = \
 	python/server/loader.py=>server/loader.py \
 	python/server/module.py=>server/module.py \
 	python/server/policy.py=>server/policy.py
-
-# Python Client Module - a sample script.
-VBoxPython-inst-sample_INST = $(INST_SDK)bindings/xpcom/python/sample/
-VBoxPython-inst-sample_SOURCES = \
-	$(PATH_ROOT)/src/VBox/Frontends/VBoxShell/xpcom/vboxshell.py \
-	$(PATH_ROOT)/src/VBox/Frontends/VBoxShell/shellcommon.py
 
 #
 # testcases
