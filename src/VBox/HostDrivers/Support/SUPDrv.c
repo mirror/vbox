@@ -963,12 +963,11 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
  * @returns IPRT status code, see SUPR0ObjAddRef.
  * @param   hHandleTable    The handle table handle. Ignored.
  * @param   pvObj           The object pointer.
- * @param   pvCtx           Context. NULL.
+ * @param   pvCtx           Context, the handle type. Ignored.
  * @param   pvUser          Session pointer.
  */
 static DECLCALLBACK(int) supdrvSessionObjHandleRetain(RTHANDLETABLE hHandleTable, void *pvObj, void *pvCtx, void *pvUser)
 {
-    Assert(!pvCtx);
     NOREF(pvCtx);
     NOREF(hHandleTable);
     return SUPR0ObjAddRef(pvObj, (PSUPDRVSESSION)pvUser);
@@ -981,12 +980,11 @@ static DECLCALLBACK(int) supdrvSessionObjHandleRetain(RTHANDLETABLE hHandleTable
  * @param   hHandleTable    The handle table handle. Ignored.
  * @param   h               The handle value. Ignored.
  * @param   pvObj           The object pointer.
- * @param   pvCtx           Context. NULL.
+ * @param   pvCtx           Context, the handle type. Ignored.
  * @param   pvUser          Session pointer.
  */
 static DECLCALLBACK(void) supdrvSessionObjHandleDelete(RTHANDLETABLE hHandleTable, uint32_t h, void *pvObj, void *pvCtx, void *pvUser)
 {
-    Assert(!pvCtx);
     NOREF(pvCtx);
     NOREF(h);
     NOREF(hHandleTable);
