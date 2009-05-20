@@ -702,6 +702,7 @@ endif
 
 # some day will be deleted
 VBOX_WITH_MULTI_DNS=1
+VBOX_WITHOUT_SLIRP_CLIENT_ETHER=1
 
 Drivers_SOURCES += $(VBOX_SLIRP_SOURCES)
 define def_vbox_slirp_cflags
