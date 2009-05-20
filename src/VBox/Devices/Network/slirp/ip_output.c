@@ -84,8 +84,8 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
     int len, off, error = 0;
 #ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
     extern uint8_t zerro_ethaddr[ETH_ALEN];
-    struct ethhdr *eh;
-    uint8_t *eth_dst;
+    struct ethhdr *eh = NULL;
+    uint8_t *eth_dst = NULL;
 #endif
 
     DEBUG_CALL("ip_output");
