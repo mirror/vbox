@@ -160,7 +160,7 @@ def removeVm(ctx,mach):
     vb = ctx['vb']
     id = mach.id
     print "removing machine ",mach.name,"with UUID",id
-    session = ctx['mgr'].getSessionObject(vb)
+    session = mgr.getSessionObject(vb)
     vb.openSession(session, id)
     mach=session.machine
     for d in mach.getHardDiskAttachments():
@@ -200,11 +200,7 @@ def startVm(ctx,mach,type):
             print session.QueryErrorObject(rc)
 
 def getMachines(ctx):
-    # XPCOM brigde has trouble with array attributes
-    if ctx['type'] == 'xpcom':
-       return ctx['vb'].getMachines()
-    else:
-       return ctx['vb'].machines
+    return ctx['global'].getArray(ctx['vb'], 'machines')
 
 def asState(var):
     if var:
@@ -504,7 +500,7 @@ def interpret(ctx):
     print "Running VirtualBox version %s" %(vbox.version)
 
     # MSCOM doesn't work with collector yet
-    if ctx['type'] != 'mscom':
+    if ctx['type'] != 'MSCOM':
        ctx['perf'] = PerfCollector(vbox)
     else:
        ctx['perf'] = None

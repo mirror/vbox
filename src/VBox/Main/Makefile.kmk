@@ -172,6 +172,11 @@ INSTALLS += VBox-main-xidl
 VBox-main-xidl_INST = $(INST_SDK)bindings/
 VBox-main-xidl_SOURCES = $(VBOX_XIDL_FILE_SRC)
 
+INSTALLS += VBox-python-glue
+VBox-python-glue_INST = $(INST_SDK)bindings/
+# This file also should go to Python site-wide modules directory
+# so for users it look 'just being here' 
+VBox-python-glue_SOURCES = glue/vboxapi.py=>glue/python/vboxapi.py
 
 ifndef VBOX_ONLY_SDK # Note this goes on for *very* long
 
