@@ -231,7 +231,7 @@ typedef struct SUPCOOKIE
  * Query SUPR0 functions.
  * @{
  */
-#define SUP_IOCTL_QUERY_FUNCS(cFuncs)                   SUP_CTL_CODE_BIG(2) 
+#define SUP_IOCTL_QUERY_FUNCS(cFuncs)                   SUP_CTL_CODE_BIG(2)
 #define SUP_IOCTL_QUERY_FUNCS_SIZE(cFuncs)              RT_UOFFSETOF(SUPQUERYFUNCS, u.Out.aFunctions[(cFuncs)])
 #define SUP_IOCTL_QUERY_FUNCS_SIZE_IN                   sizeof(SUPREQHDR)
 #define SUP_IOCTL_QUERY_FUNCS_SIZE_OUT(cFuncs)          SUP_IOCTL_QUERY_FUNCS_SIZE(cFuncs)
@@ -1023,6 +1023,83 @@ typedef struct SUPLOGGERSETTINGS
 #define SUPLOGGERSETTINGS_WHAT_CREATE       1
 /** Destroy the logger instance. */
 #define SUPLOGGERSETTINGS_WHAT_DESTROY      2
+
+/** @} */
+
+
+/** @name Semaphore Types
+ * @{ */
+#define SUP_SEM_TYPE_EVENT                  0
+#define SUP_SEM_TYPE_EVENT_MULTI            1
+/** @} */
+
+
+/** @name SUP_IOCTL_SEM_CREATE
+ * Create a semaphore
+ * @{
+ */
+#define SUP_IOCTL_SEM_CREATE                            SUP_CTL_CODE_SIZE(26, SUP_IOCTL_SEM_CREATE_SIZE)
+#define SUP_IOCTL_SEM_CREATE_SIZE                       sizeof(SUPSEMCREATE)
+#define SUP_IOCTL_SEM_CREATE_SIZE_IN                    sizeof(SUPSEMCREATE)
+#define SUP_IOCTL_SEM_CREATE_SIZE_OUT                   sizeof(SUPSEMCREATE)
+typedef struct SUPSEMCREATE
+{
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** The semaphore type. */
+            uint32_t        uType;
+        } In;
+        struct
+        {
+            /** The handle of the created semaphore. */
+            uint32_t        hSem;
+        } Out;
+    } u;
+} SUPSEMCREATE, *PSUPSEMCREATE;
+
+/** @} */
+
+
+/** @name SUP_IOCTL_SEM_OP
+ * Semaphore operations.
+ * @{
+ */
+#define SUP_IOCTL_SEM_OP                                SUP_CTL_CODE_SIZE(27, SUP_IOCTL_SEM_OP_SIZE)
+#define SUP_IOCTL_SEM_OP_SIZE                           sizeof(SUPSEMOP)
+#define SUP_IOCTL_SEM_OP_SIZE_IN                        sizeof(SUPSEMOP)
+#define SUP_IOCTL_SEM_OP_SIZE_OUT                       sizeof(SUPREQHDR)
+typedef struct SUPSEMOP
+{
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** The operation. */
+            uint32_t        uOp;
+            /** The semaphore type. */
+            uint32_t        uType;
+            /** The semaphore handle. */
+            uint32_t        hSem;
+            /** The number of milliseconds to wait if it's a wait operation. */
+            uint32_t        cMillies;
+        } In;
+    } u;
+} SUPSEMOP, *PSUPSEMOP;
+
+/** Wait for a number of millisecons. */
+#define SUPSEMOP_WAIT       0
+/** Signal the semaphore. */
+#define SUPSEMOP_SIGNAL     1
+/** Reset the sempahore (only applicable to SUP_SEM_TYPE_EVENT_MULTI). */
+#define SUPSEMOP_RESET      2
+/** Close the semaphore handle. */
+#define SUPSEMOP_CLOSE      3
 
 /** @} */
 
