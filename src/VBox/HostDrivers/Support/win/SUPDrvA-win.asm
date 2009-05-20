@@ -74,6 +74,17 @@ NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0MemFree
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0PageAlloc
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0PageFree
 ;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0Printf            - cannot wrap this buster.
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPSemEventCreate
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPSemEventClose
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPSemEventSignal
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPSemEventWait
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPSemEventWaitNoResume
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPSemEventMultiCreate
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPSemEventMultiClose
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPSemEventMultiSignal
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPSemEventMultiReset
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPSemEventMultiWait
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPSemEventMultiWaitNoResume
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0GetPagingMode
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMemAlloc
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMemAllocZ

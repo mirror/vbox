@@ -103,6 +103,8 @@ OBJS   = \
 	common/log/logrelellipsis.o \
 	common/log/logcom.o \
 	common/log/logformat.o \
+	common/misc/handletable.o \
+	common/misc/handletablectx.o \
 	common/string/strformat.o \
 	common/string/strformatrt.o \
 	common/string/strformattype.o \
