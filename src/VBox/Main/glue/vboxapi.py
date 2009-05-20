@@ -83,17 +83,18 @@ class PlatformMSCOM:
             import pythoncom
             import win32api
             self.constants = PlatformMSCOM.InterfacesWrapper()
-            win32com.client.gencache.EnsureDispatch('VirtualBox.Session')
+            #win32com.client.gencache.EnsureDispatch('VirtualBox.Session')
+            #win32com.client.gencache.EnsureDispatch('VirtualBox.VirtualBox')
 
     def getSessionObject(self):
         import win32com
         from win32com.client import Dispatch
-        return win32com.client.Dispatch("{3C02F46D-C9D2-4f11-A384-53F0CF917214}")
+	return win32com.client.Dispatch("VirtualBox.Session")
 
     def getVirtualBox(self):
 	import win32com
         from win32com.client import Dispatch
-        return win32com.client.Dispatch("{3C02F46D-C9D2-4f11-A384-53F0CF917214}")
+        return win32com.client.Dispatch("VirtualBox.VirtualBox")
 
     def getConstants(self):
         return self.constants
