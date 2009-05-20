@@ -371,7 +371,6 @@ ifdef VBOX_ONLY_SDK
 	$(VBOXWEB_WS_PYTHON) \
         $(VBOXWEB_WS_PERL) \
 	$(VBOXWEB_PYTHONWSSAMPLE)\
-	$(VBOXWEB_SHELLCOMMON) \
 	$(VBOXWEB_JAXWSSAMPLE) \
 	$(VBOXWEB_METRICSAMPLE) \
 	$(VBOXWEB_JAVA15_JAR) \
@@ -389,9 +388,7 @@ ifdef VBOX_ONLY_SDK
       samples/java/jax-ws/Makefile=>java/jax-ws/samples/Makefile \
       samples/perl/clienttest.pl=>perl/samples/clienttest.pl \
       samples/python/Makefile=>python/samples/Makefile \
-      samples/python/Makefile.glue=>python/lib/Makefile \
-      $(PATH_ROOT)/src/VBox/Frontends/VBoxShell/ws/vboxshell.py=>python/samples/vboxshell.py \
-      $(PATH_ROOT)/src/VBox/Frontends/VBoxShell/shellcommon.py=>python/samples/shellcommon.py
+      samples/python/Makefile.glue=>python/lib/Makefile
 
  #
  # filesplitter - build helper, splits up the java classes.

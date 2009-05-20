@@ -87,9 +87,7 @@ if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" == "win"
  	$(VBOX_IDL_FILE.MSCOM) \
  	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h \
  	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox.tlb \
- 	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c \
- 	$(VBOX_PATH_SDK)/bindings/mscom/python/samples/vboxshell.py   \
- 	$(VBOX_PATH_SDK)/bindings/mscom/python/samples/shellcommon.py
+ 	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c 
  OTHER_CLEAN    += \
  	$(VBOX_IDL_FILE.MSCOM) \
  	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h \
@@ -97,9 +95,7 @@ if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" == "win"
  	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c \
  	$(PATH_VBoxCOM)/VirtualBox.h   \
  	$(PATH_VBoxCOM)/VirtualBox_i.c \
- 	$(PATH_VBoxCOM)/VirtualBox.tlb \
- 	$(VBOX_PATH_SDK)/bindings/mscom/python/samples/vboxshell.py \
- 	$(VBOX_PATH_SDK)/bindings/mscom/python/samples/shellcommon.py
+ 	$(PATH_VBoxCOM)/VirtualBox.tlb 
 
  VBOX_MAIN_PREREQS += $(PATH_VBoxCOM)/VirtualBox_i.c
  BLDDIRS += $(VBOX_PATH_SDK)/bindings/mscom/idl
@@ -756,17 +752,6 @@ $(PATH_VBoxCOM)/VirtualBox_i.c \
 	$(MKDIR) -p $(VBOX_PATH_SDK)/bindings/mscom/lib
 	$(CP) $(PATH_VBoxCOM)/VirtualBox.tlb $(VBOX_PATH_SDK)/bindings/mscom/lib
 	$(CP) $(PATH_VBoxCOM)/VirtualBox_i.c $(VBOX_PATH_SDK)/bindings/mscom/lib
-
-
-## @todo Use install targets, please.
-#        Actually, what on earth is this stuff doing? Why copy two files like this?
-$(VBOX_PATH_SDK)/bindings/mscom/python/samples/shellcommon.py \
-+ $(VBOX_PATH_SDK)/bindings/mscom/python/samples/vboxshell.py: \
-		$(PATH_ROOT)/src/VBox/Frontends/VBoxShell/shellcommon.py \
-		$(PATH_ROOT)/src/VBox/Frontends/VBoxShell/mscom/vboxshell.py
-	$(MKDIR) -p $(VBOX_PATH_SDK)/bindings/mscom/python/samples
-	$(CP) $(PATH_ROOT)/src/VBox/Frontends/VBoxShell/shellcommon.py     $(VBOX_PATH_SDK)/bindings/mscom/python/samples/shellcommon.py
-	$(CP) $(PATH_ROOT)/src/VBox/Frontends/VBoxShell/mscom/vboxshell.py $(VBOX_PATH_SDK)/bindings/mscom/python/samples/vboxshell.py
 
 #
 # Translation stuff
