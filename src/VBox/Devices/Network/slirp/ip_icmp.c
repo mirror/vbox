@@ -543,10 +543,7 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
         if (new_m_size>m->m_size)
             m_inc(m, new_m_size);
     }
-    /* XXX (vasily - r) not very safe code here add M_EXT assertion, 
-     * need replace code here with more safe constructions
-     */
-    Assert((m->m_flags & M_EXT) == 0 && (msrc->m_flags & M_EXT) == 0);
+
     memcpy(m->m_data, msrc->m_data, msrc->m_len);
     m->m_len = msrc->m_len;                /* copy msrc to m */
 
