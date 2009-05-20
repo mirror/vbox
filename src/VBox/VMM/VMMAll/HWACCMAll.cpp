@@ -105,7 +105,9 @@ VMMDECL(int) HWACCMFlushAllTLBs(PVM pVM)
         {
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTlbShootdownFlush);
 #ifdef IN_RING0
-            RTMpPokeCpu(idCpu);
+            RTCPUID idHostCpu = pVCpu->hwaccm.s.idEnteredCpu;
+            if (idHostCpu != NIL_RTCPUID)
+                RTMpPokeCpu(idHostCpu);
 #else
             VMR3NotifyCpuFFU(pVCpu->pUVCpu, VMNOTIFYFF_FLAGS_POKE);
 #endif
