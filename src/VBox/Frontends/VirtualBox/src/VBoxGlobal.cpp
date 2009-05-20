@@ -1664,7 +1664,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
         QString item = QString (sSectionItemTpl2).arg (tr ("Base Memory", "details report"),
                                                        tr ("<nobr>%1 MB</nobr>", "details report"))
                        .arg (aMachine.GetMemorySize())
-                     + QString (sSectionItemTpl2).arg (tr ("CPU Count", "details report"),
+                     + QString (sSectionItemTpl2).arg (tr ("Processor(s)", "details report"),
                                                        tr ("<nobr>%1</nobr>", "details report"))
                        .arg (aMachine.GetCPUCount())
                      + QString (sSectionItemTpl2).arg (tr ("Boot Order", "details report"), bootOrder)

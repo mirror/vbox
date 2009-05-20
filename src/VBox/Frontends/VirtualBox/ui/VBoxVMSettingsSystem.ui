@@ -379,7 +379,7 @@
           </sizepolicy>
          </property>
          <property name="text" >
-          <string>CPU &amp;Count:</string>
+          <string>&amp;Processor(s):</string>
          </property>
          <property name="alignment" >
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>

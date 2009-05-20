@@ -453,8 +453,8 @@ void VBoxVMSettingsSystem::retranslateUi()
     mLbMemoryMax->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (sys.GetMaxGuestRAM()));
 
     /* Retranslate the cpu slider legend */
-    mLbCPUMin->setText (tr ("<qt>%1&nbsp;CPU</qt>").arg (sys.GetMinGuestCPUCount()));
-    mLbCPUMax->setText (tr ("<qt>%1&nbsp;CPU</qt>").arg (sys.GetMaxGuestCPUCount()));
+    mLbCPUMin->setText (tr ("<qt>%1&nbsp;CPU</qt>", "%1 is 1 for now").arg (sys.GetMinGuestCPUCount()));
+    mLbCPUMax->setText (tr ("<qt>%1&nbsp;CPUs</qt>", "%1 is 32 for now").arg (sys.GetMaxGuestCPUCount()));
 }
 
 void VBoxVMSettingsSystem::valueChangedRAM (int aVal)
