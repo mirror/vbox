@@ -2063,7 +2063,7 @@ DECLCALLBACK(int) pgmPoolClearAll(PVM pVM, void *pvUser)
 
     pPool->cPresent = 0;
     pgmUnlock(pVM);
-    PGM_INVL_VCPU_TLBS(VMMGetCpu(pVM));
+    PGM_INVL_ALL_VCPU_TLBS(pVM);
     STAM_PROFILE_STOP(&pPool->StatClearAll, c);
     return VINF_SUCCESS;
 }
@@ -2620,6 +2620,7 @@ void pgmPoolTrackFlushGCPhysPT(PVM pVM, PPGMPAGE pPhysPage, uint16_t iShw, uint1
  */
 void pgmPoolTrackFlushGCPhysPTs(PVM pVM, PPGMPAGE pPhysPage, uint16_t iPhysExt)
 {
+    Assert(PGMIsLockOwner(pVM));
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     STAM_PROFILE_START(&pPool->StatTrackFlushGCPhysPTs, f);
     LogFlow(("pgmPoolTrackFlushGCPhysPTs: pPhysPage=%R[pgmpage] iPhysExt\n", pPhysPage, iPhysExt));
@@ -3822,6 +3823,7 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
 {
     PVM pVM = pPool->CTX_SUFF(pVM);
 
+    Assert(PGMIsLockOwner(pVM));
     STAM_PROFILE_START(&pPool->StatFlushAllInt, a);
     LogFlow(("pgmPoolFlushAllInt:\n"));
 
@@ -4003,7 +4005,6 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
  * Flushes a pool page.
  *
  * This moves the page to the free list after removing all user references to it.
- * In GC this will cause a CR3 reload if the page is traced back to an active root page.
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success.
