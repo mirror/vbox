@@ -47,6 +47,10 @@
 RTDECL(int) RTHandleTableCreateEx(PRTHANDLETABLE phHandleTable, uint32_t fFlags, uint32_t uBase, uint32_t cMax,
                                   PFNRTHANDLETABLERETAIN pfnRetain, void *pvUser)
 {
+    PRTHANDLETABLEINT   pThis;
+    uint32_t            cLevel1;
+    size_t              cb;
+
     /*
      * Validate input.
      */
@@ -64,17 +68,17 @@ RTDECL(int) RTHandleTableCreateEx(PRTHANDLETABLE phHandleTable, uint32_t fFlags,
         cMax = UINT32_MAX - RTHT_LEVEL2_ENTRIES + 1;
     cMax = ((cMax + RTHT_LEVEL2_ENTRIES - 1) / RTHT_LEVEL2_ENTRIES) * RTHT_LEVEL2_ENTRIES;
 
-    uint32_t const cLevel1 = cMax / RTHT_LEVEL2_ENTRIES;
+    cLevel1 = cMax / RTHT_LEVEL2_ENTRIES;
     Assert(cLevel1 * RTHT_LEVEL2_ENTRIES == cMax);
 
     /*
      * Allocate the structure, include the 1st level lookup table
      * if it's below the threshold size.
      */
-    size_t cb = sizeof(RTHANDLETABLEINT);
+    cb = sizeof(RTHANDLETABLEINT);
     if (cLevel1 < RTHT_LEVEL1_DYN_ALLOC_THRESHOLD)
         cb = RT_ALIGN(cb, sizeof(void *)) + cLevel1 * sizeof(void *);
-    PRTHANDLETABLEINT pThis = (PRTHANDLETABLEINT)RTMemAllocZ(cb);
+    pThis = (PRTHANDLETABLEINT)RTMemAllocZ(cb);
     if (!pThis)
         return VERR_NO_MEMORY;
 
@@ -120,12 +124,17 @@ RTDECL(int) RTHandleTableCreate(PRTHANDLETABLE phHandleTable)
 
 RTDECL(int) RTHandleTableDestroy(RTHANDLETABLE hHandleTable, PFNRTHANDLETABLEDELETE pfnDelete, void *pvUser)
 {
+    PRTHANDLETABLEINT   pThis;
+    RTSPINLOCKTMP       Tmp;
+    uint32_t            i1;
+    uint32_t            i;
+
     /*
      * Validate input, quitely ignore the NIL handle.
      */
     if (hHandleTable == NIL_RTHANDLETABLE)
         return VINF_SUCCESS;
-    PRTHANDLETABLEINT pThis = (PRTHANDLETABLEINT)hHandleTable;
+    pThis = (PRTHANDLETABLEINT)hHandleTable;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTHANDLETABLE_MAGIC, VERR_INVALID_HANDLE);
     AssertPtrNullReturn(pfnDelete, VERR_INVALID_POINTER);
@@ -134,7 +143,6 @@ RTDECL(int) RTHandleTableDestroy(RTHANDLETABLE hHandleTable, PFNRTHANDLETABLEDEL
      * Mark the thing as invalid / deleted.
      * Then kill the lock.
      */
-    RTSPINLOCKTMP Tmp;
     rtHandleTableLock(pThis, &Tmp);
     ASMAtomicWriteU32(&pThis->u32Magic, ~RTHANDLETABLE_MAGIC);
     rtHandleTableUnlock(pThis, &Tmp);
@@ -156,11 +164,11 @@ RTDECL(int) RTHandleTableDestroy(RTHANDLETABLE hHandleTable, PFNRTHANDLETABLEDEL
         uint32_t cLeft = pThis->cCurAllocated;
         if (pThis->fFlags & RTHANDLETABLE_FLAGS_CONTEXT)
         {
-            for (uint32_t i1 = 0; cLeft > 0 && i1 < pThis->cLevel1; i1++)
+            for (i1 = 0; cLeft > 0 && i1 < pThis->cLevel1; i1++)
             {
                 PRTHTENTRYCTX paTable = (PRTHTENTRYCTX)pThis->papvLevel1[i1];
                 if (paTable)
-                    for (uint32_t i = 0; i < RTHT_LEVEL2_ENTRIES; i++)
+                    for (i = 0; i < RTHT_LEVEL2_ENTRIES; i++)
                         if (!RTHT_IS_FREE(paTable[i].pvObj))
                         {
                             pfnDelete(hHandleTable, pThis->uBase + i + i1 * RTHT_LEVEL2_ENTRIES,
@@ -172,11 +180,11 @@ RTDECL(int) RTHandleTableDestroy(RTHANDLETABLE hHandleTable, PFNRTHANDLETABLEDEL
         }
         else
         {
-            for (uint32_t i1 = 0; cLeft > 0 && i1 < pThis->cLevel1; i1++)
+            for (i1 = 0; cLeft > 0 && i1 < pThis->cLevel1; i1++)
             {
                 PRTHTENTRY paTable = (PRTHTENTRY)pThis->papvLevel1[i1];
                 if (paTable)
-                    for (uint32_t i = 0; i < RTHT_LEVEL2_ENTRIES; i++)
+                    for (i = 0; i < RTHT_LEVEL2_ENTRIES; i++)
                         if (!RTHT_IS_FREE(paTable[i].pvObj))
                         {
                             pfnDelete(hHandleTable, pThis->uBase + i + i1 * RTHT_LEVEL2_ENTRIES,
@@ -192,7 +200,7 @@ RTDECL(int) RTHandleTableDestroy(RTHANDLETABLE hHandleTable, PFNRTHANDLETABLEDEL
     /*
      * Free the memory.
      */
-    for (uint32_t i1 = 0; i1 < pThis->cLevel1; i1++)
+    for (i1 = 0; i1 < pThis->cLevel1; i1++)
         if (pThis->papvLevel1[i1])
         {
             RTMemFree(pThis->papvLevel1[i1]);
