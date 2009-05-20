@@ -1463,7 +1463,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
                 rc = TRPMAssertTrap(pVCpu, u8Interrupt, enmEvent);
                 AssertRC(rc);
                 STAM_COUNTER_INC(&pVM->trpm.s.paStatForwardedIRQR3[u8Interrupt]);
-                return VINF_EM_RESCHEDULE_HWACC;
+                return HWACCMR3IsActive(pVCpu) ? VINF_EM_RESCHEDULE_HWACC : VINF_EM_RESCHEDULE_REM;
             }
             /* If the guest gate is not patched, then we will check (again) if we can patch it. */
             if (pVM->trpm.s.aGuestTrapHandler[u8Interrupt] == TRPM_INVALID_HANDLER)
