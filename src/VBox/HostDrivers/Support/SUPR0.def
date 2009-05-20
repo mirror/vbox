@@ -53,6 +53,17 @@ EXPORTS
     SUPR0MemGetPhys
     SUPR0MemFree
     SUPR0Printf
+    SUPSemEventCreate
+    SUPSemEventClose
+    SUPSemEventSignal
+    SUPSemEventWait
+    SUPSemEventWaitNoResume
+    SUPSemEventMultiCreate
+    SUPSemEventMultiClose
+    SUPSemEventMultiSignal
+    SUPSemEventMultiReset
+    SUPSemEventMultiWait
+    SUPSemEventMultiWaitNoResume
     SUPR0GetPagingMode
     SUPR0EnableVTx
     RTMemAlloc

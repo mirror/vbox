@@ -307,6 +307,130 @@ typedef SUPR0SERVICEREQHDR *PSUPR0SERVICEREQHDR;
 #define SUPR0SERVICEREQHDR_MAGIC    UINT32_C(0x19640416)
 
 
+/** Event semaphore handle. Ring-0 / ring-3. */
+typedef R0PTRTYPE(struct SUPSEMEVENTHANDLE *) SUPSEMEVENT;
+/** Pointer to an event semaphore handle. */
+typedef SUPSEMEVENT *PSUPSEMEVENT;
+/** Nil event semaphore handle. */
+#define NIL_SUPSEMEVENT         ((SUPSEMEVENT)0)
+
+/**
+ * Creates a single release event semaphore.
+ *
+ * @returns VBox status code.
+ * @param   pSession        The session handle of the caller.
+ * @param   phEvent         Where to return the handle to the event semaphore.
+ */
+SUPDECL(int) SUPSemEventCreate(PSUPDRVSESSION pSession, PSUPSEMEVENT phEvent);
+
+/**
+ * Closes a single release event semaphore handle.
+ *
+ * @returns VBox status code.
+ * @param   pSession            The session handle of the caller.
+ * @param   hEvent              The handle. Nil is quietly ignored.
+ */
+SUPDECL(int) SUPSemEventClose(PSUPDRVSESSION pSession, SUPSEMEVENT hEvent);
+
+/**
+ * Signals a single release event semaphore.
+ *
+ * @returns VBox status code.
+ * @param   pSession            The session handle of the caller.
+ * @param   hEvent              The semaphore handle.
+ */
+SUPDECL(int) SUPSemEventSignal(PSUPDRVSESSION pSession, SUPSEMEVENT hEvent);
+
+#ifdef IN_RING0
+/**
+ * Waits on a single release event semaphore, not interruptible.
+ *
+ * @returns VBox status code.
+ * @param   pSession            The session handle of the caller.
+ * @param   hEvent              The semaphore handle.
+ * @param   cMillies            The number of milliseconds to wait.
+ * @remarks Not available in ring-3.
+ */
+SUPDECL(int) SUPSemEventWait(PSUPDRVSESSION pSession, SUPSEMEVENT hEvent, uint32_t cMillies);
+#endif
+
+/**
+ * Waits on a single release event semaphore, interruptible.
+ *
+ * @returns VBox status code.
+ * @param   pSession            The session handle of the caller.
+ * @param   hEvent              The semaphore handle.
+ * @param   cMillies            The number of milliseconds to wait.
+ */
+SUPDECL(int) SUPSemEventWaitNoResume(PSUPDRVSESSION pSession, SUPSEMEVENT hEvent, uint32_t cMillies);
+
+
+/** Multiple release event semaphore handle. Ring-0 / ring-3. */
+typedef R0PTRTYPE(struct SUPSEMEVENTMULTIHANDLE *)  SUPSEMEVENTMULTI;
+/** Pointer to an multiple release event semaphore handle. */
+typedef SUPSEMEVENTMULTI                           *PSUPSEMEVENTMULTI;
+/** Nil multiple release event semaphore handle. */
+#define NIL_SUPSEMEVENTMULTI                        ((SUPSEMEVENTMULTI)0)
+
+/**
+ * Creates a multiple release event semaphore.
+ *
+ * @returns VBox status code.
+ * @param   pSession        The session handle of the caller.
+ * @param   phEventMulti    Where to return the handle to the event semaphore.
+ */
+SUPDECL(int) SUPSemEventMultiCreate(PSUPDRVSESSION pSession, PSUPSEMEVENTMULTI phEventMulti);
+
+/**
+ * Closes a multiple release event semaphore handle.
+ *
+ * @returns VBox status code.
+ * @param   pSession            The session handle of the caller.
+ * @param   hEventMulti         The handle. Nil is quietly ignored.
+ */
+SUPDECL(int) SUPSemEventMultiClose(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEventMulti);
+
+/**
+ * Signals a multiple release event semaphore.
+ *
+ * @returns VBox status code.
+ * @param   pSession            The session handle of the caller.
+ * @param   hEventMulti         The semaphore handle.
+ */
+SUPDECL(int) SUPSemEventMultiSignal(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEventMulti);
+
+/**
+ * Resets a multiple release event semaphore.
+ *
+ * @returns VBox status code.
+ * @param   pSession            The session handle of the caller.
+ * @param   hEventMulti         The semaphore handle.
+ */
+SUPDECL(int) SUPSemEventMultiReset(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEventMulti);
+
+#ifdef IN_RING0
+/**
+ * Waits on a multiple release event semaphore, not interruptible.
+ *
+ * @returns VBox status code.
+ * @param   pSession            The session handle of the caller.
+ * @param   hEventMulti         The semaphore handle.
+ * @param   cMillies            The number of milliseconds to wait.
+ * @remarks Not available in ring-3.
+ */
+SUPDECL(int) SUPSemEventMultiWait(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEventMulti, uint32_t cMillies);
+#endif
+
+/**
+ * Waits on a multiple release event semaphore, interruptible.
+ *
+ * @returns VBox status code.
+ * @param   pSession            The session handle of the caller.
+ * @param   hEventMulti         The semaphore handle.
+ * @param   cMillies            The number of milliseconds to wait.
+ */
+SUPDECL(int) SUPSemEventMultiWaitNoResume(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEventMulti, uint32_t cMillies);
+
 
 #ifdef IN_RING3
 
@@ -857,6 +981,10 @@ typedef enum SUPDRVOBJTYPE
     SUPDRVOBJTYPE_INTERNAL_NETWORK,
     /** Internal network interface. */
     SUPDRVOBJTYPE_INTERNAL_NETWORK_INTERFACE,
+    /** Single release event semaphore. */
+    SUPDRVOBJTYPE_SEM_EVENT,
+    /** Multiple release event semaphore. */
+    SUPDRVOBJTYPE_SEM_EVENT_MULTI,
     /** The first invalid object type in this end. */
     SUPDRVOBJTYPE_END,
     /** The usual 32-bit type size hack. */

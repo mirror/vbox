@@ -37,13 +37,14 @@
 # include <iprt/param.h>
 #endif
 #include <iprt/alloc.h>
+#include <iprt/cpuset.h>
+#include <iprt/handletable.h>
+#include <iprt/mp.h>
+#include <iprt/power.h>
+#include <iprt/process.h>
 #include <iprt/semaphore.h>
 #include <iprt/spinlock.h>
 #include <iprt/thread.h>
-#include <iprt/process.h>
-#include <iprt/mp.h>
-#include <iprt/power.h>
-#include <iprt/cpuset.h>
 #include <iprt/uuid.h>
 #include <VBox/param.h>
 #include <VBox/log.h>
@@ -124,6 +125,8 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+static DECLCALLBACK(int)    supdrvSessionObjHandleRetain(RTHANDLETABLE hHandleTable, void *pvObj, void *pvCtx, void *pvUser);
+static DECLCALLBACK(void)   supdrvSessionObjHandleDelete(RTHANDLETABLE hHandleTable, uint32_t h, void *pvObj, void *pvCtx, void *pvUser);
 static int      supdrvMemAdd(PSUPDRVMEMREF pMem, PSUPDRVSESSION pSession);
 static int      supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEMREFTYPE eType);
 static int      supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDROPEN pReq);
@@ -177,6 +180,17 @@ DECLASM(int)    UNWIND_WRAP(SUPR0MemFree)(PSUPDRVSESSION pSession, RTHCUINTPTR u
 DECLASM(int)    UNWIND_WRAP(SUPR0PageAlloc)(PSUPDRVSESSION pSession, uint32_t cPages, PRTR3PTR ppvR3, PRTHCPHYS paPages);
 DECLASM(int)    UNWIND_WRAP(SUPR0PageFree)(PSUPDRVSESSION pSession, RTR3PTR pvR3);
 //DECLASM(int)    UNWIND_WRAP(SUPR0Printf)(const char *pszFormat, ...);
+DECLASM(int)    UNWIND_WRAP(SUPSemEventCreate)(PSUPDRVSESSION pSession, PSUPSEMEVENT phEvent);
+DECLASM(int)    UNWIND_WRAP(SUPSemEventClose)(PSUPDRVSESSION pSession, SUPSEMEVENT hEvent);
+DECLASM(int)    UNWIND_WRAP(SUPSemEventSignal)(PSUPDRVSESSION pSession, SUPSEMEVENT hEvent);
+DECLASM(int)    UNWIND_WRAP(SUPSemEventWait)(PSUPDRVSESSION pSession, SUPSEMEVENT hEvent, uint32_t cMillies);
+DECLASM(int)    UNWIND_WRAP(SUPSemEventWaitNoResume)(PSUPDRVSESSION pSession, SUPSEMEVENT hEvent, uint32_t cMillies);
+DECLASM(int)    UNWIND_WRAP(SUPSemEventMultiCreate)(PSUPDRVSESSION pSession, PSUPSEMEVENTMULTI phEventMulti);
+DECLASM(int)    UNWIND_WRAP(SUPSemEventMultiClose)(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEventMulti);
+DECLASM(int)    UNWIND_WRAP(SUPSemEventMultiSignal)(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEventMulti);
+DECLASM(int)    UNWIND_WRAP(SUPSemEventMultiReset)(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEventMulti);
+DECLASM(int)    UNWIND_WRAP(SUPSemEventMultiWait)(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEventMulti, uint32_t cMillies);
+DECLASM(int)    UNWIND_WRAP(SUPSemEventMultiWaitNoResume)(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEventMulti, uint32_t cMillies);
 DECLASM(SUPPAGINGMODE) UNWIND_WRAP(SUPR0GetPagingMode)(void);
 DECLASM(void *) UNWIND_WRAP(RTMemAlloc)(size_t cb) RT_NO_THROW;
 DECLASM(void *) UNWIND_WRAP(RTMemAllocZ)(size_t cb) RT_NO_THROW;
@@ -315,6 +329,17 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0PageAlloc",                         (void *)UNWIND_WRAP(SUPR0PageAlloc) },
     { "SUPR0PageFree",                          (void *)UNWIND_WRAP(SUPR0PageFree) },
     { "SUPR0Printf",                            (void *)SUPR0Printf }, /** @todo needs wrapping? */
+    { "SUPSemEventCreate",                      (void *)UNWIND_WRAP(SUPSemEventCreate) },
+    { "SUPSemEventClose",                       (void *)UNWIND_WRAP(SUPSemEventClose) },
+    { "SUPSemEventSignal",                      (void *)UNWIND_WRAP(SUPSemEventSignal) },
+    { "SUPSemEventWait",                        (void *)UNWIND_WRAP(SUPSemEventWait) },
+    { "SUPSemEventWaitNoResume",                (void *)UNWIND_WRAP(SUPSemEventWaitNoResume) },
+    { "SUPSemEventMultiCreate",                 (void *)UNWIND_WRAP(SUPSemEventMultiCreate) },
+    { "SUPSemEventMultiClose",                  (void *)UNWIND_WRAP(SUPSemEventMultiClose) },
+    { "SUPSemEventMultiSignal",                 (void *)UNWIND_WRAP(SUPSemEventMultiSignal) },
+    { "SUPSemEventMultiReset",                  (void *)UNWIND_WRAP(SUPSemEventMultiReset) },
+    { "SUPSemEventMultiWait",                   (void *)UNWIND_WRAP(SUPSemEventMultiWait) },
+    { "SUPSemEventMultiWaitNoResume",           (void *)UNWIND_WRAP(SUPSemEventMultiWaitNoResume) },
     { "SUPR0GetPagingMode",                     (void *)UNWIND_WRAP(SUPR0GetPagingMode) },
     { "SUPR0EnableVTx",                         (void *)SUPR0EnableVTx },
     { "RTMemAlloc",                             (void *)UNWIND_WRAP(RTMemAlloc) },
@@ -648,32 +673,39 @@ int VBOXCALL supdrvCreateSession(PSUPDRVDEVEXT pDevExt, bool fUser, PSUPDRVSESSI
         rc = RTSpinlockCreate(&pSession->Spinlock);
         if (!rc)
         {
-            Assert(pSession->Spinlock != NIL_RTSPINLOCK);
-            pSession->pDevExt           = pDevExt;
-            pSession->u32Cookie         = BIRD_INV;
-            /*pSession->pLdrUsage         = NULL;
-            pSession->pVM               = NULL;
-            pSession->pUsage            = NULL;
-            pSession->pGip              = NULL;
-            pSession->fGipReferenced    = false;
-            pSession->Bundle.cUsed      = 0; */
-            pSession->Uid               = NIL_RTUID;
-            pSession->Gid               = NIL_RTGID;
-            if (fUser)
+            rc = RTHandleTableCreateEx(&pSession->hHandleTable,
+                                       RTHANDLETABLE_FLAGS_LOCKED | RTHANDLETABLE_FLAGS_CONTEXT,
+                                       1 /*uBase*/, 32768 /*cMax*/, supdrvSessionObjHandleRetain, pSession);
+            if (RT_SUCCESS(rc))
             {
-                pSession->Process       = RTProcSelf();
-                pSession->R0Process     = RTR0ProcHandleSelf();
-            }
-            else
-            {
-                pSession->Process       = NIL_RTPROCESS;
-                pSession->R0Process     = NIL_RTR0PROCESS;
+                Assert(pSession->Spinlock != NIL_RTSPINLOCK);
+                pSession->pDevExt           = pDevExt;
+                pSession->u32Cookie         = BIRD_INV;
+                /*pSession->pLdrUsage         = NULL;
+                pSession->pVM               = NULL;
+                pSession->pUsage            = NULL;
+                pSession->pGip              = NULL;
+                pSession->fGipReferenced    = false;
+                pSession->Bundle.cUsed      = 0; */
+                pSession->Uid               = NIL_RTUID;
+                pSession->Gid               = NIL_RTGID;
+                if (fUser)
+                {
+                    pSession->Process       = RTProcSelf();
+                    pSession->R0Process     = RTR0ProcHandleSelf();
+                }
+                else
+                {
+                    pSession->Process       = NIL_RTPROCESS;
+                    pSession->R0Process     = NIL_RTR0PROCESS;
+                }
+
+                LogFlow(("Created session %p initial cookie=%#x\n", pSession, pSession->u32Cookie));
+                return VINF_SUCCESS;
             }
 
-            LogFlow(("Created session %p initial cookie=%#x\n", pSession, pSession->u32Cookie));
-            return VINF_SUCCESS;
+            RTSpinlockDestroy(pSession->Spinlock);
         }
-
         RTMemFree(pSession);
         *ppSession = NULL;
         Log(("Failed to create spinlock, rc=%d!\n", rc));
@@ -720,6 +752,7 @@ void VBOXCALL supdrvCloseSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
  */
 void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
 {
+    int                 rc;
     PSUPDRVBUNDLE       pBundle;
     LogFlow(("supdrvCleanupSession: pSession=%p\n", pSession));
 
@@ -727,6 +760,13 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
      * Remove logger instances related to this session.
      */
     RTLogSetDefaultInstanceThread(NULL, (uintptr_t)pSession);
+
+    /*
+     * Destroy the handle table.
+     */
+    rc = RTHandleTableDestroy(pSession->hHandleTable, supdrvSessionObjHandleDelete, pSession);
+    AssertRC(rc);
+    pSession->hHandleTable = NIL_RTHANDLETABLE;
 
     /*
      * Release object references made in this session.
@@ -914,6 +954,43 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
         pSession->fGipReferenced = 0;
     }
     Log2(("umapping GIP - done\n"));
+}
+
+
+/**
+ * RTHandleTableDestroy callback used by supdrvCleanupSession.
+ *
+ * @returns IPRT status code, see SUPR0ObjAddRef.
+ * @param   hHandleTable    The handle table handle. Ignored.
+ * @param   pvObj           The object pointer.
+ * @param   pvCtx           Context. NULL.
+ * @param   pvUser          Session pointer.
+ */
+static DECLCALLBACK(int) supdrvSessionObjHandleRetain(RTHANDLETABLE hHandleTable, void *pvObj, void *pvCtx, void *pvUser)
+{
+    Assert(!pvCtx);
+    NOREF(pvCtx);
+    NOREF(hHandleTable);
+    return SUPR0ObjAddRef(pvObj, (PSUPDRVSESSION)pvUser);
+}
+
+
+/**
+ * RTHandleTableDestroy callback used by supdrvCleanupSession.
+ *
+ * @param   hHandleTable    The handle table handle. Ignored.
+ * @param   h               The handle value. Ignored.
+ * @param   pvObj           The object pointer.
+ * @param   pvCtx           Context. NULL.
+ * @param   pvUser          Session pointer.
+ */
+static DECLCALLBACK(void) supdrvSessionObjHandleDelete(RTHANDLETABLE hHandleTable, uint32_t h, void *pvObj, void *pvCtx, void *pvUser)
+{
+    Assert(!pvCtx);
+    NOREF(pvCtx);
+    NOREF(h);
+    NOREF(hHandleTable);
+    SUPR0ObjRelease(pvObj, (PSUPDRVSESSION)pvUser);
 }
 
 
@@ -3179,6 +3256,353 @@ SUPR0DECL(int) SUPR0ComponentQueryFactory(PSUPDRVSESSION pSession, const char *p
 
         RTSemFastMutexRelease(pSession->pDevExt->mtxComponentFactory);
     }
+    return rc;
+}
+
+
+/**
+ * Destructor for objects created by SUPSemEventCreate.
+ *
+ * @param   pvObj               The object handle.
+ * @param   pvUser1             The IPRT event handle.
+ * @param   pvUser2             NULL.
+ */
+static DECLCALLBACK(void) supR0SemEventDestructor(void *pvObj, void *pvUser1, void *pvUser2)
+{
+    Assert(pvUser2 == NULL);
+    NOREF(pvObj);
+    RTSemEventDestroy((RTSEMEVENT)pvUser1);
+}
+
+
+SUPDECL(int) SUPSemEventCreate(PSUPDRVSESSION pSession, PSUPSEMEVENT phEvent)
+{
+    int         rc;
+    RTSEMEVENT  hEventReal;
+
+    /*
+     * Input validation.
+     */
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(phEvent, VERR_INVALID_POINTER);
+
+    /*
+     * Create the event semaphore object.
+     */
+    rc = RTSemEventCreate(&hEventReal);
+    if (RT_SUCCESS(rc))
+    {
+        void *pvObj = SUPR0ObjRegister(pSession, SUPDRVOBJTYPE_SEM_EVENT, supR0SemEventDestructor, hEventReal, NULL);
+        if (pvObj)
+        {
+            uint32_t h32;
+            rc = RTHandleTableAllocWithCtx(pSession->hHandleTable, pvObj, SUPDRV_HANDLE_CTX_EVENT, &h32);
+            if (RT_SUCCESS(rc))
+            {
+                *phEvent = (SUPSEMEVENT)(uintptr_t)h32;
+                return VINF_SUCCESS;
+            }
+            SUPR0ObjRelease(pvObj, pSession);
+        }
+        else
+            RTSemEventDestroy(hEventReal);
+    }
+    return rc;
+}
+
+
+SUPDECL(int) SUPSemEventClose(PSUPDRVSESSION pSession, SUPSEMEVENT hEvent)
+{
+    uint32_t    h32;
+    PSUPDRVOBJ  pObj;
+
+    /*
+     * Input validation.
+     */
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    if (hEvent == NIL_SUPSEMEVENT)
+        return VINF_SUCCESS;
+    h32 = (uint32_t)(uintptr_t)hEvent;
+    if (h32 != (uintptr_t)hEvent)
+        return VERR_INVALID_HANDLE;
+
+    /*
+     * Do the job.
+     */
+    pObj = (PSUPDRVOBJ)RTHandleTableFreeWithCtx(pSession->hHandleTable, h32, SUPDRV_HANDLE_CTX_EVENT);
+    if (!pObj)
+        return VERR_INVALID_HANDLE;
+
+    Assert(pObj->cUsage >= 2);
+    SUPR0ObjRelease(pObj, pSession);        /* The free call above. */
+    return SUPR0ObjRelease(pObj, pSession); /* The handle table reference. */
+}
+
+
+SUPDECL(int) SUPSemEventSignal(PSUPDRVSESSION pSession, SUPSEMEVENT hEvent)
+{
+    int         rc;
+    uint32_t    h32;
+    PSUPDRVOBJ  pObj;
+
+    /*
+     * Input validation.
+     */
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    h32 = (uint32_t)(uintptr_t)hEvent;
+    if (h32 != (uintptr_t)hEvent)
+        return VERR_INVALID_HANDLE;
+    pObj = (PSUPDRVOBJ)RTHandleTableLookupWithCtx(pSession->hHandleTable, h32, SUPDRV_HANDLE_CTX_EVENT);
+    if (!pObj)
+        return VERR_INVALID_HANDLE;
+
+    /*
+     * Do the job.
+     */
+    rc = RTSemEventSignal((RTSEMEVENT)pObj->pvUser1);
+
+    SUPR0ObjRelease(pObj, pSession);
+    return rc;
+}
+
+
+SUPDECL(int) SUPSemEventWait(PSUPDRVSESSION pSession, SUPSEMEVENT hEvent, uint32_t cMillies)
+{
+    int         rc;
+    uint32_t    h32;
+    PSUPDRVOBJ  pObj;
+
+    /*
+     * Input validation.
+     */
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    h32 = (uint32_t)(uintptr_t)hEvent;
+    if (h32 != (uintptr_t)hEvent)
+        return VERR_INVALID_HANDLE;
+    pObj = (PSUPDRVOBJ)RTHandleTableLookupWithCtx(pSession->hHandleTable, h32, SUPDRV_HANDLE_CTX_EVENT);
+    if (!pObj)
+        return VERR_INVALID_HANDLE;
+
+    /*
+     * Do the job.
+     */
+    rc = RTSemEventWait((RTSEMEVENT)pObj->pvUser1, cMillies);
+
+    SUPR0ObjRelease(pObj, pSession);
+    return rc;
+}
+
+
+SUPDECL(int) SUPSemEventWaitNoResume(PSUPDRVSESSION pSession, SUPSEMEVENT hEvent, uint32_t cMillies)
+{
+    int         rc;
+    uint32_t    h32;
+    PSUPDRVOBJ  pObj;
+
+    /*
+     * Input validation.
+     */
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    h32 = (uint32_t)(uintptr_t)hEvent;
+    if (h32 != (uintptr_t)hEvent)
+        return VERR_INVALID_HANDLE;
+    pObj = (PSUPDRVOBJ)RTHandleTableLookupWithCtx(pSession->hHandleTable, h32, SUPDRV_HANDLE_CTX_EVENT);
+    if (!pObj)
+        return VERR_INVALID_HANDLE;
+
+    /*
+     * Do the job.
+     */
+    rc = RTSemEventWaitNoResume((RTSEMEVENT)pObj->pvUser1, cMillies);
+
+    SUPR0ObjRelease(pObj, pSession);
+    return rc;
+}
+
+
+/**
+ * Destructor for objects created by SUPSemEventMultiCreate.
+ *
+ * @param   pvObj               The object handle.
+ * @param   pvUser1             The IPRT event handle.
+ * @param   pvUser2             NULL.
+ */
+static DECLCALLBACK(void) supR0SemEventMultiDestructor(void *pvObj, void *pvUser1, void *pvUser2)
+{
+    Assert(pvUser2 == NULL);
+    NOREF(pvObj);
+    RTSemEventMultiDestroy((RTSEMEVENTMULTI)pvUser1);
+}
+
+
+SUPDECL(int) SUPSemEventMultiCreate(PSUPDRVSESSION pSession, PSUPSEMEVENTMULTI phEventMulti)
+{
+    int             rc;
+    RTSEMEVENTMULTI hEventMultReal;
+
+    /*
+     * Input validation.
+     */
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(phEventMulti, VERR_INVALID_POINTER);
+
+    /*
+     * Create the event semaphore object.
+     */
+    rc = RTSemEventMultiCreate(&hEventMultReal);
+    if (RT_SUCCESS(rc))
+    {
+        void *pvObj = SUPR0ObjRegister(pSession, SUPDRVOBJTYPE_SEM_EVENT_MULTI, supR0SemEventMultiDestructor, hEventMultReal, NULL);
+        if (pvObj)
+        {
+            uint32_t h32;
+            rc = RTHandleTableAllocWithCtx(pSession->hHandleTable, pvObj, &h32, SUPDRV_HANDLE_CTX_EVENT_MULTI);
+            if (RT_SUCCESS(rc))
+            {
+                *phEventMulti = (SUPSEMEVENTMULTI)(uintptr_t)h32;
+                return VINF_SUCCESS;
+            }
+            SUPR0ObjRelease(pvObj, pSession);
+        }
+        else
+            RTSemEventMultiDestroy(hEventMultReal);
+    }
+    return rc;
+}
+
+
+SUPDECL(int) SUPSemEventMultiClose(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEventMulti)
+{
+    uint32_t    h32;
+    PSUPDRVOBJ  pObj;
+
+    /*
+     * Input validation.
+     */
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    if (hEventMulti == NIL_SUPSEMEVENTMULTI)
+        return VINF_SUCCESS;
+    h32 = (uint32_t)(uintptr_t)hEventMulti;
+    if (h32 != (uintptr_t)hEventMulti)
+        return VERR_INVALID_HANDLE;
+
+    /*
+     * Do the job.
+     */
+    pObj = (PSUPDRVOBJ)RTHandleTableFreeWithCtx(pSession->hHandleTable, h32, SUPDRV_HANDLE_CTX_EVENT_MULTI);
+    if (!pObj)
+        return VERR_INVALID_HANDLE;
+
+    Assert(pObj->cUsage >= 2);
+    SUPR0ObjRelease(pObj, pSession);        /* The free call above. */
+    return SUPR0ObjRelease(pObj, pSession); /* The handle table reference. */
+}
+
+
+SUPDECL(int) SUPSemEventMultiSignal(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEventMulti)
+{
+    int         rc;
+    uint32_t    h32;
+    PSUPDRVOBJ  pObj;
+
+    /*
+     * Input validation.
+     */
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    h32 = (uint32_t)(uintptr_t)hEventMulti;
+    if (h32 != (uintptr_t)hEventMulti)
+        return VERR_INVALID_HANDLE;
+    pObj = (PSUPDRVOBJ)RTHandleTableLookupWithCtx(pSession->hHandleTable, h32, SUPDRV_HANDLE_CTX_EVENT_MULTI);
+    if (!pObj)
+        return VERR_INVALID_HANDLE;
+
+    /*
+     * Do the job.
+     */
+    rc = RTSemEventMultiSignal((RTSEMEVENTMULTI)pObj->pvUser1);
+
+    SUPR0ObjRelease(pObj, pSession);
+    return rc;
+}
+
+
+SUPDECL(int) SUPSemEventMultiReset(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEventMulti)
+{
+    int         rc;
+    uint32_t    h32;
+    PSUPDRVOBJ  pObj;
+
+    /*
+     * Input validation.
+     */
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    h32 = (uint32_t)(uintptr_t)hEventMulti;
+    if (h32 != (uintptr_t)hEventMulti)
+        return VERR_INVALID_HANDLE;
+    pObj = (PSUPDRVOBJ)RTHandleTableLookupWithCtx(pSession->hHandleTable, h32, SUPDRV_HANDLE_CTX_EVENT_MULTI);
+    if (!pObj)
+        return VERR_INVALID_HANDLE;
+
+    /*
+     * Do the job.
+     */
+    rc = RTSemEventMultiReset((RTSEMEVENTMULTI)pObj->pvUser1);
+
+    SUPR0ObjRelease(pObj, pSession);
+    return rc;
+}
+
+
+SUPDECL(int) SUPSemEventMultiWait(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEventMulti, uint32_t cMillies)
+{
+    int         rc;
+    uint32_t    h32;
+    PSUPDRVOBJ  pObj;
+
+    /*
+     * Input validation.
+     */
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    h32 = (uint32_t)(uintptr_t)hEventMulti;
+    if (h32 != (uintptr_t)hEventMulti)
+        return VERR_INVALID_HANDLE;
+    pObj = (PSUPDRVOBJ)RTHandleTableLookupWithCtx(pSession->hHandleTable, h32, SUPDRV_HANDLE_CTX_EVENT_MULTI);
+    if (!pObj)
+        return VERR_INVALID_HANDLE;
+
+    /*
+     * Do the job.
+     */
+    rc = RTSemEventMultiWait((RTSEMEVENTMULTI)pObj->pvUser1, cMillies);
+
+    SUPR0ObjRelease(pObj, pSession);
+    return rc;
+}
+
+
+SUPDECL(int) SUPSemEventMultiWaitNoResume(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEventMulti, uint32_t cMillies)
+{
+    int         rc;
+    uint32_t    h32;
+    PSUPDRVOBJ  pObj;
+
+    /*
+     * Input validation.
+     */
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    h32 = (uint32_t)(uintptr_t)hEventMulti;
+    if (h32 != (uintptr_t)hEventMulti)
+        return VERR_INVALID_HANDLE;
+    pObj = (PSUPDRVOBJ)RTHandleTableLookupWithCtx(pSession->hHandleTable, h32, SUPDRV_HANDLE_CTX_EVENT_MULTI);
+    if (!pObj)
+        return VERR_INVALID_HANDLE;
+
+    /*
+     * Do the job.
+     */
+    rc = RTSemEventMultiWaitNoResume((RTSEMEVENTMULTI)pObj->pvUser1, cMillies);
+
+    SUPR0ObjRelease(pObj, pSession);
     return rc;
 }
 

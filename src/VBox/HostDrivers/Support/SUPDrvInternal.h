@@ -308,6 +308,16 @@ __END_DECLS
 #define SUPDRV_ERR_VERSION_MISMATCH (-11)
 
 
+/** @name Context values for the per-session handle tables.
+ * The context value is used to distiguish between the different kinds of
+ * handles, making the handle table API do all the work.
+ * @{ */
+/** Handle context value for single release event handles.  */
+#define SUPDRV_HANDLE_CTX_EVENT         ((void *)(uintptr_t)(SUPDRVOBJTYPE_SEM_EVENT))
+/** Handle context value for multiple release event handles.  */
+#define SUPDRV_HANDLE_CTX_EVENT_MULTI   ((void *)(uintptr_t)(SUPDRVOBJTYPE_SEM_EVENT_MULTI))
+/** @} */
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -493,12 +503,13 @@ typedef struct SUPDRVSESSION
     /** Session Cookie. */
     uint32_t                        u32Cookie;
 
-    /** Load usage records. (protected by SUPDRVDEVEXT::mtxLdr) */
-    PSUPDRVLDRUSAGE volatile        pLdrUsage;
     /** The VM associated with the session. */
     PVM                             pVM;
-    /** List of generic usage records. (protected by SUPDRVDEVEXT::SpinLock) */
-    PSUPDRVUSAGE volatile           pUsage;
+    /** Handle table for IPRT semaphore wrapper APIs.
+     * Programmable from R0 and R3. */
+    RTHANDLETABLE                   hHandleTable;
+    /** Load usage records. (protected by SUPDRVDEVEXT::mtxLdr) */
+    PSUPDRVLDRUSAGE volatile        pLdrUsage;
 
     /** Spinlock protecting the bundles and the GIP members. */
     RTSPINLOCK                      Spinlock;
@@ -508,6 +519,8 @@ typedef struct SUPDRVSESSION
     uint32_t                        fGipReferenced;
     /** Bundle of locked memory objects. */
     SUPDRVBUNDLE                    Bundle;
+    /** List of generic usage records. (protected by SUPDRVDEVEXT::SpinLock) */
+    PSUPDRVUSAGE volatile           pUsage;
 
     /** The user id of the session. (Set by the OS part.) */
     RTUID                           Uid;
