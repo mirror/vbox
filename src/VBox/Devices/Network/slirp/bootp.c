@@ -244,7 +244,7 @@ static void bootp_reply(PNATState pData, struct mbuf *m0)
         RTStrPrintf((char*)rbp->bp_file, sizeof(rbp->bp_file), "%s", bootp_filename);
 
     /* Address/port of the DHCP server. */
-#ifndef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
+#ifndef VBOX_WITH_NAT_SERVICE
     saddr.sin_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS);
 #else
     saddr.sin_addr.s_addr = special_addr.s_addr;
