@@ -1080,12 +1080,12 @@ typedef struct SUPSEMOP
     {
         struct
         {
-            /** The operation. */
-            uint32_t        uOp;
             /** The semaphore type. */
             uint32_t        uType;
             /** The semaphore handle. */
             uint32_t        hSem;
+            /** The operation. */
+            uint32_t        uOp;
             /** The number of milliseconds to wait if it's a wait operation. */
             uint32_t        cMillies;
         } In;
