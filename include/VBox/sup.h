@@ -327,6 +327,10 @@ SUPDECL(int) SUPSemEventCreate(PSUPDRVSESSION pSession, PSUPSEMEVENT phEvent);
  * Closes a single release event semaphore handle.
  *
  * @returns VBox status code.
+ * @retval  VINF_OBJECT_DESTROYED if the semaphore was destroyed.
+ * @retval  VINF_SUCCESS if the handle was successfully closed but the sempahore
+ *          object remained alive because of other references.
+ *
  * @param   pSession            The session handle of the caller.
  * @param   hEvent              The handle. Nil is quietly ignored.
  */
@@ -385,6 +389,10 @@ SUPDECL(int) SUPSemEventMultiCreate(PSUPDRVSESSION pSession, PSUPSEMEVENTMULTI p
  * Closes a multiple release event semaphore handle.
  *
  * @returns VBox status code.
+ * @retval  VINF_OBJECT_DESTROYED if the semaphore was destroyed.
+ * @retval  VINF_SUCCESS if the handle was successfully closed but the sempahore
+ *          object remained alive because of other references.
+ *
  * @param   pSession            The session handle of the caller.
  * @param   hEventMulti         The handle. Nil is quietly ignored.
  */
