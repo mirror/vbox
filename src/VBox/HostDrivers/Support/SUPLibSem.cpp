@@ -66,7 +66,7 @@ DECLINLINE(int) supSemOp(PSUPDRVSESSION pSession, uint32_t uType, uintptr_t hSem
     Req.u.In.hSem               = (uint32_t)hSem;
     AssertReturn(Req.u.In.hSem == hSem, VERR_INVALID_HANDLE);
     Req.u.In.uOp                = uOp;
-    Req.u.In.cMillies           = 0;
+    Req.u.In.cMillies           = cMillies;
     int rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_SEM_OP, &Req, sizeof(Req));
     if (RT_SUCCESS(rc))
         rc = Req.Hdr.rc;
