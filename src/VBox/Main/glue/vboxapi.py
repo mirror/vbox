@@ -44,47 +44,51 @@ class PlatformMSCOM:
                 if self.__dict__['_depth'] > 4:
                     raise AttributeError
 
-            def __getattr__(self, attr):
-                if attr.startswith("__"):
-                    raise AttributeError
+        def __getattr__(self, attr):
+            import win32com
+            from win32com.client import constants
+                
+            if attr.startswith("__"):
+                raise AttributeError
 
-                consts = self.__dict__['_consts']
-                fake = consts.get(attr, None)
-                if fake != None:
-                    return fake  
-                try:
-                    name = makeFullName(self, attr)
-                    return win32com.client.constants.__getattr__(name)
-                except AttributeError,e:
-                    fake = ConstantFake(self, attr)
-                    consts[attr] = fake
-                    return fake     
+            consts = self.__dict__['_consts']
+            
+            fake = consts.get(attr, None)
+            if fake != None:
+               return fake  
+            try:
+               name = self.__dict__['_name']
+               parent = self.__dict__['_parent']
+               while parent != None:                  
+                  if parent._name is not None:
+                    name = parent._name+'_'+name
+                  parent = parent._parent
+                
+               if name is not None:
+                  name += "_" + attr
+               else:
+                  name = attr
+               print "ask",name
+               return win32com.client.constants.__getattr__(name)
+            except AttributeError,e:
+               fake = PlatformMSCOM.ConstantFake(self, attr)
+               consts[attr] = fake
+               return fake 
+
 
     class InterfacesWrapper:
             def __init__(self):
                 self.__dict__['_rootFake'] = PlatformMSCOM.ConstantFake(None, None)
 
             def __getattr__(self, a):
+                import win32com
+                from win32com.client import constants
                 if a.startswith("__"):
                     raise AttributeError
                 try:
                     return win32com.client.constants.__getattr__(a)
                 except AttributeError,e:
                     return self.__dict__['_rootFake'].__getattr__(a)
-
-    def makeFullName(fake, attr):
-            name = fake._name
-            parent = fake._parent
-            while parent != None:
-                if parent._name is not None:
-                    name = parent._name+'_'+name
-                parent = parent._parent
-                
-            if name is not None:
-                name += "_" + attr
-            else:
-                name = attr
-            return name
 
     def __init__(self, params):
             sys.path.append(VboxSdkDir+'/bindings/mscom/python/')
