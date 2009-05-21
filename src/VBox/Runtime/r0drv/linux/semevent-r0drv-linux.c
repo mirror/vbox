@@ -92,8 +92,8 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
     /*
      * Invalidate it and signal the object just in case.
      */
-    ASMAtomicIncU32(&pEventInt->u32Magic);
-    ASMAtomicXchgU32(&pEventInt->fState, 0);
+    ASMAtomicWriteU32(&pEventInt->u32Magic, ~RTSEMEVENT_MAGIC);
+    ASMAtomicWriteU32(&pEventInt->fState, 0);
     Assert(!waitqueue_active(&pEventInt->Head));
     wake_up_all(&pEventInt->Head);
     RTMemFree(pEventInt);
@@ -119,7 +119,7 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
     /*
      * Signal the event object.
      */
-    ASMAtomicXchgU32(&pEventInt->fState, 1);
+    ASMAtomicWriteU32(&pEventInt->fState, 1);
     wake_up(&pEventInt->Head);
 
     return VINF_SUCCESS;
