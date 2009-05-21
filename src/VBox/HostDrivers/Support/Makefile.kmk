@@ -81,6 +81,7 @@ SUPR3_INCS         := $(PATH_SUB_CURRENT)
 SUPR3_INCS.l4       = $(L4_INCDIR)
 SUPR3_SOURCES       = \
 	SUPLib.cpp \
+	SUPLibSem.cpp \
 	SUPR3HardenedIPRT.cpp \
 	SUPR3HardenedVerify.cpp \
 	$(KBUILD_TARGET)/SUPLib-$(KBUILD_TARGET).cpp

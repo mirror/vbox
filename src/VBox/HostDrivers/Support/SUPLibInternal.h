@@ -96,17 +96,6 @@
 
 
 /*******************************************************************************
-*   Global Variables                                                           *
-*******************************************************************************/
-/** The negotiated interrupt number. */
-extern DECLHIDDEN(uint8_t)        g_uchInterruptNo;
-/** The negotiated cookie. */
-extern DECLHIDDEN(uint32_t)       g_u32Cookie;
-/** The negotiated cookie. */
-extern DECLHIDDEN(uint32_t)       g_u32CookieSession;
-
-
-/*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 /**
@@ -239,6 +228,14 @@ typedef SUPPREINITDATA const *PCSUPPREINITDATA;
 typedef DECLCALLBACK(int) FNSUPR3PREINIT(PSUPPREINITDATA pPreInitData, uint32_t fFlags);
 /** Pointer to supR3PreInit. */
 typedef FNSUPR3PREINIT *PFNSUPR3PREINIT;
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+extern DECLHIDDEN(uint32_t)     g_u32Cookie;
+extern DECLHIDDEN(uint32_t)     g_u32SessionCookie;
+extern DECLHIDDEN(SUPLIBDATA)   g_supLibData;
 
 
 /*******************************************************************************
