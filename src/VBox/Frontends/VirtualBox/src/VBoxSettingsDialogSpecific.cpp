@@ -253,8 +253,8 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
     {
         prefPage = new VBoxVMSettingsSystem();
         connect (prefPage, SIGNAL (tableChanged()), this, SLOT (resetFirstRunFlag()));
-        addItem (":/chipset_32px.png", ":/chipset_32px.png",
-                 ":/chipset_16px.png", ":/chipset_16px.png",
+        addItem (":/chipset_32px.png", ":/chipset_disabled_32px.png",
+                 ":/chipset_16px.png", ":/chipset_disabled_16px.png",
                  SystemId, "#system", prefPage);
     }
 

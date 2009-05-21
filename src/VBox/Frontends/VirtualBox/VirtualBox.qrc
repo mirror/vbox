@@ -337,5 +337,7 @@
     <file alias="disconnect_16px.png">images/disconnect_16px.png</file>
     <file alias="chipset_16px.png">images/chipset_16px.png</file>
     <file alias="chipset_32px.png">images/chipset_32px.png</file>
+    <file alias="chipset_disabled_16px.png">images/chipset_disabled_16px.png</file>
+    <file alias="chipset_disabled_32px.png">images/chipset_disabled_32px.png</file>
  </qresource>
  </RCC>
