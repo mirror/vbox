@@ -1632,6 +1632,100 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             return 0;
         }
 
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_SEM_CREATE):
+        {
+            /* validate */
+            PSUPSEMCREATE pReq = (PSUPSEMCREATE)pReqHdr;
+            REQ_CHECK_SIZES_EX(SUP_IOCTL_SEM_CREATE, SUP_IOCTL_SEM_CREATE_SIZE_IN, SUP_IOCTL_SEM_CREATE_SIZE_OUT);
+
+            /* execute */
+            switch (pReq->u.In.uType)
+            {
+                case SUP_SEM_TYPE_EVENT:
+                {
+                    SUPSEMEVENT hEvent;
+                    pReq->Hdr.rc = SUPSemEventCreate(pSession, &hEvent);
+                    pReq->u.Out.hSem = (uint32_t)(uintptr_t)hEvent;
+                    break;
+                }
+
+                case SUP_SEM_TYPE_EVENT_MULTI:
+                {
+                    SUPSEMEVENTMULTI hEventMulti;
+                    pReq->Hdr.rc = SUPSemEventMultiCreate(pSession, &hEventMulti);
+                    pReq->u.Out.hSem = (uint32_t)(uintptr_t)hEventMulti;
+                    break;
+                }
+
+                default:
+                    pReq->Hdr.rc = VERR_INVALID_PARAMETER;
+                    break;
+            }
+            return 0;
+        }
+
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_SEM_OP):
+        {
+            /* validate */
+            PSUPSEMOP pReq = (PSUPSEMOP)pReqHdr;
+            REQ_CHECK_SIZES_EX(SUP_IOCTL_SEM_OP, SUP_IOCTL_SEM_OP_SIZE_IN, SUP_IOCTL_SEM_OP_SIZE_OUT);
+
+            /* execute */
+            switch (pReq->u.In.uType)
+            {
+                case SUP_SEM_TYPE_EVENT:
+                {
+                    SUPSEMEVENT hEvent = (SUPSEMEVENT)(uintptr_t)pReq->u.In.hSem;
+                    switch (pReq->u.In.uOp)
+                    {
+                        case SUPSEMOP_WAIT:
+                            pReq->Hdr.rc = SUPSemEventWaitNoResume(pSession, hEvent, pReq->u.In.cMillies);
+                            break;
+                        case SUPSEMOP_SIGNAL:
+                            pReq->Hdr.rc = SUPSemEventSignal(pSession, hEvent);
+                            break;
+                        case SUPSEMOP_CLOSE:
+                            pReq->Hdr.rc = SUPSemEventClose(pSession, hEvent);
+                            break;
+                        case SUPSEMOP_RESET:
+                        default:
+                            pReq->Hdr.rc = VERR_INVALID_FUNCTION;
+                            break;
+                    }
+                    break;
+                }
+
+                case SUP_SEM_TYPE_EVENT_MULTI:
+                {
+                    SUPSEMEVENTMULTI hEventMulti = (SUPSEMEVENTMULTI)(uintptr_t)pReq->u.In.hSem;
+                    switch (pReq->u.In.uOp)
+                    {
+                        case SUPSEMOP_WAIT:
+                            pReq->Hdr.rc = SUPSemEventMultiWaitNoResume(pSession, hEventMulti, pReq->u.In.cMillies);
+                            break;
+                        case SUPSEMOP_SIGNAL:
+                            pReq->Hdr.rc = SUPSemEventMultiSignal(pSession, hEventMulti);
+                            break;
+                        case SUPSEMOP_CLOSE:
+                            pReq->Hdr.rc = SUPSemEventMultiClose(pSession, hEventMulti);
+                            break;
+                        case SUPSEMOP_RESET:
+                            pReq->Hdr.rc = SUPSemEventMultiReset(pSession, hEventMulti);
+                            break;
+                        default:
+                            pReq->Hdr.rc = VERR_INVALID_FUNCTION;
+                            break;
+                    }
+                    break;
+                }
+
+                default:
+                    pReq->Hdr.rc = VERR_INVALID_PARAMETER;
+                    break;
+            }
+            return 0;
+        }
+
         default:
             Log(("Unknown IOCTL %#lx\n", (long)uIOCtl));
             break;
