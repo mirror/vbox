@@ -84,6 +84,8 @@ SPU * crSPULoad( SPU *child, int id, char *name, char *dir, void *server )
         {
                 crError( "Couldn't load the SPU entry point \"%s\" from SPU \"%s\"!",
                                 SPU_ENTRY_POINT_NAME, name );
+                crSPUUnloadChain(the_spu);
+                return NULL;
         }
 
         /* This basicall calls the SPU's SPULoad() function */
@@ -94,6 +96,8 @@ SPU * crSPULoad( SPU *child, int id, char *name, char *dir, void *server )
                                    &(the_spu->spu_flags)) )
         {
                 crError( "I found the SPU \"%s\", but loading it failed!", name );
+                crSPUUnloadChain(the_spu);
+                return NULL;
         }
 #ifdef IN_GUEST
         if (crStrcmp(the_spu->name,"error"))
@@ -124,6 +128,7 @@ SPU * crSPULoad( SPU *child, int id, char *name, char *dir, void *server )
         the_spu->function_table = the_spu->init( id, child, the_spu, 0, 1 );
         if (!the_spu->function_table) {
                 crDebug("Failed to init %s SPU", name);
+                crSPUUnloadChain(the_spu);
                 return NULL;
         }
         __buildDispatch( the_spu );
