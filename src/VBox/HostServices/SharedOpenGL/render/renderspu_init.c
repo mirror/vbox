@@ -323,6 +323,7 @@ renderSPUInit( int id, SPU *child, SPU *self,
     render_spu.gather_conns = NULL;
 
     crDebug("Render SPU: ---------- End of Init -------------");
+
     return &render_functions;
 }
 
@@ -385,6 +386,8 @@ static int renderSPUCleanup(void)
     CloseHandle(render_spu.hWinThreadReadyEvent);
     render_spu.hWinThreadReadyEvent = NULL;
 #endif
+
+    crUnloadOpenGL();
 
     return 1;
 }

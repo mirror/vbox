@@ -118,8 +118,6 @@ static void crServerTearDown( void )
     crSPUUnloadChain(cr_server.head_spu);
     cr_server.head_spu = NULL;
 #endif
-
-    crUnloadOpenGL();
 }
 
 static void crServerClose( unsigned int id )
