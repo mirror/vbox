@@ -91,6 +91,16 @@ typedef FNRTONCE *PFNRTONCE;
  */
 RTDECL(int) RTOnce(PRTONCE pOnce, PFNRTONCE pfnOnce, void *pvUser1, void *pvUser2);
 
+/**
+ * Resets an execute once variable.
+ *
+ * The caller is responsible for making sure there are no concurrent accesses to
+ * the execute once variable.
+ *
+ * @param   pOnce           Pointer to the execute once variable.
+ */
+RTDECL(void) RTOnceReset(PRTONCE pOnce);
+
 /** @} */
 
 __END_DECLS

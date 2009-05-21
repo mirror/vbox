@@ -159,3 +159,16 @@ RTDECL(int) RTOnce(PRTONCE pOnce, PFNRTONCE pfnOnce, void *pvUser1, void *pvUser
     return ASMAtomicUoReadS32(&pOnce->rc);
 }
 
+
+RTDECL(void) RTOnceReset(PRTONCE pOnce)
+{
+    /* Cannot be done while busy! */
+    AssertPtr(pOnce);
+    Assert(pOnce->hEventMulti == NIL_RTSEMEVENTMULTI);
+    Assert(pOnce->iState != 1);
+
+    /* Do the same as RTONCE_INITIALIZER does. */
+    ASMAtomicWriteS32(&pOnce->rc, VERR_INTERNAL_ERROR);
+    ASMAtomicWriteS32(&pOnce->iState, -1);
+}
+
