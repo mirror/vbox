@@ -775,13 +775,6 @@ findso:
                  * XXX Some OS's don't tell us whether the connect()
                  * succeeded or not.  So we must time it out.
                  */
-#ifdef VBOX_WITH_NAT_SERVICE
-                Assert(m);
-                {
-                    struct ethhdr *eh0;
-                    eh0 = (struct ethhdr *)m->m_dat;
-                }
-#endif
                 so->so_m = m;
                 so->so_ti = ti;
                 tp->t_timer[TCPT_KEEP] = TCPTV_KEEP_INIT;
