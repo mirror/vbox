@@ -66,6 +66,7 @@ RTDECL(int) RTSemEventMultiCreate(PRTSEMEVENTMULTI pEventMultiSem)
     if (pThis)
     {
         pThis->u32Magic = RTSEMEVENTMULTI_MAGIC;
+        pThis->fState   = 0;
         init_waitqueue_head(&pThis->Head);
         *pEventMultiSem = pThis;
         return VINF_SUCCESS;
