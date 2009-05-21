@@ -1216,7 +1216,7 @@ static int vboxNetFltSolarisSetFastMode(queue_t *pQueue)
  * @param   fPromisc        Whether to enable promiscous mode or not.
  * @param   PromiscLevel    Promiscous level; DL_PROMISC_PHYS/SAP/MULTI.
  *
- * @returns VBox error code.
+ * @returns VBox status code.
  */
 static int vboxNetFltSolarisPromiscReq(queue_t *pQueue, bool fPromisc)
 {
