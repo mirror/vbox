@@ -86,6 +86,7 @@ PROGRAMS += \
 	tstStrSimplePattern \
 	tstStrToNum \
 	tstSystemQueryOsInfo \
+	tstTermCallbacks \
 	tstThread-1 \
 	tstTime \
 	tstTime-2 \
@@ -319,6 +320,8 @@ tstStrSimplePattern_SOURCES = tstStrSimplePattern.cpp
 tstStrToNum_SOURCES = tstStrToNum.cpp
 
 tstSystemQueryOsInfo_SOURCES = tstSystemQueryOsInfo.cpp
+
+tstTermCallbacks_SOURCES = tstTermCallbacks.cpp
 
 tstThread-1_SOURCES = tstThread-1.cpp
 

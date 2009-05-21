@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -132,6 +132,87 @@ RTGCDECL(int) RTRCInit(uint64_t u64ProgramStartNanoTS);
 RTGCDECL(void) RTRCTerm(void);
 #endif
 
+
+/**
+ * Termination reason.
+ */
+typedef enum RTTERMREASON
+{
+    /** Normal exit. iStatus contains the exit code. */
+    RTTERMREASON_EXIT = 1,
+    /** Any abnormal exit. iStatus is 0 and has no meaning. */
+    RTTERMREASON_ABEND,
+    /** Killed by a signal. The iStatus contains the signal number. */
+    RTTERMREASON_SIGNAL,
+    /** The IPRT module is being unloaded. iStatus is 0 and has no meaning. */
+    RTTERMREASON_UNLOAD
+} RTTERMREASON;
+
+/** Whether lazy clean up is Okay or not.
+ * When the process is exiting, it is a waste of time to for instance free heap
+ * memory or close open files. OTOH, when the runtime is unloaded from the
+ * process, it is important to release absolutely all resources to prevent
+ * resource leaks. */
+#define RTTERMREASON_IS_LAZY_CLEANUP_OK(enmReason)  ((enmReason) != RTTERMREASON_UNLOAD)
+
+
+/**
+ * IPRT termination callback function.
+ *
+ * @param   enmReason           The cause of the termination.
+ * @param   iStatus             The meaning of this depends on enmReason.
+ * @param   pvUser              User argument passed to RTTermRegisterCallback.
+ */
+typedef DECLCALLBACK(void) FNRTTERMCALLBACK(RTTERMREASON enmReason, int32_t iStatus, void *pvUser);
+/** Pointer to an IPRT termination callback function. */
+typedef FNRTTERMCALLBACK *PFNRTTERMCALLBACK;
+
+
+/**
+ * Registers a termination callback.
+ *
+ * This is intended for performing clean up during IPRT termination. Frequently
+ * paired with lazy initialization thru RTOnce.
+ *
+ * The callbacks are called in LIFO order.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   pfnCallback         The callback function.
+ * @param   pvUser              The user argument for the callback.
+ *
+ * @remarks May need to acquire a fast mutex or critical section, so use with
+ *          some care in ring-0 context.
+ *
+ * @remarks Be very careful using this from code that may be unloaded before
+ *          IPRT terminates. Unlike some atexit and on_exit implementations,
+ *          IPRT will not automatically unregister callbacks when a module gets
+ *          unloaded.
+ */
+RTDECL(int) RTTermRegisterCallback(PFNRTTERMCALLBACK pfnCallback, void *pvUser);
+
+/**
+ * Deregister a termination callback.
+ *
+ * @returns VINF_SUCCESS if found, VERR_NOT_FOUND if the callback/pvUser pair
+ *          wasn't found.
+ *
+ * @param   pfnCallback         The callback function.
+ * @param   pvUser              The user argument for the callback.
+ */
+RTDECL(int) RTTermDeregisterCallback(PFNRTTERMCALLBACK pfnCallback, void *pvUser);
+
+/**
+ * Runs the termination callback queue.
+ *
+ * Normally called by an internal IPRT termination function, but may also be
+ * called by external code immediately prior to terminating IPRT if it is in a
+ * better position to state the termination reason and/or status.
+ *
+ * @param   enmReason           The reason why it's called.
+ * @param   iStatus             The associated exit status or signal number.
+ */
+RTDECL(void) RTTermRunCallbacks(RTTERMREASON enmReason, int32_t iStatus);
 
 /** @} */
 

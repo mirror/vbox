@@ -227,6 +227,7 @@ RuntimeR3_SOURCES       = \
 	common/misc/semspingpong.cpp \
 	common/misc/thread.cpp \
 	common/misc/zip.cpp \
+	common/misc/term.cpp \
 	common/rand/rand.cpp \
 	common/rand/randadv.cpp \
 	common/rand/randparkmiller.cpp \
@@ -971,6 +972,7 @@ RuntimeR0_SOURCES       = \
 	common/misc/sanity-c.c \
 	common/misc/sanity-cpp.cpp \
 	common/misc/RTAssertMsg2.cpp \
+	common/misc/term.cpp \
 	common/string/strformat.cpp \
 	common/string/strformatrt.cpp \
 	common/string/strformattype.cpp \
@@ -1071,6 +1073,7 @@ RuntimeR0Drv_SOURCES    = \
 	common/misc/once.cpp \
 	common/misc/sanity-c.c \
 	common/misc/sanity-cpp.cpp \
+	common/misc/term.cpp \
 	common/rand/rand.cpp \
 	common/rand/randadv.cpp \
 	common/rand/randparkmiller.cpp \
