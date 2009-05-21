@@ -66,6 +66,7 @@ RTDECL(int)  RTSemEventCreate(PRTSEMEVENT pEventSem)
     if (pEventInt)
     {
         pEventInt->u32Magic = RTSEMEVENT_MAGIC;
+        pEventInt->fState   = 0;
         init_waitqueue_head(&pEventInt->Head);
         *pEventSem = pEventInt;
         return VINF_SUCCESS;
