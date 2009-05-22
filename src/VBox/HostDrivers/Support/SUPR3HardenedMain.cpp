@@ -234,7 +234,7 @@ DECLHIDDEN(int) supR3HardenedPathAppPrivateNoArch(char *pszPath, size_t cchPath)
     return VINF_SUCCESS;
 
 #else
-    return supR3HardenedPathProgram(pszPath, cchPath);
+    return supR3HardenedPathExecDir(pszPath, cchPath);
 #endif
 }
 
@@ -254,7 +254,7 @@ DECLHIDDEN(int) supR3HardenedPathAppPrivateArch(char *pszPath, size_t cchPath)
     return VINF_SUCCESS;
 
 #else
-    return supR3HardenedPathProgram(pszPath, cchPath);
+    return supR3HardenedPathExecDir(pszPath, cchPath);
 #endif
 }
 
@@ -274,7 +274,7 @@ DECLHIDDEN(int) supR3HardenedPathSharedLibs(char *pszPath, size_t cchPath)
     return VINF_SUCCESS;
 
 #else
-    return supR3HardenedPathProgram(pszPath, cchPath);
+    return supR3HardenedPathExecDir(pszPath, cchPath);
 #endif
 }
 
@@ -294,7 +294,7 @@ DECLHIDDEN(int) supR3HardenedPathAppDocs(char *pszPath, size_t cchPath)
     return VINF_SUCCESS;
 
 #else
-    return supR3HardenedPathProgram(pszPath, cchPath);
+    return supR3HardenedPathExecDir(pszPath, cchPath);
 #endif
 }
 
@@ -328,7 +328,7 @@ static void supR3HardenedGetFullExePath(void)
     int cchLink = readlink("/proc/curproc/file", &g_szSupLibHardenedExePath[0], sizeof(g_szSupLibHardenedExePath) - 1);
 # endif
     if (cchLink < 0 || cchLink == sizeof(g_szSupLibHardenedExePath) - 1)
-        supR3HardenedFatal("supR3HardenedPathProgram: couldn't read \"%s\", errno=%d cchLink=%d\n",
+        supR3HardenedFatal("supR3HardenedExecDir: couldn't read \"%s\", errno=%d cchLink=%d\n",
                             g_szSupLibHardenedExePath, errno, cchLink);
     g_szSupLibHardenedExePath[cchLink] = '\0';
 
@@ -338,16 +338,16 @@ static void supR3HardenedGetFullExePath(void)
 #elif defined(RT_OS_DARWIN)
     const char *pszImageName = _dyld_get_image_name(0);
     if (!pszImageName)
-        supR3HardenedFatal("supR3HardenedPathProgram: _dyld_get_image_name(0) failed\n");
+        supR3HardenedFatal("supR3HardenedExecDir: _dyld_get_image_name(0) failed\n");
     size_t cchImageName = strlen(pszImageName);
     if (!cchImageName || cchImageName >= sizeof(g_szSupLibHardenedExePath))
-        supR3HardenedFatal("supR3HardenedPathProgram: _dyld_get_image_name(0) failed, cchImageName=%d\n", cchImageName);
+        supR3HardenedFatal("supR3HardenedExecDir: _dyld_get_image_name(0) failed, cchImageName=%d\n", cchImageName);
     memcpy(g_szSupLibHardenedExePath, pszImageName, cchImageName + 1);
 
 #elif defined(RT_OS_WINDOWS)
     HMODULE hExe = GetModuleHandle(NULL);
     if (!GetModuleFileName(hExe, &g_szSupLibHardenedExePath[0], sizeof(g_szSupLibHardenedExePath)))
-        supR3HardenedFatal("supR3HardenedPathProgram: GetModuleFileName failed, rc=%d\n", GetLastError());
+        supR3HardenedFatal("supR3HardenedExecDir: GetModuleFileName failed, rc=%d\n", GetLastError());
 #else
 # error needs porting.
 #endif
@@ -380,9 +380,9 @@ static bool supR3HardenedMainIsProcSelfExeAccssible(void)
 
 
 /**
- * @copydoc RTPathProgram
+ * @copydoc RTPathExecDir
  */
-DECLHIDDEN(int) supR3HardenedPathProgram(char *pszPath, size_t cchPath)
+DECLHIDDEN(int) supR3HardenedPathExecDir(char *pszPath, size_t cchPath)
 {
     /*
      * Lazy init (probably not required).
@@ -400,7 +400,7 @@ DECLHIDDEN(int) supR3HardenedPathProgram(char *pszPath, size_t cchPath)
         return VINF_SUCCESS;
     }
 
-    supR3HardenedFatal("supR3HardenedPathProgram: Buffer too small (%u < %u)\n", cchPath, cch);
+    supR3HardenedFatal("supR3HardenedPathExecDir: Buffer too small (%u < %u)\n", cchPath, cch);
     return VERR_BUFFER_OVERFLOW;
 }
 

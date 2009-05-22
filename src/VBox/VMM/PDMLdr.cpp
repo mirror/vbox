@@ -977,7 +977,7 @@ static char *pdmR3File(const char *pszFile, const char *pszDefaultExt, bool fSha
                  : RTPathAppPrivateArch(szPath, sizeof(szPath));
     if (!RT_SUCCESS(rc))
     {
-        AssertMsgFailed(("RTPathProgram(,%d) failed rc=%d!\n", sizeof(szPath), rc));
+        AssertMsgFailed(("RTPath[SharedLibs|AppPrivateArch](,%d) failed rc=%d!\n", sizeof(szPath), rc));
         return NULL;
     }
 

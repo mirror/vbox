@@ -845,10 +845,10 @@ int main(int argc, char **argv)
     }
 
     char szPath[RTPATH_MAX];
-    rc = RTPathProgram(szPath, sizeof(szPath) - sizeof("/../VMMR0.r0"));
+    rc = RTPathExecDir(szPath, sizeof(szPath) - sizeof("/../VMMR0.r0"));
     if (RT_FAILURE(rc))
     {
-        RTPrintf("tstIntNet-1: RTPathProgram -> %Rrc\n", rc);
+        RTPrintf("tstIntNet-1: RTPathExecDir -> %Rrc\n", rc);
         return 1;
     }
 

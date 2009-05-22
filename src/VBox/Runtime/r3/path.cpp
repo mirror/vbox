@@ -665,7 +665,7 @@ RTDECL(char *) RTPathAbsExDup(const char *pszBase, const char *pszPath)
 
 #ifndef RT_MINI
 
-RTDECL(int) RTPathProgram(char *pszPath, size_t cchPath)
+RTDECL(int) RTPathExecDir(char *pszPath, size_t cchPath)
 {
     AssertReturn(g_szrtProcExePath[0], VERR_WRONG_ORDER);
 
@@ -691,7 +691,7 @@ RTDECL(int) RTPathProgram(char *pszPath, size_t cchPath)
  *
  * Linux:    /usr/shared/@<application@>
  * Windows:  @<program files directory@>/@<application@>
- * Old path: same as RTPathProgram()
+ * Old path: same as RTPathExecDir()
  *
  */
 RTDECL(int) RTPathAppPrivateNoArch(char *pszPath, size_t cchPath)
@@ -711,7 +711,7 @@ RTDECL(int) RTPathAppPrivateNoArch(char *pszPath, size_t cchPath)
     }
     return rc;
 #else
-    return RTPathProgram(pszPath, cchPath);
+    return RTPathExecDir(pszPath, cchPath);
 #endif
 }
 
@@ -722,7 +722,7 @@ RTDECL(int) RTPathAppPrivateNoArch(char *pszPath, size_t cchPath)
  *
  * Linux:    /usr/lib/@<application@>
  * Windows:  @<program files directory@>/@<application@>
- * Old path: same as RTPathProgram()
+ * Old path: same as RTPathExecDir()
  *
  * @returns iprt status code.
  * @param   pszPath     Buffer where to store the path.
@@ -745,7 +745,7 @@ RTDECL(int) RTPathAppPrivateArch(char *pszPath, size_t cchPath)
     }
     return rc;
 #else
-    return RTPathProgram(pszPath, cchPath);
+    return RTPathExecDir(pszPath, cchPath);
 #endif
 }
 
@@ -757,7 +757,7 @@ RTDECL(int) RTPathAppPrivateArch(char *pszPath, size_t cchPath)
  *
  * Linux:    /usr/lib
  * Windows:  @<program files directory@>/@<application@>
- * Old path: same as RTPathProgram()
+ * Old path: same as RTPathExecDir()
  *
  * @returns iprt status code.
  * @param   pszPath     Buffer where to store the path.
@@ -780,7 +780,7 @@ RTDECL(int) RTPathSharedLibs(char *pszPath, size_t cchPath)
     }
     return rc;
 #else
-    return RTPathProgram(pszPath, cchPath);
+    return RTPathExecDir(pszPath, cchPath);
 #endif
 }
 
@@ -790,7 +790,7 @@ RTDECL(int) RTPathSharedLibs(char *pszPath, size_t cchPath)
  *
  * Linux:    /usr/share/doc/@<application@>
  * Windows:  @<program files directory@>/@<application@>
- * Old path: same as RTPathProgram()
+ * Old path: same as RTPathExecDir()
  *
  * @returns iprt status code.
  * @param   pszPath     Buffer where to store the path.
@@ -813,7 +813,7 @@ RTDECL(int) RTPathAppDocs(char *pszPath, size_t cchPath)
     }
     return rc;
 #else
-    return RTPathProgram(pszPath, cchPath);
+    return RTPathExecDir(pszPath, cchPath);
 #endif
 }
 

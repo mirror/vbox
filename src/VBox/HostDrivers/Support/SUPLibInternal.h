@@ -78,7 +78,7 @@
 # define supR3HardenedPathAppPrivateArch   supR3HardenedStaticPathAppPrivateArch
 # define supR3HardenedPathSharedLibs       supR3HardenedStaticPathSharedLibs
 # define supR3HardenedPathAppDocs          supR3HardenedStaticPathAppDocs
-# define supR3HardenedPathProgram          supR3HardenedStaticPathProgram
+# define supR3HardenedPathExecDir          supR3HardenedStaticPathExecDir
 # define supR3HardenedPathFilename         supR3HardenedStaticPathFilename
 # define supR3HardenedFatalV               supR3HardenedStaticFatalV
 # define supR3HardenedFatal                supR3HardenedStaticFatal
@@ -273,8 +273,8 @@ DECLHIDDEN(int)    supR3HardenedPathAppPrivateArch(char *pszPath, size_t cchPath
 DECLHIDDEN(int)    supR3HardenedPathSharedLibs(char *pszPath, size_t cchPath);
 /** @copydoc RTPathAppDocs */
 DECLHIDDEN(int)    supR3HardenedPathAppDocs(char *pszPath, size_t cchPath);
-/** @copydoc RTPathProgram */
-DECLHIDDEN(int)    supR3HardenedPathProgram(char *pszPath, size_t cchPath);
+/** @copydoc RTPathExecDir */
+DECLHIDDEN(int)    supR3HardenedPathExecDir(char *pszPath, size_t cchPath);
 /** @copydoc RTPathFilename */
 DECLHIDDEN(char *) supR3HardenedPathFilename(const char *pszPath);
 

@@ -90,11 +90,11 @@ DECLHIDDEN(int) supR3HardenedPathAppDocs(char *pszPath, size_t cchPath)
 
 
 /**
- * @copydoc RTPathProgram
+ * @copydoc RTPathExecDir
  */
-DECLHIDDEN(int) supR3HardenedPathProgram(char *pszPath, size_t cchPath)
+DECLHIDDEN(int) supR3HardenedPathExecDir(char *pszPath, size_t cchPath)
 {
-    return RTPathProgram(pszPath, cchPath);
+    return RTPathExecDir(pszPath, cchPath);
 }
 
 
