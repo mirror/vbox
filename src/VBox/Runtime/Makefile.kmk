@@ -1239,10 +1239,6 @@ RuntimeR0Drv_SOURCES.os2 = \
 	os2/sys0.asm \
 	r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.cpp \
 	r0drv/generic/RTMpOn-r0drv-generic.cpp \
-	r0drv/generic/RTThreadPreemptIsEnabled-r0drv-generic.cpp \
-	r0drv/generic/RTThreadPreemptIsPending-r0drv-generic.cpp \
-	r0drv/generic/RTThreadPreemptDisable-r0drv-generic.cpp \
-	r0drv/generic/RTThreadPreemptRestore-r0drv-generic.cpp \
 	r0drv/generic/mpnotification-r0drv-generic.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/powernotification-r0drv.c \
