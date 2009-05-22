@@ -123,7 +123,7 @@ __BEGIN_DECLS
 #define HWACCM_MAX_RESUME_LOOPS             1024
 
 /** Maximum number of page flushes we are willing to remember before considering a full TLB flush. */
-#define HWACCM_MAX_TLB_SHOOTDOWN_PAGES      16
+#define HWACCM_MAX_TLB_SHOOTDOWN_PAGES      8
 
 /** Size for the EPT identity page table (1024 4 MB pages to cover the entire address space). */
 #define HWACCM_EPT_IDENTITY_PG_TABLE_SIZE   PAGE_SIZE
@@ -568,8 +568,11 @@ typedef struct HWACCMCPU
     RTCPUID                 idEnteredCpu;
 
     /** To keep track of pending TLB shootdown pages. (SMP guest only) */
-    RTGCPTR                 aTlbShootdownPages[HWACCM_MAX_TLB_SHOOTDOWN_PAGES];
-    RTUINT                  cTlbShootdownPages;
+    struct
+    {
+        RTGCPTR             aPages[HWACCM_MAX_TLB_SHOOTDOWN_PAGES];
+        unsigned            cPages;
+    } TlbShootdown;
 
     RTUINT                  padding2[1];
 
