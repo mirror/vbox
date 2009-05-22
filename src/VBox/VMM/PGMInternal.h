@@ -326,8 +326,9 @@
 #endif
 
 /** @def PGM_INVL_PG
- * Invalidates a page when in GC does nothing in HC.
+ * Invalidates a page.
  *
+ * @param   pVCpu       The VMCPU handle.
  * @param   GCVirt      The virtual address of the page to invalidate.
  */
 #ifdef IN_RC
@@ -338,9 +339,24 @@
 # define PGM_INVL_PG(pVCpu, GCVirt)             HWACCMInvalidatePage(pVCpu, (RTGCPTR)(GCVirt))
 #endif
 
-/** @def PGM_INVL_BIG_PG
- * Invalidates a 4MB page directory entry when in GC does nothing in HC.
+/** @def PGM_INVL_PG
+ * Invalidates a page on all VCPUs
  *
+ * @param   pVM         The VM handle.
+ * @param   GCVirt      The virtual address of the page to invalidate.
+ */
+#ifdef IN_RC
+# define PGM_INVL_ALL_VCPU_PG(pVM, GCVirt)      ASMInvalidatePage((void *)(GCVirt))
+#elif defined(IN_RING0)
+# define PGM_INVL_ALL_VCPU_PG(pVM, GCVirt)      HWACCMInvalidatePageOnAllVCpus(pVM, (RTGCPTR)(GCVirt))
+#else
+# define PGM_INVL_ALL_VCPU_PG(pVM, GCVirt)      HWACCMInvalidatePageOnAllVCpus(pVM, (RTGCPTR)(GCVirt))
+#endif
+
+/** @def PGM_INVL_BIG_PG
+ * Invalidates a 4MB page directory entry.
+ *
+ * @param   pVCpu       The VMCPU handle.
  * @param   GCVirt      The virtual address within the page directory to invalidate.
  */
 #ifdef IN_RC
@@ -353,6 +369,8 @@
 
 /** @def PGM_INVL_VCPU_TLBS()
  * Invalidates the TLBs of the specified VCPU
+ *
+ * @param   pVCpu       The VMCPU handle.
  */
 #ifdef IN_RC
 # define PGM_INVL_VCPU_TLBS(pVCpu)             ASMReloadCR3()
@@ -364,13 +382,15 @@
 
 /** @def PGM_INVL_ALL_VCPU_TLBS()
  * Invalidates the TLBs of all VCPUs
+ *
+ * @param   pVM         The VM handle.
  */
 #ifdef IN_RC
 # define PGM_INVL_ALL_VCPU_TLBS(pVM)            ASMReloadCR3()
 #elif defined(IN_RING0)
-# define PGM_INVL_ALL_VCPU_TLBS(pVM)            HWACCMFlushAllTLBs(pVM)
+# define PGM_INVL_ALL_VCPU_TLBS(pVM)            HWACCMFlushTLBOnAllVCpus(pVM)
 #else
-# define PGM_INVL_ALL_VCPU_TLBS(pVM)            HWACCMFlushAllTLBs(pVM)
+# define PGM_INVL_ALL_VCPU_TLBS(pVM)            HWACCMFlushTLBOnAllVCpus(pVM)
 #endif
 
 /** Size of the GCPtrConflict array in PGMMAPPING.
