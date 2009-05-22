@@ -163,13 +163,11 @@ def split_no_quotes(s):
 def createVm(ctx,name,kind,base):
     mgr = ctx['mgr']
     vb = ctx['vb']
-    session = mgr.getSessionObject(vb)
     mach = vb.createMachine(name, kind, base,
                             "00000000-0000-0000-0000-000000000000")
     mach.saveSettings()
     print "created machine with UUID",mach.id
     vb.registerMachine(mach)
-    session.close()
 
 def removeVm(ctx,mach):
     mgr = ctx['mgr']
