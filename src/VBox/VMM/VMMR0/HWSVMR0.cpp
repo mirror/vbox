@@ -1047,11 +1047,11 @@ ResumeExecution:
         {
             /* Deal with pending TLB shootdown actions which were queued when we were not executing code. */
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTlbShootdown);
-            for (unsigned i=0;i<pVCpu->hwaccm.s.cTlbShootdownPages;i++)
-                SVMR0InvlpgA(pVCpu->hwaccm.s.aTlbShootdownPages[i], pVMCB->ctrl.TLBCtrl.n.u32ASID);
+            for (unsigned i=0;i<pVCpu->hwaccm.s.TlbShootdown.cPages;i++)
+                SVMR0InvlpgA(pVCpu->hwaccm.s.TlbShootdown.aPages[i], pVMCB->ctrl.TLBCtrl.n.u32ASID);
         }
     }
-    pVCpu->hwaccm.s.cTlbShootdownPages = 0;
+    pVCpu->hwaccm.s.TlbShootdown.cPages = 0;
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
 
     AssertMsg(pVCpu->hwaccm.s.cTLBFlushes == pCpu->cTLBFlushes, ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVCpu->hwaccm.s.cTLBFlushes, pCpu->cTLBFlushes));
@@ -2338,7 +2338,6 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
         pVMCB = (SVM_VMCB *)pVM->aCpus[0].hwaccm.s.svm.pVMCB;
         AssertMsgReturn(pVMCB, ("Invalid pVMCB\n"), VERR_EM_INTERNAL_ERROR);
 
-        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushPageManual);
 #if HC_ARCH_BITS == 32
         /* If we get a flush in 64 bits guest mode, then force a full TLB flush. Invlpga takes only 32 bits addresses. */
         if (CPUMIsGuestInLongMode(pVCpu))

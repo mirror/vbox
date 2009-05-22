@@ -44,6 +44,30 @@
 #include <iprt/cpuset.h>
 
 /**
+ * Queues a page for invalidation
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The VMCPU to operate on.
+ * @param   GCVirt      Page to invalidate
+ */
+void hwaccmQueueInvlPage(PVMCPU pVCpu, RTGCPTR GCVirt)
+{
+    Assert(HWACCMIsEnabled(pVCpu->CTX_SUFF(pVM)));
+
+    /* Nothing to do if a TLB flush is already pending */
+    if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TLB_FLUSH))
+        return;
+#if 1
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
+#else
+    if (iPage == RT_ELEMENTS(pVCpu->hwaccm.s.TlbShootdown.aPages))
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
+    else
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
+#endif
+}
+
+/**
  * Invalidates a guest page
  *
  * @returns VBox status code.
@@ -52,6 +76,7 @@
  */
 VMMDECL(int) HWACCMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
 {
+    STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushPageManual);
 #ifdef IN_RING0
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (pVM->hwaccm.s.vmx.fSupported)
@@ -61,6 +86,7 @@ VMMDECL(int) HWACCMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
     return SVMR0InvalidatePage(pVM, pVCpu, GCVirt);
 #endif
 
+    hwaccmQueueInvlPage(pVCpu, GCVirt);
     return VINF_SUCCESS;
 }
 
@@ -89,8 +115,35 @@ VMMDECL(int) HWACCMFlushTLB(PVMCPU pVCpu)
  */
 VMMDECL(int) HWACCMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCPtr)
 {
-    /* @todo */
-    HWACCMInvalidatePage(VMMGetCpu(pVM), GCPtr);
+    VMCPUID idCurCpu = VMMGetCpuId(pVM);
+
+    for (unsigned idCpu = 0; idCpu < pVM->cCPUs; idCpu++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[idCpu];
+
+        if (pVCpu->idCpu == idCurCpu)
+        {
+            HWACCMInvalidatePage(pVCpu, GCPtr);
+        }
+        else
+        {
+            hwaccmQueueInvlPage(pVCpu, GCPtr);
+            if (VMCPU_GET_STATE(pVCpu) == VMCPUSTATE_STARTED_EXEC)
+            {
+                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTlbShootdown);
+#ifdef IN_RING0
+                RTCPUID idHostCpu = pVCpu->hwaccm.s.idEnteredCpu;
+                if (idHostCpu != NIL_RTCPUID)
+                    RTMpPokeCpu(idHostCpu);
+#else
+                VMR3NotifyCpuFFU(pVCpu->pUVCpu, VMNOTIFYFF_FLAGS_POKE);
+#endif
+            }
+            else
+                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushPageManual);
+        }
+    }
+
     return VINF_SUCCESS;
 }
 
@@ -183,6 +236,7 @@ VMMDECL(int) HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
     }
 
     Assert(pVM->hwaccm.s.svm.fSupported);
+    /* AMD-V doesn't support invalidation with guest physical addresses; see comment in SVMR0InvalidatePhysPage. */
     HWACCMFlushTLBOnAllVCpus(pVM);
 #else
     HWACCMFlushTLBOnAllVCpus(pVM);

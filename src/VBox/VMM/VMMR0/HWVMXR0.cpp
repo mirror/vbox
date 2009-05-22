@@ -1797,7 +1797,7 @@ static void vmxR0SetupTLBDummy(PVM pVM, PVMCPU pVCpu)
     NOREF(pVM);
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH);
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
-    pVCpu->hwaccm.s.cTlbShootdownPages = 0;
+    pVCpu->hwaccm.s.TlbShootdown.cPages = 0;
     return;
 }
 
@@ -1845,13 +1845,14 @@ static void vmxR0SetupTLBEPT(PVM pVM, PVMCPU pVCpu)
     {
         /* Deal with pending TLB shootdown actions which were queued when we were not executing code. */
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTlbShootdown);
-        for (unsigned i=0;i<pVCpu->hwaccm.s.cTlbShootdownPages;i++)
+
+        for (unsigned i=0;i<pVCpu->hwaccm.s.TlbShootdown.cPages;i++)
         {
             /* aTlbShootdownPages contains physical addresses in this case. */
-            vmxR0FlushEPT(pVM, pVCpu, pVM->hwaccm.s.vmx.enmFlushContext, pVCpu->hwaccm.s.aTlbShootdownPages[i]);
+            vmxR0FlushEPT(pVM, pVCpu, pVM->hwaccm.s.vmx.enmFlushContext, pVCpu->hwaccm.s.TlbShootdown.aPages[i]);
         }
     }
-    pVCpu->hwaccm.s.cTlbShootdownPages = 0;
+    pVCpu->hwaccm.s.TlbShootdown.cPages= 0;
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
 
 #ifdef VBOX_WITH_STATISTICS
@@ -1925,11 +1926,11 @@ static void vmxR0SetupTLBVPID(PVM pVM, PVMCPU pVCpu)
         {
             /* Deal with pending TLB shootdown actions which were queued when we were not executing code. */
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTlbShootdown);
-            for (unsigned i=0;i<pVCpu->hwaccm.s.cTlbShootdownPages;i++)
-                vmxR0FlushVPID(pVM, pVCpu, pVM->hwaccm.s.vmx.enmFlushContext, pVCpu->hwaccm.s.aTlbShootdownPages[i]);
+            for (unsigned i=0;i<pVCpu->hwaccm.s.TlbShootdown.cPages;i++)
+                vmxR0FlushVPID(pVM, pVCpu, pVM->hwaccm.s.vmx.enmFlushContext, pVCpu->hwaccm.s.TlbShootdown.aPages[i]);
         }
     }
-    pVCpu->hwaccm.s.cTlbShootdownPages = 0;
+    pVCpu->hwaccm.s.TlbShootdown.cPages = 0;
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
 
     AssertMsg(pVCpu->hwaccm.s.cTLBFlushes == pCpu->cTLBFlushes, ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVCpu->hwaccm.s.cTLBFlushes, pCpu->cTLBFlushes));
