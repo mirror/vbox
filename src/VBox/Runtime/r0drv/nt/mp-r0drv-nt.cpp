@@ -368,8 +368,7 @@ RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
     /* Assuming here that high importance DPCs will be delivered immediately; or at least an IPI will be sent immediately.
      * Todo: verify!
      */
-    BOOLEAN ret = KeInsertQueueDpc(&aPokeDpcs[idCpu], 0, 0);
-    Assert(ret);
+    KeInsertQueueDpc(&aPokeDpcs[idCpu], 0, 0);
 
     KeLowerIrql(oldIrql);
     return VINF_SUCCESS;
