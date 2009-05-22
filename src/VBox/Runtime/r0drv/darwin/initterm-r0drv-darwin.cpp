@@ -45,7 +45,6 @@
 lck_grp_t *g_pDarwinLockGroup = NULL;
 
 
-
 int rtR0InitNative(void)
 {
     /*
@@ -54,12 +53,24 @@ int rtR0InitNative(void)
     g_pDarwinLockGroup = lck_grp_alloc_init("IPRT", LCK_GRP_ATTR_NULL);
     AssertReturn(g_pDarwinLockGroup, VERR_NO_MEMORY);
 
-    return VINF_SUCCESS;
+    /*
+     * Initialize the preemption hacks.
+     */
+    int rc = rtThreadPreemptDarwinInit();
+    if (RT_FAILURE(rc))
+        rtR0TermNative();
+
+    return rc;
 }
 
 
 void rtR0TermNative(void)
 {
+    /*
+     * Preemption hacks before the lock group.
+     */
+    rtThreadPreemptDarwinTerm();
+
     /*
      * Free the lock group.
      */

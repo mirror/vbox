@@ -78,6 +78,14 @@
 #include <IOKit/IOMapper.h>
 
 
+/* See osfmk/kern/ast.h. */
+#ifndef AST_PREEMPT
+# define AST_PREEMPT    UINT32_C(1)
+# define AST_QUANTUM    UINT32_C(2)
+# define AST_URGENT     UINT32_C(4)
+#endif
+
+
 __BEGIN_DECLS
 /* mach/vm_types.h */
 typedef struct pmap *pmap_t;
@@ -120,6 +128,8 @@ __END_DECLS
 
 __BEGIN_DECLS
 extern lck_grp_t *g_pDarwinLockGroup;
+int  rtThreadPreemptDarwinInit(void);
+void rtThreadPreemptDarwinTerm(void);
 __END_DECLS
 
 
