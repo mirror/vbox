@@ -53,3 +53,14 @@ RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
     return !in_atomic() && !irqs_disabled();
 }
 
+
+RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
+{
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 4)
+    return test_tsk_thread_flag(current, TIF_NEED_RESCHED);
+#else
+    /** @todo get back to this if it matters. */
+    return false;
+#endif
+}
+
