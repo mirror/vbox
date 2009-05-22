@@ -298,48 +298,74 @@ RTDECL(bool) RTPathHavePath(const char *pszPath);
  * The comparison takes platform-dependent details into account,
  * such as:
  * <ul>
- * <li>On DOS-like platforms, both |\| and |/| separator chars are considered
+ * <li>On DOS-like platforms, both separator chars (|\| and |/|) are considered
  *     to be equal.
  * <li>On platforms with case-insensitive file systems, mismatching characters
  *     are uppercased and compared again.
  * </ul>
  *
- * File system details are currently ignored. This means that you won't get
- * case-insensitive compares on unix systems when a path goes into a case-insensitive
- * filesystem like FAT, HPFS, HFS, NTFS, JFS, or similar. For NT, OS/2 and similar
- * you'll won't get case-sensitive compares on a case-sensitive file system.
+ * @returns @< 0 if the first path less than the second path.
+ * @returns 0 if the first path identical to the second path.
+ * @returns @> 0 if the first path greater than the second path.
  *
  * @param   pszPath1    Path to compare (must be an absolute path).
  * @param   pszPath2    Path to compare (must be an absolute path).
  *
- * @returns @< 0 if the first path less than the second path.
- * @returns 0 if the first path identical to the second path.
- * @returns @> 0 if the first path greater than the second path.
+ * @remarks File system details are currently ignored. This means that you won't
+ *          get case-insentive compares on unix systems when a path goes into a
+ *          case-insensitive filesystem like FAT, HPFS, HFS, NTFS, JFS, or
+ *          similar. For NT, OS/2 and similar you'll won't get case-sensitve
+ *          compares on a case-sensitive file system.
  */
 RTDECL(int) RTPathCompare(const char *pszPath1, const char *pszPath2);
 
 /**
  * Checks if a path starts with the given parent path.
  *
- * This means that either the path and the parent path matches completely, or that
- * the path is to some file or directory residing in the tree given by the parent
- * directory.
+ * This means that either the path and the parent path matches completely, or
+ * that the path is to some file or directory residing in the tree given by the
+ * parent directory.
  *
  * The path comparison takes platform-dependent details into account,
  * see RTPathCompare() for details.
+ *
+ * @returns |true| when \a pszPath starts with \a pszParentPath (or when they
+ *          are identical), or |false| otherwise.
  *
  * @param   pszPath         Path to check, must be an absolute path.
  * @param   pszParentPath   Parent path, must be an absolute path.
  *                          No trailing directory slash!
  *
- * @returns |true| when \a pszPath starts with \a pszParentPath (or when they
- *          are identical), or |false| otherwise.
- *
- * @remark  This API doesn't currently handle root directory compares in a manner
- *          consistent with the other APIs. RTPathStartsWith(pszSomePath, "/") will
- *          not work if pszSomePath isn't "/".
+ * @remarks This API doesn't currently handle root directory compares in a
+ *          manner consistant with the other APIs. RTPathStartsWith(pszSomePath,
+ *          "/") will not work if pszSomePath isn't "/".
  */
 RTDECL(bool) RTPathStartsWith(const char *pszPath, const char *pszParentPath);
+
+/**
+ * Appends one partial path to another.
+ *
+ * The main purpose of this function is to deal correctly with leading and
+ * trailing slashes.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_PATH
+ *
+ * @param   pszPath         The path to append pszAppend to. This serves as both
+ *                          input and output. This can be empty, in which case
+ *                          pszAppend is just copied over.
+ * @param   cchPathDst      The size of the buffer pszPath points to. This
+ *                          should NOT be strlen(pszPath).
+ * @param   pszAppend       The partial path to append to pszPath. This can be
+ *                          NULL, in which case nothing is done.
+ *
+ * @remarks On OS/2, Window and similar systems, concatenating a drive letter
+ *          specifier with a root prefixed path will result in an absolute path.
+ *          Meaning, RTPathAppend(strcpy(szBuf, "C:"), sizeof(szBuf), "/bar")
+ *          will result in "C:/bar". (This follows directly from the behavior
+ *          when pszPath is empty.)
+ */
+RTDECL(int) RTPathAppend(char *pszPath, size_t cchPathDst, const char *pszAppend);
 
 
 #ifdef IN_RING3
