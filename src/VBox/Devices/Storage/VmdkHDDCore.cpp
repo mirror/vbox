@@ -783,8 +783,11 @@ DECLINLINE(int) vmdkFileInflateAt(PVMDKFILE pVmdkFile,
         uint64_t uCompOffset, cbComp;
         VMDKINFLATESTATE InflateState;
         size_t cbActuallyRead;
+        size_t cbMarker = sizeof(Marker);
 
-        rc = RTFileReadAt(pVmdkFile->File, uOffset, &Marker, sizeof(Marker), NULL);
+        if (uMarker == VMDK_MARKER_IGNORE)
+            cbMarker -= sizeof(Marker.uType);
+        rc = RTFileReadAt(pVmdkFile->File, uOffset, &Marker, cbMarker, NULL);
         if (RT_FAILURE(rc))
             return rc;
         Marker.uSector = RT_LE2H_U64(Marker.uSector);
