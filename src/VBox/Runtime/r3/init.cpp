@@ -77,7 +77,7 @@ static int32_t volatile g_cUsers = 0;
 static bool volatile    g_fInitializing = false;
 
 /** The process path.
- * This is used by RTPathProgram and RTProcGetExecutableName and set by rtProcInitName. */
+ * This is used by RTPathExecDir and RTProcGetExecutableName and set by rtProcInitName. */
 char        g_szrtProcExePath[RTPATH_MAX];
 /** The length of g_szrtProcExePath. */
 size_t      g_cchrtProcExePath;

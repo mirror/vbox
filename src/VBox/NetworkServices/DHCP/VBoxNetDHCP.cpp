@@ -871,7 +871,7 @@ int VBoxNetDhcp::tryGoOnline(void)
     }
 
     char szPath[RTPATH_MAX];
-    rc = RTPathProgram(szPath, sizeof(szPath) - sizeof("/VMMR0.r0"));
+    rc = RTPathExecDir(szPath, sizeof(szPath) - sizeof("/VMMR0.r0"));
     if (RT_FAILURE(rc))
     {
         RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: RTPathProgram -> %Rrc", rc);

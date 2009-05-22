@@ -215,7 +215,7 @@ static int supR3HardenedMakePath(SUPINSTDIR enmDir, char *pszDst, size_t cchDst,
     {
         case kSupID_AppBin: /** @todo fix this AppBin crap (uncertain wtf some binaries actually are installed). */
         case kSupID_Bin:
-            rc = supR3HardenedPathProgram(pszDst, cchDst);
+            rc = supR3HardenedPathExecDir(pszDst, cchDst);
             break;
         case kSupID_SharedLib:
             rc = supR3HardenedPathSharedLibs(pszDst, cchDst);
@@ -677,7 +677,7 @@ static int supR3HardenedVerifyProgram(const char *pszProgName, bool fFatal)
                 fExe = true;
 
                 char szFilename[RTPATH_MAX];
-                int rc2 = supR3HardenedPathProgram(szFilename, sizeof(szFilename) - cchProgName - sizeof(SUPLIB_EXE_SUFF));
+                int rc2 = supR3HardenedPathExecDir(szFilename, sizeof(szFilename) - cchProgName - sizeof(SUPLIB_EXE_SUFF));
                 if (RT_SUCCESS(rc2))
                 {
                     strcat(szFilename, "/");

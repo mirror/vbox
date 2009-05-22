@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
 
     // get the path to the executable
     char appPath [RTPATH_MAX];
-    RTPathProgram (appPath, RTPATH_MAX);
+    RTPathExecDir (appPath, RTPATH_MAX);
 
     nsCOMPtr<nsIFile> nsAppPath;
     {

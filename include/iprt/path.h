@@ -345,13 +345,13 @@ RTDECL(bool) RTPathStartsWith(const char *pszPath, const char *pszParentPath);
 #ifdef IN_RING3
 
 /**
- * Gets the program path.
+ * Gets the path to the directory containing the executable.
  *
  * @returns iprt status code.
  * @param   pszPath     Buffer where to store the path.
  * @param   cchPath     Buffer size in bytes.
  */
-RTDECL(int) RTPathProgram(char *pszPath, size_t cchPath);
+RTDECL(int) RTPathExecDir(char *pszPath, size_t cchPath);
 
 /**
  * Gets the user home directory.
@@ -363,13 +363,14 @@ RTDECL(int) RTPathProgram(char *pszPath, size_t cchPath);
 RTDECL(int) RTPathUserHome(char *pszPath, size_t cchPath);
 
 /**
- * Gets the directory of shared libraries. This is not the same as
- * RTPathAppPrivateArch() as Linux depends all shared libraries in
- * a common global directory where ld.so can found them.
+ * Gets the directory of shared libraries.
+ *
+ * This is not the same as RTPathAppPrivateArch() as Linux depends all shared
+ * libraries in a common global directory where ld.so can found them.
  *
  * Linux:    /usr/lib
  * Windows:  @<program files directory@>/@<application@>
- * Old path: same as RTPathProgram()
+ * Old path: same as RTPathExecDir()
  *
  * @returns iprt status code.
  * @param   pszPath     Buffer where to store the path.
@@ -383,7 +384,7 @@ RTDECL(int) RTPathSharedLibs(char *pszPath, size_t cchPath);
  *
  * Linux:    /usr/shared/@<application@>
  * Windows:  @<program files directory@>/@<application@>
- * Old path: same as RTPathProgram()
+ * Old path: same as RTPathExecDir()
  *
  * @returns iprt status code.
  * @param   pszPath     Buffer where to store the path.
@@ -397,7 +398,7 @@ RTDECL(int) RTPathAppPrivateNoArch(char *pszPath, size_t cchPath);
  *
  * Linux:    /usr/lib/@<application@>
  * Windows:  @<program files directory@>/@<application@>
- * Old path: same as RTPathProgram()
+ * Old path: same as RTPathExecDir()
  *
  * @returns iprt status code.
  * @param   pszPath     Buffer where to store the path.
@@ -410,7 +411,7 @@ RTDECL(int) RTPathAppPrivateArch(char *pszPath, size_t cchPath);
  *
  * Linux:    /usr/share/doc/@<application@>
  * Windows:  @<program files directory@>/@<application@>
- * Old path: same as RTPathProgram()
+ * Old path: same as RTPathExecDir()
  *
  * @returns iprt status code.
  * @param   pszPath     Buffer where to store the path.

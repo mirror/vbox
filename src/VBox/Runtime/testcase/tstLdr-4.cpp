@@ -235,7 +235,7 @@ int main(int argc, char **argv)
      * Execute the test.
      */
     char szPath[RTPATH_MAX];
-    rc = RTPathProgram(szPath, sizeof(szPath) - sizeof("/tstLdrObjR0.r0"));
+    rc = RTPathExecDir(szPath, sizeof(szPath) - sizeof("/tstLdrObjR0.r0"));
     if (RT_SUCCESS(rc))
     {
         strcat(szPath, "/tstLdrObjR0.r0");
@@ -244,7 +244,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        RTPrintf("tstLdr-4: RTPathProgram -> %Rrc\n", rc);
+        RTPrintf("tstLdr-4: RTPathExecDir -> %Rrc\n", rc);
         cErrors++;
     }
 

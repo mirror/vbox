@@ -263,10 +263,10 @@ int main(int argc, char **argv)
     if (argc == 1)
     {
         char szPath[RTPATH_MAX];
-        int rc = RTPathProgram(szPath, sizeof(szPath) - sizeof("/.."));
+        int rc = RTPathExecDir(szPath, sizeof(szPath) - sizeof("/.."));
         if (RT_FAILURE(rc))
         {
-            RTPrintf("fatal error: RTPathProgram -> %Rrc\n", rc);
+            RTPrintf("fatal error: RTPathExecDir -> %Rrc\n", rc);
             return 1;
         }
         rc = RTPathSetCurrent(strcat(szPath, "/.."));
