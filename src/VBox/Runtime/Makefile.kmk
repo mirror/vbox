@@ -1186,9 +1186,6 @@ RuntimeR0Drv_SOURCES.darwin = \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
 	generic/timer-generic.cpp \
-	r0drv/generic/RTThreadPreemptIsEnabled-r0drv-generic.cpp \
-	r0drv/generic/RTThreadPreemptDisable-r0drv-generic.cpp \
-	r0drv/generic/RTThreadPreemptRestore-r0drv-generic.cpp \
 	r0drv/generic/mpnotification-r0drv-generic.cpp \
 	r0drv/darwin/alloc-r0drv-darwin.cpp \
 	r0drv/darwin/assert-r0drv-darwin.cpp \
@@ -1202,6 +1199,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 	r0drv/darwin/spinlock-r0drv-darwin.cpp \
 	r0drv/darwin/thread-r0drv-darwin.cpp \
 	r0drv/darwin/thread2-r0drv-darwin.cpp \
+	r0drv/darwin/threadpreempt-r0drv-darwin.cpp \
 	r0drv/darwin/time-r0drv-darwin.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/powernotification-r0drv.c
@@ -1242,6 +1240,7 @@ RuntimeR0Drv_SOURCES.os2 = \
 	r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.cpp \
 	r0drv/generic/RTMpOn-r0drv-generic.cpp \
 	r0drv/generic/RTThreadPreemptIsEnabled-r0drv-generic.cpp \
+	r0drv/generic/RTThreadPreemptIsPending-r0drv-generic.cpp \
 	r0drv/generic/RTThreadPreemptDisable-r0drv-generic.cpp \
 	r0drv/generic/RTThreadPreemptRestore-r0drv-generic.cpp \
 	r0drv/generic/mpnotification-r0drv-generic.cpp \
@@ -1283,6 +1282,7 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	generic/mppresent-generic.cpp \
 	r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.cpp \
 	r0drv/generic/RTThreadPreemptIsEnabled-r0drv-generic.cpp \
+	r0drv/generic/RTThreadPreemptIsPending-r0drv-generic.cpp \
 	r0drv/generic/RTThreadPreemptDisable-r0drv-generic.cpp \
 	r0drv/generic/RTThreadPreemptRestore-r0drv-generic.cpp \
 	r0drv/generic/mpnotification-r0drv-generic.cpp \
