@@ -2890,7 +2890,7 @@ ResumeExecution:
         if (exitQualification & VMX_EXIT_QUALIFICATION_EPT_ENTRY_PRESENT)
             errCode |= X86_TRAP_PF_P;
 
-        Log(("EPT Page fault %x at %RGp error code %x\n", (uint32_t)exitQualification, GCPhys, errCode));
+        LogFlow(("EPT Page fault %x at %RGp error code %x\n", (uint32_t)exitQualification, GCPhys, errCode));
 
         /* GCPhys contains the guest physical address of the page fault. */
         TRPMAssertTrap(pVCpu, X86_XCPT_PF, TRPM_TRAP);
