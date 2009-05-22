@@ -103,6 +103,15 @@ RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
 }
 
 
+RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
+{
+    Assert(hThread == NIL_RTTHREAD);
+    /** @todo Review this! */
+    return CPU->cpu_runrun   != 0
+        || CPU->cpu_kprunrun != 0;
+}
+
+
 RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 {
     AssertPtr(pState);
