@@ -396,6 +396,17 @@ RTDECL(int) RTThreadPoke(RTTHREAD hThread);
 RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread);
 
 /**
+ * Check if preemption is pending for the current thread.
+ *
+ * This function should be called regularly when executing larger portions of
+ * code with preemption disabled.
+ *
+ * @returns true if pending, false if not.
+ * @param       hThread         Must be NIL_RTTHREAD for now.
+ */
+RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread);
+
+/**
  * Preemption state saved by RTThreadPreemptDisable and used by
  * RTThreadPreemptRestore to restore the previous state.
  */
