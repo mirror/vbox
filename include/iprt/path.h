@@ -345,8 +345,8 @@ RTDECL(bool) RTPathStartsWith(const char *pszPath, const char *pszParentPath);
 /**
  * Appends one partial path to another.
  *
- * The main purpose of this function is to deal correctly with leading and
- * trailing slashes.
+ * The main purpose of this function is to deal correctly with the slashes when
+ * concatenating the two partial paths.
  *
  * @returns IPRT status code.
  * @retval  VERR_PATH
@@ -360,10 +360,15 @@ RTDECL(bool) RTPathStartsWith(const char *pszPath, const char *pszParentPath);
  *                          NULL, in which case nothing is done.
  *
  * @remarks On OS/2, Window and similar systems, concatenating a drive letter
- *          specifier with a root prefixed path will result in an absolute path.
- *          Meaning, RTPathAppend(strcpy(szBuf, "C:"), sizeof(szBuf), "/bar")
- *          will result in "C:/bar". (This follows directly from the behavior
- *          when pszPath is empty.)
+ *          specifier with a slash prefixed path will result in an absolute
+ *          path. Meaning, RTPathAppend(strcpy(szBuf, "C:"), sizeof(szBuf),
+ *          "/bar") will result in "C:/bar". (This follows directly from the
+ *          behavior when pszPath is empty.)
+ *
+ *          On the other hand, when joining a drive letter specifier with a
+ *          partial path that does not start with a slash, the result is not an
+ *          absolute path. Meaning, RTPathAppend(strcpy(szBuf, "C:"),
+ *          sizeof(szBuf), "bar") will result in "C:bar".
  */
 RTDECL(int) RTPathAppend(char *pszPath, size_t cchPathDst, const char *pszAppend);
 
