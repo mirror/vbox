@@ -725,7 +725,7 @@ $(VBOX_IDL_FILE.MSCOM): $(VBOX_PATH_MAIN_SRC)/idl/midl.xsl $(VBOX_XIDL_FILE) | $
 
 $(VBOX_PYTHON_CONSTANTS):  $(VBOX_PATH_MAIN_SRC)/glue/constants-python.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
 	$(call MSG_TOOL,xsltproc,Python constants,$<,$@)
-	$(VBOX_XSLTPROC) -o $@ $< $(VBOX_XIDL_FILE)
+	$(QUIET)$(VBOX_XSLTPROC) -o $@ $< $(VBOX_XIDL_FILE)
 
 # Aliases for testing purposes.
 ifdef VBOX_WITH_XPCOM

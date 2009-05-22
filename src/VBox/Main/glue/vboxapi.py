@@ -31,6 +31,8 @@ os.environ["VBOX_SDK_PATH"] = VboxSdkDir
 sys.path.append(VboxBinDir)
 sys.path.append(VboxSdkDir+"/bindings/glue/python")
 
+from VirtualBox_constants import VirtualBoxReflectionInfo
+
 class PlatformMSCOM:
     class ConstantFake:
         def __init__(self, parent, name):
@@ -206,7 +208,7 @@ class VirtualBoxManager:
             exec "self.platform = Platform"+style+"(platparams)"
             self.vbox = self.platform.getVirtualBox()
             self.mgr = SessionManager(self)
-            self.constants = self.platform.getConstants()
+            self.constants = VirtualBoxReflectionInfo()
             self.type = self.platform.getType()
             self.remote = self.platform.getRemote()
         except Exception,e:
