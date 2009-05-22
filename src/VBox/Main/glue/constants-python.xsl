@@ -56,7 +56,7 @@ class VirtualBoxReflectionInfo:
                   <xsl:for-each select="const">'<xsl:value-of select="@name"/>':<xsl:value-of select="@value"/><xsl:if test="not(position()=last())">,</xsl:if>
                   </xsl:for-each>}<xsl:if test="not(position()=last())">,</xsl:if>
 
-              </xsl:for-each>
+              </xsl:for-each>}
 
    _ValuesFlat = {<xsl:for-each select="//enum">
                    <xsl:variable name="ename">
@@ -65,14 +65,15 @@ class VirtualBoxReflectionInfo:
                    <xsl:for-each select="const">
                         '<xsl:value-of select="$ename"/>_<xsl:value-of select="@name"/>':<xsl:value-of select="@value"/><xsl:if test="not(position()=last())">,</xsl:if>
                    </xsl:for-each>
+                   <xsl:if test="not(position()=last())">,</xsl:if>
                   </xsl:for-each>}
 
    def __getattr__(self,attr):
       v = self._ValuesFlat.get(attr)
-      if v == None:
-          return self.__dict__[name]
-      return v
-
+      if v is not None:
+         return v
+      else:
+         raise AttributeError
 
 </xsl:template>
 </xsl:stylesheet> 
