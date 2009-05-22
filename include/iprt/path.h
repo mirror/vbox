@@ -348,14 +348,17 @@ RTDECL(bool) RTPathStartsWith(const char *pszPath, const char *pszParentPath);
  * The main purpose of this function is to deal correctly with the slashes when
  * concatenating the two partial paths.
  *
- * @returns IPRT status code.
- * @retval  VERR_PATH
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_BUFFER_OVERFLOW if the result is too big to fit within
+ *          cbPathDst bytes. No changes has been made.
+ * @retval  VERR_INVALID_PARAMETER if the string pointed to by pszPath is longer
+ *          than cbPathDst-1 bytes (failed to find terminator). Asserted.
  *
  * @param   pszPath         The path to append pszAppend to. This serves as both
  *                          input and output. This can be empty, in which case
  *                          pszAppend is just copied over.
- * @param   cchPathDst      The size of the buffer pszPath points to. This
- *                          should NOT be strlen(pszPath).
+ * @param   cbPathDst       The size of the buffer pszPath points to, terminator
+ *                          included. This should NOT be strlen(pszPath).
  * @param   pszAppend       The partial path to append to pszPath. This can be
  *                          NULL, in which case nothing is done.
  *
@@ -370,7 +373,7 @@ RTDECL(bool) RTPathStartsWith(const char *pszPath, const char *pszParentPath);
  *          absolute path. Meaning, RTPathAppend(strcpy(szBuf, "C:"),
  *          sizeof(szBuf), "bar") will result in "C:bar".
  */
-RTDECL(int) RTPathAppend(char *pszPath, size_t cchPathDst, const char *pszAppend);
+RTDECL(int) RTPathAppend(char *pszPath, size_t cbPathDst, const char *pszAppend);
 
 
 #ifdef IN_RING3

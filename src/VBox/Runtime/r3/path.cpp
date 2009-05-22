@@ -728,9 +728,9 @@ RTDECL(char *) RTPathAbsExDup(const char *pszBase, const char *pszPath)
 }
 
 
-RTDECL(int) RTPathAppend(char *pszPath, size_t cchPath, const char *pszAppend)
+RTDECL(int) RTPathAppend(char *pszPath, size_t cbPathDst, const char *pszAppend)
 {
-    char *pszPathEnd = (char *)memchr(pszPath, '\0', cchPath);
+    char *pszPathEnd = (char *)memchr(pszPath, '\0', cbPathDst);
     AssertReturn(pszPathEnd, VERR_INVALID_PARAMETER);
 
     /*
@@ -743,7 +743,7 @@ RTDECL(int) RTPathAppend(char *pszPath, size_t cchPath, const char *pszAppend)
         return VINF_SUCCESS;
     if (pszPathEnd == pszPath)
     {
-        if (cchAppend >= cchPath)
+        if (cchAppend >= cbPathDst)
             return VERR_BUFFER_OVERFLOW;
         memcpy(pszPath, pszAppend, cchAppend + 1);
         return VINF_SUCCESS;
@@ -761,13 +761,13 @@ RTDECL(int) RTPathAppend(char *pszPath, size_t cchPath, const char *pszAppend)
             if (    pszPath[1] == ':'
                 &&  RT_C_IS_ALPHA(pszPath[0]))
             {
-                if ((size_t)(pszPathEnd - pszPath) + cchAppend >= cchPath)
+                if ((size_t)(pszPathEnd - pszPath) + cchAppend >= cbPathDst)
                     return VERR_BUFFER_OVERFLOW;
             }
             else
 #endif
             {
-                if ((size_t)(pszPathEnd - pszPath) + 1 + cchAppend >= cchPath)
+                if ((size_t)(pszPathEnd - pszPath) + 1 + cchAppend >= cbPathDst)
                     return VERR_BUFFER_OVERFLOW;
                 *pszPathEnd++ = '/';
             }
@@ -778,7 +778,7 @@ RTDECL(int) RTPathAppend(char *pszPath, size_t cchPath, const char *pszAppend)
             while (RTPATH_IS_SLASH(pszAppend[1]))
                 pszAppend++, cchAppend--;
 
-            if ((size_t)(pszPathEnd - pszPath) + cchAppend >= cchPath)
+            if ((size_t)(pszPathEnd - pszPath) + cchAppend >= cbPathDst)
                 return VERR_BUFFER_OVERFLOW;
         }
     }
@@ -795,7 +795,7 @@ RTDECL(int) RTPathAppend(char *pszPath, size_t cchPath, const char *pszAppend)
                &&   RTPATH_IS_SLASH(pszPathEnd[-2]))
             pszPathEnd--;
 
-        if ((size_t)(pszPathEnd - pszPath) + cchAppend >= cchPath)
+        if ((size_t)(pszPathEnd - pszPath) + cchAppend >= cbPathDst)
             return VERR_BUFFER_OVERFLOW;
     }
 
