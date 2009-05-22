@@ -362,9 +362,9 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64
                 ASMAtomicWriteSize(&pPT->a[iPTE], Pte.u);
                 Assert(pPT->a[iPTE].n.u1Present);
 # if PGM_SHW_TYPE == PGM_TYPE_EPT
-                HWACCMInvalidatePhysPage(pVCpu, (RTGCPHYS)GCPtr);
+                HWACCMInvalidatePhysPage(pVM, (RTGCPHYS)GCPtr);
 # else
-                PGM_INVL_PG(pVCpu, GCPtr);
+                PGM_INVL_ALL_VCPU_PG(pVM, GCPtr);
 # endif
             }
 

@@ -1296,8 +1296,9 @@ static int pgmPoolCacheFreeOne(PPGMPOOL pPool, uint16_t iUser)
      * Found a usable page, flush it and return.
      */
     int rc = pgmPoolFlushPage(pPool, pPage);
+    /* This flush was initiated by us and not the guest, so explicitly flush the TLB. */
     if (rc == VINF_SUCCESS)
-        PGM_INVL_VCPU_TLBS(VMMGetCpu(pVM)); /* see PT handler. */
+        PGM_INVL_ALL_VCPU_TLBS(pVM);
     return rc;
 }
 
@@ -3962,6 +3963,8 @@ void pgmPoolFreeByPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint3
  */
 static int pgmPoolMakeMoreFreePages(PPGMPOOL pPool, PGMPOOLKIND enmKind, uint16_t iUser)
 {
+    PVM pVM = pPool->CTX_SUFF(pVM);
+
     LogFlow(("pgmPoolMakeMoreFreePages: iUser=%#x\n", iUser));
 
     /*
@@ -3977,9 +3980,9 @@ static int pgmPoolMakeMoreFreePages(PPGMPOOL pPool, PGMPOOLKIND enmKind, uint16_
     {
         STAM_PROFILE_ADV_SUSPEND(&pPool->StatAlloc, a);
 #ifdef IN_RING3
-        int rc = PGMR3PoolGrow(pPool->pVMR3);
+        int rc = PGMR3PoolGrow(pVM);
 #else
-        int rc = CTXALLMID(VMM, CallHost)(pPool->CTX_SUFF(pVM), VMMCALLHOST_PGM_POOL_GROW, 0);
+        int rc = CTXALLMID(VMM, CallHost)(pVM, VMMCALLHOST_PGM_POOL_GROW, 0);
 #endif
         if (RT_FAILURE(rc))
             return rc;
