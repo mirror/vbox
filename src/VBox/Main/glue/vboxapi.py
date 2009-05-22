@@ -127,6 +127,15 @@ class PlatformMSCOM:
     def getArray(self, obj, field):
         return obj.__getattr__(field)
 
+    def initPerThread(self):
+        import pythoncom
+        # or with pythoncom.COINIT_APARTMENTTHREADED?
+        pythoncom.CoInitializeEx()
+
+    def deinitPerThread(self):
+        import pythoncom
+        pythoncom.CoUninitialize()
+
 
 class PlatformXPCOM:
     def __init__(self, params):
@@ -155,6 +164,12 @@ class PlatformXPCOM:
 
     def getArray(self, obj, field):
         return obj.__getattr__('get'+field.capitalize())()
+
+    def initPerThread(self):
+        pass
+
+    def deinitPerThread(self):
+        pass
 
 class PlatformWEBSERVICE:
     def __init__(self, params):
@@ -188,7 +203,12 @@ class PlatformWEBSERVICE:
 
     def getArray(self, obj, field):
         return obj.__getattr__(field)
-           
+    
+    def initPerThread(self):
+        pass
+
+    def deinitPerThread(self):
+        pass
 
 class SessionManager:
     def __init__(self, mgr):
@@ -225,3 +245,9 @@ class VirtualBoxManager:
     def __del__(self):
         if hasattr(self, "vbox"):
             del self.vbox
+
+    def initPerThread(self):
+        self.platform.initPerThread()
+
+    def deinitPerThread(self):
+        self.platform.deinitPerThread()
