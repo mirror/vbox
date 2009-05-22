@@ -47,6 +47,7 @@
 *******************************************************************************/
 static PSUPDRVSESSION   g_pSession;
 static RTTEST           g_hTest;
+static uint32_t         g_cMillies; /* Used by the interruptible tests. */
 
 
 
@@ -54,7 +55,7 @@ static DECLCALLBACK(int) tstSupSemInterruptibleSRE(RTTHREAD hSelf, void *pvUser)
 {
     SUPSEMEVENT hEvent = (SUPSEMEVENT)pvUser;
     RTThreadUserSignal(hSelf);
-    return SUPSemEventWaitNoResume(g_pSession, hEvent, RT_INDEFINITE_WAIT);
+    return SUPSemEventWaitNoResume(g_pSession, hEvent, g_cMillies);
 }
 
 
@@ -62,7 +63,7 @@ static DECLCALLBACK(int) tstSupSemInterruptibleMRE(RTTHREAD hSelf, void *pvUser)
 {
     SUPSEMEVENTMULTI hEventMulti = (SUPSEMEVENTMULTI)pvUser;
     RTThreadUserSignal(hSelf);
-    return SUPSemEventMultiWaitNoResume(g_pSession, hEventMulti, RT_INDEFINITE_WAIT);
+    return SUPSemEventMultiWaitNoResume(g_pSession, hEventMulti, g_cMillies);
 }
 
 
@@ -141,6 +142,7 @@ int main(int argc, char **argv)
 #if !defined(RT_OS_OS2) && !defined(RT_OS_WINDOWS)
     RTTestSub(hTest, "SRE Interruptibility");
     RTTESTI_CHECK_RC(SUPSemEventCreate(pSession, &hEvent), VINF_SUCCESS);
+    g_cMillies = RT_INDEFINITE_WAIT;
     RTTHREAD hThread = NIL_RTTHREAD;
     RTTESTI_CHECK_RC(RTThreadCreate(&hThread, tstSupSemInterruptibleSRE, (void *)hEvent, 0, RTTHREADTYPE_TIMER, RTTHREADFLAGS_WAITABLE, "IntSRE"), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTThreadUserWait(hThread, 60*1000), VINF_SUCCESS);
@@ -151,8 +153,22 @@ int main(int argc, char **argv)
     RTTESTI_CHECK_RC(rcThread, VERR_INTERRUPTED);
     RTTESTI_CHECK_RC(SUPSemEventClose(pSession, hEvent), VINF_OBJECT_DESTROYED);
 
+    RTTESTI_CHECK_RC(SUPSemEventCreate(pSession, &hEvent), VINF_SUCCESS);
+    g_cMillies = 120*1000;
+    hThread = NIL_RTTHREAD;
+    RTTESTI_CHECK_RC(RTThreadCreate(&hThread, tstSupSemInterruptibleSRE, (void *)hEvent, 0, RTTHREADTYPE_TIMER, RTTHREADFLAGS_WAITABLE, "IntSRE"), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTThreadUserWait(hThread, 60*1000), VINF_SUCCESS);
+    RTThreadSleep(120);
+    RTThreadPoke(hThread);
+    rcThread = VINF_SUCCESS;
+    RTTESTI_CHECK_RC(RTThreadWait(hThread, 60*1000, &rcThread), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(rcThread, VERR_INTERRUPTED);
+    RTTESTI_CHECK_RC(SUPSemEventClose(pSession, hEvent), VINF_OBJECT_DESTROYED);
+
+
     RTTestSub(hTest, "MRE Interruptibility");
     RTTESTI_CHECK_RC(SUPSemEventMultiCreate(pSession, &hEventMulti), VINF_SUCCESS);
+    g_cMillies = RT_INDEFINITE_WAIT;
     hThread = NIL_RTTHREAD;
     RTTESTI_CHECK_RC(RTThreadCreate(&hThread, tstSupSemInterruptibleMRE, (void *)hEventMulti, 0, RTTHREADTYPE_TIMER, RTTHREADFLAGS_WAITABLE, "IntMRE"), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTThreadUserWait(hThread, 60*1000), VINF_SUCCESS);
@@ -163,7 +179,18 @@ int main(int argc, char **argv)
     RTTESTI_CHECK_RC(rcThread, VERR_INTERRUPTED);
     RTTESTI_CHECK_RC(SUPSemEventMultiClose(pSession, hEventMulti), VINF_OBJECT_DESTROYED);
 
-#endif
+    RTTESTI_CHECK_RC(SUPSemEventMultiCreate(pSession, &hEventMulti), VINF_SUCCESS);
+    g_cMillies = 120*1000;
+    hThread = NIL_RTTHREAD;
+    RTTESTI_CHECK_RC(RTThreadCreate(&hThread, tstSupSemInterruptibleMRE, (void *)hEventMulti, 0, RTTHREADTYPE_TIMER, RTTHREADFLAGS_WAITABLE, "IntMRE"), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTThreadUserWait(hThread, 60*1000), VINF_SUCCESS);
+    RTThreadSleep(120);
+    RTThreadPoke(hThread);
+    rcThread = VINF_SUCCESS;
+    RTTESTI_CHECK_RC(RTThreadWait(hThread, 60*1000, &rcThread), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(rcThread, VERR_INTERRUPTED);
+    RTTESTI_CHECK_RC(SUPSemEventMultiClose(pSession, hEventMulti), VINF_OBJECT_DESTROYED);
+#endif /* !OS2 && !WINDOWS */
 
     /*
      * Done.
