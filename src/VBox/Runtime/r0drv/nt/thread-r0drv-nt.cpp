@@ -87,6 +87,37 @@ RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
 }
 
 
+#if 0
+RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
+{
+    Assert(hThread == NIL_RTTHREAD);
+
+    KeRaiseIrql
+    RTCCUINTREG       fSavedFlags  = ASMIntDisableFlags();
+    PKPCR             pPcr         = KeGetPcr();
+    uint8_t volatile *pbQuantumEnd;
+
+#if   defined(RT_ARCH_X86)
+    /* HACK ALERT! The offset is from ks386.inc. */
+    pbQuantumEnd = (uint8_t volatile *)pPcr->Prcb + 0x3375;
+
+
+#elif defined(RT_ARCH_AMD64)
+    /* HACK ALERT! The offset is from windbg/vista64. */
+    pbQuantumEnd = (uint8_t volatile *)pPcr->CurrentPrcb + 0x3375;
+
+#else
+# error "port me"
+#endif
+
+    bool fResult = *pbQuantumEnd != FALSE;
+    ASMSetFlags(fSavedFlags);
+
+    return fResult;
+}
+#endif
+
+
 RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 {
     AssertPtr(pState);
