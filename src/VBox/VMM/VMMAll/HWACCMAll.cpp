@@ -52,8 +52,6 @@
  */
 void hwaccmQueueInvlPage(PVMCPU pVCpu, RTGCPTR GCVirt)
 {
-    Assert(HWACCMIsEnabled(pVCpu->CTX_SUFF(pVM)));
-
     /* Nothing to do if a TLB flush is already pending */
     if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TLB_FLUSH))
         return;
