@@ -81,13 +81,14 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
             RTThreadPreemptDisable(&State);
             if (RTThreadPreemptIsEnabled(NIL_RTTHREAD))
                 RTStrPrintf(pszErr, cchErr, "!RTThreadPreemptIsEnabled returns true after RTThreadPreemptDisable");
+            else if (!(ASMGetFlags() & X86_EFL_IF))
+                RTStrPrintf(pszErr, cchErr, "!Interrupts disabled");
             RTThreadPreemptRestore(&State);
             break;
         }
 
         case TSTR0THREADPREMEPTION_IS_PENDING:
         {
-            /* This isn't 100% proof... */
             RTTHREADPREEMPTSTATE State = RTTHREADPREEMPTSTATE_INITIALIZER;
             RTThreadPreemptDisable(&State);
             if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
@@ -105,11 +106,13 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
                         cLoops++;
                     } while (   !fPending
                              && cNanosElapsed < UINT64_C(60)*1000U*1000U*1000U);
-                    if (fPending)
-                        RTStrPrintf(pszErr, cchErr, "RTThreadPreemptIsPending returned true after %llu loops / %llu ns\n",
-                                    cLoops, cNanosElapsed);
-                    else
+                    if (!fPending)
                         RTStrPrintf(pszErr, cchErr, "!Preempt not pending after %llu loops / %llu ns\n",
+                                    cLoops, cNanosElapsed);
+                    else if (cLoops == 1)
+                        RTStrPrintf(pszErr, cchErr, "!cLoops=0\n");
+                    else
+                        RTStrPrintf(pszErr, cchErr, "RTThreadPreemptIsPending returned true after %llu loops / %llu ns\n",
                                     cLoops, cNanosElapsed);
                 }
                 else

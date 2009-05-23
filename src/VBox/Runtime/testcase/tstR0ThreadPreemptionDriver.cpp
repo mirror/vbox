@@ -39,6 +39,7 @@
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
+#include <iprt/thread.h>
 #ifdef VBOX
 # include <VBox/sup.h>
 # include "tstR0ThreadPreemption.h"
@@ -152,14 +153,24 @@ int main(int argc, char **argv)
      * Stay in ring-0 until preemption is pending.
      */
     RTTestSub(hTest, "Pending Preemption");
-    Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
-    Req.Hdr.cbReq = sizeof(Req);
-    Req.szMsg[0] = '\0';
-    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstR0ThreadPreemption", sizeof("tstR0ThreadPreemption") - 1,
-                                             TSTR0THREADPREMEPTION_IS_PENDING, 0, &Req.Hdr), VINF_SUCCESS);
-    RTTESTI_CHECK_MSG(Req.szMsg[0] != '!', ("%s", Req.szMsg));
-    if (Req.szMsg[0])
-        RTTestIPrintf(RTTESTLVL_ALWAYS, "%s", Req.szMsg);
+    for (int i = 0; ; i++)
+    {
+        Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
+        Req.Hdr.cbReq = sizeof(Req);
+        Req.szMsg[0] = '\0';
+        RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstR0ThreadPreemption", sizeof("tstR0ThreadPreemption") - 1,
+                                                 TSTR0THREADPREMEPTION_IS_PENDING, 0, &Req.Hdr), VINF_SUCCESS);
+        if (    strcmp(Req.szMsg, "cLoops=0\n")
+            ||  i >= 64)
+        {
+            RTTESTI_CHECK_MSG(Req.szMsg[0] != '!', ("%s", Req.szMsg));
+            if (Req.szMsg[0])
+                RTTestIPrintf(RTTESTLVL_ALWAYS, "%s", Req.szMsg);
+            break;
+        }
+        if ((i % 3) == 0)
+            RTThreadYield();
+    }
 
     /*
      * Stay in ring-0 until preemption is pending.
