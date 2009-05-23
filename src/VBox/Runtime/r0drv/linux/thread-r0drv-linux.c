@@ -71,7 +71,15 @@ RTDECL(bool) RTThreadYield(void)
 RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
 {
     Assert(hThread == NIL_RTTHREAD);
-    return !in_atomic() && !irqs_disabled();
+#ifdef CONFIG_PREEMPT
+# ifdef preemptible
+    return preemptible();
+# else
+    return preempt_count() == 0 && !in_atomic() && !irqs_disabled();
+# endif
+#else
+    return false;
+#endif
 }
 
 
