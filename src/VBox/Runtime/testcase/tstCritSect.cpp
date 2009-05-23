@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,7 +28,6 @@
  * additional information or have any questions.
  */
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -36,53 +35,59 @@
 # include <Windows.h>
 #endif
 #include <iprt/critsect.h>
-#include <iprt/lock.h>
-#include <iprt/thread.h>
-#include <iprt/log.h>
-#include <iprt/semaphore.h>
-#include <iprt/asm.h>
-#include <iprt/initterm.h>
-#include <iprt/time.h>
-#include <iprt/assert.h>
-#include <iprt/string.h>
-#include <iprt/err.h>
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <iprt/asm.h>
+#include <iprt/assert.h>
+#include <iprt/ctype.h>
+#include <iprt/err.h>
+#include <iprt/initterm.h>
+#include <iprt/getopt.h>
+#include <iprt/lock.h>
+#include <iprt/log.h>
+#include <iprt/mem.h>
+#include <iprt/semaphore.h>
+#include <iprt/string.h>
+#include <iprt/test.h>
+#include <iprt/time.h>
+#include <iprt/thread.h>
+
 
 #ifndef TRY_WIN32_CRIT
-#define LOCKERS(sect)   ((sect).cLockers)
-#else
+# define LOCKERS(sect)   ((sect).cLockers)
+#else /* TRY_WIN32_CRIT */
+
 /* This is for comparing with the "real thing". */
 #define RTCRITSECT      CRITICAL_SECTION
 #define PRTCRITSECT     LPCRITICAL_SECTION
 #define LOCKERS(sect)   (*(LONG volatile *)&(sect).LockCount)
 
-inline int RTCritSectInit(PCRITICAL_SECTION pCritSect)
+DECLINLINE(int) RTCritSectInit(PCRITICAL_SECTION pCritSect)
 {
     InitializeCriticalSection(pCritSect);
     return VINF_SUCCESS;
 }
 
 #undef RTCritSectEnter
-inline int RTCritSectEnter(PCRITICAL_SECTION pCritSect)
+DECLINLINE(int) RTCritSectEnter(PCRITICAL_SECTION pCritSect)
 {
     EnterCriticalSection(pCritSect);
     return VINF_SUCCESS;
 }
 
-inline int RTCritSectLeave(PCRITICAL_SECTION pCritSect)
+DECLINLINE(int) RTCritSectLeave(PCRITICAL_SECTION pCritSect)
 {
     LeaveCriticalSection(pCritSect);
     return VINF_SUCCESS;
 }
 
-inline int RTCritSectDelete(PCRITICAL_SECTION pCritSect)
+DECLINLINE(int) RTCritSectDelete(PCRITICAL_SECTION pCritSect)
 {
     DeleteCriticalSection(pCritSect);
     return VINF_SUCCESS;
 }
-#endif
+
+#endif /* TRY_WIN32_CRIT */
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -138,90 +143,68 @@ typedef struct THREADTEST2ARGS
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/** Error counter. */
-static volatile uint32_t g_cErrors = 0;
+/** The test handle. */
+static RTTEST g_hTest;
+
+
 
 /**
  * Thread which goes to sleep on the critsect and checks that it's released in the right order.
  */
-static DECLCALLBACK(int) ThreadTest1(RTTHREAD ThreadSelf, void *pvArg)
+static DECLCALLBACK(int) ThreadTest1(RTTHREAD ThreadSelf, void *pvArgs)
 {
-    PTHREADTEST1ARGS pArgs = (PTHREADTEST1ARGS)pvArg;
-    Log2(("ThreadTest1: Start - iThread=%d ThreadSelf=%p\n", pArgs->iThread, ThreadSelf));
+    THREADTEST1ARGS Args = *(PTHREADTEST1ARGS)pvArgs;
+    Log2(("ThreadTest1: Start - iThread=%d ThreadSelf=%p\n", Args.iThread, ThreadSelf));
+    RTMemFree(pvArgs);
 
     /*
      * Enter it.
      */
-    int rc = RTCritSectEnter(pArgs->pCritSect);
+    int rc = RTCritSectEnter(Args.pCritSect);
     if (RT_FAILURE(rc))
     {
-        printf("tstCritSect: FATAL FAILURE - thread %d: RTCritSectEnter -> %d\n", pArgs->iThread, rc);
-        ASMAtomicIncU32(&g_cErrors);
-        exit(g_cErrors);
+        RTTestFailed(g_hTest, "thread %d: RTCritSectEnter -> %Rrc", Args.iThread, rc);
         return 1;
     }
 
     /*
      * Check release order.
      */
-    if (*pArgs->pu32Release != pArgs->iThread)
-    {
-        printf("tstCritSect: FAILURE - thread %d: released as number %d\n", pArgs->iThread, *pArgs->pu32Release);
-        ASMAtomicIncU32(&g_cErrors);
-    }
-    ASMAtomicIncU32(pArgs->pu32Release);
+    if (*Args.pu32Release != Args.iThread)
+        RTTestFailed(g_hTest, "thread %d: released as number %d", Args.iThread, *Args.pu32Release);
+    ASMAtomicIncU32(Args.pu32Release);
 
     /*
      * Leave it.
      */
-    rc = RTCritSectLeave(pArgs->pCritSect);
+    rc = RTCritSectLeave(Args.pCritSect);
     if (RT_FAILURE(rc))
     {
-        printf("tstCritSect: FATAL FAILURE - thread %d: RTCritSectEnter -> %d\n", pArgs->iThread, rc);
-        ASMAtomicIncU32(&g_cErrors);
-        exit(g_cErrors);
+        RTTestFailed(g_hTest, "thread %d: RTCritSectEnter -> %Rrc", Args.iThread, rc);
         return 1;
     }
 
-    Log2(("ThreadTest1: End - iThread=%d ThreadSelf=%p\n", pArgs->iThread, ThreadSelf));
+    Log2(("ThreadTest1: End - iThread=%d ThreadSelf=%p\n", Args.iThread, ThreadSelf));
     return 0;
 }
 
 
-int Test1(unsigned cThreads)
+static int Test1(unsigned cThreads)
 {
+    RTTestSubF(g_hTest, "Test #1 with %u thread", cThreads);
+
     /*
      * Create a critical section.
      */
     RTCRITSECT CritSect;
-    int rc = RTCritSectInit(&CritSect);
-    if (RT_FAILURE(rc))
-    {
-        printf("tstCritSect: FATAL FAILURE - RTCritSectInit -> %d\n", rc);
-        return 1;
-    }
+    RTTEST_CHECK_RC_RET(g_hTest, RTCritSectInit(&CritSect), VINF_SUCCESS, 1);
 
     /*
      * Enter, leave and enter again.
      */
-    rc = RTCritSectEnter(&CritSect);
-    if (RT_FAILURE(rc))
-    {
-        printf("tstCritSect: FATAL FAILURE - RTCritSectEnter -> %d\n", rc);
-        return 1;
-    }
-    rc = RTCritSectLeave(&CritSect);
-    if (RT_FAILURE(rc))
-    {
-        printf("tstCritSect: FATAL FAILURE - RTCritSectLeave -> %d\n", rc);
-        return 1;
-    }
-    rc = RTCritSectEnter(&CritSect);
-    if (RT_FAILURE(rc))
-    {
-        printf("tstCritSect: FATAL FAILURE - RTCritSectEnter -> %d (2nd)\n", rc);
-        return 1;
-    }
+    RTTEST_CHECK_RC_RET(g_hTest, RTCritSectEnter(&CritSect), VINF_SUCCESS, 1);
+    RTTEST_CHECK_RC_RET(g_hTest, RTCritSectLeave(&CritSect), VINF_SUCCESS, 1);
+    RTTEST_CHECK_RC_RET(g_hTest, RTCritSectEnter(&CritSect), VINF_SUCCESS, 1);
 
     /*
      * Now spawn threads which will go to sleep entering the critsect.
@@ -229,20 +212,14 @@ int Test1(unsigned cThreads)
     uint32_t    u32Release = 0;
     for (uint32_t iThread = 0; iThread < cThreads; iThread++)
     {
-        PTHREADTEST1ARGS pArgs = (PTHREADTEST1ARGS)calloc(sizeof(*pArgs), 1);
+        PTHREADTEST1ARGS pArgs = (PTHREADTEST1ARGS)RTMemAllocZ(sizeof(*pArgs));
         pArgs->iThread = iThread;
         pArgs->pCritSect = &CritSect;
         pArgs->pu32Release = &u32Release;
         int32_t     iLock = LOCKERS(CritSect);
-        char szThread[17];
-        RTStrPrintf(szThread, sizeof(szThread), "T%d", iThread);
-        RTTHREAD  Thread;
-        rc = RTThreadCreate(&Thread, ThreadTest1, pArgs, 0, RTTHREADTYPE_DEFAULT, 0, szThread);
-        if (RT_FAILURE(rc))
-        {
-            printf("tstCritSect: FATAL FAILURE - RTThreadCreate -> %d\n", rc);
-            exit(1);
-        }
+        RTTHREAD    Thread;
+        RTTEST_CHECK_RC_RET(g_hTest, RTThreadCreateF(&Thread, ThreadTest1, pArgs, 0, RTTHREADTYPE_DEFAULT, 0, "T%d", iThread), VINF_SUCCESS, 1);
+
         /* wait for it to get into waiting. */
         while (LOCKERS(CritSect) == iLock)
             RTThreadSleep(10);
@@ -253,22 +230,11 @@ int Test1(unsigned cThreads)
      * Now we'll release the threads and wait for all of them to quit.
      */
     u32Release = 0;
-    rc = RTCritSectLeave(&CritSect);
-    if (RT_FAILURE(rc))
-    {
-        printf("tstCritSect: FATAL FAILURE - RTCritSectLeave -> %d (2nd)\n", rc);
-        return 1;
-    }
+    RTTEST_CHECK_RC_RET(g_hTest, RTCritSectLeave(&CritSect), VINF_SUCCESS, 1);
     while (u32Release < cThreads)
         RTThreadSleep(10);
 
-    rc = RTCritSectDelete(&CritSect);
-    if (RT_FAILURE(rc))
-    {
-        printf("tstCritSect: FAILURE - RTCritSectDelete -> %d\n", rc);
-        ASMAtomicIncU32(&g_cErrors);
-    }
-
+    RTTEST_CHECK_RC_RET(g_hTest, RTCritSectDelete(&CritSect), VINF_SUCCESS, 1);
     return 0;
 }
 
@@ -294,28 +260,23 @@ static DECLCALLBACK(int) ThreadTest2(RTTHREAD ThreadSelf, void *pvArg)
         int rc = RTCritSectEnter(pArgs->pCritSect);
         if (RT_FAILURE(rc))
         {
-            printf("tstCritSect: FATAL FAILURE - Test 2 - thread %d, iteration %d: RTCritSectEnter -> %d\n", pArgs->iThread, i, rc);
-            ASMAtomicIncU32(&g_cErrors);
-            exit(g_cErrors);
+            RTTestFailed(g_hTest, "thread %d, iteration %d: RTCritSectEnter -> %d", pArgs->iThread, i, rc);
             return 1;
         }
         if (!u64TSStart)
             u64TSStart = RTTimeNanoTS();
 
-        #if 0 /* We just check for sequences. */
+#if 0 /* We just check for sequences. */
         /*
          * Check release order.
          */
         if ((*pArgs->pu32Release % pArgs->cThreads) != pArgs->iThread)
-        {
-            printf("tstCritSect: FAILURE - Test 2 - thread %d, iteration %d: released as number %d (%d)\n",
-                   pArgs->iThread, i, *pArgs->pu32Release % pArgs->cThreads, *pArgs->pu32Release);
-            ASMAtomicIncU32(&g_cErrors);
-        }
+            RTTestFailed(g_hTest, "thread %d, iteration %d: released as number %d (%d)",
+                         pArgs->iThread, i, *pArgs->pu32Release % pArgs->cThreads, *pArgs->pu32Release);
         else
-            printf("tstCritSect: SUCCESS - Test 2 - thread %d, iteration %d: released as number %d (%d)\n",
-                   pArgs->iThread, i, *pArgs->pu32Release % pArgs->cThreads, *pArgs->pu32Release);
-        #endif
+            RTTestPrintf(g_hTest, RTTESTLVL_INFO, "iteration %d: released as number %d (%d)\n",
+                         pArgs->iThread, i, *pArgs->pu32Release % pArgs->cThreads, *pArgs->pu32Release);
+#endif
         pArgs->cTimes++;
         ASMAtomicIncU32(pArgs->pu32Release);
 
@@ -347,10 +308,8 @@ static DECLCALLBACK(int) ThreadTest2(RTTHREAD ThreadSelf, void *pvArg)
         {
             if (*pArgs->pu32Alone != ~0U)
             {
-                printf("tstCritSect: FATAL FAILURE - Test 2 - thread %d, iteration %d: not alone!!!\n", pArgs->iThread, i);
-                AssertReleaseMsgFailed(("Not alone!\n"));
-                ASMAtomicIncU32(&g_cErrors);
-                exit(g_cErrors);
+                RTTestFailed(g_hTest, "thread %d, iteration %d: not alone!!!", pArgs->iThread, i);
+                //AssertReleaseMsgFailed(("Not alone!\n"));
                 return 1;
             }
         }
@@ -359,10 +318,8 @@ static DECLCALLBACK(int) ThreadTest2(RTTHREAD ThreadSelf, void *pvArg)
         {
             if (*pArgs->pu32Alone != pArgs->iThread)
             {
-                printf("tstCritSect: FATAL FAILURE - Test 2 - thread %d, iteration %d: not alone!!!\n", pArgs->iThread, i);
-                AssertReleaseMsgFailed(("Not alone!\n"));
-                ASMAtomicIncU32(&g_cErrors);
-                exit(g_cErrors);
+                RTTestFailed(g_hTest, "thread %d, iteration %d: not alone!!!", pArgs->iThread, i);
+                //AssertReleaseMsgFailed(("Not alone!\n"));
                 return 1;
             }
         }
@@ -383,9 +340,7 @@ static DECLCALLBACK(int) ThreadTest2(RTTHREAD ThreadSelf, void *pvArg)
         rc = RTCritSectLeave(pArgs->pCritSect);
         if (RT_FAILURE(rc))
         {
-            printf("tstCritSect: FATAL FAILURE - Test 2 - thread %d, iteration %d: RTCritSectEnter -> %d\n", pArgs->iThread, i, rc);
-            ASMAtomicIncU32(&g_cErrors);
-            exit(g_cErrors);
+            RTTestFailed(g_hTest, "thread %d, iteration %d: RTCritSectEnter -> %d", pArgs->iThread, i, rc);
             return 1;
         }
     }
@@ -397,49 +352,30 @@ static DECLCALLBACK(int) ThreadTest2(RTTHREAD ThreadSelf, void *pvArg)
     return 0;
 }
 
-int Test2(unsigned cThreads, unsigned cIterations, unsigned cCheckLoops)
+static int Test2(unsigned cThreads, unsigned cIterations, unsigned cCheckLoops)
 {
-    printf("tstCritSect: Test2 - cThread=%d cIterations=%d cCheckLoops=%d...\n", cThreads, cIterations, cCheckLoops);
+    RTTestSubF(g_hTest, "Test #2 - cThreads=%u cIterations=%u cCheckLoops=%u", cThreads, cIterations, cCheckLoops);
 
     /*
      * Create a critical section.
      */
     RTCRITSECT CritSect;
-    int rc = RTCritSectInit(&CritSect);
-    if (RT_FAILURE(rc))
-    {
-        printf("tstCritSect: FATAL FAILURE - Test 2 - RTCritSectInit -> %d\n", rc);
-        return 1;
-    }
+    int rc;
+    RTTEST_CHECK_RC_RET(g_hTest, RTCritSectInit(&CritSect), VINF_SUCCESS, 1);
 
     /*
      * Enter, leave and enter again.
      */
-    rc = RTCritSectEnter(&CritSect);
-    if (RT_FAILURE(rc))
-    {
-        printf("tstCritSect: FATAL FAILURE - Test 2 - RTCritSectEnter -> %d\n", rc);
-        return 1;
-    }
-    rc = RTCritSectLeave(&CritSect);
-    if (RT_FAILURE(rc))
-    {
-        printf("tstCritSect: FATAL FAILURE - Test 2 - RTCritSectLeave -> %d\n", rc);
-        return 1;
-    }
-    rc = RTCritSectEnter(&CritSect);
-    if (RT_FAILURE(rc))
-    {
-        printf("tstCritSect: FATAL FAILURE - Test 2 - RTCritSectEnter -> %d (2nd)\n", rc);
-        return 1;
-    }
+    RTTEST_CHECK_RC_RET(g_hTest, RTCritSectEnter(&CritSect), VINF_SUCCESS, 1);
+    RTTEST_CHECK_RC_RET(g_hTest, RTCritSectLeave(&CritSect), VINF_SUCCESS, 1);
+    RTTEST_CHECK_RC_RET(g_hTest, RTCritSectEnter(&CritSect), VINF_SUCCESS, 1);
 
     /*
      * Now spawn threads which will go to sleep entering the critsect.
      */
-    PTHREADTEST2ARGS paArgs = (PTHREADTEST2ARGS)calloc(sizeof(THREADTEST2ARGS), cThreads);
-    RTSEMEVENT    EventDone;
-    rc = RTSemEventCreate(&EventDone);
+    PTHREADTEST2ARGS paArgs = (PTHREADTEST2ARGS)RTMemAllocZ(sizeof(THREADTEST2ARGS) * cThreads);
+    RTSEMEVENT       EventDone;
+    RTTEST_CHECK_RC_RET(g_hTest, RTSemEventCreate(&EventDone), VINF_SUCCESS, 1);
     uint32_t volatile   u32Release = 0;
     uint32_t volatile   u32Alone = ~0;
     uint32_t volatile   u32Prev = ~0;
@@ -469,27 +405,22 @@ int Test2(unsigned cThreads, unsigned cIterations, unsigned cCheckLoops)
         rc = RTThreadCreate(&Thread, ThreadTest2, &paArgs[iThread], 0, RTTHREADTYPE_DEFAULT, 0, szThread);
         if (RT_FAILURE(rc))
         {
-            printf("tstCritSect: FATAL FAILURE - Test 2 - RTThreadCreate -> %d\n", rc);
-            exit(1);
+            RTTestFailed(g_hTest, "RTThreadCreate -> %d", rc);
+            return 1;
         }
         /* wait for it to get into waiting. */
         while (LOCKERS(CritSect) == iLock)
             RTThreadSleep(10);
         RTThreadSleep(20);
     }
-    printf("tstCritSect: Test2 - threads created...\n");
+    RTTestPrintf(g_hTest, RTTESTLVL_INFO, "threads created...\n");
 
     /*
      * Now we'll release the threads and wait for all of them to quit.
      */
     u32Release = 0;
     uint64_t u64TSStart = RTTimeNanoTS();
-    rc = RTCritSectLeave(&CritSect);
-    if (RT_FAILURE(rc))
-    {
-        printf("tstCritSect: FATAL FAILURE - RTCritSectLeave -> %d (2nd)\n", rc);
-        return 1;
-    }
+    RTTEST_CHECK_RC_RET(g_hTest, RTCritSectLeave(&CritSect), VINF_SUCCESS, 1);
 
     while (cThreadRunning > 0)
         RTSemEventWait(EventDone, RT_INDEFINITE_WAIT);
@@ -498,19 +429,11 @@ int Test2(unsigned cThreads, unsigned cIterations, unsigned cCheckLoops)
     /*
      * Clean up and report results.
      */
-    rc = RTCritSectDelete(&CritSect);
-    if (RT_FAILURE(rc))
-    {
-        printf("tstCritSect: FAILURE - RTCritSectDelete -> %d\n", rc);
-        ASMAtomicIncU32(&g_cErrors);
-    }
+    RTTEST_CHECK_RC(g_hTest, RTCritSectDelete(&CritSect), VINF_SUCCESS);
 
     /* sequences */
     if (cSeq > RT_MAX(u32Release / 10000, 1))
-    {
-        printf("tstCritSect: FAILURE - too many same thread sequences! cSeq=%d\n", cSeq);
-        ASMAtomicIncU32(&g_cErrors);
-    }
+        RTTestFailed(g_hTest, "too many same thread sequences! cSeq=%d\n", cSeq);
 
     /* distribution caused by sequences / reordering. */
     unsigned cDiffTotal = 0;
@@ -519,63 +442,108 @@ int Test2(unsigned cThreads, unsigned cIterations, unsigned cCheckLoops)
     {
         int cDiff = paArgs[iThread].cTimes - u32Perfect;
         if ((unsigned)RT_ABS(cDiff) > RT_MAX(u32Perfect / 10000, 2))
-        {
-            printf("tstCritSect: FAILURE - bad distribution thread %d u32Perfect=%d cTimes=%d cDiff=%d\n",
-                   iThread, u32Perfect, paArgs[iThread].cTimes, cDiff);
-            ASMAtomicIncU32(&g_cErrors);
-        }
+            RTTestFailed(g_hTest, "bad distribution thread %d u32Perfect=%d cTimes=%d cDiff=%d\n",
+                         iThread, u32Perfect, paArgs[iThread].cTimes, cDiff);
         cDiffTotal += RT_ABS(cDiff);
     }
 
     uint32_t cMillies = (uint32_t)((u64TSEnd - u64TSStart) / 1000000);
-    printf("tstCritSect: Test2 - DONE. %d enter+leave in %dms cSeq=%d cReordered=%d cDiffTotal=%d\n",
-           u32Release, cMillies, cSeq, cReordered, cDiffTotal);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
+                 "%d enter+leave in %dms cSeq=%d cReordered=%d cDiffTotal=%d\n",
+                 u32Release, cMillies, cSeq, cReordered, cDiffTotal);
     return 0;
 }
 
 
-int main(int argc, char *argv[])
+int main(int argc, char **argv)
 {
-    printf("tstCritSect: TESTING\n");
-
     int rc = RTR3Init();
     if (RT_FAILURE(rc))
-    {
-        printf("tstCritSect: FATAL FAILURE - RTR3Init -> %d\n", rc);
         return 1;
+    RTTEST hTest;
+#ifndef TRY_WIN32_CRT
+    rc = RTTestCreate("tstRTCritSect", &hTest);
+#else
+    rc = RTTestCreate("tstRTCritSectW32", &hTest);
+#endif
+    if (RT_FAILURE(rc))
+        return 1;
+    g_hTest = hTest;
+    RTTestBanner(hTest);
+
+    /* parse args. */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--distribution", 'd', RTGETOPT_REQ_NOTHING },
+        { "--help",         'h', RTGETOPT_REQ_NOTHING }
+    };
+
+    bool fTestDistribution = false;
+
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (ch)
+        {
+            case 'd':
+                fTestDistribution = true;
+                break;
+
+            case 'h':
+                RTTestIPrintf(RTTESTLVL_ALWAYS, "%s [--help|-h] [--distribution|-d]\n", argv[0]);
+                return 1;
+
+            case VINF_GETOPT_NOT_OPTION:
+                RTTestIFailed("%Rrs\n", ch);
+                return RTTestSummaryAndDestroy(hTest);
+
+            default:
+                if (ch > 0)
+                {
+                    if (RT_C_IS_GRAPH(ch))
+                        RTTestIFailed("unhandled option: -%c\n", ch);
+                    else
+                        RTTestIFailed("unhandled option: %i\n", ch);
+                }
+                else if (ch == VERR_GETOPT_UNKNOWN_OPTION)
+                    RTTestIFailed("unknown option: %s\n", ValueUnion.psz);
+                else if (ValueUnion.pDef)
+                    RTTestIFailed("%s: %Rrs\n", ValueUnion.pDef->pszLong, ch);
+                else
+                    RTTestIFailed("%Rrs\n", ch);
+                return RTTestSummaryAndDestroy(hTest);
+        }
     }
 
-    printf("tstCritSect: Test1...\n");
-    if (Test1(1))
-        return 1;
-    if (Test1(3))
-        return 1;
-    if (Test1(10))
-        return 1;
-    if (Test1(63))
-        return 1;
-    if (Test2(1, 200000, 1000))
-        return 1;
-    if (Test2(2, 200000, 1000))
-        return 1;
-    if (Test2(3, 200000, 1000))
-        return 1;
-    if (Test2(4, 200000, 1000))
-        return 1;
-    if (Test2(5, 200000, 1000))
-        return 1;
-    if (Test2(7, 200000, 1000))
-        return 1;
-    if (Test2(67, 200000, 1000))
-        return 1;
+
+    /*
+     * Perform the testing.
+     */
+    if (    !Test1(1)
+        &&  !Test1(3)
+        &&  !Test1(10)
+        &&  !Test1(63))
+    {
+
+        if (    fTestDistribution
+            &&  !Test2(1, 200000, 1000)
+            &&  !Test2(2, 200000, 1000)
+            &&  !Test2(3, 200000, 1000)
+            &&  !Test2(4, 200000, 1000)
+            &&  !Test2(5, 200000, 1000)
+            &&  !Test2(7, 200000, 1000)
+            &&  !Test2(67, 200000, 1000))
+        {
+            /*nothing*/;
+        }
+    }
 
     /*
      * Summary.
      */
-    if (!g_cErrors)
-        printf("tstCritSect: SUCCESS\n");
-    else
-        printf("tstCritSect: FAILURE - %d errors\n", g_cErrors);
-
-    return !!g_cErrors;
+    return RTTestSummaryAndDestroy(hTest);
 }
+
