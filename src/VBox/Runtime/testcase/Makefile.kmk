@@ -48,7 +48,7 @@ IPRT_OUT_DIR ?= $(PATH_TARGET)/Runtime
 # Target lists
 #
 PROGRAMS += \
-	tstAvl \
+	tstRTAvl \
 	tstBase64 \
 	tstBitOperations \
 	tstCidr \
@@ -135,7 +135,7 @@ endif
 # Target configs in almost alphabetical order.
 #
 
-tstAvl_SOURCES = tstAvl.cpp
+tstRTAvl_SOURCES = tstRTAvl.cpp
 
 tstBase64_TEMPLATE = VBOXR3TSTEXE
 tstBase64_SOURCES = tstBase64.cpp

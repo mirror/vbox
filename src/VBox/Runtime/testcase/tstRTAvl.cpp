@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT Testcase - Avl trees.
+ * IPRT Testcase - AVL trees.
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,17 +28,18 @@
  * additional information or have any questions.
  */
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/avl.h>
+
 #include <iprt/asm.h>
+#include <iprt/initterm.h>
+#include <iprt/mem.h>
+#include <iprt/rand.h>
 #include <iprt/stdarg.h>
 #include <iprt/string.h>
-
-#include <stdio.h>
-#include <stdlib.h> /* rand */
+#include <iprt/test.h>
 
 
 /*******************************************************************************
@@ -59,26 +60,11 @@ typedef struct TRACKER
 } TRACKER, *PTRACKER;
 
 
-/**
- * Gets a random number between 0 and Max.
- *
- * @return random number.
- * @param   Max     The max number. (exclusive)
- */
-uint32_t Random(uint32_t Max)
-{
-    unsigned rc = rand();
-    if (Max < RAND_MAX)
-    {
-        while (rc >= Max)
-            rc /= 3;
-    }
-    else
-    {
-        /// @todo...
-    }
-    return rc;
-}
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+static RTTEST g_hTest;
+static RTRAND g_hRand;
 
 
 /**
@@ -87,15 +73,16 @@ uint32_t Random(uint32_t Max)
  * @returns Pointer to the new tracker.
  * @param   MaxKey      The max key value for the tracker. (exclusive)
  */
-PTRACKER TrackerCreate(uint32_t MaxKey)
+static PTRACKER TrackerCreate(uint32_t MaxKey)
 {
     uint32_t cbBitmap = (MaxKey + sizeof(uint32_t) * sizeof(uint8_t) - 1) / sizeof(uint8_t);
-    PTRACKER pTracker = (PTRACKER)calloc(1, RT_OFFSETOF(TRACKER, abBitmap[cbBitmap]));
+    PTRACKER pTracker = (PTRACKER)RTMemAllocZ(RT_OFFSETOF(TRACKER, abBitmap[cbBitmap]));
     if (pTracker)
     {
         pTracker->MaxKey = MaxKey;
         pTracker->LastAllocatedKey = MaxKey;
         pTracker->cbBitmap = cbBitmap;
+        Assert(pTracker->cSetBits == 0);
     }
     return pTracker;
 }
@@ -106,10 +93,9 @@ PTRACKER TrackerCreate(uint32_t MaxKey)
  *
  * @param   pTracker        The tracker.
  */
-void TrackerDestroy(PTRACKER pTracker)
+static void TrackerDestroy(PTRACKER pTracker)
 {
-    if (pTracker)
-        free(pTracker);
+    RTMemFree(pTracker);
 }
 
 
@@ -121,7 +107,7 @@ void TrackerDestroy(PTRACKER pTracker)
  * @param   Key         The first key in the range.
  * @param   KeyLast     The last key in the range. (inclusive)
  */
-bool TrackerInsert(PTRACKER pTracker, uint32_t Key, uint32_t KeyLast)
+static bool TrackerInsert(PTRACKER pTracker, uint32_t Key, uint32_t KeyLast)
 {
     bool fRc = !ASMBitTestAndSet(pTracker->abBitmap, Key);
     if (fRc)
@@ -146,7 +132,7 @@ bool TrackerInsert(PTRACKER pTracker, uint32_t Key, uint32_t KeyLast)
  * @param   Key         The first key in the range.
  * @param   KeyLast     The last key in the range. (inclusive)
  */
-bool TrackerRemove(PTRACKER pTracker, uint32_t Key, uint32_t KeyLast)
+static bool TrackerRemove(PTRACKER pTracker, uint32_t Key, uint32_t KeyLast)
 {
     bool fRc = ASMBitTestAndClear(pTracker->abBitmap, Key);
     if (fRc)
@@ -173,12 +159,12 @@ bool TrackerRemove(PTRACKER pTracker, uint32_t Key, uint32_t KeyLast)
  * @param   cMaxKey     The max range length.
  * @remark  The caller has to call TrackerInsert.
  */
-bool TrackerNewRandomEx(PTRACKER pTracker, uint32_t *pKey, uint32_t *pKeyLast, uint32_t cMaxKeys)
+static bool TrackerNewRandomEx(PTRACKER pTracker, uint32_t *pKey, uint32_t *pKeyLast, uint32_t cMaxKeys)
 {
     /*
      * Find a key.
      */
-    uint32_t Key = Random(pTracker->MaxKey);
+    uint32_t Key = RTRandAdvU32Ex(g_hRand, 0, pTracker->MaxKey - 1);
     if (ASMBitTest(pTracker->abBitmap, Key))
     {
         if (pTracker->cSetBits >= pTracker->MaxKey)
@@ -193,7 +179,7 @@ bool TrackerNewRandomEx(PTRACKER pTracker, uint32_t *pKey, uint32_t *pKeyLast, u
             for (;;)
             {
                 const uint32_t KeyPrev = Key;
-                Key = Random(KeyPrev);
+                Key = RTRandAdvU32Ex(g_hRand, 0, KeyPrev - 1);
                 if (!ASMBitTest(pTracker->abBitmap, Key))
                     break;
                 Key2 = ASMBitNextClear(pTracker->abBitmap, RT_ALIGN_32(KeyPrev, 32), Key);
@@ -214,7 +200,7 @@ bool TrackerNewRandomEx(PTRACKER pTracker, uint32_t *pKey, uint32_t *pKeyLast, u
         KeyLast = Key;
     else
     {
-        uint32_t cKeys = Random(RT_MIN(pTracker->MaxKey - Key, cMaxKeys));
+        uint32_t cKeys = RTRandAdvU32Ex(g_hRand, 0, RT_MIN(pTracker->MaxKey - Key, cMaxKeys - 1));
         KeyLast = Key + cKeys;
         int Key2 = ASMBitNextSet(pTracker->abBitmap, RT_ALIGN_32(KeyLast, 32), Key);
         if (    Key2 > 0
@@ -240,7 +226,7 @@ bool TrackerNewRandomEx(PTRACKER pTracker, uint32_t *pKey, uint32_t *pKeyLast, u
  * @param   pKey        Where to store the allocated key.
  * @remark  The caller has to call TrackerInsert.
  */
-bool TrackerNewRandom(PTRACKER pTracker, uint32_t *pKey)
+static bool TrackerNewRandom(PTRACKER pTracker, uint32_t *pKey)
 {
     return TrackerNewRandomEx(pTracker, pKey, NULL, 1);
 }
@@ -254,9 +240,9 @@ bool TrackerNewRandom(PTRACKER pTracker, uint32_t *pKey)
  * @param   pKey        Where to store the allocated key.
  * @remark  The caller has to call TrackerRemove.
  */
-bool TrackerFindRandom(PTRACKER pTracker, uint32_t *pKey)
+static bool TrackerFindRandom(PTRACKER pTracker, uint32_t *pKey)
 {
-    uint32_t Key = Random(pTracker->MaxKey);
+    uint32_t Key = RTRandAdvU32Ex(g_hRand, 0, pTracker->MaxKey - 1);
     if (!ASMBitTest(pTracker->abBitmap, Key))
     {
         if (!pTracker->cSetBits)
@@ -267,20 +253,25 @@ bool TrackerFindRandom(PTRACKER pTracker, uint32_t *pKey)
             Key = Key2;
         else
         {
-            /* we're missing a ASMBitPrevSet function, so just try another, lower, value.*/
-            for (;;)
+            /* we're missing a ASMBitPrevSet function, so here's a quick replacement hack. */
+            uint32_t *pu32Start = (uint32_t *)&pTracker->abBitmap[0];
+            uint32_t *pu32Cur   = (uint32_t *)&pTracker->abBitmap[Key >> 8];
+            while (pu32Cur >= pu32Start)
             {
-                const uint32_t KeyPrev = Key;
-                Key = Random(KeyPrev);
-                if (ASMBitTest(pTracker->abBitmap, Key))
-                    break;
-                Key2 = ASMBitNextSet(pTracker->abBitmap, RT_ALIGN_32(KeyPrev, 32), Key);
-                if (Key2 > 0)
+                if (*pu32Cur)
                 {
-                    Key = Key2;
-                    break;
+                    *pKey = ASMBitLastSetU32(*pu32Cur) - 1 + (uint32_t)((pu32Cur - pu32Start) * 32);
+                    return true;
                 }
+                pu32Cur--;
             }
+            Key2 = ASMBitFirstSet(pTracker->abBitmap, pTracker->MaxKey);
+            if (Key2 == -1)
+            {
+                RTTestIFailed("cSetBits=%u - but ASMBitFirstSet failed to find any", pTracker->cSetBits);
+                return false;
+            }
+            Key = Key2;
         }
     }
 
@@ -300,10 +291,10 @@ bool TrackerAllocSeq(PTRACKER pTracker, uint32_t *pKey, uint32_t *pKeyLast, uint
  * Prints an unbuffered char.
  * @param   ch  The char.
  */
-void ProgressChar(char ch)
+static void ProgressChar(char ch)
 {
-    fputc(ch, stdout);
-    fflush(stdout);
+    //RTTestIPrintf(RTTESTLVL_INFO, "%c", ch);
+    RTTestIPrintf(RTTESTLVL_SUB_TEST, "%c", ch);
 }
 
 /**
@@ -316,9 +307,11 @@ DECLINLINE(void) ProgressPrintf(unsigned cMax, const char *pszFormat, ...)
 {
     if (cMax < 10000)
         return;
+
     va_list va;
     va_start(va, pszFormat);
-    vfprintf(stdout, pszFormat, va);
+    //RTTestIPrintfV(RTTESTLVL_INFO, pszFormat, va);
+    RTTestIPrintfV(RTTESTLVL_SUB_TEST, pszFormat, va);
     va_end(va);
 }
 
@@ -337,29 +330,30 @@ DECLINLINE(void) Progress(unsigned iCur, unsigned cMax)
 }
 
 
-int avlogcphys(unsigned cMax)
+static int avlogcphys(unsigned cMax)
 {
     /*
      * Simple linear insert and remove.
      */
-    ProgressPrintf(cMax, "tstAVL oGCPhys(%d): linear left", cMax);
-    PAVLOGCPHYSTREE pTree = (PAVLOGCPHYSTREE)calloc(sizeof(*pTree),1);
+    if (cMax >= 10000)
+        RTTestISubF("oGCPhys(%d): linear left", cMax);
+    PAVLOGCPHYSTREE pTree = (PAVLOGCPHYSTREE)RTMemAllocZ(sizeof(*pTree));
     unsigned i;
     for (i = 0; i < cMax; i++)
     {
         Progress(i, cMax);
-        PAVLOGCPHYSNODECORE pNode = (PAVLOGCPHYSNODECORE)malloc(sizeof(*pNode));
+        PAVLOGCPHYSNODECORE pNode = (PAVLOGCPHYSNODECORE)RTMemAlloc(sizeof(*pNode));
         pNode->Key = i;
         if (!RTAvloGCPhysInsert(pTree, pNode))
         {
-            printf("\ntstAvl: FAILURE - oGCPhys - linear left insert i=%d\n", i);
+            RTTestIFailed("linear left insert i=%d\n", i);
             return 1;
         }
         /* negative. */
         AVLOGCPHYSNODECORE Node = *pNode;
         if (RTAvloGCPhysInsert(pTree, &Node))
         {
-            printf("\ntstAvl: FAILURE - oGCPhys - linear left negative insert i=%d\n", i);
+            RTTestIFailed("linear left negative insert i=%d\n", i);
             return 1;
         }
     }
@@ -371,17 +365,17 @@ int avlogcphys(unsigned cMax)
         PAVLOGCPHYSNODECORE pNode = RTAvloGCPhysRemove(pTree, i);
         if (!pNode)
         {
-            printf("\ntstAvl: FAILURE - oGCPhys - linear left remove i=%d\n", i);
+            RTTestIFailed("linear left remove i=%d\n", i);
             return 1;
         }
         memset(pNode, 0xcc, sizeof(*pNode));
-        free(pNode);
+        RTMemFree(pNode);
 
         /* negative */
         pNode = RTAvloGCPhysRemove(pTree, i);
         if (pNode)
         {
-            printf("\ntstAvl: FAILURE - oGCPhys - linear left negative remove i=%d\n", i);
+            RTTestIFailed("linear left negative remove i=%d\n", i);
             return 1;
         }
     }
@@ -389,22 +383,23 @@ int avlogcphys(unsigned cMax)
     /*
      * Simple linear insert and remove from the right.
      */
-    ProgressPrintf(cMax, "\ntstAVL oGCPhys(%d): linear right", cMax);
+    if (cMax >= 10000)
+        RTTestISubF("oGCPhys(%d): linear right", cMax);
     for (i = 0; i < cMax; i++)
     {
         Progress(i, cMax);
-        PAVLOGCPHYSNODECORE pNode = (PAVLOGCPHYSNODECORE)malloc(sizeof(*pNode));
+        PAVLOGCPHYSNODECORE pNode = (PAVLOGCPHYSNODECORE)RTMemAlloc(sizeof(*pNode));
         pNode->Key = i;
         if (!RTAvloGCPhysInsert(pTree, pNode))
         {
-            printf("\ntstAvl: FAILURE - oGCPhys - linear right insert i=%d\n", i);
+            RTTestIFailed("linear right insert i=%d\n", i);
             return 1;
         }
         /* negative. */
         AVLOGCPHYSNODECORE Node = *pNode;
         if (RTAvloGCPhysInsert(pTree, &Node))
         {
-            printf("\ntstAvl: FAILURE - oGCPhys - linear right negative insert i=%d\n", i);
+            RTTestIFailed("linear right negative insert i=%d\n", i);
             return 1;
         }
     }
@@ -416,17 +411,17 @@ int avlogcphys(unsigned cMax)
         PAVLOGCPHYSNODECORE pNode = RTAvloGCPhysRemove(pTree, i);
         if (!pNode)
         {
-            printf("\ntstAvl: FAILURE - oGCPhys - linear right remove i=%d\n", i);
+            RTTestIFailed("linear right remove i=%d\n", i);
             return 1;
         }
         memset(pNode, 0xcc, sizeof(*pNode));
-        free(pNode);
+        RTMemFree(pNode);
 
         /* negative */
         pNode = RTAvloGCPhysRemove(pTree, i);
         if (pNode)
         {
-            printf("\ntstAvl: FAILURE - oGCPhys - linear right negative remove i=%d\n", i);
+            RTTestIFailed("linear right negative remove i=%d\n", i);
             return 1;
         }
     }
@@ -434,22 +429,23 @@ int avlogcphys(unsigned cMax)
     /*
      * Linear insert but root based removal.
      */
-    ProgressPrintf(cMax, "\ntstAVL oGCPhys(%d): linear root", cMax);
+    if (cMax >= 10000)
+        RTTestISubF("oGCPhys(%d): linear root", cMax);
     for (i = 0; i < cMax; i++)
     {
         Progress(i, cMax);
-        PAVLOGCPHYSNODECORE pNode = (PAVLOGCPHYSNODECORE)malloc(sizeof(*pNode));
+        PAVLOGCPHYSNODECORE pNode = (PAVLOGCPHYSNODECORE)RTMemAlloc(sizeof(*pNode));
         pNode->Key = i;
         if (!RTAvloGCPhysInsert(pTree, pNode))
         {
-            printf("\ntstAvl: FAILURE - oGCPhys - linear root insert i=%d\n", i);
+            RTTestIFailed("linear root insert i=%d\n", i);
             return 1;
         }
         /* negative. */
         AVLOGCPHYSNODECORE Node = *pNode;
         if (RTAvloGCPhysInsert(pTree, &Node))
         {
-            printf("\ntstAvl: FAILURE - oGCPhys - linear root negative insert i=%d\n", i);
+            RTTestIFailed("linear root negative insert i=%d\n", i);
             return 1;
         }
     }
@@ -463,23 +459,23 @@ int avlogcphys(unsigned cMax)
         pNode = RTAvloGCPhysRemove(pTree, Key);
         if (!pNode)
         {
-            printf("\ntstAvl: FAILURE - oGCPhys - linear root remove i=%d Key=%d\n", i, (unsigned)Key);
+            RTTestIFailed("linear root remove i=%d Key=%d\n", i, (unsigned)Key);
             return 1;
         }
         memset(pNode, 0xcc, sizeof(*pNode));
-        free(pNode);
+        RTMemFree(pNode);
 
         /* negative */
         pNode = RTAvloGCPhysRemove(pTree, Key);
         if (pNode)
         {
-            printf("\ntstAvl: FAILURE - oGCPhys - linear root negative remove i=%d Key=%d\n", i, (unsigned)Key);
+            RTTestIFailed("linear root negative remove i=%d Key=%d\n", i, (unsigned)Key);
             return 1;
         }
     }
     if (*pTree)
     {
-        printf("\ntstAvl: FAILURE - oGCPhys - sparse remove didn't remove it all!\n");
+        RTTestIFailed("sparse remove didn't remove it all!\n");
         return 1;
     }
 
@@ -487,22 +483,23 @@ int avlogcphys(unsigned cMax)
      * Make a sparsely populated tree and remove the nodes using best fit in 5 cycles.
      */
     const unsigned cMaxSparse = RT_ALIGN(cMax, 32);
-    ProgressPrintf(cMaxSparse, "\ntstAVL oGCPhys(%d): sparse", cMax);
+    if (cMaxSparse >= 10000)
+        RTTestISubF("oGCPhys(%d): sparse", cMax);
     for (i = 0; i < cMaxSparse; i += 8)
     {
         Progress(i, cMaxSparse);
-        PAVLOGCPHYSNODECORE pNode = (PAVLOGCPHYSNODECORE)malloc(sizeof(*pNode));
+        PAVLOGCPHYSNODECORE pNode = (PAVLOGCPHYSNODECORE)RTMemAlloc(sizeof(*pNode));
         pNode->Key = i;
         if (!RTAvloGCPhysInsert(pTree, pNode))
         {
-            printf("\ntstAvl: FAILURE - oGCPhys - sparse insert i=%d\n", i);
+            RTTestIFailed("sparse insert i=%d\n", i);
             return 1;
         }
         /* negative. */
         AVLOGCPHYSNODECORE Node = *pNode;
         if (RTAvloGCPhysInsert(pTree, &Node))
         {
-            printf("\ntstAvl: FAILURE - oGCPhys - sparse negative insert i=%d\n", i);
+            RTTestIFailed("sparse negative insert i=%d\n", i);
             return 1;
         }
     }
@@ -518,24 +515,24 @@ int avlogcphys(unsigned cMax)
             PAVLOGCPHYSNODECORE pNode = RTAvloGCPhysRemoveBestFit(pTree, i, true);
             if (!pNode)
             {
-                printf("\ntstAvl: FAILURE - oGCPhys - sparse remove i=%d j=%d\n", i, j);
+                RTTestIFailed("sparse remove i=%d j=%d\n", i, j);
                 return 1;
             }
             if (pNode->Key - (unsigned long)i >= 8 * 4)
             {
-                printf("\ntstAvl: FAILURE - oGCPhys - sparse remove i=%d j=%d Key=%d\n", i, j, (unsigned)pNode->Key);
+                RTTestIFailed("sparse remove i=%d j=%d Key=%d\n", i, j, (unsigned)pNode->Key);
                 return 1;
             }
             memset(pNode, 0xdd, sizeof(*pNode));
-            free(pNode);
+            RTMemFree(pNode);
         }
     }
     if (*pTree)
     {
-        printf("\ntstAvl: FAILURE - oGCPhys - sparse remove didn't remove it all!\n");
+        RTTestIFailed("sparse remove didn't remove it all!\n");
         return 1;
     }
-    free(pTree);
+    RTMemFree(pTree);
     ProgressPrintf(cMaxSparse, "\n");
     return 0;
 }
@@ -543,17 +540,18 @@ int avlogcphys(unsigned cMax)
 
 int avlogcphysRand(unsigned cMax, unsigned cMax2)
 {
-    PAVLOGCPHYSTREE pTree = (PAVLOGCPHYSTREE)calloc(sizeof(*pTree),1);
+    PAVLOGCPHYSTREE pTree = (PAVLOGCPHYSTREE)RTMemAllocZ(sizeof(*pTree));
     unsigned i;
 
     /*
      * Random tree.
      */
-    ProgressPrintf(cMax, "tstAVL oGCPhys(%d, %d): random", cMax, cMax2);
+    if (cMax >= 10000)
+        RTTestISubF("oGCPhys(%d, %d): random", cMax, cMax2);
     PTRACKER pTracker = TrackerCreate(cMax2);
     if (!pTracker)
     {
-        printf("tstAVL: Failure - oGCPhys - failed to create %d tracker!\n", cMax2);
+        RTTestIFailed("failed to create %d tracker!\n", cMax2);
         return 1;
     }
 
@@ -564,22 +562,22 @@ int avlogcphysRand(unsigned cMax, unsigned cMax2)
         uint32_t Key;
         if (!TrackerNewRandom(pTracker, &Key))
         {
-            printf("\ntstAVL: Failure - oGCPhys - failed to allocate node no. %d\n", i);
+            RTTestIFailed("failed to allocate node no. %d\n", i);
             TrackerDestroy(pTracker);
             return 1;
         }
-        PAVLOGCPHYSNODECORE pNode = (PAVLOGCPHYSNODECORE)malloc(sizeof(*pNode));
+        PAVLOGCPHYSNODECORE pNode = (PAVLOGCPHYSNODECORE)RTMemAlloc(sizeof(*pNode));
         pNode->Key = Key;
         if (!RTAvloGCPhysInsert(pTree, pNode))
         {
-            printf("\ntstAvl: FAILURE - oGCPhys - random insert i=%d Key=%#x\n", i, Key);
+            RTTestIFailed("random insert i=%d Key=%#x\n", i, Key);
             return 1;
         }
         /* negative. */
         AVLOGCPHYSNODECORE Node = *pNode;
         if (RTAvloGCPhysInsert(pTree, &Node))
         {
-            printf("\ntstAvl: FAILURE - oGCPhys - linear negative insert i=%d Key=%#x\n", i, Key);
+            RTTestIFailed("linear negative insert i=%d Key=%#x\n", i, Key);
             return 1;
         }
         TrackerInsert(pTracker, Key, Key);
@@ -594,7 +592,7 @@ int avlogcphysRand(unsigned cMax, unsigned cMax2)
         uint32_t Key;
         if (!TrackerFindRandom(pTracker, &Key))
         {
-            printf("\ntstAVL: Failure - oGCPhys - failed to find free node no. %d\n", i);
+            RTTestIFailed("failed to find free node no. %d\n", i);
             TrackerDestroy(pTracker);
             return 1;
         }
@@ -602,26 +600,26 @@ int avlogcphysRand(unsigned cMax, unsigned cMax2)
         PAVLOGCPHYSNODECORE pNode = RTAvloGCPhysRemove(pTree, Key);
         if (!pNode)
         {
-            printf("\ntstAvl: FAILURE - oGCPhys - random remove i=%d Key=%#x\n", i, Key);
+            RTTestIFailed("random remove i=%d Key=%#x\n", i, Key);
             return 1;
         }
         if (pNode->Key != Key)
         {
-            printf("\ntstAvl: FAILURE - oGCPhys - random remove i=%d Key=%#x pNode->Key=%#x\n", i, Key, (unsigned)pNode->Key);
+            RTTestIFailed("random remove i=%d Key=%#x pNode->Key=%#x\n", i, Key, (unsigned)pNode->Key);
             return 1;
         }
         TrackerRemove(pTracker, Key, Key);
         memset(pNode, 0xdd, sizeof(*pNode));
-        free(pNode);
+        RTMemFree(pNode);
     }
     if (*pTree)
     {
-        printf("\ntstAvl: FAILURE - oGCPhys - random remove didn't remove it all!\n");
+        RTTestIFailed("random remove didn't remove it all!\n");
         return 1;
     }
     ProgressPrintf(cMax, "\n");
     TrackerDestroy(pTracker);
-    free(pTree);
+    RTMemFree(pTree);
     return 0;
 }
 
@@ -632,10 +630,12 @@ int avlrogcphys(void)
     unsigned            i;
     unsigned            j;
     unsigned            k;
-    PAVLROGCPHYSTREE    pTree = (PAVLROGCPHYSTREE)calloc(sizeof(*pTree), 1);
+    PAVLROGCPHYSTREE    pTree = (PAVLROGCPHYSTREE)RTMemAllocZ(sizeof(*pTree));
 
     AssertCompileSize(AVLOGCPHYSNODECORE, 24);
     AssertCompileSize(AVLROGCPHYSNODECORE, 32);
+
+    RTTestISubF("RTAvlroGCPhys");
 
     /*
      * Simple linear insert, get and remove.
@@ -643,12 +643,12 @@ int avlrogcphys(void)
     /* insert */
     for (i = 0; i < 65536; i += 4)
     {
-        PAVLROGCPHYSNODECORE pNode = (PAVLROGCPHYSNODECORE)malloc(sizeof(*pNode));
+        PAVLROGCPHYSNODECORE pNode = (PAVLROGCPHYSNODECORE)RTMemAlloc(sizeof(*pNode));
         pNode->Key = i;
         pNode->KeyLast = i + 3;
         if (!RTAvlroGCPhysInsert(pTree, pNode))
         {
-            printf("tstAvl: FAILURE - roGCPhys - linear insert i=%d\n", (unsigned)i);
+            RTTestIFailed("linear insert i=%d\n", (unsigned)i);
             return 1;
         }
 
@@ -662,7 +662,7 @@ int avlrogcphys(void)
                 Node.KeyLast = RT_MAX(k, j);
                 if (RTAvlroGCPhysInsert(pTree, &Node))
                 {
-                    printf("tstAvl: FAILURE - roGCPhys - linear negative insert i=%d j=%d k=%d\n", i, j, k);
+                    RTTestIFailed("linear negative insert i=%d j=%d k=%d\n", i, j, k);
                     return 1;
                 }
             }
@@ -675,12 +675,12 @@ int avlrogcphys(void)
         PAVLROGCPHYSNODECORE pNode = RTAvlroGCPhysGet(pTree, i);
         if (!pNode)
         {
-            printf("tstAvl: FAILURE - roGCPhys - linear get i=%d\n", i);
+            RTTestIFailed("linear get i=%d\n", i);
             return 1;
         }
         if (pNode->Key > i || pNode->KeyLast < i)
         {
-            printf("tstAvl: FAILURE - roGCPhys - linear get i=%d Key=%d KeyLast=%d\n", i, (unsigned)pNode->Key, (unsigned)pNode->KeyLast);
+            RTTestIFailed("linear get i=%d Key=%d KeyLast=%d\n", i, (unsigned)pNode->Key, (unsigned)pNode->KeyLast);
             return 1;
         }
 
@@ -688,7 +688,7 @@ int avlrogcphys(void)
         {
             if (RTAvlroGCPhysRangeGet(pTree, i + j) != pNode)
             {
-                printf("tstAvl: FAILURE - roGCPhys - linear range get i=%d j=%d\n", i, j);
+                RTTestIFailed("linear range get i=%d j=%d\n", i, j);
                 return 1;
             }
         }
@@ -698,7 +698,7 @@ int avlrogcphys(void)
             ||  RTAvlroGCPhysGet(pTree, i + 2)
             ||  RTAvlroGCPhysGet(pTree, i + 3))
         {
-            printf("tstAvl: FAILURE - roGCPhys - linear negative get i=%d + n\n", i);
+            RTTestIFailed("linear negative get i=%d + n\n", i);
             return 1;
         }
 
@@ -710,11 +710,11 @@ int avlrogcphys(void)
         PAVLROGCPHYSNODECORE pNode = RTAvlroGCPhysRemove(pTree, i);
         if (!pNode)
         {
-            printf("tstAvl: FAILURE - roGCPhys - linear remove i=%d\n", i);
+            RTTestIFailed("linear remove i=%d\n", i);
             return 1;
         }
         memset(pNode, 0xcc, sizeof(*pNode));
-        free(pNode);
+        RTMemFree(pNode);
 
         /* negative */
         if (    RTAvlroGCPhysRemove(pTree, i)
@@ -722,7 +722,7 @@ int avlrogcphys(void)
             ||  RTAvlroGCPhysRemove(pTree, i + 2)
             ||  RTAvlroGCPhysRemove(pTree, i + 3))
         {
-            printf("tstAvl: FAILURE - roGCPhys - linear negative remove i=%d + n\n", i);
+            RTTestIFailed("linear negative remove i=%d + n\n", i);
             return 1;
         }
     }
@@ -732,12 +732,12 @@ int avlrogcphys(void)
      */
     for (i = 0; i < 65536; i += 8)
     {
-        PAVLROGCPHYSNODECORE pNode = (PAVLROGCPHYSNODECORE)malloc(sizeof(*pNode));
+        PAVLROGCPHYSNODECORE pNode = (PAVLROGCPHYSNODECORE)RTMemAlloc(sizeof(*pNode));
         pNode->Key = i;
         pNode->KeyLast = i + 3;
         if (!RTAvlroGCPhysInsert(pTree, pNode))
         {
-            printf("tstAvl: FAILURE - roGCPhys - sparse insert i=%d\n", i);
+            RTTestIFailed("sparse insert i=%d\n", i);
             return 1;
         }
         /* negative. */
@@ -752,7 +752,7 @@ int avlrogcphys(void)
                 Node.KeyLast = RT_MAX(k, j);
                 if (RTAvlroGCPhysInsert(pTree, &Node))
                 {
-                    printf("tstAvl: FAILURE - roGCPhys - sparse negative insert i=%d j=%d k=%d\n", i, j, k);
+                    RTTestIFailed("sparse negative insert i=%d j=%d k=%d\n", i, j, k);
                     return 1;
                 }
             }
@@ -771,19 +771,19 @@ int avlrogcphys(void)
             PAVLROGCPHYSNODECORE pNode = RTAvlroGCPhysGet(pTree, KeyBase);
             if (!pNode)
             {
-                printf("tstAvl: FAILURE - roGCPhys - sparse get i=%d j=%d KeyBase=%d\n", i, j, (unsigned)KeyBase);
+                RTTestIFailed("sparse get i=%d j=%d KeyBase=%d\n", i, j, (unsigned)KeyBase);
                 return 1;
             }
             if (pNode->Key > KeyBase || pNode->KeyLast < KeyBase)
             {
-                printf("tstAvl: FAILURE - roGCPhys - sparse get i=%d j=%d KeyBase=%d pNode->Key=%d\n", i, j, (unsigned)KeyBase, (unsigned)pNode->Key);
+                RTTestIFailed("sparse get i=%d j=%d KeyBase=%d pNode->Key=%d\n", i, j, (unsigned)KeyBase, (unsigned)pNode->Key);
                 return 1;
             }
             for (k = KeyBase; k < KeyBase + 4; k++)
             {
                 if (RTAvlroGCPhysRangeGet(pTree, k) != pNode)
                 {
-                    printf("tstAvl: FAILURE - roGCPhys - sparse range get i=%d j=%d k=%d\n", i, j, k);
+                    RTTestIFailed("sparse range get i=%d j=%d k=%d\n", i, j, k);
                     return 1;
                 }
             }
@@ -794,7 +794,7 @@ int avlrogcphys(void)
                 if (    k != KeyBase
                     &&  RTAvlroGCPhysGet(pTree, k))
                 {
-                    printf("tstAvl: FAILURE - roGCPhys - sparse negative get i=%d j=%d k=%d\n", i, j, k);
+                    RTTestIFailed("sparse negative get i=%d j=%d k=%d\n", i, j, k);
                     return 1;
                 }
             }
@@ -802,7 +802,7 @@ int avlrogcphys(void)
             {
                 if (RTAvlroGCPhysRangeGet(pTree, k))
                 {
-                    printf("tstAvl: FAILURE - roGCPhys - sparse negative range get i=%d j=%d k=%d\n", i, j, k);
+                    RTTestIFailed("sparse negative range get i=%d j=%d k=%d\n", i, j, k);
                     return 1;
                 }
             }
@@ -810,7 +810,7 @@ int avlrogcphys(void)
             {
                 if (RTAvlroGCPhysRangeGet(pTree, k))
                 {
-                    printf("tstAvl: FAILURE - roGCPhys - sparse negative range get i=%d j=%d k=%d\n", i, j, k);
+                    RTTestIFailed("sparse negative range get i=%d j=%d k=%d\n", i, j, k);
                     return 1;
                 }
             }
@@ -819,16 +819,16 @@ int avlrogcphys(void)
             RTGCPHYS Key = KeyBase + ((i / 19) % 4);
             if (RTAvlroGCPhysRangeRemove(pTree, Key) != pNode)
             {
-                printf("tstAvl: FAILURE - roGCPhys - sparse remove i=%d j=%d Key=%d\n", i, j, (unsigned)Key);
+                RTTestIFailed("sparse remove i=%d j=%d Key=%d\n", i, j, (unsigned)Key);
                 return 1;
             }
             memset(pNode, 0xdd, sizeof(*pNode));
-            free(pNode);
+            RTMemFree(pNode);
         }
     }
     if (*pTree)
     {
-        printf("tstAvl: FAILURE - roGCPhys - sparse remove didn't remove it all!\n");
+        RTTestIFailed("sparse remove didn't remove it all!\n");
         return 1;
     }
 
@@ -855,37 +855,37 @@ int avlrogcphys(void)
         PAVLROGCPHYSNODECORE pNode = &s1.aNode[i];
         if (!RTAvlroGCPhysInsert(&s1.Tree, pNode))
         {
-            printf("tstAvl: FAILURE - roGCPhys - real insert i=%d\n", i);
+            RTTestIFailed("real insert i=%d\n", i);
             return 1;
         }
         if (RTAvlroGCPhysInsert(&s1.Tree, pNode))
         {
-            printf("tstAvl: FAILURE - roGCPhys - real negative insert i=%d\n", i);
+            RTTestIFailed("real negative insert i=%d\n", i);
             return 1;
         }
         if (RTAvlroGCPhysGet(&s1.Tree, pNode->Key) != pNode)
         {
-            printf("tstAvl: FAILURE - roGCPhys - real get (1) i=%d\n", i);
+            RTTestIFailed("real get (1) i=%d\n", i);
             return 1;
         }
         if (RTAvlroGCPhysGet(&s1.Tree, pNode->KeyLast) != NULL)
         {
-            printf("tstAvl: FAILURE - roGCPhys - real negative get (2) i=%d\n", i);
+            RTTestIFailed("real negative get (2) i=%d\n", i);
             return 1;
         }
         if (RTAvlroGCPhysRangeGet(&s1.Tree, pNode->Key) != pNode)
         {
-            printf("tstAvl: FAILURE - roGCPhys - real range get (1) i=%d\n", i);
+            RTTestIFailed("real range get (1) i=%d\n", i);
             return 1;
         }
         if (RTAvlroGCPhysRangeGet(&s1.Tree, pNode->Key + 1) != pNode)
         {
-            printf("tstAvl: FAILURE - roGCPhys - real range get (2) i=%d\n", i);
+            RTTestIFailed("real range get (2) i=%d\n", i);
             return 1;
         }
         if (RTAvlroGCPhysRangeGet(&s1.Tree, pNode->KeyLast) != pNode)
         {
-            printf("tstAvl: FAILURE - roGCPhys - real range get (3) i=%d\n", i);
+            RTTestIFailed("real range get (3) i=%d\n", i);
             return 1;
         }
     }
@@ -897,12 +897,12 @@ int avlrogcphys(void)
         PAVLROGCPHYSNODECORE pNode = &s3.aNode[i];
         if (RTAvlroGCPhysGet(&s3.Tree, pNode->Key) != pNode)
         {
-            printf("tstAvl: FAILURE - roGCPhys - real get (10) i=%d\n", i);
+            RTTestIFailed("real get (10) i=%d\n", i);
             return 1;
         }
         if (RTAvlroGCPhysRangeGet(&s3.Tree, pNode->Key) != pNode)
         {
-            printf("tstAvl: FAILURE - roGCPhys - real range get (10) i=%d\n", i);
+            RTTestIFailed("real range get (10) i=%d\n", i);
             return 1;
         }
 
@@ -911,12 +911,12 @@ int avlrogcphys(void)
         {
             if (RTAvlroGCPhysGet(&s3.Tree, j) != NULL)
             {
-                printf("tstAvl: FAILURE - roGCPhys - real negative get (11) i=%d j=%#x\n", i, j);
+                RTTestIFailed("real negative get (11) i=%d j=%#x\n", i, j);
                 return 1;
             }
             if (RTAvlroGCPhysRangeGet(&s3.Tree, j) != pNode)
             {
-                printf("tstAvl: FAILURE - roGCPhys - real range get (11) i=%d j=%#x\n", i, j);
+                RTTestIFailed("real range get (11) i=%d j=%#x\n", i, j);
                 return 1;
             }
         } while (j++ < pNode->KeyLast);
@@ -928,6 +928,8 @@ int avlrogcphys(void)
 
 int avlul(void)
 {
+    RTTestISubF("RTAvlUL");
+
     /*
      * Simple linear insert and remove.
      */
@@ -936,18 +938,18 @@ int avlul(void)
     /* insert */
     for (i = 0; i < 65536; i++)
     {
-        PAVLULNODECORE pNode = (PAVLULNODECORE)malloc(sizeof(*pNode));
+        PAVLULNODECORE pNode = (PAVLULNODECORE)RTMemAlloc(sizeof(*pNode));
         pNode->Key = i;
         if (!RTAvlULInsert(&pTree, pNode))
         {
-            printf("tstAvl: FAILURE - UL - linear insert i=%d\n", i);
+            RTTestIFailed("linear insert i=%d\n", i);
             return 1;
         }
         /* negative. */
         AVLULNODECORE Node = *pNode;
         if (RTAvlULInsert(&pTree, &Node))
         {
-            printf("tstAvl: FAILURE - UL - linear negative insert i=%d\n", i);
+            RTTestIFailed("linear negative insert i=%d\n", i);
             return 1;
         }
     }
@@ -957,19 +959,19 @@ int avlul(void)
         PAVLULNODECORE pNode = RTAvlULRemove(&pTree, i);
         if (!pNode)
         {
-            printf("tstAvl: FAILURE - UL - linear remove i=%d\n", i);
+            RTTestIFailed("linear remove i=%d\n", i);
             return 1;
         }
         pNode->pLeft     = (PAVLULNODECORE)0xaaaaaaaa;
         pNode->pRight    = (PAVLULNODECORE)0xbbbbbbbb;
         pNode->uchHeight = 'e';
-        free(pNode);
+        RTMemFree(pNode);
 
         /* negative */
         pNode = RTAvlULRemove(&pTree, i);
         if (pNode)
         {
-            printf("tstAvl: FAILURE - UL - linear negative remove i=%d\n", i);
+            RTTestIFailed("linear negative remove i=%d\n", i);
             return 1;
         }
     }
@@ -979,18 +981,18 @@ int avlul(void)
      */
     for (i = 0; i < 65536; i += 8)
     {
-        PAVLULNODECORE pNode = (PAVLULNODECORE)malloc(sizeof(*pNode));
+        PAVLULNODECORE pNode = (PAVLULNODECORE)RTMemAlloc(sizeof(*pNode));
         pNode->Key = i;
         if (!RTAvlULInsert(&pTree, pNode))
         {
-            printf("tstAvl: FAILURE - UL - linear insert i=%d\n", i);
+            RTTestIFailed("linear insert i=%d\n", i);
             return 1;
         }
         /* negative. */
         AVLULNODECORE Node = *pNode;
         if (RTAvlULInsert(&pTree, &Node))
         {
-            printf("tstAvl: FAILURE - UL - linear negative insert i=%d\n", i);
+            RTTestIFailed("linear negative insert i=%d\n", i);
             return 1;
         }
     }
@@ -1007,13 +1009,13 @@ int avlul(void)
             //PAVLULNODECORE pNode = RTAvlULRemove(&pTree, i + j * 8);
             if (!pNode)
             {
-                printf("tstAvl: FAILURE - UL - sparse remove i=%d j=%d\n", i, j);
+                RTTestIFailed("sparse remove i=%d j=%d\n", i, j);
                 return 1;
             }
             pNode->pLeft     = (PAVLULNODECORE)0xdddddddd;
             pNode->pRight    = (PAVLULNODECORE)0xcccccccc;
             pNode->uchHeight = 'E';
-            free(pNode);
+            RTMemFree(pNode);
         }
     }
 
@@ -1023,30 +1025,54 @@ int avlul(void)
 
 int main()
 {
-    int cErrors = 0;
-    unsigned i;
+    /*
+     * Init.
+     */
+    int rc = RTR3Init();
+    if (RT_FAILURE(rc))
+        return 1;
 
-    ProgressPrintf(~0, "tstAvl oGCPhys(32..2048)\n");
-    for (i = 32; i < 2048 && !cErrors; i++)
-        cErrors += avlogcphys(i);
-    cErrors += avlogcphys(_64K);
-    cErrors += avlogcphys(_512K);
-    cErrors += avlogcphys(_4M);
-    for (unsigned j = 0; j < /*256*/ 1 && !cErrors; j++)
+    RTTEST hTest;
+    rc = RTTestCreate("tstRTAvl", &hTest);
+    if (RT_FAILURE(rc))
+        return 1;
+    g_hTest = hTest;
+    RTTestBanner(hTest);
+
+    rc = RTRandAdvCreateParkMiller(&g_hRand);
+    if (RT_FAILURE(rc))
     {
-        ProgressPrintf(~0, "tstAvl oGCPhys(32..2048, *1K)\n");
-        for (i = 32; i < 4096 && !cErrors; i++)
-            cErrors += avlogcphysRand(i, i + _1K);
-        for (; i <= _4M && !cErrors; i *= 2)
-            cErrors += avlogcphysRand(i, i * 8);
+        RTTestIFailed("RTRandAdvCreateParkMiller -> %Rrc", rc);
+        return RTTestSummaryAndDestroy(hTest);
     }
 
-    cErrors += avlrogcphys();
-    cErrors += avlul();
+    /*
+     * Testing.
+     */
+    unsigned i;
+    RTTestSub(hTest, "oGCPhys(32..2048)");
+    for (i = 32; i < 2048; i++)
+        if (avlogcphys(i))
+            break;
 
-    if (!cErrors)
-        printf("tstAvl: SUCCESS\n");
-    else
-        printf("tstAvl: FAILURE - %d errors\n", cErrors);
-    return !!cErrors;
+    avlogcphys(_64K);
+    avlogcphys(_512K);
+    avlogcphys(_4M);
+
+    RTTestISubF("oGCPhys(32..2048, *1K)");
+    for (i = 32; i < 4096; i++)
+        if (avlogcphysRand(i, i + _1K))
+            break;
+    for (; i <= _4M; i *= 2)
+        if (avlogcphysRand(i, i * 8))
+            break;
+
+    avlrogcphys();
+    avlul();
+
+    /*
+     * Done.
+     */
+    return RTTestSummaryAndDestroy(hTest);
 }
+
