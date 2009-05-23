@@ -118,6 +118,10 @@ EXPORTS
     RTThreadNativeSelf
     RTThreadSleep
     RTThreadYield
+    RTThreadPreemptIsEnabled
+    RTThreadPreemptIsPending
+    RTThreadPreemptDisable
+    RTThreadPreemptRestore
     RTMpOnAll
     RTMpOnOthers
     RTMpOnSpecific

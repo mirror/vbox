@@ -152,6 +152,10 @@ NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTThreadUserReset
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTThreadUserWait
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTThreadUserWaitNoResume
 %endif
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTThreadPreemptIsEnabled - not necessary
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTThreadPreemptIsPending - not necessary
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTThreadPreemptDisable - not necessary
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTThreadPreemptRestore
 ;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTLogDefaultInstance   - a bit of a gamble, but we do not want the overhead!
 ;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMpCpuId              - not necessary
 ;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMpCpuIdFromSetIndex  - not necessary
