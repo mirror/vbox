@@ -992,8 +992,12 @@ RTR3DECL(int) RTTestFailedV(RTTEST hTest, const char *pszFormat, va_list va)
         va_list va2;
         va_copy(va2, va);
 
+        const char *pszEnd = strchr(pszFormat, '\0');
+        bool fHasNewLine = pszFormat != pszEnd
+                        && pszEnd[-1] == '\n';
+
         RTCritSectEnter(&pTest->OutputLock);
-        cch += rtTestPrintf(pTest, "%N\n", pszFormat, &va2);
+        cch += rtTestPrintf(pTest, fHasNewLine ? "%N" : "%N\n", pszFormat, &va2);
         RTCritSectLeave(&pTest->OutputLock);
 
         va_end(va2);
