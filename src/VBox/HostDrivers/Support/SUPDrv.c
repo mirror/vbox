@@ -259,6 +259,10 @@ DECLASM(int)    UNWIND_WRAP(RTThreadUserReset)(RTTHREAD Thread);
 DECLASM(int)    UNWIND_WRAP(RTThreadUserWait)(RTTHREAD Thread, unsigned cMillies);
 DECLASM(int)    UNWIND_WRAP(RTThreadUserWaitNoResume)(RTTHREAD Thread, unsigned cMillies);
 #endif
+/* RTThreadPreemptIsEnabled - not necessary */
+/* RTThreadPreemptIsPending  - not necessary */
+/* RTThreadPreemptDisable - not necessary */
+DECLASM(void)   UNWIND_WRAP(RTThreadPreemptRestore)(RTTHREADPREEMPTSTATE pState);
 /* RTLogDefaultInstance   - a bit of a gamble, but we do not want the overhead! */
 /* RTMpCpuId              - not necessary */
 /* RTMpCpuIdFromSetIndex  - not necessary */
@@ -414,6 +418,11 @@ static SUPFUNC g_aFunctions[] =
     { "RTThreadUserWait",                       (void *)UNWIND_WRAP(RTThreadUserWait) },
     { "RTThreadUserWaitNoResume",               (void *)UNWIND_WRAP(RTThreadUserWaitNoResume) },
 #endif
+    { "RTThreadPreemptIsEnabled",               (void *)RTThreadPreemptIsEnabled },
+    { "RTThreadPreemptIsPending",               (void *)RTThreadPreemptIsPending },
+    { "RTThreadPreemptDisable",                 (void *)RTThreadPreemptDisable },
+    { "RTThreadPreemptRestore",                 (void *)UNWIND_WRAP(RTThreadPreemptRestore) },
+
     { "RTLogDefaultInstance",                   (void *)RTLogDefaultInstance },
     { "RTMpCpuId",                              (void *)RTMpCpuId },
     { "RTMpCpuIdFromSetIndex",                  (void *)RTMpCpuIdFromSetIndex },
