@@ -268,6 +268,7 @@ int main()
         "dir//",                "/file",                "dir/file",
         "dir//",                "//file",               "dir/file",
         "dir///",               "///file",              "dir/file",
+        "/bin/testcase",        "foo.r0",               "/bin/testcase/foo.r0",
 #if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
         "/",                    "\\",                   "/",
         "\\",                   "/",                    "\\",
@@ -281,6 +282,7 @@ int main()
         "C:",                   "\\autoexec.bat",       "C:\\autoexec.bat",
         "C:\\",                 "/autoexec.bat",        "C:\\autoexec.bat",
         "C:\\\\",               "autoexec.bat",         "C:\\autoexec.bat",
+        "E:\\bin\\testcase",    "foo.r0",               "E:\\bin\\testcase/foo.r0",
 #endif
     };
     for (unsigned i = 0; i < RT_ELEMENTS(s_apszAppendTests); i += 3)
