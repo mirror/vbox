@@ -210,9 +210,35 @@ RTR3DECL(int) RTTestSummaryAndDestroy(RTTEST hTest);
  * @returns Number of chars printed.
  * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
  *                      associated with the calling thread.
- * @param   pszSubTest  The sub-test name
+ * @param   pszSubTest  The sub-test name.
  */
 RTR3DECL(int) RTTestSub(RTTEST hTest, const char *pszSubTest);
+
+/**
+ * Format string version of RTTestSub.
+ *
+ * See RTTestSub for details.
+ *
+ * @returns Number of chars printed.
+ * @param   hTest           The test handle. If NIL_RTTEST we'll use the one
+ *                          associated with the calling thread.
+ * @param   pszSubTestFmt   The sub-test name format string.
+ * @param   ...             Arguments.
+ */
+RTR3DECL(int) RTTestSubF(RTTEST hTest, const char *pszSubTestFmt, ...);
+
+/**
+ * Format string version of RTTestSub.
+ *
+ * See RTTestSub for details.
+ *
+ * @returns Number of chars printed.
+ * @param   hTest           The test handle. If NIL_RTTEST we'll use the one
+ *                          associated with the calling thread.
+ * @param   pszSubTestFmt   The sub-test name format string.
+ * @param   ...             Arguments.
+ */
+RTR3DECL(int) RTTestSubV(RTTEST hTest, const char *pszSubTestFmt, va_list va);
 
 /**
  * Completes a sub-test.
@@ -470,6 +496,46 @@ RTR3DECL(int) RTTestIPrintfV(RTTESTLVL enmLevel, const char *pszFormat, va_list 
  * @param   ...         Arguments.
  */
 RTR3DECL(int) RTTestIPrintf(RTTESTLVL enmLevel, const char *pszFormat, ...);
+
+/**
+ * Starts a sub-test.
+ *
+ * This will perform an implicit RTTestSubDone() call if that has not been done
+ * since the last RTTestSub call.
+ *
+ * @returns Number of chars printed.
+ * @param   pszSubTest  The sub-test name.
+ */
+RTR3DECL(int) RTTestISub(const char *pszSubTest);
+
+/**
+ * Format string version of RTTestSub.
+ *
+ * See RTTestSub for details.
+ *
+ * @returns Number of chars printed.
+ * @param   pszSubTestFmt   The sub-test name format string.
+ * @param   ...             Arguments.
+ */
+RTR3DECL(int) RTTestISubF(const char *pszSubTestFmt, ...);
+
+/**
+ * Format string version of RTTestSub.
+ *
+ * See RTTestSub for details.
+ *
+ * @returns Number of chars printed.
+ * @param   pszSubTestFmt   The sub-test name format string.
+ * @param   ...             Arguments.
+ */
+RTR3DECL(int) RTTestISubV(const char *pszSubTestFmt, va_list va);
+
+/**
+ * Completes a sub-test.
+ *
+ * @returns Number of chars printed.
+ */
+RTR3DECL(int) RTTestISubDone(void);
 
 /**
  * Prints an extended PASSED message, optional.
