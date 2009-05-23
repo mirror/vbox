@@ -250,7 +250,6 @@ int main(int argc, char **argv)
      };
 
      int ch;
-     int i = 1;
      RTGETOPTUNION ValueUnion;
      RTGETOPTSTATE GetState;
      RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
