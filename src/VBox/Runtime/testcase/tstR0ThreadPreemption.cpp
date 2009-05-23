@@ -87,6 +87,7 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
 
         case TSTR0THREADPREMEPTION_IS_PENDING:
         {
+            /* This isn't 100% proof... */
             RTTHREADPREEMPTSTATE State = RTTHREADPREEMPTSTATE_INITIALIZER;
             RTThreadPreemptDisable(&State);
             if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
@@ -117,6 +118,40 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
             else
                 RTStrPrintf(pszErr, cchErr, "!RTThreadPreemptIsEnabled returns true after RTThreadPreemptDisable");
             RTThreadPreemptRestore(&State);
+            break;
+        }
+
+        case TSTR0THREADPREMEPTION_NESTED:
+        {
+            RTTHREADPREEMPTSTATE State1 = RTTHREADPREEMPTSTATE_INITIALIZER;
+            RTThreadPreemptDisable(&State1);
+            if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
+            {
+                RTTHREADPREEMPTSTATE State2 = RTTHREADPREEMPTSTATE_INITIALIZER;
+                RTThreadPreemptDisable(&State2);
+                if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
+                {
+                    RTTHREADPREEMPTSTATE State3 = RTTHREADPREEMPTSTATE_INITIALIZER;
+                    RTThreadPreemptDisable(&State3);
+                    if (RTThreadPreemptIsEnabled(NIL_RTTHREAD))
+                        RTStrPrintf(pszErr, cchErr, "!RTThreadPreemptIsEnabled returns true after 3rd RTThreadPreemptDisable");
+
+                    RTThreadPreemptRestore(&State3);
+                    if (RTThreadPreemptIsEnabled(NIL_RTTHREAD) && !*pszErr)
+                        RTStrPrintf(pszErr, cchErr, "!RTThreadPreemptIsEnabled returns true after 1st RTThreadPreemptRestore");
+                }
+                else
+                    RTStrPrintf(pszErr, cchErr, "!RTThreadPreemptIsEnabled returns true after 2nd RTThreadPreemptDisable");
+
+                RTThreadPreemptRestore(&State2);
+                if (RTThreadPreemptIsEnabled(NIL_RTTHREAD) && !*pszErr)
+                    RTStrPrintf(pszErr, cchErr, "!RTThreadPreemptIsEnabled returns true after 2nd RTThreadPreemptRestore");
+            }
+            else
+                RTStrPrintf(pszErr, cchErr, "!RTThreadPreemptIsEnabled returns true after 1st RTThreadPreemptDisable");
+            RTThreadPreemptRestore(&State1);
+            if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD) && !*pszErr)
+                RTStrPrintf(pszErr, cchErr, "!RTThreadPreemptIsEnabled returns false after 3rd RTThreadPreemptRestore");
             break;
         }
 

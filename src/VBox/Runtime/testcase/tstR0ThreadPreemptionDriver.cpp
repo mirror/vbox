@@ -162,6 +162,21 @@ int main(int argc, char **argv)
         RTTestIPrintf(RTTESTLVL_ALWAYS, "%s", Req.szMsg);
 
     /*
+     * Stay in ring-0 until preemption is pending.
+     */
+    RTTestSub(hTest, "Nested");
+    Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
+    Req.Hdr.cbReq = sizeof(Req);
+    Req.szMsg[0] = '\0';
+    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstR0ThreadPreemption", sizeof("tstR0ThreadPreemption") - 1,
+                                             TSTR0THREADPREMEPTION_NESTED, 0, &Req.Hdr), VINF_SUCCESS);
+    RTTESTI_CHECK_MSG(Req.szMsg[0] != '!', ("%s", Req.szMsg));
+    if (Req.szMsg[0])
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "%s", Req.szMsg);
+
+
+
+    /*
      * Done.
      */
     return RTTestSummaryAndDestroy(hTest);
