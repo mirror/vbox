@@ -78,6 +78,8 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
         case TSTR0THREADPREMEPTION_BASIC:
         {
             RTTHREADPREEMPTSTATE State = RTTHREADPREEMPTSTATE_INITIALIZER;
+            if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
+                RTStrPrintf(pszErr, cchErr, "RTThreadPreemptIsEnabled returns false by default");
             RTThreadPreemptDisable(&State);
             if (RTThreadPreemptIsEnabled(NIL_RTTHREAD))
                 RTStrPrintf(pszErr, cchErr, "!RTThreadPreemptIsEnabled returns true after RTThreadPreemptDisable");
@@ -107,12 +109,12 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
                     } while (   !fPending
                              && cNanosElapsed < UINT64_C(60)*1000U*1000U*1000U);
                     if (!fPending)
-                        RTStrPrintf(pszErr, cchErr, "!Preempt not pending after %llu loops / %llu ns\n",
+                        RTStrPrintf(pszErr, cchErr, "!Preempt not pending after %llu loops / %llu ns",
                                     cLoops, cNanosElapsed);
                     else if (cLoops == 1)
                         RTStrPrintf(pszErr, cchErr, "!cLoops=0\n");
                     else
-                        RTStrPrintf(pszErr, cchErr, "RTThreadPreemptIsPending returned true after %llu loops / %llu ns\n",
+                        RTStrPrintf(pszErr, cchErr, "RTThreadPreemptIsPending returned true after %llu loops / %llu ns",
                                     cLoops, cNanosElapsed);
                 }
                 else
@@ -126,6 +128,7 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
 
         case TSTR0THREADPREMEPTION_NESTED:
         {
+            bool const fDefault = RTThreadPreemptIsEnabled(NIL_RTTHREAD);
             RTTHREADPREEMPTSTATE State1 = RTTHREADPREEMPTSTATE_INITIALIZER;
             RTThreadPreemptDisable(&State1);
             if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
@@ -153,13 +156,13 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
             else
                 RTStrPrintf(pszErr, cchErr, "!RTThreadPreemptIsEnabled returns true after 1st RTThreadPreemptDisable");
             RTThreadPreemptRestore(&State1);
-            if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD) && !*pszErr)
+            if (RTThreadPreemptIsEnabled(NIL_RTTHREAD) != fDefault && !*pszErr)
                 RTStrPrintf(pszErr, cchErr, "!RTThreadPreemptIsEnabled returns false after 3rd RTThreadPreemptRestore");
             break;
         }
 
         default:
-            RTStrPrintf(pszErr, cchErr, "!Unknown test #%d\n", uOperation);
+            RTStrPrintf(pszErr, cchErr, "!Unknown test #%d", uOperation);
             break;
     }
 
