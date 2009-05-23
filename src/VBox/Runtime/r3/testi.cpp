@@ -52,6 +52,34 @@ RTR3DECL(int) RTTestIPrintf(RTTESTLVL enmLevel, const char *pszFormat, ...)
 }
 
 
+RTR3DECL(int) RTTestISub(const char *pszSubTest)
+{
+    return RTTestSub(NIL_RTTEST, pszSubTest);
+}
+
+
+RTR3DECL(int) RTTestISubF(const char *pszSubTestFmt, ...)
+{
+    va_list va;
+    va_start(va, pszSubTestFmt);
+    int cch = RTTestSubV(NIL_RTTEST, pszSubTestFmt, va);
+    va_end(va);
+    return cch;
+}
+
+
+RTR3DECL(int) RTTestISubV(const char *pszSubTestFmt, va_list va)
+{
+    return RTTestSubV(NIL_RTTEST, pszSubTestFmt, va);
+}
+
+
+RTR3DECL(int) RTTestISubDone(void)
+{
+    return RTTestSubDone(NIL_RTTEST);
+}
+
+
 RTR3DECL(int) RTTestIPassedV(const char *pszFormat, va_list va)
 {
     return RTTestPassedV(NIL_RTTEST, pszFormat, va);

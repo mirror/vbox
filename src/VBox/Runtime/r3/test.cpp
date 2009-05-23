@@ -33,14 +33,16 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/test.h>
+
+#include <iprt/asm.h>
+#include <iprt/critsect.h>
+#include <iprt/env.h>
+#include <iprt/err.h>
 #include <iprt/mem.h>
+#include <iprt/once.h>
 #include <iprt/param.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
-#include <iprt/critsect.h>
-#include <iprt/once.h>
-#include <iprt/err.h>
-#include <iprt/asm.h>
 
 #include "internal/magics.h"
 
@@ -246,6 +248,28 @@ RTR3DECL(int) RTTestCreate(const char *pszTest, PRTTEST phTest)
                 rc = RTTlsSet(g_iTestTls, pTest);
             if (RT_SUCCESS(rc))
             {
+                /*
+                 * Finally, pick up overrides from the environment.
+                 */
+                char szMaxLevel[80];
+                rc = RTEnvGetEx(RTENV_DEFAULT, "IPRT_TEST_MAX_LEVEL", szMaxLevel, sizeof(szMaxLevel), NULL);
+                if (RT_SUCCESS(rc))
+                {
+                    char *pszMaxLevel = RTStrStrip(szMaxLevel);
+                    if (!strcmp(pszMaxLevel, "all"))
+                        pTest->enmMaxLevel = RTTESTLVL_DEBUG;
+                    if (!strcmp(pszMaxLevel, "quiet"))
+                        pTest->enmMaxLevel = RTTESTLVL_FAILURE;
+                    else if (!strcmp(pszMaxLevel, "debug"))
+                        pTest->enmMaxLevel = RTTESTLVL_DEBUG;
+                    else if (!strcmp(pszMaxLevel, "info"))
+                        pTest->enmMaxLevel = RTTESTLVL_INFO;
+                    else if (!strcmp(pszMaxLevel, "sub_test"))
+                        pTest->enmMaxLevel = RTTESTLVL_SUB_TEST;
+                    else if (!strcmp(pszMaxLevel, "failure"))
+                        pTest->enmMaxLevel = RTTESTLVL_FAILURE;
+                }
+
                 *phTest = pTest;
                 return VINF_SUCCESS;
             }
@@ -802,6 +826,52 @@ RTR3DECL(int) RTTestSub(RTTEST hTest, const char *pszSubTest)
     RTCritSectLeave(&pTest->Lock);
 
     return cch;
+}
+
+
+/**
+ * Format string version of RTTestSub.
+ *
+ * See RTTestSub for details.
+ *
+ * @returns Number of chars printed.
+ * @param   hTest           The test handle. If NIL_RTTEST we'll use the one
+ *                          associated with the calling thread.
+ * @param   pszSubTestFmt   The sub-test name format string.
+ * @param   ...             Arguments.
+ */
+RTR3DECL(int) RTTestSubF(RTTEST hTest, const char *pszSubTestFmt, ...)
+{
+    va_list va;
+    va_start(va, pszSubTestFmt);
+    int cch = RTTestSubV(hTest, pszSubTestFmt, va);
+    va_end(va);
+    return cch;
+}
+
+
+/**
+ * Format string version of RTTestSub.
+ *
+ * See RTTestSub for details.
+ *
+ * @returns Number of chars printed.
+ * @param   hTest           The test handle. If NIL_RTTEST we'll use the one
+ *                          associated with the calling thread.
+ * @param   pszSubTestFmt   The sub-test name format string.
+ * @param   ...             Arguments.
+ */
+RTR3DECL(int) RTTestSubV(RTTEST hTest, const char *pszSubTestFmt, va_list va)
+{
+    char *pszSubTest;
+    RTStrAPrintfV(&pszSubTest, pszSubTestFmt, va);
+    if (pszSubTest)
+    {
+        int cch = RTTestSub(hTest, pszSubTest);
+        RTStrFree(pszSubTest);
+        return cch;
+    }
+    return 0;
 }
 
 
