@@ -51,7 +51,7 @@ PROGRAMS += \
 	tstRTAvl \
 	tstRTBase64 \
 	tstRTBitOperations \
-	tstCidr \
+	tstRTCidr \
 	tstCritSect \
 	tstDeadlock \
 	tstDir \
@@ -149,7 +149,8 @@ tstRTBitOperationsPIC3_SOURCES = tstRTBitOperations.cpp
 tstRTBitOperationsPIC3_CXXFLAGS = -fPIC -fomit-frame-pointer -O3
 tstRTBitOperationsPIC3_DEFS = PIC
 
-tstCidr_SOURCES = tstCidr.cpp
+tstRTCidr_TEMPLATE = VBOXR3TSTEXE
+tstRTCidr_SOURCES = tstRTCidr.cpp
 
 tstCritSect_SOURCES = tstCritSect.cpp
 
