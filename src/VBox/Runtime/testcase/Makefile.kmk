@@ -81,6 +81,7 @@ PROGRAMS += \
 	tstPrfRT \
 	tstRand \
 	tstRTFsQueries \
+	tstR0ThreadPreemptionDriver \
 	tstSemPingPong \
 	tstStrFormat \
 	tstStrSimplePattern \
@@ -117,7 +118,8 @@ PROGRAMS.darwin += \
 	tstDarwinSched
 SYSMODS += \
 	tstLdrObj \
-	tstLdrObjR0
+	tstLdrObjR0 \
+	tstR0ThreadPreemption
 if1of ($(VBOX_LDR_FMT)), lx pe)
 LIBRARIES += \
 	tstLdr-4Imp
@@ -300,6 +302,18 @@ tstPath_SOURCES = tstPath.cpp
 tstPrfRT_SOURCES = tstPrfRT.cpp
 
 tstRand_SOURCES = tstRand.cpp
+
+tstR0ThreadPreemption_TEMPLATE = VBOXR0
+tstR0ThreadPreemption_INST = $(INST_TESTCASE)
+tstR0ThreadPreemption_DEFS = IN_RT_R0
+tstR0ThreadPreemption_SYSSUFF = .r0
+tstR0ThreadPreemption_SOURCES = tstR0ThreadPreemption.cpp
+tstR0ThreadPreemption_LIBS = $(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
+if1of ($(VBOX_LDR_FMT), pe lx)
+ tstR0ThreadPreemption_LIBS += $(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
+endif
+
+tstR0ThreadPreemptionDriver_SOURCES = tstR0ThreadPreemptionDriver.cpp
 
 tstRTFsQueries_SOURCES = tstRTFsQueries.cpp
 
