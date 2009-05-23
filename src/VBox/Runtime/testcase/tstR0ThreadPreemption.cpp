@@ -109,12 +109,12 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
                     } while (   !fPending
                              && cNanosElapsed < UINT64_C(60)*1000U*1000U*1000U);
                     if (!fPending)
-                        RTStrPrintf(pszErr, cchErr, "!Preempt not pending after %llu loops / %llu ns",
+                        RTStrPrintf(pszErr, cchErr, "!Preempt not pending after %'llu loops / %'llu ns",
                                     cLoops, cNanosElapsed);
                     else if (cLoops == 1)
                         RTStrPrintf(pszErr, cchErr, "!cLoops=0\n");
                     else
-                        RTStrPrintf(pszErr, cchErr, "RTThreadPreemptIsPending returned true after %llu loops / %llu ns",
+                        RTStrPrintf(pszErr, cchErr, "RTThreadPreemptIsPending returned true after %'llu loops / %'llu ns",
                                     cLoops, cNanosElapsed);
                 }
                 else
