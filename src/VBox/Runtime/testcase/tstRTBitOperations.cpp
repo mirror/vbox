@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,16 +28,15 @@
  * additional information or have any questions.
  */
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/asm.h>
-#include <iprt/test.h>
+
+#include <iprt/initterm.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
-#include <iprt/initterm.h>
 
 
 /*
@@ -131,9 +130,9 @@ int main()
      */
     RTTEST hTest;
     if (    RT_FAILURE(RTR3Init())
-        ||  RT_FAILURE(RTTestCreate("tstBitOperations", &hTest)))
+        ||  RT_FAILURE(RTTestCreate("tstRTBitOperations", &hTest)))
     {
-        RTPrintf("tstBitOperation: fatal initialization error\n");
+        RTPrintf("tstRTBitOperations: fatal initialization error\n");
         return 1;
     }
     RTTestBanner(hTest);

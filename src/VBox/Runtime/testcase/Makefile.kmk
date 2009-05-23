@@ -50,7 +50,7 @@ IPRT_OUT_DIR ?= $(PATH_TARGET)/Runtime
 PROGRAMS += \
 	tstRTAvl \
 	tstRTBase64 \
-	tstBitOperations \
+	tstRTBitOperations \
 	tstCidr \
 	tstCritSect \
 	tstDeadlock \
@@ -108,7 +108,7 @@ PROGRAMS.win += \
 PROGRAMS.linux += \
 	tstRTProcWait \
 	tstRTProcIsRunningByName \
-	tstBitOperationsPIC3 \
+	tstRTBitOperationsPIC3 \
 	tstInlineAsmPIC \
 	tstInlineAsmPIC3 \
 	tstSemMutex
@@ -141,12 +141,13 @@ tstRTAvl_SOURCES = tstRTAvl.cpp
 tstRTBase64_TEMPLATE = VBOXR3TSTEXE
 tstRTBase64_SOURCES = tstRTBase64.cpp
 
-tstBitOperations_TEMPLATE = VBOXR3TSTEXE
-tstBitOperations_SOURCES = tstBitOperations.cpp
+tstRTBitOperations_TEMPLATE = VBOXR3TSTEXE
+tstRTBitOperations_SOURCES = tstRTBitOperations.cpp
 
-tstBitOperationsPIC3_SOURCES = tstBitOperations.cpp
-tstBitOperationsPIC3_CXXFLAGS = -fPIC -fomit-frame-pointer -O3
-tstBitOperationsPIC3_DEFS = PIC
+tstRTBitOperationsPIC3_TEMPLATE = VBOXR3TSTEXE
+tstRTBitOperationsPIC3_SOURCES = tstRTBitOperations.cpp
+tstRTBitOperationsPIC3_CXXFLAGS = -fPIC -fomit-frame-pointer -O3
+tstRTBitOperationsPIC3_DEFS = PIC
 
 tstCidr_SOURCES = tstCidr.cpp
 
