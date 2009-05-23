@@ -47,27 +47,4 @@ RTDECL(RTTHREAD) RTThreadSelf(void)
 */
 
 
-RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
-{
-    Assert(hThread == NIL_RTTHREAD);
-    return !in_atomic() && !irqs_disabled();
-}
-
-
-RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
-{
-    Assert(hThread == NIL_RTTHREAD);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 4)
-    return test_tsk_thread_flag(current, TIF_NEED_RESCHED);
-
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 20)
-    return need_resched();
-
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 1, 110)
-    return current->need_resched != 0;
-
-#else
-    return need_resched != 0;
-#endif
-}
 
