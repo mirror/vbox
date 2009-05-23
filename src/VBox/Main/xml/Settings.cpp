@@ -245,6 +245,8 @@ stdx::char_auto_ptr ToStringInteger (uint64_t aValue, unsigned int aBase,
     }
 
     stdx::char_auto_ptr result (new char [len]);
+    if (aBase == 0)
+        aBase = 10;
     int vrc = RTStrFormatNumber (result.get(), aValue, aBase, 0, 0, flags);
     if (RT_SUCCESS (vrc))
         return result;

@@ -529,22 +529,23 @@ typedef FNRTSTROUTPUT *PFNRTSTROUTPUT;
  * These are used by RTStrFormat extensions and RTStrFormatNumber, mind
  * that not all flags makes sense to both of the functions.
  * @{ */
-#define RTSTR_F_CAPITAL    0x0001
-#define RTSTR_F_LEFT       0x0002
-#define RTSTR_F_ZEROPAD    0x0004
-#define RTSTR_F_SPECIAL    0x0008
-#define RTSTR_F_VALSIGNED  0x0010
-#define RTSTR_F_PLUS       0x0020
-#define RTSTR_F_BLANK      0x0040
-#define RTSTR_F_WIDTH      0x0080
-#define RTSTR_F_PRECISION  0x0100
+#define RTSTR_F_CAPITAL         0x0001
+#define RTSTR_F_LEFT            0x0002
+#define RTSTR_F_ZEROPAD         0x0004
+#define RTSTR_F_SPECIAL         0x0008
+#define RTSTR_F_VALSIGNED       0x0010
+#define RTSTR_F_PLUS            0x0020
+#define RTSTR_F_BLANK           0x0040
+#define RTSTR_F_WIDTH           0x0080
+#define RTSTR_F_PRECISION       0x0100
+#define RTSTR_F_THOUSAND_SEP    0x0200
 
-#define RTSTR_F_BIT_MASK   0xf800
-#define RTSTR_F_8BIT       0x0800
-#define RTSTR_F_16BIT      0x1000
-#define RTSTR_F_32BIT      0x2000
-#define RTSTR_F_64BIT      0x4000
-#define RTSTR_F_128BIT     0x8000
+#define RTSTR_F_BIT_MASK        0xf800
+#define RTSTR_F_8BIT            0x0800
+#define RTSTR_F_16BIT           0x1000
+#define RTSTR_F_32BIT           0x2000
+#define RTSTR_F_64BIT           0x4000
+#define RTSTR_F_128BIT          0x8000
 /** @} */
 
 /** @def RTSTR_GET_BIT_FLAG

@@ -413,7 +413,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
 
                     case RTSF_FP16:
                     {
-                        fFlags &= ~(RTSTR_F_VALSIGNED | RTSTR_F_BIT_MASK | RTSTR_F_WIDTH | RTSTR_F_PRECISION);
+                        fFlags &= ~(RTSTR_F_VALSIGNED | RTSTR_F_BIT_MASK | RTSTR_F_WIDTH | RTSTR_F_PRECISION | RTSTR_F_THOUSAND_SEP);
                         cch = RTStrFormatNumber(&szBuf[0], u.fp16.sel, 16, 4, -1, fFlags | RTSTR_F_16BIT);
                         Assert(cch == 4);
                         szBuf[4] = ':';
@@ -424,7 +424,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                     }
                     case RTSF_FP32:
                     {
-                        fFlags &= ~(RTSTR_F_VALSIGNED | RTSTR_F_BIT_MASK | RTSTR_F_WIDTH | RTSTR_F_PRECISION);
+                        fFlags &= ~(RTSTR_F_VALSIGNED | RTSTR_F_BIT_MASK | RTSTR_F_WIDTH | RTSTR_F_PRECISION | RTSTR_F_THOUSAND_SEP);
                         cch = RTStrFormatNumber(&szBuf[0], u.fp32.sel, 16, 4, -1, fFlags | RTSTR_F_16BIT);
                         Assert(cch == 4);
                         szBuf[4] = ':';
@@ -435,7 +435,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                     }
                     case RTSF_FP64:
                     {
-                        fFlags &= ~(RTSTR_F_VALSIGNED | RTSTR_F_BIT_MASK | RTSTR_F_WIDTH | RTSTR_F_PRECISION);
+                        fFlags &= ~(RTSTR_F_VALSIGNED | RTSTR_F_BIT_MASK | RTSTR_F_WIDTH | RTSTR_F_PRECISION | RTSTR_F_THOUSAND_SEP);
                         cch = RTStrFormatNumber(&szBuf[0], u.fp64.sel, 16, 4, -1, fFlags | RTSTR_F_16BIT);
                         Assert(cch == 4);
                         szBuf[4] = ':';
