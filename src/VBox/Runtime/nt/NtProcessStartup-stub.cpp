@@ -34,8 +34,8 @@
 #include <iprt/asm.h>
 
 
-extern "C" void __stdcall NtProcessStartup(void *pvIgnored);
-extern "C" void __stdcall NtProcessStartup(void *pvIgnored)
+extern "C" void __cdecl NtProcessStartup(void *pvIgnored);
+extern "C" void __cdecl NtProcessStartup(void *pvIgnored)
 {
     ASMBreakpoint();
     NOREF(pvIgnored);
