@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,45 +33,46 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/cidr.h>
+
 #include <iprt/err.h>
-#include <iprt/stream.h>
 #include <iprt/initterm.h>
+#include <iprt/test.h>
 
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#define CHECKNETWORK(string, expected_result, expected_network, expected_netmask) \
+#define CHECKNETWORK(String, rcExpected, ExpectedNetwork, ExpectedNetMask) \
     do { \
-        RTIPV4ADDR network, netmask; \
-        int result = RTCidrStrToIPv4(string, &network, &netmask); \
-        if (expected_result && !result) \
+        RTIPV4ADDR Network, NetMask; \
+        int rc = RTCidrStrToIPv4(String, &Network, &NetMask); \
+        if ((rcExpected) && !rc) \
         { \
-            g_cErrors++; \
-            RTPrintf("%s, %d: %s: expected %Rrc got %Rrc\n", \
-                    __FUNCTION__, __LINE__, string, expected_result, result); \
+            RTTestIFailed("at line %d: '%s': expected %Rrc got %Rrc\n", \
+                          __LINE__, String, (rcExpected), rc); \
         } \
-        else if (   expected_result != result \
-                 || (   result == VINF_SUCCESS \
-                     && (   expected_network != network \
-                         || expected_netmask != netmask))) \
+        else if (   (rcExpected) != rc \
+                 || (   rc == VINF_SUCCESS \
+                     && (   (ExpectedNetwork) != Network \
+                         || (ExpectedNetMask) != NetMask))) \
         { \
-            g_cErrors++; \
-            RTPrintf("%s, %d: '%s': expected %Rrc got %Rrc, expected network %08x got %08x, expected netmask %08x got %08x\n", \
-                    __FUNCTION__, __LINE__, string, expected_result, result, expected_network, network, expected_netmask, netmask); \
+            RTTestIFailed("at line %d: '%s': expected %Rrc got %Rrc, expected network %08x got %08x, expected netmask %08x got %08x\n", \
+                          __LINE__, String, rcExpected, rc, (ExpectedNetwork), Network, (ExpectedNetMask), NetMask); \
         } \
     } while (0)
 
 
-/*******************************************************************************
-*   Global Variables                                                           *
-*******************************************************************************/
-static unsigned g_cErrors = 0;
-
-
 int main()
 {
-    RTR3Init();
+    int rc = RTR3Init();
+    if (RT_FAILURE(rc))
+        return 1;
+    RTTEST hTest;
+    rc = RTTestCreate("tstRTCidr", &hTest);
+    if (RT_FAILURE(rc))
+        return 1;
+    RTTestBanner(hTest);
+
     CHECKNETWORK("10.0.0/24",                VINF_SUCCESS, 0x0A000000, 0xFFFFFF00);
     CHECKNETWORK("10.0.0/8",                 VINF_SUCCESS, 0x0A000000, 0xFF000000);
     CHECKNETWORK("10.0.0./24",     VERR_INVALID_PARAMETER,          0,          0);
@@ -86,10 +87,7 @@ int main()
     CHECKNETWORK("10.0.0/24.",     VERR_INVALID_PARAMETER,          0,          0);
     CHECKNETWORK("10.1.2/16",                VINF_SUCCESS, 0x0A010200, 0xFFFF0000);
     CHECKNETWORK("1.2.3.4",                  VINF_SUCCESS, 0x01020304, 0xFFFFFFFF);
-    if (!g_cErrors)
-        RTPrintf("tstIp: SUCCESS\n", g_cErrors);
-    else
-        RTPrintf("tstIp: FAILURE - %d errors\n", g_cErrors);
-    return !!g_cErrors;
+
+    return RTTestSummaryAndDestroy(hTest);
 }
 
