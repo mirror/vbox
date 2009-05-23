@@ -32,11 +32,13 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/base64.h>
+
 #include <iprt/err.h>
 #include <iprt/initterm.h>
+#include <iprt/stdarg.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
-#include <iprt/stdarg.h>
+#include <iprt/test.h>
 
 
 /*******************************************************************************
@@ -52,84 +54,55 @@
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-static int g_cErrors = 0;
 
 
-static void tstBase64(const void *pvData, size_t cbData, const char *pszEnc, size_t cchEnc,
-                      int fTextData, int fNormalEnc, const char *pszTestFmt, ...)
+static void tstBase64(const void *pvData, size_t cbData,
+                      const char *pszEnc, size_t cchEnc,
+                      int fTextData, int fNormalEnc)
 {
     char    szOut[0x10000];
     size_t  cchOut = 0;
-
-    /* Format the test name first. */
-    va_list va;
-    va_start(va, pszTestFmt);
-    char szTest[32];
-    RTStrPrintfV(szTest, sizeof(szTest), pszTestFmt, va);
-    va_end(va);
 
     /*
      * Test decoding.
      */
     int rc = RTBase64Decode(pszEnc, szOut, cbData, &cchOut, NULL);
     if (RT_FAILURE(rc))
-    {
-        RTPrintf("tstBase64: FAILURE - %s: RTBase64Decode -> %Rrc\n", szTest, rc);
-        g_cErrors++;
-    }
+        RTTestIFailed("RTBase64Decode -> %Rrc", rc);
     else if (cchOut != cbData)
-    {
-        RTPrintf("tstBase64: FAILURE - %s: RTBase64Decode returned %zu bytes, expected %zu.\n",
-                 szTest, cchOut, cbData);
-        g_cErrors++;
-    }
+        RTTestIFailed("RTBase64Decode returned %zu bytes, expected %zu.",
+                      cchOut, cbData);
     else if (memcmp(szOut, pvData, cchOut))
     {
         if (fTextData)
-            RTPrintf("tstBase64: FAILURE - %s: RTBase64Decode returned:\n%.*s\nexpected:\n%s\n",
-                     szTest, (int)cchOut, szOut, pvData);
+            RTTestIFailed("RTBase64Decode returned:\n%.*s\nexpected:\n%s\n",
+                          (int)cchOut, szOut, pvData);
         else
-            RTPrintf("tstBase64: FAILURE - %s: RTBase64Decode return mismatching output\n", szTest);
-        g_cErrors++;
+            RTTestIFailed("RTBase64Decode return mismatching output\n");
     }
 
     cchOut = RTBase64DecodedSize(pszEnc, NULL);
     if (cchOut != cbData)
-    {
-        RTPrintf("tstBase64: FAILURE - %s: RTBase64DecodedSize returned %zu bytes, expected %zu.\n",
-                 szTest, cchOut, cbData);
-        g_cErrors++;
-    }
+        RTTestIFailed("RTBase64DecodedSize returned %zu bytes, expected %zu.\n",
+                      cchOut, cbData);
 
     /*
      * Test encoding.
      */
     rc = RTBase64Encode(pvData, cbData, szOut, cchEnc + 1, &cchOut);
     if (RT_FAILURE(rc))
-    {
-        RTPrintf("tstBase64: FAILURE - %s: RTBase64Encode -> %Rrc\n", szTest, rc);
-        g_cErrors++;
-    }
+        RTTestIFailed("RTBase64Encode -> %Rrc\n", rc);
     else if (fNormalEnc && cchOut != cchEnc)
-    {
-        RTPrintf("tstBase64: FAILURE - %s: RTBase64Encode returned %zu bytes, expected %zu.\n",
-                 szTest, cchOut, cchEnc);
-        g_cErrors++;
-    }
+        RTTestIFailed("RTBase64Encode returned %zu bytes, expected %zu.\n",
+                      cchOut, cchEnc);
     else if (fNormalEnc && memcmp(szOut, pszEnc, cchOut + 1))
-    {
-        RTPrintf("tstBase64: FAILURE - %s: RTBase64Encode returned:\n%*s\nexpected:\n%s\n",
-                 szTest, szOut, pszEnc);
-        g_cErrors++;
-    }
+        RTTestIFailed("RTBase64Encode returned:\n%*s\nexpected:\n%s\n",
+                      szOut, pszEnc);
 
     size_t cchOut2 = RTBase64EncodedLength(cbData);
     if (cchOut != cchOut2)
-    {
-        RTPrintf("tstBase64: FAILURE - %s: RTBase64EncodedLength returned %zu bytes, expected %zu.\n",
-                 szTest, cchOut2, cchOut);
-        g_cErrors++;
-    }
+        RTTestIFailed("RTBase64EncodedLength returned %zu bytes, expected %zu.\n",
+                      cchOut2, cchOut);
 
     /** @todo negative testing. */
 }
@@ -137,13 +110,18 @@ static void tstBase64(const void *pvData, size_t cbData, const char *pszEnc, siz
 
 int main()
 {
-    RTR3Init();
-
+    int rc = RTR3Init();
+    if (RT_FAILURE(rc))
+        return 1;
+    RTTEST hTest;
+    rc = RTTestCreate("tstRTBase64", &hTest);
+    if (RT_FAILURE(rc))
+        return 1;
+    RTTestBanner(hTest);
 
     /*
      * Series of simple tests.
      */
-    RTPrintf("tstBase64: TESTING - Test 1\n");
     static const struct
     {
         const char *pszText;
@@ -172,14 +150,17 @@ int main()
     };
 
     for (unsigned i = 0; i < RT_ELEMENTS(g_aTests); i++)
+    {
+        RTTestSubF(hTest, "Test 1-%u", i);
         tstBase64(g_aTests[i].pszText, g_aTests[i].cchText,
                   g_aTests[i].pszEnc, g_aTests[i].cchEnc,
-                  1 /* fTextData */, 1 /* fNormalEnc */, "Test 1-#u", i);
+                  1 /* fTextData */, 1 /* fNormalEnc */);
+    }
 
     /*
      * Try with some more junk in the encoding and different line length.
      */
-    RTPrintf("tstBase64: TESTING - Test 2\n");
+    RTTestSub(hTest, "Test 2");
     static const char s_szText2[] =
         "Man is distinguished, not only by his reason, but by this singular passion "
         "from other animals, which is a lust of the mind, that by a perseverance of "
@@ -195,12 +176,12 @@ int main()
 
     tstBase64(s_szText2, sizeof(s_szText2) - 1,
               s_szEnc2,  sizeof(s_szEnc2) - 1,
-              1 /* fTextData */, 0 /* fNormalEnc */, "Test 2");
+              1 /* fTextData */, 0 /* fNormalEnc */);
 
     /*
      * Finally, a more extensive test.
      */
-    RTPrintf("tstBase64: TESTING - Test 3\n");
+    RTTestSub(hTest, "Test 3");
     static uint8_t s_abData3[12*256];
     for (unsigned i = 0; i < 256; i++)
     {
@@ -287,15 +268,11 @@ int main()
 
     tstBase64(s_abData3, sizeof(s_abData3),
               s_szEnc3,  sizeof(s_szEnc3) - 1,
-              0 /* fTextData */, 0 /* fNormalEnc */, "Test 3");
+              0 /* fTextData */, 0 /* fNormalEnc */);
 
     /*
      * Summary.
      */
-    if (!g_cErrors)
-        RTPrintf("tstBase64: SUCCESS\n");
-    else
-        RTPrintf("tstBase64: FAILURE - %d errors\n", g_cErrors);
-    return !!g_cErrors;
+    return RTTestSummaryAndDestroy(hTest);
 }
 
