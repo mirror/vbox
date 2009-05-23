@@ -169,29 +169,25 @@ RTDECL(int) RTStrFormatNumber(char *psz, uint64_t u64Value, unsigned int uiBase,
  */
 static int rtStrFormatNumber(char *psz, KSIZE64 ullValue, unsigned int uiBase, signed int cchWidth, signed int cchPrecision, unsigned int fFlags)
 {
-    const char *    pachDigits = "0123456789abcdef";
-    char *          pszStart = psz;
+    const char     *pachDigits = "0123456789abcdef";
+    char           *pszStart = psz;
     int             cchValue;
     unsigned long   ul;
-#if 0
-    unsigned long   ullow;
-#endif
     int             i;
     int             j;
 
-/** @todo Formatting of 64 bit numbers is broken, fix it! */
-
     /*
-     * Validate and addjust input...
+     * Validate and adjust input...
      */
-/** @todo r=bird: Dmitry, who is calling this code with uiBase == 0? */
-    if (uiBase == 0)
-        uiBase = 10;
-    kASSERT((uiBase >= 2 || uiBase <= 16));
+    Assert(uiBase >= 2 || uiBase <= 16);
     if (fFlags & RTSTR_F_CAPITAL)
         pachDigits = "0123456789ABCDEF";
     if (fFlags & RTSTR_F_LEFT)
         fFlags &= ~RTSTR_F_ZEROPAD;
+    if (    (fFlags & RTSTR_F_THOUSAND_SEP) 
+        &&  (   uiBase != 10 
+             || (fFlags & RTSTR_F_ZEROPAD))) /** @todo implement RTSTR_F_ZEROPAD + RTSTR_F_THOUSAND_SEP. */
+        fFlags &= ~RTSTR_F_THOUSAND_SEP;
 
     /*
      * Determin value length
@@ -216,6 +212,13 @@ static int rtStrFormatNumber(char *psz, KSIZE64 ullValue, unsigned int uiBase, s
             cchValue++;
             ul /= uiBase;
         } while (ul);
+    }
+    if (fFlags & RTSTR_F_THOUSAND_SEP)
+    {
+        if (cchValue <= 3)
+            fFlags &= ~RTSTR_F_THOUSAND_SEP;
+        else
+            cchValue += cchValue / 3 - (cchValue % 3 == 0);
     }
 
     /*
@@ -280,22 +283,47 @@ static int rtStrFormatNumber(char *psz, KSIZE64 ullValue, unsigned int uiBase, s
     if (ullValue.ulHi || (fFlags & RTSTR_F_64BIT))
     {
         uint64_t    u64 = *(uint64_t *)(void *)&ullValue;
-        do
-        {
-            psz[i--] = pachDigits[u64 % uiBase];
-            u64 /= uiBase;
-        } while (u64);
+        if (fFlags & RTSTR_F_THOUSAND_SEP)
+        {    
+            do
+            {
+                if ((-i - 1) % 4 == 3)
+                    psz[i--] = ' ';
+                psz[i--] = pachDigits[u64 % uiBase];
+                u64 /= uiBase;
+            } while (u64);
+        }
+        else
+        {    
+            do
+            {
+                psz[i--] = pachDigits[u64 % uiBase];
+                u64 /= uiBase;
+            } while (u64);
+        }
     }
     else
     {
         ul = (fFlags & RTSTR_F_VALSIGNED) && (ullValue.ulLo & 0x80000000) ? -(int32_t)ullValue.ulLo : ullValue.ulLo;
-        do
+        if (fFlags & RTSTR_F_THOUSAND_SEP)
         {
-            psz[i--] = pachDigits[ul % uiBase];
-            ul /= uiBase;
-        } while (ul);
+            do
+            {
+                if ((-i - 1) % 4 == 3)
+                    psz[i--] = ' ';
+                psz[i--] = pachDigits[ul % uiBase];
+                ul /= uiBase;
+            } while (ul);
+        }
+        else
+        {
+            do
+            {
+                psz[i--] = pachDigits[ul % uiBase];
+                ul /= uiBase;
+            } while (ul);
+        }
     }
-
 
     /*
      * width if RTSTR_F_LEFT
@@ -357,11 +385,12 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                 {
                     switch (*pszFormat++)
                     {
-                        case '#':   fFlags |= RTSTR_F_SPECIAL;   continue;
-                        case '-':   fFlags |= RTSTR_F_LEFT;      continue;
-                        case '+':   fFlags |= RTSTR_F_PLUS;      continue;
-                        case ' ':   fFlags |= RTSTR_F_BLANK;     continue;
-                        case '0':   fFlags |= RTSTR_F_ZEROPAD;   continue;
+                        case '#':   fFlags |= RTSTR_F_SPECIAL;      continue;
+                        case '-':   fFlags |= RTSTR_F_LEFT;         continue;
+                        case '+':   fFlags |= RTSTR_F_PLUS;         continue;
+                        case ' ':   fFlags |= RTSTR_F_BLANK;        continue;
+                        case '0':   fFlags |= RTSTR_F_ZEROPAD;      continue;
+                        case '\'':  fFlags |= RTSTR_F_THOUSAND_SEP; continue;
                     }
                     pszFormat--;
                     break;

@@ -32,15 +32,11 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/string.h>
-#include <iprt/initterm.h>
-#include <iprt/uuid.h>
-#include <iprt/string.h>
-#include <iprt/stream.h>
 
-/*******************************************************************************
-*   Global Variables                                                           *
-*******************************************************************************/
-static int g_cErrors = 0;
+#include <iprt/initterm.h>
+#include <iprt/stream.h>
+#include <iprt/test.h>
+#include <iprt/uuid.h>
 
 
 /** See FNRTSTRFORMATTYPE. */
@@ -51,23 +47,17 @@ static DECLCALLBACK(size_t) TstType(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
 {
     /* validate */
     if (strncmp(pszType, "type", 4))
-    {
-        RTPrintf("tstStrFormat: pszType=%s expected 'typeN'\n", pszType);
-        g_cErrors++;
-    }
+        RTTestIFailed("pszType=%s expected 'typeN'\n", pszType);
 
     int iType = pszType[4] - '0';
     if ((uintptr_t)pvUser != (uintptr_t)TstType + iType)
-    {
-        RTPrintf("tstStrFormat: pvValue=%p expected %p\n", pvUser, (void *)((uintptr_t)TstType + iType));
-        g_cErrors++;
-    }
+        RTTestIFailed("pvValue=%p expected %p\n", pvUser, (void *)((uintptr_t)TstType + iType));
 
     /* format */
     size_t cch = pfnOutput(pvArgOutput, pszType, 5);
     cch += pfnOutput(pvArgOutput, "=", 1);
     char szNum[64];
-    size_t cchNum = RTStrFormatNumber(szNum, (uintptr_t)pvValue, 0, cchWidth, cchPrecision, fFlags);
+    size_t cchNum = RTStrFormatNumber(szNum, (uintptr_t)pvValue, 10, cchWidth, cchPrecision, fFlags);
     cch += pfnOutput(pvArgOutput, szNum, cchNum);
     return cch;
 }
@@ -75,113 +65,108 @@ static DECLCALLBACK(size_t) TstType(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
 
 int main()
 {
-    RTR3Init();
+    int rc = RTR3Init();
+    if (RT_FAILURE(rc))
+        return 1;
+    RTTEST      hTest;
+    rc = RTTestCreate("tstStrFormat", &hTest);
+    if (RT_FAILURE(rc))
+        return 1;
+    RTTestBanner(hTest);
 
     uint32_t    u32 = 0x010;
     uint64_t    u64 = 0x100;
-    char        szStr[120];
+#define BUF_SIZE    120
+    char       *pszBuf = (char *)RTTestGuardedAllocHead(hTest, BUF_SIZE);
+
+    RTTestSub(hTest, "Basics");
 
     /* simple */
-    size_t cch = RTStrPrintf(szStr, sizeof(szStr), "u32=%d u64=%lld u64=%#llx", u32, u64, u64);
-    if (strcmp(szStr, "u32=16 u64=256 u64=0x100"))
+    size_t cch = RTStrPrintf(pszBuf, BUF_SIZE, "u32=%d u64=%lld u64=%#llx", u32, u64, u64);
+    if (strcmp(pszBuf, "u32=16 u64=256 u64=0x100"))
     {
-        RTPrintf("error: '%s'\n"
-               "wanted 'u32=16 u64=256 u64=0x100'\n", szStr);
-        g_cErrors++;
+        RTTestIFailed("error: '%s'\n"
+                      "wanted 'u32=16 u64=256 u64=0x100'\n", pszBuf);
     }
 
     /* just big. */
     u64 = UINT64_C(0x7070605040302010);
-    cch = RTStrPrintf(szStr, sizeof(szStr), "u64=%#llx 42=%d u64=%lld 42=%d", u64, 42, u64, 42);
-    if (strcmp(szStr, "u64=0x7070605040302010 42=42 u64=8102081627430068240 42=42"))
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "u64=%#llx 42=%d u64=%lld 42=%d", u64, 42, u64, 42);
+    if (strcmp(pszBuf, "u64=0x7070605040302010 42=42 u64=8102081627430068240 42=42"))
     {
-        RTPrintf("error: '%s'\n"
-                 "wanted 'u64=0x8070605040302010 42=42 u64=8102081627430068240 42=42'\n", szStr);
-        RTPrintf("%d\n", (int)(u64 % 10));
-        g_cErrors++;
+        RTTestIFailed("error: '%s'\n"
+                      "wanted 'u64=0x8070605040302010 42=42 u64=8102081627430068240 42=42'\n", pszBuf);
+        RTTestIPrintf(RTTESTLVL_FAILURE, "%d\n", (int)(u64 % 10));
     }
 
     /* huge and negative. */
     u64 = UINT64_C(0x8070605040302010);
-    cch = RTStrPrintf(szStr, sizeof(szStr), "u64=%#llx 42=%d u64=%llu 42=%d u64=%lld 42=%d", u64, 42, u64, 42, u64, 42);
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "u64=%#llx 42=%d u64=%llu 42=%d u64=%lld 42=%d", u64, 42, u64, 42, u64, 42);
     /* Not sure if this is the correct decimal representation... But both */
-    if (strcmp(szStr, "u64=0x8070605040302010 42=42 u64=9255003132036915216 42=42 u64=-9191740941672636400 42=42"))
+    if (strcmp(pszBuf, "u64=0x8070605040302010 42=42 u64=9255003132036915216 42=42 u64=-9191740941672636400 42=42"))
     {
-        RTPrintf("error: '%s'\n"
-                 "wanted 'u64=0x8070605040302010 42=42 u64=9255003132036915216 42=42 u64=-9191740941672636400 42=42'\n", szStr);
-        RTPrintf("%d\n", (int)(u64 % 10));
-        g_cErrors++;
+        RTTestIFailed("error: '%s'\n"
+                      "wanted 'u64=0x8070605040302010 42=42 u64=9255003132036915216 42=42 u64=-9191740941672636400 42=42'\n", pszBuf);
+        RTTestIPrintf(RTTESTLVL_FAILURE, "%d\n", (int)(u64 % 10));
     }
 
     /* 64-bit value bug. */
     u64 = 0xa0000000;
-    cch = RTStrPrintf(szStr, sizeof(szStr), "u64=%#llx 42=%d u64=%lld 42=%d", u64, 42, u64, 42);
-    if (strcmp(szStr, "u64=0xa0000000 42=42 u64=2684354560 42=42"))
-    {
-        RTPrintf("error: '%s'\n"
-                 "wanted 'u64=0xa0000000 42=42 u64=2684354560 42=42'\n", szStr);
-        g_cErrors++;
-    }
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "u64=%#llx 42=%d u64=%lld 42=%d", u64, 42, u64, 42);
+    if (strcmp(pszBuf, "u64=0xa0000000 42=42 u64=2684354560 42=42"))
+        RTTestIFailed("error: '%s'\n"
+                      "wanted 'u64=0xa0000000 42=42 u64=2684354560 42=42'\n", pszBuf);
 
     /* uuid */
     RTUUID Uuid;
     RTUuidCreate(&Uuid);
     char szCorrect[RTUUID_STR_LENGTH];
     RTUuidToStr(&Uuid, szCorrect, sizeof(szCorrect));
-    cch = RTStrPrintf(szStr, sizeof(szStr), "%Vuuid", &Uuid);
-    if (strcmp(szStr, szCorrect))
-    {
-        RTPrintf("error:    '%s'\n"
-                 "expected: '%s'\n",
-                 szStr, szCorrect);
-        g_cErrors++;
-    }
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%Vuuid", &Uuid);
+    if (strcmp(pszBuf, szCorrect))
+        RTTestIFailed("error:    '%s'\n"
+                      "expected: '%s'\n",
+                      pszBuf, szCorrect);
 
-    /* allocation */
+    /* 
+     * allocation
+     */
+    RTTestSub(hTest, "RTStrAPrintf");
     char *psz = (char *)~0;
     int cch2 = RTStrAPrintf(&psz, "Hey there! %s%s", "This is a test", "!");
     if (cch2 < 0)
-    {
-        RTPrintf("error: RTStrAPrintf failed, cch2=%d\n", cch2);
-        g_cErrors++;
-    }
+        RTTestIFailed("RTStrAPrintf failed, cch2=%d\n", cch2);
     else if (strcmp(psz, "Hey there! This is a test!"))
-    {
-        RTPrintf("error: RTStrAPrintf failed\n"
-                 "got   : '%s'\n"
-                 "wanted: 'Hey there! This is a test!'\n",
-               psz);
-        g_cErrors++;
-    }
+        RTTestIFailed("RTStrAPrintf failed\n"
+                      "got   : '%s'\n"
+                      "wanted: 'Hey there! This is a test!'\n",
+                      psz);
     else if ((int)strlen(psz) != cch2)
-    {
-        RTPrintf("error: RTStrAPrintf failed, cch2 == %d expected %u\n", cch2, strlen(psz));
-        g_cErrors++;
-    }
+        RTTestIFailed("RTStrAPrintf failed, cch2 == %d expected %u\n", cch2, strlen(psz));
     RTStrFree(psz);
 
 #define CHECK42(fmt, arg, out) \
     do { \
-        cch = RTStrPrintf(szStr, sizeof(szStr), fmt " 42=%d " fmt " 42=%d", arg, 42, arg, 42); \
-        if (strcmp(szStr, out " 42=42 " out " 42=42")) \
-        { \
-            RTPrintf("error(%d): format '%s'\n" \
-                     "    output: '%s'\n"  \
-                     "    wanted: '%s'\n", \
-                     __LINE__, fmt, szStr, out " 42=42 " out " 42=42"); \
-            g_cErrors++; \
-        } \
+        cch = RTStrPrintf(pszBuf, BUF_SIZE, fmt " 42=%d " fmt " 42=%d", arg, 42, arg, 42); \
+        if (strcmp(pszBuf, out " 42=42 " out " 42=42")) \
+            RTTestIFailed("at line %d: format '%s'\n" \
+                          "    output: '%s'\n"  \
+                          "    wanted: '%s'\n", \
+                          __LINE__, fmt, pszBuf, out " 42=42 " out " 42=42"); \
         else if (cch != sizeof(out " 42=42 " out " 42=42") - 1) \
-        { \
-            RTPrintf("error(%d): Invalid length %d returned, expected %u!\n", \
-                     __LINE__, cch, sizeof(out " 42=42 " out " 42=42") - 1); \
-            g_cErrors++; \
-        } \
+            RTTestIFailed("at line %d: Invalid length %d returned, expected %u!\n", \
+                          __LINE__, cch, sizeof(out " 42=42 " out " 42=42") - 1); \
     } while (0)
+
+#define CHECKSTR(Correct) \
+    if (strcmp(pszBuf, Correct)) \
+        RTTestIFailed("error:    '%s'\n" \
+                      "expected: '%s'\n", pszBuf, Correct); \
 
     /*
      * Runtime extensions.
      */
+    RTTestSub(hTest, "Runtime format types (%R*)");
     CHECK42("%RGi", (RTGCINT)127, "127");
     CHECK42("%RGi", (RTGCINT)-586589, "-586589");
 
@@ -356,14 +341,11 @@ int main()
 
     RTUuidCreate(&Uuid);
     RTUuidToStr(&Uuid, szCorrect, sizeof(szCorrect));
-    cch = RTStrPrintf(szStr, sizeof(szStr), "%RTuuid", &Uuid);
-    if (strcmp(szStr, szCorrect))
-    {
-        RTPrintf("error:    '%s'\n"
-                 "expected: '%s'\n",
-                 szStr, szCorrect);
-        g_cErrors++;
-    }
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%RTuuid", &Uuid);
+    if (strcmp(pszBuf, szCorrect))
+        RTTestIFailed("error:    '%s'\n"
+                      "expected: '%s'\n",
+                      pszBuf, szCorrect);
 
     CHECK42("%RTxint", (RTGCUINT)0x2345, "2345");
     CHECK42("%RTxint", (RTGCUINT)0xffff8fff, "ffff8fff");
@@ -394,46 +376,64 @@ int main()
     CHECK42("%RX8", (uint8_t)0xff, "ff");
     CHECK42("%RX8", 0x100, "0");
 
-#define CHECKSTR(Correct) \
-    if (strcmp(szStr, Correct)) \
-    { \
-        RTPrintf("error:    '%s'\n" \
-                 "expected: '%s'\n", szStr, Correct); \
-        g_cErrors++; \
-    }
+    /*
+     * Thousand separators.
+     */
+    RTTestSub(hTest, "Thousand Separators (%'*)");
+
+    RTStrFormatNumber(pszBuf,       1, 10, 0, 0, RTSTR_F_THOUSAND_SEP); CHECKSTR("1");              memset(pszBuf, '!', BUF_SIZE);
+    RTStrFormatNumber(pszBuf,      10, 10, 0, 0, RTSTR_F_THOUSAND_SEP); CHECKSTR("10");             memset(pszBuf, '!', BUF_SIZE);
+    RTStrFormatNumber(pszBuf,     100, 10, 0, 0, RTSTR_F_THOUSAND_SEP); CHECKSTR("100");            memset(pszBuf, '!', BUF_SIZE);
+    RTStrFormatNumber(pszBuf,    1000, 10, 0, 0, RTSTR_F_THOUSAND_SEP); CHECKSTR("1 000");          memset(pszBuf, '!', BUF_SIZE);
+    RTStrFormatNumber(pszBuf,   10000, 10, 0, 0, RTSTR_F_THOUSAND_SEP); CHECKSTR("10 000");         memset(pszBuf, '!', BUF_SIZE);
+    RTStrFormatNumber(pszBuf,  100000, 10, 0, 0, RTSTR_F_THOUSAND_SEP); CHECKSTR("100 000");        memset(pszBuf, '!', BUF_SIZE);
+    RTStrFormatNumber(pszBuf, 1000000, 10, 0, 0, RTSTR_F_THOUSAND_SEP); CHECKSTR("1 000 000");      memset(pszBuf, '!', BUF_SIZE);
+    
+    CHECK42("%'u", 1,                              "1");
+    CHECK42("%'u", 10,                            "10");
+    CHECK42("%'u", 100,                          "100");
+    CHECK42("%'u", 1000,                       "1 000");
+    CHECK42("%'u", 10000,                     "10 000");
+    CHECK42("%'u", 100000,                   "100 000");
+    CHECK42("%'u", 1000000,                "1 000 000");
+    CHECK42("%'RU64", _1T,         "1 099 511 627 776");
+    CHECK42("%'RU64", _1E, "1 152 921 504 606 846 976");
 
     /*
      * String formatting.
      */
+    RTTestSub(hTest, "String formatting (%s)");
+
 //            0         1         2         3         4         5         6         7
 //            0....5....0....5....0....5....0....5....0....5....0....5....0....5....0
-    cch = RTStrPrintf(szStr, sizeof(szStr), "%-10s %-30s %s", "cmd", "args", "description");
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%-10s %-30s %s", "cmd", "args", "description");
     CHECKSTR("cmd        args                           description");
 
-    cch = RTStrPrintf(szStr, sizeof(szStr), "%-10s %-30s %s", "cmd", "", "description");
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%-10s %-30s %s", "cmd", "", "description");
     CHECKSTR("cmd                                       description");
 
 
-    cch = RTStrPrintf(szStr, sizeof(szStr),  "%*s", 0, "");
+    cch = RTStrPrintf(pszBuf, BUF_SIZE,  "%*s", 0, "");
     CHECKSTR("");
 
     /* automatic conversions. */
     static RTUNICP s_usz1[] = { 'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', 0 }; //assumes ascii.
     static RTUTF16 s_wsz1[] = { 'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', 0 }; //assumes ascii.
 
-    cch = RTStrPrintf(szStr, sizeof(szStr), "%ls", s_wsz1);
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%ls", s_wsz1);
     CHECKSTR("hello world");
-    cch = RTStrPrintf(szStr, sizeof(szStr), "%Ls", s_usz1);
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%Ls", s_usz1);
     CHECKSTR("hello world");
 
-    cch = RTStrPrintf(szStr, sizeof(szStr), "%.5ls", s_wsz1);
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%.5ls", s_wsz1);
     CHECKSTR("hello");
-    cch = RTStrPrintf(szStr, sizeof(szStr), "%.5Ls", s_usz1);
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%.5Ls", s_usz1);
     CHECKSTR("hello");
 
     /*
      * Unicode string formatting.
      */
+    RTTestSub(hTest, "Unicode string formatting (%ls)");
     static RTUTF16 s_wszEmpty[]  = { 0 }; //assumes ascii.
     static RTUTF16 s_wszCmd[]    = { 'c', 'm', 'd', 0 }; //assumes ascii.
     static RTUTF16 s_wszArgs[]   = { 'a', 'r', 'g', 's', 0 }; //assumes ascii.
@@ -441,10 +441,10 @@ int main()
 
 //            0         1         2         3         4         5         6         7
 //            0....5....0....5....0....5....0....5....0....5....0....5....0....5....0
-    cch = RTStrPrintf(szStr, sizeof(szStr), "%-10ls %-30ls %ls", s_wszCmd, s_wszArgs, s_wszDesc);
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%-10ls %-30ls %ls", s_wszCmd, s_wszArgs, s_wszDesc);
     CHECKSTR("cmd        args                           description");
 
-    cch = RTStrPrintf(szStr, sizeof(szStr), "%-10ls %-30ls %ls", s_wszCmd, s_wszEmpty, s_wszDesc);
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%-10ls %-30ls %ls", s_wszCmd, s_wszEmpty, s_wszDesc);
     CHECKSTR("cmd                                       description");
 
 
@@ -453,77 +453,71 @@ int main()
     static RTUTF16 s_wsz2[] = { 0xc5, 0xc6, 0xf8, 0 };
     static char    s_sz2[]  = { 0xc5, 0xc6, 0xf8, 0 };///@todo multibyte tests.
 
-    cch = RTStrPrintf(szStr, sizeof(szStr), "%ls", s_wsz2);
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%ls", s_wsz2);
     CHECKSTR(s_sz2);
-    cch = RTStrPrintf(szStr, sizeof(szStr), "%Ls", s_usz2);
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%Ls", s_usz2);
     CHECKSTR(s_sz2);
 #endif
 
     /*
      * Custom types.
      */
-#define CHECK(expr)  do { if (!(expr)) { RTPrintf("tstEnv: error line %d: %s\n", __LINE__, #expr); g_cErrors++; } } while (0)
-#define CHECK_RC(expr, rc)  do { int rc2 = expr; if (rc2 != (rc)) { RTPrintf("tstEnv: error line %d: %s -> %Rrc expected %Rrc\n", __LINE__, #expr, rc2, rc); g_cErrors++; } } while (0)
-
-    CHECK_RC(RTStrFormatTypeRegister("type3", TstType, (void *)((uintptr_t)TstType)), VINF_SUCCESS);
-    CHECK_RC(RTStrFormatTypeSetUser("type3",           (void *)((uintptr_t)TstType + 3)), VINF_SUCCESS);
-    cch = RTStrPrintf(szStr, sizeof(szStr), "%R[type3]", (void *)1);
+    RTTestSub(hTest, "Custom format types (%R[*])");
+    RTTESTI_CHECK_RC(RTStrFormatTypeRegister("type3", TstType, (void *)((uintptr_t)TstType)), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTStrFormatTypeSetUser("type3",           (void *)((uintptr_t)TstType + 3)), VINF_SUCCESS);
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%R[type3]", (void *)1);
     CHECKSTR("type3=1");
 
-    CHECK_RC(RTStrFormatTypeRegister("type1", TstType, (void *)((uintptr_t)TstType)), VINF_SUCCESS);
-    CHECK_RC(RTStrFormatTypeSetUser("type1",           (void *)((uintptr_t)TstType + 1)), VINF_SUCCESS);
-    cch = RTStrPrintf(szStr, sizeof(szStr), "%R[type3] %R[type1]", (void *)1, (void *)2);
+    RTTESTI_CHECK_RC(RTStrFormatTypeRegister("type1", TstType, (void *)((uintptr_t)TstType)), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTStrFormatTypeSetUser("type1",           (void *)((uintptr_t)TstType + 1)), VINF_SUCCESS);
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%R[type3] %R[type1]", (void *)1, (void *)2);
     CHECKSTR("type3=1 type1=2");
 
-    CHECK_RC(RTStrFormatTypeRegister("type4", TstType, (void *)((uintptr_t)TstType)), VINF_SUCCESS);
-    CHECK_RC(RTStrFormatTypeSetUser("type4",           (void *)((uintptr_t)TstType + 4)), VINF_SUCCESS);
-    cch = RTStrPrintf(szStr, sizeof(szStr), "%R[type3] %R[type1] %R[type4]", (void *)1, (void *)2, (void *)3);
+    RTTESTI_CHECK_RC(RTStrFormatTypeRegister("type4", TstType, (void *)((uintptr_t)TstType)), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTStrFormatTypeSetUser("type4",           (void *)((uintptr_t)TstType + 4)), VINF_SUCCESS);
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%R[type3] %R[type1] %R[type4]", (void *)1, (void *)2, (void *)3);
     CHECKSTR("type3=1 type1=2 type4=3");
 
-    CHECK_RC(RTStrFormatTypeRegister("type2", TstType, (void *)((uintptr_t)TstType)), VINF_SUCCESS);
-    CHECK_RC(RTStrFormatTypeSetUser("type2",           (void *)((uintptr_t)TstType + 2)), VINF_SUCCESS);
-    cch = RTStrPrintf(szStr, sizeof(szStr), "%R[type3] %R[type1] %R[type4] %R[type2]", (void *)1, (void *)2, (void *)3, (void *)4);
+    RTTESTI_CHECK_RC(RTStrFormatTypeRegister("type2", TstType, (void *)((uintptr_t)TstType)), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTStrFormatTypeSetUser("type2",           (void *)((uintptr_t)TstType + 2)), VINF_SUCCESS);
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%R[type3] %R[type1] %R[type4] %R[type2]", (void *)1, (void *)2, (void *)3, (void *)4);
     CHECKSTR("type3=1 type1=2 type4=3 type2=4");
 
-    CHECK_RC(RTStrFormatTypeRegister("type5", TstType, (void *)((uintptr_t)TstType)), VINF_SUCCESS);
-    CHECK_RC(RTStrFormatTypeSetUser("type5",           (void *)((uintptr_t)TstType + 5)), VINF_SUCCESS);
-    cch = RTStrPrintf(szStr, sizeof(szStr), "%R[type3] %R[type1] %R[type4] %R[type2] %R[type5]", (void *)1, (void *)2, (void *)3, (void *)4, (void *)5);
+    RTTESTI_CHECK_RC(RTStrFormatTypeRegister("type5", TstType, (void *)((uintptr_t)TstType)), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTStrFormatTypeSetUser("type5",           (void *)((uintptr_t)TstType + 5)), VINF_SUCCESS);
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%R[type3] %R[type1] %R[type4] %R[type2] %R[type5]", (void *)1, (void *)2, (void *)3, (void *)4, (void *)5);
     CHECKSTR("type3=1 type1=2 type4=3 type2=4 type5=5");
 
-    CHECK_RC(RTStrFormatTypeSetUser("type1",           (void *)((uintptr_t)TstType + 1)), VINF_SUCCESS);
-    CHECK_RC(RTStrFormatTypeSetUser("type2",           (void *)((uintptr_t)TstType + 2)), VINF_SUCCESS);
-    CHECK_RC(RTStrFormatTypeSetUser("type3",           (void *)((uintptr_t)TstType + 3)), VINF_SUCCESS);
-    CHECK_RC(RTStrFormatTypeSetUser("type4",           (void *)((uintptr_t)TstType + 4)), VINF_SUCCESS);
-    CHECK_RC(RTStrFormatTypeSetUser("type5",           (void *)((uintptr_t)TstType + 5)), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTStrFormatTypeSetUser("type1",           (void *)((uintptr_t)TstType + 1)), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTStrFormatTypeSetUser("type2",           (void *)((uintptr_t)TstType + 2)), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTStrFormatTypeSetUser("type3",           (void *)((uintptr_t)TstType + 3)), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTStrFormatTypeSetUser("type4",           (void *)((uintptr_t)TstType + 4)), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTStrFormatTypeSetUser("type5",           (void *)((uintptr_t)TstType + 5)), VINF_SUCCESS);
 
-    cch = RTStrPrintf(szStr, sizeof(szStr), "%R[type3] %R[type1] %R[type4] %R[type2] %R[type5]", (void *)10, (void *)20, (void *)30, (void *)40, (void *)50);
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%R[type3] %R[type1] %R[type4] %R[type2] %R[type5]", (void *)10, (void *)20, (void *)30, (void *)40, (void *)50);
     CHECKSTR("type3=10 type1=20 type4=30 type2=40 type5=50");
 
-    CHECK_RC(RTStrFormatTypeDeregister("type2"), VINF_SUCCESS);
-    cch = RTStrPrintf(szStr, sizeof(szStr), "%R[type3] %R[type1] %R[type4] %R[type5]", (void *)10, (void *)20, (void *)30, (void *)40);
+    RTTESTI_CHECK_RC(RTStrFormatTypeDeregister("type2"), VINF_SUCCESS);
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%R[type3] %R[type1] %R[type4] %R[type5]", (void *)10, (void *)20, (void *)30, (void *)40);
     CHECKSTR("type3=10 type1=20 type4=30 type5=40");
 
-    CHECK_RC(RTStrFormatTypeDeregister("type5"), VINF_SUCCESS);
-    cch = RTStrPrintf(szStr, sizeof(szStr), "%R[type3] %R[type1] %R[type4]", (void *)10, (void *)20, (void *)30);
+    RTTESTI_CHECK_RC(RTStrFormatTypeDeregister("type5"), VINF_SUCCESS);
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%R[type3] %R[type1] %R[type4]", (void *)10, (void *)20, (void *)30);
     CHECKSTR("type3=10 type1=20 type4=30");
 
-    CHECK_RC(RTStrFormatTypeDeregister("type4"), VINF_SUCCESS);
-    cch = RTStrPrintf(szStr, sizeof(szStr), "%R[type3] %R[type1]", (void *)10, (void *)20);
+    RTTESTI_CHECK_RC(RTStrFormatTypeDeregister("type4"), VINF_SUCCESS);
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%R[type3] %R[type1]", (void *)10, (void *)20);
     CHECKSTR("type3=10 type1=20");
 
-    CHECK_RC(RTStrFormatTypeDeregister("type1"), VINF_SUCCESS);
-    cch = RTStrPrintf(szStr, sizeof(szStr), "%R[type3]", (void *)10);
+    RTTESTI_CHECK_RC(RTStrFormatTypeDeregister("type1"), VINF_SUCCESS);
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%R[type3]", (void *)10);
     CHECKSTR("type3=10");
 
-    CHECK_RC(RTStrFormatTypeDeregister("type3"), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTStrFormatTypeDeregister("type3"), VINF_SUCCESS);
 
     /*
      * Summarize and exit.
      */
-    if (!g_cErrors)
-        RTPrintf("tstStrFormat: SUCCESS\n");
-    else
-        RTPrintf("tstStrFormat: FAILED - %d errors\n", g_cErrors);
-    return !!g_cErrors;
+    return RTTestSummaryAndDestroy(hTest);
 }
 
