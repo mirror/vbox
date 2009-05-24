@@ -166,7 +166,7 @@ typedef enum PDMINTERFACE
     PDMINTERFACE_SCSI_PORT,
     /** PDMISCSICONNECTOR       - The SCSI command execution connector interface (Up) Coupled with PDMINTERFACE_SCSI_PORT. */
     PDMINTERFACE_SCSI_CONNECTOR,
-    /** PDMDDISPLAYVBVACALLBACKS       - The Display VBVA call-backs */
+    /** PDMDDISPLAYVBVACALLBACKS - The Display VBVA callbacks. */
     PDMINTERFACE_DISPLAY_VBVA_CALLBACKS,
 
     /** Maximum interface number. */
@@ -426,7 +426,8 @@ typedef struct PDMIDISPLAYPORT
 
 } PDMIDISPLAYPORT;
 
-typedef struct _VBOXVHWACMD *PVBOXVHWACMD;
+
+typedef struct _VBOXVHWACMD *PVBOXVHWACMD; /**< @todo r=bird: _VBOXVHWACMD -> VBOXVHWACMD; avoid using 1 or 2 leading underscores. Also, a line what it is to make doxygen happy. */
 
 /** Pointer to a display connector interface. */
 typedef struct PDMIDISPLAYCONNECTOR *PPDMIDISPLAYCONNECTOR;
@@ -2600,16 +2601,26 @@ typedef struct PDMISCSICONNECTOR
 
 typedef struct PDMDDISPLAYVBVACALLBACKS *PPDMDDISPLAYVBVACALLBACKS;
 /**
- * Display VBVA callbacks
+ * Display VBVA callbacks.
  */
 typedef struct PDMDDISPLAYVBVACALLBACKS
 {
+
     /**
-     * Informs guest about completion of processing the given Video HW Acceleration command,
-     * does not wait for the guest to process the command
+     * Informs guest about completion of processing the given Video HW Acceleration
+     * command, does not wait for the guest to process the command.
+     *
+     * @returns ???
+     * @param   pInterface          Pointer to this interface.
+     * @param   pCmd                The Video HW Acceleration Command that was
+     *                              completed.
+     * @todo r=bird: if asynch mean asyncronous; then
+     *                   s/pfnVHWACommandCompleteAsynch/pfnVHWACommandCompleteAsync/;
+     *               fi
      */
     DECLR3CALLBACKMEMBER(int, pfnVHWACommandCompleteAsynch, (PPDMDDISPLAYVBVACALLBACKS pInterface, PVBOXVHWACMD pCmd));
-}PDMDDISPLAYVBVACALLBACKS;
+
+} PDMDDISPLAYVBVACALLBACKS;
 
 /** @} */
 
