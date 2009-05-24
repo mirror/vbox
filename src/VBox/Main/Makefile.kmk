@@ -87,7 +87,7 @@ if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" == "win"
  	$(VBOX_IDL_FILE.MSCOM) \
  	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h \
  	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox.tlb \
- 	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c 
+ 	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c
  OTHER_CLEAN    += \
  	$(VBOX_IDL_FILE.MSCOM) \
  	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h \
@@ -95,7 +95,7 @@ if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" == "win"
  	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c \
  	$(PATH_VBoxCOM)/VirtualBox.h   \
  	$(PATH_VBoxCOM)/VirtualBox_i.c \
- 	$(PATH_VBoxCOM)/VirtualBox.tlb 
+ 	$(PATH_VBoxCOM)/VirtualBox.tlb
 
  VBOX_MAIN_PREREQS += $(PATH_VBoxCOM)/VirtualBox_i.c
  BLDDIRS += $(VBOX_PATH_SDK)/bindings/mscom/idl
@@ -171,7 +171,7 @@ VBox-main-xidl_SOURCES = $(VBOX_XIDL_FILE_SRC)
 INSTALLS += VBox-python-glue
 VBox-python-glue_INST = $(INST_SDK)bindings/
 # This file also should go to Python site-wide modules directory
-# so for users it look 'just being here' 
+# so for users it look 'just being here'
 VBox-python-glue_SOURCES = glue/vboxapi.py=>glue/python/vboxapi.py
 
 VBOX_PYTHON_CONSTANTS = $(VBOX_PATH_SDK)/bindings/glue/python/VirtualBox_constants.py
@@ -520,6 +520,9 @@ VBoxC_DEFS += \
 	VBOX_WITH_USB \
 	$(if $(VBOX_WITH_EHCI),VBOX_WITH_EHCI,)
 endif
+ifdef VBOX_WITH_VIDEOHWACCEL
+VBoxC_DEFS += VBOX_WITH_VIDEOHWACCEL
+endif
 VBoxC_DEFS.darwin.x86 = VBOX_WITH_2X_4GB_ADDR_SPACE
 VBoxC_DEFS.win.x86 += _WIN32_WINNT=0x0500
 VBoxC_DEFS.win.amd64 += _WIN32_WINNT=0x0510
@@ -593,10 +596,6 @@ VBoxC_SOURCES += \
 	hgcm/HGCMObjects.cpp \
 	hgcm/HGCMThread.cpp \
 	hgcm/HGCM.cpp
-endif
-
-ifdef VBOX_WITH_VIDEOHWACCEL
-VBoxC_DEFS += VBOX_WITH_VIDEOHWACCEL
 endif
 
 ifdef VBOX_WITH_USB
