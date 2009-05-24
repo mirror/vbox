@@ -38,6 +38,8 @@
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 
+#include "internal-r0drv-nt.h"
+
 __BEGIN_DECLS
 NTSTATUS NTAPI ZwYieldExecution(void);
 __END_DECLS
@@ -91,27 +93,57 @@ RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
 {
     Assert(hThread == NIL_RTTHREAD);
 
-    uint8_t volatile *pbQuantumEnd;
-    RTCCUINTREG       fSavedFlags  = ASMIntDisableFlags();
+    /*
+     * Read the globals and check if they are useful.
+     */
+    uint32_t const offQuantumEnd     = g_offrtNtPbQuantumEnd;
+    uint32_t const cbQuantumEnd      = g_cbrtNtPbQuantumEnd;
+    uint32_t const offDpcQueueDepth  = g_offrtNtPbDpcQueueDepth;
+    if (!offQuantumEnd && !cbQuantumEnd && !offDpcQueueDepth)
+        return false;
+    Assert((offQuantumEnd && cbQuantumEnd) || (!offQuantumEnd && !cbQuantumEnd));
 
-#if   defined(RT_ARCH_X86)
-    /* HACK ALERT! The offset is from ks386.inc. */
-    PKPCR pPcr = (PKPCR)__readfsdword(RT_OFFSETOF(KPCR,SelfPcr));
-    pbQuantumEnd = (uint8_t volatile *)pPcr->Prcb + 0x1a41;
+    /*
+     * Disable interrupts so we won't be messed around.
+     */
+    bool            fPending;
+    RTCCUINTREG     fSavedFlags  = ASMIntDisableFlags();
+
+#ifdef RT_ARCH_X86
+    PKPCR       pPcr   = (PKPCR)__readfsdword(RT_OFFSETOF(KPCR,SelfPcr));
+    uint8_t    *pbPrcb = (uint8_t *)pPcr->Prcb;
 
 #elif defined(RT_ARCH_AMD64)
     /* HACK ALERT! The offset is from windbg/vista64. */
-    PKPCR pPcr = (PKPCR)__readgsqword(RT_OFFSETOF(KPCR,Self));
-    pbQuantumEnd = (uint8_t volatile *)pPcr->CurrentPrcb + 0x3375;
+    PKPCR       pPcr   = (PKPCR)__readgsqword(RT_OFFSETOF(KPCR,Self));
+    uint8_t    *pbPrcb = (uint8_t *)pPcr->CurrentPrcb;
 
 #else
 # error "port me"
 #endif
-    uint8_t QuantumEnd = *pbQuantumEnd;
-    ASMSetFlags(fSavedFlags);
 
-    AssertMsg(QuantumEnd == FALSE || QuantumEnd == TRUE, ("%x\n", QuantumEnd));
-    return QuantumEnd == TRUE;
+    /* Check QuantumEnd. */
+    if (cbQuantumEnd == 1)
+    {
+        uint8_t volatile *pbQuantumEnd = (uint8_t volatile *)(pbPrcb + offQuantumEnd);
+        fPending = *pbQuantumEnd == TRUE;
+    }
+    else if (cbQuantumEnd == sizeof(uint32_t))
+    {
+        uint32_t volatile *pu32QuantumEnd = (uint32_t volatile *)(pbPrcb + offQuantumEnd);
+        fPending = *pu32QuantumEnd != 0;
+    }
+
+    /* Check DpcQueueDepth. */
+    if (    !fPending
+        &&  offDpcQueueDepth)
+    {
+        uint32_t volatile *pu32DpcQueueDepth = (uint32_t volatile *)(pbPrcb + offDpcQueueDepth);
+        fPending = *pu32DpcQueueDepth > 0;
+    }
+
+    ASMSetFlags(fSavedFlags);
+    return fPending;
 }
 
 
