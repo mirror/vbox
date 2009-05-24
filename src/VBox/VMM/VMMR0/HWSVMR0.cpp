@@ -1773,7 +1773,8 @@ ResumeExecution:
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushTLBCRxChange);
 
             /* Must be set by PGMSyncCR3 */
-            Assert(rc != VINF_SUCCESS || PGMGetGuestMode(pVCpu) <= PGMMODE_PROTECTED || pVCpu->hwaccm.s.fForceTLBFlush);
+            AssertMsg(rc == VINF_SUCCESS || PGMGetGuestMode(pVCpu) <= PGMMODE_PROTECTED || pVCpu->hwaccm.s.fForceTLBFlush,
+                      ("rc=%Rrc mode=%d fForceTLBFlush=%RTbool\n", rc, PGMGetGuestMode(pVCpu), pVCpu->hwaccm.s.fForceTLBFlush));
         }
         if (rc == VINF_SUCCESS)
         {
