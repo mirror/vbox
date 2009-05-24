@@ -32,19 +32,23 @@
 #include <VBox/tm.h>
 #include "VMMInternal.h"
 #include <VBox/vm.h>
+
 #include <VBox/gvmm.h>
 #include <VBox/gmm.h>
 #include <VBox/intnet.h>
 #include <VBox/hwaccm.h>
 #include <VBox/param.h>
-
 #include <VBox/err.h>
 #include <VBox/version.h>
 #include <VBox/log.h>
+
 #include <iprt/assert.h>
-#include <iprt/stdarg.h>
 #include <iprt/mp.h>
+#include <iprt/stdarg.h>
 #include <iprt/string.h>
+#ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
+# include <iprt/thread.h>
+#endif
 
 #if defined(_MSC_VER) && defined(RT_ARCH_AMD64) /** @todo check this with with VC7! */
 #  pragma intrinsic(_AddressOfReturnAddress)
@@ -623,7 +627,10 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
 
             STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
 
-#if !defined(RT_OS_WINDOWS) /** @todo check other hosts */
+#ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
+            RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+            RTThreadPreemptDisable(&PreemptState);
+#elif !defined(RT_OS_WINDOWS)
             RTCCUINTREG uFlags = ASMIntDisableFlags();
 #endif
             ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
@@ -659,7 +666,9 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
             pVCpu->vmm.s.iLastGZRc = rc;
 
             ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
-#if !defined(RT_OS_WINDOWS) /** @todo check other hosts */
+#ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
+            RTThreadPreemptRestore(&PreemptState);
+#else !defined(RT_OS_WINDOWS)
             ASMSetFlags(uFlags);
 #endif
 
