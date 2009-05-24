@@ -127,8 +127,16 @@ int rtR0InitNative(void)
 #elif defined(RT_ARCH_AMD64)
         PKPCR    pPcr   = (PKPCR)__readgsqword(RT_OFFSETOF(KPCR,Self));
         uint8_t *pbPrcb = (uint8_t *)pPcr->CurrentPrcb;
+
+        if (    BuildNumber == 3790                             /* XP64 / W2K3-AMD64 SP1 */
+            &&  !memcmp(&pbPrcb[0x22b4], &u.szVendor[0], 4*3))
+        {
+            g_offrtNtPbQuantumEnd    = 0x1f75;
+            g_cbrtNtPbQuantumEnd     = 1;
+            g_offrtNtPbDpcQueueDepth = 0x1f00 + 0x18;
+        }
         /** @todo proper detection! */
-        if (pbPrcb[0x3375] <= 1)
+        else if (pbPrcb[0x3375] <= 1)
         {
             g_offrtNtPbQuantumEnd    = 0x3375;
             g_cbrtNtPbQuantumEnd     = 1;
