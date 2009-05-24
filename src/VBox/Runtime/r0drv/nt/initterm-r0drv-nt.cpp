@@ -91,7 +91,7 @@ int rtR0InitNative(void)
     ULONG MajorVersion = 0;
     ULONG MinorVersion = 0;
     ULONG BuildNumber  = 0;
-    PsGetVersion(&MajorVersion, &MinorVersion, &BuildNumber, NULL);
+    BOOLEAN fChecked = PsGetVersion(&MajorVersion, &MinorVersion, &BuildNumber, NULL);
 
     KIRQL OldIrql;
     KeRaiseIrql(DISPATCH_LEVEL, &OldIrql); /* make sure we stay on the same cpu */
@@ -135,19 +135,19 @@ int rtR0InitNative(void)
             g_cbrtNtPbQuantumEnd     = 1;
             g_offrtNtPbDpcQueueDepth = 0x1f00 + 0x18;
         }
-        /** @todo proper detection! */
-        else if (pbPrcb[0x3375] <= 1)
+        else if (   BuildNumber == 6000                         /* Vista/AMD64 */
+                 && !memcmp(&pbPrcb[0x38bc], &u.szVendor[0], 4*3))
         {
             g_offrtNtPbQuantumEnd    = 0x3375;
             g_cbrtNtPbQuantumEnd     = 1;
-            g_offrtNtPbDpcQueueDepth = 0;
+            g_offrtNtPbDpcQueueDepth = 0x3300 + 0x18;
         }
 
 #else
 # error "port me"
 #endif
     }
-    __except(EXCEPTION_EXECUTE_HANDLER)
+    __except(EXCEPTION_EXECUTE_HANDLER) /** @todo this handler doesn't seem to work... */
     {
         g_offrtNtPbQuantumEnd    = 0;
         g_cbrtNtPbQuantumEnd     = 0;
@@ -158,7 +158,14 @@ int rtR0InitNative(void)
 
 #ifndef IN_GUEST /** @todo fix above for all Nt versions. */
     if (!g_offrtNtPbQuantumEnd && !g_offrtNtPbDpcQueueDepth)
-        DbgPrint("IPRT: Neither _KPRCB::QuantumEnd nor _KPRCB::DpcQueueDepth was not found!\n");
+        DbgPrint("IPRT: Neither _KPRCB::QuantumEnd nor _KPRCB::DpcQueueDepth was not found! Kernel %u.%u %u %s\n",
+                 MajorVersion, MinorVersion, BuildNumber, fChecked ? "checked" : "free");
+# ifdef DEBUG
+    else
+        DbgPrint("IPRT: _KPRCB:{.QuantumEnd=%x/%d, .DpcQueueDepth=%x/%d} Kernel %ul.%ul %ul %s\n",
+                 g_offrtNtPbQuantumEnd, g_cbrtNtPbQuantumEnd, g_offrtNtPbDpcQueueDepth,
+                 MajorVersion, MinorVersion, BuildNumber, fChecked ? "checked" : "free");
+# endif
 #endif
 
     return VINF_SUCCESS;
