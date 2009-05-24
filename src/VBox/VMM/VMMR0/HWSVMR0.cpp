@@ -43,6 +43,9 @@
 #include <iprt/asm.h>
 #include <iprt/cpuset.h>
 #include <iprt/mp.h>
+#ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
+# include <iprt/thread.h>
+#endif
 #include "HWSVMR0.h"
 
 /*******************************************************************************
@@ -914,6 +917,18 @@ ResumeExecution:
         goto end;
     }
 
+#ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
+    /** @todo This must be repeated (or moved down) after we've disabled interrupts
+     *        below because a rescheduling request (IPI) might arrive before we get
+     *        there and we end up exceeding our timeslice. (Putting it here for
+     *        now because I don't want to mess up anything.) */
+    if (RTThreadPreemptIsPending(NIL_RTTHREAD))
+    {
+        rc = VINF_EM_RAW_INTERRUPT_HYPER;
+        goto end;
+    }
+#endif
+
     /* When external interrupts are pending, we should exit the VM when IF is set. */
     /* Note! *After* VM_FF_INHIBIT_INTERRUPTS check!!! */
     rc = SVMR0CheckPendingInterrupt(pVM, pVCpu, pVMCB, pCtx);
@@ -988,7 +1003,7 @@ ResumeExecution:
         goto end;
     }
 
-    /* Disable interrupts to make sure a poke will interrupt execution. 
+    /* Disable interrupts to make sure a poke will interrupt execution.
      * This must be done *before* we check for TLB flushes; TLB shootdowns rely on this.
      */
     uOldEFlags = ASMIntDisableFlags();
