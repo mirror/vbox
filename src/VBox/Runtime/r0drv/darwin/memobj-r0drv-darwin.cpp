@@ -35,12 +35,15 @@
 #include "the-darwin-kernel.h"
 
 #include <iprt/memobj.h>
+
 #include <iprt/alloc.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/log.h>
 #include <iprt/param.h>
-#include <iprt/string.h>
 #include <iprt/process.h>
+#include <iprt/string.h>
+
 #include "internal/memobj.h"
 
 /*#define USE_VM_MAP_WIRE - may re-enable later when non-mapped allocations are added. */
@@ -506,6 +509,26 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
             void *pv = (void *)(uintptr_t)VirtAddr;
             if ((uintptr_t)pv == VirtAddr)
             {
+                /*
+                 * HACK ALERT!
+                 *
+                 * Touch the pages to force the kernel to create  the page
+                 * table entries. This is necessary since the kernel gets
+                 * upset if we take a page fault when preemption is disabled
+                 * and/or we own a simple lock. It has no problems with us
+                 * disabling interrupts when taking the traps, weird stuff.
+                 */
+                uint32_t volatile  *pu32   = (uint32_t volatile *)pv;
+                size_t              cbLeft = cbSub;
+                for (;;)
+                {
+                    ASMAtomicCmpXchgU32(pu32, 0xdeadbeef, 0xdeadbeef);
+                    if (cbLeft <= PAGE_SIZE)
+                        break;
+                    cbLeft -= PAGE_SIZE;
+                    pu32 += PAGE_SIZE / sizeof(uint32_t);
+                }
+
                 /*
                  * Create the IPRT memory object.
                  */
