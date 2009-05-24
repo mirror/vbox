@@ -668,7 +668,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
             ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
 #ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
             RTThreadPreemptRestore(&PreemptState);
-#else !defined(RT_OS_WINDOWS)
+#elif !defined(RT_OS_WINDOWS)
             ASMSetFlags(uFlags);
 #endif
 
