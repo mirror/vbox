@@ -935,6 +935,7 @@ ifndef VBOX_GCC_TOOL
  else ifeq ($(KBUILD_TARGET),solaris)
   VBOX_GCC_TOOL := GXX3PLAIN
   VBOX_GCC32_TOOL := GXX3PLAIN
+  TOOL_GXX3PLAIN_LD_SYSMOD ?= /usr/ccs/bin/ld
  else
   VBOX_GCC_TOOL := GXX3
   ifeq ($(KBUILD_TARGET_ARCH).$(KBUILD_HOST_ARCH),x86.amd64) ## @todo mixing target/host here!
