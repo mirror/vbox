@@ -144,7 +144,7 @@ int main(int argc, char **argv)
     if (RT_FAILURE(rc))
         return RTTestSummaryAndDestroy(hTest);
     if (Req.szMsg[0] == '!')
-    {    
+    {
         RTTestIFailed("%s", &Req.szMsg[1]);
         return RTTestSummaryAndDestroy(hTest);
     }
@@ -162,7 +162,7 @@ int main(int argc, char **argv)
         Req.szMsg[0] = '\0';
         RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstR0ThreadPreemption", sizeof("tstR0ThreadPreemption") - 1,
                                                  TSTR0THREADPREMEPTION_IS_PENDING, 0, &Req.Hdr), VINF_SUCCESS);
-        if (    strcmp(Req.szMsg, "cLoops=0\n")
+        if (    strcmp(Req.szMsg, "cLoops=1\n")
             ||  i >= 64)
         {
             if (Req.szMsg[0] == '!')
@@ -176,7 +176,7 @@ int main(int argc, char **argv)
     }
 
     /*
-     * Stay in ring-0 until preemption is pending.
+     * Test nested RTThreadPreemptDisable calls.
      */
     RTTestSub(hTest, "Nested");
     Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
