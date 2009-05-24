@@ -162,31 +162,28 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterrup
         /*
          * Translate milliseconds into ticks and go to sleep.
          */
-        int cTicks;
+        struct timeval tv;
+
         if (cMillies != RT_INDEFINITE_WAIT)
         {
-            if (hz == 1000)
-                cTicks = cMillies;
-            else if (hz == 100)
-                cTicks = cMillies / 10;
-            else
-            {
-                int64_t cTicks64 = ((uint64_t)cMillies * hz) / 1000;
-                cTicks = (int)cTicks64;
-                if (cTicks != cTicks64)
-                    cTicks = INT_MAX;
-            }
+            tv.tv_sec = cMillies / 1000;
+            tv.tv_usec = (cMillies % 1000) * 1000;
         }
         else
-            cTicks = 0;
+        {
+            tv.tv_sec = 0;
+            tv.tv_usec = 0;
+        }
 
         ASMAtomicIncU32(&pEventInt->cWaiters);
 
-        rc = msleep_spin(pEventInt,          /* block id */
-                         &pEventInt->Mtx,
-                         //fInterruptible ? PZERO | PCATCH : PZERO,
-                         "iprte",           /* max 6 chars */
-                         cTicks);
+        mtx_unlock_spin(&pEventInt->Mtx);
+        rc = tsleep(pEventInt,          /* block id */
+                    fInterruptible ? PZERO | PCATCH : PZERO,
+                    "iprtev",
+                    tvtohz(&tv));
+        mtx_lock_spin(&pEventInt->Mtx);
+
         switch (rc)
         {
             case 0:
