@@ -26,9 +26,9 @@ include	$(KBUILD_PATH)/subheader.kmk
 include $(PATH_SUB_CURRENT)/Miniport/Makefile.kmk
 include $(PATH_SUB_CURRENT)/Display/Makefile.kmk
 ifdef VBOX_WITH_CROGL
-  ifeq ($(KBUILD_TARGET_ARCH),x86)
-    include $(PATH_SUB_CURRENT)/Wine/Makefile.kmk
-  endif
+ ifeq ($(KBUILD_TARGET_ARCH),x86)
+   include $(PATH_SUB_CURRENT)/Wine/Makefile.kmk
+ endif
 endif
 
 #
