@@ -44,7 +44,7 @@ ifndef VBOX_ONLY_DOCS
  endif
 endif # !VBOX_ONLY_DOCS
 
-# @todo: include Python shell into binary delivery?
+## @todo Include Python shell into binary delivery?
 ifdef VBOX_ONLY_SDK
  include $(PATH_SUB_CURRENT)/VBoxShell/Makefile.kmk
 endif
