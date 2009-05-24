@@ -161,19 +161,28 @@ static DECLCALLBACK(int) drvHostBaseRead(PPDMIBLOCK pInterface, uint64_t off, vo
         /*
          * Issue a READ(12) request.
          */
-        const uint32_t  LBA       = off / pThis->cbBlock;
-        AssertReturn(!(off % pThis->cbBlock), VERR_INVALID_PARAMETER);
-        uint32_t        cbRead32  = (uint32_t)cbRead;
-        const uint32_t  cBlocks   = cbRead32 / pThis->cbBlock;
-        AssertReturn(!(cbRead % pThis->cbBlock), VERR_INVALID_PARAMETER);
-        uint8_t         abCmd[16] =
+        do
         {
-            SCSI_READ_12, 0,
-            RT_BYTE4(LBA),     RT_BYTE3(LBA),     RT_BYTE2(LBA),     RT_BYTE1(LBA),
-            RT_BYTE4(cBlocks), RT_BYTE3(cBlocks), RT_BYTE2(cBlocks), RT_BYTE1(cBlocks),
-            0, 0, 0, 0, 0
-        };
-        rc = DRVHostBaseScsiCmd(pThis, abCmd, 12, PDMBLOCKTXDIR_FROM_DEVICE, pvBuf, &cbRead32, NULL, 0, 0);
+            const uint32_t  LBA       = off / pThis->cbBlock;
+            AssertReturn(!(off % pThis->cbBlock), VERR_INVALID_PARAMETER);
+            uint32_t        cbRead32  =   cbRead > SCSI_MAX_BUFFER_SIZE
+                                        ? SCSI_MAX_BUFFER_SIZE
+                                        : (uint32_t)cbRead;
+            const uint32_t  cBlocks   = cbRead32 / pThis->cbBlock;
+            AssertReturn(!(cbRead % pThis->cbBlock), VERR_INVALID_PARAMETER);
+            uint8_t         abCmd[16] =
+            {
+                SCSI_READ_12, 0,
+                RT_BYTE4(LBA),     RT_BYTE3(LBA),     RT_BYTE2(LBA),     RT_BYTE1(LBA),
+                RT_BYTE4(cBlocks), RT_BYTE3(cBlocks), RT_BYTE2(cBlocks), RT_BYTE1(cBlocks),
+                0, 0, 0, 0, 0
+            };
+            rc = DRVHostBaseScsiCmd(pThis, abCmd, 12, PDMBLOCKTXDIR_FROM_DEVICE, pvBuf, &cbRead32, NULL, 0, 0);
+
+            off    += cbRead32;
+            cbRead -= cbRead32;
+            pvBuf   = (uint8_t *)pvBuf + cbRead32;
+        } while ((cbRead > 0) && RT_SUCCESS(rc)); 
 
 #else
         /*
