@@ -32,8 +32,12 @@
 
 #include <iprt/assert.h>
 
-#define SCSI_MAX_BUFFER_SIZE (100 * _1K)
-
+#ifdef RT_OS_FREEBSD
+/* The cam subsystem doesn't allow more */
+# define SCSI_MAX_BUFFER_SIZE (64  * _1K)
+#else
+# define SCSI_MAX_BUFFER_SIZE (100 * _1K)
+#endif
 
 /**
  * SCSI command opcode identifiers.

@@ -86,6 +86,11 @@ extern "C" char *getfullrawname(char *);
 
 #endif /* RT_OS_WINDOWS */
 
+#ifdef RT_OS_FREEBSD
+# ifdef VBOX_USE_LIBHAL
+#  include "vbox-libhal.h"
+# endif
+#endif
 
 #include "HostImpl.h"
 #include "HostDVDDriveImpl.h"
@@ -395,7 +400,13 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (ComSafeArrayOut (IHostDVDDrive *, aDriv
         cur = cur->pNext;
         RTMemFree(freeMe);
     }
-
+#elif defined(RT_OS_FREEBSD)
+# ifdef VBOX_USE_LIBHAL
+    if (!getDVDInfoFromHal(list))
+# endif
+    {
+        /** @todo: Scan for accessible /dev/cd* devices. */
+    }
 #else
     /* PORTME */
 #endif
@@ -1596,8 +1607,8 @@ void Host::getUSBFilters(Host::USBDeviceFilterList *aGlobalFilters, VirtualBox::
 // private methods
 ////////////////////////////////////////////////////////////////////////////////
 
-#if defined(RT_OS_SOLARIS) && defined(VBOX_USE_LIBHAL)
-/* Solaris hosts, loading libhal at runtime */
+#if (defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)) && defined(VBOX_USE_LIBHAL)
+/* Solaris and FreeBSD hosts, loading libhal at runtime */
 
 /**
  * Helper function to query the hal subsystem for information about DVD drives attached to the
@@ -1642,6 +1653,25 @@ bool Host::getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list)
                             gLibHalFreeString(devNode);
                             devNode = tmp;
 #endif
+
+#ifdef RT_OS_FREEBSD
+                            /*
+                             * Don't show devices handled by the 'acd' driver.
+                             * The ioctls don't work with it.
+                             */
+                            char *driverName = gLibHalDeviceGetPropertyString(halContext,
+                                                       halDevices[i], "freebsd.driver", &dbusError);
+                            if (driverName)
+                            {
+                                if (RTStrCmp(driverName, "acd") == 0)
+                                {
+                                    gLibHalFreeString(devNode);
+                                    devNode = NULL;
+                                }
+                                gLibHalFreeString(driverName);
+                            }
+#endif
+
                             if (devNode != 0)
                             {
 //                                if (validateDevice(devNode, true))
