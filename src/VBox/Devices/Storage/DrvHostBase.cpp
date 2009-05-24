@@ -163,7 +163,7 @@ static DECLCALLBACK(int) drvHostBaseRead(PPDMIBLOCK pInterface, uint64_t off, vo
          */
         const uint32_t  LBA       = off / pThis->cbBlock;
         AssertReturn(!(off % pThis->cbBlock), VERR_INVALID_PARAMETER);
-        uint32_t        cbRead32  = (uint32_t)cbRead32;
+        uint32_t        cbRead32  = (uint32_t)cbRead;
         const uint32_t  cBlocks   = cbRead32 / pThis->cbBlock;
         AssertReturn(!(cbRead % pThis->cbBlock), VERR_INVALID_PARAMETER);
         uint8_t         abCmd[16] =
