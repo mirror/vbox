@@ -1,3 +1,4 @@
+# $Id$
 ## @file
 # Sub-Makefile for the shell frontend.
 #
@@ -24,7 +25,8 @@ include $(KBUILD_PATH)/subheader.kmk
 INSTALLS += VBoxShell
 VBoxShell_INST = $(INST_SDK)/bindings
 VBoxShell_SOURCES = \
-        vboxshell.py=>glue/python/sample/vboxshell.py     \
-        shellcommon.py=>glue/python/sample/shellcommon.py 
+	vboxshell.py=>glue/python/sample/vboxshell.py \
+	shellcommon.py=>glue/python/sample/shellcommon.py
 
 include $(KBUILD_PATH)/subfooter.kmk
+
