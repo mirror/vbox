@@ -46,6 +46,17 @@
 # include <IOKit/ps/IOPSKeys.h>
 #endif
 
+#ifdef RT_OS_FREEBSD
+# include <sys/ioctl.h>
+# include <dev/acpica/acpiio.h>
+# include <sys/types.h>
+# include <sys/sysctl.h>
+# include <stdio.h>
+# include <errno.h>
+# include <fcntl.h>
+# include <unistd.h>
+#endif
+
 #include "Builtins.h"
 
 
@@ -224,7 +235,27 @@ static DECLCALLBACK(int) drvACPIQueryPowerSource(PPDMIACPICONNECTOR pInterface,
     }
     CFRelease(pBlob);
     CFRelease(pSources);
-#else /* !RT_OS_DARWIN either - what could this be? */
+#elif defined(RT_OS_FREEBSD) /* !RT_OS_DARWIN */
+    int fAcLine = 0;
+    size_t cbParameter = sizeof(fAcLine);
+
+    int rc = sysctlbyname("hw.acpi.acline", &fAcLine, &cbParameter, NULL, NULL);
+
+    if (!rc)
+    {
+        if (fAcLine == 1)
+            *pPowerSource = PDM_ACPI_POWER_SOURCE_OUTLET;
+        else if (fAcLine == 0)
+            *pPowerSource = PDM_ACPI_POWER_SOURCE_BATTERY;
+        else
+            *pPowerSource = PDM_ACPI_POWER_SOURCE_UNKNOWN;
+    }
+    else
+    {
+        AssertMsg(errno == ENOENT, ("rc=%d (%s)\n", rc, strerror(errno)));
+        *pPowerSource = PDM_ACPI_POWER_SOURCE_OUTLET;
+    }
+#else /* !RT_OS_FREEBSD either - what could this be? */
     *pPowerSource = PDM_ACPI_POWER_SOURCE_OUTLET;
 #endif /* !RT_OS_WINDOWS */
     return VINF_SUCCESS;
@@ -561,7 +592,118 @@ static DECLCALLBACK(int) drvACPIQueryBatteryStatus(PPDMIACPICONNECTOR pInterface
     }
     CFRelease(pBlob);
     CFRelease(pSources);
-#endif /* RT_OS_DARWIN */
+#elif defined(RT_OS_FREEBSD)
+    /* We try to use /dev/acpi first and if that fails use the sysctls. */
+    bool fSuccess = true;
+    int FileAcpi = 0;
+    int rc = 0;
+
+    FileAcpi = open("/dev/acpi", O_RDONLY);
+    if (FileAcpi != -1)
+    {
+        bool fMilliWatt;
+        union acpi_battery_ioctl_arg BatteryIo;
+
+        memset(&BatteryIo, 0, sizeof(BatteryIo));
+        BatteryIo.unit = 0; /* Always use the first battery. */
+
+        /* Determine the power units first. */
+        if (ioctl(FileAcpi, ACPIIO_BATT_GET_BIF, &BatteryIo) == -1)
+            fSuccess = false;
+        else
+        {
+            if (BatteryIo.bif.units == ACPI_BIF_UNITS_MW)
+                fMilliWatt = true;
+            else
+                fMilliWatt = false; /* mA */
+
+            BatteryIo.unit = 0;
+            if (ioctl(FileAcpi, ACPIIO_BATT_GET_BATTINFO, &BatteryIo) == -1)
+                fSuccess = false;
+            else
+            {
+                if ((BatteryIo.battinfo.state & ACPI_BATT_STAT_NOT_PRESENT) == ACPI_BATT_STAT_NOT_PRESENT)
+                    *pfPresent = false;
+                else
+                {
+                    *pfPresent = true;
+
+                    if (BatteryIo.battinfo.state & ACPI_BATT_STAT_DISCHARG)
+                        *penmBatteryState = PDM_ACPI_BAT_STATE_DISCHARGING;
+                    else if (BatteryIo.battinfo.state & ACPI_BATT_STAT_CHARGING)
+                        *penmBatteryState = PDM_ACPI_BAT_STATE_CHARGING;
+                    else
+                        *penmBatteryState = PDM_ACPI_BAT_STATE_CHARGED;
+
+                    if (BatteryIo.battinfo.state & ACPI_BATT_STAT_CRITICAL)
+                        *penmBatteryState = (PDMACPIBATSTATE)(*penmBatteryState | PDM_ACPI_BAT_STATE_CRITICAL);
+                }
+
+                if (BatteryIo.battinfo.cap != -1)
+                    *penmRemainingCapacity = (PDMACPIBATCAPACITY)BatteryIo.battinfo.cap;
+
+                BatteryIo.unit = 0;
+                if (ioctl(FileAcpi, ACPIIO_BATT_GET_BST, &BatteryIo) == 0)
+                {
+                    /* The rate can be either mW or mA but the ACPI device wants mW. */
+                    if (BatteryIo.bst.rate != 0xffffffff)
+                    {
+                        if (fMilliWatt)
+                            *pu32PresentRate = BatteryIo.bst.rate;
+                        else if (BatteryIo.bst.volt != 0xffffffff)
+                        {
+                            /*
+                             * The rate is in mA so we have to convert it.
+                             * The current power rate can be calculated with P = U * I
+                             */
+                            *pu32PresentRate = (uint32_t)((((float)BatteryIo.bst.volt/1000.0) * ((float)BatteryIo.bst.rate/1000.0)) * 1000.0);
+                        }
+                    }
+                }
+            }
+        }
+
+        close(FileAcpi);
+    }
+    else
+        fSuccess = false;
+
+    if (!fSuccess)
+    {
+        int fBatteryState = 0;
+        size_t cbParameter = sizeof(fBatteryState);
+
+        rc = sysctlbyname("hw.acpi.battery.state", &fBatteryState, &cbParameter, NULL, NULL);
+        if (!rc)
+        {
+            if ((fBatteryState & ACPI_BATT_STAT_NOT_PRESENT) == ACPI_BATT_STAT_NOT_PRESENT)
+                *pfPresent = false;
+            else
+            {
+                *pfPresent = true;
+
+                if (fBatteryState & ACPI_BATT_STAT_DISCHARG)
+                    *penmBatteryState = PDM_ACPI_BAT_STATE_DISCHARGING;
+                else if (fBatteryState & ACPI_BATT_STAT_CHARGING)
+                    *penmBatteryState = PDM_ACPI_BAT_STATE_CHARGING;
+                else
+                    *penmBatteryState = PDM_ACPI_BAT_STATE_CHARGED;
+
+                if (fBatteryState & ACPI_BATT_STAT_CRITICAL)
+                    *penmBatteryState = (PDMACPIBATSTATE)(*penmBatteryState | PDM_ACPI_BAT_STATE_CRITICAL);
+
+                /* Get battery level. */
+                int curCapacity = 0;
+                cbParameter = sizeof(curCapacity);
+                rc = sysctlbyname("hw.acpi.battery.life", &curCapacity, &cbParameter, NULL, NULL);
+                if ((!rc) && (curCapacity >= 0))
+                    *penmRemainingCapacity = (PDMACPIBATCAPACITY)curCapacity;
+
+                /* The rate can't be determined with sysctls. */
+            }
+        }
+    }
+#endif /* RT_OS_FREEBSD */
     return VINF_SUCCESS;
 }
 
