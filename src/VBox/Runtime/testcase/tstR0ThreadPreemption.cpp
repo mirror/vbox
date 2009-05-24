@@ -97,17 +97,18 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
             {
                 if (ASMGetFlags() & X86_EFL_IF)
                 {
-                    uint64_t    u64StartTS    = RTTimeNanoTS();
+                    uint64_t    u64StartTS    = RTTimeSystemNanoTS();
                     uint64_t    cLoops        = 0;
                     uint64_t    cNanosElapsed;
                     bool        fPending;
                     do
                     {
                         fPending = RTThreadPreemptIsPending(NIL_RTTHREAD);
-                        cNanosElapsed = RTTimeNanoTS() - u64StartTS;
+                        cNanosElapsed = RTTimeSystemNanoTS() - u64StartTS;
                         cLoops++;
                     } while (   !fPending
-                             && cNanosElapsed < UINT64_C(60)*1000U*1000U*1000U);
+                             && cNanosElapsed < UINT64_C(2)*1000U*1000U*1000U
+                             && cLoops < 10U*_1M);
                     if (!fPending)
                         RTStrPrintf(pszErr, cchErr, "!Preempt not pending after %'llu loops / %'llu ns",
                                     cLoops, cNanosElapsed);
