@@ -83,6 +83,14 @@
 # include <ntddscsi.h>
 # undef USE_MEDIA_POLLING
 
+#elif defined(RT_OS_FREEBSD)
+# include <sys/cdefs.h>
+# include <sys/param.h>
+# include <stdio.h>
+# include <cam/cam.h>
+# include <cam/cam_ccb.h>
+# define USE_MEDIA_POLLING
+
 #else
 # error "Unsupported Platform."
 #endif
@@ -128,7 +136,7 @@ static DECLCALLBACK(int) drvHostDvdUnmount(PPDMIMOUNT pInterface, bool fForce)
          /*
           * Eject the disc.
           */
-#ifdef RT_OS_DARWIN
+#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
          uint8_t abCmd[16] =
          {
              SCSI_START_STOP_UNIT, 0, 0, 0, 2 /*eject+stop*/, 0,
@@ -305,8 +313,10 @@ DECLCALLBACK(int) drvHostDvdPoll(PDRVHOSTBASE pThis)
     /*
      * Poll for media change.
      */
+#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
 #ifdef RT_OS_DARWIN
     AssertReturn(pThis->ppScsiTaskDI, VERR_INTERNAL_ERROR);
+#endif
 
     /*
      * Issue a TEST UNIT READY request.
@@ -375,7 +385,7 @@ DECLCALLBACK(int) drvHostDvdPoll(PDRVHOSTBASE pThis)
         /*
          * Poll for media change.
          */
-#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
         /* taken care of above. */
 #elif defined(RT_OS_LINUX)
         bool fMediaChanged = ioctl(pThis->FileDevice, CDROM_MEDIA_CHANGED, CDSL_CURRENT) == 1;
@@ -405,7 +415,7 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd,
     int rc;
     LogFlow(("%s: cmd[0]=%#04x txdir=%d pcbBuf=%d timeout=%d\n", __FUNCTION__, pbCmd[0], enmTxDir, *pcbBuf, cTimeoutMillies));
 
-#ifdef RT_OS_DARWIN
+#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
     /*
      * Pass the request on to the internal scsi command interface.
      * The command seems to be 12 bytes long, the docs a bit copy&pasty on the command length point...

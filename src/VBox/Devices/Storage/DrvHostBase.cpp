@@ -100,6 +100,17 @@ NTSTATUS __stdcall NtQueryVolumeInformationFile(
         /*IN*/ ULONG                Length,
         /*IN*/ FS_INFORMATION_CLASS FileSystemInformationClass );
 
+#elif defined(RT_OS_FREEBSD)
+# include <sys/cdefs.h>
+# include <sys/param.h>
+# include <errno.h>
+# include <stdio.h>
+# include <cam/cam.h>
+# include <cam/cam_ccb.h>
+# include <cam/scsi/scsi_message.h>
+# include <cam/scsi/scsi_pass.h>
+# include <VBox/scsi.h>
+# include <iprt/log.h>
 #else
 # error "Unsupported Platform."
 #endif
@@ -139,11 +150,14 @@ static DECLCALLBACK(int) drvHostBaseRead(PPDMIBLOCK pInterface, uint64_t off, vo
     if (    pThis->fMediaPresent
         &&  pThis->ppScsiTaskDI
         &&  pThis->cbBlock)
+#elif RT_OS_FREEBSD
+    if (    pThis->fMediaPresent
+        &&  pThis->cbBlock)
 #else
     if (pThis->fMediaPresent)
 #endif
     {
-#ifdef RT_OS_DARWIN
+#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
         /*
          * Issue a READ(12) request.
          */
@@ -213,7 +227,7 @@ static DECLCALLBACK(int) drvHostBaseWrite(PPDMIBLOCK pInterface, uint64_t off, c
     {
         if (pThis->fMediaPresent)
         {
-#ifdef RT_OS_DARWIN
+#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
             /** @todo write support... */
             rc = VERR_WRITE_PROTECT;
 
@@ -258,7 +272,7 @@ static DECLCALLBACK(int) drvHostBaseFlush(PPDMIBLOCK pInterface)
 
     if (pThis->fMediaPresent)
     {
-#ifdef RT_OS_DARWIN
+#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
         rc = VINF_SUCCESS;
         /** @todo scsi device buffer flush... */
 #else
@@ -933,6 +947,77 @@ static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileDevice, bool fReadOn
     *pFileDevice = FileDevice;
     return VINF_SUCCESS;
 
+#elif defined(RT_OS_FREEBSD)
+    int rc = VINF_SUCCESS;
+    RTFILE FileDevice;
+
+    rc = RTFileOpen(&FileDevice, pThis->pszDeviceOpen, RTFILE_O_READWRITE);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * The current device handle can't passthrough SCSI commands.
+     * We have to get he passthrough device path and open this.
+     */
+    union ccb DeviceCCB;
+    memset(&DeviceCCB, 0, sizeof(DeviceCCB));
+
+    DeviceCCB.ccb_h.func_code = XPT_GDEVLIST;
+    int rcBSD = ioctl(FileDevice, CAMGETPASSTHRU, &DeviceCCB);
+    if (!rcBSD)
+    {
+        char *pszPassthroughDevice = NULL;
+        rc = RTStrAPrintf(&pszPassthroughDevice, "/dev/%s%u",
+                          DeviceCCB.cgdl.periph_name, DeviceCCB.cgdl.unit_number);
+        if (RT_SUCCESS(rc))
+        {
+            RTFILE PassthroughDevice;
+
+            rc = RTFileOpen(&PassthroughDevice, pszPassthroughDevice, RTFILE_O_READWRITE);
+
+            RTStrFree(pszPassthroughDevice);
+
+            if (RT_SUCCESS(rc))
+            {
+                /* Get needed device parameters. */
+                union ccb DeviceCCB;
+
+                /*
+                 * The device path, target id and lun id. Those are
+                 * needed for the SCSI passthrough ioctl.
+                 */
+                memset(&DeviceCCB, 0, sizeof(DeviceCCB));
+                DeviceCCB.ccb_h.func_code = XPT_GDEVLIST;
+
+                rcBSD = ioctl(PassthroughDevice, CAMGETPASSTHRU, &DeviceCCB);
+                if (!rcBSD)
+                {
+                    if (DeviceCCB.cgdl.status != CAM_GDEVLIST_ERROR)
+                    {
+                        pThis->ScsiBus      = DeviceCCB.ccb_h.path_id;
+                        pThis->ScsiTargetID = DeviceCCB.ccb_h.target_id;
+                        pThis->ScsiLunID    = DeviceCCB.ccb_h.target_lun;
+                        *pFileDevice = PassthroughDevice;
+                    }
+                    else
+                    {
+                        /* The passthrough device wasn't found. */
+                        rc = VERR_NOT_FOUND;
+                    }
+                }
+                else
+                    rc = RTErrConvertFromErrno(errno);
+
+                if (RT_FAILURE(rc))
+                    RTFileClose(PassthroughDevice);
+            }
+        }
+    }
+    else
+        rc = RTErrConvertFromErrno(errno);
+
+    RTFileClose(FileDevice);
+    return rc;
 #else
     return RTFileOpen(pFileDevice, pThis->pszDeviceOpen,
                       (fReadOnly ? RTFILE_O_READ : RTFILE_O_READWRITE) | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
@@ -1036,7 +1121,7 @@ static int drvHostBaseReopen(PDRVHOSTBASE pThis)
  */
 static int drvHostBaseGetMediaSize(PDRVHOSTBASE pThis, uint64_t *pcb)
 {
-#ifdef RT_OS_DARWIN
+#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
     /*
      * Try a READ_CAPACITY command...
      */
@@ -1114,7 +1199,7 @@ static int drvHostBaseGetMediaSize(PDRVHOSTBASE pThis, uint64_t *pcb)
 }
 
 
-#ifdef RT_OS_DARWIN
+#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
 /**
  * Execute a SCSI command.
  *
@@ -1225,6 +1310,86 @@ DECLCALLBACK(int) DRVHostBaseScsiCmd(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
 
     (*ppScsiTaskI)->Release(ppScsiTaskI);
 
+# elif defined(RT_OS_FREEBSD)
+    int rc = VINF_SUCCESS;
+    int rcBSD = 0;
+    union ccb DeviceCCB;
+    union ccb *pDeviceCCB = &DeviceCCB;
+    u_int32_t fFlags;
+
+    memset(pDeviceCCB, 0, sizeof(DeviceCCB));
+    pDeviceCCB->ccb_h.path_id   = pThis->ScsiBus;
+    pDeviceCCB->ccb_h.target_id = pThis->ScsiTargetID;
+    pDeviceCCB->ccb_h.target_lun = pThis->ScsiLunID;
+
+    /* The SCSI INQUIRY command can't be passed through directly. */
+    if (pbCmd[0] == SCSI_INQUIRY)
+    {
+        pDeviceCCB->ccb_h.func_code = XPT_GDEV_TYPE;
+
+        rcBSD = ioctl(pThis->FileDevice, CAMIOCOMMAND, pDeviceCCB);
+        if (!rcBSD)
+        {
+            uint32_t cbCopy =   cbBuf < sizeof(struct scsi_inquiry_data)
+                              ? cbBuf
+                              : sizeof(struct scsi_inquiry_data);;
+            memcpy(pvBuf, &pDeviceCCB->cgd.inq_data, cbCopy);
+            memset(pbSense, 0, cbSense);
+
+            if (pcbBuf)
+                *pcbBuf = cbCopy;
+        }
+        else
+            rc = RTErrConvertFromErrno(errno);
+    }
+    else
+    {
+        /* Copy the CDB. */
+        memcpy(&pDeviceCCB->csio.cdb_io.cdb_bytes, pbCmd, cbCmd);
+
+        /* Set direction. */
+        if (enmTxDir == PDMBLOCKTXDIR_NONE)
+            fFlags = CAM_DIR_NONE;
+        else if (enmTxDir == PDMBLOCKTXDIR_FROM_DEVICE)
+            fFlags = CAM_DIR_IN;
+        else
+            fFlags = CAM_DIR_OUT;
+
+        fFlags |= CAM_DEV_QFRZDIS;
+
+        cam_fill_csio(&pDeviceCCB->csio, 1, NULL, fFlags, MSG_SIMPLE_Q_TAG,
+                      (u_int8_t *)pvBuf, cbBuf, cbSense, cbCmd,
+                      cTimeoutMillies ? cTimeoutMillies : 30000/* timeout */);
+
+        /* Send command */
+        rcBSD = ioctl(pThis->FileDevice, CAMIOCOMMAND, pDeviceCCB);
+        if (!rcBSD)
+        {
+            switch (pDeviceCCB->ccb_h.status & CAM_STATUS_MASK)
+            {
+                case CAM_REQ_CMP:
+                    rc = VINF_SUCCESS;
+                    break;
+                case CAM_SEL_TIMEOUT:
+                    rc = VERR_DEV_IO_ERROR;
+                    break;
+                case CAM_CMD_TIMEOUT:
+                    rc = VERR_TIMEOUT;
+                    break;
+                default:
+                    rc = VERR_DEV_IO_ERROR;
+            }
+
+            if (pcbBuf)
+                *pcbBuf = cbBuf - pDeviceCCB->csio.resid;
+
+            if (pbSense)
+                memcpy(pbSense, &pDeviceCCB->csio.sense_data,
+                       cbSense - pDeviceCCB->csio.sense_resid);
+        }
+        else
+            rc = RTErrConvertFromErrno(errno);
+    }
 # endif
 
     return rc;
@@ -1925,7 +2090,7 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
     /*
      * Open the device.
      */
-#ifdef RT_OS_DARWIN
+#if defined(RT_OS_DARWIN)
     rc = drvHostBaseOpen(pThis, NULL, pThis->fReadOnlyConfig);
 #else
     rc = drvHostBaseReopen(pThis);

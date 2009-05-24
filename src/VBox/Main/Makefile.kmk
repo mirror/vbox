@@ -227,6 +227,7 @@ VBoxSVC_DEFS.win.amd64 += _WIN32_WINNT=0x0510
 # Try to load and use libhal at runtime for probing removable media
 # VBoxSVC_DEFS.linux += VBOX_USE_LIBHAL
 VBoxSVC_DEFS.solaris += VBOX_USE_LIBHAL
+VBoxSVC_DEFS.freebsd += VBOX_USE_LIBHAL
 ifdef VBOX_SOLARIS_NSL_RESOLVED
  VBoxSVC_DEFS.solaris += VBOX_SOLARIS_NSL_RESOLVED
 endif
@@ -334,6 +335,9 @@ endif
 VBoxSVC_SOURCES.solaris = \
 	linux/vbox-libhal.cpp \
 	solaris/DynLoadLibSolaris.cpp
+
+VBoxSVC_SOURCES.freebsd = \
+	linux/vbox-libhal.cpp
 
 ifdef VBOX_WITH_USB
  VBoxSVC_SOURCES  += \
