@@ -97,26 +97,30 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
             {
                 if (ASMGetFlags() & X86_EFL_IF)
                 {
-                    uint64_t    u64StartTS    = RTTimeSystemNanoTS();
+                    uint64_t    u64StartSysTS = RTTimeSystemNanoTS();
+                    uint64_t    u64StartTS    = RTTimeNanoTS();
                     uint64_t    cLoops        = 0;
+                    uint64_t    cNanosSysElapsed;
                     uint64_t    cNanosElapsed;
                     bool        fPending;
                     do
                     {
-                        fPending = RTThreadPreemptIsPending(NIL_RTTHREAD);
-                        cNanosElapsed = RTTimeSystemNanoTS() - u64StartTS;
+                        fPending         = RTThreadPreemptIsPending(NIL_RTTHREAD);
+                        cNanosElapsed    = RTTimeNanoTS() - u64StartTS;
+                        cNanosSysElapsed = RTTimeSystemNanoTS() - u64StartSysTS;
                         cLoops++;
                     } while (   !fPending
-                             && cNanosElapsed < UINT64_C(2)*1000U*1000U*1000U
-                             && cLoops < 100U*_1M);
+                             && cNanosElapsed    < UINT64_C(2)*1000U*1000U*1000U
+                             && cNanosSysElapsed < UINT64_C(2)*1000U*1000U*1000U
+                             && cLoops           < 100U*_1M);
                     if (!fPending)
-                        RTStrPrintf(pszErr, cchErr, "!Preempt not pending after %'llu loops / %'llu ns",
-                                    cLoops, cNanosElapsed);
+                        RTStrPrintf(pszErr, cchErr, "!Preempt not pending after %'llu loops / %'llu ns / %'llu ns (sys)",
+                                    cLoops, cNanosElapsed, cNanosSysElapsed);
                     else if (cLoops == 1)
-                        RTStrPrintf(pszErr, cchErr, "!cLoops=0\n");
+                        RTStrPrintf(pszErr, cchErr, "!cLoops=1\n");
                     else
-                        RTStrPrintf(pszErr, cchErr, "RTThreadPreemptIsPending returned true after %'llu loops / %'llu ns",
-                                    cLoops, cNanosElapsed);
+                        RTStrPrintf(pszErr, cchErr, "RTThreadPreemptIsPending returned true after %'llu loops / %'llu ns / %'llu ns (sys)",
+                                    cLoops, cNanosElapsed, cNanosSysElapsed);
                 }
                 else
                     RTStrPrintf(pszErr, cchErr, "!Interrupts disabled");
