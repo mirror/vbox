@@ -52,7 +52,7 @@ PROGRAMS += \
 	tstRTBase64 \
 	tstRTBitOperations \
 	tstRTCidr \
-	tstCritSect \
+	tstRTCritSect \
 	tstDeadlock \
 	tstDir \
 	tstDir-2 \
@@ -102,7 +102,7 @@ PROGRAMS += \
 # tstSems
 PROGRAMS.win += \
 	tstRTProcWait \
-	tstCritSectW32 \
+	tstRTCritSectW32 \
 	tstFileAppendWin-1 \
 	ntGetTimerResolution
 PROGRAMS.linux += \
@@ -152,10 +152,12 @@ tstRTBitOperationsPIC3_DEFS = PIC
 tstRTCidr_TEMPLATE = VBOXR3TSTEXE
 tstRTCidr_SOURCES = tstRTCidr.cpp
 
-tstCritSect_SOURCES = tstCritSect.cpp
+tstRTCritSect_TEMPLATE = VBOXR3TSTEXE
+tstRTCritSect_SOURCES = tstRTCritSect.cpp
 
-tstCritSectW32_SOURCES = tstCritSect.cpp
-tstCritSectW32_DEFS = TRY_WIN32_CRIT
+tstRTCritSectW32_TEMPLATE = VBOXR3TSTEXE
+tstRTCritSectW32_SOURCES = tstRTCritSect.cpp
+tstRTCritSectW32_DEFS = TRY_WIN32_CRIT
 
 tstDarwinSched_SOURCES = tstDarwinSched.cpp
 
