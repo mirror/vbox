@@ -184,6 +184,9 @@ ifdef VBOX_WITH_DEBUGGER_GUI
   VirtualBox_DEFS       += VBOX_WITH_DEBUGGER_GUI_MENU
  endif
 endif
+ifdef VBOX_WITH_VIDEOHWACCEL
+ VirtualBox_DEFS        += VBOX_WITH_VIDEOHWACCEL
+endif
 
 VirtualBox_src/main.cpp_DEFS += VBOX_VERSION_STRING=\"$(VBOX_VERSION_STRING)\"
 VirtualBox_src/main.cpp_DEPS += $(VBOX_VERSION_MK)
@@ -431,10 +434,6 @@ ifdef VBOX_WITH_COCOA_QT
 else
  VirtualBox_SOURCES.darwin += \
 	src/darwin/VBoxUtils-darwin-carbon.cpp
-endif
-
-ifdef VBOX_WITH_VIDEOHWACCEL
- VirtualBox_DEFS += VBOX_WITH_VIDEOHWACCEL
 endif
 
 # The Qt modules we're using.
