@@ -1448,34 +1448,18 @@ static int pgmR3InitPaging(PVM pVM)
      * We assume that two page tables will be enought for the core code
      * mappings (HC virtual and identity).
      */
-    pVM->pgm.s.pInterPD         = (PX86PD)MMR3PageAllocLow(pVM);
-    pVM->pgm.s.apInterPTs[0]    = (PX86PT)MMR3PageAllocLow(pVM);
-    pVM->pgm.s.apInterPTs[1]    = (PX86PT)MMR3PageAllocLow(pVM);
-    pVM->pgm.s.apInterPaePTs[0] = (PX86PTPAE)MMR3PageAlloc(pVM);
-    pVM->pgm.s.apInterPaePTs[1] = (PX86PTPAE)MMR3PageAlloc(pVM);
-    pVM->pgm.s.apInterPaePDs[0] = (PX86PDPAE)MMR3PageAlloc(pVM);
-    pVM->pgm.s.apInterPaePDs[1] = (PX86PDPAE)MMR3PageAlloc(pVM);
-    pVM->pgm.s.apInterPaePDs[2] = (PX86PDPAE)MMR3PageAlloc(pVM);
-    pVM->pgm.s.apInterPaePDs[3] = (PX86PDPAE)MMR3PageAlloc(pVM);
-    pVM->pgm.s.pInterPaePDPT    = (PX86PDPT)MMR3PageAllocLow(pVM);
-    pVM->pgm.s.pInterPaePDPT64  = (PX86PDPT)MMR3PageAllocLow(pVM);
-    pVM->pgm.s.pInterPaePML4    = (PX86PML4)MMR3PageAllocLow(pVM);
-    if (    !pVM->pgm.s.pInterPD
-        ||  !pVM->pgm.s.apInterPTs[0]
-        ||  !pVM->pgm.s.apInterPTs[1]
-        ||  !pVM->pgm.s.apInterPaePTs[0]
-        ||  !pVM->pgm.s.apInterPaePTs[1]
-        ||  !pVM->pgm.s.apInterPaePDs[0]
-        ||  !pVM->pgm.s.apInterPaePDs[1]
-        ||  !pVM->pgm.s.apInterPaePDs[2]
-        ||  !pVM->pgm.s.apInterPaePDs[3]
-        ||  !pVM->pgm.s.pInterPaePDPT
-        ||  !pVM->pgm.s.pInterPaePDPT64
-        ||  !pVM->pgm.s.pInterPaePML4)
-    {
-        AssertMsgFailed(("Failed to allocate pages for the intermediate context!\n"));
-        return VERR_NO_PAGE_MEMORY;
-    }
+    pVM->pgm.s.pInterPD         = (PX86PD)MMR3PageAllocLow(pVM);    AssertReturn(pVM->pgm.s.pInterPD,         VERR_NO_PAGE_MEMORY);
+    pVM->pgm.s.apInterPTs[0]    = (PX86PT)MMR3PageAllocLow(pVM);    AssertReturn(pVM->pgm.s.apInterPTs[0],    VERR_NO_PAGE_MEMORY);
+    pVM->pgm.s.apInterPTs[1]    = (PX86PT)MMR3PageAllocLow(pVM);    AssertReturn(pVM->pgm.s.apInterPTs[1],    VERR_NO_PAGE_MEMORY);
+    pVM->pgm.s.apInterPaePTs[0] = (PX86PTPAE)MMR3PageAlloc(pVM);    AssertReturn(pVM->pgm.s.apInterPaePTs[0], VERR_NO_PAGE_MEMORY);
+    pVM->pgm.s.apInterPaePTs[1] = (PX86PTPAE)MMR3PageAlloc(pVM);    AssertReturn(pVM->pgm.s.apInterPaePTs[1], VERR_NO_PAGE_MEMORY);
+    pVM->pgm.s.apInterPaePDs[0] = (PX86PDPAE)MMR3PageAlloc(pVM);    AssertReturn(pVM->pgm.s.apInterPaePDs[0], VERR_NO_PAGE_MEMORY);
+    pVM->pgm.s.apInterPaePDs[1] = (PX86PDPAE)MMR3PageAlloc(pVM);    AssertReturn(pVM->pgm.s.apInterPaePDs[1], VERR_NO_PAGE_MEMORY);
+    pVM->pgm.s.apInterPaePDs[2] = (PX86PDPAE)MMR3PageAlloc(pVM);    AssertReturn(pVM->pgm.s.apInterPaePDs[2], VERR_NO_PAGE_MEMORY);
+    pVM->pgm.s.apInterPaePDs[3] = (PX86PDPAE)MMR3PageAlloc(pVM);    AssertReturn(pVM->pgm.s.apInterPaePDs[3], VERR_NO_PAGE_MEMORY);
+    pVM->pgm.s.pInterPaePDPT    = (PX86PDPT)MMR3PageAllocLow(pVM);  AssertReturn(pVM->pgm.s.pInterPaePDPT,    VERR_NO_PAGE_MEMORY);
+    pVM->pgm.s.pInterPaePDPT64  = (PX86PDPT)MMR3PageAllocLow(pVM);  AssertReturn(pVM->pgm.s.pInterPaePDPT64,  VERR_NO_PAGE_MEMORY);
+    pVM->pgm.s.pInterPaePML4    = (PX86PML4)MMR3PageAllocLow(pVM);  AssertReturn(pVM->pgm.s.pInterPaePML4,    VERR_NO_PAGE_MEMORY);
 
     pVM->pgm.s.HCPhysInterPD = MMPage2Phys(pVM, pVM->pgm.s.pInterPD);
     AssertRelease(pVM->pgm.s.HCPhysInterPD != NIL_RTHCPHYS && !(pVM->pgm.s.HCPhysInterPD & PAGE_OFFSET_MASK));
