@@ -17,6 +17,9 @@
 # define _WINSOCK2API_
 # include <IPHlpApi.h>
 #endif
+#ifdef VBOX_WITH_SLIRP_ALIAS
+# include<alias.h>
+#endif
 
 #if !defined(RT_OS_WINDOWS)
 
@@ -661,7 +664,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     special_addr.s_addr = u32NetAddr;
 #endif
 #ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
-    pData->slirp_ethaddr = &special_ethaddr;
+    pData->slirp_ethaddr = &special_ethaddr[0];
 #endif
     alias_addr.s_addr = special_addr.s_addr | htonl(CTL_ALIAS);
     /* @todo: add ability to configure this staff */
@@ -681,6 +684,20 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
 #endif
 
     getouraddr(pData);
+
+#ifdef VBOX_WITH_SLIRP_ALIAS
+    {
+        struct libalias *lib = NULL; 
+        lib = LibAliasInit(pData, NULL);
+        if (lib == NULL)
+        {
+            LogRel(("NAT: LibAlias default rule wasn't initialized\n"));
+            AssertMsgFailed(("NAT: LibAlias default rule wasn't initialized\n"));
+        }
+        LibAliasSetAddress(lib, special_addr);
+        
+    }
+#endif
     return fNATfailed ? VINF_NAT_DNS : VINF_SUCCESS;
 }
 

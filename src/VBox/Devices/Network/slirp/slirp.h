@@ -35,6 +35,7 @@ typedef int socklen_t;
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include <iprt/dir.h>
+#include <iprt/rand.h>
 #include <VBox/types.h>
 
 #undef malloc
@@ -372,4 +373,22 @@ struct ethhdr
 };
 AssertCompileSize(struct ethhdr, 14);
 # endif
+#if defined(VBOX_WITH_SLIRP_ALIAS) && defined(VBOX_SLIRP_ALIAS)
+# define ip_next(ip) (uintptr_t)((uint8_t *)(ip) + ((ip)->ip_hl << 2))
+# define bcopy(src, dst, len) memcpy((dst), (src), (len)) 
+# define NO_FW_PUNCH
+# ifdef alias_addr
+#  error  alias_addr has already defined!!!
+# endif
+# define arc4random() RTRandU32()
+# undef malloc
+# undef calloc
+# undef free
+# define	malloc(x) RTMemAlloc((x))
+# define	calloc(x, n) RTMemAllocZ((x)*(n))
+# define	free(x)	RTMemFree((x))
+# ifndef __unused
+#  define __unused
+# endif
+#endif
 #endif
