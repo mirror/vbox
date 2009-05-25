@@ -317,7 +317,7 @@ VMMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
         return;
     }
 
-#if defined(IN_RING3) /// @todo enable this later - || defined(IN_RING0)
+#if defined(IN_RING3) || defined(IN_RING0)
     /*
      * Leave for real.
      */
