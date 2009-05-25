@@ -2907,6 +2907,47 @@ ResumeExecution:
 
         LogFlow(("EPT Page fault %x at %RGp error code %x\n", (uint32_t)exitQualification, GCPhys, errCode));
 
+        /* Shortcut for APIC TPR reads and writes. */
+        if ((GCPhys & 0xfff) == 0x080)
+        {
+            RTGCPHYS GCPhysApicBase;
+            PDMApicGetBase(pVM, &GCPhysApicBase);
+            if (GCPhys == GCPhysApicBase + 0x80)
+            {
+                DISCPUSTATE Cpu;
+                uint32_t    cbOp;
+                Cpu.mode = SELMGetCpuModeFromSelector(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid);
+
+                rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), &Cpu, &cbOp);
+                if (    rc == VINF_SUCCESS
+                    &&  Cpu.pCurInstr->opcode == OP_MOV)
+                {
+                    if (    (errCode & X86_TRAP_PF_RW)
+                        &&  (Cpu.param2.flags == USE_REG_GEN32))
+                    {
+                        uint32_t val;
+
+                        DISFetchReg32(CPUMCTX2CORE(pCtx), Cpu.param2.base.reg_gen, &val);
+
+                        rc = PDMApicSetTPR(pVM, val >> 4);
+                        goto ResumeExecution;
+                    }
+                    else
+                    if (Cpu.param1.flags == USE_REG_GEN32)
+                    {
+                        uint8_t u8TPR;
+                        bool    fPending;
+
+                        rc = PDMApicGetTPR(pVM, &u8TPR, &fPending);
+                        AssertRC(rc);
+                        
+                        DISWriteReg32(CPUMCTX2CORE(pCtx), Cpu.param1.base.reg_gen, u8TPR << 4);
+                        goto ResumeExecution;
+                    }
+                }
+            }
+        }
+
         /* GCPhys contains the guest physical address of the page fault. */
         TRPMAssertTrap(pVCpu, X86_XCPT_PF, TRPM_TRAP);
         TRPMSetErrorCode(pVCpu, errCode);
@@ -3363,6 +3404,29 @@ ResumeExecution:
         /* RIP is already set to the next instruction and the TPR has been synced back. Just resume. */
         goto ResumeExecution;
 
+    case VMX_EXIT_APIC_ACCESS:          /* 44 APIC access. Guest software attempted to access memory at a physical address on the APIC-access page. */
+    {
+        LogFlow(("VMX_EXIT_APIC_ACCESS\n"));
+
+        switch(VMX_EXIT_QUALIFICATION_APIC_ACCESS_TYPE(exitQualification))
+        {
+        case VMX_APIC_ACCESS_TYPE_LINEAR_READ:
+        case VMX_APIC_ACCESS_TYPE_LINEAR_WRITE:
+        {
+            RTGCPHYS GCPhys;
+            PDMApicGetBase(pVM, &GCPhys);
+            GCPhys += VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(exitQualification);
+            rc = VINF_EM_RAW_EMULATE_INSTR;
+            break;
+        }
+
+        default:
+            rc = VINF_EM_RAW_EMULATE_INSTR;
+            break;
+        }
+        break;
+    }
+
     case VMX_EXIT_PREEMPTION_TIMER:     /* 52 VMX-preemption timer expired. The preemption timer counted down to zero. */
         goto ResumeExecution;
 
@@ -3476,6 +3540,7 @@ ResumeExecution:
         break;
 
     case VMX_EXIT_TPR:                  /* 43 TPR below threshold. Guest software executed MOV to CR8. */
+    case VMX_EXIT_APIC_ACCESS:          /* 44 APIC access. Guest software attempted to access memory at a physical address on the APIC-access page. */
     case VMX_EXIT_RDMSR:                /* 31 RDMSR. Guest software attempted to execute RDMSR. */
     case VMX_EXIT_WRMSR:                /* 32 WRMSR. Guest software attempted to execute WRMSR. */
         /* Note: If we decide to emulate them here, then we must sync the MSRs that could have been changed (sysenter, fs/gs base)!!! */
