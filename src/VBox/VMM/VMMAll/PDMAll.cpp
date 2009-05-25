@@ -225,16 +225,17 @@ VMMDECL(int) PDMApicHasPendingIrq(PVM pVM, bool *pfPending)
  * Set the TPR (task priority register?).
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pVCpu           VMCPU handle.
  * @param   u8TPR           The new TPR.
  */
-VMMDECL(int) PDMApicSetTPR(PVM pVM, uint8_t u8TPR)
+VMMDECL(int) PDMApicSetTPR(PVMCPU pVCpu, uint8_t u8TPR)
 {
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
         Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnSetTPR));
         pdmLock(pVM);
-        pVM->pdm.s.Apic.CTX_SUFF(pfnSetTPR)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), u8TPR);
+        pVM->pdm.s.Apic.CTX_SUFF(pfnSetTPR)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu->idCpu, u8TPR);
         pdmUnlock(pVM);
         return VINF_SUCCESS;
     }
@@ -246,17 +247,18 @@ VMMDECL(int) PDMApicSetTPR(PVM pVM, uint8_t u8TPR)
  * Get the TPR (task priority register).
  *
  * @returns The current TPR.
- * @param   pVM             VM handle.
+ * @param   pVCpu           VMCPU handle.
  * @param   pu8TPR          Where to store the TRP.
  * @param   pfPending       Pending interrupt state (out).
 */
-VMMDECL(int) PDMApicGetTPR(PVM pVM, uint8_t *pu8TPR, bool *pfPending)
+VMMDECL(int) PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending)
 {
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
         Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnGetTPR));
         pdmLock(pVM);
-        *pu8TPR = pVM->pdm.s.Apic.CTX_SUFF(pfnGetTPR)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns));
+        *pu8TPR = pVM->pdm.s.Apic.CTX_SUFF(pfnGetTPR)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu->idCpu);
         if (pfPending)
             *pfPending = pVM->pdm.s.Apic.CTX_SUFF(pfnHasPendingIrq)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns));
         pdmUnlock(pVM);
