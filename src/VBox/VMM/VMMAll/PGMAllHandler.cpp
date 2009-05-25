@@ -1125,7 +1125,10 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasHC(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
             PGM_PAGE_SET_HCPHYS(pPage, HCPhysPageRemap);
             PGM_PAGE_SET_TYPE(pPage, PGMPAGETYPE_MMIO2_ALIAS_MMIO);
             PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ALLOCATED);
-            /** @todo hack alert */
+            /** @todo hack alert
+             *  This needs to be done properly. Currently we get away with it as the recompiler directly calls
+             *  IOM read and write functions. Access through PGMPhysRead/Write will crash the process. 
+             */
             PGM_PAGE_SET_PAGEID(pPage, NIL_GMM_PAGEID);
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
             LogFlow(("PGMHandlerPhysicalPageAliasHC: => %R[pgmpage]\n", pPage));
