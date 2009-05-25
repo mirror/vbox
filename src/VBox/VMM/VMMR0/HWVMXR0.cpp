@@ -179,7 +179,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
 
     if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
     {
-        /* Allocate one page for the virtual APIC mmio cache. */
+        /* Allocate one page for the APIC physical page (serves for filtering accesses). */
         rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.vmx.pMemObjAPIC, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
         AssertRC(rc);
         if (RT_FAILURE(rc))
@@ -245,6 +245,16 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
         pVCpu->hwaccm.s.vmx.cr0_mask = 0;
         pVCpu->hwaccm.s.vmx.cr4_mask = 0;
 
+        /* Allocate one page for the virtual APIC page for TPR caching. */
+        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.vmx.pMemObjVAPIC, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
+        AssertRC(rc);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        pVCpu->hwaccm.s.vmx.pVAPIC     = (uint8_t *)RTR0MemObjAddress(pVCpu->hwaccm.s.vmx.pMemObjVAPIC);
+        pVCpu->hwaccm.s.vmx.pVAPICPhys = RTR0MemObjGetPagePhysAddr(pVCpu->hwaccm.s.vmx.pMemObjVAPIC, 0);
+        ASMMemZero32(pVCpu->hwaccm.s.vmx.pVAPIC, PAGE_SIZE);
+
         /* Current guest paging mode. */
         pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode = PGMMODE_REAL;
 
@@ -266,12 +276,21 @@ VMMR0DECL(int) VMXR0TermVM(PVM pVM)
 {
     for (unsigned i=0;i<pVM->cCPUs;i++)
     {
-        if (pVM->aCpus[i].hwaccm.s.vmx.pMemObjVMCS != NIL_RTR0MEMOBJ)
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
+        if (pVCpu->hwaccm.s.vmx.pMemObjVMCS != NIL_RTR0MEMOBJ)
         {
-            RTR0MemObjFree(pVM->aCpus[i].hwaccm.s.vmx.pMemObjVMCS, false);
-            pVM->aCpus[i].hwaccm.s.vmx.pMemObjVMCS = NIL_RTR0MEMOBJ;
-            pVM->aCpus[i].hwaccm.s.vmx.pVMCS       = 0;
-            pVM->aCpus[i].hwaccm.s.vmx.pVMCSPhys   = 0;
+            RTR0MemObjFree(pVCpu->hwaccm.s.vmx.pMemObjVMCS, false);
+            pVCpu->hwaccm.s.vmx.pMemObjVMCS = NIL_RTR0MEMOBJ;
+            pVCpu->hwaccm.s.vmx.pVMCS       = 0;
+            pVCpu->hwaccm.s.vmx.pVMCSPhys   = 0;
+        }
+        if (pVCpu->hwaccm.s.vmx.pMemObjVAPIC != NIL_RTR0MEMOBJ)
+        {
+            RTR0MemObjFree(pVCpu->hwaccm.s.vmx.pMemObjVAPIC, false);
+            pVCpu->hwaccm.s.vmx.pMemObjVAPIC = NIL_RTR0MEMOBJ;
+            pVCpu->hwaccm.s.vmx.pVAPIC       = 0;
+            pVCpu->hwaccm.s.vmx.pVAPICPhys   = 0;
         }
     }
     if (pVM->hwaccm.s.vmx.pMemObjAPIC != NIL_RTR0MEMOBJ)
@@ -414,7 +433,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
             /* Mask away the bits that the CPU doesn't support */
             /** @todo make sure they don't conflict with the above requirements. */
             val &= pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1;
-
+            pVCpu->hwaccm.s.vmx.proc_ctls2 = val;
             rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS2, val);
             AssertRC(rc);
         }
@@ -474,7 +493,11 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
             Assert(pVM->hwaccm.s.vmx.pMemObjAPIC);
             /* Optional */
             rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TPR_THRESHOLD, 0);
-            rc |= VMXWriteVMCS64(VMX_VMCS_CTRL_VAPIC_PAGEADDR_FULL, pVM->hwaccm.s.vmx.pAPICPhys);
+            rc |= VMXWriteVMCS64(VMX_VMCS_CTRL_VAPIC_PAGEADDR_FULL, pVCpu->hwaccm.s.vmx.pVAPICPhys);
+
+            if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC)
+                rc |= VMXWriteVMCS64(VMX_VMCS_CTRL_APIC_ACCESSADDR_FULL, pVM->hwaccm.s.vmx.pAPICPhys);
+
             AssertRC(rc);
         }
 
@@ -1141,7 +1164,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_EFER_MSR;
 #endif
     /* 64 bits guest mode? */
-    if (pCtx->msrEFER & MSR_K6_EFER_LMA)
+    if (CPUMIsGuestInLongModeEx(pCtx))
         val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_IA64_MODE;
     /* else Must be zero when AMD64 is not available. */
 
@@ -1167,7 +1190,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         val |= VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64;
     /* else: Must be zero when AMD64 is not available. */
 #elif HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
-    if (pCtx->msrEFER & MSR_K6_EFER_LMA)
+    if (CPUMIsGuestInLongModeEx(pCtx))
         val |= VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64;      /* our switcher goes to long mode */
     else
         Assert(!(val & VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64));
@@ -1622,7 +1645,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     }
 
     /* 64 bits guest mode? */
-    if (pCtx->msrEFER & MSR_K6_EFER_LMA)
+    if (CPUMIsGuestInLongModeEx(pCtx))
     {
 #if !defined(VBOX_ENABLE_64_BITS_GUESTS)
         return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
@@ -2139,7 +2162,7 @@ ResumeExecution:
     /**
      * @todo reduce overhead
      */
-    if (   (pCtx->msrEFER & MSR_K6_EFER_LMA)
+    if (    CPUMIsGuestInLongModeEx(pCtx)
         &&  pVM->hwaccm.s.vmx.pAPIC)
     {
         /* TPR caching in CR8 */
@@ -2903,8 +2926,27 @@ ResumeExecution:
 
         /* If the page is present, then it's a page level protection fault. */
         if (exitQualification & VMX_EXIT_QUALIFICATION_EPT_ENTRY_PRESENT)
+        {
             errCode |= X86_TRAP_PF_P;
 
+#if 0
+            /* Shortcut for APIC TPR reads and writes; 32 bits guests only */
+            if (    (GCPhys & 0xfff) == 0x080
+                &&  GCPhys > 0x1000000  /* to skip VGA frame buffer accesses */
+                &&  !CPUMIsGuestInLongModeEx(pCtx)
+                &&  (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC))
+            {
+                RTGCPHYS GCPhysApicBase;
+                PDMApicGetBase(pVM, &GCPhysApicBase);   /* @todo cache this */
+                if (GCPhys == GCPhysApicBase + 0x80)
+                {
+                    pVCpu->hwaccm.s.vmx.proc_ctls2 |= VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC;
+                    rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS2, val);
+                    AssertRC(rc);
+                }
+            }
+#endif
+        }
         LogFlow(("EPT Page fault %x at %RGp error code %x\n", (uint32_t)exitQualification, GCPhys, errCode));
 
         /* GCPhys contains the guest physical address of the page fault. */
@@ -3375,6 +3417,8 @@ ResumeExecution:
             RTGCPHYS GCPhys;
             PDMApicGetBase(pVM, &GCPhys);
             GCPhys += VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(exitQualification);
+
+            Log(("Apic access at %RGp\n", GCPhys));
             rc = VINF_EM_RAW_EMULATE_INSTR;
             break;
         }
@@ -4113,6 +4157,7 @@ VMMR0DECL(int) VMXWriteVMCS64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
     case VMX_VMCS_CTRL_VMEXIT_MSR_LOAD_FULL:
     case VMX_VMCS_CTRL_VMENTRY_MSR_LOAD_FULL:
     case VMX_VMCS_CTRL_VAPIC_PAGEADDR_FULL:
+    case VMX_VMCS_CTRL_APIC_ACCESSADDR_FULL:
     case VMX_VMCS_GUEST_LINK_PTR_FULL:
     case VMX_VMCS_GUEST_PDPTR0_FULL:
     case VMX_VMCS_GUEST_PDPTR1_FULL:

@@ -2902,7 +2902,7 @@ VMMDECL(int) EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
         if ((pRegFrame->ecx >= MSR_IA32_APIC_START) && (pRegFrame->ecx < MSR_IA32_APIC_END))
             rc = PDMApicReadMSR(pVM, pVCpu->idCpu, pRegFrame->ecx, &val);
         else
-            /* We should actually trigger a #GP here, but don't as that might cause more trouble. */
+            /* We should actually trigger a #GP here, but don't as that will cause more trouble. */
             val = 0;
         break;
     }

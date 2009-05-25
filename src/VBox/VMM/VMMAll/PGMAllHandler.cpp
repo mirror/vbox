@@ -1009,7 +1009,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
                 AssertMsgReturn(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2_ALIAS_MMIO,
                                 ("GCPhysPage=%RGp %R[pgmpage]\n", GCPhysPage, pPage),
                                 VERR_PGM_PHYS_NOT_MMIO2);
-                if (PGM_PAGE_GET_HCPHYS(pPage) == PGM_PAGE_GET_HCPHYS(pPage))
+                if (PGM_PAGE_GET_HCPHYS(pPage) == PGM_PAGE_GET_HCPHYS(pPageRemap))
                     return VINF_PGM_HANDLER_ALREADY_ALIASED;
 
                 /*
@@ -1034,6 +1034,101 @@ VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
             PGM_PAGE_SET_PAGEID(pPage, PGM_PAGE_GET_PAGEID(pPageRemap));
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
             LogFlow(("PGMHandlerPhysicalPageAlias: => %R[pgmpage]\n", pPage));
+
+#ifndef IN_RC
+            HWACCMInvalidatePhysPage(pVM, GCPhysPage);
+#endif
+            return VINF_SUCCESS;
+        }
+
+        AssertMsgFailed(("The page %#x is outside the range %#x-%#x\n",
+                         GCPhysPage, pCur->Core.Key, pCur->Core.KeyLast));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    AssertMsgFailed(("Specified physical handler start address %#x is invalid.\n", GCPhys));
+    return VERR_PGM_HANDLER_NOT_FOUND;
+}
+
+/**
+ * Replaces an MMIO page with an arbitrary HC page.
+ *
+ * This is a worker for IOMMMIOMapMMIO2Page that works in a similar way to
+ * PGMHandlerPhysicalPageTempOff but for an MMIO page. Since an MMIO page has no
+ * backing, the caller must provide a replacement page. For various reasons the
+ * replacement page must be an MMIO2 page.
+ *
+ * The caller must do required page table modifications. You can get away
+ * without making any modifations since it's an MMIO page, the cost is an extra
+ * \#PF which will the resync the page.
+ *
+ * Call PGMHandlerPhysicalReset() to restore the MMIO page.
+ *
+ * The caller may still get handler callback even after this call and must be
+ * able to deal correctly with such calls. The reason for these callbacks are
+ * either that we're executing in the recompiler (which doesn't know about this
+ * arrangement) or that we've been restored from saved state (where we won't
+ * save the change).
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The VM handle
+ * @param   GCPhys              The start address of the access handler. This
+ *                              must be a fully page aligned range or we risk
+ *                              messing up other handlers installed for the
+ *                              start and end pages.
+ * @param   GCPhysPage          The physical address of the page to turn off
+ *                              access monitoring for.
+ * @param   HCPhysPageRemap     The physical address of the HC page that
+ *                              serves as backing memory.
+ *
+ * @remark  May cause a page pool flush if used on a page that is already
+ *          aliased.
+ */
+VMMDECL(int)  PGMHandlerPhysicalPageAliasHC(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage, RTHCPHYS HCPhysPageRemap)
+{
+///    Assert(!IOMIsLockOwner(pVM)); /* We mustn't own any other locks when calling this */
+
+    /*
+     * Lookup and validate the range.
+     */
+    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
+    if (RT_LIKELY(pCur))
+    {
+        if (RT_LIKELY(    GCPhysPage >= pCur->Core.Key
+                      &&  GCPhysPage <= pCur->Core.KeyLast))
+        {
+            AssertReturn(pCur->enmType == PGMPHYSHANDLERTYPE_MMIO, VERR_ACCESS_DENIED);
+            AssertReturn(!(pCur->Core.Key & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
+            AssertReturn((pCur->Core.KeyLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK, VERR_INVALID_PARAMETER);
+
+            /*
+             * Get and validate the pages.
+             */
+            PPGMPAGE pPage;
+            int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysPage, &pPage);
+            AssertRCReturn(rc, rc);
+            if (PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_MMIO)
+            {
+                AssertMsgReturn(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2_ALIAS_MMIO,
+                                ("GCPhysPage=%RGp %R[pgmpage]\n", GCPhysPage, pPage),
+                                VERR_PGM_PHYS_NOT_MMIO2);
+                return VINF_PGM_HANDLER_ALREADY_ALIASED;
+            }
+            Assert(PGM_PAGE_IS_ZERO(pPage));
+
+            /*
+             * Do the actual remapping here.
+             * This page now serves as an alias for the backing memory specified.
+             */
+            LogFlow(("PGMHandlerPhysicalPageAlias: %RGp (%R[pgmpage]) alias for %HGp\n",
+                     GCPhysPage, pPage, HCPhysPageRemap));
+            PGM_PAGE_SET_HCPHYS(pPage, HCPhysPageRemap);
+            PGM_PAGE_SET_TYPE(pPage, PGMPAGETYPE_MMIO2_ALIAS_MMIO);
+            PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ALLOCATED);
+            /** @todo hack alert */
+            PGM_PAGE_SET_PAGEID(pPage, NIL_GMM_PAGEID);
+            PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
+            LogFlow(("PGMHandlerPhysicalPageAliasHC: => %R[pgmpage]\n", pPage));
 
 #ifndef IN_RC
             HWACCMInvalidatePhysPage(pVM, GCPhysPage);
