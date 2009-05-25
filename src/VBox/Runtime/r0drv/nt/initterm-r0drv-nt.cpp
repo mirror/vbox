@@ -105,11 +105,19 @@ int rtR0InitNative(void)
     u.szVendor[4*3] = '\0';
 
     /*
-     * Try find _KPRCB::QuantumEnd and possibly also _KPRCB::DpcQueueDepth.
+     * HACK ALERT (and déjà vu warning)!
+     *
+     * Try find _KPRCB::QuantumEnd and _KPRCB::[DpcData.]DpcQueueDepth.
+     * For purpose of verification we use the VendorString member (12+1 chars).
+     *
+     * The offsets was initially derived by poking around with windbg
+     * (dt _KPRCB, !prcb ++, and such like). Systematic harvesting is now done
+     * by means of dia2dump, grep and the symbol packs. Typically:
+     *      dia2dump -type _KDPC_DATA -type _KPRCB EXE\ntkrnlmp.pdb | grep -wE "QuantumEnd|DpcData|DpcQueueDepth|VendorString"
      */
+    /** @todo array w/ data + script for extracting a row. (save space + readability; table will be short.) */
     __try
     {
-        /* HACK ALERT! The offsets are from poking around in windbg. */
 #if defined(RT_ARCH_X86)
         PKPCR    pPcr   = (PKPCR)__readfsdword(RT_OFFSETOF(KPCR,SelfPcr));
         uint8_t *pbPrcb = (uint8_t *)pPcr->Prcb;
@@ -121,6 +129,17 @@ int rtR0InitNative(void)
             g_cbrtNtPbQuantumEnd     = 4;
             g_offrtNtPbDpcQueueDepth = 0x870;
         }
+        /* WindowsVista.6002.090410-1830.x86fre.Symbols.exe
+           WindowsVista.6002.090410-1830.x86chk.Symbols.exe
+           WindowsVista.6002.090130-1715.x86fre.Symbols.exe */
+        else if (   BuildNumber == 6002
+                 && !memcmp(&pbPrcb[0x1c2c], &u.szVendor[0], 4*3))
+        {
+            g_offrtNtPbQuantumEnd    = 0x1a41;
+            g_cbrtNtPbQuantumEnd     = 1;
+            g_offrtNtPbDpcQueueDepth = 0x19e0 + 0xc;
+        }
+
         /** @todo more */
         //pbQuantumEnd = (uint8_t volatile *)pPcr->Prcb + 0x1a41;
 
@@ -142,12 +161,20 @@ int rtR0InitNative(void)
             g_cbrtNtPbQuantumEnd     = 1;
             g_offrtNtPbDpcQueueDepth = 0x3300 + 0x18;
         }
+        /* WindowsVista.6002.090410-1830.amd64fre.Symbols */
+        else if (   BuildNumber == 6002
+                 && !memcmp(&pbPrcb[0x399c], &u.szVendor[0], 4*3))
+        {
+            g_offrtNtPbQuantumEnd    = 0x3475;
+            g_cbrtNtPbQuantumEnd     = 1;
+            g_offrtNtPbDpcQueueDepth = 0x3400 + 0x18;
+        }
 
 #else
 # error "port me"
 #endif
     }
-    __except(EXCEPTION_EXECUTE_HANDLER) /** @todo this handler doesn't seem to work... */
+    __except(EXCEPTION_EXECUTE_HANDLER) /** @todo this handler doesn't seem to work... Because of Irql? */
     {
         g_offrtNtPbQuantumEnd    = 0;
         g_cbrtNtPbQuantumEnd     = 0;
