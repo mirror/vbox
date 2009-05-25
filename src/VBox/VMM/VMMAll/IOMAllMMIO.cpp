@@ -1042,11 +1042,10 @@ static int iomInterpretXCHG(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
  * @param   pVM         VM Handle.
  * @param   uErrorCode  CPU Error code.
  * @param   pCtxCore    Trap register frame.
- * @param   pvFault     The fault address (cr2).
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pvUser      Pointer to the MMIO ring-3 range entry.
  */
-VMMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
+int iomMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPHYS GCPhysFault, void *pvUser)
 {
     /* Take the IOM lock before performing any MMIO. */
     int rc = iomLock(pVM);
@@ -1057,8 +1056,8 @@ VMMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore,
     AssertRC(rc);
 
     STAM_PROFILE_START(&pVM->iom.s.StatRZMMIOHandler, a);
-    Log(("IOMMMIOHandler: GCPhys=%RGp uErr=%#x pvFault=%RGv rip=%RGv\n",
-         GCPhysFault, (uint32_t)uErrorCode, pvFault, (RTGCPTR)pCtxCore->rip));
+    Log(("iomMMIOHandler: GCPhys=%RGp uErr=%#x pvFault=%RGv rip=%RGv\n",
+         GCPhysFault, (uint32_t)uErrorCode, (RTGCPTR)pCtxCore->rip));
 
     PIOMMMIORANGE pRange = (PIOMMMIORANGE)pvUser;
     Assert(pRange);
@@ -1243,6 +1242,37 @@ VMMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore,
     return rc;
 }
 
+/**
+ * \#PF Handler callback for MMIO ranges.
+ *
+ * @returns VBox status code (appropriate for GC return).
+ * @param   pVM         VM Handle.
+ * @param   uErrorCode  CPU Error code.
+ * @param   pCtxCore    Trap register frame.
+ * @param   pvFault     The fault address (cr2).
+ * @param   GCPhysFault The GC physical address corresponding to pvFault.
+ * @param   pvUser      Pointer to the MMIO ring-3 range entry.
+ */
+VMMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
+{
+    LogFlow(("IOMMMIOHandler: GCPhys=%RGp uErr=%#x pvFault=%RGv rip=%RGv\n",
+             GCPhysFault, (uint32_t)uErrorCode, pvFault, (RTGCPTR)pCtxCore->rip));
+    return iomMMIOHandler(pVM, uErrorCode, pCtxCore, GCPhysFault, pvUser);
+}
+
+/**
+ * Physical access handler for MMIO ranges.
+ *
+ * @returns VBox status code (appropriate for GC return).
+ * @param   pVM         VM Handle.
+ * @param   uErrorCode  CPU Error code.
+ * @param   pCtxCore    Trap register frame.
+ * @param   GCPhysFault The GC physical address.
+ */
+VMMDECL(int) IOMMMIOPhysHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPHYS GCPhysFault)
+{
+    return iomMMIOHandler(pVM, uErrorCode, pCtxCore, GCPhysFault, iomMMIOGetRange(&pVM->iom.s, GCPhysFault));
+}
 
 #ifdef IN_RING3
 /**
