@@ -2032,8 +2032,9 @@ VMMDECL(const char *) PGMGetModeName(PGMMODE enmMode)
  */
 VMMDECL(bool) PGMIsLocked(PVM pVM)
 {
-    return PDMCritSectIsLocked(&pVM->pgm.s.CritSect);
+    return PDMCritSectIsOwned(&pVM->pgm.s.CritSect);
 }
+
 
 /**
  * Check if this VCPU currently owns the PGM lock.

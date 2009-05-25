@@ -3297,7 +3297,7 @@ static EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 static int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 {
     if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PDM_CRITSECT))
-        PDMR3CritSectFF(pVCpu);
+        PDMCritSectFF(pVCpu);
 
     if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_CSAM_PENDING_ACTION))
         CSAMR3DoPendingAction(pVM, pVCpu);

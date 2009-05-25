@@ -334,40 +334,33 @@ VMMR3DECL(int) PDMR3Init(PVM pVM)
     /*
      * Initialize sub compontents.
      */
-    int rc = pdmR3CritSectInit(pVM);
+    int rc = RTCritSectInit(&pVM->pdm.s.MiscCritSect);
+    if (RT_SUCCESS(rc))
+        rc = pdmR3CritSectInit(pVM);
+    if (RT_SUCCESS(rc))
+        rc = PDMR3CritSectInit(pVM, &pVM->pdm.s.CritSect, "PDM");
+    if (RT_SUCCESS(rc))
+        rc = pdmR3LdrInitU(pVM->pUVM);
+    if (RT_SUCCESS(rc))
+        rc = pdmR3DrvInit(pVM);
+    if (RT_SUCCESS(rc))
+        rc = pdmR3DevInit(pVM);
+#ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+    if (RT_SUCCESS(rc))
+        rc = pdmR3AsyncCompletionInit(pVM);
+#endif
     if (RT_SUCCESS(rc))
     {
-        rc = PDMR3CritSectInit(pVM, &pVM->pdm.s.CritSect, "PDM");
-        if (RT_SUCCESS(rc))
-            rc = pdmR3LdrInitU(pVM->pUVM);
+        /*
+         * Register the saved state data unit.
+         */
+        rc = SSMR3RegisterInternal(pVM, "pdm", 1, PDM_SAVED_STATE_VERSION, 128,
+                                   NULL, pdmR3Save, NULL,
+                                   pdmR3LoadPrep, pdmR3Load, NULL);
         if (RT_SUCCESS(rc))
         {
-            rc = pdmR3DrvInit(pVM);
-            if (RT_SUCCESS(rc))
-            {
-                rc = pdmR3DevInit(pVM);
-                if (RT_SUCCESS(rc))
-                {
-#ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
-                    rc = pdmR3AsyncCompletionInit(pVM);
-                    if (RT_SUCCESS(rc))
-#endif
-                    {
-                        /*
-                         * Register the saved state data unit.
-                         */
-                        rc = SSMR3RegisterInternal(pVM, "pdm", 1, PDM_SAVED_STATE_VERSION, 128,
-                                                   NULL, pdmR3Save, NULL,
-                                                   pdmR3LoadPrep, pdmR3Load, NULL);
-                        if (RT_SUCCESS(rc))
-                        {
-                            LogFlow(("PDM: Successfully initialized\n"));
-                            return rc;
-                        }
-
-                    }
-                }
-            }
+            LogFlow(("PDM: Successfully initialized\n"));
+            return rc;
         }
     }
 
@@ -599,6 +592,7 @@ VMMR3DECL(int) PDMR3Term(PVM pVM)
      * Destroy the PDM lock.
      */
     PDMR3CritSectDelete(&pVM->pdm.s.CritSect);
+    /* The MiscCritSect is deleted by PDMR3CritSectTerm. */
 
     LogFlow(("PDMR3Term: returns %Rrc\n", VINF_SUCCESS));
     return VINF_SUCCESS;
