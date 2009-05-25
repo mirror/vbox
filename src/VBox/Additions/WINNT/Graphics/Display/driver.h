@@ -252,12 +252,18 @@ void VBoxUpdateDisplayInfo (PPDEV ppdev);
 void drvLoadEng (void);
 
 #ifdef VBOX_WITH_HGSMI
-DECLCALLBACK(int) vboxVHWACommandHanlder(void *pvHandler, uint16_t u16ChannelInfo, void *pvBuffer, HGSMISIZE cbBuffer);
+DECLCALLBACK(int) vboxVBVAHostCommandHanlder(void *pvHandler, uint16_t u16ChannelInfo, void *pvBuffer, HGSMISIZE cbBuffer);
+void vboxVBVAHostCommandComplete(PPDEV ppdev, void *pvBuffer);
 
  #ifdef VBOX_WITH_VIDEOHWACCEL
-VBOXVHWACMD* vboxVHWACreateCommand (PPDEV ppdev, VBOXVHWACMD_LENGTH cbCmd);
-void vboxVHWAFreeCommand (PPDEV ppdev, VBOXVHWACMD* pCmd);
-void vboxVHWASubmitCommand (PPDEV ppdev, VBOXVHWACMD* pCmd);
+
+typedef DECLCALLBACK(void) FNVBOXVHWACMDCOMPLETION(PPDEV ppdev, VBOXVHWACMD * pCmd, void * pContext);
+typedef FNVBOXVHWACMDCOMPLETION *PFNVBOXVHWACMDCOMPLETION;
+
+VBOXVHWACMD* vboxVHWACommandCreate (PPDEV ppdev, VBOXVHWACMD_LENGTH cbCmd);
+void vboxVHWACommandFree (PPDEV ppdev, VBOXVHWACMD* pCmd);
+BOOL vboxVHWACommandSubmit (PPDEV ppdev, VBOXVHWACMD* pCmd);
+void vboxVHWACommandSubmitAssynch (PPDEV ppdev, VBOXVHWACMD* pCmd, PFNVBOXVHWACMDCOMPLETION pfnCompletion, void * pContext);
  #endif
 #endif
 

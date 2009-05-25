@@ -691,7 +691,7 @@ void VBoxProcessDisplayInfo (PPDEV ppdev)
 
 # ifdef VBOX_WITH_VIDEOHWACCEL
 
-VBOXVHWACMD* vboxVHWACreateCommand (PPDEV ppdev, VBOXVHWACMD_LENGTH cbCmd)
+VBOXVHWACMD* vboxVHWACommandCreate (PPDEV ppdev, VBOXVHWACMD_LENGTH cbCmd)
 {
     VBOXVHWACMD* pHdr = (VBOXVHWACMD*)HGSMIHeapAlloc (&ppdev->hgsmiDisplayHeap,
                               cbCmd,
@@ -699,43 +699,79 @@ VBOXVHWACMD* vboxVHWACreateCommand (PPDEV ppdev, VBOXVHWACMD_LENGTH cbCmd)
                               VBVA_VHWA_CMD);
     if (!pHdr)
     {
-        DISPDBG((0, "VBoxDISP::vboxVHWACreateCommand: HGSMIHeapAlloc failed\n"));
+        DISPDBG((0, "VBoxDISP::vboxVHWACommandCreate: HGSMIHeapAlloc failed\n"));
     }
 
     return pHdr;
 }
 
-void vboxVHWAFreeCommand (PPDEV ppdev, VBOXVHWACMD* pCmd)
+void vboxVHWACommandFree (PPDEV ppdev, VBOXVHWACMD* pCmd)
 {
     HGSMIHeapFree (&ppdev->hgsmiDisplayHeap, pCmd);
 }
 
-void vboxVHWASubmitCommand (PPDEV ppdev, VBOXVHWACMD* pCmd)
+static void vboxVHWACommandCompletionCallbackEvent(PPDEV ppdev, VBOXVHWACMD * pCmd, void * pContext)
 {
-    vboxHGSMIBufferSubmit (ppdev, pCmd);
-    if(pCmd->rc == VINF_VHWA_CMD_PENDING)
-    {
+    PEVENT pEvent = (PEVENT)pContext;
+    LONG oldState = EngSetEvent(pEvent);
+    Assert(!oldState);
+}
 
+BOOL vboxVHWACommandSubmit (PPDEV ppdev, VBOXVHWACMD* pCmd)
+{
+    PEVENT pEvent;
+    BOOL brc = EngCreateEvent(&pEvent);
+    Assert(brc);
+    if(brc)
+    {
+        vboxVHWACommandSubmitAssynch (ppdev, pCmd, vboxVHWACommandCompletionCallbackEvent, pEvent);
+
+        brc = EngWaitForSingleObject(pEvent,
+                NULL /*IN PLARGE_INTEGER  pTimeOut*/
+                );
+        Assert(brc);
+        if(brc)
+        {
+            EngDeleteEvent(pEvent);
+        }
     }
+    return brc;
 }
 
 /* do not wait for completion */
-void vboxVHWASubmitCommandAssynch (PPDEV ppdev, VBOXVHWACMD* pCmd)
+void vboxVHWACommandSubmitAssynch (PPDEV ppdev, VBOXVHWACMD* pCmd, PFNVBOXVHWACMDCOMPLETION pfnCompletion, void * pContext)
 {
+    pCmd->GuestVBVAReserved1 = (uintptr_t)pfnCompletion;
+    pCmd->GuestVBVAReserved2 = (uintptr_t)pContext;
+
     vboxHGSMIBufferSubmit (ppdev, pCmd);
+
+    if(pCmd->rc != VINF_VHWA_CMD_PENDING)
+    {
+        /* the command is completed */
+        pfnCompletion(ppdev, pCmd, pContext);
+    }
+
 }
 
 static int vboxVHWAHanldeVHWACmdCompletion(PPDEV ppdev, void *pvBuffer, HGSMISIZE cbBuffer)
 {
-    Assert(0);
+    VBOXVHWACMD* pCmd = (VBOXVHWACMD*)pvBuffer;
+    PFNVBOXVHWACMDCOMPLETION pfnCompletion = (PFNVBOXVHWACMDCOMPLETION)pCmd->GuestVBVAReserved1;
+    void * pContext = (void *)pCmd->GuestVBVAReserved2;
 
-    ppdev->pfnHGSMICommandComplete(ppdev->hMpHGSMI, pvBuffer);
+    pfnCompletion(ppdev, pCmd, pContext);
     return 0;
 }
 
 # endif
 
-DECLCALLBACK(int) vboxVHWACommandHanlder(void *pvHandler, uint16_t u16ChannelInfo, void *pvBuffer, HGSMISIZE cbBuffer)
+void vboxVBVAHostCommandComplete(PPDEV ppdev, void *pvBuffer)
+{
+    ppdev->pfnHGSMICommandComplete(ppdev->hMpHGSMI, pvBuffer);
+}
+
+DECLCALLBACK(int) vboxVBVAHostCommandHanlder(void *pvHandler, uint16_t u16ChannelInfo, void *pvBuffer, HGSMISIZE cbBuffer)
 {
     int rc = VINF_SUCCESS;
     PPDEV ppdev = (PPDEV)pvHandler;
@@ -751,9 +787,8 @@ DECLCALLBACK(int) vboxVHWACommandHanlder(void *pvHandler, uint16_t u16ChannelInf
 # endif
         default:
         {
-            ppdev->pfnHGSMICommandComplete(ppdev->hMpHGSMI, pvBuffer);
+            vboxVBVAHostCommandComplete(ppdev, pvBuffer);
         }
-
     }
     return rc;
 }

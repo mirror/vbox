@@ -123,7 +123,7 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
 
             ppdev->hMpHGSMI = Callbacks.hContext;
             ppdev->pfnHGSMICommandComplete = Callbacks.pfnCompletionHandler;
-            HandlerReg.pfnHandler = vboxVHWACommandHanlder;
+            HandlerReg.pfnHandler = vboxVBVAHostCommandHanlder;
             HandlerReg.pvHandler = ppdev;
             HandlerReg.u8Channel = HGSMI_CH_VBVA;
             err = EngDeviceIoControl(ppdev->hDriver,

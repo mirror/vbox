@@ -266,6 +266,8 @@ typedef struct _VBOXVHWACMD
     int32_t rc; /* command result */
     int32_t iDisplay; /* display index */
     int32_t Reserved; /* reserved, must be null*/
+    uint64_t GuestVBVAReserved1; /* field internally used by the guest VBVA cmd handling, must NOT be modified by clients */
+    uint64_t GuestVBVAReserved2; /* field internally used by the guest VBVA cmd handling, must NOT be modified by clients */
     char body[1];
 } VBOXVHWACMD;
 
