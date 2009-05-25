@@ -3459,7 +3459,7 @@ ResumeExecution:
             GCPhys &= PAGE_BASE_GC_MASK;
             GCPhys += VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(exitQualification);
 
-            Log(("Apic access at %RGp\n", GCPhys));
+            LogFlow(("Apic access at %RGp\n", GCPhys));
             rc = IOMMMIOPhysHandler(pVM, (uAccessType == VMX_APIC_ACCESS_TYPE_LINEAR_READ) ? 0 : X86_TRAP_PF_RW, CPUMCTX2CORE(pCtx), GCPhys);
             if (rc == VINF_SUCCESS)
                 goto ResumeExecution;   /* rip already updated */
