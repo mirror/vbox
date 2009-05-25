@@ -692,6 +692,22 @@ VBOX_SLIRP_SOURCES = \
 	Network/slirp/tftp.c \
 	Network/slirp/udp.c
 
+VBOX_SLIRP_ALIAS_SOURCES= \
+    Network/slirp/libalias/alias.c \
+    Network/slirp/libalias/alias_db.c \
+    Network/slirp/libalias/alias_mod.c \
+    Network/slirp/libalias/alias_proxy.c \
+    Network/slirp/libalias/alias_util.c
+
+ifdef VBOX_WITH_SLIRP_ALIAS
+VBOX_SLIRP_SOURCES += $(VBOX_SLIRP_ALIAS_SOURCES)
+Drivers_INCS += Network/slirp/libalias
+define def_vbox_slirp_alias_cflags
+  $(file)_DEFS += VBOX_SLIRP_ALIAS
+endef
+$(foreach file,$(VBOX_SLIRP_ALIAS_SOURCES),$(eval $(def_vbox_slirp_alias_cflags)))
+endif
+
 VBOX_WITH_SLIRP_DNS_PROXY=1
 
 ifdef VBOX_WITH_SLIRP_DNS_PROXY
@@ -708,6 +724,7 @@ Drivers_SOURCES += $(VBOX_SLIRP_SOURCES)
 define def_vbox_slirp_cflags
   $(file)_DEFS += \
       $(if $(VBOX_WITH_SLIRP_MEMORY_CHECK),RTMEM_WRAP_TO_EF_APIS,) \
+      $(if $(VBOX_WITH_SLIRP_ALIAS),VBOX_WITH_SLIRP_ALIAS,) \
       $(if $(VBOX_WITHOUT_SLIRP_CLIENT_ETHER),VBOX_WITHOUT_SLIRP_CLIENT_ETHER,)	\
       $(if $(VBOX_WITH_DEBUG_NAT_SOCKETS),VBOX_WITH_DEBUG_NAT_SOCKETS,)	\
       $(if $(VBOX_WITH_MULTI_DNS),VBOX_WITH_MULTI_DNS,)	\
