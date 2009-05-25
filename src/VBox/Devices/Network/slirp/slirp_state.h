@@ -131,7 +131,7 @@ typedef struct NATState
 #ifndef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
     uint8_t client_ethaddr[6];
 #else
-    uint8_t *slirp_ethaddr;
+    const uint8_t *slirp_ethaddr;
 #endif
     struct ex_list *exec_list;
     char slirp_hostname[33];
@@ -382,7 +382,7 @@ typedef struct NATState
     (so) = (_X(queue_ ## label ## _label)).so_next;                   \
     QSOCKET_UNLOCK(__X(queue_## label ##_label));                     \
     if ((so) != &(_X(queue_## label ## _label))) SOCKET_LOCK((so));   \
-    for(;;)                                                           \
+    for (;;)                                                          \
     {                                                                 \
         if ((so) == &(_X(queue_## label ## _label)))                  \
         {                                                             \

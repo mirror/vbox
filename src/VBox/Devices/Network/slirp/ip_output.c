@@ -45,27 +45,25 @@
 #include <slirp.h>
 
 #ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
-char * rt_lookup_in_cache(PNATState pData, uint32_t dst)
+static const uint8_t* rt_lookup_in_cache(PNATState pData, uint32_t dst)
 {
     int i;
-   /* @todo (r - vasily) to quick ramp up on routing rails 
-    * we use information from DHCP server leasings, this 
-    * code couldn't detect any changes in network topology 
-    * and should be borrowed from other places 
+   /* @todo (r - vasily) to quick ramp up on routing rails
+    * we use information from DHCP server leasings, this
+    * code couldn't detect any changes in network topology
+    * and should be borrowed from other places
     */
-    for(i = 0; i < NB_ADDR; i++)
+    for (i = 0; i < NB_ADDR; i++)
     {
-        if (    bootp_clients[i].allocated 
+        if (   bootp_clients[i].allocated
             && bootp_clients[i].addr.s_addr == dst)
-        {
             return &bootp_clients[i].macaddr[0];
-        }
     }
+
     if (dst != 0)
-    {
         return pData->slirp_ethaddr;
-    }
-   return NULL; 
+
+    return NULL; 
 }
 #endif
 
@@ -85,7 +83,7 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
 #ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
     extern uint8_t zerro_ethaddr[ETH_ALEN];
     struct ethhdr *eh = NULL;
-    uint8_t *eth_dst = NULL;
+    const uint8_t *eth_dst = NULL;
 #endif
 
     DEBUG_CALL("ip_output");
@@ -126,14 +124,12 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
     }
 #endif
 #ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
-      /* Current TCP/IP stack hasn't routing information at 
-       * all so we need to calculate destination ethernet address 
+      /* Current TCP/IP stack hasn't routing information at
+       * all so we need to calculate destination ethernet address
        */
      eh = (struct ethhdr *)MBUF_HEAD(m);
-     if (memcmp(eh->h_source, zerro_ethaddr, ETH_ALEN) == 0) {
+     if (memcmp(eh->h_source, zerro_ethaddr, ETH_ALEN) == 0)
          eth_dst = rt_lookup_in_cache(pData, ip->ip_dst.s_addr); 
-     }
-       
 #endif
 
     /*

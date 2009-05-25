@@ -31,7 +31,7 @@ static BOOTPClient *get_new_addr(PNATState pData, struct in_addr *paddr)
 {
     int i;
 
-    for(i = 0; i < NB_ADDR; i++)
+    for (i = 0; i < NB_ADDR; i++)
     {
         if (!bootp_clients[i].allocated)
         {
@@ -66,7 +66,7 @@ static BOOTPClient *find_addr(PNATState pData, struct in_addr *paddr, const uint
 {
     int i;
 
-    for(i = 0; i < NB_ADDR; i++)
+    for (i = 0; i < NB_ADDR; i++)
     {
         if (!memcmp(macaddr, bootp_clients[i].macaddr, 6))
         {
