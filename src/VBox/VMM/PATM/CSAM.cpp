@@ -489,7 +489,7 @@ static DECLCALLBACK(int) csamr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
             rc = MMHyperAlloc(pVM, CSAM_PAGE_BITMAP_SIZE, 0, MM_TAG_CSAM, (void **)&pVM->csam.s.pPDBitmapHC[i]);
             if (RT_FAILURE(rc))
             {
-                Log(("MMR3HyperAlloc failed with %d\n", rc));
+                Log(("MMHyperAlloc failed with %Rrc\n", rc));
                 return rc;
             }
             /* Convert to GC pointer. */
