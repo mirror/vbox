@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,6 +19,7 @@
  * additional information or have any questions.
  */
 
+//#define PDM_WITH_R3R0_CRIT_SECT
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -28,13 +29,16 @@
 #include <VBox/pdm.h>
 #include <VBox/mm.h>
 #include <VBox/vm.h>
-#include <VBox/err.h>
 
+#include <VBox/err.h>
 #include <VBox/log.h>
+#ifdef PDM_WITH_R3R0_CRIT_SECT
+# include <VBox/sup.h>
+#endif
 #include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/thread.h>
 #include <iprt/string.h>
+#include <iprt/thread.h>
 
 
 /*******************************************************************************
@@ -111,16 +115,39 @@ VMMDECL(int) PDMR3CritSectTerm(PVM pVM)
 static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey, const char *pszName)
 {
     VM_ASSERT_EMT(pVM);
+
+#ifdef PDM_WITH_R3R0_CRIT_SECT
+    /*
+     * Allocate the semaphore.
+     */
+    AssertCompile(sizeof(SUPSEMEVENT) == sizeof(pCritSect->Core.EventSem));
+    int rc = SUPSemEventCreate(pVM->pSession, (PSUPSEMEVENT)&pCritSect->Core.EventSem);
+#else
     int rc = RTCritSectInit(&pCritSect->Core);
+#endif
     if (RT_SUCCESS(rc))
     {
-        pCritSect->pVMR3         = pVM;
-        pCritSect->pVMR0         = pVM->pVMR0;
-        pCritSect->pVMRC         = pVM->pVMRC;
-        pCritSect->pvKey         = pvKey;
-        pCritSect->EventToSignal = NIL_RTSEMEVENT;
-        pCritSect->pNext         = pVM->pdm.s.pCritSects;
-        pCritSect->pszName       = RTStrDup(pszName);
+#ifdef PDM_WITH_R3R0_CRIT_SECT
+        /*
+         * Initialize the structure (first bit is c&p from RTCritSectInitEx).
+         */
+        pCritSect->Core.u32Magic             = RTCRITSECT_MAGIC;
+        pCritSect->Core.fFlags               = 0;
+        pCritSect->Core.cNestings            = 0;
+        pCritSect->Core.cLockers             = -1;
+        pCritSect->Core.NativeThreadOwner    = NIL_RTNATIVETHREAD;
+        pCritSect->Core.Strict.ThreadOwner   = NIL_RTTHREAD;
+        pCritSect->Core.Strict.pszEnterFile  = NULL;
+        pCritSect->Core.Strict.u32EnterLine  = 0;
+        pCritSect->Core.Strict.uEnterId      = 0;
+#endif
+        pCritSect->pVMR3                     = pVM;
+        pCritSect->pVMR0                     = pVM->pVMR0;
+        pCritSect->pVMRC                     = pVM->pVMRC;
+        pCritSect->pvKey                     = pvKey;
+        pCritSect->EventToSignal             = NIL_RTSEMEVENT;
+        pCritSect->pNext                     = pVM->pdm.s.pCritSects;
+        pCritSect->pszName                   = RTStrDup(pszName);
         pVM->pdm.s.pCritSects = pCritSect;
         STAMR3RegisterF(pVM, &pCritSect->StatContentionRZLock,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionRZLock", pszName);
         STAMR3RegisterF(pVM, &pCritSect->StatContentionRZUnlock,STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionRZUnlock", pszName);
@@ -184,13 +211,38 @@ int pdmR3CritSectInitDevice(PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect,
  */
 static int pdmR3CritSectDeleteOne(PVM pVM, PPDMCRITSECTINT pCritSect, PPDMCRITSECTINT pPrev, bool fFinal)
 {
-    /* ulink */
+#ifdef PDM_WITH_R3R0_CRIT_SECT
+    /*
+     * Assert free waiters and so on (c&p from RTCritSectDelete).
+     */
+    Assert(pCritSect->Core.u32Magic == RTCRITSECT_MAGIC);
+    Assert(pCritSect->Core.cNestings == 0);
+    Assert(pCritSect->Core.cLockers == -1);
+    Assert(pCritSect->Core.NativeThreadOwner == NIL_RTNATIVETHREAD);
+#endif
+
+    /*
+     * Unlink it.
+     */
     if (pPrev)
         pPrev->pNext = pCritSect->pNext;
     else
         pVM->pdm.s.pCritSects = pCritSect->pNext;
 
-    /* delete */
+    /*
+     * Delete it (parts taken from RTCritSectDelete).
+     * In case someone is waiting we'll signal the semaphore cLockers + 1 times.
+     */
+#ifdef PDM_WITH_R3R0_CRIT_SECT
+    ASMAtomicWriteU32(&pCritSect->Core.u32Magic, 0);
+    SUPSEMEVENT hEvent = (SUPSEMEVENT)pCritSect->Core.EventSem;
+    pCritSect->Core.EventSem = NIL_RTSEMEVENT;
+    while (pCritSect->Core.cLockers-- >= 0)
+        SUPSemEventSignal(pVM->pSession, hEvent);
+    ASMAtomicWriteS32(&pCritSect->Core.cLockers, -1);
+    int rc = SUPSemEventClose(pVM->pSession, hEvent);
+    AssertRC(rc);
+#endif
     pCritSect->pNext   = NULL;
     pCritSect->pvKey   = NULL;
     pCritSect->pVMR3   = NULL;
@@ -207,7 +259,10 @@ static int pdmR3CritSectDeleteOne(PVM pVM, PPDMCRITSECTINT pCritSect, PPDMCRITSE
         STAMR3Deregister(pVM, &pCritSect->StatLocked);
 #endif
     }
-    return RTCritSectDelete(&pCritSect->Core);
+#ifndef PDM_WITH_R3R0_CRIT_SECT
+    int rc = RTCritSectDelete(&pCritSect->Core);
+#endif
+    return rc;
 }
 
 
@@ -305,7 +360,11 @@ VMMR3DECL(void) PDMR3CritSectFF(PVMCPU pVCpu)
     for (RTUINT i = 0; i < c; i++)
     {
         PPDMCRITSECT pCritSect = pVCpu->pdm.s.apQueuedCritSectsLeaves[i];
+#ifdef PDM_WITH_R3R0_CRIT_SECT
+        int rc = pdmCritSectLeave(pCritSect);
+#else
         int rc = RTCritSectLeave(&pCritSect->s.Core);
+#endif
         LogFlow(("PDMR3CritSectFF: %p - %Rrc\n", pCritSect, rc));
         AssertRC(rc);
     }
