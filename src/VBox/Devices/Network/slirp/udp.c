@@ -582,7 +582,7 @@ udp_emu(PNATState pData, struct socket *so, struct mbuf *m)
                 int s;
                 u_short temp_port;
 
-                for(req = req_tbl; req; req = req->next)
+                for (req = req_tbl; req; req = req->next)
                     if (so == req->udp_so)
                         break;          /* found it */
 
