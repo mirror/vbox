@@ -1133,6 +1133,34 @@ typedef enum
 #define VMX_EXIT_QUALIFICATION_IO_ENCODING_IMM         1
 /** @} */
 
+/** @name VMX_EXIT_APIC_ACCESS
+ * @{
+ */
+/** 0-11:   If the APIC-access VM exit is due to a linear access, the offset of access within the APIC page. */
+#define VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(a)    (a & 0xfff)
+/** 12-15:  Access type. */
+#define VMX_EXIT_QUALIFICATION_APIC_ACCESS_TYPE(a)      ((a >> 12) & 0xf)
+/* Rest reserved. */
+/** @} */
+
+
+/** @name VMX_EXIT_QUALIFICATION_APIC_ACCESS_TYPE; access types
+ * @{
+ */
+/** Linear read access. */
+#define VMX_APIC_ACCESS_TYPE_LINEAR_READ                0
+/** Linear write access. */
+#define VMX_APIC_ACCESS_TYPE_LINEAR_WRITE               1
+/** Linear instruction fetch access. */
+#define VMX_APIC_ACCESS_TYPE_LINEAR_INSTR_FETCH         2
+/** Linear read/write access during event delivery. */
+#define VMX_APIC_ACCESS_TYPE_LINEAR_EVENT_DELIVERY      3
+/** Physical read/write access during event delivery. */
+#define VMX_APIC_ACCESS_TYPE_PHYSICAL_EVENT_DELIVERY    10
+/** Physical access for an instruction fetch or during instruction execution. */
+#define VMX_APIC_ACCESS_TYPE_PHYSICAL_INSTR             15
+/** @} */
+
 /** @} */
 
 /** @name VMCS field encoding - Natural width guest state fields
