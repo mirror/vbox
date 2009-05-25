@@ -258,11 +258,11 @@ typedef struct HWACCM
         /** Virtual address of the identity page table used for real mode and protected mode without paging emulation in EPT mode. */
         R3PTRTYPE(PX86PD)           pNonPagingModeEPTPageTable;
 
-        /** R0 memory object for the virtual APIC mmio cache. */
+        /** R0 memory object for the APIC physical page (serves for filtering accesses). */
         RTR0MEMOBJ                  pMemObjAPIC;
-        /** Physical address of the virtual APIC mmio cache. */
+        /** Physical address of the APIC physical page (serves for filtering accesses). */
         RTHCPHYS                    pAPICPhys;
-        /** Virtual address of the virtual APIC mmio cache. */
+        /** Virtual address of the APIC physical page (serves for filtering accesses). */
         R0PTRTYPE(uint8_t *)        pAPIC;
 
         /** R0 memory object for the MSR bitmap (1 page). */
@@ -488,6 +488,16 @@ typedef struct HWACCMCPU
 
         /** Current VMX_VMCS_CTRL_PROC_EXEC_CONTROLS. */
         uint64_t                    proc_ctls;
+
+        /** Current VMX_VMCS_CTRL_PROC_EXEC2_CONTROLS. */
+        uint64_t                    proc_ctls2;
+
+        /** R0 memory object for the virtual APIC page for TPR caching. */
+        RTR0MEMOBJ                  pMemObjVAPIC;
+        /** Physical address of the virtual APIC page for TPR caching. */
+        RTHCPHYS                    pVAPICPhys;
+        /** Virtual address of the virtual APIC page for TPR caching. */
+        R0PTRTYPE(uint8_t *)        pVAPIC;
 
         /** Current CR0 mask. */
         uint64_t                    cr0_mask;
