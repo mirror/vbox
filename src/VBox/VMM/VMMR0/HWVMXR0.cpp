@@ -2483,6 +2483,30 @@ ResumeExecution:
                 TRPMSetErrorCode(pVCpu, errCode);
                 TRPMSetFaultAddress(pVCpu, exitQualification);
 
+                /* Shortcut for APIC TPR reads and writes; 32 bits guests only */
+                if (    (exitQualification & 0xfff) == 0x080
+                    &&  !(errCode & X86_TRAP_PF_P)  /* not present */
+                    &&  fSetupTPRCaching
+                    &&  !CPUMIsGuestInLongModeEx(pCtx))
+                {
+                    RTGCPHYS GCPhysApicBase, GCPhys;
+                    PDMApicGetBase(pVM, &GCPhysApicBase);   /* @todo cache this */
+                    GCPhysApicBase &= PAGE_BASE_GC_MASK;
+
+                    rc = PGMGstGetPage(pVCpu, (RTGCPTR)exitQualification, NULL, &GCPhys);
+                    if (    rc == VINF_SUCCESS
+                        &&  GCPhys == GCPhysApicBase)
+                    {
+                        Log(("Enable VT-x virtual APIC access filtering\n"));
+                        pVCpu->hwaccm.s.vmx.proc_ctls2 |= VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC;
+                        rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS2, pVCpu->hwaccm.s.vmx.proc_ctls2);
+                        AssertRC(rc);
+
+                        rc = IOMMMIOMapMMIOHCPage(pVM, GCPhysApicBase, pVM->hwaccm.s.vmx.pAPICPhys, X86_PTE_RW | X86_PTE_P);
+                        AssertRC(rc);
+                    }
+                }
+
                 /* Forward it to our trap handler first, in case our shadow pages are out of sync. */
                 rc = PGMTrap0eHandler(pVCpu, errCode, CPUMCTX2CORE(pCtx), (RTGCPTR)exitQualification);
                 Log2(("PGMTrap0eHandler %RGv returned %Rrc\n", (RTGCPTR)pCtx->rip, rc));
@@ -2940,13 +2964,12 @@ ResumeExecution:
         {
             errCode |= X86_TRAP_PF_P;
         }
-#if 0
         else {
             /* Shortcut for APIC TPR reads and writes; 32 bits guests only */
             if (    (GCPhys & 0xfff) == 0x080
                 &&  GCPhys > 0x1000000   /* to skip VGA frame buffer accesses */
                 &&  !CPUMIsGuestInLongModeEx(pCtx)
-                &&  (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC))
+                &&  fSetupTPRCaching)
             {
                 RTGCPHYS GCPhysApicBase;
                 PDMApicGetBase(pVM, &GCPhysApicBase);   /* @todo cache this */
@@ -2963,7 +2986,6 @@ ResumeExecution:
                 }
             }
         }
-#endif
         Log(("EPT Page fault %x at %RGp error code %x\n", (uint32_t)exitQualification, GCPhys, errCode));
 
         /* GCPhys contains the guest physical address of the page fault. */
