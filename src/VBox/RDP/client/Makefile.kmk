@@ -100,7 +100,8 @@ rdesktop-vrdp_LIBPATH = \
 	/usr/lib \
 	$(VBOX_LIBPATH_X11)
 rdesktop-vrdp_LIBS = \
-	X11
+	X11 \
+	$(LIB_RUNTIME)
 rdesktop-vrdp_LIBS.solaris = \
 	nsl
 
