@@ -2928,26 +2928,32 @@ ResumeExecution:
         if (exitQualification & VMX_EXIT_QUALIFICATION_EPT_ENTRY_PRESENT)
         {
             errCode |= X86_TRAP_PF_P;
-
+        }
 #if 0
+        else {
             /* Shortcut for APIC TPR reads and writes; 32 bits guests only */
             if (    (GCPhys & 0xfff) == 0x080
-                &&  GCPhys > 0x1000000  /* to skip VGA frame buffer accesses */
+                &&  GCPhys > 0x1000000   /* to skip VGA frame buffer accesses */
                 &&  !CPUMIsGuestInLongModeEx(pCtx)
                 &&  (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC))
             {
                 RTGCPHYS GCPhysApicBase;
                 PDMApicGetBase(pVM, &GCPhysApicBase);   /* @todo cache this */
+                GCPhysApicBase &= PAGE_BASE_GC_MASK;
                 if (GCPhys == GCPhysApicBase + 0x80)
                 {
+                    Log(("Enable VT-x virtual APIC access filtering\n"));
                     pVCpu->hwaccm.s.vmx.proc_ctls2 |= VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC;
-                    rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS2, val);
+                    rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS2, pVCpu->hwaccm.s.vmx.proc_ctls2);
+                    AssertRC(rc);
+
+                    rc = IOMMMIOMapMMIOHCPage(pVM, GCPhysApicBase, pVM->hwaccm.s.vmx.pAPICPhys, X86_PTE_RW | X86_PTE_P);
                     AssertRC(rc);
                 }
             }
-#endif
         }
-        LogFlow(("EPT Page fault %x at %RGp error code %x\n", (uint32_t)exitQualification, GCPhys, errCode));
+#endif
+        Log(("EPT Page fault %x at %RGp error code %x\n", (uint32_t)exitQualification, GCPhys, errCode));
 
         /* GCPhys contains the guest physical address of the page fault. */
         TRPMAssertTrap(pVCpu, X86_XCPT_PF, TRPM_TRAP);
@@ -3408,8 +3414,9 @@ ResumeExecution:
     case VMX_EXIT_APIC_ACCESS:          /* 44 APIC access. Guest software attempted to access memory at a physical address on the APIC-access page. */
     {
         LogFlow(("VMX_EXIT_APIC_ACCESS\n"));
+        unsigned uAccessType = VMX_EXIT_QUALIFICATION_APIC_ACCESS_TYPE(exitQualification);
 
-        switch(VMX_EXIT_QUALIFICATION_APIC_ACCESS_TYPE(exitQualification))
+        switch(uAccessType)
         {
         case VMX_APIC_ACCESS_TYPE_LINEAR_READ:
         case VMX_APIC_ACCESS_TYPE_LINEAR_WRITE:
@@ -3419,7 +3426,10 @@ ResumeExecution:
             GCPhys += VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(exitQualification);
 
             Log(("Apic access at %RGp\n", GCPhys));
-            rc = VINF_EM_RAW_EMULATE_INSTR;
+            rc = IOMMMIOPhysHandler(pVM, (uAccessType == VMX_APIC_ACCESS_TYPE_LINEAR_READ) ? 0 : X86_TRAP_PF_RW, CPUMCTX2CORE(pCtx), GCPhys);
+            if (rc == VINF_SUCCESS)
+                goto ResumeExecution;   /* rip already updated */
+
             break;
         }
 
