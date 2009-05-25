@@ -514,7 +514,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
             if ((da->de_addr.s_addr & htonl(IN_CLASSA_NET)) == ntohl(INADDR_LOOPBACK & IN_CLASSA_NET)) {
                 da->de_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS);
             }
-            LIST_INSERT_HEAD(&pData->dns_list_head, da, de_list);
+            TAILQ_INSERT_HEAD(&pData->dns_list_head, da, de_list);
 #endif
             found++;
         }
