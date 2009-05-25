@@ -430,6 +430,9 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
                 val |= VMX_VMCS_CTRL_PROC_EXEC2_VPID;
 #endif /* HWACCM_VTX_WITH_VPID */
 
+            if (PDMHasIoApic(pVM))
+                val |= VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC;
+            
             /* Mask away the bits that the CPU doesn't support */
             /** @todo make sure they don't conflict with the above requirements. */
             val &= pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1;
@@ -2483,11 +2486,11 @@ ResumeExecution:
                 TRPMSetErrorCode(pVCpu, errCode);
                 TRPMSetFaultAddress(pVCpu, exitQualification);
 
-                /* Shortcut for APIC TPR reads and writes; 32 bits guests only */
+                /* Shortcut for APIC TPR reads and writes. */
                 if (    (exitQualification & 0xfff) == 0x080
                     &&  !(errCode & X86_TRAP_PF_P)  /* not present */
                     &&  fSetupTPRCaching
-                    &&  !CPUMIsGuestInLongModeEx(pCtx))
+                    &&  (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC))
                 {
                     RTGCPHYS GCPhysApicBase, GCPhys;
                     PDMApicGetBase(pVM, &GCPhysApicBase);   /* @todo cache this */
@@ -2498,10 +2501,6 @@ ResumeExecution:
                         &&  GCPhys == GCPhysApicBase)
                     {
                         Log(("Enable VT-x virtual APIC access filtering\n"));
-                        pVCpu->hwaccm.s.vmx.proc_ctls2 |= VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC;
-                        rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS2, pVCpu->hwaccm.s.vmx.proc_ctls2);
-                        AssertRC(rc);
-
                         rc = IOMMMIOMapMMIOHCPage(pVM, GCPhysApicBase, pVM->hwaccm.s.vmx.pAPICPhys, X86_PTE_RW | X86_PTE_P);
                         AssertRC(rc);
                     }
@@ -2965,11 +2964,11 @@ ResumeExecution:
             errCode |= X86_TRAP_PF_P;
         }
         else {
-            /* Shortcut for APIC TPR reads and writes; 32 bits guests only */
+            /* Shortcut for APIC TPR reads and writes. */
             if (    (GCPhys & 0xfff) == 0x080
                 &&  GCPhys > 0x1000000   /* to skip VGA frame buffer accesses */
-                &&  !CPUMIsGuestInLongModeEx(pCtx)
-                &&  fSetupTPRCaching)
+                &&  fSetupTPRCaching
+                &&  (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC))
             {
                 RTGCPHYS GCPhysApicBase;
                 PDMApicGetBase(pVM, &GCPhysApicBase);   /* @todo cache this */
@@ -2977,10 +2976,6 @@ ResumeExecution:
                 if (GCPhys == GCPhysApicBase + 0x80)
                 {
                     Log(("Enable VT-x virtual APIC access filtering\n"));
-                    pVCpu->hwaccm.s.vmx.proc_ctls2 |= VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC;
-                    rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS2, pVCpu->hwaccm.s.vmx.proc_ctls2);
-                    AssertRC(rc);
-
                     rc = IOMMMIOMapMMIOHCPage(pVM, GCPhysApicBase, pVM->hwaccm.s.vmx.pAPICPhys, X86_PTE_RW | X86_PTE_P);
                     AssertRC(rc);
                 }
