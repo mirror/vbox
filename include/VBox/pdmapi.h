@@ -45,6 +45,7 @@ __BEGIN_DECLS
 VMMDECL(int)    PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt);
 VMMDECL(int)    PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level);
 VMMDECL(int)    PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level);
+VMMDECL(bool)   PDMHasIoApic(PVM pVM);
 VMMDECL(int)    PDMApicHasPendingIrq(PVM pVM, bool *pfPending);
 VMMDECL(int)    PDMApicSetBase(PVM pVM, uint64_t u64Base);
 VMMDECL(int)    PDMApicGetBase(PVM pVM, uint64_t *pu64Base);

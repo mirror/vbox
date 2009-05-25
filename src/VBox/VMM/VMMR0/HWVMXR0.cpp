@@ -2162,7 +2162,7 @@ ResumeExecution:
     /**
      * @todo reduce overhead
      */
-    if (    CPUMIsGuestInLongModeEx(pCtx)
+    if (    PDMHasIoApic(pVM)
         &&  pVM->hwaccm.s.vmx.pAPIC)
     {
         /* TPR caching in CR8 */
@@ -3423,6 +3423,7 @@ ResumeExecution:
         {
             RTGCPHYS GCPhys;
             PDMApicGetBase(pVM, &GCPhys);
+            GCPhys &= PAGE_BASE_GC_MASK;
             GCPhys += VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(exitQualification);
 
             Log(("Apic access at %RGp\n", GCPhys));

@@ -146,6 +146,18 @@ VMMDECL(int) PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level)
 
 
 /**
+ * Returns presence of an IO-APIC
+ *
+ * @returns VBox true if IO-APIC is present
+ * @param   pVM             VM handle.
+ */
+VMMDECL(bool) PDMHasIoApic(PVM pVM)
+{
+    return pVM->pdm.s.IoApic.CTX_SUFF(pDevIns) != NULL;
+}
+
+
+/**
  * Set the APIC base.
  *
  * @returns VBox status code.
