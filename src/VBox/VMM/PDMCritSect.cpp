@@ -19,7 +19,6 @@
  * additional information or have any questions.
  */
 
-//#define PDM_WITH_R3R0_CRIT_SECT
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -32,9 +31,7 @@
 
 #include <VBox/err.h>
 #include <VBox/log.h>
-#ifdef PDM_WITH_R3R0_CRIT_SECT
-# include <VBox/sup.h>
-#endif
+#include <VBox/sup.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
@@ -71,10 +68,12 @@ int pdmR3CritSectInit(PVM pVM)
  */
 void pdmR3CritSectRelocate(PVM pVM)
 {
+    RTCritSectEnter(&pVM->pdm.s.MiscCritSect);
     for (PPDMCRITSECTINT pCur = pVM->pdm.s.pCritSects;
          pCur;
          pCur = pCur->pNext)
         pCur->pVMRC = pVM->pVMRC;
+    RTCritSectLeave(&pVM->pdm.s.MiscCritSect);
 }
 
 
@@ -91,6 +90,7 @@ void pdmR3CritSectRelocate(PVM pVM)
 VMMDECL(int) PDMR3CritSectTerm(PVM pVM)
 {
     int rc = VINF_SUCCESS;
+    RTCritSectEnter(&pVM->pdm.s.MiscCritSect);
     while (pVM->pdm.s.pCritSects)
     {
         int rc2 = pdmR3CritSectDeleteOne(pVM, pVM->pdm.s.pCritSects, NULL, true /* final */);
@@ -98,6 +98,8 @@ VMMDECL(int) PDMR3CritSectTerm(PVM pVM)
         if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
             rc = rc2;
     }
+    RTCritSectLeave(&pVM->pdm.s.MiscCritSect);
+    RTCritSectDelete(&pVM->pdm.s.MiscCritSect);
     return rc;
 }
 
@@ -116,18 +118,13 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
 {
     VM_ASSERT_EMT(pVM);
 
-#ifdef PDM_WITH_R3R0_CRIT_SECT
     /*
      * Allocate the semaphore.
      */
     AssertCompile(sizeof(SUPSEMEVENT) == sizeof(pCritSect->Core.EventSem));
     int rc = SUPSemEventCreate(pVM->pSession, (PSUPSEMEVENT)&pCritSect->Core.EventSem);
-#else
-    int rc = RTCritSectInit(&pCritSect->Core);
-#endif
     if (RT_SUCCESS(rc))
     {
-#ifdef PDM_WITH_R3R0_CRIT_SECT
         /*
          * Initialize the structure (first bit is c&p from RTCritSectInitEx).
          */
@@ -140,7 +137,6 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
         pCritSect->Core.Strict.pszEnterFile  = NULL;
         pCritSect->Core.Strict.u32EnterLine  = 0;
         pCritSect->Core.Strict.uEnterId      = 0;
-#endif
         pCritSect->pVMR3                     = pVM;
         pCritSect->pVMR0                     = pVM->pVMR0;
         pCritSect->pVMRC                     = pVM->pVMRC;
@@ -171,6 +167,7 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
  * @param   pDevIns         Device instance.
  * @param   pCritSect       Pointer to the critical section.
  * @param   pszName         The name of the critical section (for statistics).
+ * @thread  EMT(0)
  */
 VMMR3DECL(int) PDMR3CritSectInit(PVM pVM, PPDMCRITSECT pCritSect, const char *pszName)
 {
@@ -204,14 +201,16 @@ int pdmR3CritSectInitDevice(PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect,
  * Deletes one critical section.
  *
  * @returns Return code from RTCritSectDelete.
+ *
  * @param   pVM         The VM handle.
  * @param   pCritSect   The critical section.
  * @param   pPrev       The previous critical section in the list.
  * @param   fFinal      Set if this is the final call and statistics shouldn't be deregistered.
+ *
+ * @remarks Caller must've entered the MiscCritSect.
  */
 static int pdmR3CritSectDeleteOne(PVM pVM, PPDMCRITSECTINT pCritSect, PPDMCRITSECTINT pPrev, bool fFinal)
 {
-#ifdef PDM_WITH_R3R0_CRIT_SECT
     /*
      * Assert free waiters and so on (c&p from RTCritSectDelete).
      */
@@ -219,7 +218,7 @@ static int pdmR3CritSectDeleteOne(PVM pVM, PPDMCRITSECTINT pCritSect, PPDMCRITSE
     Assert(pCritSect->Core.cNestings == 0);
     Assert(pCritSect->Core.cLockers == -1);
     Assert(pCritSect->Core.NativeThreadOwner == NIL_RTNATIVETHREAD);
-#endif
+    Assert(RTCritSectIsOwner(&pVM->pdm.s.MiscCritSect));
 
     /*
      * Unlink it.
@@ -233,7 +232,6 @@ static int pdmR3CritSectDeleteOne(PVM pVM, PPDMCRITSECTINT pCritSect, PPDMCRITSE
      * Delete it (parts taken from RTCritSectDelete).
      * In case someone is waiting we'll signal the semaphore cLockers + 1 times.
      */
-#ifdef PDM_WITH_R3R0_CRIT_SECT
     ASMAtomicWriteU32(&pCritSect->Core.u32Magic, 0);
     SUPSEMEVENT hEvent = (SUPSEMEVENT)pCritSect->Core.EventSem;
     pCritSect->Core.EventSem = NIL_RTSEMEVENT;
@@ -242,7 +240,6 @@ static int pdmR3CritSectDeleteOne(PVM pVM, PPDMCRITSECTINT pCritSect, PPDMCRITSE
     ASMAtomicWriteS32(&pCritSect->Core.cLockers, -1);
     int rc = SUPSemEventClose(pVM->pSession, hEvent);
     AssertRC(rc);
-#endif
     pCritSect->pNext   = NULL;
     pCritSect->pvKey   = NULL;
     pCritSect->pVMR3   = NULL;
@@ -259,9 +256,6 @@ static int pdmR3CritSectDeleteOne(PVM pVM, PPDMCRITSECTINT pCritSect, PPDMCRITSE
         STAMR3Deregister(pVM, &pCritSect->StatLocked);
 #endif
     }
-#ifndef PDM_WITH_R3R0_CRIT_SECT
-    int rc = RTCritSectDelete(&pCritSect->Core);
-#endif
     return rc;
 }
 
@@ -281,9 +275,10 @@ static int pdmR3CritSectDeleteByKey(PVM pVM, void *pvKey)
     /*
      * Iterate the list and match key.
      */
-    int             rc = VINF_SUCCESS;
+    int             rc    = VINF_SUCCESS;
     PPDMCRITSECTINT pPrev = NULL;
-    PPDMCRITSECTINT pCur = pVM->pdm.s.pCritSects;
+    RTCritSectEnter(&pVM->pdm.s.MiscCritSect);
+    PPDMCRITSECTINT pCur  = pVM->pdm.s.pCritSects;
     while (pCur)
     {
         if (pCur->pvKey == pvKey)
@@ -298,6 +293,7 @@ static int pdmR3CritSectDeleteByKey(PVM pVM, void *pvKey)
         pPrev = pCur;
         pCur = pCur->pNext;
     }
+    RTCritSectLeave(&pVM->pdm.s.MiscCritSect);
     return rc;
 }
 
@@ -329,48 +325,27 @@ VMMR3DECL(int) PDMR3CritSectDelete(PPDMCRITSECT pCritSect)
     /*
      * Find and unlink it.
      */
-    PVM             pVM = pCritSect->s.pVMR3;
+    PVM             pVM   = pCritSect->s.pVMR3;
     AssertReleaseReturn(pVM, VERR_INTERNAL_ERROR);
     PPDMCRITSECTINT pPrev = NULL;
-    PPDMCRITSECTINT pCur = pVM->pdm.s.pCritSects;
+    RTCritSectEnter(&pVM->pdm.s.MiscCritSect);
+    PPDMCRITSECTINT pCur  = pVM->pdm.s.pCritSects;
     while (pCur)
     {
         if (pCur == &pCritSect->s)
-            return pdmR3CritSectDeleteOne(pVM, pCur, pPrev, false /* not final */);
+        {
+            int rc = pdmR3CritSectDeleteOne(pVM, pCur, pPrev, false /* not final */);
+            RTCritSectLeave(&pVM->pdm.s.MiscCritSect);
+            return rc;
+        }
 
         /* next */
         pPrev = pCur;
         pCur = pCur->pNext;
     }
+    RTCritSectLeave(&pVM->pdm.s.MiscCritSect);
     AssertReleaseMsgFailed(("pCritSect=%p wasn't found!\n", pCritSect));
     return VERR_INTERNAL_ERROR;
-}
-
-
-/**
- * Process the critical sections queued for ring-3 'leave'.
- *
- * @param   pVCpu         The VMCPU handle.
- */
-VMMR3DECL(void) PDMR3CritSectFF(PVMCPU pVCpu)
-{
-    Assert(pVCpu->pdm.s.cQueuedCritSectLeaves > 0);
-
-    const RTUINT c = pVCpu->pdm.s.cQueuedCritSectLeaves;
-    for (RTUINT i = 0; i < c; i++)
-    {
-        PPDMCRITSECT pCritSect = pVCpu->pdm.s.apQueuedCritSectsLeaves[i];
-#ifdef PDM_WITH_R3R0_CRIT_SECT
-        int rc = pdmCritSectLeave(pCritSect);
-#else
-        int rc = RTCritSectLeave(&pCritSect->s.Core);
-#endif
-        LogFlow(("PDMR3CritSectFF: %p - %Rrc\n", pCritSect, rc));
-        AssertRC(rc);
-    }
-
-    pVCpu->pdm.s.cQueuedCritSectLeaves = 0;
-    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_PDM_CRITSECT);
 }
 
 
@@ -381,6 +356,7 @@ VMMR3DECL(void) PDMR3CritSectFF(PVMCPU pVCpu)
  * @returns VERR_TOO_MANY_SEMAPHORES if an event was already scheduled.
  * @returns VERR_NOT_OWNER if we're not the critsect owner.
  * @returns VERR_SEM_DESTROYED if RTCritSectDelete was called while waiting.
+ *
  * @param   pCritSect       The critical section.
  * @param   EventToSignal   The semapore that should be signalled.
  */

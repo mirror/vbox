@@ -48,6 +48,47 @@ __BEGIN_DECLS
  */
 
 /**
+ * The thread state.
+ */
+typedef enum RTTHREADSTATE
+{
+    /** The usual invalid 0 value. */
+    RTTHREADSTATE_INVALID = 0,
+    /** The thread is being initialized. */
+    RTTHREADSTATE_INITIALIZING,
+    /** The thread has terminated */
+    RTTHREADSTATE_TERMINATED,
+    /** Probably running. */
+    RTTHREADSTATE_RUNNING,
+    /** Waiting on a critical section. */
+    RTTHREADSTATE_CRITSECT,
+    /** Waiting on a mutex. */
+    RTTHREADSTATE_MUTEX,
+    /** Waiting on a event semaphore. */
+    RTTHREADSTATE_EVENT,
+    /** Waiting on a event multiple wakeup semaphore. */
+    RTTHREADSTATE_EVENTMULTI,
+    /** Waiting on a read write semaphore, read (shared) access. */
+    RTTHREADSTATE_RW_READ,
+    /** Waiting on a read write semaphore, write (exclusive) access. */
+    RTTHREADSTATE_RW_WRITE,
+    /** The thread is sleeping. */
+    RTTHREADSTATE_SLEEP,
+    /** The usual 32-bit size hack. */
+    RTTHREADSTATE_32BIT_HACK = 0x7fffffff
+} RTTHREADSTATE;
+
+/** Checks if a thread state indicates that the thread is sleeping. */
+#define RTTHREAD_IS_SLEEPING(enmState) (    (enmState) == RTTHREADSTATE_CRITSECT \
+                                        ||  (enmState) == RTTHREADSTATE_MUTEX \
+                                        ||  (enmState) == RTTHREADSTATE_EVENT \
+                                        ||  (enmState) == RTTHREADSTATE_EVENTMULTI \
+                                        ||  (enmState) == RTTHREADSTATE_RW_READ \
+                                        ||  (enmState) == RTTHREADSTATE_RW_WRITE \
+                                        ||  (enmState) == RTTHREADSTATE_SLEEP \
+                                       )
+
+/**
  * Get the thread handle of the current thread.
  *
  * @returns Thread handle.
@@ -532,6 +573,33 @@ RTDECL(void) RTThreadReadLockInc(RTTHREAD Thread);
  * @param   Thread      The current thread.
  */
 RTDECL(void) RTThreadReadLockDec(RTTHREAD Thread);
+
+/**
+ * Unblocks a thread.
+ *
+ * This function is paired with rtThreadBlocking.
+ *
+ * @param   hThread     The current thread.
+ * @param   enmCurState The current state, used to check for nested blocking.
+ *                      The new state will be running.
+ */
+RTDECL(void) RTThreadUnblocked(RTTHREAD hThread, RTTHREADSTATE enmCurState);
+
+/**
+ * Change the thread state to blocking and do deadlock detection.
+ *
+ * This is a RT_STRICT method for debugging locks and detecting deadlocks.
+ *
+ * @param   hThread     The current thread.
+ * @param   enmState    The sleep state.
+ * @param   u64Block    The block data. A pointer or handle.
+ * @param   pszFile     Where we are blocking.
+ * @param   uLine       Where we are blocking.
+ * @param   uId         Where we are blocking.
+ */
+RTDECL(void) RTThreadBlocking(RTTHREAD hThread, RTTHREADSTATE enmState, uint64_t u64Block,
+                              const char *pszFile, unsigned uLine, RTUINTPTR uId);
+
 
 
 /** @name Thread Local Storage

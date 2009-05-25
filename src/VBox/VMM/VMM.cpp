@@ -1549,11 +1549,12 @@ VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM, PVMCPU pVCpu)
  */
 static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
 {
-    /* We must also check for pending releases or else we can deadlock when acquiring a new lock here. 
-     * On return we go straight back to R0/GC.
+    /*
+     * We must also check for pending critsect exits or else we can deadlock
+     * when entering other critsects here.
      */
     if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PDM_CRITSECT))
-        PDMR3CritSectFF(pVCpu);
+        PDMCritSectFF(pVCpu);
 
     switch (pVCpu->vmm.s.enmCallHostOperation)
     {

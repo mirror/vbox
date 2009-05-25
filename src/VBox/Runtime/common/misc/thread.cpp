@@ -1405,16 +1405,17 @@ static void rtThreadDeadlock(PRTTHREADINT pThread, PRTTHREADINT pCur, RTTHREADST
  *
  * This is a RT_STRICT method for debugging locks and detecting deadlocks.
  *
- * @param   pThread     This thread.
+ * @param   hThread     The current thread.
  * @param   enmState    The sleep state.
  * @param   u64Block    The block data. A pointer or handle.
  * @param   pszFile     Where we are blocking.
  * @param   uLine       Where we are blocking.
  * @param   uId         Where we are blocking.
  */
-void rtThreadBlocking(PRTTHREADINT pThread, RTTHREADSTATE enmState, uint64_t u64Block,
-                     const char *pszFile, unsigned uLine, RTUINTPTR uId)
+RTDECL(void) RTThreadBlocking(RTTHREAD hThread, RTTHREADSTATE enmState, uint64_t u64Block,
+                              const char *pszFile, unsigned uLine, RTUINTPTR uId)
 {
+    PRTTHREADINT pThread = hThread;
     Assert(RTTHREAD_IS_SLEEPING(enmState));
     if (pThread && pThread->enmState == RTTHREADSTATE_RUNNING)
     {
@@ -1501,14 +1502,14 @@ void rtThreadBlocking(PRTTHREADINT pThread, RTTHREADSTATE enmState, uint64_t u64
  *
  * This function is paired with rtThreadBlocking.
  *
- * @param   pThread     The current thread.
+ * @param   hThread     The current thread.
  * @param   enmCurState The current state, used to check for nested blocking.
  *                      The new state will be running.
  */
-void rtThreadUnblocked(PRTTHREADINT pThread, RTTHREADSTATE enmCurState)
+RTDECL(void) RTThreadUnblocked(RTTHREAD hThread, RTTHREADSTATE enmCurState)
 {
-    if (pThread && pThread->enmState == enmCurState)
-        ASMAtomicWriteSize(&pThread->enmState, RTTHREADSTATE_RUNNING);
+    if (hThread && hThread->enmState == enmCurState)
+        ASMAtomicWriteSize(&hThread->enmState, RTTHREADSTATE_RUNNING);
 }
 
 #endif /* IN_RING3 */

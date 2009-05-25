@@ -250,12 +250,12 @@ RTDECL(int) RTCritSectTryEnterDebug(PRTCRITSECT pCritSect, const char *pszFile, 
      * First time
      */
     pCritSect->cNestings = 1;
-    ASMAtomicXchgSize(&pCritSect->NativeThreadOwner, NativeThreadSelf);
+    ASMAtomicWriteHandle(&pCritSect->NativeThreadOwner, NativeThreadSelf);
 #ifdef RTCRITSECT_STRICT
     pCritSect->Strict.pszEnterFile = pszFile;
     pCritSect->Strict.u32EnterLine = uLine;
     pCritSect->Strict.uEnterId     = uId;
-    ASMAtomicXchgSize(&pCritSect->Strict.ThreadOwner, (RTUINTPTR)ThreadSelf); /* screw gcc and its pedantic warnings. */
+    ASMAtomicWriteHandle(&pCritSect->Strict.ThreadOwner, ThreadSelf);
 #endif
 
     return VINF_SUCCESS;
@@ -318,11 +318,11 @@ RTDECL(int) RTCritSectEnterDebug(PRTCRITSECT pCritSect, const char *pszFile, uns
         for (;;)
         {
 #ifdef RTCRITSECT_STRICT
-            rtThreadBlocking(ThreadSelf, RTTHREADSTATE_CRITSECT, (uintptr_t)pCritSect, pszFile, uLine, uId);
+            RTThreadBlocking(ThreadSelf, RTTHREADSTATE_CRITSECT, (uintptr_t)pCritSect, pszFile, uLine, uId);
 #endif
             int rc = RTSemEventWait(pCritSect->EventSem, RT_INDEFINITE_WAIT);
 #ifdef RTCRITSECT_STRICT
-            rtThreadUnblocked(ThreadSelf, RTTHREADSTATE_CRITSECT);
+            RTThreadUnblocked(ThreadSelf, RTTHREADSTATE_CRITSECT);
 #endif
             if (pCritSect->u32Magic != RTCRITSECT_MAGIC)
                 return VERR_SEM_DESTROYED;
@@ -337,12 +337,12 @@ RTDECL(int) RTCritSectEnterDebug(PRTCRITSECT pCritSect, const char *pszFile, uns
      * First time
      */
     pCritSect->cNestings = 1;
-    ASMAtomicXchgSize(&pCritSect->NativeThreadOwner, NativeThreadSelf);
+    ASMAtomicWriteHandle(&pCritSect->NativeThreadOwner, NativeThreadSelf);
 #ifdef RTCRITSECT_STRICT
     pCritSect->Strict.pszEnterFile = pszFile;
     pCritSect->Strict.u32EnterLine = uLine;
     pCritSect->Strict.uEnterId     = uId;
-    ASMAtomicXchgSize(&pCritSect->Strict.ThreadOwner, (RTUINTPTR)ThreadSelf); /* screw gcc and its pedantic warnings. */
+    ASMAtomicWriteHandle(&pCritSect->Strict.ThreadOwner, ThreadSelf);
     RTThreadWriteLockInc(ThreadSelf);
 #endif
 
@@ -382,9 +382,9 @@ RTDECL(int) RTCritSectLeave(PRTCRITSECT pCritSect)
 #ifdef RTCRITSECT_STRICT
         if (pCritSect->Strict.ThreadOwner != NIL_RTTHREAD) /* May happen for PDMCritSects when entering GC/R0. */
             RTThreadWriteLockDec(pCritSect->Strict.ThreadOwner);
-        ASMAtomicXchgSize(&pCritSect->Strict.ThreadOwner, NIL_RTTHREAD);
+        ASMAtomicWriteHandle(&pCritSect->Strict.ThreadOwner, NIL_RTTHREAD);
 #endif
-        ASMAtomicXchgSize(&pCritSect->NativeThreadOwner, NIL_RTNATIVETHREAD);
+        ASMAtomicWriteHandle(&pCritSect->NativeThreadOwner, NIL_RTNATIVETHREAD);
         if (ASMAtomicDecS32(&pCritSect->cLockers) >= 0)
         {
             int rc = RTSemEventSignal(pCritSect->EventSem);
