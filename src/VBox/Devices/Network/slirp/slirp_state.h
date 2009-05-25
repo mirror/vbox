@@ -69,9 +69,9 @@ LIST_HEAD(dns_domain_list_head, dns_domain_entry);
 struct dns_entry
 {
         struct in_addr de_addr;
-        LIST_ENTRY(dns_entry) de_list;
+        TAILQ_ENTRY(dns_entry) de_list;
 };
-LIST_HEAD(dns_list_head, dns_entry);
+TAILQ_HEAD(dns_list_head, dns_entry);
 #endif
 
 /** Main state/configuration structure for slirp NAT. */

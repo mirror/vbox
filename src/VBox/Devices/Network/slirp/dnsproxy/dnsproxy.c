@@ -105,7 +105,7 @@ timeout(PNATState pData, struct socket *so, void *arg)
 {
     struct request *req = (struct request *)arg;
     struct dns_entry *de;
-    de = LIST_NEXT(req->dns_server, de_list);
+    de = TAILQ_PREV(req->dns_server, dns_list_head, de_list);
     /* here we should check if we reached the end of the DNS server list */
     if (de == NULL)
     {
@@ -268,7 +268,7 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
         req->id = QUERYID;
         memcpy(&req->client, &fromaddr, sizeof(struct sockaddr_in));
         memcpy(&req->clientid, &buf[0], 2);
-        req->dns_server = LIST_FIRST(&pData->dns_list_head);
+        req->dns_server = TAILQ_LAST(&pData->dns_list_head, dns_list_head);
         if (req->dns_server == NULL)
         {
             static int fail_counter = 0;

@@ -330,16 +330,16 @@ static void bootp_reply(PNATState pData, struct mbuf *m0)
 # endif
 
 
-        if (!LIST_EMPTY(&pData->dns_list_head)) 
+        if (!TAILQ_EMPTY(&pData->dns_list_head)) 
         {
-            de = LIST_FIRST(&pData->dns_list_head);
+            de = TAILQ_LAST(&pData->dns_list_head, dns_list_head);
             q_dns_header = q;
             FILL_BOOTP_EXT(q, RFC1533_DNS, 4, &de->de_addr.s_addr);
         }
 
-        LIST_FOREACH(de, &pData->dns_list_head, de_list)
+        TAILQ_FOREACH_REVERSE(de, &pData->dns_list_head, dns_list_head, de_list)
         {
-            if (LIST_FIRST(&pData->dns_list_head) == de)
+            if (TAILQ_LAST(&pData->dns_list_head, dns_list_head) == de)
                 continue; /* first value with head we've ingected before */
             FILL_BOOTP_APP(q_dns_header, q, RFC1533_DNS, 4, &de->de_addr.s_addr);
         }
