@@ -946,7 +946,7 @@ ResumeExecution:
         bool fPending;
 
         /* TPR caching in CR8 */
-        int rc = PDMApicGetTPR(pVM, &u8LastVTPR, &fPending);
+        int rc = PDMApicGetTPR(pVCpu, &u8LastVTPR, &fPending);
         AssertRC(rc);
         pVMCB->ctrl.IntCtrl.n.u8VTPR = u8LastVTPR;
 
@@ -1339,7 +1339,7 @@ ResumeExecution:
 
     if (fSyncTPR)
     {
-        rc = PDMApicSetTPR(pVM, pVMCB->ctrl.IntCtrl.n.u8VTPR);
+        rc = PDMApicSetTPR(pVCpu, pVMCB->ctrl.IntCtrl.n.u8VTPR);
         AssertRC(rc);
     }
 

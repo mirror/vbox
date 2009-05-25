@@ -982,18 +982,19 @@ typedef struct PDMAPICREG
      * Set the TPR (task priority register).
      *
      * @param   pDevIns         Device instance of the APIC.
+     * @param   idCpu           VCPU id
      * @param   u8TPR           The new TPR.
      */
-    DECLR3CALLBACKMEMBER(void, pfnSetTPRR3,(PPDMDEVINS pDevIns, uint8_t u8TPR));
+    DECLR3CALLBACKMEMBER(void, pfnSetTPRR3,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t u8TPR));
 
     /**
      * Get the TPR (task priority register).
      *
      * @returns The current TPR.
      * @param   pDevIns         Device instance of the APIC.
-     * @param   pfPending       Pending interrupt state (out).
+     * @param   idCpu           VCPU id
      */
-    DECLR3CALLBACKMEMBER(uint8_t, pfnGetTPRR3,(PPDMDEVINS pDevIns));
+    DECLR3CALLBACKMEMBER(uint8_t, pfnGetTPRR3,(PPDMDEVINS pDevIns, VMCPUID idCpu));
 
     /**
      * Write MSR in APIC range.
