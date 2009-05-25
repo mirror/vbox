@@ -51,6 +51,9 @@ else ifdef VBOX_ONLY_DOCS
  LIBRARIES += RuntimeR3
  DLLS += VBoxRT
 
+ # Temporary(?) hack.
+ VBOX_WITH_LIBXML2_IN_VBOXRT=
+
 else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
 
  #
