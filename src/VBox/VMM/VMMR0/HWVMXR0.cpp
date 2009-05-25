@@ -1996,6 +1996,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     RTGCUINTPTR intInfo = 0; /* shut up buggy gcc 4 */
     RTGCUINTPTR errCode, instrInfo;
     bool        fSyncTPR = false;
+    bool        fSetupTPRCaching = false;
     PHWACCM_CPUINFO pCpu = 0;
     RTCCUINTREG uOldEFlags;
     unsigned    cResume = 0;
@@ -2006,6 +2007,17 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     bool fStatEntryStarted = true;
     bool fStatExit2Started = false;
 #endif
+
+    /* Check if we need to use TPR shadowing. */
+    if (    pVM->hwaccm.s.vmx.pAPIC
+        &&  (   CPUMIsGuestInLongModeEx(pCtx)
+             || (   (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC)
+                 && PDMHasIoApic(pVM))
+            )
+       )
+    {
+        fSetupTPRCaching = true;
+    }
 
     Log2(("\nE"));
 
@@ -2162,8 +2174,7 @@ ResumeExecution:
     /**
      * @todo reduce overhead
      */
-    if (    PDMHasIoApic(pVM)
-        &&  pVM->hwaccm.s.vmx.pAPIC)
+    if (fSetupTPRCaching)
     {
         /* TPR caching in CR8 */
         uint8_t u8TPR;
