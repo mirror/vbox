@@ -494,7 +494,7 @@ endif
 ## Use the new version of liblzf. Remove with the old liblzf.
 #VBOX_WITH_NEW_LIBLZF = 1
 ## For experimenting with linking libxml2 into VBoxRT.
-#VBOX_WITH_LIBXML2_IN_VBOXRT = 1
+VBOX_WITH_LIBXML2_IN_VBOXRT = 1
 
 ## For experimenting with disabling preemption instead of interrupts
 # when working VT-x/AMD-V in VMMR0.
