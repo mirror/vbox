@@ -225,6 +225,9 @@ typedef struct NATState
     /* this field control behaviour of DHCP server */
     bool use_dns_proxy;
 #endif
+#ifdef VBOX_WITH_SLIRP_ALIAS
+    LIST_HEAD(, libalias) instancehead;
+#endif
     STAMPROFILE StatFill;
     STAMPROFILE StatPoll;
     STAMPROFILE StatFastTimer;
@@ -307,7 +310,9 @@ typedef struct NATState
 #define cUsers pData->cUsers
 #define tt pData->tt
 #define our_addr pData->our_addr
-#define alias_addr pData->alias_addr
+#ifndef VBOX_SLIRP_ALIAS
+# define alias_addr pData->alias_addr
+#endif
 #define special_addr pData->special_addr
 #define dns_addr pData->dns_addr
 #define loopback_addr pData->loopback_addr
@@ -662,6 +667,10 @@ typedef struct NATState
 # define recursive_addr pData->recursive_addr
 # define sock_query pData->sock_query
 # define sock_answer pData->sock_answer
+#endif
+
+#ifdef VBOX_WITH_SLIRP_ALIAS
+# define instancehead pData->instancehead
 #endif
 
 #endif /* !_slirp_state_h_ */

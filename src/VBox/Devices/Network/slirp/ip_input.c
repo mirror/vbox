@@ -44,6 +44,9 @@
 
 #include <slirp.h>
 #include "ip_icmp.h"
+#ifdef VBOX_WITH_SLIRP_ALIAS
+# include "alias.h"
+#endif
 
 
 /*
@@ -170,6 +173,13 @@ ip_input(PNATState pData, struct mbuf *m)
     /*
      * Switch out to protocol's input routine.
      */
+#ifdef VBOX_WITH_SLIRP_ALIAS
+    {
+        int rc;
+        rc = LibAliasIn(LIST_FIRST(&instancehead), mtod(m, char *), ip->ip_len);
+        Log2(("NAT: LibAlias return %d\n", rc));
+    }
+#endif
     ipstat.ips_delivered++;
     switch (ip->ip_p)
     {
