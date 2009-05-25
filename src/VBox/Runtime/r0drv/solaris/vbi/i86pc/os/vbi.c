@@ -521,7 +521,7 @@ vbi_execute_on_one(void *func, void *arg, int c)
 
 	for (i = 0; i < VBI_SET_WORDS; ++i)
 		set.words[i] = 0;
-	BT_SET(set.words, vbi_cpu_id());
+	BT_SET(set.words, c);
 	if (use_old) {
 		if (use_old_with_ulong) {
 			p_xc_call((xc_arg_t)arg, 0, 0, X_CALL_HIPRI,
