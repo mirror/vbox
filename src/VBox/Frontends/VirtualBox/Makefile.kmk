@@ -253,6 +253,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxSelectorWnd.h \
 	include/VBoxConsoleWnd.h \
 	include/VBoxConsoleView.h \
+	include/VBoxMiniToolBar.h \
 	include/VBoxProblemReporter.h \
 	include/VBoxProgressDialog.h \
 	include/VBoxDownloaderWgt.h \
@@ -344,6 +345,7 @@ VirtualBox_SOURCES = \
 	src/VBoxSelectorWnd.cpp \
 	src/VBoxConsoleView.cpp \
 	src/VBoxConsoleWnd.cpp \
+	src/VBoxMiniToolBar.cpp \
 	src/VBoxDownloaderWgt.cpp \
 	src/VBoxVMListView.cpp \
 	src/VBoxFrameBuffer.cpp \
