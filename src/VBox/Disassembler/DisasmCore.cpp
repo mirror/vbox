@@ -716,9 +716,19 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
             switch (vtype)
             {
             case OP_PARM_C: //control register
-                disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "CR%d", reg);
                 pParam->flags |= USE_REG_CR;
-                pParam->base.reg_ctrl = reg;
+
+                if (    pCpu->pCurInstr->opcode == OP_MOV_CR
+                    &&  pCpu->opmode == CPUMODE_32BIT
+                    &&  (pCpu->prefix & PREFIX_LOCK))
+                {
+                    pCpu->prefix &= ~PREFIX_LOCK;
+                    pParam->base.reg_ctrl = USE_REG_CR8;
+                }
+                else
+                    pParam->base.reg_ctrl = reg;
+
+                disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "CR%d", pParam->base.reg_ctrl);
                 return 0;
 
             case OP_PARM_D: //debug register
