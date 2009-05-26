@@ -278,7 +278,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchViewport( GLint x, GLint y, GLsize
 			* process of decoding the BoundsInfo packet, so no worries. */
 		 crStateViewport( x, y, width, height );
 
-		 mural->viewportValidated = GL_FALSE;
+		 if (mural) mural->viewportValidated = GL_FALSE;
 	}
 
 	/* always dispatch to be safe */
