@@ -1006,6 +1006,20 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_CACHE_EMPTY                        (-851)
 /** @} */
 
+/** @name RTS3 status codes
+ * @{ */
+/** Access denied error */
+#define VERR_S3_ACCESS_DENIED                   (-875)
+/** The bucket/key wasn't found */
+#define VERR_S3_NOT_FOUND                       (-876)
+/** Bucket already exists. */
+#define VERR_S3_BUCKET_ALREADY_EXISTS           (-877)
+/** Can't delete bucket with keys. */
+#define VERR_S3_BUCKET_NOT_EMPTY                (-878)
+/** The current operation was canceled */
+#define VERR_S3_CANCELED                        (-879)
+/** @} */
+
 /* SED-END */
 
 /** @} */
