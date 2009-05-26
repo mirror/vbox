@@ -6417,6 +6417,11 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
                 if (VBOX_FAILURE (vrc))
                     break;
 
+                vrc = static_cast <Console *>(console)->getDisplay()->registerSSM(pVM);
+                AssertRC (vrc);
+                if (VBOX_FAILURE (vrc))
+                    break;
+
                 /*
                  * Synchronize debugger settings
                  */
