@@ -616,7 +616,7 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
 
                          if (size == 0)
                          {
-                             pHostParm->u.pointer.addr = (void *) 0xfeeddead;
+                             pHostParm->u.pointer.addr = NULL;
                          }
                          else
                          {
@@ -718,7 +718,7 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
 
                          if (size == 0)
                          {
-                             pHostParm->u.pointer.addr = (void *) 0xfeeddead;
+                             pHostParm->u.pointer.addr = NULL;
                          }
                          else
                          {
