@@ -454,6 +454,15 @@ RTDECL(int) RTPathAppPrivateArch(char *pszPath, size_t cchPath);
 RTDECL(int) RTPathAppDocs(char *pszPath, size_t cchPath);
 
 /**
+ * Gets the temporary directory path.
+ *
+ * @returns iprt status code.
+ * @param   pszPath     Buffer where to store the path.
+ * @param   cchPath     Buffer size in bytes.
+ */
+RTDECL(int) RTPathTemp(char *pszPath, size_t cchPath);
+
+/**
  * Query information about a file system object.
  *
  * This API will not resolve symbolic links in the last component (just
