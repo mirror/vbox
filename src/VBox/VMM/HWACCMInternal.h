@@ -204,9 +204,12 @@ typedef struct HWACCM
     /** Set if we can support 64-bit guests or not. */
     bool                        fAllow64BitGuests;
 
+    /** Set if an IO-APIC is configured for this VM. */
+    bool                        fHasIoApic;
+
     /** Explicit alignment padding to make 32-bit gcc align u64RegisterMask
      *  naturally. */
-    bool                        padding[2];
+    bool                        padding[1];
 
     /** And mask for copying register contents. */
     uint64_t                    u64RegisterMask;

@@ -430,7 +430,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
                 val |= VMX_VMCS_CTRL_PROC_EXEC2_VPID;
 #endif /* HWACCM_VTX_WITH_VPID */
 
-            if (PDMHasIoApic(pVM))
+            if (pVM->hwaccm.s.fHasIoApic)
                 val |= VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC;
             
             /* Mask away the bits that the CPU doesn't support */
@@ -2016,7 +2016,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /* Check if we need to use TPR shadowing. */
     if (    CPUMIsGuestInLongModeEx(pCtx)
         || (   (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC)
-            && PDMHasIoApic(pVM))
+            &&  pVM->hwaccm.s.fHasIoApic)
        )
     {
         fSetupTPRCaching = true;
