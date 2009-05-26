@@ -227,7 +227,7 @@ void VBoxMiniToolBar::timerEvent (QTimerEvent *aEvent)
 {
     if (aEvent->timerId() == mScrollTimer.timerId())
     {
-        QRect rect (rect());
+        QRect rect = this->rect();
         QPoint p (rect.left(), rect.top());
         QPoint screen_point = mapToGlobal (p);
 
@@ -256,7 +256,7 @@ void VBoxMiniToolBar::timerEvent (QTimerEvent *aEvent)
     }
     else if (aEvent->timerId() == mAutoScrollTimer.timerId())
     {
-        QRect rect (rect());
+        QRect rect = this->rect();
         QPoint cursor_pos = QCursor::pos();
         QPoint p = mapFromGlobal (cursor_pos);
 
