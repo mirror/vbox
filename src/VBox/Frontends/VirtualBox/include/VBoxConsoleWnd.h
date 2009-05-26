@@ -57,6 +57,8 @@ class VBoxSwitchMenu;
 
 class VBoxChangeDockIconUpdateEvent;
 
+class VBoxMiniToolBar;
+
 /* We want to make the first action highlighted but not
  * selected, but Qt makes the both or neither one of this,
  * so, just move the focus to the next eligible object,
@@ -249,6 +251,9 @@ private slots:
     void switchToFullscreen (bool aOn, bool aSeamless);
     void setViewInSeamlessMode (const QRect &aTargetRect);
 
+    void mtExitMode();
+    void mtCloseVM();
+
 private:
 
     /** Popup version of the main menu */
@@ -306,6 +311,7 @@ private:
     QAction *mDevicesSFMenuSeparator;
 
     QMenu *mVMMenu;
+    QMenu *mMiniVMMenu;
     QMenu *mDevicesMenu;
     QMenu *mDevicesMountFloppyMenu;
     QMenu *mDevicesMountDVDMenu;
@@ -391,6 +397,8 @@ private:
     /* For the fade effect if the the window goes fullscreen */
     CGDisplayFadeReservationToken mFadeToken;
 #endif
+
+    VBoxMiniToolBar *mMiniToolBar;
 };
 
 

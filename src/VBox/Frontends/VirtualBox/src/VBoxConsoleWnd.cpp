@@ -31,6 +31,7 @@
 #include "VBoxDownloaderWgt.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
+#include "VBoxMiniToolBar.h"
 
 #include "QIStateIndicator.h"
 #include "QIStatusBar.h"
@@ -502,6 +503,30 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     mMainMenu->addMenu (mHelpMenu);
 
     mHelpActions.addTo (mHelpMenu);
+
+    /* Machine submenu for mini toolbar */
+    mMiniVMMenu = new QMenu (this);
+    mMiniVMMenu->addAction (mVmTypeCADAction);
+#ifdef Q_WS_X11
+    mMiniVMMenu->addAction (mVmTypeCABSAction);
+#endif
+    mMiniVMMenu->addSeparator();
+    mMiniVMMenu->addAction (mVmTakeSnapshotAction);
+    mMiniVMMenu->addSeparator();
+    mMiniVMMenu->addAction (mVmShowInformationDlgAction);
+    mMiniVMMenu->addSeparator();
+    mMiniVMMenu->addAction (mVmResetAction);
+    mMiniVMMenu->addAction (mVmPauseAction);
+    mMiniVMMenu->addAction (mVmACPIShutdownAction);
+
+    /* Mini toolbar */
+    QList <QMenu*> menuList;
+    menuList.append (mMiniVMMenu);
+    menuList.append (mDevicesMenu);
+    mMiniToolBar = new VBoxMiniToolBar (menuList);
+    connect (mMiniToolBar, SIGNAL (exitAction()), this, SLOT (mtExitMode()));
+    connect (mMiniToolBar, SIGNAL (closeAction()), this, SLOT (mtCloseVM()));
+    connect (this, SIGNAL (closing()), mMiniToolBar, SLOT (close()));
 
     ///// Status bar ////////////////////////////////////////////////////////
 
@@ -1741,6 +1766,8 @@ void VBoxConsoleWnd::retranslateUi()
     mVMMenu->setTitle (tr ("&Machine"));
 //    mVMMenu->setIcon (VBoxGlobal::iconSet (":/machine_16px.png"));
 
+    mMiniVMMenu->setTitle (tr ("&Machine"));
+
     mDevicesMenu->setTitle (tr ("&Devices"));
 //    mDevicesMenu->setIcon (VBoxGlobal::iconSet (":/settings_16px.png"));
 
@@ -1805,6 +1832,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
         setWindowTitle (cmachine.GetName() + snapshotName +
                         " [" + vboxGlobal().toString (machine_state) + "] - " +
                         caption_prefix);
+        mMiniToolBar->setDisplayText (cmachine.GetName() + snapshotName);
 //#ifdef Q_WS_MAC
 //        SetWindowTitleWithCFString (reinterpret_cast <WindowPtr> (this->winId()), CFSTR("sfds"));
 //SetWindowAlternateTitle
@@ -2326,14 +2354,12 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 #endif
 
         /* Hide all but the central widget containing the console view. */
-        QList<QWidget *> list = findChildren<QWidget *>();
+        QList <QWidget*> list (findChildren <QWidget*> ());
+        QList <QWidget*> excludes;
+        excludes << centralWidget() << centralWidget()->findChildren <QWidget*> ();
         foreach (QWidget *w, list)
         {
-            /* todo: The list is now recursive. So think about a better way to
-             * prevent the childrens of the centralWidget to be hidden */
-            if (w != centralWidget() &&
-                w != console &&
-                w != console->viewport())
+            if (!excludes.contains (w))
             {
                 if (!w->isHidden())
                 {
@@ -2400,8 +2426,21 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
     if ((mIsFullscreen || mIsSeamless) && (consoleSize != initialSize))
         mIsWaitingModeResize = true;
 
+    if (!aOn)
+    {
+        /* Animation takes a bit long, the mini toolbar is still disappearing
+         * when switched to normal mode so hide it completely */
+        mMiniToolBar->hide();
+        mMiniToolBar->updateDisplay (false, true);
+    }
+
     /* Toggle qt full-screen mode */
     switchToFullscreen (aOn, aSeamless);
+
+    if (aOn)
+    {
+        mMiniToolBar->updateDisplay (true, true);
+    }
 
 #ifdef Q_WS_MAC
     if (aOn && aSeamless)
@@ -2518,6 +2557,19 @@ void VBoxConsoleWnd::setViewInSeamlessMode (const QRect &aTargetRect)
 #else // !Q_WS_MAC
     NOREF (aTargetRect);
 #endif // !Q_WS_MAC
+}
+
+void VBoxConsoleWnd::mtExitMode()
+{
+    if (mIsSeamless)
+        mVmSeamlessAction->toggle();
+    else
+        mVmFullscreenAction->toggle();
+}
+
+void VBoxConsoleWnd::mtCloseVM()
+{
+    mVmCloseAction->trigger();
 }
 
 void VBoxConsoleWnd::vmFullscreen (bool aOn)

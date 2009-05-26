@@ -2602,6 +2602,10 @@ void VBoxConsoleView::toggleFSMode (const QSize &aSize)
             newSize = mNormalSize;
         doResizeHint (newSize);
     }
+
+    /* Reactivate the console window to preserve the focus position.
+     * Else focus will move to the mini-tool-bar. */
+    activateWindow();
 }
 
 /**
