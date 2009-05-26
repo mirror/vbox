@@ -789,7 +789,7 @@ VBoxRT_DEFS.$(KBUILD_TYPE)     = $(RuntimeR3_DEFS.$(KBUILD_TYPE))
 VBoxRT_SOURCES                 = \
 	VBox/VBoxRTDeps.cpp \
 	$(RuntimeR3_SOURCES)
-if defined(VBOX_WITH_LIBXML2_IN_VBOXRT) && !defined(VBOX_OSE)
+if defined(VBOX_WITH_LIBXML2_IN_VBOXRT)
 VBoxRT_SOURCES                += \
 	common/misc/s3.cpp
 endif
