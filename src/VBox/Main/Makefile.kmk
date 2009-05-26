@@ -399,6 +399,9 @@ ifdef VBOX_WITH_HOSTNETIF_API
  endif
 endif
 
+ifdef VBOX_WITH_CROGL
+ VBoxSVC_INCS += $(PATH_ROOT)/src/VBox/GuestHost/OpenGL/include
+endif
 
 win/VBoxSVC.rc_INCS  = $(PATH_VBoxSVC)
 win/VBoxSVC.rc_DEPS  = $(PATH_VBoxSVC)/VBoxSVC.rgs $(PATH_VBoxSVC)/VBoxSVC-icon.rc

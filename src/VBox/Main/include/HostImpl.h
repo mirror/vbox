@@ -92,6 +92,7 @@ public:
     STDMETHOD(COMGETTER(OperatingSystem))(BSTR *os);
     STDMETHOD(COMGETTER(OSVersion))(BSTR *version);
     STDMETHOD(COMGETTER(UTCTime))(LONG64 *aUTCTime);
+    STDMETHOD(COMGETTER(Acceleration3DAvailable))(BOOL *aSupported);
 
     // IHost methods
     STDMETHOD(CreateHostOnlyNetworkInterface) (IHostNetworkInterface **aHostNetworkInterface,
@@ -173,6 +174,8 @@ private:
 #endif
     /* Features that can be queried with GetProcessorFeature */
     BOOL fVTxAMDVSupported, fLongModeSupported, fPAESupported;
+    /* 3D hardware acceleration supported? */
+    BOOL f3DAccelerationSupported;
 
     HostPowerService *mHostPowerService;
 };
