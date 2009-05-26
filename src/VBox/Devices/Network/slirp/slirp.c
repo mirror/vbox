@@ -1589,7 +1589,7 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
             }
             break;
         default:
-            LogRel(("NAT: Unsupported protocol %x\n", proto));
+            Log(("NAT: Unsupported protocol %x\n", proto));
             m_free(pData, m);
             break;
     }
