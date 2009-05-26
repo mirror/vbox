@@ -325,7 +325,7 @@ ifdef VBOX_ONLY_SDK
  # Global relevant to the SDK.
  #
  VBOXWEB_GLUE_PYTHON           = $(VBOX_PATH_SDK)/bindings/webservice/python/lib/VirtualBox_wrappers.py
- VBOXWEB_WS_PYTHON             = $(VBOX_PATH_SDK)/bindings/webservice/python/lib/VirtualBox_service.py
+ VBOXWEB_WS_PYTHON             = $(VBOX_PATH_SDK)/bindings/webservice/python/lib/VirtualBox_services.py
  VBOXWEB_WS_PERL               = $(VBOX_PATH_SDK)/bindings/webservice/perl/lib/vboxService.pm
  VBOXWEB_SAMPLES_AXIS_DIR      = $(VBOX_PATH_SDK)/bindings/webservice/java/axis/samples
  VBOXWEB_SAMPLES_JAXWS_DIR     = $(VBOX_PATH_SDK)/bindings/webservice/java/jax-ws/samples

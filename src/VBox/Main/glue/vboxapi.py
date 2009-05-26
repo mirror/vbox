@@ -105,7 +105,7 @@ class PlatformMSCOM:
             #win32com.client.gencache.EnsureDispatch('VirtualBox.Session')
             #win32com.client.gencache.EnsureDispatch('VirtualBox.VirtualBox')
 
-    def getSessionObject(self):
+    def getSessionObject(self, vbox):
         import win32com
         from win32com.client import Dispatch
 	return win32com.client.Dispatch("VirtualBox.Session")
@@ -144,7 +144,7 @@ class PlatformXPCOM:
         import xpcom
         import xpcom.components
 
-    def getSessionObject(self):
+    def getSessionObject(self, vbox):
         import xpcom.components
         return xpcom.components.classes["@virtualbox.org/Session;1"].createInstance()
 
@@ -176,24 +176,25 @@ class PlatformWEBSERVICE:
         sys.path.append(VboxSdkDir+'/bindings/webservice/python/lib')
         import VirtualBox_services
         import VirtualBox_wrappers
-        from VirtualBox_wrappers import IWebsessionManager
-        from VirtualBox_wrappers import g_port
-        from VirtualBox_wrappers import g_reflectionInfo
-        self.wsmgr = IWebsessionManager()
-        self.port = g_port
-        self.constants = g_reflectionInfo
-        self.user = ""
-        self.password = ""
+        from VirtualBox_wrappers import IWebsessionManager2
+        if params is not None:
+            self.user = params.get("user", "")
+            self.password = params.get("password", "")
+            self.url = params.get("url", "")
+        else:
+            self.user = ""
+            self.password = ""
+            self.url = None
+        self.wsmgr = IWebsessionManager2(self.url)
 
-    def getSessionObject(self):
-        return self.wsmgr.getSessionObject()
+    def getSessionObject(self, vbox):
+        return self.wsmgr.getSessionObject(vbox)
 
     def getVirtualBox(self):
         return self.wsmgr.logon(self.user, self.password)
 
     def getConstants(self):
-        from VirtualBox_wrappers import g_reflectionInfo
-        return g_reflectionInfo
+        return None
     
     def getType(self):
         return 'WEBSERVICE'
@@ -215,7 +216,7 @@ class SessionManager:
         self.mgr = mgr
 
     def getSessionObject(self, vbox):
-        return self.mgr.platform.getSessionObject()
+        return self.mgr.platform.getSessionObject(vbox)
 
 class VirtualBoxManager:
     def __init__(self, style, platparams):
