@@ -332,7 +332,7 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
     if (pCpu->prefix & (PREFIX_SEG | PREFIX_REPNE))
         return VINF_IOM_HC_MMIO_READ_WRITE; /** @todo -> interpret whatever. */
 
-    PVMCPU pVCpu = VMMGetCpu(pVM)
+    PVMCPU pVCpu = VMMGetCpu(pVM);
 
     /*
      * Get bytes/words/dwords/qword count to copy.
