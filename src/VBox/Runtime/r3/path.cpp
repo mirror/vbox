@@ -972,7 +972,6 @@ RTDECL(int) RTPathAppDocs(char *pszPath, size_t cchPath)
  */
 RTDECL(int) RTPathTemp(char *pszPath, size_t cchPath)
 {
-    char *pszResult;
     int rc;
     const char *pszTmpEnv = RTEnvGet("TMP");
     if (!pszTmpEnv)
