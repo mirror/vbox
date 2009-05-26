@@ -129,6 +129,10 @@ PROGRAMS += \
 	tstFileAio
 endif
 
+ifdef VBOX_WITH_LIBXML2_IN_VBOXRT
+PROGRAMS += \
+	tstRTS3
+endif
 
 
 #
@@ -362,6 +366,8 @@ tstTSC_SOURCES = tstTSC.cpp
 tstTSC_CXXFLAGS.linux += -O3
 
 tstUuid_SOURCES = tstUuid.cpp
+
+tstRTS3_SOURCES = tstRTS3.cpp
 
 tstUtf8_SOURCES = tstUtf8.cpp
 
