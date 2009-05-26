@@ -984,8 +984,9 @@ typedef struct PDMAPICREG
      * @param   pDevIns         Device instance of the APIC.
      * @param   idCpu           VCPU id
      * @param   u8TPR           The new TPR.
+     * @param   fMMIOFormat     Update as if MMIO write to ApicBase + 0x80
      */
-    DECLR3CALLBACKMEMBER(void, pfnSetTPRR3,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t u8TPR));
+    DECLR3CALLBACKMEMBER(void, pfnSetTPRR3,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t u8TPR, bool fMMIOFormat));
 
     /**
      * Get the TPR (task priority register).
@@ -993,8 +994,9 @@ typedef struct PDMAPICREG
      * @returns The current TPR.
      * @param   pDevIns         Device instance of the APIC.
      * @param   idCpu           VCPU id
+     * @param   fMMIOFormat     Return as if MMIO read from ApicBase + 0x80
      */
-    DECLR3CALLBACKMEMBER(uint8_t, pfnGetTPRR3,(PPDMDEVINS pDevIns, VMCPUID idCpu));
+    DECLR3CALLBACKMEMBER(uint8_t, pfnGetTPRR3,(PPDMDEVINS pDevIns, VMCPUID idCpu, bool fMMIOFormat));
 
     /**
      * Write MSR in APIC range.

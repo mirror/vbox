@@ -437,8 +437,8 @@ PDMBOTHCBDECL(int)  apicGetInterrupt(PPDMDEVINS pDevIns);
 PDMBOTHCBDECL(bool) apicHasPendingIrq(PPDMDEVINS pDevIns);
 PDMBOTHCBDECL(void) apicSetBase(PPDMDEVINS pDevIns, uint64_t val);
 PDMBOTHCBDECL(uint64_t) apicGetBase(PPDMDEVINS pDevIns);
-PDMBOTHCBDECL(void) apicSetTPR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t val);
-PDMBOTHCBDECL(uint8_t) apicGetTPR(PPDMDEVINS pDevIns, VMCPUID idCpu);
+PDMBOTHCBDECL(void) apicSetTPR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t val, bool fMMIOFormat);
+PDMBOTHCBDECL(uint8_t) apicGetTPR(PPDMDEVINS pDevIns, VMCPUID idCpu, bool fMMIOFormat);
 PDMBOTHCBDECL(int)  apicBusDeliverCallback(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode,
                                            uint8_t u8DeliveryMode, uint8_t iVector, uint8_t u8Polarity,
                                            uint8_t u8TriggerMode);
@@ -669,20 +669,33 @@ PDMBOTHCBDECL(uint64_t) apicGetBase(PPDMDEVINS pDevIns)
     return s->apicbase;
 }
 
-PDMBOTHCBDECL(void) apicSetTPR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t val)
+PDMBOTHCBDECL(void) apicSetTPR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t val, bool fMMIOFormat)
 {
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     APICState *s = getLapicById(dev, idCpu);
-    LogFlow(("apicSetTPR: val=%#x (trp %#x -> %#x)\n", val, s->tpr, (val & 0x0f) << 4));
-    apic_update_tpr(dev, s, (val & 0x0f) << 4);
+
+    if (!fMMIOFormat)
+        val = (val & 0x0f) << 4;
+
+    LogFlow(("apicSetTPR: val=%#x (trp %#x -> %#x)\n", val, s->tpr, val));
+    apic_update_tpr(dev, s, val);
 }
 
-PDMBOTHCBDECL(uint8_t) apicGetTPR(PPDMDEVINS pDevIns, VMCPUID idCpu)
+PDMBOTHCBDECL(uint8_t) apicGetTPR(PPDMDEVINS pDevIns, VMCPUID idCpu, bool fMMIOFormat)
 {
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     APICState *s = getLapicById(dev, idCpu);
-    Log2(("apicGetTPR: returns %#x\n", s->tpr >> 4));
-    return s->tpr >> 4;
+
+    if (fMMIOFormat)
+    {
+        Log2(("apicGetTPR: returns %#x\n", s->tpr));
+        return s->tpr;
+    }
+    else
+    {
+        Log2(("apicGetTPR: returns %#x\n", s->tpr >> 4));
+        return s->tpr >> 4;
+    }
 }
 
 PDMBOTHCBDECL(int) apicWriteMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t u64Value)

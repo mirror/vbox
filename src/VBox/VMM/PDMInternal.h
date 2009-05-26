@@ -419,9 +419,9 @@ typedef struct PDMAPIC
     /** @copydoc PDMAPICREG::pfnGetBaseR3 */
     DECLR3CALLBACKMEMBER(uint64_t,  pfnGetBaseR3,(PPDMDEVINS pDevIns));
     /** @copydoc PDMAPICREG::pfnSetTPRR3 */
-    DECLR3CALLBACKMEMBER(void,      pfnSetTPRR3,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t u8TPR));
+    DECLR3CALLBACKMEMBER(void,      pfnSetTPRR3,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t u8TPR, bool fMMIOFormat));
     /** @copydoc PDMAPICREG::pfnGetTPRR3 */
-    DECLR3CALLBACKMEMBER(uint8_t,   pfnGetTPRR3,(PPDMDEVINS pDevIns, VMCPUID idCpu));
+    DECLR3CALLBACKMEMBER(uint8_t,   pfnGetTPRR3,(PPDMDEVINS pDevIns, VMCPUID idCpu, bool fMMIOFormat));
     /** @copydoc PDMAPICREG::pfnWriteMSRR3 */
     DECLR3CALLBACKMEMBER(int,       pfnWriteMSRR3, (PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t u64Value));
     /** @copydoc PDMAPICREG::pfnReadMSRR3 */
@@ -441,9 +441,9 @@ typedef struct PDMAPIC
     /** @copydoc PDMAPICREG::pfnGetBaseR3 */
     DECLR0CALLBACKMEMBER(uint64_t,  pfnGetBaseR0,(PPDMDEVINS pDevIns));
     /** @copydoc PDMAPICREG::pfnSetTPRR3 */
-    DECLR0CALLBACKMEMBER(void,      pfnSetTPRR0,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t u8TPR));
+    DECLR0CALLBACKMEMBER(void,      pfnSetTPRR0,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t u8TPR, bool fMMIOFormat));
     /** @copydoc PDMAPICREG::pfnGetTPRR3 */
-    DECLR0CALLBACKMEMBER(uint8_t,   pfnGetTPRR0,(PPDMDEVINS pDevIns, VMCPUID idCpu));
+    DECLR0CALLBACKMEMBER(uint8_t,   pfnGetTPRR0,(PPDMDEVINS pDevIns, VMCPUID idCpu, bool fMMIOFormat));
      /** @copydoc PDMAPICREG::pfnWriteMSRR3 */
     DECLR0CALLBACKMEMBER(uint32_t,  pfnWriteMSRR0, (PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t u64Value));
     /** @copydoc PDMAPICREG::pfnReadMSRR3 */
@@ -463,9 +463,9 @@ typedef struct PDMAPIC
     /** @copydoc PDMAPICREG::pfnGetBaseR3 */
     DECLRCCALLBACKMEMBER(uint64_t,  pfnGetBaseRC,(PPDMDEVINS pDevIns));
     /** @copydoc PDMAPICREG::pfnSetTPRR3 */
-    DECLRCCALLBACKMEMBER(void,      pfnSetTPRRC,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t u8TPR));
+    DECLRCCALLBACKMEMBER(void,      pfnSetTPRRC,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t u8TPR, bool fMMIOFormat));
     /** @copydoc PDMAPICREG::pfnGetTPRR3 */
-    DECLRCCALLBACKMEMBER(uint8_t,   pfnGetTPRRC,(PPDMDEVINS pDevIns, VMCPUID idCpu));
+    DECLRCCALLBACKMEMBER(uint8_t,   pfnGetTPRRC,(PPDMDEVINS pDevIns, VMCPUID idCpu, bool fMMIOFormat));
     /** @copydoc PDMAPICREG::pfnWriteMSRR3 */
     DECLRCCALLBACKMEMBER(uint32_t,  pfnWriteMSRRC, (PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t u64Value));
     /** @copydoc PDMAPICREG::pfnReadMSRR3 */

@@ -222,7 +222,29 @@ VMMDECL(int) PDMApicHasPendingIrq(PVM pVM, bool *pfPending)
 
 
 /**
- * Set the TPR (task priority register?).
+ * Set the TPR (task priority register).
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           VMCPU handle.
+ * @param   u8TPR           The new TPR.
+ * @param   fMMIOFormat     Update as if MMIO write to ApicBase + 0x80
+ */
+VMMDECL(int) PDMApicSetTPREx(PVMCPU pVCpu, uint8_t u8TPR, bool fMMIOFormat)
+{
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
+    {
+        Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnSetTPR));
+        pdmLock(pVM);
+        pVM->pdm.s.Apic.CTX_SUFF(pfnSetTPR)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu->idCpu, u8TPR, fMMIOFormat);
+        pdmUnlock(pVM);
+        return VINF_SUCCESS;
+    }
+    return VERR_PDM_NO_APIC_INSTANCE;
+}
+
+/**
+ * Set the TPR (task priority register).
  *
  * @returns VBox status code.
  * @param   pVCpu           VMCPU handle.
@@ -230,15 +252,32 @@ VMMDECL(int) PDMApicHasPendingIrq(PVM pVM, bool *pfPending)
  */
 VMMDECL(int) PDMApicSetTPR(PVMCPU pVCpu, uint8_t u8TPR)
 {
+    return PDMApicSetTPREx(pVCpu, u8TPR, false /* TPR only */);
+}
+
+/**
+ * Get the TPR (task priority register).
+ *
+ * @returns The current TPR.
+ * @param   pVCpu           VMCPU handle.
+ * @param   pu8TPR          Where to store the TRP.
+ * @param   fMMIOFormat     Return as if MMIO read from ApicBase + 0x80
+ * @param   pfPending       Pending interrupt state (out).
+*/
+VMMDECL(int) PDMApicGetTPREx(PVMCPU pVCpu, uint8_t *pu8TPR, bool fMMIOFormat, bool *pfPending)
+{
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
-        Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnSetTPR));
+        Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnGetTPR));
         pdmLock(pVM);
-        pVM->pdm.s.Apic.CTX_SUFF(pfnSetTPR)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu->idCpu, u8TPR);
+        *pu8TPR = pVM->pdm.s.Apic.CTX_SUFF(pfnGetTPR)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu->idCpu, fMMIOFormat);
+        if (pfPending)
+            *pfPending = pVM->pdm.s.Apic.CTX_SUFF(pfnHasPendingIrq)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns));
         pdmUnlock(pVM);
         return VINF_SUCCESS;
     }
+    *pu8TPR = 0;
     return VERR_PDM_NO_APIC_INSTANCE;
 }
 
@@ -253,19 +292,7 @@ VMMDECL(int) PDMApicSetTPR(PVMCPU pVCpu, uint8_t u8TPR)
 */
 VMMDECL(int) PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-    if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
-    {
-        Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnGetTPR));
-        pdmLock(pVM);
-        *pu8TPR = pVM->pdm.s.Apic.CTX_SUFF(pfnGetTPR)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu->idCpu);
-        if (pfPending)
-            *pfPending = pVM->pdm.s.Apic.CTX_SUFF(pfnHasPendingIrq)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns));
-        pdmUnlock(pVM);
-        return VINF_SUCCESS;
-    }
-    *pu8TPR = 0;
-    return VERR_PDM_NO_APIC_INSTANCE;
+    return PDMApicGetTPREx(pVCpu, pu8TPR, false /* TPR only */, pfPending);
 }
 
 /**
