@@ -130,7 +130,7 @@ PROGRAMS += \
 	tstFileAio
 endif
 
-if defined(VBOX_WITH_LIBXML2_IN_VBOXRT) && !defined(VBOX_OSE)
+if defined(VBOX_WITH_LIBXML2_IN_VBOXRT)
 PROGRAMS += \
 	tstRTS3
 endif
