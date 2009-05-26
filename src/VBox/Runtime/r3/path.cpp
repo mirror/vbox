@@ -41,6 +41,7 @@
 #include <iprt/ctype.h>
 #include <iprt/err.h>
 #include <iprt/uni.h>
+#include <iprt/env.h>
 #include "internal/fs.h"
 #include "internal/path.h"
 #include "internal/process.h"
@@ -960,6 +961,36 @@ RTDECL(int) RTPathAppDocs(char *pszPath, size_t cchPath)
 #else
     return RTPathExecDir(pszPath, cchPath);
 #endif
+}
+
+/**
+ * Gets the temporary directory path.
+ *
+ * @returns iprt status code.
+ * @param   pszPath     Buffer where to store the path.
+ * @param   cchPath     Buffer size in bytes.
+ */
+RTDECL(int) RTPathTemp(char *pszPath, size_t cchPath)
+{
+    char *pszResult;
+    int rc;
+    const char *pszTmpEnv = RTEnvGet("TMP");
+    if (!pszTmpEnv)
+        pszTmpEnv = RTEnvGet("TEMP");
+    char *pszTmpDir;
+    /* Make a copy in any case. */
+    if (pszTmpEnv)
+        pszTmpDir = RTStrDup(pszTmpEnv);
+    else
+        pszTmpDir = RTStrDup("/tmp");
+
+    size_t cchTmpDir = strlen(pszTmpDir);
+    if (cchTmpDir < cchPath)
+        memcpy(pszPath, pszTmpDir, cchTmpDir + 1);
+    else
+        rc = VERR_BUFFER_OVERFLOW;
+    RTStrFree(pszTmpDir);
+    return rc;
 }
 
 #endif /* !RT_MINI */
