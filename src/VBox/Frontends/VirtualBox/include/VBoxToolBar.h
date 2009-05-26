@@ -23,7 +23,7 @@
 #ifndef ___VBoxToolBar_h___
 #define ___VBoxToolBar_h___
 
-
+#include <QGlobalStatic> /* for Q_WS_MAC */
 #ifdef Q_WS_MAC
 # include "VBoxUtils.h"
 #endif
