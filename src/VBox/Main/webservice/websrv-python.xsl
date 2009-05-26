@@ -71,6 +71,7 @@
     <xsl:with-param name="type" select="$type" />
   </xsl:call-template>
   <xsl:text>(</xsl:text>
+   <xsl:text>self.mgr,</xsl:text>
   <xsl:value-of select="$value"/>
   <xsl:if test="$safearray='yes'">
     <xsl:value-of select="', True'"/>
@@ -88,7 +89,7 @@
    def <xsl:value-of select="$fname"/>(self):
        req=<xsl:value-of select="$ifname"/>_<xsl:value-of select="$fname"/>RequestMsg()
        req._this=self.handle
-       val=g_port.<xsl:value-of select="$ifname"/>_<xsl:value-of select="$fname"/>(req)
+       val=self.mgr.getPort().<xsl:value-of select="$ifname"/>_<xsl:value-of select="$fname"/>(req)
        <xsl:text>return  </xsl:text>
        <xsl:call-template name="emitOutParam">
            <xsl:with-param name="ifname" select="$ifname" />
@@ -112,15 +113,16 @@
             req._<xsl:value-of select="$attrname"/> = value
        else:
             req._<xsl:value-of select="$attrname"/> = value.handle
-       g_port.<xsl:value-of select="$ifname"/>_<xsl:value-of select="$fname"/>(req)      
+       self.mgr.getPort().<xsl:value-of select="$ifname"/>_<xsl:value-of select="$fname"/>(req)      
 </xsl:template>
 
 <xsl:template name="collection">
    <xsl:variable name="cname"><xsl:value-of select="@name" /></xsl:variable>
    <xsl:variable name="ename"><xsl:value-of select="@type" /></xsl:variable>
 class <xsl:value-of select="$cname"/>:
-   def __init__(self, array):
+   def __init__(self, mgr, array):
        self.array = array
+       self.mgr = mgr
 
    def __next(self):
        return self.array.__next()
@@ -132,28 +134,31 @@ class <xsl:value-of select="$cname"/>:
        return self.array._array.__len__()
 
    def __getitem__(self, index):
-       return <xsl:value-of select="$ename"/>(self.array._array[index])
+       return <xsl:value-of select="$ename"/>(self.mgr, self.array._array[index])
        
 </xsl:template>
 
 <xsl:template name="interface">
    <xsl:variable name="ifname"><xsl:value-of select="@name" /></xsl:variable>
 class <xsl:value-of select="$ifname"/>:
-   def __init__(self, handle = None,isarray = False):
+   def __init__(self, mgr, handle, isarray = False):
+       self.mgr = mgr
+       if handle is None or handle == "":
+           raise Exception("bad handle: "+str(handle))
        self.handle = handle
        self.isarray = isarray
 <!--
     This doesn't work now
-       g_manMgr.register(handle)
+       mgr.register(handle)
 
    def __del__(self):
-       g_manMgr.unregister(self.handle) 
+       mgr.unregister(self.handle) 
 -->
    def releaseRemote(self):
         try:
             req=IManagedObjectRef_releaseRequestMsg() 
             req._this=handle
-            g_port.IManagedObjectRef_release(req)
+            self.mgr.getPort().IManagedObjectRef_release(req)
         except:
             pass
 
@@ -174,7 +179,7 @@ class <xsl:value-of select="$ifname"/>:
 
    def __getitem__(self, index):
       if self.isarray:
-          return <xsl:value-of select="$ifname" />(self.handle[index])
+          return <xsl:value-of select="$ifname" />(self.mgr, self.handle[index])
       raise TypeError, "iteration over non-sequence"       
 
    def __str__(self):
@@ -266,7 +271,8 @@ class <xsl:value-of select="$ifname"/>:
 <xsl:template name="interfacestruct">
    <xsl:variable name="ifname"><xsl:value-of select="@name" /></xsl:variable>
 class <xsl:value-of select="$ifname"/>:
-    def __init__(self, handle):<xsl:for-each select="attribute">
+    def __init__(self, mgr, handle):<xsl:for-each select="attribute">
+       self.mgr = mgr
        self.<xsl:value-of select="@name"/> = handle._<xsl:value-of select="@name"/>
        </xsl:for-each>
 
@@ -286,7 +292,7 @@ class <xsl:value-of select="$ifname"/>:
        <xsl:for-each select="param[@dir='in']">
        req._<xsl:value-of select="@name" />=_arg_<xsl:value-of select="@name" />
        </xsl:for-each>
-       val=g_port.<xsl:value-of select="../@name"/>_<xsl:value-of select="@name"/>(req)
+       val=self.mgr.getPort().<xsl:value-of select="../@name"/>_<xsl:value-of select="@name"/>(req)
        <!-- return needs to be the first one -->      
        return <xsl:for-each select="param[@dir='return']">
          <xsl:call-template name="emitOutParam">
@@ -338,7 +344,8 @@ class <xsl:value-of select="$ifname"/>:
 
 <xsl:template name="enum">
 class <xsl:value-of select="@name"/>:
-   def __init__(self,handle):
+   def __init__(self,mgr,handle):
+       self.mgr=mgr
        if isinstance(handle,basestring):
            self.handle=<xsl:value-of select="@name"/>._ValueMap[handle]
        else:
@@ -394,8 +401,6 @@ class <xsl:value-of select="@name"/>:
 #
 from VirtualBox_services import *
 
-g_port = vboxServiceLocator().getvboxPortType()
-
 class ManagedManager:
   def __init__(self):
      self.map = {}
@@ -418,18 +423,16 @@ class ManagedManager:
         try:
             req=IManagedObjectRef_releaseRequestMsg() 
             req._this=handle
-            g_port.IManagedObjectRef_release(req)
+            self.mgr.getPort().IManagedObjectRef_release(req)
         except:
             pass
         finally:
             self.map[handle] = -1
      else:
         self.map[handle] = c
-
-g_manMgr = ManagedManager()
-
+  
 class String:
-  def __init__(self, handle = None, isarray = False):
+  def __init__(self, mgr, handle, isarray = False):
       self.handle = handle
       self.isarray = isarray
  
@@ -476,7 +479,7 @@ class String:
 
 
 class UUID:
-  def __init__(self, handle = None, isarray = False):
+  def __init__(self, mgr, handle, isarray = False):
       self.handle = handle
       self.isarray = isarray
  
@@ -522,7 +525,7 @@ class UUID:
       return True
 
 class Boolean:
-  def __init__(self, handle = None, isarray = False):
+  def __init__(self, mgr, handle, isarray = False):
        self.handle = handle
        self.isarray = isarray
  
@@ -544,7 +547,7 @@ class Boolean:
       return True
 
 class UnsignedInt:
-  def __init__(self, handle = None, isarray = False):
+  def __init__(self, mgr, handle, isarray = False):
        self.handle = handle
        self.isarray = isarray
  
@@ -576,7 +579,7 @@ class UnsignedInt:
 
     
 class Int:
-  def __init__(self, handle = None, isarray = False):
+  def __init__(self, mgr, handle, isarray = False):
        self.handle = handle
        self.isarray = isarray
 
@@ -607,7 +610,7 @@ class Int:
        return int(self.handle)
 
 class UnsignedShort:
-  def __init__(self, handle = None, isarray = False):
+  def __init__(self, mgr, handle, isarray = False):
        self.handle = handle
        self.isarray = isarray
  
@@ -618,7 +621,7 @@ class UnsignedShort:
        return int(self.handle)
 
 class Short:
-  def __init__(self, handle = None, isarray = False):
+  def __init__(self, mgr, handle, isarray = False):
        self.handle = handle
  
   def __str__(self):
@@ -628,7 +631,7 @@ class Short:
        return int(self.handle)
 
 class UnsignedLong:
-  def __init__(self, handle = None, isarray = False):
+  def __init__(self, mgr, handle, isarray = False):
        self.handle = handle
  
   def __str__(self):
@@ -638,7 +641,7 @@ class UnsignedLong:
        return int(self.handle)
 
 class Long:
-  def __init__(self, handle = None, isarray = False):
+  def __init__(self, mgr, handle, isarray = False):
        self.handle = handle
  
   def __str__(self):
@@ -648,7 +651,7 @@ class Long:
        return int(self.handle)
 
 class Double:
-  def __init__(self, handle = None, isarray = False):
+  def __init__(self, mgr, handle, isarray = False):
        self.handle = handle
  
   def __str__(self):
@@ -658,9 +661,9 @@ class Double:
        return int(self.handle)
 
 class Float:
-  def __init__(self, handle = None, isarray = False):
+  def __init__(self, mgr, handle, isarray = False):
        self.handle = handle
- 
+       
   def __str__(self):
        return str(self.handle)
 
@@ -669,8 +672,9 @@ class Float:
 
 
 class IUnknown:
-  def __init__(self, handle = None, isarray = False):
+  def __init__(self,  mgr, handle, isarray = False):
        self.handle = handle
+       self.mgr = mgr
        self.isarray = isarray
 
   def __next(self):
@@ -690,7 +694,7 @@ class IUnknown:
 
   def __getitem__(self, index):
       if self.isarray:
-          return IUnknown(self.handle[index])
+          return IUnknown(self.mgr, self.handle[index])
       raise TypeError, "iteration over non-sequence"       
   
   def __str__(self):
@@ -710,26 +714,17 @@ class IUnknown:
        <xsl:call-template name="enum"/>
   </xsl:for-each>
 
-class VirtualBoxReflectionInfo:
-   def __init__(self):
-      self.map = {}
-  
-   def add(self,name,ref):
-      self.map[name] = ref
+class IWebsessionManager2(IWebsessionManager):
+  def __init__(self, url):
+       self.url = url
+       self.port = None
+       self.handle = None
+       self.mgr = self
 
-   def __getattr__(self,name):
-      ref = self.map.get(name,None)
-      if ref == None:
-          return self.__dict__[name]
-      return ref
-
-g_reflectionInfo = VirtualBoxReflectionInfo()
-<xsl:for-each select="//enum">
-  <xsl:variable name="ename">
-    <xsl:value-of select="@name"/>
-  </xsl:variable>
-  <xsl:value-of select="concat('g_reflectionInfo.add(&#34;',$ename,'&#34;,',$ename,')&#10;')"/>
-</xsl:for-each>
+  def getPort(self):
+      if self.port is None:
+          self.port = vboxServiceLocator().getvboxPortType(self.url)
+      return self.port
 
 </xsl:template>
 
