@@ -73,11 +73,10 @@ static ClearFunc_t origClear;
 static ViewportFunc_t origViewport;
 static SwapBuffersFunc_t origSwapBuffers;
 static DrawBufferFunc_t origDrawBuffer;
+static ScissorFunc_t origScissor;
 
 static void stubCheckWindowState(void)
 {
-    int winX, winY;
-    unsigned int winW, winH;
     WindowInfo *window;
     bool bForceUpdate = false;
 
@@ -87,8 +86,6 @@ static void stubCheckWindowState(void)
         return;
 
     window = stub.currentContext->currentDrawable;
-
-    stubGetWindowGeometry( window, &winX, &winY, &winW, &winH );
 
 #ifdef WINDOWS
     /* @todo install hook and track for WM_DISPLAYCHANGE */
@@ -147,8 +144,19 @@ static void SPU_APIENTRY trapClear(GLbitfield mask)
 static void SPU_APIENTRY trapViewport(GLint x, GLint y, GLsizei w, GLsizei h)
 {
     stubCheckWindowState();
-    /* call the original SPU glViewport function */
+    /* call the original SPU glViewport function */  
     origViewport(x, y, w, h);
+
+    /*
+    {
+        int winX, winY;
+        unsigned int winW, winH;
+        WindowInfo *pWindow;
+        pWindow = stub.currentContext->currentDrawable;
+        stubGetWindowGeometry(pWindow, &winX, &winY, &winW, &winH);
+        origViewport(0, 0, winW, winH);
+    }
+    */
 }
 
 static void SPU_APIENTRY trapSwapBuffers(GLint window, GLint flags)
@@ -161,6 +169,22 @@ static void SPU_APIENTRY trapDrawBuffer(GLenum buf)
 {
     stubCheckWindowState();
     origDrawBuffer(buf);
+}
+
+static void SPU_APIENTRY trapScissor(GLint x, GLint y, GLsizei w, GLsizei h)
+{
+    origScissor(x, y, w, h);
+
+    /*
+    {
+        int winX, winY;
+        unsigned int winW, winH;
+        WindowInfo *pWindow;
+        pWindow = stub.currentContext->currentDrawable;
+        stubGetWindowGeometry(pWindow, &winX, &winY, &winW, &winH);
+        origScissor(0, 0, winW, winH);
+    }
+    */
 }
 
 /**
@@ -178,8 +202,10 @@ static void stubInitSPUDispatch(SPU *spu)
         origViewport = stub.spuDispatch.Viewport;
         origSwapBuffers = stub.spuDispatch.SwapBuffers;
         origDrawBuffer = stub.spuDispatch.DrawBuffer;
+        origScissor = stub.spuDispatch.Scissor;
         stub.spuDispatch.Clear = trapClear;
         stub.spuDispatch.Viewport = trapViewport;
+        /*stub.spuDispatch.Scissor = trapScissor;*/
         /*stub.spuDispatch.SwapBuffers = trapSwapBuffers;
         stub.spuDispatch.DrawBuffer = trapDrawBuffer;*/
     }
