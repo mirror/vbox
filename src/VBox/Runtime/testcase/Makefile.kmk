@@ -82,6 +82,7 @@ PROGRAMS += \
 	tstRand \
 	tstRTFsQueries \
 	tstR0ThreadPreemptionDriver \
+	tstSems \
 	tstSemPingPong \
 	tstStrFormat \
 	tstStrSimplePattern \
@@ -129,7 +130,7 @@ PROGRAMS += \
 	tstFileAio
 endif
 
-ifdef VBOX_WITH_LIBXML2_IN_VBOXRT
+if defined(VBOX_WITH_LIBXML2_IN_VBOXRT) && !defined(VBOX_OSE)
 PROGRAMS += \
 	tstRTS3
 endif
