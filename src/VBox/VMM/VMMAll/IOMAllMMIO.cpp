@@ -455,7 +455,7 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
         /* Check if destination address is MMIO. */
         PIOMMMIORANGE pMMIODst;
         RTGCPHYS PhysDst;
-        rc = PGMGstGetPage((RTGCPTR)pu8Virt, NULL, &PhysDst);
+        rc = PGMGstGetPage(pVCpu, (RTGCPTR)pu8Virt, NULL, &PhysDst);
         PhysDst |= (RTGCUINTPTR)pu8Virt & PAGE_OFFSET_MASK;
         if (    RT_SUCCESS(rc)
             &&  (pMMIODst = iomMMIOGetRange(&pVM->iom.s, PhysDst)))
