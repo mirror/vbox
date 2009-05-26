@@ -306,7 +306,7 @@ VMMR3DECL(int) HWACCMR3Init(PVM pVM)
     /*
      * Register the saved state data unit.
      */
-    int rc = SSMR3RegisterInternal(pVM, "HWACCM", 0, HWACCM_SSM_VERSION, sizeof(HWACCM),
+    int rc = SSMR3RegisterInternal(pVM, "HWACCM", 0, HWACCM_SSM_VERSION_3_0_X, sizeof(HWACCM),
                                    NULL, hwaccmR3Save, NULL,
                                    NULL, hwaccmR3Load, NULL);
     if (RT_FAILURE(rc))
@@ -1696,6 +1696,9 @@ static DECLCALLBACK(int) hwaccmR3Save(PVM pVM, PSSMHANDLE pSSM)
         AssertRCReturn(rc, rc);
     }
 
+    rc = SSMR3PutBool(pSSM, pVM->hwaccm.s.svm.fTPRPatching);
+    AssertRCReturn(rc, rc);
+
     return VINF_SUCCESS;
 }
 
@@ -1716,8 +1719,9 @@ static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Vers
     /*
      * Validate version.
      */
-    if (   u32Version != HWACCM_SSM_VERSION
-        && u32Version != HWACCM_SSM_VERSION_2_0_X)
+    if (   u32Version != HWACCM_SSM_VERSION_2_2_X
+        && u32Version != HWACCM_SSM_VERSION_2_0_X
+        && u32Version != HWACCM_SSM_VERSION_3_0_X)
     {
         AssertMsgFailed(("hwaccmR3Load: Invalid version u32Version=%d!\n", u32Version));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -1731,7 +1735,7 @@ static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Vers
         rc = SSMR3GetU64(pSSM, &pVM->aCpus[i].hwaccm.s.Event.intInfo);
         AssertRCReturn(rc, rc);
 
-        if (u32Version >= HWACCM_SSM_VERSION)
+        if (u32Version >= HWACCM_SSM_VERSION_2_2_X)
         {
             uint32_t val;
 
@@ -1748,6 +1752,13 @@ static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Vers
             pVM->aCpus[i].hwaccm.s.vmx.enmPrevGuestMode = (PGMMODE)val;
         }
     }
+
+    if (u32Version >= HWACCM_SSM_VERSION_3_0_X)
+    {
+        rc = SSMR3GetBool(pSSM, &pVM->hwaccm.s.svm.fTPRPatching);
+        AssertRCReturn(rc, rc);
+    }
+
     return VINF_SUCCESS;
 }
 

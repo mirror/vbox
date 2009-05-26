@@ -1430,7 +1430,7 @@ ResumeExecution:
             {   /* A genuine pagefault.
                  * Forward the trap to the guest by injecting the exception and resuming execution.
                  */
-                Log(("Guest page fault at %RGv cr2=%RGv error code %x rsp=%RGv\n", (RTGCPTR)pCtx->rip, uFaultAddress, errCode, (RTGCPTR)pCtx->rsp));
+                Log(("Guest page fault at %04X:%RGv cr2=%RGv error code %x rsp=%RGv\n", pCtx->cs, (RTGCPTR)pCtx->rip, uFaultAddress, errCode, (RTGCPTR)pCtx->rsp));
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestPF);
 
                 /* Now we must update CR2. */
@@ -1474,20 +1474,21 @@ ResumeExecution:
                     AssertRC(rc);
                     if (    rc == VINF_SUCCESS
                         &&  Cpu.pCurInstr->opcode == OP_MOV
-                        &&  cbOp == 6)
+                        &&  cbOp >= 5)
                     {
                         if (    (errCode & X86_TRAP_PF_RW)
-                            &&  Cpu.param1.parval == uFaultAddress)
+                            &&  Cpu.param1.disp32 == (uint32_t)uFaultAddress)
                         {
+                            pVM->hwaccm.s.svm.fTPRPatching = true;
                             Log(("Acceptable write candidate!\n"));
                         }
                         else
-                        if (Cpu.param2.parval == uFaultAddress)
+                        if (Cpu.param2.disp32 == (uint32_t)uFaultAddress)
                         {
+                            pVM->hwaccm.s.svm.fTPRPatching = true;
                             Log(("Acceptable read candidate!\n"));
                         }
                     }
-
                 }
             }
 #endif
@@ -1588,6 +1589,7 @@ ResumeExecution:
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestGP);
                 Event.n.u1ErrorCodeValid    = 1;
                 Event.n.u32ErrorCode        = pVMCB->ctrl.u64ExitInfo1; /* EXITINFO1 = error code */
+Assert(pCtx->cs != 0xffcf || pCtx->eip != 0x4315);
                 break;
             case X86_XCPT_DE:
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestDE);
@@ -1606,7 +1608,7 @@ ResumeExecution:
                 Event.n.u32ErrorCode        = pVMCB->ctrl.u64ExitInfo1; /* EXITINFO1 = error code */
                 break;
             }
-            Log(("Trap %x at %RGv esi=%x\n", vector, (RTGCPTR)pCtx->rip, pCtx->esi));
+            Log(("Trap %x at %04x:%RGv esi=%x\n", vector, pCtx->cs, (RTGCPTR)pCtx->rip, pCtx->esi));
             SVMR0InjectEvent(pVM, pVMCB, pCtx, &Event);
 
             STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
