@@ -618,6 +618,8 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
     }
     Assert(!pVM->fHWACCMEnabled || VMMIsHwVirtExtForced(pVM));
 
+    pVM->hwaccm.s.fHasIoApic = PDMHasIoApic(pVM);
+
     if (pVM->hwaccm.s.vmx.fSupported)
     {
         Log(("pVM->hwaccm.s.vmx.fSupported = %d\n", pVM->hwaccm.s.vmx.fSupported));
