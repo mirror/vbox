@@ -2892,6 +2892,103 @@
   </interface>
 
   <!--
+  // IVFSExplorer
+  /////////////////////////////////////////////////////////////////////////
+  -->
+
+  <enum
+    name="VFSType"
+    uuid="813999ba-b949-48a8-9230-aadc6285e2f2"
+  >
+    <desc>
+    </desc>
+
+    <const name="File" value="1" />
+    <const name="Cloud" value="2" />
+    <const name="S3" value="3" />
+    <const name="WebDav" value="4" />
+  </enum>
+
+  <enum
+    name="FileType"
+    uuid="714333cd-44e2-415f-a245-d378fa9b1242"
+  >
+    <desc>
+    </desc>
+
+    <const name="Unknown" value="1" />
+    <const name="Fifo" value="2" />
+    <const name="DevChar" value="3" />
+    <const name="Directory" value="4" />
+    <const name="DevBlock" value="5" />
+    <const name="File" value="6" />
+    <const name="SymLink" value="7" />
+    <const name="Socket" value="8" />
+    <const name="WhiteOut" value="9" />
+  </enum>
+
+  <interface
+     name="IVFSExplorer" extends="$unknown"
+     uuid="fd7da337-80ef-4a5c-9122-918435e33003"
+     wsmap="managed"
+     >
+    <desc />
+
+    <attribute name="path" type="wstring" readonly="yes">
+      <desc />
+    </attribute>
+
+    <attribute name="type" type="VFSType" readonly="yes">
+      <desc />
+    </attribute>
+
+    <method name="update">
+      <desc />
+
+      <param name="aProgress" type="IProgress" dir="return">
+        <desc />
+      </param>
+    </method>
+
+    <method name="entryList">
+      <desc />
+
+      <param name="aNames" type="wstring" safearray="yes" dir="out">
+        <desc />
+      </param>
+
+      <param name="aTypes" type="unsigned long" safearray="yes" dir="out">
+        <desc />
+      </param>
+    </method>
+
+    <method name="exists">
+      <desc />
+
+      <param name="aNames" type="wstring" safearray="yes" dir="in">
+        <desc />
+      </param>
+
+      <param name="aExists" type="wstring" safearray="yes" dir="return">
+        <desc />
+      </param>
+    </method>
+
+    <method name="remove">
+      <desc />
+
+      <param name="aNames" type="wstring" safearray="yes" dir="in">
+        <desc />
+      </param>
+
+      <param name="aProgress" type="IProgress" dir="return">
+        <desc />
+      </param>
+    </method>
+    
+  </interface>
+
+  <!--
   // IAppliance
   /////////////////////////////////////////////////////////////////////////
   -->
@@ -3042,7 +3139,7 @@
 
   <interface
      name="IAppliance" extends="$unknown"
-     uuid="30bfa6b8-9eda-4b0a-b218-a86813248ccd"
+     uuid="07495095-d16c-4911-8964-5914341ced5d"
      wsmap="managed"
      >
     <desc>
@@ -3225,6 +3322,18 @@
 
       <param name="aProgress" type="IProgress" dir="return">
         <desc></desc>
+      </param>
+    </method>
+
+    <method name="createVFSExplorer">
+      <desc />
+
+      <param name="aUri" type="wstring" dir="in">
+        <desc />
+      </param>
+
+      <param name="aExplorer" type="IVFSExplorer" dir="return">
+        <desc />
       </param>
     </method>
 
