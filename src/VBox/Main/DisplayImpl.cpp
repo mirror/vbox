@@ -109,6 +109,60 @@ void Display::FinalRelease()
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
 
+#define sSSMDisplayVer 0x00010001
+
+/**
+ * Save/Load some important guest state
+ */
+DECLCALLBACK(void)
+Display::displaySSMSave (PSSMHANDLE pSSM, void *pvUser)
+{
+    Display *that = static_cast<Display*>(pvUser);
+
+    int rc = SSMR3PutU32 (pSSM, that->mcMonitors);
+    AssertRC(rc);
+
+    for (unsigned i = 0; i < that->mcMonitors; i++)
+    {
+        rc = SSMR3PutU32 (pSSM, that->maFramebuffers[i].u32Offset);
+        AssertRC(rc);
+        rc = SSMR3PutU32 (pSSM, that->maFramebuffers[i].u32MaxFramebufferSize);
+        AssertRC(rc);
+        rc = SSMR3PutU32 (pSSM, that->maFramebuffers[i].u32InformationSize);
+        AssertRC(rc);
+    }
+}
+
+DECLCALLBACK(int)
+Display::displaySSMLoad (PSSMHANDLE pSSM, void *pvUser, uint32_t u32Version)
+{
+    Display *that = static_cast<Display*>(pvUser);
+    uint32_t cMonitors;
+
+    if (u32Version != sSSMDisplayVer)
+        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+
+    int rc = SSMR3GetU32 (pSSM, &cMonitors);
+    if (cMonitors != that->mcMonitors)
+    {
+        LogRel(("Display: Number of monitors changed (%d->%d)!\n",
+                 cMonitors, that->mcMonitors));
+        return VERR_SSM_LOAD_CONFIG_MISMATCH;
+    }
+
+    for (unsigned i = 0; i < cMonitors; i++)
+    {
+        rc = SSMR3GetU32 (pSSM, &that->maFramebuffers[i].u32Offset);
+        AssertRC(rc);
+        rc = SSMR3GetU32 (pSSM, &that->maFramebuffers[i].u32MaxFramebufferSize);
+        AssertRC(rc);
+        rc = SSMR3GetU32 (pSSM, &that->maFramebuffers[i].u32InformationSize);
+        AssertRC(rc);
+    }
+
+    return VINF_SUCCESS;
+}
+
 /**
  * Initializes the display object.
  *
@@ -196,6 +250,18 @@ void Display::uninit()
     mpDrv = NULL;
     mpVMMDev = NULL;
     mfVMMDevInited = true;
+}
+
+/**
+ * Register the SSM methods. Called by the power up thread to be able to
+ * pass pVM
+ */
+int Display::registerSSM(PVM pVM)
+{
+    return SSMR3RegisterExternal(pVM, "DisplayData", 3*sizeof(uint32_t*),
+                                 sSSMDisplayVer, 0,
+                                 NULL, displaySSMSave, NULL,
+                                 NULL, displaySSMLoad, NULL, this);
 }
 
 // IConsoleCallback method
@@ -2365,13 +2431,13 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle
     /*
      * Init Interfaces.
      */
-    pDrvIns->IBase.pfnQueryInterface    = Display::drvQueryInterface;
+    pDrvIns->IBase.pfnQueryInterface       = Display::drvQueryInterface;
 
-    pData->Connector.pfnResize          = Display::displayResizeCallback;
-    pData->Connector.pfnUpdateRect      = Display::displayUpdateCallback;
-    pData->Connector.pfnRefresh         = Display::displayRefreshCallback;
-    pData->Connector.pfnReset           = Display::displayResetCallback;
-    pData->Connector.pfnLFBModeChange   = Display::displayLFBModeChangeCallback;
+    pData->Connector.pfnResize             = Display::displayResizeCallback;
+    pData->Connector.pfnUpdateRect         = Display::displayUpdateCallback;
+    pData->Connector.pfnRefresh            = Display::displayRefreshCallback;
+    pData->Connector.pfnReset              = Display::displayResetCallback;
+    pData->Connector.pfnLFBModeChange      = Display::displayLFBModeChangeCallback;
     pData->Connector.pfnProcessAdapterData = Display::displayProcessAdapterDataCallback;
     pData->Connector.pfnProcessDisplayData = Display::displayProcessDisplayDataCallback;
 #ifdef VBOX_WITH_VIDEOHWACCEL
