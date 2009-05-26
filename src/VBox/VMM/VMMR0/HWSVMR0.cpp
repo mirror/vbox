@@ -1323,9 +1323,7 @@ ResumeExecution:
         pVCpu->hwaccm.s.Event.fPending = true;
         /* Error code present? (redundant) */
         if (pVMCB->ctrl.ExitIntInfo.n.u1ErrorCodeValid)
-        {
             pVCpu->hwaccm.s.Event.errCode  = pVMCB->ctrl.ExitIntInfo.n.u32ErrorCode;
-        }
         else
             pVCpu->hwaccm.s.Event.errCode  = 0;
     }
@@ -1474,19 +1472,48 @@ ResumeExecution:
                     AssertRC(rc);
                     if (    rc == VINF_SUCCESS
                         &&  Cpu.pCurInstr->opcode == OP_MOV
-                        &&  cbOp >= 5)
+                        &&  (cbOp == 5 || cbOp == 6))
                     {
+                        uint8_t szInstr[15];
                         if (    (errCode & X86_TRAP_PF_RW)
-                            &&  Cpu.param1.disp32 == (uint32_t)uFaultAddress)
+                            &&  Cpu.param1.disp32 == (uint32_t)uFaultAddress
+                            &&  Cpu.param2.flags == USE_REG_GEN32)
                         {
+                            /* 0xF0, 0x0F, 0x22, 0xC0 = mov cr8, eax */
+                            szInstr[0] = 0xF0;
+                            szInstr[1] = 0x0F;
+                            szInstr[2] = 0x22;
+                            szInstr[3] = 0xC0 | Cpu.param2.base.reg_gen;
+                            for (unsigned i = 4; i < cbOp; i++)
+                                szInstr[i] = 0x90;  /* nop */
+
+                            rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, szInstr, cbOp);
+                            AssertRC(rc);
+
                             pVM->hwaccm.s.svm.fTPRPatching = true;
                             Log(("Acceptable write candidate!\n"));
+                            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
+                            goto ResumeExecution;
                         }
                         else
-                        if (Cpu.param2.disp32 == (uint32_t)uFaultAddress)
+                        if (    Cpu.param2.disp32 == (uint32_t)uFaultAddress
+                            &&  Cpu.param1.flags == USE_REG_GEN32)
                         {
+                            /* 0xF0, 0x0F, 0x20, 0xC0 = mov eax, cr8 */
+                            szInstr[0] = 0xF0;
+                            szInstr[1] = 0x0F;
+                            szInstr[2] = 0x20;
+                            szInstr[3] = 0xC0 | Cpu.param1.base.reg_gen;
+                            for (unsigned i = 4; i < cbOp; i++)
+                                szInstr[i] = 0x90;  /* nop */
+
+                            rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, szInstr, cbOp);
+                            AssertRC(rc);
+
                             pVM->hwaccm.s.svm.fTPRPatching = true;
                             Log(("Acceptable read candidate!\n"));
+                            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
+                            goto ResumeExecution;
                         }
                     }
                 }
@@ -1815,7 +1842,7 @@ Assert(pCtx->cs != 0xffcf || pCtx->eip != 0x4315);
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushTLBCRxChange);
 
             /* Must be set by PGMSyncCR3 */
-            AssertMsg(rc == VINF_SUCCESS || PGMGetGuestMode(pVCpu) <= PGMMODE_PROTECTED || pVCpu->hwaccm.s.fForceTLBFlush,
+            AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 || PGMGetGuestMode(pVCpu) <= PGMMODE_PROTECTED || pVCpu->hwaccm.s.fForceTLBFlush,
                       ("rc=%Rrc mode=%d fForceTLBFlush=%RTbool\n", rc, PGMGetGuestMode(pVCpu), pVCpu->hwaccm.s.fForceTLBFlush));
         }
         if (rc == VINF_SUCCESS)
