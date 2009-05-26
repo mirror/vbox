@@ -395,7 +395,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
         CPUMR3SetCR4Feature(pVM, X86_CR4_TSD, ~X86_CR4_TSD);
     else
         CPUMR3SetCR4Feature(pVM, 0, ~X86_CR4_TSD);
-    LogRel(("TM: cTSCTicksPerSecond=%#RX64 (%RU64) fTSCVirtualized=%RTbool fTSCUseRealTSC=%RTbool\n"
+    LogRel(("TM: cTSCTicksPerSecond=%#RX64 (%'RU64) fTSCVirtualized=%RTbool fTSCUseRealTSC=%RTbool\n"
             "TM: fMaybeUseOffsettedHostTSC=%RTbool TSCTiedToExecution=%RTbool TSCNotTiedToHalt=%RTbool\n",
             pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.fTSCVirtualized, pVM->tm.s.fTSCUseRealTSC,
             pVM->tm.s.fMaybeUseOffsettedHostTSC, pVM->tm.s.fTSCTiedToExecution, pVM->tm.s.fTSCNotTiedToHalt));
@@ -446,7 +446,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
             return VMSetError(pVM, rc, RT_SRC_POS, N_("Configuration error: Failed to querying 64-bit integer value \"CatchUpThreshold" #iPeriod "\"")); \
         if (    (iPeriod > 0 && u64 <= pVM->tm.s.aVirtualSyncCatchUpPeriods[iPeriod - 1].u64Start) \
             ||  u64 >= pVM->tm.s.u64VirtualSyncCatchUpGiveUpThreshold) \
-            return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS, N_("Configuration error: Invalid start of period #" #iPeriod ": %RU64"), u64); \
+            return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS, N_("Configuration error: Invalid start of period #" #iPeriod ": %'RU64"), u64); \
         pVM->tm.s.aVirtualSyncCatchUpPeriods[iPeriod].u64Start = u64; \
         rc = CFGMR3QueryU32(pCfgHandle, "CatchUpPrecentage" #iPeriod, &pVM->tm.s.aVirtualSyncCatchUpPeriods[iPeriod].u32Percentage); \
         if (rc == VERR_CFGM_VALUE_NOT_FOUND) \
@@ -541,8 +541,8 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawDataR3.cBadPrev, STAMTYPE_U32, "/TM/R3/cBadPrev",                     STAMUNIT_OCCURENCES, "Times the previous virtual time was considered erratic (shouldn't ever happen).");
     STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawDataR0.c1nsSteps,STAMTYPE_U32, "/TM/R0/1nsSteps",                     STAMUNIT_OCCURENCES, "Virtual time 1ns steps (due to TSC / GIP variations).");
     STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawDataR0.cBadPrev, STAMTYPE_U32, "/TM/R0/cBadPrev",                     STAMUNIT_OCCURENCES, "Times the previous virtual time was considered erratic (shouldn't ever happen).");
-    STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawDataRC.c1nsSteps,STAMTYPE_U32, "/TM/GC/1nsSteps",                     STAMUNIT_OCCURENCES, "Virtual time 1ns steps (due to TSC / GIP variations).");
-    STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawDataRC.cBadPrev, STAMTYPE_U32, "/TM/GC/cBadPrev",                     STAMUNIT_OCCURENCES, "Times the previous virtual time was considered erratic (shouldn't ever happen).");
+    STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawDataRC.c1nsSteps,STAMTYPE_U32, "/TM/RC/1nsSteps",                     STAMUNIT_OCCURENCES, "Virtual time 1ns steps (due to TSC / GIP variations).");
+    STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawDataRC.cBadPrev, STAMTYPE_U32, "/TM/RC/cBadPrev",                     STAMUNIT_OCCURENCES, "Times the previous virtual time was considered erratic (shouldn't ever happen).");
     STAM_REL_REG(     pVM,(void*)&pVM->tm.s.offVirtualSync,               STAMTYPE_U64, "/TM/VirtualSync/CurrentOffset",               STAMUNIT_NS, "The current offset. (subtract GivenUp to get the lag)");
     STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.offVirtualSyncGivenUp,        STAMTYPE_U64, "/TM/VirtualSync/GivenUp",                     STAMUNIT_NS, "Nanoseconds of the 'CurrentOffset' that's been given up and won't ever be attemted caught up with.");
 
@@ -551,8 +551,8 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataR3.cUpdateRaces,STAMTYPE_U32, "/TM/R3/cUpdateRaces",                 STAMUNIT_OCCURENCES, "Thread races when updating the previous timestamp.");
     STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataR0.cExpired,    STAMTYPE_U32, "/TM/R0/cExpired",                     STAMUNIT_OCCURENCES, "Times the TSC interval expired (overlaps 1ns steps).");
     STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataR0.cUpdateRaces,STAMTYPE_U32, "/TM/R0/cUpdateRaces",                 STAMUNIT_OCCURENCES, "Thread races when updating the previous timestamp.");
-    STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataRC.cExpired,    STAMTYPE_U32, "/TM/GC/cExpired",                     STAMUNIT_OCCURENCES, "Times the TSC interval expired (overlaps 1ns steps).");
-    STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataRC.cUpdateRaces,STAMTYPE_U32, "/TM/GC/cUpdateRaces",                 STAMUNIT_OCCURENCES, "Thread races when updating the previous timestamp.");
+    STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataRC.cExpired,    STAMTYPE_U32, "/TM/RC/cExpired",                     STAMUNIT_OCCURENCES, "Times the TSC interval expired (overlaps 1ns steps).");
+    STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataRC.cUpdateRaces,STAMTYPE_U32, "/TM/RC/cUpdateRaces",                 STAMUNIT_OCCURENCES, "Thread races when updating the previous timestamp.");
     STAM_REG(pVM, &pVM->tm.s.StatDoQueues,                            STAMTYPE_PROFILE, "/TM/DoQueues",                    STAMUNIT_TICKS_PER_CALL, "Profiling timer TMR3TimerQueuesDo.");
     STAM_REG(pVM, &pVM->tm.s.aStatDoQueues[TMCLOCK_VIRTUAL],      STAMTYPE_PROFILE_ADV, "/TM/DoQueues/Virtual",            STAMUNIT_TICKS_PER_CALL, "Time spent on the virtual clock queue.");
     STAM_REG(pVM, &pVM->tm.s.aStatDoQueues[TMCLOCK_VIRTUAL_SYNC], STAMTYPE_PROFILE_ADV, "/TM/DoQueues/VirtualSync",        STAMUNIT_TICKS_PER_CALL, "Time spent on the virtual sync clock queue.");
@@ -967,7 +967,7 @@ VMMR3DECL(void) TMR3Reset(PVM pVM)
             ASMAtomicWriteU64((uint64_t volatile *)&pVM->tm.s.offVirtualSyncGivenUp, offNew);
             ASMAtomicWriteU64((uint64_t volatile *)&pVM->tm.s.offVirtualSync, offNew);
             ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncCatchUp, false);
-            LogRel(("TM: Aborting catch-up attempt on reset with a %RU64 ns lag on reset; new total: %RU64 ns\n", offNew - offOld, offNew));
+            LogRel(("TM: Aborting catch-up attempt on reset with a %'RU64 ns lag on reset; new total: %'RU64 ns\n", offNew - offOld, offNew));
         }
     }
 
@@ -1097,7 +1097,7 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         return rc;
     if (u64Hz != TMCLOCK_FREQ_VIRTUAL)
     {
-        AssertMsgFailed(("The virtual clock frequency differs! Saved: %RU64 Binary: %RU64\n",
+        AssertMsgFailed(("The virtual clock frequency differs! Saved: %'RU64 Binary: %'RU64\n",
                          u64Hz, TMCLOCK_FREQ_VIRTUAL));
         return VERR_SSM_VIRTUAL_CLOCK_HZ;
     }
@@ -1125,7 +1125,7 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         return rc;
     if (u64Hz != TMCLOCK_FREQ_REAL)
     {
-        AssertMsgFailed(("The real clock frequency differs! Saved: %RU64 Binary: %RU64\n",
+        AssertMsgFailed(("The real clock frequency differs! Saved: %'RU64 Binary: %'RU64\n",
                          u64Hz, TMCLOCK_FREQ_REAL));
         return VERR_SSM_VIRTUAL_CLOCK_HZ; /* missleading... */
     }
@@ -1148,7 +1148,7 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     if (!pVM->tm.s.fTSCUseRealTSC)
         pVM->tm.s.cTSCTicksPerSecond = u64Hz;
 
-    LogRel(("TM: cTSCTicksPerSecond=%#RX64 (%RU64) fTSCVirtualized=%RTbool fTSCUseRealTSC=%RTbool (state load)\n",
+    LogRel(("TM: cTSCTicksPerSecond=%#RX64 (%'RU64) fTSCVirtualized=%RTbool fTSCUseRealTSC=%RTbool (state load)\n",
             pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.fTSCVirtualized, pVM->tm.s.fTSCUseRealTSC));
 
     /*
@@ -1385,7 +1385,7 @@ VMMR3DECL(int) TMR3TimerDestroy(PTMTIMER pTimer)
         switch (enmState)
         {
             case TMTIMERSTATE_STOPPED:
-            case TMTIMERSTATE_EXPIRED:
+            case TMTIMERSTATE_EXPIRED_DELIVER:
                 break;
 
             case TMTIMERSTATE_ACTIVE:
@@ -1406,6 +1406,7 @@ VMMR3DECL(int) TMR3TimerDestroy(PTMTIMER pTimer)
             /*
              * This shouldn't happen as the caller should make sure there are no races.
              */
+            case TMTIMERSTATE_EXPIRED_GET_UNLINK:
             case TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE:
             case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
                 AssertMsgFailed(("%p:.enmState=%s %s\n", pTimer, tmTimerState(enmState), pTimer->pszDesc));
@@ -1802,7 +1803,7 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
         Log2(("tmR3TimerQueueRun: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .pszDesc=%s}\n",
               pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, pTimer->u64Expire, u64Now, pTimer->pszDesc));
         bool fRc;
-        TM_TRY_SET_STATE(pTimer, TMTIMERSTATE_EXPIRED, TMTIMERSTATE_ACTIVE, fRc);
+        TM_TRY_SET_STATE(pTimer, TMTIMERSTATE_EXPIRED_GET_UNLINK, TMTIMERSTATE_ACTIVE, fRc);
         if (fRc)
         {
             Assert(!pTimer->offScheduleNext); /* this can trigger falsely */
@@ -1821,8 +1822,8 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
             pTimer->offNext = 0;
             pTimer->offPrev = 0;
 
-
             /* fire */
+            TM_SET_STATE(pTimer, TMTIMERSTATE_EXPIRED_DELIVER);
 //            tmUnlock(pVM);
             switch (pTimer->enmType)
             {
@@ -1842,7 +1843,7 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
 //            tmLock(pVM);
 
             /* change the state if it wasn't changed already in the handler. */
-            TM_TRY_SET_STATE(pTimer, TMTIMERSTATE_STOPPED, TMTIMERSTATE_EXPIRED, fRc);
+            TM_TRY_SET_STATE(pTimer, TMTIMERSTATE_STOPPED, TMTIMERSTATE_EXPIRED_DELIVER, fRc);
             Log2(("tmR3TimerQueueRun: new state %s\n", tmTimerState(pTimer->enmState)));
         }
     } /* run loop */
@@ -1901,9 +1902,9 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
     else
     {
         /* Calc 'now'. */
-        bool     fStopCatchup  = false;
-        bool     fUpdateStuff  = false;
-        uint64_t off           = pVM->tm.s.offVirtualSync;
+        bool        fStopCatchup   = false;
+        bool        fUpdateStuff   = false;
+        uint64_t    off            = pVM->tm.s.offVirtualSync;
         if (pVM->tm.s.fVirtualSyncCatchUp)
         {
             uint64_t u64Delta = u64VirtualNow - pVM->tm.s.u64VirtualSyncCatchUpPrev;
@@ -1913,14 +1914,13 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
                 if (off > u64Sub + offSyncGivenUp)
                 {
                     off -= u64Sub;
-                    Log4(("TM: %RU64/%RU64: sub %RU64 (run)\n", u64VirtualNow - off, off - offSyncGivenUp, u64Sub));
+                    Log4(("TM: %'RU64/-%'8RU64: sub %'RU64 [tmR3TimerQueueRunVirtualSync]\n", u64VirtualNow - off, off - offSyncGivenUp, u64Sub));
                 }
                 else
                 {
                     STAM_PROFILE_ADV_STOP(&pVM->tm.s.StatVirtualSyncCatchup, c);
                     fStopCatchup = true;
                     off = offSyncGivenUp;
-                    Log4(("TM: %RU64/0: caught up (run)\n", u64VirtualNow));
                 }
             }
         }
@@ -1934,14 +1934,17 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
             u64Now = pNext->u64Expire;
             ASMAtomicWriteU64(&pVM->tm.s.u64VirtualSync, u64Now);
             ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncTicking, false);
-            Log4(("TM: %RU64/%RU64: exp tmr (run)\n", u64Now, u64VirtualNow - u64Now - offSyncGivenUp));
+            Log4(("TM: %'RU64/-%'8RU64: exp tmr [tmR3TimerQueueRunVirtualSync]\n", u64Now, u64VirtualNow - u64Now - offSyncGivenUp));
         }
         else if (fUpdateStuff)
         {
             ASMAtomicWriteU64(&pVM->tm.s.offVirtualSync, off);
             ASMAtomicWriteU64(&pVM->tm.s.u64VirtualSyncCatchUpPrev, u64VirtualNow);
             if (fStopCatchup)
+            {
                 ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncCatchUp, false);
+                Log4(("TM: %'RU64/0: caught up [tmR3TimerQueueRunVirtualSync]\n", u64VirtualNow));
+            }
         }
     }
 
@@ -1969,7 +1972,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
         Log2(("tmR3TimerQueueRun: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .pszDesc=%s}\n",
               pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, pTimer->u64Expire, u64Now, pTimer->pszDesc));
         bool fRc;
-        TM_TRY_SET_STATE(pTimer, TMTIMERSTATE_EXPIRED, TMTIMERSTATE_ACTIVE, fRc);
+        TM_TRY_SET_STATE(pTimer, TMTIMERSTATE_EXPIRED_GET_UNLINK, TMTIMERSTATE_ACTIVE, fRc);
         if (fRc)
         {
             /* unlink */
@@ -1988,13 +1991,14 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
 
             /* advance the clock - don't permit timers to be out of order or armed in the 'past'. */
 #ifdef VBOX_STRICT
-            AssertMsg(pTimer->u64Expire >= u64Prev, ("%RU64 < %RU64 %s\n", pTimer->u64Expire, u64Prev, pTimer->pszDesc));
+            AssertMsg(pTimer->u64Expire >= u64Prev, ("%'RU64 < %'RU64 %s\n", pTimer->u64Expire, u64Prev, pTimer->pszDesc));
             u64Prev = pTimer->u64Expire;
 #endif
             ASMAtomicWriteU64(&pVM->tm.s.u64VirtualSync, pTimer->u64Expire);
             ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncTicking, false);
 
             /* fire */
+            TM_SET_STATE(pTimer, TMTIMERSTATE_EXPIRED_DELIVER);
             switch (pTimer->enmType)
             {
                 case TMTIMERTYPE_DEV:       pTimer->u.Dev.pfnTimer(pTimer->u.Dev.pDevIns, pTimer); break;
@@ -2007,7 +2011,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
             }
 
             /* change the state if it wasn't changed already in the handler. */
-            TM_TRY_SET_STATE(pTimer, TMTIMERSTATE_STOPPED, TMTIMERSTATE_EXPIRED, fRc);
+            TM_TRY_SET_STATE(pTimer, TMTIMERSTATE_STOPPED, TMTIMERSTATE_EXPIRED_DELIVER, fRc);
             Log2(("tmR3TimerQueueRun: new state %s\n", tmTimerState(pTimer->enmState)));
         }
     } /* run loop */
@@ -2024,7 +2028,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
         /* calc the slack we've handed out. */
         const uint64_t u64VirtualNow2 = TMVirtualGetNoCheck(pVM);
         Assert(u64VirtualNow2 >= u64VirtualNow);
-        AssertMsg(pVM->tm.s.u64VirtualSync >= u64Now, ("%RU64 < %RU64\n", pVM->tm.s.u64VirtualSync, u64Now));
+        AssertMsg(pVM->tm.s.u64VirtualSync >= u64Now, ("%'RU64 < %'RU64\n", pVM->tm.s.u64VirtualSync, u64Now));
         const uint64_t offSlack = pVM->tm.s.u64VirtualSync - u64Now;
         STAM_STATS({
             if (offSlack)
@@ -2067,7 +2071,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
                 /* stop */
                 STAM_PROFILE_ADV_STOP(&pVM->tm.s.StatVirtualSyncCatchup, c);
                 ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncCatchUp, false);
-                Log4(("TM: %RU64/%RU64: caught up\n", u64VirtualNow2 - offNew, offLag));
+                Log4(("TM: %'RU64/-%'8RU64: caught up [pt]\n", u64VirtualNow2 - offNew, offLag));
             }
             else if (offLag <= pVM->tm.s.u64VirtualSyncCatchUpGiveUpThreshold)
             {
@@ -2080,7 +2084,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
                 {
                     STAM_COUNTER_INC(&pVM->tm.s.aStatVirtualSyncCatchupAdjust[i]);
                     ASMAtomicWriteU32(&pVM->tm.s.u32VirtualSyncCatchUpPercentage, pVM->tm.s.aVirtualSyncCatchUpPeriods[i].u32Percentage);
-                    Log4(("TM: %RU64/%RU64: adj %u%%\n", u64VirtualNow2 - offNew, offLag, pVM->tm.s.u32VirtualSyncCatchUpPercentage));
+                    Log4(("TM: %'RU64/%'8RU64: adj %u%%\n", u64VirtualNow2 - offNew, offLag, pVM->tm.s.u32VirtualSyncCatchUpPercentage));
                 }
                 pVM->tm.s.u64VirtualSyncCatchUpPrev = u64VirtualNow2;
             }
@@ -2091,8 +2095,8 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
                 STAM_PROFILE_ADV_STOP(&pVM->tm.s.StatVirtualSyncCatchup, c);
                 ASMAtomicWriteU64((uint64_t volatile *)&pVM->tm.s.offVirtualSyncGivenUp, offNew);
                 ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncCatchUp, false);
-                Log4(("TM: %RU64/%RU64: give up %u%%\n", u64VirtualNow2 - offNew, offLag, pVM->tm.s.u32VirtualSyncCatchUpPercentage));
-                LogRel(("TM: Giving up catch-up attempt at a %RU64 ns lag; new total: %RU64 ns\n", offLag, offNew));
+                Log4(("TM: %'RU64/%'8RU64: give up %u%%\n", u64VirtualNow2 - offNew, offLag, pVM->tm.s.u32VirtualSyncCatchUpPercentage));
+                LogRel(("TM: Giving up catch-up attempt at a %'RU64 ns lag; new total: %'RU64 ns\n", offLag, offNew));
             }
         }
         else if (offLag >= pVM->tm.s.aVirtualSyncCatchUpPeriods[0].u64Start)
@@ -2108,15 +2112,15 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
                 STAM_COUNTER_INC(&pVM->tm.s.aStatVirtualSyncCatchupInitial[i]);
                 ASMAtomicWriteU32(&pVM->tm.s.u32VirtualSyncCatchUpPercentage, pVM->tm.s.aVirtualSyncCatchUpPeriods[i].u32Percentage);
                 ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncCatchUp, true);
-                Log4(("TM: %RU64/%RU64: catch-up %u%%\n", u64VirtualNow2 - offNew, offLag, pVM->tm.s.u32VirtualSyncCatchUpPercentage));
+                Log4(("TM: %'RU64/%'8RU64: catch-up %u%%\n", u64VirtualNow2 - offNew, offLag, pVM->tm.s.u32VirtualSyncCatchUpPercentage));
             }
             else
             {
                 /* don't bother */
                 STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGiveUpBeforeStarting);
                 ASMAtomicWriteU64((uint64_t volatile *)&pVM->tm.s.offVirtualSyncGivenUp, offNew);
-                Log4(("TM: %RU64/%RU64: give up\n", u64VirtualNow2 - offNew, offLag));
-                LogRel(("TM: Not bothering to attempt catching up a %RU64 ns lag; new total: %RU64\n", offLag, offNew));
+                Log4(("TM: %'RU64/%'8RU64: give up\n", u64VirtualNow2 - offNew, offLag));
+                LogRel(("TM: Not bothering to attempt catching up a %'RU64 ns lag; new total: %'RU64\n", offLag, offNew));
             }
         }
 
@@ -2230,7 +2234,8 @@ VMMR3DECL(int) TMR3TimerSave(PTMTIMERR3 pTimer, PSSMHANDLE pSSM)
             SSMR3PutU8(pSSM, (uint8_t)TMTIMERSTATE_PENDING_SCHEDULE);
             return SSMR3PutU64(pSSM, pTimer->u64Expire);
 
-        case TMTIMERSTATE_EXPIRED:
+        case TMTIMERSTATE_EXPIRED_GET_UNLINK:
+        case TMTIMERSTATE_EXPIRED_DELIVER:
         case TMTIMERSTATE_DESTROY:
         case TMTIMERSTATE_FREE:
             AssertMsgFailed(("Invalid timer state %d %s (%s)\n", pTimer->enmState, tmTimerState(pTimer->enmState), pTimer->pszDesc));

@@ -69,8 +69,10 @@ typedef enum TMTIMERSTATE
     TMTIMERSTATE_STOPPED = 1,
     /** Timer is active. */
     TMTIMERSTATE_ACTIVE,
-    /** Timer is expired, is being delivered. */
-    TMTIMERSTATE_EXPIRED,
+    /** Timer is expired, getting expire and unlinking. */
+    TMTIMERSTATE_EXPIRED_GET_UNLINK,
+    /** Timer is expired and is being delivered. */
+    TMTIMERSTATE_EXPIRED_DELIVER,
 
     /** Timer is stopped but still in the active list.
      * Currently in the ScheduleTimers list. */
