@@ -938,10 +938,9 @@ ResumeExecution:
         goto end;
     }
 
-    /* TPR caching using CR8 is only available in 64 bits mode */
-    /* Note the 32 bits exception for AMD (X86_CPUID_AMD_FEATURE_ECX_CR8L), but that appears missing in Intel CPUs */
+    /* TPR caching using CR8 is only available in 64 bits mode or with 32 bits guests when X86_CPUID_AMD_FEATURE_ECX_CR8L is supported. */
     /* Note: we can't do this in LoadGuestState as PDMApicGetTPR can jump back to ring 3 (lock)!!!!!!!! */
-    if (CPUMIsGuestInLongModeEx(pCtx))
+    if (pVM->hwaccm.s.fHasIoApic)
     {
         bool fPending;
 

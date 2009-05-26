@@ -369,7 +369,7 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        //| X86_CPUID_AMD_FEATURE_ECX_CMPL
                                        //| X86_CPUID_AMD_FEATURE_ECX_SVM    - not virtualized.
                                        //| X86_CPUID_AMD_FEATURE_ECX_EXT_APIC
-                                       //| X86_CPUID_AMD_FEATURE_ECX_CR8L
+                                       | X86_CPUID_AMD_FEATURE_ECX_CR8L         /* expose lock mov cr0 = mov cr8 hack for guests that can use this feature to access the TPR. */
                                        //| X86_CPUID_AMD_FEATURE_ECX_ABM
                                        //| X86_CPUID_AMD_FEATURE_ECX_SSE4A
                                        //| X86_CPUID_AMD_FEATURE_ECX_MISALNSSE
