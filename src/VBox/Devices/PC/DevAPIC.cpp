@@ -1317,6 +1317,16 @@ static DECLCALLBACK(void) apicTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
 {
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     APICState *s = getLapic(dev);
+    if (s->pTimerR3 != pTimer)
+    {
+        for (uint32_t iCpu = 0; iCpu < dev->cCpus; iCpu++)
+        {
+            s = getLapicById(dev, iCpu);
+            if (s->pTimerR3 == pTimer)
+                break;
+        }
+        Assert(s->pTimerR3 == pTimer);
+    }
 
     APIC_LOCK_VOID(dev, VERR_INTERNAL_ERROR);
 #endif /* VBOX */
