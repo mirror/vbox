@@ -418,7 +418,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetHandleCatchUpLocked(PVM pVM, uint64_t u64, 
         if (off > u64Sub + pVM->tm.s.offVirtualSyncGivenUp)
         {
             off -= u64Sub;
-            Log4(("TM: %RU64/%RU64: sub %RU32\n", u64 - off, off - pVM->tm.s.offVirtualSyncGivenUp, u64Sub));
+            Log4(("TM: %'RU64/-%'8RU64: sub %RU32 [vsghcul]\n", u64 - off, off - pVM->tm.s.offVirtualSyncGivenUp, u64Sub));
         }
         else
         {
@@ -426,7 +426,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetHandleCatchUpLocked(PVM pVM, uint64_t u64, 
             STAM_PROFILE_ADV_STOP(&pVM->tm.s.StatVirtualSyncCatchup, c);
             off = pVM->tm.s.offVirtualSyncGivenUp;
             fStop = true;
-            Log4(("TM: %RU64/0: caught up\n", u64));
+            Log4(("TM: %'RU64/0: caught up [vsghcul]\n", u64));
         }
     }
     else
@@ -464,7 +464,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetHandleCatchUpLocked(PVM pVM, uint64_t u64, 
         PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
         VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
         Log5(("TMAllVirtual(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_ISPENDING(pVCpuDst, VMCPU_FF_TIMER)));
-        Log4(("TM: %RU64/%RU64: exp tmr=>ff\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
+        Log4(("TM: %'RU64/-%'8RU64: exp tmr=>ff [vsghcul]\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
         tmVirtualSyncUnlock(pVM);
 
 #ifdef IN_RING3
@@ -476,6 +476,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetHandleCatchUpLocked(PVM pVM, uint64_t u64, 
     }
     STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetLocked);
 
+    Log6(("tmVirtualSyncGetHandleCatchUpLocked -> %'RU64\n", u64));
     return u64;
 }
 
@@ -497,6 +498,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetLocked(PVM pVM, uint64_t u64)
         u64 = ASMAtomicUoReadU64(&pVM->tm.s.u64VirtualSync);
         tmVirtualSyncUnlock(pVM);
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetLocked);
+        Log6(("tmVirtualSyncGetLocked -> %'RU64 [stopped]\n", u64));
         return u64;
     }
 
@@ -525,8 +527,8 @@ DECLINLINE(uint64_t) tmVirtualSyncGetLocked(PVM pVM, uint64_t u64)
         VM_FF_SET(pVM, VM_FF_TM_VIRTUAL_SYNC);
         PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
         VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
-        Log5(("TMAllVirtual(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_ISPENDING(pVCpuDst, VMCPU_FF_TIMER)));
-        Log4(("TM: %RU64/%RU64: exp tmr=>ff\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
+        Log5(("TMAllVirtual(%u): FF: %d -> 1\n", __LINE__, !!VMCPU_FF_ISPENDING(pVCpuDst, VMCPU_FF_TIMER)));
+        Log4(("TM: %'RU64/-%'8RU64: exp tmr=>ff [vsgl]\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
         tmVirtualSyncUnlock(pVM);
 
 #ifdef IN_RING3
@@ -537,6 +539,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetLocked(PVM pVM, uint64_t u64)
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetExpired);
     }
     STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetLocked);
+    Log6(("tmVirtualSyncGetLocked -> %'RU64\n", u64));
     return u64;
 }
 
@@ -595,6 +598,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
                 if (off < ASMAtomicReadU64(&pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire))
                 {
                     STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetLockless);
+                    Log6(("tmVirtualSyncGetEx -> %'RU64 [lockless]\n", off));
                     return off;
                 }
             }
@@ -606,6 +610,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
         if (RT_LIKELY(!ASMAtomicReadBool(&pVM->tm.s.fVirtualSyncTicking)))
         {
             STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetLockless);
+            Log6(("tmVirtualSyncGetEx -> %'RU64 [lockless/stopped]\n", off));
             return off;
         }
     }
@@ -644,6 +649,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
             if (   ASMAtomicReadBool(&pVM->tm.s.fVirtualSyncTicking)
                 && cOuterTries > 0)
                 continue;
+            Log6(("tmVirtualSyncGetEx -> %'RU64 [stopped]\n", off));
             return off;
         }
 
@@ -667,14 +673,14 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
                     if (off > u64Sub + offGivenUp)
                     {
                         off -= u64Sub;
-                        Log4(("TM: %RU64/%RU64: sub %RU32 (NoLock)\n", u64 - off, pVM->tm.s.offVirtualSync - offGivenUp, u64Sub));
+                        Log4(("TM: %'RU64/-%'8RU64: sub %RU32 [NoLock]\n", u64 - off, pVM->tm.s.offVirtualSync - offGivenUp, u64Sub));
                     }
                     else
                     {
                         /* we've completely caught up. */
                         STAM_PROFILE_ADV_STOP(&pVM->tm.s.StatVirtualSyncCatchup, c);
                         off = offGivenUp;
-                        Log4(("TM: %RU64/0: caught up\n", u64));
+                        Log4(("TM: %'RU64/0: caught up [NoLock]\n", u64));
                     }
                 }
                 else
@@ -718,13 +724,14 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
             VMR3NotifyCpuFFU(pVCpuDst->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM);
 #endif
             STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetSetFF);
-            Log4(("TM: %RU64/%RU64: exp tmr=>ff (NoLock)\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
+            Log4(("TM: %'RU64/-%'8RU64: exp tmr=>ff [NoLock]\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
         }
         else
-            Log4(("TM: %RU64/%RU64: exp tmr (NoLock)\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
+            Log4(("TM: %'RU64/-%'8RU64: exp tmr [NoLock]\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetExpired);
     }
 
+    Log6(("tmVirtualSyncGetEx -> %'RU64\n", u64));
     return u64;
 }
 
