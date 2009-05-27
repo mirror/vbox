@@ -2924,7 +2924,8 @@ REMR3DECL(void) REMR3NotifyPhysRamDeregister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb
     Assert(RT_ALIGN_T(GCPhys, PAGE_SIZE, RTGCPHYS) == GCPhys);
     Assert(cb);
     Assert(RT_ALIGN_Z(cb, PAGE_SIZE) == cb);
-    Assert(!PGMIsLockOwner(pVM));
+/* Locked during termination */
+//    Assert(!PGMIsLockOwner(pVM));
 
     EMR3RemLock(pVM);
 
@@ -2996,8 +2997,7 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE
     Log(("REMR3NotifyHandlerPhysicalDeregister: enmType=%d GCPhys=%RGp cb=%RGp fHasHCHandler=%RTbool fRestoreAsRAM=%RTbool RAM=%08x\n",
           enmType, GCPhys, cb, fHasHCHandler, fRestoreAsRAM, MMR3PhysGetRamSize(pVM)));
     VM_ASSERT_EMT(pVM);
-/* Locked during termination */
-//    Assert(!PGMIsLockOwner(pVM));
+    Assert(!PGMIsLockOwner(pVM));
 
     EMR3RemLock(pVM);
 
