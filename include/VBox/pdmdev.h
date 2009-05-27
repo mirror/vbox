@@ -2865,7 +2865,7 @@ typedef R3PTRTYPE(struct PDMDEVHLPR3 *) PPDMDEVHLPR3;
 typedef R3PTRTYPE(const struct PDMDEVHLPR3 *) PCPDMDEVHLPR3;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLP_VERSION  0xf2090000
+#define PDM_DEVHLP_VERSION  0xf20a0000
 
 
 /**
