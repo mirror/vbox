@@ -60,3 +60,6 @@ UnmapBufferARB
 BindBufferARB
 BufferDataARB
 ZPixCR
+ActiveTextureARB
+DrawBuffer
+Flush

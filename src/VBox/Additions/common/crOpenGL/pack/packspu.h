@@ -82,6 +82,8 @@ extern void packspuConnectToServer( CRNetServer *server );
 extern void packspuFlush( void *arg );
 extern void packspuHuge( CROpcode opcode, void *buf );
 
+extern GLboolean packspuSyncOnFlushes();
+
 extern ThreadInfo *packspuNewThread( unsigned long id );
 
 

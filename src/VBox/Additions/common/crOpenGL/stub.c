@@ -14,6 +14,15 @@
 #include <X11/extensions/Xfixes.h>
 #endif
 
+static void crForcedFlush()
+{
+    GLint buffer;
+    stub.spu->dispatch_table.GetIntegerv(GL_DRAW_BUFFER, &buffer);
+    stub.spu->dispatch_table.DrawBuffer(GL_FRONT);
+    stub.spu->dispatch_table.Flush();
+    stub.spu->dispatch_table.DrawBuffer(buffer);
+}
+
 /**
  * Returns -1 on error
  */
@@ -99,7 +108,7 @@ void APIENTRY crWindowDestroy( GLint window )
             XFree(winInfo->pVisibleRegions);
         }
 #endif
-        stub.spu->dispatch_table.Flush();
+        crForcedFlush();
 
         crHashtableDelete(stub.windowTable, window, crFree);
     }
@@ -302,7 +311,7 @@ static void stubCBCheckWindowsInfo(unsigned long key, void *data1, void *data2)
 
                 if (stubUpdateWindowGeometry(winInfo, GL_FALSE) || changed)
                 {
-                    stub.spuDispatch.Flush();
+                    crForcedFlush();
                 }
                 break;
             }
@@ -316,7 +325,7 @@ static void stubCBCheckWindowsInfo(unsigned long key, void *data1, void *data2)
             {
                 if (stub.trackWindowVisibleRgn && stubUpdateWindowVisibileRegions(winInfo))
                 {
-                    stub.spuDispatch.Flush();
+                    crForcedFlush();
                 }
                 break;
             }
@@ -326,7 +335,7 @@ static void stubCBCheckWindowsInfo(unsigned long key, void *data1, void *data2)
                 if (stub.trackWindowVisibleRgn && stubUpdateWindowVisibileRegions(winInfo))
                 {
                     crDebug("Visibility info updated due to unknown hooked message (%d)", pMsgInfo->message);
-                    stub.spuDispatch.Flush();
+                    crForcedFlush();
                 }
                 break;
             }
