@@ -130,7 +130,7 @@ RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode)
 
 RTDECL(int) RTDirCreateTemp(char *pszTemplate)
 {
-    if (!_mktemp(pszTemplate))
+    if (_mktemp(pszTemplate))
     {
         int rc = RTDirCreate(pszTemplate, 0700);
         return rc;
