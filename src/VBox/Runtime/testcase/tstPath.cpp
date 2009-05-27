@@ -78,6 +78,16 @@ int main()
     if (RT_SUCCESS(rc))
         RTTestIPrintf(RTTESTLVL_INFO, "UserHome={%s}\n", szPath);
 
+    RTTestSub(hTest, "RTPathTemp");
+    RTTESTI_CHECK_RC(RTPathTemp(szPath, sizeof(szPath)), VINF_SUCCESS);
+    if (RT_SUCCESS(rc))
+        RTTestIPrintf(RTTESTLVL_INFO, "PathTemp={%s}\n", szPath);
+    size_t cch = strlen(szPath);
+    RTTESTI_CHECK_RC(RTPathTemp(szPath, cch), VERR_BUFFER_OVERFLOW);
+    RTTESTI_CHECK_RC(RTPathTemp(szPath, cch+1), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTPathTemp(szPath, cch+2), VINF_SUCCESS);
+
+
     /*
      * RTPathAbsEx
      */
