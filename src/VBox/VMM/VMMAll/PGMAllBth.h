@@ -799,7 +799,10 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                      */
                     pgmLock(pVM);
                     rc = PGM_BTH_NAME(SyncPage)(pVCpu, PdeSrc, pvFault, 1, uErr);
+#   ifndef VBOX_STRICT
+                    /* Keep it locked in VBOX_STRICT mode so the next checks won't trigger without reason with guest SMP. */
                     pgmUnlock(pVM);
+#   endif
                     if (RT_SUCCESS(rc))
                     {
                        /*
@@ -814,12 +817,16 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
 
                         uint64_t fPageShw;
                         rc = PGMShwGetPage(pVCpu, pvFault, &fPageShw, NULL);
-                        AssertMsg((pVM->cCPUs > 1 && rc == VERR_PAGE_NOT_PRESENT) || (RT_SUCCESS(rc) && (fPageShw & X86_PTE_RW)), ("rc=%Rrc fPageShw=%RX64\n", rc, fPageShw));
+                        AssertMsg((RT_SUCCESS(rc) && (fPageShw & X86_PTE_RW)), ("rc=%Rrc fPageShw=%RX64\n", rc, fPageShw));
+                        pgmUnlock(pVM);
 #   endif /* VBOX_STRICT */
                         STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeOutOfSync, c);
                         STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2OutOfSyncHndObs; });
                         return VINF_SUCCESS;
                     }
+#   ifdef VBOX_STRICT
+                    pgmUnlock(pVM);
+#   endif
 
                     /* Check to see if we need to emulate the instruction as X86_CR0_WP has been cleared. */
                     if (    CPUMGetGuestCPL(pVCpu, pRegFrame) == 0

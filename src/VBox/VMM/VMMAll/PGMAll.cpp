@@ -789,7 +789,10 @@ VMMDECL(int) PGMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFra
  */
 VMMDECL(int) PGMShwGetPage(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys)
 {
-    return PGM_SHW_PFN(GetPage, pVCpu)(pVCpu, GCPtr, pfFlags, pHCPhys);
+    pgmLock(pVCpu->CTX_SUFF(pVM));
+    int rc = PGM_SHW_PFN(GetPage, pVCpu)(pVCpu, GCPtr, pfFlags, pHCPhys);
+    pgmUnlock(pVCpu->CTX_SUFF(pVM));
+    return rc;
 }
 
 
