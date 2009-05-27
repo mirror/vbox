@@ -395,16 +395,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_TMTimerCreate(PPDMDEVINS pDevIns, TMCLOCK e
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnTMTimerCreateExternal */
-static DECLCALLBACK(PTMTIMERR3) pdmR3DevHlp_TMTimerCreateExternal(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMEREXT pfnCallback, void *pvUser, const char *pszDesc)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-
-    return TMR3TimerCreateExternal(pDevIns->Internal.s.pVMR3, enmClock, pfnCallback, pvUser, pszDesc);
-}
-
-
 /** @copydoc PDMDEVHLPR3::pfnPCIRegister */
 static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev)
 {
@@ -2677,7 +2667,6 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_ROMRegister,
     pdmR3DevHlp_SSMRegister,
     pdmR3DevHlp_TMTimerCreate,
-    pdmR3DevHlp_TMTimerCreateExternal,
     pdmR3DevHlp_PCIRegister,
     pdmR3DevHlp_PCIIORegionRegister,
     pdmR3DevHlp_PCISetConfigCallbacks,
@@ -3139,7 +3128,6 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_ROMRegister,
     pdmR3DevHlp_SSMRegister,
     pdmR3DevHlp_TMTimerCreate,
-    pdmR3DevHlp_TMTimerCreateExternal,
     pdmR3DevHlp_PCIRegister,
     pdmR3DevHlp_PCIIORegionRegister,
     pdmR3DevHlp_PCISetConfigCallbacks,

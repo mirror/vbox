@@ -1966,19 +1966,6 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(int, pfnTMTimerCreate,(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer));
 
     /**
-     * Creates an external timer.
-     *
-     * @returns timer pointer
-     * @param   pDevIns             Device instance.
-     * @param   enmClock            The clock to use on this timer.
-     * @param   pfnCallback         Callback function.
-     * @param   pvUser              User pointer
-     * @param   pszDesc             Pointer to description string which must stay around
-     *                              until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
-     */
-    DECLR3CALLBACKMEMBER(PTMTIMERR3, pfnTMTimerCreateExternal,(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMEREXT pfnCallback, void *pvUser, const char *pszDesc));
-
-    /**
      * Registers the device with the default PCI bus.
      *
      * @returns VBox status code.
