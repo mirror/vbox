@@ -109,7 +109,6 @@ private:
     void parseURI(Utf8Str strUri, const Utf8Str &strProtocol, Utf8Str &strFilepath, Utf8Str &strHostname, Utf8Str &strUsername, Utf8Str &strPassword);
     HRESULT writeImpl(int aFormat, Utf8Str aPath, ComObjPtr<Progress> &aProgress);
 
-    char * mkTemp(char *pszTemplate);
     struct TaskImportMachines;  /* Worker thread for import */
     static DECLCALLBACK(int) taskThreadImportMachines(RTTHREAD thread, void *pvUser);
 
