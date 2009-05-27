@@ -348,7 +348,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     /*
      * Prereqs.
      */
-    Assert(PDMCritSectIsOwner(&pVM->pgm.s.CritSect));
+    Assert(PGMIsLocked(pVM));
     AssertMsg(PGM_PAGE_IS_ZERO(pPage) || PGM_PAGE_IS_SHARED(pPage), ("%R[pgmpage] %RGp\n", pPage, GCPhys));
     Assert(!PGM_PAGE_IS_MMIO(pPage));
 
@@ -373,7 +373,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
         return rc2;
     }
     /* re-assert preconditions since pgmPhysEnsureHandyPage may do a context switch. */
-    Assert(PDMCritSectIsOwner(&pVM->pgm.s.CritSect));
+    Assert(PGMIsLocked(pVM));
     AssertMsg(PGM_PAGE_IS_ZERO(pPage) || PGM_PAGE_IS_SHARED(pPage), ("%R[pgmpage] %RGp\n", pPage, GCPhys));
     Assert(!PGM_PAGE_IS_MMIO(pPage));
 
@@ -512,7 +512,7 @@ int pgmPhysPageMapByPageID(PVM pVM, uint32_t idPage, RTHCPHYS HCPhys, void **ppv
     /*
      * Validation.
      */
-    Assert(PDMCritSectIsOwner(&pVM->pgm.s.CritSect));
+    Assert(PGMIsLocked(pVM));
     AssertReturn(HCPhys && !(HCPhys & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
     const uint32_t idChunk = idPage >> GMM_CHUNKID_SHIFT;
     AssertReturn(idChunk != NIL_GMM_CHUNKID, VERR_INVALID_PARAMETER);
@@ -594,7 +594,7 @@ int pgmPhysPageMapByPageID(PVM pVM, uint32_t idPage, RTHCPHYS HCPhys, void **ppv
  */
 int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap, void **ppv)
 {
-    Assert(PDMCritSectIsOwner(&pVM->pgm.s.CritSect));
+    Assert(PGMIsLocked(pVM));
 
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
     /*
@@ -816,7 +816,7 @@ int pgmPhysGCPhys2CCPtrInternal(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *
 {
     int rc;
     AssertReturn(pPage, VERR_INTERNAL_ERROR);
-    Assert(PDMCritSectIsOwner(&pVM->pgm.s.CritSect) || VM_IS_EMT(pVM));
+    Assert(PGMIsLocked(pVM));
 
     /*
      * Make sure the page is writable.
@@ -865,7 +865,7 @@ int pgmPhysGCPhys2CCPtrInternal(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *
 int pgmPhysGCPhys2CCPtrInternalReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, const void **ppv)
 {
     AssertReturn(pPage, VERR_INTERNAL_ERROR);
-    Assert(PDMCritSectIsOwner(&pVM->pgm.s.CritSect) || VM_IS_EMT(pVM));
+    Assert(PGMIsLocked(pVM));
     Assert(PGM_PAGE_GET_HCPHYS(pPage) != 0);
 
     /*
