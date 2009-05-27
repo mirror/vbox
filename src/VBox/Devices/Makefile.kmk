@@ -299,7 +299,7 @@ ifdef VBOX_WITH_HGSMI
 	Graphics/DevVGA_VBVA.cpp \
 	Graphics/HGSMI/HGSMIHost.cpp \
 	Graphics/HGSMI/HGSMIHostHlp.cpp
- 
+
 endif
 ifdef VBOX_WITH_VIDEOHWACCEL
  DevicesR3_DEFS         += VBOX_WITH_VIDEOHWACCEL
@@ -692,13 +692,13 @@ VBOX_SLIRP_SOURCES = \
 	Network/slirp/tftp.c \
 	Network/slirp/udp.c
 
-VBOX_SLIRP_ALIAS_SOURCES= \
-    Network/slirp/libalias/alias.c \
-    Network/slirp/libalias/alias_db.c \
-    Network/slirp/libalias/alias_mod.c \
-    Network/slirp/libalias/alias_proxy.c \
-    Network/slirp/libalias/alias_ftp.c \
-    Network/slirp/libalias/alias_util.c
+VBOX_SLIRP_ALIAS_SOURCES = \
+	Network/slirp/libalias/alias.c \
+	Network/slirp/libalias/alias_db.c \
+	Network/slirp/libalias/alias_mod.c \
+	Network/slirp/libalias/alias_proxy.c \
+	Network/slirp/libalias/alias_ftp.c \
+	Network/slirp/libalias/alias_util.c
 
 ifdef VBOX_WITH_SLIRP_ALIAS
 VBOX_SLIRP_SOURCES += $(VBOX_SLIRP_ALIAS_SOURCES)
