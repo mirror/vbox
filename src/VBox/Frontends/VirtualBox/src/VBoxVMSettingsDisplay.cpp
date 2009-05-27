@@ -101,6 +101,9 @@ void VBoxVMSettingsDisplay::getFrom (const CMachine &aMachine)
     mSlMemory->setValue (mMachine.GetVRAMSize());
 
     /* 3D Acceleration */
+    bool isAccelerationSupported = vboxGlobal().virtualBox().GetHost()
+                                   .GetAcceleration3DAvailable();
+    mCb3D->setEnabled (isAccelerationSupported);
     mCb3D->setChecked (mMachine.GetAccelerate3DEnabled());
 
     /* VRDP Settings */
