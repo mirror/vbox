@@ -44,6 +44,26 @@
 #endif
 
 
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** @def TMTIMER_ASSERT_CRITSECT
+ * Checks that the caller owns the critical section if one is associated with
+ * the timer. */
+#ifdef VBOX_STRICT
+# define TMTIMER_ASSERT_CRITSECT(pTimer) \
+    do { \
+        if ((pTimer)->pCritSect) \
+        { \
+            PPDMCRITSECT pCritSect = (PPDMCRITSECT)MMHyperR3ToCC((pTimer)->CTX_SUFF(pVM), (pTimer)->pCritSect); \
+            Assert(pCritSect && PDMCritSectIsOwner(pCritSect)); \
+        } \
+    } while (0)
+#else
+# define TMTIMER_ASSERT_CRITSECT(pTimer) do { } while (0)
+#endif
+
+
 #ifndef tmLock
 
 /**
@@ -730,6 +750,7 @@ VMMDECL(PTMTIMERRC) TMTimerRCPtr(PTMTIMER pTimer)
 VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
 {
     STAM_PROFILE_START(&pTimer->CTX_SUFF(pVM)->tm.s.CTXALLSUFF(StatTimerSet), a);
+    TMTIMER_ASSERT_CRITSECT(pTimer);
 
     /** @todo find the most frequently used paths and make them skip tmSchedule and tmTimerTryWithLink. */
     int cRetries = 1000;
@@ -941,6 +962,8 @@ VMMDECL(int) TMTimerSetNano(PTMTIMER pTimer, uint64_t cNanosToNext)
 VMMDECL(int) TMTimerStop(PTMTIMER pTimer)
 {
     STAM_PROFILE_START(&pTimer->CTX_SUFF(pVM)->tm.s.CTXALLSUFF(StatTimerStop), a);
+    TMTIMER_ASSERT_CRITSECT(pTimer);
+
     /** @todo see if this function needs optimizing. */
     int cRetries = 1000;
     do
@@ -1325,6 +1348,7 @@ VMMDECL(uint64_t) TMTimerFromMilli(PTMTIMER pTimer, uint64_t u64MilliTS)
  */
 VMMDECL(uint64_t) TMTimerGetExpire(PTMTIMER pTimer)
 {
+    TMTIMER_ASSERT_CRITSECT(pTimer);
     int cRetries = 1000;
     do
     {

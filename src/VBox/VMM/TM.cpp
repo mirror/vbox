@@ -1377,6 +1377,10 @@ VMMR3DECL(int) TMR3TimerDestroy(PTMTIMER pTimer)
     bool            fActive  = false;
     bool            fPending = false;
 
+    AssertMsg(   !pTimer->pCritSect
+              || VMR3GetState(pVM) != VMSTATE_RUNNING
+              || PDMCritSectIsOwner(pTimer->pCritSect), ("%s\n", pTimer->pszDesc));
+
     /*
      * The rest of the game happens behind the lock, just
      * like create does. All the work is done here.
@@ -2325,7 +2329,8 @@ VMMR3DECL(int) TMR3TimerLoad(PTMTIMERR3 pTimer, PSSMHANDLE pSSM)
  * thread will leave the critical section when the timer callback returns.
  *
  * In strict builds, ownership of the critical section will be asserted by
- * TMTimerSet and TMTimerStop.
+ * TMTimerSet, TMTimerStop, TMTimerGetExpire and TMTimerDestroy (when called at
+ * runtime).
  *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_INVALID_HANDLE if the timer handle is NULL or invalid
