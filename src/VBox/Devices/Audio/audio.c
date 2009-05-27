@@ -1610,9 +1610,9 @@ void AUD_remove_card (QEMUSoundCard *card)
     qemu_free (card->name);
 }
 
-static void audio_timer_helper (PPDMDRVINS pDrvIns, PTMTIMER pTimer)
+static DECLCALLBACK(void) audio_timer_helper (PPDMDRVINS pDrvIns, PTMTIMER pTimer, void *pvUser)
 {
-    AudioState *s = &glob_audio_state;
+    AudioState *s = (AudioState *)pvUser;
     audio_timer (s);
 }
 
@@ -1627,8 +1627,8 @@ static int AUD_init (PPDMDRVINS pDrvIns, const char *drvname)
     LIST_INIT (&s->hw_head_in);
     LIST_INIT (&s->cap_head);
 
-    rc = PDMDrvHlpTMTimerCreate (pDrvIns, TMCLOCK_VIRTUAL,
-                                 audio_timer_helper, "Audio timer", &s->ts);
+    rc = PDMDrvHlpTMTimerCreate (pDrvIns, TMCLOCK_VIRTUAL, audio_timer_helper,
+                                 &glob_audio_state, 0, "Audio timer", &s->ts);
     if (RT_FAILURE (rc))
         return rc;
 
