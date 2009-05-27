@@ -814,7 +814,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
 
                         uint64_t fPageShw;
                         rc = PGMShwGetPage(pVCpu, pvFault, &fPageShw, NULL);
-                        AssertMsg(RT_SUCCESS(rc) && fPageShw & X86_PTE_RW, ("rc=%Rrc fPageShw=%RX64\n", rc, fPageShw));
+                        AssertMsg((pVM->cCPUs > 1 && rc == VERR_PAGE_NOT_PRESENT) || (RT_SUCCESS(rc) && (fPageShw & X86_PTE_RW)), ("rc=%Rrc fPageShw=%RX64\n", rc, fPageShw));
 #   endif /* VBOX_STRICT */
                         STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeOutOfSync, c);
                         STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2OutOfSyncHndObs; });
