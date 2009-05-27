@@ -110,9 +110,9 @@ extern "C" char *getfullrawname(char *);
 # include "darwin/iokit.h"
 #endif
 
-//#ifdef VBOX_WITH_CROGL
-//# include "cr_spu.h"
-//#endif /* VBOX_WITH_CROGL */
+#ifdef VBOX_WITH_CROGL
+# include "cr_spu.h"
+#endif /* VBOX_WITH_CROGL */
 
 #include <iprt/asm.h>
 #include <iprt/string.h>
@@ -252,19 +252,18 @@ HRESULT Host::init (VirtualBox *aParent)
         }
     }
 
-    f3DAccelerationSupported = true;
     /* Test for 3D hardware acceleration support */
-//    f3DAccelerationSupported = false;
-//#ifdef VBOX_WITH_CROGL
-//    SPU *spu;
-//    spu = crSPULoad(NULL, 0, "render", NULL, NULL);
-//    if (spu)
-//    {
-//        crSPUUnloadChain(spu);
-//        f3DAccelerationSupported = true;
-//    }
-//
-//#endif /* VBOX_WITH_CROGL */
+    f3DAccelerationSupported = false;
+
+#ifdef VBOX_WITH_CROGL
+    SPU *spu;
+    spu = crSPULoad(NULL, 0, "render", NULL, NULL);
+    if (spu)
+    {
+        crSPUUnloadChain(spu);
+        f3DAccelerationSupported = true;
+    }
+#endif /* VBOX_WITH_CROGL */
 
     setReady(true);
     return S_OK;
