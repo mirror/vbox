@@ -492,7 +492,7 @@ static DECLCALLBACK(void) pgmR3PoolFlushReusedPage(PPGMPOOL pPool, PPGMPOOLPAGE 
  * The handler can not raise any faults, it's mainly for monitoring write access
  * to certain pages.
  *
- * @returns VINF_SUCCESS if the handler have carried out the operation.
+ * @returns VINF_SUCCESS if the handler has carried out the operation.
  * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
  * @param   pVM             VM Handle.
  * @param   GCPhys          The physical address the guest is writing to.
@@ -520,7 +520,15 @@ static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *
      * We cannot flush a page if we're in an async thread because of REM notifications.
      */
     pgmLock(pVM);
-    if (!pVCpu) /** @todo This shouldn't happen any longer, all access handlers will be called on an EMT. All ring-3 handlers, except MMIO, already owns the PGM lock. @bugref{3170} */
+    if (PHYS_PAGE_ADDRESS(GCPhys) != PHYS_PAGE_ADDRESS(pPage->GCPhys))
+    {
+        /* Pool page changed while we were waiting for the lock; ignore. */
+        Log(("CPU%d: pgmR3PoolAccessHandler pgm pool page for %RGp changed (to %RGp) while waiting!\n", pVCpu->idCpu, PHYS_PAGE_ADDRESS(GCPhys), PHYS_PAGE_ADDRESS(pPage->GCPhys)));
+        pgmUnlock(pVM);
+        return VINF_PGM_HANDLER_DO_DEFAULT;
+    }
+
+    if (!pVCpu) /** @todo This shouldn't happen any longer, all access handlers will be called on an EMT. All ring-3 handlers, except MMIO, already own the PGM lock. @bugref{3170} */
     {
         Log(("pgmR3PoolAccessHandler: async thread, requesting EMT to flush the page: %p:{.Core=%RHp, .idx=%d, .GCPhys=%RGp, .enmType=%d}\n",
              pPage, pPage->Core.Key, pPage->idx, pPage->GCPhys, pPage->enmKind));
