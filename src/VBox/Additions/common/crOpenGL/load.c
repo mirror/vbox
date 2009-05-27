@@ -543,7 +543,7 @@ stubInit(void)
 
     if (stub_initialized)
         return true;
-    
+
     stubInitVars();
 
     /* @todo check if it'd be of any use on other than guests, no use for windows */

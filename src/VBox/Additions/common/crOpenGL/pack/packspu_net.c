@@ -150,9 +150,15 @@ void packspuFlush(void *arg )
     CRASSERT( thread->netServer.conn );
 
     if ( buf->holds_BeginEnd )
+    {
+        /*crDebug("crNetBarf %d, (%d)", len, buf->size);*/
         crNetBarf( thread->netServer.conn, &(buf->pack), hdr, len );
+    }
     else
+    {
+        /*crDebug("crNetSend %d, (%d)", len, buf->size);*/
         crNetSend( thread->netServer.conn, &(buf->pack), hdr, len );
+    }
 
     buf->pack = crNetAlloc( thread->netServer.conn );
 

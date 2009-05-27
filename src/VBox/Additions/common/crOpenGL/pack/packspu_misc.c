@@ -40,27 +40,72 @@ void PACKSPU_APIENTRY packspu_ChromiumParametervCR(GLenum target, GLenum type, G
 
 }
 
+GLboolean packspuSyncOnFlushes()
+{
+    GLint buffer;
+    crStateGetIntegerv(GL_DRAW_BUFFER, &buffer);
+    /*Usually buffer==GL_BACK, so put this extra check to simplify boolean eval on runtime*/
+    return  (buffer != GL_BACK)
+            && (buffer == GL_FRONT_LEFT 
+                || buffer == GL_FRONT_RIGHT
+                || buffer == GL_FRONT
+                || buffer == GL_FRONT_AND_BACK
+                || buffer == GL_LEFT
+                || buffer == GL_RIGHT);
+}
+
+void PACKSPU_APIENTRY packspu_DrawBuffer(GLenum mode)
+{
+    crStateDrawBuffer(mode);
+    crPackDrawBuffer(mode);
+}
+
 void PACKSPU_APIENTRY packspu_Finish( void )
 {
     GET_THREAD(thread);
     GLint writeback = pack_spu.thread[0].netServer.conn->actual_network;
+
     if (pack_spu.swap)
     {
-        crPackFinishSWAP(  );
-        if (writeback)
-            crPackWritebackSWAP( &writeback );
+        crPackFinishSWAP();
     }
     else
     {
-        crPackFinish(  );
-        if (writeback)
-            crPackWriteback( &writeback );
+        crPackFinish();
     }
-    packspuFlush( (void *) thread );
-    while (writeback)
-        crNetRecv();
+
+    if (packspuSyncOnFlushes())
+    {
+        packspuFlush( (void *) thread );
+
+        if (writeback)
+            if (pack_spu.swap)
+                crPackWritebackSWAP(&writeback);
+            else
+                crPackWriteback(&writeback);
+
+        while (writeback)
+            crNetRecv();
+    }
 }
 
+void PACKSPU_APIENTRY packspu_Flush( void )
+{
+    GET_THREAD(thread);
+    if (pack_spu.swap)
+    {
+        crPackFlushSWAP();
+    }
+    else
+    {
+        crPackFlush();
+    }
+
+    if (packspuSyncOnFlushes())
+    {
+        packspuFlush( (void *) thread );
+    }
+}
 
 GLint PACKSPU_APIENTRY packspu_WindowCreate( const char *dpyName, GLint visBits )
 {
