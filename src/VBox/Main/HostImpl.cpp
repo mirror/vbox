@@ -111,7 +111,7 @@ extern "C" char *getfullrawname(char *);
 #endif
 
 #ifdef VBOX_WITH_CROGL
-# include "cr_spu.h"
+//# include "cr_spu.h"
 #endif /* VBOX_WITH_CROGL */
 
 #include <iprt/asm.h>
@@ -253,16 +253,16 @@ HRESULT Host::init (VirtualBox *aParent)
     }
 
     /* Test for 3D hardware acceleration support */
-    f3DAccelerationSupported = false;
+    f3DAccelerationSupported = true;
 
 #ifdef VBOX_WITH_CROGL
-    SPU *spu;
+/*  SPU *spu;
     spu = crSPULoad(NULL, 0, "render", NULL, NULL);
     if (spu)
     {
         crSPUUnloadChain(spu);
         f3DAccelerationSupported = true;
-    }
+    }*/
 #endif /* VBOX_WITH_CROGL */
 
     setReady(true);
