@@ -165,6 +165,7 @@ typedef RTTESTINT *PRTTESTINT;
 *   Internal Functions                                                         *
 *******************************************************************************/
 static void rtTestGuardedFreeOne(PRTTESTGUARDEDMEM pMem);
+static int rtTestPrintf(PRTTESTINT pTest, const char *pszFormat, ...);
 
 
 /*******************************************************************************
@@ -301,6 +302,12 @@ RTR3DECL(int) RTTestDestroy(RTTEST hTest)
         return VINF_SUCCESS;
     RTTESTINT *pTest = hTest;
     RTTEST_VALID_RETURN(pTest);
+
+    /*
+     * Make sure we end with a new line.
+     */
+    if (!pTest->fNewLine)
+        rtTestPrintf(pTest, "\n");
 
     /*
      * Clean up.
@@ -785,8 +792,45 @@ RTR3DECL(int) RTTestSummaryAndDestroy(RTTEST hTest)
         rc = 1;
     }
 
+    RTTestDestroy(pTest);
+    return rc;
+}
+
+
+RTR3DECL(int) RTTestSkipAndDestroyV(RTTEST hTest, const char *pszReason, va_list va)
+{
+    PRTTESTINT pTest = hTest;
+    RTTEST_GET_VALID_RETURN_RC(pTest, 2);
+
+    RTCritSectEnter(&pTest->Lock);
+    rtTestSubTestReport(pTest);
+    RTCritSectLeave(&pTest->Lock);
+
+    int rc;
+    if (!pTest->cErrors)
+    {
+        if (pszReason)
+            RTTestPrintfNlV(hTest, RTTESTLVL_FAILURE, pszReason, va);
+        RTTestPrintfNl(hTest, RTTESTLVL_ALWAYS, "SKIPPED\n", pTest->cErrors);
+        rc = 2;
+    }
+    else
+    {
+        RTTestPrintfNl(hTest, RTTESTLVL_ALWAYS, "FAILURE - %u errors\n", pTest->cErrors);
+        rc = 1;
+    }
 
     RTTestDestroy(pTest);
+    return rc;
+}
+
+
+RTR3DECL(int) RTTestSkipAndDestroy(RTTEST hTest, const char *pszReason, ...)
+{
+    va_list va;
+    va_start(va, pszReason);
+    int rc = RTTestSkipAndDestroyV(hTest, pszReason, va);
+    va_end(va);
     return rc;
 }
 

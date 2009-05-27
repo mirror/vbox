@@ -202,6 +202,28 @@ RTR3DECL(int) RTTestBanner(RTTEST hTest);
 RTR3DECL(int) RTTestSummaryAndDestroy(RTTEST hTest);
 
 /**
+ * Skips the test, destroys the test instance and return an exit code.
+ *
+ * @returns Test program exit code.
+ * @param   hTest           The test handle. If NIL_RTTEST we'll use the one
+ *                          associated with the calling thread.
+ * @param   pszReasonFmt    Text explaining why, optional (NULL).
+ * @param   va              Arguments for the reason format string.
+ */
+RTR3DECL(int) RTTestSkipAndDestroyV(RTTEST hTest, const char *pszReason, va_list va);
+
+/**
+ * Skips the test, destroys the test instance and return an exit code.
+ *
+ * @returns Test program exit code.
+ * @param   hTest           The test handle. If NIL_RTTEST we'll use the one
+ *                          associated with the calling thread.
+ * @param   pszReasonFmt    Text explaining why, optional (NULL).
+ * @param   va              Arguments for the reason format string.
+ */
+RTR3DECL(int) RTTestSkipAndDestroy(RTTEST hTest, const char *pszReason, ...);
+
+/**
  * Starts a sub-test.
  *
  * This will perform an implicit RTTestSubDone() call if that has not been done
