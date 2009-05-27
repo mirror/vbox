@@ -82,6 +82,13 @@ ip_input(PNATState pData, struct mbuf *m)
     DEBUG_ARG("m_len = %d", m->m_len);
 
     ipstat.ips_total++;
+#ifdef VBOX_WITH_SLIRP_ALIAS
+    {
+        int rc;
+        rc = LibAliasIn(LIST_FIRST(&instancehead), mtod(m, char *), m->m_len);
+        Log2(("NAT: LibAlias return %d\n", rc));
+    }
+#endif
 
     if (m->m_len < sizeof(struct ip))
     {
@@ -173,13 +180,6 @@ ip_input(PNATState pData, struct mbuf *m)
     /*
      * Switch out to protocol's input routine.
      */
-#ifdef VBOX_WITH_SLIRP_ALIAS
-    {
-        int rc;
-        rc = LibAliasIn(LIST_FIRST(&instancehead), mtod(m, char *), ip->ip_len);
-        Log2(("NAT: LibAlias return %d\n", rc));
-    }
-#endif
     ipstat.ips_delivered++;
     switch (ip->ip_p)
     {

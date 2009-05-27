@@ -390,5 +390,40 @@ AssertCompileSize(struct ethhdr, 14);
 # ifndef __unused
 #  define __unused
 # endif
-#endif
+
+# define strncasecmp RTStrNICmp
+
+# define LIBALIAS_DEBUG
+# ifdef fprintf
+#   undef fprintf
+#   define fprintf vbox_slirp_fprintf
+# endif /*fprintf*/
+static inline void vbox_slirp_fprintf(void *ignored, char *msg, ...)
+{
+/*  define LogIt(pvInst, fFlags, iGroup, fmtargs) */
+    va_list args;
+    register PRTLOGGER LogIt_pLogger;
+    char buffer[2048];
+    memset(buffer, 0, 2048);
+    memcpy(buffer, "NAT: ALIAS:", 11);
+    va_start(args, msg);
+    RTStrPrintfV(&buffer[11], 2048 - 11, msg, args);
+
+    LogIt_pLogger = (PRTLOGGER)(LOG_INSTANCE) ? 
+        (PRTLOGGER)(LOG_INSTANCE) : RTLogDefaultInstance();
+    if (LogIt_pLogger)
+    {
+        RTLogPrintfEx(LogIt_pLogger,
+                ((RTLOGGRPFLAGS_LEVEL_2) | RTLOGGRPFLAGS_ENABLED), LOG_GROUP,
+                msg, buffer);
+    }
+    va_end(args);
+}
+#endif /*VBOX_WITH_SLIRP_ALIAS && VBOX_SLIRP_ALIAS*/
+
+#ifdef VBOX_WITH_SLIRP_ALIAS
+int ftp_alias_load();
+int ftp_alias_unload();
+#endif /*VBOX_WITH_SLIRP_ALIAS*/
+
 #endif
