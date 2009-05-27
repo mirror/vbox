@@ -61,7 +61,8 @@ RTDECL(bool) RTDirExists(const char *pszPath);
  * @returns iprt status code.
  * @param   pszPath   Path to the directory to create.
  * @param   fMode      The mode of the new directory.
- */ RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode);
+ */ 
+RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode);
 
 /**
  * Creates a directory including all parent directories in the path
