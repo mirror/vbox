@@ -73,6 +73,7 @@
 #include <VirtualBox_XPCOM.h>
 #include <VirtualBoxImpl.h>
 #include <MachineImpl.h>
+#include <VFSExplorerImpl.h>
 #include <ApplianceImpl.h>
 #include <SnapshotImpl.h>
 #include <MediumImpl.h>
@@ -109,6 +110,9 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VirtualBox, IVirtualBox)
 
 NS_DECL_CLASSINFO(Machine)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Machine, IMachine)
+
+NS_DECL_CLASSINFO(VFSExplorer)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VFSExplorer, IVFSExplorer)
 
 NS_DECL_CLASSINFO(Appliance)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Appliance, IAppliance)
