@@ -296,7 +296,7 @@ static int VBoxDrvFreeBSDOpen(struct cdev *pDev, int fOpen, struct thread *pTd, 
 #if __FreeBSD_version < 800062
     dprintf(("VBoxDrvFreeBSDOpen: fOpen=%#x iUnit=%d\n", fOpen, minor2unit(minor(pDev))));
 #else
-    dprintf(("VBoxDrvFreeBSDOpen: fOpen=%#x iUnit=%d\n", fOpen, minor(pDev)));
+    dprintf(("VBoxDrvFreeBSDOpen: fOpen=%#x iUnit=%d\n", fOpen, minor(dev2udev(pDev))));
 #endif
 
     /*
@@ -352,7 +352,7 @@ static int VBoxDrvFreeBSDClose(struct cdev *pDev, int fFile, int DevType, struct
 #if __FreeBSD_version < 800062
     dprintf(("VBoxDrvFreeBSDClose: fFile=%#x iUnit=%d pSession=%p\n", fFile, minor2unit(minor(pDev)), pSession));
 #else
-    dprintf(("VBoxDrvFreeBSDClose: fFile=%#x iUnit=%d pSession=%p\n", fFile, minor(pDev), pSession));
+    dprintf(("VBoxDrvFreeBSDClose: fFile=%#x iUnit=%d pSession=%p\n", fFile, minor(dev2udev(pDev)), pSession));
 #endif
 
     /*
