@@ -21,16 +21,17 @@
  */
 
 /* VBox includes */
-#include "VBoxLineTextEdit.h"
 #include "VBoxGlobal.h"
+#include "VBoxLineTextEdit.h"
+#include "QIFileDialog.h"
 
 /* Qt includes */
-#include <QPushButton>
-#include <QLineEdit>
 #include <QDialogButtonBox>
 #include <QFile>
-#include <QTextStream>
+#include <QLineEdit>
+#include <QPushButton>
 #include <QTextEdit>
+#include <QTextStream>
 
 ////////////////////////////////////////////////////////////////////////////////
 // VBoxTextEditor
@@ -80,7 +81,7 @@ void VBoxTextEditor::retranslateUi()
 
 void VBoxTextEditor::open()
 {
-    QString fileName = vboxGlobal().getOpenFileName (vboxGlobal().documentsPath(), tr("Text (*.txt);;All (*.*)"), this, tr("Select a file to open..."));
+    QString fileName = QIFileDialog::getOpenFileName (vboxGlobal().documentsPath(), tr("Text (*.txt);;All (*.*)"), this, tr("Select a file to open..."));
     if (!fileName.isEmpty())
     {
         QFile file (fileName);
