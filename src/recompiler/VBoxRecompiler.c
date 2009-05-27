@@ -2838,8 +2838,10 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb
     Assert(cb);
     Assert(RT_ALIGN_Z(cb, PAGE_SIZE) == cb);
     AssertMsg(fFlags == REM_NOTIFY_PHYS_RAM_FLAGS_RAM || fFlags == REM_NOTIFY_PHYS_RAM_FLAGS_MMIO2, ("#x\n", fFlags));
+#ifdef VBOX_WITH_REM_LOCKING
     Assert(!PGMIsLockOwner(pVM));
-
+    EMR3RemLock(pVM);
+#endif
     /*
      * Base ram? Update GCPhysLastRam.
      */
@@ -2861,7 +2863,9 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb
     cpu_register_physical_memory(GCPhys, cb, GCPhys);
     Assert(pVM->rem.s.fIgnoreAll);
     pVM->rem.s.fIgnoreAll = false;
+#ifdef VBOX_WITH_REM_LOCKING
     EMR3RemUnlock(pVM);
+#endif
 }
 
 
@@ -2888,7 +2892,9 @@ REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
     Assert(cb);
     Assert(RT_ALIGN_Z(cb, PAGE_SIZE) == cb);
 
+#ifdef VBOX_WITH_REM_LOCKING
     EMR3RemLock(pVM);
+#endif
     /*
      * Register the rom.
      */
@@ -2899,7 +2905,9 @@ REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
 
     Assert(pVM->rem.s.fIgnoreAll);
     pVM->rem.s.fIgnoreAll = false;
+#ifdef VBOX_WITH_REM_LOCKING
     EMR3RemUnlock(pVM);
+#endif
 }
 
 
@@ -2922,8 +2930,9 @@ REMR3DECL(void) REMR3NotifyPhysRamDeregister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb
     Assert(cb);
     Assert(RT_ALIGN_Z(cb, PAGE_SIZE) == cb);
 
+#ifdef VBOX_WITH_REM_LOCKING
     EMR3RemLock(pVM);
-
+#endif
     /*
      * Unassigning the memory.
      */
@@ -2934,7 +2943,9 @@ REMR3DECL(void) REMR3NotifyPhysRamDeregister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb
 
     Assert(pVM->rem.s.fIgnoreAll);
     pVM->rem.s.fIgnoreAll = false;
+#ifdef VBOX_WITH_REM_LOCKING
     EMR3RemUnlock(pVM);
+#endif
 }
 
 
@@ -2958,7 +2969,9 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE e
     Assert(RT_ALIGN_T(GCPhys, PAGE_SIZE, RTGCPHYS) == GCPhys);
     Assert(RT_ALIGN_T(cb, PAGE_SIZE, RTGCPHYS) == cb);
 
+#ifdef VBOX_WITH_REM_LOCKING
     EMR3RemLock(pVM);
+#endif
     if (pVM->rem.s.cHandlerNotifications)
         REMR3ReplayHandlerNotifications(pVM);
 
@@ -2972,7 +2985,9 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE e
 
     Assert(pVM->rem.s.fIgnoreAll);
     pVM->rem.s.fIgnoreAll = false;
+#ifdef VBOX_WITH_REM_LOCKING
     EMR3RemUnlock(pVM);
+#endif
 }
 
 
@@ -2992,8 +3007,9 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE
           enmType, GCPhys, cb, fHasHCHandler, fRestoreAsRAM, MMR3PhysGetRamSize(pVM)));
     VM_ASSERT_EMT(pVM);
 
+#ifdef VBOX_WITH_REM_LOCKING
     EMR3RemLock(pVM);
-
+#endif
     if (pVM->rem.s.cHandlerNotifications)
         REMR3ReplayHandlerNotifications(pVM);
 
@@ -3020,7 +3036,9 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE
 
     Assert(pVM->rem.s.fIgnoreAll);
     pVM->rem.s.fIgnoreAll = false;
+#ifdef VBOX_WITH_REM_LOCKING
     EMR3RemUnlock(pVM);
+#endif
 }
 
 
@@ -3042,8 +3060,9 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enm
     VM_ASSERT_EMT(pVM);
     AssertReleaseMsg(enmType != PGMPHYSHANDLERTYPE_MMIO, ("enmType=%d\n", enmType));
 
+#ifdef VBOX_WITH_REM_LOCKING
     EMR3RemLock(pVM);
-
+#endif
     if (pVM->rem.s.cHandlerNotifications)
         REMR3ReplayHandlerNotifications(pVM);
 
@@ -3075,7 +3094,9 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enm
         Assert(pVM->rem.s.fIgnoreAll);
         pVM->rem.s.fIgnoreAll = false;
     }
+#ifdef VBOX_WITH_REM_LOCKING
     EMR3RemUnlock(pVM);
+#endif
 }
 
 
