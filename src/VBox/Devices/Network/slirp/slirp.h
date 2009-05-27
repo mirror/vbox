@@ -374,12 +374,15 @@ struct ethhdr
 AssertCompileSize(struct ethhdr, 14);
 # endif
 #if defined(VBOX_WITH_SLIRP_ALIAS) && defined(VBOX_SLIRP_ALIAS)
-# define ip_next(ip) (uintptr_t)((uint8_t *)(ip) + ((ip)->ip_hl << 2))
+
+# define ip_next(ip) (void *)((uint8_t *)(ip) + ((ip)->ip_hl << 2))
 # define bcopy(src, dst, len) memcpy((dst), (src), (len)) 
 # define NO_FW_PUNCH
+
 # ifdef alias_addr
 #  error  alias_addr has already defined!!!
 # endif
+
 # define arc4random() RTRandU32()
 # undef malloc
 # undef calloc
@@ -394,30 +397,22 @@ AssertCompileSize(struct ethhdr, 14);
 # define strncasecmp RTStrNICmp
 
 # define LIBALIAS_DEBUG
+
 # ifdef fprintf
 #   undef fprintf
-#   define fprintf vbox_slirp_fprintf
 # endif /*fprintf*/
-static inline void vbox_slirp_fprintf(void *ignored, char *msg, ...)
+# define fprintf vbox_slirp_fprintf
+static void vbox_slirp_fprintf(void *ignored, char *format, ...)
 {
 /*  define LogIt(pvInst, fFlags, iGroup, fmtargs) */
     va_list args;
-    register PRTLOGGER LogIt_pLogger;
-    char buffer[2048];
-    memset(buffer, 0, 2048);
-    memcpy(buffer, "NAT: ALIAS:", 11);
-    va_start(args, msg);
-    RTStrPrintfV(&buffer[11], 2048 - 11, msg, args);
-
-    LogIt_pLogger = (PRTLOGGER)(LOG_INSTANCE) ? 
-        (PRTLOGGER)(LOG_INSTANCE) : RTLogDefaultInstance();
-    if (LogIt_pLogger)
-    {
-        RTLogPrintfEx(LogIt_pLogger,
-                ((RTLOGGRPFLAGS_LEVEL_2) | RTLOGGRPFLAGS_ENABLED), LOG_GROUP,
-                msg, buffer);
-    }
+    char buffer[1024];
+    memset(buffer, 0, 1024);
+    va_start(args, format);
+    RTStrPrintfV(buffer, 1024, format, args);
     va_end(args);
+
+    Log2(("%s\n", buffer));
 }
 #endif /*VBOX_WITH_SLIRP_ALIAS && VBOX_SLIRP_ALIAS*/
 
