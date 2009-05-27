@@ -686,13 +686,18 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
 #ifdef VBOX_WITH_SLIRP_ALIAS
     {
         struct libalias *lib = NULL; 
+        int flags = 0;
         lib = LibAliasInit(pData, NULL);
         if (lib == NULL)
         {
             LogRel(("NAT: LibAlias default rule wasn't initialized\n"));
             AssertMsgFailed(("NAT: LibAlias default rule wasn't initialized\n"));
         }
+        flags = LibAliasSetMode(lib, 0, 0);
+        flags |= PKT_ALIAS_LOG; /* set logging */
+        flags = LibAliasSetMode(lib, flags, ~0);
         LibAliasSetAddress(lib, special_addr);
+        ftp_alias_load();
         
     }
 #endif

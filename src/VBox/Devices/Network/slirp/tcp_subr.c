@@ -658,6 +658,7 @@ tcp_tos(struct socket *so)
 int
 tcp_emu(PNATState pData, struct socket *so, struct mbuf *m)
 {
+#ifndef VBOX_WITH_SLIRP_ALIAS
     u_int n1, n2, n3, n4, n5, n6;
     char buff[256];
     u_int32_t laddr;
@@ -1006,4 +1007,9 @@ tcp_emu(PNATState pData, struct socket *so, struct mbuf *m)
             so->so_emu = 0;
             return 1;
     }
+#else /* !VBOX_WITH_SLIRP_ALIAS */
+    /*XXX: libalias should care about it */
+    so->so_emu = 0;
+    return 1;
+#endif
 }

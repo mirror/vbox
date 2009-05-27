@@ -384,7 +384,6 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         {
             /* only check for slow/fast timers */
             slirp_select_poll(pThis->pNATState, /* fTimeout=*/true, /*fIcmp=*/false);
-            Log2(("%s: timeout\n", __FUNCTION__));
             continue;
         }
 
