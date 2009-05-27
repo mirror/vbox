@@ -1685,6 +1685,7 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
     if (!PdeDst.n.u1Present)
     {
         AssertMsg(pVM->cCPUs > 1, ("%Unexpected missing PDE p=%llx\n", pPdeDst, (uint64_t)PdeDst.u));
+        Log(("CPU%d: SyncPage: Pde at %RGv changed behind our back!\n", GCPtrPage));
         return VINF_SUCCESS;    /* force the instruction to be executed again. */
     }
 
