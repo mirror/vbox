@@ -203,23 +203,6 @@ static DECLCALLBACK(void) pdmR3ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, PDMAPIC
     }
 }
 
-/** @copydoc PDMAPICHLPR3::pfnLock */
-static DECLCALLBACK(int) pdmR3ApicHlp_Lock(PPDMDEVINS pDevIns, int rc)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3ApicHlp_Lock: caller='%s'/%d: rc=%Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
-    return pdmLockEx(pDevIns->Internal.s.pVMR3, rc);
-}
-
-
-/** @copydoc PDMAPICHLPR3::pfnUnlock */
-static DECLCALLBACK(void) pdmR3ApicHlp_Unlock(PPDMDEVINS pDevIns)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3ApicHlp_Unlock: caller='%s'/%d:\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
-    pdmUnlock(pDevIns->Internal.s.pVMR3);
-}
-
 /** @copydoc PDMAPICHLPR3::pfnGetCpuId */
 static DECLCALLBACK(VMCPUID) pdmR3ApicHlp_GetCpuId(PPDMDEVINS pDevIns)
 {
@@ -275,6 +258,38 @@ static DECLCALLBACK(PCPDMAPICHLPR0) pdmR3ApicHlp_GetR0Helpers(PPDMDEVINS pDevIns
 }
 
 
+/** @copydoc PDMAPICHLPR3::pfnGetR3CritSect */
+static DECLCALLBACK(R3PTRTYPE(PPDMCRITSECT)) pdmR3ApicHlp_GetR3CritSect(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3ApicHlp_Lock: caller='%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+    return &pDevIns->Internal.s.pVMR3->pdm.s.CritSect;
+}
+
+
+/** @copydoc PDMAPICHLPR3::pfnGetRCCritSect */
+static DECLCALLBACK(RCPTRTYPE(PPDMCRITSECT)) pdmR3ApicHlp_GetRCCritSect(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    RTRCPTR RCPtr = MMHyperCCToRC(pVM, &pVM->pdm.s.CritSect);
+    LogFlow(("pdmR3ApicHlp_GetR0CritSect: caller='%s'/%d: return %RRv\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, RCPtr));
+    return RCPtr;
+}
+
+
+/** @copydoc PDMAPICHLPR3::pfnGetR3CritSect */
+static DECLCALLBACK(R0PTRTYPE(PPDMCRITSECT)) pdmR3ApicHlp_GetR0CritSect(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    RTR0PTR R0Ptr = MMHyperCCToR0(pVM, &pVM->pdm.s.CritSect);
+    LogFlow(("pdmR3ApicHlp_GetR0CritSect: caller='%s'/%d: return %RHv\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, R0Ptr));
+    return R0Ptr;
+}
+
+
+
 /**
  * APIC Device Helpers.
  */
@@ -284,13 +299,14 @@ const PDMAPICHLPR3 g_pdmR3DevApicHlp =
     pdmR3ApicHlp_SetInterruptFF,
     pdmR3ApicHlp_ClearInterruptFF,
     pdmR3ApicHlp_ChangeFeature,
-    pdmR3ApicHlp_Lock,
-    pdmR3ApicHlp_Unlock,
     pdmR3ApicHlp_GetCpuId,
     pdmR3ApicHlp_SendSipi,
     pdmR3ApicHlp_SendInitIpi,
     pdmR3ApicHlp_GetRCHelpers,
     pdmR3ApicHlp_GetR0Helpers,
+    pdmR3ApicHlp_GetR3CritSect,
+    pdmR3ApicHlp_GetRCCritSect,
+    pdmR3ApicHlp_GetR0CritSect,
     PDM_APICHLPR3_VERSION /* the end */
 };
 

@@ -1271,23 +1271,6 @@ typedef struct PDMAPICHLPR3
     DECLR3CALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, PDMAPICVERSION enmVersion));
 
     /**
-     * Acquires the PDM lock.
-     *
-     * @returns VINF_SUCCESS on success.
-     * @returns Fatal error on failure.
-     * @param   pDevIns         The APIC device instance.
-     * @param   rc              Dummy for making the interface identical to the GC and R0 versions.
-     */
-    DECLR3CALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
-
-    /**
-     * Releases the PDM lock.
-     *
-     * @param   pDevIns         The APIC device instance.
-     */
-    DECLR3CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
-
-    /**
      * Get the virtual CPU id corresponding to the current EMT.
      *
      * @param   pDevIns         The APIC device instance.
@@ -1334,6 +1317,30 @@ typedef struct PDMAPICHLPR3
      */
     DECLR3CALLBACKMEMBER(PCPDMAPICHLPR0, pfnGetR0Helpers,(PPDMDEVINS pDevIns));
 
+    /**
+     * Get the critical section used to synchronize the PICs, PCI and stuff.
+     *
+     * @returns Ring-3 pointer to the critical section.
+     * @param   pDevIns         The APIC device instance.
+     */
+    DECLR3CALLBACKMEMBER(R3PTRTYPE(PPDMCRITSECT), pfnGetR3CritSect,(PPDMDEVINS pDevIns));
+
+    /**
+     * Get the critical section used to synchronize the PICs, PCI and stuff.
+     *
+     * @returns Raw-mode context pointer to the critical section.
+     * @param   pDevIns         The APIC device instance.
+     */
+    DECLR3CALLBACKMEMBER(RCPTRTYPE(PPDMCRITSECT), pfnGetRCCritSect,(PPDMDEVINS pDevIns));
+
+    /**
+     * Get the critical section used to synchronize the PICs, PCI and stuff.
+     *
+     * @returns Ring-0 pointer to the critical section.
+     * @param   pDevIns         The APIC device instance.
+     */
+    DECLR3CALLBACKMEMBER(R0PTRTYPE(PPDMCRITSECT), pfnGetR0CritSect,(PPDMDEVINS pDevIns));
+
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
 } PDMAPICHLPR3;
@@ -1343,7 +1350,7 @@ typedef R3PTRTYPE(PDMAPICHLPR3 *) PPDMAPICHLPR3;
 typedef R3PTRTYPE(const PDMAPICHLPR3 *) PCPDMAPICHLPR3;
 
 /** Current PDMAPICHLP version number. */
-#define PDM_APICHLPR3_VERSION  0xfd010000
+#define PDM_APICHLPR3_VERSION  0xfd020000
 
 
 /**

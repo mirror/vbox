@@ -58,25 +58,25 @@
 
 /** @def APIC_LOCK
  * Acquires the PDM lock. */
-#define APIC_LOCK(pThis, rc) \
+#define APIC_LOCK(pThis, rcBusy) \
     do { \
-        int rc2 = (pThis)->CTX_SUFF(pApicHlp)->pfnLock((pThis)->CTX_SUFF(pDevIns), rc); \
+        int rc2 = PDMCritSectEnter((pThis)->CTX_SUFF(pCritSect), (rcBusy)); \
         if (rc2 != VINF_SUCCESS) \
             return rc2; \
     } while (0)
 
 /** @def APIC_LOCK_VOID
  * Acquires the PDM lock and does not expect failure (i.e. ring-3 only!). */
-#define APIC_LOCK_VOID(pThis, rc) \
+#define APIC_LOCK_VOID(pThis, rcBusy) \
     do { \
-        int rc2 = (pThis)->CTX_SUFF(pApicHlp)->pfnLock((pThis)->CTX_SUFF(pDevIns), rc); \
+        int rc2 = PDMCritSectEnter((pThis)->CTX_SUFF(pCritSect), (rcBusy)); \
         AssertLogRelRCReturnVoid(rc2); \
     } while (0)
 
 /** @def APIC_UNLOCK
  * Releases the PDM lock. */
 #define APIC_UNLOCK(pThis) \
-    (pThis)->CTX_SUFF(pApicHlp)->pfnUnlock((pThis)->CTX_SUFF(pDevIns))
+    PDMCritSectLeave((pThis)->CTX_SUFF(pCritSect))
 
 /** @def IOAPIC_LOCK
  * Acquires the PDM lock. */
@@ -280,34 +280,41 @@ typedef struct IOAPICState IOAPICState;
 typedef struct
 {
     /** The device instance - R3 Ptr. */
-    PPDMDEVINSR3    pDevInsR3;
+    PPDMDEVINSR3            pDevInsR3;
     /** The APIC helpers - R3 Ptr. */
-    PCPDMAPICHLPR3  pApicHlpR3;
+    PCPDMAPICHLPR3          pApicHlpR3;
     /** LAPICs states - R3 Ptr */
-    RTR3PTR         pLapicsR3;
+    RTR3PTR                 pLapicsR3;
+    /** The critical section - R3 Ptr. */
+    R3PTRTYPE(PPDMCRITSECT) pCritSectR3;
 
     /** The device instance - R0 Ptr. */
-    PPDMDEVINSR0    pDevInsR0;
+    PPDMDEVINSR0            pDevInsR0;
     /** The APIC helpers - R0 Ptr. */
-    PCPDMAPICHLPR0  pApicHlpR0;
+    PCPDMAPICHLPR0          pApicHlpR0;
     /** LAPICs states - R0 Ptr */
-    RTR0PTR         pLapicsR0;
+    RTR0PTR                 pLapicsR0;
+    /** The critical section - R3 Ptr. */
+    R0PTRTYPE(PPDMCRITSECT) pCritSectR0;
 
     /** The device instance - RC Ptr. */
-    PPDMDEVINSRC    pDevInsRC;
+    PPDMDEVINSRC            pDevInsRC;
     /** The APIC helpers - RC Ptr. */
-    PCPDMAPICHLPRC  pApicHlpRC;
+    PCPDMAPICHLPRC          pApicHlpRC;
     /** LAPICs states - RC Ptr */
-    RTRCPTR         pLapicsRC;
+    RTRCPTR                 pLapicsRC;
+    /** The critical section - R3 Ptr. */
+    RCPTRTYPE(PPDMCRITSECT) pCritSectRC;
+    RTRCPTR                 Padding0;
 
     /** APIC specification version in this virtual hardware configuration. */
-    PDMAPICVERSION  enmVersion;
+    PDMAPICVERSION          enmVersion;
 
     /** Number of attempts made to optimize TPR accesses. */
-    uint32_t        ulTPRPatchAttempts;
+    uint32_t                cTPRPatchAttempts;
 
     /** Number of CPUs on the system (same as LAPIC count). */
-    uint32_t        cCpus;
+    uint32_t                cCpus;
 
 # ifdef VBOX_WITH_STATISTICS
     STAMCOUNTER     StatMMIOReadGC;
@@ -1305,8 +1312,6 @@ static DECLCALLBACK(void) apicTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *p
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     APICState *s = (APICState *)pvUser;
     Assert(s->pTimerR3 == pTimer);
-
-    APIC_LOCK_VOID(dev, VERR_INTERNAL_ERROR);
 # endif /* VBOX */
 
     if (!(s->lvt[APIC_LVT_TIMER] & APIC_LVT_MASKED)) {
@@ -1314,10 +1319,6 @@ static DECLCALLBACK(void) apicTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *p
         apic_set_irq(dev, s, s->lvt[APIC_LVT_TIMER] & 0xff, APIC_TRIGGER_EDGE);
     }
     apic_timer_update(dev, s, s->next_time);
-
-# ifdef VBOX
-    APIC_UNLOCK(dev);
-# endif
 }
 #endif /* IN_RING3 */
 
@@ -2056,7 +2057,7 @@ PDMBOTHCBDECL(int) apicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
             uint32_t index = (GCPhysAddr >> 4) & 0xff;
 
             if (    index == 0x08 /* TPR */
-                &&  ++s->ulTPRPatchAttempts < APIC_MAX_PATCH_ATTEMPTS)
+                &&  ++s->cTPRPatchAttempts < APIC_MAX_PATCH_ATTEMPTS)
             {
 #ifdef IN_RC
                 pDevIns->pDevHlpGC->pfnPATMSetMMIOPatchInfo(pDevIns, GCPhysAddr, &s->tpr);
@@ -2177,11 +2178,12 @@ static DECLCALLBACK(void) apicReset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) apicRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
-    dev->pDevInsRC  = PDMDEVINS_2_RCPTR(pDevIns);
-    dev->pApicHlpRC = dev->pApicHlpR3->pfnGetRCHelpers(pDevIns);
-    dev->pLapicsRC  = MMHyperR3ToRC(PDMDevHlpGetVM(pDevIns), dev->pLapicsR3);
-    foreach_apic(dev, 0xffffffff,
+    APICDeviceInfo *pThis = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
+    pThis->pDevInsRC   = PDMDEVINS_2_RCPTR(pDevIns);
+    pThis->pApicHlpRC  = pThis->pApicHlpR3->pfnGetRCHelpers(pDevIns);
+    pThis->pLapicsRC   = MMHyperR3ToRC(PDMDevHlpGetVM(pDevIns), pThis->pLapicsR3);
+    pThis->pCritSectRC = pThis->pApicHlpR3->pfnGetRCCritSect(pDevIns);
+    foreach_apic(pThis, 0xffffffff,
                  apic->pTimerRC = TMTimerRCPtr(apic->CTX_SUFF(pTimer)));
 }
 
@@ -2345,6 +2347,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         AssertLogRelMsgFailed(("APICRegister -> %Rrc\n", rc));
         return rc;
     }
+    pThis->pCritSectR3 = pThis->pApicHlpR3->pfnGetR3CritSect(pDevIns);
 
     /*
      * The the CPUID feature bit.
@@ -2375,7 +2378,8 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return rc;
 
     if (fGCEnabled) {
-        pThis->pApicHlpRC = pThis->pApicHlpR3->pfnGetRCHelpers(pDevIns);
+        pThis->pApicHlpRC  = pThis->pApicHlpR3->pfnGetRCHelpers(pDevIns);
+        pThis->pCritSectRC = pThis->pApicHlpR3->pfnGetRCCritSect(pDevIns);
 
         rc = PDMDevHlpMMIORegisterGC(pDevIns, LAPIC_BASE(pThis)->apicbase & ~0xfff, 0x1000, 0,
                                      "apicMMIOWrite", "apicMMIORead", NULL);
@@ -2384,7 +2388,8 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     }
 
     if (fR0Enabled) {
-        pThis->pApicHlpR0 = pThis->pApicHlpR3->pfnGetR0Helpers(pDevIns);
+        pThis->pApicHlpR0  = pThis->pApicHlpR3->pfnGetR0Helpers(pDevIns);
+        pThis->pCritSectR0 = pThis->pApicHlpR3->pfnGetR0CritSect(pDevIns);
 
         rc = PDMDevHlpMMIORegisterR0(pDevIns, LAPIC_BASE(pThis)->apicbase & ~0xfff, 0x1000, 0,
                                      "apicMMIOWrite", "apicMMIORead", NULL);
@@ -2403,7 +2408,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
             return rc;
         apic->pTimerR0 = TMTimerR0Ptr(apic->pTimerR3);
         apic->pTimerRC = TMTimerRCPtr(apic->pTimerR3);
-        /// @todo TMTimerSetCritSect(apic->pTimerR3, pThis->pApicHlpR3->pfnGetCritSect(..));
+        TMR3TimerSetCritSect(apic->pTimerR3, pThis->pCritSectR3);
         apic++;
     }
 
