@@ -1302,9 +1302,9 @@ typedef struct PDMAPICHLPR3
      * @param   iVector         SIPI vector
      */
     DECLR3CALLBACKMEMBER(void,    pfnSendSipi,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t uVector));
-    
+
     /**
-     * Sends init IPI to given virtual CPU, should result in reset and 
+     * Sends init IPI to given virtual CPU, should result in reset and
      * halting till SIPI.
      *
      * @param   pDevIns         The APIC device instance.
@@ -1950,11 +1950,13 @@ typedef struct PDMDEVHLPR3
      * @param   pDevIns             Device instance.
      * @param   enmClock            The clock to use on this timer.
      * @param   pfnCallback         Callback function.
+     * @param   pvUser              User argument for the callback.
+     * @param   fFlags              Flags, see TMTIMER_FLAGS_*.
      * @param   pszDesc             Pointer to description string which must stay around
      *                              until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
      * @param   ppTimer             Where to store the timer on success.
      */
-    DECLR3CALLBACKMEMBER(int, pfnTMTimerCreate,(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, const char *pszDesc, PPTMTIMERR3 ppTimer));
+    DECLR3CALLBACKMEMBER(int, pfnTMTimerCreate,(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer));
 
     /**
      * Creates an external timer.
@@ -3462,9 +3464,10 @@ DECLINLINE(int) PDMDevHlpSSMRegister(PPDMDEVINS pDevIns, const char *pszName, ui
 /**
  * @copydoc PDMDEVHLPR3::pfnTMTimerCreate
  */
-DECLINLINE(int) PDMDevHlpTMTimerCreate(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, const char *pszDesc, PPTMTIMERR3 ppTimer)
+DECLINLINE(int) PDMDevHlpTMTimerCreate(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, void *pvUser, uint32_t fFlags,
+                                       const char *pszDesc, PPTMTIMERR3 ppTimer)
 {
-    return pDevIns->pDevHlpR3->pfnTMTimerCreate(pDevIns, enmClock, pfnCallback, pszDesc, ppTimer);
+    return pDevIns->pDevHlpR3->pfnTMTimerCreate(pDevIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, ppTimer);
 }
 
 /**

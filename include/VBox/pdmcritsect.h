@@ -53,10 +53,6 @@ typedef union PDMCRITSECT
     struct PDMCRITSECTINT s;
 #endif
 } PDMCRITSECT;
-/** Pointer to a PDM critical section. */
-typedef PDMCRITSECT *PPDMCRITSECT;
-/** Pointer to a const PDM critical section. */
-typedef const PDMCRITSECT *PCPDMCRITSECT;
 
 VMMR3DECL(int)      PDMR3CritSectInit(PVM pVM, PPDMCRITSECT pCritSect, const char *pszName);
 VMMDECL(int)        PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy);
@@ -68,6 +64,7 @@ VMMDECL(bool)       PDMCritSectIsOwnerEx(PCPDMCRITSECT pCritSect, VMCPUID idCpu)
 VMMDECL(bool)       PDMCritSectIsOwned(PCPDMCRITSECT pCritSect);
 VMMDECL(bool)       PDMCritSectIsInitialized(PCPDMCRITSECT pCritSect);
 VMMDECL(uint32_t)   PDMCritSectGetRecursion(PCPDMCRITSECT pCritSect);
+VMMR3DECL(const char *) PDMR3CritSectName(PCPDMCRITSECT pCritSect);
 VMMR3DECL(int)      PDMR3CritSectScheduleExitEvent(PPDMCRITSECT pCritSect, RTSEMEVENT EventToSignal);
 VMMR3DECL(int)      PDMR3CritSectDelete(PPDMCRITSECT pCritSect);
 VMMDECL(int)        PDMR3CritSectTerm(PVM pVM);

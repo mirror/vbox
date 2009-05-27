@@ -203,6 +203,11 @@ typedef struct PDMSRVINS *PPDMSRVINS;
 /** Pointer to a pointer to a PDM Service Instance. */
 typedef PPDMSRVINS *PPPDMSRVINS;
 
+/** Pointer to a PDM critical section. */
+typedef union PDMCRITSECT *PPDMCRITSECT;
+/** Pointer to a const PDM critical section. */
+typedef const union PDMCRITSECT *PCPDMCRITSECT;
+
 /** R3 pointer to a timer. */
 typedef R3PTRTYPE(struct TMTIMER *) PTMTIMERR3;
 /** Pointer to a R3 pointer to a timer. */

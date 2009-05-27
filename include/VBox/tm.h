@@ -72,6 +72,17 @@ typedef enum TMCLOCK
 } TMCLOCK;
 
 
+/** @defgroup grp_tm_timer_flags Timer flags.
+ * @{ */
+/** Use the default critical section for the class of timers.
+ * Only devices have one at the moment. */
+#define TMTIMER_FLAGS_DEFAULT_CRIT_SECT 0
+/** No critical section needed or a custom one is set using
+ *  TMR3TimerSetCritSect(). */
+#define TMTIMER_FLAGS_NO_CRIT_SECT      RT_BIT_32(0)
+/** @} */
+
+
 VMMDECL(void)     TMNotifyStartOfExecution(PVMCPU pVCpu);
 VMMDECL(void)     TMNotifyEndOfExecution(PVMCPU pVCpu);
 VMMDECL(void)     TMNotifyStartOfHalt(PVMCPU pVCpu);
@@ -131,8 +142,9 @@ VMMDECL(uint64_t) TMCpuTicksPerSecond(PVM pVM);
  *
  * @param   pDevIns         Device instance of the device which registered the timer.
  * @param   pTimer          The timer handle.
+ * @param   pvUser          User argument specified upon timer creation.
  */
-typedef DECLCALLBACK(void) FNTMTIMERDEV(PPDMDEVINS pDevIns, PTMTIMER pTimer);
+typedef DECLCALLBACK(void) FNTMTIMERDEV(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser);
 /** Pointer to a device timer callback function. */
 typedef FNTMTIMERDEV *PFNTMTIMERDEV;
 
@@ -217,7 +229,7 @@ VMMR3DECL(int)    TMR3Term(PVM pVM);
 VMMR3DECL(int)    TMR3TermCPU(PVM pVM);
 VMMR3DECL(void)   TMR3Reset(PVM pVM);
 VMMR3DECL(int)    TMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPtrValue);
-VMMR3DECL(int)    TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, const char *pszDesc, PPTMTIMERR3 ppTimer);
+VMMR3DECL(int)    TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer);
 VMMR3DECL(int)    TMR3TimerCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, const char *pszDesc, PPTMTIMERR3 ppTimer);
 VMMR3DECL(int)    TMR3TimerCreateInternal(PVM pVM, TMCLOCK enmClock, PFNTMTIMERINT pfnCallback, void *pvUser, const char *pszDesc, PPTMTIMERR3 ppTimer);
 VMMR3DECL(PTMTIMERR3) TMR3TimerCreateExternal(PVM pVM, TMCLOCK enmClock, PFNTMTIMEREXT pfnCallback, void *pvUser, const char *pszDesc);
@@ -226,6 +238,7 @@ VMMR3DECL(int)    TMR3TimerDestroyDevice(PVM pVM, PPDMDEVINS pDevIns);
 VMMR3DECL(int)    TMR3TimerDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns);
 VMMR3DECL(int)    TMR3TimerSave(PTMTIMERR3 pTimer, PSSMHANDLE pSSM);
 VMMR3DECL(int)    TMR3TimerLoad(PTMTIMERR3 pTimer, PSSMHANDLE pSSM);
+VMMR3DECL(int)    TMR3TimerSetCritSect(PTMTIMERR3 pTimer, PPDMCRITSECT pCritSect);
 VMMR3DECL(void)   TMR3TimerQueuesDo(PVM pVM);
 VMMR3DECL(void)   TMR3VirtualSyncFF(PVM pVM, PVMCPU pVCpu);
 VMMR3DECL(PRTTIMESPEC) TMR3UTCNow(PVM pVM, PRTTIMESPEC pTime);

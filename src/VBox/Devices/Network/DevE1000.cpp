@@ -2465,11 +2465,12 @@ DECLINLINE(uint32_t) e1kGetTxLen(E1KSTATE* pState)
  *
  * @param   pDevIns     Pointer to device instance structure.
  * @param   pTimer      Pointer to the timer.
+ * @param   pvUser      NULL.
  * @thread  EMT
  */
-static DECLCALLBACK(void) e1kTxIntDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
+static DECLCALLBACK(void) e1kTxIntDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    E1KSTATE *pState = PDMINS_2_DATA(pDevIns, E1KSTATE *);
+    E1KSTATE *pState = (E1KSTATE *)pvUser;
 
     if (RT_LIKELY(e1kMutexAcquire(pState, VERR_SEM_BUSY, RT_SRC_POS) == VINF_SUCCESS))
     {
@@ -2490,11 +2491,12 @@ static DECLCALLBACK(void) e1kTxIntDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer
  *
  * @param   pDevIns     Pointer to device instance structure.
  * @param   pTimer      Pointer to the timer.
+ * @param   pvUser      NULL.
  * @thread  EMT
  */
-static DECLCALLBACK(void) e1kTxAbsDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
+static DECLCALLBACK(void) e1kTxAbsDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    E1KSTATE *pState = PDMINS_2_DATA(pDevIns, E1KSTATE *);
+    E1KSTATE *pState = (E1KSTATE *)pvUser;
 
     if (RT_LIKELY(e1kMutexAcquire(pState, VERR_SEM_BUSY, RT_SRC_POS) == VINF_SUCCESS))
     {
@@ -2515,11 +2517,12 @@ static DECLCALLBACK(void) e1kTxAbsDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer
  *
  * @param   pDevIns     Pointer to device instance structure.
  * @param   pTimer      Pointer to the timer.
+ * @param   pvUser      NULL.
  * @thread  EMT
  */
-static DECLCALLBACK(void) e1kRxIntDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
+static DECLCALLBACK(void) e1kRxIntDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    E1KSTATE *pState = PDMINS_2_DATA(pDevIns, E1KSTATE *);
+    E1KSTATE *pState = (E1KSTATE *)pvUser;
 
     if (RT_LIKELY(e1kMutexAcquire(pState, VERR_SEM_BUSY, RT_SRC_POS) == VINF_SUCCESS))
     {
@@ -2538,11 +2541,12 @@ static DECLCALLBACK(void) e1kRxIntDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer
  *
  * @param   pDevIns     Pointer to device instance structure.
  * @param   pTimer      Pointer to the timer.
+ * @param   pvUser      NULL.
  * @thread  EMT
  */
-static DECLCALLBACK(void) e1kRxAbsDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
+static DECLCALLBACK(void) e1kRxAbsDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    E1KSTATE *pState = PDMINS_2_DATA(pDevIns, E1KSTATE *);
+    E1KSTATE *pState = (E1KSTATE *)pvUser;
 
     if (RT_LIKELY(e1kMutexAcquire(pState, VERR_SEM_BUSY, RT_SRC_POS) == VINF_SUCCESS))
     {
@@ -2560,11 +2564,12 @@ static DECLCALLBACK(void) e1kRxAbsDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer
  *
  * @param   pDevIns     Pointer to device instance structure.
  * @param   pTimer      Pointer to the timer.
+ * @param   pvUser      NULL.
  * @thread  EMT
  */
-static DECLCALLBACK(void) e1kLateIntTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
+static DECLCALLBACK(void) e1kLateIntTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    E1KSTATE *pState = PDMINS_2_DATA(pDevIns, E1KSTATE *);
+    E1KSTATE *pState = (E1KSTATE *)pvUser;
 
     STAM_PROFILE_ADV_START(&pState->StatLateIntTimer, a);
     if (RT_LIKELY(e1kMutexAcquire(pState, VERR_SEM_BUSY, RT_SRC_POS) == VINF_SUCCESS))
@@ -2586,11 +2591,12 @@ static DECLCALLBACK(void) e1kLateIntTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
  *
  * @param   pDevIns     Pointer to device instance structure.
  * @param   pTimer      Pointer to the timer.
+ * @param   pvUser      NULL.
  * @thread  EMT
  */
-static DECLCALLBACK(void) e1kLinkUpTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
+static DECLCALLBACK(void) e1kLinkUpTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    E1KSTATE *pState = PDMINS_2_DATA(pDevIns, E1KSTATE *);
+    E1KSTATE *pState = (E1KSTATE *)pvUser;
 
     if (RT_LIKELY(e1kMutexAcquire(pState, VERR_SEM_BUSY, RT_SRC_POS) == VINF_SUCCESS))
     {
@@ -4811,7 +4817,8 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 
 #ifdef E1K_USE_TX_TIMERS
     /* Create Transmit Interrupt Delay Timer */
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kTxIntDelayTimer,
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kTxIntDelayTimer, pState,
+                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, /** @todo check locking here. */
                                 "E1000 Transmit Interrupt Delay Timer", &pState->pTIDTimerR3);
     if (RT_FAILURE(rc))
         return rc;
@@ -4820,7 +4827,8 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 
 # ifndef E1K_NO_TAD
     /* Create Transmit Absolute Delay Timer */
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kTxAbsDelayTimer,
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kTxAbsDelayTimer, pState,
+                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, /** @todo check locking here. */
                                 "E1000 Transmit Absolute Delay Timer", &pState->pTADTimerR3);
     if (RT_FAILURE(rc))
         return rc;
@@ -4831,7 +4839,8 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 
 #ifdef E1K_USE_RX_TIMERS
     /* Create Receive Interrupt Delay Timer */
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kRxIntDelayTimer,
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kRxIntDelayTimer, pState,
+                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, /** @todo check locking here. */
                                 "E1000 Receive Interrupt Delay Timer", &pState->pRIDTimerR3);
     if (RT_FAILURE(rc))
         return rc;
@@ -4839,7 +4848,8 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     pState->pRIDTimerRC = TMTimerRCPtr(pState->pRIDTimerR3);
 
     /* Create Receive Absolute Delay Timer */
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kRxAbsDelayTimer,
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kRxAbsDelayTimer, pState,
+                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, /** @todo check locking here. */
                                 "E1000 Receive Absolute Delay Timer", &pState->pRADTimerR3);
     if (RT_FAILURE(rc))
         return rc;
@@ -4848,7 +4858,8 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 #endif /* E1K_USE_RX_TIMERS */
 
     /* Create Late Interrupt Timer */
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kLateIntTimer,
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kLateIntTimer, pState,
+                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, /** @todo check locking here. */
                                 "E1000 Late Interrupt Timer", &pState->pIntTimerR3);
     if (RT_FAILURE(rc))
         return rc;
@@ -4856,7 +4867,8 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     pState->pIntTimerRC = TMTimerRCPtr(pState->pIntTimerR3);
 
     /* Create Link Up Timer */
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kLinkUpTimer,
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kLinkUpTimer, pState,
+                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, /** @todo check locking here. */
                                 "E1000 Link Up Timer", &pState->pLUTimer);
     if (RT_FAILURE(rc))
         return rc;

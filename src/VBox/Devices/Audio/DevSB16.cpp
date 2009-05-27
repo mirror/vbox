@@ -279,9 +279,9 @@ static void aux_timer (void *opaque)
     qemu_irq_raise (s->pic[s->irq]);
 }
 #else  /* VBOX */
-static DECLCALLBACK(void) sb16Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
+static DECLCALLBACK(void) sb16Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvThis)
 {
-    SB16State *s = PDMINS_2_DATA(pDevIns, SB16State *);
+    SB16State *s = (SB16State *)pvThis;
     s->can_write = 1;
     PDMDevHlpISASetIrq(s->pDevIns, s->irq, 1);
 }
@@ -1794,7 +1794,8 @@ static DECLCALLBACK(int) sb16Construct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Create timer, register & attach stuff.
      */
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, sb16Timer, "SB16 timer", &s->pTimer);
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, sb16Timer, s,
+                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "SB16 timer", &s->pTimer);
     if (RT_FAILURE(rc))
         AssertMsgFailedReturn(("pfnTMTimerCreate -> %Rrc\n", rc), rc);
 

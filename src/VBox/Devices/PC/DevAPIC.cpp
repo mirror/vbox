@@ -1295,28 +1295,19 @@ static void apic_timer_update(APICDeviceInfo* dev, APICState *s, int64_t current
 }
 
 #ifdef IN_RING3
-#ifndef VBOX
+# ifndef VBOX
 static void apic_timer(void *opaque)
 {
     APICState *s = opaque;
-#else /* VBOX */
-static DECLCALLBACK(void) apicTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
+# else /* VBOX */
+static DECLCALLBACK(void) apicTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
-    APICState *s = getLapic(dev);
-    if (s->pTimerR3 != pTimer)
-    {
-        for (uint32_t iCpu = 0; iCpu < dev->cCpus; iCpu++)
-        {
-            s = getLapicById(dev, iCpu);
-            if (s->pTimerR3 == pTimer)
-                break;
-        }
-        Assert(s->pTimerR3 == pTimer);
-    }
+    APICState *s = (APICState *)pvUser;
+    Assert(s->pTimerR3 == pTimer);
 
     APIC_LOCK_VOID(dev, VERR_INTERNAL_ERROR);
-#endif /* VBOX */
+# endif /* VBOX */
 
     if (!(s->lvt[APIC_LVT_TIMER] & APIC_LVT_MASKED)) {
         LogFlow(("apic_timer: trigger irq\n"));
@@ -1324,9 +1315,9 @@ static DECLCALLBACK(void) apicTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
     }
     apic_timer_update(dev, s, s->next_time);
 
-#ifdef VBOX
+# ifdef VBOX
     APIC_UNLOCK(dev);
-#endif
+# endif
 }
 #endif /* IN_RING3 */
 
@@ -2406,12 +2397,13 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      */
     for (i = 0, apic = LAPIC_BASE(pThis); i < cCpus; i++)
     {
-        rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, apicTimer,
-                                    "APIC Timer", &apic->pTimerR3);
+        rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, apicTimer, apic,
+                                    TMTIMER_FLAGS_NO_CRIT_SECT, "APIC Timer", &apic->pTimerR3);
         if (RT_FAILURE(rc))
             return rc;
         apic->pTimerR0 = TMTimerR0Ptr(apic->pTimerR3);
         apic->pTimerRC = TMTimerRCPtr(apic->pTimerR3);
+        /// @todo TMTimerSetCritSect(apic->pTimerR3, pThis->pApicHlpR3->pfnGetCritSect(..));
         apic++;
     }
 

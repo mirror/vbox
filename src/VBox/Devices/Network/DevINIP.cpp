@@ -145,9 +145,9 @@ static DECLCALLBACK(err_t) devINIPInterface(struct netif *netif);
  * @param   pDevIns     Device instance.
  * @param   pTimer      Pointer to timer.
  */
-static DECLCALLBACK(void) devINIPARPTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
+static DECLCALLBACK(void) devINIPARPTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    PDEVINTNETIP pThis = PDMINS_2_DATA(pDevIns, PDEVINTNETIP);
+    PDEVINTNETIP pThis = (PDEVINTNETIP)pvUser;
     LogFlow(("%s: pDevIns=%p pTimer=%p\n", __FUNCTION__, pDevIns, pTimer));
     lwip_etharp_tmr();
     TMTimerSetMillies(pThis->ARPTimer, ARP_TMR_INTERVAL);
@@ -160,9 +160,9 @@ static DECLCALLBACK(void) devINIPARPTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
  * @param   pDevIns     Device instance.
  * @param   pTimer      Pointer to timer.
  */
-static DECLCALLBACK(void) devINIPTCPFastTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
+static DECLCALLBACK(void) devINIPTCPFastTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    PDEVINTNETIP pThis = PDMINS_2_DATA(pDevIns, PDEVINTNETIP);
+    PDEVINTNETIP pThis = (PDEVINTNETIP)pvUser;
     LogFlow(("%s: pDevIns=%p pTimer=%p\n", __FUNCTION__, pDevIns, pTimer));
     lwip_tcp_fasttmr();
     TMTimerSetMillies(pThis->TCPFastTimer, TCP_FAST_INTERVAL);
@@ -175,9 +175,9 @@ static DECLCALLBACK(void) devINIPTCPFastTimer(PPDMDEVINS pDevIns, PTMTIMER pTime
  * @param   pDevIns     Device instance.
  * @param   pTimer      Pointer to timer.
  */
-static DECLCALLBACK(void) devINIPTCPSlowTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
+static DECLCALLBACK(void) devINIPTCPSlowTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    PDEVINTNETIP pThis = PDMINS_2_DATA(pDevIns, PDEVINTNETIP);
+    PDEVINTNETIP pThis = (PDEVINTNETIP)pvUser;
     LogFlow(("%s: pDevIns=%p pTimer=%p\n", __FUNCTION__, pDevIns, pTimer));
     lwip_tcp_slowtmr();
     TMTimerSetMillies(pThis->TCPSlowTimer, TCP_SLOW_INTERVAL);
@@ -589,14 +589,17 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance,
     lwip_memp_init();
     lwip_pbuf_init();
     lwip_netif_init();
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, devINIPARPTimer, "lwIP ARP", &pThis->ARPTimer);
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, devINIPARPTimer, pThis,
+                                TMTIMER_FLAGS_NO_CRIT_SECT, "lwIP ARP", &pThis->ARPTimer);
     if (RT_FAILURE(rc))
         goto out;
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, devINIPTCPFastTimer, "lwIP fast TCP", &pThis->TCPFastTimer);
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, devINIPTCPFastTimer, pThis,
+                                TMTIMER_FLAGS_NO_CRIT_SECT, "lwIP fast TCP", &pThis->TCPFastTimer);
     if (RT_FAILURE(rc))
         goto out;
     TMTimerSetMillies(pThis->TCPFastTimer, TCP_FAST_INTERVAL);
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, devINIPTCPSlowTimer, "lwIP slow TCP", &pThis->TCPSlowTimer);
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, devINIPTCPSlowTimer, pThis,
+                                TMTIMER_FLAGS_NO_CRIT_SECT, "lwIP slow TCP", &pThis->TCPSlowTimer);
     if (RT_FAILURE(rc))
         goto out;
     TMTimerSetMillies(pThis->TCPFastTimer, TCP_SLOW_INTERVAL);

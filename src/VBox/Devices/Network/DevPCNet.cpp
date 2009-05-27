@@ -3801,18 +3801,11 @@ PDMBOTHCBDECL(int) pcnetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
  * @param   pTimer          The timer handle.
  * @thread  EMT
  */
-static DECLCALLBACK(void) pcnetTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
+static DECLCALLBACK(void) pcnetTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    PCNetState *pThis = PDMINS_2_DATA(pDevIns, PCNetState *);
-    int         rc;
-
+    PCNetState *pThis = (PCNetState *)pvUser;
     STAM_PROFILE_ADV_START(&pThis->StatTimer, a);
-    rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
-    AssertReleaseRC(rc);
-
     pcnetPollTimer(pThis);
-
-    PDMCritSectLeave(&pThis->CritSect);
     STAM_PROFILE_ADV_STOP(&pThis->StatTimer, a);
 }
 
@@ -3824,10 +3817,11 @@ static DECLCALLBACK(void) pcnetTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
  * @param   pTimer          The timer handle.
  * @thread  EMT
  */
-static DECLCALLBACK(void) pcnetTimerSoftInt(PPDMDEVINS pDevIns, PTMTIMER pTimer)
+static DECLCALLBACK(void) pcnetTimerSoftInt(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    PCNetState *pThis = PDMINS_2_DATA(pDevIns, PCNetState *);
+    PCNetState *pThis = (PCNetState *)pvUser;
 
+/** @todo why aren't we taking any critsect here?!? */
     pThis->aCSR[7] |= 0x0800; /* STINT */
     pcnetUpdateIrq(pThis);
     TMTimerSetNano(pThis->CTX_SUFF(pTimerSoftInt), 12800U * (pThis->aBCR[BCR_STVAL] & 0xffff));
@@ -3844,13 +3838,11 @@ static DECLCALLBACK(void) pcnetTimerSoftInt(PPDMDEVINS pDevIns, PTMTIMER pTimer)
  * @param   pDevIns         Device instance of the device which registered the timer.
  * @param   pTimer          The timer handle.
  */
-static DECLCALLBACK(void) pcnetTimerRestore(PPDMDEVINS pDevIns, PTMTIMER pTimer)
+static DECLCALLBACK(void) pcnetTimerRestore(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     PCNetState *pThis = PDMINS_2_DATA(pDevIns, PCNetState *);
-    int         rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
-    AssertReleaseRC(rc);
 
-    rc = VERR_GENERAL_FAILURE;
+    int rc = VERR_GENERAL_FAILURE;
     if (pThis->cLinkDownReported <= PCNET_MAX_LINKDOWN_REPORTED)
         rc = TMTimerSetMillies(pThis->pTimerRestore, 1500);
     if (RT_FAILURE(rc))
@@ -3869,8 +3861,6 @@ static DECLCALLBACK(void) pcnetTimerRestore(PPDMDEVINS pDevIns, PTMTIMER pTimer)
     else
         Log(("#%d pcnetTimerRestore: cLinkDownReported=%d, wait another 1500ms...\n",
              pDevIns->iInstance, pThis->cLinkDownReported));
-
-    PDMCritSectLeave(&pThis->CritSect);
 }
 
 
@@ -4677,7 +4667,7 @@ static DECLCALLBACK(void) pcnetReset(PPDMDEVINS pDevIns)
     {
         pThis->cLinkDownReported = 0x10000;
         TMTimerStop(pThis->pTimerRestore);
-        pcnetTimerRestore(pDevIns, pThis->pTimerRestore);
+        pcnetTimerRestore(pDevIns, pThis->pTimerRestore, pThis);
     }
     if (pThis->pSharedMMIOR3)
         pcnetInitSharedMemory(pThis);
@@ -4918,47 +4908,10 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
             return rc;
     }
 
-#ifdef PCNET_NO_POLLING
-    /*
-     * Resolve the R0 and RC handlers.
-     */
-    rc = PDMR3LdrGetSymbolR0Lazy(PDMDevHlpGetVM(pDevIns), NULL, "EMInterpretInstruction", &pThis->pfnEMInterpretInstructionR0);
-    if (RT_SUCCESS(rc))
-        rc = PDMR3LdrGetSymbolRCLazy(PDMDevHlpGetVM(pDevIns), NULL, "EMInterpretInstruction", (RTGCPTR *)&pThis->pfnEMInterpretInstructionRC);
-    AssertLogRelMsgRCReturn(rc, ("PDMR3LdrGetSymbolRCLazy(EMInterpretInstruction) -> %Rrc\n", rc), rc);
-#else
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pcnetTimer,
-                                "PCNet Poll Timer", &pThis->pTimerPollR3);
-    if (RT_FAILURE(rc))
-        return rc;
-    pThis->pTimerPollR0 = TMTimerR0Ptr(pThis->pTimerPollR3);
-    pThis->pTimerPollRC = TMTimerRCPtr(pThis->pTimerPollR3);
-#endif
-    if (pThis->fAm79C973)
-    {
-        /* Software Interrupt timer */
-        rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pcnetTimerSoftInt,
-                                    "PCNet SoftInt Timer", &pThis->pTimerSoftIntR3);
-        if (RT_FAILURE(rc))
-            return rc;
-        pThis->pTimerSoftIntR0 = TMTimerR0Ptr(pThis->pTimerSoftIntR3);
-        pThis->pTimerSoftIntRC = TMTimerRCPtr(pThis->pTimerSoftIntR3);
-    }
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pcnetTimerRestore,
-                                "PCNet Restore Timer", &pThis->pTimerRestore);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance,
-                              PCNET_SAVEDSTATE_VERSION, sizeof(*pThis),
-                              pcnetSavePrep, pcnetSaveExec, NULL,
-                              pcnetLoadPrep, pcnetLoadExec, NULL);
-    if (RT_FAILURE(rc))
-        return rc;
-
     /*
      * Initialize critical section.
-     * This must of course be done before attaching drivers or anything else which can call us back.
+     * This must be done before register the critsect with the timer code, and also before
+     * attaching drivers or anything else that may call us back.
      */
     char szName[24];
     RTStrPrintf(szName, sizeof(szName), "PCNet#%d", iInstance);
@@ -4968,6 +4921,46 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     rc = RTSemEventCreate(&pThis->hEventOutOfRxSpace);
     AssertRC(rc);
+
+#ifdef PCNET_NO_POLLING
+    /*
+     * Resolve the R0 and RC handlers.
+     */
+    rc = PDMR3LdrGetSymbolR0Lazy(PDMDevHlpGetVM(pDevIns), NULL, "EMInterpretInstruction", &pThis->pfnEMInterpretInstructionR0);
+    if (RT_SUCCESS(rc))
+        rc = PDMR3LdrGetSymbolRCLazy(PDMDevHlpGetVM(pDevIns), NULL, "EMInterpretInstruction", (RTGCPTR *)&pThis->pfnEMInterpretInstructionRC);
+    AssertLogRelMsgRCReturn(rc, ("PDMR3LdrGetSymbolRCLazy(EMInterpretInstruction) -> %Rrc\n", rc), rc);
+#else
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pcnetTimer, pThis,
+                                TMTIMER_FLAGS_NO_CRIT_SECT, "PCNet Poll Timer", &pThis->pTimerPollR3);
+    if (RT_FAILURE(rc))
+        return rc;
+    pThis->pTimerPollR0 = TMTimerR0Ptr(pThis->pTimerPollR3);
+    pThis->pTimerPollRC = TMTimerRCPtr(pThis->pTimerPollR3);
+    TMR3TimerSetCritSect(pThis->pTimerPollR3, &pThis->CritSect);
+#endif
+    if (pThis->fAm79C973)
+    {
+        /* Software Interrupt timer */
+        rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pcnetTimerSoftInt, pThis, /** @todo r=bird: the locking here looks bogus now with SMP... */
+                                    TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PCNet SoftInt Timer", &pThis->pTimerSoftIntR3);
+        if (RT_FAILURE(rc))
+            return rc;
+        pThis->pTimerSoftIntR0 = TMTimerR0Ptr(pThis->pTimerSoftIntR3);
+        pThis->pTimerSoftIntRC = TMTimerRCPtr(pThis->pTimerSoftIntR3);
+    }
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pcnetTimerRestore, pThis,
+                                TMTIMER_FLAGS_NO_CRIT_SECT, "PCNet Restore Timer", &pThis->pTimerRestore);
+    if (RT_FAILURE(rc))
+        return rc;
+    TMR3TimerSetCritSect(pThis->pTimerRestore, &pThis->CritSect);
+
+    rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance,
+                              PCNET_SAVEDSTATE_VERSION, sizeof(*pThis),
+                              pcnetSavePrep, pcnetSaveExec, NULL,
+                              pcnetLoadPrep, pcnetLoadExec, NULL);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
      * Create the transmit queue.

@@ -1657,6 +1657,18 @@ VMMR3DECL(void) IOMR3ReleaseOwnedLocks(PVM pVM)
 
 
 /**
+ * For TM only!
+ *
+ * @returns Pointer to the critical section.
+ * @param   pVM                 The VM handle.
+ */
+VMMR3DECL(PPDMCRITSECT) IOMR3GetCritSect(PVM pVM)
+{
+    return &pVM->iom.s.EmtLock;
+}
+
+
+/**
  * Display a single MMIO range.
  *
  * @returns 0

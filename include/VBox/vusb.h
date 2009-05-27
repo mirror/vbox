@@ -778,6 +778,7 @@ DECLINLINE(VUSBDEVICESTATE) VUSBIDevGetState(PVUSBIDEVICE pInterface)
 
 /**
  * USB Timer Interface.
+ * @todo r=bird: why is this code still here?
  */
 typedef struct VUSBITIMER
 {

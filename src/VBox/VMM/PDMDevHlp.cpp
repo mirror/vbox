@@ -380,14 +380,15 @@ static DECLCALLBACK(int) pdmR3DevHlp_SSMRegister(PPDMDEVINS pDevIns, const char 
 
 
 /** @copydoc PDMDEVHLPR3::pfnTMTimerCreate */
-static DECLCALLBACK(int) pdmR3DevHlp_TMTimerCreate(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, const char *pszDesc, PPTMTIMERR3 ppTimer)
+static DECLCALLBACK(int) pdmR3DevHlp_TMTimerCreate(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-    LogFlow(("pdmR3DevHlp_TMTimerCreate: caller='%s'/%d: enmClock=%d pfnCallback=%p pszDesc=%p:{%s} ppTimer=%p\n",
-             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, enmClock, pfnCallback, pszDesc, pszDesc, ppTimer));
+    LogFlow(("pdmR3DevHlp_TMTimerCreate: caller='%s'/%d: enmClock=%d pfnCallback=%p pvUser=%p fFlags=%#x pszDesc=%p:{%s} ppTimer=%p\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, enmClock, pfnCallback, pvUser, fFlags, pszDesc, pszDesc, ppTimer));
 
-    int rc = TMR3TimerCreateDevice(pDevIns->Internal.s.pVMR3, pDevIns, enmClock, pfnCallback, pszDesc, ppTimer);
+
+    int rc = TMR3TimerCreateDevice(pDevIns->Internal.s.pVMR3, pDevIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, ppTimer);
 
     LogFlow(("pdmR3DevHlp_TMTimerCreate: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
