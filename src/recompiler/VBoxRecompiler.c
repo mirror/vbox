@@ -2840,8 +2840,6 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb
     AssertMsg(fFlags == REM_NOTIFY_PHYS_RAM_FLAGS_RAM || fFlags == REM_NOTIFY_PHYS_RAM_FLAGS_MMIO2, ("#x\n", fFlags));
     Assert(!PGMIsLockOwner(pVM));
 
-    EMR3RemLock(pVM);
-
     /*
      * Base ram? Update GCPhysLastRam.
      */
@@ -2889,7 +2887,6 @@ REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
     Assert(RT_ALIGN_T(GCPhys, PAGE_SIZE, RTGCPHYS) == GCPhys);
     Assert(cb);
     Assert(RT_ALIGN_Z(cb, PAGE_SIZE) == cb);
-    Assert(!PGMIsLockOwner(pVM));
 
     EMR3RemLock(pVM);
     /*
@@ -2924,8 +2921,6 @@ REMR3DECL(void) REMR3NotifyPhysRamDeregister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb
     Assert(RT_ALIGN_T(GCPhys, PAGE_SIZE, RTGCPHYS) == GCPhys);
     Assert(cb);
     Assert(RT_ALIGN_Z(cb, PAGE_SIZE) == cb);
-/* Locked during termination */
-//    Assert(!PGMIsLockOwner(pVM));
 
     EMR3RemLock(pVM);
 
@@ -2962,7 +2957,6 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE e
     VM_ASSERT_EMT(pVM);
     Assert(RT_ALIGN_T(GCPhys, PAGE_SIZE, RTGCPHYS) == GCPhys);
     Assert(RT_ALIGN_T(cb, PAGE_SIZE, RTGCPHYS) == cb);
-    Assert(!PGMIsLockOwner(pVM));
 
     EMR3RemLock(pVM);
     if (pVM->rem.s.cHandlerNotifications)
@@ -2997,7 +2991,6 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE
     Log(("REMR3NotifyHandlerPhysicalDeregister: enmType=%d GCPhys=%RGp cb=%RGp fHasHCHandler=%RTbool fRestoreAsRAM=%RTbool RAM=%08x\n",
           enmType, GCPhys, cb, fHasHCHandler, fRestoreAsRAM, MMR3PhysGetRamSize(pVM)));
     VM_ASSERT_EMT(pVM);
-    Assert(!PGMIsLockOwner(pVM));
 
     EMR3RemLock(pVM);
 
@@ -3048,7 +3041,6 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enm
           enmType, GCPhysOld, GCPhysNew, cb, fHasHCHandler, fRestoreAsRAM));
     VM_ASSERT_EMT(pVM);
     AssertReleaseMsg(enmType != PGMPHYSHANDLERTYPE_MMIO, ("enmType=%d\n", enmType));
-    Assert(!PGMIsLockOwner(pVM));
 
     EMR3RemLock(pVM);
 
