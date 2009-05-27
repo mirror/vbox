@@ -489,28 +489,32 @@ public:
 
     ~ImageChain()
     {
-        List::const_iterator last = end();
-        last--;
-        for (List::const_iterator it = begin(); it != end(); ++ it)
+        /* empty? */
+        if (begin() != end())
         {
-            AutoWriteLock alock (*it);
-            if (it == last)
+            List::const_iterator last = end();
+            last--;
+            for (List::const_iterator it = begin(); it != end(); ++ it)
             {
-                Assert (   (*it)->m.state == MediaState_LockedRead
-                        || (*it)->m.state == MediaState_LockedWrite);
-                if ((*it)->m.state == MediaState_LockedRead)
-                    (*it)->UnlockRead (NULL);
-                else if ((*it)->m.state == MediaState_LockedWrite)
-                    (*it)->UnlockWrite (NULL);
-            }
-            else
-            {
-                Assert ((*it)->m.state == MediaState_LockedRead);
-                if ((*it)->m.state == MediaState_LockedRead)
-                    (*it)->UnlockRead (NULL);
-            }
+                AutoWriteLock alock (*it);
+                if (it == last)
+                {
+                    Assert (   (*it)->m.state == MediaState_LockedRead
+                            || (*it)->m.state == MediaState_LockedWrite);
+                    if ((*it)->m.state == MediaState_LockedRead)
+                        (*it)->UnlockRead (NULL);
+                    else if ((*it)->m.state == MediaState_LockedWrite)
+                        (*it)->UnlockWrite (NULL);
+                }
+                else
+                {
+                    Assert ((*it)->m.state == MediaState_LockedRead);
+                    if ((*it)->m.state == MediaState_LockedRead)
+                        (*it)->UnlockRead (NULL);
+                }
 
-            (*it)->releaseCaller();
+                (*it)->releaseCaller();
+            }
         }
     }
 
