@@ -20,32 +20,33 @@
  * additional information or have any questions.
  */
 
+/* VBox includes */
 #include "VBoxConsoleWnd.h"
 #include "VBoxConsoleView.h"
 #include "VBoxCloseVMDlg.h"
-#include "VBoxTakeSnapshotDlg.h"
+#include "VBoxDownloaderWgt.h"
+#include "VBoxGlobal.h"
 #include "VBoxMediaManagerDlg.h"
+#include "VBoxMiniToolBar.h"
+#include "VBoxProblemReporter.h"
+#include "VBoxTakeSnapshotDlg.h"
 #include "VBoxVMFirstRunWzd.h"
 #include "VBoxVMSettingsSF.h"
 #include "VBoxVMInformationDlg.h"
-#include "VBoxDownloaderWgt.h"
-#include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
-#include "VBoxMiniToolBar.h"
-
-#include "QIStateIndicator.h"
-#include "QIStatusBar.h"
+#include "QIFileDialog.h"
 #include "QIHotKeyEdit.h"
 #include "QIHttp.h"
+#include "QIStateIndicator.h"
+#include "QIStatusBar.h"
 
 /* Qt includes */
 #include <QActionGroup>
 #include <QDesktopWidget>
-#include <QMenuBar>
-#include <QFileInfo>
 #include <QDir>
-#include <QTimer>
+#include <QFileInfo>
+#include <QMenuBar>
 #include <QProgressBar>
+#include <QTimer>
 #ifdef Q_WS_X11
 # include <QX11Info>
 #endif
@@ -158,7 +159,7 @@ private slots:
                         .arg (QDir::toNativeSeparators (mTarget)));
                 }
 
-                QString target = vboxGlobal().getExistingDirectory (
+                QString target = QIFileDialog::getExistingDirectory (
                     QFileInfo (mTarget).absolutePath(), this,
                     tr ("Select folder to save Guest Additions image to"), true);
                 if (target.isNull())

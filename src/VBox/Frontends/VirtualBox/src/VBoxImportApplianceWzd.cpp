@@ -21,16 +21,17 @@
  */
 
 /* VBox includes */
-#include "VBoxImportApplianceWzd.h"
 #include "VBoxGlobal.h"
-#include "QIWidgetValidator.h"
+#include "VBoxImportApplianceWzd.h"
 #include "VBoxProblemReporter.h"
+#include "QIFileDialog.h"
+#include "QIWidgetValidator.h"
 
 /* Qt includes */
-#include <QFileInfo>
 #include <QDialogButtonBox>
-#include <QPrinter>
+#include <QFileInfo>
 #include <QPrintDialog>
+#include <QPrinter>
 #include <QTextStream>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -99,7 +100,7 @@ void VBoxImportLicenseViewer::print()
 
 void VBoxImportLicenseViewer::save()
 {
-    QString fileName = vboxGlobal().getSaveFileName (vboxGlobal().documentsPath(), tr("Text (*.txt)"), this, tr("Save license to file..."));
+    QString fileName = QIFileDialog::getSaveFileName (vboxGlobal().documentsPath(), tr("Text (*.txt)"), this, tr("Save license to file..."));
     if (!fileName.isEmpty())
     {
         QFile file (fileName);

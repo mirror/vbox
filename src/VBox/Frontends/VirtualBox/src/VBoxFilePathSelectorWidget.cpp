@@ -20,8 +20,10 @@
  * additional information or have any questions.
  */
 
+/* VBox includes */
 #include "VBoxFilePathSelectorWidget.h"
 #include "VBoxGlobal.h"
+#include "QIFileDialog.h"
 #include "QILabel.h"
 
 /* Qt includes */
@@ -30,10 +32,10 @@
 #include <QClipboard>
 #include <QDir>
 #include <QFileIconProvider>
-#include <QLineEdit>
-#include <QTimer>
-#include <QPushButton>
 #include <QFocusEvent>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QTimer>
 
 ////////////////////////////////////////////////////////////////////////////////
 // VBoxFilePathSelectorWidget
@@ -382,7 +384,7 @@ void VBoxFilePathSelectorWidget::selectPath()
 {
     /* Preparing initial directory. */
     QString initDir = mPath.isNull() ? mHomeDir :
-        VBoxGlobal::getFirstExistingDir (mPath);
+        QIFileDialog::getFirstExistingDir (mPath);
     if (initDir.isNull())
         initDir = mHomeDir;
 
@@ -390,16 +392,16 @@ void VBoxFilePathSelectorWidget::selectPath()
     switch (mMode)
     {
         case Mode_File_Open:
-            path = VBoxGlobal::getOpenFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle); break;
+            path = QIFileDialog::getOpenFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle); break;
         case Mode_File_Save:
             {
-                path = VBoxGlobal::getSaveFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle);
+                path = QIFileDialog::getSaveFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle);
                 if (!path.isEmpty() && QFileInfo (path).suffix().isEmpty())
                     path = QString ("%1.%2").arg (path).arg (mDefaultSaveExt);
                 break;
             }
         case Mode_Folder:
-            path = VBoxGlobal::getExistingDirectory (initDir, parentWidget(), mFileDialogTitle); break;
+            path = QIFileDialog::getExistingDirectory (initDir, parentWidget(), mFileDialogTitle); break;
     }
 
     if (path.isNull())
@@ -632,11 +634,11 @@ void VBoxEmptyFileSelector::choose()
 
     /* Preparing initial directory. */
     QString initDir = path.isNull() ? mHomeDir :
-        VBoxGlobal::getFirstExistingDir (path);
+        QIFileDialog::getFirstExistingDir (path);
     if (initDir.isNull())
         initDir = mHomeDir;
 
-    path = VBoxGlobal::getOpenFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle);
+    path = QIFileDialog::getOpenFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle);
     if (!path.isEmpty())
     {
         setPath (path);

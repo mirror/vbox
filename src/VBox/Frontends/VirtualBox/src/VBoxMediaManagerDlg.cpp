@@ -20,25 +20,27 @@
  * additional information or have any questions.
  */
 
+/* VBox includes */
+#include "VBoxGlobal.h"
 #include "VBoxMediaManagerDlg.h"
-#include "VBoxToolBar.h"
-#include "QILabel.h"
 #include "VBoxNewHDWzd.h"
 #include "VBoxProblemReporter.h"
-#include "VBoxGlobal.h"
+#include "VBoxToolBar.h"
+#include "QIFileDialog.h"
+#include "QILabel.h"
 
 /* Qt includes */
+#include <QCloseEvent>
 #include <QDir>
+#include <QDragEnterEvent>
+#include <QDropEvent>
 #include <QFileInfo>
 #include <QHeaderView>
 #include <QMenuBar>
-#include <QPushButton>
-#include <QUrl>
 #include <QProgressBar>
+#include <QPushButton>
 #include <QTimer>
-#include <QCloseEvent>
-#include <QDragEnterEvent>
-#include <QDropEvent>
+#include <QUrl>
 
 class AddVDMUrlsEvent: public QEvent
 {
@@ -1046,7 +1048,7 @@ void VBoxMediaManagerDlg::doAddMedium()
             break;
     }
 
-    QStringList files = VBoxGlobal::getOpenFileNames (dir, filter, this, title);
+    QStringList files = QIFileDialog::getOpenFileNames (dir, filter, this, title);
     foreach (QString loc, files)
     {
         loc =  QDir::convertSeparators (loc);

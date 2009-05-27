@@ -241,6 +241,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/QIMainDialog.h \
 	include/QIHelpButton.h \
 	include/QIDialog.h \
+	include/QIFileDialog.h \
 	include/VBoxFilePathSelectorWidget.h \
 	include/VBoxOSTypeSelectorButton.h \
 	include/VBoxOSTypeSelectorWidget.h \
@@ -312,6 +313,10 @@ ifdef VBOX_WITH_XPCOM
  VirtualBox_QT_MOCSRCS += \
 	src/COMDefs.cpp
 endif
+ifeq ($(KBUILD_TARGET),win)
+VirtualBox_QT_MOCSRCS += \
+	src/QIFileDialog.cpp
+endif
 
 VirtualBox_SOURCES = \
 	src/main.cpp \
@@ -325,6 +330,7 @@ VirtualBox_SOURCES = \
 	src/QILabelSeparator.cpp \
 	src/QIAbstractWizard.cpp \
 	src/QIDialog.cpp \
+	src/QIFileDialog.cpp \
 	src/QIDialogButtonBox.cpp \
 	src/QIListView.cpp \
 	src/QITreeWidget.cpp \

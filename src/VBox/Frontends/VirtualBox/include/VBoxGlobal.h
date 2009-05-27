@@ -718,26 +718,6 @@ public:
 
     static QString systemLanguageId();
 
-    static QString getExistingDirectory (const QString &aDir, QWidget *aParent,
-                                         const QString &aCaption = QString::null,
-                                         bool aDirOnly = TRUE,
-                                         bool resolveSymlinks = TRUE);
-
-    static QString getSaveFileName (const QString &aStartWith, const QString &aFilters, QWidget *aParent,
-                                    const QString &aCaption, QString *aSelectedFilter = NULL,
-                                    bool aResolveSymLinks = true);
-
-    static QString getOpenFileName (const QString &aStartWith, const QString &aFilters, QWidget *aParent,
-                                    const QString &aCaption, QString *aSelectedFilter = NULL,
-                                    bool aResolveSymLinks = true);
-
-    static QStringList getOpenFileNames (const QString &aStartWith, const QString &aFilters, QWidget *aParent,
-                                         const QString &aCaption, QString *aSelectedFilter = NULL,
-                                         bool aResolveSymLinks = true,
-                                         bool aSingleFile = false);
-
-    static QString getFirstExistingDir (const QString &);
-
     static bool activateWindow (WId aWId, bool aSwitchDesktop = true);
 
     static QString removeAccelMark (const QString &aText);
