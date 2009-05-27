@@ -1978,8 +1978,11 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
 #endif
     while (pNext && pNext->u64Expire <= u64Max)
     {
-        PTMTIMER pTimer = pNext;
+        PTMTIMER        pTimer    = pNext;
         pNext = TMTIMER_GET_NEXT(pTimer);
+        PPDMCRITSECT    pCritSect = pTimer->pCritSect;
+        if (pCritSect)
+            PDMCritSectEnter(pCritSect, VERR_INTERNAL_ERROR);
         Log2(("tmR3TimerQueueRun: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .pszDesc=%s}\n",
               pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, pTimer->u64Expire, u64Now, pTimer->pszDesc));
         bool fRc;
@@ -2025,6 +2028,8 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
             TM_TRY_SET_STATE(pTimer, TMTIMERSTATE_STOPPED, TMTIMERSTATE_EXPIRED_DELIVER, fRc);
             Log2(("tmR3TimerQueueRun: new state %s\n", tmTimerState(pTimer->enmState)));
         }
+        if (pCritSect)
+            PDMCritSectLeave(pCritSect);
     } /* run loop */
 
     /*
