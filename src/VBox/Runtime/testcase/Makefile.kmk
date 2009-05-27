@@ -164,8 +164,6 @@ tstRTCritSectW32_TEMPLATE = VBOXR3TSTEXE
 tstRTCritSectW32_SOURCES = tstRTCritSect.cpp
 tstRTCritSectW32_DEFS = TRY_WIN32_CRIT
 
-tstDarwinSched_SOURCES = tstDarwinSched.cpp
-
 tstDeadlock_SOURCES = tstDeadlock.cpp
 
 tstDir_SOURCES = tstDir.cpp
@@ -184,6 +182,8 @@ tstErrUnique.cpp_DEPS = $(IPRT_OUT_DIR)/errmsgdata.h
 tstFile_SOURCES = tstFile.cpp
 
 tstFileAppendWin-1_SOURCES = tstFileAppendWin-1.cpp
+
+tstFileAio_SOURCES = tstFileAio.cpp
 
 tstFileLock_SOURCES = tstFileLock.cpp
 
@@ -331,6 +331,8 @@ tstRTProcWait_SOURCES = tstRTProcWait.cpp
 
 tstRTProcIsRunningByName_SOURCES = tstRTProcIsRunningByName.cpp
 
+tstRTS3_SOURCES = tstRTS3.cpp
+
 tstSemMutex_SOURCES = tstSemMutex.cpp
 
 tstSemPingPong_SOURCES = tstSemPingPong.cpp
@@ -368,11 +370,14 @@ tstTSC_CXXFLAGS.linux += -O3
 
 tstUuid_SOURCES = tstUuid.cpp
 
-tstRTS3_SOURCES = tstRTS3.cpp
-
 tstUtf8_SOURCES = tstUtf8.cpp
 
-tstFileAio_SOURCES = tstFileAio.cpp
+
+#
+# odds and  ends
+#
+
+tstDarwinSched_SOURCES = tstDarwinSched.cpp
 
 ntGetTimerResolution_SOURCES = ntGetTimerResolution.cpp
 ntGetTimerResolution_SDKS.win = WINPSDK W2K3DDK VBOX_NTDLL

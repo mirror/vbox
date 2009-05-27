@@ -38,6 +38,10 @@
 #include <iprt/err.h>
 #include <iprt/test.h>
 
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
 /* Manual configuration of this testcase */
 #define TSTS3_CREATEBUCKET
 #define TSTS3_PUTGETKEY
@@ -175,6 +179,18 @@ void putKey(RTS3 hS3, const char *pszBucketName, const char *pszKeyName, const c
 int main(int argc, char **argv)
 {
     /*
+     * Initialize IPRT and create the test.
+     */
+    int rc = RTR3Init();
+    if (RT_FAILURE(rc))
+        return 1;
+    RTTEST hTest;
+    rc = RTTestCreate("tstRTS3", &hTest);
+    if (RT_FAILURE(rc))
+        return 1;
+    RTTestBanner(hTest);
+
+    /*
      * If no args, display usage.
      */
     if (argc <= 2)
@@ -182,16 +198,6 @@ int main(int argc, char **argv)
         RTPrintf("Syntax: %s [Access Key] [Secret Key]\n", argv[0]);
         return 1;
     }
-
-    int rc = RTR3Init();
-    if (RT_FAILURE(rc))
-        return 1;
-
-    RTTEST hTest;
-    rc = RTTestCreate("tstRTS3", &hTest);
-    if (RT_FAILURE(rc))
-        return 1;
-    RTTestBanner(hTest);
 
     RTTestSubF(hTest, "Create S3");
     RTS3 hS3;
