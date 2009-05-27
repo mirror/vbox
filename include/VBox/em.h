@@ -182,6 +182,8 @@ VMMR3DECL(int)      EMR3CheckRawForcedActions(PVM pVM, PVMCPU pVCpu);
 VMMR3DECL(int)      EMR3Interpret(PVM pVM);
 
 VMMR3DECL(void)     EMR3ReleaseOwnedLocks(PVM pVM);
+VMMR3DECL(void)     EMR3RemUnlock(PVM pVM);
+VMMR3DECL(void)     EMR3RemLock(PVM pVM);
 
 /**
  * Command argument for EMR3RawSetMode().
