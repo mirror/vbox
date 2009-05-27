@@ -20,13 +20,17 @@
  * additional information or have any questions.
  */
 
-#include <VBox/param.h>
 #include <iprt/stream.h>
 #include <iprt/path.h>
 #include <iprt/dir.h>
 #include <iprt/file.h>
+#include <iprt/s3.h>
+
+#include <VBox/param.h>
+#include <VBox/version.h>
 
 #include "ApplianceImpl.h"
+#include "VFSExplorerImpl.h"
 #include "VirtualBoxImpl.h"
 #include "GuestOSTypeImpl.h"
 #include "ProgressImpl.h"
@@ -459,7 +463,6 @@ struct shutup {};
  * @param
  * @return
  */
-
 HRESULT Appliance::init(VirtualBox *aVirtualBox)
 {
     /* Enclose the state transition NotReady->InInit->Ready */
@@ -2500,33 +2503,115 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
 
 struct Appliance::TaskWriteOVF
 {
-    TaskWriteOVF(Appliance *aThat, Progress *aProgress)
-        : pAppliance(aThat),
-          enFormat(unspecified),
-          progress(aProgress),
+    enum OVFFormat
+    {
+        unspecified,
+        OVF_0_9,
+        OVF_1_0
+    };
+    enum TaskType
+    {
+        Write
+    };
+
+    TaskWriteOVF(OVFFormat aFormat, Appliance *aThat)
+        : taskType(Write),
+          storageType(VFSType_File),
+          enFormat(aFormat),
+          pAppliance(aThat),
           rc(S_OK)
     {}
     ~TaskWriteOVF() {}
 
-    HRESULT startThread();
+    int startThread();
+    static int uploadProgress(unsigned uPercent, void *pvUser);
 
+    TaskType taskType;
+    VFSType_T storageType;
+    Utf8Str filepath;
+    Utf8Str hostname;
+    Utf8Str username;
+    Utf8Str password;
+    OVFFormat enFormat;
     Appliance *pAppliance;
-    enum { unspecified, OVF_0_9, OVF_1_0 }
-        enFormat;
-
     ComObjPtr<Progress> progress;
     HRESULT rc;
 };
 
-HRESULT Appliance::TaskWriteOVF::startThread()
+int Appliance::TaskWriteOVF::startThread()
 {
     int vrc = RTThreadCreate(NULL, Appliance::taskThreadWriteOVF, this,
                              0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
                              "Appliance::Task");
+
     ComAssertMsgRCRet(vrc,
-                      ("Could not create taskThreadExportOVF (%Rrc)\n", vrc), E_FAIL);
+                      ("Could not create taskThreadWriteOVF (%Rrc)\n", vrc), E_FAIL);
 
     return S_OK;
+}
+
+/* static */
+int Appliance::TaskWriteOVF::uploadProgress(unsigned uPercent, void *pvUser)
+{
+    Appliance::TaskWriteOVF* pTask = *(Appliance::TaskWriteOVF**)pvUser;
+
+    if (pTask &&
+        !pTask->progress.isNull())
+    {
+        BOOL fCanceled;
+        pTask->progress->COMGETTER(Canceled)(&fCanceled);
+        if (fCanceled)
+            return -1;
+        pTask->progress->setCurrentOperationProgress(uPercent);
+    }
+    return VINF_SUCCESS;
+}
+
+STDMETHODIMP Appliance::CreateVFSExplorer(IN_BSTR aURI, IVFSExplorer **aExplorer)
+{
+    HRESULT rc = S_OK;
+
+    CheckComArgOutPointerValid(aExplorer);
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock(this);
+
+    Utf8Str uri(aURI);
+    /* Check which kind of export the user has requested */
+    VFSType_T type = VFSType_File;
+    Utf8Str strProtocol = "";
+    /* Check the URI for the target format */
+    if (uri.startsWith("SunCloud://", Utf8Str::CaseInsensitive)) /* Sun Cloud service */
+    {
+        type = VFSType_S3;
+        strProtocol = "SunCloud://";
+    }
+    else if (uri.startsWith("S3://", Utf8Str::CaseInsensitive)) /* S3 service */
+    {
+        type = VFSType_S3;
+        strProtocol = "S3://";
+    }
+    else if (uri.startsWith("webdav://", Utf8Str::CaseInsensitive)) /* webdav service */
+        throw E_NOTIMPL;
+
+    Utf8Str strFilepath;
+    Utf8Str strHostname;
+    Utf8Str strUsername;
+    Utf8Str strPassword;
+    parseURI(uri, strProtocol, strFilepath, strHostname, strUsername, strPassword);
+
+    ComObjPtr<VFSExplorer> explorer;
+    explorer.createObject();
+
+    rc = explorer->init(type, strFilepath, strHostname, strUsername, strPassword, mVirtualBox);
+
+    if (SUCCEEDED(rc))
+        /* Return explorer to the caller */
+        explorer.queryInterfaceTo(aExplorer);
+
+    return rc;
 }
 
 STDMETHODIMP Appliance::Write(IN_BSTR format, IN_BSTR path, IProgress **aProgress)
@@ -2536,46 +2621,28 @@ STDMETHODIMP Appliance::Write(IN_BSTR format, IN_BSTR path, IProgress **aProgres
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
-    if (FAILED(rc = autoCaller.rc())) return rc;
+    CheckComRCReturnRC(autoCaller.rc());
 
     AutoWriteLock(this);
 
     // see if we can handle this file; for now we insist it has an ".ovf" extension
-    m->strPath = path;
-    if (!m->strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
+    Utf8Str strPath = path;
+    if (!strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
         return setError(VBOX_E_FILE_ERROR,
                         tr("Appliance file must have .ovf extension"));
 
     ComObjPtr<Progress> progress;
-    try
-    {
-        Bstr progressDesc = BstrFmt(tr("Export appliance '%s'"),
-                                    m->strPath.raw());
-        rc = setUpProgress(progress, progressDesc);
-        if (FAILED(rc)) throw rc;
+    Utf8Str strFormat(format);
+    TaskWriteOVF::OVFFormat ovfF;
+    if (strFormat == "ovf-0.9")
+        ovfF = TaskWriteOVF::OVF_0_9;
+    else if (strFormat == "ovf-1.0")
+        ovfF = TaskWriteOVF::OVF_1_0;
+    else
+        return setError(VBOX_E_FILE_ERROR,
+                        tr("Invalid format \"%s\" specified"), strFormat.c_str());
 
-        /* Initialize our worker task */
-        std::auto_ptr<TaskWriteOVF> task(new TaskWriteOVF(this, progress));
-        //AssertComRCThrowRC (task->autoCaller.rc());
-
-        Utf8Str strFormat(format);
-        if (strFormat == "ovf-0.9")
-            task->enFormat = TaskWriteOVF::OVF_0_9;
-        else if (strFormat == "ovf-1.0")
-            task->enFormat = TaskWriteOVF::OVF_1_0;
-        else
-            return setError(VBOX_E_FILE_ERROR,
-                            tr("Invalid format \"%s\" specified"), strFormat.c_str());
-
-        rc = task->startThread();
-        CheckComRCThrowRC(rc);
-
-        task.release();
-    }
-    catch (HRESULT aRC)
-    {
-        rc = aRC;
-    }
+    rc = writeImpl(ovfF, strPath, progress);
 
     if (SUCCEEDED(rc))
         /* Return progress to the caller */
@@ -2584,12 +2651,85 @@ STDMETHODIMP Appliance::Write(IN_BSTR format, IN_BSTR path, IProgress **aProgres
     return rc;
 }
 
-/**
- * Worker thread implementation for Write() (ovf writer).
- * @param aThread
- * @param pvUser
- */
-/* static */
+void Appliance::parseURI(Utf8Str strUri, const Utf8Str &strProtocol, Utf8Str &strFilepath, Utf8Str &strHostname, Utf8Str &strUsername, Utf8Str &strPassword)
+{
+    /* Remove the protocol */
+    if (strUri.startsWith(strProtocol, Utf8Str::CaseInsensitive))
+        strUri = strUri.substr(strProtocol.length());
+    size_t uppos = strUri.find("@");
+    if (uppos != Utf8Str::npos)
+    {
+        strUsername = strUri.substr(0, uppos);
+        strUri = strUri.substr(uppos + 1);
+        size_t upos = strUsername.find(":");
+        if (upos != Utf8Str::npos)
+        {
+            strPassword = strUsername.substr(upos + 1);
+            strUsername = strUsername.substr(0, upos);
+        }
+    }
+    size_t hpos = strUri.find("/");
+    if (hpos != Utf8Str::npos)
+    {
+        strHostname = strUri.substr(0, hpos);
+        strUri = strUri.substr(hpos);
+    }
+    strFilepath = strUri;
+}
+
+HRESULT Appliance::writeImpl(int aFormat, Utf8Str aPath, ComObjPtr<Progress> &aProgress)
+{
+    HRESULT rc = S_OK;
+    try
+    {
+        m->strPath = aPath;
+
+        /* Initialize our worker task */
+        std::auto_ptr<TaskWriteOVF> task(new TaskWriteOVF((TaskWriteOVF::OVFFormat)aFormat, this));
+
+        /* Check which kind of export the user has requested */
+        Utf8Str strProtocol = "";
+        /* Check the URI for the target format */
+        if (m->strPath.startsWith("SunCloud://", Utf8Str::CaseInsensitive)) /* Sun Cloud service */
+        {
+            task->storageType = VFSType_S3;
+            strProtocol = "SunCloud://";
+        }
+        else if (m->strPath.startsWith("S3://", Utf8Str::CaseInsensitive)) /* S3 service */
+        {
+            task->storageType = VFSType_S3;
+            strProtocol = "S3://";
+        }
+        else if (m->strPath.startsWith("webdav://", Utf8Str::CaseInsensitive)) /* webdav service */
+            throw E_NOTIMPL;
+
+        parseURI(m->strPath, strProtocol, task->filepath, task->hostname, task->username, task->password);
+        Bstr progressDesc = BstrFmt(tr("Export appliance '%s'"),
+                                    task->filepath.c_str());
+
+        /* todo: This progress init stuff should be done a little bit more generic */
+        if (task->storageType == VFSType_S3)
+            rc = setUpProgressUpload(aProgress, progressDesc);
+        else
+            rc = setUpProgress(aProgress, progressDesc);
+        if (FAILED(rc)) throw rc;
+
+        task->progress = aProgress;
+
+        rc = task->startThread();
+        CheckComRCThrowRC(rc);
+
+        /* Don't destruct on success */
+        task.release();
+    }
+    catch (HRESULT aRC)
+    {
+        rc = aRC;
+    }
+
+    return rc;
+}
+
 DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pvUser)
 {
     std::auto_ptr<TaskWriteOVF> task(static_cast<TaskWriteOVF*>(pvUser));
@@ -2600,21 +2740,50 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
     LogFlowFuncEnter();
     LogFlowFunc(("Appliance %p\n", pAppliance));
 
-    AutoCaller autoCaller(pAppliance);
-    CheckComRCReturnRC(autoCaller.rc());
-
-    AutoWriteLock appLock(pAppliance);
-
     HRESULT rc = S_OK;
 
-    ComPtr<IVirtualBox> pVirtualBox(pAppliance->mVirtualBox);
+    switch(task->taskType)
+    {
+        case TaskWriteOVF::Write:
+        {
+            if (task->storageType == VFSType_File)
+                rc = pAppliance->writeFS(task.get());
+            else if (task->storageType == VFSType_S3)
+                rc = pAppliance->writeS3(task.get());
+            break;
+        }
+    }
+
+    LogFlowFunc(("rc=%Rhrc\n", rc));
+    LogFlowFuncLeave();
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Worker thread implementation for Write() (ovf writer).
+ * @param aThread
+ * @param pvUser
+ */
+/* static */
+int Appliance::writeFS(TaskWriteOVF *pTask)
+{
+    LogFlowFuncEnter();
+    LogFlowFunc(("Appliance %p\n", this));
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock appLock(this);
+
+    HRESULT rc = S_OK;
 
     try
     {
         xml::Document doc;
         xml::ElementNode *pelmRoot = doc.createRootElement("Envelope");
 
-        pelmRoot->setAttribute("ovf:version", (task->enFormat == TaskWriteOVF::OVF_1_0) ? "1.0" : "0.9");
+        pelmRoot->setAttribute("ovf:version", (pTask->enFormat == TaskWriteOVF::OVF_1_0) ? "1.0" : "0.9");
         pelmRoot->setAttribute("xml:lang", "en-US");
 
         Utf8Str strNamespace = (TaskWriteOVF::OVF_0_9)
@@ -2638,7 +2807,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                 <Disk ovf:capacity="4294967296" ovf:diskId="lamp" ovf:format="http://www.vmware.com/specifications/vmdk.html#compressed" ovf:populatedSize="1924967692"/>
             </DiskSection> */
         xml::ElementNode *pelmDiskSection;
-        if (task->enFormat == TaskWriteOVF::OVF_0_9)
+        if (pTask->enFormat == TaskWriteOVF::OVF_0_9)
         {
             // <Section xsi:type="ovf:DiskSection_Type">
             pelmDiskSection = pelmRoot->createChild("Section");
@@ -2661,7 +2830,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                 </Network>
             </NetworkSection> */
         xml::ElementNode *pelmNetworkSection;
-        if (task->enFormat == TaskWriteOVF::OVF_0_9)
+        if (pTask->enFormat == TaskWriteOVF::OVF_0_9)
         {
             // <Section xsi:type="ovf:NetworkSection_Type">
             pelmNetworkSection = pelmRoot->createChild("Section");
@@ -2683,9 +2852,9 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
         // writing OVF 1.0; otherwise fail since ovftool can't import more than
         // one machine, it seems
         xml::ElementNode *pelmToAddVirtualSystemsTo;
-        if (pAppliance->m->virtualSystemDescriptions.size() > 1)
+        if (m->virtualSystemDescriptions.size() > 1)
         {
-            if (task->enFormat == TaskWriteOVF::OVF_0_9)
+            if (pTask->enFormat == TaskWriteOVF::OVF_0_9)
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Cannot export more than one virtual system with OVF 0.9, use OVF 1.0"));
 
@@ -2697,14 +2866,14 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
 
         list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
         /* Iterate through all virtual systems of that appliance */
-        for (it = pAppliance->m->virtualSystemDescriptions.begin();
-             it != pAppliance->m->virtualSystemDescriptions.end();
+        for (it = m->virtualSystemDescriptions.begin();
+             it != m->virtualSystemDescriptions.end();
              ++it)
         {
             ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
 
             xml::ElementNode *pelmVirtualSystem;
-            if (task->enFormat == TaskWriteOVF::OVF_0_9)
+            if (pTask->enFormat == TaskWriteOVF::OVF_0_9)
             {
                 // <Section xsi:type="ovf:NetworkSection_Type">
                 pelmVirtualSystem = pelmToAddVirtualSystemsTo->createChild("Content");
@@ -2748,7 +2917,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                     <VendorUrl>http://www.sun.com</VendorUrl>
                 </Section> */
                 xml::ElementNode *pelmAnnotationSection;
-                if (task->enFormat == TaskWriteOVF::OVF_0_9)
+                if (pTask->enFormat == TaskWriteOVF::OVF_0_9)
                 {
                     // <Section ovf:required="false" xsi:type="ovf:ProductSection_Type">
                     pelmAnnotationSection = pelmVirtualSystem->createChild("Section");
@@ -2780,7 +2949,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                         <Annotation>Plan 9</Annotation>
                     </Section> */
                 xml::ElementNode *pelmAnnotationSection;
-                if (task->enFormat == TaskWriteOVF::OVF_0_9)
+                if (pTask->enFormat == TaskWriteOVF::OVF_0_9)
                 {
                     // <Section ovf:required="false" xsi:type="ovf:AnnotationSection_Type">
                     pelmAnnotationSection = pelmVirtualSystem->createChild("Section");
@@ -2803,7 +2972,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                    <License ovf:msgid="1">License terms can go in here.</License>
                    </EulaSection> */
                 xml::ElementNode *pelmEulaSection;
-                if (task->enFormat == TaskWriteOVF::OVF_0_9)
+                if (pTask->enFormat == TaskWriteOVF::OVF_0_9)
                 {
                     pelmEulaSection = pelmVirtualSystem->createChild("Section");
                     pelmEulaSection->setAttribute("xsi:type", "ovf:EulaSection_Type");
@@ -2825,7 +2994,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                     <Description>Linux 2.6.x</Description>
                 </OperatingSystemSection> */
             xml::ElementNode *pelmOperatingSystemSection;
-            if (task->enFormat == TaskWriteOVF::OVF_0_9)
+            if (pTask->enFormat == TaskWriteOVF::OVF_0_9)
             {
                 pelmOperatingSystemSection = pelmVirtualSystem->createChild("Section");
                 pelmOperatingSystemSection->setAttribute("xsi:type", "ovf:OperatingSystemSection_Type");
@@ -2841,7 +3010,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
 
             // <VirtualHardwareSection ovf:id="hw1" ovf:transport="iso">
             xml::ElementNode *pelmVirtualHardwareSection;
-            if (task->enFormat == TaskWriteOVF::OVF_0_9)
+            if (pTask->enFormat == TaskWriteOVF::OVF_0_9)
             {
                 // <Section xsi:type="ovf:VirtualHardwareSection_Type">
                 pelmVirtualHardwareSection = pelmVirtualSystem->createChild("Section");
@@ -2867,7 +3036,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
             pelmSystem->createChild("vssd:VirtualSystemIdentifier")->addContent(strVMName);
             // <vssd:VirtualSystemType>vmx-4</vssd:VirtualSystemType>
             const char *pcszHardware = "virtualbox-2.2";
-            if (task->enFormat == TaskWriteOVF::OVF_0_9)
+            if (pTask->enFormat == TaskWriteOVF::OVF_0_9)
                 // pretend to be vmware compatible then
                 pcszHardware = "vmx-6";
             pelmSystem->createChild("vssd:VirtualSystemType")->addContent(pcszHardware);
@@ -3225,7 +3394,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
 
                         // <rasd:InstanceID>1</rasd:InstanceID>
                         xml::ElementNode *pelmInstanceID;
-                        if (task->enFormat == TaskWriteOVF::OVF_0_9)
+                        if (pTask->enFormat == TaskWriteOVF::OVF_0_9)
                             pelmInstanceID = pItem->createChild("rasd:InstanceId");
                         else
                             pelmInstanceID = pItem->createChild("rasd:InstanceID");      // capitalization changed...
@@ -3301,7 +3470,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
             // output filename
             const Utf8Str &strTargetFileNameOnly = pDiskEntry->strOvf;
             // target path needs to be composed from where the output OVF is
-            Utf8Str strTargetFilePath = stripFilename(pAppliance->m->strPath);
+            Utf8Str strTargetFilePath = stripFilename(m->strPath);
             strTargetFilePath.append("/");
             strTargetFilePath.append(strTargetFileNameOnly);
 
@@ -3311,7 +3480,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
             ComPtr<IProgress> pProgress2;
 
             Log(("Finding source disk \"%ls\"\n", bstrSrcFilePath.raw()));
-            rc = pVirtualBox->FindHardDisk(bstrSrcFilePath, pSourceDisk.asOutParam());
+            rc = mVirtualBox->FindHardDisk(bstrSrcFilePath, pSourceDisk.asOutParam());
             if (FAILED(rc)) throw rc;
 
             /* We are always exporting to vmdfk stream optimized for now */
@@ -3319,7 +3488,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
 
             // create a new hard disk interface for the destination disk image
             Log(("Creating target disk \"%s\"\n", strTargetFilePath.raw()));
-            rc = pVirtualBox->CreateHardDisk(bstrSrcFormat, Bstr(strTargetFilePath), pTargetDisk.asOutParam());
+            rc = mVirtualBox->CreateHardDisk(bstrSrcFormat, Bstr(strTargetFilePath), pTargetDisk.asOutParam());
             if (FAILED(rc)) throw rc;
 
             // the target disk is now registered and needs to be removed again,
@@ -3331,19 +3500,19 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
                 if (FAILED(rc)) throw rc;
 
                 // advance to the next operation
-                if (!task->progress.isNull())
-                    task->progress->setNextOperation(BstrFmt(tr("Exporting virtual disk image '%s'"), strSrcFilePath.c_str()),
+                if (!pTask->progress.isNull())
+                    pTask->progress->setNextOperation(BstrFmt(tr("Exporting virtual disk image '%s'"), strSrcFilePath.c_str()),
                                                      pDiskEntry->ulSizeMB);     // operation's weight, as set up with the IProgress originally);
 
                 // now wait for the background disk operation to complete; this throws HRESULTs on error
-                pAppliance->waitForAsyncProgress(task->progress, pProgress2);
+                waitForAsyncProgress(pTask->progress, pProgress2);
             }
             catch (HRESULT rc3)
             {
                 // upon error after registering, close the disk or
                 // it'll stick in the registry forever
                 pTargetDisk->Close();
-                throw rc3;
+                throw;
             }
 
             // we need the following for the XML
@@ -3380,7 +3549,7 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
 
         // now go write the XML
         xml::XmlFileWriter writer(doc);
-        writer.write(pAppliance->m->strPath.c_str());
+        writer.write(m->strPath.c_str());
     }
     catch(xml::Error &x)
     {
@@ -3392,10 +3561,188 @@ DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pv
         rc = aRC;
     }
 
-    task->rc = rc;
+    pTask->rc = rc;
 
-    if (!task->progress.isNull())
-        task->progress->notifyComplete(rc);
+    if (!pTask->progress.isNull())
+        pTask->progress->notifyComplete(rc);
+
+    LogFlowFunc(("rc=%Rhrc\n", rc));
+    LogFlowFuncLeave();
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Worker thread implementation for Upload() (ovf uploader).
+ * @param aThread
+ * @param pvUser
+ */
+/* static */
+int Appliance::writeS3(TaskWriteOVF *pTask)
+{
+    LogFlowFuncEnter();
+    LogFlowFunc(("Appliance %p\n", this));
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    HRESULT rc = S_OK;
+
+    AutoWriteLock appLock(this);
+
+    /* Buckets are S3 specific. So parse the bucket out of the file path */
+    Utf8Str tmpPath = pTask->filepath;
+    if (!tmpPath.startsWith("/"))
+        return setError(E_INVALIDARG,
+                        tr("The path '%s' must start with /"), tmpPath.c_str());
+    Utf8Str bucket;
+    size_t bpos = tmpPath.find("/", 1);
+    if (bpos != Utf8Str::npos)
+    {
+        bucket = tmpPath.substr(1, bpos - 1); /* The bucket without any slashes */
+        tmpPath = tmpPath.substr(bpos); /* The rest of the file path */
+    }
+    /* If there is no bucket name provided reject the upload */
+    if (bucket.isEmpty())
+        return setError(E_INVALIDARG,
+                        tr("You doesn't provide a bucket name in the URI"), tmpPath.c_str());
+
+    int vrc = VINF_SUCCESS;
+    RTS3 hS3 = NULL;
+    char szOSTmpDir[RTPATH_MAX];
+    RTPathTemp(szOSTmpDir, sizeof(szOSTmpDir));
+    /* The template for the temporary directory created below */
+    char *pszTmpDir;
+    RTStrAPrintf(&pszTmpDir, "%s"RTPATH_SLASH_STR"vbox-ovf-XXXXXX", szOSTmpDir);
+    list< pair<Utf8Str, ULONG> > filesList;
+
+    // todo:
+    // - getting the tmp directory (especially on win)
+    // - usable error codes
+    // - seems snapshot filenames are problematic {uuid}.vdi
+    try
+    {
+        /* We need a temporary directory which we can put the OVF file & all
+         * disk images in */
+        vrc = RTDirCreateTemp(pszTmpDir);
+        if (RT_FAILURE(rc))
+            throw setError(VBOX_E_FILE_ERROR,
+                           tr("Cannot create temporary directory '%s'"), pszTmpDir);
+
+        /* The temporary name of the target OVF file */
+        Utf8StrFmt strTmpOvf("%s/%s", pszTmpDir, RTPathFilename(tmpPath));
+
+        /* Prepare the temporary writing of the OVF */
+        ComObjPtr<Progress> progress;
+        rc = writeImpl(pTask->enFormat, strTmpOvf.c_str(), progress);
+        if (FAILED(rc)) throw rc;
+
+        /* Unlock the appliance for the writing thread */
+        appLock.unlock();
+        /* Wait until the writing is done, but report the progress back to the
+           caller */
+        ComPtr<IProgress> progressInt(progress);
+        waitForAsyncProgress(pTask->progress, progressInt); /* Any errors will be thrown */
+
+        /* Again lock the appliance for the next steps */
+        appLock.lock();
+
+        vrc = RTPathExists(strTmpOvf.c_str()); /* Paranoid check */
+        if(RT_FAILURE(vrc))
+            throw setError(VBOX_E_FILE_ERROR,
+                           tr("Cannot find source file '%s'"), strTmpOvf.c_str());
+        /* Add the OVF file */
+        filesList.push_back(pair<Utf8Str, ULONG>(strTmpOvf, m->ulWeightPerOperation)); /* Use 1% of the total for the OVF file upload */
+
+        /* Now add every disks of every virtual system */
+        list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
+        for (it = m->virtualSystemDescriptions.begin();
+             it != m->virtualSystemDescriptions.end();
+             ++it)
+        {
+            ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
+            std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskImage);
+            std::list<VirtualSystemDescriptionEntry*>::const_iterator itH;
+            for (itH = avsdeHDs.begin();
+                 itH != avsdeHDs.end();
+                 ++itH)
+            {
+                const Utf8Str &strTargetFileNameOnly = (*itH)->strOvf;
+                /* Target path needs to be composed from where the output OVF is */
+                Utf8Str strTargetFilePath = stripFilename(m->strPath);
+                strTargetFilePath.append("/");
+                strTargetFilePath.append(strTargetFileNameOnly);
+                vrc = RTPathExists(strTargetFilePath.c_str()); /* Paranoid check */
+                if(RT_FAILURE(vrc))
+                    throw setError(VBOX_E_FILE_ERROR,
+                                   tr("Cannot find source file '%s'"), strTargetFilePath.c_str());
+                filesList.push_back(pair<Utf8Str, ULONG>(strTargetFilePath, (*itH)->ulSizeMB));
+            }
+        }
+        /* Next we have to upload the OVF & all disk images */
+        vrc = RTS3Create(&hS3, pTask->username.c_str(), pTask->password.c_str(), pTask->hostname.c_str(), "virtualbox-agent/"VBOX_VERSION_STRING);
+        if(RT_FAILURE(vrc))
+            throw setError(VBOX_E_IPRT_ERROR,
+                           tr("Cannot create S3 service handler"));
+        RTS3SetProgressCallback(hS3, pTask->uploadProgress, &pTask);
+
+        /* Upload all files */
+        for (list< pair<Utf8Str, ULONG> >::const_iterator it1 = filesList.begin(); it1 != filesList.end(); ++it1)
+        {
+            const pair<Utf8Str, ULONG> &s = (*it1);
+            char *pszFilename = RTPathFilename(s.first.c_str());
+            /* Advance to the next operation */
+            if (!pTask->progress.isNull())
+                pTask->progress->setNextOperation(BstrFmt(tr("Uploading file '%s'"), pszFilename), s.second);
+            vrc = RTS3PutKey(hS3, bucket.c_str(), pszFilename, s.first.c_str());
+            if (RT_FAILURE(vrc))
+            {
+                if(vrc == VERR_S3_CANCELED)
+                    break;
+                else if(vrc == VERR_S3_ACCESS_DENIED)
+                    throw setError(E_ACCESSDENIED,
+                                   tr("Cannot upload file '%s' to S3 storage server (Access denied)"), pszFilename);
+                else if(vrc == VERR_S3_NOT_FOUND)
+                    throw setError(VBOX_E_FILE_ERROR,
+                                   tr("Cannot upload file '%s' to S3 storage server (File not found)"), pszFilename);
+                else
+                    throw setError(VBOX_E_IPRT_ERROR,
+                                   tr("Cannot upload file '%s' to S3 storage server (%Rrc)"), pszFilename, vrc);
+            }
+        }
+
+    }
+    catch(HRESULT aRC)
+    {
+        rc = aRC;
+    }
+    /* Cleanup */
+    if (hS3)
+        RTS3Destroy(hS3);
+    /* Delete all files which where temporary created */
+    for (list< pair<Utf8Str, ULONG> >::const_iterator it1 = filesList.begin(); it1 != filesList.end(); ++it1)
+    {
+        const pair<Utf8Str, ULONG> &s = (*it1);
+        vrc = RTFileDelete(s.first.c_str());
+        if(RT_FAILURE(vrc))
+            rc = setError(VBOX_E_FILE_ERROR,
+                          tr("Cannot delete file '%s' (%Rrc)"), s.first.c_str(), vrc);
+    }
+    /* Delete the temporary directory */
+    if (RTPathExists(pszTmpDir))
+    {
+        vrc = RTDirRemove(pszTmpDir);
+        if(RT_FAILURE(vrc))
+            rc = setError(VBOX_E_FILE_ERROR,
+                          tr("Cannot delete temporary directory '%s' (%Rrc)"), pszTmpDir, vrc);
+    }
+    if (pszTmpDir)
+        RTStrFree(pszTmpDir);
+
+    pTask->rc = rc;
+
+    if (!pTask->progress.isNull())
+        pTask->progress->notifyComplete(rc);
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
@@ -3541,6 +3888,65 @@ HRESULT Appliance::setUpProgress(ComObjPtr<Progress> &pProgress, const Bstr &bst
                          ulTotalOperationsWeight, // ULONG ulTotalOperationsWeight,
                          bstrDescription, // CBSTR bstrFirstOperationDescription,
                          m->ulWeightPerOperation); // ULONG ulFirstOperationWeight,
+    return rc;
+}
+
+HRESULT Appliance::setUpProgressUpload(ComObjPtr<Progress> &pProgress, const Bstr &bstrDescription)
+{
+    HRESULT rc;
+
+    /* Create the progress object */
+    pProgress.createObject();
+
+    // weigh the disk images according to their sizes
+    uint32_t ulTotalMB = 0;
+    uint32_t cDisks = 0;
+    list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
+    for (it = m->virtualSystemDescriptions.begin();
+         it != m->virtualSystemDescriptions.end();
+         ++it)
+    {
+        ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
+        /* One for every hard disk of the Virtual System */
+        std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskImage);
+        std::list<VirtualSystemDescriptionEntry*>::const_iterator itH;
+        for (itH = avsdeHDs.begin();
+             itH != avsdeHDs.end();
+             ++itH)
+        {
+            const VirtualSystemDescriptionEntry *pHD = *itH;
+            ulTotalMB += pHD->ulSizeMB;
+            ++cDisks;
+        }
+    }
+
+    ULONG cOperations = 1 + 1 + cDisks;     // one op per disk plus 1 for the OVF & 1 plus to the temporary creation */
+
+    ULONG ulTotalOperationsWeight;
+    if (ulTotalMB)
+    {
+        m->ulWeightPerOperation = (ULONG)((double)ulTotalMB * 1  / 100);    // use 1% of the progress for OVF file upload (we didn't know the size at this point)
+        ulTotalOperationsWeight = ulTotalMB + m->ulWeightPerOperation;
+    }
+    else
+    {
+        // no disks to export:
+        ulTotalOperationsWeight = 1;
+        m->ulWeightPerOperation = 1;
+    }
+    ULONG ulOVFCreationWeight = ((double)ulTotalOperationsWeight * 50.0 / 100.0); /* Use 50% for the creation of the OVF & the disks */
+    ulTotalOperationsWeight += ulOVFCreationWeight;
+
+    Log(("Setting up progress object: ulTotalMB = %d, cDisks = %d, => cOperations = %d, ulTotalOperationsWeight = %d, m->ulWeightPerOperation = %d\n",
+         ulTotalMB, cDisks, cOperations, ulTotalOperationsWeight, m->ulWeightPerOperation));
+
+    rc = pProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
+                         bstrDescription,
+                         TRUE /* aCancelable */,
+                         cOperations, // ULONG cOperations,
+                         ulTotalOperationsWeight, // ULONG ulTotalOperationsWeight,
+                         bstrDescription, // CBSTR bstrFirstOperationDescription,
+                         ulOVFCreationWeight); // ULONG ulFirstOperationWeight,
     return rc;
 }
 

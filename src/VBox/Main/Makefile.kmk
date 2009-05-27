@@ -284,6 +284,7 @@ VBoxSVC_SOURCES = \
 	VirtualBoxImpl.cpp \
 	VirtualBoxImplExtra.cpp \
 	ApplianceImpl.cpp \
+	VFSExplorerImpl.cpp \
 	MachineImpl.cpp \
 	SnapshotImpl.cpp \
 	MediumImpl.cpp \
