@@ -1205,6 +1205,8 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, const char *pszDesc, PPTMT
     pTimer->offScheduleNext = 0;
     pTimer->offNext         = 0;
     pTimer->offPrev         = 0;
+    pTimer->pvUser          = NULL;
+    pTimer->pCritSect       = NULL;
     pTimer->pszDesc         = pszDesc;
 
     /* insert into the list of created timers. */
@@ -1232,12 +1234,16 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, const char *pszDesc, PPTMT
  * @param   pDevIns         Device instance.
  * @param   enmClock        The clock to use on this timer.
  * @param   pfnCallback     Callback function.
+ * @param   pvUser          The user argument to the callback.
+ * @param   fFlags          Timer creation flags, see grp_tm_timer_flags.
  * @param   pszDesc         Pointer to description string which must stay around
  *                          until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
  * @param   ppTimer         Where to store the timer on success.
  */
-VMMR3DECL(int) TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, const char *pszDesc, PPTMTIMERR3 ppTimer)
+VMMR3DECL(int) TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer)
 {
+    AssertReturn(!(fFlags & ~(TMTIMER_FLAGS_NO_CRIT_SECT)), VERR_INVALID_PARAMETER);
+
     /*
      * Allocate and init stuff.
      */
@@ -1247,6 +1253,9 @@ VMMR3DECL(int) TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enmClo
         (*ppTimer)->enmType         = TMTIMERTYPE_DEV;
         (*ppTimer)->u.Dev.pfnTimer  = pfnCallback;
         (*ppTimer)->u.Dev.pDevIns   = pDevIns;
+        (*ppTimer)->pvUser          = pvUser;
+        if (fFlags & TMTIMER_FLAGS_DEFAULT_CRIT_SECT)
+            (*ppTimer)->pCritSect   = IOMR3GetCritSect(pVM);
         Log(("TM: Created device timer %p clock %d callback %p '%s'\n", (*ppTimer), enmClock, pfnCallback, pszDesc));
     }
 
@@ -1307,7 +1316,7 @@ VMMR3DECL(int) TMR3TimerCreateInternal(PVM pVM, TMCLOCK enmClock, PFNTMTIMERINT 
     {
         pTimer->enmType             = TMTIMERTYPE_INTERNAL;
         pTimer->u.Internal.pfnTimer = pfnCallback;
-        pTimer->u.Internal.pvUser   = pvUser;
+        pTimer->pvUser              = pvUser;
         *ppTimer = pTimer;
         Log(("TM: Created internal timer %p clock %d callback %p '%s'\n", pTimer, enmClock, pfnCallback, pszDesc));
     }
@@ -1338,7 +1347,7 @@ VMMR3DECL(PTMTIMERR3) TMR3TimerCreateExternal(PVM pVM, TMCLOCK enmClock, PFNTMTI
     {
         pTimer->enmType             = TMTIMERTYPE_EXTERNAL;
         pTimer->u.External.pfnTimer = pfnCallback;
-        pTimer->u.External.pvUser   = pvUser;
+        pTimer->pvUser              = pvUser;
         Log(("TM: Created external timer %p clock %d callback %p '%s'\n", pTimer, enmClock, pfnCallback, pszDesc));
         return pTimer;
     }
@@ -1798,8 +1807,11 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
     const uint64_t u64Now = tmClock(pVM, pQueue->enmClock);
     while (pNext && pNext->u64Expire <= u64Now)
     {
-        PTMTIMER pTimer = pNext;
+        PTMTIMER        pTimer    = pNext;
         pNext = TMTIMER_GET_NEXT(pTimer);
+        PPDMCRITSECT    pCritSect = pTimer->pCritSect;
+        if (pCritSect)
+            PDMCritSectEnter(pCritSect, VERR_INTERNAL_ERROR);
         Log2(("tmR3TimerQueueRun: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .pszDesc=%s}\n",
               pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, pTimer->u64Expire, u64Now, pTimer->pszDesc));
         bool fRc;
@@ -1824,28 +1836,23 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
 
             /* fire */
             TM_SET_STATE(pTimer, TMTIMERSTATE_EXPIRED_DELIVER);
-//            tmUnlock(pVM);
             switch (pTimer->enmType)
             {
-                case TMTIMERTYPE_DEV:
-//                    iomLock(pVM);
-                    pTimer->u.Dev.pfnTimer(pTimer->u.Dev.pDevIns, pTimer);
-//                    iomUnlock(pVM);
-                    break;
-
-                case TMTIMERTYPE_DRV:       pTimer->u.Drv.pfnTimer(pTimer->u.Drv.pDrvIns, pTimer); break;
-                case TMTIMERTYPE_INTERNAL:  pTimer->u.Internal.pfnTimer(pVM, pTimer, pTimer->u.Internal.pvUser); break;
-                case TMTIMERTYPE_EXTERNAL:  pTimer->u.External.pfnTimer(pTimer->u.External.pvUser); break;
+                case TMTIMERTYPE_DEV:       pTimer->u.Dev.pfnTimer(pTimer->u.Dev.pDevIns, pTimer, pTimer->pvUser); break;
+                case TMTIMERTYPE_DRV:       pTimer->u.Drv.pfnTimer(pTimer->u.Drv.pDrvIns, pTimer /*, pTimer->pvUser*/); break;
+                case TMTIMERTYPE_INTERNAL:  pTimer->u.Internal.pfnTimer(pVM, pTimer, pTimer->pvUser); break;
+                case TMTIMERTYPE_EXTERNAL:  pTimer->u.External.pfnTimer(pTimer->pvUser); break;
                 default:
                     AssertMsgFailed(("Invalid timer type %d (%s)\n", pTimer->enmType, pTimer->pszDesc));
                     break;
             }
-//            tmLock(pVM);
 
             /* change the state if it wasn't changed already in the handler. */
             TM_TRY_SET_STATE(pTimer, TMTIMERSTATE_STOPPED, TMTIMERSTATE_EXPIRED_DELIVER, fRc);
             Log2(("tmR3TimerQueueRun: new state %s\n", tmTimerState(pTimer->enmState)));
         }
+        if (pCritSect)
+            PDMCritSectLeave(pCritSect);
     } /* run loop */
 }
 
@@ -2001,10 +2008,10 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
             TM_SET_STATE(pTimer, TMTIMERSTATE_EXPIRED_DELIVER);
             switch (pTimer->enmType)
             {
-                case TMTIMERTYPE_DEV:       pTimer->u.Dev.pfnTimer(pTimer->u.Dev.pDevIns, pTimer); break;
-                case TMTIMERTYPE_DRV:       pTimer->u.Drv.pfnTimer(pTimer->u.Drv.pDrvIns, pTimer); break;
-                case TMTIMERTYPE_INTERNAL:  pTimer->u.Internal.pfnTimer(pVM, pTimer, pTimer->u.Internal.pvUser); break;
-                case TMTIMERTYPE_EXTERNAL:  pTimer->u.External.pfnTimer(pTimer->u.External.pvUser); break;
+                case TMTIMERTYPE_DEV:       pTimer->u.Dev.pfnTimer(pTimer->u.Dev.pDevIns, pTimer, pTimer->pvUser); break;
+                case TMTIMERTYPE_DRV:       pTimer->u.Drv.pfnTimer(pTimer->u.Drv.pDrvIns, pTimer /*, pTimer->pvUser*/); break;
+                case TMTIMERTYPE_INTERNAL:  pTimer->u.Internal.pfnTimer(pVM, pTimer, pTimer->pvUser); break;
+                case TMTIMERTYPE_EXTERNAL:  pTimer->u.External.pfnTimer(pTimer->pvUser); break;
                 default:
                     AssertMsgFailed(("Invalid timer type %d (%s)\n", pTimer->enmType, pTimer->pszDesc));
                     break;
@@ -2306,6 +2313,48 @@ VMMR3DECL(int) TMR3TimerLoad(PTMTIMERR3 pTimer, PSSMHANDLE pSSM)
     if (RT_FAILURE(rc))
         rc = SSMR3HandleSetStatus(pSSM, rc);
     return rc;
+}
+
+
+/**
+ * Associates a critical section with a timer.
+ *
+ * The critical section will be entered prior to doing the timer call back, thus
+ * avoiding potential races between the timer thread and other threads trying to
+ * stop or adjust the timer expiration while it's being delivered. The timer
+ * thread will leave the critical section when the timer callback returns.
+ *
+ * In strict builds, ownership of the critical section will be asserted by
+ * TMTimerSet and TMTimerStop.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_INVALID_HANDLE if the timer handle is NULL or invalid
+ *          (asserted).
+ * @retval  VERR_INVALID_PARAMETER if pCritSect is NULL or has an invalid magic
+ *          (asserted).
+ * @retval  VERR_ALREADY_EXISTS if a critical section was already associated
+ *          with the timer (asserted).
+ * @retval  VERR_INVALID_STATE if the timer isn't stopped.
+ *
+ * @param   pTimer          The timer handle.
+ * @param   pCritSect       The critical section. The caller must make sure this
+ *                          is around for the life time of the timer.
+ *
+ * @thread  Any, but the caller is responsible for making sure the timer is not
+ *          active.
+ */
+VMMR3DECL(int) TMR3TimerSetCritSect(PTMTIMERR3 pTimer, PPDMCRITSECT pCritSect)
+{
+    AssertPtrReturn(pTimer, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pCritSect, VERR_INVALID_PARAMETER);
+    const char *pszName = PDMR3CritSectName(pCritSect); /* exploited for validation */
+    AssertReturn(pszName, VERR_INVALID_PARAMETER);
+    AssertReturn(!pTimer->pCritSect, VERR_ALREADY_EXISTS);
+    AssertReturn(pTimer->enmState == TMTIMERSTATE_STOPPED, VERR_INVALID_STATE);
+    LogFlow(("pTimer=%p (%s) pCritSect=%p (%s)\n", pTimer, pTimer->pszDesc, pCritSect, pszName));
+
+    pTimer->pCritSect = pCritSect;
+    return VINF_SUCCESS;
 }
 
 

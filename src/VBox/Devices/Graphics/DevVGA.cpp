@@ -5070,9 +5070,9 @@ static DECLCALLBACK(void) vgaPortSetRenderVRAM(PPDMIDISPLAYPORT pInterface, bool
 }
 
 
-static DECLCALLBACK(void) vgaTimerRefresh(PPDMDEVINS pDevIns, PTMTIMER pTimer)
+static DECLCALLBACK(void) vgaTimerRefresh(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE pThis = (PVGASTATE)pvUser;
 
     if (pThis->pDrv)
         pThis->pDrv->pfnRefresh(pThis->pDrv);
@@ -5782,7 +5782,9 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Create the refresh timer.
      */
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_REAL, vgaTimerRefresh, "VGA Refresh Timer", &pThis->RefreshTimer);
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_REAL, vgaTimerRefresh,
+                                pThis, TMTIMER_FLAGS_DEFAULT_CRIT_SECT, /** @todo This needs to be fixed! We cannot take the I/O lock at this point! */
+                                "VGA Refresh Timer", &pThis->RefreshTimer);
     if (RT_FAILURE(rc))
         return rc;
 

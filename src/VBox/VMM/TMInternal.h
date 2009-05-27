@@ -152,8 +152,6 @@ typedef struct TMTIMER
         {
             /** Callback. */
             R3PTRTYPE(PFNTMTIMERINT)    pfnTimer;
-            /** User argument. */
-            RTR3PTR                     pvUser;
         } Internal;
 
         /** TMTIMERTYPE_EXTERNAL. */
@@ -161,8 +159,6 @@ typedef struct TMTIMER
         {
             /** Callback. */
             R3PTRTYPE(PFNTMTIMEREXT)    pfnTimer;
-            /** User data. */
-            RTR3PTR                     pvUser;
         } External;
     } u;
 
@@ -175,6 +171,11 @@ typedef struct TMTIMER
     int32_t                 offNext;
     /** Timer relative offset to the previous timer in the chain. */
     int32_t                 offPrev;
+
+    /** User argument. */
+    RTR3PTR                 pvUser;
+    /** The critical section associated with the lock. */
+    R3PTRTYPE(PPDMCRITSECT) pCritSect;
 
     /** Pointer to the next timer in the list of created or free timers. (TM::pTimers or TM::pFree) */
     PTMTIMERR3              pBigNext;

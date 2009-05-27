@@ -72,9 +72,9 @@ typedef struct RTCState RTCState;
 __BEGIN_DECLS
 PDMBOTHCBDECL(int) rtcIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
 PDMBOTHCBDECL(int) rtcIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
-PDMBOTHCBDECL(void) rtcTimerPeriodic(PPDMDEVINS pDevIns, PTMTIMER pTimer);
-PDMBOTHCBDECL(void) rtcTimerSecond(PPDMDEVINS pDevIns, PTMTIMER pTimer);
-PDMBOTHCBDECL(void) rtcTimerSecond2(PPDMDEVINS pDevIns, PTMTIMER pTimer);
+PDMBOTHCBDECL(void) rtcTimerPeriodic(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser);
+PDMBOTHCBDECL(void) rtcTimerSecond(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser);
+PDMBOTHCBDECL(void) rtcTimerSecond2(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser);
 __END_DECLS
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
 
@@ -552,10 +552,11 @@ PDMBOTHCBDECL(int) rtcIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
  *
  * @param   pDevIns         Device instance of the device which registered the timer.
  * @param   pTimer          The timer handle.
+ * @param   pvUser          Pointer to the RTC state.
  */
-PDMBOTHCBDECL(void) rtcTimerPeriodic(PPDMDEVINS pDevIns, PTMTIMER pTimer)
+PDMBOTHCBDECL(void) rtcTimerPeriodic(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    rtc_periodic_timer(PDMINS_2_DATA(pDevIns, RTCState *));
+    rtc_periodic_timer((RTCState *)pvUser);
 }
 
 
@@ -564,10 +565,11 @@ PDMBOTHCBDECL(void) rtcTimerPeriodic(PPDMDEVINS pDevIns, PTMTIMER pTimer)
  *
  * @param   pDevIns         Device instance of the device which registered the timer.
  * @param   pTimer          The timer handle.
+ * @param   pvUser          Pointer to the RTC state.
  */
-PDMBOTHCBDECL(void) rtcTimerSecond(PPDMDEVINS pDevIns, PTMTIMER pTimer)
+PDMBOTHCBDECL(void) rtcTimerSecond(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    rtc_update_second(PDMINS_2_DATA(pDevIns, RTCState *));
+    rtc_update_second((RTCState *)pvUser);
 }
 
 
@@ -576,10 +578,11 @@ PDMBOTHCBDECL(void) rtcTimerSecond(PPDMDEVINS pDevIns, PTMTIMER pTimer)
  *
  * @param   pDevIns         Device instance of the device which registered the timer.
  * @param   pTimer          The timer handle.
+ * @param   pvUser          Pointer to the RTC state.
  */
-PDMBOTHCBDECL(void) rtcTimerSecond2(PPDMDEVINS pDevIns, PTMTIMER pTimer)
+PDMBOTHCBDECL(void) rtcTimerSecond2(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    rtc_update_second2(PDMINS_2_DATA(pDevIns, RTCState *));
+    rtc_update_second2((RTCState *)pvUser);
 }
 
 
@@ -868,19 +871,25 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Create timers, arm them, register I/O Ports and save state.
      */
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerPeriodic, "MC146818 RTC/CMOS - Periodic", &pThis->pPeriodicTimerR3);
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerPeriodic, pThis,
+                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "MC146818 RTC/CMOS - Periodic",
+                                &pThis->pPeriodicTimerR3);
     if (RT_FAILURE(rc))
         return rc;
     pThis->pPeriodicTimerR0 = TMTimerR0Ptr(pThis->pPeriodicTimerR3);
     pThis->pPeriodicTimerRC = TMTimerRCPtr(pThis->pPeriodicTimerR3);
 
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerSecond,   "MC146818 RTC/CMOS - Second", &pThis->pSecondTimerR3);
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerSecond, pThis,
+                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "MC146818 RTC/CMOS - Second",
+                                &pThis->pSecondTimerR3);
     if (RT_FAILURE(rc))
         return rc;
     pThis->pSecondTimerR0 = TMTimerR0Ptr(pThis->pSecondTimerR3);
     pThis->pSecondTimerRC = TMTimerRCPtr(pThis->pSecondTimerR3);
 
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerSecond2,  "MC146818 RTC/CMOS - Second2", &pThis->pSecondTimer2R3);
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerSecond2, pThis,
+                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "MC146818 RTC/CMOS - Second2",
+                                &pThis->pSecondTimer2R3);
     if (RT_FAILURE(rc))
         return rc;
     pThis->pSecondTimer2R0 = TMTimerR0Ptr(pThis->pSecondTimer2R3);

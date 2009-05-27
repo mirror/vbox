@@ -808,11 +808,11 @@ static DECLCALLBACK(int) pitLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
  *
  * @param   pDevIns         Device instance of the device which registered the timer.
  * @param   pTimer          The timer handle.
+ * @param   pvUser          Pointer to the PIT channel state.
  */
-static DECLCALLBACK(void) pitTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
+static DECLCALLBACK(void) pitTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    PITState *pThis = PDMINS_2_DATA(pDevIns, PITState *);
-    PITChannelState *s = &pThis->channels[0];
+    PITChannelState *s = (PITChannelState *)pvUser;
     STAM_PROFILE_ADV_START(&s->CTX_SUFF(pPit)->StatPITHandler, a);
     Log(("pitTimer\n"));
     pit_irq_timer_update(s, s->next_transition_time, TMTimerGet(pTimer));
@@ -993,7 +993,8 @@ static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Create timer, register I/O Ports and save state.
      */
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, pitTimer, "i8254 Programmable Interval Timer",
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, pitTimer, &pThis->channels[0],
+                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "i8254 Programmable Interval Timer",
                                 &pThis->channels[0].pTimerR3);
     if (RT_FAILURE(rc))
         return rc;

@@ -1067,9 +1067,9 @@ static void acpiPMTimerReset(ACPIState *s)
     TMTimerSet(s->CTX_SUFF(ts), TMTimerGet(s->CTX_SUFF(ts)) + interval);
 }
 
-static DECLCALLBACK(void) acpiTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
+static DECLCALLBACK(void) acpiTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    ACPIState *s = PDMINS_2_DATA(pDevIns, ACPIState *);
+    ACPIState *s = (ACPIState *)pvUser;
 
     Log(("acpi: pm timer sts %#x (%d), en %#x (%d)\n",
          s->pm1a_sts, (s->pm1a_sts & TMR_STS) != 0,
@@ -1319,7 +1319,7 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
                                           | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
                             : 0;
                     break;
-               
+
                 case SYSTEM_INFO_INDEX_CPU0_STATUS:
                 case SYSTEM_INFO_INDEX_CPU1_STATUS:
                 case SYSTEM_INFO_INDEX_CPU2_STATUS:
@@ -1932,7 +1932,8 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         AssertRCReturn(rc, rc);
     }
 
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, acpiTimer, "ACPI Timer", &s->tsR3);
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, acpiTimer, dev,
+                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "ACPI Timer", &s->tsR3);
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("pfnTMTimerCreate -> %Rrc\n", rc));

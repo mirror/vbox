@@ -350,6 +350,22 @@ VMMR3DECL(int) PDMR3CritSectDelete(PPDMCRITSECT pCritSect)
 
 
 /**
+ * Gets the name of the critical section.
+ *
+ *
+ * @returns Pointer to the critical section name (read only) on success,
+ *          NULL on failure (invalid critical section).
+ * @param   pCritSect           The critical section.
+ */
+VMMR3DECL(const char *) PDMR3CritSectName(PCPDMCRITSECT pCritSect)
+{
+    AssertPtrReturn(pCritSect, NULL);
+    AssertReturn(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC, NULL);
+    return pCritSect->s.pszName;
+}
+
+
+/**
  * Schedule a event semaphore for signalling upon critsect exit.
  *
  * @returns VINF_SUCCESS on success.
