@@ -214,7 +214,7 @@ STDMETHODIMP VBoxFrameBuffer::VideoModeSupported (ULONG aWidth, ULONG aHeight,
         && (aHeight > (ULONG) screen.height())
        )
         *aSupported = FALSE;
-    LogFlowThisFunc(("screenW=%lu, screenH=%lu -> aSupported=%s\n", 
+    LogFlowThisFunc(("screenW=%lu, screenH=%lu -> aSupported=%s\n",
                     screen.width(), screen.height(), *aSupported ? "TRUE" : "FALSE"));
     return S_OK;
 }
@@ -266,6 +266,7 @@ STDMETHODIMP VBoxFrameBuffer::ProcessVHWACommand(BYTE *pCommand)
                              new VBoxVHWACommandProcessEvent ((struct _VBOXVHWACMD*)pCommand));
     return S_OK;
 #else
+    Q_UNUSED (pCommand);
     return E_NOTIMPL;
 #endif
 }
