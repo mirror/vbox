@@ -1271,12 +1271,17 @@ VMMR3DECL(int) TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enmClo
  * @param   pDrvIns         Driver instance.
  * @param   enmClock        The clock to use on this timer.
  * @param   pfnCallback     Callback function.
+ * @param   pvUser          The user argument to the callback.
+ * @param   fFlags          Timer creation flags, see grp_tm_timer_flags.
  * @param   pszDesc         Pointer to description string which must stay around
  *                          until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
  * @param   ppTimer         Where to store the timer on success.
  */
-VMMR3DECL(int) TMR3TimerCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, const char *pszDesc, PPTMTIMERR3 ppTimer)
+VMMR3DECL(int) TMR3TimerCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, void *pvUser,
+                                     uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer)
 {
+    AssertReturn(!(fFlags & ~(TMTIMER_FLAGS_NO_CRIT_SECT)), VERR_INVALID_PARAMETER);
+
     /*
      * Allocate and init stuff.
      */
@@ -1286,6 +1291,7 @@ VMMR3DECL(int) TMR3TimerCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, TMCLOCK enmClo
         (*ppTimer)->enmType         = TMTIMERTYPE_DRV;
         (*ppTimer)->u.Drv.pfnTimer  = pfnCallback;
         (*ppTimer)->u.Drv.pDrvIns   = pDrvIns;
+        (*ppTimer)->pvUser          = pvUser;
         Log(("TM: Created device timer %p clock %d callback %p '%s'\n", (*ppTimer), enmClock, pfnCallback, pszDesc));
     }
 
@@ -1843,7 +1849,7 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
             switch (pTimer->enmType)
             {
                 case TMTIMERTYPE_DEV:       pTimer->u.Dev.pfnTimer(pTimer->u.Dev.pDevIns, pTimer, pTimer->pvUser); break;
-                case TMTIMERTYPE_DRV:       pTimer->u.Drv.pfnTimer(pTimer->u.Drv.pDrvIns, pTimer /*, pTimer->pvUser*/); break;
+                case TMTIMERTYPE_DRV:       pTimer->u.Drv.pfnTimer(pTimer->u.Drv.pDrvIns, pTimer, pTimer->pvUser); break;
                 case TMTIMERTYPE_INTERNAL:  pTimer->u.Internal.pfnTimer(pVM, pTimer, pTimer->pvUser); break;
                 case TMTIMERTYPE_EXTERNAL:  pTimer->u.External.pfnTimer(pTimer->pvUser); break;
                 default:
@@ -2016,7 +2022,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
             switch (pTimer->enmType)
             {
                 case TMTIMERTYPE_DEV:       pTimer->u.Dev.pfnTimer(pTimer->u.Dev.pDevIns, pTimer, pTimer->pvUser); break;
-                case TMTIMERTYPE_DRV:       pTimer->u.Drv.pfnTimer(pTimer->u.Drv.pDrvIns, pTimer /*, pTimer->pvUser*/); break;
+                case TMTIMERTYPE_DRV:       pTimer->u.Drv.pfnTimer(pTimer->u.Drv.pDrvIns, pTimer, pTimer->pvUser); break;
                 case TMTIMERTYPE_INTERNAL:  pTimer->u.Internal.pfnTimer(pVM, pTimer, pTimer->pvUser); break;
                 case TMTIMERTYPE_EXTERNAL:  pTimer->u.External.pfnTimer(pTimer->pvUser); break;
                 default:

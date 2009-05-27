@@ -521,12 +521,14 @@ typedef struct PDMDRVHLP
      * @param   pDrvIns         Driver instance.
      * @param   enmClock        The clock to use on this timer.
      * @param   pfnCallback     Callback function.
+     * @param   pvUser          The user argument to the callback.
+     * @param   fFlags          Timer creation flags, see grp_tm_timer_flags.
      * @param   pszDesc         Pointer to description string which must stay around
      *                          until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
      * @param   ppTimer         Where to store the timer on success.
      * @thread  EMT
      */
-    DECLR3CALLBACKMEMBER(int, pfnTMTimerCreate,(PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, const char *pszDesc, PPTMTIMERR3 ppTimer));
+    DECLR3CALLBACKMEMBER(int, pfnTMTimerCreate,(PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer));
 
     /**
      * Register a save state data unit.
@@ -696,7 +698,7 @@ typedef PDMDRVHLP *PPDMDRVHLP;
 typedef const PDMDRVHLP *PCPDMDRVHLP;
 
 /** Current DRVHLP version number. */
-#define PDM_DRVHLP_VERSION  0x90020001
+#define PDM_DRVHLP_VERSION  0x90030000
 
 
 
@@ -836,9 +838,9 @@ DECLINLINE(uint64_t) PDMDrvHlpTMGetVirtualTime(PPDMDRVINS pDrvIns)
 /**
  * @copydoc PDMDRVHLP::pfnTMTimerCreate
  */
-DECLINLINE(int) PDMDrvHlpTMTimerCreate(PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, const char *pszDesc, PPTMTIMERR3 ppTimer)
+DECLINLINE(int) PDMDrvHlpTMTimerCreate(PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer)
 {
-    return pDrvIns->pDrvHlp->pfnTMTimerCreate(pDrvIns, enmClock, pfnCallback, pszDesc, ppTimer);
+    return pDrvIns->pDrvHlp->pfnTMTimerCreate(pDrvIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, ppTimer);
 }
 
 /**
