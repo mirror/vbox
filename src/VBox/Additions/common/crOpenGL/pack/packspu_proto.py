@@ -29,19 +29,19 @@ keys = apiutil.GetDispatchedFunctions(sys.argv[1]+"/APIspec.txt")
 
 # make list of special functions
 for func_name in keys:
-	if ("get" in apiutil.Properties(func_name) or
-	    apiutil.FindSpecial( "packspu", func_name ) or 
-	    apiutil.FindSpecial( "packspu_flush", func_name ) or 
-		apiutil.FindSpecial( "packspu_vertex", func_name )):
-	  pack_specials.append( func_name )
+    if ("get" in apiutil.Properties(func_name) or
+        apiutil.FindSpecial( "packspu", func_name ) or 
+        apiutil.FindSpecial( "packspu_flush", func_name ) or 
+        apiutil.FindSpecial( "packspu_vertex", func_name )):
+      pack_specials.append( func_name )
 
 for func_name in keys:
-	if apiutil.FindSpecial( "packspu_unimplemented", func_name ):
-		continue
-	if func_name in pack_specials:
-		return_type = apiutil.ReturnType(func_name)
-		params = apiutil.Parameters(func_name)
-		print 'extern %s PACKSPU_APIENTRY packspu_%s( %s );' % ( return_type, func_name, apiutil.MakeDeclarationString(params) )
+    if apiutil.FindSpecial( "packspu_unimplemented", func_name ):
+        continue
+    if func_name in pack_specials:
+        return_type = apiutil.ReturnType(func_name)
+        params = apiutil.Parameters(func_name)
+        print 'extern %s PACKSPU_APIENTRY packspu_%s( %s );' % ( return_type, func_name, apiutil.MakeDeclarationString(params) )
 
 
 print """
