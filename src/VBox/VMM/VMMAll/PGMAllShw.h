@@ -145,6 +145,8 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
 #else /* PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 
+    Assert(PGMIsLockOwner(pVM));
+
     /*
      * Get the PDE.
      */
