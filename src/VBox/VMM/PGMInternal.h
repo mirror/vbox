@@ -1648,6 +1648,7 @@ typedef struct PGMPOOLPAGE
 
     /** Used to indicate that this page can't be flushed. Important for cr3 root pages or shadow pae pd pages). */
     uint32_t            cLocked;
+    uint32_t            bPadding2;
 } PGMPOOLPAGE, *PPGMPOOLPAGE, **PPPGMPOOLPAGE;
 /** Pointer to a const pool page. */
 typedef PGMPOOLPAGE const *PCPGMPOOLPAGE;
