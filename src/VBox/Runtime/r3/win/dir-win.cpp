@@ -34,6 +34,7 @@
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_DIR
 #include <Windows.h>
+#include <io.h>
 
 #include <iprt/dir.h>
 #include <iprt/path.h>
@@ -124,6 +125,17 @@ RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode)
 
     LogFlow(("RTDirCreate(%p:{%s}, %RTfmode): returns %Rrc\n", pszPath, pszPath, fMode, rc));
     return rc;
+}
+
+
+RTDECL(int) RTDirCreateTemp(char *pszTemplate)
+{
+    if (!_mktemp(pszTemplate))
+    {
+        int rc = RTDirCreate(pszTemplate, 0700);
+        return rc;
+    }
+    return RTErrConvertFromWin32(GetLastError());
 }
 
 

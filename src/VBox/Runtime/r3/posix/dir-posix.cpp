@@ -108,6 +108,14 @@ RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode)
     return rc;
 }
 
+RTDECL(int) RTDirCreateTemp(char *pszTemplate)
+{
+    if (mkdtemp(pszTemplate))
+        return VINF_SUCCESS;
+    
+    return RTErrConvertFromErrno(errno);
+}
+
 
 RTDECL(int) RTDirRemove(const char *pszPath)
 {

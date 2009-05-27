@@ -61,8 +61,7 @@ RTDECL(bool) RTDirExists(const char *pszPath);
  * @returns iprt status code.
  * @param   pszPath   Path to the directory to create.
  * @param   fMode      The mode of the new directory.
- */
-RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode);
+ */ RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode);
 
 /**
  * Creates a directory including all parent directories in the path
@@ -73,6 +72,19 @@ RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode);
  * @param   fMode      The mode of the new directories.
  */
 RTDECL(int) RTDirCreateFullPath(const char *pszPath, RTFMODE fMode);
+
+/**
+ * Creates a directory with a temporary name which is guaranteed not 
+ * to exists. It takes a path with a directory name template and 
+ * overwrites a portion of it to create the unique name. The template 
+ * may be any directory name with some numbers of `Xs` appended to it. 
+ * The trailing `Xs` are replaced with the unique numbers. The 
+ * directory is created with mode 0700.
+ *
+ * @returns iprt status code.
+ * @param   pszTemplate     Buffer with the template path.
+ */
+RTDECL(int) RTDirCreateTemp(char *pszTemplate);
 
 /**
  * Removes a directory if empty.
