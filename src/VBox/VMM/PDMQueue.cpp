@@ -519,7 +519,7 @@ VMMR3DECL(int) PDMR3QueueDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
      */
     if (!pDrvIns)
         return VERR_INVALID_PARAMETER;
-    VMCPU_ASSERT_EMT(&pVM->aCpus[0]);
+    VMCPU_ASSERT_EMT(&pVM->aCpus[0]); /** @todo fix this using the "Misc" critical section. */
 
     /*
      * Unlink it.
@@ -651,7 +651,7 @@ static bool pdmR3QueueFlush(PPDMQUEUE pQueue)
     RTRCPTR           pItemsRC = ASMAtomicXchgRCPtr(&pQueue->pPendingRC, NIL_RTRCPTR);
     RTR0PTR           pItemsR0 = ASMAtomicXchgR0Ptr(&pQueue->pPendingR0, NIL_RTR0PTR);
 
-    if (    !pItems 
+    if (    !pItems
         &&  !pItemsRC
         &&  !pItemsR0)
         /* Somebody was racing us. */
