@@ -56,7 +56,8 @@
         if ((pTimer)->pCritSect) \
         { \
             PPDMCRITSECT pCritSect = (PPDMCRITSECT)MMHyperR3ToCC((pTimer)->CTX_SUFF(pVM), (pTimer)->pCritSect); \
-            Assert(pCritSect && PDMCritSectIsOwner(pCritSect)); \
+            AssertMsg(pCritSect && PDMCritSectIsOwner(pCritSect), \
+                      ("pTimer=%p (%s) pCritSect=%p\n", pTimer, R3STRING(pTimer->pszDesc), (pTimer)->pCritSect)); \
         } \
     } while (0)
 #else
