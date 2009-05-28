@@ -128,19 +128,6 @@ RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode)
 }
 
 
-RTDECL(int) RTDirCreateTemp(char *pszTemplate)
-{
-    /** @todo r=bird: this doesn't work for more than 26 calls and it's racy:
-     *        http://msdn.microsoft.com/en-us/library/34wc6k1f(VS.80).aspx */
-    if (_mktemp(pszTemplate))
-    {
-        int rc = RTDirCreate(pszTemplate, 0700);
-        return rc;
-    }
-    return RTErrConvertFromErrno(errno);
-}
-
-
 RTDECL(int) RTDirRemove(const char *pszPath)
 {
     /*

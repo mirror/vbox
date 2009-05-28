@@ -274,6 +274,7 @@ RuntimeR3_SOURCES       = \
 	common/time/timesup.cpp \
 	generic/critsect-generic.cpp \
 	generic/env-generic.cpp \
+	generic/RTDirCreateTemp-generic.cpp \
 	generic/RTFileCopy-generic.cpp \
 	generic/RTFileReadAll-generic.cpp \
 	generic/RTFileReadAllEx-generic.cpp \
