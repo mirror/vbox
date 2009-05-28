@@ -3232,8 +3232,8 @@ VMMR3DECL(int) PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, 
             }
             else
             {
-                /* Temporariliy disabled phycial handler(s), since the recompiler
-                   doesn't get notified when it's reset we'll have to pretend its
+                /* Temporarily disabled physical handler(s), since the recompiler
+                   doesn't get notified when it's reset we'll have to pretend it's
                    operating normally. */
                 if (pgmHandlerPhysicalIsAll(pVM, GCPhys))
                     rc = VERR_PGM_PHYS_TLB_CATCH_ALL;
@@ -3265,7 +3265,7 @@ VMMR3DECL(int) PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, 
             AssertLogRelRCReturn(rc2, rc2);
             *ppv = (void *)((uintptr_t)pTlbe->pv | (GCPhys & PAGE_OFFSET_MASK));
             /** @todo mapping/locking hell; this isn't horribly efficient since
-             *        pgmPhysPageLoadIntoTlb will repeate the lookup we've done here. */
+             *        pgmPhysPageLoadIntoTlb will repeat the lookup we've done here. */
 
             Log6(("PGMR3PhysTlbGCPhys2Ptr: GCPhys=%RGp rc=%Rrc pPage=%R[pgmpage] *ppv=%p\n", GCPhys, rc, pPage, *ppv));
         }
