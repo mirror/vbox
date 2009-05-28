@@ -187,15 +187,6 @@
 
 /** @} */
 
-/** @name PGM pool physical address flags
- *
- * These are bit markers for PGM pool physical addresses.
- * @{ */
-#define PGMPOOL_PHYS_NON_PAGED          RT_BIT_64(63)
-#define PGMPOOL_PHYS_ACCESS_USER        RT_BIT_64(62)       /* set = user, cleared = supervisor */
-#define PGMPOOL_PHYS_ACCESS_RW          RT_BIT_64(61)       /* set = read/write, cleared = read-only. */
-/** @} */
-
 /** @name Defines used to indicate the shadow and guest paging in the templates.
  * @{ */
 #define PGM_TYPE_REAL                   1
