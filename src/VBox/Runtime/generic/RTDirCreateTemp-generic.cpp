@@ -36,6 +36,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/path.h>
 #include <iprt/rand.h>
 #include <iprt/string.h>
 
@@ -43,16 +44,47 @@
 RTDECL(int) RTDirCreateTemp(char *pszTemplate)
 {
     /*
-     * Validate input.
+     * Validate input and count X'es.
+     *
+     * The X'es may be trailing, or they may be a cluster of 3 or more inside
+     * the file name.
      */
     AssertPtr(pszTemplate);
     unsigned    cXes = 0;
     char       *pszX = strchr(pszTemplate, '\0');
-    while (pszX != pszTemplate && pszX[-1] == 'X')
+    if (   pszX != pszTemplate
+        && pszX[-1] != 'X')
+    {
+        /* look inside the file name. */
+        char *pszFilename = RTPathFilename(pszTemplate);
+        if (   pszFilename
+            && (size_t)(pszX - pszFilename) > 3)
+        {
+            char *pszXEnd = pszX - 1;
+            pszFilename += 3;
+            do
+            {
+                if (    pszXEnd[-1] == 'X'
+                    &&  pszXEnd[-2] == 'X'
+                    &&  pszXEnd[-3] == 'X')
+                {
+                    pszX = pszXEnd - 3;
+                    cXes = 3;
+                    break;
+                }
+            } while (pszXEnd-- != pszFilename);
+        }
+    }
+
+    /* count them */
+    while (   pszX != pszTemplate
+           && pszX[-1] == 'X')
     {
         pszX--;
         cXes++;
     }
+
+    /* fail if none found. */
     if (!cXes)
     {
         AssertFailed();
@@ -69,7 +101,7 @@ RTDECL(int) RTDirCreateTemp(char *pszTemplate)
         static char const s_sz[] = "0123456789abcdefghijklmnopqrstuvwxyz";
         unsigned j = cXes;
         while (j-- > 0)
-            pszX[j] = s_sz[RTRandU32Ex(0, RT_ELEMENTS(s_sz) - 1)];
+            pszX[j] = s_sz[RTRandU32Ex(0, RT_ELEMENTS(s_sz) - 2)];
         int rc = RTDirCreate(pszTemplate, 0700);
         if (RT_SUCCESS(rc))
             return rc;

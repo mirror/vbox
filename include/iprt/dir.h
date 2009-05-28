@@ -75,12 +75,17 @@ RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode);
 RTDECL(int) RTDirCreateFullPath(const char *pszPath, RTFMODE fMode);
 
 /**
- * Creates a new temporary directory with a unique name.
+ * Creates a new directory with a unique name using the given template.
  *
- * It takes a path with a directory name template and overwrites a portion of it
- * to create the unique name. The template may be any directory name with one or
- * more tailing `X`. The trailing `Xs` will be replaced by alpha numeric
- * characters to create a directory unique name.
+ * One or more trailing X'es in the template will be replaced by random alpha
+ * numeric characters until a RTDirCreate succeeds or we run out of patience.
+ * For instance:
+ *          "/tmp/myprog-XXXXXX"
+ *
+ * As an alternative to trailing X'es, it
+ * is possible to put 3 or more X'es somewhere inside the directory name. In
+ * the following string only the last bunch of X'es will be modified:
+ *          "/tmp/myprog-XXX-XXX.tmp"
  *
  * The directory is created with mode 0700.
  *
