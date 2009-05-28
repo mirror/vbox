@@ -119,9 +119,6 @@ __BEGIN_DECLS
 /** @} */
 
 
-/** Maxium resume loops allowed in ring 0 (safety precaution) */
-#define HWACCM_MAX_RESUME_LOOPS             1024
-
 /** Maximum number of page flushes we are willing to remember before considering a full TLB flush. */
 #define HWACCM_MAX_TLB_SHOOTDOWN_PAGES      8
 
@@ -216,6 +213,10 @@ typedef struct HWACCM
 
     /** Maximum ASID allowed. */
     RTUINT                      uMaxASID;
+
+    /** The maximum number of resumes loops allowed in ring-0 (safety precaution).
+     * This number is set much higher when RTThreadPreemptIsPending is reliable. */
+    uint32_t                    cMaxResumeLoops;
 
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     /** 32 to 64 bits switcher entrypoint. */
@@ -643,6 +644,7 @@ typedef struct HWACCMCPU
     STAMCOUNTER             StatExitIOStringRead;
     STAMCOUNTER             StatExitIrqWindow;
     STAMCOUNTER             StatExitMaxResume;
+    STAMCOUNTER             StatExitPreemptPending;
     STAMCOUNTER             StatIntReinject;
     STAMCOUNTER             StatPendingHostIrq;
 
