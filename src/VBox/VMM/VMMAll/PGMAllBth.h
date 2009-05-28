@@ -2603,6 +2603,9 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
                 GCPhys |= PGMPOOL_PHYS_ACCESS_USER;
 
             rc = pgmPoolAlloc(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_BIG, pShwPde->idx,      iPDDst, &pShwPage);
+
+            /* Strip the flags again in case we have to construct it. */
+            GCPhys &= ~(PGMPOOL_PHYS_ACCESS_RW|PGMPOOL_PHYS_ACCESS_USER);
         }
         if (rc == VINF_SUCCESS)
             pPTDst = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
