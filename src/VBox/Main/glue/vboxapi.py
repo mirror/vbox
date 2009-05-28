@@ -129,8 +129,7 @@ class PlatformMSCOM:
 
     def initPerThread(self):
         import pythoncom
-        # or with pythoncom.COINIT_APARTMENTTHREADED?
-        pythoncom.CoInitializeEx()
+        pythoncom.CoInitializeEx(0)
 
     def deinitPerThread(self):
         import pythoncom
