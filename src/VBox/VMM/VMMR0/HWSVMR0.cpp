@@ -846,7 +846,7 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     unsigned    cResume = 0;
     uint8_t     u8LastVTPR;
     PHWACCM_CPUINFO pCpu = 0;
-    RTCCUINTREG uOldEFlags;
+    RTCCUINTREG uOldEFlags = ~(RTCCUINTREG)0;
 #ifdef VBOX_STRICT
     RTCPUID  idCpuCheck;
 #endif
@@ -862,7 +862,7 @@ ResumeExecution:
     Assert(!HWACCMR0SuspendPending());
 
     /* Safety precaution; looping for too long here can have a very bad effect on the host */
-    if (++cResume > HWACCM_MAX_RESUME_LOOPS)
+    if (RT_UNLIKELY(++cResume > pVM->hwaccm.s.cMaxResumeLoops))
     {
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitMaxResume);
         rc = VINF_EM_RAW_INTERRUPT;
@@ -918,15 +918,24 @@ ResumeExecution:
     }
 
 #ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
-    /** @todo This must be repeated (or moved down) after we've disabled interrupts
-     *        below because a rescheduling request (IPI) might arrive before we get
-     *        there and we end up exceeding our timeslice. (Putting it here for
-     *        now because I don't want to mess up anything.) */
+    /*
+     * Exit to ring-3 preemption/work is pending.
+     *
+     * Interrupts are disabled before the call to make sure we don't miss any interrupt
+     * that would flag preemption (IPI, timer tick, ++). (Would've been nice to do this
+     * further down, but SVMR0CheckPendingInterrupt makes that hard.)
+     *
+     * Note! Interrupts must be disabled done *before* we check for TLB flushes; TLB
+     *       shootdowns rely on this.
+     */
+    uOldEFlags = ASMIntDisableFlags();
     if (RTThreadPreemptIsPending(NIL_RTTHREAD))
     {
-        rc = VINF_EM_RAW_INTERRUPT_HYPER;
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitPreemptPending);
+        rc = VINF_EM_RAW_INTERRUPT;
         goto end;
     }
+    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
 #endif
 
     /* When external interrupts are pending, we should exit the VM when IF is set. */
@@ -1002,11 +1011,13 @@ ResumeExecution:
         goto end;
     }
 
+#ifndef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
     /* Disable interrupts to make sure a poke will interrupt execution.
      * This must be done *before* we check for TLB flushes; TLB shootdowns rely on this.
      */
     uOldEFlags = ASMIntDisableFlags();
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
+#endif
 
     pCpu = HWACCMR0GetCurrentCpu();
     /* Force a TLB flush for the first world switch if the current cpu differs from the one we ran on last. */
@@ -1098,6 +1109,9 @@ ResumeExecution:
     TMNotifyEndOfExecution(pVCpu);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
     ASMSetFlags(uOldEFlags);
+#ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
+    uOldEFlags = ~(RTCCUINTREG)0;
+#endif
     STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatInGC, x);
 
     /*
@@ -2253,6 +2267,12 @@ end:
 
     /* Just set the correct state here instead of trying to catch every goto above. */
     VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED, VMCPUSTATE_STARTED_EXEC);
+
+#ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
+    /* Restore interrupts if we exitted after disabling them. */
+    if (uOldEFlags != ~(RTCCUINTREG)0)
+        ASMSetFlags(uOldEFlags);
+#endif
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
     return rc;

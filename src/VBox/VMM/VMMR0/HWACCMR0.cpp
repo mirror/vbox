@@ -36,13 +36,14 @@
 #include <VBox/log.h>
 #include <VBox/selm.h>
 #include <VBox/iom.h>
-#include <iprt/param.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
-#include <iprt/string.h>
-#include <iprt/memobj.h>
 #include <iprt/cpuset.h>
+#include <iprt/memobj.h>
+#include <iprt/param.h>
 #include <iprt/power.h>
+#include <iprt/string.h>
+#include <iprt/thread.h>
 #include "HWVMXR0.h"
 #include "HWSVMR0.h"
 
@@ -835,6 +836,16 @@ VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
 
     pVM->hwaccm.s.uMaxASID                  = HWACCMR0Globals.uMaxASID;
 
+
+    if (!pVM->hwaccm.s.cMaxResumeLoops) /* allow ring-3 overrides */
+    {
+        pVM->hwaccm.s.cMaxResumeLoops       = 1024;
+#ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
+        if (RTThreadPreemptIsPendingTrusty())
+            pVM->hwaccm.s.cMaxResumeLoops   = 8192;
+#endif
+    }
+
     for (unsigned i=0;i<pVM->cCPUs;i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
@@ -851,7 +862,7 @@ VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
     RTCCUINTREG     fFlags = ASMIntDisableFlags();
     PHWACCM_CPUINFO pCpu = HWACCMR0GetCurrentCpu();
 
-    /* @note Not correct as we can be rescheduled to a different cpu, but the fInUse case is mostly for debugging. */
+    /* Note: Not correct as we can be rescheduled to a different cpu, but the fInUse case is mostly for debugging. */
     ASMAtomicWriteBool(&pCpu->fInUse, true);
     ASMSetFlags(fFlags);
 
