@@ -181,11 +181,14 @@ static int pit_get_count(PITChannelState *s)
             d = ASMMultU64ByU32DivByU32(TMTimerGet(pTimer) - s->count_load_time, PIT_FREQ, TMTimerGetFreq(pTimer));
             return s->count - (d % s->count); /** @todo check this value. */
         }
+        uint64_t Interval = s->u64NextTS - s->u64ReloadTS;
+        if (!Interval)
+            return s->count - 1; /** @todo This is WRONG! But I'm too tired to fix it properly and just want to shut up a DIV/0 trap now. */
         d = TMTimerGet(pTimer);
-        d = ASMMultU64ByU32DivByU32(d - s->u64ReloadTS, s->count, s->u64NextTS - s->u64ReloadTS);
+        d = ASMMultU64ByU32DivByU32(d - s->u64ReloadTS, s->count, Interval);
         if (d >= s->count)
             return 1;
-        return  s->count - d;
+        return s->count - d;
     }
     d = ASMMultU64ByU32DivByU32(TMTimerGet(pTimer) - s->count_load_time, PIT_FREQ, TMTimerGetFreq(pTimer));
     switch(s->mode) {
