@@ -2227,6 +2227,13 @@ VMMR3DECL(void) TMR3VirtualSyncFF(PVM pVM, PVMCPU pVCpu)
 }
 
 
+/** @name Saved state values
+ * @{ */
+#define TMTIMERSTATE_SAVED_PENDING_STOP         4
+#define TMTIMERSTATE_SAVED_PENDING_SCHEDULE     7
+/** @}  */
+
+
 /**
  * Saves the state of a timer to a saved state.
  *
@@ -2242,7 +2249,7 @@ VMMR3DECL(int) TMR3TimerSave(PTMTIMERR3 pTimer, PSSMHANDLE pSSM)
         case TMTIMERSTATE_STOPPED:
         case TMTIMERSTATE_PENDING_STOP:
         case TMTIMERSTATE_PENDING_STOP_SCHEDULE:
-            return SSMR3PutU8(pSSM, (uint8_t)TMTIMERSTATE_PENDING_STOP);
+            return SSMR3PutU8(pSSM, TMTIMERSTATE_SAVED_PENDING_STOP);
 
         case TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE:
         case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
@@ -2253,7 +2260,7 @@ VMMR3DECL(int) TMR3TimerSave(PTMTIMERR3 pTimer, PSSMHANDLE pSSM)
         case TMTIMERSTATE_ACTIVE:
         case TMTIMERSTATE_PENDING_SCHEDULE:
         case TMTIMERSTATE_PENDING_RESCHEDULE:
-            SSMR3PutU8(pSSM, (uint8_t)TMTIMERSTATE_PENDING_SCHEDULE);
+            SSMR3PutU8(pSSM, TMTIMERSTATE_SAVED_PENDING_SCHEDULE);
             return SSMR3PutU64(pSSM, pTimer->u64Expire);
 
         case TMTIMERSTATE_EXPIRED_GET_UNLINK:
@@ -2288,16 +2295,24 @@ VMMR3DECL(int) TMR3TimerLoad(PTMTIMERR3 pTimer, PSSMHANDLE pSSM)
     int rc = SSMR3GetU8(pSSM, &u8State);
     if (RT_FAILURE(rc))
         return rc;
-    TMTIMERSTATE enmState = (TMTIMERSTATE)u8State;
-    if (    enmState != TMTIMERSTATE_PENDING_STOP
-        &&  enmState != TMTIMERSTATE_PENDING_SCHEDULE
-        &&  enmState != TMTIMERSTATE_PENDING_STOP_SCHEDULE)
+#if 1 /* Workaround for accidental state shift in r47786 (2009-05-26 19:12:12). */  /** @todo remove this in a few weeks! */
+    if (    u8State == TMTIMERSTATE_SAVED_PENDING_STOP + 1
+        ||  u8State == TMTIMERSTATE_SAVED_PENDING_SCHEDULE + 1)
+        u8State--;
+#endif
+    if (    u8State != TMTIMERSTATE_SAVED_PENDING_STOP
+        &&  u8State != TMTIMERSTATE_SAVED_PENDING_SCHEDULE)
     {
-        AssertMsgFailed(("enmState=%d %s\n", enmState, tmTimerState(enmState)));
+        AssertLogRelMsgFailed(("u8State=%d\n", u8State));
         return SSMR3HandleSetStatus(pSSM, VERR_TM_LOAD_STATE);
     }
 
-    if (enmState == TMTIMERSTATE_PENDING_SCHEDULE)
+    /* Enter the critical section to make TMTimerSet/Stop happy. */
+    PPDMCRITSECT pCritSect = pTimer->pCritSect;
+    if (pCritSect)
+        PDMCritSectEnter(pCritSect, VERR_INTERNAL_ERROR);
+
+    if (u8State == TMTIMERSTATE_SAVED_PENDING_SCHEDULE)
     {
         /*
          * Load the expire time.
@@ -2310,7 +2325,7 @@ VMMR3DECL(int) TMR3TimerLoad(PTMTIMERR3 pTimer, PSSMHANDLE pSSM)
         /*
          * Set it.
          */
-        Log(("enmState=%d %s u64Expire=%llu\n", enmState, tmTimerState(enmState), u64Expire));
+        Log(("u8State=%d u64Expire=%llu\n", u8State, u64Expire));
         rc = TMTimerSet(pTimer, u64Expire);
     }
     else
@@ -2318,9 +2333,12 @@ VMMR3DECL(int) TMR3TimerLoad(PTMTIMERR3 pTimer, PSSMHANDLE pSSM)
         /*
          * Stop it.
          */
-        Log(("enmState=%d %s\n", enmState, tmTimerState(enmState)));
+        Log(("u8State=%d\n", u8State));
         rc = TMTimerStop(pTimer);
     }
+
+    if (pCritSect)
+        PDMCritSectLeave(pCritSect);
 
     /*
      * On failure set SSM status.
