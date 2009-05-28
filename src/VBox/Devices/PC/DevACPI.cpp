@@ -1792,7 +1792,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     int rc;
     ACPIState *s = PDMINS_2_DATA(pDevIns, ACPIState *);
     uint32_t rsdp_addr;
-    PCIDevice *dev;
+    PCIDevice *dev = &s->dev;
     bool fGCEnabled;
     bool fR0Enabled;
 
@@ -1945,7 +1945,6 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     s->pm_timer_initial = TMTimerGet(s->tsR3);
     acpiPMTimerReset(s);
 
-    dev = &s->dev;
     PCIDevSetVendorId(dev, 0x8086); /* Intel */
     PCIDevSetDeviceId(dev, 0x7113); /* 82371AB */
 
