@@ -237,9 +237,9 @@ typedef struct HWACCM
     /* Test handler */
     RTRCPTR                     pfnTest64;
 
-    RTRCPTR                     uAlignment[1];
-#elif defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-    uint32_t                    u32Alignment[1];
+    RTRCPTR                     uAlignment[2];
+/*#elif defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+    uint32_t                    u32Alignment[1]; */
 #endif
 
     struct
