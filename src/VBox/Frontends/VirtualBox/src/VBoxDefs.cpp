@@ -52,3 +52,7 @@ const char* VBoxDefs::GUI_MainWindowCount = "GUI/MainWindowCount";
 const char* VBoxDefs::GUI_RealtimeDockIconUpdateEnabled = "GUI/RealtimeDockIconUpdateEnabled";
 #endif /* Q_WS_MAC */
 const char* VBoxDefs::GUI_PassCAD = "GUI/PassCAD";
+const char* VBoxDefs::GUI_Export_StorageType = "GUI/Export/StorageType";
+const char* VBoxDefs::GUI_Export_Username = "GUI/Export/Username";
+const char* VBoxDefs::GUI_Export_Hostname = "GUI/Export/Hostname";
+const char* VBoxDefs::GUI_Export_Bucket = "GUI/Export/Bucket";

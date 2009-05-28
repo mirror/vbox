@@ -35,6 +35,14 @@ class VBoxExportApplianceWzd : public QIWithRetranslateUI<QIAbstractWizard>,
 {
     Q_OBJECT;
 
+    enum StorageType
+    {
+        Filesystem,
+        SunCloud,
+        S3
+    };
+
+
 public:
     VBoxExportApplianceWzd (QWidget* aParent = NULL, const QString& aSelectName = QString::null);
 
@@ -54,12 +62,21 @@ private:
     void addListViewVMItems (const QString& aSelectName);
     bool prepareSettingsWidget();
     bool exportVMs (CAppliance &aAppliance);
+    QString uri() const;
+    StorageType currentStorageType() const;
+    void setCurrentStorageType(VBoxExportApplianceWzd::StorageType aType);
+
+    void storageTypeChanged();
 
     /* Private member vars */
     QString mDefaultApplianceName;
 
     QIWidgetValidator *mWValVMSelector;
     QIWidgetValidator *mWValFileSelector;
+
+    QString mExportToFileSystemDesc;
+    QString mExportToSunCloudDesc;
+    QString mExportToS3Desc;
 };
 
 #endif /* __VBoxExportApplianceWzd_h__ */

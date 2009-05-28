@@ -25,6 +25,7 @@
 #include "VBoxGlobal.h"
 #include "QIFileDialog.h"
 #include "QILabel.h"
+#include "QILineEdit.h"
 
 /* Qt includes */
 #include <QAction>
@@ -563,34 +564,108 @@ void VBoxFilePathSelectorWidget::refreshText()
 
 VBoxEmptyFileSelector::VBoxEmptyFileSelector (QWidget *aParent /* = NULL */)
     : QIWithRetranslateUI<QWidget> (aParent)
+    , mPathWgt (NULL)
+    , mLabel (NULL)
+    , mLineEdit (NULL)
     , mHomeDir (QDir::current().absolutePath())
-      , mIsModified (false)
+    , mIsModified (false)
 {
-    QHBoxLayout *mainLayout = new QHBoxLayout (this);
-    mainLayout->setMargin (0);
+    mMainLayout = new QHBoxLayout (this);
+    mMainLayout->setMargin (0);
 
     mSelectButton = new QPushButton (this);
-    mainLayout->addWidget (mSelectButton);
-
-    mLabel = new QILabel (this);
-    mLabel->setWordWrap (true);
-    mainLayout->addWidget (mLabel, 2);
-
     connect (mSelectButton, SIGNAL (clicked()),
              this, SLOT (choose()));
+
+    mMainLayout->addWidget (mSelectButton);
+
+    setEditable (false);
 
     retranslateUi();
 }
 
+void VBoxEmptyFileSelector::setButtonPosition (ButtonPosition aPos)
+{
+    if (aPos == LeftPosition)
+    {
+        mMainLayout->setDirection (QBoxLayout::LeftToRight);
+        setTabOrder (mSelectButton, mPathWgt);
+    }
+    else
+    {
+        mMainLayout->setDirection (QBoxLayout::RightToLeft);
+        setTabOrder (mPathWgt, mSelectButton);
+    }
+}
+
+VBoxEmptyFileSelector::ButtonPosition VBoxEmptyFileSelector::buttonPosition() const
+{
+    return mMainLayout->direction() == QBoxLayout::LeftToRight ? LeftPosition : RightPosition;
+}
+
+void VBoxEmptyFileSelector::setEditable (bool aOn)
+{
+    if (mPathWgt)
+    {
+        delete mPathWgt;
+        mLabel = NULL;
+        mLineEdit = NULL;
+    }
+
+    if (aOn)
+    {
+        mPathWgt = mLineEdit = new QILineEdit (this);
+        connect (mLineEdit, SIGNAL (textChanged (const QString&)),
+                 this, SLOT (textChanged (const QString&)));
+    }
+    else
+    {
+        mPathWgt = mLabel = new QILabel (this);
+        mLabel->setWordWrap (true);
+    }
+    mMainLayout->addWidget (mPathWgt, 2);
+    setButtonPosition (buttonPosition());
+
+    setPath (mPath);
+}
+
+bool VBoxEmptyFileSelector::isEditable() const
+{
+    return mLabel ? false : true;
+}
+
+void VBoxEmptyFileSelector::setChooserVisible (bool aOn)
+{
+    mSelectButton->setVisible (aOn);
+}
+
+bool VBoxEmptyFileSelector::isChooserVisible() const
+{
+    return mSelectButton->isVisible();
+}
+
 void VBoxEmptyFileSelector::setPath (const QString& aPath)
 {
-    mLabel->setText (QString ("<compact elipsis=\"start\">%1</compact>").arg (aPath));
-    mPath = aPath;
+    if (mLabel)
+        mLabel->setText (QString ("<compact elipsis=\"start\">%1</compact>").arg (aPath));
+    else if (mLineEdit)
+        mLineEdit->setText (aPath);
+    textChanged(aPath);
 }
 
 QString VBoxEmptyFileSelector::path() const
 {
     return mPath;
+}
+
+void VBoxEmptyFileSelector::setDefaultSaveExt (const QString &aExt)
+{
+    mDefaultSaveExt = aExt;
+}
+
+QString VBoxEmptyFileSelector::defaultSaveExt() const
+{
+    return mDefaultSaveExt;
 }
 
 void VBoxEmptyFileSelector::setFileDialogTitle (const QString& aTitle)
@@ -639,10 +714,20 @@ void VBoxEmptyFileSelector::choose()
         initDir = mHomeDir;
 
     path = QIFileDialog::getOpenFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle);
+    if (!path.isEmpty() && QFileInfo (path).suffix().isEmpty())
+        path = QString ("%1.%2").arg (path).arg (mDefaultSaveExt);
     if (!path.isEmpty())
-    {
         setPath (path);
+}
+
+void VBoxEmptyFileSelector::textChanged (const QString& aPath)
+{
+    const QString oldPath = mPath;
+    mPath = aPath;
+    if (oldPath != mPath)
+    {
         mIsModified = true;
-        emit pathChanged (path);
+        emit pathChanged (mPath);
     }
 }
+

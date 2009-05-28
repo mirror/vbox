@@ -9,7 +9,7 @@
  available from http://www.virtualbox.org. This file is free software;
  you can redistribute it and/or modify it under the terms of the GNU
  General Public License (GPL) as published by the Free Software
- Foundation, in version 2 as it comes in the "COPYING" file of the
+ Foundation, in version 2 as it comes in the &quot;COPYING&quot; file of the
  VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 
@@ -23,8 +23,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>559</width>
-    <height>399</height>
+    <width>556</width>
+    <height>452</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -353,10 +353,10 @@ p, li { white-space: pre-wrap; }
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="mFileSelectPage">
-      <layout class="QVBoxLayout" name="verticalLayout_3">
+     <widget class="QWidget" name="mTargetSelectPage">
+      <layout class="QVBoxLayout" name="verticalLayout_6">
        <item>
-        <widget class="QLabel" name="mPageFileSelectHdr">
+        <widget class="QLabel" name="mPageTargetSelectHdr">
          <property name="font">
           <font>
            <family>Arial</family>
@@ -371,16 +371,16 @@ p, li { white-space: pre-wrap; }
         </widget>
        </item>
        <item>
-        <widget class="Line" name="line21">
+        <widget class="Line" name="line21_3">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
        <item>
-        <layout class="QGridLayout" name="gridLayout_2">
-         <item row="0" column="0" rowspan="4">
-          <widget class="QLabel" name="mLogoFileSelect">
+        <layout class="QGridLayout" name="gridLayout_5">
+         <item row="0" column="0" rowspan="2">
+          <widget class="QLabel" name="mLogoTargetSelect">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Maximum" vsizetype="Minimum">
              <horstretch>0</horstretch>
@@ -402,7 +402,7 @@ p, li { white-space: pre-wrap; }
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QILabel" name="mTextFileSelect">
+          <widget class="QILabel" name="mTextTargetSelect">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
              <horstretch>0</horstretch>
@@ -416,7 +416,7 @@ p, li { white-space: pre-wrap; }
             </size>
            </property>
            <property name="text">
-            <string>Please specify a filename into which the appliance information will be written. Currently VirtualBox supports the Open Virtualization Format (OVF).</string>
+            <string>Please specify the target for the OVF export. You can choose between a local file system export, the uploading of the OVF to the Sun Cloud service or an S3 storage server.</string>
            </property>
            <property name="wordWrap">
             <bool>true</bool>
@@ -424,42 +424,57 @@ p, li { white-space: pre-wrap; }
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="VBoxFilePathSelectorWidget" name="mFileSelector"/>
-         </item>
-         <item row="3" column="1">
-          <spacer name="spacer">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>418</width>
-             <height>208</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="2" column="1">
-          <widget class="QCheckBox" name="mSelectOVF09">
-           <property name="toolTip">
-            <string>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</string>
-           </property>
-           <property name="text">
-            <string>&amp;Write legacy OVF 0.9</string>
-           </property>
-          </widget>
+          <layout class="QVBoxLayout" name="verticalLayout_5">
+           <item>
+            <widget class="QRadioButton" name="mRBtnLocalFileSystem">
+             <property name="text">
+              <string>&amp;Local Filesystem </string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="mRBtnSunCloud">
+             <property name="text">
+              <string>Sun &amp;Cloud</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="mRBtnS3">
+             <property name="text">
+              <string>&amp;Simple Storage System (S3)</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="verticalSpacer">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
          </item>
         </layout>
        </item>
        <item>
-        <widget class="Line" name="line22">
+        <widget class="Line" name="line22_3">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="_3">
+        <layout class="QHBoxLayout" name="_6">
          <item>
           <spacer>
            <property name="orientation">
@@ -481,9 +496,9 @@ p, li { white-space: pre-wrap; }
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="mBtnFinish">
+          <widget class="QPushButton" name="mBtnNext3">
            <property name="text">
-            <string>&amp;Export &gt;</string>
+            <string>&amp;Next &gt;</string>
            </property>
           </widget>
          </item>
@@ -514,6 +529,237 @@ p, li { white-space: pre-wrap; }
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="mTargetOptionsPage">
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <widget class="QLabel" name="mPageTargetOptionsHdr">
+         <property name="font">
+          <font>
+           <family>Arial</family>
+           <pointsize>12</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Appliance Export Settings</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="Line" name="line21">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QGridLayout" name="gridLayout_4">
+         <item row="0" column="0" rowspan="4">
+          <widget class="QLabel" name="mLogoTargetOptions">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Minimum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="autoFillBackground">
+            <bool>true</bool>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="pixmap">
+            <pixmap resource="../VirtualBox.qrc">:/vmw_ovf_import.png</pixmap>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QILabel" name="mTextTargetOptions">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>300</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>bla</string>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <layout class="QGridLayout" name="gridLayout_2">
+           <item row="0" column="0">
+            <widget class="QLabel" name="mLblUsername">
+             <property name="text">
+              <string>&amp;Username:</string>
+             </property>
+             <property name="buddy">
+              <cstring>mLeUsername</cstring>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="mLeUsername"/>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="mLblPassword">
+             <property name="text">
+              <string>&amp;Password:</string>
+             </property>
+             <property name="buddy">
+              <cstring>mLePassword</cstring>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="mLePassword">
+             <property name="echoMode">
+              <enum>QLineEdit::Password</enum>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QLineEdit" name="mLeBucket"/>
+           </item>
+           <item row="5" column="0">
+            <widget class="QLabel" name="mLblFile">
+             <property name="text">
+              <string>&amp;File:</string>
+             </property>
+             <property name="buddy">
+              <cstring>mFileSelector</cstring>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
+            <widget class="VBoxEmptyFileSelector" name="mFileSelector" native="true"/>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="mLblBucket">
+             <property name="text">
+              <string>&amp;Bucket:</string>
+             </property>
+             <property name="buddy">
+              <cstring>mLeBucket</cstring>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="mLblHostname">
+             <property name="text">
+              <string>&amp;Hostname</string>
+             </property>
+             <property name="buddy">
+              <cstring>mLeHostname</cstring>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QLineEdit" name="mLeHostname"/>
+           </item>
+          </layout>
+         </item>
+         <item row="2" column="1">
+          <widget class="QCheckBox" name="mSelectOVF09">
+           <property name="toolTip">
+            <string>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</string>
+           </property>
+           <property name="text">
+            <string>&amp;Write legacy OVF 0.9</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <spacer name="spacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>415</width>
+             <height>46</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="Line" name="line22">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="_3">
+         <item>
+          <spacer>
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="mBtnBack4">
+           <property name="text">
+            <string>&lt; &amp;Back</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="mBtnFinish">
+           <property name="text">
+            <string>&amp;Export &gt;</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer>
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>5</width>
+             <height>0</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="mBtnCancel4">
+           <property name="text">
+            <string>Cancel</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
   </layout>
@@ -525,8 +771,8 @@ p, li { white-space: pre-wrap; }
    <header>QILabel.h</header>
   </customwidget>
   <customwidget>
-   <class>VBoxFilePathSelectorWidget</class>
-   <extends>QComboBox</extends>
+   <class>VBoxEmptyFileSelector</class>
+   <extends>QWidget</extends>
    <header>VBoxFilePathSelectorWidget.h</header>
   </customwidget>
   <customwidget>
@@ -536,6 +782,26 @@ p, li { white-space: pre-wrap; }
    <container>1</container>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>mVMListWidget</tabstop>
+  <tabstop>mBtnBack1</tabstop>
+  <tabstop>mBtnNext1</tabstop>
+  <tabstop>mBtnCancel1</tabstop>
+  <tabstop>mTargetOptionsPage</tabstop>
+  <tabstop>mBtnRestore</tabstop>
+  <tabstop>mBtnBack2</tabstop>
+  <tabstop>mBtnNext2</tabstop>
+  <tabstop>mBtnCancel2</tabstop>
+  <tabstop>mLeUsername</tabstop>
+  <tabstop>mLePassword</tabstop>
+  <tabstop>mLeHostname</tabstop>
+  <tabstop>mLeBucket</tabstop>
+  <tabstop>mFileSelector</tabstop>
+  <tabstop>mSelectOVF09</tabstop>
+  <tabstop>mBtnBack4</tabstop>
+  <tabstop>mBtnFinish</tabstop>
+  <tabstop>mBtnCancel4</tabstop>
+ </tabstops>
  <resources>
   <include location="../VirtualBox.qrc"/>
   <include location="../VirtualBox.qrc"/>

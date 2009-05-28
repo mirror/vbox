@@ -145,8 +145,10 @@ public:
     QWidget *mainWindowShown() const;
 
     /* Generic problem handlers */
+    bool askForOverridingFile (const QString& aPath, QWidget *aParent  = NULL) const;
+    bool askForOverridingFiles (const QVector<QString>& aPaths, QWidget *aParent = NULL) const;
     bool askForOverridingFileIfExists (const QString& path, QWidget *aParent = NULL) const;
-    bool askForOverridingFilesIfExists (const QStringList& aPaths, QWidget *aParent = NULL) const;
+    bool askForOverridingFilesIfExists (const QVector<QString>& aPaths, QWidget *aParent = NULL) const;
 
     void cannotDeleteFile (const QString& path, QWidget *aParent = NULL) const;
 
@@ -342,6 +344,9 @@ public:
 
     void cannotImportAppliance (CAppliance *aAppliance, QWidget *aParent = NULL) const;
     void cannotImportAppliance (const CProgress &aProgress, CAppliance *aAppliance, QWidget *aParent = NULL) const;
+
+    void cannotCheckFiles (const CProgress &aProgress, QWidget *aParent = NULL) const;
+    void cannotRemoveFiles (const CProgress &aProgress, QWidget *aParent = NULL) const;
 
     void cannotExportAppliance (CAppliance *aAppliance, QWidget *aParent = NULL) const;
     void cannotExportAppliance (const CMachine &aMachine, CAppliance *aAppliance, QWidget *aParent = NULL) const;
