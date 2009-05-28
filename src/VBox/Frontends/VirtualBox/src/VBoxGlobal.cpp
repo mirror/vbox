@@ -4100,6 +4100,9 @@ QString VBoxGlobal::documentsPath()
 
     /* Make sure the path exists */
     QDir dir (path);
+    /* We have to make sure this is an absolute path. If not 'dir.cdUp' below
+     * will block in some rare cases. */
+    dir.makeAbsolute();
     while (!dir.exists())
         dir.cdUp();
 

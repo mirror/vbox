@@ -71,28 +71,38 @@ VBoxExportApplianceWzd::VBoxExportApplianceWzd (QWidget *aParent /* = NULL */, c
     mWValVMSelector->revalidate();
 
     /* Configure the file selector */
-    mFileSelector->setMode (VBoxFilePathSelectorWidget::Mode_File_Save);
-    mFileSelector->setResetEnabled (false);
+//    mFileSelector->setMode (VBoxFilePathSelectorWidget::Mode_File_Save);
+    mFileSelector->setEditable (true);
+    mFileSelector->setButtonPosition (VBoxEmptyFileSelector::RightPosition);
     mFileSelector->setFileDialogTitle (tr ("Select a file to export into"));
     mFileSelector->setFileFilters (tr ("Open Virtualization Format (%1)").arg ("*.ovf"));
     mFileSelector->setDefaultSaveExt ("ovf");
-#ifdef Q_WS_MAC
-    /* Editable boxes are uncommon on the Mac */
-    mFileSelector->setEditable (false);
-#endif /* Q_WS_MAC */
+    setTabOrder (mLeBucket, mFileSelector);
 
     /* Connect the restore button with the settings widget */
     connect (mBtnRestore, SIGNAL (clicked()),
              mExportSettingsWgt, SLOT (restoreDefaults()));
 
     /* Validator for the file selector page */
-    mWValFileSelector = new QIWidgetValidator (mFileSelectPage, this);
+    mWValFileSelector = new QIWidgetValidator (mTargetOptionsPage, this);
     connect (mWValFileSelector, SIGNAL (validityChanged (const QIWidgetValidator *)),
              this, SLOT (enableNext (const QIWidgetValidator *)));
     connect (mWValFileSelector, SIGNAL (isValidRequested (QIWidgetValidator *)),
              this, SLOT (revalidate (QIWidgetValidator *)));
     connect (mFileSelector, SIGNAL (pathChanged (const QString &)),
              mWValFileSelector, SLOT (revalidate()));
+    connect (mLeUsername, SIGNAL (textChanged (const QString &)),
+             mWValFileSelector, SLOT (revalidate()));
+    connect (mLePassword, SIGNAL (textChanged (const QString &)),
+             mWValFileSelector, SLOT (revalidate()));
+    connect (mLeHostname, SIGNAL (textChanged (const QString &)),
+             mWValFileSelector, SLOT (revalidate()));
+    connect (mLeBucket, SIGNAL (textChanged (const QString &)),
+             mWValFileSelector, SLOT (revalidate()));
+
+    mLeUsername->setText (vboxGlobal().virtualBox().GetExtraData (VBoxDefs::GUI_Export_Username));
+    mLeHostname->setText (vboxGlobal().virtualBox().GetExtraData (VBoxDefs::GUI_Export_Hostname));
+    mLeBucket->setText (vboxGlobal().virtualBox().GetExtraData (VBoxDefs::GUI_Export_Bucket));
 
     mWValFileSelector->revalidate();
 
@@ -100,6 +110,11 @@ VBoxExportApplianceWzd::VBoxExportApplianceWzd (QWidget *aParent /* = NULL */, c
     initializeWizardFtr();
 
     retranslateUi();
+
+    bool ok;
+    StorageType type = StorageType (vboxGlobal().virtualBox().GetExtraData (VBoxDefs::GUI_Export_StorageType).toInt(&ok));
+    if (ok)
+        setCurrentStorageType (type);
 }
 
 void VBoxExportApplianceWzd::retranslateUi()
@@ -108,6 +123,17 @@ void VBoxExportApplianceWzd::retranslateUi()
     Ui::VBoxExportApplianceWzd::retranslateUi (this);
 
     mDefaultApplianceName = tr("Appliance");
+
+    mExportToFileSystemDesc = tr("Please choose a filename to export the OVF in.");
+    mExportToSunCloudDesc = tr("Please complete the additionally fields like the username, password & the bucket. Finally you have to provide a filename for the OVF target.");
+    mExportToS3Desc = tr("Please complete the additionally fields like the username, password, hostname & the bucket. Finally you have to provide a filename for the OVF target.");
+
+    switch (currentStorageType())
+    {
+        case Filesystem: mTextTargetOptions->setText (mExportToFileSystemDesc); break;
+        case SunCloud: mTextTargetOptions->setText (mExportToSunCloudDesc); break;
+        case S3: mTextTargetOptions->setText (mExportToS3Desc); break;
+    }
 }
 
 void VBoxExportApplianceWzd::revalidate (QIWidgetValidator *aWval)
@@ -119,7 +145,22 @@ void VBoxExportApplianceWzd::revalidate (QIWidgetValidator *aWval)
         valid = mVMListWidget->selectedItems().size() > 0;
 
     if (aWval == mWValFileSelector)
+    {
         valid = mFileSelector->path().toLower().endsWith (".ovf");
+        if (currentStorageType() == SunCloud)
+        {
+            valid &= !mLeUsername->text().isEmpty() &&
+                !mLePassword->text().isEmpty() &&
+                !mLeBucket->text().isEmpty();
+        }
+        else if (currentStorageType() == S3)
+        {
+            valid &= !mLeUsername->text().isEmpty() &&
+                !mLePassword->text().isEmpty() &&
+                !mLeHostname->text().isEmpty() &&
+                !mLeBucket->text().isEmpty();
+        }
+    }
 
     aWval->setOtherValid (valid);
 }
@@ -136,8 +177,8 @@ void VBoxExportApplianceWzd::accept()
 {
     CAppliance *appliance = mExportSettingsWgt->appliance();
     QFileInfo fi (mFileSelector->path());
-    QStringList files;
-    files << mFileSelector->path();
+    QVector<QString> files;
+    files << fi.fileName();
     /* We need to know every filename which will be created, so that we can
      * ask the user for confirmation of overwriting. For that we iterating
      * over all virtual systems & fetch all descriptions of the type
@@ -150,26 +191,55 @@ void VBoxExportApplianceWzd::accept()
 
         vsds[i].GetDescriptionByType (KVirtualSystemDescriptionType_HardDiskImage, types, refs, origValues, configValues, extraConfigValues);
         foreach (const QString &s, origValues)
-            files << QString ("%1/%2").arg (fi.absolutePath()).arg (s);
+            files << QString ("%2").arg (s);
     }
+    CVFSExplorer explorer = appliance->CreateVFSExplorer(uri());
+    CProgress progress = explorer.Update();
+    bool fResult = explorer.isOk();
+    if (fResult)
+    {
+        /* Show some progress, so the user know whats going on */
+        vboxProblem().showModalProgressDialog (progress, tr ("Checking files ..."), this);
+        if (progress.GetCanceled())
+            return;
+        if (!progress.isOk() || progress.GetResultCode() != 0)
+        {
+            vboxProblem().cannotCheckFiles (progress, this);
+            return;
+        }
+    }
+    QVector<QString> exists = explorer.Exists (files);
     /* Check if the file exists already, if yes get confirmation for
      * overwriting from the user. */
-    if (!vboxProblem().askForOverridingFilesIfExists (files, this))
+    if (!vboxProblem().askForOverridingFiles (exists, this))
         return;
     /* Ok all is confirmed so delete all the files which exists */
-    foreach (const QString &file, files)
+    if (!exists.isEmpty())
     {
-        QFile f (file);
-        if (f.exists())
-            if (!f.remove())
+        CProgress progress1 = explorer.Remove (exists);
+        fResult = explorer.isOk();
+        if (fResult)
+        {
+            /* Show some progress, so the user know whats going on */
+            vboxProblem().showModalProgressDialog (progress1, tr ("Removing files ..."), this);
+            if (progress1.GetCanceled())
+                return;
+            if (!progress1.isOk() || progress1.GetResultCode() != 0)
             {
-                vboxProblem().cannotDeleteFile (file, this);
+                vboxProblem().cannotRemoveFiles (progress1, this);
                 return;
             }
+        }
     }
     /* Export the VMs, on success we are finished */
-    if (exportVMs(*appliance))
+    if (exportVMs (*appliance))
+    {
+        vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_Export_StorageType, QString::number(currentStorageType()));
+        vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_Export_Username, mLeUsername->text());
+        vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_Export_Hostname, mLeHostname->text());
+        vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_Export_Bucket, mLeBucket->text());
         QIAbstractWizard::accept();
+    }
 }
 
 void VBoxExportApplianceWzd::showNextPage()
@@ -179,8 +249,9 @@ void VBoxExportApplianceWzd::showNextPage()
     {
         prepareSettingsWidget();
     }
-    else if (sender() == mBtnNext2)
+    else if (sender() == mBtnNext3)
     {
+        storageTypeChanged();
         if (mFileSelector->path().isEmpty())
         {
             /* Set the default filename */
@@ -189,8 +260,12 @@ void VBoxExportApplianceWzd::showNextPage()
             if (mVMListWidget->selectedItems().size() == 1)
                 name = mVMListWidget->selectedItems().first()->text();
 
-            mFileSelector->setPath (QDir::toNativeSeparators (QString ("%1/%2.ovf").arg (vboxGlobal().documentsPath())
-                                                                                   .arg (name)));
+            name += ".ovf";
+
+            if (currentStorageType() == Filesystem)
+                name = QDir::toNativeSeparators (QString ("%1/%2").arg (vboxGlobal().documentsPath())
+                                                 .arg (name));
+            mFileSelector->setPath (name);
             mWValFileSelector->revalidate();
         }
         mExportSettingsWgt->prepareExport();
@@ -201,12 +276,9 @@ void VBoxExportApplianceWzd::showNextPage()
 
 void VBoxExportApplianceWzd::onPageShow()
 {
-    /* Make sure all is properly translated & composed */
-    retranslateUi();
-
     QWidget *page = mPageStack->currentWidget();
 
-    if (page == mFileSelectPage)
+    if (page == mTargetOptionsPage)
         finishButton()->setDefault (true);
     else
         nextButton (page)->setDefault (true);
@@ -302,12 +374,14 @@ bool VBoxExportApplianceWzd::exportVMs (CAppliance &aAppliance)
 {
     /* Write the appliance */
     QString version = mSelectOVF09->isChecked() ? "ovf-0.9" : "ovf-1.0";
-    CProgress progress = aAppliance.Write (version, mFileSelector->path());
+    CProgress progress = aAppliance.Write (version, uri());
     bool fResult = aAppliance.isOk();
     if (fResult)
     {
         /* Show some progress, so the user know whats going on */
         vboxProblem().showModalProgressDialog (progress, tr ("Exporting Appliance ..."), this);
+        if (progress.GetCanceled())
+            return false;
         if (!progress.isOk() || progress.GetResultCode() != 0)
         {
             vboxProblem().cannotExportAppliance (progress, &aAppliance, this);
@@ -319,5 +393,121 @@ bool VBoxExportApplianceWzd::exportVMs (CAppliance &aAppliance)
     if (!fResult)
         vboxProblem().cannotExportAppliance (&aAppliance, this);
     return false;
+}
+
+QString VBoxExportApplianceWzd::uri() const
+{
+    if (currentStorageType() == Filesystem)
+        return mFileSelector->path();
+    else if (currentStorageType() == SunCloud)
+    {
+        QString uri ("SunCloud://");
+        if (!mLeUsername->text().isEmpty())
+            uri = QString ("%1%2").arg (uri).arg (mLeUsername->text());
+        if (!mLePassword->text().isEmpty())
+            uri = QString ("%1:%2").arg (uri).arg (mLePassword->text());
+        if (!mLeUsername->text().isEmpty() ||
+            !mLePassword->text().isEmpty())
+            uri = QString ("%1@").arg (uri);
+        uri = QString ("%1%2/%3/%4").arg (uri).arg ("object.storage.network.com").arg (mLeBucket->text()).arg (mFileSelector->path());
+        return uri;
+    }
+    else if (currentStorageType() == S3)
+    {
+        QString uri ("S3://");
+        if (!mLeUsername->text().isEmpty())
+            uri = QString ("%1%2").arg (uri).arg (mLeUsername->text());
+        if (!mLePassword->text().isEmpty())
+            uri = QString ("%1:%2").arg (uri).arg (mLePassword->text());
+        if (!mLeUsername->text().isEmpty() ||
+            !mLePassword->text().isEmpty())
+            uri = QString ("%1@").arg (uri);
+        uri = QString ("%1%2/%3/%4").arg (uri).arg (mLeHostname->text()).arg (mLeBucket->text()).arg (mFileSelector->path());
+        return uri;
+    }
+    return "";
+}
+
+VBoxExportApplianceWzd::StorageType VBoxExportApplianceWzd::currentStorageType() const
+{
+    if (mRBtnLocalFileSystem->isChecked())
+        return Filesystem;
+    else if (mRBtnSunCloud->isChecked())
+        return SunCloud;
+    else
+        return S3;
+}
+
+void VBoxExportApplianceWzd::storageTypeChanged()
+{
+    StorageType type = currentStorageType();
+    switch (type)
+    {
+        case Filesystem:
+        {
+            mTextTargetOptions->setText (mExportToFileSystemDesc);
+            mLblUsername->setVisible (false);
+            mLeUsername->setVisible (false);
+            mLblPassword->setVisible (false);
+            mLePassword->setVisible (false);
+            mLblHostname->setVisible (false);
+            mLeHostname->setVisible (false);
+            mLblBucket->setVisible (false);
+            mLeBucket->setVisible (false);
+            mFileSelector->setChooserVisible (true);
+            mFileSelector->setFocus();
+            break;
+        };
+        case SunCloud:
+        {
+            mTextTargetOptions->setText (mExportToSunCloudDesc);
+            mLblUsername->setVisible (true);
+            mLeUsername->setVisible (true);
+            mLblPassword->setVisible (true);
+            mLePassword->setVisible (true);
+            mLblHostname->setVisible (false);
+            mLeHostname->setVisible (false);
+            mLblBucket->setVisible (true);
+            mLeBucket->setVisible (true);
+            mFileSelector->setChooserVisible (false);
+            mLeUsername->setFocus();
+            break;
+        };
+        case S3:
+        {
+            mTextTargetOptions->setText (mExportToS3Desc);
+            mLblUsername->setVisible (true);
+            mLeUsername->setVisible (true);
+            mLblPassword->setVisible (true);
+            mLePassword->setVisible (true);
+            mLblHostname->setVisible (true);
+            mLeHostname->setVisible (true);
+            mLblBucket->setVisible (true);
+            mLeBucket->setVisible (true);
+            mFileSelector->setChooserVisible (false);
+            mLeUsername->setFocus();
+            break;
+        };
+    }
+
+    if (!mFileSelector->path().isEmpty())
+    {
+        QFileInfo fi (mFileSelector->path());
+        QString name = fi.fileName();
+        if (type == Filesystem)
+            name = QDir::toNativeSeparators (QString ("%1/%2").arg (vboxGlobal().documentsPath())
+                                             .arg (name));
+        mFileSelector->setPath (name);
+    }
+}
+
+void VBoxExportApplianceWzd::setCurrentStorageType (VBoxExportApplianceWzd::StorageType aType)
+{
+    switch (aType)
+    {
+        case Filesystem: mRBtnLocalFileSystem->setChecked(true); mRBtnLocalFileSystem->setFocus(); break;
+        case SunCloud: mRBtnSunCloud->setChecked(true); mRBtnSunCloud->setFocus(); break;
+        case S3: mRBtnS3->setChecked(true); mRBtnS3->setFocus(); break;
+    }
 }
 

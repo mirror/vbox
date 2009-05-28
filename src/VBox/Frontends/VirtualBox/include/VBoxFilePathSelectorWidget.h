@@ -31,8 +31,10 @@
 
 /* VBox forward declarations */
 class QILabel;
+class QILineEdit;
 
 /* Qt forward declarations */
+class QHBoxLayout;
 class QFileIconProvider;
 class QAction;
 class QPushButton;
@@ -137,10 +139,27 @@ class VBoxEmptyFileSelector: public QIWithRetranslateUI<QWidget>
     Q_OBJECT;
 
 public:
+    enum ButtonPosition
+    {
+        LeftPosition,
+        RightPosition
+    };
+
     VBoxEmptyFileSelector (QWidget *aParent = NULL);
 
-    void setPath (const QString& aPath);
+    void setButtonPosition (ButtonPosition aPos);
+    ButtonPosition buttonPosition() const;
+
+    void setEditable (bool aOn);
+    bool isEditable() const;
+
+    void setChooserVisible (bool aOn);
+    bool isChooserVisible() const;
+
     QString path() const;
+
+    void setDefaultSaveExt (const QString &aExt);
+    QString defaultSaveExt() const;
 
     bool isModified () const { return mIsModified; }
     void resetModified () { mIsModified = false; }
@@ -157,18 +176,26 @@ public:
 signals:
     void pathChanged (QString);
 
+public slots:
+    void setPath (const QString& aPath);
+
 protected:
     void retranslateUi();
 
 private slots:
     void choose();
+    void textChanged (const QString& aPath);
 
 private:
     /* Private member vars */
+    QHBoxLayout *mMainLayout;
+    QWidget *mPathWgt;
     QILabel *mLabel;
+    QILineEdit *mLineEdit;
     QPushButton *mSelectButton;
     QString mFileDialogTitle;
     QString mFileFilters;
+    QString mDefaultSaveExt;
     QString mHomeDir;
     bool mIsModified;
     QString mPath;

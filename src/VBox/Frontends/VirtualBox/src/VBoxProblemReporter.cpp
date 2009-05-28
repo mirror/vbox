@@ -296,18 +296,34 @@ QWidget *VBoxProblemReporter::mainWindowShown() const
 // Generic Problem handlers
 /////////////////////////////////////////////////////////////////////////////
 
-bool VBoxProblemReporter::askForOverridingFileIfExists (const QString& aPath, QWidget *aParent /* = NULL */) const
+bool VBoxProblemReporter::askForOverridingFile (const QString& aPath, QWidget *aParent /* = NULL */) const
 {
-    QFileInfo fi (aPath);
-    if (fi.exists())
-        return messageYesNo (aParent, Question, tr ("A file named <b>%1</b> already exists. Are you sure you want to replace it?<br /><br />The file already exists in \"%2\". Replacing it will overwrite its contents.").arg (fi.fileName()). arg (fi.absolutePath()));
+    return messageYesNo (aParent, Question, tr ("A file named <b>%1</b> already exists. Are you sure you want to replace it?<br /><br />Replacing it will overwrite its contents.").arg (aPath));
+}
+
+bool VBoxProblemReporter::askForOverridingFiles (const QVector<QString>& aPaths, QWidget *aParent /* = NULL */) const
+{
+    if (aPaths.size() == 1)
+        /* If it is only one file use the single question versions above */
+        return askForOverridingFile (aPaths.at (0), aParent);
+    else if (aPaths.size() > 1)
+        return messageYesNo (aParent, Question, tr ("The following files already exist:<br /><br />%1<br /><br />Are you sure you want to replace them? Replacing them will overwrite their contents.").arg (QStringList(aPaths.toList()).join ("<br />")));
     else
         return true;
 }
 
-bool VBoxProblemReporter::askForOverridingFilesIfExists (const QStringList& aPaths, QWidget *aParent /* = NULL */) const
+bool VBoxProblemReporter::askForOverridingFileIfExists (const QString& aPath, QWidget *aParent /* = NULL */) const
 {
-    QStringList existingFiles;
+    QFileInfo fi (aPath);
+    if (fi.exists())
+        return askForOverridingFile (aPath, aParent);
+    else
+        return true;
+}
+
+bool VBoxProblemReporter::askForOverridingFilesIfExists (const QVector<QString>& aPaths, QWidget *aParent /* = NULL */) const
+{
+    QVector<QString> existingFiles;
     foreach (const QString &file, aPaths)
     {
         QFileInfo fi (file);
@@ -318,7 +334,7 @@ bool VBoxProblemReporter::askForOverridingFilesIfExists (const QStringList& aPat
         /* If it is only one file use the single question versions above */
         return askForOverridingFileIfExists (existingFiles.at (0), aParent);
     else if (existingFiles.size() > 1)
-        return messageYesNo (aParent, Question, tr ("The following files already exist:<br /><br />%1<br /><br />Are you sure you want to replace them? Replacing them will overwrite their contents.").arg (existingFiles.join ("<br />")));
+        return askForOverridingFiles (existingFiles, aParent);
     else
         return true;
 }
@@ -2021,6 +2037,26 @@ void VBoxProblemReporter::cannotImportAppliance (const CProgress &aProgress, CAp
     message (aParent ? aParent : mainWindowShown(),
              Error,
              tr ("Failed to import appliance <b>%1</b>.").arg (aAppliance->GetPath()),
+             formatErrorInfo (aProgress.GetErrorInfo()));
+}
+
+void VBoxProblemReporter::cannotCheckFiles (const CProgress &aProgress, QWidget *aParent /* = NULL */) const
+{
+    AssertWrapperOk (aProgress);
+
+    message (aParent ? aParent : mainWindowShown(),
+             Error,
+             tr ("Failed to check files."),
+             formatErrorInfo (aProgress.GetErrorInfo()));
+}
+
+void VBoxProblemReporter::cannotRemoveFiles (const CProgress &aProgress, QWidget *aParent /* = NULL */) const
+{
+    AssertWrapperOk (aProgress);
+
+    message (aParent ? aParent : mainWindowShown(),
+             Error,
+             tr ("Failed to remove file."),
              formatErrorInfo (aProgress.GetErrorInfo()));
 }
 

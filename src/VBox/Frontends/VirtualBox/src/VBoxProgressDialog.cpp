@@ -100,7 +100,7 @@ void VBoxProgressDialog::cancelOperation()
 
 void VBoxProgressDialog::timerEvent (QTimerEvent * /* aEvent */)
 {
-    if (!mEnded && (!mProgress.isOk() || mProgress.GetCompleted() || mProgress.GetCanceled()))
+    if (!mEnded && (!mProgress.isOk() || mProgress.GetCompleted()))
     {
         /* Progress finished */
         if (mProgress.isOk())
@@ -128,16 +128,19 @@ void VBoxProgressDialog::timerEvent (QTimerEvent * /* aEvent */)
         return;
     }
 
-    /* Update the progress dialog */
-    ulong newOp = mProgress.GetOperation() + 1;
-    if (newOp != mCurOp)
+    if (!mProgress.GetCanceled())
     {
-        mCurOp = newOp;
-        setLabelText (QString (sOpDescTpl)
-                      .arg (mProgress.GetOperationDescription())
-                      .arg (mCurOp).arg (mOpCount));
+        /* Update the progress dialog */
+        ulong newOp = mProgress.GetOperation() + 1;
+        if (newOp != mCurOp)
+        {
+            mCurOp = newOp;
+            setLabelText (QString (sOpDescTpl)
+                          .arg (mProgress.GetOperationDescription())
+                          .arg (mCurOp).arg (mOpCount));
+        }
+        setValue (mProgress.GetPercent());
     }
-    setValue (mProgress.GetPercent());
 }
 
 void VBoxProgressDialog::reject()
