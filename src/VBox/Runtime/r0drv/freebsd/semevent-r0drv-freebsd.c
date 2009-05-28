@@ -173,10 +173,19 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterrup
         ASMAtomicIncU32(&pEventInt->cWaiters);
 
         mtx_unlock_spin(&pEventInt->Mtx);
+/** @todo r=bird: This doesn't handle cMillies == 0 correctly, it will assert
+ *        and or sleep for ever according to r47861. (That's probably an old bug
+ *        of my making.)
+ *
+ *        And it really looks like it's racing signalling on MP systems. (It
+ *        *looks* like you leave the lock and then tries to go to sleep on a
+ *        block id, someone spinning on the lock attempt to wake us up before we
+ *        go to sleep. That's why the code was originally trying to use msleep
+ *        here.). */
         rc = tsleep(pEventInt,          /* block id */
                     fInterruptible ? PZERO | PCATCH : PZERO,
-                    "iprtev",
-                      cMillis == RT_INDEFINITE_WAIT
+                    "iprtev",           /* max 6 chars */
+                    cMillis == RT_INDEFINITE_WAIT
                     ? 0
                     : tvtohz(&tv));
         mtx_lock_spin(&pEventInt->Mtx);
@@ -221,7 +230,7 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterrup
                 break;
 
             default:
-                AssertMsgFailed(("msleep -> %d\n", rc));
+                AssertMsgFailed(("tsleep -> %d\n", rc));
                 rc = VERR_GENERAL_FAILURE;
                 break;
         }
