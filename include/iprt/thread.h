@@ -448,6 +448,13 @@ RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread);
 RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread);
 
 /**
+ * Is RTThreadPreemptIsPending reliable?
+ *
+ * @returns true if pending, false if not.
+ */
+RTDECL(bool) RTThreadPreemptIsPendingTrusty(void);
+
+/**
  * Preemption state saved by RTThreadPreemptDisable and used by
  * RTThreadPreemptRestore to restore the previous state.
  */

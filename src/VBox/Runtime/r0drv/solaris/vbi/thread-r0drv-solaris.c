@@ -112,6 +112,13 @@ RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
 }
 
 
+RTDECL(bool) RTThreadPreemptIsPendingTrusty(void)
+{
+    /* yes, RTThreadPreemptIsPending is reliable. */
+    return true;
+}
+
+
 RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 {
     AssertPtr(pState);
