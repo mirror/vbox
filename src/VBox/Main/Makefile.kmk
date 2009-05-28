@@ -269,6 +269,11 @@ ifdef VBOX_WITH_USB
  VBoxSVC_LIBS.solaris += \
 	devinfo
 endif
+ifdef VBOX_WITH_CROGL
+ VBoxSVC_LIBS += \
+ 	$(PATH_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
+ 	$(VBOX_LIB_OGL_HOSTCRUTIL)
+endif
 
 VBoxSVC_INTERMEDIATES = \
 	$(VBOX_MAIN_PREREQS) \
@@ -398,12 +403,6 @@ ifdef VBOX_WITH_HOSTNETIF_API
  if1of ($(KBUILD_TARGET), linux darwin solaris freebsd)
   VBoxSVC_SOURCES        += generic/NetIf-generic.cpp
  endif
-endif
-
-ifdef VBOX_WITH_CROGL 
- VBoxSVC_LIBS         += \
- $(PATH_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
- $(VBOX_LIB_OGL_HOSTCRUTIL) 
 endif
 
 win/VBoxSVC.rc_INCS  = $(PATH_VBoxSVC)
