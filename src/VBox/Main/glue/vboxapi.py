@@ -20,16 +20,16 @@ VboxBinDir = os.environ.get("VBOX_PROGRAM_PATH", None)
 VboxSdkDir = os.environ.get("VBOX_SDK_PATH", None)
 
 if VboxBinDir is None:
-    # @todo: To be set by installer
-    VboxBinDir = "/home/nike/work/ws/out/linux.amd64/debug/bin/"
+    # Will be set by the installer
+    VboxBinDir = "%VBOX_INSTALL_PATH%"
 
 if VboxSdkDir is None:
     VboxSdkDir = VboxBinDir+"/sdk"
 
 os.environ["VBOX_PROGRAM_PATH"] = VboxBinDir
-os.environ["VBOX_SDK_PATH"] = VboxSdkDir
+#os.environ["VBOX_SDK_PATH"] = VboxSdkDir
 sys.path.append(VboxBinDir)
-sys.path.append(VboxSdkDir+"/bindings/glue/python")
+#sys.path.append(VboxSdkDir+"/bindings/glue/python")
 
 from VirtualBox_constants import VirtualBoxReflectionInfo
 
