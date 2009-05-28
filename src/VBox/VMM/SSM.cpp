@@ -3416,6 +3416,32 @@ VMMR3DECL(int) SSMR3GetStrZEx(PSSMHANDLE pSSM, char *psz, size_t cbMax, size_t *
 }
 
 
+/**
+ * Skips a number of bytes in the current data unit.
+ *
+ * @returns VBox status code.
+ * @param   pSSM                The SSM handle.
+ * @param   cb                  The number of bytes to skip.
+ */
+VMMR3DECL(int) SSMR3Skip(PSSMHANDLE pSSM, size_t cb)
+{
+    AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC
+                    || pSSM->enmOp == SSMSTATE_OPEN_READ,
+                    ("Invalid state %d\n", pSSM->enmOp),
+                    VERR_SSM_INVALID_STATE);
+    while (cb > 0)
+    {
+        uint8_t abBuf[8192];
+        size_t  cbCur = RT_MIN(sizeof(abBuf), cb);
+        cb -= cbCur;
+        int rc = ssmR3Read(pSSM, abBuf, cbCur);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    return VINF_SUCCESS;
+}
+
 
 /**
  * Query what the VBox status code of the operation is.
@@ -3471,9 +3497,9 @@ VMMR3DECL(SSMAFTER) SSMR3HandleGetAfter(PSSMHANDLE pSSM)
 
 /**
  * Get the current unit byte offset (uncompressed).
- *  
- * @returns The offset. UINT64_MAX if called at a wrong time. 
- * @param   pSSM            SSM operation handle. 
+ *
+ * @returns The offset. UINT64_MAX if called at a wrong time.
+ * @param   pSSM            SSM operation handle.
  */
 VMMR3DECL(uint64_t) SSMR3HandleGetUnitOffset(PSSMHANDLE pSSM)
 {
