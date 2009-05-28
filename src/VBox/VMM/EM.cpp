@@ -510,7 +510,7 @@ VMMR3DECL(int) EMR3TermCPU(PVM pVM)
  */
 static DECLCALLBACK(int) emR3Save(PVM pVM, PSSMHANDLE pSSM)
 {
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -551,7 +551,7 @@ static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     /*
      * Load the saved state.
      */
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -561,15 +561,12 @@ static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
 
         if (u32Version > EM_SAVED_STATE_VERSION_PRE_SMP)
         {
-            EMSTATE     enmState;
-            uint32_t    u32;
-            rc = SSMR3GetU32(pSSM, &u32);
+            AssertCompile(sizeof(pVCpu->em.s.enmPrevState) == sizeof(uint32_t));
+            rc = SSMR3GetU32(pSSM, (uint32_t *)&pVCpu->em.s.enmPrevState);
             AssertRCReturn(rc, rc);
+            Assert(pVCpu->em.s.enmPrevState != EMSTATE_SUSPENDED);
 
-            enmState = (EMSTATE)u32;
-            Assert(enmState != EMSTATE_SUSPENDED);
-            pVCpu->em.s.enmState     = enmState;
-            pVCpu->em.s.enmPrevState = EMSTATE_NONE;
+            pVCpu->em.s.enmState = EMSTATE_SUSPENDED;
         }
         Assert(!pVCpu->em.s.pCliStatTree);
     }
@@ -3666,7 +3663,10 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
     LogFlow(("EMR3ExecuteVM: pVM=%p enmVMState=%d  enmState=%d (%s) fForceRAW=%d\n", pVM, pVM->enmVMState,
              pVCpu->em.s.enmState, EMR3GetStateName(pVCpu->em.s.enmState), pVCpu->em.s.fForceRAW));
     VM_ASSERT_EMT(pVM);
-    Assert(pVCpu->em.s.enmState == EMSTATE_NONE || pVCpu->em.s.enmState == EMSTATE_WAIT_SIPI || pVCpu->em.s.enmState == EMSTATE_SUSPENDED || pVCpu->em.s.enmState == EMSTATE_HALTED);
+    AssertMsg(   pVCpu->em.s.enmState == EMSTATE_NONE
+              || pVCpu->em.s.enmState == EMSTATE_WAIT_SIPI
+              || pVCpu->em.s.enmState == EMSTATE_SUSPENDED,
+              ("%s\n", EMR3GetStateName(pVCpu->em.s.enmState)));
 
     int rc = setjmp(pVCpu->em.s.u.FatalLongJump);
     if (rc == 0)
@@ -3684,13 +3684,12 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
         /* Reschedule right away to start in the right state. */
         rc = VINF_SUCCESS;
 
+        /* If resuming after a pause or a state load, restore the previous
+           state or else we'll start executing code. Else, just reschedule. */
         if (    pVCpu->em.s.enmState == EMSTATE_SUSPENDED
             &&  (   pVCpu->em.s.enmPrevState == EMSTATE_WAIT_SIPI
                  || pVCpu->em.s.enmPrevState == EMSTATE_HALTED))
-        {
-            /* Pause->Resume: Restore the old wait state or else we'll start executing code. */
             pVCpu->em.s.enmState = pVCpu->em.s.enmPrevState;
-        }
         else
             pVCpu->em.s.enmState = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);
 
