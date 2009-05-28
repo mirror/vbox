@@ -1789,12 +1789,8 @@ static int acpiPlantTables(ACPIState *s)
  */
 static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
 {
-    int rc;
-    ACPIState *s = PDMINS_2_DATA(pDevIns, ACPIState *);
-    uint32_t rsdp_addr;
+    ACPIState *s   = PDMINS_2_DATA(pDevIns, ACPIState *);
     PCIDevice *dev = &s->dev;
-    bool fGCEnabled;
-    bool fR0Enabled;
 
     /* Validate and read the configuration. */
     if (!CFGMR3AreValuesValid(pCfgHandle,
@@ -1816,7 +1812,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     s->pDevIns = pDevIns;
 
     /* query whether we are supposed to present an IOAPIC */
-    rc = CFGMR3QueryU8Def(pCfgHandle, "IOAPIC", &s->u8UseIOApic, 1);
+    int rc = CFGMR3QueryU8Def(pCfgHandle, "IOAPIC", &s->u8UseIOApic, 1);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"IOAPIC\""));
@@ -1859,6 +1855,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (s->cCpus > 1)
         s->fShowCpu = true;
 
+    bool fGCEnabled;
     rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &fGCEnabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         fGCEnabled = true;
@@ -1866,6 +1863,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"GCEnabled\""));
 
+    bool fR0Enabled;
     rc = CFGMR3QueryBool(pCfgHandle, "R0Enabled", &fR0Enabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         fR0Enabled = true;
@@ -1874,7 +1872,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                                 N_("configuration error: failed to read R0Enabled as boolean"));
 
     /* */
-    rsdp_addr = find_rsdp_space();
+    uint32_t rsdp_addr = find_rsdp_space();
     if (!rsdp_addr)
         return PDMDEV_SET_ERROR(pDevIns, VERR_NO_MEMORY,
                                 N_("Can not find space for RSDP. ACPI is disabled"));
