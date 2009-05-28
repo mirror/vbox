@@ -3841,8 +3841,10 @@ static DECLCALLBACK(void) pcnetTimerSoftInt(PPDMDEVINS pDevIns, PTMTIMER pTimer,
 static DECLCALLBACK(void) pcnetTimerRestore(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     PCNetState *pThis = PDMINS_2_DATA(pDevIns, PCNetState *);
+    int         rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    AssertReleaseRC(rc);
 
-    int rc = VERR_GENERAL_FAILURE;
+    rc = VERR_GENERAL_FAILURE;
     if (pThis->cLinkDownReported <= PCNET_MAX_LINKDOWN_REPORTED)
         rc = TMTimerSetMillies(pThis->pTimerRestore, 1500);
     if (RT_FAILURE(rc))
@@ -3861,8 +3863,9 @@ static DECLCALLBACK(void) pcnetTimerRestore(PPDMDEVINS pDevIns, PTMTIMER pTimer,
     else
         Log(("#%d pcnetTimerRestore: cLinkDownReported=%d, wait another 1500ms...\n",
              pDevIns->iInstance, pThis->cLinkDownReported));
-}
 
+    PDMCritSectLeave(&pThis->CritSect);
+}
 
 /**
  * Callback function for mapping an PCI I/O region.
@@ -4953,7 +4956,6 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                 TMTIMER_FLAGS_NO_CRIT_SECT, "PCNet Restore Timer", &pThis->pTimerRestore);
     if (RT_FAILURE(rc))
         return rc;
-    TMR3TimerSetCritSect(pThis->pTimerRestore, &pThis->CritSect);
 
     rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance,
                               PCNET_SAVEDSTATE_VERSION, sizeof(*pThis),
