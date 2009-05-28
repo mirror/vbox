@@ -1187,6 +1187,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     rc = VINF_SUCCESS;
     if (PdeSrc.n.u1Present)
     {
+# ifndef PGM_WITHOUT_MAPPING
         if (PdeDst.u & PGM_PDFLAGS_MAPPING)
         {
             /*
@@ -1198,7 +1199,9 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
             rc = PGM_BTH_NAME(SyncPT)(pVCpu, iPDSrc, pPDSrc, GCPtrPage);
             pgmUnlock(pVM);
         }
-        else if (   PdeSrc.n.u1User != PdeDst.n.u1User
+        else 
+# endif /* !PGM_WITHOUT_MAPPING */
+             if (   PdeSrc.n.u1User != PdeDst.n.u1User
                  || (!PdeSrc.n.u1Write && PdeDst.n.u1Write))
         {
             /*
@@ -3336,50 +3339,6 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigne
     return VERR_INTERNAL_ERROR;
 #endif /* PGM_GST_TYPE != PGM_TYPE_32BIT */
 }
-
-
-#if PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64
-# if PGM_SHW_TYPE == PGM_TYPE_32BIT || PGM_SHW_TYPE == PGM_TYPE_PAE || PGM_SHW_TYPE == PGM_TYPE_AMD64
-/**
- * Figures out which kind of shadow page this guest PDE warrants.
- *
- * @returns Shadow page kind.
- * @param   pPdeSrc     The guest PDE in question.
- * @param   cr4         The current guest cr4 value.
- */
-DECLINLINE(PGMPOOLKIND) PGM_BTH_NAME(CalcPageKind)(const GSTPDE *pPdeSrc, uint32_t cr4)
-{
-#  if PMG_GST_TYPE == PGM_TYPE_AMD64
-    if (!pPdeSrc->n.u1Size)
-#  else
-    if (!pPdeSrc->n.u1Size || !(cr4 & X86_CR4_PSE))
-#  endif
-        return BTH_PGMPOOLKIND_PT_FOR_PT;
-    //switch (pPdeSrc->u & (X86_PDE4M_RW | X86_PDE4M_US /*| X86_PDE4M_PAE_NX*/))
-    //{
-    //    case 0:
-    //      return BTH_PGMPOOLKIND_PT_FOR_BIG_RO;
-    //    case X86_PDE4M_RW:
-    //      return BTH_PGMPOOLKIND_PT_FOR_BIG_RW;
-    //    case X86_PDE4M_US:
-    //      return BTH_PGMPOOLKIND_PT_FOR_BIG_US;
-    //    case X86_PDE4M_RW | X86_PDE4M_US:
-    //      return BTH_PGMPOOLKIND_PT_FOR_BIG_RW_US;
-#  if 0
-    //    case X86_PDE4M_PAE_NX:
-    //      return BTH_PGMPOOLKIND_PT_FOR_BIG_NX;
-    //    case X86_PDE4M_RW | X86_PDE4M_PAE_NX:
-    //      return BTH_PGMPOOLKIND_PT_FOR_BIG_RW_NX;
-    //    case X86_PDE4M_US | X86_PDE4M_PAE_NX:
-    //      return BTH_PGMPOOLKIND_PT_FOR_BIG_US_NX;
-    //    case X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_PAE_NX:
-    //      return BTH_PGMPOOLKIND_PT_FOR_BIG_RW_US_NX;
-#  endif
-            return BTH_PGMPOOLKIND_PT_FOR_BIG;
-    //}
-}
-# endif
-#endif
 
 #undef MY_STAM_COUNTER_INC
 #define MY_STAM_COUNTER_INC(a) do { } while (0)
