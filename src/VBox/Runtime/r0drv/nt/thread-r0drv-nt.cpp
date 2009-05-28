@@ -147,6 +147,15 @@ RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
 }
 
 
+RTDECL(bool) RTThreadPreemptIsPendingTrusty(void)
+{
+    /* RTThreadPreemptIsPending is only reliable of we've got both offsets and size. */
+    return offQuantumEnd    != 0
+        && cbQuantumEnd     != 0
+        && offDpcQueueDepth != 0;
+}
+
+
 RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 {
     AssertPtr(pState);

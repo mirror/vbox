@@ -1283,6 +1283,7 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.cpp \
 	r0drv/generic/RTThreadPreemptIsEnabled-r0drv-generic.cpp \
 	r0drv/generic/RTThreadPreemptIsPending-r0drv-generic.cpp \
+	r0drv/generic/RTThreadPreemptIsPendingTrusty-r0drv-generic.cpp \
 	r0drv/generic/RTThreadPreemptDisable-r0drv-generic.cpp \
 	r0drv/generic/RTThreadPreemptRestore-r0drv-generic.cpp \
 	r0drv/generic/mpnotification-r0drv-generic.cpp \
