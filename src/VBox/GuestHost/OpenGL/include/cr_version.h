@@ -29,9 +29,14 @@
 #define CR_OPENGL_VERSION_1_3 1
 #define CR_OPENGL_VERSION_1_4 1
 #define CR_OPENGL_VERSION_1_5 1
+/*#define CR_OPENGL_VERSION_2_0 1*/
 
 /* Version (string) of OpenGL functionality suported by Chromium */
-#define CR_OPENGL_VERSION_STRING "1.5"
+#ifdef CR_OPENGL_VERSION_2_0
+# define CR_OPENGL_VERSION_STRING "2.0"
+#else
+# define CR_OPENGL_VERSION_STRING "1.5"
+#endif
 
 
 /* These define the OpenGL extensions that Chromium supports.
@@ -105,5 +110,8 @@
 #define CR_SGIS_generate_mipmap 1
 
 #define CR_EXT_texture_from_pixmap 1
+
+#define CR_ARB_vertex_shader 1
+#define CR_ARB_fragment_shader 1
 
 #endif /* CR_VERSION_H */

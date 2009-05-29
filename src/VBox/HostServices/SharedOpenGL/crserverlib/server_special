@@ -180,3 +180,11 @@ WindowPos3iARB
 WindowPos3ivARB
 WindowPos3sARB
 WindowPos3svARB
+GetActiveAttrib
+GetActiveUniform
+GetAttachedShaders
+GetShaderInfoLog
+GetProgramInfoLog
+GetShaderSource
+GetUniformfv
+GetUniformiv

@@ -8723,6 +8723,438 @@ category    GL_chromium
 props       render pixelstore
 chromium    extpack
 
+# OpenGL 2.0
+
+name        CreateShader
+return      GLuint
+param       type        GLenum
+paramprop   type        GL_VERTEX_SHADER GL_FRAGMENT_SHADER
+category    2.0
+props       get
+chromium    extpack serverdependent
+
+name        ShaderSource
+return      void
+param       shader      GLuint
+param       count       GLsizei
+param       string      const char **
+param       length      const GLint *
+category    2.0
+chromium    extpack
+
+name        CompileShader
+return      void
+param       shader      GLuint
+category    2.0
+chromium    extpack
+
+name        DeleteShader
+return      void
+param       shader      GLuint
+category    2.0
+props       nolist
+chromium    extpack
+
+name        IsShader
+return      GLboolean
+param       shader      GLuint
+category    2.0
+props       get
+chromium    extpack
+
+name        CreateProgram
+return      GLuint
+category    2.0
+props       get
+chromium    extpack serverdependent
+
+name        AttachShader
+return      void
+param       program     GLuint
+param       shader      GLuint
+category    2.0
+chromium    extpack
+
+name        DetachShader
+return      void
+param       program     GLuint
+param       shader      GLuint
+category    2.0
+chromium    extpack
+
+name        LinkProgram
+return      void
+param       program     GLuint
+category    2.0
+chromium    extpack
+
+name        UseProgram
+return      void
+param       program     GLuint
+category    2.0
+chromium    extpack
+
+name        DeleteProgram
+return      void
+param       program     GLuint
+category    2.0
+props       nolist
+chromium    extpack
+
+name        ValidateProgram
+return      void
+param       program     GLuint
+category    2.0
+chromium    extpack
+
+name        IsProgram
+return      GLboolean
+param       program     GLuint
+category    2.0
+props       get
+chromium    extpack
+
+name        GetActiveAttrib
+return      void
+param       program     GLuint
+param       index       GLuint
+param       bufSize     GLsizei
+param       length      GLsizei *
+param       size        GLint *
+param       type        GLenum *
+param       name        char *
+category    2.0
+props       get
+chromium    extpack
+
+name        GetAttribLocation
+return      GLint
+param       program     GLuint
+param       name        const char *
+category    2.0
+props       get
+chromium    extpack
+
+name        BindAttribLocation
+return      void
+param       program     GLuint
+param       index       GLuint
+param       name        const char *
+category    2.0
+chromium    extpack
+
+name        GetUniformLocation
+return      GLint
+param       program     GLuint
+param       name        const char *
+category    2.0
+props       get
+chromium    extpack
+
+name        GetActiveUniform
+return      void
+param       program     GLuint
+param       index       GLuint
+param       bufSize     GLsizei
+param       length      GLsizei *
+param       size        GLint *
+param       type        GLenum *
+param       name        char *
+category    2.0
+props       get
+chromium    extpack
+
+name        glUniform1f
+return      void
+param       location    GLint
+param       v0          GLfloat
+category    2.0
+chromium    extpack
+
+name        glUniform2f
+return      void
+param       location    GLint
+param       v0          GLfloat
+param       v1          GLfloat
+category    2.0
+chromium    extpack
+
+name        glUniform3f
+return      void
+param       location    GLint
+param       v0          GLfloat
+param       v1          GLfloat
+param       v2          GLfloat
+category    2.0
+chromium    extpack
+
+name        glUniform4f
+return      void
+param       location    GLint
+param       v0          GLfloat
+param       v1          GLfloat
+param       v2          GLfloat
+param       v3          GLfloat
+category    2.0
+chromium    extpack
+
+name        glUniform1i
+return      void
+param       location    GLint
+param       v0          GLint
+category    2.0
+chromium    extpack
+
+name        glUniform2i
+return      void
+param       location    GLint
+param       v0          GLint
+param       v1          GLint
+category    2.0
+chromium    extpack
+
+name        glUniform3i
+return      void
+param       location    GLint
+param       v0          GLint
+param       v1          GLint
+param       v2          GLint
+category    2.0
+chromium    extpack
+
+name        glUniform4i
+return      void
+param       location    GLint
+param       v0          GLint
+param       v1          GLint
+param       v2          GLint
+param       v3          GLint
+category    2.0
+chromium    extpack
+
+name        glUniform1fv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       value       const GLfloat *
+category    2.0
+chromium    extpack
+
+name        glUniform2fv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       value       const GLfloat *
+category    2.0
+chromium    extpack
+
+name        glUniform3fv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       value       const GLfloat *
+category    2.0
+chromium    extpack
+
+name        glUniform4fv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       value       const GLfloat *
+category    2.0
+chromium    extpack
+
+name        glUniform1iv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       value       const GLint *
+category    2.0
+chromium    extpack
+
+name        glUniform2iv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       value       const GLint *
+category    2.0
+chromium    extpack
+
+name        glUniform3iv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       value       const GLint *
+category    2.0
+chromium    extpack
+
+name        glUniform4iv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       value       const GLint *
+category    2.0
+chromium    extpack
+
+name        glUniformMatrix2fv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       transpose   GLboolean
+param       value       const GLfloat *
+category    2.0
+chromium    extpack
+
+name        glUniformMatrix3fv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       transpose   GLboolean
+param       value       const GLfloat *
+category    2.0
+chromium    extpack
+
+name        glUniformMatrix4fv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       transpose   GLboolean
+param       value       const GLfloat *
+category    2.0
+chromium    extpack
+
+name        GetShaderiv
+return      void
+param       shader      GLuint
+param       pname       GLenum
+paramprop   pname       GL_SHADER_TYPE GL_DELETE_STATUS GL_COMPILE_STATUS GL_INFO_LOG_LENGTH GL_SHADER_SOURCE_LENGTH
+param       params      GLint *
+category    2.0
+props       get serverdependent
+chromium    extpack
+
+name        GetProgramiv
+return      void
+param       program     GLuint
+param       pname       GLenum
+paramprop   pname       GL_DELETE_STATUS GL_LINK_STATUS GL_VALIDATE_STATUS GL_INFO_LOG_LENGTH GL_ATTACHED_SHADERS GL_ACTIVE_ATTRIBUTES GL_ACTIVE_ATTRIBUTE_MAX_LENGTH GL_ACTIVE_UNIFORMS GL_ACTIVE_UNIFORM_MAX_LENGTH
+param       params      GLint *
+category    2.0
+props       get serverdependent
+chromium    extpack
+
+name        GetAttachedShaders
+return      void
+param       program     GLuint
+param       maxCount    GLsizei
+param       count       GLsizei *
+param       shaders     GLuint *
+category    2.0
+props       get
+chromium    extpack
+
+name        GetShaderInfoLog
+return      void
+param       shader      GLuint
+param       bufSize     GLsizei
+param       length      GLsizei *
+param       infoLog     char *
+category    2.0
+props       get serverdependent
+chromium    extpack
+
+name        GetProgramInfoLog
+return      void
+param       program     GLuint
+param       bufSize     GLsizei
+param       length      GLsizei *
+param       infoLog     char *
+category    2.0
+props       get serverdependent
+chromium    extpack
+
+name        GetShaderSource
+return      void
+param       shader      GLuint
+param       bufSize     GLsizei
+param       length      GLsizei *
+param       source      char *
+category    2.0
+props       get
+chromium    extpack
+
+name        GetVertexAttribdv
+alias       GetVertexAttribdvARB
+return      void
+param       index       GLuint
+paramlist   index       1 2 3 4 5 6 7
+param       pname       GLenum
+paramprop   pname       GL_VERTEX_ATTRIB_ARRAY_ENABLED GL_VERTEX_ATTRIB_ARRAY_SIZE GL_VERTEX_ATTRIB_ARRAY_STRIDE GL_VERTEX_ATTRIB_ARRAY_TYPE GL_VERTEX_ATTRIB_ARRAY_NORMALIZED GL_CURRENT_VERTEX_ATTRIB
+param       params      GLdouble *
+paramvec    params      0.0 0.0 0.0 0.0
+vector      params      4
+category    2.0
+props       get
+chromium    extpack
+
+name        GetVertexAttribfv
+alias       GetVertexAttribfvARB
+return      void
+param       index       GLuint
+paramlist   index       1 2 3 4 5 6 7
+param       pname       GLenum
+paramprop   pname       GL_VERTEX_ATTRIB_ARRAY_ENABLED GL_VERTEX_ATTRIB_ARRAY_SIZE GL_VERTEX_ATTRIB_ARRAY_STRIDE GL_VERTEX_ATTRIB_ARRAY_TYPE GL_VERTEX_ATTRIB_ARRAY_NORMALIZED GL_CURRENT_VERTEX_ATTRIB
+param       params      GLfloat *
+paramvec    params      0.0 0.0 0.0 0.0
+vector      params      4
+category    2.0
+props       get
+chromium    extpack
+
+name        GetVertexAttribiv
+alias       GetVertexAttribivARB
+return      void
+param       index       GLuint
+paramlist   index       1 2 3 4 5 6 7
+param       pname       GLenum
+paramprop   pname       GL_VERTEX_ATTRIB_ARRAY_ENABLED GL_VERTEX_ATTRIB_ARRAY_SIZE GL_VERTEX_ATTRIB_ARRAY_STRIDE GL_VERTEX_ATTRIB_ARRAY_TYPE GL_VERTEX_ATTRIB_ARRAY_NORMALIZED GL_CURRENT_VERTEX_ATTRIB GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING
+param       params      GLint *
+paramvec    params      0 0 0 0
+vector      params      4
+category    2.0
+props       get
+chromium    extpack
+
+name        GetVertexAttribPointerv
+alias       GetVertexAttribPointervARB
+return      void
+param       index       GLuint
+paramlist   index       1 2 3 4 5 6 7
+param       pname       GLenum
+paramprop   pname       GL_VERTEX_ATTRIB_ARRAY_ENABLED GL_VERTEX_ATTRIB_ARRAY_SIZE GL_VERTEX_ATTRIB_ARRAY_STRIDE GL_VERTEX_ATTRIB_ARRAY_TYPE GL_VERTEX_ATTRIB_ARRAY_NORMALIZED GL_CURRENT_VERTEX_ATTRIB
+param       pointer     GLvoid **
+category    2.0
+props       useclient get
+chromium    extpack
+
+name        GetUniformfv
+return      void
+param       program     GLuint
+param       location    GLint
+param       params      GLfloat *
+category    2.0
+props       get
+chromium    extpack
+
+name        GetUniformiv
+return      void
+param       program     GLuint
+param       location    GLint
+param       params      GLint *
+category    2.0
+props       get
+chromium    extpack
+
 # end of file sentinel
 
 name        dummy
