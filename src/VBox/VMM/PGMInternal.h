@@ -2223,11 +2223,6 @@ typedef struct PGM
     /** Alignment padding. */
     bool                            afAlignment0[7];
 
-    /** What needs syncing (PGM_SYNC_*).
-     * This is used to queue operations for PGMSyncCR3, PGMInvalidatePage,
-     * PGMFlushTLB, and PGMR3Load. */
-    RTUINT                          fGlobalSyncFlags;
-
     /*
      * This will be redefined at least two more times before we're done, I'm sure.
      * The current code is only to get on with the coding.
@@ -2916,8 +2911,8 @@ typedef PGMCPU *PPGMCPU;
 /** Check guest mapping in SyncCR3. */
 #define PGM_SYNC_MAP_CR3                        RT_BIT(3)
 /** Clear the page pool (a light weight flush). */
-#define PGM_GLOBAL_SYNC_CLEAR_PGM_POOL_BIT      8
-#define PGM_GLOBAL_SYNC_CLEAR_PGM_POOL          RT_BIT(PGM_GLOBAL_SYNC_CLEAR_PGM_POOL_BIT)
+#define PGM_SYNC_CLEAR_PGM_POOL_BIT             8
+#define PGM_SYNC_CLEAR_PGM_POOL                 RT_BIT(PGM_SYNC_CLEAR_PGM_POOL_BIT)
 /** @} */
 
 
@@ -2982,7 +2977,7 @@ void            pgmPoolFreeByPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t i
 int             pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 void            pgmPoolClearAll(PVM pVM);
 PPGMPOOLPAGE    pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys);
-int             pgmPoolSyncCR3(PVM pVM);
+int             pgmPoolSyncCR3(PVMCPU pVCpu);
 int             pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs);
 uint16_t        pgmPoolTrackPhysExtAddref(PVM pVM, uint16_t u16, uint16_t iShwPT);
 void            pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPoolPage, PPGMPAGE pPhysPage);

@@ -1773,7 +1773,7 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
      * The pool may have pending stuff and even require a return to ring-3 to
      * clear the whole thing.
      */
-    rc = pgmPoolSyncCR3(pVM);
+    rc = pgmPoolSyncCR3(pVCpu);
     if (rc != VINF_SUCCESS)
         return rc;
 #endif
@@ -1832,7 +1832,7 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
         }
 #ifdef IN_RING3
         if (rc == VINF_PGM_SYNC_CR3)
-            rc = pgmPoolSyncCR3(pVM);
+            rc = pgmPoolSyncCR3(pVCpu);
 #else
         if (rc == VINF_PGM_SYNC_CR3)
         {

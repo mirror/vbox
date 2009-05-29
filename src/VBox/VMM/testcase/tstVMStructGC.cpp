@@ -474,7 +474,6 @@ int main()
     GEN_CHECK_OFF(PGM, offVM);
     GEN_CHECK_OFF(PGM, offVCpuPGM);
     GEN_CHECK_OFF(PGM, fRamPreAlloc);
-    GEN_CHECK_OFF(PGM, fGlobalSyncFlags);
     GEN_CHECK_OFF(PGM, paDynPageMap32BitPTEsGC);
     GEN_CHECK_OFF(PGM, paDynPageMapPaePTEsGC);
     GEN_CHECK_OFF(PGM, enmHostMode);
