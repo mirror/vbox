@@ -209,7 +209,7 @@ VBoxOGLhostcrpacker_TEMPLATE = VBOXCROGLR3HOSTLIB
 $(VBOX_PATH_CROGL_GENFILES)/packer.def: $(PATH_SUB_CURRENT)/packer/packer_defs.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
 
-$(VBOX_PATH_CROGL_GENFILES)/cr_packfunctions.h: $(PATH_SUB_CURRENT)/packer/pack_header.py $(PATH_SUB_CURRENT)/packer/packer_special $(API_FILES) | $$(dir $$@)
+$(VBOX_PATH_CROGL_GENFILES)/cr_packfunctions.h: $(PATH_SUB_CURRENT)/packer/pack_header.py $(PATH_SUB_CURRENT)/packer/packer_special $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) $(<D)
 
 $(VBOX_PATH_CROGL_GENFILES)/cr_opcodes.h: $(PATH_SUB_CURRENT)/packer/opcodes.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
