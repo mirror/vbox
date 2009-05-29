@@ -25,17 +25,19 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DBGF_INFO
 #include <VBox/dbgf.h>
+
 #include <VBox/mm.h>
 #include "DBGFInternal.h"
 #include <VBox/vm.h>
-
-#include <VBox/log.h>
-#include <iprt/semaphore.h>
-#include <iprt/thread.h>
-#include <iprt/assert.h>
-#include <iprt/string.h>
-#include <iprt/ctype.h>
 #include <VBox/err.h>
+#include <VBox/log.h>
+
+#include <iprt/assert.h>
+#include <iprt/ctype.h>
+#include <iprt/semaphore.h>
+#include <iprt/stream.h>
+#include <iprt/string.h>
+#include <iprt/thread.h>
 
 
 /*******************************************************************************
@@ -45,6 +47,8 @@ static DECLCALLBACK(void) dbgfR3InfoLog_Printf(PCDBGFINFOHLP pHlp, const char *p
 static DECLCALLBACK(void) dbgfR3InfoLog_PrintfV(PCDBGFINFOHLP pHlp, const char *pszFormat, va_list args);
 static DECLCALLBACK(void) dbgfR3InfoLogRel_Printf(PCDBGFINFOHLP pHlp, const char *pszFormat, ...);
 static DECLCALLBACK(void) dbgfR3InfoLogRel_PrintfV(PCDBGFINFOHLP pHlp, const char *pszFormat, va_list args);
+static DECLCALLBACK(void) dbgfR3InfoStdErr_Printf(PCDBGFINFOHLP pHlp, const char *pszFormat, ...);
+static DECLCALLBACK(void) dbgfR3InfoStdErr_PrintfV(PCDBGFINFOHLP pHlp, const char *pszFormat, va_list args);
 static DECLCALLBACK(void) dbgfR3InfoHelp(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
 
@@ -63,6 +67,13 @@ static const DBGFINFOHLP g_dbgfR3InfoLogRelHlp =
 {
     dbgfR3InfoLogRel_Printf,
     dbgfR3InfoLogRel_PrintfV
+};
+
+/** Standard error output. */
+static const DBGFINFOHLP g_dbgfR3InfoStdErrHlp =
+{
+    dbgfR3InfoStdErr_Printf,
+    dbgfR3InfoStdErr_PrintfV
 };
 
 
@@ -158,6 +169,24 @@ static DECLCALLBACK(void) dbgfR3InfoLogRel_Printf(PCDBGFINFOHLP pHlp, const char
 static DECLCALLBACK(void) dbgfR3InfoLogRel_PrintfV(PCDBGFINFOHLP pHlp, const char *pszFormat, va_list args)
 {
     RTLogRelPrintfV(pszFormat, args);
+}
+
+
+/** Standard error output.
+ * @copydoc DBGFINFOHLP::pfnPrintf */
+static DECLCALLBACK(void) dbgfR3InfoStdErr_Printf(PCDBGFINFOHLP pHlp, const char *pszFormat, ...)
+{
+    va_list args;
+    va_start(args, pszFormat);
+    RTStrmPrintfV(g_pStdErr, pszFormat, args);
+    va_end(args);
+}
+
+/** Standard error output.
+ * @copydoc DBGFINFOHLP::pfnPrintfV */
+static DECLCALLBACK(void) dbgfR3InfoStdErr_PrintfV(PCDBGFINFOHLP pHlp, const char *pszFormat, va_list args)
+{
+    RTStrmPrintfV(g_pStdErr, pszFormat, args);
 }
 
 
@@ -756,6 +785,34 @@ VMMR3DECL(int) DBGFR3Info(PVM pVM, const char *pszName, const char *pszArgs, PCD
         rc = VERR_FILE_NOT_FOUND;
     }
     return rc;
+}
+
+
+/**
+ * Wrapper for DBGFR3Info that outputs to the release log.
+ *
+ * @returns See DBGFR3Info.
+ * @param   pVM                 The VM handle.
+ * @param   pszName             See DBGFR3Info.
+ * @param   pszArgs             See DBGFR3Info.
+ */
+VMMR3DECL(int) DBGFR3InfoLogRel(PVM pVM, const char *pszName, const char *pszArgs)
+{
+    return DBGFR3Info(pVM, pszName, pszArgs, &g_dbgfR3InfoLogRelHlp);
+}
+
+
+/**
+ * Wrapper for DBGFR3Info that outputs to standard error.
+ *
+ * @returns See DBGFR3Info.
+ * @param   pVM                 The VM handle.
+ * @param   pszName             See DBGFR3Info.
+ * @param   pszArgs             See DBGFR3Info.
+ */
+VMMR3DECL(int) DBGFR3InfoStdErr(PVM pVM, const char *pszName, const char *pszArgs)
+{
+    return DBGFR3Info(pVM, pszName, pszArgs, &g_dbgfR3InfoStdErrHlp);
 }
 
 
