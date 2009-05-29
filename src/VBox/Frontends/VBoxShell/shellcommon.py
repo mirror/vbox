@@ -174,12 +174,11 @@ def removeVm(ctx,mach):
     vb = ctx['vb']
     id = mach.id
     print "removing machine ",mach.name,"with UUID",id
-    session = mgr.getSessionObject(vb)
-    vb.openSession(session, id)
+    session = ctx['global'].openMachineSession(id)
     mach=session.machine
     for d in mach.getHardDiskAttachments():
         mach.detachHardDisk(d.controller, d.port, d.device)
-    session.close()
+    ctx['global'].closeMachineSession(session)
     mach = vb.unregisterMachine(id)
     if mach:
          mach.deleteSettings()
@@ -415,7 +414,6 @@ def setvarCmd(ctx, args):
     mach = argsToMach(ctx,args)
     if mach == None:
         return 0
-    vbox = ctx['vb']
     session = ctx['mgr'].getSessionObject(vbox)
     vbox.openSession(session, mach.id)
     mach = session.machine

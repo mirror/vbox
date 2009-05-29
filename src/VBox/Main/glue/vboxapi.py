@@ -27,8 +27,9 @@ if VboxSdkDir is None:
     VboxSdkDir = VboxBinDir+"/sdk"
 
 os.environ["VBOX_PROGRAM_PATH"] = VboxBinDir
-#os.environ["VBOX_SDK_PATH"] = VboxSdkDir
+os.environ["VBOX_SDK_PATH"] = VboxSdkDir
 sys.path.append(VboxBinDir)
+# This directory's content goes to the site-wide directory
 #sys.path.append(VboxSdkDir+"/bindings/glue/python")
 
 from VirtualBox_constants import VirtualBoxReflectionInfo

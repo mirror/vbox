@@ -192,6 +192,16 @@ ifdef VBOX_WITH_VRDP
  endif
 endif
 
+# Python XPCOM glue
+ifdef VBOX_WITH_PYTHON
+  VBOX_LNX_NO_STRIP += \
+	$(foreach f,$(notdir $(wildcard $(PATH_BIN)/sdk/bindings/xpcom/python/xpcom/*.py)),sdk/bindings/xpcom/python/xpcom/$(f)) \
+	sdk/bindings/xpcom/python/xpcom/client/__init__.py \
+        sdk/installer/vboxapisetup.py \
+	sdk/installer/vboxapi/__init__.py \
+	sdk/installer/vboxapi/VirtualBox_constants.py
+endif
+
 # Headless
 ifdef VBOX_WITH_HEADLESS
  VBOX_LNX_STRIP_BIN += \
@@ -342,6 +352,10 @@ BLDDIRS += $(foreach d,\
 	archive/components \
 	archive/nls \
 	$(if $(VBOX_WITH_QT4_SUN),archive/accessible,) \
+	$(if $(VBOX_WITH_PYTHON),archive/sdk/installer,) \
+	$(if $(VBOX_WITH_PYTHON),archive/sdk/installer/vboxapi,) \
+	$(if $(VBOX_WITH_PYTHON),archive/sdk/bindings/xpcom/python/xpcom,) \
+	$(if $(VBOX_WITH_PYTHON),archive/sdk/bindings/xpcom/python/xpcom/client,) \
 	archive/additions \
 	install\
 ,$(VBOX_LNX_INST_OUT_DIR)/$(d)/)
