@@ -1964,10 +1964,24 @@ static void clipGetCompletedRequest(int *prc, uint32_t *pcbActual)
     *prc = g_completedRC;
     *pcbActual = g_completedActual;
 }
-
+#ifdef RT_OS_SOLARIS_10
+char XtStrings [] = "";
+_WidgetClassRec* applicationShellWidgetClass;
+char XtShellStrings [] = "";
+int XmbTextPropertyToTextList(
+    Display*            /* display */,
+    XTextProperty*      /* text_prop */,
+    char***             /* list_return */,
+    int*                /* count_return */
+)
+{
+  return 0;
+}
+#else
 const char XtStrings [] = "";
 _WidgetClassRec* applicationShellWidgetClass;
 const char XtShellStrings [] = "";
+#endif
 
 #define MAX_BUF_SIZE 256
 
