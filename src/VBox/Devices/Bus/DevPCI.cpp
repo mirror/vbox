@@ -1363,8 +1363,10 @@ static DECLCALLBACK(int) pciR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
  */
 static void pciR3CommonRestoreConfig(PPCIDEVICE pDev, uint8_t const *pbSrcConfig, bool fIsBridge)
 {
-    /* This table defines the fields for normal devices and bridge devices, and
-       the order in which they need to be restored. */
+    /*
+     * This table defines the fields for normal devices and bridge devices, and
+     * the order in which they need to be restored.
+     */
     static const struct PciField
     {
         uint8_t     off;
@@ -1388,7 +1390,7 @@ static void pciR3CommonRestoreConfig(PPCIDEVICE pDev, uint8_t const *pbSrcConfig
         { 0x0f, 1, 0, 3, "BIST" },              // fWritable = ??
         { 0x10, 4, 1, 3, "BASE_ADDRESS_0" },
         { 0x14, 4, 1, 3, "BASE_ADDRESS_1" },
-        { 0x18, 4, 1, 3, "BASE_ADDRESS_2" },
+        { 0x18, 4, 1, 1, "BASE_ADDRESS_2" },
         { 0x18, 1, 1, 2, "PRIMARY_BUS" },       // fWritable = ??
         { 0x19, 1, 1, 2, "SECONDARY_BUS" },     // fWritable = ??
         { 0x1a, 1, 1, 2, "SUBORDINATE_BUS" },   // fWritable = ??
@@ -1412,6 +1414,7 @@ static void pciR3CommonRestoreConfig(PPCIDEVICE pDev, uint8_t const *pbSrcConfig
         { 0x30, 2, 1, 2, "IO_BASE_UPPER16" },   // fWritable = ?!
         { 0x32, 2, 1, 2, "IO_LIMIT_UPPER16" },  // fWritable = ?!
         { 0x34, 4, 0, 3, "CAPABILITY_LIST" },   // fWritable = !? cb=!?
+        { 0x38, 4, 1, 1, "???" },               // ???
         { 0x38, 4, 1, 2, "ROM_ADDRESS_BR" },    // fWritable = !? cb=!? fBridge=!?
         { 0x3c, 1, 1, 3, "INTERRUPT_LINE" },    // fBridge=??
         { 0x3d, 1, 0, 3, "INTERRUPT_PIN" },     // fBridge=??
@@ -1424,6 +1427,36 @@ static void pciR3CommonRestoreConfig(PPCIDEVICE pDev, uint8_t const *pbSrcConfig
         { 0x04, 2, 1, 3, "COMMAND" },
     };
 
+#ifdef RT_STRICT
+    /* Check that we've got full register coverage. */
+    uint32_t bmDevice[0x40 / 32];
+    uint32_t bmBridge[0x40 / 32];
+    RT_ZERO(bmDevice);
+    RT_ZERO(bmBridge);
+    for (uint32_t i = 0; i < RT_ELEMENTS(s_aFields); i++)
+    {
+        uint8_t off = s_aFields[i].off;
+        uint8_t cb  = s_aFields[i].cb;
+        uint8_t f   = s_aFields[i].fBridge;
+        while (cb-- > 0)
+        {
+            if (f & 1) AssertMsg(!ASMBitTest(bmDevice, off), ("%#x\n", off));
+            if (f & 2) AssertMsg(!ASMBitTest(bmBridge, off), ("%#x\n", off));
+            if (f & 1) ASMBitSet(bmDevice, off);
+            if (f & 2) ASMBitSet(bmBridge, off);
+            off++;
+        }
+    }
+    for (uint32_t off = 0; off < 0x40; off++)
+    {
+        AssertMsg(ASMBitTest(bmDevice, off), ("%#x\n", off));
+        AssertMsg(ASMBitTest(bmBridge, off), ("%#x\n", off));
+    }
+#endif
+
+    /*
+     * Loop thru the fields covering the 64 bytes of standard registers.
+     */
     uint8_t const fBridge = fIsBridge ? 2 : 1;
     uint8_t *pbDstConfig = &pDev->config[0];
     for (uint32_t i = 0; i < RT_ELEMENTS(s_aFields); i++)
@@ -1471,10 +1504,11 @@ static void pciR3CommonRestoreConfig(PPCIDEVICE pDev, uint8_t const *pbSrcConfig
         }
 
     /*
-     * The device dependent registers. We will not use ConfigWrite here as we
-     * have no clue about the size of the registers, so the device is
-     * responsible for correctly restoring functionality governed by these
-     * registers.
+     * The device dependent registers.
+     *
+     * We will not use ConfigWrite here as we have no clue about the size
+     * of the registers, so the device is responsible for correctly
+     * restoring functionality governed by these registers.
      */
     for (uint32_t off = 0x40; off < sizeof(pDev->config); off++)
         if (pbDstConfig[off] != pbSrcConfig[off])
