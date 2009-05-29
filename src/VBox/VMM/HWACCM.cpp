@@ -547,7 +547,7 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
     pVCpu->hwaccm.s.paStatInjectedIrqsR0 = MMHyperR3ToR0(pVM, pVCpu->hwaccm.s.paStatInjectedIrqs);
     for (unsigned j = 0; j < 255; j++)
         STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.paStatInjectedIrqs[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, "Forwarded interrupts.",
-                        j < 0x20 ? "/HWACCM/CPU%d/Interrupt/Trap/%02X" : "/TRPM/CPU%d/Interrupt/IRQ/%02X", i, j);
+                        (j < 0x20) ? "/HWACCM/CPU%d/Interrupt/Trap/%02X" : "/HWACCM/CPU%d/Interrupt/IRQ/%02X", i, j);
 
     }
 #endif /* VBOX_WITH_STATISTICS */
