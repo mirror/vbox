@@ -274,9 +274,11 @@ ifdef VBOX_WITH_USB
 	devinfo
 endif
 ifdef VBOX_WITH_CROGL
- VBoxSVC_LIBS += \
- 	$(PATH_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
- 	$(VBOX_LIB_OGL_HOSTCRUTIL)
+ ifneq ($(KBUILD_TARGET),darwin)
+  VBoxSVC_LIBS += \
+	$(PATH_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
+	$(VBOX_LIB_OGL_HOSTCRUTIL)
+ endif
 endif
 
 VBoxSVC_INTERMEDIATES = \
@@ -329,6 +331,10 @@ VBoxSVC_SOURCES.darwin = \
 	darwin/iokit.cpp \
 	darwin/HostPowerDarwin.cpp
 
+ifdef VBOX_WITH_CROGL
+ VBoxSVC_SOURCES.darwin += darwin/OpenGLTestDarwin.cpp
+endif
+
 VBoxSVC_SOURCES.win = \
 	win/svcmain.cpp \
 	win/svchlp.cpp \
@@ -377,6 +383,11 @@ ifdef VBOX_WITH_NETFLT
  endif
 endif
 VBoxSVC_LDFLAGS.darwin    = -framework IOKit -framework SystemConfiguration
+
+ifdef VBOX_WITH_CROGL
+ VBoxSVC_LDFLAGS.darwin += -framework OpenGL
+endif
+
 ifeq ($(KBUILD_TYPE),debug)
  VBoxSVC_LDFLAGS.linux   += -rdynamic # for backtrace_symbols()
 endif
