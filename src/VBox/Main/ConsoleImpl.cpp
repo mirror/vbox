@@ -6794,6 +6794,10 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, ULONG lInstance,
          * to be made generic based on the capabiliy flags when the new
          * HardDisk interface is merged.
          */
+        pLunL2 = CFGMR3GetChild(pLunL1, "AttachedDriver");
+        AssertReturn(pLunL2, VERR_INTERNAL_ERROR);
+
+        CFGMR3RemoveNode(pLunL2);
         rc = CFGMR3InsertNode (pLunL1, "AttachedDriver", &pLunL2);      RC_CHECK();
         rc = CFGMR3InsertString (pLunL2, "Driver", "TransportAsync");   RC_CHECK();
         /* The async transport driver has no config options yet. */
