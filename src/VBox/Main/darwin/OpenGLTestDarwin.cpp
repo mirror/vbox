@@ -20,7 +20,7 @@ bool is3DAccelerationSupported()
     CGDirectDisplayID   display = CGMainDisplayID ();
     CGOpenGLDisplayMask cglDisplayMask = CGDisplayIDToOpenGLDisplayMask (display);
     CGLPixelFormatObj   pixelFormat = NULL;
-    long numPixelFormats = 0;
+    GLint numPixelFormats = 0;
 
     CGLPixelFormatAttribute attribs[] = {
         kCGLPFADisplayMask,
