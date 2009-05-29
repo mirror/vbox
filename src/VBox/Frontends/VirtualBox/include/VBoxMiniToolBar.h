@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,7 +42,15 @@ class VBoxMiniToolBar : public VBoxToolBar
 
 public:
 
-    VBoxMiniToolBar (QList <QMenu*> aMenus);
+    enum Alignment
+    {
+        AlignTop,
+        AlignBottom
+    };
+
+    VBoxMiniToolBar (Alignment aAlignment);
+
+    VBoxMiniToolBar& operator<< (QList <QMenu*> aMenus);
 
     void updateDisplay (bool aShow, bool aSetHideFlag);
     void setDisplayText (const QString &aText);
@@ -57,6 +65,7 @@ protected:
     void resizeEvent (QResizeEvent *aEvent);
     void mouseMoveEvent (QMouseEvent *aEvent);
     void timerEvent (QTimerEvent *aEvent);
+    void showEvent (QShowEvent *aEvent);
 
 private slots:
 
@@ -72,8 +81,23 @@ private:
 
     int mAutoHideCounter;
     bool mAutoHide;
-    bool mSlideDown;
+    bool mSlideToScreen;
     bool mHideAfterSlide;
+    bool mPolished;
+
+    int mPositionX;
+    int mPositionY;
+
+    /* Lists of used spacers */
+    QList <QWidget*> mMargins;
+    QList <QWidget*> mSpacings;
+    QList <QWidget*> mLabelMargins;
+
+    /* Menu insert position */
+    QAction *mInsertPosition;
+
+    /* Tool-bar alignment */
+    Alignment mAlignment;
 
     /* Wether to animate showing/hiding the toolbar */
     bool mAnimated;

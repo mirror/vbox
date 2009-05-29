@@ -521,10 +521,9 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     mMiniVMMenu->addAction (mVmACPIShutdownAction);
 
     /* Mini toolbar */
-    QList <QMenu*> menuList;
-    menuList.append (mMiniVMMenu);
-    menuList.append (mDevicesMenu);
-    mMiniToolBar = new VBoxMiniToolBar (menuList);
+    QList <QMenu*> menus (QList <QMenu*> () << mMiniVMMenu << mDevicesMenu);
+    mMiniToolBar = new VBoxMiniToolBar (VBoxMiniToolBar::AlignBottom);
+    *mMiniToolBar << menus;
     connect (mMiniToolBar, SIGNAL (exitAction()), this, SLOT (mtExitMode()));
     connect (mMiniToolBar, SIGNAL (closeAction()), this, SLOT (mtCloseVM()));
     connect (this, SIGNAL (closing()), mMiniToolBar, SLOT (close()));
