@@ -660,7 +660,7 @@ p, li { white-space: pre-wrap; }
            <item row="2" column="0">
             <widget class="QLabel" name="mLblHostname">
              <property name="text">
-              <string>&amp;Hostname</string>
+              <string>&amp;Hostname:</string>
              </property>
              <property name="buddy">
               <cstring>mLeHostname</cstring>

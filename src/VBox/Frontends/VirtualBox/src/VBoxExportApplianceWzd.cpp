@@ -125,8 +125,8 @@ void VBoxExportApplianceWzd::retranslateUi()
     mDefaultApplianceName = tr("Appliance");
 
     mExportToFileSystemDesc = tr("Please choose a filename to export the OVF in.");
-    mExportToSunCloudDesc = tr("Please complete the additionally fields like the username, password & the bucket. Finally you have to provide a filename for the OVF target.");
-    mExportToS3Desc = tr("Please complete the additionally fields like the username, password, hostname & the bucket. Finally you have to provide a filename for the OVF target.");
+    mExportToSunCloudDesc = tr("Please complete the additionally fields like the username, password and the bucket. Finally you have to provide a filename for the OVF target.");
+    mExportToS3Desc = tr("Please complete the additionally fields like the username, password, hostname and the bucket. Finally you have to provide a filename for the OVF target.");
 
     switch (currentStorageType())
     {
@@ -454,6 +454,7 @@ void VBoxExportApplianceWzd::storageTypeChanged()
             mLeHostname->setVisible (false);
             mLblBucket->setVisible (false);
             mLeBucket->setVisible (false);
+            mSelectOVF09->setVisible (true);
             mFileSelector->setChooserVisible (true);
             mFileSelector->setFocus();
             break;
@@ -469,6 +470,8 @@ void VBoxExportApplianceWzd::storageTypeChanged()
             mLeHostname->setVisible (false);
             mLblBucket->setVisible (true);
             mLeBucket->setVisible (true);
+            mSelectOVF09->setVisible (false);
+            mSelectOVF09->setChecked (false);
             mFileSelector->setChooserVisible (false);
             mLeUsername->setFocus();
             break;
@@ -484,6 +487,7 @@ void VBoxExportApplianceWzd::storageTypeChanged()
             mLeHostname->setVisible (true);
             mLblBucket->setVisible (true);
             mLeBucket->setVisible (true);
+            mSelectOVF09->setVisible (true);
             mFileSelector->setChooserVisible (false);
             mLeUsername->setFocus();
             break;
