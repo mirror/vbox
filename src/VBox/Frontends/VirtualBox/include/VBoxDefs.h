@@ -159,6 +159,7 @@ struct VBoxDefs
     static const char* GUI_UpdateCheckCount;
     static const char* GUI_LastVMSelected;
     static const char* GUI_InfoDlgState;
+    static const char* GUI_RenderMode;
 #ifdef VBOX_GUI_WITH_SYSTRAY
     static const char* GUI_TrayIconWinID;
     static const char* GUI_MainWindowCount;
