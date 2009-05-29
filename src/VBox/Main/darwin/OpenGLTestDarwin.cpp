@@ -14,6 +14,7 @@
 
 #include <OpenGL/OpenGL.h>
 #include <ApplicationServices/ApplicationServices.h>
+#include <OpenGL/gl.h>
 
 bool is3DAccelerationSupported()
 {
