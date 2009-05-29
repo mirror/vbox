@@ -2684,6 +2684,7 @@ void pgmPoolTrackFlushGCPhysPTs(PVM pVM, PPGMPAGE pPhysPage, uint16_t iPhysExt)
  */
 int pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs)
 {
+    PVMCPU pVCpu = VMMGetCpu(pVM);
     pgmLock(pVM);
     int rc = VINF_SUCCESS;
 #ifdef PGMPOOL_WITH_GCPHYS_TRACKING
@@ -2703,7 +2704,6 @@ int pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs)
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
             /* Start a subset here because pgmPoolTrackFlushGCPhysPTsSlow and
                pgmPoolTrackFlushGCPhysPTs will/may kill the pool otherwise. */
-            PVMCPU pVCpu = VMMGetCpu(pVM);
             uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
 # endif
 
@@ -2731,7 +2731,6 @@ int pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs)
     {
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
         /* Start a subset here because pgmPoolTrackFlushGCPhysPTsSlow kill the pool otherwise. */
-        PVMCPU pVCpu = VMMGetCpu(pVM);
         uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
 # endif
         rc = pgmPoolTrackFlushGCPhysPTsSlow(pVM, pPhysPage);
@@ -2750,11 +2749,7 @@ int pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs)
     if (rc == VINF_PGM_GCPHYS_ALIASED)
     {
         pVM->pgm.s.fGlobalSyncFlags |= PGM_GLOBAL_SYNC_CLEAR_PGM_POOL;
-        for (unsigned i=0;i<pVM->cCPUs;i++)
-        {
-            PVMCPU pVCpu = &pVM->aCpus[i];
-            VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
-        }
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
         rc = VINF_PGM_SYNC_CR3;
     }
     pgmUnlock(pVM);
