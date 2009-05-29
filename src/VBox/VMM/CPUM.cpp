@@ -507,6 +507,9 @@ static int cpumR3CpuIdInit(PVM pVM)
 #ifdef VBOX_WITH_MULTI_CORE
         if (pVM->cpum.s.enmCPUVendor == CPUMCPUVENDOR_AMD)
         {
+            /* Legacy method to determine the number of cores. */
+            pCPUM->aGuestCpuIdExt[1].ecx |= X86_CPUID_AMD_FEATURE_ECX_CMPL;
+            pCPUM->aGuestCpuIdExt[8].ecx |= (pVM->cCPUs - 1); /* NC: Number of CPU cores - 1; 8 bits */
 
         }
 #endif
