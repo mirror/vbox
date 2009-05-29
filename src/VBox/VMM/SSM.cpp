@@ -44,9 +44,8 @@
  *
  * There are plans to extend SSM to make it easier to be both backwards and
  * (somewhat) forwards compatible.  One of the new features will be being able
- * to classify units and data items as unimportant, one example where this would
- * be nice can be seen in with the SSM data unit.  Another potentail feature is
- * naming data items, perhaps by extending the SSMR3PutStruct API.
+ * to classify units and data items as unimportant.  Another potentail feature
+ * is naming data items, perhaps by extending the SSMR3PutStruct API.
  *
  */
 
@@ -296,7 +295,7 @@ typedef SSMFILEUNITHDR *PSSMFILEUNITHDR;
 static int                  ssmR3LazyInit(PVM pVM);
 static DECLCALLBACK(int)    ssmR3SelfSaveExec(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int)    ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
-static int                  ssmR3Register(PVM pVM, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess, PSSMUNIT *ppUnit);
+static int                  ssmR3Register(PVM pVM, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess, const char *pszBefore, PSSMUNIT *ppUnit);
 static int                  ssmR3CalcChecksum(RTFILE File, uint64_t cbFile, uint32_t *pu32CRC);
 static void                 ssmR3Progress(PSSMHANDLE pSSM, uint64_t cbAdvance);
 static int                  ssmR3Validate(RTFILE File, PSSMFILEHDR pHdr, size_t *pcbFileHdr);
@@ -398,11 +397,18 @@ static DECLCALLBACK(int) ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t u3
  * @param   u32Instance     The instance id.
  * @param   u32Version      The data unit version.
  * @param   cbGuess         The guessed data unit size.
+ * @param   pszBefore       Name of data unit to be placed in front of.
+ *                          Optional.
  * @param   ppUnit          Where to store the insterted unit node.
  *                          Caller must fill in the missing details.
  */
-static int ssmR3Register(PVM pVM, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess, PSSMUNIT *ppUnit)
+static int ssmR3Register(PVM pVM, const char *pszName, uint32_t u32Instance,
+                         uint32_t u32Version, size_t cbGuess, const char *pszBefore, PSSMUNIT *ppUnit)
 {
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+    AssertReturn(*pszName, VERR_INVALID_PARAMETER);
+    AssertReturn(!pszBefore || *pszBefore, VERR_INVALID_PARAMETER);
+
     /*
      * Lazy init.
      */
@@ -415,9 +421,12 @@ static int ssmR3Register(PVM pVM, const char *pszName, uint32_t u32Instance, uin
     /*
      * Walk to the end of the list checking for duplicates as we go.
      */
-    size_t      cchName = strlen(pszName);
-    PSSMUNIT    pUnitPrev = NULL;
-    PSSMUNIT    pUnit = pVM->ssm.s.pHead;
+    size_t      cchBefore       = pszBefore ? strlen(pszBefore) : 0;
+    PSSMUNIT    pUnitBeforePrev = NULL;
+    PSSMUNIT    pUnitBefore     = NULL;
+    size_t      cchName         = strlen(pszName);
+    PSSMUNIT    pUnitPrev       = NULL;
+    PSSMUNIT    pUnit           = pVM->ssm.s.pHead;
     while (pUnit)
     {
         if (    pUnit->u32Instance == u32Instance
@@ -427,6 +436,14 @@ static int ssmR3Register(PVM pVM, const char *pszName, uint32_t u32Instance, uin
             AssertMsgFailed(("Duplicate registration %s\n", pszName));
             return VERR_SSM_UNIT_EXISTS;
         }
+        if (    pUnit->cchName == cchBefore
+            &&  !pUnitBefore
+            &&  !memcmp(pUnit->szName, pszBefore, cchBefore))
+        {
+            pUnitBeforePrev = pUnitPrev;
+            pUnitBefore     = pUnit;
+        }
+
         /* next */
         pUnitPrev = pUnit;
         pUnit = pUnit->pNext;
@@ -442,16 +459,24 @@ static int ssmR3Register(PVM pVM, const char *pszName, uint32_t u32Instance, uin
     /*
      * Fill in (some) data. (Stuff is zero'ed.)
      */
-    pUnit->u32Version = u32Version;
-    pUnit->u32Instance = u32Instance;
-    pUnit->cbGuess = cbGuess;
-    pUnit->cchName = cchName;
+    pUnit->u32Version   = u32Version;
+    pUnit->u32Instance  = u32Instance;
+    pUnit->cbGuess      = cbGuess;
+    pUnit->cchName      = cchName;
     memcpy(pUnit->szName, pszName, cchName);
 
     /*
      * Insert
      */
-    if (pUnitPrev)
+    if (pUnitBefore)
+    {
+        pUnit->pNext = pUnitBefore;
+        if (pUnitBeforePrev)
+            pUnitBeforePrev->pNext = pUnit;
+        else
+            pVM->ssm.s.pHead       = pUnit;
+    }
+    else if (pUnitPrev)
         pUnitPrev->pNext = pUnit;
     else
         pVM->ssm.s.pHead = pUnit;
@@ -474,6 +499,8 @@ static int ssmR3Register(PVM pVM, const char *pszName, uint32_t u32Instance, uin
  * @param   u32Version      Data layout version number.
  * @param   cbGuess         The approximate amount of data in the unit.
  *                          Only for progress indicators.
+ * @param   pszBefore       Name of data unit which we should be put in front
+ *                          of. Optional (NULL).
  * @param   pfnSavePrep     Prepare save callback, optional.
  * @param   pfnSaveExec     Execute save callback, optional.
  * @param   pfnSaveDone     Done save callback, optional.
@@ -481,12 +508,12 @@ static int ssmR3Register(PVM pVM, const char *pszName, uint32_t u32Instance, uin
  * @param   pfnLoadExec     Execute load callback, optional.
  * @param   pfnLoadDone     Done load callback, optional.
  */
-VMMR3DECL(int) SSMR3RegisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
+VMMR3DECL(int) SSMR3RegisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess, const char *pszBefore,
     PFNSSMDEVSAVEPREP pfnSavePrep, PFNSSMDEVSAVEEXEC pfnSaveExec, PFNSSMDEVSAVEDONE pfnSaveDone,
     PFNSSMDEVLOADPREP pfnLoadPrep, PFNSSMDEVLOADEXEC pfnLoadExec, PFNSSMDEVLOADDONE pfnLoadDone)
 {
     PSSMUNIT pUnit;
-    int rc = ssmR3Register(pVM, pszName, u32Instance, u32Version, cbGuess, &pUnit);
+    int rc = ssmR3Register(pVM, pszName, u32Instance, u32Version, cbGuess, pszBefore, &pUnit);
     if (RT_SUCCESS(rc))
     {
         pUnit->enmType = SSMUNITTYPE_DEV;
@@ -527,7 +554,7 @@ VMMR3DECL(int) SSMR3RegisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszN
     PFNSSMDRVLOADPREP pfnLoadPrep, PFNSSMDRVLOADEXEC pfnLoadExec, PFNSSMDRVLOADDONE pfnLoadDone)
 {
     PSSMUNIT pUnit;
-    int rc = ssmR3Register(pVM, pszName, u32Instance, u32Version, cbGuess, &pUnit);
+    int rc = ssmR3Register(pVM, pszName, u32Instance, u32Version, cbGuess, NULL, &pUnit);
     if (RT_SUCCESS(rc))
     {
         pUnit->enmType = SSMUNITTYPE_DRV;
@@ -567,7 +594,7 @@ VMMR3DECL(int) SSMR3RegisterInternal(PVM pVM, const char *pszName, uint32_t u32I
     PFNSSMINTLOADPREP pfnLoadPrep, PFNSSMINTLOADEXEC pfnLoadExec, PFNSSMINTLOADDONE pfnLoadDone)
 {
     PSSMUNIT pUnit;
-    int rc = ssmR3Register(pVM, pszName, u32Instance, u32Version, cbGuess, &pUnit);
+    int rc = ssmR3Register(pVM, pszName, u32Instance, u32Version, cbGuess, NULL, &pUnit);
     if (RT_SUCCESS(rc))
     {
         pUnit->enmType = SSMUNITTYPE_INTERNAL;
@@ -607,7 +634,7 @@ VMMR3DECL(int) SSMR3RegisterExternal(PVM pVM, const char *pszName, uint32_t u32I
     PFNSSMEXTLOADPREP pfnLoadPrep, PFNSSMEXTLOADEXEC pfnLoadExec, PFNSSMEXTLOADDONE pfnLoadDone, void *pvUser)
 {
     PSSMUNIT pUnit;
-    int rc = ssmR3Register(pVM, pszName, u32Instance, u32Version, cbGuess, &pUnit);
+    int rc = ssmR3Register(pVM, pszName, u32Instance, u32Version, cbGuess, NULL, &pUnit);
     if (RT_SUCCESS(rc))
     {
         pUnit->enmType = SSMUNITTYPE_EXTERNAL;

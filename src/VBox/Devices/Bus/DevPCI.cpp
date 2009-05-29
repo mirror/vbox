@@ -1275,6 +1275,7 @@ static DECLCALLBACK(int) pciSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
      */
     SSMR3PutU32(pSSMHandle, pThis->uConfigReg);
     SSMR3PutBool(pSSMHandle, pThis->fUseIoApic);
+
     /*
      * Save IRQ states.
      */
@@ -1308,6 +1309,116 @@ static DECLCALLBACK(int) pciSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
     return SSMR3PutU32(pSSMHandle, ~0); /* terminator */
 }
 
+
+/**
+ * Common routine for restoring the config registers of a PCI device.
+ *
+ * @param   pDev                The PCI device.
+ * @param   pbSrcConfig         The configuration register values to be loaded.
+ * @param   fIsBridge           Whether this is a bridge device or not.
+ */
+static void pciR3CommonRestoreConfig(PPCIDEVICE pDev, uint8_t const *pbSrcConfig, bool fIsBridge)
+{
+    /* This table defines the fields for normal devices and bridge devices, and
+       the order in which they need to be restored (nothing special there atm). */
+    static const struct PciField
+    {
+        uint8_t     off;
+        uint8_t     cb;
+        uint8_t     fWritable;
+        uint8_t     fBridge;
+        const char *pszName;
+    } s_aFields[] =
+    {
+        /* off,cb,fW,fB, pszName */
+        { 0x00, 2, 0, 3, "VENDOR_ID" },
+        { 0x02, 2, 0, 3, "DEVICE_ID" },
+        { 0x04, 2, 1, 3, "COMMAND" },
+        { 0x06, 2, 1, 3, "STATUS" },
+        { 0x08, 1, 0, 3, "REVISION_ID" },
+        { 0x09, 1, 0, 3, "CLASS_PROG" },
+        { 0x0a, 1, 0, 3, "CLASS_SUB" },
+        { 0x0b, 1, 0, 3, "CLASS_BASE" },
+        { 0x0c, 1, 0, 3, "CACHE_LINE_SIZE" },   // fWritable = ??
+        { 0x0d, 1, 0, 3, "LATENCY_TIMER" },     // fWritable = ??
+        { 0x0e, 1, 0, 3, "HEADER_TYPE" },       // fWritable = ??
+        { 0x0f, 1, 0, 3, "BIST" },              // fWritable = ??
+        { 0x10, 4, 1, 3, "BASE_ADDRESS_0" },
+        { 0x14, 4, 1, 3, "BASE_ADDRESS_1" },
+        { 0x18, 4, 1, 3, "BASE_ADDRESS_2" },
+        { 0x18, 1, 1, 2, "PRIMARY_BUS" },       // fWritable = ??
+        { 0x19, 1, 1, 2, "SECONDARY_BUS" },     // fWritable = ??
+        { 0x1a, 1, 1, 2, "SUBORDINATE_BUS" },   // fWritable = ??
+        { 0x1b, 1, 1, 2, "SEC_LATENCY_TIMER" }, // fWritable = ??
+        { 0x1c, 4, 1, 1, "BASE_ADDRESS_3" },
+        { 0x1c, 1, 1, 2, "IO_BASE" },           // fWritable = ??
+        { 0x1d, 1, 1, 2, "IO_LIMIT" },          // fWritable = ??
+        { 0x1e, 2, 1, 2, "SEC_STATUS" },        // fWritable = ??
+        { 0x20, 4, 1, 1, "BASE_ADDRESS_4" },
+        { 0x20, 2, 1, 2, "MEMORY_BASE" },       // fWritable = ??
+        { 0x22, 2, 1, 2, "MEMORY_LIMIT" },      // fWritable = ??
+        { 0x24, 4, 1, 1, "BASE_ADDRESS_4" },
+        { 0x24, 2, 1, 2, "PREF_MEMORY_BASE" },  // fWritable = ??
+        { 0x26, 2, 1, 2, "PREF_MEMORY_LIMIT" }, // fWritable = ??
+        { 0x28, 4, 1, 1, "CARDBUS_CIS" },       // fWritable = ??
+        { 0x28, 4, 1, 2, "PREF_BASE_UPPER32" }, // fWritable = ??
+        { 0x2c, 2, 0, 1, "SUBSYSTEM_VENDOR_ID" },// fWritable = !?
+        { 0x2c, 4, 1, 2, "PREF_LIMIT_UPPER32" },// fWritable = ??
+        { 0x2e, 2, 0, 1, "SUBSYSTEM_ID" },      // fWritable = !?
+        { 0x30, 4, 1, 1, "ROM_ADDRESS" },       // fWritable = ?!
+        { 0x30, 2, 1, 2, "IO_BASE_UPPER16" },   // fWritable = ?!
+        { 0x32, 2, 1, 2, "IO_LIMIT_UPPER16" },  // fWritable = ?!
+        { 0x34, 4, 0, 3, "CAPABILITY_LIST" },   // fWritable = !? cb=!?
+        { 0x38, 4, 1, 2, "ROM_ADDRESS_BR" },    // fWritable = !? cb=!? fBridge=!?
+        { 0x3c, 1, 1, 3, "INTERRUPT_LINE" },    // fBridge=??
+        { 0x3d, 1, 0, 3, "INTERRUPT_PIN" },     // fBridge=??
+        { 0x3e, 1, 0, 1, "MIN_GNT" },           // fWritable = !?
+        { 0x3e, 1, 1, 2, "BRIDGE_CONTROL" },    // fWritable = !? cb=!?
+        { 0x3f, 1, 1, 3, "MAX_LAT" },           // fWritable = !? fBridge=!?
+    };
+
+    uint8_t const fBridge = fIsBridge ? 2 : 1;
+    uint8_t *pbDstConfig = &pDev->config[0];
+    for (uint32_t i = 0; i < RT_ELEMENTS(s_aFields); i++)
+        if (s_aFields[i].fBridge & fBridge)
+        {
+            uint8_t const   off = s_aFields[i].off;
+            uint8_t const   cb  = s_aFields[i].cb;
+            uint32_t        u32Src;
+            uint32_t        u32Dst;
+            switch (cb)
+            {
+                case 1:
+                    u32Src = pbSrcConfig[off];
+                    u32Dst = pbDstConfig[off];
+                    break;
+                case 2:
+                    u32Src = *(uint16_t const *)&pbSrcConfig[off];
+                    u32Dst = *(uint16_t const *)&pbDstConfig[off];
+                    break;
+                case 4:
+                    u32Src = *(uint32_t const *)&pbSrcConfig[off];
+                    u32Dst = *(uint32_t const *)&pbDstConfig[off];
+                    break;
+                default:
+                    AssertFailed();
+                    continue;
+            }
+
+            if (u32Src != u32Dst)
+            {
+                if (!s_aFields[i].fWritable)
+                    LogRel(("PCI: %8s/%u: %2u-bit field %s: %x -> %x - !READ ONLY!\n",
+                            pDev->name, pDev->pDevIns->iInstance, cb*8, s_aFields[i].pszName, u32Dst, u32Src));
+                else
+                    LogRel(("PCI: %8s/%u: %2u-bit field %s: %x -> %x\n",
+                            pDev->name, pDev->pDevIns->iInstance, cb*8, s_aFields[i].pszName, u32Dst, u32Src));
+                pDev->Int.s.pfnConfigWrite(pDev, off, u32Src, cb);
+            }
+        }
+}
+
+
 /**
  * Loads a saved PCI device state.
  *
@@ -1318,8 +1429,8 @@ static DECLCALLBACK(int) pciSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
  */
 static DECLCALLBACK(int) pciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
 {
-    PPCIGLOBALS  pThis = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
-    PPCIBUS      pBus  = &pThis->PciBus;
+    PPCIGLOBALS pThis = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
+    PPCIBUS     pBus  = &pThis->PciBus;
     uint32_t    u32;
     uint32_t    i;
     int         rc;
@@ -1431,7 +1542,7 @@ static DECLCALLBACK(int) pciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
         }
 
         /* commit the loaded device config. */
-        memcpy(pDev->config, DevTmp.config, sizeof(pDev->config));
+        pciR3CommonRestoreConfig(pDev, &DevTmp.config[0], false ); /** @todo fix bridge fun! */
 
         pDev->Int.s.uIrqPinState = DevTmp.Int.s.uIrqPinState;
     }
@@ -1899,8 +2010,8 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
             return rc;
     }
 
-    rc = PDMDevHlpSSMRegister(pDevIns, "pci", iInstance, VBOX_PCI_SAVED_STATE_VERSION, sizeof(*pBus),
-                              NULL, pciSaveExec, NULL, NULL, pciLoadExec, NULL);
+    rc = SSMR3RegisterDevice(PDMDevHlpGetVM(pDevIns), pDevIns, "pci", iInstance, VBOX_PCI_SAVED_STATE_VERSION, sizeof(*pBus) + 16*128, "pgm",
+                             NULL, pciSaveExec, NULL, NULL, pciLoadExec, NULL);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2108,6 +2219,8 @@ static DECLCALLBACK(int) pcibridgeLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHa
     uint32_t    i;
     int         rc;
 
+/** @todo r=bird: this is a copy of pciLoadExec. combine the two!  */
+
     /*
      * Check the version.
      */
@@ -2178,7 +2291,7 @@ static DECLCALLBACK(int) pcibridgeLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHa
         }
 
         /* commit the loaded device config. */
-        memcpy(pDev->config, DevTmp.config, sizeof(pDev->config));
+        pciR3CommonRestoreConfig(pDev, &DevTmp.config[0], false ); /** @todo fix bridge fun! */
 
         pDev->Int.s.uIrqPinState = DevTmp.Int.s.uIrqPinState;
     }
@@ -2364,8 +2477,8 @@ static DECLCALLBACK(int)   pcibridgeConstruct(PPDMDEVINS pDevIns, int iInstance,
      * Register SSM handlers. We use the same saved state version as for the host bridge
      * to make changes easier.
      */
-    rc = PDMDevHlpSSMRegister(pDevIns, "pcibridge", iInstance, VBOX_PCI_SAVED_STATE_VERSION, sizeof(*pBus),
-                              NULL, pcibridgeSaveExec, NULL, NULL, pcibridgeLoadExec, NULL);
+    rc = SSMR3RegisterDevice(PDMDevHlpGetVM(pDevIns), pDevIns, "pcibridge", iInstance, VBOX_PCI_SAVED_STATE_VERSION, sizeof(*pBus) + 16*128, "pgm",
+                             NULL, pcibridgeSaveExec, NULL, NULL, pcibridgeLoadExec, NULL);
     if (RT_FAILURE(rc))
         return rc;
 
