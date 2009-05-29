@@ -1424,6 +1424,7 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
  * @param   pPool       The pool.
  * @param   GCPhys      The GC physical address of the page we're gonna shadow.
  * @param   enmKind     The kind of mapping.
+ * @param   enmAccess   Access type for the mapping (only relevant for big pages)
  * @param   iUser       The shadow page pool index of the user table.
  * @param   iUserTable  The index into the user table (shadowed).
  * @param   ppPage      Where to store the pointer to the page.

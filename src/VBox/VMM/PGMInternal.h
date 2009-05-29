@@ -1579,7 +1579,9 @@ typedef enum PGMPOOLKIND
     PGMPOOLKIND_LAST = PGMPOOLKIND_ROOT_NESTED
 } PGMPOOLKIND;
 
-
+/**
+ * The access attributes of the page; only applies to big pages.
+ */
 typedef enum
 {
     PGMPOOLACCESS_DONTCARE = 0,
