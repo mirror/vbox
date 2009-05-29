@@ -542,12 +542,17 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
         Assert(pVCpu->hwaccm.s.paStatExitReasonR0 != NIL_RTR0PTR);
 # endif
 
-    rc = MMHyperAlloc(pVM, sizeof(STAMCOUNTER) * 255, 8, MM_TAG_HWACCM, (void **)&pVCpu->hwaccm.s.paStatInjectedIrqs);
-    AssertRCReturn(rc, rc);
-    pVCpu->hwaccm.s.paStatInjectedIrqsR0 = MMHyperR3ToR0(pVM, pVCpu->hwaccm.s.paStatInjectedIrqs);
-    for (unsigned j = 0; j < 255; j++)
-        STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.paStatInjectedIrqs[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, "Forwarded interrupts.",
-                        (j < 0x20) ? "/HWACCM/CPU%d/Interrupt/Trap/%02X" : "/HWACCM/CPU%d/Interrupt/IRQ/%02X", i, j);
+        rc = MMHyperAlloc(pVM, sizeof(STAMCOUNTER) * 256, 8, MM_TAG_HWACCM, (void **)&pVCpu->hwaccm.s.paStatInjectedIrqs);
+        AssertRCReturn(rc, rc);
+        pVCpu->hwaccm.s.paStatInjectedIrqsR0 = MMHyperR3ToR0(pVM, pVCpu->hwaccm.s.paStatInjectedIrqs);
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+        Assert(pVCpu->hwaccm.s.paStatInjectedIrqsR0 != NIL_RTR0PTR || !VMMIsHwVirtExtForced(pVM));
+# else
+        Assert(pVCpu->hwaccm.s.paStatInjectedIrqsR0 != NIL_RTR0PTR);
+# endif
+        for (unsigned j = 0; j < 255; j++)
+            STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.paStatInjectedIrqs[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, "Forwarded interrupts.",
+                            (j < 0x20) ? "/HWACCM/CPU%d/Interrupt/Trap/%02X" : "/HWACCM/CPU%d/Interrupt/IRQ/%02X", i, j);
 
     }
 #endif /* VBOX_WITH_STATISTICS */
