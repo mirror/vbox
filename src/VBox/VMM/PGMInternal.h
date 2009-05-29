@@ -2221,7 +2221,7 @@ typedef struct PGM
      */
     bool                            fRamPreAlloc;
     /** Alignment padding. */
-    bool                            afAlignment0[7];
+    bool                            afAlignment0[11];
 
     /*
      * This will be redefined at least two more times before we're done, I'm sure.

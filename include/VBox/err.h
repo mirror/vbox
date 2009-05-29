@@ -81,6 +81,8 @@
 #define VERR_INVALID_VMCPU_HANDLE           (-1017)
 /** Invalid Virtual CPU ID. */
 #define VERR_INVALID_CPU_ID                 (-1018)
+/** Too many VCPUs. */
+#define VERR_TOO_MANY_CPUS                  (-1019)
 /** @} */
 
 

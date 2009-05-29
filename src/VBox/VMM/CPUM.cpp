@@ -422,6 +422,7 @@ static int cpumR3CpuIdInit(PVM pVM)
 #ifdef VBOX_WITH_MULTI_CORE
     if (pVM->cpum.s.enmCPUVendor == CPUMCPUVENDOR_INTEL)
     {
+        AssertReturn(pVM->cCPUs <= 64, VERR_TOO_MANY_CPUS);
         /* One logical processor with possibly multiple cores. */
         pCPUM->aGuestCpuIdStd[4].eax |= ((pVM->cCPUs - 1) << 26);   /* 6 bits only -> 64 cores! */
     }
