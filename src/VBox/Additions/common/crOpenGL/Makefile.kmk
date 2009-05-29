@@ -338,7 +338,8 @@ VBoxOGLpackspu_DEFS          = TRACKS_STATE=1 PACKS=1
 VBoxOGLpackspu_INCS          = \
 	pack
 VBoxOGLpackspu_INTERMEDIATES = \
-	$(VBOX_PATH_CROGL_GENFILES)/packspu_proto.h
+	$(VBOX_PATH_CROGL_GENFILES)/packspu_proto.h \
+	$(VBOX_PATH_CROGL_GENFILES)/cr_packfunctions.h
 VBoxOGLpackspu_SOURCES    = \
 	pack/packspu_bufferobject.c \
 	pack/packspu_client.c \
