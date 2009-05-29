@@ -24,35 +24,13 @@ CRCurrentStatePointers crServerCurrent;
 """
 
 
-def GetTestWrapper(func_name):
-    """Return a C preprocessor token to test in order to wrap code.
-    This handles extensions.
-    Example: GetTestWrapper("glActiveTextureARB") = "CR_multitexture"
-    Example: GetTestWrapper("glBegin") = ""
-    """
-    cat = apiutil.Category(func_name)
-    if (cat == "1.0" or
-        cat == "1.1" or
-        cat == "1.2" or
-        cat == "Chromium" or
-        cat == "GL_chromium"):
-        return ''
-    elif cat[0] =='1':
-        # i.e. OpenGL 1.3 or 1.4 or 1.5
-        return "OPENGL_VERSION_" + string.replace(cat, ".", "_")
-    else:
-        assert cat != ''
-        return string.replace(cat, "GL_", "")
-
-
-
 for func_name in apiutil.AllSpecials( sys.argv[1]+"/../state_tracker/state" ):
     params = apiutil.Parameters(func_name)
     if (apiutil.FindSpecial( "server", func_name ) or
         "get" in apiutil.Properties(func_name)):
         continue
 
-    wrap = GetTestWrapper(func_name)
+    wrap = apiutil.GetCategoryWrapper(func_name)
     if wrap:
         print '#if defined(CR_%s)' % wrap
     print 'void SERVER_DISPATCH_APIENTRY crServerDispatch%s( %s )' % ( func_name, apiutil.MakeDeclarationString( params ) )
@@ -139,7 +117,7 @@ for func_name in keys:
         apiutil.FindSpecial( "server", func_name ) or
         apiutil.FindSpecial( sys.argv[1]+"/../state_tracker/state", func_name )):
 
-        wrap = GetTestWrapper(func_name)
+        wrap = apiutil.GetCategoryWrapper(func_name)
         if wrap:
             print '#if defined(CR_%s)' % wrap
             

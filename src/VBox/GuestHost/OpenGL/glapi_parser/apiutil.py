@@ -354,7 +354,10 @@ def GetCategoryWrapper(func_name):
 		cat == "Chromium" or
 		cat == "GL_chromium"):
 		return ''
-	elif cat[0] =='1':
+	elif (cat == '1.3' or
+          cat == '1.4' or
+          cat == '1.5' or
+          cat == '2.0'):
 		# i.e. OpenGL 1.3 or 1.4 or 1.5
 		return "OPENGL_VERSION_" + string.replace(cat, ".", "_")
 	else:
