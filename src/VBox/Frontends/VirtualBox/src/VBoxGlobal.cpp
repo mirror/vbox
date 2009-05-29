@@ -4597,7 +4597,9 @@ void VBoxGlobal::init()
 
     /* process command line */
 
-    vm_render_mode_str = 0;
+    vm_render_mode_str = RTStrDup (virtualBox()
+            .GetExtraData (VBoxDefs::GUI_RenderMode).toAscii().constData());
+
 #ifdef VBOX_WITH_DEBUGGER_GUI
 # ifdef VBOX_WITH_DEBUGGER_GUI_MENU
     mDbgEnabled = true;
@@ -4699,7 +4701,7 @@ void VBoxGlobal::init()
         i++;
     }
 
-    vm_render_mode = vboxGetRenderMode( vm_render_mode_str );
+    vm_render_mode = vboxGetRenderMode (vm_render_mode_str);
 
     /* setup the callback */
     callback = CVirtualBoxCallback (new VBoxCallback (*this));
