@@ -1580,6 +1580,15 @@ typedef enum PGMPOOLKIND
 } PGMPOOLKIND;
 
 
+typedef enum
+{
+    PGMPOOLACCESS_DONTCARE = 0,
+    PGMPOOLACCESS_USER_RW,
+    PGMPOOLACCESS_USER_R,
+    PGMPOOLACCESS_SUPERVISOR_RW,
+    PGMPOOLACCESS_SUPERVISOR_R
+} PGMPOOLACCESS;
+
 /**
  * The tracking data for a page in the pool.
  */
@@ -1600,7 +1609,8 @@ typedef struct PGMPOOLPAGE
     RTGCPHYS            GCPhys;
     /** The kind of page we're shadowing. (This is really a PGMPOOLKIND enum.) */
     uint8_t             enmKind;
-    uint8_t             bPadding;
+    /** The subkind of page we're shadowing. (This is really a PGMPOOLACCESS enum.) */
+    uint8_t             enmAccess;
     /** The index of this page. */
     uint16_t            idx;
     /** The next entry in the list this page currently resides in.
@@ -2958,7 +2968,13 @@ void            pgmR3PoolReset(PVM pVM);
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
 int             pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **ppv);
 #endif
-int             pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, uint32_t iUserTable, PPPGMPOOLPAGE ppPage);
+int             pgmPoolAllocEx(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS enmAccess, uint16_t iUser, uint32_t iUserTable, PPPGMPOOLPAGE ppPage);
+
+DECLINLINE(int) pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, uint32_t iUserTable, PPPGMPOOLPAGE ppPage)
+{
+    return pgmPoolAllocEx(pVM, GCPhys, enmKind, PGMPOOLACCESS_DONTCARE, iUser, iUserTable, ppPage);
+}
+
 void            pgmPoolFree(PVM pVM, RTHCPHYS HCPhys, uint16_t iUser, uint32_t iUserTable);
 void            pgmPoolFreeByPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint32_t iUserTable);
 int             pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage);

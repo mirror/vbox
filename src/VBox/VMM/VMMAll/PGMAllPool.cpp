@@ -1428,7 +1428,7 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
  * @param   iUserTable  The index into the user table (shadowed).
  * @param   ppPage      Where to store the pointer to the page.
  */
-static int pgmPoolCacheAlloc(PPGMPOOL pPool, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, uint32_t iUserTable, PPPGMPOOLPAGE ppPage)
+static int pgmPoolCacheAlloc(PPGMPOOL pPool, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS enmAccess, uint16_t iUser, uint32_t iUserTable, PPPGMPOOLPAGE ppPage)
 {
 #ifndef IN_RC
     const PVM pVM = pPool->CTX_SUFF(pVM);
@@ -1446,7 +1446,8 @@ static int pgmPoolCacheAlloc(PPGMPOOL pPool, RTGCPHYS GCPhys, PGMPOOLKIND enmKin
             Log4(("pgmPoolCacheAlloc: slot %d found page %RGp\n", i, pPage->GCPhys));
             if (pPage->GCPhys == GCPhys)
             {
-                if ((PGMPOOLKIND)pPage->enmKind == enmKind)
+                if (    (PGMPOOLKIND)pPage->enmKind == enmKind
+                    &&  (PGMPOOLACCESS)pPage->enmAccess == enmAccess)
                 {
                     /* Put it at the start of the use list to make sure pgmPoolTrackAddUser
                      * doesn't flush it in case there are no more free use records.
@@ -1464,18 +1465,21 @@ static int pgmPoolCacheAlloc(PPGMPOOL pPool, RTGCPHYS GCPhys, PGMPOOLKIND enmKin
                     return rc;
                 }
 
-                /*
-                 * The kind is different. In some cases we should now flush the page
-                 * as it has been reused, but in most cases this is normal remapping
-                 * of PDs as PT or big pages using the GCPhys field in a slightly
-                 * different way than the other kinds.
-                 */
-                if (pgmPoolCacheReusedByKind((PGMPOOLKIND)pPage->enmKind, enmKind))
+                if ((PGMPOOLKIND)pPage->enmKind != enmKind)
                 {
-                    STAM_COUNTER_INC(&pPool->StatCacheKindMismatches);
-                    pgmPoolFlushPage(pPool, pPage);
-                    PGM_INVL_VCPU_TLBS(VMMGetCpu(pVM)); /* see PT handler. */
-                    break;
+                    /*
+                     * The kind is different. In some cases we should now flush the page
+                     * as it has been reused, but in most cases this is normal remapping
+                     * of PDs as PT or big pages using the GCPhys field in a slightly
+                     * different way than the other kinds.
+                     */
+                    if (pgmPoolCacheReusedByKind((PGMPOOLKIND)pPage->enmKind, enmKind))
+                    {
+                        STAM_COUNTER_INC(&pPool->StatCacheKindMismatches);
+                        pgmPoolFlushPage(pPool, pPage);
+                        PGM_INVL_VCPU_TLBS(VMMGetCpu(pVM)); /* see PT handler. */
+                        break;
+                    }
                 }
             }
 
@@ -3915,6 +3919,7 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     pPage->iNext = pPool->iFreeHead;
     pPool->iFreeHead = pPage->idx;
     pPage->enmKind = PGMPOOLKIND_FREE;
+    pPage->enmAccess = PGMPOOLACCESS_DONTCARE;
     pPage->GCPhys = NIL_RTGCPHYS;
     pPage->fReusedFlushPending = false;
 
@@ -4018,7 +4023,6 @@ static int pgmPoolMakeMoreFreePages(PPGMPOOL pPool, PGMPOOLKIND enmKind, uint16_
 #endif
 }
 
-
 /**
  * Allocates a page from the pool.
  *
@@ -4034,11 +4038,12 @@ static int pgmPoolMakeMoreFreePages(PPGMPOOL pPool, PGMPOOLKIND enmKind, uint16_
  *                      For 4MB and 2MB PD entries, it's the first address the
  *                      shadow PT is covering.
  * @param   enmKind     The kind of mapping.
+ * @param   enmAccess   Access type for the mapping (only relevant for big pages)
  * @param   iUser       The shadow page pool index of the user table.
  * @param   iUserTable  The index into the user table (shadowed).
  * @param   ppPage      Where to store the pointer to the page. NULL is stored here on failure.
  */
-int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, uint32_t iUserTable, PPPGMPOOLPAGE ppPage)
+int pgmPoolAllocEx(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS enmAccess, uint16_t iUser, uint32_t iUserTable, PPPGMPOOLPAGE ppPage)
 {
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     STAM_PROFILE_ADV_START(&pPool->StatAlloc, a);
@@ -4053,7 +4058,7 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
 #ifdef PGMPOOL_WITH_CACHE
     if (pPool->fCacheEnabled)
     {
-        int rc2 = pgmPoolCacheAlloc(pPool, GCPhys, enmKind, iUser, iUserTable, ppPage);
+        int rc2 = pgmPoolCacheAlloc(pPool, GCPhys, enmKind, enmAccess, iUser, iUserTable, ppPage);
         if (RT_SUCCESS(rc2))
         {
             pgmUnlock(pVM);
@@ -4093,6 +4098,7 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
      */
     pPool->cUsedPages++;                /* physical handler registration / pgmPoolTrackFlushGCPhysPTsSlow requirement. */
     pPage->enmKind = enmKind;
+    pPage->enmAccess = enmAccess;
     pPage->GCPhys = GCPhys;
     pPage->fSeenNonGlobal = false;      /* Set this to 'true' to disable this feature. */
     pPage->fMonitored = false;
@@ -4116,10 +4122,11 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
     if (RT_FAILURE(rc3))
     {
         pPool->cUsedPages--;
-        pPage->enmKind = PGMPOOLKIND_FREE;
-        pPage->GCPhys = NIL_RTGCPHYS;
-        pPage->iNext = pPool->iFreeHead;
-        pPool->iFreeHead = pPage->idx;
+        pPage->enmKind      = PGMPOOLKIND_FREE;
+        pPage->enmAccess    = PGMPOOLACCESS_DONTCARE;
+        pPage->GCPhys       = NIL_RTGCPHYS;
+        pPage->iNext        = pPool->iFreeHead;
+        pPool->iFreeHead    = pPage->idx;
         pgmUnlock(pVM);
         STAM_PROFILE_ADV_STOP(&pPool->StatAlloc, a);
         Log(("pgmPoolAlloc: returns %Rrc (Insert)\n", rc3));
@@ -4243,25 +4250,26 @@ void pgmR3PoolReset(PVM pVM)
         pPage->iMonitoredPrev = NIL_PGMPOOL_IDX;
         pPage->cModifications = 0;
 #endif
-        pPage->GCPhys    = NIL_RTGCPHYS;
-        pPage->enmKind   = PGMPOOLKIND_FREE;
+        pPage->GCPhys     = NIL_RTGCPHYS;
+        pPage->enmKind    = PGMPOOLKIND_FREE;
+        pPage->enmAccess  = PGMPOOLACCESS_DONTCARE;
         Assert(pPage->idx == i);
-        pPage->iNext     = i + 1;
-        pPage->fZeroed   = false;       /* This could probably be optimized, but better safe than sorry. */
+        pPage->iNext      = i + 1;
+        pPage->fZeroed    = false;       /* This could probably be optimized, but better safe than sorry. */
         pPage->fSeenNonGlobal = false;
-        pPage->fMonitored= false;
-        pPage->fCached   = false;
+        pPage->fMonitored = false;
+        pPage->fCached    = false;
         pPage->fReusedFlushPending = false;
 #ifdef PGMPOOL_WITH_USER_TRACKING
-        pPage->iUserHead = NIL_PGMPOOL_USER_INDEX;
+        pPage->iUserHead  = NIL_PGMPOOL_USER_INDEX;
 #else
-        pPage->fCR3Mix = false;
+        pPage->fCR3Mix    = false;
 #endif
 #ifdef PGMPOOL_WITH_CACHE
-        pPage->iAgeNext  = NIL_PGMPOOL_IDX;
-        pPage->iAgePrev  = NIL_PGMPOOL_IDX;
+        pPage->iAgeNext   = NIL_PGMPOOL_IDX;
+        pPage->iAgePrev   = NIL_PGMPOOL_IDX;
 #endif
-        pPage->cLocked   = 0;
+        pPage->cLocked    = 0;
     }
     pPool->aPages[pPool->cCurPages - 1].iNext = NIL_PGMPOOL_IDX;
     pPool->iFreeHead = PGMPOOL_IDX_FIRST;
