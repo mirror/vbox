@@ -627,6 +627,10 @@ static int VMXR0InjectEvent(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t intIn
     int         rc;
     uint32_t    iGate = VMX_EXIT_INTERRUPTION_INFO_VECTOR(intInfo);
 
+#ifdef VBOX_WITH_STATISTICS
+    STAM_COUNTER_INC(&pVCpu->hwaccm.s.paStatInjectedIrqsR0[iGate & MASK_INJECT_IRQ_STAT]);
+#endif
+
 #ifdef VBOX_STRICT
     if (iGate == 0xE)
         LogFlow(("VMXR0InjectEvent: Injecting interrupt %d at %RGv error code=%08x CR2=%RGv intInfo=%08x\n", iGate, (RTGCPTR)pCtx->rip, errCode, pCtx->cr2, intInfo));
