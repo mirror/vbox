@@ -79,10 +79,12 @@ void PACKSPU_APIENTRY packspu_Finish( void )
         packspuFlush( (void *) thread );
 
         if (writeback)
+        {
             if (pack_spu.swap)
                 crPackWritebackSWAP(&writeback);
             else
                 crPackWriteback(&writeback);
+        }
 
         while (writeback)
             crNetRecv();
