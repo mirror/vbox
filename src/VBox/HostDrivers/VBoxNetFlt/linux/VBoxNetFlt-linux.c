@@ -656,7 +656,7 @@ static void vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff 
     }
     else
     {
-        if (pBuf->ip_summed == CHECKSUM_PARTIAL)
+        if (pBuf->ip_summed == CHECKSUM_PARTIAL && pBuf->pkt_type == PACKET_OUTGOING)
             if (VBOX_SKB_CHECKSUM_HELP(pBuf))
             {
                 LogRel(("VBoxNetFlt: Failed to compute checksum, dropping the packet.\n"));
