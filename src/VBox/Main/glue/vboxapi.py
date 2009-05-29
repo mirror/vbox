@@ -249,5 +249,13 @@ class VirtualBoxManager:
     def initPerThread(self):
         self.platform.initPerThread()
 
+    def openMachineSession(self, machineId):
+         session = self.mgr.getSessionObject(self.vbox)
+         self.vbox.openSession(session, machineId)
+         return session
+
+    def closeMachineSession(self, session):
+        session.close()
+
     def deinitPerThread(self):
         self.platform.deinitPerThread()
