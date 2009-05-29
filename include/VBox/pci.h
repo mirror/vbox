@@ -279,6 +279,17 @@ DECLINLINE(void) PCIDevSetCommand(PPCIDEVICE pPciDev, uint16_t u16Command)
 
 
 /**
+ * Gets the command config register.
+ * @returns The command register value.
+ * @param   pPciDev         The PCI device.
+ */
+DECLINLINE(uint16_t) PCIDevGetCommand(PPCIDEVICE pPciDev)
+{
+    return RT_LE2H_U16(RT_MAKE_U16(pPciDev->config[VBOX_PCI_COMMAND], pPciDev->config[VBOX_PCI_COMMAND + 1]));
+}
+
+
+/**
  * Sets the status config register.
  *
  * @param   pPciDev         The PCI device.
