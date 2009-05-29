@@ -1469,6 +1469,20 @@ static void pciR3CommonRestoreConfig(PPCIDEVICE pDev, uint8_t const *pbSrcConfig
                 pDev->Int.s.pfnConfigWrite(pDev, off, u32Src, cb);
             }
         }
+
+    /*
+     * The device dependent registers. We will not use ConfigWrite here as we
+     * have no clue about the size of the registers, so the device is
+     * responsible for correctly restoring functionality governed by these
+     * registers.
+     */
+    for (uint32_t off = 0x40; off < sizeof(pDev->config); off++)
+        if (pbDstConfig[off] != pbSrcConfig[off])
+        {
+            LogRel(("PCI: %8s/%u: register %02x: %02x -> %02x\n",
+                    pDev->name, pDev->pDevIns->iInstance, off, pbDstConfig[off], pbSrcConfig[off])); /** @todo make this Log() later. */
+            pbDstConfig[off] = pbSrcConfig[off];
+        }
 }
 
 
