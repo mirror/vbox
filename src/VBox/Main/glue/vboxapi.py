@@ -98,7 +98,6 @@ class PlatformMSCOM:
             from win32com import universal
             from win32com.client import gencache, DispatchWithEvents, Dispatch
             from win32com.client import constants, getevents
-            import win32com.server.register
             import win32com
             import pythoncom
             import win32api
