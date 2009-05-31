@@ -152,7 +152,8 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
 #ifdef VBOX_WITH_SLIRP_ALIAS
         {
             int rc;
-            rc = LibAliasOut(LIST_FIRST(&instancehead), mtod(m, char *), m->m_len);
+            rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias), 
+                mtod(m, char *), m->m_len);
             Log2(("NAT: LibAlias return %d\n", rc));
         }
 #endif
@@ -253,7 +254,8 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
 #ifdef VBOX_WITH_SLIRP_ALIAS
         {
             int rc;
-            rc = LibAliasOut(LIST_FIRST(&instancehead), mtod(m, char *), m->m_len);
+            rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias), 
+                mtod(m, char *), m->m_len);
             Log2(("NAT: LibAlias return %d\n", rc));
         }
 #endif
@@ -268,7 +270,8 @@ sendorfree:
 #ifdef VBOX_WITH_SLIRP_ALIAS
             {
                 int rc;
-                rc = LibAliasOut(LIST_FIRST(&instancehead), mtod(m, char *), m->m_len);
+                rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias), 
+                    mtod(m, char *), m->m_len);
                 Log2(("NAT: LibAlias return %d\n", rc));
             }
 #endif

@@ -77,7 +77,9 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
 
     DEBUG_CALL("udp_input");
     DEBUG_ARG("m = %lx", (long)m);
+    ip = mtod(m, struct ip *);
     DEBUG_ARG("iphlen = %d", iphlen);
+    Log2(("%R[IP4] iphlen = %d\n", &ip->ip_dst, iphlen));
 
     udpstat.udps_ipackets++;
 
@@ -258,7 +260,8 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         m->m_len += iphlen;
         m->m_data -= iphlen;
         *ip = save_ip;
-        DEBUG_MISC((dfd,"udp tx errno = %d-%s\n", errno, strerror(errno)));
+        DEBUG_MISC((dfd,"NAT: UDP tx errno = %d-%s (on sent to %R[IP4])\n", errno, 
+                strerror(errno), &ip->ip_dst));
         icmp_error(pData, m, ICMP_UNREACH, ICMP_UNREACH_NET, 0, strerror(errno));
         /* in case we receive ICMP on this socket we'll aware that ICMP has been already sent to host*/
         so->so_m = NULL; 
@@ -275,6 +278,8 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     return;
 
 bad:
+    Log2(("NAT: UDP datagram to %R[IP4] with size(%d) claimed as bad\n", 
+        &ip->ip_dst, ip->ip_len));
     m_freem(pData, m);
     return;
 }

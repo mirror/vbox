@@ -227,6 +227,7 @@ typedef struct NATState
 #endif
 #ifdef VBOX_WITH_SLIRP_ALIAS
     LIST_HEAD(, libalias) instancehead;
+    struct libalias *proxy_alias;
 #endif
     STAMPROFILE StatFill;
     STAMPROFILE StatPoll;

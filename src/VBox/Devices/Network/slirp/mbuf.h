@@ -73,6 +73,9 @@ struct m_hdr
 
     caddr_t mh_data;           /* Location of data */
     int     mh_len;            /* Amount of data in this mbuf */
+#ifndef VBOX_SLIRP_ALIAS
+    struct libalias *mh_la;     /*Real freebsd store hocksin similar way*/
+#endif
 };
 
 /*
@@ -110,6 +113,9 @@ struct mbuf
 #define m_dat           M_dat.m_dat_
 #define m_ext           M_dat.m_ext_
 #define m_so            m_hdr.mh_so
+#ifdef VBOX_WITH_SLIRP_ALIAS
+#define m_la            m_hdr.mh_la
+#endif
 
 #define ifq_prev m_prev
 #define ifq_next m_next

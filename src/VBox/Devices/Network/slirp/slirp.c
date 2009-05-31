@@ -685,18 +685,17 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
 
 #ifdef VBOX_WITH_SLIRP_ALIAS
     {
-        struct libalias *lib = NULL; 
         int flags = 0;
-        lib = LibAliasInit(pData, NULL);
-        if (lib == NULL)
+        pData->proxy_alias = LibAliasInit(pData, NULL);
+        if (pData->proxy_alias == NULL)
         {
             LogRel(("NAT: LibAlias default rule wasn't initialized\n"));
             AssertMsgFailed(("NAT: LibAlias default rule wasn't initialized\n"));
         }
-        flags = LibAliasSetMode(lib, 0, 0);
+        flags = LibAliasSetMode(pData->proxy_alias, 0, 0);
         flags |= PKT_ALIAS_LOG; /* set logging */
-        flags = LibAliasSetMode(lib, flags, ~0);
-        LibAliasSetAddress(lib, special_addr);
+        flags = LibAliasSetMode(pData->proxy_alias, flags, ~0);
+        LibAliasSetAddress(pData->proxy_alias, special_addr);
         ftp_alias_load();
         
     }
@@ -1540,12 +1539,13 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
     static bool fWarnedIpv6;
     struct ethhdr *eh = (struct ethhdr*)pkt;
 
+    Log2(("NAT: slirp_input %d\n", pkt_len));
     if (pkt_len < ETH_HLEN)
     {
         LogRel(("NAT: packet having size %d has been ingnored\n", pkt_len));
         return;
     }
-    Log4(("NAT: in:%R[ether]->%R[ether]\n", eh->h_source, eh->h_dest));
+    Log4(("NAT: in:%R[ether]->%R[ether]\n", &eh->h_source, &eh->h_dest));
 #ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
     if (memcmp(eh->h_source, special_ethaddr, ETH_ALEN) == 0) 
     {
@@ -1581,8 +1581,7 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
             /* Update time. Important if the network is very quiet, as otherwise
              * the first outgoing connection gets an incorrect timestamp. */
             updtime(pData);
-            m->m_data += ETH_HLEN;
-            m->m_len -= ETH_HLEN;
+            m_adj(m, ETH_HLEN);
             ip_input(pData, m);
             break;
         case ETH_P_IPV6:
@@ -1628,7 +1627,11 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m)
         memcpy(eh->h_dest, eh->h_source, ETH_ALEN);
         memcpy(eh->h_source, special_ethaddr, ETH_ALEN);
         Assert(memcmp(eh->h_dest, special_ethaddr, ETH_ALEN) != 0);
-        Assert(memcmp(eh->h_dest, zerro_ethaddr, ETH_ALEN) != 0);
+        if (memcmp(eh->h_dest, zerro_ethaddr, ETH_ALEN) == 0)
+        {
+            /* don't do anything */
+            goto done;
+        }
     }
 #endif
     eh->h_proto = htons(eth_proto);
@@ -1637,6 +1640,7 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m)
 #else
     memcpy(buf, mtod(m, uint8_t *), m->m_len);
     slirp_output(pData->pvUser, NULL, buf, m->m_len);
+done:
     m_free(pData, m);
 #endif
 }
@@ -1645,6 +1649,16 @@ int slirp_redir(PNATState pData, int is_udp, int host_port,
                 struct in_addr guest_addr, int guest_port)
 {
     struct socket *so;
+#ifdef VBOX_WITH_SLIRP_ALIAS
+    struct alias_link *link;
+    struct libalias *lib;
+    int flags;
+    struct sockaddr sa;
+    struct sockaddr_in *psin;
+    socklen_t socketlen;
+    struct in_addr alias;
+    int rc;
+#endif
     Log2(("NAT: set redirect %s hp:%d gp:%d\n", (is_udp?"UDP":"TCP"), host_port, guest_port));
     if (is_udp)
     {
@@ -1656,8 +1670,50 @@ int slirp_redir(PNATState pData, int is_udp, int host_port,
         so = solisten(pData, htons(host_port), guest_addr.s_addr,
                       htons(guest_port), 0);
     }
+#ifndef VBOX_WITH_SLIRP_ALIAS
     Log2(("NAT: redirecting socket %R[natsock]\n", so));
     return (so != NULL ? 0 : -1);
+#else
+
+    psin = (struct sockaddr_in *)&sa;
+    psin->sin_family = AF_INET;
+    psin->sin_port = 0;
+    psin->sin_addr.s_addr = INADDR_ANY;
+    socketlen = sizeof(struct sockaddr);
+    
+    rc = getsockname(so->s, &sa, &socketlen); 
+    if (rc < 0 || sa.sa_family != AF_INET) 
+    {
+        Log(("NAT: can't get socket's name\n"));
+        return 1;
+    }
+
+    psin = (struct sockaddr_in *)&sa;
+    
+#if 1
+    lib = LibAliasInit(pData, NULL);
+    flags = LibAliasSetMode(lib, 0, 0);
+    flags |= PKT_ALIAS_LOG; /* set logging */
+    flags |= PKT_ALIAS_REVERSE; /* set logging */
+    flags = LibAliasSetMode(lib, flags, ~0);
+#else
+    lib = LIST_FIRST(&instancehead);
+#endif
+
+    alias.s_addr =  htonl(ntohl(guest_addr.s_addr) | CTL_ALIAS);
+    link = LibAliasRedirectPort(lib, psin->sin_addr, htons(host_port),
+        alias, htons(guest_port),
+        special_addr,  -1, /* not very clear for now*/
+        (is_udp ? IPPROTO_UDP : IPPROTO_TCP));
+    if (link == NULL) 
+    {
+        Log(("NAT: can't create redirect\n"));
+        return 1;
+    }
+    so->so_la = lib;
+    
+    return 0;
+#endif
 }
 
 int slirp_add_exec(PNATState pData, int do_pty, const char *args, int addr_low_byte,
@@ -1732,7 +1788,7 @@ uint16_t slirp_get_service(int proto, uint16_t dport, uint16_t sport)
     hsport = ntohs(sport);
     Log2(("proto: %d, dport: %d sport: %d\n", proto, hdport, hsport));
     service = 0;
-#if 1
+#if 0
     /* Always return 0 here */
     switch (hdport)
     {
