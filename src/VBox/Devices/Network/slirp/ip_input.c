@@ -80,7 +80,7 @@ ip_input(PNATState pData, struct mbuf *m)
     DEBUG_CALL("ip_input");
     DEBUG_ARG("m = %lx", (long)m);
     ip = mtod(m, struct ip *);
-    DEBUG_ARG("ip_dst=%R[IP4](len:%d) m_len = %d", &ip->ip_dst, ntohs(ip->ip_len), m->m_len);
+    Log2(("ip_dst=%R[IP4](len:%d) m_len = %d", &ip->ip_dst, ntohs(ip->ip_len), m->m_len));
     Log2(("ip_dst=%R[IP4](len:%d) m_len = %d\n", &ip->ip_dst, ntohs(ip->ip_len), m->m_len));
 
     ipstat.ips_total++;
