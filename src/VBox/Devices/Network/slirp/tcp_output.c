@@ -600,6 +600,10 @@ send:
             }
         }
 #endif
+#ifdef VBOX_WITH_SLIRP_ALIAS
+        if(so->so_la != NULL)
+            m->m_la = so->so_la;
+#endif
         error = ip_output(pData, so, m);
 
 #if 0

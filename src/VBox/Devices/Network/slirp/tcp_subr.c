@@ -486,6 +486,9 @@ tcp_connect(PNATState pData, struct socket *inso)
         }
         so->so_laddr = inso->so_laddr;
         so->so_lport = inso->so_lport;
+#ifdef VBOX_WITH_SLIRP_ALIAS
+        so->so_la = inso->so_la;
+#endif
     }
 
     (void) tcp_mss(pData, sototcpcb(so), 0);

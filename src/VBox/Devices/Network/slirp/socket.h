@@ -86,6 +86,10 @@ struct socket
     /* storage of source ether address */
     unsigned char so_ethaddr[6]; 
 #endif
+#ifdef VBOX_WITH_SLIRP_ALIAS
+    /* required for port-forwarding */
+    struct libalias *so_la;
+#endif
 };
 
 #ifdef VBOX_WITH_SLIRP_MT
