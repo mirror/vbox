@@ -804,8 +804,8 @@ typedef const PDMUSBHUB *PCPDMUSBHUB;
 /** Pointer to a PDM Async I/O template. */
 typedef struct PDMASYNCCOMPLETIONTEMPLATE *PPDMASYNCCOMPLETIONTEMPLATE;
 
-/** Pointer to the main PDM Async completion structure. */
-typedef struct PDMASYNCCOMPLETIONMANAGER *PPDMASYNCCOMPLETIONMANAGER;
+/** Pointer to the main PDM Async completion endpoint class. */
+typedef struct PDMASYNCCOMPLETIONEPCLASS *PPDMASYNCCOMPLETIONEPCLASS;
 
 
 /**
@@ -896,10 +896,13 @@ typedef struct PDM
     /** Tail of the PDM Thread list. (singly linked) */
     R3PTRTYPE(PPDMTHREAD)           pThreadsTail;
 
-    /** Head of the asychronous tasks managers. (singly linked) */
-    R3PTRTYPE(PPDMASYNCCOMPLETIONMANAGER) pAsyncCompletionManagerHead;
+    /** @name   PDM Async Completion
+     * @{ */
+    /** Pointer to the array of supported endpoint classes. */
+    R3PTRTYPE(PPDMASYNCCOMPLETIONEPCLASS *)  papAsyncCompletionEndpointClass;
     /** Head of the templates. (singly linked) */
     R3PTRTYPE(PPDMASYNCCOMPLETIONTEMPLATE) pAsyncCompletionTemplates;
+    /** @} */
 
     /** @name   VMM device heap
      * @{ */

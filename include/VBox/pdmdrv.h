@@ -683,10 +683,12 @@ typedef struct PDMDRVHLP
      * @param   pDrvIns         The driver instance.
      * @param   ppTemplate      Where to store the template pointer on success.
      * @param   pfnCompleted    The completion callback routine.
+     * @param   pvTemplateUser  Template user argument.
      * @param   pszDesc         Description.
      */
     DECLR3CALLBACKMEMBER(int, pfnPDMAsyncCompletionTemplateCreate,(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate,
-                                                                   PFNPDMASYNCCOMPLETEDRV pfnCompleted, const char *pszDesc));
+                                                                   PFNPDMASYNCCOMPLETEDRV pfnCompleted, void *pvTemplateUser,
+                                                                   const char *pszDesc));
 #endif
 
     /** Just a safety precaution. */
@@ -905,9 +907,9 @@ DECLINLINE(VMSTATE) PDMDrvHlpVMState(PPDMDRVINS pDrvIns)
  * @copydoc PDMDRVHLP::pfnPDMAsyncCompletionTemplateCreate
  */
 DECLINLINE(int) PDMDrvHlpPDMAsyncCompletionTemplateCreate(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate,
-                                                          PFNPDMASYNCCOMPLETEDRV pfnCompleted, const char *pszDesc)
+                                                          PFNPDMASYNCCOMPLETEDRV pfnCompleted, void *pvTemplateUser, const char *pszDesc)
 {
-    return pDrvIns->pDrvHlp->pfnPDMAsyncCompletionTemplateCreate(pDrvIns, ppTemplate, pfnCompleted, pszDesc);
+    return pDrvIns->pDrvHlp->pfnPDMAsyncCompletionTemplateCreate(pDrvIns, ppTemplate, pfnCompleted, pvTemplateUser, pszDesc);
 }
 #endif
 
