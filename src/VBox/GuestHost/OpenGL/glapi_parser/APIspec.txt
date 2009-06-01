@@ -8864,14 +8864,14 @@ category    2.0
 props       get
 chromium    extpack
 
-name        glUniform1f
+name        Uniform1f
 return      void
 param       location    GLint
 param       v0          GLfloat
 category    2.0
 chromium    extpack
 
-name        glUniform2f
+name        Uniform2f
 return      void
 param       location    GLint
 param       v0          GLfloat
@@ -8879,7 +8879,7 @@ param       v1          GLfloat
 category    2.0
 chromium    extpack
 
-name        glUniform3f
+name        Uniform3f
 return      void
 param       location    GLint
 param       v0          GLfloat
@@ -8888,7 +8888,7 @@ param       v2          GLfloat
 category    2.0
 chromium    extpack
 
-name        glUniform4f
+name        Uniform4f
 return      void
 param       location    GLint
 param       v0          GLfloat
@@ -8898,14 +8898,14 @@ param       v3          GLfloat
 category    2.0
 chromium    extpack
 
-name        glUniform1i
+name        Uniform1i
 return      void
 param       location    GLint
 param       v0          GLint
 category    2.0
 chromium    extpack
 
-name        glUniform2i
+name        Uniform2i
 return      void
 param       location    GLint
 param       v0          GLint
@@ -8913,7 +8913,7 @@ param       v1          GLint
 category    2.0
 chromium    extpack
 
-name        glUniform3i
+name        Uniform3i
 return      void
 param       location    GLint
 param       v0          GLint
@@ -8922,7 +8922,7 @@ param       v2          GLint
 category    2.0
 chromium    extpack
 
-name        glUniform4i
+name        Uniform4i
 return      void
 param       location    GLint
 param       v0          GLint
@@ -8932,7 +8932,7 @@ param       v3          GLint
 category    2.0
 chromium    extpack
 
-name        glUniform1fv
+name        Uniform1fv
 return      void
 param       location    GLint
 param       count       GLsizei
@@ -8940,7 +8940,7 @@ param       value       const GLfloat *
 category    2.0
 chromium    extpack
 
-name        glUniform2fv
+name        Uniform2fv
 return      void
 param       location    GLint
 param       count       GLsizei
@@ -8948,7 +8948,7 @@ param       value       const GLfloat *
 category    2.0
 chromium    extpack
 
-name        glUniform3fv
+name        Uniform3fv
 return      void
 param       location    GLint
 param       count       GLsizei
@@ -8956,7 +8956,7 @@ param       value       const GLfloat *
 category    2.0
 chromium    extpack
 
-name        glUniform4fv
+name        Uniform4fv
 return      void
 param       location    GLint
 param       count       GLsizei
@@ -8964,7 +8964,7 @@ param       value       const GLfloat *
 category    2.0
 chromium    extpack
 
-name        glUniform1iv
+name        Uniform1iv
 return      void
 param       location    GLint
 param       count       GLsizei
@@ -8972,7 +8972,7 @@ param       value       const GLint *
 category    2.0
 chromium    extpack
 
-name        glUniform2iv
+name        Uniform2iv
 return      void
 param       location    GLint
 param       count       GLsizei
@@ -8980,7 +8980,7 @@ param       value       const GLint *
 category    2.0
 chromium    extpack
 
-name        glUniform3iv
+name        Uniform3iv
 return      void
 param       location    GLint
 param       count       GLsizei
@@ -8988,7 +8988,7 @@ param       value       const GLint *
 category    2.0
 chromium    extpack
 
-name        glUniform4iv
+name        Uniform4iv
 return      void
 param       location    GLint
 param       count       GLsizei
@@ -8996,7 +8996,7 @@ param       value       const GLint *
 category    2.0
 chromium    extpack
 
-name        glUniformMatrix2fv
+name        UniformMatrix2fv
 return      void
 param       location    GLint
 param       count       GLsizei
@@ -9005,7 +9005,7 @@ param       value       const GLfloat *
 category    2.0
 chromium    extpack
 
-name        glUniformMatrix3fv
+name        UniformMatrix3fv
 return      void
 param       location    GLint
 param       count       GLsizei
@@ -9014,7 +9014,7 @@ param       value       const GLfloat *
 category    2.0
 chromium    extpack
 
-name        glUniformMatrix4fv
+name        UniformMatrix4fv
 return      void
 param       location    GLint
 param       count       GLsizei
