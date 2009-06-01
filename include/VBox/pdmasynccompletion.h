@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007 Sun Microsystems, Inc.
+ * Copyright (C) 2007-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -52,19 +52,19 @@ typedef struct PDMASYNCCOMPLETIONTASK *PPDMASYNCCOMPLETIONTASK;
 /** Pointer to a PDM async completion task handle pointer. */
 typedef PPDMASYNCCOMPLETIONTASK *PPPDMASYNCCOMPLETIONTASK;
 
+/** Pointer to a PDM async completion endpoint handle. */
+typedef struct PDMASYNCCOMPLETIONENDPOINT *PPDMASYNCCOMPLETIONENDPOINT;
+/** Pointer to a PDM async completion endpoint handle pointer. */
+typedef PPDMASYNCCOMPLETIONENDPOINT *PPPDMASYNCCOMPLETIONENDPOINT;
+
 
 /**
  * Completion callback for devices.
  *
  * @param   pDevIns     The device instance.
- * @param   pTask       Pointer to the completion task.
- *                      The task is at the time of the call setup to be resumed. So, the callback must
- *                      call PDMR3AsyncCompletionSuspend or PDMR3AsyncCompletionDestroy if any other
- *                      action is wanted upon return.
- * @param   pvCtx       Pointer to any additional, OS specific, completion context. TBD.
  * @param   pvUser      User argument.
  */
-typedef DECLCALLBACK(void) FNPDMASYNCCOMPLETEDEV(PPDMDEVINS pDevIns, PPDMASYNCCOMPLETIONTASK pTask, void *pvCtx, void *pvUser);
+typedef DECLCALLBACK(void) FNPDMASYNCCOMPLETEDEV(PPDMDEVINS pDevIns, void *pvUser);
 /** Pointer to a FNPDMASYNCCOMPLETEDEV(). */
 typedef FNPDMASYNCCOMPLETEDEV *PFNPDMASYNCCOMPLETEDEV;
 
@@ -72,15 +72,11 @@ typedef FNPDMASYNCCOMPLETEDEV *PFNPDMASYNCCOMPLETEDEV;
 /**
  * Completion callback for drivers.
  *
- * @param   pDrvIns     The driver instance.
- * @param   pTask       Pointer to the completion task.
- *                      The task is at the time of the call setup to be resumed. So, the callback must
- *                      call PDMR3AsyncCompletionSuspend or PDMR3AsyncCompletionDestroy if any other
- *                      action is wanted upon return.
- * @param   pvCtx       Pointer to any additional, OS specific, completion context. TBD.
- * @param   pvUser      User argument.
+ * @param   pDrvIns        The driver instance.
+ * @param   pvTemplateUser User argument given when creating the template.
+ * @param   pvUser         User argument given during request initiation.
  */
-typedef DECLCALLBACK(void) FNPDMASYNCCOMPLETEDRV(PPDMDRVINS pDrvIns, PPDMASYNCCOMPLETIONTASK pTask, void *pvCtx, void *pvUser);
+typedef DECLCALLBACK(void) FNPDMASYNCCOMPLETEDRV(PPDMDRVINS pDrvIns, void *pvTemplateUser, void *pvUser);
 /** Pointer to a FNPDMASYNCCOMPLETEDRV(). */
 typedef FNPDMASYNCCOMPLETEDRV *PFNPDMASYNCCOMPLETEDRV;
 
@@ -89,14 +85,9 @@ typedef FNPDMASYNCCOMPLETEDRV *PFNPDMASYNCCOMPLETEDRV;
  * Completion callback for USB devices.
  *
  * @param   pUsbIns     The USB device instance.
- * @param   pTask       Pointer to the completion task.
- *                      The task is at the time of the call setup to be resumed. So, the callback must
- *                      call PDMR3AsyncCompletionSuspend or PDMR3AsyncCompletionDestroy if any other
- *                      action is wanted upon return.
- * @param   pvCtx       Pointer to any additional, OS specific, completion context. TBD.
  * @param   pvUser      User argument.
  */
-typedef DECLCALLBACK(void) FNPDMASYNCCOMPLETEUSB(PPDMUSBINS pUsbIns, PPDMASYNCCOMPLETIONTASK pTask, void *pvCtx, void *pvUser);
+typedef DECLCALLBACK(void) FNPDMASYNCCOMPLETEUSB(PPDMUSBINS pUsbIns, void *pvUser);
 /** Pointer to a FNPDMASYNCCOMPLETEUSB(). */
 typedef FNPDMASYNCCOMPLETEUSB *PFNPDMASYNCCOMPLETEUSB;
 
@@ -105,15 +96,10 @@ typedef FNPDMASYNCCOMPLETEUSB *PFNPDMASYNCCOMPLETEUSB;
  * Completion callback for internal.
  *
  * @param   pVM         Pointer to the shared VM structure.
- * @param   pTask       Pointer to the completion task.
- *                      The task is at the time of the call setup to be resumed. So, the callback must
- *                      call PDMR3AsyncCompletionSuspend or PDMR3AsyncCompletionDestroy if any other
- *                      action is wanted upon return.
- * @param   pvCtx       Pointer to any additional, OS specific, completion context. TBD.
  * @param   pvUser      User argument for the task.
  * @param   pvUser2     User argument for the template.
  */
-typedef DECLCALLBACK(void) FNPDMASYNCCOMPLETEINT(PVM pVM, PPDMASYNCCOMPLETIONTASK pTask, void *pvCtx, void *pvUser, void *pvUser2);
+typedef DECLCALLBACK(void) FNPDMASYNCCOMPLETEINT(PVM pVM, void *pvUser, void *pvUser2);
 /** Pointer to a FNPDMASYNCCOMPLETEINT(). */
 typedef FNPDMASYNCCOMPLETEINT *PFNPDMASYNCCOMPLETEINT;
 
@@ -142,9 +128,10 @@ VMMR3DECL(int) PDMR3AsyncCompletionTemplateCreateDevice(PVM pVM, PPDMDEVINS pDev
  * @param   pDrvIns         The driver instance.
  * @param   ppTemplate      Where to store the template pointer on success.
  * @param   pfnCompleted    The completion callback routine.
+ * @param   pvTemplateUser  Template user argument.
  * @param   pszDesc         Description.
  */
-VMMR3DECL(int) PDMR3AsyncCompletionTemplateCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEDRV pfnCompleted, const char *pszDesc);
+VMMR3DECL(int) PDMR3AsyncCompletionTemplateCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEDRV pfnCompleted, void *pvTemplateUser, const char *pszDesc);
 
 /**
  * Creates a async completion template for a USB device instance.
@@ -221,324 +208,118 @@ VMMR3DECL(int) PDMR3AsyncCompletionTemplateDestroyDriver(PVM pVM, PPDMDRVINS pDr
  */
 VMMR3DECL(int) PDMR3AsyncCompletionTemplateDestroyUsb(PVM pVM, PPDMUSBINS pUsbIns);
 
-/**
- * Async completion task type
- */
-typedef enum PDMASYNCCOMPLETIONTASKTYPE
-{
-    /** Socket. */
-    PDMASYNCCOMPLETIONTASKTYPE_SOCKET = 0,
-    /** Host OS specific. */
-    PDMASYNCCOMPLETIONTASKTYPE_HOST,
-    /** Number of supported backends. This has to be last entry! */
-    PDMASYNCCOMPLETIONTASKTYPE_SUPPORTED
-} PDMASYNCCOMPLETIONTASKTYPE;
 
 /**
- * Get the backend name of a task type.
- *
- * @returns Name of the backend.
- * @param   enmTaskType    The task type to get the backend name from.
- */
-VMMR3DECL(const char *) PDMR3AsyncCompletionGetBackendName(PDMASYNCCOMPLETIONTASKTYPE enmTaskType);
-
-/**
- * Creates a completion task.
+ * Opens a file as a async completion endpoint.
  *
  * @returns VBox status code.
+ * @param   ppEndpoint      Where to store the opaque endpoint handle on success.
+ * @param   pszFilename     Path to the file which is to be opened. (UTF-8)
+ * @param   fFlags          Open flags, see grp_pdmacep_file_flags.
+ * @param   pTemplate       Handle to the completion callback template to use
+ *                          for this end point.
+ */
+VMMR3DECL(int) PDMR3AsyncCompletionEpCreateForFile(PPPDMASYNCCOMPLETIONENDPOINT ppEndpoint,
+                                                   const char *pszFilename, uint32_t fFlags,
+                                                   PPDMASYNCCOMPLETIONTEMPLATE pTemplate);
+
+/** @defgroup grp_pdmacep_file_flags Flags for PDMR3AsyncCompletionEpCreateForFile
+ * @{ */
+/** Open the file in read-only mode. */
+#define PDMACEP_FILE_FLAGS_READ_ONLY    RT_BIT_32(0)
+/** whether file content should be cached by the endpoint. */
+#define PDMACEP_FILE_FLAGS_CACHING      RT_BIT_32(1)
+/** @} */
+
+/**
+ * Closes a endpoint waiting for any pending tasks to finish.
+ *
+ * @returns nothing.
+ * @param   pEndpoint       Handle of the endpoint.
+ */
+VMMR3DECL(void) PDMR3AsyncCompletionEpClose(PPDMASYNCCOMPLETIONENDPOINT pEndpoint);
+
+/**
+ * Creates a read task on the given endpoint.
+ *
+ * @returns VBox status code.
+ * @param   pEndpoint       The file endpoint to read from.
+ * @param   off             Where to start reading from.
+ * @param   paSegments      Scatter gather list to store the data in.
+ * @param   cSegments       Number of segments in the list.
+ * @param   cbRead          The overall number of bytes to read.
+ * @param   pvUser          Opaque user data returned in the completion callback
+ *                          upon completion of the task.
  * @param   ppTask          Where to store the task handle on success.
- * @param   pTemplate       The async completion template.
- * @param   enmType         The type of the task.
- * @param   pvCtx           The task specific context.
- * @param   pvUser          The user argument for the callback.
  */
-VMMR3DECL(int) PDMR3AsyncCompletionTaskCreate(PPPDMASYNCCOMPLETIONTASK ppTask, PPDMASYNCCOMPLETIONTEMPLATE pTemplate, PDMASYNCCOMPLETIONTASKTYPE enmType, void *pvCtx, void *pvUser);
+VMMR3DECL(int) PDMR3AsyncCompletionEpRead(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, RTFOFF off,
+                                          PCPDMDATASEG paSegments, size_t cSegments,
+                                          size_t cbRead, void *pvUser,
+                                          PPPDMASYNCCOMPLETIONTASK ppTask);
 
 /**
- * Submit an array of tasks for processing
- * The tasks must have a type specific context.
+ * Creates a write task on the given endpoint.
  *
  * @returns VBox status code.
- * @param   apTasks  Array of tasks which should be processed.
- * @param   cTasks   Number of tasks in the array which should be processed.
+ * @param   pEndpoint       The file endpoint to write to.
+ * @param   off             Where to start writing at.
+ * @param   paSegments      Scatter gather list of the data to write.
+ * @param   cSegments       Number of segments in the list.
+ * @param   cbWrite         The overall number of bytes to write.
+ * @param   pvUser          Opaque user data returned in the completion callback
+ *                          upon completion of the task.
+ * @param   ppTask          Where to store the task handle on success.
  */
-VMMR3DECL(int) PDMR3AsyncCompletionTaskSubmit(PPDMASYNCCOMPLETIONTASK apTasks[], unsigned cTasks);
+VMMR3DECL(int) PDMR3AsyncCompletionEpWrite(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, RTFOFF off,
+                                           PCPDMDATASEG paSegments, size_t cSegments,
+                                           size_t cbWrite, void *pvUser,
+                                           PPPDMASYNCCOMPLETIONTASK ppTask);
 
 /**
- * Sets the user argument of a completion task.
+ * Creates a flush task on the given endpoint.
+ *
+ * Every read and write task initiated before the flush task is
+ * finished upon completion of this task.
  *
  * @returns VBox status code.
- * @param   pTask           The async completion task.
- * @param   pvUser          The user argument for the callback.
+ * @param   pEndpoint       The file endpoint to flush.
+ * @param   pvUser          Opaque user data returned in the completion callback
+ *                          upon completion of the task.
+ * @param   ppTask          Where to store the task handle on success.
  */
-VMMR3DECL(int) PDMR3AsyncCompletionTaskSetUserArg(PPDMASYNCCOMPLETIONTASK pTask, void *pvUser);
+VMMR3DECL(int) PDMR3AsyncCompletionEpFlush(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
+                                           void *pvUser,
+                                           PPPDMASYNCCOMPLETIONTASK ppTask);
 
 /**
- * Suspends a async completion task.
+ * Queries the size of an endpoint.
+ * Not that some endpoints may not support this and will return an error
+ * (sockets for example).
  *
- * @returns VBox status codes:
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_PDM_ASYNC_COMPLETION_ALREADY_SUSPENDED if already suspended.
- * @retval  VERR_INVALID_HANDLE if pTask is invalid (asserts).
- * @param   pTask           The async completion task.
+ * @returns VBox status code.
+ * @retval  VERR_NOT_SUPPORTED if the endpoint does not support this operation.
+ * @param   pEndpoint       The file endpoint.
+ * @param   pcbSize         Where to store the size of the endpoint.
  */
-VMMR3DECL(int) PDMR3AsyncCompletionTaskSuspend(PPDMASYNCCOMPLETIONTASK pTask);
-
-/**
- * Suspends a async completion task.
- *
- * @returns VBox status codes:
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_PDM_ASYNC_COMPLETION_NOT_SUSPENDED if not suspended.
- * @retval  VERR_INVALID_HANDLE if pTask is invalid (asserts).
- * @param   pTask           The async completion task.
- */
-VMMR3DECL(int) PDMR3AsyncCompletionTaskResume(PPDMASYNCCOMPLETIONTASK pTask);
+VMMR3DECL(int) PDMR3AsyncCompletionEpGetSize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
+                                             uint64_t *pcbSize);
 
 /**
  * Cancels a async completion task.
- * The task doesn't have to be suspended.
+ *
+ * If you want to use this method, you have to take great create to make sure
+ * you will never attempt cancel a task which has been completed. Since there is
+ * no reference counting or anything on the task it self, you have to serialize
+ * the cancelation and completion paths such that the aren't racing one another.
  *
  * @returns VBox status code
- * @param   pTask The Task to cancel.
+ * @param   pTask           The Task to cancel.
  */
 VMMR3DECL(int) PDMR3AsyncCompletionTaskCancel(PPDMASYNCCOMPLETIONTASK pTask);
-
-/**
- * Destroys a async completion task.
- *
- * The task doesn't have to be suspended or anything.
- *
- * @returns VBox status codes:
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_INVALID_HANDLE if pTask is invalid but not NIL (asserts).
- * @param   pTask           The async completion task.
- */
-VMMR3DECL(int) PDMR3AsyncCompletionTaskDestroy(PPDMASYNCCOMPLETIONTASK pTask);
-
-/*
- * Host specific wrapper functions for the above API
- */
-#if defined(RT_OS_LINUX)
-
-struct iocb;
-
-/**
- * Creates a completion task for an IO operation on Linux.
- *
- * The pvCtx callback argument will be pIoCB.
- *
- * @returns VBox status code.
- * @param   ppTask          Where to store the task handle on success.
- * @param   pTemplate       The async completion template.
- * @param   pIoCB           The asynchronous I/O control block to wait for.
- * @param   pvUser          The user argument for the callback.
- */
-DECLINLINE(int) PDMR3AsyncCompletionCreateLnxIO(PPPDMASYNCCOMPLETIONTASK ppTask, PPDMASYNCCOMPLETIONTEMPLATE pTemplate, const struct iocb *pIoCB, void *pvUser)
-{
-    int rc = VINF_SUCCESS;
-    PPDMASYNCCOMPLETIONTASK pTask;
-
-    rc = PDMR3AsyncCompletionTaskCreate(&pTask, pTemplate, PDMASYNCCOMPLETIONTASKTYPE_HOST, (void *)pIoCB, pvUser);
-    if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("Creating Linux task failed\n"));
-        return rc;
-    }
-
-    *ppTask = pTask;
-
-    return rc;
-}
-#endif /* RT_OS_LINUX */
-
-#if defined(RT_OS_SOLARIS) || defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD) || defined(RT_OS_LINUX)
-
-struct aiocb;
-
-/**
- * Creates a completion task for an AIO operation on Unix like systems like Solaris, Darwin or FreeBSD.
- * This method must be used too on Linux if the real asynchronous solution is not available.
- *
- * The pvCtx callback argument will be pAioCB.
- *
- * @returns VBox status code.
- * @param   ppTask          Where to store the task handle on success.
- * @param   pTemplate       The async completion template.
- * @param   pIoCB           The asynchronous I/O control block to wait for.
- * @param   pvUser          The user argument for the callback.
- */
-DECLINLINE(int) PDMR3AsyncCompletionCreateUnxAIO(PPPDMASYNCCOMPLETIONTASK ppTask, PPDMASYNCCOMPLETIONTEMPLATE pTemplate, const struct aiocb *pAioCB, void *pvUser)
-{
-    int rc = VINF_SUCCESS;
-    PPDMASYNCCOMPLETIONTASK pTask;
-
-    rc = PDMR3AsyncCompletionTaskCreate(&pTask, pTemplate, PDMASYNCCOMPLETIONTASKTYPE_HOST, (void *)pAioCB, pvUser);
-    if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("Creating AIO task failed\n"));
-        return rc;
-    }
-
-    *ppTask = pTask;
-
-    return rc;
-}
-#endif /* RT_OS_SOLARIS || RT_OS_DARWIN || RT_OS_FREEBSD || RT_OS_LINUX */
-
-#ifdef RT_OS_OS2
-/**
- * Creates a completion task for an event semaphore on OS/2.
- *
- * The pvCtx callback argument will be hev.
- *
- * @returns VBox status code.
- * @param   ppTask          Where to store the task handle on success.
- * @param   pTemplate       The async completion template.
- * @param   hev             The handle of the event semaphore to wait on.
- * @param   pvUser          The user argument for the callback.
- */
-DECLINLINE(int) PDMR3AsyncCompletionCreateOs2Event(PPPDMASYNCCOMPLETIONTASK ppTask, PPDMASYNCCOMPLETIONTEMPLATE pTemplate, unsigned long hev, void *pvUser)
-{
-    int rc = VINF_SUCCESS;
-    PPDMASYNCCOMPLETIONTASK pTask;
-
-    rc = PDMR3AsyncCompletionTaskCreate(&pTask, pTemplate, PDMASYNCCOMPLETIONTASKTYPE_HOST, (void *)&hev, pvUser);
-    if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("Creating OS/2 task failed\n"));
-        return rc;
-    }
-
-    *ppTask = pTask;
-
-    return rc;
-}
-#endif /* RT_OS_OS2 */
-
-#ifdef RT_OS_WINDOWS
-/**
- * Creates a completion task for an object on Windows.
- *
- * The pvCtx callback argument will be hObject.
- *
- * @returns VBox status code.
- * @param   ppTask          Where to store the task handle on success.
- * @param   pTemplate       The async completion template.
- * @param   hObject         The object to wait for.
- * @param   pvUser          The user argument for the callback.
- */
-DECLINLINE(int) PDMR3AsyncCompletionCreateWinObject(PPPDMASYNCCOMPLETIONTASK ppTask, PPDMASYNCCOMPLETIONTEMPLATE pTemplate, void *hObject, void *pvUser)
-{
-    int rc = VINF_SUCCESS;
-    PPDMASYNCCOMPLETIONTASK pTask;
-
-    rc = PDMR3AsyncCompletionTaskCreate(&pTask, pTemplate, PDMASYNCCOMPLETIONTASKTYPE_HOST, (void *)hObject, pvUser);
-    if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("Creating Windows task failed\n"));
-        return rc;
-    }
-
-    *ppTask = pTask;
-
-    return rc;
-}
-#endif /* RT_OS_WINDOWS */
-
-/**
- * Socket completion context (pvCtx).
- */
-typedef struct PDMASYNCCOMPLETIONSOCKET
-{
-    /** The socket. */
-    RTSOCKET        Socket;
-    /** Readable. */
-    bool            fReadable;
-    /** Writable. */
-    bool            fWriteable;
-    /** Exceptions. */
-    bool            fXcpt;
-} PDMASYNCCOMPLETIONSOCKET;
-/** Pointer to a socket completion context. */
-typedef PDMASYNCCOMPLETIONSOCKET *PPDMASYNCCOMPLETIONSOCKET;
-
-/**
- * Creates a completion task for a socket.
- *
- * The pvCtx callback argument will be pointing to a PDMASYNCCOMPLETIONSOCKET structure.
- *
- * @returns VBox status code.
- * @param   ppTask          Where to store the task handle on success.
- * @param   pTemplate       The async completion template.
- * @param   Socket          The socket.
- * @param   fReadable       Whether to callback when the socket becomes readable.
- * @param   fWriteable      Whether to callback when the socket becomes writable.
- * @param   fXcpt           Whether to callback on exception.
- * @param   pvUser          The user argument for the callback.
- */
-DECLINLINE(int) PDMR3AsyncCompletionCreateSocket(PPPDMASYNCCOMPLETIONTASK ppTask, PPDMASYNCCOMPLETIONTEMPLATE pTemplate, RTSOCKET Socket, bool fReadable, bool fWriteable, bool fXcpt, void *pvUser)
-{
-    int rc = VINF_SUCCESS;
-    PPDMASYNCCOMPLETIONTASK pTask;
-    PDMASYNCCOMPLETIONSOCKET SocketContext;
-
-    SocketContext.Socket     = Socket;
-    SocketContext.fReadable  = fReadable;
-    SocketContext.fWriteable = fWriteable;
-    SocketContext.fXcpt      = fXcpt;
-
-    rc = PDMR3AsyncCompletionTaskCreate(&pTask, pTemplate, PDMASYNCCOMPLETIONTASKTYPE_SOCKET, (void *)&SocketContext, pvUser);
-    if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("Creating Socket task failed\n"));
-        return rc;
-    }
-
-    *ppTask = pTask;
-
-    return rc;
-}
-
-#if 0
-/**
- * Modifies a socket completion task.
- *
- * @returns VBox status code.
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_NOT_SUPPORTED if the task isn't a socket task.
- * @param   pTemplate       The async completion template.
- * @param   Socket          The socket
- * @param   fReadable       Whether to callback when the socket becomes readable.
- * @param   fWriteable      Whether to callback when the socket becomes writable.
- * @param   fXcpt           Whether to callback on exception.
- */
-DECLINLINE(int) PDMR3AsyncCompletionModifySocket(PPDMASYNCCOMPLETIONTASK pTask, RTSOCKET Socket, bool fReadable, bool fWriteable, bool fXcpt)
-{
-    int rc = VINF_SUCCESS;
-    PDMASYNCCOMPLETIONSOCKET SocketContext;
-
-    SocketContext.Socket     = Socket;
-    SocketContext.fReadable  = fReadable;
-    SocketContext.fWriteable = fWriteable;
-    SocketContext.fXcpt      = fXcpt;
-
-    rc = PDMR3AsyncCompletionTaskAssociate(pTask, &SocketContext);
-    if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("Modifying Socket task failed\n"));
-        return rc;
-    }
-
-    return rc;
-}
-#endif
 
 /** @} */
 
 __END_DECLS
 
 #endif
-
-
 

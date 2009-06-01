@@ -394,8 +394,10 @@ DECLINLINE(PVDINTERFACEERROR) VDGetInterfaceError(PVDINTERFACE pInterface)
  *
  * @return  VBox status code.
  * @param   pvUser          Opaque user data which is passed on request submission.
+ * @param   ppvCaller       Where to store the opaque user data the caller of
+ *                          VDAsyncRead or VDAsyncWrite passed.
  */
-typedef DECLCALLBACK(int) FNVDCOMPLETED(void *pvUser);
+typedef DECLCALLBACK(int) FNVDCOMPLETED(void *pvUser, void **ppvCaller);
 /** Pointer to FNVDCOMPLETED() */
 typedef FNVDCOMPLETED *PFNVDCOMPLETED;
 
@@ -424,9 +426,15 @@ typedef struct VDINTERFACEASYNCIO
      * @param   pvUser          The opaque data passed on container creation.
      * @param   pszLocation     Name of the location to open.
      * @param   fReadonly       Whether to open the storage medium read only.
+     * @param   pfnCompleted    The callabck which is called whenever a task
+     *                          completed. The backend has to pass the user data
+     *                          of the request initiator (ie the one who calls
+     *                          VDAsyncRead or VDAsyncWrite) in pvCompletion
+     *                          if this is NULL.
      * @param   ppStorage       Where to store the opaque storage handle.
      */
-    DECLR3CALLBACKMEMBER(int, pfnOpen, (void *pvUser, const char *pszLocation, bool fReadonly, void **ppStorage));
+    DECLR3CALLBACKMEMBER(int, pfnOpen, (void *pvUser, const char *pszLocation, bool fReadonly,
+                                        PFNVDCOMPLETED pfnCompleted, void **ppStorage));
 
     /**
      * Close callback.
@@ -436,6 +444,16 @@ typedef struct VDINTERFACEASYNCIO
      * @param   pStorage        The opaque storage handle to close.
      */
     DECLR3CALLBACKMEMBER(int, pfnClose, (void *pvUser, void *pStorage));
+
+    /**
+     * Returns the size of the opened storage backend.
+     *
+     * @return  VBox status code.
+     * @param   pvUser          The opaque data passed on container creation.
+     * @param   pStorage        The opaque storage handle to close.
+     * @param   pcbSize         Where to store the size of the storage backend.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnGetSize, (void *pvUser, void *pStorage, uint64_t *pcbSize));
 
     /**
      * Synchronous write callback.
@@ -448,8 +466,8 @@ typedef struct VDINTERFACEASYNCIO
      * @param   pvBuf           Pointer to the bits need to be written.
      * @param   pcbWritten      Where to store how many bytes where actually written.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWrite, (void *pvUser, void *pStorage, uint64_t uOffset,
-                                         size_t cbWrite, const void *pvBuf, size_t *pcbWritten));
+    DECLR3CALLBACKMEMBER(int, pfnWriteSync, (void *pvUser, void *pStorage, uint64_t uOffset,
+                                             size_t cbWrite, const void *pvBuf, size_t *pcbWritten));
 
     /**
      * Synchronous read callback.
@@ -462,8 +480,8 @@ typedef struct VDINTERFACEASYNCIO
      * @param   pvBuf           Where to store the read bits.
      * @param   pcbRead         Where to store how many bytes where actually read.
      */
-    DECLR3CALLBACKMEMBER(int, pfnRead, (void *pvUser, void *pStorage, uint64_t uOffset,
-                                        size_t cbRead, void *pvBuf, size_t *pcbRead));
+    DECLR3CALLBACKMEMBER(int, pfnReadSync, (void *pvUser, void *pStorage, uint64_t uOffset,
+                                            size_t cbRead, void *pvBuf, size_t *pcbRead));
 
     /**
      * Flush data to the storage backend.
@@ -472,49 +490,55 @@ typedef struct VDINTERFACEASYNCIO
      * @param   pvUser          The opaque data passed on container creation.
      * @param   pStorage        The storage handle to flush.
      */
-    DECLR3CALLBACKMEMBER(int, pfnFlush, (void *pvUser, void *pStorage));
+    DECLR3CALLBACKMEMBER(int, pfnFlushSync, (void *pvUser, void *pStorage));
 
     /**
-     * Prepare an asynchronous read task.
+     * Initiate a asynchronous read request.
      *
      * @return  VBox status code.
      * @param   pvUser         The opqaue user data passed on container creation.
      * @param   pStorage       The storage handle.
      * @param   uOffset        The offset to start reading from.
-     * @param   pvBuf          Where to store read bits.
+     * @param   paSegments     Scatter gather list to store the data in.
+     * @param   cSegments      Number of segments in the list.
      * @param   cbRead         How many bytes to read.
+     * @param   pvCompletion   The opaque user data which is returned upon completion.
      * @param   ppTask         Where to store the opaque task handle.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPrepareRead, (void *pvUser, void *pStorage, uint64_t uOffset,
-                                               void *pvBuf, size_t cbRead, void **ppTask));
+    DECLR3CALLBACKMEMBER(int, pfnReadAsync, (void *pvUser, void *pStorage, uint64_t uOffset,
+                                             PCPDMDATASEG paSegments, size_t cSegments,
+                                             size_t cbRead, void *pvCompletion,
+                                             void **ppTask));
 
     /**
-     * Prepare an asynchronous write task.
+     * Initiate a asynchronous write request.
      *
      * @return  VBox status code.
      * @param   pvUser         The opaque user data passed on conatiner creation.
      * @param   pStorage       The storage handle.
      * @param   uOffset        The offset to start writing to.
-     * @param   pvBuf          Where to read the data from.
+     * @param   paSegments     Scatter gather list of the data to write
+     * @param   cSegments      Number of segments in the list.
      * @param   cbWrite        How many bytes to write.
+     * @param   pvCompletion   The opaque user data which is returned upon completion.
      * @param   ppTask         Where to store the opaque task handle.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPrepareWrite, (void *pvUser, void *pStorage, uint64_t uOffset,
-                                                void *pvBuf, size_t cbWrite, void **ppTask));
+    DECLR3CALLBACKMEMBER(int, pfnWriteAsync, (void *pvUser, void *pStorage, uint64_t uOffset,
+                                              PCPDMDATASEG paSegments, size_t cSegments,
+                                              size_t cbWrite, void *pvCompletion,
+                                              void **ppTask));
 
     /**
-     * Submit an array of tasks for processing
+     * Initiates a async flush request.
      *
-     * @return  VBox status code.
-     * @param   pvUser        The opaque user data passed on container creation.
-     * @param   apTasks       Array of task handles to submit.
-     * @param   cTasks        How many tasks to submit.
-     * @param   pvUser2       User data which is passed on completion.
-     * @param   pvUserCaller  Opaque user data the caller of VDAsyncWrite/Read passed.
-     * @param   pfnTasksCompleted Pointer to callback which is called on request completion.
+     * @return  VBox statis code.
+     * @param   pvUser          The opaque data passed on container creation.
+     * @param   pStorage        The storage handle to flush.
+     * @param   pvCompletion    The opaque user data which is returned upon completion.
+     * @param   ppTask          Where to store the opaque task handle.
      */
-    DECLR3CALLBACKMEMBER(int, pfnTasksSubmit, (void *pvUser, void *apTasks[], unsigned cTasks, void *pvUser2,
-                                               void *pvUserCaller, PFNVDCOMPLETED pfnTasksCompleted));
+    DECLR3CALLBACKMEMBER(int, pfnFlushAsync, (void *pvUser, void *pStorage,
+                                              void *pvCompletion, void **ppTask));
 
 } VDINTERFACEASYNCIO, *PVDINTERFACEASYNCIO;
 
