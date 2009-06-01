@@ -609,8 +609,10 @@ static void pdmacFileAioMgrWakeup(PPDMACEPFILEMGR pAioMgr)
 
         if (fWaitingEventSem)
             rc = RTSemEventSignal(pAioMgr->EventSem);
+#if 0 /** @todo When RTFileAio* is used */
         else if (fWaitingForIo)
             rc = RTThreadPoke(pAioMgr->Thread);
+#endif
 
         AssertRC(rc);
     }
