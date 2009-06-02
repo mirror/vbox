@@ -80,7 +80,7 @@ const GLubyte * PACKSPU_APIENTRY packspu_GetString( GLenum name )
     else if (name == GL_VERSION)
     {
         float version = GetVersionString();
-        sprintf(ctx->glVersion, "%g Chromium %s", version, CR_VERSION_STRING);
+        sprintf(ctx->glVersion, "%.1f Chromium %s", version, CR_VERSION_STRING);
         return (const GLubyte *) ctx->glVersion;
     }
     else
