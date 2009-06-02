@@ -2203,6 +2203,10 @@ static DECLCALLBACK(int) vmR3Reset(PVM pVM)
      * thru here and been told to enter the EMSTATE_WAIT_SIPI state.
      */
     VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STARTED);
+
+    /* Clear all pending forced actions. */
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_ALL_MASK & ~VMCPU_FF_REQUEST);
+
     if (pVCpu->idCpu != 0)
         return VINF_EM_RESET;
 
