@@ -34,30 +34,27 @@
 #include <QRegion>
 #include <QTimer>
 
-VBoxMiniToolBar::VBoxMiniToolBar (Alignment aAlignment)
-    : VBoxToolBar (0)
+VBoxMiniToolBar::VBoxMiniToolBar (QWidget *aParent, Alignment aAlignment)
+    : VBoxToolBar (aParent)
     , mAutoHideCounter (0)
     , mAutoHide (true)
     , mSlideToScreen (true)
     , mHideAfterSlide (false)
     , mPolished (false)
+    , mIsSeamless (false)
     , mAlignment (aAlignment)
     , mAnimated (true)
     , mScrollDelay (20)
     , mAutoScrollDelay (100)
     , mAutoHideTotalCounter (10)
 {
-    /* Play with toolbar mode as child of the main window, rather than top parentless */
-    //setAllowedAreas (Qt::NoToolBarArea);
-    //mMainWindow->addToolBar (/* Qt::NoToolBarArea, */ this);
+    AssertMsg (parentWidget(), ("Parent widget must be set!!!\n"));
 
-    setWindowFlags (Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
+    /* Various options */
+    setAutoFillBackground (true);
     setIconSize (QSize (16, 16));
     setMouseTracking (mAutoHide);
     setVisible (false);
-
-    // TODO, we need to hide the tab icon in taskbar when in seamless mode
-    setWindowTitle (tr ("VirtualBox Mini Toolbar"));
 
     /* Left margin of tool-bar */
     mMargins << widgetForAction (addWidget (new QWidget (this)));
@@ -107,6 +104,11 @@ VBoxMiniToolBar::VBoxMiniToolBar (Alignment aAlignment)
     mMargins << widgetForAction (addWidget (new QWidget (this)));
 }
 
+void VBoxMiniToolBar::setIsSeamlessMode (bool aIsSeamless)
+{
+    mIsSeamless = aIsSeamless;
+}
+
 VBoxMiniToolBar& VBoxMiniToolBar::operator<< (QList <QMenu*> aMenus)
 {
     for (int i = 0; i < aMenus.size(); ++ i)
@@ -130,6 +132,9 @@ void VBoxMiniToolBar::updateDisplay (bool aShow, bool aSetHideFlag)
 
     if (aShow)
     {
+        if (isHidden())
+            moveToBase();
+
         if (mAnimated)
         {
             if (aSetHideFlag)
@@ -175,76 +180,6 @@ void VBoxMiniToolBar::setDisplayText (const QString &aText)
     mDisplayLabel->setText (aText);
 }
 
-void VBoxMiniToolBar::resizeEvent (QResizeEvent*)
-{
-    /* Create polygon shaped toolbar */
-    int triangular_x = height();
-    int points [8];
-    switch (mAlignment)
-    {
-        case AlignTop:
-        {
-            points [0] = 0;
-            points [1] = 0;
-
-            points [2] = triangular_x;
-            points [3] = height();
-
-            points [4] = width() - triangular_x;
-            points [5] = height();
-
-            points [6] = width();
-            points [7] = 0;
-
-            break;
-        }
-        case AlignBottom:
-        {
-            points [0] = triangular_x;
-            points [1] = 0;
-
-            points [2] = 0;
-            points [3] = height();
-
-            points [4] = width();
-            points [5] = height();
-
-            points [6] = width() - triangular_x;
-            points [7] = 0;
-
-            break;
-        }
-        default:
-            break;
-    }
-    QPolygon polygon;
-    polygon.setPoints (4, points);
-    setMask (polygon);
-
-    /* Set the initial position */
-    QRect d = QApplication::desktop()->screenGeometry (this);
-    mPositionX = d.width() / 2 - width() / 2;
-    switch (mAlignment)
-    {
-        case AlignTop:
-        {
-            mPositionY = - height() + 1;
-            break;
-        }
-        case AlignBottom:
-        {
-            mPositionY = d.height() - 1;
-            break;
-        }
-        default:
-        {
-            mPositionY = 0;
-            break;
-        }
-    }
-    move (mPositionX, mPositionY);
-}
-
 void VBoxMiniToolBar::mouseMoveEvent (QMouseEvent *aEvent)
 {
     if (!mHideAfterSlide)
@@ -281,9 +216,10 @@ void VBoxMiniToolBar::timerEvent (QTimerEvent *aEvent)
             }
             case AlignBottom:
             {
-                QRect d = QApplication::desktop()->screenGeometry (this);
-                if (((mPositionY == d.height() - height()) && mSlideToScreen) ||
-                    ((mPositionY == d.height() - 1) && !mSlideToScreen))
+                QRect screen = mIsSeamless ? QApplication::desktop()->availableGeometry (this) :
+                                             QApplication::desktop()->screenGeometry (this);
+                if (((mPositionY == screen.height() - height()) && mSlideToScreen) ||
+                    ((mPositionY == screen.height() - 1) && !mSlideToScreen))
                 {
                     mScrollTimer.stop();
                     if (mHideAfterSlide)
@@ -299,7 +235,8 @@ void VBoxMiniToolBar::timerEvent (QTimerEvent *aEvent)
             default:
                 break;
         }
-        move (mPositionX, mPositionY);
+        move (mapFromScreen (QPoint (mPositionX, mPositionY)));
+        emit geometryUpdated();
     }
     else if (aEvent->timerId() == mAutoScrollTimer.timerId())
     {
@@ -343,6 +280,10 @@ void VBoxMiniToolBar::showEvent (QShowEvent *aEvent)
         /* Resize to sizehint */
         resize (sizeHint());
 
+        /* Initialize */
+        recreateMask();
+        moveToBase();
+
         mPolished = true;
     }
 
@@ -353,5 +294,87 @@ void VBoxMiniToolBar::togglePushpin (bool aOn)
 {
     mAutoHide = !aOn;
     updateDisplay (!mAutoHide, false);
+}
+
+void VBoxMiniToolBar::recreateMask()
+{
+    int edgeShift = height();
+    int points [8];
+    switch (mAlignment)
+    {
+        case AlignTop:
+        {
+            points [0] = 0;
+            points [1] = 0;
+
+            points [2] = edgeShift;
+            points [3] = height();
+
+            points [4] = width() - edgeShift;
+            points [5] = height();
+
+            points [6] = width();
+            points [7] = 0;
+
+            break;
+        }
+        case AlignBottom:
+        {
+            points [0] = edgeShift;
+            points [1] = 0;
+
+            points [2] = 0;
+            points [3] = height();
+
+            points [4] = width();
+            points [5] = height();
+
+            points [6] = width() - edgeShift;
+            points [7] = 0;
+
+            break;
+        }
+        default:
+            break;
+    }
+    QPolygon polygon;
+    polygon.setPoints (4, points);
+    setMask (polygon);
+}
+
+void VBoxMiniToolBar::moveToBase()
+{
+    QRect screen = mIsSeamless ? QApplication::desktop()->availableGeometry (this) :
+                                 QApplication::desktop()->screenGeometry (this);
+    mPositionX = screen.width() / 2 - width() / 2;
+    switch (mAlignment)
+    {
+        case AlignTop:
+        {
+            mPositionY = - height() + 1;
+            break;
+        }
+        case AlignBottom:
+        {
+            mPositionY = screen.height() - 1;
+            break;
+        }
+        default:
+        {
+            mPositionY = 0;
+            break;
+        }
+    }
+    move (mapFromScreen (QPoint (mPositionX, mPositionY)));
+}
+
+QPoint VBoxMiniToolBar::mapFromScreen (const QPoint &aPoint)
+{
+    QPoint globalPosition = parentWidget()->mapFromGlobal (aPoint);
+    QRect fullArea = QApplication::desktop()->screenGeometry (this);
+    QRect realArea = mIsSeamless ? QApplication::desktop()->availableGeometry (this) :
+                                   QApplication::desktop()->screenGeometry (this);
+    QPoint shiftToReal (realArea.topLeft() - fullArea.topLeft());
+    return globalPosition + shiftToReal;
 }
 

@@ -2633,6 +2633,11 @@ QRect VBoxConsoleView::desktopGeometry()
     return rc;
 }
 
+QRegion VBoxConsoleView::lastVisibleRegion() const
+{
+    return mLastVisibleRegion;
+}
+
 bool VBoxConsoleView::isAutoresizeGuestActive()
 {
     return mGuestSupportsGraphics && mAutoresizeGuest;

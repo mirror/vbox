@@ -253,6 +253,7 @@ private slots:
 
     void mtExitMode();
     void mtCloseVM();
+    void mtMaskUpdate();
 
 private:
 

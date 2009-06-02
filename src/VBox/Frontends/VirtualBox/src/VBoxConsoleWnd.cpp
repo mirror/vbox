@@ -520,14 +520,6 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     mMiniVMMenu->addAction (mVmPauseAction);
     mMiniVMMenu->addAction (mVmACPIShutdownAction);
 
-    /* Mini toolbar */
-    QList <QMenu*> menus (QList <QMenu*> () << mMiniVMMenu << mDevicesMenu);
-    mMiniToolBar = new VBoxMiniToolBar (VBoxMiniToolBar::AlignBottom);
-    *mMiniToolBar << menus;
-    connect (mMiniToolBar, SIGNAL (exitAction()), this, SLOT (mtExitMode()));
-    connect (mMiniToolBar, SIGNAL (closeAction()), this, SLOT (mtCloseVM()));
-    connect (this, SIGNAL (closing()), mMiniToolBar, SLOT (close()));
-
     ///// Status bar ////////////////////////////////////////////////////////
 
     QWidget *indicatorBox = new QWidget ();
@@ -816,6 +808,15 @@ bool VBoxConsoleWnd::openView (const CSession &session)
 
     console = new VBoxConsoleView (this, cconsole, mode,
                                    centralWidget());
+
+    /* Mini toolbar */
+    QList <QMenu*> menus (QList <QMenu*> () << mMiniVMMenu << mDevicesMenu);
+    mMiniToolBar = new VBoxMiniToolBar (centralWidget(), VBoxMiniToolBar::AlignBottom);
+    *mMiniToolBar << menus;
+    connect (mMiniToolBar, SIGNAL (exitAction()), this, SLOT (mtExitMode()));
+    connect (mMiniToolBar, SIGNAL (closeAction()), this, SLOT (mtCloseVM()));
+    connect (mMiniToolBar, SIGNAL (geometryUpdated()), this, SLOT (mtMaskUpdate()));
+    connect (this, SIGNAL (closing()), mMiniToolBar, SLOT (close()));
 
     activateUICustomizations();
 
@@ -2439,6 +2440,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 
     if (aOn)
     {
+        mMiniToolBar->setIsSeamlessMode (aSeamless);
         mMiniToolBar->updateDisplay (true, true);
     }
 
@@ -2570,6 +2572,12 @@ void VBoxConsoleWnd::mtExitMode()
 void VBoxConsoleWnd::mtCloseVM()
 {
     mVmCloseAction->trigger();
+}
+
+void VBoxConsoleWnd::mtMaskUpdate()
+{
+    if (mIsSeamless)
+        setMask (console->lastVisibleRegion());
 }
 
 void VBoxConsoleWnd::vmFullscreen (bool aOn)
@@ -2988,8 +2996,15 @@ void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)
 void VBoxConsoleWnd::setMask (const QRegion &aRegion)
 {
     QRegion region = aRegion;
+
     /* The global mask shift cause of toolbars and such things. */
     region.translate (mMaskShift.width(), mMaskShift.height());
+
+    /* Including mini toolbar area */
+    QRegion toolBarRegion (mMiniToolBar->mask());
+    toolBarRegion.translate (mMiniToolBar->mapToGlobal (toolBarRegion.boundingRect().topLeft()) - QPoint (1, 0));
+    region += toolBarRegion;
+
     /* Restrict the drawing to the available space on the screen.
      * (The &operator is better than the previous used -operator,
      * because this excludes space around the real screen also.
