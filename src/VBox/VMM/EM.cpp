@@ -3444,6 +3444,7 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         if (VM_FF_IS_PENDING_EXCEPT(pVM, VM_FF_REQUEST, VM_FF_PGM_NO_MEMORY))
         {
             rc2 = VMR3ReqProcessU(pVM->pUVM, VMCPUID_ANY);
+            Assert(rc2 != VINF_EM_RESET); /* should be per-VCPU */
             if (rc2 == VINF_EM_OFF || rc2 == VINF_EM_TERMINATE)
             {
                 Log2(("emR3ForcedActions: returns %Rrc\n", rc2));
@@ -3478,7 +3479,7 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
         {
             rc2 = VMR3ReqProcessU(pVM->pUVM, pVCpu->idCpu);
-            if (rc2 == VINF_EM_OFF || rc2 == VINF_EM_TERMINATE)
+            if (rc2 == VINF_EM_OFF || rc2 == VINF_EM_TERMINATE || rc2 == VINF_EM_RESET)
             {
                 Log2(("emR3ForcedActions: returns %Rrc\n", rc2));
                 STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatForcedActions, a);
