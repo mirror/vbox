@@ -18,8 +18,6 @@
 #include "cr_string.h"
 #include "cr_version.h"
 
-#ifdef CR_OPENGL_VERSION_2_0
-
 void crUnpackExtendBindAttribLocation(void)
 {
     GLuint program   = READ_DATA(8, GLuint);
@@ -153,5 +151,3 @@ void crUnpackExtendUniformMatrix4fv(void)
     const GLfloat *value = DATA_POINTER(16+sizeof(GLboolean), const GLfloat);
     cr_unpackDispatch.UniformMatrix4fv(location, count, transpose, value);
 }
-
-#endif /* #ifdef CR_OPENGL_VERSION_2_0 */
