@@ -6786,24 +6786,6 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, ULONG lInstance,
     LogFlowFunc (("LUN#%d: leaf format '%ls'\n", iLUN, bstr.raw()));
     rc = CFGMR3InsertString(pCfg, "Format", Utf8Str(bstr));                     RC_CHECK();
 
-#if defined(VBOX_WITH_PDM_ASYNC_COMPLETION)
-    if (bstr == L"VMDK")
-    {
-        /* Create cfgm nodes for async transport driver because VMDK is
-         * currently the only one which may support async I/O. This has
-         * to be made generic based on the capabiliy flags when the new
-         * HardDisk interface is merged.
-         */
-        pLunL2 = CFGMR3GetChild(pLunL1, "AttachedDriver");
-        AssertReturn(pLunL2, VERR_INTERNAL_ERROR);
-
-        CFGMR3RemoveNode(pLunL2);
-        rc = CFGMR3InsertNode (pLunL1, "AttachedDriver", &pLunL2);      RC_CHECK();
-        rc = CFGMR3InsertString (pLunL2, "Driver", "TransportAsync");   RC_CHECK();
-        /* The async transport driver has no config options yet. */
-    }
-#endif
-
     /* Pass all custom parameters. */
     bool fHostIP = true;
     SafeArray <BSTR> names;
