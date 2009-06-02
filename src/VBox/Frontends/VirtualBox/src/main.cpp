@@ -48,10 +48,9 @@
 #include <iprt/initterm.h>
 #include <iprt/process.h>
 #include <iprt/stream.h>
+#include <VBox/err.h>
 #ifdef VBOX_WITH_HARDENING
 # include <VBox/sup.h>
-#else
-# include <VBox/err.h>
 #endif
 
 #ifdef RT_OS_LINUX
