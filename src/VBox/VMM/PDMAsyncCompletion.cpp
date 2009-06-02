@@ -731,9 +731,11 @@ int pdmR3AsyncCompletionTerm(PVM pVM)
 {
     LogFlowFunc((": pVM=%p\n", pVM));
 
-    pdmR3AsyncCompletionEpClassTerminate(pVM->pdm.s.papAsyncCompletionEndpointClass[PDMASYNCCOMPLETIONEPCLASSTYPE_FILE]);
-
-    MMR3HeapFree(pVM->pdm.s.papAsyncCompletionEndpointClass);
+    if (pVM->pdm.s.papAsyncCompletionEndpointClass)
+    {
+        pdmR3AsyncCompletionEpClassTerminate(pVM->pdm.s.papAsyncCompletionEndpointClass[PDMASYNCCOMPLETIONEPCLASSTYPE_FILE]);
+        MMR3HeapFree(pVM->pdm.s.papAsyncCompletionEndpointClass);
+    }
     return VINF_SUCCESS;
 }
 
