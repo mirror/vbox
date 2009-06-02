@@ -1,0 +1,32 @@
+# $Id$
+## @file
+# Common installer stuff.
+#
+
+#
+# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+#
+# Sun Microsystems, Inc. confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+# Include Sub-Makefiles.
+ifndef VBOX_OSE
+ include $(PATH_SUB_CURRENT)/keygen/Makefile.kmk
+endif
+
+# Python glue installer
+ifdef VBOX_WITH_PYTHON
+
+INSTALLS += VBox-python-glue-installer
+
+VBox-python-glue-installer_INST = $(INST_SDK)/installer
+VBox-python-glue-installer_SOURCES = vboxapisetup.py
+
+endif # VBOX_WITH_PYTHON
+
+include $(KBUILD_PATH)/subfooter.kmk
+
