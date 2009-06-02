@@ -3832,10 +3832,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     }
                     else
                     {
-                        /* All other VCPUs go into the wait for SIPI state.
-                         * Make sure we clear all pending forced actions.
-                         */
-                        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_ALL_MASK & ~VMCPU_FF_REQUEST);
+                        /* All other VCPUs go into the wait for SIPI state. */
                         pVCpu->em.s.enmState = EMSTATE_WAIT_SIPI;
                     }
                     break;
