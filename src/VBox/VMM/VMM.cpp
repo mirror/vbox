@@ -1202,6 +1202,8 @@ DECLCALLBACK(int) vmmR3SendSipi(PVM pVM, VMCPUID idCpu, uint32_t uVector)
     pCtx->csHid.u32Limit            = 0x0000ffff;
     pCtx->rip                       = 0;
 
+    Log(("vmmR3SendSipi for VCPU %d with vector %x\n", uVector));
+
 # if 1 /* If we keep the EMSTATE_WAIT_SIPI method, then move this to EM.cpp. */
     EMSetState(pVCpu, EMSTATE_HALTED);
     return VINF_EM_RESCHEDULE;
@@ -1217,6 +1219,7 @@ DECLCALLBACK(int) vmmR3SendInitIpi(PVM pVM, VMCPUID idCpu)
     PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
     VMCPU_ASSERT_EMT(pVCpu);
 
+    Log(("vmmR3SendInitIpi for VCPU %d\n", idCpu));
     CPUMR3ResetCpu(pVCpu);
     return VINF_EM_WAIT_SIPI;
 }
