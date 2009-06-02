@@ -225,12 +225,37 @@ VMMDECL(int) HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
     if (!HWACCMIsNestedPagingActive(pVM))
         return VINF_SUCCESS;
 
-    PVMCPU pVCpu = VMMGetCpu(pVM);
 #ifdef IN_RING0
     if (pVM->hwaccm.s.vmx.fSupported)
     {
-        /* @todo for all vcpus */
-        return VMXR0InvalidatePhysPage(pVM, pVCpu, GCPhys);
+        VMCPUID idThisCpu = VMMGetCpuId(pVM);
+
+        for (unsigned idCpu = 0; idCpu < pVM->cCPUs; idCpu++)
+        {
+            PVMCPU pVCpu = &pVM->aCpus[idCpu];
+
+            if (idThisCpu == idCpu)
+            {
+                VMXR0InvalidatePhysPage(pVM, pVCpu, GCPhys);
+                continue;
+            }
+
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
+            if (VMCPU_GET_STATE(pVCpu) == VMCPUSTATE_STARTED_EXEC)
+            {
+                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTlbShootdownFlush);
+    #ifdef IN_RING0
+                RTCPUID idHostCpu = pVCpu->hwaccm.s.idEnteredCpu;
+                if (idHostCpu != NIL_RTCPUID)
+                    RTMpPokeCpu(idHostCpu);
+    #else
+                VMR3NotifyCpuFFU(pVCpu->pUVCpu, VMNOTIFYFF_FLAGS_POKE);
+    #endif
+            }
+            else
+                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushTLBManual);
+        }
+        return VINF_SUCCESS;
     }
 
     Assert(pVM->hwaccm.s.svm.fSupported);
