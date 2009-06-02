@@ -341,14 +341,14 @@ VMMR3DECL(int) PDMR3Init(PVM pVM)
         rc = PDMR3CritSectInit(pVM, &pVM->pdm.s.CritSect, "PDM");
     if (RT_SUCCESS(rc))
         rc = pdmR3LdrInitU(pVM->pUVM);
-    if (RT_SUCCESS(rc))
-        rc = pdmR3DrvInit(pVM);
-    if (RT_SUCCESS(rc))
-        rc = pdmR3DevInit(pVM);
 #ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
     if (RT_SUCCESS(rc))
         rc = pdmR3AsyncCompletionInit(pVM);
 #endif
+    if (RT_SUCCESS(rc))
+        rc = pdmR3DrvInit(pVM);
+    if (RT_SUCCESS(rc))
+        rc = pdmR3DevInit(pVM);
     if (RT_SUCCESS(rc))
     {
         /*
