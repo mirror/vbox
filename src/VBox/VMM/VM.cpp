@@ -2208,7 +2208,10 @@ static DECLCALLBACK(int) vmR3Reset(PVM pVM)
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_ALL_MASK & ~VMCPU_FF_REQUEST);
 
     if (pVCpu->idCpu != 0)
+    {
+        CPUMR3ResetCpu(pVCpu);
         return VINF_EM_RESET;
+    }
 
     /*
      * As a safety precaution we temporarily change the state while resetting.
