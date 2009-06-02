@@ -10,6 +10,7 @@ Build-Depends: debhelper (>= 5), libz-dev, libssl-dev, libqt4-dev,
   ia32-libs [amd64], libasound-dev, libpulse-dev, libxml2-dev,
   libxslt1-dev, python-dev, gsoap, libcap2-dev, libgl1-mesa-dev,
   libglu1-mesa-dev, libxmu-dev, libxext-dev
+XS-Python-Version: >= 2.4
 
 Package: virtualbox-ose
 Architecture: i386 amd64
@@ -23,6 +24,7 @@ Description: Sun VirtualBox
  Windows, Linux, FreeBSD, DOS, OpenBSD and others. VirtualBox comes with a broad
  feature set and excellent performance, making it the premier virtualization
  software solution on the market.
+XB-Python-Version: ${python:Versions}
 
 Package: virtualbox-ose-dbg
 Architecture: i386 amd64
