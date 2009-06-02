@@ -638,7 +638,11 @@ extern "C" DECLEXPORT(void) TrustedError (const char *pszWhere, SUPINITOP enmWha
             else
 # endif
             if (rc == VERR_VM_DRIVER_VERSION_MISMATCH)
-                msgText += g_QStrHintWrongDriverVersion;
+# ifdef RT_OS_LINUX
+                msgText += g_QStrHintLinuxWrongDriverVersion;
+# else
+                msgText += g_QStrHintOtherWrongDriverVersion;
+# endif
             else
                 msgText += g_QStrHintReinstall;
             break;
