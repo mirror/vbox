@@ -81,7 +81,7 @@ QString g_QStrHintLinuxNoDriver = QApplication::tr(
   "recompiles the vboxdrv kernel module if necessary."
   );
 
-QString g_QStrHinOtherWrongDriverVersion = QApplication::tr(
+QString g_QStrHintOtherWrongDriverVersion = QApplication::tr(
   "The VirtualBox kernel modules do not fit to this version of "
   "VirtualBox. The installation of VirtualBox was apparently not "
   "successful. It may help to completely uninstall and re-install "
