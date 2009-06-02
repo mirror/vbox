@@ -102,6 +102,8 @@ public:
 
     QRect desktopGeometry();
 
+    QRegion lastVisibleRegion() const;
+
     bool isAutoresizeGuestActive();
 
     /* todo: This are some support functions for the qt4 port. Maybe we get rid

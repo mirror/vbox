@@ -48,7 +48,9 @@ public:
         AlignBottom
     };
 
-    VBoxMiniToolBar (Alignment aAlignment);
+    VBoxMiniToolBar (QWidget *aParent, Alignment aAlignment);
+
+    void setIsSeamlessMode (bool aIsSeamless);
 
     VBoxMiniToolBar& operator<< (QList <QMenu*> aMenus);
 
@@ -59,10 +61,10 @@ signals:
 
     void exitAction();
     void closeAction();
+    void geometryUpdated();
 
 protected:
 
-    void resizeEvent (QResizeEvent *aEvent);
     void mouseMoveEvent (QMouseEvent *aEvent);
     void timerEvent (QTimerEvent *aEvent);
     void showEvent (QShowEvent *aEvent);
@@ -72,6 +74,10 @@ private slots:
     void togglePushpin (bool aOn);
 
 private:
+
+    void recreateMask();
+    void moveToBase();
+    QPoint mapFromScreen (const QPoint &aPoint);
 
     QAction *mAutoHideAct;
     QLabel *mDisplayLabel;
@@ -87,6 +93,8 @@ private:
 
     int mPositionX;
     int mPositionY;
+
+    bool mIsSeamless;
 
     /* Lists of used spacers */
     QList <QWidget*> mMargins;
