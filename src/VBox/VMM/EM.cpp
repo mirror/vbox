@@ -2722,6 +2722,7 @@ static int emR3RawForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
      */
     if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
     {
+        Assert(pVCpu->em.s.enmState != EMSTATE_WAIT_SIPI);
         int rc = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
         if (RT_FAILURE(rc))
             return rc;
@@ -3540,6 +3541,7 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             &&  PATMAreInterruptsEnabled(pVM)
             &&  !HWACCMR3IsEventPending(pVM))
         {
+            Assert(pVCpu->em.s.enmState != EMSTATE_WAIT_SIPI);
             if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
             {
                 /* Note: it's important to make sure the return code from TRPMR3InjectEvent isn't ignored! */
