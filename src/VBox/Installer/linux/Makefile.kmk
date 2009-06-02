@@ -197,7 +197,7 @@ ifdef VBOX_WITH_PYTHON
   VBOX_LNX_NO_STRIP += \
 	$(foreach f,$(notdir $(wildcard $(PATH_BIN)/sdk/bindings/xpcom/python/xpcom/*.py)),sdk/bindings/xpcom/python/xpcom/$(f)) \
 	sdk/bindings/xpcom/python/xpcom/client/__init__.py \
-        sdk/installer/vboxapisetup.py \
+	sdk/installer/vboxapisetup.py \
 	sdk/installer/vboxapi/__init__.py \
 	sdk/installer/vboxapi/VirtualBox_constants.py
 endif
