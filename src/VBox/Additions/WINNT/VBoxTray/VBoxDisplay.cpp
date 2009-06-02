@@ -256,8 +256,12 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
                 if (!EnumDisplaySettings((LPSTR)DisplayDevice.DeviceName,
                      ENUM_CURRENT_SETTINGS, &paDeviceModes[DevNum]))
                 {
+                    /* ENUM_CURRENT_SETTINGS returns FALSE when the display is not active:
+                     * for example a disabled secondary display.
+                     * Do not return here, ignore the error and set the display info to 0x0x0.
+                     */
                     Log(("EnumDisplaySettings(ENUM_CURRENT_SETTINGS) err %d\n", GetLastError ()));
-                    return FALSE;
+                    ZeroMemory(&paDeviceModes[DevNum], sizeof(DEVMODE));
                 }
             }
             
