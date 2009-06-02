@@ -851,117 +851,117 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
      * First, TCP sockets
      */
     do_slowtimo = 0;
-    if (link_up)
+    if (!link_up)
+        goto done;
+    /*
+     * *_slowtimo needs calling if there are IP fragments
+     * in the fragment queue, or there are TCP connections active
+     */
+    /* XXX:
+     * triggering of fragment expiration should be the same but use new macroses
+     */
+    do_slowtimo = (tcb.so_next != &tcb);
+    if (!do_slowtimo)
     {
-        /*
-         * *_slowtimo needs calling if there are IP fragments
-         * in the fragment queue, or there are TCP connections active
-         */
-        /* XXX:
-         * triggering of fragment expiration should be the same but use new macroses
-         */
-        do_slowtimo = (tcb.so_next != &tcb);
-        if (!do_slowtimo)
+        for (i = 0; i < IPREASS_NHASH; i++)
         {
-            for (i = 0; i < IPREASS_NHASH; i++)
+            if (!TAILQ_EMPTY(&ipq[i]))
             {
-                if (!TAILQ_EMPTY(&ipq[i]))
-                {
-                    do_slowtimo = 1;
-                    break;
-                }
+                do_slowtimo = 1;
+                break;
             }
         }
-        ICMP_ENGAGE_EVENT(&pData->icmp_socket, readfds);
-
-        STAM_COUNTER_RESET(&pData->StatTCP);
-        STAM_COUNTER_RESET(&pData->StatTCPHot);
-
-        QSOCKET_FOREACH(so, so_next, tcp)
-        /* { */
+    }
+    ICMP_ENGAGE_EVENT(&pData->icmp_socket, readfds);
+    
+    STAM_COUNTER_RESET(&pData->StatTCP);
+    STAM_COUNTER_RESET(&pData->StatTCPHot);
+    
+    QSOCKET_FOREACH(so, so_next, tcp)
+    /* { */
 #if !defined(RT_OS_WINDOWS)
-            so->so_poll_index = -1;
+        so->so_poll_index = -1;
 #endif
-            STAM_COUNTER_INC(&pData->StatTCP);
-
-            /*
-             * See if we need a tcp_fasttimo
-             */
-            if (    time_fasttimo == 0
-                    && so->so_tcpcb != NULL
-                    && so->so_tcpcb->t_flags & TF_DELACK)
-                time_fasttimo = curtime; /* Flag when we want a fasttimo */
-
-            /*
-             * NOFDREF can include still connecting to local-host,
-             * newly socreated() sockets etc. Don't want to select these.
-             */
-            if (so->so_state & SS_NOFDREF || so->s == -1)
-                CONTINUE(tcp);
-
-            /*
-             * Set for reading sockets which are accepting
-             */
-            if (so->so_state & SS_FACCEPTCONN)
-            {
-                STAM_COUNTER_INC(&pData->StatTCPHot);
-                TCP_ENGAGE_EVENT1(so, readfds);
-                CONTINUE(tcp);
-            }
-
-            /*
-             * Set for writing sockets which are connecting
-             */
-            if (so->so_state & SS_ISFCONNECTING)
-            {
-                Log2(("connecting %R[natsock] engaged\n",so));
-                STAM_COUNTER_INC(&pData->StatTCPHot);
-                TCP_ENGAGE_EVENT1(so, writefds);
-            }
-
-            /*
-             * Set for writing if we are connected, can send more, and
-             * we have something to send
-             */
-            if (CONN_CANFSEND(so) && so->so_rcv.sb_cc)
-            {
-                STAM_COUNTER_INC(&pData->StatTCPHot);
-                TCP_ENGAGE_EVENT1(so, writefds);
-            }
-
-            /*
-             * Set for reading (and urgent data) if we are connected, can
-             * receive more, and we have room for it XXX /2 ?
-             */
-            if (CONN_CANFRCV(so) && (so->so_snd.sb_cc < (so->so_snd.sb_datalen/2)))
-            {
-                STAM_COUNTER_INC(&pData->StatTCPHot);
-                TCP_ENGAGE_EVENT2(so, readfds, xfds);
-            }
-            LOOP_LABEL(tcp, so, so_next);
+        STAM_COUNTER_INC(&pData->StatTCP);
+    
+        /*
+         * See if we need a tcp_fasttimo
+         */
+        if (    time_fasttimo == 0
+                && so->so_tcpcb != NULL
+                && so->so_tcpcb->t_flags & TF_DELACK)
+            time_fasttimo = curtime; /* Flag when we want a fasttimo */
+    
+        /*
+         * NOFDREF can include still connecting to local-host,
+         * newly socreated() sockets etc. Don't want to select these.
+         */
+        if (so->so_state & SS_NOFDREF || so->s == -1)
+            CONTINUE(tcp);
+    
+        /*
+         * Set for reading sockets which are accepting
+         */
+        if (so->so_state & SS_FACCEPTCONN)
+        {
+            STAM_COUNTER_INC(&pData->StatTCPHot);
+            TCP_ENGAGE_EVENT1(so, readfds);
+            CONTINUE(tcp);
         }
+    
+        /*
+         * Set for writing sockets which are connecting
+         */
+        if (so->so_state & SS_ISFCONNECTING)
+        {
+            Log2(("connecting %R[natsock] engaged\n",so));
+            STAM_COUNTER_INC(&pData->StatTCPHot);
+            TCP_ENGAGE_EVENT1(so, writefds);
+        }
+    
+        /*
+         * Set for writing if we are connected, can send more, and
+         * we have something to send
+         */
+        if (CONN_CANFSEND(so) && so->so_rcv.sb_cc)
+        {
+            STAM_COUNTER_INC(&pData->StatTCPHot);
+            TCP_ENGAGE_EVENT1(so, writefds);
+        }
+    
+        /*
+         * Set for reading (and urgent data) if we are connected, can
+         * receive more, and we have room for it XXX /2 ?
+         */
+        if (CONN_CANFRCV(so) && (so->so_snd.sb_cc < (so->so_snd.sb_datalen/2)))
+        {
+            STAM_COUNTER_INC(&pData->StatTCPHot);
+            TCP_ENGAGE_EVENT2(so, readfds, xfds);
+        }
+        LOOP_LABEL(tcp, so, so_next);
+    }
+    
+    /*
+     * UDP sockets
+     */
+    STAM_COUNTER_RESET(&pData->StatUDP);
+    STAM_COUNTER_RESET(&pData->StatUDPHot);
+    
+    QSOCKET_FOREACH(so, so_next, udp)
+    /* { */
+    
+        STAM_COUNTER_INC(&pData->StatUDP);
+#if !defined(RT_OS_WINDOWS)
+        so->so_poll_index = -1;
+#endif
 
         /*
-         * UDP sockets
+         * See if it's timed out
          */
-        STAM_COUNTER_RESET(&pData->StatUDP);
-        STAM_COUNTER_RESET(&pData->StatUDPHot);
-
-        QSOCKET_FOREACH(so, so_next, udp)
-        /* { */
-
-            STAM_COUNTER_INC(&pData->StatUDP);
-#if !defined(RT_OS_WINDOWS)
-            so->so_poll_index = -1;
-#endif
-
-            /*
-             * See if it's timed out
-             */
-            if (so->so_expire)
+        if (so->so_expire)
+        {
+            if (so->so_expire <= curtime)
             {
-                if (so->so_expire <= curtime)
-                {
 #ifdef VBOX_WITH_SLIRP_DNS_PROXY
                     Log2(("NAT: %R[natsock] expired\n", so));
                     if (so->so_timeout != NULL)
@@ -999,6 +999,7 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
         }
 
     }
+done:
 
 #if defined(RT_OS_WINDOWS)
     *pnfds = VBOX_EVENT_COUNT;
