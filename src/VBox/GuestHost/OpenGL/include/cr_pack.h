@@ -243,6 +243,13 @@ crPackCanHoldOpcode(const CRPackContext *pc, int num_opcode, int num_data)
 #define WRITE_DATA( offset, type, data ) \
   *( (type *) (data_ptr + (offset))) = (data)
 
+/* Write data to current location and auto increment */
+#define WRITE_DATA_AI(type, data)     \
+  {                                   \
+      *((type*) (data_ptr)) = (data); \
+      data_ptr += sizeof(type);       \
+  }
+
 #ifdef CR_UNALIGNED_ACCESS_OKAY
 #define WRITE_DOUBLE( offset, data ) \
   WRITE_DATA( offset, GLdouble, data )
