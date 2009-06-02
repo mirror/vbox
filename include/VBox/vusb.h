@@ -276,6 +276,7 @@ typedef const VUSBDESCENDPOINTEX *PCVUSBDESCENDPOINTEX;
 #define VUSB_REQ_MASK           (0x3 << VUSB_REQ_SHIFT)
 /** @} */
 
+#define VUSB_DIR_TO_DEVICE      0x00
 #define VUSB_DIR_TO_HOST        0x80
 
 /**
