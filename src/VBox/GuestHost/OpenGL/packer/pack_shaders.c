@@ -15,8 +15,6 @@
 #include "cr_error.h"
 #include "cr_string.h"
 
-#ifdef CR_OPENGL_VERSION_2_0
-
 void PACK_APIENTRY crPackBindAttribLocation(GLuint program, GLuint index, const char *name)
 {
     GET_PACKER_CONTEXT(pc);
@@ -375,5 +373,3 @@ void PACK_APIENTRY crPackUniformMatrix4fvSWAP(GLint location, GLsizei count, GLb
     crError ("No swap version");
     (void) pc;
 }
-
-#endif /* #ifdef CR_OPENGL_VERSION_2_0 */
