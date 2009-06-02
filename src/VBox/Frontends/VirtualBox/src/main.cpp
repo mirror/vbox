@@ -82,6 +82,22 @@ QString g_QStrHintLinuxNoDriver = QApplication::tr(
   "recompiles the vboxdrv kernel module if necessary."
   );
 
+QString g_QStrHinOtherWrongDriverVersion = QApplication::tr(
+  "The VirtualBox kernel modules do not fit to this version of "
+  "VirtualBox. The installation of VirtualBox was apparently not "
+  "successful. It may help to completely uninstall and re-install "
+  "VirtualBox."
+  );
+
+QString g_QStrHintLinuxWrongDriverVersion = QApplication::tr(
+  "The VirtualBox kernel modules do not fit to this version of "
+  "VirtualBox. The installation of VirtualBox was apparently not "
+  "successful. Executing<br/><br/>"
+  "  <font color=blue>'/etc/init.d/vboxdrv setup'</font><br/><br/>"
+  "should fix that problem. Make sure that you don't mix the "
+  "OSE version and the PUEL version of VirtualBox."
+  );
+
 QString g_QStrHintOtherNoDriver = QApplication::tr(
   "Make sure the kernel module has been loaded successfully."
   );
@@ -549,6 +565,13 @@ int main (int argc, char **argv, char **envp)
             case VERR_VM_DRIVER_NOT_ACCESSIBLE:
                 msgText += QApplication::tr ("Kernel driver not accessible");
                 break;
+            case VERR_VM_DRIVER_VERSION_MISMATCH:
+# ifdef RT_OS_LINUX
+                msgText += g_QStrHintLinuxWrongDriverVersion;
+# else
+                msgText += g_QStrHintOtherWrongDriverVersion;
+# endif 
+                break;
             default:
                 msgText += QApplication::tr (
                         "Unknown %2 error during initialization of the Runtime"
@@ -615,6 +638,9 @@ extern "C" DECLEXPORT(void) TrustedError (const char *pszWhere, SUPINITOP enmWha
                 msgText += g_QStrHintLinuxNoMemory;
             else
 # endif
+            if (rc == VERR_VM_DRIVER_VERSION_MISMATCH)
+                msgText += g_QStrHintWrongDriverVersion;
+            else
                 msgText += g_QStrHintReinstall;
             break;
         case kSupInitOp_Integrity:
