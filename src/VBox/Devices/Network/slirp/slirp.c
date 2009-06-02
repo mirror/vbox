@@ -1060,188 +1060,207 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
     /*
      * Check sockets
      */
-    if (link_up)
-    {
+    if (!link_up)
+        goto done; 
 #if defined(RT_OS_WINDOWS)
-        /*XXX: before renaming please make see define
-         * fIcmp in slirp_state.h
-         */
-        if (fIcmp)
-            sorecvfrom(pData, &pData->icmp_socket);
+    /*XXX: before renaming please make see define
+     * fIcmp in slirp_state.h
+     */
+    if (fIcmp)
+        sorecvfrom(pData, &pData->icmp_socket);
 #else
-        if (   (pData->icmp_socket.s != -1)
-            && CHECK_FD_SET(&pData->icmp_socket, ignored, readfds))
-            sorecvfrom(pData, &pData->icmp_socket);
+    if (   (pData->icmp_socket.s != -1)
+        && CHECK_FD_SET(&pData->icmp_socket, ignored, readfds))
+        sorecvfrom(pData, &pData->icmp_socket);
 #endif
-        /*
-         * Check TCP sockets
-         */
-        QSOCKET_FOREACH(so, so_next, tcp)
-        /* { */
+    /*
+     * Check TCP sockets
+     */
+    QSOCKET_FOREACH(so, so_next, tcp)
+    /* { */
 
 #ifdef VBOX_WITH_SLIRP_MT
-            if (   so->so_state & SS_NOFDREF
-                && so->so_deleted == 1)
+        if (   so->so_state & SS_NOFDREF
+            && so->so_deleted == 1)
+        {
+            struct socket *son, *sop = NULL;
+            QSOCKET_LOCK(tcb);
+            if (so->so_next != NULL)
             {
-                struct socket *son, *sop = NULL;
-                QSOCKET_LOCK(tcb);
-                if (so->so_next != NULL)
-                {
-                    if (so->so_next != &tcb)
-                        SOCKET_LOCK(so->so_next);
-                    son = so->so_next;
-                }
-                if (    so->so_prev != &tcb
-                    && so->so_prev != NULL)
-                {
-                    SOCKET_LOCK(so->so_prev);
-                    sop = so->so_prev;
-                }
-                QSOCKET_UNLOCK(tcb);
-                remque(pData, so);
-                NSOCK_DEC();
-                SOCKET_UNLOCK(so);
-                SOCKET_LOCK_DESTROY(so);
-                RTMemFree(so);
-                so_next = son;
-                if (sop != NULL)
-                    SOCKET_UNLOCK(sop);
-                CONTINUE_NO_UNLOCK(tcp);
+                if (so->so_next != &tcb)
+                    SOCKET_LOCK(so->so_next);
+                son = so->so_next;
             }
+            if (    so->so_prev != &tcb
+                && so->so_prev != NULL)
+            {
+                SOCKET_LOCK(so->so_prev);
+                sop = so->so_prev;
+            }
+            QSOCKET_UNLOCK(tcb);
+            remque(pData, so);
+            NSOCK_DEC();
+            SOCKET_UNLOCK(so);
+            SOCKET_LOCK_DESTROY(so);
+            RTMemFree(so);
+            so_next = son;
+            if (sop != NULL)
+                SOCKET_UNLOCK(sop);
+            CONTINUE_NO_UNLOCK(tcp);
+        }
 #endif
+        /*
+         * FD_ISSET is meaningless on these sockets
+         * (and they can crash the program)
+         */
+        if (so->so_state & SS_NOFDREF || so->s == -1)
+            CONTINUE(tcp);
+        
+        POLL_TCP_EVENTS(rc, error, so, &NetworkEvents);
+        
+        LOG_NAT_SOCK(so, TCP, &NetworkEvents, readfds, writefds, xfds);
+        
+        
+        /*
+         * Check for URG data
+         * This will soread as well, so no need to
+         * test for readfds below if this succeeds
+         */
+        
+        /* out-of-band data */
+        if (CHECK_FD_SET(so, NetworkEvents, xfds))
+        {
+            sorecvoob(pData, so);
+        }
+        
+        /*
+         * Check sockets for reading
+         */
+        else if (   CHECK_FD_SET(so, NetworkEvents, readfds)
+                 || WIN_CHECK_FD_SET(so, NetworkEvents, acceptds))
+        {
             /*
-             * FD_ISSET is meaningless on these sockets
-             * (and they can crash the program)
+             * Check for incoming connections
              */
-            if (so->so_state & SS_NOFDREF || so->s == -1)
-                CONTINUE(tcp);
-
-            POLL_TCP_EVENTS(rc, error, so, &NetworkEvents);
-
-            LOG_NAT_SOCK(so, TCP, &NetworkEvents, readfds, writefds, xfds);
-
-
-            /*
-             * Check for URG data
-             * This will soread as well, so no need to
-             * test for readfds below if this succeeds
-             */
-
-            /* out-of-band data */
-            if (CHECK_FD_SET(so, NetworkEvents, xfds))
+            if (so->so_state & SS_FACCEPTCONN)
             {
-                sorecvoob(pData, so);
-            }
-
-            /*
-             * Check sockets for reading
-             */
-            else if (   CHECK_FD_SET(so, NetworkEvents, readfds)
-                     || WIN_CHECK_FD_SET(so, NetworkEvents, acceptds))
-            {
-                /*
-                 * Check for incoming connections
-                 */
-                if (so->so_state & SS_FACCEPTCONN)
-                {
-                    TCP_CONNECT(pData, so);
+                TCP_CONNECT(pData, so);
 #if defined(RT_OS_WINDOWS)
-                    if (!(NetworkEvents.lNetworkEvents & FD_CLOSE))
+                if (!(NetworkEvents.lNetworkEvents & FD_CLOSE))
 #endif
-                        CONTINUE(tcp);
-                }
+                    CONTINUE(tcp);
+            }
+        
+            ret = soread(pData, so);
+            /* Output it if we read something */
+            if (ret > 0)
+                TCP_OUTPUT(pData, sototcpcb(so));
+        }
 
+#if defined(RT_OS_WINDOWS)
+        /*
+         * Check for FD_CLOSE events.
+         * in some cases once FD_CLOSE engaged on socket it could be flashed latter (for some reasons)
+         */
+        if (    (NetworkEvents.lNetworkEvents & FD_CLOSE)
+            ||  (so->so_close == 1))
+        {
+            so->so_close = 1; /* mark it */
+            /*
+             * drain the socket
+             */
+            for (;;)
+            {
                 ret = soread(pData, so);
-                /* Output it if we read something */
                 if (ret > 0)
                     TCP_OUTPUT(pData, sototcpcb(so));
-            }
-
-#if defined(RT_OS_WINDOWS)
-            /*
-             * Check for FD_CLOSE events.
-             * in some cases once FD_CLOSE engaged on socket it could be flashed latter (for some reasons)
-             */
-            if (    (NetworkEvents.lNetworkEvents & FD_CLOSE)
-                ||  (so->so_close == 1))
-            {
-                so->so_close = 1; /* mark it */
-                /*
-                 * drain the socket
-                 */
-                for (;;)
-                {
-                    ret = soread(pData, so);
-                    if (ret > 0)
-                        TCP_OUTPUT(pData, sototcpcb(so));
-                    else
-                        break;
-                }
-                CONTINUE(tcp);
-            }
-#endif
-
-            /*
-             * Check sockets for writing
-             */
-            if (CHECK_FD_SET(so, NetworkEvents, writefds))
-            {
-                /*
-                 * Check for non-blocking, still-connecting sockets
-                 */
-                if (so->so_state & SS_ISFCONNECTING)
-                {
-                    Log2(("connecting %R[natsock] catched\n", so));
-                    /* Connected */
-                    so->so_state &= ~SS_ISFCONNECTING;
-
-                    /*
-                     * This should be probably guarded by PROBE_CONN too. Anyway,
-                     * we disable it on OS/2 because the below send call returns
-                     * EFAULT which causes the opened TCP socket to close right
-                     * after it has been opened and connected.
-                     */
-#ifndef RT_OS_OS2
-                    ret = send(so->s, (const char *)&ret, 0, 0);
-                    if (ret < 0)
-                    {
-                        /* XXXXX Must fix, zero bytes is a NOP */
-                        if (   errno == EAGAIN
-                            || errno == EWOULDBLOCK
-                            || errno == EINPROGRESS
-                            || errno == ENOTCONN)
-                            CONTINUE(tcp);
-
-                        /* else failed */
-                        so->so_state = SS_NOFDREF;
-                    }
-                    /* else so->so_state &= ~SS_ISFCONNECTING; */
-#endif
-
-                    /*
-                     * Continue tcp_input
-                     */
-                    TCP_INPUT(pData, (struct mbuf *)NULL, sizeof(struct ip), so);
-                    /* continue; */
-                }
                 else
-                    SOWRITE(ret, pData, so);
-                /*
-                 * XXX If we wrote something (a lot), there could be the need
-                 * for a window update. In the worst case, the remote will send
-                 * a window probe to get things going again.
-                 */
+                    break;
             }
-
+            CONTINUE(tcp);
+        }
+#endif
+        
+        /*
+         * Check sockets for writing
+         */
+        if (CHECK_FD_SET(so, NetworkEvents, writefds))
+        {
             /*
-             * Probe a still-connecting, non-blocking socket
-             * to check if it's still alive
+             * Check for non-blocking, still-connecting sockets
              */
-#ifdef PROBE_CONN
             if (so->so_state & SS_ISFCONNECTING)
             {
-                ret = recv(so->s, (char *)&ret, 0, 0);
-
+                Log2(("connecting %R[natsock] catched\n", so));
+                /* Connected */
+                so->so_state &= ~SS_ISFCONNECTING;
+        
+                /*
+                 * This should be probably guarded by PROBE_CONN too. Anyway,
+                 * we disable it on OS/2 because the below send call returns
+                 * EFAULT which causes the opened TCP socket to close right
+                 * after it has been opened and connected.
+                 */
+#ifndef RT_OS_OS2
+                ret = send(so->s, (const char *)&ret, 0, 0);
+                if (ret < 0)
+                {
+                    /* XXXXX Must fix, zero bytes is a NOP */
+                    if (   errno == EAGAIN
+                        || errno == EWOULDBLOCK
+                        || errno == EINPROGRESS
+                        || errno == ENOTCONN)
+                        CONTINUE(tcp);
+                
+                    /* else failed */
+                    so->so_state = SS_NOFDREF;
+                }
+                /* else so->so_state &= ~SS_ISFCONNECTING; */
+#endif
+        
+                /*
+                 * Continue tcp_input
+                 */
+                TCP_INPUT(pData, (struct mbuf *)NULL, sizeof(struct ip), so);
+                /* continue; */
+            }
+            else
+                SOWRITE(ret, pData, so);
+            /*
+             * XXX If we wrote something (a lot), there could be the need
+             * for a window update. In the worst case, the remote will send
+             * a window probe to get things going again.
+             */
+        }
+        
+        /*
+         * Probe a still-connecting, non-blocking socket
+         * to check if it's still alive
+         */
+#ifdef PROBE_CONN
+        if (so->so_state & SS_ISFCONNECTING)
+        {
+            ret = recv(so->s, (char *)&ret, 0, 0);
+        
+            if (ret < 0)
+            {
+                /* XXX */
+                if (   errno == EAGAIN
+                    || errno == EWOULDBLOCK
+                    || errno == EINPROGRESS
+                    || errno == ENOTCONN)
+                {
+                    CONTINUE(tcp); /* Still connecting, continue */
+                }
+        
+                /* else failed */
+                so->so_state = SS_NOFDREF;
+        
+                /* tcp_input will take care of it */
+            }
+            else
+            {
+                ret = send(so->s, &ret, 0, 0);
                 if (ret < 0)
                 {
                     /* XXX */
@@ -1250,165 +1269,145 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
                         || errno == EINPROGRESS
                         || errno == ENOTCONN)
                     {
-                        CONTINUE(tcp); /* Still connecting, continue */
+                        CONTINUE(tcp);
                     }
-
                     /* else failed */
                     so->so_state = SS_NOFDREF;
-
-                    /* tcp_input will take care of it */
                 }
                 else
-                {
-                    ret = send(so->s, &ret, 0, 0);
-                    if (ret < 0)
-                    {
-                        /* XXX */
-                        if (   errno == EAGAIN
-                            || errno == EWOULDBLOCK
-                            || errno == EINPROGRESS
-                            || errno == ENOTCONN)
-                        {
-                            CONTINUE(tcp);
-                        }
-                        /* else failed */
-                        so->so_state = SS_NOFDREF;
-                    }
-                    else
-                        so->so_state &= ~SS_ISFCONNECTING;
-
-                }
-                TCP_INPUT((struct mbuf *)NULL, sizeof(struct ip),so);
-            } /* SS_ISFCONNECTING */
+                    so->so_state &= ~SS_ISFCONNECTING;
+        
+            }
+            TCP_INPUT((struct mbuf *)NULL, sizeof(struct ip),so);
+        } /* SS_ISFCONNECTING */
 #endif
 #ifndef RT_OS_WINDOWS
-            if (   UNIX_CHECK_FD_SET(so, NetworkEvents, rdhup)
-                || UNIX_CHECK_FD_SET(so, NetworkEvents, rderr))
-            {
-                int err;
-                int inq, outq;
-                int status;
-                socklen_t optlen = sizeof(int);
-                inq = outq = 0;
-                status = getsockopt(so->s, SOL_SOCKET, SO_ERROR, &err, &optlen);
-                if (status != 0)
-                    Log(("NAT: can't get error status from %R[natsock]\n", so));
+        if (   UNIX_CHECK_FD_SET(so, NetworkEvents, rdhup)
+            || UNIX_CHECK_FD_SET(so, NetworkEvents, rderr))
+        {
+            int err;
+            int inq, outq;
+            int status;
+            socklen_t optlen = sizeof(int);
+            inq = outq = 0;
+            status = getsockopt(so->s, SOL_SOCKET, SO_ERROR, &err, &optlen);
+            if (status != 0)
+                Log(("NAT: can't get error status from %R[natsock]\n", so));
 #ifndef RT_OS_SOLARIS
-                status = ioctl(so->s, FIONREAD, &inq); /* tcp(7) recommends SIOCINQ which is Linux specific */
-                if (status != 0 || status != EINVAL)
-                {
-                    /* EINVAL returned if socket in listen state tcp(7)*/
-                    Log(("NAT: can't get depth of IN queue status from %R[natsock]\n", so));
-                }
-                status = ioctl(so->s, TIOCOUTQ, &outq); /* SIOCOUTQ see previous comment */
-                if (status != 0)
-                    Log(("NAT: can't get depth of OUT queue from %R[natsock]\n", so));
+            status = ioctl(so->s, FIONREAD, &inq); /* tcp(7) recommends SIOCINQ which is Linux specific */
+            if (status != 0 || status != EINVAL)
+            {
+                /* EINVAL returned if socket in listen state tcp(7)*/
+                Log(("NAT: can't get depth of IN queue status from %R[natsock]\n", so));
+            }
+            status = ioctl(so->s, TIOCOUTQ, &outq); /* SIOCOUTQ see previous comment */
+            if (status != 0)
+                Log(("NAT: can't get depth of OUT queue from %R[natsock]\n", so));
 #else
                 /*
                  * Solaris has bit different ioctl commands and its handlings
                  * hint: streamio(7) I_NREAD
                  */
 #endif
-                if (   so->so_state & SS_ISFCONNECTING
-                    || UNIX_CHECK_FD_SET(so, NetworkEvents, readfds))
-                {
-                    /**
-                     * Check if we need here take care about gracefull connection
-                     * @todo try with proxy server
-                     */
-                    if (UNIX_CHECK_FD_SET(so, NetworkEvents, readfds))
-                    {
-                        /*
-                         * Never meet inq != 0 or outq != 0, anyway let it stay for a while
-                         * in case it happens we'll able to detect it.
-                         * Give TCP/IP stack wait or expire the socket.
-                         */
-                        Log(("NAT: %R[natsock] err(%d:%s) s(in:%d,out:%d)happens on read I/O, "
-                            "other side close connection \n", so, err, strerror(err), inq, outq));
-                        CONTINUE(tcp);
-                    }
-                    goto tcp_input_close;
-                }
-                if (   !UNIX_CHECK_FD_SET(so, NetworkEvents, readfds)
-                    && !UNIX_CHECK_FD_SET(so, NetworkEvents, writefds)
-                    && !UNIX_CHECK_FD_SET(so, NetworkEvents, xfds))
-                {
-                    Log(("NAT: system expires the socket %R[natsock] err(%d:%s) s(in:%d,out:%d) happens on non-I/O. ",
-                            so, err, strerror(err), inq, outq));
-                    goto tcp_input_close;
-                }
-                Log(("NAT: %R[natsock] we've met(%d:%s) s(in:%d, out:%d) unhandled combination hup (%d) "
-                    "rederr(%d) on (r:%d, w:%d, x:%d)\n",
-                        so, err, strerror(err),
-                        inq, outq,
-                        UNIX_CHECK_FD_SET(so, ign, rdhup),
-                        UNIX_CHECK_FD_SET(so, ign, rderr),
-                        UNIX_CHECK_FD_SET(so, ign, readfds),
-                        UNIX_CHECK_FD_SET(so, ign, writefds),
-                        UNIX_CHECK_FD_SET(so, ign, xfds)));
-                /*
-                 * Give OS's TCP/IP stack a chance to resolve an issue or expire the socket.
+            if (   so->so_state & SS_ISFCONNECTING
+                || UNIX_CHECK_FD_SET(so, NetworkEvents, readfds))
+            {
+                /**
+                 * Check if we need here take care about gracefull connection
+                 * @todo try with proxy server
                  */
-                CONTINUE(tcp);
+                if (UNIX_CHECK_FD_SET(so, NetworkEvents, readfds))
+                {
+                    /*
+                     * Never meet inq != 0 or outq != 0, anyway let it stay for a while
+                     * in case it happens we'll able to detect it.
+                     * Give TCP/IP stack wait or expire the socket.
+                     */
+                    Log(("NAT: %R[natsock] err(%d:%s) s(in:%d,out:%d)happens on read I/O, "
+                        "other side close connection \n", so, err, strerror(err), inq, outq));
+                    CONTINUE(tcp);
+                }
+                goto tcp_input_close;
+            }
+            if (   !UNIX_CHECK_FD_SET(so, NetworkEvents, readfds)
+                && !UNIX_CHECK_FD_SET(so, NetworkEvents, writefds)
+                && !UNIX_CHECK_FD_SET(so, NetworkEvents, xfds))
+            {
+                Log(("NAT: system expires the socket %R[natsock] err(%d:%s) s(in:%d,out:%d) happens on non-I/O. ",
+                        so, err, strerror(err), inq, outq));
+                goto tcp_input_close;
+            }
+            Log(("NAT: %R[natsock] we've met(%d:%s) s(in:%d, out:%d) unhandled combination hup (%d) "
+                "rederr(%d) on (r:%d, w:%d, x:%d)\n",
+                    so, err, strerror(err),
+                    inq, outq,
+                    UNIX_CHECK_FD_SET(so, ign, rdhup),
+                    UNIX_CHECK_FD_SET(so, ign, rderr),
+                    UNIX_CHECK_FD_SET(so, ign, readfds),
+                    UNIX_CHECK_FD_SET(so, ign, writefds),
+                    UNIX_CHECK_FD_SET(so, ign, xfds)));
+            /*
+             * Give OS's TCP/IP stack a chance to resolve an issue or expire the socket.
+             */
+            CONTINUE(tcp);
 tcp_input_close:
-                so->so_state = SS_NOFDREF; /*cause connection valid tcp connection termination and socket closing */
-                TCP_INPUT(pData, (struct mbuf *)NULL, sizeof(struct ip), so);
-                CONTINUE(tcp);
-            }
-#endif
-            LOOP_LABEL(tcp, so, so_next);
+            so->so_state = SS_NOFDREF; /*cause connection valid tcp connection termination and socket closing */
+            TCP_INPUT(pData, (struct mbuf *)NULL, sizeof(struct ip), so);
+            CONTINUE(tcp);
         }
-
-        /*
-         * Now UDP sockets.
-         * Incoming packets are sent straight away, they're not buffered.
-         * Incoming UDP data isn't buffered either.
-         */
-         QSOCKET_FOREACH(so, so_next, udp)
-         /* { */
-#ifdef VBOX_WITH_SLIRP_MT
-            if (   so->so_state & SS_NOFDREF
-                && so->so_deleted == 1)
-            {
-                struct socket *son, *sop = NULL;
-                QSOCKET_LOCK(udb);
-                if (so->so_next != NULL)
-                {
-                    if (so->so_next != &udb)
-                        SOCKET_LOCK(so->so_next);
-                    son = so->so_next;
-                }
-                if (   so->so_prev != &udb
-                    && so->so_prev != NULL)
-                {
-                    SOCKET_LOCK(so->so_prev);
-                    sop = so->so_prev;
-                }
-                QSOCKET_UNLOCK(udb);
-                remque(pData, so);
-                NSOCK_DEC();
-                SOCKET_UNLOCK(so);
-                SOCKET_LOCK_DESTROY(so);
-                RTMemFree(so);
-                so_next = son;
-                if (sop != NULL)
-                    SOCKET_UNLOCK(sop);
-                CONTINUE_NO_UNLOCK(udp);
-            }
 #endif
-            POLL_UDP_EVENTS(rc, error, so, &NetworkEvents);
-
-            LOG_NAT_SOCK(so, UDP, &NetworkEvents, readfds, writefds, xfds);
-
-            if (so->s != -1 && CHECK_FD_SET(so, NetworkEvents, readfds))
-            {
-                SORECVFROM(pData, so);
-            }
-            LOOP_LABEL(udp, so, so_next);
-        }
-
+        LOOP_LABEL(tcp, so, so_next);
     }
 
+    /*
+     * Now UDP sockets.
+     * Incoming packets are sent straight away, they're not buffered.
+     * Incoming UDP data isn't buffered either.
+     */
+     QSOCKET_FOREACH(so, so_next, udp)
+     /* { */
+#ifdef VBOX_WITH_SLIRP_MT
+        if (   so->so_state & SS_NOFDREF
+            && so->so_deleted == 1)
+        {
+            struct socket *son, *sop = NULL;
+            QSOCKET_LOCK(udb);
+            if (so->so_next != NULL)
+            {
+                if (so->so_next != &udb)
+                    SOCKET_LOCK(so->so_next);
+                son = so->so_next;
+            }
+            if (   so->so_prev != &udb
+                && so->so_prev != NULL)
+            {
+                SOCKET_LOCK(so->so_prev);
+                sop = so->so_prev;
+            }
+            QSOCKET_UNLOCK(udb);
+            remque(pData, so);
+            NSOCK_DEC();
+            SOCKET_UNLOCK(so);
+            SOCKET_LOCK_DESTROY(so);
+            RTMemFree(so);
+            so_next = son;
+            if (sop != NULL)
+                SOCKET_UNLOCK(sop);
+            CONTINUE_NO_UNLOCK(udp);
+        }
+#endif
+        POLL_UDP_EVENTS(rc, error, so, &NetworkEvents);
+    
+        LOG_NAT_SOCK(so, UDP, &NetworkEvents, readfds, writefds, xfds);
+    
+        if (so->s != -1 && CHECK_FD_SET(so, NetworkEvents, readfds))
+        {
+            SORECVFROM(pData, so);
+        }
+        LOOP_LABEL(udp, so, so_next);
+    }
+
+done:
 #ifndef VBOX_WITH_SLIRP_MT
     /*
      * See if we can start outputting
