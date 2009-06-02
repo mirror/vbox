@@ -140,3 +140,16 @@ UnmapBufferARB
 DeleteBuffersARB
 ZPixCR
 WindowVisibleRegion
+BindAttribLocation
+ShaderSource
+Uniform1fv
+Uniform1iv
+Uniform2fv
+Uniform2iv
+Uniform3fv
+Uniform3iv
+Uniform4fv
+Uniform4iv
+UniformMatrix2fv
+UniformMatrix3fv
+UniformMatrix4fv

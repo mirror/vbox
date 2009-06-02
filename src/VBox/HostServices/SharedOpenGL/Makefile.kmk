@@ -190,6 +190,7 @@ VBoxOGLcrunpacker_SOURCES  = \
 	unpacker/unpack_texture.c \
 	unpacker/unpack_writeback.c \
 	unpacker/unpack_visibleregion.c \
+	unpacker/unpack_shaders.c \
 	$(VBOX_PATH_CROGL_GENFILES)/unpack.c
 VBoxOGLcrunpacker_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/unpack.c \
