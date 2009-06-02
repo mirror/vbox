@@ -2159,7 +2159,11 @@ static DECLCALLBACK(void) apicReset(PPDMDEVINS pDevIns)
 
     TMTimerStop(s->CTX_SUFF(pTimer));
 
+    /* Do not send an init ipi to the VCPU; we take
+     * care of the proper init ourselves.
     apic_init_ipi(dev, s);
+     */
+
     /* malc, I've removed the initing duplicated in apic_init_ipi(). This
      * arb_id was left over.. */
     s->arb_id = 0;
