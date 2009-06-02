@@ -28,6 +28,10 @@ typedef struct _crGetActive_t
     GLenum  type;
 } crGetActive_t;
 
+/*@todo: most of those functions would fail. Either need to support more than 1 cr_server.return_ptr(s) or 
+ *       change pack_spu to pack output args into single buffer.
+ */
+
 void SERVER_DISPATCH_APIENTRY crServerDispatchGetActiveAttrib(GLuint program, GLuint index, GLsizei bufSize, GLsizei *length, GLint *size, GLenum *type, char *name)
 {
     crGetActive_t *pLocal;
