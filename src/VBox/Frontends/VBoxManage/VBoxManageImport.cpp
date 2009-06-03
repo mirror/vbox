@@ -646,7 +646,11 @@ int handleImportAppliance(HandlerArg *a)
                 showProgress(progress);
 
                 if (SUCCEEDED(rc))
-                    progress->COMGETTER(ResultCode)(&rc);
+                {
+                    LONG iRc;
+                    progress->COMGETTER(ResultCode)(&iRc);
+                    rc = iRc;
+                }
 
                 if (FAILED(rc))
                 {
@@ -891,7 +895,11 @@ int handleExportAppliance(HandlerArg *a)
         showProgress(progress);
 
         if (SUCCEEDED(rc))
-            progress->COMGETTER(ResultCode)(&rc);
+        {
+            LONG iRc;
+            progress->COMGETTER(ResultCode)(&iRc);
+            rc = iRc;
+        }
 
         if (FAILED(rc))
         {
