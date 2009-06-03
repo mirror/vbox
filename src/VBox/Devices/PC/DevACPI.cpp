@@ -1851,7 +1851,10 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"ShowCpu\""));
 
-    /* Always show the CPU leafs when we have multiple VCPUs or when the IO-APIC is enabled. */
+    /* Always show the CPU leafs when we have multiple VCPUs or when the IO-APIC is enabled. 
+     * The Windows SMP kernel needs a CPU leaf or else its idle loop will burn cpu cycles; the 
+     * intelppm driver refuses to register an idle state handler.
+     */
     if (    s->cCpus > 1
         ||  s->u8UseIOApic)
         s->fShowCpu = true;
