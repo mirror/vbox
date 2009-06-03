@@ -8030,7 +8030,7 @@
       <desc>Whether the task has been canceled.</desc>
     </attribute>
 
-    <attribute name="resultCode" type="unsigned long" readonly="yes">
+    <attribute name="resultCode" type="long" readonly="yes">
       <desc>
         Result code of the progress task.
         Valid only if <link to="#completed"/> is true.

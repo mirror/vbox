@@ -135,7 +135,7 @@ void HostPowerService::notify (HostPowerEvent aEvent)
                     continue;
 
                 /* Wait until the operation has been completed. */
-                ULONG iRc;
+                LONG iRc;
                 rc = progress->WaitForCompletion(-1);
                 if (SUCCEEDED (rc))
                     progress->COMGETTER(ResultCode) (&iRc);
