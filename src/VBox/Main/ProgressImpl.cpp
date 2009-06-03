@@ -371,7 +371,7 @@ STDMETHODIMP ProgressBase::COMGETTER(Canceled) (BOOL *aCanceled)
     return S_OK;
 }
 
-STDMETHODIMP ProgressBase::COMGETTER(ResultCode) (LONG *aResultCode)
+STDMETHODIMP ProgressBase::COMGETTER(ResultCode) (ULONG *aResultCode)
 {
     CheckComArgOutPointerValid(aResultCode);
 
@@ -491,10 +491,9 @@ HRESULT ProgressBase::setErrorInfoOnThread (IProgress *aProgress)
 {
     AssertReturn (aProgress != NULL, E_INVALIDARG);
 
-    LONG iRc;
-    HRESULT rc = aProgress->COMGETTER(ResultCode) (&iRc);
+    ULONG resultCode;
+    HRESULT rc = aProgress->COMGETTER(ResultCode) (&resultCode);
     AssertComRCReturnRC (rc);
-    HRESULT resultCode = iRc;
 
     if (resultCode == S_OK)
         return resultCode;
@@ -1315,7 +1314,7 @@ STDMETHODIMP CombinedProgress::COMGETTER(Canceled) (BOOL *aCanceled)
     return ProgressBase::COMGETTER(Canceled) (aCanceled);
 }
 
-STDMETHODIMP CombinedProgress::COMGETTER(ResultCode) (LONG *aResultCode)
+STDMETHODIMP CombinedProgress::COMGETTER(ResultCode) (ULONG *aResultCode)
 {
     CheckComArgOutPointerValid(aResultCode);
 
@@ -1592,11 +1591,9 @@ HRESULT CombinedProgress::checkProgress()
             if (FAILED (rc))
                 return rc;
 
-            LONG iRc;
-            rc = progress->COMGETTER(ResultCode) (&iRc);
+            rc = progress->COMGETTER(ResultCode) (&mResultCode);
             if (FAILED (rc))
                 return rc;
-            mResultCode = iRc;
 
             if (FAILED (mResultCode))
             {

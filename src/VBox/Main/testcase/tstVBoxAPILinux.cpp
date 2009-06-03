@@ -325,7 +325,7 @@ void createVM(IVirtualBox *virtualBox)
              * Here we wait forever (timeout -1)  which is potentially dangerous.
              */
             rc = progress->WaitForCompletion(-1);
-            PRInt32 resultCode;
+            PRUint32 resultCode;
             progress->GetResultCode(&resultCode);
             if (NS_FAILED(rc) || NS_FAILED(resultCode))
             {

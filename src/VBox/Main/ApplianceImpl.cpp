@@ -3999,7 +3999,7 @@ void Appliance::waitForAsyncProgress(ComObjPtr<Progress> &pProgressThis,
         if (FAILED(rc)) throw rc;
     }
     // report result of asynchronous operation
-    LONG iRc;
+    ULONG iRc;
     rc = pProgressAsync->COMGETTER(ResultCode)(&iRc);
     if (FAILED(rc)) throw rc;
 
