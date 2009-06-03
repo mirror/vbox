@@ -49,11 +49,13 @@ if defined(VBOX_ONLY_SDK) ## @todo || defined(VBOX_WITH_SDK)
  PACKING      += $(VBOX_SDK_ZIP)
  OTHER_CLEANS += $(VBOX_SDK_ZIP) \
                  $(wildcard $(PATH_BIN)/VirtualBoxSDK-*-r*.zip)
+
+# @todo: wrong, it must depend on everything included in SDK
 $(VBOX_SDK_ZIP): \
 		$(PATH_BIN)/sdk \
 		$(VBOX_VERSION_STAMP)
 	$(call MSG_L1,Making SDK delivery $@)
-	$(QUIET)$(REDIRECT) -C $(PATH_BIN) -- zip -r9 $@ sdk > /dev/null
+	$(QUIET)$(REDIRECT) -C $(PATH_BIN) -- $(ZIP) -r9 $@ sdk > /dev/null
 endif
 
 
