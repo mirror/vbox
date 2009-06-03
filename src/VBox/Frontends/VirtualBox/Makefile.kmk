@@ -185,7 +185,8 @@ ifdef VBOX_WITH_DEBUGGER_GUI
  endif
 endif
 ifdef VBOX_WITH_VIDEOHWACCEL
- VirtualBox_DEFS        += VBOX_WITH_VIDEOHWACCEL
+ VirtualBox_DEFS        += VBOX_WITH_VIDEOHWACCEL \
+            VBOX_GUI_USE_QGL
 endif
 
 VirtualBox_src/main.cpp_DEFS += VBOX_VERSION_STRING=\"$(VBOX_VERSION_STRING)\"
@@ -222,6 +223,10 @@ VirtualBox_LIBS.win       = \
 	$(PATH_SDK_DXSDK_LIB)/dxguid.lib
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
  VirtualBox_LIBS         += $(PATH_DLL)/VBoxKeyboard$(VBOX_SUFF_DLL)
+endif
+
+ifdef VBOX_WITH_VIDEOHWACCEL
+ VirtualBox_LIBS.win     += $(PATH_SDK_WINPSDK_LIB)/Opengl32.lib
 endif
 
 # Headers containing definitions of classes that use the Q_OBJECT macro.
@@ -447,6 +452,10 @@ endif
 # The Qt modules we're using.
 # (The include directory and lib/framework for each module will be added by the Qt4 unit.)
 VirtualBox_QT_MODULES = Core Gui Network
+
+ifdef VBOX_WITH_VIDEOHWACCEL
+VirtualBox_QT_MODULES += OpenGL
+endif
 
 # Import QDesigner UI sources and translations from VBoxUI.pro.
 ifndef VBOX_WITH_REGISTRATION

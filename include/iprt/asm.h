@@ -6453,7 +6453,7 @@ DECLINLINE(unsigned) ASMBitLastSetU32(uint32_t u32)
  */
 DECLINLINE(unsigned) ASMBitLastSetS32(int32_t i32)
 {
-    return ASMBitLastSetS32((uint32_t)i32);
+    return ASMBitLastSetU32((uint32_t)i32);
 }
 
 /**
