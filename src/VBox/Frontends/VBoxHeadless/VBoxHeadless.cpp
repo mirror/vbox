@@ -909,8 +909,10 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
         /* wait for result because there can be errors */
         if (SUCCEEDED(progress->WaitForCompletion (-1)))
         {
-            progress->COMGETTER(ResultCode)(&rc);
-            if (FAILED(rc))
+            LONG progressRc;
+            progress->COMGETTER(ResultCode)(&progressRc);
+            rc = progressRc;
+            if (FAILED(progressRc))
             {
                 com::ProgressErrorInfo info(progress);
                 if (info.isBasicAvailable())

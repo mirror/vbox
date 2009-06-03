@@ -115,7 +115,7 @@ int main (int argc, char **argv)
             CHECK_ERROR_BREAK (progress, COMGETTER(Completed) (&completed));
             ASSERT (completed);
 
-            HRESULT resultCode;
+            LONG resultCode;
             CHECK_ERROR_BREAK (progress, COMGETTER(ResultCode) (&resultCode));
             if (FAILED (resultCode))
             {
