@@ -93,7 +93,9 @@ int handleSnapshot(HandlerArg *a)
             CHECK_ERROR_BREAK(console, TakeSnapshot(name, desc, progress.asOutParam()));
 
             showProgress(progress);
-            progress->COMGETTER(ResultCode)(&rc);
+            LONG iRc;
+            progress->COMGETTER(ResultCode)(&iRc);
+            rc = iRc;
             if (FAILED(rc))
             {
                 com::ProgressErrorInfo info(progress);
@@ -133,7 +135,9 @@ int handleSnapshot(HandlerArg *a)
             CHECK_ERROR_BREAK(console, DiscardSnapshot(guid, progress.asOutParam()));
 
             showProgress(progress);
-            progress->COMGETTER(ResultCode)(&rc);
+            LONG iRc;
+            progress->COMGETTER(ResultCode)(&iRc);
+            rc = iRc;
             if (FAILED(rc))
             {
                 com::ProgressErrorInfo info(progress);
@@ -172,7 +176,9 @@ int handleSnapshot(HandlerArg *a)
             }
 
             showProgress(progress);
-            progress->COMGETTER(ResultCode)(&rc);
+            LONG iRc;
+            progress->COMGETTER(ResultCode)(&iRc);
+            rc = iRc;
             if (FAILED(rc))
             {
                 com::ProgressErrorInfo info(progress);
