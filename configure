@@ -43,6 +43,22 @@ which_wrapper()
   fi
 }
 
+OS=`uname -s | sed -e 's/GNU\/Linux/Linux/g' | tr [:upper:] [:lower:]`
+case "$OS" in
+  linux)
+    ;;
+  darwin)
+    ;;
+  freebsd)
+    ;;
+  sunos)
+    OS='solaris'
+    ;;
+  *)
+    echo "Cannot determine OS!"
+    exit 1
+    ;;
+esac
 
 #
 # Defaults
@@ -69,6 +85,9 @@ WITH_DBUS=1
 WITH_KMODS=1
 WITH_OPENGL=1
 WITH_HARDENING=1
+BUILD_LIBXML2=
+BUILD_LIBXSLT=
+BUILD_LIBCURL=
 CC="gcc"
 CC32=""
 CC64=""
@@ -82,16 +101,13 @@ AS86="as86"
 XSLTPROC="xsltproc"
 GENISOIMAGE="genisoimage"
 MKISOFS="mkisofs"
-BUILD_LIBXML2=
-BUILD_LIBXSLT=
-BUILD_LIBCURL=
 LIBCRYPTO="-lcrypto"
 LIBPTHREAD="-lpthread"
 LIBCAP="-lcap"
 GSOAP=""
 GSOAP_IMPORT=""
-LIBX11="-L/usr/X11R6/lib -L/usr/X11R6/lib64 -L/usr/local/lib -lXext -lX11"
 INCX11="/usr/local/include"
+LIBX11="-L/usr/X11R6/lib -L/usr/X11R6/lib64 -L/usr/local/lib -lXext -lX11"
 LIBXCURSOR="-lXcursor"
 LIBXMU="-lXmu"
 MESA="-lGL"
@@ -99,8 +115,13 @@ INCZ=""
 LIBZ="-lz"
 INCPNG=""
 LIBPNG="-lpng"
-INCCURL=""
-LIBCURL="-lcurl"
+if [ "$OS" = "freebsd" ]; then
+  INCCURL="-I/usr/local/include"
+  LIBCURL="-L/usr/local/lib -lcurl"
+else
+  INCCURL=""
+  LIBCURL="-lcurl"
+fi
 PKGCONFIG="`which_wrapper pkg-config`"
 PYTHONDIR="/usr /usr/local"
 QT4DIR="/usr/lib/qt4 /usr/share/qt4 /usr/lib64/qt4 /usr /usr/local"
@@ -127,7 +148,7 @@ if (cd `dirname $0`; pwd)|grep -q "$INVALID_CHARS"; then
 fi
 
 # darwin /bin/sh has a builtin echo that doesn't grok -n. gotta love it.
-if [ "`uname`" = "Darwin" ]; then
+if [ "$OS" = "darwin" ]; then
   ECHO_N="/bin/echo -n"
 else
   ECHO_N="echo -n"
@@ -289,22 +310,6 @@ test_execute_path()
 check_environment()
 {
   test_header environment
-  OS=`uname -s | sed -e 's/GNU\/Linux/Linux/g' | tr [:upper:] [:lower:]`
-  case "$OS" in
-    linux)
-      ;;
-    darwin)
-      ;;
-    freebsd)
-      ;;
-    sunos)
-      OS='solaris'
-      ;;
-    *)
-      log_failure "Cannot determine OS"
-      exit 1
-      ;;
-  esac
   BUILD_CPU=`uname -m`
   [ "$OS" = "solaris" ] && BUILD_CPU=`isainfo | cut -f 1 -d ' '`
   case "$BUILD_CPU" in
@@ -377,7 +382,7 @@ check_gcc()
       if [ "x$cc_ver" != "x$cxx_ver" ]; then
         log_failure "gcc version $cc_ver does not match g++ version $cxx_ver"
         fail really
-      elif [ $cc_maj -eq 4 -a $cc_min -eq 0 -a "OS" = "darwin" ]; then
+      elif [ $cc_maj -eq 4 -a $cc_min -eq 0 -a "$OS" = "darwin" ]; then
         log_success "found version $cc_ver"
       elif [ $cc_maj -eq 4 -a $cc_min -eq 4 ]; then
         log_success "found version $cc_ver"
