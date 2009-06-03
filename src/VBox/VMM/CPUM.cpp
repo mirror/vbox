@@ -386,11 +386,12 @@ static int cpumR3CpuIdInit(PVM pVM)
      */
     pCPUM->aGuestCpuIdStd[1].ebx &= 0x0000ffff;
 #ifdef VBOX_WITH_MULTI_CORE
-    /* Set the Maximum number of addressable IDs for logical processors in this physical package (bits 16-23) */
-    pCPUM->aGuestCpuIdStd[1].ebx |= ((pVM->cCPUs - 1) << 16);
-
     if (pVM->cCPUs > 1)
+    {
+        /* Set the Maximum number of addressable IDs for logical processors in this physical package (bits 16-23) */
+        pCPUM->aGuestCpuIdStd[1].ebx |= ((pVM->cCPUs - 1) << 16);
         pCPUM->aGuestCpuIdStd[1].edx |= X86_CPUID_FEATURE_EDX_HTT;  /* necessary for hyper-threading *or* multi-core CPUs */
+    }
 #endif
 
     /* Cpuid 2:
@@ -420,7 +421,8 @@ static int cpumR3CpuIdInit(PVM pVM)
     pCPUM->aGuestCpuIdStd[4].ecx = pCPUM->aGuestCpuIdStd[4].edx = 0;
     pCPUM->aGuestCpuIdStd[4].eax = pCPUM->aGuestCpuIdStd[4].ebx = 0;
 #ifdef VBOX_WITH_MULTI_CORE
-    if (pVM->cpum.s.enmCPUVendor == CPUMCPUVENDOR_INTEL)
+    if (    pVM->cCPUs > 1
+        &&  pVM->cpum.s.enmCPUVendor == CPUMCPUVENDOR_INTEL)
     {
         AssertReturn(pVM->cCPUs <= 64, VERR_TOO_MANY_CPUS);
         /* One logical processor with possibly multiple cores. */
@@ -506,7 +508,8 @@ static int cpumR3CpuIdInit(PVM pVM)
          * NC (0-7) Number of cores; 0 equals 1 core */
         pCPUM->aGuestCpuIdExt[8].ecx = 0;
 #ifdef VBOX_WITH_MULTI_CORE
-        if (pVM->cpum.s.enmCPUVendor == CPUMCPUVENDOR_AMD)
+        if (    pVM->cCPUs > 1
+            &&  pVM->cpum.s.enmCPUVendor == CPUMCPUVENDOR_AMD)
         {
             /* Legacy method to determine the number of cores. */
             pCPUM->aGuestCpuIdExt[1].ecx |= X86_CPUID_AMD_FEATURE_ECX_CMPL;
