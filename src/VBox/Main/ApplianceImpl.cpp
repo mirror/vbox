@@ -1443,11 +1443,11 @@ STDMETHODIMP Appliance::Interpret()
             /* CPU count */
             ULONG cpuCountVBox = vsysThis.cCPUs;
             /* Check for the constrains */
-            if (cpuCountVBox > 1) //SchemaDefs::MaxCPUCount)
+            if (cpuCountVBox > SchemaDefs::MaxCPUCount)
             {
                 addWarning(tr("The virtual system \"%s\" claims support for %u CPU's, but VirtualBox has support for max %u CPU's only."),
-                           vsysThis.strName.c_str(), cpuCountVBox, 1); //SchemaDefs::MaxCPUCount);
-                cpuCountVBox = 1; //SchemaDefs::MaxCPUCount;
+                           vsysThis.strName.c_str(), cpuCountVBox, SchemaDefs::MaxCPUCount);
+                cpuCountVBox = SchemaDefs::MaxCPUCount;
             }
             if (vsysThis.cCPUs == 0)
                 cpuCountVBox = 1;
