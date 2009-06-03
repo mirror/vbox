@@ -697,6 +697,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
         flags = LibAliasSetMode(pData->proxy_alias, flags, ~0);
         LibAliasSetAddress(pData->proxy_alias, special_addr);
         ftp_alias_load();
+        nbt_alias_load();
         
     }
 #endif

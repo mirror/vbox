@@ -376,6 +376,7 @@ AssertCompileSize(struct ethhdr, 14);
 #if defined(VBOX_WITH_SLIRP_ALIAS) && defined(VBOX_SLIRP_ALIAS)
 
 # define ip_next(ip) (void *)((uint8_t *)(ip) + ((ip)->ip_hl << 2))
+# define udp_next(udp) (void *)((uint8_t *)&((struct udphdr *)(udp))[1] )
 # define bcopy(src, dst, len) memcpy((dst), (src), (len)) 
 # define NO_FW_PUNCH
 
@@ -401,6 +402,10 @@ AssertCompileSize(struct ethhdr, 14);
 # ifdef fprintf
 #   undef fprintf
 # endif /*fprintf*/
+# ifdef fflush
+#   undef fflush
+# endif /*fflush*/
+#define fflush(x) do{}while(0)
 # define fprintf vbox_slirp_fprintf
 static void vbox_slirp_fprintf(void *ignored, char *format, ...)
 {
@@ -419,6 +424,8 @@ static void vbox_slirp_fprintf(void *ignored, char *format, ...)
 #ifdef VBOX_WITH_SLIRP_ALIAS
 int ftp_alias_load();
 int ftp_alias_unload();
+int nbt_alias_load();
+int nbt_alias_unload();
 #endif /*VBOX_WITH_SLIRP_ALIAS*/
 
 #endif
