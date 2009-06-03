@@ -1765,6 +1765,131 @@ end function
 
 
 ''
+' Checks for openssl
+sub CheckForSsl(strOptSsl)
+   dim strPathSsl, str
+   PrintHdr "openssl"
+
+   '
+   ' Try find some openssl dll/lib.
+   '
+   strPathSsl = ""
+   if (strPathSsl = "") And (strOptSsl <> "") then
+      if CheckForSslSub(strOptSsl) then strPathSsl = strOptSsl
+   end if
+
+   if strPathSsl = "" Then
+      str = Which("ssleay32.lib")
+      if str <> "" Then
+         str = PathParent(PathStripFilename(str))
+         if CheckForSslSub(str) then strPathSsl = str
+      end if
+   end if
+
+   ' Ignore failure if we're in 'internal' mode.
+   if (strPathSsl = "") and g_blnInternalMode then
+      PrintResult "openssl", "ignored (internal mode)"
+      exit sub
+   end if
+
+   ' Success?
+   if strPathSsl = "" then
+      if strOptSsl = "" then
+         MsgError "Can't locate openssl. Try specify the path with the --with-openssl=<path> argument. " _
+                & "If still no luck, consult the configure.log and the build requirements."
+      else
+         MsgError "Can't locate openssl. Please consult the configure.log and the build requirements."
+      end if
+      exit sub
+   end if
+
+   strPathSsl = UnixSlashes(PathAbs(strPathSsl))
+   CfgPrint "SDK_VBOX_OPENSSL_INCS := " & strPathSsl & "/include"
+   CfgPrint "SDK_VBOX_OPENSSL_LIBS := " & strPathSsl & "/lib/ssleay32.lib" & " " & strPathSsl & "/lib/libeay32.lib"
+
+   PrintResult "openssl", strPathSsl
+end sub
+
+''
+' Checks if the specified path points to an usable openssl or not.
+function CheckForSslSub(strPathSsl)
+
+   CheckForSslSub = False
+   LogPrint "trying: strPathSsl=" & strPathSsl
+   if   LogFileExists(strPathSsl, "include/openssl/md5.h") _
+    And LogFindFile(strPathSsl, "bin/ssleay32.dll") <> "" _
+    And LogFindFile(strPathSsl, "lib/ssleay32.lib") <> "" _
+    And LogFindFile(strPathSsl, "bin/libeay32.dll") <> "" _
+    And LogFindFile(strPathSsl, "lib/libeay32.lib") <> "" _
+      then
+         CheckForSslSub = True
+      end if
+end function
+
+
+''
+' Checks for libcurl
+sub CheckForCurl(strOptCurl)
+   dim strPathCurl, str
+   PrintHdr "libcurl"
+
+   '
+   ' Try find some cURL dll/lib.
+   '
+   strPathCurl = ""
+   if (strPathCurl = "") And (strOptCurl <> "") then
+      if CheckForCurlSub(strOptCurl) then strPathCurl = strOptCurl
+   end if
+
+   if strPathCurl = "" Then
+      str = Which("ssleay32.lib")
+      if str <> "" Then
+         str = PathParent(PathStripFilename(str))
+         if CheckForCurlSub(str) then strPathCurl = str
+      end if
+   end if
+
+   ' Ignore failure if we're in 'internal' mode.
+   if (strPathCurl = "") and g_blnInternalMode then
+      PrintResult "curl", "ignored (internal mode)"
+      exit sub
+   end if
+
+   ' Success?
+   if strPathCurl = "" then
+      if strOptCurl = "" then
+         MsgError "Can't locate libcurl. Try specify the path with the --with-libcurl=<path> argument. " _
+                & "If still no luck, consult the configure.log and the build requirements."
+      else
+         MsgError "Can't locate libcurl. Please consult the configure.log and the build requirements."
+      end if
+      exit sub
+   end if
+
+   strPathCurl = UnixSlashes(PathAbs(strPathCurl))
+   CfgPrint "SDK_VBOX_LIBCURL_INCS := " & strPathCurl & "/include"
+   CfgPrint "SDK_VBOX_LIBCURL_LIBS := " & strPathCurl & "/libcurl_imp.lib"
+
+   PrintResult "libcurl", strPathCurl
+end sub
+
+''
+' Checks if the specified path points to an usable libcurl or not.
+function CheckForCurlSub(strPathCurl)
+
+   CheckForCurlSub = False
+   LogPrint "trying: strPathCurl=" & strPathCurl
+   if   LogFileExists(strPathCurl, "include/curl/curl.h") _
+    And LogFindFile(strPathCurl, "curllib.dll") <> "" _
+    And LogFindFile(strPathCurl, "libcurl_imp.lib") <> "" _
+      then
+         CheckForCurlSub = True
+      end if
+end function
+
+
+
+''
 ''
 ' Checks for any Qt4 binaries.
 sub CheckForQt4(strOptQt4)
@@ -1820,6 +1945,23 @@ function CheckForQt4Sub(strPathQt4)
 end function
 
 
+'
+'
+function CheckForPython(strPathPython)
+
+   PrintHdr "Python"
+
+   CheckForPython = False
+   LogPrint "trying: strPathPython=" & strPathPython
+
+   if LogFileExists(strPathPython, "python.exe") then
+      CfgPrint "VBOX_BLD_PYTHON       := " & strPathPython & "\python.exe"
+      CheckForPython = True
+   end if
+  
+   PrintResult "Python ", strPathPython
+end function
+
 ''
 ' Show usage.
 sub usage
@@ -1847,6 +1989,9 @@ sub usage
    Print "  --with-W32API=PATH    "
    Print "  --with-libxml2=PATH   "
    Print "  --with-libxslt=PATH   "
+   Print "  --with-openssl=PATH   "
+   Print "  --with-libcurl=PATH   "
+   Print "  --with-python=PATH    "
 end sub
 
 
@@ -1879,6 +2024,9 @@ Sub Main
    strOptW32API = ""
    strOptXml2 = ""
    strOptXslt = ""
+   strOptSsl = ""
+   strOptCurl = ""
+   strOptPython = ""
    blnOptDisableCOM = False
    for i = 1 to Wscript.Arguments.Count
       dim str, strArg, strPath
@@ -1922,6 +2070,12 @@ Sub Main
             strOptXml2 = strPath
          case "--with-libxslt"
             strOptXslt = strPath
+         case "--with-openssl"
+            strOptSsl = strPath
+         case "--with-libcurl"
+            strOptCurl = strPath
+         case "--with-python"
+            strOptPython = strPath
          case "--disable-com"
             blnOptDisableCOM = True
          case "--enable-com"
@@ -1982,7 +2136,12 @@ Sub Main
    if (strOptXslt <> "") then
       CheckForXslt strOptXslt
    end if
+   CheckForSsl strOptSsl
+   CheckForCurl strOptCurl
    CheckForQt4 strOptQt4
+   if (strOptPython <> "") then
+     CheckForPython strOptPython
+   end if
    if g_blnInternalMode then
       EnvPrint "call " & g_strPathDev & "/env.cmd %1 %2 %3 %4 %5 %6 %7 %8 %9"
    end if
