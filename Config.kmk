@@ -412,10 +412,10 @@ VBOX_WITH_SCSI = 1
 if1of ($(KBUILD_TARGET), darwin solaris linux win freebsd)
  VBOX_WITH_HOSTNETIF_API = 1
 endif
-# Enables the Python<->XPCOM and later Python<->COM bindings.
-# (Current not enabled by default because all the build servers has
+# Enables the Python<->XPCOM and Python<->COM bindings.
+# (Currently not enabled by default because all the build servers has
 # different Python versions installed and would start burning.)
-if1of ($(KBUILD_TARGET), darwin solaris)
+ifn1of ($(KBUILD_TARGET), linux)
  VBOX_WITH_PYTHON = 1
 endif
 # Enables hardening.
