@@ -1585,8 +1585,8 @@ STDMETHODIMP Appliance::Interpret()
 
             /* Hard disk Controller */
             uint16_t cIDEused = 0;
-            uint16_t cSATAused = 0;
-            uint16_t cSCSIused = 0;
+            uint16_t cSATAused = 0; NOREF(cSATAused);
+            uint16_t cSCSIused = 0; NOREF(cSCSIused);
             ControllersMap::const_iterator hdcIt;
             /* Iterate through all hard disk controllers */
             for (hdcIt = vsysThis.mapControllers.begin();
@@ -1629,9 +1629,9 @@ STDMETHODIMP Appliance::Interpret()
                             break;
                         }
 
-#ifdef VBOX_WITH_AHCI
                     case HardDiskController::SATA:
                         {
+#ifdef VBOX_WITH_AHCI
                             /* Check for the constrains */
                             if (cSATAused < 1)
                             {
@@ -1652,11 +1652,15 @@ STDMETHODIMP Appliance::Interpret()
                             }
                             ++cSATAused;
                             break;
+#else /* !VBOX_WITH_AHCI */
+                            addWarning(tr("The virtual system \"%s\" requests at least one SATA controller but this version of VirtualBox does not provide a SATA controller emulation"),
+                                      vsysThis.strName.c_str());
+#endif /* !VBOX_WITH_AHCI */
                         }
-#endif /* VBOX_WITH_AHCI */
 
                     case HardDiskController::SCSI:
                         {
+#ifdef VBOX_WITH_LSILOGIC
                             /* Check for the constrains */
                             if (cSCSIused < 1)
                             {
@@ -1675,6 +1679,10 @@ STDMETHODIMP Appliance::Interpret()
                                            strControllerID.c_str());
                             ++cSCSIused;
                             break;
+#else /* !VBOX_WITH_LSILOGIC */
+                            addWarning(tr("The virtual system \"%s\" requests at least one SATA controller but this version of VirtualBox does not provide a SCSI controller emulation"),
+                                       vsysThis.strName.c_str());
+#endif /* !VBOX_WITH_LSILOGIC */
                         }
                 }
             }
@@ -2159,6 +2167,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
             }
 #endif /* VBOX_WITH_AHCI */
 
+#ifdef VBOX_WITH_LSILOGIC
             /* Hard disk controller SCSI */
             std::list<VirtualSystemDescriptionEntry*> vsdeHDCSCSI = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerSCSI);
             if (vsdeHDCSCSI.size() > 1)
@@ -2183,6 +2192,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
                 rc = pController->COMSETTER(ControllerType)(controllerType);
                 if (FAILED(rc)) throw rc;
             }
+#endif /* VBOX_WITH_LSILOGIC */
 
             /* Now its time to register the machine before we add any hard disks */
             rc = pVirtualBox->RegisterMachine(pNewMachine);
@@ -4565,6 +4575,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
         }
 #endif // VBOX_WITH_AHCI
 
+#ifdef VBOX_WITH_LSILOGIC
 //     <const name="HardDiskControllerSCSI" value="8" />
         rc = GetStorageControllerByName(Bstr("SCSI"), pController.asOutParam());
         if (SUCCEEDED(rc))
@@ -4587,6 +4598,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
             else
                 throw rc;
         }
+#endif // VBOX_WITH_LSILOGIC
 
 //     <const name="HardDiskImage" value="9" />
         HDData::AttachmentList::iterator itA;
