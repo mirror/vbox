@@ -718,7 +718,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                             RC_CHECK();
     rc = CFGMR3InsertInteger(pCfg,  "NumCPUs", cCpus);                              RC_CHECK();
 
-    /* SMP: @todo: IOAPIC may be required for SMP configs */
     if (fIOAPIC)
     {
         /*
