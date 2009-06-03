@@ -378,6 +378,7 @@ AssertCompileSize(struct ethhdr, 14);
 # define ip_next(ip) (void *)((uint8_t *)(ip) + ((ip)->ip_hl << 2))
 # define udp_next(udp) (void *)((uint8_t *)&((struct udphdr *)(udp))[1] )
 # define bcopy(src, dst, len) memcpy((dst), (src), (len)) 
+# define bcmp(a1, a2, len) memcmp((a1), (a2), (len)) 
 # define NO_FW_PUNCH
 
 # ifdef alias_addr
@@ -405,19 +406,33 @@ AssertCompileSize(struct ethhdr, 14);
 # ifdef fflush
 #   undef fflush
 # endif /*fflush*/
+# ifdef printf
+#   undef printf
+# endif /*printf*/
 #define fflush(x) do{}while(0)
 # define fprintf vbox_slirp_fprintf
-static void vbox_slirp_fprintf(void *ignored, char *format, ...)
+# define printf vbox_slirp_printf
+static void vbox_slirp_printV(char *format, va_list args)
 {
-/*  define LogIt(pvInst, fFlags, iGroup, fmtargs) */
-    va_list args;
     char buffer[1024];
     memset(buffer, 0, 1024);
-    va_start(args, format);
     RTStrPrintfV(buffer, 1024, format, args);
-    va_end(args);
 
-    Log2(("%s\n", buffer));
+    Log2(("NAT:ALIAS: %s\n", buffer));
+}
+static void vbox_slirp_printf(char *format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    vbox_slirp_printV(format, args);
+    va_end(args);
+}
+static void vbox_slirp_fprintf(void *ignored, char *format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    vbox_slirp_printV(format, args);
+    va_end(args);
 }
 #endif /*VBOX_WITH_SLIRP_ALIAS && VBOX_SLIRP_ALIAS*/
 
