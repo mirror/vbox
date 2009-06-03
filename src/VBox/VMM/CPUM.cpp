@@ -62,6 +62,8 @@
 #include <iprt/mp.h>
 #include <iprt/cpuset.h>
 
+/* Enable multi-core VCPUs. */
+#define VBOX_WITH_MULTI_CORE
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
