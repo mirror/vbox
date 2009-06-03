@@ -33,6 +33,7 @@
 #include <QRect>
 #include <QRegion>
 #include <QTimer>
+#include <QToolButton>
 
 VBoxMiniToolBar::VBoxMiniToolBar (QWidget *aParent, Alignment aAlignment)
     : VBoxToolBar (aParent)
@@ -113,13 +114,12 @@ VBoxMiniToolBar& VBoxMiniToolBar::operator<< (QList <QMenu*> aMenus)
 {
     for (int i = 0; i < aMenus.size(); ++ i)
     {
-        insertAction (mInsertPosition, aMenus [i]->menuAction());
+        QAction *action = aMenus [i]->menuAction();
+        insertAction (mInsertPosition, action);
+        if (QToolButton *button = qobject_cast <QToolButton*> (widgetForAction (action)))
+            button->setPopupMode (QToolButton::InstantPopup);
         if (i != aMenus.size() - 1)
-        {
-            QWidget *spacer = new QWidget (this);
-            insertWidget (mInsertPosition, spacer);
-            mSpacings << spacer;
-        }
+            mSpacings << widgetForAction (insertWidget (mInsertPosition, new QWidget (this)));
     }
     return *this;
 }
