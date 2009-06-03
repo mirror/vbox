@@ -1015,7 +1015,9 @@ STDMETHODIMP Host::COMGETTER(USBDevices)(ComSafeArrayOut (IHostUSBDevice *, aUSB
      * extended error info to indicate that USB is simply not available
      * (w/o treating it as a failure), for example, as in OSE. */
     NOREF(aUSBDevices);
+# ifndef RT_OS_WINDOWS
     NOREF(aUSBDevicesSize);
+# endif
     ReturnComNotImplemented();
 #endif
 }
@@ -1040,7 +1042,9 @@ STDMETHODIMP Host::COMGETTER(USBDeviceFilters) (ComSafeArrayOut (IHostUSBDeviceF
      * extended error info to indicate that USB is simply not available
      * (w/o treating it as a failure), for example, as in OSE. */
     NOREF(aUSBDeviceFilters);
+# ifndef RT_OS_WINDOWS
     NOREF(aUSBDeviceFiltersSize);
+# endif
     ReturnComNotImplemented();
 #endif
 }

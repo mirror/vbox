@@ -375,7 +375,9 @@ STDMETHODIMP USBController::COMGETTER(DeviceFilters) (ComSafeArrayOut(IUSBDevice
     return S_OK;
 #else
     NOREF(aDevicesFilters);
+# ifndef RT_OS_WINDOWS
     NOREF(aDevicesFiltersSize);
+# endif
     ReturnComNotImplemented();
 #endif
 }
