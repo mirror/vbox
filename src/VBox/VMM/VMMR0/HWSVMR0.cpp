@@ -127,18 +127,8 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
 {
     int rc;
 
-    pVM->hwaccm.s.svm.pMemObjVMCBHost = NIL_RTR0MEMOBJ;
     pVM->hwaccm.s.svm.pMemObjIOBitmap = NIL_RTR0MEMOBJ;
     pVM->hwaccm.s.svm.pMemObjMSRBitmap = NIL_RTR0MEMOBJ;
-
-    /* Allocate one page for the host context */
-    rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.svm.pMemObjVMCBHost, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    pVM->hwaccm.s.svm.pVMCBHost     = RTR0MemObjAddress(pVM->hwaccm.s.svm.pMemObjVMCBHost);
-    pVM->hwaccm.s.svm.pVMCBHostPhys = RTR0MemObjGetPagePhysAddr(pVM->hwaccm.s.svm.pMemObjVMCBHost, 0);
-    ASMMemZeroPage(pVM->hwaccm.s.svm.pVMCBHost);
 
     /* Allocate 12 KB for the IO bitmap (doesn't seem to be a way to convince SVM not to use it) */
     rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.svm.pMemObjIOBitmap, 3 << PAGE_SHIFT, true /* executable R0 mapping */);
@@ -194,16 +184,28 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
     /* Allocate VMCBs for all guest CPUs. */
     for (unsigned i=0;i<pVM->cCPUs;i++)
     {
-        pVM->aCpus[i].hwaccm.s.svm.pMemObjVMCB = NIL_RTR0MEMOBJ;
+        PVMCPU pVCpu = &pVM->aCpus[i];
 
-        /* Allocate one page for the VM control block (VMCB). */
-        rc = RTR0MemObjAllocCont(&pVM->aCpus[i].hwaccm.s.svm.pMemObjVMCB, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
+        pVCpu->hwaccm.s.svm.pMemObjVMCBHost = NIL_RTR0MEMOBJ;
+        pVCpu->hwaccm.s.svm.pMemObjVMCB     = NIL_RTR0MEMOBJ;
+
+        /* Allocate one page for the host context */
+        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.svm.pMemObjVMCBHost, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
         if (RT_FAILURE(rc))
             return rc;
 
-        pVM->aCpus[i].hwaccm.s.svm.pVMCB     = RTR0MemObjAddress(pVM->aCpus[i].hwaccm.s.svm.pMemObjVMCB);
-        pVM->aCpus[i].hwaccm.s.svm.pVMCBPhys = RTR0MemObjGetPagePhysAddr(pVM->aCpus[i].hwaccm.s.svm.pMemObjVMCB, 0);
-        ASMMemZeroPage(pVM->aCpus[i].hwaccm.s.svm.pVMCB);
+        pVCpu->hwaccm.s.svm.pVMCBHost     = RTR0MemObjAddress(pVCpu->hwaccm.s.svm.pMemObjVMCBHost);
+        pVCpu->hwaccm.s.svm.pVMCBHostPhys = RTR0MemObjGetPagePhysAddr(pVCpu->hwaccm.s.svm.pMemObjVMCBHost, 0);
+        ASMMemZeroPage(pVCpu->hwaccm.s.svm.pVMCBHost);
+
+        /* Allocate one page for the VM control block (VMCB). */
+        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.svm.pMemObjVMCB, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        pVCpu->hwaccm.s.svm.pVMCB     = RTR0MemObjAddress(pVCpu->hwaccm.s.svm.pMemObjVMCB);
+        pVCpu->hwaccm.s.svm.pVMCBPhys = RTR0MemObjGetPagePhysAddr(pVCpu->hwaccm.s.svm.pMemObjVMCB, 0);
+        ASMMemZeroPage(pVCpu->hwaccm.s.svm.pVMCB);
     }
 
     return VINF_SUCCESS;
@@ -219,20 +221,23 @@ VMMR0DECL(int) SVMR0TermVM(PVM pVM)
 {
     for (unsigned i=0;i<pVM->cCPUs;i++)
     {
-        if (pVM->aCpus[i].hwaccm.s.svm.pMemObjVMCB != NIL_RTR0MEMOBJ)
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
+        if (pVCpu->hwaccm.s.svm.pMemObjVMCBHost != NIL_RTR0MEMOBJ)
         {
-            RTR0MemObjFree(pVM->aCpus[i].hwaccm.s.svm.pMemObjVMCB, false);
-            pVM->aCpus[i].hwaccm.s.svm.pVMCB       = 0;
-            pVM->aCpus[i].hwaccm.s.svm.pVMCBPhys   = 0;
-            pVM->aCpus[i].hwaccm.s.svm.pMemObjVMCB = NIL_RTR0MEMOBJ;
+            RTR0MemObjFree(pVCpu->hwaccm.s.svm.pMemObjVMCBHost, false);
+            pVCpu->hwaccm.s.svm.pVMCBHost       = 0;
+            pVCpu->hwaccm.s.svm.pVMCBHostPhys   = 0;
+            pVCpu->hwaccm.s.svm.pMemObjVMCBHost = NIL_RTR0MEMOBJ;
         }
-    }
-    if (pVM->hwaccm.s.svm.pMemObjVMCBHost != NIL_RTR0MEMOBJ)
-    {
-        RTR0MemObjFree(pVM->hwaccm.s.svm.pMemObjVMCBHost, false);
-        pVM->hwaccm.s.svm.pVMCBHost       = 0;
-        pVM->hwaccm.s.svm.pVMCBHostPhys   = 0;
-        pVM->hwaccm.s.svm.pMemObjVMCBHost = NIL_RTR0MEMOBJ;
+
+        if (pVCpu->hwaccm.s.svm.pMemObjVMCB != NIL_RTR0MEMOBJ)
+        {
+            RTR0MemObjFree(pVCpu->hwaccm.s.svm.pMemObjVMCB, false);
+            pVCpu->hwaccm.s.svm.pVMCB       = 0;
+            pVCpu->hwaccm.s.svm.pVMCBPhys   = 0;
+            pVCpu->hwaccm.s.svm.pMemObjVMCB = NIL_RTR0MEMOBJ;
+        }
     }
     if (pVM->hwaccm.s.svm.pMemObjIOBitmap != NIL_RTR0MEMOBJ)
     {
@@ -1109,7 +1114,7 @@ ResumeExecution:
     Assert(idCpuCheck == RTMpCpuId());
 #endif
     TMNotifyStartOfExecution(pVCpu);
-    pVCpu->hwaccm.s.svm.pfnVMRun(pVM->hwaccm.s.svm.pVMCBHostPhys, pVCpu->hwaccm.s.svm.pVMCBPhys, pCtx, pVM, pVCpu);
+    pVCpu->hwaccm.s.svm.pfnVMRun(pVCpu->hwaccm.s.svm.pVMCBHostPhys, pVCpu->hwaccm.s.svm.pVMCBPhys, pCtx, pVM, pVCpu);
     TMNotifyEndOfExecution(pVCpu);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
     ASMSetFlags(uOldEFlags);
