@@ -272,6 +272,7 @@ $(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh: $(VBOX_PATH_LNX_INST_SRC)/vboxdrv.sh.in | $
 $(VBOX_LNX_INST_OUT_DIR)/install.sh: $(VBOX_PATH_LNX_INST_SRC)/install.sh $(VBOX_VERSION_STAMP) | $$(dir $$@)
 	$(QUIET)$(SED) \
 		-e "s;_VERSION_;$(VBOX_VERSION_STRING);g" \
+		-e "s;_SVNREV_;$(VBOX_SVN_REV);g" \
 		-e "s;_BUILD_;$(date-utc );g" \
 		-e "s;_ARCH_;$(KBUILD_TARGET_ARCH);g" \
 		-e "s;_HARDENED_;$(VBOX_WITH_HARDENING);g" \
