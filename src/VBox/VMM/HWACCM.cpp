@@ -1160,9 +1160,10 @@ VMMR3DECL(void) HWACCMR3Relocate(PVM pVM)
         for (unsigned i=0;i<pVM->cCPUs;i++)
         {
             PVMCPU pVCpu = &pVM->aCpus[i];
-            /* @todo SMP */
+
             pVCpu->hwaccm.s.enmShadowMode            = PGMGetShadowMode(pVCpu);
-            pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode = PGMGetGuestMode(pVCpu);
+            Assert(pVCpu->hwaccm.s.vmx.enmCurrGuestMode == PGMGetGuestMode(pVCpu));
+            pVCpu->hwaccm.s.vmx.enmCurrGuestMode     = PGMGetGuestMode(pVCpu);
         }
     }
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
