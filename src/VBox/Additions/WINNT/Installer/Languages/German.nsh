@@ -13,6 +13,11 @@ LangString VBOX_INNOTEK_FOUND ${LANG_GERMAN}            "Eine veraltete Version 
 LangString VBOX_INNOTEK_ABORTED ${LANG_GERMAN}          "Die Installation der Guest Additions kann nicht fortgesetzt werden.$\r$\nBitte deinstallieren Sie erst die alten Guest Additions!"
 LangString VBOX_INNOTEK_REBOOT ${LANG_GERMAN}           "Es wird dringend empfohlen das System neu zu starten bevor die neuen Guest Additions installiert werden.$\r$\nBitte starten Sie die Installation nach dem Neustart erneut.$\r$\n$\r$\nJetzt neu starten?"
 
+LangString VBOX_COMPONENT_MAIN ${LANG_GERMAN}           "VirtualBox Guest Additions"
+LangString VBOX_COMPONENT_MAIN_DESC ${LANG_GERMAN}      "Hauptkomponenten der VirtualBox Guest Additions"
+LangString VBOX_COMPONENT_D3D  ${LANG_GERMAN}           "Direct3D-Unterstützung"
+LangString VBOX_COMPONENT_D3D_DESC  ${LANG_GERMAN}      "Ermöglicht Direct3D-Unterstützung für Gäste"
+
 LangString VBOX_REBOOT_REQUIRED ${LANG_GERMAN}          "Um alle Änderungen durchführen zu können, muss das System neu gestartet werden. Jetzt neu starten?"
 
 LangString VBOX_EXTRACTION_COMPLETE ${LANG_GERMAN}      "$(^Name): Die Dateien wurden erfolgreich nach $\"$INSTDIR$\" entpackt!"

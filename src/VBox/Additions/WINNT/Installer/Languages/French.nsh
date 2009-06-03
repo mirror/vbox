@@ -13,6 +13,11 @@ LangString VBOX_INNOTEK_FOUND ${LANG_FRENCH}             "Une ancienne version d
 LangString VBOX_INNOTEK_ABORTED ${LANG_FRENCH}           "Le programme ne peut continuer avec l'installation des Additions Clients.$\r$\nVeuillez désinstaller d'abord les anciennes Additions Clients!"
 LangString VBOX_INNOTEK_REBOOT ${LANG_FRENCH}            "Nous vous conseillons fortement de redémarer cette machine virtuelle avant d'installer la nouvelle version des Additions Clients.$\r$\nVeuillez recommencer l'installation des Additions Clients après le redémarrage.$\r$\n$\r$\nRedémarrer maintenant?"
 
+LangString VBOX_COMPONENT_MAIN ${LANG_FRENCH}            "VirtualBox Guest Additions"
+LangString VBOX_COMPONENT_MAIN_DESC ${LANG_FRENCH}       "Main Files of VirtualBox Guest Additions"
+LangString VBOX_COMPONENT_D3D  ${LANG_FRENCH}            "Direct3D Support for Guests"
+LangString VBOX_COMPONENT_D3D_DESC  ${LANG_FRENCH}       "Enables Direct3D Support for Guests"
+
 LangString VBOX_EXTRACTION_COMPLETE ${LANG_FRENCH}       "$(^Name): Les fichiers ont été extrait avec succès dans $\"$INSTDIR$\"!"
 
 LangString VBOX_REBOOT_REQUIRED ${LANG_FRENCH}           "Le système doit être redémarré pourque les changements prennent effet. Redémarrer Windows maintenant?"
