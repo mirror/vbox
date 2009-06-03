@@ -2517,8 +2517,8 @@ VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     int             rc;
     RTHCUINTREG     uOldEFlags;
 
-    /* @todo This code is not guest SMP safe (hyper stack) */
-    AssertReturn(pVM->cCPUs == 1, VERR_ACCESS_DENIED);
+    /* @todo This code is not guest SMP safe (hyper stack and switchers) */
+    AssertReturn(pVM->cCPUs == 1, VERR_TOO_MANY_CPUS);
     Assert(pfnHandler);
 
     uOldEFlags = ASMIntDisableFlags();
