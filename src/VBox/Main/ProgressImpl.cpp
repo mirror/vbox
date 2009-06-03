@@ -1591,10 +1591,12 @@ HRESULT CombinedProgress::checkProgress()
             if (FAILED (rc))
                 return rc;
 
-            rc = progress->COMGETTER(ResultCode) (&mResultCode);
+            ULONG iRc;
+            rc = progress->COMGETTER(ResultCode) (&iRc);
             if (FAILED (rc))
                 return rc;
 
+            mResultCode = iRc;
             if (FAILED (mResultCode))
             {
                 rc = progress->COMGETTER(ErrorInfo) (mErrorInfo.asOutParam());
