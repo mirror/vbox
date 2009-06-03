@@ -606,7 +606,7 @@ static void startVM(IVirtualBox *virtualBox, ISession *session, PRUnichar *id, n
     else
     {
         PRBool completed;
-        PRInt32 resultCode;
+        PRUint32 resultCode;
 
         printf("Waiting for the remote session to open...\n");
         progress->vtbl->WaitForCompletion(progress, -1);
