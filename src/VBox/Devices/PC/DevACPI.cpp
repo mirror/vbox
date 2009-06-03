@@ -1851,8 +1851,9 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"ShowCpu\""));
 
-    /* Always show the CPU leafs when we have multiple VCPUs. */
-    if (s->cCpus > 1)
+    /* Always show the CPU leafs when we have multiple VCPUs or when the IO-APIC is enabled. */
+    if (    s->cCpus > 1
+        ||  s->u8UseIOApic)
         s->fShowCpu = true;
 
     bool fGCEnabled;
