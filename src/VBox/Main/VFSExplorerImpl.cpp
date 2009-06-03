@@ -252,6 +252,7 @@ VFSFileType_T VFSExplorer::RTToVFSFileType(int aType) const
     VFSFileType_T t;
     switch(aType)
     {
+        default:
         case RTDIRENTRYTYPE_UNKNOWN: t = VFSFileType_Unknown; break;
         case RTDIRENTRYTYPE_FIFO: t = VFSFileType_Fifo; break;
         case RTDIRENTRYTYPE_DEV_CHAR: t = VFSFileType_DevChar; break;

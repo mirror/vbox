@@ -1014,6 +1014,8 @@ STDMETHODIMP Host::COMGETTER(USBDevices)(ComSafeArrayOut (IHostUSBDevice *, aUSB
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
      * (w/o treating it as a failure), for example, as in OSE. */
+    NOREF(aUSBDevices);
+    NOREF(aUSBDevicesSize);
     ReturnComNotImplemented();
 #endif
 }
@@ -1037,6 +1039,8 @@ STDMETHODIMP Host::COMGETTER(USBDeviceFilters) (ComSafeArrayOut (IHostUSBDeviceF
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
      * (w/o treating it as a failure), for example, as in OSE. */
+    NOREF(aUSBDeviceFilters);
+    NOREF(aUSBDeviceFiltersSize);
     ReturnComNotImplemented();
 #endif
 }
@@ -1334,6 +1338,8 @@ STDMETHODIMP Host::CreateUSBDeviceFilter (IN_BSTR aName, IHostUSBDeviceFilter **
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
      * (w/o treating it as a failure), for example, as in OSE. */
+    NOREF(aName);
+    NOREF(aFilter);
     ReturnComNotImplemented();
 #endif
 }
@@ -1381,6 +1387,8 @@ STDMETHODIMP Host::InsertUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
      * (w/o treating it as a failure), for example, as in OSE. */
+    NOREF(aPosition);
+    NOREF(aFilter);
     ReturnComNotImplemented();
 #endif
 }
@@ -1435,6 +1443,8 @@ STDMETHODIMP Host::RemoveUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
      * (w/o treating it as a failure), for example, as in OSE. */
+    NOREF(aPosition);
+    NOREF(aFilter);
     ReturnComNotImplemented();
 #endif
 }
@@ -2498,6 +2508,8 @@ STDMETHODIMP Host::FindUSBDeviceByAddress (IN_BSTR aAddress, IHostUSBDevice **aD
         aAddress);
 
 #else   /* !VBOX_WITH_USB */
+    NOREF(aAddress);
+    NOREF(aDevice);
     return E_NOTIMPL;
 #endif  /* !VBOX_WITH_USB */
 }
@@ -2530,6 +2542,8 @@ STDMETHODIMP Host::FindUSBDeviceById (IN_BSTR aId, IHostUSBDevice **aDevice)
         Guid (aId).raw());
 
 #else   /* !VBOX_WITH_USB */
+    NOREF(aId);
+    NOREF(aDevice);
     return E_NOTIMPL;
 #endif  /* !VBOX_WITH_USB */
 }

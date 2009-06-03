@@ -374,6 +374,8 @@ STDMETHODIMP USBController::COMGETTER(DeviceFilters) (ComSafeArrayOut(IUSBDevice
 
     return S_OK;
 #else
+    NOREF(aDevicesFilters);
+    NOREF(aDevicesFiltersSize);
     ReturnComNotImplemented();
 #endif
 }
@@ -407,6 +409,8 @@ STDMETHODIMP USBController::CreateDeviceFilter (IN_BSTR aName,
 
     return S_OK;
 #else
+    NOREF(aName);
+    NOREF(aFilter);
     ReturnComNotImplemented();
 #endif
 }
@@ -467,6 +471,8 @@ STDMETHODIMP USBController::InsertDeviceFilter (ULONG aPosition,
 
 #else /* VBOX_WITH_USB */
 
+    NOREF(aPosition);
+    NOREF(aFilter);
     ReturnComNotImplemented();
 
 #endif /* VBOX_WITH_USB */
@@ -532,6 +538,8 @@ STDMETHODIMP USBController::RemoveDeviceFilter (ULONG aPosition,
 
 #else /* VBOX_WITH_USB */
 
+    NOREF(aPosition);
+    NOREF(aFilter);
     ReturnComNotImplemented();
 
 #endif /* VBOX_WITH_USB */

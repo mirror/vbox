@@ -1468,6 +1468,7 @@ STDMETHODIMP Machine::COMGETTER(VRDPServer)(IVRDPServer **vrdpServer)
 
     return S_OK;
 #else
+    NOREF(vrdpServer);
     ReturnComNotImplemented();
 #endif
 }
@@ -1534,6 +1535,7 @@ STDMETHODIMP Machine::COMGETTER(USBController) (IUSBController **aUSBController)
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
      * (w/o treting it as a failure), for example, as in OSE */
+    NOREF(aUSBController);
     ReturnComNotImplemented();
 #endif
 }
@@ -8502,6 +8504,7 @@ void SessionMachine::uninit (Uninit::Reason aReason)
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
     MachineState_T lastState = mData->mMachineState;
+    NOREF(lastState);
 
     if (aReason == Uninit::Abnormal)
     {
@@ -8739,6 +8742,8 @@ STDMETHODIMP SessionMachine::RunUSBDeviceFilters (IUSBDevice *aUSBDevice,
 #ifdef VBOX_WITH_USB
     *aMatched = mUSBController->hasMatchingFilter (aUSBDevice, aMaskedIfs);
 #else
+    NOREF(aUSBDevice);
+    NOREF(aMaskedIfs);
     *aMatched = FALSE;
 #endif
 
@@ -8764,6 +8769,7 @@ STDMETHODIMP SessionMachine::CaptureUSBDevice (IN_BSTR aId)
     AssertReturn (service, E_FAIL);
     return service->captureDeviceForVM (this, Guid(aId));
 #else
+    NOREF(aId);
     return E_NOTIMPL;
 #endif
 }
@@ -8783,6 +8789,8 @@ STDMETHODIMP SessionMachine::DetachUSBDevice (IN_BSTR aId, BOOL aDone)
     AssertReturn (service, E_FAIL);
     return service->detachDeviceFromVM (this, Guid(aId), !!aDone);
 #else
+    NOREF(aId);
+    NOREF(aDone);
     return E_NOTIMPL;
 #endif
 }
@@ -8841,6 +8849,7 @@ STDMETHODIMP SessionMachine::DetachAllUSBDevices (BOOL aDone)
     AssertReturn (service, E_FAIL);
     return service->detachAllDevicesFromVM (this, !!aDone, false /* aAbnormal */);
 #else
+    NOREF(aDone);
     return S_OK;
 #endif
 }
@@ -9953,6 +9962,9 @@ bool SessionMachine::hasMatchingUSBFilter (const ComObjPtr <HostUSBDevice> &aDev
             return mUSBController->hasMatchingFilter (aDevice, aMaskedIfs);
         default: break;
     }
+#else
+    NOREF(aDevice);
+    NOREF(aMaskedIfs);
 #endif
     return false;
 }
