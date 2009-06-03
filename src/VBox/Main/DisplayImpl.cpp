@@ -570,7 +570,11 @@ void Display::handleDisplayUpdate (int x, int y, int w, int h)
 
     pFramebuffer->Lock();
 
-    checkCoordBounds (&x, &y, &w, &h, mpDrv->Connector.cx, mpDrv->Connector.cy);
+    if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
+        checkCoordBounds (&x, &y, &w, &h, mpDrv->Connector.cx, mpDrv->Connector.cy);
+    else
+        checkCoordBounds (&x, &y, &w, &h, maFramebuffers[uScreenId].w,
+                                          maFramebuffers[uScreenId].h);
 
     if (w != 0 && h != 0)
         pFramebuffer->NotifyUpdate(x, y, w, h);
@@ -672,7 +676,8 @@ static void vbvaRgnDirtyRect (VBVADIRTYREGION *prgn, unsigned uScreenId, VBVACMD
     {
         //@todo pfnUpdateDisplayRect must take the vram offset parameter for the framebuffer
         prgn->pPort->pfnUpdateDisplayRect (prgn->pPort, phdr->x, phdr->y, phdr->w, phdr->h);
-        prgn->pDisplay->handleDisplayUpdate (phdr->x, phdr->y, phdr->w, phdr->h);
+        prgn->pDisplay->handleDisplayUpdate (phdr->x + pFBInfo->xOrigin,
+                                             phdr->y + pFBInfo->yOrigin, phdr->w, phdr->h);
     }
 
     return;
@@ -689,7 +694,8 @@ static void vbvaRgnUpdateFramebuffer (VBVADIRTYREGION *prgn, unsigned uScreenId)
     {
         //@todo pfnUpdateDisplayRect must take the vram offset parameter for the framebuffer
         prgn->pPort->pfnUpdateDisplayRect (prgn->pPort, pFBInfo->dirtyRect.xLeft, pFBInfo->dirtyRect.yTop, w, h);
-        prgn->pDisplay->handleDisplayUpdate (pFBInfo->dirtyRect.xLeft, pFBInfo->dirtyRect.yTop, w, h);
+        prgn->pDisplay->handleDisplayUpdate (pFBInfo->dirtyRect.xLeft + pFBInfo->xOrigin,
+                                             pFBInfo->dirtyRect.yTop + pFBInfo->yOrigin, w, h);
     }
 }
 
@@ -1947,8 +1953,9 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
 #endif /* DEBUG_sunlover_2 */
 
     Display *pDisplay = pDrv->pDisplay;
-
+    bool fNoUpdate = false; /* Do not update the display if any of the framebuffers is being resized. */
     unsigned uScreenId;
+
     for (uScreenId = 0; uScreenId < pDisplay->mcMonitors; uScreenId++)
     {
         DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[uScreenId];
@@ -1961,6 +1968,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
         if (u32ResizeStatus == ResizeStatus_UpdateDisplayData)
         {
             LogFlowFunc (("ResizeStatus_UpdateDisplayData %d\n", uScreenId));
+            fNoUpdate = true; /* Always set it here, because pfnUpdateDisplayAll can cause a new resize. */
             /* The framebuffer was resized and display data need to be updated. */
             pDisplay->handleResizeCompletedEMT ();
             if (pFBInfo->u32ResizeStatus != ResizeStatus_Void)
@@ -1975,72 +1983,75 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
                 if (!pFBInfo->pFramebuffer.isNull())
                     pDrv->pUpPort->pfnUpdateDisplayAll(pDrv->pUpPort);
             }
-            /* Ignore the refresh for the screen to replay the logic. */
-            continue;
         }
         else if (u32ResizeStatus == ResizeStatus_InProgress)
         {
             /* The framebuffer is being resized. Do not call the VGA device back. Immediately return. */
             LogFlowFunc (("ResizeStatus_InProcess\n"));
+            fNoUpdate = true;
             continue;
         }
+    }
 
-        if (pFBInfo->pFramebuffer.isNull())
+    if (!fNoUpdate)
+    {
+        if (pDisplay->mfPendingVideoAccelEnable)
         {
-            /*
-             *  Do nothing in the "black hole" mode to avoid copying guest
-             *  video memory to the frame buffer
+            /* Acceleration was enabled while machine was not yet running
+             * due to restoring from saved state. Update entire display and
+             * actually enable acceleration.
              */
+            Assert(pDisplay->mpPendingVbvaMemory);
+
+            /* Acceleration can not be yet enabled.*/
+            Assert(pDisplay->mpVbvaMemory == NULL);
+            Assert(!pDisplay->mfVideoAccelEnabled);
+
+            if (pDisplay->mfMachineRunning)
+            {
+                pDisplay->VideoAccelEnable (pDisplay->mfPendingVideoAccelEnable,
+                                            pDisplay->mpPendingVbvaMemory);
+
+                /* Reset the pending state. */
+                pDisplay->mfPendingVideoAccelEnable = false;
+                pDisplay->mpPendingVbvaMemory = NULL;
+            }
         }
         else
         {
-            if (pDisplay->mfPendingVideoAccelEnable)
+            Assert(pDisplay->mpPendingVbvaMemory == NULL);
+
+            if (pDisplay->mfVideoAccelEnabled)
             {
-                /* Acceleration was enabled while machine was not yet running
-                 * due to restoring from saved state. Update entire display and
-                 * actually enable acceleration.
-                 */
-                Assert(pDisplay->mpPendingVbvaMemory);
-
-                /* Acceleration can not be yet enabled.*/
-                Assert(pDisplay->mpVbvaMemory == NULL);
-                Assert(!pDisplay->mfVideoAccelEnabled);
-
-                if (pDisplay->mfMachineRunning)
-                {
-                    pDisplay->VideoAccelEnable (pDisplay->mfPendingVideoAccelEnable,
-                                                pDisplay->mpPendingVbvaMemory);
-
-                    /* Reset the pending state. */
-                    pDisplay->mfPendingVideoAccelEnable = false;
-                    pDisplay->mpPendingVbvaMemory = NULL;
-                }
+                Assert(pDisplay->mpVbvaMemory);
+                pDisplay->VideoAccelFlush ();
             }
             else
             {
-                Assert(pDisplay->mpPendingVbvaMemory == NULL);
-
-                if (pDisplay->mfVideoAccelEnabled)
-                {
-                    Assert(pDisplay->mpVbvaMemory);
-                    pDisplay->VideoAccelFlush ();
-                }
-                else
+                DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN];
+                if (!pFBInfo->pFramebuffer.isNull())
                 {
                     Assert(pDrv->Connector.pu8Data);
+                    Assert(pFBInfo->u32ResizeStatus == ResizeStatus_Void);
                     pDrv->pUpPort->pfnUpdateDisplay(pDrv->pUpPort);
                 }
             }
+
             /* Inform the VRDP server that the current display update sequence is
              * completed. At this moment the framebuffer memory contains a definite
              * image, that is synchronized with the orders already sent to VRDP client.
              * The server can now process redraw requests from clients or initial
              * fullscreen updates for new clients.
              */
-            if (pFBInfo->u32ResizeStatus == ResizeStatus_Void)
+            for (uScreenId = 0; uScreenId < pDisplay->mcMonitors; uScreenId++)
             {
-                Assert (pDisplay->mParent && pDisplay->mParent->consoleVRDPServer());
-                pDisplay->mParent->consoleVRDPServer()->SendUpdate (uScreenId, NULL, 0);
+                DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[uScreenId];
+
+                if (!pFBInfo->pFramebuffer.isNull() && pFBInfo->u32ResizeStatus == ResizeStatus_Void)
+                {
+                    Assert (pDisplay->mParent && pDisplay->mParent->consoleVRDPServer());
+                    pDisplay->mParent->consoleVRDPServer()->SendUpdate (uScreenId, NULL, 0);
+                }
             }
         }
     }
