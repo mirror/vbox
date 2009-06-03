@@ -552,8 +552,12 @@ static VBoxDefs::RenderMode vboxGetRenderMode (const char *aModeStr)
             mode = VBoxDefs::Quartz2DMode;
 #endif
     }
-
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    /* temporary hack to enable QGL mode */
+    mode = VBoxDefs::QGLMode;
+#endif
     return mode;
+
 }
 
 /** @class VBoxGlobal

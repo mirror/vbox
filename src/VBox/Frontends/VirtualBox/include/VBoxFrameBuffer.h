@@ -32,6 +32,9 @@
 #include <QMutex>
 #include <QPaintEvent>
 #include <QMoveEvent>
+#if defined (VBOX_GUI_USE_QGL)
+#include <QGLWidget>
+#endif
 
 #if defined (VBOX_GUI_USE_SDL)
 #include <SDL.h>
@@ -307,6 +310,129 @@ private:
     ulong mPixelFormat;
     bool mUsesGuestVRAM;
 };
+
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+
+#if defined (VBOX_GUI_USE_QGL)
+
+#ifdef DEBUG
+#define VBOXQGL_ASSERTNOERR() \
+    do { GLenum err = glGetError(); \
+        Assert(err == GL_NO_ERROR); \
+    }while(0)
+
+#define VBOXQGL_CHECKERR(_op) \
+    do { \
+        glGetError(); \
+        _op \
+        VBOXQGL_ASSERTNOERR(); \
+    }while(0)
+#else
+#define VBOXQGL_ASSERTNOERR() \
+    do {}while(0)
+
+#define VBOXQGL_CHECKERR(_op) \
+    do { \
+        _op \
+    }while(0)
+#endif
+class VBoxGLWidget : public QGLWidget
+{
+public:
+    VBoxGLWidget (QWidget *aParent)
+        : QGLWidget (aParent),
+        mRe(NULL),
+        mpIntersectionRect(NULL),
+        mDisplay(0),
+        mDisplayInitialized(false),
+        mAddress(NULL),
+        mTexture(0),
+        mFormat(0),
+        mInternalFormat(0),
+        mType(0),
+        mBitsPerPixel(0),
+        mBytesPerPixel(0),
+        mBytesPerLine(0),
+        mPixelFormat(0),
+        mUsesGuestVRAM(false),
+        mDisplayWidth(0),
+        mDisplayHeight(0)
+    {
+//        Assert(0);
+        /* No need for background drawing */
+//        setAttribute (Qt::WA_OpaquePaintEvent);
+    }
+
+    ulong vboxPixelFormat() { return mPixelFormat; }
+    bool vboxUsesGuestVRAM() { return mUsesGuestVRAM; }
+
+    uchar *vboxAddress() { return mAddress; }
+    ulong vboxBitsPerPixel() { return mBitsPerPixel; }
+    ulong vboxBytesPerLine() { return mBytesPerLine; }
+
+    void vboxPaintEvent (QPaintEvent *pe);
+    void vboxResizeEvent (VBoxResizeEvent *re);
+
+protected:
+//    void resizeGL (int height, int width);
+
+    void paintGL();
+
+    void initializeGL();
+
+private:
+    void vboxDoInitDisplay();
+    void vboxDoDeleteDisplay();
+    void vboxDoPerformDisplay() { Assert(mDisplayInitialized); glCallList(mDisplay); }
+
+    void vboxDoResize(VBoxResizeEvent *re);
+    void vboxDoPaint(const QRect *rec);
+
+    VBoxResizeEvent *mRe;
+    const QRect *mpIntersectionRect;
+    GLuint mDisplay;
+    bool mDisplayInitialized;
+    uchar * mAddress;
+    GLuint mTexture;
+
+    GLenum mFormat;
+    GLint  mInternalFormat;
+    GLenum mType;
+    ulong  mDisplayWidth;
+    ulong  mDisplayHeight;
+    ulong  mBitsPerPixel;
+    ulong  mBytesPerPixel;
+    ulong  mBytesPerLine;
+    ulong  mPixelFormat;
+    bool   mUsesGuestVRAM;
+};
+
+
+class VBoxQGLFrameBuffer : public VBoxFrameBuffer
+{
+public:
+
+    VBoxQGLFrameBuffer (VBoxConsoleView *aView);
+
+    STDMETHOD(NotifyUpdate) (ULONG aX, ULONG aY,
+                             ULONG aW, ULONG aH);
+
+    ulong pixelFormat() { return vboxWidget()->vboxPixelFormat(); }
+    bool usesGuestVRAM() { return vboxWidget()->vboxUsesGuestVRAM(); }
+
+    uchar *address() { /*Assert(0); */return vboxWidget()->vboxAddress(); }
+    ulong bitsPerPixel() { return vboxWidget()->vboxBitsPerPixel(); }
+    ulong bytesPerLine() { return vboxWidget()->vboxBytesPerLine(); }
+
+    void paintEvent (QPaintEvent *pe);
+    void resizeEvent (VBoxResizeEvent *re);
+private:
+    void vboxMakeCurrent();
+    VBoxGLWidget * vboxWidget();
+};
+
 
 #endif
 

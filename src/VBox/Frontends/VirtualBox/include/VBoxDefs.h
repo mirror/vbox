@@ -82,6 +82,9 @@ struct VBoxDefs
     enum RenderMode
     {
         InvalidRenderMode, TimerMode, QImageMode, SDLMode, DDRAWMode, Quartz2DMode
+#ifdef VBOX_WITH_VIDEOHWACCEL
+        , QGLMode
+#endif
     };
 
     /** Additional Qt event types. */

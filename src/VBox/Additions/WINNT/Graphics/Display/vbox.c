@@ -710,7 +710,7 @@ void vboxVHWACommandFree (PPDEV ppdev, VBOXVHWACMD* pCmd)
     HGSMIHeapFree (&ppdev->hgsmiDisplayHeap, pCmd);
 }
 
-static void vboxVHWACommandCompletionCallbackEvent(PPDEV ppdev, VBOXVHWACMD * pCmd, void * pContext)
+static DECLCALLBACK(void) vboxVHWACommandCompletionCallbackEvent(PPDEV ppdev, VBOXVHWACMD * pCmd, void * pContext)
 {
     PEVENT pEvent = (PEVENT)pContext;
     LONG oldState = EngSetEvent(pEvent);

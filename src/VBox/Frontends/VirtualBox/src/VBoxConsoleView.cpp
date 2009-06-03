@@ -788,8 +788,14 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     /* No frame around the view */
     setFrameStyle (QFrame::NoFrame);
 
+#ifndef VBOX_WITH_VIDEOHWACCEL
     VBoxViewport *pViewport = new VBoxViewport (this);
+#else
+//    /* TODO: temporary always use VBoxGLWidget for debugging */
+    VBoxGLWidget *pViewport = new VBoxGLWidget (this);
+#endif
     setViewport (pViewport);
+//    pViewport->vboxDoInit();
 
     /* enable MouseMove events */
     viewport()->setMouseTracking (true);
@@ -824,6 +830,11 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 
     switch (mode)
     {
+#if defined (VBOX_GUI_USE_QGL)
+        case VBoxDefs::QGLMode:
+            mFrameBuf = new VBoxQGLFrameBuffer (this);
+            break;
+#endif
 #if defined (VBOX_GUI_USE_QIMAGE)
         case VBoxDefs::QImageMode:
             mFrameBuf = new VBoxQImageFrameBuffer (this);
