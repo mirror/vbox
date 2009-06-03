@@ -185,7 +185,7 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterrup
         rc = tsleep(pEventInt,          /* block id */
                     fInterruptible ? PZERO | PCATCH : PZERO,
                     "iprtev",           /* max 6 chars */
-                    cMillis == RT_INDEFINITE_WAIT
+                    cMillies == RT_INDEFINITE_WAIT
                     ? 0
                     : tvtohz(&tv));
         mtx_lock_spin(&pEventInt->Mtx);
