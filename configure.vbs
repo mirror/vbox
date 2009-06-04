@@ -1842,7 +1842,7 @@ sub CheckForCurl(strOptCurl)
    end if
 
    if strPathCurl = "" Then
-      str = Which("ssleay32.lib")
+      str = Which("libcurl.lib")
       if str <> "" Then
          str = PathParent(PathStripFilename(str))
          if CheckForCurlSub(str) then strPathCurl = str
@@ -1868,7 +1868,7 @@ sub CheckForCurl(strOptCurl)
 
    strPathCurl = UnixSlashes(PathAbs(strPathCurl))
    CfgPrint "SDK_VBOX_LIBCURL_INCS := " & strPathCurl & "/include"
-   CfgPrint "SDK_VBOX_LIBCURL_LIBS := " & strPathCurl & "/libcurl_imp.lib"
+   CfgPrint "SDK_VBOX_LIBCURL_LIBS := " & strPathCurl & "/libcurl.lib"
 
    PrintResult "libcurl", strPathCurl
 end sub
@@ -1880,8 +1880,8 @@ function CheckForCurlSub(strPathCurl)
    CheckForCurlSub = False
    LogPrint "trying: strPathCurl=" & strPathCurl
    if   LogFileExists(strPathCurl, "include/curl/curl.h") _
-    And LogFindFile(strPathCurl, "curllib.dll") <> "" _
-    And LogFindFile(strPathCurl, "libcurl_imp.lib") <> "" _
+    And LogFindFile(strPathCurl, "libcurl.dll") <> "" _
+    And LogFindFile(strPathCurl, "libcurl.lib") <> "" _
       then
          CheckForCurlSub = True
       end if
