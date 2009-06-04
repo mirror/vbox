@@ -127,7 +127,7 @@ if test -f "/opt/VirtualBox/sdk/installer/vboxapisetup.py" || test -h "/opt/Virt
         echo "Installing Python bindings..."
 
         cd /opt/VirtualBox/sdk/installer
-        /opt/VirtualBox/sdk/installer/vboxapisetup.py install
+        $PYTHONBIN ./vboxapisetup.py install
     else
         echo "** WARNING! Python not found, skipped installed Python bindings."
         echo "   Manually run '/opt/VirtualBox/sdk/installer/vboxapisetup.py install'"
