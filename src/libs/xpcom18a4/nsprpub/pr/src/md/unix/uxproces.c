@@ -618,7 +618,22 @@ ProcessReapedChildInternal(pid_t pid, int status)
         pRec->reapedCV = NULL;
         InsertPidTable(pRec);
     } else {
+#ifdef VBOX
+        /* In the context of VirtualBox processes get created (right now
+         * exclusively via Machine::openRemoteSession) which xpcom doesn't know
+         * about, and thus would trigger assertions or (even worse) could
+         * crash VBoxSVC as the code below would notify a NULL condition
+         * variable. Treat it like a detached process. The proper fix would be
+         * to port the NSPR to use IPRT, as currently this races with getting
+         * the exit code, but that's pretty harmless. */
+        /** @todo fix this properly, by using IPRT for process management */
+        if (_PR_PID_REAPED == pRec->state) {
+            DeletePidTable(pRec);
+            PR_DELETE(pRec);
+        } else
+#else /* !VBOX */
         PR_ASSERT(pRec->state != _PR_PID_REAPED);
+#endif /* !VBOX */
         if (_PR_PID_DETACHED == pRec->state) {
             PR_ASSERT(NULL == pRec->reapedCV);
             DeletePidTable(pRec);
