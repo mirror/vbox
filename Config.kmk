@@ -415,9 +415,7 @@ endif
 # Enables the Python<->XPCOM and Python<->COM bindings.
 # (Currently not enabled by default because all the build servers has
 # different Python versions installed and would start burning.)
-ifn1of ($(KBUILD_TARGET), linux)
- VBOX_WITH_PYTHON = 1
-endif
+VBOX_WITH_PYTHON = 1
 # Enables hardening.
 # Most developers will want to disable this in their LocalConfig.kmk.
 ifn1of ($(KBUILD_TARGET), win)
