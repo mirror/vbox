@@ -657,12 +657,29 @@ static void vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff 
     else
     {
         if (pBuf->ip_summed == CHECKSUM_PARTIAL && pBuf->pkt_type == PACKET_OUTGOING)
+        {
+#if LINUX_VERSION_CODE == KERNEL_VERSION(2, 6, 18)
+            /*
+             * Try to work around the problem with CentOS 5.2 (2.6.18 kernel),
+             * it passes wrong 'h' pointer down. We take IP header length from
+             * the header itself and reconstruct 'h' pointer to TCP (or whatever)
+             * header.
+             */
+            unsigned char *tmp = pBuf->h.raw;
+            if (pBuf->h == pBuf->nh && pBuf->protocol == htons(ETH_P_IP))
+                pBuf->h.raw = pBuf->nh.raw + ((pBuf->nh.raw[0] & 0xF) * 4);
+#endif /* LINUX_VERSION_CODE == KERNEL_VERSION(2, 6, 18) */
             if (VBOX_SKB_CHECKSUM_HELP(pBuf))
             {
                 LogRel(("VBoxNetFlt: Failed to compute checksum, dropping the packet.\n"));
                 dev_kfree_skb(pBuf);
                 return;
             }
+#if LINUX_VERSION_CODE == KERNEL_VERSION(2, 6, 18)
+            /* Restore the original (wrong) pointer. */
+            pBuf->h.raw = tmp;
+#endif /* LINUX_VERSION_CODE == KERNEL_VERSION(2, 6, 18) */
+        }
         vboxNetFltLinuxForwardSegment(pThis, pBuf, fSrc);
     }
     /*
