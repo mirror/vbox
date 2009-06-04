@@ -252,7 +252,8 @@ HRESULT SupportErrorInfoBase::setErrorInternal (
                 }
 
                 /* we want to return the head's result code */
-                rc = info->COMGETTER(ResultCode) (&aResultCode);
+                PRInt32 lrc;
+                rc = info->COMGETTER(ResultCode) (&lrc); aResultCode = lrc;
                 CheckComRCBreakRC (rc);
             }
             else

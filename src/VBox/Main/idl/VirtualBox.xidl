@@ -931,7 +931,7 @@
       in the chain).
     </desc>
 
-    <attribute name="resultCode" type="result" readonly="yes">
+    <attribute name="resultCode" type="long" readonly="yes">
       <desc>
         Result code of the error.
         Usually, it will be the same as the result code returned
@@ -939,7 +939,8 @@
         always. For example, on Win32, CoCreateInstance() will most
         likely return E_NOINTERFACE upon unsuccessful component
         instantiation attempt, but not the value the component factory
-        returned.
+        returned. Value is typed 'long', not 'result',
+        to make interface usable from scripting languages.
         <note>
           In MS COM, there is no equivalent.
           In XPCOM, it is the same as nsIException::result.

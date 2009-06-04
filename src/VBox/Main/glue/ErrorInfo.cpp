@@ -179,8 +179,9 @@ void ErrorInfo::init (IVirtualBoxErrorInfo *info)
     HRESULT rc = E_FAIL;
     bool gotSomething = false;
     bool gotAll = true;
+    LONG lrc;
 
-    rc = info->COMGETTER(ResultCode) (&mResultCode);
+    rc = info->COMGETTER(ResultCode) (&lrc); mResultCode = lrc;    
     gotSomething |= SUCCEEDED (rc);
     gotAll &= SUCCEEDED (rc);
 

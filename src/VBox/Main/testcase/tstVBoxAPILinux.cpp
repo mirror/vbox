@@ -604,7 +604,7 @@ void printErrorInfo()
                 {
                     /* got extended error info */
                     printf ("Extended error info (IVirtualBoxErrorInfo):\n");
-                    nsresult resultCode = NS_OK;
+                    PRInt32 resultCode = NS_OK;
                     info->GetResultCode (&resultCode);
                     printf ("  resultCode=%08X\n", resultCode);
                     nsXPIDLString component;

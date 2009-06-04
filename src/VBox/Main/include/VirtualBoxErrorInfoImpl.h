@@ -73,7 +73,7 @@ public:
                   IVirtualBoxErrorInfo *aNext = NULL);
 
     // IVirtualBoxErrorInfo properties
-    STDMETHOD(COMGETTER(ResultCode)) (HRESULT *aResultCode);
+    STDMETHOD(COMGETTER(ResultCode)) (LONG *aResultCode);
     STDMETHOD(COMGETTER(InterfaceID)) (OUT_GUID aIID);
     STDMETHOD(COMGETTER(Component)) (BSTR *aComponent);
     STDMETHOD(COMGETTER(Text)) (BSTR *aText);

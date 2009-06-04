@@ -59,7 +59,7 @@ HRESULT VirtualBoxErrorInfo::init (HRESULT aResultCode, const GUID *aIID,
 // IVirtualBoxErrorInfo properties
 ////////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(ResultCode) (HRESULT *aResultCode)
+STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(ResultCode) (LONG *aResultCode)
 {
     if (!aResultCode)
         return E_POINTER;
@@ -201,7 +201,14 @@ NS_IMETHODIMP VirtualBoxErrorInfo::GetMessage (char **aMessage)
 /* readonly attribute nsresult result; */
 NS_IMETHODIMP VirtualBoxErrorInfo::GetResult (nsresult *aResult)
 {
-    return COMGETTER(ResultCode) (aResult);
+    if (!aResult)
+      return NS_ERROR_INVALID_POINTER;
+
+    PRInt32 lrc;
+    nsresult rc = COMGETTER(ResultCode) (&lrc);
+    if (SUCCEEDED(rc))
+      *aResult = lrc;
+    return rc;
 }
 
 /* readonly attribute string name; */
