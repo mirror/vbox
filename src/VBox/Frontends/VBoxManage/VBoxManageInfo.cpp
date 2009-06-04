@@ -262,7 +262,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
     for (ULONG i = 1; i <= maxBootPosition; i++)
     {
         ULONG bootOrder;
-        machine->COMGETTER(BootOrder)(i, &bootOrder);
+        machine->GetBootOrder(i, &bootOrder);
         if (bootOrder == DeviceType_Floppy)
         {
             if (details == VMINFO_MACHINEREADABLE)
