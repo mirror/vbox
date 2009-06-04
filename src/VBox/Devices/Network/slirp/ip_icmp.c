@@ -103,7 +103,7 @@ icmp_init(PNATState pData)
         pData->pfIcmpCloseHandle = (BOOL (WINAPI *)(HANDLE))
                                     GetProcAddress(pData->hmIcmpLibrary, "IcmpCloseHandle");
 # ifdef VBOX_WITH_MULTI_DNS 
-        pData->pfGetAdaptersAddresses = (ULONG (WINAPI *)(HANDLE))
+        pData->pfGetAdaptersAddresses = (ULONG (WINAPI *)(ULONG, ULONG, PVOID, PIP_ADAPTER_ADDRESSES, PULONG))
                                     GetProcAddress(pData->hmIcmpLibrary, "GetAdaptersAddresses");
         if (pData->pfGetAdaptersAddresses == NULL) 
         {

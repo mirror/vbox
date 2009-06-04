@@ -803,7 +803,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
         slirp_set_dhcp_TFTP_bootfile(pThis->pNATState, pThis->pszBootFile);
         slirp_set_dhcp_next_server(pThis->pNATState, pThis->pszNextServer);
 #ifdef VBOX_WITH_SLIRP_DNS_PROXY
-        slirp_set_dhcp_dns_proxy(pThis->pNATState, fDNSProxy);
+        slirp_set_dhcp_dns_proxy(pThis->pNATState, !!fDNSProxy);
 #endif
 
         slirp_register_timers(pThis->pNATState, pDrvIns);
