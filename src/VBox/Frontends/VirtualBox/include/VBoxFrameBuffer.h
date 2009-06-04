@@ -266,6 +266,12 @@ public:
      */
     virtual void moveEvent (QMoveEvent * /*me*/ ) {}
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    /* this method is called from the GUI thread
+     * to perform the actual Video HW Acceleration command processing */
+    virtual void doProcessVHWACommand(struct _VBOXVHWACMD * pCommand);
+#endif
+
 protected:
 
     VBoxConsoleView *mView;
@@ -317,27 +323,6 @@ private:
 
 #if defined (VBOX_GUI_USE_QGL)
 
-#ifdef DEBUG
-#define VBOXQGL_ASSERTNOERR() \
-    do { GLenum err = glGetError(); \
-        Assert(err == GL_NO_ERROR); \
-    }while(0)
-
-#define VBOXQGL_CHECKERR(_op) \
-    do { \
-        glGetError(); \
-        _op \
-        VBOXQGL_ASSERTNOERR(); \
-    }while(0)
-#else
-#define VBOXQGL_ASSERTNOERR() \
-    do {}while(0)
-
-#define VBOXQGL_CHECKERR(_op) \
-    do { \
-        _op \
-    }while(0)
-#endif
 class VBoxGLWidget : public QGLWidget
 {
 public:
@@ -419,6 +404,10 @@ public:
     STDMETHOD(NotifyUpdate) (ULONG aX, ULONG aY,
                              ULONG aW, ULONG aH);
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    STDMETHOD(ProcessVHWACommand)(BYTE *pCommand);
+#endif
+
     ulong pixelFormat() { return vboxWidget()->vboxPixelFormat(); }
     bool usesGuestVRAM() { return vboxWidget()->vboxUsesGuestVRAM(); }
 
@@ -428,6 +417,10 @@ public:
 
     void paintEvent (QPaintEvent *pe);
     void resizeEvent (VBoxResizeEvent *re);
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    void doProcessVHWACommand(struct _VBOXVHWACMD * pCommand);
+#endif
+
 private:
     void vboxMakeCurrent();
     VBoxGLWidget * vboxWidget();

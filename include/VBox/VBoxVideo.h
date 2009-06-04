@@ -257,7 +257,10 @@ typedef struct _VBOXVIDEOINFOQUERYCONF32
 typedef enum
 {
     VBOXVHWACMD_TYPE_SURF_CREATE = 1,
-    VBOXVHWACMD_TYPE_SURF_DESTROY
+    VBOXVHWACMD_TYPE_SURF_DESTROY,
+    VBOXVHWACMD_TYPE_SURF_LOCK,
+    VBOXVHWACMD_TYPE_SURF_UNLOCK,
+    VBOXVHWACMD_TYPE_SURF_BLT
 } VBOXVHWACMD_TYPE;
 
 typedef struct _VBOXVHWACMD
@@ -288,10 +291,52 @@ typedef struct _VBOXVHWA_RECTL
 #define VBOXVHWASURF_PRIMARY      0x00000001
 #define VBOXVHWASURF_OVERLAY      0x00000002
 
+typedef struct _VBOXVHWA_COLORKEY
+{
+    uint32_t low;
+    uint32_t high;
+} VBOXVHWA_COLORKEY;
+
+typedef struct _VBOXVHWA_PIXELFORMAT
+{
+    uint32_t flags;
+    uint32_t fourCC;
+    union
+    {
+        uint32_t rgbBitCount;
+        uint32_t yuvBitCount;
+    } c;
+
+    union
+    {
+        uint32_t rgbRBitMask;
+        uint32_t yuvYBitMask;
+    } m1;
+
+    union
+    {
+        uint32_t rgbGBitMask;
+        uint32_t yuvUBitMask;
+    } m2;
+
+    union
+    {
+        uint32_t rgbBBitMask;
+        uint32_t yuvVBitMask;
+    } m3;
+} VBOXVHWA_PIXELFORMAT;
+
 typedef struct _VBOXVHWA_SURFINFO
 {
-    uint32_t surfChars;
-    VBOXVHWA_RECTL rectl;
+    uint32_t height;
+    uint32_t width;
+    VBOXVHWA_COLORKEY DstOverlayCK;
+    VBOXVHWA_COLORKEY DstBltCK;
+    VBOXVHWA_COLORKEY SrcOverlayCK;
+    VBOXVHWA_COLORKEY SrcBltCK;
+    VBOXVHWA_PIXELFORMAT PixelFormat;
+    uint32_t surfCaps;
+    uint32_t Reserved;
 } VBOXVHWA_SURFINFO;
 
 typedef struct _VBOXVHWACMD_SURF_CREATE
@@ -320,6 +365,48 @@ typedef struct _VBOXVHWACMD_SURF_DESTROY
         } in;
     } u;
 } VBOXVHWACMD_SURF_DESTROY;
+
+typedef struct _VBOXVHWACMD_SURF_LOCK
+{
+    union
+    {
+        struct
+        {
+            VBOXVHWA_SURFHANDLE hSurf;
+            uint32_t flags;
+            uint32_t Reserved;
+            VBOXVHWA_RECTL rect;
+        } in;
+    } u;
+} VBOXVHWACMD_SURF_LOCK;
+
+typedef struct _VBOXVHWACMD_SURF_UNLOCK
+{
+    union
+    {
+        struct
+        {
+            VBOXVHWA_SURFHANDLE hSurf;
+        } in;
+    } u;
+} VBOXVHWACMD_SURF_UNLOCK;
+
+typedef struct _VBOXVHWACMD_SURF_BLT
+{
+    union
+    {
+        struct
+        {
+            VBOXVHWA_SURFHANDLE hDstSurf;
+            VBOXVHWA_RECTL dstRect;
+            VBOXVHWA_SURFHANDLE hSrcSurf;
+            VBOXVHWA_RECTL srcRect;
+            uint32_t flags;
+            uint32_t reserved;
+        } in;
+    } u;
+} VBOXVHWACMD_SURF_BLT;
+
 #pragma pack()
 # endif /* #ifdef VBOX_WITH_VIDEOHWACCEL */
 
