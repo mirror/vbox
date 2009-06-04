@@ -274,13 +274,6 @@ ifdef VBOX_WITH_USB
  VBoxSVC_LIBS.solaris += \
 	devinfo
 endif
-ifdef VBOX_WITH_CROGL
- ifneq ($(KBUILD_TARGET),darwin)
-  VBoxSVC_LIBS += \
-	$(PATH_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
-	$(VBOX_LIB_OGL_HOSTCRUTIL)
- endif
-endif
 
 VBoxSVC_INTERMEDIATES = \
 	$(VBOX_MAIN_PREREQS) \
@@ -333,6 +326,9 @@ VBoxSVC_SOURCES.darwin = \
 	darwin/HostPowerDarwin.cpp
 
 ifdef VBOX_WITH_CROGL
+  ifneq ($(KBUILD_TARGET),darwin)
+    VBoxSVC_SOURCES += generic/OpenGLTest.cpp
+  endif
  VBoxSVC_SOURCES.darwin += darwin/OpenGLTestDarwin.cpp
 endif
 
@@ -471,6 +467,22 @@ $(VBOX_XML_SCHEMADEFS_CPP): $(VBOX_XML_SCHEMADEFS_XSL) $(VBOX_XML_SCHEMA.$(KBUIL
 	$(VBOX_XSLTPROC)  --stringparam mode define  -o $@ $(VBOX_XML_SCHEMADEFS_XSL) $(VBOX_XML_SCHEMA.$(KBUILD_TARGET))
 
 OTHER_CLEAN += $(VBOX_XML_SCHEMADEFS_H) $(VBOX_XML_SCHEMADEFS_CPP)
+
+
+ifdef VBOX_WITH_CROGL
+#
+# VBoxTestOGL - OpenGL support test app.
+#
+ ifneq ($(KBUILD_TARGET),darwin)
+  PROGRAMS += VBoxTestOGL
+  VBoxTestOGL_TEMPLATE = VBOXMAINEXE
+  VBoxTestOGL_SOURCES = generic/OpenGLTestApp.cpp
+  VBoxTestOGL_LIBS = \
+	$(PATH_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
+	$(VBOX_LIB_OGL_HOSTCRUTIL) \
+	$(LIB_RUNTIME)
+ endif
+endif
 
 
 ifdef VBOX_WITH_XPCOM
