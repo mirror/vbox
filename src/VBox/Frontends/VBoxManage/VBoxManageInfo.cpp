@@ -1992,10 +1992,10 @@ int handleShowVMInfo(HandlerArg *a)
 
     /* try to find the given machine */
     ComPtr <IMachine> machine;
-    Bstr uuid;
-    if (!Guid(VMNameOrUuid).isEmpty())
+    Bstr uuid (VMNameOrUuid);
+    if (!Guid (VMNameOrUuid).isEmpty())
     {
-        CHECK_ERROR (a->virtualBox, GetMachine (Bstr(VMNameOrUuid), machine.asOutParam()));
+        CHECK_ERROR (a->virtualBox, GetMachine (uuid, machine.asOutParam()));
     }
     else
     {
