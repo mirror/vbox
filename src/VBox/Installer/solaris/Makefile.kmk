@@ -252,6 +252,7 @@ SOLARIS_EXTRAS = \
 	$(if $(VBOX_WITH_USB),vboxusbmon.conf,) \
 	vboxdrv.sh \
 	VBox.sh \
+	ipsinstall.sh \
 	$(if $(VBOX_WITH_VBOXSDL),libSDL-1.2.so.0,) \
 	$(if $(not $(VBOX_WITH_NETFLT))vnic_setup.sh,) \
 	$(if $(not $(VBOX_WITH_NETFLT))vnic_term.sh,) \
@@ -441,6 +442,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 		$(VBOX_PATH_SOL_INST_SRC)/vbox.space \
 		$(VBOX_PATH_SOL_INST_SRC)/vbox.pkgresponse \
 		$(VBOX_PATH_SOL_INST_SRC)/VBox.sh \
+		$(VBOX_PATH_SOL_INST_SRC)/ipsinstall.sh \
 		$(VBOX_PATH_SOL_INST_SRC)/virtualbox.desktop \
 		$(PATH_ROOT)/doc/ReadMe-Solaris.txt \
 		$(VBOX_PATH_SOL_INST_SRC)/Makefile.kmk \
@@ -526,6 +528,7 @@ endif
 	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_VBOXINST_DIR)/vboxdrv.sh.tmp                                           $(SOLARIS_VBOXINST_DIR)/vboxdrv.sh
 	$(QUIET)$(RM) -f $(SOLARIS_VBOXINST_DIR)/vboxdrv.sh.tmp
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/VBox.sh                                            $(SOLARIS_VBOXINST_DIR)/VBox.sh
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/ipsinstall.sh                                      $(SOLARIS_VBOXINST_DIR)/ipsinstall.sh
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox.desktop         $(SOLARIS_USRSHR_APPS_DIR)/virtualbox.desktop,)
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_OUT_BIN)/VBox.png                                                  $(SOLARIS_USRSHR_PIXMAPS_DIR)/VBox.png
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/postinstall.sh                                     $(SOLARIS_BASEINST_DIR)/postinstall.sh

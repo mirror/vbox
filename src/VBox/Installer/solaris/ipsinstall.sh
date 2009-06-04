@@ -24,113 +24,140 @@
 # If you just installed VirtualBox using IPS/pkg(5), you should run this
 # script once to avoid rebooting the system before using VirtualBox
 #
-currentzone=`zonename`
+
+check_root()
+{
+    idbin=/usr/xpg4/bin/id
+    if test ! -f "$idbin"; then
+        found=`which id | grep "no id"`
+        if test ! -z "$found"; then
+            echo "## Failed to find a suitable user id binary."
+        else
+            idbin=$found
+        fi
+    fi
+
+    if test `$idbin -u` -ne 0; then
+        echo "## This script must be run with administrator privileges."
+    fi
+}
+
+check_zone()
+{
+    currentzone=`zonename`
+    if test "$currentzone" != "global"; then
+        echo "## This script must be run from the global zone."
+    fi
+}
+
+check_root
+check_zone
+
 osversion=`uname -r`
-if test "$currentzone" = "global"; then
-    BIN_REMDRV=/usr/sbin/rem_drv
-    BIN_ADDDRV=/usr/sbin/add_drv
-    BIN_MODLOAD=/usr/sbin/modload
-    BIN_DEVFSADM=/usr/sbin/devfsadm
 
-    # Halt services in case of installation update
-    zoneaccessfound=`svcs -a | grep "virtualbox/zoneaccess"`
-    if test ! -z "$zoneaccessfound"; then
-        /usr/sbin/svcadm disable -s svc:/application/virtualbox/zoneaccess
-    fi
+BIN_REMDRV=/usr/sbin/rem_drv
+BIN_ADDDRV=/usr/sbin/add_drv
+BIN_MODLOAD=/usr/sbin/modload
+BIN_DEVFSADM=/usr/sbin/devfsadm
 
-    # Remove drivers ignoring errors as they are not really loaded
-    # just updated various boot archive files without really loading
-    # them... But we _want_ them to be loaded.
-    echo "Removing any stale driver configurations..."
+# Halt services in case of installation update
+zoneaccessfound=`svcs -a | grep "virtualbox/zoneaccess"`
+if test ! -z "$zoneaccessfound"; then
+    /usr/sbin/svcadm disable -s svc:/application/virtualbox/zoneaccess
+fi
 
-    $BIN_REMDRV vboxflt > /dev/null 2>&1
-    /sbin/ifconfig vboxnet0 unplumb > /dev/null 2>&1
-    $BIN_REMDRV vboxnet > /dev/null 2>&1
-    $BIN_REMDRV vboxusbmon > /dev/null 2>&1
-    $BIN_REMDRV vboxdrv > /dev/null 2>&1
+# Remove drivers ignoring errors as they are not really loaded
+# just updated various boot archive files without really loading
+# them... But we _want_ them to be loaded.
+echo "Removing any stale driver configurations..."
 
-    echo "Loading VirtualBox Drivers:"
-    # Add drivers the proper way and load them immediately
-    /opt/VirtualBox/vboxdrv.sh start
-    rc=$?
-    if test "$rc" -eq 0; then
-        # Add vboxdrv to the devlink.tab
-        sed -e '
+$BIN_REMDRV vboxflt > /dev/null 2>&1
+/sbin/ifconfig vboxnet0 unplumb > /dev/null 2>&1
+$BIN_REMDRV vboxnet > /dev/null 2>&1
+$BIN_REMDRV vboxusbmon > /dev/null 2>&1
+$BIN_REMDRV vboxdrv > /dev/null 2>&1
+
+echo "Loading VirtualBox Drivers:"
+# Add drivers the proper way and load them immediately
+/opt/VirtualBox/vboxdrv.sh start
+rc=$?
+if test "$rc" -eq 0; then
+    # Add vboxdrv to the devlink.tab
+    sed -e '
 /name=vboxdrv/d' /etc/devlink.tab > /etc/devlink.vbox
-        echo "type=ddi_pseudo;name=vboxdrv	\D" >> /etc/devlink.vbox
-        mv -f /etc/devlink.vbox /etc/devlink.tab
+    echo "type=ddi_pseudo;name=vboxdrv	\D" >> /etc/devlink.vbox
+    mv -f /etc/devlink.vbox /etc/devlink.tab
 
-        # Create the device link
-        /usr/sbin/devfsadm -i vboxdrv
+    # Create the device link
+    /usr/sbin/devfsadm -i vboxdrv
 
-        echo "HostDrv    : SUCCESS"
+    echo "HostDrv    : SUCCESS"
 
-        # Load VBoxNetAdapter vboxnet
-        if test -f /platform/i86pc/kernel/drv/vboxnet.conf; then
-            /opt/VirtualBox/vboxdrv.sh netstart
-            rc=$?
+    # Load VBoxNetAdapter vboxnet
+    if test -f /platform/i86pc/kernel/drv/vboxnet.conf; then
+        /opt/VirtualBox/vboxdrv.sh netstart
+        rc=$?
 
-            if test "$rc" -eq 0; then
-                echo "NetAdapter : SUCCESS"
+        if test "$rc" -eq 0; then
+            echo "NetAdapter : SUCCESS"
 
-                # nwam/dhcpagent fix
-                nwamfile=/etc/nwam/llp
-                nwambackupfile=$nwamfile.vbox
-                if test -f "$nwamfile"; then
-                    sed -e '/vboxnet/d' $nwamfile > $nwambackupfile
-                    echo "vboxnet0	static 192.168.56.1" >> $nwambackupfile
-                    mv -f $nwambackupfile $nwamfile
-                    echo "  -> patched /etc/nwam/llp to use static IP for vboxnet0"
-                fi
-            else
-                echo "NetAdapter : FAILED"
+            # nwam/dhcpagent fix
+            nwamfile=/etc/nwam/llp
+            nwambackupfile=$nwamfile.vbox
+            if test -f "$nwamfile"; then
+                sed -e '/vboxnet/d' $nwamfile > $nwambackupfile
+                echo "vboxnet0	static 192.168.56.1" >> $nwambackupfile
+                mv -f $nwambackupfile $nwamfile
+                echo "  -> patched /etc/nwam/llp to use static IP for vboxnet0"
             fi
+        else
+            echo "NetAdapter : FAILED"
         fi
-
-        # Load VBoxNetFilter vboxflt
-        if test -f /platform/i86pc/kernel/drv/vboxflt.conf; then
-            /opt/VirtualBox/vboxdrv.sh fltstart
-            rc=$?
-            if test "$rc" -eq 0; then
-                echo "NetFilter  : SUCCESS"
-            else
-                echo "NetFilter  : FAILED"
-            fi
-        fi
-
-        # Load VBoxUSBMonitor vboxusbmon (do NOT load for Solaris 10)
-        if test -f /platform/i86pc/kernel/drv/vboxusbmon.conf && test "$osversion" != "5.10"; then
-            /opt/VirtualBox/vboxdrv.sh usbstart
-            rc=$?
-            if test "$rc" -eq 0; then
-
-                # Add vboxusbmon to the devlink.tab
-                sed -e '
-                /name=vboxusbmon/d' /etc/devlink.tab > /etc/devlink.vbox
-                echo "type=ddi_pseudo;name=vboxusbmon	\D" >> /etc/devlink.vbox
-                mv -f /etc/devlink.vbox /etc/devlink.tab
-
-                /usr/sbin/devfsadm -i vboxusbmon
-
-                echo "USBMonitor : SUCCESS"
-            else
-                echo "USBMonitor : FAILED"
-            fi
-        fi
-    else
-        echo "HostDrv    : FAILED"
     fi
 
-    # Enable Zone access service
-    if test -f /var/svc/manifest/application/virtualbox/zoneaccess.xml; then
-        /usr/sbin/svcadm enable -s svc:/application/virtualbox/zoneaccess
-        echo "Service to use VirtualBox from zones  : ENABLED"
+    # Load VBoxNetFilter vboxflt
+    if test -f /platform/i86pc/kernel/drv/vboxflt.conf; then
+        /opt/VirtualBox/vboxdrv.sh fltstart
+        rc=$?
+        if test "$rc" -eq 0; then
+            echo "NetFilter  : SUCCESS"
+        else
+            echo "NetFilter  : FAILED"
+        fi
     fi
 
-    # We need to touch the desktop link in order to add it to the menu right away
-    if test -f "/usr/share/applications/virtualbox.desktop"; then
-        touch /usr/share/applications/virtualbox.desktop
+    # Load VBoxUSBMonitor vboxusbmon (do NOT load for Solaris 10)
+    if test -f /platform/i86pc/kernel/drv/vboxusbmon.conf && test "$osversion" != "5.10"; then
+        /opt/VirtualBox/vboxdrv.sh usbstart
+        rc=$?
+        if test "$rc" -eq 0; then
+
+            # Add vboxusbmon to the devlink.tab
+            sed -e '
+            /name=vboxusbmon/d' /etc/devlink.tab > /etc/devlink.vbox
+            echo "type=ddi_pseudo;name=vboxusbmon	\D" >> /etc/devlink.vbox
+            mv -f /etc/devlink.vbox /etc/devlink.tab
+
+            /usr/sbin/devfsadm -i vboxusbmon
+
+            echo "USBMonitor : SUCCESS"
+        else
+            echo "USBMonitor : FAILED"
+        fi
     fi
+else
+    echo "HostDrv    : FAILED"
+fi
+
+# Enable Zone access service
+if test -f /var/svc/manifest/application/virtualbox/zoneaccess.xml; then
+    /usr/sbin/svcadm enable -s svc:/application/virtualbox/zoneaccess
+    echo "Service to use VirtualBox from zones  : ENABLED"
+fi
+
+# We need to touch the desktop link in order to add it to the menu right away
+if test -f "/usr/share/applications/virtualbox.desktop"; then
+    touch /usr/share/applications/virtualbox.desktop
 fi
 
 exit 0
