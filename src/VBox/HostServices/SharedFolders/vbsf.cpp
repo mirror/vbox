@@ -1253,11 +1253,16 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
 
             rc = VINF_SUCCESS;
 
-            /* write access requested? */
-            if (pParms->CreateFlags & (  SHFL_CF_ACT_REPLACE_IF_EXISTS
-                                       | SHFL_CF_ACT_OVERWRITE_IF_EXISTS
-                                       | SHFL_CF_ACT_CREATE_IF_NEW
-                                       | SHFL_CF_ACCESS_WRITE))
+            /* Note: do not check the SHFL_CF_ACCESS_WRITE here, only check if the open operation
+             * will cause changes.
+             *
+             * Actual operations (write, set attr, etc), which can write to a shared folder, have
+             * the check and will return VERR_WRITE_PROTECT if the folder is not writable.
+             */
+            if (   (pParms->CreateFlags & SHFL_CF_ACT_MASK_IF_EXISTS) == SHFL_CF_ACT_REPLACE_IF_EXISTS
+                || (pParms->CreateFlags & SHFL_CF_ACT_MASK_IF_EXISTS) == SHFL_CF_ACT_OVERWRITE_IF_EXISTS
+                || (pParms->CreateFlags & SHFL_CF_ACT_MASK_IF_NEW) == SHFL_CF_ACT_CREATE_IF_NEW
+               )
             {
                 /* is the guest allowed to write to this share? */
                 bool fWritable;
