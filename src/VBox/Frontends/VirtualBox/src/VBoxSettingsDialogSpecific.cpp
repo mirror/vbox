@@ -525,7 +525,6 @@ bool VBoxVMSettingsDlg::correlate (QWidget *aPage, QString &aWarning)
     /* This method performs correlation option check between
      * different pages of VM Settings dialog */
 
-    /* Guest OS type & VT-x/AMD-V option correlation test */
     if (aPage == mSelector->idToPage (GeneralId) ||
         aPage == mSelector->idToPage (SystemId))
     {
@@ -534,18 +533,32 @@ bool VBoxVMSettingsDlg::correlate (QWidget *aPage, QString &aWarning)
         VBoxVMSettingsSystem *systemPage =
             qobject_cast <VBoxVMSettingsSystem*> (mSelector->idToPage (SystemId));
 
+        /* Guest OS type & VT-x/AMD-V option correlation test */
         if (generalPage && systemPage &&
             generalPage->is64BitOSTypeSelected() && !systemPage->isHWVirtExEnabled())
         {
             aWarning = tr (
-                "there is a 64 bits guest OS type assigned for this VM, which "
+                "there is a 64-bit guest OS type assigned for this VM, which "
                 "requires virtualization feature (VT-x/AMD-V) to be enabled "
-                "too, else your guest will fail to detect a 64 bits CPU and "
+                "too, else your guest will fail to detect a 64-bit CPU and "
                 "will not be able to boot, so this feature will be enabled "
                 "automatically when you'll accept VM Settings by pressing OK "
                 "button.");
             return true;
         }
+
+#ifndef Q_WS_MAC
+        /* Guest OS bitness & SMP slider correlation test */
+        if (ARCH_BITS == 32 && generalPage && systemPage &&
+            generalPage->is64BitOSTypeSelected() && systemPage->cpuCount() > 1)
+        {
+            aWarning = tr (
+                "there is a 64-bit guest OS type selected for this VM. "
+                "VirtualBox does currently not support more than one virtual CPU "
+                "for 64-bit guests executed on 32-bit hosts.");
+            return false;
+        }
+#endif
     }
 
     return true;
