@@ -1207,7 +1207,6 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
  */
 static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
 {
-    int rc;
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
     LogFlow(("%s:\n", __FUNCTION__));
 
