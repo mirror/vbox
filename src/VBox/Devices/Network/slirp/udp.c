@@ -470,6 +470,7 @@ udp_tos(struct socket *so)
 void
 udp_emu(PNATState pData, struct socket *so, struct mbuf *m)
 {
+#ifndef VBOX_WITH_SLIRP_ALIAS
     struct sockaddr_in addr;
     socklen_t addrlen = sizeof(addr);
 #ifdef EMULATE_TALK
@@ -709,6 +710,9 @@ udp_emu(PNATState pData, struct socket *so, struct mbuf *m)
             }
             return;
     }
+#else /*!VBOX_WITH_SLIRP_ALIAS*/
+    so->so_emu = 0;
+#endif /* VBOX_WITH_SLIRP_ALIAS */
 }
 
 struct socket *
