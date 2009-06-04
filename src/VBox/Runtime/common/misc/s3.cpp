@@ -246,7 +246,11 @@ static int rtS3Perform(PRTS3INTERNAL pS3Int)
             case CURLE_URL_MALFORMAT:
             case CURLE_COULDNT_RESOLVE_HOST:
             case CURLE_REMOTE_FILE_NOT_FOUND: rc = VERR_S3_NOT_FOUND; break;
+#if defined(CURLE_REMOTE_ACCESS_DENIED)
             case CURLE_REMOTE_ACCESS_DENIED: rc = VERR_S3_ACCESS_DENIED; break;
+#elif defined(CURLE_FTP_ACCESS_DENIED)
+            case CURLE_FTP_ACCESS_DENIED: rc = VERR_S3_ACCESS_DENIED; break;
+#endif
             case CURLE_ABORTED_BY_CALLBACK: rc = VERR_S3_CANCELED; break;
             default: break;
         }
