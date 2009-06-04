@@ -84,7 +84,6 @@ if test "$currentzone" = "global"; then
     fi
 fi
 
-VBOXBASEDIR="/opt/VirtualBox"
 echo "Configuring services and drivers..."
 
 if test "$currentzone" = "global"; then
@@ -118,6 +117,23 @@ if test "$currentzone" = "global"; then
     if test -f /var/svc/manifest/application/virtualbox/zoneaccess.xml; then
         /usr/sbin/svccfg import /var/svc/manifest/application/virtualbox/zoneaccess.xml
         /usr/sbin/svcadm enable -s svc:/application/virtualbox/zoneaccess
+    fi
+fi
+
+#
+# Install python bindings
+#
+if test -f "/opt/VirtualBox/sdk/installer/vboxapisetup.py" || test -h "/opt/VirtualBox/sdk/installer/vboxapisetup.py"; then
+    PYTHONBIN=`which python`
+    if test -f "$PYTHONBIN" || test -h "$PYTHONBIN"; then
+        echo "Installing Python bindings..."
+
+        cd /opt/VirtualBox/sdk/installer
+        /opt/VirtualBox/sdk/installer/vboxapisetup.py install
+    else
+        echo "** WARNING! Python not found, skipped installed Python bindings."
+        echo "   Manually run '/opt/VirtualBox/sdk/installer/vboxapisetup.py install'"
+        echo "   to install the bindings when python is available."
     fi
 fi
 
