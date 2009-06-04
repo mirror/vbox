@@ -298,6 +298,30 @@ renderSPUInit( int id, SPU *child, SPU *self,
         (wglGetPixelFormatAttribfvEXTFunc_t)
         render_spu.ws.wglGetProcAddress( "wglGetPixelFormatAttribfvARB" );
 
+    if (render_spu.ws.wglGetProcAddress("glCopyTexSubImage3D"))
+    {
+        _cr_render_table[numFuncs].name = crStrdup("CopyTexSubImage3D");
+        _cr_render_table[numFuncs].fn = (SPUGenericFunction) render_spu.ws.wglGetProcAddress("glCopyTexSubImage3D");
+        ++numFuncs;
+        crDebug("Render SPU: Found glCopyTexSubImage3D function");
+    }
+
+    if (render_spu.ws.wglGetProcAddress("glDrawRangeElements"))
+    {
+        _cr_render_table[numFuncs].name = crStrdup("DrawRangeElements");
+        _cr_render_table[numFuncs].fn = (SPUGenericFunction) render_spu.ws.wglGetProcAddress("glDrawRangeElements");
+        ++numFuncs;
+        crDebug("Render SPU: Found glDrawRangeElements function");
+    }
+
+    if (render_spu.ws.wglGetProcAddress("glTexSubImage3D"))
+    {
+        _cr_render_table[numFuncs].name = crStrdup("TexSubImage3D");
+        _cr_render_table[numFuncs].fn = (SPUGenericFunction) render_spu.ws.wglGetProcAddress("glTexSubImage3D");
+        ++numFuncs;
+        crDebug("Render SPU: Found glTexSubImage3D function");
+    }
+
     if (render_spu.ws.wglGetProcAddress("glTexImage3D"))
     {
         _cr_render_table[numFuncs].name = crStrdup("TexImage3D");
