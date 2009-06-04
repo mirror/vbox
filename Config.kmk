@@ -413,9 +413,7 @@ if1of ($(KBUILD_TARGET), darwin solaris linux win freebsd)
  VBOX_WITH_HOSTNETIF_API = 1
 endif
 # Enables the Python<->XPCOM and Python<->COM bindings.
-# (Currently not enabled by default because all the build servers has
-# different Python versions installed and would start burning.)
-VBOX_WITH_PYTHON = 1
+VBOX_WITH_PYTHON ?= 1
 # Enables hardening.
 # Most developers will want to disable this in their LocalConfig.kmk.
 ifn1of ($(KBUILD_TARGET), win)
