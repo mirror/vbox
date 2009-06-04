@@ -603,12 +603,32 @@ static void vbsfFreeFullPath (char *pszFullPath)
  *
  * @returns iprt status code
  * @param  fShflFlags shared folder create flags
+ * @param  fMode      file attibutes
  * @retval pfOpen     iprt create flags
  */
-static int vbsfConvertFileOpenFlags(unsigned fShflFlags, unsigned *pfOpen)
+static int vbsfConvertFileOpenFlags(unsigned fShflFlags, RTFMODE fMode, unsigned *pfOpen)
 {
     unsigned fOpen = 0;
     int rc = VINF_SUCCESS;
+
+    if (   (fMode & RTFS_DOS_MASK) != 0
+        && (fMode & RTFS_UNIX_MASK) == 0)
+    {
+        /* A DOS/Windows guest, make RTFS_UNIX_* from RTFS_DOS_*.
+         * @todo this is based on rtFsModeNormalize/rtFsModeFromDos.
+         *       May be better to use RTFsModeNormalize here.
+         */
+        fMode |= RTFS_UNIX_IRUSR | RTFS_UNIX_IRGRP | RTFS_UNIX_IROTH;
+        /* x for directories. */
+        if (fMode & RTFS_DOS_DIRECTORY)
+            fMode |= RTFS_TYPE_DIRECTORY | RTFS_UNIX_IXUSR | RTFS_UNIX_IXGRP | RTFS_UNIX_IXOTH;
+        /* writable? */
+        if (!(fMode & RTFS_DOS_READONLY))
+            fMode |= RTFS_UNIX_IWUSR | RTFS_UNIX_IWGRP | RTFS_UNIX_IWOTH;
+    }
+    
+    /* Set the requested mode. */
+    fOpen |= (fMode & RTFS_UNIX_MASK) << RTFILE_O_CREATE_MODE_SHIFT;
 
     switch (BIT_FLAG(fShflFlags, SHFL_CF_ACCESS_MASK_RW))
     {
@@ -649,8 +669,6 @@ static int vbsfConvertFileOpenFlags(unsigned fShflFlags, unsigned *pfOpen)
         case SHFL_CF_ACCESS_ATTR_NONE:
         {
             fOpen |= RTFILE_O_ACCESS_ATTR_DEFAULT;
-            /** @todo for posix guests we should allow passing the mode. */
-            fOpen |= 0666 << RTFILE_O_CREATE_MODE_SHIFT;
             Log(("FLAG: SHFL_CF_ACCESS_ATTR_NONE\n"));
             break;
         }
@@ -658,10 +676,6 @@ static int vbsfConvertFileOpenFlags(unsigned fShflFlags, unsigned *pfOpen)
         case SHFL_CF_ACCESS_ATTR_READ:
         {
             fOpen |= RTFILE_O_ACCESS_ATTR_READ;
-            /** @todo for posix guests we should allow passing the mode.
-             * Additionally this esoteric case - new file with only read
-             * access - should be tested with apps depending on this. */
-            fOpen |= 0444 << RTFILE_O_CREATE_MODE_SHIFT;
             Log(("FLAG: SHFL_CF_ACCESS_ATTR_READ\n"));
             break;
         }
@@ -669,10 +683,6 @@ static int vbsfConvertFileOpenFlags(unsigned fShflFlags, unsigned *pfOpen)
         case SHFL_CF_ACCESS_ATTR_WRITE:
         {
             fOpen |= RTFILE_O_ACCESS_ATTR_WRITE;
-            /** @todo for posix guests we should allow passing the mode.
-             * Additionally this esoteric case - new file with only write
-             * access - should be tested with apps depending on this. */
-            fOpen |= 0222 << RTFILE_O_CREATE_MODE_SHIFT;
             Log(("FLAG: SHFL_CF_ACCESS_ATTR_WRITE\n"));
             break;
         }
@@ -680,8 +690,6 @@ static int vbsfConvertFileOpenFlags(unsigned fShflFlags, unsigned *pfOpen)
         case SHFL_CF_ACCESS_ATTR_READWRITE:
         {
             fOpen |= RTFILE_O_ACCESS_ATTR_READWRITE;
-            /** @todo for posix guests we should allow passing the mode. */
-            fOpen |= 0666 << RTFILE_O_CREATE_MODE_SHIFT;
             Log(("FLAG: SHFL_CF_ACCESS_ATTR_READWRITE\n"));
             break;
         }
@@ -816,7 +824,7 @@ static int vbsfOpenFile (const char *pszPath, SHFLCREATEPARMS *pParms)
     bool fNoError = false;
     static int cErrors;
 
-    int rc = vbsfConvertFileOpenFlags(pParms->CreateFlags, &fOpen);
+    int rc = vbsfConvertFileOpenFlags(pParms->CreateFlags, pParms->Info.Attr.fMode, &fOpen);
     if (RT_SUCCESS(rc))
     {
         handle  = vbsfAllocFileHandle();
