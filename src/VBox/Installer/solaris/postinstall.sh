@@ -126,6 +126,8 @@ if test -f "/opt/VirtualBox/sdk/installer/vboxapisetup.py" || test -h "/opt/Virt
     if test -f "$PYTHONBIN" || test -h "$PYTHONBIN"; then
         echo "Installing Python bindings..."
 
+        VBOX_INSTALL_PATH=/opt/VirtualBox
+        export VBOX_INSTALL_PATH
         cd /opt/VirtualBox/sdk/installer
         $PYTHONBIN ./vboxapisetup.py install
     else
