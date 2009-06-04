@@ -4059,8 +4059,6 @@ VMMR3DECL(void) PGMR3ReleaseOwnedLocks(PVM pVM)
  */
 int pgmR3ExitShadowModeBeforePoolFlush(PVM pVM, PVMCPU pVCpu)
 {
-    /** @todo Need to synchronize this across all VCPUs! */
-
     /* Unmap the old CR3 value before flushing everything. */
     int rc = PGM_BTH_PFN(UnmapCR3, pVCpu)(pVCpu);
     AssertRC(rc);
