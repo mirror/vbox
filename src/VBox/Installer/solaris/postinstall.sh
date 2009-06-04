@@ -66,8 +66,7 @@ if test "$currentzone" = "global"; then
                 rc=$?
                 if test "$rc" -eq 0; then
                     # Add vboxusbmon to the devlink.tab
-                    sed -e '
-                    /name=vboxusbmon/d' /etc/devlink.tab > /etc/devlink.vbox
+                    sed -e '/name=vboxusbmon/d' /etc/devlink.tab > /etc/devlink.vbox
                     echo "type=ddi_pseudo;name=vboxusbmon	\D" >> /etc/devlink.vbox
                     mv -f /etc/devlink.vbox /etc/devlink.tab
                 fi
@@ -94,8 +93,7 @@ if test "$currentzone" = "global"; then
     fi
 
     # Add vboxdrv to the devlink.tab
-    sed -e '
-/name=vboxdrv/d' /etc/devlink.tab > /etc/devlink.vbox
+    sed -e '/name=vboxdrv/d' /etc/devlink.tab > /etc/devlink.vbox
     echo "type=ddi_pseudo;name=vboxdrv	\D" >> /etc/devlink.vbox
     mv -f /etc/devlink.vbox /etc/devlink.tab
 
