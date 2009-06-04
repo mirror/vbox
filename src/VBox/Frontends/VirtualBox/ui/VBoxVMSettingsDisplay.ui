@@ -195,7 +195,7 @@
      </widget>
      <widget class="QWidget" name="mTabVRDP" >
       <attribute name="title" >
-       <string>V&amp;RDP</string>
+       <string>&amp;Remote Display</string>
       </attribute>
       <layout class="QVBoxLayout" name="mLtVRDPPage" >
        <property name="spacing" >

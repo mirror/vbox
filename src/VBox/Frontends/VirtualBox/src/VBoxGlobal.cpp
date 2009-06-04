@@ -110,6 +110,8 @@
 #include <iprt/mem.h>
 #endif
 
+//#define VBOX_WITH_FULL_DETAILS_REPORT /* hidden for now */
+
 //#warning "port me: check this"
 /// @todo bird: Use (U)INT_PTR, (U)LONG_PTR, DWORD_PTR, or (u)intptr_t.
 #if defined(Q_OS_WIN64)
@@ -1461,6 +1463,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
         if (bootOrder.isEmpty())
             bootOrder = toString (KDeviceType_Null);
 
+#ifdef VBOX_WITH_FULL_DETAILS_REPORT
         /* ACPI */
         QString acpi = biosSettings.GetACPIEnabled()
             ? tr ("Enabled", "details report (ACPI)")
@@ -1485,6 +1488,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
         QString nested = aMachine.GetHWVirtExNestedPagingEnabled()
             ? tr ("Enabled", "details report (Nested Paging)")
             : tr ("Disabled", "details report (Nested Paging)");
+#endif /* VBOX_WITH_FULL_DETAILS_REPORT */
 
         QString item = QString (sSectionItemTpl2).arg (tr ("Base Memory", "details report"),
                                                        tr ("<nobr>%1 MB</nobr>", "details report"))
@@ -1493,14 +1497,21 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
                                                        tr ("<nobr>%1</nobr>", "details report"))
                        .arg (aMachine.GetCPUCount())
                      + QString (sSectionItemTpl2).arg (tr ("Boot Order", "details report"), bootOrder)
+#ifdef VBOX_WITH_FULL_DETAILS_REPORT
                      + QString (sSectionItemTpl2).arg (tr ("ACPI", "details report"), acpi)
                      + QString (sSectionItemTpl2).arg (tr ("IO APIC", "details report"), ioapic)
                      + QString (sSectionItemTpl2).arg (tr ("PAE/NX", "details report"), pae)
                      + QString (sSectionItemTpl2).arg (tr ("VT-x/AMD-V", "details report"), virt)
-                     + QString (sSectionItemTpl2).arg (tr ("Nested Paging", "details report"), nested);
+                     + QString (sSectionItemTpl2).arg (tr ("Nested Paging", "details report"), nested)
+#endif /* VBOX_WITH_FULL_DETAILS_REPORT */
+                     ;
 
         report += sectionTpl
+#ifdef VBOX_WITH_FULL_DETAILS_REPORT
                   .arg (2 + 8) /* rows */
+#else
+                  .arg (2 + 3) /* rows */
+#endif /* VBOX_WITH_FULL_DETAILS_REPORT */
                   .arg (":/chipset_16px.png", /* icon */
                         "#system", /* link */
                         tr ("System", "details report"), /* title */
