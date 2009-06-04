@@ -1934,8 +1934,21 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
                 if (FAILED(rc)) throw rc;
             }
 
-            /* CPU count (ignored for now) */
-            // EntriesList vsdeCPU = vsd->findByType (VirtualSystemDescriptionType_CPU);
+            /* CPU count */
+            std::list<VirtualSystemDescriptionEntry*> vsdeCPU = vsdescThis->findByType (VirtualSystemDescriptionType_CPU);
+            const Utf8Str &cpuVBox = vsdeCPU.front()->strVbox;
+            ULONG tmpCount = (ULONG)RTStrToUInt64(cpuVBox.c_str());
+            rc = pNewMachine->COMSETTER(CPUCount)(tmpCount);
+            if (FAILED(rc)) throw rc;
+            bool fEnableIOApic = false;
+            /* We need HWVirt & IO-APIC if more than one CPU is requested */
+            if (tmpCount > 1)
+            {
+                rc = pNewMachine->COMSETTER(HWVirtExEnabled)(TRUE);
+                if (FAILED(rc)) throw rc;
+
+                fEnableIOApic = true;
+            }
 
             /* RAM */
             std::list<VirtualSystemDescriptionEntry*> vsdeRAM = vsdescThis->findByType(VirtualSystemDescriptionType_Memory);
@@ -1965,6 +1978,12 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
 
             Utf8Str strFamilyId(bstrFamilyId);
             if (strFamilyId == "Windows")
+                fEnableIOApic = true;
+
+            /* If IP-APIC should be enabled could be have different reasons.
+               See CPU count & the Win test above. Here we enable it if it was
+               previously requested. */
+            if (fEnableIOApic)
             {
                 ComPtr<IBIOSSettings> pBIOSSettings;
                 rc = pNewMachine->COMGETTER(BIOSSettings)(pBIOSSettings.asOutParam());
@@ -3115,7 +3134,9 @@ int Appliance::writeFS(TaskWriteOVF *pTask)
                             {
                                 strDescription = "Number of virtual CPUs";
                                 type = OVFResourceType_Processor; // 3
-                                lVirtualQuantity = 1;
+                                desc.strVbox.toInt(uTemp);
+                                lVirtualQuantity = uTemp;
+                                strCaption = Utf8StrFmt("%d virtual CPU", lVirtualQuantity);     // without this ovftool won't eat the item
                             }
                         break;
 
