@@ -1506,7 +1506,7 @@ static int handleVMStatistics(HandlerArg *a)
     /* try to find the given machine */
     ComPtr <IMachine> machine;
     Bstr uuid (a->argv[0]);
-    if (!uuid.isEmpty())
+    if (!Guid (a->argv[0]).isEmpty())
         CHECK_ERROR(a->virtualBox, GetMachine(uuid, machine.asOutParam()));
     else
     {
