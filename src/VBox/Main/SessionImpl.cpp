@@ -258,6 +258,7 @@ STDMETHODIMP Session::GetPID (ULONG *aPid)
 
 STDMETHODIMP Session::GetRemoteConsole (IConsole **aConsole)
 {
+    LogFlowThisFuncEnter();
     AssertReturn (aConsole, E_POINTER);
 
     AutoCaller autoCaller (this);
@@ -276,6 +277,8 @@ STDMETHODIMP Session::GetRemoteConsole (IConsole **aConsole)
         return VBOX_E_INVALID_VM_STATE;
 
     mConsole.queryInterfaceTo (aConsole);
+
+    LogFlowThisFuncLeave();
 
     return S_OK;
 }
