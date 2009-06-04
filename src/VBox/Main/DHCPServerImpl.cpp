@@ -101,7 +101,7 @@ HRESULT DHCPServer::init(VirtualBox *aVirtualBox, const settings::Key &aNode)
     unconst(mName) = aNode.stringValue ("networkName");
     m.IPAddress = aNode.stringValue ("IPAddress");
     m.networkMask = aNode.stringValue ("networkMask");
-    m.enabled = aNode.value <BOOL> ("enabled");
+    m.enabled = aNode.value <bool> ("enabled");
     m.lowerIP = aNode.stringValue ("lowerIP");
     m.upperIP = aNode.stringValue ("upperIP");
 
@@ -128,7 +128,7 @@ HRESULT DHCPServer::saveSettings (settings::Key &aParentNode)
     aNode.setValue <Bstr> ("networkMask", m.networkMask);
     aNode.setValue <Bstr> ("lowerIP", m.lowerIP);
     aNode.setValue <Bstr> ("upperIP", m.upperIP);
-    aNode.setValue <BOOL> ("enabled", m.enabled);
+    aNode.setValue <bool> ("enabled", !!m.enabled);
 
     return S_OK;
 }
