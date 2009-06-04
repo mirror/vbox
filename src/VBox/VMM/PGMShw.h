@@ -228,10 +228,11 @@ PGM_SHW_DECL(int, Relocate)(PVMCPU pVCpu, RTGCPTR offDelta)
  */
 PGM_SHW_DECL(int, Exit)(PVMCPU pVCpu)
 {
-#if PGM_SHW_TYPE == PGM_TYPE_NESTED || PGM_SHW_TYPE == PGM_TYPE_EPT
-    if (pVCpu->pgm.s.CTX_SUFF(pShwPageCR3))
+    PVM pVM = pVCpu->pVMR3;
+
+    if (    HWACCMIsNestedPagingActive(pVM)
+        &&  pVCpu->pgm.s.CTX_SUFF(pShwPageCR3))
     {
-        PVM      pVM   = pVCpu->pVMR3;
         PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
         Assert(pVCpu->pgm.s.iShwUser == PGMPOOL_IDX_NESTED_ROOT);
@@ -245,9 +246,9 @@ PGM_SHW_DECL(int, Exit)(PVMCPU pVCpu)
         pVCpu->pgm.s.pShwPageCR3RC = 0;
         pVCpu->pgm.s.iShwUser      = 0;
         pVCpu->pgm.s.iShwUserTable = 0;
+
+        Log(("Leave nested shadow paging mode\n"));
     }
-    Log(("Leave nested shadow paging mode\n"));
-#endif
     return VINF_SUCCESS;
 }
 

@@ -220,8 +220,7 @@ void pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
 {
     Log4(("pgmMapSetShadowPDEs new pde %x (mappings enabled %d)\n", iNewPDE, pgmMapAreMappingsEnabled(&pVM->pgm.s)));
 
-    if (    !pgmMapAreMappingsEnabled(&pVM->pgm.s)
-        ||  pVM->cCPUs > 1)
+    if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
         return;
 
     /* This only applies to raw mode where we only support 1 VCPU. */
@@ -388,8 +387,7 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
 {
     Log(("pgmMapClearShadowPDEs: old pde %x (cPTs=%x) (mappings enabled %d) fDeactivateCR3=%RTbool\n", iOldPDE, pMap->cPTs, pgmMapAreMappingsEnabled(&pVM->pgm.s), fDeactivateCR3));
 
-    if (    !pgmMapAreMappingsEnabled(&pVM->pgm.s)
-        ||  pVM->cCPUs > 1)
+    if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
         return;
 
     Assert(pShwPageCR3);
@@ -632,8 +630,7 @@ int pgmMapActivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
     /*
      * Can skip this if mappings are disabled.
      */
-    if (    !pgmMapAreMappingsEnabled(&pVM->pgm.s)
-        ||  pVM->cCPUs > 1)
+    if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
         return VINF_SUCCESS;
 
     /* Note. A log flush (in RC) can cause problems when called from MapCR3 (inconsistent state will trigger assertions). */
@@ -668,8 +665,7 @@ int pgmMapDeactivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
     /*
      * Can skip this if mappings are disabled.
      */
-    if (    !pgmMapAreMappingsEnabled(&pVM->pgm.s)
-        ||  pVM->cCPUs > 1)
+    if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
         return VINF_SUCCESS;
 
     Assert(pShwPageCR3);
