@@ -1944,7 +1944,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
             /* We need HWVirt & IO-APIC if more than one CPU is requested */
             if (tmpCount > 1)
             {
-                rc = pNewMachine->COMSETTER(HWVirtExEnabled)(TRUE);
+                rc = pNewMachine->COMSETTER(HWVirtExEnabled)(TSBool_True);
                 if (FAILED(rc)) throw rc;
 
                 fEnableIOApic = true;
