@@ -230,7 +230,8 @@ PGM_SHW_DECL(int, Exit)(PVMCPU pVCpu)
 {
     PVM pVM = pVCpu->pVMR3;
 
-    if (    HWACCMIsNestedPagingActive(pVM)
+    if (    (   pVCpu->pgm.s.enmShadowMode == PGMMODE_NESTED 
+             || pVCpu->pgm.s.enmShadowMode == PGMMODE_EPT)
         &&  pVCpu->pgm.s.CTX_SUFF(pShwPageCR3))
     {
         PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
