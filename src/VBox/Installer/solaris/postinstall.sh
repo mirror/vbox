@@ -30,7 +30,7 @@ fi
 osversion=`uname -r`
 currentzone=`zonename`
 if test "$currentzone" = "global"; then
-    echo "Configuring VirtualBox kernel modules..."
+    echo "Loading VirtualBox kernel modules..."
     /opt/VirtualBox/vboxdrv.sh stopall silentunload checkarch
     rc=$?
     if test "$rc" -eq 0; then
@@ -79,7 +79,7 @@ if test "$currentzone" = "global"; then
     # track problems when older vboxdrv is hanging about in memory and add_drv of the new
     # one suceeds and it appears as though the new one is being used.
     if test "$rc" -ne 0; then
-        echo "## Configuration failed. Aborting installation."
+        echo "## Loading failed. Aborting installation."
         exit 2
     fi
 fi
