@@ -354,10 +354,11 @@ BLDDIRS += $(foreach d,\
 	archive/components \
 	archive/nls \
 	$(if $(VBOX_WITH_QT4_SUN),archive/accessible,) \
-	$(if $(VBOX_WITH_PYTHON),archive/sdk/installer,) \
-	$(if $(VBOX_WITH_PYTHON),archive/sdk/installer/vboxapi,) \
-	$(if $(VBOX_WITH_PYTHON),archive/sdk/bindings/xpcom/python/xpcom,) \
-	$(if $(VBOX_WITH_PYTHON),archive/sdk/bindings/xpcom/python/xpcom/client,) \
+	$(if $(VBOX_WITH_PYTHON),\
+	  archive/sdk/installer \
+	  archive/sdk/installer/vboxapi \
+	  archive/sdk/bindings/xpcom/python/xpcom \
+	  archive/sdk/bindings/xpcom/python/xpcom/client,) \
 	archive/additions \
 	install\
 ,$(VBOX_LNX_INST_OUT_DIR)/$(d)/)
