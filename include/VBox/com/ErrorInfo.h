@@ -283,9 +283,9 @@ protected:
     bool mIsFullAvailable : 1;
 
     HRESULT mResultCode;
-    Guid mInterfaceID;
-    Bstr mComponent;
-    Bstr mText;
+    Guid    mInterfaceID;
+    Bstr    mComponent;
+    Bstr    mText;
 
     cppx::auto_copy_ptr <ErrorInfo> mNext;
 

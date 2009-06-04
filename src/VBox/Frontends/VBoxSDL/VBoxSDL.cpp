@@ -4098,7 +4098,7 @@ void SaveState(void)
     /*
      * What's the result of the operation?
      */
-    HRESULT lrc;
+    LONG lrc;
     rc = gProgress->COMGETTER(ResultCode)(&lrc);
     if (FAILED(rc))
         lrc = ~0;
