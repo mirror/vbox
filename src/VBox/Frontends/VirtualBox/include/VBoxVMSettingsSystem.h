@@ -37,6 +37,7 @@ public:
     VBoxVMSettingsSystem();
 
     bool isHWVirtExEnabled() const;
+    int cpuCount() const;
 
 signals:
 

@@ -129,6 +129,11 @@ bool VBoxVMSettingsSystem::isHWVirtExEnabled() const
     return mCbVirt->isChecked();
 }
 
+int VBoxVMSettingsSystem::cpuCount() const
+{
+    return mSlCPU->value();
+}
+
 void VBoxVMSettingsSystem::getFrom (const CMachine &aMachine)
 {
     mMachine = aMachine;
