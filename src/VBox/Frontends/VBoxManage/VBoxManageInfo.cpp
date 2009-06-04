@@ -255,6 +255,65 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
     else
         RTPrintf("Boot menu mode:  %s\n", pszBootMenu);
 
+    ULONG maxBootPosition = 0;
+    ComPtr<ISystemProperties> systemProperties;
+    virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
+    systemProperties->COMGETTER(MaxBootPosition)(&maxBootPosition);
+    for (ULONG i = 1; i <= maxBootPosition; i++)
+    {
+        DeviceType_T bootOrder;
+        machine->GetBootOrder(i, &bootOrder);
+        if (bootOrder == DeviceType_Floppy)
+        {
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf("bootdevice-%d=\"floppy\"\n", i);
+            else
+                RTPrintf("Boot Device (%d): Floppy\n", i);
+        }
+        else if (bootOrder == DeviceType_DVD)
+        {
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf("bootdevice-%d=\"dvd\"\n", i);
+            else
+                RTPrintf("Boot Device (%d): DVD\n", i);
+        }
+        else if (bootOrder == DeviceType_HardDisk)
+        {
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf("bootdevice-%d=\"harddisk\"\n", i);
+            else
+                RTPrintf("Boot Device (%d): HardDisk\n", i);
+        }
+        else if (bootOrder == DeviceType_Network)
+        {
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf("bootdevice-%d=\"network\"\n", i);
+            else
+                RTPrintf("Boot Device (%d): Network\n", i);
+        }
+        else if (bootOrder == DeviceType_USB)
+        {
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf("bootdevice-%d=\"usb\"\n", i);
+            else
+                RTPrintf("Boot Device (%d): USB\n", i);
+        }
+        else if (bootOrder == DeviceType_SharedFolder)
+        {
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf("bootdevice-%d=\"sharedfolder\"\n", i);
+            else
+                RTPrintf("Boot Device (%d): Shared Folder\n", i);
+        }
+        else
+        {
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf("bootdevice-%d=\"null\"\n", i);
+            else
+                RTPrintf("Boot Device (%d): Not Assigned\n", i);
+        }
+    }
+
     BOOL acpiEnabled;
     biosSettings->COMGETTER(ACPIEnabled)(&acpiEnabled);
     if (details == VMINFO_MACHINEREADABLE)
