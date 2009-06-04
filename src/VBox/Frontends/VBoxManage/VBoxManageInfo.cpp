@@ -266,49 +266,49 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         if (bootOrder == DeviceType_Floppy)
         {
             if (details == VMINFO_MACHINEREADABLE)
-                RTPrintf("bootdevice-%d=\"floppy\"\n", i);
+                RTPrintf("boot%d=\"floppy\"\n", i);
             else
                 RTPrintf("Boot Device (%d): Floppy\n", i);
         }
         else if (bootOrder == DeviceType_DVD)
         {
             if (details == VMINFO_MACHINEREADABLE)
-                RTPrintf("bootdevice-%d=\"dvd\"\n", i);
+                RTPrintf("boot%d=\"dvd\"\n", i);
             else
                 RTPrintf("Boot Device (%d): DVD\n", i);
         }
         else if (bootOrder == DeviceType_HardDisk)
         {
             if (details == VMINFO_MACHINEREADABLE)
-                RTPrintf("bootdevice-%d=\"harddisk\"\n", i);
+                RTPrintf("boot%d=\"disk\"\n", i);
             else
                 RTPrintf("Boot Device (%d): HardDisk\n", i);
         }
         else if (bootOrder == DeviceType_Network)
         {
             if (details == VMINFO_MACHINEREADABLE)
-                RTPrintf("bootdevice-%d=\"network\"\n", i);
+                RTPrintf("boot%d=\"net\"\n", i);
             else
                 RTPrintf("Boot Device (%d): Network\n", i);
         }
         else if (bootOrder == DeviceType_USB)
         {
             if (details == VMINFO_MACHINEREADABLE)
-                RTPrintf("bootdevice-%d=\"usb\"\n", i);
+                RTPrintf("boot%d=\"usb\"\n", i);
             else
                 RTPrintf("Boot Device (%d): USB\n", i);
         }
         else if (bootOrder == DeviceType_SharedFolder)
         {
             if (details == VMINFO_MACHINEREADABLE)
-                RTPrintf("bootdevice-%d=\"sharedfolder\"\n", i);
+                RTPrintf("boot%d=\"sharedfolder\"\n", i);
             else
                 RTPrintf("Boot Device (%d): Shared Folder\n", i);
         }
         else
         {
             if (details == VMINFO_MACHINEREADABLE)
-                RTPrintf("bootdevice-%d=\"null\"\n", i);
+                RTPrintf("boot%d=\"none\"\n", i);
             else
                 RTPrintf("Boot Device (%d): Not Assigned\n", i);
         }
