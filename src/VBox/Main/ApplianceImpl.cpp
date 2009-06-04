@@ -1936,6 +1936,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
 
             /* CPU count */
             std::list<VirtualSystemDescriptionEntry*> vsdeCPU = vsdescThis->findByType (VirtualSystemDescriptionType_CPU);
+            ComAssertMsgThrow(vsdeCPU.size() == 1, ("CPU count missing"), E_FAIL);
             const Utf8Str &cpuVBox = vsdeCPU.front()->strVbox;
             ULONG tmpCount = (ULONG)RTStrToUInt64(cpuVBox.c_str());
             rc = pNewMachine->COMSETTER(CPUCount)(tmpCount);
