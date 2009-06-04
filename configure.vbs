@@ -2146,6 +2146,13 @@ Sub Main
       EnvPrint "call " & g_strPathDev & "/env.cmd %1 %2 %3 %4 %5 %6 %7 %8 %9"
    end if
 
+   Print ""
+   Print "Execute env.bat once before you start to build VBox:"
+   Print ""
+   Print "  env.bat"
+   Print "  kmk"
+   Print ""
+
 End Sub
 
 
