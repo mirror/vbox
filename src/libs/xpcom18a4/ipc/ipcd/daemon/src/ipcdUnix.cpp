@@ -524,7 +524,15 @@ int main(int argc, char **argv)
     else {
         IPC_InitModuleReg(argv[0]);
 
+#ifdef VBOX
+        // Use large backlog, as otherwise local sockets can reject connection
+        // attempts. Usually harmless, but causes an unnecessary start attempt
+        // of IPCD (which will terminate straight away), and the next attempt
+        // usually succeeds. But better avoid unnecessary activities.
+        if (PR_Listen(listenFD, 128) != PR_SUCCESS) {
+#else /* !VBOX */
         if (PR_Listen(listenFD, 5) != PR_SUCCESS) {
+#endif /* !VBOX */
             LOG(("PR_Listen failed [%d]\n", PR_GetError()));
         }
         else {

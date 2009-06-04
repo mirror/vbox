@@ -68,6 +68,9 @@
 
 #include "nsEventQueueService.h"
 #include "nsEventQueue.h"
+#ifdef VBOX
+# include "nsEventQueueUtils.h"
+#endif /* VBOX */
 
 #include "nsIProxyObjectManager.h"
 #include "nsProxyEventPrivate.h"  // access to the impl of nsProxyObjectManager for the generic factory registration.
@@ -760,6 +763,17 @@ nsresult NS_COM NS_InitXPCOM2(nsIServiceManager* *result,
     // Pay the cost at startup time of starting this singleton.
     nsIInterfaceInfoManager* iim = XPTI_GetInterfaceInfoManager();
     NS_IF_RELEASE(iim);
+#ifdef VBOX
+    // Must initialize the EventQueueService singleton before anyone is
+    // using it. The notification below creates a thread which races creating
+    // the EventQueueService creation otherwise, no matter what.
+    nsCOMPtr<nsIEventQueue> eventQ;
+    rv = NS_GetMainEventQ(getter_AddRefs(eventQ));
+    if (NS_FAILED(rv)) {
+      NS_ERROR("Could not create event queue for main thread");
+      return rv;
+    }
+#endif /* VBOX */
 
     // Notify observers of xpcom autoregistration start
     NS_CreateServicesFromCategory(NS_XPCOM_STARTUP_OBSERVER_ID, 
