@@ -314,7 +314,7 @@ DECLCALLBACK(uint32_t)  rtRandAdvSynthesizeU32FromBytes(PRTRANDINT pThis, uint32
 
 DECLCALLBACK(uint32_t)  rtRandAdvSynthesizeU32FromU64(PRTRANDINT pThis, uint32_t u32First, uint32_t u32Last)
 {
-    return pThis->pfnGetU64(pThis, u32First, u32Last);
+    return (uint32_t)pThis->pfnGetU64(pThis, u32First, u32Last);
 }
 
 
@@ -357,9 +357,9 @@ DECLCALLBACK(uint64_t)  rtRandAdvSynthesizeU64FromU32(PRTRANDINT pThis, uint64_t
 {
     uint64_t off = u64Last - u64First;
     if (off <= UINT32_MAX)
-        return pThis->pfnGetU32(pThis, 0, off) + u64First;
+        return (uint64_t)pThis->pfnGetU32(pThis, 0, off) + u64First;
 
-    return (    pThis->pfnGetU32(pThis, 0, UINT32_MAX)
+    return (    (uint64_t)pThis->pfnGetU32(pThis, 0, UINT32_MAX)
             |  ((uint64_t)pThis->pfnGetU32(pThis, 0, off >> 32) << 32))
          + u64First;
 }

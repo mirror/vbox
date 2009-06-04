@@ -117,7 +117,7 @@ static DECLCALLBACK(uint32_t) rtRandParkMillerGetU32(PRTRANDINT pThis, uint32_t 
 /** @copydoc RTRANDINT::pfnSeed */
 static DECLCALLBACK(int) rtRandParkMillerSeed(PRTRANDINT pThis, uint64_t u64Seed)
 {
-    pThis->u.ParkMiller.u32Ctx = u64Seed;
+    pThis->u.ParkMiller.u32Ctx = (uint32_t)u64Seed;
     pThis->u.ParkMiller.u32Bits = 0;
     pThis->u.ParkMiller.cBits = 0;
     return VINF_SUCCESS;
