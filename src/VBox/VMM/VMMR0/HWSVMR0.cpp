@@ -1682,11 +1682,81 @@ Assert(pCtx->cs != 0xffcf || pCtx->eip != 0x4315);
         PGMMODE     enmShwPagingMode;
 
         Assert(pVM->hwaccm.s.fNestedPaging);
-        Log(("Nested page fault at %RGv cr2=%RGp error code %x\n", (RTGCPTR)pCtx->rip, uFaultAddress, errCode));
+        LogFlow(("Nested page fault at %RGv cr2=%RGp error code %x\n", (RTGCPTR)pCtx->rip, uFaultAddress, errCode));
         /* Exit qualification contains the linear address of the page fault. */
         TRPMAssertTrap(pVCpu, X86_XCPT_PF, TRPM_TRAP);
         TRPMSetErrorCode(pVCpu, errCode);
         TRPMSetFaultAddress(pVCpu, uFaultAddress);
+
+#if 0
+            /* Shortcut for APIC TPR reads and writes; 32 bits guests only */
+            if (    (uFaultAddress & 0xfff) == 0x080
+                &&  pVM->hwaccm.s.fHasIoApic
+                &&  !(errCode & X86_TRAP_PF_P)  /* not present */
+                &&  !CPUMIsGuestInLongModeEx(pCtx))
+            {
+                RTGCPHYS GCPhysApicBase;
+                PDMApicGetBase(pVM, &GCPhysApicBase);   /* @todo cache this */
+                GCPhysApicBase &= PAGE_BASE_GC_MASK;
+
+                if (uFaultAddress == GCPhysApicBase + 0x80)
+                {
+                    Log(("Replace TPR access at %RGv\n", pCtx->rip));
+#if 0
+                    DISCPUSTATE Cpu;
+                    unsigned cbOp;
+                    rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), &Cpu, &cbOp);
+                    AssertRC(rc);
+                    if (    rc == VINF_SUCCESS
+                        &&  Cpu.pCurInstr->opcode == OP_MOV
+                        &&  (cbOp == 5 || cbOp == 6))
+                    {
+                        uint8_t szInstr[15];
+                        if (    (errCode & X86_TRAP_PF_RW)
+                            &&  Cpu.param1.disp32 == (uint32_t)uFaultAddress
+                            &&  Cpu.param2.flags == USE_REG_GEN32)
+                        {
+                            /* 0xF0, 0x0F, 0x22, 0xC0 = mov cr8, eax */
+                            szInstr[0] = 0xF0;
+                            szInstr[1] = 0x0F;
+                            szInstr[2] = 0x22;
+                            szInstr[3] = 0xC0 | Cpu.param2.base.reg_gen;
+                            for (unsigned i = 4; i < cbOp; i++)
+                                szInstr[i] = 0x90;  /* nop */
+
+                            rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, szInstr, cbOp);
+                            AssertRC(rc);
+
+                            pVM->hwaccm.s.svm.fTPRPatching = true;
+                            Log(("Acceptable write candidate!\n"));
+                            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
+                            goto ResumeExecution;
+                        }
+                        else
+                        if (    Cpu.param2.disp32 == (uint32_t)uFaultAddress
+                            &&  Cpu.param1.flags == USE_REG_GEN32)
+                        {
+                            /* 0xF0, 0x0F, 0x20, 0xC0 = mov eax, cr8 */
+                            szInstr[0] = 0xF0;
+                            szInstr[1] = 0x0F;
+                            szInstr[2] = 0x20;
+                            szInstr[3] = 0xC0 | Cpu.param1.base.reg_gen;
+                            for (unsigned i = 4; i < cbOp; i++)
+                                szInstr[i] = 0x90;  /* nop */
+
+                            rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, szInstr, cbOp);
+                            AssertRC(rc);
+
+                            pVM->hwaccm.s.svm.fTPRPatching = true;
+                            Log(("Acceptable read candidate!\n"));
+                            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
+                            goto ResumeExecution;
+                        }
+                    }
+#endif
+                }
+            }
+#endif
 
         /* Handle the pagefault trap for the nested shadow table. */
 #if HC_ARCH_BITS == 32
