@@ -538,12 +538,9 @@ bool VBoxVMSettingsDlg::correlate (QWidget *aPage, QString &aWarning)
             generalPage->is64BitOSTypeSelected() && !systemPage->isHWVirtExEnabled())
         {
             aWarning = tr (
-                "there is a 64-bit guest OS type assigned for this VM, which "
-                "requires virtualization feature (VT-x/AMD-V) to be enabled "
-                "too, else your guest will fail to detect a 64-bit CPU and "
-                "will not be able to boot, so this feature will be enabled "
-                "automatically when you'll accept VM Settings by pressing OK "
-                "button.");
+                "you have selected a 64-bit guest OS type for this VM. As such guests"
+                "require hardware virtualization (VT-x/AMD-V), this feature will be enabled "
+                "automatically.");
             return true;
         }
 
@@ -553,8 +550,8 @@ bool VBoxVMSettingsDlg::correlate (QWidget *aPage, QString &aWarning)
             generalPage->is64BitOSTypeSelected() && systemPage->cpuCount() > 1)
         {
             aWarning = tr (
-                "there is a 64-bit guest OS type selected for this VM. "
-                "VirtualBox does currently not support more than one virtual CPU "
+                "you have selected a 64-bit guest OS type for this VM. "
+                "VirtualBox does not currently support more than one virtual CPU "
                 "for 64-bit guests executed on 32-bit hosts.");
             return false;
         }
