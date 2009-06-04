@@ -956,8 +956,9 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
     else
     {
         RTPrintf("File '%s' is no block device\n", rawdisk.raw());
-        vrc = VERR_INVALID_PARAMETER;
-        goto out;
+        vrc = RTFileGetSize(RawFile, &cbSize);
+        //vrc = VERR_INVALID_PARAMETER;
+        //goto out;
     }
 #elif defined(RT_OS_DARWIN)
     struct stat DevStat;
