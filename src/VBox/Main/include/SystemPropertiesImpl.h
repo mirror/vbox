@@ -92,6 +92,7 @@ public:
     STDMETHOD(COMSETTER(HWVirtExEnabled)) (BOOL enabled);
     STDMETHOD(COMGETTER(LogHistoryCount)) (ULONG *count);
     STDMETHOD(COMSETTER(LogHistoryCount)) (ULONG count);
+    STDMETHOD(COMGETTER(DefaultAudioDriver)) (AudioDriverType_T *aAudioDriver);
 
     // public methods only for internal purposes
 
@@ -143,6 +144,7 @@ private:
     Bstr mWebServiceAuthLibrary;
     BOOL mHWVirtExEnabled;
     ULONG mLogHistoryCount;
+    AudioDriverType_T mDefaultAudioDriver;
 };
 
 #endif // ____H_SYSTEMPROPERTIESIMPL

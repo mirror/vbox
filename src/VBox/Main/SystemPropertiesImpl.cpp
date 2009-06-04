@@ -31,6 +31,7 @@
 
 #include <iprt/path.h>
 #include <iprt/dir.h>
+#include <iprt/process.h>
 
 #include <VBox/err.h>
 #include <VBox/param.h>
@@ -111,6 +112,40 @@ HRESULT SystemProperties::init (VirtualBox *aParent)
             mHardDiskFormats.push_back (hdf);
         }
     }
+
+    /* Driver defaults which are OS specific */
+#if defined (RT_OS_WINDOWS)
+# ifdef VBOX_WITH_WINMM
+    mDefaultAudioDriver = AudioDriverType_WinMM;
+# else /* VBOX_WITH_WINMM */
+    mDefaultAudioDriver = AudioDriverType_DirectSound;
+# endif /* !VBOX_WITH_WINMM */
+#elif defined (RT_OS_SOLARIS)
+    mDefaultAudioDriver = AudioDriverType_SolAudio;
+#elif defined (RT_OS_LINUX)
+# if defined (VBOX_WITH_PULSE)
+    /* Check for the pulse library & that the pulse audio daemon is running. */
+    if (RTProcIsRunningByName ("pulseaudio") &&
+        RTLdrIsLoadable ("libpulse.so.0"))
+        mDefaultAudioDriver = AudioDriverType_Pulse;
+    else
+# endif /* VBOX_WITH_PULSE */
+# if defined (VBOX_WITH_ALSA)
+        /* Check if we can load the ALSA library */
+        if (RTLdrIsLoadable ("libasound.so.2"))
+            mDefaultAudioDriver = AudioDriverType_ALSA;
+        else
+# endif /* VBOX_WITH_ALSA */
+            mDefaultAudioDriver = AudioDriverType_OSS;
+#elif defined (RT_OS_DARWIN)
+    mDefaultAudioDriver = AudioDriverType_CoreAudio;
+#elif defined (RT_OS_OS2)
+    mDefaultAudioDriver = AudioDriverType_MMP;
+#elif defined (RT_OS_FREEBSD)
+    mDefaultAudioDriver = AudioDriverType_OSS;
+#else
+    mDefaultAudioDriver = AudioDriverType_Null;
+#endif
 
     /* Confirm a successful initialization */
     if (SUCCEEDED (rc))
@@ -537,6 +572,21 @@ STDMETHODIMP SystemProperties::COMSETTER(LogHistoryCount) (ULONG count)
     HRESULT rc = mParent->saveSettings();
 
     return rc;
+}
+
+STDMETHODIMP SystemProperties::COMGETTER(DefaultAudioDriver) (AudioDriverType_T *aAudioDriver)
+{
+    if (!aAudioDriver)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
+
+    *aAudioDriver = mDefaultAudioDriver;
+
+    return S_OK;
 }
 
 // public methods only for internal purposes
