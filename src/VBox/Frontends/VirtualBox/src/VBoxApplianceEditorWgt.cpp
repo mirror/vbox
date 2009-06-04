@@ -331,6 +331,7 @@ Qt::ItemFlags HardwareItem::itemFlags (int aColumn) const
              mType == KVirtualSystemDescriptionType_Description ||
              mType == KVirtualSystemDescriptionType_License ||
              mType == KVirtualSystemDescriptionType_OS ||
+             mType == KVirtualSystemDescriptionType_CPU ||
              mType == KVirtualSystemDescriptionType_Memory ||
              mType == KVirtualSystemDescriptionType_SoundCard ||
              mType == KVirtualSystemDescriptionType_NetworkAdapter ||
