@@ -7490,7 +7490,7 @@
   <interface
      name="ISystemProperties"
      extends="$unknown"
-     uuid="0760e03f-06d0-481e-9f81-be43fef092ba"
+     uuid="63bfd184-df69-4949-9159-a923cf7b1207"
      wsmap="managed"
      >
     <desc>
@@ -7755,6 +7755,11 @@
       <desc>
         This value specifies how many old release log files are kept.
        </desc>
+    </attribute>
+
+    <attribute name="defaultAudioDriver" type="AudioDriverType" readonly="yes">
+      <desc>This value hold the default audio driver for the current
+      system.</desc>
     </attribute>
   </interface>
 

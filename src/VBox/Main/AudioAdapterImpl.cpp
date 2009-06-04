@@ -62,10 +62,22 @@ HRESULT AudioAdapter::init (Machine *aParent)
     AutoInitSpan autoInitSpan (this);
     AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
+    /* Get the default audio driver out of the system properties */
+    ComPtr<IVirtualBox> VBox;
+    HRESULT rc = aParent->COMGETTER(Parent)(VBox.asOutParam());
+    if (FAILED(rc)) return rc;
+    ComPtr<ISystemProperties> sysProps;
+    rc = VBox->COMGETTER(SystemProperties)(sysProps.asOutParam());
+    if (FAILED(rc)) return rc;
+    AudioDriverType_T defaultAudioDriver;
+    rc = sysProps->COMGETTER(DefaultAudioDriver)(&defaultAudioDriver);
+    if (FAILED(rc)) return rc;
+
     unconst (mParent) = aParent;
     /* mPeer is left null */
 
     mData.allocate();
+    mData->mAudioDriver = defaultAudioDriver;
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -338,39 +350,8 @@ AudioAdapter::Data::Data()
     /* Generic defaults */
     mEnabled = false;
     mAudioController = AudioControllerType_AC97;
-    /* Driver defaults which are OS specific */
-#if defined (RT_OS_WINDOWS)
-# ifdef VBOX_WITH_WINMM
-    mAudioDriver = AudioDriverType_WinMM;
-# else /* VBOX_WITH_WINMM */
-    mAudioDriver = AudioDriverType_DirectSound;
-# endif /* !VBOX_WITH_WINMM */
-#elif defined (RT_OS_SOLARIS)
-    mAudioDriver = AudioDriverType_SolAudio;
-#elif defined (RT_OS_LINUX)
-# if defined (VBOX_WITH_PULSE)
-    /* Check for the pulse library & that the pulse audio daemon is running. */
-    if (RTProcIsRunningByName ("pulseaudio") &&
-        RTLdrIsLoadable ("libpulse.so.0"))
-        mAudioDriver = AudioDriverType_Pulse;
-    else
-# endif /* VBOX_WITH_PULSE */
-# if defined (VBOX_WITH_ALSA)
-        /* Check if we can load the ALSA library */
-        if (RTLdrIsLoadable ("libasound.so.2"))
-            mAudioDriver = AudioDriverType_ALSA;
-        else
-# endif /* VBOX_WITH_ALSA */
-            mAudioDriver = AudioDriverType_OSS;
-#elif defined (RT_OS_DARWIN)
-    mAudioDriver = AudioDriverType_CoreAudio;
-#elif defined (RT_OS_OS2)
-    mAudioDriver = AudioDriverType_MMP;
-#elif defined (RT_OS_FREEBSD)
-    mAudioDriver = AudioDriverType_OSS;
-#else
+    /* Driver defaults to the null audio driver */
     mAudioDriver = AudioDriverType_Null;
-#endif
 }
 
 /**
