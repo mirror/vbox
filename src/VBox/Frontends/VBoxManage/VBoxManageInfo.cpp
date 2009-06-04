@@ -261,7 +261,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
     systemProperties->COMGETTER(MaxBootPosition)(&maxBootPosition);
     for (ULONG i = 1; i <= maxBootPosition; i++)
     {
-        PRUint32 bootOrder;
+        ULONG bootOrder;
         machine->COMGETTER(BootOrder)(i, &bootOrder);
         if (bootOrder == DeviceType_Floppy)
         {
