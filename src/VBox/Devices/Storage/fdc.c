@@ -1596,7 +1596,7 @@ static uint32_t fdctrl_read_data (fdctrl_t *fdctrl)
 {
     fdrive_t *cur_drv;
     uint32_t retval = 0;
-    int pos, len;
+    unsigned pos, len;
 #ifdef VBOX
     int rc;
 #endif
@@ -1618,11 +1618,12 @@ static uint32_t fdctrl_read_data (fdctrl_t *fdctrl)
             cur_drv->Led.Asserted.s.fReading
                 = cur_drv->Led.Actual.s.fReading = 1;
 
+            Assert(len <= sizeof(fdctrl->fifo));
             rc = cur_drv->pDrvBlock->pfnRead (
                 cur_drv->pDrvBlock,
                 fd_sector (cur_drv) * 512,
                 fdctrl->fifo,
-                len * 512
+                len
                 );
 
             cur_drv->Led.Actual.s.fReading = 0;
@@ -1781,7 +1782,7 @@ static void fdctrl_write_data (fdctrl_t *fdctrl, uint32_t value)
                 cur_drv->pDrvBlock,
                 fd_sector (cur_drv) * 512,
                 fdctrl->fifo,
-                FD_SECTOR_LEN * 512
+                FD_SECTOR_LEN
                 );
 
             cur_drv->Led.Actual.s.fWriting = 0;
