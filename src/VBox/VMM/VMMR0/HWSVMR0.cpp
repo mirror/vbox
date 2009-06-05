@@ -1797,24 +1797,23 @@ ResumeExecution:
                                 /* mov new_reg, uMmioReg */
                                 szInstr[0] = 0x89;
                                 szInstr[1] = MAKE_MODRM(3, uMmioReg, Cpu.param1.base.reg_gen);
-                                szInstr[2] = 4;
 
                                 /* Let's hope the guest won't mind us trashing the source register...
                                  * shr uMmioReg, 4
                                  */
-                                szInstr[3] = 0xC1;
-                                szInstr[4] = 0xE0 | uMmioReg;
-                                szInstr[5] = 4;
+                                szInstr[2] = 0xC1;
+                                szInstr[3] = 0xE8 | uMmioReg;
+                                szInstr[4] = 4;
 
                                 /* 0xF0, 0x0F, 0x22, 0xC0 = mov cr8, eax */
-                                szInstr[6] = 0xF0;
-                                szInstr[7] = 0x0F;
-                                szInstr[8] = 0x22;
-                                szInstr[9] = 0xC0 | uMmioReg;
+                                szInstr[5] = 0xF0;
+                                szInstr[6] = 0x0F;
+                                szInstr[7] = 0x22;
+                                szInstr[8] = 0xC0 | uMmioReg;
 
                                 /* Two nop instructions */
+                                szInstr[9] = 0x90;
                                 szInstr[10] = 0x90;
-                                szInstr[11] = 0x90;
 
                                 rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, szInstr, 6+cbOp);
                                 AssertRC(rc);
