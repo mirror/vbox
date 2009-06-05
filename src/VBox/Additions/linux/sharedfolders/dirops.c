@@ -42,6 +42,8 @@ sf_dir_open (struct inode *inode, struct file *file)
                 return 0;
         }
 
+        memset(&params, 0, sizeof(params));
+
         sf_d = sf_dir_info_alloc ();
 
         if (!sf_d) {
@@ -405,6 +407,8 @@ sf_create_aux (struct inode *parent, struct dentry *dentry, int dirop)
         printk ("create_aux %s/%s\n", sf_i->path->String.utf8,
                 dentry->d_name.name);
 #endif
+
+        memset(&params, 0, sizeof(params));
 
         params.CreateFlags = 0
                 | SHFL_CF_ACT_CREATE_IF_NEW
