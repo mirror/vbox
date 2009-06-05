@@ -1654,7 +1654,6 @@ ResumeExecution:
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestGP);
                 Event.n.u1ErrorCodeValid    = 1;
                 Event.n.u32ErrorCode        = pVMCB->ctrl.u64ExitInfo1; /* EXITINFO1 = error code */
-Assert(pCtx->cs != 0xffcf || pCtx->eip != 0x4315);
                 break;
             case X86_XCPT_DE:
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestDE);
