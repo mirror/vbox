@@ -29,6 +29,10 @@ def patchWith(file,install):
         newF.write(line)
     newF.close()
     oldF.close()
+     try: 
+        os.remove(file)
+    except:
+        pass
     os.rename(newFile, file)
 
 # See http://docs.python.org/distutils/index.html
