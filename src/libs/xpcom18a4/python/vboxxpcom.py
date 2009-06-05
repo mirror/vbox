@@ -48,7 +48,7 @@ if platform.system() == 'Darwin':
     sys.path.remove('/Applications/VirtualBox.app/Contents/MacOS')
 
 if cglue == None:
-    raise Exception, "Cannot find VBoxPython module"
+    raise Exception, "Cannot find VBoxPython module (make sure you use 64-bit Python build with 64-bit VirtualBox, such as /usr/bin/amd64/python)"
 
 sys.modules['xpcom._xpcom'] = cglue
 xpcom._xpcom = cglue
