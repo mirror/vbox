@@ -461,10 +461,16 @@ static int handleStartVM(HandlerArg *a)
                     sessionType = "vrdp";
                 }
 #endif
+#ifdef VBOX_WITH_HEADLESS
                 else if (!RTStrICmp(ValueUnion.psz, "capture"))
                 {
                     sessionType = "capture";
                 }
+                else if (!RTStrICmp(ValueUnion.psz, "headless"))
+                {
+                    sessionType = "headless";
+                }
+#endif
                 else
                     return errorArgument("Invalid session type '%s'", ValueUnion.psz);
                 break;

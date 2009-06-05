@@ -3870,43 +3870,39 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
 
     else
 
-#ifdef VBOX_WITH_VRDP
-    if (type == "vrdp")
-    {
-        const char VBoxVRDP_exe[] = "VBoxHeadless" HOSTSUFF_EXE;
-        Assert (sz >= sizeof (VBoxVRDP_exe));
-        strcpy (cmd, VBoxVRDP_exe);
-
-        Utf8Str idStr = mData->mUuid.toString();
-# ifdef RT_OS_WINDOWS
-        const char * args[] = {path, "--startvm", idStr, 0 };
-# else
-        Utf8Str name = mUserData->mName;
-        const char * args[] = {path, "--comment", name, "--startvm", idStr, 0 };
-# endif
-        vrc = RTProcCreate (path, args, env, 0, &pid);
-    }
-#else /* !VBOX_WITH_VRDP */
-    if (0)
-        ;
-#endif /* !VBOX_WITH_VRDP */
-
-    else
-
 #ifdef VBOX_WITH_HEADLESS
-    if (type == "capture")
+    if (   type == "headless"
+        || type == "capture"
+#ifdef VBOX_WITH_VRDP
+        || type == "vrdp"
+#endif
+       )
     {
         const char VBoxVRDP_exe[] = "VBoxHeadless" HOSTSUFF_EXE;
         Assert (sz >= sizeof (VBoxVRDP_exe));
         strcpy (cmd, VBoxVRDP_exe);
 
         Utf8Str idStr = mData->mUuid.toString();
+        /* Leave space for 2 args, as "headless" needs --vrdp off on non-OSE. */
 # ifdef RT_OS_WINDOWS
-        const char * args[] = {path, "--startvm", idStr, "--capture", 0 };
+        const char * args[] = {path, "--startvm", idStr, 0, 0, 0 };
 # else
         Utf8Str name = mUserData->mName;
-        const char * args[] = {path, "--comment", name, "--startvm", idStr, "--capture", 0 };
+        const char * args[] = {path, "--comment", name, "--startvm", idStr, 0, 0, 0 };
 # endif
+#ifdef VBOX_WITH_VRDP
+        if (type == "headless")
+        {
+            unsigned pos = RT_ELEMENTS(args) - 3;
+            args[pos++] = "--vrdp";
+            args[pos] = "off";
+        }
+#endif
+        if (type == "capture")
+        {
+            unsigned pos = RT_ELEMENTS(args) - 3;
+            args[pos] = "--capture";
+        }
         vrc = RTProcCreate (path, args, env, 0, &pid);
     }
 #else /* !VBOX_WITH_HEADLESS */
