@@ -39,6 +39,7 @@
 #include <iprt/assert.h>
 #include <iprt/param.h>
 #include <iprt/string.h>
+#include <iprt/time.h>
 #ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
 # include <iprt/thread.h>
 #endif
@@ -2008,7 +2009,10 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     RTCCUINTREG uOldEFlags = ~(RTCCUINTREG)0;
     unsigned    cResume = 0;
 #ifdef VBOX_STRICT
-    RTCPUID  idCpuCheck;
+    RTCPUID     idCpuCheck;
+#endif
+#ifdef VBOX_HIGH_RES_TIMERS_HACK_IN_RING0
+    uint64_t    u64LastTime = RTTimeMilliTS();
 #endif
 #ifdef VBOX_WITH_STATISTICS
     bool fStatEntryStarted = true;
@@ -2138,15 +2142,35 @@ ResumeExecution:
         AssertRC(rc);
     }
 
-    /* Check for pending actions that force us to go back to ring 3. */
-    if (    VM_FF_ISPENDING(pVM, VM_FF_HWACCM_TO_R3_MASK)
-        ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HWACCM_TO_R3_MASK))
+#ifdef VBOX_HIGH_RES_TIMERS_HACK_IN_RING0
+    if (RT_UNLIKELY(cResume & 0xf) == 0)
     {
-        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
-        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatSwitchToR3);
-        rc = RT_UNLIKELY(VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)) ? VINF_EM_NO_MEMORY : VINF_EM_RAW_TO_R3;
-        goto end;
+        uint64_t u64CurTime = RTTimeMilliTS();
+
+        if (RT_UNLIKELY(u64CurTime > u64LastTime))
+        {
+            u64LastTime = u64CurTime;
+            TMTimerPollVoid(pVM, pVCpu);
+        }
     }
+#endif
+
+    /* Check for pending actions that force us to go back to ring 3. */
+#ifdef DEBUG
+    /* Intercept X86_XCPT_DB if stepping is enabled */
+    if (!DBGFIsStepping(pVCpu))
+#endif
+    {
+        if (    VM_FF_ISPENDING(pVM, VM_FF_HWACCM_TO_R3_MASK)
+            ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HWACCM_TO_R3_MASK))
+        {
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
+            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatSwitchToR3);
+            rc = RT_UNLIKELY(VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)) ? VINF_EM_NO_MEMORY : VINF_EM_RAW_TO_R3;
+            goto end;
+        }
+    }
+
     /* Pending request packets might contain actions that need immediate attention, such as pending hardware interrupts. */
     if (    VM_FF_ISPENDING(pVM, VM_FF_REQUEST)
         ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
