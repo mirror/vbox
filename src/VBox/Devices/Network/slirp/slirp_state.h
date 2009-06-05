@@ -226,7 +226,7 @@ typedef struct NATState
     bool use_dns_proxy;
 #endif
 #ifdef VBOX_WITH_SLIRP_ALIAS
-    LIST_HEAD(, libalias) instancehead;
+    LIST_HEAD(RT_NOTHING, libalias) instancehead;
     struct libalias *proxy_alias;
 #endif
     STAMPROFILE StatFill;
