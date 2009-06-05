@@ -2615,13 +2615,15 @@ STDMETHODIMP Appliance::CreateVFSExplorer(IN_BSTR aURI, IVFSExplorer **aExplorer
     /* Check the URI for the target format */
     if (uri.startsWith("SunCloud://", Utf8Str::CaseInsensitive)) /* Sun Cloud service */
     {
-        type = VFSType_S3;
-        strProtocol = "SunCloud://";
+        throw E_NOTIMPL;
+//        type = VFSType_S3;
+//        strProtocol = "SunCloud://";
     }
     else if (uri.startsWith("S3://", Utf8Str::CaseInsensitive)) /* S3 service */
     {
-        type = VFSType_S3;
-        strProtocol = "S3://";
+        throw E_NOTIMPL;
+//        type = VFSType_S3;
+//        strProtocol = "S3://";
     }
     else if (uri.startsWith("webdav://", Utf8Str::CaseInsensitive)) /* webdav service */
         throw E_NOTIMPL;
@@ -2722,13 +2724,15 @@ HRESULT Appliance::writeImpl(int aFormat, Utf8Str aPath, ComObjPtr<Progress> &aP
         /* Check the URI for the target format */
         if (m->strPath.startsWith("SunCloud://", Utf8Str::CaseInsensitive)) /* Sun Cloud service */
         {
-            task->storageType = VFSType_S3;
-            strProtocol = "SunCloud://";
+            throw E_NOTIMPL;
+//            task->storageType = VFSType_S3;
+//            strProtocol = "SunCloud://";
         }
         else if (m->strPath.startsWith("S3://", Utf8Str::CaseInsensitive)) /* S3 service */
         {
-            task->storageType = VFSType_S3;
-            strProtocol = "S3://";
+            throw E_NOTIMPL;
+//            task->storageType = VFSType_S3;
+//            strProtocol = "S3://";
         }
         else if (m->strPath.startsWith("webdav://", Utf8Str::CaseInsensitive)) /* webdav service */
             throw E_NOTIMPL;
