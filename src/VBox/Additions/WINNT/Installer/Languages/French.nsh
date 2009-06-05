@@ -15,12 +15,13 @@ LangString VBOX_INNOTEK_REBOOT ${LANG_FRENCH}            "Nous vous conseillons 
 
 LangString VBOX_COMPONENT_MAIN ${LANG_FRENCH}            "VirtualBox Guest Additions"
 LangString VBOX_COMPONENT_MAIN_DESC ${LANG_FRENCH}       "Main Files of VirtualBox Guest Additions"
-LangString VBOX_COMPONENT_D3D  ${LANG_FRENCH}            "Direct3D Support for Guests"
-LangString VBOX_COMPONENT_D3D_DESC  ${LANG_FRENCH}       "Enables Direct3D Support for Guests"
+LangString VBOX_COMPONENT_D3D  ${LANG_FRENCH}            "Direct3D Support for Guests (Experimental)"
+LangString VBOX_COMPONENT_D3D_DESC  ${LANG_FRENCH}       "Enables Direct3D Support for Guests (Experimental)"
+
+LangString VBOX_WFP_WARN_REPLACE ${LANG_FRENCH}          "The setup just has replaced some system files in order to make ${PRODUCT_NAME} work correctly.$\r$\nIn case a warning dialog from the Windows File Protection pops up, please don't restore the original files and cancel this dialog!"
+LangString VBOX_REBOOT_REQUIRED ${LANG_FRENCH}           "Le système doit être redémarré pourque les changements prennent effet. Redémarrer Windows maintenant?"
 
 LangString VBOX_EXTRACTION_COMPLETE ${LANG_FRENCH}       "$(^Name): Les fichiers ont été extrait avec succès dans $\"$INSTDIR$\"!"
-
-LangString VBOX_REBOOT_REQUIRED ${LANG_FRENCH}           "Le système doit être redémarré pourque les changements prennent effet. Redémarrer Windows maintenant?"
 
 LangString VBOX_ERROR_INST_FAILED ${LANG_FRENCH}         "Une erreur est survenue pendant l'installation!$\r$\nVeuillez consulter le fichier log '$INSTDIR\install_ui.log' pour plus d'informations."
 

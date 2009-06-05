@@ -15,9 +15,10 @@ LangString VBOX_INNOTEK_REBOOT ${LANG_GERMAN}           "Es wird dringend empfoh
 
 LangString VBOX_COMPONENT_MAIN ${LANG_GERMAN}           "VirtualBox Guest Additions"
 LangString VBOX_COMPONENT_MAIN_DESC ${LANG_GERMAN}      "Hauptkomponenten der VirtualBox Guest Additions"
-LangString VBOX_COMPONENT_D3D  ${LANG_GERMAN}           "Direct3D-Unterstützung"
-LangString VBOX_COMPONENT_D3D_DESC  ${LANG_GERMAN}      "Ermöglicht Direct3D-Unterstützung für Gäste"
+LangString VBOX_COMPONENT_D3D  ${LANG_GERMAN}           "Direct3D-Unterstützung (Experimentell)"
+LangString VBOX_COMPONENT_D3D_DESC  ${LANG_GERMAN}      "Ermöglicht Direct3D-Unterstützung für Gäste (Experimentell)"
 
+LangString VBOX_WFP_WARN_REPLACE ${LANG_GERMAN}         "Das Setup hat gerade Systemdateien ersetzt um die ${PRODUCT_NAME} korrekt installieren zu können.$\r$\nFalls nun ein Warn-Dialog des Windows-Dateischutzes erscheint, diesen bitte abbrechen und die Dateien nicht wiederherstellen lassen!"
 LangString VBOX_REBOOT_REQUIRED ${LANG_GERMAN}          "Um alle Änderungen durchführen zu können, muss das System neu gestartet werden. Jetzt neu starten?"
 
 LangString VBOX_EXTRACTION_COMPLETE ${LANG_GERMAN}      "$(^Name): Die Dateien wurden erfolgreich nach $\"$INSTDIR$\" entpackt!"
