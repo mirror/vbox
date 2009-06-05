@@ -323,39 +323,110 @@ private:
 
 #if defined (VBOX_GUI_USE_QGL)
 
+class VBoxVHWASurfaceBase
+{
+public:
+    VBoxVHWASurfaceBase(GLsizei aWidth, GLsizei aHeight,
+            GLint aInternalFormat, GLenum aFormat, GLenum aType);
+
+    virtual ~VBoxVHWASurfaceBase();
+
+    virtual void init(uchar *pvMem);
+
+    virtual void uninit();
+
+    static void globalInit();
+
+    int blt(VBoxVHWASurfaceBase * pToSurface, QRect * pSrcRect, QRect * pDstRect);
+
+    int lock(QRect * pRect);
+
+    int unlock();
+
+    virtual void makeCurrent() = 0;
+
+    void paint(const QRect * pRect);
+
+    void performDisplay() { Assert(mDisplayInitialized); glCallList(mDisplay); }
+
+    static ulong calcBytesPerPixel(GLenum format, GLenum type);
+
+    static GLsizei makePowerOf2(GLsizei val);
+
+    uchar * address(){ return mAddress; }
+    ulong   bufferSize(){ return mBytesPerLine * mDisplayHeight; }
+
+    ulong width()  { return mDisplayWidth;  }
+    ulong height() { return mDisplayHeight; }
+
+    GLenum format() {return mFormat; }
+    GLint  internalFormat() { return mInternalFormat; }
+    GLenum type() { return mType; }
+    ulong  bytesPerPixel() { return mBytesPerPixel; }
+    ulong  bytesPerLine() { return mBytesPerLine; }
+
+private:
+    void initDisplay();
+    void deleteDisplay();
+    void updateTexture(const QRect * pRect);
+
+    GLuint mDisplay;
+    bool mDisplayInitialized;
+
+    uchar * mAddress;
+    GLuint mTexture;
+
+    GLenum mFormat;
+    GLint  mInternalFormat;
+    GLenum mType;
+    ulong  mDisplayWidth;
+    ulong  mDisplayHeight;
+    ulong  mBytesPerPixel;
+    ulong  mBytesPerLine;
+
+    QRect mLockedRect;
+    bool mLocked;
+    bool mFreeAddress;
+};
+
+class VBoxVHWASurfacePrimary : public VBoxVHWASurfaceBase
+{
+public:
+    VBoxVHWASurfacePrimary(GLsizei aWidth, GLsizei aHeight,
+            GLint aInternalFormat, GLenum aFormat, GLenum aType,
+            class VBoxGLWidget *pWidget) :
+                VBoxVHWASurfaceBase(aWidth, aHeight,
+                        aInternalFormat, aFormat, aType),
+                mWidget(pWidget)
+    {}
+
+    void makeCurrent();
+private:
+    class VBoxGLWidget *mWidget;
+};
+
 class VBoxGLWidget : public QGLWidget
 {
 public:
     VBoxGLWidget (QWidget *aParent)
         : QGLWidget (aParent),
+        pDisplay(NULL),
         mRe(NULL),
         mpIntersectionRect(NULL),
-        mDisplay(0),
-        mDisplayInitialized(false),
-        mAddress(NULL),
-        mTexture(0),
-        mFormat(0),
-        mInternalFormat(0),
-        mType(0),
         mBitsPerPixel(0),
-        mBytesPerPixel(0),
-        mBytesPerLine(0),
         mPixelFormat(0),
-        mUsesGuestVRAM(false),
-        mDisplayWidth(0),
-        mDisplayHeight(0)
+        mUsesGuestVRAM(false)
     {
-//        Assert(0);
-        /* No need for background drawing */
+//        /* No need for background drawing */
 //        setAttribute (Qt::WA_OpaquePaintEvent);
     }
 
     ulong vboxPixelFormat() { return mPixelFormat; }
     bool vboxUsesGuestVRAM() { return mUsesGuestVRAM; }
 
-    uchar *vboxAddress() { return mAddress; }
+    uchar *vboxAddress() { return pDisplay ? pDisplay->address() : NULL; }
     ulong vboxBitsPerPixel() { return mBitsPerPixel; }
-    ulong vboxBytesPerLine() { return mBytesPerLine; }
+    ulong vboxBytesPerLine() { return pDisplay ? pDisplay->bytesPerLine() : NULL; }
 
     void vboxPaintEvent (QPaintEvent *pe);
     void vboxResizeEvent (VBoxResizeEvent *re);
@@ -368,28 +439,17 @@ protected:
     void initializeGL();
 
 private:
-    void vboxDoInitDisplay();
-    void vboxDoDeleteDisplay();
-    void vboxDoPerformDisplay() { Assert(mDisplayInitialized); glCallList(mDisplay); }
+//    void vboxDoInitDisplay();
+//    void vboxDoDeleteDisplay();
+//    void vboxDoPerformDisplay() { Assert(mDisplayInitialized); glCallList(mDisplay); }
 
     void vboxDoResize(VBoxResizeEvent *re);
     void vboxDoPaint(const QRect *rec);
+    VBoxVHWASurfacePrimary * pDisplay;
 
     VBoxResizeEvent *mRe;
     const QRect *mpIntersectionRect;
-    GLuint mDisplay;
-    bool mDisplayInitialized;
-    uchar * mAddress;
-    GLuint mTexture;
-
-    GLenum mFormat;
-    GLint  mInternalFormat;
-    GLenum mType;
-    ulong  mDisplayWidth;
-    ulong  mDisplayHeight;
     ulong  mBitsPerPixel;
-    ulong  mBytesPerPixel;
-    ulong  mBytesPerLine;
     ulong  mPixelFormat;
     bool   mUsesGuestVRAM;
 };
