@@ -297,7 +297,8 @@ sf_setattr (struct dentry *dentry, struct iattr *iattr)
         memset(&info, 0, sizeof(info));
 
         params.CreateFlags = SHFL_CF_ACT_OPEN_IF_EXISTS
-                           | SHFL_CF_ACT_FAIL_IF_NEW;
+                           | SHFL_CF_ACT_FAIL_IF_NEW
+                           | SHFL_CF_ACCESS_ATTR_WRITE;
 
         rc = vboxCallCreate (&client_handle, &sf_g->map, sf_i->path, &params);
         if (VBOX_FAILURE (rc)) {
