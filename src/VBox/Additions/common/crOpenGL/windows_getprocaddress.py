@@ -102,6 +102,7 @@ CR_PROC CR_APIENTRY crGetProcAddress( const char *name )
 
     for (i = 0; functions[i].name; i++) {
         if (crStrcmp(name, functions[i].name) == 0) {
+            /*crDebug("crGetProcAddress(%s) returns %p", name, functions[i].address);*/
             return functions[i].address;
         }
     }

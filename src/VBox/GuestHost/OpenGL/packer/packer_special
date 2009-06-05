@@ -153,3 +153,4 @@ Uniform4iv
 UniformMatrix2fv
 UniformMatrix3fv
 UniformMatrix4fv
+DrawBuffers

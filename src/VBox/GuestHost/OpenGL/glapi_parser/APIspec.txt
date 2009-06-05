@@ -9131,7 +9131,7 @@ return      void
 param       index       GLuint
 paramlist   index       1 2 3 4 5 6 7
 param       pname       GLenum
-paramprop   pname       GL_VERTEX_ATTRIB_ARRAY_ENABLED GL_VERTEX_ATTRIB_ARRAY_SIZE GL_VERTEX_ATTRIB_ARRAY_STRIDE GL_VERTEX_ATTRIB_ARRAY_TYPE GL_VERTEX_ATTRIB_ARRAY_NORMALIZED GL_CURRENT_VERTEX_ATTRIB
+paramprop   pname       GL_VERTEX_ATTRIB_ARRAY_ENABLED GL_VERTEX_ATTRIB_ARRAY_SIZE GL_VERTEX_ATTRIB_ARRAY_STRIDE GL_VERTEX_ATTRIB_ARRAY_TYPE GL_VERTEX_ATTRIB_ARRAY_NORMALIZED GL_CURRENT_VERTEX_ATTRIB GL_VERTEX_ATTRIB_ARRAY_POINTER
 param       pointer     GLvoid **
 category    2.0
 props       useclient get
@@ -9153,6 +9153,37 @@ param       location    GLint
 param       params      GLint *
 category    2.0
 props       get
+chromium    extpack
+
+name        DrawBuffers
+return      void
+param       n           GLsizei
+param       bufs        const GLenum*
+category    2.0
+chromium    extpack
+
+name        StencilFuncSeparate
+return      void
+param       frontfunc   GLenum
+paramprop   func        GL_NEVER GL_LESS GL_LEQUAL GL_GREATER GL_GEQUAL GL_EQUAL GL_NOTEQUAL GL_ALWAYS
+param       backfunc    GLenum
+paramprop   func        GL_NEVER GL_LESS GL_LEQUAL GL_GREATER GL_GEQUAL GL_EQUAL GL_NOTEQUAL GL_ALWAYS
+param       ref         GLint
+param       mask        GLuint
+category    2.0
+chromium    extpack
+
+name        StencilOpSeparate
+return      void
+param       face        GLenum
+paramprop   face        GL_FRONT GL_BACK GL_FRONT_AND_BACK
+param       fail        GLenum
+paramprop   fail        GL_KEEP GL_ZERO GL_REPLACE GL_INCR GL_DECR GL_INVERT GL_INCR_WRAP_EXT GL_DECR_WRAP_EXT
+param       zfail       GLenum
+paramprop   zfail       GL_KEEP GL_ZERO GL_REPLACE GL_INCR GL_DECR GL_INVERT GL_INCR_WRAP_EXT GL_DECR_WRAP_EXT
+param       zpass       GLenum
+paramprop   zpass       GL_KEEP GL_ZERO GL_REPLACE GL_INCR GL_DECR GL_INVERT GL_INCR_WRAP_EXT GL_DECR_WRAP_EXT
+category    2.0
 chromium    extpack
 
 # end of file sentinel

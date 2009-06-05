@@ -151,3 +151,10 @@ void crUnpackExtendUniformMatrix4fv(void)
     const GLfloat *value = DATA_POINTER(16+sizeof(GLboolean), const GLfloat);
     cr_unpackDispatch.UniformMatrix4fv(location, count, transpose, value);
 }
+
+void crUnpackExtendDrawBuffers(void)
+{
+    GLsizei n = READ_DATA(8, GLsizei);
+    const GLenum *bufs = DATA_POINTER(8+sizeof(GLsizei), const GLenum);
+    cr_unpackDispatch.DrawBuffers(n, bufs);
+}
