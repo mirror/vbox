@@ -100,9 +100,9 @@ VBoxExportApplianceWzd::VBoxExportApplianceWzd (QWidget *aParent /* = NULL */, c
     connect (mLeBucket, SIGNAL (textChanged (const QString &)),
              mWValFileSelector, SLOT (revalidate()));
 
-    mLeUsername->setText (vboxGlobal().virtualBox().GetExtraData (VBoxDefs::GUI_Export_Username));
-    mLeHostname->setText (vboxGlobal().virtualBox().GetExtraData (VBoxDefs::GUI_Export_Hostname));
-    mLeBucket->setText (vboxGlobal().virtualBox().GetExtraData (VBoxDefs::GUI_Export_Bucket));
+//    mLeUsername->setText (vboxGlobal().virtualBox().GetExtraData (VBoxDefs::GUI_Export_Username));
+//    mLeHostname->setText (vboxGlobal().virtualBox().GetExtraData (VBoxDefs::GUI_Export_Hostname));
+//    mLeBucket->setText (vboxGlobal().virtualBox().GetExtraData (VBoxDefs::GUI_Export_Bucket));
 
     mWValFileSelector->revalidate();
 
@@ -111,10 +111,16 @@ VBoxExportApplianceWzd::VBoxExportApplianceWzd (QWidget *aParent /* = NULL */, c
 
     retranslateUi();
 
-    bool ok;
-    StorageType type = StorageType (vboxGlobal().virtualBox().GetExtraData (VBoxDefs::GUI_Export_StorageType).toInt(&ok));
-    if (ok)
-        setCurrentStorageType (type);
+    /* Type selection is disabled for now */
+    connect (mBtnNext2, SIGNAL (clicked(bool)),
+             mBtnNext3, SLOT (click()));
+    connect (mBtnBack4, SIGNAL (clicked(bool)),
+             mBtnBack3, SLOT (click()));
+
+//    bool ok;
+//    StorageType type = StorageType (vboxGlobal().virtualBox().GetExtraData (VBoxDefs::GUI_Export_StorageType).toInt(&ok));
+//    if (ok)
+//        setCurrentStorageType (type);
 }
 
 void VBoxExportApplianceWzd::retranslateUi()
@@ -234,10 +240,10 @@ void VBoxExportApplianceWzd::accept()
     /* Export the VMs, on success we are finished */
     if (exportVMs (*appliance))
     {
-        vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_Export_StorageType, QString::number(currentStorageType()));
-        vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_Export_Username, mLeUsername->text());
-        vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_Export_Hostname, mLeHostname->text());
-        vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_Export_Bucket, mLeBucket->text());
+//        vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_Export_StorageType, QString::number(currentStorageType()));
+//        vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_Export_Username, mLeUsername->text());
+//        vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_Export_Hostname, mLeHostname->text());
+//        vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_Export_Bucket, mLeBucket->text());
         QIAbstractWizard::accept();
     }
 }
