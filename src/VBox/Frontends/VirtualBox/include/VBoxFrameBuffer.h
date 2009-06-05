@@ -322,6 +322,59 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 
 #if defined (VBOX_GUI_USE_QGL)
+class VBoxVHWADirtyRect
+{
+public:
+    VBoxVHWADirtyRect() :
+        mIsClear(false)
+    {}
+
+    VBoxVHWADirtyRect(const QRect & aRect)
+    {
+        if(aRect.isEmpty())
+        {
+            mIsClear = false;
+            mRect = aRect;
+        }
+        else
+        {
+            mIsClear = true;
+        }
+    }
+
+    bool isClear() { return mIsClear; }
+
+    void add(const QRect & aRect)
+    {
+        if(aRect.isEmpty())
+            return;
+
+        mRect = mIsClear ? aRect : mRect.united(aRect);
+        mIsClear = false;
+    }
+
+    void set(const QRect & aRect)
+    {
+        if(aRect.isEmpty())
+        {
+            mIsClear = true;
+        }
+        else
+        {
+            mRect = aRect;
+        }
+    }
+
+    void clear() { mIsClear = true; }
+
+    const QRect & rect() {return mRect;}
+
+    bool intersects(const QRect & aRect) {return mIsClear ? false : mRect.intersects(aRect);}
+
+private:
+    QRect mRect;
+    bool mIsClear;
+};
 
 class VBoxVHWASurfaceBase
 {
@@ -337,9 +390,9 @@ public:
 
     static void globalInit();
 
-    int blt(VBoxVHWASurfaceBase * pToSurface, QRect * pSrcRect, QRect * pDstRect);
+    int blt(const QRect * pDstRect, VBoxVHWASurfaceBase * pSrtSurface, const QRect * pSrcRect);
 
-    int lock(QRect * pRect);
+    int lock(const QRect * pRect);
 
     int unlock();
 
@@ -354,7 +407,8 @@ public:
     static GLsizei makePowerOf2(GLsizei val);
 
     uchar * address(){ return mAddress; }
-    ulong   bufferSize(){ return mBytesPerLine * mDisplayHeight; }
+    uchar * pointAddress(int x, int y) { return mAddress + y*mBytesPerLine + x*mBytesPerPixel; }
+    ulong   memSize(){ return mBytesPerLine * mDisplayHeight; }
 
     ulong width()  { return mDisplayWidth;  }
     ulong height() { return mDisplayHeight; }
@@ -365,10 +419,15 @@ public:
     ulong  bytesPerPixel() { return mBytesPerPixel; }
     ulong  bytesPerLine() { return mBytesPerLine; }
 
+    /* clients should treat the rerurned texture as read-only */
+    GLuint textureSynched(const QRect * aRect) { synchTexture(aRect); return mTexture; }
+
 private:
     void initDisplay();
     void deleteDisplay();
     void updateTexture(const QRect * pRect);
+    void synchTexture(const QRect * pRect);
+    void synchMem(const QRect * pRect);
 
     GLuint mDisplay;
     bool mDisplayInitialized;
@@ -384,8 +443,12 @@ private:
     ulong  mBytesPerPixel;
     ulong  mBytesPerLine;
 
-    QRect mLockedRect;
-    bool mLocked;
+    VBoxVHWADirtyRect mLockedRect;
+    /*in case of blit we blit from another surface's texture, so our current texture gets durty  */
+    VBoxVHWADirtyRect mUpdateFB2TexRect;
+    /*in case of blit the memory buffer does not get updated until we need it, e.g. for pain or lock operations */
+    VBoxVHWADirtyRect mUpdateFB2MemRect;
+
     bool mFreeAddress;
 };
 
@@ -482,6 +545,13 @@ public:
 #endif
 
 private:
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    int vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd);
+    int vhwaSurfaceDestroy(struct _VBOXVHWACMD_SURF_DESTROY *pCmd);
+    int vhwaSurfaceLock(struct _VBOXVHWACMD_SURF_LOCK *pCmd);
+    int vhwaSurfaceUnlock(struct _VBOXVHWACMD_SURF_UNLOCK *pCmd);
+    int vhwaSurfaceBlt(struct _VBOXVHWACMD_SURF_BLT *pCmd);
+#endif
     void vboxMakeCurrent();
     VBoxGLWidget * vboxWidget();
 };
