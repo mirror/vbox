@@ -59,11 +59,11 @@ DECLINLINE(void) __debug_log(FILE *pIgnore, const char *pszFormat, ...)
 
 #endif  /* !LOG_ENABLED */
 
-int debug_init _P((void));
-void ipstats _P((PNATState));
-void tcpstats _P((PNATState));
-void udpstats _P((PNATState));
-void icmpstats _P((PNATState));
-void mbufstats _P((PNATState));
-void sockstats _P((PNATState));
+int debug_init (void);
+void ipstats (PNATState);
+void tcpstats (PNATState);
+void udpstats (PNATState);
+void icmpstats (PNATState);
+void mbufstats (PNATState);
+void sockstats (PNATState);
 

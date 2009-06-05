@@ -155,14 +155,6 @@ typedef unsigned char u_int8_t;
 # include <sys/uio.h>
 #endif
 
-#ifndef _P
-#ifndef NO_PROTOTYPES
-#  define   _P(x)   x
-#else
-#  define   _P(x)   ()
-#endif
-#endif
-
 #ifndef RT_OS_WINDOWS
 # include <netinet/in.h>
 # include <arpa/inet.h>
@@ -173,7 +165,7 @@ typedef unsigned char u_int8_t;
 #endif
 
 #ifndef HAVE_INET_ATON
-int inet_aton _P((const char *cp, struct in_addr *ia));
+int inet_aton (const char *cp, struct in_addr *ia);
 #endif
 
 #include <fcntl.h>
@@ -250,22 +242,22 @@ int inet_aton _P((const char *cp, struct in_addr *ia));
 # define NULL (void *)0
 #endif
 
-void if_start _P((PNATState));
+void if_start (PNATState);
 
 #ifndef HAVE_INDEX
- char *index _P((const char *, int));
+ char *index (const char *, int);
 #endif
 
 #ifndef HAVE_GETHOSTID
- long gethostid _P((void));
+ long gethostid (void);
 #endif
 
 #if SIZEOF_CHAR_P == 4
 # define insque_32 insque
 # define remque_32 remque
 #else
-extern void insque_32 _P((PNATState, void *, void *));
-extern void remque_32 _P((PNATState, void *));
+extern void insque_32 (PNATState, void *, void *);
+extern void remque_32 (PNATState, void *);
 #endif
 
 #ifndef RT_OS_WINDOWS
@@ -284,45 +276,45 @@ int get_dns_addr(PNATState pData, struct in_addr *pdns_addr);
 int cksum(struct mbuf *m, int len);
 
 /* if.c */
-void if_init _P((PNATState));
-void if_output _P((PNATState, struct socket *, struct mbuf *));
+void if_init (PNATState);
+void if_output (PNATState, struct socket *, struct mbuf *);
 
 /* ip_input.c */
-void ip_init _P((PNATState));
-void ip_input _P((PNATState, struct mbuf *));
-struct mbuf * ip_reass _P((PNATState, register struct mbuf *));
-void ip_freef _P((PNATState, struct ipqhead *, struct ipq_t *));
-void ip_slowtimo _P((PNATState));
-void ip_stripoptions _P((register struct mbuf *, struct mbuf *));
+void ip_init (PNATState);
+void ip_input (PNATState, struct mbuf *);
+struct mbuf * ip_reass (PNATState, register struct mbuf *);
+void ip_freef (PNATState, struct ipqhead *, struct ipq_t *);
+void ip_slowtimo (PNATState);
+void ip_stripoptions (register struct mbuf *, struct mbuf *);
 
 /* ip_output.c */
-int ip_output _P((PNATState, struct socket *, struct mbuf *));
+int ip_output (PNATState, struct socket *, struct mbuf *);
 
 /* tcp_input.c */
-int tcp_reass _P((PNATState, struct tcpcb *, struct tcphdr *, int *, struct mbuf *));
-void tcp_input _P((PNATState, register struct mbuf *, int, struct socket *));
-void tcp_dooptions _P((PNATState, struct tcpcb *, u_char *, int, struct tcpiphdr *));
-void tcp_xmit_timer _P((PNATState, register struct tcpcb *, int));
-int tcp_mss _P((PNATState, register struct tcpcb *, u_int));
+int tcp_reass (PNATState, struct tcpcb *, struct tcphdr *, int *, struct mbuf *);
+void tcp_input (PNATState, register struct mbuf *, int, struct socket *);
+void tcp_dooptions (PNATState, struct tcpcb *, u_char *, int, struct tcpiphdr *);
+void tcp_xmit_timer (PNATState, register struct tcpcb *, int);
+int tcp_mss (PNATState, register struct tcpcb *, u_int);
 
 /* tcp_output.c */
-int tcp_output _P((PNATState, register struct tcpcb *));
-void tcp_setpersist _P((register struct tcpcb *));
+int tcp_output (PNATState, register struct tcpcb *);
+void tcp_setpersist (register struct tcpcb *);
 
 /* tcp_subr.c */
-void tcp_init _P((PNATState));
-void tcp_template _P((struct tcpcb *));
-void tcp_respond _P((PNATState, struct tcpcb *, register struct tcpiphdr *, register struct mbuf *, tcp_seq, tcp_seq, int));
-struct tcpcb * tcp_newtcpcb _P((PNATState, struct socket *));
-struct tcpcb * tcp_close _P((PNATState, register struct tcpcb *));
-void tcp_drain _P((void));
-void tcp_sockclosed _P((PNATState, struct tcpcb *));
-int tcp_fconnect _P((PNATState, struct socket *));
-void tcp_connect _P((PNATState, struct socket *));
-int tcp_attach _P((PNATState, struct socket *));
-u_int8_t tcp_tos _P((struct socket *));
-int tcp_emu _P((PNATState, struct socket *, struct mbuf *));
-int tcp_ctl _P((PNATState, struct socket *));
+void tcp_init (PNATState);
+void tcp_template (struct tcpcb *);
+void tcp_respond (PNATState, struct tcpcb *, register struct tcpiphdr *, register struct mbuf *, tcp_seq, tcp_seq, int);
+struct tcpcb * tcp_newtcpcb (PNATState, struct socket *);
+struct tcpcb * tcp_close (PNATState, register struct tcpcb *);
+void tcp_drain (void);
+void tcp_sockclosed (PNATState, struct tcpcb *);
+int tcp_fconnect (PNATState, struct socket *);
+void tcp_connect (PNATState, struct socket *);
+int tcp_attach (PNATState, struct socket *);
+u_int8_t tcp_tos (struct socket *);
+int tcp_emu (PNATState, struct socket *, struct mbuf *);
+int tcp_ctl (PNATState, struct socket *);
 struct tcpcb *tcp_drop(PNATState, struct tcpcb *tp, int err);
 
 uint16_t slirp_get_service(int proto, uint16_t dport, uint16_t sport);

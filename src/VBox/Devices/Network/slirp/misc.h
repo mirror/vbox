@@ -59,19 +59,19 @@ extern struct emu_t *tcpemu;
 
 extern int x_port, x_server, x_display;
 
-int show_x _P((char *, struct socket *));
-void redir_x _P((u_int32_t, int, int, int));
-void getouraddr _P((PNATState));
-void slirp_insque  _P((PNATState, void *, void *));
-void slirp_remque  _P((PNATState, void *));
-int add_exec _P((struct ex_list **, int, char *, int, int));
-int slirp_openpty _P((int *, int *));
-int fork_exec _P((PNATState, struct socket *, char *, int));
-void snooze_hup _P((int));
-void snooze _P((void));
-void relay _P((int));
-void add_emu _P((char *));
-void fd_nonblock _P((int));
-void fd_block _P((int));
+int show_x (char *, struct socket *);
+void redir_x (u_int32_t, int, int, int);
+void getouraddr (PNATState);
+void slirp_insque  (PNATState, void *, void *);
+void slirp_remque  (PNATState, void *);
+int add_exec (struct ex_list **, int, char *, int, int);
+int slirp_openpty (int *, int *);
+int fork_exec (PNATState, struct socket *, char *, int);
+void snooze_hup (int);
+void snooze (void);
+void relay (int);
+void add_emu (char *);
+void fd_nonblock (int);
+void fd_block (int);
 
 #endif

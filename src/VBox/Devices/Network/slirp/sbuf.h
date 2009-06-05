@@ -22,11 +22,11 @@ struct sbuf
     char    *sb_data;       /* Actual data */
 };
 
-void sbfree _P((struct sbuf *));
-void sbdrop _P((struct sbuf *, int));
-void sbreserve _P((struct sbuf *, int));
-void sbappend _P((PNATState, struct socket *, struct mbuf *));
-void sbappendsb _P((struct sbuf *, struct mbuf *));
-void sbcopy _P((struct sbuf *, int, int, char *));
+void sbfree (struct sbuf *);
+void sbdrop (struct sbuf *, int);
+void sbreserve (struct sbuf *, int);
+void sbappend (PNATState, struct socket *, struct mbuf *);
+void sbappendsb (struct sbuf *, struct mbuf *);
+void sbcopy (struct sbuf *, int, int, char *);
 
 #endif
