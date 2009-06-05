@@ -977,6 +977,7 @@ static int vbsfOpenFile (const char *pszPath, SHFLCREATEPARMS *pParms)
         {
             vbsfFreeFileHandle (handle);
         }
+        pParms->Handle = SHFL_HANDLE_NIL;
     }
     else
     {
@@ -1091,6 +1092,7 @@ static int vbsfOpenDir (const char *pszPath, SHFLCREATEPARMS *pParms)
         {
             vbsfFreeFileHandle (handle);
         }
+        pParms->Handle = SHFL_HANDLE_NIL;
     }
     else
     {
@@ -1180,6 +1182,7 @@ static int vbsfLookupFile(char *pszPath, SHFLCREATEPARMS *pParms)
             break;
         }
     }
+    pParms->Handle = SHFL_HANDLE_NIL;
     return rc;
 }
 
@@ -1227,9 +1230,11 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
 
     if (RT_SUCCESS (rc))
     {
-        /* Reset return values in case client forgot to do so. */
+        /* Reset return value in case client forgot to do so.
+         * pParms->Handle must not be reset here, as it is used
+         * in vbsfOpenFile to detect old additions.
+         */
         pParms->Result = SHFL_NO_RESULT;
-        pParms->Handle = SHFL_HANDLE_NIL;
 
         if (BIT_FLAG(pParms->CreateFlags, SHFL_CF_LOOKUP))
         {
@@ -1301,6 +1306,10 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
                 {
                     rc = vbsfOpenFile (pszFullPath, pParms);
                 }
+            }
+            else
+            {
+                pParms->Handle = SHFL_HANDLE_NIL;
             }
         }
 
