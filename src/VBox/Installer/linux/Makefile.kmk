@@ -67,7 +67,8 @@ linux-bin_INST = bin/
 linux-bin_MODE = a+rx,u+w
 linux-bin_SOURCES = \
         VBoxSysInfo.sh \
-	VBox.sh=>VBox.sh
+	VBox.sh=>VBox.sh \
+	$(if $(VBOX_WITH_PYTHON),$(PATH_ROOT)/src/VBox/Frontends/VBoxShell/vboxshell.py=>vboxshell.py,)
 
 INSTALLS += linux-misc
 linux-misc_INST = bin/
@@ -141,6 +142,7 @@ VBOX_LNX_NO_STRIP = \
 	$(if $(VBOX_WITH_MAIN), \
 	  components/VBoxXPCOMBase.xpt \
 	  components/VirtualBox_XPCOM.xpt) \
+	$(if $(VBOX_WITH_PYTHON),vboxshell.py,) \
 	VBoxSysInfo.sh \
 	VBox.sh \
 	VBox.png \

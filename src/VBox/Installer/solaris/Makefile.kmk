@@ -103,6 +103,12 @@ VBIPKG_FILENAME  = VirtualBoxKern-$(VBOX_VERSION_STRING)-SunOS-r$(VBOX_SVN_REV)
 PROGRAMS         += VBoxZoneAccess VBoxISAExec
 INSTALLS         += solaris-doc
 
+INSTALLS += solaris-bin
+solaris-bin_INST = bin/
+solaris-bin_MODE = a+rx,u+w
+solaris-bin_SOURCES = \
+	$(if $(VBOX_WITH_PYTHON),$(PATH_ROOT)/src/VBox/Frontends/VBoxShell/vboxshell.py=>vboxshell.py,)
+
 BLDDIRS          += \
 	$(SOLARIS_INST_OUT_DIR) \
 	$(SOLARIS_BASEINST_DIR) \
@@ -233,7 +239,8 @@ VBOX_SOL_PYTHON_DIR_64 = 64
 SOLARIS_NO_STRIP = \
 	components/VBoxXPCOMBase.xpt \
 	components/VirtualBox_XPCOM.xpt \
-	$(if $(and $(VBOX_LICENSE_FILES),$(VBOX_WITH_QTGUI)),$(VBOX_LICENSE_FILES))
+	$(if $(and $(VBOX_LICENSE_FILES),$(VBOX_WITH_QTGUI)),$(VBOX_LICENSE_FILES)) \
+	$(if $(VBOX_WITH_PYTHON),vboxshell.py,)
 
 SOLARIS_USRBIN_LINKS = \
 	$(if $(VBOX_WITH_QTGUI),VirtualBox,) \
