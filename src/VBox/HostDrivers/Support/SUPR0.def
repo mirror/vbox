@@ -111,9 +111,9 @@ EXPORTS
     RTSpinlockAcquireNoInts
     RTSpinlockReleaseNoInts
     RTTimeNanoTS
-    RTTimeMillieTS
+    RTTimeMilliTS
     RTTimeSystemNanoTS
-    RTTimeSystemMillieTS
+    RTTimeSystemMilliTS
     RTThreadSelf
     RTThreadNativeSelf
     RTThreadSleep
