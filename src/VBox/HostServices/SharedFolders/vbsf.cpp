@@ -606,7 +606,7 @@ static void vbsfFreeFullPath (char *pszFullPath)
  * @param  fMode      file attibutes
  * @retval pfOpen     iprt create flags
  */
-static int vbsfConvertFileOpenFlags(unsigned fShflFlags, RTFMODE fMode, unsigned *pfOpen)
+static int vbsfConvertFileOpenFlags(unsigned fShflFlags, RTFMODE fMode, SHFLHANDLE handleInitial, unsigned *pfOpen)
 {
     unsigned fOpen = 0;
     int rc = VINF_SUCCESS;
@@ -625,10 +625,30 @@ static int vbsfConvertFileOpenFlags(unsigned fShflFlags, RTFMODE fMode, unsigned
         /* writable? */
         if (!(fMode & RTFS_DOS_READONLY))
             fMode |= RTFS_UNIX_IWUSR | RTFS_UNIX_IWGRP | RTFS_UNIX_IWOTH;
+
+        /* Set the requested mode using only allowed bits. */
+        fOpen |= ((fMode & RTFS_UNIX_MASK) << RTFILE_O_CREATE_MODE_SHIFT) & RTFILE_O_CREATE_MODE_MASK;
     }
-    
-    /* Set the requested mode. */
-    fOpen |= (fMode & RTFS_UNIX_MASK) << RTFILE_O_CREATE_MODE_SHIFT;
+    else
+    {
+        /* Old linux and solaris additions did not initialize the Info.Attr.fMode field
+         * and it contained random bits from stack. Detect this using the handle field value
+         * passed from the guest: old additions set it (incorrectly) to 0, new additions
+         * set it to SHFL_HANDLE_NIL(~0).
+         */
+        if (handleInitial == 0)
+        {
+            /* Old additions. Do nothing, use default mode. */
+        }
+        else
+        {
+            /* New additions or Windows additions. Set the requested mode using only allowed bits.
+             * Note: Windows guest set RTFS_UNIX_MASK bits to 0, which means a default mode
+             *       will be set in fOpen.
+             */
+            fOpen |= ((fMode & RTFS_UNIX_MASK) << RTFILE_O_CREATE_MODE_SHIFT) & RTFILE_O_CREATE_MODE_MASK;
+        }
+    }
 
     switch (BIT_FLAG(fShflFlags, SHFL_CF_ACCESS_MASK_RW))
     {
@@ -824,7 +844,7 @@ static int vbsfOpenFile (const char *pszPath, SHFLCREATEPARMS *pParms)
     bool fNoError = false;
     static int cErrors;
 
-    int rc = vbsfConvertFileOpenFlags(pParms->CreateFlags, pParms->Info.Attr.fMode, &fOpen);
+    int rc = vbsfConvertFileOpenFlags(pParms->CreateFlags, pParms->Info.Attr.fMode, pParms->Handle, &fOpen);
     if (RT_SUCCESS(rc))
     {
         handle  = vbsfAllocFileHandle();
