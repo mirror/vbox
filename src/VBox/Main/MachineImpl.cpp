@@ -3878,9 +3878,9 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
 #endif
        )
     {
-        const char VBoxVRDP_exe[] = "VBoxHeadless" HOSTSUFF_EXE;
-        Assert (sz >= sizeof (VBoxVRDP_exe));
-        strcpy (cmd, VBoxVRDP_exe);
+        const char VBoxHeadless_exe[] = "VBoxHeadless" HOSTSUFF_EXE;
+        Assert (sz >= sizeof (VBoxHeadless_exe));
+        strcpy (cmd, VBoxHeadless_exe);
 
         Utf8Str idStr = mData->mUuid.toString();
         /* Leave space for 2 args, as "headless" needs --vrdp off on non-OSE. */
