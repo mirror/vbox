@@ -158,5 +158,31 @@ if test -f "/usr/share/applications/virtualbox.desktop"; then
     touch /usr/share/applications/virtualbox.desktop
 fi
 
+# Install python bindings
+if test -f "/opt/VirtualBox/sdk/installer/vboxapisetup.py" || test -h "/opt/VirtualBox/sdk/installer/vboxapisetup.py"; then
+    PYTHONBIN=`which python`
+    if test -f "$PYTHONBIN" || test -h "$PYTHONBIN"; then
+        echo "Installing Python bindings..."
+
+        VBOX_INSTALL_PATH=/opt/VirtualBox
+        export VBOX_INSTALL_PATH
+        cd /opt/VirtualBox/sdk/installer
+        $PYTHONBIN ./vboxapisetup.py install > /dev/null
+    else
+        echo "** WARNING! Python not found, skipped installed Python bindings."
+        echo "   Manually run '/opt/VirtualBox/sdk/installer/vboxapisetup.py install'"
+        echo "   to install the bindings when python is available."
+    fi
+fi
+
+# Update boot archive
+BOOTADMBIN=/sbin/bootadm
+if test -f "$BOOTADMBIN" || test -h "$BOOTADMBIN"; then
+    echo "Updating boot archive..."
+    $BOOTADMBIN update-archive > /dev/null
+fi
+
+echo "Done."
+
 exit 0
 
