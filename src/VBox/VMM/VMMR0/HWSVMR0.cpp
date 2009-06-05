@@ -2405,8 +2405,9 @@ static int svmR0EmulateTprMov(PVMCPU pVCpu, DISCPUSTATE *pDisState, PCPUMCTX pCt
  */
 static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
+    RTGCPTR     oldrip = pCtx->rip;
     DISCPUSTATE Cpu;
-    unsigned cbOp;
+    unsigned    cbOp;
 
     Log(("Replace TPR access at %RGv\n", pCtx->rip));
 
@@ -2415,10 +2416,6 @@ static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     if (    rc == VINF_SUCCESS
         &&  Cpu.pCurInstr->opcode == OP_MOV)
     {
-        rc = svmR0EmulateTprMov(pVCpu, &Cpu, pCtx, cbOp);
-        if (rc != VINF_SUCCESS)
-            return rc;
-
         uint8_t szInstr[15];
         if (    cbOp == 10
             &&  Cpu.param1.flags == USE_DISPLACEMENT32
@@ -2440,7 +2437,9 @@ static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             /* Check if the next instruction overwrites a general purpose register. If 
              * it does, then we can safely use it ourselves.
              */
+            pCtx->rip += cbOp;
             rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), &Cpu, &cbOp);
+            pCtx->rip = oldrip;
             if (    rc == VINF_SUCCESS
                 &&  Cpu.pCurInstr->opcode == OP_MOV
                 &&  Cpu.param1.flags == USE_REG_GEN32)
@@ -2479,7 +2478,9 @@ static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                  * Check if next instruction is a TPR read:
                  *   mov ecx, dword [fffe0080]        (5 bytes)
                  */
+                pCtx->rip += cbOp;
                 rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), &Cpu, &cbOp);
+                pCtx->rip = oldrip;
                 if (    rc == VINF_SUCCESS
                     &&  Cpu.pCurInstr->opcode == OP_MOV
                     &&  Cpu.param1.flags == USE_REG_GEN32
@@ -2526,7 +2527,9 @@ static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                  * Check if next instruction is:
                  *   shr eax, 4
                  */
+                pCtx->rip += cbOp;
                 rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), &Cpu, &cbOp);
+                pCtx->rip = oldrip;
                 if (    rc == VINF_SUCCESS
                     &&  Cpu.pCurInstr->opcode == OP_SHR
                     &&  Cpu.param1.flags == USE_REG_GEN32
@@ -2550,6 +2553,10 @@ static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 }
             }
         }
+        rc = svmR0EmulateTprMov(pVCpu, &Cpu, pCtx, cbOp);
+        if (rc != VINF_SUCCESS)
+            return rc;
+
         /* Emulated successfully, so continue. */
         return VINF_SUCCESS;
     }
