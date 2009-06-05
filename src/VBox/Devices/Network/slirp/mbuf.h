@@ -136,15 +136,15 @@ extern int mbuf_alloced;
 extern struct mbuf m_freelist, m_usedlist;
 extern int mbuf_max;
 
-void m_init _P((PNATState));
-void msize_init _P((PNATState));
-struct mbuf * m_get _P((PNATState));
-void m_free _P((PNATState, struct mbuf *));
-void m_cat _P((PNATState, register struct mbuf *, register struct mbuf *));
-void m_inc _P((struct mbuf *, int));
-void m_adj _P((struct mbuf *, int));
-int m_copy _P((struct mbuf *, struct mbuf *, int, int));
-struct mbuf * dtom _P((PNATState, void *));
+void m_init (PNATState);
+void msize_init (PNATState);
+struct mbuf * m_get (PNATState);
+void m_free (PNATState, struct mbuf *);
+void m_cat (PNATState, register struct mbuf *, register struct mbuf *);
+void m_inc (struct mbuf *, int);
+void m_adj (struct mbuf *, int);
+int m_copy (struct mbuf *, struct mbuf *, int, int);
+struct mbuf * dtom (PNATState, void *);
 
 /*
  * this macro should be used for validation and copying of Ethernet header where it really requred

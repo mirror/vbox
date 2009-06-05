@@ -129,9 +129,9 @@ extern const int tcp_backoff[];
 
 struct tcpcb;
 
-void tcp_fasttimo _P((PNATState));
-void tcp_slowtimo _P((PNATState));
-void tcp_canceltimers _P((struct tcpcb *));
-struct tcpcb * tcp_timers _P((PNATState, register struct tcpcb *, int));
+void tcp_fasttimo (PNATState);
+void tcp_slowtimo (PNATState);
+void tcp_canceltimers (struct tcpcb *);
+struct tcpcb * tcp_timers (PNATState, register struct tcpcb *, int);
 
 #endif

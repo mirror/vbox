@@ -166,9 +166,9 @@ AssertCompileSize(struct icmp, 28);
         (type) == ICMP_IREQ || (type) == ICMP_IREQREPLY || \
         (type) == ICMP_MASKREQ || (type) == ICMP_MASKREPLY)
 
-void icmp_input _P((PNATState, struct mbuf *, int));
-void icmp_error _P((PNATState, struct mbuf *, u_char, u_char, int, const char *));
-void icmp_reflect _P((PNATState, struct mbuf *));
+void icmp_input (PNATState, struct mbuf *, int);
+void icmp_error (PNATState, struct mbuf *, u_char, u_char, int, const char *);
+void icmp_reflect (PNATState, struct mbuf *);
 
 struct icmp_msg
 {
@@ -179,7 +179,7 @@ struct icmp_msg
 
 LIST_HEAD(icmp_storage, icmp_msg);
 
-int icmp_init _P((PNATState ));
-struct icmp_msg * icmp_find_original_mbuf _P((PNATState , struct ip *));
+int icmp_init (PNATState );
+struct icmp_msg * icmp_find_original_mbuf (PNATState , struct ip *);
 
 #endif
