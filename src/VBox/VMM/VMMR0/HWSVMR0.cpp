@@ -1738,10 +1738,10 @@ ResumeExecution:
 
                         u32tpr = (u32tpr >> 4) & 0xf;
 
-                        pCtx->eip += cbOp;
                         /* Check if the next instruction overwrites a general purpose register. If 
                          * it does, then we can safely use it ourselves.
                          */
+                        pCtx->eip += cbOp;
                         rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), &Cpu, &cbOp);
                         pCtx->eip = oldEip;
                         if (    rc == VINF_SUCCESS
@@ -1784,6 +1784,7 @@ ResumeExecution:
                              * Check if next instruction is a TPR read:
                              *   mov ecx, dword [fffe0080]        (5 bytes)
                              */
+                            pCtx->eip += cbOp;
                             rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), &Cpu, &cbOp);
                             pCtx->eip = oldEip;
                             if (    rc == VINF_SUCCESS
@@ -1835,6 +1836,7 @@ ResumeExecution:
                              * Check if next instruction is:
                              *   shr eax, 4
                              */
+                            pCtx->eip += cbOp;
                             rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), &Cpu, &cbOp);
                             pCtx->eip = oldEip;
                             if (    rc == VINF_SUCCESS
