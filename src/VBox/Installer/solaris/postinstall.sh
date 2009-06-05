@@ -81,11 +81,9 @@ if test "$currentzone" = "global"; then
         echo "## Loading failed. Aborting installation."
         exit 2
     fi
-fi
 
-echo "Configuring services and drivers..."
+    echo "Configuring services and drivers..."
 
-if test "$currentzone" = "global"; then
     # Web service
     if test -f /var/svc/manifest/application/virtualbox/webservice.xml; then
         /usr/sbin/svccfg import /var/svc/manifest/application/virtualbox/webservice.xml
@@ -116,24 +114,29 @@ if test "$currentzone" = "global"; then
         /usr/sbin/svccfg import /var/svc/manifest/application/virtualbox/zoneaccess.xml
         /usr/sbin/svcadm enable -s svc:/application/virtualbox/zoneaccess
     fi
-fi
 
-#
-# Install python bindings
-#
-if test -f "/opt/VirtualBox/sdk/installer/vboxapisetup.py" || test -h "/opt/VirtualBox/sdk/installer/vboxapisetup.py"; then
-    PYTHONBIN=`which python`
-    if test -f "$PYTHONBIN" || test -h "$PYTHONBIN"; then
-        echo "Installing Python bindings..."
+    # Install python bindings
+    if test -f "/opt/VirtualBox/sdk/installer/vboxapisetup.py" || test -h "/opt/VirtualBox/sdk/installer/vboxapisetup.py"; then
+        PYTHONBIN=`which python`
+        if test -f "$PYTHONBIN" || test -h "$PYTHONBIN"; then
+            echo "Installing Python bindings..."
 
-        VBOX_INSTALL_PATH=/opt/VirtualBox
-        export VBOX_INSTALL_PATH
-        cd /opt/VirtualBox/sdk/installer
-        $PYTHONBIN ./vboxapisetup.py install
-    else
-        echo "** WARNING! Python not found, skipped installed Python bindings."
-        echo "   Manually run '/opt/VirtualBox/sdk/installer/vboxapisetup.py install'"
-        echo "   to install the bindings when python is available."
+            VBOX_INSTALL_PATH=/opt/VirtualBox
+            export VBOX_INSTALL_PATH
+            cd /opt/VirtualBox/sdk/installer
+            $PYTHONBIN ./vboxapisetup.py install > /dev/null
+        else
+            echo "** WARNING! Python not found, skipped installed Python bindings."
+            echo "   Manually run '/opt/VirtualBox/sdk/installer/vboxapisetup.py install'"
+            echo "   to install the bindings when python is available."
+        fi
+    fi
+
+    # Update boot archive
+    BOOTADMBIN=/sbin/bootadm
+    if test -f "$BOOTADMBIN" || test -h "$BOOTADMBIN"; then
+        echo "Updating boot archive..."
+        $BOOTADMBIN update-archive > /dev/null
     fi
 fi
 
