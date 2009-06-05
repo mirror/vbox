@@ -163,9 +163,13 @@ void VBoxProgressDialog::timerEvent (QTimerEvent * /* aEvent */)
         /* Update the progress dialog */
         /* First ETA */
         long newTime = mProgress.GetTimeRemaining();
-        QTime time(0, 0);
-        time = time.addSecs (newTime);
-        mETA->setText (mETAText.arg (time.toString()));
+        if (newTime > 0)
+        {
+            QTime time(0, 0);
+            time = time.addSecs (newTime);
+            mETA->setText (mETAText.arg (time.toString()));
+        }else
+            mETA->clear();
         /* Then operation text if changed */
         ulong newOp = mProgress.GetOperation() + 1;
         if (newOp != mCurOp)
