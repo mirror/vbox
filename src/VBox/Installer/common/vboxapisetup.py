@@ -18,6 +18,10 @@ from distutils.core import setup
 
 def patchWith(file,install):
     newFile=file+".new"
+    try: 
+        os.remove(newFile)
+    except:
+        pass
     oldF = open(file, 'r')
     newF = open(newFile, 'w')
     for line in oldF:
