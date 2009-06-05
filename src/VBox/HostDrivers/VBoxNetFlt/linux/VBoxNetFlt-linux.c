@@ -666,8 +666,8 @@ static void vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff 
              * header.
              */
             unsigned char *tmp = pBuf->h.raw;
-            if (pBuf->h == pBuf->nh && pBuf->protocol == htons(ETH_P_IP))
-                pBuf->h.raw = pBuf->nh.raw + ((pBuf->nh.raw[0] & 0xF) * 4);
+            if (pBuf->h.raw == pBuf->nh.raw && pBuf->protocol == htons(ETH_P_IP))
+                pBuf->h.raw = pBuf->nh.raw + pBuf->nh.iph->ihl * 4;
 #endif /* LINUX_VERSION_CODE == KERNEL_VERSION(2, 6, 18) */
             if (VBOX_SKB_CHECKSUM_HELP(pBuf))
             {
