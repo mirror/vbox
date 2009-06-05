@@ -23,13 +23,12 @@
 bool is3DAccelerationSupported()
 {
     static char pszVBoxPath[RTPATH_MAX];
-    const char *pArgs[1] = {NULL};
+    const char *pArgs[2] = {"-test", NULL};
     int rc;
     RTPROCESS Process;
     RTPROCSTATUS ProcStatus;
     RTTIMESPEC Start;
     RTTIMESPEC Now;
-
 
     RTProcGetExecutableName(pszVBoxPath, RTPATH_MAX);
     RTPathStripFilename(pszVBoxPath);
