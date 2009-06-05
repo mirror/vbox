@@ -1796,7 +1796,7 @@ ResumeExecution:
                             {
                                 /* mov new_reg, uMmioReg */
                                 szInstr[0] = 0x89;
-                                szInstr[1] = MAKE_MODRM(3, uMmioReg, Cpu.param2.base.reg_gen);
+                                szInstr[1] = MAKE_MODRM(3, uMmioReg, Cpu.param1.base.reg_gen);
                                 szInstr[2] = 4;
 
                                 /* Let's hope the guest won't mind us trashing the source register...
