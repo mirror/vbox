@@ -783,6 +783,13 @@ void slirp_term(PNATState pData)
 #ifdef RT_OS_WINDOWS
     WSACleanup();
 #endif
+#ifdef VBOX_WITH_SLIRP_ALIAS
+    while(!LIST_EMPTY(&instancehead)) {
+        struct libalias *la = LIST_FIRST(&instancehead);
+        /* libalias do all clean up */
+        LibAliasUninit(la);
+    }
+#endif
 #ifdef LOG_ENABLED
     Log(("\n"
          "NAT statistics\n"
