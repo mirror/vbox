@@ -1721,7 +1721,10 @@ ResumeExecution:
 
                 rc = IOMMMIOPhysHandler(pVM, errCode, CPUMCTX2CORE(pCtx), uFaultAddress);
                 if (rc == VINF_SUCCESS)
+                {
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
                     goto ResumeExecution;   /* rip already updated */
+                }
             }
         }
 #endif

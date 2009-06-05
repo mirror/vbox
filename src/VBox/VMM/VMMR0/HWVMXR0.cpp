@@ -3479,6 +3479,7 @@ ResumeExecution:
     case VMX_EXIT_TPR:                  /* 43 TPR below threshold. Guest software executed MOV to CR8. */
         LogFlow(("VMX_EXIT_TPR\n"));
         /* RIP is already set to the next instruction and the TPR has been synced back. Just resume. */
+        STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub1, y1);
         goto ResumeExecution;
 
     case VMX_EXIT_APIC_ACCESS:          /* 44 APIC access. Guest software attempted to access memory at a physical address on the APIC-access page. */
@@ -3499,8 +3500,10 @@ ResumeExecution:
             LogFlow(("Apic access at %RGp\n", GCPhys));
             rc = IOMMMIOPhysHandler(pVM, (uAccessType == VMX_APIC_ACCESS_TYPE_LINEAR_READ) ? 0 : X86_TRAP_PF_RW, CPUMCTX2CORE(pCtx), GCPhys);
             if (rc == VINF_SUCCESS)
+            {
+                STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub1, y1);
                 goto ResumeExecution;   /* rip already updated */
-
+            }
             break;
         }
 
@@ -3512,6 +3515,7 @@ ResumeExecution:
     }
 
     case VMX_EXIT_PREEMPTION_TIMER:     /* 52 VMX-preemption timer expired. The preemption timer counted down to zero. */
+        STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub1, y1);
         goto ResumeExecution;
 
     default:
