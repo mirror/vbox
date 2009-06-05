@@ -209,20 +209,18 @@ sf_reg_open (struct inode *inode, struct file *file)
         BUG_ON (!sf_g);
         BUG_ON (!sf_i);
 
+        LogFunc(("open %s\n", sf_i->path->String.utf8));
+
         sf_r = kmalloc (sizeof (*sf_r), GFP_KERNEL);
         if (!sf_r) {
                 LogRelFunc(("could not allocate reg info\n"));
                 return -ENOMEM;
         }
 
-        LogFunc(("open %s\n", sf_i->path->String.utf8));
-
-        params.CreateFlags = 0;
-        params.Info.cbObject = 0;
-        /* We check this afterwards to find out if the call succeeded
-           or failed, as the API does not seem to cleanly distinguish
-           error and informational messages. */
-        params.Handle = 0;
+        memset(&params, 0, sizeof(params));
+        /* params.Handle is now 0. We check this afterwards to find out if
+         * the call succeeded or failed, as the API does not seem to cleanly
+         * distinguish error and informational messages. */
 
         if (file->f_flags & O_CREAT) {
                 LogFunc(("O_CREAT set\n"));
