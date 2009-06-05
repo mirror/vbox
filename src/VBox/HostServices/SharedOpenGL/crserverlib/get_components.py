@@ -110,8 +110,7 @@ num_extended_components = {
 	'GL_QUERY_RESULT_ARB': (1, 'CR_ARB_occlusion_query'),
 	'GL_CURRENT_QUERY_ARB': (1, 'CR_ARB_occlusion_query'),
 	'GL_TEXTURE_COMPRESSED_IMAGE_SIZE': (1, 'CR_ARB_texture_compression'),
-	'GL_POINT_SPRITE_ARB': (1, 'CR_ARB_point_sprite'),
-	'GL_COORD_REPLACE_ARB': (4, 'CR_ARB_point_sprite')
+	'GL_COORD_REPLACE_ARB': (1, 'CR_ARB_point_sprite'),
 }
 
 print """static unsigned int lookupComponents( GLenum pname )
