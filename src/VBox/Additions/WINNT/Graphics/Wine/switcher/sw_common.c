@@ -14,6 +14,8 @@
 #include <windows.h>
 #include "switcher.h"
 
+static char* gsBlackList[] = {"Dwm.exe"/*, "taskeng.exe"*/, NULL};
+
 /* Checks if 3D is enabled for VM and it works on host machine */
 BOOL isVBox3DEnabled(void)
 {
@@ -37,7 +39,32 @@ BOOL isVBox3DEnabled(void)
 
 BOOL checkOptions(void)
 {
-    //@todo: check some registry keys, app name etc.
+    char name[1000];
+    char *filename = name, *pName;
+    int i;
+
+	if (!GetModuleFileName(NULL, name, 1000))
+		return TRUE;
+
+    /*Extract filename*/
+    for (pName=name; *pName; ++pName)
+    {
+        switch (*pName)
+        {
+            case ':':
+            case '\\':
+            case '/':
+                filename = pName + 1;
+                break;
+        }
+    }
+
+    for (i=0; gsBlackList[i]; ++i)
+    {
+        if (!strcmp(filename, gsBlackList[i]))
+            return FALSE;
+    }
+
     return TRUE;
 }
 
