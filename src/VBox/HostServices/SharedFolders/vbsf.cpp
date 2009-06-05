@@ -32,6 +32,7 @@
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/uni.h>
+#include <iprt/stream.h>
 #ifdef RT_OS_DARWIN
 #include <Carbon/Carbon.h>
 #endif
@@ -1738,15 +1739,25 @@ static int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Ha
         /* Change file attributes if necessary */
         if (pSFDEntry->Attr.fMode)
         {
-            rc = RTFileSetMode((RTFILE)pHandle->file.Handle, pSFDEntry->Attr.fMode);
+            RTFMODE fMode = pSFDEntry->Attr.fMode;
+
+#ifndef RT_OS_WINDOWS
+            /* don't allow to clear the own bit, otherwise the guest wouldn't be
+             * able to access this file anymore */
+            if (fMode)
+                fMode |= RTFS_UNIX_IRUSR;
+#endif
+
+            rc = RTFileSetMode((RTFILE)pHandle->file.Handle, fMode);
             if (rc != VINF_SUCCESS)
             {
-                Log(("RTFileSetMode %x failed with %Rrc\n", pSFDEntry->Attr.fMode, rc));
+                Log(("RTFileSetMode %x failed with %Rrc\n", fMode, rc));
                 /* silent failure, because this tends to fail with e.g. windows guest & linux host */
                 rc = VINF_SUCCESS;
             }
         }
     }
+    /* TODO: mode for directories */
 
     if (rc == VINF_SUCCESS)
     {
