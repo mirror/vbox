@@ -690,6 +690,7 @@ solisten(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
     struct socket *so;
     socklen_t addrlen = sizeof(addr);
     int s, opt = 1;
+    int status;
 
     DEBUG_CALL("solisten");
     DEBUG_ARG("port = %d", port);
@@ -755,10 +756,27 @@ solisten(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 #endif
         return NULL;
     }
+    fd_nonblock(s);
     setsockopt(s, SOL_SOCKET, SO_OOBINLINE,(char *)&opt, sizeof(int));
 
     getsockname(s,(struct sockaddr *)&addr,&addrlen);
     so->so_fport = addr.sin_port;
+    /* set socket buffers */
+    opt = 64 * _1K;
+    status = setsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&opt, sizeof(int));
+    if (status < 0)
+    {
+        LogRel(("NAT: Error(%d) while setting RCV capacity to (%d)\n", errno, opt));
+        goto no_sockopt;
+    }
+    opt = 64 * _1K;
+    status = setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&opt, sizeof(int));
+    if (status < 0)
+    {
+        LogRel(("NAT: Error(%d) while setting SND capacity to (%d)\n", errno, opt));
+        goto no_sockopt;
+    }
+no_sockopt:
     if (addr.sin_addr.s_addr == 0 || addr.sin_addr.s_addr == loopback_addr.s_addr)
         so->so_faddr = alias_addr;
     else
