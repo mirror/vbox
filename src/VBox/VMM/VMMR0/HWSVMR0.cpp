@@ -1776,7 +1776,7 @@ ResumeExecution:
                             &&  cbOp == 6)
                         {
                             RTGCPTR  oldEip   = pCtx->eip;
-                            RTGCPTR  GCPtrTpr = Cpu.param1.parval;
+                            RTGCPTR  GCPtrTpr = Cpu.param1.disp32;
                             uint32_t uMmioReg = Cpu.param2.base.reg_gen;
 
                             /* Found:
@@ -1789,8 +1789,8 @@ ResumeExecution:
                             if (    rc == VINF_SUCCESS
                                 &&  Cpu.pCurInstr->opcode == OP_MOV
                                 &&  Cpu.param1.flags == USE_REG_GEN32
-                                &&  Cpu.param2.flags == USE_IMMEDIATE32
-                                &&  Cpu.param2.parval == GCPtrTpr
+                                &&  Cpu.param2.flags == USE_DISPLACEMENT32
+                                &&  Cpu.param2.disp32 == GCPtrTpr
                                 &&  cbOp == 5)
                             {
                                 /* mov new_reg, uMmioReg */
