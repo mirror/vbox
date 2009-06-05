@@ -29,7 +29,7 @@ def patchWith(file,install):
         newF.write(line)
     newF.close()
     oldF.close()
-     try: 
+    try: 
         os.remove(file)
     except:
         pass
