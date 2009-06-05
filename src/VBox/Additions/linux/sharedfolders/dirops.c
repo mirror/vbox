@@ -391,7 +391,7 @@ sf_instantiate (const char *caller, struct inode *parent,
 }
 
 static int
-sf_create_aux (struct inode *parent, struct dentry *dentry, int dirop)
+sf_create_aux (struct inode *parent, struct dentry *dentry, int mode, int dirop)
 {
         int rc, err;
         SHFLCREATEPARMS params;
@@ -409,6 +409,9 @@ sf_create_aux (struct inode *parent, struct dentry *dentry, int dirop)
 #endif
 
         memset(&params, 0, sizeof(params));
+        /* Ensure that the shared folders host service is using our fMode
+         * paramter */
+        params.Handle = SHFL_HANDLE_NIL;
 
         params.CreateFlags = 0
                 | SHFL_CF_ACT_CREATE_IF_NEW
@@ -419,9 +422,7 @@ sf_create_aux (struct inode *parent, struct dentry *dentry, int dirop)
 
         params.Info.Attr.fMode = 0
                 | (dirop ? RTFS_TYPE_DIRECTORY : RTFS_TYPE_FILE)
-                | RTFS_UNIX_IRUSR
-                | RTFS_UNIX_IWUSR
-                | RTFS_UNIX_IXUSR
+                | (mode & S_IRWXUGO)
                 ;
 
         params.Info.Attr.enmAdditional = RTFSOBJATTRADD_NOTHING;
@@ -486,14 +487,14 @@ sf_create (struct inode *parent, struct dentry *dentry, int mode
         )
 {
         TRACE ();
-        return sf_create_aux (parent, dentry, 0);
+        return sf_create_aux (parent, dentry, mode, 0);
 }
 
 static int
 sf_mkdir (struct inode *parent, struct dentry *dentry, int mode)
 {
         TRACE ();
-        return sf_create_aux (parent, dentry, 1);
+        return sf_create_aux (parent, dentry, mode, 1);
 }
 
 static int
@@ -606,6 +607,7 @@ struct inode_operations sf_dir_iops = {
 #if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 0)
         .revalidate = sf_inode_revalidate
 #else
-        .getattr    = sf_getattr
+        .getattr    = sf_getattr,
+        .setattr    = sf_setattr
 #endif
 };

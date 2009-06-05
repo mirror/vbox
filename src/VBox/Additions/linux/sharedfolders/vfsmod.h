@@ -84,6 +84,8 @@ sf_inode_revalidate (struct dentry *dentry);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 0)
 extern int
 sf_getattr (struct vfsmount *mnt, struct dentry *dentry, struct kstat *kstat);
+extern int
+sf_setattr (struct dentry *dentry, struct iattr *iattr);
 #endif
 extern int
 sf_path_from_dentry (const char *caller, struct sf_glob_info *sf_g,

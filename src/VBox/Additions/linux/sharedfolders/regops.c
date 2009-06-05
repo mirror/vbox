@@ -218,9 +218,13 @@ sf_reg_open (struct inode *inode, struct file *file)
         }
 
         memset(&params, 0, sizeof(params));
-        /* params.Handle is now 0. We check this afterwards to find out if
+        params.Handle = SHFL_HANDLE_NIL;
+        /* We check the value of params.Handle afterwards to find out if
          * the call succeeded or failed, as the API does not seem to cleanly
-         * distinguish error and informational messages. */
+         * distinguish error and informational messages.
+         *
+         * Furthermore, we must set params.Handle to SHFL_HANDLE_NIL to
+         * make the shared folders host service use our fMode parameter */
 
         if (file->f_flags & O_CREAT) {
                 LogFunc(("O_CREAT set\n"));
@@ -264,6 +268,7 @@ sf_reg_open (struct inode *inode, struct file *file)
                 }
         }
 
+        params.Info.Attr.fMode = inode->i_mode;
         LogFunc(("sf_reg_open: calling vboxCallCreate, file %s, flags=%d, %#x\n",
                  sf_i->path->String.utf8 , file->f_flags, params.CreateFlags));
         rc = vboxCallCreate (&client_handle, &sf_g->map, sf_i->path, &params);
@@ -452,7 +457,8 @@ struct inode_operations sf_reg_iops = {
 #if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 0)
         .revalidate = sf_inode_revalidate
 #else
-        .getattr    = sf_getattr
+        .getattr    = sf_getattr,
+        .setattr    = sf_setattr
 #endif
 };
 

@@ -60,7 +60,14 @@ sf_ftime_from_timespec (time_t *time, RTTIMESPEC *ts)
         do_div (t, 1000000000);
         *time = t;
 }
-#else
+
+static void
+sf_timespec_from_ftime (RTTIMESPEC *ts, time_t *time)
+{
+        int64_t t = 1000000000 * *time;
+        RTTimeSpecSetNano (ts, t);
+}
+#else /* >= 2.6.0 */
 static void
 sf_ftime_from_timespec (struct timespec *tv, RTTIMESPEC *ts)
 {
@@ -71,7 +78,14 @@ sf_ftime_from_timespec (struct timespec *tv, RTTIMESPEC *ts)
         tv->tv_sec = t;
         tv->tv_nsec = nsec;
 }
-#endif
+
+static void
+sf_timespec_from_ftime (RTTIMESPEC *ts, struct timespec *tv)
+{
+        int64_t t = (int64_t)tv->tv_nsec + (int64_t)tv->tv_sec * 1000000000;
+        RTTimeSpecSetNano (ts, t);
+}
+#endif /* >= 2.6.0 */
 
 /* set [inode] attributes based on [info], uid/gid based on [sf_g] */
 void
@@ -232,7 +246,7 @@ static int
 #if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 0)
 sf_dentry_revalidate (struct dentry *dentry, int flags)
 #else
-        sf_dentry_revalidate (struct dentry *dentry, struct nameidata *nd)
+sf_dentry_revalidate (struct dentry *dentry, struct nameidata *nd)
 #endif
 {
         TRACE ();
@@ -259,9 +273,103 @@ sf_getattr (struct vfsmount *mnt, struct dentry *dentry, struct kstat *kstat)
         }
 
         generic_fillattr (dentry->d_inode, kstat);
+        printk("getattr %08x\n", kstat->mode);
         return 0;
 }
-#endif
+
+int
+sf_setattr (struct dentry *dentry, struct iattr *iattr)
+{
+        struct sf_glob_info *sf_g;
+        struct sf_inode_info *sf_i;
+        SHFLCREATEPARMS params;
+        RTFSOBJINFO info;
+        uint32_t cbBuffer;
+        int rc, err;
+
+        TRACE ();
+
+        sf_g = GET_GLOB_INFO (dentry->d_inode->i_sb);
+        sf_i = GET_INODE_INFO (dentry->d_inode);
+        err  = 0;
+
+        memset(&params, 0, sizeof(params));
+        memset(&info, 0, sizeof(info));
+
+        params.CreateFlags = SHFL_CF_ACT_OPEN_IF_EXISTS
+                           | SHFL_CF_ACT_FAIL_IF_NEW;
+
+        rc = vboxCallCreate (&client_handle, &sf_g->map, sf_i->path, &params);
+        if (VBOX_FAILURE (rc)) {
+                LogFunc(("vboxCallCreate(%s) failed rc=%Rrc\n",
+                        sf_i->path->String.utf8, rc));
+                err = -RTErrConvertToErrno(rc);
+                goto fail2;
+        }
+        if (params.Result != SHFL_FILE_EXISTS) {
+                LogFunc(("file %s does not exist\n", sf_i->path->String.utf8));
+                err = -ENOENT;
+                goto fail1;
+        }
+
+        cbBuffer = sizeof(info);
+
+#define mode_set(r) ((iattr->ia_mode & (S_##r)) ? RTFS_UNIX_##r : 0)
+
+        if (iattr->ia_valid & ATTR_MODE)
+        {
+            info.Attr.fMode  = mode_set (ISUID);
+            info.Attr.fMode |= mode_set (ISGID);
+            info.Attr.fMode |= mode_set (IRUSR);
+            info.Attr.fMode |= mode_set (IWUSR);
+            info.Attr.fMode |= mode_set (IXUSR);
+            info.Attr.fMode |= mode_set (IRGRP);
+            info.Attr.fMode |= mode_set (IWGRP);
+            info.Attr.fMode |= mode_set (IXGRP);
+            info.Attr.fMode |= mode_set (IROTH);
+            info.Attr.fMode |= mode_set (IWOTH);
+            info.Attr.fMode |= mode_set (IXOTH);
+
+            if (iattr->ia_mode & S_IFDIR)
+                info.Attr.fMode |= RTFS_TYPE_DIRECTORY;
+            else
+                info.Attr.fMode |= RTFS_TYPE_FILE;
+        }
+
+        if (iattr->ia_valid & ATTR_ATIME)
+            sf_timespec_from_ftime (&info.AccessTime, &iattr->ia_atime);
+        if (iattr->ia_valid & ATTR_MTIME)
+            sf_timespec_from_ftime (&info.ModificationTime, &iattr->ia_mtime);
+        /* ignore ctime (inode change time) as it can't be set from userland anyway */
+
+        rc = vboxCallFSInfo(&client_handle, &sf_g->map, params.Handle,
+                            SHFL_INFO_SET | SHFL_INFO_FILE, &cbBuffer,
+                            (PSHFLDIRINFO)&info);
+        if (VBOX_FAILURE (rc)) {
+                LogFunc(("vboxCallFSInfo(%s) failed rc=%Rrc\n",
+                        sf_i->path->String.utf8, rc));
+                err = -RTErrConvertToErrno(rc);
+                goto fail1;
+        }
+        
+        rc = vboxCallClose (&client_handle, &sf_g->map, params.Handle);
+        if (VBOX_FAILURE (rc)) {
+                LogFunc(("vboxCallClose(%s) failed rc=%Rrc\n",
+                      sf_i->path->String.utf8, rc));
+        }
+
+        return sf_inode_revalidate (dentry);
+
+fail1:
+        rc = vboxCallClose (&client_handle, &sf_g->map, params.Handle);
+        if (VBOX_FAILURE (rc)) {
+                LogFunc(("vboxCallClose(%s) failed rc=%Rrc\n",
+                      sf_i->path->String.utf8, rc));
+        }
+fail2:
+        return err;
+}
+#endif /* >= 2.6.0 */
 
 static int
 sf_make_path (const char *caller, struct sf_inode_info *sf_i,
