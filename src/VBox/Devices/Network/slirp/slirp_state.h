@@ -346,10 +346,10 @@ typedef struct NATState
 
 #define queue_tcp_label tcb
 #define queue_udp_label udb
-#define __X(x) x
-#define _X(x) __X(x)
-#define _str(x) #x
-#define str(x) _str(x)
+#define VBOX_X2(x) x
+#define VBOX_X(x) VBOX_X2(x)
+#define VBOX_STR2(x) #x
+#define VBOX_STR(x) VBOX_STR2(x)
 
 #ifdef VBOX_WITH_SLIRP_MT
 
@@ -357,13 +357,13 @@ typedef struct NATState
     do {                                                              \
         int rc;                                                       \
         /* Assert(strcmp(RTThreadSelfName(), "EMT") != 0); */         \
-        rc = RTCritSectEnter(&_X(queue) ## _mutex);                   \
+        rc = RTCritSectEnter(&VBOX_X(queue) ## _mutex);               \
         AssertReleaseRC(rc);                                          \
     } while (0)
 # define QSOCKET_UNLOCK(queue)                                        \
     do {                                                              \
         int rc;                                                       \
-        rc = RTCritSectLeave(&_X(queue) ## _mutex);                   \
+        rc = RTCritSectLeave(&VBOX_X(queue) ## _mutex);               \
         AssertReleaseRC(rc);                                          \
     } while (0)
 # define QSOCKET_LOCK_CREATE(queue)                                   \
@@ -379,13 +379,13 @@ typedef struct NATState
     } while (0)
 
 # define QSOCKET_FOREACH(so, sonext, label)                           \
-    QSOCKET_LOCK(__X(queue_## label ## _label));                      \
-    (so) = (_X(queue_ ## label ## _label)).so_next;                   \
-    QSOCKET_UNLOCK(__X(queue_## label ##_label));                     \
-    if ((so) != &(_X(queue_## label ## _label))) SOCKET_LOCK((so));   \
+    QSOCKET_LOCK(VBOX_X2(queue_## label ## _label));                  \
+    (so) = (VBOX_X(queue_ ## label ## _label)).so_next;               \
+    QSOCKET_UNLOCK(VBOX_X2(queue_## label ##_label));                 \
+    if ((so) != &(VBOX_X(queue_## label ## _label))) SOCKET_LOCK((so));\
     for (;;)                                                          \
     {                                                                 \
-        if ((so) == &(_X(queue_## label ## _label)))                  \
+        if ((so) == &(VBOX_X(queue_## label ## _label)))              \
         {                                                             \
             break;                                                    \
         }                                                             \
@@ -398,16 +398,16 @@ typedef struct NATState
 # define LOOP_LABEL(label, so, sonext) loop_end_ ## label ## _mt:       \
     (sonext) = (so)->so_next;                                           \
     SOCKET_UNLOCK(so);                                                  \
-    QSOCKET_LOCK(_X(queue_ ## label ## _label));                        \
-    if ((sonext) != &(_X(queue_## label ## _label)))                    \
+    QSOCKET_LOCK(VBOX_X(queue_ ## label ## _label));                    \
+    if ((sonext) != &(VBOX_X(queue_## label ## _label)))                \
     {                                                                   \
         SOCKET_LOCK((sonext));                                          \
-        QSOCKET_UNLOCK(_X(queue_ ## label ## _label));                  \
+        QSOCKET_UNLOCK(VBOX_X(queue_ ## label ## _label));              \
     }                                                                   \
     else                                                                \
     {                                                                   \
-        so = &_X(queue_ ## label ## _label);                            \
-        QSOCKET_UNLOCK(_X(queue_ ## label ## _label));                  \
+        so = &VBOX_X(queue_ ## label ## _label);                        \
+        QSOCKET_UNLOCK(VBOX_X(queue_ ## label ## _label));              \
         break;                                                          \
     }                                                                   \
     (so) = (sonext);                                                    \
@@ -589,7 +589,7 @@ typedef struct NATState
                 && so->so_faddr.s_addr == (dst).s_addr                  \
                 && so->so_fport        == (dport))                      \
                 {                                                       \
-                    if (sonxt != &__X(queue_ ## label ## _label))       \
+                    if (sonxt != &VBOX_X2(queue_ ## label ## _label))       \
                         SOCKET_UNLOCK(sonxt);                           \
                     break; /*so is locked*/                             \
                 }                                                       \
@@ -605,8 +605,8 @@ typedef struct NATState
 # define QSOCKET_LOCK_CREATE(queue) do {} while (0)
 # define QSOCKET_LOCK_DESTROY(queue) do {} while (0)
 # define QSOCKET_FOREACH(so, sonext, label)                              \
-    for ((so)  = __X(queue_ ## label ## _label).so_next;                 \
-         (so) != &(__X(queue_ ## label ## _label));                      \
+    for ((so)  = VBOX_X2(queue_ ## label ## _label).so_next;                 \
+         (so) != &(VBOX_X2(queue_ ## label ## _label));                      \
          (so) = (sonext))                                                \
     {                                                                    \
         (sonext) = (so)->so_next;
@@ -627,7 +627,7 @@ typedef struct NATState
 # define DO_SORECFROM(data, so) sorecvfrom((data), (so))
 # define SOLOOKUP(so, label, src, sport, dst, dport)                                      \
     do {                                                                                  \
-        (so) = solookup(&__X(queue_ ## label ## _label), (src), (sport), (dst), (dport)); \
+        (so) = solookup(&VBOX_X2(queue_ ## label ## _label), (src), (sport), (dst), (dport)); \
     } while (0)
 # define DO_UDP_DETACH(data, so, ignored) udp_detach((data), (so))
 
