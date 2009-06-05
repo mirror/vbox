@@ -163,7 +163,7 @@ void VBoxProgressDialog::timerEvent (QTimerEvent * /* aEvent */)
         /* Update the progress dialog */
         /* First ETA */
         long newTime = mProgress.GetTimeRemaining();
-        if (newTime > 0)
+        if (newTime >= 0)
         {
             QTime time(0, 0);
             time = time.addSecs (newTime);
