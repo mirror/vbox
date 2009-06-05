@@ -258,8 +258,10 @@ void printUsage(USAGECATEGORY u64Cmd)
     if (u64Cmd & USAGE_STARTVM)
     {
         RTPrintf("VBoxManage startvm          <uuid>|<name>\n");
+        RTPrintf("                            [--type gui");
         if (fVRDP)
-            RTPrintf("                            [--type gui|vrdp]\n");
+            RTPrintf(                         "|vrdp");
+        RTPrintf(                             "|headless]\n");
         RTPrintf("\n");
     }
 
