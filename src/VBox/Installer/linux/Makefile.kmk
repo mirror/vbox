@@ -123,6 +123,7 @@ VBOX_LNX_STRIP_BIN = \
 		VBoxOGLhostcrutil.so \
 		VBoxOGLhosterrorspu.so \
 		VBoxOGLrenderspu.so \
+		VBoxTestOGL \
 		VBoxSharedCrOpenGL.so,) \
 	$(if $(VBOX_WITH_PYTHON),VBoxPython.so,) \
 	VBoxTunctl
