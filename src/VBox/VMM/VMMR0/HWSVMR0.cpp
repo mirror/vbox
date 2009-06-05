@@ -1704,6 +1704,7 @@ ResumeExecution:
         if (    (uFaultAddress & 0xfff) == 0x080
             &&  pVM->hwaccm.s.fHasIoApic
             &&  !(errCode & X86_TRAP_PF_P)  /* not present */
+            &&  CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx)) == 0
             &&  !CPUMIsGuestInLongModeEx(pCtx))
         {
             RTGCPHYS GCPhysApicBase;
@@ -2333,6 +2334,66 @@ end:
     return rc;
 }
 
+/**
+ * Emulate simple mov tpr instruction
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The VM CPU to operate on.
+ * @param   pDisState   Disassembly state
+ * @param   pCtx        CPU context
+ * @param   cbOp        Opcode size
+ */
+static int svmR0EmulateTprMov(PVMCPU pVCpu, DISCPUSTATE *pDisState, PCPUMCTX pCtx, unsigned cbOp)
+{
+    int rc;
+
+    if (pDisState->param1.flags == USE_DISPLACEMENT32)
+    {
+        /* write */
+        uint8_t u8Tpr;
+
+        /* Fetch the new TPR value */
+        if (pDisState->param2.flags == USE_REG_GEN32)
+        {
+            uint32_t val;
+
+            rc = DISFetchReg32(CPUMCTX2CORE(pCtx), pDisState->param2.base.reg_gen, &val);
+            AssertRC(rc);
+            u8Tpr = val >> 4;
+        }
+        else
+        if (pDisState->param2.flags == USE_IMMEDIATE32)
+        {
+            u8Tpr = (uint8_t)pDisState->param2.parval >> 4;
+        }
+        else
+            return VERR_EM_INTERPRETER;
+
+        rc = PDMApicSetTPR(pVCpu, u8Tpr);
+        AssertRC(rc);
+
+        pCtx->rip += cbOp;
+        return VINF_SUCCESS;
+    }
+    else
+    if (pDisState->param2.flags == USE_DISPLACEMENT32)
+    {
+        /* read */
+        bool    fPending;
+        uint8_t u8Tpr;
+
+        /* TPR caching in CR8 */
+        rc = PDMApicGetTPR(pVCpu, &u8Tpr, &fPending);
+        AssertRC(rc);
+
+        rc = DISWriteReg32(CPUMCTX2CORE(pCtx), pDisState->param1.base.reg_gen, u8Tpr << 4);
+        AssertRC(rc);
+
+        pCtx->rip += cbOp;
+        return VINF_SUCCESS;
+    }
+    return VERR_EM_INTERPRETER;
+}
 
 /**
  * Attempt to patch TPR mmio instructions
@@ -2354,6 +2415,10 @@ static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     if (    rc == VINF_SUCCESS
         &&  Cpu.pCurInstr->opcode == OP_MOV)
     {
+        rc = svmR0EmulateTprMov(pVCpu, &Cpu, pCtx, cbOp);
+        if (rc != VINF_SUCCESS)
+            return rc;
+
         uint8_t szInstr[15];
         if (    cbOp == 10
             &&  Cpu.param1.flags == USE_DISPLACEMENT32
@@ -2368,7 +2433,6 @@ static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
              *   nop                                            (1 byte)
              *
              */
-            RTGCPTR     oldEip = pCtx->eip;
             uint32_t    u32tpr = (uint32_t)Cpu.param2.parval;
 
             u32tpr = (u32tpr >> 4) & 0xf;
@@ -2376,9 +2440,7 @@ static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             /* Check if the next instruction overwrites a general purpose register. If 
              * it does, then we can safely use it ourselves.
              */
-            pCtx->eip += cbOp;
             rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), &Cpu, &cbOp);
-            pCtx->eip = oldEip;
             if (    rc == VINF_SUCCESS
                 &&  Cpu.pCurInstr->opcode == OP_MOV
                 &&  Cpu.param1.flags == USE_REG_GEN32)
@@ -2409,7 +2471,6 @@ static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             if (    Cpu.param2.flags == USE_REG_GEN32
                 &&  cbOp == 6)
             {
-                RTGCPTR  oldEip   = pCtx->eip;
                 RTGCPTR  GCPtrTpr = (uint32_t)Cpu.param1.disp32;
                 uint32_t uMmioReg = Cpu.param2.base.reg_gen;
 
@@ -2418,9 +2479,7 @@ static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                  * Check if next instruction is a TPR read:
                  *   mov ecx, dword [fffe0080]        (5 bytes)
                  */
-                pCtx->eip += cbOp;
                 rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), &Cpu, &cbOp);
-                pCtx->eip = oldEip;
                 if (    rc == VINF_SUCCESS
                     &&  Cpu.pCurInstr->opcode == OP_MOV
                     &&  Cpu.param1.flags == USE_REG_GEN32
@@ -2452,7 +2511,7 @@ static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                     rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, szInstr, 6+cbOp);
                     AssertRC(rc);
 
-                    Log(("Acceptable write candidate!\n"));
+                    Log(("Acceptable read/write candidate!\n"));
                     return VINF_SUCCESS;
                 }
             }
@@ -2460,7 +2519,6 @@ static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             if (    Cpu.param1.flags == USE_REG_GEN32
                 &&  cbOp == 5)
             {
-                RTGCPTR  oldEip = pCtx->eip;
                 uint32_t uMmioReg = Cpu.param1.base.reg_gen;
 
                 /* Found:
@@ -2468,9 +2526,7 @@ static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                  * Check if next instruction is:
                  *   shr eax, 4
                  */
-                pCtx->eip += cbOp;
                 rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), &Cpu, &cbOp);
-                pCtx->eip = oldEip;
                 if (    rc == VINF_SUCCESS
                     &&  Cpu.pCurInstr->opcode == OP_SHR
                     &&  Cpu.param1.flags == USE_REG_GEN32
@@ -2494,6 +2550,8 @@ static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 }
             }
         }
+        /* Emulated successfully, so continue. */
+        return VINF_SUCCESS;
     }
     return VERR_ACCESS_DENIED;
 }
