@@ -230,17 +230,13 @@ typedef struct NATState
     struct libalias *proxy_alias;
 #endif
 
-#ifdef VBOX_WITH_STATISTICS
 # define PROFILE_COUNTER(name, dsc) STAMPROFILE Stat ## name
 # define COUNTING_COUTER(name, dsc) STAMCOUNTER Stat ## name
 
-
 #include "counters.h"
-
 
 #undef PROFILE_COUNTER
 #undef COUNTING_COUTER
-#endif
 
 } NATState;
 
