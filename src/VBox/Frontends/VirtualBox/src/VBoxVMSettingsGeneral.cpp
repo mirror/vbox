@@ -42,6 +42,10 @@ VBoxVMSettingsGeneral::VBoxVMSettingsGeneral()
     mCbClipboard->addItem (""); /* KClipboardMode_GuestToHost */
     mCbClipboard->addItem (""); /* KClipboardMode_Bidirectional */
 
+#ifdef Q_WS_MAC
+    mTeDescription->setMinimumHeight (150);
+#endif /* Q_WS_MAC */
+
     /* Applying language settings */
     retranslateUi();
 }
