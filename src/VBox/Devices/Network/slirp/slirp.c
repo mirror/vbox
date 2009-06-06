@@ -710,22 +710,28 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
 void slirp_register_timers(PNATState pData, PPDMDRVINS pDrvIns)
 {
 #ifdef VBOX_WITH_STATISTICS
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatFill, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
-                           STAMUNIT_TICKS_PER_CALL, "Profiling slirp fills", "/Drivers/NAT%d/Fill", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatPoll, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
-                           STAMUNIT_TICKS_PER_CALL, "Profiling slirp polls", "/Drivers/NAT%d/Poll", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatFastTimer, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
-                           STAMUNIT_TICKS_PER_CALL, "Profiling slirp fast timer", "/Drivers/NAT%d/TimerFast", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatSlowTimer, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
-                           STAMUNIT_TICKS_PER_CALL, "Profiling slirp slow timer", "/Drivers/NAT%d/TimerSlow", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatTCP, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
-                           STAMUNIT_COUNT, "TCP sockets", "/Drivers/NAT%d/SockTCP", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatTCPHot, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
-                           STAMUNIT_COUNT, "TCP sockets active", "/Drivers/NAT%d/SockTCPHot", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatUDP, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
-                           STAMUNIT_COUNT, "UDP sockets", "/Drivers/NAT%d/SockUDP", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatUDPHot, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
-                           STAMUNIT_COUNT, "UDP sockets active", "/Drivers/NAT%d/SockUDPHot", pDrvIns->iInstance);
+# define COUNTER(name, type, units, dsc)                            \
+do{                                                                 \
+    PDMDrvHlpSTAMRegisterF(pDrvIns,                                 \
+                    &pData->Stat ## name,                           \
+                    type,                                           \
+                    STAMVISIBILITY_ALWAYS,                          \
+                    units,                                          \
+                    dsc,                                            \
+                    "/Drivers/NAT%d/Stat" #name, pDrvIns->iInstance);   \
+}while(0)
+
+# define PROFILE_COUNTER(name, dsc) \
+    COUNTER(name, STAMTYPE_PROFILE, STAMUNIT_TICKS_PER_CALL, dsc) 
+# define COUNTING_COUTER(name, dsc) \
+    COUNTER(name, STAMTYPE_COUNTER, STAMUNIT_COUNT, dsc) 
+
+#include "counters.h"
+
+#undef COUNTER
+#undef PROFILE_COUNTER
+#undef COUNTING_COUTER
+
 #endif /* VBOX_WITH_STATISTICS */
 }
 
@@ -1160,7 +1166,7 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
         
             ret = soread(pData, so);
             /* Output it if we read something */
-            if (ret > 0)
+            if (RT_LIKELY(ret > 0))
                 TCP_OUTPUT(pData, sototcpcb(so));
         }
 
@@ -1752,7 +1758,7 @@ unsigned int slirp_get_timeout_ms(PNATState pData)
     if (link_up)
     {
         if (time_fasttimo)
-            return 2;
+            return 2; 
         if (do_slowtimo)
             return 500; /* see PR_SLOWHZ */
     }

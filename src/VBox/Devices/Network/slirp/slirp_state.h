@@ -229,14 +229,19 @@ typedef struct NATState
     LIST_HEAD(RT_NOTHING, libalias) instancehead;
     struct libalias *proxy_alias;
 #endif
-    STAMPROFILE StatFill;
-    STAMPROFILE StatPoll;
-    STAMPROFILE StatFastTimer;
-    STAMPROFILE StatSlowTimer;
-    STAMCOUNTER StatTCP;
-    STAMCOUNTER StatUDP;
-    STAMCOUNTER StatTCPHot;
-    STAMCOUNTER StatUDPHot;
+
+#ifdef VBOX_WITH_STATISTICS
+# define PROFILE_COUNTER(name, dsc) STAMPROFILE Stat ## name
+# define COUNTING_COUTER(name, dsc) STAMCOUNTER Stat ## name
+
+
+#include "counters.h"
+
+
+#undef PROFILE_COUNTER
+#undef COUNTING_COUTER
+#endif
+
 } NATState;
 
 
