@@ -171,8 +171,7 @@ RTDECL(int)  RTDbgModCreate(PRTDBGMOD phDbgMod, const char *pszName, RTUINTPTR c
         pDbgMod->pszName = RTStrDup(pszName);
         if (pDbgMod->pszName)
         {
-            pDbgMod->pDbgVt = &g_rtDbgModVtDbgContainer;
-            rc = pDbgMod->pDbgVt->pfnTryOpen(pDbgMod);
+            rc = rtDbgModContainerCreate(pDbgMod, cb);
             if (RT_SUCCESS(rc))
             {
                 *phDbgMod = pDbgMod;
@@ -209,10 +208,20 @@ static void  rtDbgModDestroy(PRTDBGMODINT pDbgMod)
      * Close the debug info interpreter first, then the image interpret.
      */
     RTCritSectEnter(&pDbgMod->CritSect); /* paranoia  */
+
     if (pDbgMod->pDbgVt)
+    {
         pDbgMod->pDbgVt->pfnClose(pDbgMod);
+        pDbgMod->pDbgVt = NULL;
+        pDbgMod->pvDbgPriv = NULL;
+    }
+
     if (pDbgMod->pImgVt)
+    {
         pDbgMod->pImgVt->pfnClose(pDbgMod);
+        pDbgMod->pImgVt = NULL;
+        pDbgMod->pvImgPriv = NULL;
+    }
 
     /*
      * Free the resources.
