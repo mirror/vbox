@@ -23,6 +23,7 @@
 #define ___internal_dbgmod_h
 
 #include <iprt/types.h>
+#include <iprt/critsect.h>
 #include "internal/magics.h"
 
 __BEGIN_DECLS
@@ -133,6 +134,22 @@ typedef struct RTDBGMODVTDBG
     DECLCALLBACKMEMBER(int, pfnClose)(PRTDBGMODINT pMod);
 
     /**
+     * Adds a symbol to the module (optional).
+     *
+     * This method is used to implement DBGFR3SymbolAdd.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_NOT_SUPPORTED if the interpreter doesn't support this feature.
+     *
+     * @param   pMod        Pointer to the module structure.
+     * @param   pszSymbol   The symbol name.
+     * @param   iSeg        The segment number (0-based). RTDBGMOD_SEG_RVA can be used.
+     * @param   off         The offset into the segment.
+     * @param   cbSymbol    The area covered by the symbol. 0 is fine.
+     */
+    DECLCALLBACKMEMBER(int, pfnSymbolAdd)(PRTDBGMODINT pMod, const char *pszSymbol, uint32_t iSeg, RTGCUINTPTR off, RTUINT cbSymbol);
+
+    /**
      * Queries symbol information by symbol name.
      *
      * @returns VBox status code.
@@ -184,22 +201,6 @@ typedef struct RTDBGMODVTDBG
      */
     DECLCALLBACKMEMBER(int, pfnLineByAddr)(PRTDBGMODINT pMod, uint32_t iSeg, RTGCUINTPTR off, PRTGCINTPTR poffDisp, PRTDBGLINE pLine);
 
-    /**
-     * Adds a symbol to the module (optional).
-     *
-     * This method is used to implement DBGFR3SymbolAdd.
-     *
-     * @returns VBox status code.
-     * @retval  VERR_NOT_SUPPORTED if the interpreter doesn't support this feature.
-     *
-     * @param   pMod        Pointer to the module structure.
-     * @param   pszSymbol   The symbol name.
-     * @param   iSeg        The segment number (0-based). RTDBGMOD_SEG_RVA can be used.
-     * @param   off         The offset into the segment.
-     * @param   cbSymbol    The area covered by the symbol. 0 is fine.
-     */
-    DECLCALLBACKMEMBER(int, pfnSymbolAdd)(PRTDBGMODINT pMod, const char *pszSymbol, uint32_t iSeg, RTGCUINTPTR off, RTUINT cbSymbol);
-
     /** For catching initialization errors (RTDBGMODVTDBG_MAGIC). */
     uint32_t    u32EndMagic;
 } RTDBGMODVTDBG;
@@ -213,29 +214,37 @@ typedef RTDBGMODVTDBG const *PCRTDBGMODVTDBG;
 typedef struct RTDBGMODINT
 {
     /** Magic value (RTDBGMOD_MAGIC). */
-    uint32_t        u32Magic;
-    /** The number of address spaces this module is currently linked into.
+    uint32_t            u32Magic;
+    /** The number of reference there are to this module.
      * This is used to perform automatic cleanup and sharing. */
-    uint32_t        cLinks;
+    uint32_t volatile   cRefs;
     /** The module name (short). */
-    const char     *pszName;
+    char               *pszName;
     /** The module filename. Can be NULL. */
-    const char     *pszImgFile;
+    char               *pszImgFile;
     /** The debug info file (if external). Can be NULL. */
-    const char     *pszDbgFile;
+    char               *pszDbgFile;
+
+    /** Critical section serializing access to the module. */
+    RTCRITSECT          CritSect;
 
     /** The method table for the executable image interpreter. */
-    PCRTDBGMODVTIMG pImgVt;
+    PCRTDBGMODVTIMG     pImgVt;
     /** Pointer to the private data of the executable image interpreter. */
-    void           *pvImgPriv;
+    void               *pvImgPriv;
 
     /** The method table for the debug info interpreter. */
-    PCRTDBGMODVTDBG pDbgVt;
+    PCRTDBGMODVTDBG     pDbgVt;
     /** Pointer to the private data of the debug info interpreter. */
-    void           *pvDbgPriv;
+    void               *pvDbgPriv;
 
 } RTDBGMODINT;
+/** Pointer to an debug module structure.  */
+typedef RTDBGMODINT *PRTDBGMODINT;
 
+
+/** Default symbol container implementation. */
+extern RTDBGMODVTDBG const g_rtDbgModVtDbgContainer;
 
 /** @} */
 

@@ -186,9 +186,10 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
         ASMAtomicDecU32(&pEventInt->cWaiters);
         ASMAtomicIncU32(&pEventInt->cWaking);
         thread_wakeup_prim((event_t)pEventInt, TRUE /* one thread */, THREAD_AWAKENED);
-        /** @todo this isn't safe. a scheduling interrupt on the other cpu while we're in here
+		/** @todo this isn't safe. a scheduling interrupt on the other cpu while we're in here
          * could cause the thread to be timed out before we manage to wake it up and the event
-         * ends up in the wrong state. ditto for posix signals. */
+         * ends up in the wrong state. ditto for posix signals. 
+		 * Update: check the return code; it will return KERN_NOT_WAITING if no one is around. */
     }
     else
         ASMAtomicXchgU8(&pEventInt->fSignaled, true);
