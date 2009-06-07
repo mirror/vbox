@@ -32,21 +32,159 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/dbg.h>
-#include <iprt/asm.h>
-#include <iprt/avl.h>
-#include <iprt/string.h>
 
-#include <iprt/mem.h>
-#include <iprt/err.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/avl.h>
+#include <iprt/err.h>
+#include <iprt/initterm.h>
+#include <iprt/mem.h>
+#include <iprt/once.h>
 #include <iprt/param.h>
+#include <iprt/semaphore.h>
+#include <iprt/string.h>
 #include "internal/dbgmod.h"
 #include "internal/magics.h"
 
 
-RTDECL(int)         RTDbgModCreate(PRTDBGMOD phDbgMod, const char *pszName, RTUINTPTR cb, uint32_t fFlags)
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+/** Debug info interpreter regisration record. */
+typedef struct RTDBGMODREGDBG
 {
-    return VERR_NOT_IMPLEMENTED;
+    /** Pointer to the next record. */
+    struct RTDBGMODREGDBG  *pNext;
+    /** Pointer to the virtual function table for the interpreter.  */
+    PCRTDBGMODVTDBG         pVt;
+    /** Usage counter.  */
+    uint32_t volatile       cUsers;
+} RTDBGMODREGDBG;
+typedef RTDBGMODREGDBG *PRTDBGMODREGDBG;
+
+/** Image interpreter regisration record. */
+typedef struct RTDBGMODREGIMG
+{
+    /** Pointer to the next record. */
+    struct RTDBGMODREGIMG  *pNext;
+    /** Pointer to the virtual function table for the interpreter.  */
+    PCRTDBGMODVTIMG         pVt;
+    /** Usage counter.  */
+    uint32_t volatile       cUsers;
+} RTDBGMODREGIMG;
+typedef RTDBGMODREGIMG *PRTDBGMODREGIMG;
+
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** Validates a debug module handle and returns rc if not valid. */
+#define RTDBGMOD_VALID_RETURN_RC(pDbgMod, rc) \
+    do { \
+        AssertPtrReturn((pDbgMod), (rc)); \
+        AssertReturn((pDbgMod)->u32Magic == RTDBGMOD_MAGIC, (rc)); \
+        AssertReturn((pDbgMod)->cRefs > 0, (rc)); \
+    } while (0)
+
+/** Locks the debug module. */
+#define RTDBGMOD_LOCK(pDbgMod) \
+    do { \
+        int rcLock = RTCritSectEnter(&(pDbgMod)->CritSect); \
+        AssertRC(rcLock); \
+    } while (0)
+
+/** Unlocks the debug module. */
+#define RTDBGMOD_UNLOCK(pDbgMod) \
+    do { \
+        int rcLock = RTCritSectLeave(&(pDbgMod)->CritSect); \
+        AssertRC(rcLock); \
+    } while (0)
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/** Init once object for lazy registration of the built-in image and debug
+ * info interpreters. */
+static RTONCE           g_rtDbgModOnce = RTONCE_INITIALIZER;
+/** Read/Write semaphore protecting the list of registered interpreters.  */
+static RTSEMRW          g_hDbgModRWSem = NIL_RTSEMRW;
+/** List of registered image interpreters.  */
+static RTDBGMODREGIMG   g_pImgHead;
+/** List of registered debug infor interpreters.  */
+static RTDBGMODREGDBG   g_pDbgHead;
+
+
+
+/**
+ * Do-once callback that initializes the read/write semaphore and registers
+ * the built-in interpreters.
+ *
+ * @returns IPRT status code.
+ * @param   pvUser1     NULL.
+ * @param   pvUser2     NULL.
+ */
+static DECLCALLBACK(int) rtDbgModInitOnce(void *pvUser1, void *pvUser2)
+{
+    int rc = RTSemRWCreate(&g_hDbgModRWSem);
+    AssertRCReturn(rc, rc);
+
+    /* Register them. */
+
+    return rc;
+}
+
+
+DECLINLINE(int) rtDbgModLazyInit(void)
+{
+    return RTOnce(&g_rtDbgModOnce, rtDbgModInitOnce, NULL, NULL);
+}
+
+
+RTDECL(int)  RTDbgModCreate(PRTDBGMOD phDbgMod, const char *pszName, RTUINTPTR cb, uint32_t fFlags)
+{
+    /*
+     * Input validation and lazy initialization.
+     */
+    AssertPtrReturn(phDbgMod, VERR_INVALID_POINTER);
+    *phDbgMod = NIL_RTDBGMOD;
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+    AssertReturn(*pszName, VERR_INVALID_PARAMETER);
+    AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
+    AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER);
+
+    int rc = rtDbgModLazyInit();
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Allocate a new module instance.
+     */
+    PRTDBGMODINT pDbgMod = (PRTDBGMODINT)RTMemAllocZ(sizeof(*pDbgMod));
+    if (!pDbgMod)
+        return VERR_NO_MEMORY;
+    pDbgMod->u32Magic = RTDBGMOD_MAGIC;
+    pDbgMod->cRefs = 1;
+    rc = RTCritSectInit(&pDbgMod->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        pDbgMod->pszName = RTStrDup(pszName);
+        if (pDbgMod->pszName)
+        {
+            pDbgMod->pDbgVt = &g_rtDbgModVtDbgContainer;
+            rc = pDbgMod->pDbgVt->pfnTryOpen(pDbgMod);
+            if (RT_SUCCESS(rc))
+            {
+                *phDbgMod = pDbgMod;
+                return rc;
+            }
+            RTStrFree(pDbgMod->pszName);
+        }
+        RTCritSectDelete(&pDbgMod->CritSect);
+    }
+
+    RTMemFree(pDbgMod);
+    return rc;
 }
 
 RTDECL(int)         RTDbgModCreateFromImage(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, uint32_t fFlags)
@@ -59,25 +197,93 @@ RTDECL(int)         RTDbgModCreateFromMap(PRTDBGMOD phDbgMod, const char *pszFil
     return VERR_NOT_IMPLEMENTED;
 }
 
-RTDECL(int)         RTDbgModDestroy(RTDBGMOD hDbgMod)
+
+/**
+ * Destroys an module after the reference count has reached zero.
+ *
+ * @param   pDbgMod     The module instance.
+ */
+static void  rtDbgModDestroy(PRTDBGMODINT pDbgMod)
 {
-    return VERR_NOT_IMPLEMENTED;
+    /*
+     * Close the debug info interpreter first, then the image interpret.
+     */
+    RTCritSectEnter(&pDbgMod->CritSect); /* paranoia  */
+    if (pDbgMod->pDbgVt)
+        pDbgMod->pDbgVt->pfnClose(pDbgMod);
+    if (pDbgMod->pImgVt)
+        pDbgMod->pImgVt->pfnClose(pDbgMod);
+
+    /*
+     * Free the resources.
+     */
+    ASMAtomicWriteU32(&pDbgMod->u32Magic, ~RTDBGMOD_MAGIC);
+    RTStrFree(pDbgMod->pszName);
+    RTStrFree(pDbgMod->pszImgFile);
+    RTStrFree(pDbgMod->pszDbgFile);
+    RTCritSectLeave(&pDbgMod->CritSect); /* paranoia  */
+    RTCritSectDelete(&pDbgMod->CritSect);
+    RTMemFree(pDbgMod);
 }
 
-RTDECL(uint32_t)    RTDbgModRetain(RTDBGMOD hDbgMod)
+
+/**
+ * Retains another reference to the module.
+ *
+ * @returns New reference count, UINT32_MAX on invalid handle (asserted).
+ *
+ * @param   hDbgMod         The module handle.
+ *
+ * @remarks Will not take any locks.
+ */
+RTDECL(uint32_t) RTDbgModRetain(RTDBGMOD hDbgMod)
 {
-    return 0;
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, UINT32_MAX);
+    return ASMAtomicIncU32(&pDbgMod->cRefs);
 }
 
-RTDECL(uint32_t)    RTDbgModRelease(RTDBGMOD hDbgMod)
+
+/**
+ * Release a reference to the module.
+ *
+ * When the reference count reaches zero, the module is destroyed.
+ *
+ * @returns New reference count, UINT32_MAX on invalid handle (asserted).
+ *
+ * @param   hDbgMod         The module handle. The NIL handle is quietly ignored
+ *                          and 0 is returned.
+ *
+ * @remarks Will not take any locks.
+ */
+RTDECL(uint32_t) RTDbgModRelease(RTDBGMOD hDbgMod)
 {
-    return 0;
+    if (hDbgMod == NIL_RTDBGMOD)
+        return 0;
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, UINT32_MAX);
+
+    uint32_t cRefs = ASMAtomicDecU32(&pDbgMod->cRefs);
+    if (!cRefs)
+        rtDbgModDestroy(pDbgMod);
+    return cRefs;
 }
 
+
+/**
+ * Gets the module name.
+ *
+ * @returns Pointer to a read only string containing the name.
+ *
+ * @param   hDbgMod             The module handle.
+ */
 RTDECL(const char *) RTDbgModName(RTDBGMOD hDbgMod)
 {
-    return NULL;
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, NULL);
+    return pDbgMod->pszName;
 }
+
 
 RTDECL(RTUINTPTR)   RTDbgModImageSize(RTDBGMOD hDbgMod)
 {
