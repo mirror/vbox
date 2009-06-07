@@ -243,8 +243,7 @@ typedef struct RTDBGMODINT
 typedef RTDBGMODINT *PRTDBGMODINT;
 
 
-/** Default symbol container implementation. */
-extern RTDBGMODVTDBG const g_rtDbgModVtDbgContainer;
+int rtDbgModContainerCreate(PRTDBGMODINT pMod, RTUINTPTR cb);
 
 /** @} */
 
