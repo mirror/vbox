@@ -45,23 +45,35 @@
 # include <sys/cdefs.h>
 #else
 
- /** @def __BEGIN_DECLS
-  * Used to start a block of function declarations which are shared
-  * between C and C++ program.
-  */
+/** @def RT_BEGIN_DECLS
+ * Used to start a block of function declarations which are shared
+ * between C and C++ program.
+ */
 
- /** @def __END_DECLS
-  * Used to end a block of function declarations which are shared
-  * between C and C++ program.
-  */
+/** @def RT_END_DECLS
+ * Used to end a block of function declarations which are shared
+ * between C and C++ program.
+ */
 
- #if defined(__cplusplus)
- # define __BEGIN_DECLS extern "C" {
- # define __END_DECLS   }
- #else
- # define __BEGIN_DECLS
- # define __END_DECLS
- #endif
+/** @def __BEGIN_DECLS
+ * @deprecated  Use RT_BEGIN_DECLS
+ */
+
+/** @def __END_DECLS
+ * @deprecated  Use RT_END_DECLS
+ */
+
+# if defined(__cplusplus)
+#  define RT_BEGIN_DECLS extern "C" {
+#  define __BEGIN_DECLS  extern "C" {
+#  define RT_END_DECLS   }
+#  define __END_DECLS    }
+# else
+#  define RT_BEGIN_DECLS
+#  define __BEGIN_DECLS
+#  define RT_END_DECLS
+#  define __END_DECLS
+# endif
 
 #endif
 
