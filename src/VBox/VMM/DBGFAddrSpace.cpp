@@ -774,9 +774,9 @@ VMMR3DECL(int) DBGFR3AsLoadMap(PVM pVM, RTDBGAS hDbgAs, const char *pszFilename,
     Data.uSubtrahend = uSubtrahend;
     Data.fFlags = 0;
     Data.hMod = NIL_RTDBGMOD;
-    int rc = dbgfR3AsSearchEnvPath(pszFilename, "VBOXDBG_MAP_PATH", dbgfR3AsLoadImageOpen, &Data);
+    int rc = dbgfR3AsSearchEnvPath(pszFilename, "VBOXDBG_MAP_PATH", dbgfR3AsLoadMapOpen, &Data);
     if (RT_FAILURE(rc))
-        rc = dbgfR3AsSearchEnvPath(pszFilename, "VBOXDBG_PATH", dbgfR3AsLoadImageOpen, &Data);
+        rc = dbgfR3AsSearchEnvPath(pszFilename, "VBOXDBG_PATH", dbgfR3AsLoadMapOpen, &Data);
     if (RT_SUCCESS(rc))
     {
         rc = DBGFR3AsLinkModule(pVM, hRealAS, Data.hMod, pModAddress, iModSeg, 0);
