@@ -195,7 +195,7 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	    cd ./debian/builddir/bin/sdk/installer && \
 	    python ./vboxapisetup.py install --root $(prefix)
 	rm -rf $(archdir)/sdk/installer
-	mv $(archdir)/vboxshell.py $(prefix)/usr/share/$(package)
+	mv $(archdir)/vboxshell.py $(prefix)/usr/lib/$(package)
 	mv $(archdir)/sdk $(prefix)/usr/share/$(package)
 	install -D -g 0 -o 0 -m 644 debian/VBox.sh $(prefix)/usr/bin/VBox
 	mv $(archdir)/VBoxSysInfo.sh $(prefix)/usr/share/$(package)
