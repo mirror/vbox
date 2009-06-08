@@ -25,7 +25,7 @@
 #include <iprt/net.h>
 #include <VBox/intnet.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 
 /**
@@ -67,7 +67,7 @@ int     VBoxNetIntIfRingWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, siz
 int     VBoxNetIntIfSend(PSUPDRVSESSION pSession, INTNETIFHANDLE hIf, PINTNETBUF pBuf, size_t cSegs, PCINTNETSEG paSegs, bool fFlush);
 
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 
