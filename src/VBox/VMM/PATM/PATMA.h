@@ -138,7 +138,7 @@ typedef struct
 } PATCHJUMPTABLE, *PPATCHJUMPTABLE;
 
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 extern PATCHASMRECORD PATMCliRecord;
 extern PATCHASMRECORD PATMStiRecord;
@@ -186,6 +186,6 @@ extern PATCHASMRECORD PATMMovFromSSRecord;
 
 extern uint32_t       PATMInterruptFlag;
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif

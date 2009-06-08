@@ -35,7 +35,7 @@
 
 #include <iprt/stdarg.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** @defgroup grp_rt_req    RTReq - Request Packet Management
  * @ingroup grp_rt
@@ -368,7 +368,7 @@ RTDECL(int) RTReqWait(PRTREQ pReq, unsigned cMillies);
 
 /** @} */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

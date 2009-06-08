@@ -39,7 +39,7 @@
 #undef RT_MAX
 #include <os2ddk/devhlp.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 extern PCDOSTABLE   g_pDosTable;
 extern PCDOSTABLE2  g_pDosTable2;
@@ -50,6 +50,6 @@ RTR0DECL(void *) RTR0Os2Virt2Flat(RTFAR16 fp);
 DECLASM(int) RTR0Os2DHQueryDOSVar(uint8_t iVar, uint16_t iSub, PRTFAR16 pfp);
 DECLASM(int) RTR0Os2DHVMGlobalToProcess(ULONG fFlags, PVOID pvR0, ULONG cb, PPVOID ppvR3);
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif

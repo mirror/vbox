@@ -36,7 +36,7 @@
 #include <iprt/stdarg.h>
 
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** @defgroup grp_rt_mp RTLinuxSysfs - Linux sysfs
  * @ingroup grp_rt
@@ -179,7 +179,7 @@ RTDECL(ssize_t) RTLinuxSysFsGetLinkDest(char *pszBuf, size_t cchBuf, const char 
 
 /** @} */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

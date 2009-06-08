@@ -31,7 +31,7 @@
 #include <VBox/pgm.h>
 #include <VBox/hwacc_svm.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** @defgroup grp_svm_int  Internal
  * @ingroup grp_svm
@@ -223,7 +223,7 @@ DECLASM(void) SVMR0InvlpgA(RTGCPTR pPageGC, uint32_t u32ASID);
 
 /** @} */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

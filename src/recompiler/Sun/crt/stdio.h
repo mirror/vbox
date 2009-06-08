@@ -37,7 +37,7 @@
 # error "LOG_USE_C99 isn't defined."
 #endif
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 typedef struct FILE FILE;
 
@@ -71,7 +71,7 @@ DECLINLINE(int) fprintf(FILE *ignored, const char *pszFormat, ...)
 # error "DEBUG_TMP_LOGGING doesn't work with the Sun/crt/stdio.h wrapper."
 #endif
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

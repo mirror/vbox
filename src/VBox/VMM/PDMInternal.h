@@ -34,7 +34,7 @@
 # include <iprt/thread.h>
 #endif
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 
 /** @defgroup grp_pdm_int       Internal
@@ -289,9 +289,9 @@ typedef struct PDMTHREADINT
 #ifdef ___VBox_pdm_h
 # error "Invalid header PDM order. Include PDMInternal.h before VBox/pdm.h!"
 #endif
-RT_END_DECLS
+RT_C_DECLS_END
 #include <VBox/pdm.h>
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /**
  * PDM Logical Unit.
@@ -1041,6 +1041,6 @@ void        pdmUnlock(PVM pVM);
 
 /** @} */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif

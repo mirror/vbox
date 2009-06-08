@@ -769,7 +769,7 @@ typedef struct MMUSERPERVM
 typedef MMUSERPERVM *PMMUSERPERVM;
 
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 
 int  mmR3UpdateReservation(PVM pVM);
@@ -814,7 +814,7 @@ RTHCPHYS mmPagePoolPtr2Phys(PMMPAGEPOOL pPool, void *pv);
  */
 void *mmPagePoolPhys2Ptr(PMMPAGEPOOL pPool, RTHCPHYS HCPhys);
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 /** @} */
 

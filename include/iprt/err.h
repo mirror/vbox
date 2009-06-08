@@ -33,7 +33,7 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** @defgroup grp_rt_err            RTErr - Status Codes
  * @ingroup grp_rt
@@ -1024,7 +1024,7 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 
 /** @} */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

@@ -34,7 +34,7 @@
 #include <VBox/ssm.h>
 #include <VBox/cfgm.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** @defgroup grp_pdm_services  The PDM Services API
  * @ingroup grp_pdm
@@ -332,6 +332,6 @@ typedef DECLCALLBACK(int) FNPDMVBOXSERVICESREGISTER(PPDMSRVREGCB pCallbacks, uin
 
 /** @} */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif

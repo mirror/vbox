@@ -51,7 +51,7 @@
 #endif
 
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 /* Private interface in 10.3 and later. */
 typedef int CGSConnection;
 typedef enum
@@ -63,7 +63,7 @@ typedef enum
 extern CGSConnection _CGSDefaultConnection(void);
 extern CGError CGSGetGlobalHotKeyOperatingMode(CGSConnection Connection, CGSGlobalHotKeyOperatingMode *enmMode);
 extern CGError CGSSetGlobalHotKeyOperatingMode(CGSConnection Connection, CGSGlobalHotKeyOperatingMode enmMode);
-RT_END_DECLS
+RT_C_DECLS_END
 
 
 /*******************************************************************************

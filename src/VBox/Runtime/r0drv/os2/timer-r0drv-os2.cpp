@@ -100,11 +100,11 @@ static uint32_t volatile    g_u32ChangeNo;
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 DECLASM(void) rtTimerOs2Tick(void);
 DECLASM(int) rtTimerOs2Arm(void);
 DECLASM(int) rtTimerOs2Dearm(void);
-RT_END_DECLS
+RT_C_DECLS_END
 
 
 

@@ -69,13 +69,13 @@ typedef struct RTCState RTCState;
 *   Internal Functions                                                         *
 *******************************************************************************/
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 PDMBOTHCBDECL(int) rtcIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
 PDMBOTHCBDECL(int) rtcIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
 PDMBOTHCBDECL(void) rtcTimerPeriodic(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser);
 PDMBOTHCBDECL(void) rtcTimerSecond(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser);
 PDMBOTHCBDECL(void) rtcTimerSecond2(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser);
-RT_END_DECLS
+RT_C_DECLS_END
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
 
 

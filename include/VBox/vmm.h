@@ -37,7 +37,7 @@
 #include <VBox/log.h>
 #include <iprt/stdarg.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** @defgroup grp_vmm       The Virtual Machine Monitor API
  * @{
@@ -348,7 +348,7 @@ VMMRCDECL(void)     VMMGCLogFlushIfFull(PVM pVM);
 
 
 /** @} */
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

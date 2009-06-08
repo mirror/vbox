@@ -39,7 +39,7 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 static DECLCALLBACK(int) dbgfR3BpSetReg(PVM pVM, PCDBGFADDRESS pAddress, uint64_t *piHitTrigger, uint64_t *piHitDisable,
                                         uint8_t u8Type, uint8_t cb, PRTUINT piBp);
 static DECLCALLBACK(int) dbgfR3BpSetInt3(PVM pVM, PCDBGFADDRESS pAddress, uint64_t *piHitTrigger, uint64_t *piHitDisable, PRTUINT piBp);
@@ -52,7 +52,7 @@ static int dbgfR3BpRegArm(PVM pVM, PDBGFBP pBp);
 static int dbgfR3BpRegDisarm(PVM pVM, PDBGFBP pBp);
 static int dbgfR3BpInt3Arm(PVM pVM, PDBGFBP pBp);
 static int dbgfR3BpInt3Disarm(PVM pVM, PDBGFBP pBp);
-RT_END_DECLS
+RT_C_DECLS_END
 
 
 

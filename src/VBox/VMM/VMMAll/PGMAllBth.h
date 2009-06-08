@@ -24,7 +24,7 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault);
 PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage);
 PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned cPages, unsigned uErr);
@@ -41,7 +41,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVMCPU pVCpu, PPGMPOOLPA
 #endif
 PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
 PGM_BTH_DECL(int, UnmapCR3)(PVMCPU pVCpu);
-RT_END_DECLS
+RT_C_DECLS_END
 
 
 /* Filter out some illegal combinations of guest and shadow paging, so we can remove redundant checks inside functions. */
@@ -3447,9 +3447,9 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
  * @param   cMaxDepth   Number of levels to dump.
  * @param   pHlp        Pointer to the output functions.
  */
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 VMMR3DECL(int) PGMR3DumpHierarchyHC(PVM pVM, uint32_t cr3, uint32_t cr4, bool fLongMode, unsigned cMaxDepth, PCDBGFINFOHLP pHlp);
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

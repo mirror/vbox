@@ -996,12 +996,12 @@ typedef struct E1kState_st E1KSTATE;
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
 /* Forward declarations ******************************************************/
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 PDMBOTHCBDECL(int) e1kMMIORead (PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
 PDMBOTHCBDECL(int) e1kMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
 PDMBOTHCBDECL(int) e1kIOPortIn (PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port, uint32_t *pu32, unsigned cb);
 PDMBOTHCBDECL(int) e1kIOPortOut(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port, uint32_t u32, unsigned cb);
-RT_END_DECLS
+RT_C_DECLS_END
 
 static int e1kRegReadUnimplemented (E1KSTATE* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
 static int e1kRegWriteUnimplemented(E1KSTATE* pState, uint32_t offset, uint32_t index, uint32_t u32Value);

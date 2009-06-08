@@ -33,7 +33,7 @@
 
 #include <iprt/file.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /**
  * Adjusts and validates the flags.
@@ -47,7 +47,7 @@ RT_BEGIN_DECLS
  */
 int rtFileRecalcAndValidateFlags(unsigned *pfOpen);
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

@@ -39,7 +39,7 @@
  * @{
  */
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 
 /**
@@ -302,7 +302,7 @@ RTDECL(int) RTLdrEnumSymbols(RTLDRMOD hLdrMod, unsigned fFlags, const void *pvBi
 #define RTLDR_ENUM_SYMBOL_FLAGS_ALL    RT_BIT(1)
 /** @} */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 /** @} */
 

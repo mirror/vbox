@@ -38,7 +38,7 @@
 #include <setjmp.h>
 #endif
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 
 /** CPU mode flags (DISCPUSTATE::mode).
@@ -758,7 +758,7 @@ DISDECL(size_t) DISFormatGasEx( PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
 /** @todo DISAnnotate(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf, register reader, memory reader); */
 
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

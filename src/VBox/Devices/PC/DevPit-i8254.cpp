@@ -155,7 +155,7 @@ typedef struct PITState
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 PDMBOTHCBDECL(int) pitIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
 PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
 PDMBOTHCBDECL(int) pitIOPortSpeakerRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
@@ -163,7 +163,7 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 PDMBOTHCBDECL(int) pitIOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
 static void pit_irq_timer_update(PITChannelState *s, uint64_t current_time, uint64_t now);
 #endif
-RT_END_DECLS
+RT_C_DECLS_END
 
 
 

@@ -44,9 +44,9 @@
 #include <iprt/alloca.h>
 
 #include <sys/systm.h>
-RT_BEGIN_DECLS /* Buggy 10.4 headers, fixed in 10.5. */
+RT_C_DECLS_BEGIN /* Buggy 10.4 headers, fixed in 10.5. */
 #include <sys/kpi_mbuf.h>
-RT_END_DECLS
+RT_C_DECLS_END
 
 #include <net/ethernet.h>
 #include <net/if_ether.h>
@@ -95,10 +95,10 @@ RT_END_DECLS
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 static kern_return_t    VBoxNetAdpDarwinStart(struct kmod_info *pKModInfo, void *pvData);
 static kern_return_t    VBoxNetAdpDarwinStop(struct kmod_info *pKModInfo, void *pvData);
-RT_END_DECLS
+RT_C_DECLS_END
 
 static int VBoxNetAdpDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess);
 static int VBoxNetAdpDarwinClose(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess);
@@ -110,7 +110,7 @@ static int VBoxNetAdpDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFla
 /**
  * Declare the module stuff.
  */
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 extern kern_return_t _start(struct kmod_info *pKModInfo, void *pvData);
 extern kern_return_t _stop(struct kmod_info *pKModInfo, void *pvData);
 
@@ -118,7 +118,7 @@ KMOD_EXPLICIT_DECL(VBoxNetAdp, VBOX_VERSION_STRING, _start, _stop)
 DECLHIDDEN(kmod_start_func_t *) _realmain = VBoxNetAdpDarwinStart;
 DECLHIDDEN(kmod_stop_func_t  *) _antimain = VBoxNetAdpDarwinStop;
 DECLHIDDEN(int)                 _kext_apple_cc = __APPLE_CC__;
-RT_END_DECLS
+RT_C_DECLS_END
 
 /**
  * The (common) global data.

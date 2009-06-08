@@ -32,7 +32,7 @@
 
 #include <iprt/cdefs.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /**
  * Global list of guest operating system types.
@@ -114,6 +114,6 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_32BIT_HACK = 0x7fffffff
 } VBOXOSTYPE;
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif

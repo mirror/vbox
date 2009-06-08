@@ -35,7 +35,7 @@
 #include "internal/process.h"
 #include "internal/thread.h"
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /**
  * Calculate the scheduling properties for all the threads in the default
@@ -46,6 +46,6 @@ RT_BEGIN_DECLS
  */
 int rtSchedNativeCalcDefaultPriority(RTTHREADTYPE enmType);
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif

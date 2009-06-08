@@ -141,37 +141,37 @@ void vbglUnlockLinear (void *pvCtx, void *pv, uint32_t u32Size)
 #endif
 
 #ifdef RT_OS_LINUX
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 extern DECLVBGL(void *) vboxadd_cmc_open (void);
 extern DECLVBGL(void) vboxadd_cmc_close (void *);
 extern DECLVBGL(int) vboxadd_cmc_call (void *opaque, uint32_t func, void *data);
-RT_END_DECLS
+RT_C_DECLS_END
 #endif /* RT_OS_LINUX */
 
 #ifdef RT_OS_OS2
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 /*
  * On OS/2 we'll do the connecting in the assembly code of the
  * client driver, exporting a g_VBoxGuestIDC symbol containing
  * the connection information obtained from the 16-bit IDC.
  */
 extern VBOXGUESTOS2IDCCONNECT g_VBoxGuestIDC;
-RT_END_DECLS
+RT_C_DECLS_END
 #endif
 
 #ifdef RT_OS_SOLARIS
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 extern DECLVBGL(void *) VBoxGuestSolarisServiceOpen (uint32_t *pu32Version);
 extern DECLVBGL(void) VBoxGuestSolarisServiceClose (void *pvOpaque);
 extern DECLVBGL(int) VBoxGuestSolarisServiceCall (void *pvOpaque, unsigned int iCmd, void *pvData, size_t cbSize, size_t *pcbReturn);
-RT_END_DECLS
+RT_C_DECLS_END
 
 #elif defined (RT_OS_FREEBSD)
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 extern DECLVBGL(void *) VBoxGuestFreeBSDServiceOpen (uint32_t *pu32Version);
 extern DECLVBGL(void) VBoxGuestFreeBSDServiceClose (void *pvOpaque);
 extern DECLVBGL(int) VBoxGuestFreeBSDServiceCall (void *pvOpaque, unsigned int iCmd, void *pvData, size_t cbSize, size_t *pcbReturn);
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

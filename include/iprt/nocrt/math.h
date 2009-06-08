@@ -209,7 +209,7 @@ extern int RT_NOCRT(signgam);
  * effect of raising floating-point exceptions, so they are not declared
  * as __pure2.  In C99, FENV_ACCESS affects the purity of these functions.
  */
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 /*
  * ANSI/POSIX
  */
@@ -558,7 +558,7 @@ long double RT_NOCRT(ynl)(int, long double);
 long double RT_NOCRT(lgammal_r)(long double,int *);
 long double RT_NOCRT(gammal)(long double);
 #endif
-RT_END_DECLS
+RT_C_DECLS_END
 
 
 

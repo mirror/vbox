@@ -40,9 +40,9 @@
 
 #include "internal-r0drv-nt.h"
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 NTSTATUS NTAPI ZwYieldExecution(void);
-RT_END_DECLS
+RT_C_DECLS_END
 
 
 RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void)

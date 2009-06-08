@@ -35,7 +35,7 @@
 #include <iprt/assert.h>
 #include "internal/magics.h"
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** @defgroup grp_rt_memobj_int Internals.
  * @ingroup grp_rt_memobj
@@ -426,7 +426,7 @@ void rtR0MemObjDelete(PRTR0MEMOBJINTERNAL pMem);
 
 /** @} */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

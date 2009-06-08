@@ -63,7 +63,7 @@ static PSUPDRVSESSION       g_apSessionHashTab[19];
 /** Calculates the index into g_apSessionHashTab.*/
 #define SESSION_HASH(sfn) ((sfn) % RT_ELEMENTS(g_apSessionHashTab))
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 /* Defined in SUPDrvA-os2.asm */
 extern uint16_t             g_offLogHead;
 extern uint16_t volatile    g_offLogTail;
@@ -73,7 +73,7 @@ extern char                 g_szLog[];
 extern char                 g_szInitText[];
 extern uint16_t             g_cchInitText;
 extern uint16_t             g_cchInitTextMax;
-RT_END_DECLS
+RT_C_DECLS_END
 
 
 /*******************************************************************************

@@ -383,7 +383,7 @@ typedef struct CPUMCPU
 /** Pointer to the CPUMCPU instance data residing in the shared VMCPU structure. */
 typedef CPUMCPU *PCPUMCPU;
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 DECLASM(int)      cpumHandleLazyFPUAsm(PCPUMCPU pCPUM);
 
@@ -404,7 +404,7 @@ DECLASM(void)     cpumR0LoadDRx(uint64_t const *pa4Regs);
 DECLASM(void)     cpumR0SaveDRx(uint64_t *pa4Regs);
 #endif
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 /** @} */
 

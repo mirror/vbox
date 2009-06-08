@@ -146,7 +146,7 @@ typedef struct VBOXGUESTSESSION
 } VBOXGUESTSESSION;
 
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 int  VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase, void *pvMMIOBase, uint32_t cbMMIO, VBOXOSTYPE enmOSType);
 void VBoxGuestDeleteDevExt(PVBOXGUESTDEVEXT pDevExt);
@@ -161,7 +161,7 @@ int  VBoxGuestCommonIOCtlFast(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBO
 int  VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
                           void *pvData, size_t cbData, size_t *pcbDataReturned);
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

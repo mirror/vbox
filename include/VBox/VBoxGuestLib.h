@@ -68,7 +68,7 @@
 
 typedef uint32_t VBGLIOPORT;
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 #ifdef VBGL_VBOXGUEST
 
@@ -325,7 +325,7 @@ DECLVBGL(void) VbglPhysHeapFree (void *p);
 
 DECLVBGL(int) VbglQueryVMMDevMemory (VMMDevMemory **ppVMMDevMemory);
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 /** @} */
 

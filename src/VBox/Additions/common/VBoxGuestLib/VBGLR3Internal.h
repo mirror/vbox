@@ -27,7 +27,7 @@
 #endif
 #include <VBox/VBoxGuest.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 int     vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData);
 int     vbglR3GRAlloc(VMMDevRequestHeader **ppReq, uint32_t cb, VMMDevRequestType enmReqType);
@@ -92,6 +92,6 @@ DECLINLINE(void) VbglHGCMParmPtrSetString(HGCMFunctionParameter *pParm, const ch
 
 #endif /* ___iprt_string_h */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif

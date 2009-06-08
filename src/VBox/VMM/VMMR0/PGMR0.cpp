@@ -30,7 +30,7 @@
 #include <VBox/err.h>
 #include <iprt/assert.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_32BIT_PROT(name)
 #include "PGMR0Bth.h"
 #undef PGM_BTH_NAME
@@ -47,7 +47,7 @@ RT_BEGIN_DECLS
 #include "PGMR0Bth.h"
 #undef PGM_BTH_NAME
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 
 /**

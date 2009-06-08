@@ -115,7 +115,7 @@ typedef struct
 typedef DWORD (WINAPI* fnWTSGetActiveConsoleSessionId)();
 #endif
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 extern char *g_pszProgName;
 extern int g_cVerbosity;
@@ -154,7 +154,7 @@ extern DWORD VboxServiceVMInfoWinGetLUIDsFromProcesses(PLUID *ppLuid);
 #endif /* VBOX_WITH_GUEST_PROPS */
 #endif /* RT_OS_WINDOWS */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

@@ -26,12 +26,12 @@
 
 # include <ApplicationServices/ApplicationServices.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 void initSharedAVManager();
 void setImageRef (CGImageRef aImage);
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

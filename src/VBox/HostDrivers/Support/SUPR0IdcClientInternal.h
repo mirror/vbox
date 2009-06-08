@@ -42,18 +42,18 @@
 #  define _InterlockedCompareExchange    _InterlockedCompareExchange_StupidDDKVsCompilerCrap
 #  define _InterlockedAddLargeStatistic  _InterlockedAddLargeStatistic_StupidDDKVsCompilerCrap
 #  pragma warning(disable : 4163)
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 #  include <ntddk.h>
-RT_END_DECLS
+RT_C_DECLS_END
 #  pragma warning(default : 4163)
 #  undef  _InterlockedExchange
 #  undef  _InterlockedExchangeAdd
 #  undef  _InterlockedCompareExchange
 #  undef  _InterlockedAddLargeStatistic
 # else
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 #  include <ntddk.h>
-RT_END_DECLS
+RT_C_DECLS_END
 # endif
 #endif /* RT_OS_WINDOWS */
 
@@ -79,12 +79,12 @@ struct SUPDRVIDCHANDLEPRIVATE
 #include "SUPDrvIDC.h"
 AssertCompile(RT_SIZEOFMEMB(SUPDRVIDCHANDLE, apvPadding) >= sizeof(struct SUPDRVIDCHANDLEPRIVATE));
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 PSUPDRVIDCHANDLE supR0IdcGetHandleFromSession(PSUPDRVSESSION pSession);
 int VBOXCALL supR0IdcNativeOpen(PSUPDRVIDCHANDLE pHandle, PSUPDRVIDCREQCONNECT pReq);
 int VBOXCALL supR0IdcNativeClose(PSUPDRVIDCHANDLE pHandle, PSUPDRVIDCREQHDR pReq);
 int VBOXCALL supR0IdcNativeCall(PSUPDRVIDCHANDLE pHandle, uint32_t iReq, PSUPDRVIDCREQHDR pReq);
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

@@ -396,7 +396,7 @@ typedef struct AHCIATACONTROLLER
 /*******************************************************************************
  *  Internal Functions                                                         *
  ******************************************************************************/
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 int ataControllerIOPortWrite1(PAHCIATACONTROLLER pCtl, RTIOPORT Port, uint32_t u32, unsigned cb);
 int ataControllerIOPortRead1(PAHCIATACONTROLLER pCtl, RTIOPORT Port, uint32_t *u32, unsigned cb);
 int ataControllerIOPortWriteStr1(PAHCIATACONTROLLER pCtl, RTIOPORT Port, RTGCPTR *pGCPtrSrc, PRTGCUINTREG pcTransfer, unsigned cb);
@@ -405,7 +405,7 @@ int ataControllerIOPortWrite2(PAHCIATACONTROLLER pCtl, RTIOPORT Port, uint32_t u
 int ataControllerIOPortRead2(PAHCIATACONTROLLER pCtl, RTIOPORT Port, uint32_t *u32, unsigned cb);
 int ataControllerBMDMAIOPortRead(PAHCIATACONTROLLER pCtl, RTIOPORT Port, uint32_t *pu32, unsigned cb);
 int ataControllerBMDMAIOPortWrite(PAHCIATACONTROLLER pCtl, RTIOPORT Port, uint32_t u32, unsigned cb);
-RT_END_DECLS
+RT_C_DECLS_END
 
 #ifdef IN_RING3
 /**

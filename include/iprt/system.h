@@ -34,7 +34,7 @@
 #include <iprt/types.h>
 
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** @defgroup grp_rt_system RTSystem - System Information
  * @ingroup grp_rt
@@ -142,7 +142,7 @@ RTDECL(int) RTSystemQueryUnavailableRam(uint64_t *pcb);
 
 /** @} */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

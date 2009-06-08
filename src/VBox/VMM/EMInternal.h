@@ -32,7 +32,7 @@
 #include <iprt/avl.h>
 #include <setjmp.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 
 /** @defgroup grp_em_int       Internal
@@ -395,7 +395,7 @@ typedef EMCPU *PEMCPU;
 
 /** @} */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

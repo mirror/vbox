@@ -117,7 +117,7 @@ typedef struct TSTMICRO
 } TSTMICRO, *PTSTMICRO;
 
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 DECLASM(void) idtOnly42(PTSTMICRO pTst);
 
@@ -142,6 +142,6 @@ DECLASM(void) tstTrapHandlerNoErr(void);
 DECLASM(void) tstTrapHandler(void);
 DECLASM(void) tstInterrupt42(void);
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif

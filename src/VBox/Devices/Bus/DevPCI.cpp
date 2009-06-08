@@ -214,7 +214,7 @@ typedef PCIGLOBALS *PPCIGLOBALS;
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 PDMBOTHCBDECL(void) pciSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel);
 PDMBOTHCBDECL(void) pcibridgeSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel);
@@ -227,7 +227,7 @@ PDMBOTHCBDECL(int)  pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 DECLINLINE(PPCIDEVICE) pciFindBridge(PPCIBUS pBus, uint8_t iBus);
 #endif
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #define DEBUG_PCI
 

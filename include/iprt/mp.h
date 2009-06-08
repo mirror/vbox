@@ -34,7 +34,7 @@
 #include <iprt/types.h>
 
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** @defgroup grp_rt_mp RTMp - Multiprocessor
  * @ingroup grp_rt
@@ -340,7 +340,7 @@ RTDECL(int) RTMpNotificationDeregister(PFNRTMPNOTIFICATION pfnCallback, void *pv
 
 /** @} */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

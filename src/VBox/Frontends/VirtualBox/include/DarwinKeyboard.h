@@ -27,7 +27,7 @@
 #include <iprt/cdefs.h>
 #include <CoreFoundation/CFBase.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** Private hack for missing rightCmdKey enum. */
 #define kEventKeyModifierRightCmdKeyMask (1<<27)
@@ -50,7 +50,7 @@ void     DarwinDisableGlobalHotKeys(bool fDisable);
 void     DarwinGrabKeyboard(bool fGlobalHotkeys);
 void     DarwinReleaseKeyboard(void);
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

@@ -48,7 +48,7 @@
  * @{
  */
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** @def RTMEM_ALIGNMENT
  * The alignment of the memory blocks returned by RTMemAlloc(), RTMemAllocZ(),
@@ -365,7 +365,7 @@ RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra) RT_
 
 /** @} */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 
 #ifdef __cplusplus

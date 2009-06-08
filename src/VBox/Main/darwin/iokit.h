@@ -76,7 +76,7 @@ typedef DARWINETHERNIC *PDARWINETHERNIC;
  * notifications events. */
 #define VBOX_IOKIT_MODE_STRING "VBoxIOKitMode"
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 #ifdef VBOX_WITH_USB
 void *          DarwinSubscribeUSBNotifications(void);
 void            DarwinUnsubscribeUSBNotifications(void *pvOpaque);
@@ -86,7 +86,7 @@ int             DarwinReEnumerateUSBDevice(PCUSBDEVICE pCur);
 #endif /* VBOX_WITH_USB */
 PDARWINDVD      DarwinGetDVDDrives(void);
 PDARWINETHERNIC DarwinGetEthernetControllers(void);
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

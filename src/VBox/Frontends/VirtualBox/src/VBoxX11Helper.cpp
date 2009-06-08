@@ -26,10 +26,10 @@
 #include <QX11Info>
 
 /* rhel3 build hack */
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 #include <X11/Xlib.h>
 #include <X11/extensions/dpms.h>
-RT_END_DECLS
+RT_C_DECLS_END
 
 static int  gX11ScreenSaverTimeout;
 static BOOL gX11ScreenSaverDpmsAvailable;

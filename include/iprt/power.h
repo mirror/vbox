@@ -34,7 +34,7 @@
 #include <iprt/types.h>
 
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** @defgroup grp_rt_power RTPower - Power management
  * @ingroup grp_rt
@@ -110,7 +110,7 @@ RTDECL(int) RTPowerSignalEvent(RTPOWEREVENT enmEvent);
 
 /** @} */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

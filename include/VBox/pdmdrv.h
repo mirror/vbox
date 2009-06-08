@@ -47,7 +47,7 @@
 # include <VBox/pdmasynccompletion.h>
 #endif
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** @defgroup grp_pdm_driver    The PDM Drivers API
  * @ingroup grp_pdm
@@ -962,6 +962,6 @@ VMMR3DECL(int) PDMR3RegisterDrivers(PVM pVM, FNPDMVBOXDRIVERSREGISTER pfnCallbac
 
 /** @} */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
