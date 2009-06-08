@@ -59,24 +59,29 @@ GetExtensions(void)
     return gpszExtensions;
 }
 
+static void GetString(GLenum name, char *pszStr)
+{
+    GET_THREAD(thread);
+    int writeback = 1;
+
+    if (pack_spu.swap)
+        crPackGetStringSWAP(name, pszStr, &writeback);
+    else
+        crPackGetString(name, pszStr, &writeback);
+    packspuFlush( (void *) thread );
+
+    while (writeback)
+        crNetRecv();
+}
 
 static GLfloat
 GetVersionString(void)
 {
     GLubyte return_value[100];
-    GET_THREAD(thread);
     int writeback = 1;
     GLfloat version;
 
-    if (pack_spu.swap)
-        crPackGetStringSWAP( GL_VERSION, return_value, &writeback );
-    else
-        crPackGetString( GL_VERSION, return_value, &writeback );
-    packspuFlush( (void *) thread );
-
-    while (writeback)
-        crNetRecv();
-
+    GetString(GL_VERSION, return_value);
     CRASSERT(crStrlen((char *)return_value) < 100);
 
     version = crStrToFloat((char *) return_value);
@@ -85,37 +90,77 @@ GetVersionString(void)
     return version;
 }
 
+#ifdef WINDOWS
+static bool packspuRunningUnderWine(void)
+{
+    return NULL != GetModuleHandle("wined3d.dll");
+}
+#endif
+
 const GLubyte * PACKSPU_APIENTRY packspu_GetString( GLenum name )
 {
     GET_CONTEXT(ctx);
 
-    if (name == GL_EXTENSIONS)
+    switch(name)
     {
-        return GetExtensions();
-    }
-    else if (name == GL_VERSION)
-    {
-        float version = GetVersionString();
-        sprintf(ctx->glVersion, "%.1f Chromium %s", version, CR_VERSION_STRING);
-        return (const GLubyte *) ctx->glVersion;
-    }
-#ifdef CR_OPENGL_VERSION_2_0
-    else if (name == GL_SHADING_LANGUAGE_VERSION)
-    {
-        GET_THREAD(thread);
-        int writeback = 1;
-
-        crPackGetString(GL_SHADING_LANGUAGE_VERSION, gpszShadingVersion, &writeback);
-        packspuFlush( (void *) thread );
-
-        while (writeback)
-            crNetRecv();
-
-        return gpszShadingVersion;
-    }
+        case GL_EXTENSIONS:
+            return GetExtensions();
+        case GL_VERSION:
+#ifdef WINDOWS
+            if (packspuRunningUnderWine())
+            {
+                GetString(GL_REAL_VERSION, ctx->pszRealVersion);
+                return (const GLubyte*) ctx->pszRealVersion;               
+            }
+            else
 #endif
-    else
-    {
-        return crStateGetString(name);
+            {
+                float version = GetVersionString();
+                sprintf(ctx->glVersion, "%.1f Chromium %s", version, CR_VERSION_STRING);
+                return (const GLubyte *) ctx->glVersion;
+            }
+        case GL_VENDOR:
+#ifdef WINDOWS
+            if (packspuRunningUnderWine())
+            {
+                GetString(GL_REAL_VENDOR, ctx->pszRealVendor);
+                return (const GLubyte*) ctx->pszRealVendor;
+            }
+            else
+#endif
+            {
+                return crStateGetString(name);
+            }
+        case GL_RENDERER:
+#ifdef WINDOWS
+            if (packspuRunningUnderWine())
+            {
+                GetString(GL_REAL_RENDERER, ctx->pszRealRenderer);
+                return (const GLubyte*) ctx->pszRealRenderer;
+            }
+            else
+#endif
+            {
+                return crStateGetString(name);
+            }
+
+#ifdef CR_OPENGL_VERSION_2_0
+        case GL_SHADING_LANGUAGE_VERSION:
+            GetString(GL_SHADING_LANGUAGE_VERSION, gpszShadingVersion);
+            return gpszShadingVersion;
+#endif
+#ifdef GL_CR_real_vendor_strings
+        case GL_REAL_VENDOR:
+            GetString(GL_REAL_VENDOR, ctx->pszRealVendor);
+            return (const GLubyte*) ctx->pszRealVendor;
+        case GL_REAL_VERSION:
+            GetString(GL_REAL_VERSION, ctx->pszRealVersion);
+            return (const GLubyte*) ctx->pszRealVersion;
+        case GL_REAL_RENDERER:
+            GetString(GL_REAL_RENDERER, ctx->pszRealRenderer);
+            return (const GLubyte*) ctx->pszRealRenderer;
+#endif
+        default:
+            return crStateGetString(name);
     }
 }
