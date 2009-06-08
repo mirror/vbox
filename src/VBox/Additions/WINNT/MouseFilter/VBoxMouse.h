@@ -24,12 +24,12 @@
 #define VBOXMOUSE_H
 
 #include <iprt/assert.h>
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 #include "ntddk.h"
 #include "kbdmou.h"
 #include <ntddmou.h>
 #include <ntdd8042.h>
-__END_DECLS
+RT_END_DECLS
 #include <VBox/VBoxGuest.h>
 
 #define VBOXMOUSE_POOL_TAG (ULONG) 'oMBV'
@@ -150,7 +150,7 @@ typedef struct _DEVICE_EXTENSION
 //
 // Prototypes
 //
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 NTSTATUS
 VBoxMouse_AddDevice(
@@ -225,6 +225,6 @@ VBoxDispatchIo(
     IN PIRP              Irp
     );
 
-__END_DECLS
+RT_END_DECLS
 
 #endif  // VBOXMOUSE_H

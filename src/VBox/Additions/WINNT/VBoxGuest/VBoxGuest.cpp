@@ -79,9 +79,9 @@ DECLVBGL(void) VBoxHGCMCallback(VMMDevHGCMRequestHeader *pHeader, void *pvData, 
 /*******************************************************************************
 *   Exported Functions                                                         *
 *******************************************************************************/
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath);
-__END_DECLS
+RT_END_DECLS
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (INIT, DriverEntry)

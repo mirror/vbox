@@ -87,7 +87,7 @@ static PVBOXGUESTSESSION    g_apSessionHashTab[19];
 /** Calculates the index into g_apSessionHashTab.*/
 #define SESSION_HASH(sfn) ((sfn) % RT_ELEMENTS(g_apSessionHashTab))
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 /* Defined in VBoxGuestA-os2.asm */
 extern uint32_t             g_PhysMMIOBase;
 extern uint32_t             g_cbMMIO; /* 0 currently not set. */
@@ -108,7 +108,7 @@ extern char                 g_szLog[];
 extern char                 g_szInitText[];
 extern uint16_t             g_cchInitText;
 extern uint16_t             g_cchInitTextMax;
-__END_DECLS
+RT_END_DECLS
 
 
 /*******************************************************************************

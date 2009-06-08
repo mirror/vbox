@@ -31,18 +31,18 @@
 #  define _InterlockedCompareExchange    _InterlockedCompareExchange_StupidDDKVsCompilerCrap
 #  define _InterlockedAddLargeStatistic  _InterlockedAddLargeStatistic_StupidDDKVsCompilerCrap
 #  pragma warning(disable : 4163)
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 #  include <ntddk.h>
-__END_DECLS
+RT_END_DECLS
 #  pragma warning(default : 4163)
 #  undef  _InterlockedExchange
 #  undef  _InterlockedExchangeAdd
 #  undef  _InterlockedCompareExchange
 #  undef  _InterlockedAddLargeStatistic
 # else
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 #  include <ntddk.h>
-__END_DECLS
+RT_END_DECLS
 # endif
 /* XP DDK #defines ExFreePool to ExFreePoolWithTag. The latter does not exist on NT4, so...
  * The same for ExAllocatePool.

@@ -31,13 +31,13 @@
 #include "VBoxHGSMI.h"
 #endif /* VBOX_WITH_HGSMI */
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 #include "dderror.h"
 #include "devioctl.h"
 #include "miniport.h"
 #include "ntddvdeo.h"
 #include "video.h"
-__END_DECLS
+RT_END_DECLS
 
 
 #define VBE_DISPI_IOPORT_INDEX          0x01CE
@@ -157,9 +157,9 @@ typedef struct _DEVICE_EXTENSION
 extern "C"
 {
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 ULONG DriverEntry(IN PVOID Context1, IN PVOID Context2);
-__END_DECLS
+RT_END_DECLS
 
 VP_STATUS VBoxVideoFindAdapter(
    IN PVOID HwDeviceExtension,
