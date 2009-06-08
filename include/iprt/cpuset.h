@@ -35,7 +35,7 @@
 #include <iprt/asm.h>
 
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_rt_cpuset RTCpuSet - CPU Set
  * @ingroup grp_rt
@@ -235,7 +235,7 @@ DECLINLINE(int) RTCpuLastIndex(PCRTCPUSET pSet)
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

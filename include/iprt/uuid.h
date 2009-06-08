@@ -33,7 +33,7 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_rt_uuid       RTUuid - Universally Unique Identifiers
  * @ingroup grp_rt
@@ -169,7 +169,7 @@ RTDECL(int)  RTUuidFromUtf16(PRTUUID pUuid, PCRTUTF16 pwszString);
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

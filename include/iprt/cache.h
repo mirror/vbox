@@ -39,7 +39,7 @@
 #include <iprt/types.h>
 #include <iprt/critsect.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** Protect the object requester against concurrent access from different threads. */
 #define RTOBJCACHE_PROTECT_REQUEST   RT_BIT(0)
@@ -142,6 +142,6 @@ RTDECL(int) RTCacheRequest(PRTOBJCACHE pCache, void **ppObj);
  */
 RTDECL(int) RTCacheInsert(PRTOBJCACHE pCache, void *pObj);
 
-__END_DECLS
+RT_END_DECLS
 
 #endif /* __iprt_cache_h */

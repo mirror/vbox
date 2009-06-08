@@ -33,7 +33,7 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_rt_avl    RTAvl - AVL Trees
  * @ingroup grp_rt
@@ -868,7 +868,7 @@ RTDECL(int)                     RTAvlHCPhysDestroy(PAVLHCPHYSTREE pTree, PAVLHCP
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

@@ -34,7 +34,7 @@
 #include <iprt/types.h>
 #include <iprt/stdarg.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_rt_test       RTTest - Testcase Framework.
  * @ingroup grp_rt
@@ -907,7 +907,7 @@ RTR3DECL(int) RTTestIFailureDetails(const char *pszFormat, ...);
 
 /** @}  */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

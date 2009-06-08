@@ -77,7 +77,7 @@
  * @{
  */
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /**
  * The 1st part of an assert message.
@@ -163,7 +163,7 @@ extern RTDATADECL(uint32_t volatile)        g_u32RTAssertLine;
 extern RTDATADECL(const char * volatile)    g_pszRTAssertFunction;
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 /** @def RTAssertDebugBreak()
  * Debugger breakpoint instruction.
@@ -208,11 +208,11 @@ typedef int RTASSERTTYPE[1];
  * GCC uses this.
  */
 #ifdef __GNUC__
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 #endif
 extern int RTASSERTVAR[1];
 #ifdef __GNUC__
-__END_DECLS
+RT_END_DECLS
 #endif
 
 /** @def AssertCompile

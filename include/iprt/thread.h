@@ -40,7 +40,7 @@
 
 
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_rt_thread    RTThread - Thread Management
  * @ingroup grp_rt
@@ -690,7 +690,7 @@ RTR3DECL(int) RTTlsSet(RTTLS iTls, void *pvValue);
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

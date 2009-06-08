@@ -38,7 +38,7 @@
  * @ingroup grp_rt
  * @{
  */
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** An IPv4 address. */
 typedef uint32_t RTIPV4ADDR;
@@ -59,7 +59,7 @@ typedef RTIPV4ADDR const *PCRTIPV4ADDR;
  */
 RTDECL(int) RTCidrStrToIPv4(const char *pszAddress, PRTIPV4ADDR pNetwork, PRTIPV4ADDR pNetmask);
 
-__END_DECLS
+RT_END_DECLS
 /** @} */
 
 #endif

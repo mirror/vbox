@@ -34,7 +34,7 @@
 #include <iprt/types.h>
 
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_rt_crc32      RTCrc32 - CRC32 Calculation
  * @ingroup grp_rt
@@ -79,7 +79,7 @@ RTDECL(uint32_t) RTCrc32Finish(uint32_t uCRC32);
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

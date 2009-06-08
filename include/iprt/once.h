@@ -34,7 +34,7 @@
 #include <iprt/types.h>
 #include <iprt/err.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_rt_once       RTOnce - Execute Once
  * @ingroup grp_rt
@@ -103,7 +103,7 @@ RTDECL(void) RTOnceReset(PRTONCE pOnce);
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

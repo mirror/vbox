@@ -37,7 +37,7 @@
 #endif
 
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_rt_critsect       RTCritSect - Critical Sections
  * @ingroup grp_rt
@@ -308,7 +308,7 @@ DECLINLINE(int32_t) RTCritSectGetWaiters(PCRTCRITSECT pCritSect)
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

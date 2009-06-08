@@ -120,7 +120,7 @@ int RT_NOCRT(__test_sse)(void);
              (RT_NOCRT(__has_sse) == __SSE_UNK && RT_NOCRT(__test_sse)()))
 #endif
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /* Default floating-point environment */
 extern const fenv_t __fe_dfl_env;
@@ -259,7 +259,7 @@ fegetexcept(void)
     return (~__control & FE_ALL_EXCEPT);
 }
 
-__END_DECLS
+RT_END_DECLS
 
 #ifndef RT_WIHTOUT_NOCRT_WRAPPERS
 # define __has_sse RT_NOCRT(__has_sse)
@@ -272,7 +272,7 @@ __END_DECLS
 # define feupdateenv RT_NOCRT(feupdateenv)
 # define feenableexcept RT_NOCRT(feenableexcept)
 # define fedisableexcept RT_NOCRT(fedisableexcept)
-#endif 
+#endif
 
 #endif  /* !__iprt_nocrt_x86_fenv_h__ */
 

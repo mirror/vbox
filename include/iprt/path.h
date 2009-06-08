@@ -38,7 +38,7 @@
 
 
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_rt_path   RTPath - Path Manipulation
  * @ingroup grp_rt
@@ -598,7 +598,7 @@ RTR3DECL(int) RTPathRename(const char *pszSrc,  const char *pszDst, unsigned fRe
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 
