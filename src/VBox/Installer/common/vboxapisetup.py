@@ -18,6 +18,7 @@ from distutils.core import setup
 
 def patchWith(file,install):
     newFile=file+".new"
+    install=install.replace("\\", "\\\\") 
     try: 
         os.remove(newFile)
     except:
