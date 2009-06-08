@@ -47,7 +47,7 @@ VBoxMiniToolBar::VBoxMiniToolBar (QWidget *aParent, Alignment aAlignment)
     , mIsSeamless (false)
     , mAlignment (aAlignment)
     , mAnimated (true)
-    , mScrollDelay (20)
+    , mScrollDelay (10)
     , mAutoScrollDelay (100)
     , mAutoHideTotalCounter (10)
 {
@@ -118,7 +118,10 @@ VBoxMiniToolBar& VBoxMiniToolBar::operator<< (QList <QMenu*> aMenus)
         QAction *action = aMenus [i]->menuAction();
         insertAction (mInsertPosition, action);
         if (QToolButton *button = qobject_cast <QToolButton*> (widgetForAction (action)))
+        {
             button->setPopupMode (QToolButton::InstantPopup);
+            button->setAutoRaise (true);
+        }
         if (i != aMenus.size() - 1)
             mSpacings << widgetForAction (insertWidget (mInsertPosition, new QWidget (this)));
     }
