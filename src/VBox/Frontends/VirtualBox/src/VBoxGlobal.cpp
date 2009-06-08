@@ -1478,6 +1478,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
         QString pae = aMachine.GetPAEEnabled()
             ? tr ("Enabled", "details report (PAE/NX)")
             : tr ("Disabled", "details report (PAE/NX)");
+#endif /* VBOX_WITH_FULL_DETAILS_REPORT */
 
         /* VT-x/AMD-V */
         QString virt = aMachine.GetHWVirtExEnabled() == KTSBool_True ?
@@ -1488,7 +1489,6 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
         QString nested = aMachine.GetHWVirtExNestedPagingEnabled()
             ? tr ("Enabled", "details report (Nested Paging)")
             : tr ("Disabled", "details report (Nested Paging)");
-#endif /* VBOX_WITH_FULL_DETAILS_REPORT */
 
         QString item = QString (sSectionItemTpl2).arg (tr ("Base Memory", "details report"),
                                                        tr ("<nobr>%1 MB</nobr>", "details report"))
@@ -1501,16 +1501,16 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
                      + QString (sSectionItemTpl2).arg (tr ("ACPI", "details report"), acpi)
                      + QString (sSectionItemTpl2).arg (tr ("IO APIC", "details report"), ioapic)
                      + QString (sSectionItemTpl2).arg (tr ("PAE/NX", "details report"), pae)
+#endif /* VBOX_WITH_FULL_DETAILS_REPORT */
                      + QString (sSectionItemTpl2).arg (tr ("VT-x/AMD-V", "details report"), virt)
                      + QString (sSectionItemTpl2).arg (tr ("Nested Paging", "details report"), nested)
-#endif /* VBOX_WITH_FULL_DETAILS_REPORT */
                      ;
 
         report += sectionTpl
 #ifdef VBOX_WITH_FULL_DETAILS_REPORT
                   .arg (2 + 8) /* rows */
 #else
-                  .arg (2 + 3) /* rows */
+                  .arg (2 + 5) /* rows */
 #endif /* VBOX_WITH_FULL_DETAILS_REPORT */
                   .arg (":/chipset_16px.png", /* icon */
                         "#system", /* link */
@@ -1543,11 +1543,11 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
         {
             if (srv.GetEnabled())
                 item += QString (sSectionItemTpl2)
-                        .arg (tr ("VRDP Server Port", "details report (VRDP Server)"))
+                        .arg (tr ("Remote Display Server Port", "details report (VRDP Server)"))
                         .arg (srv.GetPort());
             else
                 item += QString (sSectionItemTpl2)
-                        .arg (tr ("VRDP Server", "details report (VRDP Server)"))
+                        .arg (tr ("Remote Display Server", "details report (VRDP Server)"))
                         .arg (tr ("Disabled", "details report (VRDP Server)"));
             ++ rows;
         }
