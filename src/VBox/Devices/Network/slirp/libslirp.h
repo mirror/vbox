@@ -65,6 +65,10 @@ void slirp_set_dhcp_next_server(PNATState pData, const char *nextServer);
 #ifdef VBOX_WITH_SLIRP_DNS_PROXY
 void slirp_set_dhcp_dns_proxy(PNATState pData, bool fDNSProxy);
 #endif
+void slirp_set_rcvbuf(PNATState pData, int kilobytes);
+void slirp_set_sndbuf(PNATState pData, int kilobytes);
+void slirp_set_tcp_rcvspace(PNATState pData, int kilobytes);
+void slirp_set_tcp_sndspace(PNATState pData, int kilobytes);
 
 #if defined(RT_OS_WINDOWS)
 
