@@ -61,7 +61,7 @@ BOOL checkOptions(void)
 
     for (i=0; gsBlackList[i]; ++i)
     {
-        if (!strcmp(filename, gsBlackList[i]))
+        if (!stricmp(filename, gsBlackList[i]))
             return FALSE;
     }
 
