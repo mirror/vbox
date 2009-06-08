@@ -145,7 +145,7 @@ RTDECL(void *) RTMemDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra) RT_NO
 RTDECL(void *)  RTMemRealloc(void *pvOld, size_t cbNew) RT_NO_THROW;
 
 /**
- * Free memory related to an virtual machine
+ * Frees memory.
  *
  * @param   pv      Pointer to memory block.
  */
@@ -158,14 +158,14 @@ RTDECL(void)    RTMemFree(void *pv) RT_NO_THROW;
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocate.
  */
-RTDECL(void *)    RTMemExecAlloc(size_t cb) RT_NO_THROW;
+RTDECL(void *)  RTMemExecAlloc(size_t cb) RT_NO_THROW;
 
 /**
  * Free executable/read/write memory allocated by RTMemExecAlloc().
  *
  * @param   pv      Pointer to memory block.
  */
-RTDECL(void)      RTMemExecFree(void *pv) RT_NO_THROW;
+RTDECL(void)    RTMemExecFree(void *pv) RT_NO_THROW;
 
 #if defined(IN_RING0) && defined(RT_ARCH_AMD64) && defined(RT_OS_LINUX)
 /**
