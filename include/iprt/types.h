@@ -1203,6 +1203,24 @@ typedef RTDBGMOD                                   *PRTDBGMOD;
 /** NIL debug module handle. */
 #define NIL_RTDBGMOD                                ((RTDBGMOD)0)
 
+/** Memory pool handle. */
+typedef R3R0PTRTYPE(struct RTMEMPOOLINT *)          RTMEMPOOL;
+/** Pointer to a memory pool handle. */
+typedef RTMEMPOOL                                  *PRTMEMPOOL;
+/** NIL memory pool handle. */
+#define NIL_RTMEMPOOL                               ((RTMEMPOOL)0)
+/** The default memory pool handle. */
+#define RTMEMPOOL_DEFAULT                           ((RTMEMPOOL)-2)
+
+/** String cache handle. */
+typedef R3R0PTRTYPE(struct RTSTRCACHEINT *)         RTSTRCACHE;
+/** Pointer to a string cache handle. */
+typedef RTSTRCACHE                                 *PRTSTRCACHE;
+/** NIL string cache handle. */
+#define NIL_RTSTRCACHE                              ((RTSTRCACHE)0)
+/** The default string cache handle. */
+#define RTSTRCACHE_DEFAULT                          ((RTSTRCACHE)-2)
+
 
 /**
  * UUID data type.

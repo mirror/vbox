@@ -151,7 +151,7 @@ static RTDBGMODVTDBG const g_rtDbgModVtDbgContainer =
 
 
 /**
- * Creates a
+ * Creates a generic debug info container and associates it with the module.
  *
  * @returns IPRT status code.
  * @param   pMod        The module instance.

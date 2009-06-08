@@ -68,6 +68,10 @@
 #define RTMEMCACHE_MAGIC            0x19230108
 /** Dead magic number for RTMEMCACHEINT::u32Magic. */
 #define RTMEMCACHE_MAGIC_DEAD       0x20080305
+/** The magic value for RTMEMPOOL::u32Magic. (Jane Austin) */
+#define RTMEMPOOL_MAGIC             0x17751216
+/** The magic value for RTMEMPOOL::u32Magic after RTMemPoolDestroy. */
+#define RTMEMPOOL_MAGIC_DEAD        0x18170718
 /** Magic number for heap blocks. (Edgar Allan Poe) */
 #define RTMEMHDR_MAGIC              0x18090119
 /** RTR0MEMOBJ::u32Magic. (Masakazu Katsura) */
@@ -90,6 +94,10 @@
 #define RTSEMRW_MAGIC               0x19640707
 /** Magic value for RTSPINLOCKINTERNAL::u32Magic. (Terry Pratchett) */
 #define RTSPINLOCK_MAGIC            0x19480428
+/** Magic value for RTSTRCACHE::u32Magic. (Sir Arthur Charles Clarke) */
+#define RTSTRCACHE_MAGIC            0x19171216
+/** Magic value for RTSTRCACHE::u32Magic after RTStrCacheDestroy. */
+#define RTSTRCACHE_MAGIC_DEAD       0x20080319
 /** The value of RTSTREAM::u32Magic for a valid stream. */
 #define RTSTREAM_MAGIC              0xe44e44ee
 /** RTTESTINT::u32Magic value. (Daniel Kehlmann) */
