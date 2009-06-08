@@ -857,7 +857,7 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
 #endif
     int i;
 
-    STAM_PROFILE_START(&pData->StatFill, a);
+    SLIRP_PROFILE_START(Fill, a);
 
     nfds = *pnfds;
 
@@ -888,15 +888,15 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
     }
     ICMP_ENGAGE_EVENT(&pData->icmp_socket, readfds);
     
-    STAM_COUNTER_RESET(&pData->StatTCP);
-    STAM_COUNTER_RESET(&pData->StatTCPHot);
+    SLIRP_COUNTER_RESET(TCP);
+    SLIRP_COUNTER_RESET(TCPHot);
     
     QSOCKET_FOREACH(so, so_next, tcp)
     /* { */
 #if !defined(RT_OS_WINDOWS)
         so->so_poll_index = -1;
 #endif
-        STAM_COUNTER_INC(&pData->StatTCP);
+        SLIRP_COUNTER_INC(TCP);
     
         /*
          * See if we need a tcp_fasttimo
@@ -918,7 +918,7 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
          */
         if (so->so_state & SS_FACCEPTCONN)
         {
-            STAM_COUNTER_INC(&pData->StatTCPHot);
+            SLIRP_COUNTER_INC(TCPHot);
             TCP_ENGAGE_EVENT1(so, readfds);
             CONTINUE(tcp);
         }
@@ -929,7 +929,7 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
         if (so->so_state & SS_ISFCONNECTING)
         {
             Log2(("connecting %R[natsock] engaged\n",so));
-            STAM_COUNTER_INC(&pData->StatTCPHot);
+            SLIRP_COUNTER_INC(TCPHot);
             TCP_ENGAGE_EVENT1(so, writefds);
         }
     
@@ -939,7 +939,7 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
          */
         if (CONN_CANFSEND(so) && so->so_rcv.sb_cc)
         {
-            STAM_COUNTER_INC(&pData->StatTCPHot);
+            SLIRP_COUNTER_INC(TCPHot);
             TCP_ENGAGE_EVENT1(so, writefds);
         }
     
@@ -949,7 +949,7 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
          */
         if (CONN_CANFRCV(so) && (so->so_snd.sb_cc < (so->so_snd.sb_datalen/2)))
         {
-            STAM_COUNTER_INC(&pData->StatTCPHot);
+            SLIRP_COUNTER_INC(TCPHot);
             TCP_ENGAGE_EVENT2(so, readfds, xfds);
         }
         LOOP_LABEL(tcp, so, so_next);
@@ -958,13 +958,13 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
     /*
      * UDP sockets
      */
-    STAM_COUNTER_RESET(&pData->StatUDP);
-    STAM_COUNTER_RESET(&pData->StatUDPHot);
+    SLIRP_COUNTER_RESET(UDP);
+    SLIRP_COUNTER_RESET(UDPHot);
     
     QSOCKET_FOREACH(so, so_next, udp)
     /* { */
     
-        STAM_COUNTER_INC(&pData->StatUDP);
+        SLIRP_COUNTER_INC(UDP);
 #if !defined(RT_OS_WINDOWS)
         so->so_poll_index = -1;
 #endif
@@ -1006,7 +1006,7 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
          */
         if ((so->so_state & SS_ISFCONNECTED) && so->so_queued <= 4)
         {
-            STAM_COUNTER_INC(&pData->StatUDPHot);
+            SLIRP_COUNTER_INC(UDPHot);
             UDP_ENGAGE_EVENT(so, readfds);
         }
         LOOP_LABEL(udp, so, so_next);
@@ -1020,7 +1020,7 @@ done:
     *pnfds = poll_index;
 #endif /* !RT_OS_WINDOWS */
 
-    STAM_PROFILE_STOP(&pData->StatFill, a);
+    SLIRP_PROFILE_STOP(Fill, a);
 }
 
 #if defined(RT_OS_WINDOWS)
@@ -1039,7 +1039,7 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
     int poll_index = 0;
 #endif
 
-    STAM_PROFILE_START(&pData->StatPoll, a);
+    SLIRP_PROFILE_START(Poll, a);
 
     /* Update time */
     updtime(pData);
@@ -1051,18 +1051,18 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
     {
         if (time_fasttimo && ((curtime - time_fasttimo) >= 2))
         {
-            STAM_PROFILE_START(&pData->StatFastTimer, a);
+            SLIRP_PROFILE_START(FastTimer, a);
             tcp_fasttimo(pData);
             time_fasttimo = 0;
-            STAM_PROFILE_STOP(&pData->StatFastTimer, a);
+            SLIRP_PROFILE_STOP(FastTimer, a);
         }
         if (do_slowtimo && ((curtime - last_slowtimo) >= 499))
         {
-            STAM_PROFILE_START(&pData->StatSlowTimer, a);
+            SLIRP_PROFILE_START(SlowTimer, a);
             ip_slowtimo(pData);
             tcp_slowtimo(pData);
             last_slowtimo = curtime;
-            STAM_PROFILE_STOP(&pData->StatSlowTimer, a);
+            SLIRP_PROFILE_STOP(SlowTimer, a);
         }
     }
 #if defined(RT_OS_WINDOWS)
@@ -1429,7 +1429,7 @@ done:
         if_start(pData);
 #endif
 
-    STAM_PROFILE_STOP(&pData->StatPoll, a);
+    SLIRP_PROFILE_STOP(Poll, a);
 }
 
 #ifndef VBOX_WITHOUT_SLIRP_CLIENT_ETHER

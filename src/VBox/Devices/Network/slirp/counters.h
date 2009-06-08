@@ -36,10 +36,28 @@ COUNTING_COUTER(TCP, "TCP sockets");
 COUNTING_COUTER(TCPHot, "TCP sockets active");
 COUNTING_COUTER(UDP, "UDP sockets");
 COUNTING_COUTER(UDPHot, "UDP sockets active");
-COUNTING_COUTER(SBAlloc, "SB Alloc");
-COUNTING_COUTER(SBReAlloc, "SB ReAlloc");
 
 COUNTING_COUTER(IORead_in_1, "SB IORead_in_1");
+COUNTING_COUTER(IORead_in_1_bytes, "SB IORead_in_1_bytes");
 COUNTING_COUTER(IORead_in_2, "SB IORead_in_2");
+COUNTING_COUTER(IORead_in_2_1st_bytes, "SB IORead_in_2_1st_bytes");
+COUNTING_COUTER(IORead_in_2_2nd_bytes, "SB IORead_in_2_2nd_bytes");
 COUNTING_COUTER(IOWrite_in_1, "SB IOWrite_in_1");
+COUNTING_COUTER(IOWrite_in_1_bytes, "SB IOWrite_in_1_bytes");
 COUNTING_COUTER(IOWrite_in_2, "SB IOWrite_in_2");
+COUNTING_COUTER(IOWrite_in_2_1st_bytes, "SB IOWrite_in_2_1st_bytes");
+COUNTING_COUTER(IOWrite_in_2_2nd_bytes, "SB IOWrite_in_2_2nd_bytes");
+COUNTING_COUTER(IOWrite_no_w, "SB IOWrite_no_w");
+COUNTING_COUTER(IOWrite_rest, "SB IOWrite_rest");
+COUNTING_COUTER(IOWrite_rest_bytes, "SB IOWrite_rest_bytes");
+
+COUNTING_COUTER(IOSBAppend, "SB: Append total");
+COUNTING_COUTER(IOSBAppend_wa, "SB: Append all is written to network ");
+COUNTING_COUTER(IOSBAppend_wf, "SB: Append nothing is written");
+COUNTING_COUTER(IOSBAppend_wp, "SB: Append is written partly");
+COUNTING_COUTER(IOSBAppend_zm, "SB: Append mbuf is zerro or less");
+
+COUNTING_COUTER(IOSBAppendSB, "SB: AppendSB total");
+COUNTING_COUTER(IOSBAppendSB_w_l_r, "SB: AppendSB (sb_wptr < sb_rptr)");
+COUNTING_COUTER(IOSBAppendSB_w_ge_r, "SB: AppendSB (sb_wptr >= sb_rptr)");
+COUNTING_COUTER(IOSBAppendSB_w_alter, "SB: AppendSB (altering of sb_wptr)");
