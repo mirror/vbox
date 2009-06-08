@@ -38,7 +38,7 @@
 typedef NSWindow *NativeWindowRef;
 typedef NSView *NativeViewRef;
 #else
-# include <iprt/cdefs.h> /* for __BEGIN_DECLS/__END_DECLS & stuff */
+# include <iprt/cdefs.h> /* for RT_BEGIN_DECLS/RT_END_DECLS & stuff */
 
 # include <qglobal.h> /* for QT_MAC_USE_COCOA */
 # include <QRect>
@@ -61,7 +61,7 @@ typedef HIViewRef NativeViewRef;
 # endif /* QT_MAC_USE_COCOA */
 #endif /* __OBJC__ */
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /********************************************************************************
  *
@@ -91,7 +91,7 @@ void darwinWindowAnimateResizeImpl (NativeWindowRef aWindow, int x, int y, int w
 void darwinWindowInvalidateShapeImpl (NativeWindowRef aWindow);
 void darwinWindowInvalidateShadowImpl (NativeWindowRef aWindow);
 
-__END_DECLS
+RT_END_DECLS
 
 #ifndef __OBJC__
 /********************************************************************************

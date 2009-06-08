@@ -1071,7 +1071,7 @@ void SDLConsole::processKey(SDL_KeyboardEvent *ev)
 
 #ifdef RT_OS_DARWIN
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 /* Private interface in 10.3 and later. */
 typedef int CGSConnection;
 typedef enum
@@ -1083,7 +1083,7 @@ typedef enum
 extern CGSConnection _CGSDefaultConnection(void);
 extern CGError CGSGetGlobalHotKeyOperatingMode(CGSConnection Connection, CGSGlobalHotKeyOperatingMode *enmMode);
 extern CGError CGSSetGlobalHotKeyOperatingMode(CGSConnection Connection, CGSGlobalHotKeyOperatingMode enmMode);
-__END_DECLS
+RT_END_DECLS
 
 /** Keeping track of whether we disabled the hotkeys or not. */
 static bool g_fHotKeysDisabled = false;
