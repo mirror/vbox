@@ -25,6 +25,7 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_REM
 #include <VBox/rem.h>
+#include <VBox/em.h>
 #include <VBox/vmm.h>
 #include "REMInternal.h"
 #include <VBox/vm.h>
@@ -45,12 +46,14 @@
  */
 VMMDECL(int) REMNotifyInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
 {
-    if (pVM->rem.s.cInvalidatedPages < RT_ELEMENTS(pVM->rem.s.aGCPtrInvalidatedPages))
+    if (    EMTryEnterRemLock(pVM) == VINF_SUCCESS  /* if this fails, then we'll just flush the tlb as we don't want to waste time here. */
+        &&  pVM->rem.s.cInvalidatedPages < RT_ELEMENTS(pVM->rem.s.aGCPtrInvalidatedPages))
     {
         /*
          * We sync them back in REMR3State.
          */
         pVM->rem.s.aGCPtrInvalidatedPages[pVM->rem.s.cInvalidatedPages++] = GCPtrPage;
+        EMRemUnlock(pVM);
     }
     else
     {
