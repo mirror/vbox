@@ -862,44 +862,6 @@ static int emR3Debug(PVM pVM, PVMCPU pVCpu, int rc)
 }
 
 /**
- * Locks REM execution to a single VCpu
- *
- * @param   pVM         VM handle.
- */
-VMMR3DECL(void) EMR3RemLock(PVM pVM)
-{
-    if (!PDMCritSectIsInitialized(&pVM->em.s.CritSectREM))
-        return;     /* early init */
-
-    int rc = PDMCritSectEnter(&pVM->em.s.CritSectREM, VERR_SEM_BUSY);
-    AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
-}
-
-/**
- * Unlocks REM execution
- *
- * @param   pVM         VM handle.
- */
-VMMR3DECL(void) EMR3RemUnlock(PVM pVM)
-{
-    if (!PDMCritSectIsInitialized(&pVM->em.s.CritSectREM))
-        return;     /* early init */
-
-    PDMCritSectLeave(&pVM->em.s.CritSectREM);
-}
-
-/**
- * Check if this VCPU currently owns the REM lock.
- *
- * @returns bool owner/not owner
- * @param   pVM         The VM to operate on.
- */
-VMMR3DECL(bool) EMR3RemIsLockOwner(PVM pVM)
-{
-    return PDMCritSectIsOwner(&pVM->em.s.CritSectREM);
-}
-
-/**
  * Steps recompiled code.
  *
  * @returns VBox status code. The most important ones are: VINF_EM_STEP_EVENT,
@@ -912,7 +874,7 @@ static int emR3RemStep(PVM pVM, PVMCPU pVCpu)
 {
     LogFlow(("emR3RemStep: cs:eip=%04x:%08x\n", CPUMGetGuestCS(pVCpu),  CPUMGetGuestEIP(pVCpu)));
 
-    EMR3RemLock(pVM);
+    EMRemLock(pVM);
 
     /*
      * Switch to REM, step instruction, switch back.
@@ -923,7 +885,7 @@ static int emR3RemStep(PVM pVM, PVMCPU pVCpu)
         rc = REMR3Step(pVM, pVCpu);
         REMR3StateBack(pVM, pVCpu);
     }
-    EMR3RemUnlock(pVM);
+    EMRemUnlock(pVM);
 
     LogFlow(("emR3RemStep: returns %Rrc cs:eip=%04x:%08x\n", rc, CPUMGetGuestCS(pVCpu),  CPUMGetGuestEIP(pVCpu)));
     return rc;
@@ -965,7 +927,7 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 #endif
 
     /* Big lock, but you are not supposed to own any lock when coming in here. */
-    EMR3RemLock(pVM);
+    EMRemLock(pVM);
 
     /*
      * Spin till we get a forced action which returns anything but VINF_SUCCESS
@@ -1088,7 +1050,7 @@ l_REMDoForcedActions:
         REMR3StateBack(pVM, pVCpu);
         STAM_PROFILE_STOP(&pVCpu->em.s.StatREMSync, e);
     }
-    EMR3RemUnlock(pVM);
+    EMRemUnlock(pVM);
 
     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatREMTotal, a);
     return rc;
@@ -1493,14 +1455,14 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
 #endif /* 0 */
     STAM_PROFILE_START(&pVCpu->em.s.StatREMEmu, a);
     Log(("EMINS: %04x:%RGv RSP=%RGv\n", pCtx->cs, (RTGCPTR)pCtx->rip, (RTGCPTR)pCtx->rsp));
-    EMR3RemLock(pVM);
+    EMRemLock(pVM);
     /* Flush the recompiler TLB if the VCPU has changed. */
     if (pVM->em.s.idLastRemCpu != pVCpu->idCpu)
         CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
     pVM->em.s.idLastRemCpu = pVCpu->idCpu;
 
     rc = REMR3EmulateInstruction(pVM, pVCpu);
-    EMR3RemUnlock(pVM);
+    EMRemUnlock(pVM);
     STAM_PROFILE_STOP(&pVCpu->em.s.StatREMEmu, a);
 
 #ifdef EM_NOTIFY_HWACCM
@@ -3452,9 +3414,9 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /* Replay the handler notification changes. */
         if (VM_FF_IS_PENDING_EXCEPT(pVM, VM_FF_REM_HANDLER_NOTIFY, VM_FF_PGM_NO_MEMORY))
         {
-            EMR3RemLock(pVM);
+            EMRemLock(pVM);
             REMR3ReplayHandlerNotifications(pVM);
-            EMR3RemUnlock(pVM);
+            EMRemUnlock(pVM);
         }
 
         /* check that we got them all  */

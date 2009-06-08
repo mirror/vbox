@@ -165,6 +165,14 @@ VMMDECL(uint32_t)   EMEmulateCmpXchg8b(void *pu32Param1, uint32_t *pEAX, uint32_
 VMMDECL(uint32_t)   EMEmulateLockCmpXchg8b(void *pu32Param1, uint32_t *pEAX, uint32_t *pEDX, uint32_t uEBX, uint32_t uECX);
 /** @} */
 
+/** @name REM locking routines
+ * @{ */
+VMMDECL(void)       EMRemUnlock(PVM pVM);
+VMMDECL(void)       EMRemLock(PVM pVM);
+VMMDECL(bool)       EMRemIsLockOwner(PVM pVM);
+VMMDECL(int)        EMTryEnterRemLock(PVM pVM);
+/** @} */
+
 #ifdef IN_RING3
 /** @defgroup grp_em_r3     The EM Host Context Ring-3 API
  * @ingroup grp_em
@@ -182,9 +190,6 @@ VMMR3DECL(int)      EMR3CheckRawForcedActions(PVM pVM, PVMCPU pVCpu);
 VMMR3DECL(int)      EMR3Interpret(PVM pVM);
 
 VMMR3DECL(void)     EMR3ReleaseOwnedLocks(PVM pVM);
-VMMR3DECL(void)     EMR3RemUnlock(PVM pVM);
-VMMR3DECL(void)     EMR3RemLock(PVM pVM);
-VMMR3DECL(bool)     EMR3RemIsLockOwner(PVM pVM);
 
 /**
  * Command argument for EMR3RawSetMode().
