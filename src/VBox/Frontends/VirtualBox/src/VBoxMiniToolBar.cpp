@@ -44,6 +44,7 @@ VBoxMiniToolBar::VBoxMiniToolBar (QWidget *aParent, Alignment aAlignment)
     , mSlideToScreen (true)
     , mHideAfterSlide (false)
     , mPolished (false)
+    , mIsActive (true)
     , mIsSeamless (false)
     , mAlignment (aAlignment)
     , mAnimated (true)
@@ -106,6 +107,11 @@ VBoxMiniToolBar::VBoxMiniToolBar (QWidget *aParent, Alignment aAlignment)
     mMargins << widgetForAction (addWidget (new QWidget (this)));
 }
 
+void VBoxMiniToolBar::setActive (bool aIsActive)
+{
+    mIsActive = aIsActive;
+}
+
 void VBoxMiniToolBar::setIsSeamlessMode (bool aIsSeamless)
 {
     mIsSeamless = aIsSeamless;
@@ -146,11 +152,10 @@ void VBoxMiniToolBar::updateDisplay (bool aShow, bool aSetHideFlag)
                 mHideAfterSlide = false;
                 mSlideToScreen = true;
             }
-            show();
+            if (mIsActive) show();
             mScrollTimer.start (mScrollDelay, this);
         }
-        else
-            show();
+        else if (mIsActive) show();
 
         if (mAutoHide)
             mAutoScrollTimer.start (mAutoScrollDelay, this);

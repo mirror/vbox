@@ -69,6 +69,10 @@ void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
     QString saveRtimeImages = mMachine.GetExtraData (VBoxDefs::GUI_SaveMountedAtRuntime);
     mCbSaveMounted->setChecked (saveRtimeImages != "no");
 
+    /* Show Mini ToolBar in fullscreen/seamless */
+    QString showMiniToolBar = mMachine.GetExtraData (VBoxDefs::GUI_ShowMiniToolBar);
+    mCbShowToolBar->setChecked (showMiniToolBar != "no");
+
     /* Snapshot folder */
     mPsSnapshot->setPath (aMachine.GetSnapshotFolder());
     mPsSnapshot->setHomeDir (QFileInfo (mMachine.GetSettingsFilePath()).absolutePath());
@@ -95,6 +99,10 @@ void VBoxVMSettingsGeneral::putBackTo()
     /* Remember mediums mounted at runtime */
     mMachine.SetExtraData (VBoxDefs::GUI_SaveMountedAtRuntime,
                            mCbSaveMounted->isChecked() ? "yes" : "no");
+
+    /* Show Mini ToolBar in fullscreen/seamless */
+    mMachine.SetExtraData (VBoxDefs::GUI_ShowMiniToolBar,
+                           mCbShowToolBar->isChecked() ? "yes" : "no");
 
     /* Saved state folder */
     if (mPsSnapshot->isModified())

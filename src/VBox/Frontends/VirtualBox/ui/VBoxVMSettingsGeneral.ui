@@ -163,6 +163,16 @@
             </property>
            </spacer>
           </item>
+          <item row="2" column="0" >
+           <widget class="QLabel" name="mLbMedia" >
+            <property name="text" >
+             <string>Removable Media:</string>
+            </property>
+            <property name="alignment" >
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
           <item row="2" column="1" >
            <widget class="QCheckBox" name="mCbSaveMounted" >
             <property name="sizePolicy" >
@@ -182,13 +192,32 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="0" >
-           <widget class="QLabel" name="mLbAdvanced" >
+          <item row="3" column="0" >
+           <widget class="QLabel" name="mLbToolBar" >
             <property name="text" >
-             <string>Removable Media:</string>
+             <string>Mini ToolBar:</string>
             </property>
             <property name="alignment" >
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1" >
+           <widget class="QCheckBox" name="mCbShowToolBar" >
+            <property name="sizePolicy" >
+             <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="whatsThis" >
+             <string>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</string>
+            </property>
+            <property name="text" >
+             <string>Show In &amp;Fullscreen/Seamless</string>
+            </property>
+            <property name="checked" >
+             <bool>true</bool>
             </property>
            </widget>
           </item>

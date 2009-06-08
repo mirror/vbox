@@ -899,6 +899,10 @@ bool VBoxConsoleWnd::openView (const CSession &session)
         if (str == "no")
             mIsAutoSaveMedia = false;
 
+        str = cmachine.GetExtraData (VBoxDefs::GUI_ShowMiniToolBar);
+        if (str == "no")
+            mMiniToolBar->setActive (false);
+
         /* Check if one of extended modes to be activated on loading */
         QString fsMode = cmachine.GetExtraData (VBoxDefs::GUI_Fullscreen);
         QString slMode = cmachine.GetExtraData (VBoxDefs::GUI_Seamless);
