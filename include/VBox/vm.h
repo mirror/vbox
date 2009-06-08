@@ -269,7 +269,8 @@ typedef struct VMCPU
  * loops. */
 #define VM_FF_PGM_NO_MEMORY                 RT_BIT_32(19)
 /** REM needs to be informed about handler changes. */
-#define VM_FF_REM_HANDLER_NOTIFY            RT_BIT_32(29)
+#define VM_FF_REM_HANDLER_NOTIFY_BIT        29
+#define VM_FF_REM_HANDLER_NOTIFY            RT_BIT_32(VM_FF_REM_HANDLER_NOTIFY_BIT)
 /** Suspend the VM - debug only. */
 #define VM_FF_DEBUG_SUSPEND                 RT_BIT_32(31)
 
@@ -359,7 +360,7 @@ typedef struct VMCPU
 /** VM Flags that cause the HWACCM loops to go back to ring-3. */
 #define VM_FF_HWACCM_TO_R3_MASK                 (VM_FF_TM_VIRTUAL_SYNC | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY)
 /** VMCPU Flags that cause the HWACCM loops to go back to ring-3. */
-#define VMCPU_FF_HWACCM_TO_R3_MASK               (VMCPU_FF_TO_R3 | VMCPU_FF_TIMER)
+#define VMCPU_FF_HWACCM_TO_R3_MASK              (VMCPU_FF_TO_R3 | VMCPU_FF_TIMER)
 
 /** All the forced VM flags. */
 #define VM_FF_ALL_MASK                          (~0U)

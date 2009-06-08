@@ -2727,54 +2727,58 @@ REMR3DECL(void) REMR3ReplayInvalidatedPages(PVM pVM, PVMCPU pVCpu)
  */
 REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
 {
+    Assert(EMR3RemIsLockOwner(pVM));
+
     /*
      * Replay the flushes.
      */
-    RTUINT i;
-    const RTUINT c = pVM->rem.s.cHandlerNotifications;
-
-    LogFlow(("REMR3ReplayInvalidatedPages:\n"));
+    LogFlow(("REMR3ReplayHandlerNotifications:\n"));
     VM_ASSERT_EMT(pVM);
 
-    pVM->rem.s.cHandlerNotifications = 0;
-    for (i = 0; i < c; i++)
+    if (VM_FF_TESTANDCLEAR(pVM, VM_FF_REM_HANDLER_NOTIFY_BIT))
     {
-        PREMHANDLERNOTIFICATION pRec = &pVM->rem.s.aHandlerNotifications[i];
-        switch (pRec->enmKind)
+        RTUINT i;
+        const RTUINT c = pVM->rem.s.cHandlerNotifications;
+
+        pVM->rem.s.cHandlerNotifications = 0;
+        for (i = 0; i < c; i++)
         {
-            case REMHANDLERNOTIFICATIONKIND_PHYSICAL_REGISTER:
-                REMR3NotifyHandlerPhysicalRegister(pVM,
-                                                   pRec->u.PhysicalRegister.enmType,
-                                                   pRec->u.PhysicalRegister.GCPhys,
-                                                   pRec->u.PhysicalRegister.cb,
-                                                   pRec->u.PhysicalRegister.fHasHCHandler);
-                break;
+            PREMHANDLERNOTIFICATION pRec = &pVM->rem.s.aHandlerNotifications[i];
+            switch (pRec->enmKind)
+            {
+                case REMHANDLERNOTIFICATIONKIND_PHYSICAL_REGISTER:
+                    REMR3NotifyHandlerPhysicalRegister(pVM,
+                                                    pRec->u.PhysicalRegister.enmType,
+                                                    pRec->u.PhysicalRegister.GCPhys,
+                                                    pRec->u.PhysicalRegister.cb,
+                                                    pRec->u.PhysicalRegister.fHasHCHandler);
+                    break;
 
-            case REMHANDLERNOTIFICATIONKIND_PHYSICAL_DEREGISTER:
-                REMR3NotifyHandlerPhysicalDeregister(pVM,
-                                                     pRec->u.PhysicalDeregister.enmType,
-                                                     pRec->u.PhysicalDeregister.GCPhys,
-                                                     pRec->u.PhysicalDeregister.cb,
-                                                     pRec->u.PhysicalDeregister.fHasHCHandler,
-                                                     pRec->u.PhysicalDeregister.fRestoreAsRAM);
-                break;
+                case REMHANDLERNOTIFICATIONKIND_PHYSICAL_DEREGISTER:
+                    REMR3NotifyHandlerPhysicalDeregister(pVM,
+                                                        pRec->u.PhysicalDeregister.enmType,
+                                                        pRec->u.PhysicalDeregister.GCPhys,
+                                                        pRec->u.PhysicalDeregister.cb,
+                                                        pRec->u.PhysicalDeregister.fHasHCHandler,
+                                                        pRec->u.PhysicalDeregister.fRestoreAsRAM);
+                    break;
 
-            case REMHANDLERNOTIFICATIONKIND_PHYSICAL_MODIFY:
-                REMR3NotifyHandlerPhysicalModify(pVM,
-                                                 pRec->u.PhysicalModify.enmType,
-                                                 pRec->u.PhysicalModify.GCPhysOld,
-                                                 pRec->u.PhysicalModify.GCPhysNew,
-                                                 pRec->u.PhysicalModify.cb,
-                                                 pRec->u.PhysicalModify.fHasHCHandler,
-                                                 pRec->u.PhysicalModify.fRestoreAsRAM);
-                break;
+                case REMHANDLERNOTIFICATIONKIND_PHYSICAL_MODIFY:
+                    REMR3NotifyHandlerPhysicalModify(pVM,
+                                                    pRec->u.PhysicalModify.enmType,
+                                                    pRec->u.PhysicalModify.GCPhysOld,
+                                                    pRec->u.PhysicalModify.GCPhysNew,
+                                                    pRec->u.PhysicalModify.cb,
+                                                    pRec->u.PhysicalModify.fHasHCHandler,
+                                                    pRec->u.PhysicalModify.fRestoreAsRAM);
+                    break;
 
-            default:
-                AssertReleaseMsgFailed(("enmKind=%d\n", pRec->enmKind));
-                break;
+                default:
+                    AssertReleaseMsgFailed(("enmKind=%d\n", pRec->enmKind));
+                    break;
+            }
         }
     }
-    VM_FF_CLEAR(pVM, VM_FF_REM_HANDLER_NOTIFY);
 }
 
 
