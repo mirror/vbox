@@ -28,7 +28,7 @@
 #endif
 #include <Carbon/Carbon.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** Event handler callback.
  * @returns true if handled, false if not.
@@ -93,7 +93,7 @@ const char *VBoxCocoaApplication_eventTypeName(unsigned long eEvtType);
 void VBoxCocoaApplication_printEvent(const char *pszPrefix, const void *pvEvent);
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 
