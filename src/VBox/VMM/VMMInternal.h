@@ -296,7 +296,6 @@ typedef struct VMM
     STAMCOUNTER                 StatRZRetPatchPF;
     STAMCOUNTER                 StatRZRetPatchGP;
     STAMCOUNTER                 StatRZRetPatchIretIRQ;
-    STAMCOUNTER                 StatRZRetPageOverflow;
     STAMCOUNTER                 StatRZRetRescheduleREM;
     STAMCOUNTER                 StatRZRetToR3;
     STAMCOUNTER                 StatRZRetTimerPending;
