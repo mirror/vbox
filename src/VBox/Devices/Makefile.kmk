@@ -408,10 +408,20 @@ DevicesR3_DEFS         += VBOX_WITH_HGCM
 DevicesR3_DEFS.linux   += _GNU_SOURCE
 DevicesR3_DEFS.l4      += _GNU_SOURCE
 
-# VBoxAcpi.cpp needs vboxaml.hex which we generate from PC/vbox.dsl. (bird: What's vboxaml.aml?)
+ifdef VBOX_WITH_DYNAMIC_DSDT
+DevicesR3_CLEAN        += $(PATH_DevicesR3)/vboxdsl.hex
+PC/ACPI/VBoxAcpi.cpp_DEPS     = $(PATH_DevicesR3)/vboxdsl.hex
+
+$$(PATH_DevicesR3)/vboxdsl.hex: $(PATH_SUB_CURRENT)/PC/vbox.dsl | $$(dir $$@)
+	$(call MSG_TOOL,bin2c,DevicesR3,$<,$@)
+	$(QUIET)$(VBOX_BIN2C) -export VboxDslSource $< $@
+
+vboxdsl.hex:: $$(PATH_DevicesR3)/vboxdsl.hex
+
+else
+# VBoxAcpi.cpp needs vboxaml.hex which we generate from PC/vbox.dsl
 DevicesR3_CLEAN        += $(PATH_DevicesR3)/vboxaml.hex $(PATH_DevicesR3)/vboxaml.aml
 PC/ACPI/VBoxAcpi.cpp_DEPS     = $(PATH_DevicesR3)/vboxaml.hex
-PC/ACPI/VBoxAcpi.cpp_INCS     = $(PATH_DevicesR3)
 
 $$(PATH_DevicesR3)/vboxaml.hex: $(PATH_SUB_CURRENT)/PC/vbox.dsl | $$(dir $$@)
 	$(call MSG_TOOL,iasl,DevicesR3,$<,$@)
@@ -419,6 +429,8 @@ $$(PATH_DevicesR3)/vboxaml.hex: $(PATH_SUB_CURRENT)/PC/vbox.dsl | $$(dir $$@)
 
 vboxaml.hex:: $$(PATH_DevicesR3)/vboxaml.hex
 
+endif
+PC/ACPI/VBoxAcpi.cpp_INCS     = $(PATH_DevicesR3)
 
 # For finding PCIInternal.h from VBox/pci.h.
 Bus/DevPCI.cpp_INCS     = Bus
