@@ -898,7 +898,7 @@
 
   <interface
      name="IVirtualBoxErrorInfo" extends="$errorinfo"
-     uuid="e98b5376-8eb4-4eea-812a-3964bf3bb26f"
+     uuid="bcae7fc3-3fd0-4bac-923c-ec1596c7bc83"
      supportsErrorInfo="no"
      wsmap="suppress"
      >
