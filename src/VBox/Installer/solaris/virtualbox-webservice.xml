@@ -75,12 +75,20 @@
         <exec_method
             type='method'
             name='stop'
-            exec='/opt/VirtualBox/smf-vboxwebsrv %m %{restarter/contract}'
+            exec=':kill'
             timeout_seconds='15'>
             <method_context>
                 <method_credential user='root' group='root' />
             </method_context>
         </exec_method>
+
+        <property_group name='startd' type='framework'>
+            <!-- The default contract restarter behavior is not appropriate,
+                 it will kill VMs if the service is restarted. -->
+            <propval name='duration' type='astring' value='child' />
+            <!-- sub-process core dumps/signals shouldn't restart session -->
+            <propval name='ignore_error' type='astring' value='core,signal' />
+        </property_group>
 
         <property_group name='config' type='application'>
             <propval name='user' type='astring' value='root' />
