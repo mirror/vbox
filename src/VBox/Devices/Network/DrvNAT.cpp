@@ -717,13 +717,13 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     /*
      * Validate the config.
      */
-#ifndef VBOX_WITH_SLIRP_DNS_PROXY
     if (!CFGMR3AreValuesValid(pCfgHandle, "PassDomain\0TFTPPrefix\0BootFile\0Network\0NextServer\0"
-#else
-    if (!CFGMR3AreValuesValid(pCfgHandle, "PassDomain\0TFTPPrefix\0BootFile\0Network\0NextServer\0DNSProxy\0"
+#ifdef VBOX_WITH_SLIRP_DNS_PROXY
+        "DNSProxy\0"
 #endif
-        "SocketRcvBuf\0SocketSndBuf\0TcpRcvSpace\0TcpSndSpace"))
-        return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES, N_("Unknown NAT configuration option, only supports PassDomain, TFTPPrefix, BootFile and Network"));
+        "SocketRcvBuf\0SocketSndBuf\0TcpRcvSpace\0TcpSndSpace\0"))
+        return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
+                                N_("Unknown NAT configuration option, only supports PassDomain, TFTPPrefix, BootFile and Network"));
 
     /*
      * Init the static parts.
