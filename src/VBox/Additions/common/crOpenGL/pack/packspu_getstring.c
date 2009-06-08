@@ -69,10 +69,14 @@ GetVersionString(void)
     return version;
 }
 
+#ifdef CR_OPENGL_VERSION_2_0
+static GLubyte gpszShadingVersion[255]="";
+#endif
 
 const GLubyte * PACKSPU_APIENTRY packspu_GetString( GLenum name )
 {
     GET_CONTEXT(ctx);
+
     if (name == GL_EXTENSIONS)
     {
         return GetExtensions();
@@ -83,6 +87,21 @@ const GLubyte * PACKSPU_APIENTRY packspu_GetString( GLenum name )
         sprintf(ctx->glVersion, "%.1f Chromium %s", version, CR_VERSION_STRING);
         return (const GLubyte *) ctx->glVersion;
     }
+#ifdef CR_OPENGL_VERSION_2_0
+    else if (name == GL_SHADING_LANGUAGE_VERSION)
+    {
+        GET_THREAD(thread);
+        int writeback = 1;
+
+        crPackGetString(GL_SHADING_LANGUAGE_VERSION, gpszShadingVersion, &writeback);
+        packspuFlush( (void *) thread );
+
+        while (writeback)
+            crNetRecv();
+
+        return gpszShadingVersion;
+    }
+#endif
     else
     {
         return crStateGetString(name);

@@ -995,6 +995,10 @@ renderspuGetString(GLenum pname)
         sprintf(tempStr, "Chromium (%s)", (char *) render_spu.ws.glGetString(GL_RENDERER));
         return (const GLubyte *) tempStr;
     }
+#ifdef CR_OPENGL_VERSION_2_0
+    else if (pname == GL_SHADING_LANGUAGE_VERSION)
+        return render_spu.ws.glGetString(GL_SHADING_LANGUAGE_VERSION);
+#endif
     else
         return NULL;
 }
