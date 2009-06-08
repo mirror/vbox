@@ -24,7 +24,7 @@
 
 #include <iprt/stream.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 int PcapStreamHdr(PRTSTREAM pStream, uint64_t StartNanoTS);
 int PcapStreamFrame(PRTSTREAM pStream, uint64_t StartNanoTS, const void *pvFrame, size_t cbFrame, size_t cbMax);
@@ -32,7 +32,7 @@ int PcapStreamFrame(PRTSTREAM pStream, uint64_t StartNanoTS, const void *pvFrame
 int PcapFileHdr(RTFILE File, uint64_t StartNanoTS);
 int PcapFileFrame(RTFILE File, uint64_t StartNanoTS, const void *pvFrame, size_t cbFrame, size_t cbMax);
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

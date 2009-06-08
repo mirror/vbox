@@ -24,7 +24,7 @@
 
 #include <VBox/pdm.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 #ifdef IN_VBOXDD2
 extern DECLEXPORT(const unsigned char)  g_abPcBiosBinary[];
@@ -48,6 +48,6 @@ extern DECLIMPORT(const unsigned)       g_cbVmiBiosBinary;
 extern const PDMDEVREG g_DeviceAPIC;
 extern const PDMDEVREG g_DeviceIOAPIC;
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
