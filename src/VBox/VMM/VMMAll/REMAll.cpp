@@ -46,8 +46,8 @@
  */
 VMMDECL(int) REMNotifyInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
 {
-    if (    EMTryEnterRemLock(pVM) == VINF_SUCCESS  /* if this fails, then we'll just flush the tlb as we don't want to waste time here. */
-        &&  pVM->rem.s.cInvalidatedPages < RT_ELEMENTS(pVM->rem.s.aGCPtrInvalidatedPages))
+    if (    pVM->rem.s.cInvalidatedPages < RT_ELEMENTS(pVM->rem.s.aGCPtrInvalidatedPages)
+        &&  EMTryEnterRemLock(pVM) == VINF_SUCCESS) /* if this fails, then we'll just flush the tlb as we don't want to waste time here. */
     {
         /*
          * We sync them back in REMR3State.
