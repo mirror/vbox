@@ -29,9 +29,9 @@
 #include <VBox/VBoxGuestLib.h>
 // VBOX end
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 NTSTATUS DriverEntry (PDRIVER_OBJECT, PUNICODE_STRING);
-__END_DECLS
+RT_END_DECLS
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (INIT, DriverEntry)
