@@ -26,7 +26,7 @@
 #include <VBox/types.h>
 #include <VBox/ssm.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_ssm_int       Internals
  * @ingroup grp_ssm
@@ -178,7 +178,7 @@ typedef SSM *PSSM;
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif /* !___SSMInternal_h */
 

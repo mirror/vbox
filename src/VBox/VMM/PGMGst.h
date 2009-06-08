@@ -23,7 +23,7 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 /* r3 */
 PGM_GST_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR0);
 PGM_GST_DECL(int, Enter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
@@ -34,7 +34,7 @@ PGM_GST_DECL(int, Exit)(PVMCPU pVCpu);
 PGM_GST_DECL(int, GetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys);
 PGM_GST_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
 PGM_GST_DECL(int, GetPDE)(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPDE);
-__END_DECLS
+RT_END_DECLS
 
 
 /**

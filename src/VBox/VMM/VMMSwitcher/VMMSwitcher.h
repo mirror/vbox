@@ -130,7 +130,7 @@ typedef struct VMMSWITCHERDEF
 } VMMSWITCHERDEF;
 #pragma pack()
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 extern VMMSWITCHERDEF vmmR3Switcher32BitTo32Bit_Def;
 extern VMMSWITCHERDEF vmmR3Switcher32BitToPAE_Def;
 extern VMMSWITCHERDEF vmmR3Switcher32BitToAMD64_Def;
@@ -150,6 +150,6 @@ extern DECLCALLBACK(void) vmmR3SwitcherPAEToAMD64_Relocate(PVM pVM, PVMMSWITCHER
 extern DECLCALLBACK(void) vmmR3SwitcherAMD64To32Bit_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IdCode);
 extern DECLCALLBACK(void) vmmR3SwitcherAMD64ToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IdCode);
 extern DECLCALLBACK(void) vmmR3SwitcherAMD64ToAMD64_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IdCode);
-__END_DECLS
+RT_END_DECLS
 
 #endif

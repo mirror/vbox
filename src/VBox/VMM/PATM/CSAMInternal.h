@@ -278,8 +278,8 @@ inline RTRCPTR CSAMResolveBranch(PDISCPUSTATE pCpu, RTRCPTR pBranchInstrGC)
 #endif
 }
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 VMMRCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
-__END_DECLS
+RT_END_DECLS
 
 #endif

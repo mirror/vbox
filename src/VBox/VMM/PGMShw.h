@@ -117,7 +117,7 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 /* r3 */
 PGM_SHW_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR0);
 PGM_SHW_DECL(int, Enter)(PVMCPU pVCpu);
@@ -127,7 +127,7 @@ PGM_SHW_DECL(int, Exit)(PVMCPU pVCpu);
 /* all */
 PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
 PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
-__END_DECLS
+RT_END_DECLS
 
 
 /**
@@ -230,7 +230,7 @@ PGM_SHW_DECL(int, Exit)(PVMCPU pVCpu)
 {
     PVM pVM = pVCpu->pVMR3;
 
-    if (    (   pVCpu->pgm.s.enmShadowMode == PGMMODE_NESTED 
+    if (    (   pVCpu->pgm.s.enmShadowMode == PGMMODE_NESTED
              || pVCpu->pgm.s.enmShadowMode == PGMMODE_EPT)
         &&  pVCpu->pgm.s.CTX_SUFF(pShwPageCR3))
     {
