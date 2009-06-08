@@ -32,7 +32,7 @@
 
 #include <iprt/types.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 void *  RT_NOCRT(memchr)(const void *pv, int ch, size_t cb);
 int     RT_NOCRT(memcmp)(const void *pv1, const void *pv2, size_t cb);
@@ -79,6 +79,6 @@ char *  RT_NOCRT(strstr)(const char *psz, const char *pszSub);
 # define strstr   RT_NOCRT(strstr)
 #endif
 
-__END_DECLS
+RT_END_DECLS
 
 #endif

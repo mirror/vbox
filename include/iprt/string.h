@@ -65,10 +65,10 @@
  * IPRT instead of the operating environment.
  */
 #if defined(RT_OS_DARWIN) && defined(KERNEL)
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 void *memchr(const void *pv, int ch, size_t cb);
 char *strpbrk(const char *pszStr, const char *pszChars);
-__END_DECLS
+RT_END_DECLS
 #endif
 
 /**
@@ -111,7 +111,7 @@ __END_DECLS
  * @{
  */
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 
 /**
@@ -1883,7 +1883,7 @@ DECLINLINE(bool) RTUtf16IsSurrogatePair(RTUTF16 wcHigh, RTUTF16 wcLow)
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 /** @} */
 

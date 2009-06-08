@@ -33,7 +33,7 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_rt_env    RTProc - Process Environment Strings
  * @ingroup grp_rt
@@ -215,7 +215,7 @@ RTDECL(int) RTEnvUnsetEx(RTENV Env, const char *pszVar);
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

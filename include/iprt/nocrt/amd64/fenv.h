@@ -97,7 +97,7 @@ typedef uint16_t      fexcept_t;
 #define _SSE_ROUND_SHIFT        3
 #define _SSE_EMASK_SHIFT        7
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /* Default floating-point environment */
 extern const fenv_t     RT_NOCRT(__fe_dfl_env);
@@ -220,7 +220,7 @@ fegetexcept(void)
         return (~__control & FE_ALL_EXCEPT);
 }
 
-__END_DECLS
+RT_END_DECLS
 
 #ifndef RT_WITHOUT_NOCRT_WRAPPERS
 # define fesetexceptflag RT_NOCRT(fesetexceptflag)

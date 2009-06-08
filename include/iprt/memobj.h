@@ -33,7 +33,7 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_rt_memobj     RTMemObj - Memory Object Manipulation (Ring-0)
  * @ingroup grp_rt
@@ -303,7 +303,7 @@ RTR0DECL(int) RTR0MemObjMapUser(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, RTR
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

@@ -32,7 +32,7 @@
 
 #include <iprt/critsect.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_rt_lock       RTLock - Scope-based Locking (C++).
  * @ingroup grp_rt
@@ -139,7 +139,7 @@ class RTLock
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

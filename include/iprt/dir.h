@@ -37,7 +37,7 @@
 #endif
 
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_rt_dir    RTDir - Directory Manipulation
  * @ingroup grp_rt
@@ -372,7 +372,7 @@ RTR3DECL(int) RTDirSetTimes(PRTDIR pDir, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC 
 #endif /* IN_RING3 */
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

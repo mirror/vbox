@@ -55,14 +55,6 @@
  * between C and C++ program.
  */
 
-/** @def __BEGIN_DECLS
- * @deprecated  Use RT_BEGIN_DECLS
- */
-
-/** @def __END_DECLS
- * @deprecated  Use RT_END_DECLS
- */
-
 # if defined(__cplusplus)
 #  define RT_BEGIN_DECLS extern "C" {
 #  define __BEGIN_DECLS  extern "C" {

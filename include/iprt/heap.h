@@ -33,7 +33,7 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /**
  * Initializes the heap.
@@ -169,7 +169,7 @@ typedef FNRTHEAPSIMPLEPRINTF *PFNRTHEAPSIMPLEPRINTF;
  */
 RTDECL(void) RTHeapSimpleDump(RTHEAPSIMPLE Heap, PFNRTHEAPSIMPLEPRINTF pfnPrintf);
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

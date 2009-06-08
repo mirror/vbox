@@ -53,7 +53,7 @@ typedef struct RTMD5CONTEXT
 /** Pointer to MD5 hash algorithm context. */
 typedef RTMD5CONTEXT *PRTMD5CONTEXT;
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /**
  * Initialize MD5 context.
@@ -80,7 +80,7 @@ RTDECL(void) RTMd5Update(PRTMD5CONTEXT pCtx, const void *pvBuf, size_t cbBuf);
  */
 RTDECL(void) RTMd5Final(uint8_t pabDigest[RTMD5HASHSIZE], PRTMD5CONTEXT pCtx);
 
-__END_DECLS
+RT_END_DECLS
 
 /** @} */
 

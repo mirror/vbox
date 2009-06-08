@@ -39,7 +39,7 @@
 #endif
 
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_rt_localipc   RTLocalIpc - Local IPC
  * @ingroup grp_rt
@@ -272,7 +272,7 @@ RTDECL(int) RTLocalIpcSessionQueryUserId(RTLOCALIPCSESSION hSession, PRTUID pUid
 RTDECL(int) RTLocalIpcSessionQueryGroupId(RTLOCALIPCSESSION hSession, PRTUID pUid);
 
 /** @} */
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

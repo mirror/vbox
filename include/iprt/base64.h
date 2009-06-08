@@ -32,7 +32,7 @@
 
 #include <iprt/types.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_rt_base64     RTBase64 - Base64, MIME content transfer encoding.
  * @ingroup grp_rt
@@ -117,7 +117,7 @@ RTDECL(int) RTBase64Encode(const void *pvData, size_t cbData, char *pszBuf, size
 
 /** @}  */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

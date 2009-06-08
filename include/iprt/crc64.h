@@ -35,7 +35,7 @@
 #include <iprt/types.h>
 
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_rt_crc64      RTCrc64 - CRC64 Calculation
  * @ingroup grp_rt
@@ -80,7 +80,7 @@ RTDECL(uint64_t) RTCrc64Finish(uint64_t uCRC64);
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

@@ -36,7 +36,7 @@
 # include <iprt/fs.h>
 #endif
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_rt_fileio     RTFile - File I/O
  * @ingroup grp_rt
@@ -1146,7 +1146,7 @@ RTDECL(int) RTFileAioCtxWakeup(RTFILEAIOCTX hAioCtx);
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

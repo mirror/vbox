@@ -33,7 +33,7 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_rt_time   RTTime - Time
  * @ingroup grp_rt
@@ -932,7 +932,7 @@ RTDECL(uint64_t) RTTimeProgramStartNanoTS(void);
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 
