@@ -1065,6 +1065,9 @@ static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, siz
             {
                 *pcbPreRead = cBATEntryIndex * VHD_SECTOR_SIZE;
                 *pcbPostRead = pImage->cSectorsPerDataBlock * VHD_SECTOR_SIZE - cbToWrite - *pcbPreRead;
+
+                if (pcbWriteProcess)
+                    *pcbWriteProcess = cbToWrite;
                 return VERR_VD_BLOCK_FREE;
             }
 
