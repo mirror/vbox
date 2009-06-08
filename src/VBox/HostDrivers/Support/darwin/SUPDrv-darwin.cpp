@@ -70,9 +70,9 @@
 #include <IOKit/pwr_mgt/RootDomain.h>
 
 #ifdef VBOX_WITH_HOST_VMX
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 # include <i386/vmx.h>
-__END_DECLS
+RT_END_DECLS
 #endif
 
 
@@ -88,7 +88,7 @@ __END_DECLS
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pvData);
 static kern_return_t    VBoxDrvDarwinStop(struct kmod_info *pKModInfo, void *pvData);
 
@@ -100,7 +100,7 @@ static int              VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long i
 static int              VBoxDrvDarwinErr2DarwinErr(int rc);
 
 static IOReturn         VBoxDrvDarwinSleepHandler(void *pvTarget, void *pvRefCon, UInt32 uMessageType, IOService *pProvider, void *pvMessageArgument, vm_size_t argSize);
-__END_DECLS
+RT_END_DECLS
 
 
 /*******************************************************************************
@@ -161,7 +161,7 @@ OSDefineMetaClassAndStructors(org_virtualbox_SupDrvClient, IOUserClient);
 /**
  * Declare the module stuff.
  */
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 extern kern_return_t _start(struct kmod_info *pKModInfo, void *pvData);
 extern kern_return_t _stop(struct kmod_info *pKModInfo, void *pvData);
 
@@ -169,7 +169,7 @@ KMOD_EXPLICIT_DECL(VBoxDrv, VBOX_VERSION_STRING, _start, _stop)
 DECLHIDDEN(kmod_start_func_t *) _realmain = VBoxDrvDarwinStart;
 DECLHIDDEN(kmod_stop_func_t *)  _antimain = VBoxDrvDarwinStop;
 DECLHIDDEN(int)                 _kext_apple_cc = __APPLE_CC__;
-__END_DECLS
+RT_END_DECLS
 
 
 /**

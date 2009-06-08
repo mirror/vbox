@@ -241,7 +241,7 @@ extern DECLHIDDEN(SUPLIBDATA)   g_supLibData;
 /*******************************************************************************
 *   OS Specific Function                                                       *
 *******************************************************************************/
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 int     suplibOsInstall(void);
 int     suplibOsUninstall(void);
 int     suplibOsInit(PSUPLIBDATA pThis, bool fPreInited);
@@ -314,7 +314,7 @@ DECLHIDDEN(void)   supR3HardenedGetPreInitData(PSUPPREINITDATA pPreInitData);
 DECLHIDDEN(int)    supR3HardenedRecvPreInitData(PCSUPPREINITDATA pPreInitData);
 
 
-__END_DECLS
+RT_END_DECLS
 
 
 #endif
