@@ -718,10 +718,11 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
      * Validate the config.
      */
 #ifndef VBOX_WITH_SLIRP_DNS_PROXY
-    if (!CFGMR3AreValuesValid(pCfgHandle, "PassDomain\0TFTPPrefix\0BootFile\0Network\0NextServer\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "PassDomain\0TFTPPrefix\0BootFile\0Network\0NextServer\0"
 #else
-    if (!CFGMR3AreValuesValid(pCfgHandle, "PassDomain\0TFTPPrefix\0BootFile\0Network\0NextServer\0DNSProxy\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, "PassDomain\0TFTPPrefix\0BootFile\0Network\0NextServer\0DNSProxy\0"
 #endif
+        "SocketRcvBuf\0SocketSndBuf\0TcpRcvSpace\0TcpSndSpace"))
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES, N_("Unknown NAT configuration option, only supports PassDomain, TFTPPrefix, BootFile and Network"));
 
     /*
@@ -805,7 +806,19 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
 #ifdef VBOX_WITH_SLIRP_DNS_PROXY
         slirp_set_dhcp_dns_proxy(pThis->pNATState, !!fDNSProxy);
 #endif
-
+#define SLIRP_SET_TUNING_VALUE(name, setter)            \
+    do                                                  \
+    {                                                   \
+        int len = 0;                                    \
+        rc = CFGMR3QueryS32(pCfgHandle, name, &len);    \
+        if (RT_SUCCESS(rc))                             \
+            setter(pThis->pNATState, len);              \
+    }while(0)
+        SLIRP_SET_TUNING_VALUE("SocketRcvBuf", slirp_set_rcvbuf); 
+        SLIRP_SET_TUNING_VALUE("SocketSndBuf", slirp_set_sndbuf); 
+        SLIRP_SET_TUNING_VALUE("TcpRcvSpace", slirp_set_tcp_rcvspace); 
+        SLIRP_SET_TUNING_VALUE("TcpSndSpace", slirp_set_tcp_sndspace); 
+    
         slirp_register_timers(pThis->pNATState, pDrvIns);
         int rc2 = drvNATConstructRedir(pDrvIns->iInstance, pThis, pCfgHandle, Network);
         if (RT_SUCCESS(rc2))
