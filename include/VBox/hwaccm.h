@@ -56,7 +56,7 @@ typedef enum HWACCMSTATE
     HWACCMSTATE_32BIT_HACK = 0x7fffffff
 } HWACCMSTATE;
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /**
  * Query HWACCM state (enabled/disabled)
@@ -163,7 +163,7 @@ VMMR0DECL(int)   HWACCMR0TestSwitcher3264(PVM pVM);
 
 
 /** @} */
-RT_END_DECLS
+RT_C_DECLS_END
 
 
 #endif

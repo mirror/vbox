@@ -437,7 +437,7 @@ static bool apic_update_irq(APICDeviceInfo* dev, APICState *s);
 
 #ifdef VBOX
 static uint32_t apic_get_delivery_bitmask(APICDeviceInfo* dev, uint8_t dest, uint8_t dest_mode);
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 PDMBOTHCBDECL(int)  apicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
 PDMBOTHCBDECL(int)  apicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
 PDMBOTHCBDECL(int)  apicGetInterrupt(PPDMDEVINS pDevIns);
@@ -456,7 +456,7 @@ PDMBOTHCBDECL(int)  ioapicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS G
 PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
 
 static void apic_update_tpr(APICDeviceInfo *dev, APICState* s, uint32_t val);
-RT_END_DECLS
+RT_C_DECLS_END
 #endif /* VBOX */
 
 #ifndef VBOX

@@ -98,7 +98,7 @@ typedef struct TRPMGCHYPER
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 /** Defined in VMMGC0.asm or VMMGC99.asm.
  * @{ */
 extern const TRPMGCHYPER g_aTrap0bHandlers[1];
@@ -108,15 +108,15 @@ extern const TRPMGCHYPER g_aTrap0dHandlersEnd[1];
 extern const TRPMGCHYPER g_aTrap0eHandlers[1];
 extern const TRPMGCHYPER g_aTrap0eHandlersEnd[1];
 /** @} */
-RT_END_DECLS
+RT_C_DECLS_END
 
 
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-RT_BEGIN_DECLS /* addressed from asm (not called so no DECLASM). */
+RT_C_DECLS_BEGIN /* addressed from asm (not called so no DECLASM). */
 DECLCALLBACK(int) trpmGCTrapInGeneric(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t uUser);
-RT_END_DECLS
+RT_C_DECLS_END
 
 
 

@@ -61,7 +61,7 @@ typedef CFGMVALUETYPE *PCFGMVALUETYPE;
 
 
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 #ifdef IN_RING3
 /** @defgroup   grp_cfgm_r3     The CFGM Host Context Ring-3 API
@@ -186,7 +186,7 @@ VMMR3DECL(bool)         CFGMR3AreValuesValid(PCFGMNODE pNode, const char *pszzVa
 #endif  /* IN_RING3 */
 
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 /** @} */
 

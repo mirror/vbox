@@ -48,9 +48,9 @@
 # include <crt_externs.h>
 #endif
 #if defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD) || defined(RT_OS_OPENBSD)
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 extern char **environ;
-RT_END_DECLS
+RT_C_DECLS_END
 #endif
 
 /*******************************************************************************

@@ -35,7 +35,7 @@
 /** First interrupt handler. Used for validating input. */
 #define TRPM_HANDLER_INT_BASE  0x20
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 
 /** @defgroup grp_trpm_int   Internals
@@ -286,6 +286,6 @@ DECLASM(void) trpmR0DispatchHostInterruptSimple(RTUINT uActiveVector);
 
 /** @} */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif

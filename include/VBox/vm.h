@@ -962,7 +962,7 @@ typedef struct VM
 
 
 #ifdef IN_RC
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** The VM structure.
  * This is imported from the VMMGCBuiltin module, i.e. it's a one
@@ -970,7 +970,7 @@ RT_BEGIN_DECLS
  */
 extern DECLIMPORT(VM)   g_VM;
 
-RT_END_DECLS
+RT_C_DECLS_END
 #endif
 
 /** @} */

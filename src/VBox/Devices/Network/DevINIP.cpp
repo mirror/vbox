@@ -24,13 +24,13 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_INIP
-#include <iprt/cdefs.h>     /* include early to allow RT_BEGIN_DECLS hack */
+#include <iprt/cdefs.h>     /* include early to allow RT_C_DECLS_BEGIN hack */
 #include <iprt/mem.h>       /* include anything of ours that the lwip headers use. */
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
 #include <iprt/alloca.h>
 /* All lwip header files are not C++ safe. So hack around this. */
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 #include "lwip/sys.h"
 #include "lwip/stats.h"
 #include "lwip/mem.h"
@@ -43,7 +43,7 @@ RT_BEGIN_DECLS
 #include "lwip/tcpip.h"
 #include "lwip/sockets.h"
 #include "netif/etharp.h"
-RT_END_DECLS
+RT_C_DECLS_END
 #include <VBox/pdmdev.h>
 #include <VBox/tm.h>
 #include <iprt/string.h>

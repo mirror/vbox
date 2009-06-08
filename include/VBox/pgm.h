@@ -37,7 +37,7 @@
 #include <VBox/x86.h>
 #include <VBox/hwacc_vmx.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** @defgroup grp_pgm   The Page Monitor / Manager API
  * @{
@@ -568,7 +568,7 @@ VMMR3DECL(int)      PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RT
 /** @} */
 #endif /* IN_RING3 */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 /** @} */
 #endif

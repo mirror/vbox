@@ -453,7 +453,7 @@ typedef struct VMINTUSERPERVMCPU
 /** Pointer to the VM internal data kept in the UVM. */
 typedef VMINTUSERPERVMCPU *PVMINTUSERPERVMCPU;
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 DECLCALLBACK(int)   vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArg);
 int                 vmR3SetHaltMethodU(PUVM pUVM, VMHALTMETHOD enmHaltMethod);
@@ -465,7 +465,7 @@ void                vmSetRuntimeErrorCopy(PVM pVM, uint32_t fFlags, const char *
 void                vmR3DestroyFinalBitFromEMT(PUVM pUVM);
 void                vmR3SetState(PVM pVM, VMSTATE enmStateNew);
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 
 /** @} */

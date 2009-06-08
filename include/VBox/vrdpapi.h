@@ -51,7 +51,7 @@
 /** Default port that VRDP binds to. */
 #define VRDP_DEFAULT_PORT (3389)
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /* Forward declaration of the VRDP server instance handle. */
 #ifdef __cplusplus
@@ -1186,7 +1186,7 @@ typedef DECLCALLBACK(int) FNVRDPCREATESERVER (const VRDPINTERFACEHDR *pCallbacks
                                               HVRDPSERVER *phServer);
 typedef FNVRDPCREATESERVER *PFNVRDPCREATESERVER;
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 /** @} */
 

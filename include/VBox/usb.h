@@ -32,7 +32,7 @@
 
 #include <VBox/types.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /**
  * The USB host device state.
@@ -255,7 +255,7 @@ typedef USBCONFIGDESC *PUSBCONFIGDESC;
 
 #endif /* VBOX_USB_H_INCL_DESCRIPTORS */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

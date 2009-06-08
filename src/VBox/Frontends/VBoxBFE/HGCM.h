@@ -36,7 +36,7 @@
 struct _HGCMSVCEXTHANDLEDATA;
 typedef struct _HGCMSVCEXTHANDLEDATA *HGCMSVCEXTHANDLE;
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 int HGCMHostInit (void);
 int HGCMHostShutdown (void);
 
@@ -56,6 +56,6 @@ int HGCMHostCall (const char *pszServiceName, uint32_t function, uint32_t cParms
 int HGCMHostSaveState (PSSMHANDLE pSSM);
 int HGCMHostLoadState (PSSMHANDLE pSSM);
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif /* __HGCM_h__ */

@@ -9,7 +9,7 @@
 
 #include <iprt/cdefs.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 DECLEXPORT(char *)  crStrdup( const char *str );
 DECLEXPORT(char *)  crStrndup( const char *str, unsigned int len );
@@ -36,6 +36,6 @@ DECLEXPORT(int)     crIsDigit( char c );
 DECLEXPORT(void)    crBytesToString( char *string, int nstring, void *data, int ndata );
 DECLEXPORT(void)    crWordsToString( char *string, int nstring, void *data, int ndata );
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif /* CR_STRING_H */

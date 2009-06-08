@@ -29,10 +29,10 @@
  */
 
 #ifdef IN_RING0
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOperation,
                                                    uint64_t u64Arg, PSUPR0SERVICEREQHDR pReqHdr);
-RT_END_DECLS
+RT_C_DECLS_END
 #endif
 
 typedef enum TSTR0THREADPREMEPTION

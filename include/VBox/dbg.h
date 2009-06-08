@@ -40,7 +40,7 @@
 
 #include <iprt/stdarg.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** @def VBOX_WITH_DEBUGGER
  * The build is with debugger module. Test if this is defined before registering
@@ -730,6 +730,6 @@ DBGDECL(int)    DBGCTcpCreate(PVM pVM, void **ppvUser);
 DBGDECL(int)    DBGCTcpTerminate(PVM pVM, void *pvData);
 
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif

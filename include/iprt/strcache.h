@@ -33,7 +33,7 @@
 
 #include <iprt/types.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 
 /**
@@ -119,7 +119,7 @@ RTDECL(uint32_t) RTStrCacheRelease(RTSTRCACHE hStrCache, const char *psz);
  */
 RTDECL(size_t) RTStrCacheLength(const char *psz);
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

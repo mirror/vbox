@@ -30,7 +30,7 @@
 #include <VBox/stam.h>
 #include <VBox/pdmcritsect.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 
 /** @defgroup grp_tm_int       Internal
@@ -583,7 +583,7 @@ DECLEXPORT(uint64_t)    tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA pData);
 
 /** @} */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

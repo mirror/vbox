@@ -33,7 +33,7 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** @defgroup grp_rt_handletable    RTHandleTable - Handle Tables
  * @ingroup grp_rt
@@ -240,7 +240,7 @@ RTDECL(void *)  RTHandleTableFreeWithCtx(RTHANDLETABLE hHandleTable, uint32_t h,
 
 /** @} */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 
 #endif

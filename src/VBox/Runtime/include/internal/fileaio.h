@@ -108,9 +108,9 @@ typedef enum RTFILEAIOREQSTATE
     } while (0)
 
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

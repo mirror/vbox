@@ -35,7 +35,7 @@
 #include <iprt/assert.h>
 
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** @defgroup grp_rt_net     RTNet - Network Protocols
  * @ingroup grp_rt
@@ -681,7 +681,7 @@ typedef RTNETARPIPV4 const *PCRTNETARPIPV4;
 
 /** @} */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

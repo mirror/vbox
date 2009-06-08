@@ -401,7 +401,7 @@ typedef struct IOM
 typedef IOM *PIOM;
 
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 #ifdef IN_RING3
 PIOMIOPORTSTATS iomR3IOPortStatsCreate(PVM pVM, RTIOPORT Port, const char *pszDesc);
@@ -534,7 +534,7 @@ void    iomUnlock(PVM pVM);
 bool    iomGetRegImmData(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRegFrame, uint64_t *pu64Data, unsigned *pcbSize);
 bool    iomSaveDataToReg(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRegFrame, uint64_t u32Data);
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 
 #ifdef IN_RING3

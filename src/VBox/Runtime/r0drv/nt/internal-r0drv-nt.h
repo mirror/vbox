@@ -33,7 +33,7 @@
 
 #include <iprt/cpuset.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -53,7 +53,7 @@ extern uint32_t                     g_cbrtNtPbQuantumEnd;
 extern uint32_t                     g_offrtNtPbDpcQueueDepth;
 
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

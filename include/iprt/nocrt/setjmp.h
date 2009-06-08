@@ -32,7 +32,7 @@
 
 #include <iprt/types.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 #ifdef RT_ARCH_AMD64
 typedef uint64_t RT_NOCRT(jmp_buf)[8];
@@ -49,7 +49,7 @@ extern int RT_NOCRT(longjmp)(RT_NOCRT(jmp_buf), int);
 # define longjmp RT_NOCRT(longjmp)
 #endif
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

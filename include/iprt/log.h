@@ -34,7 +34,7 @@
 #include <iprt/types.h>
 #include <iprt/stdarg.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** @defgroup grp_rt_log    RTLog - Logging
  * @ingroup grp_rt
@@ -1690,7 +1690,7 @@ RTDECL(size_t)  RTLogBackdoorPrintfV(const char *pszFormat, va_list args);
 
 #endif /* VBOX */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 /** @} */
 

@@ -33,13 +33,13 @@
 
 #include <iprt/power.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /* Called from initterm-r0drv.cpp: */
 int  rtR0PowerNotificationInit(void);
 void rtR0PowerNotificationTerm(void);
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

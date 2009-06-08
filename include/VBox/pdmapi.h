@@ -36,7 +36,7 @@
 
 #include <VBox/types.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** @defgroup grp_pdm       The Pluggable Device Manager API
  * @{
@@ -128,7 +128,7 @@ VMMR3DECL(void) PDMR3ReleaseOwnedLocks(PVM pVM);
 /** @} */
 #endif
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 /** @} */
 

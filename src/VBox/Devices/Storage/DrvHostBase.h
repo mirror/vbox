@@ -24,7 +24,7 @@
 
 #include <VBox/cdefs.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 
 /** Pointer to host base drive access driver instance data. */
@@ -197,6 +197,6 @@ DECLCALLBACK(int) DRVHostBaseScsiCmd(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
 /** Makes a PDRVHOSTBASE out of a PPDMIBLOCK. */
 #define PDMIBLOCK_2_DRVHOSTBASE(pInterface)        ( (PDRVHOSTBASE)((uintptr_t)pInterface - RT_OFFSETOF(DRVHOSTBASE, IBlock)) )
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif

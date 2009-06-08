@@ -25,9 +25,9 @@
 #include <VBox/cdefs.h>
 #include <VBox/cpum.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 void tstDumpCtx(PCPUMCTX pCtx, const char *pszComment);
-RT_END_DECLS
+RT_C_DECLS_END
 
 
 /**

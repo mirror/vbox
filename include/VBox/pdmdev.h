@@ -44,7 +44,7 @@
 #include <VBox/pci.h>
 #include <iprt/stdarg.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** @defgroup grp_pdm_device    The PDM Devices API
  * @ingroup grp_pdm
@@ -3909,6 +3909,6 @@ typedef DECLCALLBACK(int) FNPDMVBOXDEVICESREGISTER(PPDMDEVREGCB pCallbacks, uint
 
 /** @} */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif

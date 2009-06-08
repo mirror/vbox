@@ -35,7 +35,7 @@
 #include <VBox/types.h>
 #include <VBox/sup.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** @defgroup grp_GVMM  GVMM - The Global VM Manager.
  * @{
@@ -237,7 +237,7 @@ GVMMR0DECL(int)     GVMMR0ResetStatisticsReq(PVM pVM, PGVMMRESETSTATISTICSSREQ p
 
 /** @} */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

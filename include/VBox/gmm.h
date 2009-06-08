@@ -34,7 +34,7 @@
 #include <VBox/gvmm.h>
 #include <VBox/sup.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** @defgroup   grp_gmm     GMM - The Global Memory Manager
  * @{
@@ -426,7 +426,7 @@ GMMR3DECL(int)  GMMR3SeedChunk(PVM pVM, RTR3PTR pvR3);
 
 /** @} */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

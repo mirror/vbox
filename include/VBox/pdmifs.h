@@ -33,7 +33,7 @@
 #include <VBox/types.h>
 #include <VBox/hgcmsvc.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** @defgroup grp_pdm_interfaces    The PDM Interface Definitions
  * @ingroup grp_pdm
@@ -2461,6 +2461,6 @@ typedef struct PDMDDISPLAYVBVACALLBACKS
 
 /** @} */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif

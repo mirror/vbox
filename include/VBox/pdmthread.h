@@ -36,7 +36,7 @@
 # include <iprt/thread.h>
 #endif
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** @defgroup grp_pdm_thread    The PDM Threads API
  * @ingroup grp_pdm
@@ -297,6 +297,6 @@ VMMR3DECL(int) PDMR3ThreadResume(PPDMTHREAD pThread);
 
 /** @} */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif

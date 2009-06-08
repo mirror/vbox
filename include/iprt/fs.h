@@ -35,7 +35,7 @@
 #include <iprt/time.h>
 
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** @defgroup grp_rt_fs    RTFs - Filesystem and Volume
  * @ingroup grp_rt
@@ -463,7 +463,7 @@ RTR3DECL(int) RTFsMountpointsEnum(PFNRTFSMOUNTPOINTENUM pfnCallback, void *pvUse
 
 /** @} */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif /* ___iprt_fs_h */
 

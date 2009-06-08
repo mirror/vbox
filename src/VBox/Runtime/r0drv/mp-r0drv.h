@@ -33,7 +33,7 @@
 
 #include <iprt/mp.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /**
  * MP callback
@@ -70,7 +70,7 @@ int rtR0MpNotificationNativeInit(void);
 void rtR0MpNotificationNativeTerm(void);
 void rtMpNotificationDoCallbacks(RTMPEVENT enmEvent, RTCPUID idCpu);
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

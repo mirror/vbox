@@ -33,7 +33,7 @@
 
 #include <iprt/types.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 #if defined(IN_RING3) || defined(IN_RC)
 
@@ -43,6 +43,6 @@ extern uint64_t g_u64ProgramStartMilliTS;
 
 #endif
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif

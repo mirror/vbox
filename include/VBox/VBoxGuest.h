@@ -1665,7 +1665,7 @@ typedef VBOXGUESTOS2IDCCONNECT *PVBOXGUESTOS2IDCCONNECT;
 
 /* General-purpose functions */
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 VBGLR3DECL(int)     VbglR3Init(void);
 VBGLR3DECL(int)     VbglR3InitUser(void);
 VBGLR3DECL(void)    VbglR3Term(void);
@@ -1746,7 +1746,7 @@ VBGLR3DECL(int)     VbglR3GuestPropWait(uint32_t u32ClientId, const char *pszPat
 #endif /* VBOX_WITH_GUEST_PROPS defined */
 
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif /* IN_RING3 */
 

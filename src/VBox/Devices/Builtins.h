@@ -24,7 +24,7 @@
 
 #include <VBox/pdm.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** The default BIOS logo data. */
 extern const unsigned char  g_abVgaDefBiosLogo[];
@@ -126,6 +126,6 @@ extern const PDMDRVREG g_DrvSCSIHost;
 #endif
 #endif
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif

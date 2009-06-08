@@ -35,7 +35,7 @@
 #include <VBox/trpm.h>
 #include <VBox/dis.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /** @defgroup grp_em        The Execution Monitor / Manager API
  * @{
@@ -228,7 +228,7 @@ VMMRCDECL(uint32_t) EMGCEmulateXAdd(RTRCPTR pu32Param1, uint32_t *pu32Param2, si
 
 /** @} */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

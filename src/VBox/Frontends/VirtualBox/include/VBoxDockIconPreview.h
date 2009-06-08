@@ -25,7 +25,7 @@
 
 #include "VBoxUtils-darwin.h"
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 void darwinCreateVBoxDockIconTileView (void);
 void darwinDestroyVBoxDockIconTileView (void);
 
@@ -34,7 +34,7 @@ void darwinEndCGContextForApplicationDockTile (CGContextRef aContext);
 
 void darwinOverlayApplicationDockTileImage (CGImageRef pImage);
 void darwinRestoreApplicationDockTileImage (void);
-RT_END_DECLS
+RT_C_DECLS_END
 
 #ifndef __OBJC__
 class VBoxConsoleWnd;

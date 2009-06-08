@@ -34,7 +34,7 @@
 #include <VBox/types.h>
 #include <VBox/dis.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 
 /** @defgroup grp_iom   The Input / Ouput Monitor API
@@ -276,7 +276,7 @@ VMMR3DECL(PPDMCRITSECT) IOMR3GetCritSect(PVM pVM);
 
 /** @} */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

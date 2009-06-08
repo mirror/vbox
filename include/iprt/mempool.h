@@ -32,7 +32,7 @@
 
 #include <iprt/types.h>
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /**
  * Creates a new memory pool.
@@ -153,7 +153,7 @@ RTDECL(uint32_t) RTMemPoolRetain(void *pv) RT_NO_THROW;
 RTDECL(uint32_t) RTMemPoolRelease(RTMEMPOOL hMemPool, void *pv) RT_NO_THROW;
 
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif
 

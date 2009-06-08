@@ -642,7 +642,7 @@ struct VDIDISK
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 #ifndef VBOX_VDICORE_VD
 VBOXDDU_DECL(void) vdiInitVDIDisk(PVDIDISK pDisk);
@@ -650,6 +650,6 @@ VBOXDDU_DECL(void) VDIFlushImage(PVDIIMAGEDESC pImage);
 VBOXDDU_DECL(int)  vdiChangeImageMode(PVDIIMAGEDESC pImage, bool fReadOnly);
 #endif /* !VBOX_VDICORE_VD */
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #endif

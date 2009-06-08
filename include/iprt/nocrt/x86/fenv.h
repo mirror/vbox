@@ -120,7 +120,7 @@ int RT_NOCRT(__test_sse)(void);
              (RT_NOCRT(__has_sse) == __SSE_UNK && RT_NOCRT(__test_sse)()))
 #endif
 
-RT_BEGIN_DECLS
+RT_C_DECLS_BEGIN
 
 /* Default floating-point environment */
 extern const fenv_t __fe_dfl_env;
@@ -259,7 +259,7 @@ fegetexcept(void)
     return (~__control & FE_ALL_EXCEPT);
 }
 
-RT_END_DECLS
+RT_C_DECLS_END
 
 #ifndef RT_WIHTOUT_NOCRT_WRAPPERS
 # define __has_sse RT_NOCRT(__has_sse)

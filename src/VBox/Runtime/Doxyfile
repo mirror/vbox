@@ -1162,8 +1162,8 @@ SEARCH_INCLUDES        = YES
 # instead of the = operator.
 
 PREDEFINED             = DOXYGEN_RUNNING __DOXYGEN__ \
-    RT_END_DECLS=  \
-    RT_BEGIN_DECLS=  \
+    RT_C_DECLS_END=  \
+    RT_C_DECLS_BEGIN=  \
     VBOX=1 \
     RT_STRICT=1 \
     __cplusplus=1 \
