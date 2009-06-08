@@ -68,6 +68,7 @@ protected:
     void mouseMoveEvent (QMouseEvent *aEvent);
     void timerEvent (QTimerEvent *aEvent);
     void showEvent (QShowEvent *aEvent);
+    void paintEvent (QPaintEvent *aEvent);
 
 private slots:
 

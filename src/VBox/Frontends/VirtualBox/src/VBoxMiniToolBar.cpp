@@ -29,6 +29,8 @@
 #include <QDesktopWidget>
 #include <QLabel>
 #include <QMenu>
+#include <QPainter>
+#include <QPaintEvent>
 #include <QPolygon>
 #include <QRect>
 #include <QRegion>
@@ -52,7 +54,6 @@ VBoxMiniToolBar::VBoxMiniToolBar (QWidget *aParent, Alignment aAlignment)
     AssertMsg (parentWidget(), ("Parent widget must be set!!!\n"));
 
     /* Various options */
-    setAutoFillBackground (true);
     setIconSize (QSize (16, 16));
     setMouseTracking (mAutoHide);
     setVisible (false);
@@ -96,7 +97,7 @@ VBoxMiniToolBar::VBoxMiniToolBar (QWidget *aParent, Alignment aAlignment)
 
     /* Close action */
     QAction *closeAct = new QAction (this);
-    closeAct->setIcon (VBoxGlobal::iconSet (":/delete_16px.png"));
+    closeAct->setIcon (VBoxGlobal::iconSet (":/close_16px.png"));
     closeAct->setToolTip (tr ("Close VM"));
     connect (closeAct, SIGNAL (triggered()), this, SIGNAL (closeAction()));
     addAction (closeAct);
@@ -288,6 +289,13 @@ void VBoxMiniToolBar::showEvent (QShowEvent *aEvent)
     }
 
     VBoxToolBar::showEvent (aEvent);
+}
+
+void VBoxMiniToolBar::paintEvent (QPaintEvent *aEvent)
+{
+    QPainter painter (this);
+    painter.fillRect (aEvent->rect(), palette().brush (QPalette::Window));
+    VBoxToolBar::paintEvent (aEvent);
 }
 
 void VBoxMiniToolBar::togglePushpin (bool aOn)
