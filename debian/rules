@@ -191,12 +191,12 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	$(if $(NOQT),,mv $(archdir)/nls $(prefix)/usr/share/$(package))
 	mv $(archdir)/src  $(prefix)/usr/share/$(package)
 	rm $(archdir)/VBox.sh
-	export VBOX_INSTALL_PATH=/usr/share/$(package) && \
+	export VBOX_INSTALL_PATH=/usr/lib/$(package) && \
 	    cd ./debian/builddir/bin/sdk/installer && \
 	    python ./vboxapisetup.py install --root $(prefix)
 	rm -rf $(archdir)/sdk/installer
 	mv $(archdir)/vboxshell.py $(prefix)/usr/lib/$(package)
-	mv $(archdir)/sdk $(prefix)/usr/share/$(package)
+	mv $(archdir)/sdk $(prefix)/usr/lib/$(package)
 	install -D -g 0 -o 0 -m 644 debian/VBox.sh $(prefix)/usr/bin/VBox
 	mv $(archdir)/VBoxSysInfo.sh $(prefix)/usr/share/$(package)
 	for i in VBoxManage VBoxSVC $(if $(HEADLESS),,VBoxSDL) \
