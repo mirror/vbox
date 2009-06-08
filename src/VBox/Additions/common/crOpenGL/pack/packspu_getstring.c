@@ -10,6 +10,11 @@
 #include "cr_string.h"
 #include "packspu_proto.h"
 
+static GLubyte gpszExtensions[10000];
+#ifdef CR_OPENGL_VERSION_2_0
+static GLubyte gpszShadingVersion[255]="";
+#endif
+
 static const GLubyte *
 GetExtensions(void)
 {
@@ -40,7 +45,18 @@ GetExtensions(void)
     extensions = return_value;
     ext = crStateMergeExtensions(1, &extensions);
 
-    return ext;  /* XXX we should return a static string here! */
+#ifdef CR_OPENGL_VERSION_2_0
+    /* This extension is a core part of opengl 2.0, yet
+     * some apps (like glview) request us to have this extension.
+     * @todo, check if host supports opengl 2.0 or this extension 
+     * before exporting it.
+     */
+    sprintf(gpszExtensions, "%s GL_ARB_shading_language_100", ext);
+#else
+    sprintf(gpszExtensions, "%s", ext);
+#endif
+
+    return gpszExtensions;
 }
 
 
@@ -68,10 +84,6 @@ GetVersionString(void)
 
     return version;
 }
-
-#ifdef CR_OPENGL_VERSION_2_0
-static GLubyte gpszShadingVersion[255]="";
-#endif
 
 const GLubyte * PACKSPU_APIENTRY packspu_GetString( GLenum name )
 {
