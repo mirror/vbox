@@ -225,7 +225,7 @@ typedef SUPDRVIDCREQCOMPDEREGFACTORY *PSUPDRVIDCREQCOMPDEREGFACTORY;
  * The OS specific prototypes.
  * Most OSes uses
  */
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 #if defined(RT_OS_DARWIN)
 extern int VBOXCALL SUPDrvDarwinIDC(uint32_t iReq, PSUPDRVIDCREQHDR pReq);
@@ -249,7 +249,7 @@ extern int VBOXCALL SUPDrvSolarisIDC(uint32_t iReq, PSUPDRVIDCREQHDR pReq);
 /* PORTME: OS specific IDC stuff goes here. */
 #endif
 
-__END_DECLS
+RT_END_DECLS
 
 /**
  * The SUPDRV IDC entry point.

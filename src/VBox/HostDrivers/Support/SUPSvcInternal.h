@@ -36,7 +36,7 @@
 #include <iprt/stdarg.h>
 #include <iprt/getopt.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @name Common Helpers
  * @{ */
@@ -89,7 +89,7 @@ DECLCALLBACK(int)  supSvcGlobalTryStop(void *pvInstance);
 DECLCALLBACK(void) supSvcGlobalStopAndDestroy(void *pvInstance, bool fRunning);
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

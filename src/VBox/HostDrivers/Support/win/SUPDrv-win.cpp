@@ -90,9 +90,9 @@ DECLASM(int)   UNWIND_WRAP(RTPowerSignalEvent)(RTPOWEREVENT enmEvent);
 /*******************************************************************************
 *   Exported Functions                                                         *
 *******************************************************************************/
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 ULONG _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath);
-__END_DECLS
+RT_END_DECLS
 
 
 /**

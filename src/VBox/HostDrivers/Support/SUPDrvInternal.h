@@ -48,7 +48,7 @@
 
 
 #if defined(RT_OS_WINDOWS)
-    __BEGIN_DECLS
+    RT_BEGIN_DECLS
 #   if (_MSC_VER >= 1400) && !defined(VBOX_WITH_PATCHED_DDK)
 #       define _InterlockedExchange           _InterlockedExchange_StupidDDKVsCompilerCrap
 #       define _InterlockedExchangeAdd        _InterlockedExchangeAdd_StupidDDKVsCompilerCrap
@@ -75,7 +75,7 @@
 #   include <memory.h>
 #   define memcmp(a,b,c) mymemcmp(a,b,c)
     int VBOXCALL mymemcmp(const void *, const void *, size_t);
-    __END_DECLS
+    RT_END_DECLS
 
 #elif defined(RT_OS_LINUX)
 #   include <linux/autoconf.h>
@@ -190,9 +190,9 @@
 # error Unsupported kernel version!
 #endif
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 int  linux_dprintf(const char *format, ...);
-__END_DECLS
+RT_END_DECLS
 
 /* debug printf */
 # define OSDBGPRINT(a) printk a
@@ -623,7 +623,7 @@ typedef struct SUPDRVDEVEXT
 } SUPDRVDEVEXT;
 
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /*******************************************************************************
 *   OS Specific Functions                                                      *
@@ -650,7 +650,7 @@ void VBOXCALL   supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS);
 void VBOXCALL   supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, unsigned iCpu);
 bool VBOXCALL   supdrvDetermineAsyncTsc(uint64_t *pu64DiffCores);
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

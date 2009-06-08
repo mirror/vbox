@@ -28,7 +28,7 @@
 #include <iprt/assert.h>
 
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** Pointer to the globals. */
 typedef struct VBOXNETADPGLOBALS *PVBOXNETADPGLOBALS;
@@ -220,7 +220,7 @@ DECLHIDDEN(int) vboxNetAdpInitGlobalsBase(PVBOXNETADPGLOBALS pGlobals);
 DECLHIDDEN(int) vboxNetAdpInitIdc(PVBOXNETADPGLOBALS pGlobals);
 DECLHIDDEN(void) vboxNetAdpDeleteGlobalsBase(PVBOXNETADPGLOBALS pGlobals);
 DECLHIDDEN(int) vboxNetAdpTryDeleteIdc(PVBOXNETADPGLOBALS pGlobals);
-                 
+
 
 
 /** @name The OS specific interface.
@@ -337,7 +337,7 @@ DECLHIDDEN(int) vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMac);
 
 
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 
