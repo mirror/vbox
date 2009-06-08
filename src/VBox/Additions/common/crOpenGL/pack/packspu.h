@@ -40,6 +40,9 @@ struct context_info_t {
     CRContext *clientState;  /* used to store client-side GL state */
     GLint serverCtx;         /* context ID returned by server */
     char glVersion[100];     /* GL_VERSION string */
+    char pszRealVendor[100];
+    char pszRealVersion[100];
+    char pszRealRenderer[100];
 };
 
 typedef struct {

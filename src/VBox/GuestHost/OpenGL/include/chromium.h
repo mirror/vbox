@@ -544,6 +544,14 @@ extern void APIENTRY glZPixCR(GLsizei width, GLsizei height, GLenum format,
 
 #endif /* GL_CR_zpix */
 
+/*Allow to use glGetString to query real host GPU info*/
+#ifndef GL_CR_real_vendor_strings
+#define GL_CR_real_vendor_strings 1
+#define GL_REAL_VENDOR   0x8B23
+#define GL_REAL_VERSION  0x8B24
+#define GL_REAL_RENDERER 0x8B25
+#endif
+
 
 /**********************************************************************/
 /*****                Chromium-specific API                       *****/
@@ -616,7 +624,6 @@ CR_PROC APIENTRY crGetProcAddress( const char *name );
 /* For SGI, etc that don't have glXGetProcAddress(). */
 #define GET_PROC(NAME) NULL
 #endif
-
 
 #ifdef __cplusplus
 }

@@ -999,6 +999,14 @@ renderspuGetString(GLenum pname)
     else if (pname == GL_SHADING_LANGUAGE_VERSION)
         return render_spu.ws.glGetString(GL_SHADING_LANGUAGE_VERSION);
 #endif
+#ifdef GL_CR_real_vendor_strings
+    else if (pname == GL_REAL_VENDOR)
+        return render_spu.ws.glGetString(GL_VENDOR);
+    else if (pname == GL_REAL_VERSION)
+        return render_spu.ws.glGetString(GL_VERSION);
+    else if (pname == GL_REAL_RENDERER)
+        return render_spu.ws.glGetString(GL_RENDERER);
+#endif
     else
         return NULL;
 }
