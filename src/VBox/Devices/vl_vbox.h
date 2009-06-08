@@ -40,7 +40,7 @@
 
 #include "Builtins.h"
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /*
  * Misc macros.
@@ -371,6 +371,6 @@ CPU_CONVERT(le, 64, uint64_t)
 
 /* end of bswap.h */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif /* __vl_vbox_h__ */
