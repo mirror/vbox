@@ -12,6 +12,7 @@
 #ifdef __sun__
 #include <sys/filio.h>
 #endif
+#include <VBox/pdmdrv.h>
 #if defined (RT_OS_WINDOWS)
 #include <iphlpapi.h>
 #include <icmpapi.h>
@@ -122,6 +123,11 @@ soread(PNATState pData, struct socket *so)
     size_t len = sb->sb_datalen - sb->sb_cc;
     struct iovec iov[2];
     int mss = so->so_tcpcb->t_maxseg;
+
+    SLIRP_PROFILE_START(IOread, a);
+    SLIRP_COUNTER_RESET(IORead_in_1);
+    SLIRP_COUNTER_RESET(IORead_in_2);
+
     QSOCKET_LOCK(tcb);
     SOCKET_LOCK(so);
     QSOCKET_UNLOCK(tcb);
@@ -213,12 +219,14 @@ soread(PNATState pData, struct socket *so)
         if (nn == 0 && (pending != 0))
         {
             SOCKET_UNLOCK(so);
+            SLIRP_PROFILE_STOP(IOread, a);
             return 0;
         }
 #endif
         if (nn < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK))
         {
             SOCKET_UNLOCK(so);
+            STAM_PROFILE_STOP(&pData->StatIOread, a);
             return 0;
         }
         else
@@ -229,9 +237,22 @@ soread(PNATState pData, struct socket *so)
             sofcantrcvmore(so);
             tcp_sockclosed(pData, sototcpcb(so));
             SOCKET_UNLOCK(so);
+            STAM_PROFILE_STOP(&pData->StatIOread, a);
             return -1;
         }
     }
+    STAM_STATS(
+        if (n == 1)
+        { 
+            STAM_COUNTER_INC(&pData->StatIORead_in_1);
+            STAM_COUNTER_ADD(&pData->StatIORead_in_1_bytes, nn);
+        }
+        else
+        {
+            STAM_COUNTER_INC(&pData->StatIORead_in_2);
+            STAM_COUNTER_ADD(&pData->StatIORead_in_2_1st_bytes, nn);
+        }
+    );
 
 #ifndef HAVE_READV
     /*
@@ -249,6 +270,13 @@ soread(PNATState pData, struct socket *so)
         ret = recv(so->s, iov[1].iov_base, iov[1].iov_len, 0);
         if (ret > 0)
             nn += ret;
+        STAM_STATS(
+            if(ret > 0)
+            {
+                SLIRP_COUNTER_INC(IORead_in_2);
+                SLIRP_COUNTER_ADD(IORead_in_2_2nd_bytes, ret);
+            }
+        );
     }
 
     DEBUG_MISC((dfd, " ... read nn = %d bytes\n", nn));
@@ -259,6 +287,7 @@ soread(PNATState pData, struct socket *so)
     sb->sb_wptr += nn;
     if (sb->sb_wptr >= (sb->sb_data + sb->sb_datalen))
         sb->sb_wptr -= sb->sb_datalen;
+    STAM_PROFILE_STOP(&pData->StatIOread, a);
     SOCKET_UNLOCK(so);
     return nn;
 }
@@ -371,6 +400,15 @@ sowrite(PNATState pData, struct socket *so)
     size_t len = sb->sb_cc;
     struct iovec iov[2];
 
+    SLIRP_PROFILE_START(IOwrite, a);
+    SLIRP_COUNTER_RESET(IOWrite_in_1);
+    SLIRP_COUNTER_RESET(IOWrite_in_1_bytes);
+    SLIRP_COUNTER_RESET(IOWrite_in_2);
+    SLIRP_COUNTER_RESET(IOWrite_in_2_1st_bytes);
+    SLIRP_COUNTER_RESET(IOWrite_in_2_2nd_bytes);
+    SLIRP_COUNTER_RESET(IOWrite_no_w);
+    SLIRP_COUNTER_RESET(IOWrite_rest);
+    SLIRP_COUNTER_RESET(IOWrite_rest_bytes);
     DEBUG_CALL("sowrite");
     DEBUG_ARG("so = %lx", (long)so);
     QSOCKET_LOCK(tcb);
@@ -382,6 +420,7 @@ sowrite(PNATState pData, struct socket *so)
         if (sb->sb_cc == 0)
         {
             SOCKET_UNLOCK(so);
+            STAM_PROFILE_STOP(&pData->StatIOwrite, a);
             return 0;
         }
     }
@@ -421,6 +460,19 @@ sowrite(PNATState pData, struct socket *so)
         else
             n = 1;
     }
+    STAM_STATS({
+        if (n == 1) 
+        {
+            SLIRP_COUNTER_INC(IOWrite_in_1);
+            SLIRP_COUNTER_ADD(IOWrite_in_1_bytes, iov[0].iov_len);
+        }
+        else
+        {
+            SLIRP_COUNTER_INC(IOWrite_in_2);
+            SLIRP_COUNTER_ADD(IOWrite_in_2_1st_bytes, iov[0].iov_len);
+            SLIRP_COUNTER_ADD(IOWrite_in_2_2nd_bytes, iov[1].iov_len);
+        }
+    });
     /* Check if there's urgent data to send, and if so, send it */
 #ifdef HAVE_READV
     nn = writev(so->s, (const struct iovec *)iov, n);
@@ -432,6 +484,7 @@ sowrite(PNATState pData, struct socket *so)
     if (nn < 0 && (errno == EAGAIN || errno == EINTR || errno == EWOULDBLOCK))
     {
         SOCKET_UNLOCK(so);
+        STAM_PROFILE_STOP(&pData->StatIOwrite, a);
         return 0;
     }
 
@@ -442,6 +495,7 @@ sowrite(PNATState pData, struct socket *so)
         sofcantsendmore(so);
         tcp_sockclosed(pData, sototcpcb(so));
         SOCKET_UNLOCK(so);
+        STAM_PROFILE_STOP(&pData->StatIOwrite, a);
         return -1;
     }
 
@@ -452,6 +506,13 @@ sowrite(PNATState pData, struct socket *so)
         ret = send(so->s, iov[1].iov_base, iov[1].iov_len, 0);
         if (ret > 0)
             nn += ret;
+        STAM_STATS({
+            if (ret > 0 && ret != iov[1].iov_len)
+            {
+                SLIRP_COUNTER_INC(IOWrite_rest);
+                SLIRP_COUNTER_ADD(IOWrite_rest_bytes, (ret - iov[1].iov_len));
+            }
+        });
     }
     DEBUG_MISC((dfd, "  ... wrote nn = %d bytes\n", nn));
 #endif
@@ -470,6 +531,7 @@ sowrite(PNATState pData, struct socket *so)
         sofcantsendmore(so);
 
     SOCKET_UNLOCK(so);
+    SLIRP_PROFILE_STOP(IOwrite, a);
     return nn;
 }
 
