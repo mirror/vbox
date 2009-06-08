@@ -868,12 +868,9 @@ static int emR3Debug(PVM pVM, PVMCPU pVCpu, int rc)
  */
 VMMR3DECL(void) EMR3RemLock(PVM pVM)
 {
-#ifdef IN_RING3
     if (!PDMCritSectIsInitialized(&pVM->em.s.CritSectREM))
         return;     /* early init */
-#else
-    Assert(PDMCritSectIsInitialized(&pVM->em.s.CritSectREM));
-#endif
+
     int rc = PDMCritSectEnter(&pVM->em.s.CritSectREM, VERR_SEM_BUSY);
     AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
 }
@@ -885,13 +882,21 @@ VMMR3DECL(void) EMR3RemLock(PVM pVM)
  */
 VMMR3DECL(void) EMR3RemUnlock(PVM pVM)
 {
-#ifdef IN_RING3
     if (!PDMCritSectIsInitialized(&pVM->em.s.CritSectREM))
         return;     /* early init */
-#else
-    Assert(PDMCritSectIsInitialized(&pVM->em.s.CritSectREM));
-#endif
+
     PDMCritSectLeave(&pVM->em.s.CritSectREM);
+}
+
+/**
+ * Check if this VCPU currently owns the REM lock.
+ *
+ * @returns bool owner/not owner
+ * @param   pVM         The VM to operate on.
+ */
+VMMR3DECL(bool) EMR3RemIsLockOwner(PVM pVM)
+{
+    return PDMCritSectIsOwner(&pVM->em.s.CritSectREM);
 }
 
 /**

@@ -184,6 +184,7 @@ VMMR3DECL(int)      EMR3Interpret(PVM pVM);
 VMMR3DECL(void)     EMR3ReleaseOwnedLocks(PVM pVM);
 VMMR3DECL(void)     EMR3RemUnlock(PVM pVM);
 VMMR3DECL(void)     EMR3RemLock(PVM pVM);
+VMMR3DECL(bool)     EMR3RemIsLockOwner(PVM pVM);
 
 /**
  * Command argument for EMR3RawSetMode().
