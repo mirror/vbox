@@ -824,14 +824,14 @@ solisten(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
     getsockname(s,(struct sockaddr *)&addr,&addrlen);
     so->so_fport = addr.sin_port;
     /* set socket buffers */
-    opt = 64 * _1K;
+    opt = pData->socket_rcv;
     status = setsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&opt, sizeof(int));
     if (status < 0)
     {
         LogRel(("NAT: Error(%d) while setting RCV capacity to (%d)\n", errno, opt));
         goto no_sockopt;
     }
-    opt = 64 * _1K;
+    opt = pData->socket_snd;
     status = setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&opt, sizeof(int));
     if (status < 0)
     {

@@ -113,6 +113,11 @@ typedef struct NATState
     struct in_addr our_addr;
     struct in_addr alias_addr;
     struct in_addr special_addr;
+
+    int tcp_rcvspace;
+    int tcp_sndspace;
+    int socket_rcv;
+    int socket_snd;
 #ifdef VBOX_WITH_SLIRP_MT
     PRTREQQUEUE pReqQueue;
 #endif
@@ -270,10 +275,10 @@ typedef struct NATState
 #define tcp_do_rfc1323 1
 
 /** TCP receive buffer size. */
-#define tcp_rcvspace TCP_RCVSPACE
+#define tcp_rcvspace pData->tcp_rcvspace
 
 /** TCP receive buffer size. */
-#define tcp_sndspace TCP_SNDSPACE
+#define tcp_sndspace pData->tcp_sndspace
 
 /* TCP duplicate ACK retransmit threshold. */
 #define tcprexmtthresh 3

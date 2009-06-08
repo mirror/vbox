@@ -632,6 +632,12 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     pData->pvUser = pvUser;
     pData->netmask = u32Netmask;
 
+    /* sockets & TCP defaults */
+    pData->socket_rcv = 64 * _1K;
+    pData->socket_snd = 64 * _1K;
+    tcp_sndspace = 64 * _1K;
+    tcp_rcvspace = 64 * _1K;
+
 #ifdef RT_OS_WINDOWS
     {
         WSADATA Data;
@@ -1844,3 +1850,40 @@ void slirp_set_dhcp_dns_proxy(PNATState pData, bool fDNSProxy)
     pData->use_dns_proxy = fDNSProxy;
 }
 #endif
+
+#define CHECK_ARG(name, val, lim_min, lim_max)                                  \
+do {                                                                            \
+    if ((val) < (lim_min) || (val) > (lim_max))                                 \
+    {                                                                           \
+        LogRel(("NAT: (" #name ":%d) has been ignored, "                        \
+            "because out of range (%d, %d)\n", (val), (lim_min), (lim_max)));   \
+        return;                                                                 \
+    }                                                                           \
+    else                                                                        \
+    {                                                                           \
+        LogRel(("NAT: (" #name ":%d)\n", (val)));                               \
+    }                                                                           \
+} while (0)
+
+/* don't allow user set negative and more than 1M values */
+#define _1M_CHECK_ARG(name, val) CHECK_ARG(name, (val), 0, 1024)
+void slirp_set_rcvbuf(PNATState pData, int kilobytes)
+{
+    _1M_CHECK_ARG("SOCKET_RCVBUF", kilobytes);    
+    pData->socket_rcv = kilobytes;
+}
+void slirp_set_sndbuf(PNATState pData, int kilobytes)
+{
+    _1M_CHECK_ARG("SOCKET_SNDBUF", kilobytes);    
+    pData->socket_snd = kilobytes * _1K;
+}
+void slirp_set_tcp_rcvspace(PNATState pData, int kilobytes)
+{
+    _1M_CHECK_ARG("TCP_RCVSPACE", kilobytes);    
+    tcp_rcvspace = kilobytes * _1K;
+}
+void slirp_set_tcp_sndspace(PNATState pData, int kilobytes)
+{
+    _1M_CHECK_ARG("TCP_SNDSPACE", kilobytes);    
+    tcp_sndspace = kilobytes * _1K;
+}
