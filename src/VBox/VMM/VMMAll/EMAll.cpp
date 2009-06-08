@@ -3356,3 +3356,52 @@ VMMDECL(RTGCUINTPTR) EMGetInhibitInterruptsPC(PVMCPU pVCpu)
     return pVCpu->em.s.GCPtrInhibitInterrupts;
 }
 
+/**
+ * Locks REM execution to a single VCpu
+ *
+ * @param   pVM         VM handle.
+ */
+VMMDECL(void) EMRemLock(PVM pVM)
+{
+    if (!PDMCritSectIsInitialized(&pVM->em.s.CritSectREM))
+        return;     /* early init */
+
+    int rc = PDMCritSectEnter(&pVM->em.s.CritSectREM, VERR_SEM_BUSY);
+    AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
+}
+
+/**
+ * Unlocks REM execution
+ *
+ * @param   pVM         VM handle.
+ */
+VMMDECL(void) EMRemUnlock(PVM pVM)
+{
+    if (!PDMCritSectIsInitialized(&pVM->em.s.CritSectREM))
+        return;     /* early init */
+
+    PDMCritSectLeave(&pVM->em.s.CritSectREM);
+}
+
+/**
+ * Check if this VCPU currently owns the REM lock.
+ *
+ * @returns bool owner/not owner
+ * @param   pVM         The VM to operate on.
+ */
+VMMDECL(bool) EMRemIsLockOwner(PVM pVM)
+{
+    return PDMCritSectIsOwner(&pVM->em.s.CritSectREM);
+}
+
+/**
+ * Try to acquire the REM lock.
+ *
+ * @returns VBox status code
+ * @param   pVM         The VM to operate on.
+ */
+VMMDECL(int) EMTryEnterRemLock(PVM pVM)
+{
+    return PDMCritSectTryEnter(&pVM->em.s.CritSectREM);
+}
+
