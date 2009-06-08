@@ -4219,6 +4219,10 @@ HRESULT Console::consoleInitReleaseLog (const ComPtr <IMachine> aMachine)
     virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
     ULONG uLogHistoryCount = 3;
     systemProperties->COMGETTER(LogHistoryCount)(&uLogHistoryCount);
+    ComPtr <IHost> host;
+    virtualBox->COMGETTER(Host)(host.asOutParam());
+    ULONG uHostMemoryMB;
+    host->COMGETTER(MemorySize)(&uHostMemoryMB);
     if (uLogHistoryCount)
     {
         for (int i = uLogHistoryCount-1; i >= 0; i--)
@@ -4277,6 +4281,7 @@ HRESULT Console::consoleInitReleaseLog (const ComPtr <IMachine> aMachine)
         vrc = RTSystemQueryOSInfo(RTSYSOSINFO_SERVICE_PACK, szTmp, sizeof(szTmp));
         if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
             RTLogRelLogger(loggerRelease, 0, ~0U, "OS Service Pack: %s\n", szTmp);
+        RTLogRelLogger(loggerRelease, 0, ~0U, "Host RAM: %uMB\n", uHostMemoryMB);
         /* the package type is interesting for Linux distributions */
         char szExecName[RTPATH_MAX];
         char *pszExecName = RTProcGetExecutableName(szExecName, sizeof(szExecName));
