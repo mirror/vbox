@@ -345,7 +345,6 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
     if (cksum(m, len))
     {
         tcpstat.tcps_rcvbadsum++;
-        Log2(("checksum is invalid => drop\n"));
         goto drop;
     }
 
@@ -358,7 +357,6 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
         || off > tlen)
     {
         tcpstat.tcps_rcvbadoff++;
-        Log2(("ti_off(tlen(%d)<%d<(tcphdr(%d))) is invalid =>drop\n", tlen, off, sizeof(struct tcphdr)));
         goto drop;
     }
     tlen -= off;
@@ -434,13 +432,11 @@ findso:
                 && so->so_fport        == ti->ti_dport
                 && so->so_deleted != 1) 
             {
-                Log2(("lock: %s:%d We found socket %R[natsock]\n", __FUNCTION__, __LINE__, so));
                 break; /* so is locked here */
             }
         LOOP_LABEL(tcp, so, sonxt);
         }
         if (so == &tcb) {
-            Log2(("lock: %s:%d Haven't find anything \n", __FUNCTION__, __LINE__));
             so = NULL;
         }
 #endif
@@ -469,7 +465,6 @@ findso:
      * the only flag set, then create a session, mark it
      * as if it was LISTENING, and continue...
      */
-    Log2(("so = %R[natsock]\n", so));
     if (so == 0)
     {
         if ((tiflags & (TH_SYN|TH_FIN|TH_RST|TH_URG|TH_ACK)) != TH_SYN)
@@ -483,8 +478,8 @@ findso:
             goto dropwithreset;
         }
         SOCKET_LOCK(so); 
-        sbreserve(&so->so_snd, tcp_sndspace);
-        sbreserve(&so->so_rcv, tcp_rcvspace);
+        sbreserve(pData, &so->so_snd, tcp_sndspace);
+        sbreserve(pData, &so->so_rcv, tcp_rcvspace);
 
 /*      tcp_last_so = so; */  /* XXX ? */
 /*      tp = sototcpcb(so);    */
@@ -508,7 +503,6 @@ findso:
      */
     if (so->so_state & SS_ISFCONNECTING) 
     {
-        Log2(("so_state(%x) of %R[natsock] is still connecting =>drop\n", so->so_state, so));
         goto drop;
     }
 
@@ -519,7 +513,6 @@ findso:
         goto dropwithreset;
     if (tp->t_state == TCPS_CLOSED)
     {
-        Log2(("t_state(%x) is closed =>drop\n", tp->t_state));
         goto drop;
     }
 
@@ -723,14 +716,12 @@ findso:
         case TCPS_LISTEN:
         {
             if (tiflags & TH_RST) {
-                Log2(("RST(%x) is on listen =>drop\n", tiflags));
                 goto drop;
             }
             if (tiflags & TH_ACK)
                 goto dropwithreset;
             if ((tiflags & TH_SYN) == 0) 
             {
-                Log2(("SYN(%x) is off on listen =>drop\n", tiflags));
                 goto drop;
             }
 
@@ -818,7 +809,6 @@ cont_input:
             tp->t_state = TCPS_SYN_RECEIVED;
             tp->t_timer[TCPT_KEEP] = TCPTV_KEEP_INIT;
             tcpstat.tcps_accepts++;
-            Log2(("hit trimthenstep6\n"));
             goto trimthenstep6;
         } /* case TCPS_LISTEN */
 
@@ -844,13 +834,11 @@ cont_input:
             {
                 if (tiflags & TH_ACK)
                     tp = tcp_drop(pData, tp, 0); /* XXX Check t_softerror! */
-                Log2(("RST(%x) is on SYN_SENT =>drop\n", tiflags));
                 goto drop;
             }
 
             if ((tiflags & TH_SYN) == 0) 
             {
-                Log2(("SYN(%x) bit is off on SYN_SENT =>drop\n", tiflags));
                 goto drop;
             }
             if (tiflags & TH_ACK)
@@ -1102,7 +1090,6 @@ trimthenstep6:
             case TCPS_CLOSE_WAIT:
 /*              so->so_error = ECONNRESET; */
 close:
-                Log2(("closing...=>drop\n", tp->t_state)); 
                 tp->t_state = TCPS_CLOSED;
                 tcpstat.tcps_drops++;
                 tp = tcp_close(pData, tp);
@@ -1111,7 +1098,6 @@ close:
             case TCPS_CLOSING:
             case TCPS_LAST_ACK:
             case TCPS_TIME_WAIT:
-                Log2(("t_state is (%x) sort of close =>drop\n", tp->t_state)); 
                 tp = tcp_close(pData, tp);
                 goto drop;
         }
@@ -1131,7 +1117,6 @@ close:
      */
     if ((tiflags & TH_ACK) == 0) 
     {
-        Log2(("ACK(%x) bit is off =>drop\n", tiflags)); 
         goto drop;
     }
 
@@ -1173,7 +1158,6 @@ close:
             (void) tcp_reass(pData, tp, (struct tcphdr *)0, (int *)0, (struct mbuf *)0);
             tp->snd_wl1 = ti->ti_seq - 1;
             /* Avoid ack processing; snd_una==ti_ack  =>  dup ack */
-            Log2(("hit synrx_to_est\n"));
             goto synrx_to_est;
             /* fall into ... */
 
@@ -1242,14 +1226,12 @@ close:
                             tp->t_maxseg * tp->t_dupacks;
                         if (SEQ_GT(onxt, tp->snd_nxt))
                             tp->snd_nxt = onxt;
-                        Log2(("t_dupacks(%d) == tcprexmtthresh(%d)=>drop\n", tp->t_dupacks, tcprexmtthresh));
                         goto drop;
                     }
                     else if (tp->t_dupacks > tcprexmtthresh)
                     {
                         tp->snd_cwnd += tp->t_maxseg;
                         (void) tcp_output(pData, tp);
-                        Log2(("t_dupacks(%d) > tcprexmtthresh(%d)=>drop\n", tp->t_dupacks, tcprexmtthresh));
                         goto drop;
                     }
                 }
@@ -1258,7 +1240,6 @@ close:
                 break;
             }
 synrx_to_est:
-            Log2(("enter synrx_to_est\n"));
             /*
              * If the congestion window was inflated to account
              * for the other side's cached packets, retract it.
@@ -1396,7 +1377,6 @@ synrx_to_est:
                 case TCPS_LAST_ACK:
                     if (ourfinisacked)
                     {
-                        Log2(("ourfinisacked=>drop\n"));
                         tp = tcp_close(pData, tp);
                         goto drop;
                     }
@@ -1487,7 +1467,6 @@ step6:
         if (SEQ_GT(tp->rcv_nxt, tp->rcv_up))
             tp->rcv_up = tp->rcv_nxt;
 dodata:
-    Log2(("do data hit!\n"));
 
     /*
      * If this is a small packet, then ACK now - with Nagel
@@ -1897,8 +1876,8 @@ tcp_mss(PNATState pData, register struct tcpcb *tp, u_int offer)
 
     tp->snd_cwnd = mss;
 
-    sbreserve(&so->so_snd, tcp_sndspace+((tcp_sndspace%mss)?(mss-(tcp_sndspace%mss)):0));
-    sbreserve(&so->so_rcv, tcp_rcvspace+((tcp_rcvspace%mss)?(mss-(tcp_rcvspace%mss)):0));
+    sbreserve(pData, &so->so_snd, tcp_sndspace+((tcp_sndspace%mss)?(mss-(tcp_sndspace%mss)):0));
+    sbreserve(pData, &so->so_rcv, tcp_rcvspace+((tcp_rcvspace%mss)?(mss-(tcp_rcvspace%mss)):0));
 
     DEBUG_MISC((dfd, " returning mss = %d\n", mss));
 

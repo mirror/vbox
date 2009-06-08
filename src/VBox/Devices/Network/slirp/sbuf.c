@@ -38,7 +38,7 @@ sbdrop(struct sbuf *sb, int num)
 }
 
 void
-sbreserve(struct sbuf *sb, int size)
+sbreserve(PNATState pData, struct sbuf *sb, int size)
 {
     if (sb->sb_data)
     {
@@ -82,11 +82,18 @@ sbappend(PNATState pData, struct socket *so, struct mbuf *m)
     DEBUG_ARG("m = %lx", (long)m);
     DEBUG_ARG("m->m_len = %d", m->m_len);
 
+    SLIRP_COUNTER_RESET(IOSBAppend);
+    SLIRP_COUNTER_RESET(IOSBAppend_zm);
+    SLIRP_COUNTER_RESET(IOSBAppend_wa);
+    SLIRP_COUNTER_RESET(IOSBAppend_wf);
+    SLIRP_COUNTER_RESET(IOSBAppend_wp);
+
+    SLIRP_COUNTER_INC(IOSBAppend);
     /* Shouldn't happen, but...  e.g. foreign host closes connection */
     if (m->m_len <= 0)
     {
-        m_free(pData, m);
-        return;
+        SLIRP_COUNTER_INC(IOSBAppend_zm);
+        goto done;
     }
 
     /*
@@ -96,7 +103,7 @@ sbappend(PNATState pData, struct socket *so, struct mbuf *m)
      */
     if (so->so_urgc)
     {
-        sbappendsb(&so->so_rcv, m);
+        sbappendsb(pData, &so->so_rcv, m);
         m_free(pData, m);
         sosendoob(so);
         return;
@@ -111,25 +118,31 @@ sbappend(PNATState pData, struct socket *so, struct mbuf *m)
 
     if (ret <= 0)
     {
+        SLIRP_COUNTER_INC(IOSBAppend_wf);
         /*
          * Nothing was written
          * It's possible that the socket has closed, but
          * we don't need to check because if it has closed,
          * it will be detected in the normal way by soread()
          */
-        sbappendsb(&so->so_rcv, m);
+        sbappendsb(pData, &so->so_rcv, m);
+        goto done;
     }
     else if (ret != m->m_len)
     {
+        SLIRP_COUNTER_INC(IOSBAppend_wp);
         /*
          * Something was written, but not everything..
          * sbappendsb the rest
          */
         m->m_len -= ret;
         m->m_data += ret;
-        sbappendsb(&so->so_rcv, m);
+        sbappendsb(pData, &so->so_rcv, m);
+        goto done;
     } /* else */
     /* Whatever happened, we free the mbuf */
+    SLIRP_COUNTER_INC(IOSBAppend_wa);
+done:
     m_free(pData, m);
 }
 
@@ -138,14 +151,21 @@ sbappend(PNATState pData, struct socket *so, struct mbuf *m)
  * The caller is responsible to make sure there's enough room
  */
 void
-sbappendsb(struct sbuf *sb, struct mbuf *m)
+sbappendsb(PNATState pData, struct sbuf *sb, struct mbuf *m)
 {
     int len, n,  nn;
 
     len = m->m_len;
 
+    SLIRP_COUNTER_RESET(IOSBAppendSB);
+    SLIRP_COUNTER_RESET(IOSBAppendSB_w_l_r);
+    SLIRP_COUNTER_RESET(IOSBAppendSB_w_ge_r);
+    SLIRP_COUNTER_RESET(IOSBAppendSB_w_alter);
+
+    SLIRP_COUNTER_INC(IOSBAppendSB);
     if (sb->sb_wptr < sb->sb_rptr)
     {
+        SLIRP_COUNTER_INC(IOSBAppendSB_w_l_r);
         n = sb->sb_rptr - sb->sb_wptr;
         if (n > len)
             n = len;
@@ -153,6 +173,7 @@ sbappendsb(struct sbuf *sb, struct mbuf *m)
     }
     else
     {
+        SLIRP_COUNTER_INC(IOSBAppendSB_w_ge_r);
         /* Do the right edge first */
         n = sb->sb_data + sb->sb_datalen - sb->sb_wptr;
         if (n > len)
@@ -173,7 +194,10 @@ sbappendsb(struct sbuf *sb, struct mbuf *m)
     sb->sb_cc += n;
     sb->sb_wptr += n;
     if (sb->sb_wptr >= sb->sb_data + sb->sb_datalen)
+    {
+        SLIRP_COUNTER_INC(IOSBAppendSB_w_alter);
         sb->sb_wptr -= sb->sb_datalen;
+    }
 }
 
 /*
