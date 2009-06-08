@@ -86,7 +86,7 @@
 #endif
 
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 /* mach/vm_types.h */
 typedef struct pmap *pmap_t;
 
@@ -119,18 +119,18 @@ extern int cpu_number(void);
 /* i386/machine_routines.h */
 extern int ml_get_max_cpus(void);
 
-__END_DECLS
+RT_END_DECLS
 
 
 /*
  * Internals of the Darwin Ring-0 IPRT.
  */
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 extern lck_grp_t *g_pDarwinLockGroup;
 int  rtThreadPreemptDarwinInit(void);
 void rtThreadPreemptDarwinTerm(void);
-__END_DECLS
+RT_END_DECLS
 
 
 /**

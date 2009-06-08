@@ -26,7 +26,7 @@
 #include <iprt/critsect.h>
 #include "internal/magics.h"
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_rt_dbgmod     RTDbgMod - Debug Module Interperter
  * @ingroup grp_rt
@@ -247,7 +247,7 @@ int rtDbgModContainerCreate(PRTDBGMODINT pMod, RTUINTPTR cb);
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

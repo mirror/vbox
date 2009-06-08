@@ -48,9 +48,9 @@
 # include <crt_externs.h>
 #endif
 #if defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD) || defined(RT_OS_OPENBSD)
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 extern char **environ;
-__END_DECLS
+RT_END_DECLS
 #endif
 
 /*******************************************************************************
@@ -72,16 +72,16 @@ typedef struct RTENVINTERNAL
 {
     /** Magic value . */
     uint32_t    u32Magic;
-    /** Number of variables in the array. 
+    /** Number of variables in the array.
      * This does not include the terminating NULL entry. */
     size_t      cVars;
-    /** Capacity (allocated size) of the array. 
-     * This includes space for the terminating NULL element (for compatibility 
+    /** Capacity (allocated size) of the array.
+     * This includes space for the terminating NULL element (for compatibility
      * with the C library), so that c <= cCapacity - 1. */
     size_t      cAllocated;
     /** Array of environment variables. */
     char      **papszEnv;
-    /** Array of environment variables in the process CP. 
+    /** Array of environment variables in the process CP.
      * This get (re-)constructed when RTEnvGetExecEnvP method is called. */
     char      **papszEnvOtherCP;
 } RTENVINTERNAL, *PRTENVINTERNAL;
@@ -91,9 +91,9 @@ typedef struct RTENVINTERNAL
 
 
 /**
- * Internal worker that resolves the pointer to the default 
+ * Internal worker that resolves the pointer to the default
  * process environment. (environ)
- * 
+ *
  * @returns Pointer to the default environment.
  *          This may be NULL.
  */
@@ -101,18 +101,18 @@ static const char * const *rtEnvDefault(void)
 {
 #ifdef RT_OS_DARWIN
     return *(_NSGetEnviron());
-#elif defined(RT_OS_L4)  
+#elif defined(RT_OS_L4)
     /* So far, our L4 libraries do not include environment support. */
     return NULL;
 #else
     return environ;
-#endif 
+#endif
 }
 
 
 /**
  * Internal worker that creates an environment handle with a specified capacity.
- * 
+ *
  * @returns IPRT status code.
  * @param   ppIntEnv    Where to store the result.
  * @param   cAllocated  The initial array size.
@@ -140,7 +140,7 @@ static int rtEnvCreate(PRTENVINTERNAL *ppIntEnv, size_t cAllocated)
         }
 
         RTMemFree(pIntEnv);
-    }    
+    }
 
     return VERR_NO_MEMORY;
 }
@@ -155,7 +155,7 @@ RTDECL(int) RTEnvCreate(PRTENV pEnv)
 
 RTDECL(int) RTEnvDestroy(RTENV Env)
 {
-    /* 
+    /*
      * Ignore NIL_RTENV and validate input.
      */
     if (    Env == NIL_RTENV
@@ -166,7 +166,7 @@ RTDECL(int) RTEnvDestroy(RTENV Env)
     AssertPtrReturn(pIntEnv, VERR_INVALID_HANDLE);
     AssertReturn(pIntEnv->u32Magic == RTENV_MAGIC, VERR_INVALID_HANDLE);
 
-    /* 
+    /*
      * Do the cleanup.
      */
     RTENV_LOCK(pIntEnv);
@@ -191,7 +191,7 @@ RTDECL(int) RTEnvDestroy(RTENV Env)
     RTENV_UNLOCK(pIntEnv);
     /*RTCritSectDelete(&pIntEnv->CritSect) */
     RTMemFree(pIntEnv);
-    
+
     return VINF_SUCCESS;
 }
 
@@ -284,7 +284,7 @@ RTDECL(int) RTEnvPutEx(RTENV Env, const char *pszVarEqualValue)
         rc = RTEnvUnsetEx(Env, pszVarEqualValue);
     else
     {
-        /* 
+        /*
          * Make a copy of the variable name so we can terminate it
          * properly and then pass the request on to RTEnvSetEx.
          */
@@ -311,9 +311,9 @@ RTDECL(int) RTEnvSetEx(RTENV Env, const char *pszVar, const char *pszValue)
     int rc;
     if (Env == RTENV_DEFAULT)
     {
-        /* 
+        /*
          * Since RTEnvPut isn't UTF-8 clean and actually expects the strings
-         * to be in the current code page (codeset), we'll do the necessary 
+         * to be in the current code page (codeset), we'll do the necessary
          * conversions here.
          */
         char *pszVarOtherCP;
@@ -361,7 +361,7 @@ RTDECL(int) RTEnvSetEx(RTENV Env, const char *pszVar, const char *pszValue)
                     break;
             if (iVar < pIntEnv->cVars)
             {
-                /* 
+                /*
                  * Replace the current entry. Simple.
                  */
                 RTMemFree(pIntEnv->papszEnv[iVar]);
@@ -370,7 +370,7 @@ RTDECL(int) RTEnvSetEx(RTENV Env, const char *pszVar, const char *pszValue)
             else
             {
                 /*
-                 * Adding a new variable. Resize the array if required 
+                 * Adding a new variable. Resize the array if required
                  * and then insert the new value at the end.
                  */
                 if (pIntEnv->cVars + 2 > pIntEnv->cAllocated)
@@ -394,7 +394,7 @@ RTDECL(int) RTEnvSetEx(RTENV Env, const char *pszVar, const char *pszValue)
                     Assert(pIntEnv->cVars == iVar + 1);
                 }
             }
-    
+
             RTENV_UNLOCK(pIntEnv);
 
             if (RT_FAILURE(rc))
@@ -415,9 +415,9 @@ RTDECL(int) RTEnvUnsetEx(RTENV Env, const char *pszVar)
     int rc;
     if (Env == RTENV_DEFAULT)
     {
-        /* 
+        /*
          * Since RTEnvUnset isn't UTF-8 clean and actually expects the strings
-         * to be in the current code page (codeset), we'll do the necessary 
+         * to be in the current code page (codeset), we'll do the necessary
          * conversions here.
          */
         char *pszVarOtherCP;
@@ -458,7 +458,7 @@ RTDECL(int) RTEnvUnsetEx(RTENV Env, const char *pszVar)
         RTENV_UNLOCK(pIntEnv);
     }
     return rc;
-    
+
 }
 
 
@@ -474,9 +474,9 @@ RTDECL(int) RTEnvGetEx(RTENV Env, const char *pszVar, char *pszValue, size_t cbV
     int rc;
     if (Env == RTENV_DEFAULT)
     {
-        /* 
+        /*
          * Since RTEnvGet isn't UTF-8 clean and actually expects the strings
-         * to be in the current code page (codeset), we'll do the necessary 
+         * to be in the current code page (codeset), we'll do the necessary
          * conversions here.
          */
         char *pszVarOtherCP;
@@ -544,7 +544,7 @@ RTDECL(int) RTEnvGetEx(RTENV Env, const char *pszVar, char *pszValue, size_t cbV
         RTENV_UNLOCK(pIntEnv);
     }
     return rc;
-    
+
 }
 
 
@@ -555,9 +555,9 @@ RTDECL(bool) RTEnvExistEx(RTENV Env, const char *pszVar)
     bool fExist = false;
     if (Env == RTENV_DEFAULT)
     {
-        /* 
+        /*
          * Since RTEnvExist isn't UTF-8 clean and actually expects the strings
-         * to be in the current code page (codeset), we'll do the necessary 
+         * to be in the current code page (codeset), we'll do the necessary
          * conversions here.
          */
         char *pszVarOtherCP;
@@ -614,8 +614,8 @@ RTDECL(char const * const *) RTEnvGetExecEnvP(RTENV Env)
 
         RTENV_LOCK(pIntEnv);
 
-        /* 
-         * Free any old envp. 
+        /*
+         * Free any old envp.
          */
         if (pIntEnv->papszEnvOtherCP)
         {

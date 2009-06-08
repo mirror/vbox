@@ -33,7 +33,7 @@
 
 #include <iprt/cdefs.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 #ifdef IN_RING0
 
@@ -51,7 +51,7 @@ void rtR0TermNative(void);
 
 #endif /* IN_RING0 */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

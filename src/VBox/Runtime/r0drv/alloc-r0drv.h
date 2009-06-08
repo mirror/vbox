@@ -35,7 +35,7 @@
 #include <iprt/types.h>
 #include "internal/magics.h"
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /**
  * Header which heading all memory blocks.
@@ -67,6 +67,6 @@ typedef struct RTMEMHDR
 PRTMEMHDR   rtMemAlloc(size_t cb, uint32_t fFlags);
 void        rtMemFree(PRTMEMHDR pHdr);
 
-__END_DECLS
+RT_END_DECLS
 #endif
 

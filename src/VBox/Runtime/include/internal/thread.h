@@ -40,7 +40,7 @@
 #endif
 #include "internal/magics.h"
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 
 
@@ -207,6 +207,6 @@ void rtThreadClearTlsEntry(RTTLS iTls);
 void rtThreadTlsDestruction(PRTTHREADINT pThread); /* in tls-generic.cpp */
 #endif
 
-__END_DECLS
+RT_END_DECLS
 
 #endif

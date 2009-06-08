@@ -160,7 +160,7 @@ typedef struct RTRANDINT
 } RTRANDINT;
 
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /**
  * Initialize OS facilities for generating random bytes.
@@ -189,7 +189,7 @@ DECLCALLBACK(int)       rtRandAdvStubSaveState(PRTRANDINT pThis, char *pszState,
 DECLCALLBACK(int)       rtRandAdvStubRestoreState(PRTRANDINT pThis, char const *pszState);
 DECLCALLBACK(int)       rtRandAdvDefaultDestroy(PRTRANDINT pThis);
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 
