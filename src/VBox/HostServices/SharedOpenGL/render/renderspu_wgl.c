@@ -316,7 +316,7 @@ bSetupPixelFormat( HDC hdc, GLbitfield visAttribs )
        we shouldn't be using wgl functions to setup pixel formats unless we're loading ICD driver.
        In particular, bSetupPixelFormatEXT bugs with Intel drivers.
      */
-    bSetupPixelFormatNormal(hdc, visAttribs);
+    return bSetupPixelFormatNormal(hdc, visAttribs);
 }
 
 GLboolean renderspu_SystemCreateWindow( VisualInfo *visual, GLboolean showIt, WindowInfo *window )
