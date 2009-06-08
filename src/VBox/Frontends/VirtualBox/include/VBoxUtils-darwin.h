@@ -38,7 +38,6 @@
 typedef NSWindow *NativeWindowRef;
 typedef NSView *NativeViewRef;
 #else
-# include <iprt/cdefs.h> /* for RT_C_DECLS_BEGIN/RT_C_DECLS_END & stuff */
 
 # include <qglobal.h> /* for QT_MAC_USE_COCOA */
 # include <QRect>
@@ -60,6 +59,8 @@ typedef WindowRef NativeWindowRef;
 typedef HIViewRef NativeViewRef;
 # endif /* QT_MAC_USE_COCOA */
 #endif /* __OBJC__ */
+
+#include <iprt/cdefs.h> /* for RT_C_DECLS_BEGIN/RT_C_DECLS_END & stuff */
 
 RT_C_DECLS_BEGIN
 
