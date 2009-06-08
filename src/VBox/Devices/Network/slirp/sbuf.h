@@ -24,9 +24,9 @@ struct sbuf
 
 void sbfree (struct sbuf *);
 void sbdrop (struct sbuf *, int);
-void sbreserve (struct sbuf *, int);
+void sbreserve (PNATState, struct sbuf *, int);
 void sbappend (PNATState, struct socket *, struct mbuf *);
-void sbappendsb (struct sbuf *, struct mbuf *);
+void sbappendsb (PNATState, struct sbuf *, struct mbuf *);
 void sbcopy (struct sbuf *, int, int, char *);
 
 #endif
