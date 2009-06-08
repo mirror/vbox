@@ -36,7 +36,7 @@
 # include <sys/stat.h>
 #endif
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 RTFMODE rtFsModeFromDos(RTFMODE fMode, const char *pszName, size_t cbName);
 RTFMODE rtFsModeFromUnix(RTFMODE fMode, const char *pszName, size_t cbName);
@@ -57,6 +57,6 @@ void    rtFsConvertStatToObjInfo(PRTFSOBJINFO pObjInfo, const struct stat *pStat
 # endif
 #endif
 
-__END_DECLS
+RT_END_DECLS
 
 #endif

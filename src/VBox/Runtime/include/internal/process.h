@@ -34,7 +34,7 @@
 #include <iprt/process.h>
 #include <iprt/param.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 extern RTPROCESS        g_ProcessSelf;
 extern RTPROCPRIORITY   g_enmProcessPriority;
@@ -66,7 +66,7 @@ int rtProcNativeSetPriority(RTPROCPRIORITY enmPriority);
  */
 DECLHIDDEN(int) rtProcInitExePath(char *pszPath, size_t cchPath);
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

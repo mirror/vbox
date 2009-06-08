@@ -198,6 +198,13 @@ RTDECL(int)  RTDbgModCreate(PRTDBGMOD phDbgMod, const char *pszName, RTUINTPTR c
     return rc;
 }
 
+
+RTDECL(int)         RTDbgModCreateDeferred(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, RTUINTPTR cb, uint32_t fFlags)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
 RTDECL(int)         RTDbgModCreateFromImage(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, uint32_t fFlags)
 {
     return VERR_NOT_IMPLEMENTED;

@@ -135,7 +135,7 @@ typedef unsigned int	qshift_t;
 typedef u_quad_t	qshift_t;
 #endif
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 quad_t __adddi3 __P((quad_t, quad_t));
 quad_t __anddi3 __P((quad_t, quad_t));
 quad_t __ashldi3 __P((quad_t, qshift_t));
@@ -162,4 +162,4 @@ int __ucmpdi2 __P((u_quad_t, u_quad_t));
 u_quad_t __udivdi3 __P((u_quad_t, u_quad_t ));
 u_quad_t __umoddi3 __P((u_quad_t, u_quad_t ));
 quad_t __xordi3 __P((quad_t, quad_t));
-__END_DECLS
+RT_END_DECLS

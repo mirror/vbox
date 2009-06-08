@@ -60,8 +60,8 @@
 
 #include <iprt/cdefs.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 extern struct ddi_dma_attr g_SolarisX86PhysMemLimits;
-__END_DECLS
+RT_END_DECLS
 
 #endif

@@ -33,7 +33,7 @@
 
 #include <iprt/cdefs.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 #ifndef bool /* Linux 2.6.19 C++ nightmare */
 #define bool bool_type
 #define true true_type
@@ -55,7 +55,7 @@ char *strpbrk(const char *pszStr, const char *pszChars)
 #endif
     ;
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 
