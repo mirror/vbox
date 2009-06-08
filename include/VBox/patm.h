@@ -35,7 +35,7 @@
 #include <VBox/dis.h>
 
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_patm      The Patch Manager API
  * @{
@@ -670,7 +670,7 @@ VMMR3DECL(bool) PATMIsSpinlockReleasePatch(PVM pVM, RTRCPTR pCallTargetGC);
 
 
 /** @} */
-__END_DECLS
+RT_END_DECLS
 
 
 #endif

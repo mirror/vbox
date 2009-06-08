@@ -35,7 +35,7 @@
 #include <VBox/x86.h>
 
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_cpum      The CPU Monitor / Manager API
  * @{
@@ -1042,7 +1042,7 @@ VMMR0DECL(int)          CPUMR0LoadGuestDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCT
 #endif /* IN_RING0 */
 
 /** @} */
-__END_DECLS
+RT_END_DECLS
 
 
 #endif

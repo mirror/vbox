@@ -36,7 +36,7 @@
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 
 /** Pointer to an internal network ring-0 instance. */
@@ -979,6 +979,6 @@ INTNETR0DECL(int) INTNETR0IfWait(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSES
 /** @} */
 #endif /* IN_RING0 */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif

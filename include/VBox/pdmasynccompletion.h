@@ -35,7 +35,7 @@
 #include <VBox/err.h>
 #include <iprt/assert.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_pdm_async_completion  The PDM Async I/O Completion API
  * @ingroup grp_pdm
@@ -319,7 +319,7 @@ VMMR3DECL(int) PDMR3AsyncCompletionTaskCancel(PPDMASYNCCOMPLETIONTASK pTask);
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

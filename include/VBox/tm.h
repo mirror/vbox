@@ -36,7 +36,7 @@
 # include <iprt/time.h>
 #endif
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_tm        The Time Manager API
  * @{
@@ -249,7 +249,7 @@ VMMR3DECL(PRTTIMESPEC) TMR3UTCNow(PVM pVM, PRTTIMESPEC pTime);
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

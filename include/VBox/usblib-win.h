@@ -228,7 +228,7 @@ typedef struct
 #pragma pack()                          /* paranoia */
 
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 #ifdef IN_RING3
 
@@ -277,7 +277,7 @@ USBLIB_DECL(int) USBLibReleaseDevice(uint16_t usVendorId, uint16_t usProductId, 
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 
 #endif

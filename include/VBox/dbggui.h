@@ -38,7 +38,7 @@
 #endif
 
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_dbggui    VirtualBox Debugger GUI
  * @{
@@ -171,7 +171,7 @@ DBGDECL(void) DBGGuiSetMenu(PDBGGUI pGui, void *pvMenu);
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

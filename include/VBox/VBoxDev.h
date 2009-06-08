@@ -32,7 +32,7 @@
 
 #include <VBox/cdefs.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** Mouse capability bits
  * @{ */
@@ -84,6 +84,6 @@ __BEGIN_DECLS
  */
 #define VMMDEV_HEAP_SIZE (4*PAGE_SIZE)
 
-__END_DECLS
+RT_END_DECLS
 
 #endif

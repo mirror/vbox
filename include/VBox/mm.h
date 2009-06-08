@@ -37,7 +37,7 @@
 #include <VBox/sup.h>
 
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_mm       The Memory Manager API
  * @{
@@ -350,7 +350,7 @@ VMMRCDECL(int)      MMGCRamWrite(PVM pVM, void *pDst, void *pSrc, size_t cb);
 #endif /* IN_RC */
 
 /** @} */
-__END_DECLS
+RT_END_DECLS
 
 
 #endif

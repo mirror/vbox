@@ -37,7 +37,7 @@
 #include <VBox/dis.h>
 
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 /** @addtogroup grp_cpum
  * @{
  */
@@ -56,7 +56,7 @@ VMMR3DECL(void) CPUMR3DisasmInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPTR 
 #endif /* IN_RING3 */
 
 /** @} */
-__END_DECLS
+RT_END_DECLS
 
 
 #endif

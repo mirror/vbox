@@ -35,7 +35,7 @@
 #include <VBox/x86.h>
 
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 /** @defgroup grp_trpm The Trap Monitor API
  * @{
  */
@@ -148,6 +148,6 @@ VMMR0DECL(void)     TRPMR0SetupInterruptDispatcherFrame(PVM pVM, void *pvRet);
 #endif
 
 /** @} */
-__END_DECLS
+RT_END_DECLS
 
 #endif

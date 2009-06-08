@@ -39,7 +39,7 @@
 # endif
 #endif
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_stam     The Statistics Manager API
  * @{
@@ -1124,7 +1124,7 @@ VMMR3DECL(const char *) STAMR3GetUnit(STAMUNIT enmUnit);
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

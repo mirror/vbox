@@ -36,7 +36,7 @@
 #include <VBox/vmapi.h>
 
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_rem      The Recompiled Execution Manager API
  * @{
@@ -102,7 +102,7 @@ REMR3DECL(bool) REMR3IsPageAccessHandled(PVM pVM, RTGCPHYS GCPhys);
 
 
 /** @} */
-__END_DECLS
+RT_END_DECLS
 
 
 #endif

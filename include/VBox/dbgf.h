@@ -39,7 +39,7 @@
 #include <iprt/stdarg.h>
 #include <iprt/dbg.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 
 /** @defgroup grp_dbgf     The Debugger Facility API
@@ -1040,7 +1040,7 @@ VMMR3DECL(void *)   DBGFR3OSQueryInterface(PVM pVM, DBGFOSINTERFACE enmIf);
 /** @} */
 
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

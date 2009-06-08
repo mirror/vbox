@@ -43,7 +43,7 @@
 #include <VBox/vusb.h>
 #include <iprt/stdarg.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_pdm_usbdev    The USB Devices API
  * @ingroup grp_pdm
@@ -772,6 +772,6 @@ VMMR3DECL(bool) PDMR3USBHasHub(PVM pVM);
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif

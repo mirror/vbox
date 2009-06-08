@@ -37,7 +37,7 @@
 #include <VBox/log.h>
 #include <iprt/stdarg.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_vmm       The Virtual Machine Monitor API
  * @{
@@ -116,7 +116,7 @@ typedef enum VMMCALLHOST
  * VMMR3AtomicExecuteHandler callback function.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the shared VM structure. 
+ * @param   pVM     Pointer to the shared VM structure.
  * @param   pvUser  User specified argument
  */
 typedef DECLCALLBACK(int) FNATOMICHANDLER(PVM pVM, void *pvUser);
@@ -139,7 +139,7 @@ VMMDECL(VMMSWITCHER) VMMGetSwitcher(PVM pVM);
  * using hardware assisted virtualization.
  *
  * @returns true / false.
- * @param   pVM     Pointer to the shared VM structure. 
+ * @param   pVM     Pointer to the shared VM structure.
  */
 #define VMMIsHwVirtExtForced(pVM)   ((pVM)->fHwVirtExtForced)
 
@@ -348,7 +348,7 @@ VMMRCDECL(void)     VMMGCLogFlushIfFull(PVM pVM);
 
 
 /** @} */
-__END_DECLS
+RT_END_DECLS
 
 #endif
 
