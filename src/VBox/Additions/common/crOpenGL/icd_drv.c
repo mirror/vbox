@@ -24,6 +24,7 @@
 #include "icd_drv.h"
 #include "cr_gl.h"
 #include "stub.h"
+#include "cr_mem.h"
 
 #include <windows.h>
 
@@ -117,7 +118,7 @@ BOOL APIENTRY DrvSetPixelFormat(HDC hdc, int iPixelFormat)
 {
     crDebug( "DrvSetPixelFormat called.\n" );
 
-    if ( iPixelFormat != 1 ) {
+    if ( (iPixelFormat<1) || (iPixelFormat>2) ) {
         crError( "wglSetPixelFormat: iPixelFormat=%d?\n", iPixelFormat );
     }
 
@@ -179,46 +180,81 @@ int APIENTRY DrvGetLayerPaletteEntries(HDC hdc, int iLayerPlane,
 int APIENTRY DrvDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, LPPIXELFORMATDESCRIPTOR pfd)
 {
     if ( !pfd ) {
-        return 1; /* There's only one, baby */
+        return 2;
     }
 
     if ( nBytes != sizeof(*pfd) ) {
         crWarning( "DrvDescribePixelFormat: nBytes=%u?\n", nBytes );
-        return 1; /* There's only one, baby */
+        return 2;
     }
 
-    pfd->nSize           = sizeof(*pfd);
-    pfd->nVersion        = 1;
-    pfd->dwFlags         = ( PFD_DRAW_TO_WINDOW |
-                 PFD_SUPPORT_GDI    |
-                 PFD_SUPPORT_OPENGL |
-                 PFD_DOUBLEBUFFER );
-    pfd->iPixelType      = PFD_TYPE_RGBA;
-    pfd->cColorBits      = 32;
-    pfd->cRedBits        = 8;
-    pfd->cRedShift       = 24;
-    pfd->cGreenBits      = 8;
-    pfd->cGreenShift     = 16;
-    pfd->cBlueBits       = 8;
-    pfd->cBlueShift      = 8;
-    pfd->cAlphaBits      = 8;
-    pfd->cAlphaShift     = 0;
-    pfd->cAccumBits      = 0;
-    pfd->cAccumRedBits   = 0;
-    pfd->cAccumGreenBits = 0;
-    pfd->cAccumBlueBits  = 0;
-    pfd->cAccumAlphaBits = 0;
-    pfd->cDepthBits      = 32;
-    pfd->cStencilBits    = 8;
-    pfd->cAuxBuffers     = 0;
-    pfd->iLayerType      = PFD_MAIN_PLANE;
-    pfd->bReserved       = 0;
-    pfd->dwLayerMask     = 0;
-    pfd->dwVisibleMask   = 0;
-    pfd->dwDamageMask    = 0;
+    if (iPixelFormat==1)
+    {
+        crMemZero(pfd, sizeof(*pfd));
+
+        pfd->nSize           = sizeof(*pfd);
+        pfd->nVersion        = 1;
+        pfd->dwFlags         = (PFD_DRAW_TO_WINDOW |
+                                PFD_SUPPORT_OPENGL |
+                                PFD_DOUBLEBUFFER);
+        pfd->iPixelType      = PFD_TYPE_RGBA;
+        pfd->cColorBits      = 32;
+        pfd->cRedBits        = 8;
+        pfd->cRedShift       = 24;
+        pfd->cGreenBits      = 8;
+        pfd->cGreenShift     = 16;
+        pfd->cBlueBits       = 8;
+        pfd->cBlueShift      = 8;
+        pfd->cAlphaBits      = 8;
+        pfd->cAlphaShift     = 0;
+        pfd->cAccumBits      = 0;
+        pfd->cAccumRedBits   = 0;
+        pfd->cAccumGreenBits = 0;
+        pfd->cAccumBlueBits  = 0;
+        pfd->cAccumAlphaBits = 0;
+        pfd->cDepthBits      = 32;
+        pfd->cStencilBits    = 8;
+        pfd->cAuxBuffers     = 0;
+        pfd->iLayerType      = PFD_MAIN_PLANE;
+        pfd->bReserved       = 0;
+        pfd->dwLayerMask     = 0;
+        pfd->dwVisibleMask   = 0;
+        pfd->dwDamageMask    = 0;
+    }
+    else
+    {
+        crMemZero(pfd, sizeof(*pfd));
+        pfd->nVersion        = 1;
+        pfd->dwFlags         = (PFD_DRAW_TO_WINDOW|
+                                PFD_SUPPORT_OPENGL);
+
+        pfd->iPixelType      = PFD_TYPE_RGBA;
+        pfd->cColorBits      = 32;
+        pfd->cRedBits        = 8;
+        pfd->cRedShift       = 16;
+        pfd->cGreenBits      = 8;
+        pfd->cGreenShift     = 8;
+        pfd->cBlueBits       = 8;
+        pfd->cBlueShift      = 0;
+        pfd->cAlphaBits      = 0;
+        pfd->cAlphaShift     = 0;
+        pfd->cAccumBits      = 64;
+        pfd->cAccumRedBits   = 16;
+        pfd->cAccumGreenBits = 16;
+        pfd->cAccumBlueBits  = 16;
+        pfd->cAccumAlphaBits = 0;
+        pfd->cDepthBits      = 16;
+        pfd->cStencilBits    = 8;
+        pfd->cAuxBuffers     = 0;
+        pfd->iLayerType      = PFD_MAIN_PLANE;
+        pfd->bReserved       = 0;
+        pfd->dwLayerMask     = 0;
+        pfd->dwVisibleMask   = 0;
+        pfd->dwDamageMask    = 0;
+    }
 
     /* the max PFD index */
-    return 1;
+    return 2;
 }
 
 BOOL APIENTRY DrvDeleteContext(HGLRC hglrc)
