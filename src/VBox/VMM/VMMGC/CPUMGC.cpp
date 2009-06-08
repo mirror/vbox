@@ -37,9 +37,9 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-__BEGIN_DECLS /* addressed from asm (not called so no DECLASM). */
+RT_BEGIN_DECLS /* addressed from asm (not called so no DECLASM). */
 DECLCALLBACK(int) cpumGCHandleNPAndGP(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t uUser);
-__END_DECLS
+RT_END_DECLS
 
 
 /**

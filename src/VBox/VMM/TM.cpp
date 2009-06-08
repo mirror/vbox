@@ -1781,10 +1781,10 @@ VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
     STAM_PROFILE_STOP(&pVM->tm.s.StatDoQueues, a);
 }
 
-//__BEGIN_DECLS
+//RT_BEGIN_DECLS
 //int     iomLock(PVM pVM);
 //void    iomUnlock(PVM pVM);
-//__END_DECLS
+//RT_END_DECLS
 
 
 /**

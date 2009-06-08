@@ -31,7 +31,7 @@
 #include <VBox/pgm.h>
 #include <VBox/hwacc_vmx.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_vmx_int   Internal
  * @ingroup grp_vmx
@@ -367,7 +367,7 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

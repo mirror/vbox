@@ -428,7 +428,7 @@ typedef enum VMMGCOPERATION
 } VMMGCOPERATION;
 
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 #ifdef IN_RING3
 int  vmmR3SwitcherInit(PVM pVM);
@@ -551,7 +551,7 @@ DECLASM(int)    vmmGCTestTrap0e_ResumeEIP(void); /**< a label */
 
 #endif /* IN_RC */
 
-__END_DECLS
+RT_END_DECLS
 
 /** @} */
 

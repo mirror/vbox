@@ -30,7 +30,7 @@
 
 
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_stam_int   Internals
  * @ingroup grp_stam
@@ -122,6 +122,6 @@ typedef STAMUSERPERVM *PSTAMUSERPERVM;
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif

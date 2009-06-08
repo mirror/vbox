@@ -44,7 +44,7 @@
 #define HWACCM_VTX_WITH_EPT
 #define HWACCM_VTX_WITH_VPID
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 
 /** @defgroup grp_hwaccm_int       Internal
@@ -730,7 +730,7 @@ DECLASM(uint64_t) hwaccmR0Get64bitCR3(void);
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

@@ -24,7 +24,7 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault);
 PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage);
 PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned cPages, unsigned uErr);
@@ -41,7 +41,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVMCPU pVCpu, PPGMPOOLPA
 #endif
 PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
 PGM_BTH_DECL(int, UnmapCR3)(PVMCPU pVCpu);
-__END_DECLS
+RT_END_DECLS
 
 
 /* Filter out some illegal combinations of guest and shadow paging, so we can remove redundant checks inside functions. */
@@ -206,7 +206,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
             pgmUnlock(pVM);
             AssertRC(rc);
             return rc;
-        }   
+        }
         Assert(pPDDst);
 
 #  elif PGM_SHW_TYPE == PGM_TYPE_EPT
@@ -1199,7 +1199,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
             rc = PGM_BTH_NAME(SyncPT)(pVCpu, iPDSrc, pPDSrc, GCPtrPage);
             pgmUnlock(pVM);
         }
-        else 
+        else
 # endif /* !PGM_WITHOUT_MAPPING */
         if (   PdeSrc.n.u1User != PdeDst.n.u1User
             || (!PdeSrc.n.u1Write && PdeDst.n.u1Write))
@@ -2359,7 +2359,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
                         else
                         /* Check for stale TLB entry; only applies to the SMP guest case. */
                         if (    pVM->cCPUs > 1
-                            &&  pPteDst->n.u1Write == 1 
+                            &&  pPteDst->n.u1Write == 1
                             &&  pPteDst->n.u1Accessed == 1)
                         {
                             /* Stale TLB entry. */
@@ -3447,9 +3447,9 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
  * @param   cMaxDepth   Number of levels to dump.
  * @param   pHlp        Pointer to the output functions.
  */
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 VMMR3DECL(int) PGMR3DumpHierarchyHC(PVM pVM, uint32_t cr3, uint32_t cr4, bool fLongMode, unsigned cMaxDepth, PCDBGFINFOHLP pHlp);
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

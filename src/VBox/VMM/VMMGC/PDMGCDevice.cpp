@@ -42,13 +42,13 @@
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 extern DECLEXPORT(const PDMDEVHLPRC)    g_pdmRCDevHlp;
 extern DECLEXPORT(const PDMPICHLPRC)    g_pdmRCPicHlp;
 extern DECLEXPORT(const PDMAPICHLPRC)   g_pdmRCApicHlp;
 extern DECLEXPORT(const PDMIOAPICHLPRC) g_pdmRCIoApicHlp;
 extern DECLEXPORT(const PDMPCIHLPRC)    g_pdmRCPciHlp;
-__END_DECLS
+RT_END_DECLS
 
 
 /*******************************************************************************

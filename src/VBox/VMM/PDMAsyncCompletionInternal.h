@@ -28,7 +28,7 @@
 #include <VBox/cfgm.h>
 #include <VBox/pdmasynccompletion.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /**
  * Supported endpoint classes.
@@ -251,7 +251,7 @@ typedef struct PDMASYNCCOMPLETIONTASK
  */
 void pdmR3AsyncCompletionCompleteTask(PPDMASYNCCOMPLETIONTASK pTask);
 
-__END_DECLS
+RT_END_DECLS
 
 extern const PDMASYNCCOMPLETIONEPCLASSOPS g_PDMAsyncCompletionEndpointClassFile;
 
