@@ -689,10 +689,6 @@
 #define VERR_REM_VIRTUAL_CPU_ERROR          (-2301)
 /** Recompiler execution was interrupted by forced action. */
 #define VINF_REM_INTERRUPED_FF              2302
-/** Reason for leaving GC: Must flush pending invlpg operations to REM.
- * Tell REM to flush page invalidations. Will temporary go to REM context
- * from REM and perform the flushes. */
-#define VERR_REM_FLUSHED_PAGES_OVERFLOW     (-2303)
 /** Too many similar traps. This is a very useful debug only
  * check (we don't do double/tripple faults in REM). */
 #define VERR_REM_TOO_MANY_TRAPS             (-2304)

@@ -40,8 +40,6 @@
  * Records a invlpg instruction for replaying upon REM entry.
  *
  * @returns VINF_SUCCESS on success.
- * @returns VERR_REM_FLUSHED_PAGES_OVERFLOW if a return to HC for flushing of
- *          recorded pages is required before the call can succeed.
  * @param   pVM         The VM handle.
  * @param   GCPtrPage   The
  */

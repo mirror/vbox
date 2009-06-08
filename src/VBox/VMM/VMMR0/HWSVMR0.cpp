@@ -2651,7 +2651,7 @@ static int svmR0InterpretInvlPg(PVMCPU pVCpu, PDISCPUSTATE pCpu, PCPUMCTXCORE pR
         SVMR0InvlpgA(addr, uASID);
         return VINF_SUCCESS;
     }
-    Assert(rc == VERR_REM_FLUSHED_PAGES_OVERFLOW);
+    AssertRC(rc);
     return rc;
 }
 

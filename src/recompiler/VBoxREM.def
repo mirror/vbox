@@ -36,7 +36,6 @@ EXPORTS
     REMR3StateUpdate
     REMR3A20Set
     REMR3DisasEnableStepping
-    REMR3ReplayInvalidatedPages
     REMR3ReplayHandlerNotifications
     REMR3NotifyPhysRamRegister
     REMR3NotifyPhysRamDeregister

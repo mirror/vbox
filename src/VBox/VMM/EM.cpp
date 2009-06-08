@@ -2504,17 +2504,6 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
             break;
 
         /*
-         * REMGCNotifyInvalidatePage() failed because of overflow.
-         */
-        case VERR_REM_FLUSHED_PAGES_OVERFLOW:
-            Assert((pCtx->ss & X86_SEL_RPL) != 1);
-            EMR3RemLock(pVM);
-            REMR3ReplayInvalidatedPages(pVM, pVCpu);
-            EMR3RemUnlock(pVM);
-            rc = VINF_SUCCESS;
-            break;
-
-        /*
          * I/O Port access - emulate the instruction.
          */
         case VINF_IOM_HC_IOPORT_READ:

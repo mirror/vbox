@@ -1887,8 +1887,7 @@ VMMDECL(int) EMInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RT
     if (    rc == VINF_SUCCESS
         ||  rc == VINF_PGM_SYNC_CR3 /* we can rely on the FF */)
         return VINF_SUCCESS;
-    AssertMsgReturn(   rc == VERR_REM_FLUSHED_PAGES_OVERFLOW
-                    || rc == VINF_EM_RAW_EMULATE_INSTR,
+    AssertMsgReturn(rc == VINF_EM_RAW_EMULATE_INSTR,
                     ("%Rrc addr=%RGv\n", rc, pAddrGC),
                     VERR_EM_INTERPRETER);
     return rc;
@@ -1930,8 +1929,7 @@ static int emInterpretInvlPg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPU
     if (    rc == VINF_SUCCESS
         ||  rc == VINF_PGM_SYNC_CR3 /* we can rely on the FF */)
         return VINF_SUCCESS;
-    AssertMsgReturn(   rc == VERR_REM_FLUSHED_PAGES_OVERFLOW
-                    || rc == VINF_EM_RAW_EMULATE_INSTR,
+    AssertMsgReturn(rc == VINF_EM_RAW_EMULATE_INSTR,
                     ("%Rrc addr=%RGv\n", rc, addr),
                     VERR_EM_INTERPRETER);
     return rc;
