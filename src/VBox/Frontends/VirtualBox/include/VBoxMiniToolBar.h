@@ -50,6 +50,7 @@ public:
 
     VBoxMiniToolBar (QWidget *aParent, Alignment aAlignment);
 
+    void setActive (bool aIsActive);
     void setIsSeamlessMode (bool aIsSeamless);
 
     VBoxMiniToolBar& operator<< (QList <QMenu*> aMenus);
@@ -95,6 +96,7 @@ private:
     int mPositionX;
     int mPositionY;
 
+    bool mIsActive;
     bool mIsSeamless;
 
     /* Lists of used spacers */
