@@ -40,9 +40,9 @@
 # define DEBUG_ACPI
 #endif
 
-/* the compiled DSL */
 #if defined(IN_RING3) && !defined(VBOX_DEVICE_STRUCT_TESTCASE)
-# include <vboxaml.hex>
+int acpiPrepareDsdt(PPDMDEVINS pDevIns, void* *ppPtr, size_t *puDsdtLen);
+int acpiCleanupDsdt(PPDMDEVINS pDevIns, void* pPtr);
 #endif /* !IN_RING3 */
 
 
@@ -610,9 +610,11 @@ static void acpiPhyscpy(ACPIState *s, RTGCPHYS32 dst, const void * const src, si
 }
 
 /** Differentiated System Description Table (DSDT) */
-static void acpiSetupDSDT(ACPIState *s, RTGCPHYS32 addr)
+
+static void acpiSetupDSDT(ACPIState *s, RTGCPHYS32 addr, 
+                            void* pPtr, size_t uDsdtLen)
 {
-    acpiPhyscpy(s, addr, AmlCode, sizeof(AmlCode));
+    acpiPhyscpy(s, addr, pPtr, uDsdtLen);
 }
 
 /** Firmware ACPI Control Structure (FACS) */
@@ -1746,7 +1748,13 @@ static int acpiPlantTables(ACPIState *s)
         dsdt_addr = RT_ALIGN_32(facs_addr + sizeof(ACPITBLFACS), 16);
     }
 
-    last_addr = RT_ALIGN_32(dsdt_addr + sizeof(AmlCode), 16);
+    void*  pDsdtCode = NULL;
+    size_t uDsdtSize = 0;
+    rc = acpiPrepareDsdt(s->pDevIns, &pDsdtCode, &uDsdtSize);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    last_addr = RT_ALIGN_32(dsdt_addr + uDsdtSize, 16);
     if (last_addr > 0x10000)
         return PDMDEV_SET_ERROR(s->pDevIns, VERR_TOO_MUCH_DATA,
                                 N_("Error: ACPI tables > 64KB"));
@@ -1757,7 +1765,8 @@ static int acpiPlantTables(ACPIState *s)
     Log(("FACS 0x%08X FADT 0x%08X\n", facs_addr + addend, fadt_addr + addend));
     Log(("DSDT 0x%08X\n", dsdt_addr + addend));
     acpiSetupRSDP((ACPITBLRSDP*)s->au8RSDPPage, rsdt_addr + addend, xsdt_addr + addend);
-    acpiSetupDSDT(s, dsdt_addr + addend);
+    acpiSetupDSDT(s, dsdt_addr + addend, pDsdtCode, uDsdtSize);
+    acpiCleanupDsdt(s->pDevIns, pDsdtCode);
     acpiSetupFACS(s, facs_addr + addend);
     acpiSetupFADT(s, fadt_addr + addend, facs_addr + addend, dsdt_addr + addend);
 

@@ -272,6 +272,7 @@ DevicesR3_SOURCES       = \
 	PC/DevPit-i8254.cpp \
 	PC/DevPIC.cpp \
 	PC/DevACPI.cpp \
+	PC/ACPI/VBoxAcpi.cpp \
 	PC/DevRTC.cpp \
 	PC/DevPcBios.cpp \
 	PC/DevPcArch.c \
@@ -386,6 +387,10 @@ EFI/DevEFI.cpp_INCS.x86   += EFI/tools/include/Ia32
 EFI/DevEFI.cpp_INCS.amd64 += EFI/tools/include/X64
 endif
 
+ifdef VBOX_WITH_DYNAMIC_DSDT
+DevicesR3_DEFS          += VBOX_WITH_DYNAMIC_DSDT
+endif
+
 ifdef VBOX_WITH_USB
 DevicesR3_DEFS         += VBOX_WITH_USB IN_USB_R3
 
@@ -403,10 +408,10 @@ DevicesR3_DEFS         += VBOX_WITH_HGCM
 DevicesR3_DEFS.linux   += _GNU_SOURCE
 DevicesR3_DEFS.l4      += _GNU_SOURCE
 
-# DevACPI.cpp needs vboxaml.hex which we generate from PC/vbox.dsl. (bird: What's vboxaml.aml?)
+# VBoxAcpi.cpp needs vboxaml.hex which we generate from PC/vbox.dsl. (bird: What's vboxaml.aml?)
 DevicesR3_CLEAN        += $(PATH_DevicesR3)/vboxaml.hex $(PATH_DevicesR3)/vboxaml.aml
-PC/DevACPI.cpp_DEPS     = $(PATH_DevicesR3)/vboxaml.hex
-PC/DevACPI.cpp_INCS     = $(PATH_DevicesR3)
+PC/ACPI/VBoxAcpi.cpp_DEPS     = $(PATH_DevicesR3)/vboxaml.hex
+PC/ACPI/VBoxAcpi.cpp_INCS     = $(PATH_DevicesR3)
 
 $$(PATH_DevicesR3)/vboxaml.hex: $(PATH_SUB_CURRENT)/PC/vbox.dsl | $$(dir $$@)
 	$(call MSG_TOOL,iasl,DevicesR3,$<,$@)
