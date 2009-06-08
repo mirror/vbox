@@ -2107,23 +2107,29 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
     if (element & VirtualizationStuff)
     {
         bool virtEnabled = cconsole.GetDebugger().GetHWVirtExEnabled();
-        bool nestEnabled = cconsole.GetDebugger().GetHWVirtExNestedPagingEnabled();
-
-        QString tip (tr("<qt>Indicates the status of the hardware virtualization "
-                        "features used by this virtual machine:<br>"
-                        "<nobr><b>%1:</b>&nbsp;%2</nobr><br>"
-                        "<nobr><b>%3:</b>&nbsp;%4</nobr></qt>"));
         QString virtualization = virtEnabled ?
             VBoxGlobal::tr ("Enabled", "details report (VT-x/AMD-V)") :
             VBoxGlobal::tr ("Disabled", "details report (VT-x/AMD-V)");
+
+        bool nestEnabled = cconsole.GetDebugger().GetHWVirtExNestedPagingEnabled();
         QString nestedPaging = nestEnabled ?
             VBoxVMInformationDlg::tr ("Enabled", "nested paging") :
             VBoxVMInformationDlg::tr ("Disabled", "nested paging");
 
-        mVirtLed->setToolTip (tip
-            .arg (VBoxGlobal::tr ("VT-x/AMD-V", "details report"), virtualization)
-            .arg (VBoxVMInformationDlg::tr ("Nested Paging"), nestedPaging));
+        QString tip (tr ("Indicates the status of the hardware virtualization "
+                         "features used by this virtual machine:"
+                         "<br><nobr><b>%1:</b>&nbsp;%2</nobr>"
+                         "<br><nobr><b>%3:</b>&nbsp;%4</nobr>",
+                         "Virtualization Stuff LED")
+                         .arg (VBoxGlobal::tr ("VT-x/AMD-V", "details report"), virtualization)
+                         .arg (VBoxVMInformationDlg::tr ("Nested Paging"), nestedPaging));
 
+        int cpuCount = cconsole.GetMachine().GetCPUCount();
+        if (cpuCount > 1)
+            tip += tr ("<br><nobr><b>%1:</b>&nbsp;%2</nobr>", "Virtualization Stuff LED")
+                      .arg (VBoxGlobal::tr ("Processor(s)", "details report")).arg (cpuCount);
+
+        mVirtLed->setToolTip (tip);
         mVirtLed->setState (virtEnabled);
     }
     if (element & PauseAction)
