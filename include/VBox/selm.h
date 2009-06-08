@@ -37,7 +37,7 @@
 #include <VBox/dbgfsel.h>
 
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_selm      The Selector Monitor(/Manager) API
  * @{
@@ -119,7 +119,7 @@ VMMR3DECL(int)      SELMR3DebugCheck(PVM pVM);
 #endif /* IN_RING3 */
 
 /** @} */
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

@@ -40,7 +40,7 @@
 /** @todo remove this dependency, using PFNVMPROGRESS outside VMM is *WRONG*. */
 #include <VBox/vmapi.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 #ifdef IN_RING0
 # error "There are no VBox HDD Container APIs available in Ring-0 Host Context!"
@@ -1734,7 +1734,7 @@ VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
                                void *pvUser);
 
 
-__END_DECLS
+RT_END_DECLS
 
 /** @} */
 

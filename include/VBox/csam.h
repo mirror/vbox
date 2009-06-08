@@ -53,7 +53,7 @@ typedef enum CSAMTAG
 } CSAMTAG;
 
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 
 /**
@@ -306,6 +306,6 @@ VMMR3DECL(int) CSAMR3RecordCallAddress(PVM pVM, RTRCPTR GCPtrCall);
 
 
 /** @} */
-__END_DECLS
+RT_END_DECLS
 
 #endif

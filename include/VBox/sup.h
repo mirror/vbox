@@ -36,7 +36,7 @@
 #include <iprt/stdarg.h>
 #include <iprt/asm.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup   grp_sup     The Support Library API
  * @{
@@ -1145,7 +1145,7 @@ SUPR0DECL(int) SUPR0IdcComponentDeregisterFactory(PSUPDRVIDCHANDLE pHandle, PCSU
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

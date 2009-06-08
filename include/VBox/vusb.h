@@ -33,7 +33,7 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_vusb  VBox USB API
  * @{
@@ -1002,6 +1002,6 @@ typedef struct VUSBURB
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif

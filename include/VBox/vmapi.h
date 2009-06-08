@@ -37,7 +37,7 @@
 
 #include <iprt/stdarg.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_vmm_apis  VM All Contexts API
  * @ingroup grp_vm
@@ -446,7 +446,7 @@ VMMR3DECL(RTNATIVETHREAD)   VMR3GetVMCPUNativeThreadU(PUVM pUVM);
 /** @} */
 #endif
 
-__END_DECLS
+RT_END_DECLS
 
 /** @} */
 

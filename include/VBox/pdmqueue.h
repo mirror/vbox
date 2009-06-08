@@ -32,7 +32,7 @@
 
 #include <VBox/types.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_pdm_queue     The PDM Queues API
  * @ingroup grp_pdm
@@ -133,7 +133,7 @@ VMMDECL(R0PTRTYPE(PPDMQUEUE)) PDMQueueR0Ptr(PPDMQUEUE pQueue);
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 

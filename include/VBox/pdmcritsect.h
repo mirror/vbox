@@ -33,7 +33,7 @@
 #include <VBox/types.h>
 #include <iprt/critsect.h>
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 /** @defgroup grp_pdm_critsect      The PDM Critical Section API
  * @ingroup grp_pdm
@@ -73,7 +73,7 @@ VMMR3DECL(uint32_t) PDMR3CritSectCountOwned(PVM pVM, char *pszNames, size_t cbNa
 
 /** @} */
 
-__END_DECLS
+RT_END_DECLS
 
 #endif
 
