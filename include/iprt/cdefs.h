@@ -57,14 +57,10 @@
 
 # if defined(__cplusplus)
 #  define RT_C_DECLS_BEGIN extern "C" {
-#  define __BEGIN_DECLS  extern "C" {
 #  define RT_C_DECLS_END   }
-#  define __END_DECLS    }
 # else
 #  define RT_C_DECLS_BEGIN
-#  define __BEGIN_DECLS
 #  define RT_C_DECLS_END
-#  define __END_DECLS
 # endif
 
 #endif
