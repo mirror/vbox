@@ -1138,7 +1138,7 @@ DECLINLINE(RTGCPHYS32) pcnetTdraAddr(PCNetState *pThis, int idx)
     return pThis->GCTDRA + ((CSR_XMTRL(pThis) - idx) << pThis->iLog2DescSize);
 }
 
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 PDMBOTHCBDECL(int) pcnetIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
                                    RTIOPORT Port, uint32_t *pu32, unsigned cb);
 PDMBOTHCBDECL(int) pcnetIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
@@ -1155,7 +1155,7 @@ PDMBOTHCBDECL(int) pcnetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
 DECLEXPORT(int) pcnetHandleRingWrite(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
                                      RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
 #endif
-__END_DECLS
+RT_END_DECLS
 
 #undef htonl
 #define htonl(x)    ASMByteSwapU32(x)

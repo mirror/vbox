@@ -38,11 +38,11 @@
 
 #ifdef VBOX_WITH_INIP
 /* All lwip header files are not C++ safe. So hack around this. */
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 #include <lwip/inet.h>
 #include <lwip/tcp.h>
 #include <lwip/sockets.h>
-__END_DECLS
+RT_END_DECLS
 #endif /* VBOX_WITH_INIP */
 
 #include "Builtins.h"

@@ -306,7 +306,7 @@ static const uint8_t g_abLogoF12BootText[] =
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 
 PDMBOTHCBDECL(int) vgaIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
 PDMBOTHCBDECL(int) vgaIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
@@ -335,7 +335,7 @@ PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 #endif /* IN_RING3 */
 
 
-__END_DECLS
+RT_END_DECLS
 
 
 /**

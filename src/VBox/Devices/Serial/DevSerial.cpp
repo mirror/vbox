@@ -184,10 +184,10 @@ struct SerialState
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 PDMBOTHCBDECL(int) serialIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
 PDMBOTHCBDECL(int) serialIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
-__END_DECLS
+RT_END_DECLS
 
 #ifdef IN_RING3
 

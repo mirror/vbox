@@ -178,7 +178,7 @@ typedef struct AHCIATADevState {
     R0PTRTYPE(uint8_t *) pbIOBufferR0;
     /** Pointer to the I/O buffer. */
     RCPTRTYPE(uint8_t *) pbIOBufferRC;
-    
+
     RTRCPTR Aligmnent1; /**< Align the statistics at an 8-byte boundrary. */
 
     /*
@@ -396,7 +396,7 @@ typedef struct AHCIATACONTROLLER
 /*******************************************************************************
  *  Internal Functions                                                         *
  ******************************************************************************/
-__BEGIN_DECLS
+RT_BEGIN_DECLS
 int ataControllerIOPortWrite1(PAHCIATACONTROLLER pCtl, RTIOPORT Port, uint32_t u32, unsigned cb);
 int ataControllerIOPortRead1(PAHCIATACONTROLLER pCtl, RTIOPORT Port, uint32_t *u32, unsigned cb);
 int ataControllerIOPortWriteStr1(PAHCIATACONTROLLER pCtl, RTIOPORT Port, RTGCPTR *pGCPtrSrc, PRTGCUINTREG pcTransfer, unsigned cb);
@@ -405,7 +405,7 @@ int ataControllerIOPortWrite2(PAHCIATACONTROLLER pCtl, RTIOPORT Port, uint32_t u
 int ataControllerIOPortRead2(PAHCIATACONTROLLER pCtl, RTIOPORT Port, uint32_t *u32, unsigned cb);
 int ataControllerBMDMAIOPortRead(PAHCIATACONTROLLER pCtl, RTIOPORT Port, uint32_t *pu32, unsigned cb);
 int ataControllerBMDMAIOPortWrite(PAHCIATACONTROLLER pCtl, RTIOPORT Port, uint32_t u32, unsigned cb);
-__END_DECLS
+RT_END_DECLS
 
 #ifdef IN_RING3
 /**
