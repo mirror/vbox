@@ -113,7 +113,8 @@ PROGRAMS.linux += \
 	tstRTBitOperationsPIC3 \
 	tstInlineAsmPIC \
 	tstInlineAsmPIC3 \
-	tstSemMutex
+	tstSemMutex \
+	tstSemRW
 PROGRAMS.l4 += \
 	tstIoCtl
 PROGRAMS.darwin += \
@@ -335,6 +336,8 @@ tstRTProcIsRunningByName_SOURCES = tstRTProcIsRunningByName.cpp
 tstRTS3_SOURCES = tstRTS3.cpp
 
 tstSemMutex_SOURCES = tstSemMutex.cpp
+
+tstSemRW_SOURCES = tstSemRW.cpp
 
 tstSemPingPong_SOURCES = tstSemPingPong.cpp
 
