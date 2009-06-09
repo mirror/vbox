@@ -163,6 +163,9 @@ typedef struct REM
 
     /** Number of recorded invlpg instructions. */
     uint32_t                cInvalidatedPages;
+#if HC_ARCH_BITS == 32
+    uint32_t                uPadding2;
+#endif
     /** Array of recorded invlpg instruction.
      * These instructions are replayed when entering REM. */
     RTGCPTR                 aGCPtrInvalidatedPages[48];
