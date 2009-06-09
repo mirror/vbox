@@ -105,6 +105,9 @@ static void     remR3HandlerWriteU8(void *pvVM, target_phys_addr_t GCPhys, uint3
 static void     remR3HandlerWriteU16(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32);
 static void     remR3HandlerWriteU32(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32);
 
+static void remR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM);
+static void remR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler);
+static void remR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM);
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -405,6 +408,23 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     logfile = fopen("/tmp/vbox-qemu.log", "w");
 # endif
 #endif
+
+    PREMHANDLERNOTIFICATION pCur;
+    unsigned i;
+
+    pVM->rem.s.idxPendingList = -1;
+    pVM->rem.s.idxFreeList    = 0;
+
+    for (i = 0 ; i < RT_ELEMENTS(pVM->rem.s.aHandlerNotifications) - 1; i++)
+    {
+        pCur = &pVM->rem.s.aHandlerNotifications[i];
+        pCur->idxNext = i + 1;
+        pCur->idxSelf = i;
+    }
+
+    pCur = &pVM->rem.s.aHandlerNotifications[RT_ELEMENTS(pVM->rem.s.aHandlerNotifications) - 1];
+    pCur->idxNext = -1;
+    pCur->idxSelf = RT_ELEMENTS(pVM->rem.s.aHandlerNotifications) - 1;
 
     return rc;
 }
@@ -1872,9 +1892,8 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
         pVM->rem.s.cInvalidatedPages = 0;
     }
 
-    /* Replay notification changes? */
-    if (pVM->rem.s.cHandlerNotifications)
-        REMR3ReplayHandlerNotifications(pVM);
+    /* Replay notification changes. */
+    REMR3ReplayHandlerNotifications(pVM);
 
     /* Update MSRs; before CRx registers! */
     pVM->rem.s.Env.efer         = pCtx->msrEFER;
@@ -2692,8 +2711,6 @@ REMR3DECL(void) REMR3A20Set(PVM pVM, PVMCPU pVCpu, bool fEnable)
  */
 REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
 {
-    Assert(EMRemIsLockOwner(pVM));
-
     /*
      * Replay the flushes.
      */
@@ -2702,17 +2719,43 @@ REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
 
     if (VM_FF_TESTANDCLEAR(pVM, VM_FF_REM_HANDLER_NOTIFY_BIT))
     {
-        RTUINT i;
-        const RTUINT c = pVM->rem.s.cHandlerNotifications;
+        /* Lockless purging of pending notifications. */
+        uint32_t idxReqs = ASMAtomicXchgU32(&pVM->rem.s.idxPendingList, -1);
+        if (idxReqs == -1)
+            return;
 
-        pVM->rem.s.cHandlerNotifications = 0;
-        for (i = 0; i < c; i++)
+        Assert(idxReqs < RT_ELEMENTS(pVM->rem.s.aHandlerNotifications));
+        PREMHANDLERNOTIFICATION pReqs = &pVM->rem.s.aHandlerNotifications[idxReqs];
+
+        /*
+         * Reverse the list to process it in FIFO order.
+         */
+        PREMHANDLERNOTIFICATION pReq = pReqs;
+        pReqs = NULL;
+        while (pReq)
         {
-            PREMHANDLERNOTIFICATION pRec = &pVM->rem.s.aHandlerNotifications[i];
+            PREMHANDLERNOTIFICATION pCur = pReq;
+
+            if (pReq->idxNext != -1)
+            {
+                Assert(pReq->idxNext < RT_ELEMENTS(pVM->rem.s.aHandlerNotifications));
+                pReq = &pVM->rem.s.aHandlerNotifications[pReq->idxNext];
+            }
+            else
+                pReq = NULL;
+
+            pCur->idxNext = (pReqs) ? pReqs->idxSelf : -1;
+            pReqs = pCur;
+        }
+
+        while (pReqs)
+        {
+            PREMHANDLERNOTIFICATION pRec = pReqs;
+
             switch (pRec->enmKind)
             {
                 case REMHANDLERNOTIFICATIONKIND_PHYSICAL_REGISTER:
-                    REMR3NotifyHandlerPhysicalRegister(pVM,
+                    remR3NotifyHandlerPhysicalRegister(pVM,
                                                     pRec->u.PhysicalRegister.enmType,
                                                     pRec->u.PhysicalRegister.GCPhys,
                                                     pRec->u.PhysicalRegister.cb,
@@ -2720,7 +2763,7 @@ REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
                     break;
 
                 case REMHANDLERNOTIFICATIONKIND_PHYSICAL_DEREGISTER:
-                    REMR3NotifyHandlerPhysicalDeregister(pVM,
+                    remR3NotifyHandlerPhysicalDeregister(pVM,
                                                         pRec->u.PhysicalDeregister.enmType,
                                                         pRec->u.PhysicalDeregister.GCPhys,
                                                         pRec->u.PhysicalDeregister.cb,
@@ -2729,7 +2772,7 @@ REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
                     break;
 
                 case REMHANDLERNOTIFICATIONKIND_PHYSICAL_MODIFY:
-                    REMR3NotifyHandlerPhysicalModify(pVM,
+                    remR3NotifyHandlerPhysicalModify(pVM,
                                                     pRec->u.PhysicalModify.enmType,
                                                     pRec->u.PhysicalModify.GCPhysOld,
                                                     pRec->u.PhysicalModify.GCPhysNew,
@@ -2742,6 +2785,22 @@ REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
                     AssertReleaseMsgFailed(("enmKind=%d\n", pRec->enmKind));
                     break;
             }
+            if (pReqs->idxNext != -1)
+            {
+                AssertMsg(pReqs->idxNext < RT_ELEMENTS(pVM->rem.s.aHandlerNotifications), ("pReqs->idxNext=%d\n", pReqs->idxNext));
+                pReqs = &pVM->rem.s.aHandlerNotifications[pReqs->idxNext];
+            }
+            else
+                pReqs = NULL;
+
+            /* Put the record back into the free list */
+            uint32_t idxNext;
+
+            do
+            {
+                idxNext = pVM->rem.s.idxFreeList;
+                pRec->idxNext = idxNext;
+            } while (!ASMAtomicCmpXchgU32(&pVM->rem.s.idxFreeList, pRec->idxSelf, idxNext));
         }
     }
 }
@@ -2930,10 +2989,11 @@ REMR3DECL(void) REMR3NotifyPhysRamDeregister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb
  * @remark  MMR3PhysRomRegister assumes that this function will not apply the
  *          Handler memory type to memory which has no HC handler.
  */
-REMR3DECL(void) REMR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler)
+static void remR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler)
 {
     Log(("REMR3NotifyHandlerPhysicalRegister: enmType=%d GCPhys=%RGp cb=%RGp fHasHCHandler=%d\n",
           enmType, GCPhys, cb, fHasHCHandler));
+
     VM_ASSERT_EMT(pVM);
     Assert(RT_ALIGN_T(GCPhys, PAGE_SIZE, RTGCPHYS) == GCPhys);
     Assert(RT_ALIGN_T(cb, PAGE_SIZE, RTGCPHYS) == cb);
@@ -2941,8 +3001,6 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE e
 #ifdef VBOX_WITH_REM_LOCKING
     EMRemLock(pVM);
 #endif
-    if (pVM->rem.s.cHandlerNotifications)
-        REMR3ReplayHandlerNotifications(pVM);
 
     Assert(!pVM->rem.s.fIgnoreAll);
     pVM->rem.s.fIgnoreAll = true;
@@ -2959,6 +3017,24 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE e
 #endif
 }
 
+/**
+ * Notification about a successful PGMR3HandlerPhysicalRegister() call.
+ *
+ * @param   pVM             VM Handle.
+ * @param   enmType         Handler type.
+ * @param   GCPhys          Handler range address.
+ * @param   cb              Size of the handler range.
+ * @param   fHasHCHandler   Set if the handler has a HC callback function.
+ *
+ * @remark  MMR3PhysRomRegister assumes that this function will not apply the
+ *          Handler memory type to memory which has no HC handler.
+ */
+REMR3DECL(void) REMR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler)
+{
+    REMR3ReplayHandlerNotifications(pVM);
+
+    remR3NotifyHandlerPhysicalRegister(pVM, enmType, GCPhys, cb, fHasHCHandler);
+}
 
 /**
  * Notification about a successful PGMR3HandlerPhysicalDeregister() operation.
@@ -2970,7 +3046,7 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE e
  * @param   fHasHCHandler   Set if the handler has a HC callback function.
  * @param   fRestoreAsRAM   Whether the to restore it as normal RAM or as unassigned memory.
  */
-REMR3DECL(void) REMR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
+static void remR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
 {
     Log(("REMR3NotifyHandlerPhysicalDeregister: enmType=%d GCPhys=%RGp cb=%RGp fHasHCHandler=%RTbool fRestoreAsRAM=%RTbool RAM=%08x\n",
           enmType, GCPhys, cb, fHasHCHandler, fRestoreAsRAM, MMR3PhysGetRamSize(pVM)));
@@ -2979,8 +3055,6 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE
 #ifdef VBOX_WITH_REM_LOCKING
     EMRemLock(pVM);
 #endif
-    if (pVM->rem.s.cHandlerNotifications)
-        REMR3ReplayHandlerNotifications(pVM);
 
     Assert(!pVM->rem.s.fIgnoreAll);
     pVM->rem.s.fIgnoreAll = true;
@@ -3010,6 +3084,22 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE
 #endif
 }
 
+/**
+ * Notification about a successful PGMR3HandlerPhysicalDeregister() operation.
+ *
+ * @param   pVM             VM Handle.
+ * @param   enmType         Handler type.
+ * @param   GCPhys          Handler range address.
+ * @param   cb              Size of the handler range.
+ * @param   fHasHCHandler   Set if the handler has a HC callback function.
+ * @param   fRestoreAsRAM   Whether the to restore it as normal RAM or as unassigned memory.
+ */
+REMR3DECL(void) REMR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
+{
+    REMR3ReplayHandlerNotifications(pVM);
+    remR3NotifyHandlerPhysicalDeregister(pVM, enmType, GCPhys, cb, fHasHCHandler, fRestoreAsRAM);
+}
+
 
 /**
  * Notification about a successful PGMR3HandlerPhysicalModify() call.
@@ -3022,7 +3112,7 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE
  * @param   fHasHCHandler   Set if the handler has a HC callback function.
  * @param   fRestoreAsRAM   Whether the to restore it as normal RAM or as unassigned memory.
  */
-REMR3DECL(void) REMR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
+static void remR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
 {
     Log(("REMR3NotifyHandlerPhysicalModify: enmType=%d GCPhysOld=%RGp GCPhysNew=%RGp cb=%RGp fHasHCHandler=%RTbool fRestoreAsRAM=%RTbool\n",
           enmType, GCPhysOld, GCPhysNew, cb, fHasHCHandler, fRestoreAsRAM));
@@ -3032,8 +3122,6 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enm
 #ifdef VBOX_WITH_REM_LOCKING
     EMRemLock(pVM);
 #endif
-    if (pVM->rem.s.cHandlerNotifications)
-        REMR3ReplayHandlerNotifications(pVM);
 
     if (fHasHCHandler)
     {
@@ -3068,6 +3156,23 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enm
 #endif
 }
 
+/**
+ * Notification about a successful PGMR3HandlerPhysicalModify() call.
+ *
+ * @param   pVM             VM Handle.
+ * @param   enmType         Handler type.
+ * @param   GCPhysOld       Old handler range address.
+ * @param   GCPhysNew       New handler range address.
+ * @param   cb              Size of the handler range.
+ * @param   fHasHCHandler   Set if the handler has a HC callback function.
+ * @param   fRestoreAsRAM   Whether the to restore it as normal RAM or as unassigned memory.
+ */
+REMR3DECL(void) REMR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
+{
+    REMR3ReplayHandlerNotifications(pVM);
+
+    remR3NotifyHandlerPhysicalModify(pVM, enmType, GCPhysOld, GCPhysNew, cb, fHasHCHandler, fRestoreAsRAM);
+}
 
 /**
  * Checks if we're handling access to this page or not.
@@ -3083,8 +3188,7 @@ REMR3DECL(bool) REMR3IsPageAccessHandled(PVM pVM, RTGCPHYS GCPhys)
 {
 #ifdef VBOX_STRICT
     unsigned long off;
-    if (pVM->rem.s.cHandlerNotifications)
-        REMR3ReplayHandlerNotifications(pVM);
+    REMR3ReplayHandlerNotifications(pVM);
 
     off = get_phys_page_offset(GCPhys);
     return (off & PAGE_OFFSET_MASK) == pVM->rem.s.iHandlerMemType
