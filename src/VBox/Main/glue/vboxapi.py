@@ -135,6 +135,18 @@ class PlatformMSCOM:
         import pythoncom
         pythoncom.CoUninitialize()
 
+    def createCallback(self, iface, impl):        
+        d = {}
+        d['BaseClass'] = impl
+        str = ""
+        str += "import win32com.server.util"
+        str += "class "+iface+"Impl(BaseClass):\n"
+        str += "   _com_interfaces_ = ['"+iface+"']\n"
+        str += "   _typelib_guid_ = '{46137EEC-703B-4FE5-AFD4-7C9BBBBA0259}'\n"
+        str += "   def __init__(self): pass\n"
+        str += "result = win32com.server.util.wrap("+iface+"Impl())\n"        
+        exec (str,d,d)
+        return d['result']
 
 class PlatformXPCOM:
     def __init__(self, params):
@@ -169,6 +181,20 @@ class PlatformXPCOM:
 
     def deinitPerThread(self):
         pass
+
+    def createCallback(self, iface, impl):        
+        d = {}
+        d['BaseClass'] = impl
+        str = ""
+        str += "import xpcom.components\n"
+        str += "class "+iface+"Impl(BaseClass):\n"
+        str += "   _com_interfaces_ = xpcom.components.interfaces."+iface+"\n"
+        str += "   def __init__(self): pass\n"
+        str += "result = "+iface+"Impl()\n"
+        #print str
+        exec (str,d,d)
+        return d['result']
+
 
 class PlatformWEBSERVICE:
     def __init__(self, params):
@@ -209,6 +235,9 @@ class PlatformWEBSERVICE:
 
     def deinitPerThread(self):
         pass
+
+    def createCallback(self, iface, impl):
+        raise Exception("no callbacks for webservices")
 
 class SessionManager:
     def __init__(self, mgr):
@@ -259,3 +288,6 @@ class VirtualBoxManager:
 
     def deinitPerThread(self):
         self.platform.deinitPerThread()
+
+    def createCallback(self, iface, impl):
+        return self.platform.createCallback(iface, impl)
