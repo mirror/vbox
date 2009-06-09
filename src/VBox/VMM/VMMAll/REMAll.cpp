@@ -100,7 +100,7 @@ static void remNotifyHandlerInsert(PVM pVM, PREMHANDLERNOTIFICATION pRec)
     do
     {
         idxFree = pVM->rem.s.idxFreeList;
-        if (idxFree == -1)
+        if (idxFree == (uint32_t)-1)
         {
             pFree = NULL;
             break;
