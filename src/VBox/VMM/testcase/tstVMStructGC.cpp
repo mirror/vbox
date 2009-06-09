@@ -724,8 +724,9 @@ int main()
     GEN_CHECK_OFF(REM, pCtx);
     GEN_CHECK_OFF(REM, cCanExecuteRaw);
     GEN_CHECK_OFF(REM, aGCPtrInvalidatedPages);
-    GEN_CHECK_OFF(REM, cHandlerNotifications);
+    GEN_CHECK_OFF(REM, idxPendingList);
     GEN_CHECK_OFF(REM, aHandlerNotifications);
+    GEN_CHECK_OFF(REM, idxFreeList);
     GEN_CHECK_OFF(REM, rc);
     GEN_CHECK_OFF(REM, StatsInQEMU);
     GEN_CHECK_OFF(REM, Env);

@@ -106,6 +106,8 @@ typedef struct REMHANDLERNOTIFICATION
         } PhysicalModify;
         uint64_t                padding[5];
     } u;
+    uint32_t                    idxSelf;
+    uint32_t                    idxNext;
 } REMHANDLERNOTIFICATION, *PREMHANDLERNOTIFICATION;
 
 /**
@@ -165,12 +167,12 @@ typedef struct REM
     /** Array of recorded invlpg instruction.
      * These instructions are replayed when entering REM. */
     RTGCPTR                 aGCPtrInvalidatedPages[48];
-    /** The number of recorded handler notifications. */
-    RTUINT volatile         cHandlerNotifications;
-    RTUINT                  padding0; /**< Padding. */
+
     /** Array of recorded handler noticications.
      * These are replayed when entering REM. */
     REMHANDLERNOTIFICATION  aHandlerNotifications[32];
+    volatile uint32_t       idxPendingList;
+    volatile uint32_t       idxFreeList;
 
     /** MMIO memory type.
      * This is used to register MMIO physical access handlers. */
@@ -210,11 +212,7 @@ typedef struct REM
     /** Padding the CPUX86State structure to 32 byte. */
     uint32_t                abPadding[HC_ARCH_BITS == 32 ? 6 : 4];
 
-#if GC_ARCH_BITS == 32
-# define REM_ENV_SIZE        (HC_ARCH_BITS == 32 ? 0xff00 : 0xff00)
-#else
-# define REM_ENV_SIZE        (HC_ARCH_BITS == 32 ? 0xff00 : 0xff00)
-#endif
+# define REM_ENV_SIZE       0xff00
 
     /** Recompiler CPU state. */
 #ifdef REM_INCLUDE_CPU_H
