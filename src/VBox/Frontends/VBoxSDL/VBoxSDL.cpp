@@ -208,7 +208,7 @@ static ComPtr<IDisplay> gDisplay;
 static ComPtr<IVRDPServer> gVrdpServer;
 static ComPtr<IProgress> gProgress;
 
-static unsigned   gcMonitors = 1;
+static ULONG       gcMonitors = 1;
 static VBoxSDLFB  *gpFramebuffer[64];
 //static VBoxSDLFB  *gpFramebufferCurrent = NULL;
 static SDL_Cursor *gpDefaultCursor = NULL;
@@ -2056,7 +2056,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     signal(SIGSEGV, signal_handler_SIGINT);
 #endif
 
-    for (unsigned i = 0; i < gcMonitors; i++)
+    for (ULONG i = 0; i < gcMonitors; i++)
     {
         // register our framebuffer
         rc = gDisplay->SetFramebuffer(i, gpFramebuffer[i]);
@@ -2066,7 +2066,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             goto leave;
         }
         IFramebuffer *dummyFb;
-        int xOrigin, yOrigin;
+        LONG xOrigin, yOrigin;
         rc = gDisplay->GetFramebuffer(i, &dummyFb, &xOrigin, &yOrigin);
         gpFramebuffer[i]->setOrigin(xOrigin, yOrigin);
     }
@@ -2774,7 +2774,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             {
                 LogFlow(("SDL_USER_EVENT_RESIZE\n"));
                 IFramebuffer *dummyFb;
-                int xOrigin, yOrigin;
+                LONG xOrigin, yOrigin;
                 gpFramebuffer[event.user.code]->resizeGuest();
                 /* update xOrigin, yOrigin -> mouse */
                 rc = gDisplay->GetFramebuffer(event.user.code, &dummyFb, &xOrigin, &yOrigin);
