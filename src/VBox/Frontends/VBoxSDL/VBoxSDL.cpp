@@ -2305,7 +2305,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                     {
                         LogFlow(("SDL_USER_EVENT_RESIZE\n"));
                         IFramebuffer *dummyFb;
-                        int xOrigin, yOrigin;
+                        LONG xOrigin, yOrigin;
                         gpFramebuffer[event.user.code]->resizeGuest();
                         /* update xOrigin, yOrigin -> mouse */
                         rc = gDisplay->GetFramebuffer(event.user.code, &dummyFb, &xOrigin, &yOrigin);
