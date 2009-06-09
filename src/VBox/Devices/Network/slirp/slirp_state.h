@@ -180,9 +180,13 @@ typedef struct NATState
     int nsock;
 #  define NSOCK_INC() do {pData->nsock++;} while (0)
 #  define NSOCK_DEC() do {pData->nsock--;} while (0)
+#  define NSOCK_INC_EX(ex) do {ex->pData->nsock++;} while (0)
+#  define NSOCK_DEC_EX(ex) do {ex->pData->nsock--;} while (0)
 # else
 #  define NSOCK_INC() do {} while (0)
 #  define NSOCK_DEC() do {} while (0)
+#  define NSOCK_INC_EX(ex) do {} while (0)
+#  define NSOCK_DEC_EX(ex) do {} while (0)
 # endif
 # ifdef RT_OS_WINDOWS
     void *pvIcmpBuffer;
