@@ -75,7 +75,7 @@ RTDECL(int)  RTSemEventCreate(PRTSEMEVENT pEventSem)
         pEventInt->cWaiters = 0;
         pEventInt->cWaking = 0;
         pEventInt->fSignaled = 0;
-        mtx_init(&pEventInt->Mtx, "IPRT Event Semaphore", NULL, MTX_SPIN);
+        mtx_init(&pEventInt->Mtx, "IPRT Event Semaphore", NULL, 0);
         *pEventSem = pEventInt;
         return VINF_SUCCESS;
     }
@@ -93,21 +93,21 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
                     ("pEventInt=%p u32Magic=%#x\n", pEventInt, pEventInt->u32Magic),
                     VERR_INVALID_HANDLE);
 
-    mtx_lock_spin(&pEventInt->Mtx);
+    mtx_lock(&pEventInt->Mtx);
     ASMAtomicIncU32(&pEventInt->u32Magic); /* make the handle invalid */
     if (pEventInt->cWaiters > 0)
     {
         /* abort waiting thread, last man cleans up. */
         ASMAtomicXchgU32(&pEventInt->cWaking, pEventInt->cWaking + pEventInt->cWaiters);
         wakeup(pEventInt);
-        mtx_unlock_spin(&pEventInt->Mtx);
+        mtx_unlock(&pEventInt->Mtx);
     }
     else if (pEventInt->cWaking)
         /* the last waking thread is gonna do the cleanup */
-        mtx_unlock_spin(&pEventInt->Mtx);
+        mtx_unlock(&pEventInt->Mtx);
     else
     {
-        mtx_unlock_spin(&pEventInt->Mtx);
+        mtx_unlock(&pEventInt->Mtx);
         mtx_destroy(&pEventInt->Mtx);
         RTMemFree(pEventInt);
     }
@@ -124,7 +124,7 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
                     ("pEventInt=%p u32Magic=%#x\n", pEventInt, pEventInt->u32Magic),
                     VERR_INVALID_HANDLE);
 
-    mtx_lock_spin(&pEventInt->Mtx);
+    mtx_lock(&pEventInt->Mtx);
 
     if (pEventInt->cWaiters > 0)
     {
@@ -135,7 +135,7 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
     else
         ASMAtomicXchgU8(&pEventInt->fSignaled, true);
 
-    mtx_unlock_spin(&pEventInt->Mtx);
+    mtx_unlock(&pEventInt->Mtx);
     return VINF_SUCCESS;
 }
 
@@ -149,7 +149,7 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterrup
                     ("pEventInt=%p u32Magic=%#x\n", pEventInt, pEventInt->u32Magic),
                     VERR_INVALID_HANDLE);
 
-    mtx_lock_spin(&pEventInt->Mtx);
+    mtx_lock(&pEventInt->Mtx);
 
     if (pEventInt->fSignaled)
     {
@@ -172,23 +172,17 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterrup
 
         ASMAtomicIncU32(&pEventInt->cWaiters);
 
-        mtx_unlock_spin(&pEventInt->Mtx);
-/** @todo r=bird: This doesn't handle cMillies == 0 correctly, it will assert
- *        and or sleep for ever according to r47861. (That's probably an old bug
- *        of my making.)
- *
- *        And it really looks like it's racing signalling on MP systems. (It
- *        *looks* like you leave the lock and then tries to go to sleep on a
- *        block id, someone spinning on the lock attempt to wake us up before we
- *        go to sleep. That's why the code was originally trying to use msleep
- *        here.). */
-        rc = tsleep(pEventInt,          /* block id */
-                    fInterruptible ? PZERO | PCATCH : PZERO,
-                    "iprtev",           /* max 6 chars */
-                    cMillies == RT_INDEFINITE_WAIT
-                    ? 0
-                    : tvtohz(&tv));
-        mtx_lock_spin(&pEventInt->Mtx);
+        /** @todo r=bird: This doesn't handle cMillies == 0 correctly, it will assert
+         *        and or sleep for ever according to r47861. (That's probably an old bug
+         *        of my making.)
+         */
+        rc = mtx_sleep(pEventInt,          /* block id */
+                       &pEventInt->Mtx,    /* mtx */
+                       fInterruptible ? PZERO | PCATCH : PZERO,
+                       "iprtev",           /* max 6 chars */
+                       cMillies == RT_INDEFINITE_WAIT
+                       ? 0
+                       : tvtohz(&tv));
 
         switch (rc)
         {
@@ -206,7 +200,7 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterrup
                     {
                         /* The event was destroyed, as the last thread do the cleanup.
                            we don't actually know whether */
-                        mtx_unlock_spin(&pEventInt->Mtx);
+                        mtx_unlock(&pEventInt->Mtx);
                         mtx_destroy(&pEventInt->Mtx);
                         RTMemFree(pEventInt);
                         return rc;
@@ -236,7 +230,7 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterrup
         }
     }
 
-    mtx_unlock_spin(&pEventInt->Mtx);
+    mtx_unlock(&pEventInt->Mtx);
     return rc;
 }
 
