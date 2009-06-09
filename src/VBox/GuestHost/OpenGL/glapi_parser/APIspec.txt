@@ -3413,7 +3413,7 @@ chromium    nopack
 name        BlendEquation
 return      void
 param       mode        GLenum
-paramprop   mode        GL_FUNC_ADD GL_FUNC_SUBTRACT GL_FUNC_REVERSE_SUBTRACT GL_MIN GL_MAX
+paramprop   mode        GL_FUNC_ADD GL_FUNC_SUBTRACT GL_FUNC_REVERSE_SUBTRACT GL_MIN GL_MAX GL_LOGIC_OP
 category    1.2
 alias       BlendEquationEXT
 chromium    nopack
@@ -9183,6 +9183,23 @@ param       zfail       GLenum
 paramprop   zfail       GL_KEEP GL_ZERO GL_REPLACE GL_INCR GL_DECR GL_INVERT GL_INCR_WRAP_EXT GL_DECR_WRAP_EXT
 param       zpass       GLenum
 paramprop   zpass       GL_KEEP GL_ZERO GL_REPLACE GL_INCR GL_DECR GL_INVERT GL_INCR_WRAP_EXT GL_DECR_WRAP_EXT
+category    2.0
+chromium    extpack
+
+name        StencilMaskSeparate
+return      void
+param       face        GLenum
+paramprop   face        GL_FRONT GL_BACK GL_FRONT_AND_BACK
+param       mask        GLuint
+category    2.0
+chromium    extpack
+
+name        BlendEquationSeparate
+return      void
+param       modeRGB        GLenum
+paramprop   modeRGB        GL_FUNC_ADD GL_FUNC_SUBTRACT GL_FUNC_REVERSE_SUBTRACT GL_MIN GL_MAX GL_LOGIC_OP
+param       modeAlpha      GLenum
+paramprop   modeAlpha      GL_FUNC_ADD GL_FUNC_SUBTRACT GL_FUNC_REVERSE_SUBTRACT GL_MIN GL_MAX GL_LOGIC_OP
 category    2.0
 chromium    extpack
 
