@@ -55,7 +55,7 @@ VBoxSharedClipboard_LIBS = \
 	$(LIB_VMM) \
 	$(LIB_RUNTIME) \
 	$(LIB_REM)
-if1of ($(KBUILD_TARGET), linux solaris)
+if1of ($(KBUILD_TARGET), linux solaris freebsd)
  ifndef VBOX_HEADLESS
   VBoxSharedClipboard_LIBPATH = \
 	$(VBOX_LIBPATH_X11)
