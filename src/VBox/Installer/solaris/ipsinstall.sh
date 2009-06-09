@@ -32,6 +32,7 @@ check_root()
         found=`which id | grep "no id"`
         if test ! -z "$found"; then
             echo "## Failed to find a suitable user id binary."
+            exit 1
         else
             idbin=$found
         fi
@@ -39,6 +40,7 @@ check_root()
 
     if test `$idbin -u` -ne 0; then
         echo "## This script must be run with administrator privileges."
+        exit 2
     fi
 }
 
@@ -47,6 +49,7 @@ check_zone()
     currentzone=`zonename`
     if test "$currentzone" != "global"; then
         echo "## This script must be run from the global zone."
+        exit 3
     fi
 }
 
@@ -69,7 +72,7 @@ fi
 # Remove drivers ignoring errors as they are not really loaded
 # just updated various boot archive files without really loading
 # them... But we _want_ them to be loaded.
-echo "Removing any stale driver configurations..."
+echo "Removing stale driver configurations..."
 
 $BIN_REMDRV vboxflt > /dev/null 2>&1
 /sbin/ifconfig vboxnet0 unplumb > /dev/null 2>&1
@@ -90,16 +93,12 @@ if test "$rc" -eq 0; then
     # Create the device link
     /usr/sbin/devfsadm -i vboxdrv
 
-    echo "HostDrv    : SUCCESS"
-
     # Load VBoxNetAdapter vboxnet
     if test -f /platform/i86pc/kernel/drv/vboxnet.conf; then
         /opt/VirtualBox/vboxdrv.sh netstart
         rc=$?
 
         if test "$rc" -eq 0; then
-            echo "NetAdapter : SUCCESS"
-
             # nwam/dhcpagent fix
             nwamfile=/etc/nwam/llp
             nwambackupfile=$nwamfile.vbox
@@ -107,10 +106,8 @@ if test "$rc" -eq 0; then
                 sed -e '/vboxnet/d' $nwamfile > $nwambackupfile
                 echo "vboxnet0	static 192.168.56.1" >> $nwambackupfile
                 mv -f $nwambackupfile $nwamfile
-                echo "  -> patched /etc/nwam/llp to use static IP for vboxnet0"
+                echo "   -> patched /etc/nwam/llp to use static IP for vboxnet0"
             fi
-        else
-            echo "NetAdapter : FAILED"
         fi
     fi
 
@@ -118,11 +115,6 @@ if test "$rc" -eq 0; then
     if test -f /platform/i86pc/kernel/drv/vboxflt.conf; then
         /opt/VirtualBox/vboxdrv.sh fltstart
         rc=$?
-        if test "$rc" -eq 0; then
-            echo "NetFilter  : SUCCESS"
-        else
-            echo "NetFilter  : FAILED"
-        fi
     fi
 
     # Load VBoxUSBMonitor vboxusbmon (do NOT load for Solaris 10)
@@ -137,37 +129,44 @@ if test "$rc" -eq 0; then
             mv -f /etc/devlink.vbox /etc/devlink.tab
 
             /usr/sbin/devfsadm -i vboxusbmon
-
-            echo "USBMonitor : SUCCESS"
-        else
-            echo "USBMonitor : FAILED"
         fi
     fi
-else
-    echo "HostDrv    : FAILED"
 fi
 
-# Enable Zone access service
-if test -f /var/svc/manifest/application/virtualbox/zoneaccess.xml; then
-    /usr/sbin/svcadm enable -s svc:/application/virtualbox/zoneaccess
-    echo "Service to use VirtualBox from zones  : ENABLED"
+# Enable Zone access service (note IPS auto-prefixes "virtualbox-" to the filename...)
+if test -f "/var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml"; then
+    /usr/sbin/svccfg import /var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml
+    rc=$?
+    if test "$rc" -eq 0; then
+        /usr/sbin/svcadm enable -s svc:/application/virtualbox/zoneaccess
+        rc=$?
+        if test "$rc" -eq 0; then
+            echo "Enabled VirtualBox zone service."
+        else
+            echo "## Failed to enable VirtualBox zone service."
+        fi
+    else
+        echo "## Failed to import VirtualBox zone service."
+    fi
 fi
 
 # We need to touch the desktop link in order to add it to the menu right away
 if test -f "/usr/share/applications/virtualbox.desktop"; then
     touch /usr/share/applications/virtualbox.desktop
+    echo "Added VirtualBox shortcut menu item."
 fi
 
 # Install python bindings
 if test -f "/opt/VirtualBox/sdk/installer/vboxapisetup.py" || test -h "/opt/VirtualBox/sdk/installer/vboxapisetup.py"; then
     PYTHONBIN=`which python`
     if test -f "$PYTHONBIN" || test -h "$PYTHONBIN"; then
-        echo "Installing Python bindings..."
+        echo "Installing python bindings..."
 
         VBOX_INSTALL_PATH=/opt/VirtualBox
         export VBOX_INSTALL_PATH
         cd /opt/VirtualBox/sdk/installer
         $PYTHONBIN ./vboxapisetup.py install > /dev/null
+        echo "Done."
     else
         echo "** WARNING! Python not found, skipped installed Python bindings."
         echo "   Manually run '/opt/VirtualBox/sdk/installer/vboxapisetup.py install'"
@@ -183,6 +182,10 @@ if test -f "$BOOTADMBIN" || test -h "$BOOTADMBIN"; then
 fi
 
 echo "Done."
-
+if test "$rc" -eq 0; then
+    echo "Post install successfully completed."
+else
+    echo "Post install completed but with some errors."
+fi
 exit 0
 
