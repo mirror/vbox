@@ -1,20 +1,27 @@
 /* $Id$ */
 /** @file
- * Async completion Testcase.
- */
-
-/*
- * Copyright (C) 2008 Sun Microsystems, Inc.
+ * PDM Asynchronous Completion Testcase.
  *
- * Sun Microsystems, Inc. confidential
- * All rights reserved
- */
-
-/*
  * This testcase is for testing the async completion interface.
  * It implements a file copy program which uses the interface to copy the data.
  *
  * Use: ./tstPDMAsyncCompletion <source> <destination>
+ */
+
+/*
+ * Copyright (C) 2008-2009 Sun Microsystems, Inc.
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+ * Clara, CA 95054 USA or visit http://www.sun.com if you need
+ * additional information or have any questions.
  */
 
 /*******************************************************************************
@@ -79,8 +86,7 @@ int main(int argc, char *argv[])
     if (argc != 3)
     {
         RTPrintf(TESTCASE ": Usage is ./tstPDMAsyncCompletion <source> <dest>\n");
-        rcRet++;
-        return rcRet;
+        return 1;
     }
 
     PVM pVM;
@@ -103,8 +109,7 @@ int main(int argc, char *argv[])
         if (RT_FAILURE(rc))
         {
             RTPrintf(TESTCASE ": Error while creating the template!! rc=%d\n", rc);
-            rcRet++;
-            return rcRet;
+            return 1;
         }
 
         /*
@@ -135,6 +140,7 @@ int main(int argc, char *argv[])
         if (RT_FAILURE(rc))
         {
             RTPrintf(TESTCASE ": Error while creating the destination!! rc=%d\n", rc);
+            return 1;
             rcRet++;
             return rcRet;
         }
@@ -154,8 +160,8 @@ int main(int argc, char *argv[])
 
                 int fReadPass = true;
                 uint64_t cbSrc, cbLeft;
-                size_t   uOffsetSrc = 0;
-                size_t   uOffsetDst = 0;
+                size_t   offSrc = 0;
+                size_t   offDst = 0;
                 uint32_t cTasksUsed = 0;
 
                 rc = PDMR3AsyncCompletionEpGetSize(pEndpointSrc, &cbSrc);
@@ -166,28 +172,28 @@ int main(int argc, char *argv[])
                     {
                         if (fReadPass)
                         {
-                            cTasksUsed = (BUFFER_SIZE * NR_TASKS) <= (cbSrc - uOffsetSrc)
+                            cTasksUsed = (BUFFER_SIZE * NR_TASKS) <= (cbSrc - offSrc)
                                          ? NR_TASKS
-                                         :   ((cbSrc - uOffsetSrc) / BUFFER_SIZE)
-                                           +   ((cbSrc - uOffsetSrc) % BUFFER_SIZE) > 0
-                                             ? 1
-                                             : 0;
+                                         :   ((cbSrc - offSrc) / BUFFER_SIZE)
+                                           + ((cbSrc - offSrc) % BUFFER_SIZE) > 0
+                                         ? 1
+                                         : 0;
 
                             g_cTasksLeft = cTasksUsed;
 
-                            for (unsigned i = 0; i < cTasksUsed; i++)
+                            for (uint32_t i = 0; i < cTasksUsed; i++)
                             {
-                                size_t cbRead = ((size_t)uOffsetSrc + BUFFER_SIZE) <= cbSrc ? BUFFER_SIZE : cbSrc - uOffsetSrc;
+                                size_t cbRead = ((size_t)offSrc + BUFFER_SIZE) <= cbSrc ? BUFFER_SIZE : cbSrc - offSrc;
                                 PDMDATASEG DataSeg;
 
                                 DataSeg.pvSeg = g_AsyncCompletionTasksBuffer[i];
                                 DataSeg.cbSeg = cbRead;
 
-                                rc = PDMR3AsyncCompletionEpRead(pEndpointSrc, uOffsetSrc, &DataSeg, 1, cbRead, NULL,
+                                rc = PDMR3AsyncCompletionEpRead(pEndpointSrc, offSrc, &DataSeg, 1, cbRead, NULL,
                                                                 &g_AsyncCompletionTasks[i]);
                                 AssertRC(rc);
-                                uOffsetSrc += cbRead;
-                                if (uOffsetSrc == cbSrc)
+                                offSrc += cbRead;
+                                if (offSrc == cbSrc)
                                     break;
                             }
                         }
@@ -195,19 +201,19 @@ int main(int argc, char *argv[])
                         {
                             g_cTasksLeft = cTasksUsed;
 
-                            for (unsigned i = 0; i < cTasksUsed; i++)
+                            for (uint32_t i = 0; i < cTasksUsed; i++)
                             {
-                                size_t cbWrite = (uOffsetDst + BUFFER_SIZE) <= cbSrc ? BUFFER_SIZE : cbSrc - uOffsetDst;
+                                size_t cbWrite = (offDst + BUFFER_SIZE) <= cbSrc ? BUFFER_SIZE : cbSrc - offDst;
                                 PDMDATASEG DataSeg;
 
                                 DataSeg.pvSeg = g_AsyncCompletionTasksBuffer[i];
                                 DataSeg.cbSeg = cbWrite;
 
-                                rc = PDMR3AsyncCompletionEpWrite(pEndpointDst, uOffsetDst, &DataSeg, 1, cbWrite, NULL,
+                                rc = PDMR3AsyncCompletionEpWrite(pEndpointDst, offDst, &DataSeg, 1, cbWrite, NULL,
                                                                  &g_AsyncCompletionTasks[i]);
                                 AssertRC(rc);
-                                uOffsetDst += cbWrite;
-                                if (uOffsetDst == cbSrc)
+                                offDst += cbWrite;
+                                if (offDst == cbSrc)
                                     break;
                             }
                         }
@@ -215,7 +221,7 @@ int main(int argc, char *argv[])
                         rc = RTSemEventWait(g_FinishedEventSem, RT_INDEFINITE_WAIT);
                         AssertRC(rc);
 
-                        if (!fReadPass && (uOffsetDst == cbSrc))
+                        if (!fReadPass && (offDst == cbSrc))
                             break;
                         else if (fReadPass)
                             fReadPass = false;
