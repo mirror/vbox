@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT Testcase - Simple Semaphore Smoke Test.
+ * IPRT Testcase - Simple Mutex Semaphore Smoke Test.
  */
 
 /*
@@ -187,7 +187,7 @@ static int Test1(unsigned cThreads, unsigned cSeconds, bool fYield, bool fQuiet)
     {
         uint64_t Delta = RT_ABS((int64_t)(g_au64[i] - Normal));
         if (Delta > Normal / 2)
-            RTPrintf("tstSemMutex: Warning! Thread %d diviates by more than 50%% - %llu (it) vs. %llu (avg)\n",
+            RTPrintf("tstSemMutex: Warning! Thread %d deviates by more than 50%% - %llu (it) vs. %llu (avg)\n",
                      i, g_au64[i], Normal);
         if (Delta > MaxDiviation)
             MaxDiviation = Delta;
