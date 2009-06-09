@@ -277,6 +277,10 @@ REMR3DECL(int) REMR3Init(PVM pVM)
 
     /*
      * Initialize the REM critical section.
+     *
+     * Note: This is not a 100% safe solution as updating the internal memory state while another VCPU 
+     *       is executing code could be dangerous. Taking the REM lock is not an option due to the danger of
+     *       deadlocks. (mostly pgm vs rem locking)
      */
     rc = PDMR3CritSectInit(pVM, &pVM->rem.s.CritSectRegister, "REM-Register");
     AssertRCReturn(rc, rc);
