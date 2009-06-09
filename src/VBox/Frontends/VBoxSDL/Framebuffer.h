@@ -41,7 +41,7 @@ extern DECLSPEC SDL_Surface* (SDLCALL *pTTF_RenderUTF8_Blended)(TTF_Font *font, 
 extern DECLSPEC void (SDLCALL *pTTF_CloseFont)(TTF_Font *font);
 extern DECLSPEC void (SDLCALL *pTTF_Quit)(void);
 }
-#endif /* VBOX_SECURELABEL */
+#endif /* VBOX_SECURELABEL && !VBOX_WITH_SDL13 */
 
 class VBoxSDLFBOverlay;
 
@@ -49,10 +49,14 @@ class VBoxSDLFB :
     VBOX_SCRIPTABLE_IMPL(IFramebuffer)
 {
 public:
-    VBoxSDLFB(bool fFullscreen = false, bool fResizable = true, bool fShowSDLConfig = false,
+    VBoxSDLFB(uint32_t uScreenId,
+              bool fFullscreen = false, bool fResizable = true, bool fShowSDLConfig = false,
               bool fKeepHostRes = false, uint32_t u32FixedWidth = ~(uint32_t)0,
               uint32_t u32FixedHeight = ~(uint32_t)0, uint32_t u32FixedBPP = ~(uint32_t)0);
     virtual ~VBoxSDLFB();
+
+    static void init(bool fShowSDLConfig);
+    static void uninit();
 
 #ifdef RT_OS_WINDOWS
     STDMETHOD_(ULONG, AddRef)()
@@ -117,29 +121,43 @@ public:
     void resizeSDL();
     void update(int x, int y, int w, int h, bool fGuestRelative);
     void repaint();
-    bool getFullscreen();
     void setFullscreen(bool fFullscreen);
-    int  getXOffset();
-    int  getYOffset();
     void getFullscreenGeometry(uint32_t *width, uint32_t *height);
+    uint32_t getScreenId() { return mScreenId; }
     uint32_t getGuestXRes() { return mGuestXRes; }
     uint32_t getGuestYRes() { return mGuestYRes; }
+    int32_t getOriginX() { return mOriginX; }
+    int32_t getOriginY() { return mOriginY; }
+    int32_t getXOffset() { return mCenterXOffset; }
+    int32_t getYOffset() { return mCenterYOffset; }
+#ifdef VBOX_WITH_SDL13
+    bool hasWindow(SDL_WindowID id) { return mScreen && mWindow == id; }
+#endif
 #ifdef VBOX_SECURELABEL
     int  initSecureLabel(uint32_t height, char *font, uint32_t pointsize, uint32_t labeloffs);
     void setSecureLabelText(const char *text);
     void setSecureLabelColor(uint32_t colorFG, uint32_t colorBG);
     void paintSecureLabel(int x, int y, int w, int h, bool fForce);
 #endif
-    void uninit();
     void setWinId(uint64_t winId) { mWinId = winId; }
+    void setOrigin(int32_t axOrigin, int32_t ayOrigin) { mOriginX = axOrigin; mOriginY = ayOrigin; }
+    bool getFullscreen() { return mfFullscreen; }
 
 private:
-    /** the sdl thread */
-    RTNATIVETHREAD mSdlNativeThread;
     /** current SDL framebuffer pointer (also includes screen width/height) */
     SDL_Surface *mScreen;
+#ifdef VBOX_WITH_SDL13
+    /** the SDL window */
+    SDL_WindowID mWindow;
+    /** the texture */
+    SDL_TextureID mTexture;
+    /** render info */
+    SDL_RendererInfo mRenderInfo;
+#endif
     /** false if constructor failed */
     bool mfInitialized;
+    /** the screen number of this framebuffer */
+    uint32_t mScreenId;
     /** maximum possible screen width in pixels (~0 = no restriction) */
     uint32_t mMaxScreenWidth;
     /** maximum possible screen height in pixels (~0 = no restriction) */
@@ -148,14 +166,14 @@ private:
     ULONG mGuestXRes;
     /** current guest screen height in pixels */
     ULONG mGuestYRes;
+    int32_t mOriginX;
+    int32_t mOriginY;
     /** fixed SDL screen width (~0 = not set) */
     uint32_t mFixedSDLWidth;
     /** fixed SDL screen height (~0 = not set) */
     uint32_t mFixedSDLHeight;
     /** fixed SDL bits per pixel (~0 = not set) */
     uint32_t mFixedSDLBPP;
-    /** default BPP */
-    uint32_t mDefaultSDLBPP;
     /** Y offset in pixels, i.e. guest-nondrawable area at the top */
     uint32_t mTopOffset;
     /** X offset for guest screen centering */
@@ -188,6 +206,7 @@ private:
     uint32_t mLabelHeight;
     /** secure label offset from the top of the secure label */
     uint32_t mLabelOffs;
+
 #endif
 #ifdef RT_OS_WINDOWS
     long refcnt;
@@ -200,9 +219,6 @@ private:
     ULONG mPixelFormat;
     BOOL mUsesGuestVRAM;
     BOOL mfSameSizeRequested;
-
-    /** the application Icon */
-    SDL_Surface *mWMIcon;
 };
 
 class VBoxSDLFBOverlay :

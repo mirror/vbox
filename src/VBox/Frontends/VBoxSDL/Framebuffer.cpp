@@ -66,6 +66,9 @@ DECLSPEC void (SDLCALL *pTTF_Quit)(void);
 }
 #endif /* VBOX_SECURELABEL */
 
+static SDL_Surface *gWMIcon;                    /**< the application icon */
+static RTNATIVETHREAD gSdlNativeThread;         /**< the SDL thread */
+
 //
 // Constructor / destructor
 //
@@ -82,7 +85,8 @@ DECLSPEC void (SDLCALL *pTTF_Quit)(void);
  * @param iFixedWidth    fixed SDL width (-1 means not set)
  * @param iFixedHeight   fixed SDL height (-1 means not set)
  */
-VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
+VBoxSDLFB::VBoxSDLFB(uint32_t uScreenId,
+                     bool fFullscreen, bool fResizable, bool fShowSDLConfig,
                      bool fKeepHostRes, uint32_t u32FixedWidth,
                      uint32_t u32FixedHeight, uint32_t u32FixedBPP)
 {
@@ -93,7 +97,12 @@ VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
     refcnt = 0;
 #endif
 
+    mScreenId       = uScreenId;
     mScreen         = NULL;
+#ifdef VBOX_WITH_SDL13
+    mWindow         = 0;
+    mTexture        = 0;
+#endif
     mSurfVRAM       = NULL;
     mfInitialized   = false;
     mfFullscreen    = fFullscreen;
@@ -104,7 +113,6 @@ VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
     mFixedSDLWidth  = u32FixedWidth;
     mFixedSDLHeight = u32FixedHeight;
     mFixedSDLBPP    = u32FixedBPP;
-    mDefaultSDLBPP  = 32;
     mCenterXOffset  = 0;
     mCenterYOffset  = 0;
     /* Start with standard screen dimensions. */
@@ -121,13 +129,41 @@ VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
     mLabelHeight    = 0;
     mLabelOffs      = 0;
 #endif
-    mWMIcon         = NULL;
-
-    /* memorize the thread that inited us, that's the SDL thread */
-    mSdlNativeThread = RTThreadNativeSelf();
 
     rc = RTCritSectInit(&mUpdateLock);
     AssertMsg(rc == VINF_SUCCESS, ("Error from RTCritSectInit!\n"));
+
+    resizeGuest();
+    Assert(mScreen);
+    mfInitialized = true;
+}
+
+VBoxSDLFB::~VBoxSDLFB()
+{
+    LogFlow(("VBoxSDLFB::~VBoxSDLFB\n"));
+    if (mSurfVRAM)
+    {
+        SDL_FreeSurface(mSurfVRAM);
+        mSurfVRAM = NULL;
+    }
+    mScreen = NULL;
+
+#ifdef VBOX_SECURELABEL
+    if (mLabelFont)
+        pTTF_CloseFont(mLabelFont);
+    if (pTTF_Quit)
+        pTTF_Quit();
+#endif
+
+    RTCritSectDelete(&mUpdateLock);
+}
+
+void VBoxSDLFB::init(bool fShowSDLConfig)
+{
+    LogFlow(("VBoxSDLFB::init\n"));
+
+    /* memorize the thread that inited us, that's the SDL thread */
+    gSdlNativeThread = RTThreadNativeSelf();
 
 #ifdef RT_OS_WINDOWS
     /* default to DirectX if nothing else set */
@@ -142,7 +178,7 @@ VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
      * See http://wiki.clug.org.za/wiki/QEMU_mouse_not_working */
     RTEnvSet("SDL_VIDEO_X11_DGAMOUSE", "0");
 #endif
-    rc = SDL_InitSubSystem(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_NOPARACHUTE);
+    int rc = SDL_InitSubSystem(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_NOPARACHUTE);
     if (rc != 0)
     {
         RTPrintf("SDL Error: '%s'\n", SDL_GetError());
@@ -153,16 +189,8 @@ VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
     Assert(videoInfo);
     if (videoInfo)
     {
-        switch (videoInfo->vfmt->BitsPerPixel)
-        {
-            case 16: mDefaultSDLBPP = 16; break;
-            case 24: mDefaultSDLBPP = 24; break;
-            default:
-            case 32: mDefaultSDLBPP = 32; break;
-        }
-
         /* output what SDL is capable of */
-        if (mfShowSDLConfig)
+        if (fShowSDLConfig)
             RTPrintf("SDL capabilities:\n"
                      "  Hardware surface support:                    %s\n"
                      "  Window manager available:                    %s\n"
@@ -192,26 +220,31 @@ VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
 
     if (12320 == g_cbIco64x01)
     {
-        mWMIcon = SDL_AllocSurface(SDL_SWSURFACE, 64, 64, 24, 0xff, 0xff00, 0xff0000, 0);
+        gWMIcon = SDL_AllocSurface(SDL_SWSURFACE, 64, 64, 24, 0xff, 0xff00, 0xff0000, 0);
         /** @todo make it as simple as possible. No PNM interpreter here... */
-        if (mWMIcon)
+        if (gWMIcon)
         {
-            memcpy(mWMIcon->pixels, g_abIco64x01+32, g_cbIco64x01-32);
-            SDL_WM_SetIcon(mWMIcon, NULL);
+            memcpy(gWMIcon->pixels, g_abIco64x01+32, g_cbIco64x01-32);
+            SDL_WM_SetIcon(gWMIcon, NULL);
         }
     }
-
-    resizeGuest();
-    Assert(mScreen);
-    mfInitialized = true;
 }
 
-VBoxSDLFB::~VBoxSDLFB()
+/**
+ * Terminate SDL
+ *
+ * @remarks must be called from the SDL thread!
+ */
+void VBoxSDLFB::uninit()
 {
-    LogFlow(("VBoxSDLFB::~VBoxSDLFB\n"));
-    RTCritSectDelete(&mUpdateLock);
+    AssertMsg(gSdlNativeThread == RTThreadNativeSelf(), ("Wrong thread! SDL is not threadsafe!\n"));
+    SDL_QuitSubSystem(SDL_INIT_VIDEO);
+    if (gWMIcon)
+    {
+        SDL_FreeSurface(gWMIcon);
+        gWMIcon = NULL;
+    }
 }
-
 
 /**
  * Returns the current framebuffer width in pixels.
@@ -279,16 +312,14 @@ STDMETHODIMP VBoxSDLFB::COMGETTER(Address)(BYTE **address)
     if (!address)
         return E_INVALIDARG;
 
-    if (mSurfVRAM)
-    {
-        *address = (BYTE *) mSurfVRAM->pixels;
-    }
-    else
+    if (!mSurfVRAM)
     {
         /* That's actually rather bad. */
         AssertMsgFailed(("mSurfVRAM is NULL!\n"));
         return E_FAIL;
     }
+
+    *address = (BYTE *) mSurfVRAM->pixels;
     LogFlow(("VBoxSDL::GetAddress returning %p\n", *address));
     return S_OK;
 }
@@ -424,6 +455,7 @@ STDMETHODIMP VBoxSDLFB::NotifyUpdate(ULONG x, ULONG y,
      */
     SDL_Event event;
     event.type       = SDL_USEREVENT;
+    event.user.code  = mScreenId;
     event.user.type  = SDL_USER_EVENT_UPDATERECT;
     // 16 bit is enough for coordinates
     event.user.data1 = (void*)(x << 16 | y);
@@ -501,6 +533,7 @@ STDMETHODIMP VBoxSDLFB::RequestResize(ULONG aScreenId, ULONG pixelFormat, BYTE *
     SDL_Event event;
     event.type       = SDL_USEREVENT;
     event.user.type  = SDL_USER_EVENT_RESIZE;
+    event.user.code  = mScreenId;
 
     /* Try multiple times if necessary */
     PushSDLEventForSure(&event);
@@ -592,7 +625,7 @@ STDMETHODIMP VBoxSDLFB::ProcessVHWACommand(BYTE *pCommand)
 void VBoxSDLFB::resizeGuest()
 {
     LogFlowFunc (("mGuestXRes: %d, mGuestYRes: %d\n", mGuestXRes, mGuestYRes));
-    AssertMsg(mSdlNativeThread == RTThreadNativeSelf(),
+    AssertMsg(gSdlNativeThread == RTThreadNativeSelf(),
               ("Wrong thread! SDL is not threadsafe!\n"));
 
     uint32_t Rmask, Gmask, Bmask, Amask = 0;
@@ -642,16 +675,17 @@ void VBoxSDLFB::resizeGuest()
     /* is the guest in a linear framebuffer mode we support? */
     if (mUsesGuestVRAM)
     {
-
         /* Create a source surface from guest VRAM. */
         mSurfVRAM = SDL_CreateRGBSurfaceFrom(mPtrVRAM, mGuestXRes, mGuestYRes, mBitsPerPixel,
                                              mBytesPerLine, Rmask, Gmask, Bmask, Amask);
+        LogRel(("mSurfVRAM from guest %d x %d\n", mGuestXRes,  mGuestYRes));
     }
     else
     {
         /* Create a software surface for which SDL allocates the RAM */
         mSurfVRAM = SDL_CreateRGBSurface(SDL_SWSURFACE, mGuestXRes, mGuestYRes, mBitsPerPixel,
                                          Rmask, Gmask, Bmask, Amask);
+        LogRel(("mSurfVRAM from SDL %d x %d\n", mGuestXRes,  mGuestYRes));
     }
     LogFlow(("VBoxSDL:: created VRAM surface %p\n", mSurfVRAM));
 
@@ -750,11 +784,86 @@ void VBoxSDLFB::resizeSDL(void)
     /* we don't have any extra space by default */
     mTopOffset = 0;
 
+#if defined(VBOX_WITH_SDL13)
+    int sdlWindowFlags = SDL_WINDOW_SHOWN;
+    if (mfResizable)
+        sdlWindowFlags |= SDL_WINDOW_RESIZABLE;
+    if (!mWindow)
+    {
+        SDL_DisplayMode desktop_mode;
+        int x = 40 + mScreenId * 20;
+        int y = 40 + mScreenId * 15;
+
+        SDL_GetDesktopDisplayMode(&desktop_mode);
+        /* create new window */
+       
+        char szTitle[64];
+        RTStrPrintf(szTitle, sizeof(szTitle), "SDL window %d", mScreenId);
+        mWindow = SDL_CreateWindow(szTitle, x, y,
+                                   newWidth, newHeight, sdlWindowFlags);
+        if (SDL_CreateRenderer(mWindow, -1,
+                               SDL_RENDERER_SINGLEBUFFER | SDL_RENDERER_PRESENTDISCARD) < 0)
+            AssertReleaseFailed();
+
+        SDL_GetRendererInfo(&mRenderInfo);
+
+        mTexture = SDL_CreateTexture(desktop_mode.format,
+                                     SDL_TEXTUREACCESS_STREAMING, newWidth, newHeight);
+        if (!mTexture)
+            AssertReleaseFailed();
+    }
+    else
+    {
+        int w, h;
+        uint32_t format;
+        int access;
+
+        /* resize current window */
+        SDL_GetWindowSize(mWindow, &w, &h);
+
+        if (w != (int)newWidth || h != (int)newHeight)
+            SDL_SetWindowSize(mWindow, newWidth, newHeight);
+
+        SDL_QueryTexture(mTexture, &format, &access, &w, &h);
+        SDL_SelectRenderer(mWindow);
+        SDL_DestroyTexture(mTexture);
+        mTexture = SDL_CreateTexture(format, access, newWidth, newHeight);
+        if (!mTexture)
+            AssertReleaseFailed();
+    }
+
+    void *pixels;
+    int pitch;
+    int w, h, bpp;
+    uint32_t Rmask, Gmask, Bmask, Amask;
+    uint32_t format;
+
+    if (SDL_QueryTexture(mTexture, &format, NULL, &w, &h) < 0)
+        AssertReleaseFailed();
+
+    if (!SDL_PixelFormatEnumToMasks(format, &bpp, &Rmask, &Gmask, &Bmask, &Amask))
+        AssertReleaseFailed();
+
+    if (SDL_QueryTexturePixels(mTexture, &pixels, &pitch) == 0)
+    {
+        mScreen = SDL_CreateRGBSurfaceFrom(pixels, w, h, bpp, pitch,
+                                           Rmask, Gmask, Bmask, Amask);
+    }
+    else
+    {
+        mScreen = SDL_CreateRGBSurface(0, w, h, bpp, Rmask, Gmask, Bmask, Amask);
+        AssertReleaseFailed();
+    }
+
+    SDL_SetClipRect(mScreen, NULL);
+
+#else
     /*
      * Now set the screen resolution and get the surface pointer
      * @todo BPP is not supported!
      */
     mScreen = SDL_SetVideoMode(newWidth, newHeight, 0, sdlFlags);
+#endif
 #ifdef VBOX_SECURELABEL
     /*
      * For non fixed SDL resolution, the above call tried to add the label height
@@ -815,13 +924,13 @@ void VBoxSDLFB::resizeSDL(void)
 void VBoxSDLFB::update(int x, int y, int w, int h, bool fGuestRelative)
 {
 #ifdef VBOXSDL_WITH_X11
-    AssertMsg(mSdlNativeThread == RTThreadNativeSelf(), ("Wrong thread! SDL is not threadsafe!\n"));
+    AssertMsg(gSdlNativeThread == RTThreadNativeSelf(), ("Wrong thread! SDL is not threadsafe!\n"));
 #endif
     Assert(mScreen);
     Assert(mSurfVRAM);
     if (!mScreen || !mSurfVRAM)
         return;
-
+    
     /* the source and destination rectangles */
     SDL_Rect srcRect;
     SDL_Rect dstRect;
@@ -879,16 +988,22 @@ void VBoxSDLFB::update(int x, int y, int w, int h, bool fGuestRelative)
     dstRect.w = w;
     dstRect.h = RT_MAX(0, h - yCutoffGuest);
 
-    //RTPrintf("y = %d h = %d mapped to srcY %d srcH %d mapped to dstY = %d dstH %d (guestrel: %d, mLabelHeight: %d, mTopOffset: %d)\n",
-    //         y, h, srcRect.y, srcRect.h, dstRect.y, dstRect.h, fGuestRelative, mLabelHeight, mTopOffset);
-
     /*
      * Now we just blit
      */
     SDL_BlitSurface(mSurfVRAM, &srcRect, mScreen, &dstRect);
     /* hardware surfaces don't need update notifications */
+#if defined(VBOX_WITH_SDL13)
+    AssertRelease(mScreen->flags & SDL_PREALLOC);
+    SDL_SelectRenderer(mWindow);
+    SDL_DirtyTexture(mTexture, 1, &dstRect);
+    AssertRelease(mRenderInfo.flags & SDL_RENDERER_PRESENTCOPY);
+    SDL_RenderCopy(mTexture, &dstRect, &dstRect);
+    SDL_RenderPresent();
+#else
     if ((mScreen->flags & SDL_HWSURFACE) == 0)
         SDL_UpdateRect(mScreen, dstRect.x, dstRect.y, dstRect.w, dstRect.h);
+#endif
 
 #ifdef VBOX_SECURELABEL
     if (fPaintLabel)
@@ -903,15 +1018,9 @@ void VBoxSDLFB::update(int x, int y, int w, int h, bool fGuestRelative)
  */
 void VBoxSDLFB::repaint()
 {
-    AssertMsg(mSdlNativeThread == RTThreadNativeSelf(), ("Wrong thread! SDL is not threadsafe!\n"));
+    AssertMsg(gSdlNativeThread == RTThreadNativeSelf(), ("Wrong thread! SDL is not threadsafe!\n"));
     LogFlow(("VBoxSDLFB::repaint\n"));
     update(0, 0, mScreen->w, mScreen->h, false /* fGuestRelative */);
-}
-
-bool VBoxSDLFB::getFullscreen()
-{
-    LogFlow(("VBoxSDLFB::getFullscreen\n"));
-    return mfFullscreen;
 }
 
 /**
@@ -921,7 +1030,7 @@ bool VBoxSDLFB::getFullscreen()
  */
 void VBoxSDLFB::setFullscreen(bool fFullscreen)
 {
-    AssertMsg(mSdlNativeThread == RTThreadNativeSelf(), ("Wrong thread! SDL is not threadsafe!\n"));
+    AssertMsg(gSdlNativeThread == RTThreadNativeSelf(), ("Wrong thread! SDL is not threadsafe!\n"));
     LogFlow(("VBoxSDLFB::SetFullscreen: fullscreen: %d\n", fFullscreen));
     mfFullscreen = fFullscreen;
     /* only change the SDL resolution, do not touch the guest framebuffer */
@@ -962,28 +1071,6 @@ void VBoxSDLFB::getFullscreenGeometry(uint32_t *width, uint32_t *height)
             *height = modes[0]->w;
         }
     }
-}
-
-/**
- * Returns the current x offset of the start of the guest screen
- *
- * @returns current x offset in pixels
- */
-int VBoxSDLFB::getXOffset()
-{
-    /* there can only be an offset for centering */
-    return mCenterXOffset;
-}
-
-/**
- * Returns the current y offset of the start of the guest screen
- *
- * @returns current y offset in pixels
- */
-int VBoxSDLFB::getYOffset()
-{
-    /* we might have a top offset and a center offset */
-    return mTopOffset + mCenterYOffset;
 }
 
 #ifdef VBOX_SECURELABEL
@@ -1050,7 +1137,7 @@ void VBoxSDLFB::setSecureLabelColor(uint32_t colorFG, uint32_t colorBG)
 void VBoxSDLFB::paintSecureLabel(int x, int y, int w, int h, bool fForce)
 {
 #ifdef VBOXSDL_WITH_X11
-    AssertMsg(mSdlNativeThread == RTThreadNativeSelf(), ("Wrong thread! SDL is not threadsafe!\n"));
+    AssertMsg(gSdlNativeThread == RTThreadNativeSelf(), ("Wrong thread! SDL is not threadsafe!\n"));
 #endif
     /* only when the function is present */
     if (!pTTF_RenderUTF8_Solid)
@@ -1085,34 +1172,6 @@ void VBoxSDLFB::paintSecureLabel(int x, int y, int w, int h, bool fForce)
     SDL_UpdateRect(mScreen, 0, 0, mScreen->w, mLabelHeight);
 }
 #endif /* VBOX_SECURELABEL */
-
-/**
- * Terminate SDL
- *
- * @remarks must be called from the SDL thread!
- */
-void VBoxSDLFB::uninit()
-{
-    AssertMsg(mSdlNativeThread == RTThreadNativeSelf(), ("Wrong thread! SDL is not threadsafe!\n"));
-    if (mSurfVRAM)
-    {
-        SDL_FreeSurface(mSurfVRAM);
-        mSurfVRAM = NULL;
-    }
-    SDL_QuitSubSystem(SDL_INIT_VIDEO);
-#ifdef VBOX_SECURELABEL
-    if (mLabelFont)
-        pTTF_CloseFont(mLabelFont);
-    if (pTTF_Quit)
-        pTTF_Quit();
-#endif
-    mScreen = NULL;
-    if (mWMIcon)
-    {
-        SDL_FreeSurface(mWMIcon);
-        mWMIcon = NULL;
-    }
-}
 
 // IFramebufferOverlay
 ///////////////////////////////////////////////////////////////////////////////////
