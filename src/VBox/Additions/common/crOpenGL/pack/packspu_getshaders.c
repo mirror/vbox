@@ -42,7 +42,7 @@ void PACKSPU_APIENTRY packspu_GetActiveAttrib(GLuint program, GLuint index, GLsi
     while (writeback)
         crNetRecv();
 
-    if (*length) *length = pLocal->length;
+    if (length) *length = pLocal->length;
     *size   = pLocal->size;
     *type   = pLocal->type;
     crMemcpy(name, (char*)&pLocal[1], pLocal->length+1);
@@ -66,7 +66,7 @@ void PACKSPU_APIENTRY packspu_GetActiveUniform(GLuint program, GLuint index, GLs
     while (writeback)
         crNetRecv();
 
-    if (*length) *length = pLocal->length;
+    if (length) *length = pLocal->length;
     *size   = pLocal->size;
     *type   = pLocal->type;
     crMemcpy(name, &pLocal[1], pLocal->length+1);
