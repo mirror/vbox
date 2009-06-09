@@ -46,9 +46,7 @@ GetExtensions(void)
     ext = crStateMergeExtensions(1, &extensions);
 
 #ifdef CR_OPENGL_VERSION_2_0
-    /* This extension is a core part of opengl 2.0, yet
-     * some apps (like glview) request us to have this extension.
-     * @todo, check if host supports opengl 2.0 or this extension 
+    /* @todo, check if host supports opengl 2.0 or this extension 
      * before exporting it.
      */
     sprintf(gpszExtensions, "%s GL_ARB_shading_language_100", ext);
