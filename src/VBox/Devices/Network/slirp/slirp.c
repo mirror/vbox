@@ -657,6 +657,8 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     debug_init();
     if_init(pData);
     ip_init(pData);
+    tcp_init(pData);
+    udp_init(pData);
     icmp_init(pData);
 
     /* Initialise mbufs *after* setting the MTU */
