@@ -48,15 +48,16 @@ public:
         AlignBottom
     };
 
-    VBoxMiniToolBar (QWidget *aParent, Alignment aAlignment);
-
-    void setActive (bool aIsActive);
-    void setIsSeamlessMode (bool aIsSeamless);
+    VBoxMiniToolBar (QWidget *aParent, Alignment aAlignment, bool aIsActive, bool aAutoHide);
 
     VBoxMiniToolBar& operator<< (QList <QMenu*> aMenus);
 
-    void updateDisplay (bool aShow, bool aSetHideFlag);
+    void setSeamlessMode (bool aIsSeamless);
     void setDisplayText (const QString &aText);
+
+    bool isAutoHide() const;
+
+    void updateDisplay (bool aShow, bool aSetHideFlag);
 
 signals:
 
@@ -87,17 +88,16 @@ private:
     QBasicTimer mScrollTimer;
     QBasicTimer mAutoScrollTimer;
 
-    int mAutoHideCounter;
+    bool mActive;
+    bool mPolished;
+    bool mSeamless;
     bool mAutoHide;
     bool mSlideToScreen;
     bool mHideAfterSlide;
-    bool mPolished;
 
+    int mAutoHideCounter;
     int mPositionX;
     int mPositionY;
-
-    bool mIsActive;
-    bool mIsSeamless;
 
     /* Lists of used spacers */
     QList <QWidget*> mMargins;

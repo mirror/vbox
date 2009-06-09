@@ -150,6 +150,7 @@ struct VBoxDefs
     static const char* GUI_FirstRun;
     static const char* GUI_SaveMountedAtRuntime;
     static const char* GUI_ShowMiniToolBar;
+    static const char* GUI_MiniToolBarAutoHide;
     static const char* GUI_LastCloseAction;
     static const char* GUI_SuppressMessages;
     static const char* GUI_PermanentSharedFoldersAtRuntime;

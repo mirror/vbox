@@ -37,15 +37,15 @@
 #include <QTimer>
 #include <QToolButton>
 
-VBoxMiniToolBar::VBoxMiniToolBar (QWidget *aParent, Alignment aAlignment)
+VBoxMiniToolBar::VBoxMiniToolBar (QWidget *aParent, Alignment aAlignment, bool aActive, bool aAutoHide)
     : VBoxToolBar (aParent)
-    , mAutoHideCounter (0)
-    , mAutoHide (true)
+    , mActive (aActive)
+    , mPolished (false)
+    , mSeamless (false)
+    , mAutoHide (aAutoHide)
     , mSlideToScreen (true)
     , mHideAfterSlide (false)
-    , mPolished (false)
-    , mIsActive (true)
-    , mIsSeamless (false)
+    , mAutoHideCounter (0)
     , mAlignment (aAlignment)
     , mAnimated (true)
     , mScrollDelay (10)
@@ -107,16 +107,6 @@ VBoxMiniToolBar::VBoxMiniToolBar (QWidget *aParent, Alignment aAlignment)
     mMargins << widgetForAction (addWidget (new QWidget (this)));
 }
 
-void VBoxMiniToolBar::setActive (bool aIsActive)
-{
-    mIsActive = aIsActive;
-}
-
-void VBoxMiniToolBar::setIsSeamlessMode (bool aIsSeamless)
-{
-    mIsSeamless = aIsSeamless;
-}
-
 VBoxMiniToolBar& VBoxMiniToolBar::operator<< (QList <QMenu*> aMenus)
 {
     for (int i = 0; i < aMenus.size(); ++ i)
@@ -132,6 +122,22 @@ VBoxMiniToolBar& VBoxMiniToolBar::operator<< (QList <QMenu*> aMenus)
             mSpacings << widgetForAction (insertWidget (mInsertPosition, new QWidget (this)));
     }
     return *this;
+}
+
+void VBoxMiniToolBar::setSeamlessMode (bool aSeamless)
+{
+    mSeamless = aSeamless;
+}
+
+/* Update the display text, usually the VM Name */
+void VBoxMiniToolBar::setDisplayText (const QString &aText)
+{
+    mDisplayLabel->setText (aText);
+}
+
+bool VBoxMiniToolBar::isAutoHide() const
+{
+    return mAutoHide;
 }
 
 void VBoxMiniToolBar::updateDisplay (bool aShow, bool aSetHideFlag)
@@ -152,10 +158,10 @@ void VBoxMiniToolBar::updateDisplay (bool aShow, bool aSetHideFlag)
                 mHideAfterSlide = false;
                 mSlideToScreen = true;
             }
-            if (mIsActive) show();
+            if (mActive) show();
             mScrollTimer.start (mScrollDelay, this);
         }
-        else if (mIsActive) show();
+        else if (mActive) show();
 
         if (mAutoHide)
             mAutoScrollTimer.start (mAutoScrollDelay, this);
@@ -181,12 +187,6 @@ void VBoxMiniToolBar::updateDisplay (bool aShow, bool aSetHideFlag)
         else
             mAutoScrollTimer.stop();
     }
-}
-
-/* Update the display text, usually the VM Name */
-void VBoxMiniToolBar::setDisplayText (const QString &aText)
-{
-    mDisplayLabel->setText (aText);
 }
 
 void VBoxMiniToolBar::mouseMoveEvent (QMouseEvent *aEvent)
@@ -225,8 +225,8 @@ void VBoxMiniToolBar::timerEvent (QTimerEvent *aEvent)
             }
             case AlignBottom:
             {
-                QRect screen = mIsSeamless ? QApplication::desktop()->availableGeometry (this) :
-                                             QApplication::desktop()->screenGeometry (this);
+                QRect screen = mSeamless ? QApplication::desktop()->availableGeometry (this) :
+                                           QApplication::desktop()->screenGeometry (this);
                 if (((mPositionY == screen.height() - height()) && mSlideToScreen) ||
                     ((mPositionY == screen.height() - 1) && !mSlideToScreen))
                 {
@@ -360,8 +360,8 @@ void VBoxMiniToolBar::recreateMask()
 
 void VBoxMiniToolBar::moveToBase()
 {
-    QRect screen = mIsSeamless ? QApplication::desktop()->availableGeometry (this) :
-                                 QApplication::desktop()->screenGeometry (this);
+    QRect screen = mSeamless ? QApplication::desktop()->availableGeometry (this) :
+                               QApplication::desktop()->screenGeometry (this);
     mPositionX = screen.width() / 2 - width() / 2;
     switch (mAlignment)
     {
@@ -388,8 +388,8 @@ QPoint VBoxMiniToolBar::mapFromScreen (const QPoint &aPoint)
 {
     QPoint globalPosition = parentWidget()->mapFromGlobal (aPoint);
     QRect fullArea = QApplication::desktop()->screenGeometry (this);
-    QRect realArea = mIsSeamless ? QApplication::desktop()->availableGeometry (this) :
-                                   QApplication::desktop()->screenGeometry (this);
+    QRect realArea = mSeamless ? QApplication::desktop()->availableGeometry (this) :
+                                 QApplication::desktop()->screenGeometry (this);
     QPoint shiftToReal (realArea.topLeft() - fullArea.topLeft());
     return globalPosition + shiftToReal;
 }
