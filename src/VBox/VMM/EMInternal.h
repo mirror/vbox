@@ -290,7 +290,7 @@ typedef struct EM
     /** Id of the VCPU that last executed code in the recompiler. */
     VMCPUID                 idLastRemCpu;
 
-    /** PGM critical section.
+    /** REM critical section.
      * This protects recompiler usage
      */
     PDMCRITSECT             CritSectREM;
