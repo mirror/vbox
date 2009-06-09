@@ -63,3 +63,9 @@ ZPixCR
 ActiveTextureARB
 DrawBuffer
 Flush
+GetActiveAttrib
+GetActiveUniform
+GetAttachedShaders
+GetShaderInfoLog
+GetProgramInfoLog
+GetShaderSource

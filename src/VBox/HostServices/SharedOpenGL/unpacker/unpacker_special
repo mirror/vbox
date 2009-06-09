@@ -152,3 +152,11 @@ UniformMatrix2fv
 UniformMatrix3fv
 UniformMatrix4fv
 DrawBuffers
+GetActiveAttrib
+GetActiveUniform
+GetAttachedShaders
+GetShaderInfoLog
+GetProgramInfoLog
+GetShaderSource
+GetAttribLocation
+GetUniformLocation
