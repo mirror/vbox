@@ -304,6 +304,9 @@ typedef struct VGAState {
     /** Pointer to the device instance - R0 Ptr. */
     PPDMDEVINSR0                pDevInsR0;
 
+    /** The critical section. */
+    PDMCRITSECT                 lock;
+
     /** The display port base interface. */
     PDMIBASE                    Base;
     /** The display port interface. */
