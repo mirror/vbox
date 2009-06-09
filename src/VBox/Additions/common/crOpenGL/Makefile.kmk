@@ -373,6 +373,7 @@ VBoxOGLpackspu_SOURCES    = \
 	pack/packspu_swapbuf.c \
 	pack/packspu_pixel.c \
 	pack/packspu_texture.c \
+    pack/packspu_getshaders.c \
 	$(VBOX_PATH_CROGL_GENFILES)/packspu.c \
 	$(VBOX_PATH_CROGL_GENFILES)/packspu_get.c \
 	$(VBOX_PATH_CROGL_GENFILES)/packspu_flush.c \

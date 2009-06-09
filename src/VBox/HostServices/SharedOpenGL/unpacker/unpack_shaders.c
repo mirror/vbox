@@ -158,3 +158,79 @@ void crUnpackExtendDrawBuffers(void)
     const GLenum *bufs = DATA_POINTER(8+sizeof(GLsizei), const GLenum);
     cr_unpackDispatch.DrawBuffers(n, bufs);
 }
+
+void crUnpackExtendGetActiveAttrib(void)
+{
+    GLuint program = READ_DATA(8, GLuint);
+    GLuint index = READ_DATA(12, GLuint);
+    GLsizei bufSize = READ_DATA(16, GLsizei);
+    SET_RETURN_PTR(20);
+    SET_WRITEBACK_PTR(28);
+    cr_unpackDispatch.GetActiveAttrib(program, index, bufSize, NULL, NULL, NULL, NULL);
+}
+
+void crUnpackExtendGetActiveUniform(void)
+{
+    GLuint program = READ_DATA(8, GLuint);
+    GLuint index = READ_DATA(12, GLuint);
+    GLsizei bufSize = READ_DATA(16, GLsizei);
+    SET_RETURN_PTR(20);
+    SET_WRITEBACK_PTR(28);
+    cr_unpackDispatch.GetActiveUniform(program, index, bufSize, NULL, NULL, NULL, NULL);
+}
+
+void crUnpackExtendGetAttachedShaders(void)
+{
+    GLuint program = READ_DATA(8, GLuint);
+    GLsizei maxCount = READ_DATA(12, GLsizei);
+    SET_RETURN_PTR(16);
+    SET_WRITEBACK_PTR(24);
+    cr_unpackDispatch.GetAttachedShaders(program, maxCount, NULL, NULL);
+}
+
+void crUnpackExtendGetProgramInfoLog(void)
+{
+    GLuint program = READ_DATA(8, GLuint);
+    GLsizei bufSize = READ_DATA(12, GLsizei);
+    SET_RETURN_PTR(16);
+    SET_WRITEBACK_PTR(24);
+    cr_unpackDispatch.GetProgramInfoLog(program, bufSize, NULL, NULL);
+}
+
+void crUnpackExtendGetShaderInfoLog(void)
+{
+    GLuint shader = READ_DATA(8, GLuint);
+    GLsizei bufSize = READ_DATA(12, GLsizei);
+    SET_RETURN_PTR(16);
+    SET_WRITEBACK_PTR(24);
+    cr_unpackDispatch.GetShaderInfoLog(shader, bufSize, NULL, NULL);
+}
+
+void crUnpackExtendGetShaderSource(void)
+{
+    GLuint shader = READ_DATA(8, GLuint);
+    GLsizei bufSize = READ_DATA(12, GLsizei);
+    SET_RETURN_PTR(16);
+    SET_WRITEBACK_PTR(24);
+    cr_unpackDispatch.GetShaderSource(shader, bufSize, NULL, NULL);
+}
+
+void crUnpackExtendGetAttribLocation(void)
+{
+    int packet_length = READ_DATA(0, int);
+    GLuint program = READ_DATA(8, GLuint);
+    const char *name = DATA_POINTER(12, const char);
+    SET_RETURN_PTR(packet_length-16);
+    SET_WRITEBACK_PTR(packet_length-8);
+    cr_unpackDispatch.GetAttribLocation(program, name);
+}
+
+void crUnpackExtendGetUniformLocation(void)
+{
+    int packet_length = READ_DATA(0, int);
+    GLuint program = READ_DATA(8, GLuint);
+    const char *name = DATA_POINTER(12, const char);
+    SET_RETURN_PTR(packet_length-16);
+    SET_WRITEBACK_PTR(packet_length-8);
+    cr_unpackDispatch.GetUniformLocation(program, name);
+}
