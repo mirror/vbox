@@ -806,12 +806,17 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     CConsole cconsole = csession.GetConsole();
     AssertWrapperOk (csession);
 
-    console = new VBoxConsoleView (this, cconsole, mode,
-                                   centralWidget());
+    console = new VBoxConsoleView (this, cconsole, mode, centralWidget());
+    static_cast <QGridLayout*> (centralWidget()->layout())->addWidget (console, 1, 1, Qt::AlignVCenter | Qt::AlignHCenter);
+
+    CMachine cmachine = csession.GetMachine();
 
     /* Mini toolbar */
+    bool isActive = !(cmachine.GetExtraData (VBoxDefs::GUI_ShowMiniToolBar) == "no");
+    bool isAutoHide = !(cmachine.GetExtraData (VBoxDefs::GUI_MiniToolBarAutoHide) == "off");
     QList <QMenu*> menus (QList <QMenu*> () << mMiniVMMenu << mDevicesMenu);
-    mMiniToolBar = new VBoxMiniToolBar (centralWidget(), VBoxMiniToolBar::AlignBottom);
+    mMiniToolBar = new VBoxMiniToolBar (centralWidget(), VBoxMiniToolBar::AlignBottom,
+                                        isActive, isAutoHide);
     *mMiniToolBar << menus;
     connect (mMiniToolBar, SIGNAL (exitAction()), this, SLOT (mtExitMode()));
     connect (mMiniToolBar, SIGNAL (closeAction()), this, SLOT (mtCloseVM()));
@@ -819,10 +824,6 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     connect (this, SIGNAL (closing()), mMiniToolBar, SLOT (close()));
 
     activateUICustomizations();
-
-    static_cast<QGridLayout*>(centralWidget()->layout())->addWidget(console, 1, 1, Qt::AlignVCenter | Qt::AlignHCenter);
-
-    CMachine cmachine = csession.GetMachine();
 
     /* Set the VM-specific application icon */
     /* Not on Mac OS X. The dock icon is handled below. */
@@ -898,10 +899,6 @@ bool VBoxConsoleWnd::openView (const CSession &session)
         str = cmachine.GetExtraData (VBoxDefs::GUI_SaveMountedAtRuntime);
         if (str == "no")
             mIsAutoSaveMedia = false;
-
-        str = cmachine.GetExtraData (VBoxDefs::GUI_ShowMiniToolBar);
-        if (str == "no")
-            mMiniToolBar->setActive (false);
 
         /* Check if one of extended modes to be activated on loading */
         QString fsMode = cmachine.GetExtraData (VBoxDefs::GUI_Fullscreen);
@@ -1581,6 +1578,8 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
                               mVmSeamlessAction->isChecked() ? "on" : "off");
         machine.SetExtraData (VBoxDefs::GUI_AutoresizeGuest,
                               mVmAutoresizeGuestAction->isChecked() ? "on" : "off");
+        machine.SetExtraData (VBoxDefs::GUI_MiniToolBarAutoHide,
+                              mMiniToolBar->isAutoHide() ? "on" : "off");
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
         /* Close & destroy the debugger GUI */
@@ -2450,7 +2449,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 
     if (aOn)
     {
-        mMiniToolBar->setIsSeamlessMode (aSeamless);
+        mMiniToolBar->setSeamlessMode (aSeamless);
         mMiniToolBar->updateDisplay (true, true);
     }
 
