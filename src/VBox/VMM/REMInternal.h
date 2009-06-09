@@ -27,6 +27,7 @@
 #include <VBox/cpum.h>
 #include <VBox/stam.h>
 #include <VBox/pgm.h>
+#include <VBox/pdmcritsect.h>
 #ifdef REM_INCLUDE_CPU_H
 # include "target-i386/cpu.h"
 #endif
@@ -140,8 +141,6 @@ typedef struct REM
     /** Set when the translation blocks cache need to be flushed. */
     bool                    fFlushTBs;
 
-    /** Ignore all that can be ignored. */
-    bool                    fIgnoreAll;
     /** Ignore CR3 load notifications from the REM. */
     bool                    fIgnoreCR3Load;
     /** Ignore invlpg notifications from the REM. */
@@ -150,6 +149,10 @@ typedef struct REM
     bool                    fIgnoreCpuMode;
     /** Ignore set page. */
     bool                    fIgnoreSetPage;
+    bool                    bPadding1;
+
+    /** Ignore all that can be ignored. */
+    uint32_t                cIgnoreAll;
 
     /** Number of times REMR3CanExecuteRaw has been called.
      * It is used to prevent rescheduling on the first call. */
@@ -158,10 +161,6 @@ typedef struct REM
     /** Pending interrupt (~0 -> nothing). */
     uint32_t                u32PendingInterrupt;
 
-#if HC_ARCH_BITS == 64
-    /** Alignment padding. */
-    uint32_t                u32Padding;
-#endif
     /** Number of recorded invlpg instructions. */
     uint32_t                cInvalidatedPages;
     /** Array of recorded invlpg instruction.
@@ -200,6 +199,11 @@ typedef struct REM
     /** Pending rc. */
     int32_t                 rc;
 
+    /** REM critical section.
+     * This protects cpu_register_physical_memory usage
+     */
+    PDMCRITSECT             CritSectRegister;
+
     /** Time spent in QEMU. */
     STAMPROFILEADV          StatsInQEMU;
     /** Time spent in rawmode.c. */
@@ -210,7 +214,7 @@ typedef struct REM
     STAMPROFILE             StatsStateBack;
 
     /** Padding the CPUX86State structure to 32 byte. */
-    uint32_t                abPadding[HC_ARCH_BITS == 32 ? 6 : 4];
+    uint32_t                abPadding[HC_ARCH_BITS == 32 ? 2 : 6];
 
 # define REM_ENV_SIZE       0xff00
 

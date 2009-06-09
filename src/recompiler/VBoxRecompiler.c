@@ -275,12 +275,18 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     pVM->rem.s.state |= CPU_RAW_MODE_INIT;
 #endif
 
+    /*
+     * Initialize the REM critical section.
+     */
+    rc = PDMR3CritSectInit(pVM, &pVM->rem.s.CritSectRegister, "REM-Register");
+    AssertRCReturn(rc, rc);
+
     /* ctx. */
     pVM->rem.s.pCtx = NULL;     /* set when executing code. */
     AssertMsg(MMR3PhysGetRamSize(pVM) == 0, ("Init order has changed! REM depends on notification about ALL physical memory registrations\n"));
 
     /* ignore all notifications */
-    pVM->rem.s.fIgnoreAll = true;
+    ASMAtomicIncU32(&pVM->rem.s.cIgnoreAll);
 
     code_gen_prologue = RTMemExecAlloc(_1K);
     AssertLogRelReturn(code_gen_prologue, VERR_NO_MEMORY);
@@ -320,7 +326,7 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     Log2(("REM: iMMIOMemType=%d iHandlerMemType=%d\n", pVM->rem.s.iMMIOMemType, pVM->rem.s.iHandlerMemType));
 
     /* stop ignoring. */
-    pVM->rem.s.fIgnoreAll = false;
+    ASMAtomicDecU32(&pVM->rem.s.cIgnoreAll);
 
     /*
      * Register the saved state data unit.
@@ -600,10 +606,12 @@ REMR3DECL(void) REMR3Reset(PVM pVM)
     /*
      * Reset the REM cpu.
      */
-    pVM->rem.s.fIgnoreAll = true;
+    Assert(pVM->rem.s.cIgnoreAll == 0);
+    ASMAtomicIncU32(&pVM->rem.s.cIgnoreAll);
     cpu_reset(&pVM->rem.s.Env);
     pVM->rem.s.cInvalidatedPages = 0;
-    pVM->rem.s.fIgnoreAll = false;
+    ASMAtomicDecU32(&pVM->rem.s.cIgnoreAll);
+    Assert(pVM->rem.s.cIgnoreAll == 0);
 
     /* Clear raw ring 0 init state */
     pVM->rem.s.Env.state &= ~CPU_RAW_RING0;
@@ -678,7 +686,7 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
      * Ignore all ignorable notifications.
      * (Not doing this will cause serious trouble.)
      */
-    pVM->rem.s.fIgnoreAll = true;
+    ASMAtomicIncU32(&pVM->rem.s.cIgnoreAll);
 
     /*
      * Load the required CPU Env bits.
@@ -754,7 +762,7 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     /*
      * Stop ignoring ignornable notifications.
      */
-    pVM->rem.s.fIgnoreAll = false;
+    ASMAtomicDecU32(&pVM->rem.s.cIgnoreAll);
 
     /*
      * Sync the whole CPU state when executing code in the recompiler.
@@ -1452,7 +1460,7 @@ void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
      * When we're replaying invlpg instructions or restoring a saved
      * state we disable this path.
      */
-    if (pVM->rem.s.fIgnoreInvlPg || pVM->rem.s.fIgnoreAll)
+    if (pVM->rem.s.fIgnoreInvlPg || pVM->rem.s.cIgnoreAll)
         return;
     Log(("remR3FlushPage: GCPtr=%RGv\n", GCPtr));
     Assert(pVM->rem.s.fInREM || pVM->rem.s.fInStateSync);
@@ -1564,7 +1572,7 @@ void remR3FlushTLB(CPUState *env, bool fGlobal)
      * When we're replaying invlpg instructions or restoring a saved
      * state we disable this path.
      */
-    if (pVM->rem.s.fIgnoreCR3Load || pVM->rem.s.fIgnoreAll)
+    if (pVM->rem.s.fIgnoreCR3Load || pVM->rem.s.cIgnoreAll)
         return;
     Assert(pVM->rem.s.fInREM);
 
@@ -1610,7 +1618,7 @@ void remR3ChangeCpuMode(CPUState *env)
      * When we're replaying loads or restoring a saved
      * state this path is disabled.
      */
-    if (pVM->rem.s.fIgnoreCpuMode || pVM->rem.s.fIgnoreAll)
+    if (pVM->rem.s.fIgnoreCpuMode || pVM->rem.s.cIgnoreAll)
         return;
     Assert(pVM->rem.s.fInREM);
 
@@ -2689,17 +2697,12 @@ REMR3DECL(void) REMR3StateUpdate(PVM pVM, PVMCPU pVCpu)
  */
 REMR3DECL(void) REMR3A20Set(PVM pVM, PVMCPU pVCpu, bool fEnable)
 {
-    bool fSaved;
-
     LogFlow(("REMR3A20Set: fEnable=%d\n", fEnable));
     VM_ASSERT_EMT(pVM);
 
-    fSaved = pVM->rem.s.fIgnoreAll; /* just in case. */
-    pVM->rem.s.fIgnoreAll = fSaved || !pVM->rem.s.fInREM;
-
+    ASMAtomicIncU32(&pVM->rem.s.cIgnoreAll);
     cpu_x86_set_a20(&pVM->rem.s.Env, fEnable);
-
-    pVM->rem.s.fIgnoreAll = fSaved;
+    ASMAtomicDecU32(&pVM->rem.s.cIgnoreAll);
 }
 
 
@@ -2866,10 +2869,7 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb
     Assert(cb);
     Assert(RT_ALIGN_Z(cb, PAGE_SIZE) == cb);
     AssertMsg(fFlags == REM_NOTIFY_PHYS_RAM_FLAGS_RAM || fFlags == REM_NOTIFY_PHYS_RAM_FLAGS_MMIO2, ("#x\n", fFlags));
-#ifdef VBOX_WITH_REM_LOCKING
-    Assert(!PGMIsLockOwner(pVM));
-    EMRemLock(pVM);
-#endif
+
     /*
      * Base ram? Update GCPhysLastRam.
      */
@@ -2885,15 +2885,13 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb
     /*
      * Register the ram.
      */
-    Assert(!pVM->rem.s.fIgnoreAll);
-    pVM->rem.s.fIgnoreAll = true;
+    ASMAtomicIncU32(&pVM->rem.s.cIgnoreAll);
 
+    PDMCritSectEnter(&pVM->rem.s.CritSectRegister, VERR_SEM_BUSY);
     cpu_register_physical_memory(GCPhys, cb, GCPhys);
-    Assert(pVM->rem.s.fIgnoreAll);
-    pVM->rem.s.fIgnoreAll = false;
-#ifdef VBOX_WITH_REM_LOCKING
-    EMRemUnlock(pVM);
-#endif
+    PDMCritSectLeave(&pVM->rem.s.CritSectRegister);
+
+    ASMAtomicDecU32(&pVM->rem.s.cIgnoreAll);
 }
 
 
@@ -2920,22 +2918,16 @@ REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
     Assert(cb);
     Assert(RT_ALIGN_Z(cb, PAGE_SIZE) == cb);
 
-#ifdef VBOX_WITH_REM_LOCKING
-    EMRemLock(pVM);
-#endif
     /*
      * Register the rom.
      */
-    Assert(!pVM->rem.s.fIgnoreAll);
-    pVM->rem.s.fIgnoreAll = true;
+    ASMAtomicIncU32(&pVM->rem.s.cIgnoreAll);
 
+    PDMCritSectEnter(&pVM->rem.s.CritSectRegister, VERR_SEM_BUSY);
     cpu_register_physical_memory(GCPhys, cb, GCPhys | (fShadow ? 0 : IO_MEM_ROM));
+    PDMCritSectLeave(&pVM->rem.s.CritSectRegister);
 
-    Assert(pVM->rem.s.fIgnoreAll);
-    pVM->rem.s.fIgnoreAll = false;
-#ifdef VBOX_WITH_REM_LOCKING
-    EMRemUnlock(pVM);
-#endif
+    ASMAtomicDecU32(&pVM->rem.s.cIgnoreAll);
 }
 
 
@@ -2958,22 +2950,16 @@ REMR3DECL(void) REMR3NotifyPhysRamDeregister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb
     Assert(cb);
     Assert(RT_ALIGN_Z(cb, PAGE_SIZE) == cb);
 
-#ifdef VBOX_WITH_REM_LOCKING
-    EMRemLock(pVM);
-#endif
     /*
      * Unassigning the memory.
      */
-    Assert(!pVM->rem.s.fIgnoreAll);
-    pVM->rem.s.fIgnoreAll = true;
+    ASMAtomicIncU32(&pVM->rem.s.cIgnoreAll);
 
+    PDMCritSectEnter(&pVM->rem.s.CritSectRegister, VERR_SEM_BUSY);
     cpu_register_physical_memory(GCPhys, cb, IO_MEM_UNASSIGNED);
+    PDMCritSectLeave(&pVM->rem.s.CritSectRegister);
 
-    Assert(pVM->rem.s.fIgnoreAll);
-    pVM->rem.s.fIgnoreAll = false;
-#ifdef VBOX_WITH_REM_LOCKING
-    EMRemUnlock(pVM);
-#endif
+    ASMAtomicDecU32(&pVM->rem.s.cIgnoreAll);
 }
 
 
@@ -2998,23 +2984,17 @@ static void remR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmTy
     Assert(RT_ALIGN_T(GCPhys, PAGE_SIZE, RTGCPHYS) == GCPhys);
     Assert(RT_ALIGN_T(cb, PAGE_SIZE, RTGCPHYS) == cb);
 
-#ifdef VBOX_WITH_REM_LOCKING
-    EMRemLock(pVM);
-#endif
 
-    Assert(!pVM->rem.s.fIgnoreAll);
-    pVM->rem.s.fIgnoreAll = true;
+    ASMAtomicIncU32(&pVM->rem.s.cIgnoreAll);
 
+    PDMCritSectEnter(&pVM->rem.s.CritSectRegister, VERR_SEM_BUSY);
     if (enmType == PGMPHYSHANDLERTYPE_MMIO)
         cpu_register_physical_memory(GCPhys, cb, pVM->rem.s.iMMIOMemType);
     else if (fHasHCHandler)
         cpu_register_physical_memory(GCPhys, cb, pVM->rem.s.iHandlerMemType);
+    PDMCritSectLeave(&pVM->rem.s.CritSectRegister);
 
-    Assert(pVM->rem.s.fIgnoreAll);
-    pVM->rem.s.fIgnoreAll = false;
-#ifdef VBOX_WITH_REM_LOCKING
-    EMRemUnlock(pVM);
-#endif
+    ASMAtomicDecU32(&pVM->rem.s.cIgnoreAll);
 }
 
 /**
@@ -3052,14 +3032,11 @@ static void remR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE enm
           enmType, GCPhys, cb, fHasHCHandler, fRestoreAsRAM, MMR3PhysGetRamSize(pVM)));
     VM_ASSERT_EMT(pVM);
 
-#ifdef VBOX_WITH_REM_LOCKING
-    EMRemLock(pVM);
-#endif
 
-    Assert(!pVM->rem.s.fIgnoreAll);
-    pVM->rem.s.fIgnoreAll = true;
+    ASMAtomicIncU32(&pVM->rem.s.cIgnoreAll);
 
-/** @todo this isn't right, MMIO can (in theory) be restored as RAM. */
+    PDMCritSectEnter(&pVM->rem.s.CritSectRegister, VERR_SEM_BUSY);
+    /** @todo this isn't right, MMIO can (in theory) be restored as RAM. */
     if (enmType == PGMPHYSHANDLERTYPE_MMIO)
         cpu_register_physical_memory(GCPhys, cb, IO_MEM_UNASSIGNED);
     else if (fHasHCHandler)
@@ -3076,12 +3053,9 @@ static void remR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE enm
             cpu_register_physical_memory(GCPhys, cb, GCPhys);
         }
     }
+    PDMCritSectLeave(&pVM->rem.s.CritSectRegister);
 
-    Assert(pVM->rem.s.fIgnoreAll);
-    pVM->rem.s.fIgnoreAll = false;
-#ifdef VBOX_WITH_REM_LOCKING
-    EMRemUnlock(pVM);
-#endif
+    ASMAtomicDecU32(&pVM->rem.s.cIgnoreAll);
 }
 
 /**
@@ -3119,18 +3093,14 @@ static void remR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType
     VM_ASSERT_EMT(pVM);
     AssertReleaseMsg(enmType != PGMPHYSHANDLERTYPE_MMIO, ("enmType=%d\n", enmType));
 
-#ifdef VBOX_WITH_REM_LOCKING
-    EMRemLock(pVM);
-#endif
-
     if (fHasHCHandler)
     {
-        Assert(!pVM->rem.s.fIgnoreAll);
-        pVM->rem.s.fIgnoreAll = true;
+        ASMAtomicIncU32(&pVM->rem.s.cIgnoreAll);
 
         /*
          * Reset the old page.
          */
+        PDMCritSectEnter(&pVM->rem.s.CritSectRegister, VERR_SEM_BUSY);
         if (!fRestoreAsRAM)
             cpu_register_physical_memory(GCPhysOld, cb, IO_MEM_UNASSIGNED);
         else
@@ -3147,13 +3117,10 @@ static void remR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType
         Assert(RT_ALIGN_T(GCPhysNew, PAGE_SIZE, RTGCPHYS) == GCPhysNew);
         Assert(RT_ALIGN_T(cb, PAGE_SIZE, RTGCPHYS) == cb);
         cpu_register_physical_memory(GCPhysNew, cb, pVM->rem.s.iHandlerMemType);
+        PDMCritSectLeave(&pVM->rem.s.CritSectRegister);
 
-        Assert(pVM->rem.s.fIgnoreAll);
-        pVM->rem.s.fIgnoreAll = false;
+        ASMAtomicDecU32(&pVM->rem.s.cIgnoreAll);
     }
-#ifdef VBOX_WITH_REM_LOCKING
-    EMRemUnlock(pVM);
-#endif
 }
 
 /**
