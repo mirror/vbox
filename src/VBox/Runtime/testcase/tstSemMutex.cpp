@@ -182,24 +182,24 @@ static int Test1(unsigned cThreads, unsigned cSeconds, bool fYield, bool fQuiet)
         Total += g_au64[i];
 
     uint64_t Normal = Total / cThreads;
-    uint64_t MaxDiviation = 0;
+    uint64_t MaxDeviation = 0;
     for (i = 0; i < cThreads; i++)
     {
         uint64_t Delta = RT_ABS((int64_t)(g_au64[i] - Normal));
         if (Delta > Normal / 2)
             RTPrintf("tstSemMutex: Warning! Thread %d deviates by more than 50%% - %llu (it) vs. %llu (avg)\n",
                      i, g_au64[i], Normal);
-        if (Delta > MaxDiviation)
-            MaxDiviation = Delta;
+        if (Delta > MaxDeviation)
+            MaxDeviation = Delta;
 
     }
 
-    RTPrintf("tstSemMutex: Threads: %u  Total: %llu  Per Sec: %llu  Avg: %llu ns  Max div: %llu%%\n",
+    RTPrintf("tstSemMutex: Threads: %u  Total: %llu  Per Sec: %llu  Avg: %llu ns  Max dev: %llu%%\n",
              cThreads,
              Total,
              Total / cSeconds,
              ElapsedNS / Total,
-             MaxDiviation * 100 / Normal
+             MaxDeviation * 100 / Normal
              );
     return 0;
 }
