@@ -239,8 +239,8 @@ typedef struct NATState
     struct libalias *proxy_alias;
 #endif
 
-# define PROFILE_COUNTER(name, dsc) STAMPROFILE Stat ## name
-# define COUNTING_COUTER(name, dsc) STAMCOUNTER Stat ## name
+# define PROFILE_COUNTER(name, dsc) STAMPROFILE Stat ## name;
+# define COUNTING_COUTER(name, dsc) STAMCOUNTER Stat ## name;
 
 #include "counters.h"
 
