@@ -232,7 +232,7 @@ stop_vms()
         # don't create the ipcd directory with wrong permissions!
         if [ -d /tmp/.vbox-$i-ipc ]; then
             export VBOX_IPC_SOCKETID="$i"
-            VMS=`$VBOXMANAGE --nologo list runningvms | sed -e 's/^".*"//' 2>/dev/null`
+            VMS=`$VBOXMANAGE --nologo list runningvms | sed -e 's/^".*.*"{\(.*\)}/\1/' 2>/dev/null`
             if [ -n "$VMS" ]; then
                 if [ "$SHUTDOWN" = "poweroff" ]; then
                     begin_msg "Powering off remaining VMs"
@@ -320,7 +320,7 @@ dmnstatus()
             # don't create the ipcd directory with wrong permissions!
             if [ -d /tmp/.vbox-$i-ipc ]; then
                 export VBOX_IPC_SOCKETID="$i"
-                VMS=`$VBOXMANAGE --nologo list runningvms | sed -e 's/^".*"//' 2>/dev/null`
+                VMS=`$VBOXMANAGE --nologo list runningvms | sed -e 's/^".*".*{\(.*\)}/\1/' 2>/dev/null`
                 if [ -n "$VMS" ]; then
                     echo "The following VMs are currently running:"
                     for v in $VMS; do
