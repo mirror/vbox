@@ -188,6 +188,24 @@ void crUnpackExtendGetAttachedShaders(void)
     cr_unpackDispatch.GetAttachedShaders(program, maxCount, NULL, NULL);
 }
 
+void crUnpackExtendGetAttachedObjectsARB(void)
+{
+	GLhandleARB containerObj = READ_DATA(8, GLhandleARB);
+	GLsizei maxCount = READ_DATA(12, GLsizei);
+	SET_RETURN_PTR(16);
+	SET_WRITEBACK_PTR(24);
+	cr_unpackDispatch.GetAttachedObjectsARB(containerObj, maxCount, NULL, NULL);
+}
+
+void crUnpackExtendGetInfoLogARB(void)
+{
+	GLhandleARB obj = READ_DATA(8, GLhandleARB);
+	GLsizei maxLength = READ_DATA(12, GLsizei);
+	SET_RETURN_PTR(16);
+	SET_WRITEBACK_PTR(24);
+	cr_unpackDispatch.GetInfoLogARB(obj, maxLength, NULL, NULL);
+}
+
 void crUnpackExtendGetProgramInfoLog(void)
 {
     GLuint program = READ_DATA(8, GLuint);

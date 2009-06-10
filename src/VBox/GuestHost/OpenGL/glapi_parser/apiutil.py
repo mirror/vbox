@@ -609,7 +609,9 @@ __lengths = {
 	'void': 0,  # XXX why?
 	'int': 4,
 	'GLintptrARB': 4,   # XXX or 8 bytes?
-	'GLsizeiptrARB': 4  # XXX or 8 bytes?
+	'GLsizeiptrARB': 4, # XXX or 8 bytes?
+	'GLhandleARB': 4,
+	'GLcharARB': 1
 }
 
 def sizeof(type):

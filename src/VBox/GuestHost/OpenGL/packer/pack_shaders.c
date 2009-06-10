@@ -262,7 +262,7 @@ void PACK_APIENTRY crPackDrawBuffers(GLsizei n, const GLenum *bufs)
     WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
 }
 
-/*@todo next 5 functions are bit hacky, 
+/*@todo next 7 functions are bit hacky, 
  * we expect packspu to pass a single structure with all output parameters via first output pointer.
  * it'd be better to add CRMessageMultiReadback one day.
  */
@@ -318,6 +318,36 @@ void PACK_APIENTRY crPackGetAttachedShaders(GLuint program, GLsizei maxCount, GL
     WRITE_NETWORK_POINTER(16, (void *) count);
     WRITE_NETWORK_POINTER(24, (void *) writeback);
     WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
+}
+
+void PACK_APIENTRY crPackGetAttachedObjectsARB(GLhandleARB containerObj, GLsizei maxCount, GLsizei * count, GLhandleARB * obj, int * writeback)
+{
+	GET_PACKER_CONTEXT(pc);
+	unsigned char *data_ptr;
+	(void) pc;
+	GET_BUFFERED_POINTER(pc, 32);
+	WRITE_DATA(0, GLint, 32);
+	WRITE_DATA(4, GLenum, CR_GETATTACHEDOBJECTSARB_EXTEND_OPCODE);
+	WRITE_DATA(8, GLhandleARB, containerObj);
+	WRITE_DATA(12, GLsizei, maxCount);
+	WRITE_NETWORK_POINTER(16, (void *) count);
+	WRITE_NETWORK_POINTER(24, (void *) writeback);
+	WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
+}
+
+void PACK_APIENTRY crPackGetInfoLogARB(GLhandleARB obj, GLsizei maxLength, GLsizei * length, GLcharARB * infoLog, int * writeback)
+{
+	GET_PACKER_CONTEXT(pc);
+	unsigned char *data_ptr;
+	(void) pc;
+	GET_BUFFERED_POINTER(pc, 32);
+	WRITE_DATA(0, GLint, 32);
+	WRITE_DATA(4, GLenum, CR_GETINFOLOGARB_EXTEND_OPCODE);
+	WRITE_DATA(8, GLhandleARB, obj);
+	WRITE_DATA(12, GLsizei, maxLength);
+	WRITE_NETWORK_POINTER(16, (void *) length);
+	WRITE_NETWORK_POINTER(24, (void *) writeback);
+	WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
 }
 
 void PACK_APIENTRY crPackGetProgramInfoLog(GLuint program, GLsizei bufSize, GLsizei * length, char * infoLog, int * writeback)
@@ -381,12 +411,12 @@ void PACK_APIENTRY crPackGetAttribLocation(GLuint program, const char * name, GL
     WRITE_DATA_AI(GLuint, program);
     crMemcpy(data_ptr, name, cbName*sizeof(*name));
     data_ptr +=  cbName*sizeof(*name);
-    WRITE_NETWORK_POINTER(0, (void *) return_value );
-    WRITE_NETWORK_POINTER(8, (void *) writeback );
+    WRITE_NETWORK_POINTER(0, (void *) return_value);
+    WRITE_NETWORK_POINTER(8, (void *) writeback);
     WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
 }
 
-void PACK_APIENTRY crPackGetUniformLocation( GLuint program, const char * name, GLint * return_value, int * writeback )
+void PACK_APIENTRY crPackGetUniformLocation(GLuint program, const char * name, GLint * return_value, int * writeback)
 {
     GET_PACKER_CONTEXT(pc);
     unsigned char *data_ptr;
@@ -399,8 +429,8 @@ void PACK_APIENTRY crPackGetUniformLocation( GLuint program, const char * name, 
     WRITE_DATA_AI(GLuint, program);
     crMemcpy(data_ptr, name, cbName*sizeof(*name));
     data_ptr +=  cbName*sizeof(*name);
-    WRITE_NETWORK_POINTER(0, (void *) return_value );
-    WRITE_NETWORK_POINTER(8, (void *) writeback );
+    WRITE_NETWORK_POINTER(0, (void *) return_value);
+    WRITE_NETWORK_POINTER(8, (void *) writeback);
     WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
 }
 
@@ -559,7 +589,7 @@ void PACK_APIENTRY crPackGetAttribLocationSWAP(GLuint program, const char * name
     (void) pc;
 }
 
-void PACK_APIENTRY crPackGetUniformLocationSWAP( GLuint program, const char * name, GLint * return_value, int * writeback )
+void PACK_APIENTRY crPackGetUniformLocationSWAP(GLuint program, const char * name, GLint * return_value, int * writeback)
 {
     GET_PACKER_CONTEXT(pc);
     (void)program;

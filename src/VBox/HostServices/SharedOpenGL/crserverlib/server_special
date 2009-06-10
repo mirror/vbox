@@ -188,3 +188,5 @@ GetProgramInfoLog
 GetShaderSource
 GetUniformfv
 GetUniformiv
+GetAttachedObjectsARB
+GetInfoLogARB

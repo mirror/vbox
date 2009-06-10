@@ -335,6 +335,8 @@ extensions_num_get_values = {
     'GL_MAX_TEXTURE_IMAGE_UNITS_ARB': (1, 'CR_ARB_fragment_program'),
     # We don't support GL_ARB_draw_buffers, but for some reason ubuntu64 8.10 vm queries it on macos host
     'GL_MAX_DRAW_BUFFERS_ARB': (1, 'VBOX'),
+    'GL_MAX_PROGRAM_MATRICES_ARB': (1, 'CR_ARB_vertex_program'),
+    'GL_MAX_PROGRAM_MATRIX_STACK_DEPTH_ARB': (1, 'CR_ARB_vertex_program'),
     # Vertex shaders (2.0) #
     'GL_MAX_VERTEX_UNIFORM_COMPONENTS': (1, 'CR_OPENGL_VERSION_2_0'),
     'GL_MAX_VARYING_FLOATS': (1, 'CR_OPENGL_VERSION_2_0'),

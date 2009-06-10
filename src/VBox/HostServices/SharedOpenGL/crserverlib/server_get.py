@@ -71,7 +71,9 @@ max_components = {
     'GetQueryObjectuivARB' : 1,
     'GetQueryivARB' : 1,
     'GetProgramiv' : 1,
-    'GetShaderiv' : 1
+    'GetShaderiv' : 1,
+    'GetObjectParameterfvARB': 1,
+    'GetObjectParameterivARB': 1
 }
 
 no_pnames = [
@@ -88,7 +90,9 @@ no_pnames = [
     'GetProgramivARB',
     'AreProgramsResidentNV',
     'GetProgramiv',
-    'GetShaderiv'
+    'GetShaderiv',
+    'GetObjectParameterfvARB',
+    'GetObjectParameterivARB'
 ];
 
 from get_components import *;

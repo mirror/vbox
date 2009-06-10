@@ -162,3 +162,5 @@ GetProgramInfoLog
 GetShaderSource
 GetAttribLocation
 GetUniformLocation
+GetAttachedObjectsARB
+GetInfoLogARB
