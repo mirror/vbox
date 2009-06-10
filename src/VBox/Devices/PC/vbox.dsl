@@ -125,6 +125,9 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
     // So we enable this ACPI object only for certain guests, which do need it,
     // if by accident Windows guest seen enabled CPU object, just boot from latest
     // known good configuration, as it remembers state, even if ACPI object gets disabled.
+    // WARNING: processor objects _MUST_ be named starting from "CP"
+    // and processor block should not be too long, otherwise 
+    // patching in VBoxAcpi.cpp will fail
     Scope (\_PR)
     {
        Processor (CPU0, /* Name */
@@ -141,7 +144,6 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                    0x0   /* Processor IO ports range length */
                    )
         {
-           Method (_STA) { Return(\_SB.UCP1) }
         }
         Processor (CPU2, /* Name */
                    0x02, /* Id */
@@ -149,7 +151,6 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                    0x0   /* Processor IO ports range length */
                    )
         {
-           Method (_STA) { Return(\_SB.UCP2) }
         }
         Processor (CPU3, /* Name */
                    0x03, /* Id */
@@ -157,7 +158,90 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                    0x0   /* Processor IO ports range length */
                    )
         {
-           Method (_STA) { Return(\_SB.UCP3) }
+        }
+        Processor (CPU4, /* Name */
+                   0x04, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPU5, /* Name */
+                   0x05, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPU6, /* Name */
+                   0x06, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPU7, /* Name */
+                   0x07, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPU8, /* Name */
+                   0x08, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPU9, /* Name */
+                   0x09, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUA, /* Name */
+                   0x0A, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUB, /* Name */
+                   0x0B, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUC, /* Name */
+                   0x0C, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUD, /* Name */
+                   0x0D, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUE, /* Name */
+                   0x0E, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUF, /* Name */
+                   0x0F, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
         }
     }
 
@@ -179,9 +263,6 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
             UFDC,  32,
             // @todo: maybe make it bitmask instead?
             UCP0,  32,
-            UCP1,  32,
-            UCP2,  32,
-            UCP3,  32,
             MEMH,  32,
             URTC,  32,
             Offset (0x80),
