@@ -49,7 +49,7 @@ GetExtensions(void)
     /* @todo, check if host supports opengl 2.0 or this extension 
      * before exporting it.
      */
-    sprintf(gpszExtensions, "%s GL_ARB_shading_language_100", ext);
+    sprintf(gpszExtensions, "%sGL_ARB_shading_language_100 GL_ARB_shader_objects GL_ARB_vertex_shader GL_ARB_fragment_shader", ext);
 #else
     sprintf(gpszExtensions, "%s", ext);
 #endif
