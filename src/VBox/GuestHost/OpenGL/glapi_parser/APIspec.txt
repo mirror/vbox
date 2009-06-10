@@ -9095,7 +9095,7 @@ paramvec    params      0.0 0.0 0.0 0.0
 vector      params      4
 category    2.0
 props       get
-chromium    extpack
+chromium    nopack
 
 name        GetVertexAttribfv
 alias       GetVertexAttribfvARB
@@ -9109,7 +9109,7 @@ paramvec    params      0.0 0.0 0.0 0.0
 vector      params      4
 category    2.0
 props       get
-chromium    extpack
+chromium    nopack
 
 name        GetVertexAttribiv
 alias       GetVertexAttribivARB
@@ -9123,7 +9123,7 @@ paramvec    params      0 0 0 0
 vector      params      4
 category    2.0
 props       get
-chromium    extpack
+chromium    nopack
 
 name        GetVertexAttribPointerv
 alias       GetVertexAttribPointervARB
@@ -9135,7 +9135,7 @@ paramprop   pname       GL_VERTEX_ATTRIB_ARRAY_ENABLED GL_VERTEX_ATTRIB_ARRAY_SI
 param       pointer     GLvoid **
 category    2.0
 props       useclient get
-chromium    extpack
+chromium    nopack
 
 name        GetUniformfv
 return      void
@@ -9202,6 +9202,845 @@ param       modeAlpha      GLenum
 paramprop   modeAlpha      GL_FUNC_ADD GL_FUNC_SUBTRACT GL_FUNC_REVERSE_SUBTRACT GL_MIN GL_MAX GL_LOGIC_OP
 category    2.0
 chromium    extpack
+
+name        VertexAttrib1s
+alias       VertexAttrib1sARB
+return      void
+param       index       GLuint
+param       x       GLshort
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib1f
+alias       VertexAttrib1fARB
+return      void
+param       index       GLuint
+param       x       GLfloat
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib1d
+alias       VertexAttrib1dARB
+return      void
+param       index       GLuint
+param       x       GLdouble
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib2s
+alias       VertexAttrib2sARB
+return      void
+param       index       GLuint
+param       x       GLshort
+param       y       GLshort
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib2f
+alias       VertexAttrib2fARB
+return      void
+param       index       GLuint
+param       x       GLfloat
+param       y       GLfloat
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib2d
+alias       VertexAttrib2dARB
+return      void
+param       index       GLuint
+param       x       GLdouble
+param       y       GLdouble
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib3s
+alias       VertexAttrib3sARB
+return      void
+param       index       GLuint
+param       x       GLshort
+param       y       GLshort
+param       z       GLshort
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib3f
+alias       VertexAttrib3fARB
+return      void
+param       index       GLuint
+param       x       GLfloat
+param       y       GLfloat
+param       z       GLfloat
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib3d
+alias       VertexAttrib3dARB
+return      void
+param       index       GLuint
+param       x       GLdouble
+param       y       GLdouble
+param       z       GLdouble
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib4s
+alias       VertexAttrib4sARB
+return      void
+param       index       GLuint
+param       x       GLshort
+param       y       GLshort
+param       z       GLshort
+param       w       GLshort
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib4f
+alias       VertexAttrib4fARB
+return      void
+param       index       GLuint
+param       x       GLfloat
+param       y       GLfloat
+param       z       GLfloat
+param       w       GLfloat
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib4d
+alias       VertexAttrib4dARB
+return      void
+param       index       GLuint
+param       x       GLdouble
+param       y       GLdouble
+param       z       GLdouble
+param       w       GLdouble
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib4Nub
+alias       VertexAttrib4NubARB
+return      void
+param       index       GLuint
+param       x       GLubyte
+param       y       GLubyte
+param       z       GLubyte
+param       w       GLubyte
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib1sv
+alias       VertexAttrib1svARB
+return      void
+param       index       GLuint
+paramlist   index       0 1 2 3 4 5 6 7
+param       v       const GLshort *
+paramvec    v       1
+vector      v       1
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib1fv
+alias       VertexAttrib1fvARB
+return      void
+param       index       GLuint
+paramlist   index       0 1 2 3 4 5 6 7
+param       v       const GLfloat *
+paramvec    v       1.0
+vector      v       1
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib1dv
+alias       VertexAttrib1dvARB
+return      void
+param       index       GLuint
+paramlist   index       0 1 2 3 4 5 6 7
+param       v       const GLdouble *
+paramvec    v       1.0
+vector      v       1
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib2sv
+alias       VertexAttrib2svARB
+return      void
+param       index       GLuint
+paramlist   index       0 1 2 3 4 5 6 7
+param       v       const GLshort *
+paramvec    v       1 1
+vector      v       2
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib2fv
+alias       VertexAttrib2fvARB
+return      void
+param       index       GLuint
+paramlist   index       0 1 2 3 4 5 6 7
+param       v       const GLfloat *
+paramvec    v       1.0 1.0
+vector      v       2
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib2dv
+alias       VertexAttrib2dvARB
+return      void
+param       index       GLuint
+paramlist   index       0 1 2 3 4 5 6 7
+param       v       const GLdouble *
+paramvec    v       1.0 1.0
+vector      v       2
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib3sv
+alias       VertexAttrib3svARB
+return      void
+param       index       GLuint
+paramlist   index       0 1 2 3 4 5 6 7
+param       v       const GLshort *
+paramvec    v       1 1
+vector      v       3
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib3fv
+alias       VertexAttrib3fvARB
+return      void
+param       index       GLuint
+paramlist   index       0 1 2 3 4 5 6 7
+param       v       const GLfloat *
+paramvec    v       1.0 1.0 1.0
+vector      v       3
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib3dv
+alias       VertexAttrib3dvARB
+return      void
+param       index       GLuint
+paramlist   index       0 1 2 3 4 5 6 7
+param       v       const GLdouble *
+paramvec    v       1.0 1.0 1.0
+vector      v       3
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib4bv
+alias       VertexAttrib4bvARB
+return      void
+param       index       GLuint
+paramlist   index       0 1 2 3 4 5 6 7
+param       v       const GLbyte *
+paramvec    v       1 1 1 1
+vector      v       4
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib4sv
+alias       VertexAttrib4svARB
+return      void
+param       index       GLuint
+paramlist   index       0 1 2 3 4 5 6 7
+param       v       const GLshort *
+paramvec    v       1 1 1 1
+vector      v       4
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib4iv
+alias       VertexAttrib4ivARB
+return      void
+param       index       GLuint
+paramlist   index       0 1 2 3 4 5 6 7
+param       v       const GLint *
+paramvec    v       1 1 1 1
+vector      v       4
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib4ubv
+alias       VertexAttrib4ubvARB
+return      void
+param       index       GLuint
+paramlist   index       0 1 2 3 4 5 6 7
+param       v       const GLubyte *
+paramvec    v       1 1 1 1
+vector      v       4
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib4usv
+alias       VertexAttrib4usvARB
+return      void
+param       index       GLuint
+paramlist   index       0 1 2 3 4 5 6 7
+param       v       const GLushort *
+paramvec    v       1 1 1 1
+vector      v       4
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib4uiv
+alias       VertexAttrib4uivARB
+return      void
+param       index       GLuint
+paramlist   index       0 1 2 3 4 5 6 7
+param       v       const GLuint *
+paramvec    v       1 1 1 1
+vector      v       4
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib4fv
+alias       VertexAttrib4fvARB
+return      void
+param       index       GLuint
+paramlist   index       0 1 2 3 4 5 6 7
+param       v       const GLfloat *
+paramvec    v       1 1 1 1
+vector      v       4
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib4dv
+alias       VertexAttrib4dvARB
+return      void
+param       index       GLuint
+paramlist   index       0 1 2 3 4 5 6 7
+param       v       const GLdouble *
+paramvec    v       1.0 1.0 1.0 1.0
+vector      v       4
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib4Nbv
+alias       VertexAttrib4NbvARB
+return      void
+param       index       GLuint
+paramlist   index       0 1 2 3 4 5 6 7
+param       v       const GLbyte *
+paramvec    v       1 1 1 1
+vector      v       4
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib4Nsv
+alias       VertexAttrib4NsvARB
+return      void
+param       index       GLuint
+paramlist   index       0 1 2 3 4 5 6 7
+param       v       const GLshort *
+paramvec    v       1 1 1 1
+vector      v       4
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib4Niv
+alias       VertexAttrib4NivARB
+return      void
+param       index       GLuint
+paramlist   index       0 1 2 3 4 5 6 7
+param       v       const GLint *
+paramvec    v       1 1 1 1
+vector      v       4
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib4Nubv
+alias       VertexAttrib4NubvARB
+return      void
+param       index       GLuint
+paramlist   index       0 1 2 3 4 5 6 7
+param       v       const GLubyte *
+paramvec    v       1 1 1 1
+vector      v       4
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib4Nusv
+alias       VertexAttrib4NusvARB
+return      void
+param       index       GLuint
+paramlist   index       0 1 2 3 4 5 6 7
+param       v       const GLushort *
+paramvec    v       1 1 1 1
+vector      v       4
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttrib4Nuiv
+alias       VertexAttrib4NuivARB
+return      void
+param       index       GLuint
+paramlist   index       0 1 2 3 4 5 6 7
+param       v       const GLuint *
+paramvec    v       1 1 1 1
+vector      v       4
+category    2.0
+props       pervertex
+chromium    nopack
+
+name        VertexAttribPointer
+alias       VertexAttribPointerARB
+return      void
+param       index       GLuint
+paramlist   index       0 1 2 3 4 5 6 7
+param       size        GLint
+paramlist   size        1 2 3 4
+param       type        GLenum
+paramprop   type        GL_SHORT GL_FLOAT GL_DOUBLE
+param       normalized  GLboolean
+paramlist   normalized  GL_TRUE GL_FALSE
+param       stride      GLsizei
+paramlist   stride      0
+param       pointer     const GLvoid *
+category    2.0
+props       setclient
+chromium    nopack
+
+name        EnableVertexAttribArray
+alias       EnableVertexAttribArrayARB
+return      void
+param       index       GLuint
+category    2.0
+props       setclient
+chromium    nopack
+
+name        DisableVertexAttribArray
+alias       DisableVertexAttribArrayARB
+return      void
+param       index       GLuint
+category    2.0
+props       setclient
+chromium    nopack
+
+# GL_ARB_shader_objects
+
+name        GetHandleARB
+return      GLhandleARB
+param       pname           GLenum
+paramprop   pname           GL_PROGRAM_OBJECT_ARB
+category    GL_ARB_shader_objects
+props       get
+chromium    extpack serverdependent
+
+name        DeleteObjectARB
+return      void
+param       obj             GLhandleARB
+category    GL_ARB_shader_objects
+props       nolist
+chromium    extpack
+
+name        DetachObjectARB
+return      void
+param       containerObj    GLhandleARB
+param       attachedObj     GLhandleARB
+category    GL_ARB_shader_objects
+chromium    extpack
+
+name        CreateShaderObjectARB
+alias       CreateShader
+return      GLhandleARB
+param       shaderType      GLenum
+paramprop   shaderType      GL_FRAGMENT_SHADER_ARB GL_VERTEX_SHADER_ARB
+category    GL_ARB_shader_objects
+props       get
+chromium    nopack
+
+name        ShaderSourceARB
+alias       ShaderSource
+return      void
+param       shaderObj   GLhandleARB
+param       count       GLsizei
+param       string      const GLcharARB **
+param       length      const GLint *
+category    GL_ARB_shader_objects
+chromium    nopack
+
+name        CompileShaderARB
+alias       CompileShader
+return      void
+param       shaderObj   GLhandleARB
+category    GL_ARB_shader_objects
+chromium    nopack
+
+name        CreateProgramObjectARB
+alias       CreateProgram
+return      GLhandleARB
+category    GL_ARB_shader_objects
+props       get
+chromium    nopack
+
+name        AttachObjectARB
+return      void
+param       containerObj    GLhandleARB
+param       obj             GLhandleARB
+category    GL_ARB_shader_objects
+chromium    extpack
+
+name        LinkProgramARB
+alias       LinkProgram
+return      void
+param       programObj      GLhandleARB
+category    GL_ARB_shader_objects
+chromium    nopack
+
+name        UseProgramObjectARB
+alias       UseProgram
+return      void
+param       programObj      GLhandleARB
+category    GL_ARB_shader_objects
+chromium    nopack
+
+name        ValidateProgramARB
+alias       ValidateProgram
+return      void
+param       programObj      GLhandleARB
+category    GL_ARB_shader_objects
+chromium    nopack
+
+name        Uniform1fARB
+alias       Uniform1f
+return      void
+param       location    GLint
+param       v0          GLfloat
+category    GL_ARB_shader_objects
+chromium    nopack
+
+name        Uniform2fARB
+alias       Uniform2f
+return      void
+param       location    GLint
+param       v0          GLfloat
+param       v1          GLfloat
+category    GL_ARB_shader_objects
+chromium    nopack
+
+name        Uniform3fARB
+alias       Uniform3f
+return      void
+param       location    GLint
+param       v0          GLfloat
+param       v1          GLfloat
+param       v2          GLfloat
+category    GL_ARB_shader_objects
+chromium    nopack
+
+name        Uniform4fARB
+alias       Uniform4f
+return      void
+param       location    GLint
+param       v0          GLfloat
+param       v1          GLfloat
+param       v2          GLfloat
+param       v3          GLfloat
+category    GL_ARB_shader_objects
+chromium    nopack
+
+name        Uniform1iARB
+alias       Uniform1i
+return      void
+param       location    GLint
+param       v0          GLint
+category    GL_ARB_shader_objects
+chromium    nopack
+
+name        Uniform2iARB
+alias       Uniform2i
+return      void
+param       location    GLint
+param       v0          GLint
+param       v1          GLint
+category    GL_ARB_shader_objects
+chromium    nopack
+
+name        Uniform3iARB
+alias       Uniform3i
+return      void
+param       location    GLint
+param       v0          GLint
+param       v1          GLint
+param       v2          GLint
+category    GL_ARB_shader_objects
+chromium    nopack
+
+name        Uniform4iARB
+alias       Uniform4i
+return      void
+param       location    GLint
+param       v0          GLint
+param       v1          GLint
+param       v2          GLint
+param       v3          GLint
+category    GL_ARB_shader_objects
+chromium    nopack
+
+name        Uniform1fvARB
+alias       Uniform1fv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       value       const GLfloat *
+category    GL_ARB_shader_objects
+chromium    nopack
+
+name        Uniform2fvARB
+alias       Uniform2fv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       value       const GLfloat *
+category    GL_ARB_shader_objects
+chromium    nopack
+
+name        Uniform3fvARB
+alias       Uniform3fv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       value       const GLfloat *
+category    GL_ARB_shader_objects
+chromium    nopack
+
+name        Uniform4fvARB
+alias       Uniform4fv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       value       const GLfloat *
+category    GL_ARB_shader_objects
+chromium    nopack
+
+name        Uniform1ivARB
+alias       Uniform1iv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       value       const GLint *
+category    GL_ARB_shader_objects
+chromium    nopack
+
+name        Uniform2ivARB
+alias       Uniform2iv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       value       const GLint *
+category    GL_ARB_shader_objects
+chromium    nopack
+
+name        Uniform3ivARB
+alias       Uniform3iv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       value       const GLint *
+category    GL_ARB_shader_objects
+chromium    nopack
+
+name        Uniform4ivARB
+alias       Uniform4iv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       value       const GLint *
+category    GL_ARB_shader_objects
+chromium    nopack
+
+name        UniformMatrix2fvARB
+alias       UniformMatrix2fv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       transpose   GLboolean
+param       value       const GLfloat *
+category    GL_ARB_shader_objects
+chromium    nopack
+
+name        UniformMatrix3fvARB
+alias       UniformMatrix3fv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       transpose   GLboolean
+param       value       const GLfloat *
+category    GL_ARB_shader_objects
+chromium    nopack
+
+name        UniformMatrix4fvARB
+alias       UniformMatrix4fv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       transpose   GLboolean
+param       value       const GLfloat *
+category    GL_ARB_shader_objects
+chromium    nopack
+
+name        GetObjectParameterfvARB
+return      void
+param       obj         GLhandleARB
+param       pname       GLenum
+paramprop   pname       GL_OBJECT_TYPE_ARB GL_OBJECT_SUBTYPE_ARB GL_OBJECT_DELETE_STATUS_ARB GL_OBJECT_COMPILE_STATUS_ARB GL_OBJECT_LINK_STATUS_ARB GL_OBJECT_VALIDATE_STATUS_ARB GL_OBJECT_INFO_LOG_LENGTH_ARB GL_OBJECT_ATTACHED_OBJECTS_ARB GL_OBJECT_ACTIVE_UNIFORMS_ARB GL_OBJECT_ACTIVE_UNIFORM_MAX_LENGTH_ARB GL_OBJECT_SHADER_SOURCE_LENGTH_ARB
+param       params      GLfloat *
+category    GL_ARB_shader_objects
+props       get serverdependent
+chromium    extpack
+
+name        GetObjectParameterivARB
+return      void
+param       obj         GLhandleARB
+param       pname       GLenum
+paramprop   pname       GL_OBJECT_TYPE_ARB GL_OBJECT_SUBTYPE_ARB GL_OBJECT_DELETE_STATUS_ARB GL_OBJECT_COMPILE_STATUS_ARB GL_OBJECT_LINK_STATUS_ARB GL_OBJECT_VALIDATE_STATUS_ARB GL_OBJECT_INFO_LOG_LENGTH_ARB GL_OBJECT_ATTACHED_OBJECTS_ARB GL_OBJECT_ACTIVE_UNIFORMS_ARB GL_OBJECT_ACTIVE_UNIFORM_MAX_LENGTH_ARB GL_OBJECT_SHADER_SOURCE_LENGTH_ARB
+param       params      GLint *
+category    GL_ARB_shader_objects
+props       get serverdependent
+chromium    extpack
+
+name        GetInfoLogARB
+return      void
+param       obj         GLhandleARB
+param       maxLength   GLsizei
+param       length      GLsizei *
+param       infoLog     GLcharARB *
+category    GL_ARB_shader_objects
+props       get serverdependent
+chromium    extpack
+
+name        GetAttachedObjectsARB
+return      void
+param       containerObj    GLhandleARB
+param       maxCount        GLsizei
+param       count           GLsizei *
+param       obj             GLhandleARB *
+category    GL_ARB_shader_objects
+props       get
+chromium    extpack
+
+name        GetUniformLocationARB
+alias       GetUniformLocation
+return      GLint
+param       programObj  GLhandleARB
+param       name        const GLcharARB *
+category    GL_ARB_shader_objects
+props       get
+chromium    nopack
+
+name        GetActiveUniformARB
+alias       GetActiveUniform
+return      void
+param       programObj  GLhandleARB
+param       index       GLuint
+param       maxLength   GLsizei
+param       length      GLsizei *
+param       size        GLint *
+param       type        GLenum *
+param       name        GLcharARB *
+category    GL_ARB_shader_objects
+props       get
+chromium    nopack
+
+name        GetShaderSourceARB
+alias       GetShaderSource
+return      void
+param       obj         GLhandleARB
+param       maxLength   GLsizei
+param       length      GLsizei *
+param       source      GLcharARB *
+category    GL_ARB_shader_objects
+props       get
+chromium    nopack
+
+name        GetUniformfvARB
+alias       GetUniformfv
+return      void
+param       programObj  GLhandleARB
+param       location    GLint
+param       params      GLfloat *
+category    GL_ARB_shader_objects
+props       get
+chromium    nopack
+
+name        GetUniformivARB
+alias       GetUniformiv
+return      void
+param       programObj  GLhandleARB
+param       location    GLint
+param       params      GLint *
+category    GL_ARB_shader_objects
+props       get
+chromium    nopack
+
+# GL_ARB_vertex_shader
+
+name        GetActiveAttribARB
+alias       GetActiveAttrib
+return      void
+param       programObj  GLhandleARB
+param       index       GLuint
+param       maxLength   GLsizei
+param       length      GLsizei *
+param       size        GLint *
+param       type        GLenum *
+param       name        GLcharARB *
+category    GL_ARB_vertex_shader
+props       get
+chromium    nopack
+
+name        GetAttribLocationARB
+alias       GetAttribLocation
+return      GLint
+param       programObj  GLhandleARB
+param       name        const GLcharARB *
+category    GL_ARB_vertex_shader
+props       get
+chromium    nopack
+
+name        BindAttribLocationARB
+alias       BindAttribLocation
+return      void
+param       programObj  GLhandleARB
+param       index       GLuint
+param       name        const GLcharARB *
+category    GL_ARB_vertex_shader
+chromium    nopack
 
 # end of file sentinel
 

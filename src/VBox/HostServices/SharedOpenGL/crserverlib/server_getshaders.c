@@ -75,6 +75,36 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetAttachedShaders(GLuint program,
     crFree(pLocal);
 }
 
+void SERVER_DISPATCH_APIENTRY crServerDispatchGetAttachedObjectsARB(GLhandleARB containerObj, GLsizei maxCount, GLsizei * count, GLhandleARB * obj)
+{
+    GLsizei *pLocal;
+
+    pLocal = (GLsizei*) crAlloc(maxCount*sizeof(GLhandleARB)+sizeof(GLsizei));
+    if (!pLocal)
+    {
+        GLsizei zero=0;
+        crServerReturnValue(&zero, sizeof(zero));
+    }
+    cr_server.head_spu->dispatch_table.GetAttachedObjectsARB(containerObj, maxCount, pLocal, (GLhandleARB*)&pLocal[1]);
+    crServerReturnValue(pLocal, (*pLocal)*sizeof(GLhandleARB)+sizeof(GLsizei));
+    crFree(pLocal);
+}
+
+void SERVER_DISPATCH_APIENTRY crServerDispatchGetInfoLogARB(GLhandleARB obj, GLsizei maxLength, GLsizei * length, GLcharARB * infoLog)
+{
+    GLsizei *pLocal;
+
+    pLocal = (GLsizei*) crAlloc(maxLength+sizeof(GLsizei));
+    if (!pLocal)
+    {
+        GLsizei zero=0;
+        crServerReturnValue(&zero, sizeof(zero));
+    }
+    cr_server.head_spu->dispatch_table.GetInfoLogARB(obj, maxLength, pLocal, (char*)&pLocal[1]);
+    crServerReturnValue(pLocal, (*pLocal)+1+sizeof(GLsizei));
+    crFree(pLocal);
+}
+
 void SERVER_DISPATCH_APIENTRY crServerDispatchGetShaderInfoLog(GLuint shader, GLsizei bufSize, GLsizei *length, char *infoLog)
 {
     GLsizei *pLocal;

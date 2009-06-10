@@ -69,3 +69,5 @@ GetAttachedShaders
 GetShaderInfoLog
 GetProgramInfoLog
 GetShaderSource
+GetAttachedObjectsARB
+GetInfoLogARB
