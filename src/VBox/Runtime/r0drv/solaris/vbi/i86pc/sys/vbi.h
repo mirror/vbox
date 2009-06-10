@@ -309,6 +309,27 @@ extern void vbi_poke_cpu(int);
 
 /* end of interfaces defined for version 4 */
 
+/* begin interfaces defined for version 5 */
+/*
+ * Allocate and free physically limited, page aligned memory. Note that
+ * the allocated pages are not physically contiguous.
+ *
+ * return value is a) NULL if memory below "phys" not available or
+ * b) virtual address of memory in kernel heap
+ *
+ * phys on input is set to the upper boundary of acceptable memory
+ *
+ * size is the amount to allocate and must be a multiple of PAGESIZE
+ */
+extern void *vbi_lowmem_alloc(uint64_t phys, size_t size);
+
+/*
+ * va is from vbi_lowmem_alloc() return value
+ * size must match from vbi_lowmem_alloc()
+ */
+extern void vbi_lowmem_free(void *va, size_t size);
+/* end of interfaces defined for version 5 */
+
 #ifdef	__cplusplus
 }
 #endif
