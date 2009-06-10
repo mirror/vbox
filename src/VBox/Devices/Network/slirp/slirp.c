@@ -1887,3 +1887,24 @@ void slirp_set_tcp_sndspace(PNATState pData, int kilobytes)
     _8K_1M_CHECK_ARG("TCP_SNDSPACE", kilobytes);    
     tcp_sndspace = kilobytes * _1K;
 }
+
+
+#define COUNTING_COUTER(name, dsc) \
+void slirp_counting_counter_##name##_reset(PNATState pData) \
+{                                                           \
+    SLIRP_COUNTER_RESET(name);                              \
+}                                                           \
+void slirp_counting_counter_##name##_inc(PNATState pData)   \
+{                                                           \
+    SLIRP_COUNTER_INC(name);                                \
+}                                                           \
+void slirp_counting_counter_##name##_add(PNATState pData,int val)   \
+{                                                           \
+    SLIRP_COUNTER_ADD(name, val);                           \
+}
+/* @todo think abaout it */
+#define PROFILE_COUNTER(name, dsc) 
+#include "counters.h"
+#undef COUNTING_COUTER
+#undef PROFILE_COUNTER
+
