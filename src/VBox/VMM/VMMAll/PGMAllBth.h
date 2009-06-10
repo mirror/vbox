@@ -2737,7 +2737,7 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
 # endif
                             PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
                         Log2(("SyncPT:   4K+ %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx}%s dst.raw=%08llx iPTSrc=%x PdeSrc.u=%x physpte=%RGp\n",
-                              (RTGCPTR)((iPDSrc << GST_PD_SHIFT) | (iPTSrc << PAGE_SHIFT)),
+                              (RTGCPTR)(((RTGCPTR)iPDSrc << GST_PD_SHIFT) | ((RTGCPTR)iPTSrc << PAGE_SHIFT)),
                               PteSrc.n.u1Present,
                               PteSrc.n.u1Write & PdeSrc.n.u1Write,
                               PteSrc.n.u1User & PdeSrc.n.u1User,
