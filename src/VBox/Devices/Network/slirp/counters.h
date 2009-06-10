@@ -68,3 +68,6 @@ COUNTING_COUTER(IOSBAppendSB_w_alter, "SB: AppendSB (altering of sb_wptr)");
 
 PROFILE_COUNTER(TCP_reassamble, "TCP::reasamble");
 PROFILE_COUNTER(TCP_input, "TCP::input");
+
+COUNTING_COUTER(DrvNAT_package_sent, "counting package sent via PDM queue");
+COUNTING_COUTER(DrvNAT_package_drop, "counting package drops by PDM queue");

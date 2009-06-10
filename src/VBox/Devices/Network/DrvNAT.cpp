@@ -53,8 +53,27 @@
  *        activity. This needs to be fixed properly.
  */
 #define VBOX_NAT_DELAY_HACK
-
-
+#ifdef VBOX_WITH_STATISTICS
+# define COUNTING_COUTER(name, dsc) \
+extern "C" void slirp_counting_counter_##name##_reset(PNATState pData); \
+extern "C" void slirp_counting_counter_##name##_inc(PNATState pData); \
+extern "C" void slirp_counting_counter_##name##_add(PNATState pData, int val);
+/* @todo think abaout it */
+# define PROFILE_COUNTER(name, dsc) 
+# include "Network/slirp/counters.h"
+# undef COUNTING_COUTER
+# undef PROFILE_COUNTER
+# define DRVNAT_COUNTER_RESET(pData, name) \
+    slirp_counting_counter_##name##_reset(pData)
+# define DRVNAT_COUNTER_INC(pData, name) \
+    slirp_counting_counter_##name##_inc(pData)
+# define DRVNAT_COUNTER_ADD(pData, name, val) \
+    slirp_counting_counter_##name##_add(pData, (val)) 
+#else
+#define DRVNAT_COUNTER_RESET(name) do{}while(0)
+#define DRVNAT_COUNTER_INC(name) do{}while(0)
+#define DRVNAT_COUNTER_ADD(name) do{}while(0)
+#endif
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -474,6 +493,8 @@ void slirp_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
     LogFlow(("slirp_output BEGIN %x %d\n", pu8Buf, cb));
     Log2(("slirp_output: pu8Buf=%p cb=%#x (pThis=%p)\n%.*Rhxd\n", pu8Buf, cb, pThis, cb, pu8Buf));
 
+    DRVNAT_COUNTER_RESET(pThis->pNATState, DrvNAT_package_drop);
+    DRVNAT_COUNTER_RESET(pThis->pNATState, DrvNAT_package_sent);
     Assert(pThis);
 
     PDRVNATQUEUITEM pItem = (PDRVNATQUEUITEM)PDMQueueAlloc(pThis->pSendQueue);
@@ -484,6 +505,7 @@ void slirp_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
         pItem->mbuf = pvArg;
         Log2(("pItem:%p %.Rhxd\n", pItem, pItem->pu8Buf));
         PDMQueueInsert(pThis->pSendQueue, &pItem->Core);
+        DRVNAT_COUNTER_INC(pThis->pNATState, DrvNAT_package_sent);
         return;
     }
     static unsigned cDroppedPackets;
@@ -496,6 +518,7 @@ void slirp_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
         LogRel(("NAT: %d messages suppressed about dropping package (couldn't allocate queue item)\n", cDroppedPackets));
         cDroppedPackets = 0;
     }
+    DRVNAT_COUNTER_INC(pThis->pNATState, DrvNAT_package_drop);
     RTMemFree((void *)pu8Buf);
 }
 
