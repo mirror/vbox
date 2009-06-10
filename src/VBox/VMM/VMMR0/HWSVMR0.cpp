@@ -2372,6 +2372,7 @@ static int svmR0EmulateTprMov(PVMCPU pVCpu, DISCPUSTATE *pDisState, PCPUMCTX pCt
         rc = PDMApicSetTPR(pVCpu, u8Tpr);
         AssertRC(rc);
 
+        Log(("Emulated write successfully\n"));
         pCtx->rip += cbOp;
         return VINF_SUCCESS;
     }
@@ -2389,6 +2390,7 @@ static int svmR0EmulateTprMov(PVMCPU pVCpu, DISCPUSTATE *pDisState, PCPUMCTX pCt
         rc = DISWriteReg32(CPUMCTX2CORE(pCtx), pDisState->param1.base.reg_gen, u8Tpr << 4);
         AssertRC(rc);
 
+        Log(("Emulated read successfully\n"));
         pCtx->rip += cbOp;
         return VINF_SUCCESS;
     }
@@ -2416,6 +2418,7 @@ static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     if (    rc == VINF_SUCCESS
         &&  Cpu.pCurInstr->opcode == OP_MOV)
     {
+#if 0
         uint8_t szInstr[15];
         if (    cbOp == 10
             &&  Cpu.param1.flags == USE_DISPLACEMENT32
@@ -2553,6 +2556,7 @@ static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 }
             }
         }
+#endif
         rc = svmR0EmulateTprMov(pVCpu, &Cpu, pCtx, cbOp);
         if (rc != VINF_SUCCESS)
             return rc;
