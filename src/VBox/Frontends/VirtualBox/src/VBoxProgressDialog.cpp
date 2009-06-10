@@ -100,7 +100,7 @@ VBoxProgressDialog::VBoxProgressDialog (CProgress &aProgress, const QString &aTi
 
 void VBoxProgressDialog::retranslateUi()
 {
-    mETAText = tr ("ETA: %1");
+    mETAText = tr ("Time remaining: %1");
 }
 
 int VBoxProgressDialog::run (int aRefreshInterval)
