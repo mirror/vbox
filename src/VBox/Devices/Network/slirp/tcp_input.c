@@ -78,6 +78,7 @@ tcp_reass(PNATState pData, struct tcpcb *tp, struct tcphdr *th, int *tlenp, stru
     struct tseg_qent *te = NULL;
     struct socket *so = tp->t_socket;
     int flags;
+    SLIRP_PROFILE_START(TCP_reassamble, tcp_reassamble);
 
     /*
      * XXX: tcp_reass() is rather inefficient with its data structures
@@ -107,6 +108,7 @@ tcp_reass(PNATState pData, struct tcpcb *tp, struct tcphdr *th, int *tlenp, stru
         tcpstat.tcps_rcvmemdrop++;
         m_freem(pData, m);
         *tlenp = 0;
+        SLIRP_PROFILE_STOP(TCP_reassamble, tcp_reassamble);
         return (0);
     }
 
@@ -120,6 +122,7 @@ tcp_reass(PNATState pData, struct tcpcb *tp, struct tcphdr *th, int *tlenp, stru
         tcpstat.tcps_rcvmemdrop++;
         m_freem(pData, m);
         *tlenp = 0;
+        SLIRP_PROFILE_STOP(TCP_reassamble, tcp_reassamble);
         return (0);
     }
     tp->t_segqlen++;
@@ -217,10 +220,16 @@ present:
      * completed sequence space.
      */
     if (!TCPS_HAVEESTABLISHED(tp->t_state))
+    {
+        SLIRP_PROFILE_STOP(TCP_reassamble, tcp_reassamble);
         return (0);
+    }
     q = LIST_FIRST(&tp->t_segq);
     if (!q || q->tqe_th->th_seq != tp->rcv_nxt)
+    {
+        SLIRP_PROFILE_STOP(TCP_reassamble, tcp_reassamble);
         return (0);
+    }
     do
     {
         tp->rcv_nxt += q->tqe_len;
@@ -249,6 +258,7 @@ present:
     }
     while (q && q->tqe_th->th_seq == tp->rcv_nxt);
 
+    SLIRP_PROFILE_STOP(TCP_reassamble, tcp_reassamble);
     return flags;
 }
 
@@ -272,6 +282,7 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
     int iss = 0;
     u_long tiwin;
 /*  int ts_present = 0; */
+    SLIRP_PROFILE_START(TCP_input, counter_input);
 
     DEBUG_CALL("tcp_input");
     DEBUG_ARGS((dfd," m = %8lx  iphlen = %2d  inso = %lx\n",
@@ -302,6 +313,7 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
 			LogRel(("NAT: ti is null. can't do any reseting connection actions\n"));
 			/* mbuf should be cleared in sofree called from tcp_close */
 			tcp_close(pData, tp);
+                        SLIRP_PROFILE_STOP(TCP_input, counter_input);
 			return;
 		}
         tiwin = ti->ti_win;
@@ -636,6 +648,7 @@ findso:
                   (void) tcp_output(pData, tp);
 
               SOCKET_UNLOCK(so);
+              SLIRP_PROFILE_STOP(TCP_input, counter_input);
               return;
             }
         }
@@ -681,6 +694,7 @@ findso:
             tp->t_flags |= TF_ACKNOW;
             tcp_output(pData, tp);
             SOCKET_UNLOCK(so);
+            SLIRP_PROFILE_STOP(TCP_input, counter_input);
             return;
         }
     } /* header prediction */
@@ -780,6 +794,7 @@ findso:
                 tp->t_state = TCPS_SYN_RECEIVED;
             }
             SOCKET_UNLOCK(so);
+            SLIRP_PROFILE_STOP(TCP_input, counter_input);
             return;
 
 cont_conn:
@@ -1606,6 +1621,7 @@ dodata:
         tcp_output(pData, tp);
 
     SOCKET_UNLOCK(so);
+    SLIRP_PROFILE_STOP(TCP_input, counter_input);
     return;
 
 dropafterack:
@@ -1620,6 +1636,7 @@ dropafterack:
     tp->t_flags |= TF_ACKNOW;
     (void) tcp_output(pData, tp);
     SOCKET_UNLOCK(so);
+    SLIRP_PROFILE_STOP(TCP_input, counter_input);
     return;
 
 dropwithreset:
@@ -1635,6 +1652,7 @@ dropwithreset:
 
     if (so != &tcb)
         SOCKET_UNLOCK(so);
+    SLIRP_PROFILE_STOP(TCP_input, counter_input);
     return;
 
 drop:
@@ -1650,6 +1668,7 @@ drop:
     }
 #endif
 
+    SLIRP_PROFILE_STOP(TCP_input, counter_input);
     return;
 }
 

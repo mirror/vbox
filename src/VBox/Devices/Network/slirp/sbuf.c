@@ -77,6 +77,7 @@ sbappend(PNATState pData, struct socket *so, struct mbuf *m)
 {
     int ret = 0;
 
+    SLIRP_PROFILE_START(IOSBAppend_pf, a);
     DEBUG_CALL("sbappend");
     DEBUG_ARG("so = %lx", (long)so);
     DEBUG_ARG("m = %lx", (long)m);
@@ -126,6 +127,7 @@ sbappend(PNATState pData, struct socket *so, struct mbuf *m)
          * it will be detected in the normal way by soread()
          */
         sbappendsb(pData, &so->so_rcv, m);
+        SLIRP_PROFILE_STOP(IOSBAppend_pf_wf, a);
         goto done;
     }
     else if (ret != m->m_len)
@@ -138,10 +140,12 @@ sbappend(PNATState pData, struct socket *so, struct mbuf *m)
         m->m_len -= ret;
         m->m_data += ret;
         sbappendsb(pData, &so->so_rcv, m);
+        SLIRP_PROFILE_STOP(IOSBAppend_pf_wp, a);
         goto done;
     } /* else */
     /* Whatever happened, we free the mbuf */
     SLIRP_COUNTER_INC(IOSBAppend_wa);
+    SLIRP_PROFILE_STOP(IOSBAppend_pf_wa, a);
 done:
     m_free(pData, m);
 }
