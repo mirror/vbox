@@ -722,14 +722,6 @@ VBOX_SLIRP_ALIAS_SOURCES = \
 	Network/slirp/libalias/alias_nbt.c \
 	Network/slirp/libalias/alias_util.c
 
-ifdef VBOX_WITH_SLIRP_ALIAS
-VBOX_SLIRP_SOURCES += $(VBOX_SLIRP_ALIAS_SOURCES)
-Drivers_INCS += Network/slirp/libalias
-define def_vbox_slirp_alias_cflags
-  $(file)_DEFS += VBOX_SLIRP_ALIAS
-endef
-$(foreach file,$(VBOX_SLIRP_ALIAS_SOURCES),$(eval $(def_vbox_slirp_alias_cflags)))
-endif
 
 VBOX_WITH_SLIRP_DNS_PROXY=1
 
@@ -753,6 +745,9 @@ define def_vbox_slirp_cflags
       $(if $(VBOX_WITH_MULTI_DNS),VBOX_WITH_MULTI_DNS,)	\
       $(if $(VBOX_WITH_SLIRP_DNS_PROXY),VBOX_WITH_SLIRP_DNS_PROXY,)	\
       $(if $(VBOX_WITH_SLIRP_MT),VBOX_WITH_SLIRP_MT,)
+ ifdef VBOX_WITH_SLIRP_ALIAS
+  $(file)_INCS += Network/slirp/libalias
+ endif
  ifeq ($(KBUILD_TARGET),win)
   $(file)_CFLAGS = -wd4018
  else
@@ -760,6 +755,18 @@ define def_vbox_slirp_cflags
  endif
 endef
 $(foreach file,$(VBOX_SLIRP_SOURCES),$(eval $(def_vbox_slirp_cflags)))
+
+ifdef VBOX_WITH_SLIRP_ALIAS
+Drivers_SOURCES += $(VBOX_SLIRP_ALIAS_SOURCES)
+define def_vbox_slirp_alias_cflags
+  $(file)_DEFS += VBOX_SLIRP_ALIAS
+  $(file)_INCS += Network/slirp/libalias
+  $(file)_INCS += Network/slirp
+  $(file)_INCS += Network/slirp/dnsproxy
+endef
+$(foreach file,$(VBOX_SLIRP_ALIAS_SOURCES),$(eval $(def_vbox_slirp_cflags)))
+$(foreach file,$(VBOX_SLIRP_ALIAS_SOURCES),$(eval $(def_vbox_slirp_alias_cflags)))
+endif
 
 # -- OS specific --
 
