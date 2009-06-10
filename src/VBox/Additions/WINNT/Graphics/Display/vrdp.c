@@ -1642,9 +1642,11 @@ BOOL vrdpRealizeBrush(
                 pu8Bits += psoPattern->lDelta;
             }
 
-            /* Obtain RGB values for the brush fore and background colors. */
-            pBrush->u.pat.rgbFG = vrdpColor2RGB (psoTarget, pxlo->pulXlate[1]);
-            pBrush->u.pat.rgbBG = vrdpColor2RGB (psoTarget, pxlo->pulXlate[0]);
+            /* Obtain RGB values for the brush fore and background colors:
+             * "should translate color zero through the XLATEOBJ to get the foreground color for the brush."
+             */
+            pBrush->u.pat.rgbFG = vrdpColor2RGB (psoTarget, pxlo->pulXlate[0]);
+            pBrush->u.pat.rgbBG = vrdpColor2RGB (psoTarget, pxlo->pulXlate[1]);
 
             pBrush->fPattern = TRUE;
 
