@@ -57,7 +57,7 @@
 # define COUNTING_COUTER(name, dsc) \
 extern "C" void slirp_counting_counter_##name##_reset(PNATState pData); \
 extern "C" void slirp_counting_counter_##name##_inc(PNATState pData); \
-extern "C" void slirp_counting_counter_##name##_add(PNATState pData, int val);
+extern "C" void slirp_counting_counter_##name##_add(PNATState pData, int val)
 /* @todo think abaout it */
 # define PROFILE_COUNTER(name, dsc) 
 # include "Network/slirp/counters.h"
