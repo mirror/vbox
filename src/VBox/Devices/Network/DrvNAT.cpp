@@ -70,9 +70,9 @@ extern "C" void slirp_counting_counter_##name##_add(PNATState pData, int val);
 # define DRVNAT_COUNTER_ADD(pData, name, val) \
     slirp_counting_counter_##name##_add(pData, (val)) 
 #else
-#define DRVNAT_COUNTER_RESET(name) do{}while(0)
-#define DRVNAT_COUNTER_INC(name) do{}while(0)
-#define DRVNAT_COUNTER_ADD(name) do{}while(0)
+#define DRVNAT_COUNTER_RESET(pData, name) do{}while(0)
+#define DRVNAT_COUNTER_INC(pData, name) do{}while(0)
+#define DRVNAT_COUNTER_ADD(pData, name) do{}while(0)
 #endif
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
