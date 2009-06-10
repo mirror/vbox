@@ -19,7 +19,7 @@
  * CDDL HEADER END
  */
 /*
- * Copyright 2008 Sun Microsystems, Inc.  All rights reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
  * Use is subject to license terms.
  */
 
@@ -110,7 +110,7 @@ typedef struct vbi_cpuset {
  * module linkage stuff
  */
 static struct modlmisc vbi_modlmisc = {
-	&mod_miscops, "VirtualBox Interfaces V4"
+	&mod_miscops, "VirtualBox Interfaces V5"
 };
 
 static struct modlinkage vbi_modlinkage = {
@@ -198,22 +198,28 @@ static ddi_dma_attr_t base_attr = {
 	0			/* bus-specific flags */
 };
 
-void *
-vbi_contig_alloc(uint64_t *phys, size_t size)
+static void *
+vbi_internal_alloc(uint64_t *phys, size_t size, int contig)
 {
 	ddi_dma_attr_t attr;
 	pfn_t pfn;
 	void *ptr;
+	uint_t npages;
 
 	if ((size & PAGEOFFSET) != 0)
+		return (NULL);
+	npages = size >> PAGESHIFT;
+	if (npages == 0)
 		return (NULL);
 
 	attr = base_attr;
 	attr.dma_attr_addr_hi = *phys;
+	if (!contig)
+		attr.dma_attr_sgllen = npages;
 	ptr = contig_alloc(size, &attr, PAGESIZE, 1);
 
 	if (ptr == NULL) {
-		VBI_VERBOSE("vbi_contig_alloc() failure");
+		VBI_VERBOSE("vbi_internal_alloc() failure");
 		return (NULL);
 	}
 
@@ -222,6 +228,12 @@ vbi_contig_alloc(uint64_t *phys, size_t size)
 		panic("vbi_contig_alloc(): hat_getpfnum() failed\n");
 	*phys = (uint64_t)pfn << PAGESHIFT;
 	return (ptr);
+}
+
+void *
+vbi_contig_alloc(uint64_t *phys, size_t size)
+{
+	return (vbi_internal_alloc(phys, size, 1));
 }
 
 void
@@ -1059,16 +1071,28 @@ vbi_is_preempt_enabled(void)
 	return (curthread->t_preempt == 0);
 }
 
-/*
- * This is revision 4 of the interface. As more functions are added,
- * they should go after this point in the file and the revision level
- * increased. Also change vbi_modlmisc at the top of the file.
- */
-uint_t vbi_revision_level = 4;
-
 void
 vbi_poke_cpu(int c)
 {
 	if (c < ncpus)
 		poke_cpu(c);
+}
+
+/*
+ * This is revision 5 of the interface. As more functions are added,
+ * they should go after this point in the file and the revision level
+ * increased. Also change vbi_modlmisc at the top of the file.
+ */
+uint_t vbi_revision_level = 5;
+
+void *
+vbi_lowmem_alloc(uint64_t phys, size_t size)
+{
+	return (vbi_internal_alloc(&phys, size, 0));
+}
+
+void
+vbi_lowmem_free(void *va, size_t size)
+{
+	p_contig_free(va, size);
 }

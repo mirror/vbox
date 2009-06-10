@@ -68,6 +68,10 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 
     switch (pMemSolaris->Core.enmType)
     {
+        case RTR0MEMOBJTYPE_LOW:
+            vbi_lowmem_free(pMemSolaris->Core.pv, pMemSolaris->Core.cb);
+            break;
+
         case RTR0MEMOBJTYPE_CONT:
             vbi_contig_free(pMemSolaris->Core.pv, pMemSolaris->Core.cb);
             break;
@@ -85,7 +89,6 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             break;
 
         /* unused */
-        case RTR0MEMOBJTYPE_LOW:
         case RTR0MEMOBJTYPE_PHYS:
         case RTR0MEMOBJTYPE_RES_VIRT:
         default:
@@ -120,21 +123,27 @@ int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
 
 int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
 {
-    /* Try page alloc first */
-    int rc = rtR0MemObjNativeAllocPage(ppMem, cb, fExecutable);
-    if (RT_SUCCESS(rc))
+    NOREF(fExecutable);
+
+    /* Create the object */
+    PRTR0MEMOBJSOLARIS pMemSolaris = (PRTR0MEMOBJSOLARIS)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_LOW, NULL, cb);
+    if (!pMemSolaris)
+        return VERR_NO_MEMORY;
+
+    /* Allocate physically low page-aligned memory. */
+    caddr_t virtAddr;
+    uint64_t phys = (unsigned)0xffffffff;
+    virtAddr = vbi_lowmem_alloc(&phys, cb);
+    if (virtAddr == NULL)
     {
-        size_t iPage = cb >> PAGE_SHIFT;
-        while (iPage-- > 0)
-            if (rtR0MemObjNativeGetPagePhysAddr(*ppMem, iPage) > (_4G - PAGE_SIZE))
-            {
-                /* Failed! Fall back to physical contiguous alloc */
-                RTR0MemObjFree(*ppMem, false);
-                rc = rtR0MemObjNativeAllocCont(ppMem, cb, fExecutable);
-                break;
-            }
+        rtR0MemObjDelete(&pMemSolaris->Core);
+        return VERR_NO_LOW_MEMORY;
     }
-    return rc;
+    Assert(phys < (uint64_t)1 << 32);
+    pMemSolaris->Core.pv = virtAddr;
+    pMemSolaris->handle = NULL;
+    *ppMem = &pMemSolaris->Core;
+    return VINF_SUCCESS;
 }
 
 
