@@ -51,6 +51,10 @@ COUNTING_COUTER(IOWrite_no_w, "SB IOWrite_no_w");
 COUNTING_COUTER(IOWrite_rest, "SB IOWrite_rest");
 COUNTING_COUTER(IOWrite_rest_bytes, "SB IOWrite_rest_bytes");
 
+PROFILE_COUNTER(IOSBAppend_pf, "Profiling sbuf::append common");
+PROFILE_COUNTER(IOSBAppend_pf_wa, "Profiling sbuf::append all writen in network");
+PROFILE_COUNTER(IOSBAppend_pf_wf, "Profiling sbuf::append writen fault");
+PROFILE_COUNTER(IOSBAppend_pf_wp, "Profiling sbuf::append writen partly");
 COUNTING_COUTER(IOSBAppend, "SB: Append total");
 COUNTING_COUTER(IOSBAppend_wa, "SB: Append all is written to network ");
 COUNTING_COUTER(IOSBAppend_wf, "SB: Append nothing is written");
@@ -61,3 +65,6 @@ COUNTING_COUTER(IOSBAppendSB, "SB: AppendSB total");
 COUNTING_COUTER(IOSBAppendSB_w_l_r, "SB: AppendSB (sb_wptr < sb_rptr)");
 COUNTING_COUTER(IOSBAppendSB_w_ge_r, "SB: AppendSB (sb_wptr >= sb_rptr)");
 COUNTING_COUTER(IOSBAppendSB_w_alter, "SB: AppendSB (altering of sb_wptr)");
+
+PROFILE_COUNTER(TCP_reassamble, "TCP::reasamble");
+PROFILE_COUNTER(TCP_input, "TCP::input");
