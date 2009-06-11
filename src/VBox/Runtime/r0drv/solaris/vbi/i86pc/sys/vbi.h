@@ -241,7 +241,7 @@ extern uint_t vbi_revision_level;
  * Note there is no guarantee about which CPU the function is invoked on.
  */
 typedef struct vbi_cpu_watch vbi_cpu_watch_t;
-extern vbi_cpu_watch_t *vbi_watch_cpus(void (*func)(), void *arg,
+extern vbi_cpu_watch_t *vbi_watch_cpus(void (*func)(void), void *arg,
     int current_too);
 extern void vbi_ignore_cpus(vbi_cpu_watch_t *);
 #pragma weak vbi_watch_cpus
