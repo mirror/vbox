@@ -133,7 +133,7 @@ int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecut
     /* Allocate physically low page-aligned memory. */
     caddr_t virtAddr;
     uint64_t phys = (unsigned)0xffffffff;
-    virtAddr = vbi_lowmem_alloc(&phys, cb);
+    virtAddr = vbi_lowmem_alloc(phys, cb);
     if (virtAddr == NULL)
     {
         rtR0MemObjDelete(&pMemSolaris->Core);
