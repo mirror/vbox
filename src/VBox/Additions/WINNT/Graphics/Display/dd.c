@@ -1071,8 +1071,9 @@ DWORD APIENTRY DdAddAttachedSurface(PDD_ADDATTACHEDSURFACEDATA  lpAddAttachedSur
 
 DWORD APIENTRY DdBlt(PDD_BLTDATA  lpBlt)
 {
+    PPDEV pDev = (PPDEV)lpBlt->lpDD->dhpdev;
     DISPDBG((0, "%s\n", __FUNCTION__));
-    lpBlt->ddRVal = DD_OK;
+    vboxVHWASurfBlt(pDev, lpBlt);
     return DDHAL_DRIVER_HANDLED;
 }
 

@@ -97,7 +97,11 @@ typedef struct
 typedef struct _VBOXVHWASURFDESC
 {
     VBOXVHWA_SURFHANDLE hHostHandle;
+    volatile uint32_t cPendingBltsSrc;
+    volatile uint32_t cPendingBltsDst;
+    volatile uint32_t cPendingFlips;
 }VBOXVHWASURFDESC, *PVBOXVHWASURFDESC;
+
 typedef struct _VBOXVHWAINFO
 {
     uint32_t caps;
@@ -298,6 +302,7 @@ void vboxVHWATerm();
 void vboxVHWASurfCanCreate(PPDEV ppdev, PDD_CANCREATESURFACEDATA  lpCanCreateSurface);
 void vboxVHWASurfCreate(PPDEV ppdev, PDD_CREATESURFACEDATA  lpCreateSurface);
 void vboxVHWASurfDestroy(PPDEV ppdev, PDD_DESTROYSURFACEDATA  lpDestroySurface);
+void vboxVHWASurfBlt(PPDEV ppdev, PDD_BLTDATA  lpBlt);
  #endif
 #endif
 

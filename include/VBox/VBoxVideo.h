@@ -294,10 +294,10 @@ typedef uint64_t VBOXVHWA_SURFHANDLE;
 
 typedef struct _VBOXVHWA_RECTL
 {
-    int16_t x;
-    int16_t y;
-    uint16_t w;
-    uint16_t h;
+    int32_t x;
+    int32_t y;
+    uint32_t w;
+    uint32_t h;
 } VBOXVHWA_RECTL;
 
 typedef struct _VBOXVHWA_COLORKEY
@@ -463,6 +463,8 @@ typedef struct _VBOXVHWACMD_SURF_UNLOCK
 
 typedef struct _VBOXVHWACMD_SURF_BLT
 {
+    uint64_t DstGuestSurfInfo;
+    uint64_t SrcGuestSurfInfo;
     union
     {
         struct
