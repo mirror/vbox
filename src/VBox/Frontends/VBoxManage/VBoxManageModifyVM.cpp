@@ -1130,7 +1130,7 @@ int handleModifyVM(HandlerArg *a)
                 /* not successful? Then it must be a filename */
                 if (!hardDisk)
                 {
-                    CHECK_ERROR(a->virtualBox, FindHardDisk(Bstr(hdds[0]), hardDisk.asOutParam()));
+                    rc = a->virtualBox->FindHardDisk(Bstr(hdds[0]), hardDisk.asOutParam());
                     if (FAILED(rc))
                     {
                         /* open the new hard disk object */
@@ -1163,7 +1163,7 @@ int handleModifyVM(HandlerArg *a)
                 /* not successful? Then it must be a filename */
                 if (!hardDisk)
                 {
-                    CHECK_ERROR(a->virtualBox, FindHardDisk(Bstr(hdds[1]), hardDisk.asOutParam()));
+                    rc = a->virtualBox->FindHardDisk(Bstr(hdds[1]), hardDisk.asOutParam());
                     if (FAILED(rc))
                     {
                         /* open the new hard disk object */
@@ -1196,7 +1196,7 @@ int handleModifyVM(HandlerArg *a)
                 /* not successful? Then it must be a filename */
                 if (!hardDisk)
                 {
-                    CHECK_ERROR(a->virtualBox, FindHardDisk(Bstr(hdds[2]), hardDisk.asOutParam()));
+                    rc = a->virtualBox->FindHardDisk(Bstr(hdds[2]), hardDisk.asOutParam());
                     if (FAILED(rc))
                     {
                         /* open the new hard disk object */
@@ -1917,7 +1917,7 @@ int handleModifyVM(HandlerArg *a)
                     /* not successful? Then it must be a filename */
                     if (!hardDisk)
                     {
-                        CHECK_ERROR(a->virtualBox, FindHardDisk(Bstr(hdds[i]), hardDisk.asOutParam()));
+                        rc =  a->virtualBox->FindHardDisk(Bstr(hdds[i]), hardDisk.asOutParam());
                         if (FAILED(rc))
                         {
                             /* open the new hard disk object */
@@ -2006,7 +2006,7 @@ int handleModifyVM(HandlerArg *a)
                     /* not successful? Then it must be a filename */
                     if (!hardDisk)
                     {
-                        CHECK_ERROR(a->virtualBox, FindHardDisk(Bstr(hdds[i]), hardDisk.asOutParam()));
+                        rc = a->virtualBox->FindHardDisk(Bstr(hdds[i]), hardDisk.asOutParam());
                         if (FAILED(rc))
                         {
                             /* open the new hard disk object */
