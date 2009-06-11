@@ -52,6 +52,10 @@ VBoxDisp_SOURCES     = \
 	vbox.c \
 	VBoxDisp.def \
 	VBoxDisp.rc
+	
+ifdef VBOX_WITH_VIDEOHWACCEL
+VBoxDisp_SOURCES     += vhwa.c
+endif
 VBoxDisp_LDFLAGS.x86   = /Entry:DrvEnableDriver@12
 VBoxDisp_LDFLAGS.amd64 = /Entry:DrvEnableDriver
 VBoxDisp_LIBS = \

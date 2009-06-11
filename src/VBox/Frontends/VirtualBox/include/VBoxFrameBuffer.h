@@ -494,6 +494,7 @@ public:
     void vboxPaintEvent (QPaintEvent *pe);
     void vboxResizeEvent (VBoxResizeEvent *re);
 
+    VBoxVHWASurfacePrimary * vboxGetSurface() { return pDisplay; }
 protected:
 //    void resizeGL (int height, int width);
 
@@ -546,11 +547,14 @@ public:
 
 private:
 #ifdef VBOX_WITH_VIDEOHWACCEL
+    int vhwaSurfaceCanCreate(struct _VBOXVHWACMD_SURF_CANCREATE *pCmd);
     int vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd);
     int vhwaSurfaceDestroy(struct _VBOXVHWACMD_SURF_DESTROY *pCmd);
     int vhwaSurfaceLock(struct _VBOXVHWACMD_SURF_LOCK *pCmd);
     int vhwaSurfaceUnlock(struct _VBOXVHWACMD_SURF_UNLOCK *pCmd);
     int vhwaSurfaceBlt(struct _VBOXVHWACMD_SURF_BLT *pCmd);
+    int vhwaQueryInfo1(struct _VBOXVHWACMD_QUERYINFO1 *pCmd);
+    int vhwaQueryInfo2(struct _VBOXVHWACMD_QUERYINFO2 *pCmd);
 #endif
     void vboxMakeCurrent();
     VBoxGLWidget * vboxWidget();

@@ -41,7 +41,8 @@ static DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface);
 #endif
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-void getDDHALInfo(PPDEV pDev, DD_HALINFO* pHALInfo);
+#define VBOXVHWA_CAP(_pdev, _cap) ((_pdev)->vhwaInfo.caps & (_cap))
+static bool getDDHALInfo(PPDEV pDev, DD_HALINFO* pHALInfo);
 #endif
 
 /**
@@ -97,8 +98,12 @@ BOOL APIENTRY DrvGetDirectDrawInfo(
     if (!(pvmList && pdwFourCC))
     {
 #ifdef VBOX_WITH_VIDEOHWACCEL
+        vboxVHWAInit();
+
         memset(pHalInfo, 0, sizeof(DD_HALINFO));
         pHalInfo->dwSize    = sizeof(DD_HALINFO);
+
+        vboxVHWAInitHostInfo1(pDev);
 #else
         memset(&pHalInfo->ddCaps, 0, sizeof(DDNTCORECAPS));
 #endif
@@ -148,15 +153,11 @@ BOOL APIENTRY DrvGetDirectDrawInfo(
 
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-        pHalInfo->vmiData.dwOverlayAlign = 4;
-
-#if 1
-        /* teesting */
-        pDev->bVHWAEnabled = TRUE;
-#endif
-        if(pDev->bVHWAEnabled)
+        if(pDev->vhwaInfo.bVHWAEnabled)
         {
-            getDDHALInfo(pDev, pHalInfo);
+            pHalInfo->vmiData.dwOverlayAlign = 4;
+
+            pDev->vhwaInfo.bVHWAEnabled = getDDHALInfo(pDev, pHalInfo);
         }
 #endif
     }
@@ -204,19 +205,24 @@ BOOL APIENTRY DrvGetDirectDrawInfo(
     }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    if(pDev->bVHWAEnabled)
+    if(pDev->vhwaInfo.bVHWAEnabled)
     {
-        // TODO: filter out hw-unsupported fourccs
-#define FOURCC_YUV422  (MAKEFOURCC('Y','U','Y','2'))
-#define FOURCC_YUV411  (MAKEFOURCC('Y','4','1','1'))
+//        // TODO: filter out hw-unsupported fourccs
+//#define FOURCC_YUV422  (MAKEFOURCC('Y','U','Y','2'))
+//#define FOURCC_YUV411  (MAKEFOURCC('Y','4','1','1'))
+//
+//        static DWORD fourCC[] =  { FOURCC_YUV422, FOURCC_YUV411 };  // The FourCC's we support
 
-        static DWORD fourCC[] =  { FOURCC_YUV422, FOURCC_YUV411 };  // The FourCC's we support
+        *pdwNumFourCCCodes = pDev->vhwaInfo.numFourCC;
 
-        *pdwNumFourCCCodes = sizeof( fourCC ) / sizeof( fourCC[0] );
-
-        if (pdwFourCC)
+        if (pdwFourCC && pDev->vhwaInfo.numFourCC)
         {
-            memcpy(pdwFourCC, fourCC, sizeof(fourCC));
+            int rc = vboxVHWAInitHostInfo2(pDev, pdwFourCC);
+            if(RT_FAILURE(rc))
+            {
+                *pdwNumFourCCCodes = 0;
+                pDev->vhwaInfo.numFourCC = 0;
+            }
         }
     }
 #endif
@@ -310,7 +316,7 @@ BOOL APIENTRY DrvEnableDirectDraw(
     pPaletteCallBacks->dwFlags          = 0;
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    if(pDev->bVHWAEnabled)
+    if(pDev->vhwaInfo.bVHWAEnabled)
     {
         //TODO: filter out those we do not need in case not supported by hw
         pSurfaceCallBacks->DestroySurface = DdDestroySurface;
@@ -332,11 +338,14 @@ BOOL APIENTRY DrvEnableDirectDraw(
 //                         | DDHAL_SURFCB32_UNLOCK
                          ;
 
-        pSurfaceCallBacks->UpdateOverlay = DdUpdateOverlay;   // Now supporting overlays.
-        pSurfaceCallBacks->SetOverlayPosition = DdSetOverlayPosition;
-        pSurfaceCallBacks->dwFlags |=
-                         DDHAL_SURFCB32_UPDATEOVERLAY      | // Now supporting
-                         DDHAL_SURFCB32_SETOVERLAYPOSITION ; // overlays.
+        if(pDev->vhwaInfo.caps & VBOXVHWA_CAPS_OVERLAY)
+        {
+            pSurfaceCallBacks->UpdateOverlay = DdUpdateOverlay;   // Now supporting overlays.
+            pSurfaceCallBacks->SetOverlayPosition = DdSetOverlayPosition;
+            pSurfaceCallBacks->dwFlags |=
+                             DDHAL_SURFCB32_UPDATEOVERLAY      | // Now supporting
+                             DDHAL_SURFCB32_SETOVERLAYPOSITION ; // overlays.
+        }
     }
 #endif
     return TRUE;
@@ -624,6 +633,9 @@ DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface)
     lpSurfaceDesc->lPitch   = lpSurfaceGlobal->lPitch;
     lpSurfaceDesc->dwFlags |= DDSD_PITCH;
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    vboxVHWASurfCreate(pDev, lpCreateSurface);
+#endif
 
     return DDHAL_DRIVER_NOTHANDLED;
 }
@@ -674,11 +686,11 @@ DWORD APIENTRY DdCanCreateSurface(PDD_CANCREATESURFACEDATA lpCanCreateSurface)
         lpCanCreateSurface->ddRVal = DDERR_INVALIDPIXELFORMAT;
         return DDHAL_DRIVER_HANDLED;
     }
+    lpCanCreateSurface->ddRVal = DD_OK;
 #else
-    /* TODO: filter out unsupported formats */
+    vboxVHWASurfCanCreate(pDev, lpCanCreateSurface);
 #endif
 
-    lpCanCreateSurface->ddRVal = DD_OK;
     return DDHAL_DRIVER_HANDLED;
 }
 
@@ -954,7 +966,11 @@ DWORD APIENTRY DdDestroySurface(PDD_DESTROYSURFACEDATA lpDestroySurface)
     PPDEV pDev = (PPDEV)lpDestroySurface->lpDD->dhpdev;
     DISPDBG((0, "%s: %p\n", __FUNCTION__, pDev));
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    vboxVHWASurfDestroy(pDev, lpDestroySurface);
+#else
     lpDestroySurface->ddRVal = DD_OK;
+#endif
     return DDHAL_DRIVER_HANDLED;
 }
 
@@ -1183,44 +1199,54 @@ setupRops(
 static BYTE ropListNT[] =
 {
     SRCCOPY >> 16
-//        WHITENESS >> 16,
+//    WHITENESS >> 16,
 //        BLACKNESS >> 16
 };
 
 static DWORD rops[DD_ROP_SPACE] = { 0 };
 
-void
+bool
 getDDHALInfo(
     PPDEV pDev,
     DD_HALINFO* pHALInfo)
 {
     int i;
+    if(!VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_BLT) && !VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_OVERLAY))
+        return false;
 
-    /* TODO: only enable features supported by the host backend & host hw
-     * for now this just combines all caps we might use */
+    if(VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_BLT))
+    {
+        // Setup the ROPS we do.
+        //TODO: hardcoded for now
+        setupRops( ropListNT,
+                     rops,
+                     sizeof(ropListNT)/sizeof(ropListNT[0]));
 
-    // Setup the ROPS we do.
-    setupRops( ropListNT,
-                 rops,
-                 sizeof(ropListNT)/sizeof(ropListNT[0]));
+        // The most basic DirectDraw functionality
+        pHALInfo->ddCaps.dwCaps |=   DDCAPS_BLT
+                                     | DDCAPS_BLTQUEUE;
+        if(VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_BLTCOLORFILL))
+        {
+            pHALInfo->ddCaps.dwCaps |= DDCAPS_BLTCOLORFILL;
+        }
+    }
 
-    // The most basic DirectDraw functionality
-    pHALInfo->ddCaps.dwCaps |=   DDCAPS_BLT
-                                 | DDCAPS_BLTQUEUE
-                                 | DDCAPS_BLTCOLORFILL
 //                                | DDCAPS_READSCANLINE
-                                ;
+
 
     pHALInfo->ddCaps.ddsCaps.dwCaps |=   DDSCAPS_OFFSCREENPLAIN
-                                         | DDSCAPS_PRIMARYSURFACE
-                                         | DDSCAPS_FLIP;
-
-    pHALInfo->ddCaps.dwCaps |= DDCAPS_3D           |
-                               DDCAPS_BLTDEPTHFILL;
-
-    pHALInfo->ddCaps.ddsCaps.dwCaps |= DDSCAPS_3DDEVICE |
-                                       DDSCAPS_ZBUFFER |
-                                       DDSCAPS_ALPHA;
+                                         | DDSCAPS_PRIMARYSURFACE;
+    if(pDev->vhwaInfo.surfaceCaps & VBOXVHWA_SCAPS_FLIP)
+    {
+        pHALInfo->ddCaps.ddsCaps.dwCaps |= DDSCAPS_FLIP;
+    }
+//disabled
+//    pHALInfo->ddCaps.dwCaps |= DDCAPS_3D           |
+//                               DDCAPS_BLTDEPTHFILL;
+//
+//    pHALInfo->ddCaps.ddsCaps.dwCaps |= DDSCAPS_3DDEVICE |
+//                                       DDSCAPS_ZBUFFER |
+//                                       DDSCAPS_ALPHA;
     pHALInfo->ddCaps.dwCaps2 = 0;
 
 //#if DX7_TEXMANAGEMENT
@@ -1260,28 +1286,86 @@ getDDHALInfo(
     // 2. YUV->RGB conversion
     // 3. Mirroring in X and Y
     // 4. ColorKeying from a source color and a source color space
-    pHALInfo->ddCaps.dwCaps |= DDCAPS_BLTSTRETCH
-                               | DDCAPS_BLTFOURCC
-                               | DDCAPS_COLORKEY
+    if(VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_BLT)
+            && VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_BLTSTRETCH))
+    {
+        pHALInfo->ddCaps.dwCaps |= DDCAPS_BLTSTRETCH;
+
+        // Special effects caps
+        //TODO: filter them out
+        pHALInfo->ddCaps.dwFXCaps |= DDFXCAPS_BLTSTRETCHY  |
+                                    DDFXCAPS_BLTSTRETCHX  |
+                                    DDFXCAPS_BLTSTRETCHYN |
+                                    DDFXCAPS_BLTSTRETCHXN |
+                                    DDFXCAPS_BLTSHRINKY   |
+                                    DDFXCAPS_BLTSHRINKX   |
+                                    DDFXCAPS_BLTSHRINKYN  |
+                                    DDFXCAPS_BLTSHRINKXN;
+
+
+        //mirroring with blitting
+        pHALInfo->ddCaps.dwFXCaps |= DDFXCAPS_BLTMIRRORUPDOWN
+                                     | DDFXCAPS_BLTMIRRORLEFTRIGHT;
+
+    }
+
+    if(VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_BLT)
+            && VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_BLTFOURCC))
+    {
+        pHALInfo->ddCaps.dwCaps |= DDCAPS_BLTFOURCC;
+
+        // Enable copy blts between Four CC formats for DShow acceleration
+        pHALInfo->ddCaps.dwCaps2 |= DDCAPS2_COPYFOURCC;
+    }
+
+    if(VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_BLT)
+            && VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_COLORKEY))
+    {
+        pHALInfo->ddCaps.dwCaps |= DDCAPS_COLORKEY;
 //                               | DDCAPS_CANBLTSYSMEM
-                               ;
 
-    // Special effects caps
-    pHALInfo->ddCaps.dwFXCaps |= DDFXCAPS_BLTSTRETCHY  |
-                                DDFXCAPS_BLTSTRETCHX  |
-                                DDFXCAPS_BLTSTRETCHYN |
-                                DDFXCAPS_BLTSTRETCHXN |
-                                DDFXCAPS_BLTSHRINKY   |
-                                DDFXCAPS_BLTSHRINKX   |
-                                DDFXCAPS_BLTSHRINKYN  |
-                                DDFXCAPS_BLTSHRINKXN;
+        // ColorKey caps
+        //TODO: filter them out
+        pHALInfo->ddCaps.dwCKeyCaps |= DDCKEYCAPS_SRCBLT         |
+                                      DDCKEYCAPS_SRCBLTCLRSPACE |
+                                      DDCKEYCAPS_DESTBLT        |
+                                      DDCKEYCAPS_DESTBLTCLRSPACE;
 
-    // ColorKey caps
-    pHALInfo->ddCaps.dwCKeyCaps |= DDCKEYCAPS_SRCBLT         |
-                                  DDCKEYCAPS_SRCBLTCLRSPACE |
-                                  DDCKEYCAPS_DESTBLT        |
-                                  DDCKEYCAPS_DESTBLTCLRSPACE;
+        pHALInfo->ddCaps.dwCKeyCaps |=  DDCKEYCAPS_SRCBLTCLRSPACEYUV
+                                        | DDCKEYCAPS_DESTBLTCLRSPACEYUV;
 
+#if 0
+        DDCKEYCAPS_DESTBLT Supports transparent blitting with a color key that identifies the replaceable bits of the destination surface for RGB colors.
+        DDCKEYCAPS_DESTBLTCLRSPACE Supports transparent blitting with a color space that identifies the replaceable bits of the destination surface for RGB colors.
+        DDCKEYCAPS_DESTBLTCLRSPACEYUV Supports transparent blitting with a color space that identifies the replaceable bits of the destination surface for YUV colors.
+        DDCKEYCAPS_DESTBLTYUV Supports transparent blitting with a color key that identifies the replaceable bits of the destination surface for YUV colors.
+
+        DDCKEYCAPS_SRCBLT Supports transparent blitting using the color key for the source with this surface for RGB colors.
+        DDCKEYCAPS_SRCBLTCLRSPACE Supports transparent blitting using a color space for the source with this surface for RGB colors.
+        DDCKEYCAPS_SRCBLTCLRSPACEYUV Supports transparent blitting using a color space for the source with this surface for YUV colors.
+        DDCKEYCAPS_SRCBLTYUV Supports transparent blitting using the color key for the source with this surface for YUV colors.
+#endif
+
+    }
+
+    if(VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_OVERLAY)
+            && VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_COLORKEY))
+    {
+#if 0
+        DDCKEYCAPS_DESTOVERLAY Supports overlaying with color keying of the replaceable bits of the destination surface being overlaid for RGB colors.
+        DDCKEYCAPS_DESTOVERLAYCLRSPACE Supports a color space as the color key for the destination of RGB colors.
+        DDCKEYCAPS_DESTOVERLAYCLRSPACEYUV Supports a color space as the color key for the destination of YUV colors.
+        DDCKEYCAPS_DESTOVERLAYONEACTIVE Supports only one active destination color key value for visible overlay surfaces.
+        DDCKEYCAPS_DESTOVERLAYYUV Supports overlaying using color keying of the replaceable bits of the destination surface being overlaid for YUV colors.
+        DDCKEYCAPS_NOCOSTOVERLAY Indicates that there are no bandwidth tradeoffs for using the color key with an overlay.
+
+        DDCKEYCAPS_SRCOVERLAY Supports overlaying using the color key for the source with this overlay surface for RGB colors.
+        DDCKEYCAPS_SRCOVERLAYCLRSPACE Supports overlaying using a color space as the source color key for the overlay surface for RGB colors.
+        DDCKEYCAPS_SRCOVERLAYCLRSPACEYUV Supports overlaying using a color space as the source color key for the overlay surface for YUV colors.
+        DDCKEYCAPS_SRCOVERLAYONEACTIVE Supports only one active source color key value for visible overlay surfaces.
+        DDCKEYCAPS_SRCOVERLAYYUV Supports overlaying using the color key for the source with this overlay surface for YUV colors.
+#endif
+    }
 //    pHALInfo->ddCaps.dwSVBCaps = DDCAPS_BLT;
 
 //    // We can do a texture from sysmem to video mem.
@@ -1295,13 +1379,10 @@ getDDHALInfo(
 //        pHALInfo->ddCaps.dwSVBRops[i] = rops[i];
 //    }
 
-    //mirroring with blitting
-    pHALInfo->ddCaps.dwFXCaps |= DDFXCAPS_BLTMIRRORUPDOWN  |
-                                DDFXCAPS_BLTMIRRORLEFTRIGHT;
 
-    pHALInfo->ddCaps.dwCKeyCaps |=  DDCKEYCAPS_SRCBLTCLRSPACEYUV;
 
-    pHALInfo->ddCaps.ddsCaps.dwCaps |= DDSCAPS_TEXTURE;
+//disabled
+//    pHALInfo->ddCaps.ddsCaps.dwCaps |= DDSCAPS_TEXTURE;
 
 //#if DX7_STEREO
 //    // Report the stereo capability back to runtime
@@ -1328,10 +1409,10 @@ getDDHALInfo(
 //
 //#endif // SUPPORT_VIDEOPORT
 
-
+        if(VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_OVERLAY)) /* no overlay support for now */
         {
             // Overlay is free to use.
-            pHALInfo->ddCaps.dwMaxVisibleOverlays = 1;
+            pHALInfo->ddCaps.dwMaxVisibleOverlays = pDev->vhwaInfo.numOverlays;
             pHALInfo->ddCaps.dwCurrVisibleOverlays = 0;
 
             pHALInfo->ddCaps.dwCaps |=  DDCAPS_OVERLAY          |
@@ -1374,8 +1455,6 @@ getDDHALInfo(
     // Also permit surfaces wider than the display buffer.
     pHALInfo->ddCaps.dwCaps2 |= DDCAPS2_WIDESURFACES;
 
-    // Enable copy blts betweemn Four CC formats for DShow acceleration
-    pHALInfo->ddCaps.dwCaps2 |= DDCAPS2_COPYFOURCC;
 
     // Won't do Video-Sys mem Blits.
     pHALInfo->ddCaps.dwVSBCaps = 0;
@@ -1409,20 +1488,21 @@ getDDHALInfo(
 //                                                  DDBD_4 |
 //                                                  DDBD_8;
 
-    // No alpha blending for overlays, so I'm not sure what these should be.
-    // Because we support 32bpp overlays, it's just that you can't use the
-    // alpha bits for blending. Pass.
-    pHALInfo->ddCaps.dwAlphaBltConstBitDepths = DDBD_2 |
-                                                DDBD_4 |
-                                                DDBD_8;
-
-    pHALInfo->ddCaps.dwAlphaBltPixelBitDepths = DDBD_1 |
-                                                DDBD_8;
-
-    pHALInfo->ddCaps.dwAlphaBltSurfaceBitDepths = DDBD_1 |
-                                                  DDBD_2 |
-                                                  DDBD_4 |
-                                                  DDBD_8;
+//disabled
+//    // No alpha blending for overlays, so I'm not sure what these should be.
+//    // Because we support 32bpp overlays, it's just that you can't use the
+//    // alpha bits for blending. Pass.
+//    pHALInfo->ddCaps.dwAlphaBltConstBitDepths = DDBD_2 |
+//                                                DDBD_4 |
+//                                                DDBD_8;
+//
+//    pHALInfo->ddCaps.dwAlphaBltPixelBitDepths = DDBD_1 |
+//                                                DDBD_8;
+//
+//    pHALInfo->ddCaps.dwAlphaBltSurfaceBitDepths = DDBD_1 |
+//                                                  DDBD_2 |
+//                                                  DDBD_4 |
+//                                                  DDBD_8;
 
     //
     // ROPS supported
@@ -1442,7 +1522,7 @@ getDDHALInfo(
 //    pHALInfo->dwFlags |= DDHALINFO_GETDRIVERINFO2;
 //#endif DX8_DDI
 
-
+    return true;
 } // getDDHALInfo
 
 

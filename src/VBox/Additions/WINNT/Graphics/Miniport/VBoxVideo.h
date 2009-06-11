@@ -257,13 +257,13 @@ BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION PrimaryExtension,
                                 PVIDEO_POINTER_ATTRIBUTES pointerAttr,
                                 uint32_t cbLength);
 
-DECLCALLBACK(void) hgsmiHostCmdHandlerComplete (HVBOXVIDEOHGSMI hHGSMI, void * pvMem);
+DECLCALLBACK(void) hgsmiHostCmdComplete (HVBOXVIDEOHGSMI hHGSMI, struct _VBVAHOSTCMD * pCmd);
+DECLCALLBACK(int) hgsmiHostCmdRequest (HVBOXVIDEOHGSMI hHGSMI, uint8_t u8Channel, struct _VBVAHOSTCMD ** ppCmd);
 
-int vboxHGSMIChannelDisplayRegister (PDEVICE_EXTENSION PrimaryExtension,
+
+int vboxVBVAChannelDisplayEnable(PDEVICE_EXTENSION PrimaryExtension,
         int iDisplay, /* negative would mean this is a miniport handler */
-        uint8_t u8Channel,
-        PFNHGSMICHANNELHANDLER pfnChannelHandler,
-        void *pvChannelHandler);
+        uint8_t u8Channel);
 #endif /* VBOX_WITH_HGSMI */
 } /* extern "C" */
 
