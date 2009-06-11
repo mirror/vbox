@@ -256,29 +256,41 @@ typedef struct _VBOXVIDEOINFOQUERYCONF32
 
 typedef enum
 {
-    VBOXVHWACMD_TYPE_SURF_CREATE = 1,
+    VBOXVHWACMD_TYPE_SURF_CANCREATE = 1,
+    VBOXVHWACMD_TYPE_SURF_CREATE,
     VBOXVHWACMD_TYPE_SURF_DESTROY,
     VBOXVHWACMD_TYPE_SURF_LOCK,
     VBOXVHWACMD_TYPE_SURF_UNLOCK,
-    VBOXVHWACMD_TYPE_SURF_BLT
+    VBOXVHWACMD_TYPE_SURF_BLT,
+    VBOXVHWACMD_TYPE_QUERY_INFO1,
+    VBOXVHWACMD_TYPE_QUERY_INFO2
 } VBOXVHWACMD_TYPE;
+
+/* the command processing was asynch, set by the host to indicate asynch command completion
+ * must not be cleared once set, the command completion is performed by issuing a host->guest completion command
+ * while keeping this flag unchanged */
+#define VBOXVHWACMD_FLAG_ASYNCH      0x00000001
+/* asynch completion is performed by issuing the event */
+#define VBOXVHWACMD_FLAG_ASYNCH_EVENT 0x00000002
 
 typedef struct _VBOXVHWACMD
 {
     VBOXVHWACMD_TYPE enmCmd; /* command type */
-    int32_t rc; /* command result */
+    volatile int32_t rc; /* command result */
     int32_t iDisplay; /* display index */
-    int32_t Reserved; /* reserved, must be null*/
+    volatile int32_t Flags; /* ored VBOXVHWACMD_FLAG_xxx values */
     uint64_t GuestVBVAReserved1; /* field internally used by the guest VBVA cmd handling, must NOT be modified by clients */
     uint64_t GuestVBVAReserved2; /* field internally used by the guest VBVA cmd handling, must NOT be modified by clients */
     char body[1];
 } VBOXVHWACMD;
 
-#define VBOXVHWACMD_SIZE(_tCmd) (RT_OFFSETOF(VBOXVHWACMD_HDR, body) + sizeof(_tCmd))
+#define VBOXVHWACMD_HEADSIZE() (RT_OFFSETOF(VBOXVHWACMD, body))
+#define VBOXVHWACMD_SIZE(_tCmd) (VBOXVHWACMD_HEADSIZE() + sizeof(_tCmd))
 typedef unsigned int VBOXVHWACMD_LENGTH;
 typedef uint64_t VBOXVHWA_SURFHANDLE;
 #define VBOXVHWACMD_SURFHANDLE_INVALID 0
 #define VBOXVHWACMD_BODY(_p, _t) ((_t*)(_p)->body)
+#define VBOXVHWACMD_HEAD(_pb) ((VBOXVHWACMD*)((uint8_t *)(_pb) - RT_OFFSETOF(VBOXVHWACMD, body)))
 
 typedef struct _VBOXVHWA_RECTL
 {
@@ -287,9 +299,6 @@ typedef struct _VBOXVHWA_RECTL
     uint16_t w;
     uint16_t h;
 } VBOXVHWA_RECTL;
-
-#define VBOXVHWASURF_PRIMARY      0x00000001
-#define VBOXVHWASURF_OVERLAY      0x00000002
 
 typedef struct _VBOXVHWA_COLORKEY
 {
@@ -338,6 +347,67 @@ typedef struct _VBOXVHWA_SURFINFO
     uint32_t surfCaps;
     uint32_t Reserved;
 } VBOXVHWA_SURFINFO;
+
+#define VBOXVHWA_CAPS_BLT             0x00000001
+#define VBOXVHWA_CAPS_BLTCOLORFILL    0x00000002
+#define VBOXVHWA_CAPS_BLTFOURCC       0x00000004
+#define VBOXVHWA_CAPS_BLTSTRETCH      0x00000008
+
+#define VBOXVHWA_CAPS_OVERLAY         0x00000100
+#define VBOXVHWA_CAPS_OVERLAYFOURCC   0x00000200
+#define VBOXVHWA_CAPS_OVERLAYSTRETCH  0x00000400
+
+#define VBOXVHWA_CAPS_COLORKEY        0x00001000
+//#define VBOXVHWA_CAPS_COLORKEYHWASSIST         0x00002000 /* always set COLORKEYHWASSIST in case host reports colorkey support */
+
+#define VBOXVHWA_CAPS2_COPYFOURCC   0x00000001
+
+#define VBOXVHWA_SCAPS_FLIP             0x00000001
+#define VBOXVHWA_SCAPS_PRIMARYSURFACE   0x00000002
+#define VBOXVHWA_SCAPS_OVERLAY          0x00000008
+
+#define VBOXVHWA_PF_RGB                 0x00000001
+#define VBOXVHWA_PF_RGBTOYUV            0x00000002
+#define VBOXVHWA_PF_YUV                 0x00000008
+#define VBOXVHWA_PF_FOURCC              0x00000010
+
+#define VBOXVHWA_CFG_ENABLED          0x00000001
+
+typedef struct _VBOXVHWACMD_QUERYINFO1
+{
+    uint32_t cfgFlags;
+    uint32_t caps;
+    uint32_t colorKeyCaps;
+    uint32_t stretchCaps;
+    uint32_t surfaceCaps;
+    uint32_t numOverlays;
+    uint32_t numFourCC;
+
+} VBOXVHWACMD_QUERYINFO1;
+
+typedef struct _VBOXVHWACMD_QUERYINFO2
+{
+    uint32_t numFourCC;
+    uint32_t FourCC[1];
+} VBOXVHWACMD_QUERYINFO2;
+
+#define VBOXVHWAINFO2_SIZE(_cFourCC) RT_OFFSETOF(VBOXVHWAINFO2, FourCC[_cFourCC])
+
+typedef struct _VBOXVHWACMD_SURF_CANCREATE
+{
+    union
+    {
+        struct
+        {
+            VBOXVHWA_SURFINFO SurfInfo;
+        } in;
+
+        struct
+        {
+            uint32_t ErrInfo;
+        } out;
+    } u;
+} VBOXVHWACMD_SURF_CANCREATE;
 
 typedef struct _VBOXVHWACMD_SURF_CREATE
 {
@@ -446,27 +516,47 @@ typedef struct _VBVABUFFER
 #define VBVA_INFO_SCREEN  6
 #define VBVA_ENABLE       7
 #define VBVA_MOUSE_POINTER_SHAPE 8
-# ifdef VBOX_WITH_VIDEOHWACCEL
-# define VBVA_INFO_VHWA   9
-# define VBVA_VHWA_CMD    10
-# endif /* # ifdef VBOX_WITH_VIDEOHWACCEL */
+#ifdef VBOX_WITH_VIDEOHWACCEL
+# define VBVA_VHWA_CMD    9
+#endif /* # ifdef VBOX_WITH_VIDEOHWACCEL */
 
 /* host->guest commands */
-# ifdef VBOX_WITH_VIDEOHWACCEL
-# define VBVAHG_VHWA_CMDCOMPLETE 1
+# define VBVAHG_EVENT 1
+# define VBVAHG_DISPLAY_CUSTOM 2
 
+# ifdef VBOX_WITH_VIDEOHWACCEL
+#define VBVAHG_DCUSTOM_VHWA_CMDCOMPLETE 1
+#pragma pack(1)
 typedef struct _VBVAHOSTCMDVHWACMDCOMPLETE
 {
     uint32_t offCmd;
 }VBVAHOSTCMDVHWACMDCOMPLETE;
+#pragma pack()
 # endif /* # ifdef VBOX_WITH_VIDEOHWACCEL */
 
 #pragma pack(1)
+typedef enum
+{
+    VBVAHOSTCMD_OP_EVENT = 1,
+    VBVAHOSTCMD_OP_CUSTOM
+}VBVAHOSTCMD_OP_TYPE;
+
+typedef struct _VBVAHOSTCMDEVENT
+{
+    uint64_t pEvent;
+}VBVAHOSTCMDEVENT;
+
+
 typedef struct _VBVAHOSTCMD
 {
     /* destination ID if >=0 specifies display index, otherwize the command is directed to the miniport */
     int32_t iDstID;
-    uint32_t Reserved;
+    int32_t customOpCode;
+    union
+    {
+        struct _VBVAHOSTCMD *pNext;
+        uint64_t Data; /* the body is 64-bit alligned */
+    } u;
     char body[1];
 }VBVAHOSTCMD;
 

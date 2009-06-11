@@ -118,16 +118,16 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
         Assert(!err);
         if(!err)
         {
-            HGSMIHANDLERREGISTER HandlerReg;
+            HGSMIHANDLERENABLE HandlerReg;
             RtlZeroMemory(&HandlerReg, sizeof(HandlerReg));
 
             ppdev->hMpHGSMI = Callbacks.hContext;
             ppdev->pfnHGSMICommandComplete = Callbacks.pfnCompletionHandler;
-            HandlerReg.pfnHandler = vboxVBVAHostCommandHanlder;
-            HandlerReg.pvHandler = ppdev;
+            ppdev->pfnHGSMIRequestCommands = Callbacks.pfnRequestCommandsHandler;
+
             HandlerReg.u8Channel = HGSMI_CH_VBVA;
             err = EngDeviceIoControl(ppdev->hDriver,
-                    IOCTL_VIDEO_HGSMI_HANDLER_REGISTER,
+                    IOCTL_VIDEO_HGSMI_HANDLER_ENABLE,
                     &HandlerReg,
                     sizeof(HandlerReg),
                     NULL,

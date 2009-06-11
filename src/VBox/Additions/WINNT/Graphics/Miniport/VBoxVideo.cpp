@@ -1894,21 +1894,22 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
 
             HGSMIQUERYCALLBACKS *pInfo = (HGSMIQUERYCALLBACKS *)RequestPacket->OutputBuffer;
 
-            pInfo->hContext = pDevExt->pPrimary;
-            pInfo->pfnCompletionHandler = hgsmiHostCmdHandlerComplete;
+            pInfo->hContext = pDevExt;
+            pInfo->pfnCompletionHandler = hgsmiHostCmdComplete;
+            pInfo->pfnRequestCommandsHandler = hgsmiHostCmdRequest;
 
             RequestPacket->StatusBlock->Information = sizeof(HGSMIQUERYCALLBACKS);
             Result = TRUE;
             break;
         }
-        case IOCTL_VIDEO_HGSMI_HANDLER_REGISTER:
+        case IOCTL_VIDEO_HGSMI_HANDLER_ENABLE:
         {
-            dprintf(("VBoxVideo::VBoxVideoStartIO: IOCTL_VIDEO_HGSMI_HANDLER_REGISTER\n"));
+            dprintf(("VBoxVideo::VBoxVideoStartIO: IOCTL_VIDEO_HGSMI_HANDLER_ENABLE\n"));
 
-            if (RequestPacket->InputBufferLength< sizeof(HGSMIHANDLERREGISTER))
+            if (RequestPacket->InputBufferLength< sizeof(HGSMIHANDLERENABLE))
             {
                 dprintf(("VBoxVideo::VBoxVideoStartIO: Output buffer too small: %d needed: %d!!!\n",
-                         RequestPacket->InputBufferLength, sizeof(HGSMIHANDLERREGISTER)));
+                         RequestPacket->InputBufferLength, sizeof(HGSMIHANDLERENABLE)));
                 RequestPacket->StatusBlock->Status = ERROR_INSUFFICIENT_BUFFER;
                 return FALSE;
             }
@@ -1919,13 +1920,11 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
                 return FALSE;
             }
 
-            HGSMIHANDLERREGISTER *pInfo = (HGSMIHANDLERREGISTER *)RequestPacket->InputBuffer;
+            HGSMIHANDLERENABLE *pInfo = (HGSMIHANDLERENABLE *)RequestPacket->InputBuffer;
 
-            int rc = vboxHGSMIChannelDisplayRegister (pDevExt->pPrimary,
-                    pDevExt->iDevice, /* negative would mean this is a miniport handler */
-                    pInfo->u8Channel,
-                    pInfo->pfnHandler,
-                    pInfo->pvHandler);
+            int rc = vboxVBVAChannelDisplayEnable(pDevExt->pPrimary,
+                    pDevExt->iDevice,
+                    pInfo->u8Channel);
             if(RT_FAILURE(rc))
             {
                 RequestPacket->StatusBlock->Status = ERROR_INVALID_NAME;
@@ -1933,7 +1932,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
             Result = TRUE;
             break;
         }
-        case IOCTL_VIDEO_HGSMI_HANDLER_DEREGISTER:
+        case IOCTL_VIDEO_HGSMI_HANDLER_DISABLE:
         {
             /* TODO: implement */
             if (!pDevExt->pPrimary->u.primary.bHGSMI)

@@ -93,6 +93,24 @@ typedef struct
     PPDEV   ppdev;
 } VBOXSURF, *PVBOXSURF;
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+typedef struct _VBOXVHWASURFDESC
+{
+    VBOXVHWA_SURFHANDLE hHostHandle;
+}VBOXVHWASURFDESC, *PVBOXVHWASURFDESC;
+typedef struct _VBOXVHWAINFO
+{
+    uint32_t caps;
+    uint32_t colorKeyCaps;
+    uint32_t stretchCaps;
+    uint32_t surfaceCaps;
+    uint32_t numOverlays;
+    uint32_t numFourCC;
+    HGSMIOFFSET FourCC;
+    BOOLEAN bVHWAEnabled;
+} VBOXVHWAINFO;
+#endif
+
 struct  _PDEV
 {
     HANDLE  hDriver;                    // Handle to \Device\Screen
@@ -166,10 +184,11 @@ struct  _PDEV
 
     HVBOXVIDEOHGSMI hMpHGSMI; /* context handler passed to miniport HGSMI callbacks */
     PFNVBOXVIDEOHGSMICOMPLETION pfnHGSMICommandComplete; /* called to complete the command we receive from the miniport */
+    PFNVBOXVIDEOHGSMICOMMANDS   pfnHGSMIRequestCommands; /* called to requests the commands posted to us from the host */
 #endif /* VBOX_WITH_HGSMI */
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    BOOLEAN bVHWAEnabled;
+    VBOXVHWAINFO vhwaInfo;
 #endif
 };
 
@@ -252,8 +271,7 @@ void VBoxUpdateDisplayInfo (PPDEV ppdev);
 void drvLoadEng (void);
 
 #ifdef VBOX_WITH_HGSMI
-DECLCALLBACK(int) vboxVBVAHostCommandHanlder(void *pvHandler, uint16_t u16ChannelInfo, void *pvBuffer, HGSMISIZE cbBuffer);
-void vboxVBVAHostCommandComplete(PPDEV ppdev, void *pvBuffer);
+void vboxVBVAHostCommandComplete(PPDEV ppdev, VBVAHOSTCMD * pCmd);
 
  #ifdef VBOX_WITH_VIDEOHWACCEL
 
@@ -263,7 +281,23 @@ typedef FNVBOXVHWACMDCOMPLETION *PFNVBOXVHWACMDCOMPLETION;
 VBOXVHWACMD* vboxVHWACommandCreate (PPDEV ppdev, VBOXVHWACMD_LENGTH cbCmd);
 void vboxVHWACommandFree (PPDEV ppdev, VBOXVHWACMD* pCmd);
 BOOL vboxVHWACommandSubmit (PPDEV ppdev, VBOXVHWACMD* pCmd);
-void vboxVHWACommandSubmitAssynch (PPDEV ppdev, VBOXVHWACMD* pCmd, PFNVBOXVHWACMDCOMPLETION pfnCompletion, void * pContext);
+void vboxVHWACommandSubmitAsynch (PPDEV ppdev, VBOXVHWACMD* pCmd, PFNVBOXVHWACMDCOMPLETION pfnCompletion, void * pContext);
+void vboxVHWACommandSubmitAsynchByEvent (PPDEV ppdev, VBOXVHWACMD* pCmd, PEVENT pEvent);
+void vboxVHWACommandCheckHostCmds(PPDEV ppdev);
+
+int vboxVHWAInitHostInfo1(PPDEV ppdev);
+int vboxVHWAInitHostInfo2(PPDEV ppdev, DWORD *pFourCC);
+
+VBOXVHWACMD_QUERYINFO1* vboxVHWAQueryHostInfo1(PPDEV ppdev);
+void vboxVHWAFreeHostInfo1(PPDEV ppdev, VBOXVHWACMD_QUERYINFO1* pInfo);
+VBOXVHWACMD_QUERYINFO2* vboxVHWAQueryHostInfo2(PPDEV ppdev, uint32_t numFourCC);
+void vboxVHWAFreeHostInfo2(PPDEV ppdev, VBOXVHWACMD_QUERYINFO2* pInfo);
+
+void vboxVHWAInit();
+void vboxVHWATerm();
+void vboxVHWASurfCanCreate(PPDEV ppdev, PDD_CANCREATESURFACEDATA  lpCanCreateSurface);
+void vboxVHWASurfCreate(PPDEV ppdev, PDD_CREATESURFACEDATA  lpCreateSurface);
+void vboxVHWASurfDestroy(PPDEV ppdev, PDD_DESTROYSURFACEDATA  lpDestroySurface);
  #endif
 #endif
 
