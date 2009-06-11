@@ -31,6 +31,7 @@
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <net/if_arp.h>
+#include <net/route.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -39,6 +40,36 @@
 #include "HostNetworkInterfaceImpl.h"
 #include "netif.h"
 #include "Logging.h"
+
+static int getDefaultIfaceName(char *pszName)
+{
+    FILE *fp = fopen("/proc/net/route", "r");
+    char szBuf[1024];
+    char szIfName[17];
+    char szAddr[129];
+    char szGateway[129];
+    char szMask[129];
+    int  iTmp;
+    int  iFlags;
+
+    while (fgets(szBuf, sizeof(szBuf)-1, fp))
+    {
+        int n = sscanf(szBuf, "%16s %128s %128s %X %d %d %d %128s %d %d %d\n",
+                   szIfName, szAddr, szGateway, &iFlags, &iTmp, &iTmp, &iTmp,
+                   szMask, &iTmp, &iTmp, &iTmp);
+        if (n < 10 || !(iFlags & RTF_UP))
+            continue;
+
+        if (strcmp(szAddr, "00000000") == 0 && strcmp(szMask, "00000000") == 0)
+        {
+            fclose(fp);
+            strncpy(pszName, szIfName, 16);
+            pszName[16] = 0;
+            return VINF_SUCCESS;
+        }
+    }
+    return VERR_INTERNAL_ERROR;
+}
 
 static int getInterfaceInfo(int iSocket, const char *pszName, PNETIFINFO pInfo)
 {
@@ -121,7 +152,13 @@ static int getInterfaceInfo(int iSocket, const char *pszName, PNETIFINFO pInfo)
 
 int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
 {
-    int rc = VINF_SUCCESS;
+    char szDefaultIface[256];
+    int rc = getDefaultIfaceName(szDefaultIface);
+    if (RT_FAILURE(rc))
+    {
+        Log(("NetIfList: Failed to find default interface.\n"));
+        szDefaultIface[0] = 0;
+    }
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock >= 0)
     {
@@ -153,7 +190,12 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
                         enmType = HostNetworkInterfaceType_HostOnly;
 
                     if (SUCCEEDED(IfObj->init(Bstr(pszName), enmType, &Info)))
-                        list.push_back(IfObj);
+                    {
+                        if (strcmp(pszName, szDefaultIface) == 0)
+                            list.push_front(IfObj);
+                        else
+                            list.push_back(IfObj);
+                    }
                 }
 
             }
