@@ -988,7 +988,7 @@ VMMR3DECL(RTR0PTR) VMMR3GetHostToGuestSwitcher(PVM pVM, VMMSWITCHER enmSwitcher)
         ||  enmSwitcher >= VMMSWITCHER_MAX)
     {
         AssertMsgFailed(("Invalid input enmSwitcher=%d\n", enmSwitcher));
-        return VERR_INVALID_PARAMETER;
+        return (RTR0PTR)0;
     }
 
     /*
