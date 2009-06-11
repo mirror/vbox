@@ -358,10 +358,14 @@ static int vhdDynamicHeaderUpdate(PVHDIMAGE pImage)
     /* Update parent's timestamp. */
     ddh.ParentTimeStamp = RT_H2BE_U32(pImage->u32ParentTimeStamp);
     /* Update parent's filename. */
-    rc = vhdFilenameToUtf16(RTPathFilename(pImage->pszParentFilename),
-        ddh.ParentUnicodeName, sizeof(ddh.ParentUnicodeName) - 1, NULL);
-    if (RT_FAILURE(rc))
-        return rc;
+    if (pImage->pszParentFilename)
+    {
+        rc = vhdFilenameToUtf16(RTPathFilename(pImage->pszParentFilename),
+             ddh.ParentUnicodeName, sizeof(ddh.ParentUnicodeName) - 1, NULL);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
     /* Update parent's locators. */
     for (i = 0; i < VHD_MAX_LOCATOR_ENTRIES; i++)
     {
