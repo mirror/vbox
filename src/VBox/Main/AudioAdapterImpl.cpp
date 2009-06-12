@@ -258,7 +258,7 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioDriver)(AudioDriverType_T aAudioDriver
             case AudioDriverType_Pulse:
 # endif
 #endif /* RT_OS_LINUX */
-#if defined (RT_OS_LINUX) || defined (RT_OS_FREEBSD)
+#if defined (RT_OS_LINUX) || defined (RT_OS_FREEBSD) || defined(VBOX_WITH_SOLARIS_OSS)
             case AudioDriverType_OSS:
 #endif
 #ifdef RT_OS_DARWIN
@@ -430,7 +430,7 @@ HRESULT AudioAdapter::loadSettings (const settings::Key &aMachineNode)
         mData->mAudioDriver = AudioDriverType_OSS;
 # endif
 #endif // RT_OS_LINUX
-#if defined (RT_OS_LINUX) || defined (RT_OS_FREEBSD)
+#if defined (RT_OS_LINUX) || defined (RT_OS_FREEBSD) || defined(VBOX_WITH_SOLARIS_OSS)
     else if (strcmp (driver, "OSS") == 0)
         mData->mAudioDriver = AudioDriverType_OSS;
 #endif // RT_OS_LINUX || RT_OS_FREEBSD
@@ -529,7 +529,7 @@ HRESULT AudioAdapter::saveSettings (settings::Key &aMachineNode)
             }
 # endif
 #endif /* RT_OS_LINUX */
-#if defined (RT_OS_LINUX) || defined (RT_OS_FREEBSD)
+#if defined (RT_OS_LINUX) || defined (RT_OS_FREEBSD) || defined(VBOX_WITH_SOLARIS_OSS)
             case AudioDriverType_OSS:
             {
                 driverStr = "OSS";

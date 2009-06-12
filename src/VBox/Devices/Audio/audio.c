@@ -62,7 +62,7 @@ typedef struct DRVAUDIO
 } DRVAUDIO, *PDRVAUDIO;
 
 static struct audio_driver *drvtab[] = {
-#if defined (RT_OS_LINUX) || defined (RT_OS_FREEBSD)
+#if defined (RT_OS_LINUX) || defined (RT_OS_FREEBSD) || defined(VBOX_WITH_SOLARIS_OSS)
     &oss_audio_driver,
 #endif
 #ifdef RT_OS_LINUX

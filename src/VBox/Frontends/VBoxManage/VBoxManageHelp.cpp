@@ -198,7 +198,11 @@ void printUsage(USAGECATEGORY u64Cmd)
         }
         if (fSolaris)
         {
-            RTPrintf(                        "|solaudio");
+            RTPrintf(                        "|solaudio"
+#ifdef VBOX_WITH_SOLARIS_OSS
+                                             "|oss"
+#endif
+                                              );
         }
         if (fLinux)
         {
