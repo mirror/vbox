@@ -27,6 +27,7 @@
 #include <iprt/process.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
+#include <iprt/thread.h>
 
 bool is3DAccelerationSupported()
 {
