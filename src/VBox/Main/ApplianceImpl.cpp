@@ -4508,8 +4508,10 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
 
         // this is more tricky so use the COM method
         rc = COMGETTER(USBController)(pUsbController.asOutParam());
-        if (FAILED(rc)) throw rc;
-        rc = pUsbController->COMGETTER(Enabled)(&fUSBEnabled);
+        if (FAILED(rc))
+            fUSBEnabled = false;
+        else
+            rc = pUsbController->COMGETTER(Enabled)(&fUSBEnabled);
 
         pAudioAdapter = mAudioAdapter;
         rc = pAudioAdapter->COMGETTER(Enabled)(&fAudioEnabled);
