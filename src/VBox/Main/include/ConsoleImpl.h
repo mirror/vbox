@@ -26,10 +26,7 @@
 
 #include "VirtualBoxBase.h"
 #include "ProgressImpl.h"
-
-#ifdef VBOX_DYNAMIC_NET_ATTACH
-# include "SchemaDefs.h"
-#endif /* VBOX_DYNAMIC_NET_ATTACH */
+#include "SchemaDefs.h"
 
 class Guest;
 class Keyboard;
