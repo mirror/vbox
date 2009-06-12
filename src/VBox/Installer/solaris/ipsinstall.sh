@@ -89,33 +89,38 @@ if test "$rc" -eq 0; then
 
     # Create the device link
     /usr/sbin/devfsadm -i vboxdrv
+    rc=$?
 
-    # Load VBoxNetAdapter vboxnet
-    if test -f /platform/i86pc/kernel/drv/vboxnet.conf; then
-        /opt/VirtualBox/vboxdrv.sh netstart
-        rc=$?
+    if test "$rc" -eq 0; then
+        # Load VBoxNetAdapter vboxnet
+        if test -f /platform/i86pc/kernel/drv/vboxnet.conf; then
+            /opt/VirtualBox/vboxdrv.sh netstart
+            rc=$?
 
-        if test "$rc" -eq 0; then
-            # nwam/dhcpagent fix
-            nwamfile=/etc/nwam/llp
-            nwambackupfile=$nwamfile.vbox
-            if test -f "$nwamfile"; then
-                sed -e '/vboxnet/d' $nwamfile > $nwambackupfile
-                echo "vboxnet0	static 192.168.56.1" >> $nwambackupfile
-                mv -f $nwambackupfile $nwamfile
-                echo "   -> patched /etc/nwam/llp to use static IP for vboxnet0"
+            if test "$rc" -eq 0; then
+                # nwam/dhcpagent fix
+                nwamfile=/etc/nwam/llp
+                nwambackupfile=$nwamfile.vbox
+                if test -f "$nwamfile"; then
+                    sed -e '/vboxnet/d' $nwamfile > $nwambackupfile
+                    echo "vboxnet0	static 192.168.56.1" >> $nwambackupfile
+                    mv -f $nwambackupfile $nwamfile
+                    echo "   -> patched /etc/nwam/llp to use static IP for vboxnet0"
+                fi
             fi
         fi
+    else
+        echo "## Failed to create device link in /dev for vboxdrv"
     fi
 
     # Load VBoxNetFilter vboxflt
-    if test -f /platform/i86pc/kernel/drv/vboxflt.conf; then
+    if test "$rc" -eq 0 && test -f /platform/i86pc/kernel/drv/vboxflt.conf; then
         /opt/VirtualBox/vboxdrv.sh fltstart
         rc=$?
     fi
 
     # Load VBoxUSBMonitor vboxusbmon (do NOT load for Solaris 10)
-    if test -f /platform/i86pc/kernel/drv/vboxusbmon.conf && test "$osversion" != "5.10"; then
+    if test "$rc" -eq 0 && test -f /platform/i86pc/kernel/drv/vboxusbmon.conf && test "$osversion" != "5.10"; then
         /opt/VirtualBox/vboxdrv.sh usbstart
         rc=$?
         if test "$rc" -eq 0; then
@@ -126,18 +131,23 @@ if test "$rc" -eq 0; then
             mv -f /etc/devlink.vbox /etc/devlink.tab
 
             /usr/sbin/devfsadm -i vboxusbmon
+            rc=$?
+            if test "$rc" -ne 0; then
+                echo "## Failed to create device link in /dev for vboxusbmon"
+            fi
         fi
     fi
 fi
 
+rc2=0
 # Enable Zone access service (note IPS auto-prefixes "virtualbox-" to the filename...)
 if test -f "/var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml"; then
     /usr/sbin/svccfg import /var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml
-    rc=$?
-    if test "$rc" -eq 0; then
+    rc2=$?
+    if test "$rc2" -eq 0; then
         /usr/sbin/svcadm enable -s svc:/application/virtualbox/zoneaccess
-        rc=$?
-        if test "$rc" -eq 0; then
+        rc2=$?
+        if test "$rc2" -eq 0; then
             echo "Enabled VirtualBox zone service."
         else
             echo "## Failed to enable VirtualBox zone service."
@@ -154,6 +164,7 @@ if test -f "/usr/share/applications/virtualbox.desktop"; then
 fi
 
 # Install python bindings
+rc3=0
 if test -f "/opt/VirtualBox/sdk/installer/vboxapisetup.py" || test -h "/opt/VirtualBox/sdk/installer/vboxapisetup.py"; then
     PYTHONBIN=`which python`
     if test -f "$PYTHONBIN" || test -h "$PYTHONBIN"; then
@@ -163,26 +174,34 @@ if test -f "/opt/VirtualBox/sdk/installer/vboxapisetup.py" || test -h "/opt/Virt
         export VBOX_INSTALL_PATH
         cd /opt/VirtualBox/sdk/installer
         $PYTHONBIN ./vboxapisetup.py install > /dev/null
+        rc3=$?
         echo "Done."
     else
         echo "** WARNING! Python not found, skipped installed Python bindings."
         echo "   Manually run '/opt/VirtualBox/sdk/installer/vboxapisetup.py install'"
         echo "   to install the bindings when python is available."
+        rc3=1
     fi
 fi
 
-# Update boot archive
-BOOTADMBIN=/sbin/bootadm
-if test -f "$BOOTADMBIN" || test -h "$BOOTADMBIN"; then
-    echo "Updating boot archive..."
-    $BOOTADMBIN update-archive > /dev/null
+# Update boot archive (only when driver's were all successfully loaded)
+rc4=0
+if test "$rc" -eq 0; then
+    BOOTADMBIN=/sbin/bootadm
+    if test -f "$BOOTADMBIN" || test -h "$BOOTADMBIN"; then
+        echo "Updating boot archive..."
+        $BOOTADMBIN update-archive > /dev/null
+        rc4=$?
+    fi
 fi
 
 echo "Done."
-if test "$rc" -eq 0; then
+if test "$rc" -eq 0 && test "$rc2" -eq 0 && test "$rc3" -eq 0 && test "$rc4" -eq 0; then
     echo "Post install successfully completed."
 else
     echo "Post install completed but with some errors."
+    # 20 - partially failed installed
+    $rc=20
 fi
-exit 0
+exit $rc
 
