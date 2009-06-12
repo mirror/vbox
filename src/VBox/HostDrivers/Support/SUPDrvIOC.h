@@ -182,6 +182,14 @@ typedef SUPREQHDR *PSUPREQHDR;
  * The upper 16-bit is the major version, the the lower the minor version.
  * When incompatible changes are made, the upper major number has to be changed.
  *
+ * Update rules:
+ *  -# Only update the major number when incompatible changes has been made.
+ *  -# When adding new features (new IOC number, new flags, new exports, ++)
+ *     only update the minor number and change SUPLib.cpp to require the
+ *     new IOC version.
+ *  -# When incrementing the major number, clear the minor part and reset
+ *     any IOC version requirements in SUPLib.cpp.
+ *
  * @todo Pending work on next major version change:
  *          - Eliminate supdrvPageWasLockedByPageAlloc and supdrvPageGetPhys.
  *          - Remove SUPR0PageAlloc in favor of SUPR0PageAllocEx, removing
