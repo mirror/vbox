@@ -668,7 +668,7 @@ VBOX_WITH_SLIRP_ALIAS=1
 endif
 Drivers_INCS      := \
 	$(PATH_SUB_CURRENT) \
-	Network/slirp
+	Device/Network
 Drivers_SOURCES    = \
 	Audio/audio.c \
 	Audio/audiosniffer.c \
@@ -746,7 +746,8 @@ define def_vbox_slirp_cflags
       $(if $(VBOX_WITH_SLIRP_DNS_PROXY),VBOX_WITH_SLIRP_DNS_PROXY,)	\
       $(if $(VBOX_WITH_SLIRP_MT),VBOX_WITH_SLIRP_MT,)
  ifdef VBOX_WITH_SLIRP_ALIAS
-  $(file)_INCS += Network/slirp/libalias
+  $(file)_INCS += $(1)/slirp
+  $(file)_INCS += $(1)/slirp/libalias
  endif
  ifeq ($(KBUILD_TARGET),win)
   $(file)_CFLAGS = -wd4018
@@ -754,18 +755,18 @@ define def_vbox_slirp_cflags
   $(file)_CFLAGS = -Wno-sign-compare
  endif
 endef
-$(foreach file,$(VBOX_SLIRP_SOURCES),$(eval $(def_vbox_slirp_cflags)))
+$(foreach file,$(VBOX_SLIRP_SOURCES),$(eval $(call def_vbox_slirp_cflags, Network)))
 
 ifdef VBOX_WITH_SLIRP_ALIAS
 Drivers_SOURCES += $(VBOX_SLIRP_ALIAS_SOURCES)
 define def_vbox_slirp_alias_cflags
   $(file)_DEFS += VBOX_SLIRP_ALIAS
-  $(file)_INCS += Network/slirp/libalias
-  $(file)_INCS += Network/slirp
-  $(file)_INCS += Network/slirp/dnsproxy
+  $(file)_INCS += $(1)/slirp/libalias
+  $(file)_INCS += $(1)/slirp
+  $(file)_INCS += $(1)/slirp/dnsproxy
 endef
-$(foreach file,$(VBOX_SLIRP_ALIAS_SOURCES),$(eval $(def_vbox_slirp_cflags)))
-$(foreach file,$(VBOX_SLIRP_ALIAS_SOURCES),$(eval $(def_vbox_slirp_alias_cflags)))
+$(foreach file,$(VBOX_SLIRP_ALIAS_SOURCES),$(eval $(call def_vbox_slirp_cflags, Network)))
+$(foreach file,$(VBOX_SLIRP_ALIAS_SOURCES),$(eval $(call def_vbox_slirp_alias_cflags, Network)))
 endif
 
 # -- OS specific --
