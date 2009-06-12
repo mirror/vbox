@@ -750,6 +750,97 @@ static int handleControlVM(HandlerArg *a)
                 }
             }
         }
+#ifdef VBOX_DYNAMIC_NET_ATTACH
+        else if (!strncmp(a->argv[1], "nic", 3))
+        {
+            /* Get the number of network adapters */
+            ULONG NetworkAdapterCount = 0;
+            ComPtr <ISystemProperties> info;
+            CHECK_ERROR_BREAK (a->virtualBox, COMGETTER(SystemProperties) (info.asOutParam()));
+            CHECK_ERROR_BREAK (info, COMGETTER(NetworkAdapterCount) (&NetworkAdapterCount));
+
+            unsigned n = parseNum(&a->argv[1][3], NetworkAdapterCount, "NIC");
+            if (!n)
+            {
+                rc = E_FAIL;
+                break;
+            }
+            if (a->argc <= 1 + 1)
+            {
+                errorArgument("Missing argument to '%s'", a->argv[1]);
+                rc = E_FAIL;
+                break;
+            }
+
+            /* get the corresponding network adapter */
+            ComPtr<INetworkAdapter> adapter;
+            CHECK_ERROR_BREAK (sessionMachine, GetNetworkAdapter(n - 1, adapter.asOutParam()));
+            if (adapter)
+            {
+                if (!strcmp(a->argv[2], "none"))
+                {
+                    CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (FALSE), 1);
+                }
+                else if (!strcmp(a->argv[2], "null"))
+                {
+                    CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (TRUE), 1);
+                    CHECK_ERROR_RET(adapter, Detach(), 1);
+                }
+                else if (!strcmp(a->argv[2], "nat"))
+                {
+                    if (a->argc == 3)
+                        CHECK_ERROR_RET(adapter, COMSETTER(NATNetwork)(Bstr(a->argv[3])), 1);
+                    CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (TRUE), 1);
+                    CHECK_ERROR_RET(adapter, AttachToNAT(), 1);
+                }
+                else if (  !strcmp(a->argv[2], "bridged")
+                        || !strcmp(a->argv[2], "hostif")) /* backward compatibility */
+                {
+                    if (a->argc <= 1 + 2)
+                    {
+                        errorArgument("Missing argument to '%s'", a->argv[2]);
+                        rc = E_FAIL;
+                        break;
+                    }
+                    CHECK_ERROR_RET(adapter, COMSETTER(HostInterface)(Bstr(a->argv[3])), 1);
+                    CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (TRUE), 1);
+                    CHECK_ERROR_RET(adapter, AttachToBridgedInterface(), 1);
+                }
+                else if (!strcmp(a->argv[2], "intnet"))
+                {
+                    if (a->argc <= 1 + 2)
+                    {
+                        errorArgument("Missing argument to '%s'", a->argv[2]);
+                        rc = E_FAIL;
+                        break;
+                    }
+                    CHECK_ERROR_RET(adapter, COMSETTER(InternalNetwork)(Bstr(a->argv[3])), 1);
+                    CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (TRUE), 1);
+                    CHECK_ERROR_RET(adapter, AttachToInternalNetwork(), 1);
+                }
+#if defined(VBOX_WITH_NETFLT)
+                else if (!strcmp(a->argv[2], "hostonly"))
+                {
+                    if (a->argc <= 1 + 2)
+                    {
+                        errorArgument("Missing argument to '%s'", a->argv[2]);
+                        rc = E_FAIL;
+                        break;
+                    }
+                    CHECK_ERROR_RET(adapter, COMSETTER(HostInterface)(Bstr(a->argv[3])), 1);
+                    CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (TRUE), 1);
+                    CHECK_ERROR_RET(adapter, AttachToHostOnlyInterface(), 1);
+                }
+#endif
+                else
+                {
+                    errorArgument("Invalid type '%s' specfied for NIC %lu", Utf8Str(a->argv[2]).raw(), n + 1);
+                    rc = E_FAIL;
+                    break;
+                }
+            }
+        }
+#endif /* VBOX_DYNAMIC_NET_ATTACH */
 #ifdef VBOX_WITH_VRDP
         else if (!strcmp(a->argv[1], "vrdp"))
         {

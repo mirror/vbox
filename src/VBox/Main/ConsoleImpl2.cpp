@@ -1363,6 +1363,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         switch (networkAttachment)
         {
             case NetworkAttachmentType_Null:
+#ifdef VBOX_DYNAMIC_NET_ATTACH
+                pConsole->meAttachmentType[ulInstance] = NetworkAttachmentType_Null;
+#endif /* VBOX_DYNAMIC_NET_ATTACH */
                 break;
 
             case NetworkAttachmentType_NAT:
@@ -1411,6 +1414,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
                     STR_FREE();
                 }
+#ifdef VBOX_DYNAMIC_NET_ATTACH
+                pConsole->meAttachmentType[ulInstance] = NetworkAttachmentType_NAT;
+#endif /* VBOX_DYNAMIC_NET_ATTACH */
                 break;
             }
 
@@ -1744,6 +1750,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #else
 # error "Port me"
 #endif
+#ifdef VBOX_DYNAMIC_NET_ATTACH
+                    pConsole->meAttachmentType[ulInstance] = NetworkAttachmentType_Bridged;
+#endif /* VBOX_DYNAMIC_NET_ATTACH */
                 }
                 else
                 {
@@ -1792,6 +1801,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     }
                     STR_FREE();
                 }
+#ifdef VBOX_DYNAMIC_NET_ATTACH
+                pConsole->meAttachmentType[ulInstance] = NetworkAttachmentType_Internal;
+#endif /* VBOX_DYNAMIC_NET_ATTACH */
                 break;
             }
 
@@ -2003,6 +2015,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 if (SUCCEEDED(hrc) && !tmpAddr.isEmpty())
                     hrc = hostInterface->EnableStaticIpConfigV6(tmpAddr, Utf8Str(tmpMask).toUInt32());
 #endif
+#ifdef VBOX_DYNAMIC_NET_ATTACH
+                pConsole->meAttachmentType[ulInstance] = NetworkAttachmentType_HostOnly;
+#endif /* VBOX_DYNAMIC_NET_ATTACH */
                 break;
             }
 

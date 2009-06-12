@@ -277,6 +277,15 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            keyboardputscancode <hex> [<hex> ...]|\n"
                  "                            injectnmi|\n"
                  "                            setlinkstate<1-N> on|off |\n"
+#ifdef VBOX_DYNAMIC_NET_ATTACH
+#if defined(VBOX_WITH_NETFLT)
+                 "                            nic<1-N> none|null|nat|bridged|intnet|hostonly\n"
+                 "                                     [<devicename>] |\n"
+#else /* !RT_OS_LINUX && !RT_OS_DARWIN */
+                 "                            nic<1-N> none|null|nat|bridged|intnet\n"
+                 "                                     [<devicename>] |\n"
+#endif /* !RT_OS_LINUX && !RT_OS_DARWIN  */
+#endif /* VBOX_DYNAMIC_NET_ATTACH */
                  "                            usbattach <uuid>|<address> |\n"
                  "                            usbdetach <uuid>|<address> |\n"
                  "                            dvdattach none|<uuid>|<filename>|host:<drive> |\n"
