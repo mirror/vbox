@@ -231,6 +231,8 @@
 #define VERR_EM_INTERNAL_ERROR              (-1149)
 /** Pending VM request packet. */
 #define VINF_EM_PENDING_REQUEST             (-1150)
+/** Start instruction stepping (debug only). */
+#define VINF_EM_RAW_EMULATE_DBG_STEP        1151
 /** @} */
 
 
