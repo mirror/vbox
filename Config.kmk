@@ -1946,9 +1946,13 @@ ifeq ($(KBUILD_TARGET),solaris)
   # We cannot compile additions on Solaris 10, due kernel interface deps
   VBOX_WITHOUT_ADDITIONS := 1
   VBOX_WITH_ADDITIONS =
+ else
+  $(eval export VBOX_SOLARIS_SNV_VERSION := $(shell uname -v | cut -f2 -d'_'))
+
+  # OSS audio support for Solaris
+ VBOX_WITH_SOLARIS_OSS := $(if-expr $(VBOX_SOLARIS_SNV_VERSION) >= 115,1,)
  endif
 endif
-
 
 #
 # Template for building GC things.

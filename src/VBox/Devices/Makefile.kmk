@@ -835,6 +835,10 @@ Drivers_SOURCES.solaris = \
 	Storage/DrvHostBase.cpp \
 	Storage/DrvHostDVD.cpp \
 	Serial/DrvHostSerial.cpp
+ ifdef VBOX_WITH_SOLARIS_OSS
+  Drivers_SOURCES += Audio/ossaudio.c
+  Drivers_DEFS += VBOX_WITH_SOLARIS_OSS
+ endif
  ifdef VBOX_WITH_CROSSBOW
   Drivers_SOURCES += Network/solaris/vbox-libdlpi.cpp
   Drivers_DEFS += VBOX_WITH_CROSSBOW

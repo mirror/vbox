@@ -274,14 +274,17 @@ static int oss_open (int in, struct oss_params *req,
         goto err;
     }
 
+/* Obsolete on Solaris (using O_NONBLOCK is sufficient) */
+#if !(defined(VBOX) && defined(RT_OS_SOLARIS))
     if (ioctl (fd, SNDCTL_DSP_NONBLOCK)) {
-#ifndef VBOX
+# ifndef VBOX
         oss_logerr2 (errno, typ, "Failed to set non-blocking mode\n");
-#else
+# else
         LogRel(("OSS: Failed to set non-blocking mode (%s)\n", strerror(errno)));
-#endif
+# endif
         goto err;
     }
+#endif
 
     mmmmssss = (req->nfrags << 16) | lsbindex (req->fragsize);
     if (ioctl (fd, SNDCTL_DSP_SETFRAGMENT, &mmmmssss)) {

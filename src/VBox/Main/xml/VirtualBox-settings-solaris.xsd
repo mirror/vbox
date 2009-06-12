@@ -62,6 +62,7 @@
           <xsd:restriction base="xsd:token">
             <xsd:enumeration value="Null"/>
             <xsd:enumeration value="SolAudio"/>
+            <xsd:enumeration value="OSS"/>
           </xsd:restriction>
         </xsd:simpleType>
       </xsd:attribute>

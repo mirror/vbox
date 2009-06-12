@@ -83,6 +83,9 @@ void VBoxVMSettingsAudio::prepareComboboxes()
 #endif
 #if defined Q_OS_SOLARIS
     mCbAudioDriver->addItem (vboxGlobal().toString (KAudioDriverType_SolAudio));
+# if defined VBOX_WITH_SOLARIS_OSS
+    mCbAudioDriver->addItem (vboxGlobal().toString (KAudioDriverType_OSS));
+#endif
 #endif
 #if defined Q_OS_LINUX || defined Q_OS_FREEBSD
     mCbAudioDriver->addItem (vboxGlobal().toString (KAudioDriverType_OSS));

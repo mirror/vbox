@@ -2278,7 +2278,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             }
 # endif
 #endif /* RT_OS_LINUX */
-#if defined (RT_OS_LINUX) || defined (RT_OS_FREEBSD)
+#if defined (RT_OS_LINUX) || defined (RT_OS_FREEBSD) || defined(VBOX_WITH_SOLARIS_OSS)
             case AudioDriverType_OSS:
             {
                 rc = CFGMR3InsertString(pCfg, "AudioDriver", "oss");                RC_CHECK();

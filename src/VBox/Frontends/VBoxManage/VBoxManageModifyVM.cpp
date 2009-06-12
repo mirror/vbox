@@ -1441,6 +1441,14 @@ int handleModifyVM(HandlerArg *a)
                     CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
                 }
 
+# ifdef VBOX_WITH_SOLARIS_OSS
+                else if (!strcmp(audio, "oss"))
+                {
+                    CHECK_ERROR(audioAdapter, COMSETTER(AudioDriver)(AudioDriverType_OSS));
+                    CHECK_ERROR(audioAdapter, COMSETTER(Enabled)(true));
+                }
+# endif
+
 #endif /* !RT_OS_SOLARIS */
 #ifdef RT_OS_DARWIN
                 else if (!strcmp(audio, "coreaudio"))
