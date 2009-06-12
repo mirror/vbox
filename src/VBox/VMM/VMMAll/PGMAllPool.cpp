@@ -3126,7 +3126,7 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t i
     {
         paPhysExts[iPhysExt].aidx[2] = iShwPT;
         STAM_COUNTER_INC(&pVM->pgm.s.StatTrackAliasedMany);
-        LogFlow(("pgmPoolTrackPhysExtAddref: %d:{,,%d}\n", iPhysExt, iShwPT));
+        LogFlow(("pgmPoolTrackPhysExtInsert: %d:{,,%d}\n", iPhysExt, iShwPT));
         return PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, iPhysExt);
     }
 
@@ -3141,14 +3141,14 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t i
             {
                 paPhysExts[iPhysExt].aidx[i] = iShwPT;
                 STAM_COUNTER_INC(&pVM->pgm.s.StatTrackAliasedMany);
-                LogFlow(("pgmPoolTrackPhysExtAddref: %d:{%d} i=%d cMax=%d\n", iPhysExt, iShwPT, i, cMax));
+                LogFlow(("pgmPoolTrackPhysExtInsert: %d:{%d} i=%d cMax=%d\n", iPhysExt, iShwPT, i, cMax));
                 return PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, iPhysExtStart);
             }
         if (!--cMax)
         {
             STAM_COUNTER_INC(&pVM->pgm.s.StatTrackOverflows);
             pgmPoolTrackPhysExtFreeList(pVM, iPhysExtStart);
-            LogFlow(("pgmPoolTrackPhysExtAddref: overflow (1) iShwPT=%d\n", iShwPT));
+            LogFlow(("pgmPoolTrackPhysExtInsert: overflow (1) iShwPT=%d\n", iShwPT));
             return PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, PGMPOOL_TD_IDX_OVERFLOWED);
         }
     }
@@ -3159,11 +3159,12 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t i
     {
         STAM_COUNTER_INC(&pVM->pgm.s.StatTrackOverflows);
         pgmPoolTrackPhysExtFreeList(pVM, iPhysExtStart);
+        LogFlow(("pgmPoolTrackPhysExtInsert: pgmPoolTrackPhysExtAlloc failed iShwPT=%d\n", iShwPT));
         return PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, PGMPOOL_TD_IDX_OVERFLOWED);
     }
     pNew->iNext = iPhysExtStart;
     pNew->aidx[0] = iShwPT;
-    LogFlow(("pgmPoolTrackPhysExtAddref: added new extent %d:{%d}->%d\n", iPhysExt, iShwPT, iPhysExtStart));
+    LogFlow(("pgmPoolTrackPhysExtInsert: added new extent %d:{%d}->%d\n", iPhysExt, iShwPT, iPhysExtStart));
     return PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, iPhysExt);
 }
 
