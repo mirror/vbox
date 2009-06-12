@@ -1,7 +1,9 @@
 #!/bin/sh
 ## @file
-# Sun VirtualBox
-# VirtualBox IPS/pkg(5) postinstall script for Solaris.
+# Sun VirtualBox - Manual IPS/pkg(5) postinstall script for Solaris.
+#
+# If you just installed VirtualBox using IPS/pkg(5), you should run this
+# script once to avoid rebooting the system before using VirtualBox.
 #
 
 #
@@ -18,11 +20,6 @@
 # Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
 # Clara, CA 95054 USA or visit http://www.sun.com if you need
 # additional information or have any questions.
-#
-
-#
-# If you just installed VirtualBox using IPS/pkg(5), you should run this
-# script once to avoid rebooting the system before using VirtualBox
 #
 
 check_root()
