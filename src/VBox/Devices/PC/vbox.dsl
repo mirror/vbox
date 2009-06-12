@@ -127,7 +127,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
     // known good configuration, as it remembers state, even if ACPI object gets disabled.
     Scope (\_PR)
     {
-       Processor (CPU0, /* Name */
+        Processor (CPU0, /* Name */
                    0x00, /* Id */
                    0x0,  /* Processor IO ports range start */
                    0x0   /* Processor IO ports range length */
@@ -141,7 +141,6 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                    0x0   /* Processor IO ports range length */
                    )
         {
-           Method (_STA) { Return(\_SB.UCP1) }
         }
         Processor (CPU2, /* Name */
                    0x02, /* Id */
@@ -149,7 +148,6 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                    0x0   /* Processor IO ports range length */
                    )
         {
-           Method (_STA) { Return(\_SB.UCP2) }
         }
         Processor (CPU3, /* Name */
                    0x03, /* Id */
@@ -157,8 +155,204 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                    0x0   /* Processor IO ports range length */
                    )
         {
-           Method (_STA) { Return(\_SB.UCP3) }
         }
+        Processor (CPU4, /* Name */
+                   0x04, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPU5, /* Name */
+                   0x05, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPU6, /* Name */
+                   0x06, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPU7, /* Name */
+                   0x07, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPU8, /* Name */
+                   0x08, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPU9, /* Name */
+                   0x09, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUA, /* Name */
+                   0x0a, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUB, /* Name */
+                   0x0b, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUC, /* Name */
+                   0x0c, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUD, /* Name */
+                   0x0d, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUE, /* Name */
+                   0x0e, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUF, /* Name */
+                   0x0f, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUG, /* Name */
+                   0x10, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUH, /* Name */
+                   0x11, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUI, /* Name */
+                   0x12, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUJ, /* Name */
+                   0x13, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUK, /* Name */
+                   0x14, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUL, /* Name */
+                   0x15, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUM, /* Name */
+                   0x16, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUN, /* Name */
+                   0x17, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUO, /* Name */
+                   0x18, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUP, /* Name */
+                   0x19, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUQ, /* Name */
+                   0x1a, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUR, /* Name */
+                   0x1b, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUS, /* Name */
+                   0x1c, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUT, /* Name */
+                   0x1d, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUU, /* Name */
+                   0x1e, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        Processor (CPUV, /* Name */
+                   0x1f, /* Id */
+                   0x0,  /* Processor IO ports range start */
+                   0x0   /* Processor IO ports range length */
+                   )
+        {
+        }
+        
     }
 
     Scope (\_SB)
