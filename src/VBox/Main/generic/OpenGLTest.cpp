@@ -40,9 +40,9 @@ bool is3DAccelerationSupported()
 
     rc = RTPathExecDir(pszVBoxPath, RTPATH_MAX); AssertRCReturn(rc, false);
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-    rc = RTPathAppend(pszVBoxPath, RTPATH_MAX, "VBoxTestOGL");
-#else
     rc = RTPathAppend(pszVBoxPath, RTPATH_MAX, "VBoxTestOGL.exe");
+#else
+    rc = RTPathAppend(pszVBoxPath, RTPATH_MAX, "VBoxTestOGL");
 #endif
     AssertRCReturn(rc, false);
     papszArgs[0] = pszVBoxPath;         /* argv[0] */
