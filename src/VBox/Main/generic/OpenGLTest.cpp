@@ -1,7 +1,6 @@
 /* $Id$ */
-
 /** @file
- * VBox host opengl support test
+ * VBox host opengl support test - generic implementation.
  */
 
 /*
@@ -12,35 +11,37 @@
  */
 
 #include <VBox/err.h>
-#include <iprt/process.h>
-#include <iprt/path.h>
-#include <iprt/param.h>
+#include <iprt/assert.h>
 #include <iprt/env.h>
-#include <iprt/thread.h>
-#include <string.h>
-#include <stdio.h>
+#include <iprt/param.h>
+#include <iprt/path.h>
+#include <iprt/process.h>
+#include <iprt/string.h>
+#include <iprt/time.h>
 
 bool is3DAccelerationSupported()
 {
     static char pszVBoxPath[RTPATH_MAX];
-    const char *pArgs[2] = {"-test", NULL};
+    const char *papszArgs[3] = { NULL, "-test", NULL};
     int rc;
     RTPROCESS Process;
     RTPROCSTATUS ProcStatus;
-    RTTIMESPEC Start;
-    RTTIMESPEC Now;
+    uint64_t StartTS;
 
-    RTProcGetExecutableName(pszVBoxPath, RTPATH_MAX);
-    RTPathStripFilename(pszVBoxPath);
-    strcat(pszVBoxPath,"/VBoxTestOGL");
-#ifdef RT_OS_WINDOWS
-    strcat(pszVBoxPath,".exe");
+    rc = RTPathExecDir(pszVBoxPath, RTPATH_MAX); AssertRCReturn(rc, false);
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+    rc = RTPathAppend(pszVBoxPath, RTPATH_MAX, "VBoxTestOGL");
+#else
+    rc = RTPathAppend(pszVBoxPath, RTPATH_MAX, "VBoxTestOGL.exe");
 #endif
+    AssertRCReturn(rc, false);
+    papszArgs[0] = pszVBoxPath;         /* argv[0] */
 
-    rc = RTProcCreate(pszVBoxPath, pArgs, RTENV_DEFAULT, 0, &Process);
-    if (RT_FAILURE(rc)) return false;
+    rc = RTProcCreate(pszVBoxPath, papszArgs, RTENV_DEFAULT, 0, &Process);
+    if (RT_FAILURE(rc))
+        return false;
 
-    RTTimeNow(&Start);
+    StartTS = RTTimeMilliTS();
 
     while (1)
     {
@@ -48,7 +49,7 @@ bool is3DAccelerationSupported()
         if (rc != VERR_PROCESS_RUNNING)
             break;
 
-        if (RTTimeSpecGetMilli(RTTimeSpecSub(RTTimeNow(&Now), &Start)) > 30*1000 /* 30 sec */)
+        if (RTTimeMilliTS() - StartTS > 30*1000 /* 30 sec */)
         {
             RTProcTerminate(Process);
             RTThreadSleep(100);
@@ -68,3 +69,4 @@ bool is3DAccelerationSupported()
 
     return false;
 }
+
