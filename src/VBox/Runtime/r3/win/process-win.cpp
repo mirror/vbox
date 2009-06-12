@@ -94,7 +94,7 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
     const char * const *papszEnv = RTEnvGetExecEnvP(Env);
     AssertPtrReturn(papszEnv, VERR_INVALID_HANDLE);
     AssertPtrReturn(papszArgs, VERR_INVALID_PARAMETER);
-    AssertReturn(*papszArgs, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(*papszArgs, VERR_INVALID_PARAMETER);
     /* later: path searching. */
 
     /*
