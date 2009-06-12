@@ -101,13 +101,7 @@ VBIPKG_FILENAME  = VirtualBoxKern-$(VBOX_VERSION_STRING)-SunOS-r$(VBOX_SVN_REV)
 # Targets
 #
 PROGRAMS         += VBoxZoneAccess VBoxISAExec
-INSTALLS         += solaris-doc
-
-INSTALLS += solaris-bin
-solaris-bin_INST = bin/
-solaris-bin_MODE = a+rx,u+w
-solaris-bin_SOURCES = \
-	$(if $(VBOX_WITH_PYTHON),$(PATH_ROOT)/src/VBox/Frontends/VBoxShell/vboxshell.py=>vboxshell.py,)
+INSTALLS         += solaris-doc solaris-bin
 
 BLDDIRS          += \
 	$(SOLARIS_INST_OUT_DIR) \
@@ -116,7 +110,7 @@ BLDDIRS          += \
 	$(SOLARIS_VBI_DIR) \
 	$(SOLARIS_DBG_DIR)
 
-BLDDIRS += $(foreach d,\
+BLDDIRS          += $(addprefix $(SOLARIS_BASEINST_DIR)/,\
 	usr \
 	usr/bin \
 	platform \
@@ -124,14 +118,13 @@ BLDDIRS += $(foreach d,\
 	platform/i86pc/kernel \
 	platform/i86pc/kernel/drv \
 	platform/i86pc/kernel/drv/amd64 \
-,$(SOLARIS_BASEINST_DIR)/$(d))
-
+)
 
 PACKING          += $(PATH_BIN)/$(PKG_FILENAME).tar.gz $(PATH_BIN)/$(DBG_ARCHIVE)
 
 OTHER_CLEAN      += $(addprefix $(SOLARIS_BASEINST_DIR)/,\
 	vbox.pkginfo vbox.copyright vbox.space vbox.pkgresponse \
-        makepackage.sh prototype postinstall.sh preremove.sh)
+	makepackage.sh prototype postinstall.sh preremove.sh)
 
 #
 # VBoxZoneAccess
@@ -157,10 +150,16 @@ solaris-doc_SOURCES = \
 	$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)=>LICENSE) \
 	$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/$(if $(VBOX_OSE),OSE,NonOSE)/VirtualBox_64px.png=>VBox.png
 
+solaris-bin_INST = bin/
+solaris-bin_MODE = a+rx,u+w
+solaris-bin_SOURCES = \
+	$(if $(VBOX_WITH_PYTHON),$(PATH_ROOT)/src/VBox/Frontends/VBoxShell/vboxshell.py=>vboxshell.py,)
+
 #
 # Note: Other than the files produced during packing (.pkg, .gzip etc.) all files that
 # go into the temporary install folder $(SOLARIS_VBOXINST_DIR) should be part of $(SOLARIS_ARCH_FILES).
 # For the files produced during packing they should be cleaned up promptly when the work is done.
+#
 
 # Strip these executables
 SOLARIS_STRIP_EXES = \
