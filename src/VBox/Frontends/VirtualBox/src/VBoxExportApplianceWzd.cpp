@@ -71,7 +71,7 @@ VBoxExportApplianceWzd::VBoxExportApplianceWzd (QWidget *aParent /* = NULL */, c
     mWValVMSelector->revalidate();
 
     /* Configure the file selector */
-//    mFileSelector->setMode (VBoxFilePathSelectorWidget::Mode_File_Save);
+    mFileSelector->setMode (VBoxFilePathSelectorWidget::Mode_File_Save);
     mFileSelector->setEditable (true);
     mFileSelector->setButtonPosition (VBoxEmptyFileSelector::RightPosition);
     mFileSelector->setFileDialogTitle (tr ("Select a file to export into"));

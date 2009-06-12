@@ -147,6 +147,9 @@ public:
 
     VBoxEmptyFileSelector (QWidget *aParent = NULL);
 
+    void setMode (VBoxFilePathSelectorWidget::Mode aMode);
+    VBoxFilePathSelectorWidget::Mode mode() const;
+
     void setButtonPosition (ButtonPosition aPos);
     ButtonPosition buttonPosition() const;
 
@@ -191,6 +194,7 @@ private:
     QHBoxLayout *mMainLayout;
     QWidget *mPathWgt;
     QILabel *mLabel;
+    VBoxFilePathSelectorWidget::Mode mMode;
     QILineEdit *mLineEdit;
     QPushButton *mSelectButton;
     QString mFileDialogTitle;

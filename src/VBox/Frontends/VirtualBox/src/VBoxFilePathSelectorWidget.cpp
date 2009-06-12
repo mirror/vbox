@@ -566,6 +566,7 @@ VBoxEmptyFileSelector::VBoxEmptyFileSelector (QWidget *aParent /* = NULL */)
     : QIWithRetranslateUI<QWidget> (aParent)
     , mPathWgt (NULL)
     , mLabel (NULL)
+    , mMode (VBoxFilePathSelectorWidget::Mode_File_Open)
     , mLineEdit (NULL)
     , mHomeDir (QDir::current().absolutePath())
     , mIsModified (false)
@@ -582,6 +583,16 @@ VBoxEmptyFileSelector::VBoxEmptyFileSelector (QWidget *aParent /* = NULL */)
     setEditable (false);
 
     retranslateUi();
+}
+
+void VBoxEmptyFileSelector::setMode (VBoxFilePathSelectorWidget::Mode aMode)
+{
+    mMode = aMode;
+}
+
+VBoxFilePathSelectorWidget::Mode VBoxEmptyFileSelector::mode() const
+{
+    return mMode;
 }
 
 void VBoxEmptyFileSelector::setButtonPosition (ButtonPosition aPos)
@@ -713,11 +724,25 @@ void VBoxEmptyFileSelector::choose()
     if (initDir.isNull())
         initDir = mHomeDir;
 
-    path = QIFileDialog::getOpenFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle);
-    if (!path.isEmpty() && QFileInfo (path).suffix().isEmpty())
-        path = QString ("%1.%2").arg (path).arg (mDefaultSaveExt);
-    if (!path.isEmpty())
-        setPath (path);
+    switch (mMode)
+    {
+        case VBoxFilePathSelectorWidget::Mode_File_Open:
+            path = QIFileDialog::getOpenFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle); break;
+        case VBoxFilePathSelectorWidget::Mode_File_Save:
+        {
+            path = QIFileDialog::getSaveFileName (initDir, mFileFilters, parentWidget(), mFileDialogTitle);
+            if (!path.isEmpty() && QFileInfo (path).suffix().isEmpty())
+                path = QString ("%1.%2").arg (path).arg (mDefaultSaveExt);
+            break;
+        }
+        case VBoxFilePathSelectorWidget::Mode_Folder:
+            path = QIFileDialog::getExistingDirectory (initDir, parentWidget(), mFileDialogTitle); break;
+    }
+    if (path.isEmpty())
+        return;
+
+    path.remove (QRegExp ("[\\\\/]$"));
+    setPath (path);
 }
 
 void VBoxEmptyFileSelector::textChanged (const QString& aPath)
