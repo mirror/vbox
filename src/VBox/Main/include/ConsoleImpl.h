@@ -27,6 +27,10 @@
 #include "VirtualBoxBase.h"
 #include "ProgressImpl.h"
 
+#ifdef VBOX_DYNAMIC_NET_ATTACH
+# include "SchemaDefs.h"
+#endif /* VBOX_DYNAMIC_NET_ATTACH */
+
 class Guest;
 class Keyboard;
 class Mouse;
@@ -438,6 +442,17 @@ private:
                                           unsigned uInstance, unsigned uLun,
                                           DriveState_T eState, DriveState_T *peState,
                                           const char *pszPath, bool fPassthrough);
+#ifdef VBOX_DYNAMIC_NET_ATTACH
+    HRESULT doNetworkAdapterChange (const char *pszDevice, unsigned uInstance,
+                                    unsigned uLun, NetworkAttachmentType_T eAttachmentType,
+                                    NetworkAttachmentType_T *meAttachmentType,
+                                    INetworkAdapter *aNetworkAdapter);
+    static DECLCALLBACK(int) changeNetworkAttachment (Console *pThis, const char *pszDevice,
+                                                      unsigned uInstance, unsigned uLun,
+                                                      NetworkAttachmentType_T eAttachmentType,
+                                                      NetworkAttachmentType_T *meAttachmentType,
+                                                      INetworkAdapter *aNetworkAdapter);
+#endif /* VBOX_DYNAMIC_NET_ATTACH */
 
 #ifdef VBOX_WITH_USB
     HRESULT attachUSBDevice (IUSBDevice *aHostDevice, ULONG aMaskedIfs);
@@ -538,6 +553,11 @@ private:
     /** The current Floppy drive state in the VM.
      * This does not have to match the state maintained in the Floppy. */
     DriveState_T meFloppyState;
+#ifdef VBOX_DYNAMIC_NET_ATTACH
+    /** The current network attachment type in the VM.
+     * This does not have to match the state maintained in the NetworkAdapter. */
+    NetworkAttachmentType_T meAttachmentType[SchemaDefs::NetworkAdapterCount];
+#endif /* VBOX_DYNAMIC_NET_ATTACH */
 
     VMMDev * const mVMMDev;
     AudioSniffer * const mAudioSniffer;

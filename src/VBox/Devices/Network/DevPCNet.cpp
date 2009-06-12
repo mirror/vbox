@@ -4650,6 +4650,103 @@ static DECLCALLBACK(void) pcnetPowerOff(PPDMDEVINS pDevIns)
 }
 
 
+#ifdef VBOX_DYNAMIC_NET_ATTACH
+/**
+ * Detach notification.
+ *
+ * One network card at one port has been unplugged.
+ * The VM is suspended at this point.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   iLUN        The logical unit which is being detached.
+ */
+static DECLCALLBACK(void) pcnetDetach(PPDMDEVINS pDevIns, unsigned iLUN)
+{
+    PCNetState *pThis = PDMINS_2_DATA(pDevIns, PCNetState *);
+
+    Log(("%s:\n", __FUNCTION__));
+
+    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    AssertReleaseRC(rc);
+
+    /* @todo: r=pritesh still need to check if i missed
+     * to clean something in this function
+     */
+
+    /*
+     * Zero some important members.
+     */
+    pThis->pDrvBase = NULL;
+    pThis->pDrv = NULL;
+
+    PDMCritSectLeave(&pThis->CritSect);
+}
+
+
+/**
+ * Attach the Network attachment.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   iLUN        The logical unit which is being detached.
+ */
+static DECLCALLBACK(int)  pcnetAttach(PPDMDEVINS pDevIns, unsigned iLUN)
+{
+    PCNetState *pThis = PDMINS_2_DATA(pDevIns, PCNetState *);
+    int         rc    = VINF_SUCCESS;
+
+    Log(("%s:\n", __FUNCTION__));
+
+    rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    AssertReleaseRC(rc);
+
+    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "Network Port");
+    if (RT_SUCCESS(rc))
+    {
+        if (rc == VINF_NAT_DNS)
+        {
+#ifdef RT_OS_LINUX
+            PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "NoDNSforNAT",
+                                       N_("A Domain Name Server (DNS) for NAT networking could not be determined. Please check your /etc/resolv.conf for <tt>nameserver</tt> entries. Either add one manually (<i>man resolv.conf</i>) or ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
+#else
+            PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "NoDNSforNAT",
+                                       N_("A Domain Name Server (DNS) for NAT networking could not be determined. Ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
+#endif
+        }
+        pThis->pDrv = (PPDMINETWORKCONNECTOR)
+            pThis->pDrvBase->pfnQueryInterface(pThis->pDrvBase, PDMINTERFACE_NETWORK_CONNECTOR);
+        if (!pThis->pDrv)
+        {
+            AssertMsgFailed(("Failed to obtain the PDMINTERFACE_NETWORK_CONNECTOR interface!\n"));
+            return VERR_PDM_MISSING_INTERFACE_BELOW;
+        }
+    }
+    else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+        Log(("No attached driver!\n"));
+    else
+        return rc;
+
+    /*
+     * Temporary set the link down if it was up so that the guest
+     * will know that we have change the configuration of the
+     * network card
+     */
+    if (pThis->fLinkUp)
+    {
+        pThis->fLinkTempDown = true;
+        pThis->cLinkDownReported = 0;
+        pThis->aCSR[0] |= RT_BIT(15) | RT_BIT(13); /* ERR | CERR (this is probably wrong) */
+        pThis->Led.Asserted.s.fError = pThis->Led.Actual.s.fError = 1;
+        TMTimerSetMillies(pThis->pTimerRestore, 20000);
+    }
+    PDMCritSectLeave(&pThis->CritSect);
+
+    return rc;
+
+}
+#endif /* VBOX_DYNAMIC_NET_ATTACH */
+
+
 /**
  * @copydoc FNPDMDEVSUSPEND
  */
@@ -5162,10 +5259,17 @@ const PDMDEVREG g_DevicePCNet =
     pcnetSuspend,
     /* pfnResume */
     NULL,
+#ifdef VBOX_DYNAMIC_NET_ATTACH
+    /* pfnAttach */
+    pcnetAttach,
+    /* pfnDetach */
+    pcnetDetach,
+#else /* !VBOX_DYNAMIC_NET_ATTACH */
     /* pfnAttach */
     NULL,
     /* pfnDetach */
     NULL,
+#endif /* !VBOX_DYNAMIC_NET_ATTACH */
     /* pfnQueryInterface. */
     NULL,
     /* pfnInitComplete. */
