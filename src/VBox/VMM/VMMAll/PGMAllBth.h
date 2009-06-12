@@ -812,7 +812,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                         RTGCPHYS GCPhys;
                         uint64_t fPageGst;
                         rc = PGMGstGetPage(pVCpu, pvFault, &fPageGst, &GCPhys);
-                        Assert(RT_SUCCESS(rc) && (fPageGst & X86_PTE_RW));
+                        AssertMsg(RT_SUCCESS(rc) && (fPageGst & X86_PTE_RW), ("rc=%d fPageGst=%RX64\n"));
                         LogFlow(("Obsolete physical monitor page out of sync %RGv - phys %RGp flags=%08llx\n", pvFault, GCPhys, (uint64_t)fPageGst));
 
                         uint64_t fPageShw;
