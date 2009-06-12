@@ -668,7 +668,7 @@ VBOX_WITH_SLIRP_ALIAS=1
 endif
 Drivers_INCS      := \
 	$(PATH_SUB_CURRENT) \
-	Device/Network
+	Network/slirp
 Drivers_SOURCES    = \
 	Audio/audio.c \
 	Audio/audiosniffer.c \
