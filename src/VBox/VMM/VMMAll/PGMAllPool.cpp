@@ -2543,12 +2543,11 @@ static void pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, uint16_t 
                         return;
                 }
 #ifdef LOG_ENABLED
-            RTLogPrintf("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent);
+            Log(("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent));
             for (unsigned i = 0; i < RT_ELEMENTS(pPT->a); i++)
                 if ((pPT->a[i].u & (X86_PTE_PG_MASK | X86_PTE_P)) == u32)
                 {
-                    RTLogPrintf("i=%d cRefs=%d\n", i, cRefs--);
-                    pPT->a[i].u = 0;
+                    Log(("i=%d cRefs=%d\n", i, cRefs--));
                 }
 #endif
             AssertFatalMsgFailed(("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent));
@@ -2573,12 +2572,11 @@ static void pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, uint16_t 
                         return;
                 }
 #ifdef LOG_ENABLED
-            RTLogPrintf("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent);
+            Log(("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent));
             for (unsigned i = 0; i < RT_ELEMENTS(pPT->a); i++)
                 if ((pPT->a[i].u & (X86_PTE_PAE_PG_MASK | X86_PTE_P)) == u64)
                 {
-                    RTLogPrintf("i=%d cRefs=%d\n", i, cRefs--);
-                    pPT->a[i].u = 0;
+                    Log(("i=%d cRefs=%d\n", i, cRefs--));
                 }
 #endif
             AssertFatalMsgFailed(("cRefs=%d iFirstPresent=%d cPresent=%d u64=%RX64\n", cRefs, pPage->iFirstPresent, pPage->cPresent, u64));
@@ -2599,12 +2597,11 @@ static void pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, uint16_t 
                         return;
                 }
 #ifdef LOG_ENABLED
-            RTLogPrintf("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent);
+            Log(("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent));
             for (unsigned i = 0; i < RT_ELEMENTS(pPT->a); i++)
                 if ((pPT->a[i].u & (EPT_PTE_PG_MASK | X86_PTE_P)) == u64)
                 {
-                    RTLogPrintf("i=%d cRefs=%d\n", i, cRefs--);
-                    pPT->a[i].u = 0;
+                    Log(("i=%d cRefs=%d\n", i, cRefs--));
                 }
 #endif
             AssertFatalMsgFailed(("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent));
