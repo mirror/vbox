@@ -54,6 +54,75 @@ static int cleanupDynamicDsdt(PPDMDEVINS pDevIns,
 {
     return 0;
 }
+
+#else
+static int patchAml(PPDMDEVINS pDevIns, uint8_t* pAml, size_t uAmlLen)
+{
+    uint16_t cNumCpus;
+    int rc;
+    
+    rc = CFGMR3QueryU16Def(pDevIns->pCfgHandle, "NumCPUs", &cNumCpus, 1);
+   
+    if (RT_FAILURE(rc))
+        return rc;
+    
+    /** 
+     * Now search AML for:
+     *  AML_PROCESSOR_OP            (UINT16) 0x5b83
+     * and replace whole block with
+     *  AML_NOOP_OP                 (UINT16) 0xa3 
+     * for VCPU not configured
+     */
+    uint16_t cAcpiCpus = 0;
+    for (uint32_t i = 0; i < uAmlLen - 5; i++)
+    {
+        /*
+         * AML_PROCESSOR_OP 
+         *
+         * DefProcessor := ProcessorOp PkgLength NameString ProcID 
+                             PblkAddr PblkLen ObjectList
+         * ProcessorOp  := ExtOpPrefix 0x83
+         * ProcID       := ByteData
+         * PblkAddr     := DwordData
+         * PblkLen      := ByteData
+         */
+        if ((pAml[i] == 0x5b) && (pAml[i+1] == 0x83))
+        {
+            if ((pAml[i+3] != 'C') || (pAml[i+4] != 'P'))
+                /* false alarm, not named starting CP */
+                continue;
+            
+            /* Maybe use ProcID instead? */
+            cAcpiCpus++;
+            if (cAcpiCpus <= cNumCpus)
+                continue;
+
+            /* Will fill unwanted CPU block with NOOPs */
+            /* 
+             * See 18.2.4 Package Length Encoding in ACPI spec 
+             * for full format 
+             */
+            uint32_t cBytes = pAml[i + 2];
+            AssertReleaseMsg((cBytes >> 6) == 0, 
+                             ("So far, we only understand simple package length"));
+                
+            /* including AML_PROCESSOR_OP itself */
+            for (uint32_t j = 0; j < cBytes + 2; j++)
+                pAml[i+j] = 0xa3;
+
+            /* Can increase i by cBytes + 1, but not really worth it */
+        }
+    }
+
+    /* now recompute checksum, whole file byte sum must be 0 */
+    pAml[9] = 0;
+    uint8_t         aSum = 0;
+    for (uint32_t i = 0; i < uAmlLen; i++)
+      aSum = aSum + (uint8_t)pAml[i];
+    pAml[9] = (uint8_t) (0 - aSum);
+    
+    return 0;
+}
 #endif
 
 /* Two only public functions */
