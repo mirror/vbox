@@ -1026,7 +1026,7 @@ ResumeExecution:
 #ifdef VBOX_STRICT
     idCpuCheck = RTMpCpuId();
 #endif
-#ifdef LOG_LOGGING
+#ifdef LOG_ENABLED
     VMMR0LogFlushDisable(pVCpu);
 #endif
 
@@ -1323,7 +1323,7 @@ ResumeExecution:
     }
 
     /* Note! NOW IT'S SAFE FOR LOGGING! */
-#ifdef LOG_LOGGING
+#ifdef LOG_ENABLED
     VMMR0LogFlushEnable(pVCpu);
 #endif
 
