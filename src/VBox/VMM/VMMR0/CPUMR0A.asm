@@ -81,6 +81,8 @@ BEGINPROC cpumR0SaveHostRestoreGuestFPUState
 %else
     mov     xDX, dword [esp + 4]
 %endif
+    pushf                               ; The darwin kernel can get upset or upset things if an
+    cli                                 ; interrupt occurs while we're doing fxsave/fxrstor/cr0.
 
     ; Switch the state.
     or      dword [xDX + CPUMCPU.fUseFlags], (CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM)
@@ -103,7 +105,7 @@ BEGINPROC cpumR0SaveHostRestoreGuestFPUState
 
 .done:
     mov     cr0, xCX                    ; and restore old CR0 again ;; @todo optimize this.
-.fpu_not_used:
+    popf
     xor     eax, eax
     ret
 
@@ -175,6 +177,9 @@ BEGINPROC cpumR0SaveGuestRestoreHostFPUState
     test    dword [xDX + CPUMCPU.fUseFlags], CPUM_USED_FPU
     jz short .fpu_not_used
 
+    pushf                               ; The darwin kernel can get upset or upset things if an
+    cli                                 ; interrupt occurs while we're doing fxsave/fxrstor/cr0.
+
     mov     xAX, cr0                    ; Make sure it's safe to access the FPU state.
     mov     xCX, xAX                    ; save old CR0
     and     xAX, ~(X86_CR0_TS | X86_CR0_EM)
@@ -194,6 +199,7 @@ BEGINPROC cpumR0SaveGuestRestoreHostFPUState
 .done:
     mov     cr0, xCX                    ; and restore old CR0 again ;; @todo optimize this.
     and     dword [xDX + CPUMCPU.fUseFlags], ~CPUM_USED_FPU
+    popf
 .fpu_not_used:
     xor     eax, eax
     ret
@@ -236,6 +242,9 @@ BEGINPROC cpumR0RestoreHostFPUState
     test    dword [xDX + CPUMCPU.fUseFlags], CPUM_USED_FPU
     jz short .fpu_not_used
 
+    pushf                               ; The darwin kernel can get upset or upset things if an
+    cli                                 ; interrupt occurs while we're doing fxsave/fxrstor/cr0.
+
     mov     xAX, cr0
     mov     xCX, xAX                    ; save old CR0
     and     xAX, ~(X86_CR0_TS | X86_CR0_EM)
@@ -254,6 +263,7 @@ BEGINPROC cpumR0RestoreHostFPUState
 .done:
     mov     cr0, xCX                    ; and restore old CR0 again
     and     dword [xDX + CPUMCPU.fUseFlags], ~CPUM_USED_FPU
+    popf
 .fpu_not_used:
     xor     eax, eax
     ret
