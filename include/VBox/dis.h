@@ -519,7 +519,7 @@ typedef DISCPUSTATE const *PCDISCPUSTATE;
 
 /** The storage padding sufficient to hold the largest DISCPUSTATE in all
  * contexts (R3, R0 and RC). Used various places in the VMM internals.   */
-#define DISCPUSTATE_PADDING_SIZE    (HC_ARCH_BITS == 64 ? 0x1a0 : 0x160)
+#define DISCPUSTATE_PADDING_SIZE    (HC_ARCH_BITS == 64 ? 0x1a0 : 0x180)
 
 /** Opcode. */
 #pragma pack(4)
