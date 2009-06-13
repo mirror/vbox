@@ -38,8 +38,8 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#ifdef RT_OS_DARWIN
-# define VMM_R0_SWITCH_STACK
+#if !defined(VMM_R0_SWITCH_STACK) && !defined(VMM_R0_NO_SWITCH_STACK)
+# error "VMM_R0_SWITCH_STACK or VMM_R0_NO_SWITCH_STACK has to be defined.
 #endif
 
 

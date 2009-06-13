@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2007 Sun Microsystems, Inc.
+; Copyright (C) 2006-2009 Sun Microsystems, Inc.
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -20,6 +20,18 @@
 ;
 
 %include "VBox/asmdefs.mac"
+
+;
+; Determin the default stack switching unless specified explicitly.
+;
+%ifndef VMM_R0_SWITCH_STACK
+ %ifndef VMM_R0_NO_SWITCH_STACK
+  %ifdef RT_OS_DARWIN
+   %define VMM_R0_SWITCH_STACK
+  %endif
+ %endif
+%endif
+
 
 struc VMMR0JMPBUF
 %ifdef RT_ARCH_X86
@@ -44,10 +56,10 @@ struc VMMR0JMPBUF
 %ifdef RT_ARCH_AMD64
     ; traditional jmp_buf
     .rbx            resq 1
-%ifdef RT_OS_WINDOWS
+ %ifdef RT_OS_WINDOWS
     .rsi            resq 1
     .rdi            resq 1
-%endif
+ %endif
     .rbp            resq 1
     .r12            resq 1
     .r13            resq 1

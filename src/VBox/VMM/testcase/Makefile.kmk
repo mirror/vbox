@@ -30,7 +30,7 @@ ifneq ($(KBUILD_TARGET),win)
 PROGRAMS   += tstVMMFork
 endif
 ifdef VBOX_WITH_TESTCASES
- PROGRAMS  += tstCFGM tstSSM tstMMHyperHeap tstVMREQ tstMicro tstCompiler tstVMMR0CallHost-1
+ PROGRAMS  += tstCFGM tstSSM tstMMHyperHeap tstVMREQ tstMicro tstCompiler tstVMMR0CallHost-1 tstVMMR0CallHost-2
  ifneq ($(KBUILD_TARGET),l4)
   PROGRAMS += tstAnimate
  endif
@@ -157,15 +157,18 @@ tstVMMFork_TEMPLATE     = VBOXR3EXE
 tstVMMFork_SOURCES      = tstVMMFork.cpp
 tstVMMFork_LIBS         = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 
-tstVMMR0CallHost-1_TEMPLATE = VBOXR3EXE
-tstVMMR0CallHost-1_INCS  = $(VBOX_PATH_VMM_SRC)
+tstVMMR0CallHost-1_TEMPLATE = VBOXR3TSTEXE
+tstVMMR0CallHost-1_DEFS = VMM_R0_NO_SWITCH_STACK
+tstVMMR0CallHost-1_INCS = $(VBOX_PATH_VMM_SRC)
 tstVMMR0CallHost-1_SOURCES = \
 	tstVMMR0CallHost-1.cpp
 tstVMMR0CallHost-1_SOURCES.amd64 = \
 	$(VBOX_PATH_VMM_SRC)/VMMR0/VMMR0JmpA-amd64.asm
 tstVMMR0CallHost-1_SOURCES.x86 = \
 	$(VBOX_PATH_VMM_SRC)/VMMR0/VMMR0JmpA-x86.asm
-tstVMMR0CallHost-1_LIBS  = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
+
+tstVMMR0CallHost-2_EXTENDS = tstVMMR0CallHost-1
+tstVMMR0CallHost-2_DEFS = VMM_R0_SWITCH_STACK
 
 tstVMREQ_TEMPLATE       = VBOXR3EXE
 tstVMREQ_SOURCES        = tstVMREQ.cpp

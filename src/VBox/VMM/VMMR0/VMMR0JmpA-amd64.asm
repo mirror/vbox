@@ -23,12 +23,9 @@
 ;* Header Files                                                                *
 ;*******************************************************************************
 %include "VBox/asmdefs.mac"
-%include "VMMInternal.mac"
+%include "../VMMInternal.mac"
 %include "iprt/err.mac"
-
-%ifdef RT_OS_DARWIN
- %define VMM_R0_SWITCH_STACK
-%endif
+%include "VBox/param.mac"
 
 
 BEGINCODE
@@ -65,42 +62,42 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     mov     r11, rsi                    ; pfn
     mov     rdx, rdi                    ; pJmpBuf
  %endif
-    mov     [rdx + VMMR0JMPBUF.rbx], rbx
+    mov     [xDX + VMMR0JMPBUF.rbx], rbx
  %ifdef ASM_CALL64_MSC
-    mov     [rdx + VMMR0JMPBUF.rsi], rsi
-    mov     [rdx + VMMR0JMPBUF.rdi], rdi
+    mov     [xDX + VMMR0JMPBUF.rsi], rsi
+    mov     [xDX + VMMR0JMPBUF.rdi], rdi
  %endif
     mov     r10, [rbp]
-    mov     [rdx + VMMR0JMPBUF.rbp], r10
-    mov     [rdx + VMMR0JMPBUF.r12], r12
-    mov     [rdx + VMMR0JMPBUF.r13], r13
-    mov     [rdx + VMMR0JMPBUF.r14], r14
-    mov     [rdx + VMMR0JMPBUF.r15], r15
-    mov     rax, [rbp + 8]
-    mov     [rdx + VMMR0JMPBUF.rip], rax
+    mov     [xDX + VMMR0JMPBUF.rbp], r10
+    mov     [xDX + VMMR0JMPBUF.r12], r12
+    mov     [xDX + VMMR0JMPBUF.r13], r13
+    mov     [xDX + VMMR0JMPBUF.r14], r14
+    mov     [xDX + VMMR0JMPBUF.r15], r15
+    mov     xAX, [rbp + 8]
+    mov     [xDX + VMMR0JMPBUF.rip], xAX
     lea     r10, [rbp + 10h]            ; (used in resume)
-    mov     [rdx + VMMR0JMPBUF.rsp], r10
+    mov     [xDX + VMMR0JMPBUF.rsp], r10
 
     ;
     ; If we're not in a ring-3 call, call pfn and return.
     ;
-    test    byte [rdx + VMMR0JMPBUF.fInRing3Call], 1
+    test    byte [xDX + VMMR0JMPBUF.fInRing3Call], 1
     jnz     .resume
 
  %ifdef VMM_R0_SWITCH_STACK
-    mov     r15, [rdx + VMMR0JMPBUF.pvSavedStack]
+    mov     r15, [xDX + VMMR0JMPBUF.pvSavedStack]
     test    r15, r15
     jz      .entry_error
   %ifdef VBOX_STRICT
     cmp     dword [r15], 0h
     jne     .entry_error
     mov     rdi, r15
-    mov     rcx, 1024
-    mov     rax, 00eeeeeeeffeeeeeeeh
+    mov     rcx, VMM_STACK_SIZE / 8
+    mov     rax, 00eeeeeeeeffeeeeeeeh
     repne stosq
     mov     [rdi - 10h], rbx
   %endif
-    lea     r15, [r15 + 8192 - 40h]
+    lea     r15, [r15 + VMM_STACK_SIZE - 40h]
     mov     rsp, r15                    ; Switch stack!
  %endif ; VMM_R0_SWITCH_STACK
 
@@ -117,7 +114,7 @@ GLOBALNAME vmmR0CallHostSetJmpEx
 
  %ifdef VMM_R0_SWITCH_STACK
   %ifdef VBOX_STRICT
-    mov     r15, [rdx + VMMR0JMPBUF.pvSavedStack]
+    mov     r15, [xDX + VMMR0JMPBUF.pvSavedStack]
     mov     dword [r15], 0h             ; Reset the marker
   %endif
  %endif
@@ -126,77 +123,94 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     ; Return like in the long jump but clear eip, no short cuts here.
     ;
 .proper_return:
-    mov     rbx, [rdx + VMMR0JMPBUF.rbx]
+    mov     rbx, [xDX + VMMR0JMPBUF.rbx]
  %ifdef ASM_CALL64_MSC
-    mov     rsi, [rdx + VMMR0JMPBUF.rsi]
-    mov     rdi, [rdx + VMMR0JMPBUF.rdi]
+    mov     rsi, [xDX + VMMR0JMPBUF.rsi]
+    mov     rdi, [xDX + VMMR0JMPBUF.rdi]
  %endif
-    mov     r12, [rdx + VMMR0JMPBUF.r12]
-    mov     r13, [rdx + VMMR0JMPBUF.r13]
-    mov     r14, [rdx + VMMR0JMPBUF.r14]
-    mov     r15, [rdx + VMMR0JMPBUF.r15]
-    mov     rbp, [rdx + VMMR0JMPBUF.rbp]
-    mov     rcx, [rdx + VMMR0JMPBUF.rip]
-    and     qword [rdx + VMMR0JMPBUF.rip], byte 0 ; used for valid check.
-    mov     rsp, [rdx + VMMR0JMPBUF.rsp]
-    jmp     rcx
+    mov     r12, [xDX + VMMR0JMPBUF.r12]
+    mov     r13, [xDX + VMMR0JMPBUF.r13]
+    mov     r14, [xDX + VMMR0JMPBUF.r14]
+    mov     r15, [xDX + VMMR0JMPBUF.r15]
+    mov     rbp, [xDX + VMMR0JMPBUF.rbp]
+    mov     xCX, [xDX + VMMR0JMPBUF.rip]
+    and     qword [xDX + VMMR0JMPBUF.rip], byte 0 ; used for valid check.
+    mov     rsp, [xDX + VMMR0JMPBUF.rsp]
+    jmp     xCX
 
 .entry_error:
     mov     eax, VERR_INTERNAL_ERROR_2
     jmp     .proper_return
 
+.stack_overflow:
+    mov     eax, VERR_INTERNAL_ERROR_5
+    jmp     .proper_return
+
+    ;
+    ; Aborting resume.
+    ;
+.bad:
+    and     qword [xDX + VMMR0JMPBUF.rip], byte 0 ; used for valid check.
+    mov     rbx, [xDX + VMMR0JMPBUF.rbx]
+ %ifdef ASM_CALL64_MSC
+    mov     rsi, [xDX + VMMR0JMPBUF.rsi]
+    mov     rdi, [xDX + VMMR0JMPBUF.rdi]
+ %endif
+    mov     r12, [xDX + VMMR0JMPBUF.r12]
+    mov     r13, [xDX + VMMR0JMPBUF.r13]
+    mov     r14, [xDX + VMMR0JMPBUF.r14]
+    mov     r15, [xDX + VMMR0JMPBUF.r15]
+    mov     eax, VERR_INTERNAL_ERROR_3    ; todo better return code!
+    leave
+    ret
+
     ;
     ; Resume VMMR0CallHost the call.
     ;
 .resume:
- %ifdef VMM_R0_SWITCH_STACK
-    ; Switch stack.
-    mov     rsp, [rdx + VMMR0JMPBUF.SpResume]
- %else  ; !VMM_R0_SWITCH_STACK
     ; Sanity checks.
-    cmp     r10, [rdx + VMMR0JMPBUF.SpCheck]
-    je      .rspCheck_ok
-.bad:
-    and     qword [rdx + VMMR0JMPBUF.rip], byte 0 ; used for valid check.
-    mov     rbx, [rdx + VMMR0JMPBUF.rbx]
-  %ifdef ASM_CALL64_MSC
-    mov     rsi, [rdx + VMMR0JMPBUF.rsi]
-    mov     rdi, [rdx + VMMR0JMPBUF.rdi]
-  %endif
-    mov     r12, [rdx + VMMR0JMPBUF.r12]
-    mov     r13, [rdx + VMMR0JMPBUF.r13]
-    mov     r14, [rdx + VMMR0JMPBUF.r14]
-    mov     r15, [rdx + VMMR0JMPBUF.r15]
-    mov     eax, VERR_INTERNAL_ERROR_2
-    leave
-    ret
+ %ifdef VMM_R0_SWITCH_STACK
+    ;; @todo amd64/switch/resume sanity.
+ %else  ; !VMM_R0_SWITCH_STACK
+    cmp     r10, [xDX + VMMR0JMPBUF.SpCheck]
+    jne     .bad
 
-.rspCheck_ok:
-    mov     ecx, [rdx + VMMR0JMPBUF.cbSavedStack]
-    cmp     rcx, 8192
+    mov     ecx, [xDX + VMMR0JMPBUF.cbSavedStack]
+    cmp     rcx, VMM_STACK_SIZE
     ja      .bad
     test    rcx, 3
     jnz     .bad
-    mov     rdi, [rdx + VMMR0JMPBUF.rsp]
-    sub     rdi, [rdx + VMMR0JMPBUF.SpResume]
+    mov     rdi, [xDX + VMMR0JMPBUF.rsp]
+    sub     rdi, [xDX + VMMR0JMPBUF.SpResume]
     cmp     rcx, rdi
     jne     .bad
+ %endif
 
-    ;
+%ifdef VMM_R0_SWITCH_STACK
+    ; Switch stack.
+    mov     rsp, [xDX + VMMR0JMPBUF.SpResume]
+%else
     ; Restore the stack.
-    ;
-    mov     ecx, [rdx + VMMR0JMPBUF.cbSavedStack]
+    mov     ecx, [xDX + VMMR0JMPBUF.cbSavedStack]
     shr     ecx, 3
-    mov     rsi, [rdx + VMMR0JMPBUF.pvSavedStack]
-    mov     rdi, [rdx + VMMR0JMPBUF.SpResume]
+    mov     rsi, [xDX + VMMR0JMPBUF.pvSavedStack]
+    mov     rdi, [xDX + VMMR0JMPBUF.SpResume]
     mov     rsp, rdi
     rep movsq
- %endif ; !VMM_R0_SWITCH_STACK
-    mov     byte [rdx + VMMR0JMPBUF.fInRing3Call], 0
+%endif ; !VMM_R0_SWITCH_STACK
+    mov     byte [xDX + VMMR0JMPBUF.fInRing3Call], 0
 
     ;
     ; Continue where we left off.
     ;
+%ifdef VBOX_STRICT
+    pop     eax                         ; magic
+    cmp     eax, 0f00dbed0h
+    je      .magic_ok
+    mov     ecx, 0123h
+    mov     [ecx], edx
+.magic_ok:
+%endif
     popf
     pop     rbx
  %ifdef ASM_CALL64_MSC
@@ -236,6 +250,9 @@ BEGINPROC vmmR0CallHostLongJmp
  %endif
     push    rbx
     pushf
+%ifdef VBOX_STRICT
+    push    dword 0f00dbed0h
+%endif
 
     ;
     ; Normalize the parameters.
@@ -251,23 +268,23 @@ BEGINPROC vmmR0CallHostLongJmp
     ;
     ; Is the jump buffer armed?
     ;
-    cmp     qword [rdx + VMMR0JMPBUF.rip], byte 0
+    cmp     qword [xDX + VMMR0JMPBUF.rip], byte 0
     je      .nok
 
     ;
     ; Sanity checks.
     ;
-    mov     rdi, [rdx + VMMR0JMPBUF.pvSavedStack]
+    mov     rdi, [xDX + VMMR0JMPBUF.pvSavedStack]
     test    rdi, rdi                    ; darwin may set this to 0.
     jz      .nok
-    mov     [rdx + VMMR0JMPBUF.SpResume], rsp
+    mov     [xDX + VMMR0JMPBUF.SpResume], rsp
  %ifndef VMM_R0_SWITCH_STACK
     mov     rsi, rsp
-    mov     rcx, [rdx + VMMR0JMPBUF.rsp]
+    mov     rcx, [xDX + VMMR0JMPBUF.rsp]
     sub     rcx, rsi
 
     ; two sanity checks on the size.
-    cmp     rcx, 8192                   ; check max size.
+    cmp     rcx, VMM_STACK_SIZE         ; check max size.
     jnbe    .nok
 
     ;
@@ -275,7 +292,7 @@ BEGINPROC vmmR0CallHostLongJmp
     ;
     test    ecx, 7                      ; check alignment
     jnz     .nok
-    mov     [rdx + VMMR0JMPBUF.cbSavedStack], ecx
+    mov     [xDX + VMMR0JMPBUF.cbSavedStack], ecx
     shr     ecx, 3
     rep movsq
 
@@ -283,36 +300,44 @@ BEGINPROC vmmR0CallHostLongJmp
 
     ; Save RSP & RBP to enable stack dumps
     mov     rcx, rbp
-    mov     [rdx + VMMR0JMPBUF.SavedEbp], rcx
+    mov     [xDX + VMMR0JMPBUF.SavedEbp], rcx
     sub     rcx, 8
-    mov     [rdx + VMMR0JMPBUF.SavedEsp], rcx
+    mov     [xDX + VMMR0JMPBUF.SavedEsp], rcx
 
     ; store the last pieces of info.
-    mov     rcx, [rdx + VMMR0JMPBUF.rsp]
-    mov     [rdx + VMMR0JMPBUF.SpCheck], rcx
-    mov     byte [rdx + VMMR0JMPBUF.fInRing3Call], 1
+    mov     rcx, [xDX + VMMR0JMPBUF.rsp]
+    mov     [xDX + VMMR0JMPBUF.SpCheck], rcx
+    mov     byte [xDX + VMMR0JMPBUF.fInRing3Call], 1
 
     ;
     ; Do the long jump.
     ;
-    mov     rbx, [rdx + VMMR0JMPBUF.rbx]
+    mov     rbx, [xDX + VMMR0JMPBUF.rbx]
  %ifdef ASM_CALL64_MSC
-    mov     rsi, [rdx + VMMR0JMPBUF.rsi]
-    mov     rdi, [rdx + VMMR0JMPBUF.rdi]
+    mov     rsi, [xDX + VMMR0JMPBUF.rsi]
+    mov     rdi, [xDX + VMMR0JMPBUF.rdi]
  %endif
-    mov     r12, [rdx + VMMR0JMPBUF.r12]
-    mov     r13, [rdx + VMMR0JMPBUF.r13]
-    mov     r14, [rdx + VMMR0JMPBUF.r14]
-    mov     r15, [rdx + VMMR0JMPBUF.r15]
-    mov     rbp, [rdx + VMMR0JMPBUF.rbp]
-    mov     rcx, [rdx + VMMR0JMPBUF.rip]
-    mov     rsp, [rdx + VMMR0JMPBUF.rsp]
+    mov     r12, [xDX + VMMR0JMPBUF.r12]
+    mov     r13, [xDX + VMMR0JMPBUF.r13]
+    mov     r14, [xDX + VMMR0JMPBUF.r14]
+    mov     r15, [xDX + VMMR0JMPBUF.r15]
+    mov     rbp, [xDX + VMMR0JMPBUF.rbp]
+    mov     rcx, [xDX + VMMR0JMPBUF.rip]
+    mov     rsp, [xDX + VMMR0JMPBUF.rsp]
     jmp     rcx
 
     ;
     ; Failure
     ;
 .nok:
+%ifdef VBOX_STRICT
+    pop     rax                         ; magic
+    cmp     eax, 0f00dbed0h
+    je      .magic_ok
+    mov     ecx, 0123h
+    mov     [rcx], edx
+.magic_ok:
+%endif
     mov     eax, VERR_INTERNAL_ERROR_4
     popf
     pop     rbx
