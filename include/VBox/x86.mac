@@ -1,4 +1,3 @@
-%define ___VBox_x86_h
 %define X86_EFL_CF          RT_BIT(0)
 %define X86_EFL_PF          RT_BIT(2)
 %define X86_EFL_AF          RT_BIT(4)
@@ -389,6 +388,9 @@
 %define X86_PML4E_NX                        RT_BIT_64(63)
 %define X86_PML4_SHIFT              39
 %define X86_PML4_MASK               0x1ff
+%define X86DESC_BASE(desc) \
+%define X86DESC_LIMIT(desc) \
+%define X86DESC64_BASE(desc) \
 %define X86_SEL_TYPE_CODE                   8
 %define X86_SEL_TYPE_MEMORY                 RT_BIT(4)
 %define X86_SEL_TYPE_ACCESSED               1

@@ -1,9 +1,11 @@
 /** @file
  * X86 (and AMD64) Structures and Definitions.
+ *
+ * x86.mac is generated from this file by running 'kmk incs' in the root.
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,11 +27,6 @@
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
- */
-
-/*
- * x86.mac is generated from this file using:
- *      sed -e '/__VBox_x86_h__/d' -e '/#define/!d' -e 's/#define/%define/' include/VBox/x86.h
  */
 
 #ifndef ___VBox_x86_h
