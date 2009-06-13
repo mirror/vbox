@@ -80,10 +80,12 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     test    esi, esi
     jz      .entry_error
  %ifdef VBOX_STRICT
-    mov      edx, esi
-    mov      edi, esi
-    mov      ecx, 2048
-    mov      eax, 0eeeeeeeeh
+    cmp     dword [esi], 0h
+    jne     .entry_error
+    mov     edx, esi
+    mov     edi, esi
+    mov     ecx, 2048
+    mov     eax, 0eeeeeeeeh
     repne stosd
  %endif
     lea     esi, [esi + 8192 - 32]
@@ -99,6 +101,25 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     mov     esp, esi                    ; Switch stack!
     call    eax
     and     dword [esi + 1ch], byte 0   ; clear marker.
+
+ %ifdef VBOX_STRICT
+    mov     esi, [ebx + VMMR0JMPBUF.pvSavedStack]
+    cmp     [esi], 0eeeeeeeeh           ; Check for stack overflow
+    jne     .stack_overflow
+    cmp     [esi + 04h], 0eeeeeeeeh
+    jne     .stack_overflow
+    cmp     [esi + 08h], 0eeeeeeeeh
+    jne     .stack_overflow
+    cmp     [esi + 0ch], 0eeeeeeeeh
+    jne     .stack_overflow
+    cmp     [esi + 10h], 0eeeeeeeeh
+    jne     .stack_overflow
+    cmp     [esi + 20h], 0eeeeeeeeh
+    jne     .stack_overflow
+    cmp     [esi + 30h], 0eeeeeeeeh
+    jne     .stack_overflow
+    mov     dword [esi], 0h             ; Reset the marker
+ %endif
 
 %else  ; !VMM_R0_SWITCH_STACK
     mov     ecx, [esp + 0ch]            ; pvArg1
@@ -128,17 +149,13 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     mov     eax, VERR_INTERNAL_ERROR_2
     jmp     .proper_return
 
+.stack_overflow:
+    mov     eax, VERR_INTERNAL_ERROR_5
+    jmp     .proper_return
+
     ;
-    ; Resume VMMR0CallHost the call.
+    ; Aborting resume.
     ;
-.resume:
-%ifdef VMM_R0_SWITCH_STACK
-    ; Switch stack.
-    mov     esp, [edx + VMMR0JMPBUF.SpResume]
-%else  ; !VMM_R0_SWITCH_STACK
-    ; Sanity checks.
-    cmp     ecx, [edx + VMMR0JMPBUF.SpCheck]
-    je      .espCheck_ok
 .bad:
     and     dword [edx + VMMR0JMPBUF.eip], byte 0 ; used for valid check.
     mov     edi, [edx + VMMR0JMPBUF.edi]
@@ -147,6 +164,30 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     mov     eax, VERR_INTERNAL_ERROR_3    ; todo better return code!
     ret
 
+    ;
+    ; Resume VMMR0CallHost the call.
+    ;
+.resume:
+    ; Sanity checks.
+%ifdef VMM_R0_SWITCH_STACK
+    mov     eax, [edx + VMMR0JMPBUF.pvSavedStack]
+ %ifdef RT_STRICT
+    cmp     dword [eax], 0eeeeeeeeh
+ %endif
+    lea     eax, [eax + 8192 - 32]
+    cmp     dword [eax + 1ch], 0deadbeefh       ; Marker 1.
+    jne     .bad
+ %ifdef RT_STRICT
+    cmp     [esi + 18h], edx                    ; The saved pJmpBuf pointer.
+    jne     .bad
+    cmp     dword [esi + 14h], 00c00ffeeh       ; Marker 2.
+    jne     .bad
+    cmp     dword [esi + 10h], 0f00dbeefh       ; Marker 3.
+    jne     .bad
+ %endif
+%else  ; !VMM_R0_SWITCH_STACK
+    cmp     ecx, [edx + VMMR0JMPBUF.SpCheck]
+    jne     .bad
 .espCheck_ok:
     mov     ecx, [edx + VMMR0JMPBUF.cbSavedStack]
     cmp     ecx, 8192
@@ -157,10 +198,13 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     sub     edi, [edx + VMMR0JMPBUF.SpResume]
     cmp     ecx, edi
     jne     .bad
+%endif
 
-    ;
+%ifdef VMM_R0_SWITCH_STACK
+    ; Switch stack.
+    mov     esp, [edx + VMMR0JMPBUF.SpResume]
+%else
     ; Restore the stack.
-    ;
     mov     ecx, [edx + VMMR0JMPBUF.cbSavedStack]
     shr     ecx, 2
     mov     esi, [edx + VMMR0JMPBUF.pvSavedStack]
@@ -170,9 +214,7 @@ GLOBALNAME vmmR0CallHostSetJmpEx
 %endif ; !VMM_R0_SWITCH_STACK
     mov     byte [edx + VMMR0JMPBUF.fInRing3Call], 0
 
-    ;
     ; Continue where we left off.
-    ;
 %ifdef VBOX_STRICT
     pop     eax                         ; magic
     cmp     eax, 0f00dbed0h
@@ -234,6 +276,8 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     test    r15, r15
     jz      .entry_error
   %ifdef VBOX_STRICT
+    cmp     dword [r15], 0h
+    jne     .entry_error
     mov     rdi, r15
     mov     rcx, 1024
     mov     rax, 00eeeeeeeffeeeeeeeh
@@ -254,6 +298,13 @@ GLOBALNAME vmmR0CallHostSetJmpEx
  %endif
     call    r11
     mov     rdx, r12                    ; Restore pJmpBuf
+
+ %ifdef VMM_R0_SWITCH_STACK
+  %ifdef VBOX_STRICT
+    mov     r15, [rdx + VMMR0JMPBUF.pvSavedStack]
+    mov     dword [r15], 0h             ; Reset the marker
+  %endif
+ %endif
 
     ;
     ; Return like in the long jump but clear eip, no short cuts here.
