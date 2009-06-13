@@ -309,6 +309,12 @@ int main()
     CHECK_MEMBER_ALIGNMENT(HWACCMCPU, vmx.proc_ctls, 8);
     CHECK_MEMBER_ALIGNMENT(HWACCMCPU, Event.intInfo, 8);
 
+    /* The various disassembler state members.  */
+    CHECK_PADDING3(EMCPU, DisState, abDisStatePadding);
+    CHECK_PADDING3(HWACCMCPU, DisState, abDisStatePadding);
+    CHECK_PADDING3(IOMCPU, DisState, abDisStatePadding);
+    CHECK_PADDING3(PGMCPU, DisState, abDisStatePadding);
+
     /* Make sure the set is large enough and has the correct size. */
     CHECK_SIZE(VMCPUSET, 32);
     if (sizeof(VMCPUSET) * 8 < VMM_MAX_CPU_COUNT)

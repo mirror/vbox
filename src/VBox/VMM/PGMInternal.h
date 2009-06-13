@@ -2701,6 +2701,17 @@ typedef struct PGMCPU
 #endif
     /** @} */
 
+    /** For saving stack space, the disassembler state is allocated here instead of
+     * on the stack.
+     * @note The DISCPUSTATE structure is not R3/R0/RZ clean!  */
+    union
+    {
+        /** The disassembler scratch space. */
+        DISCPUSTATE                 DisState;
+        /** Padding. */
+        uint8_t                     abDisStatePadding[DISCPUSTATE_PADDING_SIZE];
+    };
+
     /** @name Release Statistics
      * @{ */
     /** The number of times the guest has switched mode since last reset or statistics reset. */
