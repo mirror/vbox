@@ -38,8 +38,8 @@
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/log.h>
-#include <iprt/string.h>
 #include <iprt/process.h>
+#include <iprt/string.h>
 #include "internal/memobj.h"
 
 
@@ -1162,6 +1162,16 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
     }
 
     return rc;
+}
+
+
+int rtR0MemObjNativeProtect(PRTR0MEMOBJINTERNAL pMem, size_t offSub, size_t cbSub, uint32_t fProt)
+{
+    NOREF(pMem);
+    NOREF(offSub);
+    NOREF(cbSub);
+    NOREF(fProt);
+    return VERR_NOT_SUPPORTED;
 }
 
 
