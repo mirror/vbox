@@ -57,6 +57,12 @@
 # define VBOX_WITH_R0_LOGGING
 #endif
 
+/** @def VBOX_STRICT_VMM_STACK
+ * Enables VMM stack guard pages to catch stack over- and underruns. */
+#if defined(VBOX_STRICT) || defined(DOXYGEN_RUNNING)
+# define VBOX_STRICT_VMM_STACK
+#endif
+
 
 /**
  * Converts a VMM pointer into a VM pointer.

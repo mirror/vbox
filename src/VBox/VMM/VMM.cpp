@@ -94,6 +94,9 @@
 
 
 
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
 /** The saved state version. */
 #define VMM_SAVED_STATE_VERSION     3
 
@@ -411,17 +414,15 @@ VMMR3DECL(int) VMMR3InitFinalize(PVM pVM)
          * Two inaccessible pages at each sides of the stack to catch over/under-flows.
          */
         memset(pVCpu->vmm.s.pbEMTStackR3 - PAGE_SIZE, 0xcc, PAGE_SIZE);
-        PGMMapSetPage(pVM, MMHyperR3ToRC(pVM, pVCpu->vmm.s.pbEMTStackR3 - PAGE_SIZE), PAGE_SIZE, 0);
-        RTMemProtect(pVCpu->vmm.s.pbEMTStackR3 - PAGE_SIZE, PAGE_SIZE, RTMEM_PROT_NONE);
+        MMR3HyperSetGuard(pVM, pVCpu->vmm.s.pbEMTStackR3 - PAGE_SIZE, PAGE_SIZE, true /*fSet*/);
 
         memset(pVCpu->vmm.s.pbEMTStackR3 + VMM_STACK_SIZE, 0xcc, PAGE_SIZE);
-        PGMMapSetPage(pVM, MMHyperR3ToRC(pVM, pVCpu->vmm.s.pbEMTStackR3 + VMM_STACK_SIZE), PAGE_SIZE, 0);
-        RTMemProtect(pVCpu->vmm.s.pbEMTStackR3 + VMM_STACK_SIZE, PAGE_SIZE, RTMEM_PROT_NONE);
+        MMR3HyperSetGuard(pVM, pVCpu->vmm.s.pbEMTStackR3 + VMM_STACK_SIZE, PAGE_SIZE, true /*fSet*/);
 #endif
 
         /*
-        * Set page attributes to r/w for stack pages.
-        */
+         * Set page attributes to r/w for stack pages.
+         */
         rc = PGMMapSetPage(pVM, pVCpu->vmm.s.pbEMTStackRC, VMM_STACK_SIZE, X86_PTE_P | X86_PTE_A | X86_PTE_D | X86_PTE_RW);
         AssertRC(rc);
         if (RT_FAILURE(rc))
@@ -640,8 +641,11 @@ VMMR3DECL(int) VMMR3Term(PVM pVM)
     /*
      * Make the two stack guard pages present again.
      */
-    RTMemProtect(pVM->vmm.s.pbEMTStackR3 - PAGE_SIZE,      PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
-    RTMemProtect(pVM->vmm.s.pbEMTStackR3 + VMM_STACK_SIZE, PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
+    {
+        RTMemProtect(pVM->aCpus[i].vmm.s.pbEMTStackR3 - PAGE_SIZE,      PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+        RTMemProtect(pVM->aCpus[i].vmm.s.pbEMTStackR3 + VMM_STACK_SIZE, PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+    }
 #endif
     return rc;
 }
