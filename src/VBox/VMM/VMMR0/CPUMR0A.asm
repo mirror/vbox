@@ -123,6 +123,7 @@ BITS 32
 %endif
 ENDPROC   cpumR0SaveHostRestoreGuestFPUState
 
+
 %ifndef RT_ARCH_AMD64
 %ifdef  VBOX_WITH_64_BITS_GUESTS
 %ifndef VBOX_WITH_HYBRID_32BIT_KERNEL
@@ -135,6 +136,8 @@ ENDPROC   cpumR0SaveHostRestoreGuestFPUState
 align 16
 BEGINPROC cpumR0SaveHostFPUState
     mov     xDX, dword [esp + 4]
+    pushf                               ; The darwin kernel can get upset or upset things if an
+    cli                                 ; interrupt occurs while we're doing fxsave/fxrstor/cr0.
 
     ; Switch the state.
     or      dword [xDX + CPUMCPU.fUseFlags], (CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM)
@@ -147,12 +150,14 @@ BEGINPROC cpumR0SaveHostFPUState
     fxsave  [xDX + CPUMCPU.Host.fpu]    ; ASSUMES that all VT-x/AMD-V boxes sports fxsave/fxrstor (safe assumption)
 
     mov     cr0, xCX                    ; and restore old CR0 again ;; @todo optimize this.
+    popf
     xor     eax, eax
     ret
 ENDPROC   cpumR0SaveHostFPUState
 %endif
 %endif
 %endif
+
 
 ;;
 ; Saves the guest FPU/XMM state and restores the host state.
@@ -294,6 +299,9 @@ BEGINPROC cpumR0SaveDRx
  %endif
 %else
     mov     xCX, dword [esp + 4]
+%endif
+    pushf                               ; Just to be on the safe side.
+    cli
 %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     cmp     byte [NAME(g_fCPUMIs64bitHost)], 0
     jz      .legacy_mode
@@ -301,7 +309,6 @@ BEGINPROC cpumR0SaveDRx
     dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
 .legacy_mode:
 %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
-%endif
 
     ;
     ; Do the job.
@@ -316,6 +323,7 @@ BEGINPROC cpumR0SaveDRx
     mov     [xCX + 8 * 3], xDX
 
 .done:
+    popf
     ret
 
 %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
@@ -351,6 +359,9 @@ BEGINPROC cpumR0LoadDRx
  %endif
 %else
     mov     xCX, dword [esp + 4]
+%endif
+    pushf                               ; Just to be on the safe side.
+    cli
 %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     cmp     byte [NAME(g_fCPUMIs64bitHost)], 0
     jz      .legacy_mode
@@ -358,7 +369,6 @@ BEGINPROC cpumR0LoadDRx
     dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
 .legacy_mode:
 %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
-%endif
 
     ;
     ; Do the job.
@@ -373,6 +383,7 @@ BEGINPROC cpumR0LoadDRx
     mov     dr3, xDX
 
 .done:
+    popf
     ret
 
 %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
