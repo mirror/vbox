@@ -258,7 +258,8 @@ VMMR3DECL(void)     MMR3ReleaseOwnedLocks(PVM pVM);
 /** @defgroup grp_mm_r3_hyper  Hypervisor Memory Manager (HC R3 Portion)
  * @ingroup grp_mm_r3
  * @{ */
-VMMDECL(int)        MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, void **ppv);
+VMMR3DECL(int)      MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, void **ppv);
+VMMR3DECL(int)      MMR3HyperSetGuard(PVM pVM, void *pvStart, size_t cb, bool fSet);
 VMMR3DECL(int)      MMR3HyperMapHCPhys(PVM pVM, void *pvR3, RTR0PTR pvR0, RTHCPHYS HCPhys, size_t cb, const char *pszDesc, PRTGCPTR pGCPtr);
 VMMR3DECL(int)      MMR3HyperMapGCPhys(PVM pVM, RTGCPHYS GCPhys, size_t cb, const char *pszDesc, PRTGCPTR pGCPtr);
 VMMR3DECL(int)      MMR3HyperMapMMIO2(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb, const char *pszDesc, PRTRCPTR pRCPtr);
