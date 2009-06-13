@@ -259,8 +259,8 @@ SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession)
         CookieReq.Hdr.rc = VERR_INTERNAL_ERROR;
         strcpy(CookieReq.u.In.szMagic, SUPCOOKIE_MAGIC);
         CookieReq.u.In.u32ReqVersion = SUPDRV_IOC_VERSION;
-        const uint32_t MinVersion = (SUPDRV_IOC_VERSION & 0xffff0000) >= 0x000d0000
-                                  ? 0x000d0000
+        const uint32_t MinVersion = (SUPDRV_IOC_VERSION & 0xffff0000) == 0x000d0000
+                                  ?  0x000d0001
                                   :  SUPDRV_IOC_VERSION & 0xffff0000;
         CookieReq.u.In.u32MinVersion = MinVersion;
         rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_COOKIE, &CookieReq, SUP_IOCTL_COOKIE_SIZE);
@@ -1140,6 +1140,46 @@ SUPR3DECL(int) SUPR3PageMapKernel(void *pvR3, uint32_t off, uint32_t cb, uint32_
         rc = Req.Hdr.rc;
     if (RT_SUCCESS(rc))
         *pR0Ptr = Req.u.Out.pvR0;
+    return rc;
+}
+
+
+SUPR3DECL(int) SUPR3PageProtect(void *pvR3, RTR0PTR R0Ptr, uint32_t off, uint32_t cb, uint32_t fProt)
+{
+    /*
+     * Validate.
+     */
+    AssertPtrReturn(pvR3, VERR_INVALID_POINTER);
+    Assert(!(off & PAGE_OFFSET_MASK));
+    Assert(!(cb & PAGE_OFFSET_MASK) && cb);
+    AssertReturn(!(fProt & ~(RTMEM_PROT_NONE | RTMEM_PROT_READ | RTMEM_PROT_WRITE | RTMEM_PROT_EXEC)), VERR_INVALID_PARAMETER);
+
+    /* fake */
+    if (RT_UNLIKELY(g_u32FakeMode))
+        return RTMemProtect((uint8_t *)pvR3 + off, cb, fProt);
+
+    /*
+     * Some OSes can do this from ring-3, so try that before we
+     * issue the IOCtl to the SUPDRV kernel module.
+     * (Yea, this isn't very nice, but just try get the job done for now.)
+     */
+    RTMemProtect((uint8_t *)pvR3 + off, cb, fProt);
+
+    SUPPAGEPROTECT Req;
+    Req.Hdr.u32Cookie = g_u32Cookie;
+    Req.Hdr.u32SessionCookie = g_u32SessionCookie;
+    Req.Hdr.cbIn = SUP_IOCTL_PAGE_PROTECT_SIZE_IN;
+    Req.Hdr.cbOut = SUP_IOCTL_PAGE_PROTECT_SIZE_OUT;
+    Req.Hdr.fFlags = SUPREQHDR_FLAGS_DEFAULT;
+    Req.Hdr.rc = VERR_INTERNAL_ERROR;
+    Req.u.In.pvR3 = pvR3;
+    Req.u.In.pvR0 = R0Ptr;
+    Req.u.In.offSub = off;
+    Req.u.In.cbSub = cb;
+    Req.u.In.fProt = fProt;
+    int rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_PAGE_PROTECT, &Req, SUP_IOCTL_PAGE_PROTECT_SIZE);
+    if (RT_SUCCESS(rc))
+        rc = Req.Hdr.rc;
     return rc;
 }
 

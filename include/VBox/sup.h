@@ -741,16 +741,38 @@ SUPR3DECL(int) SUPR3PageAllocEx(size_t cPages, uint32_t fFlags, void **ppvPages,
 /**
  * Maps a portion of a ring-3 only allocation into kernel space.
  *
- * @return VBox status code.
+ * @returns VBox status code.
  *
- * @param  pvR3             The address SUPR3PageAllocEx return.
- * @param  off              Offset to start mapping at. Must be page aligned.
- * @param  cb               Number of bytes to map. Must be page aligned.
- * @param  fFlags           Flags, must be zero.
- * @param  pR0Ptr           Where to store the address on success.
+ * @param   pvR3            The address SUPR3PageAllocEx return.
+ * @param   off             Offset to start mapping at. Must be page aligned.
+ * @param   cb              Number of bytes to map. Must be page aligned.
+ * @param   fFlags          Flags, must be zero.
+ * @param   pR0Ptr          Where to store the address on success.
  *
  */
 SUPR3DECL(int) SUPR3PageMapKernel(void *pvR3, uint32_t off, uint32_t cb, uint32_t fFlags, PRTR0PTR pR0Ptr);
+
+/**
+ * Changes the protection of
+ *
+ * @returns VBox status code.
+ * @retval  VERR_NOT_SUPPORTED if the OS doesn't allow us to change page level
+ *          protection. See also RTR0MemObjProtect.
+ *
+ * @param   pvR3            The ring-3 address SUPR3PageAllocEx returned.
+ * @param   R0Ptr           The ring-0 address SUPR3PageAllocEx returned if it
+ *                          is desired that the corresponding ring-0 page
+ *                          mappings should change protection as well. Pass
+ *                          NIL_RTR0PTR if the ring-0 pages should remain
+ *                          unaffected.
+ * @param   off             Offset to start at which to start chagning the page
+ *                          level protection. Must be page aligned.
+ * @param   cb              Number of bytes to change. Must be page aligned.
+ * @param   fProt           The new page level protection, either a combination
+ *                          of RTMEM_PROT_READ, RTMEM_PROT_WRITE and
+ *                          RTMEM_PROT_EXEC, or just RTMEM_PROT_NONE.
+ */
+SUPR3DECL(int) SUPR3PageProtect(void *pvR3, RTR0PTR R0Ptr, uint32_t off, uint32_t cb, uint32_t fProt);
 
 /**
  * Free pages allocated by SUPR3PageAllocEx.
@@ -1029,6 +1051,7 @@ SUPR0DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr);
 SUPR0DECL(int) SUPR0PageAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR3PTR ppvR3, PRTHCPHYS paPages);
 SUPR0DECL(int) SUPR0PageAllocEx(PSUPDRVSESSION pSession, uint32_t cPages, uint32_t fFlags, PRTR3PTR ppvR3, PRTR0PTR ppvR0, PRTHCPHYS paPages);
 SUPR0DECL(int) SUPR0PageMapKernel(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t offSub, uint32_t cbSub, uint32_t fFlags, PRTR0PTR ppvR0);
+SUPR0DECL(int) SUPR0PageProtect(PSUPDRVSESSION pSession, RTR3PTR pvR3, RTR0PTR pvR0, uint32_t offSub, uint32_t cbSub, uint32_t fProt);
 SUPR0DECL(int) SUPR0PageFree(PSUPDRVSESSION pSession, RTR3PTR pvR3);
 SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS pHCPhysGip);
 SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession);

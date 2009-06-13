@@ -208,6 +208,7 @@ DECLASM(int)    UNWIND_WRAP(RTR0MemObjLockUser)(PRTR0MEMOBJ pMemObj, RTR3PTR R3P
 DECLASM(int)    UNWIND_WRAP(RTR0MemObjMapKernel)(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, void *pvFixed, size_t uAlignment, unsigned fProt);
 DECLASM(int)    UNWIND_WRAP(RTR0MemObjMapKernelEx)(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, void *pvFixed, size_t uAlignment, unsigned fProt, size_t offSub, size_t cbSub);
 DECLASM(int)    UNWIND_WRAP(RTR0MemObjMapUser)(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, RTR3PTR R3PtrFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process);
+DECLASM(int)    UNWIND_WRAP(RTR0MemObjProtect)(RTR0MEMOBJ hMemObj, size_t offsub, size_t cbSub, uint32_t fProt);
 /*DECLASM(void *) UNWIND_WRAP(RTR0MemObjAddress)(RTR0MEMOBJ MemObj); - not necessary */
 /*DECLASM(RTR3PTR) UNWIND_WRAP(RTR0MemObjAddressR3)(RTR0MEMOBJ MemObj); - not necessary */
 /*DECLASM(size_t) UNWIND_WRAP(RTR0MemObjSize)(RTR0MEMOBJ MemObj); - not necessary */
@@ -363,6 +364,7 @@ static SUPFUNC g_aFunctions[] =
     { "RTR0MemObjMapKernel",                    (void *)UNWIND_WRAP(RTR0MemObjMapKernel) },
     { "RTR0MemObjMapKernelEx",                  (void *)UNWIND_WRAP(RTR0MemObjMapKernelEx) },
     { "RTR0MemObjMapUser",                      (void *)UNWIND_WRAP(RTR0MemObjMapUser) },
+    { "RTR0MemObjProtect",                      (void *)UNWIND_WRAP(RTR0MemObjProtect) },
     { "RTR0MemObjAddress",                      (void *)RTR0MemObjAddress },
     { "RTR0MemObjAddressR3",                    (void *)RTR0MemObjAddressR3 },
     { "RTR0MemObjSize",                         (void *)RTR0MemObjSize },
@@ -1586,6 +1588,22 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             return 0;
         }
 
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_PAGE_PROTECT):
+        {
+            /* validate */
+            PSUPPAGEPROTECT pReq = (PSUPPAGEPROTECT)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_PAGE_PROTECT);
+            REQ_CHECK_EXPR_FMT(!(pReq->u.In.fProt & ~(RTMEM_PROT_READ | RTMEM_PROT_WRITE | RTMEM_PROT_EXEC | RTMEM_PROT_NONE)),
+                               ("SUP_IOCTL_PAGE_PROTECT: fProt=%#x!\n", pReq->u.In.fProt));
+            REQ_CHECK_EXPR_FMT(!(pReq->u.In.offSub & PAGE_OFFSET_MASK), ("SUP_IOCTL_PAGE_PROTECT: offSub=%#x\n", pReq->u.In.offSub));
+            REQ_CHECK_EXPR_FMT(pReq->u.In.cbSub && !(pReq->u.In.cbSub & PAGE_OFFSET_MASK),
+                               ("SUP_IOCTL_PAGE_PROTECT: cbSub=%#x\n", pReq->u.In.cbSub));
+
+            /* execute */
+            pReq->Hdr.rc = SUPR0PageProtect(pSession, pReq->u.In.pvR3, pReq->u.In.pvR0, pReq->u.In.offSub, pReq->u.In.cbSub, pReq->u.In.fProt);
+            return 0;
+        }
+
         case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_PAGE_FREE):
         {
             /* validate */
@@ -2793,20 +2811,17 @@ SUPR0DECL(int) SUPR0PageAllocEx(PSUPDRVSESSION pSession, uint32_t cPages, uint32
 
 
 /**
- * Allocates a chunk of memory with a kernel or/and a user mode mapping.
- *
- * The memory is fixed and it's possible to query the physical addresses using
- * SUPR0MemGetPhys().
+ * Maps a chunk of memory previously allocated by SUPR0PageAllocEx into kernel
+ * space.
  *
  * @returns IPRT status code.
  * @param   pSession    The session to associated the allocation with.
- * @param   cPages      The number of pages to allocate.
- * @param   fFlags      Flags, reserved for the future. Must be zero.
- * @param   ppvR3       Where to store the address of the Ring-3 mapping.
- *                      NULL if no ring-3 mapping.
- * @param   ppvR3       Where to store the address of the Ring-0 mapping.
- *                      NULL if no ring-0 mapping.
- * @param   paPages     Where to store the addresses of the pages. Optional.
+ * @param   pvR3        The ring-3 address returned by SUPR0PageAllocEx.
+ * @param   offSub      Where to start mapping. Must be page aligned.
+ * @param   cbSub       How much to map. Must be page aligned.
+ * @param   fFlags      Flags, MBZ.
+ * @param   ppvR0       Where to reutrn the address of the ring-0 mapping on
+ *                      success.
  */
 SUPR0DECL(int) SUPR0PageMapKernel(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t offSub, uint32_t cbSub,
                                   uint32_t fFlags, PRTR0PTR ppvR0)
@@ -2878,6 +2893,96 @@ SUPR0DECL(int) SUPR0PageMapKernel(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_
 
     }
     return rc;
+}
+
+
+/**
+ * Changes the page level protection of one or more pages previously allocated
+ * by SUPR0PageAllocEx.
+ *
+ * @returns IPRT status code.
+ * @param   pSession    The session to associated the allocation with.
+ * @param   pvR3        The ring-3 address returned by SUPR0PageAllocEx.
+ *                      NIL_RTR3PTR if the ring-3 mapping should be unaffected.
+ * @param   pvR0        The ring-0 address returned by SUPR0PageAllocEx.
+ *                      NIL_RTR0PTR if the ring-0 mapping should be unaffected.
+ * @param   offSub      Where to start changing. Must be page aligned.
+ * @param   cbSub       How much to change. Must be page aligned.
+ * @param   fProt       The new page level protection, see RTMEM_PROT_*.
+ */
+SUPR0DECL(int) SUPR0PageProtect(PSUPDRVSESSION pSession, RTR3PTR pvR3, RTR0PTR pvR0, uint32_t offSub, uint32_t cbSub, uint32_t fProt)
+{
+    int             rc;
+    PSUPDRVBUNDLE   pBundle;
+    RTSPINLOCKTMP   SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
+    RTR0MEMOBJ      hMemObjR0 = NIL_RTR0MEMOBJ;
+    RTR0MEMOBJ      hMemObjR3 = NIL_RTR0MEMOBJ;
+    LogFlow(("SUPR0PageProtect: pSession=%p pvR3=%p pvR0=%p offSub=%#x cbSub=%#x fProt-%#x\n", pSession, pvR3, pvR0, offSub, cbSub, fProt));
+
+    /*
+     * Validate input. The allowed allocation size must be at least equal to the maximum guest VRAM size.
+     */
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fProt & ~(RTMEM_PROT_READ | RTMEM_PROT_WRITE | RTMEM_PROT_EXEC | RTMEM_PROT_NONE)), VERR_INVALID_PARAMETER);
+    AssertReturn(!(offSub & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn(!(cbSub & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn(cbSub, VERR_INVALID_PARAMETER);
+
+    /*
+     * Find the memory object.
+     */
+    RTSpinlockAcquire(pSession->Spinlock, &SpinlockTmp);
+    for (pBundle = &pSession->Bundle; pBundle; pBundle = pBundle->pNext)
+    {
+        if (pBundle->cUsed > 0)
+        {
+            unsigned i;
+            for (i = 0; i < RT_ELEMENTS(pBundle->aMem); i++)
+            {
+                if (   pBundle->aMem[i].eType == MEMREF_TYPE_PAGE
+                    && pBundle->aMem[i].MemObj != NIL_RTR0MEMOBJ
+                    && (   pBundle->aMem[i].MapObjR3 != NIL_RTR0MEMOBJ
+                        || pvR3 == NIL_RTR3PTR)
+                    && (   pvR0 != NIL_RTR0PTR
+                        || RTR0MemObjAddress(pBundle->aMem[i].MemObj))
+                    && (   pvR3 != NIL_RTR3PTR
+                        || RTR0MemObjAddressR3(pBundle->aMem[i].MapObjR3) == pvR3))
+                {
+                    if (pvR0 != NIL_RTR0PTR)
+                        hMemObjR0 = pBundle->aMem[i].MemObj;
+                    if (pvR3 != NIL_RTR3PTR)
+                        hMemObjR3 = pBundle->aMem[i].MapObjR3;
+                    break;
+                }
+            }
+        }
+    }
+    RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
+
+    rc = VERR_INVALID_PARAMETER;
+    if (    hMemObjR0 != NIL_RTR0MEMOBJ
+        ||  hMemObjR3 != NIL_RTR0MEMOBJ)
+    {
+        /*
+         * Do some furter input validations before calling IPRT.
+         */
+        size_t cbMemObj = hMemObjR0 != NIL_RTR0PTR ? RTR0MemObjSize(hMemObjR0) : RTR0MemObjSize(hMemObjR3);
+        if (    offSub < cbMemObj
+            &&  cbSub <= cbMemObj
+            &&  offSub + cbSub <= cbMemObj)
+        {
+            rc = VINF_SUCCESS;
+            if (hMemObjR3 != NIL_RTR0PTR)
+                rc = RTR0MemObjProtect(hMemObjR3, offSub, cbSub, fProt);
+            if (hMemObjR0 != NIL_RTR0PTR && RT_SUCCESS(rc))
+                rc = RTR0MemObjProtect(hMemObjR0, offSub, cbSub, fProt);
+        }
+        else
+            SUPR0Printf("SUPR0PageMapKernel: cbMemObj=%#x offSub=%#x cbSub=%#x\n", cbMemObj, offSub, cbSub);
+
+    }
+    return rc;
+
 }
 
 

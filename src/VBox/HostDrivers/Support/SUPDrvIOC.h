@@ -195,7 +195,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  *          - Remove SUPR0PageAlloc in favor of SUPR0PageAllocEx, removing
  *            and renaming the related IOCtls too.
  */
-#define SUPDRV_IOC_VERSION                              0x000d0000
+#define SUPDRV_IOC_VERSION                              0x000d0001
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -1109,6 +1109,44 @@ typedef struct SUPSEMOP
 /** Close the semaphore handle. */
 #define SUPSEMOP_CLOSE      3
 
+/** @} */
+
+
+/** @name SUP_IOCTL_PAGE_PROTECT
+ * Changes the page level protection of the user and/or kernel mappings of
+ * memory previously allocated by SUPR0PageAllocEx.
+ *
+ * @remarks Not necessarily supported on all platforms.
+ *
+ * @{
+ */
+#define SUP_IOCTL_PAGE_PROTECT                          SUP_CTL_CODE_SIZE(28, SUP_IOCTL_PAGE_PROTECT_SIZE)
+#define SUP_IOCTL_PAGE_PROTECT_SIZE                     sizeof(SUPPAGEPROTECT)
+#define SUP_IOCTL_PAGE_PROTECT_SIZE_IN                  sizeof(SUPPAGEPROTECT)
+#define SUP_IOCTL_PAGE_PROTECT_SIZE_OUT                 sizeof(SUPPAGEPROTECT)
+typedef struct SUPPAGEPROTECT
+{
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** The pointer of to the previously allocated memory.
+             * Pass NIL_RTR3PTR if the ring-0 mapping should remain unaffected. */
+            RTR3PTR         pvR3;
+            /** The pointer of to the previously allocated memory.
+             * Pass NIL_RTR0PTR if the ring-0 mapping should remain unaffected. */
+            RTR0PTR         pvR0;
+            /** The offset to start changing protection at. */
+            uint32_t        offSub;
+            /** Size of the portion that should be changed. */
+            uint32_t        cbSub;
+            /** Protection flags, RTMEM_PROT_*. */
+            uint32_t        fProt;
+        } In;
+    } u;
+} SUPPAGEPROTECT, *PSUPPAGEPROTECT;
 /** @} */
 
 
