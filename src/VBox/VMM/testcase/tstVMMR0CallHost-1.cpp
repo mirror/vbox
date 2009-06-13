@@ -22,12 +22,13 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include <VBox/err.h>
+#include <VBox/param.h>
+#include <iprt/alloca.h>
 #include <iprt/initterm.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
-#include <iprt/alloca.h>
 #include <iprt/test.h>
-#include <VBox/err.h>
 
 #define IN_VMM_R0
 #define IN_RING0 /* pretent we're in Ring-0 to get the prototypes. */
@@ -50,14 +51,29 @@
 static VMMR0JMPBUF          g_Jmp;
 /** The number of jumps we've done. */
 static unsigned volatile    g_cJmps;
+/** Number of bytes allocated last time we called foo(). */
+static size_t volatile      g_cbFoo;
+/** Number of bytes used last time we called foo(). */
+static intptr_t volatile    g_cbFooUsed;
 
 
 int foo(int i, int iZero, int iMinusOne)
 {
     /* allocate a buffer which we fill up to the end. */
-    size_t cb = (i % 5555) + 32;
+    size_t cb = (i % 1555) + 32;
+    g_cbFoo = cb;
     char  *pv = (char *)alloca(cb);
     RTStrPrintf(pv, cb, "i=%d%*s\n", i, cb, "");
+#ifdef VMM_R0_SWITCH_STACK
+    g_cbFooUsed = VMM_STACK_SIZE - ((uintptr_t)pv - (uintptr_t)g_Jmp.pvSavedStack);
+    RTTESTI_CHECK_MSG_RET(g_cbFooUsed < VMM_STACK_SIZE - 128, ("%#x - (%p - %p) -> %#x; cb=%#x i=%d\n", VMM_STACK_SIZE, pv, g_Jmp.pvSavedStack, g_cbFooUsed, cb, i), -15);
+#elif defined(RT_ARCH_AMD64)
+    g_cbFooUsed = (uintptr_t)g_Jmp.rsp - (uintptr_t)pv;
+    RTTESTI_CHECK_MSG_RET(g_cbFooUsed < VMM_STACK_SIZE - 128, ("%p - %p -> %#x; cb=%#x i=%d\n", g_Jmp.rsp, pv, g_cbFooUsed, cb, i), -15);
+#elif defined(RT_ARCH_X86)
+    g_cbFooUsed = (uintptr_t)g_Jmp.esp - (uintptr_t)pv;
+    RTTESTI_CHECK_MSG_RET(g_cbFooUsed < VMM_STACK_SIZE - 128, ("%p - %p -> %#x; cb=%#x i=%d\n", g_Jmp.esp, pv, g_cbFooUsed, cb, i), -15);
+#endif
 
     /* Do long jmps every 7th time */
     if ((i % 7) == 0)
@@ -91,11 +107,18 @@ void tst(int iFrom, int iTo, int iInc)
     void   *pvPrev = alloca(1);
 #endif
 
+    RTR0PTR R0PtrSaved = g_Jmp.pvSavedStack;
+    RT_ZERO(g_Jmp);
+    g_Jmp.pvSavedStack = R0PtrSaved;
+    memset((void *)g_Jmp.pvSavedStack, '\0', VMM_STACK_SIZE);
+    g_cbFoo = 0;
     g_cJmps = 0;
+    g_cbFooUsed = 0;
+
     for (int i = iFrom, iItr = 0; i != iTo; i += iInc, iItr++)
     {
         int rc = vmmR0CallHostSetJmp(&g_Jmp, (PFNVMMR0SETJMP)tst2, (PVM)i, 0);
-        RTTESTI_CHECK_MSG_RETV(rc == 0 || rc == 42, ("i=%d rc=%d setjmp\n", i, rc));
+        RTTESTI_CHECK_MSG_RETV(rc == 0 || rc == 42, ("i=%d rc=%d setjmp; cbFoo=%#x cbFooUsed=%#x\n", i, rc, g_cbFoo, g_cbFooUsed));
 
 #ifdef VMM_R0_SWITCH_STACK
         /* Make the stack pointer slide for the second half of the calls. */
@@ -112,6 +135,9 @@ void tst(int iFrom, int iTo, int iInc)
 #endif
     }
     RTTESTI_CHECK_MSG_RETV(g_cJmps, ("No jumps!"));
+    if (g_Jmp.cbUsedAvg || g_Jmp.cUsedTotal)
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "cbUsedAvg=%#x cbUsedMax=%#x cUsedTotal=%#llx\n",
+                      g_Jmp.cbUsedAvg, g_Jmp.cbUsedMax, g_Jmp.cUsedTotal);
 }
 
 
@@ -130,7 +156,7 @@ int main()
     }
     RTTestBanner(hTest);
 
-    g_Jmp.pvSavedStack = (RTR0PTR)RTTestGuardedAllocTail(hTest, 8192);
+    g_Jmp.pvSavedStack = (RTR0PTR)RTTestGuardedAllocTail(hTest, VMM_STACK_SIZE);
 
     /*
      * Run two test with about 1000 long jumps each.

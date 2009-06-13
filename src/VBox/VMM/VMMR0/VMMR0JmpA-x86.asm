@@ -28,6 +28,13 @@
 %include "VBox/param.mac"
 
 
+;*******************************************************************************
+;*  Defined Constants And Macros                                               *
+;*******************************************************************************
+%define RESUME_MAGIC    07eadf00dh
+%define STACK_PADDING   0eeeeeeeeh
+
+
 ; For vmmR0LoggerWrapper. (The other architecture(s) use(s) C99 variadict macros.)
 extern NAME(RTLogLogger)
 
@@ -80,7 +87,7 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     mov     edx, esi
     mov     edi, esi
     mov     ecx, VMM_STACK_SIZE / 4
-    mov     eax, 0eeeeeeeeh
+    mov     eax, STACK_PADDING
     repne stosd
  %endif
     lea     esi, [esi + VMM_STACK_SIZE - 32]
@@ -95,26 +102,52 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     mov     eax, [esp + 08h]            ; pfn
     mov     esp, esi                    ; Switch stack!
     call    eax
-    and     dword [esi + 1ch], byte 0   ; clear marker.
+    and     dword [esi + 1ch], byte 0   ; reset marker.
 
  %ifdef VBOX_STRICT
-    mov     esi, [ebx + VMMR0JMPBUF.pvSavedStack]
-    cmp     [esi], 0eeeeeeeeh           ; Check for stack overflow
+    ; Calc stack usage and check for overflows.
+    mov     edi, [ebx + VMMR0JMPBUF.pvSavedStack]
+    cmp     dword [edi], STACK_PADDING  ; Check for obvious stack overflow.
     jne     .stack_overflow
-    cmp     [esi + 04h], 0eeeeeeeeh
-    jne     .stack_overflow
-    cmp     [esi + 08h], 0eeeeeeeeh
-    jne     .stack_overflow
-    cmp     [esi + 0ch], 0eeeeeeeeh
-    jne     .stack_overflow
-    cmp     [esi + 10h], 0eeeeeeeeh
-    jne     .stack_overflow
-    cmp     [esi + 20h], 0eeeeeeeeh
-    jne     .stack_overflow
-    cmp     [esi + 30h], 0eeeeeeeeh
-    jne     .stack_overflow
-    mov     dword [esi], 0h             ; Reset the marker
- %endif
+    mov     esi, eax                    ; save eax
+    mov     eax, STACK_PADDING
+    mov     ecx, VMM_STACK_SIZE / 4
+    cld
+    repe scasd
+    mov     eax, esi                    ; restore eax in case of overflow (esi remains used)
+    mov     edi, VMM_STACK_SIZE
+    shl     ecx, 2                      ; *4
+    sub     edi, ecx
+    cmp     edi, VMM_STACK_SIZE - 64    ; Less than 64 bytes left -> overflow as well.
+    jae     .stack_overflow_almost
+
+    ; Update stack usage statistics.
+    cmp     edi, [ebx + VMMR0JMPBUF.cbUsedMax] ; New max usage?
+    jle     .no_used_max
+    mov     [ebx + VMMR0JMPBUF.cbUsedMax], edi
+.no_used_max:
+    ; To simplify the average stuff, just historize before we hit div errors.
+    inc     dword [ebx + VMMR0JMPBUF.cUsedTotal]
+    test    [ebx + VMMR0JMPBUF.cUsedTotal], dword 0c0000000h
+    jz      .no_historize
+    mov     dword [ebx + VMMR0JMPBUF.cUsedTotal], 2
+    mov     ecx, [ebx + VMMR0JMPBUF.cbUsedAvg]
+    mov     [ebx + VMMR0JMPBUF.cbUsedTotal], ecx
+    mov     dword [ebx + VMMR0JMPBUF.cbUsedTotal + 4], 0
+.no_historize:
+    add     [ebx + VMMR0JMPBUF.cbUsedTotal], edi
+    adc     dword [ebx + VMMR0JMPBUF.cbUsedTotal + 4], 0
+    mov     eax, [ebx + VMMR0JMPBUF.cbUsedTotal]
+    mov     edx, [ebx + VMMR0JMPBUF.cbUsedTotal + 4]
+    mov     ecx, [ebx + VMMR0JMPBUF.cUsedTotal]
+    div     ecx
+    mov     [ebx + VMMR0JMPBUF.cbUsedAvg], eax
+
+    mov     eax, esi                    ; restore eax (final, esi released)
+
+    mov     edi, [ebx + VMMR0JMPBUF.pvSavedStack]
+    mov     dword [edi], 0h             ; Reset the overflow marker.
+ %endif ; VBOX_STRICT
 
 %else  ; !VMM_R0_SWITCH_STACK
     mov     ecx, [esp + 0ch]            ; pvArg1
@@ -146,6 +179,12 @@ GLOBALNAME vmmR0CallHostSetJmpEx
 
 .stack_overflow:
     mov     eax, VERR_INTERNAL_ERROR_5
+    mov     edx, ebx
+    jmp     .proper_return
+
+.stack_overflow_almost:
+    mov     eax, VERR_INTERNAL_ERROR
+    mov     edx, ebx
     jmp     .proper_return
 
     ;
@@ -167,7 +206,7 @@ GLOBALNAME vmmR0CallHostSetJmpEx
 %ifdef VMM_R0_SWITCH_STACK
     mov     eax, [xDX + VMMR0JMPBUF.pvSavedStack]
  %ifdef RT_STRICT
-    cmp     dword [eax], 0eeeeeeeeh
+    cmp     dword [eax], STACK_PADDING
  %endif
     lea     eax, [eax + VMM_STACK_SIZE - 32]
     cmp     dword [eax + 1ch], 0deadbeefh       ; Marker 1.
@@ -214,7 +253,7 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     ;
 %ifdef VBOX_STRICT
     pop     eax                         ; magic
-    cmp     eax, 0f00dbed0h
+    cmp     eax, RESUME_MAGIC
     je      .magic_ok
     mov     ecx, 0123h
     mov     [ecx], edx
@@ -248,7 +287,7 @@ BEGINPROC vmmR0CallHostLongJmp
     push    ebx
     pushf
 %ifdef VBOX_STRICT
-    push    dword 0f00dbed0h
+    push    RESUME_MAGIC
 %endif
 
     ;
@@ -317,7 +356,7 @@ BEGINPROC vmmR0CallHostLongJmp
 .nok:
 %ifdef VBOX_STRICT
     pop     eax                         ; magic
-    cmp     eax, 0f00dbed0h
+    cmp     eax, RESUME_MAGIC
     je      .magic_ok
     mov     ecx, 0123h
     mov     [ecx], edx

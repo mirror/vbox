@@ -28,6 +28,17 @@
 %include "VBox/param.mac"
 
 
+;*******************************************************************************
+;*  Defined Constants And Macros                                               *
+;*******************************************************************************
+%define RESUME_MAGIC    07eadf00dh
+%define STACK_PADDING   0eeeeeeeeeeeeeeeeh
+
+
+; For vmmR0LoggerWrapper. (The other architecture(s) use(s) C99 variadict macros.)
+extern NAME(RTLogLogger)
+
+
 BEGINCODE
 
 
@@ -93,7 +104,7 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     jne     .entry_error
     mov     rdi, r15
     mov     rcx, VMM_STACK_SIZE / 8
-    mov     rax, 00eeeeeeeeffeeeeeeeh
+    mov     rax, qword 0eeeeeeeffeeeeeeeh
     repne stosq
     mov     [rdi - 10h], rbx
   %endif
@@ -204,8 +215,8 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     ; Continue where we left off.
     ;
 %ifdef VBOX_STRICT
-    pop     eax                         ; magic
-    cmp     eax, 0f00dbed0h
+    pop     rax                         ; magic
+    cmp     rax, RESUME_MAGIC
     je      .magic_ok
     mov     ecx, 0123h
     mov     [ecx], edx
@@ -251,7 +262,7 @@ BEGINPROC vmmR0CallHostLongJmp
     push    rbx
     pushf
 %ifdef VBOX_STRICT
-    push    dword 0f00dbed0h
+    push    RESUME_MAGIC
 %endif
 
     ;
@@ -332,7 +343,7 @@ BEGINPROC vmmR0CallHostLongJmp
 .nok:
 %ifdef VBOX_STRICT
     pop     rax                         ; magic
-    cmp     eax, 0f00dbed0h
+    cmp     rax, RESUME_MAGIC
     je      .magic_ok
     mov     ecx, 0123h
     mov     [rcx], edx

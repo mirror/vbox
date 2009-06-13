@@ -77,5 +77,11 @@ struc VMMR0JMPBUF
     .SavedEsp       resq 1
     .SavedEbp       resq 1
 %endif
+
+    ; Statistics
+    .cbUsedMax      resd 1
+    .cbUsedAvg      resd 1
+    .cbUsedTotal    resq 1
+    .cUsedTotal     resq 1
 endstruc
 
