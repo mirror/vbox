@@ -138,6 +138,7 @@ int main()
     GEN_CHECK_OFF(EMCPU, enmState);
     GEN_CHECK_OFF(EMCPU, fForceRAW);
     GEN_CHECK_OFF(EMCPU, u.achPaddingFatalLongJump);
+    GEN_CHECK_OFF(EMCPU, DisState);
     GEN_CHECK_OFF(EMCPU, StatForcedActions);
     GEN_CHECK_OFF(EMCPU, StatTotalClis);
     GEN_CHECK_OFF(EMCPU, pStatsR3);
@@ -157,6 +158,10 @@ int main()
     GEN_CHECK_OFF(IOM, pMMIOStatsLastRC);
     GEN_CHECK_OFF(IOM, pRangeLastReadR0);
     GEN_CHECK_OFF(IOM, pRangeLastReadRC);
+
+    GEN_CHECK_SIZE(IOMCPU);
+    GEN_CHECK_OFF(IOMCPU, DisState);
+    GEN_CHECK_OFF(IOMCPU, Dummy[0]);
 
     GEN_CHECK_SIZE(IOMMMIORANGE);
     GEN_CHECK_OFF(IOMMMIORANGE, GCPhys);
@@ -471,6 +476,12 @@ int main()
     GEN_CHECK_OFF(PGMCPU, pfnRCBthPrefetchPage);
     GEN_CHECK_OFF(PGMCPU, pfnRCBthVerifyAccessSyncPage);
     GEN_CHECK_OFF(PGMCPU, pfnRCBthAssertCR3);
+    GEN_CHECK_OFF(PGMCPU, DisState);
+    GEN_CHECK_OFF(PGMCPU, cGuestModeChanges);
+#ifdef VBOX_WITH_STATISTICS
+    GEN_CHECK_OFF(PGMCPU, pStatTrap0eAttributionR0);
+    GEN_CHECK_OFF(PGMCPU, pStatTrap0eAttributionRC);
+#endif
     GEN_CHECK_OFF(PGM, offVM);
     GEN_CHECK_OFF(PGM, offVCpuPGM);
     GEN_CHECK_OFF(PGM, fRamPreAlloc);
@@ -550,11 +561,6 @@ int main()
     GEN_CHECK_OFF(PGM, cPrivatePages);
     GEN_CHECK_OFF(PGM, cSharedPages);
     GEN_CHECK_OFF(PGM, cZeroPages);
-    GEN_CHECK_OFF(PGMCPU, cGuestModeChanges);
-#ifdef VBOX_WITH_STATISTICS
-    GEN_CHECK_OFF(PGMCPU, pStatTrap0eAttributionR0);
-    GEN_CHECK_OFF(PGMCPU, pStatTrap0eAttributionRC);
-#endif
 
     GEN_CHECK_SIZE(PGMMAPPING);
     GEN_CHECK_OFF(PGMMAPPING, pNextR3);

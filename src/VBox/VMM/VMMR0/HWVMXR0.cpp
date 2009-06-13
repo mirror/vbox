@@ -2314,9 +2314,7 @@ ResumeExecution:
 
     /* All done! Let's start VM execution. */
     STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatInGC, z);
-#ifdef VBOX_STRICT
     Assert(idCpuCheck == RTMpCpuId());
-#endif
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
     pVCpu->hwaccm.s.vmx.VMCSCache.cResume = cResume;
@@ -2327,6 +2325,7 @@ ResumeExecution:
     rc = pVCpu->hwaccm.s.vmx.pfnStartVM(pVCpu->hwaccm.s.fResumeVM, pCtx, &pVCpu->hwaccm.s.vmx.VMCSCache, pVM, pVCpu);
     TMNotifyEndOfExecution(pVCpu);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
+    Assert(!(ASMGetFlags() & X86_EFL_IF));
     ASMSetFlags(uOldEFlags);
 #ifndef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
     uOldEFlags = ~(RTCCUINTREG)0;
@@ -2675,9 +2674,9 @@ ResumeExecution:
 
             case X86_XCPT_GP:   /* General protection failure exception.*/
             {
-                uint32_t    cbOp;
-                uint32_t    cbSize;
-                DISCPUSTATE Cpu;
+                uint32_t     cbOp;
+                uint32_t     cbSize;
+                PDISCPUSTATE pDis = &pVCpu->hwaccm.s.DisState;
 
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestGP);
 #ifdef VBOX_STRICT
@@ -2694,13 +2693,13 @@ ResumeExecution:
 
                 LogFlow(("Real mode X86_XCPT_GP instruction emulation at %RGv\n", (RTGCPTR)pCtx->rip));
 
-                rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), &Cpu, &cbOp);
+                rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
                 if (RT_SUCCESS(rc))
                 {
                     bool fUpdateRIP = true;
 
-                    Assert(cbOp == Cpu.opsize);
-                    switch (Cpu.pCurInstr->opcode)
+                    Assert(cbOp == pDis->opsize);
+                    switch (pDis->pCurInstr->opcode)
                     {
                     case OP_CLI:
                         pCtx->eflags.Bits.u1IF = 0;
@@ -2715,7 +2714,7 @@ ResumeExecution:
                     case OP_HLT:
                         fUpdateRIP = false;
                         rc = VINF_EM_HALT;
-                        pCtx->rip += Cpu.opsize;
+                        pCtx->rip += pDis->opsize;
                         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitHlt);
                         break;
 
@@ -2726,7 +2725,7 @@ ResumeExecution:
                         uint32_t  uMask;
                         X86EFLAGS eflags;
 
-                        if (Cpu.prefix & PREFIX_OPSIZE)
+                        if (pDis->prefix & PREFIX_OPSIZE)
                         {
                             cbParm = 4;
                             uMask  = 0xffffffff;
@@ -2768,7 +2767,7 @@ ResumeExecution:
                         uint32_t  uMask;
                         X86EFLAGS eflags;
 
-                        if (Cpu.prefix & PREFIX_OPSIZE)
+                        if (pDis->prefix & PREFIX_OPSIZE)
                         {
                             cbParm = 4;
                             uMask  = 0xffffffff;
@@ -2809,7 +2808,7 @@ ResumeExecution:
                         uint32_t  uMask = 0xffff;
                         uint16_t  aIretFrame[3];
 
-                        if (Cpu.prefix & (PREFIX_OPSIZE | PREFIX_ADDRSIZE))
+                        if (pDis->prefix & (PREFIX_OPSIZE | PREFIX_ADDRSIZE))
                         {
                             rc = VERR_EM_INTERPRETER;
                             break;
@@ -2843,8 +2842,8 @@ ResumeExecution:
                     {
                         RTGCUINTPTR intInfo;
 
-                        LogFlow(("Realmode: INT %x\n", Cpu.param1.parval & 0xff));
-                        intInfo  = Cpu.param1.parval & 0xff;
+                        LogFlow(("Realmode: INT %x\n", pDis->param1.parval & 0xff));
+                        intInfo  = pDis->param1.parval & 0xff;
                         intInfo |= (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
                         intInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
 
@@ -2891,7 +2890,7 @@ ResumeExecution:
                     }
 
                     default:
-                        rc = EMInterpretInstructionCPU(pVM, pVCpu, &Cpu, CPUMCTX2CORE(pCtx), 0, &cbSize);
+                        rc = EMInterpretInstructionCPU(pVM, pVCpu, pDis, CPUMCTX2CORE(pCtx), 0, &cbSize);
                         break;
                     }
 
@@ -3340,25 +3339,25 @@ ResumeExecution:
         if (VMX_EXIT_QUALIFICATION_IO_STRING(exitQualification))
         {
             /* ins/outs */
-            DISCPUSTATE Cpu;
+            PDISCPUSTATE pDis = &pVCpu->hwaccm.s.DisState;
 
             /* Disassemble manually to deal with segment prefixes. */
             /** @todo VMX_VMCS_EXIT_GUEST_LINEAR_ADDR contains the flat pointer operand of the instruction. */
             /** @todo VMX_VMCS32_RO_EXIT_INSTR_INFO also contains segment prefix info. */
-            rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), &Cpu, NULL);
+            rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, NULL);
             if (rc == VINF_SUCCESS)
             {
                 if (fIOWrite)
                 {
                     Log2(("IOMInterpretOUTSEx %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, uPort, cbSize));
                     STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOStringWrite);
-                    rc = IOMInterpretOUTSEx(pVM, CPUMCTX2CORE(pCtx), uPort, Cpu.prefix, cbSize);
+                    rc = IOMInterpretOUTSEx(pVM, CPUMCTX2CORE(pCtx), uPort, pDis->prefix, cbSize);
                 }
                 else
                 {
                     Log2(("IOMInterpretINSEx  %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, uPort, cbSize));
                     STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOStringRead);
-                    rc = IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), uPort, Cpu.prefix, cbSize);
+                    rc = IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), uPort, pDis->prefix, cbSize);
                 }
             }
             else

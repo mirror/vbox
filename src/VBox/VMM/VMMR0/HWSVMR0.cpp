@@ -1022,7 +1022,7 @@ ResumeExecution:
      * Exit to ring-3 preemption/work is pending.
      *
      * Interrupts are disabled before the call to make sure we don't miss any interrupt
-     * that would flag preemption (IPI, timer tick, ++). 
+     * that would flag preemption (IPI, timer tick, ++).
      *
      * Note! Interrupts must be disabled done *before* we check for TLB flushes; TLB
      *       shootdowns rely on this.
@@ -2061,23 +2061,23 @@ ResumeExecution:
         if (IoExitInfo.n.u1STR)
         {
             /* ins/outs */
-            DISCPUSTATE Cpu;
+            PDISCPUSTATE pDis = &pVCpu->hwaccm.s.DisState;
 
             /* Disassemble manually to deal with segment prefixes. */
-            rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), &Cpu, NULL);
+            rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, NULL);
             if (rc == VINF_SUCCESS)
             {
                 if (IoExitInfo.n.u1Type == 0)
                 {
                     Log2(("IOMInterpretOUTSEx %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize));
                     STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOStringWrite);
-                    rc = IOMInterpretOUTSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, Cpu.prefix, uIOSize);
+                    rc = IOMInterpretOUTSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, pDis->prefix, uIOSize);
                 }
                 else
                 {
                     Log2(("IOMInterpretINSEx  %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize));
                     STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOStringRead);
-                    rc = IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, Cpu.prefix, uIOSize);
+                    rc = IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, pDis->prefix, uIOSize);
                 }
             }
             else
@@ -2336,32 +2336,32 @@ end:
  *
  * @returns VBox status code.
  * @param   pVCpu       The VM CPU to operate on.
- * @param   pDisState   Disassembly state
+ * @param   pDis        Disassembly state
  * @param   pCtx        CPU context
  * @param   cbOp        Opcode size
  */
-static int svmR0EmulateTprMov(PVMCPU pVCpu, DISCPUSTATE *pDisState, PCPUMCTX pCtx, unsigned cbOp)
+static int svmR0EmulateTprMov(PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX pCtx, unsigned cbOp)
 {
     int rc;
 
-    if (pDisState->param1.flags == USE_DISPLACEMENT32)
+    if (pDis->param1.flags == USE_DISPLACEMENT32)
     {
         /* write */
         uint8_t u8Tpr;
 
         /* Fetch the new TPR value */
-        if (pDisState->param2.flags == USE_REG_GEN32)
+        if (pDis->param2.flags == USE_REG_GEN32)
         {
             uint32_t val;
 
-            rc = DISFetchReg32(CPUMCTX2CORE(pCtx), pDisState->param2.base.reg_gen, &val);
+            rc = DISFetchReg32(CPUMCTX2CORE(pCtx), pDis->param2.base.reg_gen, &val);
             AssertRC(rc);
             u8Tpr = val >> 4;
         }
         else
-        if (pDisState->param2.flags == USE_IMMEDIATE32)
+        if (pDis->param2.flags == USE_IMMEDIATE32)
         {
-            u8Tpr = (uint8_t)pDisState->param2.parval >> 4;
+            u8Tpr = (uint8_t)pDis->param2.parval >> 4;
         }
         else
             return VERR_EM_INTERPRETER;
@@ -2374,7 +2374,7 @@ static int svmR0EmulateTprMov(PVMCPU pVCpu, DISCPUSTATE *pDisState, PCPUMCTX pCt
         return VINF_SUCCESS;
     }
     else
-    if (pDisState->param2.flags == USE_DISPLACEMENT32)
+    if (pDis->param2.flags == USE_DISPLACEMENT32)
     {
         /* read */
         bool    fPending;
@@ -2384,7 +2384,7 @@ static int svmR0EmulateTprMov(PVMCPU pVCpu, DISCPUSTATE *pDisState, PCPUMCTX pCt
         rc = PDMApicGetTPR(pVCpu, &u8Tpr, &fPending);
         AssertRC(rc);
 
-        rc = DISWriteReg32(CPUMCTX2CORE(pCtx), pDisState->param1.base.reg_gen, u8Tpr << 4);
+        rc = DISWriteReg32(CPUMCTX2CORE(pCtx), pDis->param1.base.reg_gen, u8Tpr << 4);
         AssertRC(rc);
 
         Log(("Emulated read successfully\n"));
@@ -2404,22 +2404,22 @@ static int svmR0EmulateTprMov(PVMCPU pVCpu, DISCPUSTATE *pDisState, PCPUMCTX pCt
  */
 static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    RTGCPTR     oldrip = pCtx->rip;
-    DISCPUSTATE Cpu;
-    unsigned    cbOp;
+    RTGCPTR      oldrip = pCtx->rip;
+    PDISCPUSTATE pDis   = &pVCpu->hwaccm.s.DisState;
+    unsigned     cbOp;
 
     Log(("Replace TPR access at %RGv\n", pCtx->rip));
 
-    int rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), &Cpu, &cbOp);
+    int rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
     AssertRC(rc);
     if (    rc == VINF_SUCCESS
-        &&  Cpu.pCurInstr->opcode == OP_MOV)
+        &&  pDis->pCurInstr->opcode == OP_MOV)
     {
 #if 0
         uint8_t szInstr[15];
         if (    cbOp == 10
-            &&  Cpu.param1.flags == USE_DISPLACEMENT32
-            &&  Cpu.param2.flags == USE_IMMEDIATE32)
+            &&  pDis->param1.flags == USE_DISPLACEMENT32
+            &&  pDis->param2.flags == USE_IMMEDIATE32)
         {
             /* Found:
              *   mov [fffe0080], immediate_dword                (10 bytes)
@@ -2430,22 +2430,22 @@ static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
              *   nop                                            (1 byte)
              *
              */
-            uint32_t    u32tpr = (uint32_t)Cpu.param2.parval;
+            uint32_t    u32tpr = (uint32_t)pDis->param2.parval;
 
             u32tpr = (u32tpr >> 4) & 0xf;
 
-            /* Check if the next instruction overwrites a general purpose register. If 
+            /* Check if the next instruction overwrites a general purpose register. If
              * it does, then we can safely use it ourselves.
              */
             pCtx->rip += cbOp;
-            rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), &Cpu, &cbOp);
+            rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
             pCtx->rip = oldrip;
             if (    rc == VINF_SUCCESS
-                &&  Cpu.pCurInstr->opcode == OP_MOV
-                &&  Cpu.param1.flags == USE_REG_GEN32)
+                &&  pDis->pCurInstr->opcode == OP_MOV
+                &&  pDis->param1.flags == USE_REG_GEN32)
             {
                 /* 0xB8, dword immediate  = mov eax, dword immediate */
-                szInstr[0] = 0xB8 + Cpu.param1.base.reg_gen;
+                szInstr[0] = 0xB8 + pDis->param1.base.reg_gen;
                 szInstr[1] = (uint8_t)u32tpr;
                 szInstr[2] = 0;
                 szInstr[3] = 0;
@@ -2455,7 +2455,7 @@ static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 szInstr[5] = 0xF0;
                 szInstr[6] = 0x0F;
                 szInstr[7] = 0x22;
-                szInstr[8] = 0xC0 | Cpu.param1.base.reg_gen;
+                szInstr[8] = 0xC0 | pDis->param1.base.reg_gen;
                 szInstr[9] = 0x90; /* nop */
 
                 rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, szInstr, 10);
@@ -2467,11 +2467,11 @@ static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         }
         else
         {
-            if (    Cpu.param2.flags == USE_REG_GEN32
+            if (    pDis->param2.flags == USE_REG_GEN32
                 &&  cbOp == 6)
             {
-                RTGCPTR  GCPtrTpr = (uint32_t)Cpu.param1.disp32;
-                uint32_t uMmioReg = Cpu.param2.base.reg_gen;
+                RTGCPTR  GCPtrTpr = (uint32_t)pDis->param1.disp32;
+                uint32_t uMmioReg = pDis->param2.base.reg_gen;
 
                 /* Found:
                  *   mov dword [fffe0080], eax        (6 bytes)
@@ -2479,18 +2479,18 @@ static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                  *   mov ecx, dword [fffe0080]        (5 bytes)
                  */
                 pCtx->rip += cbOp;
-                rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), &Cpu, &cbOp);
+                rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
                 pCtx->rip = oldrip;
                 if (    rc == VINF_SUCCESS
-                    &&  Cpu.pCurInstr->opcode == OP_MOV
-                    &&  Cpu.param1.flags == USE_REG_GEN32
-                    &&  Cpu.param2.flags == USE_DISPLACEMENT32
-                    &&  Cpu.param2.disp32 == (uint32_t)GCPtrTpr
+                    &&  pDis->pCurInstr->opcode == OP_MOV
+                    &&  pDis->param1.flags == USE_REG_GEN32
+                    &&  pDis->param2.flags == USE_DISPLACEMENT32
+                    &&  pDis->param2.disp32 == (uint32_t)GCPtrTpr
                     &&  cbOp == 5)
                 {
                     /* mov new_reg, uMmioReg */
                     szInstr[0] = 0x89;
-                    szInstr[1] = MAKE_MODRM(3, uMmioReg, Cpu.param1.base.reg_gen);
+                    szInstr[1] = MAKE_MODRM(3, uMmioReg, pDis->param1.base.reg_gen);
 
                     /* Let's hope the guest won't mind us trashing the source register...
                      * shr uMmioReg, 4
@@ -2517,10 +2517,10 @@ static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 }
             }
             else
-            if (    Cpu.param1.flags == USE_REG_GEN32
+            if (    pDis->param1.flags == USE_REG_GEN32
                 &&  cbOp == 5)
             {
-                uint32_t uMmioReg = Cpu.param1.base.reg_gen;
+                uint32_t uMmioReg = pDis->param1.base.reg_gen;
 
                 /* Found:
                  *   mov eax, dword [fffe0080]        (5 bytes)
@@ -2528,20 +2528,20 @@ static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                  *   shr eax, 4
                  */
                 pCtx->rip += cbOp;
-                rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), &Cpu, &cbOp);
+                rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
                 pCtx->rip = oldrip;
                 if (    rc == VINF_SUCCESS
-                    &&  Cpu.pCurInstr->opcode == OP_SHR
-                    &&  Cpu.param1.flags == USE_REG_GEN32
-                    &&  Cpu.param1.base.reg_gen == uMmioReg
-                    &&  Cpu.param2.flags == USE_IMMEDIATE8
-                    &&  Cpu.param2.parval == 4)
+                    &&  pDis->pCurInstr->opcode == OP_SHR
+                    &&  pDis->param1.flags == USE_REG_GEN32
+                    &&  pDis->param1.base.reg_gen == uMmioReg
+                    &&  pDis->param2.flags == USE_IMMEDIATE8
+                    &&  pDis->param2.parval == 4)
                 {
                     /* 0xF0, 0x0F, 0x20, 0xC0 = mov eax, cr8 */
                     szInstr[0] = 0xF0;
                     szInstr[1] = 0x0F;
                     szInstr[2] = 0x20;
-                    szInstr[3] = 0xC0 | Cpu.param1.base.reg_gen;
+                    szInstr[3] = 0xC0 | pDis->param1.base.reg_gen;
                     for (unsigned i = 4; i < 5+cbOp; i++)
                         szInstr[i] = 0x90;  /* nop */
 
@@ -2554,7 +2554,7 @@ static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             }
         }
 #endif
-        rc = svmR0EmulateTprMov(pVCpu, &Cpu, pCtx, cbOp);
+        rc = svmR0EmulateTprMov(pVCpu, pDis, pCtx, cbOp);
         if (rc != VINF_SUCCESS)
             return rc;
 
@@ -2682,16 +2682,16 @@ static int svmR0InterpretInvpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, ui
         int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->rip, &pbCode);
         if (RT_SUCCESS(rc))
         {
-            uint32_t    cbOp;
-            DISCPUSTATE Cpu;
+            uint32_t     cbOp;
+            PDISCPUSTATE pDis = &pVCpu->hwaccm.s.DisState;
 
-            Cpu.mode = enmMode;
-            rc = EMInterpretDisasOneEx(pVM, pVCpu, pbCode, pRegFrame, &Cpu, &cbOp);
-            Assert(RT_FAILURE(rc) || Cpu.pCurInstr->opcode == OP_INVLPG);
-            if (RT_SUCCESS(rc) && Cpu.pCurInstr->opcode == OP_INVLPG)
+            pDis->mode = enmMode;
+            rc = EMInterpretDisasOneEx(pVM, pVCpu, pbCode, pRegFrame, pDis, &cbOp);
+            Assert(RT_FAILURE(rc) || pDis->pCurInstr->opcode == OP_INVLPG);
+            if (RT_SUCCESS(rc) && pDis->pCurInstr->opcode == OP_INVLPG)
             {
-                Assert(cbOp == Cpu.opsize);
-                rc = svmR0InterpretInvlPg(pVCpu, &Cpu, pRegFrame, uASID);
+                Assert(cbOp == pDis->opsize);
+                rc = svmR0InterpretInvlPg(pVCpu, pDis, pRegFrame, uASID);
                 if (RT_SUCCESS(rc))
                 {
                     pRegFrame->rip += cbOp; /* Move on to the next instruction. */

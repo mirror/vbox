@@ -190,6 +190,15 @@ typedef struct VMCPU
         char                padding[128];       /* multiple of 64 */
     } pdm;
 
+    /** IOM part. */
+    union
+    {
+#ifdef ___IOMInternal_h
+        struct IOMCPU       s;
+#endif
+        char                padding[512];       /* multiple of 64 */
+    } iom;
+
     /** DBGF part.
      * @todo Combine this with other tiny structures. */
     union

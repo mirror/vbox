@@ -74,14 +74,14 @@ VMMDECL(int) pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE p
              * If it's a simple instruction which doesn't change the cpu state
              * we will simply skip it. Otherwise we'll have to defer it to REM.
              */
-            uint32_t cbOp;
-            DISCPUSTATE Cpu;
-            rc = EMInterpretDisasOne(pVM, pVCpu, pRegFrame, &Cpu, &cbOp);
+            uint32_t     cbOp;
+            PDISCPUSTATE pDis = &pVCpu->pgm.s.DisState;
+            rc = EMInterpretDisasOne(pVM, pVCpu, pRegFrame, pDis, &cbOp);
             if (     RT_SUCCESS(rc)
-                &&   Cpu.mode == CPUMODE_32BIT  /** @todo why does this matter? */
-                &&  !(Cpu.prefix & (PREFIX_REPNE | PREFIX_REP | PREFIX_SEG)))
+                &&   pDis->mode == CPUMODE_32BIT  /** @todo why does this matter? */
+                &&  !(pDis->prefix & (PREFIX_REPNE | PREFIX_REP | PREFIX_SEG)))
             {
-                switch (Cpu.opcode)
+                switch (pDis->opcode)
                 {
                     /** @todo Find other instructions we can safely skip, possibly
                      * adding this kind of detection to DIS or EM. */

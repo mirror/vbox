@@ -401,6 +401,27 @@ typedef struct IOM
 typedef IOM *PIOM;
 
 
+/**
+ * IOM per virtual CPU instance data.
+ */
+typedef struct IOMCPU
+{
+    /** For saving stack space, the disassembler state is allocated here instead of
+     * on the stack.
+     * @note The DISCPUSTATE structure is not R3/R0/RZ clean!  */
+    union
+    {
+        /** The disassembler scratch space. */
+        DISCPUSTATE                 DisState;
+        /** Padding. */
+        uint8_t                     abDisStatePadding[DISCPUSTATE_PADDING_SIZE];
+    };
+    uint8_t                         Dummy[16];
+} IOMCPU;
+/** Pointer to IOM per virtual CPU instance data. */
+typedef IOMCPU *PIOMCPU;
+
+
 RT_C_DECLS_BEGIN
 
 #ifdef IN_RING3

@@ -1107,16 +1107,17 @@ int iomMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPHYS
     /*
      * Disassemble the instruction and interpret it.
      */
-    DISCPUSTATE Cpu;
-    unsigned cbOp;
-    rc = EMInterpretDisasOne(pVM, VMMGetCpu(pVM), pCtxCore, &Cpu, &cbOp);
+    PVMCPU          pVCpu = VMMGetCpu(pVM);
+    PDISCPUSTATE    pDis  = &pVCpu->iom.s.DisState;
+    unsigned        cbOp;
+    rc = EMInterpretDisasOne(pVM, pVCpu, pCtxCore, pDis, &cbOp);
     AssertRC(rc);
     if (RT_FAILURE(rc))
     {
         iomUnlock(pVM);
         return rc;
     }
-    switch (Cpu.pCurInstr->opcode)
+    switch (pDis->pCurInstr->opcode)
     {
         case OP_MOV:
         case OP_MOVZX:
@@ -1124,9 +1125,9 @@ int iomMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPHYS
         {
             STAM_PROFILE_START(&pVM->iom.s.StatRZInstMov, b);
             if (uErrorCode & X86_TRAP_PF_RW)
-                rc = iomInterpretMOVxXWrite(pVM, pCtxCore, &Cpu, pRange, GCPhysFault);
+                rc = iomInterpretMOVxXWrite(pVM, pCtxCore, pDis, pRange, GCPhysFault);
             else
-                rc = iomInterpretMOVxXRead(pVM, pCtxCore, &Cpu, pRange, GCPhysFault);
+                rc = iomInterpretMOVxXRead(pVM, pCtxCore, pDis, pRange, GCPhysFault);
             STAM_PROFILE_STOP(&pVM->iom.s.StatRZInstMov, b);
             break;
         }
@@ -1138,7 +1139,7 @@ int iomMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPHYS
         {
             STAM_PROFILE_ADV_START(&pVM->iom.s.StatRZInstMovs, c);
             PSTAMPROFILE pStat = NULL;
-            rc = iomInterpretMOVS(pVM, uErrorCode, pCtxCore, GCPhysFault, &Cpu, pRange, &pStat);
+            rc = iomInterpretMOVS(pVM, uErrorCode, pCtxCore, GCPhysFault, pDis, pRange, &pStat);
             STAM_PROFILE_ADV_STOP_EX(&pVM->iom.s.StatRZInstMovs, pStat, c);
             break;
         }
@@ -1148,7 +1149,7 @@ int iomMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPHYS
         case OP_STOSWD:
             Assert(uErrorCode & X86_TRAP_PF_RW);
             STAM_PROFILE_START(&pVM->iom.s.StatRZInstStos, d);
-            rc = iomInterpretSTOS(pVM, pCtxCore, GCPhysFault, &Cpu, pRange);
+            rc = iomInterpretSTOS(pVM, pCtxCore, GCPhysFault, pDis, pRange);
             STAM_PROFILE_STOP(&pVM->iom.s.StatRZInstStos, d);
             break;
 
@@ -1156,52 +1157,52 @@ int iomMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPHYS
         case OP_LODSWD:
             Assert(!(uErrorCode & X86_TRAP_PF_RW));
             STAM_PROFILE_START(&pVM->iom.s.StatRZInstLods, e);
-            rc = iomInterpretLODS(pVM, pCtxCore, GCPhysFault, &Cpu, pRange);
+            rc = iomInterpretLODS(pVM, pCtxCore, GCPhysFault, pDis, pRange);
             STAM_PROFILE_STOP(&pVM->iom.s.StatRZInstLods, e);
             break;
 
         case OP_CMP:
             Assert(!(uErrorCode & X86_TRAP_PF_RW));
             STAM_PROFILE_START(&pVM->iom.s.StatRZInstCmp, f);
-            rc = iomInterpretCMP(pVM, pCtxCore, GCPhysFault, &Cpu, pRange);
+            rc = iomInterpretCMP(pVM, pCtxCore, GCPhysFault, pDis, pRange);
             STAM_PROFILE_STOP(&pVM->iom.s.StatRZInstCmp, f);
             break;
 
         case OP_AND:
             STAM_PROFILE_START(&pVM->iom.s.StatRZInstAnd, g);
-            rc = iomInterpretOrXorAnd(pVM, pCtxCore, GCPhysFault, &Cpu, pRange, EMEmulateAnd);
+            rc = iomInterpretOrXorAnd(pVM, pCtxCore, GCPhysFault, pDis, pRange, EMEmulateAnd);
             STAM_PROFILE_STOP(&pVM->iom.s.StatRZInstAnd, g);
             break;
 
         case OP_OR:
             STAM_PROFILE_START(&pVM->iom.s.StatRZInstOr, k);
-            rc = iomInterpretOrXorAnd(pVM, pCtxCore, GCPhysFault, &Cpu, pRange, EMEmulateOr);
+            rc = iomInterpretOrXorAnd(pVM, pCtxCore, GCPhysFault, pDis, pRange, EMEmulateOr);
             STAM_PROFILE_STOP(&pVM->iom.s.StatRZInstOr, k);
             break;
 
         case OP_XOR:
             STAM_PROFILE_START(&pVM->iom.s.StatRZInstXor, m);
-            rc = iomInterpretOrXorAnd(pVM, pCtxCore, GCPhysFault, &Cpu, pRange, EMEmulateXor);
+            rc = iomInterpretOrXorAnd(pVM, pCtxCore, GCPhysFault, pDis, pRange, EMEmulateXor);
             STAM_PROFILE_STOP(&pVM->iom.s.StatRZInstXor, m);
             break;
 
         case OP_TEST:
             Assert(!(uErrorCode & X86_TRAP_PF_RW));
             STAM_PROFILE_START(&pVM->iom.s.StatRZInstTest, h);
-            rc = iomInterpretTEST(pVM, pCtxCore, GCPhysFault, &Cpu, pRange);
+            rc = iomInterpretTEST(pVM, pCtxCore, GCPhysFault, pDis, pRange);
             STAM_PROFILE_STOP(&pVM->iom.s.StatRZInstTest, h);
             break;
 
         case OP_BT:
             Assert(!(uErrorCode & X86_TRAP_PF_RW));
             STAM_PROFILE_START(&pVM->iom.s.StatRZInstBt, l);
-            rc = iomInterpretBT(pVM, pCtxCore, GCPhysFault, &Cpu, pRange);
+            rc = iomInterpretBT(pVM, pCtxCore, GCPhysFault, pDis, pRange);
             STAM_PROFILE_STOP(&pVM->iom.s.StatRZInstBt, l);
             break;
 
         case OP_XCHG:
             STAM_PROFILE_START(&pVM->iom.s.StatRZInstXchg, i);
-            rc = iomInterpretXCHG(pVM, pCtxCore, GCPhysFault, &Cpu, pRange);
+            rc = iomInterpretXCHG(pVM, pCtxCore, GCPhysFault, pDis, pRange);
             STAM_PROFILE_STOP(&pVM->iom.s.StatRZInstXchg, i);
             break;
 

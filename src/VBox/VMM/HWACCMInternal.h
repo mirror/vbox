@@ -589,6 +589,17 @@ typedef struct HWACCMCPU
         unsigned            cPages;
     } TlbShootdown;
 
+    /** For saving stack space, the disassembler state is allocated here instead of
+     * on the stack.
+     * @note The DISCPUSTATE structure is not R3/R0/RZ clean!  */
+    union
+    {
+        /** The disassembler scratch space. */
+        DISCPUSTATE         DisState;
+        /** Padding. */
+        uint8_t             abDisStatePadding[DISCPUSTATE_PADDING_SIZE];
+    };
+
     RTUINT                  padding2[1];
 
     STAMPROFILEADV          StatEntry;
