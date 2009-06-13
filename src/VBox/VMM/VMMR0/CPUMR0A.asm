@@ -287,8 +287,10 @@ ENDPROC   cpumR0RestoreHostFPUState
 ;
 ; @param    pCtx  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCTX pointer
 ;
+; @remarks Used by the disabled CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE code.
+;
 align 16
-BEGINPROC   CPUMLoadFPU
+BEGINPROC   cpumR0LoadFPU
 %ifdef RT_ARCH_AMD64
  %ifdef RT_OS_WINDOWS
     mov     xDX, rcx
@@ -321,7 +323,7 @@ BITS 64
     dd      .done, NAME(SUPR0AbsKernelCS)
 BITS 32
 %endif
-ENDPROC     CPUMLoadFPU
+ENDPROC     cpumR0LoadFPU
 
 
 ;;
@@ -329,8 +331,10 @@ ENDPROC     CPUMLoadFPU
 ;
 ; @param    pCtx  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCTX pointer
 ;
+; @remarks Used by the disabled CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE code.
+;
 align 16
-BEGINPROC   CPUMSaveFPU
+BEGINPROC   cpumR0SaveFPU
 %ifdef RT_ARCH_AMD64
  %ifdef RT_OS_WINDOWS
     mov     xDX, rcx
@@ -362,7 +366,7 @@ BITS 64
     dd      .done, NAME(SUPR0AbsKernelCS)
 BITS 32
 %endif
-ENDPROC CPUMSaveFPU
+ENDPROC cpumR0SaveFPU
 
 
 ;;
@@ -370,8 +374,10 @@ ENDPROC CPUMSaveFPU
 ;
 ; @param    pCtx  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCTX pointer
 ;
+; @remarks  Used by the disabled CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE code.
+;
 align 16
-BEGINPROC   CPUMLoadXMM
+BEGINPROC   cpumR0LoadXMM
 %ifdef RT_ARCH_AMD64
  %ifdef RT_OS_WINDOWS
     mov     xDX, rcx
@@ -412,7 +418,6 @@ BEGINPROC   CPUMLoadXMM
     movdqa  xmm15, [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*15]
 %endif
 .done:
-
     ret
 
 %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
@@ -447,7 +452,7 @@ BITS 64
     dd      .done, NAME(SUPR0AbsKernelCS)
 BITS 32
 %endif
-ENDPROC     CPUMLoadXMM
+ENDPROC     cpumR0LoadXMM
 
 
 ;;
@@ -455,8 +460,10 @@ ENDPROC     CPUMLoadXMM
 ;
 ; @param    pCtx  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCTX pointer
 ;
+; @remarks  Used by the disabled CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE code.
+;
 align 16
-BEGINPROC   CPUMSaveXMM
+BEGINPROC   cpumR0SaveXMM
 %ifdef RT_ARCH_AMD64
  %ifdef RT_OS_WINDOWS
     mov     xDX, rcx
@@ -533,7 +540,7 @@ BITS 64
     dd      .done, NAME(SUPR0AbsKernelCS)
 BITS 32
 %endif
-ENDPROC     CPUMSaveXMM
+ENDPROC     cpumR0SaveXMM
 
 
 ;;
