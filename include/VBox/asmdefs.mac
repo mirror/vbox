@@ -41,6 +41,17 @@
 
 %include "iprt/asmdefs.mac"
 
+;; @def VBOX_STRICT
+; Enables strict checks in the VBox code.
+; This is enabled by default in all debug builds and when RT_STRICT is enabled.
+%ifndef VBOX_STRICT
+ %ifdef DEBUG
+  %define VBOX_STRICT
+ %endif
+ %ifdef RT_STRICT
+  %define VBOX_STRICT
+ %endif
+%endif
 
 
 %ifndef VBOX_UART_BASE
