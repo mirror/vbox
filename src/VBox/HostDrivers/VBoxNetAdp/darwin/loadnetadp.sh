@@ -80,8 +80,11 @@ fi
 
 # On smbfs, this might succeed just fine but make no actual changes,
 # so we might have to temporarily copy the driver to a local directory.
-sudo chown -R root:wheel "$DIR" "$DEP_DIR"
-OWNER=`/usr/bin/stat -f "%u" "$DIR"`
+if sudo chown -R root:wheel "$DIR" "$DEP_DIR"; then
+    OWNER=`/usr/bin/stat -f "%u" "$DIR"`
+else
+    OWNER=1000
+fi
 if test "$OWNER" -ne 0; then
     TMP_DIR=/tmp/${SCRIPT_NAME}.tmp
     echo "${SCRIPT_NAME}.sh: chown didn't work on $DIR, using temp location $TMP_DIR/$DRVNAME"
