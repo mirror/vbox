@@ -34,12 +34,15 @@
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_DEFAULT ///@todo RTLOGGROUP_MEM
 #include <iprt/memobj.h>
+
 #include <iprt/alloc.h>
-#include <iprt/process.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/log.h>
 #include <iprt/param.h>
+#include <iprt/process.h>
+
 #include "internal/memobj.h"
 
 
@@ -71,6 +74,7 @@ PRTR0MEMOBJINTERNAL rtR0MemObjNew(size_t cbSelf, RTR0MEMOBJTYPE enmType, void *p
         pNew->u32Magic  = RTR0MEMOBJ_MAGIC;
         pNew->cbSelf    = (uint32_t)cbSelf;
         pNew->enmType   = enmType;
+        pNew->fFlags    = 0;
         pNew->cb        = cb;
         pNew->pv        = pv;
     }
@@ -89,7 +93,7 @@ void rtR0MemObjDelete(PRTR0MEMOBJINTERNAL pMem)
 {
     if (pMem)
     {
-        pMem->u32Magic++;
+        ASMAtomicUoWriteU32(&pMem->u32Magic, ~RTR0MEMOBJ_MAGIC);
         pMem->enmType = RTR0MEMOBJTYPE_END;
         RTMemFree(pMem);
     }
@@ -817,3 +821,29 @@ RTR0DECL(int) RTR0MemObjMapUser(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, RTR
     return rc;
 }
 
+
+RTR0DECL(int) RTR0MemObjProtect(RTR0MEMOBJ hMemObj, size_t offSub, size_t cbSub, uint32_t fProt)
+{
+    PRTR0MEMOBJINTERNAL pMemObj;
+    int                 rc;
+
+    /* sanity checks. */
+    pMemObj = (PRTR0MEMOBJINTERNAL)hMemObj;
+    AssertPtrReturn(pMemObj, VERR_INVALID_HANDLE);
+    AssertReturn(pMemObj->u32Magic == RTR0MEMOBJ_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(pMemObj->enmType > RTR0MEMOBJTYPE_INVALID && pMemObj->enmType < RTR0MEMOBJTYPE_END, VERR_INVALID_HANDLE);
+    AssertReturn(rtR0MemObjIsProtectable(pMemObj), VERR_INVALID_PARAMETER);
+    AssertReturn(!(offSub & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn(offSub < pMemObj->cb, VERR_INVALID_PARAMETER);
+    AssertReturn(!(cbSub  & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn(cbSub <= pMemObj->cb, VERR_INVALID_PARAMETER);
+    AssertReturn(offSub + cbSub <= pMemObj->cb, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fProt & ~(RTMEM_PROT_NONE | RTMEM_PROT_READ | RTMEM_PROT_WRITE | RTMEM_PROT_EXEC)), VERR_INVALID_PARAMETER);
+
+    /* do the job */
+    rc = rtR0MemObjNativeProtect(pMemObj, offSub, cbSub, fProt);
+    if (RT_SUCCESS(rc))
+        pMemObj->fFlags |= RTR0MEMOBJ_FLAGS_PROT_CHANGED; /* record it */
+
+    return rc;
+}

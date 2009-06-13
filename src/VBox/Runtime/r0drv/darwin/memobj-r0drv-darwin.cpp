@@ -92,6 +92,96 @@ static void rtR0MemObjDarwinTouchPages(void *pv, size_t cb)
     }
 }
 
+
+/**
+ * Gets the virtual memory map the specified object is mapped into.
+ *
+ * @returns VM map handle on success, NULL if no map.
+ * @param   pMem                The memory object.
+ */
+DECLINLINE(vm_map_t) rtR0MemObjDarwinGetMap(PRTR0MEMOBJINTERNAL pMem)
+{
+    switch (pMem->enmType)
+    {
+        case RTR0MEMOBJTYPE_PAGE:
+        case RTR0MEMOBJTYPE_LOW:
+        case RTR0MEMOBJTYPE_CONT:
+            return kernel_map;
+
+        case RTR0MEMOBJTYPE_PHYS:
+        case RTR0MEMOBJTYPE_PHYS_NC:
+            return NULL; /* pretend these have no mapping atm. */
+
+        case RTR0MEMOBJTYPE_LOCK:
+            return pMem->u.Lock.R0Process == NIL_RTR0PROCESS
+                ? kernel_map
+                : get_task_map((task_t)pMem->u.Lock.R0Process);
+
+        case RTR0MEMOBJTYPE_RES_VIRT:
+            return pMem->u.ResVirt.R0Process == NIL_RTR0PROCESS
+                ? kernel_map
+                : get_task_map((task_t)pMem->u.ResVirt.R0Process);
+
+        case RTR0MEMOBJTYPE_MAPPING:
+            return pMem->u.Mapping.R0Process == NIL_RTR0PROCESS
+                ? kernel_map
+                : get_task_map((task_t)pMem->u.Mapping.R0Process);
+
+        default:
+            return NULL;
+    }
+}
+
+#if 0 /* not necessary after all*/
+/* My vm_map mockup. */
+struct my_vm_map
+{
+    struct { char pad[8]; } lock;
+    struct my_vm_map_header
+    {
+        struct vm_map_links
+        {
+            void            *prev;
+            void            *next;
+            vm_map_offset_t start;
+            vm_map_offset_t end;
+        }                   links;
+        int                 nentries;
+        boolean_t           entries_pageable;
+    }                       hdr;
+    pmap_t                  pmap;
+    vm_map_size_t           size;
+};
+
+
+/**
+ * Gets the minimum map address, this is similar to get_map_min.
+ *
+ * @returns The start address of the map.
+ * @param   pMap                The map.
+ */
+static vm_map_offset_t rtR0MemObjDarwinGetMapMin(vm_map_t pMap)
+{
+    /* lazy discovery of the correct offset. The apple guys is a wonderfully secretive bunch. */
+    static int32_t volatile s_offAdjust = INT32_MAX;
+    int32_t                 off         = s_offAdjust;
+    if (off == INT32_MAX)
+    {
+        for (off = 0; ; off += sizeof(pmap_t))
+        {
+            if (*(pmap_t *)((uint8_t *)kernel_map + off) == kernel_pmap)
+                break;
+            AssertReturn(off <= RT_MAX(RT_OFFSETOF(struct my_vm_map, pmap) * 4, 1024), 0x1000);
+        }
+        ASMAtomicWriteS32(&s_offAdjust, off - RT_OFFSETOF(struct my_vm_map, pmap));
+    }
+
+    /* calculate it. */
+    struct my_vm_map *pMyMap = (struct my_vm_map *)((uint8_t *)pMap + off);
+    return pMyMap->hdr.links.start;
+}
+#endif /* unused */
+
 #ifdef RT_STRICT
 
 /**
@@ -809,6 +899,52 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
             rc = VERR_MAP_FAILED;
     }
     return rc;
+}
+
+
+int rtR0MemObjNativeProtect(PRTR0MEMOBJINTERNAL pMem, size_t offSub, size_t cbSub, uint32_t fProt)
+{
+    /* Get the map for the object. */
+    vm_map_t pVmMap = rtR0MemObjDarwinGetMap(pMem);
+    if (!pVmMap)
+        return VERR_NOT_SUPPORTED;
+
+    /* Convert the protection. */
+    vm_prot_t fMachProt;
+    switch (fProt)
+    {
+        case RTMEM_PROT_NONE:
+            fMachProt = VM_PROT_NONE;
+            break;
+        case RTMEM_PROT_READ:
+            fMachProt = VM_PROT_READ;
+            break;
+        case RTMEM_PROT_READ | RTMEM_PROT_WRITE:
+            fMachProt = VM_PROT_READ | VM_PROT_WRITE;
+            break;
+        case RTMEM_PROT_READ | RTMEM_PROT_WRITE | RTMEM_PROT_EXEC:
+            fMachProt = VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE;
+            break;
+        case RTMEM_PROT_WRITE | RTMEM_PROT_EXEC:
+            fMachProt = VM_PROT_WRITE | VM_PROT_EXECUTE;
+            break;
+        case RTMEM_PROT_EXEC:
+            fMachProt = VM_PROT_EXECUTE;
+            break;
+        default:
+            AssertFailedReturn(VERR_INVALID_PARAMETER);
+    }
+
+    /* do the job. */
+    vm_offset_t Start = (uintptr_t)pMem->pv + offSub;
+    kern_return_t krc = vm_protect(pVmMap,
+                                   Start,
+                                   cbSub,
+                                   false,
+                                   fMachProt);
+    if (krc != KERN_SUCCESS)
+        return RTErrConvertFromDarwinKern(krc);
+    return VINF_SUCCESS;
 }
 
 

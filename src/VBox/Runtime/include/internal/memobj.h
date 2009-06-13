@@ -89,6 +89,13 @@ typedef enum RTR0MEMOBJTYPE
 } RTR0MEMOBJTYPE;
 
 
+/** @name RTR0MEMOBJINTERNAL::fFlags
+ * @{ */
+/** Page level protection was changed. */
+#define RTR0MEMOBJ_FLAGS_PROT_CHANGED       RT_BIT_32(0)
+/** @} */
+
+
 typedef struct RTR0MEMOBJINTERNAL *PRTR0MEMOBJINTERNAL;
 typedef struct RTR0MEMOBJINTERNAL **PPRTR0MEMOBJINTERNAL;
 
@@ -110,6 +117,8 @@ typedef struct RTR0MEMOBJINTERNAL
     uint32_t        cbSelf;
     /** The type of allocation. */
     RTR0MEMOBJTYPE  enmType;
+    /** Flags, RTR0MEMOBJ_FLAGS_*. */
+    uint32_t        fFlags;
     /** The size of the memory allocated, pinned down, or mapped. */
     size_t          cb;
     /** The memory address.
@@ -221,6 +230,28 @@ DECLINLINE(bool) rtR0MemObjIsMapping(PRTR0MEMOBJINTERNAL pMem)
     switch (pMem->enmType)
     {
         case RTR0MEMOBJTYPE_MAPPING:
+            return true;
+
+        default:
+            return false;
+    }
+}
+
+
+/**
+ * Checks page level protection can be changed on this object.
+ *
+ * @returns true / false.
+ * @param   pMem        The ring-0 memory object handle.
+ */
+DECLINLINE(bool) rtR0MemObjIsProtectable(PRTR0MEMOBJINTERNAL pMem)
+{
+    switch (pMem->enmType)
+    {
+        case RTR0MEMOBJTYPE_MAPPING:
+        case RTR0MEMOBJTYPE_PAGE:
+        case RTR0MEMOBJTYPE_LOW:
+        case RTR0MEMOBJTYPE_CONT:
             return true;
 
         default:
@@ -408,6 +439,20 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
  * @param   R0Process       The process to map the memory into.
  */
 int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMemToMap, RTR3PTR R3PtrFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process);
+
+/**
+ * Change the page level protection of one or more pages in a memory object.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED see RTR0MemObjProtect.
+ *
+ * @param   pMem            The memory object.
+ * @param   offSub          Offset into the memory object. Page aligned.
+ * @param   cbSub           Number of bytes to change the protection of. Page
+ *                          aligned.
+ * @param   fProt           Combination of RTMEM_PROT_* flags.
+ */
+int rtR0MemObjNativeProtect(PRTR0MEMOBJINTERNAL pMem, size_t offSub, size_t cbSub, uint32_t fProt);
 
 /**
  * Get the physical address of an page in the memory object.
