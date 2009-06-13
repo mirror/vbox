@@ -413,7 +413,6 @@ VMMR0_SOURCES   = \
 	VMMR0/TRPMR0.cpp \
 	VMMR0/TRPMR0A.asm \
 	VMMR0/VMMR0.cpp \
-	VMMR0/VMMR0A.asm \
 	VMMRZ/DBGFRZ.cpp \
 	VMMAll/CPUMAllA.asm \
 	VMMAll/CPUMAllRegs.cpp \
@@ -444,6 +443,10 @@ VMMR0_SOURCES   = \
 	VMMAll/TRPMAll.cpp \
 	VMMAll/VMAll.cpp \
 	VMMAll/VMMAll.cpp
+VMMR0_SOURCES.amd64 = \
+	VMMR0/VMMR0JmpA-amd64.asm
+VMMR0_SOURCES.x86 = \
+	VMMR0/VMMR0JmpA-x86.asm
 VMMR0_SOURCES.darwin.x86 = \
 	VMMR0/PGMR0DynMap.cpp
 
