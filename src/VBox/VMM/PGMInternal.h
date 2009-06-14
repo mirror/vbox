@@ -448,13 +448,13 @@ typedef struct PGMMAPPING
         R3PTRTYPE(PX86PT)               pPTR3;
         /** The HC virtual address of the two PAE page table. (i.e 1024 entries instead of 512) */
         R3PTRTYPE(PX86PTPAE)            paPaePTsR3;
-        /** The GC virtual address of the 32-bit page table. */
+        /** The RC virtual address of the 32-bit page table. */
         RCPTRTYPE(PX86PT)               pPTRC;
-        /** The GC virtual address of the two PAE page table. */
+        /** The RC virtual address of the two PAE page table. */
         RCPTRTYPE(PX86PTPAE)            paPaePTsRC;
-        /** The GC virtual address of the 32-bit page table. */
+        /** The R0 virtual address of the 32-bit page table. */
         R0PTRTYPE(PX86PT)               pPTR0;
-        /** The GC virtual address of the two PAE page table. */
+        /** The R0 virtual address of the two PAE page table. */
         R0PTRTYPE(PX86PTPAE)            paPaePTsR0;
     } aPTs[1];
 } PGMMAPPING;
@@ -483,7 +483,7 @@ typedef struct PGMPHYSHANDLER
     R0PTRTYPE(PFNPGMR0PHYSHANDLER)      pfnHandlerR0;
     /** User argument for R0 handlers. */
     R0PTRTYPE(void *)                   pvUserR0;
-    /** Pointer to GC callback function. */
+    /** Pointer to RC callback function. */
     RCPTRTYPE(PFNPGMRCPHYSHANDLER)      pfnHandlerRC;
     /** User argument for RC handlers. */
     RCPTRTYPE(void *)                   pvUserRC;

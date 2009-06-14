@@ -2230,8 +2230,7 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
                 Log4(("PGMGCDynMapHCPage: HCPhys=%RHp pv=%p iPage=%d iCache=%d\n", HCPhys, pv, iPage, iCache));
                 return VINF_SUCCESS;
             }
-            else
-                LogFlow(("Out of sync entry %d\n", iPage));
+            LogFlow(("Out of sync entry %d\n", iPage));
         }
     }
     AssertCompile(RT_ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache) == 8);
@@ -2241,9 +2240,9 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
     /*
      * Update the page tables.
      */
-    register unsigned iPage = pVM->pgm.s.iDynPageMapLast;
+    unsigned iPage = pVM->pgm.s.iDynPageMapLast;
     unsigned i;
-    for (i=0;i<(MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT);i++)
+    for (i = 0; i < (MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT); i++)
     {
         pVM->pgm.s.iDynPageMapLast = iPage = (iPage + 1) & ((MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT) - 1);
         if (!pVM->pgm.s.aLockedDynPageMapCache[iPage])
