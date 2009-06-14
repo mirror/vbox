@@ -244,6 +244,7 @@ VBOXCrtcResize(ScrnInfoPtr scrn, int width, int height)
         scrn->virtualX = width;
         scrn->virtualY = height;
         scrn->displayWidth = width;
+        VBOXDRIUpdateStride(scrn, pVBox);
     }
     TRACE_LOG("returning %s\n", rc ? "TRUE" : "FALSE");
     return rc;
@@ -984,6 +985,9 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
         return (FALSE);
     if (!miSetPixmapDepths())
         return (FALSE);
+
+    /* Needed before we initialise DRI. */
+    pScrn->displayWidth = pScrn->virtualX;
 
 #ifdef VBOX_DRI
     pVBox->useDRI = VBOXDRIScreenInit(scrnIndex, pScreen, pVBox);
