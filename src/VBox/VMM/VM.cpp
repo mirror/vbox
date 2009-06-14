@@ -638,8 +638,8 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
                                 if (RT_SUCCESS(rc))
                                 {
                                     /*
-                                    * Now we can safely set the VM halt method to default.
-                                    */
+                                     * Now we can safely set the VM halt method to default.
+                                     */
                                     rc = vmR3SetHaltMethodU(pUVM, VMHALTMETHOD_DEFAULT);
                                     if (RT_SUCCESS(rc))
                                     {
@@ -670,15 +670,35 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
             AssertRC(rc2);
         }
 
-        /* Tell GVMM that it can destroy the VM now. */
+        /*
+         * Drop all references to VM and the VMCPU structures, then
+         * tell GVMM to destroy the VM.
+         */
+        pUVM->pVM = NULL;
+        for (VMCPUID i = 0; i < pUVM->cCpus; i++)
+        {
+            pUVM->aCpus[i].pVM = NULL;
+            pUVM->aCpus[i].pVCpu = NULL;
+        }
+        Assert(pUVM->vm.s.enmHaltMethod == VMHALTMETHOD_BOOTSTRAP);
+
+        if (pUVM->cCpus > 1)
+        {
+            /* Poke the other EMTs since they may have stale pVM and pVCpu references
+               on the stack (see VMR3WaitU for instance) if they've been awakened after
+               VM creation. */
+            for (VMCPUID i = 1; i < pUVM->cCpus; i++)
+                VMR3NotifyCpuFFU(&pUVM->aCpus[i], 0);
+            RTThreadSleep(RT_MIN(100 + 25 *(pUVM->cCpus - 1), 500)); /* very sophisticated */
+        }
+
         int rc2 = SUPCallVMMR0Ex(CreateVMReq.pVMR0, 0 /* VCPU 0 */, VMMR0_DO_GVMM_DESTROY_VM, 0, NULL);
         AssertRC(rc2);
-        pUVM->pVM = NULL;
     }
     else
         vmR3SetErrorU(pUVM, rc, RT_SRC_POS, N_("VM creation failed (GVMM)"));
 
-    LogFlow(("vmR3Create: returns %Rrc\n", rc));
+    LogFlow(("vmR3CreateU: returns %Rrc\n", rc));
     return rc;
 }
 
