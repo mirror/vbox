@@ -158,10 +158,39 @@ RTDECL(int) RTMemPoolCreate(PRTMEMPOOL phMemPool, const char *pszName)
 
 RTDECL(int) RTMemPoolDestroy(RTMEMPOOL hMemPool)
 {
+    if (hMemPool == NIL_RTMEMPOOL)
+        return VINF_SUCCESS;
+    PRTMEMPOOLINT pMemPool = hMemPool;
+    RTMEMPOOL_VALID_RETURN_RC(pMemPool, VERR_INVALID_HANDLE);
+    if (pMemPool == &g_rtMemPoolDefault)
+        return VINF_SUCCESS;
 
-    return VERR_NOT_IMPLEMENTED;
+    /*
+     * Invalidate the handle and free all associated resources.
+     */
+    ASMAtomicWriteU32(&pMemPool->u32Magic, RTMEMPOOL_MAGIC_DEAD);
+
+    int rc = RTSpinlockDestroy(pMemPool->hSpinLock); AssertRC(rc);
+    pMemPool->hSpinLock = NIL_RTSPINLOCK;
+
+    PRTMEMPOOLENTRY pEntry = pMemPool->pHead;
+    pMemPool->pHead = NULL;
+    while (pEntry)
+    {
+        PRTMEMPOOLENTRY pFree = pEntry;
+        pEntry = pEntry->pNext;
+
+        pFree->pMemPool = NULL;
+        pFree->pNext = NULL;
+        pFree->pPrev = NULL;
+        pFree->cRefs = UINT32_MAX - 3;
+        RTMemFree(pFree);
+    }
+
+    RTMemFree(pMemPool);
+
+    return VINF_SUCCESS;
 }
-
 
 
 DECLINLINE(void) rtMemPoolInitAndLink(PRTMEMPOOLINT pMemPool, PRTMEMPOOLENTRY pEntry)
@@ -352,6 +381,7 @@ RTDECL(uint32_t) RTMemPoolRelease(RTMEMPOOL hMemPool, void *pv) RT_NO_THROW
     if (!cRefs)
     {
         rtMemPoolUnlink(pEntry);
+        pEntry->cRefs = UINT32_MAX - 2;
         RTMemFree(pEntry);
     }
 
