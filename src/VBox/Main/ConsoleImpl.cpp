@@ -3457,6 +3457,11 @@ DECLCALLBACK(int) Console::changeNetworkAttachment (Console *pThis, const char *
             AssertMsgFailedReturn (("enmVMState=%d\n", enmVMState), VERR_ACCESS_DENIED);
     }
 
+/** @todo r=bird: This should be code common with the config constructor in
+ *        ConsoleImpl2.cpp, so please move it into into a seperate method
+ *        that lives in ConsoleImpl2.cpp. I believe I mentioned this already.
+ *        (The header stuff on the top of this file might also be reduced
+ *        after that has been done.) */
     int rc = VINF_SUCCESS;
     int rcRet = VINF_SUCCESS;
 
