@@ -289,6 +289,9 @@ tstLog_SOURCES = tstLog.cpp
 
 tstMemAutoPtr_SOURCES = tstMemAutoPtr.cpp
 
+tstRTMemPool_TEMPLATE = VBOXR3TSTEXE
+tstRTMemPool_SOURCES = tstRTMePool.cpp
+
 tstMove_SOURCES = tstMove.cpp
 
 tstMp-1_SOURCES = tstMp-1.cpp
