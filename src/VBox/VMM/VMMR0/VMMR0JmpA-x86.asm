@@ -96,11 +96,16 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     mov     [esi + 14h], dword 00c00ffeeh ; Marker 2.
     mov     [esi + 10h], dword 0f00dbeefh ; Marker 3.
     mov     edx, [esp + 10h]            ; pvArg2
-    mov     [esi + 04h], edx
     mov     ecx, [esp + 0ch]            ; pvArg1
-    mov     [esi      ], ecx
     mov     eax, [esp + 08h]            ; pfn
-    mov     esp, esi                    ; Switch stack!
+%if 1                                   ; Use this to eat of some extra stack - handy for finding paths using lots of stack.
+ %define FRAME_OFFSET 0
+%else
+ %define FRAME_OFFSET 1024
+%endif
+    mov     [esi - FRAME_OFFSET + 04h], edx
+    mov     [esi - FRAME_OFFSET      ], ecx
+    lea     esp, [esi - FRAME_OFFSET]   ; Switch stack!
     call    eax
     and     dword [esi + 1ch], byte 0   ; reset marker.
 
@@ -114,33 +119,31 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     mov     ecx, VMM_STACK_SIZE / 4
     cld
     repe scasd
-    mov     eax, esi                    ; restore eax in case of overflow (esi remains used)
-    mov     edi, VMM_STACK_SIZE
     shl     ecx, 2                      ; *4
-    sub     edi, ecx
-    cmp     edi, VMM_STACK_SIZE - 64    ; Less than 64 bytes left -> overflow as well.
+    cmp     ecx, VMM_STACK_SIZE - 64    ; Less than 64 bytes left -> overflow as well.
+    mov     eax, esi                    ; restore eax in case of overflow (esi remains used)
     jae     .stack_overflow_almost
 
     ; Update stack usage statistics.
-    cmp     edi, [ebx + VMMR0JMPBUF.cbUsedMax] ; New max usage?
+    cmp     ecx, [ebx + VMMR0JMPBUF.cbUsedMax] ; New max usage?
     jle     .no_used_max
-    mov     [ebx + VMMR0JMPBUF.cbUsedMax], edi
+    mov     [ebx + VMMR0JMPBUF.cbUsedMax], ecx
 .no_used_max:
     ; To simplify the average stuff, just historize before we hit div errors.
     inc     dword [ebx + VMMR0JMPBUF.cUsedTotal]
     test    [ebx + VMMR0JMPBUF.cUsedTotal], dword 0c0000000h
     jz      .no_historize
     mov     dword [ebx + VMMR0JMPBUF.cUsedTotal], 2
-    mov     ecx, [ebx + VMMR0JMPBUF.cbUsedAvg]
-    mov     [ebx + VMMR0JMPBUF.cbUsedTotal], ecx
+    mov     edi, [ebx + VMMR0JMPBUF.cbUsedAvg]
+    mov     [ebx + VMMR0JMPBUF.cbUsedTotal], edi
     mov     dword [ebx + VMMR0JMPBUF.cbUsedTotal + 4], 0
 .no_historize:
-    add     [ebx + VMMR0JMPBUF.cbUsedTotal], edi
+    add     [ebx + VMMR0JMPBUF.cbUsedTotal], ecx
     adc     dword [ebx + VMMR0JMPBUF.cbUsedTotal + 4], 0
     mov     eax, [ebx + VMMR0JMPBUF.cbUsedTotal]
     mov     edx, [ebx + VMMR0JMPBUF.cbUsedTotal + 4]
-    mov     ecx, [ebx + VMMR0JMPBUF.cUsedTotal]
-    div     ecx
+    mov     edi, [ebx + VMMR0JMPBUF.cUsedTotal]
+    div     edi
     mov     [ebx + VMMR0JMPBUF.cbUsedAvg], eax
 
     mov     eax, esi                    ; restore eax (final, esi released)
