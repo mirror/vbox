@@ -2145,7 +2145,6 @@ VMMDECL(int) PGMPhysSimpleReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, s
     /* won't ever get here. */
 }
 
-#ifndef IN_RC /* Ring 0 & 3 only. (Just not needed in GC.) */
 
 /**
  * Write to guest physical memory referenced by GC pointer.
@@ -2617,7 +2616,6 @@ VMMDECL(int) PGMPhysWriteGCPtr(PVMCPU pVCpu, RTGCPTR GCPtrDst, const void *pvSrc
     }
 }
 
-#endif /* !IN_RC */
 
 /**
  * Performs a read of guest virtual memory for instruction emulation.
