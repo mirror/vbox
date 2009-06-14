@@ -106,6 +106,7 @@ RTDECL(bool) RTThreadYield(void)
     return false; /** @todo figure this one ... */
 }
 
+
 RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
 {
     Assert(hThread == NIL_RTTHREAD);
@@ -121,11 +122,13 @@ RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
     return curthread->td_owepreempt == 1;
 }
 
+
 RTDECL(bool) RTThreadPreemptIsPendingTrusty(void)
 {
     /* yes, RTThreadPreemptIsPending is reliable. */
     return true;
 }
+
 
 RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 {
