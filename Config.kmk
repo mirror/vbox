@@ -495,9 +495,9 @@ VBOX_WITH_LIBXML2_IN_VBOXRT = 1
 
 ## For experimenting with disabling preemption instead of interrupts
 # when working VT-x/AMD-V in VMMR0.
-## @todo darwin, os2. This should be made the default.
-if1of ($(KBUILD_TARGET), linux solaris windows freebsd)
- VBOX_WITH_VMMR0_DISABLE_PREEMPTION=1
+## @todo os2? Reconsider perhaps windows? (see defect) This should be made the default.
+if1of ($(KBUILD_TARGET), darwin freebsd linux solaris windows)
+ VBOX_WITH_VMMR0_DISABLE_PREEMPTION = 1
 endif
 
 #
