@@ -4649,13 +4649,12 @@ static DECLCALLBACK(void) pcnetPowerOff(PPDMDEVINS pDevIns)
     pcnetWakeupReceive(pDevIns);
 }
 
-
 #ifdef VBOX_DYNAMIC_NET_ATTACH
+
 /**
  * Detach notification.
  *
- * One network card at one port has been unplugged.
- * The VM is suspended at this point.
+ * One port on the network card has been disconnected from the network.
  *
  * @param   pDevIns     The device instance.
  * @param   iLUN        The logical unit which is being detached.
@@ -4663,13 +4662,13 @@ static DECLCALLBACK(void) pcnetPowerOff(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) pcnetDetach(PPDMDEVINS pDevIns, unsigned iLUN)
 {
     PCNetState *pThis = PDMINS_2_DATA(pDevIns, PCNetState *);
+    Log(("#%d pcnetDetach:\n", PCNET_INST_NR));
 
-    Log(("%s:\n", __FUNCTION__));
+    AssertLogRelReturn(iLUN == 0, VERR_PDM_NO_SUCH_LUN);
 
-    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
-    AssertReleaseRC(rc);
+    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
 
-    /* @todo: r=pritesh still need to check if i missed
+    /** @todo: r=pritesh still need to check if i missed
      * to clean something in this function
      */
 
@@ -4686,21 +4685,27 @@ static DECLCALLBACK(void) pcnetDetach(PPDMDEVINS pDevIns, unsigned iLUN)
 /**
  * Attach the Network attachment.
  *
+ * One port on the network card has been connected to a network.
+ *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
- * @param   iLUN        The logical unit which is being detached.
+ * @param   iLUN        The logical unit which is being attached.
+ *
+ * @remarks This code path is not used during construction.
  */
-static DECLCALLBACK(int)  pcnetAttach(PPDMDEVINS pDevIns, unsigned iLUN)
+static DECLCALLBACK(int) pcnetAttach(PPDMDEVINS pDevIns, unsigned iLUN)
 {
     PCNetState *pThis = PDMINS_2_DATA(pDevIns, PCNetState *);
-    int         rc    = VINF_SUCCESS;
+    LogFlow(("#%d pcnetAttach:\n", PCNET_INST_NR));
 
-    Log(("%s:\n", __FUNCTION__));
+    AssertLogRelReturn(iLUN == 0, VERR_PDM_NO_SUCH_LUN);
 
-    rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
-    AssertReleaseRC(rc);
+    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
 
-    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "Network Port");
+    /*
+     * Attach the driver.
+     */
+    int rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "Network Port");
     if (RT_SUCCESS(rc))
     {
         if (rc == VINF_NAT_DNS)
@@ -4713,25 +4718,23 @@ static DECLCALLBACK(int)  pcnetAttach(PPDMDEVINS pDevIns, unsigned iLUN)
                                        N_("A Domain Name Server (DNS) for NAT networking could not be determined. Ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
 #endif
         }
-        pThis->pDrv = (PPDMINETWORKCONNECTOR)
-            pThis->pDrvBase->pfnQueryInterface(pThis->pDrvBase, PDMINTERFACE_NETWORK_CONNECTOR);
+        pThis->pDrv = (PPDMINETWORKCONNECTOR)pThis->pDrvBase->pfnQueryInterface(pThis->pDrvBase, PDMINTERFACE_NETWORK_CONNECTOR);
         if (!pThis->pDrv)
         {
             AssertMsgFailed(("Failed to obtain the PDMINTERFACE_NETWORK_CONNECTOR interface!\n"));
-            return VERR_PDM_MISSING_INTERFACE_BELOW;
+            rc = VERR_PDM_MISSING_INTERFACE_BELOW;
         }
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
-        Log(("No attached driver!\n"));
-    else
-        return rc;
+        Log(("#%d No attached driver!\n", PCNET_INST_NR));
+
 
     /*
      * Temporary set the link down if it was up so that the guest
      * will know that we have change the configuration of the
      * network card
      */
-    if (pThis->fLinkUp)
+    if (pThis->fLinkUp && RT_SUCCESS(rc))
     {
         pThis->fLinkTempDown = true;
         pThis->cLinkDownReported = 0;
@@ -4739,13 +4742,13 @@ static DECLCALLBACK(int)  pcnetAttach(PPDMDEVINS pDevIns, unsigned iLUN)
         pThis->Led.Asserted.s.fError = pThis->Led.Actual.s.fError = 1;
         TMTimerSetMillies(pThis->pTimerRestore, 20000);
     }
-    PDMCritSectLeave(&pThis->CritSect);
 
+    PDMCritSectLeave(&pThis->CritSect);
     return rc;
 
 }
-#endif /* VBOX_DYNAMIC_NET_ATTACH */
 
+#endif /* VBOX_DYNAMIC_NET_ATTACH */
 
 /**
  * @copydoc FNPDMDEVSUSPEND
