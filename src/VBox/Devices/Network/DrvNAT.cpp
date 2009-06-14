@@ -1,11 +1,10 @@
+/* $Id$ */
 /** @file
- *
- * VBox network devices:
- * NAT network transport driver
+ * DrvNAT - NAT network transport driver.
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -48,6 +47,10 @@
 #include <iprt/semaphore.h>
 #include <iprt/req.h>
 
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
 /**
  * @todo: This is a bad hack to prevent freezing the guest during high network
  *        activity. This needs to be fixed properly.
@@ -55,11 +58,11 @@
 #define VBOX_NAT_DELAY_HACK
 #ifdef VBOX_WITH_STATISTICS
 # define COUNTING_COUTER(name, dsc) \
-extern "C" void slirp_counting_counter_##name##_reset(PNATState pData); \
-extern "C" void slirp_counting_counter_##name##_inc(PNATState pData); \
-extern "C" void slirp_counting_counter_##name##_add(PNATState pData, int val);
-/* @todo think abaout it */
-# define PROFILE_COUNTER(name, dsc) 
+    extern "C" void slirp_counting_counter_##name##_reset(PNATState pData); \
+    extern "C" void slirp_counting_counter_##name##_inc(PNATState pData); \
+    extern "C" void slirp_counting_counter_##name##_add(PNATState pData, int val);
+/** @todo think abaout it */
+# define PROFILE_COUNTER(name, dsc)
 # include "Network/slirp/counters.h"
 # undef COUNTING_COUTER
 # undef PROFILE_COUNTER
@@ -68,12 +71,14 @@ extern "C" void slirp_counting_counter_##name##_add(PNATState pData, int val);
 # define DRVNAT_COUNTER_INC(pData, name) \
     slirp_counting_counter_##name##_inc(pData)
 # define DRVNAT_COUNTER_ADD(pData, name, val) \
-    slirp_counting_counter_##name##_add(pData, (val)) 
+    slirp_counting_counter_##name##_add(pData, (val))
 #else
-#define DRVNAT_COUNTER_RESET(pData, name) do{}while(0)
-#define DRVNAT_COUNTER_INC(pData, name) do{}while(0)
-#define DRVNAT_COUNTER_ADD(pData, name) do{}while(0)
+# define DRVNAT_COUNTER_RESET(pData, name) do{}while(0)
+# define DRVNAT_COUNTER_INC(pData, name) do{}while(0)
+# define DRVNAT_COUNTER_ADD(pData, name) do{}while(0)
 #endif
+
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -837,11 +842,11 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
         if (RT_SUCCESS(rc))                             \
             setter(pThis->pNATState, len);              \
     }while(0)
-        SLIRP_SET_TUNING_VALUE("SocketRcvBuf", slirp_set_rcvbuf); 
-        SLIRP_SET_TUNING_VALUE("SocketSndBuf", slirp_set_sndbuf); 
-        SLIRP_SET_TUNING_VALUE("TcpRcvSpace", slirp_set_tcp_rcvspace); 
-        SLIRP_SET_TUNING_VALUE("TcpSndSpace", slirp_set_tcp_sndspace); 
-    
+        SLIRP_SET_TUNING_VALUE("SocketRcvBuf", slirp_set_rcvbuf);
+        SLIRP_SET_TUNING_VALUE("SocketSndBuf", slirp_set_sndbuf);
+        SLIRP_SET_TUNING_VALUE("TcpRcvSpace", slirp_set_tcp_rcvspace);
+        SLIRP_SET_TUNING_VALUE("TcpSndSpace", slirp_set_tcp_sndspace);
+
         slirp_register_timers(pThis->pNATState, pDrvIns);
         int rc2 = drvNATConstructRedir(pDrvIns->iInstance, pThis, pCfgHandle, Network);
         if (RT_SUCCESS(rc2))
