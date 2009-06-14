@@ -972,6 +972,7 @@ VMMR3DECL(int) VMMR3DisableSwitcher(PVM pVM)
     return VINF_SUCCESS;
 }
 
+
 /**
  * Gets the switcher to be used for switching to GC.
  *
@@ -988,7 +989,7 @@ VMMR3DECL(RTR0PTR) VMMR3GetHostToGuestSwitcher(PVM pVM, VMMSWITCHER enmSwitcher)
         ||  enmSwitcher >= VMMSWITCHER_MAX)
     {
         AssertMsgFailed(("Invalid input enmSwitcher=%d\n", enmSwitcher));
-        return (RTR0PTR)0;
+        return NIL_RTR0PTR;
     }
 
     /*
@@ -1000,5 +1001,5 @@ VMMR3DECL(RTR0PTR) VMMR3GetHostToGuestSwitcher(PVM pVM, VMMSWITCHER enmSwitcher)
         RTR0PTR     pbCodeR0 = (RTR0PTR)pVM->vmm.s.pvCoreCodeR0 + pVM->vmm.s.aoffSwitchers[enmSwitcher]; /** @todo fix the pvCoreCodeR0 type */
         return pbCodeR0 + pSwitcher->offR0HostToGuest;
     }
-    return (RTR0PTR)0;
+    return NIL_RTR0PTR;
 }
