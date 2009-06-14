@@ -196,6 +196,17 @@ void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient,
     ClipAnnounceFormatToX11 (pClient->pCtx->pBackend, u32Formats);
 }
 
+/** Structure describing a request for clipoard data from the guest. */
+struct _CLIPREADCBREQ
+{
+    /** Where to write the returned data to. */
+    void *pv;
+    /** The size of the buffer in pv */
+    uint32_t cb;
+    /** The actual size of the data written */
+    uint32_t *pcbActual;
+};
+
 /**
  * Called when VBox wants to read the X11 clipboard.
  *
@@ -209,7 +220,7 @@ void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient,
  * @param  cb        The size of the buffer to write the data to
  * @param  pcbActual Where to write the actual size of the written data
  * @note   We always fail or complete asynchronously
- * @note   On success allocates a CLIPREADX11CBCONTEXT structure which must be
+ * @note   On success allocates a CLIPREADCBREQ structure which must be
  *         freed in ClipCompleteDataRequestFromX11 when it is called back from
  *         the backend code.
  *         
@@ -221,10 +232,19 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient,
     LogFlowFunc(("pClient=%p, u32Format=%02X, pv=%p, cb=%u, pcbActual=%p",
                  pClient, u32Format, pv, cb, pcbActual));
     
-    int rc = ClipRequestDataFromX11(pClient->pCtx->pBackend, u32Format, pv,
-                                    cb);
-    if (RT_SUCCESS(rc))
-        rc = VINF_HGCM_ASYNC_EXECUTE;
+    int rc = VINF_SUCCESS;
+    CLIPREADCBREQ *pReq = (CLIPREADCBREQ *) RTMemAlloc(sizeof(CLIPREADCBREQ));
+    if (!pReq)
+        rc = VERR_NO_MEMORY;
+    else
+    {
+        pReq->pv = pv;
+        pReq->cb = cb;
+        pReq->pcbActual = pcbActual;
+        rc = ClipRequestDataFromX11(pClient->pCtx->pBackend, u32Format, pReq);
+        if (RT_SUCCESS(rc))
+            rc = VINF_HGCM_ASYNC_EXECUTE;
+    }
     LogFlowFunc(("returning %Rrc\n", rc));
     return rc;
 }
@@ -241,9 +261,13 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient,
  *         them onto the caller
  */
 void ClipCompleteDataRequestFromX11(VBOXCLIPBOARDCONTEXT *pCtx, int rc,
-                                    uint32_t cbActual)
+                                    CLIPREADCBREQ *pReq, void *pv,
+                                    uint32_t cb)
 {
-    vboxSvcClipboardCompleteReadData(pCtx->pClient, rc, cbActual);
+    if (cb <= pReq->cb)
+        memcpy(pReq->pv, pv, cb);
+    RTMemFree(pReq);
+    vboxSvcClipboardCompleteReadData(pCtx->pClient, rc, cb);
 }
 
 /** A request for clipboard data from VBox */
@@ -409,9 +433,8 @@ struct _CLIPBACKEND
     struct _READDATA
     {
         uint32_t format;
-        void *pv;
-        uint32_t cb;
         int rc;
+        CLIPREADCBREQ *pReq;
     } readData;
     struct _COMPLETEREAD
     {
@@ -477,11 +500,10 @@ void ClipAnnounceFormatToX11(CLIPBACKEND *pBackend,
 }
 
 extern int ClipRequestDataFromX11(CLIPBACKEND *pBackend, uint32_t u32Format,
-                                  void *pv, uint32_t cb)
+                                  CLIPREADCBREQ *pReq)
 {
     pBackend->readData.format = u32Format;
-    pBackend->readData.pv = pv;
-    pBackend->readData.cb = cb;
+    pBackend->readData.pReq = pReq;
     return pBackend->readData.rc;
 }
 
@@ -517,17 +539,20 @@ int main()
     {
         if (   pBackend->readData.format !=
                        VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT
-            || pBackend->readData.pv != &u32Dummy
-            || pBackend->readData.cb != 42)
+            || pBackend->readData.pReq->pv != &u32Dummy
+            || pBackend->readData.pReq->cb != 42
+            || pBackend->readData.pReq->pcbActual != &u32Dummy)
         {
-            RTPrintf(TEST_NAME ": format=%u, pv=%p, cb=%u\n",
-                     pBackend->readData.format, pBackend->readData.pv,
-                     pBackend->readData.cb);
+            RTPrintf(TEST_NAME ": format=%u, pReq->pv=%p, pReq->cb=%u, pReq->pcbActual=%p\n",
+                     pBackend->readData.format, pBackend->readData.pReq->pv,
+                     pBackend->readData.pReq->cb,
+                     pBackend->readData.pReq->pcbActual);
             ++cErrors;
         }
         else
         {
-            ClipCompleteDataRequestFromX11(client.pCtx, VERR_NO_DATA, 43);
+            ClipCompleteDataRequestFromX11(client.pCtx, VERR_NO_DATA,
+                                           pBackend->readData.pReq, NULL, 43);
             if (   pBackend->completeRead.rc != VERR_NO_DATA
                 || pBackend->completeRead.cbActual != 43)
             {
