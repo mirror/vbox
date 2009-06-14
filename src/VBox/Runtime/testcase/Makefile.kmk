@@ -73,6 +73,7 @@ PROGRAMS += \
 	tstLdrLoad \
 	tstLog \
 	tstMemAutoPtr \
+	tstRTMemPool \
 	tstMove \
 	tstMp-1 \
 	tstNoCrt-1 \
@@ -290,7 +291,7 @@ tstLog_SOURCES = tstLog.cpp
 tstMemAutoPtr_SOURCES = tstMemAutoPtr.cpp
 
 tstRTMemPool_TEMPLATE = VBOXR3TSTEXE
-tstRTMemPool_SOURCES = tstRTMePool.cpp
+tstRTMemPool_SOURCES = tstRTMemPool.cpp
 
 tstMove_SOURCES = tstMove.cpp
 
