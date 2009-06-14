@@ -236,7 +236,7 @@ VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf, QWidget *
 
     mLeNewFirstName->setMaxLength (50);
 
-   mLeNewFirstName->setValidator (new QRegExpValidator (nameExp, this));
+    mLeNewFirstName->setValidator (new QRegExpValidator (nameExp, this));
 
     mLeNewLastName->setMaxLength (50);
     mLeNewLastName->setValidator (new QRegExpValidator (nameExp, this));
@@ -263,27 +263,8 @@ VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf, QWidget *
     connect (mWvalReg, SIGNAL (isValidRequested (QIWidgetValidator *)),
              this, SLOT (revalidate (QIWidgetValidator *)));
 
-    connect (mRbOld, SIGNAL (toggled (bool)), mWvalReg, SLOT (revalidate()));
-    connect (mRbNew, SIGNAL (toggled (bool)), mWvalReg, SLOT (revalidate()));
-
-    connect (mLeOldEmail, SIGNAL (textEdited (const QString &)),
-             this, SLOT (tuneRadioButton (const QString &)));
-    connect (mLeOldPassword, SIGNAL (textEdited (const QString &)),
-             this, SLOT (tuneRadioButton (const QString &)));
-    connect (mLeNewFirstName, SIGNAL (textEdited (const QString &)),
-             this, SLOT (tuneRadioButton (const QString &)));
-    connect (mLeNewLastName, SIGNAL (textEdited (const QString &)),
-             this, SLOT (tuneRadioButton (const QString &)));
-    connect (mLeNewCompany, SIGNAL (textEdited (const QString &)),
-             this, SLOT (tuneRadioButton (const QString &)));
-    connect (mLeNewCountry, SIGNAL (textEdited (const QString &)),
-             this, SLOT (tuneRadioButton (const QString &)));
-    connect (mLeNewEmail, SIGNAL (textEdited (const QString &)),
-             this, SLOT (tuneRadioButton (const QString &)));
-    connect (mLeNewPassword, SIGNAL (textEdited (const QString &)),
-             this, SLOT (tuneRadioButton (const QString &)));
-    connect (mLeNewPassword2, SIGNAL (textEdited (const QString &)),
-             this, SLOT (tuneRadioButton (const QString &)));
+    connect (mRbOld, SIGNAL (toggled (bool)), this, SLOT (radioButtonToggled()));
+    connect (mRbNew, SIGNAL (toggled (bool)), this, SLOT (radioButtonToggled()));
 
     /* Setup other connections */
     connect (vboxGlobal().mainWindow(), SIGNAL (closing()), this, SLOT (reject()));
@@ -293,9 +274,7 @@ VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf, QWidget *
         GetExtraData (VBoxDefs::GUI_RegistrationData), false);
     mLeOldEmail->setText (data.account());
 
-    /* Update the next button state for pages with validation
-     * (validityChanged() connected to enableNext() will do the job) */
-    mWvalReg->revalidate();
+    radioButtonToggled();
 
     /* Initialize wizard hdr */
     initializeWizardFtr();
@@ -324,22 +303,19 @@ void VBoxRegistrationDlg::retranslateUi()
     Ui::VBoxRegistrationDlg::retranslateUi (this);
 }
 
-void VBoxRegistrationDlg::tuneRadioButton (const QString &aNewText)
+void VBoxRegistrationDlg::radioButtonToggled()
 {
-    QList <QLineEdit*> oldSet;
-    oldSet << mLeOldEmail << mLeOldPassword;
+    QRadioButton *current = mRbOld->isChecked() ? mRbOld : mRbNew;
 
-    QList <QLineEdit*> newSet;
-    newSet << mLeNewFirstName << mLeNewLastName
-           << mLeNewCompany << mLeNewCountry
-           << mLeNewEmail << mLeNewPassword << mLeNewPassword2;
-
-    QLineEdit *le = qobject_cast <QLineEdit*> (sender());
-
-    if (le && !aNewText.isEmpty() && oldSet.contains (le))
-        mRbOld->setChecked (true);
-    else if (le && !aNewText.isEmpty() && newSet.contains (le))
-        mRbNew->setChecked (true);
+    mLeOldEmail->setEnabled (current == mRbOld);
+    mLeOldPassword->setEnabled (current == mRbOld);
+    mLeNewFirstName->setEnabled (current == mRbNew);
+    mLeNewLastName->setEnabled (current == mRbNew);
+    mLeNewCompany->setEnabled (current == mRbNew);
+    mLeNewCountry->setEnabled (current == mRbNew);
+    mLeNewEmail->setEnabled (current == mRbNew);
+    mLeNewPassword->setEnabled (current == mRbNew);
+    mLeNewPassword2->setEnabled (current == mRbNew);
 
     mWvalReg->revalidate();
 }
@@ -394,15 +370,7 @@ void VBoxRegistrationDlg::reinit()
     mHttp->readAll();
 
     /* Enable control elements */
-    mLeOldEmail->setEnabled (true);
-    mLeOldPassword->setEnabled (true);
-    mLeNewFirstName->setEnabled (true);
-    mLeNewLastName->setEnabled (true);
-    mLeNewCompany->setEnabled (true);
-    mLeNewCountry->setEnabled (true);
-    mLeNewEmail->setEnabled (true);
-    mLeNewPassword->setEnabled (true);
-    mLeNewPassword2->setEnabled (true);
+    radioButtonToggled();
     finishButton()->setEnabled (true);
     cancelButton()->setEnabled (true);
 

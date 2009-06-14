@@ -51,7 +51,7 @@ protected:
 
 private slots:
 
-    void tuneRadioButton (const QString &aNewText);
+    void radioButtonToggled();
 
     void accept();
     void reject();
