@@ -241,7 +241,11 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
     }
     else
     {
+#ifdef DEBUG_bird
+        Assert(!fFlushTLBs || rc == VINF_PGM_SYNC_CR3);
+#else
         Assert(!fFlushTLBs);
+#endif
         Log(("pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs: doesn't flush guest TLBs. rc=%Rrc\n", rc));
     }
     return rc;
@@ -1133,7 +1137,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasHC(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
             PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ALLOCATED);
             /** @todo hack alert
              *  This needs to be done properly. Currently we get away with it as the recompiler directly calls
-             *  IOM read and write functions. Access through PGMPhysRead/Write will crash the process. 
+             *  IOM read and write functions. Access through PGMPhysRead/Write will crash the process.
              */
             PGM_PAGE_SET_PAGEID(pPage, NIL_GMM_PAGEID);
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
