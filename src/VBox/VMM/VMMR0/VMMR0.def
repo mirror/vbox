@@ -29,6 +29,12 @@ EXPORTS
     PDMQueueInsert
     PGMHandlerPhysicalPageTempOff
     PGMShwModifyPage
+    PGMPhysSimpleWriteGCPhys
+    PGMPhysSimpleReadGCPtr
+    PGMPhysSimpleWriteGCPtr
+    PGMPhysReadGCPtr
+    PGMPhysWriteGCPtr
+    PGMPhysSimpleDirtyWriteGCPtr
     IOMMMIOResetRegion
     IOMMMIOMapMMIO2Page
     RTLogDefaultInstance
