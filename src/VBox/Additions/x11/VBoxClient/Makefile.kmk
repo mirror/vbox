@@ -33,6 +33,8 @@ VBoxClient_DEFS.linux += _GNU_SOURCE
 VBoxClient_SOURCES = \
 	main.cpp
 VBoxClient_SOURCES += \
+  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-helper.cpp \
+  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/x11-clipboard.cpp \
 	clipboard.cpp
 VBoxClient_LIBPATH = \
 	$(VBOX_LIBPATH32_X11)
