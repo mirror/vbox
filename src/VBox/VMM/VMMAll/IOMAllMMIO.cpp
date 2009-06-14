@@ -138,9 +138,9 @@ DECLINLINE(int) iomMMIODoRead(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhys, vo
                 rc = VINF_SUCCESS;
                 break;
         }
-        if (rc != VINF_IOM_HC_MMIO_READ)
-            STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Read));
     }
+    if (rc != VINF_IOM_HC_MMIO_READ)
+        STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Read));
     return rc;
 }
 
