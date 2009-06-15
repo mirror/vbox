@@ -729,14 +729,14 @@ do{                                                                 \
 
 # define PROFILE_COUNTER(name, dsc) \
     COUNTER(name, STAMTYPE_PROFILE, STAMUNIT_TICKS_PER_CALL, dsc);
-# define COUNTING_COUTER(name, dsc) \
+# define COUNTING_COUNTER(name, dsc) \
     COUNTER(name, STAMTYPE_COUNTER, STAMUNIT_COUNT, dsc); 
 
 #include "counters.h"
 
 #undef COUNTER
 #undef PROFILE_COUNTER
-#undef COUNTING_COUTER
+#undef COUNTING_COUNTER
 
 #endif /* VBOX_WITH_STATISTICS */
 }
@@ -1890,18 +1890,18 @@ void slirp_set_tcp_sndspace(PNATState pData, int kilobytes)
 
 #ifdef VBOX_WITH_STATISTICS
 /*definitions */
-#define COUNTING_COUTER(name, dsc) \
+#define COUNTING_COUNTER(name, dsc) \
 void slirp_counting_counter_##name##_reset(PNATState);      \
 void slirp_counting_counter_##name##_inc(PNATState);        \
 void slirp_counting_counter_##name##_add(PNATState,int );   \
 /* @todo think abaout it */
 #define PROFILE_COUNTER(name, dsc) 
 #include "counters.h"
-#undef COUNTING_COUTER
+#undef COUNTING_COUNTER
 #undef PROFILE_COUNTER
 
 /*declarations*/
-#define COUNTING_COUTER(name, dsc) \
+#define COUNTING_COUNTER(name, dsc) \
 void slirp_counting_counter_##name##_reset(PNATState pData) \
 {                                                           \
     SLIRP_COUNTER_RESET(name);                              \
@@ -1917,6 +1917,6 @@ void slirp_counting_counter_##name##_add(PNATState pData,int val)   \
 /* @todo think abaout it */
 #define PROFILE_COUNTER(name, dsc) 
 #include "counters.h"
-#undef COUNTING_COUTER
+#undef COUNTING_COUNTER
 #undef PROFILE_COUNTER
 #endif
