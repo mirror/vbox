@@ -91,6 +91,16 @@ RTR3DECL(int) RTTestCreate(const char *pszTest, PRTTEST phTest);
 RTR3DECL(int) RTTestDestroy(RTTEST hTest);
 
 /**
+ * Changes the default test instance for the calling thread.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hNewDefaultTest The new default test. NIL_RTTEST is fine.
+ * @param   phOldTest       Where to store the old test handle. Optional.
+ */
+RTR3DECL(int) RTTestSetDefault(RTTEST hNewDefaultTest, PRTTEST phOldTest);
+
+/**
  * Allocate a block of guarded memory.
  *
  * @returns IPRT status code.
