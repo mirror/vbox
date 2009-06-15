@@ -38,6 +38,7 @@
 #include <iprt/critsect.h>
 #include <iprt/env.h>
 #include <iprt/err.h>
+#include <iprt/initterm.h>
 #include <iprt/mem.h>
 #include <iprt/once.h>
 #include <iprt/param.h>
@@ -284,6 +285,24 @@ RTR3DECL(int) RTTestCreate(const char *pszTest, PRTTEST phTest)
     RTStrFree((char *)pTest->pszTest);
     RTMemFree(pTest);
     return rc;
+}
+
+
+RTR3DECL(int) RTTestInitAndCreate(const char *pszTest, PRTTEST phTest)
+{
+    int rc = RTR3Init();
+    if (RT_FAILURE(rc))
+    {
+        RTStrmPrintf(g_pStdErr, "%s: fatal error: RTR3Init failed with rc=%Rrc\n",  pszTest, rc);
+        return 16;
+    }
+    rc = RTTestCreate(pszTest, phTest);
+    if (RT_FAILURE(rc))
+    {
+        RTStrmPrintf(g_pStdErr, "%s: fatal error: RTTestCreate failed with rc=%Rrc\n",  pszTest, rc);
+        return 17;
+    }
+    return 0;
 }
 
 
