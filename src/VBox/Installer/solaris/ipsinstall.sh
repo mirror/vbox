@@ -26,8 +26,8 @@ check_root()
 {
     idbin=/usr/xpg4/bin/id
     if test ! -f "$idbin"; then
-        found=`which id | grep "no id"`
-        if test ! -z "$found"; then
+        found=`which id`
+        if test ! -f "$found" || test ! -h "$found"; then
             echo "## Failed to find a suitable user id binary."
             exit 1
         else
