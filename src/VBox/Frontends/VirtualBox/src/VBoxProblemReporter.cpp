@@ -248,15 +248,10 @@ bool VBoxProblemReporter::showModalProgressDialog (
     CProgress &aProgress, const QString &aTitle, QWidget *aParent,
     int aMinDuration)
 {
-    QApplication::setOverrideCursor (QCursor (Qt::WaitCursor));
-
-    VBoxProgressDialog progressDlg (aProgress, aTitle, aMinDuration,
-                                    aParent);
+    VBoxProgressDialog progressDlg (aProgress, aTitle, aMinDuration, aParent);
 
     /* run the dialog with the 100 ms refresh interval */
     progressDlg.run (100);
-
-    QApplication::restoreOverrideCursor();
 
     return true;
 }

@@ -52,23 +52,29 @@ class VBoxProgressDialog: protected QIDialog
     Q_OBJECT;
 
 public:
+
     VBoxProgressDialog (CProgress &aProgress, const QString &aTitle,
-                        int aMinDuration = 2000, QWidget *aParent = NULL);
+                        int aMinDuration = 2000, QWidget *aParent = 0);
 
     int run (int aRefreshInterval);
     bool cancelEnabled() const { return mCancelEnabled; }
 
 protected:
+
     virtual void retranslateUi();
 
     virtual void reject();
+
     virtual void timerEvent (QTimerEvent *aEvent);
     virtual void closeEvent (QCloseEvent *aEvent);
 
 private slots:
+
+    void showDialog();
     void cancelOperation();
 
 private:
+
     /* Private member vars */
     CProgress &mProgress;
     QILabel *mLabel;
