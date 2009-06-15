@@ -128,7 +128,8 @@ HRESULT DHCPServer::saveSettings (settings::Key &aParentNode)
     aNode.setValue <Bstr> ("networkMask", m.networkMask);
     aNode.setValue <Bstr> ("lowerIP", m.lowerIP);
     aNode.setValue <Bstr> ("upperIP", m.upperIP);
-    aNode.setValue <bool> ("enabled", !!m.enabled);
+    /* To force it back to a numeric value; will otherwise break for 2.2.x. */
+    aNode.setValue <ULONG> ("enabled", m.enabled);
 
     return S_OK;
 }
