@@ -202,6 +202,12 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     /* We don't actually (fully) restore the state; we simply check if the current state is as we it expect it to be. */
     for (int i=0;i<SHFL_MAX_MAPPINGS;i++)
     {
+        if (FolderMapping[i].pFolderName)
+        {
+            LogRel(("SharedFolders host service: loading folder [%ls]\n",
+                    FolderMapping[i].pFolderName->String.ucs2));
+        }
+
         bool fValid;
 
         /* restore the folder mapping counter. */
@@ -212,7 +218,11 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
         AssertRCReturn(rc, rc);
 
         if (fValid != FolderMapping[i].fValid)
+        {
+            LogRel(("SharedFolders host service: unexpected saved state %d, should be %d\n",
+                    fValid, FolderMapping[i].fValid));
             return VERR_SSM_UNEXPECTED_DATA;
+        }
 
         if (FolderMapping[i].fValid)
         {
@@ -223,7 +233,11 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
             AssertRCReturn(rc, rc);
 
             if (len != ShflStringSizeOfBuffer(FolderMapping[i].pFolderName))
+            {
+                LogRel(("SharedFolders host service: unexpected saved name length %d, should be %d\n",
+                        len, ShflStringSizeOfBuffer(FolderMapping[i].pFolderName)));
                 return VERR_SSM_UNEXPECTED_DATA;
+            }
 
             pName = (PSHFLSTRING)RTMemAlloc(len);
             Assert(pName);
@@ -235,6 +249,8 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
 
             if (memcmp(FolderMapping[i].pFolderName, pName, len))
             {
+                LogRel(("SharedFolders host service: unexpected saved name\n%.*Rhxd\nshould be\n%.*Rhxd\n",
+                        len, pName, len, FolderMapping[i].pFolderName));
                 RTMemFree(pName);
                 return VERR_SSM_UNEXPECTED_DATA;
             }
@@ -245,7 +261,11 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
             AssertRCReturn(rc, rc);
 
             if (len != ShflStringSizeOfBuffer(FolderMapping[i].pMapName))
+            {
+                LogRel(("SharedFolders host service: unexpected saved map length %d, should be %d\n",
+                        len, ShflStringSizeOfBuffer(FolderMapping[i].pMapName)));
                 return VERR_SSM_UNEXPECTED_DATA;
+            }
 
             pName = (PSHFLSTRING)RTMemAlloc(len);
             Assert(pName);
@@ -257,6 +277,8 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
 
             if (memcmp(FolderMapping[i].pMapName, pName, len))
             {
+                LogRel(("SharedFolders host service: unexpected saved map\n%.*Rhxd\nshould be\n%.*Rhxd\n",
+                        len, pName, len, FolderMapping[i].pMapName));
                 RTMemFree(pName);
                 return VERR_SSM_UNEXPECTED_DATA;
             }
@@ -267,7 +289,11 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
             rc = SSMR3GetBool(pSSM, &fCaseSensitive);
             AssertRCReturn(rc, rc);
             if (FolderMapping[i].fHostCaseSensitive != fCaseSensitive)
+            {
+                LogRel(("SharedFolders host service: unexpected saved case %d, should be %d\n",
+                        fCaseSensitive, FolderMapping[i].fHostCaseSensitive));
                 return VERR_SSM_UNEXPECTED_DATA;
+            }
 
             rc = SSMR3GetBool(pSSM, &FolderMapping[i].fGuestCaseSensitive);
             AssertRCReturn(rc, rc);
