@@ -124,7 +124,7 @@ PACKING          += $(PATH_BIN)/$(PKG_FILENAME).tar.gz $(PATH_BIN)/$(DBG_ARCHIVE
 
 OTHER_CLEAN      += $(addprefix $(SOLARIS_BASEINST_DIR)/,\
 	vbox.pkginfo vbox.copyright vbox.space vbox.pkgresponse \
-	makepackage.sh prototype postinstall.sh preremove.sh)
+	makepackage.sh prototype postinstall.sh checkinstall.sh preremove.sh)
 
 #
 # VBoxZoneAccess
@@ -172,6 +172,7 @@ SOLARIS_STRIP_EXES = \
 	$(if $(VBOX_WITH_NETADP),VBoxNetAdpCtl,) \
 	VBoxNetDHCP \
 	VBoxSVC \
+	$(if $(VBOX_WITH_CROGL),VBoxTestOGL,) \
 	VBoxXPCOMIPCD \
 	kchmviewer
 
@@ -451,6 +452,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 		$(VBOX_VERSION_STAMP) \
 		$(VBOX_PATH_SOL_INST_SRC)/makepackage.sh \
 		$(VBOX_PATH_SOL_INST_SRC)/postinstall.sh \
+		$(VBOX_PATH_SOL_INST_SRC)/checkinstall.sh \
 		$(VBOX_PATH_SOL_INST_SRC)/preremove.sh \
 		$(VBOX_PATH_SOL_INST_SRC)/vbox.pkginfo \
 		$(VBOX_PATH_SOL_INST_SRC)/vbox.space \
@@ -546,6 +548,7 @@ endif
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox.desktop         $(SOLARIS_USRSHR_APPS_DIR)/virtualbox.desktop,)
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_OUT_BIN)/VBox.png                                                  $(SOLARIS_USRSHR_PIXMAPS_DIR)/VBox.png
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/postinstall.sh                                     $(SOLARIS_BASEINST_DIR)/postinstall.sh
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/checkinstall.sh                                    $(SOLARIS_BASEINST_DIR)/checkinstall.sh
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/preremove.sh                                       $(SOLARIS_BASEINST_DIR)/preremove.sh
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/makepackage.sh                                     $(SOLARIS_BASEINST_DIR)/makepackage.sh
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/vbox.pkgresponse                                   $(SOLARIS_VBOXINST_DIR)/autoresponse
