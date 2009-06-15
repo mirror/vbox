@@ -335,9 +335,9 @@ int main()
     CHECK42("%RTuid", (RTUID)-2, "-2");
     CHECK42("%RTuid", (RTUID)90344, "90344");
 
-    CHECK42("%RTuint", (RTGCUINT)584589, "584589");
-    CHECK42("%RTuint", (RTGCUINT)3, "3");
-    CHECK42("%RTuint", (RTGCUINT)2400000000U, "2400000000");
+    CHECK42("%RTuint", (RTUINT)584589, "584589");
+    CHECK42("%RTuint", (RTUINT)3, "3");
+    CHECK42("%RTuint", (RTUINT)2400000000U, "2400000000");
 
     RTUuidCreate(&Uuid);
     RTUuidToStr(&Uuid, szCorrect, sizeof(szCorrect));
@@ -347,8 +347,8 @@ int main()
                       "expected: '%s'\n",
                       pszBuf, szCorrect);
 
-    CHECK42("%RTxint", (RTGCUINT)0x2345, "2345");
-    CHECK42("%RTxint", (RTGCUINT)0xffff8fff, "ffff8fff");
+    CHECK42("%RTxint", (RTUINT)0x2345, "2345");
+    CHECK42("%RTxint", (RTUINT)0xffff8fff, "ffff8fff");
 
     CHECK42("%RU16", (uint16_t)7, "7");
     CHECK42("%RU16", (uint16_t)46384, "46384");
