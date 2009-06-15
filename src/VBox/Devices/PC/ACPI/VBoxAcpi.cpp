@@ -23,6 +23,7 @@
 #error Pure R3 code
 #endif
 
+#define LOG_GROUP LOG_GROUP_DEV_ACPI
 #include <VBox/pdmdev.h>
 #include <VBox/pgm.h>
 #include <VBox/log.h>
@@ -44,10 +45,9 @@ static int prepareDynamicDsdt(PPDMDEVINS pDevIns,
                               void*      *ppPtr,
                               size_t     *puDsdtLen)
 {
-    //LogRel(("file is %s\n", g_abVboxDslSource));
-    *ppPtr = NULL;
-    *puDsdtLen = 0;
-    return 0;
+  *ppPtr = NULL;
+  *puDsdtLen = 0;
+  return 0;
 }
 
 static int cleanupDynamicDsdt(PPDMDEVINS pDevIns,
@@ -67,6 +67,17 @@ static int patchAml(PPDMDEVINS pDevIns, uint8_t* pAml, size_t uAmlLen)
     if (RT_FAILURE(rc))
         return rc;
 
+#if 0
+    /* Can clear CPU objects at all  here, if needed */
+    bool fShowCpu;
+    rc = CFGMR3QueryBoolDef(pDevIns->pCfgHandle, "ShowCpu", &fShowCpu, false);
+    if (RT_FAILURE(rc))
+      return rc;
+
+    if (!fShowCpu)
+      cNumCpus = 0;
+#endif
+
     /**
      * Now search AML for:
      *  AML_PROCESSOR_OP            (UINT16) 0x5b83
@@ -74,8 +85,7 @@ static int patchAml(PPDMDEVINS pDevIns, uint8_t* pAml, size_t uAmlLen)
      *  AML_NOOP_OP                 (UINT16) 0xa3
      * for VCPU not configured
      */
-    uint16_t cAcpiCpus = 0;
-    for (uint32_t i = 0; i < uAmlLen - 5; i++)
+    for (uint32_t i = 0; i < uAmlLen - 7; i++)
     {
         /*
          * AML_PROCESSOR_OP
@@ -93,10 +103,9 @@ static int patchAml(PPDMDEVINS pDevIns, uint8_t* pAml, size_t uAmlLen)
                 /* false alarm, not named starting CP */
                 continue;
 
-            /* Maybe use ProcID instead? */
-            cAcpiCpus++;
-            if (cAcpiCpus <= cNumCpus)
-                continue;
+            /* Processor ID */
+            if (pAml[i+7] < cNumCpus)
+              continue;
 
             /* Will fill unwanted CPU block with NOOPs */
             /*
@@ -132,6 +141,7 @@ int acpiPrepareDsdt(PPDMDEVINS pDevIns,  void * *ppPtr, size_t *puDsdtLen)
 #ifdef VBOX_WITH_DYNAMIC_DSDT
     return prepareDynamicDsdt(pDevIns, ppPtr, puDsdtLen);
 #else
+    patchAml(pDevIns, AmlCode, sizeof(AmlCode));
     *ppPtr = AmlCode;
     *puDsdtLen = sizeof(AmlCode);
     return 0;
