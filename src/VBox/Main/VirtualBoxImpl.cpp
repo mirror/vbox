@@ -1890,6 +1890,18 @@ STDMETHODIMP VirtualBox::UnregisterCallback (IVirtualBoxCallback *aCallback)
     return rc;
 }
 
+
+STDMETHODIMP VirtualBox::WaitForEvents(LONG aTimeout)
+{
+#ifdef RT_OS_WINDOWS
+    ReturnComNotImplemented();
+#else
+    extern nsresult XPCOM_waitForEvents(PRInt32 aTimeout);
+
+    return XPCOM_waitForEvents(aTimeout);
+#endif
+}
+
 STDMETHODIMP VirtualBox::WaitForPropertyChange (IN_BSTR /* aWhat */, ULONG /* aTimeout */,
                                                 BSTR * /* aChanged */, BSTR * /* aValues */)
 {

@@ -130,15 +130,16 @@ class PlatformMSCOM:
         import pythoncom
         pythoncom.CoUninitialize()
 
-    def createCallback(self, iface, impl):        
+    def createCallback(self, iface, impl, arg):        
         d = {}
         d['BaseClass'] = impl
+        d['arg'] = arg
         str = ""
         str += "import win32com.server.util"
         str += "class "+iface+"Impl(BaseClass):\n"
         str += "   _com_interfaces_ = ['"+iface+"']\n"
         str += "   _typelib_guid_ = '{46137EEC-703B-4FE5-AFD4-7C9BBBBA0259}'\n"
-        str += "   def __init__(self): pass\n"
+        str += "   def __init__(self): BaseClass.__init__(self, arg)\n"
         str += "result = win32com.server.util.wrap("+iface+"Impl())\n"        
         exec (str,d,d)
         return d['result']
@@ -177,14 +178,15 @@ class PlatformXPCOM:
     def deinitPerThread(self):
         pass
 
-    def createCallback(self, iface, impl):        
+    def createCallback(self, iface, impl, arg):
         d = {}
         d['BaseClass'] = impl
+        d['arg'] = arg
         str = ""
         str += "import xpcom.components\n"
         str += "class "+iface+"Impl(BaseClass):\n"
         str += "   _com_interfaces_ = xpcom.components.interfaces."+iface+"\n"
-        str += "   def __init__(self): pass\n"
+        str += "   def __init__(self): BaseClass.__init__(self, arg)\n"
         str += "result = "+iface+"Impl()\n"
         exec (str,d,d)
         return d['result']
@@ -230,7 +232,7 @@ class PlatformWEBSERVICE:
     def deinitPerThread(self):
         pass
 
-    def createCallback(self, iface, impl):
+    def createCallback(self, iface, impl, arg):
         raise Exception("no callbacks for webservices")
 
 class SessionManager:
@@ -283,5 +285,5 @@ class VirtualBoxManager:
     def deinitPerThread(self):
         self.platform.deinitPerThread()
 
-    def createCallback(self, iface, impl):
-        return self.platform.createCallback(iface, impl)
+    def createCallback(self, iface, impl, arg):
+        return self.platform.createCallback(iface, impl, arg)

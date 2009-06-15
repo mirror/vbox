@@ -96,6 +96,66 @@ class PerfCollector:
             })
         return out
 
+# Simple implementation of IConsoleCallback, one can use it as skeleton 
+# for custom implementations
+class GuestMonitor:
+    def __init__(self, mach):
+        self.mach = mach
+
+    def onMousePointerShapeChange(self, visible, alpha, xHot, yHot, width, height, shape):
+        print  "%s: onMousePointerShapeChange: visible=%d" %(self.mach.name, visible) 
+    def onMouseCapabilityChange(self, supportsAbsolute, needsHostCursor):
+        print  "%s: onMouseCapabilityChange: needsHostCursor=%d" %(self.mach.name, needsHostCursor)
+
+    def onKeyboardLedsChange(self, numLock, capsLock, scrollLock):
+        print  "%s: onKeyboardLedsChange capsLock=%d"  %(self.mach.name, capsLock)
+
+    def onStateChange(self, state):
+        print  "%s: onStateChange state=%d" %(self.mach.name, state)
+
+    def onAdditionsStateChange(self):
+        print  "%s: onAdditionsStateChange" %(self.mach.name)
+
+    def onDVDDriveChange(self):
+        print  "%s: onDVDDriveChange" %(self.mach.name)
+
+    def onFloppyDriveChange(self):
+        print  "%s: onFloppyDriveChange" %(self.mach.name)
+
+    def onNetworkAdapterChange(self, adapter):
+        print  "%s: onNetworkAdapterChange" %(self.mach.name)
+
+    def onSerialPortChange(self, port):
+        print  "%s: onSerialPortChange" %(self.mach.name)
+
+    def onParallelPortChange(self, port):
+        print  "%s: onParallelPortChange" %(self.mach.name)
+
+    def onStorageControllerChange(self):
+        print  "%s: onStorageControllerChange" %(self.mach.name)
+
+    def onVRDPServerChange(self):
+        print  "%s: onVRDPServerChange" %(self.mach.name)
+
+    def onUSBControllerChange(self):
+        print  "%s: onUSBControllerChange" %(self.mach.name)
+
+    def onUSBDeviceStateChange(self, device, attached, error):
+        print  "%s: onUSBDeviceStateChange" %(self.mach.name)
+
+    def onSharedFolderChange(self, scope):
+        print  "%s: onSharedFolderChange" %(self.mach.name)
+
+    def onRuntimeError(self, fatal, id, message):
+        print  "%s: onRuntimeError fatal=%d message=%s" %(self.mach.name, fatal, message)
+
+    def onCanShowWindow(self):
+        print  "%s: onCanShowWindow" %(self.mach.name)
+        return true
+
+    def onShowWindow(self, winId):
+        print  "%s: onShowWindow: %d" %(self.mach.name, winId)
+
 g_hasreadline = 1
 try:
     import readline
@@ -241,6 +301,18 @@ def guestStats(ctx,mach):
 def guestExec(ctx, machine, console, cmds):
     exec cmds
 
+def monitorGuest(ctx, machine, console, dur):
+    import time
+    cb = ctx['global'].createCallback('IConsoleCallback', GuestMonitor, machine)
+    console.registerCallback(cb)
+    if dur == -1:
+        # not infinity, but close enough
+        dur = 100000
+    end = time.clock() + dur
+    while  time.clock() < end:
+        ctx['vb'].waitForEvents(100)
+    console.unregisterCallback(cb)
+
 def cmdExistingVm(ctx,mach,cmd,args):
     mgr=ctx['mgr']
     vb=ctx['vb']
@@ -266,7 +338,8 @@ def cmdExistingVm(ctx,mach,cmd,args):
          'resume':     lambda: console.resume(),
          'powerdown':  lambda: console.powerDown(),
          'stats':      lambda: guestStats(ctx, mach),
-         'guest':      lambda: guestExec(ctx, mach, console, args)
+         'guest':      lambda: guestExec(ctx, mach, console, args),
+         'monitorGuest': lambda: monitorGuest(ctx, mach, console, args)
          }
     try:
         ops[cmd]()
@@ -467,6 +540,19 @@ def hostCmd(ctx, args):
    return 0
 
 
+def monitorGuestCmd(ctx, args):
+    if (len(args) < 2):
+        print "usage: monitorGuest name (duration)"
+        return 0
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+    dur = 5
+    if len(args) > 2:
+        dur = float(args[2])
+    cmdExistingVm(ctx, mach, 'monitorGuest', dur)
+    return 0
+
 def evalCmd(ctx, args):
    expr = ' '.join(args[1:])
    try:
@@ -502,6 +588,7 @@ commands = {'help':['Prints help information', helpCmd],
             'quit':['Exits', quitCmd],
             'host':['Show host information', hostCmd],
             'guest':['Execute command for guest: guest Win32 console.mouse.putMouseEvent(20, 20, 0, 0)', guestCmd],
+            'monitorGuest':['Monitor what happens with the guest for some time: monitorGuest Win32 10', monitorGuestCmd],
             }
 
 def runCommand(ctx, cmd):
@@ -536,6 +623,7 @@ def interpret(ctx):
     while True:
         try:
             cmd = raw_input("vbox> ")
+            vbox.waitForEvents(0)
             done = runCommand(ctx, cmd)
             if done != 0: break
         except KeyboardInterrupt:

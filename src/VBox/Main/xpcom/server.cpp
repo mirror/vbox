@@ -243,6 +243,70 @@ static bool gAutoShutdown = false;
 static nsIEventQueue* gEventQ = nsnull;
 static PRBool volatile gKeepRunning = PR_TRUE;
 
+nsresult XPCOM_waitForEvents(PRInt32 aTimeout)
+{
+  nsIEventQueue* q = gEventQ;
+  PRBool hasEvents = false;
+  nsresult rc;
+
+  if (!gKeepRunning || !q)
+    return NS_OK;
+
+  rc = q->PendingEvents(&hasEvents);
+  if (NS_FAILED (rc))
+    return NS_ERROR_FAILURE;
+
+  if (hasEvents)
+  {
+    q->ProcessPendingEvents();
+    return NS_OK;
+  }
+  
+  if (aTimeout == 0)
+     return NS_OK;
+
+  PRInt32 fd;
+  fd = q->GetEventQueueSelectFD();
+
+  if (fd < 0 && aTimeout == -1)
+  {
+    /* fallback */
+    PLEvent *pEvent = NULL;
+    rc = q->WaitForEvent(&pEvent);
+    if (NS_SUCCEEDED(rc))
+      q->HandleEvent(pEvent);
+
+    q->ProcessPendingEvents();
+    return NS_OK;
+  }
+
+  /* Cannot perform timed wait otherwise */
+  AssertReturn(fd >= 0, NS_ERROR_FAILURE);
+  
+  fd_set fdsetR, fdsetE;
+  struct timeval tv;
+
+  FD_ZERO(&fdsetR);
+  FD_SET(fd, &fdsetR);
+
+  fdsetE = fdsetR;
+  if (aTimeout > 0)
+  {
+    /* LogRel(("sleep %d\n", aTimeout)); */
+    tv.tv_sec = (PRInt64)aTimeout / 1000;
+    tv.tv_usec = ((PRInt64)aTimeout % 1000) * 1000;
+  }
+
+  /** @todo: What to do for XPCOM platforms w/o select() ? */
+  int n = select(fd + 1, &fdsetR, NULL, &fdsetE, aTimeout < 0 ? NULL : &tv);
+  rc = (n >= 0) ? NS_OK :  NS_ERROR_FAILURE;
+
+  /* process pending events, no matter what */
+  q->ProcessPendingEvents();
+
+  return rc;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 /**

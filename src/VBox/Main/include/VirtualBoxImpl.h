@@ -179,6 +179,7 @@ public:
     STDMETHOD(RegisterCallback) (IVirtualBoxCallback *aCallback);
     STDMETHOD(UnregisterCallback) (IVirtualBoxCallback *aCallback);
 
+    STDMETHOD(WaitForEvents) (LONG aTimeout);    
     STDMETHOD(WaitForPropertyChange) (IN_BSTR aWhat, ULONG aTimeout,
                                       BSTR *aChanged, BSTR *aValues);
 
