@@ -240,12 +240,12 @@ typedef struct NATState
 #endif
 
 # define PROFILE_COUNTER(name, dsc) STAMPROFILE Stat ## name;
-# define COUNTING_COUTER(name, dsc) STAMCOUNTER Stat ## name;
+# define COUNTING_COUNTER(name, dsc) STAMCOUNTER Stat ## name;
 
 #include "counters.h"
 
 #undef PROFILE_COUNTER
-#undef COUNTING_COUTER
+#undef COUNTING_COUNTER
 
 } NATState;
 
