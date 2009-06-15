@@ -2820,7 +2820,7 @@ int Appliance::writeFS(TaskWriteOVF *pTask)
         pelmRoot->setAttribute("ovf:version", (pTask->enFormat == TaskWriteOVF::OVF_1_0) ? "1.0" : "0.9");
         pelmRoot->setAttribute("xml:lang", "en-US");
 
-        Utf8Str strNamespace = (TaskWriteOVF::OVF_0_9)
+        Utf8Str strNamespace = (pTask->enFormat == TaskWriteOVF::OVF_0_9)
             ? "http://www.vmware.com/schema/ovf/1/envelope"     // 0.9
             : "http://schemas.dmtf.org/ovf/envelope/1";         // 1.0
         pelmRoot->setAttribute("xmlns", strNamespace);
@@ -3064,8 +3064,14 @@ int Appliance::writeFS(TaskWriteOVF *pTask)
                 </System> */
             xml::ElementNode *pelmSystem = pelmVirtualHardwareSection->createChild("System");
 
+            pelmSystem->createChild("vssd:ElementName")->addContent("Virtual Hardware Family"); // required OVF 1.0
+
             // <vssd:InstanceId>0</vssd:InstanceId>
-            pelmSystem->createChild("vssd:InstanceId")->addContent("0");
+            if (pTask->enFormat == TaskWriteOVF::OVF_0_9)
+                pelmSystem->createChild("vssd:InstanceId")->addContent("0");
+            else // capitalization changed...
+                pelmSystem->createChild("vssd:InstanceID")->addContent("0");
+
             // <vssd:VirtualSystemIdentifier>VAtest</vssd:VirtualSystemIdentifier>
             pelmSystem->createChild("vssd:VirtualSystemIdentifier")->addContent(strVMName);
             // <vssd:VirtualSystemType>vmx-4</vssd:VirtualSystemType>
@@ -3178,6 +3184,7 @@ int Appliance::writeFS(TaskWriteOVF *pTask)
                             if (uLoop == 1)
                             {
                                 strDescription = "IDE Controller";
+                                strCaption = "ideController0";
                                 type = OVFResourceType_IDEController; // 5
                                 strResourceSubType = desc.strVbox;
                                 // it seems that OVFTool always writes these two, and since we can only
@@ -3424,7 +3431,12 @@ int Appliance::writeFS(TaskWriteOVF *pTask)
                         // exactly this order, as stupid as it seems.
 
                         if (!strCaption.isEmpty())
+                        {
                             pItem->createChild("rasd:Caption")->addContent(strCaption);
+                            if (pTask->enFormat == TaskWriteOVF::OVF_1_0)
+                                pItem->createChild("rasd:ElementName")->addContent(strCaption);
+                        }
+
                         if (!strDescription.isEmpty())
                             pItem->createChild("rasd:Description")->addContent(strDescription);
 
@@ -3461,7 +3473,8 @@ int Appliance::writeFS(TaskWriteOVF *pTask)
                             pItem->createChild("rasd:Address")->addContent(Utf8StrFmt("%d", lAddress));
 
                         if (lBusNumber != -1)
-                            pItem->createChild("rasd:BusNumber")->addContent(Utf8StrFmt("%d", lBusNumber));
+                            if (pTask->enFormat == TaskWriteOVF::OVF_0_9) // BusNumber is invalid OVF 1.0 so only write it in 0.9 mode for OVFTool compatibility
+                                pItem->createChild("rasd:BusNumber")->addContent(Utf8StrFmt("%d", lBusNumber));
 
                         if (ulParent)
                             pItem->createChild("rasd:Parent")->addContent(Utf8StrFmt("%d", ulParent));
