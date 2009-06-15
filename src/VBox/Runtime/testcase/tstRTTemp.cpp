@@ -99,13 +99,10 @@ static void tstDirCreateTemp(const char *pszSubTest, const char *pszTemplate, un
 
 int main()
 {
-    int rc = RTR3Init();
-    if (RT_FAILURE(rc))
-        return 1;
     RTTEST hTest;
-    rc = RTTestCreate("tstRTTemp", &hTest);
-    if (RT_FAILURE(rc))
-        return 1;
+    int rc = RTTestInitAndCreate("tstRTTemp", &hTest);
+    if (rc)
+        return rc;
     RTTestBanner(hTest);
 
     /*

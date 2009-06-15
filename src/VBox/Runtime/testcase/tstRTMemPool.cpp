@@ -298,15 +298,12 @@ static void tst4(void)
 
 int main()
 {
-    int rc = RTR3Init();
-    if (RT_FAILURE(rc))
-        return 1;
     RTTEST hTest;
-    rc = RTTestCreate("tstRTMemPool", &hTest);
-    if (RT_FAILURE(rc))
-        return 1;
-    g_hTest = hTest;
+    int rc = RTTestInitAndCreate("tstRTMemPool", &hTest);
+    if (rc)
+        return rc;
     RTTestBanner(hTest);
+    g_hTest = hTest;
 
     /*
      * Smoke tests using first the default and then a custom pool.

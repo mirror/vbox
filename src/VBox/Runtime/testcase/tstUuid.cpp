@@ -42,14 +42,10 @@
 
 int main(int argc, char **argv)
 {
-    int rc;
     RTTEST hTest;
-    if (    RT_FAILURE(rc = RTR3Init())
-        ||  RT_FAILURE(rc = RTTestCreate("tstUuid", &hTest)))
-    {
-        RTPrintf("tstUuid: RTR3Init or RTTestCreate failed: %Rrc\n", rc);
-        return 1;
-    }
+    int rc = RTTestInitAndCreate("tstUuid", &hTest);
+    if (rc)
+        return rc;
     RTTestBanner(hTest);
 
 

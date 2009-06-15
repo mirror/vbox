@@ -181,13 +181,10 @@ int main(int argc, char **argv)
     /*
      * Initialize IPRT and create the test.
      */
-    int rc = RTR3Init();
-    if (RT_FAILURE(rc))
-        return 1;
     RTTEST hTest;
-    rc = RTTestCreate("tstRTS3", &hTest);
-    if (RT_FAILURE(rc))
-        return 1;
+    int rc = RTTestInitAndCreate("tstRTS3", &hTest);
+    if (rc)
+        return rc;
     RTTestBanner(hTest);
 
     /*

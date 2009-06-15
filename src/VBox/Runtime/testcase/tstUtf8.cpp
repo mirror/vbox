@@ -42,7 +42,7 @@
 #include <iprt/err.h>
 #include <iprt/test.h>
 
-#include <stdlib.h>
+#include <stdlib.h> /** @todo use our random. */
 
 
 
@@ -928,17 +928,17 @@ static void testStrStr(RTTEST hTest)
 int main()
 {
     /*
-     * Init the runtime and stuff.
+     * Init the runtime, test and say hello.
      */
     RTTEST hTest;
-    if (    RT_FAILURE(RTR3Init())
-        ||  RT_FAILURE(RTTestCreate("tstUtf8", &hTest)))
-    {
-        RTPrintf("tstBitstUtf8: fatal initialization error\n");
-        return 1;
-    }
+    int rc = RTTestInitAndCreate("tstUtf8", &hTest);
+    if (rc)
+        return rc;
     RTTestBanner(hTest);
 
+    /*
+     * Run the test.
+     */
     InitStrings();
     test1(hTest);
     test2(hTest);
@@ -952,3 +952,4 @@ int main()
      */
     return RTTestSummaryAndDestroy(hTest);
 }
+

@@ -457,19 +457,16 @@ static int Test2(unsigned cThreads, unsigned cIterations, unsigned cCheckLoops)
 
 int main(int argc, char **argv)
 {
-    int rc = RTR3Init();
-    if (RT_FAILURE(rc))
-        return 1;
     RTTEST hTest;
 #ifndef TRY_WIN32_CRT
-    rc = RTTestCreate("tstRTCritSect", &hTest);
+    int rc = RTTestInitAndCreate("tstRTCritSect", &hTest);
 #else
-    rc = RTTestCreate("tstRTCritSectW32", &hTest);
+    int rc = RTTestInitAndCreate("tstRTCritSectW32", &hTest);
 #endif
-    if (RT_FAILURE(rc))
-        return 1;
-    g_hTest = hTest;
+    if (rc)
+        return rc;
     RTTestBanner(hTest);
+    g_hTest = hTest;
 
     /* parse args. */
     static const RTGETOPTDEF s_aOptions[] =
