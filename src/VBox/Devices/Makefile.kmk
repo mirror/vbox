@@ -901,6 +901,7 @@ ifdef VBOX_WITH_USB
  Drivers_SOURCES      += \
 	USB/DrvVUSBRootHub.cpp \
 	USB/VUSBDevice.cpp \
+	USB/VUSBReadAhead.cpp \
 	USB/VUSBUrb.cpp
  ifdef VBOX_WITH_VRDP
   Drivers_DEFS        += VBOX_WITH_VRDP
