@@ -30,7 +30,7 @@ abort_error()
 }
 
 # Check if VBoxSVC is currently running
-VBOXSVC_PID=`ps -eo pid,fname | grep VBoxSVC | grep -v grep | cut -f 1 -d " "`
+VBOXSVC_PID=`ps -eo pid,fname | grep VBoxSVC | grep -v grep | awk '{ print $1 }'`
 if test $VBOXSVC_PID -ge 0; then
     echo "## VirtualBox's VBoxSVC (pid $VBOXSVC_PID) still appears to be running."
     abort_error
