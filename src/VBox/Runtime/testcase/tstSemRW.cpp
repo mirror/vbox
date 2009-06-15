@@ -78,15 +78,28 @@ int ThreadTest1(RTTHREAD ThreadSelf, void *pvUser)
     for (;;)
     {
         int rc;
+        unsigned readrec = RTRandU32Ex(0, 3);
+        unsigned writerec = RTRandU32Ex(0, 3);
+        /* Don't overdo recursion testing. */
+        if (readrec > 1)
+            readrec--;
+        if (writerec > 1)
+            writerec--;
+
         fWrite = (c100 < g_uWritePercent);
         if (fWrite)
         {
-            rc = RTSemRWRequestWriteNoResume(g_hSemRW, RT_INDEFINITE_WAIT);
-            if (RT_FAILURE(rc))
+            for (unsigned i = 0; i <= writerec; i++)
             {
-                PrintError("%x: RTSemRWRequestWriteNoResume failed with %Rrc\n", rc);
-                break;
+                rc = RTSemRWRequestWriteNoResume(g_hSemRW, RT_INDEFINITE_WAIT);
+                if (RT_FAILURE(rc))
+                {
+                    PrintError("%x: RTSemRWRequestWriteNoResume failed with %Rrc\n", rc);
+                    break;
+                }
             }
+            if (RT_FAILURE(rc))
+                break;
             if (ASMAtomicIncU32(&g_cbConcurrentWrite) != 1)
             {
                 PrintError("g_cbConcurrentWrite=%d after request!\n", g_cbConcurrentWrite);
@@ -113,6 +126,17 @@ int ThreadTest1(RTTHREAD ThreadSelf, void *pvUser)
                 break;
             }
         }
+        for (unsigned i = 0; i < readrec; i++)
+        {
+            rc = RTSemRWRequestReadNoResume(g_hSemRW, RT_INDEFINITE_WAIT);
+            if (RT_FAILURE(rc))
+            {
+                PrintError("%x: RTSemRWRequestReadNoResume failed with %Rrc\n", rc);
+                break;
+            }
+        }
+        if (RT_FAILURE(rc))
+            break;
 
         /*
          * Check for fairness: The values of the threads should not differ too much
@@ -126,6 +150,18 @@ int ThreadTest1(RTTHREAD ThreadSelf, void *pvUser)
         if (g_fYield)
             RTThreadYield();
 
+        for (unsigned i = 0; i < readrec; i++)
+        {
+            rc = RTSemRWReleaseRead(g_hSemRW);
+            if (RT_FAILURE(rc))
+            {
+                PrintError("%x: RTSemRWReleaseRead failed with %Rrc\n", rc);
+                break;
+            }
+        }
+        if (RT_FAILURE(rc))
+            break;
+
         if (fWrite)
         {
             if (ASMAtomicDecU32(&g_cbConcurrentWrite) != 0)
@@ -138,11 +174,14 @@ int ThreadTest1(RTTHREAD ThreadSelf, void *pvUser)
                 PrintError("g_cbConcurrentRead=%d before release!\n", g_cbConcurrentRead);
                 break;
             }
-            rc = RTSemRWReleaseWrite(g_hSemRW);
-            if (RT_FAILURE(rc))
+            for (unsigned i = 0; i <= writerec; i++)
             {
-                PrintError("%x: RTSemRWReleaseWrite failed with %Rrc\n", rc);
-                break;
+                rc = RTSemRWReleaseWrite(g_hSemRW);
+                if (RT_FAILURE(rc))
+                {
+                    PrintError("%x: RTSemRWReleaseWrite failed with %Rrc\n", rc);
+                    break;
+                }
             }
         }
         else
