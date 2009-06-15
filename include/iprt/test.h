@@ -83,6 +83,29 @@ typedef enum RTTESTLVL
 RTR3DECL(int) RTTestCreate(const char *pszTest, PRTTEST phTest);
 
 /**
+ * Initializes IPRT and creates a test instance.
+ *
+ * Typical usage is:
+ * @code
+    int main(int argc, char **argv)
+    {
+        RTTEST hTest;
+        int rc = RTTestInitAndCreate("tstSomething", &hTest);
+        if (rc)
+            return rc;
+        ...
+    }
+   @endcode
+ *
+ * @returns 0 on success. On failure an error message is printed and
+ *          a suitable exit code is return.
+ *
+ * @param   pszTest     The test name.
+ * @param   phTest      Where to store the test instance handle.
+ */
+RTR3DECL(int) RTTestInitAndCreate(const char *pszTest, PRTTEST phTest);
+
+/**
  * Destroys a test instance previously created by RTTestCreate.
  *
  * @returns IPRT status code.
