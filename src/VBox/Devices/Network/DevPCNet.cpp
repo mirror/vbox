@@ -4664,7 +4664,7 @@ static DECLCALLBACK(void) pcnetDetach(PPDMDEVINS pDevIns, unsigned iLUN)
     PCNetState *pThis = PDMINS_2_DATA(pDevIns, PCNetState *);
     Log(("#%d pcnetDetach:\n", PCNET_INST_NR));
 
-    AssertLogRelReturn(iLUN == 0, VERR_PDM_NO_SUCH_LUN);
+    AssertLogRelReturnVoid(iLUN == 0);
 
     PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
 
