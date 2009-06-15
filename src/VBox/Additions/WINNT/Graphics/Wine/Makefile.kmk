@@ -242,7 +242,7 @@ VBoxD3D9_LIBS = \
 DLLS += d3d8
 d3d8_TEMPLATE      = VBOXGUESTR3NPDLL
 d3d8_DEFS          = __i386__
-d3d8_INCS          = $(PATH_SUB_CURRENT)/include
+d3d8_INCS         := $(PATH_SUB_CURRENT)/include
 d3d8_SOURCES       =  \
     switcher/d3d8_main.c \
     switcher/sw_common.c \
@@ -252,7 +252,7 @@ d3d8_SOURCES       =  \
 DLLS += d3d9
 d3d9_TEMPLATE      = VBOXGUESTR3NPDLL
 d3d9_DEFS          = __i386__
-d3d9_INCS          = $(PATH_SUB_CURRENT)/include
+d3d9_INCS         := $(PATH_SUB_CURRENT)/include
 d3d9_SOURCES       =  \
     switcher/d3d9_main.c \
     switcher/sw_common.c \
