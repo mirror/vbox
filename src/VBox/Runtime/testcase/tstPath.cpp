@@ -49,14 +49,10 @@ int main()
     /*
      * Init RT+Test.
      */
-    int rc = RTR3Init();
-    if (RT_FAILURE(rc))
-        return 1;
-
     RTTEST hTest;
-    rc = RTTestCreate("tstPath", &hTest);
-    if (RT_FAILURE(rc))
-        return 1;
+    int rc = RTTestInitAndCreate("tstPath", &hTest);
+    if (rc)
+        return rc;
     RTTestBanner(hTest);
 
     /*

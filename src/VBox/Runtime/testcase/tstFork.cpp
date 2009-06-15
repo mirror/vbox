@@ -50,14 +50,10 @@ int main()
     /*
      * Init the runtime and stuff.
      */
-    int rc;
     RTTEST hTest;
-    if (    RT_FAILURE(rc = RTR3Init())
-        ||  RT_FAILURE(rc = RTTestCreate("tstFork", &hTest)))
-    {
-        RTPrintf("tstFork: fatal initialization error: %Rrc\n", rc);
-        return 1;
-    }
+    int rc = RTTestInitAndCreate("tstFork", &hTest);
+    if (rc)
+        return rc;
     RTTestBanner(hTest);
 
 #ifdef RT_OS_WINDOWS

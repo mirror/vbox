@@ -55,20 +55,10 @@ int main(int argc, char **argv)
     /*
      * Init.
      */
-    int rc = RTR3InitAndSUPLib();
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("tstR0ThreadPreemption: fatal error: RTR3InitAndSUPLib failed with rc=%Rrc\n", rc);
-        return 1;
-    }
-
     RTTEST hTest;
-    rc = RTTestCreate("tstR0ThreadPreemption", &hTest);
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("tstR0ThreadPreemption: fatal error: RTTestCreate failed with rc=%Rrc\n", rc);
-        return 1;
-    }
+    int rc = RTTestInitAndCreate("tstR0ThreadPreemption", &hTest);
+    if (rc)
+        return rc;
     RTTestBanner(hTest);
 
     PSUPDRVSESSION pSession;

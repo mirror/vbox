@@ -1028,16 +1028,12 @@ int main()
     /*
      * Init.
      */
-    int rc = RTR3Init();
-    if (RT_FAILURE(rc))
-        return 1;
-
     RTTEST hTest;
-    rc = RTTestCreate("tstRTAvl", &hTest);
-    if (RT_FAILURE(rc))
-        return 1;
-    g_hTest = hTest;
+    int rc = RTTestInitAndCreate("tstRTAvl", &hTest);
+    if (rc)
+        return rc;
     RTTestBanner(hTest);
+    g_hTest = hTest;
 
     rc = RTRandAdvCreateParkMiller(&g_hRand);
     if (RT_FAILURE(rc))

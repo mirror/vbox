@@ -65,13 +65,10 @@ static DECLCALLBACK(size_t) TstType(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
 
 int main()
 {
-    int rc = RTR3Init();
-    if (RT_FAILURE(rc))
-        return 1;
-    RTTEST      hTest;
-    rc = RTTestCreate("tstStrFormat", &hTest);
-    if (RT_FAILURE(rc))
-        return 1;
+    RTTEST hTest;
+    int rc = RTTestInitAndCreate("tstStrFormat", &hTest);
+    if (rc)
+        return rc;
     RTTestBanner(hTest);
 
     uint32_t    u32 = 0x010;
@@ -128,7 +125,7 @@ int main()
                       "expected: '%s'\n",
                       pszBuf, szCorrect);
 
-    /* 
+    /*
      * allocation
      */
     RTTestSub(hTest, "RTStrAPrintf");
@@ -388,7 +385,7 @@ int main()
     RTStrFormatNumber(pszBuf,   10000, 10, 0, 0, RTSTR_F_THOUSAND_SEP); CHECKSTR("10 000");         memset(pszBuf, '!', BUF_SIZE);
     RTStrFormatNumber(pszBuf,  100000, 10, 0, 0, RTSTR_F_THOUSAND_SEP); CHECKSTR("100 000");        memset(pszBuf, '!', BUF_SIZE);
     RTStrFormatNumber(pszBuf, 1000000, 10, 0, 0, RTSTR_F_THOUSAND_SEP); CHECKSTR("1 000 000");      memset(pszBuf, '!', BUF_SIZE);
-    
+
     CHECK42("%'u", 1,                              "1");
     CHECK42("%'u", 10,                            "10");
     CHECK42("%'u", 100,                          "100");

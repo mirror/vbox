@@ -110,13 +110,10 @@ static void tstBase64(const void *pvData, size_t cbData,
 
 int main()
 {
-    int rc = RTR3Init();
-    if (RT_FAILURE(rc))
-        return 1;
     RTTEST hTest;
-    rc = RTTestCreate("tstRTBase64", &hTest);
-    if (RT_FAILURE(rc))
-        return 1;
+    int rc = RTTestInitAndCreate("tstRTBase64", &hTest);
+    if (rc)
+        return rc;
     RTTestBanner(hTest);
 
     /*
