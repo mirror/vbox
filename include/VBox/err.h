@@ -289,7 +289,7 @@
 /** Patch was already enabled */
 #define VERR_PATCH_ALREADY_ENABLED          (-1406)
 /** Patch was removed. */
-#define VWRN_PATCH_REMOVED                  1408
+#define VWRN_PATCH_REMOVED                  1407
 
 /** Reason for leaving GC: \#GP with EIP pointing to patch code. */
 #define VINF_PATM_PATCH_TRAP_GP             1408
