@@ -29,12 +29,11 @@ if VboxSdkDir is None:
 os.environ["VBOX_PROGRAM_PATH"] = VboxBinDir
 os.environ["VBOX_SDK_PATH"] = VboxSdkDir
 sys.path.append(VboxBinDir)
-# This directory's content goes to the site-wide directory
-#sys.path.append(VboxSdkDir+"/bindings/glue/python")
 
 from VirtualBox_constants import VirtualBoxReflectionInfo
 
 class PlatformMSCOM:
+    # Class to fake access to constants in style of foo.bar.boo 
     class ConstantFake:
         def __init__(self, parent, name):
             self.__dict__['_parent'] = parent
@@ -71,7 +70,6 @@ class PlatformMSCOM:
                   name += "_" + attr
                else:
                   name = attr
-               print "ask",name
                return win32com.client.constants.__getattr__(name)
             except AttributeError,e:
                fake = PlatformMSCOM.ConstantFake(self, attr)
@@ -94,7 +92,6 @@ class PlatformMSCOM:
                     return self.__dict__['_rootFake'].__getattr__(a)
 
     def __init__(self, params):
-            sys.path.append(VboxSdkDir+'/bindings/mscom/python/')
             from win32com import universal
             from win32com.client import gencache, DispatchWithEvents, Dispatch
             from win32com.client import constants, getevents
@@ -102,8 +99,6 @@ class PlatformMSCOM:
             import pythoncom
             import win32api
             self.constants = PlatformMSCOM.InterfacesWrapper()
-            #win32com.client.gencache.EnsureDispatch('VirtualBox.Session')
-            #win32com.client.gencache.EnsureDispatch('VirtualBox.VirtualBox')
 
     def getSessionObject(self, vbox):
         import win32com
@@ -191,7 +186,6 @@ class PlatformXPCOM:
         str += "   _com_interfaces_ = xpcom.components.interfaces."+iface+"\n"
         str += "   def __init__(self): pass\n"
         str += "result = "+iface+"Impl()\n"
-        #print str
         exec (str,d,d)
         return d['result']
 

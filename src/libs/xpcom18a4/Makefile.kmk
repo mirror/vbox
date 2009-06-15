@@ -1335,10 +1335,10 @@ VBoxXPCOMIPCD_SOURCES = \
 	ipc/ipcd/daemon/src/ipcCommandModule.cpp
 ifeq ($(KBUILD_TARGET),win)
  VBoxXPCOMIPCD_SOURCES += \
- 	ipc/ipcd/daemon/src/ipcdWin.cpp
+	ipc/ipcd/daemon/src/ipcdWin.cpp
 else
  VBoxXPCOMIPCD_SOURCES += \
- 	ipc/ipcd/daemon/src/ipcdUnix.cpp
+	ipc/ipcd/daemon/src/ipcdUnix.cpp
 endif
 
 
@@ -1363,9 +1363,9 @@ ifdef VBOX_WITH_PYTHON
     VBOX_PATH_PYTHON_INC := /usr/include/python2.4
    else
     VBOX_PATH_PYTHON_INC := $(patsubst %/Python.h,%, $(lastword $(sort $(wildcard \
-    	/usr/include/python2.*/Python.h \
-    	/usr/local/include/python2.*/Python.h \
-    	))))
+	/usr/include/python2.*/Python.h \
+	/usr/local/include/python2.*/Python.h \
+	))))
    endif
    ifeq ($(VBOX_PATH_PYTHON_INC),)
     $(warning Unable to determine the python include directory (VBOX_PATH_PYTHON_INC).)
@@ -1375,13 +1375,13 @@ ifdef VBOX_WITH_PYTHON
   ifndef VBOX_LIB_PYTHON
    VBOX_TMP := $(if $(eq $(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),solaris.amd64),64/,)
    VBOX_LIB_PYTHON := $(firstword $(wildcard \
-   	/usr/lib/$(VBOX_TMP)libpython$(VBOX_PYTHON_VER)$(SUFF_DLL) \
-   	/usr/local/lib/$(VBOX_TMP)libpython$(VBOX_PYTHON_VER)$(SUFF_DLL) \
-   	/usr/lib/$(VBOX_TMP)libpython2$(SUFF_DLL) \
-   	/usr/local/lib/$(VBOX_TMP)libpython2$(SUFF_DLL) \
-   	/usr/lib/$(VBOX_TMP)libpython$(SUFF_DLL) \
-   	/usr/local/lib/$(VBOX_TMP)libpython$(SUFF_DLL) \
-   	))
+	/usr/lib/$(VBOX_TMP)libpython$(VBOX_PYTHON_VER)$(SUFF_DLL) \
+	/usr/local/lib/$(VBOX_TMP)libpython$(VBOX_PYTHON_VER)$(SUFF_DLL) \
+	/usr/lib/$(VBOX_TMP)libpython2$(SUFF_DLL) \
+	/usr/local/lib/$(VBOX_TMP)libpython2$(SUFF_DLL) \
+	/usr/lib/$(VBOX_TMP)libpython$(SUFF_DLL) \
+	/usr/local/lib/$(VBOX_TMP)libpython$(SUFF_DLL) \
+	))
    ifeq ($(VBOX_LIB_PYTHON),)
     $(warning Unable to determine the python library (VBOX_LIB_PYTHON).)
    endif
@@ -1391,6 +1391,13 @@ ifdef VBOX_WITH_PYTHON
   DLLS += VBoxPython
  endif
  INSTALLS += VBoxPython-inst-py-xpcom
+endif
+
+# Kibd of hack: we don't want to limit VBoxPython.so to single Python version
+# on Linux, where we can avoid putting explicit libpythonX.Y.so dependency
+# to VBoxPython.so
+if "$(KBUILD_TARGET)" == "linux"
+ VBOX_LIB_PYTHON=
 endif
 
 # Python Client Module - the C++/XPCOM bits.
