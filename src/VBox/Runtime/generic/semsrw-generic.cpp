@@ -543,7 +543,7 @@ RTDECL(bool) RTSemRWIsWriteOwner(RTSEMRW RWSem)
     if (!rtsemRWValid(pThis))
     {
         AssertMsgFailed(("Invalid handle %p!\n", RWSem));
-        return VERR_INVALID_HANDLE;
+        return false;
     }
 
     /*
@@ -565,7 +565,7 @@ RTDECL(uint32_t) RTSemRWGetWriteRecursion(RTSEMRW RWSem)
     if (!rtsemRWValid(pThis))
     {
         AssertMsgFailed(("Invalid handle %p!\n", RWSem));
-        return VERR_INVALID_HANDLE;
+        return 0;
     }
 
     /*
@@ -584,7 +584,7 @@ RTDECL(uint32_t) RTSemRWGetWriterReadRecursion(RTSEMRW RWSem)
     if (!rtsemRWValid(pThis))
     {
         AssertMsgFailed(("Invalid handle %p!\n", RWSem));
-        return VERR_INVALID_HANDLE;
+        return 0;
     }
 
     /*
