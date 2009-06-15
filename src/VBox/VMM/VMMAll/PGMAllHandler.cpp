@@ -241,11 +241,6 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
     }
     else
     {
-#ifdef DEBUG_bird
-        Assert(!fFlushTLBs || rc == VINF_PGM_SYNC_CR3);
-#else
-        Assert(!fFlushTLBs);
-#endif
         Log(("pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs: doesn't flush guest TLBs. rc=%Rrc\n", rc));
     }
     return rc;
