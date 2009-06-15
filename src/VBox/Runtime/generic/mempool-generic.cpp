@@ -108,9 +108,8 @@ typedef struct RTMEMPOOLINT
     do { \
         AssertPtrReturn(pEntry, (rc)); \
         AssertPtrNullReturn((pEntry)->pMemPool, (rc)); \
+        Assert((pEntry)->cRefs < UINT32_MAX / 2); \
         AssertReturn((pEntry)->pMemPool->u32Magic == RTMEMPOOL_MAGIC, (rc)); \
-        AssertPtrNull((pEntry)->pNext); \
-        AssertPtrNull((pEntry)->pPrev); \
     } while (0)
 
 
@@ -178,6 +177,7 @@ RTDECL(int) RTMemPoolDestroy(RTMEMPOOL hMemPool)
     while (pEntry)
     {
         PRTMEMPOOLENTRY pFree = pEntry;
+        Assert(pFree->cRefs > 0 && pFree->cRefs < UINT32_MAX / 2);
         pEntry = pEntry->pNext;
 
         pFree->pMemPool = NULL;
@@ -209,8 +209,7 @@ DECLINLINE(void) rtMemPoolInitAndLink(PRTMEMPOOLINT pMemPool, PRTMEMPOOLENTRY pE
         pEntry->pNext = pHead;
         if (pHead)
             pHead->pPrev = pEntry;
-        else
-            pMemPool->pHead = pEntry;
+        pMemPool->pHead = pEntry;
 
         RTSpinlockRelease(pMemPool->hSpinLock, &Tmp);
     }
@@ -227,12 +226,14 @@ DECLINLINE(void) rtMemPoolUnlink(PRTMEMPOOLENTRY pEntry)
         RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
         RTSpinlockAcquire(pMemPool->hSpinLock, &Tmp);
 
-        if (pEntry->pNext)
-            pEntry->pNext->pPrev = pEntry->pPrev;
-        if (pEntry->pPrev)
-            pEntry->pPrev->pNext = pEntry->pNext;
+        PRTMEMPOOLENTRY pNext = pEntry->pNext;
+        PRTMEMPOOLENTRY pPrev = pEntry->pPrev;
+        if (pNext)
+            pNext->pPrev    = pPrev;
+        if (pPrev)
+            pPrev->pNext    = pNext;
         else
-            pMemPool->pHead      = pEntry->pNext;
+            pMemPool->pHead = pNext;
         pEntry->pMemPool = NULL;
 
         RTSpinlockRelease(pMemPool->hSpinLock, &Tmp);
