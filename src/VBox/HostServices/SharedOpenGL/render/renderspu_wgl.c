@@ -230,7 +230,7 @@ bSetupPixelFormatNormal( HDC hdc, GLbitfield visAttribs )
 
     renderspuMakeVisString( visAttribs, s );
 
-    crWarning( "Render SPU: WGL wants these visual capabilities: %s", s);
+    crDebug( "Render SPU: WGL wants these visual capabilities: %s", s);
 
     /* These really come into play with sort-last configs */
     if (visAttribs & CR_DEPTH_BIT)
@@ -305,7 +305,7 @@ bSetupPixelFormatNormal( HDC hdc, GLbitfield visAttribs )
 
     renderspuMakeVisString( b, s );
 
-    crWarning( "Render SPU: WGL chose these visual capabilities: %s", s);
+    crDebug( "Render SPU: WGL chose these visual capabilities: %s", s);
     return TRUE;
 }
 
