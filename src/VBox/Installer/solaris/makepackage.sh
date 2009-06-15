@@ -98,6 +98,7 @@ symlink_fixup()
 # Prepare file list
 cd "$PKG_BASE_DIR"
 echo 'i pkginfo=./vbox.pkginfo' > prototype
+echo 'i checkinstall=./checkinstall.sh' >> prototype
 echo 'i postinstall=./postinstall.sh' >> prototype
 echo 'i preremove=./preremove.sh' >> prototype
 echo 'i space=./vbox.space' >> prototype
@@ -112,6 +113,10 @@ ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxSDL
 ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/vboxwebsrv
 ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/webtest
 ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxZoneAccess
+if test -f $VBOX_INSTALLED_DIR/amd64/VBoxTestOGL || test -f $VBOX_INSTALLED_DIR/i386/VBoxTestOGL; then
+    ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxTestOGL
+fi
+
 if test -f $VBOX_INSTALLED_DIR/amd64/VirtualBox || test -f $VBOX_INSTALLED_DIR/i386/VirtualBox; then
     ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VirtualBox
 fi
