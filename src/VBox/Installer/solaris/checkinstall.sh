@@ -24,7 +24,7 @@ abort_error()
 {
     echo "## To fix this:"
     echo "## 1. Close VirtualBox and all virtual machines completely."
-    echo "## 2. Uninstall VirtualBox (SUNWvbox) and kernel package (SUNWvboxkern) in this order before reinstalling."
+    echo "## 2. Uninstall VirtualBox (SUNWvbox) and kernel package (SUNWvboxkern) in this order."
     echo "## 3. Re-run this installer."
     exit 1
 }
