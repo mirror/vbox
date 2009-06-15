@@ -3105,6 +3105,8 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pD
              && pDis->pCurInstr->opcode != OP_CMPXCHG8B
              && pDis->pCurInstr->opcode != OP_XADD
              && pDis->pCurInstr->opcode != OP_OR
+             && pDis->pCurInstr->opcode != OP_AND
+             && pDis->pCurInstr->opcode != OP_XOR
              && pDis->pCurInstr->opcode != OP_BTR
             )
        )
@@ -3115,6 +3117,8 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pD
             )
         ||  (   (pDis->prefix & PREFIX_LOCK)
              && pDis->pCurInstr->opcode != OP_OR
+             && pDis->pCurInstr->opcode != OP_AND
+             && pDis->pCurInstr->opcode != OP_XOR
              && pDis->pCurInstr->opcode != OP_BTR
              && pDis->pCurInstr->opcode != OP_CMPXCHG
              && pDis->pCurInstr->opcode != OP_CMPXCHG8B
@@ -3270,9 +3274,9 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pD
         INTERPRET_CASE_EX_PARAM2(OP_DEC,Dec, IncDec, EMEmulateDec);
         INTERPRET_CASE_EX_PARAM2(OP_INC,Inc, IncDec, EMEmulateInc);
         INTERPRET_CASE(OP_POP,Pop);
-        INTERPRET_CASE_EX_LOCK_PARAM3(OP_OR, Or, OrXorAnd, EMEmulateOr, EMEmulateLockOr);
-        INTERPRET_CASE_EX_PARAM3(OP_XOR,Xor, OrXorAnd, EMEmulateXor);
-        INTERPRET_CASE_EX_PARAM3(OP_AND,And, OrXorAnd, EMEmulateAnd);
+        INTERPRET_CASE_EX_LOCK_PARAM3(OP_OR, Or,  OrXorAnd, EMEmulateOr, EMEmulateLockOr);
+        INTERPRET_CASE_EX_LOCK_PARAM3(OP_XOR,Xor, OrXorAnd, EMEmulateXor, EMEmulateLockXor);
+        INTERPRET_CASE_EX_LOCK_PARAM3(OP_AND,And, OrXorAnd, EMEmulateAnd, EMEmulateLockAnd);
         INTERPRET_CASE(OP_MOV,Mov);
 #ifndef IN_RC
         INTERPRET_CASE(OP_STOSWD,StosWD);

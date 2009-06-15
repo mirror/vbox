@@ -211,6 +211,106 @@ ENDPROC     EMEmulateAnd
 
 
 ;;
+; Emulate LOCK AND instruction.
+; VMMDECL(int)      EMEmulateLockAnd(void *pvParam1, uint64_t u64Param2, size_t cbSize, RTGCUINTREG32 *pf);
+;
+; @returns VINF_SUCCESS on success, VERR_ACCESS_DENIED on \#PF (GC only).
+; @param    [esp + 04h]  gcc:rdi  msc:rcx   Param 1 - First parameter - pointer to data item (the real stuff).
+; @param    [esp + 08h]  gcc:rsi  msc:rdx   Param 2 - Second parameter- the immediate / register value.
+; @param    [esp + 10h]  gcc:rdx  msc:r8    Param 3 - Size of the operation - 1, 2, 4 or 8 bytes.
+; @param    [esp + 14h]  gcc:rcx  msc:r9    Param 4 - Where to store the eflags on success.
+;                                                     only arithmetic flags are valid.
+align 16
+BEGINPROC   EMEmulateLockAnd
+%ifdef RT_ARCH_AMD64
+%ifdef RT_OS_WINDOWS
+    mov     rax, r8                     ; eax = size of parameters
+%else   ; !RT_OS_WINDOWS
+    mov     rax, rdx                    ; rax = size of parameters
+    mov     rcx, rdi                    ; rcx = first parameter
+    mov     rdx, rsi                    ; rdx = second parameter
+%endif  ; !RT_OS_WINDOWS
+%else   ; !RT_ARCH_AMD64
+    mov     eax, [esp + 10h]            ; eax = size of parameters
+    mov     ecx, [esp + 04h]            ; ecx = first parameter (MY_PTR_REG)
+    mov     edx, [esp + 08h]            ; edx = second parameter
+%endif
+
+    ; switch on size
+%ifdef CAN_DO_8_BYTE_OP
+    cmp     al, 8
+    je short .do_qword                  ; 8 bytes variant
+%endif
+    cmp     al, 4
+    je short .do_dword                  ; 4 bytes variant
+    cmp     al, 2
+    je short .do_word                   ; 2 byte variant
+    cmp     al, 1
+    je short .do_byte                   ; 1 bytes variant
+    int3
+
+    ; workers
+%ifdef RT_ARCH_AMD64
+.do_qword:
+    lock and [MY_PTR_REG], rdx           ; do 8 bytes OR
+    jmp short .done
+%endif
+
+.do_dword:
+    lock and [MY_PTR_REG], edx           ; do 4 bytes OR
+    jmp short .done
+
+.do_word:
+    lock and [MY_PTR_REG], dx            ; do 2 bytes OR
+    jmp short .done
+
+.do_byte:
+    lock and [MY_PTR_REG], dl            ; do 1 byte OR
+
+    ; collect flags and return.
+.done:
+    pushf
+%ifdef RT_ARCH_AMD64
+    pop    rax
+ %ifdef RT_OS_WINDOWS
+    mov    [r9], eax
+ %else  ; !RT_OS_WINDOWS
+    mov    [rcx], eax
+ %endif ; !RT_OS_WINDOWS
+%else   ; !RT_ARCH_AMD64
+    mov     eax, [esp + 14h + 4]
+    pop     dword [eax]
+%endif
+    mov     eax, VINF_SUCCESS
+    retn
+
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+.do_qword:
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+BITS 64
+.sixtyfourbit_mode:
+    and     esp, 0ffffffffh
+    and     MY_PTR_REG, 0ffffffffh
+    mov     rdx, qword [rsp + 08h]      ; rdx = second parameter
+    lock and [MY_PTR_REG64], rdx         ; do 8 bytes OR
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .done.
+    dd      .done, NAME(SUPR0AbsKernelCS)
+BITS 32
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+
+
+%ifdef IN_RC
+; #PF resume point.
+GLOBALNAME EMEmulateLockAnd_Error
+    mov     eax, VERR_ACCESS_DENIED
+    ret
+%endif
+
+ENDPROC     EMEmulateLockAnd
+
+;;
 ; Emulate OR instruction, CDECL calling conv.
 ; VMMDECL(uint32_t) EMEmulateOr(void *pvParam1, uint64_t u64Param2, size_t cb);
 ;
@@ -472,6 +572,105 @@ BITS 32
 %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
 ENDPROC     EMEmulateXor
 
+;;
+; Emulate LOCK XOR instruction.
+; VMMDECL(int)      EMEmulateLockXor(void *pvParam1, uint64_t u64Param2, size_t cbSize, RTGCUINTREG32 *pf);
+;
+; @returns VINF_SUCCESS on success, VERR_ACCESS_DENIED on \#PF (GC only).
+; @param    [esp + 04h]  gcc:rdi  msc:rcx   Param 1 - First parameter - pointer to data item (the real stuff).
+; @param    [esp + 08h]  gcc:rsi  msc:rdx   Param 2 - Second parameter- the immediate / register value.
+; @param    [esp + 10h]  gcc:rdx  msc:r8    Param 3 - Size of the operation - 1, 2, 4 or 8 bytes.
+; @param    [esp + 14h]  gcc:rcx  msc:r9    Param 4 - Where to store the eflags on success.
+;                                                     only arithmetic flags are valid.
+align 16
+BEGINPROC   EMEmulateLockXor
+%ifdef RT_ARCH_AMD64
+%ifdef RT_OS_WINDOWS
+    mov     rax, r8                     ; eax = size of parameters
+%else   ; !RT_OS_WINDOWS
+    mov     rax, rdx                    ; rax = size of parameters
+    mov     rcx, rdi                    ; rcx = first parameter
+    mov     rdx, rsi                    ; rdx = second parameter
+%endif  ; !RT_OS_WINDOWS
+%else   ; !RT_ARCH_AMD64
+    mov     eax, [esp + 10h]            ; eax = size of parameters
+    mov     ecx, [esp + 04h]            ; ecx = first parameter (MY_PTR_REG)
+    mov     edx, [esp + 08h]            ; edx = second parameter
+%endif
+
+    ; switch on size
+%ifdef CAN_DO_8_BYTE_OP
+    cmp     al, 8
+    je short .do_qword                  ; 8 bytes variant
+%endif
+    cmp     al, 4
+    je short .do_dword                  ; 4 bytes variant
+    cmp     al, 2
+    je short .do_word                   ; 2 byte variant
+    cmp     al, 1
+    je short .do_byte                   ; 1 bytes variant
+    int3
+
+    ; workers
+%ifdef RT_ARCH_AMD64
+.do_qword:
+    lock xor [MY_PTR_REG], rdx           ; do 8 bytes OR
+    jmp short .done
+%endif
+
+.do_dword:
+    lock xor [MY_PTR_REG], edx           ; do 4 bytes OR
+    jmp short .done
+
+.do_word:
+    lock xor [MY_PTR_REG], dx            ; do 2 bytes OR
+    jmp short .done
+
+.do_byte:
+    lock xor [MY_PTR_REG], dl            ; do 1 byte OR
+
+    ; collect flags and return.
+.done:
+    pushf
+%ifdef RT_ARCH_AMD64
+    pop    rax
+ %ifdef RT_OS_WINDOWS
+    mov    [r9], eax
+ %else  ; !RT_OS_WINDOWS
+    mov    [rcx], eax
+ %endif ; !RT_OS_WINDOWS
+%else   ; !RT_ARCH_AMD64
+    mov     eax, [esp + 14h + 4]
+    pop     dword [eax]
+%endif
+    mov     eax, VINF_SUCCESS
+    retn
+
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+.do_qword:
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+BITS 64
+.sixtyfourbit_mode:
+    and     esp, 0ffffffffh
+    and     MY_PTR_REG, 0ffffffffh
+    mov     rdx, qword [rsp + 08h]      ; rdx = second parameter
+    lock xor [MY_PTR_REG64], rdx         ; do 8 bytes OR
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .done.
+    dd      .done, NAME(SUPR0AbsKernelCS)
+BITS 32
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+
+
+%ifdef IN_RC
+; #PF resume point.
+GLOBALNAME EMEmulateLockXor_Error
+    mov     eax, VERR_ACCESS_DENIED
+    ret
+%endif
+
+ENDPROC     EMEmulateLockXor
 
 ;;
 ; Emulate INC instruction, CDECL calling conv.
