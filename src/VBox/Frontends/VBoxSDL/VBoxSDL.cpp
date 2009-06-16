@@ -4042,6 +4042,9 @@ static void SendMouseEvent(VBoxSDLFB *fb, int dz, int down, int button)
         RTPrintf("MouseEvent: Cannot find fb mouse = %d,%d\n", x, y);
         return;
     }
+#else
+    if (!fb)
+        fb = gpFramebuffer[0];
 #endif
 
     /*
