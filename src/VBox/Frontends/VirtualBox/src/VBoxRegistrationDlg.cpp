@@ -377,6 +377,11 @@ void VBoxRegistrationDlg::reinit()
     finishButton()->setEnabled (true);
     cancelButton()->setEnabled (true);
 
+    /* Return 'default' attribute loosed
+     * when button was disabled... */
+    finishButton()->setDefault (true);
+    finishButton()->setFocus();
+
     /* Unset busy cursor */
     unsetCursor();
 }
@@ -496,6 +501,9 @@ void VBoxRegistrationDlg::enableNext (const QIWidgetValidator *aWval)
     aWval->isValid();
     /* But control dialog only with necessary */
     finishButton()->setEnabled (aWval->isOtherValid());
+    /* Return 'default' attribute loosed
+     * when button was disabled... */
+    finishButton()->setDefault (true);
 }
 
 void VBoxRegistrationDlg::onPageShow()
