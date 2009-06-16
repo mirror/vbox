@@ -149,7 +149,7 @@ __findSystemLib( const char *provided_system_path, char *lib )
 		}*/
 #endif
 	}
-#if !defined(__linux__) && !defined(SunOS)
+#if !defined(__linux__) && !defined(SunOS) && !defined(__FreeBSD__)
 	crStrcat( system_path, "/" );
 #endif
 	crStrcat( system_path, lib );
