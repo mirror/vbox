@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 #
-# Copyright (C) 2006-2008 Sun Microsystems, Inc.
+# Copyright (C) 2006-2009 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -27,12 +27,14 @@ export DH_COMPAT=4
 #  NOMODS=1         don't build any module
 #  NOQT=1           don't build the Qt GUI
 #  HEADLESS=1       build the headless version
+#  NOWEBSVC=1       don't build the webservice API, default for OSE
 #  STAGEDISO=<path> don't build the VBoxAdditions, use the precompiled .iso
 
 package  := virtualbox
 verpkg   := virtualbox-ose
 current  := $(shell pwd)
 vboxroot := $(shell pwd)
+pkgdir   := ..
 builddir := $(current)/debian/builddir
 moddir   := $(current)/debian/modules
 prefix   := $(current)/debian/$(verpkg)
@@ -41,11 +43,13 @@ verfile  := $(builddir)/version-generated.mk
 ose      := 1
 NOMODS   ?= $(ose)
 NOQT     ?= $(HEADLESS)
+NOWEBSVC ?= $(ose)
+NOWINE   := $(if $(NODOCS),$(if $(STAGEDISO),1,),)
 
 ifneq ($(wildcard $(verfile)),)
 include $(verfile)
 ver      := $(VBOX_VERSION_STRING)
-archdir   := $(prefix)/opt/VirtualBox-$(ver)
+archdir  := $(prefix)/opt/VirtualBox-$(ver)
 endif
 
 ifneq ($(STAGEDISO),)
@@ -67,6 +71,10 @@ endif
 
 debcfgs  := VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/$(verpkg)\""
 
+# Locations of custom built Qt libraries (see below)
+qtstdc5  := /home/vbox/Qt-4.4.3-stdc++5-$(arch))
+qtstdc6  := /home/vbox/Qt-4.4.3-stdc++6-$(arch))
+
 # Ubuntu dapper: gcc-4.0 does not work with recompiler, use gcc-3.4 instead
 # Ubuntu gutsy:  gcc-4.1 does not work for the webservices, use gcc-4.2 instead
 configure: debian/configure-stamp
@@ -77,8 +85,15 @@ debian/configure-stamp:
 	    $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) $(if \
 	    $(filter _Ubuntu_dapper,$(debrel)),--with-gcc=gcc-3.4 --with-g++=g++-3.4,) $(if \
 	    $(filter _Ubuntu_gutsy,$(debrel)),--with-gcc=gcc-4.2 --with-g++=g++-4.2,) $(if \
+	    $(filter _xandros4.1 _ucs1.3 _Debian_sarge _Ubuntu_dapper,$(debrel)),--build-libxml2,) $(if \
+	    $(filter _xandros4.1 _ucs1.3 _Debian_sarge _Ubuntu_dapper,$(debrel)),--build-libxslt,) $(if \
+	    $(filter _Debian_etch,$(debrel)),--build-libcurl,) $(if \
+	    $(filter _Debian_sarge _xandros4.1 _ucs1.3,$(debrel)),--with-qt4-dir=$(qtstdc5)) $(if \
+	    $(filter _Debian_etch _Ubuntu_dapper _Ubuntu_edgy _Ubuntu_feisty,$(debrel)),--with-qt4-dir=$(qtstdc6)) $(if \
 	    $(filter _xandros4.1 _ucs1.3,$(debrel)),--disable-sdl-ttf,) $(if \
-	    $(HEADLESS),--build-headless,) $(if $(DEBUG),--build-debug,)
+	    $(filter _Debian_sarge _Ubuntu_dapper _Ubuntu_edgy _xandros4.1 _ucs1.3,$(debrel)),--disable-pulse,) $(if \
+	    $(HEADLESS),--build-headless,) $(if $(DEBUG),--build-debug,) $(if \
+	    $(NOWINE),,--setup-wine) $(if $(NOWEBSVC),,--enable-webservice)
 	touch debian/configure-stamp
 
 build: debian/configure-stamp debian/build-stamp
@@ -94,10 +109,11 @@ debian/build-stamp $(verfile):
 	    LOCALCFG=$(current)/debian/LocalConfig.kmk \
 	    PATH_OUT=$(current)/debian/builddir \
 	    VBOX_DO_STRIP= VBOX_DO_STRIP_MODULES= \
+	    $(if $(filter _Debian_sarge _xandros4.1 _ucs1.3,$(debrel)),VBOX_LD_as_needed= ,) \
 	    $(debcfgs) \
 	    all
-	$(if $(NODOCS),cp $(vboxroot)/prebuild/UserManual.pdf $(builddir)/bin,)
-	$(if $(NODOCS),cp $(vboxroot)/prebuild/VirtualBox.chm $(builddir)/bin,)
+	$(if $(NODOCS),cp $(vboxroot)/prebuild/UserManual*.pdf $(builddir)/bin,)
+	$(if $(NODOCS),cp $(vboxroot)/prebuild/VirtualBox*.chm $(builddir)/bin,)
 	mkdir -p $(builddir)/bin/additions
 	$(if $(STAGEDISO),cp $(STAGEDISO)/VBoxGuestAdditions.iso $(builddir)/bin/additions,)
 	. debian/env.sh && kmk -C $(vboxroot) $(if \
@@ -108,7 +124,9 @@ debian/build-stamp $(verfile):
 	    LOCALCFG=$(current)/debian/LocalConfig.kmk \
 	    PATH_OUT=$(current)/debian/builddir \
 	    VBOX_DO_STRIP= VBOX_DO_STRIP_MODULES= \
-	    VBOX_NO_LINUX_RUN_INSTALLER=1 \
+	    $(if $(filter _Debian_sarge _xandros4.1 _ucs1.3,$(debrel)),VBOX_LD_as_needed= ,) \
+	    VBOX_NO_LINUX_RUN_INSTALLER=1 $(if $(NODOCS),VBOX_WITH_DOCS= ,) \
+	    VBOX_PATH_ADDITIONS.linux.x86=$(builddir)/bin/additions \
 	    $(debcfgs) \
 	    packing
 	touch debian/build-stamp
@@ -200,14 +218,9 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	install -D -g 0 -o 0 -m 644 debian/VBox.sh $(prefix)/usr/bin/VBox
 	mv $(archdir)/VBoxSysInfo.sh $(prefix)/usr/share/$(package)
 	for i in VBoxManage VBoxSVC $(if $(HEADLESS),,VBoxSDL) \
-	    $(if $(NOQT),,VirtualBox) VBoxHeadless; do \
+	    $(if $(NOQT),,VirtualBox) VBoxHeadless \
+	    $(if $(NOWEBSVC),,vboxwebsrv webtest); do \
 	    mv $(archdir)/$$i $(prefix)/usr/lib/$(package); done
-	if [ -f $(archdir)/vboxwebsrv ]; then \
-	  mv $(archdir)/vboxwebsrv $(prefix)/usr/lib/$(package); \
-	fi
-	if [ -f $(archdir)/webtest ]; then \
-	  mv $(archdir)/webtest $(prefix)/usr/lib/$(package); \
-	fi
 	mv $(archdir)/VBoxTunctl $(prefix)/usr/bin
 	$(if $(NOMODS),,for d in $(moddir)/*; do \
 	    install -D -g 0 -o 0 -m 0644 \
@@ -238,7 +251,7 @@ endif
 	    $(if $(HEADLESS),,usr/bin/VBox      usr/bin/VBoxSDL) \
 	    $(if $(ose),,usr/bin/VBox           usr/bin/VBoxVRDP) \
 	    usr/bin/VBox                        usr/bin/VBoxHeadless \
-	    $(if $(ose),,usr/bin/VBox           usr/bin/vboxwebsrv) \
+	    usr/bin/VBox                        usr/bin/vboxwebsrv \
 	    usr/share/virtualbox/src/vboxdrv    usr/src/vboxdrv-$(ver) \
 	    usr/share/virtualbox/src/vboxnetflt usr/src/vboxnetflt-$(ver) \
 	    usr/share/virtualbox/src/vboxnetadp usr/src/vboxnetadp-$(ver)
@@ -256,7 +269,8 @@ endif
 	dh_installdebconf
 	dh_installchangelogs
 	dh_link
-	dh_strip --keep-debug --exclude=libVBoxQtCore.so.4 --exclude=libVBoxQtGui.so.4 --exclude=libVBoxQtNetwork.so.4 --exclude=libqtaccessiblewidgets.so
+ifeq ($(DEBUG),)
+	dh_strip --keep-debug --exclude=libQtCoreVBox.so.4 --exclude=libQtGuiVBox.so.4 --exclude=libQtNetworkVBox.so.4 --exclude=libqtaccessiblewidgets.so
 	# manually strip our R0/GC modules, dh_strip cannot handle them
 	for f in \
 	  $(prefix)/usr/lib/$(package)/*.r0 $(prefix)/usr/lib/$(package)/*.gc; do \
@@ -266,8 +280,11 @@ endif
 	    strip -S --remove-section=.comment $$f; \
 	    objcopy --add-gnu-debuglink=$(prefix)/usr/lib/debug/usr/lib/$(package)/`basename $$f` $$f; \
 	done
+endif
 	mkdir -p $(current)/debian/$(verpkg)-dbg/usr/lib
+ifeq ($(DEBUG),)
 	mv $(current)/debian/$(verpkg)/usr/lib/debug $(current)/debian/$(verpkg)-dbg/usr/lib
+endif
 	dh_pycentral
 	dh_compress -X.pdf -X.chm -X LICENSE -X.py
 	dh_fixperms
@@ -281,7 +298,7 @@ endif
 	  -Vsdlttf=$(if $(HEADLESS),,libsdl-ttf2.0-0) \
 	  -Vdkms=$(if $(filter _Ubuntu_gutsy _Ubuntu_hardy _Ubuntu_intrepid _Ubuntu_jaunty,$(debrel)),dkms,)
 	dh_md5sums
-	dh_builddeb
+	dh_builddeb --destdir $(pkgdir)
 endif
 
 .PHONY: binary modules binary-arch binary-indep clean checkroot
