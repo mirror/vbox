@@ -15,6 +15,36 @@ static GLubyte gpszExtensions[10000];
 static GLubyte gpszShadingVersion[255]="";
 #endif
 
+static void GetString(GLenum name, char *pszStr)
+{
+    GET_THREAD(thread);
+    int writeback = 1;
+
+    if (pack_spu.swap)
+        crPackGetStringSWAP(name, pszStr, &writeback);
+    else
+        crPackGetString(name, pszStr, &writeback);
+    packspuFlush( (void *) thread );
+
+    while (writeback)
+        crNetRecv();
+}
+
+static GLfloat
+GetVersionString(void)
+{
+    GLubyte return_value[100];
+    GLfloat version;
+
+    GetString(GL_VERSION, return_value);
+    CRASSERT(crStrlen((char *)return_value) < 100);
+
+    version = crStrToFloat((char *) return_value);
+    version = crStateComputeVersion(version);
+
+    return version;
+}
+
 static const GLubyte *
 GetExtensions(void)
 {
@@ -46,46 +76,20 @@ GetExtensions(void)
     ext = crStateMergeExtensions(1, &extensions);
 
 #ifdef CR_OPENGL_VERSION_2_0
-    /* @todo, check if host supports opengl 2.0 or this extension 
-     * before exporting it.
+    /* @todo move to known extensions etc, for now just a hack.
      */
-    sprintf(gpszExtensions, "%sGL_ARB_shading_language_100 GL_ARB_shader_objects GL_ARB_vertex_shader GL_ARB_fragment_shader", ext);
+    {
+        GLfloat fversion = GetVersionString();
+        if (fversion>=2.f)
+        {
+            sprintf(gpszExtensions, "%sGL_ARB_shading_language_100 GL_ARB_shader_objects GL_ARB_vertex_shader GL_ARB_fragment_shader", ext);
+        }
+    }
 #else
     sprintf(gpszExtensions, "%s", ext);
 #endif
 
     return gpszExtensions;
-}
-
-static void GetString(GLenum name, char *pszStr)
-{
-    GET_THREAD(thread);
-    int writeback = 1;
-
-    if (pack_spu.swap)
-        crPackGetStringSWAP(name, pszStr, &writeback);
-    else
-        crPackGetString(name, pszStr, &writeback);
-    packspuFlush( (void *) thread );
-
-    while (writeback)
-        crNetRecv();
-}
-
-static GLfloat
-GetVersionString(void)
-{
-    GLubyte return_value[100];
-    int writeback = 1;
-    GLfloat version;
-
-    GetString(GL_VERSION, return_value);
-    CRASSERT(crStrlen((char *)return_value) < 100);
-
-    version = crStrToFloat((char *) return_value);
-    version = crStateComputeVersion(version);
-
-    return version;
 }
 
 #ifdef WINDOWS
