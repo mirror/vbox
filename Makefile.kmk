@@ -722,7 +722,7 @@ snapshot-ose:
 	    echo "Please do 'kmk snapshot-ose VBOX_OSE=1'"; \
 	    echo; \
 	    exit 1; \
-	fi; \
+	fi
 	$(QUIET)$(MKDIR) -p $(TARBALLPATH)
 	$(QUIET)$(RM) -f $(TARBALLPATH)/$(TARBALLROOT)
 	$(QUIET)$(LN_SYMLINK) $(PATH_ROOT) $(TARBALLPATH)/$(TARBALLROOT)
