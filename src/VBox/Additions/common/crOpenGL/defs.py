@@ -453,7 +453,7 @@ for func_name in ( "wglChoosePixelFormat",
            "wglChoosePixelFormatEXT",
            "wglGetPixelFormatAttribivEXT",
            "wglGetPixelFormatAttribfvEXT",
-           "wglGetExtensionsStringEXT" ):
+           "wglGetExtensionsStringEXT"):
     print "%s@%d = %s_prox" % (func_name,stack_sizes[func_name],func_name)
 
 """

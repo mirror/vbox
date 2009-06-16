@@ -92,11 +92,17 @@ print """
 };
 
 extern const GLubyte * WINAPI wglGetExtensionsStringEXT_prox( HDC hdc );
+extern BOOL WINAPI wglChoosePixelFormatEXT_prox(HDC hdc, const int *piAttributes, const FLOAT *pfAttributes, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
+extern BOOL WINAPI wglGetPixelFormatAttribivEXT_prox(HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, int *piAttributes, int *pValues);
+extern BOOL WINAPI wglGetPixelFormatAttribfvEXT_prox(HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, int *piAttributes, float *pValues);
 
 CR_PROC CR_APIENTRY crGetProcAddress( const char *name )
 {
     int i;
     wglGetExtensionsStringEXTFunc_t wglGetExtensionsStringEXT = wglGetExtensionsStringEXT_prox;
+    wglChoosePixelFormatEXTFunc_t wglChoosePixelFormatEXT = wglChoosePixelFormatEXT_prox;
+    wglGetPixelFormatAttribivEXTFunc_t wglGetPixelFormatAttribivEXT = wglGetPixelFormatAttribivEXT_prox;
+    wglGetPixelFormatAttribfvEXTFunc_t wglGetPixelFormatAttribfvEXT = wglGetPixelFormatAttribfvEXT_prox;
 
     stubInit();
 
@@ -106,8 +112,17 @@ CR_PROC CR_APIENTRY crGetProcAddress( const char *name )
             return functions[i].address;
         }
     }
-    
+
+    if (!crStrcmp( name, "wglGetExtensionsStringEXT" )) return (CR_PROC) wglGetExtensionsStringEXT;
     if (!crStrcmp( name, "wglGetExtensionsStringARB" )) return (CR_PROC) wglGetExtensionsStringEXT;
+
+    if (!crStrcmp( name, "wglChoosePixelFormatEXT" )) return (CR_PROC) wglChoosePixelFormatEXT;
+    if (!crStrcmp( name, "wglGetPixelFormatAttribivEXT" )) return (CR_PROC) wglGetPixelFormatAttribivEXT;
+    if (!crStrcmp( name, "wglGetPixelFormatAttribfvEXT" )) return (CR_PROC) wglGetPixelFormatAttribfvEXT;
+
+    if (!crStrcmp( name, "wglChoosePixelFormatARB" )) return (CR_PROC) wglChoosePixelFormatEXT;
+    if (!crStrcmp( name, "wglGetPixelFormatAttribivARB" )) return (CR_PROC) wglGetPixelFormatAttribivEXT;
+    if (!crStrcmp( name, "wglGetPixelFormatAttribfvARB" )) return (CR_PROC) wglGetPixelFormatAttribfvEXT;  
 
     crDebug("Returning GetProcAddress:NULL for %s", name);
     return NULL;
