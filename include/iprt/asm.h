@@ -3849,6 +3849,52 @@ DECLINLINE(void) ASMAtomicAndS32(int32_t volatile *pi32, int32_t i32)
 }
 
 
+/** 
+ * Serialize Instruction.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(void) ASMSerializeInstruction(void);
+#else
+DECLINLINE(void) ASMSerializeInstruction(void)
+{
+# if RT_INLINE_ASM_GNU_STYLE
+    RTCCUINTREG xAX = 0;
+#  ifdef RT_ARCH_AMD64
+    __asm__ ("cpuid"
+             : "=a" (xAX)
+             : "0" (xAX)
+             : "rbx", "rcx", "rdx");
+#  elif (defined(PIC) || defined(__PIC__)) && defined(__i386__)
+    __asm__ ("push  %%ebx\n\t"
+             "cpuid\n\t"
+             "pop   %%ebx\n\t"
+             : "=a" (xAX)
+             : "0" (xAX)
+             : "ecx", "edx");
+#  else
+    __asm__ ("cpuid"
+             : "=a" (xAX)
+             : "0" (xAX)
+             : "ebx", "ecx", "edx");
+#  endif
+
+# elif RT_INLINE_ASM_USES_INTRIN
+    int aInfo[4];
+    __cpuid(aInfo, 0);
+
+# else
+    __asm
+    {
+        push    ebx
+        xor     eax, eax
+        cpuid
+        pop     ebx
+    }
+# endif
+}
+#endif
+
+
 /**
  * Memory fence, waits for any pending writes and reads to complete.
  */
