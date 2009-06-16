@@ -1897,6 +1897,15 @@ typedef void (WINE_GLAPI * PGLFNGLGENERATEMIPMAPEXTPROC)(GLenum target);
 #endif
 typedef void (WINE_GLAPI * PGLFNGLBLITFRAMEBUFFEREXTPROC) (GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter);
 
+/* GL_EXT_packed_depth_stencil */
+#ifndef GL_EXT_packed_depth_stencil
+#define GL_EXT_packed_depth_stencil 1
+#define GL_DEPTH_STENCIL_EXT                0x84f9
+#define GL_UNSIGNED_INT_24_8_EXT            0x84fa
+#define GL_DEPTH24_STENCIL8_EXT             0x88f0
+#define GL_TEXTURE_STENCIL_SIZE_EXT         0x88f1
+#endif
+
 /* GL_EXT_framebuffer_multisample */
 #ifndef GL_EXT_framebuffer_multisample
 #define GL_EXT_framebuffer_multisample 1
@@ -3080,6 +3089,13 @@ typedef void (WINE_GLAPI *PGLFNSETFRAGMENTSHADERCONSTANTATI) (GLuint dst, const 
 #define GL_ATI_texture_compression_3dc
 #define GL_COMPRESSED_LUMINANCE_ALPHA_3DC_ATI 0x8837
 #endif
+/* GL_NV_vertex_program2_option */
+#ifndef GL_NV_vertex_program2_option
+#define GL_NV_vertex_program2_option
+#define GL_MAX_PROGRAM_EXEC_INSTRUCTIONS_NV               0x88F4
+#define GL_MAX_PROGRAM_CALL_DEPTH_NV                      0x88F5
+#endif
+
 /* GL_EXT_texture_compression_rgtc */
 #ifndef GL_EXT_texture_compression_rgtc
 #define GL_EXT_texture_compression_rgtc
@@ -3302,6 +3318,7 @@ typedef enum _GL_Cards {
 
   CARD_ATI_RAGE_128PRO            = 0x5246,
   CARD_ATI_RADEON_7200            = 0x5144,
+  CARD_ATI_RADEON_HD4800          = 0x944c,
   CARD_ATI_RADEON_8500            = 0x514c,
   CARD_ATI_RADEON_9500            = 0x4144,
   CARD_ATI_RADEON_XPRESS_200M     = 0x5955,
@@ -3373,8 +3390,10 @@ typedef enum _GL_PSVersion {
   PS_VERSION_13 = 0x13,
   PS_VERSION_14 = 0x14,
   PS_VERSION_20 = 0x20,
+  WINED3D_GL_EXT_NONE,
   PS_VERSION_30 = 0x30,
   /*Force 32-bits*/
+  ARB_DEPTH_TEXTURE,
   PS_VERSION_FORCE_DWORD = 0x7FFFFFFF
 } GL_PSVersion;
 
@@ -3414,6 +3433,7 @@ typedef enum _GL_SupportedExt {
   ARB_SHADER_OBJECTS,
   ARB_SHADER_TEXTURE_LOD,
   ARB_HALF_FLOAT_VERTEX,
+  EXT_PACKED_DEPTH_STENCIL,
   /* EXT */
   EXT_BLEND_COLOR,
   EXT_BLEND_MINMAX,
@@ -3449,7 +3469,9 @@ typedef enum _GL_SupportedExt {
   NV_FRAGMENT_PROGRAM2,
   NV_OCCLUSION_QUERY,
   NV_REGISTER_COMBINERS,
+  NV_VERTEX_PROGRAM2_OPTION,
   NV_REGISTER_COMBINERS2,
+  NV_FRAGMENT_PROGRAM_OPTION,
   NV_TEXGEN_REFLECTION,
   NV_TEXTURE_ENV_COMBINE4,
   NV_TEXTURE_SHADER,
@@ -3487,7 +3509,7 @@ typedef enum _GL_SupportedExt {
   WGL_ARB_PIXEL_FORMAT,
   WGL_WINE_PIXEL_FORMAT_PASSTHROUGH,
 
-  OPENGL_SUPPORTED_EXT_END
+  WINED3D_GL_EXT_COUNT,
 } GL_SupportedExt;
 
 
@@ -3970,8 +3992,9 @@ typedef struct _WineD3D_GL_Info {
   BOOL arb_vs_offset_limit;
   BOOL set_texcoord_w;
   DWORD reserved_glsl_constants;
+  BOOL glsl_clip_varying;
 
-  BOOL supported[OPENGL_SUPPORTED_EXT_END + 1];
+  BOOL supported[WINED3D_GL_EXT_COUNT];
 
   /** OpenGL EXT and ARB functions ptr */
   GL_EXT_FUNCS_GEN

@@ -857,6 +857,19 @@ typedef enum _WINED3DSURFTYPE
     SURFACE_GDI,                                    /* User surface. No 3D, DirectDraw rendering with GDI */
 } WINED3DSURFTYPE;
 
+enum wined3d_sysval_semantic
+{
+    WINED3D_SV_DEPTH = 0xffffffff,
+    WINED3D_SV_TARGET0 = 0,
+    WINED3D_SV_TARGET1 = 1,
+    WINED3D_SV_TARGET2 = 2,
+    WINED3D_SV_TARGET3 = 3,
+    WINED3D_SV_TARGET4 = 4,
+    WINED3D_SV_TARGET5 = 5,
+    WINED3D_SV_TARGET6 = 6,
+    WINED3D_SV_TARGET7 = 7,
+};
+
 const UINT WINED3DCOLORWRITEENABLE_RED                          = (1<<0);
 const UINT WINED3DCOLORWRITEENABLE_GREEN                        = (1<<1);
 const UINT WINED3DCOLORWRITEENABLE_BLUE                         = (1<<2);
@@ -2126,6 +2139,23 @@ struct wined3d_buffer_desc
     UINT misc_flags;
 };
 
+struct wined3d_shader_signature_element
+{
+    const char *semantic_name;
+    UINT semantic_idx;
+    enum wined3d_sysval_semantic sysval_semantic;
+    DWORD component_type;
+    UINT register_idx;
+    DWORD mask;
+};
+
+struct wined3d_shader_signature
+{
+    UINT element_count;
+    struct wined3d_shader_signature_element *elements;
+    char *string_data;
+};
+
 interface IWineD3DResource;
 interface IWineD3DSurface;
 interface IWineD3DVolume;
@@ -2595,10 +2625,6 @@ interface IWineD3DBaseTexture : IWineD3DResource
     );
     BOOL IsCondNP2(
     );
-    void ApplyStateChanges(
-        const DWORD texture_states[WINED3D_HIGHEST_TEXTURE_STATE + 1],
-        const DWORD sampler_states[WINED3D_HIGHEST_SAMPLER_STATE + 1]
-    );
 }
 
 [
@@ -2832,7 +2858,8 @@ interface IWineD3DBuffer : IWineD3DResource
 interface IWineD3DBaseShader : IWineD3DBase
 {
     HRESULT SetFunction(
-        [in] const DWORD *function
+        [in] const DWORD *function,
+        [in] const struct wined3d_shader_signature *output_signature
     );
 }
 
@@ -2849,9 +2876,6 @@ interface IWineD3DVertexShader : IWineD3DBaseShader
     HRESULT GetFunction(
         [out] void *data,
         [in, out] UINT *data_size
-    );
-    void FakeSemantics(
-        [in] IWineD3DVertexDeclaration *vertex_declaration
     );
     HRESULT SetLocalConstantsF(
         [in] UINT start_idx,
@@ -2993,13 +3017,14 @@ interface IWineD3DDevice : IWineD3DBase
         [in] DWORD fvf
     );
     HRESULT CreateVertexShader(
-        [in] IWineD3DVertexDeclaration *declaration,
         [in] const DWORD *function,
+        [in] const struct wined3d_shader_signature *output_signature,
         [out] IWineD3DVertexShader **shader,
         [in] IUnknown *parent
     );
     HRESULT CreatePixelShader(
         [in] const DWORD *function,
+        [in] const struct wined3d_shader_signature *output_signature,
         [out] IWineD3DPixelShader **shader,
         [in] IUnknown *parent
     );
@@ -3451,9 +3476,6 @@ interface IWineD3DDevice : IWineD3DBase
     HRESULT GetFrontBufferData(
         [in] UINT swapchain_idx,
         [in] IWineD3DSurface *dst_surface
-    );
-    void ResourceReleased(
-        [in] IWineD3DResource *resource
     );
     HRESULT EnumResources(
         [in] D3DCB_ENUMRESOURCES callback,

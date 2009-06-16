@@ -181,6 +181,11 @@ enum MatrixOrder
 {
     MatrixOrderPrepend = 0,
     MatrixOrderAppend  = 1
+enum WarpMode {
+    WarpModePerspective,
+    WarpModeBilinear
+};
+
 };
 
 enum ImageType
@@ -436,6 +441,7 @@ typedef enum LineCap LineCap;
 typedef enum PathPointType PathPointType;
 typedef enum LineJoin LineJoin;
 typedef enum QualityMode QualityMode;
+typedef enum WarpMode WarpMode;
 typedef enum SmoothingMode SmoothingMode;
 typedef enum CompositingQuality CompositingQuality;
 typedef enum InterpolationMode InterpolationMode;

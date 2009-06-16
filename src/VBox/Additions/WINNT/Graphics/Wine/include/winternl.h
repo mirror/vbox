@@ -994,6 +994,11 @@ typedef struct _KNONVOLATILE_CONTEXT_POINTERS
             PULONG64 R10;
             PULONG64 R11;
             PULONG64 R12;
+#define UNW_FLAG_NHANDLER  0
+#define UNW_FLAG_EHANDLER  1
+#define UNW_FLAG_UHANDLER  2
+#define UNW_FLAG_CHAININFO 4
+
             PULONG64 R13;
             PULONG64 R14;
             PULONG64 R15;

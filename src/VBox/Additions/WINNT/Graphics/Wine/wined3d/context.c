@@ -38,6 +38,7 @@ WINE_DEFAULT_DEBUG_CHANNEL(d3d);
 
 #define GLINFO_LOCATION This->adapter->gl_info
 
+/* GL locking is done by the caller */
 /* The last used device.
  *
  * If the application creates multiple devices and switches between them, ActivateContext has to
@@ -62,12 +63,11 @@ void context_bind_fbo(IWineD3DDevice *iface, GLenum target, GLuint *fbo)
     checkGLcall("glBindFramebuffer()");
 }
 
-static void context_destroy_fbo(IWineD3DDeviceImpl *This, const GLuint *fbo)
+/* GL locking is done by the caller */
+static void context_clean_fbo_attachments(IWineD3DDeviceImpl *This)
 {
     unsigned int i;
 
-    GL_EXTCALL(glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, *fbo));
-    checkGLcall("glBindFramebuffer()");
     for (i = 0; i < GL_LIMITS(buffers); ++i)
     {
         GL_EXTCALL(glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT + i, GL_TEXTURE_2D, 0, 0));
@@ -75,12 +75,23 @@ static void context_destroy_fbo(IWineD3DDeviceImpl *This, const GLuint *fbo)
     }
     GL_EXTCALL(glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, 0, 0));
     checkGLcall("glFramebufferTexture2D()");
+}
+
+/* GL locking is done by the caller */
+static void context_destroy_fbo(IWineD3DDeviceImpl *This, const GLuint *fbo)
+{
+    GL_EXTCALL(glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, *fbo));
+    checkGLcall("glBindFramebuffer()");
+
+    context_clean_fbo_attachments(This);
+
     GL_EXTCALL(glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0));
     checkGLcall("glBindFramebuffer()");
     GL_EXTCALL(glDeleteFramebuffersEXT(1, fbo));
     checkGLcall("glDeleteFramebuffers()");
 }
 
+/* GL locking is done by the caller */
 static void context_apply_attachment_filter_states(IWineD3DDevice *iface, IWineD3DSurface *surface, BOOL force_preload)
 {
     IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *)iface;
@@ -145,6 +156,7 @@ static void context_apply_attachment_filter_states(IWineD3DDevice *iface, IWineD
 }
 
 /* TODO: Handle stencil attachments */
+/* GL locking is done by the caller */
 void context_attach_depth_stencil_fbo(IWineD3DDeviceImpl *This, GLenum fbo_target, IWineD3DSurface *depth_stencil, BOOL use_render_buffer)
 {
     IWineD3DSurfaceImpl *depth_stencil_impl = (IWineD3DSurfaceImpl *)depth_stencil;
@@ -170,6 +182,7 @@ void context_attach_depth_stencil_fbo(IWineD3DDeviceImpl *This, GLenum fbo_targe
     }
 }
 
+/* GL locking is done by the caller */
 void context_attach_surface_fbo(IWineD3DDeviceImpl *This, GLenum fbo_target, DWORD idx, IWineD3DSurface *surface)
 {
     const IWineD3DSurfaceImpl *surface_impl = (IWineD3DSurfaceImpl *)surface;
@@ -189,6 +202,7 @@ void context_attach_surface_fbo(IWineD3DDeviceImpl *This, GLenum fbo_target, DWO
     }
 }
 
+/* GL locking is done by the caller */
 static void context_check_fbo_status(IWineD3DDevice *iface)
 {
     IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *)iface;
@@ -239,19 +253,36 @@ static struct fbo_entry *context_create_fbo_entry(IWineD3DDevice *iface)
     return entry;
 }
 
-static void context_destroy_fbo_entry(IWineD3DDeviceImpl *This, struct fbo_entry *entry)
+/* GL locking is done by the caller */
+static void context_reuse_fbo_entry(IWineD3DDevice *iface, struct fbo_entry *entry)
+{
+    IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *)iface;
+
+    GL_EXTCALL(glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, entry->id));
+    checkGLcall("glBindFramebuffer()");
+    context_clean_fbo_attachments(This);
+
+    memcpy(entry->render_targets, This->render_targets, GL_LIMITS(buffers) * sizeof(*entry->render_targets));
+    entry->depth_stencil = This->stencilBufferTarget;
+    entry->attached = FALSE;
+}
+
+/* GL locking is done by the caller */
+static void context_destroy_fbo_entry(IWineD3DDeviceImpl *This, WineD3DContext *context, struct fbo_entry *entry)
 {
     if (entry->id)
     {
         TRACE("Destroy FBO %d\n", entry->id);
         context_destroy_fbo(This, &entry->id);
     }
+    --context->fbo_entry_count;
     list_remove(&entry->entry);
     HeapFree(GetProcessHeap(), 0, entry->render_targets);
     HeapFree(GetProcessHeap(), 0, entry);
 }
 
 
+/* GL locking is done by the caller */
 static struct fbo_entry *context_find_fbo_entry(IWineD3DDevice *iface, WineD3DContext *context)
 {
     IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *)iface;
@@ -262,15 +293,30 @@ static struct fbo_entry *context_find_fbo_entry(IWineD3DDevice *iface, WineD3DCo
         if (!memcmp(entry->render_targets, This->render_targets, GL_LIMITS(buffers) * sizeof(*entry->render_targets))
                 && entry->depth_stencil == This->stencilBufferTarget)
         {
+            list_remove(&entry->entry);
+            list_add_head(&context->fbo_list, &entry->entry);
             return entry;
         }
     }
 
-    entry = context_create_fbo_entry(iface);
-    list_add_head(&context->fbo_list, &entry->entry);
+    if (context->fbo_entry_count < WINED3D_MAX_FBO_ENTRIES)
+    {
+        entry = context_create_fbo_entry(iface);
+        list_add_head(&context->fbo_list, &entry->entry);
+        ++context->fbo_entry_count;
+    }
+    else
+    {
+        entry = LIST_ENTRY(list_tail(&context->fbo_list), struct fbo_entry, entry);
+        context_reuse_fbo_entry(iface, entry);
+        list_remove(&entry->entry);
+        list_add_head(&context->fbo_list, &entry->entry);
+    }
+
     return entry;
 }
 
+/* GL locking is done by the caller */
 static void context_apply_fbo_entry(IWineD3DDevice *iface, struct fbo_entry *entry)
 {
     IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *)iface;
@@ -316,6 +362,7 @@ static void context_apply_fbo_entry(IWineD3DDevice *iface, struct fbo_entry *ent
     }
 }
 
+/* GL locking is done by the caller */
 static void context_apply_fbo_state(IWineD3DDevice *iface)
 {
     IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *)iface;
@@ -344,9 +391,12 @@ void context_resource_released(IWineD3DDevice *iface, IWineD3DResource *resource
         {
             for (i = 0; i < This->numContexts; ++i)
             {
+                WineD3DContext *context = This->contexts[i];
                 struct fbo_entry *entry, *entry2;
 
-                LIST_FOR_EACH_ENTRY_SAFE(entry, entry2, &This->contexts[i]->fbo_list, struct fbo_entry, entry)
+                ENTER_GL();
+
+                LIST_FOR_EACH_ENTRY_SAFE(entry, entry2, &context->fbo_list, struct fbo_entry, entry)
                 {
                     BOOL destroyed = FALSE;
                     UINT j;
@@ -355,14 +405,16 @@ void context_resource_released(IWineD3DDevice *iface, IWineD3DResource *resource
                     {
                         if (entry->render_targets[j] == (IWineD3DSurface *)resource)
                         {
-                            context_destroy_fbo_entry(This, entry);
+                            context_destroy_fbo_entry(This, context, entry);
                             destroyed = TRUE;
                         }
                     }
 
                     if (!destroyed && entry->depth_stencil == (IWineD3DSurface *)resource)
-                        context_destroy_fbo_entry(This, entry);
+                        context_destroy_fbo_entry(This, context, entry);
                 }
+
+                LEAVE_GL();
             }
 
             break;
@@ -903,6 +955,24 @@ WineD3DContext *CreateContext(IWineD3DDeviceImpl *This, IWineD3DSurfaceImpl *tar
             checkGLcall("glTexEnvi(GL_TEXTURE_SHADER_NV, GL_PREVIOUS_TEXTURE_INPUT_NV, ...\n");
         }
     }
+    if(GL_SUPPORT(ARB_FRAGMENT_PROGRAM)) {
+        /* MacOS(radeon X1600 at least, but most likely others too) refuses to draw if GLSL and ARBFP are
+         * enabled, but the currently bound arbfp program is 0. Enabling ARBFP with prog 0 is invalid, but
+         * GLSL should bypass this. This causes problems in programs that never use the fixed function pipeline,
+         * because the ARBFP extension is enabled by the ARBFP pipeline at context creation, but no program
+         * is ever assigned.
+         *
+         * So make sure a program is assigned to each context. The first real ARBFP use will set a different
+         * program and the dummy program is destroyed when the context is destroyed.
+         */
+        const char *dummy_program =
+                "!!ARBfp1.0\n"
+                "MOV result.color, fragment.color.primary;\n"
+                "END\n";
+        GL_EXTCALL(glGenProgramsARB(1, &ret->dummy_arbfp_prog));
+        GL_EXTCALL(glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, ret->dummy_arbfp_prog));
+        GL_EXTCALL(glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB, GL_PROGRAM_FORMAT_ASCII_ARB, strlen(dummy_program), dummy_program));
+    }
 
     for(s = 0; s < GL_LIMITS(point_sprite_units); s++) {
         GL_EXTCALL(glActiveTextureARB(GL_TEXTURE0_ARB + s));
@@ -1012,7 +1082,7 @@ void DestroyContext(IWineD3DDeviceImpl *This, WineD3DContext *context) {
     ENTER_GL();
 
     LIST_FOR_EACH_ENTRY_SAFE(entry, entry2, &context->fbo_list, struct fbo_entry, entry) {
-        context_destroy_fbo_entry(This, entry);
+        context_destroy_fbo_entry(This, context, entry);
     }
     if (context->src_fbo) {
         TRACE("Destroy src FBO %d\n", context->src_fbo);
@@ -1021,6 +1091,9 @@ void DestroyContext(IWineD3DDeviceImpl *This, WineD3DContext *context) {
     if (context->dst_fbo) {
         TRACE("Destroy dst FBO %d\n", context->dst_fbo);
         context_destroy_fbo(This, &context->dst_fbo);
+    }
+    if(context->dummy_arbfp_prog) {
+        GL_EXTCALL(glDeleteProgramsARB(1, &context->dummy_arbfp_prog));
     }
 
     LEAVE_GL();
@@ -1044,6 +1117,7 @@ void DestroyContext(IWineD3DDeviceImpl *This, WineD3DContext *context) {
     RemoveContextFromArray(This, context);
 }
 
+/* GL locking is done by the caller */
 static inline void set_blit_dimension(UINT width, UINT height) {
     glMatrixMode(GL_PROJECTION);
     checkGLcall("glMatrixMode(GL_PROJECTION)");
@@ -1080,7 +1154,9 @@ static inline void SetupForBlit(IWineD3DDeviceImpl *This, WineD3DContext *contex
     TRACE("Setting up context %p for blitting\n", context);
     if(context->last_was_blit) {
         if(context->blit_w != width || context->blit_h != height) {
+            ENTER_GL();
             set_blit_dimension(width, height);
+            LEAVE_GL();
             context->blit_w = width; context->blit_h = height;
             /* No need to dirtify here, the states are still dirtified because they weren't
              * applied since the last SetupForBlit call. Otherwise last_was_blit would not
@@ -1095,7 +1171,10 @@ static inline void SetupForBlit(IWineD3DDeviceImpl *This, WineD3DContext *contex
     /* TODO: Use a display list */
 
     /* Disable shaders */
+    ENTER_GL();
     This->shader_backend->shader_select((IWineD3DDevice *)This, FALSE, FALSE);
+    LEAVE_GL();
+
     Context_MarkStateDirty(context, STATE_VSHADER, StateTable);
     Context_MarkStateDirty(context, STATE_PIXELSHADER, StateTable);
 
@@ -1236,9 +1315,11 @@ static inline void SetupForBlit(IWineD3DDeviceImpl *This, WineD3DContext *contex
     glDisable(GL_CLIP_PLANE4); checkGLcall("glDisable(clip plane 4)");
     glDisable(GL_CLIP_PLANE5); checkGLcall("glDisable(clip plane 5)");
     Context_MarkStateDirty(context, STATE_RENDER(WINED3DRS_CLIPPING), StateTable);
-    LEAVE_GL();
 
     set_blit_dimension(width, height);
+
+    LEAVE_GL();
+
     context->blit_w = width; context->blit_h = height;
     Context_MarkStateDirty(context, STATE_VIEWPORT, StateTable);
     Context_MarkStateDirty(context, STATE_TRANSFORM(WINED3DTS_PROJECTION), StateTable);
@@ -1571,7 +1652,9 @@ void ActivateContext(IWineD3DDeviceImpl *This, IWineD3DSurface *target, ContextU
         case CTXUSAGE_CLEAR:
         case CTXUSAGE_DRAWPRIM:
             if (wined3d_settings.offscreen_rendering_mode == ORM_FBO) {
+                ENTER_GL();
                 context_apply_fbo_state((IWineD3DDevice *)This);
+                LEAVE_GL();
             }
             if (context->draw_buffer_dirty) {
                 apply_draw_buffer(This, target, FALSE);
@@ -1583,10 +1666,9 @@ void ActivateContext(IWineD3DDeviceImpl *This, IWineD3DSurface *target, ContextU
             if (wined3d_settings.offscreen_rendering_mode == ORM_FBO) {
                 if (This->render_offscreen) {
                     FIXME("Activating for CTXUSAGE_BLIT for an offscreen target with ORM_FBO. This should be avoided.\n");
+                    ENTER_GL();
                     context_bind_fbo((IWineD3DDevice *)This, GL_FRAMEBUFFER_EXT, &context->dst_fbo);
                     context_attach_surface_fbo(This, GL_FRAMEBUFFER_EXT, 0, target);
-
-                    ENTER_GL();
                     GL_EXTCALL(glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, 0));
                     checkGLcall("glFramebufferRenderbufferEXT");
                     LEAVE_GL();
@@ -1645,6 +1727,7 @@ void ActivateContext(IWineD3DDeviceImpl *This, IWineD3DSurface *target, ContextU
 
             IWineD3DDeviceImpl_FindTexUnitMap(This);
 
+            ENTER_GL();
             for(i=0; i < context->numDirtyEntries; i++) {
                 dirtyState = context->dirtyArray[i];
                 idx = dirtyState >> 5;
@@ -1652,6 +1735,7 @@ void ActivateContext(IWineD3DDeviceImpl *This, IWineD3DSurface *target, ContextU
                 context->isStateDirty[idx] &= ~(1 << shift);
                 StateTable[dirtyState].apply(dirtyState, This->stateBlock, context);
             }
+            LEAVE_GL();
             context->numDirtyEntries = 0; /* This makes the whole list clean */
             context->last_was_blit = FALSE;
             break;

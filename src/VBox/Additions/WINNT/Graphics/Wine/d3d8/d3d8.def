@@ -1,6 +1,6 @@
 ; File generated automatically from ../../../dlls/d3d8/d3d8.spec; do not edit!
 
-LIBRARY d3d8.dll
+LIBRARY VBoxD3D8.dll
 
 EXPORTS
   D3D8GetSWInfo

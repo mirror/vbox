@@ -1,6 +1,6 @@
 ; File generated automatically from ../../../dlls/d3d9/d3d9.spec; do not edit!
 
-LIBRARY d3d9.dll
+LIBRARY VBoxD3D9.dll
 
 EXPORTS
   Direct3DShaderValidatorCreate9@0=Direct3DShaderValidatorCreate9
