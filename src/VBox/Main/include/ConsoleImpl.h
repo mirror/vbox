@@ -429,6 +429,13 @@ private:
     HRESULT removeSharedFolder (CBSTR aName);
 
     static DECLCALLBACK(int) configConstructor(PVM pVM, void *pvConsole);
+    static DECLCALLBACK(int) configNetwork(Console *pThis, const char *pszDevice,
+                                           unsigned uInstance, unsigned uLun,
+                                           NetworkAttachmentType_T eAttachmentType,
+                                           NetworkAttachmentType_T *meAttachmentType,
+                                           INetworkAdapter *aNetworkAdapter,
+                                           PCFGMNODE pCfg, PCFGMNODE pLunL0,
+                                           PCFGMNODE pInst, bool attachDetach);
     static DECLCALLBACK(void) vmstateChangeCallback(PVM aVM, VMSTATE aState,
                                                     VMSTATE aOldState, void *aUser);
     HRESULT doDriveChange (const char *pszDevice, unsigned uInstance,
@@ -550,11 +557,9 @@ private:
     /** The current Floppy drive state in the VM.
      * This does not have to match the state maintained in the Floppy. */
     DriveState_T meFloppyState;
-#ifdef VBOX_DYNAMIC_NET_ATTACH
     /** The current network attachment type in the VM.
      * This does not have to match the state maintained in the NetworkAdapter. */
-    NetworkAttachmentType_T meAttachmentType[SchemaDefs::NetworkAdapterCount];
-#endif /* VBOX_DYNAMIC_NET_ATTACH */
+    static NetworkAttachmentType_T meAttachmentType[SchemaDefs::NetworkAdapterCount];
 
     VMMDev * const mVMMDev;
     AudioSniffer * const mAudioSniffer;
