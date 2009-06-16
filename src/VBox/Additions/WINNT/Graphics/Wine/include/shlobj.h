@@ -1263,6 +1263,7 @@ BOOL WINAPI SHChangeNotifyDeregister(ULONG ulID);
 HANDLE WINAPI SHChangeNotification_Lock(HANDLE hChangeNotification, DWORD dwProcessId,
                                         LPITEMIDLIST **pppidl, LONG *plEvent);
 BOOL WINAPI SHChangeNotification_Unlock(HANDLE hLock);
+#define    SHCreateDirectoryEx WINELIB_NAME_AW(SHCreateDirectoryEx)
 
 HRESULT WINAPI SHGetRealIDL(IShellFolder *psf, LPCITEMIDLIST pidlSimple, LPITEMIDLIST * ppidlReal);
 

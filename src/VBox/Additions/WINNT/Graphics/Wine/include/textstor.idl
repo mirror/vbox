@@ -20,6 +20,10 @@
  * Sun LGPL Disclaimer: For the avoidance of doubt, except that if any license choice
  * other than GPL or LGPL is available it will apply instead, Sun elects to use only
  * the Lesser General Public License version 2.1 (LGPLv2) at this time for any software where
+cpp_quote("#define TS_E_READONLY        MAKE_HRESULT(SEVERITY_ERROR, FACILITY_ITF, 0x0209)")
+cpp_quote("#define TS_E_NOLOCK          MAKE_HRESULT(SEVERITY_ERROR, FACILITY_ITF, 0x0201)")
+
+
  * a choice of LGPL license versions is made available with the language indicating
  * that LGPLv2 or any later version may be used, or where a choice of which version
  * of the LGPL is applied is otherwise unspecified.
@@ -42,6 +46,10 @@ const DWORD TS_SS_NOHIDDENTEXT = 0x008;
 const DWORD TS_AS_TEXT_CHANGE      = 0x01;
 const DWORD TS_AS_SEL_CHANGE       = 0x02;
 const DWORD TS_AS_LAYOUT_CHANGE    = 0x04;
+const WCHAR TS_CHAR_EMBEDDED     = 0xfffc;
+const WCHAR TS_CHAR_REGION       = 0x0000;
+const WCHAR TS_CHAR_REPLACEMENT  = 0xfffd;
+
 const DWORD TS_AS_ATTR_CHANGE      = 0x08;
 const DWORD TS_AS_STATUS_CHANGE    = 0x10;
 

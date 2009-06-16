@@ -1735,7 +1735,6 @@ static HRESULT WINAPI IDirect3DDevice8Impl_CreateVertexShader(LPDIRECT3DDEVICE8 
     IDirect3DDevice8Impl *This = (IDirect3DDevice8Impl *)iface;
     HRESULT hrc = D3D_OK;
     IDirect3DVertexShader8Impl *object;
-    IWineD3DVertexDeclaration *wined3d_vertex_declaration;
     const DWORD *token = pDeclaration;
     DWORD handle;
 
@@ -1792,13 +1791,11 @@ static HRESULT WINAPI IDirect3DDevice8Impl_CreateVertexShader(LPDIRECT3DDEVICE8 
         *ppShader = ((IDirect3DVertexDeclaration8Impl *)object->vertex_declaration)->shader_handle = shader_handle;
     }
 
-    wined3d_vertex_declaration = ((IDirect3DVertexDeclaration8Impl *)object->vertex_declaration)->wined3d_vertex_declaration;
-
     if (pFunction)
     {
         /* Usage is missing ... Use SetRenderState to set the sw vp render state in SetVertexShader */
-        hrc = IWineD3DDevice_CreateVertexShader(This->WineD3DDevice, wined3d_vertex_declaration,
-                pFunction, &object->wineD3DVertexShader, (IUnknown *)object);
+        hrc = IWineD3DDevice_CreateVertexShader(This->WineD3DDevice, pFunction,
+                NULL /* output signature */, &object->wineD3DVertexShader, (IUnknown *)object);
 
         if (FAILED(hrc))
         {
@@ -2175,7 +2172,7 @@ static HRESULT WINAPI IDirect3DDevice8Impl_CreatePixelShader(LPDIRECT3DDEVICE8 i
 
     EnterCriticalSection(&d3d8_cs);
     hr = IWineD3DDevice_CreatePixelShader(This->WineD3DDevice, pFunction,
-            &object->wineD3DPixelShader, (IUnknown *)object);
+            NULL, &object->wineD3DPixelShader, (IUnknown *)object);
     if (FAILED(hr))
     {
         LeaveCriticalSection(&d3d8_cs);

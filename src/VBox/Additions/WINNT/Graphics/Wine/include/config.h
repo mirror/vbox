@@ -94,6 +94,12 @@
 /* Define to 1 if you have the `ffs' function. */
 #define HAVE_FFS 1
 
+/* Define to 1 if you have the `fnmatch' function. */
+#define HAVE_FNMATCH 1
+
+/* Define to 1 if you have the <fnmatch.h> header file. */
+#define HAVE_FNMATCH_H 1
+
 /* Define to 1 if you have the `finite' function. */
 #define HAVE_FINITE 1
 
@@ -1041,6 +1047,12 @@
 
 /* Define to the full name and version of this package. */
 #define PACKAGE_STRING "Wine 1.1.10"
+
+/* Define to 1 if you have the `z' library (-lz). */
+#define HAVE_ZLIB 1
+
+/* Define to 1 if you have the <zlib.h> header file. */
+#define HAVE_ZLIB_H 1
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "wine"

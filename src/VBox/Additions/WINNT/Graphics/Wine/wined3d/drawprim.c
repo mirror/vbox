@@ -43,6 +43,7 @@ WINE_DEFAULT_DEBUG_CHANNEL(d3d_draw);
 
 #define ceilf ceil
 
+/* GL locking is done by the caller */
 static void drawStridedFast(IWineD3DDevice *iface, GLenum primitive_type,
         UINT min_vertex_idx, UINT max_vertex_idx, UINT count, UINT idx_size,
         const void *idx_data, UINT start_idx)
@@ -79,6 +80,7 @@ static void drawStridedFast(IWineD3DDevice *iface, GLenum primitive_type,
  * Slower GL version which extracts info about each vertex in turn
  */
 
+/* GL locking is done by the caller */
 static void drawStridedSlow(IWineD3DDevice *iface, const struct wined3d_stream_info *si, UINT NumVertexes,
         GLenum glPrimType, const void *idxData, UINT idxSize, UINT minIndex, UINT startIdx)
 {
@@ -306,6 +308,7 @@ static void drawStridedSlow(IWineD3DDevice *iface, const struct wined3d_stream_i
     checkGLcall("glEnd and previous calls");
 }
 
+/* GL locking is done by the caller */
 static inline void send_attribute(IWineD3DDeviceImpl *This, WINED3DFORMAT format, const UINT index, const void *ptr)
 {
     switch(format)
@@ -408,6 +411,7 @@ static inline void send_attribute(IWineD3DDeviceImpl *This, WINED3DFORMAT format
     }
 }
 
+/* GL locking is done by the caller */
 static void drawStridedSlowVs(IWineD3DDevice *iface, const struct wined3d_stream_info *si, UINT numberOfVertices,
         GLenum glPrimitiveType, const void *idxData, UINT idxSize, UINT minIndex, UINT startIdx)
 {
@@ -468,6 +472,7 @@ static void drawStridedSlowVs(IWineD3DDevice *iface, const struct wined3d_stream
     glEnd();
 }
 
+/* GL locking is done by the caller */
 static inline void drawStridedInstanced(IWineD3DDevice *iface, const struct wined3d_stream_info *si,
         UINT numberOfVertices, GLenum glPrimitiveType, const void *idxData, UINT idxSize, UINT minIndex,
         UINT startIdx)
@@ -931,13 +936,11 @@ HRESULT tesselate_rectpatch(IWineD3DDeviceImpl *This,
     if(i == -1) {
         LEAVE_GL();
         ERR("Feedback failed. Expected %d elements back\n", buffer_size);
-        Sleep(10000);
         HeapFree(GetProcessHeap(), 0, feedbuffer);
         return WINED3DERR_DRIVERINTERNALERROR;
     } else if(i != buffer_size) {
         LEAVE_GL();
         ERR("Unexpected amount of elements returned. Expected %d, got %d\n", buffer_size, i);
-        Sleep(10000);
         HeapFree(GetProcessHeap(), 0, feedbuffer);
         return WINED3DERR_DRIVERINTERNALERROR;
     } else {

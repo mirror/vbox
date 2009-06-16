@@ -1391,6 +1391,9 @@ typedef enum {
 
 /* SetupDiGetWizardPage PageType values */
 #define SPWPT_SELECTDEVICE 0x00000001
+/* SetupUninstallOEMInf Flags values */
+#define SUOI_FORCEDELETE 0x00000001
+
 /* SetupDiGetWizardPage Flags values */
 #define SPWP_USE_DEVINFO_DATA 0x00000001
 

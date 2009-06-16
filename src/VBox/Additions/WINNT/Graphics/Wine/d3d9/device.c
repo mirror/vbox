@@ -860,8 +860,8 @@ static HRESULT  WINAPI  IDirect3DDevice9Impl_SetRenderTarget(LPDIRECT3DDEVICE9EX
 
 static HRESULT  WINAPI  IDirect3DDevice9Impl_GetRenderTarget(LPDIRECT3DDEVICE9EX iface, DWORD RenderTargetIndex, IDirect3DSurface9 **ppRenderTarget) {
     IDirect3DDevice9Impl *This = (IDirect3DDevice9Impl *)iface;
-    HRESULT hr = D3D_OK;
     IWineD3DSurface *pRenderTarget;
+    HRESULT hr;
 
     TRACE("(%p) Relay\n" , This);
 
@@ -872,13 +872,20 @@ static HRESULT  WINAPI  IDirect3DDevice9Impl_GetRenderTarget(LPDIRECT3DDEVICE9EX
     EnterCriticalSection(&d3d9_cs);
     hr=IWineD3DDevice_GetRenderTarget(This->WineD3DDevice,RenderTargetIndex,&pRenderTarget);
 
-    if (hr == D3D_OK && pRenderTarget != NULL) {
-        IWineD3DSurface_GetParent(pRenderTarget,(IUnknown**)ppRenderTarget);
-        IWineD3DSurface_Release(pRenderTarget);
-    } else {
-        FIXME("Call to IWineD3DDevice_GetRenderTarget failed\n");
+    if (FAILED(hr))
+    {
+        FIXME("Call to IWineD3DDevice_GetRenderTarget failed, hr %#x\n", hr);
+    }
+    else if (!pRenderTarget)
+    {
         *ppRenderTarget = NULL;
     }
+    else
+    {
+        IWineD3DSurface_GetParent(pRenderTarget, (IUnknown **)ppRenderTarget);
+        IWineD3DSurface_Release(pRenderTarget);
+    }
+
     LeaveCriticalSection(&d3d9_cs);
 
     return hr;
@@ -2004,7 +2011,8 @@ static HRESULT STDMETHODCALLTYPE device_parent_CreateSurface(IWineD3DDeviceParen
             "\tpool %#x, level %u, face %u, surface %p\n",
             iface, superior, width, height, format, usage, pool, level, face, surface);
 
-    if (pool == D3DPOOL_DEFAULT && !(usage & D3DUSAGE_DYNAMIC)) lockable = FALSE;
+    if (pool == WINED3DPOOL_DEFAULT && !(usage & D3DUSAGE_DYNAMIC))
+        lockable = FALSE;
 
     hr = IDirect3DDevice9Impl_CreateSurface((IDirect3DDevice9Ex *)This, width, height,
             d3dformat_from_wined3dformat(format), lockable, FALSE /* Discard */, level,
