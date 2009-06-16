@@ -182,6 +182,7 @@ typedef struct {
     int trackWindowVisibleRgn;
     char *spu_dir;
     int force_pbuffers;
+    int viewportHack;
 
     /* thread safety stuff */
     GLboolean threadSafe;
