@@ -303,15 +303,22 @@ def guestExec(ctx, machine, console, cmds):
 
 def monitorGuest(ctx, machine, console, dur):
     import time
+    import xpcom
     cb = ctx['global'].createCallback('IConsoleCallback', GuestMonitor, machine)
     console.registerCallback(cb)
     if dur == -1:
         # not infinity, but close enough
         dur = 100000
-    end = time.clock() + dur
-    while  time.clock() < end:
-        ctx['vb'].waitForEvents(100)
+    try:
+        end = time.time() + dur
+        while  time.time() < end:
+            ctx['global'].waitForEvents(500)
+    # We need to catch all exceptions here, otherwise callback will never be unregistered
+    except:
+        pass    
     console.unregisterCallback(cb)
+
+    
 
 def cmdExistingVm(ctx,mach,cmd,args):
     mgr=ctx['mgr']
@@ -623,7 +630,6 @@ def interpret(ctx):
     while True:
         try:
             cmd = raw_input("vbox> ")
-            vbox.waitForEvents(0)
             done = runCommand(ctx, cmd)
             if done != 0: break
         except KeyboardInterrupt:
@@ -661,6 +667,7 @@ def main(argv):
            'type':g_virtualBoxManager.type
            }
     interpret(ctx)
+    g_virtualBoxManager.deinit()
     del g_virtualBoxManager
 
 if __name__ == '__main__':

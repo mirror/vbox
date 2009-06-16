@@ -144,6 +144,15 @@ class PlatformMSCOM:
         exec (str,d,d)
         return d['result']
 
+    def waitForEvents(self, timeout):
+        # not really supported yet
+        pass
+
+    def deinit(self):
+        import pythoncom
+        pythoncom.CoUninitialize()
+        pass
+
 class PlatformXPCOM:
     def __init__(self, params):
         sys.path.append(VboxSdkDir+'/bindings/xpcom/python/')
@@ -191,6 +200,13 @@ class PlatformXPCOM:
         exec (str,d,d)
         return d['result']
 
+    def waitForEvents(self, timeout):
+        import xpcom
+        xpcom._xpcom.WaitForEvents(timeout)
+
+    def deinit(self):
+        import xpcom
+        xpcom._xpcom.DeinitCOM()
 
 class PlatformWEBSERVICE:
     def __init__(self, params):
@@ -235,6 +251,14 @@ class PlatformWEBSERVICE:
     def createCallback(self, iface, impl, arg):
         raise Exception("no callbacks for webservices")
 
+    def waitForEvents(self, timeout):
+        # Webservices cannot do that
+        pass
+
+    def deinit(self):
+        # should we do something about it?
+        pass
+
 class SessionManager:
     def __init__(self, mgr):
         self.mgr = mgr
@@ -268,8 +292,13 @@ class VirtualBoxManager:
         return  self.platform.getVirtualBox()
 
     def __del__(self):
+        deinit(self)
+
+    def deinit(self):
         if hasattr(self, "vbox"):
             del self.vbox
+        if hasattr(self, "platform"):
+            self.platform.deinit()
 
     def initPerThread(self):
         self.platform.initPerThread()
@@ -287,3 +316,6 @@ class VirtualBoxManager:
 
     def createCallback(self, iface, impl, arg):
         return self.platform.createCallback(iface, impl, arg)
+
+    def waitForEvents(self, timeout):
+        return self.platform.waitForEvents(timeout)
