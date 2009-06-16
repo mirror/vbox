@@ -944,6 +944,27 @@ ResumeExecution:
         goto end;
     }
 
+#ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
+    /*
+     * Exit to ring-3 preemption/work is pending.
+     *
+     * Interrupts are disabled before the call to make sure we don't miss any interrupt
+     * that would flag preemption (IPI, timer tick, ++). (Would've been nice to do this
+     * further down, but SVMR0CheckPendingInterrupt makes that impossible.)
+     *
+     * Note! Interrupts must be disabled done *before* we check for TLB flushes; TLB
+     *       shootdowns rely on this.
+     */
+    uOldEFlags = ASMIntDisableFlags();
+    if (RTThreadPreemptIsPending(NIL_RTTHREAD))
+    {
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitPreemptPending);
+        rc = VINF_EM_RAW_INTERRUPT;
+        goto end;
+    }
+    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
+#endif
+
     /* When external interrupts are pending, we should exit the VM when IF is set. */
     /* Note! *After* VM_FF_INHIBIT_INTERRUPTS check!!! */
     rc = SVMR0CheckPendingInterrupt(pVM, pVCpu, pVMCB, pCtx);
@@ -1017,25 +1038,7 @@ ResumeExecution:
         goto end;
     }
 
-#ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
-    /*
-     * Exit to ring-3 preemption/work is pending.
-     *
-     * Interrupts are disabled before the call to make sure we don't miss any interrupt
-     * that would flag preemption (IPI, timer tick, ++).
-     *
-     * Note! Interrupts must be disabled done *before* we check for TLB flushes; TLB
-     *       shootdowns rely on this.
-     */
-    uOldEFlags = ASMIntDisableFlags();
-    if (RTThreadPreemptIsPending(NIL_RTTHREAD))
-    {
-        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitPreemptPending);
-        rc = VINF_EM_RAW_INTERRUPT;
-        goto end;
-    }
-    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
-#else
+#ifndef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
     /* Disable interrupts to make sure a poke will interrupt execution.
      * This must be done *before* we check for TLB flushes; TLB shootdowns rely on this.
      */
