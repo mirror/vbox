@@ -3667,6 +3667,15 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
         cbOffset += cbExtent;
     }
 
+    if (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_ESX)
+    {
+        /* VirtualBox doesn't care, but VMWare ESX freaks out if the wrong
+         * controller type is set in an image. */
+        rc = vmdkDescDDBSetStr(pImage, &pImage->Descriptor, "ddb.adapterType", "lsilogic");
+        if (RT_FAILURE(rc))
+            return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not set controller type to lsilogic in '%s'"), pImage->pszFilename);
+    }
+
     const char *pszDescType = NULL;
     if (uImageFlags & VD_IMAGE_FLAGS_FIXED)
     {
