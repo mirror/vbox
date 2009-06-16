@@ -1519,6 +1519,6 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
     /* Note: if it's a PATM address, then we'll go back to raw mode regardless of the return code below. */
 
     /* Fall back to the recompiler */
-    return VINF_EM_RESCHEDULE_REM; /* (Heed the halted state if this is changed!) */
+    return HWACCMR3IsActive(pVCpu) ? VINF_EM_RESCHEDULE_HWACC : VINF_EM_RESCHEDULE_REM; /* (Heed the halted state if this is changed!) */
 }
 
