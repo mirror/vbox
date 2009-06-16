@@ -210,7 +210,6 @@ static ComPtr<IProgress> gProgress;
 
 static ULONG       gcMonitors = 1;
 static VBoxSDLFB  *gpFramebuffer[64];
-//static VBoxSDLFB  *gpFramebufferCurrent = NULL;
 static SDL_Cursor *gpDefaultCursor = NULL;
 #ifdef VBOXSDL_WITH_X11
 static Cursor      gpDefaultOrigX11Cursor;
@@ -2070,7 +2069,6 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         rc = gDisplay->GetFramebuffer(i, &dummyFb, &xOrigin, &yOrigin);
         gpFramebuffer[i]->setOrigin(xOrigin, yOrigin);
     }
-//    gpFramebufferCurrent = gpFramebuffer[0];
 
     // register a callback for global events
     callback = new VBoxSDLCallback();
@@ -2447,8 +2445,6 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                     }
                     case SDL_WINDOWEVENT_FOCUS_GAINED:
                     {
-                        /* XXX hack */
-//                        gpFramebufferCurrent = getFbFromWinId(event.window.windowID);
                         break;
                     }
                     default:
@@ -2603,7 +2599,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 #ifdef VBOX_WITH_SDL13
                     fb = getFbFromWinId(event.motion.windowID);
 #else
-                    fb = NULL;
+                    fb = gpFramebuffer[0];
 #endif
                     SendMouseEvent(fb, 0, 0, 0);
                 }
@@ -2662,7 +2658,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 #ifdef VBOX_WITH_SDL13
                     fb = getFbFromWinId(event.button.windowID);
 #else
-                    fb = NULL;
+                    fb = gpFramebuffer[0];
 #endif
                     SendMouseEvent(fb, dz, event.type == SDL_MOUSEBUTTONDOWN, bev->button);
                 }
@@ -4036,15 +4032,13 @@ static void SendMouseEvent(VBoxSDLFB *fb, int dz, int down, int button)
     bool abs;
 
 #ifdef VBOX_WITH_SDL13
-    if (!fb)
     {
         SDL_GetMouseState(0, &x, &y);
         RTPrintf("MouseEvent: Cannot find fb mouse = %d,%d\n", x, y);
         return;
     }
 #else
-    if (!fb)
-        fb = gpFramebuffer[0];
+    AssertRelease(fb != NULL);
 #endif
 
     /*
