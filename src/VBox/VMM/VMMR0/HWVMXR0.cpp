@@ -2000,7 +2000,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     RTGCUINTREG val;
     RTGCUINTREG exitReason = VMX_EXIT_INVALID;
     RTGCUINTREG instrError, cbInstr;
-    RTGCUINTPTR exitQualification;
+    RTGCUINTPTR exitQualification = 0;
     RTGCUINTPTR intInfo = 0; /* shut up buggy gcc 4 */
     RTGCUINTPTR errCode, instrInfo;
     bool        fSyncTPR = false;
