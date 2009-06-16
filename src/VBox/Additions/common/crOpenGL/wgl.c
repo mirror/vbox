@@ -360,7 +360,8 @@ BOOL WINAPI wglSwapLayerBuffers_prox( HDC hdc, UINT planes )
     return 0;
 }
 
-BOOL WINAPI wglChoosePixelFormatEXT_prox(HDC hdc, const int *piAttributes, const FLOAT *pfAttributes, UINT nMaxFormats, int *piFormats, UINT *nNumFormats)
+BOOL WINAPI wglChoosePixelFormatEXT_prox
+(HDC hdc, const int *piAttributes, const FLOAT *pfAttributes, UINT nMaxFormats, int *piFormats, UINT *nNumFormats)
 {
     int *pi;
     int wants_rgb = 0;
@@ -433,6 +434,20 @@ BOOL WINAPI wglChoosePixelFormatEXT_prox(HDC hdc, const int *piAttributes, const
                 pi++;
                 break;
 
+            case WGL_SUPPORT_OPENGL_ARB:
+            case WGL_DRAW_TO_WINDOW_ARB:
+            case WGL_ACCELERATION_ARB:
+                pi++;
+                break;
+
+            case WGL_PIXEL_TYPE_ARB:
+                if(pi[1]!=WGL_TYPE_RGBA_ARB) 
+                {
+                    crWarning("WGL_PIXEL_TYPE 0x%x not supported!", pi[1]);
+                    return 0;
+                }
+                pi++;
+                break;
 
             default:
                 crWarning( "wglChoosePixelFormatEXT: bad pi=0x%x", *pi );
@@ -440,27 +455,250 @@ BOOL WINAPI wglChoosePixelFormatEXT_prox(HDC hdc, const int *piAttributes, const
         }
     }
 
+    if (nNumFormats) *nNumFormats = 1;
+    if (nMaxFormats>0 && piFormats)
+    {
+        piFormats[0] = 1;
+    }
+
     return 1;
 }
 
-BOOL WINAPI wglGetPixelFormatAttribivEXT_prox(HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, int *piAttributes, int *pValues)
+BOOL WINAPI wglGetPixelFormatAttribivEXT_prox
+(HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, int *piAttributes, int *pValues)
 {
-    /* TODO */
+    UINT i;
+
+    if (!pValues || !piAttributes) return 0;
+
+    if ((nAttributes!=1) || (piAttributes && piAttributes[0]!=WGL_NUMBER_PIXEL_FORMATS_ARB))
+    {
+        if (iPixelFormat!=1)
+        {
+            crDebug("wglGetPixelFormatAttribivARB: bad pf:%i", iPixelFormat);
+            return 0;
+        }
+    }
+
+    for (i=0; i<nAttributes; ++i)
+    {
+        switch (piAttributes[i])
+        {
+            case WGL_NUMBER_PIXEL_FORMATS_ARB:
+                pValues[i] = 1;
+                break;
+            case WGL_DRAW_TO_WINDOW_ARB:
+            case WGL_SUPPORT_OPENGL_ARB:
+            case WGL_DOUBLE_BUFFER_ARB:
+            case WGL_STEREO_ARB:
+                pValues[i] = 1;
+                break;
+            case WGL_DRAW_TO_BITMAP_ARB:
+            case WGL_NEED_PALETTE_ARB:
+            case WGL_NEED_SYSTEM_PALETTE_ARB:
+            case WGL_SWAP_LAYER_BUFFERS_ARB:
+            case WGL_NUMBER_OVERLAYS_ARB:
+            case WGL_NUMBER_UNDERLAYS_ARB:
+            case WGL_TRANSPARENT_ARB:
+            case WGL_TRANSPARENT_RED_VALUE_ARB:
+            case WGL_TRANSPARENT_GREEN_VALUE_ARB:
+            case WGL_TRANSPARENT_BLUE_VALUE_ARB:
+            case WGL_TRANSPARENT_ALPHA_VALUE_ARB:
+            case WGL_TRANSPARENT_INDEX_VALUE_ARB:
+            case WGL_SHARE_DEPTH_ARB:
+            case WGL_SHARE_STENCIL_ARB:
+            case WGL_SHARE_ACCUM_ARB:
+            case WGL_SUPPORT_GDI_ARB:
+                pValues[i] = 0;
+                break;
+            case WGL_ACCELERATION_ARB:
+                pValues[i] = WGL_FULL_ACCELERATION_ARB;
+                break;
+            case WGL_SWAP_METHOD_ARB:
+                pValues[i] = WGL_SWAP_UNDEFINED_ARB;
+                break;
+            case WGL_PIXEL_TYPE_ARB:
+                pValues[i] = WGL_TYPE_RGBA_ARB;
+                break;
+            case WGL_COLOR_BITS_ARB:
+                pValues[i] = 24;
+                break;
+            case WGL_RED_BITS_ARB:
+            case WGL_GREEN_BITS_ARB:
+            case WGL_BLUE_BITS_ARB:
+            case WGL_ALPHA_BITS_ARB:
+                pValues[i] = 8;
+                break;
+            case WGL_RED_SHIFT_ARB:
+                pValues[i] = 24;
+                break;
+            case WGL_GREEN_SHIFT_ARB:
+                pValues[i] = 16;
+                break;
+            case WGL_BLUE_SHIFT_ARB:
+                pValues[i] = 8;
+                break;
+            case WGL_ALPHA_SHIFT_ARB:
+                pValues[i] = 0;
+                break;
+            case WGL_ACCUM_BITS_ARB:
+                pValues[i] = 0;
+                break;
+            case WGL_ACCUM_RED_BITS_ARB:
+                pValues[i] = 0;
+                break;
+            case WGL_ACCUM_GREEN_BITS_ARB:
+                pValues[i] = 0;
+                break;
+            case WGL_ACCUM_BLUE_BITS_ARB:
+                pValues[i] = 0;
+                break;
+            case WGL_ACCUM_ALPHA_BITS_ARB:
+                pValues[i] = 0;
+                break;
+            case WGL_DEPTH_BITS_ARB:
+                pValues[i] = 32;
+                break;
+            case WGL_STENCIL_BITS_ARB:
+                pValues[i] = 8;
+                break;
+            case WGL_AUX_BUFFERS_ARB:
+                pValues[i] = 0;
+                break;
+            case WGL_SAMPLE_BUFFERS_EXT:
+                pValues[i] = 1;
+                break;
+            case WGL_SAMPLES_EXT:
+                pValues[i] = 1;
+                break;
+            default:
+                crWarning("wglGetPixelFormatAttribivARB: bad attrib=0x%x", piAttributes[i]);
+                return 0;
+        }
+    }
 
     return 1;
 }
 
-BOOL WINAPI wglGetPixelFormatAttribfvEXT_prox(HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, int *piAttributes, int *pValues)
+BOOL WINAPI wglGetPixelFormatAttribfvEXT_prox
+(HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, int *piAttributes, float *pValues)
 {
-    /* TODO */
+    UINT i;
+
+    if (!pValues || !piAttributes) return 0;
+
+    if ((nAttributes!=1) || (piAttributes && piAttributes[0]!=WGL_NUMBER_PIXEL_FORMATS_ARB))
+    {
+        if (iPixelFormat!=1)
+        {
+            crDebug("wglGetPixelFormatAttribivARB: bad pf:%i", iPixelFormat);
+            return 0;
+        }
+    }
+
+    for (i=0; i<nAttributes; ++i)
+    {
+        switch (piAttributes[i])
+        {
+            case WGL_NUMBER_PIXEL_FORMATS_ARB:
+                pValues[i] = 1.f;
+                break;
+            case WGL_DRAW_TO_WINDOW_ARB:
+            case WGL_SUPPORT_OPENGL_ARB:
+            case WGL_DOUBLE_BUFFER_ARB:
+            case WGL_STEREO_ARB:
+                pValues[i] = 1.f;
+                break;
+            case WGL_DRAW_TO_BITMAP_ARB:
+            case WGL_NEED_PALETTE_ARB:
+            case WGL_NEED_SYSTEM_PALETTE_ARB:
+            case WGL_SWAP_LAYER_BUFFERS_ARB:
+            case WGL_NUMBER_OVERLAYS_ARB:
+            case WGL_NUMBER_UNDERLAYS_ARB:
+            case WGL_TRANSPARENT_ARB:
+            case WGL_TRANSPARENT_RED_VALUE_ARB:
+            case WGL_TRANSPARENT_GREEN_VALUE_ARB:
+            case WGL_TRANSPARENT_BLUE_VALUE_ARB:
+            case WGL_TRANSPARENT_ALPHA_VALUE_ARB:
+            case WGL_TRANSPARENT_INDEX_VALUE_ARB:
+            case WGL_SHARE_DEPTH_ARB:
+            case WGL_SHARE_STENCIL_ARB:
+            case WGL_SHARE_ACCUM_ARB:
+            case WGL_SUPPORT_GDI_ARB:
+                pValues[i] = 0.f;
+                break;
+            case WGL_ACCELERATION_ARB:
+                pValues[i] = WGL_FULL_ACCELERATION_ARB;
+                break;
+            case WGL_SWAP_METHOD_ARB:
+                pValues[i] = WGL_SWAP_UNDEFINED_ARB;
+                break;
+            case WGL_PIXEL_TYPE_ARB:
+                pValues[i] = WGL_TYPE_RGBA_ARB;
+                break;
+            case WGL_COLOR_BITS_ARB:
+                pValues[i] = 24.f;
+                break;
+            case WGL_RED_BITS_ARB:
+            case WGL_GREEN_BITS_ARB:
+            case WGL_BLUE_BITS_ARB:
+            case WGL_ALPHA_BITS_ARB:
+                pValues[i] = 8.f;
+                break;
+            case WGL_RED_SHIFT_ARB:
+                pValues[i] = 24.f;
+                break;
+            case WGL_GREEN_SHIFT_ARB:
+                pValues[i] = 16.f;
+                break;
+            case WGL_BLUE_SHIFT_ARB:
+                pValues[i] = 8.f;
+                break;
+            case WGL_ALPHA_SHIFT_ARB:
+                pValues[i] = 0.f;
+                break;
+            case WGL_ACCUM_BITS_ARB:
+                pValues[i] = 0.f;
+                break;
+            case WGL_ACCUM_RED_BITS_ARB:
+                pValues[i] = 0.f;
+                break;
+            case WGL_ACCUM_GREEN_BITS_ARB:
+                pValues[i] = 0.f;
+                break;
+            case WGL_ACCUM_BLUE_BITS_ARB:
+                pValues[i] = 0.f;
+                break;
+            case WGL_ACCUM_ALPHA_BITS_ARB:
+                pValues[i] = 0.f;
+                break;
+            case WGL_DEPTH_BITS_ARB:
+                pValues[i] = 32.f;
+                break;
+            case WGL_STENCIL_BITS_ARB:
+                pValues[i] = 8.f;
+                break;
+            case WGL_AUX_BUFFERS_ARB:
+                pValues[i] = 0.f;
+                break;
+            case WGL_SAMPLE_BUFFERS_EXT:
+                pValues[i] = 1.f;
+                break;
+            case WGL_SAMPLES_EXT:
+                pValues[i] = 1.f;
+                break;
+            default:
+                crWarning("wglGetPixelFormatAttribivARB: bad attrib=0x%x", piAttributes[i]);
+                return 0;
+        }
+    }
 
     return 1;
 }
 
 const GLubyte * WINAPI wglGetExtensionsStringEXT_prox( HDC hdc )
 {
-    /*static GLubyte *retval = "WGL_EXT_pixel_format WGL_ARB_multisample";*/
-    static GLubyte *retval = "WGL_ARB_multisample";
+    static GLubyte *retval = "WGL_EXT_pixel_format WGL_ARB_pixel_format WGL_ARB_multisample";
 
     (void) hdc;
 
