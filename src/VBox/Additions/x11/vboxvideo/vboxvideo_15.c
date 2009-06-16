@@ -244,7 +244,10 @@ VBOXCrtcResize(ScrnInfoPtr scrn, int width, int height)
         scrn->virtualX = width;
         scrn->virtualY = height;
         scrn->displayWidth = width;
-        VBOXDRIUpdateStride(scrn, pVBox);
+#ifdef VBOX_DRI
+        if (pVBox->useDRI)
+            VBOXDRIUpdateStride(scrn, pVBox);
+#endif
     }
     TRACE_LOG("returning %s\n", rc ? "TRUE" : "FALSE");
     return rc;
