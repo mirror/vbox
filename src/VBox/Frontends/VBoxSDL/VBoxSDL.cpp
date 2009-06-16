@@ -4031,8 +4031,8 @@ static void SendMouseEvent(VBoxSDLFB *fb, int dz, int down, int button)
     int  x, y, state, buttons;
     bool abs;
 
-    if (!fb)
 #ifdef VBOX_WITH_SDL13
+    if (!fb)
     {
         SDL_GetMouseState(0, &x, &y);
         RTPrintf("MouseEvent: Cannot find fb mouse = %d,%d\n", x, y);
