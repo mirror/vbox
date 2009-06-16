@@ -244,9 +244,6 @@ VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf, QWidget *
     mLeNewCompany->setMaxLength (50);
     mLeNewCompany->setValidator (new QRegExpValidator (nameExp, this));
 
-    mLeNewCountry->setMaxLength (50);
-    mLeNewCountry->setValidator (new QRegExpValidator (nameExp, this));
-
     mLeNewEmail->setMaxLength (50);
     mLeNewEmail->setValidator (new QRegExpValidator (emailExp, this));
 
@@ -255,6 +252,8 @@ VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf, QWidget *
 
     mLeNewPassword2->setMaxLength (20);
     mLeNewPassword2->setValidator (new QRegExpValidator (passwordExp, this));
+
+    populateCountries();
 
     /* Setup validation */
     mWvalReg = new QIWidgetValidator (mPageReg, this);
@@ -265,6 +264,7 @@ VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf, QWidget *
 
     connect (mRbOld, SIGNAL (toggled (bool)), this, SLOT (radioButtonToggled()));
     connect (mRbNew, SIGNAL (toggled (bool)), this, SLOT (radioButtonToggled()));
+    connect (mCbNewCountry, SIGNAL (currentIndexChanged (int)), mWvalReg, SLOT (revalidate()));
 
     /* Setup other connections */
     connect (vboxGlobal().mainWindow(), SIGNAL (closing()), this, SLOT (reject()));
@@ -301,6 +301,9 @@ void VBoxRegistrationDlg::retranslateUi()
 {
     /* Translate uic generated strings */
     Ui::VBoxRegistrationDlg::retranslateUi (this);
+
+    /* Translate the first element of countries list */
+    mCbNewCountry->setItemText (0, tr ("Select Country/Territory"));
 }
 
 void VBoxRegistrationDlg::radioButtonToggled()
@@ -312,7 +315,7 @@ void VBoxRegistrationDlg::radioButtonToggled()
     mLeNewFirstName->setEnabled (current == mRbNew);
     mLeNewLastName->setEnabled (current == mRbNew);
     mLeNewCompany->setEnabled (current == mRbNew);
-    mLeNewCountry->setEnabled (current == mRbNew);
+    mCbNewCountry->setEnabled (current == mRbNew);
     mLeNewEmail->setEnabled (current == mRbNew);
     mLeNewPassword->setEnabled (current == mRbNew);
     mLeNewPassword2->setEnabled (current == mRbNew);
@@ -329,7 +332,7 @@ void VBoxRegistrationDlg::accept()
     mLeNewFirstName->setEnabled (false);
     mLeNewLastName->setEnabled (false);
     mLeNewCompany->setEnabled (false);
-    mLeNewCountry->setEnabled (false);
+    mCbNewCountry->setEnabled (false);
     mLeNewEmail->setEnabled (false);
     mLeNewPassword->setEnabled (false);
     mLeNewPassword2->setEnabled (false);
@@ -433,7 +436,7 @@ void VBoxRegistrationDlg::registrationStart()
         url.addQueryItem ("firstname", mLeNewFirstName->text());
         url.addQueryItem ("lastname", mLeNewLastName->text());
         url.addQueryItem ("company", mLeNewCompany->text());
-        url.addQueryItem ("country", mLeNewCountry->text());
+        url.addQueryItem ("country", mCbNewCountry->currentText());
     }
 
     /* Registration */
@@ -474,7 +477,7 @@ void VBoxRegistrationDlg::revalidate (QIWidgetValidator *aWval)
     {
         /* Check for fields correctness */
         if (!isFieldValid (mLeNewFirstName) || !isFieldValid (mLeNewLastName) ||
-            !isFieldValid (mLeNewCompany) || !isFieldValid (mLeNewCountry) ||
+            !isFieldValid (mLeNewCompany) || !isFieldValid (mCbNewCountry) ||
             !isFieldValid (mLeNewEmail) ||
             !isFieldValid (mLeNewPassword) || !isFieldValid (mLeNewPassword2))
             valid = false;
@@ -499,6 +502,248 @@ void VBoxRegistrationDlg::onPageShow()
 {
     Assert (mPageStack->currentWidget() == mPageReg);
     mLeOldEmail->setFocus();
+}
+
+void VBoxRegistrationDlg::populateCountries()
+{
+    QStringList list ("Empty");
+    list << "Afghanistan"
+         << "Albania"
+         << "Algeria"
+         << "American Samoa"
+         << "Andorra"
+         << "Angola"
+         << "Anguilla"
+         << "Antartica"
+         << "Antigua & Barbuda"
+         << "Argentina"
+         << "Armenia"
+         << "Aruba"
+         << "Ascension Island"
+         << "Australia"
+         << "Austria"
+         << "Azerbaijan"
+         << "Bahamas"
+         << "Bahrain"
+         << "Bangladesh"
+         << "Barbados"
+         << "Belarus"
+         << "Belgium"
+         << "Belize"
+         << "Benin"
+         << "Bermuda"
+         << "Bhutan"
+         << "Bolivia"
+         << "Bosnia and Herzegovina"
+         << "Botswana"
+         << "Bouvet Island"
+         << "Brazil"
+         << "British Indian Ocean Territory"
+         << "Brunei Darussalam"
+         << "Bulgaria"
+         << "Burkina Faso"
+         << "Burundi"
+         << "Cambodia"
+         << "Cameroon"
+         << "Canada"
+         << "Cape Verde"
+         << "Cayman Islands"
+         << "Central African Republic"
+         << "Chad"
+         << "Chile"
+         << "China"
+         << "Christmas Island"
+         << "Cocos (Keeling) Islands"
+         << "Colombia"
+         << "Comoros"
+         << "Congo, Democratic People's Republic"
+         << "Congo, Republic of"
+         << "Cook Islands"
+         << "Costa Rica"
+         << "Cote d'Ivoire"
+         << "Croatia/Hrvatska"
+         << "Cyprus"
+         << "Czech Republic"
+         << "Denmark"
+         << "Djibouti"
+         << "Dominica"
+         << "Dominican Republic"
+         << "East Timor"
+         << "Ecuador"
+         << "Egypt"
+         << "El Salvador"
+         << "Equatorial Guinea"
+         << "Eritrea"
+         << "Estonia"
+         << "Ethiopia"
+         << "Falkland Islands (Malvina)"
+         << "Faroe Islands"
+         << "Fiji"
+         << "Finland"
+         << "France"
+         << "French Guiana"
+         << "French Polynesia"
+         << "French Southern Territories"
+         << "Gabon"
+         << "Gambia"
+         << "Georgia"
+         << "Germany"
+         << "Ghana"
+         << "Gibraltar"
+         << "Greece"
+         << "Greenland"
+         << "Grenada"
+         << "Guadeloupe"
+         << "Guam"
+         << "Guatemala"
+         << "Guernsey"
+         << "Guinea"
+         << "Guinea-Bissau"
+         << "Guyana"
+         << "Haiti"
+         << "Heard and McDonald Islands"
+         << "Holy See (City Vatican State)"
+         << "Honduras"
+         << "Hong Kong"
+         << "Hungary"
+         << "Iceland"
+         << "India"
+         << "Indonesia"
+         << "Iraq"
+         << "Ireland"
+         << "Isle of Man"
+         << "Israel"
+         << "Italy"
+         << "Jamaica"
+         << "Japan"
+         << "Jersey"
+         << "Jordan"
+         << "Kazakhstan"
+         << "Kenya"
+         << "Kiribati"
+         << "Korea, Republic of"
+         << "Kuwait"
+         << "Kyrgyzstan"
+         << "Lao People's Democratic Republic"
+         << "Latvia"
+         << "Lebanon"
+         << "Lesotho"
+         << "Liberia"
+         << "Libyan Arab Jamahiriya"
+         << "Liechtenstein"
+         << "Lithuania"
+         << "Luxembourg"
+         << "Macau"
+         << "Macedonia, Former Yugoslav Republic"
+         << "Madagascar"
+         << "Malawi"
+         << "Malaysia"
+         << "Maldives"
+         << "Mali"
+         << "Malta"
+         << "Marshall Islands"
+         << "Martinique"
+         << "Mauritania"
+         << "Mauritius"
+         << "Mayotte"
+         << "Mexico"
+         << "Micronesia, Federal State of"
+         << "Moldova, Republic of"
+         << "Monaco"
+         << "Mongolia"
+         << "Montserrat"
+         << "Morocco"
+         << "Mozambique"
+         << "Namibia"
+         << "Nauru"
+         << "Nepal"
+         << "Netherlands"
+         << "Netherlands Antilles"
+         << "New Caledonia"
+         << "New Zealand"
+         << "Nicaragua"
+         << "Niger"
+         << "Nigeria"
+         << "Niue"
+         << "Norfolk Island"
+         << "Northern Mariana Island"
+         << "Norway"
+         << "Oman"
+         << "Pakistan"
+         << "Palau"
+         << "Panama"
+         << "Papua New Guinea"
+         << "Paraguay"
+         << "Peru"
+         << "Philippines"
+         << "Pitcairn Island"
+         << "Poland"
+         << "Portugal"
+         << "Puerto Rico"
+         << "Qatar"
+         << "Reunion Island"
+         << "Romania"
+         << "Russian Federation"
+         << "Rwanda"
+         << "Saint Kitts and Nevis"
+         << "Saint Lucia"
+         << "Saint Vincent and the Grenadines"
+         << "San Marino"
+         << "Sao Tome & Principe"
+         << "Saudi Arabia"
+         << "Senegal"
+         << "Seychelles"
+         << "Sierra Leone"
+         << "Singapore"
+         << "Slovak Republic"
+         << "Slovenia"
+         << "Solomon Islands"
+         << "Somalia"
+         << "South Africa"
+         << "South Georgia and the South Sandwich Islands"
+         << "Spain"
+         << "Sri Lanka"
+         << "St Pierre and Miquelon"
+         << "St. Helena"
+         << "Suriname"
+         << "Svalbard And Jan Mayen Island"
+         << "Swaziland"
+         << "Sweden"
+         << "Switzerland"
+         << "Taiwan"
+         << "Tajikistan"
+         << "Tanzania"
+         << "Thailand"
+         << "Togo"
+         << "Tokelau"
+         << "Tonga"
+         << "Trinidad and Tobago"
+         << "Tunisia"
+         << "Turkey"
+         << "Turkmenistan"
+         << "Turks and Ciacos Islands"
+         << "Tuvalu"
+         << "US Minor Outlying Islands"
+         << "Uganda"
+         << "Ukraine"
+         << "United Arab Emirates"
+         << "United Kingdom"
+         << "United States"
+         << "Uruguay"
+         << "Uzbekistan"
+         << "Vanuatu"
+         << "Venezuela"
+         << "Vietnam"
+         << "Virgin Island (British)"
+         << "Virgin Islands (USA)"
+         << "Wallis And Futuna Islands"
+         << "Western Sahara"
+         << "Western Samoa"
+         << "Yemen"
+         << "Yugoslavia"
+         << "Zambia"
+         << "Zimbabwe";
+    mCbNewCountry->addItems (list);
 }
 
 /* This wrapper displays an error message box (unless aReason is QString::null)
@@ -526,10 +771,18 @@ void VBoxRegistrationDlg::finish()
     QIAbstractWizard::accept();
 }
 
-bool VBoxRegistrationDlg::isFieldValid (QLineEdit *aLe) const
+bool VBoxRegistrationDlg::isFieldValid (QWidget *aWidget) const
 {
-    QString text (aLe->text());
-    int position;
-    return aLe->validator()->validate (text, position) == QValidator::Acceptable;
+    if (QLineEdit *le = qobject_cast <QLineEdit*> (aWidget))
+    {
+        QString text (le->text());
+        int position;
+        return le->validator()->validate (text, position) == QValidator::Acceptable;
+    }
+    else if (QComboBox *cb = qobject_cast <QComboBox*> (aWidget))
+    {
+        return cb->currentIndex() > 0;
+    }
+    return false;
 }
 
