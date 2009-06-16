@@ -1157,7 +1157,10 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
             else
                 RawDescriptor.pPartitions[i].cbPartition =  partitions.aPartitions[i].uSize * 512;
             RawDescriptor.pPartitions[i].uPartitionDataStart = partitions.aPartitions[i].uPartDataStart * 512;
-            RawDescriptor.pPartitions[i].cbPartitionData = partitions.aPartitions[i].cPartDataSectors * 512;
+            /** @todo the clipping below isn't 100% accurate, as it should
+             * actually clip to the track size. However that's easier said
+             * than done as figuring out the track size is heuristics. */
+            RawDescriptor.pPartitions[i].cbPartitionData = RT_MIN(partitions.aPartitions[i].cPartDataSectors, 63) * 512;
             if (RawDescriptor.pPartitions[i].cbPartitionData)
             {
                 Assert (RawDescriptor.pPartitions[i].cbPartitionData -
