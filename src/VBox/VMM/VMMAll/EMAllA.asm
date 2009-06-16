@@ -226,6 +226,7 @@ BEGINPROC   EMEmulateLockAnd
 %ifdef RT_OS_WINDOWS
     mov     rax, r8                     ; eax = size of parameters
 %else   ; !RT_OS_WINDOWS
+    mov     r9, rcx                     ; r9 = eflags result ptr
     mov     rax, rdx                    ; rax = size of parameters
     mov     rcx, rdi                    ; rcx = first parameter
     mov     rdx, rsi                    ; rdx = second parameter
@@ -272,11 +273,7 @@ BEGINPROC   EMEmulateLockAnd
     pushf
 %ifdef RT_ARCH_AMD64
     pop    rax
- %ifdef RT_OS_WINDOWS
     mov    [r9], eax
- %else  ; !RT_OS_WINDOWS
-    mov    [rcx], eax
- %endif ; !RT_OS_WINDOWS
 %else   ; !RT_ARCH_AMD64
     mov     eax, [esp + 14h + 4]
     pop     dword [eax]
@@ -407,6 +404,7 @@ BEGINPROC   EMEmulateLockOr
 %ifdef RT_OS_WINDOWS
     mov     rax, r8                     ; eax = size of parameters
 %else   ; !RT_OS_WINDOWS
+    mov     r9, rcx                     ; r9 = eflags result ptr
     mov     rax, rdx                    ; rax = size of parameters
     mov     rcx, rdi                    ; rcx = first parameter
     mov     rdx, rsi                    ; rdx = second parameter
@@ -453,11 +451,7 @@ BEGINPROC   EMEmulateLockOr
     pushf
 %ifdef RT_ARCH_AMD64
     pop    rax
- %ifdef RT_OS_WINDOWS
     mov    [r9], eax
- %else  ; !RT_OS_WINDOWS
-    mov    [rcx], eax
- %endif ; !RT_OS_WINDOWS
 %else   ; !RT_ARCH_AMD64
     mov     eax, [esp + 14h + 4]
     pop     dword [eax]
@@ -588,6 +582,7 @@ BEGINPROC   EMEmulateLockXor
 %ifdef RT_OS_WINDOWS
     mov     rax, r8                     ; eax = size of parameters
 %else   ; !RT_OS_WINDOWS
+    mov     r9, rcx                     ; r9 = eflags result ptr
     mov     rax, rdx                    ; rax = size of parameters
     mov     rcx, rdi                    ; rcx = first parameter
     mov     rdx, rsi                    ; rdx = second parameter
@@ -634,11 +629,7 @@ BEGINPROC   EMEmulateLockXor
     pushf
 %ifdef RT_ARCH_AMD64
     pop    rax
- %ifdef RT_OS_WINDOWS
     mov    [r9], eax
- %else  ; !RT_OS_WINDOWS
-    mov    [rcx], eax
- %endif ; !RT_OS_WINDOWS
 %else   ; !RT_ARCH_AMD64
     mov     eax, [esp + 14h + 4]
     pop     dword [eax]
