@@ -4740,7 +4740,7 @@ static DECLCALLBACK(int) pcnetAttach(PPDMDEVINS pDevIns, unsigned iLUN)
         pThis->cLinkDownReported = 0;
         pThis->aCSR[0] |= RT_BIT(15) | RT_BIT(13); /* ERR | CERR (this is probably wrong) */
         pThis->Led.Asserted.s.fError = pThis->Led.Actual.s.fError = 1;
-        TMTimerSetMillies(pThis->pTimerRestore, 20000);
+        TMTimerSetMillies(pThis->pTimerRestore, 5000);
     }
 
     PDMCritSectLeave(&pThis->CritSect);
