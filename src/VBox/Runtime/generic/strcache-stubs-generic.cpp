@@ -41,6 +41,7 @@
 #include <iprt/string.h>
 
 
+
 RTDECL(int) RTStrCacheCreate(PRTSTRCACHE phStrCache, const char *pszName)
 {
     AssertCompile(sizeof(RTSTRCACHE) == sizeof(RTMEMPOOL));
@@ -52,9 +53,10 @@ RTDECL(int) RTStrCacheCreate(PRTSTRCACHE phStrCache, const char *pszName)
 
 RTDECL(int) RTStrCacheDestroy(RTSTRCACHE hStrCache)
 {
-    if (hStrCache == NIL_RTSTRCACHE)
+    if (    hStrCache == NIL_RTSTRCACHE
+        ||  hStrCache == RTSTRCACHE_DEFAULT)
         return VINF_SUCCESS;
-    return VERR_INVALID_HANDLE;
+    return RTMemPoolDestroy((RTMEMPOOL)hStrCache);
 }
 
 
