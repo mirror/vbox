@@ -2223,8 +2223,8 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
             case NetworkAttachmentType_Bridged:
             {
 #if !defined(VBOX_WITH_NETFLT) && defined(RT_OS_LINUX)
-                Assert ((int)pConsole->maTapFD[ulInstance] >= 0);
-                if ((int)pConsole->maTapFD[ulInstance] >= 0)
+                Assert ((int)pThis->maTapFD[uInstance] >= 0);
+                if ((int)pThis->maTapFD[uInstance] >= 0)
                 {
                     if (fSniffer)
                     {
@@ -2240,7 +2240,7 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
                     RC_CHECK();
                     rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);
                     RC_CHECK();
-                    rc = CFGMR3InsertInteger(pCfg, "FileHandle", pConsole->maTapFD[ulInstance]);
+                    rc = CFGMR3InsertInteger(pCfg, "FileHandle", pThis->maTapFD[uInstance]);
                     RC_CHECK();
                 }
 #elif defined(VBOX_WITH_NETFLT)
@@ -2276,7 +2276,7 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
                 char *pszColon = (char *)memchr(szTrunk, ':', sizeof(szTrunk));
                 if (!pszColon)
                 {
-                    hrc = networkAdapter->Detach();
+                    hrc = aNetworkAdapter->Detach();
                     H();
                     return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
                                       N_("Malformed host interface networking name '%ls'"),
@@ -2630,7 +2630,7 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
                 H();
 # else
                 Bstr HifName;
-                hrc = networkAdapter->COMGETTER(HostInterface)(HifName.asOutParam());
+                hrc = aNetworkAdapter->COMGETTER(HostInterface)(HifName.asOutParam());
                 if(FAILED(hrc))
                 {
                     LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(HostInterface) failed, hrc (0x%x)", hrc));
