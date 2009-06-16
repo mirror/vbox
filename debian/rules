@@ -251,7 +251,7 @@ endif
 	    $(if $(HEADLESS),,usr/bin/VBox      usr/bin/VBoxSDL) \
 	    $(if $(ose),,usr/bin/VBox           usr/bin/VBoxVRDP) \
 	    usr/bin/VBox                        usr/bin/VBoxHeadless \
-	    usr/bin/VBox                        usr/bin/vboxwebsrv \
+	    $(if $(NOWEBSVC),,usr/bin/VBox      usr/bin/vboxwebsrv) \
 	    usr/share/virtualbox/src/vboxdrv    usr/src/vboxdrv-$(ver) \
 	    usr/share/virtualbox/src/vboxnetflt usr/src/vboxnetflt-$(ver) \
 	    usr/share/virtualbox/src/vboxnetadp usr/src/vboxnetadp-$(ver)
