@@ -44,7 +44,7 @@ ose      := 1
 NOMODS   ?= $(ose)
 NOQT     ?= $(HEADLESS)
 NOWEBSVC ?= $(ose)
-NOWINE   := $(if $(NODOCS),$(if $(STAGEDISO),1,),)
+NOWINE   := $(if $(NODOCS),$(if $(STAGEDISO),1,),)$(ose)
 
 ifneq ($(wildcard $(verfile)),)
 include $(verfile)
