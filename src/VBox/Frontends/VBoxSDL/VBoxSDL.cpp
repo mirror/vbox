@@ -2959,7 +2959,7 @@ leave:
     if (gDisplay)
     {
         for (unsigned i = 0; i < gcMonitors; i++)
-            gDisplay->SetFramebuffer(0, NULL);
+            gDisplay->SetFramebuffer(i, NULL);
     }
     gMouse = NULL;
     gKeyboard = NULL;
