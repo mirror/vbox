@@ -69,11 +69,11 @@ private slots:
 
 private:
 
-    void postRequest (const QUrl &aUrl);
+    void populateCountries();
     void abortRequest (const QString &aReason);
     void finish();
 
-    bool isFieldValid (QLineEdit *aLe) const;
+    bool isFieldValid (QWidget *aWidget) const;
 
     VBoxRegistrationDlg **mSelf;
     QIWidgetValidator    *mWvalReg;
