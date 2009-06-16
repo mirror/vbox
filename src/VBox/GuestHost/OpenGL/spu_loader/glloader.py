@@ -63,6 +63,7 @@ static CRDLL *aglDll = NULL;
 #define GLLOADER_APIENTRY
 #endif
 
+/*#define CR_NO_GL_SYSTEM_PATH 1*/
 
 /*
  * Add an entry to the SPUNamedFunctionTable
@@ -152,8 +153,12 @@ __findSystemLib( const char *provided_system_path, char *lib )
 #if !defined(__linux__) && !defined(SunOS) && !defined(__FreeBSD__)
 	crStrcat( system_path, "/" );
 #endif
+#if !defined(CR_NO_GL_SYSTEM_PATH)
 	crStrcat( system_path, lib );
-	dll = crDLLOpen( system_path, 1 /*resolveGlobal*/ );
+	dll = crDLLOpen(system_path, 1 /*resolveGlobal*/);
+#else
+	dll = crDLLOpen(lib, 1 /*resolveGlobal*/);
+#endif
 	return dll;
 }
 
