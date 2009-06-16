@@ -129,6 +129,9 @@ wined3d_DEFS         = __WINESRC__ WINE_UNICODE_API="" _REENTRANT WINE_NOWINSOCK
     BIN_TO_DLLDIR=\"\" \
     LIB_TO_DATADIR=\"\" \
     BIN_TO_DATADIR=\"\"
+ifneq ($(KBUILD_TYPE),debug)
+ wined3d_DEFS        += WINE_NO_DEBUG_MSGS
+endif
 wined3d_INCS         := $(PATH_SUB_CURRENT)/include
 wined3d_SOURCES      := \
     wined3d/arb_program_shader.c \
@@ -182,6 +185,9 @@ VBoxD3D8_DEFS         = __WINESRC__ WINE_UNICODE_API="" _REENTRANT WINE_NOWINSOC
     BIN_TO_DLLDIR=\"\" \
     LIB_TO_DATADIR=\"\" \
     BIN_TO_DATADIR=\"\"
+ifneq ($(KBUILD_TYPE),debug)
+ VBoxD3D8_DEFS       += WINE_NO_DEBUG_MSGS
+endif
 VBoxD3D8_INCS         := $(PATH_SUB_CURRENT)/include
 VBoxD3D8_SOURCES      := \
     d3d8/cubetexture.c \
