@@ -2646,21 +2646,6 @@
       </param>
     </method>
 
-    <method name="waitForEvents">
-      <desc>
-        Blocking wait for events to happen and process them, if any.
-        One may wish to call this method from the main even loop 
-        to wait for acitivity from VirtualBox, such as callback calling.
-      </desc>
-      <param name="timeout" type="long" dir="in">
-        <desc>
-          Wait timeout in milliseconds.
-          Specify -1 for an indefinite wait.
-          Specify 0 for immediate return if no events to process.
-        </desc>
-      </param>
-    </method>
-
     <method name="waitForPropertyChange">
       <desc>
         Blocks the caller until any of the properties represented by the

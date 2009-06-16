@@ -53,6 +53,9 @@
 #include "nsIComponentManagerObsolete.h"
 #include "nsIConsoleService.h"
 #include "nspr.h" // PR_fprintf
+#ifdef VBOX
+#include "nsEventQueueUtils.h"
+#endif
 
 #ifdef XP_WIN
 #ifndef WIN32_LEAN_AND_MEAN
@@ -488,6 +491,87 @@ PyObject *LogConsoleMessage(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
+#ifdef VBOX
+static nsIEventQueue* g_mainEventQ = nsnull;
+
+static PyObject* 
+PyXPCOMMethod_WaitForEvents(PyObject *self, PyObject *args)
+{
+  PRInt32 aTimeout;
+
+  if (!PyArg_ParseTuple(args, "i", &aTimeout))
+    return NULL;
+
+  nsIEventQueue* q = g_mainEventQ;
+  PRBool hasEvents = PR_FALSE;
+  nsresult rc;
+  PRInt32 fd, result = 0;
+
+  if (q == nsnull) 
+    return NULL;
+
+  if (aTimeout == 0)
+    goto ok;
+
+  rc = q->PendingEvents(&hasEvents);
+  if (NS_FAILED (rc))
+    return NULL;
+
+  if (hasEvents)
+    goto ok;
+  
+  fd = q->GetEventQueueSelectFD();
+  if (fd < 0 && aTimeout < 0)
+  {
+    /* fallback */
+    PLEvent *pEvent = NULL;
+    rc = q->WaitForEvent(&pEvent);
+    if (NS_SUCCEEDED(rc))
+      q->HandleEvent(pEvent);
+    goto ok;
+  }
+
+  /* Cannot perform timed wait otherwise */
+  if (fd < 0)
+    return NULL;
+  
+  
+  {
+    fd_set fdsetR, fdsetE;
+    struct timeval tv;
+    
+    FD_ZERO(&fdsetR);
+    FD_SET(fd, &fdsetR);
+
+    fdsetE = fdsetR;
+    if (aTimeout > 0)
+      {
+        tv.tv_sec = (PRInt64)aTimeout / 1000;
+        tv.tv_usec = ((PRInt64)aTimeout % 1000) * 1000;
+      }
+    
+    /** @todo: What to do for XPCOM platforms w/o select() ? */
+    Py_BEGIN_ALLOW_THREADS;
+    int n = select(fd + 1, &fdsetR, NULL, &fdsetE, aTimeout < 0 ? NULL : &tv);
+    result = (n == 0) ?  1 :  0;
+    Py_END_ALLOW_THREADS;
+  }
+ ok:
+  q->ProcessPendingEvents();
+
+  return PyInt_FromLong(result);
+}
+
+static void deinitVBoxPython();
+
+static PyObject* 
+PyXPCOMMethod_DeinitCOM(PyObject *self, PyObject *args)
+{
+  deinitVBoxPython();
+  return PyInt_FromLong(0);
+}
+#endif
+
 extern PYXPCOM_EXPORT PyObject *PyXPCOMMethod_IID(PyObject *self, PyObject *args);
 
 static struct PyMethodDef xpcom_methods[]=
@@ -513,6 +597,10 @@ static struct PyMethodDef xpcom_methods[]=
 	{"LogConsoleMessage", LogConsoleMessage, 1, "Write a message to the xpcom console service"},
 	{"MakeVariant", PyXPCOMMethod_MakeVariant, 1},
 	{"GetVariantValue", PyXPCOMMethod_GetVariantValue, 1},
+#ifdef VBOX
+        {"WaitForEvents", PyXPCOMMethod_WaitForEvents, 1},
+        {"DeinitCOM", PyXPCOMMethod_DeinitCOM, 1},
+#endif
 	// These should no longer be used - just use the logging.getLogger('pyxpcom')...
 	{ NULL }
 };
@@ -649,7 +737,22 @@ initVBoxPython() {
 
     rc = com::Initialize();
 
+    if (NS_SUCCEEDED(rc))
+    {
+      NS_GetMainEventQ (&g_mainEventQ);
+    }
+
     init_xpcom();
   }
+}
+
+static 
+void deinitVBoxPython()
+{
+
+  if (g_mainEventQ)
+    NS_RELEASE(g_mainEventQ); 
+  
+  com::Shutdown();
 }
 #endif
