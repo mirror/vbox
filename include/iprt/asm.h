@@ -4362,7 +4362,7 @@ DECLINLINE(bool) ASMAtomicUoReadBool(volatile bool *pf)
  * Atomically read a value which size might differ
  * between platforms or compilers, unordered.
  *
- * @param   pu      Pointer to the variable to update.
+ * @param   pu      Pointer to the variable to read.
  * @param   puRes   Where to store the result.
  */
 #define ASMAtomicUoReadSize(pu, puRes) \
