@@ -4211,11 +4211,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
 
     rc2 = VMXActivateVMCS(pVCpu->hwaccm.s.vmx.pVMCSPhys);
     AssertRCReturn(rc2, rc2);
-#ifdef RT_OS_WINDOWS
-    Assert(ASMGetFlags() & X86_EFL_IF);
-#else
     Assert(!(ASMGetFlags() & X86_EFL_IF));
-#endif
     return rc;
 }
 
