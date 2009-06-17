@@ -2212,7 +2212,7 @@ ResumeExecution:
     /* Note the 32 bits exception for AMD (X86_CPUID_AMD_FEATURE_ECX_CR8L), but that appears missing in Intel CPUs */
     /* Note: we can't do this in LoadGuestState as PDMApicGetTPR can jump back to ring 3 (lock)!!!!! */
     /**
-     * @todo reduce overhead
+     * @todo query and update the TPR only when it could have been changed (mmio access & wrmsr (x2apic))
      */
     if (fSetupTPRCaching)
     {
