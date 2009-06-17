@@ -627,6 +627,7 @@ static const struct tos_t tcptos[] =
 u_int8_t
 tcp_tos(struct socket *so)
 {
+#ifndef VBOX_WITH_SLIRP_ALIAS
     int i = 0;
 
     while(tcptos[i].tos)
@@ -639,7 +640,7 @@ tcp_tos(struct socket *so)
         }
         i++;
     }
-
+#endif
     return 0;
 }
 
