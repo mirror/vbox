@@ -855,7 +855,7 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     SVM_VMCB   *pVMCB;
     bool        fSyncTPR = false;
     unsigned    cResume = 0;
-    uint8_t     u8LastVTPR;
+    uint8_t     u8LastTPR;
     PHWACCM_CPUINFO pCpu = 0;
     RTCCUINTREG uOldEFlags = ~(RTCCUINTREG)0;
 #ifdef VBOX_STRICT
@@ -983,9 +983,9 @@ ResumeExecution:
         bool fPending;
 
         /* TPR caching in CR8 */
-        int rc = PDMApicGetTPR(pVCpu, &u8LastVTPR, &fPending);
+        int rc = PDMApicGetTPR(pVCpu, &u8LastTPR, &fPending);
         AssertRC(rc);
-        pVMCB->ctrl.IntCtrl.n.u8VTPR = u8LastVTPR;
+        pVMCB->ctrl.IntCtrl.n.u8VTPR = u8LastTPR;
 
         if (fPending)
         {
@@ -1377,7 +1377,9 @@ ResumeExecution:
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.paStatExitReasonR0[exitCode & MASK_EXITREASON_STAT]);
 #endif
 
-    if (fSyncTPR)
+    /* Sync back the TPR if it was changed. */
+    if (    fSyncTPR
+        &&  u8LastTPR != pVMCB->ctrl.IntCtrl.n.u8VTPR)
     {
         rc = PDMApicSetTPR(pVCpu, pVMCB->ctrl.IntCtrl.n.u8VTPR);
         AssertRC(rc);
