@@ -75,7 +75,8 @@ VBoxOGLcrutil_SOURCES       = \
 	util/vboxhgcm.c \
 	$(VBOX_PATH_CROGL_GENFILES)/debug_opcodes.c
 VBoxOGLcrutil_SOURCES.win.x86 = \
-	util/util.def
+	util/util.def \
+	util/util.rc
 VBoxOGLcrutil_LIBS.win = \
 	$(PATH_SDK_DXSDK_LIB)/ddraw.lib \
 	$(PATH_SDK_DXSDK_LIB)/dxguid.lib
@@ -463,7 +464,8 @@ VBoxOGLerrorspu_SOURCES = \
 	$(VBOX_PATH_CROGL_GENFILES)/errorspu.c \
 	error/errorspu_init.c
 VBoxOGLerrorspu_SOURCES.win.x86 = \
-	error/error.def
+	error/error.def \
+	error/errorspu.rc
 VBoxOGLerrorspu_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/errorspu.c
 VBoxOGLerrorspu_LIBS = \
