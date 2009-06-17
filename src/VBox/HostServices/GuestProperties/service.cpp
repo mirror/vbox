@@ -942,6 +942,9 @@ int Service::getNotification(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms,
         || cchBuf < 1
        )
         rc = VERR_INVALID_PARAMETER;
+    if (RT_SUCCESS(rc))
+        LogFlow(("    pszPatterns=%s, u64Timestamp=%llu\n", pszPatterns,
+                 u64Timestamp));
 
     /*
      * If no timestamp was supplied or no notification was found in the queue
