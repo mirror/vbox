@@ -1960,16 +1960,18 @@ void pgmPoolMonitorModifiedClearAll(PVM pVM)
  *
  * @returns VBox status code.
  * @param   pVM     The VM handle.
- * @param   pvUser  Unused parameter
+ * @param   pVCpu   The VMCPU for the EMT we're being called on. Unused.
+ * @param   pvUser  Unused parameter.
+ *
  * @remark  Should only be used when monitoring is available, thus placed in
- *          the PGMPOOL_WITH_MONITORING #ifdef.
+ *          the PGMPOOL_WITH_MONITORING \#ifdef.
  */
-DECLCALLBACK(int) pgmPoolClearAll(PVM pVM, void *pvUser)
+DECLCALLBACK(int) pgmPoolClearAll(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
-    NOREF(pvUser);
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     STAM_PROFILE_START(&pPool->StatClearAll, c);
     LogFlow(("pgmPoolClearAll: cUsedPages=%d\n", pPool->cUsedPages));
+    NOREF(pvUser); NOREF(pVCpu);
 
     pgmLock(pVM);
 
@@ -2108,6 +2110,7 @@ int pgmPoolSyncCR3(PVMCPU pVCpu)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     LogFlow(("pgmPoolSyncCR3\n"));
+
     /*
      * When monitoring shadowed pages, we reset the modification counters on CR3 sync.
      * Occasionally we will have to clear all the shadow page tables because we wanted
@@ -2117,15 +2120,17 @@ int pgmPoolSyncCR3(PVMCPU pVCpu)
 # ifdef IN_RING3 /* Don't flush in ring-0 or raw mode, it's taking too long. */
     if (ASMBitTestAndClear(&pVCpu->pgm.s.fSyncFlags, PGM_SYNC_CLEAR_PGM_POOL_BIT))
     {
-        VMMR3AtomicExecuteHandler(pVM, pgmPoolClearAll, NULL);
+        int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmPoolClearAll, NULL);
+        AssertRC(rc);
+    }
 # else  /* !IN_RING3 */
     if (pVCpu->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL)
     {
         LogFlow(("SyncCR3: PGM_SYNC_CLEAR_PGM_POOL is set -> VINF_PGM_SYNC_CR3\n"));
         VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3); /** @todo no need to do global sync, right? */
         return VINF_PGM_SYNC_CR3;
-# endif /* !IN_RING3 */
     }
+# endif /* !IN_RING3 */
     else
         pgmPoolMonitorModifiedClearAll(pVM);
 
