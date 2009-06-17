@@ -85,8 +85,8 @@ if test "$currentzone" = "global"; then
     echo "Configuring services and drivers..."
 
     # Web service
-    if test -f /var/svc/manifest/application/virtualbox/webservice.xml; then
-        /usr/sbin/svccfg import /var/svc/manifest/application/virtualbox/webservice.xml
+    if test -f /var/svc/manifest/application/virtualbox/virtualbox-webservice.xml; then
+        /usr/sbin/svccfg import /var/svc/manifest/application/virtualbox/virtualbox-webservice.xml
         /usr/sbin/svcadm disable -s svc:/application/virtualbox/webservice:default
     fi
 
@@ -110,8 +110,8 @@ if test "$currentzone" = "global"; then
     fi
 
     # Zone access service
-    if test -f /var/svc/manifest/application/virtualbox/zoneaccess.xml; then
-        /usr/sbin/svccfg import /var/svc/manifest/application/virtualbox/zoneaccess.xml
+    if test -f /var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml; then
+        /usr/sbin/svccfg import /var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml
         /usr/sbin/svcadm enable -s svc:/application/virtualbox/zoneaccess
     fi
 
