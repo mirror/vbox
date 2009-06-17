@@ -140,7 +140,6 @@ if test "$rc" -eq 0; then
 fi
 
 rc2=0
-# Enable Zone access service (note IPS auto-prefixes "virtualbox-" to the filename...)
 if test -f "/var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml"; then
     /usr/sbin/svccfg import /var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml
     rc2=$?
