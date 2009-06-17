@@ -118,10 +118,24 @@ typedef enum VMMCALLHOST
  * @returns VBox status code.
  * @param   pVM     Pointer to the shared VM structure.
  * @param   pvUser  User specified argument
+ *
+ * @todo missing prefix.
  */
 typedef DECLCALLBACK(int) FNATOMICHANDLER(PVM pVM, void *pvUser);
 /** Pointer to a FNMMATOMICHANDLER(). */
 typedef FNATOMICHANDLER *PFNATOMICHANDLER;
+
+/**
+ * Rendezvous callback.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   pVCpu       The handle of the calling virtual CPU.
+ * @param   pvUser      The user argument.
+ */
+typedef DECLCALLBACK(int) FNVMMEMTRENDEZVOUS(PVM pVM, PVMCPU pVCpu, void *pvUser);
+/** Pointer to a rendezvous callback function. */
+typedef FNVMMEMTRENDEZVOUS *PFNVMMEMTRENDEZVOUS;
 
 
 VMMDECL(RTRCPTR)     VMMGetStackRC(PVM pVM);
@@ -177,6 +191,23 @@ VMMR3DECL(void)     VMMR3YieldResume(PVM pVM);
 VMMR3DECL(void)     VMMR3SendSipi(PVM pVM, VMCPUID idCpu, uint32_t uVector);
 VMMR3DECL(void)     VMMR3SendInitIpi(PVM pVM, VMCPUID idCpu);
 VMMR3DECL(int)      VMMR3AtomicExecuteHandler(PVM pVM, PFNATOMICHANDLER pfnHandler, void *pvUser);
+VMMR3DECL(int)      VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS pfnRendezvous, void *pvUser);
+/** @defgroup grp_VMMR3EmtRendezvous_fFlags     VMMR3EmtRendezvous flags
+ *  @{ */
+/** Execution type mask. */
+#define VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK        UINT32_C(0x00000003)
+/** Invalid execution type. */
+#define VMMEMTRENDEZVOUS_FLAGS_TYPE_INVALID     UINT32_C(0)
+/** Let the EMTs execute the callback one by one (in no particular order). */
+#define VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE  UINT32_C(1)
+/** Let all the EMTs execute the callback at the same time. */
+#define VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE UINT32_C(2)
+/** Only execute the callback on one EMT (no particular one). */
+#define VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE        UINT32_C(3)
+/** The valid flags. */
+#define VMMEMTRENDEZVOUS_FLAGS_VALID_MASK       VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK
+/** @} */
+VMMR3DECL(void)     VMMR3EmtRendezvousFF(PVM pVM, PVMCPU pVCpu);
 VMMR3DECL(int)      VMMR3ReadR0Stack(PVM pVM, VMCPUID idCpu, RTHCUINTPTR pAddress, void *pvBuf, size_t cbRead);
 /** @} */
 #endif /* IN_RING3 */

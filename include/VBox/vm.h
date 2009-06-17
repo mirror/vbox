@@ -253,24 +253,32 @@ typedef struct VMCPU
  *  restarted... */
 #define VM_FF_TM_VIRTUAL_SYNC               RT_BIT_32(2)
 /** PDM Queues are pending. */
-#define VM_FF_PDM_QUEUES_BIT                3
 #define VM_FF_PDM_QUEUES                    RT_BIT_32(VM_FF_PDM_QUEUES_BIT)
+/** The bit number for VM_FF_PDM_QUEUES. */
+#define VM_FF_PDM_QUEUES_BIT                3
 /** PDM DMA transfers are pending. */
-#define VM_FF_PDM_DMA_BIT                   4
 #define VM_FF_PDM_DMA                       RT_BIT_32(VM_FF_PDM_DMA_BIT)
+/** The bit number for VM_FF_PDM_DMA. */
+#define VM_FF_PDM_DMA_BIT                   4
 /** This action forces the VM to call DBGF so DBGF can service debugger
  * requests in the emulation thread.
  * This action flag stays asserted till DBGF clears it.*/
-#define VM_FF_DBGF_BIT                      8
 #define VM_FF_DBGF                          RT_BIT_32(VM_FF_DBGF_BIT)
+/** The bit number for VM_FF_DBGF. */
+#define VM_FF_DBGF_BIT                      8
 /** This action forces the VM to service pending requests from other
  * thread or requests which must be executed in another context. */
 #define VM_FF_REQUEST                       RT_BIT_32(9)
 /** Terminate the VM immediately. */
 #define VM_FF_TERMINATE                     RT_BIT_32(10)
 /** Reset the VM. (postponed) */
-#define VM_FF_RESET_BIT                     11
 #define VM_FF_RESET                         RT_BIT_32(VM_FF_RESET_BIT)
+/** The bit number for VM_FF_RESET. */
+#define VM_FF_RESET_BIT                     11
+/** EMT rendezvous in VMM. */
+#define VM_FF_EMT_RENDEZVOUS                RT_BIT_32(VM_FF_EMT_RENDEZVOUS_BIT)
+#define VM_FF_EMT_RENDEZVOUS_BIT            12
+
 /** PGM needs to allocate handy pages. */
 #define VM_FF_PGM_NEED_HANDY_PAGES          RT_BIT_32(18)
 /** PGM is out of memory.
@@ -278,8 +286,9 @@ typedef struct VMCPU
  * loops. */
 #define VM_FF_PGM_NO_MEMORY                 RT_BIT_32(19)
 /** REM needs to be informed about handler changes. */
-#define VM_FF_REM_HANDLER_NOTIFY_BIT        29
 #define VM_FF_REM_HANDLER_NOTIFY            RT_BIT_32(VM_FF_REM_HANDLER_NOTIFY_BIT)
+/** The bit number for VM_FF_REM_HANDLER_NOTIFY. */
+#define VM_FF_REM_HANDLER_NOTIFY_BIT        29
 /** Suspend the VM - debug only. */
 #define VM_FF_DEBUG_SUSPEND                 RT_BIT_32(31)
 
@@ -305,8 +314,9 @@ typedef struct VMCPU
 /** Check for pending TLB shootdown actions. */
 #define VMCPU_FF_TLB_SHOOTDOWN              RT_BIT_32(18)
 /** Check for pending TLB flush action. */
-#define VMCPU_FF_TLB_FLUSH_BIT              19
 #define VMCPU_FF_TLB_FLUSH                  RT_BIT_32(VMCPU_FF_TLB_FLUSH_BIT)
+/** The bit number for VMCPU_FF_TLB_FLUSH. */
+#define VMCPU_FF_TLB_FLUSH_BIT              19
 /** Check the interupt and trap gates */
 #define VMCPU_FF_TRPM_SYNC_IDT              RT_BIT_32(20)
 /** Check Guest's TSS ring 0 stack */
@@ -325,18 +335,18 @@ typedef struct VMCPU
 #define VMCPU_FF_TO_R3                      RT_BIT_32(28)
 
 /** Externally VM forced actions. Used to quit the idle/wait loop. */
-#define VM_FF_EXTERNAL_SUSPENDED_MASK           (VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_REQUEST)
+#define VM_FF_EXTERNAL_SUSPENDED_MASK           (VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_REQUEST | VM_FF_EMT_RENDEZVOUS)
 /** Externally VMCPU forced actions. Used to quit the idle/wait loop. */
 #define VMCPU_FF_EXTERNAL_SUSPENDED_MASK        (VMCPU_FF_REQUEST)
 
 /** Externally forced VM actions. Used to quit the idle/wait loop. */
-#define VM_FF_EXTERNAL_HALTED_MASK              (VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA)
+#define VM_FF_EXTERNAL_HALTED_MASK              (VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA | VM_FF_EMT_RENDEZVOUS)
 /** Externally forced VMCPU actions. Used to quit the idle/wait loop. */
 #define VMCPU_FF_EXTERNAL_HALTED_MASK           (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_REQUEST | VMCPU_FF_TIMER)
 
 /** High priority VM pre-execution actions. */
 #define VM_FF_HIGH_PRIORITY_PRE_MASK            (  VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_TM_VIRTUAL_SYNC | VM_FF_DEBUG_SUSPEND \
-                                                 | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY)
+                                                 | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY | VM_FF_EMT_RENDEZVOUS)
 /** High priority VMCPU pre-execution actions. */
 #define VMCPU_FF_HIGH_PRIORITY_PRE_MASK         (  VMCPU_FF_TIMER | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_PGM_SYNC_CR3 \
                                                  | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_TRPM_SYNC_IDT \
@@ -354,12 +364,12 @@ typedef struct VMCPU
 #define VMCPU_FF_HIGH_PRIORITY_POST_MASK        (VMCPU_FF_PDM_CRITSECT|VMCPU_FF_CSAM_PENDING_ACTION)
 
 /** Normal priority VM post-execution actions. */
-#define VM_FF_NORMAL_PRIORITY_POST_MASK         (VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_RESET | VM_FF_PGM_NO_MEMORY)
+#define VM_FF_NORMAL_PRIORITY_POST_MASK         (VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_RESET | VM_FF_PGM_NO_MEMORY | VM_FF_EMT_RENDEZVOUS)
 /** Normal priority VMCPU post-execution actions. */
 #define VMCPU_FF_NORMAL_PRIORITY_POST_MASK      (VMCPU_FF_CSAM_SCAN_PAGE)
 
 /** Normal priority VM actions. */
-#define VM_FF_NORMAL_PRIORITY_MASK              (VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA | VM_FF_REM_HANDLER_NOTIFY)
+#define VM_FF_NORMAL_PRIORITY_MASK              (VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA | VM_FF_REM_HANDLER_NOTIFY | VM_FF_EMT_RENDEZVOUS)
 /** Normal priority VMCPU actions. */
 #define VMCPU_FF_NORMAL_PRIORITY_MASK           (VMCPU_FF_REQUEST)
 

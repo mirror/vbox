@@ -87,6 +87,7 @@
 #include <iprt/alloc.h>
 #include <iprt/asm.h>
 #include <iprt/time.h>
+#include <iprt/semaphore.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/stdarg.h>
@@ -135,6 +136,10 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
      * Init basic VM VMM members.
      */
     pVM->vmm.s.offVM = RT_OFFSETOF(VM, vmm);
+    pVM->vmm.s.hEvtRendezvousEnterOneByOne      = NIL_RTSEMEVENT;
+    pVM->vmm.s.hEvtMulRendezvousEnterAllAtOnce  = NIL_RTSEMEVENTMULTI;
+    pVM->vmm.s.hEvtMulRendezvousDone            = NIL_RTSEMEVENTMULTI;
+    pVM->vmm.s.hEvtRendezvousDoneCaller         = NIL_RTSEMEVENT;
     int rc = CFGMR3QueryU32(CFGMR3GetRoot(pVM), "YieldEMTInterval", &pVM->vmm.s.cYieldEveryMillies);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pVM->vmm.s.cYieldEveryMillies = 23; /* Value arrived at after experimenting with the grub boot prompt. */
@@ -143,9 +148,17 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
         AssertMsgRCReturn(rc, ("Configuration error. Failed to query \"YieldEMTInterval\", rc=%Rrc\n", rc), rc);
 
     /*
-     * Initialize the VMM sync critical section.
+     * Initialize the VMM sync critical section and semaphores.
      */
     rc = RTCritSectInit(&pVM->vmm.s.CritSectSync);
+    AssertRCReturn(rc, rc);
+    rc = RTSemEventCreate(&pVM->vmm.s.hEvtRendezvousEnterOneByOne);
+    AssertRCReturn(rc, rc);
+    rc = RTSemEventMultiCreate(&pVM->vmm.s.hEvtMulRendezvousEnterAllAtOnce);
+    AssertRCReturn(rc, rc);
+    rc = RTSemEventMultiCreate(&pVM->vmm.s.hEvtMulRendezvousDone);
+    AssertRCReturn(rc, rc);
+    rc = RTSemEventCreate(&pVM->vmm.s.hEvtRendezvousDoneCaller);
     AssertRCReturn(rc, rc);
 
     /* GC switchers are enabled by default. Turned off by HWACCM. */
@@ -648,6 +661,14 @@ VMMR3DECL(int) VMMR3Term(PVM pVM)
     }
 
     RTCritSectDelete(&pVM->vmm.s.CritSectSync);
+    RTSemEventDestroy(pVM->vmm.s.hEvtRendezvousEnterOneByOne);
+    pVM->vmm.s.hEvtRendezvousEnterOneByOne = NIL_RTSEMEVENT;
+    RTSemEventMultiDestroy(pVM->vmm.s.hEvtMulRendezvousEnterAllAtOnce);
+    pVM->vmm.s.hEvtMulRendezvousEnterAllAtOnce = NIL_RTSEMEVENTMULTI;
+    RTSemEventMultiDestroy(pVM->vmm.s.hEvtMulRendezvousDone);
+    pVM->vmm.s.hEvtMulRendezvousDone = NIL_RTSEMEVENTMULTI;
+    RTSemEventDestroy(pVM->vmm.s.hEvtRendezvousDoneCaller);
+    pVM->vmm.s.hEvtRendezvousDoneCaller = NIL_RTSEMEVENT;
 
 #ifdef VBOX_STRICT_VMM_STACK
     /*
@@ -1297,6 +1318,8 @@ DECLCALLBACK(int) vmmR3SyncVCpu(PVM pVM)
  * @param   pVM         The VM to operate on.
  * @param   pfnHandler  Callback handler
  * @param   pvUser      User specified parameter
+ *
+ * @thread EMT
  */
 VMMR3DECL(int) VMMR3AtomicExecuteHandler(PVM pVM, PFNATOMICHANDLER pfnHandler, void *pvUser)
 {
@@ -1324,6 +1347,256 @@ VMMR3DECL(int) VMMR3AtomicExecuteHandler(PVM pVM, PFNATOMICHANDLER pfnHandler, v
 
     rc = pfnHandler(pVM, pvUser);
     RTCritSectLeave(&pVM->vmm.s.CritSectSync);
+    return rc;
+}
+
+
+/**
+ * Count returns and have the last non-caller EMT wake up the caller.
+ *
+ * @param   pVM                 The VM handle.
+ */
+DECL_FORCE_INLINE(void) vmmR3EmtRendezvousNonCallerReturn(PVM pVM)
+{
+    uint32_t cReturned = ASMAtomicIncU32(&pVM->vmm.s.cRendezvousEmtsReturned);
+    if (cReturned == pVM->cCPUs - 1U)
+    {
+        int rc = RTSemEventSignal(pVM->vmm.s.hEvtRendezvousDoneCaller);
+        AssertLogRelRC(rc);
+    }
+}
+
+
+/**
+ * Common worker for VMMR3EmtRendezvous and VMMR3EmtRendezvousFF.
+ *
+ * @param   pVM                 The VM handle.
+ * @param   pVCpu               The VMCPU structure for the calling EMT.
+ * @param   fIsCaller           Whether we're the VMMR3EmtRendezvous caller or
+ *                              not.
+ * @param   fFlags              The flags.
+ * @param   pfnRendezvous       The callback.
+ * @param   pvUser              The user argument for the callback.
+ */
+static void vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool fIsCaller,
+                                     uint32_t fFlags, PFNVMMEMTRENDEZVOUS pfnRendezvous, void *pvUser)
+{
+    int rc;
+
+    /*
+     * Enter, the last EMT triggers the next callback phase.
+     */
+    uint32_t cEntered = ASMAtomicIncU32(&pVM->vmm.s.cRendezvousEmtsEntered);
+    if (cEntered != pVM->cCPUs)
+    {
+        if ((fFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE)
+        {
+            /* Wait for our turn. */
+            rc = RTSemEventWait(pVM->vmm.s.hEvtRendezvousEnterOneByOne, RT_INDEFINITE_WAIT);
+            AssertLogRelRC(rc);
+        }
+        else if ((fFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE)
+        {
+            /* Wait for the last EMT to arrive and wake everyone up. */
+            rc = RTSemEventMultiWait(pVM->vmm.s.hEvtMulRendezvousEnterAllAtOnce, RT_INDEFINITE_WAIT);
+            AssertLogRelRC(rc);
+        }
+        else
+        {
+            Assert((fFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE);
+
+            /*
+             * The execute once is handled specially to optimize the code flow.
+             *
+             * The last EMT to arrive will perform the callback and the other
+             * EMTs will wait on the Done/DoneCaller semaphores (instead of
+             * the EnterOneByOne/AllAtOnce) in the meanwhile. When the callback
+             * returns, that EMT will initiate the normal return sequence.
+             */
+            if (!fIsCaller)
+            {
+                rc = RTSemEventMultiWait(pVM->vmm.s.hEvtMulRendezvousDone, RT_INDEFINITE_WAIT);
+                AssertLogRelRC(rc);
+
+                vmmR3EmtRendezvousNonCallerReturn(pVM);
+            }
+            return;
+        }
+    }
+    else
+    {
+        /*
+         * All EMTs are waiting, clear the FF and take action according to the
+         * execution method.
+         */
+        VM_FF_CLEAR(pVM, VM_FF_EMT_RENDEZVOUS);
+
+        if ((fFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE)
+        {
+            /* Wake up everyone. */
+            rc = RTSemEventMultiSignal(pVM->vmm.s.hEvtMulRendezvousEnterAllAtOnce);
+            AssertLogRelRC(rc);
+        }
+        /* else: execute the handler on the current EMT and wake up one or more threads afterwards. */
+    }
+
+
+    /*
+     * Do the callback and update the status if necessary.
+     */
+    rc = pfnRendezvous(pVM, pVCpu, pvUser);
+    if (rc != VINF_SUCCESS)
+    {
+        int32_t i32RendezvousStatus;
+        do
+        {
+            i32RendezvousStatus = ASMAtomicUoReadS32(&pVM->vmm.s.i32RendezvousStatus);
+            if (    RT_FAILURE(i32RendezvousStatus)
+                ||  (   i32RendezvousStatus != VINF_SUCCESS
+                     && RT_SUCCESS(rc)))
+                break;
+        } while (!ASMAtomicCmpXchgS32(&pVM->vmm.s.i32RendezvousStatus, rc, i32RendezvousStatus));
+    }
+
+    /*
+     * Increment the done counter and take action depending on whether we're
+     * the last to finish callback execution.
+     */
+    uint32_t cDone = ASMAtomicIncU32(&pVM->vmm.s.cRendezvousEmtsDone);
+    if (    cDone != pVM->cCPUs
+        &&  (fFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) != VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE)
+    {
+        /* Signal the next EMT? */
+        if ((fFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE)
+        {
+            rc = RTSemEventSignal(pVM->vmm.s.hEvtRendezvousEnterOneByOne);
+            AssertLogRelRC(rc);
+        }
+
+        /* Wait for the rest to finish (the caller waits on hEvtRendezvousDoneCaller). */
+        if (!fIsCaller)
+        {
+            rc = RTSemEventMultiWait(pVM->vmm.s.hEvtMulRendezvousDone, RT_INDEFINITE_WAIT);
+            AssertLogRelRC(rc);
+        }
+    }
+    else
+    {
+        /* Callback execution is all done, tell the rest to return. */
+        rc = RTSemEventMultiSignal(pVM->vmm.s.hEvtMulRendezvousDone);
+        AssertLogRelRC(rc);
+    }
+
+    if (!fIsCaller)
+        vmmR3EmtRendezvousNonCallerReturn(pVM);
+}
+
+
+/**
+ * Called in response to VM_FF_EMT_RENDEZVOUS.
+ *
+ * @param   pVM         The VM handle
+ * @param   pVCpu       The handle of the calling EMT.
+ *
+ * @thread  EMT
+ */
+VMMR3DECL(void) VMMR3EmtRendezvousFF(PVM pVM, PVMCPU pVCpu)
+{
+    vmmR3EmtRendezvousCommon(pVM, pVCpu, false /* fIsCaller */, pVM->vmm.s.fRendezvousFlags,
+                             pVM->vmm.s.pfnRendezvous, pVM->vmm.s.pvRendezvousUser);
+}
+
+
+/**
+ * EMT rendezvous.
+ *
+ * Gathers all the EMTs and execute some code on each of them, either in a one
+ * by one fashion or all at once.
+ *
+ * @returns VBox status code. This will be the first error or, if all succeed,
+ *          the first informational status code.
+ * @retval  VERR_VM_THREAD_NOT_EMT if the caller is not an EMT.
+ *
+ * @param   pVM             The VM handle.
+ * @param   fFlags          Flags indicating execution methods. See
+ *                          grp_VMMR3EmtRendezvous_fFlags.
+ * @param   pfnRendezvous   The callback.
+ * @param   pvUser          User argument for the callback.
+ *
+ * @thread  EMT
+ */
+VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS pfnRendezvous, void *pvUser)
+{
+    /*
+     * Validate input.
+     */
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    AssertReturn(pVCpu, VERR_VM_THREAD_NOT_EMT);
+    AssertMsg(   (fFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) != VMMEMTRENDEZVOUS_FLAGS_TYPE_INVALID
+              && !(fFlags & ~VMMEMTRENDEZVOUS_FLAGS_VALID_MASK), ("%#x\n", fFlags));
+
+    int rc;
+    if (pVM->cCPUs == 1)
+        /*
+         * Shortcut for the single EMT case.
+         */
+        rc = pfnRendezvous(pVM, pVCpu, pvUser);
+    else
+    {
+        /*
+         * Spin lock. If busy, wait for the other EMT to finish while keeping a
+         * lookout of the RENDEZVOUS FF.
+         */
+        while (!ASMAtomicCmpXchgU32(&pVM->vmm.s.u32RendezvousLock, 0x77778888, 0))
+        {
+            if (VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS))
+                VMMR3EmtRendezvousFF(pVM, pVCpu);
+        }
+        Assert(!VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS));
+
+        /*
+         * Clear the slate. This is a semaphore ping-pong orgy. :-)
+         */
+        rc = RTSemEventWait(pVM->vmm.s.hEvtRendezvousEnterOneByOne, 0);         AssertLogRelMsg(rc == VERR_TIMEOUT || rc == VINF_SUCCESS, ("%Rrc\n", rc));
+        rc = RTSemEventMultiReset(pVM->vmm.s.hEvtMulRendezvousEnterAllAtOnce);  AssertLogRelRC(rc);
+        rc = RTSemEventMultiReset(pVM->vmm.s.hEvtMulRendezvousDone);            AssertLogRelRC(rc);
+        rc = RTSemEventWait(pVM->vmm.s.hEvtRendezvousDoneCaller, 0);            AssertLogRelMsg(rc == VERR_TIMEOUT || rc == VINF_SUCCESS, ("%Rrc\n", rc));
+        ASMAtomicWriteU32(&pVM->vmm.s.cRendezvousEmtsEntered, 0);
+        ASMAtomicWriteU32(&pVM->vmm.s.cRendezvousEmtsDone, 0);
+        ASMAtomicWriteU32(&pVM->vmm.s.cRendezvousEmtsReturned, 0);
+        ASMAtomicWriteS32(&pVM->vmm.s.i32RendezvousStatus, VINF_SUCCESS);
+        ASMAtomicWritePtr((void * volatile *)&pVM->vmm.s.pfnRendezvous, (void *)(uintptr_t)pfnRendezvous);
+        ASMAtomicWritePtr(&pVM->vmm.s.pvRendezvousUser, pvUser);
+        ASMAtomicWriteU32(&pVM->vmm.s.fRendezvousFlags, fFlags);
+
+        /*
+         * Set the FF and poke the other EMTs.
+         */
+        VM_FF_SET(pVM, VM_FF_EMT_RENDEZVOUS);
+        VMR3NotifyGlobalFFU(pVM->pUVM, VMNOTIFYFF_FLAGS_POKE);
+
+        /*
+         * Do the same ourselves.
+         */
+        vmmR3EmtRendezvousCommon(pVM, pVCpu, true /* fIsCaller */, fFlags, pfnRendezvous, pvUser);
+
+        /*
+         * The caller waits for the other EMTs to be done and return before doing
+         * the cleanup. This makes away with wakeup / reset races we would otherwise
+         * risk in the multiple release event semaphore code (hEvtRendezvousDoneCaller).
+         */
+        rc = RTSemEventWait(pVM->vmm.s.hEvtRendezvousDoneCaller, RT_INDEFINITE_WAIT);
+        AssertLogRelRC(rc);
+
+        /*
+         * Get the return code and clean up a little bit.
+         */
+        rc = pVM->vmm.s.i32RendezvousStatus;
+        ASMAtomicWritePtr((void * volatile *)&pVM->vmm.s.pfnRendezvous, NULL);
+
+        ASMAtomicWriteU32(&pVM->vmm.s.u32RendezvousLock, 0);
+    }
+
     return rc;
 }
 
@@ -1759,6 +2032,7 @@ static DECLCALLBACK(void) vmmR3InfoFF(PVM pVM, PCDBGFINFOHLP pHlp, const char *p
     PRINT_FLAG(VM_FF_,REQUEST);
     PRINT_FLAG(VM_FF_,TERMINATE);
     PRINT_FLAG(VM_FF_,RESET);
+    PRINT_FLAG(VM_FF_,EMT_RENDEZVOUS);
     PRINT_FLAG(VM_FF_,PGM_NEED_HANDY_PAGES);
     PRINT_FLAG(VM_FF_,PGM_NO_MEMORY);
     PRINT_FLAG(VM_FF_,REM_HANDLER_NOTIFY);

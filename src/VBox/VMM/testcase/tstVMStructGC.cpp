@@ -881,28 +881,43 @@ int main()
     GEN_CHECK_OFF(VMM, pfnCallTrampolineRC);
     GEN_CHECK_OFF(VMM, pfnCPUMRCResumeGuest);
     GEN_CHECK_OFF(VMM, pfnCPUMRCResumeGuestV86);
-    GEN_CHECK_OFF(VMMCPU, iLastGZRc);
-    GEN_CHECK_OFF(VMMCPU, pbEMTStackR3);
-    GEN_CHECK_OFF(VMMCPU, pbEMTStackRC);
-    GEN_CHECK_OFF(VMMCPU, pbEMTStackBottomRC);
     GEN_CHECK_OFF(VMM, pRCLoggerRC);
     GEN_CHECK_OFF(VMM, pRCLoggerR3);
-#ifdef LOG_ENABLED
-    GEN_CHECK_OFF(VMMCPU, pR0LoggerR0);
-    GEN_CHECK_OFF(VMMCPU, pR0LoggerR3);
-#endif
     GEN_CHECK_OFF(VMM, cbRCLogger);
     GEN_CHECK_OFF(VMM, pYieldTimer);
     GEN_CHECK_OFF(VMM, cYieldResumeMillies);
     GEN_CHECK_OFF(VMM, cYieldEveryMillies);
+    GEN_CHECK_OFF(VMM, CritSectSync);
+    GEN_CHECK_OFF(VMM, hEvtRendezvousEnterOneByOne);
+    GEN_CHECK_OFF(VMM, hEvtMulRendezvousEnterAllAtOnce);
+    GEN_CHECK_OFF(VMM, hEvtMulRendezvousDone);
+    GEN_CHECK_OFF(VMM, hEvtRendezvousDoneCaller);
+    GEN_CHECK_OFF(VMM, pfnRendezvous);
+    GEN_CHECK_OFF(VMM, pvRendezvousUser);
+    GEN_CHECK_OFF(VMM, fRendezvousFlags);
+    GEN_CHECK_OFF(VMM, cRendezvousEmtsEntered);
+    GEN_CHECK_OFF(VMM, cRendezvousEmtsDone);
+    GEN_CHECK_OFF(VMM, cRendezvousEmtsReturned);
+    GEN_CHECK_OFF(VMM, i32RendezvousStatus);
+    GEN_CHECK_OFF(VMM, u32RendezvousLock);
+    GEN_CHECK_OFF(VMM, szRing0AssertMsg1);
+    GEN_CHECK_OFF(VMM, szRing0AssertMsg2);
+    GEN_CHECK_OFF(VMM, StatRunRC);
+    GEN_CHECK_OFF(VMM, StatRZCallPGMLock);
+    GEN_CHECK_OFF(VMMCPU, iLastGZRc);
+    GEN_CHECK_OFF(VMMCPU, pbEMTStackR3);
+    GEN_CHECK_OFF(VMMCPU, pbEMTStackRC);
+    GEN_CHECK_OFF(VMMCPU, pbEMTStackBottomRC);
+#ifdef LOG_ENABLED
+    GEN_CHECK_OFF(VMMCPU, pR0LoggerR0);
+    GEN_CHECK_OFF(VMMCPU, pR0LoggerR3);
+#endif
     GEN_CHECK_OFF(VMMCPU, enmCallHostOperation);
     GEN_CHECK_OFF(VMMCPU, rcCallHost);
     GEN_CHECK_OFF(VMMCPU, u64CallHostArg);
     GEN_CHECK_OFF(VMMCPU, CallHostR0JmpBuf);
     GEN_CHECK_OFF(VMMCPU, CallHostR0JmpBuf.SpCheck);
     GEN_CHECK_OFF(VMMCPU, CallHostR0JmpBuf.SpResume);
-    GEN_CHECK_OFF(VMM, StatRunRC);
-    GEN_CHECK_OFF(VMM, StatRZCallPGMLock);
 
     GEN_CHECK_SIZE(RTPINGPONG);
     GEN_CHECK_SIZE(RTCRITSECT);
