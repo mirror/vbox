@@ -2003,8 +2003,8 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     RTGCUINTPTR exitQualification = 0;
     RTGCUINTPTR intInfo = 0; /* shut up buggy gcc 4 */
     RTGCUINTPTR errCode, instrInfo;
-    bool        fSyncTPR = false;
     bool        fSetupTPRCaching = false;
+    uint8_t     u8LastTPR = 0;
     PHWACCM_CPUINFO pCpu = 0;
     RTCCUINTREG uOldEFlags = ~(RTCCUINTREG)0;
     unsigned    cResume = 0;
@@ -2223,7 +2223,7 @@ ResumeExecution:
         int rc = PDMApicGetTPR(pVCpu, &u8TPR, &fPending);
         AssertRC(rc);
         /* The TPR can be found at offset 0x80 in the APIC mmio page. */
-        pVCpu->hwaccm.s.vmx.pVAPIC[0x80] = u8TPR << 4; /* bits 7-4 contain the task priority */
+        u8LastTPR = pVCpu->hwaccm.s.vmx.pVAPIC[0x80] = u8TPR << 4; /* bits 7-4 contain the task priority */
 
         /* Two options here:
          * - external interrupt pending, but masked by the TPR value.
@@ -2233,9 +2233,6 @@ ResumeExecution:
          */
         rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TPR_THRESHOLD, (fPending) ? u8TPR : 0);
         AssertRC(rc);
-
-        /* Always sync back the TPR; we should optimize this though */ /** @todo optimize TPR sync. */
-        fSyncTPR = true;
     }
 
 #if defined(HWACCM_VTX_WITH_EPT) && defined(LOG_ENABLED)
@@ -2425,7 +2422,9 @@ ResumeExecution:
     Log2(("Interruption error code %d\n", (uint32_t)errCode));
     Log2(("IntInfo = %08x\n", (uint32_t)intInfo));
 
-    if (fSyncTPR)
+    /* Sync back the TPR if it was changed. */
+    if (    fSetupTPRCaching
+        &&  u8LastTPR != pVCpu->hwaccm.s.vmx.pVAPIC[0x80])
     {
         rc = PDMApicSetTPR(pVCpu, pVCpu->hwaccm.s.vmx.pVAPIC[0x80] >> 4);
         AssertRC(rc);
