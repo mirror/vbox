@@ -3380,6 +3380,7 @@ VMMDECL(void) EMRemLock(PVM pVM)
     if (!PDMCritSectIsInitialized(&pVM->em.s.CritSectREM))
         return;     /* early init */
 
+    Assert(!PGMIsLockOwner(pVM) && !IOMIsLockOwner(pVM));
     int rc = PDMCritSectEnter(&pVM->em.s.CritSectREM, VERR_SEM_BUSY);
     AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
 }
