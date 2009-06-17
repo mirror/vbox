@@ -322,7 +322,8 @@ VBoxOGLarrayspu_SOURCES       = \
 	array/arrayspu_config.c \
 	array/arrayspu_init.c
 VBoxOGLarrayspu_SOURCES.win   = \
-	array/arrayspu.def
+	array/arrayspu.def \
+	array/arrayspu.rc
 VBoxOGLarrayspu_LIBS          = \
 	$(VBOX_LIB_OGL_CRUTIL) \
 	$(PATH_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
@@ -338,7 +339,8 @@ VBoxOGLpassthroughspu_SOURCES     = \
 	passthrough/passthroughspu_init.c \
 	$(VBOX_PATH_CROGL_GENFILES)/passthroughspu.c
 VBoxOGLpassthroughspu_SOURCES.win = \
-	passthrough/passthrough.def
+	passthrough/passthrough.def \
+	passthrough/passthroughspu.rc
 VBoxOGLpassthroughspu_CLEAN       = \
 	$(VBOX_PATH_CROGL_GENFILES)/passthroughspu.c
 VBoxOGLpassthroughspu_LIBS        = \
@@ -379,7 +381,8 @@ VBoxOGLpackspu_SOURCES    = \
 	$(VBOX_PATH_CROGL_GENFILES)/packspu_flush.c \
 	$(VBOX_PATH_CROGL_GENFILES)/packspu_beginend.c
 VBoxOGLpackspu_SOURCES.win = \
-	pack/pack.def
+	pack/pack.def \
+	pack/packspu.rc
 VBoxOGLpackspu_CLEAN       = \
 	$(VBOX_PATH_CROGL_GENFILES)/packspu_proto.h \
 	$(VBOX_PATH_CROGL_GENFILES)/packspu.c \
@@ -430,7 +433,8 @@ VBoxOGLfeedbackspu_SOURCES     = \
 	$(VBOX_PATH_CROGL_GENFILES)/feedbackspu.c \
 	$(VBOX_PATH_CROGL_GENFILES)/feedbackspu_state.c
 VBoxOGLfeedbackspu_SOURCES.win = \
-	feedback/feedback.def
+	feedback/feedback.def \
+	feedback/feedbackspu.rc
 VBoxOGLfeedbackspu_CLEAN       = \
 	$(VBOX_PATH_CROGL_GENFILES)/feedbackspu_proto.h \
 	$(VBOX_PATH_CROGL_GENFILES)/feedbackspu.c \
