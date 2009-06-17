@@ -2242,12 +2242,20 @@ VMMDECL(int) PGMPhysSimpleReadGCPtr(PVMCPU pVCpu, void *pvDst, RTGCPTR GCPtrSrc,
     if (!cb)
         return VINF_SUCCESS;
 
+    /* Take the PGM lock here, because many called functions take the lock for a very short period. That's counter-productive
+     * when many VCPUs are fighting for the lock.
+     */
+    pgmLock(pVM);
+
     /* map the 1st page */
     void const *pvSrc;
     PGMPAGEMAPLOCK Lock;
     int rc = PGMPhysGCPtr2CCPtrReadOnly(pVCpu, GCPtrSrc, &pvSrc, &Lock);
     if (RT_FAILURE(rc))
+    {
+        pgmUnlock(pVM);
         return rc;
+    }
 
     /* optimize for the case where access is completely within the first page. */
     size_t cbPage = PAGE_SIZE - ((RTGCUINTPTR)GCPtrSrc & PAGE_OFFSET_MASK);
@@ -2255,6 +2263,7 @@ VMMDECL(int) PGMPhysSimpleReadGCPtr(PVMCPU pVCpu, void *pvDst, RTGCPTR GCPtrSrc,
     {
         memcpy(pvDst, pvSrc, cb);
         PGMPhysReleasePageMappingLock(pVM, &Lock);
+        pgmUnlock(pVM);
         return VINF_SUCCESS;
     }
 
@@ -2273,13 +2282,17 @@ VMMDECL(int) PGMPhysSimpleReadGCPtr(PVMCPU pVCpu, void *pvDst, RTGCPTR GCPtrSrc,
         /* map the page */
         rc = PGMPhysGCPtr2CCPtrReadOnly(pVCpu, GCPtrSrc, &pvSrc, &Lock);
         if (RT_FAILURE(rc))
+        {
+            pgmUnlock(pVM);
             return rc;
+        }
 
         /* last page? */
         if (cb <= PAGE_SIZE)
         {
             memcpy(pvDst, pvSrc, cb);
             PGMPhysReleasePageMappingLock(pVM, &Lock);
+            pgmUnlock(pVM);
             return VINF_SUCCESS;
         }
 
