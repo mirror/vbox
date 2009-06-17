@@ -2217,13 +2217,12 @@ ResumeExecution:
     if (fSetupTPRCaching)
     {
         /* TPR caching in CR8 */
-        uint8_t u8TPR;
         bool    fPending;
 
-        int rc = PDMApicGetTPR(pVCpu, &u8TPR, &fPending);
+        int rc = PDMApicGetTPR(pVCpu, &u8LastTPR, &fPending);
         AssertRC(rc);
         /* The TPR can be found at offset 0x80 in the APIC mmio page. */
-        u8LastTPR = pVCpu->hwaccm.s.vmx.pVAPIC[0x80] = u8TPR << 4; /* bits 7-4 contain the task priority */
+        pVCpu->hwaccm.s.vmx.pVAPIC[0x80] = u8LastTPR;
 
         /* Two options here:
          * - external interrupt pending, but masked by the TPR value.
@@ -2231,7 +2230,7 @@ ResumeExecution:
          * - no pending interrupts
          *   -> We don't need to be explicitely notified. There are enough world switches for detecting pending interrupts.
          */
-        rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TPR_THRESHOLD, (fPending) ? u8TPR : 0);
+        rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TPR_THRESHOLD, (fPending) ? (u8LastTPR >> 4) : 0);     /* cr8 bits 3-0 correspond to bits 7-4 of the task priority mmio register. */
         AssertRC(rc);
     }
 
@@ -2426,7 +2425,7 @@ ResumeExecution:
     if (    fSetupTPRCaching
         &&  u8LastTPR != pVCpu->hwaccm.s.vmx.pVAPIC[0x80])
     {
-        rc = PDMApicSetTPR(pVCpu, pVCpu->hwaccm.s.vmx.pVAPIC[0x80] >> 4);
+        rc = PDMApicSetTPR(pVCpu, pVCpu->hwaccm.s.vmx.pVAPIC[0x80]);
         AssertRC(rc);
     }
 

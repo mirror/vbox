@@ -985,7 +985,7 @@ ResumeExecution:
         /* TPR caching in CR8 */
         int rc = PDMApicGetTPR(pVCpu, &u8LastTPR, &fPending);
         AssertRC(rc);
-        pVMCB->ctrl.IntCtrl.n.u8VTPR = u8LastTPR;
+        pVMCB->ctrl.IntCtrl.n.u8VTPR = (u8LastTPR >> 4); /* cr8 bits 3-0 correspond to bits 7-4 of the task priority mmio register. */
 
         if (fPending)
         {
@@ -1379,9 +1379,9 @@ ResumeExecution:
 
     /* Sync back the TPR if it was changed. */
     if (    fSyncTPR
-        &&  u8LastTPR != pVMCB->ctrl.IntCtrl.n.u8VTPR)
+        &&  (u8LastTPR >> 4) != pVMCB->ctrl.IntCtrl.n.u8VTPR)
     {
-        rc = PDMApicSetTPR(pVCpu, pVMCB->ctrl.IntCtrl.n.u8VTPR);
+        rc = PDMApicSetTPR(pVCpu, pVMCB->ctrl.IntCtrl.n.u8VTPR << 4);   /* cr8 bits 3-0 correspond to bits 7-4 of the task priority mmio register. */
         AssertRC(rc);
     }
 
@@ -2363,12 +2363,12 @@ static int svmR0EmulateTprMov(PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX pCtx, un
 
             rc = DISFetchReg32(CPUMCTX2CORE(pCtx), pDis->param2.base.reg_gen, &val);
             AssertRC(rc);
-            u8Tpr = val >> 4;
+            u8Tpr = val;
         }
         else
         if (pDis->param2.flags == USE_IMMEDIATE32)
         {
-            u8Tpr = (uint8_t)pDis->param2.parval >> 4;
+            u8Tpr = (uint8_t)pDis->param2.parval;
         }
         else
             return VERR_EM_INTERPRETER;
@@ -2391,7 +2391,7 @@ static int svmR0EmulateTprMov(PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX pCtx, un
         rc = PDMApicGetTPR(pVCpu, &u8Tpr, &fPending);
         AssertRC(rc);
 
-        rc = DISWriteReg32(CPUMCTX2CORE(pCtx), pDis->param1.base.reg_gen, u8Tpr << 4);
+        rc = DISWriteReg32(CPUMCTX2CORE(pCtx), pDis->param1.base.reg_gen, u8Tpr);
         AssertRC(rc);
 
         Log(("Emulated read successfully\n"));

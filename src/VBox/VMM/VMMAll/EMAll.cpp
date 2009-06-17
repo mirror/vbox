@@ -1994,6 +1994,7 @@ VMMDECL(int) EMInterpretCRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, u
         val64 = 0;
         rc = PDMApicGetTPR(pVCpu, (uint8_t *)&val64, NULL);
         AssertMsgRCReturn(rc, ("PDMApicGetTPR failed\n"), VERR_EM_INTERPRETER);
+        val64 >>= 4;     /* bits 7-4 contain the task priority that go in cr8, bits 3-0*/
     }
     else
     {
@@ -2169,7 +2170,7 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
         return rc2 == VINF_SUCCESS ? rc : rc2;
 
     case USE_REG_CR8:
-        return PDMApicSetTPR(pVCpu, val);
+        return PDMApicSetTPR(pVCpu, val << 4);  /* cr8 bits 3-0 correspond to bits 7-4 of the task priority mmio register. */
 
     default:
         AssertFailed();
