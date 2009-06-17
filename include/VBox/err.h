@@ -1168,6 +1168,9 @@
 /** The requested operation cannot be performed because the device
  * is currently being reset. */
 #define VERR_VUSB_DEVICE_IS_RESETTING               (-3406)
+/** The requested operation cannot be performed because the device
+ * is currently suspended. */
+#define VERR_VUSB_DEVICE_IS_SUSPENDED               (-3407)
 /** @} */
 
 
