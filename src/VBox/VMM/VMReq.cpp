@@ -330,10 +330,12 @@ static void vmr3ReqJoinFreeSub(volatile PVMREQ *ppHead, PVMREQ pList)
         PVMREQ pTail = pHead;
         while (pTail->pNext)
             pTail = pTail->pNext;
-        pTail->pNext = pList;
+        ASMAtomicWritePtr((void * volatile *)&pTail->pNext, pList);
+        ASMCompilerBarrier();
         if (ASMAtomicCmpXchgPtr((void * volatile *)ppHead, (void *)pHead, pList))
             return;
-        pTail->pNext = NULL;
+        ASMAtomicWritePtr((void * volatile *)&pTail->pNext, NULL);
+        ASMCompilerBarrier();
         if (ASMAtomicCmpXchgPtr((void * volatile *)ppHead, (void *)pHead, NULL))
             return;
         pList = pHead;
@@ -583,8 +585,9 @@ VMMR3DECL(int) VMR3ReqFree(PVMREQ pReq)
         PVMREQ pNext;
         do
         {
-            pNext = *ppHead;
-            ASMAtomicXchgPtr((void * volatile *)&pReq->pNext, pNext);
+            pNext = (PVMREQ)ASMAtomicUoReadPtr((void * volatile *)ppHead);
+            ASMAtomicWritePtr((void * volatile *)&pReq->pNext, pNext);
+            ASMCompilerBarrier();
         } while (!ASMAtomicCmpXchgPtr((void * volatile *)ppHead, (void *)pReq, (void *)pNext));
     }
     else
@@ -688,8 +691,9 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
         PVMREQ pNext;
         do
         {
-            pNext = pUVCpu->vm.s.pReqs;
-            pReq->pNext = pNext;
+            pNext = (PVMREQ)ASMAtomicUoReadPtr((void * volatile *)&pUVCpu->vm.s.pReqs);
+            ASMAtomicWritePtr((void * volatile *)&pReq->pNext, pNext);
+            ASMCompilerBarrier();
         } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pUVCpu->vm.s.pReqs, (void *)pReq, (void *)pNext));
 
         /*
@@ -718,8 +722,9 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
         PVMREQ pNext;
         do
         {
-            pNext = pUVM->vm.s.pReqs;
-            pReq->pNext = pNext;
+            pNext = (PVMREQ)ASMAtomicUoReadPtr((void * volatile *)&pUVM->vm.s.pReqs);
+            ASMAtomicWritePtr((void * volatile *)&pReq->pNext, pNext);
+            ASMCompilerBarrier();
         } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pUVM->vm.s.pReqs, (void *)pReq, (void *)pNext));
 
         /*
