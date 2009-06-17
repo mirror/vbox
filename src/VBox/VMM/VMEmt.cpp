@@ -154,6 +154,8 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
                 rc = VINF_EM_TERMINATE;
                 break;
             }
+            if (VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS))
+                VMMR3EmtRendezvousFF(pVM, &pVM->aCpus[idCpu]);
             if (pUVM->vm.s.pReqs)
             {
                 /*
@@ -202,7 +204,7 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
              */
             if (    rc == VINF_EM_TERMINATE
                 ||  pUVM->vm.s.fTerminateEMT
-                ||  (   pUVM->pVM
+                ||  (   pUVM->pVM /* pVM may have become invalid by now. */
                      && VM_FF_ISSET(pUVM->pVM, VM_FF_TERMINATE)))
                 break;
         }
@@ -1085,6 +1087,62 @@ VMMR3DECL(int) VMR3WaitU(PUVMCPU pUVCpu)
 
 
 /**
+ * Rendezvous callback that will be called once.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 VM handle.
+ * @param   pVCpu               The VMCPU handle for the calling EMT.
+ * @param   pvUser              The new g_aHaltMethods index.
+ */
+static DECLCALLBACK(int) vmR3SetHaltMethodCallback(PVM pVM, PVMCPU pVCpu, void *pvUser)
+{
+    PUVM        pUVM = pVM->pUVM;
+    uintptr_t   i    = (uintptr_t)pvUser;
+    Assert(i < RT_ELEMENTS(g_aHaltMethods));
+    NOREF(pVCpu);
+
+    /*
+     * Terminate the old one.
+     */
+    if (    pUVM->vm.s.enmHaltMethod != VMHALTMETHOD_INVALID
+        &&  g_aHaltMethods[pUVM->vm.s.iHaltMethod].pfnTerm)
+    {
+        g_aHaltMethods[pUVM->vm.s.iHaltMethod].pfnTerm(pUVM);
+        pUVM->vm.s.enmHaltMethod = VMHALTMETHOD_INVALID;
+    }
+
+    /* Assert that the failure fallback is where we expect. */
+    Assert(g_aHaltMethods[0].enmHaltMethod == VMHALTMETHOD_BOOTSTRAP);
+    Assert(!g_aHaltMethods[0].pfnTerm && !g_aHaltMethods[0].pfnInit);
+
+    /*
+     * Init the new one.
+     */
+    int rc = VINF_SUCCESS;
+    memset(&pUVM->vm.s.Halt, 0, sizeof(pUVM->vm.s.Halt));
+    if (g_aHaltMethods[i].pfnInit)
+    {
+        rc = g_aHaltMethods[i].pfnInit(pUVM);
+        if (RT_FAILURE(rc))
+        {
+            /* Fall back on the bootstrap method. This requires no
+               init/term (see assertion above), and will always work. */
+            AssertLogRelRC(rc);
+            i = 0;
+        }
+    }
+
+    /*
+     * Commit it.
+     */
+    pUVM->vm.s.enmHaltMethod = g_aHaltMethods[i].enmHaltMethod;
+    ASMAtomicWriteU32(&pUVM->vm.s.iHaltMethod, i);
+
+    return rc;
+}
+
+
+/**
  * Changes the halt method.
  *
  * @returns VBox status code.
@@ -1130,31 +1188,8 @@ int vmR3SetHaltMethodU(PUVM pUVM, VMHALTMETHOD enmHaltMethod)
     AssertReturn(i < RT_ELEMENTS(g_aHaltMethods), VERR_INVALID_PARAMETER);
 
     /*
-     * Terminate the old one.
+     * This needs to be done while the other EMTs are not sleeping or otherwise messing around.
      */
-    if (    pUVM->vm.s.enmHaltMethod != VMHALTMETHOD_INVALID
-        &&  g_aHaltMethods[pUVM->vm.s.iHaltMethod].pfnTerm)
-    {
-        g_aHaltMethods[pUVM->vm.s.iHaltMethod].pfnTerm(pUVM);
-        pUVM->vm.s.enmHaltMethod = VMHALTMETHOD_INVALID;
-    }
-
-/** @todo SMP: Need rendezvous thing here, the other EMTs must not be
- *        sleeping when we switch the notification method or we'll never
- *        manage to wake them up properly and end up relying on timeouts... */
-
-    /*
-     * Init the new one.
-     */
-    memset(&pUVM->vm.s.Halt, 0, sizeof(pUVM->vm.s.Halt));
-    if (g_aHaltMethods[i].pfnInit)
-    {
-        int rc = g_aHaltMethods[i].pfnInit(pUVM);
-        AssertRCReturn(rc, rc);
-    }
-    pUVM->vm.s.enmHaltMethod = enmHaltMethod;
-
-    ASMAtomicWriteU32(&pUVM->vm.s.iHaltMethod, i);
-    return VINF_SUCCESS;
+    return VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, vmR3SetHaltMethodCallback, (void *)(uintptr_t)i);
 }
 

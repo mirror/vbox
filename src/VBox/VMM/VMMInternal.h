@@ -266,7 +266,35 @@ typedef struct VMM
     /** Critical section.
      * Use for synchronizing all VCPUs
      */
-    RTCRITSECT                 CritSectSync;
+    RTCRITSECT                  CritSectSync;
+
+    /** @name EMT Rendezvous
+     * @{ */
+    /** Semaphore to wait on upon entering for one-by-one execution. */
+    RTSEMEVENT                  hEvtRendezvousEnterOneByOne;
+    /** Semaphore to wait on upon entering for all-at-once execution. */
+    RTSEMEVENTMULTI             hEvtMulRendezvousEnterAllAtOnce;
+    /** Semaphore to wait on when done. */
+    RTSEMEVENTMULTI             hEvtMulRendezvousDone;
+    /** Semaphore the VMMR3EmtRendezvous caller waits on at the end. */
+    RTSEMEVENT                  hEvtRendezvousDoneCaller;
+    /** Callback. */
+    R3PTRTYPE(PFNVMMEMTRENDEZVOUS) volatile pfnRendezvous;
+    /** The user argument for the callback. */
+    RTR3PTR volatile            pvRendezvousUser;
+    /** Flags. */
+    volatile uint32_t           fRendezvousFlags;
+    /** The number of EMTs that has entered. */
+    volatile uint32_t           cRendezvousEmtsEntered;
+    /** The number of EMTs that has done their job. */
+    volatile uint32_t           cRendezvousEmtsDone;
+    /** The number of EMTs that has returned. */
+    volatile uint32_t           cRendezvousEmtsReturned;
+    /** The status code. */
+    volatile int32_t            i32RendezvousStatus;
+    /** Spin lock. */
+    volatile uint32_t           u32RendezvousLock;
+    /** @} */
 
     /** Buffer for storing the standard assertion message for a ring-0 assertion.
      * Used for saving the assertion message text for the release log and guru

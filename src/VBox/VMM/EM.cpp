@@ -3319,6 +3319,12 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_NORMAL_PRIORITY_POST_MASK))
     {
         /*
+         * EMT Rendezvous (must be serviced before termination).
+         */
+        if (VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS))
+            VMMR3EmtRendezvousFF(pVM, pVCpu);
+
+        /*
          * Termination request.
          */
         if (VM_FF_ISPENDING(pVM, VM_FF_TERMINATE))
@@ -3373,7 +3379,7 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         }
 
         /* check that we got them all  */
-        AssertCompile(VM_FF_NORMAL_PRIORITY_POST_MASK == (VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_RESET | VM_FF_PGM_NO_MEMORY));
+        AssertCompile(VM_FF_NORMAL_PRIORITY_POST_MASK == (VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_RESET | VM_FF_PGM_NO_MEMORY | VM_FF_EMT_RENDEZVOUS));
         AssertCompile(VMCPU_FF_NORMAL_PRIORITY_POST_MASK == VMCPU_FF_CSAM_SCAN_PAGE);
     }
 
@@ -3394,6 +3400,12 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          */
         if (VM_FF_IS_PENDING_EXCEPT(pVM, VM_FF_PDM_DMA, VM_FF_PGM_NO_MEMORY))
             PDMR3DmaRun(pVM);
+
+        /*
+         * EMT Rendezvous (make sure they are handled before the requests).
+         */
+        if (VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS))
+            VMMR3EmtRendezvousFF(pVM, pVCpu);
 
         /*
          * Requests from other threads.
@@ -3420,7 +3432,7 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         }
 
         /* check that we got them all  */
-        AssertCompile(VM_FF_NORMAL_PRIORITY_MASK == (VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA | VM_FF_REM_HANDLER_NOTIFY));
+        AssertCompile(VM_FF_NORMAL_PRIORITY_MASK == (VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA | VM_FF_REM_HANDLER_NOTIFY | VM_FF_EMT_RENDEZVOUS));
     }
 
     /*
@@ -3535,6 +3547,12 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         }
 
         /*
+         * EMT Rendezvous (must be serviced before termination).
+         */
+        if (VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS))
+            VMMR3EmtRendezvousFF(pVM, pVCpu);
+
+        /*
          * Termination request.
          */
         if (VM_FF_ISPENDING(pVM, VM_FF_TERMINATE))
@@ -3577,7 +3595,7 @@ static int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 #endif
 
         /* check that we got them all  */
-        AssertCompile(VM_FF_HIGH_PRIORITY_PRE_MASK == (VM_FF_TM_VIRTUAL_SYNC | VM_FF_DBGF | VM_FF_TERMINATE | VM_FF_DEBUG_SUSPEND | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY));
+        AssertCompile(VM_FF_HIGH_PRIORITY_PRE_MASK == (VM_FF_TM_VIRTUAL_SYNC | VM_FF_DBGF | VM_FF_TERMINATE | VM_FF_DEBUG_SUSPEND | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY | VM_FF_EMT_RENDEZVOUS));
         AssertCompile(VMCPU_FF_HIGH_PRIORITY_PRE_MASK == (VMCPU_FF_TIMER | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_INHIBIT_INTERRUPTS));
     }
 
