@@ -534,6 +534,11 @@ BOOL bInitSURF(PPDEV ppdev, BOOL bFirst)
     VBoxProcessDisplayInfo (ppdev);
 #endif /* VBOX_WITH_HGSMI */
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    /* tells we can process host commands */
+    vboxVHWAEnable(ppdev);
+#endif
+
     return(TRUE);
 }
 

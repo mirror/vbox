@@ -100,6 +100,7 @@ typedef struct _VBOXVHWASURFDESC
     volatile uint32_t cPendingBltsSrc;
     volatile uint32_t cPendingBltsDst;
     volatile uint32_t cPendingFlips;
+    uint32_t cBitsPerPixel;
 }VBOXVHWASURFDESC, *PVBOXVHWASURFDESC;
 
 typedef struct _VBOXVHWAINFO
@@ -279,10 +280,12 @@ void vboxVBVAHostCommandComplete(PPDEV ppdev, VBVAHOSTCMD * pCmd);
 
  #ifdef VBOX_WITH_VIDEOHWACCEL
 
+#define VBOXDD_CHECKFLAG(_v, _f) ((_v) & (_f)) == (_f)
+
 typedef DECLCALLBACK(void) FNVBOXVHWACMDCOMPLETION(PPDEV ppdev, VBOXVHWACMD * pCmd, void * pContext);
 typedef FNVBOXVHWACMDCOMPLETION *PFNVBOXVHWACMDCOMPLETION;
 
-VBOXVHWACMD* vboxVHWACommandCreate (PPDEV ppdev, VBOXVHWACMD_LENGTH cbCmd);
+VBOXVHWACMD* vboxVHWACommandCreate (PPDEV ppdev, VBOXVHWACMD_TYPE enmCmd, VBOXVHWACMD_LENGTH cbCmd);
 void vboxVHWACommandFree (PPDEV ppdev, VBOXVHWACMD* pCmd);
 BOOL vboxVHWACommandSubmit (PPDEV ppdev, VBOXVHWACMD* pCmd);
 void vboxVHWACommandSubmitAsynch (PPDEV ppdev, VBOXVHWACMD* pCmd, PFNVBOXVHWACMDCOMPLETION pfnCompletion, void * pContext);
@@ -299,10 +302,26 @@ void vboxVHWAFreeHostInfo2(PPDEV ppdev, VBOXVHWACMD_QUERYINFO2* pInfo);
 
 void vboxVHWAInit();
 void vboxVHWATerm();
-void vboxVHWASurfCanCreate(PPDEV ppdev, PDD_CANCREATESURFACEDATA  lpCanCreateSurface);
-void vboxVHWASurfCreate(PPDEV ppdev, PDD_CREATESURFACEDATA  lpCreateSurface);
-void vboxVHWASurfDestroy(PPDEV ppdev, PDD_DESTROYSURFACEDATA  lpDestroySurface);
-void vboxVHWASurfBlt(PPDEV ppdev, PDD_BLTDATA  lpBlt);
+uint32_t vboxVHWAUnsupportedDDCAPS(uint32_t caps);
+uint32_t vboxVHWAUnsupportedDDSCAPS(uint32_t caps);
+uint32_t vboxVHWAUnsupportedDDPFS(uint32_t caps);
+uint32_t vboxVHWASupportedDDCAPS(uint32_t caps);
+uint32_t vboxVHWASupportedDDSCAPS(uint32_t caps);
+uint32_t vboxVHWASupportedDDPFS(uint32_t caps);
+uint32_t vboxVHWAFromDDCAPS(uint32_t caps);
+uint32_t vboxVHWAToDDCAPS(uint32_t caps);
+uint32_t vboxVHWAFromDDSCAPS(uint32_t caps);
+uint32_t vboxVHWAToDDSCAPS(uint32_t caps);
+uint32_t vboxVHWAFromDDPFS(uint32_t caps);
+uint32_t vboxVHWAToDDPFS(uint32_t caps);
+void vboxVHWAFromDDPIXELFORMAT(VBOXVHWA_PIXELFORMAT *pVHWAFormat, DDPIXELFORMAT *pDdFormat);
+void vboxVHWAFromRECTL(VBOXVHWA_RECTL *pDst, RECTL *pSrc);
+PVBOXVHWASURFDESC vboxVHWASurfDescAlloc();
+void vboxVHWASurfDescFree(PVBOXVHWASURFDESC pDesc);
+
+int vboxVHWAEnable(PPDEV ppdev);
+int vboxVHWADisable(PPDEV ppdev);
+
  #endif
 #endif
 

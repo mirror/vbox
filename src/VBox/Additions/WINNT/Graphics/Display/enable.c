@@ -100,26 +100,26 @@ ULONG APIENTRY DrvEscape(SURFOBJ *pso, ULONG iEsc, ULONG cjIn, PVOID pvIn, ULONG
 #ifdef VBOX_WITH_OPENGL
     case OPENGL_GETINFO:
     {
-        if (    cjOut >= sizeof(OPENGL_INFO) 
-            &&  pvOut) 
-        { 
-            POPENGL_INFO pInfo = (POPENGL_INFO)pvOut; 
+        if (    cjOut >= sizeof(OPENGL_INFO)
+            &&  pvOut)
+        {
+            POPENGL_INFO pInfo = (POPENGL_INFO)pvOut;
 
-            pInfo->dwVersion        = 2; 
-            pInfo->dwDriverVersion  = 1; 
-            pInfo->szDriverName[0]  = 'V'; 
-            pInfo->szDriverName[1]  = 'B'; 
-            pInfo->szDriverName[2]  = 'o'; 
-            pInfo->szDriverName[3]  = 'x'; 
-            pInfo->szDriverName[4]  = 'O'; 
-            pInfo->szDriverName[5]  = 'G'; 
-            pInfo->szDriverName[6]  = 'L'; 
-            pInfo->szDriverName[7]  = 0; 
+            pInfo->dwVersion        = 2;
+            pInfo->dwDriverVersion  = 1;
+            pInfo->szDriverName[0]  = 'V';
+            pInfo->szDriverName[1]  = 'B';
+            pInfo->szDriverName[2]  = 'o';
+            pInfo->szDriverName[3]  = 'x';
+            pInfo->szDriverName[4]  = 'O';
+            pInfo->szDriverName[5]  = 'G';
+            pInfo->szDriverName[6]  = 'L';
+            pInfo->szDriverName[7]  = 0;
 
-            DISPDBG((0, "OPENGL_GETINFO\n")); 
-            return cjOut; 
-        } 
-        else 
+            DISPDBG((0, "OPENGL_GETINFO\n"));
+            return cjOut;
+        }
+        else
             DISPDBG((0, "OPENGL_GETINFO invalid size %d\n", cjOut));         /* It doesn't matter that we fail here. Opengl32 will fall back to software rendering when this escape is not supported. */
         break;
     }
@@ -237,7 +237,7 @@ ULONG APIENTRY DrvEscape(SURFOBJ *pso, ULONG iEsc, ULONG cjIn, PVOID pvIn, ULONG
     }
     return 0;
 }
-    
+
 BOOL DrvConnect (PVOID x1, PVOID x2, PVOID x3, PVOID x4)
 {
     DISPDBG((0, "Experimental %s: %p, %p, %p, %p\n", __FUNCTION__, x1, x2, x3, x4));
@@ -317,7 +317,7 @@ DRVFN gadrvfn_nt5[] = {
 //     {   0x4f,                           (PFN) DrvReconnect          },	// 0x4f
 //     {   0x50,                           (PFN) DrvShadowConnect      },	// 0x50
 //     {   0x51,                           (PFN) DrvShadowDisconnect   },	// 0x51
-    
+
 };
 
 // Required hook bits will be set up according to DDI version
@@ -442,10 +442,10 @@ HANDLE      hDriver)        // Handle to base driver
     PPDEV   ppdev = (PPDEV) NULL;
 
     DISPDBG((0, "VBoxDisp::DrvEnablePDEV called\n"));
-    
+
     UNREFERENCED_PARAMETER(pwszLogAddress);
     UNREFERENCED_PARAMETER(pwszDeviceName);
-    
+
     RtlZeroMemory(&DevInfo, sizeof (DEVINFO));
     RtlZeroMemory(&GdiInfo, sizeof (GDIINFO));
 
@@ -464,7 +464,7 @@ HANDLE      hDriver)        // Handle to base driver
     // Save the screen handle in the PDEV.
 
     ppdev->hDriver = hDriver;
-    
+
     // Get the current screen mode information.  Set up device caps and devinfo.
 
     if (!bInitPDEV(ppdev, pDevmode, &GdiInfo, &DevInfo))
@@ -480,7 +480,7 @@ HANDLE      hDriver)        // Handle to base driver
         // Not a fatal error...
         DISPDBG((0, "DrvEnablePDEV failed bInitPointer\n"));
     }
-    
+
     // Initialize palette information.
 
     if (!bInitPaletteInfo(ppdev, &DevInfo))
@@ -488,18 +488,18 @@ HANDLE      hDriver)        // Handle to base driver
         DISPDBG((0, "DrvEnablePDEV failed bInitPalette\n"));
         goto error_free;
     }
-    
+
 //    // Start a thread that will process notifications from VMMDev
 //    if (!bInitNotificationThread(ppdev))
 //    {
 //        DISPDBG((0, "DrvEnablePDEV failed bInitNotificationThread\n"));
 //        goto error_free;
 //    }
-    
+
     // Copy the devinfo into the engine buffer.
-    
+
     DISPDBG((0, "VBoxDisp::DrvEnablePDEV: sizeof(DEVINFO) = %d, cjDevInfo = %d, alpha = %d\n", sizeof(DEVINFO), cjDevInfo, DevInfo.flGraphicsCaps2 & GCAPS2_ALPHACURSOR));
-    
+
 // @todo seems to be not necessary. these bits are initialized in screen.c    DevInfo.flGraphicsCaps |= GCAPS_OPAQUERECT       |
 //                              GCAPS_DITHERONREALIZE  |
 //                              GCAPS_PALMANAGED       |
@@ -508,9 +508,9 @@ HANDLE      hDriver)        // Handle to base driver
 //                              GCAPS_MONO_DITHER      |
 //                              GCAPS_COLOR_DITHER     |
 //                              GCAPS_ASYNCMOVE;
-//                              
+//
 //    DevInfo.flGraphicsCaps |= GCAPS_DITHERONREALIZE;
-    
+
     DevInfo.flGraphicsCaps2 |= GCAPS2_RESERVED1; /* @todo figure out what is this. */
 
     memcpy(pDevInfo, &DevInfo, min(sizeof(DEVINFO), cjDevInfo));
@@ -521,7 +521,7 @@ HANDLE      hDriver)        // Handle to base driver
     memcpy(pGdiInfo, &GdiInfo, min(cjGdiInfo, sizeof(GDIINFO)));
 
     DISPDBG((0, "VBoxDisp::DrvEnablePDEV completed %x\n", ppdev));
-    
+
     return((DHPDEV) ppdev);
 
     // Error case for failure.
@@ -556,7 +556,7 @@ VOID DrvDisablePDEV(DHPDEV dhpdev)
     DISPDBG((0, "VBoxDisp::DrvDisablePDEV called %x\n", dhpdev));
 //    vStopNotificationThread ((PPDEV) dhpdev);
     vDisablePalette((PPDEV) dhpdev);
-    
+
     /* Free the driver's VBVA resources. */
     vboxVbvaDisable ((PPDEV) dhpdev);
 
@@ -614,7 +614,7 @@ HSURF DrvEnableSurface(DHPDEV dhpdev)
     PVBOXSURF psurf;
 #endif
     DISPDBG((0, "DISP DrvEnableSurface called\n"));
-        
+
     // Create engine bitmap around frame buffer.
 
     ppdev = (PPDEV) dhpdev;
@@ -629,7 +629,7 @@ HSURF DrvEnableSurface(DHPDEV dhpdev)
     }
 
     DISPDBG((0, "DISP DrvEnableSurface bInitSURF success\n"));
-    
+
     sizl.cx = ppdev->cxScreen;
     sizl.cy = ppdev->cyScreen;
 
@@ -689,7 +689,7 @@ HSURF DrvEnableSurface(DHPDEV dhpdev)
         hsurf = (HSURF)EngCreateDeviceSurface((DHSURF)psurf, sizl,
                                               ulBitmapType);
     }
- 
+
     if ( hsurf == 0 )
     {
         DISPDBG((0, "DrvEnableSurface: failed EngCreateDeviceBitmap\n"));
@@ -700,13 +700,13 @@ HSURF DrvEnableSurface(DHPDEV dhpdev)
     // On NT5.0 we call EngModifSurface to expose our device surface to
     // GDI. We cant do this on NT4.0 hence we call EngAssociateSurface.
     //
-     
+
     if(g_bOnNT40)
     {
         //
         // We have to associate the surface we just created with our physical
         // device so that GDI can get information related to the PDEV when
-        // it's drawing to the surface (such as, for example, the length of 
+        // it's drawing to the surface (such as, for example, the length of
         // styles on the device when simulating styled lines).
         //
 
@@ -719,19 +719,19 @@ HSURF DrvEnableSurface(DHPDEV dhpdev)
         if (!EngAssociateSurface(hsurf, ppdev->hdevEng, myflHooks))
         {
             DISPDBG((0, "DrvEnableSurface: failed EngAssociateSurface\n"));
-            goto l_Failure; 
+            goto l_Failure;
         }
 
         //
         // Jam in the value of dhsurf into screen SURFOBJ. We do this to
         // make sure the driver acclerates Drv calls we hook and not
-        // punt them back to GDI as the SURFOBJ's dhsurf = 0. 
+        // punt them back to GDI as the SURFOBJ's dhsurf = 0.
         //
         ppdev->psoScreenBitmap = EngLockSurface(hsurf);
         if(ppdev->psoScreenBitmap == 0)
         {
             DISPDBG((0, "DrvEnableSurface: failed EngLockSurface\n"));
-            goto l_Failure; 
+            goto l_Failure;
         }
 
         ppdev->psoScreenBitmap->dhsurf = (DHSURF)hsurf;
@@ -766,7 +766,7 @@ HSURF DrvEnableSurface(DHPDEV dhpdev)
                                     ulBitmapType,
                                     (ppdev->lDeltaScreen > 0) ? BMF_TOPDOWN : 0,
                                     (PVOID) (ppdev->pjScreen));
-                                     
+
     if (hsurf == (HSURF) 0)
     {
         DISPDBG((0, "DISP DrvEnableSurface failed EngCreateBitmap\n"));
@@ -775,7 +775,7 @@ HSURF DrvEnableSurface(DHPDEV dhpdev)
     else
     {
         ppdev->hsurfScreenBitmap = hsurf;
-         
+
         if (!EngAssociateSurface(hsurf, ppdev->hdevEng, 0))
         {
             DISPDBG((0, "DISP DrvEnableSurface failed EngAssociateSurface for ScreenBitmap.\n"));
@@ -784,9 +784,9 @@ HSURF DrvEnableSurface(DHPDEV dhpdev)
         else
         {
             SURFOBJ *pso = EngLockSurface(hsurf);
-             
+
             ppdev->psoScreenBitmap = pso;
-   
+
             hsurf = (HSURF) EngCreateDeviceSurface((DHSURF)pso,
                                                     sizl,
                                                     ulBitmapType);
@@ -815,13 +815,13 @@ HSURF DrvEnableSurface(DHPDEV dhpdev)
             }
         }
     }
-#endif /* VBOX_NEW_SURFACE_CODE */    
+#endif /* VBOX_NEW_SURFACE_CODE */
     return ppdev->hsurfScreen;
-     
+
 l_Failure:
 
     DrvDisableSurface(dhpdev);
-    
+
     return((HSURF)0);
 }
 
@@ -835,7 +835,7 @@ l_Failure:
 VOID DrvDisableSurface(DHPDEV dhpdev)
 {
     PPDEV ppdev = (PPDEV)dhpdev;
-    
+
     DISPDBG((0, "VBoxDisp::DrvDisableSurface called\n"));
     if (ppdev->psoScreenBitmap)
     {
@@ -860,7 +860,12 @@ VOID DrvDisableSurface(DHPDEV dhpdev)
         EngDeleteSurface(ppdev->hsurfScreenBitmap);
         ppdev->hsurfScreenBitmap = (HSURF)0;
     }
-#endif    
+#endif
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    /* tells we can not process host commands any more and ensures we've completed processing of the host VHWA commands */
+    vboxVHWADisable(ppdev);
+#endif
     vDisableSURF(ppdev);
 }
 
@@ -878,7 +883,7 @@ BOOL DrvAssertMode(DHPDEV dhpdev, BOOL bEnable)
     PBYTE   pjScreen;
 
     DISPDBG((0, "DISP DrvAssertMode called bEnable = %d\n", bEnable));
-    
+
     if (bEnable)
     {
         pjScreen = ppdev->pjScreen;
@@ -897,26 +902,26 @@ BOOL DrvAssertMode(DHPDEV dhpdev, BOOL bEnable)
             HSURF hsurf;
             SIZEL sizl;
             SURFOBJ *pso;
-            
+
             DISPDBG((0, "DISP DrvAssertMode Screen pointer has changed!!!\n"));
-            
+
             sizl.cx = ppdev->cxScreen;
             sizl.cy = ppdev->cyScreen;
-            
+
             hsurf = (HSURF) EngCreateBitmap(sizl,
                                             ppdev->lDeltaScreen,
                                             ppdev->ulBitmapType,
                                             (ppdev->lDeltaScreen > 0) ? BMF_TOPDOWN : 0,
                                             (PVOID) (ppdev->pjScreen));
-                                     
+
             if (hsurf == (HSURF) 0)
             {
                 DISPDBG((0, "DISP DrvAssertMode failed EngCreateBitmap\n"));
                 return FALSE;
             }
-            
+
             pso = EngLockSurface(hsurf);
-             
+
             if (ppdev->psoScreenBitmap)
             {
                 EngUnlockSurface (ppdev->psoScreenBitmap);
@@ -928,7 +933,7 @@ BOOL DrvAssertMode(DHPDEV dhpdev, BOOL bEnable)
                 EngDeleteSurface(ppdev->hsurfScreenBitmap);
                 ppdev->hsurfScreenBitmap = (HSURF)0;
             }
-    
+
             ppdev->hsurfScreenBitmap = hsurf;
             ppdev->psoScreenBitmap = pso;
         }
@@ -938,17 +943,21 @@ BOOL DrvAssertMode(DHPDEV dhpdev, BOOL bEnable)
             DISPDBG((0, "DISP DrvAssertMode failed EngAssociateSurface for ScreenBitmap.\n"));
             return FALSE;
         }
-            
+
         if (!EngAssociateSurface(ppdev->hsurfScreen, ppdev->hdevEng, ppdev->flHooks))
         {
             DISPDBG((0, "DISP DrvAssertMode failed EngAssociateSurface for Screen.\n"));
             return FALSE;
         }
-            
+
         return TRUE;
     }
     else
     {
+#ifdef VBOX_WITH_VIDEOHWACCEL
+        /* tells we can not process host commands any more and ensures we've completed processing of the host VHWA commands */
+        vboxVHWADisable(ppdev);
+#endif
         //
         // We must give up the display.
         // Call the kernel driver to reset the device to a known state.
@@ -986,7 +995,7 @@ BOOL DrvAssertMode(DHPDEV dhpdev, BOOL bEnable)
  *
 \******************************************************************************/
 
-HBITMAP 
+HBITMAP
 DrvCreateDeviceBitmap(
     DHPDEV      dhpdev,
     SIZEL       sizl,
@@ -1004,7 +1013,7 @@ DrvCreateDeviceBitmap(
  *
 \******************************************************************************/
 
-VOID 
+VOID
 DrvDeleteDeviceBitmap(
     DHSURF      dhsurf)
 {
@@ -1148,7 +1157,7 @@ PVOID pvData)
         case DN_DEVICE_ORIGIN:
             ppdev->ptlDevOrg = *(PPOINTL)pvData;
 #ifndef VBOX_WITH_HGSMI
-            DISPDBG((3, "DN_DEVICE_ORIGIN: %d, %d (PSO = %p, pInfo = %p)\n", ppdev->ptlDevOrg.x, 
+            DISPDBG((3, "DN_DEVICE_ORIGIN: %d, %d (PSO = %p, pInfo = %p)\n", ppdev->ptlDevOrg.x,
                      ppdev->ptlDevOrg.y, pso, ppdev->pInfo));
             if (ppdev->pInfo)
             {
@@ -1157,7 +1166,7 @@ PVOID pvData)
                 VBoxProcessDisplayInfo(ppdev);
             }
 #else
-            DISPDBG((3, "DN_DEVICE_ORIGIN: %d, %d (PSO = %p)\n", ppdev->ptlDevOrg.x, 
+            DISPDBG((3, "DN_DEVICE_ORIGIN: %d, %d (PSO = %p)\n", ppdev->ptlDevOrg.x,
                      ppdev->ptlDevOrg.y, pso));
             VBoxProcessDisplayInfo(ppdev);
 #endif /* VBOX_WITH_HGSMI */
@@ -1178,7 +1187,7 @@ PVOID pvData)
 //
 // Parameters
 //  pDirectDraw-----Points to a DD_DIRECTDRAW_GLOBAL structure that describes
-//                  the DirectDraw object. 
+//                  the DirectDraw object.
 //  pSurface--------Points to a DD_SURFACE_LOCAL structure that describes the
 //                  DirectDraw surface around which to wrap a GDI surface.
 //
@@ -1249,7 +1258,7 @@ HBITMAP DrvDeriveSurface(DD_DIRECTDRAW_GLOBAL*  pDirectDraw, DD_SURFACE_LOCAL* p
     if ( (pSurfaceGlobal->ddpfSurface.dwRGBBitCount == pDev->ulBitCount) )
     {
         SIZEL sizel;
-        DWORD ulBitmapType, flHooks;        
+        DWORD ulBitmapType, flHooks;
 
         sizel.cx = pSurfaceGlobal->wWidth;
         sizel.cy = pSurfaceGlobal->wHeight;
@@ -1295,9 +1304,9 @@ HBITMAP DrvDeriveSurface(DD_DIRECTDRAW_GLOBAL*  pDirectDraw, DD_SURFACE_LOCAL* p
                 {
                     SURFOBJ *surfobj = EngLockSurface ((HSURF)hbmDevice);
                     DISPDBG((0, "DrvDeriveSurface surfobj %x, hsurf = %x\n", surfobj, surfobj->hsurf));
-                
+
                     surfobj->dhpdev = (DHPDEV)pDev;
-                
+
                     EngUnlockSurface(surfobj);
 
                     DISPDBG((0, "DrvDeriveSurface return succeed %x at %x\n", hbmDevice, pSurfaceGlobal->fpVidMem));
@@ -1317,7 +1326,7 @@ HBITMAP DrvDeriveSurface(DD_DIRECTDRAW_GLOBAL*  pDirectDraw, DD_SURFACE_LOCAL* p
 
     DISPDBG((0, "DrvDeriveSurface return NULL\n"));
     DISPDBG((0, "pSurfaceGlobal->ddpfSurface.dwRGBBitCount = %d, lPitch =%ld\n", pSurfaceGlobal->ddpfSurface.dwRGBBitCount,pSurfaceGlobal->lPitch));
-    
+
     return(0);
 }
 #endif /* VBOX_WITH_DDRAW */

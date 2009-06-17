@@ -263,7 +263,9 @@ typedef enum
     VBOXVHWACMD_TYPE_SURF_UNLOCK,
     VBOXVHWACMD_TYPE_SURF_BLT,
     VBOXVHWACMD_TYPE_QUERY_INFO1,
-    VBOXVHWACMD_TYPE_QUERY_INFO2
+    VBOXVHWACMD_TYPE_QUERY_INFO2,
+    VBOXVHWACMD_TYPE_ENABLE,
+    VBOXVHWACMD_TYPE_DISABLE
 } VBOXVHWACMD_TYPE;
 
 /* the command processing was asynch, set by the host to indicate asynch command completion
@@ -281,6 +283,12 @@ typedef struct _VBOXVHWACMD
     volatile int32_t Flags; /* ored VBOXVHWACMD_FLAG_xxx values */
     uint64_t GuestVBVAReserved1; /* field internally used by the guest VBVA cmd handling, must NOT be modified by clients */
     uint64_t GuestVBVAReserved2; /* field internally used by the guest VBVA cmd handling, must NOT be modified by clients */
+    union
+    {
+        struct _VBOXVHWACMD *pNext;
+        uint32_t             offNext;
+        uint64_t Data; /* the body is 64-bit aligned */
+    } u;
     char body[1];
 } VBOXVHWACMD;
 
@@ -371,7 +379,11 @@ typedef struct _VBOXVHWA_SURFINFO
 #define VBOXVHWA_PF_YUV                 0x00000008
 #define VBOXVHWA_PF_FOURCC              0x00000010
 
+#define VBOXVHWA_LOCK_DISCARDCONTENTS   0x00000001
+
 #define VBOXVHWA_CFG_ENABLED          0x00000001
+
+#define VBOXVHWA_OFFSET64_VOID        (~0L)
 
 typedef struct _VBOXVHWACMD_QUERYINFO1
 {
@@ -416,6 +428,7 @@ typedef struct _VBOXVHWACMD_SURF_CREATE
         struct
         {
             VBOXVHWA_SURFINFO SurfInfo;
+            uint64_t offSurface;
         } in;
 
         struct
@@ -443,8 +456,9 @@ typedef struct _VBOXVHWACMD_SURF_LOCK
         struct
         {
             VBOXVHWA_SURFHANDLE hSurf;
+            uint64_t offSurface;
             uint32_t flags;
-            uint32_t Reserved;
+            uint32_t rectValid;
             VBOXVHWA_RECTL rect;
         } in;
     } u;
@@ -470,8 +484,10 @@ typedef struct _VBOXVHWACMD_SURF_BLT
         struct
         {
             VBOXVHWA_SURFHANDLE hDstSurf;
+            uint64_t offDstSurface;
             VBOXVHWA_RECTL dstRect;
             VBOXVHWA_SURFHANDLE hSrcSurf;
+            uint64_t offSrcSurface;
             VBOXVHWA_RECTL srcRect;
             uint32_t flags;
             uint32_t reserved;
@@ -557,7 +573,8 @@ typedef struct _VBVAHOSTCMD
     union
     {
         struct _VBVAHOSTCMD *pNext;
-        uint64_t Data; /* the body is 64-bit alligned */
+        uint32_t             offNext;
+        uint64_t Data; /* the body is 64-bit aligned */
     } u;
     char body[1];
 }VBVAHOSTCMD;
