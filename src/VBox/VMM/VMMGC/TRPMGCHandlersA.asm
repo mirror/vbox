@@ -547,20 +547,20 @@ gt_InHypervisor:
     mov     [esp + CPUMCTXCORE.ss], ss  ; update ss in register frame
 
     ; tell cpum about the context core.
-    xchg    esi, eax                    ; save pTRPM - @todo reallocate this variable to esi, edi, or ebx
+    xchg    esi, eax                    ; save pTRPMCPU - @todo reallocate this variable to esi, edi, or ebx
     push    esp                         ; Param 2 - The new CPUMCTXCORE pointer.
     mov     eax, IMP(g_VM)              ; Param 1 - Pointer to the VMCPU.
     add     eax, [eax + VM.offVMCPU]
     push    eax
     call    NAME(CPUMHyperSetCtxCore)
     add     esp, byte 8                 ; stack cleanup (cdecl)
-    xchg    eax, esi                    ; restore pTRPM
+    xchg    eax, esi                    ; restore pTRPMCPU
 
     ; check for temporary handler.
     movzx   ebx, byte [eax + TRPMCPU.uActiveVector]
-    mov     eax, IMP(g_TRPM)
+    mov     esi, IMP(g_TRPM)            ; keep eax == pTRPMCPU
     xor     ecx, ecx
-    xchg    ecx, [eax + TRPM.aTmpTrapHandlers + ebx * 4]    ; ecx = Temp handler pointer or 0
+    xchg    ecx, [esi + TRPM.aTmpTrapHandlers + ebx * 4]    ; ecx = Temp handler pointer or 0
     or      ecx, ecx
     jnz short gt_Hyper_HaveTemporaryHandler
 
@@ -591,7 +591,7 @@ gt_Hyper_HaveTemporaryHandler:
     ;
 gt_Hyper_HaveStaticHandler:
     push    esp                         ; Param 2 - Pointer to CPUMCTXCORE.
-    push    eax                         ; Param 1 - Pointer to TRPM
+    push    eax                         ; Param 1 - Pointer to TRPMCPU
     call    ecx
     add     esp, byte 8                 ; cleanup stack (cdecl)
 
