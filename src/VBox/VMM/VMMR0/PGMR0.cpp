@@ -231,6 +231,7 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enm
      * We pretend the guest is in protected mode without paging, so we can use existing code to build the
      * nested page tables.
      */
+    pgmLock(pVM);
     switch(enmShwPagingMode)
     {
     case PGMMODE_32_BIT:
@@ -252,6 +253,8 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enm
         rc = VERR_INVALID_PARAMETER;
         break;
     }
+    Assert(PGMIsLockOwner(pVM));
+    pgmUnlock(pVM);
     if (rc == VINF_PGM_SYNCPAGE_MODIFIED_PDE)
         rc = VINF_SUCCESS;
     STAM_STATS({ if (!pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution))
