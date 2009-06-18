@@ -609,14 +609,124 @@ DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface)
     lpSurfaceDesc                   = lpCreateSurface->lpDDSurfaceDesc;
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    if(pDev->vhwaInfo.bVHWAEnabled && lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
+    if(pDev->vhwaInfo.bVHWAEnabled)
     {
-        lBpp = pDev->ulBitCount;
-        lPitch = pDev->lDeltaScreen;
-    }
-    else
+        VBOXVHWACMD* pCmd;
+        DDPIXELFORMAT * pFormat = &lpSurfaceGlobal->ddpfSurface;
+
+        if(lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
+        {
+            lBpp = pDev->ulBitCount;
+            lPitch = pDev->lDeltaScreen;
+        }
+        else
+        {
+            if (pFormat->dwFlags & DDPF_PALETTEINDEXED4)
+            {
+                lBpp = 4;
+                lPitch = lpSurfaceGlobal->wWidth/2;
+                lPitch = (lPitch + 31) & ~31;
+            }
+            else
+            if (pFormat->dwFlags & DDPF_PALETTEINDEXED8)
+            {
+                lBpp = 8;
+                lPitch = lpSurfaceGlobal->wWidth;
+                lPitch = (lPitch + 31) & ~31;
+            }
+            else
+            {
+                lBpp   = pFormat->dwRGBBitCount;
+                lPitch = lpSurfaceGlobal->wWidth*(lBpp/8);
+            }
+        }
+
+        DISPDBG((0, "New surface (%d,%d)\n", lpSurfaceGlobal->wWidth, lpSurfaceGlobal->wHeight));
+        DISPDBG((0, "BPP %d lPitch=%d\n", lBpp, lPitch));
+#if 0
+        lpSurfaceGlobal->dwBlockSizeX   = lPitch;
+        lpSurfaceGlobal->dwBlockSizeY   = lpSurfaceGlobal->wHeight;
+        lpSurfaceGlobal->lPitch         = lPitch;
+#else
+        lpSurfaceGlobal->dwBlockSizeX   = lPitch * lpSurfaceGlobal->wHeight;
+        lpSurfaceGlobal->dwBlockSizeY   = 1;
+        lpSurfaceGlobal->lPitch         = lPitch;
 #endif
-    {
+
+#if 0
+        lpSurfaceDesc->lPitch   = lpSurfaceGlobal->lPitch;
+        lpSurfaceDesc->dwFlags |= DDSD_PITCH;
+#endif
+
+        //
+        // Modify surface descriptions as appropriate and let Direct
+        // Draw perform the allocation if the surface was not the primary
+        //
+        if (lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
+        {
+            DISPDBG((0, "-> primary surface\n"));
+            lpSurfaceGlobal->fpVidMem       = 0;
+        }
+        else
+        {
+            DISPDBG((0, "-> secondary surface\n"));
+            lpSurfaceGlobal->fpVidMem       = DDHAL_PLEASEALLOC_BLOCKSIZE;
+        }
+
+        pCmd = vboxVHWACommandCreate (pDev, VBOXVHWACMD_TYPE_SURF_CREATE, sizeof(VBOXVHWACMD_SURF_CREATE));
+        if(pCmd)
+        {
+            VBOXVHWACMD_SURF_CREATE * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_CREATE);
+            PVBOXVHWASURFDESC pDesc;
+            int rc;
+
+            memset(pBody, 0, sizeof(VBOXVHWACMD_SURF_CREATE));
+
+            rc = vboxVHWAFromDDSURFACEDESC(&pBody->u.in.SurfInfo, lpSurfaceDesc);
+
+            pBody->u.in.SurfInfo.surfCaps = vboxVHWAFromDDSCAPS(lpSurfaceLocal->ddsCaps.dwCaps);
+            pBody->u.in.SurfInfo.flags |= DDSD_CAPS;
+
+            pBody->u.in.SurfInfo.height = lpSurfaceGlobal->wHeight;
+            pBody->u.in.SurfInfo.width = lpSurfaceGlobal->wWidth;
+            pBody->u.in.SurfInfo.flags |= DDSD_HEIGHT | DDSD_WIDTH;
+
+            vboxVHWAFromDDPIXELFORMAT(&pBody->u.in.SurfInfo.PixelFormat, pFormat);
+            pBody->u.in.SurfInfo.flags |= VBOXVHWA_SD_PIXELFORMAT;
+
+            if (lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
+            {
+                pBody->u.in.offSurface = 0;
+            }
+            else
+            {
+                pBody->u.in.offSurface = VBOXVHWA_OFFSET64_VOID;
+            }
+
+
+            pDesc = vboxVHWASurfDescAlloc();
+            if(pDesc)
+            {
+                pDesc->cBitsPerPixel = lBpp;
+                vboxVHWACommandSubmit(pDev, pCmd);
+                Assert(pCmd->rc == VINF_SUCCESS);
+                if(pCmd->rc == VINF_SUCCESS)
+                {
+                    pDesc->hHostHandle = pBody->u.out.hSurf;
+                    lpSurfaceGlobal->dwReserved1 = (ULONG_PTR)pDesc;
+                    lpCreateSurface->ddRVal = DD_OK;
+                }
+                else
+                {
+                    vboxVHWASurfDescFree(pDesc);
+                    lpCreateSurface->ddRVal = DDERR_GENERIC;
+                }
+            }
+            vboxVHWACommandFree(pDev, pCmd);
+        }
+        return DDHAL_DRIVER_NOTHANDLED;
+    }
+#endif
     lpSurfaceGlobal->dwReserved1    = 0;
 
     if (lpSurfaceDesc->ddpfPixelFormat.dwFlags & DDPF_PALETTEINDEXED4)
@@ -646,7 +756,6 @@ DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface)
 
     lpSurfaceDesc->lPitch   = lpSurfaceGlobal->lPitch;
     lpSurfaceDesc->dwFlags |= DDSD_PITCH;
-    }
 
     //
     // Modify surface descriptions as appropriate and let Direct
@@ -663,54 +772,6 @@ DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface)
         lpSurfaceGlobal->fpVidMem       = DDHAL_PLEASEALLOC_BLOCKSIZE;
     }
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    if(pDev->vhwaInfo.bVHWAEnabled)
-    {
-        VBOXVHWACMD* pCmd = vboxVHWACommandCreate (pDev, VBOXVHWACMD_TYPE_SURF_CREATE, sizeof(VBOXVHWACMD_SURF_CREATE));
-        if(pCmd)
-        {
-            VBOXVHWACMD_SURF_CREATE * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_CREATE);
-            PVBOXVHWASURFDESC pDesc;
-            memset(pBody, 0, sizeof(VBOXVHWACMD_SURF_CREATE));
-
-            pBody->u.in.SurfInfo.surfCaps = vboxVHWAFromDDSCAPS(lpSurfaceLocal->ddsCaps.dwCaps);
-
-            pBody->u.in.SurfInfo.height = lpSurfaceGlobal->wHeight;
-            pBody->u.in.SurfInfo.width = lpSurfaceGlobal->wWidth;
-
-            vboxVHWAFromDDPIXELFORMAT(&pBody->u.in.SurfInfo.PixelFormat, &lpSurfaceGlobal->ddpfSurface);
-
-            if (lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
-            {
-                pBody->u.in.offSurface = 0;
-            }
-            else
-            {
-                pBody->u.in.offSurface = VBOXVHWA_OFFSET64_VOID;
-            }
-
-
-            pDesc = vboxVHWASurfDescAlloc();
-            if(pDesc)
-            {
-                pDesc->cBitsPerPixel = lBpp;
-                vboxVHWACommandSubmit(pDev, pCmd);
-                if(pCmd->rc == VINF_SUCCESS)
-                {
-                    pDesc->hHostHandle = pBody->u.out.hSurf;
-                    lpSurfaceGlobal->dwReserved1 = (ULONG_PTR)pDesc;
-                    lpCreateSurface->ddRVal = DD_OK;
-                }
-                else
-                {
-                    vboxVHWASurfDescFree(pDesc);
-                    lpCreateSurface->ddRVal = DDERR_GENERIC;
-                }
-            }
-            vboxVHWACommandFree(pDev, pCmd);
-        }
-    }
-#endif
     return DDHAL_DRIVER_NOTHANDLED;
 }
 
@@ -740,24 +801,12 @@ DWORD APIENTRY DdCanCreateSurface(PDD_CANCREATESURFACEDATA lpCanCreateSurface)
 
     DISPDBG((0, "%s: %p\n", __FUNCTION__, pDev));
 
-    if (lpDDS->ddsCaps.dwCaps & DDSCAPS_ZBUFFER)
-    {
-        DISPDBG((0, "No Z-Bufer support\n"));
-        lpCanCreateSurface->ddRVal = DDERR_INVALIDPIXELFORMAT;
-        return DDHAL_DRIVER_HANDLED;
-    }
-    if (lpDDS->ddsCaps.dwCaps & DDSCAPS_TEXTURE)
-    {
-        DISPDBG((0, "No texture support\n"));
-        lpCanCreateSurface->ddRVal = DDERR_INVALIDPIXELFORMAT;
-        return DDHAL_DRIVER_HANDLED;
-    }
-
 #ifdef VBOX_WITH_VIDEOHWACCEL
     if(pDev->vhwaInfo.bVHWAEnabled)
     {
         VBOXVHWACMD* pCmd;
         uint32_t unsupportedSCaps = vboxVHWAUnsupportedDDSCAPS(lpDDS->ddsCaps.dwCaps);
+        Assert(!unsupportedSCaps);
         if(unsupportedSCaps)
         {
             VHWADBG(("vboxVHWASurfCanCreate: unsupported ddscaps: 0x%x", unsupportedSCaps));
@@ -766,6 +815,7 @@ DWORD APIENTRY DdCanCreateSurface(PDD_CANCREATESURFACEDATA lpCanCreateSurface)
         }
 
         unsupportedSCaps = vboxVHWAUnsupportedDDPFS(lpDDS->ddpfPixelFormat.dwFlags);
+        Assert(!unsupportedSCaps);
         if(unsupportedSCaps)
         {
             VHWADBG(("vboxVHWASurfCanCreate: unsupported pixel format: 0x%x", unsupportedSCaps));
@@ -776,19 +826,18 @@ DWORD APIENTRY DdCanCreateSurface(PDD_CANCREATESURFACEDATA lpCanCreateSurface)
         pCmd = vboxVHWACommandCreate (pDev, VBOXVHWACMD_TYPE_SURF_CANCREATE, sizeof(VBOXVHWACMD_SURF_CANCREATE));
         if(pCmd)
         {
+            int rc;
             VBOXVHWACMD_SURF_CANCREATE * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_CANCREATE);
             memset(pBody, 0, sizeof(VBOXVHWACMD_SURF_CANCREATE));
 
-            pBody->u.in.SurfInfo.surfCaps = vboxVHWAFromDDSCAPS(lpDDS->ddsCaps.dwCaps);
-
-            pBody->u.in.SurfInfo.height = lpDDS->dwHeight;
-            pBody->u.in.SurfInfo.width = lpDDS->dwWidth;
-            vboxVHWAFromDDPIXELFORMAT(&pBody->u.in.SurfInfo.PixelFormat, &lpDDS->ddpfPixelFormat);
+            rc = vboxVHWAFromDDSURFACEDESC(&pBody->u.in.SurfInfo, lpDDS);
+            pBody->u.in.bIsDifferentPixelFormat = lpCanCreateSurface->bIsDifferentPixelFormat;
 
             vboxVHWACommandSubmit(pDev, pCmd);
             Assert(pCmd->rc == VINF_SUCCESS);
             if(pCmd->rc == VINF_SUCCESS)
             {
+                Assert(!pBody->u.out.ErrInfo);
                 if(pBody->u.out.ErrInfo)
                 {
                     lpCanCreateSurface->ddRVal = DDERR_GENERIC;
@@ -811,6 +860,19 @@ DWORD APIENTRY DdCanCreateSurface(PDD_CANCREATESURFACEDATA lpCanCreateSurface)
         return DDHAL_DRIVER_HANDLED;
     }
 #endif
+
+    if (lpDDS->ddsCaps.dwCaps & DDSCAPS_ZBUFFER)
+    {
+        DISPDBG((0, "No Z-Bufer support\n"));
+        lpCanCreateSurface->ddRVal = DDERR_INVALIDPIXELFORMAT;
+        return DDHAL_DRIVER_HANDLED;
+    }
+    if (lpDDS->ddsCaps.dwCaps & DDSCAPS_TEXTURE)
+    {
+        DISPDBG((0, "No texture support\n"));
+        lpCanCreateSurface->ddRVal = DDERR_INVALIDPIXELFORMAT;
+        return DDHAL_DRIVER_HANDLED;
+    }
     if (lpCanCreateSurface->bIsDifferentPixelFormat && (lpDDS->ddpfPixelFormat.dwFlags & DDPF_FOURCC))
     {
         DISPDBG((0, "FOURCC not supported\n"));
