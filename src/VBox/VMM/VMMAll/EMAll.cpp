@@ -2907,7 +2907,8 @@ VMMDECL(int) EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 #endif
     default:
         /* In X2APIC specification this range is reserved for APIC control. */
-        if ((pRegFrame->ecx >= MSR_IA32_APIC_START) && (pRegFrame->ecx < MSR_IA32_APIC_END))
+        if (    pRegFrame->ecx >= MSR_IA32_APIC_START
+            &&  pRegFrame->ecx <  MSR_IA32_APIC_END)
             rc = PDMApicReadMSR(pVM, pVCpu->idCpu, pRegFrame->ecx, &val);
         else
             /* We should actually trigger a #GP here, but don't as that will cause more trouble. */
@@ -2918,7 +2919,7 @@ VMMDECL(int) EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
     if (rc == VINF_SUCCESS)
     {
         pRegFrame->rax = (uint32_t) val;
-        pRegFrame->rdx = (uint32_t) (val >> 32ULL);
+        pRegFrame->rdx = (uint32_t)(val >> 32);
     }
     return rc;
 }
@@ -2965,6 +2966,10 @@ VMMDECL(int) EMInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
     LogFlow(("EMInterpretWrmsr %s (%x) val=%RX64\n", emMSRtoString(pRegFrame->ecx), pRegFrame->ecx, val));
     switch (pRegFrame->ecx)
     {
+    case MSR_IA32_TSC:
+        TMCpuTickSet(pVM, pVCpu, val);
+        break;
+
     case MSR_IA32_APICBASE:
     {
         int rc = PDMApicSetBase(pVM, val);
@@ -3057,7 +3062,8 @@ VMMDECL(int) EMInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 
     default:
         /* In X2APIC specification this range is reserved for APIC control. */
-        if ((pRegFrame->ecx >=  MSR_IA32_APIC_START) && (pRegFrame->ecx <  MSR_IA32_APIC_END))
+        if (    pRegFrame->ecx >= MSR_IA32_APIC_START
+            &&  pRegFrame->ecx <  MSR_IA32_APIC_END)
             return PDMApicWriteMSR(pVM, pVCpu->idCpu, pRegFrame->ecx, val);
 
         /* We should actually trigger a #GP here, but don't as that might cause more trouble. */
