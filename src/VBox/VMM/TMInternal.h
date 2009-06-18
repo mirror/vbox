@@ -507,6 +507,9 @@ typedef struct TM
     /** The timer callback. */
     STAMCOUNTER                 StatTimerCallbackSetFF;
 
+    /** Calls to TMCpuTickSet. */
+    STAMCOUNTER                 StatTSCSet;
+
     /** @name Reasons for refusing TSC offsetting in TMCpuTickCanUseRealTSC.
      * @{ */
     STAMCOUNTER                 StatTSCNotFixed;

@@ -129,7 +129,7 @@ VMMDECL(uint64_t) TMVirtualFromMilli(PVM pVM, uint64_t u64MilliTS);
 VMMDECL(uint64_t) TMCpuTickGet(PVMCPU pVCpu);
 VMMDECL(uint64_t) TMCpuTickGetNoCheck(PVMCPU pVCpu);
 VMMDECL(bool)     TMCpuTickCanUseRealTSC(PVMCPU pVCpu, uint64_t *poffRealTSC);
-VMMDECL(int)      TMCpuTickSet(PVMCPU pVCpu, uint64_t u64Tick);
+VMMDECL(int)      TMCpuTickSet(PVM pVM, PVMCPU pVCpu, uint64_t u64Tick);
 VMMDECL(uint64_t) TMCpuTicksPerSecond(PVM pVM);
 /** @} */
 

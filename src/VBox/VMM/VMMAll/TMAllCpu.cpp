@@ -244,24 +244,30 @@ VMMDECL(uint64_t) TMCpuTickGetNoCheck(PVMCPU pVCpu)
  * Sets the current CPU timestamp counter.
  *
  * @returns VBox status code.
- * @param   pVCpu       The VMCPU to operate on.
+ * @param   pVM         The VM handle.
+ * @param   pVCpu       The virtual CPU to operate on.
  * @param   u64Tick     The new timestamp value.
+ *
+ * @thread  EMT which TSC is to be set.
  */
-VMMDECL(int) TMCpuTickSet(PVMCPU pVCpu, uint64_t u64Tick)
+VMMDECL(int) TMCpuTickSet(PVM pVM, PVMCPU pVCpu, uint64_t u64Tick)
 {
+    VMCPU_ASSERT_EMT(pVCpu);
+    STAM_COUNTER_INC(&pVM->tm.s.StatTSCSet);
+
     /*
      * This is easier to do when the TSC is paused since resume will
      * do all the calcuations for us.
      */
-    PVM     pVM         = pVCpu->CTX_SUFF(pVM);
     bool    fTSCTicking = pVCpu->tm.s.fTSCTicking;
     if (fTSCTicking)
         tmCpuTickPause(pVM, pVCpu);
+
     pVCpu->tm.s.u64TSC = u64Tick;
+    /** @todo Try help synchronizing it better among the virtual CPUs? */
 
     if (fTSCTicking)
         tmCpuTickResume(pVM, pVCpu);
-    /** @todo Try help synchronizing it better among the virtual CPUs? */
     return VINF_SUCCESS;
 }
 
