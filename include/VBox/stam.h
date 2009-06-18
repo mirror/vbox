@@ -197,6 +197,8 @@ typedef enum STAMUNIT
     STAMUNIT_ERRORS,
     /** Number of occurences. */
     STAMUNIT_OCCURENCES,
+    /** Ticks. */
+    STAMUNIT_TICKS,
     /** Ticks per call. */
     STAMUNIT_TICKS_PER_CALL,
     /** Ticks per occurence. */

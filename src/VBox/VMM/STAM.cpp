@@ -1794,6 +1794,7 @@ VMMR3DECL(const char *) STAMR3GetUnit(STAMUNIT enmUnit)
         case STAMUNIT_PAGES:                return "pages";
         case STAMUNIT_ERRORS:               return "errors";
         case STAMUNIT_OCCURENCES:           return "times";
+        case STAMUNIT_TICKS:                return "ticks";
         case STAMUNIT_TICKS_PER_CALL:       return "ticks/call";
         case STAMUNIT_TICKS_PER_OCCURENCE:  return "ticks/time";
         case STAMUNIT_GOOD_BAD:             return "good:bad";
