@@ -1043,11 +1043,11 @@ DWORD APIENTRY DdLock(PDD_LOCKDATA lpLock)
             }
         }
 
-        if(VBOXDD_CHECKFLAG(lpLock->dwFlags, DDLOCK_SURFACEMEMORYPTR))
-        {
-            lpLock->lpSurfData = (LPVOID)(lpSurfaceGlobal->fpVidMem + lpSurfaceGlobal->lPitch * lpLock->rArea.top
-                + lpLock->rArea.left * pDesc->cBitsPerPixel/8);
-        }
+//        if(VBOXDD_CHECKFLAG(lpLock->dwFlags, DDLOCK_SURFACEMEMORYPTR))
+//        {
+//            lpLock->lpSurfData = (LPVOID)(lpSurfaceGlobal->fpVidMem + lpSurfaceGlobal->lPitch * lpLock->rArea.top
+//                + lpLock->rArea.left * pDesc->cBitsPerPixel/8);
+//        }
 
         pCmd = vboxVHWACommandCreate (pDev, VBOXVHWACMD_TYPE_SURF_LOCK, sizeof(VBOXVHWACMD_SURF_LOCK));
         if(pCmd)
@@ -1089,7 +1089,7 @@ DWORD APIENTRY DdLock(PDD_LOCKDATA lpLock)
         {
             lpLock->ddRVal = DDERR_GENERIC;
         }
-        return DDHAL_DRIVER_HANDLED;
+        return DDHAL_DRIVER_NOTHANDLED;
     }
 #endif
     if (lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
