@@ -91,6 +91,11 @@ class PlatformMSCOM:
                 except AttributeError,e:
                     return self.__dict__['_rootFake'].__getattr__(a)
 
+    VBOX_TLB_GUID  = '{46137EEC-703B-4FE5-AFD4-7C9BBBBA0259}'
+    VBOX_TLB_LCID  = 0
+    VBOX_TLB_MAJOR = 1
+    VBOX_TLB_MINOR = 0
+
     def __init__(self, params):
             from win32com import universal
             from win32com.client import gencache, DispatchWithEvents, Dispatch
@@ -98,7 +103,7 @@ class PlatformMSCOM:
             import win32com
             import pythoncom
             import win32api
-            self.constants = PlatformMSCOM.InterfacesWrapper()
+            self.constants = PlatformMSCOM.InterfacesWrapper()                        
 
     def getSessionObject(self, vbox):
         import win32com
@@ -134,19 +139,53 @@ class PlatformMSCOM:
         d = {}
         d['BaseClass'] = impl
         d['arg'] = arg
+	d['tlb_guid'] = PlatformMSCOM.VBOX_TLB_GUID
         str = ""
-        str += "import win32com.server.util"
+        str += "import win32com.server.util\n"
+        #str += "from win32com import universal\n"
+        #str += "import pythoncom\n"
+        #str += "universal.RegisterInterfaces(tlb_guid, 0, 1, 0, ['"+iface+"'])\n"
+
         str += "class "+iface+"Impl(BaseClass):\n"
         str += "   _com_interfaces_ = ['"+iface+"']\n"
-        str += "   _typelib_guid_ = '{46137EEC-703B-4FE5-AFD4-7C9BBBBA0259}'\n"
+        str += "   _typelib_guid_ = tlb_guid\n"
+	str += "   _typelib_version_ = 1, 0\n"
+        #str += "   _reg_clsctx_ = pythoncom.CLSCTX_INPROC_SERVER\n"
+        #str += "   _reg_clsid_ = '{F21202A2-959A-4149-B1C3-68B9013F3335}'\n"
+        #str += "   _reg_progid_ = 'VirtualBox."+iface+"Impl'\n"
+        #str += "   _reg_desc_ = 'Generated callback implementation class'\n"
+        #str += "   _reg_policy_spec_ = 'win32com.server.policy.EventHandlerPolicy'\n"
+
         str += "   def __init__(self): BaseClass.__init__(self, arg)\n"
         str += "result = win32com.server.util.wrap("+iface+"Impl())\n"        
         exec (str,d,d)
         return d['result']
 
     def waitForEvents(self, timeout):
-        # not really supported yet
-        pass
+        from win32file import CloseHandle
+        from win32con import DUPLICATE_SAME_ACCESS
+	from win32api import GetCurrentThread,DuplicateHandle,GetCurrentProcess
+	from win32event import MsgWaitForMultipleObjects, \
+                               QS_ALLINPUT, WAIT_TIMEOUT, WAIT_OBJECT_0
+        from pythoncom import PumpWaitingMessages
+
+        pid = GetCurrentProcess()
+	handle = DuplicateHandle(pid, GetCurrentThread(), pid, 0, 0, DUPLICATE_SAME_ACCESS)
+        
+        handles = []
+	handles.append(handle)
+
+	rc = MsgWaitForMultipleObjects(handles, 0, timeout, QS_ALLINPUT)
+        if rc >= WAIT_OBJECT_0 and rc < WAIT_OBJECT_0+len(handles):
+            # is it possible?
+            print "how come?"
+            pass
+        elif rc==WAIT_OBJECT_0 + len(handles):
+            # Waiting messages
+            PumpWaitingMessages()
+        else:
+            pass
+        CloseHandle(handle)
 
     def deinit(self):
         import pythoncom
