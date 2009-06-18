@@ -67,8 +67,7 @@ static int patchAml(PPDMDEVINS pDevIns, uint8_t* pAml, size_t uAmlLen)
     if (RT_FAILURE(rc))
         return rc;
 
-#if 0
-    /* Can clear CPU objects at all  here, if needed */
+    /* Clear CPU objects at all, if needed */
     bool fShowCpu;
     rc = CFGMR3QueryBoolDef(pDevIns->pCfgHandle, "ShowCpu", &fShowCpu, false);
     if (RT_FAILURE(rc))
@@ -76,7 +75,6 @@ static int patchAml(PPDMDEVINS pDevIns, uint8_t* pAml, size_t uAmlLen)
 
     if (!fShowCpu)
       cNumCpus = 0;
-#endif
 
     /**
      * Now search AML for:
