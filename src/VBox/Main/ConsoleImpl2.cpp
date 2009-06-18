@@ -1339,26 +1339,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapNetworkLeds[ulInstance]); RC_CHECK();
 
         /*
-         * Enable the packet sniffer if requested.
-         */
-        BOOL fSniffer;
-        hrc = networkAdapter->COMGETTER(TraceEnabled)(&fSniffer);                   H();
-        if (fSniffer)
-        {
-            /* insert the sniffer filter driver. */
-            rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);                         RC_CHECK();
-            rc = CFGMR3InsertString(pLunL0, "Driver", "NetSniffer");                RC_CHECK();
-            rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                         RC_CHECK();
-            hrc = networkAdapter->COMGETTER(TraceFile)(&str);                       H();
-            if (str) /* check convention for indicating default file. */
-            {
-                STR_CONV();
-                rc = CFGMR3InsertString(pCfg, "File", psz);                         RC_CHECK();
-                STR_FREE();
-            }
-        }
-
-        /*
          * Configure the network card now
          */
         NetworkAttachmentType_T networkAttachment;
