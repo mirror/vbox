@@ -955,23 +955,27 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
             {
                 uint32_t iBATEntryIndexCurr = cBATEntryIndex + 1;
 
+                cSectors = 1;
+
                 /*
                  * The first sector being read is marked dirty, read as much as we
                  * can from child. Note that only sectors that are marked dirty
                  * must be read from child.
                  */
-                do
+                while (cSectors < (cbRead / VHD_SECTOR_SIZE))
                 {
-                    cSectors++;
 
                     iBitmap    = iBATEntryIndexCurr / 8; /* Byte in the block bitmap. */
                     iBitInByte = (8 - 1) - (iBATEntryIndexCurr % 8);
                     puBitmap  = pImage->pu8Bitmap + iBitmap;
+                    AssertMsg(puBitmap < (pImage->pu8Bitmap + pImage->cbDataBlockBitmap),
+                              ("VHD: Current bitmap position exceeds maximum size of the bitmap\n"));
                     if (!ASMBitTest(puBitmap, iBitInByte))
                         break;
 
                     iBATEntryIndexCurr++;
-                } while (cSectors < (cbRead / VHD_SECTOR_SIZE));
+                    cSectors++;
+                }
 
                 cbRead = cSectors * VHD_SECTOR_SIZE;
 
@@ -990,18 +994,22 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
                  * and pass it to our caller along with the notification that they
                  * should be read from the parent.
                  */
-                do
-                {
-                    cSectors++;
 
+                cSectors = 1;
+
+                while (cSectors < (cbRead / VHD_SECTOR_SIZE))
+                {
                     iBitmap    = iBATEntryIndexCurr / 8; /* Byte in the block bitmap. */
                     iBitInByte = (8 - 1) - (iBATEntryIndexCurr % 8);
                     puBitmap  = pImage->pu8Bitmap + iBitmap;
+                    AssertMsg(puBitmap < (pImage->pu8Bitmap + pImage->cbDataBlockBitmap),
+                              ("VHD: Current bitmap position exceeds maximum size of the bitmap\n"));
                     if (ASMBitTest(puBitmap, iBitInByte))
                         break;
 
                     iBATEntryIndexCurr++;
-                } while (cSectors < (cbRead / VHD_SECTOR_SIZE));
+                    cSectors++;
+                }
 
                 cbRead = cSectors * VHD_SECTOR_SIZE;
                 Log(("%s: Sectors free: uVhdOffset=%llu cbRead=%u\n", __FUNCTION__, uVhdOffset, cbRead));
