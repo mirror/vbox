@@ -660,6 +660,14 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     hrc = biosSettings->COMGETTER(ACPIEnabled)(&fACPI);                             H();
     if (fACPI)
     {
+        BOOL fShowCpu = fExtProfile;
+        /* Always show the CPU leafs when we have multiple VCPUs or when the IO-APIC is enabled.
+         * The Windows SMP kernel needs a CPU leaf or else its idle loop will burn cpu cycles; the
+         * intelppm driver refuses to register an idle state handler.
+         */
+        if ((cCpus > 1) ||  fIOAPIC)
+            fShowCpu = true;
+         
         rc = CFGMR3InsertNode(pDevices, "acpi", &pDev);                             RC_CHECK();
         rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               RC_CHECK();
         rc = CFGMR3InsertInteger(pInst, "Trusted", 1);              /* boolean */   RC_CHECK();
@@ -677,7 +685,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertInteger(pCfg,  "SmcEnabled", fSmcEnabled);                 RC_CHECK();
 #endif
         rc = CFGMR3InsertInteger(pCfg,  "ShowRtc", fExtProfile);                    RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "ShowCpu", fExtProfile);                    RC_CHECK();
+
+        rc = CFGMR3InsertInteger(pCfg,  "ShowCpu", fShowCpu);                       RC_CHECK();
         rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          7);                 RC_CHECK();
         Assert(!afPciDeviceNo[7]);
         afPciDeviceNo[7] = true;

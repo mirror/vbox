@@ -133,7 +133,6 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                    0x0   /* Processor IO ports range length */
                    )
         {
-           Method (_STA) { Return(\_SB.UCP0) }
         }
         Processor (CPU1, /* Name */
                    0x01, /* Id */
