@@ -71,6 +71,15 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegister(PPDMDEVINS pDevIns, RTIOPORT
              Port, cPorts, pvUser, pfnOut, pfnIn, pfnOutStr, pfnInStr, pszDesc, pszDesc));
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
 
+#if 0 /** @todo needs a real string cache for this */
+    if (pDevIns->iInstance > 0)
+    {
+         char *pszDesc2 = MMR3HeapAPrintf(pVM, MM_TAG_PDM_DEVICE_DESC, "%s [%u]", pszDesc, pDevIns->iInstance);
+         if (pszDesc2)
+             pszDesc = pszDesc2;
+    }
+#endif
+
     int rc = IOMR3IOPortRegisterR3(pDevIns->Internal.s.pVMR3, pDevIns, Port, cPorts, pvUser, pfnOut, pfnIn, pfnOutStr, pfnInStr, pszDesc);
 
     LogFlow(("pdmR3DevHlp_IOPortRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
@@ -121,7 +130,18 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterGC(PPDMDEVINS pDevIns, RTIOPO
         }
 
         if (RT_SUCCESS(rc))
+        {
+#if 0 /** @todo needs a real string cache for this */
+            if (pDevIns->iInstance > 0)
+            {
+                 char *pszDesc2 = MMR3HeapAPrintf(pVM, MM_TAG_PDM_DEVICE_DESC, "%s [%u]", pszDesc, pDevIns->iInstance);
+                 if (pszDesc2)
+                     pszDesc = pszDesc2;
+            }
+#endif
+
             rc = IOMR3IOPortRegisterRC(pDevIns->Internal.s.pVMR3, pDevIns, Port, cPorts, pvUser, RCPtrOut, RCPtrIn, RCPtrOutStr, RCPtrInStr, pszDesc);
+        }
     }
     else
     {
@@ -177,7 +197,18 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPO
         }
 
         if (RT_SUCCESS(rc))
+        {
+#if 0 /** @todo needs a real string cache for this */
+            if (pDevIns->iInstance > 0)
+            {
+                 char *pszDesc2 = MMR3HeapAPrintf(pVM, MM_TAG_PDM_DEVICE_DESC, "%s [%u]", pszDesc, pDevIns->iInstance);
+                 if (pszDesc2)
+                     pszDesc = pszDesc2;
+            }
+#endif
+
             rc = IOMR3IOPortRegisterR0(pDevIns->Internal.s.pVMR3, pDevIns, Port, cPorts, pvUser, pfnR0PtrOut, pfnR0PtrIn, pfnR0PtrOutStr, pfnR0PtrInStr, pszDesc);
+        }
     }
     else
     {
@@ -215,6 +246,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegister(PPDMDEVINS pDevIns, RTGCPHYS G
     LogFlow(("pdmR3DevHlp_MMIORegister: caller='%s'/%d: GCPhysStart=%RGp cbRange=%#x pvUser=%p pfnWrite=%p pfnRead=%p pfnFill=%p pszDesc=%p:{%s}\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, pfnFill, pszDesc, pszDesc));
 
+/** @todo IOMR3MMIORegisterR3 mangles the description, move it here. */
     int rc = IOMR3MMIORegisterR3(pDevIns->Internal.s.pVMR3, pDevIns, GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, pfnFill, pszDesc);
 
     LogFlow(("pdmR3DevHlp_MMIORegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
@@ -231,6 +263,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterGC(PPDMDEVINS pDevIns, RTGCPHYS
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
     LogFlow(("pdmR3DevHlp_MMIORegisterGC: caller='%s'/%d: GCPhysStart=%RGp cbRange=%#x pvUser=%p pszWrite=%p:{%s} pszRead=%p:{%s} pszFill=%p:{%s}\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhysStart, cbRange, pvUser, pszWrite, pszWrite, pszRead, pszRead, pszFill, pszFill));
+
+/** @todo pszDesc is unused here, drop it.  */
 
     /*
      * Resolve the functions.
@@ -286,6 +320,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
     LogFlow(("pdmR3DevHlp_MMIORegisterHC: caller='%s'/%d: GCPhysStart=%RGp cbRange=%#x pvUser=%p pszWrite=%p:{%s} pszRead=%p:{%s} pszFill=%p:{%s}\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhysStart, cbRange, pvUser, pszWrite, pszWrite, pszRead, pszRead, pszFill, pszFill));
+
+/** @todo pszDesc is unused here, remove it.  */
 
     /*
      * Resolve the functions.
@@ -353,6 +389,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_ROMRegister(PPDMDEVINS pDevIns, RTGCPHYS GC
     LogFlow(("pdmR3DevHlp_ROMRegister: caller='%s'/%d: GCPhysStart=%RGp cbRange=%#x pvBinary=%p fFlags=%#RX32 pszDesc=%p:{%s}\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhysStart, cbRange, pvBinary, fFlags, pszDesc, pszDesc));
 
+/** @todo can we mangle pszDesc? */
     int rc = PGMR3PhysRomRegister(pDevIns->Internal.s.pVMR3, pDevIns, GCPhysStart, cbRange, pvBinary, fFlags, pszDesc);
 
     LogFlow(("pdmR3DevHlp_ROMRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
@@ -383,12 +420,19 @@ static DECLCALLBACK(int) pdmR3DevHlp_SSMRegister(PPDMDEVINS pDevIns, const char 
 static DECLCALLBACK(int) pdmR3DevHlp_TMTimerCreate(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT(pVM);
     LogFlow(("pdmR3DevHlp_TMTimerCreate: caller='%s'/%d: enmClock=%d pfnCallback=%p pvUser=%p fFlags=%#x pszDesc=%p:{%s} ppTimer=%p\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, enmClock, pfnCallback, pvUser, fFlags, pszDesc, pszDesc, ppTimer));
 
+    if (pDevIns->iInstance > 0) /** @todo use a string cache here later. */
+    {
+         char *pszDesc2 = MMR3HeapAPrintf(pVM, MM_TAG_PDM_DEVICE_DESC, "%s [%u]", pszDesc, pDevIns->iInstance);
+         if (pszDesc2)
+             pszDesc = pszDesc2;
+    }
 
-    int rc = TMR3TimerCreateDevice(pDevIns->Internal.s.pVMR3, pDevIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, ppTimer);
+    int rc = TMR3TimerCreateDevice(pVM, pDevIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, ppTimer);
 
     LogFlow(("pdmR3DevHlp_TMTimerCreate: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
@@ -2528,6 +2572,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIO2Register(PPDMDEVINS pDevIns, uint32_t 
     LogFlow(("pdmR3DevHlp_MMIO2Register: caller='%s'/%d: iRegion=#x cb=%#RGp fFlags=%RX32 ppv=%p pszDescp=%p:{%s}\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, iRegion, cb, fFlags, ppv, pszDesc, pszDesc));
 
+/** @todo PGMR3PhysMMIO2Register mangles the description, move it here and
+ *        use a real string cache. */
     int rc = PGMR3PhysMMIO2Register(pDevIns->Internal.s.pVMR3, pDevIns, iRegion, cb, fFlags, ppv, pszDesc);
 
     LogFlow(("pdmR3DevHlp_MMIO2Register: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
@@ -2595,11 +2641,19 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMHyperMapMMIO2(PPDMDEVINS pDevIns, uint32_
                                                      const char *pszDesc, PRTRCPTR pRCPtr)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT(pVM);
     LogFlow(("pdmR3DevHlp_MMHyperMapMMIO2: caller='%s'/%d: iRegion=#x off=%RGp cb=%RGp pszDesc=%p:{%s} pRCPtr=%p\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, iRegion, off, cb, pszDesc, pszDesc, pRCPtr));
 
-    int rc = MMR3HyperMapMMIO2(pDevIns->Internal.s.pVMR3, pDevIns, iRegion, off, cb, pszDesc, pRCPtr);
+    if (pDevIns->iInstance > 0)
+    {
+         char *pszDesc2 = MMR3HeapAPrintf(pVM, MM_TAG_PDM_DEVICE_DESC, "%s [%u]", pszDesc, pDevIns->iInstance);
+         if (pszDesc2)
+             pszDesc = pszDesc2;
+    }
+
+    int rc = MMR3HyperMapMMIO2(pVM, pDevIns, iRegion, off, cb, pszDesc, pRCPtr);
 
     LogFlow(("pdmR3DevHlp_MMHyperMapMMIO2: caller='%s'/%d: returns %Rrc *pRCPtr=%RRv\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc, *pRCPtr));
     return rc;
@@ -2613,11 +2667,19 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIO2MapKernel(PPDMDEVINS pDevIns, uint32_t
                                                     const char *pszDesc, PRTR0PTR pR0Ptr)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT(pVM);
     LogFlow(("pdmR3DevHlp_MMIO2MapKernel: caller='%s'/%d: iRegion=#x off=%RGp cb=%RGp pszDesc=%p:{%s} pR0Ptr=%p\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, iRegion, off, cb, pszDesc, pszDesc, pR0Ptr));
 
-    int rc = PGMR3PhysMMIO2MapKernel(pDevIns->Internal.s.pVMR3, pDevIns, iRegion, off, cb, pszDesc, pR0Ptr);
+    if (pDevIns->iInstance > 0)
+    {
+         char *pszDesc2 = MMR3HeapAPrintf(pVM, MM_TAG_PDM_DEVICE_DESC, "%s [%u]", pszDesc, pDevIns->iInstance);
+         if (pszDesc2)
+             pszDesc = pszDesc2;
+    }
+
+    int rc = PGMR3PhysMMIO2MapKernel(pVM, pDevIns, iRegion, off, cb, pszDesc, pR0Ptr);
 
     LogFlow(("pdmR3DevHlp_MMIO2MapKernel: caller='%s'/%d: returns %Rrc *pR0Ptr=%RHv\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc, *pR0Ptr));
     return rc;

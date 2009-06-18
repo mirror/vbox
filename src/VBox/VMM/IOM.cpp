@@ -1397,7 +1397,7 @@ VMMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
      * For the 2nd+ instance, mangle the description string so it's unique.
      * (PGM requires this.)
      */
-    if (pDevIns->iInstance > 0)
+    if (pDevIns->iInstance > 0) /** @todo Move to PDMDevHlp.cpp and use a string cache. */
     {
         pszDesc = MMR3HeapAPrintf(pVM, MM_TAG_IOM, "%s [%u]", pszDesc, pDevIns->iInstance);
         if (!pszDesc)
