@@ -36,11 +36,15 @@ if test ! -z "$VBOXSVC_PID" && test "$VBOXSVC_PID" -ge 0; then
     abort_error
 fi
 
-# Check if the Zone Access service is holding open vboxdrv
-zoneaccessfound=`svcs -a | grep "virtualbox/zoneaccess"`
-if test ! -z "$zoneaccessfound"; then
-    echo "## VirtualBox's Zone Access service appears to still be running."
-    abort_error
+# Check if the Zone Access service is holding open vboxdrv, if so stop & remove it
+zoneaccessfound=`svcs -a | grep "virtualbox/zoneaccess" | awk '{ print $1 }'`
+if test ! -z "$zoneaccessfound"
+    if test "$zoneaccessfound" = "online"; then
+        echo "## VirtualBox's Zone Access service appears to still be running."
+        echo "## Stopping & removing service..."
+        /usr/sbin/svcadm disable -s svc:/application/virtualbox/zoneaccess
+    fi
+    /usr/sbin/svccfg delete svc:/application/virtualbox/zoneaccess    
 fi
 
 exit 0
