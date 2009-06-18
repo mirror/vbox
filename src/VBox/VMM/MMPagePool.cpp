@@ -396,6 +396,7 @@ DECLINLINE(void) mmR3PagePoolFree(PMMPAGEPOOL pPool, void *pv)
  */
 VMMR3DECL(void *) MMR3PageAlloc(PVM pVM)
 {
+    /* Note: unprotected by locks; currently fine as it's used during init or under the PGM lock */
     return mmR3PagePoolAlloc(pVM->mm.s.pPagePoolR3);
 }
 
@@ -414,6 +415,7 @@ VMMR3DECL(void *) MMR3PageAlloc(PVM pVM)
  */
 VMMR3DECL(RTHCPHYS) MMR3PageAllocPhys(PVM pVM)
 {
+    /* Note: unprotected by locks; currently fine as it's used during init or under the PGM lock */
     /** @todo optimize this, it's the most common case now. */
     void *pv = mmR3PagePoolAlloc(pVM->mm.s.pPagePoolR3);
     if (pv)
