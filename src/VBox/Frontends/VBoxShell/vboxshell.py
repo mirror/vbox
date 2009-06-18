@@ -156,6 +156,47 @@ class GuestMonitor:
     def onShowWindow(self, winId):
         print  "%s: onShowWindow: %d" %(self.mach.name, winId)
 
+class VBoxMonitor:
+    def __init__(self, vbox):
+        self.vbox = vbox
+        pass
+
+    def onMachineStateChange(self, id, state):
+        print "onMachineStateChange: %s %d" %(id, state)
+
+    def onMachineDataChange(self,id):
+        print "onMachineDataChange: %s" %(id)
+    
+    def onExtraDataCanChange(self, id, key, value):
+        print "onExtraDataCanChange: %s %s=>%s" %(id, key, value)
+	return true
+
+    def onExtraDataChange(self, id, key, value):
+        print "onExtraDataChange: %s %s=>%s" %(id, key, value)
+
+    def onMediaRegistred(self, id, type, registred):
+        print "onMediaRegistred: %s" %(id)
+
+    def onMachineRegistred(self, id, registred):
+        print "onMachineRegistred: %s" %(id)
+
+    def onSessionStateChange(self, id, state):
+        print "onSessionStateChange: %s %d" %(id, state)
+
+    def onSnapshotTaken(self, mach, id):
+        print "onSnapshotTaken: %s %s" %(mach, id)
+
+    def onSnapshotDiscarded(self, mach, id):
+        print "onSnapshotDiscarded: %s %s" %(mach, id)
+
+    def onSnapshotChange(self, mach, id):
+        print "onSnapshotChange: %s %s" %(mach, id)
+
+    def onGuestPropertyChange(self, id, val1, val2, val3):
+        print "onGuestPropertyChange: %s" %(id)
+    
+
+
 g_hasreadline = 1
 try:
     import readline
@@ -303,7 +344,6 @@ def guestExec(ctx, machine, console, cmds):
 
 def monitorGuest(ctx, machine, console, dur):
     import time
-    import xpcom
     cb = ctx['global'].createCallback('IConsoleCallback', GuestMonitor, machine)
     console.registerCallback(cb)
     if dur == -1:
@@ -318,7 +358,26 @@ def monitorGuest(ctx, machine, console, dur):
         pass    
     console.unregisterCallback(cb)
 
-    
+
+def monitorVbox(ctx, dur):
+    import time
+    vbox = ctx['vb']
+    cb = ctx['global'].createCallback('IVirtualBoxCallback', VBoxMonitor, vbox)
+    vbox.registerCallback(cb)
+    if dur == -1:
+        # not infinity, but close enough
+        dur = 100000
+    try:
+        end = time.time() + dur
+        while  time.time() < end:
+            ctx['global'].waitForEvents(500)
+    # We need to catch all exceptions here, otherwise callback will never be unregistered
+    except Exception,e:
+        print e
+        if g_verbose:
+                traceback.print_exc()
+        pass    
+    vbox.unregisterCallback(cb)
 
 def cmdExistingVm(ctx,mach,cmd,args):
     mgr=ctx['mgr']
@@ -560,6 +619,16 @@ def monitorGuestCmd(ctx, args):
     cmdExistingVm(ctx, mach, 'monitorGuest', dur)
     return 0
 
+def monitorVboxCmd(ctx, args):
+    if (len(args) > 2):
+        print "usage: monitorVbox (duration)"
+        return 0
+    dur = 5
+    if len(args) > 1:
+        dur = float(args[1])
+    monitorVbox(ctx, dur)
+    return 0
+
 def evalCmd(ctx, args):
    expr = ' '.join(args[1:])
    try:
@@ -596,6 +665,7 @@ commands = {'help':['Prints help information', helpCmd],
             'host':['Show host information', hostCmd],
             'guest':['Execute command for guest: guest Win32 console.mouse.putMouseEvent(20, 20, 0, 0)', guestCmd],
             'monitorGuest':['Monitor what happens with the guest for some time: monitorGuest Win32 10', monitorGuestCmd],
+            'monitorVbox':['Monitor what happens with Virtual Box for some time: monitorVbox 10', monitorVboxCmd],
             }
 
 def runCommand(ctx, cmd):
