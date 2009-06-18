@@ -488,6 +488,13 @@ private:
     class VBoxGLWidget *mWidget;
 };
 
+typedef enum
+{
+    VBOXQGL_OP_PAINT = 1,
+    VBOXQGL_OP_RESIZE,
+    VBOXQGL_OP_VHWACMD,
+} VBOXQGL_OP_TYPE;
+
 class VBoxGLWidget : public QGLWidget
 {
 public:
