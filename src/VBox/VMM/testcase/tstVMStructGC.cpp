@@ -773,7 +773,7 @@ int main()
     GEN_CHECK_OFF(TMCPU, fTSCTicking);
     GEN_CHECK_OFF(TM, fTSCUseRealTSC);
     GEN_CHECK_OFF(TM, fTSCTiedToExecution);
-    GEN_CHECK_OFF(TMCPU, u64TSCOffset);
+    GEN_CHECK_OFF(TMCPU, offTSCRawSrc);
     GEN_CHECK_OFF(TMCPU, u64TSC);
     GEN_CHECK_OFF(TM, cTSCTicksPerSecond);
     GEN_CHECK_OFF(TM, cVirtualTicking);

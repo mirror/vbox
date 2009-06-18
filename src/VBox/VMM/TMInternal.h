@@ -539,9 +539,9 @@ typedef struct TMCPU
     bool                        fTSCTicking;
     bool                        afAlignment0[3]; /**< alignment padding */
 
-    /** The offset between the host TSC and the Guest TSC.
+    /** The offset between the raw TSC source and the Guest TSC.
      * Only valid if fTicking is set and and fTSCUseRealTSC is clear. */
-    uint64_t                    u64TSCOffset;
+    uint64_t                    offTSCRawSrc;
 
     /** The guest TSC when fTicking is cleared. */
     uint64_t                    u64TSC;
