@@ -66,9 +66,9 @@ int tmCpuTickResume(PVM pVM, PVMCPU pVCpu)
             /** @todo Test that pausing and resuming doesn't cause lag! (I.e. that we're
              *        unpaused before the virtual time and stopped after it. */
             if (pVM->tm.s.fTSCUseRealTSC)
-                pVCpu->tm.s.u64TSCOffset = ASMReadTSC() - pVCpu->tm.s.u64TSC;
+                pVCpu->tm.s.offTSCRawSrc = ASMReadTSC() - pVCpu->tm.s.u64TSC;
             else
-                pVCpu->tm.s.u64TSCOffset = tmCpuTickGetRawVirtual(pVM, false /* don't check for pending timers */)
+                pVCpu->tm.s.offTSCRawSrc = tmCpuTickGetRawVirtual(pVM, false /* don't check for pending timers */)
                                          - pVCpu->tm.s.u64TSC;
         }
         return VINF_SUCCESS;
@@ -137,7 +137,7 @@ VMMDECL(bool) TMCpuTickCanUseRealTSC(PVMCPU pVCpu, uint64_t *poffRealTSC)
             if (poffRealTSC)
             {
                 uint64_t u64Now = tmCpuTickGetRawVirtual(pVM, false /* don't check for pending timers */)
-                                - pVCpu->tm.s.u64TSCOffset;
+                                - pVCpu->tm.s.offTSCRawSrc;
                 /** @todo When we start collecting statistics on how much time we spend executing
                  * guest code before exiting, we should check this against the next virtual sync
                  * timer timeout. If it's lower than the avg. length, we should trap rdtsc to increase
@@ -149,7 +149,7 @@ VMMDECL(bool) TMCpuTickCanUseRealTSC(PVMCPU pVCpu, uint64_t *poffRealTSC)
         {
             /* The source is the real TSC. */
             if (pVM->tm.s.fTSCVirtualized)
-                *poffRealTSC = pVCpu->tm.s.u64TSCOffset;
+                *poffRealTSC = pVCpu->tm.s.offTSCRawSrc;
             else
                 *poffRealTSC = 0;
         }
@@ -205,7 +205,7 @@ DECLINLINE(uint64_t) tmCpuTickGetInternal(PVMCPU pVCpu, bool fCheckTimers)
                 u64 = ASMReadTSC();
             else
                 u64 = tmCpuTickGetRawVirtual(pVM, fCheckTimers);
-            u64 -= pVCpu->tm.s.u64TSCOffset;
+            u64 -= pVCpu->tm.s.offTSCRawSrc;
         }
         else
             u64 = ASMReadTSC();

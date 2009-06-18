@@ -605,7 +605,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
 #endif /* VBOX_WITH_STATISTICS */
 
     for (VMCPUID i = 0; i < pVM->cCPUs; i++)
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.u64TSCOffset, STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS, "TSC offset relative the raw source", "/TM/TSC/offCPU%u", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.offTSCRawSrc, STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS, "TSC offset relative the raw source", "/TM/TSC/offCPU%u", i);
 
 #ifdef VBOX_WITH_STATISTICS
     STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncCatchup,              STAMTYPE_PROFILE_ADV, "/TM/VirtualSync/CatchUp",    STAMUNIT_TICKS_PER_OCCURENCE, "Counting and measuring the times spent catching up.");
@@ -1144,7 +1144,7 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         SSMR3GetU64(pSSM, &pVCpu->tm.s.u64TSC);
 
         if (pVM->tm.s.fTSCUseRealTSC)
-            pVCpu->tm.s.u64TSCOffset = 0; /** @todo TSC restore stuff and HWACC. */
+            pVCpu->tm.s.offTSCRawSrc = 0; /** @todo TSC restore stuff and HWACC. */
     }
 
     rc = SSMR3GetU64(pSSM, &u64Hz);
@@ -2667,8 +2667,8 @@ static DECLCALLBACK(void) tmR3InfoClocks(PVM pVM, PCDBGFINFOHLP pHlp, const char
         if (pVM->tm.s.fTSCUseRealTSC)
         {
             pHlp->pfnPrintf(pHlp, " - real tsc");
-            if (pVCpu->tm.s.u64TSCOffset)
-                pHlp->pfnPrintf(pHlp, "\n          offset %RU64", pVCpu->tm.s.u64TSCOffset);
+            if (pVCpu->tm.s.offTSCRawSrc)
+                pHlp->pfnPrintf(pHlp, "\n          offset %RU64", pVCpu->tm.s.offTSCRawSrc);
         }
         else
             pHlp->pfnPrintf(pHlp, " - virtual clock");
