@@ -63,6 +63,8 @@ int tmCpuTickResume(PVM pVM, PVMCPU pVCpu)
         pVCpu->tm.s.fTSCTicking = true;
         if (pVM->tm.s.fTSCVirtualized)
         {
+            /** @todo Test that pausing and resuming doesn't cause lag! (I.e. that we're
+             *        unpaused before the virtual time and stopped after it. */
             if (pVM->tm.s.fTSCUseRealTSC)
                 pVCpu->tm.s.u64TSCOffset = ASMReadTSC() - pVCpu->tm.s.u64TSC;
             else
@@ -94,24 +96,6 @@ int tmCpuTickPause(PVM pVM, PVMCPU pVCpu)
     }
     AssertFailed();
     return VERR_INTERNAL_ERROR;
-}
-
-
-/**
- * Pauses the CPU timestamp counter ticking.
- *
- * @returns VBox status code.
- * @param   pVCpu       The VMCPU to operate on.
- * @todo replace this with TMNotifySuspend
- */
-VMMDECL(int) TMCpuTickPause(PVMCPU pVCpu)
-{
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-
-    if (!pVM->tm.s.fTSCTiedToExecution)
-        return tmCpuTickPause(pVM, pVCpu);
-    /* ignored */
-    return VINF_SUCCESS;
 }
 
 
@@ -265,8 +249,19 @@ VMMDECL(uint64_t) TMCpuTickGetNoCheck(PVMCPU pVCpu)
  */
 VMMDECL(int) TMCpuTickSet(PVMCPU pVCpu, uint64_t u64Tick)
 {
-    Assert(!pVCpu->tm.s.fTSCTicking);
+    /*
+     * This is easier to do when the TSC is paused since resume will
+     * do all the calcuations for us.
+     */
+    PVM     pVM         = pVCpu->CTX_SUFF(pVM);
+    bool    fTSCTicking = pVCpu->tm.s.fTSCTicking;
+    if (fTSCTicking)
+        tmCpuTickPause(pVM, pVCpu);
     pVCpu->tm.s.u64TSC = u64Tick;
+
+    if (fTSCTicking)
+        tmCpuTickResume(pVM, pVCpu);
+    /** @todo Try help synchronizing it better among the virtual CPUs? */
     return VINF_SUCCESS;
 }
 
