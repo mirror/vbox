@@ -40,10 +40,11 @@ fi
 zoneaccessfound=`svcs -a | grep "virtualbox/zoneaccess" | awk '{ print $1 }'`
 if test ! -z "$zoneaccessfound"
     if test "$zoneaccessfound" = "online"; then
-        echo "## VirtualBox's Zone Access service appears to still be running."
-        echo "## Stopping & removing service..."
+        echo "## VirtualBox's zone access service appears to still be running."
+        echo "## Stopping zone access service..."
         /usr/sbin/svcadm disable -s svc:/application/virtualbox/zoneaccess
     fi
+    echo "## Removing zone access service..."
     /usr/sbin/svccfg delete svc:/application/virtualbox/zoneaccess    
 fi
 
