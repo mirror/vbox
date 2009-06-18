@@ -151,7 +151,7 @@ class GuestMonitor:
 
     def onCanShowWindow(self):
         print  "%s: onCanShowWindow" %(self.mach.name)
-        return true
+        return True
 
     def onShowWindow(self, winId):
         print  "%s: onShowWindow: %d" %(self.mach.name, winId)
@@ -169,7 +169,7 @@ class VBoxMonitor:
     
     def onExtraDataCanChange(self, id, key, value):
         print "onExtraDataCanChange: %s %s=>%s" %(id, key, value)
-	return true
+	return True
 
     def onExtraDataChange(self, id, key, value):
         print "onExtraDataChange: %s %s=>%s" %(id, key, value)
