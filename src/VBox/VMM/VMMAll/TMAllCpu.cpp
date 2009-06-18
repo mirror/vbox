@@ -257,17 +257,16 @@ VMMDECL(int) TMCpuTickSet(PVM pVM, PVMCPU pVCpu, uint64_t u64Tick)
 
     /*
      * This is easier to do when the TSC is paused since resume will
-     * do all the calcuations for us.
+     * do all the calcuations for us. Actually, we don't need to
+     * call tmCpuTickPause here since we overwrite u64TSC anyway.
      */
-    bool    fTSCTicking = pVCpu->tm.s.fTSCTicking;
-    if (fTSCTicking)
-        tmCpuTickPause(pVM, pVCpu);
-
-    pVCpu->tm.s.u64TSC = u64Tick;
-    /** @todo Try help synchronizing it better among the virtual CPUs? */
-
+    bool        fTSCTicking = pVCpu->tm.s.fTSCTicking;
+    pVCpu->tm.s.fTSCTicking = false;
+    pVCpu->tm.s.u64TSC      = u64Tick;
     if (fTSCTicking)
         tmCpuTickResume(pVM, pVCpu);
+    /** @todo Try help synchronizing it better among the virtual CPUs? */
+
     return VINF_SUCCESS;
 }
 
