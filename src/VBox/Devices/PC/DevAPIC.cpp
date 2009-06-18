@@ -2152,28 +2152,37 @@ static DECLCALLBACK(int) apicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
  */
 static DECLCALLBACK(void) apicReset(PPDMDEVINS pDevIns)
 {
+    unsigned i;
     APICDeviceInfo* dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
-    APICState *s = getLapic(dev);
+    APICState *apic;
 
     APIC_LOCK_VOID(dev, VERR_INTERNAL_ERROR);
 
-    TMTimerStop(s->CTX_SUFF(pTimer));
+    /* Reset all APICs. */
+    for (i = 0, apic = LAPIC_BASE(dev); i < dev->cCpus; i++)
+    {
+        TMTimerStop(apic->CTX_SUFF(pTimer));
 
-    /* Do not send an init ipi to the VCPU; we take
-     * care of the proper init ourselves.
-    apic_init_ipi(dev, s);
-     */
+        /* Do not send an init ipi to the VCPU; we take
+        * care of the proper init ourselves.
+        apic_init_ipi(dev, apic);
+        */
 
-    /* malc, I've removed the initing duplicated in apic_init_ipi(). This
-     * arb_id was left over.. */
-    s->arb_id = 0;
-    /* Reset should re-enable the APIC. */
-    s->apicbase = 0xfee00000 | MSR_IA32_APICBASE_ENABLE;
-    if (s->phys_id == 0)
-        s->apicbase |= MSR_IA32_APICBASE_BSP;
+        /* malc, I've removed the initing duplicated in apic_init_ipi(). This
+        * arb_id was left over.. */
+        apic->arb_id = 0;
+        /* Reset should re-enable the APIC. */
+        apic->apicbase = 0xfee00000 | MSR_IA32_APICBASE_ENABLE;
+        if (apic->phys_id == 0)
+            apic->apicbase |= MSR_IA32_APICBASE_BSP;
+
+        /* Clear any pending APIC interrupt action flag. */
+        cpuClearInterrupt(dev, apic);
+
+        apic++;
+    }
     dev->pApicHlpR3->pfnChangeFeature(dev->pDevInsR3, dev->enmVersion);
-    /* Clear any pending APIC interrupt action flag. */
-    cpuClearInterrupt(dev, s);
+
     APIC_UNLOCK(dev);
 }
 
