@@ -116,12 +116,12 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
 #   elif PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64
 
 #    if PGM_GST_TYPE == PGM_TYPE_PAE
-    unsigned        iPDSrc;
+    unsigned        iPDSrc = 0;                 /* initialized to shut up gcc */
     X86PDPE         PdpeSrc;
     PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVCpu->pgm.s, pvFault, &iPDSrc, &PdpeSrc);
 
 #    elif PGM_GST_TYPE == PGM_TYPE_AMD64
-    unsigned        iPDSrc;
+    unsigned        iPDSrc = 0;                 /* initialized to shut up gcc */
     PX86PML4E       pPml4eSrc;
     X86PDPE         PdpeSrc;
     PGSTPD          pPDSrc;
@@ -1668,8 +1668,8 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
     const unsigned  iPDDst   = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
     const unsigned  iPdpt    = (GCPtrPage >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
-    PX86PDPAE       pPDDst;
-    PX86PDPT        pPdptDst;
+    PX86PDPAE       pPDDst   = NULL;            /* initialized to shut up gcc */
+    PX86PDPT        pPdptDst = NULL;            /* initialized to shut up gcc */
 
     int rc = pgmShwGetLongModePDPtr(pVCpu, GCPtrPage, NULL, &pPdptDst, &pPDDst);
     AssertRCSuccessReturn(rc, rc);
@@ -1956,9 +1956,9 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
     const unsigned  iPDDst   = ((GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK);
     const unsigned  iPdpt    = (GCPtrPage >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64; NOREF(iPdpt);
-    PX86PDPAE       pPDDst;
+    PX86PDPAE       pPDDst   = NULL;            /* initialized to shut up gcc */
     X86PDEPAE       PdeDst;
-    PX86PDPT        pPdptDst;
+    PX86PDPT        pPdptDst = NULL;            /* initialized to shut up gcc */
 
     int rc = pgmShwGetLongModePDPtr(pVCpu, GCPtrPage, NULL, &pPdptDst, &pPDDst);
     AssertRCSuccessReturn(rc, rc);
@@ -2492,8 +2492,8 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
     const unsigned  iPdpt    = (GCPtrPage >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
     const unsigned  iPDDst   = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
-    PX86PDPAE       pPDDst;
-    PX86PDPT        pPdptDst;
+    PX86PDPAE       pPDDst   = NULL;            /* initialized to shut up gcc */
+    PX86PDPT        pPdptDst = NULL;            /* initialized to shut up gcc */
     rc = pgmShwGetLongModePDPtr(pVCpu, GCPtrPage, NULL, &pPdptDst, &pPDDst);
     AssertRCSuccessReturn(rc, rc);
     Assert(pPDDst);
@@ -2912,7 +2912,7 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
 
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
     const unsigned  iPDDst  = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
-    PPGMPOOLPAGE    pShwPde;
+    PPGMPOOLPAGE    pShwPde = NULL;             /* initialized to shut up gcc */
     PX86PDPAE       pPDDst;
     PSHWPDE         pPdeDst;
 
@@ -2927,8 +2927,8 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
     const unsigned  iPdpt   = (GCPtrPage >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
     const unsigned  iPDDst  = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
-    PX86PDPAE       pPDDst;
-    PX86PDPT        pPdptDst;
+    PX86PDPAE       pPDDst  = NULL;             /* initialized to shut up gcc */
+    PX86PDPT        pPdptDst= NULL;             /* initialized to shut up gcc */
     rc = pgmShwGetLongModePDPtr(pVCpu, GCPtrPage, NULL, &pPdptDst, &pPDDst);
     AssertRCSuccessReturn(rc, rc);
     Assert(pPDDst);
@@ -3587,7 +3587,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
 
         for (;iPdpt <= SHW_PDPT_MASK; iPdpt++)
         {
-            unsigned        iPDSrc;
+            unsigned        iPDSrc  = 0;        /* initialized to shut up gcc */
             PPGMPOOLPAGE    pShwPde = NULL;
             PX86PDPE        pPdpeDst;
             RTGCPHYS        GCPhysPdeSrc;
