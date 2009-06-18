@@ -602,7 +602,12 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->tm.s.StatTSCSyncNotTicking,                   STAMTYPE_COUNTER, "/TM/TSC/Intercept/SyncNotTicking",    STAMUNIT_OCCURENCES, "VirtualSync isn't ticking.");
     STAM_REG(pVM, &pVM->tm.s.StatTSCWarp,                             STAMTYPE_COUNTER, "/TM/TSC/Intercept/Warp",              STAMUNIT_OCCURENCES, "Warpdrive is active.");
     STAM_REG(pVM, &pVM->tm.s.StatTSCSet,                              STAMTYPE_COUNTER, "/TM/TSC/Sets",                        STAMUNIT_OCCURENCES, "Calls to TMCpuTickSet.");
+#endif /* VBOX_WITH_STATISTICS */
 
+    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.u64TSCOffset, STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS, "TSC offset relative the raw source", "/TM/TSC/offCPU%u", i);
+
+#ifdef VBOX_WITH_STATISTICS
     STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncCatchup,              STAMTYPE_PROFILE_ADV, "/TM/VirtualSync/CatchUp",    STAMUNIT_TICKS_PER_OCCURENCE, "Counting and measuring the times spent catching up.");
     STAM_REG(pVM, (void *)&pVM->tm.s.fVirtualSyncCatchUp,                  STAMTYPE_U8, "/TM/VirtualSync/CatchUpActive",             STAMUNIT_NONE, "Catch-Up active indicator.");
     STAM_REG(pVM, (void *)&pVM->tm.s.u32VirtualSyncCatchUpPercentage,     STAMTYPE_U32, "/TM/VirtualSync/CatchUpPercentage",          STAMUNIT_PCT, "The catch-up percentage. (+100/100 to get clock multiplier)");
@@ -621,7 +626,6 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
         STAMR3RegisterF(pVM, &pVM->tm.s.aStatVirtualSyncCatchupInitial[i],          STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,   STAMUNIT_OCCURENCES, "Times started in this period.",    "/TM/VirtualSync/Periods/%u/Initial", i);
         STAMR3RegisterF(pVM, &pVM->tm.s.aVirtualSyncCatchUpPeriods[i].u64Start,         STAMTYPE_U64, STAMVISIBILITY_ALWAYS,           STAMUNIT_NS, "Start of this period (lag).",      "/TM/VirtualSync/Periods/%u/Start", i);
     }
-
 #endif /* VBOX_WITH_STATISTICS */
 
     /*
