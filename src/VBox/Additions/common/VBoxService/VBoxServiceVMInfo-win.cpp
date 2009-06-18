@@ -181,7 +181,7 @@ BOOL VboxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER* a_pUserInfo,
     r = LsaGetLogonSessionData (a_pSession, &sessionData);
     if (r != STATUS_SUCCESS)
     {
-        VBoxServiceError("LsaGetLogonSessionData failed %lu\n", LsaNtStatusToWinError(r));
+        VBoxServiceError("LsaGetLogonSessionData failed, LSA error %lu\n", LsaNtStatusToWinError(r));
 
         if (sessionData)
             LsaFreeReturnBuffer(sessionData);
@@ -195,7 +195,7 @@ BOOL VboxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER* a_pUserInfo,
         return FALSE;
     }
 
-    VBoxServiceVerbose(3, "vboxVMInfoThread: Users: Session data: Name = %ls, Len = %d, SID = %s, LogonID = %d,%d\n", 
+    VBoxServiceVerbose(3, "Users: Session data: Name = %ls, Len = %d, SID = %s, LogonID = %d,%d\n", 
         (sessionData->UserName).Buffer, (sessionData->UserName).Length, (sessionData->Sid != NULL) ? "1" : "0", sessionData->LogonId.HighPart, sessionData->LogonId.LowPart);
 
     if ((sessionData->UserName.Buffer != NULL) &&
@@ -280,7 +280,7 @@ BOOL VboxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER* a_pUserInfo,
                         &pBuffer,
                         &dwBytesRet))
                     {
-                        /*VBoxServiceVerbose(3, ("vboxVMInfoThread: Users: WTSQuerySessionInformation returned %ld bytes, p=%p, state=%d\n", dwBytesRet, pBuffer, pBuffer != NULL ? (INT)*pBuffer : -1));*/
+                        /*VBoxServiceVerbose(3, ("Users: WTSQuerySessionInformation returned %ld bytes, p=%p, state=%d\n", dwBytesRet, pBuffer, pBuffer != NULL ? (INT)*pBuffer : -1));*/
                         if(dwBytesRet)
                             iState = *pBuffer;
 
@@ -290,7 +290,7 @@ BOOL VboxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER* a_pUserInfo,
                         {
                             /** @todo On Vista and W2K, always "old" user name are still
                              *        there. Filter out the old one! */
-                            VBoxServiceVerbose(3, "vboxVMInfoThread: Users: Account User=%ls is logged in via TCS/RDP. State=%d\n", a_pUserInfo->szUser, iState);
+                            VBoxServiceVerbose(3, "Users: Account User=%ls is logged in via TCS/RDP. State=%d\n", a_pUserInfo->szUser, iState);
                             bFoundUser = TRUE;
                         }
                     }
@@ -332,27 +332,30 @@ int VboxServiceWinGetAddsVersion(uint32_t uiClientID)
     char szVer[_MAX_PATH] = {0};
 
     HKEY hKey = NULL;
-    int rc = 0;
+    long rc = 0;
     DWORD dwSize = 0;
+    DWORD dwType = 0;
 
+    /* First try the old registry path ... */
     rc = RegOpenKeyExA (HKEY_LOCAL_MACHINE, "SOFTWARE\\Sun\\xVM VirtualBox Guest Additions", 0, KEY_READ, &hKey);
-    if ((rc != ERROR_SUCCESS ) && (rc != ERROR_FILE_NOT_FOUND))
+    if ((rc != ERROR_SUCCESS) && (rc != ERROR_FILE_NOT_FOUND))
     {
+        /* Old registry path does not exist -- maybe the new one does? */
         rc = RegOpenKeyExA (HKEY_LOCAL_MACHINE, "SOFTWARE\\Sun\\VirtualBox Guest Additions", 0, KEY_READ, &hKey);
-        if ((rc != ERROR_SUCCESS ) && (rc != ERROR_FILE_NOT_FOUND))
+        if ((rc != ERROR_SUCCESS) && (rc != ERROR_FILE_NOT_FOUND))
         {
-            VBoxServiceError("Failed to open registry key (guest additions)! Error: %d\n", GetLastError());
+            VBoxServiceError("Failed to open registry key (guest additions)! Error: %d\n", rc);
             return 1;
         }
     }
 
     /* Installation directory. */
     dwSize = sizeof(szInstDir);
-    rc = RegQueryValueExA (hKey, "InstallDir", 0, 0, (BYTE*)(LPCTSTR)szInstDir, &dwSize);
-    if ((rc != ERROR_SUCCESS ) && (rc != ERROR_FILE_NOT_FOUND))
+    rc = RegQueryValueExA (hKey, "InstallDir", NULL, &dwType, (BYTE*)(LPCTSTR)szInstDir, &dwSize);
+    if ((rc != ERROR_SUCCESS) && (rc != ERROR_FILE_NOT_FOUND))
     {
         RegCloseKey (hKey);
-        VBoxServiceError("Failed to query registry key (install directory)! Error: %d\n", GetLastError());
+        VBoxServiceError("Failed to query registry key (install directory)! Error: %d\n", rc);
         return 1;
     }
 
@@ -363,21 +366,21 @@ int VboxServiceWinGetAddsVersion(uint32_t uiClientID)
 
     /* Revision. */
     dwSize = sizeof(szRev);
-    rc = RegQueryValueExA (hKey, "Revision", 0, 0, (BYTE*)(LPCTSTR)szRev, &dwSize);
-    if ((rc != ERROR_SUCCESS ) && (rc != ERROR_FILE_NOT_FOUND))
+    rc = RegQueryValueExA (hKey, "Revision", NULL, &dwType, (BYTE*)(LPCTSTR)szRev, &dwSize);
+    if ((rc != ERROR_SUCCESS) && (rc != ERROR_FILE_NOT_FOUND))
     {
         RegCloseKey (hKey);
-        VBoxServiceError("Failed to query registry key (revision)! Error: %d\n",  GetLastError());
+        VBoxServiceError("Failed to query registry key (revision)! Error: %d\n",  rc);
         return 1;
     }
 
     /* Version. */
     dwSize = sizeof(szVer);
-    rc = RegQueryValueExA (hKey, "Version", 0, 0, (BYTE*)(LPCTSTR)szVer, &dwSize);
-    if ((rc != ERROR_SUCCESS ) && (rc != ERROR_FILE_NOT_FOUND))
+    rc = RegQueryValueExA (hKey, "Version", NULL, &dwType, (BYTE*)(LPCTSTR)szVer, &dwSize);
+    if ((rc != ERROR_SUCCESS) && (rc != ERROR_FILE_NOT_FOUND))
     {
         RegCloseKey (hKey);
-        VBoxServiceError("Failed to query registry key (version)! Error: %Rrc\n",  GetLastError());
+        VBoxServiceError("Failed to query registry key (version)! Error: %Rrc\n",  rc);
         return 1;
     }
 
