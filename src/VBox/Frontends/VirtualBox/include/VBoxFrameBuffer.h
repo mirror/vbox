@@ -488,21 +488,12 @@ private:
     class VBoxGLWidget *mWidget;
 };
 
-typedef enum
-{
-    VBOXQGL_OP_PAINT = 1,
-    VBOXQGL_OP_RESIZE,
-    VBOXQGL_OP_VHWACMD,
-} VBOXQGL_OP_TYPE;
-
 class VBoxGLWidget : public QGLWidget
 {
 public:
     VBoxGLWidget (QWidget *aParent)
         : QGLWidget (aParent),
         pDisplay(NULL),
-        mRe(NULL),
-        mpIntersectionRect(NULL),
         mBitsPerPixel(0),
         mPixelFormat(0),
         mUsesGuestVRAM(false)
@@ -515,17 +506,24 @@ public:
     bool vboxUsesGuestVRAM() { return mUsesGuestVRAM; }
 
     uchar *vboxAddress() { return pDisplay ? pDisplay->address() : NULL; }
+    uchar *vboxVRAMAddressFromOffset(uint64_t offset);
     ulong vboxBitsPerPixel() { return mBitsPerPixel; }
     ulong vboxBytesPerLine() { return pDisplay ? pDisplay->bytesPerLine() : NULL; }
 
-    void vboxPaintEvent (QPaintEvent *pe);
-    void vboxResizeEvent (VBoxResizeEvent *re);
+typedef void (VBoxGLWidget::*PFNVBOXQGLOP)(void* );
+//typedef FNVBOXQGLOP *PFNVBOXQGLOP;
+
+    void vboxPaintEvent (QPaintEvent *pe) {vboxPerformGLOp(&VBoxGLWidget::vboxDoPaint, pe);}
+    void vboxResizeEvent (VBoxResizeEvent *re) {vboxPerformGLOp(&VBoxGLWidget::vboxDoResize, re);}
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    void vboxVHWACmd (struct _VBOXVHWACMD * pCmd) {vboxPerformGLOp(&VBoxGLWidget::vboxDoVHWACmd, pCmd);}
+#endif
 
     VBoxVHWASurfacePrimary * vboxGetSurface() { return pDisplay; }
 protected:
 //    void resizeGL (int height, int width);
 
-    void paintGL();
+    void paintGL() { (this->*mpfnOp)(mOpContext);}
 
     void initializeGL();
 
@@ -533,13 +531,39 @@ private:
 //    void vboxDoInitDisplay();
 //    void vboxDoDeleteDisplay();
 //    void vboxDoPerformDisplay() { Assert(mDisplayInitialized); glCallList(mDisplay); }
+    void vboxDoResize(void *re);
+    void vboxDoPaint(void *rec);
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    void vboxDoVHWACmd(void *cmd);
+    void vboxCheckUpdateAddress (VBoxVHWASurfaceBase * pSurface, uint64_t offset)
+    {
+        if (pSurface->addressAlocated())
+        {
+            uchar * addr = vboxVRAMAddressFromOffset(offset);
+            if(addr)
+            {
+                pSurface->setAddress(addr);
+            }
+        }
+    }
+    int vhwaSurfaceCanCreate(struct _VBOXVHWACMD_SURF_CANCREATE *pCmd);
+    int vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd);
+    int vhwaSurfaceDestroy(struct _VBOXVHWACMD_SURF_DESTROY *pCmd);
+    int vhwaSurfaceLock(struct _VBOXVHWACMD_SURF_LOCK *pCmd);
+    int vhwaSurfaceUnlock(struct _VBOXVHWACMD_SURF_UNLOCK *pCmd);
+    int vhwaSurfaceBlt(struct _VBOXVHWACMD_SURF_BLT *pCmd);
+    int vhwaQueryInfo1(struct _VBOXVHWACMD_QUERYINFO1 *pCmd);
+    int vhwaQueryInfo2(struct _VBOXVHWACMD_QUERYINFO2 *pCmd);
+#endif
 
-    void vboxDoResize(VBoxResizeEvent *re);
-    void vboxDoPaint(const QRect *rec);
     VBoxVHWASurfacePrimary * pDisplay;
+    /* we need to do all opengl stuff in the paintGL context,
+     * submit the operation to be performed */
+    void vboxPerformGLOp(PFNVBOXQGLOP pfn, void* pContext) {mpfnOp = pfn; mOpContext = pContext; updateGL();}
 
-    VBoxResizeEvent *mRe;
-    const QRect *mpIntersectionRect;
+    PFNVBOXQGLOP mpfnOp;
+    void *mOpContext;
+
     ulong  mBitsPerPixel;
     ulong  mPixelFormat;
     bool   mUsesGuestVRAM;
@@ -566,8 +590,6 @@ public:
     ulong bitsPerPixel() { return vboxWidget()->vboxBitsPerPixel(); }
     ulong bytesPerLine() { return vboxWidget()->vboxBytesPerLine(); }
 
-    uchar *vramAddressFromOffset(uint64_t offset);
-
     void paintEvent (QPaintEvent *pe);
     void resizeEvent (VBoxResizeEvent *re);
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -575,27 +597,6 @@ public:
 #endif
 
 private:
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    void checkUpdateAddress (VBoxVHWASurfaceBase * pSurface, uint64_t offset)
-    {
-        if (pSurface->addressAlocated())
-        {
-            uchar * addr = vramAddressFromOffset(offset);
-            if(addr)
-            {
-                pSurface->setAddress(addr);
-            }
-        }
-    }
-    int vhwaSurfaceCanCreate(struct _VBOXVHWACMD_SURF_CANCREATE *pCmd);
-    int vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd);
-    int vhwaSurfaceDestroy(struct _VBOXVHWACMD_SURF_DESTROY *pCmd);
-    int vhwaSurfaceLock(struct _VBOXVHWACMD_SURF_LOCK *pCmd);
-    int vhwaSurfaceUnlock(struct _VBOXVHWACMD_SURF_UNLOCK *pCmd);
-    int vhwaSurfaceBlt(struct _VBOXVHWACMD_SURF_BLT *pCmd);
-    int vhwaQueryInfo1(struct _VBOXVHWACMD_QUERYINFO1 *pCmd);
-    int vhwaQueryInfo2(struct _VBOXVHWACMD_QUERYINFO2 *pCmd);
-#endif
     void vboxMakeCurrent();
     VBoxGLWidget * vboxWidget();
 };
