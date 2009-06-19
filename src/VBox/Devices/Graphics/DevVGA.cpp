@@ -3812,23 +3812,22 @@ static int vgaLFBAccess(PVM pVM, PVGASTATE pThis, RTGCPHYS GCPhys, RTGCPTR GCPtr
     {
 #ifndef IN_RING3
         rc = PGMShwModifyPage(PDMDevHlpGetVMCPU(pThis->CTX_SUFF(pDevIns)), GCPtr, 1, X86_PTE_RW, ~(uint64_t)X86_PTE_RW);
-        if (RT_SUCCESS(rc))
-        {
-            PDMCritSectLeave(&pThis->lock);
-            return VINF_SUCCESS;
-        }
-        else
-            AssertMsgFailed(("PGMShwModifyPage -> rc=%d\n", rc));
-#else /* IN_RING3 : We don't have any virtual page address of the access here. */
-        Assert(GCPtr == 0);
         PDMCritSectLeave(&pThis->lock);
+        if (RT_SUCCESS(rc))
+            return VINF_SUCCESS;
+
+        AssertMsgFailed(("PGMShwModifyPage -> rc=%d\n", rc));
+#else /* IN_RING3 : We don't have any virtual page address of the access here. */
+        PDMCritSectLeave(&pThis->lock);
+        Assert(GCPtr == 0);
         return VINF_SUCCESS;
 #endif
     }
     else
+    {
+        PDMCritSectLeave(&pThis->lock);
         AssertMsgFailed(("PGMHandlerPhysicalPageTempOff -> rc=%d\n", rc));
-
-    PDMCritSectLeave(&pThis->lock);
+    }
     return rc;
 }
 
