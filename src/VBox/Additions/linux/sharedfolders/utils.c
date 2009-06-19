@@ -273,7 +273,6 @@ sf_getattr (struct vfsmount *mnt, struct dentry *dentry, struct kstat *kstat)
         }
 
         generic_fillattr (dentry->d_inode, kstat);
-        printk("getattr %08x\n", kstat->mode);
         return 0;
 }
 
