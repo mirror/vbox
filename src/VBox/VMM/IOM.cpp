@@ -1470,25 +1470,29 @@ VMMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         /*
          * Try register it with PGM and then insert it into the tree.
          */
+        iomLock(pVM);
+        iomR3FlushCache(pVM);
         rc = PGMR3PhysMMIORegister(pVM, GCPhysStart, cbRange,
                                    IOMR3MMIOHandler, pRange,
                                    pVM->iom.s.pfnMMIOHandlerR0, MMHyperR3ToR0(pVM, pRange),
                                    pVM->iom.s.pfnMMIOHandlerRC, MMHyperR3ToRC(pVM, pRange), pszDesc);
         if (RT_SUCCESS(rc))
         {
-            iomLock(pVM);
             if (RTAvlroGCPhysInsert(&pVM->iom.s.pTreesR3->MMIOTree, &pRange->Core))
             {
                 iomUnlock(pVM);
                 return VINF_SUCCESS;
             }
-            iomUnlock(pVM);
 
             /* bail out */
+            iomUnlock(pVM);
             DBGFR3Info(pVM, "mmio", NULL, NULL);
             AssertMsgFailed(("This cannot happen!\n"));
             rc = VERR_INTERNAL_ERROR;
         }
+        else
+            iomUnlock(pVM);
+
         MMHyperFree(pVM, pRange);
     }
     if (pDevIns->iInstance > 0)
