@@ -171,6 +171,28 @@ NetFltUninstall_LIBS     = $(TARGET_WinNetConfig) \
  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
 
+#
+# NetAdpInstall
+#
+PROGRAMS.win  += NetAdpInstall
+NetAdpInstall_TEMPLATE = VBOXR3STATIC
+NetAdpInstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
+NetAdpInstall_SOURCES  = win/NetAdpInstall.cpp
+NetAdpInstall_LIBS     = $(TARGET_WinNetConfig) \
+ 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
+	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
+
+
+#
+# NetAdpUninstall
+#
+PROGRAMS.win  += NetAdpUninstall
+NetAdpUninstall_TEMPLATE = VBOXR3STATIC
+NetAdpUninstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
+NetAdpUninstall_SOURCES  = win/NetAdpUninstall.cpp
+NetAdpUninstall_LIBS     = $(TARGET_WinNetConfig) \
+ 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
+	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
 
 #
 # VBoxNetFltNotify
