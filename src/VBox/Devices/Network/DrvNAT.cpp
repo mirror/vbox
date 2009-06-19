@@ -42,8 +42,8 @@
 # include <unistd.h>
 # include <fcntl.h>
 # include <poll.h>
+# include <errno.h>
 #endif
-#include <errno.h>
 #include <iprt/semaphore.h>
 #include <iprt/req.h>
 
@@ -139,6 +139,7 @@ static void drvNATSendWorker(PDRVNAT pThis, const void *pvBuf, size_t cb)
         slirp_input(pThis->pNATState, (uint8_t *)pvBuf, cb);
 }
 
+
 /**
  * Send data to the network.
  *
@@ -217,6 +218,7 @@ static DECLCALLBACK(void) drvNATSetPromiscuousMode(PPDMINETWORKCONNECTOR pInterf
     /* nothing to do */
 }
 
+
 /**
  * Worker function for drvNATNotifyLinkChanged().
  * @thread "NAT" thread.
@@ -242,6 +244,7 @@ static void drvNATNotifyLinkChangedWorker(PDRVNAT pThis, PDMNETWORKLINKSTATE enm
             AssertMsgFailed(("drvNATNotifyLinkChanged: unexpected link state %d\n", enmLinkState));
     }
 }
+
 
 /**
  * Notification on link status changes.
@@ -417,12 +420,13 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     return VINF_SUCCESS;
 }
 
- /**
- *  Unblock the send thread so it can respond to a state change.
+
+/**
+ * Unblock the send thread so it can respond to a state change.
  *
- *  @returns VBox status code.
- *  @param   pDevIns     The pcnet device instance.
- *  @param   pThread     The send thread.
+ * @returns VBox status code.
+ * @param   pDevIns     The pcnet device instance.
+ * @param   pThread     The send thread.
  */
 static DECLCALLBACK(int) drvNATAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
@@ -441,6 +445,7 @@ static DECLCALLBACK(int) drvNATAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 }
 
 #ifdef VBOX_WITH_SLIRP_MT
+
 static DECLCALLBACK(int) drvNATAsyncIoGuest(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
@@ -453,14 +458,15 @@ static DECLCALLBACK(int) drvNATAsyncIoGuest(PPDMDRVINS pDrvIns, PPDMTHREAD pThre
     return VINF_SUCCESS;
 }
 
+
 static DECLCALLBACK(int) drvNATAsyncIoGuestWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
 
     return VINF_SUCCESS;
 }
-#endif /* VBOX_WITH_SLIRP_MT */
 
+#endif /* VBOX_WITH_SLIRP_MT */
 
 /**
  * Function called by slirp to check if it's possible to feed incoming data to the network port.
@@ -513,6 +519,7 @@ void slirp_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
     RTMemFree((void *)pu8Buf);
 }
 
+
 /**
  * Queue callback for processing a queued item.
  *
@@ -550,6 +557,7 @@ static DECLCALLBACK(bool) drvNATQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITEMC
     return RT_SUCCESS(rc);
 }
 
+
 /**
  * Queries an interface to the driver.
  *
@@ -576,26 +584,41 @@ static DECLCALLBACK(void *) drvNATQueryInterface(PPDMIBASE pInterface, PDMINTERF
 
 
 /**
- * Destruct a driver instance.
+ * Get the MAC address into the slirp stack.
  *
- * Most VM resources are freed by the VM. This callback is provided so that any non-VM
- * resources can be freed correctly.
- *
- * @param   pDrvIns     The driver instance data.
+ * Called by drvNATLoadDone and drvNATPowerOn.
  */
-static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
+static void drvNATSetMac(PDRVNAT pThis)
+{
+    if (pThis->pConfig)
+    {
+        RTMAC Mac;
+        pThis->pConfig->pfnGetMac(pThis->pConfig, &Mac);
+        slirp_set_ethaddr(pThis->pNATState, Mac.au8);
+    }
+}
+
+
+/**
+ * After loading we have to pass the MAC address of the ethernet device to the slirp stack.
+ * Otherwise the guest is not reachable until it performs a DHCP request or an ARP request
+ * (usually done during guest boot).
+ */
+static DECLCALLBACK(int) drvNATLoadDone(PPDMDRVINS pDrvIns, PSSMHANDLE pSSMHandle)
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
+    drvNATSetMac(pThis);
+    return VINF_SUCCESS;
+}
 
-    LogFlow(("drvNATDestruct:\n"));
 
-    slirp_term(pThis->pNATState);
-    slirp_deregister_statistics(pThis->pNATState, pDrvIns);
-    pThis->pNATState = NULL;
-#ifdef VBOX_WITH_STATISTICS
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatQueuePktSent);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatQueuePktDropped);
-#endif
+/**
+ * Some guests might not use DHCP to retrieve an IP but use a static IP.
+ */
+static DECLCALLBACK(void) drvNATPowerOn(PPDMDRVINS pDrvIns)
+{
+    PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
+    drvNATSetMac(pThis);
 }
 
 
@@ -679,40 +702,28 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCf
     return VINF_SUCCESS;
 }
 
-/**
- * Get the MAC address into the slirp stack.
- */
-static void drvNATSetMac(PDRVNAT pThis)
-{
-    if (pThis->pConfig)
-    {
-        RTMAC Mac;
-        pThis->pConfig->pfnGetMac(pThis->pConfig, &Mac);
-        slirp_set_ethaddr(pThis->pNATState, Mac.au8);
-    }
-}
-
 
 /**
- * After loading we have to pass the MAC address of the ethernet device to the slirp stack.
- * Otherwise the guest is not reachable until it performs a DHCP request or an ARP request
- * (usually done during guest boot).
+ * Destruct a driver instance.
+ *
+ * Most VM resources are freed by the VM. This callback is provided so that any non-VM
+ * resources can be freed correctly.
+ *
+ * @param   pDrvIns     The driver instance data.
  */
-static DECLCALLBACK(int) drvNATLoadDone(PPDMDRVINS pDrvIns, PSSMHANDLE pSSMHandle)
+static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
-    drvNATSetMac(pThis);
-    return VINF_SUCCESS;
-}
 
+    LogFlow(("drvNATDestruct:\n"));
 
-/**
- * Some guests might not use DHCP to retrieve an IP but use a static IP.
- */
-static DECLCALLBACK(void) drvNATPowerOn(PPDMDRVINS pDrvIns)
-{
-    PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
-    drvNATSetMac(pThis);
+    slirp_term(pThis->pNATState);
+    slirp_deregister_statistics(pThis->pNATState, pDrvIns);
+    pThis->pNATState = NULL;
+#ifdef VBOX_WITH_STATISTICS
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatQueuePktSent);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatQueuePktDropped);
+#endif
 }
 
 
@@ -954,3 +965,4 @@ const PDMDRVREG g_DrvNAT =
     /* pfnPowerOff */
     NULL
 };
+
