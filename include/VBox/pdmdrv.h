@@ -581,7 +581,6 @@ typedef struct PDMDRVHLP
      * Same as pfnSTAMRegister except that the name is specified in a
      * RTStrPrintf like fashion.
      *
-     * @returns VBox status.
      * @param   pDrvIns     Driver instance.
      * @param   pvSample    Pointer to the sample.
      * @param   enmType     Sample type. This indicates what pvSample is pointing at.
@@ -598,7 +597,6 @@ typedef struct PDMDRVHLP
      * Same as pfnSTAMRegister except that the name is specified in a
      * RTStrPrintfV like fashion.
      *
-     * @returns VBox status.
      * @param   pDrvIns         Driver instance.
      * @param   pvSample        Pointer to the sample.
      * @param   enmType         Sample type. This indicates what pvSample is pointing at.
@@ -610,6 +608,16 @@ typedef struct PDMDRVHLP
      */
     DECLR3CALLBACKMEMBER(void, pfnSTAMRegisterV,(PPDMDRVINS pDrvIns, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
                                                  STAMUNIT enmUnit, const char *pszDesc, const char *pszName, va_list args));
+
+    /**
+     * Deregister a statistic item previously registered with pfnSTAMRegister,
+     * pfnSTAMRegisterF or pfnSTAMRegisterV
+     *
+     * @returns VBox status.
+     * @param   pDrvIns         Driver instance.
+     * @param   pvSample        Pointer to the sample.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSTAMDeregister,(PPDMDRVINS pDrvIns, void *pvSample));
 
     /**
      * Calls the HC R0 VMM entry point, in a safer but slower manner than SUPCallVMMR0.
@@ -700,7 +708,7 @@ typedef PDMDRVHLP *PPDMDRVHLP;
 typedef const PDMDRVHLP *PCPDMDRVHLP;
 
 /** Current DRVHLP version number. */
-#define PDM_DRVHLP_VERSION  0x90030000
+#define PDM_DRVHLP_VERSION  0x90040000
 
 
 
@@ -875,6 +883,14 @@ DECLINLINE(void) PDMDrvHlpSTAMRegisterF(PPDMDRVINS pDrvIns, void *pvSample, STAM
     va_start(va, pszName);
     pDrvIns->pDrvHlp->pfnSTAMRegisterV(pDrvIns, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName, va);
     va_end(va);
+}
+
+/**
+ * @copydoc PDMDRVHLP::pfnSTAMDeregister
+ */
+DECLINLINE(int) PDMDrvHlpSTAMDeregister(PPDMDRVINS pDrvIns, void *pvSample)
+{
+    return pDrvIns->pDrvHlp->pfnSTAMDeregister(pDrvIns, pvSample);
 }
 
 /**
