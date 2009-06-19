@@ -6926,7 +6926,6 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, ULONG lInstance,
      */
     PCFGMNODE pCfg;
     PCFGMNODE pLunL1;
-    PCFGMNODE pLunL2;
 
     /* SCSI has an extra driver between the device and the block driver. */
     if (fSCSI)
