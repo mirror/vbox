@@ -21,10 +21,6 @@
 # include <alias.h>
 #endif
 
-#ifdef VBOX_WITH_STATISTICS
-# include "statistics.h"
-#endif
-
 #if !defined(RT_OS_WINDOWS)
 
 #  define DO_ENGAGE_EVENT1(so, fdset, label)                        \
@@ -714,15 +710,6 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     return fNATfailed ? VINF_NAT_DNS : VINF_SUCCESS;
 }
 
-/* instantiate the variables. */
-#ifdef VBOX_WITH_STATISTICS
-# define COUNTING_COUNTER(name, desc)    DECLHIDDEN(uint32_t) g_offSlirpStat##name
-# define PROFILE_COUNTER(name, desc)     DECLHIDDEN(uint32_t) g_offSlirpStat##name
-# include "counters.h"
-# undef COUNTING_COUNTER
-# undef PROFILE_COUNTER
-#endif
-
 /**
  * Register statistics.
  */
@@ -731,15 +718,13 @@ void slirp_register_statistics(PNATState pData, PPDMDRVINS pDrvIns)
 #ifdef VBOX_WITH_STATISTICS
 # define COUNTER(name, type, units, dsc)                            \
     do {                                                            \
-        ASMAtomicUoWriteU32(&g_offSlirpStat##name,                  \
-                            RT_UOFFSETOF(NATState, Stat##name));    \
         PDMDrvHlpSTAMRegisterF(pDrvIns,                             \
                                &pData->Stat ## name,                \
                                type,                                \
                                STAMVISIBILITY_ALWAYS,               \
                                units,                               \
                                dsc,                                 \
-                               "/Drivers/NAT%u/Stat" #name,         \
+                               "/Drivers/NAT%u/" #name,             \
                                pDrvIns->iInstance);                 \
     } while (0)
 
