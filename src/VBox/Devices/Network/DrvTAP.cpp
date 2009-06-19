@@ -863,6 +863,18 @@ static DECLCALLBACK(void) drvTAPDestruct(PPDMDRVINS pDrvIns)
 #endif
     MMR3HeapFree(pThis->pszSetupApplication);
     MMR3HeapFree(pThis->pszTerminateApplication);
+
+#ifdef VBOX_WITH_STATISTICS
+    /*
+     * Deregister statistics.
+     */
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatPktSent);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatPktSentBytes);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatPktRecv);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatPktRecvBytes);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatTransmit);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReceive);
+#endif /* VBOX_WITH_STATISTICS */
 }
 
 
