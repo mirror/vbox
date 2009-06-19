@@ -921,6 +921,8 @@ VMMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
     AssertPtrReturn(pszDesc, VERR_INVALID_POINTER);
     VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
 
+    pgmLock(pVM);
+
     /*
      * Find range location and check for conflicts.
      * (We don't lock here because the locking by EMT is only required on update.)
@@ -947,7 +949,10 @@ VMMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
     const RTGCPHYS cPages = cb >> PAGE_SHIFT;
     int rc = MMR3IncreaseBaseReservation(pVM, cPages);
     if (RT_FAILURE(rc))
+    {
+        pgmUnlock(pVM);
         return rc;
+    }
 
     if (    GCPhys >= _4G
         &&  cPages > 256)
@@ -1012,6 +1017,7 @@ VMMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
 
         pgmR3PhysInitAndLinkRamRange(pVM, pNew, GCPhys, GCPhysLast, NIL_RTRCPTR, NIL_RTR0PTR, pszDesc, pPrev);
     }
+    pgmUnlock(pVM);
 
     /*
      * Notify REM.
@@ -1306,6 +1312,8 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
     }
     else
     {
+        pgmLock(pVM);
+
         /*
          * No RAM range, insert an ad-hoc one.
          *
@@ -1341,6 +1349,8 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
 
         /* link it */
         pgmR3PhysLinkRamRange(pVM, pNew, pRamPrev);
+
+        pgmUnlock(pVM);
     }
 
     /*
