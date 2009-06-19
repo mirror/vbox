@@ -3243,17 +3243,8 @@ HRESULT Console::onNetworkAdapterChange (INetworkAdapter *aNetworkAdapter)
             }
 
 #ifdef VBOX_DYNAMIC_NET_ATTACH
-            if (VBOX_SUCCESS (vrc) &&
-                !((eAttachmentType == meAttachmentType[ulInstance]) ||
-                  (eAttachmentType == NetworkAttachmentType_Null &&
-                   meAttachmentType[ulInstance] == NetworkAttachmentType_Null)))
-            {
-                rc = doNetworkAdapterChange(pszAdapterName,
-                                            ulInstance, 0,
-                                            eAttachmentType,
-                                            &meAttachmentType[ulInstance],
-                                            aNetworkAdapter);
-            }
+            if (VBOX_SUCCESS (vrc) && !(eAttachmentType == meAttachmentType[ulInstance]))
+                rc = doNetworkAdapterChange(pszAdapterName, ulInstance, 0, aNetworkAdapter);
 #endif /* VBOX_DYNAMIC_NET_ATTACH */
 
             if (VBOX_FAILURE (vrc))
@@ -3283,21 +3274,17 @@ HRESULT Console::onNetworkAdapterChange (INetworkAdapter *aNetworkAdapter)
  * @param   pszDevice           The PDM device name.
  * @param   uInstance           The PDM device instance.
  * @param   uLun                The PDM LUN number of the drive.
- * @param   eAttachmentType     The new attachment type.
- * @param   meAttachmentType    The current attachment type.
  * @param   aNetworkAdapter     The network adapter whose attachment needs to be changed
  *
  * @note Locks this object for writing.
  */
-HRESULT Console::doNetworkAdapterChange (const char *pszDevice, unsigned uInstance,
-                                         unsigned uLun, NetworkAttachmentType_T eAttachmentType,
-                                         NetworkAttachmentType_T *meAttachmentType,
+HRESULT Console::doNetworkAdapterChange (const char *pszDevice,
+                                         unsigned uInstance,
+                                         unsigned uLun,
                                          INetworkAdapter *aNetworkAdapter)
 {
-    LogFlowThisFunc (("pszDevice=%p:{%s} uInstance=%u uLun=%u eAttachmentType=%d "
-                      "meAttachmentType=%p:{%d} aNetworkAdapter=%p\n",
-                      pszDevice, pszDevice, uInstance, uLun, eAttachmentType,
-                      meAttachmentType, *meAttachmentType, aNetworkAdapter));
+    LogFlowThisFunc (("pszDevice=%p:{%s} uInstance=%u uLun=%u aNetworkAdapter=%p\n",
+                      pszDevice, pszDevice, uInstance, uLun, aNetworkAdapter));
 
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
@@ -3316,9 +3303,8 @@ HRESULT Console::doNetworkAdapterChange (const char *pszDevice, unsigned uInstan
      */
     PVMREQ pReq;
     int vrc = VMR3ReqCall (mpVM, 0 /*idDstCpu*/, &pReq, 0 /* no wait! */,
-                           (PFNRT) Console::changeNetworkAttachment, 7,
-                           this, pszDevice, uInstance, uLun, eAttachmentType,
-                           meAttachmentType, aNetworkAdapter);
+                           (PFNRT) Console::changeNetworkAttachment, 5,
+                           this, pszDevice, uInstance, uLun, aNetworkAdapter);
 
     /* leave the lock before waiting for a result (EMT will call us back!) */
     alock.leave();
@@ -3352,23 +3338,19 @@ HRESULT Console::doNetworkAdapterChange (const char *pszDevice, unsigned uInstan
  * @param   pszDevice           The PDM device name.
  * @param   uInstance           The PDM device instance.
  * @param   uLun                The PDM LUN number of the drive.
- * @param   eAttachmentType     The new attachment type.
- * @param   meAttachmentType    The current attachment type.
  * @param   aNetworkAdapter     The network adapter whose attachment needs to be changed
  *
  * @thread  EMT
  * @note Locks the Console object for writing.
  */
-DECLCALLBACK(int) Console::changeNetworkAttachment (Console *pThis, const char *pszDevice,
-                                                    unsigned uInstance, unsigned uLun,
-                                                    NetworkAttachmentType_T eAttachmentType,
-                                                    NetworkAttachmentType_T *meAttachmentType,
+DECLCALLBACK(int) Console::changeNetworkAttachment (Console *pThis,
+                                                    const char *pszDevice,
+                                                    unsigned uInstance,
+                                                    unsigned uLun,
                                                     INetworkAdapter *aNetworkAdapter)
 {
-    LogFlowFunc (("pThis=%p pszDevice=%p:{%s} uInstance=%u uLun=%u eAttachmentType=%d "
-                  "meAttachmentType=%p{%d} aNetworkAdapter=%p\n",
-                  pThis, pszDevice, pszDevice, uInstance, uLun, eAttachmentType,
-                  meAttachmentType, *meAttachmentType, aNetworkAdapter));
+    LogFlowFunc (("pThis=%p pszDevice=%p:{%s} uInstance=%u uLun=%u aNetworkAdapter=%p\n",
+                  pThis, pszDevice, pszDevice, uInstance, uLun, aNetworkAdapter));
 
     AssertReturn (pThis, VERR_INVALID_PARAMETER);
 
@@ -3432,8 +3414,7 @@ DECLCALLBACK(int) Console::changeNetworkAttachment (Console *pThis, const char *
      * previous atachment will also cleanly reattach with the later one
      * failing to attach.
      */
-    rcRet = configNetwork(pThis, pszDevice, uInstance, uLun, eAttachmentType, meAttachmentType,
-                          aNetworkAdapter, pCfg, pLunL0, pInst, true);
+    rcRet = configNetwork(pThis, pszDevice, uInstance, uLun, aNetworkAdapter, pCfg, pLunL0, pInst, true);
 
     /*
      * Resume the VM if necessary.

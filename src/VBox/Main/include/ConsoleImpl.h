@@ -431,8 +431,6 @@ private:
     static DECLCALLBACK(int) configConstructor(PVM pVM, void *pvConsole);
     static DECLCALLBACK(int) configNetwork(Console *pThis, const char *pszDevice,
                                            unsigned uInstance, unsigned uLun,
-                                           NetworkAttachmentType_T eAttachmentType,
-                                           NetworkAttachmentType_T *meAttachmentType,
                                            INetworkAdapter *aNetworkAdapter,
                                            PCFGMNODE pCfg, PCFGMNODE pLunL0,
                                            PCFGMNODE pInst, bool attachDetach);
@@ -448,13 +446,9 @@ private:
                                           const char *pszPath, bool fPassthrough);
 #ifdef VBOX_DYNAMIC_NET_ATTACH
     HRESULT doNetworkAdapterChange (const char *pszDevice, unsigned uInstance,
-                                    unsigned uLun, NetworkAttachmentType_T eAttachmentType,
-                                    NetworkAttachmentType_T *meAttachmentType,
-                                    INetworkAdapter *aNetworkAdapter);
+                                    unsigned uLun, INetworkAdapter *aNetworkAdapter);
     static DECLCALLBACK(int) changeNetworkAttachment (Console *pThis, const char *pszDevice,
                                                       unsigned uInstance, unsigned uLun,
-                                                      NetworkAttachmentType_T eAttachmentType,
-                                                      NetworkAttachmentType_T *meAttachmentType,
                                                       INetworkAdapter *aNetworkAdapter);
 #endif /* VBOX_DYNAMIC_NET_ATTACH */
 
