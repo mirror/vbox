@@ -203,7 +203,10 @@ VMMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
         if (ASMAtomicCmpXchgS32(&pCritSect->s.Core.cLockers, 0, -1))
             return pdmCritSectEnterFirst(pCritSect, hNativeSelf);
         /** @todo need pause/nop instruction here! */
-        /* Should use monitor/mwait on e.g. &cLockers here */
+        /** @todo Should use monitor/mwait on e.g. &cLockers here, possibly with a
+           cli'ed pendingpreemption check up front using sti w/ instruction fusing
+           for avoiding races. Hmm ... This is assuming the other party is actually
+           executing code on another CPU... */
     }
 
 #ifdef IN_RING3
