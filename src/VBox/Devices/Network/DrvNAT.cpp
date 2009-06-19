@@ -26,7 +26,7 @@
 #define LOG_GROUP LOG_GROUP_DRV_NAT
 #define __STDC_LIMIT_MACROS
 #define __STDC_CONSTANT_MACROS
-#include "Network/slirp/libslirp.h"
+#include "slirp/libslirp.h"
 #include <VBox/pdmdrv.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>
@@ -35,6 +35,8 @@
 #include <iprt/critsect.h>
 #include <iprt/cidr.h>
 #include <iprt/stream.h>
+
+#include "slirp/statistics.h"
 
 #include "Builtins.h"
 
@@ -56,30 +58,16 @@
  *        activity. This needs to be fixed properly.
  */
 #define VBOX_NAT_DELAY_HACK
-#ifdef VBOX_WITH_STATISTICS
-# define COUNTING_COUNTER(name, dsc) \
-    extern "C" void slirp_counting_counter_##name##_reset(PNATState pData); \
-    extern "C" void slirp_counting_counter_##name##_inc(PNATState pData); \
-    extern "C" void slirp_counting_counter_##name##_add(PNATState pData, int val); /**< @todo r=bird: COUNTING_COUTER is missing an 'N'
-                                                                                      and trailing a semicolon. The general idea is that
-                                                                                      macros functions should have a trailing semicolon to
-                                                                                      make the source easier to parse for doxygen and editors. */
-/** @todo think abaout it */
-# define PROFILE_COUNTER(name, dsc)
-# include "Network/slirp/counters.h"
-# undef COUNTING_COUNTER
-# undef PROFILE_COUNTER
-# define DRVNAT_COUNTER_RESET(pData, name) \
-    slirp_counting_counter_##name##_reset(pData)
-# define DRVNAT_COUNTER_INC(pData, name) \
-    slirp_counting_counter_##name##_inc(pData)
-# define DRVNAT_COUNTER_ADD(pData, name, val) \
-    slirp_counting_counter_##name##_add(pData, (val))
-#else
-# define DRVNAT_COUNTER_RESET(pData, name) do{}while(0)
-# define DRVNAT_COUNTER_INC(pData, name) do{}while(0)
-# define DRVNAT_COUNTER_ADD(pData, name) do{}while(0)
-#endif
+
+/** Gets the address of a statistics member in the NATState structure.
+ *
+ * @todo It would be *really* nice if we could dispense with this hack and
+ *       just include the NATState definition here.
+ *
+ *       Actually, why don't we just put the 2-3 statistics in struct DRVNAT?!!
+ */
+#define DRVNAT_STAT(pThis, name, type) \
+    ( (type *)((uint8_t *)(pThis->pNATState) + g_offSlirpStat##name) )
 
 
 /*******************************************************************************
@@ -103,11 +91,11 @@ typedef struct DRVNAT
     /** NAT state for this instance. */
     PNATState               pNATState;
     /** TFTP directory prefix. */
-    char                    *pszTFTPPrefix;
+    char                   *pszTFTPPrefix;
     /** Boot file name to provide in the DHCP server response. */
-    char                    *pszBootFile;
+    char                   *pszBootFile;
     /** tftp server name to provide in the DHCP server response. */
-    char                    *pszNextServer;
+    char                   *pszNextServer;
     /* polling thread */
     PPDMTHREAD              pThread;
     /** Queue for NAT-thread-external events. */
@@ -126,8 +114,13 @@ typedef struct DRVNAT
     /** for external notification */
     HANDLE                  hWakeupEvent;
 #endif
-} DRVNAT, *PDRVNAT;
+} DRVNAT;
+/** Pointer the NAT driver instance data. */
+typedef DRVNAT *PDRVNAT;
 
+/**
+ * NAT queue item.
+ */
 typedef struct DRVNATQUEUITEM
 {
     /** The core part owned by the queue manager. */
@@ -137,7 +130,9 @@ typedef struct DRVNATQUEUITEM
     /* size of buffer */
     size_t              cb;
     void                *mbuf;
-} DRVNATQUEUITEM, *PDRVNATQUEUITEM;
+} DRVNATQUEUITEM;
+/** Pointer to a NAT queue item. */
+typedef DRVNATQUEUITEM *PDRVNATQUEUITEM;
 
 /** Converts a pointer to NAT::INetworkConnector to a PRDVNAT. */
 #define PDMINETWORKCONNECTOR_2_DRVNAT(pInterface)   ( (PDRVNAT)((uintptr_t)pInterface - RT_OFFSETOF(DRVNAT, INetworkConnector)) )
@@ -501,8 +496,8 @@ void slirp_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
     LogFlow(("slirp_output BEGIN %x %d\n", pu8Buf, cb));
     Log2(("slirp_output: pu8Buf=%p cb=%#x (pThis=%p)\n%.*Rhxd\n", pu8Buf, cb, pThis, cb, pu8Buf));
 
-    DRVNAT_COUNTER_RESET(pThis->pNATState, DrvNAT_package_drop);
-    DRVNAT_COUNTER_RESET(pThis->pNATState, DrvNAT_package_sent);
+    STAM_COUNTER_RESET(DRVNAT_STAT(pThis, DrvNAT_package_drop, STAMCOUNTER));
+    STAM_COUNTER_RESET(DRVNAT_STAT(pThis, DrvNAT_package_sent, STAMCOUNTER));
     Assert(pThis);
 
     PDRVNATQUEUITEM pItem = (PDRVNATQUEUITEM)PDMQueueAlloc(pThis->pSendQueue);
@@ -513,20 +508,18 @@ void slirp_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
         pItem->mbuf = pvArg;
         Log2(("pItem:%p %.Rhxd\n", pItem, pItem->pu8Buf));
         PDMQueueInsert(pThis->pSendQueue, &pItem->Core);
-        DRVNAT_COUNTER_INC(pThis->pNATState, DrvNAT_package_sent);
+        STAM_COUNTER_INC(DRVNAT_STAT(pThis, DrvNAT_package_sent, STAMCOUNTER));
         return;
     }
-    static unsigned cDroppedPackets;
-    if (cDroppedPackets < 64)
-    {
-        cDroppedPackets++;
-    }
+    static unsigned s_cDroppedPackets;
+    if (s_cDroppedPackets < 64)
+        s_cDroppedPackets++;
     else
     {
-        LogRel(("NAT: %d messages suppressed about dropping package (couldn't allocate queue item)\n", cDroppedPackets));
-        cDroppedPackets = 0;
+        LogRel(("NAT: %d messages suppressed about dropping package (couldn't allocate queue item)\n", s_cDroppedPackets));
+        s_cDroppedPackets = 0;
     }
-    DRVNAT_COUNTER_INC(pThis->pNATState, DrvNAT_package_drop);
+    STAM_COUNTER_INC(DRVNAT_STAT(pThis, DrvNAT_package_drop, STAMCOUNTER));
     RTMemFree((void *)pu8Buf);
 }
 
@@ -607,6 +600,7 @@ static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
     LogFlow(("drvNATDestruct:\n"));
 
     slirp_term(pThis->pNATState);
+    slirp_deregister_statistics(pThis->pNATState, pDrvIns);
     pThis->pNATState = NULL;
 }
 
@@ -850,7 +844,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
         SLIRP_SET_TUNING_VALUE("TcpRcvSpace", slirp_set_tcp_rcvspace);
         SLIRP_SET_TUNING_VALUE("TcpSndSpace", slirp_set_tcp_sndspace);
 
-        slirp_register_timers(pThis->pNATState, pDrvIns);
+        slirp_register_statistics(pThis->pNATState, pDrvIns);
         int rc2 = drvNATConstructRedir(pDrvIns->iInstance, pThis, pCfgHandle, Network);
         if (RT_SUCCESS(rc2))
         {

@@ -18,7 +18,11 @@
 # include <IPHlpApi.h>
 #endif
 #ifdef VBOX_WITH_SLIRP_ALIAS
-# include<alias.h>
+# include <alias.h>
+#endif
+
+#ifdef VBOX_WITH_STATISTICS
+# include "statistics.h"
 #endif
 
 #if !defined(RT_OS_WINDOWS)
@@ -462,7 +466,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     char *home = getenv("HOME");
     snprintf(buff, sizeof(buff), "%s/resolv.conf", home);
     f = fopen(buff, "r");
-    if (f != NULL) 
+    if (f != NULL)
     {
         Log(("NAT: DNS we're using %s\n", buff));
     }
@@ -704,40 +708,65 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
         LibAliasSetAddress(pData->proxy_alias, special_addr);
         ftp_alias_load();
         nbt_alias_load();
-        
+
     }
 #endif
     return fNATfailed ? VINF_NAT_DNS : VINF_SUCCESS;
 }
 
+/* instantiate the variables. */
+#ifdef VBOX_WITH_STATISTICS
+# define COUNTING_COUNTER(name, desc)    DECLHIDDEN(uint32_t) g_offSlirpStat##name
+# define PROFILE_COUNTER(name, desc)     DECLHIDDEN(uint32_t) g_offSlirpStat##name
+# include "counters.h"
+# undef COUNTING_COUNTER
+# undef PROFILE_COUNTER
+#endif
+
 /**
- * Statistics counters.
+ * Register statistics.
  */
-void slirp_register_timers(PNATState pData, PPDMDRVINS pDrvIns)
+void slirp_register_statistics(PNATState pData, PPDMDRVINS pDrvIns)
 {
 #ifdef VBOX_WITH_STATISTICS
 # define COUNTER(name, type, units, dsc)                            \
-do{                                                                 \
-    PDMDrvHlpSTAMRegisterF(pDrvIns,                                 \
-                    &pData->Stat ## name,                           \
-                    type,                                           \
-                    STAMVISIBILITY_ALWAYS,                          \
-                    units,                                          \
-                    dsc,                                            \
-                    "/Drivers/NAT%d/Stat" #name, pDrvIns->iInstance);   \
-}while(0)
+    do {                                                            \
+        ASMAtomicUoWriteU32(&g_offSlirpStat##name,                  \
+                            RT_UOFFSETOF(NATState, Stat##name));    \
+        PDMDrvHlpSTAMRegisterF(pDrvIns,                             \
+                               &pData->Stat ## name,                \
+                               type,                                \
+                               STAMVISIBILITY_ALWAYS,               \
+                               units,                               \
+                               dsc,                                 \
+                               "/Drivers/NAT%u/Stat" #name,         \
+                               pDrvIns->iInstance);                 \
+    } while (0)
 
-# define PROFILE_COUNTER(name, dsc) \
-    COUNTER(name, STAMTYPE_PROFILE, STAMUNIT_TICKS_PER_CALL, dsc);
-# define COUNTING_COUNTER(name, dsc) \
-    COUNTER(name, STAMTYPE_COUNTER, STAMUNIT_COUNT, dsc); 
+# define PROFILE_COUNTER(name, dsc)     COUNTER(name, STAMTYPE_PROFILE, STAMUNIT_TICKS_PER_CALL, dsc)
+# define COUNTING_COUNTER(name, dsc)    COUNTER(name, STAMTYPE_COUNTER, STAMUNIT_COUNT,          dsc)
 
-#include "counters.h"
+# include "counters.h"
 
-#undef COUNTER
-#undef PROFILE_COUNTER
-#undef COUNTING_COUNTER
+# undef COUNTER
+# undef PROFILE_COUNTER
+# undef COUNTING_COUNTER
+#endif /* VBOX_WITH_STATISTICS */
+}
 
+/**
+ * Deregister statistics.
+ */
+void slirp_deregister_statistics(PNATState pData, PPDMDRVINS pDrvIns)
+{
+#ifdef VBOX_WITH_STATISTICS
+# define PROFILE_COUNTER(name, dsc)     PDMDrvHlpSTAMDeregister(pDrvIns, &pData->Stat ## name)
+# define COUNTING_COUNTER(name, dsc)    PDMDrvHlpSTAMDeregister(pDrvIns, &pData->Stat ## name)
+
+# include "counters.h"
+
+# undef COUNTING_COUNTER
+# undef PROFILE_COUNTER
 #endif /* VBOX_WITH_STATISTICS */
 }
 
@@ -863,7 +892,7 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
 #endif
     int i;
 
-    SLIRP_PROFILE_START(Fill, a);
+    STAM_PROFILE_START(&pData->StatFill, a);
 
     nfds = *pnfds;
 
@@ -893,17 +922,17 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
         }
     }
     ICMP_ENGAGE_EVENT(&pData->icmp_socket, readfds);
-    
-    SLIRP_COUNTER_RESET(TCP);
-    SLIRP_COUNTER_RESET(TCPHot);
-    
+
+    STAM_COUNTER_RESET(&pData->StatTCP);
+    STAM_COUNTER_RESET(&pData->StatTCPHot);
+
     QSOCKET_FOREACH(so, so_next, tcp)
     /* { */
 #if !defined(RT_OS_WINDOWS)
         so->so_poll_index = -1;
 #endif
-        SLIRP_COUNTER_INC(TCP);
-    
+        STAM_COUNTER_INC(&pData->StatTCP);
+
         /*
          * See if we need a tcp_fasttimo
          */
@@ -911,66 +940,66 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
                 && so->so_tcpcb != NULL
                 && so->so_tcpcb->t_flags & TF_DELACK)
             time_fasttimo = curtime; /* Flag when we want a fasttimo */
-    
+
         /*
          * NOFDREF can include still connecting to local-host,
          * newly socreated() sockets etc. Don't want to select these.
          */
         if (so->so_state & SS_NOFDREF || so->s == -1)
             CONTINUE(tcp);
-    
+
         /*
          * Set for reading sockets which are accepting
          */
         if (so->so_state & SS_FACCEPTCONN)
         {
-            SLIRP_COUNTER_INC(TCPHot);
+            STAM_COUNTER_INC(&pData->StatTCPHot);
             TCP_ENGAGE_EVENT1(so, readfds);
             CONTINUE(tcp);
         }
-    
+
         /*
          * Set for writing sockets which are connecting
          */
         if (so->so_state & SS_ISFCONNECTING)
         {
             Log2(("connecting %R[natsock] engaged\n",so));
-            SLIRP_COUNTER_INC(TCPHot);
+            STAM_COUNTER_INC(&pData->StatTCPHot);
             TCP_ENGAGE_EVENT1(so, writefds);
         }
-    
+
         /*
          * Set for writing if we are connected, can send more, and
          * we have something to send
          */
         if (CONN_CANFSEND(so) && so->so_rcv.sb_cc)
         {
-            SLIRP_COUNTER_INC(TCPHot);
+            STAM_COUNTER_INC(&pData->StatTCPHot);
             TCP_ENGAGE_EVENT1(so, writefds);
         }
-    
+
         /*
          * Set for reading (and urgent data) if we are connected, can
          * receive more, and we have room for it XXX /2 ?
          */
         if (CONN_CANFRCV(so) && (so->so_snd.sb_cc < (so->so_snd.sb_datalen/2)))
         {
-            SLIRP_COUNTER_INC(TCPHot);
+            STAM_COUNTER_INC(&pData->StatTCPHot);
             TCP_ENGAGE_EVENT2(so, readfds, xfds);
         }
         LOOP_LABEL(tcp, so, so_next);
     }
-    
+
     /*
      * UDP sockets
      */
-    SLIRP_COUNTER_RESET(UDP);
-    SLIRP_COUNTER_RESET(UDPHot);
-    
+    STAM_COUNTER_RESET(&pData->StatUDP);
+    STAM_COUNTER_RESET(&pData->StatUDPHot);
+
     QSOCKET_FOREACH(so, so_next, udp)
     /* { */
-    
-        SLIRP_COUNTER_INC(UDP);
+
+        STAM_COUNTER_INC(&pData->StatUDP);
 #if !defined(RT_OS_WINDOWS)
         so->so_poll_index = -1;
 #endif
@@ -999,7 +1028,7 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
             else
                 do_slowtimo = 1; /* Let socket expire */
         }
-    
+
         /*
          * When UDP packets are received from over the link, they're
          * sendto()'d straight away, so no need for setting for writing
@@ -1012,7 +1041,7 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
          */
         if ((so->so_state & SS_ISFCONNECTED) && so->so_queued <= 4)
         {
-            SLIRP_COUNTER_INC(UDPHot);
+            STAM_COUNTER_INC(&pData->StatUDPHot);
             UDP_ENGAGE_EVENT(so, readfds);
         }
         LOOP_LABEL(udp, so, so_next);
@@ -1026,7 +1055,7 @@ done:
     *pnfds = poll_index;
 #endif /* !RT_OS_WINDOWS */
 
-    SLIRP_PROFILE_STOP(Fill, a);
+    STAM_PROFILE_STOP(&pData->StatFill, a);
 }
 
 #if defined(RT_OS_WINDOWS)
@@ -1045,7 +1074,7 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
     int poll_index = 0;
 #endif
 
-    SLIRP_PROFILE_START(Poll, a);
+    STAM_PROFILE_START(&pData->StatPoll, a);
 
     /* Update time */
     updtime(pData);
@@ -1057,18 +1086,18 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
     {
         if (time_fasttimo && ((curtime - time_fasttimo) >= 2))
         {
-            SLIRP_PROFILE_START(FastTimer, a);
+            STAM_PROFILE_START(&pData->StatFastTimer, a);
             tcp_fasttimo(pData);
             time_fasttimo = 0;
-            SLIRP_PROFILE_STOP(FastTimer, a);
+            STAM_PROFILE_STOP(&pData->StatFastTimer, a);
         }
         if (do_slowtimo && ((curtime - last_slowtimo) >= 499))
         {
-            SLIRP_PROFILE_START(SlowTimer, a);
+            STAM_PROFILE_START(&pData->StatSlowTimer, a);
             ip_slowtimo(pData);
             tcp_slowtimo(pData);
             last_slowtimo = curtime;
-            SLIRP_PROFILE_STOP(SlowTimer, a);
+            STAM_PROFILE_STOP(&pData->StatSlowTimer, a);
         }
     }
 #if defined(RT_OS_WINDOWS)
@@ -1080,7 +1109,7 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
      * Check sockets
      */
     if (!link_up)
-        goto done; 
+        goto done;
 #if defined(RT_OS_WINDOWS)
     /*XXX: before renaming please make see define
      * fIcmp in slirp_state.h
@@ -1134,24 +1163,24 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
          */
         if (so->so_state & SS_NOFDREF || so->s == -1)
             CONTINUE(tcp);
-        
+
         POLL_TCP_EVENTS(rc, error, so, &NetworkEvents);
-        
+
         LOG_NAT_SOCK(so, TCP, &NetworkEvents, readfds, writefds, xfds);
-        
-        
+
+
         /*
          * Check for URG data
          * This will soread as well, so no need to
          * test for readfds below if this succeeds
          */
-        
+
         /* out-of-band data */
         if (CHECK_FD_SET(so, NetworkEvents, xfds))
         {
             sorecvoob(pData, so);
         }
-        
+
         /*
          * Check sockets for reading
          */
@@ -1169,7 +1198,7 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
 #endif
                     CONTINUE(tcp);
             }
-        
+
             ret = soread(pData, so);
             /* Output it if we read something */
             if (RT_LIKELY(ret > 0))
@@ -1199,7 +1228,7 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
             CONTINUE(tcp);
         }
 #endif
-        
+
         /*
          * Check sockets for writing
          */
@@ -1213,7 +1242,7 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
                 Log2(("connecting %R[natsock] catched\n", so));
                 /* Connected */
                 so->so_state &= ~SS_ISFCONNECTING;
-        
+
                 /*
                  * This should be probably guarded by PROBE_CONN too. Anyway,
                  * we disable it on OS/2 because the below send call returns
@@ -1230,13 +1259,13 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
                         || errno == EINPROGRESS
                         || errno == ENOTCONN)
                         CONTINUE(tcp);
-                
+
                     /* else failed */
                     so->so_state = SS_NOFDREF;
                 }
                 /* else so->so_state &= ~SS_ISFCONNECTING; */
 #endif
-        
+
                 /*
                  * Continue tcp_input
                  */
@@ -1251,7 +1280,7 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
              * a window probe to get things going again.
              */
         }
-        
+
         /*
          * Probe a still-connecting, non-blocking socket
          * to check if it's still alive
@@ -1260,7 +1289,7 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
         if (so->so_state & SS_ISFCONNECTING)
         {
             ret = recv(so->s, (char *)&ret, 0, 0);
-        
+
             if (ret < 0)
             {
                 /* XXX */
@@ -1271,10 +1300,10 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
                 {
                     CONTINUE(tcp); /* Still connecting, continue */
                 }
-        
+
                 /* else failed */
                 so->so_state = SS_NOFDREF;
-        
+
                 /* tcp_input will take care of it */
             }
             else
@@ -1295,7 +1324,7 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
                 }
                 else
                     so->so_state &= ~SS_ISFCONNECTING;
-        
+
             }
             TCP_INPUT((struct mbuf *)NULL, sizeof(struct ip),so);
         } /* SS_ISFCONNECTING */
@@ -1416,9 +1445,9 @@ tcp_input_close:
         }
 #endif
         POLL_UDP_EVENTS(rc, error, so, &NetworkEvents);
-    
+
         LOG_NAT_SOCK(so, UDP, &NetworkEvents, readfds, writefds, xfds);
-    
+
         if (so->s != -1 && CHECK_FD_SET(so, NetworkEvents, readfds))
         {
             SORECVFROM(pData, so);
@@ -1435,7 +1464,7 @@ done:
         if_start(pData);
 #endif
 
-    SLIRP_PROFILE_STOP(Poll, a);
+    STAM_PROFILE_STOP(&pData->StatPoll, a);
 }
 
 #ifndef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
@@ -1491,7 +1520,7 @@ static void arp_input(PNATState pData, struct mbuf *m)
     mr = m_get(pData);
 #ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
     reh = mtod(mr, struct ethhdr *);
-    memcpy(reh->h_source, eh->h_source, ETH_ALEN); /* XXX: if_encap will swap src and dst*/ 
+    memcpy(reh->h_source, eh->h_source, ETH_ALEN); /* XXX: if_encap will swap src and dst*/
     Log4(("NAT: arp:%R[ether]->%R[ether]\n",
         reh->h_source, reh->h_dest));
     Log4(("NAT: arp: %R[IP4]\n", &tip));
@@ -1515,7 +1544,7 @@ static void arp_input(PNATState pData, struct mbuf *m)
                     goto arp_ok;
                 for (ex_ptr = exec_list; ex_ptr; ex_ptr = ex_ptr->ex_next)
                 {
-                    if ((htip & ~pData->netmask) == ex_ptr->ex_addr) 
+                    if ((htip & ~pData->netmask) == ex_ptr->ex_addr)
                     {
                         goto arp_ok;
                     }
@@ -1565,7 +1594,7 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
     }
     Log4(("NAT: in:%R[ether]->%R[ether]\n", &eh->h_source, &eh->h_dest));
 #ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
-    if (memcmp(eh->h_source, special_ethaddr, ETH_ALEN) == 0) 
+    if (memcmp(eh->h_source, special_ethaddr, ETH_ALEN) == 0)
     {
         /* @todo vasily: add ether logging routine in debug.c */
         Log(("NAT: packet was addressed to other MAC\n"));
@@ -1627,7 +1656,7 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m)
     m->m_data -= if_maxlinkhdr;
     m->m_len += ETH_HLEN;
     eh = mtod(m, struct ethhdr *);
-    
+
     if(MBUF_HEAD(m) != m->m_data)
     {
         LogRel(("NAT: ethernet detects corruption of the packet"));
@@ -1640,7 +1669,7 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m)
     /* XXX: not correct */
     eh->h_source[5] = CTL_ALIAS;
 #else
-    if (memcmp(eh->h_source, special_ethaddr, ETH_ALEN) != 0) 
+    if (memcmp(eh->h_source, special_ethaddr, ETH_ALEN) != 0)
     {
         memcpy(eh->h_dest, eh->h_source, ETH_ALEN);
         memcpy(eh->h_source, special_ethaddr, ETH_ALEN);
@@ -1698,16 +1727,16 @@ int slirp_redir(PNATState pData, int is_udp, int host_port,
     psin->sin_port = 0;
     psin->sin_addr.s_addr = INADDR_ANY;
     socketlen = sizeof(struct sockaddr);
-    
-    rc = getsockname(so->s, &sa, &socketlen); 
-    if (rc < 0 || sa.sa_family != AF_INET) 
+
+    rc = getsockname(so->s, &sa, &socketlen);
+    if (rc < 0 || sa.sa_family != AF_INET)
     {
         Log(("NAT: can't get socket's name\n"));
         return 1;
     }
 
     psin = (struct sockaddr_in *)&sa;
-    
+
 #if 1
     lib = LibAliasInit(pData, NULL);
     flags = LibAliasSetMode(lib, 0, 0);
@@ -1723,13 +1752,13 @@ int slirp_redir(PNATState pData, int is_udp, int host_port,
         alias, htons(guest_port),
         special_addr,  -1, /* not very clear for now*/
         (is_udp ? IPPROTO_UDP : IPPROTO_TCP));
-    if (link == NULL) 
+    if (link == NULL)
     {
         Log(("NAT: can't create redirect\n"));
         return 1;
     }
     so->so_la = lib;
-    
+
     return 0;
 #endif
 }
@@ -1764,7 +1793,7 @@ unsigned int slirp_get_timeout_ms(PNATState pData)
     if (link_up)
     {
         if (time_fasttimo)
-            return 2; 
+            return 2;
         if (do_slowtimo)
             return 500; /* see PR_SLOWHZ */
     }
@@ -1812,10 +1841,10 @@ uint16_t slirp_get_service(int proto, uint16_t dport, uint16_t sport)
     {
         case 500:
                 if (hsport != 500) /* vpnc by default try operate in src:500/dst:500 mode*/
-                /* Not sure why this make Cisco VPN client's connection more stable, 
+                /* Not sure why this make Cisco VPN client's connection more stable,
                  * at least on some servers
                  */
-                    service = sport;  
+                    service = sport;
         break;
     }
 #endif
@@ -1869,54 +1898,22 @@ do {                                                                            
 #define _8K_1M_CHECK_ARG(name, val) CHECK_ARG(name, (val), 8, 1024)
 void slirp_set_rcvbuf(PNATState pData, int kilobytes)
 {
-    _8K_1M_CHECK_ARG("SOCKET_RCVBUF", kilobytes);    
+    _8K_1M_CHECK_ARG("SOCKET_RCVBUF", kilobytes);
     pData->socket_rcv = kilobytes;
 }
 void slirp_set_sndbuf(PNATState pData, int kilobytes)
 {
-    _8K_1M_CHECK_ARG("SOCKET_SNDBUF", kilobytes);    
+    _8K_1M_CHECK_ARG("SOCKET_SNDBUF", kilobytes);
     pData->socket_snd = kilobytes * _1K;
 }
 void slirp_set_tcp_rcvspace(PNATState pData, int kilobytes)
 {
-    _8K_1M_CHECK_ARG("TCP_RCVSPACE", kilobytes);    
+    _8K_1M_CHECK_ARG("TCP_RCVSPACE", kilobytes);
     tcp_rcvspace = kilobytes * _1K;
 }
 void slirp_set_tcp_sndspace(PNATState pData, int kilobytes)
 {
-    _8K_1M_CHECK_ARG("TCP_SNDSPACE", kilobytes);    
+    _8K_1M_CHECK_ARG("TCP_SNDSPACE", kilobytes);
     tcp_sndspace = kilobytes * _1K;
 }
 
-#ifdef VBOX_WITH_STATISTICS
-/*definitions */
-#define COUNTING_COUNTER(name, dsc) \
-void slirp_counting_counter_##name##_reset(PNATState);      \
-void slirp_counting_counter_##name##_inc(PNATState);        \
-void slirp_counting_counter_##name##_add(PNATState,int );   \
-/* @todo think abaout it */
-#define PROFILE_COUNTER(name, dsc) 
-#include "counters.h"
-#undef COUNTING_COUNTER
-#undef PROFILE_COUNTER
-
-/*declarations*/
-#define COUNTING_COUNTER(name, dsc) \
-void slirp_counting_counter_##name##_reset(PNATState pData) \
-{                                                           \
-    SLIRP_COUNTER_RESET(name);                              \
-}                                                           \
-void slirp_counting_counter_##name##_inc(PNATState pData)   \
-{                                                           \
-    SLIRP_COUNTER_INC(name);                                \
-}                                                           \
-void slirp_counting_counter_##name##_add(PNATState pData,int val)   \
-{                                                           \
-    SLIRP_COUNTER_ADD(name, val);                           \
-}
-/* @todo think abaout it */
-#define PROFILE_COUNTER(name, dsc) 
-#include "counters.h"
-#undef COUNTING_COUNTER
-#undef PROFILE_COUNTER
-#endif

@@ -369,8 +369,8 @@ AssertCompileSize(struct ethhdr, 14);
 
 # define ip_next(ip) (void *)((uint8_t *)(ip) + ((ip)->ip_hl << 2))
 # define udp_next(udp) (void *)((uint8_t *)&((struct udphdr *)(udp))[1] )
-# define bcopy(src, dst, len) memcpy((dst), (src), (len)) 
-# define bcmp(a1, a2, len) memcmp((a1), (a2), (len)) 
+# define bcopy(src, dst, len) memcpy((dst), (src), (len))
+# define bcmp(a1, a2, len) memcmp((a1), (a2), (len))
 # define NO_FW_PUNCH
 
 # ifdef alias_addr
@@ -435,28 +435,5 @@ int nbt_alias_load(void);
 int nbt_alias_unload(void);
 #endif /*VBOX_WITH_SLIRP_ALIAS*/
 
-#ifdef VBOX_WITH_STATISTICS
-#define VBOX_SLIRP_COUNTER_OPER_ARG0(name, type, op) \
-    STAM_##type##_##op(&pData->Stat##name)
-#define VBOX_SLIRP_COUNTER_OPER_ARG1(name, type, op, arg) \
-    STAM_##type##_##op(&pData->Stat##name, arg)
-#else
-#define VBOX_SLIRP_COUNTER_OPER_ARG0(name, type, op) do{}while(0)
-#define VBOX_SLIRP_COUNTER_OPER_ARG1(name, type, op, arg) do{}while(0)
 #endif
 
-#define SLIRP_PROFILE_START(name, arg) \
-    VBOX_SLIRP_COUNTER_OPER_ARG1(name, PROFILE, START, arg)
-#define SLIRP_PROFILE_STOP(name, arg)  \
-    VBOX_SLIRP_COUNTER_OPER_ARG1(name, PROFILE, STOP, arg)
-
-#define SLIRP_COUNTER_RESET(name) \
-    VBOX_SLIRP_COUNTER_OPER_ARG0(name, COUNTER, RESET)
-
-#define SLIRP_COUNTER_INC(name) \
-    VBOX_SLIRP_COUNTER_OPER_ARG0(name, COUNTER, INC)
-
-#define SLIRP_COUNTER_ADD(name, val) \
-    VBOX_SLIRP_COUNTER_OPER_ARG1(name, COUNTER, ADD, (val))
-
-#endif
