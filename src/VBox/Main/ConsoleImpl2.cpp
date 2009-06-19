@@ -667,7 +667,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
          */
         if ((cCpus > 1) ||  fIOAPIC)
             fShowCpu = true;
-         
+
         rc = CFGMR3InsertNode(pDevices, "acpi", &pDev);                             RC_CHECK();
         rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               RC_CHECK();
         rc = CFGMR3InsertInteger(pInst, "Trusted", 1);              /* boolean */   RC_CHECK();
@@ -1215,7 +1215,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         /*
          * The virtual hardware type. Create appropriate device first.
          */
-        const char *cszAdapterName = "pcnet";
+        const char *pszAdapterName = "pcnet";
         NetworkAdapterType_T adapterType;
         hrc = networkAdapter->COMGETTER(AdapterType)(&adapterType);                 H();
         switch (adapterType)
@@ -1229,7 +1229,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             case NetworkAdapterType_I82543GC:
             case NetworkAdapterType_I82545EM:
                 pDev = pDevE1000;
-                cszAdapterName = "e1000";
+                pszAdapterName = "e1000";
                 break;
 #endif
             default:
@@ -1353,7 +1353,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         NetworkAttachmentType_T networkAttachment;
         hrc = networkAdapter->COMGETTER(AttachmentType)(&networkAttachment);        H();
 
-        rc = configNetwork((Console*) pvConsole, cszAdapterName, ulInstance, 0, networkAttachment,
+        rc = configNetwork((Console*) pvConsole, pszAdapterName, ulInstance, 0, networkAttachment,
                            &meAttachmentType[ulInstance], networkAdapter, pCfg, pLunL0, pInst, false);
         RC_CHECK();
     }
