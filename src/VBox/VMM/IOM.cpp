@@ -227,6 +227,7 @@ VMMR3DECL(int) IOMR3Init(PVM pVM)
  */
 static void iomR3FlushCache(PVM pVM)
 {
+    iomLock(pVM);
     /*
      * Caching of port and statistics (saves some time in rep outs/ins instruction emulation)
      */
@@ -250,6 +251,8 @@ static void iomR3FlushCache(PVM pVM)
     pVM->iom.s.pStatsLastWriteRC = NIL_RTRCPTR;
     pVM->iom.s.pMMIORangeLastRC  = NIL_RTRCPTR;
     pVM->iom.s.pMMIOStatsLastRC  = NIL_RTRCPTR;
+
+    iomUnlock(pVM);
 }
 
 
@@ -394,6 +397,7 @@ VMMR3DECL(int) IOMR3Term(PVM pVM)
  */
 PIOMIOPORTSTATS iomR3IOPortStatsCreate(PVM pVM, RTIOPORT Port, const char *pszDesc)
 {
+    Assert(IOMIsLockOwner(pVM));
     /* check if it already exists. */
     PIOMIOPORTSTATS pPort = (PIOMIOPORTSTATS)RTAvloIOPortGet(&pVM->iom.s.pTreesR3->IOPortStatTree, Port);
     if (pPort)
@@ -446,6 +450,7 @@ PIOMIOPORTSTATS iomR3IOPortStatsCreate(PVM pVM, RTIOPORT Port, const char *pszDe
  */
 PIOMMMIOSTATS iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *pszDesc)
 {
+    Assert(IOMIsLockOwner(pVM));
 #ifdef DEBUG_sandervl
     AssertGCPhys32(GCPhys);
 #endif
@@ -563,14 +568,17 @@ VMMR3DECL(int) IOMR3IOPortRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortS
         /*
          * Try Insert it.
          */
+        iomLock(pVM);
         if (RTAvlroIOPortInsert(&pVM->iom.s.pTreesR3->IOPortTreeR3, &pRange->Core))
         {
             #ifdef VBOX_WITH_STATISTICS
             for (unsigned iPort = 0; iPort < cPorts; iPort++)
                 iomR3IOPortStatsCreate(pVM, PortStart + iPort, pszDesc);
             #endif
+            iomUnlock(pVM);
             return VINF_SUCCESS;
         }
+        iomUnlock(pVM);
 
         /* conflict. */
         DBGFR3Info(pVM, "ioport", NULL, NULL);
@@ -626,6 +634,8 @@ VMMR3DECL(int)  IOMR3IOPortRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
         return VERR_INVALID_PARAMETER;
     }
 
+    iomLock(pVM);
+
     /*
      * Validate that there are ring-3 ranges for the ports.
      */
@@ -636,6 +646,7 @@ VMMR3DECL(int)  IOMR3IOPortRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
         if (!pRange)
         {
             AssertMsgFailed(("No R3! Port=#x %#x-%#x! (%s)\n", Port, PortStart, (unsigned)PortStart + cPorts - 1, pszDesc));
+            iomUnlock(pVM);
             return VERR_IOM_NO_HC_IOPORT_RANGE;
         }
 #ifndef IOM_NO_PDMINS_CHECKS
@@ -646,6 +657,7 @@ VMMR3DECL(int)  IOMR3IOPortRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
 # endif
         {
             AssertMsgFailed(("Not owner! Port=%#x %#x-%#x! (%s)\n", Port, PortStart, (unsigned)PortStart + cPorts - 1, pszDesc));
+            iomUnlock(pVM);
             return VERR_IOM_NOT_IOPORT_RANGE_OWNER;
         }
 #endif
@@ -678,14 +690,17 @@ VMMR3DECL(int)  IOMR3IOPortRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
          * Insert it.
          */
         if (RTAvlroIOPortInsert(&pVM->iom.s.CTX_SUFF(pTrees)->IOPortTreeRC, &pRange->Core))
+        {
+            iomUnlock(pVM);
             return VINF_SUCCESS;
+        }
 
         /* conflict. */
         AssertMsgFailed(("Port range %#x-%#x (%s) conflicts with existing range(s)!\n", PortStart, (unsigned)PortStart + cPorts - 1, pszDesc));
         MMHyperFree(pVM, pRange);
         rc = VERR_IOM_IOPORT_RANGE_CONFLICT;
     }
-
+    iomUnlock(pVM);
     return rc;
 }
 
@@ -734,6 +749,7 @@ VMMR3DECL(int)  IOMR3IOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
         return VERR_INVALID_PARAMETER;
     }
 
+    iomLock(pVM);
     /*
      * Validate that there are ring-3 ranges for the ports.
      */
@@ -744,6 +760,7 @@ VMMR3DECL(int)  IOMR3IOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
         if (!pRange)
         {
             AssertMsgFailed(("No R3! Port=#x %#x-%#x! (%s)\n", Port, PortStart, (unsigned)PortStart + cPorts - 1, pszDesc));
+            iomUnlock(pVM);
             return VERR_IOM_NO_HC_IOPORT_RANGE;
         }
 #ifndef IOM_NO_PDMINS_CHECKS
@@ -754,6 +771,7 @@ VMMR3DECL(int)  IOMR3IOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
 # endif
         {
             AssertMsgFailed(("Not owner! Port=%#x %#x-%#x! (%s)\n", Port, PortStart, (unsigned)PortStart + cPorts - 1, pszDesc));
+            iomUnlock(pVM);
             return VERR_IOM_NOT_IOPORT_RANGE_OWNER;
         }
 #endif
@@ -786,14 +804,17 @@ VMMR3DECL(int)  IOMR3IOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
          * Insert it.
          */
         if (RTAvlroIOPortInsert(&pVM->iom.s.CTX_SUFF(pTrees)->IOPortTreeR0, &pRange->Core))
+        {
+            iomUnlock(pVM);
             return VINF_SUCCESS;
+        }
 
         /* conflict. */
         AssertMsgFailed(("Port range %#x-%#x (%s) conflicts with existing range(s)!\n", PortStart, (unsigned)PortStart + cPorts - 1, pszDesc));
         MMHyperFree(pVM, pRange);
         rc = VERR_IOM_IOPORT_RANGE_CONFLICT;
     }
-
+    iomUnlock(pVM);
     return rc;
 }
 
@@ -831,6 +852,8 @@ VMMR3DECL(int)  IOMR3IOPortDeregister(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
         return VERR_IOM_INVALID_IOPORT_RANGE;
     }
 
+    iomLock(pVM);
+
     /* Flush the IO port lookup cache */
     iomR3FlushCache(pVM);
 
@@ -850,6 +873,7 @@ VMMR3DECL(int)  IOMR3IOPortDeregister(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
             {
                 AssertMsgFailed(("Removal of ports in range %#x-%#x rejected because not owner of %#x-%#x (%s)\n",
                                  PortStart, PortLast, pRange->Core.Key, pRange->Core.KeyLast, pRange->pszDesc));
+                iomUnlock(pVM);
                 return VERR_IOM_NOT_IOPORT_RANGE_OWNER;
             }
 #endif /* !IOM_NO_PDMINS_CHECKS */
@@ -908,29 +932,31 @@ VMMR3DECL(int)  IOMR3IOPortDeregister(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
                   * Split the range, done.
                   */
                 Assert(pRange->Core.KeyLast > PortLast && pRange->Core.Key < Port);
-                 /* create tail. */
-                 PIOMIOPORTRANGERC pRangeNew;
-                 int rc = MMHyperAlloc(pVM, sizeof(*pRangeNew), 0, MM_TAG_IOM, (void **)&pRangeNew);
-                 if (RT_FAILURE(rc))
-                     return rc;
+                /* create tail. */
+                PIOMIOPORTRANGERC pRangeNew;
+                int rc = MMHyperAlloc(pVM, sizeof(*pRangeNew), 0, MM_TAG_IOM, (void **)&pRangeNew);
+                if (RT_FAILURE(rc))
+                {
+                    iomUnlock(pVM);
+                    return rc;
+                }
+                *pRangeNew = *pRange;
+                pRangeNew->Core.Key     = PortLast;
+                pRangeNew->Port         = PortLast;
+                pRangeNew->cPorts       = pRangeNew->Core.KeyLast - PortLast + 1;
 
-                 *pRangeNew = *pRange;
-                 pRangeNew->Core.Key     = PortLast;
-                 pRangeNew->Port         = PortLast;
-                 pRangeNew->cPorts       = pRangeNew->Core.KeyLast - PortLast + 1;
+                /* adjust head */
+                pRange->Core.KeyLast  = Port - 1;
+                pRange->cPorts        = Port - pRange->Port;
 
-                 /* adjust head */
-                 pRange->Core.KeyLast  = Port - 1;
-                 pRange->cPorts        = Port - pRange->Port;
-
-                 /* insert */
-                 if (!RTAvlroIOPortInsert(&pVM->iom.s.pTreesR3->IOPortTreeRC, &pRangeNew->Core))
-                 {
-                     AssertMsgFailed(("This cannot happen!\n"));
-                     MMHyperFree(pVM, pRangeNew);
-                     rc = VERR_INTERNAL_ERROR;
-                 }
-                 break;
+                /* insert */
+                if (!RTAvlroIOPortInsert(&pVM->iom.s.pTreesR3->IOPortTreeRC, &pRangeNew->Core))
+                {
+                    AssertMsgFailed(("This cannot happen!\n"));
+                    MMHyperFree(pVM, pRangeNew);
+                    rc = VERR_INTERNAL_ERROR;
+                }
+                break;
             }
         }
         else /* next port */
@@ -988,29 +1014,31 @@ VMMR3DECL(int)  IOMR3IOPortDeregister(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
                   * Split the range, done.
                   */
                 Assert(pRange->Core.KeyLast > PortLast && pRange->Core.Key < Port);
-                 /* create tail. */
-                 PIOMIOPORTRANGER0 pRangeNew;
-                 int rc = MMHyperAlloc(pVM, sizeof(*pRangeNew), 0, MM_TAG_IOM, (void **)&pRangeNew);
-                 if (RT_FAILURE(rc))
-                     return rc;
+                /* create tail. */
+                PIOMIOPORTRANGER0 pRangeNew;
+                int rc = MMHyperAlloc(pVM, sizeof(*pRangeNew), 0, MM_TAG_IOM, (void **)&pRangeNew);
+                if (RT_FAILURE(rc))
+                {
+                    iomUnlock(pVM);
+                    return rc;
+                }
+                *pRangeNew = *pRange;
+                pRangeNew->Core.Key     = PortLast;
+                pRangeNew->Port         = PortLast;
+                pRangeNew->cPorts       = pRangeNew->Core.KeyLast - PortLast + 1;
 
-                 *pRangeNew = *pRange;
-                 pRangeNew->Core.Key     = PortLast;
-                 pRangeNew->Port         = PortLast;
-                 pRangeNew->cPorts       = pRangeNew->Core.KeyLast - PortLast + 1;
+                /* adjust head */
+                pRange->Core.KeyLast  = Port - 1;
+                pRange->cPorts        = Port - pRange->Port;
 
-                 /* adjust head */
-                 pRange->Core.KeyLast  = Port - 1;
-                 pRange->cPorts        = Port - pRange->Port;
-
-                 /* insert */
-                 if (!RTAvlroIOPortInsert(&pVM->iom.s.pTreesR3->IOPortTreeR0, &pRangeNew->Core))
-                 {
-                     AssertMsgFailed(("This cannot happen!\n"));
-                     MMHyperFree(pVM, pRangeNew);
-                     rc = VERR_INTERNAL_ERROR;
-                 }
-                 break;
+                /* insert */
+                if (!RTAvlroIOPortInsert(&pVM->iom.s.pTreesR3->IOPortTreeR0, &pRangeNew->Core))
+                {
+                    AssertMsgFailed(("This cannot happen!\n"));
+                    MMHyperFree(pVM, pRangeNew);
+                    rc = VERR_INTERNAL_ERROR;
+                }
+                break;
             }
         }
         else /* next port */
@@ -1070,8 +1098,10 @@ VMMR3DECL(int)  IOMR3IOPortDeregister(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
                 PIOMIOPORTRANGER3 pRangeNew;
                 int rc = MMHyperAlloc(pVM, sizeof(*pRangeNew), 0, MM_TAG_IOM, (void **)&pRangeNew);
                 if (RT_FAILURE(rc))
+                {
+                    iomUnlock(pVM);
                     return rc;
-
+                }
                 *pRangeNew = *pRange;
                 pRangeNew->Core.Key     = PortLast;
                 pRangeNew->Port         = PortLast;
@@ -1096,6 +1126,7 @@ VMMR3DECL(int)  IOMR3IOPortDeregister(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
     } /* for all ports - ring-3. */
 
     /* done */
+    iomUnlock(pVM);
     return rc;
 }
 
@@ -1445,8 +1476,13 @@ VMMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                                    pVM->iom.s.pfnMMIOHandlerRC, MMHyperR3ToRC(pVM, pRange), pszDesc);
         if (RT_SUCCESS(rc))
         {
+            iomLock(pVM);
             if (RTAvlroGCPhysInsert(&pVM->iom.s.pTreesR3->MMIOTree, &pRange->Core))
+            {
+                iomUnlock(pVM);
                 return VINF_SUCCESS;
+            }
+            iomUnlock(pVM);
 
             /* bail out */
             DBGFR3Info(pVM, "mmio", NULL, NULL);
@@ -1597,6 +1633,8 @@ VMMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         return VERR_IOM_INVALID_MMIO_RANGE;
     }
 
+    iomLock(pVM);
+
     /*
      * Check ownership and such for the entire area.
      */
@@ -1605,7 +1643,10 @@ VMMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
     {
         PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhys);
         if (!pRange)
+        {
+            iomUnlock(pVM);
             return VERR_IOM_MMIO_RANGE_NOT_FOUND;
+        }
         AssertMsgReturn(pRange->pDevInsR3 == pDevIns,
                         ("Not owner! GCPhys=%RGp %RGp LB%#x %s\n", GCPhys, GCPhysStart, cbRange, pRange->pszDesc),
                         VERR_IOM_NOT_MMIO_RANGE_OWNER);
@@ -1617,6 +1658,7 @@ VMMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         Assert(GCPhys <= pRange->Core.KeyLast);
         GCPhys = pRange->Core.KeyLast + 1;
     }
+    iomUnlock(pVM);
 
     /*
      * Do the actual removing of the MMIO ranges.
@@ -1624,9 +1666,11 @@ VMMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
     GCPhys = GCPhysStart;
     while (GCPhys <= GCPhysLast && GCPhys >= GCPhysStart)
     {
+        iomLock(pVM);
         PIOMMMIORANGE pRange = (PIOMMMIORANGE)RTAvlroGCPhysRemove(&pVM->iom.s.pTreesR3->MMIOTree, GCPhys);
         Assert(pRange);
         Assert(pRange->Core.Key == GCPhys && pRange->Core.KeyLast <= GCPhysLast);
+        iomUnlock(pVM);
 
         /* remove it from PGM */
         int rc = PGMR3PhysMMIODeregister(pVM, GCPhys, pRange->cb);
