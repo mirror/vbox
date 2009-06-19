@@ -1607,8 +1607,10 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
                  * Link it into the list.
                  * Since there is no particular order, just push it.
                  */
+                pgmLock(pVM);
                 pNew->pNextR3 = pVM->pgm.s.pMmio2RangesR3;
                 pVM->pgm.s.pMmio2RangesR3 = pNew;
+                pgmUnlock(pVM);
 
                 *ppv = pvPages;
                 RTMemTmpFree(paPages);
@@ -1646,6 +1648,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Deregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iR
     AssertPtrReturn(pDevIns, VERR_INVALID_PARAMETER);
     AssertReturn(iRegion <= UINT8_MAX || iRegion == UINT32_MAX, VERR_INVALID_PARAMETER);
 
+    pgmLock(pVM);
     int rc = VINF_SUCCESS;
     unsigned cFound = 0;
     PPGMMMIO2RANGE pPrev = NULL;
@@ -1715,7 +1718,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Deregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iR
             pCur = pCur->pNextR3;
         }
     }
-
+    pgmUnlock(pVM);
     return !cFound && iRegion != UINT32_MAX ? VERR_NOT_FOUND : rc;
 }
 
@@ -1961,12 +1964,15 @@ VMMR3DECL(bool) PGMR3PhysMMIO2IsBase(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhy
     /*
      * Search the list.
      */
+    pgmLock(pVM);
     for (PPGMMMIO2RANGE pCur = pVM->pgm.s.pMmio2RangesR3; pCur; pCur = pCur->pNextR3)
         if (pCur->RamRange.GCPhys == GCPhys)
         {
             Assert(pCur->fMapped);
+            pgmUnlock(pVM);
             return true;
         }
+    pgmUnlock(pVM);
     return false;
 }
 
@@ -1993,12 +1999,14 @@ VMMR3DECL(int) PGMR3PhysMMIO2GetHCPhys(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRe
     AssertPtrReturn(pDevIns, VERR_INVALID_PARAMETER);
     AssertReturn(iRegion <= UINT8_MAX, VERR_INVALID_PARAMETER);
 
+    pgmLock(pVM);
     PPGMMMIO2RANGE pCur = pgmR3PhysMMIO2Find(pVM, pDevIns, iRegion);
     AssertReturn(pCur, VERR_NOT_FOUND);
     AssertReturn(off < pCur->RamRange.cb, VERR_INVALID_PARAMETER);
 
     PCPGMPAGE pPage = &pCur->RamRange.aPages[off >> PAGE_SHIFT];
     *pHCPhys = PGM_PAGE_GET_HCPHYS(pPage);
+    pgmUnlock(pVM);
     return VINF_SUCCESS;
 }
 
@@ -2511,6 +2519,7 @@ static DECLCALLBACK(int) pgmR3PhysRomWriteHandler(PVM pVM, RTGCPHYS GCPhys, void
  */
 int pgmR3PhysRomReset(PVM pVM)
 {
+    Assert(PGMIsLockOwner(pVM));
     for (PPGMROMRANGE pRom = pVM->pgm.s.pRomRangesR3; pRom; pRom = pRom->pNextR3)
     {
         const uint32_t cPages = pRom->cb >> PAGE_SHIFT;
@@ -2726,6 +2735,7 @@ VMMDECL(void) PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable)
  */
 static DECLCALLBACK(int) pgmR3PhysChunkAgeingRolloverCallback(PAVLU32NODECORE pNode, void *pvUser)
 {
+    Assert(PGMIsLockOwner((PVM)pvUser));
     /* Age compression - ASSUMES iNow == 4. */
     PPGMCHUNKR3MAP pChunk = (PPGMCHUNKR3MAP)pNode;
     if (pChunk->iAge >= UINT32_C(0xffffff00))
@@ -2772,6 +2782,7 @@ static DECLCALLBACK(int) pgmR3PhysChunkAgeingCallback(PAVLU32NODECORE pNode, voi
  */
 VMMR3DECL(void) PGMR3PhysChunkAgeing(PVM pVM)
 {
+    pgmLock(pVM);
     pVM->pgm.s.ChunkR3Map.AgeingCountdown = RT_MIN(pVM->pgm.s.ChunkR3Map.cMax / 4, 1024);
     pVM->pgm.s.ChunkR3Map.iNow++;
     if (pVM->pgm.s.ChunkR3Map.iNow == 0)
@@ -2781,6 +2792,7 @@ VMMR3DECL(void) PGMR3PhysChunkAgeing(PVM pVM)
     }
     else
         RTAvlU32DoWithAll(&pVM->pgm.s.ChunkR3Map.pTree, true /*fFromLeft*/, pgmR3PhysChunkAgeingCallback, pVM);
+    pgmUnlock(pVM);
 }
 
 
@@ -2848,6 +2860,8 @@ static DECLCALLBACK(int) pgmR3PhysChunkUnmapCandidateCallback(PAVLLU32NODECORE p
  */
 static int32_t pgmR3PhysChunkFindUnmapCandidate(PVM pVM)
 {
+    Assert(PGMIsLockOwner(pVM));
+
     /*
      * Do tree ageing first?
      */
@@ -2882,6 +2896,7 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
 {
     int rc;
 
+    Assert(PGMIsLockOwner(pVM));
     /*
      * Allocate a new tracking structure first.
      */
@@ -2967,7 +2982,12 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
 VMMR3DECL(int) PGMR3PhysChunkMap(PVM pVM, uint32_t idChunk)
 {
     PPGMCHUNKR3MAP pChunk;
-    return pgmR3PhysChunkMap(pVM, idChunk, &pChunk);
+    int rc;
+
+    pgmLock(pVM);
+    rc = pgmR3PhysChunkMap(pVM, idChunk, &pChunk);
+    pgmUnlock(pVM);
+    return rc;
 }
 
 
@@ -3127,7 +3147,7 @@ static int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPa
     /*
      * Assert sanity.
      */
-    Assert(PDMCritSectIsOwner(&pVM->pgm.s.CritSect));
+    Assert(PGMIsLockOwner(pVM));
     if (RT_UNLIKELY(    PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_RAM
                     &&  PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_ROM_SHADOW))
     {
