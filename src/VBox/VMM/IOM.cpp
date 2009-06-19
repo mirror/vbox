@@ -1534,17 +1534,19 @@ VMMR3DECL(int)  IOMR3MMIORegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
     /*
      * Find the MMIO range and check that the input matches.
      */
+    iomLock(pVM);
     PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhysStart);
-    AssertReturn(pRange, VERR_IOM_MMIO_RANGE_NOT_FOUND);
-    AssertReturn(pRange->pDevInsR3 == pDevIns, VERR_IOM_NOT_MMIO_RANGE_OWNER);
-    AssertReturn(pRange->GCPhys == GCPhysStart, VERR_IOM_INVALID_MMIO_RANGE);
-    AssertReturn(pRange->cb == cbRange, VERR_IOM_INVALID_MMIO_RANGE);
+    AssertReturnStmt(pRange, iomUnlock(pVM), VERR_IOM_MMIO_RANGE_NOT_FOUND);
+    AssertReturnStmt(pRange->pDevInsR3 == pDevIns, iomUnlock(pVM), VERR_IOM_NOT_MMIO_RANGE_OWNER);
+    AssertReturnStmt(pRange->GCPhys == GCPhysStart, iomUnlock(pVM), VERR_IOM_INVALID_MMIO_RANGE);
+    AssertReturnStmt(pRange->cb == cbRange, iomUnlock(pVM), VERR_IOM_INVALID_MMIO_RANGE);
 
     pRange->pvUserRC          = pvUser;
     pRange->pfnReadCallbackRC = pfnReadCallback;
     pRange->pfnWriteCallbackRC= pfnWriteCallback;
     pRange->pfnFillCallbackRC = pfnFillCallback;
     pRange->pDevInsRC         = MMHyperCCToRC(pVM, pDevIns);
+    iomUnlock(pVM);
 
     return VINF_SUCCESS;
 }
@@ -1588,17 +1590,19 @@ VMMR3DECL(int)  IOMR3MMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
     /*
      * Find the MMIO range and check that the input matches.
      */
+    iomLock(pVM);
     PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhysStart);
-    AssertReturn(pRange, VERR_IOM_MMIO_RANGE_NOT_FOUND);
-    AssertReturn(pRange->pDevInsR3 == pDevIns, VERR_IOM_NOT_MMIO_RANGE_OWNER);
-    AssertReturn(pRange->GCPhys == GCPhysStart, VERR_IOM_INVALID_MMIO_RANGE);
-    AssertReturn(pRange->cb == cbRange, VERR_IOM_INVALID_MMIO_RANGE);
+    AssertReturnStmt(pRange, iomUnlock(pVM), VERR_IOM_MMIO_RANGE_NOT_FOUND);
+    AssertReturnStmt(pRange->pDevInsR3 == pDevIns, iomUnlock(pVM), VERR_IOM_NOT_MMIO_RANGE_OWNER);
+    AssertReturnStmt(pRange->GCPhys == GCPhysStart, iomUnlock(pVM), VERR_IOM_INVALID_MMIO_RANGE);
+    AssertReturnStmt(pRange->cb == cbRange, iomUnlock(pVM), VERR_IOM_INVALID_MMIO_RANGE);
 
     pRange->pvUserR0          = pvUser;
     pRange->pfnReadCallbackR0 = pfnReadCallback;
     pRange->pfnWriteCallbackR0= pfnWriteCallback;
     pRange->pfnFillCallbackR0 = pfnFillCallback;
     pRange->pDevInsR0         = MMHyperCCToR0(pVM, pDevIns);
+    iomUnlock(pVM);
 
     return VINF_SUCCESS;
 }

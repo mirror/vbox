@@ -472,6 +472,10 @@ DECLCALLBACK(int) IOMR3MMIOHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void 
  */
 DECLINLINE(CTX_SUFF(PIOMIOPORTRANGE)) iomIOPortGetRange(PIOM pIOM, RTIOPORT Port)
 {
+#ifdef IN_RING3
+    if (PDMCritSectIsInitialized(&pIOM->EmtLock))
+#endif
+        Assert(IOMIsLockOwner(IOM2VM(pIOM)));
     CTX_SUFF(PIOMIOPORTRANGE) pRange = (CTX_SUFF(PIOMIOPORTRANGE))RTAvlroIOPortRangeGet(&pIOM->CTX_SUFF(pTrees)->CTX_SUFF(IOPortTree), Port);
     return pRange;
 }
@@ -488,6 +492,10 @@ DECLINLINE(CTX_SUFF(PIOMIOPORTRANGE)) iomIOPortGetRange(PIOM pIOM, RTIOPORT Port
  */
 DECLINLINE(PIOMIOPORTRANGER3) iomIOPortGetRangeR3(PIOM pIOM, RTIOPORT Port)
 {
+#ifdef IN_RING3
+    if (PDMCritSectIsInitialized(&pIOM->EmtLock))
+#endif
+        Assert(IOMIsLockOwner(IOM2VM(pIOM)));
     PIOMIOPORTRANGER3 pRange = (PIOMIOPORTRANGER3)RTAvlroIOPortRangeGet(&pIOM->CTX_SUFF(pTrees)->IOPortTreeR3, Port);
     return pRange;
 }
@@ -504,12 +512,36 @@ DECLINLINE(PIOMIOPORTRANGER3) iomIOPortGetRangeR3(PIOM pIOM, RTIOPORT Port)
  */
 DECLINLINE(PIOMMMIORANGE) iomMMIOGetRange(PIOM pIOM, RTGCPHYS GCPhys)
 {
+#ifdef IN_RING3
+    if (PDMCritSectIsInitialized(&pIOM->EmtLock))
+#endif
+        Assert(IOMIsLockOwner(IOM2VM(pIOM)));
     PIOMMMIORANGE pRange = pIOM->CTX_SUFF(pMMIORangeLast);
     if (    !pRange
         ||  GCPhys - pRange->GCPhys >= pRange->cb)
         pIOM->CTX_SUFF(pMMIORangeLast) = pRange = (PIOMMMIORANGE)RTAvlroGCPhysRangeGet(&pIOM->CTX_SUFF(pTrees)->MMIOTree, GCPhys);
     return pRange;
 }
+
+#ifdef VBOX_STRICT
+/**
+ * Gets the MMIO range for the specified physical address in the current context.
+ *
+ * @returns Pointer to MMIO range.
+ * @returns NULL if address not in a MMIO range.
+ *
+ * @param   pIOM    IOM instance data.
+ * @param   GCPhys  Physical address to lookup.
+ */
+DECLINLINE(PIOMMMIORANGE) iomMMIOGetRangeUnsafe(PIOM pIOM, RTGCPHYS GCPhys)
+{
+    PIOMMMIORANGE pRange = pIOM->CTX_SUFF(pMMIORangeLast);
+    if (    !pRange
+        ||  GCPhys - pRange->GCPhys >= pRange->cb)
+        pIOM->CTX_SUFF(pMMIORangeLast) = pRange = (PIOMMMIORANGE)RTAvlroGCPhysRangeGet(&pIOM->CTX_SUFF(pTrees)->MMIOTree, GCPhys);
+    return pRange;
+}
+#endif
 
 
 #ifdef VBOX_WITH_STATISTICS
