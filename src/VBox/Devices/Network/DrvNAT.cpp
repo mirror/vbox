@@ -36,8 +36,6 @@
 #include <iprt/cidr.h>
 #include <iprt/stream.h>
 
-#include "slirp/statistics.h"
-
 #include "Builtins.h"
 
 #ifndef RT_OS_WINDOWS
@@ -114,6 +112,8 @@ typedef struct DRVNAT
     /** for external notification */
     HANDLE                  hWakeupEvent;
 #endif
+    STAMCOUNTER             StatQueuePktSent;       /**< counting packet sent via PDM queue */
+    STAMCOUNTER             StatQueuePktDropped;    /**< counting packet drops by PDM queue */
 } DRVNAT;
 /** Pointer the NAT driver instance data. */
 typedef DRVNAT *PDRVNAT;
@@ -496,8 +496,8 @@ void slirp_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
     LogFlow(("slirp_output BEGIN %x %d\n", pu8Buf, cb));
     Log2(("slirp_output: pu8Buf=%p cb=%#x (pThis=%p)\n%.*Rhxd\n", pu8Buf, cb, pThis, cb, pu8Buf));
 
-    STAM_COUNTER_RESET(DRVNAT_STAT(pThis, DrvNAT_package_drop, STAMCOUNTER));
-    STAM_COUNTER_RESET(DRVNAT_STAT(pThis, DrvNAT_package_sent, STAMCOUNTER));
+    STAM_COUNTER_RESET(&pThis->StatQueuePktDropped);
+    STAM_COUNTER_RESET(&pThis->StatQueuePktSent);
     Assert(pThis);
 
     PDRVNATQUEUITEM pItem = (PDRVNATQUEUITEM)PDMQueueAlloc(pThis->pSendQueue);
@@ -508,7 +508,7 @@ void slirp_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
         pItem->mbuf = pvArg;
         Log2(("pItem:%p %.Rhxd\n", pItem, pItem->pu8Buf));
         PDMQueueInsert(pThis->pSendQueue, &pItem->Core);
-        STAM_COUNTER_INC(DRVNAT_STAT(pThis, DrvNAT_package_sent, STAMCOUNTER));
+        STAM_COUNTER_INC(&pThis->StatQueuePktSent);
         return;
     }
     static unsigned s_cDroppedPackets;
@@ -516,10 +516,10 @@ void slirp_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
         s_cDroppedPackets++;
     else
     {
-        LogRel(("NAT: %d messages suppressed about dropping package (couldn't allocate queue item)\n", s_cDroppedPackets));
+        LogRel(("NAT: %d messages suppressed about dropping packet (couldn't allocate queue item)\n", s_cDroppedPackets));
         s_cDroppedPackets = 0;
     }
-    STAM_COUNTER_INC(DRVNAT_STAT(pThis, DrvNAT_package_drop, STAMCOUNTER));
+    STAM_COUNTER_INC(&pThis->StatQueuePktDropped);
     RTMemFree((void *)pu8Buf);
 }
 
@@ -602,6 +602,10 @@ static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
     slirp_term(pThis->pNATState);
     slirp_deregister_statistics(pThis->pNATState, pDrvIns);
     pThis->pNATState = NULL;
+#ifdef VBOX_WITH_STATISTICS
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatQueuePktSent);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatQueuePktDropped);
+#endif
 }
 
 
@@ -832,19 +836,25 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
         slirp_set_dhcp_dns_proxy(pThis->pNATState, !!fDNSProxy);
 #endif
 #define SLIRP_SET_TUNING_VALUE(name, setter)            \
-    do                                                  \
-    {                                                   \
-        int len = 0;                                    \
-        rc = CFGMR3QueryS32(pCfgHandle, name, &len);    \
-        if (RT_SUCCESS(rc))                             \
-            setter(pThis->pNATState, len);              \
-    }while(0)
+            do                                                  \
+            {                                                   \
+                int len = 0;                                    \
+                rc = CFGMR3QueryS32(pCfgHandle, name, &len);    \
+                if (RT_SUCCESS(rc))                             \
+                    setter(pThis->pNATState, len);              \
+            } while(0)
+
         SLIRP_SET_TUNING_VALUE("SocketRcvBuf", slirp_set_rcvbuf);
         SLIRP_SET_TUNING_VALUE("SocketSndBuf", slirp_set_sndbuf);
         SLIRP_SET_TUNING_VALUE("TcpRcvSpace", slirp_set_tcp_rcvspace);
         SLIRP_SET_TUNING_VALUE("TcpSndSpace", slirp_set_tcp_sndspace);
 
         slirp_register_statistics(pThis->pNATState, pDrvIns);
+#ifdef VBOX_WITH_STATISTICS
+        PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatQueuePktSent,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "counting packet sent via PDM queue", "/Drivers/NAT%u/QueuePacketSent", pDrvIns->iInstance);
+        PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatQueuePktDropped, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "counting packet sent via PDM queue", "/Drivers/NAT%u/QueuePacketDropped", pDrvIns->iInstance);
+#endif
+
         int rc2 = drvNATConstructRedir(pDrvIns->iInstance, pThis, pCfgHandle, Network);
         if (RT_SUCCESS(rc2))
         {
