@@ -1680,12 +1680,15 @@ VMMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         int rc = PGMR3PhysMMIODeregister(pVM, GCPhys, pRange->cb);
         AssertRC(rc);
 
+        iomLock(pVM);
+
         /* advance and free. */
         GCPhys = pRange->Core.KeyLast + 1;
         if (pDevIns->iInstance > 0)
             MMR3HeapFree((void *)pRange->pszDesc);
         MMHyperFree(pVM, pRange);
     }
+    iomUnlock(pVM);
 
     return VINF_SUCCESS;
 }
