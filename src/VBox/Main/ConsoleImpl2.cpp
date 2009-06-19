@@ -1350,11 +1350,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         /*
          * Configure the network card now
          */
-        NetworkAttachmentType_T networkAttachment;
-        hrc = networkAdapter->COMGETTER(AttachmentType)(&networkAttachment);        H();
 
-        rc = configNetwork((Console*) pvConsole, pszAdapterName, ulInstance, 0, networkAttachment,
-                           &meAttachmentType[ulInstance], networkAdapter, pCfg, pLunL0, pInst, false);
+        rc = configNetwork(pConsole, pszAdapterName, ulInstance, 0, networkAdapter, pCfg, pLunL0, pInst, false);
         RC_CHECK();
     }
 
@@ -2053,16 +2050,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
  *  @param   pszDevice           The PDM device name.
  *  @param   uInstance           The PDM device instance.
  *  @param   uLun                The PDM LUN number of the drive.
- *  @param   eAttachmentType     The new attachment type.
- *  @param   meAttachmentType    The current attachment type.
  *  @param   aNetworkAdapter     The network adapter whose attachment needs to be changed
  *
  *  @note Locks the Console object for writing.
  */
 DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
                                           unsigned uInstance, unsigned uLun,
-                                          NetworkAttachmentType_T eAttachmentType,
-                                          NetworkAttachmentType_T *meAttachmentType,
                                           INetworkAdapter *aNetworkAdapter,
                                           PCFGMNODE pCfg, PCFGMNODE pLunL0,
                                           PCFGMNODE pInst, bool attachDetach)
@@ -2144,6 +2137,9 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
         }
 
         Bstr networkName, trunkName, trunkType;
+        NetworkAttachmentType_T eAttachmentType;
+        hrc = aNetworkAdapter->COMGETTER(AttachmentType)(&eAttachmentType);
+        H();
         switch (eAttachmentType)
         {
             case NetworkAttachmentType_Null:
@@ -2846,6 +2842,15 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
                         AssertRC (rc);
                     }
 
+                    {
+                        /** @todo r=pritesh: get the dhcp server name from the
+                         * previous network configuration and then stop the server
+                         * else it may conflict with the dhcp server running  with
+                         * the current attachment type
+                         */
+                        /* Stop the hostonly DHCP Server */
+                    }
+
                     if(!networkName.isNull())
                     {
                         /*
@@ -2883,7 +2888,7 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
                 break;
         }
 
-        *meAttachmentType = eAttachmentType;
+        meAttachmentType[uInstance] = eAttachmentType;
     }
     while (0);
 
