@@ -78,7 +78,7 @@ tcp_reass(PNATState pData, struct tcpcb *tp, struct tcphdr *th, int *tlenp, stru
     struct tseg_qent *te = NULL;
     struct socket *so = tp->t_socket;
     int flags;
-    SLIRP_PROFILE_START(TCP_reassamble, tcp_reassamble);
+    STAM_PROFILE_START(&pData->StatTCP_reassamble, tcp_reassamble);
 
     /*
      * XXX: tcp_reass() is rather inefficient with its data structures
@@ -108,7 +108,7 @@ tcp_reass(PNATState pData, struct tcpcb *tp, struct tcphdr *th, int *tlenp, stru
         tcpstat.tcps_rcvmemdrop++;
         m_freem(pData, m);
         *tlenp = 0;
-        SLIRP_PROFILE_STOP(TCP_reassamble, tcp_reassamble);
+        STAM_PROFILE_STOP(&pData->StatTCP_reassamble, tcp_reassamble);
         return (0);
     }
 
@@ -122,7 +122,7 @@ tcp_reass(PNATState pData, struct tcpcb *tp, struct tcphdr *th, int *tlenp, stru
         tcpstat.tcps_rcvmemdrop++;
         m_freem(pData, m);
         *tlenp = 0;
-        SLIRP_PROFILE_STOP(TCP_reassamble, tcp_reassamble);
+        STAM_PROFILE_STOP(&pData->StatTCP_reassamble, tcp_reassamble);
         return (0);
     }
     tp->t_segqlen++;
@@ -221,13 +221,13 @@ present:
      */
     if (!TCPS_HAVEESTABLISHED(tp->t_state))
     {
-        SLIRP_PROFILE_STOP(TCP_reassamble, tcp_reassamble);
+        STAM_PROFILE_STOP(&pData->StatTCP_reassamble, tcp_reassamble);
         return (0);
     }
     q = LIST_FIRST(&tp->t_segq);
     if (!q || q->tqe_th->th_seq != tp->rcv_nxt)
     {
-        SLIRP_PROFILE_STOP(TCP_reassamble, tcp_reassamble);
+        STAM_PROFILE_STOP(&pData->StatTCP_reassamble, tcp_reassamble);
         return (0);
     }
     do
@@ -246,7 +246,7 @@ present:
             if (so->so_emu)
             {
                 if (tcp_emu(pData, so, q->tqe_m))
-                    sbappend(pData, so, q->tqe_m); 
+                    sbappend(pData, so, q->tqe_m);
             }
             else
                 sbappend(pData, so, q->tqe_m);
@@ -258,7 +258,7 @@ present:
     }
     while (q && q->tqe_th->th_seq == tp->rcv_nxt);
 
-    SLIRP_PROFILE_STOP(TCP_reassamble, tcp_reassamble);
+    STAM_PROFILE_STOP(&pData->StatTCP_reassamble, tcp_reassamble);
     return flags;
 }
 
@@ -282,14 +282,14 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
     int iss = 0;
     u_long tiwin;
 /*  int ts_present = 0; */
-    SLIRP_PROFILE_START(TCP_input, counter_input);
+    STAM_PROFILE_START(&pData->StatTCP_input, counter_input);
 
     DEBUG_CALL("tcp_input");
     DEBUG_ARGS((dfd," m = %8lx  iphlen = %2d  inso = %lx\n",
                 (long )m, iphlen, (long )inso ));
-    
-    if (inso != NULL) 
-    { 
+
+    if (inso != NULL)
+    {
         QSOCKET_LOCK(tcb);
         SOCKET_LOCK(inso);
         QSOCKET_UNLOCK(tcb);
@@ -313,7 +313,7 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
 			LogRel(("NAT: ti is null. can't do any reseting connection actions\n"));
 			/* mbuf should be cleared in sofree called from tcp_close */
 			tcp_close(pData, tp);
-                        SLIRP_PROFILE_STOP(TCP_input, counter_input);
+                        STAM_PROFILE_STOP(&pData->StatTCP_input, counter_input);
 			return;
 		}
         tiwin = ti->ti_win;
@@ -430,19 +430,19 @@ findso:
     {
         struct socket *sonxt;
         QSOCKET_UNLOCK(tcb);
-        /* @todo fix SOLOOKUP macrodefinition to be usable here */ 
+        /* @todo fix SOLOOKUP macrodefinition to be usable here */
 #ifndef VBOX_WITH_SLIRP_MT
         so = solookup(&tcb, ti->ti_src, ti->ti_sport,
                       ti->ti_dst, ti->ti_dport);
 #else
         so = NULL;
-        QSOCKET_FOREACH(so, sonxt, tcp)        
+        QSOCKET_FOREACH(so, sonxt, tcp)
         /* { */
             if (   so->so_lport        == ti->ti_sport
                 && so->so_laddr.s_addr == ti->ti_src.s_addr
                 && so->so_faddr.s_addr == ti->ti_dst.s_addr
                 && so->so_fport        == ti->ti_dport
-                && so->so_deleted != 1) 
+                && so->so_deleted != 1)
             {
                 break; /* so is locked here */
             }
@@ -457,7 +457,7 @@ findso:
             tcp_last_so = so;
         }
         ++tcpstat.tcps_socachemiss;
-    } 
+    }
     else
     {
         SOCKET_LOCK(so);
@@ -489,7 +489,7 @@ findso:
             RTMemFree(so); /* Not sofree (if it failed, it's not insqued) */
             goto dropwithreset;
         }
-        SOCKET_LOCK(so); 
+        SOCKET_LOCK(so);
         sbreserve(pData, &so->so_snd, tcp_sndspace);
         sbreserve(pData, &so->so_rcv, tcp_rcvspace);
 
@@ -513,7 +513,7 @@ findso:
      * a retransmit of the SYN.  Whether it's a retransmit SYN
      * or something else, we nuke it.
      */
-    if (so->so_state & SS_ISFCONNECTING) 
+    if (so->so_state & SS_ISFCONNECTING)
     {
         goto drop;
     }
@@ -648,7 +648,7 @@ findso:
                   (void) tcp_output(pData, tp);
 
               SOCKET_UNLOCK(so);
-              SLIRP_PROFILE_STOP(TCP_input, counter_input);
+              STAM_PROFILE_STOP(&pData->StatTCP_input, counter_input);
               return;
             }
         }
@@ -694,7 +694,7 @@ findso:
             tp->t_flags |= TF_ACKNOW;
             tcp_output(pData, tp);
             SOCKET_UNLOCK(so);
-            SLIRP_PROFILE_STOP(TCP_input, counter_input);
+            STAM_PROFILE_STOP(&pData->StatTCP_input, counter_input);
             return;
         }
     } /* header prediction */
@@ -734,7 +734,7 @@ findso:
             }
             if (tiflags & TH_ACK)
                 goto dropwithreset;
-            if ((tiflags & TH_SYN) == 0) 
+            if ((tiflags & TH_SYN) == 0)
             {
                 goto drop;
             }
@@ -794,7 +794,7 @@ findso:
                 tp->t_state = TCPS_SYN_RECEIVED;
             }
             SOCKET_UNLOCK(so);
-            SLIRP_PROFILE_STOP(TCP_input, counter_input);
+            STAM_PROFILE_STOP(&pData->StatTCP_input, counter_input);
             return;
 
 cont_conn:
@@ -852,7 +852,7 @@ cont_input:
                 goto drop;
             }
 
-            if ((tiflags & TH_SYN) == 0) 
+            if ((tiflags & TH_SYN) == 0)
             {
                 goto drop;
             }
@@ -1075,7 +1075,7 @@ trimthenstep6:
 #if 0
     if (   ts_present
         && SEQ_LEQ(ti->ti_seq, tp->last_ack_sent)
-        && SEQ_LT(tp->last_ack_sent, ti->ti_seq + ti->ti_len + ((tiflags & (TH_SYN|TH_FIN)) != 0))) 
+        && SEQ_LT(tp->last_ack_sent, ti->ti_seq + ti->ti_len + ((tiflags & (TH_SYN|TH_FIN)) != 0)))
     {
         tp->ts_recent_age = tcp_now;
         tp->ts_recent = ts_val;
@@ -1130,7 +1130,7 @@ close:
     /*
      * If the ACK bit is off we drop the segment and return.
      */
-    if ((tiflags & TH_ACK) == 0) 
+    if ((tiflags & TH_ACK) == 0)
     {
         goto drop;
     }
@@ -1519,9 +1519,9 @@ dodata:
             tcpstat.tcps_rcvbyte += tlen;
             if (so->so_state & SS_FCANTRCVMORE)
                 m_freem(pData, m);
-            else 
+            else
             {
-                if (so->so_emu) 
+                if (so->so_emu)
                 {
                     if (tcp_emu(pData, so, m))
                         sbappend(pData, so, m);
@@ -1621,7 +1621,7 @@ dodata:
         tcp_output(pData, tp);
 
     SOCKET_UNLOCK(so);
-    SLIRP_PROFILE_STOP(TCP_input, counter_input);
+    STAM_PROFILE_STOP(&pData->StatTCP_input, counter_input);
     return;
 
 dropafterack:
@@ -1636,7 +1636,7 @@ dropafterack:
     tp->t_flags |= TF_ACKNOW;
     (void) tcp_output(pData, tp);
     SOCKET_UNLOCK(so);
-    SLIRP_PROFILE_STOP(TCP_input, counter_input);
+    STAM_PROFILE_STOP(&pData->StatTCP_input, counter_input);
     return;
 
 dropwithreset:
@@ -1652,7 +1652,7 @@ dropwithreset:
 
     if (so != &tcb)
         SOCKET_UNLOCK(so);
-    SLIRP_PROFILE_STOP(TCP_input, counter_input);
+    STAM_PROFILE_STOP(&pData->StatTCP_input, counter_input);
     return;
 
 drop:
@@ -1662,13 +1662,13 @@ drop:
     m_free(pData, m);
 
 #ifdef VBOX_WITH_SLIRP_MT
-    if (RTCritSectIsOwned(&so->so_mutex)) 
+    if (RTCritSectIsOwned(&so->so_mutex))
     {
         SOCKET_UNLOCK(so);
     }
 #endif
 
-    SLIRP_PROFILE_STOP(TCP_input, counter_input);
+    STAM_PROFILE_STOP(&pData->StatTCP_input, counter_input);
     return;
 }
 

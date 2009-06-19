@@ -77,23 +77,23 @@ sbappend(PNATState pData, struct socket *so, struct mbuf *m)
 {
     int ret = 0;
 
-    SLIRP_PROFILE_START(IOSBAppend_pf, a);
+    STAM_PROFILE_START(&pData->StatIOSBAppend_pf, a);
     DEBUG_CALL("sbappend");
     DEBUG_ARG("so = %lx", (long)so);
     DEBUG_ARG("m = %lx", (long)m);
     DEBUG_ARG("m->m_len = %d", m->m_len);
 
-    SLIRP_COUNTER_RESET(IOSBAppend);
-    SLIRP_COUNTER_RESET(IOSBAppend_zm);
-    SLIRP_COUNTER_RESET(IOSBAppend_wa);
-    SLIRP_COUNTER_RESET(IOSBAppend_wf);
-    SLIRP_COUNTER_RESET(IOSBAppend_wp);
+    STAM_COUNTER_RESET(&pData->StatIOSBAppend);
+    STAM_COUNTER_RESET(&pData->StatIOSBAppend_zm);
+    STAM_COUNTER_RESET(&pData->StatIOSBAppend_wa);
+    STAM_COUNTER_RESET(&pData->StatIOSBAppend_wf);
+    STAM_COUNTER_RESET(&pData->StatIOSBAppend_wp);
 
-    SLIRP_COUNTER_INC(IOSBAppend);
+    STAM_COUNTER_INC(&pData->StatIOSBAppend);
     /* Shouldn't happen, but...  e.g. foreign host closes connection */
     if (m->m_len <= 0)
     {
-        SLIRP_COUNTER_INC(IOSBAppend_zm);
+        STAM_COUNTER_INC(&pData->StatIOSBAppend_zm);
         goto done;
     }
 
@@ -119,7 +119,7 @@ sbappend(PNATState pData, struct socket *so, struct mbuf *m)
 
     if (ret <= 0)
     {
-        SLIRP_COUNTER_INC(IOSBAppend_wf);
+        STAM_COUNTER_INC(&pData->StatIOSBAppend_wf);
         /*
          * Nothing was written
          * It's possible that the socket has closed, but
@@ -127,12 +127,12 @@ sbappend(PNATState pData, struct socket *so, struct mbuf *m)
          * it will be detected in the normal way by soread()
          */
         sbappendsb(pData, &so->so_rcv, m);
-        SLIRP_PROFILE_STOP(IOSBAppend_pf_wf, a);
+        STAM_PROFILE_STOP(&pData->StatIOSBAppend_pf_wf, a);
         goto done;
     }
     else if (ret != m->m_len)
     {
-        SLIRP_COUNTER_INC(IOSBAppend_wp);
+        STAM_COUNTER_INC(&pData->StatIOSBAppend_wp);
         /*
          * Something was written, but not everything..
          * sbappendsb the rest
@@ -140,12 +140,12 @@ sbappend(PNATState pData, struct socket *so, struct mbuf *m)
         m->m_len -= ret;
         m->m_data += ret;
         sbappendsb(pData, &so->so_rcv, m);
-        SLIRP_PROFILE_STOP(IOSBAppend_pf_wp, a);
+        STAM_PROFILE_STOP(&pData->StatIOSBAppend_pf_wp, a);
         goto done;
     } /* else */
     /* Whatever happened, we free the mbuf */
-    SLIRP_COUNTER_INC(IOSBAppend_wa);
-    SLIRP_PROFILE_STOP(IOSBAppend_pf_wa, a);
+    STAM_COUNTER_INC(&pData->StatIOSBAppend_wa);
+    STAM_PROFILE_STOP(&pData->StatIOSBAppend_pf_wa, a);
 done:
     m_free(pData, m);
 }
@@ -161,15 +161,15 @@ sbappendsb(PNATState pData, struct sbuf *sb, struct mbuf *m)
 
     len = m->m_len;
 
-    SLIRP_COUNTER_RESET(IOSBAppendSB);
-    SLIRP_COUNTER_RESET(IOSBAppendSB_w_l_r);
-    SLIRP_COUNTER_RESET(IOSBAppendSB_w_ge_r);
-    SLIRP_COUNTER_RESET(IOSBAppendSB_w_alter);
+    STAM_COUNTER_RESET(&pData->StatIOSBAppendSB);
+    STAM_COUNTER_RESET(&pData->StatIOSBAppendSB_w_l_r);
+    STAM_COUNTER_RESET(&pData->StatIOSBAppendSB_w_ge_r);
+    STAM_COUNTER_RESET(&pData->StatIOSBAppendSB_w_alter);
 
-    SLIRP_COUNTER_INC(IOSBAppendSB);
+    STAM_COUNTER_INC(&pData->StatIOSBAppendSB);
     if (sb->sb_wptr < sb->sb_rptr)
     {
-        SLIRP_COUNTER_INC(IOSBAppendSB_w_l_r);
+        STAM_COUNTER_INC(&pData->StatIOSBAppendSB_w_l_r);
         n = sb->sb_rptr - sb->sb_wptr;
         if (n > len)
             n = len;
@@ -177,7 +177,7 @@ sbappendsb(PNATState pData, struct sbuf *sb, struct mbuf *m)
     }
     else
     {
-        SLIRP_COUNTER_INC(IOSBAppendSB_w_ge_r);
+        STAM_COUNTER_INC(&pData->StatIOSBAppendSB_w_ge_r);
         /* Do the right edge first */
         n = sb->sb_data + sb->sb_datalen - sb->sb_wptr;
         if (n > len)
@@ -199,7 +199,7 @@ sbappendsb(PNATState pData, struct sbuf *sb, struct mbuf *m)
     sb->sb_wptr += n;
     if (sb->sb_wptr >= sb->sb_data + sb->sb_datalen)
     {
-        SLIRP_COUNTER_INC(IOSBAppendSB_w_alter);
+        STAM_COUNTER_INC(&pData->StatIOSBAppendSB_w_alter);
         sb->sb_wptr -= sb->sb_datalen;
     }
 }

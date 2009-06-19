@@ -124,9 +124,9 @@ soread(PNATState pData, struct socket *so)
     struct iovec iov[2];
     int mss = so->so_tcpcb->t_maxseg;
 
-    SLIRP_PROFILE_START(IOread, a);
-    SLIRP_COUNTER_RESET(IORead_in_1);
-    SLIRP_COUNTER_RESET(IORead_in_2);
+    STAM_PROFILE_START(&pData->StatIOread, a);
+    STAM_COUNTER_RESET(&pData->StatIORead_in_1);
+    STAM_COUNTER_RESET(&pData->StatIORead_in_2);
 
     QSOCKET_LOCK(tcb);
     SOCKET_LOCK(so);
@@ -219,7 +219,7 @@ soread(PNATState pData, struct socket *so)
         if (nn == 0 && (pending != 0))
         {
             SOCKET_UNLOCK(so);
-            SLIRP_PROFILE_STOP(IOread, a);
+            STAM_PROFILE_STOP(&pData->StatIOread, a);
             return 0;
         }
 #endif
@@ -243,7 +243,7 @@ soread(PNATState pData, struct socket *so)
     }
     STAM_STATS(
         if (n == 1)
-        { 
+        {
             STAM_COUNTER_INC(&pData->StatIORead_in_1);
             STAM_COUNTER_ADD(&pData->StatIORead_in_1_bytes, nn);
         }
@@ -273,8 +273,8 @@ soread(PNATState pData, struct socket *so)
         STAM_STATS(
             if(ret > 0)
             {
-                SLIRP_COUNTER_INC(IORead_in_2);
-                SLIRP_COUNTER_ADD(IORead_in_2_2nd_bytes, ret);
+                STAM_COUNTER_INC(&pData->StatIORead_in_2);
+                STAM_COUNTER_ADD(&pData->StatIORead_in_2_2nd_bytes, ret);
             }
         );
     }
@@ -400,15 +400,15 @@ sowrite(PNATState pData, struct socket *so)
     size_t len = sb->sb_cc;
     struct iovec iov[2];
 
-    SLIRP_PROFILE_START(IOwrite, a);
-    SLIRP_COUNTER_RESET(IOWrite_in_1);
-    SLIRP_COUNTER_RESET(IOWrite_in_1_bytes);
-    SLIRP_COUNTER_RESET(IOWrite_in_2);
-    SLIRP_COUNTER_RESET(IOWrite_in_2_1st_bytes);
-    SLIRP_COUNTER_RESET(IOWrite_in_2_2nd_bytes);
-    SLIRP_COUNTER_RESET(IOWrite_no_w);
-    SLIRP_COUNTER_RESET(IOWrite_rest);
-    SLIRP_COUNTER_RESET(IOWrite_rest_bytes);
+    STAM_PROFILE_START(&pData->StatIOwrite, a);
+    STAM_COUNTER_RESET(&pData->StatIOWrite_in_1);
+    STAM_COUNTER_RESET(&pData->StatIOWrite_in_1_bytes);
+    STAM_COUNTER_RESET(&pData->StatIOWrite_in_2);
+    STAM_COUNTER_RESET(&pData->StatIOWrite_in_2_1st_bytes);
+    STAM_COUNTER_RESET(&pData->StatIOWrite_in_2_2nd_bytes);
+    STAM_COUNTER_RESET(&pData->StatIOWrite_no_w);
+    STAM_COUNTER_RESET(&pData->StatIOWrite_rest);
+    STAM_COUNTER_RESET(&pData->StatIOWrite_rest_bytes);
     DEBUG_CALL("sowrite");
     DEBUG_ARG("so = %lx", (long)so);
     QSOCKET_LOCK(tcb);
@@ -461,16 +461,16 @@ sowrite(PNATState pData, struct socket *so)
             n = 1;
     }
     STAM_STATS({
-        if (n == 1) 
+        if (n == 1)
         {
-            SLIRP_COUNTER_INC(IOWrite_in_1);
-            SLIRP_COUNTER_ADD(IOWrite_in_1_bytes, iov[0].iov_len);
+            STAM_COUNTER_INC(&pData->StatIOWrite_in_1);
+            STAM_COUNTER_ADD(&pData->StatIOWrite_in_1_bytes, iov[0].iov_len);
         }
         else
         {
-            SLIRP_COUNTER_INC(IOWrite_in_2);
-            SLIRP_COUNTER_ADD(IOWrite_in_2_1st_bytes, iov[0].iov_len);
-            SLIRP_COUNTER_ADD(IOWrite_in_2_2nd_bytes, iov[1].iov_len);
+            STAM_COUNTER_INC(&pData->StatIOWrite_in_2);
+            STAM_COUNTER_ADD(&pData->StatIOWrite_in_2_1st_bytes, iov[0].iov_len);
+            STAM_COUNTER_ADD(&pData->StatIOWrite_in_2_2nd_bytes, iov[1].iov_len);
         }
     });
     /* Check if there's urgent data to send, and if so, send it */
@@ -509,8 +509,8 @@ sowrite(PNATState pData, struct socket *so)
         STAM_STATS({
             if (ret > 0 && ret != iov[1].iov_len)
             {
-                SLIRP_COUNTER_INC(IOWrite_rest);
-                SLIRP_COUNTER_ADD(IOWrite_rest_bytes, (ret - iov[1].iov_len));
+                STAM_COUNTER_INC(&pData->StatIOWrite_rest);
+                STAM_COUNTER_ADD(&pData->StatIOWrite_rest_bytes, (ret - iov[1].iov_len));
             }
         });
     }
@@ -531,7 +531,7 @@ sowrite(PNATState pData, struct socket *so)
         sofcantsendmore(so);
 
     SOCKET_UNLOCK(so);
-    SLIRP_PROFILE_STOP(IOwrite, a);
+    STAM_PROFILE_STOP(&pData->StatIOwrite, a);
     return nn;
 }
 
@@ -575,7 +575,7 @@ sorecvfrom(PNATState pData, struct socket *so)
             return;
         }
         /* adjust both parameters to maks M_FREEROOM calculate correct */
-        m_adj(m, if_maxlinkhdr + sizeof(struct udphdr) + sizeof(struct ip)); 
+        m_adj(m, if_maxlinkhdr + sizeof(struct udphdr) + sizeof(struct ip));
 
         /*
          * XXX Shouldn't FIONREAD packets destined for port 53,
@@ -634,12 +634,12 @@ sorecvfrom(PNATState pData, struct socket *so)
                 if (so->so_fport != htons(53))
                     so->so_expire = curtime + SO_EXPIRE;
             }
-            /* 
+            /*
              *  last argument should be changed if Slirp will inject IP attributes
              *  Note: Here we can't check if dnsproxy's sent initial request
              */
             if (so->so_fport == htons(53))
-                dnsproxy_answer(pData, so, m);  
+                dnsproxy_answer(pData, so, m);
 #endif
 
 #if 0

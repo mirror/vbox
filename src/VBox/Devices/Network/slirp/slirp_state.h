@@ -18,8 +18,9 @@
  * additional information or have any questions.
  */
 
-#ifndef _slirp_state_h_
-#define _slirp_state_h_
+#ifndef ___slirp_state_h
+#define ___slirp_state_h
+
 #include <iprt/req.h>
 #include "ip_icmp.h"
 #ifdef VBOX_WITH_SLIRP_DNS_PROXY
@@ -228,8 +229,8 @@ typedef struct NATState
     int sock_query;
     int sock_answer;
     /* dnsproxy/hash.c */
-    #define HASHSIZE 10
-    #define HASH(id) (id & ((1 << HASHSIZE) - 1))
+# define HASHSIZE 10
+# define HASH(id) (id & ((1 << HASHSIZE) - 1))
     struct request *request_hash[1 << HASHSIZE];
     /* this field control behaviour of DHCP server */
     bool use_dns_proxy;
@@ -239,8 +240,8 @@ typedef struct NATState
     struct libalias *proxy_alias;
 #endif
 
-# define PROFILE_COUNTER(name, dsc) STAMPROFILE Stat ## name;
-# define COUNTING_COUNTER(name, dsc) STAMCOUNTER Stat ## name;
+#define PROFILE_COUNTER(name, dsc)     STAMPROFILE Stat ## name
+#define COUNTING_COUNTER(name, dsc)    STAMCOUNTER Stat ## name
 
 #include "counters.h"
 
@@ -599,7 +600,7 @@ typedef struct NATState
                 && so->so_faddr.s_addr == (dst).s_addr                  \
                 && so->so_fport        == (dport))                      \
                 {                                                       \
-                    if (sonxt != &VBOX_X2(queue_ ## label ## _label))       \
+                    if (sonxt != &VBOX_X2(queue_ ## label ## _label))   \
                         SOCKET_UNLOCK(sonxt);                           \
                     break; /*so is locked*/                             \
                 }                                                       \
@@ -684,4 +685,5 @@ typedef struct NATState
 # define instancehead pData->instancehead
 #endif
 
-#endif /* !_slirp_state_h_ */
+#endif /* !___slirp_state_h */
+
