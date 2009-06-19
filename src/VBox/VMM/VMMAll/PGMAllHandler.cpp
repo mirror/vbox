@@ -271,9 +271,9 @@ VMMDECL(int)  PGMHandlerPhysicalDeregister(PVM pVM, RTGCPHYS GCPhys)
          */
         pgmHandlerPhysicalResetRamFlags(pVM, pCur);
         pgmHandlerPhysicalDeregisterNotifyREM(pVM, pCur);
+        MMHyperFree(pVM, pCur);
         pgmUnlock(pVM);
         HWACCMFlushTLBOnAllVCpus(pVM);
-        MMHyperFree(pVM, pCur);
         return VINF_SUCCESS;
     }
     pgmUnlock(pVM);
@@ -747,8 +747,8 @@ VMMDECL(int) PGMHandlerPhysicalJoin(PVM pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys2)
                         pCur1->cPages        = (pCur1->Core.KeyLast - (pCur1->Core.Key & X86_PTE_PAE_PG_MASK) + PAGE_SIZE) >> PAGE_SHIFT;
                         LogFlow(("PGMHandlerPhysicalJoin: %RGp-%RGp %RGp-%RGp\n",
                                  pCur1->Core.Key, pCur1->Core.KeyLast, pCur2->Core.Key, pCur2->Core.KeyLast));
-                        pgmUnlock(pVM);
                         MMHyperFree(pVM, pCur2);
+                        pgmUnlock(pVM);
                         return VINF_SUCCESS;
                     }
 
