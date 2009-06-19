@@ -3315,19 +3315,15 @@ HRESULT Console::doNetworkAdapterChange (const char *pszDevice, unsigned uInstan
      * here to make requests from under the lock in order to serialize them.
      */
     PVMREQ pReq;
-    int vrc = VMR3ReqCall (mpVM, 0, &pReq, 0 /* no wait! */,
+    int vrc = VMR3ReqCall (mpVM, 0 /*idDstCpu*/, &pReq, 0 /* no wait! */,
                            (PFNRT) Console::changeNetworkAttachment, 7,
                            this, pszDevice, uInstance, uLun, eAttachmentType,
                            meAttachmentType, aNetworkAdapter);
-    /// @todo (r=dmik) bird, it would be nice to have a special VMR3Req method
-    //  for that purpose, that doesn't return useless VERR_TIMEOUT
-    if (vrc == VERR_TIMEOUT)
-        vrc = VINF_SUCCESS;
 
     /* leave the lock before waiting for a result (EMT will call us back!) */
     alock.leave();
 
-    if (VBOX_SUCCESS (vrc))
+    if (vrc == VERR_TIMEOUT || VBOX_SUCCESS (vrc))
     {
         vrc = VMR3ReqWait (pReq, RT_INDEFINITE_WAIT);
         AssertRC (vrc);
