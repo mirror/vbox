@@ -1,6 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VirtualBox COM class implementation
+ * Implementation of INetworkAdaptor in VBoxSVC.
  */
 
 /*
