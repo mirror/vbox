@@ -38,7 +38,7 @@ DECLCALLBACK(int) vmmdevHGCMCancel (VMMDevState *pVMMDevState, VMMDevHGCMCancel 
 DECLCALLBACK(void) hgcmCompleted (PPDMIHGCMPORT pInterface, int32_t result, PVBOXHGCMCMD pCmdPtr);
 
 int vmmdevHGCMSaveState(VMMDevState *pVMMDevState, PSSMHANDLE pSSM);
-int vmmdevHGCMLoadState(VMMDevState *pVMMDevState, PSSMHANDLE pSSM);
+int vmmdevHGCMLoadState(VMMDevState *pVMMDevState, PSSMHANDLE pSSM, uint32_t u32Version);
 int vmmdevHGCMLoadStateDone(VMMDevState *pVMMDevState, PSSMHANDLE pSSM);
 RT_C_DECLS_END
 
