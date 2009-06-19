@@ -722,6 +722,20 @@ static DECLCALLBACK(void) drvIntNetDestruct(PPDMDRVINS pDrvIns)
      */
     if (EventSuspended != NIL_RTSEMEVENT)
         RTSemEventDestroy(EventSuspended);
+
+    /*
+     * Deregister statistics in case we're being detached.
+     */
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBuf->cbStatRecv);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBuf->cbStatSend);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBuf->cStatRecvs);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBuf->cStatSends);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBuf->cStatLost);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBuf->cStatYieldsNok);
+#ifdef VBOX_WITH_STATISTICS
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReceive);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatTransmit);
+#endif
 }
 
 
