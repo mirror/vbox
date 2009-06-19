@@ -4209,6 +4209,31 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
 
 
 /**
+ * Takes down the link temporarily if it's current status is up.
+ *
+ * This is used during restore and when replumbing the network link.
+ *
+ * The temporary link outage is supposed to indicate to the OS that all network
+ * connections have been lost and that it for instance is appropriate to
+ * renegotiate any DHCP lease.
+ *
+ * @param  pThis        The PCNet instance data.
+ */
+static void pcnetTempLinkDown(PCNetState *pThis)
+{
+    if (pThis->fLinkUp)
+    {
+        pThis->fLinkTempDown = true;
+        pThis->cLinkDownReported = 0;
+        pThis->aCSR[0] |= RT_BIT(15) | RT_BIT(13); /* ERR | CERR (this is probably wrong) */
+        pThis->Led.Asserted.s.fError = pThis->Led.Actual.s.fError = 1;
+        int rc = TMTimerSetMillies(pThis->pTimerRestore, 5000);
+        AssertRC(rc);
+    }
+}
+
+
+/**
  * Serializes the receive thread, it may be working inside the critsect.
  *
  * @returns VBox status code.
@@ -4360,14 +4385,8 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
     pcnetUpdateRingHandlers(pThis);
 #endif
     /* Indicate link down to the guest OS that all network connections have been lost. */
-    if (pThis->fLinkUp)
-    {
-        pThis->fLinkTempDown = true;
-        pThis->cLinkDownReported = 0;
-        pThis->aCSR[0] |= RT_BIT(15) | RT_BIT(13); /* ERR | CERR (this is probably wrong) */
-        pThis->Led.Asserted.s.fError = pThis->Led.Actual.s.fError = 1;
-        return TMTimerSetMillies(pThis->pTimerRestore, 5000);
-    }
+    pcnetTempLinkDown(pThis);
+
     return VINF_SUCCESS;
 }
 
@@ -4734,14 +4753,8 @@ static DECLCALLBACK(int) pcnetAttach(PPDMDEVINS pDevIns, unsigned iLUN)
      * will know that we have change the configuration of the
      * network card
      */
-    if (pThis->fLinkUp && RT_SUCCESS(rc))
-    {
-        pThis->fLinkTempDown = true;
-        pThis->cLinkDownReported = 0;
-        pThis->aCSR[0] |= RT_BIT(15) | RT_BIT(13); /* ERR | CERR (this is probably wrong) */
-        pThis->Led.Asserted.s.fError = pThis->Led.Actual.s.fError = 1;
-        TMTimerSetMillies(pThis->pTimerRestore, 5000);
-    }
+    if (RT_SUCCESS(rc))
+        pcnetTempLinkDown(pThis);
 
     PDMCritSectLeave(&pThis->CritSect);
     return rc;
