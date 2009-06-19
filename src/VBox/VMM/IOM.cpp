@@ -1662,7 +1662,6 @@ VMMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         Assert(GCPhys <= pRange->Core.KeyLast);
         GCPhys = pRange->Core.KeyLast + 1;
     }
-    iomUnlock(pVM);
 
     /*
      * Do the actual removing of the MMIO ranges.
@@ -1670,7 +1669,8 @@ VMMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
     GCPhys = GCPhysStart;
     while (GCPhys <= GCPhysLast && GCPhys >= GCPhysStart)
     {
-        iomLock(pVM);
+        iomR3FlushCache(pVM);
+
         PIOMMMIORANGE pRange = (PIOMMMIORANGE)RTAvlroGCPhysRemove(&pVM->iom.s.pTreesR3->MMIOTree, GCPhys);
         Assert(pRange);
         Assert(pRange->Core.Key == GCPhys && pRange->Core.KeyLast <= GCPhysLast);
@@ -1687,7 +1687,6 @@ VMMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         MMHyperFree(pVM, pRange);
     }
 
-    iomR3FlushCache(pVM);
     return VINF_SUCCESS;
 }
 
