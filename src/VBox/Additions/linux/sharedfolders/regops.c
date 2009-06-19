@@ -37,8 +37,8 @@ sf_reg_read_aux (const char *caller, struct sf_glob_info *sf_g,
         int rc = vboxCallRead (&client_handle, &sf_g->map, sf_r->handle,
                                pos, nread, buf, false /* already locked? */);
         if (RT_FAILURE (rc)) {
-                LogFunc(("vboxCallRead(%s) failed. caller=%s, rc=%Rrc\n",
-                         sf_i->path->String.utf8, caller, rc));
+                LogFunc(("vboxCallRead failed. caller=%s, rc=%Rrc\n",
+                         caller, rc));
                 return -EPROTO;
         }
         return 0;
@@ -52,8 +52,8 @@ sf_reg_write_aux (const char *caller, struct sf_glob_info *sf_g,
         int rc = vboxCallWrite (&client_handle, &sf_g->map, sf_r->handle,
                                 pos, nwritten, buf, false /* already locked? */);
         if (RT_FAILURE (rc)) {
-                LogFunc(("vboxCallWrite(%s) failed rc=%Rrc\n",
-                         sf_i->path->String.utf8, caller, rc));
+                LogFunc(("vboxCallWrite failed. caller=%s, rc=%Rrc\n",
+                         caller, rc));
                 return -EPROTO;
         }
         return 0;
