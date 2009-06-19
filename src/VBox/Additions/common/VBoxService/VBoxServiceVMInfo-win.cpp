@@ -195,7 +195,7 @@ BOOL VboxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER* a_pUserInfo,
         return FALSE;
     }
 
-    VBoxServiceVerbose(3, "Users: Session data: Name = %ls, Len = %d, SID = %s, LogonID = %d,%d\n", 
+    VBoxServiceVerbose(3, "Users: Session data: Name = %ls, Len = %d, SID = %s, LogonID = %d,%d\n",
         (sessionData->UserName).Buffer, (sessionData->UserName).Length, (sessionData->Sid != NULL) ? "1" : "0", sessionData->LogonId.HighPart, sessionData->LogonId.LowPart);
 
     if ((sessionData->UserName.Buffer != NULL) &&
@@ -236,7 +236,7 @@ BOOL VboxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER* a_pUserInfo,
         wcscat (a_pUserInfo->szLogonDomain, L"");       /* Add terminating null char. */
 
         /* Only handle users which can login interactively or logged in remotely over native RDP. */
-        if (   (((SECURITY_LOGON_TYPE)sessionData->LogonType == Interactive) 
+        if (   (((SECURITY_LOGON_TYPE)sessionData->LogonType == Interactive)
              || ((SECURITY_LOGON_TYPE)sessionData->LogonType == RemoteInteractive))
              && (sessionData->Sid != NULL))
         {
@@ -380,7 +380,7 @@ int VboxServiceWinGetAddsVersion(uint32_t uiClientID)
     if ((rc != ERROR_SUCCESS) && (rc != ERROR_FILE_NOT_FOUND))
     {
         RegCloseKey (hKey);
-        VBoxServiceError("Failed to query registry key (version)! Error: %Rrc\n",  rc);
+        VBoxServiceError("Failed to query registry key (version)! Error: %u\n",  rc);
         return 1;
     }
 
