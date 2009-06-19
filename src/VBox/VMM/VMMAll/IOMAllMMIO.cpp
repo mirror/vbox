@@ -1272,7 +1272,15 @@ VMMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore,
  */
 VMMDECL(int) IOMMMIOPhysHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPHYS GCPhysFault)
 {
-    return iomMMIOHandler(pVM, uErrorCode, pCtxCore, GCPhysFault, iomMMIOGetRange(&pVM->iom.s, GCPhysFault));
+    int rc;
+    rc = iomLock(pVM);
+#ifndef IN_RING3
+    if (rc == VERR_SEM_BUSY)
+        return (uErrorCode & X86_TRAP_PF_RW) ? VINF_IOM_HC_MMIO_WRITE : VINF_IOM_HC_MMIO_READ;
+#endif
+    rc = iomMMIOHandler(pVM, uErrorCode, pCtxCore, GCPhysFault, iomMMIOGetRange(&pVM->iom.s, GCPhysFault));
+    iomUnlock(pVM);
+    return rc;
 }
 
 #ifdef IN_RING3
@@ -1864,6 +1872,8 @@ VMMDECL(int) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu
  */
 VMMDECL(int) IOMMMIOMapMMIO2Page(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapped, uint64_t fPageFlags)
 {
+    /* Currently only called from the VGA device during MMIO. */
+    Assert(IOMIsLockOwner(pVM));
     Log(("IOMMMIOMapMMIO2Page %RGp -> %RGp flags=%RX64\n", GCPhys, GCPhysRemapped, fPageFlags));
 
     AssertReturn(fPageFlags == (X86_PTE_RW | X86_PTE_P), VERR_INVALID_PARAMETER);
@@ -1881,8 +1891,8 @@ VMMDECL(int) IOMMMIOMapMMIO2Page(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapp
      */
     PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhys);
     AssertMsgReturn(pRange,
-                    ("Handlers and page tables are out of sync or something! GCPhys=%RGp\n", GCPhys),
-                    VERR_IOM_MMIO_RANGE_NOT_FOUND);
+            ("Handlers and page tables are out of sync or something! GCPhys=%RGp\n", GCPhys), VERR_IOM_MMIO_RANGE_NOT_FOUND);
+
     Assert((pRange->GCPhys       & PAGE_OFFSET_MASK) == 0);
     Assert((pRange->Core.KeyLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK);
 
@@ -1929,6 +1939,7 @@ VMMDECL(int) IOMMMIOMapMMIO2Page(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapp
  */
 VMMDECL(int) IOMMMIOMapMMIOHCPage(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uint64_t fPageFlags)
 {
+    /* Currently only called from VT-x code during a page fault. */
     Log(("IOMMMIOMapMMIOHCPage %RGp -> %RGp flags=%RX64\n", GCPhys, HCPhys, fPageFlags));
 
     AssertReturn(fPageFlags == (X86_PTE_RW | X86_PTE_P), VERR_INVALID_PARAMETER);
@@ -1939,12 +1950,14 @@ VMMDECL(int) IOMMMIOMapMMIOHCPage(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uin
     /*
      * Lookup the context range node the page belongs to.
      */
-    PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhys);
+#ifdef VBOX_STRICT
+    /* Can't lock IOM here due to potential deadlocks in the VGA device; not safe to access. */
+    PIOMMMIORANGE pRange = iomMMIOGetRangeUnsafe(&pVM->iom.s, GCPhys);
     AssertMsgReturn(pRange,
-                    ("Handlers and page tables are out of sync or something! GCPhys=%RGp\n", GCPhys),
-                    VERR_IOM_MMIO_RANGE_NOT_FOUND);
+            ("Handlers and page tables are out of sync or something! GCPhys=%RGp\n", GCPhys), VERR_IOM_MMIO_RANGE_NOT_FOUND);
     Assert((pRange->GCPhys       & PAGE_OFFSET_MASK) == 0);
     Assert((pRange->Core.KeyLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK);
+#endif
 
     /*
      * Do the aliasing; page align the addresses since PGM is picky.
@@ -1952,7 +1965,7 @@ VMMDECL(int) IOMMMIOMapMMIOHCPage(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uin
     GCPhys &= ~(RTGCPHYS)PAGE_OFFSET_MASK;
     HCPhys &= ~(RTHCPHYS)PAGE_OFFSET_MASK;
 
-    int rc = PGMHandlerPhysicalPageAliasHC(pVM, pRange->GCPhys, GCPhys, HCPhys);
+    int rc = PGMHandlerPhysicalPageAliasHC(pVM, GCPhys, GCPhys, HCPhys);
     AssertRCReturn(rc, rc);
 
     /*
@@ -1989,10 +2002,14 @@ VMMDECL(int) IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys)
     /*
      * Lookup the context range node the page belongs to.
      */
-    PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhys);
+#ifdef VBOX_STRICT
+    /* Can't lock IOM here due to potential deadlocks in the VGA device; not safe to access. */
+    PIOMMMIORANGE pRange = iomMMIOGetRangeUnsafe(&pVM->iom.s, GCPhys);
     AssertMsgReturn(pRange,
-                    ("Handlers and page tables are out of sync or something! GCPhys=%RGp\n", GCPhys),
-                    VERR_IOM_MMIO_RANGE_NOT_FOUND);
+            ("Handlers and page tables are out of sync or something! GCPhys=%RGp\n", GCPhys), VERR_IOM_MMIO_RANGE_NOT_FOUND);
+    Assert((pRange->GCPhys       & PAGE_OFFSET_MASK) == 0);
+    Assert((pRange->Core.KeyLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK);
+#endif
 
     /*
      * Call PGM to do the job work.
@@ -2000,7 +2017,7 @@ VMMDECL(int) IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys)
      * After the call, all the pages should be non-present... unless there is
      * a page pool flush pending (unlikely).
      */
-    int rc = PGMHandlerPhysicalReset(pVM, pRange->GCPhys);
+    int rc = PGMHandlerPhysicalReset(pVM, GCPhys);
     AssertRC(rc);
 
 #ifdef VBOX_STRICT
