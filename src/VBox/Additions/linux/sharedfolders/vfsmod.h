@@ -28,7 +28,7 @@
 #include "VBoxCalls.h"
 #include "vbsfmount.h"
 
-/* structs */
+/* per-shared folder information */
 struct sf_glob_info {
         VBSFMAP map;
         struct nls_table *nls;
@@ -41,9 +41,14 @@ struct sf_glob_info {
         int fmask;
 };
 
+/* per-inode information */
 struct sf_inode_info {
+        /* which file */
         SHFLSTRING *path;
+        /* some information was changed, update data on next revalidate */
         int force_restat;
+        /* file structure, only valid between open() and release() */
+        struct file *file;
 };
 
 struct sf_dir_info {
