@@ -492,8 +492,11 @@ void slirp_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
     LogFlow(("slirp_output BEGIN %x %d\n", pu8Buf, cb));
     Log2(("slirp_output: pu8Buf=%p cb=%#x (pThis=%p)\n%.*Rhxd\n", pu8Buf, cb, pThis, cb, pu8Buf));
 
-    STAM_COUNTER_RESET(&pThis->StatQueuePktDropped);
-    STAM_COUNTER_RESET(&pThis->StatQueuePktSent);
+    /** @todo r-bird: Why do you reset the counters every time? You won't ever count
+     *        higher than ONE then. If you want to record what happened to the last
+     *        queued item, use a U8/bool instead to two 64-bit values. */
+    //STAM_COUNTER_RESET(&pThis->StatQueuePktDropped);
+    //STAM_COUNTER_RESET(&pThis->StatQueuePktSent);
     Assert(pThis);
 
     PDRVNATQUEUITEM pItem = (PDRVNATQUEUITEM)PDMQueueAlloc(pThis->pSendQueue);
