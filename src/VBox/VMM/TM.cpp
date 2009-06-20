@@ -577,6 +577,9 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->tm.s.StatTimerSetR3,                          STAMTYPE_PROFILE, "/TM/TimerSetR3",                  STAMUNIT_TICKS_PER_CALL, "Profiling TMTimerSet calls made in ring-3.");
     STAM_REG(pVM, &pVM->tm.s.StatTimerSetRZ,                          STAMTYPE_PROFILE, "/TM/TimerSetRZ",                  STAMUNIT_TICKS_PER_CALL, "Profiling TMTimerSet calls made in ring-0 / RC.");
 
+    STAM_REG(pVM, &pVM->tm.s.StatTimerSetRelativeR3,                  STAMTYPE_PROFILE, "/TM/TimerSetRelativeR3",          STAMUNIT_TICKS_PER_CALL, "Profiling TMTimerSetRelative calls made in ring-3.");
+    STAM_REG(pVM, &pVM->tm.s.StatTimerSetRelativeRZ,                  STAMTYPE_PROFILE, "/TM/TimerSetRelativeRZ",          STAMUNIT_TICKS_PER_CALL, "Profiling TMTimerSetReltaive calls made in ring-0 / RC.");
+
     STAM_REG(pVM, &pVM->tm.s.StatTimerStopR3,                         STAMTYPE_PROFILE, "/TM/TimerStopR3",                 STAMUNIT_TICKS_PER_CALL, "Profiling TMTimerStop calls made in ring-3.");
     STAM_REG(pVM, &pVM->tm.s.StatTimerStopRZ,                         STAMTYPE_PROFILE, "/TM/TimerStopRZ",                 STAMUNIT_TICKS_PER_CALL, "Profiling TMTimerStop calls made in ring-0 / RC.");
 
@@ -1497,7 +1500,7 @@ VMMR3DECL(int) TMR3TimerDestroy(PTMTIMER pTimer)
     if (fPending)
     {
         Log3(("TMR3TimerDestroy: tmTimerQueueSchedule\n"));
-        STAM_PROFILE_START(&pVM->tm.s.CTXALLSUFF(StatScheduleOne), a);
+        STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatScheduleOne), a);
         Assert(pQueue->offSchedule);
         tmTimerQueueSchedule(pVM, pQueue);
     }

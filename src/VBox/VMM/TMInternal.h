@@ -484,6 +484,11 @@ typedef struct TM
     STAMPROFILE                 StatTimerSetRZ;
     STAMPROFILE                 StatTimerSetR3;
     /** @} */
+    /** TMTimerSetRelative
+     * @{ */
+    STAMPROFILE                 StatTimerSetRelativeRZ;
+    STAMPROFILE                 StatTimerSetRelativeR3;
+    /** @} */
     /** TMTimerStop
      * @{ */
     STAMPROFILE                 StatTimerStopRZ;
