@@ -591,8 +591,10 @@ int main()
     GEN_CHECK_OFF(APICState, pTimerRC);
     GEN_CHECK_OFF(APICState, fTimerArmed);
     GEN_CHECK_OFF(APICState, pszDesc);
+#ifdef VBOX_WITH_STATISTICS
     GEN_CHECK_OFF(APICState, StatTimerSetInitialCount);
     GEN_CHECK_OFF(APICState, StatTimerSetLvtNoRelevantChange);
+#endif
 
     GEN_CHECK_SIZE(APICDeviceInfo);
     GEN_CHECK_OFF(APICDeviceInfo, pDevInsR3);
