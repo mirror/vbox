@@ -8,6 +8,7 @@
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
+#include <iprt/strcache.h>
 #include "internal/dbgmod.h"
 
 
@@ -23,8 +24,6 @@ typedef struct RTDBGMODCONTAINERSYMBOL
     AVLRUINTPTRNODECORE         AddrCore;
     /** The name space core. */
     RTSTRSPACECORE              NameCore;
-    /** The name. */
-    char                       *pszName;
     /** The segent offset. */
     RTUINTPTR                   off;
     /** The segment index. */
@@ -56,7 +55,7 @@ typedef struct RTDBGMODCONTAINER
     /** The name space. */
     RTSTRSPACE                  Names;
     /** The address space tree. */
-    AVLRUINTPTRTREE             AddrTree;
+    AVLRUINTPTRTREE             Addresses;
     /** Segment table. */
     PRTDBGMODCONTAINERSEGMENT   paSegs;
     /** The number of segments in the segment table. */
@@ -70,14 +69,15 @@ typedef RTDBGMODCONTAINER *PRTDBGMODCONTAINER;
 
 
 /** @copydoc RTDBGMODVTDBG::pfnLineByAddr */
-static DECLCALLBACK(int) rtDbgModContainer_LineByAddr(PRTDBGMODINT pMod, uint32_t iSeg, RTGCUINTPTR off, PRTGCINTPTR poffDisp, PRTDBGLINE pLine)
+static DECLCALLBACK(int) rtDbgModContainer_LineByAddr(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, RTGCUINTPTR off, PRTGCINTPTR poffDisp, PRTDBGLINE pLine)
 {
-    return VINF_SUCCESS;
+    /** @todo Make it possible to add line numbers. */
+    return VERR_DBG_NO_LINE_NUMBERS;
 }
 
 
 /** @copydoc RTDBGMODVTDBG::pfnSymbolByAddr */
-static DECLCALLBACK(int) rtDbgModContainer_SymbolByAddr(PRTDBGMODINT pMod, uint32_t iSeg, RTGCUINTPTR off, PRTGCINTPTR poffDisp, PRTDBGSYMBOL pSymbol)
+static DECLCALLBACK(int) rtDbgModContainer_SymbolByAddr(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, RTGCUINTPTR off, PRTGCINTPTR poffDisp, PRTDBGSYMBOL pSymbol)
 {
     return VINF_SUCCESS;
 }
@@ -91,9 +91,52 @@ static DECLCALLBACK(int) rtDbgModContainer_SymbolByName(PRTDBGMODINT pMod, const
 
 
 /** @copydoc RTDBGMODVTDBG::pfnSymbolAdd */
-static DECLCALLBACK(int) rtDbgModContainer_SymbolAdd(PRTDBGMODINT pMod, const char *pszSymbol, uint32_t iSeg, RTGCUINTPTR off, RTUINT cbSymbol)
+static DECLCALLBACK(int) rtDbgModContainer_SymbolAdd(PRTDBGMODINT pMod, const char *pszSymbol, RTDBGSEGIDX iSeg, RTGCUINTPTR off, uint32_t cbSymbol)
 {
-    return VINF_SUCCESS;
+    PRTDBGMODCONTAINER pThis = (PRTDBGMODCONTAINER)pMod->pvDbgPriv;
+
+    /*
+     * Address validation. The other arguments have already been validated.
+     */
+    AssertMsgReturn(    (   iSeg >= RTDBGSEGIDX_SPECIAL_FIRST
+                         && iSeg <= RTDBGSEGIDX_SPECIAL_LAST)
+                    ||  iSeg < pThis->cSegs,
+                    ("iSeg=%x cSegs=%x\n", pThis->cSegs),
+                    VERR_DBG_INVALID_SEGMENT_INDEX);
+    AssertMsgReturn(    iSeg >= RTDBGSEGIDX_SPECIAL_FIRST
+                    ||  pThis->paSegs[iSeg].cb <= off + cbSymbol,
+                    ("off=%RTptr cbSymbol=%RTptr cbSeg=%RTptr\n", off, cbSymbol, pThis->paSegs[iSeg].cb),
+                    VERR_DBG_INVALID_SEGMENT_OFFSET);
+
+    /*
+     * Create a new entry.
+     */
+    PRTDBGMODCONTAINERSYMBOL pSymbol = (PRTDBGMODCONTAINERSYMBOL)RTMemAllocZ(sizeof(*pSymbol));
+    if (!pSymbol)
+        return VERR_NO_MEMORY;
+
+#if 0 /* continue on the workstation */
+    pSymbol->AddrCore.Key     = iSeg < RTDBGSEGIDX_SPECIAL_FIRST
+                              ? pThis->paSegs->off + off
+                              : off;
+    pSymbol->AddrCore.KeyLast = pSymbol->AddrCore.Key + cbSymbol;
+    pSymbol->off  = off;
+    pSymbol->iSeg = iSeg;
+    pSymbol->NameCore.pszString = RTStrCacheEnter(g_hDbgModStrCache, pszSymbol);
+    if (pSymbol->NameCore.pszString)
+    {
+        if (RTStrSpaceInsert(&pThis->Names, &pSymbol->NameCore))
+        {
+            if (RTStrSpaceInsert(&pThis->Names, &pSymbol->NameCore))
+            {
+
+            }
+        }
+    }
+#endif
+int rc = VERR_NOT_IMPLEMENTED;
+
+    return rc;
 }
 
 
@@ -101,7 +144,7 @@ static DECLCALLBACK(int) rtDbgModContainer_SymbolAdd(PRTDBGMODINT pMod, const ch
 static DECLCALLBACK(int)  rtDbgModContainer_DestroyTreeNode(PAVLRUINTPTRNODECORE pNode, void *pvUser)
 {
     PRTDBGMODCONTAINERSYMBOL pSym = RT_FROM_MEMBER(pNode, RTDBGMODCONTAINERSYMBOL, AddrCore);
-    RTStrFree(pSym->pszName);
+    RTStrCacheRelease(g_hDbgModStrCache, pSym->NameCore.pszString);
     RTMemFree(pSym);
     return 0;
 }
@@ -115,7 +158,7 @@ static DECLCALLBACK(int) rtDbgModContainer_Close(PRTDBGMODINT pMod)
     /*
      * Destroy the symbols and instance data.
      */
-    RTAvlrUIntPtrDestroy(&pThis->AddrTree, rtDbgModContainer_DestroyTreeNode, NULL);
+    RTAvlrUIntPtrDestroy(&pThis->Addresses, rtDbgModContainer_DestroyTreeNode, NULL);
     pThis->Names = NULL;
     RTMemFree(pThis->paSegs);
     pThis->paSegs = NULL;
@@ -164,7 +207,7 @@ int rtDbgModContainerCreate(PRTDBGMODINT pMod, RTUINTPTR cb)
         return VERR_NO_MEMORY;
 
     pThis->Names = NULL;
-    pThis->AddrTree = NULL;
+    pThis->Addresses = NULL;
     pThis->paSegs = NULL;
     pThis->cSegs = 0;
     pThis->cb = cb;

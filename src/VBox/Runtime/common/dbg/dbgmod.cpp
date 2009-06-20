@@ -42,6 +42,7 @@
 #include <iprt/once.h>
 #include <iprt/param.h>
 #include <iprt/semaphore.h>
+#include <iprt/strcache.h>
 #include <iprt/string.h>
 #include "internal/dbgmod.h"
 #include "internal/magics.h"
@@ -113,7 +114,31 @@ static RTSEMRW          g_hDbgModRWSem = NIL_RTSEMRW;
 static RTDBGMODREGIMG   g_pImgHead;
 /** List of registered debug infor interpreters.  */
 static RTDBGMODREGDBG   g_pDbgHead;
+/** String cache for the debug info interpreters.
+ * RTSTRCACHE is thread safe. */
+DECLHIDDEN(RTSTRCACHE)  g_hDbgModStrCache = NIL_RTSTRCACHE;
 
+
+/**
+ * Cleanup debug info interpreter globals.
+ *
+ * @param   enmReason           The cause of the termination.
+ * @param   iStatus             The meaning of this depends on enmReason.
+ * @param   pvUser              User argument, unused.
+ */
+static DECLCALLBACK(void) rtDbgModTermCallback(RTTERMREASON enmReason, int32_t iStatus, void *pvUser)
+{
+    if (enmReason == RTTERMREASON_UNLOAD)
+    {
+        RTSemRWDestroy(g_hDbgModRWSem);
+        g_hDbgModRWSem = NIL_RTSEMRW;
+
+        RTStrCacheDestroy(g_hDbgModStrCache);
+        g_hDbgModStrCache = NIL_RTSTRCACHE;
+
+        /** @todo deregister interpreters. */
+    }
+}
 
 
 /**
@@ -126,10 +151,36 @@ static RTDBGMODREGDBG   g_pDbgHead;
  */
 static DECLCALLBACK(int) rtDbgModInitOnce(void *pvUser1, void *pvUser2)
 {
+    /*
+     * Create the semaphore and string cache.
+     */
     int rc = RTSemRWCreate(&g_hDbgModRWSem);
     AssertRCReturn(rc, rc);
 
-    /* Register them. */
+    rc = RTStrCacheCreate(&g_hDbgModStrCache, "RTDBGMOD");
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Register the interpreters.
+         */
+        /** @todo */
+
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Finally, register the IPRT cleanup callback.
+             */
+            rc = RTTermRegisterCallback(rtDbgModTermCallback, NULL);
+            if (RT_SUCCESS(rc))
+                return VINF_SUCCESS;
+        }
+
+        RTStrCacheDestroy(g_hDbgModStrCache);
+        g_hDbgModStrCache = NIL_RTSTRCACHE;
+    }
+
+    RTSemRWDestroy(g_hDbgModRWSem);
+    g_hDbgModRWSem = NIL_RTSEMRW;
 
     return rc;
 }

@@ -1446,7 +1446,7 @@ typedef struct RTSTRSPACECORE
     /** The string length. Read only! */
     size_t          cchString;
     /** Pointer to the string. Read only! */
-    const char *    pszString;
+    const char     *pszString;
 } RTSTRSPACECORE;
 
 /** String space. (Initialize with NULL.) */
