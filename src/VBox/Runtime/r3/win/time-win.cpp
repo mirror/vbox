@@ -46,19 +46,19 @@
 # define USE_INTERRUPT_TIME
 #else
 //# define USE_FILE_TIME
-#endif 
+#endif
 
 
 #ifdef USE_INTERRUPT_TIME
 
-typedef struct _MY_KSYSTEM_TIME 
+typedef struct _MY_KSYSTEM_TIME
 {
     ULONG LowPart;
     LONG High1Time;
     LONG High2Time;
 } MY_KSYSTEM_TIME;
 
-typedef struct _MY_KUSER_SHARED_DATA 
+typedef struct _MY_KUSER_SHARED_DATA
 {
     ULONG TickCountLowDeprecated;
     ULONG TickCountMultiplier;
@@ -72,14 +72,14 @@ typedef struct _MY_KUSER_SHARED_DATA
 DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
 {
 #if defined USE_TICK_COUNT
-    /* 
-     * This would work if it didn't flip over every 49 (or so) days. 
+    /*
+     * This would work if it didn't flip over every 49 (or so) days.
      */
     return (uint64_t)GetTickCount() * (uint64_t)1000000;
 
 #elif defined USE_PERFORMANCE_COUNTER
-    /* 
-     * Slow and no derived from InterruptTime. 
+    /*
+     * Slow and not derived from InterruptTime.
      */
     static LARGE_INTEGER    llFreq;
     static unsigned         uMult;
@@ -98,23 +98,23 @@ DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
         return (uint64_t)GetTickCount() * (uint64_t)1000000;
 
 #elif defined USE_FILE_TIME
-    /* 
-     * This is SystemTime not InterruptTime. 
+    /*
+     * This is SystemTime not InterruptTime.
      */
     uint64_t u64; /* manual say larger integer, should be safe to assume it's the same. */
     GetSystemTimeAsFileTime((LPFILETIME)&u64);
     return u64 * 100;
 
 #elif defined USE_INTERRUPT_TIME
-    /* 
-     * This is exactly what we want, but we have to obtain it by non-official 
+    /*
+     * This is exactly what we want, but we have to obtain it by non-official
      * means.
      */
     static MY_KUSER_SHARED_DATA *s_pUserSharedData = NULL;
     if (!s_pUserSharedData)
     {
         /** @todo find official way of getting this or some more clever
-         * detection algorithm if necessary. The com debugger class 
+         * detection algorithm if necessary. The com debugger class
          * exports this too, windbg knows it too... */
         s_pUserSharedData = (MY_ KUSER_SHARED_DATA *)(uintptr_t)0x7ffe0000;
     }
