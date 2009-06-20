@@ -49,6 +49,7 @@ EXPORTS
     TMTimerGetFreq
     TMTimerIsActive
     TMTimerSet
+    TMTimerSetRelative
     TMTimerSetMillies
     TMTimerSetMicro
     TMTimerSetNano
