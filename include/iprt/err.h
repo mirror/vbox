@@ -945,6 +945,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_DBG_INVALID_SEGMENT_INDEX          (-651)
 /** Invalid segment offset. */
 #define VERR_DBG_INVALID_SEGMENT_OFFSET         (-652)
+/** The module contains no line number information. */
+#define VERR_DBG_NO_LINE_NUMBERS                (-653)
 /** @} */
 
 /** @name Request Packet Status Codes.

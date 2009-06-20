@@ -252,6 +252,9 @@ typedef struct RTDBGMODINT
 typedef RTDBGMODINT *PRTDBGMODINT;
 
 
+extern DECLHIDDEN(RTSTRCACHE) g_hDbgModStrCache;
+
+
 int rtDbgModContainerCreate(PRTDBGMODINT pMod, RTUINTPTR cb);
 
 /** @} */
