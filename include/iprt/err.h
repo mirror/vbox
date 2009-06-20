@@ -940,7 +940,11 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
  */
 /** The specified segment:offset address was invalid. Typically an attempt at
  * addressing outside the segment boundrary. */
-#define VERR_DBGMOD_INVALID_ADDRESS             (-650)
+#define VERR_DBG_INVALID_ADDRESS                (-650)
+/** Invalid segment index. */
+#define VERR_DBG_INVALID_SEGMENT_INDEX          (-651)
+/** Invalid segment offset. */
+#define VERR_DBG_INVALID_SEGMENT_OFFSET         (-652)
 /** @} */
 
 /** @name Request Packet Status Codes.
