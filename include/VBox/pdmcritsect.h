@@ -70,6 +70,7 @@ VMMR3DECL(int)      PDMR3CritSectDelete(PPDMCRITSECT pCritSect);
 VMMDECL(int)        PDMR3CritSectTerm(PVM pVM);
 VMMDECL(void)       PDMCritSectFF(PVMCPU pVCpu);
 VMMR3DECL(uint32_t) PDMR3CritSectCountOwned(PVM pVM, char *pszNames, size_t cbNames);
+VMMR3DECL(void)     PDMR3CritSectLeaveAll(PVM pVM);
 
 /** @} */
 
