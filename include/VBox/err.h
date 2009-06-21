@@ -1305,8 +1305,6 @@
 #define VERR_VMX_UNEXPECTED_EXCEPTION               (-4016)
 /** Unexpected interruption exit code. */
 #define VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_CODE  (-4017)
-/** Running for too long, return to ring 3. */
-#define VINF_VMX_PREEMPT_PENDING                    (4018)
 /** @} */
 
 
@@ -1321,8 +1319,6 @@
 #define VERR_SVM_NO_SVM                             (-4052)
 /** SVM CPU extension disabled (by BIOS). */
 #define VERR_SVM_DISABLED                           (-4053)
-/** Running for too long, return to ring 3. */
-#define VINF_SVM_PREEMPT_PENDING                    VINF_VMX_PREEMPT_PENDING
 /** @} */
 
 
