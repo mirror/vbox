@@ -938,31 +938,37 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 /** @name Debug Info Reader Status Codes.
  * @{
  */
+/** The module contains no line number information. */
+#define VERR_DBG_NO_LINE_NUMBERS                (-650)
+/** The module contains no symbol information. */
+#define VERR_DBG_NO_SYMBOLS                     (-651)
 /** The specified segment:offset address was invalid. Typically an attempt at
  * addressing outside the segment boundrary. */
-#define VERR_DBG_INVALID_ADDRESS                (-650)
+#define VERR_DBG_INVALID_ADDRESS                (-652)
 /** Invalid segment index. */
-#define VERR_DBG_INVALID_SEGMENT_INDEX          (-651)
+#define VERR_DBG_INVALID_SEGMENT_INDEX          (-653)
 /** Invalid segment offset. */
-#define VERR_DBG_INVALID_SEGMENT_OFFSET         (-652)
+#define VERR_DBG_INVALID_SEGMENT_OFFSET         (-654)
 /** Invalid image relative virtual address. */
-#define VERR_DBG_INVALID_RVA                    (-653)
-/** The module contains no line number information. */
-#define VERR_DBG_NO_LINE_NUMBERS                (-654)
+#define VERR_DBG_INVALID_RVA                    (-655)
 /** Address conflict within a module/segment.
  * Attempted to add a symbol or line number that fully or partially overlaps with an existing one.  */
-#define VERR_DBG_ADDRESS_CONFLICT               (-655)
+#define VERR_DBG_ADDRESS_CONFLICT               (-656)
 /** Duplicate symbol within the module.
  * Attempted to add a symbol which name already exists within the module.  */
-#define VERR_DBG_DUPLICATE_SYMBOL               (-656)
+#define VERR_DBG_DUPLICATE_SYMBOL               (-657)
+/** The segment index specified when adding a new segment is already in use. */
+#define VERR_DBG_SEGMENT_INDEX_CONFLICT         (-658)
+/** No line number was found for the specified address/ordinal/whatever. */
+#define VERR_DBG_LINE_NOT_FOUND                 (-659)
 /** The length of the symbol name is out of range.
  * This means it is an empty string or that it's greater or equal to
  * RTDBG_SYMBOL_NAME_LENGTH. */
-#define VERR_DBG_SYMBOL_NAME_OUT_OF_RANGE       (-657)
+#define VERR_DBG_SYMBOL_NAME_OUT_OF_RANGE       (-660)
 /** The length of the file name is out of range.
  * This means it is an empty string or that it's greater or equal to
  * RTDBG_FILE_NAME_LENGTH. */
-#define VERR_DBG_FILE_NAME_OUT_OF_RANGE         (-658)
+#define VERR_DBG_FILE_NAME_OUT_OF_RANGE         (-661)
 /** @} */
 
 /** @name Request Packet Status Codes.

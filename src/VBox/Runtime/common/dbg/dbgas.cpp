@@ -1147,7 +1147,7 @@ DECLINLINE(void) rtDbgAsAdjustLineAddress(PRTDBGLINE pLine, RTDBGMOD hDbgMod, RT
  * @param   cb              The size of the symbol.
  * @param   fFlags          Symbol flags.
  */
-RTDECL(int) RTDbgAsSymbolAdd(RTDBGAS hDbgAs, const char *pszSymbol, RTUINTPTR Addr, RTUINTPTR cb, uint32_t fFlags)
+RTDECL(int) RTDbgAsSymbolAdd(RTDBGAS hDbgAs, const char *pszSymbol, RTUINTPTR Addr, RTUINTPTR cb, uint32_t fFlags, uint32_t *piOrdinal)
 {
     /*
     * Validate input and resolve the address.
@@ -1164,7 +1164,7 @@ RTDECL(int) RTDbgAsSymbolAdd(RTDBGAS hDbgAs, const char *pszSymbol, RTUINTPTR Ad
     /*
      * Forward the call.
      */
-    int rc = RTDbgModSymbolAdd(hMod, pszSymbol, iSeg, offSeg, cb, fFlags);
+    int rc = RTDbgModSymbolAdd(hMod, pszSymbol, iSeg, offSeg, cb, fFlags, piOrdinal);
     RTDbgModRelease(hMod);
     return rc;
 }
@@ -1463,8 +1463,11 @@ RTDECL(int) RTDbgAsSymbolByNameA(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSY
  * @param   pszFile         The file name.
  * @param   uLineNo         The line number.
  * @param   Addr            The address of the symbol.
+ * @param   piOrdinal       Where to return the line number ordinal on success.
+ *                          If the interpreter doesn't do ordinals, this will be
+ *                          set to UINT32_MAX. Optional.
  */
-RTDECL(int) RTDbgAsLineAdd(RTDBGAS hDbgAs, const char *pszFile, uint32_t uLineNo, RTUINTPTR Addr)
+RTDECL(int) RTDbgAsLineAdd(RTDBGAS hDbgAs, const char *pszFile, uint32_t uLineNo, RTUINTPTR Addr, uint32_t *piOrdinal)
 {
     /*
     * Validate input and resolve the address.
@@ -1481,7 +1484,7 @@ RTDECL(int) RTDbgAsLineAdd(RTDBGAS hDbgAs, const char *pszFile, uint32_t uLineNo
     /*
      * Forward the call.
      */
-    int rc = RTDbgModLineAdd(hMod, pszFile, uLineNo, iSeg, offSeg);
+    int rc = RTDbgModLineAdd(hMod, pszFile, uLineNo, iSeg, offSeg, piOrdinal);
     RTDbgModRelease(hMod);
     return rc;
 }

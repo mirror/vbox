@@ -404,8 +404,11 @@ RTDECL(RTDBGSEGIDX) RTDbgModSegmentCount(RTDBGMOD hDbgMod)
  * @param   off             The segment offset.
  * @param   cb              The size of the symbol.
  * @param   fFlags          Symbol flags.
+ * @param   piOrdinal       Where to return the symbol ordinal on success. If
+ *                          the interpreter doesn't do ordinals, this will be set to
+ *                          UINT32_MAX. Optional
  */
-RTDECL(int) RTDbgModSymbolAdd(RTDBGMOD hDbgMod, const char *pszSymbol, RTDBGSEGIDX iSeg, RTUINTPTR off, RTUINTPTR cb, uint32_t fFlags)
+RTDECL(int) RTDbgModSymbolAdd(RTDBGMOD hDbgMod, const char *pszSymbol, RTDBGSEGIDX iSeg, RTUINTPTR off, RTUINTPTR cb, uint32_t fFlags, uint32_t *piOrdinal)
 {
     /*
      * Validate input.
@@ -441,7 +444,7 @@ RTDECL(int) RTDbgModSymbolAdd(RTDBGMOD hDbgMod, const char *pszSymbol, RTDBGSEGI
     /*
      * Get down to business.
      */
-    int rc = pDbgMod->pDbgVt->pfnSymbolAdd(pDbgMod, pszSymbol, cchSymbol, iSeg, off, cb, fFlags);
+    int rc = pDbgMod->pDbgVt->pfnSymbolAdd(pDbgMod, pszSymbol, cchSymbol, iSeg, off, cb, fFlags, piOrdinal);
 
     RTDBGMOD_UNLOCK(pDbgMod);
     return rc;
@@ -497,8 +500,11 @@ RTDECL(int)         RTDbgModSymbolByNameA(RTDBGMOD hDbgMod, const char *pszSymbo
  * @param   uLineNo         The line number.
  * @param   iSeg            The segment index.
  * @param   off             The segment offset.
+ * @param   piOrdinal       Where to return the line number ordinal on success.
+ *                          If the interpreter doesn't do ordinals, this will be
+ *                          set to UINT32_MAX. Optional.
  */
-RTDECL(int) RTDbgModLineAdd(RTDBGMOD hDbgMod, const char *pszFile, uint32_t uLineNo, RTDBGSEGIDX iSeg, RTUINTPTR off)
+RTDECL(int) RTDbgModLineAdd(RTDBGMOD hDbgMod, const char *pszFile, uint32_t uLineNo, RTDBGSEGIDX iSeg, RTUINTPTR off, uint32_t *piOrdinal)
 {
     /*
      * Validate input.
@@ -533,7 +539,7 @@ RTDECL(int) RTDbgModLineAdd(RTDBGMOD hDbgMod, const char *pszFile, uint32_t uLin
     /*
      * Get down to business.
      */
-    int rc = pDbgMod->pDbgVt->pfnLineAdd(pDbgMod, pszFile, cchFile, uLineNo, iSeg, off);
+    int rc = pDbgMod->pDbgVt->pfnLineAdd(pDbgMod, pszFile, cchFile, uLineNo, iSeg, off, piOrdinal);
 
     RTDBGMOD_UNLOCK(pDbgMod);
     return rc;
