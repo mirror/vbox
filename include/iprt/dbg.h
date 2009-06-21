@@ -95,7 +95,7 @@ typedef const RTDBGSYMBOL *PCRTDBGSYMBOL;
  *
  * @returns Pointer to a new structure on success, NULL on failure.
  */
-RTDECL(PRTDBGSYMBOL) RTDbgSymbolAlloc(void);
+RTDECL(PRTDBGSYMBOL)    RTDbgSymbolAlloc(void);
 
 /**
  * Duplicates a symbol structure.
@@ -104,14 +104,14 @@ RTDECL(PRTDBGSYMBOL) RTDbgSymbolAlloc(void);
  *
  * @param   pSymbol         The symbol to duplicate.
  */
-RTDECL(PRTDBGSYMBOL) RTDbgSymbolDup(PCRTDBGSYMBOL pSymbol);
+RTDECL(PRTDBGSYMBOL)    RTDbgSymbolDup(PCRTDBGSYMBOL pSymbol);
 
 /**
  * Free a symbol structure previously allocated by a RTDbg method.
  *
  * @param   pSymbol         The symbol to free. NULL is ignored.
  */
-RTDECL(void) RTDbgSymbolFree(PRTDBGSYMBOL pSymbol);
+RTDECL(void)            RTDbgSymbolFree(PRTDBGSYMBOL pSymbol);
 
 
 /** Max length (including '\\0') of a debug info file name. */
@@ -141,9 +141,28 @@ typedef RTDBGLINE *PRTDBGLINE;
 /** Pointer to const debug line number. */
 typedef const RTDBGLINE *PCRTDBGLINE;
 
-RTDECL(PRTDBGLINE)   RTDbgLineAlloc(void);
-RTDECL(PRTDBGLINE)   RTDbgLineDup(PCRTDBGLINE pLine);
-RTDECL(void)         RTDbgLineFree(PRTDBGLINE pLine);
+/**
+ * Allocate a new line number structure.
+ *
+ * @returns Pointer to a new structure on success, NULL on failure.
+ */
+RTDECL(PRTDBGLINE)      RTDbgLineAlloc(void);
+
+/**
+ * Duplicates a line number structure.
+ *
+ * @returns Pointer to duplicate on success, NULL on failure.
+ *
+ * @param   pLine           The line number to duplicate.
+ */
+RTDECL(PRTDBGLINE)      RTDbgLineDup(PCRTDBGLINE pLine);
+
+/**
+ * Free a line number structure previously allocated by a RTDbg method.
+ *
+ * @param   pLine           The line number to free. NULL is ignored.
+ */
+RTDECL(void)            RTDbgLineFree(PRTDBGLINE pLine);
 
 
 /** @defgroup grp_rt_dbgas      RTDbgAs - Debug Address Space
