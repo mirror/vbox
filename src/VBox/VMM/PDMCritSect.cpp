@@ -25,7 +25,7 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_PDM//_CRITSECT
 #include "PDMInternal.h"
-#include <VBox/pdm.h>
+#include <VBox/pdmcritsect.h>
 #include <VBox/mm.h>
 #include <VBox/vm.h>
 
@@ -475,3 +475,26 @@ VMMR3DECL(uint32_t) PDMR3CritSectCountOwned(PVM pVM, char *pszNames, size_t cbNa
 
     return cCritSects;
 }
+
+
+/**
+ * Leave all critical sections the calling thread owns.
+ *
+ * @param   pVM         The VM handle.
+ */
+void PDMR3CritSectLeaveAll(PVM pVM)
+{
+    RTNATIVETHREAD const hNativeSelf = RTThreadNativeSelf();
+
+    RTCritSectEnter(&pVM->pdm.s.MiscCritSect);
+    for (PPDMCRITSECTINT pCur = pVM->pdm.s.pCritSects;
+         pCur;
+         pCur = pCur->pNext)
+    {
+        while (     pCur->Core.NativeThreadOwner == hNativeSelf
+               &&   pCur->Core.cNestings > 0)
+            PDMCritSectLeave((PPDMCRITSECT)pCur);
+    }
+    RTCritSectLeave(&pVM->pdm.s.MiscCritSect);
+}
+
