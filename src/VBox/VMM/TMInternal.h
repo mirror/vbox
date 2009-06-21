@@ -481,8 +481,18 @@ typedef struct TM
     /** @} */
     /** TMTimerSet
      * @{ */
+    STAMCOUNTER                 StatTimerSet;
+    STAMCOUNTER                 StatTimerSetOpt;
     STAMPROFILE                 StatTimerSetRZ;
     STAMPROFILE                 StatTimerSetR3;
+    STAMCOUNTER                 StatTimerSetStStopped;
+    STAMCOUNTER                 StatTimerSetStExpDeliver;
+    STAMCOUNTER                 StatTimerSetStActive;
+    STAMCOUNTER                 StatTimerSetStPendStop;
+    STAMCOUNTER                 StatTimerSetStPendStopSched;
+    STAMCOUNTER                 StatTimerSetStPendSched;
+    STAMCOUNTER                 StatTimerSetStPendResched;
+    STAMCOUNTER                 StatTimerSetStOther;
     /** @} */
     /** TMTimerSetRelative
      * @{ */
