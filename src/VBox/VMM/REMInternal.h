@@ -164,7 +164,7 @@ typedef struct REM
     uint32_t                u32PendingInterrupt;
 
     /** Number of recorded invlpg instructions. */
-    uint32_t                cInvalidatedPages;
+    uint32_t volatile       cInvalidatedPages;
 #if HC_ARCH_BITS == 32
     uint32_t                uPadding2;
 #endif
