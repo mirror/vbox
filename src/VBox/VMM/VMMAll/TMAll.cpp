@@ -1047,7 +1047,7 @@ VMMDECL(int) TMTimerSetRelative(PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t
         switch (enmState)
         {
             case TMTIMERSTATE_STOPPED:
-                if (tmClock == TMCLOCK_VIRTUAL_SYNC)
+                if (enmClock == TMCLOCK_VIRTUAL_SYNC)
                 {
                     /** @todo To fix assertion in tmR3TimerQueueRunVirtualSync:
                      *              Figure a safe way of activating this timer while the queue is
