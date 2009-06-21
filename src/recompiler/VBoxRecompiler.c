@@ -278,7 +278,7 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     /*
      * Initialize the REM critical section.
      *
-     * Note: This is not a 100% safe solution as updating the internal memory state while another VCPU 
+     * Note: This is not a 100% safe solution as updating the internal memory state while another VCPU
      *       is executing code could be dangerous. Taking the REM lock is not an option due to the danger of
      *       deadlocks. (mostly pgm vs rem locking)
      */
@@ -2724,6 +2724,7 @@ REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
     LogFlow(("REMR3ReplayHandlerNotifications:\n"));
     VM_ASSERT_EMT(pVM);
 
+    /** @todo this isn't ensuring correct replay order. */
     if (VM_FF_TESTANDCLEAR(pVM, VM_FF_REM_HANDLER_NOTIFY_BIT))
     {
         /* Lockless purging of pending notifications. */
@@ -2763,29 +2764,29 @@ REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
             {
                 case REMHANDLERNOTIFICATIONKIND_PHYSICAL_REGISTER:
                     remR3NotifyHandlerPhysicalRegister(pVM,
-                                                    pRec->u.PhysicalRegister.enmType,
-                                                    pRec->u.PhysicalRegister.GCPhys,
-                                                    pRec->u.PhysicalRegister.cb,
-                                                    pRec->u.PhysicalRegister.fHasHCHandler);
+                                                       pRec->u.PhysicalRegister.enmType,
+                                                       pRec->u.PhysicalRegister.GCPhys,
+                                                       pRec->u.PhysicalRegister.cb,
+                                                       pRec->u.PhysicalRegister.fHasHCHandler);
                     break;
 
                 case REMHANDLERNOTIFICATIONKIND_PHYSICAL_DEREGISTER:
                     remR3NotifyHandlerPhysicalDeregister(pVM,
-                                                        pRec->u.PhysicalDeregister.enmType,
-                                                        pRec->u.PhysicalDeregister.GCPhys,
-                                                        pRec->u.PhysicalDeregister.cb,
-                                                        pRec->u.PhysicalDeregister.fHasHCHandler,
-                                                        pRec->u.PhysicalDeregister.fRestoreAsRAM);
+                                                         pRec->u.PhysicalDeregister.enmType,
+                                                         pRec->u.PhysicalDeregister.GCPhys,
+                                                         pRec->u.PhysicalDeregister.cb,
+                                                         pRec->u.PhysicalDeregister.fHasHCHandler,
+                                                         pRec->u.PhysicalDeregister.fRestoreAsRAM);
                     break;
 
                 case REMHANDLERNOTIFICATIONKIND_PHYSICAL_MODIFY:
                     remR3NotifyHandlerPhysicalModify(pVM,
-                                                    pRec->u.PhysicalModify.enmType,
-                                                    pRec->u.PhysicalModify.GCPhysOld,
-                                                    pRec->u.PhysicalModify.GCPhysNew,
-                                                    pRec->u.PhysicalModify.cb,
-                                                    pRec->u.PhysicalModify.fHasHCHandler,
-                                                    pRec->u.PhysicalModify.fRestoreAsRAM);
+                                                     pRec->u.PhysicalModify.enmType,
+                                                     pRec->u.PhysicalModify.GCPhysOld,
+                                                     pRec->u.PhysicalModify.GCPhysNew,
+                                                     pRec->u.PhysicalModify.cb,
+                                                     pRec->u.PhysicalModify.fHasHCHandler,
+                                                     pRec->u.PhysicalModify.fRestoreAsRAM);
                     break;
 
                 default:
@@ -2805,8 +2806,9 @@ REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
 
             do
             {
-                idxNext = pVM->rem.s.idxFreeList;
-                pRec->idxNext = idxNext;
+                idxNext = ASMAtomicUoReadU32(&pVM->rem.s.idxFreeList);
+                ASMAtomicWriteU32(&pRec->idxNext, idxNext);
+                ASMCompilerBarrier();
             } while (!ASMAtomicCmpXchgU32(&pVM->rem.s.idxFreeList, pRec->idxSelf, idxNext));
         }
     }

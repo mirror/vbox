@@ -108,7 +108,7 @@ typedef struct REMHANDLERNOTIFICATION
         uint64_t                padding[5];
     } u;
     uint32_t                    idxSelf;
-    uint32_t                    idxNext;
+    uint32_t volatile           idxNext;
 } REMHANDLERNOTIFICATION, *PREMHANDLERNOTIFICATION;
 
 /**

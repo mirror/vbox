@@ -99,18 +99,20 @@ static void remNotifyHandlerInsert(PVM pVM, PREMHANDLERNOTIFICATION pRec)
     /* Fetch a free record. */
     do
     {
-        idxFree = pVM->rem.s.idxFreeList;
+        idxFree = ASMAtomicUoReadU32(&pVM->rem.s.idxFreeList);
         if (idxFree == (uint32_t)-1)
         {
             pFree = NULL;
             break;
         }
-        pFree = &pVM->rem.s.aHandlerNotifications[idxFree];  
+        pFree = &pVM->rem.s.aHandlerNotifications[idxFree];
     } while (!ASMAtomicCmpXchgU32(&pVM->rem.s.idxFreeList, pFree->idxNext, idxFree));
 
     if (!pFree)
     {
         remFlushHandlerNotifications(pVM);
+        /** @todo why are we dropping the pReq here without a fight? If we can drop
+         *        one, we can drop all... */
         return;
     }
 
@@ -121,12 +123,14 @@ static void remNotifyHandlerInsert(PVM pVM, PREMHANDLERNOTIFICATION pRec)
     /* Insert it into the pending list. */
     do
     {
-        idxNext = pVM->rem.s.idxPendingList;
-        pFree->idxNext = idxNext;
+        idxNext = ASMAtomicUoReadU32(&pVM->rem.s.idxPendingList);
+        ASMAtomicWriteU32(&pFree->idxNext, idxNext);
+        ASMCompilerBarrier();
     } while (!ASMAtomicCmpXchgU32(&pVM->rem.s.idxPendingList, idxFree, idxNext));
 
     VM_FF_SET(pVM, VM_FF_REM_HANDLER_NOTIFY);
 }
+
 
 /**
  * Notification about a successful PGMR3HandlerPhysicalRegister() call.
