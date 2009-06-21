@@ -247,7 +247,7 @@ DECLINLINE(int) pgmPoolPhysSimpleReadGCPhys(PVM pVM, void *pvDst, CTXTYPE(RTGCPT
  */
 void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GCPhysFault, CTXTYPE(RTGCPTR, RTHCPTR, RTGCPTR) pvAddress, PDISCPUSTATE pDis)
 {
-    Assert(pPage->iMonitoredPrev == NIL_PGMPOOL_IDX);
+    AssertMsg(pPage->iMonitoredPrev == NIL_PGMPOOL_IDX, ("%#x (idx=%#x)\n", pPage->iMonitoredPrev, pPage->idx));
     const unsigned off     = GCPhysFault & PAGE_OFFSET_MASK;
     const unsigned cbWrite = pDis ? pgmPoolDisasWriteSize(pDis) : 0;
     PVM pVM = pPool->CTX_SUFF(pVM);
