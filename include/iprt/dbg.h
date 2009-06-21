@@ -70,9 +70,13 @@ typedef RTDBGSEGIDX const  *PCRTDBGSEGIDX;
  */
 typedef struct RTDBGSYMBOL
 {
-    /** Symbol value (address). */
+    /** Symbol value (address).
+     * This depends a bit who you ask. It will be the same as offSeg when you
+     * as RTDbgMod, but the mapping address if you ask RTDbgAs. */
     RTUINTPTR           Value;
-    /** Segment number when applicable or NIL_RTDBGSEGIDX. */
+    /** Offset into the segment specified by iSeg. */
+    RTUINTPTR           offSeg;
+    /** Segment number. */
     RTDBGSEGIDX         iSeg;
     /** Symbol size. */
     uint32_t            cb;
@@ -86,9 +90,32 @@ typedef RTDBGSYMBOL *PRTDBGSYMBOL;
 /** Pointer to const debug symbol. */
 typedef const RTDBGSYMBOL *PCRTDBGSYMBOL;
 
+/**
+ * Allocate a new symbol structure.
+ *
+ * @returns Pointer to a new structure on success, NULL on failure.
+ */
 RTDECL(PRTDBGSYMBOL) RTDbgSymbolAlloc(void);
+
+/**
+ * Duplicates a symbol structure.
+ *
+ * @returns Pointer to duplicate on success, NULL on failure.
+ *
+ * @param   pSymbol         The symbol to duplicate.
+ */
 RTDECL(PRTDBGSYMBOL) RTDbgSymbolDup(PCRTDBGSYMBOL pSymbol);
-RTDECL(void)         RTDbgSymbolFree(PRTDBGSYMBOL pSymbol);
+
+/**
+ * Free a symbol structure previously allocated by a RTDbg method.
+ *
+ * @param   pSymbol         The symbol to free. NULL is ignored.
+ */
+RTDECL(void) RTDbgSymbolFree(PRTDBGSYMBOL pSymbol);
+
+
+/** Max length (including '\\0') of a debug info file name. */
+#define RTDBG_FILE_NAME_LENGTH   (260)
 
 
 /**
@@ -96,14 +123,18 @@ RTDECL(void)         RTDbgSymbolFree(PRTDBGSYMBOL pSymbol);
  */
 typedef struct RTDBGLINE
 {
-    /** Address. */
+    /** Address.
+     * This depends a bit who you ask. It will be the same as offSeg when you
+     * as RTDbgMod, but the mapping address if you ask RTDbgAs. */
     RTUINTPTR           Address;
-    /** Segment number when applicable or NIL_RTDBGSEGIDX. */
+    /** Offset into the segment specified by iSeg. */
+    RTUINTPTR           offSeg;
+    /** Segment number. */
     RTDBGSEGIDX         iSeg;
     /** Line number. */
     uint32_t            uLineNo;
     /** Filename. */
-    char                szFilename[260];
+    char                szFilename[RTDBG_FILE_NAME_LENGTH];
 } RTDBGLINE;
 /** Pointer to debug line number. */
 typedef RTDBGLINE *PRTDBGLINE;
@@ -359,13 +390,16 @@ RTDECL(int) RTDbgAsModuleByName(RTDBGAS hDbgAs, const char *pszName, uint32_t iN
  * @returns IPRT status code. See RTDbgModSymbolAdd for more specific ones.
  * @retval  VERR_INVALID_HANDLE if hDbgAs is invalid.
  * @retval  VERR_NOT_FOUND if no module was found at the specified address.
+ * @retval  VERR_NOT_SUPPORTED if the module interpret doesn't support adding
+ *          custom symbols.
  *
  * @param   hDbgAs          The address space handle.
  * @param   pszSymbol       The symbol name.
  * @param   Addr            The address of the symbol.
  * @param   cb              The size of the symbol.
+ * @param   fFlags          Symbol flags.
  */
-RTDECL(int) RTDbgAsSymbolAdd(RTDBGAS hDbgAs, const char *pszSymbol, RTUINTPTR Addr, uint32_t cb);
+RTDECL(int) RTDbgAsSymbolAdd(RTDBGAS hDbgAs, const char *pszSymbol, RTUINTPTR Addr, RTUINTPTR cb, uint32_t fFlags);
 
 /**
  * Query a symbol by address.
@@ -471,9 +505,10 @@ RTDECL(uint32_t)    RTDbgModRelease(RTDBGMOD hDbgMod);
 RTDECL(const char *) RTDbgModName(RTDBGMOD hDbgMod);
 RTDECL(RTUINTPTR)   RTDbgModImageSize(RTDBGMOD hDbgMod);
 RTDECL(RTUINTPTR)   RTDbgModSegmentSize(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg);
+RTDECL(RTUINTPTR)   RTDbgModSegmentRva(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg);
 RTDECL(RTDBGSEGIDX) RTDbgModSegmentCount(RTDBGMOD hDbgMod);
 
-RTDECL(int)         RTDbgModSymbolAdd(RTDBGMOD hDbgMod, const char *pszSymbol, RTDBGSEGIDX iSeg, RTUINTPTR off, uint32_t cb);
+RTDECL(int)         RTDbgModSymbolAdd(RTDBGMOD hDbgMod, const char *pszSymbol, RTDBGSEGIDX iSeg, RTUINTPTR off, RTUINTPTR cb, uint32_t fFlags);
 RTDECL(uint32_t)    RTDbgModSymbolCount(RTDBGMOD hDbgMod);
 RTDECL(int)         RTDbgModSymbolByIndex(RTDBGMOD hDbgMod, uint32_t iSymbol, PRTDBGSYMBOL pSymbol);
 RTDECL(int)         RTDbgModSymbolByAddr(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGSYMBOL pSymbol);
@@ -481,6 +516,7 @@ RTDECL(int)         RTDbgModSymbolByAddrA(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RT
 RTDECL(int)         RTDbgModSymbolByName(RTDBGMOD hDbgMod, const char *pszSymbol, PRTDBGSYMBOL pSymbol);
 RTDECL(int)         RTDbgModSymbolByNameA(RTDBGMOD hDbgMod, const char *pszSymbol, PRTDBGSYMBOL *ppSymbol);
 
+RTDECL(int)         RTDbgModLineAdd(RTDBGMOD hDbgMod, const char *pszFile, uint32_t uLineNo, RTDBGSEGIDX iSeg, RTUINTPTR off);
 RTDECL(int)         RTDbgModLineByAddr(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGLINE pLine);
 RTDECL(int)         RTDbgModLineByAddrA(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGLINE *ppLine);
 /** @} */

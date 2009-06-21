@@ -387,6 +387,14 @@ typedef uint64_t        RTUINTPTR;
 typedef RTUINTPTR      *PRTUINTPTR;
 /** Pointer const to unsigned integer which can contain both GC and HC pointers. */
 typedef const RTUINTPTR *PCRTUINTPTR;
+/** The maximum value the RTUINTPTR type can hold. */
+#if (HC_ARCH_BITS == 32 && GC_ARCH_BITS == 32)
+# define RTUINTPTR_MAX  UINT32_MAX
+#elif (HC_ARCH_BITS == 64 || GC_ARCH_BITS == 64)
+# define RTUINTPTR_MAX  UINT64_MAX
+#else
+#  error Unsupported HC_ARCH_BITS and/or GC_ARCH_BITS values.
+#endif
 
 /** Signed integer. */
 typedef int32_t         RTINT;

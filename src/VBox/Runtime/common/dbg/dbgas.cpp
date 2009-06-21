@@ -61,7 +61,7 @@ typedef struct RTDBGASMOD
     /** Node core, the module handle is the key. */
     AVLPVNODECORE       Core;
     /** Pointer to the first mapping of the module or a segment within it. */
-    RTDBGASMAP         *pMapHead;
+    PRTDBGASMAP         pMapHead;
     /** Pointer to the next module with an identical name. */
     PRTDBGASMOD         pNextName;
 } RTDBGASMOD;
@@ -1028,8 +1028,9 @@ RTDECL(int) RTDbgAsModuleByName(RTDBGAS hDbgAs, const char *pszName, uint32_t iN
  * @param   Addr            Address within the module.
  * @param   piSeg           where to return the segment index.
  * @param   poffSeg         Where to return the segment offset.
+ * @param   pMapAddr        The mapping address (RTDBGASMAP::Core.Key).
  */
-DECLINLINE(RTDBGMOD) rtDbgAsModuleByAddr(PRTDBGASINT pDbgAs, RTUINTPTR Addr, PRTDBGSEGIDX piSeg, PRTUINTPTR poffSeg)
+DECLINLINE(RTDBGMOD) rtDbgAsModuleByAddr(PRTDBGASINT pDbgAs, RTUINTPTR Addr, PRTDBGSEGIDX piSeg, PRTUINTPTR poffSeg, PRTUINTPTR pMapAddr)
 {
     RTDBGMOD hMod = NIL_RTDBGMOD;
 
@@ -1039,12 +1040,95 @@ DECLINLINE(RTDBGMOD) rtDbgAsModuleByAddr(PRTDBGASINT pDbgAs, RTUINTPTR Addr, PRT
     {
         hMod = (RTDBGMOD)pMap->pMod->Core.Key;
         RTDbgModRetain(hMod);
-        *piSeg = pMap->iSeg;
+        *piSeg = pMap->iSeg != NIL_RTDBGSEGIDX ? pMap->iSeg : RTDBGSEGIDX_RVA;
         *poffSeg = Addr - pMap->Core.Key;
+        if (pMapAddr)
+            *pMapAddr = pMap->Core.Key;
     }
     RTDBGAS_UNLOCK_READ(pDbgAs);
 
     return hMod;
+}
+
+
+/**
+ * Adjusts the address to correspond to the mapping of the module/segment.
+ *
+ * @param   pSymbol         The returned symbol info.
+ * @param   pMap            The mapping record.
+ * @param   hDbgMod         The module handle.
+ * @param   MapAddr         The mapping address.
+ * @param   iMapSeg         The segment that's mapped, NIL_RTDBGSEGIDX or
+ *                          RTDBGSEGIDX_RVA if the whole module is mapped here.
+ */
+DECLINLINE(void) rtDbgAsAdjustAddressByMapping(PRTUINTPTR pAddr, RTDBGSEGIDX iSeg,
+                                               RTDBGMOD hDbgMod, RTUINTPTR MapAddr, RTDBGSEGIDX iMapSeg)
+{
+    if (iSeg == RTDBGSEGIDX_ABS)
+        return;
+
+    if (iSeg == RTDBGSEGIDX_RVA)
+    {
+        if (    iMapSeg == RTDBGSEGIDX_RVA
+            ||  iMapSeg == NIL_RTDBGSEGIDX)
+            *pAddr += MapAddr;
+        else
+        {
+            RTUINTPTR SegRva = RTDbgModSegmentRva(hDbgMod, iMapSeg);
+            AssertReturnVoid(SegRva != RTUINTPTR_MAX);
+            AssertMsg(SegRva <= *pAddr, ("SegRva=%RTptr *pAddr=%RTptr\n", SegRva, *pAddr));
+            *pAddr += MapAddr - SegRva;
+        }
+    }
+    else
+    {
+        if (    iMapSeg != RTDBGSEGIDX_RVA
+            &&  iMapSeg != NIL_RTDBGSEGIDX)
+        {
+            Assert(iMapSeg == iSeg);
+            *pAddr += MapAddr;
+        }
+        else
+        {
+            RTUINTPTR SegRva = RTDbgModSegmentRva(hDbgMod, iSeg);
+            AssertReturnVoid(SegRva != RTUINTPTR_MAX);
+            *pAddr += MapAddr + SegRva;
+        }
+    }
+}
+
+
+/**
+ * Adjusts the symbol value to correspond to the mapping of the module/segment.
+ *
+ * @param   pSymbol         The returned symbol info.
+ * @param   hDbgMod         The module handle.
+ * @param   MapAddr         The mapping address.
+ * @param   iMapSeg         The segment that's mapped, NIL_RTDBGSEGIDX if the
+ *                          whole module is mapped here.
+ */
+DECLINLINE(void) rtDbgAsAdjustSymbolValue(PRTDBGSYMBOL pSymbol, RTDBGMOD hDbgMod, RTUINTPTR MapAddr, RTDBGSEGIDX iMapSeg)
+{
+    Assert(pSymbol->iSeg   != NIL_RTDBGSEGIDX);
+    Assert(pSymbol->offSeg == pSymbol->Value);
+    rtDbgAsAdjustAddressByMapping(&pSymbol->Value, pSymbol->iSeg, hDbgMod, MapAddr, iMapSeg);
+}
+
+
+/**
+ * Adjusts the line number address to correspond to the mapping of the module/segment.
+ *
+ * @param   pLine           The returned line number info.
+ * @param   hDbgMod         The module handle.
+ * @param   MapAddr         The mapping address.
+ * @param   iMapSeg         The segment that's mapped, NIL_RTDBGSEGIDX if the
+ *                          whole module is mapped here.
+ */
+DECLINLINE(void) rtDbgAsAdjustLineAddress(PRTDBGLINE pLine, RTDBGMOD hDbgMod, RTUINTPTR MapAddr, RTDBGSEGIDX iMapSeg)
+{
+    Assert(pLine->iSeg   != NIL_RTDBGSEGIDX);
+    Assert(pLine->offSeg == pLine->Address);
+    rtDbgAsAdjustAddressByMapping(&pLine->Address, pLine->iSeg, hDbgMod, MapAddr, iMapSeg);
 }
 
 
@@ -1054,13 +1138,16 @@ DECLINLINE(RTDBGMOD) rtDbgAsModuleByAddr(PRTDBGASINT pDbgAs, RTUINTPTR Addr, PRT
  * @returns IPRT status code. See RTDbgModSymbolAdd for more specific ones.
  * @retval  VERR_INVALID_HANDLE if hDbgAs is invalid.
  * @retval  VERR_NOT_FOUND if no module was found at the specified address.
+ * @retval  VERR_NOT_SUPPORTED if the module interpret doesn't support adding
+ *          custom symbols.
  *
  * @param   hDbgAs          The address space handle.
  * @param   pszSymbol       The symbol name.
  * @param   Addr            The address of the symbol.
  * @param   cb              The size of the symbol.
+ * @param   fFlags          Symbol flags.
  */
-RTDECL(int) RTDbgAsSymbolAdd(RTDBGAS hDbgAs, const char *pszSymbol, RTUINTPTR Addr, uint32_t cb)
+RTDECL(int) RTDbgAsSymbolAdd(RTDBGAS hDbgAs, const char *pszSymbol, RTUINTPTR Addr, RTUINTPTR cb, uint32_t fFlags)
 {
     /*
     * Validate input and resolve the address.
@@ -1070,14 +1157,14 @@ RTDECL(int) RTDbgAsSymbolAdd(RTDBGAS hDbgAs, const char *pszSymbol, RTUINTPTR Ad
 
     RTDBGSEGIDX iSeg;
     RTUINTPTR offSeg;
-    RTDBGMOD hMod = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg);
+    RTDBGMOD hMod = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg, NULL);
     if (hMod == NIL_RTDBGMOD)
         return VERR_NOT_FOUND;
 
     /*
      * Forward the call.
      */
-    int rc = RTDbgModSymbolAdd(hMod, pszSymbol, iSeg, offSeg, cb);
+    int rc = RTDbgModSymbolAdd(hMod, pszSymbol, iSeg, offSeg, cb, fFlags);
     RTDbgModRelease(hMod);
     return rc;
 }
@@ -1105,8 +1192,9 @@ RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDi
     RTDBGAS_VALID_RETURN_RC(pDbgAs, VERR_INVALID_HANDLE);
 
     RTDBGSEGIDX iSeg;
-    RTUINTPTR offSeg;
-    RTDBGMOD hMod = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg);
+    RTUINTPTR   offSeg;
+    RTUINTPTR   MapAddr;
+    RTDBGMOD    hMod = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg, &MapAddr);
     if (hMod == NIL_RTDBGMOD)
         return VERR_NOT_FOUND;
 
@@ -1114,6 +1202,8 @@ RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDi
      * Forward the call.
      */
     int rc = RTDbgModSymbolByAddr(hMod, iSeg, offSeg, poffDisp, pSymbol);
+    if (RT_SUCCESS(rc))
+        rtDbgAsAdjustSymbolValue(pSymbol, hMod, MapAddr, iSeg);
     RTDbgModRelease(hMod);
     return rc;
 }
@@ -1142,8 +1232,9 @@ RTDECL(int) RTDbgAsSymbolByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffD
     RTDBGAS_VALID_RETURN_RC(pDbgAs, VERR_INVALID_HANDLE);
 
     RTDBGSEGIDX iSeg;
-    RTUINTPTR offSeg;
-    RTDBGMOD hMod = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg);
+    RTUINTPTR   offSeg;
+    RTUINTPTR   MapAddr;
+    RTDBGMOD    hMod = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg, &MapAddr);
     if (hMod == NIL_RTDBGMOD)
         return VERR_NOT_FOUND;
 
@@ -1151,6 +1242,8 @@ RTDECL(int) RTDbgAsSymbolByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffD
      * Forward the call.
      */
     int rc = RTDbgModSymbolByAddrA(hMod, iSeg, offSeg, poffDisp, ppSymbol);
+    if (RT_SUCCESS(rc))
+        rtDbgAsAdjustSymbolValue(*ppSymbol, hMod, MapAddr, iSeg);
     RTDbgModRelease(hMod);
     return rc;
 }
@@ -1188,6 +1281,73 @@ DECLINLINE(PRTDBGMOD) rtDbgAsSnapshotModuleTable(PRTDBGASINT pDbgAs, uint32_t *p
 
 
 /**
+ * Attempts to find a mapping of the specified symbol/module and
+ * adjust it's Value field accordingly.
+ *
+ * @returns true / false success indicator.
+ * @param   pDbgAs          The address space.
+ * @param   hDbgMod         The module handle.
+ * @param   pSymbol         The symbol info.
+ */
+static bool rtDbgAsFindMappingAndAdjustSymbolValue(PRTDBGASINT pDbgAs, RTDBGMOD hDbgMod, PRTDBGSYMBOL pSymbol)
+{
+    /*
+     * Absolute segments needs no fixing.
+     */
+    RTDBGSEGIDX const iSeg = pSymbol->iSeg;
+    if (iSeg)
+        return true;
+
+    RTDBGAS_LOCK_READ(pDbgAs);
+
+    /*
+     * Lookup up the module by it's handle and iterate the mappings looking for one
+     * that either encompasses the entire module or the segment in question.
+     */
+    PRTDBGASMOD pMod = (PRTDBGASMOD)RTAvlPVGet(&pDbgAs->ModTree, hDbgMod);
+    if (pMod)
+    {
+        for (PRTDBGASMAP pMap = pMod->pMapHead; pMap; pMap = pMap->pNext)
+        {
+            /* Exact segment match or full-mapping. */
+            if (    iSeg == pMap->iSeg
+                ||  pMap->iSeg == NIL_RTDBGSEGIDX)
+            {
+                RTUINTPTR   MapAddr = pMap->Core.Key;
+                RTDBGSEGIDX iMapSeg = pMap->iSeg;
+
+                RTDBGAS_UNLOCK_READ(pDbgAs);
+                rtDbgAsAdjustSymbolValue(pSymbol, hDbgMod, MapAddr, iMapSeg);
+                return true;
+            }
+
+            /* Symbol uses RVA and the mapping doesn't, see if it's in the mapped segment. */
+            if (iSeg == RTDBGSEGIDX_RVA)
+            {
+                Assert(pMap->iSeg != NIL_RTDBGSEGIDX);
+                RTUINTPTR SegRva = RTDbgModSegmentRva(hDbgMod, pMap->iSeg);
+                Assert(SegRva != RTUINTPTR_MAX);
+                RTUINTPTR cbSeg = RTDbgModSegmentSize(hDbgMod, pMap->iSeg);
+                if (SegRva - pSymbol->Value < cbSeg)
+                {
+                    RTUINTPTR   MapAddr = pMap->Core.Key;
+                    RTDBGSEGIDX iMapSeg = pMap->iSeg;
+
+                    RTDBGAS_UNLOCK_READ(pDbgAs);
+                    rtDbgAsAdjustSymbolValue(pSymbol, hDbgMod, MapAddr, iMapSeg);
+                    return true;
+                }
+            }
+        }
+    }
+    /* else: Unmapped while we were searching. */
+
+    RTDBGAS_UNLOCK_READ(pDbgAs);
+    return false;
+}
+
+
+/**
  * Query a symbol by name.
  *
  * @returns IPRT status code.
@@ -1218,14 +1378,17 @@ RTDECL(int) RTDbgAsSymbolByName(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYM
     for (uint32_t i = 0; i < cModules; i++)
     {
         int rc = RTDbgModSymbolByName(paModules[i], pszSymbol, pSymbol);
-        RTDbgModRelease(paModules[i]);
         if (RT_SUCCESS(rc))
         {
-            for (i = i + 1; i < cModules; i++)
-                RTDbgModRelease(paModules[i]);
-            RTMemTmpFree(paModules);
-            return rc;
+            if (rtDbgAsFindMappingAndAdjustSymbolValue(pDbgAs, paModules[i], pSymbol))
+            {
+                for (; i < cModules; i++)
+                    RTDbgModRelease(paModules[i]);
+                RTMemTmpFree(paModules);
+                return rc;
+            }
         }
+        RTDbgModRelease(paModules[i]);
     }
 
     RTMemTmpFree(paModules);
@@ -1266,18 +1429,61 @@ RTDECL(int) RTDbgAsSymbolByNameA(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSY
     for (uint32_t i = 0; i < cModules; i++)
     {
         int rc = RTDbgModSymbolByNameA(paModules[i], pszSymbol, ppSymbol);
-        RTDbgModRelease(paModules[i]);
         if (RT_SUCCESS(rc))
         {
-            for (i = i + 1; i < cModules; i++)
-                RTDbgModRelease(paModules[i]);
-            RTMemTmpFree(paModules);
-            return rc;
+            if (rtDbgAsFindMappingAndAdjustSymbolValue(pDbgAs, paModules[i], *ppSymbol))
+            {
+                for (; i < cModules; i++)
+                    RTDbgModRelease(paModules[i]);
+                RTMemTmpFree(paModules);
+                return rc;
+            }
+
+            RTDbgSymbolFree(*ppSymbol);
+            *ppSymbol = NULL;
         }
+        RTDbgModRelease(paModules[i]);
     }
 
     RTMemTmpFree(paModules);
     return VERR_SYMBOL_NOT_FOUND;
+}
+
+
+/**
+ * Adds a line number to a module in the address space.
+ *
+ * @returns IPRT status code. See RTDbgModSymbolAdd for more specific ones.
+ * @retval  VERR_INVALID_HANDLE if hDbgAs is invalid.
+ * @retval  VERR_NOT_FOUND if no module was found at the specified address.
+ * @retval  VERR_NOT_SUPPORTED if the module interpret doesn't support adding
+ *          custom symbols.
+ *
+ * @param   hDbgAs          The address space handle.
+ * @param   pszFile         The file name.
+ * @param   uLineNo         The line number.
+ * @param   Addr            The address of the symbol.
+ */
+RTDECL(int) RTDbgAsLineAdd(RTDBGAS hDbgAs, const char *pszFile, uint32_t uLineNo, RTUINTPTR Addr)
+{
+    /*
+    * Validate input and resolve the address.
+     */
+    PRTDBGASINT pDbgAs = hDbgAs;
+    RTDBGAS_VALID_RETURN_RC(pDbgAs, VERR_INVALID_HANDLE);
+
+    RTDBGSEGIDX iSeg;
+    RTUINTPTR offSeg;
+    RTDBGMOD hMod = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg, NULL);
+    if (hMod == NIL_RTDBGMOD)
+        return VERR_NOT_FOUND;
+
+    /*
+     * Forward the call.
+     */
+    int rc = RTDbgModLineAdd(hMod, pszFile, uLineNo, iSeg, offSeg);
+    RTDbgModRelease(hMod);
+    return rc;
 }
 
 
@@ -1303,8 +1509,9 @@ RTDECL(int) RTDbgAsLineByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp
     RTDBGAS_VALID_RETURN_RC(pDbgAs, VERR_INVALID_HANDLE);
 
     RTDBGSEGIDX iSeg;
-    RTUINTPTR offSeg;
-    RTDBGMOD hMod = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg);
+    RTUINTPTR   offSeg;
+    RTUINTPTR   MapAddr;
+    RTDBGMOD    hMod = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg, &MapAddr);
     if (hMod == NIL_RTDBGMOD)
         return VERR_NOT_FOUND;
 
@@ -1312,6 +1519,8 @@ RTDECL(int) RTDbgAsLineByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp
      * Forward the call.
      */
     int rc = RTDbgModLineByAddr(hMod, iSeg, offSeg, poffDisp, pLine);
+    if (RT_SUCCESS(rc))
+        rtDbgAsAdjustLineAddress(pLine, hMod, MapAddr, iSeg);
     RTDbgModRelease(hMod);
     return rc;
 }
@@ -1340,8 +1549,9 @@ RTDECL(int) RTDbgAsLineByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDis
     RTDBGAS_VALID_RETURN_RC(pDbgAs, VERR_INVALID_HANDLE);
 
     RTDBGSEGIDX iSeg;
-    RTUINTPTR offSeg;
-    RTDBGMOD hMod = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg);
+    RTUINTPTR   offSeg;
+    RTUINTPTR   MapAddr;
+    RTDBGMOD    hMod = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg, &MapAddr);
     if (hMod == NIL_RTDBGMOD)
         return VERR_NOT_FOUND;
 
@@ -1349,6 +1559,8 @@ RTDECL(int) RTDbgAsLineByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDis
      * Forward the call.
      */
     int rc = RTDbgModLineByAddrA(hMod, iSeg, offSeg, poffDisp, ppLine);
+    if (RT_SUCCESS(rc))
+        rtDbgAsAdjustLineAddress(*ppLine, hMod, MapAddr, iSeg);
     RTDbgModRelease(hMod);
     return rc;
 }
