@@ -70,3 +70,39 @@ RTDECL(void) RTDbgSymbolFree(PRTDBGSYMBOL pSymbol)
     RTMemFree(pSymbol);
 }
 
+
+/**
+ * Allocate a new line number structure.
+ *
+ * @returns Pointer to a new structure on success, NULL on failure.
+ */
+RTDECL(PRTDBGLINE) RTDbgLineAlloc(void)
+{
+    return (PRTDBGLINE)RTMemAllocZ(sizeof(RTDBGLINE));
+}
+
+
+/**
+ * Duplicates a line number structure.
+ *
+ * @returns Pointer to duplicate on success, NULL on failure.
+ *
+ * @param   pLine           The line number to duplicate.
+ */
+RTDECL(PRTDBGLINE) RTDbgLineDup(PCRTDBGLINE pLine)
+{
+    return (PRTDBGLINE)RTMemDup(pLine, sizeof(*pLine));
+}
+
+
+/**
+ * Free a line number structure previously allocated by a RTDbg method.
+ *
+ * @param   pLine           The line number to free. NULL is ignored.
+ */
+RTDECL(void) RTDbgLineFree(PRTDBGLINE pLine)
+{
+    RTMemFree(pLine);
+}
+
+
