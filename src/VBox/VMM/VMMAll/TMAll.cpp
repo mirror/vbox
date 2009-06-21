@@ -742,6 +742,53 @@ VMMDECL(PTMTIMERRC) TMTimerRCPtr(PTMTIMER pTimer)
 
 
 /**
+ * Links a timer into the active list of a timer queue.
+ *
+ * The caller must have taken the TM semaphore before calling this function.
+ *
+ * @param   pQueue          The queue.
+ * @param   pTimer          The timer.
+ * @param   u64Expire       The timer expiration time.
+ */
+DECL_FORCE_INLINE(void) tmTimerActiveLink(PTMTIMERQUEUE pQueue, PTMTIMER pTimer, uint64_t u64Expire)
+{
+    PTMTIMER pCur = TMTIMER_GET_HEAD(pQueue);
+    if (pCur)
+    {
+        for (;; pCur = TMTIMER_GET_NEXT(pCur))
+        {
+            if (pCur->u64Expire > u64Expire)
+            {
+                const PTMTIMER pPrev = TMTIMER_GET_PREV(pCur);
+                TMTIMER_SET_NEXT(pTimer, pCur);
+                TMTIMER_SET_PREV(pTimer, pPrev);
+                if (pPrev)
+                    TMTIMER_SET_NEXT(pPrev, pTimer);
+                else
+                {
+                    TMTIMER_SET_HEAD(pQueue, pTimer);
+                    pQueue->u64Expire = u64Expire;
+                }
+                TMTIMER_SET_PREV(pCur, pTimer);
+                return;
+            }
+            if (!pCur->offNext)
+            {
+                TMTIMER_SET_NEXT(pCur, pTimer);
+                TMTIMER_SET_PREV(pTimer, pCur);
+                return;
+            }
+        }
+    }
+    else
+    {
+        TMTIMER_SET_HEAD(pQueue, pTimer);
+        pQueue->u64Expire = u64Expire;
+    }
+}
+
+
+/**
  * Arm a timer with a (new) expire time.
  *
  * @returns VBox status.
@@ -883,6 +930,42 @@ DECL_FORCE_INLINE(uint64_t) tmTimerSetRelativeNowWorker(PVM pVM, TMCLOCK enmCloc
 
 
 /**
+ * Optimized TMTimerSetRelative code path.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM             The VM handle.
+ * @param   pTimer          The timer handle.
+ * @param   cTicksToNext    Clock ticks until the next time expiration.
+ * @param   pu64Now         Where to return the current time stamp used.
+ *                          Optional.
+ */
+static int tmTimerSetRelativeOptimizedStart(PVM pVM, PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t *pu64Now)
+{
+    Assert(!pTimer->offPrev);
+    Assert(!pTimer->offNext);
+    Assert(pTimer->enmState == TMTIMERSTATE_ACTIVE);
+
+    /*
+     * Calculate and set the expiration time.
+     */
+    TMCLOCK const   enmClock  = pTimer->enmClock;
+    uint64_t const  u64Expire = cTicksToNext + tmTimerSetRelativeNowWorker(pVM, enmClock, pu64Now);
+    pTimer->u64Expire         = u64Expire;
+    Log2(("tmTimerSetRelativeOptimizedStart: %p:{.pszDesc='%s', .u64Expire=%'RU64} cTicksToNext=%'RU64\n", pTimer, R3STRING(pTimer->pszDesc), u64Expire, cTicksToNext));
+
+    /*
+     * Link the timer into the active list.
+     */
+    tmTimerActiveLink(&pVM->tm.s.CTX_SUFF(paTimerQueues)[enmClock], pTimer, u64Expire);
+
+    STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetRelativeOpt);
+    tmUnlock(pVM);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Arm a timer with a expire time relative to the current time.
  *
  * @returns VBox status.
@@ -895,35 +978,85 @@ VMMDECL(int) TMTimerSetRelative(PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t
 {
     STAM_PROFILE_START(&pTimer->CTX_SUFF(pVM)->tm.s.CTX_SUFF_Z(StatTimerSetRelative), a);
     TMTIMER_ASSERT_CRITSECT(pTimer);
-    PVM         pVM      = pTimer->CTX_SUFF(pVM);
-    TMCLOCK     enmClock = pTimer->enmClock;
-    bool        fOwnLock = false;
-    int         rc;
+    PVM             pVM = pTimer->CTX_SUFF(pVM);
+    int             rc;
 
-    /** @todo find the most frequently used paths and make them skip tmSchedule and tmTimerTryWithLink. */
+#ifdef VBOX_WITH_STATISTICS
+    /* Gather optimization info. */
+    STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetRelative);
+    TMTIMERSTATE enmOrgState = pTimer->enmState;
+    switch (enmOrgState)
+    {
+        case TMTIMERSTATE_STOPPED:                  STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetRelativeStStopped); break;
+        case TMTIMERSTATE_EXPIRED_DELIVER:          STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetRelativeStExpDeliver); break;
+        case TMTIMERSTATE_ACTIVE:                   STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetRelativeStActive); break;
+        case TMTIMERSTATE_PENDING_STOP:             STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetRelativeStPendStop); break;
+        case TMTIMERSTATE_PENDING_STOP_SCHEDULE:    STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetRelativeStPendStopSched); break;
+        case TMTIMERSTATE_PENDING_SCHEDULE:         STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetRelativeStPendSched); break;
+        case TMTIMERSTATE_PENDING_RESCHEDULE:       STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetRelativeStPendResched); break;
+        default:                                    STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetRelativeStOther); break;
+    }
+#endif
+
+    /*
+     * Try to take the TM lock and optimize the common cases.
+     *
+     * With the TM lock we can safely make optimizations like immediate
+     * scheduling and we can also be 100% sure that we're not racing the
+     * running of the timer queues. As an additional restraint we require the
+     * timer to have a critical section associated with to be 100% there aren't
+     * concurrent operations on the timer. (This latter isn't necessary any
+     * longer as this isn't supported for any timers, critsect or not.)
+     *
+     * Note! Lock ordering doesn't apply when we only tries to
+     *       get the innermost locks.
+     */
+    bool fOwnTMLock = RT_SUCCESS(tmTryLock(pVM));
+#if 1
+    if (    fOwnTMLock
+        &&  pTimer->pCritSect)
+    {
+        TMTIMERSTATE enmState = pTimer->enmState;
+        if (RT_LIKELY(  (   enmState == TMTIMERSTATE_EXPIRED_DELIVER
+                         || enmState == TMTIMERSTATE_STOPPED)
+                      && tmTimerTry(pTimer, TMTIMERSTATE_ACTIVE, enmState)))
+        {
+            tmTimerSetRelativeOptimizedStart(pVM, pTimer, cTicksToNext, pu64Now);
+            STAM_PROFILE_STOP(&pTimer->CTX_SUFF(pVM)->tm.s.CTX_SUFF_Z(StatTimerSetRelative), a);
+            return VINF_SUCCESS;
+        }
+
+        /* Optimize other states when it becomes necessary. */
+    }
+#endif
+
+    /*
+     * Unoptimized path.
+     */
+    TMCLOCK const   enmClock = pTimer->enmClock;
+    bool            fOwnVirtSyncLock;
+    fOwnVirtSyncLock = !fOwnTMLock
+                    && enmClock == TMCLOCK_VIRTUAL_SYNC
+                    && RT_SUCCESS(tmVirtualSyncTryLock(pVM));
     for (int cRetries = 1000; ; cRetries--)
     {
         /*
-         * Try to take the appropriate lock to increase the likelyhood
-         * that we don't race timer queue running and to some extend
-         * clock queries.
-         */
-        if (!fOwnLock)
-        {
-            if (enmClock == TMCLOCK_VIRTUAL_SYNC)
-                fOwnLock = RT_SUCCESS(tmVirtualSyncTryLock(pVM));
-            else
-                fOwnLock = RT_SUCCESS(tmTryLock(pVM));
-        }
-
-        /*
          * Change to any of the SET_EXPIRE states if valid and then to SCHEDULE or RESCHEDULE.
          */
-        TMTIMERSTATE    enmState = pTimer->enmState;
+        TMTIMERSTATE enmState = pTimer->enmState;
         switch (enmState)
         {
-            case TMTIMERSTATE_EXPIRED_DELIVER:
             case TMTIMERSTATE_STOPPED:
+                if (tmClock == TMCLOCK_VIRTUAL_SYNC)
+                {
+                    /** @todo To fix assertion in tmR3TimerQueueRunVirtualSync:
+                     *              Figure a safe way of activating this timer while the queue is
+                     *              being run.
+                     *        (99.9% sure this that the assertion is caused by DevAPIC.cpp
+                     *        re-starting the timer in respons to a initial_count write.) */
+                }
+                /* fall thru */
+            case TMTIMERSTATE_EXPIRED_DELIVER:
                 if (tmTimerTryWithLink(pTimer, TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE, enmState))
                 {
                     Assert(!pTimer->offPrev);
@@ -1028,18 +1161,33 @@ VMMDECL(int) TMTimerSetRelative(PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t
             tmTimerSetRelativeNowWorker(pVM, enmClock, pu64Now);
             break;
         }
+
+        /*
+         * Retry to gain locks.
+         */
+        if (!fOwnTMLock)
+        {
+            fOwnTMLock = RT_SUCCESS(tmTryLock(pVM));
+            if (    !fOwnTMLock
+                &&  enmClock == TMCLOCK_VIRTUAL_SYNC
+                &&  !fOwnVirtSyncLock)
+                fOwnVirtSyncLock = RT_SUCCESS(tmVirtualSyncTryLock(pVM));
+        }
+
     } /* for (;;) */
 
     /*
      * Clean up and return.
      */
-    if (fOwnLock)
-    {
-        if (enmClock == TMCLOCK_VIRTUAL_SYNC)
-            tmVirtualSyncUnlock(pVM);
-        else
-            tmUnlock(pVM);
-    }
+    if (fOwnVirtSyncLock)
+        tmVirtualSyncUnlock(pVM);
+    if (fOwnTMLock)
+        tmUnlock(pVM);
+
+    if (    !fOwnTMLock
+        &&  !fOwnVirtSyncLock
+        &&  enmClock == TMCLOCK_VIRTUAL_SYNC)
+        STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetRelativeRacyVirtSync);
 
     STAM_PROFILE_STOP(&pTimer->CTX_SUFF(pVM)->tm.s.CTX_SUFF_Z(StatTimerSetRelative), a);
     return rc;
