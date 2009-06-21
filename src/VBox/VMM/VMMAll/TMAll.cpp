@@ -789,6 +789,42 @@ DECL_FORCE_INLINE(void) tmTimerActiveLink(PTMTIMERQUEUE pQueue, PTMTIMER pTimer,
 
 
 /**
+ * Optimized TMTimerSet code path for starting an inactive timer.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM             The VM handle.
+ * @param   pTimer          The timer handle.
+ * @param   u64Expire       The new expire time.
+ */
+static int tmTimerSetOptimizedStart(PVM pVM, PTMTIMER pTimer, uint64_t u64Expire)
+{
+    Assert(!pTimer->offPrev);
+    Assert(!pTimer->offNext);
+    Assert(pTimer->enmState == TMTIMERSTATE_ACTIVE);
+
+    /*
+     * Calculate and set the expiration time.
+     */
+    pTimer->u64Expire = u64Expire;
+    Log2(("tmTimerSetOptimizedStart: %p:{.pszDesc='%s', .u64Expire=%'RU64}\n", pTimer, R3STRING(pTimer->pszDesc), u64Expire));
+
+    /*
+     * Link the timer into the active list.
+     */
+    TMCLOCK const enmClock = pTimer->enmClock;
+    tmTimerActiveLink(&pVM->tm.s.CTX_SUFF(paTimerQueues)[enmClock], pTimer, u64Expire);
+
+    STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetOpt);
+    tmUnlock(pVM);
+    return VINF_SUCCESS;
+}
+
+
+
+
+
+/**
  * Arm a timer with a (new) expire time.
  *
  * @returns VBox status.
@@ -797,10 +833,54 @@ DECL_FORCE_INLINE(void) tmTimerActiveLink(PTMTIMERQUEUE pQueue, PTMTIMER pTimer,
  */
 VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
 {
-    STAM_PROFILE_START(&pTimer->CTX_SUFF(pVM)->tm.s.CTX_SUFF_Z(StatTimerSet), a);
+    PVM pVM = pTimer->CTX_SUFF(pVM);
+    STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatTimerSet), a);
     TMTIMER_ASSERT_CRITSECT(pTimer);
 
-    /** @todo find the most frequently used paths and make them skip tmSchedule and tmTimerTryWithLink. */
+#ifdef VBOX_WITH_STATISTICS
+    /* Gather optimization info. */
+    STAM_COUNTER_INC(&pVM->tm.s.StatTimerSet);
+    TMTIMERSTATE enmOrgState = pTimer->enmState;
+    switch (enmOrgState)
+    {
+        case TMTIMERSTATE_STOPPED:                  STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetStStopped); break;
+        case TMTIMERSTATE_EXPIRED_DELIVER:          STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetStExpDeliver); break;
+        case TMTIMERSTATE_ACTIVE:                   STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetStActive); break;
+        case TMTIMERSTATE_PENDING_STOP:             STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetStPendStop); break;
+        case TMTIMERSTATE_PENDING_STOP_SCHEDULE:    STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetStPendStopSched); break;
+        case TMTIMERSTATE_PENDING_SCHEDULE:         STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetStPendSched); break;
+        case TMTIMERSTATE_PENDING_RESCHEDULE:       STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetStPendResched); break;
+        default:                                    STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetStOther); break;
+    }
+#endif
+
+    /*
+     * The most common case is setting the timer again during the callback.
+     * The second most common case is starting a timer at some other time.
+     */
+#if 1
+    TMTIMERSTATE enmState = pTimer->enmState;
+    if (    enmState == TMTIMERSTATE_EXPIRED_DELIVER
+        ||  (   enmState == TMTIMERSTATE_STOPPED
+             && pTimer->pCritSect))
+    {
+        /* Try take the TM lock and check the state again. */
+        if (RT_SUCCESS_NP(tmTryLock(pVM)))
+        {
+            if (RT_LIKELY(tmTimerTry(pTimer, TMTIMERSTATE_ACTIVE, enmState)))
+            {
+                tmTimerSetOptimizedStart(pVM, pTimer, u64Expire);
+                STAM_PROFILE_STOP(&pTimer->CTX_SUFF(pVM)->tm.s.CTX_SUFF_Z(StatTimerSetRelative), a);
+                return VINF_SUCCESS;
+            }
+            tmUnlock(pVM);
+        }
+    }
+#endif
+
+    /*
+     * Unoptimized code path.
+     */
     int cRetries = 1000;
     do
     {
@@ -819,13 +899,13 @@ VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
                     Assert(!pTimer->offPrev);
                     Assert(!pTimer->offNext);
                     AssertMsg(      pTimer->enmClock != TMCLOCK_VIRTUAL_SYNC
-                              ||    pTimer->CTX_SUFF(pVM)->tm.s.fVirtualSyncTicking
-                              ||    u64Expire >= pTimer->CTX_SUFF(pVM)->tm.s.u64VirtualSync,
-                              ("%'RU64 < %'RU64 %s\n", u64Expire, pTimer->CTX_SUFF(pVM)->tm.s.u64VirtualSync, R3STRING(pTimer->pszDesc)));
+                              ||    pVM->tm.s.fVirtualSyncTicking
+                              ||    u64Expire >= pVM->tm.s.u64VirtualSync,
+                              ("%'RU64 < %'RU64 %s\n", u64Expire, pVM->tm.s.u64VirtualSync, R3STRING(pTimer->pszDesc)));
                     pTimer->u64Expire = u64Expire;
                     TM_SET_STATE(pTimer, TMTIMERSTATE_PENDING_SCHEDULE);
                     tmSchedule(pTimer);
-                    STAM_PROFILE_STOP(&pTimer->CTX_SUFF(pVM)->tm.s.CTX_SUFF_Z(StatTimerSet), a);
+                    STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerSet), a);
                     return VINF_SUCCESS;
                 }
                 break;
@@ -837,7 +917,7 @@ VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
                     pTimer->u64Expire = u64Expire;
                     TM_SET_STATE(pTimer, TMTIMERSTATE_PENDING_SCHEDULE);
                     tmSchedule(pTimer);
-                    STAM_PROFILE_STOP(&pTimer->CTX_SUFF(pVM)->tm.s.CTX_SUFF_Z(StatTimerSet), a);
+                    STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerSet), a);
                     return VINF_SUCCESS;
                 }
                 break;
@@ -849,7 +929,7 @@ VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
                     pTimer->u64Expire = u64Expire;
                     TM_SET_STATE(pTimer, TMTIMERSTATE_PENDING_RESCHEDULE);
                     tmSchedule(pTimer);
-                    STAM_PROFILE_STOP(&pTimer->CTX_SUFF(pVM)->tm.s.CTX_SUFF_Z(StatTimerSet), a);
+                    STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerSet), a);
                     return VINF_SUCCESS;
                 }
                 break;
@@ -861,7 +941,7 @@ VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
                     pTimer->u64Expire = u64Expire;
                     TM_SET_STATE(pTimer, TMTIMERSTATE_PENDING_RESCHEDULE);
                     tmSchedule(pTimer);
-                    STAM_PROFILE_STOP(&pTimer->CTX_SUFF(pVM)->tm.s.CTX_SUFF_Z(StatTimerSet), a);
+                    STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerSet), a);
                     return VINF_SUCCESS;
                 }
                 break;
@@ -892,7 +972,7 @@ VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
     } while (cRetries-- > 0);
 
     AssertMsgFailed(("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, R3STRING(pTimer->pszDesc)));
-    STAM_PROFILE_STOP(&pTimer->CTX_SUFF(pVM)->tm.s.CTX_SUFF_Z(StatTimerSet), a);
+    STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerSet), a);
     return VERR_INTERNAL_ERROR;
 }
 
@@ -1011,7 +1091,7 @@ VMMDECL(int) TMTimerSetRelative(PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t
      * Note! Lock ordering doesn't apply when we only tries to
      *       get the innermost locks.
      */
-    bool fOwnTMLock = RT_SUCCESS(tmTryLock(pVM));
+    bool fOwnTMLock = RT_SUCCESS_NP(tmTryLock(pVM));
 #if 1
     if (    fOwnTMLock
         &&  pTimer->pCritSect)
@@ -1167,11 +1247,11 @@ VMMDECL(int) TMTimerSetRelative(PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t
          */
         if (!fOwnTMLock)
         {
-            fOwnTMLock = RT_SUCCESS(tmTryLock(pVM));
+            fOwnTMLock = RT_SUCCESS_NP(tmTryLock(pVM));
             if (    !fOwnTMLock
                 &&  enmClock == TMCLOCK_VIRTUAL_SYNC
                 &&  !fOwnVirtSyncLock)
-                fOwnVirtSyncLock = RT_SUCCESS(tmVirtualSyncTryLock(pVM));
+                fOwnVirtSyncLock = RT_SUCCESS_NP(tmVirtualSyncTryLock(pVM));
         }
 
     } /* for (;;) */

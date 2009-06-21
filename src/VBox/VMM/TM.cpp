@@ -574,14 +574,24 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->tm.s.StatScheduleOneRZ,                       STAMTYPE_PROFILE, "/TM/ScheduleOneRZ",               STAMUNIT_TICKS_PER_CALL, "Profiling the scheduling of one queue during a TMTimer* call in EMT.");
     STAM_REG(pVM, &pVM->tm.s.StatScheduleSetFF,                       STAMTYPE_COUNTER, "/TM/ScheduleSetFF",                   STAMUNIT_OCCURENCES, "The number of times the timer FF was set instead of doing scheduling.");
 
-    STAM_REG(pVM, &pVM->tm.s.StatTimerSetR3,                          STAMTYPE_PROFILE, "/TM/TimerSetR3",                  STAMUNIT_TICKS_PER_CALL, "Profiling TMTimerSet calls made in ring-3.");
-    STAM_REG(pVM, &pVM->tm.s.StatTimerSetRZ,                          STAMTYPE_PROFILE, "/TM/TimerSetRZ",                  STAMUNIT_TICKS_PER_CALL, "Profiling TMTimerSet calls made in ring-0 / RC.");
+    STAM_REG(pVM, &pVM->tm.s.StatTimerSet,                            STAMTYPE_COUNTER, "/TM/TimerSet",                        STAMUNIT_OCCURENCES, "Calls");
+    STAM_REG(pVM, &pVM->tm.s.StatTimerSetOpt,                         STAMTYPE_COUNTER, "/TM/TimerSet/Opt",                    STAMUNIT_OCCURENCES, "Optimized path taken.");
+    STAM_REG(pVM, &pVM->tm.s.StatTimerSetR3,                          STAMTYPE_PROFILE, "/TM/TimerSet/R3",                 STAMUNIT_TICKS_PER_CALL, "Profiling TMTimerSet calls made in ring-3.");
+    STAM_REG(pVM, &pVM->tm.s.StatTimerSetRZ,                          STAMTYPE_PROFILE, "/TM/TimerSet/RZ",                 STAMUNIT_TICKS_PER_CALL, "Profiling TMTimerSet calls made in ring-0 / RC.");
+    STAM_REG(pVM, &pVM->tm.s.StatTimerSetStActive,                    STAMTYPE_COUNTER, "/TM/TimerSet/StActive",               STAMUNIT_OCCURENCES, "ACTIVE");
+    STAM_REG(pVM, &pVM->tm.s.StatTimerSetStExpDeliver,                STAMTYPE_COUNTER, "/TM/TimerSet/StExpDeliver",           STAMUNIT_OCCURENCES, "EXPIRED_DELIVER");
+    STAM_REG(pVM, &pVM->tm.s.StatTimerSetStOther,                     STAMTYPE_COUNTER, "/TM/TimerSet/StOther",                STAMUNIT_OCCURENCES, "Other states");
+    STAM_REG(pVM, &pVM->tm.s.StatTimerSetStPendStop,                  STAMTYPE_COUNTER, "/TM/TimerSet/StPendStop",             STAMUNIT_OCCURENCES, "PENDING_STOP");
+    STAM_REG(pVM, &pVM->tm.s.StatTimerSetStPendStopSched,             STAMTYPE_COUNTER, "/TM/TimerSet/StPendStopSched",        STAMUNIT_OCCURENCES, "PENDING_STOP_SCHEDULE");
+    STAM_REG(pVM, &pVM->tm.s.StatTimerSetStPendSched,                 STAMTYPE_COUNTER, "/TM/TimerSet/StPendSched",            STAMUNIT_OCCURENCES, "PENDING_SCHEDULE");
+    STAM_REG(pVM, &pVM->tm.s.StatTimerSetStPendResched,               STAMTYPE_COUNTER, "/TM/TimerSet/StPendResched",          STAMUNIT_OCCURENCES, "PENDING_RESCHEDULE");
+    STAM_REG(pVM, &pVM->tm.s.StatTimerSetStStopped,                   STAMTYPE_COUNTER, "/TM/TimerSet/StStopped",              STAMUNIT_OCCURENCES, "STOPPED");
 
     STAM_REG(pVM, &pVM->tm.s.StatTimerSetRelative,                    STAMTYPE_COUNTER, "/TM/TimerSetRelative",                STAMUNIT_OCCURENCES, "Calls");
+    STAM_REG(pVM, &pVM->tm.s.StatTimerSetRelativeOpt,                 STAMTYPE_COUNTER, "/TM/TimerSetRelative/Opt",            STAMUNIT_OCCURENCES, "Optimized path taken.");
     STAM_REG(pVM, &pVM->tm.s.StatTimerSetRelativeR3,                  STAMTYPE_PROFILE, "/TM/TimerSetRelative/R3",         STAMUNIT_TICKS_PER_CALL, "Profiling TMTimerSetRelative calls made in ring-3.");
     STAM_REG(pVM, &pVM->tm.s.StatTimerSetRelativeRZ,                  STAMTYPE_PROFILE, "/TM/TimerSetRelative/RZ",         STAMUNIT_TICKS_PER_CALL, "Profiling TMTimerSetReltaive calls made in ring-0 / RC.");
     STAM_REG(pVM, &pVM->tm.s.StatTimerSetRelativeRacyVirtSync,        STAMTYPE_COUNTER, "/TM/TimerSetRelative/RacyVirtSync",   STAMUNIT_OCCURENCES, "Potentially racy virtual sync timer update.");
-    STAM_REG(pVM, &pVM->tm.s.StatTimerSetRelativeOpt,                 STAMTYPE_COUNTER, "/TM/TimerSetRelative/Opt",            STAMUNIT_OCCURENCES, "Optimized path taken.");
     STAM_REG(pVM, &pVM->tm.s.StatTimerSetRelativeStActive,            STAMTYPE_COUNTER, "/TM/TimerSetRelative/StActive",       STAMUNIT_OCCURENCES, "ACTIVE");
     STAM_REG(pVM, &pVM->tm.s.StatTimerSetRelativeStExpDeliver,        STAMTYPE_COUNTER, "/TM/TimerSetRelative/StExpDeliver",   STAMUNIT_OCCURENCES, "EXPIRED_DELIVER");
     STAM_REG(pVM, &pVM->tm.s.StatTimerSetRelativeStOther,             STAMTYPE_COUNTER, "/TM/TimerSetRelative/StOther",        STAMUNIT_OCCURENCES, "Other states");
