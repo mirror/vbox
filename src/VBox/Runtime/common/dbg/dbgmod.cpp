@@ -374,15 +374,79 @@ RTDECL(RTUINTPTR)   RTDbgModSegmentSize(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg)
     return 1;
 }
 
+RTDECL(RTUINTPTR)   RTDbgModSegmentRva(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg)
+{
+    return 0;
+}
+
 RTDECL(RTDBGSEGIDX) RTDbgModSegmentCount(RTDBGMOD hDbgMod)
 {
     return 1;
 }
 
-RTDECL(int)         RTDbgModSymbolAdd(RTDBGMOD hDbgMod, const char *pszSymbol, RTDBGSEGIDX iSeg, RTUINTPTR off, uint32_t cb)
+
+/**
+ * Adds a line number to the module.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_INVALID_HANDLE if hDbgMod is invalid.
+ * @retval  VERR_NOT_SUPPORTED if the module interpret doesn't support adding
+ *          custom symbols.
+ * @retval  VERR_DBG_SYMBOL_NAME_OUT_OF_RANGE
+ * @retval  VERR_DBG_INVALID_RVA
+ * @retval  VERR_DBG_INVALID_SEGMENT_INDEX
+ * @retval  VERR_DBG_INVALID_SEGMENT_OFFSET
+ * @retval  VERR_INVALID_PARAMETER
+ *
+ * @param   hDbgMod         The module handle.
+ * @param   pszSymbol       The symbol name.
+ * @param   iSeg            The segment index.
+ * @param   off             The segment offset.
+ * @param   cb              The size of the symbol.
+ * @param   fFlags          Symbol flags.
+ */
+RTDECL(int) RTDbgModSymbolAdd(RTDBGMOD hDbgMod, const char *pszSymbol, RTDBGSEGIDX iSeg, RTUINTPTR off, RTUINTPTR cb, uint32_t fFlags)
 {
-    return VERR_NOT_IMPLEMENTED;
+    /*
+     * Validate input.
+     */
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, VERR_INVALID_HANDLE);
+    AssertPtr(pszSymbol);
+    size_t cchSymbol = strlen(pszSymbol);
+    AssertReturn(cchSymbol, VERR_DBG_SYMBOL_NAME_OUT_OF_RANGE);
+    AssertReturn(cchSymbol < RTDBG_SYMBOL_NAME_LENGTH, VERR_DBG_SYMBOL_NAME_OUT_OF_RANGE);
+    AssertMsgReturn(   iSeg <= RTDBGSEGIDX_LAST
+                    || (    iSeg >= RTDBGSEGIDX_SPECIAL_FIRST
+                        &&  iSeg <= RTDBGSEGIDX_SPECIAL_LAST),
+                    ("%#x\n", iSeg),
+                    VERR_DBG_INVALID_SEGMENT_INDEX);
+    AssertReturn(!fFlags, VERR_INVALID_PARAMETER); /* currently reserved. */
+
+    RTDBGMOD_LOCK(pDbgMod);
+
+    /*
+     * Convert RVAs.
+     */
+    if (iSeg == RTDBGSEGIDX_RVA)
+    {
+        iSeg = pDbgMod->pDbgVt->pfnRvaToSegOff(pDbgMod, off, &off);
+        if (iSeg == NIL_RTDBGSEGIDX)
+        {
+            RTDBGMOD_UNLOCK(pDbgMod);
+            return VERR_DBG_INVALID_RVA;
+        }
+    }
+
+    /*
+     * Get down to business.
+     */
+    int rc = pDbgMod->pDbgVt->pfnSymbolAdd(pDbgMod, pszSymbol, cchSymbol, iSeg, off, cb, fFlags);
+
+    RTDBGMOD_UNLOCK(pDbgMod);
+    return rc;
 }
+
 
 RTDECL(uint32_t)    RTDbgModSymbolCount(RTDBGMOD hDbgMod)
 {
@@ -412,6 +476,67 @@ RTDECL(int)         RTDbgModSymbolByName(RTDBGMOD hDbgMod, const char *pszSymbol
 RTDECL(int)         RTDbgModSymbolByNameA(RTDBGMOD hDbgMod, const char *pszSymbol, PRTDBGSYMBOL *ppSymbol)
 {
     return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * Adds a line number to the module.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_INVALID_HANDLE if hDbgMod is invalid.
+ * @retval  VERR_NOT_SUPPORTED if the module interpret doesn't support adding
+ *          custom symbols.
+ * @retval  VERR_DBG_FILE_NAME_OUT_OF_RANGE
+ * @retval  VERR_DBG_INVALID_RVA
+ * @retval  VERR_DBG_INVALID_SEGMENT_INDEX
+ * @retval  VERR_DBG_INVALID_SEGMENT_OFFSET
+ * @retval  VERR_INVALID_PARAMETER
+ *
+ * @param   hDbgMod         The module handle.
+ * @param   pszFile         The file name.
+ * @param   uLineNo         The line number.
+ * @param   iSeg            The segment index.
+ * @param   off             The segment offset.
+ */
+RTDECL(int) RTDbgModLineAdd(RTDBGMOD hDbgMod, const char *pszFile, uint32_t uLineNo, RTDBGSEGIDX iSeg, RTUINTPTR off)
+{
+    /*
+     * Validate input.
+     */
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, VERR_INVALID_HANDLE);
+    AssertPtr(pszFile);
+    size_t cchFile = strlen(pszFile);
+    AssertReturn(cchFile, VERR_DBG_FILE_NAME_OUT_OF_RANGE);
+    AssertReturn(cchFile < RTDBG_FILE_NAME_LENGTH, VERR_DBG_FILE_NAME_OUT_OF_RANGE);
+    AssertMsgReturn(   iSeg <= RTDBGSEGIDX_LAST
+                    || iSeg == RTDBGSEGIDX_RVA,
+                    ("%#x\n", iSeg),
+                    VERR_DBG_INVALID_SEGMENT_INDEX);
+    AssertReturn(uLineNo > 0 && uLineNo < UINT32_MAX, VERR_INVALID_PARAMETER);
+
+    RTDBGMOD_LOCK(pDbgMod);
+
+    /*
+     * Convert RVAs.
+     */
+    if (iSeg == RTDBGSEGIDX_RVA)
+    {
+        iSeg = pDbgMod->pDbgVt->pfnRvaToSegOff(pDbgMod, off, &off);
+        if (iSeg == NIL_RTDBGSEGIDX)
+        {
+            RTDBGMOD_UNLOCK(pDbgMod);
+            return VERR_DBG_INVALID_RVA;
+        }
+    }
+
+    /*
+     * Get down to business.
+     */
+    int rc = pDbgMod->pDbgVt->pfnLineAdd(pDbgMod, pszFile, cchFile, uLineNo, iSeg, off);
+
+    RTDBGMOD_UNLOCK(pDbgMod);
+    return rc;
 }
 
 

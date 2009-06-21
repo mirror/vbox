@@ -143,20 +143,30 @@ typedef struct RTDBGMODVTDBG
     DECLCALLBACKMEMBER(int, pfnClose)(PRTDBGMODINT pMod);
 
     /**
-     * Adds a symbol to the module (optional).
+     * Converts an image relative virtual address address to a segmented address.
      *
-     * This method is used to implement DBGFR3SymbolAdd.
+     * @returns Segment index on success, NIL_RTDBGSEGIDX on failure.
+     * @param   pMod        Pointer to the module structure.
+     * @param   uRva        The image relative address to convert.
+     * @param   poffSeg     Where to return the segment offset. Optional.
+     */
+    DECLCALLBACKMEMBER(RTDBGSEGIDX, pfnRvaToSegOff)(PRTDBGMODINT pMod, RTUINTPTR uRva, PRTUINTPTR poffSeg);
+
+    /**
+     * Adds a symbol to the module (optional).
      *
      * @returns VBox status code.
      * @retval  VERR_NOT_SUPPORTED if the interpreter doesn't support this feature.
      *
      * @param   pMod        Pointer to the module structure.
      * @param   pszSymbol   The symbol name.
+     * @param   cchSymbol   The length for the symbol name.
      * @param   iSeg        The segment number (0-based). RTDBGMOD_SEG_RVA can be used.
      * @param   off         The offset into the segment.
-     * @param   cbSymbol    The area covered by the symbol. 0 is fine.
+     * @param   cb          The area covered by the symbol. 0 is fine.
      */
-    DECLCALLBACKMEMBER(int, pfnSymbolAdd)(PRTDBGMODINT pMod, const char *pszSymbol, uint32_t iSeg, RTGCUINTPTR off, RTUINT cbSymbol);
+    DECLCALLBACKMEMBER(int, pfnSymbolAdd)(PRTDBGMODINT pMod, const char *pszSymbol, size_t cchSymbol,
+                                          uint32_t iSeg, RTUINTPTR off, RTUINTPTR cb, uint32_t fFlags);
 
     /**
      * Queries symbol information by symbol name.
@@ -185,13 +195,27 @@ typedef struct RTDBGMODVTDBG
      * @retval  VERR_SYMBOL_NOT_FOUND if no suitable symbol was found.
      *
      * @param   pMod        Pointer to the module structure.
-     * @param   iSeg        The segment number (0-based). RTDBGMOD_SEG_RVA can be used.
+     * @param   iSeg        The segment number (0-based) or RTDBGSEGIDX_ABS.
      * @param   off         The offset into the segment.
      * @param   poffDisp    Where to store the distance between the specified address
      *                      and the returned symbol. Optional.
      * @param   pSymbol     Where to store the symbol information.
      */
-    DECLCALLBACKMEMBER(int, pfnSymbolByAddr)(PRTDBGMODINT pMod, uint32_t iSeg, RTGCUINTPTR off, PRTGCINTPTR poffDisp, PRTDBGSYMBOL pSymbol);
+    DECLCALLBACKMEMBER(int, pfnSymbolByAddr)(PRTDBGMODINT pMod, uint32_t iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGSYMBOL pSymbol);
+
+    /**
+     * Adds a line number to the module (optional).
+     *
+     * @returns VBox status code.
+     * @retval  VERR_NOT_SUPPORTED if the interpreter doesn't support this feature.
+     *
+     * @param   pMod        Pointer to the module structure.
+     * @param   pszFile     The filename.
+     * @param   cchFile     The length of the filename.
+     * @param   iSeg        The segment number (0-based).
+     * @param   off         The offset into the segment.
+     */
+    DECLCALLBACKMEMBER(int, pfnLineAdd)(PRTDBGMODINT pMod, const char *pszFile, size_t cchFile, uint32_t uLineNo, uint32_t iSeg, RTUINTPTR off);
 
     /**
      * Queries line number information by address.
@@ -202,13 +226,13 @@ typedef struct RTDBGMODVTDBG
      * @retval  VERR_RTDBGMOD_LINE_NOT_FOUND if no suitable line number was found.
      *
      * @param   pMod        Pointer to the module structure.
-     * @param   iSeg        The segment number (0-based). RTDBGMOD_SEG_RVA can be used.
+     * @param   iSeg        The segment number (0-based) or RTDBGSEGIDX_ABS.
      * @param   off         The offset into the segment.
      * @param   poffDisp    Where to store the distance between the specified address
      *                      and the returned line number. Optional.
      * @param   pLine       Where to store the information about the closest line number.
      */
-    DECLCALLBACKMEMBER(int, pfnLineByAddr)(PRTDBGMODINT pMod, uint32_t iSeg, RTGCUINTPTR off, PRTGCINTPTR poffDisp, PRTDBGLINE pLine);
+    DECLCALLBACKMEMBER(int, pfnLineByAddr)(PRTDBGMODINT pMod, uint32_t iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGLINE pLine);
 
     /** For catching initialization errors (RTDBGMODVTDBG_MAGIC). */
     uint32_t    u32EndMagic;

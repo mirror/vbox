@@ -614,34 +614,84 @@ RTDECL(PAVLROOGCPTRNODECORE)    RTAvlrooGCPtrGetNextEqual(PAVLROOGCPTRNODECORE p
 /** @} */
 
 
+/** AVL tree of RTUINTPTR.
+ * @{
+ */
+
+/**
+ * AVL RTUINTPTR node core.
+ */
+typedef struct _AVLUIntPtrNodeCore
+{
+    /** Key value. */
+    RTUINTPTR                   Key;
+    /** Offset to the left leaf node, relative to this field. */
+    struct _AVLUIntPtrNodeCore *pLeft;
+    /** Offset to the right leaf node, relative to this field. */
+    struct _AVLUIntPtrNodeCore *pRight;
+    /** Height of this tree: max(height(left), height(right)) + 1 */
+    unsigned char               uchHeight;
+} AVLUINTPTRNODECORE;
+/** Pointer to a RTUINTPTR AVL node core.*/
+typedef AVLUINTPTRNODECORE *PAVLUINTPTRNODECORE;
+
+/** A pointer based tree with RTUINTPTR keys. */
+typedef PAVLUINTPTRNODECORE AVLUINTPTRTREE;
+/** Pointer to a offset base tree with RTUINTPTR keys. */
+typedef AVLUINTPTRTREE     *PAVLUINTPTRTREE;
+
+/** Pointer to an internal tree pointer.
+ * In this case it's a pointer to a pointer. */
+typedef AVLUINTPTRTREE     *PPAVLUINTPTRNODECORE;
+
+/** Callback function for RTAvlUIntPtrDoWithAll() and RTAvlUIntPtrDestroy(). */
+typedef DECLCALLBACK(int)    AVLUINTPTRCALLBACK(PAVLUINTPTRNODECORE pNode, void *pvUser);
+/** Pointer to callback function for RTAvlUIntPtrDoWithAll() and RTAvlUIntPtrDestroy(). */
+typedef AVLUINTPTRCALLBACK *PAVLUINTPTRCALLBACK;
+
+RTDECL(bool)                    RTAvlUIntPtrInsert(    PAVLUINTPTRTREE pTree, PAVLUINTPTRNODECORE pNode);
+RTDECL(PAVLUINTPTRNODECORE)     RTAvlUIntPtrRemove(    PAVLUINTPTRTREE pTree, RTUINTPTR Key);
+RTDECL(PAVLUINTPTRNODECORE)     RTAvlUIntPtrGet(       PAVLUINTPTRTREE pTree, RTUINTPTR Key);
+RTDECL(PAVLUINTPTRNODECORE)     RTAvlUIntPtrGetBestFit(PAVLUINTPTRTREE pTree, RTUINTPTR Key, bool fAbove);
+RTDECL(int)                     RTAvlUIntPtrDoWithAll( PAVLUINTPTRTREE pTree, int fFromLeft, PAVLUINTPTRCALLBACK pfnCallBack, void *pvParam);
+RTDECL(int)                     RTAvlUIntPtrDestroy(   PAVLUINTPTRTREE pTree, PAVLUINTPTRCALLBACK pfnCallBack, void *pvParam);
+RTDECL(PAVLUINTPTRNODECORE)     RTAvlUIntPtrGetRoot(   PAVLUINTPTRTREE pTree);
+RTDECL(PAVLUINTPTRNODECORE)     RTAvlUIntPtrGetLeft(   PAVLUINTPTRNODECORE pNode);
+RTDECL(PAVLUINTPTRNODECORE)     RTAvlUIntPtrGetRight(  PAVLUINTPTRNODECORE pNode);
+
+/** @} */
+
+
 /** AVL tree of RTUINTPTR ranges.
  * @{
  */
 
 /**
- * AVL Core node.
+ * AVL RTUINTPTR range node core.
  */
 typedef struct _AVLRUIntPtrNodeCore
 {
     /** First key value in the range (inclusive). */
-    RTUINTPTR           Key;
+    RTUINTPTR                       Key;
     /** Last key value in the range (inclusive). */
-    RTUINTPTR           KeyLast;
+    RTUINTPTR                       KeyLast;
     /** Offset to the left leaf node, relative to this field. */
-    struct _AVLRUIntPtrNodeCore *pLeft;
+    struct _AVLRUIntPtrNodeCore    *pLeft;
     /** Offset to the right leaf node, relative to this field. */
-    struct _AVLRUIntPtrNodeCore *pRight;
+    struct _AVLRUIntPtrNodeCore    *pRight;
     /** Height of this tree: max(height(left), height(right)) + 1 */
-    unsigned char       uchHeight;
-} AVLRUINTPTRNODECORE, *PAVLRUINTPTRNODECORE;
+    unsigned char                   uchHeight;
+} AVLRUINTPTRNODECORE;
+/** Pointer to an AVL RTUINTPTR range node code. */
+typedef AVLRUINTPTRNODECORE *PAVLRUINTPTRNODECORE;
 
-/** A offset base tree with RTUINTPTR keys. */
+/** A pointer based tree with RTUINTPTR ranges. */
 typedef PAVLRUINTPTRNODECORE AVLRUINTPTRTREE;
-/** Pointer to a offset base tree with RTUINTPTR keys. */
+/** Pointer to a pointer based tree with RTUINTPTR ranges. */
 typedef AVLRUINTPTRTREE     *PAVLRUINTPTRTREE;
 
 /** Pointer to an internal tree pointer.
- * In this case it's a pointer to a relative offset. */
+ * In this case it's a pointer to a pointer. */
 typedef AVLRUINTPTRTREE     *PPAVLRUINTPTRNODECORE;
 
 /** Callback function for RTAvlrUIntPtrDoWithAll() and RTAvlrUIntPtrDestroy(). */

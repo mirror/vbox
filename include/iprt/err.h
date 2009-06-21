@@ -945,8 +945,24 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_DBG_INVALID_SEGMENT_INDEX          (-651)
 /** Invalid segment offset. */
 #define VERR_DBG_INVALID_SEGMENT_OFFSET         (-652)
+/** Invalid image relative virtual address. */
+#define VERR_DBG_INVALID_RVA                    (-653)
 /** The module contains no line number information. */
-#define VERR_DBG_NO_LINE_NUMBERS                (-653)
+#define VERR_DBG_NO_LINE_NUMBERS                (-654)
+/** Address conflict within a module/segment.
+ * Attempted to add a symbol or line number that fully or partially overlaps with an existing one.  */
+#define VERR_DBG_ADDRESS_CONFLICT               (-655)
+/** Duplicate symbol within the module.
+ * Attempted to add a symbol which name already exists within the module.  */
+#define VERR_DBG_DUPLICATE_SYMBOL               (-656)
+/** The length of the symbol name is out of range.
+ * This means it is an empty string or that it's greater or equal to
+ * RTDBG_SYMBOL_NAME_LENGTH. */
+#define VERR_DBG_SYMBOL_NAME_OUT_OF_RANGE       (-657)
+/** The length of the file name is out of range.
+ * This means it is an empty string or that it's greater or equal to
+ * RTDBG_FILE_NAME_LENGTH. */
+#define VERR_DBG_FILE_NAME_OUT_OF_RANGE         (-658)
 /** @} */
 
 /** @name Request Packet Status Codes.
