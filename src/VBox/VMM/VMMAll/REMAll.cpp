@@ -92,35 +92,38 @@ static void remFlushHandlerNotifications(PVM pVM)
  */
 static void remNotifyHandlerInsert(PVM pVM, PREMHANDLERNOTIFICATION pRec)
 {
-    uint32_t idxFree;
-    uint32_t idxNext;
+    /*
+     * Fetch a free record.
+     */
+    uint32_t                cFlushes = 0;
+    uint32_t                idxFree;
     PREMHANDLERNOTIFICATION pFree;
-
-    /* Fetch a free record. */
     do
     {
         idxFree = ASMAtomicUoReadU32(&pVM->rem.s.idxFreeList);
         if (idxFree == (uint32_t)-1)
         {
-            pFree = NULL;
-            break;
+            do
+            {
+                Assert(cFlushes++ != 128);
+                AssertFatal(cFlushes < _1M);
+                remFlushHandlerNotifications(pVM);
+                idxFree = ASMAtomicUoReadU32(&pVM->rem.s.idxFreeList);
+            } while (idxFree == (uint32_t)-1);
         }
         pFree = &pVM->rem.s.aHandlerNotifications[idxFree];
     } while (!ASMAtomicCmpXchgU32(&pVM->rem.s.idxFreeList, pFree->idxNext, idxFree));
 
-    if (!pFree)
-    {
-        remFlushHandlerNotifications(pVM);
-        /** @todo why are we dropping the pReq here without a fight? If we can drop
-         *        one, we can drop all... */
-        return;
-    }
+    /*
+     * Copy the record.
+     */
+    pFree->enmKind = pRec->enmKind;
+    pFree->u = pRec->u;
 
-    /* Copy the record. */
-    *pFree = *pRec;
-    pFree->idxSelf = idxFree; /* was trashed */
-
-    /* Insert it into the pending list. */
+    /*
+     * Insert it into the pending list.
+     */
+    uint32_t idxNext;
     do
     {
         idxNext = ASMAtomicUoReadU32(&pVM->rem.s.idxPendingList);
