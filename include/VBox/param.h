@@ -121,7 +121,11 @@
  * @{
  */
 /** VMM stack size. */
-#define VMM_STACK_SIZE              8192U
+#ifdef RT_OS_DARWIN
+# define VMM_STACK_SIZE             16384U
+#else
+# define VMM_STACK_SIZE             8192U
+#endif
 /** Min number of Virtual CPUs. */
 #define VMM_MIN_CPU_COUNT           1
 /** Max number of Virtual CPUs. */

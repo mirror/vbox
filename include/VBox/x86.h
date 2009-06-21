@@ -36,7 +36,7 @@
 #include <iprt/assert.h>
 
 /* Workaround for Solaris sys/regset.h defining CS, DS */
-#if defined(RT_OS_SOLARIS)
+#ifdef RT_OS_SOLARIS
 # undef CS
 # undef DS
 #endif
@@ -2042,7 +2042,7 @@ typedef const X86DESC *PCX86DESC;
 /** @def X86DESC_BASE
  * Return the base address of a descriptor.
  */
-#define X86DESC_BASE(desc) \
+#define X86DESC_BASE(desc) /*ASM-NOINC*/ \
         (  ((uint32_t)((desc).Gen.u8BaseHigh2) << 24) \
          | (           (desc).Gen.u8BaseHigh1  << 16) \
          | (           (desc).Gen.u16BaseLow        ) )
@@ -2050,7 +2050,7 @@ typedef const X86DESC *PCX86DESC;
 /** @def X86DESC_LIMIT
  * Return the limit of a descriptor.
  */
-#define X86DESC_LIMIT(desc) \
+#define X86DESC_LIMIT(desc) /*ASM-NOINC*/ \
         (  ((uint32_t)((desc).Gen.u4LimitHigh) << 16) \
          | (           (desc).Gen.u16LimitLow       ) )
 
