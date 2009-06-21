@@ -525,5 +525,11 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
      * Delete the output instance (flushing and restoring of flags).
      */
     vmmR3FatalDumpInfoHlpDelete(&Hlp);
+
+    /*
+     * Reset the ring-0 long jump buffer and stack.
+     */
+    /** @todo reset the R0 for the calling virtual cpu. We'll assert (luckily) in
+     *        PGMPhys.cpp otherwise. */
 }
 
