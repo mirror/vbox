@@ -109,7 +109,9 @@ typedef struct REMHANDLERNOTIFICATION
     } u;
     uint32_t                    idxSelf;
     uint32_t volatile           idxNext;
-} REMHANDLERNOTIFICATION, *PREMHANDLERNOTIFICATION;
+} REMHANDLERNOTIFICATION;
+/** Pointer to a handler notification record. */
+typedef REMHANDLERNOTIFICATION *PREMHANDLERNOTIFICATION;
 
 /**
  * Converts a REM pointer into a VM pointer.

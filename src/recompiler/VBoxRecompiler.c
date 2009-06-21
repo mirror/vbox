@@ -2727,89 +2727,100 @@ REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
     /** @todo this isn't ensuring correct replay order. */
     if (VM_FF_TESTANDCLEAR(pVM, VM_FF_REM_HANDLER_NOTIFY_BIT))
     {
-        /* Lockless purging of pending notifications. */
-        uint32_t idxReqs = ASMAtomicXchgU32(&pVM->rem.s.idxPendingList, -1);
-        if (idxReqs == -1)
-            return;
+        PREMHANDLERNOTIFICATION pReqsRev;
+        PREMHANDLERNOTIFICATION pReqs;
+        uint32_t                idxNext;
+        uint32_t                idxReqs;
 
+        /* Lockless purging of pending notifications. */
+        idxReqs = ASMAtomicXchgU32(&pVM->rem.s.idxPendingList, UINT32_MAX);
+        if (idxReqs == UINT32_MAX)
+            return;
         Assert(idxReqs < RT_ELEMENTS(pVM->rem.s.aHandlerNotifications));
-        PREMHANDLERNOTIFICATION pReqs = &pVM->rem.s.aHandlerNotifications[idxReqs];
 
         /*
          * Reverse the list to process it in FIFO order.
          */
-        PREMHANDLERNOTIFICATION pReq = pReqs;
-        pReqs = NULL;
-        while (pReq)
+        pReqsRev = &pVM->rem.s.aHandlerNotifications[idxReqs];
+        pReqs    = NULL;
+        while (pReqsRev)
         {
-            PREMHANDLERNOTIFICATION pCur = pReq;
-
-            if (pReq->idxNext != -1)
+            PREMHANDLERNOTIFICATION pCur = pReqsRev;
+            idxNext = pReqsRev->idxNext;
+            if (idxNext != UINT32_MAX)
             {
-                Assert(pReq->idxNext < RT_ELEMENTS(pVM->rem.s.aHandlerNotifications));
-                pReq = &pVM->rem.s.aHandlerNotifications[pReq->idxNext];
+                Assert(idxNext < RT_ELEMENTS(pVM->rem.s.aHandlerNotifications));
+                pReqsRev = &pVM->rem.s.aHandlerNotifications[idxNext];
             }
             else
-                pReq = NULL;
-
-            pCur->idxNext = (pReqs) ? pReqs->idxSelf : -1;
+                pReqsRev = NULL;
+            pCur->idxNext = idxNext;
             pReqs = pCur;
         }
 
+        /*
+         * Loop thru the list, reinserting the record into the free list as they are
+         * processed to avoid having other EMTs running out of entries while we're flushing.
+         */
         while (pReqs)
         {
-            PREMHANDLERNOTIFICATION pRec = pReqs;
+            PREMHANDLERNOTIFICATION pCur = pReqs;
 
-            switch (pRec->enmKind)
+            switch (pCur->enmKind)
             {
                 case REMHANDLERNOTIFICATIONKIND_PHYSICAL_REGISTER:
                     remR3NotifyHandlerPhysicalRegister(pVM,
-                                                       pRec->u.PhysicalRegister.enmType,
-                                                       pRec->u.PhysicalRegister.GCPhys,
-                                                       pRec->u.PhysicalRegister.cb,
-                                                       pRec->u.PhysicalRegister.fHasHCHandler);
+                                                       pCur->u.PhysicalRegister.enmType,
+                                                       pCur->u.PhysicalRegister.GCPhys,
+                                                       pCur->u.PhysicalRegister.cb,
+                                                       pCur->u.PhysicalRegister.fHasHCHandler);
                     break;
 
                 case REMHANDLERNOTIFICATIONKIND_PHYSICAL_DEREGISTER:
                     remR3NotifyHandlerPhysicalDeregister(pVM,
-                                                         pRec->u.PhysicalDeregister.enmType,
-                                                         pRec->u.PhysicalDeregister.GCPhys,
-                                                         pRec->u.PhysicalDeregister.cb,
-                                                         pRec->u.PhysicalDeregister.fHasHCHandler,
-                                                         pRec->u.PhysicalDeregister.fRestoreAsRAM);
+                                                         pCur->u.PhysicalDeregister.enmType,
+                                                         pCur->u.PhysicalDeregister.GCPhys,
+                                                         pCur->u.PhysicalDeregister.cb,
+                                                         pCur->u.PhysicalDeregister.fHasHCHandler,
+                                                         pCur->u.PhysicalDeregister.fRestoreAsRAM);
                     break;
 
                 case REMHANDLERNOTIFICATIONKIND_PHYSICAL_MODIFY:
                     remR3NotifyHandlerPhysicalModify(pVM,
-                                                     pRec->u.PhysicalModify.enmType,
-                                                     pRec->u.PhysicalModify.GCPhysOld,
-                                                     pRec->u.PhysicalModify.GCPhysNew,
-                                                     pRec->u.PhysicalModify.cb,
-                                                     pRec->u.PhysicalModify.fHasHCHandler,
-                                                     pRec->u.PhysicalModify.fRestoreAsRAM);
+                                                     pCur->u.PhysicalModify.enmType,
+                                                     pCur->u.PhysicalModify.GCPhysOld,
+                                                     pCur->u.PhysicalModify.GCPhysNew,
+                                                     pCur->u.PhysicalModify.cb,
+                                                     pCur->u.PhysicalModify.fHasHCHandler,
+                                                     pCur->u.PhysicalModify.fRestoreAsRAM);
                     break;
 
                 default:
-                    AssertReleaseMsgFailed(("enmKind=%d\n", pRec->enmKind));
+                    AssertReleaseMsgFailed(("enmKind=%d\n", pCur->enmKind));
                     break;
             }
-            if (pReqs->idxNext != -1)
+
+            /*
+             * Advance pReqs.
+             */
+            idxNext = pCur->idxNext;
+            if (idxNext != UINT32_MAX)
             {
-                AssertMsg(pReqs->idxNext < RT_ELEMENTS(pVM->rem.s.aHandlerNotifications), ("pReqs->idxNext=%d\n", pReqs->idxNext));
-                pReqs = &pVM->rem.s.aHandlerNotifications[pReqs->idxNext];
+                AssertMsg(idxNext < RT_ELEMENTS(pVM->rem.s.aHandlerNotifications), ("idxNext=%d\n", idxNext));
+                pReqs = &pVM->rem.s.aHandlerNotifications[idxNext];
             }
             else
                 pReqs = NULL;
 
-            /* Put the record back into the free list */
-            uint32_t idxNext;
-
+            /*
+             * Put the record back into the free list.
+             */
             do
             {
                 idxNext = ASMAtomicUoReadU32(&pVM->rem.s.idxFreeList);
-                ASMAtomicWriteU32(&pRec->idxNext, idxNext);
+                ASMAtomicWriteU32(&pCur->idxNext, idxNext);
                 ASMCompilerBarrier();
-            } while (!ASMAtomicCmpXchgU32(&pVM->rem.s.idxFreeList, pRec->idxSelf, idxNext));
+            } while (!ASMAtomicCmpXchgU32(&pVM->rem.s.idxFreeList, pCur->idxSelf, idxNext));
         }
     }
 }
