@@ -820,7 +820,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                         }
                         uint64_t fPageShw;
                         rc = PGMShwGetPage(pVCpu, pvFault, &fPageShw, NULL);
-                        AssertMsg((RT_SUCCESS(rc) && ((fPageShw & X86_PTE_RW) || pVM->cCPUs > 1 /* new monitor can be installed during trap e execution */)), ("rc=%Rrc fPageShw=%RX64\n", rc, fPageShw));
+                        AssertMsg((RT_SUCCESS(rc) && (fPageShw & X86_PTE_RW)) || pVM->cCPUs > 1 /* new monitor can be installed/page table flushed between the trap exit and PGMTrap0eHandler */, ("rc=%Rrc fPageShw=%RX64\n", rc, fPageShw));
 #   endif /* VBOX_STRICT */
                         STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeOutOfSync, c);
                         STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2OutOfSyncHndObs; });
