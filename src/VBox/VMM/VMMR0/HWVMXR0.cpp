@@ -2273,12 +2273,18 @@ ResumeExecution:
 #endif
     /* Save the host state first. */
     rc  = VMXR0SaveHostState(pVM, pVCpu);
-    if (rc != VINF_SUCCESS)
+    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+    {
+        VMMR0LogFlushEnable(pVCpu);
         goto end;
+    }
     /* Load the guest state */
     rc = VMXR0LoadGuestState(pVM, pVCpu, pCtx);
-    if (rc != VINF_SUCCESS)
+    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+    {
+        VMMR0LogFlushEnable(pVCpu);
         goto end;
+    }
 
 #ifndef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
     /* Disable interrupts to make sure a poke will interrupt execution.
@@ -2344,9 +2350,10 @@ ResumeExecution:
     STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatInGC, z);
     STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatExit1, v);
 
-    if (rc != VINF_SUCCESS)
+    if (RT_UNLIKELY(rc != VINF_SUCCESS))
     {
         VMXR0ReportWorldSwitchError(pVM, pVCpu, rc, pCtx);
+        VMMR0LogFlushEnable(pVCpu);
         goto end;
     }
 
@@ -2371,9 +2378,7 @@ ResumeExecution:
     AssertRC(rc);
 
     /* Note! NOW IT'S SAFE FOR LOGGING! */
-#ifdef LOG_ENABLED
     VMMR0LogFlushEnable(pVCpu);
-#endif
     Log2(("Raw exit reason %08x\n", exitReason));
 
     /* Check if an injected event was interrupted prematurely. */
