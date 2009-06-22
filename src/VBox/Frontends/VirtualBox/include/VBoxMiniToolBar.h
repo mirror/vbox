@@ -78,6 +78,7 @@ private slots:
 
 private:
 
+    void initialize();
     void recreateMask();
     void moveToBase();
     QPoint mapFromScreen (const QPoint &aPoint);
