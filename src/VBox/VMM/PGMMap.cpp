@@ -676,7 +676,9 @@ VMMR3DECL(int) PGMR3MappingsDisable(PVM pVM)
     /* Only applies to VCPU 0. */
     PVMCPU pVCpu = &pVM->aCpus[0];
 
+    pgmLock(pVM);                           /* to avoid assertions */
     rc = pgmMapDeactivateCR3(pVM, pVCpu->pgm.s.pShwPageCR3R3);
+    pgmUnlock(pVM);
     AssertRCReturn(rc, rc);
 
     /*
@@ -943,6 +945,7 @@ static void pgmR3MapClearPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iOldPDE)
 {
     unsigned i     = pMap->cPTs;
     PVMCPU   pVCpu = VMMGetCpu(pVM);
+    pgmLock(pVM);                           /* to avoid assertions */
 
     pgmMapClearShadowPDEs(pVM, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3), pMap, iOldPDE, false /*fDeactivateCR3*/);
 
@@ -965,7 +968,10 @@ static void pgmR3MapClearPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iOldPDE)
         AssertFatal(iPDE < 512);
         pVM->pgm.s.apInterPaePDs[iPD]->a[iPDE].u = 0;
     }
+
+    pgmUnlock(pVM);
 }
+
 
 /**
  * Sets all PDEs involved with the mapping in the shadow and intermediate page tables.
@@ -978,6 +984,7 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
 {
     PPGM   pPGM  = &pVM->pgm.s;
     PVMCPU pVCpu = VMMGetCpu(pVM);
+    pgmLock(pVM);                           /* to avoid assertions */
 
     Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s) || PGMGetGuestMode(pVCpu) <= PGMMODE_PAE_NX);
 
@@ -1013,7 +1020,10 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
         PdePae1.u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT1;
         pPGM->apInterPaePDs[iPD]->a[iPDE] = PdePae1;
     }
+
+    pgmUnlock(pVM);
 }
+
 
 /**
  * Relocates a mapping to a new address.
