@@ -45,7 +45,8 @@ VBOX_APPROVED_GUI_LANGUAGES := \
 	id    \
 	tr    \
 	km_KH \
-    bg
+    bg    \
+    uk
 
 # The list of approved GUI languages including the default 'en'.
 VBOX_APPROVED_GUI_LANGUAGES_ALL := en $(VBOX_APPROVED_GUI_LANGUAGES)
