@@ -1618,6 +1618,8 @@ VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
     State.cErrors = 0;
     State.pVM = pVM;
 
+    Assert(PGMIsLockOwner(pVM));
+
     /*
      * Check the RAM flags against the handlers.
      */
