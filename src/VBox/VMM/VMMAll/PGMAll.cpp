@@ -872,6 +872,8 @@ int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE
     PPGMPOOLPAGE   pShwPage;
     int            rc;
 
+    Assert(PGMIsLockOwner(pVM));
+
     /* Allocate page directory if not present. */
     if (    !pPdpe->n.u1Present
         &&  !(pPdpe->u & X86_PDPE_PG_MASK))
@@ -963,6 +965,9 @@ DECLINLINE(int) pgmShwGetPaePoolPagePD(PPGMCPU pPGM, RTGCPTR GCPtr, PPGMPOOLPAGE
 {
     const unsigned  iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
     PX86PDPT        pPdpt = pgmShwGetPaePDPTPtr(pPGM);
+
+    Assert(PGMIsLockOwner(PGMCPU2VM(pPGM)));
+
     AssertReturn(pPdpt, VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT);    /* can't happen */
     if (!pPdpt->a[iPdPt].n.u1Present)
     {
@@ -1007,6 +1012,8 @@ int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E pGstPml4e, 
     bool           fPaging       = !!(CPUMGetGuestCR0(pVCpu) & X86_CR0_PG);
     PPGMPOOLPAGE   pShwPage;
     int            rc;
+
+    Assert(PGMIsLockOwner(pVM));
 
     /* Allocate page directory pointer table if not present. */
     if (    !pPml4e->n.u1Present
@@ -1105,6 +1112,9 @@ DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E 
     PPGMCPU         pPGM = &pVCpu->pgm.s;
     const unsigned  iPml4 = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
     PCX86PML4E      pPml4e = pgmShwGetLongModePML4EPtr(pPGM, iPml4);
+
+    Assert(PGMIsLockOwner(PGMCPU2VM(pPGM)));
+
     AssertReturn(pPml4e, VERR_INTERNAL_ERROR);
     if (ppPml4e)
         *ppPml4e = (PX86PML4E)pPml4e;
@@ -1154,6 +1164,7 @@ int pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *p
     int            rc;
 
     Assert(HWACCMIsNestedPagingActive(pVM));
+    Assert(PGMIsLockOwner(pVM));
 
     pPml4 = (PEPTPML4)PGMPOOL_PAGE_2_PTR_BY_PGMCPU(pPGM, pPGM->CTX_SUFF(pShwPageCR3));
     Assert(pPml4);
