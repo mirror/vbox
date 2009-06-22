@@ -1101,14 +1101,14 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
 
     LogFlow(("pgmPoolAccessHandler: pvFault=%RGv pPage=%p:{.idx=%d} GCPhysFault=%RGp\n", pvFault, pPage, pPage->idx, GCPhysFault));
 
+    pgmLock(pVM);
+
     /*
      * Disassemble the faulting instruction.
      */
     PDISCPUSTATE pDis = &pVCpu->pgm.s.DisState;
     int rc = EMInterpretDisasOne(pVM, pVCpu, pRegFrame, pDis, NULL);
-    AssertRCReturn(rc, rc);
-
-    pgmLock(pVM);
+    AssertReturnStmt(rc == VINF_SUCCESS, pgmUnlock(pVM), rc);
 
     if (PHYS_PAGE_ADDRESS(GCPhysFault) != PHYS_PAGE_ADDRESS(pPage->GCPhys))
     {
