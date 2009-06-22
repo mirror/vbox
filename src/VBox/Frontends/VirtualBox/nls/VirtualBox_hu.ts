@@ -135,6 +135,14 @@
         <source>Kernel driver not accessible</source>
         <translation>A kernel driver nem érhető el</translation>
     </message>
+    <message>
+        <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. It may help to completely uninstall and re-install VirtualBox.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;should fix that problem. Make sure that you don&apos;t mix the OSE version and the PUEL version of VirtualBox.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QIArrowSplitter</name>
@@ -145,6 +153,17 @@
     <message>
         <source>&amp;Next</source>
         <translation>&amp;Következő</translation>
+    </message>
+</context>
+<context>
+    <name>QIFileDialog</name>
+    <message>
+        <source>Select a directory</source>
+        <translation type="unfinished">Mappa kiválasztása</translation>
+    </message>
+    <message>
+        <source>Select a file</source>
+        <translation type="unfinished">Fájl kiválasztása</translation>
     </message>
 </context>
 <context>
@@ -1302,7 +1321,17 @@ Verzió %1</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Megmutatja a hardveres virtualizáció szolgáltatásainak állapotát ezen a virtuális gépen: &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;Megmutatja a hardveres virtualizáció szolgáltatásainak állapotát ezen a virtuális gépen: &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
+        <comment>Virtualization Stuff LED</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
+        <comment>Virtualization Stuff LED</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1713,7 +1742,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Please specify a filename into which the appliance information will be written. Currently VirtualBox supports the Open Virtualization Format (OVF).</source>
-        <translation>Válaszd ki a fájl nevét, melybe a gép információi lesznek kiírva. Jelenleg csak a Nyílt virtualizációs formátum támogatott a VirtualBox által.</translation>
+        <translation type="obsolete">Válaszd ki a fájl nevét, melybe a gép információi lesznek kiírva. Jelenleg csak a Nyílt virtualizációs formátum támogatott a VirtualBox által.</translation>
     </message>
     <message>
         <source>&amp;Export &gt;</source>
@@ -1726,6 +1755,62 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Write legacy OVF 0.9</source>
         <translation>OVF 0.9 &amp;használata</translation>
+    </message>
+    <message>
+        <source>Please choose a filename to export the OVF in.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please complete the additionally fields like the username, password and the bucket. Finally you have to provide a filename for the OVF target.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please complete the additionally fields like the username, password, hostname and the bucket. Finally you have to provide a filename for the OVF target.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Checking files ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing files ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please specify the target for the OVF export. You can choose between a local file system export, the uploading of the OVF to the Sun Cloud service or an S3 storage server.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Local Filesystem </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sun &amp;Cloud</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Simple Storage System (S3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Username:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Password:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;File:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Bucket:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Hostname:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2243,7 +2328,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;%3 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation>&lt;nobr&gt;%3 MB&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;%3 MB&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>General</source>
@@ -2258,7 +2343,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;%4 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation>&lt;nobr&gt;%4 MB&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;%4 MB&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Boot Order</source>
@@ -2398,7 +2483,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>VRDP Server Port</source>
         <comment>details report (VRDP)</comment>
-        <translation>VRDP szerver port</translation>
+        <translation type="obsolete">VRDP szerver port</translation>
     </message>
     <message>
         <source>%1</source>
@@ -2408,12 +2493,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Disabled</source>
         <comment>details report (VRDP)</comment>
-        <translation>Letiltva</translation>
+        <translation type="obsolete">Letiltva</translation>
     </message>
     <message>
         <source>Remote Display</source>
         <comment>details report</comment>
-        <translation>Távoli képernyő</translation>
+        <translation type="obsolete">Távoli képernyő</translation>
     </message>
     <message>
         <source>Opening URLs is not implemented yet.</source>
@@ -2706,11 +2791,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Select a directory</source>
-        <translation>Mappa kiválasztása</translation>
+        <translation type="obsolete">Mappa kiválasztása</translation>
     </message>
     <message>
         <source>Select a file</source>
-        <translation>Fájl kiválasztása</translation>
+        <translation type="obsolete">Fájl kiválasztása</translation>
     </message>
     <message>
         <source>Unknown device %1:%2</source>
@@ -3068,7 +3153,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Memóriavirtualizáció</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -3144,6 +3229,51 @@ p, li { white-space: pre-wrap; }
         <source>Host-only Adapter</source>
         <comment>NetworkAttachmentType</comment>
         <translation>Host-only kártya</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Processor(s)</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Display Server Port</source>
+        <comment>details report (VRDP Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Display Server</source>
+        <comment>details report (VRDP Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (VRDP Server)</comment>
+        <translation type="unfinished">Letiltva</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Raw File</source>
+        <comment>PortMode</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3824,6 +3954,21 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>VBoxMiniToolBar</name>
+    <message>
+        <source>Always show the toolbar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit Full Screen or Seamless Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close VM</source>
+        <translation type="unfinished">Virtuális gép bezárása</translation>
+    </message>
+</context>
+<context>
     <name>VBoxNIList</name>
     <message>
         <source>VirtualBox Host Interface %1</source>
@@ -4335,11 +4480,15 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>V&amp;ersion:</source>
-        <translation>V&amp;erzió:</translation>
+        <translation type="obsolete">V&amp;erzió:</translation>
     </message>
     <message>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation>A tervezett vendég operációs rendszer típusa.</translation>
+    </message>
+    <message>
+        <source>&amp;Version:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4650,7 +4799,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A VirtualBox regisztrálása sikertelen&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;A VirtualBox regisztrálása sikertelen&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
@@ -5022,7 +5171,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;The file already exists in &quot;%2&quot;. Replacing it will overwrite its contents.</source>
-        <translation>Egy &lt;b&gt;%1&lt;/b&gt; nevű fájl már létezik. Le akarod cserélni?&lt;br /&gt;&lt;br /&gt;A fájl már létezik itt: &quot;%2&quot;. A lecseréléssel felülíródik a tartalma.</translation>
+        <translation type="obsolete">Egy &lt;b&gt;%1&lt;/b&gt; nevű fájl már létezik. Le akarod cserélni?&lt;br /&gt;&lt;br /&gt;A fájl már létezik itt: &quot;%2&quot;. A lecseréléssel felülíródik a tartalma.</translation>
     </message>
     <message>
         <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
@@ -5125,12 +5274,40 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <source>&lt;p&gt;Deleting this host-only network will lead to the deleting of the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
         <translation type="unfinished">&lt;p&gt;Ezen host-only hálózat törlésével törlődni fog az erre a hálózatra csatlakozó host-only interfész is. El akarod távolítani az (host-only hálózat) interfészt: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Megjegyzés:&lt;/b&gt; ezt az interfészt talán az egyik virtuális géped egy vagy több hálózati kártyája is használja. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</translation>
     </message>
+    <message>
+        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to register the VirtualBox product.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to check files.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to remove file.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxProgressDialog</name>
     <message>
         <source>&amp;Cancel</source>
-        <translation>&amp;Mégsem</translation>
+        <translation type="obsolete">&amp;Mégsem</translation>
+    </message>
+    <message>
+        <source>Time remaining: %1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5145,7 +5322,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>&amp;Name</source>
-        <translation>&amp;Név</translation>
+        <translation type="obsolete">&amp;Név</translation>
     </message>
     <message>
         <source>Enter your full name using Latin characters.</source>
@@ -5153,7 +5330,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>&amp;E-mail</source>
-        <translation>&amp;E-mail</translation>
+        <translation type="obsolete">&amp;E-mail</translation>
     </message>
     <message>
         <source>Enter your valid e-mail address.</source>
@@ -5161,7 +5338,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>&amp;Please do not use this information to contact me</source>
-        <translation>Ne használjátok ezt az információt a ka&amp;pcsolatfelvételhez</translation>
+        <translation type="obsolete">Ne használjátok ezt az információt a ka&amp;pcsolatfelvételhez</translation>
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from innotek at the e-mail address specified above.</source>
@@ -5189,19 +5366,75 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Kérlek töltsd ki ezt a regisztrációs űrlapot, hogy tudjuk, hogy használod a VirtualBox-ot. Ha akarod, a friss VirtualBox-os hírekről és frissítésekről is értesítünk.&lt;/p&gt;&lt;p&gt;Add meg a nevedet ékezet nélkül, és az e-mail címedet az alábbi mezőkben. A Sun Microsystems ezeket az adatokat csakis statisztikai célokra és hírlevél küldésére használja. Természetesen a Sun Microsystems vállalja, hogy harmadik fél számára ezeket az adatokat nem továbbítja. Adatkezelési szabályainkról bővebben a VirtualBox kézikönyv &lt;b&gt;Privacy Policy&lt;/b&gt; részében olvashatsz, vagy a VirtualBox &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; oldalán.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Kérlek töltsd ki ezt a regisztrációs űrlapot, hogy tudjuk, hogy használod a VirtualBox-ot. Ha akarod, a friss VirtualBox-os hírekről és frissítésekről is értesítünk.&lt;/p&gt;&lt;p&gt;Add meg a nevedet ékezet nélkül, és az e-mail címedet az alábbi mezőkben. A Sun Microsystems ezeket az adatokat csakis statisztikai célokra és hírlevél küldésére használja. Természetesen a Sun Microsystems vállalja, hogy harmadik fél számára ezeket az adatokat nem továbbítja. Adatkezelési szabályainkról bővebben a VirtualBox kézikönyv &lt;b&gt;Privacy Policy&lt;/b&gt; részében olvashatsz, vagy a VirtualBox &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; oldalán.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from Sun Microsystems at the e-mail address specified above.</source>
-        <translation>Akkor engedélyezd ezt, ha nem szeretnél levelet kapni az Sun Microsystems-től erre az e-mail címre.</translation>
+        <translation type="obsolete">Akkor engedélyezd ezt, ha nem szeretnél levelet kapni az Sun Microsystems-től erre az e-mail címre.</translation>
     </message>
     <message>
         <source>C&amp;onfirm</source>
-        <translation>Meg&amp;erősítés</translation>
+        <translation type="obsolete">Meg&amp;erősítés</translation>
     </message>
     <message>
         <source>Cancel</source>
         <translation>Mégsem</translation>
+    </message>
+    <message>
+        <source>Select Country/Territory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use the Latin characters to fill the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>I &amp;have a Sun Online account already:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;E-mail:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Password:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>I &amp;would like to register creating a new Sun Online account:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;First Name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Last Name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Company:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Co&amp;untry:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>E-&amp;mail:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>P&amp;assword:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Co&amp;nfirm Password:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Register</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5720,7 +5953,7 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation>Pillanatkép el&amp;dobása</translation>
+        <translation type="obsolete">Pillanatkép el&amp;dobása</translation>
     </message>
     <message>
         <source>Ctrl+Shift+D</source>
@@ -5832,7 +6065,7 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation>Eldobja a kiválasztott állapotát a gépnek</translation>
+        <translation type="obsolete">Eldobja a kiválasztott állapotát a gépnek</translation>
     </message>
     <message>
         <source>Ctrl+Shift+S</source>
@@ -5869,6 +6102,14 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
     <message>
         <source>Show details of the selected snapshot</source>
         <translation>A kiválasztott pillanatkép részletei</translation>
+    </message>
+    <message>
+        <source>&amp;Merge Snapshot with Parent</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Merges the snapshot into the parent snapshot or disk image and then deletes the now redundant snapshot file.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6879,6 +7120,81 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>VBoxVMSettingsDisplay</name>
+    <message>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <translation type="unfinished">kevesebb, mint &lt;b&gt;%1&lt;/b&gt; videó memóriát rendeltél a géphez, ami nem éri el a teljes képernyőhöz vagy az asztal-integráció engedélyezéséhez. </translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
+        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Video</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video &amp;Memory:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the amount of video memory provided to the virtual machine.</source>
+        <translation type="unfinished">Megadhatod a virtuális gép videomemóriájának méretét.</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="unfinished">MB</translation>
+    </message>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="unfinished">Bővített képességek:</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
+        <translation type="unfinished">Ha engedélyezed, a 3D gyorsítás bekapcsolásra kerül a virtuális gép videókártyáján.</translation>
+    </message>
+    <message>
+        <source>Enable &amp;3D Acceleration</source>
+        <translation type="unfinished">&amp;3D gyorsítás engedélyezése</translation>
+    </message>
+    <message>
+        <source>&amp;Remote Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
+        <translation type="unfinished">Ha engedélyezed, a virtuális gép RDP szerverré válik, lehetővé téve a virtuális gép kezelését egy egyszerű RDP kliensből.</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Server</source>
+        <translation type="unfinished">Sz&amp;erver bekapcsolása</translation>
+    </message>
+    <message>
+        <source>Server &amp;Port:</source>
+        <translation type="unfinished">Szerver &amp;port:</translation>
+    </message>
+    <message>
+        <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
+        <translation type="unfinished">A VRDP szerver portszáma. Ha &lt;tt&gt;0&lt;/tt&gt;-t (nulla) adsz meg, az alapértelmezés lép érvényre.</translation>
+    </message>
+    <message>
+        <source>Authentication &amp;Method:</source>
+        <translation type="unfinished">Authentikációs &amp;metódus:</translation>
+    </message>
+    <message>
+        <source>Defines the VRDP authentication method.</source>
+        <translation type="unfinished">A VRDP authentikációs metódus.</translation>
+    </message>
+    <message>
+        <source>Authentication &amp;Timeout:</source>
+        <translation type="unfinished">Authentikációs &amp;időkorlát:</translation>
+    </message>
+    <message>
+        <source>Specifies the timeout for guest authentication, in milliseconds.</source>
+        <translation type="unfinished">Időkorlát a vendég authentikálásához, millisec-ben.</translation>
+    </message>
+</context>
+<context>
     <name>VBoxVMSettingsDlg</name>
     <message>
         <source>Category</source>
@@ -7677,7 +7993,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     </message>
     <message>
         <source>Remote Display</source>
-        <translation>Távoli képernyő</translation>
+        <translation type="obsolete">Távoli képernyő</translation>
     </message>
     <message>
         <source>%1 - %2</source>
@@ -7686,6 +8002,22 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     <message>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
         <translation type="obsolete">%2 a &lt;b&gt;%1&lt;/b&gt; lapon</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have selected a 64-bit guest OS type for this VM. As such guestsrequire hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have selected a 64-bit guest OS type for this VM. VirtualBox does not currently support more than one virtual CPU for 64-bit guests executed on 32-bit hosts.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7743,7 +8075,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     <name>VBoxVMSettingsGeneral</name>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
@@ -7755,7 +8087,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     </message>
     <message>
         <source>Identification</source>
-        <translation>Azonosítás</translation>
+        <translation type="obsolete">Azonosítás</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
@@ -7775,31 +8107,19 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation>Alap&amp;memória mérete</translation>
+        <translation type="obsolete">Alap&amp;memória mérete</translation>
     </message>
     <message>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation>A virtuális gép memóriahasználatát állítja be. Ha túl magas az értek, a virtuális gép nem indul el.</translation>
-    </message>
-    <message>
-        <source>&lt;</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>&gt;</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <translation></translation>
+        <translation type="obsolete">A virtuális gép memóriahasználatát állítja be. Ha túl magas az értek, a virtuális gép nem indul el.</translation>
     </message>
     <message>
         <source>&amp;Video Memory Size</source>
-        <translation>&amp;Videómemória mérete</translation>
+        <translation type="obsolete">&amp;Videómemória mérete</translation>
     </message>
     <message>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation>Megadhatod a virtuális gép videomemóriájának méretét.</translation>
+        <translation type="obsolete">Megadhatod a virtuális gép videomemóriájának méretét.</translation>
     </message>
     <message>
         <source>&amp;Advanced</source>
@@ -7807,67 +8127,63 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     </message>
     <message>
         <source>Boo&amp;t Order:</source>
-        <translation>Boo&amp;t sorrend: </translation>
+        <translation type="obsolete">Boo&amp;t sorrend: </translation>
     </message>
     <message>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation>Meghatározza a bootsorrendet. A pipadobozok segítségével lehetőség nyílik a boot eszközök engedélyezésére/tiltására, illetve az elemek fel-le mozgatásával a bootolási sorrend meghatározására.</translation>
-    </message>
-    <message>
-        <source>[device]</source>
-        <translation></translation>
+        <translation type="obsolete">Meghatározza a bootsorrendet. A pipadobozok segítségével lehetőség nyílik a boot eszközök engedélyezésére/tiltására, illetve az elemek fel-le mozgatásával a bootolási sorrend meghatározására.</translation>
     </message>
     <message>
         <source>Move Up (Ctrl-Up)</source>
-        <translation>Fel (Ctrl+Fel)</translation>
+        <translation type="obsolete">Fel (Ctrl+Fel)</translation>
     </message>
     <message>
         <source>Moves the selected boot device up.</source>
-        <translation>A kiválasztott eszközt feljebb teszi.</translation>
+        <translation type="obsolete">A kiválasztott eszközt feljebb teszi.</translation>
     </message>
     <message>
         <source>Move Down (Ctrl-Down)</source>
-        <translation>Le (Ctrl+Le)</translation>
+        <translation type="obsolete">Le (Ctrl+Le)</translation>
     </message>
     <message>
         <source>Moves the selected boot device down.</source>
-        <translation>A kiválasztott eszközt lejjebb teszi.</translation>
+        <translation type="obsolete">A kiválasztott eszközt lejjebb teszi.</translation>
     </message>
     <message>
         <source>Extended Features:</source>
-        <translation>Bővített képességek:</translation>
+        <translation type="obsolete">Bővített képességek:</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>Ha engedélyezed, a virtuális gép támogatni fogja az Advanced Configuration and Power Management Interface-t (ACPI). &lt;b&gt;Figyelem:&lt;/b&gt; ne tiltsd le, ha már telepítettél egy Windows vendég rendszert!</translation>
+        <translation type="obsolete">Ha engedélyezed, a virtuális gép támogatni fogja az Advanced Configuration and Power Management Interface-t (ACPI). &lt;b&gt;Figyelem:&lt;/b&gt; ne tiltsd le, ha már telepítettél egy Windows vendég rendszert!</translation>
     </message>
     <message>
         <source>Enable A&amp;CPI</source>
-        <translation>A&amp;CPI engedélyezése</translation>
+        <translation type="obsolete">A&amp;CPI engedélyezése</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>Ha engedélyezed, a virtuális gép támogatni fogja az Input Output APIC-t (IO APIC), amely egy picit visszafogja a virtuális gép teljesítményét. &lt;b&gt;Figyelem:&lt;/b&gt; ne tiltsd le, ha már telepítettél egy Windows vendég rendszert!</translation>
+        <translation type="obsolete">Ha engedélyezed, a virtuális gép támogatni fogja az Input Output APIC-t (IO APIC), amely egy picit visszafogja a virtuális gép teljesítményét. &lt;b&gt;Figyelem:&lt;/b&gt; ne tiltsd le, ha már telepítettél egy Windows vendég rendszert!</translation>
     </message>
     <message>
         <source>Enable IO A&amp;PIC</source>
-        <translation>IO A&amp;PIC engedélyezése</translation>
+        <translation type="obsolete">IO A&amp;PIC engedélyezése</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation>Ha engedélyezed, a virtuális gép megpróbálja kihasználni a gazdagép processzorának hardveres virtualizációs képességét (pl. Intel VT-x vagy AMD-V).</translation>
+        <translation type="obsolete">Ha engedélyezed, a virtuális gép megpróbálja kihasználni a gazdagép processzorának hardveres virtualizációs képességét (pl. Intel VT-x vagy AMD-V).</translation>
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation>&amp;VT-x/AMD-V engedélyezése</translation>
+        <translation type="obsolete">&amp;VT-x/AMD-V engedélyezése</translation>
     </message>
     <message>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation>Ha engedélyezed, a processzorod Physycal Address  Extension (PAE) képessége ki lesz használva ennél a virtuális gépnél.</translation>
+        <translation type="obsolete">Ha engedélyezed, a processzorod Physycal Address  Extension (PAE) képessége ki lesz használva ennél a virtuális gépnél.</translation>
     </message>
     <message>
         <source>Enable PA&amp;E/NX</source>
-        <translation>PA&amp;E/NX engedélyezése</translation>
+        <translation type="obsolete">PA&amp;E/NX engedélyezése</translation>
     </message>
     <message>
         <source>&amp;Shared Clipboard:</source>
@@ -7879,11 +8195,11 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     </message>
     <message>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation>A virtuális IDE vezérlő típusa. Ezzel a beállítással lehet megadni, hogy a VirtualBox milyen IDE eszközöket mutasson a vendég rendszer felé.</translation>
+        <translation type="obsolete">A virtuális IDE vezérlő típusa. Ezzel a beállítással lehet megadni, hogy a VirtualBox milyen IDE eszközöket mutasson a vendég rendszer felé.</translation>
     </message>
     <message>
         <source>&amp;IDE Controller Type:</source>
-        <translation>&amp;IDE vezérlő típusa:</translation>
+        <translation type="obsolete">&amp;IDE vezérlő típusa:</translation>
     </message>
     <message>
         <source>S&amp;napshot Folder:</source>
@@ -7899,7 +8215,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     </message>
     <message>
         <source>&amp;Other</source>
-        <translation>T&amp;ovábbi</translation>
+        <translation type="obsolete">T&amp;ovábbi</translation>
     </message>
     <message>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
@@ -7907,44 +8223,64 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     </message>
     <message>
         <source>&amp;Remember Mounted Media</source>
-        <translation>Emlékezzen a csatolt médiák&amp;ra</translation>
+        <translation type="obsolete">Emlékezzen a csatolt médiák&amp;ra</translation>
     </message>
     <message>
         <source>Runtime:</source>
-        <translation>Futtatókörnyezet:</translation>
+        <translation type="obsolete">Futtatókörnyezet:</translation>
     </message>
     <message>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
-        <translation>kevesebb, mint &lt;b&gt;%1&lt;/b&gt; videó memóriát rendeltél a géphez, ami nem éri el a teljes képernyőhöz vagy az asztal-integráció engedélyezéséhez. </translation>
+        <translation type="obsolete">kevesebb, mint &lt;b&gt;%1&lt;/b&gt; videó memóriát rendeltél a géphez, ami nem éri el a teljes képernyőhöz vagy az asztal-integráció engedélyezéséhez. </translation>
     </message>
     <message>
         <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
-        <translation>Ha engedélyezed, a 3D gyorsítás bekapcsolásra kerül a virtuális gép videókártyáján.</translation>
+        <translation type="obsolete">Ha engedélyezed, a 3D gyorsítás bekapcsolásra kerül a virtuális gép videókártyáján.</translation>
     </message>
     <message>
         <source>Enable &amp;3D Acceleration</source>
-        <translation>&amp;3D gyorsítás engedélyezése</translation>
+        <translation type="obsolete">&amp;3D gyorsítás engedélyezése</translation>
     </message>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation>több, mint &lt;b&gt;%1&lt;/b&gt; memóriát rendeltél a virtuális géphez a rendelkezésre álló &lt;b&gt;%2&lt;/b&gt; memóriából. Így túl kevés marad a gazda operációs rendszernek, adj kevesebb memóriát a virtuális gépnek.</translation>
+        <translation type="obsolete">több, mint &lt;b&gt;%1&lt;/b&gt; memóriát rendeltél a virtuális géphez a rendelkezésre álló &lt;b&gt;%2&lt;/b&gt; memóriából. Így túl kevés marad a gazda operációs rendszernek, adj kevesebb memóriát a virtuális gépnek.</translation>
     </message>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
-        <translation>több, mint &lt;b&gt;%1&lt;/b&gt; memóriát rendeltél a virtuális géphez a rendelkezésre álló &lt;b&gt;%2&lt;/b&gt; memóriából. Így túl kevés marad a gazda operációs rendszernek, ami problémákat okozhat.</translation>
+        <translation type="obsolete">több, mint &lt;b&gt;%1&lt;/b&gt; memóriát rendeltél a virtuális géphez a rendelkezésre álló &lt;b&gt;%2&lt;/b&gt; memóriából. Így túl kevés marad a gazda operációs rendszernek, ami problémákat okozhat.</translation>
     </message>
     <message>
         <source>there is a 64 bits guest OS type assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else your guest will fail to detect a 64 bits CPU and will not be able to boot, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
         <translatorcomment>TODO: Too looooooooong...</translatorcomment>
-        <translation>ez egy 64 bites vendég rendszerrel rendelkező gép, melynek futtatásához szükség van a processzor virtualizációs tulajdonságának (VT-x/AMD-V) engedélyezéséhez, különben a vendég rendszer nem lesz képes detektálni a 64 bites CPU-t, emiatt képtelen lesz bootolni, így ez az opció automatikusan engedélyezve lesz, ha megnyomod az OK gombot.</translation>
+        <translation type="obsolete">ez egy 64 bites vendég rendszerrel rendelkező gép, melynek futtatásához szükség van a processzor virtualizációs tulajdonságának (VT-x/AMD-V) engedélyezéséhez, különben a vendég rendszer nem lesz képes detektálni a 64 bites CPU-t, emiatt képtelen lesz bootolni, így ez az opció automatikusan engedélyezve lesz, ha megnyomod az OK gombot.</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation>Ha engedélyezed, a virtuális gép meg fogja próbálni használni a processzor memóriavirtualizációs kiterjesztését.</translation>
+        <translation type="obsolete">Ha engedélyezed, a virtuális gép meg fogja próbálni használni a processzor memóriavirtualizációs kiterjesztését.</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
-        <translation>Memóriavirtualizáció en&amp;gedélyezése</translation>
+        <translation type="obsolete">Memóriavirtualizáció en&amp;gedélyezése</translation>
+    </message>
+    <message>
+        <source>Removable Media:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remember Runtime Changes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mini ToolBar:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show In &amp;Fullscreen/Seamless</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8008,6 +8344,14 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     <message>
         <source>&amp;Enable Additional Controller</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IDE &amp;Controller Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
+        <translation type="unfinished">A virtuális IDE vezérlő típusa. Ezzel a beállítással lehet megadni, hogy a VirtualBox milyen IDE eszközöket mutasson a vendég rendszer felé.</translation>
     </message>
 </context>
 <context>
@@ -8416,11 +8760,15 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     </message>
     <message>
         <source>Port &amp;Path:</source>
-        <translation>&amp;Port útvonal:</translation>
+        <translation type="obsolete">&amp;Port útvonal:</translation>
     </message>
     <message>
         <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation>A port útvonala, ha a port &lt;b&gt;Gazda cső&lt;/b&gt; üzemmódban működik, vagy a gazda soros portjának neve ha a port &lt;b&gt;Gazda eszköz&lt;/b&gt; üzemmódban működik.</translation>
+    </message>
+    <message>
+        <source>Port/File &amp;Path:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8436,6 +8784,151 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     <message>
         <source>Duplicate port path is entered </source>
         <translation>Kétszer van ugyanaz az útvonal megadva </translation>
+    </message>
+</context>
+<context>
+    <name>VBoxVMSettingsSystem</name>
+    <message>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
+        <translation type="unfinished">több, mint &lt;b&gt;%1&lt;/b&gt; memóriát rendeltél a virtuális géphez a rendelkezésre álló &lt;b&gt;%2&lt;/b&gt; memóriából. Így túl kevés marad a gazda operációs rendszernek, adj kevesebb memóriát a virtuális gépnek.</translation>
+    </message>
+    <message>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <translation type="unfinished">több, mint &lt;b&gt;%1&lt;/b&gt; memóriát rendeltél a virtuális géphez a rendelkezésre álló &lt;b&gt;%2&lt;/b&gt; memóriából. Így túl kevés marad a gazda operációs rendszernek, ami problémákat okozhat.</translation>
+    </message>
+    <message>
+        <source>for performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have assigned more virtual CPUs to the virtual machine than the number of physical CPUs on your host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>there is more than one virtual CPU assigned for this VM, which requires IO-APIC feature to be enabled too, else SMP will not be able to work, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>there is more than one virtual CPU assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else SMP will not be able to work, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
+        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</source>
+        <comment>%1 is 1 for now</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
+        <comment>%1 is 32 for now</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Motherboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Base &amp;Memory:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="unfinished">MB</translation>
+    </message>
+    <message>
+        <source>&amp;Boot Order:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move Down (Ctrl-Down)</source>
+        <translation type="unfinished">Le (Ctrl+Le)</translation>
+    </message>
+    <message>
+        <source>Moves the selected boot device down.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move Up (Ctrl-Up)</source>
+        <translation type="unfinished">Fel (Ctrl+Fel)</translation>
+    </message>
+    <message>
+        <source>Moves the selected boot device up.</source>
+        <translation type="unfinished">A kiválasztott eszközt feljebb teszi.</translation>
+    </message>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="unfinished">Bővített képességek:</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation type="unfinished">Ha engedélyezed, a virtuális gép támogatni fogja az Advanced Configuration and Power Management Interface-t (ACPI). &lt;b&gt;Figyelem:&lt;/b&gt; ne tiltsd le, ha már telepítettél egy Windows vendég rendszert!</translation>
+    </message>
+    <message>
+        <source>Enable &amp;ACPI</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation type="unfinished">Ha engedélyezed, a virtuális gép támogatni fogja az Input Output APIC-t (IO APIC), amely egy picit visszafogja a virtuális gép teljesítményét. &lt;b&gt;Figyelem:&lt;/b&gt; ne tiltsd le, ha már telepítettél egy Windows vendég rendszert!</translation>
+    </message>
+    <message>
+        <source>Enable &amp;IO APIC</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Processor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Processor(s):</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the number of virtual CPUs in the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
+        <translation type="unfinished">Ha engedélyezed, a processzorod Physycal Address  Extension (PAE) képessége ki lesz használva ennél a virtuális gépnél.</translation>
+    </message>
+    <message>
+        <source>Enable PA&amp;E/NX</source>
+        <translation type="unfinished">PA&amp;E/NX engedélyezése</translation>
+    </message>
+    <message>
+        <source>Acce&amp;leration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hardware Virtualization:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
+        <translation type="unfinished">Ha engedélyezed, a virtuális gép megpróbálja kihasználni a gazdagép processzorának hardveres virtualizációs képességét (pl. Intel VT-x vagy AMD-V).</translation>
+    </message>
+    <message>
+        <source>Enable &amp;VT-x/AMD-V</source>
+        <translation type="unfinished">&amp;VT-x/AMD-V engedélyezése</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
+        <translation type="unfinished">Ha engedélyezed, a virtuális gép meg fogja próbálni használni a processzor memóriavirtualizációs kiterjesztését.</translation>
+    </message>
+    <message>
+        <source>Enable Nested Pa&amp;ging</source>
+        <translation type="unfinished">Memóriavirtualizáció en&amp;gedélyezése</translation>
     </message>
 </context>
 <context>
@@ -8628,35 +9121,35 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     <name>VBoxVMSettingsVRDP</name>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation>Ha engedélyezed, a virtuális gép RDP szerverré válik, lehetővé téve a virtuális gép kezelését egy egyszerű RDP kliensből.</translation>
+        <translation type="obsolete">Ha engedélyezed, a virtuális gép RDP szerverré válik, lehetővé téve a virtuális gép kezelését egy egyszerű RDP kliensből.</translation>
     </message>
     <message>
         <source>&amp;Enable VRDP Server</source>
-        <translation>VRDP szerver &amp;engedélyezése</translation>
+        <translation type="obsolete">VRDP szerver &amp;engedélyezése</translation>
     </message>
     <message>
         <source>Server &amp;Port:</source>
-        <translation>Szerver &amp;port:</translation>
+        <translation type="obsolete">Szerver &amp;port:</translation>
     </message>
     <message>
         <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
-        <translation>A VRDP szerver portszáma. Ha &lt;tt&gt;0&lt;/tt&gt;-t (nulla) adsz meg, az alapértelmezés lép érvényre.</translation>
+        <translation type="obsolete">A VRDP szerver portszáma. Ha &lt;tt&gt;0&lt;/tt&gt;-t (nulla) adsz meg, az alapértelmezés lép érvényre.</translation>
     </message>
     <message>
         <source>Authentication &amp;Method:</source>
-        <translation>Authentikációs &amp;metódus:</translation>
+        <translation type="obsolete">Authentikációs &amp;metódus:</translation>
     </message>
     <message>
         <source>Defines the VRDP authentication method.</source>
-        <translation>A VRDP authentikációs metódus.</translation>
+        <translation type="obsolete">A VRDP authentikációs metódus.</translation>
     </message>
     <message>
         <source>Authentication &amp;Timeout:</source>
-        <translation>Authentikációs &amp;időkorlát:</translation>
+        <translation type="obsolete">Authentikációs &amp;időkorlát:</translation>
     </message>
     <message>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation>Időkorlát a vendég authentikálásához, millisec-ben.</translation>
+        <translation type="obsolete">Időkorlát a vendég authentikálásához, millisec-ben.</translation>
     </message>
 </context>
 </TS>
