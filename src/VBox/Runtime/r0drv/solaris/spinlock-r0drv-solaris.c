@@ -32,7 +32,6 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-solaris-kernel.h"
-#include <sys/spl.h>
 
 #include <iprt/spinlock.h>
 #include <iprt/err.h>
