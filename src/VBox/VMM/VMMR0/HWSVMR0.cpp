@@ -1028,15 +1028,14 @@ ResumeExecution:
 #ifdef VBOX_STRICT
     idCpuCheck = RTMpCpuId();
 #endif
-#ifdef LOG_ENABLED
     VMMR0LogFlushDisable(pVCpu);
-#endif
 
     /* Load the guest state; *must* be here as it sets up the shadow cr0 for lazy fpu syncing! */
     rc = SVMR0LoadGuestState(pVM, pVCpu, pCtx);
-    if (rc != VINF_SUCCESS)
+    if (RT_UNLIKELY(rc != VINF_SUCCESS))
     {
         STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatEntry, x);
+        VMMR0LogFlushEnable(pVCpu);
         goto end;
     }
 
@@ -1154,7 +1153,7 @@ ResumeExecution:
     /* Reason for the VM exit */
     exitCode = pVMCB->ctrl.u64ExitCode;
 
-    if (exitCode == (uint64_t)SVM_EXIT_INVALID)          /* Invalid guest state. */
+    if (RT_UNLIKELY(exitCode == (uint64_t)SVM_EXIT_INVALID))      /* Invalid guest state. */
     {
         HWACCMDumpRegs(pVM, pVCpu, pCtx);
 #ifdef DEBUG
@@ -1275,6 +1274,7 @@ ResumeExecution:
 
 #endif
         rc = VERR_SVM_UNABLE_TO_START_VM;
+        VMMR0LogFlushEnable(pVCpu);
         goto end;
     }
 
@@ -1325,9 +1325,7 @@ ResumeExecution:
     }
 
     /* Note! NOW IT'S SAFE FOR LOGGING! */
-#ifdef LOG_ENABLED
     VMMR0LogFlushEnable(pVCpu);
-#endif
 
     /* Take care of instruction fusing (sti, mov ss) (see 15.20.5 Interrupt Shadows) */
     if (pVMCB->ctrl.u64IntShadow & SVM_INTERRUPT_SHADOW_ACTIVE)
