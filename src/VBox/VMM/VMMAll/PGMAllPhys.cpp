@@ -1417,12 +1417,15 @@ static int pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *pv
         Assert((pPhys->Core.KeyLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK);
         Assert(pPhys->CTX_SUFF(pfnHandler));
 
+        PFNPGMR3PHYSHANDLER pfnHandler = pPhys->CTX_SUFF(pfnHandler);
+        void *pvUser = pPhys->CTX_SUFF(pvUser);
+
         Log5(("pgmPhysReadHandler: GCPhys=%RGp cb=%#x pPage=%R[pgmpage] phys %s\n", GCPhys, cb, pPage, R3STRING(pPhys->pszDesc) ));
         STAM_PROFILE_START(&pPhys->Stat, h);
         Assert(PGMIsLockOwner(pVM));
         /* Release the PGM lock as MMIO handlers take the IOM lock. (deadlock prevention) */
         pgmUnlock(pVM);
-        rc = pPhys->CTX_SUFF(pfnHandler)(pVM, GCPhys, (void *)pvSrc, pvBuf, cb, PGMACCESSTYPE_READ, pPhys->CTX_SUFF(pvUser));
+        rc = pfnHandler(pVM, GCPhys, (void *)pvSrc, pvBuf, cb, PGMACCESSTYPE_READ, pvUser);
         pgmLock(pVM);
 # ifdef VBOX_WITH_STATISTICS
         pPhys = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
@@ -1657,11 +1660,14 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
                 rc = VINF_SUCCESS;
             if (RT_SUCCESS(rc))
             {
+                PFNPGMR3PHYSHANDLER pfnHandler = pCur->CTX_SUFF(pfnHandler);
+                void *pvUser = pCur->CTX_SUFF(pvUser);
+
                 STAM_PROFILE_START(&pCur->Stat, h);
                 Assert(PGMIsLockOwner(pVM));
                 /* Release the PGM lock as MMIO handlers take the IOM lock. (deadlock prevention) */
                 pgmUnlock(pVM);
-                rc = pCur->CTX_SUFF(pfnHandler)(pVM, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, pCur->CTX_SUFF(pvUser));
+                rc = pfnHandler(pVM, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, pvUser);
                 pgmLock(pVM);
 # ifdef VBOX_WITH_STATISTICS
                 pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
@@ -1865,12 +1871,15 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
             if (cbRange > offVirt)
                 cbRange = offVirt;
 #ifdef IN_RING3
+            PFNPGMR3PHYSHANDLER pfnHandler = pPhys->CTX_SUFF(pfnHandler);
+            void *pvUser = pPhys->CTX_SUFF(pvUser);
+
             Log5(("pgmPhysWriteHandler: GCPhys=%RGp cbRange=%#x pPage=%R[pgmpage] phys %s\n", GCPhys, cbRange, pPage, R3STRING(pPhys->pszDesc) ));
             STAM_PROFILE_START(&pPhys->Stat, h);
             Assert(PGMIsLockOwner(pVM));
             /* Release the PGM lock as MMIO handlers take the IOM lock. (deadlock prevention) */
             pgmUnlock(pVM);
-            rc = pPhys->CTX_SUFF(pfnHandler)(pVM, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, pPhys->CTX_SUFF(pvUser));
+            rc = pfnHandler(pVM, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, pvUser);
             pgmLock(pVM);
 # ifdef VBOX_WITH_STATISTICS
             pPhys = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
@@ -1932,11 +1941,14 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
                 Log(("pgmPhysWriteHandler: overlapping phys and virt handlers at %RGp %R[pgmpage]; cbRange=%#x\n", GCPhys, pPage, cbRange));
             Log5(("pgmPhysWriteHandler: GCPhys=%RGp cbRange=%#x pPage=%R[pgmpage] phys/virt %s/%s\n", GCPhys, cbRange, pPage, R3STRING(pPhys->pszDesc), R3STRING(pVirt->pszDesc) ));
 
+            PFNPGMR3PHYSHANDLER pfnHandler = pPhys->CTX_SUFF(pfnHandler);
+            void *pvUser = pPhys->CTX_SUFF(pvUser);
+
             STAM_PROFILE_START(&pPhys->Stat, h);
             Assert(PGMIsLockOwner(pVM));
             /* Release the PGM lock as MMIO handlers take the IOM lock. (deadlock prevention) */
             pgmUnlock(pVM);
-            rc = pPhys->CTX_SUFF(pfnHandler)(pVM, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, pPhys->CTX_SUFF(pvUser));
+            rc = pfnHandler(pVM, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, pvUser);
             pgmLock(pVM);
 # ifdef VBOX_WITH_STATISTICS
             pPhys = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
