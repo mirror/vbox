@@ -132,7 +132,17 @@ void VBoxMiniToolBar::setSeamlessMode (bool aSeamless)
 /* Update the display text, usually the VM Name */
 void VBoxMiniToolBar::setDisplayText (const QString &aText)
 {
-    mDisplayLabel->setText (aText);
+    if (mDisplayLabel->text() != aText)
+    {
+        /* Update toolbar label */
+        mDisplayLabel->setText (aText);
+
+        /* Reinitialize */
+        initialize();
+
+        if (!isHidden())
+            updateDisplay (!mAutoHide, false);
+    }
 }
 
 bool VBoxMiniToolBar::isAutoHide() const
@@ -286,12 +296,8 @@ void VBoxMiniToolBar::showEvent (QShowEvent *aEvent)
         foreach (QWidget *lableMargin, mLabelMargins)
             lableMargin->setMinimumWidth (15);
 
-        /* Resize to sizehint */
-        resize (sizeHint());
-
         /* Initialize */
-        recreateMask();
-        moveToBase();
+        initialize();
 
         mPolished = true;
     }
@@ -310,6 +316,16 @@ void VBoxMiniToolBar::togglePushpin (bool aOn)
 {
     mAutoHide = !aOn;
     updateDisplay (!mAutoHide, false);
+}
+
+void VBoxMiniToolBar::initialize()
+{
+    /* Resize to sizehint */
+    resize (sizeHint());
+
+    /* Update geometry */
+    recreateMask();
+    moveToBase();
 }
 
 void VBoxMiniToolBar::recreateMask()
