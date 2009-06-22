@@ -1163,7 +1163,9 @@ SUPR3DECL(int) SUPR3PageProtect(void *pvR3, RTR0PTR R0Ptr, uint32_t off, uint32_
      * issue the IOCtl to the SUPDRV kernel module.
      * (Yea, this isn't very nice, but just try get the job done for now.)
      */
+#if !defined(RT_OS_SOLARIS)
     RTMemProtect((uint8_t *)pvR3 + off, cb, fProt);
+#endif
 
     SUPPAGEPROTECT Req;
     Req.Hdr.u32Cookie = g_u32Cookie;
