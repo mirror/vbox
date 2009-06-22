@@ -540,20 +540,24 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
 
                 if (RTAvlroGCPhysInsert(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, &pCur->Core))
                 {
+                    PGMPHYSHANDLERTYPE  enmType = pCur->enmType;
+                    RTGCPHYS            GCPhysLast = pCur->Core.KeyLast - GCPhys + 1;
+                    bool                fHasHCHandler = !!pCur->pfnHandlerR3;
+
                     /*
                      * Set ram flags, flush shadow PT entries and finally tell REM about this.
                      */
                     rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pCur, pRam);
                     pVM->pgm.s.fPhysCacheFlushPending = true;
+                    pgmUnlock(pVM);
 
 #ifndef IN_RING3
-                    REMNotifyHandlerPhysicalModify(pVM, pCur->enmType, GCPhysCurrent, GCPhys,
-                                                   pCur->Core.KeyLast - GCPhys + 1, !!pCur->pfnHandlerR3, fRestoreAsRAM);
+                    REMNotifyHandlerPhysicalModify(pVM, enmType, GCPhysCurrent, GCPhys,
+                                                   GCPhysLast - GCPhys + 1, fHasHCHandler, fRestoreAsRAM);
 #else
-                    REMR3NotifyHandlerPhysicalModify(pVM, pCur->enmType, GCPhysCurrent, GCPhys,
-                                                     pCur->Core.KeyLast - GCPhys + 1, !!pCur->pfnHandlerR3, fRestoreAsRAM);
+                    REMR3NotifyHandlerPhysicalModify(pVM, enmType, GCPhysCurrent, GCPhys,
+                                                     GCPhysLast, fHasHCHandler, fRestoreAsRAM);
 #endif
-                    pgmUnlock(pVM);
                     HWACCMFlushTLBOnAllVCpus(pVM);
                     Log(("PGMHandlerPhysicalModify: GCPhysCurrent=%RGp -> GCPhys=%RGp GCPhysLast=%RGp\n",
                          GCPhysCurrent, GCPhys, GCPhysLast));
