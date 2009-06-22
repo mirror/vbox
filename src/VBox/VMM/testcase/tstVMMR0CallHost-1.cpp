@@ -40,7 +40,7 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 #if !defined(VMM_R0_SWITCH_STACK) && !defined(VMM_R0_NO_SWITCH_STACK)
-# error "VMM_R0_SWITCH_STACK or VMM_R0_NO_SWITCH_STACK has to be defined.
+# error "VMM_R0_SWITCH_STACK or VMM_R0_NO_SWITCH_STACK has to be defined."
 #endif
 
 
@@ -66,13 +66,13 @@ int foo(int i, int iZero, int iMinusOne)
     RTStrPrintf(pv, cb, "i=%d%*s\n", i, cb, "");
 #ifdef VMM_R0_SWITCH_STACK
     g_cbFooUsed = VMM_STACK_SIZE - ((uintptr_t)pv - (uintptr_t)g_Jmp.pvSavedStack);
-    RTTESTI_CHECK_MSG_RET(g_cbFooUsed < VMM_STACK_SIZE - 128, ("%#x - (%p - %p) -> %#x; cb=%#x i=%d\n", VMM_STACK_SIZE, pv, g_Jmp.pvSavedStack, g_cbFooUsed, cb, i), -15);
+    RTTESTI_CHECK_MSG_RET(g_cbFooUsed < (intptr_t)VMM_STACK_SIZE - 128, ("%#x - (%p - %p) -> %#x; cb=%#x i=%d\n", VMM_STACK_SIZE, pv, g_Jmp.pvSavedStack, g_cbFooUsed, cb, i), -15);
 #elif defined(RT_ARCH_AMD64)
     g_cbFooUsed = (uintptr_t)g_Jmp.rsp - (uintptr_t)pv;
     RTTESTI_CHECK_MSG_RET(g_cbFooUsed < VMM_STACK_SIZE - 128, ("%p - %p -> %#x; cb=%#x i=%d\n", g_Jmp.rsp, pv, g_cbFooUsed, cb, i), -15);
 #elif defined(RT_ARCH_X86)
     g_cbFooUsed = (uintptr_t)g_Jmp.esp - (uintptr_t)pv;
-    RTTESTI_CHECK_MSG_RET(g_cbFooUsed < VMM_STACK_SIZE - 128, ("%p - %p -> %#x; cb=%#x i=%d\n", g_Jmp.esp, pv, g_cbFooUsed, cb, i), -15);
+    RTTESTI_CHECK_MSG_RET(g_cbFooUsed < (intptr_t)VMM_STACK_SIZE - 128, ("%p - %p -> %#x; cb=%#x i=%d\n", g_Jmp.esp, pv, g_cbFooUsed, cb, i), -15);
 #endif
 
     /* Do long jmps every 7th time */
