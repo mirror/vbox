@@ -222,6 +222,15 @@ static void vhdTime2RtTime(PRTTIMESPEC pRtTimeStamp, uint32_t u32VhdTimeStamp)
 }
 
 /**
+ * Internal: Allocates the block bitmap rounding up to the next 32bit boundary.
+ *           Can be freed with RTMemFree. The memory is zeroed.
+ */
+DECLINLINE(uint8_t *)vhdBlockBitmapAllocate(PVHDIMAGE pImage)
+{
+    return (uint8_t *)RTMemAllocZ(RT_ALIGN_T(pImage->cbDataBlockBitmap, 4, uint32_t));
+}
+
+/**
  * Internal: Compute and update header checksum.
  */
 static uint32_t vhdChecksum(void *pHeader, uint32_t cbSize)
@@ -372,9 +381,17 @@ static int vhdDynamicHeaderUpdate(PVHDIMAGE pImage)
         /* Skip empty locators */
         if (ddh.ParentLocatorEntry[i].u32Code != RT_H2BE_U32(VHD_PLATFORM_CODE_NONE))
         {
-            rc = vhdLocatorUpdate(pImage, &ddh.ParentLocatorEntry[i], pImage->pszParentFilename);
-            if (RT_FAILURE(rc))
-                goto out;
+            if (pImage->pszParentFilename)
+            {
+                rc = vhdLocatorUpdate(pImage, &ddh.ParentLocatorEntry[i], pImage->pszParentFilename);
+                if (RT_FAILURE(rc))
+                    goto out;
+            }
+            else
+            {
+                /* The parent was deleted. */
+                ddh.ParentLocatorEntry[i].u32Code = RT_H2BE_U32(VHD_PLATFORM_CODE_NONE);
+            }
         }
     }
     /* Update parent's UUID */
@@ -545,7 +562,7 @@ static int vhdLoadDynamicDisk(PVHDIMAGE pImage, uint64_t uDynamicDiskHeaderOffse
     pImage->cDataBlockBitmapSectors = pImage->cbDataBlockBitmap / VHD_SECTOR_SIZE;
     LogFlowFunc(("cbDataBlockBitmap=%u\n", pImage->cbDataBlockBitmap));
 
-    pImage->pu8Bitmap = (uint8_t *)RTMemAllocZ(pImage->cbDataBlockBitmap);
+    pImage->pu8Bitmap = vhdBlockBitmapAllocate(pImage);
     if (!pImage->pu8Bitmap)
         return VERR_NO_MEMORY;
 
@@ -888,6 +905,46 @@ static int vhdClose(void *pBackendData, bool fDelete)
     return rc;
 }
 
+/**
+ * Internal: Checks if a sector in the block bitmap is set
+ */
+DECLINLINE(bool) vhdBlockBitmapSectorContainsData(PVHDIMAGE pImage, uint32_t cBlockBitmapEntry)
+{
+    uint32_t iBitmap = (cBlockBitmapEntry / 8) & ~3; /* Byte in the block bitmap. */
+
+    /*
+     * The index of the bit in the byte of the data block bitmap.
+     * The most signifcant bit stands for a lower sector number.
+     */
+    uint8_t  iBitInByte = (32-1) - (cBlockBitmapEntry % 32);
+    uint8_t *puBitmap = pImage->pu8Bitmap + iBitmap;
+
+    AssertMsg(puBitmap < (pImage->pu8Bitmap + pImage->cbDataBlockBitmap),
+                ("VHD: Current bitmap position exceeds maximum size of the bitmap\n"));
+
+    return ASMBitTest(puBitmap, iBitInByte);
+}
+
+/**
+ * Internal: Sets the given sector in the sector bitmap.
+ */
+DECLINLINE(void) vhdBlockBitmapSectorSet(PVHDIMAGE pImage, uint32_t cBlockBitmapEntry)
+{
+    uint32_t iBitmap = (cBlockBitmapEntry / 8) & ~3; /* Byte in the block bitmap. */
+
+    /*
+     * The index of the bit in the byte of the data block bitmap.
+     * The most signifcant bit stands for a lower sector number.
+     */
+    uint8_t  iBitInByte = (32-1) - (cBlockBitmapEntry % 32);
+    uint8_t  *puBitmap  = pImage->pu8Bitmap + iBitmap;
+
+    AssertMsg(puBitmap < (pImage->pu8Bitmap + pImage->cbDataBlockBitmap),
+                ("VHD: Current bitmap position exceeds maximum size of the bitmap\n"));
+
+    ASMBitSet(puBitmap, iBitInByte);
+}
+
 static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbRead, size_t *pcbActuallyRead)
 {
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
@@ -938,23 +995,10 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
         if (RT_SUCCESS(rc))
         {
             uint32_t cSectors = 0;
-            uint32_t iBitmap = cBATEntryIndex / 8; /* Byte in the block bitmap. */
-            Assert(iBitmap < pImage->cbDataBlockBitmap);
 
-            /*
-             * The index of the bit in the byte of the data block bitmap.
-             * The most signifcant bit stands for a lower sector number.
-             *
-             * There are 8 bits in a byte but they go from 0 .. 7
-             * hence the (8 - 1) to get the index in the bitmap byte.
-             */
-            uint8_t  iBitInByte = (8 - 1) - (cBATEntryIndex % 8);
-            uint8_t *puBitmap   = pImage->pu8Bitmap + iBitmap;
-
-            if (ASMBitTest(puBitmap, iBitInByte))
+            if (vhdBlockBitmapSectorContainsData(pImage, cBATEntryIndex))
             {
-                uint32_t iBATEntryIndexCurr = cBATEntryIndex + 1;
-
+                cBATEntryIndex++;
                 cSectors = 1;
 
                 /*
@@ -962,18 +1006,10 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
                  * can from child. Note that only sectors that are marked dirty
                  * must be read from child.
                  */
-                while (cSectors < (cbRead / VHD_SECTOR_SIZE))
+                while (   (cSectors < (cbRead / VHD_SECTOR_SIZE))
+                       && vhdBlockBitmapSectorContainsData(pImage, cBATEntryIndex))
                 {
-
-                    iBitmap    = iBATEntryIndexCurr / 8; /* Byte in the block bitmap. */
-                    iBitInByte = (8 - 1) - (iBATEntryIndexCurr % 8);
-                    puBitmap  = pImage->pu8Bitmap + iBitmap;
-                    AssertMsg(puBitmap < (pImage->pu8Bitmap + pImage->cbDataBlockBitmap),
-                              ("VHD: Current bitmap position exceeds maximum size of the bitmap\n"));
-                    if (!ASMBitTest(puBitmap, iBitInByte))
-                        break;
-
-                    iBATEntryIndexCurr++;
+                    cBATEntryIndex++;
                     cSectors++;
                 }
 
@@ -984,8 +1020,6 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
             }
             else
             {
-                uint32_t iBATEntryIndexCurr = cBATEntryIndex + 1;
-
                 /*
                  * The first sector being read is marked clean, so we should read from
                  * our parent instead, but only as much as there are the following
@@ -994,20 +1028,13 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
                  * and pass it to our caller along with the notification that they
                  * should be read from the parent.
                  */
-
+                cBATEntryIndex++;
                 cSectors = 1;
 
-                while (cSectors < (cbRead / VHD_SECTOR_SIZE))
+                while (   (cSectors < (cbRead / VHD_SECTOR_SIZE))
+                       && !vhdBlockBitmapSectorContainsData(pImage, cBATEntryIndex))
                 {
-                    iBitmap    = iBATEntryIndexCurr / 8; /* Byte in the block bitmap. */
-                    iBitInByte = (8 - 1) - (iBATEntryIndexCurr % 8);
-                    puBitmap  = pImage->pu8Bitmap + iBitmap;
-                    AssertMsg(puBitmap < (pImage->pu8Bitmap + pImage->cbDataBlockBitmap),
-                              ("VHD: Current bitmap position exceeds maximum size of the bitmap\n"));
-                    if (ASMBitTest(puBitmap, iBitInByte))
-                        break;
-
-                    iBATEntryIndexCurr++;
+                    cBATEntryIndex++;
                     cSectors++;
                 }
 
@@ -1119,11 +1146,7 @@ static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, siz
             /* Set the bits for all sectors having been written. */
             for (uint32_t iSector = 0; iSector < (cbToWrite / VHD_SECTOR_SIZE); iSector++)
             {
-                uint32_t iBitmap    = cBATEntryIndex / 8; /* Byte in the block bitmap. */
-                uint8_t  iBitInByte = (8 - 1) - (cBATEntryIndex % 8);
-                uint8_t  *puBitmap  = pImage->pu8Bitmap + iBitmap;
-
-                ASMBitSet(puBitmap, iBitInByte);
+                vhdBlockBitmapSectorSet(pImage, cBATEntryIndex);
                 cBATEntryIndex++;
             }
 
@@ -1526,7 +1549,7 @@ static int vhdCreateDynamicImage(PVHDIMAGE pImage, uint64_t cbSize)
     pImage->cSectorsPerDataBlock    = pImage->cbDataBlock / VHD_SECTOR_SIZE;
     pImage->cbDataBlockBitmap       = pImage->cSectorsPerDataBlock / 8;
     pImage->cDataBlockBitmapSectors = pImage->cbDataBlockBitmap / VHD_SECTOR_SIZE;
-    pImage->pu8Bitmap               = (uint8_t *)RTMemAllocZ(pImage->cbDataBlockBitmap);
+    pImage->pu8Bitmap               = vhdBlockBitmapAllocate(pImage);
     if (!pImage->pu8Bitmap)
         return vhdError(pImage, VERR_NO_MEMORY, RT_SRC_POS, N_("VHD: cannot allocate memory for bitmap storage"));
 
