@@ -1,4 +1,6 @@
-<!DOCTYPE TS><TS>
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE TS>
+<TS version="2.0">
 <context>
     <name>@@@</name>
     <message>
@@ -1529,7 +1531,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>bla</source>
-        <translation>&lt;vide&gt;</translation>
+        <translation type="obsolete">&lt;vide&gt;</translation>
     </message>
     <message>
         <source>&amp;Username:</source>
@@ -4835,7 +4837,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&amp;Password:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Mot de &amp;passe :</translation>
     </message>
     <message>
         <source>I &amp;would like to register creating a new Sun Online account:</source>
@@ -5124,7 +5126,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation>&amp;Rejeter l&apos;instantané</translation>
+        <translation type="obsolete">&amp;Rejeter l&apos;instantané</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot</source>
@@ -5192,7 +5194,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation>Rejeter l&apos;instantané choisi de la machine virtuelle</translation>
+        <translation type="obsolete">Rejeter l&apos;instantané choisi de la machine virtuelle</translation>
     </message>
     <message>
         <source>Take a snapshot of the current virtual machine state</source>
@@ -5213,6 +5215,14 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <source>Show details of the selected snapshot</source>
         <translation>Voir les détails de l&apos;instantané sélectionné</translation>
+    </message>
+    <message>
+        <source>&amp;Merge Snapshot with Parent</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Merges the snapshot into the parent snapshot or disk image and then deletes the now redundant snapshot file.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5978,11 +5988,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Système</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Affichage</translation>
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. As such guestsrequire hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>

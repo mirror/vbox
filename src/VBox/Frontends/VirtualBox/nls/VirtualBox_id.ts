@@ -135,6 +135,14 @@
         <source>Kernel driver not accessible</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. It may help to completely uninstall and re-install VirtualBox.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;should fix that problem. Make sure that you don&apos;t mix the OSE version and the PUEL version of VirtualBox.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QIArrowSplitter</name>
@@ -145,6 +153,17 @@
     <message>
         <source>&amp;Next</source>
         <translation type="unfinished">La&amp;njut</translation>
+    </message>
+</context>
+<context>
+    <name>QIFileDialog</name>
+    <message>
+        <source>Select a directory</source>
+        <translation type="unfinished">Pilih sebuah direktori</translation>
+    </message>
+    <message>
+        <source>Select a file</source>
+        <translation type="unfinished">Pilih sebuah file</translation>
     </message>
 </context>
 <context>
@@ -1217,7 +1236,13 @@ Versi %1</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;qt&gt;Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</source>
+        <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
+        <comment>Virtualization Stuff LED</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
+        <comment>Virtualization Stuff LED</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1586,10 +1611,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Please specify a filename into which the appliance information will be written. Currently VirtualBox supports the Open Virtualization Format (OVF).</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Export &gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1599,6 +1620,62 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Write legacy OVF 0.9</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose a filename to export the OVF in.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please complete the additionally fields like the username, password and the bucket. Finally you have to provide a filename for the OVF target.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please complete the additionally fields like the username, password, hostname and the bucket. Finally you have to provide a filename for the OVF target.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Checking files ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing files ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please specify the target for the OVF export. You can choose between a local file system export, the uploading of the OVF to the Sun Cloud service or an S3 storage server.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Local Filesystem </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sun &amp;Cloud</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Simple Storage System (S3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Username:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Password:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;File:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Bucket:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Hostname:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2117,7 +2194,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;%3 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation>&lt;nobr&gt;%3 MB&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;%3 MB&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>General</source>
@@ -2132,7 +2209,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;%4 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation>&lt;nobr&gt;%4 MB&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;%4 MB&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Boot Order</source>
@@ -2267,7 +2344,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>VRDP Server Port</source>
         <comment>details report (VRDP)</comment>
-        <translation>Port Server VRDP</translation>
+        <translation type="obsolete">Port Server VRDP</translation>
     </message>
     <message>
         <source>%1</source>
@@ -2277,12 +2354,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Disabled</source>
         <comment>details report (VRDP)</comment>
-        <translation>Mati</translation>
+        <translation type="obsolete">Mati</translation>
     </message>
     <message>
         <source>Remote Display</source>
         <comment>details report</comment>
-        <translation>Display Jarak Jauh</translation>
+        <translation type="obsolete">Display Jarak Jauh</translation>
     </message>
     <message>
         <source>Opening URLs is not implemented yet.</source>
@@ -2575,11 +2652,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Select a directory</source>
-        <translation>Pilih sebuah direktori</translation>
+        <translation type="obsolete">Pilih sebuah direktori</translation>
     </message>
     <message>
         <source>Select a file</source>
-        <translation>Pilih sebuah file</translation>
+        <translation type="obsolete">Pilih sebuah file</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -3002,6 +3079,51 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Host-only Adapter</source>
         <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Processor(s)</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Display Server Port</source>
+        <comment>details report (VRDP Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Display Server</source>
+        <comment>details report (VRDP Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (VRDP Server)</comment>
+        <translation type="unfinished">Mati</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Raw File</source>
+        <comment>PortMode</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3897,6 +4019,21 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>VBoxMiniToolBar</name>
+    <message>
+        <source>Always show the toolbar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit Full Screen or Seamless Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close VM</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>VBoxNIList</name>
     <message>
         <source>VirtualBox Host Interface %1</source>
@@ -4380,12 +4517,12 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>V&amp;ersion:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="unfinished">Menampilkan tipe sistem operasi yang anda rencanakan untuk diinstall pada mesin virtual ini (disebut sebagai sebuah sistem operasi guest).</translation>
+    </message>
+    <message>
+        <source>&amp;Version:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4796,7 +4933,7 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Gagal me-register produk VirtualBox&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Gagal me-register produk VirtualBox&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
@@ -5195,10 +5332,6 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
         <translation type="unfinished">image floppy</translation>
     </message>
     <message>
-        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;The file already exists in &quot;%2&quot;. Replacing it will overwrite its contents.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5299,11 +5432,35 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
         <source>&lt;p&gt;Deleting this host-only network will lead to the deleting of the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to register the VirtualBox product.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to check files.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to remove file.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxProgressDialog</name>
     <message>
-        <source>&amp;Cancel</source>
+        <source>Time remaining: %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5319,7 +5476,7 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>&amp;Name</source>
-        <translation>&amp;Nama</translation>
+        <translation type="obsolete">&amp;Nama</translation>
     </message>
     <message>
         <source>Enter your full name using Latin characters.</source>
@@ -5327,7 +5484,7 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>&amp;E-mail</source>
-        <translation>&amp;E-mail</translation>
+        <translation type="obsolete">&amp;E-mail</translation>
     </message>
     <message>
         <source>Enter your valid e-mail address.</source>
@@ -5335,7 +5492,7 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>&amp;Please do not use this information to contact me</source>
-        <translation>&amp;Mohon jangan menggunakan informasi ini untuk menghubungi saya</translation>
+        <translation type="obsolete">&amp;Mohon jangan menggunakan informasi ini untuk menghubungi saya</translation>
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from innotek at the e-mail address specified above.</source>
@@ -5363,19 +5520,71 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Silahkan mengisi formulir registration ini agar dapat memberi tahu kami bahwa anda menggunakan VirtualBox dan, secara opsional, untuk menjaga anda tetap memperoleh informasi tentang berita seputar VirtualBox dan update.&lt;/p&gt;&lt;p&gt;Masukkan nama lengkap anda menggunakan karakter Latin dan alamat  e-mail anda pada field dibawah ini. Perhatikan bahwa Sun Microsystems akan menggunakan informasi ini hanya untuk mengumpulkan statistik penggunaan produk dan untuk mengirimkan newsletter VirtualBox pada anda. Secara khusus, Sun Microsystems tidak akan pernah memberikan data anda pada pihak ketiga. Informasi secara detail mengenai bagaimana kami menggunakan data pribadi anda bisa ditemukan pada bagian &lt;b&gt;Privacy Policy&lt;/b&gt; pada Manual VirtualBox atau pada halaman &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; dalam website VirtualBox.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Silahkan mengisi formulir registration ini agar dapat memberi tahu kami bahwa anda menggunakan VirtualBox dan, secara opsional, untuk menjaga anda tetap memperoleh informasi tentang berita seputar VirtualBox dan update.&lt;/p&gt;&lt;p&gt;Masukkan nama lengkap anda menggunakan karakter Latin dan alamat  e-mail anda pada field dibawah ini. Perhatikan bahwa Sun Microsystems akan menggunakan informasi ini hanya untuk mengumpulkan statistik penggunaan produk dan untuk mengirimkan newsletter VirtualBox pada anda. Secara khusus, Sun Microsystems tidak akan pernah memberikan data anda pada pihak ketiga. Informasi secara detail mengenai bagaimana kami menggunakan data pribadi anda bisa ditemukan pada bagian &lt;b&gt;Privacy Policy&lt;/b&gt; pada Manual VirtualBox atau pada halaman &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; dalam website VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from Sun Microsystems at the e-mail address specified above.</source>
-        <translation>Tandai kotak ini bila anda tidak ingin menerima e-mail dari Sun Microsystems pada alamat e-mail yang disebutkan di atas.</translation>
-    </message>
-    <message>
-        <source>C&amp;onfirm</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Tandai kotak ini bila anda tidak ingin menerima e-mail dari Sun Microsystems pada alamat e-mail yang disebutkan di atas.</translation>
     </message>
     <message>
         <source>Cancel</source>
         <translation type="unfinished">Batal</translation>
+    </message>
+    <message>
+        <source>Select Country/Territory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use the Latin characters to fill the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>I &amp;have a Sun Online account already:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;E-mail:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Password:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>I &amp;would like to register creating a new Sun Online account:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;First Name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Last Name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Company:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Co&amp;untry:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>E-&amp;mail:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>P&amp;assword:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Co&amp;nfirm Password:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Register</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5894,7 +6103,7 @@ untuk mengaksesnya dari sebuah SIstem Operasi Linux. Fitur ini membutuhkan Guest
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation type="unfinished">&amp;Abaikan Snapshot</translation>
+        <translation type="obsolete">&amp;Abaikan Snapshot</translation>
     </message>
     <message>
         <source>Ctrl+Shift+D</source>
@@ -5986,7 +6195,7 @@ untuk mengaksesnya dari sebuah SIstem Operasi Linux. Fitur ini membutuhkan Guest
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="unfinished">Abaikan snapshot terpilih pada mesin virtual</translation>
+        <translation type="obsolete">Abaikan snapshot terpilih pada mesin virtual</translation>
     </message>
     <message>
         <source>Ctrl+Shift+S</source>
@@ -6027,6 +6236,14 @@ untuk mengaksesnya dari sebuah SIstem Operasi Linux. Fitur ini membutuhkan Guest
     <message>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+Spasi</translation>
+    </message>
+    <message>
+        <source>&amp;Merge Snapshot with Parent</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Merges the snapshot into the parent snapshot or disk image and then deletes the now redundant snapshot file.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7094,6 +7311,81 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>VBoxVMSettingsDisplay</name>
+    <message>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
+        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Video</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video &amp;Memory:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the amount of video memory provided to the virtual machine.</source>
+        <translation type="unfinished">Mengendalikan jumlah memori video yang tersedia bagi mesin virtual.</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="unfinished">MB</translation>
+    </message>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;3D Acceleration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remote Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
+        <translation type="unfinished">Saat tertandai, mesin virtual akan bertindak sebagai server Remote Desktop Protocol (RDP), mengijinkan client jarak jauh untuk terhubung dan mengendalikan mesin virtual (saat berjalan) menggunakan client RDP standar.</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Server</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Server &amp;Port:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authentication &amp;Method:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Defines the VRDP authentication method.</source>
+        <translation type="unfinished">Mendefinisikan metode otentikasi VRDP.</translation>
+    </message>
+    <message>
+        <source>Authentication &amp;Timeout:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Specifies the timeout for guest authentication, in milliseconds.</source>
+        <translation type="unfinished">Menetapkan timeout untuk otentikasi guest, dalam milidetik.</translation>
+    </message>
+</context>
+<context>
     <name>VBoxVMSettingsDlg</name>
     <message>
         <source>Category</source>
@@ -8046,10 +8338,26 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
     </message>
     <message>
         <source>Remote Display</source>
-        <translation type="unfinished">Display Jarak Jauh</translation>
+        <translation type="obsolete">Display Jarak Jauh</translation>
     </message>
     <message>
         <source>%1 - %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>System</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have selected a 64-bit guest OS type for this VM. As such guestsrequire hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have selected a 64-bit guest OS type for this VM. VirtualBox does not currently support more than one virtual CPU for 64-bit guests executed on 32-bit hosts.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8108,7 +8416,7 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
     <name>VBoxVMSettingsGeneral</name>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
@@ -8117,10 +8425,6 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
     <message>
         <source>&amp;Basic</source>
         <translation type="unfinished">&amp;Dasar</translation>
-    </message>
-    <message>
-        <source>Identification</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Name:</source>
@@ -8136,99 +8440,67 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation type="unfinished">Ukuran &amp;Memori Dasar</translation>
+        <translation type="obsolete">Ukuran &amp;Memori Dasar</translation>
     </message>
     <message>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation type="unfinished">Mengendalikan jumlah memori yang tersedia bagi mesin virtual. Bila anda menempatkan terlalu banyak, mesin tersebut bisa saja tidak mau menyala.</translation>
+        <translation type="obsolete">Mengendalikan jumlah memori yang tersedia bagi mesin virtual. Bila anda menempatkan terlalu banyak, mesin tersebut bisa saja tidak mau menyala.</translation>
     </message>
     <message>
         <source>&lt;</source>
-        <translation type="unfinished">&lt;</translation>
+        <translation type="obsolete">&lt;</translation>
     </message>
     <message>
         <source>&gt;</source>
-        <translation type="unfinished">&gt;</translation>
+        <translation type="obsolete">&gt;</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished">MB</translation>
+        <translation type="obsolete">MB</translation>
     </message>
     <message>
         <source>&amp;Video Memory Size</source>
-        <translation type="unfinished">Ukuran Memori &amp;Video</translation>
+        <translation type="obsolete">Ukuran Memori &amp;Video</translation>
     </message>
     <message>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation type="unfinished">Mengendalikan jumlah memori video yang tersedia bagi mesin virtual.</translation>
+        <translation type="obsolete">Mengendalikan jumlah memori video yang tersedia bagi mesin virtual.</translation>
     </message>
     <message>
         <source>&amp;Advanced</source>
         <translation type="unfinished">&amp;Mendalam</translation>
     </message>
     <message>
-        <source>Boo&amp;t Order:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation type="unfinished">Pilih urutan boot device. Gunakan checkbox yang tersedia di sebelah kiri untuk menyalakan atau mematikan boot device secara individual. Naikkan atau turunkan pilihan yang ada untuk mengubah urutan device.</translation>
-    </message>
-    <message>
-        <source>[device]</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Pilih urutan boot device. Gunakan checkbox yang tersedia di sebelah kiri untuk menyalakan atau mematikan boot device secara individual. Naikkan atau turunkan pilihan yang ada untuk mengubah urutan device.</translation>
     </message>
     <message>
         <source>Move Up (Ctrl-Up)</source>
-        <translation type="unfinished">Naikkan (Ctrl+Atas)</translation>
+        <translation type="obsolete">Naikkan (Ctrl+Atas)</translation>
     </message>
     <message>
         <source>Moves the selected boot device up.</source>
-        <translation type="unfinished">Naikkan boot device terpilih.</translation>
+        <translation type="obsolete">Naikkan boot device terpilih.</translation>
     </message>
     <message>
         <source>Move Down (Ctrl-Down)</source>
-        <translation type="unfinished">Turunkan (Ctrl+Bawah)</translation>
+        <translation type="obsolete">Turunkan (Ctrl+Bawah)</translation>
     </message>
     <message>
         <source>Moves the selected boot device down.</source>
-        <translation type="unfinished">Turunkan boot device terpilih.</translation>
-    </message>
-    <message>
-        <source>Extended Features:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Turunkan boot device terpilih.</translation>
     </message>
     <message>
         <source>Enable A&amp;CPI</source>
-        <translation type="unfinished">Nyalakan A&amp;CPI</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Nyalakan A&amp;CPI</translation>
     </message>
     <message>
         <source>Enable IO A&amp;PIC</source>
-        <translation type="unfinished">Nyalakan IO A&amp;PIC</translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Nyalakan IO A&amp;PIC</translation>
     </message>
     <message>
         <source>Enable PA&amp;E/NX</source>
-        <translation type="unfinished">Menyalakan PA&amp;E/NX</translation>
+        <translation type="obsolete">Menyalakan PA&amp;E/NX</translation>
     </message>
     <message>
         <source>&amp;Shared Clipboard:</source>
@@ -8240,11 +8512,7 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
     </message>
     <message>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation type="unfinished">Mendefinisikan tipe pengendali IDE virtual. Bergantung pada nilai tersebut, VirtualBox akan menyediakan hardware IDE virtual yang berbeda pada Sistem Operasi guest.</translation>
-    </message>
-    <message>
-        <source>&amp;IDE Controller Type:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Mendefinisikan tipe pengendali IDE virtual. Bergantung pada nilai tersebut, VirtualBox akan menyediakan hardware IDE virtual yang berbeda pada Sistem Operasi guest.</translation>
     </message>
     <message>
         <source>S&amp;napshot Folder:</source>
@@ -8259,51 +8527,27 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
         <translation type="unfinished">Menampilkan deskripsi mesin virtual. Field deskripsi berguna untuk memberikan komentar pada detail konfigurasi dari Sistem Operasi guest terinstal.</translation>
     </message>
     <message>
-        <source>&amp;Other</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
         <translation type="unfinished">Saat tertandai, perubahan apapun pada media CD/DVD atau Floppy terpasang yang dilakukan saat eksekusi mesin akan disimpan dalam file setting guna menjaga konfigurasi media termuat diantara penjalanan.</translation>
     </message>
     <message>
-        <source>&amp;Remember Mounted Media</source>
+        <source>Removable Media:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Runtime:</source>
+        <source>&amp;Remember Runtime Changes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <source>Mini ToolBar:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
+        <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enable &amp;3D Acceleration</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>there is a 64 bits guest OS type assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else your guest will fail to detect a 64 bits CPU and will not be able to boot, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable Nested Pa&amp;ging</source>
+        <source>Show In &amp;Fullscreen/Seamless</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8368,6 +8612,14 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
     <message>
         <source>&amp;Enable Additional Controller</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IDE &amp;Controller Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
+        <translation type="unfinished">Mendefinisikan tipe pengendali IDE virtual. Bergantung pada nilai tersebut, VirtualBox akan menyediakan hardware IDE virtual yang berbeda pada Sistem Operasi guest.</translation>
     </message>
 </context>
 <context>
@@ -8747,12 +8999,12 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
         <translation type="unfinished">&amp;Ciptakan Pipa</translation>
     </message>
     <message>
-        <source>Port &amp;Path:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation type="unfinished">Menampilkan path menuju pipa port serial dalam host saat port bekerja pada mode &lt;b&gt;Pipa Host&lt;/a&gt;, atau nama device serial host saat port bekerja pada mode &lt;b&gt;Device Host&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Port/File &amp;Path:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8768,6 +9020,151 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
     <message>
         <source>Duplicate port path is entered </source>
         <translation type="unfinished">Path port ganda dimasukkan </translation>
+    </message>
+</context>
+<context>
+    <name>VBoxVMSettingsSystem</name>
+    <message>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>for performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have assigned more virtual CPUs to the virtual machine than the number of physical CPUs on your host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>there is more than one virtual CPU assigned for this VM, which requires IO-APIC feature to be enabled too, else SMP will not be able to work, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>there is more than one virtual CPU assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else SMP will not be able to work, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
+        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</source>
+        <comment>%1 is 1 for now</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
+        <comment>%1 is 32 for now</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Motherboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Base &amp;Memory:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
+        <translation type="unfinished">Mengendalikan jumlah memori yang tersedia bagi mesin virtual. Bila anda menempatkan terlalu banyak, mesin tersebut bisa saja tidak mau menyala.</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="unfinished">MB</translation>
+    </message>
+    <message>
+        <source>&amp;Boot Order:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <translation type="unfinished">Pilih urutan boot device. Gunakan checkbox yang tersedia di sebelah kiri untuk menyalakan atau mematikan boot device secara individual. Naikkan atau turunkan pilihan yang ada untuk mengubah urutan device.</translation>
+    </message>
+    <message>
+        <source>Move Down (Ctrl-Down)</source>
+        <translation type="unfinished">Turunkan (Ctrl+Bawah)</translation>
+    </message>
+    <message>
+        <source>Moves the selected boot device down.</source>
+        <translation type="unfinished">Turunkan boot device terpilih.</translation>
+    </message>
+    <message>
+        <source>Move Up (Ctrl-Up)</source>
+        <translation type="unfinished">Naikkan (Ctrl+Atas)</translation>
+    </message>
+    <message>
+        <source>Moves the selected boot device up.</source>
+        <translation type="unfinished">Naikkan boot device terpilih.</translation>
+    </message>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;ACPI</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;IO APIC</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Processor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Processor(s):</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the number of virtual CPUs in the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable PA&amp;E/NX</source>
+        <translation type="unfinished">Menyalakan PA&amp;E/NX</translation>
+    </message>
+    <message>
+        <source>Acce&amp;leration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hardware Virtualization:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;VT-x/AMD-V</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable Nested Pa&amp;ging</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8960,35 +9357,19 @@ membuat guest dapat melihat sebuah kartu suara, namuan semua akses kepadanya aka
     <name>VBoxVMSettingsVRDP</name>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation type="unfinished">Saat tertandai, mesin virtual akan bertindak sebagai server Remote Desktop Protocol (RDP), mengijinkan client jarak jauh untuk terhubung dan mengendalikan mesin virtual (saat berjalan) menggunakan client RDP standar.</translation>
+        <translation type="obsolete">Saat tertandai, mesin virtual akan bertindak sebagai server Remote Desktop Protocol (RDP), mengijinkan client jarak jauh untuk terhubung dan mengendalikan mesin virtual (saat berjalan) menggunakan client RDP standar.</translation>
     </message>
     <message>
         <source>&amp;Enable VRDP Server</source>
-        <translation type="unfinished">Menyalakan S&amp;erver VRDP</translation>
-    </message>
-    <message>
-        <source>Server &amp;Port:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Authentication &amp;Method:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Menyalakan S&amp;erver VRDP</translation>
     </message>
     <message>
         <source>Defines the VRDP authentication method.</source>
-        <translation type="unfinished">Mendefinisikan metode otentikasi VRDP.</translation>
-    </message>
-    <message>
-        <source>Authentication &amp;Timeout:</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Mendefinisikan metode otentikasi VRDP.</translation>
     </message>
     <message>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation type="unfinished">Menetapkan timeout untuk otentikasi guest, dalam milidetik.</translation>
+        <translation type="obsolete">Menetapkan timeout untuk otentikasi guest, dalam milidetik.</translation>
     </message>
 </context>
 </TS>

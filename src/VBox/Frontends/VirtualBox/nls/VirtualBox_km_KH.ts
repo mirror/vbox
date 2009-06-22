@@ -94,6 +94,14 @@
         <source>Unknown %2 error during initialization of the Runtime</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. It may help to completely uninstall and re-install VirtualBox.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;should fix that problem. Make sure that you don&apos;t mix the OSE version and the PUEL version of VirtualBox.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QIArrowSplitter</name>
@@ -104,6 +112,17 @@
     <message>
         <source>&amp;Next</source>
         <translation type="unfinished">បន្ទាប់</translation>
+    </message>
+</context>
+<context>
+    <name>QIFileDialog</name>
+    <message>
+        <source>Select a directory</source>
+        <translation type="unfinished">ជ្រើស​ថត</translation>
+    </message>
+    <message>
+        <source>Select a file</source>
+        <translation type="unfinished">ជ្រើស​ឯកសារ</translation>
     </message>
 </context>
 <context>
@@ -976,7 +995,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;qt&gt;Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</source>
+        <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
+        <comment>Virtualization Stuff LED</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
+        <comment>Virtualization Stuff LED</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1055,10 +1080,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Please specify a filename into which the appliance information will be written. Currently VirtualBox supports the Open Virtualization Format (OVF).</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1068,6 +1089,62 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Export &gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose a filename to export the OVF in.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please complete the additionally fields like the username, password and the bucket. Finally you have to provide a filename for the OVF target.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please complete the additionally fields like the username, password, hostname and the bucket. Finally you have to provide a filename for the OVF target.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Checking files ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing files ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please specify the target for the OVF export. You can choose between a local file system export, the uploading of the OVF to the Sun Cloud service or an S3 storage server.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Local Filesystem </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sun &amp;Cloud</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Simple Storage System (S3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Username:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Password:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;File:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Bucket:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Hostname:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1577,7 +1654,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;%3 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation>&lt;nobr&gt;%3 មេកាបៃ&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;%3 មេកាបៃ&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>General</source>
@@ -1592,7 +1669,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;%4 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation>&lt;nobr&gt;%4 មេកាបៃ&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;%4 មេកាបៃ&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Boot Order</source>
@@ -1722,7 +1799,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>VRDP Server Port</source>
         <comment>details report (VRDP)</comment>
-        <translation>ច្រក​ម៉ាស៊ីនបម្រើ VRDP</translation>
+        <translation type="obsolete">ច្រក​ម៉ាស៊ីនបម្រើ VRDP</translation>
     </message>
     <message>
         <source>%1</source>
@@ -1732,12 +1809,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Disabled</source>
         <comment>details report (VRDP)</comment>
-        <translation>បានបិទ</translation>
+        <translation type="obsolete">បានបិទ</translation>
     </message>
     <message>
         <source>Remote Display</source>
         <comment>details report</comment>
-        <translation>បង្ហាញ​ពី​ចម្ងាយ</translation>
+        <translation type="obsolete">បង្ហាញ​ពី​ចម្ងាយ</translation>
     </message>
     <message>
         <source>Opening URLs is not implemented yet.</source>
@@ -1980,11 +2057,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Select a directory</source>
-        <translation>ជ្រើស​ថត</translation>
+        <translation type="obsolete">ជ្រើស​ថត</translation>
     </message>
     <message>
         <source>Select a file</source>
-        <translation>ជ្រើស​ឯកសារ</translation>
+        <translation type="obsolete">ជ្រើស​ឯកសារ</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -2409,6 +2486,51 @@ p, li { white-space: pre-wrap; }
         <comment>StorageControllerType</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Processor(s)</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>System</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Display Server Port</source>
+        <comment>details report (VRDP Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Display Server</source>
+        <comment>details report (VRDP Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (VRDP Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Raw File</source>
+        <comment>PortMode</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -2737,6 +2859,21 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>VBoxMiniToolBar</name>
+    <message>
+        <source>Always show the toolbar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit Full Screen or Seamless Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close VM</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>VBoxNIList</name>
     <message>
         <source>VirtualBox Host Interface %1</source>
@@ -3034,11 +3171,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>V&amp;ersion:</source>
-        <translation>កំណែ ៖</translation>
+        <translation type="obsolete">កំណែ ៖</translation>
     </message>
     <message>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation>បង្ហាញ​ប្រភេទ​ប្រព័ន្ធ​ប្រតិបត្តិការ​ដែល​អ្នក​​មាន​​គម្រោង​ដំឡើង​ម៉ាស៊ីន​និម្មិត​នេះ (បាន​ហៅ​ប្រព័ន្ធ​ប្រតិបត្តិ​របស់​ម៉ាស៊ីន​ភ្ញៀវ) ។</translation>
+    </message>
+    <message>
+        <source>&amp;Version:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3341,7 +3482,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation>&lt;p&gt;បាន​បរាជ័យ​ក្នុងការ​ចុះឈ្មោះ​ផលិតផល VirtualBox​&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;បាន​បរាជ័យ​ក្នុងការ​ចុះឈ្មោះ​ផលិតផល VirtualBox​&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
@@ -3691,10 +3832,6 @@ p, li { white-space: pre-wrap; }
         <translation>រូបភាព​ថាស​ទន់</translation>
     </message>
     <message>
-        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;The file already exists in &quot;%2&quot;. Replacing it will overwrite its contents.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3791,11 +3928,35 @@ p, li { white-space: pre-wrap; }
         <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to register the VirtualBox product.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to check files.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to remove file.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxProgressDialog</name>
     <message>
-        <source>&amp;Cancel</source>
+        <source>Time remaining: %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3807,7 +3968,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Name</source>
-        <translation>ឈ្មោះ</translation>
+        <translation type="obsolete">ឈ្មោះ</translation>
     </message>
     <message>
         <source>Enter your full name using Latin characters.</source>
@@ -3815,7 +3976,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;E-mail</source>
-        <translation>អ៊ីមែល</translation>
+        <translation type="obsolete">អ៊ីមែល</translation>
     </message>
     <message>
         <source>Enter your valid e-mail address.</source>
@@ -3823,7 +3984,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Please do not use this information to contact me</source>
-        <translation>សូម​កុំ​ប្រើ​ព័ត៌មាន​នេះ​ដើម្បីទាក់ទង​ខ្ញុំ</translation>
+        <translation type="obsolete">សូម​កុំ​ប្រើ​ព័ត៌មាន​នេះ​ដើម្បីទាក់ទង​ខ្ញុំ</translation>
     </message>
     <message>
         <source>Welcome to the VirtualBox Registration Form!</source>
@@ -3835,19 +3996,75 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;សូមបំពេញ​សំណុំ​បែបបទ​ចុះឈ្មោះនេះ ដើម្បីអនុញ្ញាត​ឲ្យ​យើង​ដឹង​ថា​ អ្នកប្រើ VirtualBox និង​ជា​ជម្រើស​ត្រូវ​ជូនដំណឹង​អ្នក​អំពី​ព័ត៌មាន និង​ភាព​ទាន់សម័យ​របស់ VirtualBox ។&lt;/p&gt;&lt;p&gt;បញ្ចូល​ឈ្មោះ​ពេញលេញ​របស់​អ្នកដោយ​ប្រើ​តួអក្សរ​ឡាតាំង ហើយអាសយដ្ឋាន​អ៊ីមែល​របស់អ្នកក្នុង​វាល​ខាង​ក្រោម ។ សូម​ចំណាំ​ថា Sun Microsystems នឹង​ប្រើ​ព័ត៌មាននេះដើម្បី​ប្រមូល​តែ​​ស្ថិតិ​ប្រើ​ផលិតផល ហើយ​ផ្ញើ​ព្រឹត្តិបត្រ​ VirtualBox ឲ្យ​អ្នក ។ ជា​ទូទៅ Sun Microsystems នឹង​មិន​ចម្លង​ទិន្នន័យ​របស់​អ្នក​ទៅ​ភាគីទីបី​បានទេ ។ ព័ត៌មាន​លម្អិត​អំពី​​វិធី​ដែល​យើង​ប្រើ​ទិន្នន័យ​ផ្ទាល់ខ្លួន​របស់​អ្នក អាច​រក​បាននៅ​ក្នុង​ផ្នែក &lt;b&gt;គោលនយោបាយ​ឯកជន&lt;/b&gt; របស់​សៀវភៅ​ដៃ VirtualBox ឬ​នៅ​លើ​ទំព័រ &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;គោលនយោបាយ​ឯកជន&lt;/a&gt; របស់​តំបន់បណ្ដាញ VirtualBox ។&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;សូមបំពេញ​សំណុំ​បែបបទ​ចុះឈ្មោះនេះ ដើម្បីអនុញ្ញាត​ឲ្យ​យើង​ដឹង​ថា​ អ្នកប្រើ VirtualBox និង​ជា​ជម្រើស​ត្រូវ​ជូនដំណឹង​អ្នក​អំពី​ព័ត៌មាន និង​ភាព​ទាន់សម័យ​របស់ VirtualBox ។&lt;/p&gt;&lt;p&gt;បញ្ចូល​ឈ្មោះ​ពេញលេញ​របស់​អ្នកដោយ​ប្រើ​តួអក្សរ​ឡាតាំង ហើយអាសយដ្ឋាន​អ៊ីមែល​របស់អ្នកក្នុង​វាល​ខាង​ក្រោម ។ សូម​ចំណាំ​ថា Sun Microsystems នឹង​ប្រើ​ព័ត៌មាននេះដើម្បី​ប្រមូល​តែ​​ស្ថិតិ​ប្រើ​ផលិតផល ហើយ​ផ្ញើ​ព្រឹត្តិបត្រ​ VirtualBox ឲ្យ​អ្នក ។ ជា​ទូទៅ Sun Microsystems នឹង​មិន​ចម្លង​ទិន្នន័យ​របស់​អ្នក​ទៅ​ភាគីទីបី​បានទេ ។ ព័ត៌មាន​លម្អិត​អំពី​​វិធី​ដែល​យើង​ប្រើ​ទិន្នន័យ​ផ្ទាល់ខ្លួន​របស់​អ្នក អាច​រក​បាននៅ​ក្នុង​ផ្នែក &lt;b&gt;គោលនយោបាយ​ឯកជន&lt;/b&gt; របស់​សៀវភៅ​ដៃ VirtualBox ឬ​នៅ​លើ​ទំព័រ &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;គោលនយោបាយ​ឯកជន&lt;/a&gt; របស់​តំបន់បណ្ដាញ VirtualBox ។&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from Sun Microsystems at the e-mail address specified above.</source>
-        <translation>គូស​ធីក​ប្រអប់​នេះ ប្រសិនបើ​អ្នក​មិន​ចង់​ទទួល​សំបុត្រ​ពី​ Sun Microsystems តាម​អាសយដ្ឋាន​អ៊ីមែល​ដែល​បាន​បញ្ជាក់​ខាង​លើ ។</translation>
+        <translation type="obsolete">គូស​ធីក​ប្រអប់​នេះ ប្រសិនបើ​អ្នក​មិន​ចង់​ទទួល​សំបុត្រ​ពី​ Sun Microsystems តាម​អាសយដ្ឋាន​អ៊ីមែល​ដែល​បាន​បញ្ជាក់​ខាង​លើ ។</translation>
     </message>
     <message>
         <source>C&amp;onfirm</source>
-        <translation>អះអាង</translation>
+        <translation type="obsolete">អះអាង</translation>
     </message>
     <message>
         <source>Cancel</source>
         <translation>បោះបង់</translation>
+    </message>
+    <message>
+        <source>Select Country/Territory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use the Latin characters to fill the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>I &amp;have a Sun Online account already:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;E-mail:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Password:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>I &amp;would like to register creating a new Sun Online account:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;First Name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Last Name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Company:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Co&amp;untry:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>E-&amp;mail:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>P&amp;assword:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Co&amp;nfirm Password:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Register</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4144,7 +4361,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation>បោះបង់​រូបថត</translation>
+        <translation type="obsolete">បោះបង់​រូបថត</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot</source>
@@ -4164,7 +4381,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation>បោះបង់​រូបថត​ដែល​បានជ្រើស​របស់ម៉ាស៊ីន​និម្មិត</translation>
+        <translation type="obsolete">បោះបង់​រូបថត​ដែល​បានជ្រើស​របស់ម៉ាស៊ីន​និម្មិត</translation>
     </message>
     <message>
         <source>Take a snapshot of the current virtual machine state</source>
@@ -4181,6 +4398,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Show details of the selected snapshot</source>
         <translation>បង្ហាញ​សេចក្ដី​លម្អិត​របស់​រូបថត​ដែល​បានជ្រើស</translation>
+    </message>
+    <message>
+        <source>&amp;Merge Snapshot with Parent</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Merges the snapshot into the parent snapshot or disk image and then deletes the now redundant snapshot file.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4784,6 +5009,81 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>VBoxVMSettingsDisplay</name>
+    <message>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <translation type="unfinished">អ្នក​បាន​ផ្ដល់​សតិ​វីដេអូ​តិចជាង &lt;b&gt;%1&lt;/b&gt; សម្រាប់​សតិ​វីដេអូ​ដែល​ជា​ចំនួន​អប្បបរមា​ដែល​បានទាមទារ​ឲ្យ​ប្ដូរ​ម៉ាស៊ីន​និម្មិត​ទៅ​​របៀប​ពេញអេក្រង់ ឬ​គ្មាន​ថ្នេរ ។</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
+        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;មេកាបៃ&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Video</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video &amp;Memory:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the amount of video memory provided to the virtual machine.</source>
+        <translation type="unfinished">ត្រួតពិនិត្យ​ចំនួន​សតិ​វីឌីអូ​សរុប​ដែល​បានផ្ដល់​ឲ្យ​ម៉ាស៊ីន​និម្មិត ។</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="unfinished">មេកាបៃ</translation>
+    </message>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="unfinished">លក្ខណៈសម្បត្តិ​ដែល​បានពង្រីក ៖</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
+        <translation type="unfinished">នៅពេល​បាន​គូស​ធីគ ម៉ាស៊ីន​និម្មិត​នឹង​ចូលដំណើរការ​សមត្ថភាព​ក្រាហ្វិក​ត្រីមាត្រ​ដែល​មាន​នៅ​លើ​ម៉ាស៊ីន ។</translation>
+    </message>
+    <message>
+        <source>Enable &amp;3D Acceleration</source>
+        <translation type="unfinished">បើក​ការបង្កើន​ល្បឿន​ត្រីមាត្រ​</translation>
+    </message>
+    <message>
+        <source>&amp;Remote Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
+        <translation type="unfinished">នៅពេល​បាន​គូស​ធីក VM នឹង​ដើរតួ​ជា​ម៉ាស៊ីន​បម្រើ​ពិធីការ​ផ្ទៃតុ​ពី​ចម្ងាយ (RDP) ដោយ​អនុញ្ញាត​ឲ្យ​ម៉ាស៊ីនភ្ញៀវ​ពី​ចម្ងាយ​តភ្ជាប់​ ហើយ​ប្រតិបត្តិ​ VM (នៅ​ពេល​កំពុង​រត់) ដោយ​ប្រើ​ម៉ាស៊ីន​ភ្ញៀវ RDP ស្តង់ដារ ។</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Server</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Server &amp;Port:</source>
+        <translation type="unfinished">ច្រក​ម៉ាស៊ីន​បម្រើ ៖</translation>
+    </message>
+    <message>
+        <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
+        <translation type="unfinished">បង្ហាញ​លេខ​ច្រក​ម៉ាស៊ីនបម្រើ VRDP ។ អ្នកអាច​បញ្ជាក់ &lt;tt&gt;0&lt;/tt&gt; (សូន្យ) ដើម្បី​កំណត់​ច្រក​ទៅ​តម្លៃ​លំនាំដើម​ឡើង​វិញ ។</translation>
+    </message>
+    <message>
+        <source>Authentication &amp;Method:</source>
+        <translation type="unfinished">វិធីសាស្ត្រ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ ៖</translation>
+    </message>
+    <message>
+        <source>Defines the VRDP authentication method.</source>
+        <translation type="unfinished">កំណត់​វិធីសាស្ត្រ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ​របស់ VRDP ។</translation>
+    </message>
+    <message>
+        <source>Authentication &amp;Timeout:</source>
+        <translation type="unfinished">អស់ពេល​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ ៖</translation>
+    </message>
+    <message>
+        <source>Specifies the timeout for guest authentication, in milliseconds.</source>
+        <translation type="unfinished">បញ្ជាក់​ការ​អស់ពេលវេលា​សម្រាប់​ការ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ គិត​​ជា​មិល្លី​វិនាទី ។</translation>
+    </message>
+</context>
+<context>
     <name>VBoxVMSettingsDlg</name>
     <message>
         <source>General</source>
@@ -4835,7 +5135,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Remote Display</source>
-        <translation>ការ​បង្ហាញ​ពី​ចម្ងាយ</translation>
+        <translation type="obsolete">ការ​បង្ហាញ​ពី​ចម្ងាយ</translation>
     </message>
     <message>
         <source>%1 - %2</source>
@@ -4844,6 +5144,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
         <translation type="obsolete">នៅ​លើ​ទំព័រ &lt;b&gt;%1&lt;/b&gt; %2</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have selected a 64-bit guest OS type for this VM. As such guestsrequire hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have selected a 64-bit guest OS type for this VM. VirtualBox does not currently support more than one virtual CPU for 64-bit guests executed on 32-bit hosts.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4897,7 +5213,7 @@ p, li { white-space: pre-wrap; }
     <name>VBoxVMSettingsGeneral</name>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;%1&amp;nbsp;មេកាបៃ&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;មេកាបៃ&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
@@ -4909,7 +5225,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Identification</source>
-        <translation>ការ​កំណត់​អត្តសញ្ញាណ</translation>
+        <translation type="obsolete">ការ​កំណត់​អត្តសញ្ញាណ</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
@@ -4921,31 +5237,31 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation>ទំហំ​សតិ​មូលដ្ឋាន</translation>
+        <translation type="obsolete">ទំហំ​សតិ​មូលដ្ឋាន</translation>
     </message>
     <message>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation>ត្រួតពិនិត្យ​ចំនួន​សតិ​ដែលបានផ្ដល់​ទៅ​ម៉ាស៊ីន​និម្មិត ។ ប្រសិនបើ​អ្នក​ផ្ដល់​ច្រើនពេក ម៉ាស៊ីន​មិនអាច​ចាប់ផ្ដើម​បានទេ ។</translation>
+        <translation type="obsolete">ត្រួតពិនិត្យ​ចំនួន​សតិ​ដែលបានផ្ដល់​ទៅ​ម៉ាស៊ីន​និម្មិត ។ ប្រសិនបើ​អ្នក​ផ្ដល់​ច្រើនពេក ម៉ាស៊ីន​មិនអាច​ចាប់ផ្ដើម​បានទេ ។</translation>
     </message>
     <message>
         <source>&lt;</source>
-        <translation>&lt;</translation>
+        <translation type="obsolete">&lt;</translation>
     </message>
     <message>
         <source>&gt;</source>
-        <translation>&gt;</translation>
+        <translation type="obsolete">&gt;</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation>មេកាបៃ</translation>
+        <translation type="obsolete">មេកាបៃ</translation>
     </message>
     <message>
         <source>&amp;Video Memory Size</source>
-        <translation>ទំហំ​សតិ​វីដេអូ</translation>
+        <translation type="obsolete">ទំហំ​សតិ​វីដេអូ</translation>
     </message>
     <message>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation>ត្រួតពិនិត្យ​ចំនួន​សតិ​វីឌីអូ​សរុប​ដែល​បានផ្ដល់​ឲ្យ​ម៉ាស៊ីន​និម្មិត ។</translation>
+        <translation type="obsolete">ត្រួតពិនិត្យ​ចំនួន​សតិ​វីឌីអូ​សរុប​ដែល​បានផ្ដល់​ឲ្យ​ម៉ាស៊ីន​និម្មិត ។</translation>
     </message>
     <message>
         <source>&amp;Advanced</source>
@@ -4953,67 +5269,67 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Boo&amp;t Order:</source>
-        <translation>លំដាប់​ចាប់ផ្ដើម ៖</translation>
+        <translation type="obsolete">លំដាប់​ចាប់ផ្ដើម ៖</translation>
     </message>
     <message>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation>កំណត់​លំដាប់​ឧបករណ៍​ចាប់ផ្ដើម ។ ប្រើ​ប្រអប់​គូសធីក​នៅ​ខា​ងឆ្វេង​ដើម្បី​បើក ​ឬ​បិទ​ឧបករណ៍​ចាប់ផ្ដើម​នីមួយៗ ។ ផ្លាស់ទីធាតុ​ឡើង​លើ និង​ចុះក្រោម​ដើម្បី​ផ្លាស់ប្ដូរ​លំដាប់​ឧបករណ៍ ។</translation>
+        <translation type="obsolete">កំណត់​លំដាប់​ឧបករណ៍​ចាប់ផ្ដើម ។ ប្រើ​ប្រអប់​គូសធីក​នៅ​ខា​ងឆ្វេង​ដើម្បី​បើក ​ឬ​បិទ​ឧបករណ៍​ចាប់ផ្ដើម​នីមួយៗ ។ ផ្លាស់ទីធាតុ​ឡើង​លើ និង​ចុះក្រោម​ដើម្បី​ផ្លាស់ប្ដូរ​លំដាប់​ឧបករណ៍ ។</translation>
     </message>
     <message>
         <source>[device]</source>
-        <translation>[ឧបករណ៍]</translation>
+        <translation type="obsolete">[ឧបករណ៍]</translation>
     </message>
     <message>
         <source>Move Up (Ctrl-Up)</source>
-        <translation>ផ្លាស់ទីឡើង​លើ (បញ្ជា(Ctrl)-Up)</translation>
+        <translation type="obsolete">ផ្លាស់ទីឡើង​លើ (បញ្ជា(Ctrl)-Up)</translation>
     </message>
     <message>
         <source>Moves the selected boot device up.</source>
-        <translation>ផ្លាស់ទី​ឧបករណ៍​ចាប់ផ្ដើម​ដែល​បានជ្រើ​សឡើង​លើ ។</translation>
+        <translation type="obsolete">ផ្លាស់ទី​ឧបករណ៍​ចាប់ផ្ដើម​ដែល​បានជ្រើ​សឡើង​លើ ។</translation>
     </message>
     <message>
         <source>Move Down (Ctrl-Down)</source>
-        <translation>ផ្លាស់ទី​ចុះក្រោម (បញ្ជា(Ctrl)-Down)</translation>
+        <translation type="obsolete">ផ្លាស់ទី​ចុះក្រោម (បញ្ជា(Ctrl)-Down)</translation>
     </message>
     <message>
         <source>Moves the selected boot device down.</source>
-        <translation>ផ្លាស់ទី​ឧបករណ៍​ចាប់ផ្ដើម​ដែល​បាន​ជ្រើស​ចុះក្រោម ។</translation>
+        <translation type="obsolete">ផ្លាស់ទី​ឧបករណ៍​ចាប់ផ្ដើម​ដែល​បាន​ជ្រើស​ចុះក្រោម ។</translation>
     </message>
     <message>
         <source>Extended Features:</source>
-        <translation>លក្ខណៈសម្បត្តិ​ដែល​បានពង្រីក ៖</translation>
+        <translation type="obsolete">លក្ខណៈសម្បត្តិ​ដែល​បានពង្រីក ៖</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>នៅពេល​បានគូស​ធីក​ ម៉ាស៊ីន​និម្មិត​នឹង​គាំទ្រ​ការ​កំណត់​រចនាសម្ព័ន្ធ​កម្រិត​ខ្ពស់ និង​ចំណុច​ប្រទាក់​គ្រប់គ្រង​ថាមពល (ACPI) ។ &lt;b&gt;ចំណាំ ៖&lt;/b&gt; កុំ​បិទ​លក្ខណៈពិសេស​នេះ​ បន្ទាប់​ពី​បានដំឡើង​ប្រព័ន្ធ​ប្រតិបត្តិការ​វីនដូ​របស់ម៉ាស៊ីន​ភ្ញៀវ !</translation>
+        <translation type="obsolete">នៅពេល​បានគូស​ធីក​ ម៉ាស៊ីន​និម្មិត​នឹង​គាំទ្រ​ការ​កំណត់​រចនាសម្ព័ន្ធ​កម្រិត​ខ្ពស់ និង​ចំណុច​ប្រទាក់​គ្រប់គ្រង​ថាមពល (ACPI) ។ &lt;b&gt;ចំណាំ ៖&lt;/b&gt; កុំ​បិទ​លក្ខណៈពិសេស​នេះ​ បន្ទាប់​ពី​បានដំឡើង​ប្រព័ន្ធ​ប្រតិបត្តិការ​វីនដូ​របស់ម៉ាស៊ីន​ភ្ញៀវ !</translation>
     </message>
     <message>
         <source>Enable A&amp;CPI</source>
-        <translation>បើក ACPI</translation>
+        <translation type="obsolete">បើក ACPI</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>នៅពេល​បាន​គូស​ធីក ម៉ាស៊ីន​និម្មិត​នឹង​គាំទ្រ​ Input Output APIC (IO APIC) ដែល​អាច​បន្ថយ​ការ​អនុវត្ត​របស់ VM តិចតួច ។ &lt;b&gt;ចំណាំ ៖&lt;/b&gt; កុំ​បិទ​លក្ខណៈ​ពិសេស​នេះ​បន្ទាប់ពី​ដំឡើង​ប្រព័ន្ធ​ប្រតិបត្តិការ​វីនដូ​របស់ម៉ាស៊ីន​ភ្ញៀវ !</translation>
+        <translation type="obsolete">នៅពេល​បាន​គូស​ធីក ម៉ាស៊ីន​និម្មិត​នឹង​គាំទ្រ​ Input Output APIC (IO APIC) ដែល​អាច​បន្ថយ​ការ​អនុវត្ត​របស់ VM តិចតួច ។ &lt;b&gt;ចំណាំ ៖&lt;/b&gt; កុំ​បិទ​លក្ខណៈ​ពិសេស​នេះ​បន្ទាប់ពី​ដំឡើង​ប្រព័ន្ធ​ប្រតិបត្តិការ​វីនដូ​របស់ម៉ាស៊ីន​ភ្ញៀវ !</translation>
     </message>
     <message>
         <source>Enable IO A&amp;PIC</source>
-        <translation>បើក IO APIC</translation>
+        <translation type="obsolete">បើក IO APIC</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation>នៅពេល​បាន​គូស​ធីគ ម៉ាស៊ីន​និម្មិត​នឹង​ព្យាយាម​ប្រាកដ​ថា​ផ្នែក​បន្ថែម​និម្មិត​ផ្នែក​រឹង​របស់​ស៊ីភីយូ​របស់ម៉ាស៊ីន​ដូចជា Intel VT-x និង AMD-V ។</translation>
+        <translation type="obsolete">នៅពេល​បាន​គូស​ធីគ ម៉ាស៊ីន​និម្មិត​នឹង​ព្យាយាម​ប្រាកដ​ថា​ផ្នែក​បន្ថែម​និម្មិត​ផ្នែក​រឹង​របស់​ស៊ីភីយូ​របស់ម៉ាស៊ីន​ដូចជា Intel VT-x និង AMD-V ។</translation>
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation>បើក VT-x/AMD-V</translation>
+        <translation type="obsolete">បើក VT-x/AMD-V</translation>
     </message>
     <message>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation>នៅពេល​បាន​គូស​ធីក លក្ខណៈពិសេស​របស់ Physical Address Extension (PAE) នៃ​ស៊ីភីយូ​របស់​ម៉ាស៊ីន​នឹង​ត្រូវ​បានបង្ហាញ​ដល់​ម៉ាស៊ីន​និម្មិត ។</translation>
+        <translation type="obsolete">នៅពេល​បាន​គូស​ធីក លក្ខណៈពិសេស​របស់ Physical Address Extension (PAE) នៃ​ស៊ីភីយូ​របស់​ម៉ាស៊ីន​នឹង​ត្រូវ​បានបង្ហាញ​ដល់​ម៉ាស៊ីន​និម្មិត ។</translation>
     </message>
     <message>
         <source>Enable PA&amp;E/NX</source>
-        <translation>បើក PAE/NX</translation>
+        <translation type="obsolete">បើក PAE/NX</translation>
     </message>
     <message>
         <source>&amp;Shared Clipboard:</source>
@@ -5025,11 +5341,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation>កំណត់ប្រភេទ​ឧបករណ៍​បញ្ជា IDE និម្មិត ។ ដោយ​អាស្រ័យ​លើ​តម្លៃ​នេះ VirtualBox នឹង​ផ្ដល់​នូវ​ឧបករណ៍​ផ្នែក​រឹង IDE ផ្សេងៗ​គ្នា​ដល់​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ ។</translation>
+        <translation type="obsolete">កំណត់ប្រភេទ​ឧបករណ៍​បញ្ជា IDE និម្មិត ។ ដោយ​អាស្រ័យ​លើ​តម្លៃ​នេះ VirtualBox នឹង​ផ្ដល់​នូវ​ឧបករណ៍​ផ្នែក​រឹង IDE ផ្សេងៗ​គ្នា​ដល់​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ ។</translation>
     </message>
     <message>
         <source>&amp;IDE Controller Type:</source>
-        <translation>ប្រភេទ​វត្ថុ​បញ្ជា IDE ៖</translation>
+        <translation type="obsolete">ប្រភេទ​វត្ថុ​បញ្ជា IDE ៖</translation>
     </message>
     <message>
         <source>S&amp;napshot Folder:</source>
@@ -5045,7 +5361,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Other</source>
-        <translation>ផ្សេងៗ</translation>
+        <translation type="obsolete">ផ្សេងៗ</translation>
     </message>
     <message>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
@@ -5053,11 +5369,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Remember Mounted Media</source>
-        <translation>មេឌៀ​ដែលបាន​ម៉ោន​សមាជិក</translation>
+        <translation type="obsolete">មេឌៀ​ដែលបាន​ម៉ោន​សមាជិក</translation>
     </message>
     <message>
         <source>Runtime:</source>
-        <translation>ពេលវេលា​រត់៖</translation>
+        <translation type="obsolete">ពេលវេលា​រត់៖</translation>
     </message>
     <message>
         <source>you have assigned more than &lt;b&gt;75%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
@@ -5069,34 +5385,34 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
-        <translation>អ្នក​បាន​ផ្ដល់​សតិ​វីដេអូ​តិចជាង &lt;b&gt;%1&lt;/b&gt; សម្រាប់​សតិ​វីដេអូ​ដែល​ជា​ចំនួន​អប្បបរមា​ដែល​បានទាមទារ​ឲ្យ​ប្ដូរ​ម៉ាស៊ីន​និម្មិត​ទៅ​​របៀប​ពេញអេក្រង់ ឬ​គ្មាន​ថ្នេរ ។</translation>
+        <translation type="obsolete">អ្នក​បាន​ផ្ដល់​សតិ​វីដេអូ​តិចជាង &lt;b&gt;%1&lt;/b&gt; សម្រាប់​សតិ​វីដេអូ​ដែល​ជា​ចំនួន​អប្បបរមា​ដែល​បានទាមទារ​ឲ្យ​ប្ដូរ​ម៉ាស៊ីន​និម្មិត​ទៅ​​របៀប​ពេញអេក្រង់ ឬ​គ្មាន​ថ្នេរ ។</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
-        <translation>នៅពេល​បាន​គូស​ធីគ ម៉ាស៊ីន​និម្មិត​នឹង​ចូលដំណើរការ​សមត្ថភាព​ក្រាហ្វិក​ត្រីមាត្រ​ដែល​មាន​នៅ​លើ​ម៉ាស៊ីន ។</translation>
+        <translation type="obsolete">នៅពេល​បាន​គូស​ធីគ ម៉ាស៊ីន​និម្មិត​នឹង​ចូលដំណើរការ​សមត្ថភាព​ក្រាហ្វិក​ត្រីមាត្រ​ដែល​មាន​នៅ​លើ​ម៉ាស៊ីន ។</translation>
     </message>
     <message>
         <source>Enable &amp;3D Acceleration</source>
-        <translation>បើក​ការបង្កើន​ល្បឿន​ត្រីមាត្រ​</translation>
+        <translation type="obsolete">បើក​ការបង្កើន​ល្បឿន​ត្រីមាត្រ​</translation>
     </message>
     <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
+        <source>Removable Media:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <source>&amp;Remember Runtime Changes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>there is a 64 bits guest OS type assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else your guest will fail to detect a 64 bits CPU and will not be able to boot, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
+        <source>Mini ToolBar:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
+        <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enable Nested Pa&amp;ging</source>
+        <source>Show In &amp;Fullscreen/Seamless</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5165,6 +5481,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Enable Additional Controller</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IDE &amp;Controller Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
+        <translation type="unfinished">កំណត់ប្រភេទ​ឧបករណ៍​បញ្ជា IDE និម្មិត ។ ដោយ​អាស្រ័យ​លើ​តម្លៃ​នេះ VirtualBox នឹង​ផ្ដល់​នូវ​ឧបករណ៍​ផ្នែក​រឹង IDE ផ្សេងៗ​គ្នា​ដល់​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ ។</translation>
     </message>
 </context>
 <context>
@@ -5559,11 +5883,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Port &amp;Path:</source>
-        <translation>ផ្លូវ​ច្រក ៖</translation>
+        <translation type="obsolete">ផ្លូវ​ច្រក ៖</translation>
     </message>
     <message>
         <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation>បង្ហាញ​ផ្លូវ​ទៅកាន់​ច្រក​ស៊េរៀល​នៅ​លើ​ម៉ាស៊ីន នៅពេល​ច្រក​ដំណើការ​ក្នុង​របៀប &lt;b&gt;បំពង់​ម៉ាស៊ីន&lt;/b&gt; ឬ​ឈ្មោះ​ឧបករណ៍​ស៊េរៀល​នៅពេល​ច្រក​ដំណើរការ​ក្នុង​របៀប &lt;b&gt;ឧបករណ៍​ម៉ាស៊ីន&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>Port/File &amp;Path:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5579,6 +5907,151 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Duplicate port path is entered </source>
         <translation>បាន​បញ្ចូល​ផ្លូវ​ច្រក​ស្ទួន</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxVMSettingsSystem</name>
+    <message>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>for performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have assigned more virtual CPUs to the virtual machine than the number of physical CPUs on your host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>there is more than one virtual CPU assigned for this VM, which requires IO-APIC feature to be enabled too, else SMP will not be able to work, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>there is more than one virtual CPU assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else SMP will not be able to work, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
+        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;មេកាបៃ&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</source>
+        <comment>%1 is 1 for now</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
+        <comment>%1 is 32 for now</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Motherboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Base &amp;Memory:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
+        <translation type="unfinished">ត្រួតពិនិត្យ​ចំនួន​សតិ​ដែលបានផ្ដល់​ទៅ​ម៉ាស៊ីន​និម្មិត ។ ប្រសិនបើ​អ្នក​ផ្ដល់​ច្រើនពេក ម៉ាស៊ីន​មិនអាច​ចាប់ផ្ដើម​បានទេ ។</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="unfinished">មេកាបៃ</translation>
+    </message>
+    <message>
+        <source>&amp;Boot Order:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
+        <translation type="unfinished">កំណត់​លំដាប់​ឧបករណ៍​ចាប់ផ្ដើម ។ ប្រើ​ប្រអប់​គូសធីក​នៅ​ខា​ងឆ្វេង​ដើម្បី​បើក ​ឬ​បិទ​ឧបករណ៍​ចាប់ផ្ដើម​នីមួយៗ ។ ផ្លាស់ទីធាតុ​ឡើង​លើ និង​ចុះក្រោម​ដើម្បី​ផ្លាស់ប្ដូរ​លំដាប់​ឧបករណ៍ ។</translation>
+    </message>
+    <message>
+        <source>Move Down (Ctrl-Down)</source>
+        <translation type="unfinished">ផ្លាស់ទី​ចុះក្រោម (បញ្ជា(Ctrl)-Down)</translation>
+    </message>
+    <message>
+        <source>Moves the selected boot device down.</source>
+        <translation type="unfinished">ផ្លាស់ទី​ឧបករណ៍​ចាប់ផ្ដើម​ដែល​បាន​ជ្រើស​ចុះក្រោម ។</translation>
+    </message>
+    <message>
+        <source>Move Up (Ctrl-Up)</source>
+        <translation type="unfinished">ផ្លាស់ទីឡើង​លើ (បញ្ជា(Ctrl)-Up)</translation>
+    </message>
+    <message>
+        <source>Moves the selected boot device up.</source>
+        <translation type="unfinished">ផ្លាស់ទី​ឧបករណ៍​ចាប់ផ្ដើម​ដែល​បានជ្រើ​សឡើង​លើ ។</translation>
+    </message>
+    <message>
+        <source>Extended Features:</source>
+        <translation type="unfinished">លក្ខណៈសម្បត្តិ​ដែល​បានពង្រីក ៖</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation type="unfinished">នៅពេល​បានគូស​ធីក​ ម៉ាស៊ីន​និម្មិត​នឹង​គាំទ្រ​ការ​កំណត់​រចនាសម្ព័ន្ធ​កម្រិត​ខ្ពស់ និង​ចំណុច​ប្រទាក់​គ្រប់គ្រង​ថាមពល (ACPI) ។ &lt;b&gt;ចំណាំ ៖&lt;/b&gt; កុំ​បិទ​លក្ខណៈពិសេស​នេះ​ បន្ទាប់​ពី​បានដំឡើង​ប្រព័ន្ធ​ប្រតិបត្តិការ​វីនដូ​របស់ម៉ាស៊ីន​ភ្ញៀវ !</translation>
+    </message>
+    <message>
+        <source>Enable &amp;ACPI</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation type="unfinished">នៅពេល​បាន​គូស​ធីក ម៉ាស៊ីន​និម្មិត​នឹង​គាំទ្រ​ Input Output APIC (IO APIC) ដែល​អាច​បន្ថយ​ការ​អនុវត្ត​របស់ VM តិចតួច ។ &lt;b&gt;ចំណាំ ៖&lt;/b&gt; កុំ​បិទ​លក្ខណៈ​ពិសេស​នេះ​បន្ទាប់ពី​ដំឡើង​ប្រព័ន្ធ​ប្រតិបត្តិការ​វីនដូ​របស់ម៉ាស៊ីន​ភ្ញៀវ !</translation>
+    </message>
+    <message>
+        <source>Enable &amp;IO APIC</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Processor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Processor(s):</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the number of virtual CPUs in the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
+        <translation type="unfinished">នៅពេល​បាន​គូស​ធីក លក្ខណៈពិសេស​របស់ Physical Address Extension (PAE) នៃ​ស៊ីភីយូ​របស់​ម៉ាស៊ីន​នឹង​ត្រូវ​បានបង្ហាញ​ដល់​ម៉ាស៊ីន​និម្មិត ។</translation>
+    </message>
+    <message>
+        <source>Enable PA&amp;E/NX</source>
+        <translation type="unfinished">បើក PAE/NX</translation>
+    </message>
+    <message>
+        <source>Acce&amp;leration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hardware Virtualization:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
+        <translation type="unfinished">នៅពេល​បាន​គូស​ធីគ ម៉ាស៊ីន​និម្មិត​នឹង​ព្យាយាម​ប្រាកដ​ថា​ផ្នែក​បន្ថែម​និម្មិត​ផ្នែក​រឹង​របស់​ស៊ីភីយូ​របស់ម៉ាស៊ីន​ដូចជា Intel VT-x និង AMD-V ។</translation>
+    </message>
+    <message>
+        <source>Enable &amp;VT-x/AMD-V</source>
+        <translation type="unfinished">បើក VT-x/AMD-V</translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable Nested Pa&amp;ging</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5771,35 +6244,35 @@ p, li { white-space: pre-wrap; }
     <name>VBoxVMSettingsVRDP</name>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation>នៅពេល​បាន​គូស​ធីក VM នឹង​ដើរតួ​ជា​ម៉ាស៊ីន​បម្រើ​ពិធីការ​ផ្ទៃតុ​ពី​ចម្ងាយ (RDP) ដោយ​អនុញ្ញាត​ឲ្យ​ម៉ាស៊ីនភ្ញៀវ​ពី​ចម្ងាយ​តភ្ជាប់​ ហើយ​ប្រតិបត្តិ​ VM (នៅ​ពេល​កំពុង​រត់) ដោយ​ប្រើ​ម៉ាស៊ីន​ភ្ញៀវ RDP ស្តង់ដារ ។</translation>
+        <translation type="obsolete">នៅពេល​បាន​គូស​ធីក VM នឹង​ដើរតួ​ជា​ម៉ាស៊ីន​បម្រើ​ពិធីការ​ផ្ទៃតុ​ពី​ចម្ងាយ (RDP) ដោយ​អនុញ្ញាត​ឲ្យ​ម៉ាស៊ីនភ្ញៀវ​ពី​ចម្ងាយ​តភ្ជាប់​ ហើយ​ប្រតិបត្តិ​ VM (នៅ​ពេល​កំពុង​រត់) ដោយ​ប្រើ​ម៉ាស៊ីន​ភ្ញៀវ RDP ស្តង់ដារ ។</translation>
     </message>
     <message>
         <source>&amp;Enable VRDP Server</source>
-        <translation>បើក​ម៉ាស៊ីនបម្រើ VRDP</translation>
+        <translation type="obsolete">បើក​ម៉ាស៊ីនបម្រើ VRDP</translation>
     </message>
     <message>
         <source>Server &amp;Port:</source>
-        <translation>ច្រក​ម៉ាស៊ីន​បម្រើ ៖</translation>
+        <translation type="obsolete">ច្រក​ម៉ាស៊ីន​បម្រើ ៖</translation>
     </message>
     <message>
         <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
-        <translation>បង្ហាញ​លេខ​ច្រក​ម៉ាស៊ីនបម្រើ VRDP ។ អ្នកអាច​បញ្ជាក់ &lt;tt&gt;0&lt;/tt&gt; (សូន្យ) ដើម្បី​កំណត់​ច្រក​ទៅ​តម្លៃ​លំនាំដើម​ឡើង​វិញ ។</translation>
+        <translation type="obsolete">បង្ហាញ​លេខ​ច្រក​ម៉ាស៊ីនបម្រើ VRDP ។ អ្នកអាច​បញ្ជាក់ &lt;tt&gt;0&lt;/tt&gt; (សូន្យ) ដើម្បី​កំណត់​ច្រក​ទៅ​តម្លៃ​លំនាំដើម​ឡើង​វិញ ។</translation>
     </message>
     <message>
         <source>Authentication &amp;Method:</source>
-        <translation>វិធីសាស្ត្រ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ ៖</translation>
+        <translation type="obsolete">វិធីសាស្ត្រ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ ៖</translation>
     </message>
     <message>
         <source>Defines the VRDP authentication method.</source>
-        <translation>កំណត់​វិធីសាស្ត្រ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ​របស់ VRDP ។</translation>
+        <translation type="obsolete">កំណត់​វិធីសាស្ត្រ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ​របស់ VRDP ។</translation>
     </message>
     <message>
         <source>Authentication &amp;Timeout:</source>
-        <translation>អស់ពេល​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ ៖</translation>
+        <translation type="obsolete">អស់ពេល​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ ៖</translation>
     </message>
     <message>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation>បញ្ជាក់​ការ​អស់ពេលវេលា​សម្រាប់​ការ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ គិត​​ជា​មិល្លី​វិនាទី ។</translation>
+        <translation type="obsolete">បញ្ជាក់​ការ​អស់ពេលវេលា​សម្រាប់​ការ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ គិត​​ជា​មិល្លី​វិនាទី ។</translation>
     </message>
 </context>
 </TS>
