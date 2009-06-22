@@ -1367,7 +1367,7 @@ PX86PDPT pgmGstLazyMapPaePDPT(PPGMCPU pPGM)
     AssertReturn(pPage, NULL);
 
     RTHCPTR     HCPtrGuestCR3;
-    int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, pPGM->GCPhysCR3 & X86_CR3_PAE_PAGE_MASK, (void **)&HCPtrGuestCR3);
+    int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, pPGM->GCPhysCR3 & X86_CR3_PAE_PAGE_MASK, (void **)&HCPtrGuestCR3); /** @todo r=bird: This GCPhysR3 masking isn't necessary. */
     AssertRCReturn(rc, NULL);
 
     pPGM->pGstPaePdptR3 = (R3PTRTYPE(PX86PDPT))HCPtrGuestCR3;
@@ -1463,7 +1463,7 @@ PX86PML4 pgmGstLazyMapPml4(PPGMCPU pPGM)
     AssertReturn(pPage, NULL);
 
     RTHCPTR     HCPtrGuestCR3;
-    int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, pPGM->GCPhysCR3 & X86_CR3_AMD64_PAGE_MASK, (void **)&HCPtrGuestCR3);
+    int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, pPGM->GCPhysCR3 & X86_CR3_AMD64_PAGE_MASK, (void **)&HCPtrGuestCR3); /** @todo r=bird: This GCPhysCR3 masking isn't necessary. */
     AssertRCReturn(rc, NULL);
 
     pPGM->pGstAmd64Pml4R3 = (R3PTRTYPE(PX86PML4))HCPtrGuestCR3;
