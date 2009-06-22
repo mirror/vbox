@@ -186,7 +186,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
      */
     AssertCompileMemberAlignment(VM, tm.s, 32);
     AssertCompile(sizeof(pVM->tm.s) <= sizeof(pVM->tm.padding));
-    AssertCompileMemberAlignment(TM, EmtLock, 8);
+    AssertCompileMemberAlignment(TM, TimerCritSect, 8);
     AssertCompileMemberAlignment(TM, VirtualSyncLock, 8);
 
     /*
@@ -273,7 +273,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     /*
      * Init the locks.
      */
-    rc = PDMR3CritSectInit(pVM, &pVM->tm.s.EmtLock, "TM EMT Lock");
+    rc = PDMR3CritSectInit(pVM, &pVM->tm.s.TimerCritSect, "TM Timer Lock");
     if (RT_FAILURE(rc))
         return rc;
     rc = PDMR3CritSectInit(pVM, &pVM->tm.s.VirtualSyncLock, "TM VirtualSync Lock");
@@ -976,7 +976,7 @@ VMMR3DECL(void) TMR3Reset(PVM pVM)
 {
     LogFlow(("TMR3Reset:\n"));
     VM_ASSERT_EMT(pVM);
-    tmLock(pVM);
+    tmTimerLock(pVM);
 
     /*
      * Abort any pending catch up.
@@ -1011,7 +1011,7 @@ VMMR3DECL(void) TMR3Reset(PVM pVM)
 
     PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
     VMCPU_FF_CLEAR(pVCpuDst, VMCPU_FF_TIMER); /** @todo FIXME: this isn't right. */
-    tmUnlock(pVM);
+    tmTimerUnlock(pVM);
 }
 
 
@@ -1239,7 +1239,7 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, const char *pszDesc, PPTMT
     pTimer->pszDesc         = pszDesc;
 
     /* insert into the list of created timers. */
-    tmLock(pVM);
+    tmTimerLock(pVM);
     pTimer->pBigPrev        = NULL;
     pTimer->pBigNext        = pVM->tm.s.pCreated;
     pVM->tm.s.pCreated      = pTimer;
@@ -1248,7 +1248,7 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, const char *pszDesc, PPTMT
 #ifdef VBOX_STRICT
     tmTimerQueuesSanityChecks(pVM, "tmR3TimerCreate");
 #endif
-    tmUnlock(pVM);
+    tmTimerUnlock(pVM);
 
     *ppTimer = pTimer;
     return VINF_SUCCESS;
@@ -1420,7 +1420,7 @@ VMMR3DECL(int) TMR3TimerDestroy(PTMTIMER pTimer)
      * The rest of the game happens behind the lock, just
      * like create does. All the work is done here.
      */
-    tmLock(pVM);
+    tmTimerLock(pVM);
     for (int cRetries = 1000;; cRetries--)
     {
         /*
@@ -1458,12 +1458,12 @@ VMMR3DECL(int) TMR3TimerDestroy(PTMTIMER pTimer)
             case TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE:
             case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
                 AssertMsgFailed(("%p:.enmState=%s %s\n", pTimer, tmTimerState(enmState), pTimer->pszDesc));
-                tmUnlock(pVM);
+                tmTimerUnlock(pVM);
                 if (!RTThreadYield())
                     RTThreadSleep(1);
                 AssertMsgReturn(cRetries > 0, ("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, pTimer->pszDesc),
                                 VERR_TM_UNSTABLE_STATE);
-                tmLock(pVM);
+                tmTimerLock(pVM);
                 continue;
 
             /*
@@ -1471,12 +1471,12 @@ VMMR3DECL(int) TMR3TimerDestroy(PTMTIMER pTimer)
              */
             case TMTIMERSTATE_FREE:
             case TMTIMERSTATE_DESTROY:
-                tmUnlock(pVM);
+                tmTimerUnlock(pVM);
                 AssertLogRelMsgFailedReturn(("pTimer=%p %s\n", pTimer, tmTimerState(enmState)), VERR_TM_INVALID_STATE);
 
             default:
                 AssertMsgFailed(("Unknown timer state %d (%s)\n", enmState, R3STRING(pTimer->pszDesc)));
-                tmUnlock(pVM);
+                tmTimerUnlock(pVM);
                 return VERR_TM_UNKNOWN_STATE;
         }
 
@@ -1489,10 +1489,10 @@ VMMR3DECL(int) TMR3TimerDestroy(PTMTIMER pTimer)
         if (fRc)
             break;
         AssertMsgFailed(("%p:.enmState=%s %s\n", pTimer, tmTimerState(enmState), pTimer->pszDesc));
-        tmUnlock(pVM);
+        tmTimerUnlock(pVM);
         AssertMsgReturn(cRetries > 0, ("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, pTimer->pszDesc),
                         VERR_TM_UNSTABLE_STATE);
-        tmLock(pVM);
+        tmTimerLock(pVM);
     }
 
     /*
@@ -1550,7 +1550,7 @@ VMMR3DECL(int) TMR3TimerDestroy(PTMTIMER pTimer)
 #ifdef VBOX_STRICT
     tmTimerQueuesSanityChecks(pVM, "TMR3TimerDestroy");
 #endif
-    tmUnlock(pVM);
+    tmTimerUnlock(pVM);
     return VINF_SUCCESS;
 }
 
@@ -1568,7 +1568,7 @@ VMMR3DECL(int) TMR3TimerDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
     if (!pDevIns)
         return VERR_INVALID_PARAMETER;
 
-    tmLock(pVM);
+    tmTimerLock(pVM);
     PTMTIMER    pCur = pVM->tm.s.pCreated;
     while (pCur)
     {
@@ -1581,7 +1581,7 @@ VMMR3DECL(int) TMR3TimerDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
             AssertRC(rc);
         }
     }
-    tmUnlock(pVM);
+    tmTimerUnlock(pVM);
 
     LogFlow(("TMR3TimerDestroyDevice: returns VINF_SUCCESS\n"));
     return VINF_SUCCESS;
@@ -1601,7 +1601,7 @@ VMMR3DECL(int) TMR3TimerDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
     if (!pDrvIns)
         return VERR_INVALID_PARAMETER;
 
-    tmLock(pVM);
+    tmTimerLock(pVM);
     PTMTIMER    pCur = pVM->tm.s.pCreated;
     while (pCur)
     {
@@ -1614,7 +1614,7 @@ VMMR3DECL(int) TMR3TimerDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
             AssertRC(rc);
         }
     }
-    tmUnlock(pVM);
+    tmTimerUnlock(pVM);
 
     LogFlow(("TMR3TimerDestroyDriver: returns VINF_SUCCESS\n"));
     return VINF_SUCCESS;
@@ -1758,7 +1758,7 @@ VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
     Log2(("TMR3TimerQueuesDo:\n"));
     Assert(!pVM->tm.s.fRunningQueues);
     ASMAtomicWriteBool(&pVM->tm.s.fRunningQueues, true);
-    tmLock(pVM);
+    tmTimerLock(pVM);
 
     /*
      * Process the queues.
@@ -1806,7 +1806,7 @@ VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
     /* done */
     Log2(("TMR3TimerQueuesDo: returns void\n"));
     ASMAtomicWriteBool(&pVM->tm.s.fRunningQueues, false);
-    tmUnlock(pVM);
+    tmTimerUnlock(pVM);
     STAM_PROFILE_STOP(&pVM->tm.s.StatDoQueues, a);
 }
 
@@ -2231,7 +2231,7 @@ VMMR3DECL(void) TMR3VirtualSyncFF(PVM pVM, PVMCPU pVCpu)
             tmVirtualSyncUnlock(pVM);
 
             /* try run it. */
-            tmLock(pVM);
+            tmTimerLock(pVM);
             tmVirtualSyncLock(pVM);
             if (pVM->tm.s.fVirtualSyncTicking)
                 Log2(("TMR3VirtualSyncFF: ticking (2)\n"));
@@ -2250,7 +2250,7 @@ VMMR3DECL(void) TMR3VirtualSyncFF(PVM pVM, PVMCPU pVCpu)
             }
             STAM_PROFILE_STOP(&pVM->tm.s.StatVirtualSyncFF, a); /* before the unlock! */
             tmVirtualSyncUnlock(pVM);
-            tmUnlock(pVM);
+            tmTimerUnlock(pVM);
         }
     }
 }
@@ -2452,9 +2452,9 @@ VMMR3DECL(int) TMR3NotifySuspend(PVM pVM, PVMCPU pVCpu)
     /*
      * The shared virtual clock (includes virtual sync which is tied to it).
      */
-    tmLock(pVM);
+    tmTimerLock(pVM);                           /* Paranoia: Exploiting the timer lock here. */
     int rc = tmVirtualPauseLocked(pVM);
-    tmUnlock(pVM);
+    tmTimerUnlock(pVM);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2494,9 +2494,9 @@ VMMR3DECL(int) TMR3NotifyResume(PVM pVM, PVMCPU pVCpu)
     /*
      * The shared virtual clock (includes virtual sync which is tied to it).
      */
-    tmLock(pVM);
+    tmTimerLock(pVM);                           /* Paranoia: Exploiting the timer lock here. */
     rc = tmVirtualResumeLocked(pVM);
-    tmUnlock(pVM);
+    tmTimerUnlock(pVM);
 
     return rc;
 }
@@ -2549,7 +2549,7 @@ static DECLCALLBACK(int) tmR3SetWarpDrive(PVM pVM, uint32_t u32Percent)
      * If the time is running we'll have to pause it before we can change
      * the warp drive settings.
      */
-    tmLock(pVM);
+    tmTimerLock(pVM);                           /* Paranoia: Exploiting the timer lock here. */
     bool fPaused = !!pVM->tm.s.cVirtualTicking;
     if (fPaused) /** @todo this isn't really working, but wtf. */
         TMR3NotifySuspend(pVM, pVCpu);
@@ -2561,7 +2561,7 @@ static DECLCALLBACK(int) tmR3SetWarpDrive(PVM pVM, uint32_t u32Percent)
 
     if (fPaused)
         TMR3NotifyResume(pVM, pVCpu);
-    tmUnlock(pVM);
+    tmTimerUnlock(pVM);
     return VINF_SUCCESS;
 }
 
@@ -2587,7 +2587,7 @@ static DECLCALLBACK(void) tmR3TimerInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
                                                 "Time",
                                                 "Expire",
                                                 "State");
-    tmLock(pVM);
+    tmTimerLock(pVM);
     for (PTMTIMERR3 pTimer = pVM->tm.s.pCreated; pTimer; pTimer = pTimer->pBigNext)
     {
         pHlp->pfnPrintf(pHlp,
@@ -2602,7 +2602,7 @@ static DECLCALLBACK(void) tmR3TimerInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
                         tmTimerState(pTimer->enmState),
                         pTimer->pszDesc);
     }
-    tmUnlock(pVM);
+    tmTimerUnlock(pVM);
 }
 
 
@@ -2629,7 +2629,7 @@ static DECLCALLBACK(void) tmR3TimerInfoActive(PVM pVM, PCDBGFINFOHLP pHlp, const
                                                 "State");
     for (unsigned iQueue = 0; iQueue < TMCLOCK_MAX; iQueue++)
     {
-        tmLock(pVM);
+        tmTimerLock(pVM);
         for (PTMTIMERR3 pTimer = TMTIMER_GET_HEAD(&pVM->tm.s.paTimerQueuesR3[iQueue]);
              pTimer;
              pTimer = TMTIMER_GET_NEXT(pTimer))
@@ -2652,7 +2652,7 @@ static DECLCALLBACK(void) tmR3TimerInfoActive(PVM pVM, PCDBGFINFOHLP pHlp, const
                             tmTimerState(pTimer->enmState),
                             pTimer->pszDesc);
         }
-        tmUnlock(pVM);
+        tmTimerUnlock(pVM);
     }
 }
 

@@ -65,36 +65,37 @@
 #endif
 
 
-#ifndef tmLock
+#ifndef tmTimerLock
 
 /**
- * Try take the EMT/TM lock, wait in ring-3 return VERR_SEM_BUSY in R0/RC.
+ * Try take the timer lock, wait in ring-3 return VERR_SEM_BUSY in R0/RC.
  *
  * @retval  VINF_SUCCESS on success (always in ring-3).
  * @retval  VERR_SEM_BUSY in RC and R0 if the semaphore is busy.
  *
  * @param   pVM         The VM handle.
+ *
+ * @thread  EMTs for the time being.
  */
-int tmLock(PVM pVM)
+int tmTimerLock(PVM pVM)
 {
     VM_ASSERT_EMT(pVM);
-    int rc = PDMCritSectEnter(&pVM->tm.s.EmtLock, VERR_SEM_BUSY);
+    int rc = PDMCritSectEnter(&pVM->tm.s.TimerCritSect, VERR_SEM_BUSY);
     return rc;
 }
 
 
 /**
- * Try take the EMT/TM lock, no waiting.
+ * Try take the timer lock, no waiting.
  *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_SEM_BUSY if busy.
  *
  * @param   pVM         The VM handle.
  */
-int tmTryLock(PVM pVM)
+int tmTimerTryLock(PVM pVM)
 {
-    VM_ASSERT_EMT(pVM);
-    int rc = PDMCritSectTryEnter(&pVM->tm.s.EmtLock);
+    int rc = PDMCritSectTryEnter(&pVM->tm.s.TimerCritSect);
     return rc;
 }
 
@@ -104,9 +105,9 @@ int tmTryLock(PVM pVM)
  *
  * @param   pVM         The VM handle.
  */
-void tmUnlock(PVM pVM)
+void tmTimerUnlock(PVM pVM)
 {
-    PDMCritSectLeave(&pVM->tm.s.EmtLock);
+    PDMCritSectLeave(&pVM->tm.s.TimerCritSect);
 }
 
 
@@ -260,7 +261,7 @@ DECLINLINE(void) tmSchedule(PTMTIMER pTimer)
 {
     PVM pVM = pTimer->CTX_SUFF(pVM);
     if (    VM_IS_EMT(pVM)
-        &&  RT_SUCCESS(tmTryLock(pVM)))
+        &&  RT_SUCCESS(tmTimerTryLock(pVM)))
     {
         STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatScheduleOne), a);
         Log3(("tmSchedule: tmTimerQueueSchedule\n"));
@@ -269,7 +270,7 @@ DECLINLINE(void) tmSchedule(PTMTIMER pTimer)
         tmTimerQueuesSanityChecks(pVM, "tmSchedule");
 #endif
         STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatScheduleOne), a);
-        tmUnlock(pVM);
+        tmTimerUnlock(pVM);
     }
     else
     {
@@ -816,7 +817,7 @@ static int tmTimerSetOptimizedStart(PVM pVM, PTMTIMER pTimer, uint64_t u64Expire
     tmTimerActiveLink(&pVM->tm.s.CTX_SUFF(paTimerQueues)[enmClock], pTimer, u64Expire);
 
     STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetOpt);
-    tmUnlock(pVM);
+    tmTimerUnlock(pVM);
     return VINF_SUCCESS;
 }
 
@@ -865,7 +866,7 @@ VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
              && pTimer->pCritSect))
     {
         /* Try take the TM lock and check the state again. */
-        if (RT_SUCCESS_NP(tmTryLock(pVM)))
+        if (RT_SUCCESS_NP(tmTimerTryLock(pVM)))
         {
             if (RT_LIKELY(tmTimerTry(pTimer, TMTIMERSTATE_ACTIVE, enmState)))
             {
@@ -873,7 +874,7 @@ VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
                 STAM_PROFILE_STOP(&pTimer->CTX_SUFF(pVM)->tm.s.CTX_SUFF_Z(StatTimerSetRelative), a);
                 return VINF_SUCCESS;
             }
-            tmUnlock(pVM);
+            tmTimerUnlock(pVM);
         }
     }
 #endif
@@ -1040,7 +1041,7 @@ static int tmTimerSetRelativeOptimizedStart(PVM pVM, PTMTIMER pTimer, uint64_t c
     tmTimerActiveLink(&pVM->tm.s.CTX_SUFF(paTimerQueues)[enmClock], pTimer, u64Expire);
 
     STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetRelativeOpt);
-    tmUnlock(pVM);
+    tmTimerUnlock(pVM);
     return VINF_SUCCESS;
 }
 
@@ -1091,7 +1092,7 @@ VMMDECL(int) TMTimerSetRelative(PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t
      * Note! Lock ordering doesn't apply when we only tries to
      *       get the innermost locks.
      */
-    bool fOwnTMLock = RT_SUCCESS_NP(tmTryLock(pVM));
+    bool fOwnTMLock = RT_SUCCESS_NP(tmTimerTryLock(pVM));
 #if 1
     if (    fOwnTMLock
         &&  pTimer->pCritSect)
@@ -1247,7 +1248,7 @@ VMMDECL(int) TMTimerSetRelative(PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t
          */
         if (!fOwnTMLock)
         {
-            fOwnTMLock = RT_SUCCESS_NP(tmTryLock(pVM));
+            fOwnTMLock = RT_SUCCESS_NP(tmTimerTryLock(pVM));
             if (    !fOwnTMLock
                 &&  enmClock == TMCLOCK_VIRTUAL_SYNC
                 &&  !fOwnVirtSyncLock)
@@ -1262,7 +1263,7 @@ VMMDECL(int) TMTimerSetRelative(PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t
     if (fOwnVirtSyncLock)
         tmVirtualSyncUnlock(pVM);
     if (fOwnTMLock)
-        tmUnlock(pVM);
+        tmTimerUnlock(pVM);
 
     if (    !fOwnTMLock
         &&  !fOwnVirtSyncLock
@@ -2034,7 +2035,7 @@ DECLINLINE(void) tmTimerQueueScheduleOne(PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
  */
 void tmTimerQueueSchedule(PVM pVM, PTMTIMERQUEUE pQueue)
 {
-    TM_ASSERT_EMT_LOCK(pVM);
+    TM_ASSERT_LOCK(pVM);
 
     /*
      * Dequeue the scheduling list and iterate it.
@@ -2075,7 +2076,7 @@ void tmTimerQueueSchedule(PVM pVM, PTMTIMERQUEUE pQueue)
  */
 void tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere)
 {
-    TM_ASSERT_EMT_LOCK(pVM);
+    TM_ASSERT_LOCK(pVM);
 
     /*
      * Check the linking of the active lists.

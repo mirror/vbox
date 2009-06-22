@@ -437,8 +437,8 @@ typedef struct TM
     /* Alignment */
     bool                        u8Alignment[2];
 
-    /** Lock serializing EMT access to TM. */
-    PDMCRITSECT                 EmtLock;
+    /** Lock serializing access to the timer lists. */
+    PDMCRITSECT                 TimerCritSect;
     /** Lock serializing access to the VirtualSync clock. */
     PDMCRITSECT                 VirtualSyncLock;
 
@@ -577,19 +577,19 @@ typedef struct TMCPU
 typedef TMCPU *PTMCPU;
 
 #if 0 /* enable this to rule out locking bugs on single cpu guests. */
-# define tmLock(pVM)                VINF_SUCCESS
-# define tmTryLock(pVM)             VINF_SUCCESS
-# define tmUnlock(pVM)              ((void)0)
+# define tmTimerLock(pVM)                VINF_SUCCESS
+# define tmTimerTryLock(pVM)             VINF_SUCCESS
+# define tmTimerUnlock(pVM)              ((void)0)
 # define tmVirtualSyncLock(pVM)     VINF_SUCCESS
 # define tmVirtualSyncTryLock(pVM)  VINF_SUCCESS
 # define tmVirtualSyncUnlock(pVM)   ((void)0)
-# define TM_ASSERT_EMT_LOCK(pVM) VM_ASSERT_EMT(pVM)
+# define TM_ASSERT_LOCK(pVM)        VM_ASSERT_EMT(pVM)
 #else
-int                     tmLock(PVM pVM);
-int                     tmTryLock(PVM pVM);
-void                    tmUnlock(PVM pVM);
-/** Checks that the caller owns the EMT lock.  */
-#define TM_ASSERT_EMT_LOCK(pVM) Assert(PDMCritSectIsOwner(&pVM->tm.s.EmtLock))
+int                     tmTimerLock(PVM pVM);
+int                     tmTimerTryLock(PVM pVM);
+void                    tmTimerUnlock(PVM pVM);
+/** Checks that the caller owns the timer lock.  */
+#define TM_ASSERT_LOCK(pVM) Assert(PDMCritSectIsOwner(&pVM->tm.s.TimerCritSect))
 int                     tmVirtualSyncLock(PVM pVM);
 int                     tmVirtualSyncTryLock(PVM pVM);
 void                    tmVirtualSyncUnlock(PVM pVM);
