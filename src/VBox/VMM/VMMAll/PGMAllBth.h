@@ -4342,18 +4342,16 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
     uint32_t     iOldShwUser       = pVCpu->pgm.s.iShwUser;
     PPGMPOOLPAGE pNewShwPageCR3;
 
+    pgmLock(pVM);
+
     Assert(!(GCPhysCR3 >> (PAGE_SHIFT + 32)));
-    rc = pgmPoolAlloc(pVM, GCPhysCR3 & GST_CR3_PAGE_MASK, BTH_PGMPOOLKIND_ROOT, SHW_POOL_ROOT_IDX, GCPhysCR3 >> PAGE_SHIFT, &pNewShwPageCR3);
+    rc = pgmPoolAlloc(pVM, GCPhysCR3 & GST_CR3_PAGE_MASK, BTH_PGMPOOLKIND_ROOT, SHW_POOL_ROOT_IDX, GCPhysCR3 >> PAGE_SHIFT, &pNewShwPageCR3, true /* lock page */);
     AssertFatalRC(rc);
     rc = VINF_SUCCESS;
-
-    /* Mark the page as locked; disallow flushing. */
-    pgmPoolLockPage(pPool, pNewShwPageCR3);
 
 #  ifdef IN_RC
     /* NOTE: We can't deal with jumps to ring 3 here as we're now in an inconsistent state! */
     bool fLog = VMMGCLogDisable(pVM);
-    pgmLock(pVM);
 #  endif
 
     pVCpu->pgm.s.iShwUser      = SHW_POOL_ROOT_IDX;
@@ -4388,7 +4386,6 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
     SELMShadowCR3Changed(pVM, pVCpu);
 
 #  ifdef IN_RC
-    pgmUnlock(pVM);
     VMMGCLogRestore(pVM, fLog);
 #  endif
 
@@ -4405,7 +4402,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
 
         pgmPoolFreeByPage(pPool, pOldShwPageCR3, iOldShwUser, iOldShwUserTable);
     }
-
+    pgmUnlock(pVM);
 # endif
 
     return rc;
@@ -4472,6 +4469,8 @@ PGM_BTH_DECL(int, UnmapCR3)(PVMCPU pVCpu)
     Assert(!HWACCMIsNestedPagingActive(pVM));
 #  endif
 
+    pgmLock(pVM);
+
 # ifndef PGM_WITHOUT_MAPPINGS
     if (pVCpu->pgm.s.CTX_SUFF(pShwPageCR3))
         /* Remove the hypervisor mappings from the shadow page table. */
@@ -4494,6 +4493,7 @@ PGM_BTH_DECL(int, UnmapCR3)(PVMCPU pVCpu)
         pVCpu->pgm.s.iShwUser      = 0;
         pVCpu->pgm.s.iShwUserTable = 0;
     }
+    pgmUnlock(pVM);
 # endif
 #endif /* !IN_RC*/
 
