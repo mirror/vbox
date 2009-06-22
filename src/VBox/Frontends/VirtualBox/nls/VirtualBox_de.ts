@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
-<TS version="2.0" language="de_DE">
+<!DOCTYPE TS><TS version="1.1" language="de_DE">
+<defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
     <message>
@@ -60,7 +60,7 @@
     </message>
     <message>
         <source>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</source>
-        <translation></translation>
+        <translation>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
         <source>It may help to reinstall VirtualBox.</source>
@@ -100,7 +100,7 @@
     </message>
     <message>
         <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;should fix that problem. Make sure that you don&apos;t mix the OSE version and the PUEL version of VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die VirtualBox-Kernmodule passen nicht zu dieser Version von VirtualBox. Die Installation von VirtualBox war möglicherweise nicht vollständig. Durch Ausführen von &lt;br/&gt;&lt;br/&gt;&lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; sollte dieses Problem behoben werden. Bitte stellen Sie sicher, dass Sie die OSE-Version von VirtualBox nicht mit der PUEL-Version mischen.</translation>
     </message>
 </context>
 <context>
@@ -118,11 +118,11 @@
     <name>QIFileDialog</name>
     <message>
         <source>Select a directory</source>
-        <translation type="unfinished">Wählen Sie ein Verzeichnis</translation>
+        <translation>Wählen Sie ein Verzeichnis</translation>
     </message>
     <message>
         <source>Select a file</source>
-        <translation type="unfinished">Wählen Sie eine Datei</translation>
+        <translation>Wählen Sie eine Datei</translation>
     </message>
 </context>
 <context>
@@ -1107,31 +1107,31 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Please choose a filename to export the OVF in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte wählen Sie eine Datei für den OVF-Export.</translation>
     </message>
     <message>
         <source>Please complete the additionally fields like the username, password and the bucket. Finally you have to provide a filename for the OVF target.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte fügen Sie die Felder für Nutzername, Passwort und Bucket aus und geben Sie einen Dateinamen für den OVF-Export an.</translation>
     </message>
     <message>
         <source>Please complete the additionally fields like the username, password, hostname and the bucket. Finally you have to provide a filename for the OVF target.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte fügen Sie die Felder für Nutzername, Passwort, Hostname und Bucket aus und geben Sie einen Dateinamen für den OVF-Export an.</translation>
     </message>
     <message>
         <source>Checking files ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Überprüfe Dateien ...</translation>
     </message>
     <message>
         <source>Removing files ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Lösche Dateien ...</translation>
     </message>
     <message>
         <source>Please specify the target for the OVF export. You can choose between a local file system export, the uploading of the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte geben Sie eine Datei für den OVF-Export an. Sie können zwischen Abspeichern auf einem lokalen Dateisystem, dem Upload des OVF in den Sun Cloud-Service oder in einen S3-Storage-Server wählen.</translation>
     </message>
     <message>
         <source>&amp;Local Filesystem </source>
-        <translation>Lokales Dateisystem</translation>
+        <translation>&amp;Lokales Dateisystem</translation>
     </message>
     <message>
         <source>Sun &amp;Cloud</source>
@@ -1139,7 +1139,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Simple Storage System (S3)</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Simple Storage System (S3)</translation>
     </message>
     <message>
         <source>&amp;Username:</source>
@@ -3888,7 +3888,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Eine Datei mit dem Namen &lt;b&gt;%1&lt;/b&gt; existiert bereits. Sind Sie sicher, dass Sie diese ersetzen möchten?&lt;br/&gt;&lt;br/&gt;Durch Ersetzen wird der alte Inhalt überschrieben.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
@@ -3904,11 +3904,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to check files.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dateien konnten nicht überprüft werden.</translation>
     </message>
     <message>
         <source>Failed to remove file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dateien konnten nicht gelöscht werden.</translation>
     </message>
 </context>
 <context>
@@ -3990,7 +3990,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>I &amp;would like to register creating a new Sun Online account:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ich &amp;möchte einen neuen Sun-Account für die Registrierung erzeugen:</translation>
     </message>
     <message>
         <source>&amp;First Name:</source>
@@ -4026,7 +4026,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Select Country/Territory</source>
-        <translation type="unfinished"></translation>
+        <translation>Wählen Sie das Land/Gebiet</translation>
     </message>
 </context>
 <context>
@@ -4359,7 +4359,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Merge Snapshot with Parent</source>
-        <translation type="unfinished"></translation>
+        <translation>Überführe den Snapshot in den Parent</translation>
     </message>
     <message>
         <source>Merges the snapshot into the parent snapshot or disk image and then deletes the now redundant snapshot file.</source>
@@ -5113,7 +5113,7 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. VirtualBox does not currently support more than one virtual CPU for 64-bit guests executed on 32-bit hosts.</source>
-        <translation type="unfinished"></translation>
+        <translation>haben Sie einen 64-Bit Gastbetriebssystem für diese VM ausgewählt. VirtualBox unterstützt momentan nur eine virtuelle CPU für 64-Bit-Gäste auf 32-Bit Hosts.</translation>
     </message>
 </context>
 <context>
@@ -5367,7 +5367,7 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Falls aktiviert wird die Mini-Toolbar im Vollbildmodus und im nahtlosen Modus gezeigt.</translation>
     </message>
     <message>
         <source>Show In &amp;Fullscreen/Seamless</source>
@@ -5458,7 +5458,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <source>Not selected</source>
         <comment>network adapter name</comment>
-        <translation type="unfinished">nicht ausgewählt</translation>
+        <translation>nicht ausgewählt</translation>
     </message>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
@@ -5921,11 +5921,11 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Motherboard</source>
-        <translation>Hauptplatine</translation>
+        <translation>&amp;Hauptplatine</translation>
     </message>
     <message>
         <source>Base &amp;Memory:</source>
-        <translation>Hauptspeicher:</translation>
+        <translation>&amp;Hauptspeicher:</translation>
     </message>
     <message>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
@@ -5945,7 +5945,7 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>Move Down (Ctrl-Down)</source>
-        <translation type="unfinished">Abwärts (Strg+Ab)</translation>
+        <translation>Abwärts (Strg+Ab)</translation>
     </message>
     <message>
         <source>Moves the selected boot device down.</source>
@@ -6001,11 +6001,11 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>Acce&amp;leration</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Beschleunigung</translation>
     </message>
     <message>
         <source>Hardware Virtualization:</source>
-        <translation type="unfinished"></translation>
+        <translation>Hardware-Virtualisierung:</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
@@ -6013,7 +6013,7 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="unfinished">&amp;VT-x/AMD-V aktivieren</translation>
+        <translation>&amp;VT-x/AMD-V aktivieren</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
@@ -6021,7 +6021,7 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
-        <translation type="unfinished">Nested P&amp;aging aktivieren</translation>
+        <translation>Nested P&amp;aging aktivieren</translation>
     </message>
 </context>
 <context>
