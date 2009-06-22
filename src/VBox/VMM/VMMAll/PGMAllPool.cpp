@@ -1119,6 +1119,8 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
         return VINF_SUCCESS;
     }
 
+    Assert(pPage->enmKind != PGMPOOLKIND_FREE);
+
     /*
      * We should ALWAYS have the list head as user parameter. This
      * is because we use that page to record the changes.
