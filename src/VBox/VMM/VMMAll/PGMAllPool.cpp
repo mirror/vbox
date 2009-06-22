@@ -4202,6 +4202,8 @@ PPGMPOOLPAGE pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys)
 {
     PVM pVM = pPool->CTX_SUFF(pVM);
 
+    Assert(PGMIsLockOwner(pVM));
+
     /*
      * Look up the page.
      */
