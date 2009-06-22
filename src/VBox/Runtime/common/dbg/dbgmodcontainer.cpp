@@ -261,7 +261,7 @@ static DECLCALLBACK(int) rtDbgModContainer_LineAdd(PRTDBGMODINT pMod, const char
 
 /** @copydoc RTDBGMODVTDBG::pfnSymbolByAddr */
 static DECLCALLBACK(int) rtDbgModContainer_SymbolByAddr(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, RTUINTPTR off,
-                                                        PRTINTPTR poffDisp, PRTDBGSYMBOL pSymbol)
+                                                        PRTINTPTR poffDisp, PRTDBGSYMBOL pSymInfo)
 {
     PRTDBGMODCTN pThis = (PRTDBGMODCTN)pMod->pvDbgPriv;
 
@@ -290,14 +290,15 @@ static DECLCALLBACK(int) rtDbgModContainer_SymbolByAddr(PRTDBGMODINT pMod, RTDBG
     PCRTDBGMODCTNSYMBOL pMySym = RT_FROM_MEMBER(pAvlCore, RTDBGMODCTNSYMBOL const, AddrCore);
     if (poffDisp)
         *poffDisp = off - pMySym->AddrCore.Key;
-    return rtDbgModContainerReturnSymbol(pMySym, pSymbol);
+    return rtDbgModContainerReturnSymbol(pMySym, pSymInfo);
 }
 
 
 /** @copydoc RTDBGMODVTDBG::pfnSymbolByName */
-static DECLCALLBACK(int) rtDbgModContainer_SymbolByName(PRTDBGMODINT pMod, const char *pszSymbol, PRTDBGSYMBOL pSymbol)
+static DECLCALLBACK(int) rtDbgModContainer_SymbolByName(PRTDBGMODINT pMod, const char *pszSymbol, size_t cchSymbol, PRTDBGSYMBOL pSymInfo)
 {
     PRTDBGMODCTN pThis = (PRTDBGMODCTN)pMod->pvDbgPriv;
+    NOREF(cchSymbol);
 
     /*
      * Look it up in the name space.
@@ -306,12 +307,12 @@ static DECLCALLBACK(int) rtDbgModContainer_SymbolByName(PRTDBGMODINT pMod, const
     if (!pStrCore)
         return VERR_SYMBOL_NOT_FOUND;
     PCRTDBGMODCTNSYMBOL pMySym = RT_FROM_MEMBER(pStrCore, RTDBGMODCTNSYMBOL const, NameCore);
-    return rtDbgModContainerReturnSymbol(pMySym, pSymbol);
+    return rtDbgModContainerReturnSymbol(pMySym, pSymInfo);
 }
 
 
 /** @copydoc RTDBGMODVTDBG::pfnSymbolByOrdinal */
-static DECLCALLBACK(int) rtDbgModContainer_SymbolByOrdinal(PRTDBGMODINT pMod, uint32_t iOrdinal, PRTDBGSYMBOL pSymbol)
+static DECLCALLBACK(int) rtDbgModContainer_SymbolByOrdinal(PRTDBGMODINT pMod, uint32_t iOrdinal, PRTDBGSYMBOL pSymInfo)
 {
     PRTDBGMODCTN pThis = (PRTDBGMODCTN)pMod->pvDbgPriv;
 
@@ -325,7 +326,7 @@ static DECLCALLBACK(int) rtDbgModContainer_SymbolByOrdinal(PRTDBGMODINT pMod, ui
     PAVLU32NODECORE pAvlCore = RTAvlU32Get(&pThis->SymbolOrdinalTree, iOrdinal);
     AssertReturn(pAvlCore, VERR_SYMBOL_NOT_FOUND);
     PCRTDBGMODCTNSYMBOL pMySym = RT_FROM_MEMBER(pAvlCore, RTDBGMODCTNSYMBOL const, OrdinalCore);
-    return rtDbgModContainerReturnSymbol(pMySym, pSymbol);
+    return rtDbgModContainerReturnSymbol(pMySym, pSymInfo);
 }
 
 
