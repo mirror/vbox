@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
-<TS version="2.0" language="zh_CN">
+<!DOCTYPE TS><TS version="1.1" language="zh_CN">
 <defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
@@ -118,42 +117,38 @@
     </message>
     <message>
         <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.&lt;br/&gt;&lt;br/&gt;There are known problems with Linux 2.6.29. If you are running such a kernel, please edit /usr/src/vboxdrv-*/Makefile and enable &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. After that, re-compile the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root.</source>
-        <translation type="unfinished"></translation>
+        <translation>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.&lt;br/&gt;&lt;br/&gt;There are known problems with Linux 2.6.29. If you are running such a kernel, please edit /usr/src/vboxdrv-*/Makefile and enable &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. After that, re-compile the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root.</translation>
     </message>
     <message>
         <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Re-setup the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
-        <translation type="unfinished"></translation>
+        <translation>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Re-setup the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</translation>
     </message>
     <message>
         <source>Make sure the kernel module has been loaded successfully.</source>
-        <translation type="unfinished"></translation>
+        <translation>Make sure the kernel module has been loaded successfully.</translation>
     </message>
     <message>
         <source>VirtualBox - Runtime Error</source>
-        <translation type="unfinished"></translation>
+        <translation>虚拟电脑控制台 - 运行时错误</translation>
     </message>
     <message>
         <source>&lt;b&gt;Cannot access the kernel driver!&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Cannot access the kernel driver!&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
         <source>Unknown %2 error during initialization of the Runtime</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Kernel driver not accessible</source>
-        <translation type="unfinished"></translation>
+        <translation>初始化运行时出现未知的 %2 错误</translation>
     </message>
 </context>
 <context>
     <name>QIArrowSplitter</name>
     <message>
         <source>&amp;Back</source>
-        <translation type="unfinished"></translation>
+        <translation>返回(&amp;B)</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation type="unfinished">向后(&amp;N)</translation>
+        <translation>下一步(&amp;N)</translation>
     </message>
 </context>
 <context>
@@ -384,11 +379,11 @@
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation type="unfinished">配置明细(&amp;D)</translation>
+        <translation>明细(&amp;D)</translation>
     </message>
     <message>
         <source>&amp;Details (%1 of %2)</source>
-        <translation type="unfinished"></translation>
+        <translation>明细 (%1/%2)(&amp;D)</translation>
     </message>
 </context>
 <context>
@@ -468,23 +463,23 @@ Version %1</translation>
     <name>VBoxAddNIDialog</name>
     <message>
         <source>Add Host Interface</source>
-        <translation type="obsolete">Add Host Interface</translation>
+        <translation>Add Host Interface</translation>
     </message>
     <message>
         <source>Interface Name</source>
-        <translation type="obsolete">界面名称</translation>
+        <translation>界面名称</translation>
     </message>
     <message>
         <source>Descriptive name of the new network interface</source>
-        <translation type="obsolete">新增网络界面描述信息</translation>
+        <translation>新增网络界面描述信息</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation type="obsolete">确定(&amp;O)</translation>
+        <translation>确定(&amp;O)</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="obsolete">取消</translation>
+        <translation>取消</translation>
     </message>
 </context>
 <context>
@@ -585,107 +580,107 @@ Version %1</translation>
     <name>VBoxApplianceEditorWgt</name>
     <message>
         <source>Virtual System %1</source>
-        <translation type="unfinished"></translation>
+        <translation>虚拟系统 %1</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation>名称</translation>
     </message>
     <message>
         <source>Product</source>
-        <translation type="unfinished"></translation>
+        <translation>产品</translation>
     </message>
     <message>
         <source>Product-URL</source>
-        <translation type="unfinished"></translation>
+        <translation>Product-URL</translation>
     </message>
     <message>
         <source>Vendor</source>
-        <translation type="unfinished"></translation>
+        <translation>厂商</translation>
     </message>
     <message>
         <source>Vendor-URL</source>
-        <translation type="unfinished"></translation>
+        <translation>Vendor-URL</translation>
     </message>
     <message>
         <source>Version</source>
-        <translation type="unfinished"></translation>
+        <translation>版本</translation>
     </message>
     <message>
         <source>Description</source>
-        <translation type="unfinished"></translation>
+        <translation>描述</translation>
     </message>
     <message>
         <source>License</source>
-        <translation type="unfinished"></translation>
+        <translation>版权</translation>
     </message>
     <message>
         <source>Guest OS Type</source>
-        <translation type="unfinished">虚拟电脑操作系统类型</translation>
+        <translation>虚拟电脑上的操作系统类型</translation>
     </message>
     <message>
         <source>CPU</source>
-        <translation type="unfinished"></translation>
+        <translation>CPU</translation>
     </message>
     <message>
         <source>RAM</source>
-        <translation type="unfinished"></translation>
+        <translation>内存</translation>
     </message>
     <message>
         <source>Hard Disk Controller IDE</source>
-        <translation type="unfinished"></translation>
+        <translation>IDE 硬盘控制器</translation>
     </message>
     <message>
         <source>Hard Disk Controller SATA</source>
-        <translation type="unfinished"></translation>
+        <translation>SATA 硬盘控制器</translation>
     </message>
     <message>
         <source>Hard Disk Controller SCSI</source>
-        <translation type="unfinished"></translation>
+        <translation>SCSI 硬盘控制器</translation>
     </message>
     <message>
         <source>DVD</source>
-        <translation type="unfinished"></translation>
+        <translation>光驱</translation>
     </message>
     <message>
         <source>Floppy</source>
-        <translation type="unfinished">软驱</translation>
+        <translation>软驱</translation>
     </message>
     <message>
         <source>Network Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>网络控制器</translation>
     </message>
     <message>
         <source>USB Controller</source>
-        <translation type="unfinished">USB 控制器</translation>
+        <translation>USB 控制器</translation>
     </message>
     <message>
         <source>Sound Card</source>
-        <translation type="unfinished"></translation>
+        <translation>声卡</translation>
     </message>
     <message>
         <source>Virtual Disk Image</source>
-        <translation type="unfinished">虚拟硬盘</translation>
+        <translation>虚拟硬盘</translation>
     </message>
     <message>
         <source>Unknown Hardware Item</source>
-        <translation type="unfinished"></translation>
+        <translation>未知硬件项目</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;原值:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>配置</translation>
     </message>
     <message>
         <source>Warnings:</source>
-        <translation type="unfinished"></translation>
+        <translation>警告:</translation>
     </message>
 </context>
 <context>
@@ -1276,6 +1271,10 @@ Version %1</translation>
         <translation type="obsolete">Open VirtualBox registration form</translation>
     </message>
     <message>
+        <source>Sun xVM VirtualBox</source>
+        <translation type="obsolete">Sun xVM VirtualBox</translation>
+    </message>
+    <message>
         <source>Session I&amp;nformation Dialog</source>
         <translation>运行状态(&amp;n)</translation>
     </message>
@@ -1308,11 +1307,11 @@ Version %1</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
-        <translation>指示键盘已被虚拟电脑捕获 (&lt;img src=:/hostkey_captured_16px.png/&gt;) 或未被捕获 (&lt;img src=:/hostkey_16px.png/&gt;)</translation>
+        <translation>指示键盘已被虚拟电脑捕获 (&lt;img src=:/hostkey_captured_16px.png/&gt;) 或未被捕获 (&lt;img src=:/hostkey_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation>指示远程桌面服务 (VRDP Server) 已启用 (&lt;img src=:/vrdp_16px.png/&gt;) 或被禁用 (&lt;img src=:/vrdp_disabled_16px.png/&gt;)</translation>
+        <translation>指示远程桌面服务 (VRDP Server) 已启用 (&lt;img src=:/vrdp_16px.png/&gt;) 或被禁用 (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
@@ -1320,11 +1319,7 @@ Version %1</translation>
     </message>
     <message>
         <source>Sun VirtualBox</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun VirtualBox</translation>
     </message>
 </context>
 <context>
@@ -1695,84 +1690,82 @@ Version %1</translation>
     <name>VBoxEmptyFileSelector</name>
     <message>
         <source>&amp;Choose...</source>
-        <translation type="unfinished"></translation>
+        <translation>选择(&amp;C)...</translation>
     </message>
 </context>
 <context>
     <name>VBoxExportApplianceWzd</name>
     <message>
         <source>Select a file to export into</source>
-        <translation type="unfinished"></translation>
+        <translation>选择一个用于保存的文件</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Open Virtualization Format (%1)</translation>
     </message>
     <message>
         <source>Appliance</source>
-        <translation type="unfinished"></translation>
+        <translation>虚拟电脑</translation>
     </message>
     <message>
         <source>Exporting Appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>导出虚拟电脑 ...</translation>
     </message>
     <message>
         <source>Appliance Export Wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>虚拟电脑导出向导</translation>
     </message>
     <message>
         <source>Welcome to the Appliance Export Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation>欢迎使用虚拟电脑导出向导!</translation>
     </message>
     <message>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will you guide to the process of exporting an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that should be exported to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;本向导将指引您如何导出一个虚拟电脑. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;按 &lt;span style=&quot; font-weight:600;&quot;&gt;下一步&lt;/span&gt; 按钮进入向导的下一个页面，按 &lt;span style=&quot; font-weight:600;&quot;&gt;返回&lt;/span&gt; 按钮可退回向导的上一个页面.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;选择您要导出的虚拟电脑。您可同时选择多个虚拟电脑一块导出，请注意：要导出的虚拟电脑必须处于关闭状态。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished">&lt; 返回(&amp;B)</translation>
+        <translation>&lt; 返回(&amp;B)</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished">下一步(&amp;N) &gt;</translation>
+        <translation>下一步(&amp;N) &gt;</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">取消</translation>
+        <translation>取消</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>虚拟电脑导出设置</translation>
     </message>
     <message>
         <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the shown properties by double-clicking on the items.</source>
-        <translation type="unfinished"></translation>
+        <translation>您可以在此更改所选虚拟电脑的其它设置。通过双击该项目即可修改大部分的显示属性.</translation>
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation type="unfinished"></translation>
+        <translation>恢复为默认值</translation>
     </message>
     <message>
         <source>Please specify a filename into which the appliance information will be written. Currently VirtualBox supports the Open Virtualization Format (OVF).</source>
-        <translation type="unfinished"></translation>
+        <translation>请指定一个用于保存虚拟电脑信息的文件。当前只支持开放虚拟格式(OVF).</translation>
     </message>
     <message>
         <source>&amp;Export &gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Write legacy OVF 0.9</source>
-        <translation type="unfinished"></translation>
+        <translation>导出(&amp;E) &gt;</translation>
     </message>
 </context>
 <context>
@@ -1858,7 +1851,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Network</source>
-        <translation type="unfinished">网络</translation>
+        <translation>网络</translation>
     </message>
 </context>
 <context>
@@ -1901,11 +1894,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the Dock Icon will reflect the VM window content in realtime.</source>
-        <translation type="unfinished"></translation>
+        <translation>选中，托盘图标将实时反应虚拟电脑窗口的内容.</translation>
     </message>
     <message>
         <source>&amp;Dock Icon Realtime Preview</source>
-        <translation type="unfinished"></translation>
+        <translation>托盘图标实时预览(&amp;D)</translation>
     </message>
 </context>
 <context>
@@ -1987,239 +1980,239 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>%1 network</source>
         <comment>&lt;adapter name&gt; network</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 网络</translation>
     </message>
     <message>
         <source>host IPv4 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>主机 IPv4 地址 &lt;b&gt;%1&lt;/b&gt; 出错</translation>
     </message>
     <message>
         <source>host IPv4 network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>主机 IPv4 网络掩码 &lt;b&gt;%1&lt;/b&gt; 出错</translation>
     </message>
     <message>
         <source>host IPv6 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>主机 IPv6 地址 &lt;b&gt;%1&lt;/b&gt; 出错</translation>
     </message>
     <message>
         <source>DHCP server address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP 服务器地址 &lt;b&gt;%1&lt;/b&gt; 出错</translation>
     </message>
     <message>
         <source>DHCP server network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP 服务器网络掩码 &lt;b&gt;%1&lt;/b&gt; 出错</translation>
     </message>
     <message>
         <source>DHCP lower address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP 最小地址 &lt;b&gt;%1&lt;/b&gt; 出错</translation>
     </message>
     <message>
         <source>DHCP upper address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP 最大地址 &lt;b&gt;%1&lt;/b&gt; 出错</translation>
     </message>
     <message>
         <source>Adapter</source>
-        <translation type="unfinished">声卡类型</translation>
+        <translation>主机虚拟网络界面</translation>
     </message>
     <message>
         <source>Automatically configured</source>
         <comment>interface</comment>
-        <translation type="unfinished"></translation>
+        <translation>自动配置</translation>
     </message>
     <message>
         <source>Manually configured</source>
         <comment>interface</comment>
-        <translation type="unfinished"></translation>
+        <translation>手动配置</translation>
     </message>
     <message>
         <source>IPv4 Address</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv4 地址</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>address</comment>
-        <translation type="unfinished"></translation>
+        <translation>未设置</translation>
     </message>
     <message>
         <source>IPv4 Network Mask</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv4 网络掩码</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>mask</comment>
-        <translation type="unfinished"></translation>
+        <translation>未设置</translation>
     </message>
     <message>
         <source>IPv6 Address</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6 地址</translation>
     </message>
     <message>
         <source>IPv6 Network Mask Length</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6 网络掩码长度</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>length</comment>
-        <translation type="unfinished"></translation>
+        <translation>未设置</translation>
     </message>
     <message>
         <source>DHCP Server</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP 服务器</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>server</comment>
-        <translation type="unfinished">启用</translation>
+        <translation>启用</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>server</comment>
-        <translation type="unfinished">禁用</translation>
+        <translation>禁用</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation type="unfinished"></translation>
+        <translation>地址</translation>
     </message>
     <message>
         <source>Network Mask</source>
-        <translation type="unfinished"></translation>
+        <translation>网络掩码</translation>
     </message>
     <message>
         <source>Lower Bound</source>
-        <translation type="unfinished"></translation>
+        <translation>最小地址</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>bound</comment>
-        <translation type="unfinished"></translation>
+        <translation>未设置</translation>
     </message>
     <message>
         <source>Upper Bound</source>
-        <translation type="unfinished"></translation>
+        <translation>最大地址</translation>
     </message>
     <message>
         <source>&amp;Add host-only network</source>
-        <translation type="unfinished"></translation>
+        <translation>添加 host-only 网络(&amp;A)</translation>
     </message>
     <message>
         <source>&amp;Remove host-only network</source>
-        <translation type="unfinished"></translation>
+        <translation>删除 host-only 网络(&amp;R)</translation>
     </message>
     <message>
         <source>&amp;Edit host-only network</source>
-        <translation type="unfinished"></translation>
+        <translation>编辑 host-only 网络(&amp;E)</translation>
     </message>
     <message>
         <source>Performing</source>
         <comment>creating/removing host-only network</comment>
-        <translation type="unfinished"></translation>
+        <translation>执行中</translation>
     </message>
     <message>
         <source>&amp;Host-only Networks:</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-only 网络(&amp;H):</translation>
     </message>
     <message>
         <source>Lists all available host-only networks.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示所有可用 host-only 网络.</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation>名称</translation>
     </message>
 </context>
 <context>
     <name>VBoxGLSettingsNetworkDetails</name>
     <message>
         <source>Host-only Network Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-only 网络明细</translation>
     </message>
     <message>
         <source>&amp;Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>主机虚拟网络界面(&amp;A)</translation>
     </message>
     <message>
         <source>Manual &amp;Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>手动配置(&amp;C)</translation>
     </message>
     <message>
         <source>Use manual configuration for this host-only network adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>为该 host-only 网络连接使用手动配置.</translation>
     </message>
     <message>
         <source>&amp;IPv4 Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv4 地址(&amp;I):</translation>
     </message>
     <message>
         <source>Displays the host IPv4 address for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示主机虚拟网络界面的 IPv4 地址.</translation>
     </message>
     <message>
         <source>IPv4 Network &amp;Mask:</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv4 网络掩码(&amp;M):</translation>
     </message>
     <message>
         <source>Displays the host IPv4 network mask for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示主机虚拟网络界面的 IPv4 网络掩码.</translation>
     </message>
     <message>
         <source>I&amp;Pv6 Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6 地址(&amp;P):</translation>
     </message>
     <message>
         <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示主机虚拟网络界面的 IPv6 地址.</translation>
     </message>
     <message>
         <source>IPv6 Network Mask &amp;Length:</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6 网络掩码长度(&amp;L):</translation>
     </message>
     <message>
         <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示主机虚拟网络界面的 IPv6 网络掩码前缀.</translation>
     </message>
     <message>
         <source>&amp;DHCP Server</source>
-        <translation type="unfinished"></translation>
+        <translation>DHCP 服务器(&amp;D)</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
-        <translation type="unfinished"></translation>
+        <translation>启用服务器(&amp;E)</translation>
     </message>
     <message>
         <source>Indicates whether the DHCP Server is enabled on machine startup or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>指示DHCP服务器在电脑开机时是否启用.</translation>
     </message>
     <message>
         <source>Server Add&amp;ress:</source>
-        <translation type="unfinished"></translation>
+        <translation>服务器地址(&amp;r):</translation>
     </message>
     <message>
         <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示 DHCP 服务器地址.</translation>
     </message>
     <message>
         <source>Server &amp;Mask:</source>
-        <translation type="unfinished"></translation>
+        <translation>服务器网络掩码(&amp;M):</translation>
     </message>
     <message>
         <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示 DHCP 服务器网络掩码.</translation>
     </message>
     <message>
         <source>&amp;Lower Address Bound:</source>
-        <translation type="unfinished"></translation>
+        <translation>最小地址(&amp;L):</translation>
     </message>
     <message>
         <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示 DHCP 服务器提供的最小地址.</translation>
     </message>
     <message>
         <source>&amp;Upper Address Bound:</source>
-        <translation type="unfinished"></translation>
+        <translation>最大地址(&amp;U):</translation>
     </message>
     <message>
         <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示 DHCP 服务器提供的最大地址.</translation>
     </message>
 </context>
 <context>
@@ -2390,7 +2383,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>CD/DVD-ROM</source>
         <comment>details report</comment>
-        <translation>CD/DVD-ROM</translation>
+        <translation>光驱</translation>
     </message>
     <message>
         <source>Adapter</source>
@@ -2549,7 +2542,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>CD/DVD-ROM</source>
         <comment>DeviceType</comment>
-        <translation>CD/DVD-ROM</translation>
+        <translation>光驱</translation>
     </message>
     <message>
         <source>Hard Disk</source>
@@ -2674,7 +2667,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Not attached</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>未分配</translation>
+        <translation>未指定</translation>
     </message>
     <message>
         <source>NAT</source>
@@ -2689,7 +2682,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Internal Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>Internal Network</translation>
+        <translation>Internal</translation>
     </message>
     <message>
         <source>Not supported</source>
@@ -3115,82 +3108,77 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation type="unfinished">嵌套页</translation>
+        <translation>Nested Paging</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (Nested Paging)</comment>
-        <translation type="unfinished">启用</translation>
+        <translation>启用</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (Nested Paging)</comment>
-        <translation type="unfinished">禁用</translation>
+        <translation>禁用</translation>
+    </message>
+    <message>
+        <source>Bridged network, %1</source>
+        <comment>details report (network)</comment>
+        <translation>Bridged 网络, %1</translation>
     </message>
     <message>
         <source>Internal network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Internal 网络, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Host-only network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation>Host-only 网络, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>SCSI</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
+        <translation>SCSI</translation>
+    </message>
+    <message>
+        <source>Bridged Network</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation>Bridged</translation>
+    </message>
+    <message>
+        <source>Host-only Network</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation>Host-only</translation>
     </message>
     <message>
         <source>PIIX3</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished">PIIX3</translation>
+        <translation>PIIX3</translation>
     </message>
     <message>
         <source>PIIX4</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished">PIIX4</translation>
+        <translation>PIIX4</translation>
     </message>
     <message>
         <source>ICH6</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>ICH6</translation>
     </message>
     <message>
         <source>AHCI</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>AHCI</translation>
     </message>
     <message>
         <source>Lsilogic</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Lsilogic</translation>
     </message>
     <message>
         <source>BusLogic</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Bridged adapter, %1</source>
-        <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Host-only adapter, &apos;%1&apos;</source>
-        <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Intel PRO/1000 MT Server (82545EM)</source>
-        <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Bridged Adapter</source>
-        <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Host-only Adapter</source>
-        <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>BusLogic</translation>
     </message>
 </context>
 <context>
@@ -3780,26 +3768,26 @@ to the system default language.&lt;/qt&gt;
     <name>VBoxImportApplianceWgt</name>
     <message>
         <source>Importing Appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>导入虚拟电脑 ...</translation>
     </message>
 </context>
 <context>
     <name>VBoxImportApplianceWzd</name>
     <message>
         <source>Select an appliance to import</source>
-        <translation type="unfinished"></translation>
+        <translation>选择一个要导入的虚拟电脑</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>开放虚拟格式 (%1)</translation>
     </message>
     <message>
         <source>Appliance Import Wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>虚拟电脑导入向导</translation>
     </message>
     <message>
         <source>Welcome to the Appliance Import Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation>欢迎使用虚拟电脑导入向导!</translation>
     </message>
     <message>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -3809,70 +3797,76 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through importing an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;In order to import an appliance, you have to select a file describing the appliance first. Currently VirtualBox supports the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;本向导将指引您如何导入一个虚拟电脑. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;按 &lt;span style=&quot; font-weight:600;&quot;&gt;下一步&lt;/span&gt; 按钮进入向导的下一个页面，按 &lt;span style=&quot; font-weight:600;&quot;&gt;返回&lt;/span&gt; 按钮可退回向导的上一个页面.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;为导入一个虚拟电脑，您需首先指定该虚拟电脑所在的文件。当前只支持开放虚拟格式(OVF)的虚拟电脑的导入。请从下面选择一个您要导入的文件以继续:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished">&lt; 返回(&amp;B)</translation>
+        <translation>&lt; 返回(&amp;B)</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished">下一步(&amp;N) &gt;</translation>
+        <translation>下一步(&amp;N) &gt;</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">取消</translation>
+        <translation>取消</translation>
     </message>
     <message>
         <source>Appliance Import Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>虚拟电脑导入设置</translation>
     </message>
     <message>
         <source>These are the virtual machines as described in the appliance with their suggested mappings for importing into VirtualBox. You can change many of the shown properties by double-clicking on the items and disable others by using the check boxes below.</source>
-        <translation type="unfinished"></translation>
+        <translation>这是即将导入的虚拟电脑及建议的映射关系。您可以通过双击该项目来调整其设置，或使用下面的选择框来禁用它们.</translation>
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation type="unfinished"></translation>
+        <translation>恢复为默认值</translation>
     </message>
     <message>
         <source>&amp;Import &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>导入(&amp;I) &gt;</translation>
     </message>
 </context>
 <context>
     <name>VBoxImportLicenseViewer</name>
     <message>
         <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;虚拟电脑内的系统 &quot;%1&quot; 要求您同意下面显示的软件授权协议的各项条款。&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;按 &lt;b&gt;同意&lt;/b&gt; 继续或按 &lt;b&gt;不同意&lt;/b&gt; 取消导入.</translation>
     </message>
     <message>
         <source>Software License Agreement</source>
-        <translation type="unfinished"></translation>
+        <translation>软件授权协议</translation>
     </message>
     <message>
         <source>&amp;Disagree</source>
-        <translation type="unfinished"></translation>
+        <translation>不同意(&amp;D)</translation>
     </message>
     <message>
         <source>&amp;Agree</source>
-        <translation type="unfinished"></translation>
+        <translation>同意(&amp;A)</translation>
     </message>
     <message>
         <source>&amp;Print...</source>
-        <translation type="unfinished"></translation>
+        <translation>打印(&amp;P)...</translation>
     </message>
     <message>
         <source>&amp;Save...</source>
-        <translation type="unfinished"></translation>
+        <translation>保存(&amp;S)...</translation>
     </message>
     <message>
         <source>Text (*.txt)</source>
-        <translation type="unfinished"></translation>
+        <translation>Text (*.txt)</translation>
     </message>
     <message>
         <source>Save license to file...</source>
-        <translation type="unfinished"></translation>
+        <translation>保存协议到文件...</translation>
     </message>
 </context>
 <context>
@@ -3894,7 +3888,7 @@ p, li { white-space: pre-wrap; }
     <name>VBoxLineTextEdit</name>
     <message>
         <source>&amp;Edit</source>
-        <translation type="unfinished"></translation>
+        <translation>编辑(&amp;E)</translation>
     </message>
 </context>
 <context>
@@ -4583,11 +4577,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&amp;Create new hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>创建新的虚拟硬盘(&amp;C)</translation>
     </message>
     <message>
         <source>&amp;Use existing hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>使用现有的虚拟硬盘(&amp;U)</translation>
     </message>
 </context>
 <context>
@@ -5429,111 +5423,111 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;The file already exists in &quot;%2&quot;. Replacing it will overwrite its contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>一个名为 &lt;b&gt;%1&lt;/b&gt; 的文件已经存在。您是否确定要替代它？&lt;br /&gt;&lt;br /&gt;该文件已经存在于 &quot;%2&quot;中。替代后将会覆盖它的所有内容.</translation>
     </message>
     <message>
         <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>下列文件： &lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;已经存在。您是否确定要替代它们？替代后将会覆盖它们的所有内容.</translation>
     </message>
     <message>
-        <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove the file yourself and try again.</source>
-        <translation type="unfinished"></translation>
+        <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove that file yourself &amp; try again.</source>
+        <translation>删除文件 &lt;b&gt;%1&lt;/b&gt;失败.&lt;br /&gt;&lt;br /&gt;请您尝试自己删除该文件 &amp; 再试一次.</translation>
     </message>
     <message>
         <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
-        <translation type="unfinished"></translation>
+        <translation>您现在运行的是预览版本。该版本不适合于日常使用.</translation>
     </message>
     <message>
         <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法访问电脑上的USB设备，因为当前不管是USB文件系统(usbfs)或Dbus和hal服务都无法使用。如果您想在虚拟电脑内使用USB设备，则必须先修复它们，然后再重启本程序.</translation>
     </message>
     <message>
         <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not use the ACPI subsystem.</source>
-        <translation type="unfinished"></translation>
+        <translation>您正在尝试使用 ACPI 关机信号来关闭虚拟电脑。但这是无效的，因为该虚拟电脑内的操作系统并不支持 ACPI 信号系统.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VT-x/AMD-V 硬件加速已被启用, 但当前处于无效状态. 您虚拟电脑内的操作系统将无法检测到64位的CPU，因此也将无法启动.&lt;/p&gt;&lt;p&gt;请确认在您电脑的BIOS中已启用 VT-x/AMD-V 支持.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Close VM</source>
-        <translation type="unfinished"></translation>
+        <translation>关闭虚拟电脑</translation>
     </message>
     <message>
         <source>Continue</source>
-        <translation type="unfinished">继续</translation>
+        <translation>继续</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you wish to delete the selected snapshot and saved state?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;请确认您是否真的要删除所选的备份和当前状态?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="unfinished">清除</translation>
+        <translation>清除</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">取消</translation>
+        <translation>取消</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;已有虚拟硬盘连接到附加控制器的端口上. 如果您禁用该控制器, 所有连接到该控制器的虚拟硬盘将被自动释放.&lt;/p&gt;&lt;p&gt;您是否确认要禁用该控制器?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;已有虚拟硬盘连接到附加控制器的端口上. 如果您更改该控制器, 所有连接到该控制器的虚拟硬盘将被自动释放.&lt;/p&gt;&lt;p&gt;您是否确认要更改该控制器?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Change</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>更改</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;你是否要删除所选的host network interface&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;注意:&lt;/b&gt;该界面可能被这个或其它个虚拟电脑的一个或多个网络连接所使用。 删除该界面后，这些网络连接将不能正常工作，直到你通过选择其它网络界面或使用一个不同的适配器接入类型来修正它们.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create the host-only network interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>不能创建 host-only 网络连接.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;您当前存在的虚拟电脑设置文件将被自动从旧版转成新版，以适应新版虚拟电脑控制台的要求.&lt;/p&gt;&lt;p&gt;按 &lt;b&gt;确定&lt;/b&gt; 开始转换并启动虚拟电脑控制台或按 &lt;b&gt;退出&lt;/b&gt; 如果您不想让其自动完成该转换.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to open appliance.</source>
-        <translation type="unfinished"></translation>
+        <translation>打开虚拟电脑失败.</translation>
     </message>
     <message>
         <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>打开虚拟电脑 &lt;b&gt;%1&lt;/b&gt;失败.</translation>
     </message>
     <message>
         <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>导入虚拟电脑 &lt;b&gt;%1&lt;/b&gt;失败.</translation>
     </message>
     <message>
         <source>Failed to create appliance.</source>
-        <translation type="unfinished"></translation>
+        <translation>创建虚拟电脑失败.</translation>
     </message>
     <message>
         <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>准备导出虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 失败.</translation>
     </message>
     <message>
         <source>Failed to create an appliance.</source>
-        <translation type="unfinished"></translation>
+        <translation>创建虚拟电脑失败.</translation>
     </message>
     <message>
         <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting this host-only network will lead to the deleting of the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>导出虚拟电脑 &lt;b&gt;%1&lt;/b&gt;失败.</translation>
     </message>
 </context>
 <context>
     <name>VBoxProgressDialog</name>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>取消(&amp;C)</translation>
     </message>
 </context>
 <context>
@@ -5830,7 +5824,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>启动所选的虚拟电脑</translation>
     </message>
     <message>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
+        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;h3&gt;欢迎使用虚拟电脑控制台!&lt;/h3&gt;&lt;p&gt;窗口的左边用来显示已生成的虚拟电脑列表. 现在列表是空的，因为你还没有新建任何虚拟电脑.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;要新建一个虚拟电脑, 请按 &lt;b&gt;新建&lt;/b&gt; 按钮， 它位于窗口顶部的主工具栏.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5862,6 +5856,10 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="obsolete">Open VirtualBox registration form</translation>
     </message>
     <message>
+        <source>Sun xVM VirtualBox</source>
+        <translation type="obsolete">Sun xVM VirtualBox</translation>
+    </message>
+    <message>
         <source>R&amp;esume</source>
         <translation>唤醒(&amp;e)</translation>
     </message>
@@ -5890,12 +5888,12 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>将正在运行的虚拟电脑暂停</translation>
     </message>
     <message>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation>&lt;h3&gt;欢迎使用虚拟电脑控制台!&lt;/h3&gt;&lt;p&gt;窗口的左边用来显示已生成的虚拟电脑列表. 现在列表是空的，因为你还没有新建任何虚拟电脑.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;要新建一个虚拟电脑, 请按位于窗口顶部工具栏上的 &lt;b&gt;新建&lt;/b&gt; 按钮。.&lt;/p&gt;&lt;p&gt;你可以按 &lt;b&gt;%1&lt;/b&gt; 键来查看帮助，或访问 &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; 查看最新信息和新闻.&lt;/p&gt;</translation>
+        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
+        <translation>&lt;h3&gt;欢迎使用虚拟电脑控制台!&lt;/h3&gt;&lt;p&gt;窗口的左边用来显示已生成的虚拟电脑列表. 现在列表是空的，因为你还没有新建任何虚拟电脑.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;要新建一个虚拟电脑, 请按位于窗口顶部工具栏上的 &lt;b&gt;新建&lt;/b&gt; 按钮。.&lt;/p&gt;&lt;p&gt;你可以按 &lt;b&gt;F1&lt;/b&gt; 键来查看帮助，或访问 &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; 查看最新信息和新闻.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Virtual Media Manager...</source>
-        <translation>虚拟介质管理器(&amp;V)...</translation>
+        <translation type="unfinished">虚拟介质管理(&amp;V)...</translation>
     </message>
     <message>
         <source>Display the Virtual Media Manager dialog</source>
@@ -5908,27 +5906,27 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Sun VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Import Appliance...</source>
-        <translation type="unfinished"></translation>
+        <translation>导入虚拟电脑(&amp;I)...</translation>
     </message>
     <message>
         <source>Import an appliance into VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>导入一个虚拟电脑</translation>
     </message>
     <message>
         <source>&amp;Export Appliance...</source>
-        <translation type="unfinished"></translation>
+        <translation>导出虚拟电脑(&amp;E)...</translation>
     </message>
     <message>
         <source>Export an appliance out of VM&apos;s from VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>导出一个虚拟电脑</translation>
     </message>
     <message>
         <source>Re&amp;fresh</source>
-        <translation type="unfinished">刷新(&amp;f)</translation>
+        <translation>刷新(&amp;f)</translation>
     </message>
 </context>
 <context>
@@ -5951,7 +5949,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
-        <translation type="unfinished">在 &lt;b&gt;%1&lt;/b&gt; 页, %2</translation>
+        <translation>在 &lt;b&gt;%1&lt;/b&gt; 页, %2</translation>
     </message>
 </context>
 <context>
@@ -6352,23 +6350,23 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <name>VBoxTextEditor</name>
     <message>
         <source>Edit text</source>
-        <translation type="unfinished"></translation>
+        <translation>编辑文本</translation>
     </message>
     <message>
         <source>&amp;Replace...</source>
-        <translation type="unfinished"></translation>
+        <translation>替换(&amp;R)...</translation>
     </message>
     <message>
         <source>Replaces the current text with the content of a given file.</source>
-        <translation type="unfinished"></translation>
+        <translation>用指定文件的内容替换当前文本.</translation>
     </message>
     <message>
         <source>Text (*.txt);;All (*.*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Text (*.txt);;All (*.*)</translation>
     </message>
     <message>
         <source>Select a file to open...</source>
-        <translation type="unfinished"></translation>
+        <translation>选择一个要打开的文件...</translation>
     </message>
 </context>
 <context>
@@ -6997,7 +6995,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Nested Paging</source>
-        <translation>嵌套页</translation>
+        <translation>Nested Paging</translation>
     </message>
     <message>
         <source>VBoxVMInformationDlg</source>
@@ -7149,7 +7147,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">网络连接方式(&amp;A)</translation>
     </message>
     <message>
-        <source>Controls how this
+        <source>Controls the way how this
                                         virtual adapter is attached to the
                                         real network of the Host OS.</source>
         <translation type="obsolete">设置网络连接以何种方式接入到主机上的真实网络.</translation>
@@ -7299,7 +7297,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">选中，将在虚拟电脑内启用该网络连接.</translation>
     </message>
     <message>
-        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="obsolete">设置网络连接以何种方式接入到主机上的真实网络.</translation>
     </message>
     <message>
@@ -8810,7 +8808,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation>启用 VT-x/AMD-V(&amp;V)</translation>
+        <translation>启用 &amp;VT-x/AMD-V</translation>
     </message>
     <message>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
@@ -8886,23 +8884,23 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation type="unfinished"></translation>
+        <translation>您已将当前计算机总内存(&lt;b&gt;%2&lt;/b&gt;)中超过 &lt;b&gt;%1%&lt;/b&gt; 的部分分配给了当前的虚拟电脑。这会导致主控系统上没有足够的内存来保证正常运行。因此请选择一个更小的数目.</translation>
     </message>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
-        <translation type="unfinished"></translation>
+        <translation>您已将当前计算机总内存(&lt;b&gt;%2&lt;/b&gt;)中超过 &lt;b&gt;%1%&lt;/b&gt; 的部分分配给了当前的虚拟电脑。这可能会导致主控系统上没有足够的内存来保证正常运行。请您再斟酌是否应选择一个更小的数目。</translation>
     </message>
     <message>
         <source>there is a 64 bits guest OS type assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else your guest will fail to detect a 64 bits CPU and will not be able to boot, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>您为本虚拟电脑指定了一个64位的操作系统，这需要硬件加速技术(VT-x/AMD-V)也同时启用，否则虚拟电脑内的操作系统就无法检测到64位的CPU，同时也就无法启动。因此该特性将被自动启用.</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation type="unfinished"></translation>
+        <translation>选中，虚拟电脑将尝试使用Intel VT-x或AMD-V等CPU上具备的 nested paging 扩展特性.</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
-        <translation type="unfinished"></translation>
+        <translation>启用 Nested Pa&amp;ging</translation>
     </message>
 </context>
 <context>
@@ -8969,11 +8967,11 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>When checked, enables an additional virtual controller (either SATA or SCSI) of this machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>选中，将在该虚拟电脑上启用额外的硬盘控制器.</translation>
     </message>
     <message>
         <source>&amp;Enable Additional Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>启用额外控制器(&amp;E)</translation>
     </message>
 </context>
 <context>
@@ -9007,7 +9005,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>连接方式(&amp;A):</translation>
     </message>
     <message>
-        <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
+        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation>设置网络连接以何种方式接入到主机上的真实网络.</translation>
     </message>
     <message>
@@ -9081,76 +9079,140 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <source>Adapter</source>
         <comment>network</comment>
-        <translation type="obsolete">声卡类型</translation>
+        <translation>主机虚拟网络界面</translation>
+    </message>
+    <message>
+        <source>Not selected</source>
+        <comment>adapter</comment>
+        <translation>未指定</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>internal</comment>
-        <translation type="obsolete">网络</translation>
-    </message>
-    <message>
-        <source>Adapter &amp;Type:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>no bridged network adapter is selected</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>no internal network name is specified</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>no host-only network adapter is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>网络</translation>
     </message>
     <message>
         <source>Not selected</source>
-        <comment>network adapter name</comment>
-        <translation type="unfinished"></translation>
+        <comment>network</comment>
+        <translation>未指定</translation>
     </message>
     <message>
-        <source>Open additional options dialog for current attachment type.</source>
-        <translation type="unfinished"></translation>
+        <source>MAC Address</source>
+        <translation>MAC 地址</translation>
     </message>
     <message>
-        <source>&amp;Name:</source>
-        <translation type="unfinished">名称(&amp;N):</translation>
+        <source>Not selected</source>
+        <comment>address</comment>
+        <translation>未指定</translation>
     </message>
     <message>
-        <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <source>Cable</source>
+        <translation>网络</translation>
+    </message>
+    <message>
+        <source>Connected</source>
+        <comment>cable</comment>
+        <translation>已连接</translation>
+    </message>
+    <message>
+        <source>Not connected</source>
+        <comment>cable</comment>
+        <translation>未连接</translation>
+    </message>
+    <message>
+        <source>Adapter &amp;Type:</source>
+        <translation>控制芯片(&amp;T):</translation>
+    </message>
+    <message>
+        <source>Open extended settings dialog for current attachment type.</source>
+        <translation>打开当前连接方式的扩展特性对话框.</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsNetworkDetails</name>
     <message>
+        <source>no bridged network adapter is selected</source>
+        <translation>未指定要bridged的主机网络界面</translation>
+    </message>
+    <message>
+        <source>no internal network name is specified</source>
+        <translation>未指定internal网络名称</translation>
+    </message>
+    <message>
+        <source>no host-only adapter is selected</source>
+        <translation>未指定要host-only的主机虚拟网络界面</translation>
+    </message>
+    <message>
+        <source>Basic Details</source>
+        <translation>基本明细</translation>
+    </message>
+    <message>
+        <source>Bridged Network Details</source>
+        <translation>Bridged 网络明细</translation>
+    </message>
+    <message>
+        <source>Internal Network Details</source>
+        <translation>Internal 网络明细</translation>
+    </message>
+    <message>
+        <source>Host-only Network Details</source>
+        <translation>Host-only 网络明细</translation>
+    </message>
+    <message>
+        <source>Not selected</source>
+        <translation>未指定</translation>
+    </message>
+    <message>
+        <source>Host Settings</source>
+        <translation>主机端设置</translation>
+    </message>
+    <message>
+        <source>&amp;Bridged Network Adapter:</source>
+        <translation>Bridged 网络界面(&amp;B):</translation>
+    </message>
+    <message>
+        <source>Displays the name of the host network adapter selected for bridged networking.</source>
+        <translation>显示该 bridged 网络界面所对应的主机网络界面的名称.</translation>
+    </message>
+    <message>
+        <source>Internal &amp;Network:</source>
+        <translation>Internal 网络名称(&amp;N):</translation>
+    </message>
+    <message>
         <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation type="obsolete">显示为该网络连接选择的内部网络名称.</translation>
+        <translation>显示该 internal 网络界面的名称.</translation>
+    </message>
+    <message>
+        <source>Host-only &amp;Network Adapter:</source>
+        <translation>Host-only 网络界面(&amp;N):</translation>
+    </message>
+    <message>
+        <source>Displays the name of the VirtualBox network adapter selected for host-only networking.</source>
+        <translation>显示该 host-only 网络界面所对应的主机虚拟网络界面的名称.</translation>
+    </message>
+    <message>
+        <source>Guest Settings</source>
+        <translation>虚拟端设置</translation>
     </message>
     <message>
         <source>Guest &amp;MAC Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>MAC 地址(&amp;M):</translation>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="unfinished">显示这块网卡的 MAC 地址。它包含12位的字符信息，每位字符取自 {0-9,A-F} 。请注意：第二位字符必须为偶数.</translation>
+        <translation>显示这块网卡的 MAC 地址。它包含12位的字符信息，每位字符取自 {0-9,A-F} 。请注意：第二位字符必须为偶数.</translation>
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
-        <translation type="unfinished">生成一个新的随机MAC 地址.</translation>
+        <translation>生成一个新的随机MAC 地址.</translation>
     </message>
     <message>
         <source>&amp;Cable connected</source>
-        <translation type="unfinished"></translation>
+        <translation>接入网线(&amp;C)</translation>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="unfinished">指示虚拟网线在启动时是否与主机连接.</translation>
-    </message>
-    <message>
-        <source>Additional Options</source>
-        <translation type="unfinished"></translation>
+        <translation>指示虚拟网线在启动时是否与主机连接.</translation>
     </message>
 </context>
 <context>

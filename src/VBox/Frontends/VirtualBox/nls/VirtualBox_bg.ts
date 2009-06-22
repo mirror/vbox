@@ -19,7 +19,7 @@
         <translation>Bulgarian</translation>
     </message>
     <message>
-       <source>--</source>
+        <source>--</source>
         <comment>Language country name, in English (empty if native country name is empty)</comment>
         <translation>Bulgaria</translation>
     </message>
@@ -652,7 +652,7 @@
     </message>
     <message>
         <source>Unmount F&amp;loppy</source>
-        <translation>Демонтиране на Ф&amp;лопи</translation>
+        <translation>Демонтиране на ф&amp;лопи</translation>
     </message>
     <message>
         <source>Unmount the currently mounted floppy media</source>
@@ -1639,7 +1639,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Not mounted</source>
         <comment>details report (DVD)</comment>
-        <translation>Няма монтирано</translation>
+        <translation>Няма монтиран</translation>
     </message>
     <message>
         <source>Image</source>
@@ -1879,7 +1879,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Not attached</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>Няма свързана</translation>
+        <translation>Без връзка</translation>
     </message>
     <message>
         <source>NAT</source>
@@ -1924,7 +1924,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Disabled</source>
         <comment>ClipboardType</comment>
-        <translation>Забранено</translation>
+        <translation>Забранен</translation>
     </message>
     <message>
         <source>Host To Guest</source>
@@ -1957,7 +1957,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Disabled</source>
         <comment>details report (serial ports)</comment>
-        <translation>Забранено</translation>
+        <translation>Забранени</translation>
     </message>
     <message>
         <source>Serial Ports</source>
@@ -2057,7 +2057,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Disabled</source>
         <comment>details report (parallel ports)</comment>
-        <translation>Забранено</translation>
+        <translation>Забранени</translation>
     </message>
     <message>
         <source>Parallel Ports</source>
@@ -3917,7 +3917,7 @@ p, li { white-space: pre-wrap; }
     <name>VBoxSettingsDialog</name>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
-        <translation>&lt;i&gt;Изберете категория от настройките от списъка отляво и придвижете мишката върху даден елемент, за да получите повече информация&lt;/i&gt;.</translation>
+        <translation>&lt;i&gt;Изберете категория от настройките в списъка отляво и придвижете мишката върху даден елемент, за да получите повече информация&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
@@ -4333,7 +4333,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Стартирали сте новосъздадена виртуална машина за пръв път. Този помощник ще ви помогне да завършите стъпките, необходими за зареждането на операционна система според вашия избор на виртуалната машина.&lt;/p&gt;&lt;p&gt;Имайте предвид, че няма да можете да инсталирате операционна система на тази виртуална машина в момента, тъй като не сте закачили хард диск към нея. Ако това не е, което искате, можете да откажете изпълнението на този помощник, да изберете &lt;b&gt;Настройки&lt;/b&gt; от менюто &lt;b&gt;Машина&lt;/b&gt; от основния прозорец на VirtualBox, за да достъпите диалога с настройки на тази виртуална машина, и да промените конфигурацията на твърдия диск.&lt;/p&gt;&lt;p&gt;Използвайте бутона &lt;b&gt;Напред&lt;/b&gt;, за да отидете към следващата страница на помощника, и бутона &lt;b&gt;Назад&lt;/b&gt;, за да се върнете към предишната страница. Също така, можете да натиснете бутона &lt;b&gt;Отказ&lt;/b&gt;, ако искате да откажете изпълнението на този помощник.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Стартирали сте новосъздадена виртуална машина за пръв път. Този помощник ще ви помогне да завършите стъпките, необходими за зареждането на операционна система според вашия избор на виртуалната машина.&lt;/p&gt;&lt;p&gt;Имайте предвид, че няма да можете да инсталирате операционна система на тази виртуална машина в момента, тъй като не сте закачили твърд диск към нея. Ако това не е, което искате, можете да откажете изпълнението на този помощник, да изберете &lt;b&gt;Настройки&lt;/b&gt; от менюто &lt;b&gt;Машина&lt;/b&gt; от основния прозорец на VirtualBox, за да достъпите диалога с настройки на тази виртуална машина, и да промените конфигурацията на твърдия диск.&lt;/p&gt;&lt;p&gt;Използвайте бутона &lt;b&gt;Напред&lt;/b&gt;, за да отидете към следващата страница на помощника, и бутона &lt;b&gt;Назад&lt;/b&gt;, за да се върнете към предишната страница. Също така, можете да натиснете бутона &lt;b&gt;Отказ&lt;/b&gt;, ако искате да откажете изпълнението на този помощник.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of the media you would like to use for booting an operating system.&lt;/p&gt;</source>
@@ -5011,7 +5011,7 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     </message>
     <message>
         <source>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</source>
-        <translation>Ако е избрано, ще се показват различаващите твърди дискове, които настоящо са закачени към слотовете, вместо техните базови твърди дискове (показвани в случай на индиректни прикачвания), и, също така, ще позволи изцяло прикачване на други различаващи хард дискове. Изберете това, само ако се нуждаете от комплексна настройка на твърдите дискове.</translation>
+        <translation>Ако е избрано, ще се показват различаващите твърди дискове, които настоящо са закачени към слотовете, вместо техните базови твърди дискове (показвани в случай на индиректни прикачвания), и, също така, ще позволи изцяло прикачване на други различаващи твърди дискове. Изберете това, само ако се нуждаете от комплексна настройка на твърдите дискове.</translation>
     </message>
     <message>
         <source>&amp;Show Differencing Hard Disks</source>
@@ -5410,7 +5410,7 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     </message>
     <message>
         <source>Enable &amp;USB Controller</source>
-        <translation>Позовлява &amp;USB контролер</translation>
+        <translation>Позволяване на &amp;USB контролер</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>

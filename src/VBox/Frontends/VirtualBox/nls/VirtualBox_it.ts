@@ -4619,7 +4619,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
-        <translation>Apertura di &lt;tt&gt;%1&lt;/tt&gt;non riuscita. Assicurati che il tuo ambiente desktop possa gestire correttamente URL di questo tipo.</translation>
+        <translation>Apertura di &lt;tt&gt;%1&lt;/tt&gt; non riuscita. Assicurati che il tuo ambiente desktop possa gestire correttamente URL di questo tipo.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>

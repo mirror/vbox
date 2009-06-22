@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
 <TS version="2.0" language="it">
-<defaultcodec></defaultcodec>
 <context>
     <name>PPDOptionsModel</name>
     <message>
@@ -785,7 +784,7 @@ in
     <message>
         <location filename="../src/gui/dialogs/qcolordialog.cpp" line="1204"/>
         <source>Hu&amp;e:</source>
-        <translation type="unfinished"></translation>
+        <translation>T&amp;on:</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qcolordialog.cpp" line="1205"/>
@@ -1697,7 +1696,7 @@ Vuoi eliminarlo comunque?</translation>
     <message>
         <location filename="../src/qt3support/network/q3http.cpp" line="2020"/>
         <source>Invalid HTTP chunked body</source>
-        <translation type="unfinished"></translation>
+        <translation>ContenutoHTTP  spezzettato non valido</translation>
     </message>
     <message>
         <location filename="../src/qt3support/network/q3http.cpp" line="2314"/>
@@ -1945,7 +1944,7 @@ Vuoi eliminarlo comunque?</translation>
     <message>
         <location filename="../src/corelib/plugin/qlibrary.cpp" line="620"/>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. (%2.%3.%4) [%5]</source>
-        <translation type="unfinished"></translation>
+        <translation>Il plugin &apos;%1&apos; utilizza librerie QT non compatibili. (%2.%3.%4) [%5]</translation>
     </message>
     <message>
         <location filename="../src/corelib/plugin/qlibrary.cpp" line="636"/>
@@ -4272,7 +4271,7 @@ Scegli un nome diverso.</translation>
     <message>
         <location filename="../src/xml/qxml.cpp" line="55"/>
         <source>error in the text declaration of an external entity</source>
-        <translation type="unfinished"></translation>
+        <translation>errore nella dichiarazione di testo di un&apos;entità esterna</translation>
     </message>
 </context>
 <context>
