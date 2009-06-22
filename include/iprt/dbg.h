@@ -136,16 +136,16 @@ RTDECL(PRTDBGSYMBOL)    RTDbgSymbolAlloc(void);
  *
  * @returns Pointer to duplicate on success, NULL on failure.
  *
- * @param   pSymbol         The symbol to duplicate.
+ * @param   pSymInfo        The symbol info to duplicate.
  */
-RTDECL(PRTDBGSYMBOL)    RTDbgSymbolDup(PCRTDBGSYMBOL pSymbol);
+RTDECL(PRTDBGSYMBOL)    RTDbgSymbolDup(PCRTDBGSYMBOL pSymInfo);
 
 /**
  * Free a symbol structure previously allocated by a RTDbg method.
  *
- * @param   pSymbol         The symbol to free. NULL is ignored.
+ * @param   pSymInfo        The symbol info to free. NULL is ignored.
  */
-RTDECL(void)            RTDbgSymbolFree(PRTDBGSYMBOL pSymbol);
+RTDECL(void)            RTDbgSymbolFree(PRTDBGSYMBOL pSymInfo);
 
 
 /** Max length (including '\\0') of a debug info file name. */
@@ -471,9 +471,9 @@ RTDECL(int) RTDbgAsSymbolAdd(RTDBGAS hDbgAs, const char *pszSymbol, RTUINTPTR Ad
  * @param   Addr            The address which closest symbol is requested.
  * @param   poffDisp        Where to return the distance between the symbol
  *                          and address. Optional.
- * @param   pSymbol         Where to return the symbol info.
+ * @param   pSymInfo        Where to return the symbol info.
  */
-RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGSYMBOL pSymbol);
+RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGSYMBOL pSymInfo);
 
 /**
  * Query a symbol by address.
@@ -486,10 +486,10 @@ RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDi
  * @param   Addr            The address which closest symbol is requested.
  * @param   poffDisp        Where to return the distance between the symbol
  *                          and address. Optional.
- * @param   ppSymbol        Where to return the pointer to the allocated
- *                          symbol info. Always set. Free with RTDbgSymbolFree.
+ * @param   ppSymInfo       Where to return the pointer to the allocated symbol
+ *                          info. Always set. Free with RTDbgSymbolFree.
  */
-RTDECL(int) RTDbgAsSymbolByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGSYMBOL *ppSymbol);
+RTDECL(int) RTDbgAsSymbolByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGSYMBOL *ppSymInfo);
 
 /**
  * Query a symbol by name.
@@ -499,9 +499,9 @@ RTDECL(int) RTDbgAsSymbolByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffD
  *
  * @param   hDbgAs          The address space handle.
  * @param   pszSymbol       The symbol name.
- * @param   pSymbol         Where to return the symbol info.
+ * @param   pSymInfo        Where to return the symbol info.
  */
-RTDECL(int) RTDbgAsSymbolByName(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYMBOL pSymbol);
+RTDECL(int) RTDbgAsSymbolByName(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYMBOL pSymInfo);
 
 /**
  * Query a symbol by name.
@@ -511,10 +511,10 @@ RTDECL(int) RTDbgAsSymbolByName(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYM
  *
  * @param   hDbgAs          The address space handle.
  * @param   pszSymbol       The symbol name.
- * @param   ppSymbol        Where to return the pointer to the allocated
- *                          symbol info. Always set. Free with RTDbgSymbolFree.
+ * @param   ppSymInfo       Where to return the pointer to the allocated symbol
+ *                          info. Always set. Free with RTDbgSymbolFree.
  */
-RTDECL(int) RTDbgAsSymbolByNameA(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYMBOL *ppSymbol);
+RTDECL(int) RTDbgAsSymbolByNameA(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYMBOL *ppSymInfo);
 
 /**
  * Query a line number by address.
@@ -652,7 +652,7 @@ RTDECL(RTDBGSEGIDX) RTDbgModRvaToSegOff(RTDBGMOD hDbgMod, RTUINTPTR uRva, PRTUIN
  * NE and such it's a bit odder and the answer may not make much sense for them.
  *
  * @returns Image mapped size.
- *          UINTPTR_MAX is returned if the handle is invalid.
+ *          RTUINTPTR_MAX is returned if the handle is invalid.
  *
  * @param   hDbgMod         The module handle.
  */
@@ -729,7 +729,7 @@ RTDECL(int)         RTDbgModSegmentByIndex(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, P
  * This is a just a wrapper around RTDbgModSegmentByIndex.
  *
  * @returns The segment size.
- *          UINTPTR_MAX is returned if either the handle and segment index are
+ *          RTUINTPTR_MAX is returned if either the handle and segment index are
  *          invalid.
  *
  * @param   hDbgMod         The module handle.
@@ -745,7 +745,7 @@ RTDECL(RTUINTPTR)   RTDbgModSegmentSize(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg);
  * This is a just a wrapper around RTDbgModSegmentByIndex.
  *
  * @returns The segment relative address.
- *          UINTPTR_MAX is returned if either the handle and segment index are
+ *          RTUINTPTR_MAX is returned if either the handle and segment index are
  *          invalid.
  *
  * @param   hDbgMod         The module handle.
@@ -756,13 +756,17 @@ RTDECL(RTUINTPTR)   RTDbgModSegmentRva(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg);
 
 RTDECL(int)         RTDbgModSymbolAdd(RTDBGMOD hDbgMod, const char *pszSymbol, RTDBGSEGIDX iSeg, RTUINTPTR off, RTUINTPTR cb, uint32_t fFlags, uint32_t *piOrdinal);
 RTDECL(uint32_t)    RTDbgModSymbolCount(RTDBGMOD hDbgMod);
-RTDECL(int)         RTDbgModSymbolByIndex(RTDBGMOD hDbgMod, uint32_t iSymbol, PRTDBGSYMBOL pSymbol);
-RTDECL(int)         RTDbgModSymbolByAddr(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGSYMBOL pSymbol);
-RTDECL(int)         RTDbgModSymbolByAddrA(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGSYMBOL *ppSymbol);
-RTDECL(int)         RTDbgModSymbolByName(RTDBGMOD hDbgMod, const char *pszSymbol, PRTDBGSYMBOL pSymbol);
-RTDECL(int)         RTDbgModSymbolByNameA(RTDBGMOD hDbgMod, const char *pszSymbol, PRTDBGSYMBOL *ppSymbol);
+RTDECL(int)         RTDbgModSymbolByOrdinal(RTDBGMOD hDbgMod, uint32_t iOrdinal, PRTDBGSYMBOL pSymInfo);
+RTDECL(int)         RTDbgModSymbolByOrdinalA(RTDBGMOD hDbgMod, uint32_t iOrdinal, PRTDBGSYMBOL *ppSymInfo);
+RTDECL(int)         RTDbgModSymbolByAddr(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGSYMBOL pSymInfo);
+RTDECL(int)         RTDbgModSymbolByAddrA(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGSYMBOL *ppSymInfo);
+RTDECL(int)         RTDbgModSymbolByName(RTDBGMOD hDbgMod, const char *pszSymbol, PRTDBGSYMBOL pSymInfo);
+RTDECL(int)         RTDbgModSymbolByNameA(RTDBGMOD hDbgMod, const char *pszSymbol, PRTDBGSYMBOL *ppSymInfo);
 
 RTDECL(int)         RTDbgModLineAdd(RTDBGMOD hDbgMod, const char *pszFile, uint32_t uLineNo, RTDBGSEGIDX iSeg, RTUINTPTR off, uint32_t *piOrdinal);
+RTDECL(uint32_t)    RTDbgModLineCount(RTDBGMOD hDbgMod);
+RTDECL(int)         RTDbgModLineByOrdinal(RTDBGMOD hDbgMod, uint32_t iOrdinal, PRTDBGLINE pLine);
+RTDECL(int)         RTDbgModLineByOrdinalA(RTDBGMOD hDbgMod, uint32_t iOrdinal, PRTDBGLINE *ppLine);
 RTDECL(int)         RTDbgModLineByAddr(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGLINE pLine);
 RTDECL(int)         RTDbgModLineByAddrA(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGLINE *ppLine);
 /** @} */

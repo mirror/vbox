@@ -398,14 +398,14 @@ RTDECL(RTDBGSEGIDX) RTDbgModRvaToSegOff(RTDBGMOD hDbgMod, RTUINTPTR uRva, PRTUIN
  * NE and such it's a bit odder and the answer may not make much sense for them.
  *
  * @returns Image mapped size.
- *          UINTPTR_MAX is returned if the handle is invalid.
+ *          RTUINTPTR_MAX is returned if the handle is invalid.
  *
  * @param   hDbgMod         The module handle.
  */
 RTDECL(RTUINTPTR) RTDbgModImageSize(RTDBGMOD hDbgMod)
 {
     PRTDBGMODINT pDbgMod = hDbgMod;
-    RTDBGMOD_VALID_RETURN_RC(pDbgMod, UINTPTR_MAX);
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, RTUINTPTR_MAX);
     RTDBGMOD_LOCK(pDbgMod);
 
     RTUINTPTR cbImage = pDbgMod->pDbgVt->pfnImageSize(pDbgMod);
@@ -534,7 +534,7 @@ RTDECL(int) RTDbgModSegmentByIndex(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, PRTDBGSEG
  * This is a just a wrapper around RTDbgModSegmentByIndex.
  *
  * @returns The segment size.
- *          UINTPTR_MAX is returned if either the handle and segment index are
+ *          RTUINTPTR_MAX is returned if either the handle and segment index are
  *          invalid.
  *
  * @param   hDbgMod         The module handle.
@@ -558,7 +558,7 @@ RTDECL(RTUINTPTR) RTDbgModSegmentSize(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg)
  * This is a just a wrapper around RTDbgModSegmentByIndex.
  *
  * @returns The segment relative address.
- *          UINTPTR_MAX is returned if either the handle and segment index are
+ *          RTUINTPTR_MAX is returned if either the handle and segment index are
  *          invalid.
  *
  * @param   hDbgMod         The module handle.
@@ -573,32 +573,36 @@ RTDECL(RTUINTPTR) RTDbgModSegmentRva(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg)
 }
 
 
-
-
 /**
  * Adds a line number to the module.
  *
  * @returns IPRT status code.
- * @retval  VERR_INVALID_HANDLE if hDbgMod is invalid.
  * @retval  VERR_NOT_SUPPORTED if the module interpret doesn't support adding
- *          custom symbols.
- * @retval  VERR_DBG_SYMBOL_NAME_OUT_OF_RANGE
- * @retval  VERR_DBG_INVALID_RVA
- * @retval  VERR_DBG_INVALID_SEGMENT_INDEX
- * @retval  VERR_DBG_INVALID_SEGMENT_OFFSET
- * @retval  VERR_INVALID_PARAMETER
+ *          custom symbols. This is a common place occurance.
+ * @retval  VERR_INVALID_HANDLE if hDbgMod is invalid.
+ * @retval  VERR_DBG_SYMBOL_NAME_OUT_OF_RANGE if the symbol name is too long or
+ *          short.
+ * @retval  VERR_DBG_INVALID_RVA if an image relative address is specified and
+ *          it's not inside any of the segments defined by the module.
+ * @retval  VERR_DBG_INVALID_SEGMENT_INDEX if the segment index isn't valid.
+ * @retval  VERR_DBG_INVALID_SEGMENT_OFFSET if the segment offset is beyond the
+ *          end of the segment.
+ * @retval  VERR_DBG_ADDRESS_WRAP if off+cb wraps around.
+ * @retval  VERR_INVALID_PARAMETER if the symbol flags sets undefined bits.
  *
  * @param   hDbgMod         The module handle.
  * @param   pszSymbol       The symbol name.
  * @param   iSeg            The segment index.
  * @param   off             The segment offset.
- * @param   cb              The size of the symbol.
- * @param   fFlags          Symbol flags.
+ * @param   cb              The size of the symbol. Can be zero, although this
+ *                          may depend somewhat on the debug interpreter.
+ * @param   fFlags          Symbol flags. Reserved for the future, MBZ.
  * @param   piOrdinal       Where to return the symbol ordinal on success. If
  *                          the interpreter doesn't do ordinals, this will be set to
- *                          UINT32_MAX. Optional
+ *                          UINT32_MAX. Optional.
  */
-RTDECL(int) RTDbgModSymbolAdd(RTDBGMOD hDbgMod, const char *pszSymbol, RTDBGSEGIDX iSeg, RTUINTPTR off, RTUINTPTR cb, uint32_t fFlags, uint32_t *piOrdinal)
+RTDECL(int) RTDbgModSymbolAdd(RTDBGMOD hDbgMod, const char *pszSymbol, RTDBGSEGIDX iSeg, RTUINTPTR off,
+                              RTUINTPTR cb, uint32_t fFlags, uint32_t *piOrdinal)
 {
     /*
      * Validate input.
@@ -614,6 +618,7 @@ RTDECL(int) RTDbgModSymbolAdd(RTDBGMOD hDbgMod, const char *pszSymbol, RTDBGSEGI
                         &&  iSeg <= RTDBGSEGIDX_SPECIAL_LAST),
                     ("%#x\n", iSeg),
                     VERR_DBG_INVALID_SEGMENT_INDEX);
+    AssertMsgReturn(off + cb >= off, ("off=%RTptr cb=%RTptr\n", off, cb), VERR_DBG_ADDRESS_WRAP);
     AssertReturn(!fFlags, VERR_INVALID_PARAMETER); /* currently reserved. */
 
     RTDBGMOD_LOCK(pDbgMod);
@@ -641,34 +646,267 @@ RTDECL(int) RTDbgModSymbolAdd(RTDBGMOD hDbgMod, const char *pszSymbol, RTDBGSEGI
 }
 
 
-RTDECL(uint32_t)    RTDbgModSymbolCount(RTDBGMOD hDbgMod)
+/**
+ * Gets the symbol count.
+ *
+ * This can be used together wtih RTDbgModSymbolByOrdinal or
+ * RTDbgModSymbolByOrdinalA to enumerate all the symbols.
+ *
+ * @returns The number of symbols in the module.
+ *          UINT32_MAX is returned if the module handle is invalid or some other
+ *          error occurs.
+ *
+ * @param   hDbgMod             The module handle.
+ */
+RTDECL(uint32_t) RTDbgModSymbolCount(RTDBGMOD hDbgMod)
 {
-    return 1;
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, UINT32_MAX);
+    RTDBGMOD_LOCK(pDbgMod);
+
+    uint32_t cSymbols = pDbgMod->pDbgVt->pfnSymbolCount(pDbgMod);
+
+    RTDBGMOD_UNLOCK(pDbgMod);
+    return cSymbols;
 }
 
-RTDECL(int)         RTDbgModSymbolByIndex(RTDBGMOD hDbgMod, uint32_t iSymbol, PRTDBGSYMBOL pSymbol)
+
+/**
+ * Queries symbol information by ordinal number.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_SYMBOL_NOT_FOUND if there is no symbol at the given number.
+ * @retval  VERR_DBG_NO_SYMBOLS if there aren't any symbols.
+ * @retval  VERR_INVALID_HANDLE if hDbgMod is invalid.
+ * @retval  VERR_NOT_SUPPORTED if lookup by ordinal is not supported.
+ *
+ * @param   hDbgMod             The module handle.
+ * @param   iOrdinal            The symbol ordinal number. 0-based. The highest
+ *                              number is RTDbgModSymbolCount() - 1.
+ * @param   pSymInfo            Where to store the symbol information.
+ */
+RTDECL(int) RTDbgModSymbolByOrdinal(RTDBGMOD hDbgMod, uint32_t iOrdinal, PRTDBGSYMBOL pSymInfo)
 {
-    return VERR_NOT_IMPLEMENTED;
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, VERR_INVALID_HANDLE);
+    RTDBGMOD_LOCK(pDbgMod);
+
+    int rc = pDbgMod->pDbgVt->pfnSymbolByOrdinal(pDbgMod, iOrdinal, pSymInfo);
+
+    RTDBGMOD_UNLOCK(pDbgMod);
+    return rc;
 }
 
-RTDECL(int)         RTDbgModSymbolByAddr(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGSYMBOL pSymbol)
+
+/**
+ * Queries symbol information by ordinal number.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_DBG_NO_SYMBOLS if there aren't any symbols.
+ * @retval  VERR_NOT_SUPPORTED if lookup by ordinal is not supported.
+ * @retval  VERR_SYMBOL_NOT_FOUND if there is no symbol at the given number.
+ * @retval  VERR_NO_MEMORY if RTDbgSymbolAlloc fails.
+ *
+ * @param   hDbgMod             The module handle.
+ * @param   iOrdinal            The symbol ordinal number. 0-based. The highest
+ *                              number is RTDbgModSymbolCount() - 1.
+ * @param   ppSymInfo           Where to store the pointer to the returned
+ *                              symbol information. Always set. Free with
+ *                              RTDbgSymbolFree.
+ */
+RTDECL(int) RTDbgModSymbolByOrdinalA(RTDBGMOD hDbgMod, uint32_t iOrdinal, PRTDBGSYMBOL *ppSymInfo)
 {
-    return VERR_NOT_IMPLEMENTED;
+    AssertPtr(ppSymInfo);
+    *ppSymInfo = NULL;
+
+    PRTDBGSYMBOL pSymInfo = RTDbgSymbolAlloc();
+    if (!pSymInfo)
+        return VERR_NO_MEMORY;
+
+    int rc = RTDbgModSymbolByOrdinal(hDbgMod, iOrdinal, pSymInfo);
+
+    if (RT_SUCCESS(rc))
+        *ppSymInfo = pSymInfo;
+    else
+        RTDbgSymbolFree(pSymInfo);
+    return rc;
 }
 
-RTDECL(int)         RTDbgModSymbolByAddrA(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGSYMBOL *ppSymbol)
+
+/**
+ * Queries symbol information by address.
+ *
+ * The returned symbol is what the debug info interpreter consideres the symbol
+ * most applicable to the specified address. This usually means a symbol with an
+ * address equal or lower than the requested.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_SYMBOL_NOT_FOUND if no suitable symbol was found.
+ * @retval  VERR_DBG_NO_SYMBOLS if there aren't any symbols.
+ * @retval  VERR_INVALID_HANDLE if hDbgMod is invalid.
+ * @retval  VERR_DBG_INVALID_RVA if an image relative address is specified and
+ *          it's not inside any of the segments defined by the module.
+ * @retval  VERR_DBG_INVALID_SEGMENT_INDEX if the segment index isn't valid.
+ * @retval  VERR_DBG_INVALID_SEGMENT_OFFSET if the segment offset is beyond the
+ *          end of the segment.
+ *
+ * @param   pMod        Pointer to the module structure.
+ * @param   iSeg        The segment number (0-based) or RTDBGSEGIDX_ABS.
+ * @param   off         The offset into the segment.
+ * @param   poffDisp    Where to store the distance between the specified address
+ *                      and the returned symbol. Optional.
+ * @param   pSymInfo    Where to store the symbol information.
+ */
+RTDECL(int) RTDbgModSymbolByAddr(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGSYMBOL pSymInfo)
 {
-    return VERR_NOT_IMPLEMENTED;
+    /*
+     * Validate input.
+     */
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, UINT32_MAX);
+    AssertPtrNull(poffDisp);
+    AssertPtr(pSymInfo);
+
+    RTDBGMOD_LOCK(pDbgMod);
+
+    /*
+     * Convert RVAs.
+     */
+    if (iSeg == RTDBGSEGIDX_RVA)
+    {
+        iSeg = pDbgMod->pDbgVt->pfnRvaToSegOff(pDbgMod, off, &off);
+        if (iSeg == NIL_RTDBGSEGIDX)
+        {
+            RTDBGMOD_UNLOCK(pDbgMod);
+            return VERR_DBG_INVALID_RVA;
+        }
+    }
+
+    /*
+     * Get down to business.
+     */
+    int rc = pDbgMod->pDbgVt->pfnSymbolByAddr(pDbgMod, iSeg, off, poffDisp, pSymInfo);
+
+    RTDBGMOD_UNLOCK(pDbgMod);
+    return rc;
 }
 
-RTDECL(int)         RTDbgModSymbolByName(RTDBGMOD hDbgMod, const char *pszSymbol, PRTDBGSYMBOL pSymbol)
+
+/**
+ * Queries symbol information by address.
+ *
+ * The returned symbol is what the debug info interpreter consideres the symbol
+ * most applicable to the specified address. This usually means a symbol with an
+ * address equal or lower than the requested.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_SYMBOL_NOT_FOUND if no suitable symbol was found.
+ * @retval  VERR_DBG_NO_SYMBOLS if there aren't any symbols.
+ * @retval  VERR_INVALID_HANDLE if hDbgMod is invalid.
+ * @retval  VERR_DBG_INVALID_RVA if an image relative address is specified and
+ *          it's not inside any of the segments defined by the module.
+ * @retval  VERR_DBG_INVALID_SEGMENT_INDEX if the segment index isn't valid.
+ * @retval  VERR_DBG_INVALID_SEGMENT_OFFSET if the segment offset is beyond the
+ *          end of the segment.
+ * @retval  VERR_NO_MEMORY if RTDbgSymbolAlloc fails.
+ *
+ * @param   hDbgMod             The module handle.
+ * @param   iSeg                The segment index.
+ * @param   off                 The offset into the segment.
+ * @param   poffDisp            Where to store the distance between the
+ *                              specified address and the returned symbol. Optional.
+ * @param   ppSymInfo           Where to store the pointer to the returned
+ *                              symbol information. Always set. Free with
+ *                              RTDbgSymbolFree.
+ */
+RTDECL(int) RTDbgModSymbolByAddrA(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGSYMBOL *ppSymInfo)
 {
-    return VERR_NOT_IMPLEMENTED;
+    AssertPtr(ppSymInfo);
+    *ppSymInfo = NULL;
+
+    PRTDBGSYMBOL pSymInfo = RTDbgSymbolAlloc();
+    if (!pSymInfo)
+        return VERR_NO_MEMORY;
+
+    int rc = RTDbgModSymbolByAddr(hDbgMod, iSeg, off, poffDisp, pSymInfo);
+
+    if (RT_SUCCESS(rc))
+        *ppSymInfo = pSymInfo;
+    else
+        RTDbgSymbolFree(pSymInfo);
+    return rc;
 }
 
-RTDECL(int)         RTDbgModSymbolByNameA(RTDBGMOD hDbgMod, const char *pszSymbol, PRTDBGSYMBOL *ppSymbol)
+
+/**
+ * Queries symbol information by symbol name.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_DBG_NO_SYMBOLS if there aren't any symbols.
+ * @retval  VERR_SYMBOL_NOT_FOUND if no suitable symbol was found.
+ * @retval  VERR_DBG_SYMBOL_NAME_OUT_OF_RANGE if the symbol name is too long or
+ *          short.
+ *
+ * @param   hDbgMod             The module handle.
+ * @param   pszSymbol           The symbol name.
+ * @param   pSymInfo            Where to store the symbol information.
+ */
+RTDECL(int) RTDbgModSymbolByName(RTDBGMOD hDbgMod, const char *pszSymbol, PRTDBGSYMBOL pSymInfo)
 {
-    return VERR_NOT_IMPLEMENTED;
+    /*
+     * Validate input.
+     */
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, UINT32_MAX);
+    AssertPtr(pszSymbol);
+    size_t cchSymbol = strlen(pszSymbol);
+    AssertReturn(cchSymbol, VERR_DBG_SYMBOL_NAME_OUT_OF_RANGE);
+    AssertReturn(cchSymbol < RTDBG_SYMBOL_NAME_LENGTH, VERR_DBG_SYMBOL_NAME_OUT_OF_RANGE);
+    AssertPtr(pSymInfo);
+
+    /*
+     * Make the query.
+     */
+    RTDBGMOD_LOCK(pDbgMod);
+    int rc = pDbgMod->pDbgVt->pfnSymbolByName(pDbgMod, pszSymbol, cchSymbol, pSymInfo);
+    RTDBGMOD_UNLOCK(pDbgMod);
+
+    return rc;
+}
+
+
+/**
+ * Queries symbol information by symbol name.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_DBG_NO_SYMBOLS if there aren't any symbols.
+ * @retval  VERR_SYMBOL_NOT_FOUND if no suitable symbol was found.
+ * @retval  VERR_DBG_SYMBOL_NAME_OUT_OF_RANGE if the symbol name is too long or
+ *          short.
+ *
+ * @retval  VERR_NO_MEMORY if RTDbgSymbolAlloc fails.
+ * @param   hDbgMod             The module handle.
+ * @param   pszSymbol           The symbol name.
+ * @param   ppSymInfo           Where to store the pointer to the returned
+ *                              symbol information. Always set. Free with
+ *                              RTDbgSymbolFree.
+ */
+RTDECL(int) RTDbgModSymbolByNameA(RTDBGMOD hDbgMod, const char *pszSymbol, PRTDBGSYMBOL *ppSymInfo)
+{
+    AssertPtr(ppSymInfo);
+    *ppSymInfo = NULL;
+
+    PRTDBGSYMBOL pSymInfo = RTDbgSymbolAlloc();
+    if (!pSymInfo)
+        return VERR_NO_MEMORY;
+
+    int rc = RTDbgModSymbolByName(hDbgMod, pszSymbol, pSymInfo);
+
+    if (RT_SUCCESS(rc))
+        *ppSymInfo = pSymInfo;
+    else
+        RTDbgSymbolFree(pSymInfo);
+    return rc;
 }
 
 

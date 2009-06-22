@@ -253,10 +253,10 @@ typedef struct RTDBGMODVTDBG
      * @retval  VERR_SYMBOL_NOT_FOUND if there is no symbol at that index.
      *
      * @param   pMod        Pointer to the module structure.
-     * @param   iSymbol     The symbol ordinal number.
-     * @param   pSymbol     Where to store the symbol information.
+     * @param   iOrdinal    The symbol ordinal number.
+     * @param   pSymInfo    Where to store the symbol information.
      */
-    DECLCALLBACKMEMBER(int, pfnSymbolByOrdinal)(PRTDBGMODINT pMod, uint32_t iSymbol, PRTDBGSYMBOL pSymbol);
+    DECLCALLBACKMEMBER(int, pfnSymbolByOrdinal)(PRTDBGMODINT pMod, uint32_t iOrdinal, PRTDBGSYMBOL pSymInfo);
 
     /**
      * Queries symbol information by symbol name.
@@ -268,9 +268,10 @@ typedef struct RTDBGMODVTDBG
      *
      * @param   pMod        Pointer to the module structure.
      * @param   pszSymbol   The symbol name.
-     * @para    pSymbol     Where to store the symbol information.
+     * @param   cchSymbol   The length of the symbol name.
+     * @param   pSymInfo    Where to store the symbol information.
      */
-    DECLCALLBACKMEMBER(int, pfnSymbolByName)(PRTDBGMODINT pMod, const char *pszSymbol, PRTDBGSYMBOL pSymbol);
+    DECLCALLBACKMEMBER(int, pfnSymbolByName)(PRTDBGMODINT pMod, const char *pszSymbol, size_t cchSymbol, PRTDBGSYMBOL pSymInfo);
 
     /**
      * Queries symbol information by address.
@@ -289,9 +290,9 @@ typedef struct RTDBGMODVTDBG
      * @param   off         The offset into the segment.
      * @param   poffDisp    Where to store the distance between the specified address
      *                      and the returned symbol. Optional.
-     * @param   pSymbol     Where to store the symbol information.
+     * @param   pSymInfo    Where to store the symbol information.
      */
-    DECLCALLBACKMEMBER(int, pfnSymbolByAddr)(PRTDBGMODINT pMod, uint32_t iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGSYMBOL pSymbol);
+    DECLCALLBACKMEMBER(int, pfnSymbolByAddr)(PRTDBGMODINT pMod, uint32_t iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGSYMBOL pSymInfo);
 
 
 
