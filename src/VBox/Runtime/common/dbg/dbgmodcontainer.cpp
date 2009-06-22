@@ -593,11 +593,13 @@ static DECLCALLBACK(int) rtDbgModContainer_Close(PRTDBGMODINT pMod)
         RTStrCacheRelease(g_hDbgModStrCache, pThis->paSegs[iSeg].pszName);
         pThis->paSegs[iSeg].pszName = NULL;
     }
+
     RTAvlrUIntPtrDestroy(&pThis->AbsAddrTree, rtDbgModContainer_DestroyTreeNode, NULL);
     pThis->Names = NULL;
 
     RTMemFree(pThis->paSegs);
     pThis->paSegs = NULL;
+
     RTMemFree(pThis);
 
     return VINF_SUCCESS;
@@ -649,9 +651,10 @@ static RTDBGMODVTDBG const g_rtDbgModVtDbgContainer =
  *
  * @returns IPRT status code.
  * @param   pMod        The module instance.
- * @param   cb          The module size.
+ * @param   cbSeg       The size of the initial segment. 0 if segments are to be
+ *                      created manually later on.
  */
-int rtDbgModContainerCreate(PRTDBGMODINT pMod, RTUINTPTR cb)
+int rtDbgModContainerCreate(PRTDBGMODINT pMod, RTUINTPTR cbSeg)
 {
     PRTDBGMODCTN pThis = (PRTDBGMODCTN)RTMemAlloc(sizeof(*pThis));
     if (!pThis)
@@ -663,12 +666,28 @@ int rtDbgModContainerCreate(PRTDBGMODINT pMod, RTUINTPTR cb)
     pThis->LineOrdinalTree = NULL;
     pThis->paSegs = NULL;
     pThis->cSegs = 0;
-    pThis->cb = cb; /** @todo the module size stuff doesn't quite make sense yet. Need to look at segments first, I guess. */
+    pThis->cb = 0;
     pThis->iNextSymbolOrdinal = 0;
     pThis->iNextLineOrdinal = 0;
 
     pMod->pDbgVt = &g_rtDbgModVtDbgContainer;
     pMod->pvDbgPriv = pThis;
+
+    /*
+     * Add the initial segment.
+     */
+    if (cbSeg)
+    {
+        int rc = rtDbgModContainer_SegmentAdd(pMod, 0, cbSeg, "default", sizeof("default") - 1, 0, NULL);
+        if (RT_FAILURE(rc))
+        {
+            RTMemFree(pThis);
+            pMod->pDbgVt = NULL;
+            pMod->pvDbgPriv = NULL;
+            return rc;
+        }
+    }
+
     return VINF_SUCCESS;
 }
 

@@ -195,16 +195,20 @@ DECLINLINE(int) rtDbgModLazyInit(void)
 /**
  * Creates a module based on the default debug info container.
  *
- * This can be used to manually load a module and its symbol.
+ * This can be used to manually load a module and its symbol. The primary user
+ * group is the debug info interpreters, which use this API to create an
+ * efficient debug info container behind the scenes and forward all queries to
+ * it once the info has been loaded.
  *
  * @returns IPRT status code.
  *
  * @param   phDbgMod        Where to return the module handle.
  * @param   pszName         The name of the module (mandatory).
- * @param   cb              The size of the module. Must be greater than zero.
+ * @param   cbSeg           The size of initial segment. If zero, segments will
+ *                          have to be added manually using RTDbgModSegmentAdd.
  * @param   fFlags          Flags reserved for future extensions, MBZ for now.
  */
-RTDECL(int)  RTDbgModCreate(PRTDBGMOD phDbgMod, const char *pszName, RTUINTPTR cb, uint32_t fFlags)
+RTDECL(int) RTDbgModCreate(PRTDBGMOD phDbgMod, const char *pszName, RTUINTPTR cbSeg, uint32_t fFlags)
 {
     /*
      * Input validation and lazy initialization.
@@ -213,7 +217,6 @@ RTDECL(int)  RTDbgModCreate(PRTDBGMOD phDbgMod, const char *pszName, RTUINTPTR c
     *phDbgMod = NIL_RTDBGMOD;
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
     AssertReturn(*pszName, VERR_INVALID_PARAMETER);
-    AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
     AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER);
 
     int rc = rtDbgModLazyInit();
@@ -231,16 +234,16 @@ RTDECL(int)  RTDbgModCreate(PRTDBGMOD phDbgMod, const char *pszName, RTUINTPTR c
     rc = RTCritSectInit(&pDbgMod->CritSect);
     if (RT_SUCCESS(rc))
     {
-        pDbgMod->pszName = RTStrDup(pszName);
+        pDbgMod->pszName = RTStrCacheEnter(g_hDbgModStrCache, pszName);
         if (pDbgMod->pszName)
         {
-            rc = rtDbgModContainerCreate(pDbgMod, cb);
+            rc = rtDbgModContainerCreate(pDbgMod, cbSeg);
             if (RT_SUCCESS(rc))
             {
                 *phDbgMod = pDbgMod;
                 return rc;
             }
-            RTStrFree(pDbgMod->pszName);
+            RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszName);
         }
         RTCritSectDelete(&pDbgMod->CritSect);
     }
@@ -272,7 +275,7 @@ RTDECL(int)         RTDbgModCreateFromMap(PRTDBGMOD phDbgMod, const char *pszFil
  *
  * @param   pDbgMod     The module instance.
  */
-static void  rtDbgModDestroy(PRTDBGMODINT pDbgMod)
+static void rtDbgModDestroy(PRTDBGMODINT pDbgMod)
 {
     /*
      * Close the debug info interpreter first, then the image interpret.
@@ -297,9 +300,9 @@ static void  rtDbgModDestroy(PRTDBGMODINT pDbgMod)
      * Free the resources.
      */
     ASMAtomicWriteU32(&pDbgMod->u32Magic, ~RTDBGMOD_MAGIC);
-    RTStrFree(pDbgMod->pszName);
-    RTStrFree(pDbgMod->pszImgFile);
-    RTStrFree(pDbgMod->pszDbgFile);
+    RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszName);
+    RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszImgFile);
+    RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszDbgFile);
     RTCritSectLeave(&pDbgMod->CritSect); /* paranoia  */
     RTCritSectDelete(&pDbgMod->CritSect);
     RTMemFree(pDbgMod);
@@ -354,7 +357,7 @@ RTDECL(uint32_t) RTDbgModRelease(RTDBGMOD hDbgMod)
  *
  * @returns Pointer to a read only string containing the name.
  *
- * @param   hDbgMod             The module handle.
+ * @param   hDbgMod         The module handle.
  */
 RTDECL(const char *) RTDbgModName(RTDBGMOD hDbgMod)
 {
@@ -364,25 +367,212 @@ RTDECL(const char *) RTDbgModName(RTDBGMOD hDbgMod)
 }
 
 
-RTDECL(RTUINTPTR)   RTDbgModImageSize(RTDBGMOD hDbgMod)
+/**
+ * Converts an image relative address to a segment:offset address.
+ *
+ * @returns Segment index on success.
+ *          NIL_RTDBGSEGIDX is returned if the module handle or the RVA are
+ *          invalid.
+ *
+ * @param   hDbgMod         The module handle.
+ * @param   uRva            The image relative address to convert.
+ * @param   poffSeg         Where to return the segment offset. Optional.
+ */
+RTDECL(RTDBGSEGIDX) RTDbgModRvaToSegOff(RTDBGMOD hDbgMod, RTUINTPTR uRva, PRTUINTPTR poffSeg)
 {
-    return 1;
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, NIL_RTDBGSEGIDX);
+    RTDBGMOD_LOCK(pDbgMod);
+
+    RTDBGSEGIDX iSeg = pDbgMod->pDbgVt->pfnRvaToSegOff(pDbgMod, uRva, poffSeg);
+
+    RTDBGMOD_UNLOCK(pDbgMod);
+    return iSeg;
 }
 
-RTDECL(RTUINTPTR)   RTDbgModSegmentSize(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg)
+
+/**
+ * Image size when mapped if segments are mapped adjecently.
+ *
+ * For ELF, PE, and Mach-O images this is (usually) a natural query, for LX and
+ * NE and such it's a bit odder and the answer may not make much sense for them.
+ *
+ * @returns Image mapped size.
+ *          UINTPTR_MAX is returned if the handle is invalid.
+ *
+ * @param   hDbgMod         The module handle.
+ */
+RTDECL(RTUINTPTR) RTDbgModImageSize(RTDBGMOD hDbgMod)
 {
-    return 1;
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, UINTPTR_MAX);
+    RTDBGMOD_LOCK(pDbgMod);
+
+    RTUINTPTR cbImage = pDbgMod->pDbgVt->pfnImageSize(pDbgMod);
+
+    RTDBGMOD_UNLOCK(pDbgMod);
+    return cbImage;
 }
 
-RTDECL(RTUINTPTR)   RTDbgModSegmentRva(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg)
+
+/**
+ * Adds a segment to the module. Optional feature.
+ *
+ * This method is intended used for manually constructing debug info for a
+ * module. The main usage is from other debug info interpreters that want to
+ * avoid writing a debug info database and instead uses the standard container
+ * behind the scenes.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED if this feature isn't support by the debug info
+ *          interpreter. This is a common return code.
+ * @retval  VERR_INVALID_HANDLE if hDbgMod is invalid.
+ * @retval  VERR_DBG_ADDRESS_WRAP if uRva+cb wraps around.
+ * @retval  VERR_DBG_SEGMENT_NAME_OUT_OF_RANGE if pszName is too short or long.
+ * @retval  VERR_INVALID_PARAMETER if fFlags contains undefined flags.
+ * @retval  VERR_DBG_SPECIAL_SEGMENT if *piSeg is a special segment.
+ * @retval  VERR_DBG_INVALID_SEGMENT_INDEX if *piSeg doesn't meet expectations.
+ *
+ * @param   hDbgMod             The module handle.
+ * @param   uRva                The image relative address of the segment.
+ * @param   cb                  The size of the segment.
+ * @param   pszName             The segment name. Does not normally need to be
+ *                              unique, although this is somewhat up to the
+ *                              debug interpreter to decide.
+ * @param   fFlags              Segment flags. Reserved for future used, MBZ.
+ * @param   piSeg               The segment index or NIL_RTDBGSEGIDX on input.
+ *                              The assigned segment index on successful return.
+ *                              Optional.
+ */
+RTDECL(int) RTDbgModSegmentAdd(RTDBGMOD hDbgMod, RTUINTPTR uRva, RTUINTPTR cb, const char *pszName,
+                               uint32_t fFlags, PRTDBGSEGIDX piSeg)
 {
-    return 0;
+    /*
+     * Validate input.
+     */
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, VERR_INVALID_HANDLE);
+    AssertMsgReturn(uRva + cb >= uRva, ("uRva=%RTptr cb=%RTptr\n", uRva, cb), VERR_DBG_ADDRESS_WRAP);
+    AssertPtr(*pszName);
+    size_t cchName = strlen(pszName);
+    AssertReturn(cchName > 0, VERR_DBG_SEGMENT_NAME_OUT_OF_RANGE);
+    AssertReturn(cchName < RTDBG_SEGMENT_NAME_LENGTH, VERR_DBG_SEGMENT_NAME_OUT_OF_RANGE);
+    AssertMsgReturn(!fFlags, ("%#x\n", fFlags), VERR_INVALID_PARAMETER);
+    AssertPtrNull(piSeg);
+    AssertMsgReturn(!piSeg || *piSeg == NIL_RTDBGSEGIDX || *piSeg <= RTDBGSEGIDX_LAST, ("%#x\n", *piSeg), VERR_DBG_SPECIAL_SEGMENT);
+
+    /*
+     * Do the deed.
+     */
+    RTDBGMOD_LOCK(pDbgMod);
+    int rc = pDbgMod->pDbgVt->pfnSegmentAdd(pDbgMod, uRva, cb, pszName, cchName, fFlags, piSeg);
+    RTDBGMOD_UNLOCK(pDbgMod);
+
+    return rc;
+
 }
 
+
+/**
+ * Gets the number of segments in the module.
+ *
+ * This is can be used to determin the range which can be passed to
+ * RTDbgModSegmentByIndex and derivates.
+ *
+ * @returns The segment relative address.
+ *          NIL_RTDBGSEGIDX if the handle is invalid.
+ *
+ * @param   hDbgMod         The module handle.
+ */
 RTDECL(RTDBGSEGIDX) RTDbgModSegmentCount(RTDBGMOD hDbgMod)
 {
-    return 1;
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, NIL_RTDBGSEGIDX);
+    RTDBGMOD_LOCK(pDbgMod);
+
+    RTDBGSEGIDX cSegs = pDbgMod->pDbgVt->pfnSegmentCount(pDbgMod);
+
+    RTDBGMOD_UNLOCK(pDbgMod);
+    return cSegs;
 }
+
+
+/**
+ * Query information about a segment.
+ *
+ * This can be used together with RTDbgModSegmentCount to enumerate segments.
+ * The index starts a 0 and stops one below RTDbgModSegmentCount.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_DBG_INVALID_SEGMENT_INDEX if iSeg is too high.
+ * @retval  VERR_DBG_SPECIAL_SEGMENT if iSeg indicates a special segment.
+ * @retval  VERR_INVALID_HANDLE if hDbgMod is invalid.
+ *
+ * @param   hDbgMod         The module handle.
+ * @param   iSeg            The segment index. No special segments.
+ * @param   pSegInfo        Where to return the segment info. The
+ *                          RTDBGSEGMENT::Address member will be set to
+ *                          RTUINTPTR_MAX or the load address used at link time.
+ */
+RTDECL(int) RTDbgModSegmentByIndex(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, PRTDBGSEGMENT pSegInfo)
+{
+    AssertMsgReturn(iSeg <= RTDBGSEGIDX_LAST, ("%#x\n", iSeg), VERR_DBG_SPECIAL_SEGMENT);
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, VERR_INVALID_HANDLE);
+    RTDBGMOD_LOCK(pDbgMod);
+
+    int rc = pDbgMod->pDbgVt->pfnSegmentByIndex(pDbgMod, iSeg, pSegInfo);
+
+    RTDBGMOD_UNLOCK(pDbgMod);
+    return RT_SUCCESS(rc);
+}
+
+
+/**
+ * Gets the size of a segment.
+ *
+ * This is a just a wrapper around RTDbgModSegmentByIndex.
+ *
+ * @returns The segment size.
+ *          UINTPTR_MAX is returned if either the handle and segment index are
+ *          invalid.
+ *
+ * @param   hDbgMod         The module handle.
+ * @param   iSeg            The segment index. RTDBGSEGIDX_ABS is not allowed.
+ *                          If RTDBGSEGIDX_RVA is used, the functions returns
+ *                          the same value as RTDbgModImageSize.
+ */
+RTDECL(RTUINTPTR) RTDbgModSegmentSize(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg)
+{
+    if (iSeg == RTDBGSEGIDX_RVA)
+        return RTDbgModImageSize(hDbgMod);
+    RTDBGSEGMENT SegInfo;
+    int rc = RTDbgModSegmentByIndex(hDbgMod, iSeg, &SegInfo);
+    return RT_SUCCESS(rc) ? SegInfo.cb : RTUINTPTR_MAX;
+}
+
+
+/**
+ * Gets the image relative address of a segment.
+ *
+ * This is a just a wrapper around RTDbgModSegmentByIndex.
+ *
+ * @returns The segment relative address.
+ *          UINTPTR_MAX is returned if either the handle and segment index are
+ *          invalid.
+ *
+ * @param   hDbgMod         The module handle.
+ * @param   iSeg            The segment index. No special segment indexes
+ *                          allowed (asserted).
+ */
+RTDECL(RTUINTPTR) RTDbgModSegmentRva(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg)
+{
+    RTDBGSEGMENT SegInfo;
+    int rc = RTDbgModSegmentByIndex(hDbgMod, iSeg, &SegInfo);
+    return RT_SUCCESS(rc) ? SegInfo.uRva : RTUINTPTR_MAX;
+}
+
+
 
 
 /**
