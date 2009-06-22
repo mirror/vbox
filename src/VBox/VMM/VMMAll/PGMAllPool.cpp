@@ -1102,12 +1102,6 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     LogFlow(("pgmPoolAccessHandler: pvFault=%RGv pPage=%p:{.idx=%d} GCPhysFault=%RGp\n", pvFault, pPage, pPage->idx, GCPhysFault));
 
     /*
-     * We should ALWAYS have the list head as user parameter. This
-     * is because we use that page to record the changes.
-     */
-    Assert(pPage->iMonitoredPrev == NIL_PGMPOOL_IDX);
-
-    /*
      * Disassemble the faulting instruction.
      */
     PDISCPUSTATE pDis = &pVCpu->pgm.s.DisState;
@@ -1115,6 +1109,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     AssertRCReturn(rc, rc);
 
     pgmLock(pVM);
+
     if (PHYS_PAGE_ADDRESS(GCPhysFault) != PHYS_PAGE_ADDRESS(pPage->GCPhys))
     {
         /* Pool page changed while we were waiting for the lock; ignore. */
@@ -1123,6 +1118,12 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
         pgmUnlock(pVM);
         return VINF_SUCCESS;
     }
+
+    /*
+     * We should ALWAYS have the list head as user parameter. This
+     * is because we use that page to record the changes.
+     */
+    Assert(pPage->iMonitoredPrev == NIL_PGMPOOL_IDX);
 
     /*
      * Check if it's worth dealing with.
