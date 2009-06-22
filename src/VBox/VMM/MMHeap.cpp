@@ -339,7 +339,7 @@ void *mmR3HeapAlloc(PMMHEAP pHeap, MMTAG enmTag, size_t cbSize, bool fZero)
 
         /* register the statistics */
         PUVM pUVM = pHeap->pUVM;
-        const char *pszTag = mmR3GetTagName(enmTag);
+        const char *pszTag = mmGetTagName(enmTag);
         STAMR3RegisterFU(pUVM, &pStat->cbCurAllocated, STAMTYPE_U32, STAMVISIBILITY_ALWAYS,  STAMUNIT_BYTES, "Number of bytes currently allocated.",    "/MM/R3Heap/%s", pszTag);
         STAMR3RegisterFU(pUVM, &pStat->cAllocations,   STAMTYPE_U64, STAMVISIBILITY_ALWAYS,  STAMUNIT_CALLS, "Number or MMR3HeapAlloc() calls.",        "/MM/R3Heap/%s/cAllocations", pszTag);
         STAMR3RegisterFU(pUVM, &pStat->cReallocations, STAMTYPE_U64, STAMVISIBILITY_ALWAYS,  STAMUNIT_CALLS, "Number of MMR3HeapRealloc() calls.",      "/MM/R3Heap/%s/cReallocations", pszTag);
@@ -696,104 +696,4 @@ VMMR3DECL(void) MMR3HeapFree(void *pv)
     RTMemFree(pHdr);
 }
 
-
-/**
- * Gets the string name of a memory tag.
- *
- * @returns name of enmTag.
- * @param   enmTag      The tag.
- */
-const char *mmR3GetTagName(MMTAG enmTag)
-{
-    switch (enmTag)
-    {
-        #define TAG2STR(tag) case MM_TAG_##tag: return #tag
-
-        TAG2STR(CFGM);
-        TAG2STR(CFGM_BYTES);
-        TAG2STR(CFGM_STRING);
-        TAG2STR(CFGM_USER);
-
-        TAG2STR(CSAM);
-        TAG2STR(CSAM_PATCH);
-
-        TAG2STR(DBGF);
-        TAG2STR(DBGF_AS);
-        TAG2STR(DBGF_INFO);
-        TAG2STR(DBGF_LINE);
-        TAG2STR(DBGF_LINE_DUP);
-        TAG2STR(DBGF_MODULE);
-        TAG2STR(DBGF_OS);
-        TAG2STR(DBGF_STACK);
-        TAG2STR(DBGF_SYMBOL);
-        TAG2STR(DBGF_SYMBOL_DUP);
-
-        TAG2STR(EM);
-
-        TAG2STR(IOM);
-        TAG2STR(IOM_STATS);
-
-        TAG2STR(MM);
-        TAG2STR(MM_LOOKUP_GUEST);
-        TAG2STR(MM_LOOKUP_PHYS);
-        TAG2STR(MM_LOOKUP_VIRT);
-        TAG2STR(MM_PAGE);
-
-        TAG2STR(PARAV);
-
-        TAG2STR(PATM);
-        TAG2STR(PATM_PATCH);
-
-        TAG2STR(PDM);
-        TAG2STR(PDM_DEVICE);
-        TAG2STR(PDM_DEVICE_DESC);
-        TAG2STR(PDM_DEVICE_USER);
-        TAG2STR(PDM_DRIVER);
-        TAG2STR(PDM_DRIVER_DESC);
-        TAG2STR(PDM_DRIVER_USER);
-        TAG2STR(PDM_USB);
-        TAG2STR(PDM_USB_DESC);
-        TAG2STR(PDM_USB_USER);
-        TAG2STR(PDM_LUN);
-        TAG2STR(PDM_QUEUE);
-        TAG2STR(PDM_THREAD);
-        TAG2STR(PDM_ASYNC_COMPLETION);
-
-        TAG2STR(PGM);
-        TAG2STR(PGM_CHUNK_MAPPING);
-        TAG2STR(PGM_HANDLERS);
-        TAG2STR(PGM_MAPPINGS);
-        TAG2STR(PGM_PHYS);
-        TAG2STR(PGM_POOL);
-
-        TAG2STR(REM);
-
-        TAG2STR(SELM);
-
-        TAG2STR(SSM);
-
-        TAG2STR(STAM);
-
-        TAG2STR(TM);
-
-        TAG2STR(TRPM);
-
-        TAG2STR(VM);
-        TAG2STR(VM_REQ);
-
-        TAG2STR(VMM);
-
-        TAG2STR(HWACCM);
-
-        #undef TAG2STR
-
-        default:
-        {
-            AssertMsgFailed(("Unknown tag %d! forgot to add it to the switch?\n", enmTag));
-            static char sz[48];
-            RTStrPrintf(sz, sizeof(sz), "%d", enmTag);
-            return sz;
-        }
-    }
-}
 
