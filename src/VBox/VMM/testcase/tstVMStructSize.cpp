@@ -296,7 +296,7 @@ int main()
 #endif
 
     /* TM */
-    CHECK_MEMBER_ALIGNMENT(TM, EmtLock, sizeof(uintptr_t));
+    CHECK_MEMBER_ALIGNMENT(TM, TimerCritSect, sizeof(uintptr_t));
     CHECK_MEMBER_ALIGNMENT(TM, VirtualSyncLock, sizeof(uintptr_t));
 
     CHECK_MEMBER_ALIGNMENT(IOM, EmtLock, sizeof(uintptr_t));
