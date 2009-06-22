@@ -951,25 +951,33 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_DBG_INVALID_SEGMENT_OFFSET         (-654)
 /** Invalid image relative virtual address. */
 #define VERR_DBG_INVALID_RVA                    (-655)
+/** Invalid image relative virtual address. */
+#define VERR_DBG_SPECIAL_SEGMENT                (-656)
 /** Address conflict within a module/segment.
  * Attempted to add a segment, symbol or line number that fully or partially
  * overlaps with an existing one. */
-#define VERR_DBG_ADDRESS_CONFLICT               (-656)
+#define VERR_DBG_ADDRESS_CONFLICT               (-657)
 /** Duplicate symbol within the module.
  * Attempted to add a symbol which name already exists within the module.  */
-#define VERR_DBG_DUPLICATE_SYMBOL               (-657)
+#define VERR_DBG_DUPLICATE_SYMBOL               (-658)
 /** The segment index specified when adding a new segment is already in use. */
-#define VERR_DBG_SEGMENT_INDEX_CONFLICT         (-658)
+#define VERR_DBG_SEGMENT_INDEX_CONFLICT         (-659)
 /** No line number was found for the specified address/ordinal/whatever. */
-#define VERR_DBG_LINE_NOT_FOUND                 (-659)
+#define VERR_DBG_LINE_NOT_FOUND                 (-660)
 /** The length of the symbol name is out of range.
  * This means it is an empty string or that it's greater or equal to
  * RTDBG_SYMBOL_NAME_LENGTH. */
-#define VERR_DBG_SYMBOL_NAME_OUT_OF_RANGE       (-660)
+#define VERR_DBG_SYMBOL_NAME_OUT_OF_RANGE       (-661)
 /** The length of the file name is out of range.
  * This means it is an empty string or that it's greater or equal to
  * RTDBG_FILE_NAME_LENGTH. */
-#define VERR_DBG_FILE_NAME_OUT_OF_RANGE         (-661)
+#define VERR_DBG_FILE_NAME_OUT_OF_RANGE         (-662)
+/** The length of the segment name is out of range.
+ * This means it is an empty string or that it is greater or equal to
+ * RTDBG_SEGMENT_NAME_LENGTH. */
+#define VERR_DBG_SEGMENT_NAME_OUT_OF_RANGE      (-663)
+/** The specified address range wraps around. */
+#define VERR_DBG_ADDRESS_WRAP                   (-664)
 /** @} */
 
 /** @name Request Packet Status Codes.

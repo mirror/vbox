@@ -373,11 +373,11 @@ typedef struct RTDBGMODINT
      * This is used to perform automatic cleanup and sharing. */
     uint32_t volatile   cRefs;
     /** The module name (short). */
-    char               *pszName;
+    char const         *pszName;
     /** The module filename. Can be NULL. */
-    char               *pszImgFile;
+    char const         *pszImgFile;
     /** The debug info file (if external). Can be NULL. */
-    char               *pszDbgFile;
+    char const         *pszDbgFile;
 
     /** Critical section serializing access to the module. */
     RTCRITSECT          CritSect;
@@ -400,7 +400,7 @@ typedef RTDBGMODINT *PRTDBGMODINT;
 extern DECLHIDDEN(RTSTRCACHE) g_hDbgModStrCache;
 
 
-int rtDbgModContainerCreate(PRTDBGMODINT pMod, RTUINTPTR cb);
+int rtDbgModContainerCreate(PRTDBGMODINT pMod, RTUINTPTR cbSeg);
 
 /** @} */
 
