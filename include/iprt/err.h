@@ -952,7 +952,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 /** Invalid image relative virtual address. */
 #define VERR_DBG_INVALID_RVA                    (-655)
 /** Address conflict within a module/segment.
- * Attempted to add a symbol or line number that fully or partially overlaps with an existing one.  */
+ * Attempted to add a segment, symbol or line number that fully or partially
+ * overlaps with an existing one. */
 #define VERR_DBG_ADDRESS_CONFLICT               (-656)
 /** Duplicate symbol within the module.
  * Attempted to add a symbol which name already exists within the module.  */
