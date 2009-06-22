@@ -142,6 +142,8 @@ PGM_BTH_DECL(int, Enter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
     PVM pVM   = pVCpu->pVMR3;
 
     Assert(!HWACCMIsNestedPagingActive(pVM));
+
+    pgmLock(pVM);
     /* Note: we only really need shadow paging in real and protected mode for VT-x and AMD-V (excluding nested paging/EPT modes),
      *       but any calls to GC need a proper shadow page setup as well.
      */
@@ -174,6 +176,7 @@ PGM_BTH_DECL(int, Enter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
     {
         Log(("Bth-Enter: PGM pool flushed -> signal sync cr3\n"));
         Assert(VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
+        pgmUnlock(pVM);
         return VINF_PGM_SYNC_CR3;
     }
     AssertRCReturn(rc, rc);
@@ -188,7 +191,9 @@ PGM_BTH_DECL(int, Enter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
     CPUMSetHyperCR3(pVCpu, PGMGetHyperCR3(pVCpu));
 
     /* Apply all hypervisor mappings to the new CR3. */
-    return pgmMapActivateCR3(pVM, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
+    rc = pgmMapActivateCR3(pVM, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
+    pgmUnlock(pVM);
+    return rc;
 #else
     return VINF_SUCCESS;
 #endif
