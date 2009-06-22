@@ -692,6 +692,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
 #ifdef VBOX_WITH_SLIRP_ALIAS
     {
         int flags = 0;
+        struct in_addr proxy_addr;
         pData->proxy_alias = LibAliasInit(pData, NULL);
         if (pData->proxy_alias == NULL)
         {
@@ -701,7 +702,8 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
         flags = LibAliasSetMode(pData->proxy_alias, 0, 0);
         flags |= PKT_ALIAS_LOG; /* set logging */
         flags = LibAliasSetMode(pData->proxy_alias, flags, ~0);
-        LibAliasSetAddress(pData->proxy_alias, special_addr);
+        proxy_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS);
+        LibAliasSetAddress(pData->proxy_alias, proxy_addr);
         ftp_alias_load();
         nbt_alias_load();
 
