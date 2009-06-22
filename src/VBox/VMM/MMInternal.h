@@ -788,7 +788,7 @@ int  mmR3HyperInit(PVM pVM);
 int  mmR3HyperTerm(PVM pVM);
 int  mmR3HyperInitPaging(PVM pVM);
 
-const char *mmR3GetTagName(MMTAG enmTag);
+const char *mmGetTagName(MMTAG enmTag);
 
 /**
  * Converts a pool address to a physical address.
