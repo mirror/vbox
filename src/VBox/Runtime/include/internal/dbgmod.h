@@ -154,6 +154,17 @@ typedef struct RTDBGMODVTDBG
      */
     DECLCALLBACKMEMBER(RTDBGSEGIDX, pfnRvaToSegOff)(PRTDBGMODINT pMod, RTUINTPTR uRva, PRTUINTPTR poffSeg);
 
+    /**
+     * Image size when mapped if segments are mapped adjecently.
+     *
+     * For ELF, PE, and Mach-O images this is (usually) a natural query, for LX and
+     * NE and such it's a bit odder and the answer may not make much sense for them.
+     *
+     * @returns Image mapped size.
+     * @param   pMod        Pointer to the module structure.
+     */
+    DECLCALLBACKMEMBER(RTUINTPTR, pfnImageSize)(PRTDBGMODINT pMod);
+
 
 
     /**
@@ -196,7 +207,7 @@ typedef struct RTDBGMODVTDBG
      * @param   iSeg        The segment.
      * @param   pSegInfo    Where to store the segment information.
      */
-    DECLCALLBACKMEMBER(int, pfnSegmentByIndex)(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, RTDBGSEGMENT pSegInfo);
+    DECLCALLBACKMEMBER(int, pfnSegmentByIndex)(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, PRTDBGSEGMENT pSegInfo);
 
 
 

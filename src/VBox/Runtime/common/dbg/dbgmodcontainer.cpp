@@ -74,6 +74,8 @@ typedef struct RTDBGMODCTNSEGMENT
     RTUINTPTR                   off;
     /** The segment size. */
     RTUINTPTR                   cb;
+    /** The segment flags. */
+    uint32_t                    fFlags;
     /** The segment name. */
     const char                 *pszName;
 } RTDBGMODCTNSEGMENT;
@@ -364,7 +366,7 @@ static DECLCALLBACK(int) rtDbgModContainer_SymbolAdd(PRTDBGMODINT pMod, const ch
         return VERR_NO_MEMORY;
 
     pSymbol->AddrCore.Key       = off;
-    pSymbol->AddrCore.KeyLast   = off + RT_MIN(cb, 1);
+    pSymbol->AddrCore.KeyLast   = off + RT_MAX(cb, 1);
     pSymbol->OrdinalCore.Key    = pThis->iNextSymbolOrdinal;
     pSymbol->iSeg               = iSeg;
     pSymbol->cb                 = cb;
@@ -404,6 +406,102 @@ static DECLCALLBACK(int) rtDbgModContainer_SymbolAdd(PRTDBGMODINT pMod, const ch
         rc = VERR_NO_MEMORY;
     RTMemFree(pSymbol);
     return rc;
+}
+
+
+/** @copydoc RTDBGMODVTDBG::pfnSegmentByIndex */
+static DECLCALLBACK(int) rtDbgModContainer_SegmentByIndex(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, PRTDBGSEGMENT pSegInfo)
+{
+    PRTDBGMODCTN pThis = (PRTDBGMODCTN)pMod->pvDbgPriv;
+    if (iSeg >= pThis->cSegs)
+        return VERR_DBG_INVALID_SEGMENT_INDEX;
+    pSegInfo->Address = RTUINTPTR_MAX;
+    pSegInfo->uRva    = pThis->paSegs[iSeg].off;
+    pSegInfo->cb      = pThis->paSegs[iSeg].cb;
+    pSegInfo->fFlags  = pThis->paSegs[iSeg].fFlags;
+    pSegInfo->iSeg    = iSeg;
+    strcpy(pSegInfo->szName, pThis->paSegs[iSeg].pszName);
+    return VINF_SUCCESS;
+}
+
+
+/** @copydoc RTDBGMODVTDBG::pfnSegmentCount */
+static DECLCALLBACK(RTDBGSEGIDX) rtDbgModContainer_SegmentCount(PRTDBGMODINT pMod)
+{
+    PRTDBGMODCTN pThis = (PRTDBGMODCTN)pMod->pvDbgPriv;
+    return pThis->cSegs;
+}
+
+
+/** @copydoc RTDBGMODVTDBG::pfnSegmentAdd */
+static DECLCALLBACK(int) rtDbgModContainer_SegmentAdd(PRTDBGMODINT pMod, RTUINTPTR uRva, RTUINTPTR cb, const char *pszName, size_t cchName,
+                                                      uint32_t fFlags, PRTDBGSEGIDX piSeg)
+{
+    PRTDBGMODCTN pThis = (PRTDBGMODCTN)pMod->pvDbgPriv;
+
+    /*
+     * Input validation (the bits the caller cannot do).
+     */
+    /* Overlapping segments are not yet supported. Will use flags to deal with it if it becomes necessary. */
+    RTUINTPTR   uRvaLast    = uRva + RT_MAX(cb, 1) - 1;
+    RTUINTPTR   uRvaLastMax = uRvaLast;
+    RTDBGSEGIDX iSeg        = pThis->cSegs;
+    while (iSeg-- > 0)
+    {
+        RTUINTPTR uCurRva     = pThis->paSegs[iSeg].off;
+        RTUINTPTR uCurRvaLast = uCurRva + RT_MAX(pThis->paSegs[iSeg].cb, 1) - 1;
+        if (   uRva      <= uCurRvaLast
+            && uRvaLast  >= uCurRva)
+            AssertMsgFailedReturn(("uRva=%RTptr uRvaLast=%RTptr (cb=%RTptr) \"%s\";\n"
+                                   "uRva=%RTptr uRvaLast=%RTptr (cb=%RTptr) \"%s\" iSeg=%#x\n",
+                                   uRva, uRvaLast, cb, pszName,
+                                   uCurRva, uCurRvaLast, pThis->paSegs[iSeg].cb, pThis->paSegs[iSeg].pszName, iSeg),
+                                  VERR_DBG_SEGMENT_INDEX_CONFLICT);
+        if (uRvaLastMax < uCurRvaLast)
+            uRvaLastMax = uCurRvaLast;
+    }
+    /* Strict ordered segment addition at the moment. */
+    iSeg = pThis->cSegs;
+    AssertMsgReturn(!piSeg || *piSeg == NIL_RTDBGSEGIDX || *piSeg == iSeg,
+                    ("iSeg=%#x *piSeg=%#x\n", iSeg, *piSeg),
+                    VERR_DBG_INVALID_SEGMENT_INDEX);
+
+    /*
+     * Add an entry to the segment table, extending it if necessary.
+     */
+    if (!(iSeg % 8))
+    {
+        void *pvSegs = RTMemRealloc(pThis->paSegs, sizeof(RTDBGMODCTNSEGMENT) * (iSeg + 8));
+        if (!pvSegs)
+            return VERR_NO_MEMORY;
+        pThis->paSegs = (PRTDBGMODCTNSEGMENT)pvSegs;
+    }
+
+    pThis->paSegs[iSeg].SymAddrTree     = NULL;
+    pThis->paSegs[iSeg].LineAddrTree    = NULL;
+    pThis->paSegs[iSeg].off             = uRva;
+    pThis->paSegs[iSeg].cb              = cb;
+    pThis->paSegs[iSeg].fFlags          = fFlags;
+    pThis->paSegs[iSeg].pszName         = RTStrCacheEnterN(g_hDbgModStrCache, pszName, cchName);
+    if (pThis->paSegs[iSeg].pszName)
+    {
+        if (piSeg)
+            *piSeg = iSeg;
+        pThis->cSegs++;
+        pThis->cb = uRvaLastMax + 1;
+        if (!pThis->cb)
+            pThis->cb = RTUINTPTR_MAX;
+        return VINF_SUCCESS;
+    }
+    return VERR_NO_MEMORY;
+}
+
+
+/** @copydoc RTDBGMODVTDBG::pfnRvaToSegOff */
+static DECLCALLBACK(RTUINTPTR) rtDbgModContainer_ImageSize(PRTDBGMODINT pMod)
+{
+    PRTDBGMODCTN pThis = (PRTDBGMODCTN)pMod->pvDbgPriv;
+    return pThis->cb;
 }
 
 
@@ -518,15 +616,17 @@ static DECLCALLBACK(int) rtDbgModContainer_TryOpen(PRTDBGMODINT pMod)
 static RTDBGMODVTDBG const g_rtDbgModVtDbgContainer =
 {
     /*.u32Magic = */            RTDBGMODVTDBG_MAGIC,
-    /*.fSupports = */           0, ///@todo iprt/types.h isn't up to date...
+    /*.fSupports = */           0, /* (Don't call my TryOpen, please.) */
     /*.pszName = */             "container",
     /*.pfnTryOpen = */          rtDbgModContainer_TryOpen,
     /*.pfnClose = */            rtDbgModContainer_Close,
-    /*.pfnRvaToSegOff = */      rtDbgModContainer_RvaToSegOff,
 
-    /*.pfnSegmentAdd = */       NULL,//rtDbgModContainer_SegmentAdd,
-    /*.pfnSegmentCount = */     NULL,//rtDbgModContainer_SegmentCount,
-    /*.pfnSegmentByIndex = */   NULL,//rtDbgModContainer_SegmentByIndex,
+    /*.pfnRvaToSegOff = */      rtDbgModContainer_RvaToSegOff,
+    /*.pfnImageSize = */        rtDbgModContainer_ImageSize,
+
+    /*.pfnSegmentAdd = */       rtDbgModContainer_SegmentAdd,
+    /*.pfnSegmentCount = */     rtDbgModContainer_SegmentCount,
+    /*.pfnSegmentByIndex = */   rtDbgModContainer_SegmentByIndex,
 
     /*.pfnSymbolAdd = */        rtDbgModContainer_SymbolAdd,
     /*.pfnSymbolCount = */      rtDbgModContainer_SymbolCount,
