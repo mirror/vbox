@@ -135,7 +135,10 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
                  */
                 rc = VMR3WaitU(pUVCpu);
                 if (RT_FAILURE(rc))
+                {
+                    AssertFailed();
                     break;
+                }
             }
         }
         else
