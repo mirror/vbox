@@ -842,18 +842,10 @@ SUPR3DECL(int) SUPPageAlloc(size_t cPages, void **ppvPages)
     *ppvPages = NULL;
     AssertReturn(cPages > 0, VERR_PAGE_COUNT_OUT_OF_RANGE);
 
-#ifdef RT_OS_WINDOWS
-    /*
-     * Temporary hack for windows until we've sorted out the
-     * locked memory that doesn't need to be accessible from kernel space.
-     */
-    return SUPPageAllocLockedEx(cPages, ppvPages, NULL);
-#else
     /*
      * Call OS specific worker.
      */
     return suplibOsPageAlloc(&g_supLibData, cPages, ppvPages);
-#endif
 }
 
 
@@ -865,17 +857,10 @@ SUPR3DECL(int) SUPPageFree(void *pvPages, size_t cPages)
     AssertPtrReturn(pvPages, VERR_INVALID_POINTER);
     AssertReturn(cPages > 0, VERR_PAGE_COUNT_OUT_OF_RANGE);
 
-#ifdef RT_OS_WINDOWS
-    /*
-     * Temporary hack for windows, see above.
-     */
-    return SUPPageFreeLocked(pvPages, cPages);
-#else
     /*
      * Call OS specific worker.
      */
     return suplibOsPageFree(&g_supLibData, pvPages, cPages);
-#endif
 }
 
 
