@@ -674,8 +674,9 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
                 break;
         }
     }
-    else if (   pReq->idDstCpu != VMCPUID_ANY  /* for a specific VMCPU? */
-             && (   !pUVCpu                    /* and it's not the current thread. */
+    else if (   pReq->idDstCpu != VMCPUID_ANY   /* for a specific VMCPU? */
+             && pReq->idDstCpu != VMCPUID_OTHER 
+             && (   !pUVCpu                     /* and it's not the current thread. */
                  || pUVCpu->idCpu != pReq->idDstCpu))
     {
         VMCPUID  idTarget = pReq->idDstCpu;     Assert(idTarget < pUVM->cCpus);
