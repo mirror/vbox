@@ -6416,7 +6416,7 @@ Esta funcionalidad requiere &quot;Guest Additions&quot; instalado.&lt;/qt&gt;</t
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">&amp;Descartar Instantánea</translation>
+        <translation>&amp;Descartar Instantánea</translation>
     </message>
     <message>
         <source>Ctrl+Shift+D</source>
@@ -6528,7 +6528,7 @@ Esta funcionalidad requiere &quot;Guest Additions&quot; instalado.&lt;/qt&gt;</t
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Descartar la instantánea seleccionada de la máquina virtual</translation>
+        <translation>Descartar la instantánea seleccionada de la máquina virtual</translation>
     </message>
     <message>
         <source>Ctrl+Shift+S</source>
@@ -6569,14 +6569,6 @@ Esta funcionalidad requiere &quot;Guest Additions&quot; instalado.&lt;/qt&gt;</t
     <message>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+Espacio</translation>
-    </message>
-    <message>
-        <source>&amp;Merge Snapshot with Parent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Merges the snapshot into the parent snapshot or disk image and then deletes the now redundant snapshot file.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

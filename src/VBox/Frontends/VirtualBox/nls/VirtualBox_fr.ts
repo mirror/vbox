@@ -5126,7 +5126,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">&amp;Rejeter l&apos;instantané</translation>
+        <translation>&amp;Rejeter l&apos;instantané</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot</source>
@@ -5194,7 +5194,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Rejeter l&apos;instantané choisi de la machine virtuelle</translation>
+        <translation>Rejeter l&apos;instantané choisi de la machine virtuelle</translation>
     </message>
     <message>
         <source>Take a snapshot of the current virtual machine state</source>
@@ -5215,14 +5215,6 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <source>Show details of the selected snapshot</source>
         <translation>Voir les détails de l&apos;instantané sélectionné</translation>
-    </message>
-    <message>
-        <source>&amp;Merge Snapshot with Parent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Merges the snapshot into the parent snapshot or disk image and then deletes the now redundant snapshot file.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

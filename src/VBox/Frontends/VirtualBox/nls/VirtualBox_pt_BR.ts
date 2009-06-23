@@ -6440,7 +6440,7 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">&amp;Descartar Snapshot</translation>
+        <translation>&amp;Descartar Snapshot</translation>
     </message>
     <message>
         <source>Ctrl+Shift+D</source>
@@ -6552,7 +6552,7 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Descarta o snapshot selecionado para a máquina virtual</translation>
+        <translation>Descarta o snapshot selecionado para a máquina virtual</translation>
     </message>
     <message>
         <source>Ctrl+Shift+S</source>
@@ -6593,14 +6593,6 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
     <message>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+Barra de Espaços</translation>
-    </message>
-    <message>
-        <source>&amp;Merge Snapshot with Parent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Merges the snapshot into the parent snapshot or disk image and then deletes the now redundant snapshot file.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

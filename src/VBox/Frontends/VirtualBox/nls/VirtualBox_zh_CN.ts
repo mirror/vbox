@@ -6445,7 +6445,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">删除备份(&amp;D)</translation>
+        <translation>删除备份(&amp;D)</translation>
     </message>
     <message>
         <source>Ctrl+Shift+D</source>
@@ -6545,7 +6545,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">删除所选备份</translation>
+        <translation>删除所选备份</translation>
     </message>
     <message>
         <source>Ctrl+Shift+S</source>
@@ -6586,14 +6586,6 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <message>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+Space</translation>
-    </message>
-    <message>
-        <source>&amp;Merge Snapshot with Parent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Merges the snapshot into the parent snapshot or disk image and then deletes the now redundant snapshot file.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

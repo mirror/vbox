@@ -5841,7 +5841,7 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">&amp;Zahodiť snímok</translation>
+        <translation>&amp;Zahodiť snímok</translation>
     </message>
     <message>
         <source>Ctrl+Shift+D</source>
@@ -5929,7 +5929,7 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Zahodiť vybranú snímku virtuálneho stroja</translation>
+        <translation>Zahodiť vybranú snímku virtuálneho stroja</translation>
     </message>
     <message>
         <source>Ctrl+Shift+S</source>
@@ -5970,14 +5970,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     <message>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+Medzera</translation>
-    </message>
-    <message>
-        <source>&amp;Merge Snapshot with Parent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Merges the snapshot into the parent snapshot or disk image and then deletes the now redundant snapshot file.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

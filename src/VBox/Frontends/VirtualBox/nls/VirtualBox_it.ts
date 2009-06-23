@@ -6370,7 +6370,7 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">&amp;Scarta istantanea</translation>
+        <translation>&amp;Scarta istantanea</translation>
     </message>
     <message>
         <source>Ctrl+Shift+D</source>
@@ -6482,7 +6482,7 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Scarta l&apos;istantanea selezionata della macchina virtuale</translation>
+        <translation>Scarta l&apos;istantanea selezionata della macchina virtuale</translation>
     </message>
     <message>
         <source>Ctrl+Shift+S</source>
@@ -6523,14 +6523,6 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
     <message>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+Spazio</translation>
-    </message>
-    <message>
-        <source>&amp;Merge Snapshot with Parent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Merges the snapshot into the parent snapshot or disk image and then deletes the now redundant snapshot file.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

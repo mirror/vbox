@@ -5953,7 +5953,7 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">Pillanatkép el&amp;dobása</translation>
+        <translation>Pillanatkép el&amp;dobása</translation>
     </message>
     <message>
         <source>Ctrl+Shift+D</source>
@@ -6065,7 +6065,7 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Eldobja a kiválasztott állapotát a gépnek</translation>
+        <translation>Eldobja a kiválasztott állapotát a gépnek</translation>
     </message>
     <message>
         <source>Ctrl+Shift+S</source>
@@ -6102,14 +6102,6 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
     <message>
         <source>Show details of the selected snapshot</source>
         <translation>A kiválasztott pillanatkép részletei</translation>
-    </message>
-    <message>
-        <source>&amp;Merge Snapshot with Parent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Merges the snapshot into the parent snapshot or disk image and then deletes the now redundant snapshot file.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

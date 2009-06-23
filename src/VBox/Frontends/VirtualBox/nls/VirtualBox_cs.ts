@@ -5843,7 +5843,7 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">Zaho&amp;dit snímek</translation>
+        <translation>Zaho&amp;dit snímek</translation>
     </message>
     <message>
         <source>Take Snapshot</source>
@@ -5935,7 +5935,7 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Zahodit vybraný snímek virtuálního počítače</translation>
+        <translation>Zahodit vybraný snímek virtuálního počítače</translation>
     </message>
     <message>
         <source>Take a snapshot of the current virtual machine state</source>
@@ -5960,14 +5960,6 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
     <message>
         <source>Show details of the selected snapshot</source>
         <translation>Zobrazí detaily vybraného snímku</translation>
-    </message>
-    <message>
-        <source>&amp;Merge Snapshot with Parent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Merges the snapshot into the parent snapshot or disk image and then deletes the now redundant snapshot file.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

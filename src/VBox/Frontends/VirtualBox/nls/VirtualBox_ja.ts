@@ -5991,7 +5991,7 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">スナップショットを破棄(&amp;D)</translation>
+        <translation>スナップショットを破棄(&amp;D)</translation>
     </message>
     <message>
         <source>Ctrl+Shift+D</source>
@@ -6079,7 +6079,7 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">選択した仮想マシンのスナップショットを破棄</translation>
+        <translation>選択した仮想マシンのスナップショットを破棄</translation>
     </message>
     <message>
         <source>Ctrl+Shift+S</source>
@@ -6120,14 +6120,6 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
     <message>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+スペース</translation>
-    </message>
-    <message>
-        <source>&amp;Merge Snapshot with Parent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Merges the snapshot into the parent snapshot or disk image and then deletes the now redundant snapshot file.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

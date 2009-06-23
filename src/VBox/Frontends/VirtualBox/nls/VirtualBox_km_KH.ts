@@ -4361,7 +4361,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">បោះបង់​រូបថត</translation>
+        <translation>បោះបង់​រូបថត</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot</source>
@@ -4381,7 +4381,6 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">បោះបង់​រូបថត​ដែល​បានជ្រើស​របស់ម៉ាស៊ីន​និម្មិត</translation>
     </message>
     <message>
         <source>Take a snapshot of the current virtual machine state</source>
@@ -4398,14 +4397,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Show details of the selected snapshot</source>
         <translation>បង្ហាញ​សេចក្ដី​លម្អិត​របស់​រូបថត​ដែល​បានជ្រើស</translation>
-    </message>
-    <message>
-        <source>&amp;Merge Snapshot with Parent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Merges the snapshot into the parent snapshot or disk image and then deletes the now redundant snapshot file.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -6568,7 +6568,7 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">&amp;Renunță la instantaneu</translation>
+        <translation>&amp;Renunță la instantaneu</translation>
     </message>
     <message>
         <source>Ctrl+Shift+D</source>
@@ -6680,7 +6680,7 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Renunță la instantaneul selectat al mașinii virtuale</translation>
+        <translation>Renunță la instantaneul selectat al mașinii virtuale</translation>
     </message>
     <message>
         <source>Ctrl+Shift+S</source>
@@ -6721,14 +6721,6 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
     <message>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+Spațiu</translation>
-    </message>
-    <message>
-        <source>&amp;Merge Snapshot with Parent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Merges the snapshot into the parent snapshot or disk image and then deletes the now redundant snapshot file.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

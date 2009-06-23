@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="1.1" language="de_DE">
-<defaultcodec></defaultcodec>
+<!DOCTYPE TS>
+<TS version="2.0" language="de_DE">
 <context>
     <name>@@@</name>
     <message>
@@ -4190,6 +4190,10 @@ p, li { white-space: pre-wrap; }
         <translation>Sicherungspunkt %1</translation>
     </message>
     <message>
+        <source>&amp;Discard Snapshot</source>
+        <translation>Sicherungspunkt &amp;verwerfen</translation>
+    </message>
+    <message>
         <source>Take &amp;Snapshot</source>
         <translation>Sicherungspunkt &amp;erstellen</translation>
     </message>
@@ -4204,6 +4208,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>S&amp;how Details</source>
         <translation>Einzelheiten zeigen</translation>
+    </message>
+    <message>
+        <source>Discard the selected snapshot of the virtual machine</source>
+        <translation>Verwirft den ausgewählten Sicherungspunkt der virtuellen Maschine</translation>
     </message>
     <message>
         <source>Take a snapshot of the current virtual machine state</source>
@@ -4223,11 +4231,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Merge Snapshot with Parent</source>
-        <translation>Überführe den Snapshot in den Parent</translation>
-    </message>
-    <message>
-        <source>Merges the snapshot into the parent snapshot or disk image and then deletes the now redundant snapshot file.</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Überführe den Snapshot in den Parent</translation>
     </message>
 </context>
 <context>
