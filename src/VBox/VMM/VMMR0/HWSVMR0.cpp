@@ -425,59 +425,62 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, SVM_VMCB *pVMCB, CP
         return VINF_SUCCESS;
     }
 
-    if (VMCPU_FF_TESTANDCLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI_BIT))
+    /* If an active trap is already pending, then we must forward it first! */
+    if (!TRPMHasTrap(pVCpu))
     {
-        SVM_EVENT Event;
-
-        Log(("CPU%d: injecting #NMI\n", pVCpu->idCpu));
-        Event.n.u8Vector     = X86_XCPT_NMI;
-        Event.n.u1Valid      = 1;
-        Event.n.u32ErrorCode = 0;
-        Event.n.u3Type       = SVM_EVENT_NMI;
-
-        SVMR0InjectEvent(pVCpu, pVMCB, pCtx, &Event);
-        return VINF_SUCCESS;
-    }
-
-    /* @todo SMI interrupts. */
-
-    /* When external interrupts are pending, we should exit the VM when IF is set. */
-    if (    !TRPMHasTrap(pVCpu)
-        &&  VMCPU_FF_ISPENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC|VMCPU_FF_INTERRUPT_PIC)))
-    {
-        if (    !(pCtx->eflags.u32 & X86_EFL_IF)
-            ||  VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+        if (VMCPU_FF_TESTANDCLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI_BIT))
         {
-            if (!pVMCB->ctrl.IntCtrl.n.u1VIrqValid)
-            {
-                if (!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
-                    LogFlow(("Enable irq window exit!\n"));
-                else
-                    Log(("Pending interrupt blocked at %RGv by VM_FF_INHIBIT_INTERRUPTS -> irq window exit\n", (RTGCPTR)pCtx->rip));
+            SVM_EVENT Event;
 
-                /** @todo use virtual interrupt method to inject a pending irq; dispatched as soon as guest.IF is set. */
-                pVMCB->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_VINTR;
-                pVMCB->ctrl.IntCtrl.n.u1VIrqValid    = 1;
-                pVMCB->ctrl.IntCtrl.n.u8VIrqVector   = 0; /* don't care */
-            }
+            Log(("CPU%d: injecting #NMI\n", pVCpu->idCpu));
+            Event.n.u8Vector     = X86_XCPT_NMI;
+            Event.n.u1Valid      = 1;
+            Event.n.u32ErrorCode = 0;
+            Event.n.u3Type       = SVM_EVENT_NMI;
+
+            SVMR0InjectEvent(pVCpu, pVMCB, pCtx, &Event);
+            return VINF_SUCCESS;
         }
-        else
-        {
-            uint8_t u8Interrupt;
 
-            rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
-            Log(("Dispatch interrupt: u8Interrupt=%x (%d) rc=%Rrc\n", u8Interrupt, u8Interrupt, rc));
-            if (RT_SUCCESS(rc))
+        /* @todo SMI interrupts. */
+
+        /* When external interrupts are pending, we should exit the VM when IF is set. */
+        if (VMCPU_FF_ISPENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC|VMCPU_FF_INTERRUPT_PIC)))
+        {
+            if (    !(pCtx->eflags.u32 & X86_EFL_IF)
+                ||  VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
             {
-                rc = TRPMAssertTrap(pVCpu, u8Interrupt, TRPM_HARDWARE_INT);
-                AssertRC(rc);
+                if (!pVMCB->ctrl.IntCtrl.n.u1VIrqValid)
+                {
+                    if (!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+                        LogFlow(("Enable irq window exit!\n"));
+                    else
+                        Log(("Pending interrupt blocked at %RGv by VM_FF_INHIBIT_INTERRUPTS -> irq window exit\n", (RTGCPTR)pCtx->rip));
+
+                    /** @todo use virtual interrupt method to inject a pending irq; dispatched as soon as guest.IF is set. */
+                    pVMCB->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_VINTR;
+                    pVMCB->ctrl.IntCtrl.n.u1VIrqValid    = 1;
+                    pVMCB->ctrl.IntCtrl.n.u8VIrqVector   = 0; /* don't care */
+                }
             }
             else
             {
-                /* Can only happen in rare cases where a pending interrupt is cleared behind our back */
-                Assert(!VMCPU_FF_ISPENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC|VMCPU_FF_INTERRUPT_PIC)));
-                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatSwitchGuestIrq);
-                /* Just continue */
+                uint8_t u8Interrupt;
+
+                rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
+                Log(("Dispatch interrupt: u8Interrupt=%x (%d) rc=%Rrc\n", u8Interrupt, u8Interrupt, rc));
+                if (RT_SUCCESS(rc))
+                {
+                    rc = TRPMAssertTrap(pVCpu, u8Interrupt, TRPM_HARDWARE_INT);
+                    AssertRC(rc);
+                }
+                else
+                {
+                    /* Can only happen in rare cases where a pending interrupt is cleared behind our back */
+                    Assert(!VMCPU_FF_ISPENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC|VMCPU_FF_INTERRUPT_PIC)));
+                    STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatSwitchGuestIrq);
+                    /* Just continue */
+                }
             }
         }
     }
