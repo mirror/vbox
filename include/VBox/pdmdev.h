@@ -1132,7 +1132,7 @@ typedef struct PDMAPICHLPRC
      * Set the interrupt force action flag.
      *
      * @param   pDevIns         Device instance of the APIC.
-     * @param   enmType         Irq type
+     * @param   enmType         IRQ type.
      * @param   idCpu           Virtual CPU to set flag upon.
      */
     DECLRCCALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns, PDMAPICIRQ enmType, VMCPUID idCpu));
@@ -1186,7 +1186,7 @@ typedef RCPTRTYPE(PDMAPICHLPRC *) PPDMAPICHLPRC;
 typedef RCPTRTYPE(const PDMAPICHLPRC *) PCPDMAPICHLPRC;
 
 /** Current PDMAPICHLPRC version number. */
-#define PDM_APICHLPRC_VERSION   0x60010001
+#define PDM_APICHLPRC_VERSION   0x60020000
 
 
 /**
@@ -1201,7 +1201,7 @@ typedef struct PDMAPICHLPR0
      * Set the interrupt force action flag.
      *
      * @param   pDevIns         Device instance of the APIC.
-     * @param   enmType         Irq type
+     * @param   enmType         IRQ type.
      * @param   idCpu           Virtual CPU to set flag upon.
      */
     DECLR0CALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns, PDMAPICIRQ enmType, VMCPUID idCpu));
@@ -1255,7 +1255,7 @@ typedef RCPTRTYPE(PDMAPICHLPR0 *) PPDMAPICHLPR0;
 typedef R0PTRTYPE(const PDMAPICHLPR0 *) PCPDMAPICHLPR0;
 
 /** Current PDMAPICHLPR0 version number. */
-#define PDM_APICHLPR0_VERSION   0x60010001
+#define PDM_APICHLPR0_VERSION   0x60020000
 
 /**
  * APIC R3 helpers.
@@ -1269,7 +1269,7 @@ typedef struct PDMAPICHLPR3
      * Set the interrupt force action flag.
      *
      * @param   pDevIns         Device instance of the APIC.
-     * @param   enmType         IRQ type
+     * @param   enmType         IRQ type.
      * @param   idCpu           Virtual CPU to set flag upon.
      */
     DECLR3CALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns, PDMAPICIRQ enmType, VMCPUID idCpu));
@@ -1370,7 +1370,7 @@ typedef R3PTRTYPE(PDMAPICHLPR3 *) PPDMAPICHLPR3;
 typedef R3PTRTYPE(const PDMAPICHLPR3 *) PCPDMAPICHLPR3;
 
 /** Current PDMAPICHLP version number. */
-#define PDM_APICHLPR3_VERSION  0xfd020001
+#define PDM_APICHLPR3_VERSION  0xfd030000
 
 
 /**
