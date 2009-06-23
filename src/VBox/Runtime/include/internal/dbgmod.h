@@ -334,9 +334,9 @@ typedef struct RTDBGMODVTDBG
      *
      * @param   pMod        Pointer to the module structure.
      * @param   iOrdinal    The line number ordinal number.
-     * @param   pLine       Where to store the information about the line number.
+     * @param   pLineInfo   Where to store the information about the line number.
      */
-    DECLCALLBACKMEMBER(int, pfnLineByOrdinal)(PRTDBGMODINT pMod, uint32_t iOrdinal, PRTDBGLINE pLine);
+    DECLCALLBACKMEMBER(int, pfnLineByOrdinal)(PRTDBGMODINT pMod, uint32_t iOrdinal, PRTDBGLINE pLineInfo);
 
     /**
      * Queries line number information by address.
@@ -351,9 +351,10 @@ typedef struct RTDBGMODVTDBG
      * @param   off         The offset into the segment.
      * @param   poffDisp    Where to store the distance between the specified address
      *                      and the returned line number. Optional.
-     * @param   pLine       Where to store the information about the closest line number.
+     * @param   pLineInfo   Where to store the information about the closest line
+     *                      number.
      */
-    DECLCALLBACKMEMBER(int, pfnLineByAddr)(PRTDBGMODINT pMod, uint32_t iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGLINE pLine);
+    DECLCALLBACKMEMBER(int, pfnLineByAddr)(PRTDBGMODINT pMod, uint32_t iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGLINE pLineInfo);
 
 
     /** For catching initialization errors (RTDBGMODVTDBG_MAGIC). */

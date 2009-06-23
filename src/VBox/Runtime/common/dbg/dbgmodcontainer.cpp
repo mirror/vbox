@@ -136,7 +136,7 @@ DECLINLINE(int) rtDbgModContainerReturnSymbol(PCRTDBGMODCTNSYMBOL pMySym, PRTDBG
 
 /** @copydoc RTDBGMODVTDBG::pfnLineByAddr */
 static DECLCALLBACK(int) rtDbgModContainer_LineByAddr(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, RTUINTPTR off,
-                                                      PRTINTPTR poffDisp, PRTDBGLINE pLine)
+                                                      PRTINTPTR poffDisp, PRTDBGLINE pLineInfo)
 {
     PRTDBGMODCTN pThis = (PRTDBGMODCTN)pMod->pvDbgPriv;
 
@@ -159,12 +159,12 @@ static DECLCALLBACK(int) rtDbgModContainer_LineByAddr(PRTDBGMODINT pMod, RTDBGSE
              ? VERR_DBG_LINE_NOT_FOUND
              : VERR_DBG_NO_LINE_NUMBERS;
     PCRTDBGMODCTNLINE pMyLine = RT_FROM_MEMBER(pAvlCore, RTDBGMODCTNLINE const, AddrCore);
-    pLine->Address = pMyLine->AddrCore.Key;
-    pLine->offSeg  = pMyLine->AddrCore.Key;
-    pLine->iSeg    = iSeg;
-    pLine->uLineNo = pMyLine->uLineNo;
-    pLine->iOrdinal = pMyLine->OrdinalCore.Key;
-    strcpy(pLine->szFilename, pMyLine->pszFile);
+    pLineInfo->Address = pMyLine->AddrCore.Key;
+    pLineInfo->offSeg  = pMyLine->AddrCore.Key;
+    pLineInfo->iSeg    = iSeg;
+    pLineInfo->uLineNo = pMyLine->uLineNo;
+    pLineInfo->iOrdinal = pMyLine->OrdinalCore.Key;
+    strcpy(pLineInfo->szFilename, pMyLine->pszFile);
     if (poffDisp)
         *poffDisp = off - pMyLine->AddrCore.Key;
     return VINF_SUCCESS;
@@ -172,7 +172,7 @@ static DECLCALLBACK(int) rtDbgModContainer_LineByAddr(PRTDBGMODINT pMod, RTDBGSE
 
 
 /** @copydoc RTDBGMODVTDBG::pfnLineByOrdinal */
-static DECLCALLBACK(int) rtDbgModContainer_LineByOrdinal(PRTDBGMODINT pMod, uint32_t iOrdinal, PRTDBGLINE pLine)
+static DECLCALLBACK(int) rtDbgModContainer_LineByOrdinal(PRTDBGMODINT pMod, uint32_t iOrdinal, PRTDBGLINE pLineInfo)
 {
     PRTDBGMODCTN pThis = (PRTDBGMODCTN)pMod->pvDbgPriv;
 
@@ -186,12 +186,12 @@ static DECLCALLBACK(int) rtDbgModContainer_LineByOrdinal(PRTDBGMODINT pMod, uint
     PAVLU32NODECORE pAvlCore = RTAvlU32Get(&pThis->LineOrdinalTree, iOrdinal);
     AssertReturn(pAvlCore, VERR_DBG_LINE_NOT_FOUND);
     PCRTDBGMODCTNLINE pMyLine = RT_FROM_MEMBER(pAvlCore, RTDBGMODCTNLINE const, OrdinalCore);
-    pLine->Address  = pMyLine->AddrCore.Key;
-    pLine->offSeg   = pMyLine->AddrCore.Key;
-    pLine->iSeg     = pMyLine->iSeg;
-    pLine->uLineNo  = pMyLine->uLineNo;
-    pLine->iOrdinal = pMyLine->OrdinalCore.Key;
-    strcpy(pLine->szFilename, pMyLine->pszFile);
+    pLineInfo->Address  = pMyLine->AddrCore.Key;
+    pLineInfo->offSeg   = pMyLine->AddrCore.Key;
+    pLineInfo->iSeg     = pMyLine->iSeg;
+    pLineInfo->uLineNo  = pMyLine->uLineNo;
+    pLineInfo->iOrdinal = pMyLine->OrdinalCore.Key;
+    strcpy(pLineInfo->szFilename, pMyLine->pszFile);
     return VINF_SUCCESS;
 }
 
