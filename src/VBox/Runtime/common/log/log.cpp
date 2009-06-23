@@ -41,6 +41,7 @@
 # include <iprt/mp.h>
 #endif
 #ifdef IN_RING3
+# include <iprt/env.h>
 # include <iprt/file.h>
 # include <iprt/path.h>
 #endif
@@ -285,7 +286,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGr
                  * Destination.
                  */
                 strcpy(pszEnvVar + cchEnvVarBase, "_DEST");
-                const char *pszVar = getenv(pszEnvVar);
+                const char *pszVar = RTEnvGet(pszEnvVar);
                 if (pszVar)
                 {
                     while (*pszVar)
@@ -392,7 +393,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGr
                  * The flags.
                  */
                 strcpy(pszEnvVar + cchEnvVarBase, "_FLAGS");
-                pszVar = getenv(pszEnvVar);
+                pszVar = RTEnvGet(pszEnvVar);
                 if (pszVar)
                     RTLogFlags(pLogger, pszVar);
 
@@ -400,7 +401,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGr
                  * The group settings.
                  */
                 pszEnvVar[cchEnvVarBase] = '\0';
-                pszVar = getenv(pszEnvVar);
+                pszVar = RTEnvGet(pszEnvVar);
                 if (pszVar)
                     RTLogGroupSettings(pLogger, pszVar);
             }
