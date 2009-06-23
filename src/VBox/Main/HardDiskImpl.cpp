@@ -736,7 +736,7 @@ void HardDisk::FinalRelease()
  * ready for use so the state of the hard disk object will be set to Created.
  *
  * @param aVirtualBox   VirtualBox object.
- * @param aLocaiton     Storage unit location.
+ * @param aLocation     Storage unit location.
  */
 HRESULT HardDisk::init (VirtualBox *aVirtualBox,
                         CBSTR aFormat,
@@ -810,19 +810,31 @@ HRESULT HardDisk::init (VirtualBox *aVirtualBox,
 
 /**
  * Initializes the hard disk object by opening the storage unit at the specified
- * location. If the fWrite parameter is true, then the image will be opened
- * read/write, otherwise it will be opened read-only.
+ * location. The enOpenMode parameter defines whether the image will be opened
+ * read/write or read-only.
  *
  * Note that the UUID, format and the parent of this hard disk will be
- * determined when reading the hard disk storage unit. If the detected parent is
+ * determined when reading the hard disk storage unit, unless new values are
+ * specified by the parameters. If the detected or set parent is
  * not known to VirtualBox, then this method will fail.
  *
  * @param aVirtualBox   VirtualBox object.
- * @param aLocaiton     Storage unit location.
+ * @param aLocation     Storage unit location.
+ * @param enOpenMode    Whether to open the image read/write or read-only.
+ * @param aSetImageId   Whether to set the image UUID or not.
+ * @param aImageId      New image UUID if @aSetId is true. Empty string means
+ *                      create a new UUID, and a zero UUID is invalid.
+ * @param aSetParentId  Whether to set the parent UUID or not.
+ * @param aParentId     New parent UUID if @aSetParentId is true. Empty string
+ *                      means create a new UUID, and a zero UUID is valid.
  */
 HRESULT HardDisk::init(VirtualBox *aVirtualBox,
                        CBSTR aLocation,
-                       HDDOpenMode enOpenMode)
+                       HDDOpenMode enOpenMode,
+                       BOOL aSetImageId,
+                       const Guid &aImageId,
+                       BOOL aSetParentId,
+                       const Guid &aParentId)
 {
     AssertReturn (aVirtualBox, E_INVALIDARG);
     AssertReturn (aLocation, E_INVALIDARG);
@@ -848,6 +860,12 @@ HRESULT HardDisk::init(VirtualBox *aVirtualBox,
 
     rc = setLocation (aLocation);
     CheckComRCReturnRC (rc);
+
+    /* save the new uuid values, will be used by queryInfo() */
+    mm.setImageId = aSetImageId;
+    unconst(mm.imageId) = aImageId;
+    mm.setParentId = aSetParentId;
+    unconst(mm.parentId) = aParentId;
 
     /* get all the information about the medium from the storage unit */
     rc = queryInfo();
@@ -3206,6 +3224,9 @@ HRESULT HardDisk::queryInfo()
                )
                 flags |= VD_OPEN_FLAGS_READONLY;
 
+            /** @todo This kind of opening of images is assuming that diff
+             * images can be opened as base images. Not very clean, and should
+             * be fixed eventually. */
             vrc = VDOpen(hdd,
                          Utf8Str(mm.format),
                          location,
@@ -3221,6 +3242,23 @@ HRESULT HardDisk::queryInfo()
 
             if (mm.formatObj->capabilities() & HardDiskFormatCapabilities_Uuid)
             {
+                /* modify the UUIDs if necessary */
+                if (mm.setImageId)
+                {
+                    vrc = VDSetUuid(hdd, 0, mm.imageId);
+                    ComAssertRCThrow(vrc, E_FAIL);
+                }
+                if (mm.setParentId)
+                {
+                    vrc = VDSetUuid(hdd, 0, mm.parentId);
+                    ComAssertRCThrow(vrc, E_FAIL);
+                }
+                /* zap the information, these are no long-term members */
+                mm.setImageId = false;
+                unconst(mm.imageId).clear();
+                mm.setParentId = false;
+                unconst(mm.parentId).clear();
+
                 /* check the UUID */
                 RTUUID uuid;
                 vrc = VDGetUuid(hdd, 0, &uuid);
@@ -3257,7 +3295,12 @@ HRESULT HardDisk::queryInfo()
 
                 /* generate an UUID for an imported UUID-less hard disk */
                 if (isImport)
-                    unconst(m.id).create();
+                {
+                    if (mm.setImageId)
+                        unconst(m.id) = mm.imageId;
+                    else
+                        unconst(m.id).create();
+                }
             }
 
             /* check the type */

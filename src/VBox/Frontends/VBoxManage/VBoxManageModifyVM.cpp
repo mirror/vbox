@@ -1134,7 +1134,7 @@ int handleModifyVM(HandlerArg *a)
                     if (FAILED(rc))
                     {
                         /* open the new hard disk object */
-                        CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(hdds[0]), AccessMode_ReadWrite, hardDisk.asOutParam()));
+                        CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(hdds[0]), AccessMode_ReadWrite, false, Bstr(""), false, Bstr(""), hardDisk.asOutParam()));
                     }
                 }
                 if (hardDisk)
@@ -1167,7 +1167,7 @@ int handleModifyVM(HandlerArg *a)
                     if (FAILED(rc))
                     {
                         /* open the new hard disk object */
-                        CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(hdds[1]), AccessMode_ReadWrite, hardDisk.asOutParam()));
+                        CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(hdds[1]), AccessMode_ReadWrite, false, Bstr(""), false, Bstr(""), hardDisk.asOutParam()));
                     }
                 }
                 if (hardDisk)
@@ -1200,7 +1200,7 @@ int handleModifyVM(HandlerArg *a)
                     if (FAILED(rc))
                     {
                         /* open the new hard disk object */
-                        CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(hdds[2]), AccessMode_ReadWrite, hardDisk.asOutParam()));
+                        CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(hdds[2]), AccessMode_ReadWrite, false, Bstr(""), false, Bstr(""), hardDisk.asOutParam()));
                     }
                 }
                 if (hardDisk)
@@ -1929,7 +1929,7 @@ int handleModifyVM(HandlerArg *a)
                         if (FAILED(rc))
                         {
                             /* open the new hard disk object */
-                            CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(hdds[i]), AccessMode_ReadWrite, hardDisk.asOutParam()));
+                            CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(hdds[i]), AccessMode_ReadWrite, false, Bstr(""), false, Bstr(""), hardDisk.asOutParam()));
                         }
                     }
                     if (hardDisk)
@@ -2018,7 +2018,7 @@ int handleModifyVM(HandlerArg *a)
                         if (FAILED(rc))
                         {
                             /* open the new hard disk object */
-                            CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(hdds[i]), AccessMode_ReadWrite, hardDisk.asOutParam()));
+                            CHECK_ERROR(a->virtualBox, OpenHardDisk(Bstr(hdds[i]), AccessMode_ReadWrite, false, Bstr(""), false, Bstr(""), hardDisk.asOutParam()));
                         }
                     }
                     if (hardDisk)
