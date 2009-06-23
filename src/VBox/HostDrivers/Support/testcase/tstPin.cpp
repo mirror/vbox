@@ -41,6 +41,8 @@
 #include <iprt/thread.h>
 #include <iprt/string.h>
 
+#include "../SUPLibInternal.h"
+
 
 int main(int argc, char **argv)
 {
@@ -62,7 +64,7 @@ int main(int argc, char **argv)
         AssertRC(rc);
         RTPrintf("pv=%p\n", pv);
         SUPPAGE aPages[1];
-        rc = SUPPageLock(pv, 1, &aPages[0]);
+        rc = supR3PageLock(pv, 1, &aPages[0]);
         RTPrintf("rc=%d aPages[0]=%RHp\n", rc, pv, aPages[0]);
         RTThreadSleep(1500);
 #if 0
@@ -87,7 +89,7 @@ int main(int argc, char **argv)
             aPinnings[i].pv = NULL;
             SUPPageAlloc(0x10000 >> PAGE_SHIFT, &aPinnings[i].pv);
             aPinnings[i].pvAligned = RT_ALIGN_P(aPinnings[i].pv, PAGE_SIZE);
-            rc = SUPPageLock(aPinnings[i].pvAligned, 0xf000 >> PAGE_SHIFT, &aPinnings[i].aPages[0]);
+            rc = supR3PageLock(aPinnings[i].pvAligned, 0xf000 >> PAGE_SHIFT, &aPinnings[i].aPages[0]);
             if (!rc)
             {
                 RTPrintf("i=%d: pvAligned=%p pv=%p:\n", i, aPinnings[i].pvAligned, aPinnings[i].pv);
@@ -115,7 +117,7 @@ int main(int argc, char **argv)
         {
             if (aPinnings[i].pvAligned)
             {
-                rc = SUPPageUnlock(aPinnings[i].pvAligned);
+                rc = supR3PageUnlock(aPinnings[i].pvAligned);
                 if (rc)
                 {
                     RTPrintf("SUPPageUnlock(%p) -> rc=%d\n", aPinnings[i].pvAligned, rc);
@@ -176,7 +178,7 @@ int main(int argc, char **argv)
         {
             static SUPPAGE      aPages[BIG_SIZE >> PAGE_SHIFT];
             void *pvAligned = RT_ALIGN_P(pv, PAGE_SIZE);
-            rc = SUPPageLock(pvAligned, BIG_SIZE >> PAGE_SHIFT, &aPages[0]);
+            rc = supR3PageLock(pvAligned, BIG_SIZE >> PAGE_SHIFT, &aPages[0]);
             if (!rc)
             {
                 /* dump */
@@ -188,7 +190,7 @@ int main(int argc, char **argv)
                 #endif
 
                 /* unlock */
-                rc = SUPPageUnlock(pvAligned);
+                rc = supR3PageUnlock(pvAligned);
                 if (rc)
                 {
                     RTPrintf("SUPPageUnlock(%p) -> rc=%d\n", pvAligned, rc);

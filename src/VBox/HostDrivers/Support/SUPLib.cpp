@@ -864,7 +864,18 @@ SUPR3DECL(int) SUPPageFree(void *pvPages, size_t cPages)
 }
 
 
-SUPR3DECL(int) SUPPageLock(void *pvStart, size_t cPages, PSUPPAGE paPages)
+/**
+ * Locks down the physical memory backing a virtual memory
+ * range in the current process.
+ *
+ * @returns VBox status code.
+ * @param   pvStart         Start of virtual memory range.
+ *                          Must be page aligned.
+ * @param   cPages          Number of pages.
+ * @param   paPages         Where to store the physical page addresses returned.
+ *                          On entry this will point to an array of with cbMemory >> PAGE_SHIFT entries.
+ */
+int supR3PageLock(void *pvStart, size_t cPages, PSUPPAGE paPages)
 {
     /*
      * Validate.
@@ -919,7 +930,14 @@ SUPR3DECL(int) SUPPageLock(void *pvStart, size_t cPages, PSUPPAGE paPages)
 }
 
 
-SUPR3DECL(int) SUPPageUnlock(void *pvStart)
+/**
+ * Releases locked down pages.
+ *
+ * @returns VBox status code.
+ * @param   pvStart         Start of virtual memory range previously locked
+ *                          down by SUPPageLock().
+ */
+int supR3PageUnlock(void *pvStart)
 {
     /*
      * Validate.
@@ -973,7 +991,7 @@ SUPR3DECL(int) SUPPageFreeLocked(void *pvPages, size_t cPages)
     else
     {
         /* fallback */
-        rc = SUPPageUnlock(pvPages);
+        rc = supR3PageUnlock(pvPages);
         if (RT_SUCCESS(rc))
             rc = suplibOsPageFree(&g_supLibData, pvPages, cPages);
     }
@@ -991,7 +1009,7 @@ static int supPagePageAllocNoKernelFallback(size_t cPages, void **ppvPages, PSUP
     {
         if (!paPages)
             paPages = (PSUPPAGE)alloca(sizeof(paPages[0]) * cPages);
-        rc = SUPPageLock(*ppvPages, cPages, paPages);
+        rc = supR3PageLock(*ppvPages, cPages, paPages);
         if (RT_FAILURE(rc))
             suplibOsPageFree(&g_supLibData, *ppvPages, cPages);
     }
@@ -1206,7 +1224,7 @@ SUPR3DECL(int) SUPR3PageFreeEx(void *pvPages, size_t cPages)
         if (    rc == VERR_INVALID_PARAMETER
             &&  !g_fSupportsPageAllocNoKernel)
         {
-            int rc2 = SUPPageUnlock(pvPages);
+            int rc2 = supR3PageUnlock(pvPages);
             if (RT_SUCCESS(rc2))
                 rc = suplibOsPageFree(&g_supLibData, pvPages, cPages);
         }

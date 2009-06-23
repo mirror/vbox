@@ -52,7 +52,7 @@
 PFNRT g_VBoxRTDeps[] =
 {
     (PFNRT)SUPR3Init,
-    (PFNRT)SUPPageLock,
+    (PFNRT)SUPR3PageAllocEx,
     (PFNRT)SUPSemEventCreate,
 #ifdef VBOX_WITH_LIBXML2_IN_VBOXRT
     (PFNRT)xmlModuleOpen,
