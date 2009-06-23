@@ -80,7 +80,7 @@ int mmR3HyperInit(PVM pVM)
     if (rc == VERR_CFGM_NO_PARENT || rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
         if (pVM->cCPUs > 1)
-            cbHyperHeap = _2M;
+            cbHyperHeap = _2M + pVM->cCPUs * _64K;
         else
             cbHyperHeap = VMMIsHwVirtExtForced(pVM)
                         ? 640*_1K
