@@ -9001,9 +9001,6 @@
       The IHardDisk interface represents a virtual hard disk drive
       used by a virtual machine. This is a subclass of <link to="IMedium" />; see remarks there.
 
-      Virtual hard disk objects virtualize the hard disk hardware and look like
-      regular hard disks for the guest OS running inside the virtual machine.
-
       <h3>Hard Disk Types</h3>
 
       There are three types of hard disks:
@@ -9015,20 +9012,17 @@
       machine with the attached hard disk is taken. The type of the hard disk is
       defined by the <link to="#type"/> attribute.
 
-      All hard disks can be also divided in two big groups: <i>base</i> hard
+      All hard disks can be also divided in two groups: <i>base</i> hard
       disks and <i>differencing</i> hard disks. A base hard disk contains all
-      sectors of the hard disk data in its storage unit and therefore can be
-      used independently. On the contrary, a differencing hard disk contains
-      only some part of the hard disk data (a subset of sectors) and needs
-      another hard disk to get access to the missing sectors of data. This
-      another hard disk is called a <i>parent</i> hard disk and defines a hard
-      disk to which this differencing hard disk is known to be <i>linked to</i>.
-      The parent hard disk may be itself a differencing hard disk. This
-      way, differencing hard disks form a linked hard disk chain. This chain
-      always ends with the base hard disk which is sometimes referred to as the
-      root hard disk of this chain. Note that several differencing hard disks
-      may be linked to the same parent hard disk. This way, all known hard disks
-      form a hard disk tree which is based on their parent-child relationship.
+      sectors of the hard disk data in its own storage and therefore can be
+      used independently. On the contrary, a differencing hard disk is a
+      "delta" to some other disk and contains only those sectors which differ
+      from that other disk, which is then called a <i>parent</i>. The differencing
+      hard disk is said to be <i>linked to</i> that parent.
+      The parent may be itself a differencing image, thus forming a chain of
+      linked hard disks. The last element in that chain (sometimes referred to as
+      the root hard disk) must always be a base. Note that several differencing
+      hard disks may be linked to the same parent hard disk.
 
       Differencing hard disks can be distinguished from base hard disks by
       querying the <link to="#parent"/> attribute: base hard disks do not have
@@ -9039,7 +9033,7 @@
       attribute.
 
       Note that the type of all differencing hard disks is
-      <link to="HardDiskType_Normal">Normal</link>; all other values are
+      <link to="HardDiskType_Normal" />; all other values are
       meaningless for them. Base hard disks may be of any type.
 
       <h3>Creating Hard Disks</h3>
@@ -10928,9 +10922,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="takeScreenShotSlow">
       <desc>
-        Takes guest screen shot of the requested size and returns it as 
-        an array of bytes in uncompressed 32-bit ARGB format. 
-        This API is slow, but could be the only option to get guest screenshot 
+        Takes a guest screen shot of the requested size and returns it as
+        an array of bytes in uncompressed 32-bit ARGB format.
+        This API is slow, but could be the only option to get guest screenshot
         for scriptable languages not allowed to manipulate with addresses
         directly.
 
