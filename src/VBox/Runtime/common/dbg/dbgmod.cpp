@@ -750,12 +750,13 @@ RTDECL(int) RTDbgModSymbolByOrdinalA(RTDBGMOD hDbgMod, uint32_t iOrdinal, PRTDBG
  * @retval  VERR_DBG_INVALID_SEGMENT_OFFSET if the segment offset is beyond the
  *          end of the segment.
  *
- * @param   pMod        Pointer to the module structure.
- * @param   iSeg        The segment number (0-based) or RTDBGSEGIDX_ABS.
- * @param   off         The offset into the segment.
- * @param   poffDisp    Where to store the distance between the specified address
- *                      and the returned symbol. Optional.
- * @param   pSymInfo    Where to store the symbol information.
+ * @param   hDbgMod             The module handle.
+ * @param   iSeg                The segment number.
+ * @param   off                 The offset into the segment.
+ * @param   poffDisp            Where to store the distance between the
+ *                              specified address and the returned symbol.
+ *                              Optional.
+ * @param   pSymInfo            Where to store the symbol information.
  */
 RTDECL(int) RTDbgModSymbolByAddr(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGSYMBOL pSymInfo)
 {
@@ -763,7 +764,7 @@ RTDECL(int) RTDbgModSymbolByAddr(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR o
      * Validate input.
      */
     PRTDBGMODINT pDbgMod = hDbgMod;
-    RTDBGMOD_VALID_RETURN_RC(pDbgMod, UINT32_MAX);
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, VERR_INVALID_HANDLE);
     AssertPtrNull(poffDisp);
     AssertPtr(pSymInfo);
 
@@ -857,7 +858,7 @@ RTDECL(int) RTDbgModSymbolByName(RTDBGMOD hDbgMod, const char *pszSymbol, PRTDBG
      * Validate input.
      */
     PRTDBGMODINT pDbgMod = hDbgMod;
-    RTDBGMOD_VALID_RETURN_RC(pDbgMod, UINT32_MAX);
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, VERR_INVALID_HANDLE);
     AssertPtr(pszSymbol);
     size_t cchSymbol = strlen(pszSymbol);
     AssertReturn(cchSymbol, VERR_DBG_SYMBOL_NAME_OUT_OF_RANGE);
@@ -883,8 +884,8 @@ RTDECL(int) RTDbgModSymbolByName(RTDBGMOD hDbgMod, const char *pszSymbol, PRTDBG
  * @retval  VERR_SYMBOL_NOT_FOUND if no suitable symbol was found.
  * @retval  VERR_DBG_SYMBOL_NAME_OUT_OF_RANGE if the symbol name is too long or
  *          short.
- *
  * @retval  VERR_NO_MEMORY if RTDbgSymbolAlloc fails.
+ *
  * @param   hDbgMod             The module handle.
  * @param   pszSymbol           The symbol name.
  * @param   ppSymInfo           Where to store the pointer to the returned
@@ -914,25 +915,29 @@ RTDECL(int) RTDbgModSymbolByNameA(RTDBGMOD hDbgMod, const char *pszSymbol, PRTDB
  * Adds a line number to the module.
  *
  * @returns IPRT status code.
- * @retval  VERR_INVALID_HANDLE if hDbgMod is invalid.
  * @retval  VERR_NOT_SUPPORTED if the module interpret doesn't support adding
- *          custom symbols.
- * @retval  VERR_DBG_FILE_NAME_OUT_OF_RANGE
- * @retval  VERR_DBG_INVALID_RVA
- * @retval  VERR_DBG_INVALID_SEGMENT_INDEX
- * @retval  VERR_DBG_INVALID_SEGMENT_OFFSET
- * @retval  VERR_INVALID_PARAMETER
+ *          custom symbols. This should be consider a normal response.
+ * @retval  VERR_INVALID_HANDLE if hDbgMod is invalid.
+ * @retval  VERR_DBG_FILE_NAME_OUT_OF_RANGE if the file name is too longer or
+ *          empty.
+ * @retval  VERR_DBG_INVALID_RVA if an image relative address is specified and
+ *          it's not inside any of the segments defined by the module.
+ * @retval  VERR_DBG_INVALID_SEGMENT_INDEX if the segment index isn't valid.
+ * @retval  VERR_DBG_INVALID_SEGMENT_OFFSET if the segment offset is beyond the
+ *          end of the segment.
+ * @retval  VERR_INVALID_PARAMETER if the line number flags sets undefined bits.
  *
- * @param   hDbgMod         The module handle.
- * @param   pszFile         The file name.
- * @param   uLineNo         The line number.
- * @param   iSeg            The segment index.
- * @param   off             The segment offset.
- * @param   piOrdinal       Where to return the line number ordinal on success.
- *                          If the interpreter doesn't do ordinals, this will be
- *                          set to UINT32_MAX. Optional.
+ * @param   hDbgMod             The module handle.
+ * @param   pszFile             The file name.
+ * @param   uLineNo             The line number.
+ * @param   iSeg                The segment index.
+ * @param   off                 The segment offset.
+ * @param   piOrdinal           Where to return the line number ordinal on
+ *                              success. If  the interpreter doesn't do ordinals,
+ *                              this will be set to UINT32_MAX. Optional.
  */
-RTDECL(int) RTDbgModLineAdd(RTDBGMOD hDbgMod, const char *pszFile, uint32_t uLineNo, RTDBGSEGIDX iSeg, RTUINTPTR off, uint32_t *piOrdinal)
+RTDECL(int) RTDbgModLineAdd(RTDBGMOD hDbgMod, const char *pszFile, uint32_t uLineNo,
+                            RTDBGSEGIDX iSeg, RTUINTPTR off, uint32_t *piOrdinal)
 {
     /*
      * Validate input.
@@ -974,13 +979,200 @@ RTDECL(int) RTDbgModLineAdd(RTDBGMOD hDbgMod, const char *pszFile, uint32_t uLin
 }
 
 
-RTDECL(int)         RTDbgModLineByAddr(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGLINE pLine)
+/**
+ * Gets the line number count.
+ *
+ * This can be used together wtih RTDbgModLineByOrdinal or RTDbgModSymbolByLineA
+ * to enumerate all the line number information.
+ *
+ * @returns The number of line numbers in the module.
+ *          UINT32_MAX is returned if the module handle is invalid or some other
+ *          error occurs.
+ *
+ * @param   hDbgMod             The module handle.
+ */
+RTDECL(uint32_t) RTDbgModLineCount(RTDBGMOD hDbgMod)
 {
-    return VERR_NOT_IMPLEMENTED;
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, UINT32_MAX);
+    RTDBGMOD_LOCK(pDbgMod);
+
+    uint32_t cLineNumbers = pDbgMod->pDbgVt->pfnLineCount(pDbgMod);
+
+    RTDBGMOD_UNLOCK(pDbgMod);
+    return cLineNumbers;
 }
 
-RTDECL(int)         RTDbgModLineByAddrA(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGLINE *ppLine)
+
+/**
+ * Queries line number information by ordinal number.
+ *
+ * This can be used to enumerate the line numbers for the module. Use
+ * RTDbgModLineCount() to figure the end of the ordinals.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_DBG_NO_LINE_NUMBERS if there aren't any line numbers.
+ * @retval  VERR_DBG_LINE_NOT_FOUND if there is no line number with that
+ *          ordinal.
+ * @retval  VERR_INVALID_HANDLE if hDbgMod is invalid.
+
+ * @param   hDbgMod             The module handle.
+ * @param   iOrdinal            The line number ordinal number.
+ * @param   pLineInfo           Where to store the information about the line
+ *                              number.
+ */
+RTDECL(int) RTDbgModLineByOrdinal(RTDBGMOD hDbgMod, uint32_t iOrdinal, PRTDBGLINE pLineInfo)
 {
-    return VERR_NOT_IMPLEMENTED;
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, VERR_INVALID_HANDLE);
+    RTDBGMOD_LOCK(pDbgMod);
+
+    int rc = pDbgMod->pDbgVt->pfnLineByOrdinal(pDbgMod, iOrdinal, pLineInfo);
+
+    RTDBGMOD_UNLOCK(pDbgMod);
+    return rc;
+}
+
+
+/**
+ * Queries line number information by ordinal number.
+ *
+ * This can be used to enumerate the line numbers for the module. Use
+ * RTDbgModLineCount() to figure the end of the ordinals.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_DBG_NO_LINE_NUMBERS if there aren't any line numbers.
+ * @retval  VERR_DBG_LINE_NOT_FOUND if there is no line number with that
+ *          ordinal.
+ * @retval  VERR_INVALID_HANDLE if hDbgMod is invalid.
+ * @retval  VERR_NO_MEMORY if RTDbgLineAlloc fails.
+ *
+ * @param   hDbgMod             The module handle.
+ * @param   iOrdinal            The line number ordinal number.
+ * @param   ppLineInfo          Where to store the pointer to the returned line
+ *                              number information. Always set. Free with
+ *                              RTDbgLineFree.
+ */
+RTDECL(int) RTDbgModLineByOrdinalA(RTDBGMOD hDbgMod, uint32_t iOrdinal, PRTDBGLINE *ppLineInfo)
+{
+    AssertPtr(ppLineInfo);
+    *ppLineInfo = NULL;
+
+    PRTDBGLINE pLineInfo = RTDbgLineAlloc();
+    if (!pLineInfo)
+        return VERR_NO_MEMORY;
+
+    int rc = RTDbgModLineByOrdinal(hDbgMod, iOrdinal, pLineInfo);
+
+    if (RT_SUCCESS(rc))
+        *ppLineInfo = pLineInfo;
+    else
+        RTDbgLineFree(pLineInfo);
+    return rc;
+}
+
+
+/**
+ * Queries line number information by address.
+ *
+ * The returned line number is what the debug info interpreter consideres the
+ * one most applicable to the specified address. This usually means a line
+ * number with an address equal or lower than the requested.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_DBG_NO_LINE_NUMBERS if there aren't any line numbers.
+ * @retval  VERR_DBG_LINE_NOT_FOUND if no suitable line number was found.
+ * @retval  VERR_INVALID_HANDLE if hDbgMod is invalid.
+ * @retval  VERR_DBG_INVALID_RVA if an image relative address is specified and
+ *          it's not inside any of the segments defined by the module.
+ * @retval  VERR_DBG_INVALID_SEGMENT_INDEX if the segment index isn't valid.
+ * @retval  VERR_DBG_INVALID_SEGMENT_OFFSET if the segment offset is beyond the
+ *          end of the segment.
+ *
+ * @param   hDbgMod             The module handle.
+ * @param   iSeg                The segment number.
+ * @param   off                 The offset into the segment.
+ * @param   poffDisp            Where to store the distance between the
+ *                              specified address and the returned symbol.
+ *                              Optional.
+ * @param   pSymInfo            Where to store the symbol information.
+ */
+RTDECL(int) RTDbgModLineByAddr(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGLINE pLineInfo)
+{
+    /*
+     * Validate input.
+     */
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, VERR_INVALID_HANDLE);
+    RTDBGMOD_LOCK(pDbgMod);
+    AssertPtrNull(poffDisp);
+    AssertPtr(pLineInfo);
+
+    RTDBGMOD_LOCK(pDbgMod);
+
+    /*
+     * Convert RVAs.
+     */
+    if (iSeg == RTDBGSEGIDX_RVA)
+    {
+        iSeg = pDbgMod->pDbgVt->pfnRvaToSegOff(pDbgMod, off, &off);
+        if (iSeg == NIL_RTDBGSEGIDX)
+        {
+            RTDBGMOD_UNLOCK(pDbgMod);
+            return VERR_DBG_INVALID_RVA;
+        }
+    }
+
+    int rc = pDbgMod->pDbgVt->pfnLineByAddr(pDbgMod, iSeg, off, poffDisp, pLineInfo);
+
+    RTDBGMOD_UNLOCK(pDbgMod);
+    return rc;
+}
+
+
+/**
+ * Queries line number information by address.
+ *
+ * The returned line number is what the debug info interpreter consideres the
+ * one most applicable to the specified address. This usually means a line
+ * number with an address equal or lower than the requested.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_DBG_NO_LINE_NUMBERS if there aren't any line numbers.
+ * @retval  VERR_DBG_LINE_NOT_FOUND if no suitable line number was found.
+ * @retval  VERR_INVALID_HANDLE if hDbgMod is invalid.
+ * @retval  VERR_DBG_INVALID_RVA if an image relative address is specified and
+ *          it's not inside any of the segments defined by the module.
+ * @retval  VERR_DBG_INVALID_SEGMENT_INDEX if the segment index isn't valid.
+ * @retval  VERR_DBG_INVALID_SEGMENT_OFFSET if the segment offset is beyond the
+ *          end of the segment.
+ * @retval  VERR_NO_MEMORY if RTDbgLineAlloc fails.
+ *
+ * @param   hDbgMod             The module handle.
+ * @param   iSeg                The segment number.
+ * @param   off                 The offset into the segment.
+ * @param   poffDisp            Where to store the distance between the
+ *                              specified address and the returned symbol.
+ *                              Optional.
+ * @param   ppLineInfo          Where to store the pointer to the returned line
+ *                              number information. Always set. Free with
+ *                              RTDbgLineFree.
+ */
+RTDECL(int) RTDbgModLineByAddrA(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTINTPTR poffDisp, PRTDBGLINE *ppLineInfo)
+{
+    AssertPtr(ppLineInfo);
+    *ppLineInfo = NULL;
+
+    PRTDBGLINE pLineInfo = RTDbgLineAlloc();
+    if (!pLineInfo)
+        return VERR_NO_MEMORY;
+
+    int rc = RTDbgModLineByAddr(hDbgMod, iSeg, off, poffDisp, pLineInfo);
+
+    if (RT_SUCCESS(rc))
+        *ppLineInfo = pLineInfo;
+    else
+        RTDbgLineFree(pLineInfo);
+    return rc;
 }
 
