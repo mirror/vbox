@@ -10955,8 +10955,8 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
 /**
  * Locks the attached media.
  *
- * All attached hard disks and DVD/floppy are locked for writing. Parents of
- * attached hard disks (if any) are locked for reading.
+ * All attached hard disks are locked for writing and DVD/floppy are locked for
+ * reading. Parents of attached hard disks (if any) are locked for reading.
  *
  * This method also performs accessibility check of all media it locks: if some
  * media is inaccessible, the method will return a failure and a bunch of
@@ -11154,9 +11154,10 @@ void SessionMachine::unlockMedia()
         else
             rc = it->first->UnlockRead (&state);
 
-        /* the latter can happen if an object was re-locked in
-         * Machine::fixupHardDisks() */
-        Assert (SUCCEEDED (rc) || state == MediaState_LockedRead);
+        /* The second can happen if an object was re-locked in
+         * Machine::fixupHardDisks(). The last can happen when e.g a DVD/Floppy
+         * image was unmounted at runtime. */
+        Assert (SUCCEEDED (rc) || state == MediaState_LockedRead || state == MediaState_Created);
     }
 
     mData->mSession.mLockedMedia.clear();
