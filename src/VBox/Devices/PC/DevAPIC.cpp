@@ -414,10 +414,10 @@ DECLINLINE(VMCPUID) getCpuFromLapic(APICDeviceInfo* dev, APICState *s)
     return VMCPUID(s->phys_id);
 }
 
-DECLINLINE(void) cpuSetInterrupt(APICDeviceInfo* dev, APICState *s)
+DECLINLINE(void) cpuSetInterrupt(APICDeviceInfo* dev, APICState *s, PDMAPICIRQ enmType = PDMAPICIRQ_HARDWARE)
 {
     LogFlow(("apic: setting interrupt flag for cpu %d\n", getCpuFromLapic(dev, s)));
-    dev->CTX_SUFF(pApicHlp)->pfnSetInterruptFF(dev->CTX_SUFF(pDevIns),
+    dev->CTX_SUFF(pApicHlp)->pfnSetInterruptFF(dev->CTX_SUFF(pDevIns), enmType,
                                                getCpuFromLapic(dev, s));
 }
 
@@ -517,15 +517,13 @@ static int apic_bus_deliver(APICDeviceInfo* dev,
             break;
 
         case APIC_DM_SMI:
-            /** @todo: what do we really do with SMI */
             foreach_apic(dev, deliver_bitmask,
-                         cpuSetInterrupt(dev, apic));
+                         cpuSetInterrupt(dev, apic, PDMAPICIRQ_SMI));
             return VINF_SUCCESS;
 
         case APIC_DM_NMI:
-            /** @todo: what do we really do with NMI */
             foreach_apic(dev, deliver_bitmask,
-                         cpuSetInterrupt(dev, apic));
+                         cpuSetInterrupt(dev, apic, PDMAPICIRQ_NMI));
             return VINF_SUCCESS;
 
         case APIC_DM_INIT:
