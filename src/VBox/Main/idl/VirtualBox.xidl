@@ -2522,6 +2522,7 @@
         <ul>
           <li><tt>gui</tt>: VirtualBox Qt GUI session</li>
           <li><tt>vrdp</tt>: VirtualBox VRDP Server session</li>
+          <li><tt>sdl</tt>: VirtualBox SDL GUI session</li>
         </ul>
 
         The @a environment argument is a string containing definitions of
