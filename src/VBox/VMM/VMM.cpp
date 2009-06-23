@@ -303,7 +303,7 @@ static int vmmR3InitLoggers(PVM pVM)
             PVMCPU pVCpu = &pVM->aCpus[i];
 
             rc = MMR3HyperAllocOnceNoRel(pVM, RT_OFFSETOF(VMMR0LOGGER, Logger.afGroups[pLogger->cGroups]),
-                                     0, MM_TAG_VMM, (void **)&pVCpu->vmm.s.pR0LoggerR3);
+                                         0, MM_TAG_VMM, (void **)&pVCpu->vmm.s.pR0LoggerR3);
             if (RT_FAILURE(rc))
                 return rc;
             pVCpu->vmm.s.pR0LoggerR3->pVM = pVM->pVMR0;
