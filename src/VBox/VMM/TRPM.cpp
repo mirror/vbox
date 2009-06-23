@@ -1455,7 +1455,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
 
         uint8_t u8Interrupt;
         rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
-        Log(("TRPMR3InjectEvent: u8Interrupt=%d (%#x) rc=%Rrc\n", u8Interrupt, u8Interrupt, rc));
+        Log(("TRPMR3InjectEvent: CPU%d u8Interrupt=%d (%#x) rc=%Rrc\n", pVCpu->idCpu, u8Interrupt, u8Interrupt, rc));
         if (RT_SUCCESS(rc))
         {
             if (HWACCMIsEnabled(pVM))
