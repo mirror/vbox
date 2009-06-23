@@ -279,7 +279,8 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** The PDM saved state version. */
-#define PDM_SAVED_STATE_VERSION     3
+#define PDM_SAVED_STATE_VERSION             4
+#define PDM_SAVED_STATE_VERSION_PRE_NMI_FF  3
 
 
 /*******************************************************************************
@@ -634,11 +635,13 @@ static DECLCALLBACK(int) pdmR3Save(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Save interrupt and DMA states.
      */
-    for (unsigned idCpu=0;idCpu<pVM->cCPUs;idCpu++)
+    for (unsigned idCpu = 0; idCpu < pVM->cCPUs; idCpu++)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
         SSMR3PutUInt(pSSM, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_APIC));
         SSMR3PutUInt(pSSM, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_PIC));
+        SSMR3PutUInt(pSSM, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_NMI));
+        SSMR3PutUInt(pSSM, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_SMI));
     }
     SSMR3PutUInt(pSSM, VM_FF_ISSET(pVM, VM_FF_PDM_DMA));
 
@@ -698,6 +701,8 @@ static DECLCALLBACK(int) pdmR3LoadPrep(PVM pVM, PSSMHANDLE pSSM)
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_APIC);
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_PIC);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_SMI);
     }
     VM_FF_CLEAR(pVM, VM_FF_PDM_DMA);
 
@@ -722,7 +727,8 @@ static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     /*
      * Validate version.
      */
-    if (u32Version != PDM_SAVED_STATE_VERSION)
+    if (    u32Version != PDM_SAVED_STATE_VERSION
+        &&  u32Version != PDM_SAVED_STATE_VERSION_PRE_NMI_FF)
     {
         AssertMsgFailed(("pdmR3Load: Invalid version u32Version=%d!\n", u32Version));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -731,7 +737,7 @@ static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     /*
      * Load the interrupt and DMA states.
      */
-    for (unsigned idCpu=0;idCpu<pVM->cCPUs;idCpu++)
+    for (unsigned idCpu = 0; idCpu < pVM->cCPUs; idCpu++)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
@@ -762,6 +768,37 @@ static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
         AssertRelease(!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_PIC));
         if (fInterruptPending)
             VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC);
+
+        if (u32Version > PDM_SAVED_STATE_VERSION_PRE_NMI_FF)
+        {
+            /* NMI interrupt */
+            RTUINT fInterruptPending = 0;
+            rc = SSMR3GetUInt(pSSM, &fInterruptPending);
+            if (RT_FAILURE(rc))
+                return rc;
+            if (fInterruptPending & ~1)
+            {
+                AssertMsgFailed(("fInterruptPending=%#x (NMI)\n", fInterruptPending));
+                return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+            }
+            AssertRelease(!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_NMI));
+            if (fInterruptPending)
+                VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI);
+
+            /* SMI interrupt */
+            fInterruptPending = 0;
+            rc = SSMR3GetUInt(pSSM, &fInterruptPending);
+            if (RT_FAILURE(rc))
+                return rc;
+            if (fInterruptPending & ~1)
+            {
+                AssertMsgFailed(("fInterruptPending=%#x (SMI)\n", fInterruptPending));
+                return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+            }
+            AssertRelease(!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_SMI));
+            if (fInterruptPending)
+                VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_SMI);
+        }
     }
 
     /* DMA pending */
@@ -924,6 +961,8 @@ VMMR3DECL(void) PDMR3Reset(PVM pVM)
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_APIC);
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_PIC);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_SMI);
     }
     VM_FF_CLEAR(pVM, VM_FF_PDM_DMA);
 

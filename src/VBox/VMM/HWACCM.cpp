@@ -1627,22 +1627,21 @@ VMMR3DECL(bool) HWACCMR3IsVPIDActive(PVM pVM)
  * @returns boolean
  * @param   pVM         The VM to operate on.
  */
-VMMR3DECL(bool) HWACCMR3IsEventPending(PVM pVM)
+VMMR3DECL(bool) HWACCMR3IsEventPending(PVMCPU pVCpu)
 {
-    /* @todo SMP */
-    return HWACCMIsEnabled(pVM) && pVM->aCpus[0].hwaccm.s.Event.fPending;
+    return HWACCMIsEnabled(pVCpu->pVMR3) && pVCpu->hwaccm.s.Event.fPending;
 }
 
 
 /**
- * Inject an NMI into a running VM
+ * Inject an NMI into a running VM (only VCPU 0!)
  *
  * @returns boolean
  * @param   pVM         The VM to operate on.
  */
 VMMR3DECL(int)  HWACCMR3InjectNMI(PVM pVM)
 {
-    pVM->hwaccm.s.fInjectNMI = true;
+    VMCPU_FF_SET(&pVM->aCpus[0], VMCPU_FF_INTERRUPT_NMI);
     return VINF_SUCCESS;
 }
 
