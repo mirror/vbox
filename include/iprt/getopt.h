@@ -81,6 +81,8 @@ RT_C_DECLS_BEGIN
 #endif
 /** The value must be a valid ethernet MAC address. */
 #define RTGETOPT_REQ_MACADDR                    14
+/** The value must be a valid UUID. */
+#define RTGETOPT_REQ_UUID                       15
 /** The mask of the valid required types. */
 #define RTGETOPT_REQ_MASK                       15
 /** Treat the value as hexadecimal - only applicable with the RTGETOPT_REQ_*INT*. */
@@ -157,6 +159,8 @@ typedef union RTGETOPTUNION
 #endif
     /** A RTGETOPT_REQ_MACADDR option argument. */
     RTMAC           MacAddr;
+    /** A RTGETOPT_REQ_UUID option argument. */
+    RTUUID          Uuid;
     /** A signed integer value. */
     int64_t         i;
     /** An unsigned integer value. */
