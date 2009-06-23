@@ -44,8 +44,11 @@
 #include <wctype.h>
 
 #ifdef RT_OS_SOLARIS
-#include <langinfo.h>
+# include <langinfo.h>
 #endif
+
+#include "internal/alignmentchecks.h"
+
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -72,6 +75,7 @@ static int rtstrConvert(const void *pvInput, size_t cbInput, const char *pszInpu
     /*
      * Allocate buffer
      */
+    bool    fUcs2Term;
     void   *pvOutput;
     size_t  cbOutput2;
     if (!cbOutput)
@@ -80,11 +84,13 @@ static int rtstrConvert(const void *pvInput, size_t cbInput, const char *pszInpu
         pvOutput = RTMemTmpAlloc(cbOutput2 + sizeof(RTUTF16));
         if (!pvOutput)
             return VERR_NO_TMP_MEMORY;
+        fUcs2Term = true;
     }
     else
     {
         pvOutput = *ppvOutput;
-        cbOutput2 = cbOutput - (!strcmp(pszOutputCS, "UCS-2") ? sizeof(RTUTF16) : 1);
+        fUcs2Term = !strcmp(pszOutputCS, "UCS-2");
+        cbOutput2 = cbOutput - (fUcs2Term ? sizeof(RTUTF16) : 1);
         if (cbOutput2 > cbOutput)
             return VERR_BUFFER_OVERFLOW;
     }
@@ -104,7 +110,9 @@ static int rtstrConvert(const void *pvInput, size_t cbInput, const char *pszInpu
         if (!*pszOutputCS)
             pszOutputCS = nl_langinfo(CODESET);
 #endif
+        IPRT_ALIGNMENT_CHECKS_DISABLE(); /* glibc causes trouble */
         iconv_t icHandle = iconv_open(pszOutputCS, pszInputCS);
+        IPRT_ALIGNMENT_CHECKS_ENABLE();
         if (icHandle != (iconv_t)-1)
         {
             /*
@@ -127,15 +135,13 @@ static int rtstrConvert(const void *pvInput, size_t cbInput, const char *pszInpu
                      * (Two terminators to support UCS-2 output, too.)
                      */
                     iconv_close(icHandle);
-                    if (!cbOutput || !strcmp(pszOutputCS, "UCS-2"))
-                        *(PRTUTF16)pvOutputLeft = '\0';
-                    else
-                        *(char *)pvOutputLeft = '\0';
+                    ((char *)pvOutputLeft)[0] = '\0';
+                    if (fUcs2Term)
+                        ((char *)pvOutputLeft)[1] = '\0';
                     *ppvOutput = pvOutput;
                     return VINF_SUCCESS;
                 }
-                else
-                    errno = E2BIG;
+                errno = E2BIG;
             }
             iconv_close(icHandle);
 
@@ -149,7 +155,7 @@ static int rtstrConvert(const void *pvInput, size_t cbInput, const char *pszInpu
                 {
                     RTMemTmpFree(pvOutput);
                     cbOutput2 *= 2;
-                    pvOutput = RTMemTmpAlloc(cbOutput2);
+                    pvOutput = RTMemTmpAlloc(cbOutput2 + sizeof(RTUTF16));
                     if (!pvOutput)
                         return VERR_NO_TMP_MEMORY;
                     continue;
