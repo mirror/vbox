@@ -62,7 +62,7 @@ static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq);
  * @param   pVM             The VM handle.
  * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
  *                          one of the following special values:
- *                              VMCPUID_ANY, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
+ *                              VMCPUID_ANY, VMCPUID_OTHER, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happends.
  * @param   cMillies        Number of milliseconds to wait for the request to
@@ -98,7 +98,7 @@ VMMR3DECL(int) VMR3ReqCall(PVM pVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cM
  * @param   pUVM            Pointer to the user mode VM structure.
  * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
  *                          one of the following special values:
- *                              VMCPUID_ANY, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
+ *                              VMCPUID_ANY, VMCPUID_OTHER, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happends.
  * @param   cMillies        Number of milliseconds to wait for the request to
@@ -134,7 +134,7 @@ VMMR3DECL(int) VMR3ReqCallVoidU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsi
  * @param   pVM             The VM handle.
  * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
  *                          one of the following special values:
- *                              VMCPUID_ANY, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
+ *                              VMCPUID_ANY, VMCPUID_OTHER, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happends.
  * @param   cMillies        Number of milliseconds to wait for the request to
@@ -170,7 +170,7 @@ VMMR3DECL(int) VMR3ReqCallVoid(PVM pVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigne
  * @param   pVM             The VM handle.
  * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
  *                          one of the following special values:
- *                              VMCPUID_ANY, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
+ *                              VMCPUID_ANY, VMCPUID_OTHER, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happends, unless fFlags
  *                          contains VMREQFLAGS_NO_WAIT when it will be optional and always NULL.
@@ -208,7 +208,7 @@ VMMR3DECL(int) VMR3ReqCallEx(PVM pVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned 
  * @param   pUVM            Pointer to the user mode VM structure.
  * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
  *                          one of the following special values:
- *                              VMCPUID_ANY, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
+ *                              VMCPUID_ANY, VMCPUID_OTHER, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happends, unless fFlags
  *                          contains VMREQFLAGS_NO_WAIT when it will be optional and always NULL.
@@ -246,7 +246,7 @@ VMMR3DECL(int) VMR3ReqCallU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned
  * @param   pUVM            Pointer to the user mode VM structure.
  * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
  *                          one of the following special values:
- *                              VMCPUID_ANY, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
+ *                              VMCPUID_ANY, VMCPUID_OTHER, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happends, unless fFlags
  *                          contains VMREQFLAGS_NO_WAIT when it will be optional and always NULL.
@@ -385,7 +385,7 @@ static void vmr3ReqJoinFree(PVMINTUSERPERVM pVMInt, PVMREQ pList)
  * @param   enmType         Package type.
  * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
  *                          one of the following special values:
- *                              VMCPUID_ANY, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
+ *                              VMCPUID_ANY, VMCPUID_OTHER, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  */
 VMMR3DECL(int) VMR3ReqAlloc(PVM pVM, PVMREQ *ppReq, VMREQTYPE enmType, VMCPUID idDstCpu)
 {
@@ -406,7 +406,7 @@ VMMR3DECL(int) VMR3ReqAlloc(PVM pVM, PVMREQ *ppReq, VMREQTYPE enmType, VMCPUID i
  * @param   enmType         Package type.
  * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
  *                          one of the following special values:
- *                              VMCPUID_ANY, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
+ *                              VMCPUID_ANY, VMCPUID_OTHER, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  */
 VMMR3DECL(int) VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType, VMCPUID idDstCpu)
 {
@@ -419,6 +419,7 @@ VMMR3DECL(int) VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType, VMCPUI
                     VERR_VM_REQUEST_INVALID_TYPE);
     AssertPtrReturn(ppReq, VERR_INVALID_POINTER);
     AssertMsgReturn(    idDstCpu == VMCPUID_ANY
+                    ||  idDstCpu == VMCPUID_OTHER
                     ||  idDstCpu < pUVM->cCpus
                     ||  idDstCpu == VMCPUID_ALL
                     ||  idDstCpu == VMCPUID_ALL_REVERSE,
@@ -710,10 +711,13 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
             rc = VMR3ReqWait(pReq, cMillies);
         LogFlow(("VMR3ReqQueue: returns %Rrc\n", rc));
     }
-    else if (    pReq->idDstCpu == VMCPUID_ANY
-             &&  !pUVCpu /* only EMT threads have a valid pointer stored in the TLS slot. */)
+    else if (   (    pReq->idDstCpu == VMCPUID_ANY
+                 && !pUVCpu /* only EMT threads have a valid pointer stored in the TLS slot. */)
+             || pReq->idDstCpu == VMCPUID_OTHER)
     {
         unsigned fFlags = ((VMREQ volatile *)pReq)->fFlags;     /* volatile paranoia */
+
+        Assert(pReq->idDstCpu != VMCPUID_OTHER || pUVCpu);
 
         /*
          * Insert it.
