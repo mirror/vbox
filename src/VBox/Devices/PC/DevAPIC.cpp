@@ -416,14 +416,14 @@ DECLINLINE(VMCPUID) getCpuFromLapic(APICDeviceInfo* dev, APICState *s)
 
 DECLINLINE(void) cpuSetInterrupt(APICDeviceInfo* dev, APICState *s)
 {
-    Log2(("apic: setting interrupt flag for cpu %d\n", getCpuFromLapic(dev, s)));
+    LogFlow(("apic: setting interrupt flag for cpu %d\n", getCpuFromLapic(dev, s)));
     dev->CTX_SUFF(pApicHlp)->pfnSetInterruptFF(dev->CTX_SUFF(pDevIns),
                                                getCpuFromLapic(dev, s));
 }
 
 DECLINLINE(void) cpuClearInterrupt(APICDeviceInfo* dev, APICState *s)
 {
-    Log2(("apic: clear interrupt flag\n"));
+    LogFlow(("apic: clear interrupt flag\n"));
     dev->CTX_SUFF(pApicHlp)->pfnClearInterruptFF(dev->CTX_SUFF(pDevIns),
                                                  getCpuFromLapic(dev, s));
 }
