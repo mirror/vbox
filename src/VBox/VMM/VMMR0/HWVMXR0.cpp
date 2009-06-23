@@ -753,9 +753,11 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, CPUMCTX *pCtx)
         return VINF_SUCCESS;
     }
 
-    if (pVM->hwaccm.s.fInjectNMI)
+    if (VMCPU_FF_TESTANDCLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI_BIT))
     {
         RTGCUINTPTR intInfo;
+
+        Log(("CPU%d: injecting #NMI\n", pVCpu->idCpu));
 
         intInfo  = X86_XCPT_NMI;
         intInfo |= (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
@@ -764,9 +766,10 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, CPUMCTX *pCtx)
         rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, intInfo, 0, 0);
         AssertRC(rc);
 
-        pVM->hwaccm.s.fInjectNMI = false;
         return VINF_SUCCESS;
     }
+
+    /* @todo SMI interrupts. */
 
     /* When external interrupts are pending, we should exit the VM when IF is set. */
     if (    !TRPMHasTrap(pVCpu)

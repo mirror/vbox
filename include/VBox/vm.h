@@ -301,9 +301,11 @@ typedef struct VMCPU
  * @remarks Don't move - PATM compatability.  */
 #define VMCPU_FF_TIMER                      RT_BIT_32(2)
 /** This action forces the VM to check any pending NMIs. */
-#define VMCPU_FF_INTERRUPT_NMI              RT_BIT_32(3)
+#define VMCPU_FF_INTERRUPT_NMI_BIT          3
+#define VMCPU_FF_INTERRUPT_NMI              RT_BIT_32(VMCPU_FF_INTERRUPT_NMI_BIT)
 /** This action forces the VM to check any pending SMIs. */
-#define VMCPU_FF_INTERRUPT_SMI              RT_BIT_32(4)
+#define VMCPU_FF_INTERRUPT_SMI_BIT          4
+#define VMCPU_FF_INTERRUPT_SMI              RT_BIT_32(VMCPU_FF_INTERRUPT_SMI_BIT)
 /** PDM critical section unlocking is pending, process promptly upon return to R3. */
 #define VMCPU_FF_PDM_CRITSECT               RT_BIT_32(5)
 /** This action forces the VM to service pending requests from other
