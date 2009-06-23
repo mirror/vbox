@@ -10904,9 +10904,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="takeScreenShotSlow">
       <desc>
-        Takes a screen shot of the requested size and returns it as 
-        an array of bytes. This API is slow, but could be the only option for
-        scribtable languages not allowed to manipulate with addresses
+        Takes guest screen shot of the requested size and returns it as 
+        an array of bytes in uncompressed 32-bit ARGB format. 
+        This API is slow, but could be the only option to get guest screenshot 
+        for scriptable languages not allowed to manipulate with addresses
         directly.
 
         <result name="E_NOTIMPL">
@@ -10916,8 +10917,16 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           Could not take a screenshot.
         </result>
       </desc>
-      <param name="width" type="unsigned long" dir="in"/>
-      <param name="height" type="unsigned long" dir="in"/>
+      <param name="width" type="unsigned long" dir="in">
+        <desc>
+          Desired image width.
+        </desc>
+      </param>
+      <param name="height" type="unsigned long" dir="in">
+        <desc>
+          Desired image height.
+        </desc>
+      </param>
       <param name="screenData" type="octet" dir="out" safearray="yes">
         <desc>
           Array with resulting screen data.
