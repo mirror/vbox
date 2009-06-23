@@ -91,7 +91,7 @@ if ($optMode eq "version")
 elsif ($optMode eq "list")
 {
     print "[$cmd] Listing machines:\n";
-    my @result = vboxService->IVirtualBox_getMachines2($vbox);
+    my @result = vboxService->IVirtualBox_getMachines($vbox);
     foreach my $idMachine (@result)
     {
         my $if = vboxService->IManagedObjectRef_getInterfaceName($idMachine);
