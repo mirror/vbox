@@ -91,7 +91,7 @@ int main(int argc, char **argv)
          * Load VMM code.
          */
         char    szFile[RTPATH_MAX];
-        rc = SUPLoadVMM(ExeDirFile(szFile, argv[0], "VMMR0.r0"));
+        rc = SUPR3LoadVMM(ExeDirFile(szFile, argv[0], "VMMR0.r0"));
         if (!rc)
         {
             /*
@@ -102,7 +102,7 @@ int main(int argc, char **argv)
             const unsigned cPages = RT_ALIGN_Z(sizeof(*pVM), PAGE_SIZE) >> PAGE_SHIFT;
             PSUPPAGE paPages = (PSUPPAGE)RTMemAllocZ(cPages * sizeof(SUPPAGE));
             if (paPages)
-                rc = SUPLowAlloc(cPages, (void **)&pVM, &pVMR0, &paPages[0]);
+                rc = SUPR3LowAlloc(cPages, (void **)&pVM, &pVMR0, &paPages[0]);
             else
                 rc = VERR_NO_MEMORY;
             if (RT_SUCCESS(rc))
@@ -114,7 +114,7 @@ int main(int argc, char **argv)
                 pVM->pSession = pSession;
                 pVM->enmVMState = VMSTATE_CREATED;
 
-                rc = SUPSetVMForFastIOCtl(pVMR0);
+                rc = SUPR3SetVMForFastIOCtl(pVMR0);
                 if (!rc)
                 {
 
@@ -123,15 +123,15 @@ int main(int argc, char **argv)
                      */
                     for (i = cIterations; i > 0; i--)
                     {
-                        rc = SUPCallVMMR0(pVMR0, NIL_VMCPUID, VMMR0_DO_SLOW_NOP, NULL);
+                        rc = SUPR3CallVMMR0(pVMR0, NIL_VMCPUID, VMMR0_DO_SLOW_NOP, NULL);
                         if (rc != VINF_SUCCESS)
                         {
-                            RTPrintf("tstInt: SUPCallVMMR0 -> rc=%Rrc i=%d Expected VINF_SUCCESS!\n", rc, i);
+                            RTPrintf("tstInt: SUPR3CallVMMR0 -> rc=%Rrc i=%d Expected VINF_SUCCESS!\n", rc, i);
                             rcRet++;
                             break;
                         }
                     }
-                    RTPrintf("tstInt: Performed SUPCallVMMR0 %d times (rc=%Rrc)\n", cIterations, rc);
+                    RTPrintf("tstInt: Performed SUPR3CallVMMR0 %d times (rc=%Rrc)\n", cIterations, rc);
 
                     /*
                      * The fast path.
@@ -145,14 +145,14 @@ int main(int argc, char **argv)
                         for (i = 0; i < 1000000; i++)
                         {
                             uint64_t OneStartTick = ASMReadTSC();
-                            rc = SUPCallVMMR0Fast(pVMR0, VMMR0_DO_NOP, 0);
+                            rc = SUPR3CallVMMR0Fast(pVMR0, VMMR0_DO_NOP, 0);
                             uint64_t Ticks = ASMReadTSC() - OneStartTick;
                             if (Ticks < MinTicks)
                                 MinTicks = Ticks;
 
                             if (RT_UNLIKELY(rc != VINF_SUCCESS))
                             {
-                                RTPrintf("tstInt: SUPCallVMMR0Fast -> rc=%Rrc i=%d Expected VINF_SUCCESS!\n", rc, i);
+                                RTPrintf("tstInt: SUPR3CallVMMR0Fast -> rc=%Rrc i=%d Expected VINF_SUCCESS!\n", rc, i);
                                 rcRet++;
                                 break;
                             }
@@ -160,7 +160,7 @@ int main(int argc, char **argv)
                         uint64_t Ticks = ASMReadTSC() - StartTick;
                         uint64_t NanoSecs = RTTimeNanoTS() - StartTS;
 
-                        RTPrintf("tstInt: SUPCallVMMR0Fast - %d iterations in %llu ns / %llu ticks. %llu ns / %#llu ticks per iteration. Min %llu ticks.\n",
+                        RTPrintf("tstInt: SUPR3CallVMMR0Fast - %d iterations in %llu ns / %llu ticks. %llu ns / %#llu ticks per iteration. Min %llu ticks.\n",
                                  i, NanoSecs, Ticks, NanoSecs / i, Ticks / i, MinTicks);
 
                         /*
@@ -173,14 +173,14 @@ int main(int argc, char **argv)
                         for (i = 0; i < 1000000; i++)
                         {
                             uint64_t OneStartTick = ASMReadTSC();
-                            rc = SUPCallVMMR0Ex(pVMR0, NIL_VMCPUID, VMMR0_DO_SLOW_NOP, 0, NULL);
+                            rc = SUPR3CallVMMR0Ex(pVMR0, NIL_VMCPUID, VMMR0_DO_SLOW_NOP, 0, NULL);
                             uint64_t Ticks = ASMReadTSC() - OneStartTick;
                             if (Ticks < MinTicks)
                                 MinTicks = Ticks;
 
                             if (RT_UNLIKELY(rc != VINF_SUCCESS))
                             {
-                                RTPrintf("tstInt: SUPCallVMMR0Ex -> rc=%Rrc i=%d Expected VINF_SUCCESS!\n", rc, i);
+                                RTPrintf("tstInt: SUPR3CallVMMR0Ex -> rc=%Rrc i=%d Expected VINF_SUCCESS!\n", rc, i);
                                 rcRet++;
                                 break;
                             }
@@ -188,44 +188,44 @@ int main(int argc, char **argv)
                         Ticks = ASMReadTSC() - StartTick;
                         NanoSecs = RTTimeNanoTS() - StartTS;
 
-                        RTPrintf("tstInt: SUPCallVMMR0Ex   - %d iterations in %llu ns / %llu ticks. %llu ns / %#llu ticks per iteration. Min %llu ticks.\n",
+                        RTPrintf("tstInt: SUPR3CallVMMR0Ex   - %d iterations in %llu ns / %llu ticks. %llu ns / %#llu ticks per iteration. Min %llu ticks.\n",
                                  i, NanoSecs, Ticks, NanoSecs / i, Ticks / i, MinTicks);
                     }
                 }
                 else
                 {
-                    RTPrintf("tstInt: SUPSetVMForFastIOCtl failed: %Rrc\n", rc);
+                    RTPrintf("tstInt: SUPR3SetVMForFastIOCtl failed: %Rrc\n", rc);
                     rcRet++;
                 }
             }
             else
             {
-                RTPrintf("tstInt: SUPContAlloc2(%#zx,,) failed\n", sizeof(*pVM));
+                RTPrintf("tstInt: SUPR3ContAlloc(%#zx,,) failed\n", sizeof(*pVM));
                 rcRet++;
             }
 
             /*
              * Unload VMM.
              */
-            rc = SUPUnloadVMM();
+            rc = SUPR3UnloadVMM();
             if (rc)
             {
-                RTPrintf("tstInt: SUPUnloadVMM failed with rc=%Rrc\n", rc);
+                RTPrintf("tstInt: SUPR3UnloadVMM failed with rc=%Rrc\n", rc);
                 rcRet++;
             }
         }
         else
         {
-            RTPrintf("tstInt: SUPLoadVMM failed with rc=%Rrc\n", rc);
+            RTPrintf("tstInt: SUPR3LoadVMM failed with rc=%Rrc\n", rc);
             rcRet++;
         }
 
         /*
          * Terminate.
          */
-        rc = SUPTerm();
+        rc = SUPR3Term(false /*fForced*/);
         rcRet += rc != 0;
-        RTPrintf("tstInt: SUPTerm -> rc=%Rrc\n", rc);
+        RTPrintf("tstInt: SUPR3Term -> rc=%Rrc\n", rc);
     }
 
     return !!rc;

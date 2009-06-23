@@ -37,7 +37,7 @@
 #include <iprt/stream.h>
 #include <iprt/string.h>
 
-/* does not work for more CPUs as SUPLowAlloc() would refuse to allocate more pages */
+/* does not work for more CPUs as SUPR3LowAlloc() would refuse to allocate more pages */
 #define NUM_CPUS  16
 
 
@@ -57,7 +57,7 @@ int main(int argc, char **argv)
     SUPPAGE     aPages[RT_ALIGN_Z(sizeof(*pVM) + NUM_CPUS * sizeof(VMCPU), PAGE_SIZE) >> PAGE_SHIFT];
     int rc = SUPR3Init(NULL);
     if (RT_SUCCESS(rc))
-        rc = SUPLowAlloc(RT_ELEMENTS(aPages), (void **)&pVM, &pvR0, &aPages[0]);
+        rc = SUPR3LowAlloc(RT_ELEMENTS(aPages), (void **)&pVM, &pvR0, &aPages[0]);
     if (RT_FAILURE(rc))
     {
         RTPrintf("Fatal error: SUP Failure! rc=%Rrc\n", rc);

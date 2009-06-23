@@ -47,8 +47,8 @@ int main(int argc, char **argv)
     RTPrintf("tstInit: SUPR3Init -> rc=%d\n", rc);
     if (!rc)
     {
-        rc = SUPTerm();
-        RTPrintf("tstInit: SUPTerm -> rc=%d\n", rc);
+        rc = SUPR3Term(false /*fForced*/);
+        RTPrintf("tstInit: SUPR3Term -> rc=%d\n", rc);
     }
 
     return rc;

@@ -58,7 +58,7 @@ int main(int argc, char **argv)
         SUPPAGE aPages0[128];
         void *pvPages0 = (void *)0x77777777;
         memset(&aPages0[0], 0x8f, sizeof(aPages0));
-        rc = SUPLowAlloc(RT_ELEMENTS(aPages0), &pvPages0, NULL, aPages0);
+        rc = SUPR3LowAlloc(RT_ELEMENTS(aPages0), &pvPages0, NULL, aPages0);
         if (RT_SUCCESS(rc))
         {
             /* check that the pages are below 4GB and valid. */
@@ -90,11 +90,11 @@ int main(int argc, char **argv)
                             rcRet++;
                         }
             }
-            SUPLowFree(pvPages0, RT_ELEMENTS(aPages0));
+            SUPR3LowFree(pvPages0, RT_ELEMENTS(aPages0));
         }
         else
         {
-            RTPrintf("SUPLowAlloc(%d,,) failed -> rc=%Rrc\n", RT_ELEMENTS(aPages0), rc);
+            RTPrintf("SUPR3LowAlloc(%d,,) failed -> rc=%Rrc\n", RT_ELEMENTS(aPages0), rc);
             rcRet++;
         }
 
@@ -106,7 +106,7 @@ int main(int argc, char **argv)
             SUPPAGE aPages1[128];
             void *pvPages1 = (void *)0x77777777;
             memset(&aPages1[0], 0x8f, sizeof(aPages1));
-            rc = SUPLowAlloc(cPages, &pvPages1, NULL, aPages1);
+            rc = SUPR3LowAlloc(cPages, &pvPages1, NULL, aPages1);
             if (RT_SUCCESS(rc))
             {
                 /* check that the pages are below 4GB and valid. */
@@ -138,11 +138,11 @@ int main(int argc, char **argv)
                                 rcRet++;
                             }
                 }
-                SUPLowFree(pvPages1, cPages);
+                SUPR3LowFree(pvPages1, cPages);
             }
             else
             {
-                RTPrintf("SUPLowAlloc(%d,,) failed -> rc=%Rrc\n", cPages, rc);
+                RTPrintf("SUPR3LowAlloc(%d,,) failed -> rc=%Rrc\n", cPages, rc);
                 rcRet++;
             }
         }

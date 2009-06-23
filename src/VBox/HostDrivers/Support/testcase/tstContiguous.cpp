@@ -55,25 +55,25 @@ int main(int argc, char **argv)
          * Allocate a bit of contiguous memory.
          */
         RTHCPHYS HCPhys;
-        void *pv = SUPContAlloc(8, &HCPhys);
+        void *pv = SUPR3ContAlloc(8, NIL_RTR0PTR, &HCPhys);
         rcRet += pv == NULL || HCPhys == 0;
         if (pv && HCPhys)
         {
             memset(pv, 0xff, PAGE_SIZE * 8);
-            pv = SUPContAlloc(5, &HCPhys);
+            pv = SUPR3ContAlloc(5, NIL_RTR0PTR, &HCPhys);
             rcRet += pv == NULL || HCPhys == 0;
             if (pv && HCPhys)
             {
                 memset(pv, 0x7f, PAGE_SIZE * 5);
-                rc = SUPContFree(pv, 5);
+                rc = SUPR3ContFree(pv, 5);
                 rcRet += rc != 0;
                 if (rc)
-                    RTPrintf("tstContiguous: SUPContFree failed! rc=%Rrc\n", rc);
+                    RTPrintf("tstContiguous: SUPR3ContFree failed! rc=%Rrc\n", rc);
 
                 void *apv[128];
                 for (unsigned i = 0; i < RT_ELEMENTS(apv); i++)
                 {
-                    apv[i] = SUPContAlloc(1 + (i % 11), &HCPhys);
+                    apv[i] = SUPR3ContAlloc(1 + (i % 11), NIL_RTR0PTR, &HCPhys);
                     if (!apv[i])
                     {
                         RTPrintf("tstContiguous: i=%d: failed to allocate %d pages\n", i, 1 + (i % 11));
@@ -83,20 +83,20 @@ int main(int argc, char **argv)
                 for (unsigned i = 0; i < RT_ELEMENTS(apv); i++)
                     if (apv[i])
                     {
-                        rc = SUPContFree(apv[i], 1 + (i % 11));
+                        rc = SUPR3ContFree(apv[i], 1 + (i % 11));
                         rcRet += rc != 0;
                         if (rc)
-                            RTPrintf("tstContiguous: i=%d SUPContFree failed! rc=%Rrc\n", i, rc);
+                            RTPrintf("tstContiguous: i=%d SUPR3ContFree failed! rc=%Rrc\n", i, rc);
                     }
             }
             else
-                RTPrintf("tstContiguous: SUPContAlloc (2nd) failed!\n");
+                RTPrintf("tstContiguous: SUPR3ContAlloc (2nd) failed!\n");
         }
         else
-            RTPrintf("tstContiguous: SUPContAlloc failed!\n");
+            RTPrintf("tstContiguous: SUPR3ContAlloc failed!\n");
 
-        rc = SUPTerm();
-        RTPrintf("tstContiguous: SUPTerm -> rc=%Rrc\n", rc);
+        rc = SUPR3Term(false /*fForced*/);
+        RTPrintf("tstContiguous: SUPR3Term -> rc=%Rrc\n", rc);
         rcRet += rc != 0;
     }
 

@@ -41,7 +41,7 @@
 int main(int argc, char **argv)
 {
     RTR3Init();
-    int rc = SUPInstall();
+    int rc = SUPR3Install();
     if (RT_SUCCESS(rc))
     {
         printf("installed successfully\n");

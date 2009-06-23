@@ -593,7 +593,7 @@ static int createFakeVM(PVM *ppVM)
                  * Allocate and init the VM structure.
                  */
                 PVM pVM;
-                rc = SUPPageAlloc((sizeof(*pVM) + PAGE_SIZE - 1) >> PAGE_SHIFT, (void **)&pVM);
+                rc = SUPR3PageAlloc((sizeof(*pVM) + PAGE_SIZE - 1) >> PAGE_SHIFT, (void **)&pVM);
                 if (RT_SUCCESS(rc))
                 {
                     pVM->enmVMState = VMSTATE_CREATED;

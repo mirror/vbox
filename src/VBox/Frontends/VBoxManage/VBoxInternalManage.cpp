@@ -1640,7 +1640,7 @@ int CmdModUninstall(void)
 {
     int rc;
 
-    rc = SUPUninstall();
+    rc = SUPR3Uninstall();
     if (RT_SUCCESS(rc))
         return 0;
     if (rc == VERR_NOT_IMPLEMENTED)
@@ -1657,7 +1657,7 @@ int CmdModInstall(void)
 {
     int rc;
 
-    rc = SUPInstall();
+    rc = SUPR3Install();
     if (RT_SUCCESS(rc))
         return 0;
     if (rc == VERR_NOT_IMPLEMENTED)

@@ -60,7 +60,7 @@ int main(int argc, char **argv)
          * Simple test.
          */
         void *pv;
-        int rc = SUPPageAlloc(1, &pv);
+        int rc = SUPR3PageAlloc(1, &pv);
         AssertRC(rc);
         RTPrintf("pv=%p\n", pv);
         SUPPAGE aPages[1];
@@ -87,7 +87,7 @@ int main(int argc, char **argv)
         for (unsigned i = 0; i < sizeof(aPinnings) / sizeof(aPinnings[0]); i++)
         {
             aPinnings[i].pv = NULL;
-            SUPPageAlloc(0x10000 >> PAGE_SHIFT, &aPinnings[i].pv);
+            SUPR3PageAlloc(0x10000 >> PAGE_SHIFT, &aPinnings[i].pv);
             aPinnings[i].pvAligned = RT_ALIGN_P(aPinnings[i].pv, PAGE_SIZE);
             rc = supR3PageLock(aPinnings[i].pvAligned, 0xf000 >> PAGE_SHIFT, &aPinnings[i].aPages[0]);
             if (!rc)
@@ -107,7 +107,7 @@ int main(int argc, char **argv)
             {
                 RTPrintf("SUPPageLock -> rc=%d\n", rc);
                 rcRet++;
-                SUPPageFree(aPinnings[i].pv, 0x10000 >> PAGE_SHIFT);
+                SUPR3PageFree(aPinnings[i].pv, 0x10000 >> PAGE_SHIFT);
                 aPinnings[i].pv = aPinnings[i].pvAligned = NULL;
                 break;
             }
@@ -132,7 +132,7 @@ int main(int argc, char **argv)
             if (aPinnings[i].pv)
             {
                 memset(aPinnings[i].pv, 0xcc, 0x10000);
-                SUPPageFree(aPinnings[i].pv, 0x10000 >> PAGE_SHIFT);
+                SUPR3PageFree(aPinnings[i].pv, 0x10000 >> PAGE_SHIFT);
                 aPinnings[i].pv = NULL;
             }
         }
@@ -141,31 +141,31 @@ int main(int argc, char **argv)
         /*
          * Allocate a bit of contiguous memory.
          */
-        pv = SUPContAlloc(RT_ALIGN_Z(15003, PAGE_SIZE) >> PAGE_SHIFT, &HCPhys);
+        pv = SUPR3ContAlloc(RT_ALIGN_Z(15003, PAGE_SIZE) >> PAGE_SHIFT, NIL_RTR0PTR, &HCPhys);
         rcRet += pv == NULL || HCPhys == 0;
         if (pv && HCPhys)
         {
-            RTPrintf("SUPContAlloc(15003) -> HCPhys=%llx pv=%p\n", HCPhys, pv);
+            RTPrintf("SUPR3ContAlloc(15003) -> HCPhys=%llx pv=%p\n", HCPhys, pv);
             void *pv0 = pv;
             memset(pv0, 0xaf, 15003);
-            pv = SUPContAlloc(RT_ALIGN_Z(12999, PAGE_SIZE) >> PAGE_SHIFT, &HCPhys);
+            pv = SUPR3ContAlloc(RT_ALIGN_Z(12999, PAGE_SIZE) >> PAGE_SHIFT, NIL_RTR0PTR, &HCPhys);
             rcRet += pv == NULL || HCPhys == 0;
             if (pv && HCPhys)
             {
-                RTPrintf("SUPContAlloc(12999) -> HCPhys=%llx pv=%p\n", HCPhys, pv);
+                RTPrintf("SUPR3ContAlloc(12999) -> HCPhys=%llx pv=%p\n", HCPhys, pv);
                 memset(pv, 0xbf, 12999);
-                rc = SUPContFree(pv, RT_ALIGN_Z(12999, PAGE_SIZE) >> PAGE_SHIFT);
+                rc = SUPR3ContFree(pv, RT_ALIGN_Z(12999, PAGE_SIZE) >> PAGE_SHIFT);
                 rcRet += rc != 0;
                 if (rc)
-                    RTPrintf("SUPContFree failed! rc=%d\n", rc);
+                    RTPrintf("SUPR3ContFree failed! rc=%d\n", rc);
             }
             else
-                RTPrintf("SUPContAlloc (2nd) failed!\n");
+                RTPrintf("SUPR3ContAlloc (2nd) failed!\n");
             memset(pv0, 0xaf, 15003);
             /* pv0 is intentionally not freed! */
         }
         else
-            RTPrintf("SUPContAlloc failed!\n");
+            RTPrintf("SUPR3ContAlloc failed!\n");
 
         /*
          * Allocate a big chunk of virtual memory and then lock it.
@@ -173,7 +173,7 @@ int main(int argc, char **argv)
         #define BIG_SIZE    72*1024*1024
         #define BIG_SIZEPP  (BIG_SIZE + PAGE_SIZE)
         pv = NULL;
-        SUPPageAlloc(BIG_SIZEPP >> PAGE_SHIFT, &pv);
+        SUPR3PageAlloc(BIG_SIZEPP >> PAGE_SHIFT, &pv);
         if (pv)
         {
             static SUPPAGE      aPages[BIG_SIZE >> PAGE_SHIFT];
@@ -203,11 +203,11 @@ int main(int argc, char **argv)
                 RTPrintf("SUPPageLock(%p) -> rc=%d\n", pvAligned, rc);
                 rcRet++;
             }
-            SUPPageFree(pv, BIG_SIZEPP >> PAGE_SHIFT);
+            SUPR3PageFree(pv, BIG_SIZEPP >> PAGE_SHIFT);
         }
 
-        rc = SUPTerm();
-        RTPrintf("SUPTerm -> rc=%d\n", rc);
+        rc = SUPR3Term(false /*fForced*/);
+        RTPrintf("SUPR3Term -> rc=%d\n", rc);
         rcRet += rc != 0;
     }
 

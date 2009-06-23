@@ -527,7 +527,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
     CreateVMReq.pVMR0           = NIL_RTR0PTR;
     CreateVMReq.pVMR3           = NULL;
     CreateVMReq.cCpus           = cCpus;
-    rc = SUPCallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_GVMM_CREATE_VM, 0, &CreateVMReq.Hdr);
+    rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_GVMM_CREATE_VM, 0, &CreateVMReq.Hdr);
     if (RT_SUCCESS(rc))
     {
         PVM pVM = pUVM->pVM = CreateVMReq.pVMR3;
@@ -697,7 +697,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
             RTThreadSleep(RT_MIN(100 + 25 *(pUVM->cCpus - 1), 500)); /* very sophisticated */
         }
 
-        int rc2 = SUPCallVMMR0Ex(CreateVMReq.pVMR0, 0 /* VCPU 0 */, VMMR0_DO_GVMM_DESTROY_VM, 0, NULL);
+        int rc2 = SUPR3CallVMMR0Ex(CreateVMReq.pVMR0, 0 /*idCpu*/, VMMR0_DO_GVMM_DESTROY_VM, 0, NULL);
         AssertRC(rc2);
     }
     else
@@ -718,7 +718,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
 static DECLCALLBACK(int) vmR3RegisterEMT(PVM pVM, VMCPUID idCpu)
 {
     Assert(VMMGetCpuId(pVM) == idCpu);
-    int rc = SUPCallVMMR0Ex(pVM->pVMR0, idCpu, VMMR0_DO_GVMM_REGISTER_VMCPU, 0, NULL);
+    int rc = SUPR3CallVMMR0Ex(pVM->pVMR0, idCpu, VMMR0_DO_GVMM_REGISTER_VMCPU, 0, NULL);
     if (RT_FAILURE(rc))
         LogRel(("idCpu=%u rc=%Rrc\n", idCpu, rc));
     return rc;
@@ -1910,7 +1910,7 @@ void vmR3DestroyFinalBitFromEMT(PUVM pUVM)
         /*
          * Tell GVMM to destroy the VM and free its resources.
          */
-        int rc = SUPCallVMMR0Ex(pUVM->pVM->pVMR0, 0 /* VCPU 0 */, VMMR0_DO_GVMM_DESTROY_VM, 0, NULL);
+        int rc = SUPR3CallVMMR0Ex(pUVM->pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_GVMM_DESTROY_VM, 0, NULL);
         AssertRC(rc);
         pUVM->pVM = NULL;
     }
@@ -2056,7 +2056,7 @@ static void vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait)
      */
     if (pUVM->vm.s.pSession)
     {
-        int rc = SUPTerm();
+        int rc = SUPR3Term(false /*fForced*/);
         AssertRC(rc);
         pUVM->vm.s.pSession = NIL_RTR0PTR;
     }

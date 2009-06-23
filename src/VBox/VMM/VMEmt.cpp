@@ -651,7 +651,7 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVMCPU pUVCpu, const uint32_t fMas
 
             //RTLogRelPrintf("u64NanoTS=%RI64 cLoops=%3d sleep %02dms (%7RU64) ", u64NanoTS, cLoops, cMilliSecs, u64NanoTS);
             STAM_REL_PROFILE_START(&pUVCpu->vm.s.StatHaltBlock, c);
-            rc = SUPCallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, VMMR0_DO_GVMM_SCHED_HALT, u64GipTime, NULL);
+            rc = SUPR3CallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, VMMR0_DO_GVMM_SCHED_HALT, u64GipTime, NULL);
             STAM_REL_PROFILE_STOP(&pUVCpu->vm.s.StatHaltBlock, c);
             if (rc == VERR_INTERRUPTED)
                 rc = VINF_SUCCESS;
@@ -671,7 +671,7 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVMCPU pUVCpu, const uint32_t fMas
         else if (!(cLoops & 0x1fff))
         {
             STAM_REL_PROFILE_START(&pUVCpu->vm.s.StatHaltYield, d);
-            rc = SUPCallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, VMMR0_DO_GVMM_SCHED_POLL, false /* don't yield */, NULL);
+            rc = SUPR3CallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, VMMR0_DO_GVMM_SCHED_POLL, false /* don't yield */, NULL);
             STAM_REL_PROFILE_STOP(&pUVCpu->vm.s.StatHaltYield, d);
         }
     }
@@ -710,7 +710,7 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Wait(PUVMCPU pUVCpu)
          * Wait for a while. Someone will wake us up or interrupt the call if
          * anything needs our attention.
          */
-        rc = SUPCallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, VMMR0_DO_GVMM_SCHED_HALT, RTTimeNanoTS() + 1000000000 /* +1s */, NULL);
+        rc = SUPR3CallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, VMMR0_DO_GVMM_SCHED_HALT, RTTimeNanoTS() + 1000000000 /* +1s */, NULL);
         if (rc == VERR_INTERRUPTED)
             rc = VINF_SUCCESS;
         else if (RT_FAILURE(rc))
@@ -739,7 +739,7 @@ static DECLCALLBACK(void) vmR3HaltGlobal1NotifyCpuFF(PUVMCPU pUVCpu, uint32_t fF
 {
     if (pUVCpu->vm.s.fWait)
     {
-        int rc = SUPCallVMMR0Ex(pUVCpu->pVM->pVMR0, pUVCpu->idCpu, VMMR0_DO_GVMM_SCHED_WAKE_UP, 0, NULL);
+        int rc = SUPR3CallVMMR0Ex(pUVCpu->pVM->pVMR0, pUVCpu->idCpu, VMMR0_DO_GVMM_SCHED_WAKE_UP, 0, NULL);
         AssertRC(rc);
     }
     else if (   (   (fFlags & VMNOTIFYFF_FLAGS_POKE)
@@ -751,7 +751,7 @@ static DECLCALLBACK(void) vmR3HaltGlobal1NotifyCpuFF(PUVMCPU pUVCpu, uint32_t fF
         {
             if (fFlags & VMNOTIFYFF_FLAGS_POKE)
             {
-                int rc = SUPCallVMMR0Ex(pUVCpu->pVM->pVMR0, pUVCpu->idCpu, VMMR0_DO_GVMM_SCHED_POKE, 0, NULL);
+                int rc = SUPR3CallVMMR0Ex(pUVCpu->pVM->pVMR0, pUVCpu->idCpu, VMMR0_DO_GVMM_SCHED_POKE, 0, NULL);
                 AssertRC(rc);
             }
         }

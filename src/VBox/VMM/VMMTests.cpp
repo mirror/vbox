@@ -72,7 +72,7 @@ static int vmmR3DoGCTest(PVM pVM, VMMGCOPERATION enmTestcase, unsigned uVariatio
     CPUMPushHyper(pVCpu, RCPtrEP);                /* what to call */
     CPUMSetHyperEIP(pVCpu, pVM->vmm.s.pfnCallTrampolineRC);
     Assert(CPUMGetHyperCR3(pVCpu) && CPUMGetHyperCR3(pVCpu) == PGMGetHyperCR3(pVCpu));
-    rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
+    rc = SUPR3CallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
     if (RT_LIKELY(rc == VINF_SUCCESS))
         rc = pVCpu->vmm.s.iLastGZRc;
     return rc;
@@ -112,7 +112,7 @@ static int vmmR3DoTrapTest(PVM pVM, uint8_t u8Trap, unsigned uVariation, int rcE
     CPUMPushHyper(pVCpu, RCPtrEP);                /* what to call */
     CPUMSetHyperEIP(pVCpu, pVM->vmm.s.pfnCallTrampolineRC);
     Assert(CPUMGetHyperCR3(pVCpu) && CPUMGetHyperCR3(pVCpu) == PGMGetHyperCR3(pVCpu));
-    rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
+    rc = SUPR3CallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
     if (RT_LIKELY(rc == VINF_SUCCESS))
         rc = pVCpu->vmm.s.iLastGZRc;
     bool fDump = false;
@@ -360,7 +360,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         Assert(CPUMGetHyperCR3(pVCpu) && CPUMGetHyperCR3(pVCpu) == PGMGetHyperCR3(pVCpu));
         do
         {
-            rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
+            rc = SUPR3CallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
             if (RT_LIKELY(rc == VINF_SUCCESS))
                 rc = pVCpu->vmm.s.iLastGZRc;
             if (RT_FAILURE(rc))
@@ -414,7 +414,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
             CPUMSetHyperEIP(pVCpu, pVM->vmm.s.pfnCallTrampolineRC);
 
             uint64_t TickThisStart = ASMReadTSC();
-            rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
+            rc = SUPR3CallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
             if (RT_LIKELY(rc == VINF_SUCCESS))
                 rc = pVCpu->vmm.s.iLastGZRc;
             uint64_t TickThisElapsed = ASMReadTSC() - TickThisStart;
@@ -560,7 +560,7 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
             VM_FF_CLEAR(pVM, VM_FF_TM_VIRTUAL_SYNC);
 
             uint64_t TickThisStart = ASMReadTSC();
-            rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_HWACC_RUN, 0);
+            rc = SUPR3CallVMMR0Fast(pVM->pVMR0, VMMR0_DO_HWACC_RUN, 0);
             uint64_t TickThisElapsed = ASMReadTSC() - TickThisStart;
             if (RT_FAILURE(rc))
             {

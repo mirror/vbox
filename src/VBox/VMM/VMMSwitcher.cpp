@@ -110,7 +110,7 @@ int vmmR3SwitcherInit(PVM pVM)
      * conflicts in the intermediate mapping of the code.
      */
     pVM->vmm.s.cbCoreCode = RT_ALIGN_32(cbCoreCode, PAGE_SIZE);
-    pVM->vmm.s.pvCoreCodeR3 = SUPContAlloc2(pVM->vmm.s.cbCoreCode >> PAGE_SHIFT, &pVM->vmm.s.pvCoreCodeR0, &pVM->vmm.s.HCPhysCoreCode);
+    pVM->vmm.s.pvCoreCodeR3 = SUPR3ContAlloc(pVM->vmm.s.cbCoreCode >> PAGE_SHIFT, &pVM->vmm.s.pvCoreCodeR0, &pVM->vmm.s.HCPhysCoreCode);
     int rc = VERR_NO_MEMORY;
     if (pVM->vmm.s.pvCoreCodeR3)
     {
@@ -136,7 +136,7 @@ int vmmR3SwitcherInit(PVM pVM)
                 i++;
                 pVM->vmm.s.pvCoreCodeR0 = NIL_RTR0PTR;
                 pVM->vmm.s.HCPhysCoreCode = NIL_RTHCPHYS;
-                pVM->vmm.s.pvCoreCodeR3 = SUPContAlloc2(pVM->vmm.s.cbCoreCode >> PAGE_SHIFT, &pVM->vmm.s.pvCoreCodeR0, &pVM->vmm.s.HCPhysCoreCode);
+                pVM->vmm.s.pvCoreCodeR3 = SUPR3ContAlloc(pVM->vmm.s.cbCoreCode >> PAGE_SHIFT, &pVM->vmm.s.pvCoreCodeR0, &pVM->vmm.s.HCPhysCoreCode);
                 if (!pVM->vmm.s.pvCoreCodeR3)
                     break;
                 rc = PGMR3MapIntermediate(pVM, pVM->vmm.s.pvCoreCodeR0, pVM->vmm.s.HCPhysCoreCode, cbCoreCode);
@@ -157,7 +157,7 @@ int vmmR3SwitcherInit(PVM pVM)
             {
                 LogRel(("Core code alloc attempt #%d: pvR3=%p pvR0=%p HCPhys=%RHp\n",
                         i, paBadTries[i].pvR3, paBadTries[i].pvR0, paBadTries[i].HCPhys));
-                SUPContFree(paBadTries[i].pvR3, paBadTries[i].cb >> PAGE_SHIFT);
+                SUPR3ContFree(paBadTries[i].pvR3, paBadTries[i].cb >> PAGE_SHIFT);
             }
             RTMemTmpFree(paBadTries);
         }
@@ -199,7 +199,7 @@ int vmmR3SwitcherInit(PVM pVM)
 
         /* shit */
         AssertMsgFailed(("PGMR3Map(,%RRv, %RHp, %#x, 0) failed with rc=%Rrc\n", pVM->vmm.s.pvCoreCodeRC, pVM->vmm.s.HCPhysCoreCode, cbCoreCode, rc));
-        SUPContFree(pVM->vmm.s.pvCoreCodeR3, pVM->vmm.s.cbCoreCode >> PAGE_SHIFT);
+        SUPR3ContFree(pVM->vmm.s.pvCoreCodeR3, pVM->vmm.s.cbCoreCode >> PAGE_SHIFT);
     }
     else
         VMSetError(pVM, rc, RT_SRC_POS,

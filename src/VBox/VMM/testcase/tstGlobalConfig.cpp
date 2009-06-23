@@ -102,11 +102,11 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    rc = SUPLoadVMM("./VMMR0.r0");
+    rc = SUPR3LoadVMM("./VMMR0.r0");
     if (RT_SUCCESS(rc))
     {
         Req.pSession = pSession;
-        rc = SUPCallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, enmOp, 0, &Req.Hdr);
+        rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, enmOp, 0, &Req.Hdr);
         if (RT_SUCCESS(rc))
         {
             if (enmOp == VMMR0_DO_GCFGM_QUERY_VALUE)
@@ -120,7 +120,7 @@ int main(int argc, char **argv)
             RTPrintf("error: Failed to set '%s' to %RU64, rc=%Rrc\n", Req.szName, Req.u64Value, rc);
 
     }
-    SUPTerm(false /* not forced */);
+    SUPR3Term(false /*fForced*/);
 
     return RT_FAILURE(rc) ? 1 : 0;
 }

@@ -525,8 +525,8 @@ typedef struct MMPAGEPOOL
     R3R0PTRTYPE(PVM)                    pVM;
 #endif
     /** Flag indicating the allocation method.
-     * Set: SUPLowAlloc().
-     * Clear: SUPPageAlloc() + SUPPageLock(). */
+     * Set: SUPR3LowAlloc().
+     * Clear: SUPR3PageAllocLockedEx(). */
     bool                                fLow;
     /** Number of subpools. */
     uint32_t                            cSubPools;

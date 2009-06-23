@@ -219,7 +219,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     pVM->tm.s.pvGIPR3 = (void *)g_pSUPGlobalInfoPage;
     AssertMsgReturn(pVM->tm.s.pvGIPR3, ("GIP support is now required!\n"), VERR_INTERNAL_ERROR);
     RTHCPHYS HCPhysGIP;
-    rc = SUPGipGetPhys(&HCPhysGIP);
+    rc = SUPR3GipGetPhys(&HCPhysGIP);
     AssertMsgRCReturn(rc, ("Failed to get GIP physical address!\n"), rc);
 
     RTGCPTR GCPtr;

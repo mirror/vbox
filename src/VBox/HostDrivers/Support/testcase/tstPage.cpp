@@ -1,11 +1,10 @@
+/* $Id$ */
 /** @file
- *
- * VBox host drivers - Ring-0 support drivers - Testcases:
- * Test the page allocation interface
+ * SUP Testcase - Page allocation interface (ring 3).
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -50,40 +49,40 @@ int main(int argc, char **argv)
     if (!rc)
     {
         void *pv;
-        rc = SUPPageAlloc(1, &pv);
+        rc = SUPR3PageAlloc(1, &pv);
         cErrors += rc != 0;
         if (!rc)
         {
             memset(pv, 0xff, PAGE_SIZE);
-            rc = SUPPageFree(pv, 1);
+            rc = SUPR3PageFree(pv, 1);
             cErrors += rc != 0;
             if (rc)
-                RTPrintf("tstPage: SUPPageFree() failed rc=%d\n", rc);
+                RTPrintf("tstPage: SUPR3PageFree() failed rc=%d\n", rc);
         }
         else
-            RTPrintf("tstPage: SUPPageAlloc(1,) failed rc=%d\n", rc);
+            RTPrintf("tstPage: SUPR3PageAlloc(1,) failed rc=%d\n", rc);
 
         /*
          * Big chunk.
          */
-        rc = SUPPageAlloc(1023, &pv);
+        rc = SUPR3PageAlloc(1023, &pv);
         cErrors += rc != 0;
         if (!rc)
         {
             memset(pv, 0xfe, 1023 << PAGE_SHIFT);
-            rc = SUPPageFree(pv, 1023);
+            rc = SUPR3PageFree(pv, 1023);
             cErrors += rc != 0;
             if (rc)
-                RTPrintf("tstPage: SUPPageFree() failed rc=%d\n", rc);
+                RTPrintf("tstPage: SUPR3PageFree() failed rc=%d\n", rc);
         }
         else
-            RTPrintf("tstPage: SUPPageAlloc(1,) failed rc=%d\n", rc);
+            RTPrintf("tstPage: SUPR3PageAlloc(1,) failed rc=%d\n", rc);
 
 
-        //rc = SUPTerm();
+        //rc = SUPR3Term();
         cErrors += rc != 0;
         if (rc)
-            RTPrintf("tstPage: SUPTerm failed rc=%d\n", rc);
+            RTPrintf("tstPage: SUPR3Term failed rc=%d\n", rc);
     }
     else
         RTPrintf("tstPage: SUPR3Init failed rc=%d\n", rc);

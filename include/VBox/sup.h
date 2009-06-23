@@ -67,7 +67,7 @@ typedef const SUPPAGE *PCSUPPAGE;
 typedef enum SUPPAGINGMODE
 {
     /** The usual invalid entry.
-     * This is returned by SUPGetPagingMode()  */
+     * This is returned by SUPR3GetPagingMode()  */
     SUPPAGINGMODE_INVALID = 0,
     /** Normal 32-bit paging, no global pages */
     SUPPAGINGMODE_32_BIT,
@@ -452,14 +452,14 @@ SUPDECL(int) SUPSemEventMultiWaitNoResume(PSUPDRVSESSION pSession, SUPSEMEVENTMU
  *
  * @returns VBox status code.
  */
-SUPR3DECL(int) SUPInstall(void);
+SUPR3DECL(int) SUPR3Install(void);
 
 /**
  * Uninstalls the support library.
  *
  * @returns VBox status code.
  */
-SUPR3DECL(int) SUPUninstall(void);
+SUPR3DECL(int) SUPR3Uninstall(void);
 
 /**
  * Trusted main entry point.
@@ -542,7 +542,7 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
 /**
  * Initializes the support library.
  * Each succesful call to SUPR3Init() must be countered by a
- * call to SUPTerm(false).
+ * call to SUPR3Term(false).
  *
  * @returns VBox status code.
  * @param   ppSession       Where to store the session handle. Defaults to NULL.
@@ -557,9 +557,9 @@ SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession);
  *                      init call count and just terminated.
  */
 #ifdef __cplusplus
-SUPR3DECL(int) SUPTerm(bool fForced = false);
+SUPR3DECL(int) SUPR3Term(bool fForced = false);
 #else
-SUPR3DECL(int) SUPTerm(int fForced);
+SUPR3DECL(int) SUPR3Term(int fForced);
 #endif
 
 /**
@@ -570,7 +570,7 @@ SUPR3DECL(int) SUPTerm(int fForced);
  *                      NIL_RTR0PTR can be used to unset the handle when the
  *                      VM is about to be destroyed.
  */
-SUPR3DECL(int) SUPSetVMForFastIOCtl(PVMR0 pVMR0);
+SUPR3DECL(int) SUPR3SetVMForFastIOCtl(PVMR0 pVMR0);
 
 /**
  * Calls the HC R0 VMM entry point.
@@ -582,10 +582,10 @@ SUPR3DECL(int) SUPSetVMForFastIOCtl(PVMR0 pVMR0);
  * @param   uOperation  Operation to execute.
  * @param   pvArg       Argument.
  */
-SUPR3DECL(int) SUPCallVMMR0(PVMR0 pVMR0, VMCPUID idCpu, unsigned uOperation, void *pvArg);
+SUPR3DECL(int) SUPR3CallVMMR0(PVMR0 pVMR0, VMCPUID idCpu, unsigned uOperation, void *pvArg);
 
 /**
- * Variant of SUPCallVMMR0, except that this takes the fast ioclt path
+ * Variant of SUPR3CallVMMR0, except that this takes the fast ioclt path
  * regardsless of compile-time defaults.
  *
  * @returns VBox status code.
@@ -593,12 +593,12 @@ SUPR3DECL(int) SUPCallVMMR0(PVMR0 pVMR0, VMCPUID idCpu, unsigned uOperation, voi
  * @param   uOperation  The operation; only the SUP_VMMR0_DO_* ones are valid.
  * @param   idCpu       The virtual CPU ID.
  */
-SUPR3DECL(int) SUPCallVMMR0Fast(PVMR0 pVMR0, unsigned uOperation, VMCPUID idCpu);
+SUPR3DECL(int) SUPR3CallVMMR0Fast(PVMR0 pVMR0, unsigned uOperation, VMCPUID idCpu);
 
 /**
- * Calls the HC R0 VMM entry point, in a safer but slower manner than SUPCallVMMR0.
- * When entering using this call the R0 components can call into the host kernel
- * (i.e. use the SUPR0 and RT APIs).
+ * Calls the HC R0 VMM entry point, in a safer but slower manner than
+ * SUPR3CallVMMR0. When entering using this call the R0 components can call
+ * into the host kernel (i.e. use the SUPR0 and RT APIs).
  *
  * See VMMR0Entry() for more details.
  *
@@ -611,7 +611,7 @@ SUPR3DECL(int) SUPCallVMMR0Fast(PVMR0 pVMR0, unsigned uOperation, VMCPUID idCpu)
  *                      This will be copied in and out of kernel space. There currently is a size
  *                      limit on this, just below 4KB.
  */
-SUPR3DECL(int) SUPCallVMMR0Ex(PVMR0 pVMR0, VMCPUID idCpu, unsigned uOperation, uint64_t u64Arg, PSUPVMMR0REQHDR pReqHdr);
+SUPR3DECL(int) SUPR3CallVMMR0Ex(PVMR0 pVMR0, VMCPUID idCpu, unsigned uOperation, uint64_t u64Arg, PSUPVMMR0REQHDR pReqHdr);
 
 /**
  * Calls a ring-0 service.
@@ -671,29 +671,28 @@ SUPR3DECL(int) SUPR3LoggerDestroy(SUPLOGGER enmWhich);
  *
  * @returns The paging mode.
  */
-SUPR3DECL(SUPPAGINGMODE) SUPGetPagingMode(void);
+SUPR3DECL(SUPPAGINGMODE) SUPR3GetPagingMode(void);
 
 /**
  * Allocate zero-filled pages.
  *
- * Use this to allocate a number of pages rather than using RTMem*() and mess with
- * alignment. The returned address is of course page aligned. Call SUPPageFree()
- * to free the pages once done with them.
+ * Use this to allocate a number of pages suitable for seeding / locking.
+ * Call SUPR3PageFree() to free the pages once done with them.
  *
  * @returns VBox status.
  * @param   cPages          Number of pages to allocate.
  * @param   ppvPages        Where to store the base pointer to the allocated pages.
  */
-SUPR3DECL(int) SUPPageAlloc(size_t cPages, void **ppvPages);
+SUPR3DECL(int) SUPR3PageAlloc(size_t cPages, void **ppvPages);
 
 /**
- * Frees pages allocated with SUPPageAlloc().
+ * Frees pages allocated with SUPR3PageAlloc().
  *
  * @returns VBox status.
- * @param   pvPages         Pointer returned by SUPPageAlloc().
+ * @param   pvPages         Pointer returned by SUPR3PageAlloc().
  * @param   cPages          Number of pages that was allocated.
  */
-SUPR3DECL(int) SUPPageFree(void *pvPages, size_t cPages);
+SUPR3DECL(int) SUPR3PageFree(void *pvPages, size_t cPages);
 
 /**
  * Allocate non-zeroed, locked, pages with user and, optionally, kernel
@@ -701,9 +700,8 @@ SUPR3DECL(int) SUPPageFree(void *pvPages, size_t cPages);
  *
  * Use SUPR3PageFreeEx() to free memory allocated with this function.
  *
- * This SUPR3PageAllocEx and SUPR3PageFreeEx replaces SUPPageAllocLocked,
- * SUPPageAllocLockedEx, SUPPageFreeLocked, SUPPageAlloc, SUPPageLock,
- * SUPPageUnlock and SUPPageFree.
+ * This SUPR3PageAllocEx and SUPR3PageFreeEx replaces SUPR3PageAllocLockedEx,
+ * SUPR3PageFreeLocked, SUPR3PageAlloc, and SUPR3PageFree.
  *
  * @returns VBox status code.
  * @param   cPages          The number of pages to allocate.
@@ -764,40 +762,25 @@ SUPR3DECL(int) SUPR3PageFreeEx(void *pvPages, size_t cPages);
 /**
  * Allocate non-zeroed locked pages.
  *
- * Use this to allocate a number of pages rather than using RTMem*() and mess with
- * alignment. The returned address is of course page aligned. Call SUPPageFreeLocked()
- * to free the pages once done with them.
- *
  * @returns VBox status code.
  * @param   cPages          Number of pages to allocate.
  * @param   ppvPages        Where to store the base pointer to the allocated pages.
  * @param   paPages         Where to store the physical page addresses returned.
  *                          On entry this will point to an array of with cbMemory >> PAGE_SHIFT entries.
  *                          NULL is allowed.
+ * @todo remove this.
  */
-SUPR3DECL(int) SUPPageAllocLockedEx(size_t cPages, void **ppvPages, PSUPPAGE paPages);
+SUPR3DECL(int) SUPR3PageAllocLockedEx(size_t cPages, void **ppvPages, PSUPPAGE paPages);
 
 /**
- * Frees locked pages allocated with SUPPageAllocLocked().
+ * Frees locked pages allocated with SUPPageAllocLockedEx().
  *
  * @returns VBox status.
- * @param   pvPages         Pointer returned by SUPPageAlloc().
+ * @param   pvPages         Pointer returned by SUPR3PageAllocLockedEx().
  * @param   cPages          Number of pages that was allocated.
+ * @todo remove this.
  */
-SUPR3DECL(int) SUPPageFreeLocked(void *pvPages, size_t cPages);
-
-/**
- * Allocated memory with page aligned memory with a contiguous and locked physical
- * memory backing below 4GB.
- *
- * @returns Pointer to the allocated memory (virtual address).
- *          *pHCPhys is set to the physical address of the memory.
- *          The returned memory must be freed using SUPContFree().
- * @returns NULL on failure.
- * @param   cPages      Number of pages to allocate.
- * @param   pHCPhys     Where to store the physical address of the memory block.
- */
-SUPR3DECL(void *) SUPContAlloc(size_t cPages, PRTHCPHYS pHCPhys);
+SUPR3DECL(int) SUPR3PageFreeLocked(void *pvPages, size_t cPages);
 
 /**
  * Allocated memory with page aligned memory with a contiguous and locked physical
@@ -806,7 +789,7 @@ SUPR3DECL(void *) SUPContAlloc(size_t cPages, PRTHCPHYS pHCPhys);
  * @returns Pointer to the allocated memory (virtual address).
  *          *pHCPhys is set to the physical address of the memory.
  *          If ppvR0 isn't NULL, *ppvR0 is set to the ring-0 mapping.
- *          The returned memory must be freed using SUPContFree().
+ *          The returned memory must be freed using SUPR3ContFree().
  * @returns NULL on failure.
  * @param   cPages      Number of pages to allocate.
  * @param   pR0Ptr      Where to store the ring-0 mapping of the allocation. (optional)
@@ -816,16 +799,16 @@ SUPR3DECL(void *) SUPContAlloc(size_t cPages, PRTHCPHYS pHCPhys);
  *          ring-3 mapping executable on WIN64. This is a serious problem in regard to
  *          the world switchers.
  */
-SUPR3DECL(void *) SUPContAlloc2(size_t cPages, PRTR0PTR pR0Ptr, PRTHCPHYS pHCPhys);
+SUPR3DECL(void *) SUPR3ContAlloc(size_t cPages, PRTR0PTR pR0Ptr, PRTHCPHYS pHCPhys);
 
 /**
- * Frees memory allocated with SUPContAlloc().
+ * Frees memory allocated with SUPR3ContAlloc().
  *
  * @returns VBox status code.
  * @param   pv          Pointer to the memory block which should be freed.
  * @param   cPages      Number of pages to be freed.
  */
-SUPR3DECL(int) SUPContFree(void *pv, size_t cPages);
+SUPR3DECL(int) SUPR3ContFree(void *pv, size_t cPages);
 
 /**
  * Allocated non contiguous physical memory below 4GB.
@@ -836,21 +819,21 @@ SUPR3DECL(int) SUPContFree(void *pv, size_t cPages);
  * @returns NULL on failure.
  * @param   cPages      Number of pages to allocate.
  * @param   ppvPages    Where to store the pointer to the allocated memory.
- *                      The pointer stored here on success must be passed to SUPLowFree when
- *                      the memory should be released.
+ *                      The pointer stored here on success must be passed to
+ *                      SUPR3LowFree when the memory should be released.
  * @param   ppvPagesR0  Where to store the ring-0 pointer to the allocated memory. optional.
  * @param   paPages     Where to store the physical addresses of the individual pages.
  */
-SUPR3DECL(int) SUPLowAlloc(size_t cPages, void **ppvPages, PRTR0PTR ppvPagesR0, PSUPPAGE paPages);
+SUPR3DECL(int) SUPR3LowAlloc(size_t cPages, void **ppvPages, PRTR0PTR ppvPagesR0, PSUPPAGE paPages);
 
 /**
- * Frees memory allocated with SUPLowAlloc().
+ * Frees memory allocated with SUPR3LowAlloc().
  *
  * @returns VBox status code.
  * @param   pv          Pointer to the memory block which should be freed.
  * @param   cPages      Number of pages that was allocated.
  */
-SUPR3DECL(int) SUPLowFree(void *pv, size_t cPages);
+SUPR3DECL(int) SUPR3LowFree(void *pv, size_t cPages);
 
 /**
  * Load a module into R0 HC.
@@ -863,7 +846,7 @@ SUPR3DECL(int) SUPLowFree(void *pv, size_t cPages);
  * @param   pszModule       The module name. Max 32 bytes.
  * @param   ppvImageBase        Where to store the image address.
  */
-SUPR3DECL(int) SUPLoadModule(const char *pszFilename, const char *pszModule, void **ppvImageBase);
+SUPR3DECL(int) SUPR3LoadModule(const char *pszFilename, const char *pszModule, void **ppvImageBase);
 
 /**
  * Load a module into R0 HC.
@@ -888,7 +871,7 @@ SUPR3DECL(int) SUPR3LoadServiceModule(const char *pszFilename, const char *pszMo
  * @param   pszModule       The module to free.
  * @remark  This will not actually 'free' the module, there are of course usage counting.
  */
-SUPR3DECL(int) SUPFreeModule(void *pvImageBase);
+SUPR3DECL(int) SUPR3FreeModule(void *pvImageBase);
 
 /**
  * Get the address of a symbol in a ring-0 module.
@@ -899,23 +882,23 @@ SUPR3DECL(int) SUPFreeModule(void *pvImageBase);
  *                          ordinal value rather than a string pointer.
  * @param   ppvValue        Where to store the symbol value.
  */
-SUPR3DECL(int) SUPGetSymbolR0(void *pvImageBase, const char *pszSymbol, void **ppvValue);
+SUPR3DECL(int) SUPR3GetSymbolR0(void *pvImageBase, const char *pszSymbol, void **ppvValue);
 
 /**
  * Load R0 HC VMM code.
  *
  * @returns VBox status code.
- * @deprecated  Use SUPLoadModule(pszFilename, "VMMR0.r0", &pvImageBase)
+ * @deprecated  Use SUPR3LoadModule(pszFilename, "VMMR0.r0", &pvImageBase)
  */
-SUPR3DECL(int) SUPLoadVMM(const char *pszFilename);
+SUPR3DECL(int) SUPR3LoadVMM(const char *pszFilename);
 
 /**
  * Unloads R0 HC VMM code.
  *
  * @returns VBox status code.
- * @deprecated  Use SUPFreeModule().
+ * @deprecated  Use SUPR3FreeModule().
  */
-SUPR3DECL(int) SUPUnloadVMM(void);
+SUPR3DECL(int) SUPR3UnloadVMM(void);
 
 /**
  * Get the physical address of the GIP.
@@ -923,7 +906,7 @@ SUPR3DECL(int) SUPUnloadVMM(void);
  * @returns VBox status code.
  * @param   pHCPhys     Where to store the physical address of the GIP.
  */
-SUPR3DECL(int) SUPGipGetPhys(PRTHCPHYS pHCPhys);
+SUPR3DECL(int) SUPR3GipGetPhys(PRTHCPHYS pHCPhys);
 
 /**
  * Verifies the integrity of a file, and optionally opens it.

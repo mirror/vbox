@@ -551,7 +551,7 @@
  * So, when RTR0MemObjAllocPhysNC returns VERR_NOT_SUPPORTED the page allocator
  * will return to the ring-3 caller (and later ring-0) and asking it to seed
  * the page allocator with some fresh pages (VERR_GMM_SEED_ME). Ring-3 will
- * then perform an SUPPageAlloc(cbChunk >> PAGE_SHIFT) call and make a
+ * then perform an SUPR3PageAlloc(cbChunk >> PAGE_SHIFT) call and make a
  * "SeededAllocPages" call to ring-0.
  *
  * The first time ring-0 sees the VERR_NOT_SUPPORTED failure it will disable
@@ -1502,7 +1502,7 @@ static int pgmR3InitPaging(PVM pVM)
      * Initialize paging workers and mode from current host mode
      * and the guest running in real mode.
      */
-    pVM->pgm.s.enmHostMode = SUPGetPagingMode();
+    pVM->pgm.s.enmHostMode = SUPR3GetPagingMode();
     switch (pVM->pgm.s.enmHostMode)
     {
         case SUPPAGINGMODE_32_BIT:
