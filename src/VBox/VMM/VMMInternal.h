@@ -111,7 +111,9 @@ typedef struct VMMR0LOGGER
     /** Flag indicating whether we've registered the instance already. */
     bool                        fRegistered;
     bool                        a8Alignment;
-#if HC_ARCH_BITS == 32
+    /** The CPU ID. */
+    VMCPUID                     idCpu;
+#if HC_ARCH_BITS == 64
     uint32_t                    u32Alignment;
 #endif
     /** The ring-0 logger instance. This extends beyond the size.  */
@@ -556,6 +558,18 @@ VMMR0DECL(void) vmmR0LoggerWrapper(const char *pszFormat, ...);
  * @remark  This function must be exported!
  */
 VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger);
+
+/**
+ * Interal R0 logger worker: Custom prefix.
+ *
+ * @returns Number of chars written.
+ *
+ * @param   pLogger     The logger instance.
+ * @param   pchBuf      The output buffer.
+ * @param   cchBuf      The size of the buffer.
+ * @param   pvUser      User argument (ignored).
+ */
+VMMR0DECL(size_t) vmmR0LoggerPrefix(PRTLOGGER pLogger, char *pchBuf, size_t cchBuf, void *pvUser);
 
 #endif /* IN_RING0 */
 #ifdef IN_RC
