@@ -828,8 +828,22 @@ public class IWebsessionManager {
 
         <xsl:otherwise>
 
+          <xsl:variable name="extends" select="//interface[@name=$ifname]/@extends" />
+          <xsl:choose>
+            <xsl:when test="($extends = '$unknown') or ($extends = '$dispatched')">
+              <xsl:value-of select="concat('public class ', $ifname, ' extends IUnknown {&#10;&#10;')" />
+            </xsl:when>
+            <xsl:when test="//interface[@name=$extends]">
+              <xsl:value-of select="concat('public class ', $ifname, ' extends ', $extends, ' {&#10;&#10;')" />
+            </xsl:when>
+            <xsl:otherwise>
+              <xsl:call-template name="fatalError">
+                <xsl:with-param name="msg" select="concat('Interface generation: interface &quot;', $ifname, '&quot; has invalid &quot;extends&quot; value ', $extends, '.')" />
+              </xsl:call-template>
+            </xsl:otherwise>>
+          </xsl:choose>
+
           <!-- interface (class) constructor -->
-          <xsl:value-of select="concat('public class ', $ifname, ' extends IUnknown {&#10;&#10;')" />
           <xsl:value-of select="concat('    public static ', $ifname, ' cast(IUnknown other) {&#10;')" />
           <xsl:value-of select="concat('        return new ', $ifname,
                               '(other.getRef(), other.getRemoteWSPort());&#10;    }&#10;&#10;')"/>
