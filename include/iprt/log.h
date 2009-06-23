@@ -182,7 +182,7 @@ typedef FNRTLOGGER *PFNRTLOGGER;
  * @param   pLogger     Pointer to the logger instance which is to be flushed.
  */
 typedef DECLCALLBACK(void) FNRTLOGFLUSH(PRTLOGGER pLogger);
-/** Pointer to logger function. */
+/** Pointer to flush function. */
 typedef FNRTLOGFLUSH *PFNRTLOGFLUSH;
 
 /**
@@ -193,6 +193,23 @@ typedef FNRTLOGFLUSH *PFNRTLOGFLUSH;
 typedef DECLCALLBACK(void) FNRTLOGFLUSHGC(PRTLOGGERRC pLogger);
 /** Pointer to logger function. */
 typedef RCPTRTYPE(FNRTLOGFLUSHGC *) PFNRTLOGFLUSHGC;
+
+/**
+ * Custom log prefix callback.
+ *
+ *
+ * @returns The number of chars written.
+ *
+ * @param   pLogger     Pointer to the logger instance.
+ * @param   pchBuf      Output buffer pointer.
+ *                      No need to terminate the output.
+ * @param   cchBuf      The size of the output buffer.
+ * @param   pvUser      The user argument.
+ */
+typedef DECLCALLBACK(size_t) FNRTLOGPREFIX(PRTLOGGER pLogger, char *pchBuf, size_t cchBuf, void *pvUser);
+/** Pointer to prefix callback function. */
+typedef FNRTLOGPREFIX *PFNRTLOGPREFIX;
+
 
 
 /**
@@ -252,6 +269,10 @@ struct RTLOGGER
     PFNRTLOGGER             pfnLogger;
     /** Pointer to the flush function. */
     PFNRTLOGFLUSH           pfnFlush;
+    /** Custom prefix callback. */
+    PFNRTLOGPREFIX          pfnPrefix;
+    /** Prefix callback argument. */
+    void                   *pvPrefixUserArg;
     /** Mutex. */
     RTSEMFASTMUTEX          MutexSem;
     /** Magic number. */
@@ -282,7 +303,7 @@ struct RTLOGGER
 /** RTLOGGER::u32Magic value. (Avram Noam Chomsky) */
 #define RTLOGGER_MAGIC      0x19281207
 
-#endif
+#endif /* !IN_RC */
 
 
 /**
@@ -322,8 +343,8 @@ typedef enum RTLOGFLAGS
     RTLOGFLAGS_PREFIX_TID           = 0x00400000,
     /** New lines should be prefixed with thread name. */
     RTLOGFLAGS_PREFIX_THREAD        = 0x00800000,
-    /** New lines should be prefixed with the VCPU id. */
-    RTLOGFLAGS_PREFIX_VCPU          = 0x01000000,
+    /** New lines should be prefixed with data from a custom callback. */
+    RTLOGFLAGS_PREFIX_CUSTOM        = 0x01000000,
     /** New lines should be prefixed with formatted timestamp since program start. */
     RTLOGFLAGS_PREFIX_TIME_PROG     = 0x04000000,
     /** New lines should be prefixed with formatted timestamp (UCT). */
@@ -1400,6 +1421,16 @@ RTDECL(void) RTLogFlushRC(PRTLOGGER pLogger, PRTLOGGERRC pLoggerRC);
  *                       If NULL the default logger will be used.
  */
 RTDECL(void) RTLogFlushToLogger(PRTLOGGER pSrcLogger, PRTLOGGER pDstLogger);
+
+/**
+ * Sets the custom prefix callback.
+ *
+ * @returns IPRT status code.
+ * @param   pLogger     The logger instance.
+ * @param   pfnCallback The callback.
+ * @param   pvUser      The user argument for the callback.
+ *  */
+RTDECL(int) RTLogSetCustomPrefixCallback(PRTLOGGER pLogger, PFNRTLOGPREFIX pfnCallback, void *pvUser);
 
 /**
  * Copies the group settings and flags from logger instance to another.

@@ -936,6 +936,39 @@ RTDECL(void) RTLogFlushToLogger(PRTLOGGER pSrcLogger, PRTLOGGER pDstLogger)
 
 
 /**
+ * Sets the custom prefix callback.
+ *
+ * @returns IPRT status code.
+ * @param   pLogger     The logger instance.
+ * @param   pfnCallback The callback.
+ * @param   pvUser      The user argument for the callback.
+ *  */
+RTDECL(int) RTLogSetCustomPrefixCallback(PRTLOGGER pLogger, PFNRTLOGPREFIX pfnCallback, void *pvUser)
+{
+    /*
+     * Resolve defaults.
+     */
+    if (!pLogger)
+    {
+        pLogger = RTLogDefaultInstance();
+        if (!pLogger)
+            return VINF_SUCCESS;
+    }
+    AssertReturn(pLogger->u32Magic == RTLOGGER_MAGIC, VERR_INVALID_MAGIC);
+
+    /*
+     * Do the work.
+     */
+    rtlogLock(pLogger);
+    pLogger->pvPrefixUserArg = pvUser;
+    pLogger->pfnPrefix       = pfnCallback;
+    rtlogUnlock(pLogger);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Matches a group name with a pattern mask in an case insensitive manner (ASCII).
  *
  * @returns true if matching and *ppachMask set to the end of the pattern.
@@ -1274,6 +1307,7 @@ RTDECL(int) RTLogFlags(PRTLOGGER pLogger, const char *pszVar)
             { "group",        sizeof("group"       ) - 1,   RTLOGFLAGS_PREFIX_GROUP,        false },
             { "tid",          sizeof("tid"         ) - 1,   RTLOGFLAGS_PREFIX_TID,          false },
             { "thread",       sizeof("thread"      ) - 1,   RTLOGFLAGS_PREFIX_THREAD,       false },
+            { "custom",       sizeof("custom"      ) - 1,   RTLOGFLAGS_PREFIX_CUSTOM,       false },
             { "timeprog",     sizeof("timeprog"    ) - 1,   RTLOGFLAGS_PREFIX_TIME_PROG,    false },
             { "time",         sizeof("time"        ) - 1,   RTLOGFLAGS_PREFIX_TIME,         false },
             { "msprog",       sizeof("msprog"      ) - 1,   RTLOGFLAGS_PREFIX_MS_PROG,      false },
@@ -1932,9 +1966,9 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
 
                 /*
                  * Flush the buffer if there isn't enough room for the maximum prefix config.
-                 * Max is 224, add a couple of extra bytes.
+                 * Max is 256, add a couple of extra bytes.
                  */
-                if (cb < 224 + 16)
+                if (cb < 256 + 16)
                 {
                     rtlogFlush(pLogger);
                     cb = sizeof(pLogger->achScratch) - pLogger->offScratch - 1;
@@ -2083,9 +2117,9 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
 #ifdef IN_RING3
                     const char *pszName = RTThreadSelfName();
 #elif defined IN_RC
-                    const char *pszName = "EMT-GC";
+                    const char *pszName = "EMT-RC";
 #else
-                    const char *pszName = "EMT-R0";
+                    const char *pszName = "R0";
 #endif
                     size_t cch = 0;
                     if (pszName)
@@ -2109,6 +2143,14 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                     psz += RTStrFormatNumber(psz, idCpu, 16, sizeof(idCpu) * 2, 0, RTSTR_F_ZEROPAD);
                     *psz++ = ' ';                                                               /* +17 */
                 }
+#ifndef IN_RC
+                if (    (pLogger->fFlags & RTLOGFLAGS_PREFIX_CUSTOM)
+                    &&  pLogger->pfnPrefix)
+                {
+                    psz += pLogger->pfnPrefix(pLogger, psz, 31, pLogger->pvPrefixUserArg);
+                    *psz++ = ' ';                                                               /* +32 */
+                }
+#endif
                 if (pLogger->fFlags & RTLOGFLAGS_PREFIX_LOCK_COUNTS)
                 {
 #ifdef IN_RING3 /** @todo implement these counters in ring-0 too? */
