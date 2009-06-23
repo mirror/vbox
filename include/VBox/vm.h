@@ -293,13 +293,17 @@ typedef struct VMCPU
 #define VM_FF_DEBUG_SUSPEND                 RT_BIT_32(31)
 
 
-/** This action forces the VM to service check and pending interrups on the APIC. */
+/** This action forces the VM to check any pending interrups on the APIC. */
 #define VMCPU_FF_INTERRUPT_APIC             RT_BIT_32(0)
-/** This action forces the VM to service check and pending interrups on the PIC. */
+/** This action forces the VM to check any pending interrups on the PIC. */
 #define VMCPU_FF_INTERRUPT_PIC              RT_BIT_32(1)
 /** This action forces the VM to schedule and run pending timer (TM).
  * @remarks Don't move - PATM compatability.  */
 #define VMCPU_FF_TIMER                      RT_BIT_32(2)
+/** This action forces the VM to check any pending NMIs. */
+#define VMCPU_FF_INTERRUPT_NMI              RT_BIT_32(3)
+/** This action forces the VM to check any pending SMIs. */
+#define VMCPU_FF_INTERRUPT_SMI              RT_BIT_32(4)
 /** PDM critical section unlocking is pending, process promptly upon return to R3. */
 #define VMCPU_FF_PDM_CRITSECT               RT_BIT_32(5)
 /** This action forces the VM to service pending requests from other

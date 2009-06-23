@@ -144,7 +144,7 @@ const PDMPICHLPR3 g_pdmR3DevPicHlp =
  */
 
 /** @copydoc PDMAPICHLPR3::pfnSetInterruptFF */
-static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUID idCpu)
+static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, PDMAPICIRQ enmType, VMCPUID idCpu)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMR3;
@@ -155,7 +155,18 @@ static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUI
     LogFlow(("pdmR3ApicHlp_SetInterruptFF: caller='%s'/%d: VM_FF_INTERRUPT(%d) %d -> 1\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, idCpu, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_APIC)));
 
-    VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC);
+    switch (enmType)
+    {
+    case PDMAPICIRQ_HARDWARE:
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC);
+        break;
+    case PDMAPICIRQ_NMI:
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI);
+        break;
+    case PDMAPICIRQ_SMI:
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_SMI);
+        break;
+    }
     REMR3NotifyInterruptSet(pVM, pVCpu);
     VMR3NotifyCpuFFU(pVCpu->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM | VMNOTIFYFF_FLAGS_POKE);
 }

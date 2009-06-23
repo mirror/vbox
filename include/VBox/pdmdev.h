@@ -1102,6 +1102,23 @@ typedef enum PDMAPICVERSION
     PDMAPICVERSION_32BIT_HACK = 0x7fffffff
 } PDMAPICVERSION;
 
+/**
+ * APIC irq argument for SetInterruptFF.
+ */
+typedef enum PDMAPICIRQ
+{
+    /** Invalid 0 entry. */
+    PDMAPICIRQ_INVALID = 0,
+    /** Normal hardware interrupt. */
+    PDMAPICIRQ_HARDWARE,
+    /** NMI. */
+    PDMAPICIRQ_NMI,
+    /** SMI. */
+    PDMAPICIRQ_SMI,
+    /** The usual 32-bit paranoia. */
+    PDMAPICIRQ_32BIT_HACK = 0x7fffffff
+} PDMAPICIRQ;
+
 
 /**
  * APIC RC helpers.
@@ -1115,9 +1132,10 @@ typedef struct PDMAPICHLPRC
      * Set the interrupt force action flag.
      *
      * @param   pDevIns         Device instance of the APIC.
+     * @param   enmType         Irq type
      * @param   idCpu           Virtual CPU to set flag upon.
      */
-    DECLRCCALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns, VMCPUID idCpu));
+    DECLRCCALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns, PDMAPICIRQ enmType, VMCPUID idCpu));
 
     /**
      * Clear the interrupt force action flag.
@@ -1168,7 +1186,7 @@ typedef RCPTRTYPE(PDMAPICHLPRC *) PPDMAPICHLPRC;
 typedef RCPTRTYPE(const PDMAPICHLPRC *) PCPDMAPICHLPRC;
 
 /** Current PDMAPICHLPRC version number. */
-#define PDM_APICHLPRC_VERSION   0x60010000
+#define PDM_APICHLPRC_VERSION   0x60010001
 
 
 /**
@@ -1183,9 +1201,10 @@ typedef struct PDMAPICHLPR0
      * Set the interrupt force action flag.
      *
      * @param   pDevIns         Device instance of the APIC.
+     * @param   enmType         Irq type
      * @param   idCpu           Virtual CPU to set flag upon.
      */
-    DECLR0CALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns, VMCPUID idCpu));
+    DECLR0CALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns, PDMAPICIRQ enmType, VMCPUID idCpu));
 
     /**
      * Clear the interrupt force action flag.
@@ -1236,7 +1255,7 @@ typedef RCPTRTYPE(PDMAPICHLPR0 *) PPDMAPICHLPR0;
 typedef R0PTRTYPE(const PDMAPICHLPR0 *) PCPDMAPICHLPR0;
 
 /** Current PDMAPICHLPR0 version number. */
-#define PDM_APICHLPR0_VERSION   0x60010000
+#define PDM_APICHLPR0_VERSION   0x60010001
 
 /**
  * APIC R3 helpers.
@@ -1250,9 +1269,10 @@ typedef struct PDMAPICHLPR3
      * Set the interrupt force action flag.
      *
      * @param   pDevIns         Device instance of the APIC.
+     * @param   enmType         IRQ type
      * @param   idCpu           Virtual CPU to set flag upon.
      */
-    DECLR3CALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns, VMCPUID idCpu));
+    DECLR3CALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns, PDMAPICIRQ enmType, VMCPUID idCpu));
 
     /**
      * Clear the interrupt force action flag.
@@ -1350,7 +1370,7 @@ typedef R3PTRTYPE(PDMAPICHLPR3 *) PPDMAPICHLPR3;
 typedef R3PTRTYPE(const PDMAPICHLPR3 *) PCPDMAPICHLPR3;
 
 /** Current PDMAPICHLP version number. */
-#define PDM_APICHLPR3_VERSION  0xfd020000
+#define PDM_APICHLPR3_VERSION  0xfd020001
 
 
 /**

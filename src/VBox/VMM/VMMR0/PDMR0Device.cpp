@@ -88,7 +88,7 @@ static DECLCALLBACK(void) pdmR0PicHlp_Unlock(PPDMDEVINS pDevIns);
 /** @name APIC GC Helpers
  * @{
  */
-static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUID idCpu);
+static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, PDMAPICIRQ enmType, VMCPUID idCpu);
 static DECLCALLBACK(void) pdmR0ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, VMCPUID idCpu);
 static DECLCALLBACK(void) pdmR0ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, PDMAPICVERSION enmVersion);
 static DECLCALLBACK(int)  pdmR0ApicHlp_Lock(PPDMDEVINS pDevIns, int rc);
@@ -426,7 +426,7 @@ static DECLCALLBACK(void) pdmR0PicHlp_Unlock(PPDMDEVINS pDevIns)
 
 
 /** @copydoc PDMAPICHLPR0::pfnSetInterruptFF */
-static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUID idCpu)
+static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, PDMAPICIRQ enmType, VMCPUID idCpu)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM    pVM   = pDevIns->Internal.s.pVMR0;
@@ -436,7 +436,19 @@ static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUI
 
     LogFlow(("pdmR0ApicHlp_SetInterruptFF: caller=%p/%d: VM_FF_INTERRUPT %d -> 1\n",
              pDevIns, pDevIns->iInstance, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_APIC)));
-    VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC);
+
+    switch (enmType)
+    {
+    case PDMAPICIRQ_HARDWARE:
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC);
+        break;
+    case PDMAPICIRQ_NMI:
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI);
+        break;
+    case PDMAPICIRQ_SMI:
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_SMI);
+        break;
+    }
 
     /* We need to wait up the target CPU. */
     if (VMMGetCpuId(pVM) != idCpu)

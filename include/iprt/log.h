@@ -322,6 +322,8 @@ typedef enum RTLOGFLAGS
     RTLOGFLAGS_PREFIX_TID           = 0x00400000,
     /** New lines should be prefixed with thread name. */
     RTLOGFLAGS_PREFIX_THREAD        = 0x00800000,
+    /** New lines should be prefixed with the VCPU id. */
+    RTLOGFLAGS_PREFIX_VCPU          = 0x01000000,
     /** New lines should be prefixed with formatted timestamp since program start. */
     RTLOGFLAGS_PREFIX_TIME_PROG     = 0x04000000,
     /** New lines should be prefixed with formatted timestamp (UCT). */
