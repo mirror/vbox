@@ -78,11 +78,11 @@ static uint16 getBcd (const char *str, const char *prefix)
 
 		while (*p == ' ') p++; // skiping spaces
 
-		h = (uint16)strtoul (p, &p, 10) & 0xFF;
+		h = (uint16)strtoul (p, &p, 16) & 0xFF;
 
 		if (*p == '.')
 		{
-			l = (uint16)strtoul (p + 1, NULL, 10) & 0xFF;
+			l = (uint16)strtoul (p + 1, NULL, 16) & 0xFF;
 
 			return (h << 8) + l;
 		}
