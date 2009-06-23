@@ -154,6 +154,16 @@ def PrintFunc( func_name, params, is_swapped, can_have_pointers ):
     #if func_name == "Enable" or func_name == "Disable":
     #   print "\tCRASSERT(!pc->buffer.geometry_only); /* sanity check */"
 
+    for index in range(0,len(params)):
+        (name, type, vecSize) = params[index]
+        if vecSize>0 and func_name!=orig_func_name:
+            print "    if (!%s) {" % name
+            # Know the reason for this one, so avoid the spam.
+            if orig_func_name != "SecondaryColor3fvEXT":
+                print "        crDebug(\"App passed NULL as %s for %s\");" % (name, orig_func_name)
+            print "        return;"
+            print "    }"
+
     packet_length = apiutil.PacketLength(nonVecParams)
 
     if packet_length == 0 and not is_extended:
