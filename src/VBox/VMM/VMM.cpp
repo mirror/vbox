@@ -807,7 +807,7 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
      * For the ring-0 EMT logger, we use a per-thread logger instance
      * in ring-0. Only initialize it once.
      */
-    for (unsigned i = 0; i < pVM->cCPUs; i++)
+    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
     {
         PVMCPU       pVCpu = &pVM->aCpus[i];
         PVMMR0LOGGER pR0LoggerR3 = pVCpu->vmm.s.pR0LoggerR3;
@@ -817,18 +817,27 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
             {
                 RTR0PTR pfnLoggerWrapper = NIL_RTR0PTR;
                 rc = PDMR3LdrGetSymbolR0(pVM, VMMR0_MAIN_MODULE_NAME, "vmmR0LoggerWrapper", &pfnLoggerWrapper);
-                AssertReleaseMsgRCReturn(rc, ("VMMLoggerWrapper not found! rc=%Rra\n", rc), rc);
+                AssertReleaseMsgRCReturn(rc, ("vmmR0LoggerWrapper not found! rc=%Rra\n", rc), rc);
 
                 RTR0PTR pfnLoggerFlush = NIL_RTR0PTR;
                 rc = PDMR3LdrGetSymbolR0(pVM, VMMR0_MAIN_MODULE_NAME, "vmmR0LoggerFlush", &pfnLoggerFlush);
-                AssertReleaseMsgRCReturn(rc, ("VMMLoggerFlush not found! rc=%Rra\n", rc), rc);
+                AssertReleaseMsgRCReturn(rc, ("vmmR0LoggerFlush not found! rc=%Rra\n", rc), rc);
 
                 rc = RTLogCreateForR0(&pR0LoggerR3->Logger, pR0LoggerR3->cbLogger,
-                                    *(PFNRTLOGGER *)&pfnLoggerWrapper, *(PFNRTLOGFLUSH *)&pfnLoggerFlush,
-                                    RTLOGFLAGS_BUFFERED, RTLOGDEST_DUMMY);
+                                      *(PFNRTLOGGER *)&pfnLoggerWrapper, *(PFNRTLOGFLUSH *)&pfnLoggerFlush,
+                                      RTLOGFLAGS_BUFFERED, RTLOGDEST_DUMMY);
                 AssertReleaseMsgRCReturn(rc, ("RTLogCreateForR0 failed! rc=%Rra\n", rc), rc);
+
+                RTR0PTR pfnLoggerPrefix = NIL_RTR0PTR;
+                rc = PDMR3LdrGetSymbolR0(pVM, VMMR0_MAIN_MODULE_NAME, "vmmR0LoggerPrefix", &pfnLoggerPrefix);
+                AssertReleaseMsgRCReturn(rc, ("vmmR0LoggerPrefix not found! rc=%Rra\n", rc), rc);
+                rc = RTLogSetCustomPrefixCallback(&pR0LoggerR3->Logger, *(PFNRTLOGPREFIX *)&pfnLoggerPrefix, NULL);
+                AssertReleaseMsgRCReturn(rc, ("RTLogSetCustomPrefixCallback failed! rc=%Rra\n", rc), rc);
+
+                pR0LoggerR3->idCpu = i;
                 pR0LoggerR3->fCreated = true;
                 pR0LoggerR3->fFlushingDisabled = false;
+
             }
 
             rc = RTLogCopyGroupsAndFlags(&pR0LoggerR3->Logger, NULL /* default */, pVM->vmm.s.pRCLoggerR3->fFlags, RTLOGFLAGS_BUFFERED);

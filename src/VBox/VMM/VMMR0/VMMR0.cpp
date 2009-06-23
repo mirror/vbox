@@ -1211,6 +1211,39 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
 #endif
 }
 
+/**
+ * Interal R0 logger worker: Custom prefix.
+ *
+ * @returns Number of chars written.
+ *
+ * @param   pLogger     The logger instance.
+ * @param   pchBuf      The output buffer.
+ * @param   cchBuf      The size of the buffer.
+ * @param   pvUser      User argument (ignored).
+ */
+VMMR0DECL(size_t) vmmR0LoggerPrefix(PRTLOGGER pLogger, char *pchBuf, size_t cchBuf, void *pvUser)
+{
+    NOREF(pvUser);
+#ifdef LOG_ENABLED
+    PVMMR0LOGGER pR0Logger = (PVMMR0LOGGER)((uintptr_t)pLogger - RT_OFFSETOF(VMMR0LOGGER, Logger));
+    if (    !VALID_PTR(pR0Logger)
+        ||  !VALID_PTR(pR0Logger + 1)
+        ||  pLogger->u32Magic != RTLOGGER_MAGIC
+        ||  cchBuf < 2)
+        return 0;
+
+    static const char s_szHex[17] = "0123456789abcdef";
+    VMCPUID const     idCpu       = pR0Logger->idCpu;
+    pchBuf[1] = s_szHex[ idCpu       & 15];
+    pchBuf[0] = s_szHex[(idCpu >> 4) & 15];
+
+    return 2;
+#else
+    return 0;
+#endif
+}
+
+
 #ifdef LOG_ENABLED
 /**
  * Disables flushing of the ring-0 debug log.

@@ -130,6 +130,7 @@ static int               vmR3InitVMCpu(PVM pVM);
 static int               vmR3InitRing0(PVM pVM);
 static int               vmR3InitGC(PVM pVM);
 static int               vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
+static DECLCALLBACK(size_t) vmR3LogPrefixCallback(PRTLOGGER pLogger, char *pchBuf, size_t cchBuf, void *pvUser);
 static DECLCALLBACK(int) vmR3PowerOn(PVM pVM);
 static DECLCALLBACK(int) vmR3Suspend(PVM pVM);
 static DECLCALLBACK(int) vmR3Resume(PVM pVM);
@@ -644,11 +645,15 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
                                     if (RT_SUCCESS(rc))
                                     {
                                         /*
-                                        * Set the state and link into the global list.
-                                        */
+                                         * Set the state and link into the global list.
+                                         */
                                         vmR3SetState(pVM, VMSTATE_CREATED);
                                         pUVM->pNext = g_pUVMsHead;
                                         g_pUVMsHead = pUVM;
+
+#ifdef LOG_ENABLED
+                                        RTLogSetCustomPrefixCallback(NULL, vmR3LogPrefixCallback, pUVM);
+#endif
                                         return VINF_SUCCESS;
                                     }
                                 }
@@ -1034,6 +1039,37 @@ static int vmR3InitGC(PVM pVM)
 static int vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 {
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Logger callback for inserting a custom prefix.
+ *
+ * @returns Number of chars written.
+ * @param   pLogger             The logger.
+ * @param   pchBuf              The output buffer.
+ * @param   cchBuf              The output buffer size.
+ * @param   pvUser              Pointer to the UVM structure.
+ */
+static DECLCALLBACK(size_t) vmR3LogPrefixCallback(PRTLOGGER pLogger, char *pchBuf, size_t cchBuf, void *pvUser)
+{
+    AssertReturn(cchBuf >= 2, 0);
+    PUVM        pUVM   = (PUVM)pvUser;
+    PUVMCPU     pUVCpu = (PUVMCPU)RTTlsGet(pUVM->vm.s.idxTLS);
+    if (pUVCpu)
+    {
+        static const char s_szHex[17] = "0123456789abcdef";
+        VMCPUID const     idCpu       = pUVCpu->idCpu;
+        pchBuf[1] = s_szHex[ idCpu       & 15];
+        pchBuf[0] = s_szHex[(idCpu >> 4) & 15];
+    }
+    else
+    {
+        pchBuf[0] = 'x';
+        pchBuf[1] = 'y';
+    }
+
+    return 2;
 }
 
 
@@ -2031,6 +2067,9 @@ static void vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait)
     MMR3TermUVM(pUVM);
     STAMR3TermUVM(pUVM);
 
+#ifdef LOG_ENABLED
+    RTLogSetCustomPrefixCallback(NULL, NULL, NULL);
+#endif
     RTTlsFree(pUVM->vm.s.idxTLS);
 
     ASMAtomicUoWriteU32(&pUVM->u32Magic, UINT32_MAX);
