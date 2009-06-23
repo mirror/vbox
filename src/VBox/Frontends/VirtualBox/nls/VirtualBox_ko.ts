@@ -4263,7 +4263,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">스냅샷 삭제(&amp;D)</translation>
+        <translation>스냅샷 삭제(&amp;D)</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot</source>
@@ -4331,7 +4331,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">선택한 가상 머신의 스냅샷을 삭제합니다</translation>
+        <translation>선택한 가상 머신의 스냅샷을 삭제합니다</translation>
     </message>
     <message>
         <source>Take a snapshot of the current virtual machine state</source>
@@ -4352,14 +4352,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Show details of the selected snapshot</source>
         <translation>선택한 스냅샷의 자세한 정보를 봅니다</translation>
-    </message>
-    <message>
-        <source>&amp;Merge Snapshot with Parent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Merges the snapshot into the parent snapshot or disk image and then deletes the now redundant snapshot file.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

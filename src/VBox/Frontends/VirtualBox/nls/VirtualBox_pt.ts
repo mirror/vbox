@@ -6279,7 +6279,7 @@ para a aceder de um SO Linux. Este recurso requer a instalação das Adições d
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">&amp;Descartar Captura</translation>
+        <translation>&amp;Descartar Captura</translation>
     </message>
     <message>
         <source>Ctrl+Shift+D</source>
@@ -6391,7 +6391,7 @@ para a aceder de um SO Linux. Este recurso requer a instalação das Adições d
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Descarta a captura seleccionada da máquina virtual</translation>
+        <translation>Descarta a captura seleccionada da máquina virtual</translation>
     </message>
     <message>
         <source>Ctrl+Shift+S</source>
@@ -6432,14 +6432,6 @@ para a aceder de um SO Linux. Este recurso requer a instalação das Adições d
     <message>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+Espaço</translation>
-    </message>
-    <message>
-        <source>&amp;Merge Snapshot with Parent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Merges the snapshot into the parent snapshot or disk image and then deletes the now redundant snapshot file.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

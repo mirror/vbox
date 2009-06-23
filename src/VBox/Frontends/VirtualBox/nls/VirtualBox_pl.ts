@@ -6220,7 +6220,7 @@ Uwaga: funkcja ta wymaga zainstalowania Dodatków (Guest Additions).&lt;/qt&gt;<
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">O&amp;drzuć migawkę</translation>
+        <translation>O&amp;drzuć migawkę</translation>
     </message>
     <message>
         <source>Take Snapshot</source>
@@ -6312,7 +6312,7 @@ Uwaga: funkcja ta wymaga zainstalowania Dodatków (Guest Additions).&lt;/qt&gt;<
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Odrzuca wybraną migawkę maszyny wirtualnej</translation>
+        <translation>Odrzuca wybraną migawkę maszyny wirtualnej</translation>
     </message>
     <message>
         <source>Take a snapshot of the current virtual machine state</source>
@@ -6341,14 +6341,6 @@ Uwaga: funkcja ta wymaga zainstalowania Dodatków (Guest Additions).&lt;/qt&gt;<
     <message>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+Spacja</translation>
-    </message>
-    <message>
-        <source>&amp;Merge Snapshot with Parent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Merges the snapshot into the parent snapshot or disk image and then deletes the now redundant snapshot file.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

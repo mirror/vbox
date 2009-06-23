@@ -6250,7 +6250,7 @@ per accedir a ella des d&apos;un sistema Linux. Aquesta característica requerei
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">&amp;Descarta la captura</translation>
+        <translation>&amp;Descarta la captura</translation>
     </message>
     <message>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
@@ -6258,7 +6258,7 @@ per accedir a ella des d&apos;un sistema Linux. Aquesta característica requerei
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Descarta la captura seleccionada de la màquina virtual</translation>
+        <translation>Descarta la captura seleccionada de la màquina virtual</translation>
     </message>
     <message>
         <source>offline)</source>
@@ -6347,14 +6347,6 @@ per accedir a ella des d&apos;un sistema Linux. Aquesta característica requerei
     <message>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+Espai</translation>
-    </message>
-    <message>
-        <source>&amp;Merge Snapshot with Parent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Merges the snapshot into the parent snapshot or disk image and then deletes the now redundant snapshot file.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

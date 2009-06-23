@@ -4373,7 +4373,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">Від&amp;кинути знімок</translation>
+        <translation>Від&amp;кинути знімок</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot</source>
@@ -4393,7 +4393,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Відкинути вибраний знімок віртуальної машини</translation>
+        <translation>Відкинути вибраний знімок віртуальної машини</translation>
     </message>
     <message>
         <source>Take a snapshot of the current virtual machine state</source>
@@ -4410,14 +4410,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Show details of the selected snapshot</source>
         <translation>Показати деталі вибраного знімку</translation>
-    </message>
-    <message>
-        <source>&amp;Merge Snapshot with Parent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Merges the snapshot into the parent snapshot or disk image and then deletes the now redundant snapshot file.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

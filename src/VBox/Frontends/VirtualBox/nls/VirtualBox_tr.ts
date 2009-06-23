@@ -5999,7 +5999,7 @@ Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.&lt;/qt&gt;</tr
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">A&amp;nlık Görüntüyü Sil</translation>
+        <translation>A&amp;nlık Görüntüyü Sil</translation>
     </message>
     <message>
         <source>Ctrl+Shift+D</source>
@@ -6091,7 +6091,7 @@ Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.&lt;/qt&gt;</tr
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Sanal makine için seçilen anlık görüntüyü sil</translation>
+        <translation>Sanal makine için seçilen anlık görüntüyü sil</translation>
     </message>
     <message>
         <source>Ctrl+Shift+S</source>
@@ -6132,14 +6132,6 @@ Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.&lt;/qt&gt;</tr
     <message>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+Space</translation>
-    </message>
-    <message>
-        <source>&amp;Merge Snapshot with Parent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Merges the snapshot into the parent snapshot or disk image and then deletes the now redundant snapshot file.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

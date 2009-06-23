@@ -4639,7 +4639,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">&amp;إلغِ اللقطة</translation>
+        <translation>&amp;إلغِ اللقطة</translation>
     </message>
     <message>
         <source>Ctrl+Shift+D</source>
@@ -4722,10 +4722,6 @@ p, li { white-space: pre-wrap; }
         <translation>لقطة  %1</translation>
     </message>
     <message>
-        <source>&amp;Merge Snapshot with Parent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Revert to Current Snapshot</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4735,10 +4731,6 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>S&amp;how Details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Merges the snapshot into the parent snapshot or disk image and then deletes the now redundant snapshot file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4755,6 +4747,10 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Show details of the selected snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Discard the selected snapshot of the virtual machine</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -5729,7 +5729,7 @@ Linux SE batetatik atzitzeko. Ezaugarri honek Bezero Gehigarriak behar ditu.&lt;
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">&amp;Baztertu Egoera-argazkia</translation>
+        <translation>&amp;Baztertu Egoera-argazkia</translation>
     </message>
     <message>
         <source>Ctrl+Shift+D</source>
@@ -5753,7 +5753,7 @@ Linux SE batetatik atzitzeko. Ezaugarri honek Bezero Gehigarriak behar ditu.&lt;
     </message>
     <message>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="unfinished">Ba&amp;ztertu Uneko Egoera-argazkia eta Egoera</translation>
+        <translation>Ba&amp;ztertu Uneko Egoera-argazkia eta Egoera</translation>
     </message>
     <message>
         <source>Show Details</source>
@@ -5821,7 +5821,7 @@ Linux SE batetatik atzitzeko. Ezaugarri honek Bezero Gehigarriak behar ditu.&lt;
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Baztertu hautatutako egoera-argazkia makina birtualetik</translation>
+        <translation>Baztertu hautatutako egoera-argazkia makina birtualetik</translation>
     </message>
     <message>
         <source>Ctrl+Shift+S</source>
@@ -5858,14 +5858,6 @@ Linux SE batetatik atzitzeko. Ezaugarri honek Bezero Gehigarriak behar ditu.&lt;
     <message>
         <source>Show details of the selected snapshot</source>
         <translation type="unfinished">Hautatutako egoera-argazkiaren xehetasunak ikusi</translation>
-    </message>
-    <message>
-        <source>&amp;Merge Snapshot with Parent</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Merges the snapshot into the parent snapshot or disk image and then deletes the now redundant snapshot file.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
