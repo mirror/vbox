@@ -590,6 +590,7 @@ void cpu_set_apic_base(CPUState *env, uint64_t val)
 PDMBOTHCBDECL(void) apicSetBase(PPDMDEVINS pDevIns, uint64_t val)
 {
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
+    Assert(PDMCritSectIsOwner(dev->CTX_SUFF(pCritSect)));
     APICState *s = getLapic(dev); /** @todo fix interface */
     Log(("cpu_set_apic_base: %016RX64\n", val));
 
@@ -697,6 +698,7 @@ static inline void reset_bit(uint32_t *tab, int index)
 PDMBOTHCBDECL(uint64_t) apicGetBase(PPDMDEVINS pDevIns)
 {
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
+    Assert(PDMCritSectIsOwner(dev->CTX_SUFF(pCritSect)));
     APICState *s = getLapic(dev); /** @todo fix interface */
     LogFlow(("apicGetBase: %016llx\n", (uint64_t)s->apicbase));
     return s->apicbase;
@@ -705,6 +707,7 @@ PDMBOTHCBDECL(uint64_t) apicGetBase(PPDMDEVINS pDevIns)
 PDMBOTHCBDECL(void) apicSetTPR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t val)
 {
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
+    Assert(PDMCritSectIsOwner(dev->CTX_SUFF(pCritSect)));
     APICState *s = getLapicById(dev, idCpu);
     LogFlow(("apicSetTPR: val=%#x (trp %#x -> %#x)\n", val, s->tpr, val));
     apic_update_tpr(dev, s, val);
@@ -712,6 +715,7 @@ PDMBOTHCBDECL(void) apicSetTPR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t val)
 
 PDMBOTHCBDECL(uint8_t) apicGetTPR(PPDMDEVINS pDevIns, VMCPUID idCpu)
 {
+    /* We don't perform any locking here as that would cause a lot of contention for VT-x/AMD-V. */
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     APICState *s = getLapicById(dev, idCpu);
     Log2(("apicGetTPR: returns %#x\n", s->tpr));
@@ -732,6 +736,7 @@ PDMBOTHCBDECL(uint8_t) apicGetTPR(PPDMDEVINS pDevIns, VMCPUID idCpu)
 PDMBOTHCBDECL(int) apicWriteMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t u64Value)
 {
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
+    Assert(PDMCritSectIsOwner(dev->CTX_SUFF(pCritSect)));
     int rc = VINF_SUCCESS;
 
     if (dev->enmVersion < PDMAPICVERSION_X2APIC)
@@ -837,6 +842,7 @@ PDMBOTHCBDECL(int) apicWriteMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32R
 PDMBOTHCBDECL(int) apicReadMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t *pu64Value)
 {
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
+    Assert(PDMCritSectIsOwner(dev->CTX_SUFF(pCritSect)));
 
     if (dev->enmVersion < PDMAPICVERSION_X2APIC)
         return VERR_EM_INTERPRETER;
@@ -927,6 +933,7 @@ PDMBOTHCBDECL(int) apicBusDeliverCallback(PPDMDEVINS pDevIns, uint8_t u8Dest, ui
                                            uint8_t u8TriggerMode)
 {
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
+    Assert(PDMCritSectIsOwner(dev->CTX_SUFF(pCritSect)));
     LogFlow(("apicBusDeliverCallback: pDevIns=%p u8Dest=%#x u8DestMode=%#x u8DeliveryMode=%#x iVector=%#x u8Polarity=%#x u8TriggerMode=%#x\n",
              pDevIns, u8Dest, u8DestMode, u8DeliveryMode, iVector, u8Polarity, u8TriggerMode));
     return apic_bus_deliver(dev, apic_get_delivery_bitmask(dev, u8Dest, u8DestMode),
@@ -1016,6 +1023,9 @@ PDMBOTHCBDECL(bool) apicHasPendingIrq(PPDMDEVINS pDevIns)
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     if (!dev)
         return false;
+
+    /* We don't perform any locking here as that would cause a lot of contention for VT-x/AMD-V. */
+
     APICState *s = getLapic(dev); /** @todo fix interface */
 
     /*
@@ -1260,35 +1270,30 @@ PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns)
         return -1;
     }
 
-    APIC_LOCK(dev, VERR_INTERNAL_ERROR);
+    Assert(PDMCritSectIsOwner(dev->CTX_SUFF(pCritSect)));
 
     APICState *s = getLapic(dev);  /** @todo fix interface */
     int intno;
 
     if (!(s->spurious_vec & APIC_SV_ENABLE)) {
         Log(("CPU%d: apic_get_interrupt: returns -1 (APIC_SV_ENABLE)\n", s->phys_id));
-        intno = -1;
-        goto done;
+        return -1;
     }
 
     /* XXX: spurious IRQ handling */
     intno = get_highest_priority_int(s->irr);
     if (intno < 0) {
         Log(("CPU%d: apic_get_interrupt: returns -1 (irr)\n", s->phys_id));
-        intno = -1;
-        goto done;
+        return -1;
     }
     if (s->tpr && (uint32_t)intno <= s->tpr) {
         Log(("apic_get_interrupt: returns %d (sp)\n", s->spurious_vec & 0xff));
-        intno = s->spurious_vec & 0xff;
-        goto done;
+        return s->spurious_vec & 0xff;
     }
     reset_bit(s->irr, intno);
     set_bit(s->isr, intno);
     apic_update_irq(dev, s);
     LogFlow(("CPU%d: apic_get_interrupt: returns %d\n", s->phys_id, intno));
- done:
-    APIC_UNLOCK(dev);
     return intno;
 }
 
