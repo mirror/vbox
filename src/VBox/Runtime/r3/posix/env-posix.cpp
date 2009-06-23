@@ -40,20 +40,28 @@
 #include <iprt/string.h>
 #include <iprt/alloca.h>
 #include <iprt/assert.h>
+#if defined(DEBUG) && defined(RT_OS_LINUX)
+# include <iprt/asm.h>
+#endif
 
 #include <stdlib.h>
 #include <errno.h>
 
+#include "internal/alignmentchecks.h"
+
 
 RTDECL(bool) RTEnvExist(const char *pszVar)
 {
-    return getenv(pszVar) != NULL;
+    return RTEnvGet(pszVar) != NULL;
 }
 
 
 RTDECL(const char *) RTEnvGet(const char *pszVar)
 {
-    return getenv(pszVar);
+    IPRT_ALIGNMENT_CHECKS_DISABLE(); /* glibc causes trouble */
+    const char *pszValue = getenv(pszVar);
+    IPRT_ALIGNMENT_CHECKS_ENABLE();
+    return pszValue;
 }
 
 
@@ -85,12 +93,12 @@ RTDECL(int) RTEnvSet(const char *pszVar, const char *pszValue)
     if (!putenv(pszTmp))
         return 0;
     return RTErrConvertFromErrno(errno);
-    
+
 #else
     if (!setenv(pszVar, pszValue, 1))
         return VINF_SUCCESS;
     return RTErrConvertFromErrno(errno);
-#endif 
+#endif
 }
 
 
