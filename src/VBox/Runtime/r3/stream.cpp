@@ -41,6 +41,8 @@
 #include <iprt/err.h>
 #include <iprt/param.h>
 #include <iprt/string.h>
+
+#include "internal/alignmentchecks.h"
 #include "internal/magics.h"
 
 #include <stdio.h>
@@ -401,7 +403,9 @@ RTR3DECL(int) RTStrmWriteEx(PRTSTREAM pStream, const void *pvBuf, size_t cbWrite
         {
             if (pcbWritten)
             {
+                IPRT_ALIGNMENT_CHECKS_DISABLE(); /* glibc / mempcpy again */
                 *pcbWritten = fwrite(pvBuf, 1, cbWrite, pStream->pFile);
+                IPRT_ALIGNMENT_CHECKS_ENABLE();
                 if (    *pcbWritten == cbWrite
                     ||  !ferror(pStream->pFile))
                     return VINF_SUCCESS;
@@ -410,9 +414,12 @@ RTR3DECL(int) RTStrmWriteEx(PRTSTREAM pStream, const void *pvBuf, size_t cbWrite
             else
             {
                 /*
-                 * Must read it all!
+                 * Must write it all!
                  */
-                if (fwrite(pvBuf, cbWrite, 1, pStream->pFile) == 1)
+                IPRT_ALIGNMENT_CHECKS_DISABLE(); /* glibc / mempcpy again */
+                size_t cbWritten = fwrite(pvBuf, cbWrite, 1, pStream->pFile);
+                IPRT_ALIGNMENT_CHECKS_ENABLE();
+                if (cbWritten == 1)
                     return VINF_SUCCESS;
                 if (!ferror(pStream->pFile))
                     return VINF_SUCCESS; /* WEIRD! But anyway... */
@@ -499,32 +506,32 @@ RTR3DECL(int) RTStrmGetLine(PRTSTREAM pStream, char *pszString, size_t cchString
             if (RT_SUCCESS(rc))
             {
                 cchString--;            /* save space for the terminator. */
-                #ifdef HAVE_FWRITE_UNLOCKED
+#ifdef HAVE_FWRITE_UNLOCKED
                 flockfile(pStream->pFile);
-                #endif
+#endif
                 for (;;)
                 {
-                    #ifdef HAVE_FWRITE_UNLOCKED
+#ifdef HAVE_FWRITE_UNLOCKED
                     int ch = fgetc_unlocked(pStream->pFile);
-                    #else
+#else
                     int ch = fgetc(pStream->pFile);
-                    #endif
+#endif
                     if (ch == EOF)
                     {
-                        #ifdef HAVE_FWRITE_UNLOCKED
+#ifdef HAVE_FWRITE_UNLOCKED
                         if (feof_unlocked(pStream->pFile))
-                        #else
+#else
                         if (feof(pStream->pFile))
-                        #endif
+#endif
                         {
                             rc = VERR_EOF;
                             break;
                         }
-                        #ifdef HAVE_FWRITE_UNLOCKED
+#ifdef HAVE_FWRITE_UNLOCKED
                         if (ferror_unlocked(pStream->pFile))
-                        #else
+#else
                         if (ferror(pStream->pFile))
-                        #endif
+#endif
                             rc = VERR_READ_ERROR;
                         else
                         {
@@ -542,9 +549,9 @@ RTR3DECL(int) RTStrmGetLine(PRTSTREAM pStream, char *pszString, size_t cchString
                         break;
                     }
                 }
-                #ifdef HAVE_FWRITE_UNLOCKED
+#ifdef HAVE_FWRITE_UNLOCKED
                 funlockfile(pStream->pFile);
-                #endif
+#endif
 
                 *pszString = '\0';
                 if (RT_FAILURE(rc))
@@ -596,12 +603,14 @@ static DECLCALLBACK(size_t) rtstrmOutput(void *pvArg, const char *pachChars, siz
         int rc = pStream->i32Error;
         if (RT_SUCCESS(rc))
         {
-            #ifdef HAVE_FWRITE_UNLOCKED
+            IPRT_ALIGNMENT_CHECKS_DISABLE(); /* glibc / mempcpy again */
+#ifdef HAVE_FWRITE_UNLOCKED
             if (fwrite_unlocked(pachChars, cchChars, 1, pStream->pFile) != 1)
-            #else
+#else
             if (fwrite(pachChars, cchChars, 1, pStream->pFile) != 1)
-            #endif
+#endif
                 ASMAtomicXchgS32(&pStream->i32Error, VERR_WRITE_ERROR);
+            IPRT_ALIGNMENT_CHECKS_ENABLE();
         }
     }
     /* else: ignore termination call. */
@@ -626,13 +635,13 @@ RTR3DECL(int) RTStrmPrintfV(PRTSTREAM pStream, const char *pszFormat, va_list ar
         if (RT_SUCCESS(rc))
         {
             /** @todo consider making this thread safe... */
-            #ifdef HAVE_FWRITE_UNLOCKED
+#ifdef HAVE_FWRITE_UNLOCKED
             flockfile(pStream->pFile);
             rc = (int)RTStrFormatV(rtstrmOutput, pStream, NULL, NULL, pszFormat, args);
             funlockfile(pStream->pFile);
-            #else
+#else
             rc = (int)RTStrFormatV(rtstrmOutput, pStream, NULL, NULL, pszFormat, args);
-            #endif
+#endif
             Assert(rc >= 0);
         }
         else
