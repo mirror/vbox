@@ -696,28 +696,6 @@ SUPR3DECL(int) SUPPageAlloc(size_t cPages, void **ppvPages);
 SUPR3DECL(int) SUPPageFree(void *pvPages, size_t cPages);
 
 /**
- * Locks down the physical memory backing a virtual memory
- * range in the current process.
- *
- * @returns VBox status code.
- * @param   pvStart         Start of virtual memory range.
- *                          Must be page aligned.
- * @param   cPages          Number of pages.
- * @param   paPages         Where to store the physical page addresses returned.
- *                          On entry this will point to an array of with cbMemory >> PAGE_SHIFT entries.
- */
-SUPR3DECL(int) SUPPageLock(void *pvStart, size_t cPages, PSUPPAGE paPages);
-
-/**
- * Releases locked down pages.
- *
- * @returns VBox status code.
- * @param   pvStart         Start of virtual memory range previously locked
- *                          down by SUPPageLock().
- */
-SUPR3DECL(int) SUPPageUnlock(void *pvStart);
-
-/**
  * Allocate non-zeroed, locked, pages with user and, optionally, kernel
  * mappings.
  *
