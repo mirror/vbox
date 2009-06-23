@@ -967,41 +967,9 @@ SUPR3DECL(int) supR3PageUnlock(void *pvStart)
 }
 
 
-SUPR3DECL(int) SUPR3PageAllocLockedEx(size_t cPages, void **ppvPages, PSUPPAGE paPages)
-{
-    return SUPR3PageAllocEx(cPages, 0 /*fFlags*/, ppvPages, NULL /*pR0Ptr*/, paPages);
-}
-
-
-SUPR3DECL(int) SUPR3PageFreeLocked(void *pvPages, size_t cPages)
-{
-    /*
-     * Validate.
-     */
-    AssertPtrReturn(pvPages, VERR_INVALID_POINTER);
-    AssertReturn(cPages > 0, VERR_PAGE_COUNT_OUT_OF_RANGE);
-
-    /*
-     * Check if we're employing the fallback or not to avoid the
-     * fuzzy handling of this in SUPR3PageFreeEx.
-     */
-    int rc;
-    if (g_fSupportsPageAllocNoKernel)
-        rc = SUPR3PageFreeEx(pvPages, cPages);
-    else
-    {
-        /* fallback */
-        rc = supR3PageUnlock(pvPages);
-        if (RT_SUCCESS(rc))
-            rc = suplibOsPageFree(&g_supLibData, pvPages, cPages);
-    }
-    return rc;
-}
-
-
 /**
- * Fallback for SUPR3PageAllocLockedEx on systems where RTR0MemObjPhysAllocNC
- * isn't supported.
+ * Fallback for SUPR3PageAllocEx on systems where RTR0MemObjPhysAllocNC isn't
+ * supported.
  */
 static int supPagePageAllocNoKernelFallback(size_t cPages, void **ppvPages, PSUPPAGE paPages)
 {

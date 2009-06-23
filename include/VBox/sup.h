@@ -700,9 +700,6 @@ SUPR3DECL(int) SUPR3PageFree(void *pvPages, size_t cPages);
  *
  * Use SUPR3PageFreeEx() to free memory allocated with this function.
  *
- * This SUPR3PageAllocEx and SUPR3PageFreeEx replaces SUPR3PageAllocLockedEx,
- * SUPR3PageFreeLocked, SUPR3PageAlloc, and SUPR3PageFree.
- *
  * @returns VBox status code.
  * @param   cPages          The number of pages to allocate.
  * @param   fFlags          Flags, reserved. Must be zero.
@@ -758,29 +755,6 @@ SUPR3DECL(int) SUPR3PageProtect(void *pvR3, RTR0PTR R0Ptr, uint32_t off, uint32_
  * @param   cPages          The number of pages.
  */
 SUPR3DECL(int) SUPR3PageFreeEx(void *pvPages, size_t cPages);
-
-/**
- * Allocate non-zeroed locked pages.
- *
- * @returns VBox status code.
- * @param   cPages          Number of pages to allocate.
- * @param   ppvPages        Where to store the base pointer to the allocated pages.
- * @param   paPages         Where to store the physical page addresses returned.
- *                          On entry this will point to an array of with cbMemory >> PAGE_SHIFT entries.
- *                          NULL is allowed.
- * @todo remove this.
- */
-SUPR3DECL(int) SUPR3PageAllocLockedEx(size_t cPages, void **ppvPages, PSUPPAGE paPages);
-
-/**
- * Frees locked pages allocated with SUPPageAllocLockedEx().
- *
- * @returns VBox status.
- * @param   pvPages         Pointer returned by SUPR3PageAllocLockedEx().
- * @param   cPages          Number of pages that was allocated.
- * @todo remove this.
- */
-SUPR3DECL(int) SUPR3PageFreeLocked(void *pvPages, size_t cPages);
 
 /**
  * Allocated memory with page aligned memory with a contiguous and locked physical
