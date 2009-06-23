@@ -725,7 +725,7 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
         /*
          * Load the REM stuff.
          */
-        rc = SSMR3GetUInt(pSSM, &pRem->cInvalidatedPages);
+        rc = SSMR3GetUInt(pSSM, (uint32_t*)&pRem->cInvalidatedPages);
         if (RT_FAILURE(rc))
             return rc;
         if (pRem->cInvalidatedPages > RT_ELEMENTS(pRem->aGCPtrInvalidatedPages))
