@@ -557,8 +557,12 @@ int handleUSBFilter (HandlerArg *a)
 
     if (cmd.mMachine)
     {
-        /* commit and close the session */
-        CHECK_ERROR(cmd.mMachine, SaveSettings());
+        if (SUCCEEDED (rc))
+        {
+            /* commit the session */
+            CHECK_ERROR(cmd.mMachine, SaveSettings());
+        }
+        /* close the session */
         a->session->Close();
     }
 
