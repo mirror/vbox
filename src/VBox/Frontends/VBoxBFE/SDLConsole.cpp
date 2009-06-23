@@ -857,7 +857,7 @@ uint8_t SDLConsole::keyEventToKeyCode(const SDL_KeyboardEvent *ev)
             case SDLK_RSUPER:           keycode = 0x5c | 0x80; break;
             case SDLK_LMETA:
             case SDLK_LSUPER:           keycode = 0x5b | 0x80; break;
-            /* Sssumes normal key. */
+            /* Assumes normal key. */
             default:                    keycode = s_aMacToSet1[keycode]; break;
         }
     }
