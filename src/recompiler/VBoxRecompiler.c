@@ -647,7 +647,7 @@ static DECLCALLBACK(int) remR3Save(PVM pVM, PSSMHANDLE pSSM)
 
     /* Remember if we've entered raw mode (vital for ring 1 checks in e.g. iret emulation). */
     SSMR3PutU32(pSSM, !!(pRem->Env.state & CPU_RAW_RING0));
-    SSMR3PutUInt(pSSM, pVM->rem.s.u32PendingInterrupt);
+    SSMR3PutU32(pSSM, pVM->rem.s.u32PendingInterrupt);
 
     return SSMR3PutU32(pSSM, ~0);       /* terminator */
 }
@@ -725,7 +725,9 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
         /*
          * Load the REM stuff.
          */
-        rc = SSMR3GetUInt(pSSM, (uint32_t*)&pRem->cInvalidatedPages);
+        /** @todo r=bird: We should just drop all these items, restoring doesn't make
+         *        sense. */
+        rc = SSMR3GetU32(pSSM, (uint32_t *)&pRem->cInvalidatedPages);
         if (RT_FAILURE(rc))
             return rc;
         if (pRem->cInvalidatedPages > RT_ELEMENTS(pRem->aGCPtrInvalidatedPages))
