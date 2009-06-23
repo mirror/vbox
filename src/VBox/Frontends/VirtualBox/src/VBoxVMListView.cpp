@@ -679,7 +679,7 @@ void VBoxVMListView::dataChanged (const QModelIndex &aTopLeft, const QModelIndex
 {
     QListView::dataChanged (aTopLeft, aBottomRight);
     selectCurrent();
-    ensureCurrentVisible();
+//    ensureCurrentVisible();
     emit currentChanged();
 }
 
