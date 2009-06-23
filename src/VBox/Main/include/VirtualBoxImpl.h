@@ -150,7 +150,10 @@ public:
 
     STDMETHOD(CreateHardDisk)(IN_BSTR aFormat, IN_BSTR aLocation,
                                IHardDisk **aHardDisk);
-    STDMETHOD(OpenHardDisk) (IN_BSTR aLocation, AccessMode_T accessMode, IHardDisk **aHardDisk);
+    STDMETHOD(OpenHardDisk) (IN_BSTR aLocation, AccessMode_T accessMode,
+                             BOOL aSetImageId, IN_BSTR aImageId,
+                             BOOL aSetParentId, IN_BSTR aParentId,
+                             IHardDisk **aHardDisk);
     STDMETHOD(GetHardDisk) (IN_BSTR aId, IHardDisk **aHardDisk);
     STDMETHOD(FindHardDisk) (IN_BSTR aLocation, IHardDisk **aHardDisk);
 

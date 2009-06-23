@@ -1742,7 +1742,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         {
             /* we've not found the image */
             RTPrintf("Adding hard disk '%S'...\n", hdaFile);
-            virtualBox->OpenHardDisk(hdaFileBstr, AccessMode_ReadWrite, hardDisk.asOutParam());
+            virtualBox->OpenHardDisk(hdaFileBstr, AccessMode_ReadWrite, false, Bstr(""), false, Bstr(""), hardDisk.asOutParam());
         }
         /* do we have the right image now? */
         if (hardDisk)
@@ -2451,7 +2451,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                         break;
                 }
             }
-#else 
+#else
             case SDL_VIDEOEXPOSE:
             {
                 gpFramebuffer[0]->repaint();
@@ -2971,7 +2971,7 @@ leave:
     // we can only uninitialize SDL here because it is not threadsafe
 
     for (unsigned i = 0; i < gcMonitors; i++)
-    {      
+    {
         if (gpFramebuffer[i])
         {
             LogFlow(("Releasing framebuffer...\n"));

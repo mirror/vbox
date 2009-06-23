@@ -1902,7 +1902,8 @@
 
     <method name="openHardDisk">
       <desc>
-        Opens a hard disk from an existing location.
+        Opens a hard disk from an existing location, optionally replacing
+        the image UUID and/or parent UUID.
 
         After the hard disk is successfully opened by this method, it gets
         remembered by (known to) this VirtualBox installation and will be
@@ -1953,6 +1954,29 @@
       <param name="accessMode" type="AccessMode" dir="in">
           <desc>
               Determines whether to open the image in read/write or read-only mode.
+          </desc>
+      </param>
+      <param name="setImageId" type="boolean" dir="in">
+          <desc>
+              Select whether a new image UUID is set or not.
+          </desc>
+      </param>
+      <param name="imageId" type="wstring" dir="in">
+          <desc>
+              New UUID for the image. If an empty string is passed, then a new
+              UUID is automatically created. Specifying a zero UUIDs is not valid.
+          </desc>
+      </param>
+      <param name="setParentId" type="boolean" dir="in">
+          <desc>
+              Select whether a new parent UUID is set or not.
+          </desc>
+      </param>
+      <param name="parentId" type="wstring" dir="in">
+          <desc>
+              New parent UUID for the image. If an empty string is passed, then a
+              new UUID is automatically created, provided @a setParentId is
+              @c true. A zero UUID is valid.
           </desc>
       </param>
       <param name="hardDisk" type="IHardDisk" dir="return">

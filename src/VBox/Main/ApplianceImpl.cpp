@@ -2329,6 +2329,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
                             /* First open the existing disk image */
                             rc = pVirtualBox->OpenHardDisk(Bstr(strSrcFilePath),
                                                            AccessMode_ReadOnly,
+                                                           false, Bstr(""), false, Bstr(""),
                                                            srcHdVBox.asOutParam());
                             if (FAILED(rc)) throw rc;
                             fSourceHdNeedsClosing = true;

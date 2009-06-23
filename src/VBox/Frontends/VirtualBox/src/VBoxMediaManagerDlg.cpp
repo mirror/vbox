@@ -1548,7 +1548,7 @@ void VBoxMediaManagerDlg::addMediumToList (const QString &aLocation,
     {
         case VBoxDefs::MediaType_HardDisk:
         {
-            CHardDisk hd = mVBox.OpenHardDisk(aLocation, KAccessMode_ReadWrite);
+            CHardDisk hd = mVBox.OpenHardDisk(aLocation, KAccessMode_ReadWrite, false, "", false, "");
             if (mVBox.isOk())
             {
                 medium = VBoxMedium (CMedium (hd),
