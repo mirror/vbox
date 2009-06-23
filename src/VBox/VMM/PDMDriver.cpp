@@ -960,7 +960,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_SUPCallVMMR0Ex(PPDMDRVINS pDrvIns, unsigned
     int rc;
     if (    uOperation >= VMMR0_DO_SRV_START
         &&  uOperation <  VMMR0_DO_SRV_END)
-        rc = SUPCallVMMR0Ex(pDrvIns->Internal.s.pVM->pVMR0, NIL_VMCPUID, uOperation, 0, (PSUPVMMR0REQHDR)pvArg);
+        rc = SUPR3CallVMMR0Ex(pDrvIns->Internal.s.pVM->pVMR0, NIL_VMCPUID, uOperation, 0, (PSUPVMMR0REQHDR)pvArg);
     else
     {
         AssertMsgFailed(("Invalid uOperation=%u\n", uOperation));

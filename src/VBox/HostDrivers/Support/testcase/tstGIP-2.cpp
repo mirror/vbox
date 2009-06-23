@@ -177,7 +177,7 @@ int main(int argc, char **argv)
             rc = -1;
         }
 
-        SUPTerm();
+        SUPR3Term(false /*fForced*/);
     }
     else
         RTPrintf("tstGIP-2: SUPR3Init failed: %Rrc\n", rc);

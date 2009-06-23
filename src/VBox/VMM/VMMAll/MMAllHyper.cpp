@@ -310,7 +310,7 @@ static int mmHyperAllocInternal(PVM pVM, size_t cb, unsigned uAlignment, MMTAG e
             pStat->cAllocations++;
 #endif
             *ppv = pv;
-            /* ASMMemZero32(pv, cbAligned); - not required since memory is alloc-only and SUPPageAlloc zeros it. */
+            /* ASMMemZero32(pv, cbAligned); - not required since memory is alloc-only and SUPR3PageAlloc zeros it. */
             Log2(("MMHyperAlloc: cb=%#x uAlignment=%#x returns VINF_SUCCESS and *ppv=%p\n", cb, uAlignment, ppv));
             return VINF_SUCCESS;
         }

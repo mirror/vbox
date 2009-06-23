@@ -46,7 +46,7 @@ int main(int argc, char **argv)
     rc = SUPR3Init(NULL);
     if (RT_SUCCESS(rc))
     {
-        SUPPAGINGMODE enmMode = SUPGetPagingMode();
+        SUPPAGINGMODE enmMode = SUPR3GetPagingMode();
         switch (enmMode)
         {
             case SUPPAGINGMODE_INVALID:
@@ -88,8 +88,8 @@ int main(int argc, char **argv)
                 break;
         }
 
-        int rc2 = SUPTerm();
-        RTPrintf("SUPTerm -> rc=%Rrc\n", rc2);
+        int rc2 = SUPR3Term(false /*fForced*/);
+        RTPrintf("SUPR3Term -> rc=%Rrc\n", rc2);
     }
     else
         RTPrintf("SUPR3Init -> rc=%Rrc\n", rc);

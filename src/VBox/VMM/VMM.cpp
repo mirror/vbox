@@ -176,7 +176,7 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
     /*
      * Register the Ring-0 VM handle with the session for fast ioctl calls.
      */
-    rc = SUPSetVMForFastIOCtl(pVM->pVMR0);
+    rc = SUPR3SetVMForFastIOCtl(pVM->pVMR0);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -509,7 +509,7 @@ VMMR3DECL(int) VMMR3InitR0(PVM pVM)
         //rc = VERR_GENERAL_FAILURE;
         rc = VINF_SUCCESS;
 #else
-        rc = SUPCallVMMR0Ex(pVM->pVMR0, 0 /* VCPU 0 */, VMMR0_DO_VMMR0_INIT, VMMGetSvnRev(), NULL);
+        rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_VMMR0_INIT, VMMGetSvnRev(), NULL);
 #endif
         /*
          * Flush the logs.
@@ -583,7 +583,7 @@ VMMR3DECL(int) VMMR3InitRC(PVM pVM)
             //rc = VERR_GENERAL_FAILURE;
             rc = VINF_SUCCESS;
 #else
-            rc = SUPCallVMMR0(pVM->pVMR0, 0 /* VCPU 0 */, VMMR0_DO_CALL_HYPERVISOR, NULL);
+            rc = SUPR3CallVMMR0(pVM->pVMR0, 0 /* VCPU 0 */, VMMR0_DO_CALL_HYPERVISOR, NULL);
 #endif
 #ifdef LOG_ENABLED
             PRTLOGGERRC pLogger = pVM->vmm.s.pRCLoggerR3;
@@ -636,7 +636,7 @@ VMMR3DECL(int) VMMR3Term(PVM pVM)
         //rc = VERR_GENERAL_FAILURE;
         rc = VINF_SUCCESS;
 #else
-        rc = SUPCallVMMR0Ex(pVM->pVMR0, 0 /* VCPU 0 */, VMMR0_DO_VMMR0_TERM, 0, NULL);
+        rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_VMMR0_TERM, 0, NULL);
 #endif
         /*
          * Flush the logs.
@@ -1145,7 +1145,7 @@ VMMR3DECL(int) VMMR3RawRunGC(PVM pVM, PVMCPU pVCpu)
 #ifdef NO_SUPCALLR0VMM
             rc = VERR_GENERAL_FAILURE;
 #else
-            rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
+            rc = SUPR3CallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
             if (RT_LIKELY(rc == VINF_SUCCESS))
                 rc = pVCpu->vmm.s.iLastGZRc;
 #endif
@@ -1196,7 +1196,7 @@ VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM, PVMCPU pVCpu)
 #ifdef NO_SUPCALLR0VMM
             rc = VERR_GENERAL_FAILURE;
 #else
-            rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_HWACC_RUN, pVCpu->idCpu);
+            rc = SUPR3CallVMMR0Fast(pVM->pVMR0, VMMR0_DO_HWACC_RUN, pVCpu->idCpu);
             if (RT_LIKELY(rc == VINF_SUCCESS))
                 rc = pVCpu->vmm.s.iLastGZRc;
 #endif
@@ -1696,7 +1696,7 @@ VMMR3DECL(int) VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list
 #ifdef NO_SUPCALLR0VMM
             rc = VERR_GENERAL_FAILURE;
 #else
-            rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
+            rc = SUPR3CallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
             if (RT_LIKELY(rc == VINF_SUCCESS))
                 rc = pVCpu->vmm.s.iLastGZRc;
 #endif
@@ -1731,14 +1731,13 @@ VMMR3DECL(int) VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list
 
 
 /**
- * Wrapper for SUPCallVMMR0Ex which will deal with
- * VINF_VMM_CALL_HOST returns.
+ * Wrapper for SUPR3CallVMMR0Ex which will deal with VINF_VMM_CALL_HOST returns.
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  * @param   uOperation  Operation to execute.
  * @param   u64Arg      Constant argument.
- * @param   pReqHdr     Pointer to a request header. See SUPCallVMMR0Ex for
+ * @param   pReqHdr     Pointer to a request header. See SUPR3CallVMMR0Ex for
  *                      details.
  */
 VMMR3DECL(int) VMMR3CallR0(PVM pVM, uint32_t uOperation, uint64_t u64Arg, PSUPVMMR0REQHDR pReqHdr)
@@ -1755,7 +1754,7 @@ VMMR3DECL(int) VMMR3CallR0(PVM pVM, uint32_t uOperation, uint64_t u64Arg, PSUPVM
 #ifdef NO_SUPCALLR0VMM
         rc = VERR_GENERAL_FAILURE;
 #else
-        rc = SUPCallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, uOperation, u64Arg, pReqHdr);
+        rc = SUPR3CallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, uOperation, u64Arg, pReqHdr);
 #endif
         /*
          * Flush the logs.
@@ -1805,7 +1804,7 @@ VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM, PVMCPU pVCpu)
 #ifdef NO_SUPCALLR0VMM
             rc = VERR_GENERAL_FAILURE;
 #else
-            rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
+            rc = SUPR3CallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
             if (RT_LIKELY(rc == VINF_SUCCESS))
                 rc = pVCpu->vmm.s.iLastGZRc;
 #endif

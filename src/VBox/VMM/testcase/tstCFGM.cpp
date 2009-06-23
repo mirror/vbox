@@ -50,7 +50,7 @@ int main()
     PVM         pVM;
     int rc = SUPR3Init(NULL);
     if (RT_SUCCESS(rc))
-        rc = SUPPageAlloc(RT_ALIGN_Z(sizeof(*pVM), PAGE_SIZE) >> PAGE_SHIFT, (void **)&pVM);
+        rc = SUPR3PageAlloc(RT_ALIGN_Z(sizeof(*pVM), PAGE_SIZE) >> PAGE_SHIFT, (void **)&pVM);
     if (RT_FAILURE(rc))
     {
         RTPrintf("Fatal error: SUP Failure! rc=%Rrc\n", rc);

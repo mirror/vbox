@@ -41,7 +41,7 @@
 int main(int argc, char **argv)
 {
     RTR3Init();
-    int rc = SUPUninstall();
+    int rc = SUPR3Uninstall();
     if (RT_SUCCESS(rc))
     {
         printf("uninstalled successfully\n");

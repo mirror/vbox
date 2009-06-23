@@ -141,7 +141,7 @@ void pdmR3LdrTermU(PUVM pUVM)
             case PDMMOD_TYPE_R0:
             {
                 Assert(pModule->ImageBase);
-                int rc2 = SUPFreeModule((void *)(uintptr_t)pModule->ImageBase);
+                int rc2 = SUPR3FreeModule((void *)(uintptr_t)pModule->ImageBase);
                 AssertRC(rc2);
                 pModule->ImageBase = 0;
                 break;
@@ -517,7 +517,7 @@ VMMR3DECL(int) PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszN
                     }
                 }
                 else
-                    AssertMsgFailed(("SUPPageAlloc(%d,) -> %Rrc\n", cPages, rc));
+                    AssertMsgFailed(("SUPR3PageAlloc(%d,) -> %Rrc\n", cPages, rc));
                 RTMemTmpFree(paPages);
             }
             else
@@ -589,7 +589,7 @@ static int pdmR3LoadR0U(PUVM pUVM, const char *pszFilename, const char *pszName)
      * Ask the support library to load it.
      */
     void *pvImageBase;
-    int rc = SUPLoadModule(pszFilename, pszName, &pvImageBase);
+    int rc = SUPR3LoadModule(pszFilename, pszName, &pvImageBase);
     if (RT_SUCCESS(rc))
     {
         pModule->hLdrMod = NIL_RTLDRMOD;
@@ -705,7 +705,7 @@ VMMR3DECL(int) PDMR3LdrGetSymbolR0(PVM pVM, const char *pszModule, const char *p
         if (    pModule->eType == PDMMOD_TYPE_R0
             &&  !strcmp(pModule->szName, pszModule))
         {
-            int rc = SUPGetSymbolR0((void *)(uintptr_t)pModule->ImageBase, pszSymbol, (void **)ppvValue);
+            int rc = SUPR3GetSymbolR0((void *)(uintptr_t)pModule->ImageBase, pszSymbol, (void **)ppvValue);
             if (RT_FAILURE(rc))
             {
                 AssertMsgRC(rc, ("Couldn't find symbol '%s' in module '%s'\n", pszSymbol, pszModule));

@@ -576,13 +576,13 @@ VBoxNetDhcp::~VBoxNetDhcp()
         CloseReq.pSession = m_pSession;
         CloseReq.hIf = m_hIf;
         m_hIf = INTNET_HANDLE_INVALID;
-        int rc = SUPCallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_CLOSE, 0, &CloseReq.Hdr);
+        int rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_CLOSE, 0, &CloseReq.Hdr);
         AssertRC(rc);
     }
 
     if (m_pSession)
     {
-        SUPTerm(false /* not forced */);
+        SUPR3Term(false /*fForced*/);
         m_pSession = NIL_RTR0PTR;
     }
 }
@@ -878,10 +878,10 @@ int VBoxNetDhcp::tryGoOnline(void)
         return 1;
     }
 
-    rc = SUPLoadVMM(strcat(szPath, "/VMMR0.r0"));
+    rc = SUPR3LoadVMM(strcat(szPath, "/VMMR0.r0"));
     if (RT_FAILURE(rc))
     {
-        RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: SUPLoadVMM(\"%s\") -> %Rrc", szPath, rc);
+        RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: SUPR3LoadVMM(\"%s\") -> %Rrc", szPath, rc);
         return 1;
     }
 
@@ -906,7 +906,7 @@ int VBoxNetDhcp::tryGoOnline(void)
      * Issue the request.
      */
     debugPrint(2, false, "attempting to open/create network \"%s\"...", OpenReq.szNetwork);
-    rc = SUPCallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_OPEN, 0, &OpenReq.Hdr);
+    rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_OPEN, 0, &OpenReq.Hdr);
     if (RT_SUCCESS(rc))
     {
         m_hIf = OpenReq.hIf;
@@ -921,7 +921,7 @@ int VBoxNetDhcp::tryGoOnline(void)
         GetRing3BufferReq.pSession = m_pSession;
         GetRing3BufferReq.hIf = m_hIf;
         GetRing3BufferReq.pRing3Buf = NULL;
-        rc = SUPCallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_GET_RING3_BUFFER, 0, &GetRing3BufferReq.Hdr);
+        rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_GET_RING3_BUFFER, 0, &GetRing3BufferReq.Hdr);
         if (RT_SUCCESS(rc))
         {
             PINTNETBUF pBuf = GetRing3BufferReq.pRing3Buf;
@@ -938,18 +938,18 @@ int VBoxNetDhcp::tryGoOnline(void)
             ActiveReq.pSession = m_pSession;
             ActiveReq.hIf = m_hIf;
             ActiveReq.fActive = true;
-            rc = SUPCallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_SET_ACTIVE, 0, &ActiveReq.Hdr);
+            rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_SET_ACTIVE, 0, &ActiveReq.Hdr);
             if (RT_SUCCESS(rc))
                 return 0;
 
             /* bail out */
-            RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: SUPCallVMMR0Ex(,VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE,) failed, rc=%Rrc\n", rc);
+            RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: SUPR3CallVMMR0Ex(,VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE,) failed, rc=%Rrc\n", rc);
         }
         else
-            RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: SUPCallVMMR0Ex(,VMMR0_DO_INTNET_IF_GET_RING3_BUFFER,) failed, rc=%Rrc\n", rc);
+            RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: SUPR3CallVMMR0Ex(,VMMR0_DO_INTNET_IF_GET_RING3_BUFFER,) failed, rc=%Rrc\n", rc);
     }
     else
-        RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: SUPCallVMMR0Ex(,VMMR0_DO_INTNET_OPEN,) failed, rc=%Rrc\n", rc);
+        RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: SUPR3CallVMMR0Ex(,VMMR0_DO_INTNET_OPEN,) failed, rc=%Rrc\n", rc);
 
     return RT_SUCCESS(rc) ? 0 : 1;
 }
@@ -978,7 +978,7 @@ int VBoxNetDhcp::run(void)
         WaitReq.pSession = m_pSession;
         WaitReq.hIf = m_hIf;
         WaitReq.cMillies = 2000; /* 2 secs - the sleep is for some reason uninterruptible... */  /** @todo fix interruptability in SrvIntNet! */
-        int rc = SUPCallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_WAIT, 0, &WaitReq.Hdr);
+        int rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_WAIT, 0, &WaitReq.Hdr);
         if (RT_FAILURE(rc))
         {
             if (rc == VERR_TIMEOUT)

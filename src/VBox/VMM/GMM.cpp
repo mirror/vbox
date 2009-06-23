@@ -127,10 +127,10 @@ GMMR3DECL(int) GMMR3AllocatePagesPerform(PVM pVM, PGMMALLOCATEPAGESREQ pReq)
          * Seed another chunk.
          */
         void *pvChunk;
-        rc = SUPPageAlloc(GMM_CHUNK_SIZE >> PAGE_SHIFT, &pvChunk);
+        rc = SUPR3PageAlloc(GMM_CHUNK_SIZE >> PAGE_SHIFT, &pvChunk);
         if (RT_FAILURE(rc))
             return VMSetError(pVM, rc, RT_SRC_POS,
-                              N_("Out of memory (SUPPageAlloc) seeding a %u pages allocation request"),
+                              N_("Out of memory (SUPR3PageAlloc) seeding a %u pages allocation request"),
                               pReq->cPages);
 
         rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_SEED_CHUNK, (uintptr_t)pvChunk, NULL);

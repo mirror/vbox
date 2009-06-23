@@ -620,7 +620,8 @@ typedef struct PDMDRVHLP
     DECLR3CALLBACKMEMBER(int, pfnSTAMDeregister,(PPDMDRVINS pDrvIns, void *pvSample));
 
     /**
-     * Calls the HC R0 VMM entry point, in a safer but slower manner than SUPCallVMMR0.
+     * Calls the HC R0 VMM entry point, in a safer but slower manner than
+     * SUPR3CallVMMR0.
      *
      * When entering using this call the R0 components can call into the host kernel
      * (i.e. use the SUPR0 and RT APIs).
