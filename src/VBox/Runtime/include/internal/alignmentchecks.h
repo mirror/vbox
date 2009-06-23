@@ -45,6 +45,7 @@
 
 #if defined(DEBUG) || defined(DOXYGEN_RUNNING)
 # include <iprt/asm.h>
+# include <iprt/stdint.h>
 
 RT_C_DECLS_BEGIN
 extern RTDATADECL(bool) g_fRTAlignmentChecks;
