@@ -191,9 +191,9 @@ DECLINLINE(void) rtlogUnlock(PRTLOGGER pLogger)
  * @param   pszFilenameFmt      Log filename format string. Standard RTStrFormat().
  * @param   ...                 Format arguments.
  */
-RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGroupSettings,
+RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGroupSettings,
                            const char *pszEnvVarBase, unsigned cGroups, const char * const * papszGroups,
-                           RTUINT fDestFlags, char *pszErrorMsg, size_t cchErrorMsg, const char *pszFilenameFmt, va_list args)
+                           uint32_t fDestFlags, char *pszErrorMsg, size_t cchErrorMsg, const char *pszFilenameFmt, va_list args)
 {
     int        rc;
     size_t     cb;
@@ -504,9 +504,9 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGr
  * @param   pszFilenameFmt      Log filename format string. Standard RTStrFormat().
  * @param   ...                 Format arguments.
  */
-RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGroupSettings,
+RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGroupSettings,
                         const char *pszEnvVarBase, unsigned cGroups, const char * const * papszGroups,
-                        RTUINT fDestFlags, const char *pszFilenameFmt, ...)
+                        uint32_t fDestFlags, const char *pszFilenameFmt, ...)
 {
     va_list args;
     int rc;
@@ -535,9 +535,9 @@ RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGroup
  * @param   pszFilenameFmt      Log filename format string. Standard RTStrFormat().
  * @param   ...                 Format arguments.
  */
-RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGroupSettings,
+RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGroupSettings,
                           const char *pszEnvVarBase, unsigned cGroups, const char * const * papszGroups,
-                          RTUINT fDestFlags,  char *pszErrorMsg, size_t cchErrorMsg, const char *pszFilenameFmt, ...)
+                          uint32_t fDestFlags,  char *pszErrorMsg, size_t cchErrorMsg, const char *pszFilenameFmt, ...)
 {
     va_list args;
     int rc;
@@ -559,7 +559,7 @@ RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGro
 RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
 {
     int            rc;
-    RTUINT         iGroup;
+    uint32_t       iGroup;
     RTSEMFASTMUTEX MutexSem;
 
     /*
@@ -641,7 +641,7 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
  * @param   fFlags              Logger instance flags, a combination of the RTLOGFLAGS_* values.
  */
 RTDECL(int) RTLogCloneRC(PRTLOGGER pLogger, PRTLOGGERRC pLoggerRC, size_t cbLoggerRC,
-                         RTRCPTR pfnLoggerRCPtr, RTRCPTR pfnFlushRCPtr, RTUINT fFlags)
+                         RTRCPTR pfnLoggerRCPtr, RTRCPTR pfnFlushRCPtr, uint32_t fFlags)
 {
     /*
      * Validate input.
@@ -778,7 +778,8 @@ RTDECL(void) RTLogFlushRC(PRTLOGGER pLogger, PRTLOGGERRC pLoggerRC)
  * @param   fFlags              Logger instance flags for the clone, a combination of the RTLOGFLAGS_* values.
  * @param   fDestFlags          The destination flags.
  */
-RTDECL(int) RTLogCreateForR0(PRTLOGGER pLogger, size_t cbLogger, PFNRTLOGGER pfnLogger, PFNRTLOGFLUSH pfnFlush, RTUINT fFlags, RTUINT fDestFlags)
+RTDECL(int) RTLogCreateForR0(PRTLOGGER pLogger, size_t cbLogger, PFNRTLOGGER pfnLogger, PFNRTLOGFLUSH pfnFlush,
+                             uint32_t fFlags, uint32_t fDestFlags)
 {
     /*
      * Validate input.
@@ -802,7 +803,7 @@ RTDECL(int) RTLogCreateForR0(PRTLOGGER pLogger, size_t cbLogger, PFNRTLOGGER pfn
     pLogger->File         = NIL_RTFILE;
     pLogger->pszFilename  = NULL;
     pLogger->papszGroups  = NULL;
-    pLogger->cMaxGroups   = (RTUINT)((cbLogger - RT_OFFSETOF(RTLOGGER, afGroups[0])) / sizeof(pLogger->afGroups[0]));
+    pLogger->cMaxGroups   = (uint32_t)((cbLogger - RT_OFFSETOF(RTLOGGER, afGroups[0])) / sizeof(pLogger->afGroups[0]));
     pLogger->cGroups      = 1;
     pLogger->afGroups[0]  = 0;
     return VINF_SUCCESS;
@@ -1755,7 +1756,7 @@ static DECLCALLBACK(size_t) rtR0LogLoggerExFallbackOutput(void *pv, const char *
             /* how much */
             uint32_t cb = sizeof(pThis->achScratch) - pThis->offScratch - 1; /* minus 1 - for the string terminator. */
             if (cb > cbChars)
-                cb = (RTUINT)cbChars;
+                cb = (uint32_t)cbChars;
 
             /* copy */
             memcpy(&pThis->achScratch[pThis->offScratch], pachChars, cb);
@@ -1899,7 +1900,7 @@ static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t 
             memcpy(&pLogger->achScratch[pLogger->offScratch], pachChars, cb);
 
             /* advance */
-            pLogger->offScratch += (RTUINT)cb;
+            pLogger->offScratch += (uint32_t)cb;
             cbRet += cb;
             cbChars -= cb;
 
@@ -2257,7 +2258,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                  */
                 cb = psz - &pLogger->achScratch[pLogger->offScratch];
                 Assert(cb <= 198);
-                pLogger->offScratch += (RTUINT)cb;
+                pLogger->offScratch += (uint32_t)cb;
                 cb = sizeof(pLogger->achScratch) - pLogger->offScratch - 1;
             }
             else if (cb <= 0)
@@ -2297,7 +2298,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
             memcpy(&pLogger->achScratch[pLogger->offScratch], pachChars, cb);
 
             /* advance */
-            pLogger->offScratch += (RTUINT)cb;
+            pLogger->offScratch += (uint32_t)cb;
             cbRet += cb;
             cbChars -= cb;
 
