@@ -2785,6 +2785,7 @@ PDMBOTHCBDECL(int) ioapicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GC
 
 PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
+    /* PDM lock is taken here; @todo add assertion */
     IOAPICState *pThis = PDMINS_2_DATA(pDevIns, IOAPICState *);
     STAM_COUNTER_INC(&pThis->CTXSUFF(StatSetIrq));
     LogFlow(("ioapicSetIrq: iIrq=%d iLevel=%d\n", iIrq, iLevel));
