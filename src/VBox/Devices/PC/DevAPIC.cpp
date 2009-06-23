@@ -1266,7 +1266,7 @@ PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns)
     int intno;
 
     if (!(s->spurious_vec & APIC_SV_ENABLE)) {
-        Log(("apic_get_interrupt: returns -1 (APIC_SV_ENABLE)\n"));
+        Log(("CPU%d: apic_get_interrupt: returns -1 (APIC_SV_ENABLE)\n", s->phys_id));
         intno = -1;
         goto done;
     }
@@ -1274,7 +1274,7 @@ PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns)
     /* XXX: spurious IRQ handling */
     intno = get_highest_priority_int(s->irr);
     if (intno < 0) {
-        Log(("apic_get_interrupt: returns -1 (irr)\n"));
+        Log(("CPU%d: apic_get_interrupt: returns -1 (irr)\n", s->phys_id));
         intno = -1;
         goto done;
     }
