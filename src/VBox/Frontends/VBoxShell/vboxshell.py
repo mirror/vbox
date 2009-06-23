@@ -196,7 +196,6 @@ class VBoxMonitor:
         print "onGuestPropertyChange: %s" %(id)
     
 
-
 g_hasreadline = 1
 try:
     import readline
@@ -372,11 +371,9 @@ def monitorVbox(ctx, dur):
         while  time.time() < end:
             ctx['global'].waitForEvents(500)
     # We need to catch all exceptions here, otherwise callback will never be unregistered
-    except Exception,e:
-        print e
+    except:
         if g_verbose:
                 traceback.print_exc()
-        pass    
     vbox.unregisterCallback(cb)
 
 def cmdExistingVm(ctx,mach,cmd,args):

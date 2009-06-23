@@ -165,6 +165,12 @@ class PlatformMSCOM:
         #str += "   _reg_desc_ = 'Generated callback implementation class'\n"
         #str += "   _reg_policy_spec_ = 'win32com.server.policy.EventHandlerPolicy'\n"
 
+        # generate capitalized version of callbacks - that's how Python COM
+        # looks them up on Windows
+        for m in dir(impl):
+           if m.startswith("on"):      
+             str += "   "+m[0].capitalize()+m[1:]+"=BaseClass."+m+"\n"
+
         str += "   def __init__(self): BaseClass.__init__(self, arg)\n"
         #str += "win32com.server.register.UseCommandLine("+iface+"Impl)\n"
 
