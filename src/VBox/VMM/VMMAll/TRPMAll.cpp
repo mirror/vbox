@@ -183,7 +183,7 @@ VMMDECL(int)  TRPMAssertTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType)
      */
     if (pVCpu->trpm.s.uActiveVector != ~0U)
     {
-        AssertMsgFailed(("Active trap %#x\n", pVCpu->trpm.s.uActiveVector));
+        AssertMsgFailed(("CPU%d: Active trap %#x\n", pVCpu->idCpu, pVCpu->trpm.s.uActiveVector));
         return VERR_TRPM_ACTIVE_TRAP;
     }
 
