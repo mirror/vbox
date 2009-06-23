@@ -3030,7 +3030,6 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
             pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL;
         }
 
-        pPGM->fPhysCacheFlushPending = true;
         pgmR3HandlerPhysicalUpdateAll(pVM);
 
         for (unsigned i=0;i<pVM->cCPUs;i++)

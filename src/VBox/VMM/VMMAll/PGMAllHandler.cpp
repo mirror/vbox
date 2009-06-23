@@ -166,7 +166,6 @@ VMMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
         rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pNew, pRam);
         if (rc == VINF_PGM_SYNC_CR3)
             rc = VINF_PGM_GCPHYS_ALIASED;
-        pVM->pgm.s.fPhysCacheFlushPending = true;
         pgmUnlock(pVM);
         HWACCMFlushTLBOnAllVCpus(pVM);
 #ifndef IN_RING3
@@ -420,7 +419,6 @@ void pgmHandlerPhysicalResetAliasedPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
 # else
     HWACCMFlushTLBOnAllVCpus(pVM);
 # endif
-    pVM->pgm.s.fPhysCacheFlushPending = true;
 
     /*
      * Make it an MMIO/Zero page.
@@ -548,7 +546,6 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
                      * Set ram flags, flush shadow PT entries and finally tell REM about this.
                      */
                     rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pCur, pRam);
-                    pVM->pgm.s.fPhysCacheFlushPending = true;
                     pgmUnlock(pVM);
 
 #ifndef IN_RING3
@@ -853,7 +850,6 @@ VMMDECL(int)  PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
                      * Set the flags and flush shadow PT entries.
                      */
                     rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pCur, pRam);
-                    pVM->pgm.s.fPhysCacheFlushPending = true;
                     HWACCMFlushTLBOnAllVCpus(pVM);
                 }
 
