@@ -288,7 +288,8 @@
                <xsl:with-param name="safearray" select="$safearray" />
              </xsl:call-template>
            </xsl:variable>
-           <xsl:value-of select="concat('new ', $gluetype, '(', $value,', port)')" />
+           <!-- if the MOR string is empty, that means NULL, so return NULL instead of an object then -->
+           <xsl:value-of select="concat('(', $value, '.length() > 0) ? new ', $gluetype, '(', $value,', port) : null')" />
         </xsl:otherwise>
       </xsl:choose>
     </xsl:when>

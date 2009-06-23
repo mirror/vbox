@@ -185,7 +185,8 @@ class ManagedObjectRef
         }
 
         static int findRefFromId(const WSDLT_ID &id,
-                                 ManagedObjectRef **pRef);
+                                 ManagedObjectRef **pRef,
+                                 bool fNullAllowed);
 
         static ManagedObjectRef* findFromPtr(ComPtr<IUnknown> pcu);
         static ManagedObjectRef* create(const WSDLT_ID &idParent,
@@ -203,19 +204,24 @@ class ManagedObjectRef
  * the internal stack actually is of the expected interface.
  *
  * @param soap
- * @param id integer managed object reference, as passed in by web service client
- * @param pComPtr reference to COM pointer object that receives the com pointer,
+ * @param id in: integer managed object reference, as passed in by web service client
+ * @param pComPtr out: reference to COM pointer object that receives the com pointer,
  *                if SOAP_OK is returned
+ * @param fNullAllowed in: if true, then this func returns a NULL COM pointer if an
+ *                empty MOR is passed in (i.e. NULL pointers are allowed). If false,
+ *                then this fails; this will be false when called for the "this"
+ *                argument of method calls, which really shouldn't be NULL.
  * @return error code or SOAP_OK if no error
  */
 template <class T>
 int findComPtrFromId(struct soap *soap,
                      const WSDLT_ID &id,
-                     ComPtr<T> &pComPtr)
+                     ComPtr<T> &pComPtr,
+                     bool fNullAllowed)
 {
     int rc;
     ManagedObjectRef *pRef;
-    if ((rc = ManagedObjectRef::findRefFromId(id, &pRef)))
+    if ((rc = ManagedObjectRef::findRefFromId(id, &pRef, fNullAllowed)))
         RaiseSoapInvalidObjectFault(soap, id);
     else
     {
@@ -246,6 +252,13 @@ WSDLT_ID createOrFindRefFromComPtr(const WSDLT_ID &idParent,
                                    const char *pcszInterface,
                                    const ComPtr<T> &pc)
 {
+    // NULL comptr should return NULL MOR
+    if (pc.isNull())
+    {
+        WEBDEBUG(("   createOrFindRefFromComPtr(): returning empty MOR for NULL COM pointer\n"));
+        return "";
+    }
+
     WebServiceSession* pSession;
     if ((pSession = WebServiceSession::findSessionFromRef(idParent)))
     {

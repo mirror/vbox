@@ -625,26 +625,16 @@ const char *g_pcszIUnknown = "IUnknown";
       </xsl:choose>
     </xsl:when>
     <xsl:when test="($wsmap='managed')">
-      <xsl:text>        // look up managed object reference for method call</xsl:text>
-      <xsl:call-template name="emitNewlineIndent8" />
-      <xsl:value-of select="concat('ComPtr&lt;', $ifname, '&gt; pObj;')" />
-      <xsl:call-template name="emitNewlineIndent8" />
-      <xsl:value-of select="concat('if (!', $G_requestElementVarName, ')')" />
-      <xsl:call-template name="emitNewlineIndent8" />
-      <xsl:text>{</xsl:text>
-      <xsl:call-template name="emitNewlineIndent8" />
-      <xsl:text>    RaiseSoapInvalidObjectFault(soap, "");</xsl:text>
-      <xsl:call-template name="emitNewlineIndent8" />
-      <xsl:text>    break;</xsl:text>
-      <xsl:call-template name="emitNewlineIndent8" />
-      <xsl:text>}</xsl:text>
-      <xsl:call-template name="emitNewlineIndent8" />
-      <xsl:value-of select="concat('const WSDLT_ID &amp;idThis = ', $structprefix, $G_nameObjectRefEncoded, ';')" />
-      <xsl:call-template name="emitNewlineIndent8" />
-      <xsl:value-of select="'if ((rc = findComPtrFromId(soap, idThis, pObj)))'" />
-      <xsl:call-template name="emitNewlineIndent8" />
-      <xsl:text>    break;</xsl:text>
-      <xsl:call-template name="emitNewline" />
+      <xsl:text>        // look up managed object reference for method call&#10;</xsl:text>
+      <xsl:value-of select="concat('        ComPtr&lt;', $ifname, '&gt; pObj;&#10;')" />
+      <xsl:value-of select="concat('        if (!', $G_requestElementVarName, ')&#10;')" />
+      <xsl:text>        {&#10;</xsl:text>
+      <xsl:text>            RaiseSoapInvalidObjectFault(soap, "");&#10;</xsl:text>
+      <xsl:text>            break;&#10;</xsl:text>
+      <xsl:text>        }&#10;</xsl:text>
+      <xsl:value-of select="concat('        const WSDLT_ID &amp;idThis = ', $structprefix, $G_nameObjectRefEncoded, ';&#10;')" />
+      <xsl:value-of select="'        if ((rc = findComPtrFromId(soap, idThis, pObj, false)))&#10;'" />
+      <xsl:text>            break;&#10;</xsl:text>
     </xsl:when>
   </xsl:choose>
 </xsl:template>
@@ -686,7 +676,7 @@ const char *g_pcszIUnknown = "IUnknown";
         <xsl:when test="$type='$unknown'">
           <xsl:value-of select="'    ComPtr&lt;IUnknown&gt; tmpObject;'" />
           <xsl:call-template name="emitNewlineIndent8" />
-          <xsl:value-of select="concat('    if ((rc = findComPtrFromId(soap, ', $structprefix, $name, '[i], tmpObject)))')" />
+          <xsl:value-of select="concat('    if ((rc = findComPtrFromId(soap, ', $structprefix, $name, '[i], tmpObject, true)))')" />
           <xsl:call-template name="emitNewlineIndent8" />
           <xsl:text>        break;</xsl:text>
           <xsl:call-template name="emitNewlineIndent8" />
@@ -739,7 +729,7 @@ const char *g_pcszIUnknown = "IUnknown";
         <xsl:when test="$type='$unknown'">
           <xsl:value-of select="concat(' comcall_', $name, ';')" />
           <xsl:call-template name="emitNewlineIndent8" />
-          <xsl:value-of select="concat('if ((rc = findComPtrFromId(soap, ', $structprefix, $name, ', comcall_', $name,')))')" />
+          <xsl:value-of select="concat('if ((rc = findComPtrFromId(soap, ', $structprefix, $name, ', comcall_', $name,', true)))')" />
           <xsl:call-template name="emitNewlineIndent8" />
           <xsl:text>    break</xsl:text>
         </xsl:when>
@@ -757,7 +747,7 @@ const char *g_pcszIUnknown = "IUnknown";
             <xsl:when test="($wsmap='managed')">
               <xsl:value-of select="concat(' comcall_', $name, ';')" />
               <xsl:call-template name="emitNewlineIndent8" />
-              <xsl:value-of select="concat('if ((rc = findComPtrFromId(soap, ', $structprefix, $name, ', comcall_', $name,')))')" />
+              <xsl:value-of select="concat('if ((rc = findComPtrFromId(soap, ', $structprefix, $name, ', comcall_', $name,', true)))')" />
               <xsl:call-template name="emitNewlineIndent8" />
               <xsl:text>    break</xsl:text>
             </xsl:when>
