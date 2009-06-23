@@ -33,6 +33,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_DEFAULT
+#include <iprt/types.h>                 /* darwin: UINT32_C and others. */
+
 #ifdef RT_OS_WINDOWS
 # include <process.h>
 #else
