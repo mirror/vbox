@@ -1106,12 +1106,20 @@ WSDLT_ID ManagedObjectRef::toWSDL() const
  * @return
  */
 int ManagedObjectRef::findRefFromId(const WSDLT_ID &id,
-                                    ManagedObjectRef **pRef)
+                                    ManagedObjectRef **pRef,
+                                    bool fNullAllowed)
 {
     int rc = 0;
 
     do
     {
+        // allow NULL (== empty string) input reference, which should return a NULL pointer
+        if (!id.length() && fNullAllowed)
+        {
+            *pRef = NULL;
+            return 0;
+        }
+
         uint64_t sessid;
         uint64_t objid;
         WEBDEBUG(("   %s(): looking up objref %s\n", __FUNCTION__, id.c_str()));
@@ -1178,7 +1186,7 @@ int __vbox__IManagedObjectRef_USCOREgetInterfaceName(
 
     do {
         ManagedObjectRef *pRef;
-        if (!ManagedObjectRef::findRefFromId(req->_USCOREthis, &pRef))
+        if (!ManagedObjectRef::findRefFromId(req->_USCOREthis, &pRef, false))
             resp->returnval = pRef->getInterfaceName();
 
     } while (0);
@@ -1209,7 +1217,7 @@ int __vbox__IManagedObjectRef_USCORErelease(
 
     do {
         ManagedObjectRef *pRef;
-        if ((rc = ManagedObjectRef::findRefFromId(req->_USCOREthis, &pRef)))
+        if ((rc = ManagedObjectRef::findRefFromId(req->_USCOREthis, &pRef, false)))
         {
             RaiseSoapInvalidObjectFault(soap, req->_USCOREthis);
             break;
