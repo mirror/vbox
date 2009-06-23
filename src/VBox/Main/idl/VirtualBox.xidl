@@ -2998,7 +2998,7 @@
         <desc>Progress object to track the operation completion.</desc>
       </param>
     </method>
-    
+
   </interface>
 
   <!--
@@ -5577,6 +5577,21 @@
      uuid="13dfbef3-b74d-487d-bada-2304529aefa6"
      wsmap="suppress"
      >
+
+    <desc>
+        This interface is used by a client of the Main API that need to
+        be notified of events. For example, a graphical user interface
+        can use this to learn about machine state changes so they can
+        update the list of virtual machines without having to rely
+        on polling.
+
+        Whenever relevant events occur in VirtualBox, the callbacks in
+        objects of this interface are called. In order for this to be
+        useful, a client needs to create its own subclass that implements
+        this interface in which the methods for the relevant callbacks
+        are overridden. An instance of this subclass interface can then
+        be passed to <link to="IConsole::registerCallback" />.
+    </desc>
 
     <method name="onMousePointerShapeChange">
       <desc>
@@ -8416,9 +8431,9 @@
       The exact media type may be determined by querying the appropriate
       interface such as:
       <ul>
-        <li>IHardDisk (virtual hard disks)</li>
-        <li>IDVDImage (standard CD/DVD ISO image files)</li>
-        <li>IFloppyImage (raw floppy image files)</li>
+        <li><link to="IHardDisk" /> (virtual hard disks)</li>
+        <li><link to="IDVDImage" /> (standard CD/DVD ISO image files)</li>
+        <li><link to="IFloppyImage" /> (raw floppy image files)</li>
       </ul>
 
       Existing media are opened using the following methods, depending on the
@@ -8689,14 +8704,14 @@
         <link to="#unlockRead"/> calls.
 
         This method sets the media state to <link
-        to="MediaState_LockedRead"/> on success. The state prior to
-        this call must be <link to="MediaState_Created"/>, <link
-        to="MediaState_Inaccessible"/> or <link
-        to="MediaState_LockedRead"/>. As you can see, inaccessible
-        media can be locked too. This is not an error; this method
-        performs a logical lock that prevents modifications of this
-        media through the VirtualBox API, not a physical lock of the
-        underlying storage unit.
+        to="MediaState_LockedRead" /> on success. The state prior to
+        this call must be <link to="MediaState_Created" />,
+        <link to="MediaState_Inaccessible" /> or
+        <link to="MediaState_LockedRead" />.
+        As you can see, inaccessible media can be locked too. This is
+        not an error; this method performs a logical lock that prevents
+        modifications of this media through the VirtualBox API, not a
+        physical lock of the underlying storage unit.
 
         This method returns the current state of the medium
         <b>before</b> the operation.
@@ -8760,10 +8775,9 @@
         can <b>not</b> be nested and must be followed by a<link
         to="#unlockWrite"/> call before the next lockWrite call.
 
-        This method sets the media state to <link
-        to="MediaState_LockedWrite"/> on success. The state prior to
-        this call must be <link to="MediaState_Created"/> or <link
-        to="MediaState_Inaccessible"/>. As you can see, inaccessible
+        This method sets the media state to <link to="MediaState_LockedWrite" />
+        on success. The state prior to this call must be <link to="MediaState_Created"/>
+        or <link to="MediaState_Inaccessible"/>. As you can see, inaccessible
         media can be locked too. This is not an error; this method
         performs a logical lock preventing modifications of this
         media through the VirtualBox API, not a physical lock of the
@@ -10713,19 +10727,19 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <desc>Number of <tt>RTRECT</tt> elements in the @a rectangles array.</desc>
       </param>
     </method>
-    
+
     <method name="processVHWACommand">
       <desc>
         Posts a Video HW Acceleration Command to the frame buffer for processing.
         The commands used for 2D video acceleration (DDraw surface creation/destroying, blitting, scaling, color covnersion, overlaying, etc.)
         are posted from quest to the host to be processed by the host hardware.
-        
+
         <note>
           The address of the provided command must be in the process space of
           this IFramebuffer object.
         </note>
       </desc>
-    
+
       <param name="command" type="octet" mod="ptr" dir="in">
         <desc>Pointer to VBOXVHWACMD containing the command to execute.</desc>
       </param>
@@ -10970,7 +10984,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Signals that the Video HW Acceleration command has completed.
       </desc>
- 
+
       <param name="command" type="octet" mod="ptr" dir="in">
         <desc>Pointer to VBOXVHWACMD containing the completed command.</desc>
       </param>
@@ -13096,33 +13110,38 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       The IPerformanceCollector interface represents a service that collects and
       stores performance metrics data.
 
-      Performance metrics are associated with objects like IHost and
+      Performance metrics are associated with objects of interfaces like IHost and
       IMachine. Each object has a distinct set of performance metrics.
       The set can be obtained with <link to="IPerformanceCollector::getMetrics"/>.
 
-      Metric data are collected at the specified intervals and are retained
-      internally. The interval and the number of samples retained can be set
+      Metric data is collected at the specified intervals and is retained
+      internally. The interval and the number of retained samples can be set
       with <link to="IPerformanceCollector::setupMetrics" />.
 
-      Metrics are organized hierarchically, each level separated by slash (/).
-      General scheme for metric name is
-      "Category/Metric[/SubMetric][:aggregation]". For example CPU/Load/User:avg
-      metric name stands for: CPU category, Load metric, User submetric, average
-      aggregate. An aggregate function is computed over all retained data. Valid
-      aggregate functions are:
+      Metrics are organized hierarchically, with each level separated by a
+      slash (/) character. Generally, the scheme for metric names is like this:
 
-      <ul>
-      <li>avg -- average</li>
-      <li>min -- minimum</li>
-      <li>max -- maximum</li>
-      </ul>
+      <tt>Category/Metric[/SubMetric][:aggregation]</tt>
 
-      "Category/Metric" together form base metric name. A base metric is the
+      "Category/Metric" together form the base metric name. A base metric is the
       smallest unit for which a sampling interval and the number of retained
       samples can be set. Only base metrics can be enabled and disabled. All
       sub-metrics are collected when their base metric is collected.
       Collected values for any set of sub-metrics can be queried with
-      <link to="IPerformanceCollector::queryMetricsData" />. When setting up
+      <link to="IPerformanceCollector::queryMetricsData" />.
+
+      For example "CPU/Load/User:avg"
+      metric name stands for the "CPU" category, "Load" metric, "User" submetric,
+      "average" aggregate. An aggregate function is computed over all retained
+      data. Valid aggregate functions are:
+
+      <ul>
+          <li>avg -- average</li>
+          <li>min -- minimum</li>
+          <li>max -- maximum</li>
+      </ul>
+
+      When setting up
       metric parameters, querying metric data, enabling or disabling metrics
       wildcards can be used in metric names to specify a subset of metrics. For
       example, to select all CPU-related metrics use <tt>CPU/*</tt>, all
