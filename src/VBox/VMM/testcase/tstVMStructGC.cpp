@@ -530,9 +530,6 @@ int main()
     GEN_CHECK_OFF(PGM, pPoolR0);
     GEN_CHECK_OFF(PGM, pPoolRC);
     GEN_CHECK_OFF(PGM, fNoMorePhysWrites);
-    GEN_CHECK_OFF(PGM, fPhysCacheFlushPending);
-    GEN_CHECK_OFF(PGM, pgmphysreadcache);
-    GEN_CHECK_OFF(PGM, pgmphyswritecache);
     GEN_CHECK_OFF(PGM, ChunkR3Map);
     GEN_CHECK_OFF(PGM, ChunkR3Map.pTree);
     GEN_CHECK_OFF(PGM, ChunkR3Map.Tlb);

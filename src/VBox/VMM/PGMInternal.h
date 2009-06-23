@@ -84,11 +84,6 @@
 #define PGM_MAX_PHYSCACHE_ENTRIES       64
 #define PGM_MAX_PHYSCACHE_ENTRIES_MASK  (PGM_MAX_PHYSCACHE_ENTRIES-1)
 
-/**
- * Enable caching of PGMR3PhysRead/WriteByte/Word/Dword
- */
-#define PGM_PHYSMEMACCESS_CACHING
-
 /** @def PGMPOOL_WITH_CACHE
  * Enable agressive caching using the page pool.
  *
@@ -2369,14 +2364,6 @@ typedef struct PGM
     /** We're not in a state which permits writes to guest memory.
      * (Only used in strict builds.) */
     bool                            fNoMorePhysWrites;
-
-    /** Flush the cache on the next access. */
-    bool                            fPhysCacheFlushPending;
-/** @todo r=bird: Fix member names!*/
-    /** PGMPhysRead cache */
-    PGMPHYSCACHE                    pgmphysreadcache;
-    /** PGMPhysWrite cache */
-    PGMPHYSCACHE                    pgmphyswritecache;
 
     /**
      * Data associated with managing the ring-3 mappings of the allocation chunks.
