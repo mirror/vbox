@@ -33,7 +33,7 @@ sys.path.append(VboxBinDir)
 from VirtualBox_constants import VirtualBoxReflectionInfo
 
 class PlatformMSCOM:
-    # Class to fake access to constants in style of foo.bar.boo 
+    # Class to fake access to constants in style of foo.bar.boo
     class ConstantFake:
         def __init__(self, parent, name):
             self.__dict__['_parent'] = parent
@@ -49,23 +49,23 @@ class PlatformMSCOM:
         def __getattr__(self, attr):
             import win32com
             from win32com.client import constants
-                
+
             if attr.startswith("__"):
                 raise AttributeError
 
             consts = self.__dict__['_consts']
-            
+
             fake = consts.get(attr, None)
             if fake != None:
-               return fake  
+               return fake
             try:
                name = self.__dict__['_name']
                parent = self.__dict__['_parent']
-               while parent != None:                  
+               while parent != None:
                   if parent._name is not None:
                     name = parent._name+'_'+name
                   parent = parent._parent
-                
+
                if name is not None:
                   name += "_" + attr
                else:
@@ -74,7 +74,7 @@ class PlatformMSCOM:
             except AttributeError,e:
                fake = PlatformMSCOM.ConstantFake(self, attr)
                consts[attr] = fake
-               return fake 
+               return fake
 
 
     class InterfacesWrapper:
@@ -103,7 +103,15 @@ class PlatformMSCOM:
             import win32com
             import pythoncom
             import win32api
-            self.constants = PlatformMSCOM.InterfacesWrapper()                        
+            self.constants = PlatformMSCOM.InterfacesWrapper()
+            from win32con import DUPLICATE_SAME_ACCESS
+            from win32api import GetCurrentThread,GetCurrentThreadId,DuplicateHandle,GetCurrentProcess
+            pid = GetCurrentProcess()
+            self.tid = GetCurrentThreadId()
+            handle = DuplicateHandle(pid, GetCurrentThread(), pid, 0, 0, DUPLICATE_SAME_ACCESS)
+            self.handles = []
+            self.handles.append(handle)
+
 
     def getSessionObject(self, vbox):
         import win32com
@@ -117,7 +125,7 @@ class PlatformMSCOM:
 
     def getConstants(self):
         return self.constants
-    
+
     def getType(self):
         return 'MSCOM'
 
@@ -135,60 +143,64 @@ class PlatformMSCOM:
         import pythoncom
         pythoncom.CoUninitialize()
 
-    def createCallback(self, iface, impl, arg):        
+    def createCallback(self, iface, impl, arg):
         d = {}
         d['BaseClass'] = impl
         d['arg'] = arg
-	d['tlb_guid'] = PlatformMSCOM.VBOX_TLB_GUID
+        d['tlb_guid'] = PlatformMSCOM.VBOX_TLB_GUID
         str = ""
         str += "import win32com.server.util\n"
+        #str += "import win32com.server.register\n"
         #str += "from win32com import universal\n"
-        #str += "import pythoncom\n"
+        str += "import pythoncom\n"
         #str += "universal.RegisterInterfaces(tlb_guid, 0, 1, 0, ['"+iface+"'])\n"
 
         str += "class "+iface+"Impl(BaseClass):\n"
         str += "   _com_interfaces_ = ['"+iface+"']\n"
         str += "   _typelib_guid_ = tlb_guid\n"
-	str += "   _typelib_version_ = 1, 0\n"
-        #str += "   _reg_clsctx_ = pythoncom.CLSCTX_INPROC_SERVER\n"
+        str += "   _typelib_version_ = 1, 0\n"
+        #str += "   _reg_clsctx_ = pythoncom.CLSCTX_LOCAL_SERVER\n"
         #str += "   _reg_clsid_ = '{F21202A2-959A-4149-B1C3-68B9013F3335}'\n"
         #str += "   _reg_progid_ = 'VirtualBox."+iface+"Impl'\n"
         #str += "   _reg_desc_ = 'Generated callback implementation class'\n"
         #str += "   _reg_policy_spec_ = 'win32com.server.policy.EventHandlerPolicy'\n"
 
         str += "   def __init__(self): BaseClass.__init__(self, arg)\n"
-        str += "result = win32com.server.util.wrap("+iface+"Impl())\n"        
+        #str += "win32com.server.register.UseCommandLine("+iface+"Impl)\n"
+
+        str += "result = win32com.server.util.wrap("+iface+"Impl())\n"
         exec (str,d,d)
         return d['result']
 
     def waitForEvents(self, timeout):
-        from win32file import CloseHandle
-        from win32con import DUPLICATE_SAME_ACCESS
-	from win32api import GetCurrentThread,DuplicateHandle,GetCurrentProcess
-	from win32event import MsgWaitForMultipleObjects, \
+        from win32api import GetCurrentThreadId
+        from win32event import MsgWaitForMultipleObjects, \
                                QS_ALLINPUT, WAIT_TIMEOUT, WAIT_OBJECT_0
         from pythoncom import PumpWaitingMessages
 
-        pid = GetCurrentProcess()
-	handle = DuplicateHandle(pid, GetCurrentThread(), pid, 0, 0, DUPLICATE_SAME_ACCESS)
-        
-        handles = []
-	handles.append(handle)
+        if (self.tid != GetCurrentThreadId()):
+            raise Exception("wait for events from the same thread you inited!")
 
-	rc = MsgWaitForMultipleObjects(handles, 0, timeout, QS_ALLINPUT)
-        if rc >= WAIT_OBJECT_0 and rc < WAIT_OBJECT_0+len(handles):
+        rc = MsgWaitForMultipleObjects(self.handles, 0, timeout, QS_ALLINPUT)
+        if rc >= WAIT_OBJECT_0 and rc < WAIT_OBJECT_0+len(self.handles):
             # is it possible?
             print "how come?"
             pass
-        elif rc==WAIT_OBJECT_0 + len(handles):
+        elif rc==WAIT_OBJECT_0 + len(self.handles):
             # Waiting messages
             PumpWaitingMessages()
         else:
+            # Timeout
             pass
-        CloseHandle(handle)
 
     def deinit(self):
         import pythoncom
+        from win32file import CloseHandle
+
+        for h in self.handles:
+           if h is not None:
+              CloseHandle(h)
+        self.handles = None
         pythoncom.CoUninitialize()
         pass
 
@@ -210,10 +222,10 @@ class PlatformXPCOM:
     def getConstants(self):
         import xpcom.components
         return xpcom.components.interfaces
-    
+
     def getType(self):
         return 'XPCOM'
-    
+
     def getRemote(self):
         return False
 
@@ -271,16 +283,16 @@ class PlatformWEBSERVICE:
 
     def getConstants(self):
         return None
-    
+
     def getType(self):
         return 'WEBSERVICE'
-    
+
     def getRemote(self):
         return True
 
     def getArray(self, obj, field):
         return obj.__getattr__(field)
-    
+
     def initPerThread(self):
         pass
 
@@ -325,7 +337,7 @@ class VirtualBoxManager:
             raise e
 
     def getArray(self, obj, field):
-        return self.platform.getArray(obj, field)       
+        return self.platform.getArray(obj, field)
 
     def getVirtualBox(self):
         return  self.platform.getVirtualBox()
