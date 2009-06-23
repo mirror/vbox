@@ -1586,6 +1586,17 @@ STDMETHODIMP Display::TakeScreenShot (BYTE *address, ULONG width, ULONG height)
     return rc;
 }
 
+STDMETHODIMP Display::TakeScreenShotSlow (ULONG width, ULONG height, 
+                                          ComSafeArrayOut (BYTE, aScreenData))
+{
+     HRESULT rc = S_OK;
+
+     rc = setError (E_NOTIMPL, tr ("This feature is not implemented"));
+     
+     return rc;
+}
+
+
 STDMETHODIMP Display::DrawToScreen (BYTE *address, ULONG x, ULONG y,
                                     ULONG width, ULONG height)
 {
