@@ -10888,6 +10888,29 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="height" type="unsigned long" dir="in"/>
     </method>
 
+    <method name="takeScreenShotSlow">
+      <desc>
+        Takes a screen shot of the requested size and returns it as 
+        an array of bytes. This API is slow, but could be the only option for
+        scribtable languages not allowed to manipulate with addresses
+        directly.
+
+        <result name="E_NOTIMPL">
+          Feature not implemented.
+        </result>
+        <result name="VBOX_E_IPRT_ERROR">
+          Could not take a screenshot.
+        </result>
+      </desc>
+      <param name="width" type="unsigned long" dir="in"/>
+      <param name="height" type="unsigned long" dir="in"/>
+      <param name="screenData" type="octet" dir="out" safearray="yes">
+        <desc>
+          Array with resulting screen data.
+        </desc>
+      </param>
+    </method>
+
     <method name="drawToScreen">
       <desc>
         Draws a 32-bpp image of the specified size from the given buffer
