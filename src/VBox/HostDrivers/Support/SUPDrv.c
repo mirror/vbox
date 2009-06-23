@@ -141,10 +141,6 @@ static void     supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
 static int      supdrvIOCtl_CallServiceModule(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPCALLSERVICE pReq);
 static int      supdrvIOCtl_LoggerSettings(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLOGGERSETTINGS pReq);
 static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt);
-#ifdef RT_OS_WINDOWS
-static int      supdrvPageGetPhys(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPages, PRTHCPHYS paPages);
-static bool     supdrvPageWasLockedByPageAlloc(PSUPDRVSESSION pSession, RTR3PTR pvR3);
-#endif /* RT_OS_WINDOWS */
 static int      supdrvGipCreate(PSUPDRVDEVEXT pDevExt);
 static void     supdrvGipDestroy(PSUPDRVDEVEXT pDevExt);
 static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
@@ -177,7 +173,7 @@ DECLASM(int)    UNWIND_WRAP(SUPR0LowFree)(PSUPDRVSESSION pSession, RTHCUINTPTR u
 DECLASM(int)    UNWIND_WRAP(SUPR0MemAlloc)(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppvR0, PRTR3PTR ppvR3);
 DECLASM(int)    UNWIND_WRAP(SUPR0MemGetPhys)(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, PSUPPAGE paPages);
 DECLASM(int)    UNWIND_WRAP(SUPR0MemFree)(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr);
-DECLASM(int)    UNWIND_WRAP(SUPR0PageAlloc)(PSUPDRVSESSION pSession, uint32_t cPages, PRTR3PTR ppvR3, PRTHCPHYS paPages);
+DECLASM(int)    UNWIND_WRAP(SUPR0PageAllocEx)(PSUPDRVSESSION pSession, uint32_t cPages, uint32_t fFlags, PRTR3PTR ppvR3, PRTR0PTR ppvR0, PRTHCPHYS paPages);
 DECLASM(int)    UNWIND_WRAP(SUPR0PageFree)(PSUPDRVSESSION pSession, RTR3PTR pvR3);
 //DECLASM(int)    UNWIND_WRAP(SUPR0Printf)(const char *pszFormat, ...);
 DECLASM(int)    UNWIND_WRAP(SUPSemEventCreate)(PSUPDRVSESSION pSession, PSUPSEMEVENT phEvent);
@@ -332,7 +328,7 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0MemAlloc",                          (void *)UNWIND_WRAP(SUPR0MemAlloc) },
     { "SUPR0MemGetPhys",                        (void *)UNWIND_WRAP(SUPR0MemGetPhys) },
     { "SUPR0MemFree",                           (void *)UNWIND_WRAP(SUPR0MemFree) },
-    { "SUPR0PageAlloc",                         (void *)UNWIND_WRAP(SUPR0PageAlloc) },
+    { "SUPR0PageAllocEx",                       (void *)UNWIND_WRAP(SUPR0PageAllocEx) },
     { "SUPR0PageFree",                          (void *)UNWIND_WRAP(SUPR0PageFree) },
     { "SUPR0Printf",                            (void *)SUPR0Printf }, /** @todo needs wrapping? */
     { "SUPSemEventCreate",                      (void *)UNWIND_WRAP(SUPSemEventCreate) },
@@ -1254,29 +1250,6 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             return 0;
         }
 
-        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_IDT_INSTALL):
-        {
-            /* validate */
-            PSUPIDTINSTALL pReq = (PSUPIDTINSTALL)pReqHdr;
-            REQ_CHECK_SIZES(SUP_IOCTL_IDT_INSTALL);
-
-            /* execute */
-            pReq->u.Out.u8Idt = 3;
-            pReq->Hdr.rc = VERR_NOT_SUPPORTED;
-            return 0;
-        }
-
-        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_IDT_REMOVE):
-        {
-            /* validate */
-            PSUPIDTREMOVE pReq = (PSUPIDTREMOVE)pReqHdr;
-            REQ_CHECK_SIZES(SUP_IOCTL_IDT_REMOVE);
-
-            /* execute */
-            pReq->Hdr.rc = VERR_NOT_SUPPORTED;
-            return 0;
-        }
-
         case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_PAGE_LOCK):
         {
             /* validate */
@@ -1530,20 +1503,6 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             /* execute */
             pSession->pVM = pReq->u.In.pVMR0;
             pReq->Hdr.rc = VINF_SUCCESS;
-            return 0;
-        }
-
-        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_PAGE_ALLOC):
-        {
-            /* validate */
-            PSUPPAGEALLOC pReq = (PSUPPAGEALLOC)pReqHdr;
-            REQ_CHECK_EXPR(SUP_IOCTL_PAGE_ALLOC, pReq->Hdr.cbIn <= SUP_IOCTL_PAGE_ALLOC_SIZE_IN);
-            REQ_CHECK_SIZES_EX(SUP_IOCTL_PAGE_ALLOC, SUP_IOCTL_PAGE_ALLOC_SIZE_IN, SUP_IOCTL_PAGE_ALLOC_SIZE_OUT(pReq->u.In.cPages));
-
-            /* execute */
-            pReq->Hdr.rc = SUPR0PageAlloc(pSession, pReq->u.In.cPages, &pReq->u.Out.pvR3, &pReq->u.Out.aPages[0]);
-            if (RT_FAILURE(pReq->Hdr.rc))
-                pReq->Hdr.cbOut = sizeof(pReq->Hdr);
             return 0;
         }
 
@@ -2336,13 +2295,6 @@ SUPR0DECL(int) SUPR0LockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPag
         return VERR_INVALID_PARAMETER;
     }
 
-#ifdef RT_OS_WINDOWS /* A temporary hack for windows, will be removed once all ring-3 code has been cleaned up. */
-    /* First check if we allocated it using SUPPageAlloc; if so then we don't need to lock it again */
-    rc = supdrvPageGetPhys(pSession, pvR3, cPages, paPages);
-    if (RT_SUCCESS(rc))
-        return rc;
-#endif
-
     /*
      * Let IPRT do the job.
      */
@@ -2388,17 +2340,6 @@ SUPR0DECL(int) SUPR0UnlockMem(PSUPDRVSESSION pSession, RTR3PTR pvR3)
 {
     LogFlow(("SUPR0UnlockMem: pSession=%p pvR3=%p\n", pSession, (void *)pvR3));
     AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
-#ifdef RT_OS_WINDOWS
-    /*
-     * Temporary hack for windows - SUPR0PageFree will unlock SUPR0PageAlloc
-     * allocations; ignore this call.
-     */
-    if (supdrvPageWasLockedByPageAlloc(pSession, pvR3))
-    {
-        LogFlow(("Page will be unlocked in SUPR0PageFree -> ignore\n"));
-        return VINF_SUCCESS;
-    }
-#endif
     return supdrvMemRelease(pSession, (RTHCUINTPTR)pvR3, MEMREF_TYPE_LOCKED);
 }
 
@@ -2708,25 +2649,6 @@ SUPR0DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
 
 
 /**
- * Allocates a chunk of memory with only a R3 mappings.
- *
- * The memory is fixed and it's possible to query the physical addresses using
- * SUPR0MemGetPhys().
- *
- * @returns IPRT status code.
- * @param   pSession    The session to associated the allocation with.
- * @param   cPages      The number of pages to allocate.
- * @param   ppvR3       Where to store the address of the Ring-3 mapping.
- * @param   paPages     Where to store the addresses of the pages. Optional.
- */
-SUPR0DECL(int) SUPR0PageAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR3PTR ppvR3, PRTHCPHYS paPages)
-{
-    AssertPtrReturn(ppvR3, VERR_INVALID_POINTER);
-    return SUPR0PageAllocEx(pSession, cPages, 0 /*fFlags*/, ppvR3, NULL, paPages);
-}
-
-
-/**
  * Allocates a chunk of memory with a kernel or/and a user mode mapping.
  *
  * The memory is fixed and it's possible to query the physical addresses using
@@ -2984,102 +2906,6 @@ SUPR0DECL(int) SUPR0PageProtect(PSUPDRVSESSION pSession, RTR3PTR pvR3, RTR0PTR p
     return rc;
 
 }
-
-
-
-#ifdef RT_OS_WINDOWS
-/**
- * Check if the pages were locked by SUPR0PageAlloc
- *
- * This function will be removed along with the lock/unlock hacks when
- * we've cleaned up the ring-3 code properly.
- *
- * @returns boolean
- * @param   pSession        The session to which the memory was allocated.
- * @param   pvR3            The Ring-3 address returned by SUPR0PageAlloc().
- */
-static bool supdrvPageWasLockedByPageAlloc(PSUPDRVSESSION pSession, RTR3PTR pvR3)
-{
-    PSUPDRVBUNDLE pBundle;
-    RTSPINLOCKTMP SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
-    LogFlow(("SUPR0PageIsLockedByPageAlloc: pSession=%p pvR3=%p\n", pSession, (void *)pvR3));
-
-    /*
-     * Search for the address.
-     */
-    RTSpinlockAcquire(pSession->Spinlock, &SpinlockTmp);
-    for (pBundle = &pSession->Bundle; pBundle; pBundle = pBundle->pNext)
-    {
-        if (pBundle->cUsed > 0)
-        {
-            unsigned i;
-            for (i = 0; i < RT_ELEMENTS(pBundle->aMem); i++)
-            {
-                if (    pBundle->aMem[i].eType == MEMREF_TYPE_PAGE
-                    &&  pBundle->aMem[i].MemObj != NIL_RTR0MEMOBJ
-                    &&  pBundle->aMem[i].MapObjR3 != NIL_RTR0MEMOBJ
-                    &&  RTR0MemObjAddressR3(pBundle->aMem[i].MapObjR3) == pvR3)
-                {
-                    RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
-                    return true;
-                }
-            }
-        }
-    }
-    RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
-    return false;
-}
-
-
-/**
- * Get the physical addresses of memory allocated using SUPR0PageAllocEx().
- *
- * This function will be removed along with the lock/unlock hacks when
- * we've cleaned up the ring-3 code properly.
- *
- * @returns IPRT status code.
- * @param   pSession        The session to which the memory was allocated.
- * @param   pvR3            The Ring-3 address returned by SUPR0PageAlloc().
- * @param   cPages          Number of pages in paPages
- * @param   paPages         Where to store the physical addresses.
- */
-static int supdrvPageGetPhys(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPages, PRTHCPHYS paPages)
-{
-    PSUPDRVBUNDLE pBundle;
-    RTSPINLOCKTMP SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
-    LogFlow(("supdrvPageGetPhys: pSession=%p pvR3=%p cPages=%#lx paPages=%p\n", pSession, (void *)pvR3, (long)cPages, paPages));
-
-    /*
-     * Search for the address.
-     */
-    RTSpinlockAcquire(pSession->Spinlock, &SpinlockTmp);
-    for (pBundle = &pSession->Bundle; pBundle; pBundle = pBundle->pNext)
-    {
-        if (pBundle->cUsed > 0)
-        {
-            unsigned i;
-            for (i = 0; i < RT_ELEMENTS(pBundle->aMem); i++)
-            {
-                if (    pBundle->aMem[i].eType == MEMREF_TYPE_PAGE
-                    &&  pBundle->aMem[i].MemObj != NIL_RTR0MEMOBJ
-                    &&  pBundle->aMem[i].MapObjR3 != NIL_RTR0MEMOBJ
-                    &&  RTR0MemObjAddressR3(pBundle->aMem[i].MapObjR3) == pvR3)
-                {
-                    uint32_t iPage;
-                    size_t cMaxPages = RTR0MemObjSize(pBundle->aMem[i].MemObj) >> PAGE_SHIFT;
-                    cPages = (uint32_t)RT_MIN(cMaxPages, cPages);
-                    for (iPage = 0; iPage < cPages; iPage++)
-                        paPages[iPage] = RTR0MemObjGetPagePhysAddr(pBundle->aMem[i].MemObj, iPage);
-                    RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
-                    return VINF_SUCCESS;
-                }
-            }
-        }
-    }
-    RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
-    return VERR_INVALID_PARAMETER;
-}
-#endif /* RT_OS_WINDOWS */
 
 
 /**
