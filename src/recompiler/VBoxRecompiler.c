@@ -249,8 +249,10 @@ AssertCompile(RT_SIZEOFMEMB(REM, Env) <= REM_ENV_SIZE);
  */
 REMR3DECL(int) REMR3Init(PVM pVM)
 {
-    uint32_t u32Dummy;
-    int rc;
+    PREMHANDLERNOTIFICATION pCur;
+    uint32_t                u32Dummy;
+    int                     rc;
+    unsigned                i;
 
 #ifdef VBOX_ENABLE_VBOXREM64
     LogRel(("Using 64-bit aware REM\n"));
@@ -419,22 +421,19 @@ REMR3DECL(int) REMR3Init(PVM pVM)
 # endif
 #endif
 
-    PREMHANDLERNOTIFICATION pCur;
-    unsigned i;
-
-    pVM->rem.s.idxPendingList = -1;
+    /*
+     * Init the handler notification lists.
+     */
+    pVM->rem.s.idxPendingList = UINT32_MAX;
     pVM->rem.s.idxFreeList    = 0;
 
-    for (i = 0 ; i < RT_ELEMENTS(pVM->rem.s.aHandlerNotifications) - 1; i++)
+    for (i = 0 ; i < RT_ELEMENTS(pVM->rem.s.aHandlerNotifications); i++)
     {
         pCur = &pVM->rem.s.aHandlerNotifications[i];
         pCur->idxNext = i + 1;
         pCur->idxSelf = i;
     }
-
-    pCur = &pVM->rem.s.aHandlerNotifications[RT_ELEMENTS(pVM->rem.s.aHandlerNotifications) - 1];
-    pCur->idxNext = -1;
-    pCur->idxSelf = RT_ELEMENTS(pVM->rem.s.aHandlerNotifications) - 1;
+    pCur->idxNext = UINT32_MAX;         /* the last record. */
 
     return rc;
 }
@@ -2729,44 +2728,46 @@ REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
     /** @todo this isn't ensuring correct replay order. */
     if (VM_FF_TESTANDCLEAR(pVM, VM_FF_REM_HANDLER_NOTIFY_BIT))
     {
-        PREMHANDLERNOTIFICATION pReqsRev;
-        PREMHANDLERNOTIFICATION pReqs;
-        uint32_t                idxNext;
-        uint32_t                idxReqs;
+        uint32_t    idxNext;
+        uint32_t    idxRevHead;
+        uint32_t    idxHead;
+#ifdef VBOX_STRICT
+        int32_t     c = 0;
+#endif
 
         /* Lockless purging of pending notifications. */
-        idxReqs = ASMAtomicXchgU32(&pVM->rem.s.idxPendingList, UINT32_MAX);
-        if (idxReqs == UINT32_MAX)
+        idxHead = ASMAtomicXchgU32(&pVM->rem.s.idxPendingList, UINT32_MAX);
+        if (idxHead == UINT32_MAX)
             return;
-        Assert(idxReqs < RT_ELEMENTS(pVM->rem.s.aHandlerNotifications));
+        Assert(idxHead < RT_ELEMENTS(pVM->rem.s.aHandlerNotifications));
 
         /*
          * Reverse the list to process it in FIFO order.
          */
-        pReqsRev = &pVM->rem.s.aHandlerNotifications[idxReqs];
-        pReqs    = NULL;
-        while (pReqsRev)
+        idxRevHead = UINT32_MAX;
+        do
         {
-            PREMHANDLERNOTIFICATION pCur = pReqsRev;
-            idxNext = pReqsRev->idxNext;
-            if (idxNext != UINT32_MAX)
-            {
-                Assert(idxNext < RT_ELEMENTS(pVM->rem.s.aHandlerNotifications));
-                pReqsRev = &pVM->rem.s.aHandlerNotifications[idxNext];
-            }
-            else
-                pReqsRev = NULL;
-            pCur->idxNext = idxNext;
-            pReqs = pCur;
-        }
+            /* Save the index of the next rec. */
+            idxNext    = pVM->rem.s.aHandlerNotifications[idxHead].idxNext;
+            Assert(idxNext < RT_ELEMENTS(pVM->rem.s.aHandlerNotifications) || idxNext == UINT32_MAX);
+            /* Push the record onto the reversed list. */
+            pVM->rem.s.aHandlerNotifications[idxHead].idxNext = idxRevHead;
+            idxRevHead = idxHead;
+            Assert(++c <= RT_ELEMENTS(pVM->rem.s.aHandlerNotifications));
+            /* Advance. */
+            idxHead    = idxNext;
+        } while (idxHead != UINT32_MAX);
 
         /*
          * Loop thru the list, reinserting the record into the free list as they are
          * processed to avoid having other EMTs running out of entries while we're flushing.
          */
-        while (pReqs)
+        idxHead = idxRevHead;
+        do
         {
-            PREMHANDLERNOTIFICATION pCur = pReqs;
+            PREMHANDLERNOTIFICATION pCur = &pVM->rem.s.aHandlerNotifications[idxHead];
+            uint32_t                idxCur;
+            Assert(--c >= 0);
 
             switch (pCur->enmKind)
             {
@@ -2803,16 +2804,11 @@ REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
             }
 
             /*
-             * Advance pReqs.
+             * Advance idxHead.
              */
-            idxNext = pCur->idxNext;
-            if (idxNext != UINT32_MAX)
-            {
-                AssertMsg(idxNext < RT_ELEMENTS(pVM->rem.s.aHandlerNotifications), ("idxNext=%d\n", idxNext));
-                pReqs = &pVM->rem.s.aHandlerNotifications[idxNext];
-            }
-            else
-                pReqs = NULL;
+            idxCur  = idxHead;
+            idxHead = pCur->idxNext;
+            Assert(idxHead < RT_ELEMENTS(pVM->rem.s.aHandlerNotifications) || (idxHead == UINT32_MAX && c == 0));
 
             /*
              * Put the record back into the free list.
@@ -2822,8 +2818,19 @@ REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
                 idxNext = ASMAtomicUoReadU32(&pVM->rem.s.idxFreeList);
                 ASMAtomicWriteU32(&pCur->idxNext, idxNext);
                 ASMCompilerBarrier();
-            } while (!ASMAtomicCmpXchgU32(&pVM->rem.s.idxFreeList, pCur->idxSelf, idxNext));
+            } while (!ASMAtomicCmpXchgU32(&pVM->rem.s.idxFreeList, idxCur, idxNext));
+        } while (idxHead != UINT32_MAX);
+
+#ifdef VBOX_STRICT
+        if (pVM->cCPUs == 1)
+        {
+            /* Check that all records are now on the free list. */
+            for (c = 0, idxNext = pVM->rem.s.idxFreeList; idxNext != UINT32_MAX;
+                 idxNext = pVM->rem.s.aHandlerNotifications[idxNext].idxNext)
+                c++;
+            AssertMsg(c == RT_ELEMENTS(pVM->rem.s.aHandlerNotifications), ("%#x != %#x, idxFreeList=%#x\n", c, RT_ELEMENTS(pVM->rem.s.aHandlerNotifications), pVM->rem.s.idxFreeList));
         }
+#endif
     }
 }
 
