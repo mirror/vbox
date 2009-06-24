@@ -5,42 +5,42 @@
     <name>AudioOutput</name>
     <message>
         <source>&lt;html&gt;The audio playback device &lt;b&gt;%1&lt;/b&gt; does not work.&lt;br/&gt;Falling back to &lt;b&gt;%2&lt;/b&gt;.&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;O dispositivo de áudio &lt;b&gt;%1&lt;/b&gt; não está funcionando.&lt;br/&gt;Voltando para o dispositivo &lt;b&gt;%2&lt;/b&gt;.&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&lt;html&gt;Switching to the audio playback device &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;which just became available and has higher preference.&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;Trocando para o dispositivo de áudio &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;que acaba de ficar disponível e possui prioridade mais alta.&lt;/html&gt;</translation>
     </message>
     <message>
         <source>Revert back to device &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Voltar para o dispositivo &apos;%1&apos;</translation>
     </message>
 </context>
 <context>
     <name>Phonon::</name>
     <message>
         <source>Notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>Notificações</translation>
     </message>
     <message>
         <source>Music</source>
-        <translation type="unfinished"></translation>
+        <translation>Música</translation>
     </message>
     <message>
         <source>Video</source>
-        <translation type="unfinished"></translation>
+        <translation>Vídeo</translation>
     </message>
     <message>
         <source>Communication</source>
-        <translation type="unfinished"></translation>
+        <translation>Comunicação</translation>
     </message>
     <message>
         <source>Games</source>
-        <translation type="unfinished"></translation>
+        <translation>Jogos</translation>
     </message>
     <message>
         <source>Accessibility</source>
-        <translation type="unfinished"></translation>
+        <translation>Acessibilidade</translation>
     </message>
 </context>
 <context>
@@ -48,12 +48,14 @@
     <message>
         <source>Warning: You do not seem to have the package gstreamer0.10-plugins-good installed.
           Some video features have been disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aviso: Você não possui o pacote gstreamer0.10-plugins-good instalado.
+         Alguns recursos de vídeo foram desabilitados.</translation>
     </message>
     <message>
         <source>Warning: You do not seem to have the base GStreamer plugins installed.
           All audio and video support has been disabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Aviso: Você não possui os plugins básicos do GStreamer instalados.
+          Todo o suporte a áudio e vídeo foi desabilitado</translation>
     </message>
 </context>
 <context>
@@ -63,45 +65,49 @@
 
 Check your Gstreamer installation and make sure you 
 have libgstreamer-plugins-base installed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Não foi possível iniciar a reprodução. 
+
+Verifique sua instalação do GStreamer e certifique-se de que você 
+tenha o pacote libgstreamer-plugins-base instalado.</translation>
     </message>
     <message numerus="yes">
         <source>A required codec is missing. You need to install the following codec(s) to play this content: %0</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translatorcomment>O marcador %n está faltando no texto original?</translatorcomment>
+        <translation>
+            <numerusform>Um codec necessário está faltando. Você precisa instalar o seguinte codec para tocar este conteúdo: %0</numerusform>
+            <numerusform>Alguns codecs necessários estão faltando. Você precisa instalar os seguintes codecs para tocar este conteúdo: %0</numerusform>
         </translation>
     </message>
     <message>
         <source>Could not open media source.</source>
-        <translation type="unfinished"></translation>
+        <translation>Não foi possível abrir a mídia de origem.</translation>
     </message>
     <message>
         <source>Invalid source type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tipo de origem inválida.</translation>
     </message>
     <message>
         <source>Could not locate media source.</source>
-        <translation type="unfinished"></translation>
+        <translation>Não foi possível localizar a origem da mídia.</translation>
     </message>
     <message>
         <source>Could not open audio device. The device is already in use.</source>
-        <translation type="unfinished"></translation>
+        <translation>Não foi possível abrir o dispositivo de áudio. O dispositivo já estava em uso.</translation>
     </message>
     <message>
         <source>Could not decode media source.</source>
-        <translation type="unfinished"></translation>
+        <translation>Não foi possível decodificar a origem da mídia.</translation>
     </message>
 </context>
 <context>
     <name>Phonon::VolumeSlider</name>
     <message>
         <source>Volume: %1%</source>
-        <translation type="unfinished"></translation>
+        <translation>Volume: %1%</translation>
     </message>
     <message>
         <source>Use this slider to adjust the volume. The leftmost position is 0%, the rightmost is %1%</source>
-        <translation type="unfinished"></translation>
+        <translation>Utilize este slider para ajustar o volume. A posição inicial é 0%, e a posição final é %1%</translation>
     </message>
 </context>
 <context>
@@ -771,42 +777,42 @@ para
     <message>
         <source>%1: permission denied</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1: permissão negada</translation>
     </message>
     <message>
         <source>%1: already exists</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1: já existe</translation>
     </message>
     <message>
         <source>%1: doesn&apos;t exists</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1: não existe</translation>
     </message>
     <message>
         <source>%1: out of resources</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1: sem recursos</translation>
     </message>
     <message>
         <source>%1: unknown error %2</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1: erro desconhecido %2</translation>
     </message>
     <message>
         <source>%1: key is empty</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1: chave vazia</translation>
     </message>
     <message>
         <source>%1: unable to make key</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1: não foi possível criar chave</translation>
     </message>
     <message>
         <source>%1: ftok failed</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1: ftok falhou</translation>
     </message>
 </context>
 <context>
@@ -897,7 +903,7 @@ para
     </message>
     <message>
         <source>Done</source>
-        <translation type="unfinished">Pronto</translation>
+        <translation>Pronto</translation>
     </message>
 </context>
 <context>
@@ -984,7 +990,7 @@ para
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation type="unfinished">&amp;OK</translation>
+        <translation>&amp;OK</translation>
     </message>
 </context>
 <context>
@@ -1281,167 +1287,167 @@ Você deseja apagá-lo mesmo assim?</translation>
     <name>QFontDatabase</name>
     <message>
         <source>Normal</source>
-        <translation type="unfinished"></translation>
+        <translation>Normal</translation>
     </message>
     <message>
         <source>Bold</source>
-        <translation type="unfinished"></translation>
+        <translation>Negrito</translation>
     </message>
     <message>
         <source>Demi Bold</source>
-        <translation type="unfinished"></translation>
+        <translation>Semi-Negrito</translation>
     </message>
     <message>
         <source>Black</source>
-        <translation type="unfinished"></translation>
+        <translation>Black</translation>
     </message>
     <message>
         <source>Demi</source>
-        <translation type="unfinished"></translation>
+        <translation>Semi</translation>
     </message>
     <message>
         <source>Light</source>
-        <translation type="unfinished"></translation>
+        <translation>Light</translation>
     </message>
     <message>
         <source>Italic</source>
-        <translation type="unfinished"></translation>
+        <translation>Itálico</translation>
     </message>
     <message>
         <source>Oblique</source>
-        <translation type="unfinished"></translation>
+        <translation>Oblíquo</translation>
     </message>
     <message>
         <source>Any</source>
-        <translation type="unfinished"></translation>
+        <translation>Qualquer um</translation>
     </message>
     <message>
         <source>Latin</source>
-        <translation type="unfinished"></translation>
+        <translation>Latim</translation>
     </message>
     <message>
         <source>Greek</source>
-        <translation type="unfinished"></translation>
+        <translation>Grego</translation>
     </message>
     <message>
         <source>Cyrillic</source>
-        <translation type="unfinished"></translation>
+        <translation>Cirílico</translation>
     </message>
     <message>
         <source>Armenian</source>
-        <translation type="unfinished"></translation>
+        <translation>Armênio</translation>
     </message>
     <message>
         <source>Hebrew</source>
-        <translation type="unfinished"></translation>
+        <translation>Hebraico</translation>
     </message>
     <message>
         <source>Arabic</source>
-        <translation type="unfinished"></translation>
+        <translation>Árabe</translation>
     </message>
     <message>
         <source>Syriac</source>
-        <translation type="unfinished"></translation>
+        <translation>Sírio</translation>
     </message>
     <message>
         <source>Thaana</source>
-        <translation type="unfinished"></translation>
+        <translation>Thaana</translation>
     </message>
     <message>
         <source>Devanagari</source>
-        <translation type="unfinished"></translation>
+        <translation>Devanagari</translation>
     </message>
     <message>
         <source>Bengali</source>
-        <translation type="unfinished"></translation>
+        <translation>Bengali</translation>
     </message>
     <message>
         <source>Gurmukhi</source>
-        <translation type="unfinished"></translation>
+        <translation>Gurmukhi</translation>
     </message>
     <message>
         <source>Gujarati</source>
-        <translation type="unfinished"></translation>
+        <translation>Gujarati</translation>
     </message>
     <message>
         <source>Oriya</source>
-        <translation type="unfinished"></translation>
+        <translation>Oriya</translation>
     </message>
     <message>
         <source>Tamil</source>
-        <translation type="unfinished"></translation>
+        <translation>Tamil</translation>
     </message>
     <message>
         <source>Telugu</source>
-        <translation type="unfinished"></translation>
+        <translation>Telugu</translation>
     </message>
     <message>
         <source>Kannada</source>
-        <translation type="unfinished"></translation>
+        <translation>Kannada</translation>
     </message>
     <message>
         <source>Malayalam</source>
-        <translation type="unfinished"></translation>
+        <translation>Malayalam</translation>
     </message>
     <message>
         <source>Sinhala</source>
-        <translation type="unfinished"></translation>
+        <translation>Sinhala</translation>
     </message>
     <message>
         <source>Thai</source>
-        <translation type="unfinished"></translation>
+        <translation>Tailandês</translation>
     </message>
     <message>
         <source>Lao</source>
-        <translation type="unfinished"></translation>
+        <translation>Lao</translation>
     </message>
     <message>
         <source>Tibetan</source>
-        <translation type="unfinished"></translation>
+        <translation>Tibetano</translation>
     </message>
     <message>
         <source>Myanmar</source>
-        <translation type="unfinished"></translation>
+        <translation>Myanmar</translation>
     </message>
     <message>
         <source>Georgian</source>
-        <translation type="unfinished"></translation>
+        <translation>Georgiano</translation>
     </message>
     <message>
         <source>Khmer</source>
-        <translation type="unfinished"></translation>
+        <translation>Khmer</translation>
     </message>
     <message>
         <source>Simplified Chinese</source>
-        <translation type="unfinished"></translation>
+        <translation>Chinês Simplificado</translation>
     </message>
     <message>
         <source>Traditional Chinese</source>
-        <translation type="unfinished"></translation>
+        <translation>Chinês Tradicional</translation>
     </message>
     <message>
         <source>Japanese</source>
-        <translation type="unfinished"></translation>
+        <translation>Japonês</translation>
     </message>
     <message>
         <source>Korean</source>
-        <translation type="unfinished"></translation>
+        <translation>Coreano</translation>
     </message>
     <message>
         <source>Vietnamese</source>
-        <translation type="unfinished"></translation>
+        <translation>Vietnamita</translation>
     </message>
     <message>
         <source>Symbol</source>
-        <translation type="unfinished"></translation>
+        <translation>Symbol</translation>
     </message>
     <message>
         <source>Ogham</source>
-        <translation type="unfinished"></translation>
+        <translation>Ogham</translation>
     </message>
     <message>
         <source>Runic</source>
-        <translation type="unfinished"></translation>
+        <translation>Rúnico</translation>
     </message>
 </context>
 <context>
@@ -1682,31 +1688,31 @@ Você deseja apagá-lo mesmo assim?</translation>
     </message>
     <message>
         <source>HTTPS connection requested but SSL support not compiled in</source>
-        <translation type="unfinished"></translation>
+        <translation>Conexão HTTPS solicitada mas o suporte a SSL não foi compilado</translation>
     </message>
     <message>
         <source>Connection refused (or timed out)</source>
-        <translation type="unfinished"></translation>
+        <translation>Conexão recusada (ou tempo excedido)</translation>
     </message>
     <message>
         <source>Proxy requires authentication</source>
-        <translation type="unfinished"></translation>
+        <translation>O Proxy requer autenticação</translation>
     </message>
     <message>
         <source>Host requires authentication</source>
-        <translation type="unfinished"></translation>
+        <translation>O servidor requer autenticação</translation>
     </message>
     <message>
         <source>Data corrupted</source>
-        <translation type="unfinished"></translation>
+        <translation>Dados corrompidos</translation>
     </message>
     <message>
         <source>Unknown protocol specified</source>
-        <translation type="unfinished"></translation>
+        <translation>Protocolo desconhecido especificado</translation>
     </message>
     <message>
         <source>SSL handshake failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Handshake SSL falhou</translation>
     </message>
 </context>
 <context>
@@ -1934,62 +1940,62 @@ Você deseja apagá-lo mesmo assim?</translation>
     <name>QLocalServer</name>
     <message>
         <source>%1: Name error</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Erro de nome</translation>
     </message>
     <message>
         <source>%1: Permission denied</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Permissão negada</translation>
     </message>
     <message>
         <source>%1: Address in use</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Endereço em uso</translation>
     </message>
     <message>
         <source>%1: Unknown error %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Erro desconhecido %2</translation>
     </message>
 </context>
 <context>
     <name>QLocalSocket</name>
     <message>
         <source>%1: Connection refused</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Conexão recusada</translation>
     </message>
     <message>
         <source>%1: Remote closed</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Fechado remotamente</translation>
     </message>
     <message>
         <source>%1: Invalid name</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Nome inválido</translation>
     </message>
     <message>
         <source>%1: Socket access error</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Erro de acesso ao socket</translation>
     </message>
     <message>
         <source>%1: Socket resource error</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Erro de recursos de socket</translation>
     </message>
     <message>
         <source>%1: Socket operation timed out</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Operação no socket com tempo esgotado</translation>
     </message>
     <message>
         <source>%1: Datagram too large</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Datagrama muito grande</translation>
     </message>
     <message>
         <source>%1: Connection error</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Erro de conexão</translation>
     </message>
     <message>
         <source>%1: The socket operation is not supported</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: A operação de socket não é suportada</translation>
     </message>
     <message>
         <source>%1: Unknown error %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Erro desconhecido %2</translation>
     </message>
 </context>
 <context>
@@ -2055,18 +2061,18 @@ Você deseja apagá-lo mesmo assim?</translation>
     </message>
     <message>
         <source>Unable to execute next query</source>
-        <translation type="unfinished"></translation>
+        <translation>Falha ao executar a próxima consulta</translation>
     </message>
     <message>
         <source>Unable to store next result</source>
-        <translation type="unfinished"></translation>
+        <translation>Falha ao armazenar o próximo resultado</translation>
     </message>
 </context>
 <context>
     <name>QMdiArea</name>
     <message>
         <source>(Untitled)</source>
-        <translation type="unfinished"></translation>
+        <translation>(Sem Título)</translation>
     </message>
 </context>
 <context>
@@ -2117,31 +2123,31 @@ Você deseja apagá-lo mesmo assim?</translation>
     </message>
     <message>
         <source>- [%1]</source>
-        <translation type="unfinished"></translation>
+        <translation>- [%1]</translation>
     </message>
     <message>
         <source>Maximize</source>
-        <translation type="unfinished">Maximizar</translation>
+        <translation>Maximizar</translation>
     </message>
     <message>
         <source>Unshade</source>
-        <translation type="unfinished"></translation>
+        <translation>Desenrolar</translation>
     </message>
     <message>
         <source>Shade</source>
-        <translation type="unfinished"></translation>
+        <translation>Enrolar</translation>
     </message>
     <message>
         <source>Restore</source>
-        <translation type="unfinished"></translation>
+        <translation>Restaurar</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">Ajuda</translation>
+        <translation>Ajuda</translation>
     </message>
     <message>
         <source>Menu</source>
-        <translation type="unfinished">Menu</translation>
+        <translation>Menu</translation>
     </message>
 </context>
 <context>
@@ -2191,7 +2197,7 @@ Você deseja apagá-lo mesmo assim?</translation>
     </message>
     <message>
         <source>&lt;h3&gt;About Qt&lt;/h3&gt;%1&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qt for Embedded Linux and Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt is a Nokia product. See &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;Sobre o Qt&lt;/h3&gt;%1&lt;p&gt;O Qt é um toolkit C++ para desenvolvimento de aplicativos multi-plataforma.&lt;/p&gt;&lt;p&gt;O Qt permite portabilidade de código entre  MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, e todas as principais variantes comerciais de Unix. O Qt também está disponível para dispositivos embarcados na forma do Qt for Embedded Linux e Qt for Windows CE.&lt;/p&gt;&lt;p&gt;O Qt é um produto da Nokia. Acesse o site &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; para mais informações.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -2316,67 +2322,67 @@ Você deseja apagá-lo mesmo assim?</translation>
     </message>
     <message>
         <source>The proxy type is invalid for this operation</source>
-        <translation type="unfinished"></translation>
+        <translation>O tipo de proxy é inválido para esta operação</translation>
     </message>
 </context>
 <context>
     <name>QNetworkAccessFileBackend</name>
     <message>
         <source>Request for opening non-local file %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Solicitaçao para abrir o arquivo não local %1</translation>
     </message>
     <message>
         <source>Error opening %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Erro ao abrir %1: %2</translation>
     </message>
     <message>
         <source>Write error writing to %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Erro ao tentar escrever em %1: %2</translation>
     </message>
     <message>
         <source>Cannot open %1: Path is a directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Não foi possível abrir %1: O caminho é um diretório</translation>
     </message>
     <message>
         <source>Read error reading from %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Erro ao ler de %1: %2</translation>
     </message>
 </context>
 <context>
     <name>QNetworkAccessFtpBackend</name>
     <message>
         <source>Cannot open %1: is a directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Não foi possível abrir %1: é um diretório</translation>
     </message>
     <message>
         <source>Logging in to %1 failed: authentication required</source>
-        <translation type="unfinished"></translation>
+        <translation>Falha ao gravar log em %1: autenticação necessária</translation>
     </message>
     <message>
         <source>Error while downloading %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Erro ao baixar %1: %2</translation>
     </message>
     <message>
         <source>Error while uploading %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Erro ao enviar %1: %2</translation>
     </message>
 </context>
 <context>
     <name>QNetworkReply</name>
     <message>
         <source>Error downloading %1 - server replied: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Erro ao baixar %1 - o servidor respondeu: %2</translation>
     </message>
     <message>
         <source>Protocol &quot;%1&quot; is unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>O protocolo &quot;%1&quot; é desconhecido</translation>
     </message>
 </context>
 <context>
     <name>QNetworkReplyImpl</name>
     <message>
         <source>Operation canceled</source>
-        <translation type="unfinished"></translation>
+        <translation>Operação cancelada</translation>
     </message>
 </context>
 <context>
@@ -2392,15 +2398,15 @@ Você deseja apagá-lo mesmo assim?</translation>
     </message>
     <message>
         <source>Unable to begin transaction</source>
-        <translation type="unfinished">Não foi possível iniciar transação</translation>
+        <translation>Não foi possível iniciar a transação</translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation type="unfinished">Não foi possível efetuar commit da transação</translation>
+        <translation>Não foi possível efetuar commit da transação</translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation type="unfinished">Não foi possível fazer rollback da transação</translation>
+        <translation>Não foi possível fazer rollback da transação</translation>
     </message>
 </context>
 <context>
@@ -2489,61 +2495,61 @@ Você deseja apagá-lo mesmo assim?</translation>
     </message>
     <message>
         <source>Unable to fetch last</source>
-        <translation type="unfinished"></translation>
+        <translation>Não foi possível obter o último </translation>
     </message>
     <message>
         <source>Unable to fetch</source>
-        <translation type="unfinished"></translation>
+        <translation>Não foi possível obter</translation>
     </message>
     <message>
         <source>Unable to fetch first</source>
-        <translation type="unfinished">Não foi possível buscar o primeiro</translation>
+        <translation>Não foi possível buscar o primeiro</translation>
     </message>
     <message>
         <source>Unable to fetch previous</source>
-        <translation type="unfinished"></translation>
+        <translation>Não foi possível obter o anterior</translation>
     </message>
 </context>
 <context>
     <name>QObject</name>
     <message>
         <source>Operation not supported on %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Operação não suportada em %1</translation>
     </message>
     <message>
         <source>Invalid URI: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>URI inválida: %1</translation>
     </message>
     <message>
         <source>Write error writing to %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Erro ao escrever em %1: %2</translation>
     </message>
     <message>
         <source>Read error reading from %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Erro ao ler de %1: %2</translation>
     </message>
     <message>
         <source>Socket error on %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Erro de socket em %1: %2</translation>
     </message>
     <message>
         <source>Remote host closed the connection prematurely on %1</source>
-        <translation type="unfinished"></translation>
+        <translation>A máquina remota fechou a conexão prematuramente em %1</translation>
     </message>
     <message>
         <source>Protocol error: packet of size 0 received</source>
-        <translation type="unfinished"></translation>
+        <translation>Erro de protocolo: recebido tamanho de pacote zero</translation>
     </message>
 </context>
 <context>
     <name>QPPDOptionsModel</name>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Nome</translation>
+        <translation>Nome</translation>
     </message>
     <message>
         <source>Value</source>
-        <translation type="unfinished">Valor</translation>
+        <translation>Valor</translation>
     </message>
 </context>
 <context>
@@ -2566,11 +2572,11 @@ Você deseja apagá-lo mesmo assim?</translation>
     </message>
     <message>
         <source>Unable to subscribe</source>
-        <translation type="unfinished"></translation>
+        <translation>Não foi possível subscrever</translation>
     </message>
     <message>
         <source>Unable to unsubscribe</source>
-        <translation type="unfinished"></translation>
+        <translation>Não foi possível cancelar a subscrição</translation>
     </message>
 </context>
 <context>
@@ -2581,90 +2587,90 @@ Você deseja apagá-lo mesmo assim?</translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
-        <translation type="unfinished">Não foi possível preparar declaração</translation>
+        <translation>Não foi possível preparar a declaração</translation>
     </message>
 </context>
 <context>
     <name>QPageSetupWidget</name>
     <message>
         <source>Centimeters (cm)</source>
-        <translation type="unfinished"></translation>
+        <translation>Centímetros (cm)</translation>
     </message>
     <message>
         <source>Millimeters (mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>Milímetros (mm)</translation>
     </message>
     <message>
         <source>Inches (in)</source>
-        <translation type="unfinished"></translation>
+        <translation>polegadas (in)</translation>
     </message>
     <message>
         <source>Points (pt)</source>
-        <translation type="unfinished"></translation>
+        <translation>Pontos (pt)</translation>
     </message>
     <message>
         <source>Form</source>
-        <translation type="unfinished"></translation>
+        <translation>Formulário</translation>
     </message>
     <message>
         <source>Paper</source>
-        <translation type="unfinished"></translation>
+        <translation>Papel</translation>
     </message>
     <message>
         <source>Page size:</source>
-        <translation type="unfinished">Tamanho de página:</translation>
+        <translation>Tamanho de página:</translation>
     </message>
     <message>
         <source>Width:</source>
-        <translation type="unfinished"></translation>
+        <translation>Largura:</translation>
     </message>
     <message>
         <source>Height:</source>
-        <translation type="unfinished"></translation>
+        <translation>Altura:</translation>
     </message>
     <message>
         <source>Paper source:</source>
-        <translation type="unfinished">Fonte de papel:</translation>
+        <translation>Fonte de papel:</translation>
     </message>
     <message>
         <source>Orientation</source>
-        <translation type="unfinished"></translation>
+        <translation>Orientação</translation>
     </message>
     <message>
         <source>Portrait</source>
-        <translation type="unfinished">Retrato</translation>
+        <translation>Retrato</translation>
     </message>
     <message>
         <source>Landscape</source>
-        <translation type="unfinished">Paisagem</translation>
+        <translation>Paisagem</translation>
     </message>
     <message>
         <source>Reverse landscape</source>
-        <translation type="unfinished"></translation>
+        <translation>Paisagem Invertida</translation>
     </message>
     <message>
         <source>Reverse portrait</source>
-        <translation type="unfinished"></translation>
+        <translation>Retrato Invertido</translation>
     </message>
     <message>
         <source>Margins</source>
-        <translation type="unfinished"></translation>
+        <translation>Margens</translation>
     </message>
     <message>
         <source>top margin</source>
-        <translation type="unfinished"></translation>
+        <translation>margem superior</translation>
     </message>
     <message>
         <source>left margin</source>
-        <translation type="unfinished"></translation>
+        <translation>margem esquerda</translation>
     </message>
     <message>
         <source>right margin</source>
-        <translation type="unfinished"></translation>
+        <translation>margem direita</translation>
     </message>
     <message>
         <source>bottom margin</source>
-        <translation type="unfinished"></translation>
+        <translation>margem inferior</translation>
     </message>
 </context>
 <context>
@@ -2715,363 +2721,363 @@ Por favor escolha um nome de arquivo diferente.</translation>
     </message>
     <message>
         <source>A0</source>
-        <translation type="unfinished"></translation>
+        <translation>A0</translation>
     </message>
     <message>
         <source>A1</source>
-        <translation type="unfinished"></translation>
+        <translation>A1</translation>
     </message>
     <message>
         <source>A2</source>
-        <translation type="unfinished"></translation>
+        <translation>A2</translation>
     </message>
     <message>
         <source>A3</source>
-        <translation type="unfinished"></translation>
+        <translation>A3</translation>
     </message>
     <message>
         <source>A4</source>
-        <translation type="unfinished"></translation>
+        <translation>A4</translation>
     </message>
     <message>
         <source>A5</source>
-        <translation type="unfinished"></translation>
+        <translation>A5</translation>
     </message>
     <message>
         <source>A6</source>
-        <translation type="unfinished"></translation>
+        <translation>A6</translation>
     </message>
     <message>
         <source>A7</source>
-        <translation type="unfinished"></translation>
+        <translation>A7</translation>
     </message>
     <message>
         <source>A8</source>
-        <translation type="unfinished"></translation>
+        <translation>A8</translation>
     </message>
     <message>
         <source>A9</source>
-        <translation type="unfinished"></translation>
+        <translation>A9</translation>
     </message>
     <message>
         <source>B0</source>
-        <translation type="unfinished"></translation>
+        <translation>B0</translation>
     </message>
     <message>
         <source>B1</source>
-        <translation type="unfinished"></translation>
+        <translation>B1</translation>
     </message>
     <message>
         <source>B2</source>
-        <translation type="unfinished"></translation>
+        <translation>B2</translation>
     </message>
     <message>
         <source>B3</source>
-        <translation type="unfinished"></translation>
+        <translation>B3</translation>
     </message>
     <message>
         <source>B4</source>
-        <translation type="unfinished"></translation>
+        <translation>B4</translation>
     </message>
     <message>
         <source>B5</source>
-        <translation type="unfinished"></translation>
+        <translation>B5</translation>
     </message>
     <message>
         <source>B6</source>
-        <translation type="unfinished"></translation>
+        <translation>B6</translation>
     </message>
     <message>
         <source>B7</source>
-        <translation type="unfinished"></translation>
+        <translation>B7</translation>
     </message>
     <message>
         <source>B8</source>
-        <translation type="unfinished"></translation>
+        <translation>B8</translation>
     </message>
     <message>
         <source>B9</source>
-        <translation type="unfinished"></translation>
+        <translation>B9</translation>
     </message>
     <message>
         <source>B10</source>
-        <translation type="unfinished"></translation>
+        <translation>B10</translation>
     </message>
     <message>
         <source>C5E</source>
-        <translation type="unfinished"></translation>
+        <translation>C5E</translation>
     </message>
     <message>
         <source>DLE</source>
-        <translation type="unfinished"></translation>
+        <translation>DLE</translation>
     </message>
     <message>
         <source>Executive</source>
-        <translation type="unfinished"></translation>
+        <translation>Executivo</translation>
     </message>
     <message>
         <source>Folio</source>
-        <translation type="unfinished"></translation>
+        <translation>Folio</translation>
     </message>
     <message>
         <source>Ledger</source>
-        <translation type="unfinished"></translation>
+        <translation>Livro</translation>
     </message>
     <message>
         <source>Legal</source>
-        <translation type="unfinished"></translation>
+        <translation>Legal</translation>
     </message>
     <message>
         <source>Letter</source>
-        <translation type="unfinished"></translation>
+        <translation>Carta</translation>
     </message>
     <message>
         <source>Tabloid</source>
-        <translation type="unfinished"></translation>
+        <translation>Tablóide</translation>
     </message>
     <message>
         <source>US Common #10 Envelope</source>
-        <translation type="unfinished"></translation>
+        <translation>Envelope Comum US #10</translation>
     </message>
     <message>
         <source>Custom</source>
-        <translation type="unfinished"></translation>
+        <translation>Customizado</translation>
     </message>
     <message>
         <source>&amp;Options &gt;&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Opções &gt;&gt;</translation>
     </message>
     <message>
         <source>&amp;Print</source>
-        <translation type="unfinished"></translation>
+        <translation>Im&amp;primir</translation>
     </message>
     <message>
         <source>&amp;Options &lt;&lt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Opções &lt;&lt;</translation>
     </message>
     <message>
         <source>Print to File (PDF)</source>
-        <translation type="unfinished"></translation>
+        <translation>Imprimir para Arquivo (PDF)</translation>
     </message>
     <message>
         <source>Print to File (Postscript)</source>
-        <translation type="unfinished"></translation>
+        <translation>Imprimir para Arquivo (Postscript)</translation>
     </message>
     <message>
         <source>Local file</source>
-        <translation type="unfinished"></translation>
+        <translation>Arquivo local</translation>
     </message>
     <message>
         <source>Write %1 file</source>
-        <translation type="unfinished"></translation>
+        <translation>Escrever para arquivo %1</translation>
     </message>
 </context>
 <context>
     <name>QPrintPreviewDialog</name>
     <message>
         <source>Page Setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Configurações de Página</translation>
     </message>
     <message>
         <source>Print Preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualização de Impressão</translation>
     </message>
     <message>
         <source>Next page</source>
-        <translation type="unfinished"></translation>
+        <translation>Próxima página</translation>
     </message>
     <message>
         <source>Previous page</source>
-        <translation type="unfinished"></translation>
+        <translation>Página anterior</translation>
     </message>
     <message>
         <source>First page</source>
-        <translation type="unfinished"></translation>
+        <translation>Primeira página</translation>
     </message>
     <message>
         <source>Last page</source>
-        <translation type="unfinished"></translation>
+        <translation>Última página</translation>
     </message>
     <message>
         <source>Fit width</source>
-        <translation type="unfinished"></translation>
+        <translation>Adaptar à largura</translation>
     </message>
     <message>
         <source>Fit page</source>
-        <translation type="unfinished"></translation>
+        <translation>Adaptar á página</translation>
     </message>
     <message>
         <source>Zoom in</source>
-        <translation type="unfinished"></translation>
+        <translation>Aumentar</translation>
     </message>
     <message>
         <source>Zoom out</source>
-        <translation type="unfinished"></translation>
+        <translation>Diminuir</translation>
     </message>
     <message>
         <source>Portrait</source>
-        <translation type="unfinished">Retrato</translation>
+        <translation>Retrato</translation>
     </message>
     <message>
         <source>Landscape</source>
-        <translation type="unfinished">Paisagem</translation>
+        <translation>Paisagem</translation>
     </message>
     <message>
         <source>Show single page</source>
-        <translation type="unfinished"></translation>
+        <translation>Exibir uma página</translation>
     </message>
     <message>
         <source>Show facing pages</source>
-        <translation type="unfinished"></translation>
+        <translation>Exibir páginas opostas</translation>
     </message>
     <message>
         <source>Show overview of all pages</source>
-        <translation type="unfinished"></translation>
+        <translation>Exibir visão geral de todas as páginas</translation>
     </message>
     <message>
         <source>Print</source>
-        <translation type="unfinished">Print</translation>
+        <translation>Imprimir</translation>
     </message>
     <message>
         <source>Page setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Configurações de Página</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Fechar</translation>
+        <translation>Fechar</translation>
     </message>
 </context>
 <context>
     <name>QPrintPropertiesWidget</name>
     <message>
         <source>Form</source>
-        <translation type="unfinished"></translation>
+        <translation>Formulário</translation>
     </message>
     <message>
         <source>Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Página</translation>
     </message>
     <message>
         <source>Advanced</source>
-        <translation type="unfinished"></translation>
+        <translation>Avançado</translation>
     </message>
 </context>
 <context>
     <name>QPrintSettingsOutput</name>
     <message>
         <source>Form</source>
-        <translation type="unfinished"></translation>
+        <translation>Formulário</translation>
     </message>
     <message>
         <source>Copies</source>
-        <translation type="unfinished">Cópias</translation>
+        <translation>Cópias</translation>
     </message>
     <message>
         <source>Print range</source>
-        <translation type="unfinished">Imprimir faixa</translation>
+        <translation>Imprimir faixa</translation>
     </message>
     <message>
         <source>Print all</source>
-        <translation type="unfinished">Imprimir tudo</translation>
+        <translation>Imprimir tudo</translation>
     </message>
     <message>
         <source>Pages from</source>
-        <translation type="unfinished">Da página</translation>
+        <translation>Da página</translation>
     </message>
     <message>
         <source>to</source>
-        <translation type="unfinished">até</translation>
+        <translation>até</translation>
     </message>
     <message>
         <source>Selection</source>
-        <translation type="unfinished">Seleção</translation>
+        <translation>Seleção</translation>
     </message>
     <message>
         <source>Output Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Configurações de Saída</translation>
     </message>
     <message>
         <source>Copies:</source>
-        <translation type="unfinished"></translation>
+        <translation>Cópias:</translation>
     </message>
     <message>
         <source>Collate</source>
-        <translation type="unfinished">Agrupar</translation>
+        <translation>Agrupar</translation>
     </message>
     <message>
         <source>Reverse</source>
-        <translation type="unfinished"></translation>
+        <translation>Inverter</translation>
     </message>
     <message>
         <source>Options</source>
-        <translation type="unfinished">Opções</translation>
+        <translation>Opções</translation>
     </message>
     <message>
         <source>Color Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Modo de Cor</translation>
     </message>
     <message>
         <source>Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Cor</translation>
     </message>
     <message>
         <source>Grayscale</source>
-        <translation type="unfinished"></translation>
+        <translation>Preto e Branco</translation>
     </message>
     <message>
         <source>Duplex Printing</source>
-        <translation type="unfinished"></translation>
+        <translation>Impressão Duplex</translation>
     </message>
     <message>
         <source>None</source>
-        <translation type="unfinished"></translation>
+        <translation>Nenhum</translation>
     </message>
     <message>
         <source>Long side</source>
-        <translation type="unfinished"></translation>
+        <translation>Lado comprido</translation>
     </message>
     <message>
         <source>Short side</source>
-        <translation type="unfinished"></translation>
+        <translation>Lado curto</translation>
     </message>
 </context>
 <context>
     <name>QPrintWidget</name>
     <message>
         <source>Form</source>
-        <translation type="unfinished"></translation>
+        <translation>Formulário</translation>
     </message>
     <message>
         <source>Printer</source>
-        <translation type="unfinished">Impressora</translation>
+        <translation>Impressora</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nome:</translation>
     </message>
     <message>
         <source>P&amp;roperties</source>
-        <translation type="unfinished"></translation>
+        <translation>P&amp;ropriedades</translation>
     </message>
     <message>
         <source>Location:</source>
-        <translation type="unfinished"></translation>
+        <translation>Localização:</translation>
     </message>
     <message>
         <source>Preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualização</translation>
     </message>
     <message>
         <source>Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>Tipo:</translation>
     </message>
     <message>
         <source>Output &amp;file:</source>
-        <translation type="unfinished"></translation>
+        <translation>Arquivo de saída (&amp;F):</translation>
     </message>
     <message>
         <source>...</source>
-        <translation type="unfinished"></translation>
+        <translation>...</translation>
     </message>
 </context>
 <context>
@@ -3184,7 +3190,7 @@ Por favor escolha um nome de arquivo diferente.</translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation type="unfinished">Não foi possível fazer rollback da transação</translation>
+        <translation>Não foi possível fazer rollback da transação</translation>
     </message>
 </context>
 <context>
@@ -3211,7 +3217,7 @@ Por favor escolha um nome de arquivo diferente.</translation>
     </message>
     <message>
         <source>No query</source>
-        <translation type="unfinished"></translation>
+        <translation>Sem pesquisa</translation>
     </message>
 </context>
 <context>
@@ -3285,63 +3291,63 @@ Por favor escolha um nome de arquivo diferente.</translation>
     <name>QSharedMemory</name>
     <message>
         <source>%1: unable to set key on lock</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: não foi possível definir a a chave do lock</translation>
     </message>
     <message>
         <source>%1: create size is less then 0</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: tamanho de criação é menor que 0</translation>
     </message>
     <message>
         <source>%1: unable to lock</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: não foi possível efetuar lock</translation>
     </message>
     <message>
         <source>%1: unable to unlock</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: não foi possível efetuar unlock</translation>
     </message>
     <message>
         <source>%1: permission denied</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: permissão negada</translation>
     </message>
     <message>
         <source>%1: already exists</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: já existe</translation>
     </message>
     <message>
         <source>%1: doesn&apos;t exists</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: não existe</translation>
     </message>
     <message>
         <source>%1: out of resources</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: sem recursos</translation>
     </message>
     <message>
         <source>%1: unknown error %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: erro desconhecido %2</translation>
     </message>
     <message>
         <source>%1: key is empty</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: chave vazia</translation>
     </message>
     <message>
         <source>%1: unix key file doesn&apos;t exists</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: arquivo de chave unix não existe</translation>
     </message>
     <message>
         <source>%1: ftok failed</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: ftok falhou</translation>
     </message>
     <message>
         <source>%1: unable to make key</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: não foi possível criar chave</translation>
     </message>
     <message>
         <source>%1: system-imposed size restrictions</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: restrições impostas pelo sistema</translation>
     </message>
     <message>
         <source>%1: not attached</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: não associada</translation>
     </message>
 </context>
 <context>
@@ -3746,7 +3752,7 @@ Por favor escolha um nome de arquivo diferente.</translation>
     </message>
     <message>
         <source>Network operation timed out</source>
-        <translation type="unfinished">Tempo esgotado durante operação de rede</translation>
+        <translation>Tempo esgotado durante operação de rede</translation>
     </message>
 </context>
 <context>
@@ -3847,7 +3853,7 @@ Por favor escolha um nome de arquivo diferente.</translation>
     </message>
     <message>
         <source>Private key does not certificate public key, %1</source>
-        <translation type="unfinished"></translation>
+        <translation>A chave privada não certifica a chave pública %1</translation>
     </message>
 </context>
 <context>
@@ -4005,278 +4011,278 @@ Por favor escolha um nome de arquivo diferente.</translation>
     <name>QWebFrame</name>
     <message>
         <source>Request cancelled</source>
-        <translation type="unfinished"></translation>
+        <translation>Solicitação cancelada</translation>
     </message>
     <message>
         <source>Request blocked</source>
-        <translation type="unfinished"></translation>
+        <translation>Solicitação bloqueada</translation>
     </message>
     <message>
         <source>Cannot show URL</source>
-        <translation type="unfinished"></translation>
+        <translation>Não é possível exibir a URL</translation>
     </message>
     <message>
         <source>Frame load interruped by policy change</source>
-        <translation type="unfinished"></translation>
+        <translation>O carregamento do frame foi interrompido por uma mudança de política</translation>
     </message>
     <message>
         <source>Cannot show mimetype</source>
-        <translation type="unfinished"></translation>
+        <translation>Não é possível exibir o mimetype</translation>
     </message>
     <message>
         <source>File does not exist</source>
-        <translation type="unfinished"></translation>
+        <translation>O arquivo não existe</translation>
     </message>
 </context>
 <context>
     <name>QWebPage</name>
     <message>
         <source>Bad HTTP request</source>
-        <translation type="unfinished"></translation>
+        <translation>Solicitação HTTP inválida</translation>
     </message>
     <message>
         <source>Submit</source>
         <comment>default label for Submit buttons in forms on web pages</comment>
-        <translation type="unfinished"></translation>
+        <translation>Enviar</translation>
     </message>
     <message>
         <source>Submit</source>
         <comment>Submit (input element) alt text for &lt;input&gt; elements with no alt, title, or value</comment>
-        <translation type="unfinished"></translation>
+        <translation>Enviar</translation>
     </message>
     <message>
         <source>Reset</source>
         <comment>default label for Reset buttons in forms on web pages</comment>
-        <translation type="unfinished">Redefinir</translation>
+        <translation>Redefinir</translation>
     </message>
     <message>
         <source>This is a searchable index. Enter search keywords: </source>
         <comment>text that appears at the start of nearly-obsolete web pages in the form of a &apos;searchable index&apos;</comment>
-        <translation type="unfinished"></translation>
+        <translation>Este índice pode ser pesquisado. Entre com as palavras-chave de busca: </translation>
     </message>
     <message>
         <source>Choose File</source>
         <comment>title for file button used in HTML forms</comment>
-        <translation type="unfinished"></translation>
+        <translation>Escolher Arquivo</translation>
     </message>
     <message>
         <source>No file selected</source>
         <comment>text to display in file button used in HTML forms when no file is selected</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nenhum arquivo selecionado</translation>
     </message>
     <message>
         <source>Open in New Window</source>
         <comment>Open in New Window context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Abrir em Nova Janela</translation>
     </message>
     <message>
         <source>Save Link...</source>
         <comment>Download Linked File context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Salvar Link...</translation>
     </message>
     <message>
         <source>Copy Link</source>
         <comment>Copy Link context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Copiar Link</translation>
     </message>
     <message>
         <source>Open Image</source>
         <comment>Open Image in New Window context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Abrir Imagem</translation>
     </message>
     <message>
         <source>Save Image</source>
         <comment>Download Image context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Salvar Imagem</translation>
     </message>
     <message>
         <source>Copy Image</source>
         <comment>Copy Link context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Copiar Imagem</translation>
     </message>
     <message>
         <source>Open Frame</source>
         <comment>Open Frame in New Window context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Abrir Frame</translation>
     </message>
     <message>
         <source>Copy</source>
         <comment>Copy context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Copiar</translation>
     </message>
     <message>
         <source>Go Back</source>
         <comment>Back context menu item</comment>
-        <translation type="unfinished">Voltar</translation>
+        <translation>Voltar</translation>
     </message>
     <message>
         <source>Go Forward</source>
         <comment>Forward context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Avançar</translation>
     </message>
     <message>
         <source>Stop</source>
         <comment>Stop context menu item</comment>
-        <translation type="unfinished">Parar</translation>
+        <translation>Parar</translation>
     </message>
     <message>
         <source>Reload</source>
         <comment>Reload context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Atualizar</translation>
     </message>
     <message>
         <source>Cut</source>
         <comment>Cut context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Cortar</translation>
     </message>
     <message>
         <source>Paste</source>
         <comment>Paste context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Colar</translation>
     </message>
     <message>
         <source>No Guesses Found</source>
         <comment>No Guesses Found context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nenhuma Sugestão Encontrada</translation>
     </message>
     <message>
         <source>Ignore</source>
         <comment>Ignore Spelling context menu item</comment>
-        <translation type="unfinished">Ignorar</translation>
+        <translation>Ignorar</translation>
     </message>
     <message>
         <source>Add To Dictionary</source>
         <comment>Learn Spelling context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Adicionar ao Dicionário</translation>
     </message>
     <message>
         <source>Search The Web</source>
         <comment>Search The Web context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Pesquisar na Web</translation>
     </message>
     <message>
         <source>Look Up In Dictionary</source>
         <comment>Look Up in Dictionary context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Pesquisar no Dicionário</translation>
     </message>
     <message>
         <source>Open Link</source>
         <comment>Open Link context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Abrir Link</translation>
     </message>
     <message>
         <source>Ignore</source>
         <comment>Ignore Grammar context menu item</comment>
-        <translation type="unfinished">Ignorar</translation>
+        <translation>Ignorar</translation>
     </message>
     <message>
         <source>Spelling</source>
         <comment>Spelling and Grammar context sub-menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ortografia</translation>
     </message>
     <message>
         <source>Show Spelling and Grammar</source>
         <comment>menu item title</comment>
-        <translation type="unfinished"></translation>
+        <translation>Exibir Ortografia e Gramática</translation>
     </message>
     <message>
         <source>Hide Spelling and Grammar</source>
         <comment>menu item title</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ocultar Ortografia e Gramática</translation>
     </message>
     <message>
         <source>Check Spelling</source>
         <comment>Check spelling context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Verificar Ortografia</translation>
     </message>
     <message>
         <source>Check Spelling While Typing</source>
         <comment>Check spelling while typing context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Verificar Ortografia Ao Digitar</translation>
     </message>
     <message>
         <source>Check Grammar With Spelling</source>
         <comment>Check grammar with spelling context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Verificar Gramática Ao Digitar</translation>
     </message>
     <message>
         <source>Fonts</source>
         <comment>Font context sub-menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Fontes</translation>
     </message>
     <message>
         <source>Bold</source>
         <comment>Bold context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Negrito</translation>
     </message>
     <message>
         <source>Italic</source>
         <comment>Italic context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Itálico</translation>
     </message>
     <message>
         <source>Underline</source>
         <comment>Underline context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Sublinhado</translation>
     </message>
     <message>
         <source>Outline</source>
         <comment>Outline context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Outline</translation>
     </message>
     <message>
         <source>Direction</source>
         <comment>Writing direction context sub-menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Direção</translation>
     </message>
     <message>
         <source>Default</source>
         <comment>Default writing direction context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Padrão</translation>
     </message>
     <message>
         <source>LTR</source>
         <comment>Left to Right context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Esquerda para Direita (LTR)</translation>
     </message>
     <message>
         <source>RTL</source>
         <comment>Right to Left context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Direita Para Esquerda (RTL)</translation>
     </message>
     <message>
         <source>Inspect</source>
         <comment>Inspect Element context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Inspecionar</translation>
     </message>
     <message>
         <source>No recent searches</source>
         <comment>Label for only item in menu that appears when clicking on the search field image, when no searches have been performed</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nenhuma pesquisa recente</translation>
     </message>
     <message>
         <source>Recent searches</source>
         <comment>label for first item in the menu that appears when clicking on the search field image, used as embedded menu title</comment>
-        <translation type="unfinished"></translation>
+        <translation>Pesquisas recentes</translation>
     </message>
     <message>
         <source>Clear recent searches</source>
         <comment>menu item in Recent Searches menu that empties menu&apos;s contents</comment>
-        <translation type="unfinished"></translation>
+        <translation>Limpar pesquisas recentes</translation>
     </message>
     <message>
         <source>Unknown</source>
         <comment>Unknown filesize FTP directory listing item</comment>
-        <translation type="unfinished">Desconhecido</translation>
+        <translation>Desconhecido</translation>
     </message>
     <message>
         <source>%1 (%2x%3 pixels)</source>
         <comment>Title string for images</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 (%2x%3 pixels)</translation>
     </message>
     <message>
         <source>Web Inspector - %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Inspetor Web - %2</translation>
     </message>
 </context>
 <context>
@@ -4337,11 +4343,11 @@ Por favor escolha um nome de arquivo diferente.</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation type="unfinished"></translation>
+        <translation>Próximo (&amp;N)</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished">Próximo (&amp;N) &gt;</translation>
+        <translation>Próximo (&amp;N) &gt;</translation>
     </message>
 </context>
 <context>
@@ -4641,651 +4647,651 @@ Por favor escolha um nome de arquivo diferente.</translation>
     <name>QtXmlPatterns</name>
     <message>
         <source>An %1-attribute with value %2 has already been declared.</source>
-        <translation type="unfinished"></translation>
+        <translation>Um atributo %1 com o valor %2 já foi declarado.</translation>
     </message>
     <message>
         <source>An %1-attribute must have a valid %2 as value, which %3 isn&apos;t.</source>
-        <translation type="unfinished"></translation>
+        <translation>Um atributo %1 deve possuir um valor %2 válido, que %3 não possui.</translation>
     </message>
     <message>
         <source>Network timeout.</source>
-        <translation type="unfinished"></translation>
+        <translation>Timeout de rede.</translation>
     </message>
     <message>
         <source>Element %1 can&apos;t be serialized because it appears outside the document element.</source>
-        <translation type="unfinished"></translation>
+        <translation>O elemento %1 não pode ser serializado porque parece estar fora do elemento do documento.</translation>
     </message>
     <message>
         <source>Attribute %1 can&apos;t be serialized because it appears at the top level.</source>
-        <translation type="unfinished"></translation>
+        <translation>O atributo %1 não pode ser serializado porque está no nível mais alto.</translation>
     </message>
     <message>
         <source>Year %1 is invalid because it begins with %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>O ano %1 é inválido porque começa com %2.</translation>
     </message>
     <message>
         <source>Day %1 is outside the range %2..%3.</source>
-        <translation type="unfinished"></translation>
+        <translation>O dia %1 está fora da faixa %2..%3.</translation>
     </message>
     <message>
         <source>Month %1 is outside the range %2..%3.</source>
-        <translation type="unfinished"></translation>
+        <translation>O mês %1 está fora da faixa %2..%3.</translation>
     </message>
     <message>
         <source>Overflow: Can&apos;t represent date %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Valor máximo excedido: Não é possível representar a data %1.</translation>
     </message>
     <message>
         <source>Day %1 is invalid for month %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>O dia %1 é inválido para o mês %2.</translation>
     </message>
     <message>
         <source>Time 24:%1:%2.%3 is invalid. Hour is 24, but minutes, seconds, and milliseconds are not all 0; </source>
-        <translation type="unfinished"></translation>
+        <translation>A hora 24:%1:%2:%3 é inválida.A hora é 24, mas os minutos, segundos e milissegundos não são todos 0;</translation>
     </message>
     <message>
         <source>Time %1:%2:%3.%4 is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>A hora %1:%2:%3.%4 é inválida.</translation>
     </message>
     <message>
         <source>Overflow: Date can&apos;t be represented.</source>
-        <translation type="unfinished"></translation>
+        <translation>Valor máximo excedido: a data não pode ser representada.</translation>
     </message>
     <message>
         <source>At least one component must be present.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ao menos um componente deve estar presente.</translation>
     </message>
     <message>
         <source>At least one time component must appear after the %1-delimiter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ao menos um componente de tempo deve aparecer após o delimitador %1.</translation>
     </message>
     <message>
         <source>No operand in an integer division, %1, can be %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nenhum operando presente na operação de divisão de inteiros, %1, pode ser %2.</translation>
     </message>
     <message>
         <source>The first operand in an integer division, %1, cannot be infinity (%2).</source>
-        <translation type="unfinished"></translation>
+        <translation>O primeiro operando em uma divisão de inteiros, %1, não pode ser infinito (%2).</translation>
     </message>
     <message>
         <source>The second operand in a division, %1, cannot be zero (%2).</source>
-        <translation type="unfinished"></translation>
+        <translation>O segundo operando em uma divisão, %1, não pode ser zero (%2).</translation>
     </message>
     <message>
         <source>%1 is not a valid value of type %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 não é um valor válido para o tipo %2.</translation>
     </message>
     <message>
         <source>When casting to %1 from %2, the source value cannot be %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ao converter para %1 de %2, o valor de origem não pode ser %3.</translation>
     </message>
     <message>
         <source>Integer division (%1) by zero (%2) is undefined.</source>
-        <translation type="unfinished"></translation>
+        <translation>A divisão de inteiros (%1) por zero (%2) é indefinida.</translation>
     </message>
     <message>
         <source>Division (%1) by zero (%2) is undefined.</source>
-        <translation type="unfinished"></translation>
+        <translation>A divisão (%1) por zero (%2) é indefinida.</translation>
     </message>
     <message>
         <source>Modulus division (%1) by zero (%2) is undefined.</source>
-        <translation type="unfinished"></translation>
+        <translation>O divisão de módulo (%1) por zero (%2) é indefinida.</translation>
     </message>
     <message>
         <source>Dividing a value of type %1 by %2 (not-a-number) is not allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dividir um valor do tipo %1 por %2 (que não é um número) não é permitido.</translation>
     </message>
     <message>
         <source>Dividing a value of type %1 by %2 or %3 (plus or minus zero) is not allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dividir um valor do tipo %1 por %2 ou %3 (mais ou menos zero) não é permitido.</translation>
     </message>
     <message>
         <source>Multiplication of a value of type %1 by %2 or %3 (plus or minus infinity) is not allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Multiplicação de um valor do tipo %1 por %2 ou %3 (mais ou menos infinito) não é permitido.</translation>
     </message>
     <message>
         <source>A value of type %1 cannot have an Effective Boolean Value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Um valor do tipo %1 não pode ter um Valor Booleano Efetivo.</translation>
     </message>
     <message>
         <source>Effective Boolean Value cannot be calculated for a sequence containing two or more atomic values.</source>
-        <translation type="unfinished"></translation>
+        <translation>O Valor Booleano Efetivo não pode ser calculado por uma sequência contendo dois ou mais valores atômicos.</translation>
     </message>
     <message>
         <source>Value %1 of type %2 exceeds maximum (%3).</source>
-        <translation type="unfinished"></translation>
+        <translation>O valor %1 do tipo %2 excede o máximo (%3).</translation>
     </message>
     <message>
         <source>Value %1 of type %2 is below minimum (%3).</source>
-        <translation type="unfinished"></translation>
+        <translation>O valor %1 do tipo %2 está abaixo do mínimo (%3).</translation>
     </message>
     <message>
         <source>A value of type %1 must contain an even number of digits. The value %2 does not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Um valor do tipo %1 deve conter um número par de dígitos. O valor %2 não atende a esta condição.</translation>
     </message>
     <message>
         <source>%1 is not valid as a value of type %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 não é válido com o valor do tipo %2.</translation>
     </message>
     <message>
         <source>Operator %1 cannot be used on type %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>O operador %1 não pode ser usado com o tipo %2.</translation>
     </message>
     <message>
         <source>Operator %1 cannot be used on atomic values of type %2 and %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>O operador %1 não pode ser usado em valores atômicos do tipo %2 e %3.</translation>
     </message>
     <message>
         <source>The namespace URI in the name for a computed attribute cannot be %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>A URI de namespace presente no nome de um atributo calculado não pode ser %1.</translation>
     </message>
     <message>
         <source>The name for a computed attribute cannot have the namespace URI %1 with the local name %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>O nome de um atributo calculado não pode ter a URI de namespace %1 com o nome local %2.</translation>
     </message>
     <message>
         <source>Type error in cast, expected %1, received %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Erro de conversão de tipo, esperado %1, recebido %2.</translation>
     </message>
     <message>
         <source>When casting to %1 or types derived from it, the source value must be of the same type, or it must be a string literal. Type %2 is not allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ao converter para %1 ou tipos derivados dele, o valor de origem pode ser do mesmo tipo, ou deve ser uma string literal. O tipo %2 não é permitido.</translation>
     </message>
     <message>
         <source>No casting is possible with %1 as the target type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Conversão de tipos não é possível com %1 como tipo de destino.</translation>
     </message>
     <message>
         <source>It is not possible to cast from %1 to %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Não é possível converter do tipo %1 para %2.</translation>
     </message>
     <message>
         <source>Casting to %1 is not possible because it is an abstract type, and can therefore never be instantiated.</source>
-        <translation type="unfinished"></translation>
+        <translation>Converter para o tipo %1 não é possível porque este é um tipo abstrato, e não pode ser instanciado.</translation>
     </message>
     <message>
         <source>It&apos;s not possible to cast the value %1 of type %2 to %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Não é possível converter o valor %1 do tipo %2 para %3</translation>
     </message>
     <message>
         <source>Failure when casting from %1 to %2: %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Falha ao converter de %1 para %2: %3</translation>
     </message>
     <message>
         <source>A comment cannot contain %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Um comentário não pode conter %1</translation>
     </message>
     <message>
         <source>A comment cannot end with a %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Um comentário não pode terminar com %1.</translation>
     </message>
     <message>
         <source>No comparisons can be done involving the type %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nenhuma comparação pode ser feita envolvendo o tipo %1.</translation>
     </message>
     <message>
         <source>Operator %1 is not available between atomic values of type %2 and %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>O operador %1 não está disponível entre valores atômicos dos tipos %2 e %3.</translation>
     </message>
     <message>
         <source>An attribute node cannot be a child of a document node. Therefore, the attribute %1 is out of place.</source>
-        <translation type="unfinished"></translation>
+        <translation>Um nó de atributo não pode ser filho de um nó de documento. Logo, o atributo %1 está fora do lugar.</translation>
     </message>
     <message>
         <source>A library module cannot be evaluated directly. It must be imported from a main module.</source>
-        <translation type="unfinished"></translation>
+        <translation>Um módulo de biblioteca não pode ser interpretado diretamente. Ele deve ser importado a partir do módulo principal.</translation>
     </message>
     <message>
         <source>A value of type %1 cannot be a predicate. A predicate must have either a numeric type or an Effective Boolean Value type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Um valor do tipo %1 não pode ser um predicado. Um predicado deve ter pelo menos um tipo numérico ou um tipo de Valor Efetivo Booleano.</translation>
     </message>
     <message>
         <source>A positional predicate must evaluate to a single numeric value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Um predicado posicional deve ser interpretado para um valor numérico simples.</translation>
     </message>
     <message>
         <source>The target name in a processing instruction cannot be %1 in any combination of upper and lower case. Therefore, is %2 invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>O nome de destino em uma instrução de processamento não pode ser %1 em qualquer combinação de maiúsculas e minúsculas. Logo, %2 é inválido.</translation>
     </message>
     <message>
         <source>%1 is not a valid target name in a processing instruction. It must be a %2 value, e.g. %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 não é um nome válido de destino em uma instrução de processamento. Deve ser um valor do tipo %2, como por exemplo %3.</translation>
     </message>
     <message>
         <source>The last step in a path must contain either nodes or atomic values. It cannot be a mixture between the two.</source>
-        <translation type="unfinished"></translation>
+        <translation>O último passo em um caminho deve conter nós ou valores atômicos. Não pode ser uma mistura dos dois.</translation>
     </message>
     <message>
         <source>The data of a processing instruction cannot contain the string %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Os dados de uma instrução de processamento não podem conter a string %1</translation>
     </message>
     <message>
         <source>No namespace binding exists for the prefix %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Não existe associação no namespace para o prefixo %1</translation>
     </message>
     <message>
         <source>No namespace binding exists for the prefix %1 in %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Não existe associação no namespace para o prefixo %1 em %2</translation>
     </message>
     <message>
         <source>%1 is an invalid %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 é um %2 inválido</translation>
     </message>
     <message numerus="yes">
         <source>%1 takes at most %n argument(s). %2 is therefore invalid.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1 recebe no máximo %n argumento. %2 é portanto inválido.</numerusform>
+            <numerusform>%1 recebe no máximo %n argumentos. %2 é portanto inválido.</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%1 requires at least %n argument(s). %2 is therefore invalid.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1 requer no mínimo %n argumento. %2 é portanto inválido.</numerusform>
+            <numerusform>%1 requer no mínimo %n argumentos. %2 é portanto inválido.</numerusform>
         </translation>
     </message>
     <message>
         <source>The first argument to %1 cannot be of type %2. It must be a numeric type, xs:yearMonthDuration or xs:dayTimeDuration.</source>
-        <translation type="unfinished"></translation>
+        <translation>O primeiro argumento de %1 não pode ser do tipo %2. Este argumento deve ser de um tipo numérico, xs:yearMonthDuration ou xs:dayTimeDuration.</translation>
     </message>
     <message>
         <source>The first argument to %1 cannot be of type %2. It must be of type %3, %4, or %5.</source>
-        <translation type="unfinished"></translation>
+        <translation>O primeiro argumento de %1 não pode ser do tipo %2. Este argumento deve ser do tipo %3, %4 ou %5.</translation>
     </message>
     <message>
         <source>The second argument to %1 cannot be of type %2. It must be of type %3, %4, or %5.</source>
-        <translation type="unfinished"></translation>
+        <translation>O segundo argumento de %1 não pode ser do tipo %2. Este argumento deve ser do tipo %3, %4 ou %5.</translation>
     </message>
     <message>
         <source>%1 is not a valid XML 1.0 character.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 não é um caractere XML 1.0 válido.</translation>
     </message>
     <message>
         <source>The first argument to %1 cannot be of type %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>O primeiro argumento de %1 não pode ser do tipo %2.</translation>
     </message>
     <message>
         <source>If both values have zone offsets, they must have the same zone offset. %1 and %2 are not the same.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se ambos os valores tiverem deslocamentos de zona, eles devem ter o mesmo deslocamento de zona. %1 e %2 não são os mesmos.</translation>
     </message>
     <message>
         <source>%1 was called.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 foi chamado.</translation>
     </message>
     <message>
         <source>%1 must be followed by %2 or %3, not at the end of the replacement string.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 deve ser seguido por %2 ou %3, não ao final da string de substituição.</translation>
     </message>
     <message>
         <source>In the replacement string, %1 must be followed by at least one digit when not escaped.</source>
-        <translation type="unfinished"></translation>
+        <translation>Na string de substituição, %1 deve ser seguido por pelo menos um dígito quando não estiver utilizando sequências de escape.</translation>
     </message>
     <message>
         <source>In the replacement string, %1 can only be used to escape itself or %2, not %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Na string de substituição, %1 só pode ser utilizada para fazer escape dela mesma ou %2, e não %3</translation>
     </message>
     <message>
         <source>%1 matches newline characters</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 coincide com caracteres de salto de linha</translation>
     </message>
     <message>
         <source>%1 and %2 match the start and end of a line.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 e %2 coincidem com o início e o fim de uma linha.</translation>
     </message>
     <message>
         <source>Matches are case insensitive</source>
-        <translation type="unfinished"></translation>
+        <translation>As buscas não são sensíveis à caixa</translation>
     </message>
     <message>
         <source>Whitespace characters are removed, except when they appear in character classes</source>
-        <translation type="unfinished"></translation>
+        <translation>Caracteres embranco são removidos, exceto quando aparecerem em classes de caracteres</translation>
     </message>
     <message>
         <source>%1 is an invalid regular expression pattern: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 é um padrão inválido de expressão regular: %2</translation>
     </message>
     <message>
         <source>%1 is an invalid flag for regular expressions. Valid flags are:</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 é um atributo inválido para expressões regulares. Os atributos válidos são:</translation>
     </message>
     <message>
         <source>If the first argument is the empty sequence or a zero-length string (no namespace), a prefix cannot be specified. Prefix %1 was specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se o primeiro argumento é uma sequência vazia ou uma string de tamanho zero (sem namespace), um prefixo não pode ser espeficado. O prefixo %1 foi especificado.</translation>
     </message>
     <message>
         <source>It will not be possible to retrieve %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Não será possível recuperar %1.</translation>
     </message>
     <message>
         <source>The root node of the second argument to function %1 must be a document node. %2 is not a document node.</source>
-        <translation type="unfinished"></translation>
+        <translation>O nó raiz do segundo argumento da função %1 deve ser um nó de documento. %2 não é um nó de documento.</translation>
     </message>
     <message>
         <source>The default collection is undefined</source>
-        <translation type="unfinished"></translation>
+        <translation>A coleção padrão está indefinida</translation>
     </message>
     <message>
         <source>%1 cannot be retrieved</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 não pode ser recuperado</translation>
     </message>
     <message>
         <source>The normalization form %1 is unsupported. The supported forms are %2, %3, %4, and %5, and none, i.e. the empty string (no normalization).</source>
-        <translation type="unfinished"></translation>
+        <translation>A forma de normalização %1 não é suportada. As formas suportadas são %2, %3, %4 e %5 ou nenhuma. Neste último caso, uma string vazia (sem normalização).</translation>
     </message>
     <message>
         <source>A zone offset must be in the range %1..%2 inclusive. %3 is out of range.</source>
-        <translation type="unfinished"></translation>
+        <translation>Um deslocamento de zona deve ser especificado dentro da faixa %1..%2 (inclusive). %3 está fora da faixa.</translation>
     </message>
     <message>
         <source>%1 is not a whole number of minutes.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 não é um número inteiro de minutos.</translation>
     </message>
     <message>
         <source>Required cardinality is %1; got cardinality %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>A cardinalidade requerida é de %1; a cardinalidade atual é %2.</translation>
     </message>
     <message>
         <source>The item %1 did not match the required type %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>O item %1 não coincide com o tipo requerido %2.</translation>
     </message>
     <message>
         <source>%1 is an unknown schema type.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 é um tipo desconhecido de schema.</translation>
     </message>
     <message>
         <source>Only one %1 declaration can occur in the query prolog.</source>
-        <translation type="unfinished"></translation>
+        <translation>Apenas uma declaração %1 pode ocorrer no prolog da solicitação.</translation>
     </message>
     <message>
         <source>The initialization of variable %1 depends on itself</source>
-        <translation type="unfinished"></translation>
+        <translation>A inicialização da variável %1 depende dela mesma</translation>
     </message>
     <message>
         <source>No variable by name %1 exists</source>
-        <translation type="unfinished"></translation>
+        <translation>Nenhuma variável de nome %1 foi encontrada</translation>
     </message>
     <message>
         <source>The variable %1 is unused</source>
-        <translation type="unfinished"></translation>
+        <translation>A variável %1 não é utilizada</translation>
     </message>
     <message>
         <source>Version %1 is not supported. The supported XQuery version is 1.0.</source>
-        <translation type="unfinished"></translation>
+        <translation>A versão %1 não é suportada. A versão suportada do XQuery é 1.0.</translation>
     </message>
     <message>
         <source>The encoding %1 is invalid. It must contain Latin characters only, must not contain whitespace, and must match the regular expression %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>A codificação %1 é inválida. Ela deve conter caracteres Latinos apenas, não deve conter espaços em branco, e deve coincidir com a expressão regular %2.</translation>
     </message>
     <message>
         <source>No function with signature %1 is available</source>
-        <translation type="unfinished"></translation>
+        <translation>Nenhuma função com a assinatura %1 está disponível</translation>
     </message>
     <message>
         <source>A default namespace declaration must occur before function, variable, and option declarations.</source>
-        <translation type="unfinished"></translation>
+        <translation>Uma declaração padrão de namespace deve ocorrer antes das declarações de funções, variáveis ou opções.</translation>
     </message>
     <message>
         <source>Namespace declarations must occur before function, variable, and option declarations.</source>
-        <translation type="unfinished"></translation>
+        <translation>As declarações de namespace devem ocorrer antes das declarações de funções, variáveis ou opções.</translation>
     </message>
     <message>
         <source>Module imports must occur before function, variable, and option declarations.</source>
-        <translation type="unfinished"></translation>
+        <translation>A importação de módulos deve ocorrer antes das declarações de funções, variáveis ou opções.</translation>
     </message>
     <message>
         <source>It is not possible to redeclare prefix %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Não é possível redeclarar o prefixo %1.</translation>
     </message>
     <message>
         <source>Only the prefix %1 can be declared to bind the namespace %2. By default, it is already bound to the prefix %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Apenas o prefixo %1 pode ser declarado para se associar ao namespace %2. Por padrão, este namespace já é associado ao prefixo %1.</translation>
     </message>
     <message>
         <source>Prefix %1 is already declared in the prolog.</source>
-        <translation type="unfinished"></translation>
+        <translation>O prefixo %1 já está declarado no prolog.</translation>
     </message>
     <message>
         <source>The name of an option must have a prefix. There is no default namespace for options.</source>
-        <translation type="unfinished"></translation>
+        <translation>O nome de uma opção deve conter um prefixo. Não existe namespace padrão para opções.</translation>
     </message>
     <message>
         <source>The Schema Import feature is not supported, and therefore %1 declarations cannot occur.</source>
-        <translation type="unfinished"></translation>
+        <translation>O recurso de Importação de Schema não é suportado, logo as declarações do tipo %1 não podem ocorrer.</translation>
     </message>
     <message>
         <source>The target namespace of a %1 cannot be empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>O namespace de destino de um %1 não pode ser vazio.</translation>
     </message>
     <message>
         <source>The module import feature is not supported</source>
-        <translation type="unfinished"></translation>
+        <translation>O recurso de importação de módulos não é suportado</translation>
     </message>
     <message>
         <source>A variable by name %1 has already been declared in the prolog.</source>
-        <translation type="unfinished"></translation>
+        <translation>Uma variável de nome %1 já foi declarada no prolog.</translation>
     </message>
     <message>
         <source>No value is available for the external variable by name %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Não há valor disponível para a variável externa de nome %1.</translation>
     </message>
     <message>
         <source>The namespace for a user defined function cannot be empty (try the predefined prefix %1 which exists for cases like this)</source>
-        <translation type="unfinished"></translation>
+        <translation>O namespace de uma função definida pelo usuário não pode ser vazio (tente usar o prefixo pré-definido %1 que existe para casos como estes)</translation>
     </message>
     <message>
         <source>The namespace %1 is reserved; therefore user defined functions may not use it. Try the predefined prefix %2, which exists for these cases.</source>
-        <translation type="unfinished"></translation>
+        <translation>O namespace %1 é reservado; logo funções definidas pelo usu[ario não podem usá-lo. Tente utilizar o prefixo pré-definido %2, que existe para estes casos.</translation>
     </message>
     <message>
         <source>The namespace of a user defined function in a library module must be equivalent to the module namespace. In other words, it should be %1 instead of %2</source>
-        <translation type="unfinished"></translation>
+        <translation>O namespace de uma função definida pelo usuário em um módulo de biblioteca deve ser equivalente ao namespace do módulo. Em outras palavras, ele deve ser %1 ao invés de %2</translation>
     </message>
     <message>
         <source>A function already exists with the signature %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Uma função já existe com a assinatura %1.</translation>
     </message>
     <message>
         <source>No external functions are supported. All supported functions can be used directly, without first declaring them as external</source>
-        <translation type="unfinished"></translation>
+        <translation>Funções externas não são suportadas. Todas as funções suportadas podem ser utilizadas diretamente, sem declará-las primeiro como externas</translation>
     </message>
     <message>
         <source>An argument by name %1 has already been declared. Every argument name must be unique.</source>
-        <translation type="unfinished"></translation>
+        <translation>Um argumento de nome %1 já foi declarado. Cada nome de argumento deve ser único.</translation>
     </message>
     <message>
         <source>The name of a variable bound in a for-expression must be different from the positional variable. Hence, the two variables named %1 collide.</source>
-        <translation type="unfinished"></translation>
+        <translation>O nome de uma variável associada a uma expressão &apos;for&apos; deve ser diferente da variável posicional. Logo, duas variáveis chamadas de %1 geram conflito.</translation>
     </message>
     <message>
         <source>The Schema Validation Feature is not supported. Hence, %1-expressions may not be used.</source>
-        <translation type="unfinished"></translation>
+        <translation>O Recurso de Validação de Schemas não é suportado. Logo, expressões do tipo %1 não podem ser utilizadas.</translation>
     </message>
     <message>
         <source>None of the pragma expressions are supported. Therefore, a fallback expression must be present</source>
-        <translation type="unfinished"></translation>
+        <translation>Expressões do tipo &apos;pragma&apos; não são suportadas. Logo, uma expressão de fallback deve estar presente</translation>
     </message>
     <message>
         <source>The %1-axis is unsupported in XQuery</source>
-        <translation type="unfinished"></translation>
+        <translation>O eixo %1 não é suportado no XQuery</translation>
     </message>
     <message>
         <source>%1 is not a valid numeric literal.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 não é um literal numérico válido.</translation>
     </message>
     <message>
         <source>No function by name %1 is available.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nenhuma função de nome %1 está disponível.</translation>
     </message>
     <message>
         <source>The namespace URI cannot be the empty string when binding to a prefix, %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>A URI do namespace não pode ser uma string vazia quando estiver se associando a um prefixo, %1.</translation>
     </message>
     <message>
         <source>%1 is an invalid namespace URI.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 é uma URI de namespace inválida.</translation>
     </message>
     <message>
         <source>It is not possible to bind to the prefix %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Não é possível se associar ao prefixo %1</translation>
     </message>
     <message>
         <source>Namespace %1 can only be bound to %2 (and it is, in either case, pre-declared).</source>
-        <translation type="unfinished"></translation>
+        <translation>O namespace %1 somente pode ser associado a %2 (e já é associado, pois é pré-declarado assim).</translation>
     </message>
     <message>
         <source>Prefix %1 can only be bound to %2 (and it is, in either case, pre-declared).</source>
-        <translation type="unfinished"></translation>
+        <translation>O prefixo %1 somente pode ser associado a %2 (e já é associado, pois é pré-declarado).</translation>
     </message>
     <message>
         <source>Two namespace declaration attributes have the same name: %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Duas declarações de atributos de namespaces possuem o mesmo nome: %1.</translation>
     </message>
     <message>
         <source>The namespace URI must be a constant and cannot use enclosed expressions.</source>
-        <translation type="unfinished"></translation>
+        <translation>A URI do namespace deve ser uma constante e não pode utilizar expressões embutidas.</translation>
     </message>
     <message>
         <source>An attribute by name %1 has already appeared on this element.</source>
-        <translation type="unfinished"></translation>
+        <translation>Um atributo de nome %1 já apareceu neste elemento.</translation>
     </message>
     <message>
         <source>A direct element constructor is not well-formed. %1 is ended with %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Um construtor de elemento direto não está formado corretamente. %1 é finalizado com %2.</translation>
     </message>
     <message>
         <source>The name %1 does not refer to any schema type.</source>
-        <translation type="unfinished"></translation>
+        <translation>O nome %1 não se refere a nenhum tipo de schema.</translation>
     </message>
     <message>
         <source>%1 is an complex type. Casting to complex types is not possible. However, casting to atomic types such as %2 works.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 é um tipo complexo. Conversão para tipos complexos não é possível. No entanto, a conversão para tipos atômicos como %2 funciona.</translation>
     </message>
     <message>
         <source>%1 is not an atomic type. Casting is only possible to atomic types.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 não é um tipo atômico. A conversão somente é possível para tipos atômicos.</translation>
     </message>
     <message>
         <source>%1 is not a valid name for a processing-instruction. Therefore this name test will never match.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 não é um nome válido para uma instrução de processamento. Logo, este teste de nome nunca irá coincidir.</translation>
     </message>
     <message>
         <source>%1 is not in the in-scope attribute declarations. Note that the schema import feature is not supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 não está no escopo de declarações de atributos. Lembre-se de que o recurso de importação de schemas não é suportado.</translation>
     </message>
     <message>
         <source>The name of an extension expression must be in a namespace.</source>
-        <translation type="unfinished"></translation>
+        <translation>O nome de uma expressão de extensão deve estar contido em um namespace.</translation>
     </message>
     <message>
         <source>empty</source>
-        <translation type="unfinished"></translation>
+        <translation>vazio</translation>
     </message>
     <message>
         <source>zero or one</source>
-        <translation type="unfinished"></translation>
+        <translation>zero ou um</translation>
     </message>
     <message>
         <source>exactly one</source>
-        <translation type="unfinished"></translation>
+        <translation>exatamente um</translation>
     </message>
     <message>
         <source>one or more</source>
-        <translation type="unfinished"></translation>
+        <translation>um ou mais</translation>
     </message>
     <message>
         <source>zero or more</source>
-        <translation type="unfinished"></translation>
+        <translation>zero ou mais</translation>
     </message>
     <message>
         <source>Required type is %1, but %2 was found.</source>
-        <translation type="unfinished"></translation>
+        <translation>O tipo requerido é %1, mas %2 foi encontrado.</translation>
     </message>
     <message>
         <source>Promoting %1 to %2 may cause loss of precision.</source>
-        <translation type="unfinished"></translation>
+        <translation>Promover %1 a %2 pode causar perda de precisão.</translation>
     </message>
     <message>
         <source>The focus is undefined.</source>
-        <translation type="unfinished"></translation>
+        <translation>O foco está indefinido.</translation>
     </message>
     <message>
         <source>It&apos;s not possible to add attributes after any other kind of node.</source>
-        <translation type="unfinished"></translation>
+        <translation>Não é possível acrescentar atributos após qualquer outro tipo de nó.</translation>
     </message>
     <message>
         <source>An attribute by name %1 has already been created.</source>
-        <translation type="unfinished"></translation>
+        <translation>Um atributo de nome %1 já foi criado.</translation>
     </message>
     <message>
         <source>Only the Unicode Codepoint Collation is supported(%1). %2 is unsupported.</source>
-        <translation type="unfinished"></translation>
+        <translation>Apenas o Ordenamento de Códigos Unicode é suportado(%1). %2 não é suportado.</translation>
     </message>
 </context>
 <context>
     <name>VolumeSlider</name>
     <message>
         <source>Muted</source>
-        <translation type="unfinished"></translation>
+        <translation>Mudo</translation>
     </message>
     <message>
         <source>Volume: %1%</source>
-        <translation type="unfinished"></translation>
+        <translation>Volume: %1%</translation>
     </message>
 </context>
 <context>
     <name>WebCore::PlatformScrollbar</name>
     <message>
         <source>Scroll here</source>
-        <translation type="unfinished">Role aqui</translation>
+        <translation>Role aqui</translation>
     </message>
     <message>
         <source>Left edge</source>
-        <translation type="unfinished">Canto esquerdo</translation>
+        <translation>Canto esquerdo</translation>
     </message>
     <message>
         <source>Top</source>
-        <translation type="unfinished">Topo</translation>
+        <translation>Topo</translation>
     </message>
     <message>
         <source>Right edge</source>
-        <translation type="unfinished">Canto Direito</translation>
+        <translation>Canto Direito</translation>
     </message>
     <message>
         <source>Bottom</source>
-        <translation type="unfinished">Fundo</translation>
+        <translation>Fundo</translation>
     </message>
     <message>
         <source>Page left</source>
-        <translation type="unfinished"></translation>
+        <translation>Página à esquerda</translation>
     </message>
     <message>
         <source>Page up</source>
-        <translation type="unfinished">Página para cima</translation>
+        <translation>Página para cima</translation>
     </message>
     <message>
         <source>Page right</source>
-        <translation type="unfinished">Página para direita</translation>
+        <translation>Página para direita</translation>
     </message>
     <message>
         <source>Page down</source>
-        <translation type="unfinished">Página para baixo</translation>
+        <translation>Página para baixo</translation>
     </message>
     <message>
         <source>Scroll left</source>
-        <translation type="unfinished">Rolar para esquerda</translation>
+        <translation>Rolar para esquerda</translation>
     </message>
     <message>
         <source>Scroll up</source>
-        <translation type="unfinished">Rolar para cima</translation>
+        <translation>Rolar para cima</translation>
     </message>
     <message>
         <source>Scroll right</source>
-        <translation type="unfinished">Rolar para direita</translation>
+        <translation>Rolar para direita</translation>
     </message>
     <message>
         <source>Scroll down</source>
-        <translation type="unfinished">Rolar para baixo</translation>
+        <translation>Rolar para baixo</translation>
     </message>
 </context>
 </TS>

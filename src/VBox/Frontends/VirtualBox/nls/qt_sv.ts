@@ -5,42 +5,42 @@
     <name>AudioOutput</name>
     <message>
         <source>&lt;html&gt;The audio playback device &lt;b&gt;%1&lt;/b&gt; does not work.&lt;br/&gt;Falling back to &lt;b&gt;%2&lt;/b&gt;.&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;Ljuduppspelningsenheten &lt;b&gt;%1&lt;/b&gt; fungerar inte.&lt;br/&gt;Faller tillbaka på &lt;b&gt;%2&lt;/b&gt;.&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&lt;html&gt;Switching to the audio playback device &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;which just became available and has higher preference.&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;Växlar till ljuduppspelningsenheten &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;som precis blev tillgänglig och har högre prioritet.&lt;/html&gt;</translation>
     </message>
     <message>
         <source>Revert back to device &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Återgå tillbaka till enheten &apos;%1&apos;</translation>
     </message>
 </context>
 <context>
     <name>Phonon::</name>
     <message>
         <source>Notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>Notifieringar</translation>
     </message>
     <message>
         <source>Music</source>
-        <translation type="unfinished"></translation>
+        <translation>Musik</translation>
     </message>
     <message>
         <source>Video</source>
-        <translation type="unfinished"></translation>
+        <translation>Video</translation>
     </message>
     <message>
         <source>Communication</source>
-        <translation type="unfinished"></translation>
+        <translation>Kommunikation</translation>
     </message>
     <message>
         <source>Games</source>
-        <translation type="unfinished"></translation>
+        <translation>Spel</translation>
     </message>
     <message>
         <source>Accessibility</source>
-        <translation type="unfinished"></translation>
+        <translation>Hjälpmedel</translation>
     </message>
 </context>
 <context>
@@ -48,12 +48,14 @@
     <message>
         <source>Warning: You do not seem to have the package gstreamer0.10-plugins-good installed.
           Some video features have been disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Varning: Du verkar inte ha paketet gstreamer0.10-plugins-good installerat.
+          Vissa videofunktioner har inaktiverats.</translation>
     </message>
     <message>
         <source>Warning: You do not seem to have the base GStreamer plugins installed.
           All audio and video support has been disabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Varning: Du verkar inte ha grundläggande GStreamer-insticksmoduler installerade.
+          Allt stöd för ljud och video har inaktiverats</translation>
     </message>
 </context>
 <context>
@@ -63,45 +65,48 @@
 
 Check your Gstreamer installation and make sure you 
 have libgstreamer-plugins-base installed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan inte starta uppspelning. 
+
+Kontrollera din Gstreamer-installation och försäkra dig om 
+att du har libgstreamer-plugins-base installerat.</translation>
     </message>
     <message numerus="yes">
         <source>A required codec is missing. You need to install the following codec(s) to play this content: %0</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>En nödvändig kodek saknas. Du behöver installera följande kodek(ar) för att spela upp detta innehåll: %0</numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
     <message>
         <source>Could not open media source.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte öppna mediakällan.</translation>
     </message>
     <message>
         <source>Invalid source type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ogiltig källtyp.</translation>
     </message>
     <message>
         <source>Could not locate media source.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte hitta mediakällan.</translation>
     </message>
     <message>
         <source>Could not open audio device. The device is already in use.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte öppna ljudenheten. Enheten används redan.</translation>
     </message>
     <message>
         <source>Could not decode media source.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte avkoda mediakällan.</translation>
     </message>
 </context>
 <context>
     <name>Phonon::VolumeSlider</name>
     <message>
         <source>Volume: %1%</source>
-        <translation type="unfinished"></translation>
+        <translation>Volym: %1%</translation>
     </message>
     <message>
         <source>Use this slider to adjust the volume. The leftmost position is 0%, the rightmost is %1%</source>
-        <translation type="unfinished"></translation>
+        <translation>Använd denna draglist för att justera volymen. Längst till vänster är 0% och till höger är %1%</translation>
     </message>
 </context>
 <context>
@@ -771,42 +776,42 @@ till
     <message>
         <source>%1: permission denied</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1: åtkomst nekas</translation>
     </message>
     <message>
         <source>%1: already exists</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1: finns redan</translation>
     </message>
     <message>
         <source>%1: doesn&apos;t exists</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1: finns inte</translation>
     </message>
     <message>
         <source>%1: out of resources</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1: slut på resurser</translation>
     </message>
     <message>
         <source>%1: unknown error %2</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1: okänt fel %2</translation>
     </message>
     <message>
         <source>%1: key is empty</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1: nyckeln är tom</translation>
     </message>
     <message>
         <source>%1: unable to make key</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1: kunde inte skapa nyckel</translation>
     </message>
     <message>
         <source>%1: ftok failed</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1: ftok misslyckades</translation>
     </message>
 </context>
 <context>
@@ -897,7 +902,7 @@ till
     </message>
     <message>
         <source>Done</source>
-        <translation type="unfinished">Färdig</translation>
+        <translation>Färdig</translation>
     </message>
 </context>
 <context>
@@ -984,7 +989,7 @@ till
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation type="unfinished">&amp;OK</translation>
+        <translation>&amp;OK</translation>
     </message>
 </context>
 <context>
@@ -1281,167 +1286,167 @@ Vill du ta bort den ändå?</translation>
     <name>QFontDatabase</name>
     <message>
         <source>Normal</source>
-        <translation type="unfinished"></translation>
+        <translation>Normal</translation>
     </message>
     <message>
         <source>Bold</source>
-        <translation type="unfinished"></translation>
+        <translation>Fet</translation>
     </message>
     <message>
         <source>Demi Bold</source>
-        <translation type="unfinished"></translation>
+        <translation>Halvfet</translation>
     </message>
     <message>
         <source>Black</source>
-        <translation type="unfinished"></translation>
+        <translation>Svart</translation>
     </message>
     <message>
         <source>Demi</source>
-        <translation type="unfinished"></translation>
+        <translation>Halv</translation>
     </message>
     <message>
         <source>Light</source>
-        <translation type="unfinished"></translation>
+        <translation>Ljus</translation>
     </message>
     <message>
         <source>Italic</source>
-        <translation type="unfinished"></translation>
+        <translation>Kursiv</translation>
     </message>
     <message>
         <source>Oblique</source>
-        <translation type="unfinished"></translation>
+        <translation>Oblik</translation>
     </message>
     <message>
         <source>Any</source>
-        <translation type="unfinished"></translation>
+        <translation>Valfri</translation>
     </message>
     <message>
         <source>Latin</source>
-        <translation type="unfinished"></translation>
+        <translation>Latinska</translation>
     </message>
     <message>
         <source>Greek</source>
-        <translation type="unfinished"></translation>
+        <translation>Grekiska</translation>
     </message>
     <message>
         <source>Cyrillic</source>
-        <translation type="unfinished"></translation>
+        <translation>Kyrilliska</translation>
     </message>
     <message>
         <source>Armenian</source>
-        <translation type="unfinished"></translation>
+        <translation>Armeniska</translation>
     </message>
     <message>
         <source>Hebrew</source>
-        <translation type="unfinished"></translation>
+        <translation>Hebreiska</translation>
     </message>
     <message>
         <source>Arabic</source>
-        <translation type="unfinished"></translation>
+        <translation>Arabiska</translation>
     </message>
     <message>
         <source>Syriac</source>
-        <translation type="unfinished"></translation>
+        <translation>Syriska</translation>
     </message>
     <message>
         <source>Thaana</source>
-        <translation type="unfinished"></translation>
+        <translation>Thaana</translation>
     </message>
     <message>
         <source>Devanagari</source>
-        <translation type="unfinished"></translation>
+        <translation>Devanagari</translation>
     </message>
     <message>
         <source>Bengali</source>
-        <translation type="unfinished"></translation>
+        <translation>Bengali</translation>
     </message>
     <message>
         <source>Gurmukhi</source>
-        <translation type="unfinished"></translation>
+        <translation>Gurmukhi</translation>
     </message>
     <message>
         <source>Gujarati</source>
-        <translation type="unfinished"></translation>
+        <translation>Gujarati</translation>
     </message>
     <message>
         <source>Oriya</source>
-        <translation type="unfinished"></translation>
+        <translation>Oriya</translation>
     </message>
     <message>
         <source>Tamil</source>
-        <translation type="unfinished"></translation>
+        <translation>Tamil</translation>
     </message>
     <message>
         <source>Telugu</source>
-        <translation type="unfinished"></translation>
+        <translation>Telugu</translation>
     </message>
     <message>
         <source>Kannada</source>
-        <translation type="unfinished"></translation>
+        <translation>Kannada</translation>
     </message>
     <message>
         <source>Malayalam</source>
-        <translation type="unfinished"></translation>
+        <translation>Malayalam</translation>
     </message>
     <message>
         <source>Sinhala</source>
-        <translation type="unfinished"></translation>
+        <translation>Sinhala</translation>
     </message>
     <message>
         <source>Thai</source>
-        <translation type="unfinished"></translation>
+        <translation>Thai</translation>
     </message>
     <message>
         <source>Lao</source>
-        <translation type="unfinished"></translation>
+        <translation>Lao</translation>
     </message>
     <message>
         <source>Tibetan</source>
-        <translation type="unfinished"></translation>
+        <translation>Tibetanska</translation>
     </message>
     <message>
         <source>Myanmar</source>
-        <translation type="unfinished"></translation>
+        <translation>Myanmar</translation>
     </message>
     <message>
         <source>Georgian</source>
-        <translation type="unfinished"></translation>
+        <translation>Georgiska</translation>
     </message>
     <message>
         <source>Khmer</source>
-        <translation type="unfinished"></translation>
+        <translation>Khmer</translation>
     </message>
     <message>
         <source>Simplified Chinese</source>
-        <translation type="unfinished"></translation>
+        <translation>Förenklad kinesiska</translation>
     </message>
     <message>
         <source>Traditional Chinese</source>
-        <translation type="unfinished"></translation>
+        <translation>Traditionell kinesiska</translation>
     </message>
     <message>
         <source>Japanese</source>
-        <translation type="unfinished"></translation>
+        <translation>Japanska</translation>
     </message>
     <message>
         <source>Korean</source>
-        <translation type="unfinished"></translation>
+        <translation>Koreanska</translation>
     </message>
     <message>
         <source>Vietnamese</source>
-        <translation type="unfinished"></translation>
+        <translation>Vietnamesiska</translation>
     </message>
     <message>
         <source>Symbol</source>
-        <translation type="unfinished"></translation>
+        <translation>Symbol</translation>
     </message>
     <message>
         <source>Ogham</source>
-        <translation type="unfinished"></translation>
+        <translation>Ogham</translation>
     </message>
     <message>
         <source>Runic</source>
-        <translation type="unfinished"></translation>
+        <translation>Runskrift</translation>
     </message>
 </context>
 <context>
@@ -1682,19 +1687,19 @@ Vill du ta bort den ändå?</translation>
     </message>
     <message>
         <source>HTTPS connection requested but SSL support not compiled in</source>
-        <translation type="unfinished"></translation>
+        <translation>HTTPS-anslutning begärdes men SSL-stöd är inte inkompilerat</translation>
     </message>
     <message>
         <source>Connection refused (or timed out)</source>
-        <translation type="unfinished"></translation>
+        <translation>Anslutningen nekades (eller översteg tidsgränsen)</translation>
     </message>
     <message>
         <source>Proxy requires authentication</source>
-        <translation type="unfinished"></translation>
+        <translation>Proxyservern kräver autentisering</translation>
     </message>
     <message>
         <source>Host requires authentication</source>
-        <translation type="unfinished"></translation>
+        <translation>Värden kräver autentisering</translation>
     </message>
     <message>
         <source>Data corrupted</source>
@@ -1706,7 +1711,7 @@ Vill du ta bort den ändå?</translation>
     </message>
     <message>
         <source>SSL handshake failed</source>
-        <translation type="unfinished"></translation>
+        <translation>SSL-handskakning misslyckades</translation>
     </message>
 </context>
 <context>
@@ -1934,34 +1939,34 @@ Vill du ta bort den ändå?</translation>
     <name>QLocalServer</name>
     <message>
         <source>%1: Name error</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Namnfel</translation>
     </message>
     <message>
         <source>%1: Permission denied</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Åtkomst nekas</translation>
     </message>
     <message>
         <source>%1: Address in use</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Adressen används redan</translation>
     </message>
     <message>
         <source>%1: Unknown error %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Okänt fel %2</translation>
     </message>
 </context>
 <context>
     <name>QLocalSocket</name>
     <message>
         <source>%1: Connection refused</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Anslutning nekades</translation>
     </message>
     <message>
         <source>%1: Remote closed</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>%1: Invalid name</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Ogiltigt namn</translation>
     </message>
     <message>
         <source>%1: Socket access error</source>
@@ -1981,7 +1986,7 @@ Vill du ta bort den ändå?</translation>
     </message>
     <message>
         <source>%1: Connection error</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Anslutningsfel</translation>
     </message>
     <message>
         <source>%1: The socket operation is not supported</source>
@@ -1989,7 +1994,7 @@ Vill du ta bort den ändå?</translation>
     </message>
     <message>
         <source>%1: Unknown error %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Okänt fel %2</translation>
     </message>
 </context>
 <context>
@@ -2055,18 +2060,18 @@ Vill du ta bort den ändå?</translation>
     </message>
     <message>
         <source>Unable to execute next query</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte köra nästa frågesats</translation>
     </message>
     <message>
         <source>Unable to store next result</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte lagra nästa resultat</translation>
     </message>
 </context>
 <context>
     <name>QMdiArea</name>
     <message>
         <source>(Untitled)</source>
-        <translation type="unfinished"></translation>
+        <translation>(Namnlös)</translation>
     </message>
 </context>
 <context>
@@ -2117,31 +2122,31 @@ Vill du ta bort den ändå?</translation>
     </message>
     <message>
         <source>- [%1]</source>
-        <translation type="unfinished"></translation>
+        <translation>- [%1]</translation>
     </message>
     <message>
         <source>Maximize</source>
-        <translation type="unfinished">Maximera</translation>
+        <translation>Maximera</translation>
     </message>
     <message>
         <source>Unshade</source>
-        <translation type="unfinished"></translation>
+        <translation>Rulla ned</translation>
     </message>
     <message>
         <source>Shade</source>
-        <translation type="unfinished"></translation>
+        <translation>Rulla upp</translation>
     </message>
     <message>
         <source>Restore</source>
-        <translation type="unfinished"></translation>
+        <translation>Återställ</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished">Hjälp</translation>
+        <translation>Hjälp</translation>
     </message>
     <message>
         <source>Menu</source>
-        <translation type="unfinished">Meny</translation>
+        <translation>Meny</translation>
     </message>
 </context>
 <context>
@@ -2191,7 +2196,7 @@ Vill du ta bort den ändå?</translation>
     </message>
     <message>
         <source>&lt;h3&gt;About Qt&lt;/h3&gt;%1&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qt for Embedded Linux and Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt is a Nokia product. See &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;Om Qt&lt;/h3&gt;%1&lt;p&gt;Qt är ett C++-verktygssamling för utveckling av krossplattformsprogram.&lt;/p&gt;&lt;p&gt;Qt tillhandahåller portabilitet för samma källkod mellan MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux och alla andra stora kommersiella Unix-varianter. Qt finns också tillgängligt för inbäddade enheter som Qt for Embedded Linux och Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt är en produkt från Nokia. Se &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; för mer information.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -2316,7 +2321,7 @@ Vill du ta bort den ändå?</translation>
     </message>
     <message>
         <source>The proxy type is invalid for this operation</source>
-        <translation type="unfinished"></translation>
+        <translation>Proxytypen är ogiltig för denna åtgärd</translation>
     </message>
 </context>
 <context>
@@ -2327,56 +2332,56 @@ Vill du ta bort den ändå?</translation>
     </message>
     <message>
         <source>Error opening %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Fel vid öppning av %1: %2</translation>
     </message>
     <message>
         <source>Write error writing to %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Skrivfel vid skrivning till %1: %2</translation>
     </message>
     <message>
         <source>Cannot open %1: Path is a directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan inte öppna %1: Sökvägen är en katalog</translation>
     </message>
     <message>
         <source>Read error reading from %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Läsfel vid läsning från %1: %2</translation>
     </message>
 </context>
 <context>
     <name>QNetworkAccessFtpBackend</name>
     <message>
         <source>Cannot open %1: is a directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan inte öppna %1: är en katalog</translation>
     </message>
     <message>
         <source>Logging in to %1 failed: authentication required</source>
-        <translation type="unfinished"></translation>
+        <translation>Inloggning mot %1 misslyckades: autentisering krävs</translation>
     </message>
     <message>
         <source>Error while downloading %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Fel vid hämtning av %1: %2</translation>
     </message>
     <message>
         <source>Error while uploading %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Fel vid sändning av %1: %2</translation>
     </message>
 </context>
 <context>
     <name>QNetworkReply</name>
     <message>
         <source>Error downloading %1 - server replied: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Fel vid hämtning av %1 - servern svarade: %2</translation>
     </message>
     <message>
         <source>Protocol &quot;%1&quot; is unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>Protokollet &quot;%1&quot; är okänt</translation>
     </message>
 </context>
 <context>
     <name>QNetworkReplyImpl</name>
     <message>
         <source>Operation canceled</source>
-        <translation type="unfinished"></translation>
+        <translation>Åtgärden avbröts</translation>
     </message>
 </context>
 <context>
@@ -2392,15 +2397,15 @@ Vill du ta bort den ändå?</translation>
     </message>
     <message>
         <source>Unable to begin transaction</source>
-        <translation type="unfinished">Kunde inte påbörja transaktion</translation>
+        <translation>Kunde inte påbörja transaktion</translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation type="unfinished">Kunde inte verkställa transaktion</translation>
+        <translation>Kunde inte verkställa transaktion</translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation type="unfinished">Kunde inte rulla tillbaka transaktion</translation>
+        <translation>Kunde inte rulla tillbaka transaktion</translation>
     </message>
 </context>
 <context>
@@ -2489,19 +2494,19 @@ Vill du ta bort den ändå?</translation>
     </message>
     <message>
         <source>Unable to fetch last</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte hämta senaste</translation>
     </message>
     <message>
         <source>Unable to fetch</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte hämta</translation>
     </message>
     <message>
         <source>Unable to fetch first</source>
-        <translation type="unfinished">Kunde inte hämta första</translation>
+        <translation>Kunde inte hämta första</translation>
     </message>
     <message>
         <source>Unable to fetch previous</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte hämta föregående</translation>
     </message>
 </context>
 <context>
@@ -2512,7 +2517,7 @@ Vill du ta bort den ändå?</translation>
     </message>
     <message>
         <source>Invalid URI: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ogiltig URI: %1</translation>
     </message>
     <message>
         <source>Write error writing to %1: %2</source>
@@ -2539,11 +2544,11 @@ Vill du ta bort den ändå?</translation>
     <name>QPPDOptionsModel</name>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Namn</translation>
+        <translation>Namn</translation>
     </message>
     <message>
         <source>Value</source>
-        <translation type="unfinished">Värde</translation>
+        <translation>Värde</translation>
     </message>
 </context>
 <context>
@@ -2581,90 +2586,90 @@ Vill du ta bort den ändå?</translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
-        <translation type="unfinished">Kunde inte förbereda frågesats</translation>
+        <translation>Kunde inte förbereda frågesats</translation>
     </message>
 </context>
 <context>
     <name>QPageSetupWidget</name>
     <message>
         <source>Centimeters (cm)</source>
-        <translation type="unfinished"></translation>
+        <translation>Centimeter (cm)</translation>
     </message>
     <message>
         <source>Millimeters (mm)</source>
-        <translation type="unfinished"></translation>
+        <translation>Millimeter (mm)</translation>
     </message>
     <message>
         <source>Inches (in)</source>
-        <translation type="unfinished"></translation>
+        <translation>Tum (in)</translation>
     </message>
     <message>
         <source>Points (pt)</source>
-        <translation type="unfinished"></translation>
+        <translation>Punkter (pt)</translation>
     </message>
     <message>
         <source>Form</source>
-        <translation type="unfinished"></translation>
+        <translation>Format</translation>
     </message>
     <message>
         <source>Paper</source>
-        <translation type="unfinished"></translation>
+        <translation>Papper</translation>
     </message>
     <message>
         <source>Page size:</source>
-        <translation type="unfinished">Sidstorlek:</translation>
+        <translation>Sidstorlek:</translation>
     </message>
     <message>
         <source>Width:</source>
-        <translation type="unfinished"></translation>
+        <translation>Bredd:</translation>
     </message>
     <message>
         <source>Height:</source>
-        <translation type="unfinished"></translation>
+        <translation>Höjd:</translation>
     </message>
     <message>
         <source>Paper source:</source>
-        <translation type="unfinished">Papperskälla:</translation>
+        <translation>Papperskälla:</translation>
     </message>
     <message>
         <source>Orientation</source>
-        <translation type="unfinished"></translation>
+        <translation>Orientering</translation>
     </message>
     <message>
         <source>Portrait</source>
-        <translation type="unfinished">Stående</translation>
+        <translation>Stående</translation>
     </message>
     <message>
         <source>Landscape</source>
-        <translation type="unfinished">Liggande</translation>
+        <translation>Liggande</translation>
     </message>
     <message>
         <source>Reverse landscape</source>
-        <translation type="unfinished"></translation>
+        <translation>Omvänt liggande</translation>
     </message>
     <message>
         <source>Reverse portrait</source>
-        <translation type="unfinished"></translation>
+        <translation>Omvänt stående</translation>
     </message>
     <message>
         <source>Margins</source>
-        <translation type="unfinished"></translation>
+        <translation>Marginaler</translation>
     </message>
     <message>
         <source>top margin</source>
-        <translation type="unfinished"></translation>
+        <translation>övre marginal</translation>
     </message>
     <message>
         <source>left margin</source>
-        <translation type="unfinished"></translation>
+        <translation>vänstermarginal</translation>
     </message>
     <message>
         <source>right margin</source>
-        <translation type="unfinished"></translation>
+        <translation>högermarginal</translation>
     </message>
     <message>
         <source>bottom margin</source>
-        <translation type="unfinished"></translation>
+        <translation>nedre marginal</translation>
     </message>
 </context>
 <context>
@@ -2716,151 +2721,151 @@ Välj ett annat filnamn.</translation>
     </message>
     <message>
         <source>A0</source>
-        <translation type="unfinished"></translation>
+        <translation>A0</translation>
     </message>
     <message>
         <source>A1</source>
-        <translation type="unfinished"></translation>
+        <translation>A1</translation>
     </message>
     <message>
         <source>A2</source>
-        <translation type="unfinished"></translation>
+        <translation>A2</translation>
     </message>
     <message>
         <source>A3</source>
-        <translation type="unfinished"></translation>
+        <translation>A3</translation>
     </message>
     <message>
         <source>A4</source>
-        <translation type="unfinished"></translation>
+        <translation>A4</translation>
     </message>
     <message>
         <source>A5</source>
-        <translation type="unfinished"></translation>
+        <translation>A5</translation>
     </message>
     <message>
         <source>A6</source>
-        <translation type="unfinished"></translation>
+        <translation>A6</translation>
     </message>
     <message>
         <source>A7</source>
-        <translation type="unfinished"></translation>
+        <translation>A7</translation>
     </message>
     <message>
         <source>A8</source>
-        <translation type="unfinished"></translation>
+        <translation>A8</translation>
     </message>
     <message>
         <source>A9</source>
-        <translation type="unfinished"></translation>
+        <translation>A9</translation>
     </message>
     <message>
         <source>B0</source>
-        <translation type="unfinished"></translation>
+        <translation>B0</translation>
     </message>
     <message>
         <source>B1</source>
-        <translation type="unfinished"></translation>
+        <translation>B1</translation>
     </message>
     <message>
         <source>B2</source>
-        <translation type="unfinished"></translation>
+        <translation>B2</translation>
     </message>
     <message>
         <source>B3</source>
-        <translation type="unfinished"></translation>
+        <translation>B3</translation>
     </message>
     <message>
         <source>B4</source>
-        <translation type="unfinished"></translation>
+        <translation>B4</translation>
     </message>
     <message>
         <source>B5</source>
-        <translation type="unfinished"></translation>
+        <translation>B5</translation>
     </message>
     <message>
         <source>B6</source>
-        <translation type="unfinished"></translation>
+        <translation>B6</translation>
     </message>
     <message>
         <source>B7</source>
-        <translation type="unfinished"></translation>
+        <translation>B7</translation>
     </message>
     <message>
         <source>B8</source>
-        <translation type="unfinished"></translation>
+        <translation>B8</translation>
     </message>
     <message>
         <source>B9</source>
-        <translation type="unfinished"></translation>
+        <translation>B9</translation>
     </message>
     <message>
         <source>B10</source>
-        <translation type="unfinished"></translation>
+        <translation>B10</translation>
     </message>
     <message>
         <source>C5E</source>
-        <translation type="unfinished"></translation>
+        <translation>C5E</translation>
     </message>
     <message>
         <source>DLE</source>
-        <translation type="unfinished"></translation>
+        <translation>DLE</translation>
     </message>
     <message>
         <source>Executive</source>
-        <translation type="unfinished"></translation>
+        <translation>Executive</translation>
     </message>
     <message>
         <source>Folio</source>
-        <translation type="unfinished"></translation>
+        <translation>Folio</translation>
     </message>
     <message>
         <source>Ledger</source>
-        <translation type="unfinished"></translation>
+        <translation>Ledger</translation>
     </message>
     <message>
         <source>Legal</source>
-        <translation type="unfinished"></translation>
+        <translation>Legal</translation>
     </message>
     <message>
         <source>Letter</source>
-        <translation type="unfinished"></translation>
+        <translation>Letter</translation>
     </message>
     <message>
         <source>Tabloid</source>
-        <translation type="unfinished"></translation>
+        <translation>Tabloid</translation>
     </message>
     <message>
         <source>US Common #10 Envelope</source>
-        <translation type="unfinished"></translation>
+        <translation>US Common #10 Envelope</translation>
     </message>
     <message>
         <source>Custom</source>
-        <translation type="unfinished"></translation>
+        <translation>Anpassad</translation>
     </message>
     <message>
         <source>&amp;Options &gt;&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>A&amp;lternativ &gt;&gt;</translation>
     </message>
     <message>
         <source>&amp;Print</source>
-        <translation type="unfinished"></translation>
+        <translation>Skriv &amp;ut</translation>
     </message>
     <message>
         <source>&amp;Options &lt;&lt;</source>
-        <translation type="unfinished"></translation>
+        <translation>A&amp;lternativ &lt;&lt;</translation>
     </message>
     <message>
         <source>Print to File (PDF)</source>
-        <translation type="unfinished"></translation>
+        <translation>Skriv ut till fil (PDF)</translation>
     </message>
     <message>
         <source>Print to File (Postscript)</source>
-        <translation type="unfinished"></translation>
+        <translation>Skriv ut till fil (Postscript)</translation>
     </message>
     <message>
         <source>Local file</source>
-        <translation type="unfinished"></translation>
+        <translation>Lokal fil</translation>
     </message>
     <message>
         <source>Write %1 file</source>
@@ -2871,208 +2876,208 @@ Välj ett annat filnamn.</translation>
     <name>QPrintPreviewDialog</name>
     <message>
         <source>Page Setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Sidinställningar</translation>
     </message>
     <message>
         <source>Print Preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Förhandsgranska</translation>
     </message>
     <message>
         <source>Next page</source>
-        <translation type="unfinished"></translation>
+        <translation>Nästa sida</translation>
     </message>
     <message>
         <source>Previous page</source>
-        <translation type="unfinished"></translation>
+        <translation>Föregående sida</translation>
     </message>
     <message>
         <source>First page</source>
-        <translation type="unfinished"></translation>
+        <translation>Första sidan</translation>
     </message>
     <message>
         <source>Last page</source>
-        <translation type="unfinished"></translation>
+        <translation>Sista sidan</translation>
     </message>
     <message>
         <source>Fit width</source>
-        <translation type="unfinished"></translation>
+        <translation>Anpassa efter bredd</translation>
     </message>
     <message>
         <source>Fit page</source>
-        <translation type="unfinished"></translation>
+        <translation>Anpassa efter sida</translation>
     </message>
     <message>
         <source>Zoom in</source>
-        <translation type="unfinished"></translation>
+        <translation>Zooma in</translation>
     </message>
     <message>
         <source>Zoom out</source>
-        <translation type="unfinished"></translation>
+        <translation>Zooma ut</translation>
     </message>
     <message>
         <source>Portrait</source>
-        <translation type="unfinished">Stående</translation>
+        <translation>Stående</translation>
     </message>
     <message>
         <source>Landscape</source>
-        <translation type="unfinished">Liggande</translation>
+        <translation>Liggande</translation>
     </message>
     <message>
         <source>Show single page</source>
-        <translation type="unfinished"></translation>
+        <translation>Visa en sida</translation>
     </message>
     <message>
         <source>Show facing pages</source>
-        <translation type="unfinished"></translation>
+        <translation>Visa motsatta sidor</translation>
     </message>
     <message>
         <source>Show overview of all pages</source>
-        <translation type="unfinished"></translation>
+        <translation>Visa översikt över alla sidor</translation>
     </message>
     <message>
         <source>Print</source>
-        <translation type="unfinished">Print</translation>
+        <translation>Skriv ut</translation>
     </message>
     <message>
         <source>Page setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Sidinställningar</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Stäng</translation>
+        <translation>Stäng</translation>
     </message>
 </context>
 <context>
     <name>QPrintPropertiesWidget</name>
     <message>
         <source>Form</source>
-        <translation type="unfinished"></translation>
+        <translation>Format</translation>
     </message>
     <message>
         <source>Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Sida</translation>
     </message>
     <message>
         <source>Advanced</source>
-        <translation type="unfinished"></translation>
+        <translation>Avancerat</translation>
     </message>
 </context>
 <context>
     <name>QPrintSettingsOutput</name>
     <message>
         <source>Form</source>
-        <translation type="unfinished"></translation>
+        <translation>Format</translation>
     </message>
     <message>
         <source>Copies</source>
-        <translation type="unfinished">Kopior</translation>
+        <translation>Kopior</translation>
     </message>
     <message>
         <source>Print range</source>
-        <translation type="unfinished">Skriv ut intervall</translation>
+        <translation>Skriv ut intervall</translation>
     </message>
     <message>
         <source>Print all</source>
-        <translation type="unfinished">Skriv ut alla</translation>
+        <translation>Skriv ut alla</translation>
     </message>
     <message>
         <source>Pages from</source>
-        <translation type="unfinished">Sidor från</translation>
+        <translation>Sidor från</translation>
     </message>
     <message>
         <source>to</source>
-        <translation type="unfinished">till</translation>
+        <translation>till</translation>
     </message>
     <message>
         <source>Selection</source>
-        <translation type="unfinished">Val</translation>
+        <translation>Val</translation>
     </message>
     <message>
         <source>Output Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Utmatningsinställningar</translation>
     </message>
     <message>
         <source>Copies:</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopior:</translation>
     </message>
     <message>
         <source>Collate</source>
-        <translation type="unfinished">Sortera</translation>
+        <translation>Sortera</translation>
     </message>
     <message>
         <source>Reverse</source>
-        <translation type="unfinished"></translation>
+        <translation>Omvänt</translation>
     </message>
     <message>
         <source>Options</source>
-        <translation type="unfinished">Alternativ</translation>
+        <translation>Alternativ</translation>
     </message>
     <message>
         <source>Color Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Färgläge</translation>
     </message>
     <message>
         <source>Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Färg</translation>
     </message>
     <message>
         <source>Grayscale</source>
-        <translation type="unfinished"></translation>
+        <translation>Gråskala</translation>
     </message>
     <message>
         <source>Duplex Printing</source>
-        <translation type="unfinished"></translation>
+        <translation>Dubbelsidig utskrift</translation>
     </message>
     <message>
         <source>None</source>
-        <translation type="unfinished"></translation>
+        <translation>Ingen</translation>
     </message>
     <message>
         <source>Long side</source>
-        <translation type="unfinished"></translation>
+        <translation>Långsida</translation>
     </message>
     <message>
         <source>Short side</source>
-        <translation type="unfinished"></translation>
+        <translation>Kortsida</translation>
     </message>
 </context>
 <context>
     <name>QPrintWidget</name>
     <message>
         <source>Form</source>
-        <translation type="unfinished"></translation>
+        <translation>Format</translation>
     </message>
     <message>
         <source>Printer</source>
-        <translation type="unfinished">Skrivare</translation>
+        <translation>Skrivare</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Namn:</translation>
     </message>
     <message>
         <source>P&amp;roperties</source>
-        <translation type="unfinished"></translation>
+        <translation>E&amp;genskaper</translation>
     </message>
     <message>
         <source>Location:</source>
-        <translation type="unfinished"></translation>
+        <translation>Plats:</translation>
     </message>
     <message>
         <source>Preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Förhandsgranska</translation>
     </message>
     <message>
         <source>Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>Typ:</translation>
     </message>
     <message>
         <source>Output &amp;file:</source>
-        <translation type="unfinished"></translation>
+        <translation>Utmatnings&amp;fil:</translation>
     </message>
     <message>
         <source>...</source>
-        <translation type="unfinished"></translation>
+        <translation>...</translation>
     </message>
 </context>
 <context>
@@ -3185,7 +3190,7 @@ Välj ett annat filnamn.</translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation type="unfinished">Kunde inte rulla tillbaka transaktion</translation>
+        <translation>Kunde inte rulla tillbaka transaktion</translation>
     </message>
 </context>
 <context>
@@ -3212,7 +3217,7 @@ Välj ett annat filnamn.</translation>
     </message>
     <message>
         <source>No query</source>
-        <translation type="unfinished"></translation>
+        <translation>Ingen frågesats</translation>
     </message>
 </context>
 <context>
@@ -3294,15 +3299,15 @@ Välj ett annat filnamn.</translation>
     </message>
     <message>
         <source>%1: unable to lock</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: kunde inte låsa</translation>
     </message>
     <message>
         <source>%1: unable to unlock</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: kunde inte låsa upp</translation>
     </message>
     <message>
         <source>%1: permission denied</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: åtkomst nekas</translation>
     </message>
     <message>
         <source>%1: already exists</source>
@@ -3314,11 +3319,11 @@ Välj ett annat filnamn.</translation>
     </message>
     <message>
         <source>%1: out of resources</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: slut på resurser</translation>
     </message>
     <message>
         <source>%1: unknown error %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: okänt fel %2</translation>
     </message>
     <message>
         <source>%1: key is empty</source>
@@ -3747,7 +3752,7 @@ Välj ett annat filnamn.</translation>
     </message>
     <message>
         <source>Network operation timed out</source>
-        <translation type="unfinished">Tidsgräns för nätverksåtgärd överstegs</translation>
+        <translation>Tidsgräns för nätverksåtgärd överstegs</translation>
     </message>
 </context>
 <context>
@@ -3905,7 +3910,7 @@ Välj ett annat filnamn.</translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation>Markera alla</translation>
+        <translation>Markera allt</translation>
     </message>
 </context>
 <context>
@@ -4006,15 +4011,15 @@ Välj ett annat filnamn.</translation>
     <name>QWebFrame</name>
     <message>
         <source>Request cancelled</source>
-        <translation type="unfinished"></translation>
+        <translation>Begäran avbröts</translation>
     </message>
     <message>
         <source>Request blocked</source>
-        <translation type="unfinished"></translation>
+        <translation>Begäran blockerad</translation>
     </message>
     <message>
         <source>Cannot show URL</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan inte visa URL:en</translation>
     </message>
     <message>
         <source>Frame load interruped by policy change</source>
@@ -4022,262 +4027,262 @@ Välj ett annat filnamn.</translation>
     </message>
     <message>
         <source>Cannot show mimetype</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan inte visa mime-typen</translation>
     </message>
     <message>
         <source>File does not exist</source>
-        <translation type="unfinished"></translation>
+        <translation>Filen finns inte</translation>
     </message>
 </context>
 <context>
     <name>QWebPage</name>
     <message>
         <source>Bad HTTP request</source>
-        <translation type="unfinished"></translation>
+        <translation>Felaktig HTTP-begäran</translation>
     </message>
     <message>
         <source>Submit</source>
         <comment>default label for Submit buttons in forms on web pages</comment>
-        <translation type="unfinished"></translation>
+        <translation>Skicka</translation>
     </message>
     <message>
         <source>Submit</source>
         <comment>Submit (input element) alt text for &lt;input&gt; elements with no alt, title, or value</comment>
-        <translation type="unfinished"></translation>
+        <translation>Skicka</translation>
     </message>
     <message>
         <source>Reset</source>
         <comment>default label for Reset buttons in forms on web pages</comment>
-        <translation type="unfinished">Återställ</translation>
+        <translation>Återställ</translation>
     </message>
     <message>
         <source>This is a searchable index. Enter search keywords: </source>
         <comment>text that appears at the start of nearly-obsolete web pages in the form of a &apos;searchable index&apos;</comment>
-        <translation type="unfinished"></translation>
+        <translation>Detta är ett sökbart index. Ange sökord: </translation>
     </message>
     <message>
         <source>Choose File</source>
         <comment>title for file button used in HTML forms</comment>
-        <translation type="unfinished"></translation>
+        <translation>Välj fil</translation>
     </message>
     <message>
         <source>No file selected</source>
         <comment>text to display in file button used in HTML forms when no file is selected</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ingen fil vald</translation>
     </message>
     <message>
         <source>Open in New Window</source>
         <comment>Open in New Window context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Öppna i nytt fönster</translation>
     </message>
     <message>
         <source>Save Link...</source>
         <comment>Download Linked File context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Spara länk...</translation>
     </message>
     <message>
         <source>Copy Link</source>
         <comment>Copy Link context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Kopiera länk</translation>
     </message>
     <message>
         <source>Open Image</source>
         <comment>Open Image in New Window context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Öppna bild</translation>
     </message>
     <message>
         <source>Save Image</source>
         <comment>Download Image context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Spara bild</translation>
     </message>
     <message>
         <source>Copy Image</source>
         <comment>Copy Link context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Kopiera bild</translation>
     </message>
     <message>
         <source>Open Frame</source>
         <comment>Open Frame in New Window context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Öppna ram</translation>
     </message>
     <message>
         <source>Copy</source>
         <comment>Copy context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Kopiera</translation>
     </message>
     <message>
         <source>Go Back</source>
         <comment>Back context menu item</comment>
-        <translation type="unfinished">Gå tillbaka</translation>
+        <translation>Gå bakåt</translation>
     </message>
     <message>
         <source>Go Forward</source>
         <comment>Forward context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Gå framåt</translation>
     </message>
     <message>
         <source>Stop</source>
         <comment>Stop context menu item</comment>
-        <translation type="unfinished">Stoppa</translation>
+        <translation>Stoppa</translation>
     </message>
     <message>
         <source>Reload</source>
         <comment>Reload context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Uppdatera</translation>
     </message>
     <message>
         <source>Cut</source>
         <comment>Cut context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Klipp ut</translation>
     </message>
     <message>
         <source>Paste</source>
         <comment>Paste context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Klistra in</translation>
     </message>
     <message>
         <source>No Guesses Found</source>
         <comment>No Guesses Found context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Inga gissningar hittades</translation>
     </message>
     <message>
         <source>Ignore</source>
         <comment>Ignore Spelling context menu item</comment>
-        <translation type="unfinished">Ignorera</translation>
+        <translation>Ignorera</translation>
     </message>
     <message>
         <source>Add To Dictionary</source>
         <comment>Learn Spelling context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Lägg till i ordlista</translation>
     </message>
     <message>
         <source>Search The Web</source>
         <comment>Search The Web context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Sök på webben</translation>
     </message>
     <message>
         <source>Look Up In Dictionary</source>
         <comment>Look Up in Dictionary context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Slå upp i ordlista</translation>
     </message>
     <message>
         <source>Open Link</source>
         <comment>Open Link context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Öppna länk</translation>
     </message>
     <message>
         <source>Ignore</source>
         <comment>Ignore Grammar context menu item</comment>
-        <translation type="unfinished">Ignorera</translation>
+        <translation>Ignorera</translation>
     </message>
     <message>
         <source>Spelling</source>
         <comment>Spelling and Grammar context sub-menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Stavning</translation>
     </message>
     <message>
         <source>Show Spelling and Grammar</source>
         <comment>menu item title</comment>
-        <translation type="unfinished"></translation>
+        <translation>Visa stavning och grammatik</translation>
     </message>
     <message>
         <source>Hide Spelling and Grammar</source>
         <comment>menu item title</comment>
-        <translation type="unfinished"></translation>
+        <translation>Dölj stavning och grammatik</translation>
     </message>
     <message>
         <source>Check Spelling</source>
         <comment>Check spelling context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Kontrollera stavning</translation>
     </message>
     <message>
         <source>Check Spelling While Typing</source>
         <comment>Check spelling while typing context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Kontrollera stavning vid inmatning</translation>
     </message>
     <message>
         <source>Check Grammar With Spelling</source>
         <comment>Check grammar with spelling context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Kontrollera grammatik vid inmatning</translation>
     </message>
     <message>
         <source>Fonts</source>
         <comment>Font context sub-menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Typsnitt</translation>
     </message>
     <message>
         <source>Bold</source>
         <comment>Bold context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Fet</translation>
     </message>
     <message>
         <source>Italic</source>
         <comment>Italic context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Kursiv</translation>
     </message>
     <message>
         <source>Underline</source>
         <comment>Underline context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Understruken</translation>
     </message>
     <message>
         <source>Outline</source>
         <comment>Outline context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Kontur</translation>
     </message>
     <message>
         <source>Direction</source>
         <comment>Writing direction context sub-menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Riktning</translation>
     </message>
     <message>
         <source>Default</source>
         <comment>Default writing direction context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Standard</translation>
     </message>
     <message>
         <source>LTR</source>
         <comment>Left to Right context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Vänster till höger</translation>
     </message>
     <message>
         <source>RTL</source>
         <comment>Right to Left context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Höger till vänster</translation>
     </message>
     <message>
         <source>Inspect</source>
         <comment>Inspect Element context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Inspektera</translation>
     </message>
     <message>
         <source>No recent searches</source>
         <comment>Label for only item in menu that appears when clicking on the search field image, when no searches have been performed</comment>
-        <translation type="unfinished"></translation>
+        <translation>Inga tidigare sökningar</translation>
     </message>
     <message>
         <source>Recent searches</source>
         <comment>label for first item in the menu that appears when clicking on the search field image, used as embedded menu title</comment>
-        <translation type="unfinished"></translation>
+        <translation>Tidigare sökningar</translation>
     </message>
     <message>
         <source>Clear recent searches</source>
         <comment>menu item in Recent Searches menu that empties menu&apos;s contents</comment>
-        <translation type="unfinished"></translation>
+        <translation>Töm tidigare sökningar</translation>
     </message>
     <message>
         <source>Unknown</source>
         <comment>Unknown filesize FTP directory listing item</comment>
-        <translation type="unfinished">Okänt</translation>
+        <translation>Okänt</translation>
     </message>
     <message>
         <source>%1 (%2x%3 pixels)</source>
         <comment>Title string for images</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 (%2x%3 bildpunkter)</translation>
     </message>
     <message>
         <source>Web Inspector - %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Webbinspekterare - %2</translation>
     </message>
 </context>
 <context>
@@ -4338,11 +4343,11 @@ Välj ett annat filnamn.</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nästa</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished">&amp;Nästa &gt;</translation>
+        <translation>&amp;Nästa &gt;</translation>
     </message>
 </context>
 <context>
@@ -5180,23 +5185,23 @@ Välj ett annat filnamn.</translation>
     </message>
     <message>
         <source>empty</source>
-        <translation type="unfinished"></translation>
+        <translation>tom</translation>
     </message>
     <message>
         <source>zero or one</source>
-        <translation type="unfinished"></translation>
+        <translation>noll eller en</translation>
     </message>
     <message>
         <source>exactly one</source>
-        <translation type="unfinished"></translation>
+        <translation>exakt en</translation>
     </message>
     <message>
         <source>one or more</source>
-        <translation type="unfinished"></translation>
+        <translation>en eller mer</translation>
     </message>
     <message>
         <source>zero or more</source>
-        <translation type="unfinished"></translation>
+        <translation>noll eller mer</translation>
     </message>
     <message>
         <source>Required type is %1, but %2 was found.</source>
@@ -5227,66 +5232,66 @@ Välj ett annat filnamn.</translation>
     <name>VolumeSlider</name>
     <message>
         <source>Muted</source>
-        <translation type="unfinished"></translation>
+        <translation>Tyst</translation>
     </message>
     <message>
         <source>Volume: %1%</source>
-        <translation type="unfinished"></translation>
+        <translation>Volym: %1%</translation>
     </message>
 </context>
 <context>
     <name>WebCore::PlatformScrollbar</name>
     <message>
         <source>Scroll here</source>
-        <translation type="unfinished">Rulla här</translation>
+        <translation>Rulla här</translation>
     </message>
     <message>
         <source>Left edge</source>
-        <translation type="unfinished">Vänsterkant</translation>
+        <translation>Vänsterkant</translation>
     </message>
     <message>
         <source>Top</source>
-        <translation type="unfinished">Överkant</translation>
+        <translation>Överkant</translation>
     </message>
     <message>
         <source>Right edge</source>
-        <translation type="unfinished">Högerkant</translation>
+        <translation>Högerkant</translation>
     </message>
     <message>
         <source>Bottom</source>
-        <translation type="unfinished">Nederkant</translation>
+        <translation>Nederkant</translation>
     </message>
     <message>
         <source>Page left</source>
-        <translation type="unfinished">Sida vänster</translation>
+        <translation>Sida vänster</translation>
     </message>
     <message>
         <source>Page up</source>
-        <translation type="unfinished">Sida uppåt</translation>
+        <translation>Sida uppåt</translation>
     </message>
     <message>
         <source>Page right</source>
-        <translation type="unfinished">Sida höger</translation>
+        <translation>Sida höger</translation>
     </message>
     <message>
         <source>Page down</source>
-        <translation type="unfinished">Sida nedåt</translation>
+        <translation>Sida nedåt</translation>
     </message>
     <message>
         <source>Scroll left</source>
-        <translation type="unfinished">Rulla vänster</translation>
+        <translation>Rulla vänster</translation>
     </message>
     <message>
         <source>Scroll up</source>
-        <translation type="unfinished">Rulla uppåt</translation>
+        <translation>Rulla uppåt</translation>
     </message>
     <message>
         <source>Scroll right</source>
-        <translation type="unfinished">Rulla höger</translation>
+        <translation>Rulla höger</translation>
     </message>
     <message>
         <source>Scroll down</source>
-        <translation type="unfinished">Rulla nedåt</translation>
+        <translation>Rulla nedåt</translation>
     </message>
 </context>
 </TS>
