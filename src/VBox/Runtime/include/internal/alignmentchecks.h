@@ -51,10 +51,10 @@ extern RTDATADECL(bool) g_fRTAlignmentChecks;
 RT_C_DECLS_END
 
 # define IPRT_ALIGNMENT_CHECKS_DISABLE() \
-    if (g_fRTAlignmentChecks) ASMSetFlags(ASMGetFlags() & ~RT_BIT_32(18)); else do {} while (0)
+    do { if (g_fRTAlignmentChecks) ASMSetFlags(ASMGetFlags() & ~RT_BIT_32(18)); } while (0)
 
 # define IPRT_ALIGNMENT_CHECKS_ENABLE() \
-    if (g_fRTAlignmentChecks) ASMSetFlags(ASMGetFlags() | RT_BIT_32(18)); else do {} while (0)
+    do { if (g_fRTAlignmentChecks) ASMSetFlags(ASMGetFlags() | RT_BIT_32(18)); } while (0)
 
 #else
 # define IPRT_ALIGNMENT_CHECKS_DISABLE() do {} while (0)
