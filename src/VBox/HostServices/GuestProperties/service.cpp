@@ -1133,8 +1133,9 @@ int Service::reqNotify(PFNHGCMSVCEXT pfnCallback, void *pvData,
     HostCallbackData.pcszValue    = pszValue;
     HostCallbackData.u64Timestamp = RT_MAKE_U64(u32TimeLow, u32TimeHigh);
     HostCallbackData.pcszFlags    = pszFlags;
-    AssertRC(pfnCallback(pvData, 0, reinterpret_cast<void *>(&HostCallbackData),
-                         sizeof(HostCallbackData)));
+    int rc = pfnCallback(pvData, 0, (void *)(&HostCallbackData),
+                         sizeof(HostCallbackData));
+    AssertRC(rc);
     LogFlowFunc (("Freeing strings\n"));
     RTStrFree(pszName);
     RTStrFree(pszValue);
