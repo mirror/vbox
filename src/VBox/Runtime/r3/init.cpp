@@ -114,7 +114,7 @@ RTPROCESS   g_ProcessSelf = NIL_RTPROCESS;
  */
 RTPROCPRIORITY g_enmProcessPriority = RTPROCPRIORITY_DEFAULT;
 
-#ifdef DEBUG
+#ifdef IPRT_WITH_ALIGNMENT_CHECKS
 /**
  * Whether alignment checks are enabled.
  * This is set if the environment variable IPRT_ALIGNMENT_CHECKS is 1.
@@ -274,7 +274,7 @@ static int rtR3InitBody(bool fInitSUPLib, const char *pszProgramPath)
     AssertMsg(rc == 0, ("%d\n", rc));
 #endif
 
-#if defined(DEBUG)
+#ifdef IPRT_WITH_ALIGNMENT_CHECKS
     /*
      * Enable alignment checks.
      */
