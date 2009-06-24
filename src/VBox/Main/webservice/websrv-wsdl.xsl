@@ -148,22 +148,13 @@
   <xsl:param name="methodname" />
   <xsl:param name="type" />
   <xsl:call-template name="debugMsg"><xsl:with-param name="msg" select="concat('......emitConvertedType: type=&quot;', $type, '&quot;')" /></xsl:call-template>
+  <!-- look up XML Schema type from IDL type from table array in websrv-shared.inc.xsl -->
+  <xsl:variable name="xmltypefield" select="exsl:node-set($G_aSharedTypes)/type[@idlname=$type]/@xmlname" />
   <xsl:choose>
     <xsl:when test="$type=$G_typeIsGlobalRequestElementMarker"><xsl:value-of select="concat('vbox:', $ifname, $G_classSeparator, $methodname, $G_requestMessageElementSuffix)" /></xsl:when>
     <xsl:when test="$type=$G_typeIsGlobalResponseElementMarker"><xsl:value-of select="concat('vbox:', $ifname, $G_classSeparator, $methodname, $G_responseMessageElementSuffix)" /></xsl:when>
-    <xsl:when test="$type='wstring'">xsd:string</xsl:when>
-    <xsl:when test="$type='boolean'">xsd:boolean</xsl:when>
-    <xsl:when test="$type='unsigned long'">xsd:unsignedInt</xsl:when>
-    <xsl:when test="$type='double'">xsd:double</xsl:when>
-    <xsl:when test="$type='float'">xsd:float</xsl:when>
-    <!-- <xsl:when test="$type='octet'">xsd:unsignedByte</xsl:when> -->
-    <xsl:when test="$type='long'">xsd:int</xsl:when>
-    <xsl:when test="$type='long long'">xsd:long</xsl:when>
-    <xsl:when test="$type='short'">xsd:short</xsl:when>
-    <xsl:when test="$type='unsigned short'">xsd:unsignedShort</xsl:when>
-    <xsl:when test="$type='unsigned long long'">xsd:unsignedLong</xsl:when>
-    <xsl:when test="$type='result'">xsd:unsignedInt</xsl:when>
-    <xsl:when test="$type='uuid'">xsd:string</xsl:when>
+    <!-- if above lookup in table succeeded, use that type -->
+    <xsl:when test="string-length($xmltypefield)"><xsl:value-of select="concat('xsd:', $xmltypefield)" /></xsl:when>
     <xsl:when test="$type='$unknown'"><xsl:value-of select="$G_typeObjectRef" /></xsl:when>
     <xsl:when test="$type='global'"><xsl:value-of select="$G_typeObjectRef" /></xsl:when>
     <xsl:when test="$type='managed'"><xsl:value-of select="$G_typeObjectRef" /></xsl:when>
@@ -734,7 +725,8 @@
       <xsl:comment> method <xsl:copy-of select="$ifname" />::<xsl:copy-of select="$methodname" /> </xsl:comment>
       <!-- skip this method if it has parameters of a type that has wsmap="suppress" -->
       <xsl:choose>
-        <xsl:when test="param[@type=($G_setSuppressedInterfaces/@name)]">
+        <xsl:when test="   (param[@type=($G_setSuppressedInterfaces/@name)])
+                        or (param[@mod='ptr'])" >
           <xsl:comment><xsl:value-of select="concat('skipping method ', $methodname, ' for it has parameters with suppressed types')" /></xsl:comment>
         </xsl:when>
         <xsl:otherwise>
@@ -808,7 +800,8 @@
     <xsl:call-template name="debugMsg"><xsl:with-param name="msg" select="concat('operations for ', $ifname, '::', $methodname, ': method')" /></xsl:call-template>
     <!-- skip this method if it has parameters of a type that has wsmap="suppress" -->
     <xsl:choose>
-      <xsl:when test="param[@type=($G_setSuppressedInterfaces/@name)]">
+      <xsl:when test="   (param[@type=($G_setSuppressedInterfaces/@name)])
+                      or (param[@mod='ptr'])" >
         <xsl:comment><xsl:value-of select="concat('skipping method ', $methodname, ' for it has parameters with suppressed types')" /></xsl:comment>
       </xsl:when>
       <xsl:otherwise>
@@ -866,7 +859,8 @@
     <xsl:variable name="methodname"><xsl:value-of select="@name" /></xsl:variable>
     <!-- skip this method if it has parameters of a type that has wsmap="suppress" -->
     <xsl:choose>
-      <xsl:when test="param[@type=($G_setSuppressedInterfaces/@name)]">
+      <xsl:when test="   (param[@type=($G_setSuppressedInterfaces/@name)])
+                      or (param[@mod='ptr'])" >
         <xsl:comment><xsl:value-of select="concat('skipping method ', $methodname, ' for it has parameters with suppressed types')" /></xsl:comment>
       </xsl:when>
       <xsl:otherwise>
@@ -1131,7 +1125,8 @@
                 <xsl:comment> method <xsl:copy-of select="$ifname" />::<xsl:copy-of select="$methodname" /> </xsl:comment>
                 <!-- skip this method if it has parameters of a type that has wsmap="suppress" -->
                 <xsl:choose>
-                  <xsl:when test="param[@type=($G_setSuppressedInterfaces/@name)]">
+                  <xsl:when test="   (param[@type=($G_setSuppressedInterfaces/@name)])
+                                  or (param[@mod='ptr'])" >
                     <xsl:comment><xsl:value-of select="concat('skipping method ', $methodname, ' for it has parameters with suppressed types')" /></xsl:comment>
                   </xsl:when>
                   <xsl:otherwise>
