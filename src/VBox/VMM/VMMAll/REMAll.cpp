@@ -144,6 +144,10 @@ static void remNotifyHandlerInsert(PVM pVM, PREMHANDLERNOTIFICATION pRec)
     } while (!ASMAtomicCmpXchgU32(&pVM->rem.s.idxPendingList, idxFree, idxNext));
 
     VM_FF_SET(pVM, VM_FF_REM_HANDLER_NOTIFY);
+
+#if 0 /* Enable this to trigger odd flush bugs. */
+    remFlushHandlerNotifications(pVM);
+#endif
 }
 
 

@@ -626,6 +626,7 @@ VMMR3DECL(int) EMR3RawSetMode(PVM pVM, EMRAWMODE enmMode)
  */
 VMMR3DECL(void) EMR3FatalError(PVMCPU pVCpu, int rc)
 {
+    pVCpu->em.s.enmState = EMSTATE_GURU_MEDITATION;
     longjmp(pVCpu->em.s.u.FatalLongJump, rc);
     AssertReleaseMsgFailed(("longjmp returned!\n"));
 }
@@ -824,6 +825,7 @@ static int emR3Debug(PVM pVM, PVMCPU pVCpu, int rc)
                         case VERR_TRPM_PANIC:
                         case VERR_TRPM_DONT_PANIC:
                         case VERR_VMM_RING0_ASSERTION:
+                        case VERR_VMM_HYPER_CR3_MISMATCH:
                             return rcLast;
                     }
                     return VINF_EM_OFF;
@@ -840,6 +842,7 @@ static int emR3Debug(PVM pVM, PVMCPU pVCpu, int rc)
                 case VERR_TRPM_PANIC:
                 case VERR_TRPM_DONT_PANIC:
                 case VERR_VMM_RING0_ASSERTION:
+                case VERR_VMM_HYPER_CR3_MISMATCH:
                 case VERR_INTERNAL_ERROR:
                 case VERR_INTERNAL_ERROR_2:
                 case VERR_INTERNAL_ERROR_3:
@@ -2569,6 +2572,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
         case VERR_TRPM_DONT_PANIC:
         case VERR_TRPM_PANIC:
         case VERR_VMM_RING0_ASSERTION:
+        case VERR_VMM_HYPER_CR3_MISMATCH:
             break;
 
         /*
