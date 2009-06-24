@@ -922,6 +922,8 @@ static DECLCALLBACK(int) gmmR0CleanupVMScanChunk(PAVLU32NODECORE pNode, void *pv
         unsigned cShared = 0;
         unsigned cFree = 0;
 
+        gmmR0UnlinkChunk(pChunk);       /* avoiding cFreePages updates. */
+
         uint16_t hGVM = pGVM->hSelf;
         unsigned iPage = (GMM_CHUNK_SIZE >> PAGE_SHIFT);
         while (iPage-- > 0)
@@ -934,21 +936,14 @@ static DECLCALLBACK(int) gmmR0CleanupVMScanChunk(PAVLU32NODECORE pNode, void *pv
                      *
                      * The reason for not using gmmR0FreePrivatePage here is that we
                      * must *not* cause the chunk to be freed from under us - we're in
-                     * a AVL tree walk here.
+                     * an AVL tree walk here.
                      */
                     pChunk->aPages[iPage].u = 0;
                     pChunk->aPages[iPage].Free.iNext = pChunk->iFreeHead;
                     pChunk->aPages[iPage].Free.u2State = GMM_PAGE_STATE_FREE;
                     pChunk->iFreeHead = iPage;
                     pChunk->cPrivate--;
-                    if ((pChunk->cFree & GMM_CHUNK_FREE_SET_MASK) == 0)
-                    {
-                        gmmR0UnlinkChunk(pChunk);
-                        pChunk->cFree++;
-                        gmmR0LinkChunk(pChunk, pChunk->cShared ? &g_pGMM->Shared : &g_pGMM->Private);
-                    }
-                    else
-                        pChunk->cFree++;
+                    pChunk->cFree++;
                     pGVM->gmm.s.cPrivatePages--;
                     cFree++;
                 }
@@ -959,6 +954,8 @@ static DECLCALLBACK(int) gmmR0CleanupVMScanChunk(PAVLU32NODECORE pNode, void *pv
                 cFree++;
             else
                 cShared++;
+
+        gmmR0LinkChunk(pChunk, pChunk->cShared ? &g_pGMM->Shared : &g_pGMM->Private);
 
         /*
          * Did it add up?
@@ -1826,10 +1823,8 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
      * is a bit extra work but it's easier to do it upfront than bailing out later.
      */
     PGMMCHUNKFREESET pSet = &pGMM->Private;
-#if 0 /** @todo this is broken, at least on windows... */
     if (pSet->cFreePages < cPages)
         return VERR_GMM_SEED_ME;
-#endif
     if (pGMM->fBoundMemoryMode)
     {
         uint16_t hGVM = pGVM->hSelf;
@@ -1845,8 +1840,6 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
         if (cPagesFound < cPages)
             return VERR_GMM_SEED_ME;
     }
-    else if (pSet->cFreePages < cPages) /* see #if 0 */
-        return VERR_GMM_SEED_ME;
 
     /*
      * Pick the pages.
