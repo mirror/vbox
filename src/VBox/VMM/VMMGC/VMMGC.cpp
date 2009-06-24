@@ -189,35 +189,10 @@ VMMRCDECL(void) VMMGCLogFlushIfFull(PVM pVM)
     if (    pVM->vmm.s.pRCLoggerRC
         &&  pVM->vmm.s.pRCLoggerRC->offScratch >= (sizeof(pVM->vmm.s.pRCLoggerRC->achScratch)*3/4))
     {
+        if (pVM->vmm.s.fRCLoggerFlushingDisabled)
+            return; /* fail quietly. */
         VMMGCCallHost(pVM, VMMCALLHOST_VMM_LOGGER_FLUSH, 0);
     }
-}
-
-/**
- * Disables the GC logger temporarily, restore with VMMGCLogRestore.
- *
- * @param   pVM             The VM handle.
- */
-VMMRCDECL(bool) VMMGCLogDisable(PVM pVM)
-{
-    bool fLog = pVM->vmm.s.pRCLoggerRC
-             && !(pVM->vmm.s.pRCLoggerRC->fFlags & RTLOGFLAGS_DISABLED);
-    if (fLog)
-        pVM->vmm.s.pRCLoggerRC->fFlags |= RTLOGFLAGS_DISABLED;
-    return fLog;
-}
-
-
-/**
- * Restores the GC logger after a call to VMMGCLogDisable.
- *
- * @param   pVM             The VM handle.
- * @param   fLog            What VMMGCLogDisable returned.
- */
-VMMRCDECL(void) VMMGCLogRestore(PVM pVM, bool fLog)
-{
-    if (fLog && pVM->vmm.s.pRCLoggerRC)
-        pVM->vmm.s.pRCLoggerRC->fFlags &= ~RTLOGFLAGS_DISABLED;
 }
 
 
@@ -240,17 +215,12 @@ VMMRCDECL(void) VMMGCGuestToHost(PVM pVM, int rc)
  * @param   pVM             The VM handle.
  * @param   enmOperation    The operation.
  * @param   uArg            The argument to the operation.
+ *
+ * @deprecated Use VMMRZCallRing3.
  */
 VMMRCDECL(int) VMMGCCallHost(PVM pVM, VMMCALLHOST enmOperation, uint64_t uArg)
 {
-    PVMCPU pVCpu = VMMGetCpu0(pVM);
-
-/** @todo profile this! */
-    pVCpu->vmm.s.enmCallHostOperation = enmOperation;
-    pVCpu->vmm.s.u64CallHostArg = uArg;
-    pVCpu->vmm.s.rcCallHost = VERR_INTERNAL_ERROR;
-    pVM->vmm.s.pfnGuestToHostRC(VINF_VMM_CALL_HOST);
-    return pVCpu->vmm.s.rcCallHost;
+    return VMMRZCallRing3(pVM, VMMGetCpu0(pVM), enmOperation, uArg);
 }
 
 

@@ -810,12 +810,14 @@
 /** @name Virtual Machine Monitor (VMM) Status Codes
  * @{
  */
-/** Reason for leaving GC: Calling host function. */
+/** Reason for leaving RZ: Calling host function. */
 #define VINF_VMM_CALL_HOST                  2700
 /** Reason for leaving R0: Hit a ring-0 assertion on EMT. */
 #define VERR_VMM_RING0_ASSERTION            (-2701)
 /** The hyper CR3 differs between PGM and CPUM. */
 #define VERR_VMM_HYPER_CR3_MISMATCH         (-2702)
+/** Reason for leaving RZ: Illegal call to ring-3. */
+#define VERR_VMM_RING3_CALL_DISABLED        (-2703)
 /** @} */
 
 
