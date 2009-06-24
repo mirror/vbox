@@ -144,6 +144,9 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
 
     /*
      * Wait for it.
+     *
+     * We default to UserMode here as the waits might be aborted due to process termination. 
+     * @todo As far as I can tell this is currently safe as all calls are made on behalf of user threads.
      */
     NTSTATUS rcNt;
     if (cMillies == RT_INDEFINITE_WAIT)
