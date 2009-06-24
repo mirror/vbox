@@ -4364,8 +4364,13 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
     rc = VINF_SUCCESS;
 
 #  ifdef IN_RC
-    /* NOTE: We can't deal with jumps to ring 3 here as we're now in an inconsistent state! */
-    bool fLog = VMMGCLogDisable(pVM);
+    /*
+     * WARNING! We can't deal with jumps to ring 3 in the code below as the
+     *          state will be inconsistent! Flush important things now while
+     *          we still can and then make sure there are no ring-3 calls.
+     */
+    REMNotifyHandlerPhysicalFlushIfAlmostFull(pVM, pVCpu);
+    VMMRZCallRing3Disable(pVCpu);
 #  endif
 
     pVCpu->pgm.s.iShwUser      = SHW_POOL_ROOT_IDX;
@@ -4400,7 +4405,8 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
     SELMShadowCR3Changed(pVM, pVCpu);
 
 #  ifdef IN_RC
-    VMMGCLogRestore(pVM, fLog);
+    /* NOTE: The state is consistent again. */
+    VMMRZCallRing3Enable(pVCpu);
 #  endif
 
     /* Clean up the old CR3 root. */

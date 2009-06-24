@@ -371,11 +371,22 @@ VMMR0DECL(void)     VMMR0LogFlushEnable(PVMCPU pVCpu);
 VMMRCDECL(int)      VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...);
 VMMRCDECL(void)     VMMGCGuestToHost(PVM pVM, int rc);
 VMMRCDECL(int)      VMMGCCallHost(PVM pVM, VMMCALLHOST enmOperation, uint64_t uArg);
-VMMRCDECL(bool)     VMMGCLogDisable(PVM pVM);
-VMMRCDECL(void)     VMMGCLogRestore(PVM pVM, bool fLog);
 VMMRCDECL(void)     VMMGCLogFlushIfFull(PVM pVM);
 /** @} */
 #endif /* IN_RC */
+
+#if defined(IN_RC) || defined(IN_RING0)
+/** @defgroup grp_vmm_rz    The VMM Raw-Mode and Ring-0 Context API
+ * @ingroup grp_vmm
+ * @{
+ */
+VMMRZDECL(int)      VMMRZCallRing3(PVM pVM, PVMCPU pVCpu, VMMCALLHOST enmOperation, uint64_t uArg);
+VMMRZDECL(int)      VMMRZCallRing3NoCpu(PVM pVM, VMMCALLHOST enmOperation, uint64_t uArg);
+VMMRZDECL(void)     VMMRZCallRing3Disable(PVMCPU pVCpu);
+VMMRZDECL(void)     VMMRZCallRing3Enable(PVMCPU pVCpu);
+VMMRZDECL(bool)     VMMRZCallRing3IsEnabled(PVMCPU pVCpu);
+/** @} */
+#endif
 
 
 /** @} */

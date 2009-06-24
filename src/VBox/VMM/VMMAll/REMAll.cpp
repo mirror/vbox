@@ -21,7 +21,7 @@
 
 
 /*******************************************************************************
-*   Global Variables                                                           *
+*   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_REM
 #include <VBox/rem.h>
@@ -79,24 +79,6 @@ VMMDECL(int) REMNotifyInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
 
 
 /**
- * Flushes the handler notifications by calling the host.
- *
- * @param   pVM     The VM handle.
- */
-static void remFlushHandlerNotifications(PVM pVM)
-{
-#ifdef IN_RC
-    VMMGCCallHost(pVM, VMMCALLHOST_REM_REPLAY_HANDLER_NOTIFICATIONS, 0);
-#elif defined(IN_RING0)
-    /** @todo necessary? */
-    VMMR0CallHost(pVM, VMMCALLHOST_REM_REPLAY_HANDLER_NOTIFICATIONS, 0);
-#else
-    AssertReleaseMsgFailed(("Ring 3 call????.\n"));
-#endif
-}
-
-
-/**
  * Insert pending notification
  *
  * @param   pVM             VM Handle.
@@ -119,7 +101,7 @@ static void remNotifyHandlerInsert(PVM pVM, PREMHANDLERNOTIFICATION pRec)
             {
                 Assert(cFlushes++ != 128);
                 AssertFatal(cFlushes < _1M);
-                remFlushHandlerNotifications(pVM);
+                VMMRZCallRing3NoCpu(pVM, VMMCALLHOST_REM_REPLAY_HANDLER_NOTIFICATIONS, 0);
                 idxFree = ASMAtomicUoReadU32(&pVM->rem.s.idxFreeList);
             } while (idxFree == (uint32_t)-1);
         }
@@ -144,10 +126,6 @@ static void remNotifyHandlerInsert(PVM pVM, PREMHANDLERNOTIFICATION pRec)
     } while (!ASMAtomicCmpXchgU32(&pVM->rem.s.idxPendingList, idxFree, idxNext));
 
     VM_FF_SET(pVM, VM_FF_REM_HANDLER_NOTIFY);
-
-#if 0 /* Enable this to trigger odd flush bugs. */
-    remFlushHandlerNotifications(pVM);
-#endif
 }
 
 
@@ -220,6 +198,38 @@ VMMDECL(void) REMNotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType
 }
 
 #endif /* !IN_RING3 */
+
+#ifdef IN_RC
+/**
+ * Flushes the physical handler notifications if the queue is almost full.
+ *
+ * This is for avoiding trouble in RC when changing CR3.
+ *
+ * @param   pVM         The VM handle.
+ * @param   pVCpu       The virtual CPU handle of the calling EMT.
+ */
+VMMDECL(void) REMNotifyHandlerPhysicalFlushIfAlmostFull(PVM pVM, PVMCPU pVCpu)
+{
+    Assert(pVM->cCPUs == 1);
+
+    /*
+     * Less than 10 items means we should flush.
+     */
+    uint32_t cFree = 0;
+    for (uint32_t idx = pVM->rem.s.idxFreeList;
+         idx != UINT32_MAX;
+         idx = pVM->rem.s.aHandlerNotifications[idx].idxNext)
+    {
+        Assert(idx < RT_ELEMENTS(pVM->rem.s.aHandlerNotifications));
+        if (++cFree > 10)
+            return;
+    }
+
+    /* Ok, we gotta flush them. */
+    VMMRZCallRing3NoCpu(pVM, VMMCALLHOST_REM_REPLAY_HANDLER_NOTIFICATIONS, 0);
+}
+#endif /* IN_RC */
+
 
 /**
  * Make REM flush all translation block upon the next call to REMR3State().

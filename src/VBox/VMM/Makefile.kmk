@@ -321,6 +321,7 @@ VMMGC_SOURCES   = \
 	VMMGC/VMMGCA.asm \
 	VMMGC/HWACCMGCA.asm \
 	VMMRZ/DBGFRZ.cpp \
+	VMMRZ/VMMRZ.cpp \
 	VMMAll/CPUMAllRegs.cpp \
 	VMMAll/CPUMAllA.asm \
 	VMMAll/DBGFAll.cpp \
@@ -414,6 +415,7 @@ VMMR0_SOURCES   = \
 	VMMR0/TRPMR0A.asm \
 	VMMR0/VMMR0.cpp \
 	VMMRZ/DBGFRZ.cpp \
+	VMMRZ/VMMRZ.cpp \
 	VMMAll/CPUMAllA.asm \
 	VMMAll/CPUMAllRegs.cpp \
 	VMMAll/CPUMStack.cpp \
