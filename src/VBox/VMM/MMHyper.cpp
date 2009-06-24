@@ -1187,7 +1187,7 @@ VMMR3DECL(int)   MMR3HyperHCPhys2HCVirtEx(PVM pVM, RTHCPHYS HCPhys, void **ppv)
 VMMR3DECL(int) MMR3HyperReadGCVirt(PVM pVM, void *pvDst, RTGCPTR GCPtr, size_t cb)
 {
     if (GCPtr - pVM->mm.s.pvHyperAreaGC >= pVM->mm.s.cbHyperArea)
-        return VERR_INVALID_PARAMETER;
+        return VERR_INVALID_POINTER;
     return PGMR3MapRead(pVM, pvDst, GCPtr, cb);
 }
 
