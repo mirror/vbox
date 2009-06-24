@@ -157,19 +157,18 @@ static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, PDMAPI
 
     switch (enmType)
     {
-    case PDMAPICIRQ_HARDWARE:
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC);
-        break;
-    case PDMAPICIRQ_NMI:
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI);
-        break;
-    case PDMAPICIRQ_SMI:
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_SMI);
-        break;
-    case PDMAPICIRQ_INVALID:
-    case PDMAPICIRQ_32BIT_HACK:
-        AssertFailed();
-        break;
+        case PDMAPICIRQ_HARDWARE:
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC);
+            break;
+        case PDMAPICIRQ_NMI:
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI);
+            break;
+        case PDMAPICIRQ_SMI:
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_SMI);
+            break;
+        default:
+            AssertMsgFailed(("enmType=%d\n", enmType));
+            break;
     }
     REMR3NotifyInterruptSet(pVM, pVCpu);
     VMR3NotifyCpuFFU(pVCpu->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM | VMNOTIFYFF_FLAGS_POKE);

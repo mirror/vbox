@@ -439,25 +439,24 @@ static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, PDMAPI
 
     switch (enmType)
     {
-    case PDMAPICIRQ_HARDWARE:
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC);
-        break;
-    case PDMAPICIRQ_NMI:
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI);
-        break;
-    case PDMAPICIRQ_SMI:
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_SMI);
-        break;
-    case PDMAPICIRQ_INVALID:
-    case PDMAPICIRQ_32BIT_HACK:
-        AssertFailed();
-        break;
+        case PDMAPICIRQ_HARDWARE:
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC);
+            break;
+        case PDMAPICIRQ_NMI:
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI);
+            break;
+        case PDMAPICIRQ_SMI:
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_SMI);
+            break;
+        default:
+            AssertMsgFailed(("enmType=%d\n", enmType));
+            break;
     }
 
     /* We need to wait up the target CPU. */
     if (VMMGetCpuId(pVM) != idCpu)
     {
-        switch(VMCPU_GET_STATE(pVCpu))
+        switch (VMCPU_GET_STATE(pVCpu))
         {
             case VMCPUSTATE_STARTED_EXEC:
                 GVMMR0SchedPokeEx(pVM, pVCpu->idCpu, false /* don't take the used lock */);
