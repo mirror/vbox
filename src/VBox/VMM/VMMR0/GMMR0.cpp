@@ -1552,8 +1552,8 @@ static int gmmR0AllocateMoreChunks(PGMM pGMM, PGVM pGVM, PGMMCHUNKFREESET pSet, 
     {
         /*
          * The memory is bound to the VM allocating it, so we have to count
-         * the free pages carefully as well as making sure we set brand it
-         * with our VM handle.
+         * the free pages carefully as well as making sure we brand them with
+         * our VM handle.
          *
          * Note! We will leave the mutex while doing the allocation,
          *       gmmR0AllocateOneChunk will re-take it temporarily while registering the chunk.
@@ -1697,8 +1697,10 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
      * is a bit extra work but it's easier to do it upfront than bailing out later.
      */
     PGMMCHUNKFREESET pSet = &pGMM->Private;
+#if 0 /** @todo this is broken, at least on windows... */
     if (pSet->cPages < cPages)
         return VERR_GMM_SEED_ME;
+#endif
     if (pGMM->fBoundMemoryMode)
     {
         uint16_t hGVM = pGVM->hSelf;
@@ -1714,6 +1716,8 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
         if (cPagesFound < cPages)
             return VERR_GMM_SEED_ME;
     }
+    else if (pSet->cPages < cPages) /* see #if 0 */
+        return VERR_GMM_SEED_ME;
 
     /*
      * Pick the pages.
