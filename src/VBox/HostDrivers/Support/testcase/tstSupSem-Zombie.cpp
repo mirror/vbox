@@ -40,6 +40,7 @@
 #include <iprt/initterm.h>
 #include <iprt/process.h>
 #include <iprt/stream.h>
+#include <iprt/string.h>
 #include <iprt/test.h>
 #include <iprt/time.h>
 #include <iprt/thread.h>
@@ -114,7 +115,7 @@ static int mainChild(void)
     }
     g_pSession = pSession;
 
-    /* 
+    /*
      * A semaphore of each kind and throw a bunch of threads on them.
      */
     SUPSEMEVENT hEvent = NIL_SUPSEMEVENT;
@@ -147,8 +148,8 @@ static int mainChild(void)
 }
 
 
-/** 
- * The parent main routine. 
+/**
+ * The parent main routine.
  * @param   argv0       The executable name (or whatever).
  */
 static int mainParent(const char *argv0)
@@ -190,17 +191,17 @@ static int mainParent(const char *argv0)
                 RTThreadSleep(cElapsed < 60 ? 30 : cElapsed < 200 ? 10 : 100);
             }
             RTTESTI_CHECK_RC_OK(rc);
-            if (    RT_SUCCESS(rc) 
+            if (    RT_SUCCESS(rc)
                 &&  (   Status.enmReason != RTPROCEXITREASON_NORMAL
                      || Status.iStatus != 0))
-            {    
+            {
                 RTTestIFailed("child %u (%d) reason %d\n", Status.iStatus, Status.iStatus, Status.enmReason);
                 rc = VERR_PERMISSION_DENIED;
             }
         }
         /* one zombie process is enough. */
         if (RT_FAILURE(rc))
-            break;                      
+            break;
     }
 
     return RTTestSummaryAndDestroy(hTest);
@@ -209,7 +210,7 @@ static int mainParent(const char *argv0)
 
 int main(int argc, char **argv)
 {
-    if (    argc == 2 
+    if (    argc == 2
         &&  !strcmp(argv[1], "--child"))
         return mainChild();
     return mainParent(argv[0]);
