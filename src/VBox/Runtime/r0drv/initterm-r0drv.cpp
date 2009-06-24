@@ -110,7 +110,7 @@ RTR0DECL(void) RTR0Term(void)
     if (cNewUsers != 0)
         return;
 
-#if !defined(RT_OS_LINUX) && !defined(RT_OS_WINDOWS)
+#if !defined(RT_OS_LINUX)
     rtThreadTerm();
 #endif
 #ifndef IN_GUEST /* play safe for now */
