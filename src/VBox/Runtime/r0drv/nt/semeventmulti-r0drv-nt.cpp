@@ -147,12 +147,17 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
      */
     NTSTATUS rcNt;
     if (cMillies == RT_INDEFINITE_WAIT)
-        rcNt = KeWaitForSingleObject(&pThis->Event, Executive, KernelMode, fInterruptible, NULL);
+        rcNt = KeWaitForSingleObject(&pThis->Event, Executive, UserMode, fInterruptible, NULL);
     else
     {
-        LARGE_INTEGER Timeout;
-        Timeout.QuadPart = -(int64_t)cMillies * 10000;
-        rcNt = KeWaitForSingleObject(&pThis->Event, Executive, KernelMode, fInterruptible, &Timeout);
+        /* Can't use the stack here as the wait is UserMode. */
+        PLARGE_INTEGER pTimeout = (PLARGE_INTEGER)RTMemAlloc(sizeof(*pTimeout));
+        if (!pTimeout)
+            return VERR_NO_MEMORY;
+
+        pTimeout->QuadPart = -(int64_t)cMillies * 10000;
+        rcNt = KeWaitForSingleObject(&pThis->Event, Executive, UserMode, fInterruptible, pTimeout);
+        RTMemFree(pTimeout);
     }
     switch (rcNt)
     {
