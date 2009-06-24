@@ -455,7 +455,7 @@ typedef GMMCHUNKTLB *PGMMCHUNKTLB;
 typedef struct GMMCHUNKFREESET
 {
     /** The number of free pages in the set. */
-    uint64_t        cPages;
+    uint64_t        cFreePages;
     /** Chunks ordered by increasing number of free pages. */
     PGMMCHUNK       apLists[GMM_CHUNK_FREE_SET_LISTS];
 } GMMCHUNKFREESET;
@@ -561,6 +561,49 @@ static PGMM g_pGMM = NULL;
     } while (0)
 
 
+/** @def GMM_CHECK_SANITY_UPON_ENTERING
+ * Checks the sanity of the GMM instance data before making changes.
+ *
+ * This is macro is a stub by default and must be enabled manually in the code.
+ *
+ * @returns true if sane, false if not.
+ * @param   pGMM    The name of the pGMM variable.
+ */
+#if defined(VBOX_STRICT) && 0
+# define GMM_CHECK_SANITY_UPON_ENTERING(pGMM)   (gmmR0SanityCheck((pGMM), __PRETTY_FUNCTION__, __LINE__) == 0)
+#else
+# define GMM_CHECK_SANITY_UPON_ENTERING(pGMM)   (true)
+#endif
+
+/** @def GMM_CHECK_SANITY_UPON_LEAVING
+ * Checks the sanity of the GMM instance data after making changes.
+ *
+ * This is macro is a stub by default and must be enabled manually in the code.
+ *
+ * @returns true if sane, false if not.
+ * @param   pGMM    The name of the pGMM variable.
+ */
+#if defined(VBOX_STRICT) && 0
+# define GMM_CHECK_SANITY_UPON_LEAVING(pGMM)    (gmmR0SanityCheck((pGMM), __PRETTY_FUNCTION__, __LINE__) == 0)
+#else
+# define GMM_CHECK_SANITY_UPON_LEAVING(pGMM)    (true)
+#endif
+
+/** @def GMM_CHECK_SANITY_IN_LOOPS
+ * Checks the sanity of the GMM instance in the allocation loops.
+ *
+ * This is macro is a stub by default and must be enabled manually in the code.
+ *
+ * @returns true if sane, false if not.
+ * @param   pGMM    The name of the pGMM variable.
+ */
+#if defined(VBOX_STRICT) && 0
+# define GMM_CHECK_SANITY_IN_LOOPS(pGMM)        (gmmR0SanityCheck((pGMM), __PRETTY_FUNCTION__, __LINE__) == 0)
+#else
+# define GMM_CHECK_SANITY_IN_LOOPS(pGMM)        (true)
+#endif
+
+
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -569,6 +612,7 @@ static DECLCALLBACK(int) gmmR0CleanupVMScanChunk(PAVLU32NODECORE pNode, void *pv
 /*static*/ DECLCALLBACK(int) gmmR0CleanupVMDestroyChunk(PAVLU32NODECORE pNode, void *pvGVM);
 DECLINLINE(void) gmmR0LinkChunk(PGMMCHUNK pChunk, PGMMCHUNKFREESET pSet);
 DECLINLINE(void) gmmR0UnlinkChunk(PGMMCHUNK pChunk);
+static uint32_t gmmR0SanityCheck(PGMM pGMM, const char *pszFunction, unsigned uLineNo);
 static void gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk);
 static void gmmR0FreeSharedPage(PGMM pGMM, uint32_t idPage, PGMMPAGE pPage);
 static int gmmR0UnmapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk);
@@ -745,6 +789,7 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
 
     int rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
+    GMM_CHECK_SANITY_UPON_ENTERING(pGMM);
 
     /*
      * The policy is 'INVALID' until the initial reservation
@@ -846,6 +891,7 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
     pGVM->gmm.s.enmPriority = GMMPRIORITY_INVALID;
     pGVM->gmm.s.fMayAllocate = false;
 
+    GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     RTSemFastMutexRelease(pGMM->Mtx);
 
     LogFlow(("GMMR0CleanupVM: returns\n"));
@@ -1071,34 +1117,38 @@ GMMR0DECL(int) GMMR0InitialReservation(PVM pVM, VMCPUID idCpu, uint64_t cBasePag
 
     rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
-
-    if (    !pGVM->gmm.s.Reserved.cBasePages
-        &&  !pGVM->gmm.s.Reserved.cFixedPages
-        &&  !pGVM->gmm.s.Reserved.cShadowPages)
+    if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
     {
-        /*
-         * Check if we can accomodate this.
-         */
-        /* ... later ... */
-        if (RT_SUCCESS(rc))
+        if (    !pGVM->gmm.s.Reserved.cBasePages
+            &&  !pGVM->gmm.s.Reserved.cFixedPages
+            &&  !pGVM->gmm.s.Reserved.cShadowPages)
         {
             /*
-             * Update the records.
+             * Check if we can accomodate this.
              */
-            pGVM->gmm.s.Reserved.cBasePages = cBasePages;
-            pGVM->gmm.s.Reserved.cFixedPages = cFixedPages;
-            pGVM->gmm.s.Reserved.cShadowPages = cShadowPages;
-            pGVM->gmm.s.enmPolicy = enmPolicy;
-            pGVM->gmm.s.enmPriority = enmPriority;
-            pGVM->gmm.s.fMayAllocate = true;
+            /* ... later ... */
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Update the records.
+                 */
+                pGVM->gmm.s.Reserved.cBasePages = cBasePages;
+                pGVM->gmm.s.Reserved.cFixedPages = cFixedPages;
+                pGVM->gmm.s.Reserved.cShadowPages = cShadowPages;
+                pGVM->gmm.s.enmPolicy = enmPolicy;
+                pGVM->gmm.s.enmPriority = enmPriority;
+                pGVM->gmm.s.fMayAllocate = true;
 
-            pGMM->cReservedPages += cBasePages + cFixedPages + cShadowPages;
-            pGMM->cRegisteredVMs++;
+                pGMM->cReservedPages += cBasePages + cFixedPages + cShadowPages;
+                pGMM->cRegisteredVMs++;
+            }
         }
+        else
+            rc = VERR_WRONG_ORDER;
+        GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     }
     else
-        rc = VERR_WRONG_ORDER;
-
+        rc = VERR_INTERNAL_ERROR_5;
     RTSemFastMutexRelease(pGMM->Mtx);
     LogFlow(("GMMR0InitialReservation: returns %Rrc\n", rc));
     return rc;
@@ -1163,33 +1213,37 @@ GMMR0DECL(int) GMMR0UpdateReservation(PVM pVM, VMCPUID idCpu, uint64_t cBasePage
 
     rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
-
-    if (    pGVM->gmm.s.Reserved.cBasePages
-        &&  pGVM->gmm.s.Reserved.cFixedPages
-        &&  pGVM->gmm.s.Reserved.cShadowPages)
+    if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
     {
-        /*
-         * Check if we can accomodate this.
-         */
-        /* ... later ... */
-        if (RT_SUCCESS(rc))
+        if (    pGVM->gmm.s.Reserved.cBasePages
+            &&  pGVM->gmm.s.Reserved.cFixedPages
+            &&  pGVM->gmm.s.Reserved.cShadowPages)
         {
             /*
-             * Update the records.
+             * Check if we can accomodate this.
              */
-            pGMM->cReservedPages -= pGVM->gmm.s.Reserved.cBasePages
-                                  + pGVM->gmm.s.Reserved.cFixedPages
-                                  + pGVM->gmm.s.Reserved.cShadowPages;
-            pGMM->cReservedPages += cBasePages + cFixedPages + cShadowPages;
+            /* ... later ... */
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Update the records.
+                 */
+                pGMM->cReservedPages -= pGVM->gmm.s.Reserved.cBasePages
+                                      + pGVM->gmm.s.Reserved.cFixedPages
+                                      + pGVM->gmm.s.Reserved.cShadowPages;
+                pGMM->cReservedPages += cBasePages + cFixedPages + cShadowPages;
 
-            pGVM->gmm.s.Reserved.cBasePages = cBasePages;
-            pGVM->gmm.s.Reserved.cFixedPages = cFixedPages;
-            pGVM->gmm.s.Reserved.cShadowPages = cShadowPages;
+                pGVM->gmm.s.Reserved.cBasePages = cBasePages;
+                pGVM->gmm.s.Reserved.cFixedPages = cFixedPages;
+                pGVM->gmm.s.Reserved.cShadowPages = cShadowPages;
+            }
         }
+        else
+            rc = VERR_WRONG_ORDER;
+        GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     }
     else
-        rc = VERR_WRONG_ORDER;
-
+        rc = VERR_INTERNAL_ERROR_5;
     RTSemFastMutexRelease(pGMM->Mtx);
     LogFlow(("GMMR0UpdateReservation: returns %Rrc\n", rc));
     return rc;
@@ -1214,6 +1268,66 @@ GMMR0DECL(int) GMMR0UpdateReservationReq(PVM pVM, VMCPUID idCpu, PGMMUPDATERESER
     AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
 
     return GMMR0UpdateReservation(pVM, idCpu, pReq->cBasePages, pReq->cShadowPages, pReq->cFixedPages);
+}
+
+
+/**
+ * Performs sanity checks on a free set.
+ *
+ * @returns Error count.
+ *
+ * @param   pGMM        Pointer to the GMM instance.
+ * @param   pSet        Pointer to the set.
+ * @param   pszSetName  The set name.
+ * @param   pszFunction The function from which it was called.
+ * @param   uLine       The line number.
+ */
+static uint32_t gmmR0SanityCheckSet(PGMM pGMM, PGMMCHUNKFREESET pSet, const char *pszSetName,
+                                    const char *pszFunction, unsigned uLineNo)
+{
+    uint32_t cErrors = 0;
+
+    /*
+     * Count the free pages in all the chunks and match it against pSet->cFreePages.
+     */
+    uint32_t cPages = 0;
+    for (unsigned i = 0; i < RT_ELEMENTS(pSet->apLists); i++)
+    {
+        for (PGMMCHUNK pCur = pSet->apLists[i]; pCur; pCur = pCur->pFreeNext)
+        {
+            /** @todo check that the chunk is hash into the right set. */
+            cPages += pCur->cFree;
+        }
+    }
+    if (RT_UNLIKELY(cPages != pSet->cFreePages))
+    {
+        SUPR0Printf("GMM insanity: found %#x pages in the %s set, expected %#x. (%s, line %u)\n",
+                    cPages, pszSetName, pSet->cFreePages, pszFunction, uLineNo);
+        cErrors++;
+    }
+
+    return cErrors;
+}
+
+
+/**
+ * Performs some sanity checks on the GMM while owning lock.
+ *
+ * @returns Error count.
+ *
+ * @param   pGMM        Pointer to the GMM instance.
+ * @param   pszFunction The function from which it is called.
+ * @param   uLineNo     The line number.
+ */
+static uint32_t gmmR0SanityCheck(PGMM pGMM, const char *pszFunction, unsigned uLineNo)
+{
+    uint32_t cErrors = 0;
+
+    cErrors += gmmR0SanityCheckSet(pGMM, &pGMM->Private, "private", pszFunction, uLineNo);
+    cErrors += gmmR0SanityCheckSet(pGMM, &pGMM->Shared,  "shared",  pszFunction, uLineNo);
+    /** @todo add more sanity checks. */
+
+    return cErrors;
 }
 
 
@@ -1287,7 +1401,7 @@ DECLINLINE(void) gmmR0UnlinkChunk(PGMMCHUNK pChunk)
     PGMMCHUNKFREESET pSet = pChunk->pSet;
     if (RT_LIKELY(pSet))
     {
-        pSet->cPages -= pChunk->cFree;
+        pSet->cFreePages -= pChunk->cFree;
 
         PGMMCHUNK pPrev = pChunk->pFreePrev;
         PGMMCHUNK pNext = pChunk->pFreeNext;
@@ -1335,7 +1449,7 @@ DECLINLINE(void) gmmR0LinkChunk(PGMMCHUNK pChunk, PGMMCHUNKFREESET pSet)
             pChunk->pFreeNext->pFreePrev = pChunk;
         pSet->apLists[iList] = pChunk;
 
-        pSet->cPages += pChunk->cFree;
+        pSet->cFreePages += pChunk->cFree;
     }
 }
 
@@ -1445,20 +1559,28 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemOb
         rc = RTSemFastMutexRequest(pGMM->Mtx);
         if (RT_SUCCESS(rc))
         {
-            pChunk->Core.Key = gmmR0AllocateChunkId(pGMM);
-            if (    pChunk->Core.Key != NIL_GMM_CHUNKID
-                &&  pChunk->Core.Key <= GMM_CHUNKID_LAST
-                &&  RTAvlU32Insert(&pGMM->pChunks, &pChunk->Core))
+            if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
             {
-                pGMM->cChunks++;
-                gmmR0LinkChunk(pChunk, pSet);
-                LogFlow(("gmmR0RegisterChunk: pChunk=%p id=%#x cChunks=%d\n", pChunk, pChunk->Core.Key, pGMM->cChunks));
-                RTSemFastMutexRelease(pGMM->Mtx);
-                return VINF_SUCCESS;
-            }
+                pChunk->Core.Key = gmmR0AllocateChunkId(pGMM);
+                if (    pChunk->Core.Key != NIL_GMM_CHUNKID
+                    &&  pChunk->Core.Key <= GMM_CHUNKID_LAST
+                    &&  RTAvlU32Insert(&pGMM->pChunks, &pChunk->Core))
+                {
+                    pGMM->cChunks++;
+                    gmmR0LinkChunk(pChunk, pSet);
+                    LogFlow(("gmmR0RegisterChunk: pChunk=%p id=%#x cChunks=%d\n", pChunk, pChunk->Core.Key, pGMM->cChunks));
 
-            /* bail out */
-            rc = VERR_INTERNAL_ERROR;
+                    GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
+                    RTSemFastMutexRelease(pGMM->Mtx);
+                    return VINF_SUCCESS;
+                }
+
+                /* bail out */
+                rc = VERR_INTERNAL_ERROR;
+            }
+            else
+                rc = VERR_INTERNAL_ERROR_5;
+
             RTSemFastMutexRelease(pGMM->Mtx);
         }
         RTMemFree(pChunk);
@@ -1514,14 +1636,17 @@ static int gmmR0AllocateMoreChunks(PGMM pGMM, PGVM pGVM, PGMMCHUNKFREESET pSet, 
 {
     Assert(!pGMM->fLegacyAllocationMode);
 
+    if (!GMM_CHECK_SANITY_IN_LOOPS(pGMM))
+        return VERR_INTERNAL_ERROR_4;
+
     if (!pGMM->fBoundMemoryMode)
     {
         /*
          * Try steal free chunks from the other set first. (Only take 100% free chunks.)
          */
         PGMMCHUNKFREESET pOtherSet = pSet == &pGMM->Private ? &pGMM->Shared : &pGMM->Private;
-        while (     pSet->cPages < cPages
-               &&   pOtherSet->cPages >= GMM_CHUNK_NUM_PAGES)
+        while (     pSet->cFreePages < cPages
+               &&   pOtherSet->cFreePages >= GMM_CHUNK_NUM_PAGES)
         {
             PGMMCHUNK pChunk = pOtherSet->apLists[GMM_CHUNK_FREE_SET_LISTS - 1];
             while (pChunk && pChunk->cFree != GMM_CHUNK_NUM_PAGES)
@@ -1538,7 +1663,7 @@ static int gmmR0AllocateMoreChunks(PGMM pGMM, PGVM pGVM, PGMMCHUNKFREESET pSet, 
          * Note! We will leave the mutex while doing the allocation,
          *       gmmR0AllocateOneChunk will re-take it temporarily while registering the chunk.
          */
-        while (pSet->cPages < cPages)
+        while (pSet->cFreePages < cPages)
         {
             RTSemFastMutexRelease(pGMM->Mtx);
             int rc = gmmR0AllocateOneChunk(pGMM, pSet, NIL_GVM_HANDLE);
@@ -1546,6 +1671,8 @@ static int gmmR0AllocateMoreChunks(PGMM pGMM, PGVM pGVM, PGMMCHUNKFREESET pSet, 
             AssertRCReturn(rc2, rc2);
             if (RT_FAILURE(rc))
                 return rc;
+            if (!GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
+                return VERR_INTERNAL_ERROR_5;
         }
     }
     else
@@ -1581,6 +1708,8 @@ static int gmmR0AllocateMoreChunks(PGMM pGMM, PGVM pGVM, PGMMCHUNKFREESET pSet, 
             AssertRCReturn(rc2, rc2);
             if (RT_FAILURE(rc))
                 return rc;
+            if (!GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
+                return VERR_INTERNAL_ERROR_5;
         }
     }
 
@@ -1698,7 +1827,7 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
      */
     PGMMCHUNKFREESET pSet = &pGMM->Private;
 #if 0 /** @todo this is broken, at least on windows... */
-    if (pSet->cPages < cPages)
+    if (pSet->cFreePages < cPages)
         return VERR_GMM_SEED_ME;
 #endif
     if (pGMM->fBoundMemoryMode)
@@ -1716,7 +1845,7 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
         if (cPagesFound < cPages)
             return VERR_GMM_SEED_ME;
     }
-    else if (pSet->cPages < cPages) /* see #if 0 */
+    else if (pSet->cFreePages < cPages) /* see #if 0 */
         return VERR_GMM_SEED_ME;
 
     /*
@@ -1900,111 +2029,116 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesTo
 
     rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
-
-    /* No allocations before the initial reservation has been made! */
-    if (RT_LIKELY(    pGVM->gmm.s.Reserved.cBasePages
-                  &&  pGVM->gmm.s.Reserved.cFixedPages
-                  &&  pGVM->gmm.s.Reserved.cShadowPages))
+    if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
     {
-        /*
-         * Perform the updates.
-         * Stop on the first error.
-         */
-        for (iPage = 0; iPage < cPagesToUpdate; iPage++)
-        {
-            if (paPages[iPage].idPage != NIL_GMM_PAGEID)
-            {
-                PGMMPAGE pPage = gmmR0GetPage(pGMM, paPages[iPage].idPage);
-                if (RT_LIKELY(pPage))
-                {
-                    if (RT_LIKELY(GMM_PAGE_IS_PRIVATE(pPage)))
-                    {
-                        if (RT_LIKELY(pPage->Private.hGVM == pGVM->hSelf))
-                        {
-                            AssertCompile(NIL_RTHCPHYS > GMM_GCPHYS_LAST && GMM_GCPHYS_UNSHAREABLE > GMM_GCPHYS_LAST);
-                            if (RT_LIKELY(paPages[iPage].HCPhysGCPhys <= GMM_GCPHYS_LAST))
-                                pPage->Private.pfn = paPages[iPage].HCPhysGCPhys >> PAGE_SHIFT;
-                            else if (paPages[iPage].HCPhysGCPhys == GMM_GCPHYS_UNSHAREABLE)
-                                pPage->Private.pfn = GMM_PAGE_PFN_UNSHAREABLE;
-                            /* else: NIL_RTHCPHYS nothing */
 
-                            paPages[iPage].idPage = NIL_GMM_PAGEID;
-                            paPages[iPage].HCPhysGCPhys = NIL_RTHCPHYS;
+        /* No allocations before the initial reservation has been made! */
+        if (RT_LIKELY(    pGVM->gmm.s.Reserved.cBasePages
+                      &&  pGVM->gmm.s.Reserved.cFixedPages
+                      &&  pGVM->gmm.s.Reserved.cShadowPages))
+        {
+            /*
+             * Perform the updates.
+             * Stop on the first error.
+             */
+            for (iPage = 0; iPage < cPagesToUpdate; iPage++)
+            {
+                if (paPages[iPage].idPage != NIL_GMM_PAGEID)
+                {
+                    PGMMPAGE pPage = gmmR0GetPage(pGMM, paPages[iPage].idPage);
+                    if (RT_LIKELY(pPage))
+                    {
+                        if (RT_LIKELY(GMM_PAGE_IS_PRIVATE(pPage)))
+                        {
+                            if (RT_LIKELY(pPage->Private.hGVM == pGVM->hSelf))
+                            {
+                                AssertCompile(NIL_RTHCPHYS > GMM_GCPHYS_LAST && GMM_GCPHYS_UNSHAREABLE > GMM_GCPHYS_LAST);
+                                if (RT_LIKELY(paPages[iPage].HCPhysGCPhys <= GMM_GCPHYS_LAST))
+                                    pPage->Private.pfn = paPages[iPage].HCPhysGCPhys >> PAGE_SHIFT;
+                                else if (paPages[iPage].HCPhysGCPhys == GMM_GCPHYS_UNSHAREABLE)
+                                    pPage->Private.pfn = GMM_PAGE_PFN_UNSHAREABLE;
+                                /* else: NIL_RTHCPHYS nothing */
+
+                                paPages[iPage].idPage = NIL_GMM_PAGEID;
+                                paPages[iPage].HCPhysGCPhys = NIL_RTHCPHYS;
+                            }
+                            else
+                            {
+                                Log(("GMMR0AllocateHandyPages: #%#x/%#x: Not owner! hGVM=%#x hSelf=%#x\n",
+                                     iPage, paPages[iPage].idPage, pPage->Private.hGVM, pGVM->hSelf));
+                                rc = VERR_GMM_NOT_PAGE_OWNER;
+                                break;
+                            }
                         }
                         else
                         {
-                            Log(("GMMR0AllocateHandyPages: #%#x/%#x: Not owner! hGVM=%#x hSelf=%#x\n",
-                                 iPage, paPages[iPage].idPage, pPage->Private.hGVM, pGVM->hSelf));
-                            rc = VERR_GMM_NOT_PAGE_OWNER;
+                            Log(("GMMR0AllocateHandyPages: #%#x/%#x: Not private! %.*Rhxs\n", iPage, paPages[iPage].idPage, sizeof(*pPage), pPage));
+                            rc = VERR_GMM_PAGE_NOT_PRIVATE;
                             break;
                         }
                     }
                     else
                     {
-                        Log(("GMMR0AllocateHandyPages: #%#x/%#x: Not private! %.*Rhxs\n", iPage, paPages[iPage].idPage, sizeof(*pPage), pPage));
-                        rc = VERR_GMM_PAGE_NOT_PRIVATE;
+                        Log(("GMMR0AllocateHandyPages: #%#x/%#x: Not found! (private)\n", iPage, paPages[iPage].idPage));
+                        rc = VERR_GMM_PAGE_NOT_FOUND;
                         break;
                     }
                 }
-                else
-                {
-                    Log(("GMMR0AllocateHandyPages: #%#x/%#x: Not found! (private)\n", iPage, paPages[iPage].idPage));
-                    rc = VERR_GMM_PAGE_NOT_FOUND;
-                    break;
-                }
-            }
 
-            if (paPages[iPage].idSharedPage != NIL_GMM_PAGEID)
-            {
-                PGMMPAGE pPage = gmmR0GetPage(pGMM, paPages[iPage].idSharedPage);
-                if (RT_LIKELY(pPage))
+                if (paPages[iPage].idSharedPage != NIL_GMM_PAGEID)
                 {
-                    if (RT_LIKELY(GMM_PAGE_IS_SHARED(pPage)))
+                    PGMMPAGE pPage = gmmR0GetPage(pGMM, paPages[iPage].idSharedPage);
+                    if (RT_LIKELY(pPage))
                     {
-                        AssertCompile(NIL_RTHCPHYS > GMM_GCPHYS_LAST && GMM_GCPHYS_UNSHAREABLE > GMM_GCPHYS_LAST);
-                        Assert(pPage->Shared.cRefs);
-                        Assert(pGVM->gmm.s.cSharedPages);
-                        Assert(pGVM->gmm.s.Allocated.cBasePages);
+                        if (RT_LIKELY(GMM_PAGE_IS_SHARED(pPage)))
+                        {
+                            AssertCompile(NIL_RTHCPHYS > GMM_GCPHYS_LAST && GMM_GCPHYS_UNSHAREABLE > GMM_GCPHYS_LAST);
+                            Assert(pPage->Shared.cRefs);
+                            Assert(pGVM->gmm.s.cSharedPages);
+                            Assert(pGVM->gmm.s.Allocated.cBasePages);
 
-                        pGVM->gmm.s.cSharedPages--;
-                        pGVM->gmm.s.Allocated.cBasePages--;
-                        if (!--pPage->Shared.cRefs)
-                            gmmR0FreeSharedPage(pGMM, paPages[iPage].idSharedPage, pPage);
+                            pGVM->gmm.s.cSharedPages--;
+                            pGVM->gmm.s.Allocated.cBasePages--;
+                            if (!--pPage->Shared.cRefs)
+                                gmmR0FreeSharedPage(pGMM, paPages[iPage].idSharedPage, pPage);
 
-                        paPages[iPage].idSharedPage = NIL_GMM_PAGEID;
+                            paPages[iPage].idSharedPage = NIL_GMM_PAGEID;
+                        }
+                        else
+                        {
+                            Log(("GMMR0AllocateHandyPages: #%#x/%#x: Not shared!\n", iPage, paPages[iPage].idSharedPage));
+                            rc = VERR_GMM_PAGE_NOT_SHARED;
+                            break;
+                        }
                     }
                     else
                     {
-                        Log(("GMMR0AllocateHandyPages: #%#x/%#x: Not shared!\n", iPage, paPages[iPage].idSharedPage));
-                        rc = VERR_GMM_PAGE_NOT_SHARED;
+                        Log(("GMMR0AllocateHandyPages: #%#x/%#x: Not found! (shared)\n", iPage, paPages[iPage].idSharedPage));
+                        rc = VERR_GMM_PAGE_NOT_FOUND;
                         break;
                     }
                 }
-                else
-                {
-                    Log(("GMMR0AllocateHandyPages: #%#x/%#x: Not found! (shared)\n", iPage, paPages[iPage].idSharedPage));
-                    rc = VERR_GMM_PAGE_NOT_FOUND;
+            }
+
+            /*
+             * Join paths with GMMR0AllocatePages for the allocation.
+             * Note! gmmR0AllocateMoreChunks may leave the protection of the mutex!
+             */
+            while (RT_SUCCESS(rc))
+            {
+                rc = gmmR0AllocatePages(pGMM, pGVM, cPagesToAlloc, paPages, GMMACCOUNT_BASE);
+                if (    rc != VERR_GMM_SEED_ME
+                    ||  pGMM->fLegacyAllocationMode)
                     break;
-                }
+                rc = gmmR0AllocateMoreChunks(pGMM, pGVM, &pGMM->Private, cPagesToAlloc);
             }
         }
-
-        /*
-         * Join paths with GMMR0AllocatePages for the allocation.
-         * Note! gmmR0AllocateMoreChunks may leave the protection of the mutex!
-         */
-        while (RT_SUCCESS(rc))
-        {
-            rc = gmmR0AllocatePages(pGMM, pGVM, cPagesToAlloc, paPages, GMMACCOUNT_BASE);
-            if (    rc != VERR_GMM_SEED_ME
-                ||  pGMM->fLegacyAllocationMode)
-                break;
-            rc = gmmR0AllocateMoreChunks(pGMM, pGVM, &pGMM->Private, cPagesToAlloc);
-        }
+        else
+            rc = VERR_WRONG_ORDER;
+        GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     }
     else
-        rc = VERR_WRONG_ORDER;
-
+        rc = VERR_INTERNAL_ERROR_5;
     RTSemFastMutexRelease(pGMM->Mtx);
     LogFlow(("GMMR0AllocateHandyPages: returns %Rrc\n", rc));
     return rc;
@@ -2067,28 +2201,33 @@ GMMR0DECL(int) GMMR0AllocatePages(PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMP
 
     rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
-
-    /* No allocations before the initial reservation has been made! */
-    if (RT_LIKELY(    pGVM->gmm.s.Reserved.cBasePages
-                  &&  pGVM->gmm.s.Reserved.cFixedPages
-                  &&  pGVM->gmm.s.Reserved.cShadowPages))
+    if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
     {
-        /*
-         * gmmR0AllocatePages seed loop.
-         * Note! gmmR0AllocateMoreChunks may leave the protection of the mutex!
-         */
-        while (RT_SUCCESS(rc))
+
+        /* No allocations before the initial reservation has been made! */
+        if (RT_LIKELY(    pGVM->gmm.s.Reserved.cBasePages
+                      &&  pGVM->gmm.s.Reserved.cFixedPages
+                      &&  pGVM->gmm.s.Reserved.cShadowPages))
         {
-            rc = gmmR0AllocatePages(pGMM, pGVM, cPages, paPages, enmAccount);
-            if (    rc != VERR_GMM_SEED_ME
-                ||  pGMM->fLegacyAllocationMode)
-                break;
-            rc = gmmR0AllocateMoreChunks(pGMM, pGVM, &pGMM->Private, cPages);
+            /*
+             * gmmR0AllocatePages seed loop.
+             * Note! gmmR0AllocateMoreChunks may leave the protection of the mutex!
+             */
+            while (RT_SUCCESS(rc))
+            {
+                rc = gmmR0AllocatePages(pGMM, pGVM, cPages, paPages, enmAccount);
+                if (    rc != VERR_GMM_SEED_ME
+                    ||  pGMM->fLegacyAllocationMode)
+                    break;
+                rc = gmmR0AllocateMoreChunks(pGMM, pGVM, &pGMM->Private, cPages);
+            }
         }
+        else
+            rc = VERR_WRONG_ORDER;
+        GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     }
     else
-        rc = VERR_WRONG_ORDER;
-
+        rc = VERR_INTERNAL_ERROR_5;
     RTSemFastMutexRelease(pGMM->Mtx);
     LogFlow(("GMMR0AllocatePages: returns %Rrc\n", rc));
     return rc;
@@ -2231,7 +2370,7 @@ static void gmmR0FreePageWorker(PGMM pGMM, PGMMCHUNK pChunk, uint32_t idPage, PG
     else
     {
         pChunk->cFree++;
-        pChunk->pSet->cPages++;
+        pChunk->pSet->cFreePages++;
 
         /*
          * If the chunk becomes empty, consider giving memory back to the host OS.
@@ -2457,9 +2596,13 @@ GMMR0DECL(int) GMMR0FreePages(PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMFREEP
      */
     rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
-
-    rc = gmmR0FreePages(pGMM, pGVM, cPages, paPages, enmAccount);
-
+    if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
+    {
+        rc = gmmR0FreePages(pGMM, pGVM, cPages, paPages, enmAccount);
+        GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
+    }
+    else
+        rc = VERR_INTERNAL_ERROR_5;
     RTSemFastMutexRelease(pGMM->Mtx);
     LogFlow(("GMMR0FreePages: returns %Rrc\n", rc));
     return rc;
@@ -2545,48 +2688,52 @@ GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, uint32_t cBalloonedPa
      */
     rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
-    if (pGVM->gmm.s.Allocated.cBasePages >= cPagesToFree)
+    if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
     {
-        /*
-         * Record the ballooned memory.
-         */
-        pGMM->cBalloonedPages += cBalloonedPages;
-        if (pGVM->gmm.s.cReqBalloonedPages)
-        {
-            pGVM->gmm.s.cBalloonedPages += cBalloonedPages;
-            pGVM->gmm.s.cReqActuallyBalloonedPages += cBalloonedPages;
-            if (fCompleted)
-            {
-                Log(("GMMR0BalloonedPages: +%#x - Global=%#llx;  / VM: Total=%#llx Req=%#llx Actual=%#llx (completed)\n", cBalloonedPages,
-                     pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages, pGVM->gmm.s.cReqBalloonedPages, pGVM->gmm.s.cReqActuallyBalloonedPages));
 
-                /*
-                 * Anything we need to do here now when the request has been completed?
-                 */
-                pGVM->gmm.s.cReqBalloonedPages = 0;
+        if (pGVM->gmm.s.Allocated.cBasePages >= cPagesToFree)
+        {
+            /*
+             * Record the ballooned memory.
+             */
+            pGMM->cBalloonedPages += cBalloonedPages;
+            if (pGVM->gmm.s.cReqBalloonedPages)
+            {
+                pGVM->gmm.s.cBalloonedPages += cBalloonedPages;
+                pGVM->gmm.s.cReqActuallyBalloonedPages += cBalloonedPages;
+                if (fCompleted)
+                {
+                    Log(("GMMR0BalloonedPages: +%#x - Global=%#llx;  / VM: Total=%#llx Req=%#llx Actual=%#llx (completed)\n", cBalloonedPages,
+                         pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages, pGVM->gmm.s.cReqBalloonedPages, pGVM->gmm.s.cReqActuallyBalloonedPages));
+
+                    /*
+                     * Anything we need to do here now when the request has been completed?
+                     */
+                    pGVM->gmm.s.cReqBalloonedPages = 0;
+                }
+                else
+                    Log(("GMMR0BalloonedPages: +%#x - Global=%#llx / VM: Total=%#llx Req=%#llx Actual=%#llx (pending)\n", cBalloonedPages,
+                         pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages, pGVM->gmm.s.cReqBalloonedPages, pGVM->gmm.s.cReqActuallyBalloonedPages));
             }
             else
-                Log(("GMMR0BalloonedPages: +%#x - Global=%#llx / VM: Total=%#llx Req=%#llx Actual=%#llx (pending)\n", cBalloonedPages,
-                     pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages, pGVM->gmm.s.cReqBalloonedPages, pGVM->gmm.s.cReqActuallyBalloonedPages));
+            {
+                pGVM->gmm.s.cBalloonedPages += cBalloonedPages;
+                Log(("GMMR0BalloonedPages: +%#x - Global=%#llx / VM: Total=%#llx (user)\n",
+                     cBalloonedPages, pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages));
+            }
+
+            /*
+             * Any pages to free?
+             */
+            if (cPagesToFree)
+                rc = gmmR0FreePages(pGMM, pGVM, cPagesToFree, paPages, GMMACCOUNT_BASE);
         }
         else
-        {
-            pGVM->gmm.s.cBalloonedPages += cBalloonedPages;
-            Log(("GMMR0BalloonedPages: +%#x - Global=%#llx / VM: Total=%#llx (user)\n",
-                 cBalloonedPages, pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages));
-        }
-
-        /*
-         * Any pages to free?
-         */
-        if (cPagesToFree)
-            rc = gmmR0FreePages(pGMM, pGVM, cPagesToFree, paPages, GMMACCOUNT_BASE);
+            rc = VERR_GMM_ATTEMPT_TO_FREE_TOO_MUCH;
+        GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     }
     else
-    {
-        rc = VERR_GMM_ATTEMPT_TO_FREE_TOO_MUCH;
-    }
-
+        rc = VERR_INTERNAL_ERROR_5;
     RTSemFastMutexRelease(pGMM->Mtx);
     LogFlow(("GMMR0BalloonedPages: returns %Rrc\n", rc));
     return rc;
@@ -2651,36 +2798,42 @@ GMMR0DECL(int) GMMR0DeflatedBalloon(PVM pVM, VMCPUID idCpu, uint32_t cPages)
      */
     rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
-
-    if (pGVM->gmm.s.cBalloonedPages < cPages)
+    if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
     {
-        Assert(pGMM->cBalloonedPages >= pGVM->gmm.s.cBalloonedPages);
 
-        /*
-         * Record it.
-         */
-        pGMM->cBalloonedPages -= cPages;
-        pGVM->gmm.s.cBalloonedPages -= cPages;
-        if (pGVM->gmm.s.cReqDeflatePages)
+        if (pGVM->gmm.s.cBalloonedPages < cPages)
         {
-            Log(("GMMR0BalloonedPages: -%#x - Global=%#llx / VM: Total=%#llx Req=%#llx\n", cPages,
-                 pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages, pGVM->gmm.s.cReqDeflatePages));
+            Assert(pGMM->cBalloonedPages >= pGVM->gmm.s.cBalloonedPages);
 
             /*
-             * Anything we need to do here now when the request has been completed?
+             * Record it.
              */
-            pGVM->gmm.s.cReqDeflatePages = 0;
+            pGMM->cBalloonedPages -= cPages;
+            pGVM->gmm.s.cBalloonedPages -= cPages;
+            if (pGVM->gmm.s.cReqDeflatePages)
+            {
+                Log(("GMMR0BalloonedPages: -%#x - Global=%#llx / VM: Total=%#llx Req=%#llx\n", cPages,
+                     pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages, pGVM->gmm.s.cReqDeflatePages));
+
+                /*
+                 * Anything we need to do here now when the request has been completed?
+                 */
+                pGVM->gmm.s.cReqDeflatePages = 0;
+            }
+            else
+                Log(("GMMR0BalloonedPages: -%#x - Global=%#llx / VM: Total=%#llx\n", cPages,
+                     pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages));
         }
         else
-            Log(("GMMR0BalloonedPages: -%#x - Global=%#llx / VM: Total=%#llx\n", cPages,
-                 pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages));
+        {
+            Log(("GMMR0DeflatedBalloon: cBalloonedPages=%#llx cPages=%#x\n", pGVM->gmm.s.cBalloonedPages, cPages));
+            rc = VERR_GMM_ATTEMPT_TO_DEFLATE_TOO_MUCH;
+        }
+
+        GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     }
     else
-    {
-        Log(("GMMR0DeflatedBalloon: cBalloonedPages=%#llx cPages=%#x\n", pGVM->gmm.s.cBalloonedPages, cPages));
-        rc = VERR_GMM_ATTEMPT_TO_DEFLATE_TOO_MUCH;
-    }
-
+        rc = VERR_INTERNAL_ERROR_5;
     RTSemFastMutexRelease(pGMM->Mtx);
     LogFlow(("GMMR0BalloonedPages: returns %Rrc\n", rc));
     return rc;
@@ -2859,36 +3012,41 @@ GMMR0DECL(int) GMMR0MapUnmapChunk(PVM pVM, VMCPUID idCpu, uint32_t idChunkMap, u
      */
     rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
-
-    PGMMCHUNK pMap = NULL;
-    if (idChunkMap != NIL_GVM_HANDLE)
+    if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
     {
-        pMap = gmmR0GetChunk(pGMM, idChunkMap);
-        if (RT_LIKELY(pMap))
-            rc = gmmR0MapChunk(pGMM, pGVM, pMap, ppvR3);
-        else
+        PGMMCHUNK pMap = NULL;
+        if (idChunkMap != NIL_GVM_HANDLE)
         {
-            Log(("GMMR0MapUnmapChunk: idChunkMap=%#x\n", idChunkMap));
-            rc = VERR_GMM_CHUNK_NOT_FOUND;
-        }
-    }
-
-    if (    idChunkUnmap != NIL_GMM_CHUNKID
-        &&  RT_SUCCESS(rc))
-    {
-        PGMMCHUNK pUnmap = gmmR0GetChunk(pGMM, idChunkUnmap);
-        if (RT_LIKELY(pUnmap))
-            rc = gmmR0UnmapChunk(pGMM, pGVM, pUnmap);
-        else
-        {
-            Log(("GMMR0MapUnmapChunk: idChunkUnmap=%#x\n", idChunkUnmap));
-            rc = VERR_GMM_CHUNK_NOT_FOUND;
+            pMap = gmmR0GetChunk(pGMM, idChunkMap);
+            if (RT_LIKELY(pMap))
+                rc = gmmR0MapChunk(pGMM, pGVM, pMap, ppvR3);
+            else
+            {
+                Log(("GMMR0MapUnmapChunk: idChunkMap=%#x\n", idChunkMap));
+                rc = VERR_GMM_CHUNK_NOT_FOUND;
+            }
         }
 
-        if (RT_FAILURE(rc) && pMap)
-            gmmR0UnmapChunk(pGMM, pGVM, pMap);
-    }
+        if (    idChunkUnmap != NIL_GMM_CHUNKID
+            &&  RT_SUCCESS(rc))
+        {
+            PGMMCHUNK pUnmap = gmmR0GetChunk(pGMM, idChunkUnmap);
+            if (RT_LIKELY(pUnmap))
+                rc = gmmR0UnmapChunk(pGMM, pGVM, pUnmap);
+            else
+            {
+                Log(("GMMR0MapUnmapChunk: idChunkUnmap=%#x\n", idChunkUnmap));
+                rc = VERR_GMM_CHUNK_NOT_FOUND;
+            }
 
+            if (RT_FAILURE(rc) && pMap)
+                gmmR0UnmapChunk(pGMM, pGVM, pMap);
+        }
+
+        GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
+    }
+    else
+        rc = VERR_INTERNAL_ERROR_5;
     RTSemFastMutexRelease(pGMM->Mtx);
 
     LogFlow(("GMMR0MapUnmapChunk: returns %Rrc\n", rc));
