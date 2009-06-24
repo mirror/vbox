@@ -432,6 +432,10 @@ static DECLCALLBACK(void) pdmRCApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, PDMAPI
     case PDMAPICIRQ_SMI:
         VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_SMI);
         break;
+    case PDMAPICIRQ_INVALID:
+    case PDMAPICIRQ_32BIT_HACK:
+        AssertFailed();
+        break;
     }
 }
 

@@ -166,6 +166,10 @@ static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, PDMAPI
     case PDMAPICIRQ_SMI:
         VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_SMI);
         break;
+    case PDMAPICIRQ_INVALID:
+    case PDMAPICIRQ_32BIT_HACK:
+        AssertFailed();
+        break;
     }
     REMR3NotifyInterruptSet(pVM, pVCpu);
     VMR3NotifyCpuFFU(pVCpu->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM | VMNOTIFYFF_FLAGS_POKE);
