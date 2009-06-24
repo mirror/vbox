@@ -4008,7 +4008,7 @@ static int pgmPoolMakeMoreFreePages(PPGMPOOL pPool, PGMPOOLKIND enmKind, uint16_
 #ifdef IN_RING3
         int rc = PGMR3PoolGrow(pVM);
 #else
-        int rc = CTXALLMID(VMM, CallHost)(pVM, VMMCALLHOST_PGM_POOL_GROW, 0);
+        int rc = VMMRZCallRing3NoCpu(pVM, VMMCALLHOST_PGM_POOL_GROW, 0);
 #endif
         if (RT_FAILURE(rc))
             return rc;

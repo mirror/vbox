@@ -179,15 +179,10 @@ VMMDECL(void) PDMQueueFlush(PPDMQUEUE pQueue)
     Assert(pQueue->pVMR3);
     PVM pVM = pQueue->CTX_SUFF(pVM);
 
-#ifdef IN_RC
-    Assert(pQueue->pVMRC);
+#if defined(IN_RC) || defined(IN_RING0)
+    Assert(pQueue->CTX_SUFF(pVM));
     pVM->pdm.s.CTX_SUFF(pQueueFlush) = pQueue;
-    VMMGCCallHost(pVM, VMMCALLHOST_PDM_QUEUE_FLUSH, (uintptr_t)pQueue);
-
-#elif defined(IN_RING0)
-    Assert(pQueue->pVMR0);
-    pVM->pdm.s.CTX_SUFF(pQueueFlush) = pQueue;
-    VMMR0CallHost(pVM, VMMCALLHOST_PDM_QUEUE_FLUSH, (uintptr_t)pQueue);
+    VMMRZCallRing3NoCpu(pVM, VMMCALLHOST_PDM_QUEUE_FLUSH, (uintptr_t)pQueue);
 
 #else /* IN_RING3: */
     PVMREQ pReq;

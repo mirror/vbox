@@ -175,7 +175,9 @@ VMMRCDECL(int) vmmGCLoggerFlush(PRTLOGGERRC pLogger)
 {
     PVM pVM = &g_VM;
     NOREF(pLogger);
-    return VMMGCCallHost(pVM, VMMCALLHOST_VMM_LOGGER_FLUSH, 0);
+    if (pVM->vmm.s.fRCLoggerFlushingDisabled)
+        return VINF_SUCCESS; /* fail quietly. */
+    return VMMRZCallRing3NoCpu(pVM, VMMCALLHOST_VMM_LOGGER_FLUSH, 0);
 }
 
 
@@ -191,7 +193,7 @@ VMMRCDECL(void) VMMGCLogFlushIfFull(PVM pVM)
     {
         if (pVM->vmm.s.fRCLoggerFlushingDisabled)
             return; /* fail quietly. */
-        VMMGCCallHost(pVM, VMMCALLHOST_VMM_LOGGER_FLUSH, 0);
+        VMMRZCallRing3NoCpu(pVM, VMMCALLHOST_VMM_LOGGER_FLUSH, 0);
     }
 }
 
@@ -205,22 +207,6 @@ VMMRCDECL(void) VMMGCLogFlushIfFull(PVM pVM)
 VMMRCDECL(void) VMMGCGuestToHost(PVM pVM, int rc)
 {
     pVM->vmm.s.pfnGuestToHostRC(rc);
-}
-
-
-/**
- * Calls the ring-3 host code.
- *
- * @returns VBox status code of the ring-3 call.
- * @param   pVM             The VM handle.
- * @param   enmOperation    The operation.
- * @param   uArg            The argument to the operation.
- *
- * @deprecated Use VMMRZCallRing3.
- */
-VMMRCDECL(int) VMMGCCallHost(PVM pVM, VMMCALLHOST enmOperation, uint64_t uArg)
-{
-    return VMMRZCallRing3(pVM, VMMGetCpu0(pVM), enmOperation, uArg);
 }
 
 
