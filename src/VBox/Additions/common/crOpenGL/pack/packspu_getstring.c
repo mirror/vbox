@@ -15,7 +15,7 @@ static GLubyte gpszExtensions[10000];
 static GLubyte gpszShadingVersion[255]="";
 #endif
 
-static void GetString(GLenum name, char *pszStr)
+static void GetString(GLenum name, GLubyte *pszStr)
 {
     GET_THREAD(thread);
     int writeback = 1;
@@ -82,7 +82,7 @@ GetExtensions(void)
         GLfloat fversion = GetVersionString();
         if (fversion>=2.f)
         {
-            sprintf(gpszExtensions, "%sGL_ARB_shading_language_100 GL_ARB_shader_objects GL_ARB_vertex_shader GL_ARB_fragment_shader", ext);
+            sprintf((char*)gpszExtensions, "%sGL_ARB_shading_language_100 GL_ARB_shader_objects GL_ARB_vertex_shader GL_ARB_fragment_shader", ext);
         }
     }
 #else
@@ -112,21 +112,21 @@ const GLubyte * PACKSPU_APIENTRY packspu_GetString( GLenum name )
             if (packspuRunningUnderWine())
             {
                 GetString(GL_REAL_VERSION, ctx->pszRealVersion);
-                return (const GLubyte*) ctx->pszRealVersion;               
+                return ctx->pszRealVersion;               
             }
             else
 #endif
             {
                 float version = GetVersionString();
-                sprintf(ctx->glVersion, "%.1f Chromium %s", version, CR_VERSION_STRING);
-                return (const GLubyte *) ctx->glVersion;
+                sprintf((char*)ctx->glVersion, "%.1f Chromium %s", version, CR_VERSION_STRING);
+                return ctx->glVersion;
             }
         case GL_VENDOR:
 #ifdef WINDOWS
             if (packspuRunningUnderWine())
             {
                 GetString(GL_REAL_VENDOR, ctx->pszRealVendor);
-                return (const GLubyte*) ctx->pszRealVendor;
+                return ctx->pszRealVendor;
             }
             else
 #endif
@@ -138,7 +138,7 @@ const GLubyte * PACKSPU_APIENTRY packspu_GetString( GLenum name )
             if (packspuRunningUnderWine())
             {
                 GetString(GL_REAL_RENDERER, ctx->pszRealRenderer);
-                return (const GLubyte*) ctx->pszRealRenderer;
+                return ctx->pszRealRenderer;
             }
             else
 #endif
@@ -154,13 +154,13 @@ const GLubyte * PACKSPU_APIENTRY packspu_GetString( GLenum name )
 #ifdef GL_CR_real_vendor_strings
         case GL_REAL_VENDOR:
             GetString(GL_REAL_VENDOR, ctx->pszRealVendor);
-            return (const GLubyte*) ctx->pszRealVendor;
+            return ctx->pszRealVendor;
         case GL_REAL_VERSION:
             GetString(GL_REAL_VERSION, ctx->pszRealVersion);
-            return (const GLubyte*) ctx->pszRealVersion;
+            return ctx->pszRealVersion;
         case GL_REAL_RENDERER:
             GetString(GL_REAL_RENDERER, ctx->pszRealRenderer);
-            return (const GLubyte*) ctx->pszRealRenderer;
+            return ctx->pszRealRenderer;
 #endif
         default:
             return crStateGetString(name);
