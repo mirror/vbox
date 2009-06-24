@@ -135,10 +135,27 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterrup
         return VERR_INVALID_PARAMETER;
     }
 
+#if 1
+    /*
+     * Wait for it.
+     * We're assuming interruptible waits should happen at UserMode level.
+     */
+    NTSTATUS        rcNt;
+    KPROCESSOR_MODE WaitMode   = fInterruptible ? UserMode : KernelMode;
+    KWAIT_REASON    WaitReason = Executive; /*fInterruptible ? Executive : UserRequest; ?*/
+    if (cMillies == RT_INDEFINITE_WAIT)
+        rcNt = KeWaitForSingleObject(&pEventInt->Event, WaitReason, WaitMode, fInterruptible, NULL);
+    else
+    {
+        LARGE_INTEGER Timeout;
+        Timeout.QuadPart = -(int64_t)cMillies * 10000;
+        rcNt = KeWaitForSingleObject(&pEventInt->Event, WaitReason, WaitMode, fInterruptible, &Timeout);
+    }
+#else
     /*
      * Wait for it.
      *
-     * We default to UserMode here as the waits might be aborted due to process termination. 
+     * We default to UserMode here as the waits might be aborted due to process termination.
      * @todo As far as I can tell this is currently safe as all calls are made on behalf of user threads.
      */
     NTSTATUS rcNt;
@@ -155,6 +172,7 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterrup
         rcNt = KeWaitForSingleObject(&pEventInt->Event, Executive, UserMode, fInterruptible, pTimeout);
         RTMemFree(pTimeout);
     }
+#endif
     switch (rcNt)
     {
         case STATUS_SUCCESS:
