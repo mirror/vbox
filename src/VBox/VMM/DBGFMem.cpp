@@ -161,7 +161,10 @@ static DECLCALLBACK(int) dbgfR3MemRead(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAd
     int rc;
     if (DBGFADDRESS_IS_HMA(pAddress))
     {
-        rc = VERR_INVALID_POINTER;
+        if (DBGFADDRESS_IS_PHYS(pAddress))
+            rc = VERR_INVALID_POINTER;
+        else
+            rc = MMR3HyperReadGCVirt(pVM, pvBuf, pAddress->FlatPtr, cbRead);
     }
     else
     {
