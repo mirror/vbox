@@ -79,7 +79,7 @@ int foo(int i, int iZero, int iMinusOne)
     if ((i % 7) == 0)
     {
         g_cJmps++;
-        int rc = vmmR0CallHostLongJmp(&g_Jmp, 42);
+        int rc = vmmR0CallRing3LongJmp(&g_Jmp, 42);
         if (!rc)
             return i + 10000;
         return -1;
@@ -117,7 +117,7 @@ void tst(int iFrom, int iTo, int iInc)
 
     for (int i = iFrom, iItr = 0; i != iTo; i += iInc, iItr++)
     {
-        int rc = vmmR0CallHostSetJmp(&g_Jmp, (PFNVMMR0SETJMP)tst2, (PVM)i, 0);
+        int rc = vmmR0CallRing3SetJmp(&g_Jmp, (PFNVMMR0SETJMP)tst2, (PVM)i, 0);
         RTTESTI_CHECK_MSG_RETV(rc == 0 || rc == 42, ("i=%d rc=%d setjmp; cbFoo=%#x cbFooUsed=%#x\n", i, rc, g_cbFoo, g_cbFooUsed));
 
 #ifdef VMM_R0_SWITCH_STACK

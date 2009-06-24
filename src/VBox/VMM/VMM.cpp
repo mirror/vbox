@@ -111,7 +111,7 @@ static void                 vmmR3InitRegisterStats(PVM pVM);
 static DECLCALLBACK(int)    vmmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int)    vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
 static DECLCALLBACK(void)   vmmR3YieldEMT(PVM pVM, PTMTIMER pTimer, void *pvUser);
-static int                  vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu);
+static int                  vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu);
 static DECLCALLBACK(void)   vmmR3InfoFF(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
 
@@ -258,10 +258,10 @@ static int vmmR3InitStacks(PVM pVM)
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
             /* MMHyperR3ToR0 returns R3 when not doing hardware assisted virtualization. */
             if (!VMMIsHwVirtExtForced(pVM))
-                pVCpu->vmm.s.CallHostR0JmpBuf.pvSavedStack = NIL_RTR0PTR;
+                pVCpu->vmm.s.CallRing3JmpBufR0.pvSavedStack = NIL_RTR0PTR;
             else
 #endif
-                pVCpu->vmm.s.CallHostR0JmpBuf.pvSavedStack = MMHyperR3ToR0(pVM, pVCpu->vmm.s.pbEMTStackR3);
+                pVCpu->vmm.s.CallRing3JmpBufR0.pvSavedStack = MMHyperR3ToR0(pVM, pVCpu->vmm.s.pbEMTStackR3);
             pVCpu->vmm.s.pbEMTStackRC       = MMHyperR3ToRC(pVM, pVCpu->vmm.s.pbEMTStackR3);
             pVCpu->vmm.s.pbEMTStackBottomRC = pVCpu->vmm.s.pbEMTStackRC + VMM_STACK_SIZE;
             AssertRelease(pVCpu->vmm.s.pbEMTStackRC);
@@ -384,7 +384,7 @@ static void vmmR3InitRegisterStats(PVM pVM)
     STAM_REG(pVM, &pVM->vmm.s.StatRZRetEmulHlt,             STAMTYPE_COUNTER, "/VMM/RZRet/EmulHlt",             STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_EMULATE_INSTR_HLT returns.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZRetPendingRequest,      STAMTYPE_COUNTER, "/VMM/RZRet/PendingRequest",      STAMUNIT_OCCURENCES, "Number of VINF_EM_PENDING_REQUEST returns.");
 
-    STAM_REG(pVM, &pVM->vmm.s.StatRZRetCallHost,            STAMTYPE_COUNTER, "/VMM/RZCallR3/Misc",             STAMUNIT_OCCURENCES, "Number of Other ring-3 calls.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetCallRing3,           STAMTYPE_COUNTER, "/VMM/RZCallR3/Misc",             STAMUNIT_OCCURENCES, "Number of Other ring-3 calls.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZCallPDMLock,            STAMTYPE_COUNTER, "/VMM/RZCallR3/PDMLock",          STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_PDM_LOCK calls.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZCallPDMQueueFlush,      STAMTYPE_COUNTER, "/VMM/RZCallR3/PDMQueueFlush",    STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_PDM_QUEUE_FLUSH calls.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZCallPGMLock,            STAMTYPE_COUNTER, "/VMM/RZCallR3/PGMLock",          STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_PGM_LOCK calls.");
@@ -399,9 +399,9 @@ static void vmmR3InitRegisterStats(PVM pVM)
 #ifdef VBOX_WITH_STATISTICS
     for (VMCPUID i = 0; i < pVM->cCPUs; i++)
     {
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.CallHostR0JmpBuf.cbUsedMax,  STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,      "Max amount of stack used.", "/VMM/Stack/CPU%u/Max", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.CallHostR0JmpBuf.cbUsedAvg,  STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,      "Average stack usage.",      "/VMM/Stack/CPU%u/Avg", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.CallHostR0JmpBuf.cUsedTotal, STAMTYPE_U64,       STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of stack usages.",   "/VMM/Stack/CPU%u/Uses", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.CallRing3JmpBufR0.cbUsedMax,  STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,      "Max amount of stack used.", "/VMM/Stack/CPU%u/Max", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.CallRing3JmpBufR0.cbUsedAvg,  STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,      "Average stack usage.",      "/VMM/Stack/CPU%u/Avg", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.CallRing3JmpBufR0.cUsedTotal, STAMTYPE_U64,       STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of stack usages.",   "/VMM/Stack/CPU%u/Uses", i);
     }
 #endif
 }
@@ -521,7 +521,7 @@ VMMR3DECL(int) VMMR3InitR0(PVM pVM)
 #endif
         if (rc != VINF_VMM_CALL_HOST)
             break;
-        rc = vmmR3ServiceCallHostRequest(pVM, pVCpu);
+        rc = vmmR3ServiceCallRing3Request(pVM, pVCpu);
         if (RT_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
             break;
         /* Resume R0 */
@@ -598,7 +598,7 @@ VMMR3DECL(int) VMMR3InitRC(PVM pVM)
 #endif
             if (rc != VINF_VMM_CALL_HOST)
                 break;
-            rc = vmmR3ServiceCallHostRequest(pVM, pVCpu);
+            rc = vmmR3ServiceCallRing3Request(pVM, pVCpu);
             if (RT_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
                 break;
         }
@@ -648,7 +648,7 @@ VMMR3DECL(int) VMMR3Term(PVM pVM)
 #endif
         if (rc != VINF_VMM_CALL_HOST)
             break;
-        rc = vmmR3ServiceCallHostRequest(pVM, pVCpu);
+        rc = vmmR3ServiceCallRing3Request(pVM, pVCpu);
         if (RT_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
             break;
         /* Resume R0 */
@@ -1171,7 +1171,7 @@ VMMR3DECL(int) VMMR3RawRunGC(PVM pVM, PVMCPU pVCpu)
             Log2(("VMMR3RawRunGC: returns %Rrc (cs:eip=%04x:%08x)\n", rc, CPUMGetGuestCS(pVCpu), CPUMGetGuestEIP(pVCpu)));
             return rc;
         }
-        rc = vmmR3ServiceCallHostRequest(pVM, pVCpu);
+        rc = vmmR3ServiceCallRing3Request(pVM, pVCpu);
         if (RT_FAILURE(rc))
             return rc;
         /* Resume GC */
@@ -1217,7 +1217,7 @@ VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM, PVMCPU pVCpu)
             Log2(("VMMR3HwAccRunGC: returns %Rrc (cs:eip=%04x:%08x)\n", rc, CPUMGetGuestCS(pVCpu), CPUMGetGuestEIP(pVCpu)));
             return rc;
         }
-        rc = vmmR3ServiceCallHostRequest(pVM, pVCpu);
+        rc = vmmR3ServiceCallRing3Request(pVM, pVCpu);
         if (RT_FAILURE(rc))
             return rc;
         /* Resume R0 */
@@ -1627,11 +1627,11 @@ VMMR3DECL(int) VMMR3ReadR0Stack(PVM pVM, VMCPUID idCpu, RTHCUINTPTR pAddress, vo
     PVMCPU  pVCpu   = VMMGetCpuById(pVM, idCpu);
     AssertReturn(pVCpu, VERR_INVALID_PARAMETER);
 
-    RTHCUINTPTR offset = pVCpu->vmm.s.CallHostR0JmpBuf.SpCheck - pAddress;
-    if (offset >= pVCpu->vmm.s.CallHostR0JmpBuf.cbSavedStack)
+    RTHCUINTPTR offset = pVCpu->vmm.s.CallRing3JmpBufR0.SpCheck - pAddress;
+    if (offset >= pVCpu->vmm.s.CallRing3JmpBufR0.cbSavedStack)
         return VERR_INVALID_POINTER;
 
-    memcpy(pvBuf, pVCpu->vmm.s.pbEMTStackR3 + pVCpu->vmm.s.CallHostR0JmpBuf.cbSavedStack - offset, cbRead);
+    memcpy(pvBuf, pVCpu->vmm.s.pbEMTStackR3 + pVCpu->vmm.s.CallRing3JmpBufR0.cbSavedStack - offset, cbRead);
     return VINF_SUCCESS;
 }
 
@@ -1724,7 +1724,7 @@ VMMR3DECL(int) VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list
             Log2(("VMMR3CallGCV: returns %Rrc (cs:eip=%04x:%08x)\n", rc, CPUMGetGuestCS(pVCpu), CPUMGetGuestEIP(pVCpu)));
             return rc;
         }
-        rc = vmmR3ServiceCallHostRequest(pVM, pVCpu);
+        rc = vmmR3ServiceCallRing3Request(pVM, pVCpu);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -1767,7 +1767,7 @@ VMMR3DECL(int) VMMR3CallR0(PVM pVM, uint32_t uOperation, uint64_t u64Arg, PSUPVM
 #endif
         if (rc != VINF_VMM_CALL_HOST)
             break;
-        rc = vmmR3ServiceCallHostRequest(pVM, pVCpu);
+        rc = vmmR3ServiceCallRing3Request(pVM, pVCpu);
         if (RT_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
             break;
         /* Resume R0 */
@@ -1832,7 +1832,7 @@ VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM, PVMCPU pVCpu)
             Log(("VMMR3ResumeHyper: returns %Rrc\n", rc));
             return rc;
         }
-        rc = vmmR3ServiceCallHostRequest(pVM, pVCpu);
+        rc = vmmR3ServiceCallRing3Request(pVM, pVCpu);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -1847,7 +1847,7 @@ VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM, PVMCPU pVCpu)
  * @param   pVCpu   VMCPU handle
  * @remark  Careful with critsects.
  */
-static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
+static int vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu)
 {
     /*
      * We must also check for pending critsect exits or else we can deadlock
@@ -1856,14 +1856,14 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
     if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PDM_CRITSECT))
         PDMCritSectFF(pVCpu);
 
-    switch (pVCpu->vmm.s.enmCallHostOperation)
+    switch (pVCpu->vmm.s.enmCallRing3Operation)
     {
         /*
          * Acquire the PDM lock.
          */
         case VMMCALLRING3_PDM_LOCK:
         {
-            pVCpu->vmm.s.rcCallHost = PDMR3LockCall(pVM);
+            pVCpu->vmm.s.rcCallRing3 = PDMR3LockCall(pVM);
             break;
         }
 
@@ -1873,7 +1873,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
         case VMMCALLRING3_PDM_QUEUE_FLUSH:
         {
             PDMR3QueueFlushWorker(pVM, NULL);
-            pVCpu->vmm.s.rcCallHost = VINF_SUCCESS;
+            pVCpu->vmm.s.rcCallRing3 = VINF_SUCCESS;
             break;
         }
 
@@ -1882,7 +1882,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
          */
         case VMMCALLRING3_PGM_POOL_GROW:
         {
-            pVCpu->vmm.s.rcCallHost = PGMR3PoolGrow(pVM);
+            pVCpu->vmm.s.rcCallRing3 = PGMR3PoolGrow(pVM);
             break;
         }
 
@@ -1891,7 +1891,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
          */
         case VMMCALLRING3_PGM_MAP_CHUNK:
         {
-            pVCpu->vmm.s.rcCallHost = PGMR3PhysChunkMap(pVM, pVCpu->vmm.s.u64CallHostArg);
+            pVCpu->vmm.s.rcCallRing3 = PGMR3PhysChunkMap(pVM, pVCpu->vmm.s.u64CallRing3Arg);
             break;
         }
 
@@ -1900,7 +1900,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
          */
         case VMMCALLRING3_PGM_ALLOCATE_HANDY_PAGES:
         {
-            pVCpu->vmm.s.rcCallHost = PGMR3PhysAllocateHandyPages(pVM);
+            pVCpu->vmm.s.rcCallRing3 = PGMR3PhysAllocateHandyPages(pVM);
             break;
         }
 
@@ -1909,7 +1909,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
          */
         case VMMCALLRING3_PGM_LOCK:
         {
-            pVCpu->vmm.s.rcCallHost = PGMR3LockCall(pVM);
+            pVCpu->vmm.s.rcCallRing3 = PGMR3LockCall(pVM);
             break;
         }
 
@@ -1918,7 +1918,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
          */
         case VMMCALLRING3_MMHYPER_LOCK:
         {
-            pVCpu->vmm.s.rcCallHost = MMR3LockCall(pVM);
+            pVCpu->vmm.s.rcCallRing3 = MMR3LockCall(pVM);
             break;
         }
 
@@ -1928,7 +1928,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
         case VMMCALLRING3_REM_REPLAY_HANDLER_NOTIFICATIONS:
         {
             REMR3ReplayHandlerNotifications(pVM);
-            pVCpu->vmm.s.rcCallHost = VINF_SUCCESS;
+            pVCpu->vmm.s.rcCallRing3 = VINF_SUCCESS;
             break;
         }
 
@@ -1937,7 +1937,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
          * tests in the loops.
          */
         case VMMCALLRING3_VMM_LOGGER_FLUSH:
-            pVCpu->vmm.s.rcCallHost = VINF_SUCCESS;
+            pVCpu->vmm.s.rcCallRing3 = VINF_SUCCESS;
             LogAlways(("*FLUSH*\n"));
             break;
 
@@ -1946,14 +1946,14 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
          */
         case VMMCALLRING3_VM_SET_ERROR:
             VMR3SetErrorWorker(pVM);
-            pVCpu->vmm.s.rcCallHost = VINF_SUCCESS;
+            pVCpu->vmm.s.rcCallRing3 = VINF_SUCCESS;
             break;
 
         /*
          * Set the VM runtime error message.
          */
         case VMMCALLRING3_VM_SET_RUNTIME_ERROR:
-            pVCpu->vmm.s.rcCallHost = VMR3SetRuntimeErrorWorker(pVM);
+            pVCpu->vmm.s.rcCallRing3 = VMR3SetRuntimeErrorWorker(pVM);
             break;
 
         /*
@@ -1961,12 +1961,12 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
          * Cancel the longjmp operation that's in progress.
          */
         case VMMCALLRING3_VM_R0_ASSERTION:
-            pVCpu->vmm.s.enmCallHostOperation = VMMCALLRING3_INVALID;
-            pVCpu->vmm.s.CallHostR0JmpBuf.fInRing3Call = false;
+            pVCpu->vmm.s.enmCallRing3Operation = VMMCALLRING3_INVALID;
+            pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call = false;
 #ifdef RT_ARCH_X86
-            pVCpu->vmm.s.CallHostR0JmpBuf.eip = 0;
+            pVCpu->vmm.s.CallRing3JmpBufR0.eip = 0;
 #else
-            pVCpu->vmm.s.CallHostR0JmpBuf.rip = 0;
+            pVCpu->vmm.s.CallRing3JmpBufR0.rip = 0;
 #endif
             LogRel((pVM->vmm.s.szRing0AssertMsg1));
             LogRel((pVM->vmm.s.szRing0AssertMsg2));
@@ -1976,15 +1976,15 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
          * A forced switch to ring 0 for preemption purposes.
          */
         case VMMCALLRING3_VM_R0_PREEMPT:
-            pVCpu->vmm.s.rcCallHost = VINF_SUCCESS;
+            pVCpu->vmm.s.rcCallRing3 = VINF_SUCCESS;
             break;
 
         default:
-            AssertMsgFailed(("enmCallHostOperation=%d\n", pVCpu->vmm.s.enmCallHostOperation));
+            AssertMsgFailed(("enmCallRing3Operation=%d\n", pVCpu->vmm.s.enmCallRing3Operation));
             return VERR_INTERNAL_ERROR;
     }
 
-    pVCpu->vmm.s.enmCallHostOperation = VMMCALLRING3_INVALID;
+    pVCpu->vmm.s.enmCallRing3Operation = VMMCALLRING3_INVALID;
     return VINF_SUCCESS;
 }
 

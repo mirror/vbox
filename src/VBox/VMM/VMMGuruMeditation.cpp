@@ -311,17 +311,17 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
 
                 eip.fFlags   = DBGFADDRESS_FLAGS_RING0 | DBGFADDRESS_FLAGS_VALID;
 #if HC_ARCH_BITS == 64
-                eip.FlatPtr = eip.off = pVCpu->vmm.s.CallHostR0JmpBuf.rip;
+                eip.FlatPtr = eip.off = pVCpu->vmm.s.CallRing3JmpBufR0.rip;
 #else
-                eip.FlatPtr = eip.off = pVCpu->vmm.s.CallHostR0JmpBuf.eip;
+                eip.FlatPtr = eip.off = pVCpu->vmm.s.CallRing3JmpBufR0.eip;
 #endif
                 eip.Sel      = DBGF_SEL_FLAT;
                 ebp.fFlags   = DBGFADDRESS_FLAGS_RING0 | DBGFADDRESS_FLAGS_VALID;
-                ebp.FlatPtr  = ebp.off = pVCpu->vmm.s.CallHostR0JmpBuf.SavedEbp;
+                ebp.FlatPtr  = ebp.off = pVCpu->vmm.s.CallRing3JmpBufR0.SavedEbp;
                 ebp.Sel      = DBGF_SEL_FLAT;
                 esp.fFlags   = DBGFADDRESS_FLAGS_RING0 | DBGFADDRESS_FLAGS_VALID;
                 esp.Sel      = DBGF_SEL_FLAT;
-                esp.FlatPtr  = esp.off = pVCpu->vmm.s.CallHostR0JmpBuf.SavedEsp;
+                esp.FlatPtr  = esp.off = pVCpu->vmm.s.CallRing3JmpBufR0.SavedEsp;
 
                 rc2 = DBGFR3StackWalkBeginEx(pVM, pVCpu->idCpu, DBGFCODETYPE_RING0, &ebp, &esp, &eip,
                                              DBGFRETURNTYPE_INVALID, &pFirstFrame);

@@ -348,7 +348,7 @@ typedef struct VMM
     STAMCOUNTER                 StatRZRetToR3;
     STAMCOUNTER                 StatRZRetTimerPending;
     STAMCOUNTER                 StatRZRetInterruptPending;
-    STAMCOUNTER                 StatRZRetCallHost;
+    STAMCOUNTER                 StatRZRetCallRing3;
     STAMCOUNTER                 StatRZRetPATMDuplicateFn;
     STAMCOUNTER                 StatRZRetPGMChangeMode;
     STAMCOUNTER                 StatRZRetEmulHlt;
@@ -405,16 +405,16 @@ typedef struct VMMCPU
     /** The disable counter. */
     uint32_t                    cCallRing3Disabled;
     /** The pending operation. */
-    VMMCALLRING3                 enmCallHostOperation;
+    VMMCALLRING3                enmCallRing3Operation;
     /** The result of the last operation. */
-    int32_t                     rcCallHost;
+    int32_t                     rcCallRing3;
 #if HC_ARCH_BITS == 64
     uint32_t                    padding;
 #endif
     /** The argument to the operation. */
-    uint64_t                    u64CallHostArg;
+    uint64_t                    u64CallRing3Arg;
     /** The Ring-0 jmp buffer. */
-    VMMR0JMPBUF                 CallHostR0JmpBuf;
+    VMMR0JMPBUF                 CallRing3JmpBufR0;
     /** @} */
 
 } VMMCPU;
@@ -498,7 +498,7 @@ void vmmR3SwitcherRelocate(PVM pVM, RTGCINTPTR offDelta);
 DECLASM(int)    vmmR0WorldSwitch(PVM pVM, unsigned uArg);
 
 /**
- * Callback function for vmmR0CallHostSetJmp.
+ * Callback function for vmmR0CallRing3SetJmp.
  *
  * @returns VBox status code.
  * @param   pVM     The VM handle.
@@ -514,15 +514,15 @@ typedef FNVMMR0SETJMP *PFNVMMR0SETJMP;
  * in the middle of a ring-3 call. Another differences is the function pointer and
  * argument. This has to do with resuming code and the stack frame of the caller.
  *
- * @returns VINF_SUCCESS on success or whatever is passed to vmmR0CallHostLongJmp.
+ * @returns VINF_SUCCESS on success or whatever is passed to vmmR0CallRing3LongJmp.
  * @param   pJmpBuf     The jmp_buf to set.
  * @param   pfn         The function to be called when not resuming..
  * @param   pVM         The argument of that function.
  */
-DECLASM(int)    vmmR0CallHostSetJmp(PVMMR0JMPBUF pJmpBuf, PFNVMMR0SETJMP pfn, PVM pVM, PVMCPU pVCpu);
+DECLASM(int)    vmmR0CallRing3SetJmp(PVMMR0JMPBUF pJmpBuf, PFNVMMR0SETJMP pfn, PVM pVM, PVMCPU pVCpu);
 
 /**
- * Callback function for vmmR0CallHostSetJmpEx.
+ * Callback function for vmmR0CallRing3SetJmpEx.
  *
  * @returns VBox status code.
  * @param   pvUser      The user argument.
@@ -532,14 +532,14 @@ typedef DECLCALLBACK(int) FNVMMR0SETJMPEX(void *pvUser);
 typedef FNVMMR0SETJMPEX *PFNVMMR0SETJMPEX;
 
 /**
- * Same as vmmR0CallHostSetJmp except for the function signature.
+ * Same as vmmR0CallRing3SetJmp except for the function signature.
  *
- * @returns VINF_SUCCESS on success or whatever is passed to vmmR0CallHostLongJmp.
+ * @returns VINF_SUCCESS on success or whatever is passed to vmmR0CallRing3LongJmp.
  * @param   pJmpBuf     The jmp_buf to set.
  * @param   pfn         The function to be called when not resuming..
  * @param   pvUser      The argument of that function.
  */
-DECLASM(int)    vmmR0CallHostSetJmpEx(PVMMR0JMPBUF pJmpBuf, PFNVMMR0SETJMPEX pfn, void *pvUser);
+DECLASM(int)    vmmR0CallRing3SetJmpEx(PVMMR0JMPBUF pJmpBuf, PFNVMMR0SETJMPEX pfn, void *pvUser);
 
 
 /**
@@ -550,7 +550,7 @@ DECLASM(int)    vmmR0CallHostSetJmpEx(PVMMR0JMPBUF pJmpBuf, PFNVMMR0SETJMPEX pfn
  * @param   pJmpBuf         Pointer to the jump buffer.
  * @param   rc              The return code.
  */
-DECLASM(int)    vmmR0CallHostLongJmp(PVMMR0JMPBUF pJmpBuf, int rc);
+DECLASM(int)    vmmR0CallRing3LongJmp(PVMMR0JMPBUF pJmpBuf, int rc);
 
 /**
  * Internal R0 logger worker: Logger wrapper.

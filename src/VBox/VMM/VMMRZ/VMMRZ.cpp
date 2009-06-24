@@ -81,17 +81,17 @@ VMMRZDECL(int) VMMRZCallRing3(PVM pVM, PVMCPU pVCpu, VMMCALLRING3 enmOperation, 
      * The normal path.
      */
 /** @todo profile this! */
-    pVCpu->vmm.s.enmCallHostOperation = enmOperation;
-    pVCpu->vmm.s.u64CallHostArg = uArg;
-    pVCpu->vmm.s.rcCallHost = VERR_INTERNAL_ERROR;
+    pVCpu->vmm.s.enmCallRing3Operation = enmOperation;
+    pVCpu->vmm.s.u64CallRing3Arg = uArg;
+    pVCpu->vmm.s.rcCallRing3 = VERR_INTERNAL_ERROR;
 #ifdef IN_RC
     pVM->vmm.s.pfnGuestToHostRC(VINF_VMM_CALL_HOST);
 #else
-    int rc = vmmR0CallHostLongJmp(&pVCpu->vmm.s.CallHostR0JmpBuf, VINF_VMM_CALL_HOST);
+    int rc = vmmR0CallRing3LongJmp(&pVCpu->vmm.s.CallRing3JmpBufR0, VINF_VMM_CALL_HOST);
     if (RT_FAILURE(rc))
         return rc;
 #endif
-    return pVCpu->vmm.s.rcCallHost;
+    return pVCpu->vmm.s.rcCallRing3;
 }
 
 
