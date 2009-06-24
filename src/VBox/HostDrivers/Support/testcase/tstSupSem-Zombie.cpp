@@ -58,7 +58,9 @@ static DECLCALLBACK(int) tstSupSemSRETimed(RTTHREAD hSelf, void *pvUser)
 {
     SUPSEMEVENT hEvent = (SUPSEMEVENT)pvUser;
     RTThreadUserSignal(hSelf);
-    return SUPSemEventWaitNoResume(g_pSession, hEvent, 120*1000);
+    int rc = SUPSemEventWaitNoResume(g_pSession, hEvent, 120*1000);
+    AssertReleaseMsgFailed(("%Rrc\n", rc));
+    return rc;
 }
 
 
@@ -66,7 +68,9 @@ static DECLCALLBACK(int) tstSupSemMRETimed(RTTHREAD hSelf, void *pvUser)
 {
     SUPSEMEVENTMULTI hEventMulti = (SUPSEMEVENTMULTI)pvUser;
     RTThreadUserSignal(hSelf);
-    return SUPSemEventMultiWaitNoResume(g_pSession, hEventMulti, 120*1000);
+    int rc = SUPSemEventMultiWaitNoResume(g_pSession, hEventMulti, 120*1000);
+    AssertReleaseMsgFailed(("%Rrc\n", rc));
+    return rc;
 }
 
 
@@ -74,7 +78,9 @@ static DECLCALLBACK(int) tstSupSemSREInf(RTTHREAD hSelf, void *pvUser)
 {
     SUPSEMEVENT hEvent = (SUPSEMEVENT)pvUser;
     RTThreadUserSignal(hSelf);
-    return SUPSemEventWaitNoResume(g_pSession, hEvent, RT_INDEFINITE_WAIT);
+    int rc = SUPSemEventWaitNoResume(g_pSession, hEvent, RT_INDEFINITE_WAIT);
+    AssertReleaseMsgFailed(("%Rrc\n", rc));
+    return rc;
 }
 
 
@@ -82,7 +88,9 @@ static DECLCALLBACK(int) tstSupSemMREInf(RTTHREAD hSelf, void *pvUser)
 {
     SUPSEMEVENTMULTI hEventMulti = (SUPSEMEVENTMULTI)pvUser;
     RTThreadUserSignal(hSelf);
-    return SUPSemEventMultiWaitNoResume(g_pSession, hEventMulti, RT_INDEFINITE_WAIT);
+    int rc = SUPSemEventMultiWaitNoResume(g_pSession, hEventMulti, RT_INDEFINITE_WAIT);
+    AssertReleaseMsgFailed(("%Rrc\n", rc));
+    return rc;
 }
 
 static int mainChild(void)
@@ -195,7 +203,7 @@ static int mainParent(const char *argv0)
                 &&  (   Status.enmReason != RTPROCEXITREASON_NORMAL
                      || Status.iStatus != 0))
             {
-                RTTestIFailed("child %u (%d) reason %d\n", Status.iStatus, Status.iStatus, Status.enmReason);
+                RTTestIFailed("child %d (%#x) reason %d\n", Status.iStatus, Status.iStatus, Status.enmReason);
                 rc = VERR_PERMISSION_DENIED;
             }
         }
