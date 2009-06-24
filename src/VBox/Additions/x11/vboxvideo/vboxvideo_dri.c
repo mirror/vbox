@@ -258,7 +258,7 @@ Bool VBOXDRIScreenInit(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox)
         pDRIInfo->ddxDriverPatchVersion = 0;
         pDRIInfo->ddxDrawableTableEntry = VBOX_MAX_DRAWABLES;
         pDRIInfo->maxDrawableTableEntry = VBOX_MAX_DRAWABLES;
-        pDRIInfo->frameBufferPhysicalAddress = pVBox->mapPhys;
+        pDRIInfo->frameBufferPhysicalAddress = (pointer)pVBox->mapPhys;
         pDRIInfo->frameBufferSize = pVBox->mapSize;
         pDRIInfo->frameBufferStride =   pScrn->displayWidth
                                       * pScrn->bitsPerPixel / 8;
