@@ -143,8 +143,10 @@ static int pdmR3QueueCreate(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMil
         /*
          * Insert into the queue list for timer driven queues.
          */
+        pdmLock(pVM);
         pQueue->pNext = pVM->pdm.s.pQueuesTimer;
         pVM->pdm.s.pQueuesTimer = pQueue;
+        pdmUnlock(pVM);
     }
     else
     {
@@ -158,6 +160,7 @@ static int pdmR3QueueCreate(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMil
          * - Update, the critical sections are no longer using queues, so this isn't a real
          *   problem any longer. The priority might be a nice feature for later though.
          */
+        pdmLock(pVM);
         if (!pVM->pdm.s.pQueuesForced)
             pVM->pdm.s.pQueuesForced = pQueue;
         else
@@ -167,6 +170,7 @@ static int pdmR3QueueCreate(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMil
                 pPrev = pPrev->pNext;
             pPrev->pNext = pQueue;
         }
+        pdmUnlock(pVM);
     }
 
     *ppQueue = pQueue;
@@ -386,7 +390,8 @@ VMMR3DECL(int) PDMR3QueueDestroy(PPDMQUEUE pQueue)
         return VERR_INVALID_PARAMETER;
     Assert(pQueue && pQueue->pVMR3);
     PVM pVM = pQueue->pVMR3;
-    VMCPU_ASSERT_EMT(&pVM->aCpus[0]);
+
+    pdmLock(pVM);
 
     /*
      * Unlink it.
@@ -431,6 +436,7 @@ VMMR3DECL(int) PDMR3QueueDestroy(PPDMQUEUE pQueue)
     }
     pQueue->pNext = NULL;
     pQueue->pVMR3 = NULL;
+    pdmUnlock(pVM);
 
     /*
      * Destroy the timer and free it.
@@ -470,7 +476,8 @@ VMMR3DECL(int) PDMR3QueueDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
      */
     if (!pDevIns)
         return VERR_INVALID_PARAMETER;
-    VMCPU_ASSERT_EMT(&pVM->aCpus[0]);
+
+    pdmLock(pVM);
 
     /*
      * Unlink it.
@@ -498,6 +505,7 @@ VMMR3DECL(int) PDMR3QueueDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
         pQueueNext = NULL;
     } while (pQueue);
 
+    pdmUnlock(pVM);
     return VINF_SUCCESS;
 }
 
@@ -519,7 +527,8 @@ VMMR3DECL(int) PDMR3QueueDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
      */
     if (!pDrvIns)
         return VERR_INVALID_PARAMETER;
-    VMCPU_ASSERT_EMT(&pVM->aCpus[0]); /** @todo fix this using the "Misc" critical section. */
+
+    pdmLock(pVM);
 
     /*
      * Unlink it.
@@ -547,6 +556,7 @@ VMMR3DECL(int) PDMR3QueueDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
         pQueueNext = NULL;
     } while (pQueue);
 
+    pdmUnlock(pVM);
     return VINF_SUCCESS;
 }
 
