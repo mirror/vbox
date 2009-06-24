@@ -533,8 +533,15 @@ PyXPCOMMethod_WaitForEvents(PyObject *self, PyObject *args)
 
   /* Cannot perform timed wait otherwise */
   if (fd < 0)
-    return NULL;
-  
+#ifdef RT_OS_DARWIN
+      /** 
+       * @todo: maybe need some way to implement timed wait on Darwin,
+       *        just return immediately instead
+       */
+      goto ok;
+#else
+      return NULL;
+#endif
   
   {
     fd_set fdsetR, fdsetE;

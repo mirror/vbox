@@ -4325,7 +4325,7 @@
     </attribute>
 
     <attribute name="CPUCount" type="unsigned long">
-      <desc>Number of virtual CPUs in the VM. In the current version of the product, this is always 1.</desc>
+      <desc>Number of virtual CPUs in the VM.</desc>
     </attribute>
 
     <attribute name="memorySize" type="unsigned long">
