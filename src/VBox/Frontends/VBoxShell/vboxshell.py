@@ -29,73 +29,6 @@
 import os,sys
 import traceback
 
-class PerfCollector:
-    """ This class provides a wrapper over IPerformanceCollector in order to
-    get more 'pythonic' interface.
-
-    To begin collection of metrics use setup() method.
-
-    To get collected data use query() method.
-
-    It is possible to disable metric collection without changing collection
-    parameters with disable() method. The enable() method resumes metric
-    collection.
-    """
-
-    def __init__(self, vb):
-        """ Initializes the instance.
-
-        Pass an instance of IVirtualBox as parameter.
-        """
-        self.collector = vb.performanceCollector
-
-    def setup(self, names, objects, period, nsamples):
-        """ Discards all previously collected values for the specified
-        metrics, sets the period of collection and the number of retained
-        samples, enables collection.
-        """
-        self.collector.setupMetrics(names, objects, period, nsamples)
-
-    def enable(self, names, objects):
-        """ Resumes metric collection for the specified metrics.
-        """
-        self.collector.enableMetrics(names, objects)
-
-    def disable(self, names, objects):
-        """ Suspends metric collection for the specified metrics.
-        """
-        self.collector.disableMetrics(names, objects)
-
-    def query(self, names, objects):
-        """ Retrieves collected metric values as well as some auxiliary
-        information. Returns an array of dictionaries, one dictionary per
-        metric. Each dictionary contains the following entries:
-        'name': metric name
-        'object': managed object this metric associated with
-        'unit': unit of measurement
-        'scale': divide 'values' by this number to get float numbers
-        'values': collected data
-        'values_as_string': pre-processed values ready for 'print' statement
-        """
-        (values, names_out, objects_out, units, scales, sequence_numbers,
-            indices, lengths) = self.collector.queryMetricsData(names, objects)
-        out = []
-        for i in xrange(0, len(names_out)):
-            scale = int(scales[i])
-            if scale != 1:
-                fmt = '%.2f%s'
-            else:
-                fmt = '%d %s'
-            out.append({
-                'name':str(names_out[i]),
-                'object':str(objects_out[i]),
-                'unit':str(units[i]),
-                'scale':scale,
-                'values':[int(values[j]) for j in xrange(int(indices[i]), int(indices[i])+int(lengths[i]))],
-                'values_as_string':'['+', '.join([fmt % (int(values[j])/scale, units[i]) for j in xrange(int(indices[i]), int(indices[i])+int(lengths[i]))])+']'
-            })
-        return out
-
 # Simple implementation of IConsoleCallback, one can use it as skeleton 
 # for custom implementations
 class GuestMonitor:
@@ -169,7 +102,7 @@ class VBoxMonitor:
     
     def onExtraDataCanChange(self, id, key, value):
         print "onExtraDataCanChange: %s %s=>%s" %(id, key, value)
-	return True
+	return True, ""
 
     def onExtraDataChange(self, id, key, value):
         print "onExtraDataChange: %s %s=>%s" %(id, key, value)
@@ -192,9 +125,8 @@ class VBoxMonitor:
     def onSnapshotChange(self, mach, id):
         print "onSnapshotChange: %s %s" %(mach, id)
 
-    def onGuestPropertyChange(self, id, val1, val2, val3):
-        print "onGuestPropertyChange: %s" %(id)
-    
+    def onGuestPropertyChange(self, id, name, newValue, flags):
+        print "onGuestPropertyChange: %s: %s=%s" %(id, name, newValue)
 
 g_hasreadline = 1
 try:
@@ -457,6 +389,7 @@ def listCmd(ctx, args):
     return 0
 
 def infoCmd(ctx,args):
+    import time
     if (len(args) < 2):
         print "usage: info [vmname|uuid]"
         return 0
@@ -467,16 +400,21 @@ def infoCmd(ctx,args):
     print "  Name: ",mach.name
     print "  ID: ",mach.id
     print "  OS Type: ",os.description
+    print "  CPUs:  %d" %(mach.CPUCount)
     print "  RAM:  %dM" %(mach.memorySize)
     print "  VRAM:  %dM" %(mach.VRAMSize)
+    print "  Monitors:  %d" %(mach.monitorCount)
     print "  Clipboard mode:  %d" %(mach.clipboardMode)
     print "  Machine status: " ,mach.sessionState
     bios = mach.BIOSSettings
-    print "  BIOS ACPI: ",bios.ACPIEnabled
-    print "  PAE: ",mach.PAEEnabled
+    print "  ACPI: %s" %(asState(bios.ACPIEnabled))
+    print "  APIC: %s" %(asState(bios.IOAPICEnabled))
+    print "  PAE: %s" %(asState(mach.PAEEnabled))
     print "  Hardware virtualization: ",asState(mach.HWVirtExEnabled)
+    print "  VPID support: ",asState(mach.HWVirtExVPIDEnabled)
+    print "  Hardware 3d acceleration: ",asState(mach.accelerate3DEnabled)
     print "  Nested paging: ",asState(mach.HWVirtExNestedPagingEnabled)
-    print "  Last changed: ",mach.lastStateChange
+    print "  Last changed: ",time.asctime(time.localtime(mach.lastStateChange/1000))
 
     return 0
 
@@ -626,6 +564,50 @@ def monitorVboxCmd(ctx, args):
     monitorVbox(ctx, dur)
     return 0
 
+def getAdapterType(ctx, type):
+    if (type == ctx['global'].constants.NetworkAdapterType_Am79C970A or
+        type == ctx['global'].constants.NetworkAdapterType_Am79C973):
+        return "pcnet"
+    elif (type == ctx['global'].constants.NetworkAdapterType_I82540EM or
+          type == ctx['global'].constants.NetworkAdapterType_I82545EM or
+          type == ctx['global'].constants.NetworkAdapterType_I82543GC):
+        return "e1000"
+    elif (type == ctx['global'].constants.NetworkAdapterType_Null):
+        return None
+    else:
+        raise Exception("Unknown adapter type: "+type)    
+    
+
+def portForwardCmd(ctx, args):
+    if (len(args) != 5):
+        print "usage: portForward <vm> <adapter> <hostPort> <guestPort>"
+        return 0
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+    adapterNum = int(args[2])
+    hostPort = int(args[3])
+    guestPort = int(args[4])
+    proto = "TCP"
+    session = ctx['global'].openMachineSession(mach.id)
+    mach = session.machine
+
+    adapter = mach.getNetworkAdapter(adapterNum)
+    adapterType = getAdapterType(ctx, adapter.adapterType)
+
+    profile_name = proto+"_"+str(hostPort)+"_"+str(guestPort)
+    config = "VBoxInternal/Devices/" + adapterType + "/"
+    config = config + str(adapter.slot)  +"/LUN#0/Config/" + profile_name
+  
+    mach.setExtraData(config + "/Protocol", proto)
+    mach.setExtraData(config + "/HostPort", str(hostPort))
+    mach.setExtraData(config + "/GuestPort", str(guestPort))
+
+    mach.saveSettings()
+    session.close()
+   
+    return 0
+
 def evalCmd(ctx, args):
    expr = ' '.join(args[1:])
    try:
@@ -663,6 +645,7 @@ commands = {'help':['Prints help information', helpCmd],
             'guest':['Execute command for guest: guest Win32 console.mouse.putMouseEvent(20, 20, 0, 0)', guestCmd],
             'monitorGuest':['Monitor what happens with the guest for some time: monitorGuest Win32 10', monitorGuestCmd],
             'monitorVbox':['Monitor what happens with Virtual Box for some time: monitorVbox 10', monitorVboxCmd],
+            'portForward':['Setup permanent port forwarding for a VM, takes adapter number host port and guest port: portForward Win32 0 8080 80', portForwardCmd],
             }
 
 def runCommand(ctx, cmd):
@@ -682,7 +665,7 @@ def runCommand(ctx, cmd):
 def interpret(ctx):
     vbox = ctx['vb']
     print "Running VirtualBox version %s" %(vbox.version)
-    ctx['perf'] = PerfCollector(vbox)
+    ctx['perf'] = ctx['global'].getPerfCollector(ctx['vb'])
 
     autoCompletion(commands, ctx)
 

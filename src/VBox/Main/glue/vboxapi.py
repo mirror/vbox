@@ -32,6 +32,73 @@ sys.path.append(VboxBinDir)
 
 from VirtualBox_constants import VirtualBoxReflectionInfo
 
+class PerfCollector:
+    """ This class provides a wrapper over IPerformanceCollector in order to
+    get more 'pythonic' interface.
+
+    To begin collection of metrics use setup() method.
+
+    To get collected data use query() method.
+
+    It is possible to disable metric collection without changing collection
+    parameters with disable() method. The enable() method resumes metric
+    collection.
+    """
+
+    def __init__(self, vb):
+        """ Initializes the instance.
+
+        Pass an instance of IVirtualBox as parameter.
+        """
+        self.collector = vb.performanceCollector
+
+    def setup(self, names, objects, period, nsamples):
+        """ Discards all previously collected values for the specified
+        metrics, sets the period of collection and the number of retained
+        samples, enables collection.
+        """
+        self.collector.setupMetrics(names, objects, period, nsamples)
+
+    def enable(self, names, objects):
+        """ Resumes metric collection for the specified metrics.
+        """
+        self.collector.enableMetrics(names, objects)
+
+    def disable(self, names, objects):
+        """ Suspends metric collection for the specified metrics.
+        """
+        self.collector.disableMetrics(names, objects)
+
+    def query(self, names, objects):
+        """ Retrieves collected metric values as well as some auxiliary
+        information. Returns an array of dictionaries, one dictionary per
+        metric. Each dictionary contains the following entries:
+        'name': metric name
+        'object': managed object this metric associated with
+        'unit': unit of measurement
+        'scale': divide 'values' by this number to get float numbers
+        'values': collected data
+        'values_as_string': pre-processed values ready for 'print' statement
+        """
+        (values, names_out, objects_out, units, scales, sequence_numbers,
+            indices, lengths) = self.collector.queryMetricsData(names, objects)
+        out = []
+        for i in xrange(0, len(names_out)):
+            scale = int(scales[i])
+            if scale != 1:
+                fmt = '%.2f%s'
+            else:
+                fmt = '%d %s'
+            out.append({
+                'name':str(names_out[i]),
+                'object':str(objects_out[i]),
+                'unit':str(units[i]),
+                'scale':scale,
+                'values':[int(values[j]) for j in xrange(int(indices[i]), int(indices[i])+int(lengths[i]))],
+                'values_as_string':'['+', '.join([fmt % (int(values[j])/scale, units[i]) for j in xrange(int(indices[i]), int(indices[i])+int(lengths[i]))])+']'
+            })
+        return out
+
 class PlatformMSCOM:
     # Class to fake access to constants in style of foo.bar.boo
     class ConstantFake:
@@ -190,7 +257,6 @@ class PlatformMSCOM:
         rc = MsgWaitForMultipleObjects(self.handles, 0, timeout, QS_ALLINPUT)
         if rc >= WAIT_OBJECT_0 and rc < WAIT_OBJECT_0+len(self.handles):
             # is it possible?
-            print "how come?"
             pass
         elif rc==WAIT_OBJECT_0 + len(self.handles):
             # Waiting messages
@@ -209,6 +275,11 @@ class PlatformMSCOM:
         self.handles = None
         pythoncom.CoUninitialize()
         pass
+
+    def getPerfCollector(self, vbox):
+        # MS COM cannot invoke performance collector methods yet
+        return None
+
 
 class PlatformXPCOM:
     def __init__(self, params):
@@ -265,6 +336,9 @@ class PlatformXPCOM:
         import xpcom
         xpcom._xpcom.DeinitCOM()
 
+    def getPerfCollector(self, vbox):
+        return PerfCollector(vbox)
+
 class PlatformWEBSERVICE:
     def __init__(self, params):
         sys.path.append(VboxSdkDir+'/bindings/webservice/python/lib')
@@ -285,7 +359,7 @@ class PlatformWEBSERVICE:
         return self.wsmgr.getSessionObject(vbox)
 
     def getVirtualBox(self):
-        return self.wsmgr.logon(self.user, self.password)
+        self.vbox = self.wsmgr.logon(self.user, self.password)
 
     def getConstants(self):
         return None
@@ -309,12 +383,19 @@ class PlatformWEBSERVICE:
         raise Exception("no callbacks for webservices")
 
     def waitForEvents(self, timeout):
-        # Webservices cannot do that
+        # Webservices cannot do that yet
         pass
 
     def deinit(self):
-        # should we do something about it?
-        pass
+        try:
+            if self.vbox is not None:
+                self.wsmg.logoff(self.vbox)
+                self.vbox = None
+        except:
+            pass
+
+    def getPerfCollector(self, vbox):
+        return PerfCollector(vbox)    
 
 class SessionManager:
     def __init__(self, mgr):
@@ -337,6 +418,7 @@ class VirtualBoxManager:
             self.constants = VirtualBoxReflectionInfo()
             self.type = self.platform.getType()
             self.remote = self.platform.getRemote()
+            self.style = style            
         except Exception,e:
             print "init exception: ",e
             traceback.print_exc()
@@ -349,13 +431,15 @@ class VirtualBoxManager:
         return  self.platform.getVirtualBox()
 
     def __del__(self):
-        deinit(self)
+        self.deinit()
 
     def deinit(self):
         if hasattr(self, "vbox"):
             del self.vbox
+            self.vbox = None
         if hasattr(self, "platform"):
             self.platform.deinit()
+             self.platform = None
 
     def initPerThread(self):
         self.platform.initPerThread()
@@ -376,3 +460,6 @@ class VirtualBoxManager:
 
     def waitForEvents(self, timeout):
         return self.platform.waitForEvents(timeout)
+
+    def getPerfCollector(self, vbox):
+        return self.platform.getPerfCollector(vbox)       
