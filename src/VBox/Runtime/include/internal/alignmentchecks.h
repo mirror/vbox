@@ -43,7 +43,7 @@
  * them for the first time.
  */
 
-#if defined(DEBUG) || defined(DOXYGEN_RUNNING)
+#if ( defined(DEBUG) && !defined(IN_GUEST) ) || defined(DOXYGEN_RUNNING)
 # include <iprt/asm.h>
 
 RT_C_DECLS_BEGIN
