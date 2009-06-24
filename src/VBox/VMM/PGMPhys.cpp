@@ -2983,7 +2983,7 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
 
 
 /**
- * For VMMCALLHOST_PGM_MAP_CHUNK, considered internal.
+ * For VMMCALLRING3_PGM_MAP_CHUNK, considered internal.
  *
  * @returns see pgmR3PhysChunkMap.
  * @param   pVM         The VM handle.
@@ -3019,7 +3019,7 @@ VMMR3DECL(void) PGMR3PhysChunkInvalidateTLB(PVM pVM)
 
 
 /**
- * Response to VM_FF_PGM_NEED_HANDY_PAGES and VMMCALLHOST_PGM_ALLOCATE_HANDY_PAGES.
+ * Response to VM_FF_PGM_NEED_HANDY_PAGES and VMMCALLRING3_PGM_ALLOCATE_HANDY_PAGES.
  *
  * This function will also work the VM_FF_PGM_NO_MEMORY force action flag, to
  * signal and clear the out of memory condition. When contracted, this API is

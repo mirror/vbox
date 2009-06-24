@@ -1830,7 +1830,7 @@ int pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **pp
         AssertMsg2("PGMDynMapHCPage: cLoad=%u/%u cPages=%u cGuardPages=%u\n",
                    g_pPGMR0DynMap->cLoad, g_pPGMR0DynMap->cMaxLoad, g_pPGMR0DynMap->cPages, g_pPGMR0DynMap->cGuardPages);
         if (!g_fPGMR0DynMapTestRunning)
-            VMMR0CallHost(pVM, VMMCALLHOST_VM_R0_ASSERTION, 0);
+            VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_VM_R0_ASSERTION, 0);
         *ppv = NULL;
         return VERR_PGM_DYNMAP_FAILED;
     }
@@ -1926,7 +1926,7 @@ int pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **pp
 
                 AssertMsg2("PGMDynMapHCPage: set is full!\n");
                 if (!g_fPGMR0DynMapTestRunning)
-                    VMMR0CallHost(pVM, VMMCALLHOST_VM_R0_ASSERTION, 0);
+                    VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_VM_R0_ASSERTION, 0);
                 *ppv = NULL;
                 return VERR_PGM_DYNMAP_FULL_SET;
             }

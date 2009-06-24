@@ -1379,7 +1379,7 @@ VMMR3DECL(void) PDMR3DmaRun(PVM pVM)
 
 
 /**
- * Service a VMMCALLHOST_PDM_LOCK call.
+ * Service a VMMCALLRING3_PDM_LOCK call.
  *
  * @returns VBox status code.
  * @param   pVM     The VM handle.

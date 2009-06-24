@@ -405,7 +405,7 @@ typedef struct VMMCPU
     /** The disable counter. */
     uint32_t                    cCallRing3Disabled;
     /** The pending operation. */
-    VMMCALLHOST                 enmCallHostOperation;
+    VMMCALLRING3                 enmCallHostOperation;
     /** The result of the last operation. */
     int32_t                     rcCallHost;
 #if HC_ARCH_BITS == 64
@@ -510,7 +510,7 @@ typedef FNVMMR0SETJMP *PFNVMMR0SETJMP;
 /**
  * The setjmp variant used for calling Ring-3.
  *
- * This differs from the normal setjmp in that it will resume VMMR0CallHost if we're
+ * This differs from the normal setjmp in that it will resume VMMRZCallRing3 if we're
  * in the middle of a ring-3 call. Another differences is the function pointer and
  * argument. This has to do with resuming code and the stack frame of the caller.
  *
@@ -543,7 +543,7 @@ DECLASM(int)    vmmR0CallHostSetJmpEx(PVMMR0JMPBUF pJmpBuf, PFNVMMR0SETJMPEX pfn
 
 
 /**
- * Worker for VMMR0CallHost.
+ * Worker for VMMRZCallRing3.
  * This will save the stack and registers.
  *
  * @returns rc.

@@ -45,7 +45,7 @@ BEGINCODE
 ;;
 ; The setjmp variant used for calling Ring-3.
 ;
-; This differs from the normal setjmp in that it will resume VMMR0CallHost if we're
+; This differs from the normal setjmp in that it will resume VMMRZCallRing3 if we're
 ; in the middle of a ring-3 call. Another differences is the function pointer and
 ; argument. This has to do with resuming code and the stack frame of the caller.
 ;
@@ -202,7 +202,7 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     ret
 
     ;
-    ; Resume VMMR0CallHost the call.
+    ; Resume VMMRZCallRing3 the call.
     ;
 .resume:
     ; Sanity checks.
@@ -273,7 +273,7 @@ ENDPROC vmmR0CallHostSetJmp
 
 
 ;;
-; Worker for VMMR0CallHost.
+; Worker for VMMRZCallRing3.
 ; This will save the stack and registers.
 ;
 ; @param    pJmpBuf msc:rcx gcc:rdi x86:[ebp+8]     Pointer to the jump buffer.

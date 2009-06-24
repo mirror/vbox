@@ -283,13 +283,13 @@ VMMDECL(int) PDMCritSectTryEnter(PPDMCRITSECT pCritSect)
  * @returns VERR_SEM_DESTROYED if the critical section is dead.
  *
  * @param   pCritSect           The PDM critical section to enter.
- * @param   fCallHost           Whether this is a VMMGCCallHost() or VMMR0CallHost() request.
+ * @param   fCallRing3          Whether this is a VMMRZCallRing3()request.
  */
-VMMR3DECL(int) PDMR3CritSectEnterEx(PPDMCRITSECT pCritSect, bool fCallHost)
+VMMR3DECL(int) PDMR3CritSectEnterEx(PPDMCRITSECT pCritSect, bool fCallRing3)
 {
     int rc = PDMCritSectEnter(pCritSect, VERR_INTERNAL_ERROR);
     if (    rc == VINF_SUCCESS
-        &&  fCallHost
+        &&  fCallRing3
         &&  pCritSect->s.Core.Strict.ThreadOwner != NIL_RTTHREAD)
     {
         RTThreadWriteLockDec(pCritSect->s.Core.Strict.ThreadOwner);
