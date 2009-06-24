@@ -327,7 +327,7 @@ void pdmLock(PVM pVM)
 #else
     int rc = PDMCritSectEnter(&pVM->pdm.s.CritSect, VERR_GENERAL_FAILURE);
     if (rc == VERR_GENERAL_FAILURE)
-        rc = VMMRZCallRing3NoCpu(pVM, VMMCALLHOST_PDM_LOCK, 0);
+        rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PDM_LOCK, 0);
 #endif
     AssertRC(rc);
 }

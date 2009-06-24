@@ -385,16 +385,16 @@ static void vmmR3InitRegisterStats(PVM pVM)
     STAM_REG(pVM, &pVM->vmm.s.StatRZRetPendingRequest,      STAMTYPE_COUNTER, "/VMM/RZRet/PendingRequest",      STAMUNIT_OCCURENCES, "Number of VINF_EM_PENDING_REQUEST returns.");
 
     STAM_REG(pVM, &pVM->vmm.s.StatRZRetCallHost,            STAMTYPE_COUNTER, "/VMM/RZCallR3/Misc",             STAMUNIT_OCCURENCES, "Number of Other ring-3 calls.");
-    STAM_REG(pVM, &pVM->vmm.s.StatRZCallPDMLock,            STAMTYPE_COUNTER, "/VMM/RZCallR3/PDMLock",          STAMUNIT_OCCURENCES, "Number of VMMCALLHOST_PDM_LOCK calls.");
-    STAM_REG(pVM, &pVM->vmm.s.StatRZCallPDMQueueFlush,      STAMTYPE_COUNTER, "/VMM/RZCallR3/PDMQueueFlush",    STAMUNIT_OCCURENCES, "Number of VMMCALLHOST_PDM_QUEUE_FLUSH calls.");
-    STAM_REG(pVM, &pVM->vmm.s.StatRZCallPGMLock,            STAMTYPE_COUNTER, "/VMM/RZCallR3/PGMLock",          STAMUNIT_OCCURENCES, "Number of VMMCALLHOST_PGM_LOCK calls.");
-    STAM_REG(pVM, &pVM->vmm.s.StatRZCallPGMPoolGrow,        STAMTYPE_COUNTER, "/VMM/RZCallR3/PGMPoolGrow",      STAMUNIT_OCCURENCES, "Number of VMMCALLHOST_PGM_POOL_GROW calls.");
-    STAM_REG(pVM, &pVM->vmm.s.StatRZCallPGMMapChunk,        STAMTYPE_COUNTER, "/VMM/RZCallR3/PGMMapChunk",      STAMUNIT_OCCURENCES, "Number of VMMCALLHOST_PGM_MAP_CHUNK calls.");
-    STAM_REG(pVM, &pVM->vmm.s.StatRZCallPGMAllocHandy,      STAMTYPE_COUNTER, "/VMM/RZCallR3/PGMAllocHandy",    STAMUNIT_OCCURENCES, "Number of VMMCALLHOST_PGM_ALLOCATE_HANDY_PAGES calls.");
-    STAM_REG(pVM, &pVM->vmm.s.StatRZCallRemReplay,          STAMTYPE_COUNTER, "/VMM/RZCallR3/REMReplay",        STAMUNIT_OCCURENCES, "Number of VMMCALLHOST_REM_REPLAY_HANDLER_NOTIFICATIONS calls.");
-    STAM_REG(pVM, &pVM->vmm.s.StatRZCallLogFlush,           STAMTYPE_COUNTER, "/VMM/RZCallR3/VMMLogFlush",      STAMUNIT_OCCURENCES, "Number of VMMCALLHOST_VMM_LOGGER_FLUSH calls.");
-    STAM_REG(pVM, &pVM->vmm.s.StatRZCallVMSetError,         STAMTYPE_COUNTER, "/VMM/RZCallR3/VMSetError",       STAMUNIT_OCCURENCES, "Number of VMMCALLHOST_VM_SET_ERROR calls.");
-    STAM_REG(pVM, &pVM->vmm.s.StatRZCallVMSetRuntimeError,  STAMTYPE_COUNTER, "/VMM/RZCallR3/VMRuntimeError",   STAMUNIT_OCCURENCES, "Number of VMMCALLHOST_VM_SET_RUNTIME_ERROR calls.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZCallPDMLock,            STAMTYPE_COUNTER, "/VMM/RZCallR3/PDMLock",          STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_PDM_LOCK calls.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZCallPDMQueueFlush,      STAMTYPE_COUNTER, "/VMM/RZCallR3/PDMQueueFlush",    STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_PDM_QUEUE_FLUSH calls.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZCallPGMLock,            STAMTYPE_COUNTER, "/VMM/RZCallR3/PGMLock",          STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_PGM_LOCK calls.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZCallPGMPoolGrow,        STAMTYPE_COUNTER, "/VMM/RZCallR3/PGMPoolGrow",      STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_PGM_POOL_GROW calls.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZCallPGMMapChunk,        STAMTYPE_COUNTER, "/VMM/RZCallR3/PGMMapChunk",      STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_PGM_MAP_CHUNK calls.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZCallPGMAllocHandy,      STAMTYPE_COUNTER, "/VMM/RZCallR3/PGMAllocHandy",    STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_PGM_ALLOCATE_HANDY_PAGES calls.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZCallRemReplay,          STAMTYPE_COUNTER, "/VMM/RZCallR3/REMReplay",        STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_REM_REPLAY_HANDLER_NOTIFICATIONS calls.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZCallLogFlush,           STAMTYPE_COUNTER, "/VMM/RZCallR3/VMMLogFlush",      STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_VMM_LOGGER_FLUSH calls.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZCallVMSetError,         STAMTYPE_COUNTER, "/VMM/RZCallR3/VMSetError",       STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_VM_SET_ERROR calls.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZCallVMSetRuntimeError,  STAMTYPE_COUNTER, "/VMM/RZCallR3/VMRuntimeError",   STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_VM_SET_RUNTIME_ERROR calls.");
 
 #ifdef VBOX_WITH_STATISTICS
     for (VMCPUID i = 0; i < pVM->cCPUs; i++)
@@ -1861,7 +1861,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
         /*
          * Acquire the PDM lock.
          */
-        case VMMCALLHOST_PDM_LOCK:
+        case VMMCALLRING3_PDM_LOCK:
         {
             pVCpu->vmm.s.rcCallHost = PDMR3LockCall(pVM);
             break;
@@ -1870,7 +1870,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
         /*
          * Flush a PDM queue.
          */
-        case VMMCALLHOST_PDM_QUEUE_FLUSH:
+        case VMMCALLRING3_PDM_QUEUE_FLUSH:
         {
             PDMR3QueueFlushWorker(pVM, NULL);
             pVCpu->vmm.s.rcCallHost = VINF_SUCCESS;
@@ -1880,7 +1880,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
         /*
          * Grow the PGM pool.
          */
-        case VMMCALLHOST_PGM_POOL_GROW:
+        case VMMCALLRING3_PGM_POOL_GROW:
         {
             pVCpu->vmm.s.rcCallHost = PGMR3PoolGrow(pVM);
             break;
@@ -1889,7 +1889,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
         /*
          * Maps an page allocation chunk into ring-3 so ring-0 can use it.
          */
-        case VMMCALLHOST_PGM_MAP_CHUNK:
+        case VMMCALLRING3_PGM_MAP_CHUNK:
         {
             pVCpu->vmm.s.rcCallHost = PGMR3PhysChunkMap(pVM, pVCpu->vmm.s.u64CallHostArg);
             break;
@@ -1898,7 +1898,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
         /*
          * Allocates more handy pages.
          */
-        case VMMCALLHOST_PGM_ALLOCATE_HANDY_PAGES:
+        case VMMCALLRING3_PGM_ALLOCATE_HANDY_PAGES:
         {
             pVCpu->vmm.s.rcCallHost = PGMR3PhysAllocateHandyPages(pVM);
             break;
@@ -1907,7 +1907,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
         /*
          * Acquire the PGM lock.
          */
-        case VMMCALLHOST_PGM_LOCK:
+        case VMMCALLRING3_PGM_LOCK:
         {
             pVCpu->vmm.s.rcCallHost = PGMR3LockCall(pVM);
             break;
@@ -1916,7 +1916,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
         /*
          * Acquire the MM hypervisor heap lock.
          */
-        case VMMCALLHOST_MMHYPER_LOCK:
+        case VMMCALLRING3_MMHYPER_LOCK:
         {
             pVCpu->vmm.s.rcCallHost = MMR3LockCall(pVM);
             break;
@@ -1925,7 +1925,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
         /*
          * Flush REM handler notifications.
          */
-        case VMMCALLHOST_REM_REPLAY_HANDLER_NOTIFICATIONS:
+        case VMMCALLRING3_REM_REPLAY_HANDLER_NOTIFICATIONS:
         {
             REMR3ReplayHandlerNotifications(pVM);
             pVCpu->vmm.s.rcCallHost = VINF_SUCCESS;
@@ -1936,7 +1936,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
          * This is a noop. We just take this route to avoid unnecessary
          * tests in the loops.
          */
-        case VMMCALLHOST_VMM_LOGGER_FLUSH:
+        case VMMCALLRING3_VMM_LOGGER_FLUSH:
             pVCpu->vmm.s.rcCallHost = VINF_SUCCESS;
             LogAlways(("*FLUSH*\n"));
             break;
@@ -1944,7 +1944,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
         /*
          * Set the VM error message.
          */
-        case VMMCALLHOST_VM_SET_ERROR:
+        case VMMCALLRING3_VM_SET_ERROR:
             VMR3SetErrorWorker(pVM);
             pVCpu->vmm.s.rcCallHost = VINF_SUCCESS;
             break;
@@ -1952,7 +1952,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
         /*
          * Set the VM runtime error message.
          */
-        case VMMCALLHOST_VM_SET_RUNTIME_ERROR:
+        case VMMCALLRING3_VM_SET_RUNTIME_ERROR:
             pVCpu->vmm.s.rcCallHost = VMR3SetRuntimeErrorWorker(pVM);
             break;
 
@@ -1960,8 +1960,8 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
          * Signal a ring 0 hypervisor assertion.
          * Cancel the longjmp operation that's in progress.
          */
-        case VMMCALLHOST_VM_R0_ASSERTION:
-            pVCpu->vmm.s.enmCallHostOperation = VMMCALLHOST_INVALID;
+        case VMMCALLRING3_VM_R0_ASSERTION:
+            pVCpu->vmm.s.enmCallHostOperation = VMMCALLRING3_INVALID;
             pVCpu->vmm.s.CallHostR0JmpBuf.fInRing3Call = false;
 #ifdef RT_ARCH_X86
             pVCpu->vmm.s.CallHostR0JmpBuf.eip = 0;
@@ -1975,7 +1975,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
         /*
          * A forced switch to ring 0 for preemption purposes.
          */
-        case VMMCALLHOST_VM_R0_PREEMPT:
+        case VMMCALLRING3_VM_R0_PREEMPT:
             pVCpu->vmm.s.rcCallHost = VINF_SUCCESS;
             break;
 
@@ -1984,7 +1984,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM, PVMCPU pVCpu)
             return VERR_INTERNAL_ERROR;
     }
 
-    pVCpu->vmm.s.enmCallHostOperation = VMMCALLHOST_INVALID;
+    pVCpu->vmm.s.enmCallHostOperation = VMMCALLRING3_INVALID;
     return VINF_SUCCESS;
 }
 

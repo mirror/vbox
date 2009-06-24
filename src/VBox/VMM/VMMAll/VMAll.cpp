@@ -95,7 +95,7 @@ VMMDECL(int) VMSetErrorV(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat
      * We're already on the EMT thread and can safely create a VMERROR chunk.
      */
     vmSetErrorCopy(pVM, rc, RT_SRC_POS_ARGS, pszFormat, args);
-    VMMRZCallRing3NoCpu(pVM, VMMCALLHOST_VM_SET_ERROR, 0);
+    VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_VM_SET_ERROR, 0);
 #endif
     return rc;
 }
@@ -280,7 +280,7 @@ VMMDECL(int) VMSetRuntimeErrorV(PVM pVM, uint32_t fFlags, const char *pszErrorId
     AssertReleaseMsgFailed(("Congratulations! You will have the pleasure of debugging the RC/R0 path.\n"));
     vmSetRuntimeErrorCopy(pVM, fFlags, pszErrorId, pszFormat, va);
 
-    int rc = VMMRZCallRing3NoCpu(pVM, VMMCALLHOST_VM_SET_RUNTIME_ERROR, 0);
+    int rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_VM_SET_RUNTIME_ERROR, 0);
 #endif
 
     Log(("VMSetRuntimeErrorV: returns %Rrc (pszErrorId=%s)\n", rc, pszErrorId));

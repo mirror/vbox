@@ -46,7 +46,7 @@
  * @param   enmOperation    The operation.
  * @param   uArg            The argument to the operation.
  */
-VMMRZDECL(int) VMMRZCallRing3(PVM pVM, PVMCPU pVCpu, VMMCALLHOST enmOperation, uint64_t uArg)
+VMMRZDECL(int) VMMRZCallRing3(PVM pVM, PVMCPU pVCpu, VMMCALLRING3 enmOperation, uint64_t uArg)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
@@ -54,7 +54,7 @@ VMMRZDECL(int) VMMRZCallRing3(PVM pVM, PVMCPU pVCpu, VMMCALLHOST enmOperation, u
      * Check if calling ring-3 has been disabled and only let let fatal calls thru.
      */
     if (RT_UNLIKELY(    pVCpu->vmm.s.cCallRing3Disabled != 0
-                    &&  enmOperation != VMMCALLHOST_VM_R0_ASSERTION))
+                    &&  enmOperation != VMMCALLRING3_VM_R0_ASSERTION))
     {
         /*
          * In most cases, it's sufficient to return a status code which
@@ -66,15 +66,15 @@ VMMRZDECL(int) VMMRZCallRing3(PVM pVM, PVMCPU pVCpu, VMMCALLHOST enmOperation, u
          * from void functions, and for these we'll turn this into a ring-0
          * assertion host call.
          */
-        if (enmOperation != VMMCALLHOST_REM_REPLAY_HANDLER_NOTIFICATIONS)
+        if (enmOperation != VMMCALLRING3_REM_REPLAY_HANDLER_NOTIFICATIONS)
             return VERR_VMM_RING3_CALL_DISABLED;
 #ifdef IN_RC
         RTStrPrintf(g_szRTAssertMsg1, sizeof(pVM->vmm.s.szRing0AssertMsg1),
-                    "VMMR0CallHost: enmOperation=%d uArg=%#llx idCpu=%#x\n", enmOperation, uArg, pVCpu->idCpu);
+                    "VMMRZCallRing3: enmOperation=%d uArg=%#llx idCpu=%#x\n", enmOperation, uArg, pVCpu->idCpu);
 #endif
         RTStrPrintf(pVM->vmm.s.szRing0AssertMsg1, sizeof(pVM->vmm.s.szRing0AssertMsg1),
-                    "VMMR0CallHost: enmOperation=%d uArg=%#llx idCpu=%#x\n", enmOperation, uArg, pVCpu->idCpu);
-        enmOperation = VMMCALLHOST_VM_R0_ASSERTION;
+                    "VMMRZCallRing3: enmOperation=%d uArg=%#llx idCpu=%#x\n", enmOperation, uArg, pVCpu->idCpu);
+        enmOperation = VMMCALLRING3_VM_R0_ASSERTION;
     }
 
     /*
@@ -108,7 +108,7 @@ VMMRZDECL(int) VMMRZCallRing3(PVM pVM, PVMCPU pVCpu, VMMCALLHOST enmOperation, u
  * @param   enmOperation    The operation.
  * @param   uArg            The argument to the operation.
  */
-VMMRZDECL(int) VMMRZCallRing3NoCpu(PVM pVM, VMMCALLHOST enmOperation, uint64_t uArg)
+VMMRZDECL(int) VMMRZCallRing3NoCpu(PVM pVM, VMMCALLRING3 enmOperation, uint64_t uArg)
 {
     return VMMRZCallRing3(pVM, VMMGetCpu(pVM), enmOperation, uArg);
 }

@@ -271,7 +271,7 @@ static int pgmPhysEnsureHandyPage(PVM pVM)
 #ifdef IN_RING3
             int rc = PGMR3PhysAllocateHandyPages(pVM);
 #else
-            int rc = VMMRZCallRing3NoCpu(pVM, VMMCALLHOST_PGM_ALLOCATE_HANDY_PAGES, 0);
+            int rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PGM_ALLOCATE_HANDY_PAGES, 0);
 #endif
             if (RT_UNLIKELY(rc != VINF_SUCCESS))
             {
@@ -549,7 +549,7 @@ int pgmPhysPageMapByPageID(PVM pVM, uint32_t idPage, RTHCPHYS HCPhys, void **ppv
         if (!pMap)
         {
 # ifdef IN_RING0
-            int rc = VMMR0CallHost(pVM, VMMCALLHOST_PGM_MAP_CHUNK, idChunk);
+            int rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PGM_MAP_CHUNK, idChunk);
             AssertRCReturn(rc, rc);
             pMap = (PPGMCHUNKR3MAP)RTAvlU32Get(&pVM->pgm.s.ChunkR3Map.pTree, idChunk);
             Assert(pMap);
@@ -667,7 +667,7 @@ int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap,
         if (!pMap)
         {
 #ifdef IN_RING0
-            int rc = VMMR0CallHost(pVM, VMMCALLHOST_PGM_MAP_CHUNK, idChunk);
+            int rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PGM_MAP_CHUNK, idChunk);
             AssertRCReturn(rc, rc);
             pMap = (PPGMCHUNKR3MAP)RTAvlU32Get(&pVM->pgm.s.ChunkR3Map.pTree, idChunk);
             Assert(pMap);

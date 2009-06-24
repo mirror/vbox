@@ -2078,7 +2078,7 @@ int pgmLock(PVM pVM)
     int rc = PDMCritSectEnter(&pVM->pgm.s.CritSect, VERR_SEM_BUSY);
 #if defined(IN_RC) || defined(IN_RING0)
     if (rc == VERR_SEM_BUSY)
-        rc = VMMRZCallRing3NoCpu(pVM, VMMCALLHOST_PGM_LOCK, 0);
+        rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PGM_LOCK, 0);
 #endif
     AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
     return rc;

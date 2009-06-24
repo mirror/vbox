@@ -182,7 +182,7 @@ VMMDECL(void) PDMQueueFlush(PPDMQUEUE pQueue)
 #if defined(IN_RC) || defined(IN_RING0)
     Assert(pQueue->CTX_SUFF(pVM));
     pVM->pdm.s.CTX_SUFF(pQueueFlush) = pQueue;
-    VMMRZCallRing3NoCpu(pVM, VMMCALLHOST_PDM_QUEUE_FLUSH, (uintptr_t)pQueue);
+    VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PDM_QUEUE_FLUSH, (uintptr_t)pQueue);
 
 #else /* IN_RING3: */
     PVMREQ pReq;

@@ -306,22 +306,6 @@ VMMR0DECL(int) VMMR0TermVM(PVM pVM, PGVM pGVM)
 }
 
 
-/**
- * Calls the ring-3 host code.
- *
- * @returns VBox status code of the ring-3 call.
- * @param   pVM             The VM handle.
- * @param   enmOperation    The operation.
- * @param   uArg            The argument to the operation.
- *
- * @deprecated Use VMMRZCallRing3.
- */
-VMMR0DECL(int) VMMR0CallHost(PVM pVM, VMMCALLHOST enmOperation, uint64_t uArg)
-{
-    return VMMRZCallRing3(pVM, VMMGetCpu(pVM), enmOperation, uArg);
-}
-
-
 #ifdef VBOX_WITH_STATISTICS
 /**
  * Record return code statistics
@@ -441,37 +425,37 @@ static void vmmR0RecordRC(PVM pVM, PVMCPU pVCpu, int rc)
         case VINF_VMM_CALL_HOST:
             switch (pVCpu->vmm.s.enmCallHostOperation)
             {
-                case VMMCALLHOST_PDM_LOCK:
+                case VMMCALLRING3_PDM_LOCK:
                     STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallPDMLock);
                     break;
-                case VMMCALLHOST_PDM_QUEUE_FLUSH:
+                case VMMCALLRING3_PDM_QUEUE_FLUSH:
                     STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallPDMQueueFlush);
                     break;
-                case VMMCALLHOST_PGM_POOL_GROW:
+                case VMMCALLRING3_PGM_POOL_GROW:
                     STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallPGMPoolGrow);
                     break;
-                case VMMCALLHOST_PGM_LOCK:
+                case VMMCALLRING3_PGM_LOCK:
                     STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallPGMLock);
                     break;
-                case VMMCALLHOST_PGM_MAP_CHUNK:
+                case VMMCALLRING3_PGM_MAP_CHUNK:
                     STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallPGMMapChunk);
                     break;
-                case VMMCALLHOST_PGM_ALLOCATE_HANDY_PAGES:
+                case VMMCALLRING3_PGM_ALLOCATE_HANDY_PAGES:
                     STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallPGMAllocHandy);
                     break;
-                case VMMCALLHOST_REM_REPLAY_HANDLER_NOTIFICATIONS:
+                case VMMCALLRING3_REM_REPLAY_HANDLER_NOTIFICATIONS:
                     STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallRemReplay);
                     break;
-                case VMMCALLHOST_VMM_LOGGER_FLUSH:
+                case VMMCALLRING3_VMM_LOGGER_FLUSH:
                     STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallLogFlush);
                     break;
-                case VMMCALLHOST_VM_SET_ERROR:
+                case VMMCALLRING3_VM_SET_ERROR:
                     STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallVMSetError);
                     break;
-                case VMMCALLHOST_VM_SET_RUNTIME_ERROR:
+                case VMMCALLRING3_VM_SET_RUNTIME_ERROR:
                     STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallVMSetRuntimeError);
                     break;
-                case VMMCALLHOST_VM_R0_ASSERTION:
+                case VMMCALLRING3_VM_R0_ASSERTION:
                 default:
                     STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetCallHost);
                     break;
@@ -1200,7 +1184,7 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
 # endif
         return;
     }
-    VMMR0CallHost(pVM, VMMCALLHOST_VMM_LOGGER_FLUSH, 0);
+    VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_VMM_LOGGER_FLUSH, 0);
 #endif
 }
 
@@ -1287,7 +1271,7 @@ DECLEXPORT(bool) RTCALL RTAssertShouldPanic(void)
             &&  !pVCpu->vmm.s.CallHostR0JmpBuf.fInRing3Call)
 #endif
         {
-            int rc = VMMR0CallHost(pVM, VMMCALLHOST_VM_R0_ASSERTION, 0);
+            int rc = VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_VM_R0_ASSERTION, 0);
             return RT_FAILURE_NP(rc);
         }
     }

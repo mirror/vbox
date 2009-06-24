@@ -76,41 +76,41 @@ typedef enum VMMSWITCHER
 
 
 /**
- * VMMGCCallHost operations.
+ * VMMRZCallRing3 operations.
  */
-typedef enum VMMCALLHOST
+typedef enum VMMCALLRING3
 {
     /** Invalid operation.  */
-    VMMCALLHOST_INVALID = 0,
+    VMMCALLRING3_INVALID = 0,
     /** Acquire the PDM lock. */
-    VMMCALLHOST_PDM_LOCK,
+    VMMCALLRING3_PDM_LOCK,
     /** Call PDMR3QueueFlushWorker. */
-    VMMCALLHOST_PDM_QUEUE_FLUSH,
+    VMMCALLRING3_PDM_QUEUE_FLUSH,
     /** Acquire the PGM lock. */
-    VMMCALLHOST_PGM_LOCK,
+    VMMCALLRING3_PGM_LOCK,
     /** Grow the PGM shadow page pool. */
-    VMMCALLHOST_PGM_POOL_GROW,
+    VMMCALLRING3_PGM_POOL_GROW,
     /** Maps a chunk into ring-3. */
-    VMMCALLHOST_PGM_MAP_CHUNK,
+    VMMCALLRING3_PGM_MAP_CHUNK,
     /** Allocates more handy pages. */
-    VMMCALLHOST_PGM_ALLOCATE_HANDY_PAGES,
+    VMMCALLRING3_PGM_ALLOCATE_HANDY_PAGES,
     /** Acquire the MM hypervisor heap lock. */
-    VMMCALLHOST_MMHYPER_LOCK,
+    VMMCALLRING3_MMHYPER_LOCK,
     /** Replay the REM handler notifications. */
-    VMMCALLHOST_REM_REPLAY_HANDLER_NOTIFICATIONS,
+    VMMCALLRING3_REM_REPLAY_HANDLER_NOTIFICATIONS,
     /** Flush the GC/R0 logger. */
-    VMMCALLHOST_VMM_LOGGER_FLUSH,
+    VMMCALLRING3_VMM_LOGGER_FLUSH,
     /** Set the VM error message. */
-    VMMCALLHOST_VM_SET_ERROR,
+    VMMCALLRING3_VM_SET_ERROR,
     /** Set the VM runtime error message. */
-    VMMCALLHOST_VM_SET_RUNTIME_ERROR,
+    VMMCALLRING3_VM_SET_RUNTIME_ERROR,
     /** Signal a ring 0 assertion. */
-    VMMCALLHOST_VM_R0_ASSERTION,
+    VMMCALLRING3_VM_R0_ASSERTION,
     /** Ring switch to force preemption. */
-    VMMCALLHOST_VM_R0_PREEMPT,
+    VMMCALLRING3_VM_R0_PREEMPT,
     /** The usual 32-bit hack. */
-    VMMCALLHOST_32BIT_HACK = 0x7fffffff
-} VMMCALLHOST;
+    VMMCALLRING3_32BIT_HACK = 0x7fffffff
+} VMMCALLRING3;
 
 /**
  * VMMR3AtomicExecuteHandler callback function.
@@ -350,7 +350,6 @@ VMMR0DECL(int)      VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pv
 VMMR0DECL(void)     VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation);
 VMMR0DECL(int)      VMMR0EntryEx(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION);
 VMMR0DECL(int)      VMMR0TermVM(PVM pVM, PGVM pGVM);
-VMMR0DECL(int)      VMMR0CallHost(PVM pVM, VMMCALLHOST enmOperation, uint64_t uArg);
 
 #ifdef LOG_ENABLED
 VMMR0DECL(void)     VMMR0LogFlushDisable(PVMCPU pVCpu);
@@ -379,8 +378,8 @@ VMMRCDECL(void)     VMMGCLogFlushIfFull(PVM pVM);
  * @ingroup grp_vmm
  * @{
  */
-VMMRZDECL(int)      VMMRZCallRing3(PVM pVM, PVMCPU pVCpu, VMMCALLHOST enmOperation, uint64_t uArg);
-VMMRZDECL(int)      VMMRZCallRing3NoCpu(PVM pVM, VMMCALLHOST enmOperation, uint64_t uArg);
+VMMRZDECL(int)      VMMRZCallRing3(PVM pVM, PVMCPU pVCpu, VMMCALLRING3 enmOperation, uint64_t uArg);
+VMMRZDECL(int)      VMMRZCallRing3NoCpu(PVM pVM, VMMCALLRING3 enmOperation, uint64_t uArg);
 VMMRZDECL(void)     VMMRZCallRing3Disable(PVMCPU pVCpu);
 VMMRZDECL(void)     VMMRZCallRing3Enable(PVMCPU pVCpu);
 VMMRZDECL(bool)     VMMRZCallRing3IsEnabled(PVMCPU pVCpu);
