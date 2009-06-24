@@ -96,6 +96,7 @@ int main(int argc, char **argv)
         return RTTestSummaryAndDestroy(hTest);
     }
     g_pSession = pSession;
+    RTTestBanner(hTest);
 
     /*
      * Basic API checks.

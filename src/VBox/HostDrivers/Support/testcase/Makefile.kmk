@@ -45,7 +45,8 @@ PROGRAMS += \
 	tstPin \
 	tstGIP-2 \
 	tstGetPagingMode \
-	tstSupSem
+	tstSupSem \
+	tstSupSem-Zombie
 endif # VBOX_WITH_TESTCASES
 
 SUPInstall_TEMPLATE   = VBOXR3EXE
@@ -87,6 +88,9 @@ tstGetPagingMode_SOURCES = tstGetPagingMode.cpp
 
 tstSupSem_TEMPLATE    = VBOXR3TSTEXE
 tstSupSem_SOURCES     = tstSupSem.cpp
+
+tstSupSem-Zombie_TEMPLATE = VBOXR3TSTEXE
+tstSupSem-Zombie_SOURCES  = tstSupSem-Zombie.cpp
 
 include $(KBUILD_PATH)/subfooter.kmk
 
