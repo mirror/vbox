@@ -7032,7 +7032,7 @@
      wsmap="managed"
      >
     <desc>
-      Reprents one of host's network interfaces. IP V6 address and network
+      Represents one of host's network interfaces. IP V6 address and network
       mask are strings of 32 hexdecimal digits grouped by four. Groups are
       separated by colons.
       For example, fe80:0000:0000:0000:021e:c2ff:fed2:b030.
@@ -7865,7 +7865,6 @@
   <interface
      name="IGuest" extends="$unknown"
      uuid="d8556fca-81bc-12af-fca3-365528fa38ca"
-
      wsmap="suppress"
      >
     <desc>
@@ -10815,7 +10814,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
      name="IDisplay" extends="$unknown"
      uuid="26881797-bc98-444d-ac69-820633b93ec7"
-     wsmap="suppress"
+     wsmap="managed"
      >
     <desc>
       The IDisplay interface represents the virtual machine's display.
@@ -10906,7 +10905,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="takeScreenShot">
       <desc>
         Takes a screen shot of the requested size and copies it to the
-        32-bpp buffer allocated by the caller.
+        32-bpp buffer allocated by the caller and pointed to by @a address.
+
+        <note>This API can be used only by the COM/XPCOM C++ API as it
+            requires pointer support. Use <link to="#takeScreenShotSlow" />
+            with other language bindings.
+        </note>
 
         <result name="E_NOTIMPL">
           Feature not implemented.
@@ -10946,7 +10950,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           Desired image height.
         </desc>
       </param>
-      <param name="screenData" type="octet" dir="out" safearray="yes">
+      <param name="screenData" type="octet" dir="return" safearray="yes">
         <desc>
           Array with resulting screen data.
         </desc>
