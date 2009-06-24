@@ -932,12 +932,12 @@ int main()
     GEN_CHECK_OFF(VMMCPU, pR0LoggerR3);
 #endif
     GEN_CHECK_OFF(VMMCPU, cCallRing3Disabled);
-    GEN_CHECK_OFF(VMMCPU, enmCallHostOperation);
-    GEN_CHECK_OFF(VMMCPU, rcCallHost);
-    GEN_CHECK_OFF(VMMCPU, u64CallHostArg);
-    GEN_CHECK_OFF(VMMCPU, CallHostR0JmpBuf);
-    GEN_CHECK_OFF(VMMCPU, CallHostR0JmpBuf.SpCheck);
-    GEN_CHECK_OFF(VMMCPU, CallHostR0JmpBuf.SpResume);
+    GEN_CHECK_OFF(VMMCPU, enmCallRing3Operation);
+    GEN_CHECK_OFF(VMMCPU, rcCallRing3);
+    GEN_CHECK_OFF(VMMCPU, u64CallRing3Arg);
+    GEN_CHECK_OFF(VMMCPU, CallRing3JmpBufR0);
+    GEN_CHECK_OFF(VMMCPU, CallRing3JmpBufR0.SpCheck);
+    GEN_CHECK_OFF(VMMCPU, CallRing3JmpBufR0.SpResume);
 
     GEN_CHECK_SIZE(RTPINGPONG);
     GEN_CHECK_SIZE(RTCRITSECT);
