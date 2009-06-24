@@ -2927,7 +2927,7 @@
     uuid="813999ba-b949-48a8-9230-aadc6285e2f2"
   >
     <desc>
-      Supported virtual file systems of VFSExplorer.
+      Virtual file systems supported by VFSExplorer.
     </desc>
 
     <const name="File" value="1" />
@@ -2961,22 +2961,23 @@
      wsmap="managed"
      >
     <desc>
-      The VFSExplorer interface unify the access to different file system
+      The VFSExplorer interface unifies access to different file system
       types. This includes local file systems as well remote file systems like
-      the S3 one. For a list of supported types see <link to="VFSType" />.
+      S3. For a list of supported types see <link to="VFSType" />.
+      An instance of this is returned by <link to="IAppliance::createVFSExplorer" />.
     </desc>
 
     <attribute name="path" type="wstring" readonly="yes">
-      <desc>Return the current path in the virtual file system.</desc>
+      <desc>Returns the current path in the virtual file system.</desc>
     </attribute>
 
     <attribute name="type" type="VFSType" readonly="yes">
-      <desc>Return the file system type which is currently in use.</desc>
+      <desc>Returns the file system type which is currently in use.</desc>
     </attribute>
 
     <method name="update">
-      <desc>This method updates the internal list of files/directories from the
-      current directory level. Use <link to="entryList" /> to get the full list
+      <desc>Updates the internal list of files/directories from the
+      current directory level. Use <link to="#entryList" /> to get the full list
       after a call to this method.</desc>
 
       <param name="aProgress" type="IProgress" dir="return">
@@ -2985,9 +2986,9 @@
     </method>
 
     <method name="entryList">
-      <desc>Fetch the list of files/directories after a call to <link
-      to="update" />. The user is responcible for keeping this internal list up
-      do date.</desc>
+      <desc>Returns a list of files/directories after a call to <link
+      to="#update" />. The user is responsible for keeping this internal
+      list up do date.</desc>
 
       <param name="aNames" type="wstring" safearray="yes" dir="out">
         <desc>The list of names for the entries.</desc>
@@ -2999,7 +3000,7 @@
     </method>
 
     <method name="exists">
-        <desc>Check if the given file list exists in the current directory
+        <desc>Checks if the given file list exists in the current directory
         level.</desc>
 
       <param name="aNames" type="wstring" safearray="yes" dir="in">
@@ -3007,13 +3008,12 @@
       </param>
 
       <param name="aExists" type="wstring" safearray="yes" dir="return">
-        <desc>The names which exists.</desc>
+        <desc>The names which exist.</desc>
       </param>
     </method>
 
     <method name="remove">
-        <desc>Remove the given file names from the current directory
-        level.</desc>
+        <desc>Deletes the given files in the current directory level.</desc>
 
       <param name="aNames" type="wstring" safearray="yes" dir="in">
         <desc>The names to remove.</desc>
