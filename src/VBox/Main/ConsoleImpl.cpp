@@ -2876,13 +2876,6 @@ DECLCALLBACK(int) Console::changeDrive (Console *pThis, const char *pszDevice, u
     AutoCaller autoCaller (pThis);
     AssertComRCReturn (autoCaller.rc(), VERR_ACCESS_DENIED);
 
-    /*
-     * Locking the object before doing VMR3* calls is quite safe here, since
-     * we're on EMT. Write lock is necessary because we indirectly modify the
-     * meDVDState/meFloppyState members (pointed to by peState).
-     */
-    AutoWriteLock alock (pThis);
-
     /* protect mpVM */
     AutoVMCaller autoVMCaller (pThis);
     CheckComRCReturnRC (autoVMCaller.rc());
@@ -2924,6 +2917,17 @@ DECLCALLBACK(int) Console::changeDrive (Console *pThis, const char *pszDevice, u
 
     int rc = VINF_SUCCESS;
     int rcRet = VINF_SUCCESS;
+
+    /*
+       In general locking the object before doing VMR3* calls is quite safe
+       here, since we're on EMT. Anyway we lock for write after eventually
+       suspending the vm. The reason is that in the vmstateChangeCallback the
+       var mVMStateChangeCallbackDisabled is checked under a lock also, which
+       can lead to an dead lock. The write lock is necessary because we
+       indirectly modify the meDVDState/meFloppyState members (pointed to by
+       peState).
+     */
+    AutoWriteLock alock (pThis);
 
     do
     {
@@ -3127,6 +3131,12 @@ DECLCALLBACK(int) Console::changeDrive (Console *pThis, const char *pszDevice, u
         *peState = eState;
     }
     while (0);
+
+    /*
+       Unlock before resuming because the vmstateChangeCallback problem
+       described above.
+     */
+    alock.unlock();
 
     /*
      * Resume the VM if necessary.
