@@ -7865,7 +7865,7 @@
   <interface
      name="IGuest" extends="$unknown"
      uuid="d8556fca-81bc-12af-fca3-365528fa38ca"
-     wsmap="suppress"
+     wsmap="managed"
      >
     <desc>
       The IGuest interface represents information about the operating system
@@ -7974,7 +7974,7 @@
       <param name="statistic" type="GuestStatisticType" dir="in">
         <desc>Statistic type.</desc>
       </param>
-      <param name="statVal" type="unsigned long" dir="out">
+      <param name="statVal" type="unsigned long" dir="return">
         <desc>Statistics value</desc>
       </param>
     </method>
