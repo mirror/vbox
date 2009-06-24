@@ -258,7 +258,7 @@ VMMDECL(int) PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending)
     {
         Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnGetTPR));
         /* We don't acquire the PDM lock here as we're just reading information. Doing so causes massive
-         * contention as this function is called very often by each and every VCPU. 
+         * contention as this function is called very often by each and every VCPU.
          */
         *pu8TPR = pVM->pdm.s.Apic.CTX_SUFF(pfnGetTPR)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu->idCpu);
         if (pfPending)
@@ -327,13 +327,7 @@ void pdmLock(PVM pVM)
 #else
     int rc = PDMCritSectEnter(&pVM->pdm.s.CritSect, VERR_GENERAL_FAILURE);
     if (rc == VERR_GENERAL_FAILURE)
-    {
-# ifdef IN_RC
-        rc = VMMGCCallHost(pVM, VMMCALLHOST_PDM_LOCK, 0);
-# else
-        rc = VMMR0CallHost(pVM, VMMCALLHOST_PDM_LOCK, 0);
-# endif
-    }
+        rc = VMMRZCallRing3NoCpu(pVM, VMMCALLHOST_PDM_LOCK, 0);
 #endif
     AssertRC(rc);
 }

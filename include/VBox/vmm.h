@@ -370,7 +370,6 @@ VMMR0DECL(void)     VMMR0LogFlushEnable(PVMCPU pVCpu);
  */
 VMMRCDECL(int)      VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...);
 VMMRCDECL(void)     VMMGCGuestToHost(PVM pVM, int rc);
-VMMRCDECL(int)      VMMGCCallHost(PVM pVM, VMMCALLHOST enmOperation, uint64_t uArg);
 VMMRCDECL(void)     VMMGCLogFlushIfFull(PVM pVM);
 /** @} */
 #endif /* IN_RC */
