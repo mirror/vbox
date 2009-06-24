@@ -262,6 +262,9 @@ typedef enum
     VBOXVHWACMD_TYPE_SURF_LOCK,
     VBOXVHWACMD_TYPE_SURF_UNLOCK,
     VBOXVHWACMD_TYPE_SURF_BLT,
+    VBOXVHWACMD_TYPE_SURF_FLIP,
+    VBOXVHWACMD_TYPE_SURF_OVERLAY_UPDATE,
+    VBOXVHWACMD_TYPE_SURF_OVERLAY_SETPOSITION,
     VBOXVHWACMD_TYPE_QUERY_INFO1,
     VBOXVHWACMD_TYPE_QUERY_INFO2,
     VBOXVHWACMD_TYPE_ENABLE,
@@ -359,6 +362,26 @@ typedef struct _VBOXVHWA_SURFACEDESC
     uint32_t surfCaps;
     uint32_t Reserved2;
 } VBOXVHWA_SURFACEDESC;
+
+typedef struct _VBOXVHWA_BLTDESC
+{
+    uint32_t flags;
+    uint32_t rop;
+    uint32_t rotationOp;
+    uint32_t rotation;
+    VBOXVHWA_COLORKEY DstCK;
+    VBOXVHWA_COLORKEY SrcCK;
+} VBOXVHWA_BLTDESC;
+
+typedef struct _VBOXVHWA_OVERLAYDESC
+{
+    uint32_t flags;
+    uint32_t Reserved1;
+    uint32_t rotationOp;
+    uint32_t Reserved2;
+    VBOXVHWA_COLORKEY DstCK;
+    VBOXVHWA_COLORKEY SrcCK;
+} VBOXVHWA_OVERLAYDESC;
 
 #define VBOXVHWA_CAPS_BLT             0x00000001
 #define VBOXVHWA_CAPS_BLTCOLORFILL    0x00000002
@@ -510,9 +533,47 @@ typedef struct _VBOXVHWACMD_SURF_BLT
             VBOXVHWA_RECTL srcRect;
             uint32_t flags;
             uint32_t reserved;
+            VBOXVHWA_BLTDESC desc;
         } in;
     } u;
 } VBOXVHWACMD_SURF_BLT;
+
+typedef struct _VBOXVHWACMD_SURF_OVERLAY_UPDATE
+{
+    union
+    {
+        struct
+        {
+            VBOXVHWA_SURFHANDLE hDstSurf;
+            uint64_t offDstSurface;
+            VBOXVHWA_RECTL dstRect;
+            VBOXVHWA_SURFHANDLE hSrcSurf;
+            uint64_t offSrcSurface;
+            VBOXVHWA_RECTL srcRect;
+            uint32_t flags;
+            uint32_t reserved;
+            VBOXVHWA_OVERLAYDESC desc;
+        } in;
+    } u;
+}VBOXVHWACMD_SURF_OVERLAY_UPDATE;
+
+typedef struct _VBOXVHWACMD_SURF_OVERLAY_SETPOSITION
+{
+    union
+    {
+        struct
+        {
+            VBOXVHWA_SURFHANDLE hDstSurf;
+            uint64_t offDstSurface;
+            VBOXVHWA_SURFHANDLE hSrcSurf;
+            uint64_t offSrcSurface;
+            uint32_t xPos;
+            uint32_t yPos;
+            uint32_t flags;
+            uint32_t reserved;
+        } in;
+    } u;
+} VBOXVHWACMD_SURF_OVERLAY_SETPOSITION;
 
 #pragma pack()
 # endif /* #ifdef VBOX_WITH_VIDEOHWACCEL */

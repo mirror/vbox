@@ -94,6 +94,12 @@ typedef struct
 } VBOXSURF, *PVBOXSURF;
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
+typedef struct _VBOXVHWAREGION
+{
+    RECT DirtyMem;
+    bool bValid;
+}VBOXVHWAREGION, *PVBOXVHWAREGION;
+
 typedef struct _VBOXVHWASURFDESC
 {
     VBOXVHWA_SURFHANDLE hHostHandle;
