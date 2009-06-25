@@ -373,7 +373,9 @@ def argsToMach(ctx,args):
 def helpCmd(ctx, args):
     if len(args) == 1:
         print "Help page:"
-        for i in commands:
+        names = commands.keys()
+        names.sort()
+        for i in names:
             print "   ",i,":", commands[i][0]
     else:
         c = commands.get(args[1], None)
@@ -397,24 +399,25 @@ def infoCmd(ctx,args):
     if mach == None:
         return 0
     os = ctx['vb'].getGuestOSType(mach.OSTypeId)
-    print "  Name: ",mach.name
-    print "  ID: ",mach.id
-    print "  OS Type: ",os.description
-    print "  CPUs:  %d" %(mach.CPUCount)
-    print "  RAM:  %dM" %(mach.memorySize)
-    print "  VRAM:  %dM" %(mach.VRAMSize)
-    print "  Monitors:  %d" %(mach.monitorCount)
-    print "  Clipboard mode:  %d" %(mach.clipboardMode)
-    print "  Machine status: " ,mach.sessionState
+    print " One can use setvar <mach> <var> <value> to change variable, using name in []."
+    print "  Name [name]: ",mach.name
+    print "  ID [id]: ",mach.id
+    print "  OS Type [n/a]: ",os.description
+    print "  CPUs [CPUCount]:  %d" %(mach.CPUCount)
+    print "  RAM [memorySize]:  %dM" %(mach.memorySize)
+    print "  VRAM [VRAMSize]:  %dM" %(mach.VRAMSize)
+    print "  Monitors [monitorCount]:  %d" %(mach.monitorCount)
+    print "  Clipboard mode [clipboardMode]:  %d" %(mach.clipboardMode)
+    print "  Machine status [n/a]: " ,mach.sessionState
     bios = mach.BIOSSettings
-    print "  ACPI: %s" %(asState(bios.ACPIEnabled))
-    print "  APIC: %s" %(asState(bios.IOAPICEnabled))
-    print "  PAE: %s" %(asState(mach.PAEEnabled))
-    print "  Hardware virtualization: ",asState(mach.HWVirtExEnabled)
-    print "  VPID support: ",asState(mach.HWVirtExVPIDEnabled)
-    print "  Hardware 3d acceleration: ",asState(mach.accelerate3DEnabled)
-    print "  Nested paging: ",asState(mach.HWVirtExNestedPagingEnabled)
-    print "  Last changed: ",time.asctime(time.localtime(mach.lastStateChange/1000))
+    print "  ACPI [BIOSSettings.ACPIEnabled]: %s" %(asState(bios.ACPIEnabled))
+    print "  APIC [BIOSSettings.IOAPICEnabled]: %s" %(asState(bios.IOAPICEnabled))
+    print "  PAE [PAEEnabled]: %s" %(asState(mach.PAEEnabled))
+    print "  Hardware virtualization [HWVirtExEnabled]: ",asState(mach.HWVirtExEnabled)
+    print "  VPID support [HWVirtExVPIDEnabled]: ",asState(mach.HWVirtExVPIDEnabled)
+    print "  Hardware 3d acceleration[accelerate3DEnabled]: ",asState(mach.accelerate3DEnabled)
+    print "  Nested paging [HWVirtExNestedPagingEnabled]: ",asState(mach.HWVirtExNestedPagingEnabled)
+    print "  Last changed [n/a]: ",time.asctime(time.localtime(mach.lastStateChange/1000))
 
     return 0
 
@@ -499,8 +502,7 @@ def setvarCmd(ctx, args):
     mach = argsToMach(ctx,args)
     if mach == None:
         return 0
-    session = ctx['mgr'].getSessionObject(vbox)
-    vbox.openSession(session, mach.id)
+    session = ctx['global'].openMachineSession(mach.id)
     mach = session.machine
     expr = 'mach.'+args[2]+' = '+args[3]
     print "Executing",expr
@@ -608,6 +610,32 @@ def portForwardCmd(ctx, args):
    
     return 0
 
+
+def showLogCmd(ctx, args):
+    if (len(args) < 2):
+        print "usage: showLog <vm> <num>"
+        return 0
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+
+    log = "VBox.log"
+    if (len(args) > 2):
+       log  += "."+args[2]
+    fileName = os.path.join(mach.logFolder, log)
+
+    try:
+        lf = open(fileName, 'r')
+    except IOError,e:
+        print "cannot open: ",e
+        return 0
+
+    for line in lf:
+        print line,
+    lf.close()
+
+    return 0
+
 def evalCmd(ctx, args):
    expr = ' '.join(args[1:])
    try:
@@ -646,6 +674,7 @@ commands = {'help':['Prints help information', helpCmd],
             'monitorGuest':['Monitor what happens with the guest for some time: monitorGuest Win32 10', monitorGuestCmd],
             'monitorVbox':['Monitor what happens with Virtual Box for some time: monitorVbox 10', monitorVboxCmd],
             'portForward':['Setup permanent port forwarding for a VM, takes adapter number host port and guest port: portForward Win32 0 8080 80', portForwardCmd],
+            'showLog':['Show log file of the VM, : showLog Win32', showLogCmd],
             }
 
 def runCommand(ctx, cmd):

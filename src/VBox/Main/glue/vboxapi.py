@@ -439,7 +439,7 @@ class VirtualBoxManager:
             self.vbox = None
         if hasattr(self, "platform"):
             self.platform.deinit()
-             self.platform = None
+            self.platform = None
 
     def initPerThread(self):
         self.platform.initPerThread()
