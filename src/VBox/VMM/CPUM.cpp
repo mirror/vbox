@@ -66,9 +66,6 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** Enable multi-core VCPUs. */
-#define VBOX_WITH_MULTI_CORE
-
 /** The saved state version. */
 #define CPUM_SAVED_STATE_VERSION                10
 /** The saved state version for the 2.1 trunk before the MSR changes. */
