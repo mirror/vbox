@@ -71,10 +71,15 @@ static int patchAml(PPDMDEVINS pDevIns, uint8_t* pAml, size_t uAmlLen)
     bool fShowCpu;
     rc = CFGMR3QueryBoolDef(pDevIns->pCfgHandle, "ShowCpu", &fShowCpu, false);
     if (RT_FAILURE(rc))
-      return rc;
+        return rc;
 
     if (!fShowCpu)
-      cNumCpus = 0;
+        cNumCpus = 0;
+
+#ifdef VBOX_WITH_MULTI_CORE
+    /* One physical package with multiple cores. */
+    cNumCpus = 1;
+#endif
 
     /**
      * Now search AML for:
