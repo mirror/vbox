@@ -48,11 +48,11 @@ def main(argv):
         if d is None:
             d = k
         vers = k.replace('.', '')
-        print "VBOX_PYTHON%s_INC=%s" %(vers, known[k][0])
-        print "VBOX_PYTHON%s_LIB=%s" %(vers, known[k][1])
+        print "VBOX_PYTHON%s_INC=%s|" %(vers, known[k][0])
+        print "VBOX_PYTHON%s_LIB=%s|" %(vers, known[k][1])
     if d is not None:
-        print "VBOX_PYTHONDEF_INC=%s" %(known[d][0])
-        print "VBOX_PYTHONDEF_LIB=%s" %(known[d][1])
+        print "VBOX_PYTHONDEF_INC=%s|" %(known[d][0])
+        print "VBOX_PYTHONDEF_LIB=%s|" %(known[d][1])
 
 if __name__ == '__main__':
     main(sys.argv)
