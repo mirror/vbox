@@ -142,7 +142,6 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
     AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
     AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, ("%p u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_PARAMETER);
 
-#if 1
     /*
      * Wait for it.
      * We're assuming interruptible waits should happen at UserMode level.
@@ -157,28 +156,6 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
         Timeout.QuadPart = -(int64_t)cMillies * 10000;
         rcNt = KeWaitForSingleObject(&pThis->Event, Executive, WaitMode, fInterruptible, &Timeout);
     }
-#else
-    /*
-     * Wait for it.
-     *
-     * We default to UserMode here as the waits might be aborted due to process termination.
-     * @todo As far as I can tell this is currently safe as all calls are made on behalf of user threads.
-     */
-    NTSTATUS rcNt;
-    if (cMillies == RT_INDEFINITE_WAIT)
-        rcNt = KeWaitForSingleObject(&pThis->Event, Executive, UserMode, fInterruptible, NULL);
-    else
-    {
-        /* Can't use the stack here as the wait is UserMode. */
-        PLARGE_INTEGER pTimeout = (PLARGE_INTEGER)RTMemAlloc(sizeof(*pTimeout));
-        if (!pTimeout)
-            return VERR_NO_MEMORY;
-
-        pTimeout->QuadPart = -(int64_t)cMillies * 10000;
-        rcNt = KeWaitForSingleObject(&pThis->Event, Executive, UserMode, fInterruptible, pTimeout);
-        RTMemFree(pTimeout);
-    }
-#endif
     switch (rcNt)
     {
         case STATUS_SUCCESS:
