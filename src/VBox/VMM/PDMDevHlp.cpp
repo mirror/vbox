@@ -2374,6 +2374,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMPowerOff(PPDMDEVINS pDevIns)
         rc = VMR3ReqCallU(pVM->pUVM, VMCPUID_ANY_QUEUE, &pReq, 0, VMREQFLAGS_NO_WAIT,
                           (PFNRT)VMR3PowerOff, 1, pVM);
         AssertRC(rc);
+        /* Set the VCPU state to stopped here as well to make sure no
+         * inconsistency with the EM state occurs.
+         */
+        VMCPU_SET_STATE(VMMGetCpu(pVM), VMCPUSTATE_STOPPED);
         rc = VINF_EM_OFF;
     }
     else
