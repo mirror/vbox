@@ -961,8 +961,6 @@ static int vboxuser_ioctl(struct inode *inode, struct file *filp,
     int rc = 0;
 
     /* Deal with variable size ioctls first. */
-#ifdef DEBUG  /* Only allow random user applications to spam the log in
-               * debug additions builds */
     if (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_LOG(0))
         == VBOXGUEST_IOCTL_STRIP_SIZE(cmd))
     {
@@ -983,18 +981,15 @@ static int vboxuser_ioctl(struct inode *inode, struct file *filp,
             rc = -EFAULT;
         }
         if (0 == rc)
-        {
+            /* This only produces output in debug builds */
             Log(("%.*s", _IOC_SIZE(cmd), pszMessage));
-        }
         if (NULL != pszMessage)
         {
             kfree(pszMessage);
         }
         IOCTL_LOG_EXIT(arg);
     }
-    else
-#endif
-    if (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_VMMREQUEST(0))
+    else if (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_VMMREQUEST(0))
              == VBOXGUEST_IOCTL_STRIP_SIZE(cmd))
     {
         VMMDevRequestHeader reqHeader;
