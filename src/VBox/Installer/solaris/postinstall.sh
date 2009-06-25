@@ -127,7 +127,7 @@ if test "$currentzone" = "global"; then
             $PYTHONBIN ./vboxapisetup.py install > /dev/null
 
             # remove files installed by Python build
-            rm -rf /opt/VirtualBox/sdk/installer/build
+            rm -rf $VBOX_INSTALL_PATH/sdk/installer/build
         else
             echo "** WARNING! Python not found, skipped installed Python bindings."
             echo "   Manually run '/opt/VirtualBox/sdk/installer/vboxapisetup.py install'"
