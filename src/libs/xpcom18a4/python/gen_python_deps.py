@@ -25,11 +25,8 @@ known = {}
 def checkPair(p,v):
     file =  os.path.join(p, "include", "python"+v, "Python.h")
     # or just stat()?
-    try:
-        lf = open(file, 'r')
-    except IOError,e:
+    if not os.path.isfile(file):
         return None
-    lf.close()
     return [os.path.join(p, "include", "python"+v), 
             os.path.join(p, "lib", "libpython"+v+".so")]
 
@@ -44,15 +41,17 @@ def main(argv):
     # we want default to be the lowest versioned Python
     keys.sort()
     d = None
+    # We need separator other than newline, to sneak through $(shell)  
+    sep = "|"
     for k in keys:
         if d is None:
             d = k
         vers = k.replace('.', '')
-        print "VBOX_PYTHON%s_INC=%s|" %(vers, known[k][0])
-        print "VBOX_PYTHON%s_LIB=%s|" %(vers, known[k][1])
+        print "VBOX_PYTHON%s_INC=%s%s" %(vers, known[k][0], sep)
+        print "VBOX_PYTHON%s_LIB=%s%s" %(vers, known[k][1], sep)
     if d is not None:
-        print "VBOX_PYTHONDEF_INC=%s|" %(known[d][0])
-        print "VBOX_PYTHONDEF_LIB=%s|" %(known[d][1])
+        print "VBOX_PYTHONDEF_INC=%s%s" %(known[d][0], sep)
+        print "VBOX_PYTHONDEF_LIB=%s%s" %(known[d][1], sep)
 
 if __name__ == '__main__':
     main(sys.argv)
