@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,7 +24,7 @@
 #include <VBox/com/string.h>
 #include <VBox/com/Guid.h>
 #include <VBox/com/ErrorInfo.h>
-#include <VBox/com/errorprint_legacy.h>
+#include <VBox/com/errorprint.h>
 #include <VBox/com/EventQueue.h>
 
 #include <VBox/com/VirtualBox.h>
@@ -74,7 +74,12 @@ int main (int argc, char **argv)
 
     HRESULT rc;
 
-    CHECK_RC_RET (com::Initialize());
+    rc = com::Initialize();
+    if (FAILED(rc))
+    {
+        RTPrintf("ERROR: failed to initialize COM!\n");
+        return rc;
+    }
 
     do
     {
@@ -82,10 +87,28 @@ int main (int argc, char **argv)
         ComPtr <ISession> session;
 
         RTPrintf ("Creating VirtualBox object...\n");
-        CHECK_ERROR_NI_BREAK (virtualBox.createLocalObject (CLSID_VirtualBox));
+        rc = virtualBox.createLocalObject (CLSID_VirtualBox);
+        if (FAILED(rc))
+            RTPrintf("ERROR: failed to create the VirtualBox object!\n");
+        else
+        {
+            rc = session.createInprocObject(CLSID_Session);
+            if (FAILED(rc))
+                RTPrintf("ERROR: failed to create a session object!\n");
+        }
 
-        RTPrintf ("Creating Session object...\n");
-        CHECK_ERROR_NI_BREAK (session.createInprocObject (CLSID_Session));
+        if (FAILED (rc))
+        {
+            com::ErrorInfo info;
+            if (!info.isFullAvailable() && !info.isBasicAvailable())
+            {
+                com::GluePrintRCMessage(rc);
+                RTPrintf("Most likely, the VirtualBox COM server is not running or failed to start.\n");
+            }
+            else
+                com::GluePrintErrorInfo(info);
+            break;
+        }
 
         // create the event queue
         // (here it is necessary only to process remaining XPCOM/IPC events
@@ -123,7 +146,7 @@ int main (int argc, char **argv)
                 CHECK_ERROR_BREAK (progress,
                                    COMGETTER(ErrorInfo) (errorInfo.asOutParam()));
                 ErrorInfo info (errorInfo);
-                PRINT_ERROR_INFO (info);
+                com::GluePrintErrorInfo(info);
             }
             else
             {
@@ -140,8 +163,31 @@ int main (int argc, char **argv)
 
             if (!strcmp (operation, "off"))
             {
+                ComPtr <IProgress> progress;
                 RTPrintf ("Powering the VM off...\n");
-                CHECK_ERROR_BREAK (console, PowerDown());
+                CHECK_ERROR_BREAK (console, PowerDown(progress.asOutParam()));
+
+                RTPrintf ("Waiting for the VM to power down...\n");
+                CHECK_ERROR_BREAK (progress, WaitForCompletion (-1));
+
+                BOOL completed;
+                CHECK_ERROR_BREAK (progress, COMGETTER(Completed) (&completed));
+                ASSERT (completed);
+
+                LONG resultCode;
+                CHECK_ERROR_BREAK (progress, COMGETTER(ResultCode) (&resultCode));
+                if (FAILED (resultCode))
+                {
+                    ComPtr <IVirtualBoxErrorInfo> errorInfo;
+                    CHECK_ERROR_BREAK (progress,
+                                       COMGETTER(ErrorInfo) (errorInfo.asOutParam()));
+                    ErrorInfo info (errorInfo);
+                    com::GluePrintErrorInfo(info);
+                }
+                else
+                {
+                    RTPrintf ("VM is powered down.\n");
+                }
             }
             else
             if (!strcmp (operation, "pause"))

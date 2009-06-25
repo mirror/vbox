@@ -29,7 +29,7 @@
 #include <VBox/com/Guid.h>
 #include <VBox/com/array.h>
 #include <VBox/com/ErrorInfo.h>
-#include <VBox/com/errorprint2.h>
+#include <VBox/com/errorprint.h>
 
 #include <VBox/com/EventQueue.h>
 #include <VBox/com/VirtualBox.h>
@@ -1893,7 +1893,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         gMachine->COMGETTER(State)(&machineState);
         if (machineState == MachineState_Saved)
         {
-            CHECK_ERROR(gConsole, DiscardSavedState());
+            CHECK_ERROR(gConsole, ForgetSavedState(true));
         }
         /*
          * If there are snapshots, discard the current state,
@@ -2891,15 +2891,22 @@ leave:
         && machineState == MachineState_Running)
     {
         consoleCallback->ignorePowerOffEvents(true);
-        rc = gConsole->PowerDown();
-        if (FAILED(rc))
+        ComPtr <IProgress> progress;
+        CHECK_ERROR_BREAK(gConsole, PowerDown(progress.asOutParam()));
+        CHECK_ERROR_BREAK (progress, WaitForCompletion (-1));
+        BOOL completed;
+        CHECK_ERROR_BREAK (progress, COMGETTER(Completed) (&completed));
+        ASSERT (completed);
+        LONG hrc;
+        CHECK_ERROR_BREAK (progress, COMGETTER(ResultCode) (&hrc));
+        if (FAILED(hrc))
         {
             com::ErrorInfo info;
             if (info.isFullAvailable())
                 PrintError("Failed to power down VM",
                            info.getText().raw(), info.getComponent().raw());
             else
-                RTPrintf("Failed to power down virtual machine! No error information available (rc = 0x%x).\n", rc);
+                RTPrintf("Failed to power down virtual machine! No error information available (rc = 0x%x).\n", hrc);
             break;
         }
     }

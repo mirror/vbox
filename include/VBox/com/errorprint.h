@@ -116,4 +116,18 @@ void GlueHandleComError(ComPtr<IUnknown> iface, const char *pcszContext, HRESULT
 
 #endif
 
+/**
+ *  Does the same as ASSERT(), but executes the |return ret| statement if the
+ *  expression to assert is false;
+ */
+#define ASSERT_RET(expr, ret) \
+    do { ASSERT(expr); if (!(expr)) return (ret); } while (0)
+
+/**
+ *  Does the same as ASSERT(), but executes the |break| statement if the
+ *  expression to assert is false;
+ */
+#define ASSERT_BREAK(expr, ret) \
+    if (1) { ASSERT(expr); if (!(expr)) break; } else do {} while (0)
+
 } /* namespace com */

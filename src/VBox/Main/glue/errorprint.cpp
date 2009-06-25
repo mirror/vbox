@@ -2,7 +2,7 @@
 
 /** @file
  * MS COM / XPCOM Abstraction Layer:
- * Error info print helpers. This implements the shared code from the macros from errorprint2.h.
+ * Error info print helpers. This implements the shared code from the macros from errorprint.h.
  */
 
 /*
@@ -23,7 +23,7 @@
 
 
 #include <VBox/com/ErrorInfo.h>
-#include <VBox/com/errorprint2.h>
+#include <VBox/com/errorprint.h>
 #include <VBox/log.h>
 
 #include <iprt/stream.h>

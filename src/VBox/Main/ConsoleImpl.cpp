@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1321,42 +1321,7 @@ STDMETHODIMP Console::PowerUpPaused (IProgress **aProgress)
     return powerUp (aProgress, true /* aPaused */);
 }
 
-STDMETHODIMP Console::PowerDown()
-{
-    LogFlowThisFuncEnter();
-    LogFlowThisFunc (("mMachineState=%d\n", mMachineState));
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoWriteLock alock (this);
-
-    if (!Global::IsActive (mMachineState))
-    {
-        /* extra nice error message for a common case */
-        if (mMachineState == MachineState_Saved)
-            return setError (VBOX_E_INVALID_VM_STATE,
-                tr ("Cannot power down a saved virtual machine"));
-        else if (mMachineState == MachineState_Stopping)
-            return setError (VBOX_E_INVALID_VM_STATE,
-                tr ("Virtual machine is being powered down"));
-        else
-            return setError(VBOX_E_INVALID_VM_STATE,
-                tr ("Invalid machine state: %d (must be Running, Paused "
-                    "or Stuck)"),
-                mMachineState);
-    }
-
-    LogFlowThisFunc (("Sending SHUTDOWN request...\n"));
-
-    HRESULT rc = powerDown();
-
-    LogFlowThisFunc (("mMachineState=%d, rc=%08X\n", mMachineState, rc));
-    LogFlowThisFuncLeave();
-    return rc;
-}
-
-STDMETHODIMP Console::PowerDownAsync (IProgress **aProgress)
+STDMETHODIMP Console::PowerDown (IProgress **aProgress)
 {
     if (aProgress == NULL)
         return E_POINTER;
@@ -1836,7 +1801,7 @@ STDMETHODIMP Console::AdoptSavedState (IN_BSTR aSavedStateFile)
     return mControl->AdoptSavedState (aSavedStateFile);
 }
 
-STDMETHODIMP Console::DiscardSavedState()
+STDMETHODIMP Console::ForgetSavedState(BOOL aRemove)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1849,13 +1814,18 @@ STDMETHODIMP Console::DiscardSavedState()
                 "not in the saved state (machine state: %d)"),
             mMachineState);
 
+    HRESULT rc = S_OK;
+
+    rc = mControl->SetRemoveSavedState(aRemove);
+    CheckComRCReturnRC (rc);
+
     /*
      *  Saved -> PoweredOff transition will be detected in the SessionMachine
      *  and properly handled.
      */
-    setMachineState (MachineState_PoweredOff);
+    rc = setMachineState (MachineState_PoweredOff);
 
-    return S_OK;
+    return rc;
 }
 
 /** read the value of a LEd. */

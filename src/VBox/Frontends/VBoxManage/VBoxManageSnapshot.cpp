@@ -25,7 +25,7 @@
 #include <VBox/com/com.h>
 #include <VBox/com/string.h>
 #include <VBox/com/ErrorInfo.h>
-#include <VBox/com/errorprint2.h>
+#include <VBox/com/errorprint.h>
 
 #include <VBox/com/VirtualBox.h>
 

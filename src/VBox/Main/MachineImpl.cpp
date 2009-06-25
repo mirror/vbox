@@ -8239,7 +8239,12 @@ struct SessionMachine::DiscardCurrentStateTask : public SessionMachine::Task
 
 ////////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR (SessionMachine)
+SessionMachine::SessionMachine()
+    : mRemoveSavedState(true)
+{}
+
+SessionMachine::~SessionMachine()
+{}
 
 HRESULT SessionMachine::FinalConstruct()
 {
@@ -8683,6 +8688,21 @@ RWLockHandle *SessionMachine::lockHandle() const
 
 // IInternalMachineControl methods
 ////////////////////////////////////////////////////////////////////////////////
+
+/**
+ *  @note Locks this object for writing.
+ */
+STDMETHODIMP SessionMachine::SetRemoveSavedState(BOOL aRemove)
+{
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+
+    AutoWriteLock alock (this);
+
+    mRemoveSavedState = aRemove;
+
+    return S_OK;
+}
 
 /**
  *  @note Locks the same as #setMachineState() does.
@@ -11274,13 +11294,9 @@ HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
         }
     }
 
-    if (deleteSavedState == true)
+    if (deleteSavedState)
     {
-        /** @todo remove this API hack, and provide a clean way for
-         * detaching a saved state without deleting. */
-        Utf8Str val;
-        HRESULT rc2 = getExtraData("API/DiscardSavedStateKeepFile", val);
-        if (FAILED(rc2) || val != "1")
+        if (mRemoveSavedState)
         {
             Assert (!mSSData->mStateFilePath.isEmpty());
             RTFileDelete (Utf8Str (mSSData->mStateFilePath));
