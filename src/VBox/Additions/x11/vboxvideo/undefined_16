@@ -19,6 +19,7 @@ _Jv_RegisterClasses
 VBEGetVBEMode
 VBESaveRestore
 __isoc99_sscanf
+sscanf
 xf86LoaderReqSymLists
 ErrorF
 DRIScreenInit
