@@ -554,8 +554,7 @@ typedef struct SUPDRVSESSION
  */
 typedef struct SUPDRVDEVEXT
 {
-    /** Spinlock to serialize the initialization,
-     * usage counting and destruction of the IDT entry override and objects. */
+    /** Spinlock to serialize the initialization, usage counting and objects. */
     RTSPINLOCK                      Spinlock;
 
     /** List of registered objects. Protected by the spinlock. */
