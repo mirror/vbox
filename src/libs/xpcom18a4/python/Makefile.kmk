@@ -1,0 +1,182 @@
+# $Id$
+## @file
+# Sub-Makefile for Python bindings
+#
+
+#
+# Copyright (C) 2009 Sun Microsystems, Inc.
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+# Clara, CA 95054 USA or visit http://www.sun.com if you need
+# additional information or have any questions.
+#
+
+SUB_DEPTH = ../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+# list of supported Python versions
+$(eval $(shell $(VBOX_BLD_PYTHON) $(PATH_SUB_CURRENT)/gen_python_deps.py))
+
+# Python Client Module - the C++/XPCOM bits.
+VBoxPythonBase_TEMPLATE = XPCOM
+VBoxPythonBase_DEFS     = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API \
+                          EXPORT_XPT_API VBOX_PYXPCOM VBOX_WITH_XPCOM 
+VBoxPythonBase_INCS     = \
+                          src \
+
+VBoxPythonBase_SOURCES  = \
+	src/module/_xpcom.cpp \
+	src/dllmain.cpp \
+	src/ErrorUtils.cpp \
+	src/PyGBase.cpp \
+	src/PyGInputStream.cpp \
+	src/PyGModule.cpp \
+	src/PyGStub.cpp \
+	src/PyGWeakReference.cpp \
+	src/PyIClassInfo.cpp \
+	src/PyIComponentManager.cpp \
+	src/PyIComponentManagerObsolete.cpp \
+	src/PyIEnumerator.cpp \
+	src/PyIID.cpp \
+	src/PyIInputStream.cpp \
+	src/PyIInterfaceInfo.cpp \
+	src/PyIInterfaceInfoManager.cpp \
+	src/PyISimpleEnumerator.cpp \
+	src/PyISupports.cpp \
+	src/PyIVariant.cpp \
+	src/Pyxpt_info.cpp \
+	src/TypeObject.cpp \
+	src/VariantUtils.cpp
+
+VBoxPythonBase_LIBS = \
+	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
+	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
+
+# Python 2.3 version
+VBoxPython23_EXTENDS    = VBoxPythonBase
+VBoxPython23_EXTENDS_BY = appending
+VBoxPython23_TEMPLATE   = XPCOM
+
+VBoxPython23_DEFS       = VBOX_PYXPCOM_VERSIONED
+VBoxPython23_INCS       = $(VBOX_PYTHON23_INC)
+VBoxPython23_LIBS       = $(VBOX_PYTHON23_LIB)
+
+ifdef VBOX_PYTHON23_INC
+ KNOWN_GLUE += VBoxPython23
+endif
+
+# Python 2.4 version
+VBoxPython24_EXTENDS    = VBoxPythonBase
+VBoxPython24_EXTENDS_BY = appending
+VBoxPython24_TEMPLATE   = XPCOM
+
+VBoxPython24_DEFS       = VBOX_PYXPCOM_VERSIONED
+VBoxPython24_INCS       =  $(VBOX_PYTHON24_INC)
+VBoxPython24_LIBS       =  $(VBOX_PYTHON24_LIB)
+
+ifdef VBOX_PYTHON24_INC
+ KNOWN_GLUE += VBoxPython24
+endif
+
+# Python 2.5 version
+VBoxPython25_EXTENDS    = VBoxPythonBase
+VBoxPython25_EXTENDS_BY = appending
+VBoxPython25_TEMPLATE   = XPCOM
+
+VBoxPython25_DEFS       = VBOX_PYXPCOM_VERSIONED
+VBoxPython25_INCS       = $(VBOX_PYTHON25_INC)
+VBoxPython25_LIBS       = $(VBOX_PYTHON25_INC)
+
+ifdef VBOX_PYTHON25_INC
+ KNOWN_GLUE += VBoxPython25
+endif
+
+# Python 2.6 version
+VBoxPython26_EXTENDS    = VBoxPythonBase
+VBoxPython26_EXTENDS_BY = appending
+VBoxPython26_TEMPLATE   = XPCOM
+
+VBoxPython26_DEFS       = VBOX_PYXPCOM_VERSIONED
+VBoxPython26_INCS       = $(VBOX_PYTHON26_INC)
+VBoxPython26_LIBS       = $(VBOX_PYTHON26_INC)
+
+ifdef VBOX_PYTHON26_INC
+ KNOWN_GLUE += VBoxPython26
+endif
+
+# Python 2.7 version
+VBoxPython27_EXTENDS    = VBoxPythonBase
+VBoxPython27_EXTENDS_BY = appending
+VBoxPython27_TEMPLATE   = XPCOM
+
+VBoxPython27_DEFS       = VBOX_PYXPCOM_VERSIONED
+VBoxPython27_INCS       = $(VBOX_PYTHON27_INC)
+VBoxPython27_LIBS       = $(VBOX_PYTHON27_INC)
+
+ifdef VBOX_PYTHON27_INC
+ KNOWN_GLUE += VBoxPython27
+endif
+
+# Python 2.8 version
+VBoxPython28_EXTENDS    = VBoxPythonBase
+VBoxPython28_EXTENDS_BY = appending
+VBoxPython28_TEMPLATE   = XPCOM
+
+VBoxPython28_DEFS       = VBOX_PYXPCOM_VERSIONED
+VBoxPython28_INCS       = $(VBOX_PYTHON28_INC)
+VBoxPython28_LIBS       = $(VBOX_PYTHON28_INC)
+
+ifdef VBOX_PYTHON28_INC
+ KNOWN_GLUE += VBoxPython28
+endif
+
+# Python without versioning
+VBoxPython_EXTENDS      = VBoxPythonBase
+VBoxPython_EXTENDS_BY   = appending
+VBoxPython_TEMPLATE     = XPCOM
+
+VBoxPython_INCS       =  $(VBOX_PYTHONDEF_INC)
+if "$(KBUILD_TARGET)" == "linux"
+  VBoxPython_LIBS       = 
+else
+  VBoxPython_LIBS       = $(VBOX_PYTHONDEF_LIB)
+endif
+
+ifdef VBOX_PYTHONDEF_INC
+ KNOWN_GLUE += VBoxPython
+endif
+
+VBoxPython-inst-py-xpcom_INST = $(INST_SDK)bindings/xpcom/python/xpcom/
+VBoxPython-inst-py-xpcom_SOURCES = \
+	vboxxpcom.py \
+	components.py \
+	file.py \
+	__init__.py \
+	nsError.py \
+	primitives.py \
+	xpcom_consts.py \
+	xpt.py \
+	client/__init__.py=>client/__init__.py \
+	server/__init__.py=>server/__init__.py \
+	server/enumerator.py=>server/enumerator.py \
+	server/factory.py=>server/factory.py \
+	server/loader.py=>server/loader.py \
+	server/module.py=>server/module.py \
+	server/policy.py=>server/policy.py
+
+
+ifndef VBOX_ONLY_SDK
+ DLLS += $(KNOWN_GLUE)
+endif
+
+INSTALLS += VBoxPython-inst-py-xpcom
+
+include $(KBUILD_PATH)/subfooter.kmk

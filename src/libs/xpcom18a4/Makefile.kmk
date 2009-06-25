@@ -1348,6 +1348,9 @@ endif
 
 # Find the Python headers for the Python<->XPCOM bridge if enabled.
 ifdef VBOX_WITH_PYTHON
+ifdef VBOX_WITH_MULTIVERSION_PYTHON
+ include $(PATH_SUB_CURRENT)/python/Makefile.kmk
+else
  if "$(KBUILD_TARGET)" == "darwin" && !defined(VBOX_PATH_PYTHON_INC) && !defined(VBOX_LIB_PYTHON)
   ifndef VBOX_PYTHON_FRAMEWORK
    # Does -framework really work with CXXFLAGS and CFLAGS?
@@ -1391,14 +1394,13 @@ ifdef VBOX_WITH_PYTHON
   DLLS += VBoxPython
  endif
  INSTALLS += VBoxPython-inst-py-xpcom
-endif
 
-# Kibd of hack: we don't want to limit VBoxPython.so to single Python version
-# on Linux, where we can avoid putting explicit libpythonX.Y.so dependency
-# to VBoxPython.so
-if "$(KBUILD_TARGET)" == "linux"
- VBOX_LIB_PYTHON=
-endif
+ # Kind of hack: we don't want to limit VBoxPython.so to single Python version
+ # on Linux, where we can avoid putting explicit libpythonX.Y.so dependency
+ # to VBoxPython.so
+ if "$(KBUILD_TARGET)" == "linux"
+  VBOX_LIB_PYTHON=
+ endif
 
 # Python Client Module - the C++/XPCOM bits.
 VBoxPython_TEMPLATE = XPCOM
@@ -1474,6 +1476,9 @@ VBoxPython-inst-py-xpcom_SOURCES = \
 	python/server/loader.py=>server/loader.py \
 	python/server/module.py=>server/module.py \
 	python/server/policy.py=>server/policy.py
+
+endif # !VBOX_WITH_MULTIVERSION_PYTHON
+endif # VBOX_WITH_PYTHON
 
 #
 # testcases
