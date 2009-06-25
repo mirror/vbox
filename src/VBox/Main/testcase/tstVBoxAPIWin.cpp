@@ -209,7 +209,7 @@ int testStartVM(IVirtualBox *virtualBox)
                 printf("Error creating Session instance! rc = 0x%x\n", rc);
                 break;
             }
-    
+
             /* Start a VM session using the delivered VBox GUI. */
             rc = virtualBox->OpenRemoteSession (session, guid, sessiontype,
                                                 NULL, &progress);
@@ -218,11 +218,11 @@ int testStartVM(IVirtualBox *virtualBox)
                 printf("Could not open remote session! rc = 0x%x\n", rc);
                 break;
             }
-    
+
             /* Wait until VM is running. */
             printf ("Starting VM, please wait ...\n");
             rc = progress->WaitForCompletion (-1);
-    
+
             /* Get console object. */
             session->get_Console(&console);
 
@@ -233,11 +233,15 @@ int testStartVM(IVirtualBox *virtualBox)
             getchar();
 
             /* Power down the machine. */
-            rc = console->PowerDown();
+            rc = console->PowerDown(&progress);
+
+            /* Wait until VM is powered down. */
+            printf ("Powering off VM, please wait ...\n");
+            rc = progress->WaitForCompletion (-1);
 
             /* Close the session. */
-            rc = session->Close();  
-            
+            rc = session->Close();
+
         } while (0);
 
         SAFE_RELEASE(console);
