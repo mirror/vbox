@@ -51,6 +51,8 @@ check_if_installed()
     modulepath="$MODDIR32/$MODNAME"
     if test "$cputype" = "amd64"; then
         modulepath="$MODDIR64/$MODNAME"
+    elif test "$cputype" != "i386"; then
+        abort "VirtualBox works only on i386/amd64 architectures, not $cputype"
     fi
     if test -f "$modulepath"; then
         return 0
