@@ -7058,11 +7058,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>there is more than one virtual CPU assigned for this VM, which requires IO-APIC feature to be enabled too, else SMP will not be able to work, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>vous avez affecté plus qu&apos;un processeur virtuel à cette machine. Ceci nécéssite que le IO-APIC soit présent, donc il sera activé automatiquement si vous acceptez les modifications en cliquant sur &quot;OK&quot;.</translation>
     </message>
     <message>
         <source>there is more than one virtual CPU assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else SMP will not be able to work, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>vous avez affecté plus qu&apos;un processeur virtuel à cette machine. Ceci nécéssite la virtualisation procésseur sur le hôte, donc elle sera activé automatiquement si vous acceptez les modifications en cliquant sur &quot;OK&quot;.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
