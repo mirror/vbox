@@ -332,6 +332,7 @@ def cmdExistingVm(ctx,mach,cmd,args):
     ops={'pause' :     lambda: console.pause(),
          'resume':     lambda: console.resume(),
          'powerdown':  lambda: console.powerDown(),
+         'powerbutton':  lambda: console.powerButton(),
          'stats':      lambda: guestStats(ctx, mach),
          'guest':      lambda: guestExec(ctx, mach, console, args),
          'monitorGuest': lambda: monitorGuest(ctx, mach, console, args)
@@ -401,7 +402,7 @@ def infoCmd(ctx,args):
     os = ctx['vb'].getGuestOSType(mach.OSTypeId)
     print " One can use setvar <mach> <var> <value> to change variable, using name in []."
     print "  Name [name]: ",mach.name
-    print "  ID [id]: ",mach.id
+    print "  ID [n/a]: ",mach.id
     print "  OS Type [n/a]: ",os.description
     print "  CPUs [CPUCount]:  %d" %(mach.CPUCount)
     print "  RAM [memorySize]:  %dM" %(mach.memorySize)
@@ -469,6 +470,13 @@ def powerdownCmd(ctx, args):
     if mach == None:
         return 0
     cmdExistingVm(ctx, mach, 'powerdown', '')
+    return 0
+
+def powerbuttonCmd(ctx, args):
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+    cmdExistingVm(ctx, mach, 'powerbutton', '')
     return 0
 
 def resumeCmd(ctx, args):
@@ -668,6 +676,7 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'resume':['Resume virtual machine', resumeCmd, 0],
             'stats':['Stats for virtual machine', statsCmd, 0],
             'powerdown':['Power down virtual machine', powerdownCmd, 0],
+            'powerbutton':['Effectively press power button', powerbuttonCmd, 0],
             'list':['Shows known virtual machines', listCmd, 0],
             'info':['Shows info on machine', infoCmd, 0],
             'aliases':['Shows aliases', aliasesCmd, 0],
@@ -719,7 +728,8 @@ def checkUserExtensions(ctx, cmds, folder):
     try:
         execfile(name, d, d)
         for (k,v) in d['commands'].items():
-            print "customize: adding \"%s\" - %s" %(k, v[0])
+            if g_verbose:
+                print "customize: adding \"%s\" - %s" %(k, v[0])
             cmds[k] = [v[0], v[1], 1]
     except:
         print "Error loading user extensions:"
