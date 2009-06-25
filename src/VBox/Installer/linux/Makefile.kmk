@@ -125,7 +125,7 @@ VBOX_LNX_STRIP_BIN = \
 		VBoxOGLrenderspu.so \
 		VBoxTestOGL \
 		VBoxSharedCrOpenGL.so,) \
-	$(if $(VBOX_WITH_PYTHON),VBoxPython.so,) \
+	$(if $(VBOX_WITH_PYTHON),$(notdir $(wildcard $(PATH_BIN)/VBoxPython*.so)),) \
 	VBoxTunctl
 
 # Do not remove relocation information of these binaries
