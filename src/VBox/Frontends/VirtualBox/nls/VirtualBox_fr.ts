@@ -1,6 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
-<TS version="2.0">
+<!DOCTYPE TS><TS>
 <context>
     <name>@@@</name>
     <message>
@@ -5988,7 +5986,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. As such guestsrequire hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
-        <translation>Vous avez choisi un type de système 64 bit pour cette machine. Comme un tel invité nécéssite la virtualisation procésseur (VT-x/AMD-V), cette dernière sera automatiquement activée.</translation>
+        <translation>vous avez choisi un type de système 64 bit pour cette machine. Comme un tel invité nécéssite la virtualisation procésseur (VT-x/AMD-V), cette dernière sera automatiquement activée.</translation>
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. VirtualBox does not currently support more than one virtual CPU for 64-bit guests executed on 32-bit hosts.</source>
