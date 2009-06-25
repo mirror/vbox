@@ -76,11 +76,6 @@ static int patchAml(PPDMDEVINS pDevIns, uint8_t* pAml, size_t uAmlLen)
     if (!fShowCpu)
         cNumCpus = 0;
 
-#ifdef VBOX_WITH_MULTI_CORE
-    /* One physical package with multiple cores. */
-    cNumCpus = 1;
-#endif
-
     /**
      * Now search AML for:
      *  AML_PROCESSOR_OP            (UINT16) 0x5b83
