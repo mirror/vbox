@@ -125,3 +125,4 @@ iconv_close
 rename
 xf86SetSerialSpeed
 fflush
+abs
