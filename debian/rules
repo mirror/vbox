@@ -72,8 +72,8 @@ endif
 debcfgs  := VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/$(verpkg)\""
 
 # Locations of custom built Qt libraries (see below)
-qtstdc5  := /home/vbox/Qt-4.4.3-stdc++5-$(arch))
-qtstdc6  := /home/vbox/Qt-4.4.3-stdc++6-$(arch))
+qtstdc5  := /home/vbox/Qt-4.4.3-stdc++5-$(arch)
+qtstdc6  := /home/vbox/Qt-4.4.3-stdc++6-$(arch)
 
 # Ubuntu dapper: gcc-4.0 does not work with recompiler, use gcc-3.4 instead
 # Ubuntu gutsy:  gcc-4.1 does not work for the webservices, use gcc-4.2 instead
