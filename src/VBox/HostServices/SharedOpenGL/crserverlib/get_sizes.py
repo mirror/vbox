@@ -300,7 +300,6 @@ extensions_num_get_values = {
     'GL_SAMPLE_COVERAGE_INVERT_ARB': (1, 'CR_ARB_multisample'),
     'GL_POINT_SPRITE_ARB': (1, 'CR_ARB_point_sprite'),
     'GL_MAX_TEXTURE_LOD_BIAS_EXT': (1, 'CR_EXT_texture_lod_bias'),
-    'GL_COMPRESSED_TEXTURE_FORMATS_ARB': (1, 'CR_ARB_texture_compression'),
     'GL_NUM_COMPRESSED_TEXTURE_FORMATS_ARB': (1, 'CR_ARB_texture_compression'),
     'GL_PROGRAM_ERROR_POSITION_NV': (1, 'CR_NV_vertex_program'),
     'GL_VERTEX_PROGRAM_BINDING_NV': (1, 'CR_NV_vertex_program'),
