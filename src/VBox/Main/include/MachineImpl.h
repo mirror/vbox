@@ -905,6 +905,7 @@ public:
     RWLockHandle *lockHandle() const;
 
     // IInternalMachineControl methods
+    STDMETHOD(SetRemoveSavedState)(BOOL aRemove);
     STDMETHOD(UpdateState)(MachineState_T machineState);
     STDMETHOD(GetIPCId)(BSTR *id);
     STDMETHOD(RunUSBDeviceFilters) (IUSBDevice *aUSBDevice, BOOL *aMatched, ULONG *aMaskedIfs);
@@ -1004,6 +1005,8 @@ private:
 
     HRESULT setMachineState (MachineState_T aMachineState);
     HRESULT updateMachineStateOnClient();
+
+    HRESULT mRemoveSavedState;
 
     SnapshotData mSnapshotData;
 

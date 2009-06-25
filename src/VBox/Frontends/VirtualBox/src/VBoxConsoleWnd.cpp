@@ -1451,7 +1451,7 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
                 else
                 if (dlg.mRbPowerOff->isChecked())
                 {
-                    CProgress progress = cconsole.PowerDownAsync();
+                    CProgress progress = cconsole.PowerDown();
 
                     if (cconsole.isOk())
                     {

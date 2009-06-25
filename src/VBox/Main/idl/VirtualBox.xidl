@@ -232,7 +232,7 @@
       <tr><td>E_POINTER</td>
       <td>
         Returned if a memory pointer for the output argument is invalid (for
-        example, <tt>NULL</tt>). Note that when pointers representing input
+        example, @c null). Note that when pointers representing input
         arguments (such as strings) are invalid, E_INVALIDARG is returned.
       </td>
       </tr>
@@ -493,9 +493,9 @@
         the numeric values of these states must be correspondingly updated if
         needed: for any online VM state, the condition
         <tt>FirstOnline &lt;= state &lt;= LastOnline</tt> must be
-        <tt>true</tt>. The same relates to transient states for which
+        @c true. The same relates to transient states for which
         the condition <tt>FirstOnline &lt;= state &lt;= LastOnline</tt> must be
-        <tt>true</tt>.
+        @c true.
       </note>
     </desc>
 
@@ -1026,13 +1026,13 @@
     <method name="onExtraDataCanChange">
       <desc>
         Notification when someone tries to change extra data for
-        either the given machine or (if null) global extra data.
+        either the given machine or (if @c null) global extra data.
         This gives the chance to veto against changes.
       </desc>
       <param name="machineId" type="wstring" dir="in">
         <desc>
           ID of the machine this event relates to
-          (null ID for global extra data change requests).
+          (@c null ID for global extra data change requests).
         </desc>
       </param>
       <param name="key" type="wstring" dir="in">
@@ -1117,7 +1117,7 @@
       </param>
       <param name="registered" type="boolean" dir="in">
         <desc>
-          If true, the media was registered, otherwise it was
+          If @c true, the media was registered, otherwise it was
           unregistered.
         </desc>
       </param>
@@ -1133,7 +1133,7 @@
       </param>
       <param name="registered" type="boolean" dir="in">
         <desc>
-          If true, the machine was registered, otherwise it was
+          If @c true, the machine was registered, otherwise it was
           unregistered.
         </desc>
       </param>
@@ -1182,9 +1182,8 @@
       </param>
       <param name="snapshotId" type="wstring" dir="in">
         <desc>
-          ID of the discarded snapshot. <tt>null</tt> means the
-          current machine state has been discarded (restored from
-          the current snapshot).
+          ID of the discarded snapshot. @c null means the current machine
+          state has been discarded (restored from the current snapshot).
         </desc>
       </param>
     </method>
@@ -1343,7 +1342,7 @@
 
   <interface
     name="IVirtualBox" extends="$dispatched"
-    uuid="54bf05ec-3fa9-4735-b92e-76e7c6c7e2be"
+    uuid="3f4ab53a-199b-4526-a91a-93ff62e456b8"
     wsmap="managed"
   >
     <desc>
@@ -1418,8 +1417,8 @@
         <pre>
           x.y-platform
         </pre>
-        where <tt>x</tt> and <tt>y</tt> are the major and the minor format
-        versions, and <tt>platform</tt> is the platform identifier.
+        where @c x and @c y are the major and the minor format
+        versions, and @c platform is the platform identifier.
 
         The current version usually matches the value of the
         <link to="#settingsFormatVersion"/> attribute unless the
@@ -1454,8 +1453,8 @@
         <pre>
           x.y-platform
         </pre>
-        where <tt>x</tt> and <tt>y</tt> are the major and the minor format
-        versions, and <tt>platform</tt> is the platform identifier.
+        where @c x and @c y are the major and the minor format
+        versions, and @c platform is the platform identifier.
 
         VirtualBox uses this version of the format when saving settings files
         (either as a result of method calls that require to save settings or as
@@ -1581,7 +1580,7 @@
         relative to the <link to="IVirtualBox::homeFolder">VirtualBox home
         directory</link>.
 
-        If @a baseFolder is a null or empty string (which is recommended), the
+        If @a baseFolder is a @c null or empty string (which is recommended), the
         <link to="ISystemProperties::defaultMachineFolder">default machine
         settings folder</link> will be used as a base folder for the created
         machine. Otherwise the given base folder will be used. In either case,
@@ -1596,9 +1595,9 @@
 
         Optionally, you may specify an UUID of to assign to the created machine.
         However, this is not recommended and you should normally pass an empty
-        (null) UUID to this method so that a new UUID will be automatically
+        (@c null) UUID to this method so that a new UUID will be automatically
         generated for every created machine. You can use UUID
-        00000000-0000-0000-0000-000000000000 as null value.
+        00000000-0000-0000-0000-000000000000 as @c null value.
 
         <note>
           There is no way to change the name of the settings file or
@@ -1613,7 +1612,7 @@
           exists or could not be created due to an I/O error.
         </result>
         <result name="E_INVALIDARG">
-          @a name is empty or null.
+          @a name is empty or @c null.
         </result>
       </desc>
 
@@ -1673,7 +1672,7 @@
           could not be created due to an I/O error.
         </result>
         <result name="E_INVALIDARG">
-          @a name or @a settingsFile is empty or null.
+          @a name or @a settingsFile is empty or @c null.
         </result>
       </desc>
 
@@ -1721,7 +1720,7 @@
       </param>
       <note>
         <link to="IMachine::settingsModified"/> will return
-        false for the created machine, until any of machine settings
+        @c false for the created machine, until any of machine settings
         are changed.
       </note>
     </method>
@@ -1866,7 +1865,7 @@
         The list of all storage formats supported by this VirtualBox
         installation can be obtained using
         <link to="ISystemProperties::hardDiskFormats"/>. If the @a format
-        attribute is empty or <tt>null</tt> then the default storage format
+        attribute is empty or @c null then the default storage format
         specified by <link to="ISystemProperties::defaultHardDiskFormat"/> will
         be used for creating a storage unit of the hard disk.
 
@@ -1882,7 +1881,7 @@
           @a location is a not valid file name (for file-based formats only).
         </result>
         <result name="E_INVALIDARG">
-          @a format is a null or empty string.
+          @a format is a @c null or empty string.
         </result>
       </desc>
       <param name="format" type="wstring" dir="in">
@@ -2078,7 +2077,7 @@
       <param name="id" type="wstring" dir="in">
         <desc>
           UUID to assign to the given image within this VirtualBox installation.
-          If an empty (null) UUID is specified, the system will randomly
+          If an empty (@c null) UUID is specified, the system will randomly
           generate a new UUID.
         </desc>
       </param>
@@ -2178,7 +2177,7 @@
       <param name="id" type="wstring" dir="in">
         <desc>
           UUID to assign to the given image file within this VirtualBox
-          installation. If an empty (null) UUID is specified, the system will
+          installation. If an empty (@c null) UUID is specified, the system will
           randomly generate a new UUID.
         </desc>
       </param>
@@ -2312,9 +2311,9 @@
       <desc>
         Returns the global extra data key name following the supplied key.
 
-        An error is returned if the supplied @a key does not exist. @c NULL is
+        An error is returned if the supplied @a key does not exist. @c null is
         returned in @a nextKey if the supplied key is the last key. When
-        supplying @c NULL or an empty string for the @a key, the first key item
+        supplying @c null or an empty string for the @a key, the first key item
         is returned in @a nextKey (if there is any). @a nextValue is an optional
         parameter and if supplied, the next key's value is returned in it.
 
@@ -2339,7 +2338,7 @@
         Returns associated global extra data.
 
         If the requested data @a key does not exist, this function will
-        succeed and return @c NULL in the @a value argument.
+        succeed and return @c null in the @a value argument.
 
         <result name="VBOX_E_FILE_ERROR">
           Settings file not accessible.
@@ -2361,7 +2360,7 @@
       <desc>
         Sets associated global extra data.
 
-        If you pass @c NULL as a key @a value, the given @a key will be
+        If you pass @c null as a key @a value, the given @a key will be
         deleted.
 
         <note>
@@ -2520,9 +2519,9 @@
         Currently supported session types (values of the @a type
         argument) are:
         <ul>
-          <li><tt>gui</tt>: VirtualBox Qt GUI session</li>
-          <li><tt>vrdp</tt>: VirtualBox VRDP Server session</li>
-          <li><tt>sdl</tt>: VirtualBox SDL GUI session</li>
+          <li><tt>"gui"</tt>: VirtualBox Qt GUI session</li>
+          <li><tt>"vrdp"</tt>: VirtualBox VRDP Server session</li>
+          <li><tt>"sdl"</tt>: VirtualBox SDL GUI session</li>
         </ul>
 
         The @a environment argument is a string containing definitions of
@@ -2648,7 +2647,7 @@
         event occurs.
 
         <result name="E_INVALIDARG">
-          A @c NULL callback cannot be registered.
+          A @c null callback cannot be registered.
         </result>
 
       </desc>
@@ -2806,7 +2805,7 @@
         format of the settings file (before auto-conversion).
 
         If the given backup file already exists, this method will try to add the
-        <tt>.N</tt> suffix to the backup file name (where <tt>N</tt> counts from
+        <tt>.N</tt> suffix to the backup file name (where @c N counts from
         0 to 9) and copy it again until it succeeds. If all suffixes are
         occupied, or if any other copy error occurs, this method will return a
         failure.
@@ -3663,7 +3662,7 @@
         as returned in the aVBoxValues and aExtraConfigValues arrays from getDescription(),
         the configuration remains unchanged. Please see the documentation for getDescription()
         for valid configuration values for the individual array item types. If the
-        corresponding item in the aEnabled array is false, the configuration value is ignored.
+        corresponding item in the aEnabled array is @c false, the configuration value is ignored.
       </desc>
 
       <param name="aEnabled" type="boolean" dir="in" safearray="yes">
@@ -3709,10 +3708,18 @@
 
   <interface
      name="IInternalMachineControl" extends="$unknown"
-     uuid="5595cae1-6b18-42c1-b416-bc7493a87618"
+     uuid="ce8087d7-de92-4bbb-8140-a22fb07f37ba"
      internal="yes"
      wsmap="suppress"
      >
+    <method name="setRemoveSavedState">
+      <desc>
+        Updates the flag whether saved state is removed on a machine state
+        change from Saved to PowerOff.
+      </desc>
+      <param name="aRemove" type="boolean" dir="in"/>
+    </method>
+
     <method name="updateState">
       <desc>
         Updates the VM state.
@@ -3757,13 +3764,13 @@
 
     <method name="detachUSBDevice">
       <desc>
-        Notification that a VM is going to detach (done = false) or has
-        already detached (done = true) the given USB device.
-        When the done = true request is completed, the VM process will
+        Notification that a VM is going to detach (@a done = @c false) or has
+        already detached (@a done = @c true) the given USB device.
+        When the @a done = @c true request is completed, the VM process will
         get a <link to="IInternalSessionControl::onUSBDeviceDetach"/>
         notification.
         <note>
-          In the done = true case, the server must run its own filters
+          In the @a done = @c true case, the server must run its own filters
           and filters of all VMs but this one on the detached device
           as if it were just attached to the host computer.
         </note>
@@ -3785,11 +3792,11 @@
       <desc>
         Notification that a VM that is being powered down. The done
         parameter indicates whether which stage of the power down
-        we're at. When done = false the VM is announcing its
-        intentions, while when done = true the VM is reporting
+        we're at. When @a done = @c false the VM is announcing its
+        intentions, while when @a done = @c true the VM is reporting
         what it has done.
         <note>
-          In the done = true case, the server must run its own filters
+          In the @a done = @c true case, the server must run its own filters
           and filters of all VMs but this one on all detach devices as
           if they were just attached to the host computer.
         </note>
@@ -3848,8 +3855,7 @@
       </desc>
 
       <param name="success" type="boolean" dir="in">
-        <desc><tt>true</tt> to indicate success and <tt>false</tt>
-          otherwise.
+        <desc>@c true to indicate success and @c false otherwise.
         </desc>
       </param>
     </method>
@@ -3914,7 +3920,7 @@
       </desc>
 
       <param name="success" type="boolean" dir="in">
-        <desc><tt>true</tt> to indicate success and <tt>false</tt> otherwise</desc>
+        <desc>@c true to indicate success and @c false otherwise</desc>
       </param>
     </method>
 
@@ -4196,10 +4202,10 @@
           </li>
         </ul>
 
-        Otherwise, the value of this property is always <tt>true</tt>.
+        Otherwise, the value of this property is always @c true.
 
         Every time this property is read, the accessibility state of
-        this machine is re-evaluated. If the returned value is |false|,
+        this machine is re-evaluated. If the returned value is @c false,
         the <link to="#accessError"/> property may be used to get the
         detailed error information describing the reason of
         inaccessibility.
@@ -4225,7 +4231,7 @@
 
         <note>
           In the current implementation, once this property returns
-          <tt>true</tt>, the machine will never become inaccessible
+          @c true, the machine will never become inaccessible
           later, even if its settings file cannot be successfully
           read/written any more (at least, until the VirtualBox
           server is restarted). This limitation may be removed in
@@ -4240,8 +4246,8 @@
         inaccessibility.
 
         Reading this property is only valid after the last call to
-        <link to="#accessible"/> returned <tt>false</tt> (i.e. the
-        machine is currently unaccessible). Otherwise, a null
+        <link to="#accessible"/> returned @c false (i.e. the
+        machine is currently unaccessible). Otherwise, a @c null
         IVirtualBoxErrorInfo object will be returned.
       </desc>
     </attribute>
@@ -4415,7 +4421,7 @@
         A separate method will be available for this purpose later.
 
         <note>
-          Setting this property to <tt>null</tt> will restore the
+          Setting this property to @c null will restore the
           initial value.
         </note>
         <note>
@@ -4482,8 +4488,8 @@
         <pre>
           x.y-platform
         </pre>
-        where <tt>x</tt> and <tt>y</tt> are the major and the minor format
-        versions, and <tt>platform</tt> is the platform identifier.
+        where @c x and @c y are the major and the minor format
+        versions, and @c platform is the platform identifier.
 
         The current version usually matches the value of the
         <link to="IVirtualBox::settingsFormatVersion"/> attribute unless the
@@ -4525,10 +4531,10 @@
         </note>
         <note>
           For newly created unregistered machines, the value of this
-          property is always TRUE until <link to="#saveSettings"/>
+          property is always @c true until <link to="#saveSettings"/>
           is called (no matter if any machine settings have been
           changed after the creation or not). For opened machines
-          the value is set to FALSE (and then follows to normal rules).
+          the value is set to @c false (and then follows to normal rules).
         </note>
       </desc>
     </attribute>
@@ -4578,8 +4584,8 @@
         Full path to the file that stores the execution state of
         the machine when it is in the <link to="MachineState_Saved"/> state.
         <note>
-          When the machine is not in the Saved state, this attribute
-          <tt>null</tt>.
+          When the machine is not in the Saved state, this attribute is
+          @c null.
         </note>
       </desc>
     </attribute>
@@ -4598,7 +4604,7 @@
       <desc>
         Current snapshot of this machine.
         <note>
-          A <tt>null</tt> object is returned if the machine doesn't
+          A @c null object is returned if the machine doesn't
           have snapshots.
         </note>
         <see><link to="ISnapshot"/></see>
@@ -4614,7 +4620,7 @@
 
     <attribute name="currentStateModified" type="boolean" readonly="yes">
       <desc>
-        Returns <tt>true</tt> if the current state of the machine is not
+        Returns @c true if the current state of the machine is not
         identical to the state stored in the current snapshot.
 
         The current state is identical to the current snapshot right
@@ -4625,7 +4631,7 @@
           </li>
           <li><link to="IConsole::takeSnapshot"/> (issued on a
             powered off or saved machine, for which
-            <link to="#settingsModified"/> returns <tt>false</tt>)
+            <link to="#settingsModified"/> returns @c false)
           </li>
           <li><link to="IMachine::setCurrentSnapshot"/>
           </li>
@@ -4642,7 +4648,7 @@
 
         <note>
           For machines that don't have snapshots, this property is
-          always <tt>false</tt>.
+          always @c false.
         </note>
       </desc>
     </attribute>
@@ -4694,7 +4700,7 @@
       </desc>
       <param name="position" type="unsigned long" dir="in">
         <desc>
-          Position in the boot order (<tt>1</tt> to the total number of
+          Position in the boot order (@c 1 to the total number of
           devices the machine can boot from, as returned by
           <link to="ISystemProperties::maxBootPosition"/>).
         </desc>
@@ -4728,7 +4734,7 @@
       </desc>
       <param name="position" type="unsigned long" dir="in">
         <desc>
-          Position in the boot order (<tt>1</tt> to the total number of
+          Position in the boot order (@c 1 to the total number of
           devices the machine can boot from, as returned by
           <link to="ISystemProperties::maxBootPosition"/>).
         </desc>
@@ -5006,9 +5012,9 @@
         Returns the machine-specific extra data key name following the
         supplied key.
 
-        An error is returned if the supplied @a key does not exist. @c NULL is
+        An error is returned if the supplied @a key does not exist. @c null is
         returned in @a nextKey if the supplied key is the last key. When
-        supplying @c NULL for the @a key, the first key item is returned in
+        supplying @c null for the @a key, the first key item is returned in
         @a nextKey (if there is any). @a nextValue is an optional parameter and
         if supplied, the next key's value is returned in it.
 
@@ -5033,7 +5039,7 @@
         Returns associated machine-specific extra data.
 
         If the requested data @a key does not exist, this function will
-        succeed and return @c NULL in the @a value argument.
+        succeed and return @c null in the @a value argument.
 
         <result name="VBOX_E_FILE_ERROR">
           Settings file not accessible.
@@ -5055,7 +5061,7 @@
       <desc>
         Sets associated machine-specific extra data.
 
-        If you pass @c NULL as a key @a value, the given @a key will be
+        If you pass @c null as a key @a value, the given @a key will be
         deleted.
 
         <note>
@@ -5148,7 +5154,7 @@
         format of the settings file (before auto-conversion).
 
         If the given backup file already exists, this method will try to add the
-        <tt>.N</tt> suffix to the backup file name (where <tt>N</tt> counts from
+        <tt>.N</tt> suffix to the backup file name (where @c N counts from
         0 to 9) and copy it again until it succeeds. If all suffixes are
         occupied, or if any other copy error occurs, this method will return a
         failure.
@@ -5214,7 +5220,7 @@
         The machine must not be registered in order for this operation
         to succeed.
         <note>
-          <link to="#settingsModified"/> will return TRUE after this
+          <link to="#settingsModified"/> will return @c true after this
           method successfully returns.
         </note>
         <note>
@@ -5257,7 +5263,7 @@
     <method name="getSnapshot">
       <desc>
         Returns a snapshot of this machine with the given UUID.
-        A <tt>null</tt> UUID can be used to obtain the first snapshot
+        A @c null UUID can be used to obtain the first snapshot
         taken on this machine. This is useful if you want to traverse
         the whole tree of snapshots starting from the root.
 
@@ -5366,8 +5372,7 @@
       </desc>
       <param name="canShow" type="boolean" dir="return">
         <desc>
-          @c true if the console window can be shown and @c
-          false otherwise.
+          @c true if the console window can be shown and @c false otherwise.
         </desc>
       </param>
     </method>
@@ -5563,7 +5568,7 @@
       <param name="patterns" type="wstring" dir="in">
         <desc>
           The patterns to match the properties against, separated by '|'
-          characters.  If this is empty or NULL, all properties will match.
+          characters.  If this is empty or @c null, all properties will match.
         </desc>
       </param>
       <param name="name" type="wstring" dir="out" safearray="yes">
@@ -5828,14 +5833,12 @@
       </param>
       <param name="attached" type="boolean" dir="in">
         <desc>
-          <tt>true</tt> if the device was attached
-          and <tt>false</tt> otherwise.
+          @c true if the device was attached and @c false otherwise.
         </desc>
       </param>
       <param name="error" type="IVirtualBoxErrorInfo" dir="in">
         <desc>
-          <tt>null</tt> on success or an error message object on
-          failure.
+          @c null on success or an error message object on failure.
         </desc>
       </param>
     </method>
@@ -5871,7 +5874,7 @@
         </ul>
 
         <b>Fatal</b> errors are indicated by the @a fatal parameter set
-        to <tt>true</tt>. In case of fatal errors, the virtual machine
+        to @c true. In case of fatal errors, the virtual machine
         execution is always paused before calling this notification, and
         the notification handler is supposed either to immediately save
         the virtual machine state using <link to="IConsole::saveState"/>
@@ -5879,7 +5882,7 @@
         Resuming the execution can lead to unpredictable results.
 
         <b>Non-fatal</b> errors and warnings are indicated by the
-        @a fatal parameter set to <tt>false</tt>. If the virtual machine
+        @a fatal parameter set to @c false. If the virtual machine
         is in the Paused state by the time the error notification is
         received, it means that the user can <i>try to resume</i> the machine
         execution after attempting to solve the problem that caused the
@@ -5952,8 +5955,7 @@
       </desc>
       <param name="canShow" type="boolean" dir="return">
         <desc>
-          @c true if the console window can be shown and @c
-          false otherwise.
+          @c true if the console window can be shown and @c false otherwise.
         </desc>
       </param>
     </method>
@@ -6108,7 +6110,7 @@
 
   <interface
      name="IConsole" extends="$unknown"
-     uuid="a7f17a42-5b64-488d-977b-4b2c639ada27"
+     uuid="0a51994b-cbc6-4686-94eb-d4e4023280e2"
      wsmap="managed"
      >
     <desc>
@@ -6296,35 +6298,12 @@
 
     <method name="powerDown">
       <desc>
-        Stops the virtual machine execution.
-        After this operation completes, the machine will go to the
-        PoweredOff state.
-
-        @deprecated This method will be removed in VirtualBox 2.1 where the
-        powerDownAsync() method will take its name. Do not use this method in
-        the code.
-        <result name="VBOX_E_INVALID_VM_STATE">
-          Virtual machine must be Running, Paused or Stuck to be powered down.
-        </result>
-        <result name="VBOX_E_VM_ERROR">
-          Unable to power off or destroy virtual machine.
-        </result>
-      </desc>
-    </method>
-
-    <method name="powerDownAsync">
-      <desc>
         Initiates the power down procedure to stop the virtual machine
         execution.
 
         The completion of the power down procedure is tracked using the returned
         IProgress object. After the operation is complete, the machine will go
         to the PoweredOff state.
-
-        @warning This method will be renamed to "powerDown" in VirtualBox 2.1
-        where the original powerDown() method will be removed. You will need to
-        rename "powerDownAsync" to "powerDown" in your sources to make them
-        build with version 2.1.
         <result name="VBOX_E_INVALID_VM_STATE">
           Virtual machine must be Running, Paused or Stuck to be powered down.
         </result>
@@ -6400,7 +6379,7 @@
 
     <method name="getGuestEnteredACPIMode">
       <desc>Checks if the guest entered the ACPI mode G0 (working) or
-        G1 (sleeping). If this method returns false, the guest will
+        G1 (sleeping). If this method returns @c false, the guest will
         most likely not respond to external ACPI events.
         <result name="VBOX_E_INVALID_VM_STATE">
           Virtual machine not in Running state.
@@ -6482,11 +6461,12 @@
       </param>
     </method>
 
-    <method name="discardSavedState">
+    <method name="forgetSavedState">
       <desc>
-        Discards (deletes) the saved state of the virtual machine
-        previously created by <link to="#saveState"/>. Next time the
-        machine is powered up, a clean boot will occur.
+        Forgets the saved state of the virtual machine previously created
+        by <link to="#saveState"/>. Next time the machine is powered up, a
+        clean boot will occur. If @a remove is @c true the saved state file
+        is deleted.
         <note>
           This operation is equivalent to resetting or powering off
           the machine without doing a proper shutdown in the guest OS.
@@ -6495,6 +6475,9 @@
           Virtual machine not in state Saved.
         </result>
       </desc>
+      <param name="remove" type="boolean" dir="in">
+        <desc>If @c true remove the saved state file.</desc>
+      </param>
     </method>
 
     <method name="getDeviceActivity">
@@ -6707,7 +6690,7 @@
         become the first snapshot after discarding. If there are no
         children at all (i.e. the first snapshot is the only snapshot of
         the machine), both the current and the first snapshot of the
-        machine will be set to null. In all other cases, the first
+        machine will be set to @c null. In all other cases, the first
         snapshot cannot be discarded.
 
         You cannot discard the snapshot if it
@@ -6798,7 +6781,7 @@
         <note>
           If the machine state is <link to="MachineState_Saved">Saved</link>
           prior to this operation, the saved state file will be implicitly
-          discarded (as if <link to="IConsole::discardSavedState"/> were
+          discarded (as if <link to="IConsole::forgetSavedState"/> were
           called).
         </note>
 
@@ -6844,7 +6827,7 @@
         <note>
           If the machine state is <link to="MachineState_Saved">Saved</link>
           prior to this operation, the saved state file will be implicitly
-          discarded (as if <link to="#discardSavedState"/> were
+          discarded (as if <link to="#forgetSavedState"/> were
           called).
         </note>
 
@@ -7244,7 +7227,7 @@
       </param>
       <param name="description" type="wstring" dir="return">
         <desc>
-          Model string. A NULL string is returned if value is not known or
+          Model string. A @c null string is returned if value is not known or
           @a cpuId is invalid.
         </desc>
       </param>
@@ -7271,7 +7254,7 @@
     </attribute>
 
     <attribute name="Acceleration3DAvailable" type="boolean" readonly="yes">
-      <desc>Returns true when the host supports 3D hardware acceleration.</desc>
+      <desc>Returns @c true when the host supports 3D hardware acceleration.</desc>
     </attribute>
 
     <method name="createHostOnlyNetworkInterface">
@@ -7320,8 +7303,8 @@
     <method name="createUSBDeviceFilter">
       <desc>
         Creates a new USB device filter. All attributes except
-        the filter name are set to <tt>null</tt> (any match),
-        <i>active</i> is <tt>false</tt> (the filter is not active).
+        the filter name are set to @c null (any match),
+        <i>active</i> is @c false (the filter is not active).
 
         The created filter can be added to the list of filters using
         <link to="#insertUSBDeviceFilter"/>.
@@ -7344,7 +7327,7 @@
         Inserts the given USB device to the specified position
         in the list of filters.
 
-        Positions are numbered starting from <tt>0</tt>. If the specified
+        Positions are numbered starting from @c 0. If the specified
         position is equal to or greater than the number of elements in
         the list, the filter is added at the end of the collection.
 
@@ -7380,7 +7363,7 @@
         Removes a USB device filter from the specified position in the
         list of filters.
 
-        Positions are numbered starting from <tt>0</tt>. Specifying a
+        Positions are numbered starting from @c 0. Specifying a
         position equal to or greater than the number of elements in
         the list will produce an error.
 
@@ -7612,7 +7595,7 @@
           VirtualBox_home</link><tt>&gt;/Machines</tt>.
 
         <note>
-          Setting this property to <tt>null</tt> will restore the
+          Setting this property to @c null will restore the
           initial value.
         </note>
         <note>
@@ -7650,8 +7633,7 @@
         <tt>&gt;/HardDisks</tt>.
 
         <note>
-          Setting this property to <tt>null</tt> will restore the
-          initial value.
+          Setting this property to @c null will restore the initial value.
         </note>
         <note>
           When settings this property, the specified path can be relative
@@ -7706,7 +7688,7 @@
 
         The hard disk format set by this attribute is used by VirtualBox
         when the hard disk format was not specified explicitly. One example is
-        <link to="IVirtualBox::createHardDisk"/> with the <tt>null</tt>
+        <link to="IVirtualBox::createHardDisk"/> with the @c null
         format argument. A more complex example is implicit creation of
         differencing hard disks when taking a snapshot of a virtual machine:
         this operation will try to use a format of the parent hard disk first
@@ -7719,12 +7701,11 @@
         otherwise opeartions that create hard disks implicitly may fail
         unexpectedly.
 
-        The initial value of this property is <tt>VDI</tt> in the current
+        The initial value of this property is <tt>"VDI"</tt> in the current
         version of the VirtualBox product, but may change in the future.
 
         <note>
-          Setting this property to <tt>null</tt> will restore the
-          initial value.
+          Setting this property to @c null will restore the initial value.
         </note>
 
         <see>
@@ -7745,14 +7726,14 @@
         A full path can be specified; if not, then the library must reside on the
         system's default library path.
 
-        The default value of this property is <tt>VRDPAuth</tt>. There is a library
+        The default value of this property is <tt>"VRDPAuth"</tt>. There is a library
         of that name in one of the default VirtualBox library directories.
 
         For details about VirtualBox authentication libraries and how to implement
         them, please refer to the VirtualBox manual.
 
         <note>
-          Setting this property to <tt>null</tt> will restore the
+          Setting this property to @c null will restore the
           initial value.
         </note>
       </desc>
@@ -7768,11 +7749,11 @@
         As opposed to <link to="ISystemProperties::remoteDisplayAuthLibrary" />,
         there is no per-VM setting for this, as the webservice is a global
         resource (if it is running). Only for this setting (for the webservice),
-        setting this value to a literal "null" string disables authentication,
+        setting this value to a literal <tt>"null"</tt> string disables authentication,
         meaning that <link to="IWebsessionManager::logon" /> will always succeed,
         no matter what user name and password are supplied.
 
-        The initial value of this property is <tt>VRDPAuth</tt>,
+        The initial value of this property is <tt>"VRDPAuth"</tt>,
         meaning that the webservice will use the same authentication
         library that is used by default for VBoxVRDP (again, see
         <link to="ISystemProperties::remoteDisplayAuthLibrary" />).
@@ -8009,7 +7990,7 @@
         that only the VirtualBox internals behind the Main API can
         create and manipulate progress objects, whereas client code
         can only use the IProgress object to monitor a task's
-        progress and, if <link to="#cancelable" /> is true,
+        progress and, if <link to="#cancelable" /> is @c true,
         cancel the task by calling <link to="#cancel" />.
 
         A task represented by IProgress consists of either one or
@@ -8049,7 +8030,7 @@
       <desc>
         Current progress value of the task as a whole, in percent.
         This value depends on how many operations are already complete.
-        Returns 100 if <link to="#completed" /> is true.
+        Returns 100 if <link to="#completed" /> is @c true.
       </desc>
     </attribute>
 
@@ -8078,16 +8059,16 @@
     <attribute name="resultCode" type="long" readonly="yes">
       <desc>
         Result code of the progress task.
-        Valid only if <link to="#completed"/> is true.
+        Valid only if <link to="#completed"/> is @c true.
       </desc>
     </attribute>
 
     <attribute name="errorInfo" type="IVirtualBoxErrorInfo" readonly="yes">
       <desc>
         Extended information about the unsuccessful result of the
-        progress operation. May be NULL if no extended information
+        progress operation. May be @c null if no extended information
         is available.
-        Valid only if <link to="#completed"/> is true and
+        Valid only if <link to="#completed"/> is @c true and
         <link to="#resultCode"/> indicates a failure.
       </desc>
     </attribute>
@@ -8157,8 +8138,7 @@
       <desc>
         Cancels the task.
         <note>
-          If <link to="#cancelable"/> is <tt>false</tt>, then
-          this method will fail.
+          If <link to="#cancelable"/> is @c false, then this method will fail.
         </note>
 
         <result name="VBOX_E_INVALID_OBJECT_STATE">
@@ -8235,7 +8215,7 @@
       last taken snapshot (i.e. the head snapshot on the branch) and it
       cannot be changed.
 
-      The current snapshot is <tt>null</tt> if the machine doesn't have
+      The current snapshot is @c null if the machine doesn't have
       snapshots at all; in this case the current machine state is just
       current settings of this machine plus its current execution state.
 
@@ -8336,15 +8316,14 @@
 
     <attribute name="online" type="boolean" readonly="yes">
       <desc>
-        <tt>true</tt> if this snapshot is an online snapshot and
-        <tt>false</tt> otherwise.
+        @c true if this snapshot is an online snapshot and @c false otherwise.
 
         <note>
-          When this attribute is <tt>true</tt>, the
+          When this attribute is @c true, the
           <link to="IMachine::stateFilePath"/> attribute of the
           <link to="#machine"/> object associated with this snapshot
           will point to the saved state file. Otherwise, it will be
-          <tt>null</tt>.
+          @c null.
         </note>
       </desc>
     </attribute>
@@ -8365,7 +8344,7 @@
         Parent snapshot (a snapshot this one is based on).
         <note>
           It's not an error to read this attribute on a snapshot
-          that doesn't have a parent -- a null object will be
+          that doesn't have a parent -- a @c null object will be
           returned to indicate this.
         </note>
       </desc>
@@ -8521,7 +8500,7 @@
       Note that when VirtualBox starts up (e.g. the VirtualBox object gets
       created for the first time), all known media are in the
       <link to="MediaState_Inaccessible"/> state but the value of the <link
-      to="#lastAccessError"/> attribute is <tt>null</tt> because no actual
+      to="#lastAccessError"/> attribute is @c null because no actual
       accessibility check is made on startup. This is done to make the
       VirtualBox object ready for serving requests as
       fast as possible and let the end-user application decide if it needs to
@@ -8544,7 +8523,7 @@
     <attribute name="description" type="wstring">
       <desc>
         Optional description of the medium. For newly created media, the value
-        of this attribute value is <tt>null</tt>.
+        of this attribute value is @c null.
 
         Media types that don't support this attribute will return E_NOTIMPL in
         attempt to get or set this attribute's value.
@@ -8579,7 +8558,7 @@
         may be used to get more details about the failure. If the state of the
         medium is <link to="MediaState_LockedRead"/> or
         <link to="MediaState_LockedWrite"/> then it remains the same, and a
-        non-null value of <link to="#lastAccessError"/> will indicate a failed
+        non-@c null value of <link to="#lastAccessError"/> will indicate a failed
         accessibility check in this case.
 
         Note that not all media states are applicable to all media types.
@@ -8652,7 +8631,7 @@
 
         Accessibility checks are performed each time the <link to="#state"/>
         attribute is read. A @c null string is returned if the last
-        accessibility check was successful. A non-null string indicates a
+        accessibility check was successful. A non-@c null string indicates a
         failure and should normally describe a reason of the failure (for
         example, a file read error).
       </desc>
@@ -8662,7 +8641,7 @@
       <desc>
         Array of UUIDs of all machines this medium is attached to.
 
-        A <tt>null</tt> array is returned if this medium is not attached to any
+        A @c null array is returned if this medium is not attached to any
         machine or to any machine's snapshot.
 
         <note>
@@ -8687,7 +8666,7 @@
         If the medium is not attached to the machine in the current state, then
         the array will contain only snapshot IDs.
 
-        The returned array may be <tt>null</tt> if this medium is not attached
+        The returned array may be @c null if this medium is not attached
         to the given machine at all, neither in the current state nor in one of
         the snapshots.
       </desc>
@@ -9027,7 +9006,7 @@
       Differencing hard disks can be distinguished from base hard disks by
       querying the <link to="#parent"/> attribute: base hard disks do not have
       parents they would depend on, so the value of this attribute is always
-      <tt>null</tt> for them. Using this attribute, it is possible to walk up
+      @c null for them. Using this attribute, it is possible to walk up
       the hard disk tree (from the child hard disk to its parent). It is also
       possible to walk down the tree using the <link to="#children"/>
       attribute.
@@ -9309,14 +9288,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         on).
 
         Only differencing hard disks have parents. For base (non-differencing)
-        hard disks, <tt>null</tt> is returned.
+        hard disks, @c null is returned.
       </desc>
     </attribute>
 
     <attribute name="children" type="IHardDisk" safearray="yes" readonly="yes">
       <desc>
         Children of this hard disk (all differencing hard disks directly based
-        on this hard disk). A <tt>null</tt> array is returned if this hard disk
+        on this hard disk). A @c null array is returned if this hard disk
         does not have any children.
       </desc>
     </attribute>
@@ -9334,8 +9313,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="readOnly" type="boolean" readonly="yes">
       <desc>
-        Returns <tt>true</tt> if this hard disk is read-only and <tt>false</tt>
-        otherwise.
+        Returns @c true if this hard disk is read-only and @c false otherwise.
 
         A hard disk is considered to be read-only when its contents cannot be
         modified without breaking the integrity of other parties that depend on
@@ -9346,8 +9324,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         The value of this attribute can be used to determine the kind of the
         attachment that will take place when attaching this hard disk to a
-        virtual machine. If the value is <tt>false</tt> then the hard disk will
-        be attached directly. If the value is <tt>true</tt> then the hard disk
+        virtual machine. If the value is @c false then the hard disk will
+        be attached directly. If the value is @c true then the hard disk
         will be attached indirectly by creating a new differencing child hard
         disk for that. See the interface description for more information.
 
@@ -9395,7 +9373,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         <note>
           Reading this property on a base (non-differencing) hard disk will
-          always <tt>false</tt>. Changing the value of this property in this
+          always @c false. Changing the value of this property in this
           case is not supported.
         </note>
 
@@ -9415,13 +9393,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         The list of all properties supported by the given hard disk format can
         be obtained with <link to="IHardDiskFormat::describeProperties"/>.
 
-        Note that if this method returns a <tt>null</tt> @a value, the requested
+        Note that if this method returns a @c null @a value, the requested
         property is supported but currently not assigned any value.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           Requested property does not exist (not supported by the format).
         </result>
-        <result name="E_INVALIDARG">@a name is NULL or empty.</result>
+        <result name="E_INVALIDARG">@a name is @c null or empty.</result>
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>Name of the property to get.</desc>
@@ -9438,14 +9416,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         The list of all properties supported by the given hard disk format can
         be obtained with <link to="IHardDiskFormat::describeProperties"/>.
 
-        Note that setting the property value to <tt>null</tt> is equivalent to
+        Note that setting the property value to @c null is equivalent to
         deleting the existing value. A default value (if it is defined for this
         property) will be used by the format backend in this case.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           Requested property does not exist (not supported by the format).
         </result>
-        <result name="E_INVALIDARG">@a name is NULL or empty.</result>
+        <result name="E_INVALIDARG">@a name is @c null or empty.</result>
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>Name of the property to set.</desc>
@@ -9461,7 +9439,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         The names of the properties to get are specified using the @a names
         argument which is a list of comma-separated property names or
-        <tt>null</tt> if all properties are to be returned. Note that currently
+        @c null if all properties are to be returned. Note that currently
         the value of this argument is ignored and the method always returns all
         existing properties.
 
@@ -9475,7 +9453,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         index in the second array.
 
         Note that for properties that do not have assigned values,
-        <tt>null</tt> is returned at the appropriate index in the
+        @c null is returned at the appropriate index in the
         @a returnValues array.
 
       </desc>
@@ -9513,7 +9491,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         The list of all properties supported by the given hard disk format can
         be obtained with <link to="IHardDiskFormat::describeProperties"/>.
 
-        Note that setting the property value to <tt>null</tt> is equivalent to
+        Note that setting the property value to @c null is equivalent to
         deleting the existing value. A default value (if it is defined for this
         property) will be used by the format backend in this case.
       </desc>
@@ -9736,7 +9714,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         clone will be randomly generated.
 
         The @a parent argument defines which hard disk will be the parent
-        of the clone. Passing a NULL reference indicates that the clone will
+        of the clone. Passing a @c null reference indicates that the clone will
         be a base image, i.e. completely independent. It is possible to specify
         an arbitrary hard disk for this parameter, including the parent of the
         hard disk which is being cloned. Even cloning to a child of the source
@@ -9939,7 +9917,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Identifier of this format.
 
-        The format identifier is a non-null non-empty ASCII string. Note that
+        The format identifier is a non-@c null non-empty ASCII string. Note that
         this string is case-insensitive. This means that, for example, all of
         the following strings:
         <pre>
@@ -9997,7 +9975,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         The returned arrays are filled in only if the
         <link to="HardDiskFormatCapabilities_Properties"/> flag is set.
-        All arguments must be non-NULL.
+        All arguments must be non-@c null.
 
         <see>DataType</see>
         <see>DataFlags</see>
@@ -10372,12 +10350,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
       <param name="x" type="long" dir="in">
         <desc>
-          X coordinate of the pointer in pixels, starting from <tt>1</tt>.
+          X coordinate of the pointer in pixels, starting from @c 1.
         </desc>
       </param>
       <param name="y" type="long" dir="in">
         <desc>
-          Y coordinate of the pointer in pixels, starting from <tt>1</tt>.
+          Y coordinate of the pointer in pixels, starting from @c 1.
         </desc>
       </param>
       <param name="dz" type="long" dir="in">
@@ -10396,7 +10374,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
             <tr><td>Bit 1 (<tt>0x02</tt>)</td><td>right mouse button</td></tr>
             <tr><td>Bit 2 (<tt>0x04</tt>)</td><td>middle mouse button</td></tr>
           </table>
-          A value of <tt>1</tt> means the corresponding button is pressed.
+          A value of @c 1 means the corresponding button is pressed.
           otherwise it is released.
         </desc>
       </param>
@@ -10509,7 +10487,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         of its own, and any changes made to it are not guaranteed to be
         visible until the affected portion of IFramebuffer is updated.  The
         overlay can be created lazily the first time it is requested.  This
-        attribute can also return NULL to signal that the overlay is not
+        attribute can also return @c null to signal that the overlay is not
         implemented.
       </desc>
     </attribute>
@@ -10590,7 +10568,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         buffer pointed to by the @a VRAM parameter and the implementation is
         free to choose which mode to use. To indicate that this frame buffer uses
         the direct mode, the implementation of the <link to="#usesGuestVRAM"/>
-        attribute must return <tt>true</tt> and <link to="#address"/> must
+        attribute must return @c true and <link to="#address"/> must
         return exactly the same address that is passed in the @a VRAM parameter
         of this method; otherwise it is assumed that the indirect strategy is
         chosen.
@@ -10673,7 +10651,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Returns whether the frame buffer implementation is willing to
         support a given video mode. In case it is not able to render
         the video mode (or for some reason not willing), it should
-        return false. Usually this method is called when the guest
+        return @c false. Usually this method is called when the guest
         asks the VMM device whether a given video mode is supported
         so the information returned is directly exposed to the guest.
         It is important that this method returns very quickly.
@@ -10688,11 +10666,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Returns the visible region of this frame buffer.
 
-        If the @a rectangles parameter is <tt>NULL</tt> then the value of the
+        If the @a rectangles parameter is @c null then the value of the
         @a count parameter is ignored and the number of elements necessary to
         describe the current visible region is returned in @a countCopied.
 
-        If @a rectangles is not <tt>NULL</tt> but @a count is less
+        If @a rectangles is not @c null but @a count is less
         than the required number of elements to store region data, the method
         will report a failure. If @a count is equal or greater than the
         required number of elements, then the actual number of elements copied
@@ -10707,10 +10685,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </note>
       </desc>
       <param name="rectangles" type="octet" mod="ptr" dir="in">
-        <desc>Pointer to the <tt>RTRECT</tt> array to receive region data.</desc>
+        <desc>Pointer to the @c RTRECT array to receive region data.</desc>
       </param>
       <param name="count" type="unsigned long" dir="in">
-        <desc>Number of <tt>RTRECT</tt> elements in the @a rectangles array.</desc>
+        <desc>Number of @c RTRECT elements in the @a rectangles array.</desc>
       </param>
       <param name="countCopied" type="unsigned long" dir="return">
         <desc>Number of elements copied to the @a rectangles array.</desc>
@@ -10739,10 +10717,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </note>
       </desc>
       <param name="rectangles" type="octet" mod="ptr" dir="in">
-        <desc>Pointer to the <tt>RTRECT</tt> array.</desc>
+        <desc>Pointer to the @c RTRECT array.</desc>
       </param>
       <param name="count" type="unsigned long" dir="in">
-        <desc>Number of <tt>RTRECT</tt> elements in the @a rectangles array.</desc>
+        <desc>Number of @c RTRECT elements in the @a rectangles array.</desc>
       </param>
     </method>
 
@@ -10869,15 +10847,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         should issue the request and wait for a resolution change and
         after a timeout retry.
 
-        Specifying <tt>0</tt> for either @a width, @a height or @a bitsPerPixel
+        Specifying @c 0 for either @a width, @a height or @a bitsPerPixel
         parameters means that the corresponding values should be taken from the
         current video mode (i.e. left unchanged).
 
         If the guest OS supports multi-monitor configuration then the @a display
         parameter specifies the number of the guest display to send the hint to:
-        <tt>0</tt> is the primary display, <tt>1</tt> is the first secondary and
+        @c 0 is the primary display, @c 1 is the first secondary and
         so on. If the multi-monitor configuration is not supported, @a display
-        must be <tt>0</tt>.
+        must be @c 0.
 
         <result name="E_INVALIDARG">
           The @a display is not associated with any monitor.
@@ -10896,7 +10874,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         integration) mode.
         <note>
           Calling this method has no effect if <link
-          to="IGuest::supportsSeamless"/> returns <tt>false</tt>.
+          to="IGuest::supportsSeamless"/> returns @c false.
         </note>
       </desc>
       <param name="enabled" type="boolean" dir="in"/>
@@ -11119,7 +11097,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="MACAddress" type="wstring">
       <desc>
         Ethernet MAC address of the adapter, 12 hexadecimal characters. When setting
-        it to NULL, VirtualBox will generate a unique MAC address.
+        it to @c null, VirtualBox will generate a unique MAC address.
       </desc>
     </attribute>
 
@@ -11556,8 +11534,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="createDeviceFilter">
       <desc>
         Creates a new USB device filter. All attributes except
-        the filter name are set to <tt>null</tt> (any match),
-        <i>active</i> is <tt>false</tt> (the filter is not active).
+        the filter name are set to @c null (any match),
+        <i>active</i> is @c false (the filter is not active).
 
         The created filter can then be added to the list of filters using
         <link to="#insertDeviceFilter"/>.
@@ -11794,7 +11772,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         </li>
         <li><i>Any match</i>. Any value of the corresponding device attribute
-          will match the given filter. An empty or <tt>null</tt> string is
+          will match the given filter. An empty or @c null string is
           used to construct this type of filtering expressions.
 
         </li>
@@ -11815,7 +11793,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Visible name for this filter.
         This name is used to visually distinguish one filter from another,
-        so it can neither be <tt>null</tt> nor an empty string.
+        so it can neither be @c null nor an empty string.
       </desc>
     </attribute>
 
@@ -12299,7 +12277,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         Accessibility checks are performed each time the <link to="#accessible"/>
         attribute is read. A @c null string is returned if the last
-        accessibility check was successful. A non-null string indicates a
+        accessibility check was successful. A non-@c null string indicates a
         failure and should normally describe a reason of the failure (for
         example, a file read error).
       </desc>
@@ -12343,7 +12321,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Assigns the machine object associated with this direct-type
         session or informs the session that it will be a remote one
-        (if @a machine == NULL).
+        (if @a machine == @c null).
 
         <result name="VBOX_E_INVALID_VM_STATE">
           Session state prevents operation.
@@ -12825,7 +12803,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       The connection type of the storage controller.
     </desc>
     <const name="Null"         value="0">
-      <desc><tt>null</tt> value. Never used by the API.</desc>
+      <desc>@c null value. Never used by the API.</desc>
     </const>
     <const name="IDE"       value="1"/>
     <const name="SATA"      value="2"/>
@@ -12841,7 +12819,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </desc>
 
     <const name="Null"         value="0">
-      <desc><tt>null</tt> value. Never used by the API.</desc>
+      <desc>@c null value. Never used by the API.</desc>
     </const>
     <const name="LsiLogic"  value="1"/>
     <const name="BusLogic"  value="2"/>

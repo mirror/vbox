@@ -29,7 +29,7 @@
 #include <VBox/com/Guid.h>
 #include <VBox/com/array.h>
 #include <VBox/com/ErrorInfo.h>
-#include <VBox/com/errorprint2.h>
+#include <VBox/com/errorprint.h>
 #include <VBox/com/EventQueue.h>
 
 #include <VBox/com/VirtualBox.h>
@@ -543,7 +543,7 @@ static int handleStartVM(HandlerArg *a)
             ComPtr <IVirtualBoxErrorInfo> errorInfo;
             CHECK_ERROR_RET(progress, COMGETTER(ErrorInfo)(errorInfo.asOutParam()), 1);
             ErrorInfo info (errorInfo);
-            GluePrintErrorInfo(info);
+            com::GluePrintErrorInfo(info);
         }
         else
         {
@@ -607,7 +607,25 @@ static int handleControlVM(HandlerArg *a)
         }
         else if (!strcmp(a->argv[1], "poweroff"))
         {
-            CHECK_ERROR_BREAK (console, PowerDown());
+            ComPtr<IProgress> progress;
+            CHECK_ERROR_BREAK (console, PowerDown(progress.asOutParam()));
+
+            showProgress(progress);
+
+            LONG iRc;
+            progress->COMGETTER(ResultCode)(&iRc);
+            if (FAILED(iRc))
+            {
+                com::ProgressErrorInfo info(progress);
+                if (info.isBasicAvailable())
+                {
+                    RTPrintf("Error: failed to power off machine. Error message: %lS\n", info.getText().raw());
+                }
+                else
+                {
+                    RTPrintf("Error: failed to power off machine. No error message available!\n");
+                }
+            }
         }
         else if (!strcmp(a->argv[1], "savestate"))
         {
@@ -1180,7 +1198,7 @@ static int handleDiscardState(HandlerArg *a)
             {
                 ComPtr<IConsole> console;
                 CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
-                CHECK_ERROR_BREAK(console, DiscardSavedState());
+                CHECK_ERROR_BREAK(console, ForgetSavedState(true));
             }
             while (0);
             CHECK_ERROR_BREAK(a->session, Close());
@@ -1985,7 +2003,7 @@ int main(int argc, char *argv[])
             RTPrintf("Most likely, the VirtualBox COM server is not running or failed to start.\n");
         }
         else
-            GluePrintErrorInfo(info);
+            com::GluePrintErrorInfo(info);
         break;
     }
 
