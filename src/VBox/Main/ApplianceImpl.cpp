@@ -2899,6 +2899,8 @@ int Appliance::writeFS(TaskWriteOVF *pTask)
         else
             pelmToAddVirtualSystemsTo = pelmRoot;       // add virtual system directly under root element
 
+        uint32_t cDisks = 0;
+
         list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
         /* Iterate through all virtual systems of that appliance */
         for (it = m->virtualSystemDescriptions.begin();
@@ -3096,7 +3098,6 @@ int Appliance::writeFS(TaskWriteOVF *pTask)
             int32_t lSCSIControllerIndex = 0;
 
             uint32_t ulInstanceID = 1;
-            uint32_t cDisks = 0;
 
             for (size_t uLoop = 1;
                  uLoop <= 2;
