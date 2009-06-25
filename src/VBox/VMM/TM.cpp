@@ -1943,7 +1943,9 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
     {
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncRunStoppedAlready);
         u64Now = pVM->tm.s.u64VirtualSync;
+#ifdef DEBUG_bird
         Assert(u64Now <= pNext->u64Expire);
+#endif
     }
     else
     {
@@ -2000,10 +2002,12 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
         u64Max = u64VirtualNow - offSyncGivenUp;
 
     /* assert sanity */
+#ifdef DEBUG_bird
     Assert(u64Now <= u64VirtualNow - offSyncGivenUp);
     Assert(u64Max <= u64VirtualNow - offSyncGivenUp);
     Assert(u64Now <= u64Max);
     Assert(offSyncGivenUp == pVM->tm.s.offVirtualSyncGivenUp);
+#endif
 
     /*
      * Process the expired timers moving the clock along as we progress.
@@ -2079,7 +2083,9 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
         /* calc the slack we've handed out. */
         const uint64_t u64VirtualNow2 = TMVirtualGetNoCheck(pVM);
         Assert(u64VirtualNow2 >= u64VirtualNow);
+#ifdef DEBUG_bird
         AssertMsg(pVM->tm.s.u64VirtualSync >= u64Now, ("%'RU64 < %'RU64\n", pVM->tm.s.u64VirtualSync, u64Now));
+#endif
         const uint64_t offSlack = pVM->tm.s.u64VirtualSync - u64Now;
         STAM_STATS({
             if (offSlack)
