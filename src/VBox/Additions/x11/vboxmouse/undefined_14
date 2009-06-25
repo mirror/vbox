@@ -123,3 +123,4 @@ GetMotionHistory
 GetMotionHistorySize
 xf86SetSerialSpeed
 fflush
+abs
