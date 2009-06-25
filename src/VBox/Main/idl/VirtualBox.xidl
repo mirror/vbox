@@ -9606,7 +9606,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           state for the duration of this operation.
         </note>
         <result name="VBOX_E_OBJECT_IN_USE">
-          Hard disk not in NotCreated state.
+          Hard disk not in @c NotCreated state.
         </result>
       </desc>
       <param name="target" type="IHardDisk" dir="in">
@@ -9707,11 +9707,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Starts creating a clone of this hard disk in the format and at the
         location defined by the @a target argument.
 
-        The target hard disk must be in <link to="MediaState_NotCreated"/>
-        state (i.e. must not have an existing storage unit). Upon successful
-        completion, the cloned hard disk will contain exactly the same sector
-        data as the hard disk being cloned, except that a new UUID for the
-        clone will be randomly generated.
+        The target hard disk must be either in <link to="MediaState_NotCreated"/>
+        state (i.e. must not have an existing storage unit) or in
+        <link to="MediaState_Created"/> state (i.e. created and not locked, and
+        big enough to hold the data or else the copy will be partial). Upon
+        successful completion, the cloned hard disk will contain exactly the
+        same sector data as the hard disk being cloned, except that in the
+        first case a new UUID for the clone will be randomly generated, and in
+        the second case the UUID will remain unchanged.
 
         The @a parent argument defines which hard disk will be the parent
         of the clone. Passing a @c null reference indicates that the clone will
@@ -9728,6 +9731,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           This hard disk will be placed to <link to="MediaState_LockedRead"/>
           state for the duration of this operation.
         </note>
+        <result name="E_NOTIMPL">
+          The specified cloning variant is not supported at the moment.
+        </result>
       </desc>
       <param name="target" type="IHardDisk" dir="in">
         <desc>Target hard disk.</desc>
