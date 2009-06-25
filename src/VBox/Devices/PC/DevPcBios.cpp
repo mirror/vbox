@@ -224,6 +224,36 @@ typedef struct DMISYSTEMINF
 } *PDMISYSTEMINF;
 AssertCompileSize(DMISYSTEMINF, 0x1b);
 
+/** DMI processor information */
+typedef struct DMIPROCESSORINF
+{
+    DMIHDR          header;
+    uint8_t         u8SocketDesignation;
+    uint8_t         u8ProcessorType;
+    uint8_t         u8ProcessorFamily;
+    uint8_t         u8ProcessorManufacturer;
+    uint64_t        u64ProcessorIdentification;
+    uint8_t         u8ProcessorVersion;
+    uint8_t         u8Voltage;
+    uint16_t        u16ExternalClock;
+    uint16_t        u16MaxSpeed;
+    uint16_t        u16CurrentSpeed;
+    uint8_t         u8Status;
+    uint8_t         u8ProcessorUpgrade;
+    uint16_t        u16L1CacheHandle;
+    uint16_t        u16L2CacheHandle;
+    uint16_t        u16L3CacheHandle;
+    uint8_t         u8SerialNumber;
+    uint8_t         u8AssetTag;
+    uint8_t         u8PartNumber;
+    uint8_t         u8CoreCount;
+    uint8_t         u8CoreEnabled;
+    uint8_t         u8ThreadCount;
+    uint16_t        u16ProcessorCharacteristics;
+    uint16_t        u16ProcessorFamily2;
+} PDMIPROCESSORINF;
+AssertCompileSize(DMIPROCESSORINF, 0x2a);
+
 /** MPS floating pointer structure */
 typedef struct MPSFLOATPTR
 {
