@@ -646,6 +646,12 @@ def evalCmd(ctx, args):
             traceback.print_exc()
    return 0
 
+def reloadExtCmd(ctx, args):
+   # maybe will want more args smartness
+   checkUserExtensions(ctx, commands, ctx['vb'].homeFolder)
+   autoCompletion(commands, ctx)
+   return 0
+
 aliases = {'s':'start',
            'i':'info',
            'l':'list',
@@ -654,27 +660,28 @@ aliases = {'s':'start',
            'q':'quit', 'exit':'quit',
            'v':'verbose'}
 
-commands = {'help':['Prints help information', helpCmd],
-            'start':['Start virtual machine by name or uuid', startCmd],
-            'create':['Create virtual machine', createCmd],
-            'remove':['Remove virtual machine', removeCmd],
-            'pause':['Pause virtual machine', pauseCmd],
-            'resume':['Resume virtual machine', resumeCmd],
-            'stats':['Stats for virtual machine', statsCmd],
-            'powerdown':['Power down virtual machine', powerdownCmd],
-            'list':['Shows known virtual machines', listCmd],
-            'info':['Shows info on machine', infoCmd],
-            'aliases':['Shows aliases', aliasesCmd],
-            'verbose':['Toggle verbosity', verboseCmd],
-            'setvar':['Set VMs variable: setvar Fedora BIOSSettings.ACPIEnabled True', setvarCmd],
-            'eval':['Evaluate arbitrary Python construction: eval for m in getMachines(ctx): print m.name,"has",m.memorySize,"M"', evalCmd],
-            'quit':['Exits', quitCmd],
-            'host':['Show host information', hostCmd],
-            'guest':['Execute command for guest: guest Win32 console.mouse.putMouseEvent(20, 20, 0, 0)', guestCmd],
-            'monitorGuest':['Monitor what happens with the guest for some time: monitorGuest Win32 10', monitorGuestCmd],
-            'monitorVbox':['Monitor what happens with Virtual Box for some time: monitorVbox 10', monitorVboxCmd],
-            'portForward':['Setup permanent port forwarding for a VM, takes adapter number host port and guest port: portForward Win32 0 8080 80', portForwardCmd],
-            'showLog':['Show log file of the VM, : showLog Win32', showLogCmd],
+commands = {'help':['Prints help information', helpCmd, 0],
+            'start':['Start virtual machine by name or uuid', startCmd, 0],
+            'create':['Create virtual machine', createCmd, 0],
+            'remove':['Remove virtual machine', removeCmd, 0],
+            'pause':['Pause virtual machine', pauseCmd, 0],
+            'resume':['Resume virtual machine', resumeCmd, 0],
+            'stats':['Stats for virtual machine', statsCmd, 0],
+            'powerdown':['Power down virtual machine', powerdownCmd, 0],
+            'list':['Shows known virtual machines', listCmd, 0],
+            'info':['Shows info on machine', infoCmd, 0],
+            'aliases':['Shows aliases', aliasesCmd, 0],
+            'verbose':['Toggle verbosity', verboseCmd, 0],
+            'setvar':['Set VMs variable: setvar Fedora BIOSSettings.ACPIEnabled True', setvarCmd, 0],
+            'eval':['Evaluate arbitrary Python construction: eval for m in getMachines(ctx): print m.name,"has",m.memorySize,"M"', evalCmd, 0],
+            'quit':['Exits', quitCmd, 0],
+            'host':['Show host information', hostCmd, 0],
+            'guest':['Execute command for guest: guest Win32 console.mouse.putMouseEvent(20, 20, 0, 0)', guestCmd, 0],
+            'monitorGuest':['Monitor what happens with the guest for some time: monitorGuest Win32 10', monitorGuestCmd, 0],
+            'monitorVbox':['Monitor what happens with Virtual Box for some time: monitorVbox 10', monitorVboxCmd, 0],
+            'portForward':['Setup permanent port forwarding for a VM, takes adapter number host port and guest port: portForward Win32 0 8080 80', portForwardCmd, 0],
+            'showLog':['Show log file of the VM, : showLog Win32', showLogCmd, 0],
+            'reloadExt':['Reload custom extensions: reloadExt', reloadExtCmd, 0],
             }
 
 def runCommand(ctx, cmd):
@@ -690,11 +697,40 @@ def runCommand(ctx, cmd):
         return 0
     return ci[1](ctx, args)
 
+#
+# To write your own custom commands to vboxshell, create
+# file ~/.VirtualBox/shellext.py with content like
+#
+# def runTestCmd(ctx, args):
+#    print "Testy test", ctx['vb']
+#    return 0
+#
+# commands = {
+#    'test': ['Test help', runTestCmd]
+# }
+# and issue reloadExt shell command.
+# This file also will be read automatically on startup.
+#
+def checkUserExtensions(ctx, cmds, folder):
+    name =  os.path.join(folder, "shellext.py")
+    if not os.path.isfile(name):
+        return
+    d = {}
+    try:
+        execfile(name, d, d)
+        for (k,v) in d['commands'].items():
+            print "customize: adding \"%s\" - %s" %(k, v[0])
+            cmds[k] = [v[0], v[1], 1]
+    except:
+        print "Error loading user extensions:"
+        traceback.print_exc()
 
 def interpret(ctx):
     vbox = ctx['vb']
     print "Running VirtualBox version %s" %(vbox.version)
     ctx['perf'] = ctx['global'].getPerfCollector(ctx['vb'])
+
+    checkUserExtensions(ctx, commands, vbox.homeFolder)
 
     autoCompletion(commands, ctx)
 
