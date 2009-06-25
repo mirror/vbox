@@ -1594,8 +1594,13 @@ STDMETHODIMP HardDisk::CloneTo (IHardDisk *aTarget,
 
     try
     {
-        if (target->m.state != MediaState_NotCreated)
+        if (    target->m.state != MediaState_NotCreated
+            &&  target->m.state != MediaState_Created)
             throw target->setStateError();
+
+        /** @todo implement the cloning to existing media */
+        if (target->m.state == MediaState_Created)
+            throw setError (E_NOTIMPL, tr ("This cloning variant is not implemented"));
 
         /** @todo separate out creating/locking an image chain from
          * SessionMachine::lockMedia and use it from here too.
