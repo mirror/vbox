@@ -229,6 +229,7 @@ renderspuMakeCurrent(GLint crWindow, GLint nativeWindow, GLint ctx)
             crInfo( "Render SPU: GL_VENDOR:   %s", render_spu.ws.glGetString( GL_VENDOR ) );
             crInfo( "Render SPU: GL_RENDERER: %s", render_spu.ws.glGetString( GL_RENDERER ) );
             crInfo( "Render SPU: GL_VERSION:  %s", render_spu.ws.glGetString( GL_VERSION ) );
+            crInfo( "Render SPU: GL_EXTENSIONS: %s", render_spu.ws.glGetString( GL_EXTENSIONS ) );
             if (crStrstr(extString, "GL_ARB_window_pos"))
                 context->haveWindowPosARB = GL_TRUE;
             else
