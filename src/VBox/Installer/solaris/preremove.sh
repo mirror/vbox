@@ -67,9 +67,6 @@ if test "$currentzone" = "global"; then
     if test -h "/dev/vboxusbmon" || test -f "/dev/vboxusbmon"; then
         rm -f /dev/vboxusbmon
     fi
-
-    # remove files installed by Python build
-    rm -rf /opt/VirtualBox/sdk/installer/build
 fi
 
 echo "Done."
