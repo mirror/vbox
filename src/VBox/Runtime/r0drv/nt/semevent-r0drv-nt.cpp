@@ -61,12 +61,12 @@ typedef struct RTSEMEVENTINTERNAL
 RTDECL(int)  RTSemEventCreate(PRTSEMEVENT pEventSem)
 {
     Assert(sizeof(RTSEMEVENTINTERNAL) > sizeof(void *));
-    PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)RTMemAlloc(sizeof(*pEventInt));
-    if (pEventInt)
+    PRTSEMEVENTINTERNAL pThis = (PRTSEMEVENTINTERNAL)RTMemAlloc(sizeof(*pThis));
+    if (pThis)
     {
-        pEventInt->u32Magic = RTSEMEVENT_MAGIC;
-        KeInitializeEvent(&pEventInt->Event, SynchronizationEvent, FALSE);
-        *pEventSem = pEventInt;
+        pThis->u32Magic = RTSEMEVENT_MAGIC;
+        KeInitializeEvent(&pThis->Event, SynchronizationEvent, FALSE);
+        *pEventSem = pThis;
         return VINF_SUCCESS;
     }
     return VERR_NO_MEMORY;
@@ -78,21 +78,21 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
     /*
      * Validate input.
      */
-    PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)EventSem;
-    if (!pEventInt)
+    PRTSEMEVENTINTERNAL pThis = (PRTSEMEVENTINTERNAL)EventSem;
+    if (!pThis)
         return VERR_INVALID_PARAMETER;
-    if (pEventInt->u32Magic != RTSEMEVENT_MAGIC)
+    if (pThis->u32Magic != RTSEMEVENT_MAGIC)
     {
-        AssertMsgFailed(("pEventInt->u32Magic=%RX32 pEventInt=%p\n", pEventInt->u32Magic, pEventInt));
+        AssertMsgFailed(("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis));
         return VERR_INVALID_PARAMETER;
     }
 
     /*
      * Invalidate it and signal the object just in case.
      */
-    ASMAtomicIncU32(&pEventInt->u32Magic);
-    KeSetEvent(&pEventInt->Event, 0xfff, FALSE);
-    RTMemFree(pEventInt);
+    ASMAtomicIncU32(&pThis->u32Magic);
+    KeSetEvent(&pThis->Event, 0xfff, FALSE);
+    RTMemFree(pThis);
     return VINF_SUCCESS;
 }
 
@@ -102,20 +102,20 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
     /*
      * Validate input.
      */
-    PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)EventSem;
-    if (!pEventInt)
+    PRTSEMEVENTINTERNAL pThis = (PRTSEMEVENTINTERNAL)EventSem;
+    if (!pThis)
         return VERR_INVALID_PARAMETER;
-    if (    !pEventInt
-        ||  pEventInt->u32Magic != RTSEMEVENT_MAGIC)
+    if (    !pThis
+        ||  pThis->u32Magic != RTSEMEVENT_MAGIC)
     {
-        AssertMsgFailed(("pEventInt->u32Magic=%RX32 pEventInt=%p\n", pEventInt ? pEventInt->u32Magic : 0, pEventInt));
+        AssertMsgFailed(("pThis->u32Magic=%RX32 pThis=%p\n", pThis ? pThis->u32Magic : 0, pThis));
         return VERR_INVALID_PARAMETER;
     }
 
     /*
      * Signal the event object.
      */
-    KeSetEvent(&pEventInt->Event, 1, FALSE);
+    KeSetEvent(&pThis->Event, 1, FALSE);
     return VINF_SUCCESS;
 }
 
@@ -125,13 +125,13 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterrup
     /*
      * Validate input.
      */
-    PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)EventSem;
-    if (!pEventInt)
+    PRTSEMEVENTINTERNAL pThis = (PRTSEMEVENTINTERNAL)EventSem;
+    if (!pThis)
         return VERR_INVALID_PARAMETER;
-    if (    !pEventInt
-        ||  pEventInt->u32Magic != RTSEMEVENT_MAGIC)
+    if (    !pThis
+        ||  pThis->u32Magic != RTSEMEVENT_MAGIC)
     {
-        AssertMsgFailed(("pEventInt->u32Magic=%RX32 pEventInt=%p\n", pEventInt ? pEventInt->u32Magic : 0, pEventInt));
+        AssertMsgFailed(("pThis->u32Magic=%RX32 pThis=%p\n", pThis ? pThis->u32Magic : 0, pThis));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -142,17 +142,17 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterrup
     NTSTATUS        rcNt;
     KPROCESSOR_MODE WaitMode   = fInterruptible ? UserMode : KernelMode;
     if (cMillies == RT_INDEFINITE_WAIT)
-        rcNt = KeWaitForSingleObject(&pEventInt->Event, Executive, WaitMode, fInterruptible, NULL);
+        rcNt = KeWaitForSingleObject(&pThis->Event, Executive, WaitMode, fInterruptible, NULL);
     else
     {
         LARGE_INTEGER Timeout;
         Timeout.QuadPart = -(int64_t)cMillies * 10000;
-        rcNt = KeWaitForSingleObject(&pEventInt->Event, Executive, WaitMode, fInterruptible, &Timeout);
+        rcNt = KeWaitForSingleObject(&pThis->Event, Executive, WaitMode, fInterruptible, &Timeout);
     }
     switch (rcNt)
     {
         case STATUS_SUCCESS:
-            if (pEventInt->u32Magic == RTSEMEVENT_MAGIC)
+            if (pThis->u32Magic == RTSEMEVENT_MAGIC)
                 return VINF_SUCCESS;
             return VERR_SEM_DESTROYED;
         case STATUS_ALERTED:
@@ -162,8 +162,8 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterrup
         case STATUS_TIMEOUT:
             return VERR_TIMEOUT;
         default:
-            AssertMsgFailed(("pEventInt->u32Magic=%RX32 pEventInt=%p: wait returned %lx!\n",
-                             pEventInt->u32Magic, pEventInt, (long)rcNt));
+            AssertMsgFailed(("pThis->u32Magic=%RX32 pThis=%p: wait returned %lx!\n",
+                             pThis->u32Magic, pThis, (long)rcNt));
             return VERR_INTERNAL_ERROR;
     }
 }
