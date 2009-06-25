@@ -486,6 +486,7 @@ VMMR3DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, 
      * Search the memory - ignore MMIO and zero pages, also don't
      * bother to match across ranges.
      */
+    pgmLock(pVM);
     for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
          pRam;
          pRam = pRam->CTX_SUFF(pNext))
@@ -533,6 +534,7 @@ VMMR3DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, 
                         if (fRc)
                         {
                             *pGCPhysHit = (GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK) + offPage;
+                            pgmUnlock(pVM);
                             return VINF_SUCCESS;
                         }
                     }
@@ -545,10 +547,14 @@ VMMR3DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, 
                 /* advance to the next page. */
                 GCPhys |= PAGE_OFFSET_MASK;
                 if (GCPhys++ >= GCPhysLast)
+                {
+                    pgmUnlock(pVM);
                     return VERR_DBGF_MEM_NOT_FOUND;
+                }
             }
         }
     }
+    pgmUnlock(pVM);
     return VERR_DBGF_MEM_NOT_FOUND;
 }
 
@@ -596,12 +602,14 @@ VMMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RTGCPTR
     /*
      * Search the memory - ignore MMIO, zero and not-present pages.
      */
+    PGMMODE         enmMode   = PGMGetGuestMode(pVCpu);
+    RTGCPTR         GCPtrMask = PGMMODE_IS_LONG_MODE(enmMode) ? UINT64_MAX : UINT32_MAX;
     uint8_t         abPrev[MAX_NEEDLE_SIZE];
-    size_t          cbPrev = 0;
+    size_t          cbPrev    = 0;
     const RTGCPTR   GCPtrLast = GCPtr + cbRange - 1 >= GCPtr
-                              ? GCPtr + cbRange - 1
-                              : ~(RTGCPTR)0;
-    RTGCPTR         cPages = (((GCPtrLast - GCPtr) + (GCPtr & PAGE_OFFSET_MASK)) >> PAGE_SHIFT) + 1;
+                              ? (GCPtr + cbRange - 1) & GCPtrMask
+                              : GCPtrMask;
+    RTGCPTR         cPages    = (((GCPtrLast - GCPtr) + (GCPtr & PAGE_OFFSET_MASK)) >> PAGE_SHIFT) + 1;
     while (cPages-- > 0)
     {
         RTGCPHYS GCPhys;
@@ -610,7 +618,7 @@ VMMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RTGCPTR
         {
             PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
             if (    pPage
-///@todo                 &&  !PGM_PAGE_IS_ZERO(pPage)
+                &&  !PGM_PAGE_IS_ZERO(pPage) /** @todo handle all zero needle. */
                 &&  !PGM_PAGE_IS_MMIO(pPage))
             {
                 void const *pvPage;
@@ -643,6 +651,7 @@ VMMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RTGCPTR
         /* advance to the next page. */
         GCPtr |= PAGE_OFFSET_MASK;
         GCPtr++;
+        GCPtr &= GCPtrMask;
     }
     return VERR_DBGF_MEM_NOT_FOUND;
 }
