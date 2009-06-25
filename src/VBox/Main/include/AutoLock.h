@@ -35,26 +35,10 @@
 # include <iprt/asm.h> // for ASMReturnAddress
 #endif
 
-#ifdef VBOX_MAIN_USE_SEMRW
-# include <iprt/semaphore.h>
-#else
-# ifdef VBOX_MAIN_AUTOLOCK_TRAP
-#  include <map>
-#  include <list>
-#  include <string>
-# endif
-#endif
+#include <iprt/semaphore.h>
 
 namespace util
 {
-
-#ifdef VBOX_MAIN_AUTOLOCK_TRAP
-namespace internal
-{
-    struct TLS;
-    DECLCALLBACK(void) TLSDestructor (void *aValue);
-}
-#endif /* VBOX_MAIN_AUTOLOCK_TRAP */
 
 /**
  * Abstract lock operations. See LockHandle and AutoWriteLock for details.
@@ -194,40 +178,7 @@ private:
 
     uint32_t writeLockLevel() const;
 
-#ifdef VBOX_MAIN_USE_SEMRW
-
     RTSEMRW mSemRW;
-
-#else /* VBOX_MAIN_USE_SEMRW */
-
-    mutable RTCRITSECT mCritSect;
-    RTSEMEVENT mGoWriteSem;
-    RTSEMEVENTMULTI mGoReadSem;
-
-    RTNATIVETHREAD mWriteLockThread;
-
-    uint32_t mReadLockCount;     /*< Number of read locks */
-    uint32_t mSelfReadLockCount; /*< Number of read locks nested in write lock */
-
-    uint32_t mWriteLockLevel;
-    uint32_t mWriteLockPending;
-
-# ifdef VBOX_MAIN_AUTOLOCK_TRAP
-
-    enum Operation { LockRead, UnlockRead, LockWrite, UnlockWrite };
-    void logOp (Operation aOp);
-    void gatherInfo (std::string &aInfo);
-
-    friend DECLCALLBACK(void) internal::TLSDestructor (void *aValue);
-    static void TLSDestructor (internal::TLS *aTLS);
-
-    typedef std::list <std::string> ReaderInfo;
-    ReaderInfo mReaderInfo;
-    std::string mWriterInfo;
-
-# endif /* VBOX_MAIN_AUTOLOCK_TRAP */
-
-#endif /* VBOX_MAIN_USE_SEMRW */
 };
 
 /**
