@@ -67,19 +67,14 @@ class ATL_NO_VTABLE VFSExplorer :
     /* IVFSExplorer methods */
     STDMETHOD(Update)(IProgress **aProgress);
 
+    STDMETHOD(Cd)(IN_BSTR aDir, IProgress **aProgress);
+    STDMETHOD(CdUp)(IProgress **aProgress);
+
     STDMETHOD(EntryList)(ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(VFSFileType_T, aTypes));
 
     STDMETHOD(Exists)(ComSafeArrayIn(IN_BSTR, aNames), ComSafeArrayOut(BSTR, aExists));
 
     STDMETHOD(Remove)(ComSafeArrayIn(IN_BSTR, aNames), IProgress **aProgress);
-
-    /* todo: later
-    STDMETHOD(Cd)(IN_BSTR aDir, IProgress **aProgress);
-    STDMETHOD(CdUp)(IProgress **aProgress);
-
-    STDMETHOD(MkDir)(IN_BSTR aDir, IProgress **aProgress);
-    STDMETHOD(RmDir)(IN_BSTR aDir, IProgress **aProgress);
-    */
 
 private:
     /* Private member vars */

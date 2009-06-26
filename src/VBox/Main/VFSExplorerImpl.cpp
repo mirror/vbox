@@ -555,6 +555,21 @@ STDMETHODIMP VFSExplorer::Update(IProgress **aProgress)
     return rc;
 }
 
+STDMETHODIMP VFSExplorer::Cd(IN_BSTR aDir, IProgress **aProgress)
+{
+    CheckComArgNotNull(aDir);
+    CheckComArgOutPointerValid(aProgress);
+
+    return E_NOTIMPL;
+}
+
+STDMETHODIMP VFSExplorer::CdUp(IProgress **aProgress)
+{
+    CheckComArgOutPointerValid(aProgress);
+
+    return E_NOTIMPL;
+}
+
 STDMETHODIMP VFSExplorer::EntryList(ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(VFSFileType_T, aTypes))
 {
     if (ComSafeArrayOutIsNull(aNames) ||

@@ -2956,7 +2956,7 @@
 
   <interface
      name="IVFSExplorer" extends="$unknown"
-     uuid="fd7da337-80ef-4a5c-9122-918435e33003"
+     uuid="2bb864a1-02a3-4474-a1d4-fb5f23b742e1"
      wsmap="managed"
      >
     <desc>
@@ -2984,6 +2984,26 @@
       </param>
     </method>
 
+    <method name="cd">
+      <desc>Change the current directory level.</desc>
+
+      <param name="aDir" type="wstring" dir="in">
+        <desc>The name of the directory to go in.</desc>
+      </param>
+
+      <param name="aProgress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="cdUp">
+      <desc>Go one directory upwards from the current directory level.</desc>
+
+      <param name="aProgress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
     <method name="entryList">
       <desc>Returns a list of files/directories after a call to <link
       to="#update" />. The user is responsible for keeping this internal
@@ -2999,8 +3019,8 @@
     </method>
 
     <method name="exists">
-        <desc>Checks if the given file list exists in the current directory
-        level.</desc>
+      <desc>Checks if the given file list exists in the current directory
+      level.</desc>
 
       <param name="aNames" type="wstring" safearray="yes" dir="in">
         <desc>The names to check.</desc>
@@ -3012,7 +3032,7 @@
     </method>
 
     <method name="remove">
-        <desc>Deletes the given files in the current directory level.</desc>
+      <desc>Deletes the given files in the current directory level.</desc>
 
       <param name="aNames" type="wstring" safearray="yes" dir="in">
         <desc>The names to remove.</desc>
