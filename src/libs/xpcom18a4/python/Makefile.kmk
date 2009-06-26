@@ -63,6 +63,7 @@ VBoxPythonBase_LIBS = \
 # Python 2.3 version
 VBoxPython23_EXTENDS    = VBoxPythonBase
 VBoxPython23_EXTENDS_BY = appending
+VBoxPython23_NAME       = VBoxPython2_3
 VBoxPython23_TEMPLATE   = XPCOM
 
 VBoxPython23_DEFS       = VBOX_PYXPCOM_VERSIONED
@@ -76,6 +77,7 @@ endif
 # Python 2.4 version
 VBoxPython24_EXTENDS    = VBoxPythonBase
 VBoxPython24_EXTENDS_BY = appending
+VBoxPython24_NAME       = VBoxPython2_4
 VBoxPython24_TEMPLATE   = XPCOM
 
 VBoxPython24_DEFS       = VBOX_PYXPCOM_VERSIONED
@@ -89,6 +91,7 @@ endif
 # Python 2.5 version
 VBoxPython25_EXTENDS    = VBoxPythonBase
 VBoxPython25_EXTENDS_BY = appending
+VBoxPython25_NAME       = VBoxPython2_5
 VBoxPython25_TEMPLATE   = XPCOM
 
 VBoxPython25_DEFS       = VBOX_PYXPCOM_VERSIONED
@@ -102,6 +105,7 @@ endif
 # Python 2.6 version
 VBoxPython26_EXTENDS    = VBoxPythonBase
 VBoxPython26_EXTENDS_BY = appending
+VBoxPython26_NAME       = VBoxPython2_6
 VBoxPython26_TEMPLATE   = XPCOM
 
 VBoxPython26_DEFS       = VBOX_PYXPCOM_VERSIONED
@@ -115,6 +119,7 @@ endif
 # Python 2.7 version
 VBoxPython27_EXTENDS    = VBoxPythonBase
 VBoxPython27_EXTENDS_BY = appending
+VBoxPython27_NAME       = VBoxPython2_7
 VBoxPython27_TEMPLATE   = XPCOM
 
 VBoxPython27_DEFS       = VBOX_PYXPCOM_VERSIONED
@@ -128,6 +133,7 @@ endif
 # Python 2.8 version
 VBoxPython28_EXTENDS    = VBoxPythonBase
 VBoxPython28_EXTENDS_BY = appending
+VBoxPython28_NAME       = VBoxPython2_8
 VBoxPython28_TEMPLATE   = XPCOM
 
 VBoxPython28_DEFS       = VBOX_PYXPCOM_VERSIONED
