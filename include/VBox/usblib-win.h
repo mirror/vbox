@@ -80,8 +80,8 @@ DEFINE_GUID(GUID_CLASS_VBOXUSB, 0x873fdf, 0xCAFE, 0x80EE, 0xaa, 0x5e, 0x0, 0xc0,
 #define USBMON_MAJOR_VERSION              1
 #define USBMON_MINOR_VERSION              1
 
-#define USBDRV_MAJOR_VERSION              2
-#define USBDRV_MINOR_VERSION              1
+#define USBDRV_MAJOR_VERSION              3
+#define USBDRV_MINOR_VERSION              0
 
 #define SUPUSB_IOCTL_TEST                 CTL_CODE(FILE_DEVICE_UNKNOWN, 0x601, METHOD_BUFFERED, FILE_WRITE_ACCESS)
 #define SUPUSB_IOCTL_GET_DEVICE           CTL_CODE(FILE_DEVICE_UNKNOWN, 0x603, METHOD_BUFFERED, FILE_WRITE_ACCESS)
@@ -196,6 +196,11 @@ typedef enum
     USBSUP_DIRECTION_OUT   = 2
 } USBSUP_DIRECTION;
 
+typedef enum
+{
+    USBSUP_FLAG_NONE       = 0,
+    USBSUP_FLAG_SHORT_OK   = 1
+} USBSUP_XFER_FLAG;
 
 typedef enum
 {
@@ -203,7 +208,9 @@ typedef enum
     USBSUP_XFER_STALL      = 1,
     USBSUP_XFER_DNR        = 2,
     USBSUP_XFER_CRC        = 3,
-    USBSUP_XFER_NAC        = 4
+    USBSUP_XFER_NAC        = 4,
+    USBSUP_XFER_UNDERRUN   = 5,
+    USBSUP_XFER_OVERRUN    = 6
 } USBSUP_ERROR;
 
 typedef struct USBSUP_ISOCPKT
@@ -215,10 +222,11 @@ typedef struct USBSUP_ISOCPKT
 
 typedef struct
 {
-    USBSUP_TRANSFER_TYPE    type;           /* [in] QUSB_TRANSFER_TYPE_XXX */
+    USBSUP_TRANSFER_TYPE    type;           /* [in] USBSUP_TRANSFER_TYPE_XXX */
     uint32_t                ep;             /* [in] index to dev->pipe */
-    USBSUP_DIRECTION        dir;            /* [in] QUSB_DIRECTION_XXX */
-    USBSUP_ERROR            error;          /* [out] QUSB_XFER_XXX */
+    USBSUP_DIRECTION        dir;            /* [in] USBSUP_DIRECTION_XXX */
+    USBSUP_XFER_FLAG        flags;          /* [in] USBSUP_FLAG_XXX */
+    USBSUP_ERROR            error;          /* [out] USBSUP_XFER_XXX */
     size_t                  len;            /* [in/out] may change */
     void                    *buf;           /* [in/out] depends on dir */
     uint32_t                numIsoPkts;     /* [in] number of isochronous packets (8 max) */
