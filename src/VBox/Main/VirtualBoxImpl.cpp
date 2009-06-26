@@ -1617,7 +1617,7 @@ STDMETHODIMP VirtualBox::SetExtraData (IN_BSTR aKey, IN_BSTR aValue)
     Guid emptyGuid;
     Bstr val;
     if (!aValue)
-        val = Bstr("");
+        val = (const char *)"";
     else
         val = aValue;
 
