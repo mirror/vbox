@@ -1921,7 +1921,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                                                 strExtraDataValue.asOutParam());
 
         /* stop if for some reason there's nothing more to request */
-        if (FAILED(hrc) || !strNextExtraDataKey)
+        if (FAILED(hrc) || strNextExtraDataKey.isEmpty())
         {
             /* if we're out of global keys, continue with machine, otherwise we're done */
             if (fGlobalExtraData)
