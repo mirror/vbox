@@ -17,6 +17,7 @@ LangString VBOX_COMPONENT_MAIN ${LANG_GERMAN}           "VirtualBox Guest Additi
 LangString VBOX_COMPONENT_MAIN_DESC ${LANG_GERMAN}      "Hauptkomponenten der VirtualBox Guest Additions"
 LangString VBOX_COMPONENT_D3D  ${LANG_GERMAN}           "Direct3D-Unterstützung (Experimentell)"
 LangString VBOX_COMPONENT_D3D_DESC  ${LANG_GERMAN}      "Ermöglicht Direct3D-Unterstützung für Gäste (Experimentell)"
+LangString VBOX_COMPONENT_D3D_NO_SM ${LANG_GERMAN}      "Windows befindet sich aktuell nicht im abgesicherten Modus.$\r$\nDaher kann die D3D-Unterstützung nicht installiert werden."
 
 LangString VBOX_WFP_WARN_REPLACE ${LANG_GERMAN}         "Das Setup hat gerade Systemdateien ersetzt um die ${PRODUCT_NAME} korrekt installieren zu können.$\r$\nFalls nun ein Warn-Dialog des Windows-Dateischutzes erscheint, diesen bitte abbrechen und die Dateien nicht wiederherstellen lassen!"
 LangString VBOX_REBOOT_REQUIRED ${LANG_GERMAN}          "Um alle Änderungen durchführen zu können, muss das System neu gestartet werden. Jetzt neu starten?"
