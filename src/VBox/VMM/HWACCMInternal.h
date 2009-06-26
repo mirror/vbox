@@ -575,6 +575,10 @@ typedef struct HWACCMCPU
     /** Currenty shadow paging mode. */
     PGMMODE                 enmShadowMode;
 
+    /** The CPU ID of the CPU currently owning the VMCS. Set in
+     * HWACCMR0Enter and cleared in HWACCMR0Leave. */
+    RTCPUID                 idEnteredCpu;
+
     /** To keep track of pending TLB shootdown pages. (SMP guest only) */
     struct
     {
