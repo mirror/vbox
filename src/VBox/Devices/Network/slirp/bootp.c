@@ -339,17 +339,21 @@ skip_dns_servers:
                 /* dhcpcd client very sad if no domain name is passed */
                 FILL_BOOTP_EXT(q, RFC1533_DOMAINNAME, 1, " "); 
         }
-        LIST_FOREACH(dd, &pData->dns_domain_list_head, dd_list)
+        if (pData->fPassDomain)
         {
-            
-            if (dd->dd_pszDomain == NULL)
-                continue;
-            if (added != 0) 
-                FILL_BOOTP_EXT(q, RFC1533_DOMAINNAME, 1, ","); /* never meet valid separator here in RFC1533*/
-            else
-                added = 1;
-            val = (int)strlen(dd->dd_pszDomain);
-            FILL_BOOTP_EXT(q, RFC1533_DOMAINNAME, val, dd->dd_pszDomain);
+            LIST_FOREACH(dd, &pData->dns_domain_list_head, dd_list)
+            {
+                
+                if (dd->dd_pszDomain == NULL)
+                    continue;
+                /* never meet valid separator here in RFC1533*/
+                if (added != 0) 
+                    FILL_BOOTP_EXT(q, RFC1533_DOMAINNAME, 1, ","); 
+                else
+                    added = 1;
+                val = (int)strlen(dd->dd_pszDomain);
+                FILL_BOOTP_EXT(q, RFC1533_DOMAINNAME, val, dd->dd_pszDomain);
+            }
         }
 
         FILL_BOOTP_EXT(q, RFC2132_LEASE_TIME, 4, &lease_time);
