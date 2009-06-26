@@ -87,7 +87,7 @@ debian/configure-stamp:
 	    $(filter _Ubuntu_gutsy,$(debrel)),--with-gcc=gcc-4.2 --with-g++=g++-4.2,) $(if \
 	    $(filter _xandros4.1 _ucs1.3 _Debian_sarge _Ubuntu_dapper,$(debrel)),--build-libxml2,) $(if \
 	    $(filter _xandros4.1 _ucs1.3 _Debian_sarge _Ubuntu_dapper,$(debrel)),--build-libxslt,) $(if \
-	    $(filter _Debian_etch,$(debrel)),--build-libcurl,) $(if \
+	    $(filter _Debian_etch,$(debrel)),$(if $(ose),,--build-libcurl),) $(if \
 	    $(filter _Debian_sarge _xandros4.1 _ucs1.3,$(debrel)),--with-qt4-dir=$(qtstdc5)) $(if \
 	    $(filter _Debian_etch _Ubuntu_dapper _Ubuntu_edgy _Ubuntu_feisty,$(debrel)),--with-qt4-dir=$(qtstdc6)) $(if \
 	    $(filter _xandros4.1 _ucs1.3,$(debrel)),--disable-sdl-ttf,) $(if \
