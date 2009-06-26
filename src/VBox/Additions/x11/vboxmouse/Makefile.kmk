@@ -147,50 +147,52 @@ vboxmouse_drv_16_SOURCES = \
 # symbols.  Not very elegant, but it will catch problems early.
 ifdef VBOX_WITH_TESTCASES
 # ifndef VBOX_ONLY_ADDITIONS
-  ifeq ($(KBUILD_TARGET),linux)
+  if1of ($(KBUILD_TARGET),linux solaris)
    ifeq ($(KBUILD_HOST_ARCH),$(KBUILD_TARGET_ARCH))
     ifndef VBOX_ONLY_SDK
      OUR_PATH_VBOXMOUSE=$(PATH_ROOT)/src/VBox/Additions/x11/vboxmouse
 
-     TESTING  += $(PATH_vboxmouse_drv)/tstvboxmouse68.run
-     OTHERS += $(PATH_vboxmouse_drv)/tstvboxmouse68.run
+    ifeq ($(KBUILD_TARGET),linux)
+      TESTING  += $(PATH_vboxmouse_drv)/tstvboxmouse68.run
+      OTHERS += $(PATH_vboxmouse_drv)/tstvboxmouse68.run
 $$(PATH_vboxmouse_drv)/tstvboxmouse68.run: $$(INSTARGET_vboxmouse_drv)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh \
-	    $(INSTARGET_vboxmouse_drv) $(OUR_PATH_VBOXMOUSE)/undefined_68 --static
+	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET) \
+	    "$(INSTARGET_vboxmouse_drv)" "$(OUR_PATH_VBOXMOUSE)/undefined_68" --static
 	$(QUIET)$(APPEND) -t "$@" "done"
+    endif
 
      TESTING  += $(PATH_vboxmouse_drv_70)/tstvboxmouse70.run
      OTHERS += $(PATH_vboxmouse_drv_70)/tstvboxmouse70.run
 $$(PATH_vboxmouse_drv_70)/tstvboxmouse70.run: $$(INSTARGET_vboxmouse_drv_70)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh \
+	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh  $(KBUILD_TARGET) \
 	    $(INSTARGET_vboxmouse_drv_70) $(OUR_PATH_VBOXMOUSE)/undefined_70
 	$(QUIET)$(APPEND) -t "$@" "done"
 
      TESTING  += $(PATH_vboxmouse_drv_71)/tstvboxmouse71.run
      OTHERS += $(PATH_vboxmouse_drv_71)/tstvboxmouse71.run
 $$(PATH_vboxmouse_drv_71)/tstvboxmouse71.run: $$(INSTARGET_vboxmouse_drv_71)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh \
+	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
 	    $(INSTARGET_vboxmouse_drv_71) $(OUR_PATH_VBOXMOUSE)/undefined_71
 	$(QUIET)$(APPEND) -t "$@" "done"
 
      TESTING  += $(PATH_vboxmouse_drv_14)/tstvboxmouse14.run
      OTHERS += $(PATH_vboxmouse_drv_14)/tstvboxmouse14.run
 $$(PATH_vboxmouse_drv_14)/tstvboxmouse14.run: $$(INSTARGET_vboxmouse_drv_14)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh \
+	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET) \
 	    $(INSTARGET_vboxmouse_drv_14) $(OUR_PATH_VBOXMOUSE)/undefined_14
 	$(QUIET)$(APPEND) -t "$@" "done"
 
      TESTING  += $(PATH_vboxmouse_drv_15)/tstvboxmouse15.run
      OTHERS += $(PATH_vboxmouse_drv_15)/tstvboxmouse15.run
 $$(PATH_vboxmouse_drv_15)/tstvboxmouse15.run: $$(INSTARGET_vboxmouse_drv_15)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh \
+	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
 	    $(INSTARGET_vboxmouse_drv_15) $(OUR_PATH_VBOXMOUSE)/undefined_15
 	$(QUIET)$(APPEND) -t "$@" "done"
 
      TESTING  += $(PATH_vboxmouse_drv_16)/tstvboxmouse16.run
      OTHERS += $(PATH_vboxmouse_drv_16)/tstvboxmouse16.run
 $$(PATH_vboxmouse_drv_16)/tstvboxmouse16.run: $$(INSTARGET_vboxmouse_drv_16)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh \
+	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
 	    $(INSTARGET_vboxmouse_drv_16) $(OUR_PATH_VBOXMOUSE)/undefined_16
 	$(QUIET)$(APPEND) -t "$@" "done"
 

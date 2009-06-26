@@ -69,3 +69,12 @@ iconv_close
 rename
 GetMotionHistorySize
 fflush
+nl_langinfo
+lseek
+open
+__register_frame_info_bases
+__deregister_frame_info_bases
+stat
+fstat
+___errno
+ftruncate

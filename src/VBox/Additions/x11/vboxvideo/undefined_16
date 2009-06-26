@@ -143,3 +143,13 @@ putenv
 setenv
 getenv
 unsetenv
+lseek
+__deregister_frame_info_bases
+fstat
+__register_frame_info_bases
+___errno
+open
+ftruncate
+stat
+nl_langinfo
+sscanf

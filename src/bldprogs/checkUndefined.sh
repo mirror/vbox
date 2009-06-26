@@ -27,48 +27,61 @@ echoerr()
   echo $* 1>&2
 }
 
-target=$1
-symbols=$2
-static=$3
+hostos=$1
+target=$2
+symbols=$3
+static=$4
 
-if [ $# -lt 2 -o $# -gt 3 -o ! -r $target -o ! -r $symbols ]
-then
-  if [ ! -r $target ]
-  then
-    echoerr "$0: $target not readable"
-  elif [ ! -r $symbols ]
-  then
-    echoerr "$0: $symbols not readable"
+if test $# -lt 3 || test $# -gt 4 || test ! -r "$target" || test ! -r "$symbols"; then
+  if test ! -r "$target"; then
+    echoerr "$0: '$target' not readable"
+  elif test ! -r "$symbols"; then
+    echoerr "$0: '$symbols' not readable"
   else
     echoerr "$0: Wrong number of arguments"
   fi
   args_ok="no"
 fi
 
-if [ $# -eq 3 -a ! "$static" = "--static" ]
-then
+if test $# -eq 4 && test "$static" != "--static"; then
   args_ok="no"
 fi
 
-if [ "$args_ok" = "no" ]
-then
+if test "$args_ok" = "no"; then
   echoerr "Usage: $0 <object> <allowed undefined symbols> [--static]"
   exit 1
 fi
 
+if test "$hostos" = "solaris"; then
+    objdumpbin=/usr/sfw/bin/gobjdump
+    grepbin=/usr/sfw/bin/ggrep
+elif test "$hostos" = "linux"; then
+    objdumpbin=`which objdump`
+    grepbin=`which grep`
+else
+    echoerr "$0: '$hostos' not a valid hostos string. supported 'linux' 'solaris'"
+    exit 1
+fi
+
 command="-T"
-if [ "$static" = "--static" ]
-then
+if test "$static" = "--static"; then
   command="-t"
 fi
 
-undefined=`objdump $command $target | grep '*UND*' | grep -v -f $symbols | sed -e 's/^.*[ 	]\(.*\)/\1/'`
+if test ! -x "$objdumpbin"; then
+    echoerr "$0: '$objdumpbin' not found or not executable."
+    exit 1
+fi
+
+undefined=`$objdumpbin $command $target | $grepbin '*UND*' | $grepbin -v -f $symbols | sed -e 's/^.*[ 	]\(.*\)/\1/'`
 num_undef=`echo $undefined | wc -w`
 
-if [ $num_undef -ne 0 ]
-then
+if test $num_undef -ne 0; then
   echoerr "$0: following symbols not defined in $symbols:"
   echoerr "$undefined"
+  exit 1
 fi
 # Return code
-[ $num_undef -eq 0 ]
+exit 0
+
+
