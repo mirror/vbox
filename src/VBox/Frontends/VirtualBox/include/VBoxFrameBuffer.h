@@ -398,47 +398,69 @@ public:
         mLower(aLower)
     {}
 
-    uint32_t upper() {return mUpper; }
-    uint32_t lower() {return mLower; }
+    uint32_t upper() const {return mUpper; }
+    uint32_t lower() const {return mLower; }
 private:
     uint32_t mUpper;
     uint32_t mLower;
+};
+
+class VBoxVHWAColorComponent
+{
+public:
+    VBoxVHWAColorComponent() :
+        mMask(0),
+        mRange(0),
+        mOffset(32),
+        mcBits(0)
+    {}
+
+    VBoxVHWAColorComponent(uint32_t aMask);
+
+    uint32_t mask() const { return mMask; }
+    uint32_t range() const { return mRange; }
+    uint32_t offset() const { return mOffset; }
+    uint32_t cBits() const { return mcBits; }
+    uint32_t colorVal(uint32_t col) const { return (col & mMask) >> mOffset; }
+    float colorValNorm(uint32_t col) const { return ((float)colorVal(col))/mRange; }
+private:
+    uint32_t mMask;
+    uint32_t mRange;
+    uint32_t mOffset;
+    uint32_t mcBits;
 };
 
 class VBoxVHWAColorFormat
 {
 public:
 
-    VBoxVHWAColorFormat(GLint aInternalFormat, GLenum aFormat, GLenum aType, uint32_t aDataFormat) :
-        mInternalFormat(aInternalFormat),
-        mFormat(aFormat),
-        mType(aType),
-        mDataFormat(aDataFormat)
-    {}
+//    VBoxVHWAColorFormat(GLint aInternalFormat, GLenum aFormat, GLenum aType, uint32_t aDataFormat);
+    VBoxVHWAColorFormat(uint32_t bitsPerPixel, uint32_t r, uint32_t g, uint32_t b);
 
     GLint internalFormat() const {return mInternalFormat; }
     GLenum format() const {return mFormat; }
     GLenum type() const {return mType; }
+    bool isValid() const {return mBitsPerPixel != 0; }
     uint32_t dataFormat() const {return mDataFormat;}
-
-    void pixel2Normalized(uint32_t pix, float &r, float &g, float &b);
-    uint32_t r(uint32_t pix);
-    uint32_t g(uint32_t pix);
-    uint32_t b(uint32_t pix);
+    uint32_t bitsPerPixel() const { return mBitsPerPixel; }
+    void pixel2Normalized(uint32_t pix, float *r, float *g, float *b) const;
+//    uint32_t r(uint32_t pix);
+//    uint32_t g(uint32_t pix);
+//    uint32_t b(uint32_t pix);
 
 private:
+    void VBoxVHWAColorFormat::init(uint32_t bitsPerPixel, uint32_t r, uint32_t g, uint32_t b);
+
     GLint mInternalFormat;
     GLenum mFormat;
     GLenum mType;
     uint32_t mDataFormat;
 
-    uint32_t mRMask;
-    uint32_t mGMask;
-    uint32_t mBMask;
-    uint32_t mRRange;
-    uint32_t mGRange;
-    uint32_t mBRange;
+    uint32_t mBitsPerPixel;
 
+    VBoxVHWAColorComponent mR;
+    VBoxVHWAColorComponent mG;
+    VBoxVHWAColorComponent mB;
 };
 
 class VBoxVHWASurfaceBase
@@ -457,7 +479,7 @@ public:
 
     static void globalInit();
 
-    int blt(const QRect * aDstRect, VBoxVHWASurfaceBase * aSrtSurface, const QRect * aSrcRect, uint32_t flags, struct _VBOXVHWA_BLTDESC * pBltInfo);
+    int blt(const QRect * aDstRect, VBoxVHWASurfaceBase * aSrtSurface, const QRect * aSrcRect, const VBoxVHWAColorKey * pDstCKeyOverride, const VBoxVHWAColorKey * pSrcCKeyOverride);
 
     virtual int lock(const QRect * pRect, uint32_t flags);
 
@@ -485,6 +507,7 @@ public:
     uint32_t dataFormat() {return mColorFormat.dataFormat(); }
 
     ulong  bytesPerPixel() { return mBytesPerPixel; }
+    ulong  bitsPerPixel() { return mColorFormat.bitsPerPixel(); }
     ulong  bytesPerLine() { return mBytesPerLine; }
 
     const VBoxVHWAColorKey * dstBltCKey() { return mDstBltCKeyValid ? &mDstBltCKey : NULL; }
@@ -507,6 +530,7 @@ public:
     virtual void makeCurrent() = 0;
 #ifdef VBOX_WITH_VIDEOHWACCEL
     virtual class VBoxVHWAGlProgramMngr * getGlProgramMngr() = 0;
+    static int setCKey(class VBoxVHWAGlProgramVHWA * pProgram, const VBoxVHWAColorFormat * pFormat, const VBoxVHWAColorKey * pCKey);
 #endif
 private:
     void initDisplay();
@@ -571,13 +595,13 @@ public:
 
     void init(uchar *pvMem);
 
-    int unlock()
-    {
-        int rc = VBoxVHWASurfaceBase::unlock();
-        if(!mBuffer)
-            performDisplay();
-        return rc;
-    }
+//    int unlock()
+//    {
+//        int rc = VBoxVHWASurfaceBase::unlock();
+//        if(!mBuffer)
+//            performDisplay();
+//        return rc;
+//    }
 #ifdef VBOX_WITH_VIDEOHWACCEL
     class VBoxVHWAGlProgramMngr * getGlProgramMngr();
 #endif
@@ -598,7 +622,7 @@ public:
 
     uchar *vboxAddress() { return pDisplay ? pDisplay->address() : NULL; }
     uchar *vboxVRAMAddressFromOffset(uint64_t offset);
-    ulong vboxBitsPerPixel() { return mBitsPerPixel; }
+    ulong vboxBitsPerPixel() { return pDisplay->bitsPerPixel(); }
     ulong vboxBytesPerLine() { return pDisplay ? pDisplay->bytesPerLine() : NULL; }
 
 typedef void (VBoxGLWidget::*PFNVBOXQGLOP)(void* );
@@ -615,7 +639,7 @@ typedef void (VBoxGLWidget::*PFNVBOXQGLOP)(void* );
 protected:
 //    void resizeGL (int height, int width);
 
-    void paintGL() { (this->*mpfnOp)(mOpContext);}
+    void paintGL() { (this->*mpfnOp)(mOpContext); }
 
     void initializeGL();
 
@@ -656,7 +680,7 @@ private:
     PFNVBOXQGLOP mpfnOp;
     void *mOpContext;
 
-    ulong  mBitsPerPixel;
+//    ulong  mBitsPerPixel;
     ulong  mPixelFormat;
     bool   mUsesGuestVRAM;
 
