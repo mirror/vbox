@@ -397,7 +397,7 @@ public:
     do { \
         if ((arg) == NULL || *(arg) == '\0') \
             return setError (E_INVALIDARG, \
-                tr ("Argument %s is emtpy or NULL"), #arg); \
+                tr ("Argument %s is empty or NULL"), #arg); \
     } while (0)
 
 /**
