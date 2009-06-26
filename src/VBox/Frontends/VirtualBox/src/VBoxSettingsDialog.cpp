@@ -224,13 +224,7 @@ void VBoxSettingsDialog::setError (const QString &aError)
         return;
 
     if (!mErrorString.isEmpty())
-    {
-#ifndef Q_WS_MAC
         mLbWhatsThis->setText (mErrorString);
-#else /* Q_WS_MAC */
-        mIconLabel->setToolTip (mErrorString);
-#endif /* Q_WS_MAC */
-    }
     else
         updateWhatsThis (true);
 }
@@ -246,13 +240,7 @@ void VBoxSettingsDialog::setWarning (const QString &aWarning)
         return;
 
     if (!mWarnString.isEmpty())
-    {
-#ifndef Q_WS_MAC
         mLbWhatsThis->setText (mWarnString);
-#else /* Q_WS_MAC */
-        mIconLabel->setToolTip (mWarnString);
-#endif /* Q_WS_MAC */
-    }
     else
         updateWhatsThis (true);
 }
@@ -309,7 +297,9 @@ void VBoxSettingsDialog::enableOk (const QIWidgetValidator*)
         mValid = newValid;
         mIconLabel->setWarningPixmap (mErrorIcon);
         mIconLabel->setWarningText (mErrorHint);
-        mIconLabel->setToolTip ("");
+#ifdef Q_WS_MAC
+        mIconLabel->setToolTip (mErrorString);
+#endif /* Q_WS_MAC */
         mIconLabel->setVisible (!mValid);
         mButtonBox->button (QDialogButtonBox::Ok)->setEnabled (mValid);
 
@@ -342,7 +332,9 @@ void VBoxSettingsDialog::enableOk (const QIWidgetValidator*)
         mSilent = newSilent;
         mIconLabel->setWarningPixmap (mWarnIcon);
         mIconLabel->setWarningText (mWarnHint);
-        mIconLabel->setToolTip ("");
+#ifdef Q_WS_MAC
+        mIconLabel->setToolTip (mWarnString);
+#endif /* Q_WS_MAC */
         mIconLabel->setVisible (!mSilent);
     }
 }
@@ -371,6 +363,7 @@ void VBoxSettingsDialog::updateWhatsThis (bool aGotFocus /* = false */)
         widget = widget->parentWidget();
     }
 
+#ifndef Q_WS_MAC
     if (text.isEmpty() && !mErrorString.isEmpty())
         text = mErrorString;
     else if (text.isEmpty() && !mWarnString.isEmpty())
@@ -379,6 +372,10 @@ void VBoxSettingsDialog::updateWhatsThis (bool aGotFocus /* = false */)
         text = whatsThis();
 
     mLbWhatsThis->setText (text);
+#else /* Q_WS_MAC */
+    if (widget && !text.isEmpty())
+        widget->setToolTip (QString("<qt>%1</qt>").arg(text));
+#endif /* Q_WS_MAC */
 }
 
 void VBoxSettingsDialog::whatsThisCandidateDestroyed (QObject *aObj /* = 0 */)
