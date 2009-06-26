@@ -436,20 +436,20 @@ crPackExpandDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei cou
 	switch (type)
 	{
 	case GL_UNSIGNED_BYTE:
-		for (i=start; i<count; i++)
+		for (i=0; i<count; i++)
 		{
 			crPackExpandArrayElement((GLint) *p++, c);
 		}
 		break;
 	case GL_UNSIGNED_SHORT:
-		for (i=start; i<count; i++)
+		for (i=0; i<count; i++)
 		{
 			crPackExpandArrayElement((GLint) * (GLushort *) p, c);
 			p += sizeof(GLushort);
 		}
 		break;
 	case GL_UNSIGNED_INT:
-		for (i=start; i<count; i++)
+		for (i=0; i<count; i++)
 		{
 			crPackExpandArrayElement((GLint) * (GLuint *) p, c);
 			p += sizeof(GLuint);
