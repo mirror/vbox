@@ -153,6 +153,18 @@ typedef struct VMMR0JMPBUF
     uint64_t                    r15;
     uint64_t                    rsp;
     uint64_t                    rip;
+# ifdef RT_OS_WINDOWS
+    uint128_t                   xmm6;
+    uint128_t                   xmm7;
+    uint128_t                   xmm8;
+    uint128_t                   xmm9;
+    uint128_t                   xmm10;
+    uint128_t                   xmm11;
+    uint128_t                   xmm12;
+    uint128_t                   xmm13;
+    uint128_t                   xmm14;
+    uint128_t                   xmm15;
+# endif
 #endif
     /** @} */
 

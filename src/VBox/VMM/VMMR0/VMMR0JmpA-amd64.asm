@@ -88,6 +88,18 @@ GLOBALNAME vmmR0CallRing3SetJmpEx
     mov     [xDX + VMMR0JMPBUF.rip], xAX
     lea     r10, [rbp + 10h]            ; (used in resume)
     mov     [xDX + VMMR0JMPBUF.rsp], r10
+ %ifdef RT_OS_WINDOWS
+    movdqa  [xDX + VMMR0JMPBUF.xmm6], xmm6
+    movdqa  [xDX + VMMR0JMPBUF.xmm7], xmm7
+    movdqa  [xDX + VMMR0JMPBUF.xmm8], xmm8
+    movdqa  [xDX + VMMR0JMPBUF.xmm9], xmm9
+    movdqa  [xDX + VMMR0JMPBUF.xmm10], xmm10
+    movdqa  [xDX + VMMR0JMPBUF.xmm11], xmm11
+    movdqa  [xDX + VMMR0JMPBUF.xmm12], xmm12
+    movdqa  [xDX + VMMR0JMPBUF.xmm13], xmm13
+    movdqa  [xDX + VMMR0JMPBUF.xmm14], xmm14
+    movdqa  [xDX + VMMR0JMPBUF.xmm15], xmm15
+ %endif
 
     ;
     ; If we're not in a ring-3 call, call pfn and return.
@@ -134,11 +146,23 @@ GLOBALNAME vmmR0CallRing3SetJmpEx
     ; Return like in the long jump but clear eip, no short cuts here.
     ;
 .proper_return:
+%ifdef RT_OS_WINDOWS
+    movdqa  xmm6,  [xDX + VMMR0JMPBUF.xmm6 ]
+    movdqa  xmm7,  [xDX + VMMR0JMPBUF.xmm7 ]
+    movdqa  xmm8,  [xDX + VMMR0JMPBUF.xmm8 ]
+    movdqa  xmm9,  [xDX + VMMR0JMPBUF.xmm9 ]
+    movdqa  xmm10, [xDX + VMMR0JMPBUF.xmm10]
+    movdqa  xmm11, [xDX + VMMR0JMPBUF.xmm11]
+    movdqa  xmm12, [xDX + VMMR0JMPBUF.xmm12]
+    movdqa  xmm13, [xDX + VMMR0JMPBUF.xmm13]
+    movdqa  xmm14, [xDX + VMMR0JMPBUF.xmm14]
+    movdqa  xmm15, [xDX + VMMR0JMPBUF.xmm15]
+%endif
     mov     rbx, [xDX + VMMR0JMPBUF.rbx]
- %ifdef ASM_CALL64_MSC
+%ifdef ASM_CALL64_MSC
     mov     rsi, [xDX + VMMR0JMPBUF.rsi]
     mov     rdi, [xDX + VMMR0JMPBUF.rdi]
- %endif
+%endif
     mov     r12, [xDX + VMMR0JMPBUF.r12]
     mov     r13, [xDX + VMMR0JMPBUF.r13]
     mov     r14, [xDX + VMMR0JMPBUF.r14]
@@ -159,6 +183,7 @@ GLOBALNAME vmmR0CallRing3SetJmpEx
 
     ;
     ; Aborting resume.
+    ; Note! No need to restore XMM registers here since we haven't touched them yet.
     ;
 .bad:
     and     qword [xDX + VMMR0JMPBUF.rip], byte 0 ; used for valid check.
@@ -222,12 +247,25 @@ GLOBALNAME vmmR0CallRing3SetJmpEx
     mov     [ecx], edx
 .magic_ok:
 %endif
+%ifdef RT_OS_WINDOWS
+    movdqa  xmm6,  [rsp + 000h]
+    movdqa  xmm7,  [rsp + 010h]
+    movdqa  xmm8,  [rsp + 020h]
+    movdqa  xmm9,  [rsp + 030h]
+    movdqa  xmm10, [rsp + 040h]
+    movdqa  xmm11, [rsp + 050h]
+    movdqa  xmm12, [rsp + 060h]
+    movdqa  xmm13, [rsp + 070h]
+    movdqa  xmm14, [rsp + 080h]
+    movdqa  xmm15, [rsp + 090h]
+    add     rsp, 0a0h
+%endif
     popf
     pop     rbx
- %ifdef ASM_CALL64_MSC
+%ifdef ASM_CALL64_MSC
     pop     rsi
     pop     rdi
- %endif
+%endif
     pop     r12
     pop     r13
     pop     r14
@@ -255,12 +293,25 @@ BEGINPROC vmmR0CallRing3LongJmp
     push    r14
     push    r13
     push    r12
- %ifdef ASM_CALL64_MSC
+%ifdef ASM_CALL64_MSC
     push    rdi
     push    rsi
- %endif
+%endif
     push    rbx
     pushf
+%ifdef RT_OS_WINDOWS
+    sub     rsp, 0a0h
+    movdqa  [rsp + 000h], xmm6
+    movdqa  [rsp + 010h], xmm7
+    movdqa  [rsp + 020h], xmm8
+    movdqa  [rsp + 030h], xmm9
+    movdqa  [rsp + 040h], xmm10
+    movdqa  [rsp + 050h], xmm11
+    movdqa  [rsp + 060h], xmm12
+    movdqa  [rsp + 070h], xmm13
+    movdqa  [rsp + 080h], xmm14
+    movdqa  [rsp + 090h], xmm15
+%endif
 %ifdef VBOX_STRICT
     push    RESUME_MAGIC
 %endif
@@ -268,13 +319,13 @@ BEGINPROC vmmR0CallRing3LongJmp
     ;
     ; Normalize the parameters.
     ;
- %ifdef ASM_CALL64_MSC
+%ifdef ASM_CALL64_MSC
     mov     eax, edx                    ; rc
     mov     rdx, rcx                    ; pJmpBuf
- %else
+%else
     mov     rdx, rdi                    ; pJmpBuf
     mov     eax, esi                    ; rc
- %endif
+%endif
 
     ;
     ; Is the jump buffer armed?
@@ -323,11 +374,23 @@ BEGINPROC vmmR0CallRing3LongJmp
     ;
     ; Do the long jump.
     ;
+%ifdef RT_OS_WINDOWS
+    movdqa  xmm6,  [xDX + VMMR0JMPBUF.xmm6 ]
+    movdqa  xmm7,  [xDX + VMMR0JMPBUF.xmm7 ]
+    movdqa  xmm8,  [xDX + VMMR0JMPBUF.xmm8 ]
+    movdqa  xmm9,  [xDX + VMMR0JMPBUF.xmm9 ]
+    movdqa  xmm10, [xDX + VMMR0JMPBUF.xmm10]
+    movdqa  xmm11, [xDX + VMMR0JMPBUF.xmm11]
+    movdqa  xmm12, [xDX + VMMR0JMPBUF.xmm12]
+    movdqa  xmm13, [xDX + VMMR0JMPBUF.xmm13]
+    movdqa  xmm14, [xDX + VMMR0JMPBUF.xmm14]
+    movdqa  xmm15, [xDX + VMMR0JMPBUF.xmm15]
+%endif
     mov     rbx, [xDX + VMMR0JMPBUF.rbx]
- %ifdef ASM_CALL64_MSC
+%ifdef ASM_CALL64_MSC
     mov     rsi, [xDX + VMMR0JMPBUF.rsi]
     mov     rdi, [xDX + VMMR0JMPBUF.rdi]
- %endif
+%endif
     mov     r12, [xDX + VMMR0JMPBUF.r12]
     mov     r13, [xDX + VMMR0JMPBUF.r13]
     mov     r14, [xDX + VMMR0JMPBUF.r14]
@@ -335,6 +398,7 @@ BEGINPROC vmmR0CallRing3LongJmp
     mov     rbp, [xDX + VMMR0JMPBUF.rbp]
     mov     rcx, [xDX + VMMR0JMPBUF.rip]
     mov     rsp, [xDX + VMMR0JMPBUF.rsp]
+    ;; @todo flags????
     jmp     rcx
 
     ;
@@ -350,12 +414,15 @@ BEGINPROC vmmR0CallRing3LongJmp
 .magic_ok:
 %endif
     mov     eax, VERR_INTERNAL_ERROR_4
+%ifdef RT_OS_WINDOWS
+    add     rsp, 0a0h                   ; skip XMM registers since they are unmodified.
+%endif
     popf
     pop     rbx
- %ifdef ASM_CALL64_MSC
+%ifdef ASM_CALL64_MSC
     pop     rsi
     pop     rdi
- %endif
+%endif
     pop     r12
     pop     r13
     pop     r14

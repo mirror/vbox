@@ -67,6 +67,18 @@ struc VMMR0JMPBUF
     .r15            resq 1
     .rsp            resq 1
     .rip            resq 1
+ %ifdef RT_OS_WINDOWS
+    .xmm6           resq 2
+    .xmm7           resq 2
+    .xmm8           resq 2
+    .xmm9           resq 2
+    .xmm10          resq 2
+    .xmm11          resq 2
+    .xmm12          resq 2
+    .xmm13          resq 2
+    .xmm14          resq 2
+    .xmm15          resq 2
+ %endif
 
     ; additional state and stack info.
     .fInRing3Call   resd 1
