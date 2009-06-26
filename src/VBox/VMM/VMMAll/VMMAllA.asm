@@ -83,5 +83,5 @@ BEGINPROC VMMTrashVolatileXMMRegs
 %endif ; VMM_TRASH_XMM_REGS
         xor     eax, eax                ; for good measure.
         ret
-ENDPROC
+ENDPROC   VMMTrashVolatileXMMRegs
 
