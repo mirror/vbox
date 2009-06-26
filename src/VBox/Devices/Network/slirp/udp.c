@@ -230,14 +230,15 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     so->so_faddr = ip->ip_dst;   /* XXX */
     so->so_fport = uh->uh_dport; /* XXX */
 
-#ifdef VBOX_WITH_SLIRP_DNS_PROXY
+    /*
+     * DNS proxy
+     */
     if (   (ip->ip_dst.s_addr == htonl(ntohl(special_addr.s_addr) | CTL_DNS))
         && (ntohs(uh->uh_dport) == 53)) 
     {
         dnsproxy_query(pData, so, m, iphlen);
         goto bad; /* it isn't bad, probably better to add additional label done for boot/tftf :)  */
     }
-#endif
 
     iphlen += sizeof(struct udphdr);
     m->m_len -= iphlen;

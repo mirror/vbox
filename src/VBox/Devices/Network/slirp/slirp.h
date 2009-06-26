@@ -252,21 +252,11 @@ void if_start (PNATState);
  long gethostid (void);
 #endif
 
-#if SIZEOF_CHAR_P == 4
-# define insque_32 insque
-# define remque_32 remque
-#else
-extern void insque_32 (PNATState, void *, void *);
-extern void remque_32 (PNATState, void *);
-#endif
-
 #ifndef RT_OS_WINDOWS
 #include <netdb.h>
 #endif
 
-#ifdef VBOX_WITH_SLIRP_DNS_PROXY
-# include "dnsproxy/dnsproxy.h"
-#endif
+#include "dnsproxy/dnsproxy.h"
 
 #define DEFAULT_BAUD 115200
 
@@ -336,19 +326,6 @@ int errno_func(const char *file, int line);
 #  define errno (WSAGetLastError())
 # endif
 #endif
-
-#ifndef VBOX_WITH_MULTI_DNS
-#define DO_ALIAS(paddr)                                                     \
-do {                                                                        \
-    if ((paddr)->s_addr == dns_addr.s_addr)                                 \
-    {                                                                       \
-        (paddr)->s_addr = htonl(ntohl(special_addr.s_addr) | CTL_DNS);      \
-    }                                                                       \
-} while(0)
-#else
-#define DO_ALIAS(paddr) do {} while (0)
-#endif
-
 
 # ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
 #  define ETH_ALEN        6

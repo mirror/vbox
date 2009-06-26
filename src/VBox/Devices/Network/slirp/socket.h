@@ -78,10 +78,10 @@ struct socket
      */
     int so_close; 
 #endif /* RT_OS_WINDOWS */
-#ifdef VBOX_WITH_SLIRP_DNS_PROXY
+
     void (* so_timeout)(PNATState pData, struct socket *so, void *arg);
     void *so_timeout_arg;
-#endif
+
 #ifdef VBOX_WITH_NAT_SERVICE
     /* storage of source ether address */
     unsigned char so_ethaddr[6]; 

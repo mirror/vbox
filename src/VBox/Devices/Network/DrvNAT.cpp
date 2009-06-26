@@ -750,10 +750,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     /*
      * Validate the config.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "PassDomain\0TFTPPrefix\0BootFile\0Network\0NextServer\0"
-#ifdef VBOX_WITH_SLIRP_DNS_PROXY
-        "DNSProxy\0"
-#endif
+    if (!CFGMR3AreValuesValid(pCfgHandle, "PassDomain\0TFTPPrefix\0BootFile\0Network\0NextServer\0DNSProxy\0"
         "SocketRcvBuf\0SocketSndBuf\0TcpRcvSpace\0TcpSndSpace\0"))
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
                                 N_("Unknown NAT configuration option, only supports PassDomain, TFTPPrefix, BootFile and Network"));
@@ -792,12 +789,10 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     rc = CFGMR3QueryStringAlloc(pCfgHandle, "NextServer", &pThis->pszNextServer);
     if (RT_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"NextServer\" string failed"), pDrvIns->iInstance);
-#ifdef VBOX_WITH_SLIRP_DNS_PROXY
     int fDNSProxy;
     rc = CFGMR3QueryS32(pCfgHandle, "DNSProxy", &fDNSProxy);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         fDNSProxy = 0;
-#endif
 
     /*
      * Query the network port interface.
@@ -836,9 +831,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
         slirp_set_dhcp_TFTP_prefix(pThis->pNATState, pThis->pszTFTPPrefix);
         slirp_set_dhcp_TFTP_bootfile(pThis->pNATState, pThis->pszBootFile);
         slirp_set_dhcp_next_server(pThis->pNATState, pThis->pszNextServer);
-#ifdef VBOX_WITH_SLIRP_DNS_PROXY
         slirp_set_dhcp_dns_proxy(pThis->pNATState, !!fDNSProxy);
-#endif
 #define SLIRP_SET_TUNING_VALUE(name, setter)            \
             do                                                  \
             {                                                   \

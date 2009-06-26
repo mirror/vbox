@@ -102,24 +102,18 @@ icmp_init(PNATState pData)
                                     GetProcAddress(pData->hmIcmpLibrary, "IcmpParseReplies");
         pData->pfIcmpCloseHandle = (BOOL (WINAPI *)(HANDLE))
                                     GetProcAddress(pData->hmIcmpLibrary, "IcmpCloseHandle");
-# ifdef VBOX_WITH_MULTI_DNS 
         pData->pfGetAdaptersAddresses = (ULONG (WINAPI *)(ULONG, ULONG, PVOID, PIP_ADAPTER_ADDRESSES, PULONG))
                                     GetProcAddress(pData->hmIcmpLibrary, "GetAdaptersAddresses");
         if (pData->pfGetAdaptersAddresses == NULL) 
         {
             LogRel(("NAT: Can't find GetAdapterAddresses in Iphlpapi.dll"));
         }
-# endif
     }
 
     if (pData->pfIcmpParseReplies == NULL)
     {
-# ifdef VBOX_WITH_MULTI_DNS 
         if(pData->pfGetAdaptersAddresses == NULL) 
             FreeLibrary(pData->hmIcmpLibrary);
-# else
-        FreeLibrary(pData->hmIcmpLibrary);
-# endif
         pData->hmIcmpLibrary = LoadLibrary("Icmp.dll");
         if (pData->hmIcmpLibrary == NULL)
         {
@@ -370,10 +364,6 @@ freeit:
                     switch (ntohl(ip->ip_dst.s_addr) & ~pData->netmask)
                     {
                         case CTL_DNS:
-#ifndef VBOX_WITH_MULTI_DNS
-                            addr.sin_addr = dns_addr;
-                            break;
-#endif
                         case CTL_ALIAS:
                         default:
                             addr.sin_addr = loopback_addr;
