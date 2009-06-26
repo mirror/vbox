@@ -19,21 +19,28 @@
 import os,sys
 
 versions = ["2.3", "2.4", "2.5", "2.6", "2.7", "2.8"]
-prefixes = ["/usr", "/usr/local", "/opt"]
+prefixes = ["/usr", "/usr/local", "/opt", "/opt/local"]
 known = {}
 
-def checkPair(p,v):
+def checkPair(p,v,dllpre,dllsuff):
     file =  os.path.join(p, "include", "python"+v, "Python.h")
     # or just stat()?
     if not os.path.isfile(file):
         return None
     return [os.path.join(p, "include", "python"+v), 
-            os.path.join(p, "lib", "libpython"+v+".so")]
+            os.path.join(p, "lib", dllpre+"python"+v+dllsuff)]
 
 def main(argv):
+    dllpre = "lib"
+    dllsuff = ".so"
+    if sys.platform == 'darwin':
+        prefixes.insert(0, '/Developer/SDKs/MacOSX10.4u.sdk/usr')
+        prefixes.insert(0, '/Developer/SDKs/MacOSX10.5.sdk/usr')
+        dllsuff = '.dylib'
+    
     for v in versions:
         for p in prefixes:
-            c = checkPair(p, v)
+            c = checkPair(p, v, dllpre, dllsuff)
             if c is not None:
                 known[v] = c
                 break
