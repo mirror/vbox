@@ -36,9 +36,9 @@ void crStateBufferObjectInit (CRContext *ctx)
     RESET(bb->elementsBinding, ctx->bitid);
 
 #ifdef IN_GUEST
-    b->retainBufferData = GL_FALSE;
-#else
     b->retainBufferData = GL_TRUE;
+#else
+    b->retainBufferData = GL_FALSE;
 #endif
 
     b->nullBuffer = AllocBufferObject(0);
@@ -50,10 +50,17 @@ void crStateBufferObjectInit (CRContext *ctx)
 }
 
 
+static void crStateFreeBufferObject(void *data)
+{
+    CRBufferObject *pObj = (CRBufferObject *)data;
+    if (pObj->data) crFree(pObj->data);
+    crFree(pObj);
+}
+
 void crStateBufferObjectDestroy (CRContext *ctx)
 {
     CRBufferObjectState *b = &ctx->bufferobject;
-    crFreeHashtable(b->buffers, crFree);
+    crFreeHashtable(b->buffers, crStateFreeBufferObject);
     crFree(b->nullBuffer);
 }
 
@@ -118,7 +125,9 @@ crStateBindBufferARB (GLenum target, GLuint buffer)
     }
 
     if (oldObj->refCount <= 0) {
-        crHashtableDelete(b->buffers, (unsigned long) oldObj->name, crFree);
+        /*we shouldn't reach this point*/
+        CRASSERT(false);
+        crHashtableDelete(b->buffers, (unsigned long) oldObj->name, crStateFreeBufferObject);
     }
 }
 
@@ -164,7 +173,7 @@ crStateDeleteBuffersARB(GLsizei n, const GLuint *buffers)
                 }
                 /* XXX check bindings with the vertex arrays */
 
-                crHashtableDelete(b->buffers, buffers[i], crFree);
+                crHashtableDelete(b->buffers, buffers[i], crStateFreeBufferObject);
             }
         }
     }
