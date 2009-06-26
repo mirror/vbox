@@ -17,6 +17,7 @@ LangString VBOX_COMPONENT_MAIN ${LANG_FRENCH}            "Additions invité Virtu
 LangString VBOX_COMPONENT_MAIN_DESC ${LANG_FRENCH}       "Fichiers prinipaux des Additions invité VirtualBox"
 LangString VBOX_COMPONENT_D3D  ${LANG_FRENCH}            "Support Direct3D pour invités (experimental)"
 LangString VBOX_COMPONENT_D3D_DESC  ${LANG_FRENCH}       "Active le support Direct3D pour invités (experimental)"
+LangString VBOX_COMPONENT_D3D_NO_SM ${LANG_FRENCH}       "Windows is currently not started in safe mode.$\r$\nTherefor the D3D support cannot be installed."
 
 LangString VBOX_WFP_WARN_REPLACE ${LANG_FRENCH}          "Le programme d'installation vient de remplacer certains fichiers systèmes afin de faire fonctionner correctement ${PRODUCT_NAME}.$\r$\nPour le cas qu'un avertissement de la Protection de fichiers Windows apparaisse, veuiller l'annuler sans restaurer les fichiers originaux!"
 LangString VBOX_REBOOT_REQUIRED ${LANG_FRENCH}           "Le système doit être redémarré pourque les changements prennent effet. Redémarrer Windows maintenant?"
