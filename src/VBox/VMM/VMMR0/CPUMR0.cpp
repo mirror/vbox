@@ -182,7 +182,10 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #endif
     {
 #ifndef CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE
-# ifdef VBOX_WITH_HYBRID_32BIT_KERNEL /** @todo remove the #else here and move cpumHandleLazyFPUAsm back to VMMGC after branching out 2.1. */
+# if defined(VBOX_WITH_HYBRID_32BIT_KERNEL) || defined(VBOX_WITH_KERNEL_USING_XMM) /** @todo remove the #else here and move cpumHandleLazyFPUAsm back to VMMGC after branching out 3.0!!. */
+        /** @todo Move the FFXR handling down into
+         *        cpumR0SaveHostRestoreguestFPUState to optimize the
+         *        VBOX_WITH_KERNEL_USING_XMM handling. */
         /* Clear MSR_K6_EFER_FFXSR or else we'll be unable to save/restore the XMM state with fxsave/fxrstor. */
         uint64_t SavedEFER = 0;
         if (pVM->cpum.s.CPUFeaturesExt.edx & X86_CPUID_AMD_FEATURE_EDX_FFXSR)
@@ -299,9 +302,21 @@ VMMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #endif
     {
 #ifndef CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE
-        uint64_t oldMsrEFERHost = 0;
+# ifdef VBOX_WITH_KERNEL_USING_XMM
+        /*
+         * We've already saved the XMM registers in the assembly wrapper, so
+         * we have to save them before saving the entire FPU state and put them
+         * back afterwards.
+         */
+        /** @todo This could be skipped if MSR_K6_EFER_FFXSR is set, but
+         *        I'm not able to test such an optimization tonight.
+         *        We could just all this in assembly. */
+        uint128_t aGuestXmmRegs[16];
+        memcpy(&aGuestXmmRegs[0], &pVCpu->cpum.s.Guest.fpu.aXMM[0], sizeof(aGuestXmmRegs));
+# endif
 
         /* Clear MSR_K6_EFER_FFXSR or else we'll be unable to save/restore the XMM state with fxsave/fxrstor. */
+        uint64_t oldMsrEFERHost = 0;
         if (pVCpu->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
         {
             oldMsrEFERHost = ASMRdMsr(MSR_K6_EFER);
@@ -313,7 +328,14 @@ VMMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         if (pVCpu->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
             ASMWrMsr(MSR_K6_EFER, oldMsrEFERHost | MSR_K6_EFER_FFXSR);
 
+# ifdef VBOX_WITH_KERNEL_USING_XMM
+        memcpy(&pVCpu->cpum.s.Guest.fpu.aXMM[0], &aGuestXmmRegs[0], sizeof(aGuestXmmRegs));
+# endif
+
 #else  /* CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE */
+# ifdef VBOX_WITH_KERNEL_USING_XMM
+#  error "Fix all the NM_TRAPS_IN_KERNEL_MODE code path. I'm not going to fix unused code now."
+# endif
         cpumR0SaveFPU(pCtx);
         if (pVCpu->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
         {

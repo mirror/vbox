@@ -2333,7 +2333,11 @@ ResumeExecution:
 #endif
 
     TMNotifyStartOfExecution(pVCpu);
+#ifdef VBOX_WITH_KERNEL_USING_XMM
+    rc = hwaccmR0VMXStartVMWrapperXMM(pVCpu->hwaccm.s.fResumeVM, pCtx, &pVCpu->hwaccm.s.vmx.VMCSCache, pVM, pVCpu, pVCpu->hwaccm.s.vmx.pfnStartVM);
+#else
     rc = pVCpu->hwaccm.s.vmx.pfnStartVM(pVCpu->hwaccm.s.fResumeVM, pCtx, &pVCpu->hwaccm.s.vmx.VMCSCache, pVM, pVCpu);
+#endif
     TMNotifyEndOfExecution(pVCpu);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
     Assert(!(ASMGetFlags() & X86_EFL_IF));
