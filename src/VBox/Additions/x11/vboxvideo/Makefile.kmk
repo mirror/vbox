@@ -241,57 +241,59 @@ vboxvideo_drv_16_SOURCES  = \
 # symbols.  Not very elegant, but it will catch problems early.
 ifdef VBOX_WITH_TESTCASES
 # ifndef VBOX_ONLY_ADDITIONS
-  ifeq ($(KBUILD_TARGET),linux)
+  if1of ($(KBUILD_TARGET),linux solaris)
    ifeq ($(KBUILD_HOST_ARCH),$(KBUILD_TARGET_ARCH))
     ifndef VBOX_ONLY_SDK
      OUR_PATH_VBOXVIDEO=$(PATH_ROOT)/src/VBox/Additions/x11/vboxvideo
 
+     ifeq ($(KBUILD_TARGET),linux)
      TESTING  += $(PATH_vboxvideo_drv)/tstvboxvideo68.run
      OTHERS += $(PATH_vboxvideo_drv)/tstvboxvideo68.run
 $$(PATH_vboxvideo_drv)/tstvboxvideo68.run: $$(INSTARGET_vboxvideo_drv)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh \
+	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
 	    $(INSTARGET_vboxvideo_drv) $(OUR_PATH_VBOXVIDEO)/undefined_68 --static
 	$(QUIET)$(APPEND) -t "$@" "done"
+     endif
 
      TESTING  += $(PATH_vboxvideo_drv_70)/tstvboxvideo70.run
      OTHERS += $(PATH_vboxvideo_drv_70)/tstvboxvideo70.run
 $$(PATH_vboxvideo_drv_70)/tstvboxvideo70.run: $$(INSTARGET_vboxvideo_drv_70)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh \
+	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
 	    $(INSTARGET_vboxvideo_drv_70) $(OUR_PATH_VBOXVIDEO)/undefined_70
 	$(QUIET)$(APPEND) -t "$@" "done"
 
      TESTING  += $(PATH_vboxvideo_drv_71)/tstvboxvideo71.run
      OTHERS += $(PATH_vboxvideo_drv_71)/tstvboxvideo71.run
 $$(PATH_vboxvideo_drv_71)/tstvboxvideo71.run: $$(INSTARGET_vboxvideo_drv_71)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh \
+	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
 	    $(INSTARGET_vboxvideo_drv_71) $(OUR_PATH_VBOXVIDEO)/undefined_71
 	$(QUIET)$(APPEND) -t "$@" "done"
 
      TESTING  += $(PATH_vboxvideo_drv_13)/tstvboxvideo13.run
      OTHERS += $(PATH_vboxvideo_drv_13)/tstvboxvideo13.run
 $$(PATH_vboxvideo_drv_13)/tstvboxvideo13.run: $$(INSTARGET_vboxvideo_drv_13)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh \
+	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
 	    $(INSTARGET_vboxvideo_drv_13) $(OUR_PATH_VBOXVIDEO)/undefined_13
 	$(QUIET)$(APPEND) -t "$@" "done"
 
      TESTING  += $(PATH_vboxvideo_drv_14)/tstvboxvideo14.run
      OTHERS += $(PATH_vboxvideo_drv_14)/tstvboxvideo14.run
 $$(PATH_vboxvideo_drv_14)/tstvboxvideo14.run: $$(INSTARGET_vboxvideo_drv_14)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh \
+	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
 	    $(INSTARGET_vboxvideo_drv_14) $(OUR_PATH_VBOXVIDEO)/undefined_14
 	$(QUIET)$(APPEND) -t "$@" "done"
 
      TESTING  += $(PATH_vboxvideo_drv_15)/tstvboxvideo15.run
      OTHERS += $(PATH_vboxvideo_drv_15)/tstvboxvideo15.run
 $$(PATH_vboxvideo_drv_15)/tstvboxvideo15.run: $$(INSTARGET_vboxvideo_drv_15)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh \
+	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
 	    $(INSTARGET_vboxvideo_drv_15) $(OUR_PATH_VBOXVIDEO)/undefined_15
 	$(QUIET)$(APPEND) -t "$@" "done"
 
      TESTING  += $(PATH_vboxvideo_drv_16)/tstvboxvideo16.run
      OTHERS += $(PATH_vboxvideo_drv_16)/tstvboxvideo16.run
 $$(PATH_vboxvideo_drv_16)/tstvboxvideo16.run: $$(INSTARGET_vboxvideo_drv_16)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh \
+	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
 	    $(INSTARGET_vboxvideo_drv_16) $(OUR_PATH_VBOXVIDEO)/undefined_16
 	$(QUIET)$(APPEND) -t "$@" "done"
 

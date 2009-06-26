@@ -124,3 +124,12 @@ GetMotionHistorySize
 xf86SetSerialSpeed
 fflush
 abs
+stat
+ftruncate
+__deregister_frame_info_bases
+fstat
+open
+nl_langinfo
+lseek
+__register_frame_info_bases
+___errno

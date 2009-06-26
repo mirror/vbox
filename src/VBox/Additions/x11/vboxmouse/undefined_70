@@ -128,3 +128,12 @@ rename
 xf86SetSerialSpeed
 fflush
 xf86abs
+open
+fstat
+___errno
+ftruncate
+nl_langinfo
+__deregister_frame_info_bases
+__register_frame_info_bases
+lseek
+stat
