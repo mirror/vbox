@@ -1432,6 +1432,9 @@ DWORD APIENTRY DdBlt(PDD_BLTDATA  lpBlt)
             pBody->DstGuestSurfInfo = (uint64_t)pDestDesc;
             pBody->SrcGuestSurfInfo = (uint64_t)pSrcDesc;
 
+            pBody->u.in.flags = vboxVHWAFromDDBLTs(lpBlt->dwFlags);
+            vboxVHWAFromDDBLTFX(&pBody->u.in.desc, &lpBlt->bltFX);
+
             ASMAtomicIncU32(&pSrcDesc->cPendingBltsSrc);
             ASMAtomicIncU32(&pDestDesc->cPendingBltsDst);
 
@@ -1596,6 +1599,8 @@ getDDHALInfo(
     if(!VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_BLT) && !VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_OVERLAY))
         return false;
 
+    pHALInfo->ddCaps.dwCaps |= vboxVHWAToDDCAPS(pDev->vhwaInfo.caps);
+
     if(VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_BLT))
     {
         // Setup the ROPS we do.
@@ -1603,25 +1608,13 @@ getDDHALInfo(
         setupRops( ropListNT,
                      rops,
                      sizeof(ropListNT)/sizeof(ropListNT[0]));
-
-        // The most basic DirectDraw functionality
-        pHALInfo->ddCaps.dwCaps |=   DDCAPS_BLT
-                                     | DDCAPS_BLTQUEUE;
-        if(VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_BLTCOLORFILL))
-        {
-            pHALInfo->ddCaps.dwCaps |= DDCAPS_BLTCOLORFILL;
-        }
     }
 
 //                                | DDCAPS_READSCANLINE
 
 
-    pHALInfo->ddCaps.ddsCaps.dwCaps |=   DDSCAPS_OFFSCREENPLAIN
-                                         | DDSCAPS_PRIMARYSURFACE;
-    if(pDev->vhwaInfo.surfaceCaps & VBOXVHWA_SCAPS_FLIP)
-    {
-        pHALInfo->ddCaps.ddsCaps.dwCaps |= DDSCAPS_FLIP;
-    }
+    pHALInfo->ddCaps.ddsCaps.dwCaps |= vboxVHWAToDDSCAPS(pDev->vhwaInfo.surfaceCaps);
+
 //disabled
 //    pHALInfo->ddCaps.dwCaps |= DDCAPS_3D           |
 //                               DDCAPS_BLTDEPTHFILL;
@@ -1644,6 +1637,9 @@ getDDHALInfo(
     // We need to flag we can run in windowed mode, otherwise we
     // might get restricted by apps to run in fullscreen only
     pHALInfo->ddCaps.dwCaps2 |= DDCAPS2_CANRENDERWINDOWED;
+
+    // Also permit surfaces wider than the display buffer.
+    pHALInfo->ddCaps.dwCaps2 |= DDCAPS2_WIDESURFACES;
 //#endif
 
 //#if DX8_DDI
@@ -1668,11 +1664,9 @@ getDDHALInfo(
     // 2. YUV->RGB conversion
     // 3. Mirroring in X and Y
     // 4. ColorKeying from a source color and a source color space
-    if(VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_BLT)
+    if((VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_BLT) || VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_OVERLAY))
             && VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_BLTSTRETCH))
     {
-        pHALInfo->ddCaps.dwCaps |= DDCAPS_BLTSTRETCH;
-
         // Special effects caps
         //TODO: filter them out
         pHALInfo->ddCaps.dwFXCaps |= DDFXCAPS_BLTSTRETCHY  |
@@ -1700,54 +1694,12 @@ getDDHALInfo(
         pHALInfo->ddCaps.dwCaps2 |= DDCAPS2_COPYFOURCC;
     }
 
-    if(VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_BLT)
+    if((VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_BLT) || VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_OVERLAY))
             && VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_COLORKEY))
     {
-        pHALInfo->ddCaps.dwCaps |= DDCAPS_COLORKEY;
-//                               | DDCAPS_CANBLTSYSMEM
-
-        // ColorKey caps
-        //TODO: filter them out
-        pHALInfo->ddCaps.dwCKeyCaps |= DDCKEYCAPS_SRCBLT         |
-                                      DDCKEYCAPS_SRCBLTCLRSPACE |
-                                      DDCKEYCAPS_DESTBLT        |
-                                      DDCKEYCAPS_DESTBLTCLRSPACE;
-
-        pHALInfo->ddCaps.dwCKeyCaps |=  DDCKEYCAPS_SRCBLTCLRSPACEYUV
-                                        | DDCKEYCAPS_DESTBLTCLRSPACEYUV;
-
-#if 0
-        DDCKEYCAPS_DESTBLT Supports transparent blitting with a color key that identifies the replaceable bits of the destination surface for RGB colors.
-        DDCKEYCAPS_DESTBLTCLRSPACE Supports transparent blitting with a color space that identifies the replaceable bits of the destination surface for RGB colors.
-        DDCKEYCAPS_DESTBLTCLRSPACEYUV Supports transparent blitting with a color space that identifies the replaceable bits of the destination surface for YUV colors.
-        DDCKEYCAPS_DESTBLTYUV Supports transparent blitting with a color key that identifies the replaceable bits of the destination surface for YUV colors.
-
-        DDCKEYCAPS_SRCBLT Supports transparent blitting using the color key for the source with this surface for RGB colors.
-        DDCKEYCAPS_SRCBLTCLRSPACE Supports transparent blitting using a color space for the source with this surface for RGB colors.
-        DDCKEYCAPS_SRCBLTCLRSPACEYUV Supports transparent blitting using a color space for the source with this surface for YUV colors.
-        DDCKEYCAPS_SRCBLTYUV Supports transparent blitting using the color key for the source with this surface for YUV colors.
-#endif
-
+        pHALInfo->ddCaps.dwCKeyCaps = vboxVHWAToDDCKEYCAPS(pDev->vhwaInfo.colorKeyCaps);
     }
 
-    if(VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_OVERLAY)
-            && VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_COLORKEY))
-    {
-#if 0
-        DDCKEYCAPS_DESTOVERLAY Supports overlaying with color keying of the replaceable bits of the destination surface being overlaid for RGB colors.
-        DDCKEYCAPS_DESTOVERLAYCLRSPACE Supports a color space as the color key for the destination of RGB colors.
-        DDCKEYCAPS_DESTOVERLAYCLRSPACEYUV Supports a color space as the color key for the destination of YUV colors.
-        DDCKEYCAPS_DESTOVERLAYONEACTIVE Supports only one active destination color key value for visible overlay surfaces.
-        DDCKEYCAPS_DESTOVERLAYYUV Supports overlaying using color keying of the replaceable bits of the destination surface being overlaid for YUV colors.
-        DDCKEYCAPS_NOCOSTOVERLAY Indicates that there are no bandwidth tradeoffs for using the color key with an overlay.
-
-        DDCKEYCAPS_SRCOVERLAY Supports overlaying using the color key for the source with this overlay surface for RGB colors.
-        DDCKEYCAPS_SRCOVERLAYCLRSPACE Supports overlaying using a color space as the source color key for the overlay surface for RGB colors.
-        DDCKEYCAPS_SRCOVERLAYCLRSPACEYUV Supports overlaying using a color space as the source color key for the overlay surface for YUV colors.
-        DDCKEYCAPS_SRCOVERLAYONEACTIVE Supports only one active source color key value for visible overlay surfaces.
-        DDCKEYCAPS_SRCOVERLAYYUV Supports overlaying using the color key for the source with this overlay surface for YUV colors.
-#endif
-    }
 //    pHALInfo->ddCaps.dwSVBCaps = DDCAPS_BLT;
 
 //    // We can do a texture from sysmem to video mem.
@@ -1776,8 +1728,6 @@ getDDHALInfo(
 //    pHALInfo->ddCaps.dwZBufferBitDepths = DDBD_16;
 //    pHALInfo->ddCaps.ddsCaps.dwCaps |= DDSCAPS_MIPMAP;
 
-        pHALInfo->ddCaps.ddsCaps.dwCaps |= DDSCAPS_LOCALVIDMEM;
-
     {
 //#ifdef SUPPORT_VIDEOPORT
 //        // We support 1 video port.  Must set CurrVideoPorts to 0
@@ -1797,30 +1747,6 @@ getDDHALInfo(
             pHALInfo->ddCaps.dwMaxVisibleOverlays = pDev->vhwaInfo.numOverlays;
             pHALInfo->ddCaps.dwCurrVisibleOverlays = 0;
 
-            pHALInfo->ddCaps.dwCaps |=  DDCAPS_OVERLAY          |
-                                        DDCAPS_OVERLAYFOURCC    |
-                                        DDCAPS_OVERLAYSTRETCH   |
-                                        DDCAPS_COLORKEYHWASSIST |
-                                        DDCAPS_OVERLAYCANTCLIP;
-
-            pHALInfo->ddCaps.dwCKeyCaps |= DDCKEYCAPS_SRCOVERLAY           |
-                                           DDCKEYCAPS_SRCOVERLAYONEACTIVE  |
-                                           DDCKEYCAPS_SRCOVERLAYYUV        |
-                                           DDCKEYCAPS_DESTOVERLAY          |
-                                           DDCKEYCAPS_DESTOVERLAYONEACTIVE |
-                                           DDCKEYCAPS_DESTOVERLAYYUV;
-
-            pHALInfo->ddCaps.ddsCaps.dwCaps |= DDSCAPS_OVERLAY;
-
-            pHALInfo->ddCaps.dwFXCaps |= DDFXCAPS_OVERLAYSHRINKX   |
-                                         DDFXCAPS_OVERLAYSHRINKXN  |
-                                         DDFXCAPS_OVERLAYSHRINKY   |
-                                         DDFXCAPS_OVERLAYSHRINKYN  |
-                                         DDFXCAPS_OVERLAYSTRETCHX  |
-                                         DDFXCAPS_OVERLAYSTRETCHXN |
-                                         DDFXCAPS_OVERLAYSTRETCHY  |
-                                         DDFXCAPS_OVERLAYSTRETCHYN;
-
             // Indicates that Perm3 has no stretch ratio limitation
             pHALInfo->ddCaps.dwMinOverlayStretch = 1;
             pHALInfo->ddCaps.dwMaxOverlayStretch = 32000;
@@ -1833,9 +1759,6 @@ getDDHALInfo(
 //    pHALInfo->ddCaps.dwCaps2 |= DDCAPS2_COLORCONTROLPRIMARY;
 //#endif
 //#endif
-
-    // Also permit surfaces wider than the display buffer.
-    pHALInfo->ddCaps.dwCaps2 |= DDCAPS2_WIDESURFACES;
 
 
     // Won't do Video-Sys mem Blits.

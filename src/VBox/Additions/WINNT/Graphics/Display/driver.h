@@ -314,12 +314,25 @@ uint32_t vboxVHWAUnsupportedDDPFS(uint32_t caps);
 uint32_t vboxVHWASupportedDDCAPS(uint32_t caps);
 uint32_t vboxVHWASupportedDDSCAPS(uint32_t caps);
 uint32_t vboxVHWASupportedDDPFS(uint32_t caps);
+
+uint32_t vboxVHWAUnsupportedDDCEYCAPS(uint32_t caps);
+uint32_t vboxVHWASupportedDDCEYCAPS(uint32_t caps);
+
+uint32_t vboxVHWAToDDBLTs(uint32_t caps);
+uint32_t vboxVHWAFromDDBLTs(uint32_t caps);
+
+void vboxVHWAFromDDBLTFX(VBOXVHWA_BLTFX *pVHWABlt, DDBLTFX *pDdBlt);
+
+void vboxVHWAFromDDCOLORKEY(VBOXVHWA_COLORKEY *pVHWACKey, DDCOLORKEY  *pDdCKey);
+
 uint32_t vboxVHWAFromDDCAPS(uint32_t caps);
 uint32_t vboxVHWAToDDCAPS(uint32_t caps);
 uint32_t vboxVHWAFromDDSCAPS(uint32_t caps);
 uint32_t vboxVHWAToDDSCAPS(uint32_t caps);
 uint32_t vboxVHWAFromDDPFS(uint32_t caps);
 uint32_t vboxVHWAToDDPFS(uint32_t caps);
+uint32_t vboxVHWAFromDDCKEYCAPS(uint32_t caps);
+uint32_t vboxVHWAToDDCKEYCAPS(uint32_t caps);
 int vboxVHWAFromDDPIXELFORMAT(VBOXVHWA_PIXELFORMAT *pVHWAFormat, DDPIXELFORMAT *pDdFormat);
 int vboxVHWAFromDDSURFACEDESC(VBOXVHWA_SURFACEDESC *pVHWADesc, DDSURFACEDESC *pDdDesc);
 void vboxVHWAFromRECTL(VBOXVHWA_RECTL *pDst, RECTL *pSrc);
