@@ -92,8 +92,8 @@ BEGINPROC MY_NAME(VMXR0StartVM32)
     mov     edx, ecx
     mov     ecx, 0
     jmp     .cached_write
-    
-ALIGN(16)    
+
+ALIGN(16)
 .cached_write:
     mov     eax, [xBX + VMCSCACHE.Write.aField + xCX*4]
     vmwrite xAX, [xBX + VMCSCACHE.Write.aFieldVal + xCX*8]
@@ -126,7 +126,7 @@ ALIGN(16)
 
     sub     xSP, xS*2
     sidt    [xSP]
-    
+
 %ifdef VBOX_WITH_DR6_EXPERIMENT
     ; Restore DR6 - experiment, not safe!
     mov     xBX, [xSI + CPUMCTX.dr6]
@@ -215,10 +215,10 @@ ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte
     ltr     bx
     add     xSP, xS*2
 %endif
-    
+
     pop     xAX         ; saved LDTR
     lldt    ax
-    
+
     add     xSP, xS      ; pCtx
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
@@ -229,7 +229,7 @@ ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte
     je      .no_cached_reads
     jmp     .cached_read
 
-ALIGN(16)    
+ALIGN(16)
 .cached_read:
     dec     xCX
     mov     eax, [ss:xDX + VMCSCACHE.Read.aField + xCX*4]
@@ -397,8 +397,8 @@ BEGINPROC MY_NAME(VMXR0StartVM64)
     mov     edx, ecx
     mov     ecx, 0
     jmp     .cached_write
-    
-ALIGN(16)    
+
+ALIGN(16)
 .cached_write:
     mov     eax, [xBX + VMCSCACHE.Write.aField + xCX*4]
     vmwrite xAX, [xBX + VMCSCACHE.Write.aFieldVal + xCX*8]
@@ -542,7 +542,7 @@ ALIGNCODE(16)
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     pop     xDX         ; saved pCache
-    
+
     mov     ecx, [xDX + VMCSCACHE.Read.cValidEntries]
     cmp     ecx, 0  ; can't happen
     je      .no_cached_reads
