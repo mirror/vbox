@@ -288,7 +288,7 @@ typedef struct _ERROR_RECORD_HEADER { // Offsets:
     ERROR_SEVERITY     ErrorSeverity;     //  10: Error Severity
     ERROR_RECORD_VALID Valid;             //  11: Validation bits
     ULONG              Length;            //  12: Length of this record in bytes, including the header
-    ERROR_TIMESTAMP    TimeStamp;         //  16: Timestamp recorded when event occured
+    ERROR_TIMESTAMP    TimeStamp;         //  16: Timestamp recorded when event occurred
     UCHAR              OemPlatformId[16]; //  24: Unique platform identifier. OEM defined.
 } ERROR_RECORD_HEADER, *PERROR_RECORD_HEADER;
 
@@ -497,7 +497,7 @@ typedef union _ERROR_BUS_CHECK  {
         ULONGLONG Size:5;                  // bits  0- 4: Transaction size
         ULONGLONG Internal:1;              //       5   : Internal bus error
         ULONGLONG External:1;              //       6   : External bus error
-        ULONGLONG CacheTransfer:1;         //       7   : Error occured in Cache to Cache Transfer 
+        ULONGLONG CacheTransfer:1;         //       7   : Error occurred in Cache to Cache Transfer 
         ULONGLONG Type:8;                  //       8-15: Transaction type
         ULONGLONG Severity:5;              //      16-20: Error severity - platform specific
         ULONGLONG Hierarchy:2;             //      21-22: Level or Bus hierarchy

@@ -530,7 +530,7 @@ Revision History:
 //
 //  A valid crash dump was found in the paging file while trying to configure
 //  a direct dump. Direct dump is disabled! This occurs when the direct dump
-//  option is set in the registry but a stop error occured before configuration
+//  option is set in the registry but a stop error occurred before configuration
 //  completed
 //
 #define IO_DUMP_DUMPFILE_CONFLICT        ((NTSTATUS)0xC004002FL)

@@ -886,7 +886,7 @@ DEVINFO *pDevInfo)
 * and returns the list of modes supported by the diplay driver among those
 *
 * returns the number of entries in the videomode buffer.
-* 0 means no modes are supported by the miniport or that an error occured.
+* 0 means no modes are supported by the miniport or that an error occurred.
 *
 * NOTE: the buffer must be freed up by the caller.
 *

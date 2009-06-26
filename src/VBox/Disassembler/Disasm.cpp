@@ -286,7 +286,7 @@ DISDECL(int) DISInstrEx(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u3
 #ifndef __L4ENV__
     catch(...)
 #else
-    else  /* setjmp has returned a non-zero value: an exception occured */
+    else  /* setjmp has returned a non-zero value: an exception occurred */
 #endif
     {
         if (pcbSize)

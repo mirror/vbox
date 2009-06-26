@@ -76,7 +76,7 @@ Revision History:
 //          DLL whether this constitutes a workstation locking event.
 //
 //      SCRNSVR_ACTIVITY - used to indicate that keyboard or mouse
-//          activity occured while a secure screensaver was active.
+//          activity occurred while a secure screensaver was active.
 //
 //      SC_INSERT - used to indicate that a smart card has been inserted
 //          to a compatible device

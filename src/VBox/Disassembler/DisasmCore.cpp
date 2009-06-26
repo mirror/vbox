@@ -390,7 +390,7 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
 # ifndef __L4ENV__
     catch(...)
 # else
-    else  /* setjmp has returned a non-zero value: an exception occured */
+    else  /* setjmp has returned a non-zero value: an exception occurred */
 # endif
     {
         pCpu->opsize = 0;

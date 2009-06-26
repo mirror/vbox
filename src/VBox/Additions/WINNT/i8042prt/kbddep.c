@@ -558,7 +558,7 @@ Return Value:
                             if(deviceExtension->DumpFlags == Dump1Keys) {
                                 deviceExtension->DumpFlags = 0;
                                 KeBugCheckEx(0x0000FFFF,0,0,0,0);
-                                                  // make occured blue screen
+                                                  // make occurred blue screen
                             }
                     }
 #endif
