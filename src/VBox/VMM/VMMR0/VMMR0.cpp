@@ -607,7 +607,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
 #elif !defined(RT_OS_WINDOWS)
             RTCCUINTREG uFlags = ASMIntDisableFlags();
 #endif
-            ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
+            ASMAtomicWriteU32(&pVCpu->idHostCpu, RTMpCpuId());
 
 #ifdef LOG_ENABLED
             if (pVCpu->idCpu > 0)
