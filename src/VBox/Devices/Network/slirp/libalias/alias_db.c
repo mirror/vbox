@@ -331,7 +331,14 @@ struct alias_link {     /* Main data structure */
     int     timestamp;  /* Time link was last accessed         */
     int     expire_time;    /* Expire time for link                */
 #ifndef NO_USE_SOCKETS
+# ifndef VBOX 
+    /* 
+     * in VBox we do not use host's sockets here, which are managed 
+     * inside slirp. yes we have to create new sockets here but latter
+     * managment and deletion are in repsponsible of Slirp. 
+     */
     int     sockfd; /* socket descriptor                   */
+# endif
 #endif
             LIST_ENTRY    (alias_link) list_out;    /* Linked list of
                                  * pointers for     */
@@ -670,7 +677,11 @@ GetNewPort(struct libalias *la, struct alias_link *lnk, int alias_port_param)
                 && (lnk->flags & LINK_PARTIALLY_SPECIFIED)
                 && ((lnk->link_type == LINK_TCP) ||
                 (lnk->link_type == LINK_UDP))) {
+#ifndef VBOX
                 if (GetSocket(la, port_net, &lnk->sockfd, lnk->link_type)) {
+#else
+                if (GetSocket(la, port_net, NULL, lnk->link_type)) {
+#endif
                     lnk->alias_port = port_net;
                     return (0);
                 }
@@ -753,7 +764,6 @@ GetSocket(struct libalias *la, u_short port_net, int *sockfd, int link_type)
         sizeof(sock_addr));
     if (err == 0) {
         la->sockCount++;
-        *sockfd = sock;
 #ifdef VBOX
             so->so_expire = la->curtime + SO_EXPIRE;
             setsockopt(so->s, SOL_SOCKET, SO_BROADCAST, 
@@ -781,6 +791,8 @@ GetSocket(struct libalias *la, u_short port_net, int *sockfd, int link_type)
                 Assert(!"Shouldn't be here");
             }
         
+#else
+        *sockfd = sock;
 #endif
         return (1);
     } else {
@@ -953,10 +965,14 @@ DeleteLink(struct alias_link *lnk)
     LIST_REMOVE(lnk, list_in);
 #ifndef NO_USE_SOCKETS
 /* Close socket, if one has been allocated */
+# ifndef VBOX
     if (lnk->sockfd != -1) {
         la->sockCount--;
         close(lnk->sockfd);
     }
+# else
+    /* Slirp will close the socket in its own way */
+# endif
 #endif
 /* Link-type dependent cleanup */
     switch (lnk->link_type) {
@@ -1026,7 +1042,9 @@ AddLink(struct libalias *la, struct in_addr src_addr,
         lnk->server = NULL;
         lnk->link_type = link_type;
 #ifndef NO_USE_SOCKETS
+# ifndef VBOX
         lnk->sockfd = -1;
+# endif
 #endif
         lnk->flags = 0;
         lnk->pflags = 0;
