@@ -60,6 +60,11 @@ VBoxPythonBase_LIBS = \
 	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
 	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
 
+ifeq ($(KBUILD_TARGET),darwin)
+ ## @todo kBuild - this ain't working: VBoxPython_DLLSUFF.darwin = .so
+ VBoxPythonBase_DLLSUFF = .so
+endif
+
 # Python 2.3 version
 VBoxPython23_EXTENDS    = VBoxPythonBase
 VBoxPython23_EXTENDS_BY = appending
@@ -81,8 +86,8 @@ VBoxPython24_NAME       = VBoxPython2_4
 VBoxPython24_TEMPLATE   = XPCOM
 
 VBoxPython24_DEFS       = VBOX_PYXPCOM_VERSIONED
-VBoxPython24_INCS       =  $(VBOX_PYTHON24_INC)
-VBoxPython24_LIBS       =  $(VBOX_PYTHON24_LIB)
+VBoxPython24_INCS       = $(VBOX_PYTHON24_INC)
+VBoxPython24_LIBS       = $(VBOX_PYTHON24_LIB)
 
 ifdef VBOX_PYTHON24_INC
  KNOWN_GLUE += VBoxPython24
@@ -92,7 +97,13 @@ endif
 VBoxPython25_EXTENDS    = VBoxPythonBase
 VBoxPython25_EXTENDS_BY = appending
 VBoxPython25_NAME       = VBoxPython2_5
-VBoxPython25_TEMPLATE   = XPCOM
+if "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "darwin.x86"
+ VBoxPython25_TEMPLATE   = XPCOMOSX105
+else
+ VBoxPython25_TEMPLATE   = XPCOM
+endif
+VBoxPython25_LDFLAGS.darwin   = -install_name /Users/vbox/nike/ws/out/darwin.x86/debug/dist/VirtualBox.app/Contents/MacOS/VBoxPython2_5.so
+#VBoxPython25_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxPython2_5.so
 
 VBoxPython25_DEFS       = VBOX_PYXPCOM_VERSIONED
 VBoxPython25_INCS       = $(VBOX_PYTHON25_INC)
