@@ -11128,7 +11128,7 @@ HRESULT SessionMachine::lockMedia()
             rc = (*it)->COMGETTER(LastAccessError) (error.asOutParam());
             CheckComRCThrowRC (rc);
 
-            if (!error.isNull())
+            if (!error.isEmpty())
             {
                 Bstr loc;
                 rc = (*it)->COMGETTER(Location) (loc.asOutParam());
