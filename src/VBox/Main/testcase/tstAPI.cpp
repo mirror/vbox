@@ -171,10 +171,7 @@ HRESULT readAndChangeMachineSettings (IMachine *machine, IMachine *readonlyMachi
     if (!extraData.isEmpty()) {
         RTPrintf ("Extra data value: {%ls}\n", extraData.raw());
     } else {
-        if (extraData.isNull())
-            RTPrintf ("No extra data exists\n");
-        else
-            RTPrintf ("Extra data is empty\n");
+        RTPrintf ("No extra data exists\n");
     }
 
     if (extraData.isEmpty())
@@ -193,10 +190,7 @@ HRESULT readAndChangeMachineSettings (IMachine *machine, IMachine *readonlyMachi
         if (!extraData.isEmpty()) {
             RTPrintf ("Extra data value: {%ls}\n", extraData.raw());
         } else {
-            if (extraData.isNull())
-                RTPrintf ("No extra data exists\n");
-            else
-                RTPrintf ("Extra data is empty\n");
+            RTPrintf ("No extra data exists\n");
         }
     }
 

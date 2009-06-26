@@ -74,7 +74,10 @@ STDMETHODIMP MediumBase::COMGETTER(Description) (BSTR *aDescription)
 
     AutoReadLock alock (this);
 
-    m.description.cloneTo (aDescription);
+    if (m.description.isEmpty())
+        Bstr("").cloneTo(aDescription);
+    else
+        m.description.cloneTo (aDescription);
 
     return S_OK;
 }
@@ -198,7 +201,10 @@ STDMETHODIMP MediumBase::COMGETTER(LastAccessError) (BSTR *aLastAccessError)
 
     AutoReadLock alock (this);
 
-    m.lastAccessError.cloneTo (aLastAccessError);
+    if (m.lastAccessError.isEmpty())
+        Bstr("").cloneTo(aLastAccessError);
+    else
+        m.lastAccessError.cloneTo (aLastAccessError);
 
     return S_OK;
 }
@@ -968,7 +974,7 @@ HRESULT ImageMediumBase::protectedInit (VirtualBox *aVirtualBox, CBSTR aLocation
     {
         /* if the image file is not accessible, it's not acceptable for the
          * newly opened media so convert this into an error */
-        if (!m.lastAccessError.isNull())
+        if (!m.lastAccessError.isEmpty())
             rc = setError (VBOX_E_FILE_ERROR, Utf8Str (m.lastAccessError));
     }
 

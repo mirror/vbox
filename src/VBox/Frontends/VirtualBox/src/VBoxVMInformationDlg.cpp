@@ -123,7 +123,7 @@ VBoxVMInformationDlg::VBoxVMInformationDlg (VBoxConsoleView *aConsole,
     /* Preload dialog attributes for this vm */
     QString dlgsize =
         mSession.GetMachine().GetExtraData (VBoxDefs::GUI_InfoDlgState);
-    if (dlgsize.isNull())
+    if (dlgsize.isEmpty())
     {
         mWidth = 400;
         mHeight = 450;

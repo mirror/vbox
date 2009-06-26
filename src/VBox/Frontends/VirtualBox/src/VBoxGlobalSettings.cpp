@@ -159,8 +159,8 @@ void VBoxGlobalSettings::load (CVirtualBox &vbox)
         QString value = vbox.GetExtraData (gPropertyMap [i].publicName);
         if (!vbox.isOk())
             return;
-        // null value means the key is absent. it is ok, the default will apply
-        if (value.isNull())
+        // empty value means the key is absent. it is ok, the default will apply
+        if (value.isEmpty())
             continue;
         // try to set the property validating it against rx
         setPropertyPrivate (i, value);
@@ -241,7 +241,7 @@ bool VBoxGlobalSettings::setPublicProperty (const QString &publicName, const QSt
 
 void VBoxGlobalSettings::setPropertyPrivate (size_t index, const QString &value)
 {
-    if (value.isNull())
+    if (value.isEmpty())
     {
         if (!gPropertyMap [index].canDelete)
         {

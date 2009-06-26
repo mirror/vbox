@@ -790,6 +790,7 @@ STDMETHODIMP VirtualBox::CreateMachine (IN_BSTR aName,
     LogFlowThisFunc (("aName=\"%ls\",aOsTypeId =\"%ls\",aBaseFolder=\"%ls\"\n", aName, aOsTypeId, aBaseFolder));
 
     CheckComArgStrNotEmptyOrNull (aName);
+    /** @todo tighten checks on aId? */
     CheckComArgOutPointerValid (aMachine);
 
     AutoCaller autoCaller (this);
@@ -870,6 +871,7 @@ STDMETHODIMP VirtualBox::CreateLegacyMachine (IN_BSTR aName,
 {
     CheckComArgStrNotEmptyOrNull (aName);
     CheckComArgStrNotEmptyOrNull (aSettingsFile);
+    /** @todo tighten checks on aId? */
     CheckComArgOutPointerValid (aMachine);
 
     AutoCaller autoCaller (this);
@@ -1106,7 +1108,6 @@ STDMETHODIMP VirtualBox::CreateHardDisk(IN_BSTR aFormat,
                                         IN_BSTR aLocation,
                                         IHardDisk **aHardDisk)
 {
-    CheckComArgStrNotEmptyOrNull (aFormat);
     CheckComArgOutPointerValid (aHardDisk);
 
     AutoCaller autoCaller (this);
@@ -1453,9 +1454,9 @@ GetNextExtraDataKey (IN_BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
     CheckComRCReturnRC (autoCaller.rc());
 
     /* start with nothing found */
-    *aNextKey = NULL;
+    Bstr("").cloneTo(aNextKey);
     if (aNextValue)
-        *aNextValue = NULL;
+        Bstr("").cloneTo(aNextValue);
 
     HRESULT rc = S_OK;
 
@@ -1554,7 +1555,7 @@ STDMETHODIMP VirtualBox::GetExtraData (IN_BSTR aKey, BSTR *aValue)
     CheckComRCReturnRC (autoCaller.rc());
 
     /* start with nothing found */
-    *aValue = NULL;
+    Bstr("").cloneTo(aValue);
 
     HRESULT rc = S_OK;
 
@@ -1614,6 +1615,11 @@ STDMETHODIMP VirtualBox::SetExtraData (IN_BSTR aKey, IN_BSTR aValue)
     CheckComRCReturnRC (autoCaller.rc());
 
     Guid emptyGuid;
+    Bstr val;
+    if (!aValue)
+        val = Bstr("");
+    else
+        val = aValue;
 
     bool changed = false;
     HRESULT rc = S_OK;
@@ -1634,7 +1640,7 @@ STDMETHODIMP VirtualBox::SetExtraData (IN_BSTR aKey, IN_BSTR aValue)
         CheckComRCReturnRC (rc);
 
         const Utf8Str key = aKey;
-        Bstr oldVal;
+        Bstr oldVal("");
 
         Key globalNode = tree.rootKey().key ("Global");
         Key extraDataNode = globalNode.createKey ("ExtraData");
@@ -1652,14 +1658,14 @@ STDMETHODIMP VirtualBox::SetExtraData (IN_BSTR aKey, IN_BSTR aValue)
             }
         }
 
-        /* When no key is found, oldVal is null */
-        changed = oldVal != aValue;
+        /* When no key is found, oldVal is empty string */
+        changed = oldVal != val;
 
         if (changed)
         {
             /* ask for permission from all listeners */
             Bstr error;
-            if (!onExtraDataCanChange (Guid::Empty, aKey, aValue, error))
+            if (!onExtraDataCanChange (Guid::Empty, aKey, val, error))
             {
                 const char *sep = error.isEmpty() ? "" : ": ";
                 CBSTR err = error.isNull() ? (CBSTR) L"" : error.raw();
@@ -1668,10 +1674,10 @@ STDMETHODIMP VirtualBox::SetExtraData (IN_BSTR aKey, IN_BSTR aValue)
                 return setError (E_ACCESSDENIED,
                     tr ("Could not set extra data because someone refused "
                         "the requested change of '%ls' to '%ls'%s%ls"),
-                    aKey, aValue, sep, err);
+                    aKey, val.raw(), sep, err);
             }
 
-            if (aValue != NULL)
+            if (!val.isEmpty())
             {
                 if (extraDataItemNode.isNull())
                 {
