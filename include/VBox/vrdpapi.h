@@ -107,9 +107,11 @@ typedef uint32_t VRDPAUDIOFORMAT;
 #define VRDP_USB_VERSION_1 (1)
 /* Version 2: look for VRDP_USB_VERSION_2 comments in the code. */
 #define VRDP_USB_VERSION_2 (2)
+/* Version 3: look for VRDP_USB_VERSION_3 comments in the code. */
+#define VRDP_USB_VERSION_3 (3)
 
 /* The default VRDP server version of Remote USB Protocol. */
-#define VRDP_USB_VERSION VRDP_USB_VERSION_2
+#define VRDP_USB_VERSION VRDP_USB_VERSION_3
 
 
 /** USB backend operations. */
@@ -341,8 +343,12 @@ typedef struct _VRDP_USB_REQ_REAP_URB_PARM
 
 #define VRDP_USB_REAP_FLAG_CONTINUED (0x0)
 #define VRDP_USB_REAP_FLAG_LAST      (0x1)
+/* VRDP_USB_VERSION_3: Fragmented URBs. */
+#define VRDP_USB_REAP_FLAG_FRAGMENT  (0x2)
 
 #define VRDP_USB_REAP_VALID_FLAGS    (VRDP_USB_REAP_FLAG_LAST)
+/* VRDP_USB_VERSION_3: Fragmented URBs. */
+#define VRDP_USB_REAP_VALID_FLAGS_3  (VRDP_USB_REAP_FLAG_LAST | VRDP_USB_REAP_FLAG_FRAGMENT)
 
 typedef struct _VRDPUSBREQREAPURBBODY
 {
@@ -449,7 +455,13 @@ typedef struct _VRDPUSBREQNEGOTIATEPARM
     uint8_t code;
 
     /* Remote USB Protocol version. */
-    uint32_t version;
+    /* VRDP_USB_VERSION_3: the 32 bit field is splitted to 16 bit version and 16 bit flags.
+     * Version 1 and 2 servers therefore have 'flags' == 0.
+     * Version 3+ servers can send some capabilities in this field, this way it is possible to add
+     *  a new capability without increasing the protocol version.
+     */
+    uint16_t version;
+    uint16_t flags;
 
 } VRDPUSBREQNEGOTIATEPARM;
 
