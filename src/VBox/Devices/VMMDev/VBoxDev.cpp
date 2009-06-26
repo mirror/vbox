@@ -1790,6 +1790,8 @@ static DECLCALLBACK(int) vmmdevQueryAbsoluteMouse(PPDMIVMMDEVPORT pInterface, ui
 static DECLCALLBACK(int) vmmdevSetAbsoluteMouse(PPDMIVMMDEVPORT pInterface, uint32_t absX, uint32_t absY)
 {
     VMMDevState *pThis = IVMMDEVPORT_2_VMMDEVSTATE(pInterface);
+    if ((pThis->mouseXAbs == absX) && (pThis->mouseYAbs == absY))
+        return VINF_SUCCESS;
     Log2(("vmmdevSetAbsoluteMouse: settings absolute position to x = %d, y = %d\n", absX, absY));
     pThis->mouseXAbs = absX;
     pThis->mouseYAbs = absY;
