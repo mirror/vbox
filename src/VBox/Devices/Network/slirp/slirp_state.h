@@ -23,9 +23,7 @@
 
 #include <iprt/req.h>
 #include "ip_icmp.h"
-#ifdef VBOX_WITH_SLIRP_DNS_PROXY
-# include "dnsproxy/dnsproxy.h"
-#endif
+#include "dnsproxy/dnsproxy.h"
 
 /** Number of DHCP clients supported by NAT. */
 #define NB_ADDR     16
@@ -59,21 +57,19 @@ struct tftp_session
     int timestamp;
 };
 
-#ifdef VBOX_WITH_MULTI_DNS
 struct dns_domain_entry
 {
-        char *dd_pszDomain;
-        LIST_ENTRY(dns_domain_entry) dd_list;
+    char *dd_pszDomain;
+    LIST_ENTRY(dns_domain_entry) dd_list;
 };
 LIST_HEAD(dns_domain_list_head, dns_domain_entry);
 
 struct dns_entry
 {
-        struct in_addr de_addr;
-        TAILQ_ENTRY(dns_entry) de_list;
+    struct in_addr de_addr;
+    TAILQ_ENTRY(dns_entry) de_list;
 };
 TAILQ_HEAD(dns_list_head, dns_entry);
-#endif
 
 /** Main state/configuration structure for slirp NAT. */
 typedef struct NATState
@@ -122,15 +118,11 @@ typedef struct NATState
 #ifdef VBOX_WITH_SLIRP_MT
     PRTREQQUEUE pReqQueue;
 #endif
-#ifndef VBOX_WITH_MULTI_DNS
-    struct in_addr dns_addr;
-#else
-# ifdef RT_OS_WINDOWS
+#ifdef RT_OS_WINDOWS
     ULONG (WINAPI * pfGetAdaptersAddresses)(ULONG, ULONG, PVOID, PIP_ADAPTER_ADDRESSES, PULONG);
-# endif
+#endif
     struct dns_list_head dns_list_head;
     struct dns_domain_list_head dns_domain_list_head;
-#endif
     struct in_addr tftp_server;
     struct in_addr loopback_addr;
     uint32_t netmask;
@@ -142,9 +134,6 @@ typedef struct NATState
     struct ex_list *exec_list;
     char slirp_hostname[33];
     bool fPassDomain;
-#ifndef VBOX_WITH_MULTI_DNS
-    const char *pszDomain;
-#endif
     /* Stuff from tcp_input.c */
     struct socket tcb;
 #ifdef VBOX_WITH_SLIRP_MT
@@ -203,7 +192,7 @@ typedef struct NATState
 # define VBOX_SOCKET_EVENT (pData->phEvents[VBOX_SOCKET_EVENT_INDEX])
     HANDLE phEvents[VBOX_EVENT_COUNT];
 #endif
-#ifdef VBOX_WITH_SLIRP_DNS_PROXY
+
     /* from dnsproxy/dnsproxy.h*/
     unsigned int authoritative_port;
     unsigned int authoritative_timeout;
@@ -229,12 +218,12 @@ typedef struct NATState
     int sock_query;
     int sock_answer;
     /* dnsproxy/hash.c */
-# define HASHSIZE 10
-# define HASH(id) (id & ((1 << HASHSIZE) - 1))
+#define HASHSIZE 10
+#define HASH(id) (id & ((1 << HASHSIZE) - 1))
     struct request *request_hash[1 << HASHSIZE];
     /* this field control behaviour of DHCP server */
     bool use_dns_proxy;
-#endif
+
 #ifdef VBOX_WITH_SLIRP_ALIAS
     LIST_HEAD(RT_NOTHING, libalias) instancehead;
     struct libalias *proxy_alias;
@@ -652,38 +641,35 @@ typedef struct NATState
 #define SORECVFROM(data, so) DO_SORECFROM((data), (so))
 #define UDP_DETACH(data, so, so_next) DO_UDP_DETACH((data), (so), (so_next))
 
-#ifdef VBOX_WITH_SLIRP_DNS_PROXY
 /* dnsproxy/dnsproxy.c */
-# define authoritative_port pData->authoritative_port
-# define authoritative_timeout pData->authoritative_timeout
-# define recursive_port pData->recursive_port
-# define recursive_timeout pData->recursive_timeout
-# define stats_timeout pData->stats_timeout
+#define authoritative_port pData->authoritative_port
+#define authoritative_timeout pData->authoritative_timeout
+#define recursive_port pData->recursive_port
+#define recursive_timeout pData->recursive_timeout
+#define stats_timeout pData->stats_timeout
 /* dnsproxy/hash.c */
-# define dns_port pData->port
-# define request_hash pData->request_hash
-# define hash_collisions pData->hash_collisions
-# define active_queries pData->active_queries
-# define all_queries pData->all_queries
-# define authoritative_queries pData->authoritative_queries
-# define recursive_queries pData->recursive_queries
-# define removed_queries pData->removed_queries
-# define dropped_queries pData->dropped_queries
-# define answered_queries pData->answered_queries
-# define dropped_answers pData->dropped_answers
-# define late_answers pData->late_answers
+#define dns_port pData->port
+#define request_hash pData->request_hash
+#define hash_collisions pData->hash_collisions
+#define active_queries pData->active_queries
+#define all_queries pData->all_queries
+#define authoritative_queries pData->authoritative_queries
+#define recursive_queries pData->recursive_queries
+#define removed_queries pData->removed_queries
+#define dropped_queries pData->dropped_queries
+#define answered_queries pData->answered_queries
+#define dropped_answers pData->dropped_answers
+#define late_answers pData->late_answers
 
 /* dnsproxy/dnsproxy.c */
-# define queryid pData->queryid
-# define authoritative_addr pData->authoritative_addr
-# define recursive_addr pData->recursive_addr
-# define sock_query pData->sock_query
-# define sock_answer pData->sock_answer
-#endif
+#define queryid pData->queryid
+#define authoritative_addr pData->authoritative_addr
+#define recursive_addr pData->recursive_addr
+#define sock_query pData->sock_query
+#define sock_answer pData->sock_answer
 
 #ifdef VBOX_WITH_SLIRP_ALIAS
 # define instancehead pData->instancehead
 #endif
 
 #endif /* !___slirp_state_h */
-

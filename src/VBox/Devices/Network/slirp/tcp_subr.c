@@ -403,13 +403,6 @@ int tcp_fconnect(PNATState pData, struct socket *so)
             switch(ntohl(so->so_faddr.s_addr) & ~pData->netmask)
             {
                 case CTL_DNS:
-#ifndef VBOX_WITH_MULTI_DNS
-                    if (!get_dns_addr(pData, &dns_addr))
-                        addr.sin_addr = dns_addr;
-                    else
-                        addr.sin_addr = loopback_addr;
-                    break;
-#endif
                 case CTL_ALIAS:
                 default:
                     addr.sin_addr = loopback_addr;

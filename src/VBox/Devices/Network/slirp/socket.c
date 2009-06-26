@@ -620,15 +620,6 @@ sorecvfrom(PNATState pData, struct socket *so)
              * for the 4 minute (or whatever) timeout... So we time them
              * out much quicker (10 seconds  for now...)
              */
-#ifndef VBOX_WITH_SLIRP_DNS_PROXY
-            if (so->so_expire)
-            {
-                if (so->so_fport == htons(53))
-                    so->so_expire = curtime + SO_EXPIREFAST;
-                else
-                    so->so_expire = curtime + SO_EXPIRE;
-            }
-#else
             if (so->so_expire)
             {
                 if (so->so_fport != htons(53))
@@ -640,7 +631,6 @@ sorecvfrom(PNATState pData, struct socket *so)
              */
             if (so->so_fport == htons(53))
                 dnsproxy_answer(pData, so, m);
-#endif
 
 #if 0
             if (m->m_len == len)
@@ -700,13 +690,6 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
                 break;
 #endif
             case CTL_DNS:
-#ifndef VBOX_WITH_MULTI_DNS
-                if (!get_dns_addr(pData, &dns_addr))
-                    addr.sin_addr = dns_addr;
-                else
-                    addr.sin_addr = loopback_addr;
-                break;
-#endif
             case CTL_ALIAS:
             default:
                 if (last_byte == ~pData->netmask)
@@ -979,11 +962,6 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
         || type == ICMP_UNREACH)
     {
         ip = &icp->icmp_ip;
-        DO_ALIAS(&ip->ip_dst);
-    }
-    else
-    {
-        DO_ALIAS(&ip->ip_src);
     }
 
     icm = icmp_find_original_mbuf(pData, ip);
@@ -1109,7 +1087,6 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                 m->m_data += if_maxlinkhdr;
                 ip = mtod(m, struct ip *);
                 ip->ip_src.s_addr = icr[i].Address;
-                DO_ALIAS(&ip->ip_src);
                 ip->ip_p = IPPROTO_ICMP;
                 ip->ip_dst.s_addr = so->so_laddr.s_addr; /*XXX: still the hack*/
                 data_len = sizeof(struct ip);

@@ -721,7 +721,9 @@ VBOX_SLIRP_SOURCES = \
 	Network/slirp/tcp_subr.c \
 	Network/slirp/tcp_timer.c \
 	Network/slirp/tftp.c \
-	Network/slirp/udp.c
+	Network/slirp/udp.c \
+	Network/slirp/dnsproxy/hash.c \
+	Network/slirp/dnsproxy/dnsproxy.c
 
 VBOX_SLIRP_ALIAS_SOURCES = \
 	Network/slirp/libalias/alias.c \
@@ -732,17 +734,7 @@ VBOX_SLIRP_ALIAS_SOURCES = \
 	Network/slirp/libalias/alias_nbt.c \
 	Network/slirp/libalias/alias_util.c
 
-
-VBOX_WITH_SLIRP_DNS_PROXY=1
-
-ifdef VBOX_WITH_SLIRP_DNS_PROXY
-VBOX_SLIRP_SOURCES += \
-	Network/slirp/dnsproxy/hash.c \
-	Network/slirp/dnsproxy/dnsproxy.c
-endif
-
 # some day will be deleted
-VBOX_WITH_MULTI_DNS=1
 VBOX_WITHOUT_SLIRP_CLIENT_ETHER=1
 
 Drivers_SOURCES += $(VBOX_SLIRP_SOURCES)
@@ -752,8 +744,6 @@ define def_vbox_slirp_cflags
       $(if $(VBOX_WITH_SLIRP_ALIAS),VBOX_WITH_SLIRP_ALIAS,) \
       $(if $(VBOX_WITHOUT_SLIRP_CLIENT_ETHER),VBOX_WITHOUT_SLIRP_CLIENT_ETHER,)	\
       $(if $(VBOX_WITH_DEBUG_NAT_SOCKETS),VBOX_WITH_DEBUG_NAT_SOCKETS,)	\
-      $(if $(VBOX_WITH_MULTI_DNS),VBOX_WITH_MULTI_DNS,)	\
-      $(if $(VBOX_WITH_SLIRP_DNS_PROXY),VBOX_WITH_SLIRP_DNS_PROXY,)	\
       $(if $(VBOX_WITH_SLIRP_MT),VBOX_WITH_SLIRP_MT,)
  ifdef VBOX_WITH_SLIRP_ALIAS
   $(file)_INCS += $(1)/slirp

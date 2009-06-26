@@ -2,9 +2,6 @@
 #ifdef RT_OS_OS2
 # include <paths.h>
 #endif
-#ifdef VBOX_WITH_SLIRP_DNS_PROXY
-#include "dnsproxy/dnsproxy.h"
-#endif
 
 #include <VBox/err.h>
 #include <VBox/pdmdrv.h>
@@ -209,100 +206,6 @@ const uint8_t zerro_ethaddr[6] =
 };
 
 #ifdef RT_OS_WINDOWS
-# ifndef VBOX_WITH_MULTI_DNS
-static int get_dns_addr_domain(PNATState pData, bool fVerbose,
-                               struct in_addr *pdns_addr,
-                               const char **ppszDomain)
-{
-    int  rc = 0;
-    FIXED_INFO *FixedInfo = NULL;
-    ULONG BufLen;
-    DWORD ret;
-    IP_ADDR_STRING *pIPAddr;
-    struct in_addr tmp_addr;
-
-    FixedInfo = (FIXED_INFO *)GlobalAlloc(GPTR, sizeof(FIXED_INFO));
-    BufLen = sizeof(FIXED_INFO);
-
-    /** @todo: this API returns all DNS servers, no matter whether the
-     * corresponding network adapter is disabled or not. Maybe replace
-     * this by GetAdapterAddresses(), which is XP/Vista only though. */
-    if (ERROR_BUFFER_OVERFLOW == GetNetworkParams(FixedInfo, &BufLen))
-    {
-        if (FixedInfo)
-        {
-            GlobalFree(FixedInfo);
-            FixedInfo = NULL;
-        }
-        FixedInfo = GlobalAlloc(GPTR, BufLen);
-    }
-
-    if ((ret = GetNetworkParams(FixedInfo, &BufLen)) != ERROR_SUCCESS)
-    {
-        Log(("GetNetworkParams failed. ret = %08x\n", (u_int)ret ));
-        if (FixedInfo)
-        {
-            GlobalFree(FixedInfo);
-            FixedInfo = NULL;
-        }
-        rc = -1;
-        goto get_dns_prefix;
-    }
-
-    pIPAddr = &(FixedInfo->DnsServerList);
-    inet_aton(pIPAddr->IpAddress.String, &tmp_addr);
-    Log(("nat: DNS Servers:\n"));
-    if (fVerbose || pdns_addr->s_addr != tmp_addr.s_addr)
-        LogRel(("NAT: DNS address: %s\n", pIPAddr->IpAddress.String));
-    *pdns_addr = tmp_addr;
-
-    pIPAddr = FixedInfo -> DnsServerList.Next;
-    while (pIPAddr)
-    {
-        if (fVerbose)
-            LogRel(("NAT: ignored DNS address: %s\n", pIPAddr ->IpAddress.String));
-        pIPAddr = pIPAddr ->Next;
-    }
-    if (FixedInfo)
-    {
-        GlobalFree(FixedInfo);
-        FixedInfo = NULL;
-    }
-
-get_dns_prefix:
-    if (ppszDomain)
-    {
-        OSVERSIONINFO ver;
-        char szDnsDomain[256];
-        DWORD dwSize = sizeof(szDnsDomain);
-
-        *ppszDomain = NULL;
-        GetVersionEx(&ver);
-        if (ver.dwMajorVersion >= 5)
-        {
-            /* GetComputerNameEx exists in Windows versions starting with 2000. */
-            if (GetComputerNameEx(ComputerNameDnsDomain, szDnsDomain, &dwSize))
-            {
-                if (szDnsDomain[0])
-                {
-                    /* Just non-empty strings are valid. */
-                    *ppszDomain = RTStrDup(szDnsDomain);
-                    if (pData->fPassDomain)
-                    {
-                        if (fVerbose)
-                            LogRel(("NAT: passing domain name %s\n", szDnsDomain));
-                    }
-                    else
-                        Log(("nat: ignoring domain %s\n", szDnsDomain));
-                }
-            }
-            else
-                Log(("nat: GetComputerNameEx failed (%d)\n", GetLastError()));
-        }
-    }
-    return rc;
-}
-# else /* !VBOX_WITH_MULTI_DNS */
 static int get_dns_addr_domain(PNATState pData, bool fVerbose,
                                struct in_addr *pdns_addr,
                                const char **ppszDomain)
@@ -423,7 +326,6 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     RTMemFree(addresses);
     return 0;
 }
-# endif /* VBOX_WITH_MULTI_DNS */
 
 #else /* !RT_OS_WINDOWS */
 
@@ -481,28 +383,12 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     Log(("nat: DNS Servers:\n"));
     while (fgets(buff, 512, f) != NULL)
     {
-#ifdef VBOX_WITH_MULTI_DNS
         struct dns_entry *da = NULL;
-#endif
         if (sscanf(buff, "nameserver%*[ \t]%256s", buff2) == 1)
         {
             if (!inet_aton(buff2, &tmp_addr))
                 continue;
-#ifndef VBOX_WITH_MULTI_DNS
-            /* If it's the first one, set it to dns_addr */
-            if (!found)
-            {
-                if (fVerbose || pdns_addr->s_addr != tmp_addr.s_addr)
-                    LogRel(("NAT: DNS address: %s\n", buff2));
-                *pdns_addr = tmp_addr;
-            }
-            else
-            {
-                if (fVerbose)
-                    LogRel(("NAT: ignored DNS address: %s\n", buff2));
-            }
-#else
-    /*localhost mask */
+            /*localhost mask */
             da = RTMemAllocZ(sizeof (struct dns_entry));
             if (da == NULL)
             {
@@ -515,33 +401,8 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
                 da->de_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS);
             }
             TAILQ_INSERT_HEAD(&pData->dns_list_head, da, de_list);
-#endif
             found++;
         }
-#ifndef VBOX_WITH_MULTI_DNS
-        if (   ppszDomain
-            && (!strncmp(buff, "domain", 6) || !strncmp(buff, "search", 6)))
-        {
-            /* Domain name/search list present. Pick first entry */
-            if (*ppszDomain == NULL)
-            {
-                char *tok;
-                char *saveptr;
-                tok = strtok_r(&buff[6], " \t\n", &saveptr);
-                if (tok)
-                {
-                    *ppszDomain = RTStrDup(tok);
-                    if (pData->fPassDomain)
-                    {
-                        if (fVerbose)
-                            LogRel(("NAT: passing domain name %s\n", tok));
-                    }
-                    else
-                        Log(("nat: ignoring domain %s\n", tok));
-                }
-            }
-        }
-#else
         if ((!strncmp(buff, "domain", 6) || !strncmp(buff, "search", 6)))
         {
             char *tok;
@@ -570,7 +431,6 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
                 LIST_INSERT_HEAD(&pData->dns_domain_list_head, dd, dd_list);
             }
         }
-#endif
     }
     fclose(f);
     if (!found)
@@ -579,7 +439,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
 }
 
 #endif
-#ifdef VBOX_WITH_MULTI_DNS
+
 static int slirp_init_dns_list(PNATState pData)
 {
     TAILQ_INIT(&pData->dns_list_head);
@@ -604,7 +464,6 @@ static void slirp_release_dns_list(PNATState pData)
         RTMemFree(dd);
     }
 }
-#endif
 
 int get_dns_addr(PNATState pData, struct in_addr *pdns_addr)
 {
@@ -675,17 +534,10 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
 
     /* set default addresses */
     inet_aton("127.0.0.1", &loopback_addr);
-#ifndef VBOX_WITH_MULTI_DNS
-    inet_aton("127.0.0.1", &dns_addr);
-
-    if (get_dns_addr_domain(pData, true, &dns_addr, &pData->pszDomain) < 0)
-#else
     if (slirp_init_dns_list(pData) < 0)
-#endif
         fNATfailed = 1;
-#ifdef VBOX_WITH_SLIRP_DNS_PROXY
+
     dnsproxy_init(pData);
-#endif
 
     getouraddr(pData);
 
@@ -794,11 +646,6 @@ void slirp_link_down(PNATState pData)
  */
 void slirp_term(PNATState pData)
 {
-#ifndef VBOX_WITH_MULTI_DNS
-    if (pData->pszDomain)
-        RTStrFree((char *)(void *)pData->pszDomain);
-#endif
-
 #ifdef RT_OS_WINDOWS
     pData->pfIcmpCloseHandle(pData->icmp_socket.sh);
     FreeLibrary(pData->hmIcmpLibrary);
@@ -808,9 +655,7 @@ void slirp_term(PNATState pData)
 #endif
 
     slirp_link_down(pData);
-#ifdef VBOX_WITH_MULTI_DNS
     slirp_release_dns_list(pData);
-#endif
 #ifdef RT_OS_WINDOWS
     WSACleanup();
 #endif
@@ -1001,13 +846,11 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
         {
             if (so->so_expire <= curtime)
             {
-#ifdef VBOX_WITH_SLIRP_DNS_PROXY
                 Log2(("NAT: %R[natsock] expired\n", so));
                 if (so->so_timeout != NULL)
                 {
                     so->so_timeout(pData, so, so->so_timeout_arg);
                 }
-#endif
 #ifdef VBOX_WITH_SLIRP_MT
                     /* we need so_next for continue our cycle*/
                 so_next = so->so_next;
@@ -1862,13 +1705,12 @@ void slirp_set_dhcp_next_server(PNATState pData, const char *next_server)
     else
         inet_aton(next_server, &pData->tftp_server);
 }
-#ifdef VBOX_WITH_SLIRP_DNS_PROXY
+
 void slirp_set_dhcp_dns_proxy(PNATState pData, bool fDNSProxy)
 {
     Log2(("NAT: DNS proxy switched %s\n", (fDNSProxy ? "on" : "off")));
     pData->use_dns_proxy = fDNSProxy;
 }
-#endif
 
 #define CHECK_ARG(name, val, lim_min, lim_max)                                  \
 do {                                                                            \
