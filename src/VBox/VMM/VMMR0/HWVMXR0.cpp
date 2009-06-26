@@ -2334,7 +2334,7 @@ ResumeExecution:
 
     TMNotifyStartOfExecution(pVCpu);
 #ifdef VBOX_WITH_KERNEL_USING_XMM
-    rc = hwaccmR0VMXStartVMWrapperXMM(pVCpu->hwaccm.s.fResumeVM, pCtx, &pVCpu->hwaccm.s.vmx.VMCSCache, pVM, pVCpu, pVCpu->hwaccm.s.vmx.pfnStartVM);
+    rc = hwaccmR0VMXStartVMWrapXMM(pVCpu->hwaccm.s.fResumeVM, pCtx, &pVCpu->hwaccm.s.vmx.VMCSCache, pVM, pVCpu, pVCpu->hwaccm.s.vmx.pfnStartVM);
 #else
     rc = pVCpu->hwaccm.s.vmx.pfnStartVM(pVCpu->hwaccm.s.fResumeVM, pCtx, &pVCpu->hwaccm.s.vmx.VMCSCache, pVM, pVCpu);
 #endif
