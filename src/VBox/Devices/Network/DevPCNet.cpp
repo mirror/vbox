@@ -514,7 +514,7 @@ typedef struct TMD
         uint32_t ltint:1;       /**< suppress interrupts after successful transmission */
         uint32_t nofcs:1;       /**< when set, the state of DXMTFCS is ignored and
                                      transmitter FCS generation is activated. */
-        uint32_t err:1;         /**< error occured */
+        uint32_t err:1;         /**< error occurred */
         uint32_t own:1;         /**< 0=owned by guest driver, 1=owned by controller */
     } tmd1;
     struct
@@ -558,7 +558,7 @@ typedef struct RMD
         uint32_t crc:1;         /**< crc error on incoming frame */
         uint32_t oflo:1;        /**< overflow error (lost all or part of incoming frame) */
         uint32_t fram:1;        /**< frame error */
-        uint32_t err:1;         /**< error occured */
+        uint32_t err:1;         /**< error occurred */
         uint32_t own:1;         /**< 0=owned by guest driver, 1=owned by controller */
     } rmd1;
     struct

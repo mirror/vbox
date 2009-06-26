@@ -41,7 +41,7 @@ typedef HGCMMsgCore *FNHGCMNEWMSGALLOC(uint32_t u32MsgId);
 typedef FNHGCMNEWMSGALLOC *PFNHGCMNEWMSGALLOC;
 
 /** Function that is called after message processing by worker thread,
- *  or if an error occured during message handling after successfully
+ *  or if an error occurred during message handling after successfully
  *  posting (hgcmMsgPost) the message to worker thread.
  *
  * @param result    Return code either from the service which actually processed the message

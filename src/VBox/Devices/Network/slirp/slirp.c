@@ -227,7 +227,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     ret = pData->pfGetAdaptersAddresses(AF_INET, 0, NULL /* reserved */, addresses, &size);
     if (ret != ERROR_BUFFER_OVERFLOW)
     {
-        LogRel(("NAT: error %lu occured on capacity detection operation\n", ret));
+        LogRel(("NAT: error %lu occurred on capacity detection operation\n", ret));
         return -1;
     }
 
@@ -247,7 +247,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     ret = pData->pfGetAdaptersAddresses(AF_INET, 0, NULL /* reserved */, addresses, &size);
     if (ret != ERROR_SUCCESS)
     {
-        LogRel(("NAT: error %lu occured on fetching adapters info\n", ret));
+        LogRel(("NAT: error %lu occurred on fetching adapters info\n", ret));
         RTMemFree(addresses);
         return -1;
     }

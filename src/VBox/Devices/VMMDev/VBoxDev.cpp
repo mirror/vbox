@@ -85,7 +85,7 @@
  *
  * There is a 32 bit event mask which will be read
  * by guest on an interrupt. A non zero bit in the mask
- * means that the specific event occured and requires
+ * means that the specific event occurred and requires
  * processing on guest side.
  *
  * After reading the event mask guest must issue a

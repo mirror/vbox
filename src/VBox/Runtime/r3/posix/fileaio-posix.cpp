@@ -564,7 +564,7 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
                         }
                         else
                         {
-                            /* An error occured. */
+                            /* An error occurred. */
                             RTFILEAIOREQ_SET_STATE(pReqInt, COMPLETED);
                             pReqInt->Rc = RTErrConvertFromErrno(rcPosix);
                             pReqInt->cbTransfered = 0;

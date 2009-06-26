@@ -235,7 +235,7 @@ static DECLCALLBACK(int) drvHostParallelMonitorThread(PPDMDRVINS pDrvIns, PPDMTH
             continue;
         }
 
-        /* Interrupt occured. */
+        /* Interrupt occurred. */
         rc = pThis->pDrvHostParallelPort->pfnNotifyInterrupt(pThis->pDrvHostParallelPort);
         AssertRC(rc);
     }

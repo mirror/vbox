@@ -1915,7 +1915,7 @@ Remarks:
 
         //
         // If the read timed out, stall and retry.
-        // If some other error occured handle it outside the loop
+        // If some other error occurred handle it outside the loop
         //
 
         if(status == STATUS_IO_TIMEOUT) {

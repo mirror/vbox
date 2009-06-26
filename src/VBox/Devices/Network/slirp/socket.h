@@ -74,7 +74,7 @@ struct socket
     int so_poll_index;
 #else /* !RT_OS_WINDOWS */
     /*
-     * FD_CLOSE event has been occured on socket 
+     * FD_CLOSE event has been occurred on socket 
      */
     int so_close; 
 #endif /* RT_OS_WINDOWS */
