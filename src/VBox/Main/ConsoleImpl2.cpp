@@ -2796,11 +2796,14 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
                 }
                 Bstr tmpAddr, tmpMask;
                 hrc = virtualBox->GetExtraData(Bstr("HostOnly/vboxnet0/IPAddress"), tmpAddr.asOutParam());
-                if (SUCCEEDED(hrc) && !tmpAddr.isNull())
+                if (SUCCEEDED(hrc) && !tmpAddr.isEmpty())
                 {
                     hrc = virtualBox->GetExtraData(Bstr("HostOnly/vboxnet0/IPNetMask"), tmpMask.asOutParam());
-                    if (SUCCEEDED(hrc) && !tmpAddr.isEmpty())
+                    if (SUCCEEDED(hrc) && !tmpMask.isEmpty())
                         hrc = hostInterface->EnableStaticIpConfig(tmpAddr, tmpMask);
+                    else
+                        hrc = hostInterface->EnableStaticIpConfig(tmpAddr,
+                                                                  Bstr(VBOXNET_IPV4MASK_DEFAULT));
                 }
                 else
                     hrc = hostInterface->EnableStaticIpConfig(Bstr(VBOXNET_IPV4ADDR_DEFAULT),
@@ -2810,7 +2813,7 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
                 hrc = virtualBox->GetExtraData(Bstr("HostOnly/vboxnet0/IPV6Address"), tmpAddr.asOutParam());
                 if (SUCCEEDED(hrc))
                     hrc = virtualBox->GetExtraData(Bstr("HostOnly/vboxnet0/IPV6NetMask"), tmpMask.asOutParam());
-                if (SUCCEEDED(hrc) && !tmpAddr.isEmpty())
+                if (SUCCEEDED(hrc) && !tmpAddr.isEmpty() && !tmpMask.isEmpty())
                     hrc = hostInterface->EnableStaticIpConfigV6(tmpAddr, Utf8Str(tmpMask).toUInt32());
 #endif
                 break;

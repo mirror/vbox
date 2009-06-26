@@ -60,8 +60,14 @@ HRESULT HostFloppyDrive::init (IN_BSTR aName,
     AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     unconst (mName) = aName;
-    unconst (mUdi) = aUdi;
-    unconst (mDescription) = aDescription;
+    if (!aUdi)
+        unconst (mUdi) = "";
+    else
+        unconst (mUdi) = aUdi;
+    if (!aDescription)
+        unconst (mDescription) = "";
+    else
+        unconst (mDescription) = aDescription;
 
     /* Confirm the successful initialization */
     autoInitSpan.setSucceeded();

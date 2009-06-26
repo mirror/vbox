@@ -1618,7 +1618,10 @@ STDMETHODIMP Machine::COMGETTER(SessionType) (BSTR *aSessionType)
 
     AutoReadLock alock (this);
 
-    mData->mSession.mType.cloneTo (aSessionType);
+    if (mData->mSession.mType.isNull())
+        Bstr("").cloneTo(aSessionType);
+    else
+        mData->mSession.mType.cloneTo (aSessionType);
 
     return S_OK;
 }
@@ -1675,7 +1678,10 @@ STDMETHODIMP Machine::COMGETTER(StateFilePath) (BSTR *aStateFilePath)
 
     AutoReadLock alock (this);
 
-    mSSData->mStateFilePath.cloneTo (aStateFilePath);
+    if (mSSData->mStateFilePath.isEmpty())
+        Bstr("").cloneTo(aStateFilePath);
+    else
+        mSSData->mStateFilePath.cloneTo (aStateFilePath);
 
     return S_OK;
 }
@@ -2370,13 +2376,10 @@ STDMETHODIMP Machine::GetNextExtraDataKey (IN_BSTR aKey, BSTR *aNextKey, BSTR *a
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    /* serialize file access (prevent writes) */
-    AutoReadLock alock (this);
-
     /* start with nothing found */
-    *aNextKey = NULL;
+    Bstr("").cloneTo(aNextKey);
     if (aNextValue)
-        *aNextValue = NULL;
+        Bstr("").cloneTo(aNextValue);
 
     /* if we're ready and isConfigLocked() is FALSE then it means
      * that no config file exists yet, so return shortly */
@@ -2384,6 +2387,11 @@ STDMETHODIMP Machine::GetNextExtraDataKey (IN_BSTR aKey, BSTR *aNextKey, BSTR *a
         return S_OK;
 
     HRESULT rc = S_OK;
+
+    Bstr bstrInKey(aKey);
+
+    /* serialize file access (prevent writes) */
+    AutoReadLock alock (this);
 
     try
     {
@@ -2412,7 +2420,7 @@ STDMETHODIMP Machine::GetNextExtraDataKey (IN_BSTR aKey, BSTR *aNextKey, BSTR *a
                     Bstr key = (*it).stringValue ("name");
 
                     /* if we're supposed to return the first one */
-                    if (aKey == NULL)
+                    if (bstrInKey.isEmpty())
                     {
                         key.cloneTo (aNextKey);
                         if (aNextValue)
@@ -2424,7 +2432,7 @@ STDMETHODIMP Machine::GetNextExtraDataKey (IN_BSTR aKey, BSTR *aNextKey, BSTR *a
                     }
 
                     /* did we find the key we're looking for? */
-                    if (key == aKey)
+                    if (key == bstrInKey)
                     {
                         ++ it;
                         /* is there another item? */
@@ -2451,9 +2459,9 @@ STDMETHODIMP Machine::GetNextExtraDataKey (IN_BSTR aKey, BSTR *aNextKey, BSTR *a
          * (which is the case only when there are no items), we just fall
          * through to return NULLs and S_OK. */
 
-        if (aKey != NULL)
+        if (!bstrInKey.isEmpty())
             return setError (VBOX_E_OBJECT_NOT_FOUND,
-                tr ("Could not find the extra data key '%ls'"), aKey);
+                tr ("Could not find the extra data key '%ls'"), bstrInKey.raw());
     }
     catch (...)
     {
@@ -2478,7 +2486,7 @@ STDMETHODIMP Machine::GetExtraData (IN_BSTR aKey, BSTR *aValue)
     AutoReadLock alock (this);
 
     /* start with nothing found */
-    *aValue = NULL;
+    Bstr("").cloneTo(aValue);
 
     /* if we're ready and isConfigLocked() is FALSE then it means
      * that no config file exists yet, so return shortly */
@@ -2558,6 +2566,13 @@ STDMETHODIMP Machine::SetExtraData (IN_BSTR aKey, IN_BSTR aValue)
         CheckComRCReturnRC (rc);
     }
 
+    Bstr val;
+    if (!aValue)
+        val = Bstr("");
+    else
+        val = aValue;
+
+
     bool changed = false;
     HRESULT rc = S_OK;
 
@@ -2582,7 +2597,7 @@ STDMETHODIMP Machine::SetExtraData (IN_BSTR aKey, IN_BSTR aValue)
         CheckComRCReturnRC (rc);
 
         const Utf8Str key = aKey;
-        Bstr oldVal;
+        Bstr oldVal("");
 
         Key machineNode = tree.rootKey().key ("Machine");
         Key extraDataNode = machineNode.createKey ("ExtraData");
@@ -2600,14 +2615,14 @@ STDMETHODIMP Machine::SetExtraData (IN_BSTR aKey, IN_BSTR aValue)
             }
         }
 
-        /* When no key is found, oldVal is null */
-        changed = oldVal != aValue;
+        /* When no key is found, oldVal is empty string */
+        changed = oldVal != val;
 
         if (changed)
         {
             /* ask for permission from all listeners */
             Bstr error;
-            if (!mParent->onExtraDataCanChange (mData->mUuid, aKey, aValue, error))
+            if (!mParent->onExtraDataCanChange (mData->mUuid, aKey, val, error))
             {
                 const char *sep = error.isEmpty() ? "" : ": ";
                 CBSTR err = error.isNull() ? (CBSTR) L"" : error.raw();
@@ -2616,10 +2631,10 @@ STDMETHODIMP Machine::SetExtraData (IN_BSTR aKey, IN_BSTR aValue)
                 return setError (E_ACCESSDENIED,
                     tr ("Could not set extra data because someone refused "
                         "the requested change of '%ls' to '%ls'%s%ls"),
-                    aKey, aValue, sep, err);
+                    aKey, val.raw(), sep, err);
             }
 
-            if (aValue != NULL)
+            if (!val.isEmpty())
             {
                 if (extraDataItemNode.isNull())
                 {
@@ -3048,8 +3063,7 @@ STDMETHODIMP Machine::SetGuestProperty (IN_BSTR aName, IN_BSTR aValue, IN_BSTR a
     using namespace guestProp;
 
     CheckComArgNotNull (aName);
-    if ((aValue != NULL) && !VALID_PTR (aValue))
-        return E_INVALIDARG;
+    CheckComArgNotNull (aValue);
     if ((aFlags != NULL) && !VALID_PTR (aFlags))
         return E_INVALIDARG;
 
@@ -3118,7 +3132,7 @@ STDMETHODIMP Machine::SetGuestProperty (IN_BSTR aName, IN_BSTR aValue, IN_BSTR a
         }
         if (found && SUCCEEDED (rc))
         {
-            if (aValue != NULL)
+            if (*aValue)
             {
                 RTTIMESPEC time;
                 property.mValue = aValue;
@@ -3128,7 +3142,7 @@ STDMETHODIMP Machine::SetGuestProperty (IN_BSTR aName, IN_BSTR aValue, IN_BSTR a
                 mHWData->mGuestProperties.push_back (property);
             }
         }
-        else if (SUCCEEDED (rc) && (aValue != NULL))
+        else if (SUCCEEDED (rc) && *aValue)
         {
             RTTIMESPEC time;
             mHWData.backup();
@@ -3768,7 +3782,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
 
     RTENV env = RTENV_DEFAULT;
 
-    if (aEnvironment)
+    if (aEnvironment != NULL && *aEnvironment)
     {
         char *newEnvStr = NULL;
 

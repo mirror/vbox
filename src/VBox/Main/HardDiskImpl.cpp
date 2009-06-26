@@ -554,7 +554,7 @@ public:
                 rc = (*it)->COMGETTER(LastAccessError) (error.asOutParam());
                 CheckComRCReturnRC (rc);
 
-                if (!error.isNull())
+                if (!error.isEmpty())
                 {
                     Bstr loc;
                     rc = (*it)->COMGETTER(Location) (loc.asOutParam());
@@ -614,7 +614,7 @@ public:
                 rc = (*it)->COMGETTER(LastAccessError) (error.asOutParam());
                 CheckComRCReturnRC (rc);
 
-                if (!error.isNull())
+                if (!error.isEmpty())
                 {
                     Bstr loc;
                     rc = (*it)->COMGETTER(Location) (loc.asOutParam());
@@ -1325,7 +1325,10 @@ STDMETHODIMP HardDisk::GetProperty (IN_BSTR aName, BSTR *aValue)
         return setError (VBOX_E_OBJECT_NOT_FOUND,
             tr ("Property '%ls' does not exist"), aName);
 
-    it->second.cloneTo (aValue);
+    if (it->second.isEmpty())
+        Bstr("").cloneTo (aValue);
+    else
+        it->second.cloneTo (aValue);
 
     return S_OK;
 }
@@ -1354,7 +1357,10 @@ STDMETHODIMP HardDisk::SetProperty (IN_BSTR aName, IN_BSTR aValue)
         return setError (VBOX_E_OBJECT_NOT_FOUND,
             tr ("Property '%ls' does not exist"), aName);
 
-    it->second = aValue;
+    if (aValue && !*aValue)
+        it->second = (const char *)NULL;
+    else
+        it->second = aValue;
 
     HRESULT rc = mVirtualBox->saveSettings();
 
@@ -1384,7 +1390,10 @@ STDMETHODIMP HardDisk::GetProperties(IN_BSTR aNames,
           it != mm.properties.end(); ++ it)
     {
         it->first.cloneTo (&names [i]);
-        it->second.cloneTo (&values [i]);
+        if (it->second.isEmpty())
+            Bstr("").cloneTo(&values [i]);
+        else
+            it->second.cloneTo (&values [i]);
         ++ i;
     }
 
@@ -1423,7 +1432,10 @@ STDMETHODIMP HardDisk::SetProperties(ComSafeArrayIn (IN_BSTR, aNames),
         Data::PropertyMap::iterator it = mm.properties.find (Bstr (names [i]));
         AssertReturn (it != mm.properties.end(), E_FAIL);
 
-        it->second = values [i];
+        if (values[i] && !*values[i])
+            it->second = (const char *)NULL;
+        else
+            it->second = values [i];
     }
 
     HRESULT rc = mVirtualBox->saveSettings();

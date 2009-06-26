@@ -1880,9 +1880,6 @@
         <result name="VBOX_E_FILE_ERROR">
           @a location is a not valid file name (for file-based formats only).
         </result>
-        <result name="E_INVALIDARG">
-          @a format is a @c null or empty string.
-        </result>
       </desc>
       <param name="format" type="wstring" dir="in">
         <desc>
@@ -2311,8 +2308,8 @@
       <desc>
         Returns the global extra data key name following the supplied key.
 
-        An error is returned if the supplied @a key does not exist. @c null is
-        returned in @a nextKey if the supplied key is the last key. When
+        An error is returned if the supplied @a key does not exist. An empty
+        string is returned in @a nextKey if the supplied key is the last key. When
         supplying @c null or an empty string for the @a key, the first key item
         is returned in @a nextKey (if there is any). @a nextValue is an optional
         parameter and if supplied, the next key's value is returned in it.
@@ -2338,7 +2335,7 @@
         Returns associated global extra data.
 
         If the requested data @a key does not exist, this function will
-        succeed and return @c null in the @a value argument.
+        succeed and return an empty string in the @a value argument.
 
         <result name="VBOX_E_FILE_ERROR">
           Settings file not accessible.
@@ -2360,8 +2357,8 @@
       <desc>
         Sets associated global extra data.
 
-        If you pass @c null as a key @a value, the given @a key will be
-        deleted.
+        If you pass @c null or empty string as a key @a value, the given @a key
+        will be deleted.
 
         <note>
           Before performing the actual data change, this method will ask all
@@ -2537,8 +2534,8 @@
         and in this list, the value from this list takes precedence over the
         server's variable. If the value of the environment variable is
         omitted, this variable will be removed from the resulting environment.
-        If the environment string is @c null, the server environment is
-        inherited by the started process as is.
+        If the environment string is @c null or emprty, the server environment
+        is inherited by the started process as is.
 
         <see>openExistingSession</see>
 
@@ -3735,7 +3732,7 @@
     <method name="setRemoveSavedState">
       <desc>
         Updates the flag whether saved state is removed on a machine state
-        change from Saved to PowerOff.
+        change from Saved to PoweredOff.
       </desc>
       <param name="aRemove" type="boolean" dir="in"/>
     </method>
@@ -4441,8 +4438,8 @@
         A separate method will be available for this purpose later.
 
         <note>
-          Setting this property to @c null will restore the
-          initial value.
+          Setting this property to @c null or to an empty string will restore
+          the initial value.
         </note>
         <note>
           When setting this property, the specified path can be
@@ -4572,7 +4569,7 @@
         @a type parameter. If the session was opened directly using
         <link to="IVirtualBox::openSession"/>, or if
         <link to="#sessionState"/> is SessionClosed, the value of this
-        attribute is @c null.
+        attribute is an empty string.
       </desc>
     </attribute>
 
@@ -4605,7 +4602,7 @@
         the machine when it is in the <link to="MachineState_Saved"/> state.
         <note>
           When the machine is not in the Saved state, this attribute is
-          @c null.
+          an empty string.
         </note>
       </desc>
     </attribute>
@@ -5032,11 +5029,12 @@
         Returns the machine-specific extra data key name following the
         supplied key.
 
-        An error is returned if the supplied @a key does not exist. @c null is
-        returned in @a nextKey if the supplied key is the last key. When
-        supplying @c null for the @a key, the first key item is returned in
-        @a nextKey (if there is any). @a nextValue is an optional parameter and
-        if supplied, the next key's value is returned in it.
+        An error is returned if the supplied @a key does not exist. An empty
+        string is returned in @a nextKey if the supplied key is the last key.
+        When supplying @c null or an empty string for the @a key, the first key
+        item is returned in @a nextKey (if there is any). @a nextValue is an
+        optional parameter and if supplied, the next key's value is returned in
+        it.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           Extra data @a key not found.
@@ -5059,7 +5057,7 @@
         Returns associated machine-specific extra data.
 
         If the requested data @a key does not exist, this function will
-        succeed and return @c null in the @a value argument.
+        succeed and return an empty string in the @a value argument.
 
         <result name="VBOX_E_FILE_ERROR">
           Settings file not accessible.
@@ -5081,8 +5079,8 @@
       <desc>
         Sets associated machine-specific extra data.
 
-        If you pass @c null as a key @a value, the given @a key will be
-        deleted.
+        If you pass @c null or an empty string as a key @a value, the given
+        @a key will be deleted.
 
         <note>
           Before performing the actual data change, this method will ask all
@@ -5536,8 +5534,8 @@
         <desc>
           The new value of the property to set, change or delete.  If the
           property does not yet exist and value is non-empty, it will be
-          created.  If the value is empty, the key will be deleted if it
-          exists.
+          created.  If the value is @null or empty, the property will be
+          deleted if it exists.
         </desc>
       </param>
       <param name="flags" type="wstring" dir="in">
@@ -5574,8 +5572,8 @@
         <desc>
           The new value of the property to set, change or delete.  If the
           property does not yet exist and value is non-empty, it will be
-          created.  If value is empty, the property will be deleted if it
-          exists.
+          created.  If the value is @null or empty, the property will be
+          deleted if it exists.
         </desc>
       </param>
     </method>
@@ -6912,8 +6910,8 @@
     <attribute name="description" type="wstring" readonly="yes">
       <desc>
         Returns a human readable description for the drive.  This
-        description usually contains the product and vendor name.  A
-        @c null string is returned if the description is not available.
+        description usually contains the product and vendor name.  An
+        empty string is returned if the description is not available.
       </desc>
     </attribute>
     <attribute name="udi" type="wstring" readonly="yes">
@@ -6921,7 +6919,7 @@
         Returns the unique device identifier for the drive.  This
         attribute is reserved for future use instead of
         <link to="#name"/>. Currently it is not used and may return
-        @c null on some platforms.
+        an empty string on some platforms.
       </desc>
     </attribute>
 
@@ -6946,8 +6944,8 @@
     <attribute name="description" type="wstring" readonly="yes">
       <desc>
         Returns a human readable description for the drive.  This
-        description usually contains the product and vendor name.  A
-        @c null string is returned if the description is not available.
+        description usually contains the product and vendor name.  An
+        empty string is returned if the description is not available.
       </desc>
     </attribute>
     <attribute name="udi" type="wstring" readonly="yes">
@@ -6955,7 +6953,7 @@
         Returns the unique device identifier for the drive.  This
         attribute is reserved for future use instead of
         <link to="#name"/>. Currently it is not used and may return
-        @c null on some platforms.
+        an empty string on some platforms.
       </desc>
     </attribute>
   </interface>
@@ -7247,7 +7245,7 @@
       </param>
       <param name="description" type="wstring" dir="return">
         <desc>
-          Model string. A @c null string is returned if value is not known or
+          Model string. An empty string is returned if value is not known or
           @a cpuId is invalid.
         </desc>
       </param>
@@ -7323,7 +7321,7 @@
     <method name="createUSBDeviceFilter">
       <desc>
         Creates a new USB device filter. All attributes except
-        the filter name are set to @c null (any match),
+        the filter name are set to empty (any match),
         <i>active</i> is @c false (the filter is not active).
 
         The created filter can be added to the list of filters using
@@ -7615,7 +7613,7 @@
           VirtualBox_home</link><tt>&gt;/Machines</tt>.
 
         <note>
-          Setting this property to @c null will restore the
+          Setting this property to @c null or an empty string will restore the
           initial value.
         </note>
         <note>
@@ -7653,7 +7651,8 @@
         <tt>&gt;/HardDisks</tt>.
 
         <note>
-          Setting this property to @c null will restore the initial value.
+          Setting this property to @c null or empty string will restore the
+          initial value.
         </note>
         <note>
           When settings this property, the specified path can be relative
@@ -7725,7 +7724,8 @@
         version of the VirtualBox product, but may change in the future.
 
         <note>
-          Setting this property to @c null will restore the initial value.
+          Setting this property to @c null or empty string will restore the
+          initial value.
         </note>
 
         <see>
@@ -7753,7 +7753,7 @@
         them, please refer to the VirtualBox manual.
 
         <note>
-          Setting this property to @c null will restore the
+          Setting this property to @c null or empty string will restore the
           initial value.
         </note>
       </desc>
@@ -7780,6 +7780,10 @@
         The format and calling convention of authentication libraries
         is the same for the webservice as it is for VBoxVRDP.
 
+        <note>
+          Setting this property to @c null or empty string will restore the
+          initial value.
+        </note>
       </desc>
     </attribute>
 
@@ -8543,7 +8547,7 @@
     <attribute name="description" type="wstring">
       <desc>
         Optional description of the medium. For newly created media, the value
-        of this attribute value is @c null.
+        of this attribute value is an empty string.
 
         Media types that don't support this attribute will return E_NOTIMPL in
         attempt to get or set this attribute's value.
@@ -8650,8 +8654,8 @@
         check.
 
         Accessibility checks are performed each time the <link to="#state"/>
-        attribute is read. A @c null string is returned if the last
-        accessibility check was successful. A non-@c null string indicates a
+        attribute is read. An empty string is returned if the last
+        accessibility check was successful. A non-empty string indicates a
         failure and should normally describe a reason of the failure (for
         example, a file read error).
       </desc>
@@ -9413,8 +9417,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         The list of all properties supported by the given hard disk format can
         be obtained with <link to="IHardDiskFormat::describeProperties"/>.
 
-        Note that if this method returns a @c null @a value, the requested
-        property is supported but currently not assigned any value.
+        Note that if this method returns an empty string in @a value, the
+        requested property is supported but currently not assigned any value.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           Requested property does not exist (not supported by the format).
@@ -9436,9 +9440,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         The list of all properties supported by the given hard disk format can
         be obtained with <link to="IHardDiskFormat::describeProperties"/>.
 
-        Note that setting the property value to @c null is equivalent to
-        deleting the existing value. A default value (if it is defined for this
-        property) will be used by the format backend in this case.
+        Note that setting the property value to @c null or an empty string is
+        equivalent to deleting the existing value. A default value (if it is
+        defined for this property) will be used by the format backend in this
+        case.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           Requested property does not exist (not supported by the format).
@@ -9459,7 +9464,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         The names of the properties to get are specified using the @a names
         argument which is a list of comma-separated property names or
-        @c null if all properties are to be returned. Note that currently
+        an empty string if all properties are to be returned. Note that currently
         the value of this argument is ignored and the method always returns all
         existing properties.
 
@@ -9473,7 +9478,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         index in the second array.
 
         Note that for properties that do not have assigned values,
-        @c null is returned at the appropriate index in the
+        an empty string is returned at the appropriate index in the
         @a returnValues array.
 
       </desc>
@@ -9511,9 +9516,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         The list of all properties supported by the given hard disk format can
         be obtained with <link to="IHardDiskFormat::describeProperties"/>.
 
-        Note that setting the property value to @c null is equivalent to
-        deleting the existing value. A default value (if it is defined for this
-        property) will be used by the format backend in this case.
+        Note that setting the property value to @c null or an empty string is
+        equivalent to deleting the existing value. A default value (if it is
+        defined for this property) will be used by the format backend in this
+        case.
       </desc>
       <param name="names" type="wstring" safearray="yes" dir="in">
         <desc>Names of properties to set.</desc>
@@ -11123,7 +11129,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="MACAddress" type="wstring">
       <desc>
         Ethernet MAC address of the adapter, 12 hexadecimal characters. When setting
-        it to @c null, VirtualBox will generate a unique MAC address.
+        it to @c null or an empty string, VirtualBox will generate a unique MAC address.
       </desc>
     </attribute>
 
@@ -11560,7 +11566,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="createDeviceFilter">
       <desc>
         Creates a new USB device filter. All attributes except
-        the filter name are set to @c null (any match),
+        the filter name are set to empty (any match),
         <i>active</i> is @c false (the filter is not active).
 
         The created filter can then be added to the list of filters using
@@ -12302,8 +12308,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         check.
 
         Accessibility checks are performed each time the <link to="#accessible"/>
-        attribute is read. A @c null string is returned if the last
-        accessibility check was successful. A non-@c null string indicates a
+        attribute is read. An empty string is returned if the last
+        accessibility check was successful. A non-empty string indicates a
         failure and should normally describe a reason of the failure (for
         example, a file read error).
       </desc>
@@ -12576,6 +12582,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         of machine termination or direct call to
         <link to="IConsole::detachUSBDevice"/>) has completed.
         A @c null @a error object means success, otherwise it
+        describes a failure.
 
         <result name="VBOX_E_INVALID_VM_STATE">
           Session state prevents operation.

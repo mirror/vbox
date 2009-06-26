@@ -1082,7 +1082,7 @@ STDMETHODIMP Host::GetProcessorSpeed(ULONG aCpuId, ULONG *aSpeed)
  *
  * @returns COM status code
  * @param   cpu id to get info for.
- * @param   description address of result variable, NULL if known or aCpuId is invalid.
+ * @param   description address of result variable, empty string if not known or aCpuId is invalid.
  */
 STDMETHODIMP Host::GetProcessorDescription(ULONG /* aCpuId */, BSTR *aDescription)
 {
