@@ -130,7 +130,7 @@ VMMDECL(int) HWACCMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCPtr)
             {
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTlbShootdown);
 #ifdef IN_RING0
-                RTCPUID idHostCpu = pVCpu->hwaccm.s.idEnteredCpu;
+                RTCPUID idHostCpu = pVCpu->idHostCpu;
                 if (idHostCpu != NIL_RTCPUID)
                     RTMpPokeCpu(idHostCpu);
 #else
@@ -170,7 +170,7 @@ VMMDECL(int) HWACCMFlushTLBOnAllVCpus(PVM pVM)
         {
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTlbShootdownFlush);
 #ifdef IN_RING0
-            RTCPUID idHostCpu = pVCpu->hwaccm.s.idEnteredCpu;
+            RTCPUID idHostCpu = pVCpu->idHostCpu;
             if (idHostCpu != NIL_RTCPUID)
                 RTMpPokeCpu(idHostCpu);
 #else
@@ -245,7 +245,7 @@ VMMDECL(int) HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
             {
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTlbShootdownFlush);
     #ifdef IN_RING0
-                RTCPUID idHostCpu = pVCpu->hwaccm.s.idEnteredCpu;
+                RTCPUID idHostCpu = pVCpu->idHostCpu;
                 if (idHostCpu != NIL_RTCPUID)
                     RTMpPokeCpu(idHostCpu);
     #else

@@ -2111,9 +2111,9 @@ ResumeExecution:
         if (fStatExit2Started)   { STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2, y); fStatExit2Started = false; }
         if (!fStatEntryStarted) { STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatEntry, x); fStatEntryStarted = true; }
     });
-    AssertMsg(pVCpu->hwaccm.s.idEnteredCpu == RTMpCpuId(),
+    AssertMsg(pVCpu->idHostCpu == RTMpCpuId(),
               ("Expected %d, I'm %d; cResume=%d exitReason=%RGv exitQualification=%RGv\n",
-               (int)pVCpu->hwaccm.s.idEnteredCpu, (int)RTMpCpuId(), cResume, exitReason, exitQualification));
+               (int)pVCpu->idHostCpu, (int)RTMpCpuId(), cResume, exitReason, exitQualification));
     Assert(!HWACCMR0SuspendPending());
 
     /* Safety precaution; looping for too long here can have a very bad effect on the host */
@@ -3730,7 +3730,7 @@ end:
     {
         VMXGetActivateVMCS(&pVCpu->hwaccm.s.vmx.lasterror.u64VMCSPhys);
         pVCpu->hwaccm.s.vmx.lasterror.ulVMCSRevision = *(uint32_t *)pVCpu->hwaccm.s.vmx.pVMCS;
-        pVCpu->hwaccm.s.vmx.lasterror.idEnteredCpu   = pVCpu->hwaccm.s.idEnteredCpu;
+        pVCpu->hwaccm.s.vmx.lasterror.idEnteredCpu   = pVCpu->idHostCpu;
         pVCpu->hwaccm.s.vmx.lasterror.idCurrentCpu   = RTMpCpuId();
     }
 
