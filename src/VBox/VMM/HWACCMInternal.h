@@ -442,8 +442,13 @@ typedef VMCSCACHE *PVMCSCACHE;
 
 /** VMX StartVM function. */
 typedef DECLCALLBACK(int) FNHWACCMVMXSTARTVM(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu);
-/** Pointer to an VMX StartVM function. */
+/** Pointer to a VMX StartVM function. */
 typedef R0PTRTYPE(FNHWACCMVMXSTARTVM *) PFNHWACCMVMXSTARTVM;
+
+/** SVM VMRun function. */
+typedef DECLCALLBACK(int) FNHWACCMSVMVMRUN(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu);
+/** Pointer to a SVM VMRun function. */
+typedef R0PTRTYPE(FNHWACCMSVMVMRUN *) PFNHWACCMSVMVMRUN;
 
 /**
  * HWACCM VMCPU Instance data.
@@ -553,7 +558,7 @@ typedef struct HWACCMCPU
         R0PTRTYPE(void *)           pVMCB;
 
         /** Ring 0 handlers for VT-x. */
-        DECLR0CALLBACKMEMBER(int, pfnVMRun,(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu));
+        PFNHWACCMSVMVMRUN           pfnVMRun;
 
     } svm;
 
@@ -724,7 +729,8 @@ VMMR0DECL(int) HWACCMR0DummySaveHostState(PVM pVM, PVMCPU pVCpu);
 VMMR0DECL(int) HWACCMR0DummyLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
 # ifdef VBOX_WITH_KERNEL_USING_XMM
-DECLASM(int) hwaccmR0VMXStartVMWrapperXMM(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu, PFNHWACCMVMXSTARTVM pfnStartVM);
+DECLASM(int)   hwaccmR0VMXStartVMWrapXMM(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu, PFNHWACCMVMXSTARTVM pfnStartVM);
+DECLASM(int)   hwaccmR0SVMRunWrapXMM(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu, PFNHWACCMSVMVMRUN pfnVMRun);
 # endif
 
 # ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
