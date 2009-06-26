@@ -5534,7 +5534,7 @@
         <desc>
           The new value of the property to set, change or delete.  If the
           property does not yet exist and value is non-empty, it will be
-          created.  If the value is @null or empty, the property will be
+          created.  If the value is @c null or empty, the property will be
           deleted if it exists.
         </desc>
       </param>
@@ -5572,7 +5572,7 @@
         <desc>
           The new value of the property to set, change or delete.  If the
           property does not yet exist and value is non-empty, it will be
-          created.  If the value is @null or empty, the property will be
+          created.  If the value is @c null or empty, the property will be
           deleted if it exists.
         </desc>
       </param>
