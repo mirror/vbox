@@ -64,7 +64,6 @@ HRESULT OUSBDevice::init(IUSBDevice *aUSBDevice)
 
     hrc = aUSBDevice->COMGETTER(ProductId)(&unconst (mData.productId));
     ComAssertComRCRet (hrc, hrc);
-    ComAssertRet (mData.productId, E_INVALIDARG);
 
     hrc = aUSBDevice->COMGETTER(Revision)(&unconst (mData.revision));
     ComAssertComRCRet (hrc, hrc);

@@ -1203,7 +1203,6 @@ bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice, ULONG *aMaskedIfs
     USHORT productId = 0;
     rc = aUSBDevice->COMGETTER(ProductId) (&productId);
     ComAssertComRCRet (rc, false);
-    ComAssertRet (productId, false);
     vrc = USBFilterSetNumExact (&dev, USBFILTERIDX_PRODUCT_ID, productId, true); AssertRC(vrc);
 
     USHORT revision;
