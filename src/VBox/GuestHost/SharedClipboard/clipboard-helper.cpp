@@ -52,9 +52,11 @@ int vboxClipboardUtf16GetWinSize(PRTUTF16 pwszSrc, size_t cwSrc, size_t *pcwDest
         /* Check for a single line feed */
         if (pwszSrc[i] == LINEFEED)
             ++cwDest;
+#ifdef RT_OS_DARWIN
         /* Check for a single carriage return (MacOS) */
         if (pwszSrc[i] == CARRIAGERETURN)
             ++cwDest;
+#endif
         if (pwszSrc[i] == 0)
         {
             /* Don't count this, as we do so below. */
@@ -116,6 +118,7 @@ int vboxClipboardUtf16LinToWin(PRTUTF16 pwszSrc, size_t cwSrc, PRTUTF16 pu16Dest
                 return VERR_BUFFER_OVERFLOW;
             }
         }
+#ifdef RT_OS_DARWIN
         /* Check for a single carriage return (MacOS) */
         else if (pwszSrc[i] == CARRIAGERETURN)
         {
@@ -131,6 +134,7 @@ int vboxClipboardUtf16LinToWin(PRTUTF16 pwszSrc, size_t cwSrc, PRTUTF16 pu16Dest
             pu16Dest[j] = LINEFEED;
             continue;
         }
+#endif
         pu16Dest[j] = pwszSrc[i];
     }
     /* Add the trailing null. */

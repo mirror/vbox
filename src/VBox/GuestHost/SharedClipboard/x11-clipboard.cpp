@@ -2183,6 +2183,16 @@ int main()
                            "hello\nworld", sizeof("hello\nworld"), 8);
     if (!testStringFromX11(pCtx, "hello\r\nworld", VINF_SUCCESS))
         ++cErrs;
+    /* With an embedded CRLF */
+    clipSetSelectionValues("text/plain;charset=UTF-8", XA_STRING,
+                           "hello\r\nworld", sizeof("hello\r\nworld"), 8);
+    if (!testStringFromX11(pCtx, "hello\r\r\nworld", VINF_SUCCESS))
+        ++cErrs;
+    /* With an embedded LFCR */
+    clipSetSelectionValues("text/plain;charset=UTF-8", XA_STRING,
+                           "hello\n\rworld", sizeof("hello\n\rworld"), 8);
+    if (!testStringFromX11(pCtx, "hello\r\n\rworld", VINF_SUCCESS))
+        ++cErrs;
     /* An empty string */
     clipSetSelectionValues("text/plain;charset=utf-8", XA_STRING, "",
                            sizeof(""), 8);
@@ -2212,6 +2222,16 @@ int main()
                            sizeof("hello\nworld"), 8);
     if (!testStringFromX11(pCtx, "hello\r\nworld", VINF_SUCCESS))
         ++cErrs;
+    /* With an embedded CRLF */
+    clipSetSelectionValues("COMPOUND_TEXT", XA_STRING, "hello\r\nworld",
+                           sizeof("hello\r\nworld"), 8);
+    if (!testStringFromX11(pCtx, "hello\r\r\nworld", VINF_SUCCESS))
+        ++cErrs;
+    /* With an embedded LFCR */
+    clipSetSelectionValues("COMPOUND_TEXT", XA_STRING, "hello\n\rworld",
+                           sizeof("hello\n\rworld"), 8);
+    if (!testStringFromX11(pCtx, "hello\r\n\rworld", VINF_SUCCESS))
+        ++cErrs;
     /* An empty string */
     clipSetSelectionValues("COMPOUND_TEXT", XA_STRING, "",
                            sizeof(""), 8);
@@ -2234,6 +2254,16 @@ int main()
     clipSetSelectionValues("TEXT", XA_STRING, "Georges\nDupr\xEA",
                            sizeof("Georges\nDupr\xEA"), 8);
     if (!testLatin1FromX11(pCtx, "Georges\r\nDupr\xEA", VINF_SUCCESS))
+        ++cErrs;
+    /* With an embedded CRLF */
+    clipSetSelectionValues("TEXT", XA_STRING, "Georges\r\nDupr\xEA",
+                           sizeof("Georges\r\nDupr\xEA"), 8);
+    if (!testLatin1FromX11(pCtx, "Georges\r\r\nDupr\xEA", VINF_SUCCESS))
+        ++cErrs;
+    /* With an embedded LFCR */
+    clipSetSelectionValues("TEXT", XA_STRING, "Georges\n\rDupr\xEA",
+                           sizeof("Georges\n\rDupr\xEA"), 8);
+    if (!testLatin1FromX11(pCtx, "Georges\r\n\rDupr\xEA", VINF_SUCCESS))
         ++cErrs;
     /* A non-zero-terminated string */
     clipSetSelectionValues("text/plain", XA_STRING,
@@ -2333,6 +2363,20 @@ int main()
                             clipGetAtom(NULL, "text/plain;charset=UTF-8"),
                             "hello\nworld", sizeof("hello\nworld"), 8))
         ++cErrs;
+    /* With an embedded CRCRLF */
+    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello\r\r\nworld",
+                     sizeof("hello\r\r\nworld") * 2);
+    if (!testStringFromVBox(pCtx, "text/plain;charset=UTF-8",
+                            clipGetAtom(NULL, "text/plain;charset=UTF-8"),
+                            "hello\r\nworld", sizeof("hello\r\nworld"), 8))
+        ++cErrs;
+    /* With an embedded CRLFCR */
+    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello\r\n\rworld",
+                     sizeof("hello\r\n\rworld") * 2);
+    if (!testStringFromVBox(pCtx, "text/plain;charset=UTF-8",
+                            clipGetAtom(NULL, "text/plain;charset=UTF-8"),
+                            "hello\n\rworld", sizeof("hello\n\rworld"), 8))
+        ++cErrs;
     /* An empty string */
     clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "", 2);
     if (!testStringFromVBox(pCtx, "text/plain;charset=utf-8",
@@ -2369,6 +2413,20 @@ int main()
     if (!testStringFromVBox(pCtx, "COMPOUND_TEXT",
                             clipGetAtom(NULL, "COMPOUND_TEXT"),
                             "hello\nworld", sizeof("hello\nworld"), 8))
+        ++cErrs;
+    /* With an embedded CRCRLF */
+    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello\r\r\nworld",
+                     sizeof("hello\r\r\nworld") * 2);
+    if (!testStringFromVBox(pCtx, "COMPOUND_TEXT",
+                            clipGetAtom(NULL, "COMPOUND_TEXT"),
+                            "hello\r\nworld", sizeof("hello\r\nworld"), 8))
+        ++cErrs;
+    /* With an embedded CRLFCR */
+    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello\r\n\rworld",
+                     sizeof("hello\r\n\rworld") * 2);
+    if (!testStringFromVBox(pCtx, "COMPOUND_TEXT",
+                            clipGetAtom(NULL, "COMPOUND_TEXT"),
+                            "hello\n\rworld", sizeof("hello\n\rworld"), 8))
         ++cErrs;
     /* An empty string */
     clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "", 2);
