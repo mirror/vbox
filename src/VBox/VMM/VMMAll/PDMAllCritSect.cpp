@@ -27,6 +27,7 @@
 #include "PDMInternal.h"
 #include <VBox/pdmcritsect.h>
 #include <VBox/mm.h>
+#include <VBox/vmm.h>
 #include <VBox/vm.h>
 #include <VBox/err.h>
 #include <VBox/hwaccm.h>
@@ -360,6 +361,10 @@ VMMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
         int rc = RTSemEventSignal(hEventToSignal);
         AssertRC(rc);
     }
+# endif
+
+# if defined(DEBUG_bird) && defined(IN_RING0)
+    VMMTrashVolatileXMMRegs();
 # endif
 
 #else  /* IN_RC */
