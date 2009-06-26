@@ -798,8 +798,8 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
     {
         VMMDevRequestHeader reqHeader;
         VMMDevRequestHeader *reqFull = NULL;
-        size_t cbRequestSize;
-        size_t cbVanillaRequestSize;
+        size_t cbRequestSize = 0;
+        size_t cbVanillaRequestSize = 0;
 
         IOCTL_VMM_ENTRY(arg);
         if (copy_from_user(&reqHeader, (void*)arg, sizeof(reqHeader)))
@@ -994,8 +994,8 @@ static int vboxuser_ioctl(struct inode *inode, struct file *filp,
     {
         VMMDevRequestHeader reqHeader;
         VMMDevRequestHeader *reqFull = NULL;
-        size_t cbRequestSize;
-        size_t cbVanillaRequestSize;
+        size_t cbRequestSize = 0;
+        size_t cbVanillaRequestSize = 0;
 
         IOCTL_VMM_ENTRY(arg);
         if (copy_from_user(&reqHeader, (void*)arg, sizeof(reqHeader)))
