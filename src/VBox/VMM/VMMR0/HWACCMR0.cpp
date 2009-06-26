@@ -850,6 +850,8 @@ VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
+        pVCpu->hwaccm.s.idEnteredCpu              = NIL_RTCPUID;
+
         /* Invalidate the last cpu we were running on. */
         pVCpu->hwaccm.s.idLastCpu                 = NIL_RTCPUID;
 
@@ -960,10 +962,10 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM, PVMCPU pVCpu)
 
     /* Make sure we can't enter a session after we've disabled hwaccm in preparation of a suspend. */
     AssertReturn(!ASMAtomicReadBool(&HWACCMR0Globals.fSuspended), VERR_HWACCM_SUSPEND_PENDING);
-    Assert(pVCpu->idHostCpu == NIL_RTCPUID);
-
     ASMAtomicWriteBool(&pCpu->fInUse, true);
-    ASMAtomicWriteU32(&pVCpu->idHostCpu, idCpu);
+
+    AssertMsg(pVCpu->hwaccm.s.idEnteredCpu == NIL_RTCPUID, ("%d", (int)pVCpu->hwaccm.s.idEnteredCpu));
+    pVCpu->hwaccm.s.idEnteredCpu = idCpu;
 
     pCtx = CPUMQueryGuestCtxPtr(pVCpu);
 
@@ -997,6 +999,8 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM, PVMCPU pVCpu)
         PGMDynMapMigrateAutoSet(pVCpu);
 #endif
     }
+    else
+        pVCpu->hwaccm.s.idEnteredCpu = NIL_RTCPUID;
     return rc;
 }
 
@@ -1037,13 +1041,14 @@ VMMR0DECL(int) HWACCMR0Leave(PVM pVM, PVMCPU pVCpu)
 
     /* keep track of the CPU owning the VMCS for debugging scheduling weirdness and ring-3 calls. */
 #ifdef RT_STRICT
-    if (RT_UNLIKELY(    pVCpu->idHostCpu != idCpu
+    if (RT_UNLIKELY(    pVCpu->hwaccm.s.idEnteredCpu != idCpu
                     &&  RT_FAILURE(rc)))
     {
-        AssertMsgFailed(("Owner is %d, I'm %d", (int)pVCpu->idHostCpu, (int)idCpu));
+        AssertMsgFailed(("Owner is %d, I'm %d", (int)pVCpu->hwaccm.s.idEnteredCpu, (int)idCpu));
         rc = VERR_INTERNAL_ERROR;
     }
 #endif
+    pVCpu->hwaccm.s.idEnteredCpu = NIL_RTCPUID;
 
     ASMAtomicWriteBool(&pCpu->fInUse, false);
     return rc;
@@ -1194,7 +1199,7 @@ VMMR0DECL(PVMCPU)  HWACCMR0GetVMCPU(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
-        if (pVCpu->idHostCpu == idHostCpu)
+        if (pVCpu->hwaccm.s.idEnteredCpu == idHostCpu)
             return pVCpu;
     }
     return NULL;
