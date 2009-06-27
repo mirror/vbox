@@ -55,8 +55,9 @@ int slirp_can_output(void * pvUser);
 void slirp_output(void * pvUser, void *pvArg, const uint8_t *pkt, int pkt_len);
 void slirp_post_sent(PNATState pData, void *pvArg);
 
-int slirp_redir(PNATState pData, int is_udp, int host_port,
-                struct in_addr guest_addr, int guest_port);
+int slirp_redir(PNATState pData, int is_udp, struct in_addr host_addr,
+                int host_port, struct in_addr guest_addr, 
+                int guest_port);
 int slirp_add_exec(PNATState pData, int do_pty, const char *args, int addr_low_byte,
                    int guest_port);
 
@@ -68,6 +69,8 @@ void slirp_set_rcvbuf(PNATState pData, int kilobytes);
 void slirp_set_sndbuf(PNATState pData, int kilobytes);
 void slirp_set_tcp_rcvspace(PNATState pData, int kilobytes);
 void slirp_set_tcp_sndspace(PNATState pData, int kilobytes);
+
+int slirp_set_binding_address(PNATState, char *addr);
 
 #if defined(RT_OS_WINDOWS)
 

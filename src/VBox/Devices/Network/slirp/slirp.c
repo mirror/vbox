@@ -1525,7 +1525,7 @@ done:
 #endif
 }
 
-int slirp_redir(PNATState pData, int is_udp, int host_port,
+int slirp_redir(PNATState pData, int is_udp, struct in_addr host_addr, int host_port,
                 struct in_addr guest_addr, int guest_port)
 {
     struct socket *so;
@@ -1542,13 +1542,17 @@ int slirp_redir(PNATState pData, int is_udp, int host_port,
     Log2(("NAT: set redirect %s hp:%d gp:%d\n", (is_udp?"UDP":"TCP"), host_port, guest_port));
     if (is_udp)
     {
-        so = udp_listen(pData, htons(host_port), guest_addr.s_addr,
+        so = udp_listen(pData, host_addr.s_addr, htons(host_port), guest_addr.s_addr,
                         htons(guest_port), 0);
     }
     else
     {
-        so = solisten(pData, htons(host_port), guest_addr.s_addr,
+        so = solisten(pData, host_addr.s_addr, htons(host_port), guest_addr.s_addr,
                       htons(guest_port), 0);
+    }
+    if (so == NULL)
+    {   
+        return -1;
     }
 #ifndef VBOX_WITH_SLIRP_ALIAS
     Log2(("NAT: redirecting socket %R[natsock]\n", so));
@@ -1704,6 +1708,16 @@ void slirp_set_dhcp_next_server(PNATState pData, const char *next_server)
         pData->tftp_server.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_TFTP);
     else
         inet_aton(next_server, &pData->tftp_server);
+}
+
+int slirp_set_binding_address(PNATState pData, char *addr)
+{
+    if (addr == NULL || (inet_aton(addr, &pData->bindIP) == 0))
+    {
+        pData->bindIP.s_addr = INADDR_ANY;
+        return 1;
+    }
+    return 0;
 }
 
 void slirp_set_dhcp_dns_proxy(PNATState pData, bool fDNSProxy)

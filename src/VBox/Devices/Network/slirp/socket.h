@@ -166,7 +166,7 @@ int sosendoob (struct socket *);
 int sowrite (PNATState, struct socket *);
 void sorecvfrom (PNATState, struct socket *);
 int sosendto (PNATState, struct socket *, struct mbuf *);
-struct socket * solisten (PNATState, u_int, u_int32_t, u_int, int);
+struct socket * solisten (PNATState, u_int32_t, u_int, u_int32_t, u_int, int);
 void sorwakeup (struct socket *);
 void sowwakeup (struct socket *);
 void soisfconnecting (register struct socket *);
