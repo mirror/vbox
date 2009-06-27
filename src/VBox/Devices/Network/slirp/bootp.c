@@ -240,12 +240,14 @@ static void bootp_reply(PNATState pData, struct mbuf *m0)
         && bootp_filename)
         RTStrPrintf((char*)rbp->bp_file, sizeof(rbp->bp_file), "%s", bootp_filename);
 
+    Log(("NAT: DHCP: bp_file:%s\n", &rbp->bp_file));
     /* Address/port of the DHCP server. */
 #ifndef VBOX_WITH_NAT_SERVICE
     saddr.sin_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS);
 #else
     saddr.sin_addr.s_addr = special_addr.s_addr;
 #endif
+    Log(("NAT: DHCP: s_addr:%R[IP4]\n", &saddr.sin_addr));
 
     saddr.sin_port = htons(BOOTP_SERVER);
 
@@ -258,7 +260,9 @@ static void bootp_reply(PNATState pData, struct mbuf *m0)
     memcpy(rbp->bp_hwaddr, bp->bp_hwaddr, 6);
 
     rbp->bp_yiaddr = daddr.sin_addr; /* Client IP address */
+    Log(("NAT: DHCP: bp_yiaddr:%R[IP4]\n", &rbp->bp_yiaddr));
     rbp->bp_siaddr = pData->tftp_server; /* Next Server IP address, i.e. TFTP */
+    Log(("NAT: DHCP: bp_siaddr:%R[IP4]\n", &rbp->bp_siaddr));
 
     q = rbp->bp_vend;
     memcpy(q, rfc1533_cookie, 4);
