@@ -134,6 +134,7 @@ typedef struct NATState
     struct ex_list *exec_list;
     char slirp_hostname[33];
     bool fPassDomain;
+    struct in_addr bindIP;
     /* Stuff from tcp_input.c */
     struct socket tcb;
 #ifdef VBOX_WITH_SLIRP_MT

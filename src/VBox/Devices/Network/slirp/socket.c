@@ -729,7 +729,7 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
  * XXX This should really be tcp_listen
  */
 struct socket *
-solisten(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
+solisten(PNATState pData, u_int32_t bind_addr, u_int port, u_int32_t laddr, u_int lport, int flags)
 {
     struct sockaddr_in addr;
     struct socket *so;
@@ -774,7 +774,7 @@ solisten(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
     so->so_laddr.s_addr = laddr; /* Ditto */
 
     addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = INADDR_ANY;
+    addr.sin_addr.s_addr = bind_addr;
     addr.sin_port = port;
 
     if (   ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0)
