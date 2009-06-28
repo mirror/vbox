@@ -228,9 +228,9 @@ static void vhdTime2RtTime(PRTTIMESPEC pRtTimeStamp, uint32_t u32VhdTimeStamp)
 DECLINLINE(uint8_t *)vhdBlockBitmapAllocate(PVHDIMAGE pImage)
 {
 #ifdef RT_ARCH_AMD64
-    return (uint8_t *)RTMemAllocZ(RT_ALIGN_64(pImage->cbDataBlockBitmap, 8));
+    return (uint8_t *)RTMemAllocZ(pImage->cbDataBlockBitmap + 8);
 #else
-    return (uint8_t *)RTMemAllocZ(RT_ALIGN_32(pImage->cbDataBlockBitmap, 4));
+    return (uint8_t *)RTMemAllocZ(pImage->cbDataBlockBitmap + 4);
 #endif
 }
 
