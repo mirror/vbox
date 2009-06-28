@@ -914,7 +914,7 @@ static int vhdClose(void *pBackendData, bool fDelete)
  */
 DECLINLINE(bool) vhdBlockBitmapSectorContainsData(PVHDIMAGE pImage, uint32_t cBlockBitmapEntry)
 {
-    uint32_t iBitmap = (cBlockBitmapEntry / 8) & ~3; /* Byte in the block bitmap. */
+    uint32_t iBitmap = (cBlockBitmapEntry / 8); /* Byte in the block bitmap. */
 
     /*
      * The index of the bit in the byte of the data block bitmap.
@@ -934,7 +934,7 @@ DECLINLINE(bool) vhdBlockBitmapSectorContainsData(PVHDIMAGE pImage, uint32_t cBl
  */
 DECLINLINE(void) vhdBlockBitmapSectorSet(PVHDIMAGE pImage, uint32_t cBlockBitmapEntry)
 {
-    uint32_t iBitmap = (cBlockBitmapEntry / 8) & ~3; /* Byte in the block bitmap. */
+    uint32_t iBitmap = (cBlockBitmapEntry / 8); /* Byte in the block bitmap. */
 
     /*
      * The index of the bit in the byte of the data block bitmap.
