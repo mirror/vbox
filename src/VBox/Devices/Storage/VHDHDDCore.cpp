@@ -222,12 +222,16 @@ static void vhdTime2RtTime(PRTTIMESPEC pRtTimeStamp, uint32_t u32VhdTimeStamp)
 }
 
 /**
- * Internal: Allocates the block bitmap rounding up to the next 32bit boundary.
+ * Internal: Allocates the block bitmap rounding up to the next 32bit or 64bit boundary.
  *           Can be freed with RTMemFree. The memory is zeroed.
  */
 DECLINLINE(uint8_t *)vhdBlockBitmapAllocate(PVHDIMAGE pImage)
 {
-    return (uint8_t *)RTMemAllocZ(RT_ALIGN_T(pImage->cbDataBlockBitmap, 4, uint32_t));
+#ifdef RT_ARCH_AMD64
+    return (uint8_t *)RTMemAllocZ(RT_ALIGN_64(pImage->cbDataBlockBitmap, 8));
+#else
+    return (uint8_t *)RTMemAllocZ(RT_ALIGN_32(pImage->cbDataBlockBitmap, 4));
+#endif
 }
 
 /**
@@ -916,7 +920,7 @@ DECLINLINE(bool) vhdBlockBitmapSectorContainsData(PVHDIMAGE pImage, uint32_t cBl
      * The index of the bit in the byte of the data block bitmap.
      * The most signifcant bit stands for a lower sector number.
      */
-    uint8_t  iBitInByte = (32-1) - (cBlockBitmapEntry % 32);
+    uint8_t  iBitInByte = (8-1) - (cBlockBitmapEntry % 8);
     uint8_t *puBitmap = pImage->pu8Bitmap + iBitmap;
 
     AssertMsg(puBitmap < (pImage->pu8Bitmap + pImage->cbDataBlockBitmap),
@@ -936,7 +940,7 @@ DECLINLINE(void) vhdBlockBitmapSectorSet(PVHDIMAGE pImage, uint32_t cBlockBitmap
      * The index of the bit in the byte of the data block bitmap.
      * The most signifcant bit stands for a lower sector number.
      */
-    uint8_t  iBitInByte = (32-1) - (cBlockBitmapEntry % 32);
+    uint8_t  iBitInByte = (8-1) - (cBlockBitmapEntry % 8);
     uint8_t  *puBitmap  = pImage->pu8Bitmap + iBitmap;
 
     AssertMsg(puBitmap < (pImage->pu8Bitmap + pImage->cbDataBlockBitmap),
