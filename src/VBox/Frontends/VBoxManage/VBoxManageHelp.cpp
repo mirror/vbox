@@ -379,7 +379,7 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--format VDI|VMDK|VHD|RAW|<other>]\n"
                  "                            [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
                  "                            [--type normal|writethrough|immutable]\n"
-                 "                            [--remember]\n"
+                 "                            [--remember] [--existing]\n"
                  "\n");
     }
 
