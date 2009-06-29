@@ -51,6 +51,11 @@ void printUsage(USAGECATEGORY u64Cmd)
 #else
     bool fVRDP = false;
 #endif
+#ifdef VBOX_WITH_VBOXSDL
+    bool fVBoxSDL = true;
+#else
+    bool fVBoxSDL = false;
+#endif
 
     if (u64Cmd == USAGE_DUMPOPTS)
     {
@@ -59,6 +64,7 @@ void printUsage(USAGECATEGORY u64Cmd)
         fSolaris = true;
         fDarwin = true;
         fVRDP = true;
+        fVBoxSDL = true;
         u64Cmd = USAGE_ALL;
     }
 
@@ -263,6 +269,8 @@ void printUsage(USAGECATEGORY u64Cmd)
     {
         RTPrintf("VBoxManage startvm          <uuid>|<name>\n");
         RTPrintf("                            [--type gui");
+        if (fVBoxSDL)
+            RTPrintf(                         "|sdl");
         if (fVRDP)
             RTPrintf(                         "|vrdp");
         RTPrintf(                             "|headless]\n");
