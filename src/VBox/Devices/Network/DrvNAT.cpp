@@ -58,6 +58,29 @@
 #define VBOX_NAT_DELAY_HACK
 
 
+#define GET_EXTRADATA(node, drv_inst, name, rc, type, type_name, var)                               \
+do {                                                                                                \
+    (rc) = CFGMR3Query ## type((node), name, &(var));                                               \
+    if (RT_FAILURE((rc)) && (rc) != VERR_CFGM_VALUE_NOT_FOUND)                                      \
+        return PDMDrvHlpVMSetError(pThis->pDrvIns, (rc), RT_SRC_POS, N_("NAT#%d: configuration"     \
+            " query for \""name"\" " #type_name " failed"), (drv_inst));                            \
+}while(0)
+
+#define GET_EXTRADATA_N(node, drv_inst, name, rc, type, type_name, var, var_size)                   \
+do {                                                                                                \
+    (rc) = CFGMR3Query ## type((node), name, &(var), var_size);                                     \
+    if (RT_FAILURE((rc)) && (rc) != VERR_CFGM_VALUE_NOT_FOUND)                                      \
+        return PDMDrvHlpVMSetError(pThis->pDrvIns, (rc), RT_SRC_POS, N_("NAT#%d: configuration"     \
+            " query for \""name"\" " #type_name " failed"), (drv_inst));                            \
+}while(0)
+
+#define GET_BOOL(rc, node, drv_inst, name, var) \
+    GET_EXTRADATA(node, drv_inst, name, (rc), Bool, bolean, (var))
+#define GET_STRING(rc, node, drv_inst, name, var, var_size) \
+    GET_EXTRADATA_N(node, drv_inst, name, (rc), String, string, (var), (var_size))
+#define GET_STRING_ALLOC(rc, node, drv_inst, name, var) \
+    GET_EXTRADATA(node, drv_inst, name, (rc), StringAlloc, string, (var))
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -647,14 +670,12 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCf
         /* protocol type */
         bool fUDP;
         char szProtocol[32];
-        int rc = CFGMR3QueryString(pNode, "Protocol", &szProtocol[0], sizeof(szProtocol));
+        int rc;
+        GET_STRING(rc, pNode, iInstance, "Protocol", szProtocol[0], sizeof(szProtocol));
         if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         {
-            rc = CFGMR3QueryBool(pNode, "UDP", &fUDP);
-            if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-                fUDP = false;
-            else if (RT_FAILURE(rc))
-                return PDMDrvHlpVMSetError(pThis->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"UDP\" boolean failed"), iInstance);
+            fUDP = false;
+            GET_BOOL(rc, pNode, iInstance, "UDP", fUDP);
         }
         else if (RT_SUCCESS(rc))
         {
@@ -663,40 +684,40 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCf
             else if (!RTStrICmp(szProtocol, "UDP"))
                 fUDP = true;
             else
-                return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_INVALID_PARAMETER, RT_SRC_POS, N_("NAT#%d: Invalid configuration value for \"Protocol\": \"%s\""), iInstance, szProtocol);
+                return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_INVALID_PARAMETER, RT_SRC_POS, 
+                    N_("NAT#%d: Invalid configuration value for \"Protocol\": \"%s\""), 
+                    iInstance, szProtocol);
         }
-        else
-            return PDMDrvHlpVMSetError(pThis->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"Protocol\" string failed"), iInstance);
 
-#define DOGETIP(rc, status, x)                                                                                                                      \
-do {                                                                                                                                                \
-        char    sz##x[32];                                                                                                                          \
-        rc = CFGMR3QueryString(pNode, #x, &sz ## x[0], sizeof(sz ## x));                                                                            \
-        if (rc == VERR_CFGM_VALUE_NOT_FOUND)                                                                                                        \
-            RTStrPrintf(sz ## x, sizeof(sz ## x), "%d.%d.%d.%d",                                                                                    \
-                        (Network & 0xFF000000) >> 24, (Network & 0xFF0000) >> 16, (Network & 0xFF00) >> 8, (Network & 0xE0) | 15);                  \
-        else if (RT_FAILURE(rc))                                                                                                                    \
-            return PDMDrvHlpVMSetError(pThis->pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"" #x "\" string failed"), iInstance);  \
-        status = inet_aton(sz ## x, &x);                                                                                                            \
+#define DOGETIP(rc, status, x)                                                      \
+do {                                                                                \
+        char    sz##x[32];                                                          \
+        GET_STRING(rc, pNode, iInstance, #x, sz ## x[0],  sizeof(sz ## x));         \
+        if (rc == VERR_CFGM_VALUE_NOT_FOUND)                                        \
+            RTStrPrintf(sz ## x, sizeof(sz ## x), "%d.%d.%d.%d",                    \
+                        (Network & 0xFF000000) >> 24, (Network & 0xFF0000) >> 16,   \
+                        (Network & 0xFF00) >> 8, (Network & 0xE0) | 15);            \
+        status = inet_aton(sz ## x, &x);                                            \
 }while(0)
 
-#define GETIP(x)                                                                                                                                \
-do                                                                                                                                              \
-{                                                                                                                                               \
-    int status = 0;                                                                                                                             \
-    DOGETIP(rc, status, x);                                                                                                                     \
-    if (status == 0)                                                                                                                            \
-        return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_NAT_REDIR_GUEST_IP, RT_SRC_POS,                                                         \
-                                   N_("NAT#%d: configuration error: invalid \"" #x "\" inet_aton failed"), iInstance);                          \
+#define GETIP(x)                                                                        \
+do                                                                                      \
+{                                                                                       \
+    int status = 0;                                                                     \
+    DOGETIP(rc, status, x);                                                             \
+    if (status == 0)                                                                    \
+        return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_NAT_REDIR_GUEST_IP, RT_SRC_POS, \
+                                   N_("NAT#%d: configuration error: invalid \"" #x      \
+                                   "\" inet_aton failed"), iInstance);                  \
 }while(0)
 
-#define GETIP_DEF(x, def)                                                                                                                       \
-do                                                                                                                                              \
-{                                                                                                                                               \
-    int status = 0;                                                                                                                             \
-    DOGETIP(rc, status, x);                                                                                                                     \
-    if (status == 0 || rc == VERR_CFGM_VALUE_NOT_FOUND)                                                                                         \
-        x.s_addr = def;                                                                                                                         \
+#define GETIP_DEF(x, def)                               \
+do                                                      \
+{                                                       \
+    int status = 0;                                     \
+    DOGETIP(rc, status, x);                             \
+    if (status == 0 || rc == VERR_CFGM_VALUE_NOT_FOUND) \
+        x.s_addr = def;                                 \
 }while(0)
         /* host port */
         int32_t iHostPort;
@@ -797,22 +818,14 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     /*
      * Get the configuration settings.
      */
+    int rc;
     bool fPassDomain = true;
-    int rc = CFGMR3QueryBool(pCfgHandle, "PassDomain", &fPassDomain);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        fPassDomain = true;
-    else if (RT_FAILURE(rc))
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"PassDomain\" boolean failed"), pDrvIns->iInstance);
+    GET_BOOL(rc, pCfgHandle, pDrvIns->iInstance, "PassDomain", fPassDomain);
+    
+    GET_STRING_ALLOC(rc, pCfgHandle, pDrvIns->iInstance, "TFTPPrefix", pThis->pszTFTPPrefix);
+    GET_STRING_ALLOC(rc, pCfgHandle, pDrvIns->iInstance, "BootFile", pThis->pszBootFile);
+    GET_STRING_ALLOC(rc, pCfgHandle, pDrvIns->iInstance, "NextServer", pThis->pszNextServer);
 
-    rc = CFGMR3QueryStringAlloc(pCfgHandle, "TFTPPrefix", &pThis->pszTFTPPrefix);
-    if (RT_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"TFTPPrefix\" string failed"), pDrvIns->iInstance);
-    rc = CFGMR3QueryStringAlloc(pCfgHandle, "BootFile", &pThis->pszBootFile);
-    if (RT_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"BootFile\" string failed"), pDrvIns->iInstance);
-    rc = CFGMR3QueryStringAlloc(pCfgHandle, "NextServer", &pThis->pszNextServer);
-    if (RT_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"NextServer\" string failed"), pDrvIns->iInstance);
     int fDNSProxy;
     rc = CFGMR3QueryS32(pCfgHandle, "DNSProxy", &fDNSProxy);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
@@ -821,21 +834,25 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     /*
      * Query the network port interface.
      */
-    pThis->pPort = (PPDMINETWORKPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_NETWORK_PORT);
+    pThis->pPort = 
+                (PPDMINETWORKPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, 
+                                                                      PDMINTERFACE_NETWORK_PORT);
     if (!pThis->pPort)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE,
-                                N_("Configuration error: the above device/driver didn't export the network port interface"));
-    pThis->pConfig = (PPDMINETWORKCONFIG)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_NETWORK_CONFIG);
+                                N_("Configuration error: the above device/driver didn't "
+                                "export the network port interface"));
+    pThis->pConfig = 
+                (PPDMINETWORKCONFIG)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, 
+                                                                        PDMINTERFACE_NETWORK_CONFIG);
     if (!pThis->pConfig)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE,
-                                N_("Configuration error: the above device/driver didn't export the network config interface"));
+                                N_("Configuration error: the above device/driver didn't "
+                                "export the network config interface"));
 
     /* Generate a network address for this network card. */
-    rc = CFGMR3QueryString(pCfgHandle, "Network", szNetwork, sizeof(szNetwork));
+    GET_STRING(rc, pCfgHandle, pDrvIns->iInstance, "Network", szNetwork[0], sizeof(szNetwork));
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         RTStrPrintf(szNetwork, sizeof(szNetwork), "10.0.%d.0/24", pDrvIns->iInstance + 2);
-    else if (RT_FAILURE(rc))
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"Network\" string failed"), pDrvIns->iInstance);
 
     RTIPV4ADDR Network;
     RTIPV4ADDR Netmask;
@@ -857,9 +874,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
         slirp_set_dhcp_next_server(pThis->pNATState, pThis->pszNextServer);
         slirp_set_dhcp_dns_proxy(pThis->pNATState, !!fDNSProxy);
         char *pszBindIP = NULL;
-        rc = CFGMR3QueryStringAlloc(pCfgHandle, "BindIP", &pszBindIP);
-        if (RT_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
-            return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: configuration query for \"BindIP\" string failed"), pDrvIns->iInstance);
+        GET_STRING_ALLOC(rc, pCfgHandle, pDrvIns->iInstance, "BindIP", pszBindIP);
         rc = slirp_set_binding_address(pThis->pNATState, pszBindIP);
         if (rc != 0)
             LogRel(("NAT: value of BindIP has been ignored\n"));
