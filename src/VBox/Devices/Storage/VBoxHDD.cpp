@@ -2043,6 +2043,8 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
 
             pImageTo = pDiskTo->pLast;
             AssertPtrBreakStmt(pImageTo, rc = VERR_VD_IMAGE_NOT_FOUND);
+
+            cbSize = RT_MIN(cbSize, cbSizeFrom);
         }
         else
         {
