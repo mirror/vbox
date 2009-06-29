@@ -390,10 +390,10 @@ bool VBoxVMSettingsSystem::revalidate (QString &aWarning, QString & /* aTitle */
     if (mSlCPU->value() > 1 && !mCbApic->isChecked())
     {
         aWarning = tr (
-            "there is more than one virtual CPU assigned for this VM, which "
-            "requires IO-APIC feature to be enabled too, else SMP will not be "
-            "able to work, so this feature will be enabled automatically when "
-            "you'll accept VM Settings by pressing OK button.");
+            "you have assigned more than one virtual CPU to this VM. "
+            "This will not work unless the IO-APIC feature is also enabled. "
+            "This will be done automatically when you accept the VM Settings "
+            "by pressing the OK button.");
         return true;
     }
 
@@ -401,10 +401,10 @@ bool VBoxVMSettingsSystem::revalidate (QString &aWarning, QString & /* aTitle */
     if (mSlCPU->value() > 1 && !mCbVirt->isChecked())
     {
         aWarning = tr (
-            "there is more than one virtual CPU assigned for this VM, which "
-            "requires virtualization feature (VT-x/AMD-V) to be enabled too, "
-            "else SMP will not be able to work, so this feature will be enabled "
-            "automatically when you'll accept VM Settings by pressing OK button.");
+            "you have assigned more than one virtual CPU to this VM. "
+            "This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. "
+            "This will be done automatically when you accept the VM Settings "
+            "by pressing the OK button.");
         return true;
     }
 
