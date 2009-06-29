@@ -469,7 +469,11 @@ sf_path_from_dentry (const char *caller, struct sf_glob_info *sf_g,
                         in_len -= nb;
                         in += nb;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 31)
+                        nb = utf32_to_utf8 (uni, out, out_bound_len);
+#else
                         nb = utf8_wctomb (out, uni, out_bound_len);
+#endif
                         if (nb < 0) {
                                 LogFunc(("nls->uni2char failed %x %d\n",
                                          uni, out_bound_len));
@@ -527,7 +531,11 @@ sf_nlscpy (struct sf_glob_info *sf_g,
                         int nb;
                         wchar_t uni;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 31)
+                        nb = utf8_to_utf32 (in, in_bound_len, &uni);
+#else
                         nb = utf8_mbtowc (&uni, in, in_bound_len);
+#endif
                         if (nb < 0) {
                                 LogFunc(("utf8_mbtowc failed(%s) %x:%d\n",
                                          (const char *) utf8_name, *in, in_bound_len));
