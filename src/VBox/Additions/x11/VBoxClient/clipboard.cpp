@@ -183,7 +183,7 @@ void ClipCompleteDataRequestFromX11(VBOXCLIPBOARDCONTEXT *pCtx, int rc,
  */
 int vboxClipboardConnect(void)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
     LogFlowFunc(("\n"));
 
     /* Sanity */
