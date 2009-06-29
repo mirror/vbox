@@ -135,3 +135,5 @@ lseek
 ftruncate
 open
 stat
+strpbrk
+__iob

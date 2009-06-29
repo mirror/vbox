@@ -153,3 +153,5 @@ ftruncate
 stat
 nl_langinfo
 sscanf
+strpbrk
+__iob

@@ -141,3 +141,5 @@ __register_frame_info_bases
 ftruncate
 stat
 nl_langinfo
+strpbrk
+__iob
