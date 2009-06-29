@@ -91,6 +91,7 @@ void darwinSetMouseCoalescingEnabled (bool aEnabled);
 void darwinWindowAnimateResizeImpl (NativeWindowRef aWindow, int x, int y, int width, int height);
 void darwinWindowInvalidateShapeImpl (NativeWindowRef aWindow);
 void darwinWindowInvalidateShadowImpl (NativeWindowRef aWindow);
+int  darwinWindowToolBarHeight (NativeWindowRef aWindow);
 
 RT_C_DECLS_END
 
@@ -155,6 +156,7 @@ void darwinDisableIconsInMenus (void);
 void darwinWindowAnimateResize (QWidget *aWidget, const QRect &aTarget);
 void darwinWindowInvalidateShape (QWidget *aWidget);
 void darwinWindowInvalidateShadow (QWidget *aWidget);
+int  darwinWindowToolBarHeight (QWidget *aWidget);
 QString darwinSystemLanguage (void);
 QPixmap darwinCreateDragPixmap (const QPixmap& aPixmap, const QString &aText);
 
