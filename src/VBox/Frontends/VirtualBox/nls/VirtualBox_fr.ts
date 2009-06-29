@@ -1146,7 +1146,7 @@ Version %1</source>
     <message>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation>Indique le statut des fonctionnalités de virtualisation procésseur en utilisation par cette machine virtuelle : &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1 :&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3 :&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
+        <translation>Indique le statut des fonctionnalités de virtualisation processeur en utilisation par cette machine virtuelle : &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1 :&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3 :&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
@@ -4721,7 +4721,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;Deleting this host-only network will lead to the deleting of the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Si vous enlevez ce réseau privé hôte, l&apos;interface réseau privé hôte corréspondant sera également enlevée.  Voulez vous enlever l&apos;interface privée &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note :&lt;/b&gt; cette interface pourrait également être utilisé par une ou plusieurs interfaces réseau de vos machines virtuelles.  Si vous l&apos;enlevez, ces interfaces ne serront plus utilisables jusqu&apos;à ce que vous corrigez leurs paramètres en choisissant une autre interface privé hôte ou un autre mode d&apos;accès.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Si vous enlevez ce réseau privé hôte, l&apos;interface réseau privé hôte correspondant sera également enlevée.  Voulez vous enlever l&apos;interface privée &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note :&lt;/b&gt; cette interface pourrait également être utilisé par une ou plusieurs interfaces réseau de vos machines virtuelles.  Si vous l&apos;enlevez, ces interfaces ne serront plus utilisables jusqu&apos;à ce que vous corrigez leurs paramètres en choisissant une autre interface privé hôte ou un autre mode d&apos;accès.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
@@ -4729,7 +4729,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;L&apos;accélération procésseur VT-x/AMD-V a été activé mais n&apos;est pas fonctionnel. Certains invités (comme OS/2 et QNX) nécéssitent cette fonctionnalité.&lt;/p&gt;&lt;p&gt;Veuillez vous assurer que vous avez bien activé VT-x/AMD-V dans le BIOS de votre ordinateur hôte.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;L&apos;accélération processeur VT-x/AMD-V a été activé mais n&apos;est pas fonctionnel. Certains invités (comme OS/2 et QNX) nécéssitent cette fonctionnalité.&lt;/p&gt;&lt;p&gt;Veuillez vous assurer que vous avez bien activé VT-x/AMD-V dans le BIOS de votre ordinateur hôte.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
@@ -5986,11 +5986,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. As such guestsrequire hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
-        <translation>vous avez choisi un type de système 64 bit pour cette machine. Comme un tel invité nécéssite la virtualisation procésseur (VT-x/AMD-V), cette dernière sera automatiquement activée.</translation>
+        <translation>vous avez choisi un type de système 64 bit pour cette machine. Comme un tel invité nécéssite la virtualisation processeur (VT-x/AMD-V), cette dernière sera automatiquement activée.</translation>
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. VirtualBox does not currently support more than one virtual CPU for 64-bit guests executed on 32-bit hosts.</source>
-        <translation>Vous avez choisi un type de système 64 bit pour cette machine. VirtualBox ne supporte pas actuellement plus qu&apos;un procésseur virtuel pour des invités 64 bits exécutés sur des hôtes 32 bits.</translation>
+        <translation>Vous avez choisi un type de système 64 bit pour cette machine. VirtualBox ne supporte pas actuellement plus qu&apos;un processeur virtuel pour des invités 64 bits exécutés sur des hôtes 32 bits.</translation>
     </message>
 </context>
 <context>
@@ -6248,7 +6248,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>there is a 64 bits guest OS type assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else your guest will fail to detect a 64 bits CPU and will not be able to boot, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
-        <translation type="obsolete">Cette machine virtuelle est configurée pour un système invité 64 bits. Afin que l&apos;invité détecte un procésseur 64 bits et puisse démarrer, la fonctionnalité de virtualisation procésseur (VT-x/AMD-V) doit être activé. Cette fonctionnalité sera activée automatiquement si vous choisissez OK pour accepter les préférences pour la machine.</translation>
+        <translation type="obsolete">Cette machine virtuelle est configurée pour un système invité 64 bits. Afin que l&apos;invité détecte un processeur 64 bits et puisse démarrer, la fonctionnalité de virtualisation processeur (VT-x/AMD-V) doit être activé. Cette fonctionnalité sera activée automatiquement si vous choisissez OK pour accepter les préférences pour la machine.</translation>
     </message>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
@@ -6272,11 +6272,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
-        <translation>Si cette case est cochée, la barre d&apos;outils compacte sera affichée en modes plein écran et intégré.</translation>
+        <translation>Si cette case est cochée, la barre d&apos;outils compacte sera affichée en mode plein écran et intégré.</translation>
     </message>
     <message>
         <source>Show In &amp;Fullscreen/Seamless</source>
-        <translation>A&amp;fficher en modes plein écran/intégré</translation>
+        <translation>A&amp;fficher en mode plein écran/intégré</translation>
     </message>
 </context>
 <context>
@@ -7050,11 +7050,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>for performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
-        <translation>pour des raisons de performance, le nombre de procésseurs virtuels de la machine virtuelle ne peut être plus que le double du nombre de procésseurs physiques de l&apos;hôte (&lt;b&gt;%1&lt;/b&gt;). Veuillez réduire le nombre de procésseurs virtuels.</translation>
+        <translation>pour des raisons de performance, le nombre de processeurs virtuels de la machine virtuelle ne peut être plus que le double du nombre de processeurs physiques de l&apos;hôte (&lt;b&gt;%1&lt;/b&gt;). Veuillez réduire le nombre de processeurs virtuels.</translation>
     </message>
     <message>
         <source>you have assigned more virtual CPUs to the virtual machine than the number of physical CPUs on your host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
-        <translation>vous avez affecté plus de procésseurs virtuels à la machine virtuelle que le système hôte ne possède de procésseurs physiques (&lt;b&gt;%1&lt;/b&gt;). Ceci risque de diminuer la pérformance de votre machine virtuelle. Veuillez penser à en réduire le nombre.</translation>
+        <translation>vous avez affecté plus de processeurs virtuels à la machine virtuelle que le système hôte ne possède de processeurs physiques (&lt;b&gt;%1&lt;/b&gt;). Ceci risque de diminuer la pérformance de votre machine virtuelle. Veuillez penser à en réduire le nombre.</translation>
     </message>
     <message>
         <source>there is more than one virtual CPU assigned for this VM, which requires IO-APIC feature to be enabled too, else SMP will not be able to work, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
@@ -7062,7 +7062,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>there is more than one virtual CPU assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else SMP will not be able to work, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
-        <translation>vous avez affecté plus qu&apos;un processeur virtuel à cette machine. Ceci nécéssite la virtualisation procésseur sur le hôte, donc elle sera activé automatiquement si vous acceptez les modifications en cliquant sur &quot;OK&quot;.</translation>
+        <translation>vous avez affecté plus qu&apos;un processeur virtuel à cette machine. Ceci nécéssite la virtualisation processeur sur le hôte, donc elle sera activé automatiquement si vous acceptez les modifications en cliquant sur &quot;OK&quot;.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
@@ -7071,12 +7071,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</source>
         <comment>%1 is 1 for now</comment>
-        <translation>&lt;qt&gt;%1&amp;nbsp;procésseur&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;processeur&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
         <comment>%1 is 32 for now</comment>
-        <translation>&lt;qt&gt;%1&amp;nbsp;procésseurs&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;processeurs&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Motherboard</source>
@@ -7140,19 +7140,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Processor</source>
-        <translation>&amp;Procésseur</translation>
+        <translation>&amp;processeur</translation>
     </message>
     <message>
         <source>&amp;Processor(s):</source>
-        <translation>&amp;Procésseur(s):</translation>
+        <translation>&amp;processeur(s):</translation>
     </message>
     <message>
         <source>Controls the number of virtual CPUs in the virtual machine.</source>
-        <translation>Détermine le nombre de procésseurs virtuels de la machine virtuelle.</translation>
+        <translation>Détermine le nombre de processeurs virtuels de la machine virtuelle.</translation>
     </message>
     <message>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation>Si cette case est cochée, la fonction extension d&apos;adresses physiques (PAE) du procésseur hôte sera disponible à la machine virtuelle.</translation>
+        <translation>Si cette case est cochée, la fonction extension d&apos;adresses physiques (PAE) du processeur hôte sera disponible à la machine virtuelle.</translation>
     </message>
     <message>
         <source>Enable PA&amp;E/NX</source>
@@ -7164,7 +7164,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Hardware Virtualization:</source>
-        <translation>Virtualisation procésseur :</translation>
+        <translation>Virtualisation processeur :</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
