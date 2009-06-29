@@ -3427,6 +3427,13 @@ void VBoxGlobal::centerWidget (QWidget *aWidget, QWidget *aRelative,
 
     /* ensure the widget is within the available desktop area */
     QRect newGeo = normalizeGeometry (geo, deskGeo, aCanResize);
+#ifdef Q_WS_MAC
+    /* No idea why, but Qt doesn't respect if there is a unified toolbar on the
+     * ::move call. So manually add the height of the toolbar before setting
+     * the position. */
+    if (w)
+        newGeo.translate (0, ::darwinWindowToolBarHeight (aWidget));
+#endif /* Q_WS_MAC */
 
     aWidget->move (newGeo.topLeft());
 

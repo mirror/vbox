@@ -716,8 +716,16 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
 
     /* Save the position of the window */
     {
+        int y = mNormalGeo.y();
+#if defined (Q_WS_MAC) && !defined (QT_MAC_USE_COCOA)
+        /* The toolbar counts to the content not to the frame. Unfortunaly the
+         * toolbar isn't fully initialized when this window will be moved to
+         * the last position after VBox starting. As a workaround just do
+         * remove the toolbar height part when save the last position. */
+        y -= ::darwinWindowToolBarHeight (this);
+#endif /* Q_WS_MAC && !QT_MAC_USE_COCOA */
         QString winPos = QString ("%1,%2,%3,%4")
-            .arg (mNormalGeo.x()).arg (mNormalGeo.y())
+            .arg (mNormalGeo.x()).arg (y)
             .arg (mNormalGeo.width()).arg (mNormalGeo.height());
         if (isMaximized())
             winPos += QString (",%1").arg (VBoxDefs::GUI_LastWindowPosition_Max);

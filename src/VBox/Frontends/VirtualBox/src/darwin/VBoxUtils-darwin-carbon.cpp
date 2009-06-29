@@ -138,6 +138,23 @@ void darwinWindowInvalidateShapeImpl (NativeWindowRef aWindow)
 //    ReshapeCustomWindow (::darwinToWindowRef (this));
 }
 
+int darwinWindowToolBarHeight (NativeWindowRef aWindow)
+{
+    int h = 0;
+    if (::IsWindowToolbarVisible (aWindow))
+    {
+        /* Seems there is no method for getting the height of a toolbar in
+         * Carbon directly. Calculate it by getting the full window size,
+         * without the titlebar height & the content height. */
+        HIRect win, win1, win2;
+        if (OSStatus result = ::HIWindowGetBounds (aWindow, kWindowStructureRgn, kHICoordSpaceWindow, &win) == noErr)
+            if((result = ::HIWindowGetBounds (aWindow, kWindowTitleBarRgn, kHICoordSpaceWindow, &win1)) == noErr)
+                if ((result = ::HIWindowGetBounds (aWindow, kWindowContentRgn, kHICoordSpaceWindow, &win2)) == noErr)
+                    h = win.size.height - win1.size.height - win2.size.height;
+    }
+    return h;
+}
+
 /********************************************************************************
  *
  * Old carbon stuff. Have to converted soon!
