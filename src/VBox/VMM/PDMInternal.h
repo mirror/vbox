@@ -887,9 +887,8 @@ typedef struct PDM
     /** Pointer to the queue which should be manually flushed - RC Ptr.
      * Only touched by EMT. */
     RCPTRTYPE(struct PDMQUEUE *)    pQueueFlushRC;
-#if HC_ARCH_BITS == 64
-    RTRCPTR                         uPadding2;
-#endif
+    /** Set if we're currently checking queues to prevent other VCPUs from doing the same concurrently. */
+    volatile uint32_t               fQueueFlushing;
 
     /** Head of the PDM Thread list. (singly linked) */
     R3PTRTYPE(PPDMTHREAD)           pThreads;
