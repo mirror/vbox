@@ -309,6 +309,8 @@ static int clipWaitForDataFromVBox(VBOXCLIPBOARDCONTEXT *pCtx,
         pCtx->pReq = NULL;
     Assert(pCtx->pReq == NULL);
     RTCritSectLeave(&pCtx->clipboardMutex);
+    if (RT_SUCCESS(rc) && (pReq->pv == NULL))
+        rc = VERR_NO_DATA;
     LogFlowFunc(("returning %Rrc\n", rc));
     return rc;
 }
@@ -583,7 +585,16 @@ int main()
     rc = ClipRequestDataForX11(client.pCtx, 23, &pv, &cb);
     if (rc != VERR_TIMEOUT)
     {
-        RTPrintf("rc=%Rrc\n", rc);
+        RTPrintf("rc=%Rrc, expected VERR_TIMEOUT\n", rc);
+        ++cErrors;
+    }
+    pBackend->writeData.pv = NULL;
+    pBackend->writeData.cb = 0;
+    pBackend->writeData.timeout = false;
+    rc = ClipRequestDataForX11(client.pCtx, 23, &pv, &cb);
+    if (rc != VERR_NO_DATA)
+    {
+        RTPrintf("rc=%Rrc, expected VERR_NO_DATA\n", rc);
         ++cErrors;
     }
     /* Data arriving after a timeout should *not* cause any segfaults or
