@@ -616,7 +616,7 @@ public:
         {
 #if defined (VBOXSDL_WITH_X11)
             *winId = (ULONG64) info.info.x11.wmwindow;
-#elif defined (RT_OS_WIN)
+#elif defined (RT_OS_WINDOWS)
             *winId = (ULONG64) info.window;
 #else
             AssertFailed();

@@ -46,6 +46,10 @@ using namespace com;
 #include "Framebuffer.h"
 #include "Ico64x01.h"
 
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_LINUX)
+#include <SDL_syswm.h>           /* for SDL_GetWMInfo() */
+#endif
+
 #if defined(VBOX_WITH_XPCOM)
 NS_IMPL_ISUPPORTS1_CI(VBoxSDLFB, IFramebuffer)
 NS_DECL_CLASSINFO(VBoxSDLFB)
@@ -863,6 +867,23 @@ void VBoxSDLFB::resizeSDL(void)
      * @todo BPP is not supported!
      */
     mScreen = SDL_SetVideoMode(newWidth, newHeight, 0, sdlFlags);
+
+    /*
+     * Set the Window ID. Currently used for OpenGL accelerated guests.
+     */
+# if defined (RT_OS_WINDOWS)
+    SDL_SysWMinfo info;
+    SDL_VERSION(&info.version);
+    if (SDL_GetWMInfo(&info))
+        mWinId = (ULONG64) info.window;
+# elif defined (RT_OS_LINUX)
+    SDL_SysWMinfo info;
+    SDL_VERSION(&info.version);
+    if (SDL_GetWMInfo(&info))
+        mWinId = (ULONG64) info.info.x11.wmwindow;
+# else
+    /* XXX ignore this for other architectures */
+# endif
 #endif
 #ifdef VBOX_SECURELABEL
     /*
