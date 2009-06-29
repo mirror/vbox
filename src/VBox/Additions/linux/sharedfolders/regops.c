@@ -550,14 +550,9 @@ int
 sf_write_begin(struct file *file, struct address_space *mapping, loff_t pos,
                unsigned len, unsigned flags, struct page **pagep, void **fsdata)
 {
-        pgoff_t index = pos >> PAGE_SHIFT;
-
         TRACE ();
 
-        *pagep = grab_cache_page_write_begin(mapping, index, flags);
-        if (!*pagep)
-                return -ENOMEM;
-        return 0;
+        return simple_write_begin(file, mapping, pos, len, flags, pagep, fsdata);
 }
 
 int
