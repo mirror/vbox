@@ -92,6 +92,25 @@ do {                                                                            
 #define GET_S32_STRICT(rc, node, drv_inst, name, var) \
     GET_ED_STRICT(node, drv_inst, name, (rc), S32, int, (var))
 
+
+
+#define DOGETIP(rc, node, instance, status, x)                                      \
+do {                                                                                \
+        char    sz##x[32];                                                          \
+        GET_STRING((rc), (node), (instance), #x, sz ## x[0],  sizeof(sz ## x));     \
+        if (rc != VERR_CFGM_VALUE_NOT_FOUND)                                        \
+            (status) = inet_aton(sz ## x, &x);                                      \
+}while(0)
+
+#define GETIP_DEF(rc, node, instance, x, def)           \
+do                                                      \
+{                                                       \
+    int status = 0;                                     \
+    DOGETIP((rc), (node), (instance),  status, x);      \
+    if (status == 0 || rc == VERR_CFGM_VALUE_NOT_FOUND) \
+        x.s_addr = def;                                 \
+}while(0)
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -699,37 +718,6 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCf
                     N_("NAT#%d: Invalid configuration value for \"Protocol\": \"%s\""), 
                     iInstance, szProtocol);
         }
-
-#define DOGETIP(rc, status, x)                                                      \
-do {                                                                                \
-        char    sz##x[32];                                                          \
-        GET_STRING(rc, pNode, iInstance, #x, sz ## x[0],  sizeof(sz ## x));         \
-        if (rc == VERR_CFGM_VALUE_NOT_FOUND)                                        \
-            RTStrPrintf(sz ## x, sizeof(sz ## x), "%d.%d.%d.%d",                    \
-                        (Network & 0xFF000000) >> 24, (Network & 0xFF0000) >> 16,   \
-                        (Network & 0xFF00) >> 8, (Network & 0xE0) | 15);            \
-        status = inet_aton(sz ## x, &x);                                            \
-}while(0)
-
-#define GETIP(x)                                                                        \
-do                                                                                      \
-{                                                                                       \
-    int status = 0;                                                                     \
-    DOGETIP(rc, status, x);                                                             \
-    if (status == 0)                                                                    \
-        return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_NAT_REDIR_GUEST_IP, RT_SRC_POS, \
-                                   N_("NAT#%d: configuration error: invalid \"" #x      \
-                                   "\" inet_aton failed"), iInstance);                  \
-}while(0)
-
-#define GETIP_DEF(x, def)                               \
-do                                                      \
-{                                                       \
-    int status = 0;                                     \
-    DOGETIP(rc, status, x);                             \
-    if (status == 0 || rc == VERR_CFGM_VALUE_NOT_FOUND) \
-        x.s_addr = def;                                 \
-}while(0)
         /* host port */
         int32_t iHostPort;
         GET_S32_STRICT(rc, pNode, iInstance, "HostPort", iHostPort);
@@ -740,20 +728,20 @@ do                                                      \
 
         /* guest address */
         struct in_addr GuestIP;
-        GETIP(GuestIP);
+        /* @todo (vvl) use CTL_* */
+        GETIP_DEF(rc, pNode, iInstance, GuestIP, htonl(ntohl(Network) | 15));
 
         /*
          * Call slirp about it.
          */
         struct in_addr BindIP;
-        GETIP_DEF(BindIP, INADDR_ANY);
+        GETIP_DEF(rc, pNode, iInstance, BindIP, INADDR_ANY);
         if (slirp_redir(pThis->pNATState, fUDP, BindIP, iHostPort, GuestIP, iGuestPort) < 0)
             return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_NAT_REDIR_SETUP, RT_SRC_POS,
                                        N_("NAT#%d: configuration error: failed to set up "
                                        "redirection of %d to %d. Probably a conflict with "
                                        "existing services or other rules"), iInstance, iHostPort, 
                                        iGuestPort);
-#undef GETIP    
     } /* for each redir rule */
 
     return VINF_SUCCESS;
