@@ -537,10 +537,12 @@ int handleCloneHardDisk(HandlerArg *a)
                 break;
 
             case 'F':   // --static
+            {
                 unsigned uDiskVariant = (unsigned)DiskVariant;
                 uDiskVariant |= HardDiskVariant_Fixed;
                 DiskVariant = (HardDiskVariant_T)uDiskVariant;
                 break;
+            }
 
             case 'E':   // --existing
                 fExisting = true;
