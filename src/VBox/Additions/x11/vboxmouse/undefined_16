@@ -78,3 +78,5 @@ stat
 fstat
 ___errno
 ftruncate
+strpbrk
+__iob

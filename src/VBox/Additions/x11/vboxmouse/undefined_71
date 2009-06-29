@@ -135,3 +135,5 @@ open
 ___errno
 fstat
 ftruncate
+strpbrk
+__iob

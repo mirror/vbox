@@ -133,3 +133,5 @@ nl_langinfo
 lseek
 __register_frame_info_bases
 ___errno
+strpbrk
+__iob

@@ -137,3 +137,5 @@ __deregister_frame_info_bases
 __register_frame_info_bases
 lseek
 stat
+strpbrk
+__iob
