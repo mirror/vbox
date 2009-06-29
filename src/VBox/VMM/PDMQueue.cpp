@@ -626,19 +626,41 @@ VMMR3DECL(void) PDMR3QueueFlushAll(PVM pVM)
     VM_ASSERT_EMT(pVM);
     LogFlow(("PDMR3QueuesFlush:\n"));
 
-    /* Use atomic test and clear to prevent useless checks; pdmR3QueueFlush is SMP safe. */
-    if (VM_FF_TESTANDCLEAR(pVM, VM_FF_PDM_QUEUES_BIT))
+    VM_FF_CLEAR(pVM, VM_FF_PDM_QUEUES);
+
+    /* Prevent other VCPUs from flushing queues at the same time; we'll never flush an item twice, but the order might change. */
+    if (ASMAtomicCmpXchgU32(&pVM->pdm.s.fQueueFlushing, 1, 0))
     {
+        /* Use atomic test and clear to prevent useless checks; pdmR3QueueFlush is SMP safe. */
+        do
+        {
+            for (PPDMQUEUE pCur = pVM->pdm.s.pQueuesForced; pCur; pCur = pCur->pNext)
+            {
+                if (    pCur->pPendingR3
+                    ||  pCur->pPendingR0
+                    ||  pCur->pPendingRC)
+                {
+                    if (    pdmR3QueueFlush(pCur)
+                        &&  (   pCur->pPendingR3
+                             || pCur->pPendingR0))
+                        /* new items arrived while flushing. */
+                        pdmR3QueueFlush(pCur);
+                }
+            }
+        }
+        while (VM_FF_TESTANDCLEAR(pVM, VM_FF_PDM_QUEUES_BIT));
+
+        ASMAtomicXchgU32(&pVM->pdm.s.fQueueFlushing, 0);
+
+        /* Check if we missed anything. */
         for (PPDMQUEUE pCur = pVM->pdm.s.pQueuesForced; pCur; pCur = pCur->pNext)
         {
             if (    pCur->pPendingR3
                 ||  pCur->pPendingR0
                 ||  pCur->pPendingRC)
             {
-                if (    pdmR3QueueFlush(pCur)
-                    &&  pCur->pPendingR3)
-                    /* new items arrived while flushing. */
-                    pdmR3QueueFlush(pCur);
+                VM_FF_SET(pVM, VM_FF_PDM_QUEUES);
+                break;
             }
         }
     }
