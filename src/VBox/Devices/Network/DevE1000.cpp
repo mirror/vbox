@@ -3768,6 +3768,10 @@ PDMBOTHCBDECL(int) e1kIOPortIn(PPDMDEVINS pDevIns, void *pvUser,
                 break;
             case 0x04: /* IODATA */
                 rc = e1kRegRead(pState, pState->uSelectedReg, pu32, cb);
+                /* @todo wrong return code triggers assertions in the debug build; fix please */
+                if (rc == VINF_IOM_HC_MMIO_READ)
+                    rc = VINF_IOM_HC_IOPORT_READ;
+
                 E1kLog2(("%s e1kIOPortIn: IODATA(4), reading from selected register %#010x, val=%#010x\n", szInst, pState->uSelectedReg, *pu32));
                 break;
             default:
@@ -3818,6 +3822,9 @@ PDMBOTHCBDECL(int) e1kIOPortOut(PPDMDEVINS pDevIns, void *pvUser,
             case 0x04: /* IODATA */
                 E1kLog2(("%s e1kIOPortOut: IODATA(4), writing to selected register %#010x, value=%#010x\n", szInst, pState->uSelectedReg, u32));
                 rc = e1kRegWrite(pState, pState->uSelectedReg, &u32, cb);
+                /* @todo wrong return code triggers assertions in the debug build; fix please */
+                if (rc == VINF_IOM_HC_MMIO_WRITE)
+                    rc = VINF_IOM_HC_IOPORT_WRITE;
                 break;
             default:
                 E1kLog(("%s e1kIOPortOut: invalid port %#010x\n", szInst, port));
