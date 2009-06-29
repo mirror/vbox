@@ -1324,13 +1324,15 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pDiskTo         Pointer to destination HDD container.
  * @param   pszBackend      Name of the image file backend to use (may be NULL to use the same as the source, case insensitive).
- * @param   pszFilename     New name of the image (may be NULL if pDiskFrom == pDiskTo).
+ * @param   pszFilename     New name of the image (may be NULL to specify that the
+ *                          copy destination is the destination container, or
+ *                          if pDiskFrom == pDiskTo, i.e. when moving).
  * @param   fMoveByRename   If true, attempt to perform a move by renaming (if successful the new size is ignored).
  * @param   cbSize          New image size (0 means leave unchanged).
  * @param   uImageFlags     Flags specifying special destination image features.
  * @param   pDstUuid        New UUID of the destination image. If NULL, a new UUID is created.
  *                          This parameter is used if and only if a true copy is created.
- *                          In all rename/move cases the UUIDs are copied over.
+ *                          In all rename/move cases or copy to existing image cases the modification UUIDs are copied over.
  * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
  * @param   pDstVDIfsImage  Pointer to the per-image VD interface list, for the
  *                          destination image.
