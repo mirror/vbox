@@ -169,7 +169,7 @@ BEGINPROC cpumR0SaveHostFPUState
     and     xAX, ~(X86_CR0_TS | X86_CR0_EM)
     mov     cr0, xAX                    ;; @todo optimize this.
 
-    fxsave  [xDX + CPUMCPU.Host.fpu]    ; ASSUMES that all VT-x/AMD-V boxes sports fxsave/fxrstor (safe assumption)
+    fxsave  [xDX + CPUMCPU.Host.fpu]    ; ASSUMES that all VT-x/AMD-V boxes support fxsave/fxrstor (safe assumption)
 
     mov     cr0, xCX                    ; and restore old CR0 again ;; @todo optimize this.
     popf
@@ -220,7 +220,7 @@ BEGINPROC cpumR0SaveGuestRestoreHostFPUState
 .legacy_mode:
 %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 
-    fxsave  [xDX + CPUMCPU.Guest.fpu]   ; ASSUMES that all VT-x/AMD-V boxes sports fxsave/fxrstor (safe assumption)
+    fxsave  [xDX + CPUMCPU.Guest.fpu]   ; ASSUMES that all VT-x/AMD-V boxes support fxsave/fxrstor (safe assumption)
     fxrstor [xDX + CPUMCPU.Host.fpu]
 
 .done:
