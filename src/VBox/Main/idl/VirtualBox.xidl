@@ -9747,7 +9747,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         be a base image, i.e. completely independent. It is possible to specify
         an arbitrary hard disk for this parameter, including the parent of the
         hard disk which is being cloned. Even cloning to a child of the source
-        hard disk is possible.
+        hard disk is possible. Note that when cloning to an existing image, the
+        @a parent irgument is ignored.
 
         After the returned progress object reports that the operation is
         successfully complete, the target hard disk gets remembered by this
