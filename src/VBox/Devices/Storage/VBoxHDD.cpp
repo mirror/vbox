@@ -1958,8 +1958,8 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
             AssertReleaseMsgFailed(("VDCopy: moving by copy/delete not implemented\n"));
         }
 
-        /* When moving an image pszFilename is allowed to be NULL, so do the parameter check here. */
-        AssertMsgBreakStmt(VALID_PTR(pszFilename) && *pszFilename,
+        /* pszFilename is allowed to be NULL, as this indicates copy to the existing image. */
+        AssertMsgBreakStmt(pszFilename == NULL || (VALID_PTR(pszFilename) && *pszFilename),
                            ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
                            rc = VERR_INVALID_PARAMETER);
 
@@ -1970,9 +1970,6 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
             rc = VERR_VD_VALUE_NOT_FOUND;
             break;
         }
-
-        if (cbSize == 0)
-            cbSize = cbSizeFrom;
 
         PDMMEDIAGEOMETRY PCHSGeometryFrom = {0, 0, 0};
         PDMMEDIAGEOMETRY LCHSGeometryFrom = {0, 0, 0};
@@ -2014,33 +2011,55 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
         unsigned uOpenFlagsFrom;
         uOpenFlagsFrom = pImageFrom->Backend->pfnGetOpenFlags(pImageFrom->pvBackendData);
 
-        /* Create destination image with the properties of the source image. */
-        /** @todo replace the VDCreateDiff/VDCreateBase calls by direct
-         * calls to the backend. Unifies the code and reduces the API
-         * dependencies. */
-        if (uImageFlags & VD_IMAGE_FLAGS_DIFF)
+        if (pszFilename)
         {
-            rc = VDCreateDiff(pDiskTo, pszBackend, pszFilename, uImageFlags,
-                              szComment, &ImageUuid, &ParentUuid, uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY, NULL, NULL);
-        } else {
-            /** @todo Please, review this! It's an ugly hack I think... */
-            if (!RTStrICmp(pszBackend, "RAW"))
-                uImageFlags |= VD_IMAGE_FLAGS_FIXED;
+            if (cbSize == 0)
+                cbSize = cbSizeFrom;
 
-            rc = VDCreateBase(pDiskTo, pszBackend, pszFilename, cbSize,
-                              uImageFlags, szComment,
-                              &PCHSGeometryFrom, &LCHSGeometryFrom,
-                              NULL, uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY, NULL, NULL);
-            if (RT_SUCCESS(rc) && !RTUuidIsNull(&ImageUuid))
-                 pDiskTo->pLast->Backend->pfnSetUuid(pDiskTo->pLast->pvBackendData, &ImageUuid);
-            if (RT_SUCCESS(rc) && !RTUuidIsNull(&ParentUuid))
-                 pDiskTo->pLast->Backend->pfnSetParentUuid(pDiskTo->pLast->pvBackendData, &ParentUuid);
+            /* Create destination image with the properties of the source image. */
+            /** @todo replace the VDCreateDiff/VDCreateBase calls by direct
+             * calls to the backend. Unifies the code and reduces the API
+             * dependencies. */
+            if (uImageFlags & VD_IMAGE_FLAGS_DIFF)
+            {
+                rc = VDCreateDiff(pDiskTo, pszBackend, pszFilename, uImageFlags,
+                                  szComment, &ImageUuid, &ParentUuid, uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY, NULL, NULL);
+            } else {
+                /** @todo Please, review this! It's an ugly hack I think... */
+                if (!RTStrICmp(pszBackend, "RAW"))
+                    uImageFlags |= VD_IMAGE_FLAGS_FIXED;
+
+                rc = VDCreateBase(pDiskTo, pszBackend, pszFilename, cbSize,
+                                  uImageFlags, szComment,
+                                  &PCHSGeometryFrom, &LCHSGeometryFrom,
+                                  NULL, uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY, NULL, NULL);
+                if (RT_SUCCESS(rc) && !RTUuidIsNull(&ImageUuid))
+                     pDiskTo->pLast->Backend->pfnSetUuid(pDiskTo->pLast->pvBackendData, &ImageUuid);
+                if (RT_SUCCESS(rc) && !RTUuidIsNull(&ParentUuid))
+                     pDiskTo->pLast->Backend->pfnSetParentUuid(pDiskTo->pLast->pvBackendData, &ParentUuid);
+            }
+            if (RT_FAILURE(rc))
+                break;
+
+            pImageTo = pDiskTo->pLast;
+            AssertPtrBreakStmt(pImageTo, rc = VERR_VD_IMAGE_NOT_FOUND);
         }
-        if (RT_FAILURE(rc))
-            break;
+        else
+        {
+            pImageTo = pDiskTo->pLast;
+            AssertPtrBreakStmt(pImageTo, rc = VERR_VD_IMAGE_NOT_FOUND);
 
-        pImageTo = pDiskTo->pLast;
-        AssertPtrBreakStmt(pImageTo, rc = VERR_VD_IMAGE_NOT_FOUND);
+            uint64_t cbSizeTo;
+            cbSizeTo = pImageTo->Backend->pfnGetSize(pImageTo->pvBackendData);
+            if (cbSizeTo == 0)
+            {
+                rc = VERR_VD_VALUE_NOT_FOUND;
+                break;
+            }
+
+            if (cbSize == 0)
+                cbSize = RT_MIN(cbSizeFrom, cbSizeTo);
+        }
 
         /* Allocate tmp buffer. */
         pvBuf = RTMemTmpAlloc(VD_MERGE_BUFFER_SIZE);
@@ -2092,11 +2111,15 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
         if (RT_SUCCESS(rc))
         {
             pImageTo->Backend->pfnSetModificationUuid(pImageTo->pvBackendData, &ImageModificationUuid);
-            pImageTo->Backend->pfnGetParentModificationUuid(pImageTo->pvBackendData, &ParentModificationUuid);
+            /** @todo double-check this - it makes little sense to copy over the parent modification uuid,
+             * as the destination image can have a totally different parent. */
+#if 0
+            pImageTo->Backend->pfnSetParentModificationUuid(pImageTo->pvBackendData, &ParentModificationUuid);
+#endif
         }
     } while (0);
 
-    if (RT_FAILURE(rc) && pImageTo)
+    if (RT_FAILURE(rc) && pImageTo && pszFilename)
     {
         /* Error detected, but new image created. Remove image from list. */
         vdRemoveImageFromList(pDiskTo, pImageTo);
