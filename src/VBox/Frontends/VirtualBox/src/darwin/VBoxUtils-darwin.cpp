@@ -139,6 +139,16 @@ void darwinDisableIconsInMenus (void)
 #endif /* QT_VERSION >= 0x040400 */
 }
 
+int darwinWindowToolBarHeight (QWidget *aWidget)
+{
+#ifndef QT_MAC_USE_COCOA
+    return ::darwinWindowToolBarHeight (::darwinToNativeWindow (aWidget));
+#else /* QT_MAC_USE_COCOA */
+    NOREF (aWidget);
+    return 0;
+#endif /* QT_MAC_USE_COCOA */
+}
+
 CGContextRef darwinToCGContextRef (QWidget *aWidget)
 {
     return static_cast<CGContext *> (aWidget->macCGHandle());
