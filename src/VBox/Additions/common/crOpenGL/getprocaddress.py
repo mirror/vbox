@@ -20,6 +20,7 @@ print """
 #include "dri_glx.h"
 #if defined(VBOXOGL_DRI) || defined(VBOXOGL_FAKEDRI)
 #include "cr_gl.h"
+#include "fakedri_drv.h"
 #endif
 
 struct name_address {
@@ -75,18 +76,14 @@ CR_PROC CR_APIENTRY crGetProcAddress( const char *name )
 		}
 	}
 
-    /*@todo, reuse fakedri_glxfuncsList.h and dri_glx.h here*/
-    /*also, in case of fake dri, those should point to vbox_glX* not to vbox_stub* ones, VBOXGLXENTRYTAG */
+
+#define GLXAPI_ENTRY(Func) if (!crStrcmp(name, "glX"#Func)) return (CR_PROC) &VBOXGLXENTRYTAG(glX##Func);
+#include "fakedri_glxfuncsList.h"
+#undef GLXAPI_ENTRY
+
+    /*CR_EXT_texture_from_pixmap*/
     if (!crStrcmp( name, "glXBindTexImageEXT" )) return (CR_PROC) VBOXGLXTAG(glXBindTexImageEXT);
     if (!crStrcmp( name, "glXReleaseTexImageEXT" )) return (CR_PROC) VBOXGLXTAG(glXReleaseTexImageEXT);
-    if (!crStrcmp( name, "glXQueryDrawable" )) return (CR_PROC) VBOXGLXTAG(glXQueryDrawable);
-    if (!crStrcmp( name, "glXGetFBConfigs" )) return (CR_PROC) VBOXGLXTAG(glXGetFBConfigs);
-    if (!crStrcmp( name, "glXGetFBConfigAttrib" )) return (CR_PROC) VBOXGLXTAG(glXGetFBConfigAttrib);
-    if (!crStrcmp( name, "glXCreatePixmap" )) return (CR_PROC) VBOXGLXTAG(glXCreatePixmap);
-    if (!crStrcmp( name, "glXCreateWindow" )) return (CR_PROC) VBOXGLXTAG(glXCreateWindow);
-    if (!crStrcmp( name, "glXGetVisualFromFBConfig" )) return (CR_PROC) VBOXGLXTAG(glXGetVisualFromFBConfig);
-    if (!crStrcmp( name, "glXDestroyWindow" )) return (CR_PROC) VBOXGLXTAG(glXDestroyWindow);
-    if (!crStrcmp( name, "glXDestroyPixmap" )) return (CR_PROC) VBOXGLXTAG(glXDestroyPixmap);
 
     if (name) crDebug("Returning NULL for %s", name);
 	return NULL;
