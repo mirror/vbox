@@ -49,6 +49,19 @@ for index in range(len(funcs)):
     print '\t(void) params;'
     print '\tget_values = (%s *) crAlloc( tablesize );' % types[index]
     print '\tcr_server.head_spu->dispatch_table.%s( pname, get_values );' % func_name
+    print """
+    if (GL_TEXTURE_BINDING_1D==pname
+        || GL_TEXTURE_BINDING_2D==pname
+        || GL_TEXTURE_BINDING_3D==pname
+        || GL_TEXTURE_BINDING_RECTANGLE_ARB==pname
+        || GL_TEXTURE_BINDING_CUBE_MAP_ARB==pname)
+    {
+        GLuint texid;
+        CRASSERT(tablesize/sizeof(%s)==1);
+        texid = (GLuint) *get_values;
+        *get_values = (%s) crServerTranslateTextureID(texid);
+    }
+    """ % (types[index], types[index])
     print '\tcrServerReturnValue( get_values, tablesize );'
     print '\tcrFree(get_values);'
     print '}\n'

@@ -309,6 +309,30 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteTextures( GLsizei n, const G
     }
 }
 
+void SERVER_DISPATCH_APIENTRY crServerDispatchPrioritizeTextures( GLsizei n, const GLuint * textures, const GLclampf * priorities )
+{
+    if (!cr_server.sharedTextureObjects) 
+    {
+        GLuint *newTextures = (GLuint *) crAlloc(n * sizeof(GLuint));
+        GLint i;
+        if (!newTextures) {
+            crError("crServerDispatchDeleteTextures: out of memory");
+            return;
+        }
+        for (i = 0; i < n; i++) {
+            newTextures[i] = crServerTranslateTextureID( textures[i] );
+        }
+        crStatePrioritizeTextures(n, newTextures, priorities);
+        cr_server.head_spu->dispatch_table.PrioritizeTextures(n, newTextures, priorities);
+        crFree(newTextures);
+    }
+    else
+    {
+        crStatePrioritizeTextures(n, textures, priorities);
+        cr_server.head_spu->dispatch_table.PrioritizeTextures(n, textures, priorities);
+    }
+}
+
 void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteProgramsARB(GLsizei n, const GLuint * programs)
 {
     GLuint *pLocalProgs = (GLuint *) crAlloc(n * sizeof(GLuint));

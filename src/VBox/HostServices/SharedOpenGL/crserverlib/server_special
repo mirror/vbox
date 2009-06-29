@@ -130,6 +130,7 @@ BindTexture
 DeleteTextures
 IsTexture
 AreTexturesResident
+PrioritizeTextures
 AreProgramsResidentNV
 GenProgramsARB
 IsProgramARB
