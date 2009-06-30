@@ -456,6 +456,17 @@ VMMDECL(int) PGMTrap0eHandler(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFram
     pgmUnlock(pVM);
     if (rc == VINF_PGM_SYNCPAGE_MODIFIED_PDE)
         rc = VINF_SUCCESS;
+
+# ifdef IN_RING0
+    /* Note: hack alert for difficult to reproduce problem. */
+    if (    pVM->cCPUs > 1
+        &&  rc == VERR_PAGE_TABLE_NOT_PRESENT)
+    {
+        LogRel(("WARNING: Unexpected VERR_PAGE_TABLE_NOT_PRESENT for page fault at %RGv error code %x (rip=%RGv)\n", pvFault, uErr, pRegFrame->rip));
+        rc == VINF_SUCCESS;
+    }
+# endif
+
     STAM_STATS({ if (rc == VINF_EM_RAW_GUEST_TRAP) STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eGuestPF); });
     STAM_STATS({ if (!pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution))
                     pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2Misc; });
