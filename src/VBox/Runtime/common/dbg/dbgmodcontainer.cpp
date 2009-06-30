@@ -246,7 +246,7 @@ static DECLCALLBACK(int) rtDbgModContainer_LineAdd(PRTDBGMODINT pMod, const char
      */
     AssertMsgReturn(iSeg < pThis->cSegs,          ("iSeg=%#x cSegs=%#x\n", pThis->cSegs),
                     VERR_DBG_INVALID_SEGMENT_INDEX);
-    AssertMsgReturn(pThis->paSegs[iSeg].cb < off, ("off=%RTptr cbSeg=%RTptr\n", off, pThis->paSegs[iSeg].cb),
+    AssertMsgReturn(off < pThis->paSegs[iSeg].cb, ("off=%RTptr cbSeg=%RTptr\n", off, pThis->paSegs[iSeg].cb),
                     VERR_DBG_INVALID_SEGMENT_OFFSET);
 
     /*
@@ -384,7 +384,7 @@ static DECLCALLBACK(int) rtDbgModContainer_SymbolAdd(PRTDBGMODINT pMod, const ch
                     ("iSeg=%#x cSegs=%#x\n", pThis->cSegs),
                     VERR_DBG_INVALID_SEGMENT_INDEX);
     AssertMsgReturn(    iSeg >= RTDBGSEGIDX_SPECIAL_FIRST
-                    ||  pThis->paSegs[iSeg].cb <= off + cb,
+                    ||  off + cb <= pThis->paSegs[iSeg].cb,
                     ("off=%RTptr cb=%RTptr cbSeg=%RTptr\n", off, cb, pThis->paSegs[iSeg].cb),
                     VERR_DBG_INVALID_SEGMENT_OFFSET);
 
@@ -396,7 +396,7 @@ static DECLCALLBACK(int) rtDbgModContainer_SymbolAdd(PRTDBGMODINT pMod, const ch
         return VERR_NO_MEMORY;
 
     pSymbol->AddrCore.Key       = off;
-    pSymbol->AddrCore.KeyLast   = off + RT_MAX(cb, 1);
+    pSymbol->AddrCore.KeyLast   = off + (cb ? cb - 1 : 0);
     pSymbol->OrdinalCore.Key    = pThis->iNextSymbolOrdinal;
     pSymbol->iSeg               = iSeg;
     pSymbol->cb                 = cb;
