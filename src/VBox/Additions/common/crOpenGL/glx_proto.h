@@ -26,7 +26,7 @@
 #include "chromium.h"
 #include "stub.h"
 
-#ifdef VBOXOGL_FAKEDRI
+#if defined(VBOXOGL_FAKEDRI) || defined(VBOXOGL_DRI)
 typedef const char * (*PGLXFUNC_GetDriverConfig)(const char *driverName);
 typedef void (*PGLXFUNC_FreeMemoryMESA)(Display *dpy, int scrn, void *pointer);
 typedef GLXContext (*PGLXFUNC_ImportContextEXT)(Display *dpy, GLXContextID contextID);
