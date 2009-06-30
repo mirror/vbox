@@ -668,32 +668,6 @@ static int vboxguestLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigne
 
 
 /**
- * Poll function.
- *
- * This returns ready to read if the mouse pointer mode or the pointer position
- * has changed since last call to read.
- *
- * @returns 0 if no changes, POLLIN | POLLRDNORM if there are unseen changes.
- *
- * @param   pFile       The file structure.
- * @param   pPt         The poll table.
- */
-static unsigned int vboxguestPoll(struct file *pFile, poll_table *pPt)
-{
-    PVBOXGUESTSESSION   pSession  = (PVBOXGUESTSESSION)pFile->private_data;
-    uint32_t            u32CurSeq = ASMAtomicUoReadU32(&g_DevExt.u32MousePosChangedSeq);
-    unsigned int        fMask     = pSession->u32MousePosChangedSeq != u32CurSeq
-                                  ? POLLIN | POLLRDNORM
-                                  : 0;
-#if 1 /** @todo this isn't quite right... but it's what we used to do. */
-    pSession->u32MousePosChangedSeq = u32CurSeq;
-#endif
-    poll_wait(pFile, &g_PollEventQueue, pPt);
-    return fMask;
-}
-
-
-/**
  * Asynchronous notification activation method.
  *
  * @returns 0 on success, negative errno on failure.
@@ -709,6 +683,32 @@ static int vboxguestFAsync(int fd, struct file *pFile, int fOn)
 
 
 /**
+ * Poll function.
+ *
+ * This returns ready to read if the mouse pointer mode or the pointer position
+ * has changed since last call to read.
+ *
+ * @returns 0 if no changes, POLLIN | POLLRDNORM if there are unseen changes.
+ *
+ * @param   pFile       The file structure.
+ * @param   pPt         The poll table.
+ *
+ * @remarks This is probably not really used, X11 is said to use the fasync
+ *          interface instead.
+ */
+static unsigned int vboxguestPoll(struct file *pFile, poll_table *pPt)
+{
+    PVBOXGUESTSESSION   pSession  = (PVBOXGUESTSESSION)pFile->private_data;
+    uint32_t            u32CurSeq = ASMAtomicUoReadU32(&g_DevExt.u32MousePosChangedSeq);
+    unsigned int        fMask     = pSession->u32MousePosChangedSeq != u32CurSeq
+                                  ? POLLIN | POLLRDNORM
+                                  : 0;
+    poll_wait(pFile, &g_PollEventQueue, pPt);
+    return fMask;
+}
+
+
+/**
  * Read to go with our poll/fasync response.
  *
  * @returns 1 or -EINVAL.
@@ -717,28 +717,30 @@ static int vboxguestFAsync(int fd, struct file *pFile, int fOn)
  * @param   pbBuf       The buffer to read into.
  * @param   cbRead      The max number of bytes to read.
  * @param   poff        The current file position.
+ *
+ * @remarks This is probably not really used as X11 lets the driver do its own
+ *          event reading. The poll condition is therefore also cleared when we
+ *          see VMMDevReq_GetMouseStatus in VBoxGuestCommonIOCtl_VMMRequest.
  */
 static ssize_t vboxguestRead(struct file *pFile, char *pbBuf, size_t cbRead, loff_t *poff)
 {
+    PVBOXGUESTSESSION   pSession  = (PVBOXGUESTSESSION)pFile->private_data;
+    uint32_t            u32CurSeq = ASMAtomicUoReadU32(&g_DevExt.u32MousePosChangedSeq);
+
     if (*poff != 0)
         return -EINVAL;
 
-    if (cbRead > 0)
+    /*
+     * Fake a single byte read if we're not up to date with the current mouse position.
+     */
+    if (    pSession->u32MousePosChangedSeq != u32CurSeq
+        &&  cbRead > 0)
     {
-        /* Indicate that we're up to speed. */
-        PVBOXGUESTSESSION   pSession    = (PVBOXGUESTSESSION)pFile->private_data;
-        uint32_t            u32CurSeq   = ASMAtomicUoReadU32(&g_DevExt.u32MousePosChangedSeq);
         pSession->u32MousePosChangedSeq = u32CurSeq;
-
         pbBuf[0] = 0;
         return 1;
     }
-
-#if 1 /** @todo This is wrong, see man 2 read. Does it server any purpose? */
-    return -EINVAL;
-#else
     return 0;
-#endif
 }
 
 
