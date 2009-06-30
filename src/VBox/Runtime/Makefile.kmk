@@ -851,7 +851,7 @@ $$(VBoxRT_0_OUTDIR)/VBoxRT.def: \
 	$(REDIRECT) -wto $@ -- $(CAT_EXT) $^
 endif
 # debugging the eprint.o bit.
-VBoxRT_LDFLAGS.darwin += -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded -Wl,-y__eprintf
+VBoxRT_LDFLAGS.darwin += -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded -Wl,-y__eprintf -Wl,-y___eprintf
 
 
 #
