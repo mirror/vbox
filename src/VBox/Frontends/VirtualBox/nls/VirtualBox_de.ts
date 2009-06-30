@@ -1233,7 +1233,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Default &amp;Machine Folder:</source>
-        <translation>Voreingestellter Pfad für VMs:</translation>
+        <translation>Voreingestellter Pfad für &amp;VMs:</translation>
     </message>
     <message>
         <source>V&amp;RDP Authentication Library:</source>
@@ -1582,7 +1582,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Check for updates</source>
-        <translation>Nach Updates suchen</translation>
+        <translation>Nach &amp;Updates suchen</translation>
     </message>
     <message>
         <source>&amp;Once per:</source>
@@ -2287,7 +2287,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;hr&gt;Failed to check media accessibility.&lt;br&gt;%1.</source>
         <comment>medium</comment>
-        <translation>&lt;hr&gt;Die Zugriffsrechte des Mediums konnten nicht ermittelt werden.&lt;br&gt;%1</translation>
+        <translation>&lt;hr&gt;Die Zugriffsrechte des Mediums konnten nicht ermittelt werden.&lt;br&gt;%1.</translation>
     </message>
     <message>
         <source>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
@@ -2571,11 +2571,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>I &amp;Agree</source>
-        <translation>Zustimmen</translation>
+        <translation>&amp;Zustimmen</translation>
     </message>
     <message>
         <source>I &amp;Disagree</source>
-        <translation>Ablehnen</translation>
+        <translation>&amp;Ablehnen</translation>
     </message>
 </context>
 <context>
@@ -2878,7 +2878,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Fixed-size storage</source>
-        <translation>Medium fester Größe</translation>
+        <translation>Medium &amp;fester Größe</translation>
     </message>
     <message>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
@@ -3086,7 +3086,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
-        <translation>Die folgende Datei ist bereits vorhanden: &lt;br/&gt;&lt;br/&gt;%1&lt;br/&gt;&lt;br/&gt;Sind Sie sicher, dass Sie diese überschreiben wollen?</translation>
+        <translation>Die folgende Dateien sind bereits vorhanden: &lt;br/&gt;&lt;br/&gt;%1&lt;br/&gt;&lt;br/&gt;Sind Sie sicher, dass Sie diese überschreiben wollen?</translation>
     </message>
     <message>
         <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
@@ -3475,7 +3475,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
-        <translation>Die Datei &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; konnte nicht nach &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; kopiert werden (%3).</translation>
+        <translation>Die Datei &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; konnte nicht nach &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; kopiert werden (%3).</translation>
     </message>
     <message>
         <source>&amp;Create</source>
@@ -3578,7 +3578,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Release</source>
         <comment>detach medium</comment>
-        <translation>&amp;Freigeben</translation>
+        <translation>Freigeben</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
@@ -3850,7 +3850,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>I &amp;have a Sun Online account already:</source>
-        <translation>Ich besitze bereits einen Sun-Online-Account:</translation>
+        <translation>Ich &amp;besitze bereits einen Sun-Online-Account:</translation>
     </message>
     <message>
         <source>&amp;E-mail:</source>
@@ -3886,11 +3886,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>P&amp;assword:</source>
-        <translation>&amp;Passwort:</translation>
+        <translation>P&amp;asswort:</translation>
     </message>
     <message>
         <source>Co&amp;nfirm Password:</source>
-        <translation>Passwort &amp;bestätigen:</translation>
+        <translation>Pa&amp;sswort bestätigen:</translation>
     </message>
     <message>
         <source>&amp;Register</source>
@@ -4199,15 +4199,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation>Zurückkehren zum letzten Sicherungspunkt</translation>
+        <translation>Zu&amp;rückkehren zum letzten Sicherungspunkt</translation>
     </message>
     <message>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation>Aktuellen Sicherungspunkt und Zustand verwerfen</translation>
+        <translation>Aktuellen S&amp;icherungspunkt und Zustand verwerfen</translation>
     </message>
     <message>
         <source>S&amp;how Details</source>
-        <translation>Einzelheiten zeigen</translation>
+        <translation>Einzel&amp;heiten zeigen</translation>
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
@@ -4304,7 +4304,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Other Machines...</source>
         <comment>tray menu</comment>
-        <translation>&amp;Andere Maschinen</translation>
+        <translation>&amp;Andere Maschinen...</translation>
     </message>
 </context>
 <context>
@@ -4795,7 +4795,7 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Mount CD/DVD Drive</source>
-        <translation>CD/DVD-Laufwerk einbinden</translation>
+        <translation>CD/DVD-Laufwerk &amp;einbinden</translation>
     </message>
     <message>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
@@ -4850,7 +4850,7 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>Video &amp;Memory:</source>
-        <translation>Grafikspeicher:</translation>
+        <translation>&amp;Grafikspeicher:</translation>
     </message>
     <message>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
@@ -4874,7 +4874,7 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Remote Display</source>
-        <translation>Fernsteuerung</translation>
+        <translation>&amp;Fernsteuerung</translation>
     </message>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
@@ -5091,7 +5091,7 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>Show In &amp;Fullscreen/Seamless</source>
-        <translation>Zeige im Fullscreen/Seamless-Modus</translation>
+        <translation>Zeige im &amp;Fullscreen/Seamless-Modus</translation>
     </message>
 </context>
 <context>
@@ -5150,11 +5150,11 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Enable Additional Controller</source>
-        <translation>&amp;Zusätzlichen Controller aktivieren</translation>
+        <translation>Zusätzlichen &amp;Controller aktivieren</translation>
     </message>
     <message>
         <source>IDE &amp;Controller Type</source>
-        <translation>IDE-Controller-Typ</translation>
+        <translation>&amp;IDE-Controller-Typ</translation>
     </message>
     <message>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
@@ -5311,7 +5311,7 @@ p, li {white-space: pre-wrap; }
     <name>VBoxVMSettingsSF</name>
     <message>
         <source>&amp;Add New Shared Folder</source>
-        <translation>Fügt einen neuen gemeinsamen Ordner hinzu</translation>
+        <translation>&amp;Fügt einen neuen gemeinsamen Ordner hinzu</translation>
     </message>
     <message>
         <source>&amp;Edit Selected Shared Folder</source>
