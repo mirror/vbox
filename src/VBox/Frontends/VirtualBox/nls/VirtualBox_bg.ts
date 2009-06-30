@@ -5037,7 +5037,7 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
         <translation>Показване</translation>
     </message>
     <message>
-        <source>you have selected a 64-bit guest OS type for this VM. As such guestsrequire hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
+        <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
         <translation>Избрали сте 64-битова виртуална ОС за тази ВМ. Тъй като виртуалната машина изисква хардуерно ускорение (VT-x/AMD-V), тази функция ще бъде включена автоматично.</translation>
     </message>
     <message>
@@ -5724,11 +5724,11 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
         <translation>Задали сте повече виртуални процесори във виртуалната машина от броя на физическите процесори в реалната система (&lt;b&gt;%1&lt;/b&gt;). Това ще намали производителността на виртуалната машина. Моля, обмислете намаляване броя на виртуалните процесори.</translation>
     </message>
     <message>
-        <source>there is more than one virtual CPU assigned for this VM, which requires IO-APIC feature to be enabled too, else SMP will not be able to work, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
+        <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>Има зададени повече от един виртуални процесора към тази ВМ, което изисква функцията IO-APIC също да бъде включена, иначе SMP няма да може да работи, така че тази функция ще бъде включена автоматично, когато потвърдите настройките на ВМ при натискането на бутона Добре.</translation>
     </message>
     <message>
-        <source>there is more than one virtual CPU assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else SMP will not be able to work, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
+        <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>Има зададени повече от един виртуални процесора към тази ВМ, което изисква виртуализационната функция (VT-x/AMD-V) също да бъде включена, иначе SMP няма да може да работи, така че тази функция ще бъде включена автоматично, когато потвърдите настройките на ВМ при натискането на бутона Добре.</translation>
     </message>
     <message>

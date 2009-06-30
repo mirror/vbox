@@ -8915,7 +8915,7 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
         <translation>Tela</translation>
     </message>
     <message>
-        <source>you have selected a 64-bit guest OS type for this VM. As such guestsrequire hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
+        <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
         <translation>você selecionou um tipo de sistema operacional convidado de 64 bits para esta VM. Como tais sistemas convidados exigem virtualização de hardware (VT-x/AMD-V), este recurso será habilitado automaticamente.</translation>
     </message>
     <message>
@@ -9836,11 +9836,11 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
         <translation>por razões de performance, a quantidade de CPUs virtuais associadas a esta máquina virtual não pode ser mais que o dobro da quantidade de CPUs físicas da máquina hospedeira (&lt;b&gt;%1&lt;/b&gt;). Isto muito provavelmente irá degradar sensivelmente a performance da sua máquina virtual. Por favor reduza a quantidade de CPUs virtuais.</translation>
     </message>
     <message>
-        <source>there is more than one virtual CPU assigned for this VM, which requires IO-APIC feature to be enabled too, else SMP will not be able to work, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
+        <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>existe mais de uma CPU virtual associada para esta VM, o que exige que o recurso de IO-APIC esteja habilitado, caso contrário os recursos de SMP não irão funcionar. Portanto, este recurso será habilitado automaticamente quando você aceitar as configurações clicando no botão OK.</translation>
     </message>
     <message>
-        <source>there is more than one virtual CPU assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else SMP will not be able to work, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
+        <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>existe mais de uma CPU virtual associada para esta VM, o que exige que o recurso de virtualização de hardware (VT-x/AMD-V) esteja habilitado, caso contrário os recursos de SMP não irão funcionar. Portanto, este recurso será habilitado automaticamente quando você aceitar as configurações clicando no botão OK.</translation>
     </message>
     <message>

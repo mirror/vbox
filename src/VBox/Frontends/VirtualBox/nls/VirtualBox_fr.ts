@@ -5985,7 +5985,7 @@ p, li { white-space: pre-wrap; }
         <translation>Affichage</translation>
     </message>
     <message>
-        <source>you have selected a 64-bit guest OS type for this VM. As such guestsrequire hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
+        <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
         <translation>vous avez choisi un type de système 64 bit pour cette machine. Comme un tel invité nécéssite la virtualisation processeur (VT-x/AMD-V), cette dernière sera automatiquement activée.</translation>
     </message>
     <message>
@@ -7057,11 +7057,11 @@ p, li { white-space: pre-wrap; }
         <translation>vous avez affecté plus de processeurs virtuels à la machine virtuelle que le système hôte ne possède de processeurs physiques (&lt;b&gt;%1&lt;/b&gt;). Ceci risque de diminuer la pérformance de votre machine virtuelle. Veuillez penser à en réduire le nombre.</translation>
     </message>
     <message>
-        <source>there is more than one virtual CPU assigned for this VM, which requires IO-APIC feature to be enabled too, else SMP will not be able to work, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
+        <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>vous avez affecté plus qu&apos;un processeur virtuel à cette machine. Ceci nécéssite que le IO-APIC soit présent, donc il sera activé automatiquement si vous acceptez les modifications en cliquant sur &quot;OK&quot;.</translation>
     </message>
     <message>
-        <source>there is more than one virtual CPU assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else SMP will not be able to work, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
+        <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>vous avez affecté plus qu&apos;un processeur virtuel à cette machine. Ceci nécéssite la virtualisation processeur sur le hôte, donc elle sera activé automatiquement si vous acceptez les modifications en cliquant sur &quot;OK&quot;.</translation>
     </message>
     <message>
