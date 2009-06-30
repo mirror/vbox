@@ -117,6 +117,20 @@ RTR3DECL(int) RTStrmError(PRTSTREAM pStream);
 RTR3DECL(int) RTStrmClearError(PRTSTREAM pStream);
 
 /**
+ * Rewinds the stream.
+ *
+ * Stream errors will be reset on success.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   pStream         The stream.
+ *
+ * @remarks Not all streams are rewindable and that behavior is currently
+ *          undefined for those.
+ */
+RTR3DECL(int) RTStrmRewind(PRTSTREAM pStream);
+
+/**
  * Reads from a file stream.
  *
  * @returns iprt status code.

@@ -298,6 +298,7 @@ RTR3DECL(int) RTStrmClearError(PRTSTREAM pStream)
     int rc;
     if (pStream && pStream->u32Magic == RTSTREAM_MAGIC)
     {
+        clearerr(pStream->pFile);
         ASMAtomicXchgS32(&pStream->i32Error, VINF_SUCCESS);
         rc = VINF_SUCCESS;
     }
@@ -306,6 +307,41 @@ RTR3DECL(int) RTStrmClearError(PRTSTREAM pStream)
         AssertMsgFailed(("Invalid stream!\n"));
         rc = VERR_INVALID_PARAMETER;
     }
+    return rc;
+}
+
+
+/**
+ * Rewinds the stream.
+ *
+ * Stream errors will be reset on success.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   pStream         The stream.
+ *
+ * @remarks Not all streams are rewindable and that behavior is currently
+ *          undefined for those.
+ */
+RTR3DECL(int) RTStrmRewind(PRTSTREAM pStream)
+{
+    AssertPtrReturn(pStream, VERR_INVALID_HANDLE);
+    AssertReturn(pStream->u32Magic == RTSTREAM_MAGIC, VERR_INVALID_HANDLE);
+
+    int rc;
+    clearerr(pStream->pFile);
+    errno = 0;
+    if (!fseek(pStream->pFile, 0, SEEK_SET))
+    {
+        ASMAtomicXchgS32(&pStream->i32Error, VINF_SUCCESS);
+        rc = VINF_SUCCESS;
+    }
+    else
+    {
+        rc = RTErrConvertFromErrno(errno);
+        ASMAtomicXchgS32(&pStream->i32Error, rc);
+    }
+
     return rc;
 }
 
