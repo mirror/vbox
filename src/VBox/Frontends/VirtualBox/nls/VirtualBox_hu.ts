@@ -5956,11 +5956,11 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">Pillanatkép el&amp;dobása</translation>
+        <translation>Pillanatkép el&amp;dobása</translation>
     </message>
     <message>
         <source>Ctrl+Shift+D</source>
-        <translation type="obsolete">Ctrl+Shift+D</translation>
+        <translation>Ctrl+Shift+D</translation>
     </message>
     <message>
         <source>curStateActionGroup</source>
@@ -5992,7 +5992,7 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
     </message>
     <message>
         <source>Discard Current Snapshot and State</source>
-        <translation type="obsolete">A pillanatnyi állapot és a pillanatkép eldobása</translation>
+        <translation>A pillanatnyi állapot és a pillanatkép eldobása</translation>
     </message>
     <message>
         <source>D&amp;iscard Current Snapshot and State</source>
@@ -6068,7 +6068,7 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Eldobja a kiválasztott állapotát a gépnek</translation>
+        <translation>Eldobja a kiválasztott állapotát a gépnek</translation>
     </message>
     <message>
         <source>Ctrl+Shift+S</source>
