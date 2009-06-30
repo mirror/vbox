@@ -51,9 +51,6 @@ else ifdef VBOX_ONLY_DOCS
  LIBRARIES += RuntimeR3
  DLLS += VBoxRT
 
- # Temporary(?) hack.
- VBOX_WITH_LIBXML2_IN_VBOXRT=
-
 else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
 
  #
@@ -164,6 +161,7 @@ RuntimeNoCrt_SOURCES = \
 # RuntimeR3 - Static Runtime for Ring-3 executables.
 #
 RuntimeR3_TEMPLATE      = VBOXR3STATIC
+RuntimeR3_SDKS          = VBOX_LIBXML2
 RuntimeR3_SDKS.win      = WINPSDK W2K3DDK
 RuntimeR3_DEFS          = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF32 LDR_WITH_PE RT_WITH_VBOX RT_NO_GIP
 ifdef IPRT_WITH_KSTUFF
@@ -305,7 +303,8 @@ RuntimeR3_SOURCES       = \
 	r3/stream.cpp \
 	r3/test.cpp \
 	r3/testi.cpp \
-	r3/tcp.cpp
+	r3/tcp.cpp \
+	r3/xml.cpp
 
 #if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
 # RuntimeR3_SOURCES += common/time/timesupA.asm
@@ -786,9 +785,7 @@ RuntimeLnxHostR3_INCS          = \
 # VBoxRT - Shared Object / DLL version.
 #
 VBoxRT_TEMPLATE                = VBOXR3
-ifdef VBOX_WITH_LIBXML2_IN_VBOXRT
 VBoxRT_SDKS                    = VBOX_OPENSSL VBOX_LIBXML2 VBOX_LIBCURL
-endif
 VBoxRT_SDKS.win                = WINPSDK W2K3DDK VBOX_NTDLL
 ifeq ($(KBUILD_TARGET)$(VBOX_WITH_HARDENING),darwin)
 VBoxRT_INST                    = $(INST_DLL) $(INST_TESTCASE)
@@ -798,10 +795,8 @@ VBoxRT_DEFS.$(KBUILD_TYPE)     = $(RuntimeR3_DEFS.$(KBUILD_TYPE))
 VBoxRT_SOURCES                 = \
 	VBox/VBoxRTDeps.cpp \
 	$(RuntimeR3_SOURCES)
-if defined(VBOX_WITH_LIBXML2_IN_VBOXRT)
 VBoxRT_SOURCES                += \
 	common/misc/s3.cpp
-endif
 VBoxRT_SOURCES.$(KBUILD_TARGET) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET))
 VBoxRT_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
 VBoxRT_SOURCES.$(KBUILD_TARGET_ARCH) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET_ARCH))
@@ -817,16 +812,10 @@ ifdef IPRT_WITH_KSTUFF
  VBoxRT_LIBS                  += \
    	$(PATH_LIB)/VBox-kStuff$(VBOX_SUFF_LIB)
 endif
-ifdef VBOX_WITH_LIBXML2_IN_VBOXRT
- ifndef	SDK_VBOX_LIBXML2_LIBS
   VBoxRT_LIBS                 += \
 	$(PATH_LIB)/VBox-libxml2$(VBOX_SUFF_LIB)
- endif
- ifndef	SDK_VBOX_OPENSSL_LIBS
   VBoxRT_LIBS                 += \
 	$(PATH_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB)
- endif
-endif
 VBoxRT_LIBS.darwin             = \
 	iconv
 VBoxRT_LIBS.freebsd            = \
@@ -850,14 +839,10 @@ endif
 VBoxRT_LIBS.l4                 = \
 	$(PATH_LIB)/RuntimeR3L4$(VBOX_SUFF_LIB)
 
-ifdef VBOX_WITH_LIBXML2_IN_VBOXRT
-VBox/VBoxRTDeps.cpp_DEFS = VBOX_WITH_LIBXML2_IN_VBOXRT
-endif
-
 if1of ($(DLLS), VBoxRT)
 $$(VBoxRT_0_OUTDIR)/VBoxRT.def: \
 		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-$$(if-expr $$(KBUILD_TARGET_ARCH) == amd64,win64,win32).def \
-		$(if-expr defined(VBOX_WITH_LIBXML2_IN_VBOXRT),$(PATH_SUB_CURRENT)/r3/win/$(if $(VBOX_OSE),VBoxRT-openssl-ose.def,VBoxRT-openssl.def),)
+		$(PATH_SUB_CURRENT)/r3/win/$(if $(VBOX_OSE),VBoxRT-openssl-ose.def,VBoxRT-openssl.def)
 	$(RM) -f -- $@
 	$(REDIRECT) -wto $@ -- $(CAT_EXT) $^
 endif
