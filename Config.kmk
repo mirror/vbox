@@ -1869,6 +1869,7 @@ else
 endif
 
 SDK_VBOX_BOOST        = .
+SDK_VBOX_BOOST_DEFS  ?= BOOST_DISABLE_ASSERTS
 SDK_VBOX_BOOST_INCS  ?= $(PATH_ROOT)/src/libs/boost-1.37.0
 
 #
