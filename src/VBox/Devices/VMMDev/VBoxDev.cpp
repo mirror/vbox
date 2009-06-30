@@ -399,11 +399,16 @@ static DECLCALLBACK(int) vmmdevTimesyncBackdoorRead(PPDMDEVINS pDevIns, void *pv
 /**
  * Port I/O Handler for the generic request interface
  * @see FNIOMIOPORTOUT for details.
+ *
+ * @todo Too long, suggest doing the request copying here and moving the
+ *       switch into a different function (or better case -> functions), and
+ *       looing the gotos.
  */
 static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     VMMDevState *pThis = (VMMDevState*)pvUser;
     int rcRet = VINF_SUCCESS;
+    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
 
     /*
      * The caller has passed the guest context physical address
@@ -419,7 +424,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
     {
         Log(("VMMDev request header size too small! size = %d\n", requestHeader.size));
         rcRet = VINF_SUCCESS;
-        goto end;
+        goto end; /** @todo shouldn't (/ no need to) write back.*/
     }
 
     /* check the version of the header structure */
@@ -427,7 +432,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
     {
         Log(("VMMDev: guest header version (0x%08X) differs from ours (0x%08X)\n", requestHeader.version, VMMDEV_REQUEST_HEADER_VERSION));
         rcRet = VINF_SUCCESS;
-        goto end;
+        goto end; /** @todo shouldn't (/ no need to) write back.*/
     }
 
     Log2(("VMMDev request issued: %d\n", requestHeader.requestType));
@@ -1595,6 +1600,8 @@ end:
         /* early error case; write back header only */
         PDMDevHlpPhysWrite(pDevIns, (RTGCPHYS)u32, &requestHeader, sizeof(requestHeader));
     }
+
+    PDMCritSectLeave(&pThis->CritSect);
     return rcRet;
 }
 
@@ -2275,6 +2282,13 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
     /** @todo convert this into a config parameter like we do everywhere else! */
     pThis->cbGuestRAM = MMR3PhysGetRamSize(PDMDevHlpGetVM(pDevIns));
+
+    /*
+     * Create the critical section for the device.
+     */
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, "VMMDev");
+    AssertRCReturn(rc, rc);
+    /* Later: pDevIns->pCritSectR3 = &pThis->CritSect; */
 
     /*
      * Register the backdoor logging port

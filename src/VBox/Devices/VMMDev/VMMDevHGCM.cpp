@@ -390,7 +390,7 @@ static int vmmdevHGCMConnectSaved (VMMDevState *pVMMDevState, VMMDevHGCMConnect 
         return VERR_INVALID_PARAMETER;
     }
 
-    VMMDevHGCMConnect *pHGCMConnectCopy = (VMMDevHGCMConnect *)(pSavedCmd+1); 
+    VMMDevHGCMConnect *pHGCMConnectCopy = (VMMDevHGCMConnect *)(pSavedCmd+1);
 
     memcpy(pHGCMConnectCopy, pHGCMConnect, pHGCMConnect->header.header.size);
 
@@ -1018,7 +1018,7 @@ static int vmmdevHGCMCallSaved (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCM
                                                                 pu8Dst, cbChunk);
 
                                          AssertRCBreak(rc);
-                                         
+
                                          offPage = 0; /* A next page is read from 0 offset. */
                                          cbRemaining -= cbChunk;
                                          pu8Dst += cbChunk;
@@ -1158,7 +1158,7 @@ static int vmmdevHGCMCallSaved (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCM
                                                                 pu8Dst, cbChunk);
 
                                          AssertRCBreak(rc);
-                                         
+
                                          offPage = 0; /* A next page is read from 0 offset. */
                                          cbRemaining -= cbChunk;
                                          pu8Dst += cbChunk;
@@ -1323,6 +1323,19 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
             }
         }
 
+        /*
+         * Enter and leave the critical section here so we make sure
+         * vmmdevRequestHandler has completed before we read & write
+         * the request. (This isn't 100% optimal, but it solves the
+         * 3.0 blocker.)
+         */
+        /** @todo s/pVMMDevState/pThis/g */
+        /** @todo It would be faster if this interface would use MMIO2 memory and we
+         *        didn't have to mess around with PDMDevHlpPhysRead/Write. We're
+         *        reading the header 3 times now and writing the request back twice. */
+        PDMCritSectEnter(&pVMMDevState->CritSect, VERR_SEM_BUSY);
+        PDMCritSectLeave(&pVMMDevState->CritSect);
+
         PDMDevHlpPhysRead(pVMMDevState->pDevIns, pCmd->GCPhys, pHeader, pCmd->cbSize);
 
         /* Setup return codes. */
@@ -1440,7 +1453,7 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
                             /* Copy buffer back to guest memory. */
                             uint32_t size = pGuestParm->u.Pointer.size;
 
-                            if (size > 0) 
+                            if (size > 0)
                             {
                                 if (pGuestParm->type != VMMDevHGCMParmType_LinAddr_In)
                                 {
@@ -1503,7 +1516,7 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
                             /* Copy buffer back to guest memory. */
                             uint32_t size = pGuestParm->u.Pointer.size;
 
-                            if (size > 0) 
+                            if (size > 0)
                             {
                                 if (pGuestParm->type != VMMDevHGCMParmType_LinAddr_In)
                                 {
@@ -1582,6 +1595,8 @@ DECLCALLBACK(void) hgcmCompleted (PPDMIHGCMPORT pInterface, int32_t result, PVBO
 {
     VMMDevState *pVMMDevState = PDMIHGCMPORT_2_VMMDEVSTATE(pInterface);
 
+/** @todo no longer necessary to forward to EMT, but it might be more
+ *        efficient...? */
     /* Not safe to execute asynchroneously; forward to EMT */
     int rc = VMR3ReqCallEx(PDMDevHlpGetVM(pVMMDevState->pDevIns), VMCPUID_ANY, NULL, 0, VMREQFLAGS_NO_WAIT | VMREQFLAGS_VOID,
                            (PFNRT)hgcmCompletedWorker, 3, pInterface, result, pCmd);
@@ -1856,7 +1871,7 @@ int vmmdevHGCMLoadState(VMMDevState *pVMMDevState, PSSMHANDLE pSSM, uint32_t u32
             /* A reserved field, will allow to extend saved data for a command. */
             rc = SSMR3GetU32(pSSM, &u32);
             AssertRCReturn(rc, rc);
-            
+
             vmmdevHGCMAddCommand (pVMMDevState, pCmd, GCPhys, cbSize, VBOXHGCMCMDTYPE_LOADSTATE);
         }
 
@@ -2137,7 +2152,7 @@ int vmmdevHGCMLoadStateDone(VMMDevState *pVMMDevState, PSSMHANDLE pSSM)
                    }
 
                    RTMemFree(pIter);
-               
+
                    VMMDevNotifyGuest (pVMMDevState, VMMDEV_EVENT_HGCM);
                 }
             }
