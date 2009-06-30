@@ -25,6 +25,7 @@
 #include "VBox/com/string.h"
 
 #include <iprt/err.h>
+#include <iprt/path.h>
 
 namespace com
 {
@@ -84,9 +85,9 @@ Utf8Str Utf8Str::substr(size_t pos /*= 0*/, size_t n /*= npos*/)
                         return ret;     // return empty string on bad encoding
 
                 size_t cbCopy = psz - pFirst;
-                ret.alloc(cbCopy + 1);
-                memcpy(ret.str, pFirst, cbCopy);
-                ret.str[cbCopy] = '\0';
+                ret.reserve(cbCopy + 1);
+                memcpy(ret.m_psz, pFirst, cbCopy);
+                ret.m_psz[cbCopy] = '\0';
             }
         }
     }
@@ -94,18 +95,91 @@ Utf8Str Utf8Str::substr(size_t pos /*= 0*/, size_t n /*= npos*/)
     return ret;
 }
 
+bool Utf8Str::endsWith(const Utf8Str &that, CaseSensitivity cs /*= CaseSensitive*/) const
+{
+    size_t l1 = length();
+    if (l1 == 0)
+        return false;
+
+    size_t l2 = that.length();
+    if (l1 < l2)
+        return false;
+
+    size_t l = l1 - l2;
+    if (cs == CaseSensitive)
+        return ::RTStrCmp(&m_psz[l], that.m_psz) == 0;
+    else
+        return ::RTStrICmp(&m_psz[l], that.m_psz) == 0;
+}
+
+bool Utf8Str::startsWith(const Utf8Str &that, CaseSensitivity cs /*= CaseSensitive*/) const
+{
+    size_t l1 = length();
+    size_t l2 = that.length();
+    if (l1 == 0 || l2 == 0)
+        return false;
+
+    if (l1 < l2)
+        return false;
+
+    if (cs == CaseSensitive)
+        return ::RTStrNCmp(m_psz, that.m_psz, l2) == 0;
+    else
+        return ::RTStrNICmp(m_psz, that.m_psz, l2) == 0;
+}
+
+bool Utf8Str::contains(const Utf8Str &that, CaseSensitivity cs /*= CaseSensitive*/) const
+{
+    if (cs == CaseSensitive)
+        return ::RTStrStr(m_psz, that.m_psz) != NULL;
+    else
+        return ::RTStrIStr(m_psz, that.m_psz) != NULL;
+}
+
+Utf8Str& Utf8Str::toLower()
+{
+    if (!isEmpty())
+        ::RTStrToLower(m_psz);
+    return *this;
+}
+
+Utf8Str& Utf8Str::toUpper()
+{
+    if (!isEmpty())
+        ::RTStrToUpper(m_psz);
+    return *this;
+}
+
+void Utf8Str::stripTrailingSlash()
+{
+    RTPathStripTrailingSlash(m_psz);
+    jolt();
+}
+
+void Utf8Str::stripFilename()
+{
+    RTPathStripFilename(m_psz);
+    jolt();
+}
+
+void Utf8Str::stripExt()
+{
+    RTPathStripExt(m_psz);
+    jolt();
+}
+
 int Utf8Str::toInt(uint64_t &i) const
 {
-    if (!str)
+    if (!m_psz)
         return VERR_NO_DIGITS;
-    return RTStrToUInt64Ex(str, NULL, 0, &i);
+    return RTStrToUInt64Ex(m_psz, NULL, 0, &i);
 }
 
 int Utf8Str::toInt(uint32_t &i) const
 {
-    if (!str)
+    if (!m_psz)
         return VERR_NO_DIGITS;
-    return RTStrToUInt32Ex(str, NULL, 0, &i);
+    return RTStrToUInt32Ex(m_psz, NULL, 0, &i);
 }
 
 struct FormatData
