@@ -262,6 +262,13 @@ VMMR3DECL(void)     MMR3ReleaseOwnedLocks(PVM pVM);
  * @ingroup grp_mm_r3
  * @{ */
 VMMR3DECL(int)      MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, void **ppv);
+VMMR3DECL(int)      MMR3HyperAllocOnceNoRelEx(PVM pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, uint32_t fFlags, void **ppv);
+/** @name  MMR3HyperAllocOnceNoRelEx flags
+ * @{ */
+/** Must have kernel mapping.
+ * If not specified, the R0 pointer may point to the user process mapping. */
+#define MMHYPER_AONR_FLAGS_KERNEL_MAPPING   RT_BIT(0)
+/** @} */
 VMMR3DECL(int)      MMR3HyperSetGuard(PVM pVM, void *pvStart, size_t cb, bool fSet);
 VMMR3DECL(int)      MMR3HyperMapHCPhys(PVM pVM, void *pvR3, RTR0PTR pvR0, RTHCPHYS HCPhys, size_t cb, const char *pszDesc, PRTGCPTR pGCPtr);
 VMMR3DECL(int)      MMR3HyperMapGCPhys(PVM pVM, RTGCPHYS GCPhys, size_t cb, const char *pszDesc, PRTGCPTR pGCPtr);
