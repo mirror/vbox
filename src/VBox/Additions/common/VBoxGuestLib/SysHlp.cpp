@@ -1,11 +1,10 @@
+/* $Revision$ */
 /** @file
- *
- * VBoxGuestLib - A support library for VirtualBox guest additions:
- * Physical memory heap
+ * VBoxGuestLib - IDC with VBoxGuest and HGCM helpers.
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,6 +18,7 @@
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
  */
+
 #define LOG_GROUP LOG_GROUP_HGCM
 #include <VBox/log.h>
 
@@ -26,8 +26,9 @@
 #include "SysHlp.h"
 
 #include <iprt/assert.h>
-#if !defined(RT_OS_WINDOWS) && !defined(RT_OS_LINUX)
-#include <iprt/memobj.h>
+#if !defined (RT_OS_WINDOWS) \
+ && (!defined (RT_OS_LINUX) || defined (VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX))
+# include <iprt/memobj.h>
 #endif
 
 
@@ -73,10 +74,7 @@ int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess
         }
     }
 
-#elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
-    /** @todo r=bird: I don't think FreeBSD shouldn't go here, solaris and OS/2 doesn't
-      * That said, the assumption below might be wrong for in kernel calls... */
-
+#elif defined (RT_OS_LINUX) && !defined (VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX)
     /** @todo r=frank: Linux: pv is at least in some cases, e.g. with VBoxMapFolder,
      *  an R0 address -- the memory was allocated with kmalloc(). I don't know
      *  if this is true in any case.
@@ -119,7 +117,7 @@ void vbglUnlockLinear (void *pvCtx, void *pv, uint32_t u32Size)
         IoFreeMdl (pMdl);
     }
 
-#elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
+#elif defined (RT_OS_LINUX) && !defined (VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX)
     NOREF(pvCtx);
 
 #else
@@ -133,22 +131,22 @@ void vbglUnlockLinear (void *pvCtx, void *pv, uint32_t u32Size)
 
 #ifndef VBGL_VBOXGUEST
 
-#if defined (RT_OS_LINUX) && !defined (__KERNEL__)
-# include <unistd.h>
-# include <errno.h>
-# include <sys/fcntl.h>
-# include <sys/ioctl.h>
-#endif
+# if defined (RT_OS_LINUX) && !defined (__KERNEL__) /** @todo r=bird: What is this for?????? */
+#  include <unistd.h>
+#  include <errno.h>
+#  include <sys/fcntl.h>
+#  include <sys/ioctl.h>
+# endif
 
-#ifdef RT_OS_LINUX
+# if defined (RT_OS_LINUX) && !defined (VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX)
 RT_C_DECLS_BEGIN
 extern DECLVBGL(void *) vboxadd_cmc_open (void);
 extern DECLVBGL(void) vboxadd_cmc_close (void *);
 extern DECLVBGL(int) vboxadd_cmc_call (void *opaque, uint32_t func, void *data);
 RT_C_DECLS_END
-#endif /* RT_OS_LINUX */
+# endif /* RT_OS_LINUX */
 
-#ifdef RT_OS_OS2
+# ifdef RT_OS_OS2
 RT_C_DECLS_BEGIN
 /*
  * On OS/2 we'll do the connecting in the assembly code of the
@@ -157,27 +155,21 @@ RT_C_DECLS_BEGIN
  */
 extern VBOXGUESTOS2IDCCONNECT g_VBoxGuestIDC;
 RT_C_DECLS_END
-#endif
+# endif
 
-#ifdef RT_OS_SOLARIS
+# if !defined(RT_OS_OS2) \
+  && !defined(RT_OS_WINDOWS) \
+  && (!defined (RT_OS_LINUX) || defined (VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX))
 RT_C_DECLS_BEGIN
-extern DECLVBGL(void *) VBoxGuestSolarisServiceOpen (uint32_t *pu32Version);
-extern DECLVBGL(void) VBoxGuestSolarisServiceClose (void *pvOpaque);
-extern DECLVBGL(int) VBoxGuestSolarisServiceCall (void *pvOpaque, unsigned int iCmd, void *pvData, size_t cbSize, size_t *pcbReturn);
+extern DECLVBGL(void *) VBoxGuestIDCOpen (uint32_t *pu32Version);
+extern DECLVBGL(void)   VBoxGuestIDCClose (void *pvOpaque);
+extern DECLVBGL(int)    VBoxGuestIDCCall (void *pvOpaque, unsigned int iCmd, void *pvData, size_t cbSize, size_t *pcbReturn);
 RT_C_DECLS_END
-
-#elif defined (RT_OS_FREEBSD)
-RT_C_DECLS_BEGIN
-extern DECLVBGL(void *) VBoxGuestFreeBSDServiceOpen (uint32_t *pu32Version);
-extern DECLVBGL(void) VBoxGuestFreeBSDServiceClose (void *pvOpaque);
-extern DECLVBGL(int) VBoxGuestFreeBSDServiceCall (void *pvOpaque, unsigned int iCmd, void *pvData, size_t cbSize, size_t *pcbReturn);
-RT_C_DECLS_END
-
-#endif
+# endif
 
 int vbglDriverOpen (VBGLDRIVER *pDriver)
 {
-#ifdef RT_OS_WINDOWS
+# ifdef RT_OS_WINDOWS
     UNICODE_STRING uszDeviceName;
     RtlInitUnicodeString (&uszDeviceName, L"\\Device\\VBoxGuest");
 
@@ -198,7 +190,8 @@ int vbglDriverOpen (VBGLDRIVER *pDriver)
     Log(("vbglDriverOpen VBoxGuest failed with ntstatus=%x\n", rc));
     return rc;
 
-#elif defined (RT_OS_LINUX)
+# elif defined (RT_OS_LINUX) && !defined (VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX)
+
     void *opaque;
 
     opaque = (void *) vboxadd_cmc_open ();
@@ -209,7 +202,7 @@ int vbglDriverOpen (VBGLDRIVER *pDriver)
     pDriver->opaque = opaque;
     return VINF_SUCCESS;
 
-#elif defined (RT_OS_OS2)
+# elif defined (RT_OS_OS2)
     /*
      * Just check whether the connection was made or not.
      */
@@ -224,31 +217,19 @@ int vbglDriverOpen (VBGLDRIVER *pDriver)
     Log(("vbglDriverOpen: failed\n"));
     return VERR_FILE_NOT_FOUND;
 
-#elif defined (RT_OS_SOLARIS)
+# else
     uint32_t u32VMMDevVersion;
-    pDriver->pvOpaque = VBoxGuestSolarisServiceOpen(&u32VMMDevVersion);
+    pDriver->pvOpaque = VBoxGuestIDCOpen (&u32VMMDevVersion);
     if (    pDriver->pvOpaque
         &&  u32VMMDevVersion == VMMDEV_VERSION)
         return VINF_SUCCESS;
 
     Log(("vbglDriverOpen: failed\n"));
     return VERR_FILE_NOT_FOUND;
-
-#elif defined (RT_OS_FREEBSD)
-    uint32_t u32VMMDevVersion;
-    pDriver->pvOpaque = VBoxGuestFreeBSDServiceOpen(&u32VMMDevVersion);
-    if (pDriver->pvOpaque && (u32VMMDevVersion == VMMDEV_VERSION))
-        return VINF_SUCCESS;
-
-    Log(("vbglDriverOpen: failed\n"));
-    return VERR_FILE_NOT_FOUND;
-
-#else
-# error "Port me"
-#endif
+# endif
 }
 
-#ifdef RT_OS_WINDOWS
+# ifdef RT_OS_WINDOWS
 static NTSTATUS vbglDriverIOCtlCompletion (IN PDEVICE_OBJECT DeviceObject,
                                            IN PIRP Irp,
                                            IN PVOID Context)
@@ -260,13 +241,13 @@ static NTSTATUS vbglDriverIOCtlCompletion (IN PDEVICE_OBJECT DeviceObject,
 
     return STATUS_MORE_PROCESSING_REQUIRED;
 }
-#endif
+# endif
 
 int vbglDriverIOCtl (VBGLDRIVER *pDriver, uint32_t u32Function, void *pvData, uint32_t cbData)
 {
     Log(("vbglDriverIOCtl: pDriver: %p, Func: %x, pvData: %p, cbData: %d\n", pDriver, u32Function, pvData, cbData));
 
-#ifdef RT_OS_WINDOWS
+# ifdef RT_OS_WINDOWS
     KEVENT Event;
 
     KeInitializeEvent (&Event, NotificationEvent, FALSE);
@@ -329,10 +310,10 @@ int vbglDriverIOCtl (VBGLDRIVER *pDriver, uint32_t u32Function, void *pvData, ui
 
     return NT_SUCCESS(rc)? VINF_SUCCESS: VERR_VBGL_IOCTL_FAILED;
 
-#elif defined (RT_OS_LINUX)
+# elif defined (RT_OS_LINUX) && !defined (VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX)
     return vboxadd_cmc_call (pDriver->opaque, u32Function, pvData);
 
-#elif defined (RT_OS_OS2)
+# elif defined (RT_OS_OS2)
     if (    pDriver->u32Session
         &&  pDriver->u32Session == g_VBoxGuestIDC.u32Session)
         return g_VBoxGuestIDC.pfnServiceEP(pDriver->u32Session, u32Function, pvData, cbData, NULL);
@@ -340,38 +321,26 @@ int vbglDriverIOCtl (VBGLDRIVER *pDriver, uint32_t u32Function, void *pvData, ui
     Log(("vbglDriverIOCtl: No connection\n"));
     return VERR_WRONG_ORDER;
 
-#elif defined (RT_OS_SOLARIS)
-    return VBoxGuestSolarisServiceCall(pDriver->pvOpaque, u32Function, pvData, cbData, NULL);
-
-#elif defined (RT_OS_FREEBSD)
-    return VBoxGuestFreeBSDServiceCall(pDriver->pvOpaque, u32Function, pvData, cbData, NULL);
-
-#else
-# error "Port me"
-#endif
+# else
+    return VBoxGuestIDCCall(pDriver->pvOpaque, u32Function, pvData, cbData, NULL);
+# endif
 }
 
 void vbglDriverClose (VBGLDRIVER *pDriver)
 {
-#ifdef RT_OS_WINDOWS
+# ifdef RT_OS_WINDOWS
     Log(("vbglDriverClose pDeviceObject=%x\n", pDriver->pDeviceObject));
     ObDereferenceObject (pDriver->pFileObject);
 
-#elif defined (RT_OS_LINUX)
+# elif defined (RT_OS_LINUX) && !defined (VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX)
     vboxadd_cmc_close (pDriver->opaque);
 
-#elif defined (RT_OS_OS2)
+# elif defined (RT_OS_OS2)
     pDriver->u32Session = 0;
 
-#elif defined (RT_OS_SOLARIS)
-    VBoxGuestSolarisServiceClose (pDriver->pvOpaque);
-
-#elif defined (RT_OS_FREEBSD)
-    VBoxGuestFreeBSDServiceClose(pDriver->pvOpaque);
-
-#else
-# error "Port me"
-#endif
+# else
+    VBoxGuestIDCClose (pDriver->pvOpaque);
+# endif
 }
 
 #endif /* !VBGL_VBOXGUEST */

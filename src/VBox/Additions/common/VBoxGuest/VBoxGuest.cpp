@@ -1450,3 +1450,4 @@ bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt)
     return fOurIrq;
 }
 
+

@@ -61,7 +61,7 @@ typedef RTGCPHYS64 VMMDEVHYPPHYS64;
 # define VMMDEVHYPPHYS VMMDEVHYPPHYS32
 #endif
 
-#if defined(RT_OS_LINUX)
+#if defined(RT_OS_LINUX) && !defined(VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX)
 /** The support device name. */
 # define VBOXGUEST_DEVICE_NAME        "/dev/vboxadd"
 /** The support device name of the user accessible device node. */
@@ -72,12 +72,6 @@ typedef RTGCPHYS64 VMMDEVHYPPHYS64;
 # define VBOXGUEST_DEVICE_NAME        "\\Dev\\VBoxGst$"
 /** The support device name of the user accessible device node. */
 # define VBOXGUEST_USER_DEVICE_NAME   "\\Dev\\VBoxGst$"
-
-#elif defined(RT_OS_SOLARIS)
-/** The support device name. */
-# define VBOXGUEST_DEVICE_NAME        "/dev/vboxguest"
-/** The support device name of the user accessible device node. */
-# define VBOXGUEST_USER_DEVICE_NAME   "/dev/vboxguest"
 
 #elif defined(RT_OS_WINDOWS)
 /** The support service name. */
@@ -93,14 +87,16 @@ typedef RTGCPHYS64 VMMDEVHYPPHYS64;
 /** device name */
 # define VBOXGUEST_DEVICE_NAME_DOS    L"\\DosDevices\\VBoxGuest"
 
-#elif defined(RT_OS_FREEBSD)
+#else /* PORTME */
 /** The support device name. */
 # define VBOXGUEST_DEVICE_NAME        "/dev/vboxguest"
 /** The support device name of the user accessible device node. */
-# define VBOXGUEST_USER_DEVICE_NAME   "/dev/vboxguest"
+# ifdef defined(RT_OS_LINUX)
+#  define VBOXGUEST_USER_DEVICE_NAME  "/dev/vboxuser"
+# else
+#  define VBOXGUEST_USER_DEVICE_NAME  "/dev/vboxguest"
+# endif
 
-#else
-/* PORTME */
 #endif
 
 /** VirtualBox vendor ID */
