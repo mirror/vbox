@@ -874,7 +874,35 @@ static int mmR3HyperHeapMap(PVM pVM, PMMHYPERHEAP pHeap, PRTGCPTR ppHeapGC)
  */
 VMMR3DECL(int) MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, unsigned uAlignment, MMTAG enmTag, void **ppv)
 {
+    return MMR3HyperAllocOnceNoRelEx(pVM, cb, uAlignment, enmTag, 0/*fFlags*/, ppv);
+}
+
+
+/**
+ * Allocates memory in the Hypervisor (GC VMM) area which never will
+ * be freed and doesn't have any offset based relation to other heap blocks.
+ *
+ * The latter means that two blocks allocated by this API will not have the
+ * same relative position to each other in GC and HC. In short, never use
+ * this API for allocating nodes for an offset based AVL tree!
+ *
+ * The returned memory is of course zeroed.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @param   cb          Number of bytes to allocate.
+ * @param   uAlignment  Required memory alignment in bytes.
+ *                      Values are 0,8,16,32 and PAGE_SIZE.
+ *                      0 -> default alignment, i.e. 8 bytes.
+ * @param   enmTag      The statistics tag.
+ * @param   fFlags      Flags, see MMHYPER_AONR_FLAGS_KERNEL_MAPPING.
+ * @param   ppv         Where to store the address to the allocated memory.
+ * @remark  This is assumed not to be used at times when serialization is required.
+ */
+VMMR3DECL(int) MMR3HyperAllocOnceNoRelEx(PVM pVM, size_t cb, unsigned uAlignment, MMTAG enmTag, uint32_t fFlags, void **ppv)
+{
     AssertMsg(cb >= 8, ("Hey! Do you really mean to allocate less than 8 bytes?! cb=%d\n", cb));
+    Assert(!(fFlags & ~(MMHYPER_AONR_FLAGS_KERNEL_MAPPING)));
 
     /*
      * Choose between allocating a new chunk of HMA memory
@@ -883,9 +911,13 @@ VMMR3DECL(int) MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, unsigned uAlignment, 
      */
     if (   (   cb < _64K
             && (   uAlignment != PAGE_SIZE
-               || cb < 48*_1K))
-        ||  VMR3GetState(pVM) != VMSTATE_CREATING)
+                || cb < 48*_1K)
+            && !(fFlags & MMHYPER_AONR_FLAGS_KERNEL_MAPPING)
+           )
+        ||  VMR3GetState(pVM) != VMSTATE_CREATING
+       )
     {
+        Assert(!(fFlags & MMHYPER_AONR_FLAGS_KERNEL_MAPPING));
         int rc = MMHyperAlloc(pVM, cb, uAlignment, enmTag, ppv);
         if (    rc != VERR_MM_HYPER_NO_MEMORY
             ||  cb <= 8*_1K)
@@ -895,6 +927,14 @@ VMMR3DECL(int) MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, unsigned uAlignment, 
             return rc;
         }
     }
+
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+    /*
+     * Set MMHYPER_AONR_FLAGS_KERNEL_MAPPING if we're in going to execute in ring-0.
+     */
+    if (VMMIsHwVirtExtForced(pVM))
+        fFlags |= MMHYPER_AONR_FLAGS_KERNEL_MAPPING;
+#endif
 
     /*
      * Validate alignment.
@@ -926,20 +966,17 @@ VMMR3DECL(int) MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, unsigned uAlignment, 
     int rc = SUPR3PageAllocEx(cPages,
                               0 /*fFlags*/,
                               &pvPages,
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-                              VMMIsHwVirtExtForced(pVM) ? &pvR0 : NULL,
-#else
-                              NULL,
-#endif
+                              fFlags & MMHYPER_AONR_FLAGS_KERNEL_MAPPING ? &pvR0 : NULL,
                               paPages);
     if (RT_SUCCESS(rc))
     {
+        if (!(fFlags & MMHYPER_AONR_FLAGS_KERNEL_MAPPING))
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-        if (!VMMIsHwVirtExtForced(pVM))
             pvR0 = NIL_RTR0PTR;
 #else
-        pvR0 = (uintptr_t)pvPages;
+            pvR0 = (RTR0PTR)pvPages;
 #endif
+
         memset(pvPages, 0, cbAligned);
 
         RTGCPTR GCPtr;

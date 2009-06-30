@@ -298,12 +298,13 @@ static int vmmR3InitLoggers(PVM pVM)
         pVM->vmm.s.pRCLoggerRC = MMHyperR3ToRC(pVM, pVM->vmm.s.pRCLoggerR3);
 
 # ifdef VBOX_WITH_R0_LOGGING
-        for (unsigned i = 0; i < pVM->cCPUs; i++)
+        for (VMCPUID i = 0; i < pVM->cCPUs; i++)
         {
             PVMCPU pVCpu = &pVM->aCpus[i];
 
-            rc = MMR3HyperAllocOnceNoRel(pVM, RT_OFFSETOF(VMMR0LOGGER, Logger.afGroups[pLogger->cGroups]),
-                                         0, MM_TAG_VMM, (void **)&pVCpu->vmm.s.pR0LoggerR3);
+            rc = MMR3HyperAllocOnceNoRelEx(pVM, RT_OFFSETOF(VMMR0LOGGER, Logger.afGroups[pLogger->cGroups]),
+                                           0, MM_TAG_VMM, MMHYPER_AONR_FLAGS_KERNEL_MAPPING,
+                                           (void **)&pVCpu->vmm.s.pR0LoggerR3);
             if (RT_FAILURE(rc))
                 return rc;
             pVCpu->vmm.s.pR0LoggerR3->pVM = pVM->pVMR0;
