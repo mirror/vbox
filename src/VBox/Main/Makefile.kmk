@@ -485,6 +485,9 @@ ifdef VBOX_WITH_XPCOM
 DLLS += VBoxSVCM
 VBoxSVCM_TEMPLATE       = VBOXMAINCOMP
 VBoxSVCM_DEFS           = IN_RING3 $(VBOX_MAIN_DEFS)
+ifdef VBOX_WITH_HARDENING
+ VBoxSVCM_DEFS         += VBOX_WITH_HARDENING
+endif
 VBoxSVCM_INCS           = \
 	include \
 	$(PATH_VBoxC) \

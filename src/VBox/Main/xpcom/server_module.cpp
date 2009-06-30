@@ -57,6 +57,9 @@
 
 #include <string.h>
 
+#if defined(RT_OS_SOLARIS)
+# include <sys/systeminfo.h>
+#endif
 
 /// @todo move this to RT headers (and use them in MachineImpl.cpp as well)
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
@@ -137,11 +140,23 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
                     AssertBreakStmt (path.Length() + strlen (VBoxSVC_exe) < RTPATH_MAX,
                                      rc = NS_ERROR_FAILURE);
 
+#if defined(RT_OS_SOLARIS) && defined(VBOX_WITH_HARDENING)
+                    char achKernArch[128];
+                    int cbKernArch = sysinfo (SI_ARCHITECTURE_K, achKernArch, sizeof(achKernArch));
+                    if (cbKernArch > 0)
+                    {
+                        sprintf(VBoxSVCPath, "/opt/VirtualBox/%s/%s", achKernArch, VBoxSVC_exe);
+                        IsVBoxSVCPathSet = true;
+                    }
+                    else
+                        rc = NS_ERROR_UNEXPECTED;
+#else
                     strcpy (VBoxSVCPath, path.get());
                     RTPathStripFilename (VBoxSVCPath);
                     strcat (VBoxSVCPath, VBoxSVC_exe);
 
                     IsVBoxSVCPathSet = true;
+#endif
                 }
             }
             if (NS_FAILED (rc))
