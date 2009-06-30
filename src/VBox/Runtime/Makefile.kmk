@@ -303,8 +303,7 @@ RuntimeR3_SOURCES       = \
 	r3/stream.cpp \
 	r3/test.cpp \
 	r3/testi.cpp \
-	r3/tcp.cpp \
-	r3/xml.cpp
+	r3/tcp.cpp
 
 #if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
 # RuntimeR3_SOURCES += common/time/timesupA.asm
@@ -796,7 +795,8 @@ VBoxRT_SOURCES                 = \
 	VBox/VBoxRTDeps.cpp \
 	$(RuntimeR3_SOURCES)
 VBoxRT_SOURCES                += \
-	common/misc/s3.cpp
+	common/misc/s3.cpp \
+	r3/xml.cpp
 VBoxRT_SOURCES.$(KBUILD_TARGET) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET))
 VBoxRT_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
 VBoxRT_SOURCES.$(KBUILD_TARGET_ARCH) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET_ARCH))
