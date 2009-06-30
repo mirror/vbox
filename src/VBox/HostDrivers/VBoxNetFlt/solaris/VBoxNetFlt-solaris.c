@@ -2862,6 +2862,7 @@ static bool vboxNetFltSolarisIsOurMBlk(PVBOXNETFLTINS pThis, vboxnetflt_promisc_
         break;
     }
 
+    LogFlow((DEVICE_NAME ":vboxNetFltSolarisIsOurMBlk returns %d.\n", fIsOurPacket));
     RTSemFastMutexRelease(pThis->u.s.hFastMtx);
     return fIsOurPacket;
 }
@@ -2893,11 +2894,41 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
     /*
      * Don't loopback packets we transmit to the wire.
      */
-    /** @todo maybe we need not check for loopback for INTNETTRUNKDIR_HOST case? */
     if (vboxNetFltSolarisIsOurMBlk(pThis, pPromiscStream, pMsg))
     {
         LogFlow((DEVICE_NAME ":Avoiding packet loopback.\n"));
         return VINF_SUCCESS;
+    }
+
+    /*
+     * Paranoia...
+     */
+    if (MBLKL(pMsg) < sizeof(RTNETETHERHDR))
+    {
+        size_t cbMsg = msgdsize(pMsg);
+        if (cbMsg < sizeof(RTNETETHERHDR))
+            return VINF_SUCCESS;
+
+        mblk_t *pFullMsg = allocb(cbMsg, BPRI_MED);
+        if (RT_LIKELY(pFullMsg))
+        {
+            mblk_t *pCur = pMsg;
+            while (pCur)
+            {
+                size_t cbBlock = MBLKL(pCur);
+                if (cbBlock > 0)
+                {
+                    bcopy(pCur->b_rptr, pFullMsg->b_wptr, cbBlock);
+                    pFullMsg->b_wptr += cbBlock;
+                }
+                pCur = pCur->b_cont;
+            }
+
+            freemsg(pMsg);
+            pMsg = pFullMsg;
+        }
+        else
+            return VERR_NO_MEMORY;
     }
 
     /*
