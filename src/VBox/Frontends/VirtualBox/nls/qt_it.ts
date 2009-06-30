@@ -13,7 +13,7 @@
     </message>
     <message>
         <source>Revert back to device &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Ripristino del dispositivo &apos;%1&apos;</translation>
     </message>
 </context>
 <context>
@@ -78,7 +78,7 @@ have libgstreamer-plugins-base installed.</source>
     </message>
     <message>
         <source>Invalid source type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tipo di sorgente non valido.</translation>
     </message>
     <message>
         <source>Could not locate media source.</source>
@@ -101,7 +101,7 @@ have libgstreamer-plugins-base installed.</source>
     </message>
     <message>
         <source>Use this slider to adjust the volume. The leftmost position is 0%, the rightmost is %1%</source>
-        <translation type="unfinished"></translation>
+        <translation>Utilizza questo cursore per regolare il volume. La posizione all&apos;estrema sinistra è 0%, a destra è %1%</translation>
     </message>
 </context>
 <context>
@@ -771,42 +771,42 @@ in
     <message>
         <source>%1: permission denied</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1: permesso negato</translation>
     </message>
     <message>
         <source>%1: already exists</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1: esiste già</translation>
     </message>
     <message>
         <source>%1: doesn&apos;t exists</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1: non esiste</translation>
     </message>
     <message>
         <source>%1: out of resources</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1: risorse insufficienti</translation>
     </message>
     <message>
         <source>%1: unknown error %2</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1: errore sconosciuto %2</translation>
     </message>
     <message>
         <source>%1: key is empty</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1: la chiave è vuota</translation>
     </message>
     <message>
         <source>%1: unable to make key</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1: impossibile creare la chiave</translation>
     </message>
     <message>
         <source>%1: ftok failed</source>
         <comment>QSystemSemaphore</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1: ftok non riuscito</translation>
     </message>
 </context>
 <context>
@@ -1289,7 +1289,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Demi Bold</source>
-        <translation type="unfinished"></translation>
+        <translation>Demi grassetto</translation>
     </message>
     <message>
         <source>Black</source>
@@ -1297,7 +1297,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Demi</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Light</source>
@@ -1353,7 +1353,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Bengali</source>
-        <translation type="unfinished"></translation>
+        <translation>Bengalese</translation>
     </message>
     <message>
         <source>Gurmukhi</source>
@@ -1389,11 +1389,11 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Thai</source>
-        <translation type="unfinished"></translation>
+        <translation>Thai</translation>
     </message>
     <message>
         <source>Lao</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Tibetan</source>
@@ -1401,7 +1401,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Myanmar</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Georgian</source>
@@ -1437,7 +1437,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Ogham</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Runic</source>
@@ -1682,11 +1682,11 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>HTTPS connection requested but SSL support not compiled in</source>
-        <translation type="unfinished"></translation>
+        <translation>Richiesta una connessione HTTPS, ma il supporto SSL non è stato compilato</translation>
     </message>
     <message>
         <source>Connection refused (or timed out)</source>
-        <translation type="unfinished"></translation>
+        <translation>Connessione rifiutata (o tempo scaduto)</translation>
     </message>
     <message>
         <source>Proxy requires authentication</source>
@@ -1706,7 +1706,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>SSL handshake failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Negoziazione SSL non riuscita</translation>
     </message>
 </context>
 <context>
@@ -1934,26 +1934,26 @@ Vuoi eliminarlo comunque?</translation>
     <name>QLocalServer</name>
     <message>
         <source>%1: Name error</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Errore nel nome</translation>
     </message>
     <message>
         <source>%1: Permission denied</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Permesso negato</translation>
     </message>
     <message>
         <source>%1: Address in use</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Indirizzo in uso</translation>
     </message>
     <message>
         <source>%1: Unknown error %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Errore sconosciuto %2</translation>
     </message>
 </context>
 <context>
     <name>QLocalSocket</name>
     <message>
         <source>%1: Connection refused</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Connessione rifiutata</translation>
     </message>
     <message>
         <source>%1: Remote closed</source>
@@ -1961,7 +1961,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>%1: Invalid name</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Nome non valido</translation>
     </message>
     <message>
         <source>%1: Socket access error</source>
@@ -1989,7 +1989,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>%1: Unknown error %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Errore sconosciuto %2</translation>
     </message>
 </context>
 <context>
@@ -3848,7 +3848,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Private key does not certificate public key, %1</source>
-        <translation type="unfinished"></translation>
+        <translation>La chiave privata non certifica la chiave pubblica, %1</translation>
     </message>
 </context>
 <context>
