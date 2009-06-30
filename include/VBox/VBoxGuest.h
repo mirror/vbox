@@ -91,7 +91,7 @@ typedef RTGCPHYS64 VMMDEVHYPPHYS64;
 /** The support device name. */
 # define VBOXGUEST_DEVICE_NAME        "/dev/vboxguest"
 /** The support device name of the user accessible device node. */
-# ifdef defined(RT_OS_LINUX)
+# if defined(RT_OS_LINUX)
 #  define VBOXGUEST_USER_DEVICE_NAME  "/dev/vboxuser"
 # else
 #  define VBOXGUEST_USER_DEVICE_NAME  "/dev/vboxguest"
