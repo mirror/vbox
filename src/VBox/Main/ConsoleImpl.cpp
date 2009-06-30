@@ -1072,7 +1072,7 @@ HRESULT Console::doEnumerateGuestProperties (CBSTR aPatterns,
     int vrc = VERR_BUFFER_OVERFLOW;
     for (unsigned i = 0; i < 10 && (VERR_BUFFER_OVERFLOW == vrc); ++i)
     {
-        Utf8Buf.reserve(cchBuf + 1024);
+        Utf8Buf.alloc(cchBuf + 1024);
         if (Utf8Buf.isNull())
             return E_OUTOFMEMORY;
         parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
@@ -1080,7 +1080,6 @@ HRESULT Console::doEnumerateGuestProperties (CBSTR aPatterns,
         parm[1].u.pointer.size = (uint32_t)cchBuf + 1024;
         vrc = mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", ENUM_PROPS_HOST, 3,
                                      &parm[0]);
-        Utf8Buf.jolt();
         if (parm[2].type != VBOX_HGCM_SVC_PARM_32BIT)
             return setError (E_FAIL, tr ("Internal application error"));
         cchBuf = parm[2].u.uint32;
@@ -1717,8 +1716,8 @@ STDMETHODIMP Console::SaveState (IProgress **aProgress)
         /* ensure the directory for the saved state file exists */
         {
             Utf8Str dir = stateFilePath;
-            dir.stripFilename();
-            if (!RTDirExists(dir))
+            RTPathStripFilename (dir.mutableRaw());
+            if (!RTDirExists (dir))
             {
                 int vrc = RTDirCreateFullPath (dir, 0777);
                 if (VBOX_FAILURE (vrc))
@@ -3865,7 +3864,8 @@ HRESULT Console::getGuestProperty (IN_BSTR aName, BSTR *aValue,
     char pszBuffer[MAX_VALUE_LEN + MAX_FLAGS_LEN];
 
     parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
-    parm[0].u.pointer.addr = (void*)Utf8Name.c_str();
+    /* To save doing a const cast, we use the mutableRaw() member. */
+    parm[0].u.pointer.addr = Utf8Name.mutableRaw();
     /* The + 1 is the null terminator */
     parm[0].u.pointer.size = (uint32_t)Utf8Name.length() + 1;
     parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
@@ -3881,13 +3881,10 @@ HRESULT Console::getGuestProperty (IN_BSTR aName, BSTR *aValue,
         rc = S_OK;
         if (vrc != VERR_NOT_FOUND)
         {
-            Utf8Str strBuffer(pszBuffer);
-            strBuffer.cloneTo(aValue);
-
+            size_t iFlags = strlen(pszBuffer) + 1;
+            Utf8Str(pszBuffer).cloneTo (aValue);
             *aTimestamp = parm[2].u.uint64;
-
-            size_t iFlags = strBuffer.length() + 1;
-            Utf8Str(pszBuffer + iFlags).cloneTo(aFlags);
+            Utf8Str(pszBuffer + iFlags).cloneTo (aFlags);
         }
         else
             aValue = NULL;
@@ -3932,14 +3929,16 @@ HRESULT Console::setGuestProperty (IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags
     int vrc = VINF_SUCCESS;
 
     parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
-    parm[0].u.pointer.addr = (void*)Utf8Name.c_str();
+    /* To save doing a const cast, we use the mutableRaw() member. */
+    parm[0].u.pointer.addr = Utf8Name.mutableRaw();
     /* The + 1 is the null terminator */
     parm[0].u.pointer.size = (uint32_t)Utf8Name.length() + 1;
     Utf8Str Utf8Value = aValue;
     if (aValue != NULL)
     {
         parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
-        parm[1].u.pointer.addr = (void*)Utf8Value.c_str();
+        /* To save doing a const cast, we use the mutableRaw() member. */
+        parm[1].u.pointer.addr = Utf8Value.mutableRaw();
         /* The + 1 is the null terminator */
         parm[1].u.pointer.size = (uint32_t)Utf8Value.length() + 1;
     }
@@ -3947,7 +3946,8 @@ HRESULT Console::setGuestProperty (IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags
     if (aFlags != NULL)
     {
         parm[2].type = VBOX_HGCM_SVC_PARM_PTR;
-        parm[2].u.pointer.addr = (void*)Utf8Flags.c_str();
+        /* To save doing a const cast, we use the mutableRaw() member. */
+        parm[2].u.pointer.addr = Utf8Flags.mutableRaw();
         /* The + 1 is the null terminator */
         parm[2].u.pointer.size = (uint32_t)Utf8Flags.length() + 1;
     }

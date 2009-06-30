@@ -48,9 +48,9 @@
 #include "VBox/com/defs.h"
 #include "VBox/com/assert.h"
 
+#include <iprt/string.h>
 #include <iprt/cpputils.h>
 #include <iprt/alloc.h>
-#include <iprt/ministring_cpp.h>
 
 namespace com
 {
@@ -152,31 +152,31 @@ public:
         return ::RTUtf16Cmp ((PRTUTF16) bstr, (PRTUTF16) str);
     }
 
-    bool operator==(const Bstr &that) const { return !compare (that.bstr); }
-    bool operator!=(const Bstr &that) const { return !!compare (that.bstr); }
-    bool operator==(CBSTR that) const { return !compare (that); }
-    bool operator==(BSTR that) const { return !compare (that); }
+    bool operator == (const Bstr &that) const { return !compare (that.bstr); }
+    bool operator != (const Bstr &that) const { return !!compare (that.bstr); }
+    bool operator == (CBSTR that) const { return !compare (that); }
+    bool operator == (BSTR that) const { return !compare (that); }
 
 #if defined (VBOX_WITH_XPCOM)
-    bool operator!=(const wchar_t *that) const
+    bool operator != (const wchar_t *that) const
     {
         AssertCompile (sizeof (wchar_t) == sizeof (OLECHAR));
         return !!compare ((CBSTR) that);
     }
-    bool operator==(const wchar_t *that) const
+    bool operator == (const wchar_t *that) const
     {
         AssertCompile (sizeof (wchar_t) == sizeof (OLECHAR));
         return !compare ((CBSTR) that);
     }
 #endif
 
-    bool operator!=(CBSTR that) const { return !!compare (that); }
-    bool operator!=(BSTR that) const { return !!compare (that); }
-    bool operator<(const Bstr &that) const { return compare (that.bstr) < 0; }
-    bool operator<(CBSTR that) const { return compare (that) < 0; }
-    bool operator<(BSTR that) const { return compare (that) < 0; }
+    bool operator != (CBSTR that) const { return !!compare (that); }
+    bool operator != (BSTR that) const { return !!compare (that); }
+    bool operator < (const Bstr &that) const { return compare (that.bstr) < 0; }
+    bool operator < (CBSTR that) const { return compare (that) < 0; }
+    bool operator < (BSTR that) const { return compare (that) < 0; }
 #if defined (VBOX_WITH_XPCOM)
-    bool operator<(const wchar_t *that) const
+    bool operator < (const wchar_t *that) const
     {
         AssertCompile (sizeof (wchar_t) == sizeof (OLECHAR));
         return compare ((CBSTR) that) < 0;
@@ -302,10 +302,10 @@ protected:
 };
 
 /* symmetric compare operators */
-inline bool operator==(CBSTR l, const Bstr &r) { return r.operator== (l); }
-inline bool operator!=(CBSTR l, const Bstr &r) { return r.operator!= (l); }
-inline bool operator==(BSTR l, const Bstr &r) { return r.operator== (l); }
-inline bool operator!=(BSTR l, const Bstr &r) { return r.operator!= (l); }
+inline bool operator== (CBSTR l, const Bstr &r) { return r.operator== (l); }
+inline bool operator!= (CBSTR l, const Bstr &r) { return r.operator!= (l); }
+inline bool operator== (BSTR l, const Bstr &r) { return r.operator== (l); }
+inline bool operator!= (BSTR l, const Bstr &r) { return r.operator!= (l); }
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -323,65 +323,253 @@ inline bool operator!=(BSTR l, const Bstr &r) { return r.operator!= (l); }
  *    of COM methods using the #asOutParam() operation and correctly free them
  *    afterwards.
  */
-class Utf8Str : public ministring
+class Utf8Str
 {
 public:
 
-    Utf8Str() {}
-
-    Utf8Str(const Utf8Str &that)
-        : ministring(that)
-    {}
-
-    Utf8Str(const char *that)
-        : ministring(that)
-    {}
-
-    Utf8Str(const Bstr &that)
+    enum CaseSensitivity
     {
-        copyFrom(that);
+        CaseSensitive,
+        CaseInsensitive
+    };
+
+    typedef char *String;
+    typedef const char *ConstString;
+
+    Utf8Str () : str (NULL) {}
+
+    Utf8Str (const Utf8Str &that) : str (NULL) { raw_copy (str, that.str); }
+    Utf8Str (const char *that) : str (NULL) { raw_copy (str, that); }
+
+    Utf8Str (const Bstr &that) : str (NULL) { raw_copy (str, that); }
+    Utf8Str (CBSTR that) : str (NULL) { raw_copy (str, that); }
+
+    /** Shortcut that calls #alloc(aSize) right after object creation. */
+    Utf8Str (size_t aSize) : str (NULL) { alloc(aSize); }
+
+    virtual ~Utf8Str () { setNull(); }
+
+    Utf8Str &operator = (const Utf8Str &that) { safe_assign (that.str); return *this; }
+    Utf8Str &operator = (const char *that) { safe_assign (that); return *this; }
+
+    Utf8Str &operator = (const Bstr &that)
+    {
+        setNull();
+        raw_copy (str, that);
+        return *this;
     }
-
-    Utf8Str(CBSTR that)
+    Utf8Str &operator = (CBSTR that)
     {
-        copyFrom(that);
-    }
-
-    Utf8Str& operator=(const Utf8Str &that)
-    {
-        ministring::operator=(that);
+        setNull();
+        raw_copy (str, that);
         return *this;
     }
 
-    Utf8Str& operator=(const char *that)
+    Utf8Str &setNull()
     {
-        ministring::operator=(that);
+        if (str)
+        {
+#if !defined (VBOX_WITH_XPCOM)
+            ::RTStrFree (str);
+#else
+            nsMemory::Free (str);
+#endif
+            str = NULL;
+        }
         return *this;
     }
 
-    Utf8Str& operator=(const Bstr &that)
+    Utf8Str &setNullIfEmpty()
     {
-        cleanup();
-        copyFrom(that);
+        if (str && *str == 0)
+        {
+#if !defined (VBOX_WITH_XPCOM)
+            ::RTStrFree (str);
+#else
+            nsMemory::Free (str);
+#endif
+            str = NULL;
+        }
         return *this;
     }
 
-    Utf8Str& operator=(CBSTR that)
+    /**
+     *  Allocates memory for a string capable to store \a aSize - 1 bytes (not characters!);
+     *  in other words, aSize includes the terminating zero character. If \a aSize
+     *  is zero, or if a memory allocation error occurs, this object will become null.
+     */
+    Utf8Str &alloc (size_t aSize)
     {
-        cleanup();
-        copyFrom(that);
+        setNull();
+        if (aSize)
+        {
+#if !defined (VBOX_WITH_XPCOM)
+            str = (char *) ::RTMemTmpAlloc (aSize);
+#else
+            str = (char *) nsMemory::Alloc (aSize);
+#endif
+            if (str)
+                str [0] = 0;
+        }
         return *this;
     }
+
+    void append(const Utf8Str &that)
+    {
+        size_t cbThis = length();
+        size_t cbThat = that.length();
+
+        if (cbThat)
+        {
+            size_t cbBoth = cbThis + cbThat + 1;
+
+            // @todo optimize with realloc() once the memory management is fixed
+            char *pszTemp;
+#if !defined (VBOX_WITH_XPCOM)
+            pszTemp = (char*)::RTMemTmpAlloc(cbBoth);
+#else
+            pszTemp = (char*)nsMemory::Alloc(cbBoth);
+#endif
+            if (str)
+            {
+                memcpy(pszTemp, str, cbThis);
+                setNull();
+            }
+            if (that.str)
+                memcpy(pszTemp + cbThis, that.str, cbThat);
+            pszTemp[cbThis + cbThat] = '\0';
+
+            str = pszTemp;
+        }
+    }
+
+    int compare (const char *pcsz, CaseSensitivity cs = CaseSensitive) const
+    {
+        if (str == pcsz)
+            return 0;
+        if (str == NULL)
+            return -1;
+        if (pcsz == NULL)
+            return 1;
+
+        if (cs == CaseSensitive)
+            return ::RTStrCmp(str, pcsz);
+        else
+            return ::RTStrICmp(str, pcsz);
+    }
+
+    int compare (const Utf8Str &that, CaseSensitivity cs = CaseSensitive) const
+    {
+        return compare (that.str, cs);
+    }
+
+    bool operator == (const Utf8Str &that) const { return !compare (that); }
+    bool operator != (const Utf8Str &that) const { return !!compare (that); }
+    bool operator == (const char *that) const { return !compare (that); }
+    bool operator != (const char *that) const { return !!compare (that); }
+    bool operator < (const Utf8Str &that) const { return compare (that) < 0; }
+    bool operator < (const char *that) const { return compare (that) < 0; }
+
+    bool endsWith (const Utf8Str &that, CaseSensitivity cs = CaseSensitive) const
+    {
+        if (isNull() || that.isNull())
+            return false;
+
+        size_t l1 = length();
+        size_t l2 = that.length();
+        if (l1 < l2)
+            return false;
+
+        size_t l = l1 - l2;
+        if (cs == CaseSensitive)
+            return ::RTStrCmp(&str[l], that.str) == 0;
+        else
+            return ::RTStrICmp(&str[l], that.str) == 0;
+    }
+
+    bool startsWith (const Utf8Str &that, CaseSensitivity cs = CaseSensitive) const
+    {
+        if (isNull() || that.isNull())
+            return false;
+
+        size_t l1 = length();
+        size_t l2 = that.length();
+        if (l1 < l2)
+            return false;
+
+        if (cs == CaseSensitive)
+            return ::RTStrNCmp(str, that.str, l2) == 0;
+        else
+            return ::RTStrNICmp(str, that.str, l2) == 0;
+    }
+
+    bool contains (const Utf8Str &that, CaseSensitivity cs = CaseSensitive) const
+    {
+        if (cs == CaseSensitive)
+            return ::RTStrStr (str, that.str) != NULL;
+        else
+            return ::RTStrIStr (str, that.str) != NULL;
+    }
+
+    Utf8Str& toLower()
+    {
+        if (isEmpty())
+            return *this;
+
+        ::RTStrToLower(str);
+
+        return *this;
+    }
+
+    Utf8Str& toUpper()
+    {
+        if (isEmpty())
+            return *this;
+
+        ::RTStrToUpper(str);
+
+        return *this;
+    }
+
+    bool isNull() const { return str == NULL; }
+    operator bool() const { return !isNull(); }
+
+    bool isEmpty() const { return isNull() || *str == 0; }
+
+    size_t length() const { return isNull() ? 0 : ::strlen (str); }
+
+    /** Intended to to pass instances as input (|char *|) parameters to methods. */
+    operator const char *() const { return str; }
+
+    /** The same as operator const char *(), but for situations where the compiler
+        cannot typecast implicitly (for example, in printf() argument list). */
+    const char *raw() const { return str; }
+
+    /** The same as operator const char *(), but for situations where the compiler
+        cannot typecast implicitly (for example, in printf() argument list). */
+    const char *c_str() const { return str; }
+
+    /**
+     *  Returns a non-const raw pointer that allows to modify the string directly.
+     *  @warning
+     *      Be sure not to modify data beyond the allocated memory! The
+     *      guaranteed size of the allocated memory is at least #length()
+     *      bytes after creation and after every assignment operation.
+     */
+    char *mutableRaw() { return str; }
 
     /**
      *  Intended to assign instances to |char *| out parameters from within the
      *  interface method. Transfers the ownership of the duplicated string to the
      *  caller.
      */
-    const Utf8Str& cloneTo(char **pstr) const
+    const Utf8Str &cloneTo (char **pstr) const
     {
         if (pstr)
-            *pstr = RTStrDup(m_psz);
+        {
+            *pstr = NULL;
+            raw_copy (*pstr, str);
+        }
         return *this;
     }
 
@@ -393,12 +581,10 @@ public:
      *  As opposed to cloneTo(), this method doesn't create a copy of the
      *  string.
      */
-    Utf8Str& detachTo(char **pstr)
+    Utf8Str &detachTo (char **pstr)
     {
-        *pstr = m_psz;
-        m_psz = NULL;
-        m_cbAllocated = 0;
-        m_cbLength = 0;
+        *pstr = str;
+        str = NULL;
         return *this;
     }
 
@@ -407,12 +593,12 @@ public:
      *  interface method. Transfers the ownership of the duplicated string to the
      *  caller.
      */
-    const Utf8Str& cloneTo(BSTR *pstr) const
+    const Utf8Str &cloneTo (BSTR *pstr) const
     {
         if (pstr)
         {
             *pstr = NULL;
-            Bstr::raw_copy(*pstr, m_psz);
+            Bstr::raw_copy (*pstr, str);
         }
         return *this;
     }
@@ -436,66 +622,14 @@ public:
     Utf8Str substr(size_t pos = 0, size_t n = npos) const;
 
     /**
-     * Returns true if "this" ends with "that".
-     * @param that
-     * @param cs
-     * @return
-     */
-    bool endsWith(const Utf8Str &that, CaseSensitivity cs = CaseSensitive) const;
-
-    /**
-     * Returns true if "this" begins with "that".
-     * @return
-     */
-    bool startsWith(const Utf8Str &that, CaseSensitivity cs = CaseSensitive) const;
-
-    /**
-     * Returns true if "this" contains "that" (strstr).
-     * @param that
-     * @param cs
-     * @return
-     */
-    bool contains(const Utf8Str &that, CaseSensitivity cs = CaseSensitive) const;
-
-    /**
-     * Converts "this" to lower case by calling RTStrToLower().
-     * @return
-     */
-    Utf8Str& toLower();
-
-    /**
-     * Converts "this" to upper case by calling RTStrToUpper().
-     * @return
-     */
-    Utf8Str& toUpper();
-
-    /**
-     * Removes a trailing slash from the member string, if present.
-     * Calls RTPathStripTrailingSlash() without having to mess with mutableRaw().
-     */
-    void stripTrailingSlash();
-
-    /**
-     * Removes a trailing filename from the member string, if present.
-     * Calls RTPathStripFilename() without having to mess with mutableRaw().
-     */
-    void stripFilename();
-
-    /**
-     * Removes a trailing file name extension from the member string, if present.
-     * Calls RTPathStripExt() without having to mess with mutableRaw().
-     */
-    void stripExt();
-
-    /**
-     * Attempts to convert the member string into a 32-bit integer.
+     * Attempts to convert the member string into an 32-bit integer.
      *
      * @returns 32-bit unsigned number on success.
      * @returns 0 on failure.
      */
     int toInt32() const
     {
-        return RTStrToInt32(m_psz);
+        return RTStrToInt32(str);
     }
 
     /**
@@ -506,7 +640,7 @@ public:
      */
     int toUInt32() const
     {
-        return RTStrToUInt32(m_psz);
+        return RTStrToUInt32(str);
     }
 
     /**
@@ -517,7 +651,7 @@ public:
      */
     int64_t toInt64() const
     {
-        return RTStrToInt64(m_psz);
+        return RTStrToInt64(str);
     }
 
     /**
@@ -528,7 +662,7 @@ public:
      */
     uint64_t toUInt64() const
     {
-        return RTStrToUInt64(m_psz);
+        return RTStrToUInt64(str);
     }
 
     /**
@@ -549,11 +683,7 @@ public:
      *  Intended to pass instances as out (|char **|) parameters to methods.
      *  Takes the ownership of the returned data.
      */
-    char **asOutParam()
-    {
-        cleanup();
-        return &m_psz;
-    }
+    char **asOutParam() { setNull(); return &str; }
 
     /**
      *  Static immutable null object. May be used for comparison purposes.
@@ -562,36 +692,48 @@ public:
 
 protected:
 
-    /**
-     * As with the ministring::copyFrom() variants, this unconditionally
-     * sets the members to a copy of the given other strings and makes
-     * no assumptions about previous contents. This can therefore be used
-     * both in copy constructors, when member variables have no defined
-     * value, and in assignments after having called cleanup().
-     *
-     * This variant converts from a UTF-16 string, most probably from
-     * a Bstr assignment.
-     *
-     * @param rs
-     */
-    void copyFrom(CBSTR s)
+    void safe_assign (const char *s)
     {
-        if (s)
+        if (str != s)
         {
-            RTUtf16ToUtf8((PRTUTF16)s, &m_psz);
-            m_cbLength = strlen(m_psz);             // TODO optimize by using a different RTUtf* function
-            m_cbAllocated = m_cbLength + 1;
-        }
-        else
-        {
-            m_cbLength = 0;
-            m_cbAllocated = 0;
-            m_psz = NULL;
+            setNull();
+            raw_copy (str, s);
         }
     }
 
+    inline static void raw_copy (char *&ls, const char *rs)
+    {
+        if (rs)
+#if !defined (VBOX_WITH_XPCOM)
+            ::RTStrDupEx (&ls, rs);
+#else
+            ls = (char *) nsMemory::Clone (rs, strlen (rs) + 1);
+#endif
+    }
+
+    inline static void raw_copy (char *&ls, CBSTR rs)
+    {
+        if (rs)
+        {
+#if !defined (VBOX_WITH_XPCOM)
+            ::RTUtf16ToUtf8 ((PRTUTF16) rs, &ls);
+#else
+            char *s = NULL;
+            ::RTUtf16ToUtf8 ((PRTUTF16) rs, &s);
+            raw_copy (ls, s);
+            ::RTStrFree (s);
+#endif
+        }
+    }
+
+    char *str;
+
     friend class Bstr; /* to access our raw_copy() */
 };
+
+// symmetric compare operators
+inline bool operator== (const char *l, const Utf8Str &r) { return r.operator== (l); }
+inline bool operator!= (const char *l, const Utf8Str &r) { return r.operator!= (l); }
 
 // work around error C2593 of the stupid MSVC 7.x ambiguity resolver
 WORKAROUND_MSVC7_ERROR_C2593_FOR_BOOL_OP (Bstr)
@@ -617,12 +759,11 @@ inline Bstr &Bstr::operator = (const char *that)
     return *this;
 }
 
-inline const Bstr& Bstr::cloneTo(char **pstr) const
+inline const Bstr &Bstr::cloneTo (char **pstr) const
 {
-    if (pstr)
-    {
-        Utf8Str ustr(*this);
-        ustr.detachTo(pstr);
+    if (pstr) {
+        *pstr = NULL;
+        Utf8Str::raw_copy (*pstr, bstr);
     }
     return *this;
 }

@@ -3449,12 +3449,12 @@ int Machine::calculateFullPath (const char *aPath, Utf8Str &aResult)
 
     AssertReturn (!mData->mConfigFileFull.isNull(), VERR_GENERAL_FAILURE);
 
-    Utf8Str strSettingsDir = mData->mConfigFileFull;
+    Utf8Str settingsDir = mData->mConfigFileFull;
 
-    strSettingsDir.stripFilename();
-    char folder[RTPATH_MAX];
-    int vrc = RTPathAbsEx(strSettingsDir, aPath, folder, sizeof(folder));
-    if (RT_SUCCESS(vrc))
+    RTPathStripFilename (settingsDir.mutableRaw());
+    char folder [RTPATH_MAX];
+    int vrc = RTPathAbsEx (settingsDir, aPath, folder, sizeof (folder));
+    if (RT_SUCCESS (vrc))
         aResult = folder;
 
     return vrc;
@@ -3482,15 +3482,15 @@ void Machine::calculateRelativePath (const char *aPath, Utf8Str &aResult)
 
     Utf8Str settingsDir = mData->mConfigFileFull;
 
-    settingsDir.stripFilename();
-    if (RTPathStartsWith(aPath, settingsDir))
+    RTPathStripFilename (settingsDir.mutableRaw());
+    if (RTPathStartsWith (aPath, settingsDir))
     {
         /* when assigning, we create a separate Utf8Str instance because both
          * aPath and aResult can point to the same memory location when this
          * func is called (if we just do aResult = aPath, aResult will be freed
          * first, and since its the same as aPath, an attempt to copy garbage
          * will be made. */
-        aResult = Utf8Str(aPath + settingsDir.length() + 1);
+        aResult = Utf8Str (aPath + settingsDir.length() + 1);
     }
 }
 
@@ -5948,11 +5948,11 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
 
             /* first, rename the directory if it matches the machine name */
             configDir = configFile;
-            configDir.stripFilename();
+            RTPathStripFilename (configDir.mutableRaw());
             newConfigDir = configDir;
-            if (RTPathFilename(configDir) == name)
+            if (RTPathFilename (configDir) == name)
             {
-                newConfigDir.stripFilename();
+                RTPathStripFilename (newConfigDir.mutableRaw());
                 newConfigDir = Utf8StrFmt ("%s%c%s",
                     newConfigDir.raw(), RTPATH_DELIMITER, newName.raw());
                 /* new dir and old dir cannot be equal here because of 'if'
@@ -6077,12 +6077,12 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
         int vrc = VINF_SUCCESS;
 
         /* ensure the settings directory exists */
-        Utf8Str path(mData->mConfigFileFull);
-        path.stripFilename();
-        if (!RTDirExists(path))
+        Utf8Str path = mData->mConfigFileFull;
+        RTPathStripFilename (path.mutableRaw());
+        if (!RTDirExists (path))
         {
-            vrc = RTDirCreateFullPath(path, 0777);
-            if (RT_FAILURE(vrc))
+            vrc = RTDirCreateFullPath (path, 0777);
+            if (RT_FAILURE (vrc))
             {
                 return setError (E_FAIL,
                     tr ("Could not create a directory '%s' "
@@ -7654,11 +7654,11 @@ HRESULT Machine::unlockConfig()
  *  @note Doesn't lock anything.
  *  @note Not thread safe (must be called from this object's lock).
  */
-bool Machine::isInOwnDir(Utf8Str *aSettingsDir /* = NULL */)
+bool Machine::isInOwnDir (Utf8Str *aSettingsDir /* = NULL */)
 {
     Utf8Str settingsDir = mData->mConfigFileFull;
-    settingsDir.stripFilename();
-    char *dirName = RTPathFilename(settingsDir);
+    RTPathStripFilename (settingsDir.mutableRaw());
+    char *dirName = RTPathFilename (settingsDir);
 
     AssertReturn (dirName, false);
 

@@ -602,9 +602,8 @@ std::string ConvertComString(const com::Bstr &bstr)
  * @param bstr
  * @return
  */
-std::string ConvertComString(const com::Guid &uuid)
+std::string ConvertComString(const com::Guid &bstr)
 {
-    com::Bstr bstr(uuid);
     com::Utf8Str ustr(bstr);
     const char *pcsz;
     if ((pcsz = ustr.raw()))

@@ -155,8 +155,7 @@ HRESULT VirtualBoxErrorInfo::init (nsIException *aInfo)
     rc = aInfo->GetResult (&mResultCode);
     AssertComRC (rc);
     Utf8Str message;
-    rc = aInfo->GetMessage(message.asOutParam());
-    message.jolt();
+    rc = aInfo->GetMessage (message.asOutParam());
     AssertComRC (rc);
     mText = message;
 

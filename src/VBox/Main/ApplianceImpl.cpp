@@ -25,7 +25,6 @@
 #include <iprt/dir.h>
 #include <iprt/file.h>
 #include <iprt/s3.h>
-#include "iprt/xml_cpp.h"
 
 #include <VBox/param.h>
 #include <VBox/version.h>
@@ -39,6 +38,8 @@
 #include "HostNetworkInterfaceImpl.h"
 
 #include "Logging.h"
+
+#include "VBox/xml.h"
 
 using namespace std;
 
@@ -232,6 +233,13 @@ struct VirtualSystemDescription::Data
 // internal helpers
 //
 ////////////////////////////////////////////////////////////////////////////////
+
+static Utf8Str stripFilename(const Utf8Str &strFile)
+{
+    Utf8Str str2(strFile);
+    RTPathStripFilename(str2.mutableRaw());
+    return str2;
+}
 
 static const struct
 {
@@ -2237,8 +2245,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
 
                     /* The disk image has to be on the same place as the OVF file. So
                      * strip the filename out of the full file path. */
-                    Utf8Str strSrcDir(pAppliance->m->strPath);
-                    strSrcDir.stripFilename();
+                    Utf8Str strSrcDir = stripFilename(pAppliance->m->strPath);
 
                     /* Iterate over all given disk images */
                     list<VirtualSystemDescriptionEntry*>::const_iterator itHD;
@@ -3514,8 +3521,7 @@ int Appliance::writeFS(TaskWriteOVF *pTask)
             // output filename
             const Utf8Str &strTargetFileNameOnly = pDiskEntry->strOvf;
             // target path needs to be composed from where the output OVF is
-            Utf8Str strTargetFilePath(m->strPath);
-            strTargetFilePath.stripFilename();
+            Utf8Str strTargetFilePath = stripFilename(m->strPath);
             strTargetFilePath.append("/");
             strTargetFilePath.append(strTargetFileNameOnly);
 
@@ -3714,8 +3720,7 @@ int Appliance::writeS3(TaskWriteOVF *pTask)
             {
                 const Utf8Str &strTargetFileNameOnly = (*itH)->strOvf;
                 /* Target path needs to be composed from where the output OVF is */
-                Utf8Str strTargetFilePath(m->strPath);
-                strTargetFilePath.stripFilename();
+                Utf8Str strTargetFilePath = stripFilename(m->strPath);
                 strTargetFilePath.append("/");
                 strTargetFilePath.append(strTargetFileNameOnly);
                 vrc = RTPathExists(strTargetFilePath.c_str()); /* Paranoid check */
@@ -4730,7 +4735,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
             }
 
             Utf8Str strTargetVmdkName(bstrName);
-            strTargetVmdkName.stripExt();
+            RTPathStripExt(strTargetVmdkName.mutableRaw());
             strTargetVmdkName.append(".vmdk");
 
             pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskImage,

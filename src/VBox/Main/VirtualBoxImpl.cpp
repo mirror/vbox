@@ -3869,16 +3869,16 @@ HRESULT VirtualBox::updateSettings (const char *aOldPath, const char *aNewPath)
 /* static */
 HRESULT VirtualBox::ensureFilePathExists (const char *aFileName)
 {
-    Utf8Str strDir(aFileName);
-    strDir.stripFilename();
-    if (!RTDirExists(strDir))
+    Utf8Str dir = aFileName;
+    RTPathStripFilename (dir.mutableRaw());
+    if (!RTDirExists (dir))
     {
-        int vrc = RTDirCreateFullPath(strDir, 0777);
+        int vrc = RTDirCreateFullPath (dir, 0777);
         if (RT_FAILURE (vrc))
         {
             return setError (E_FAIL,
                 tr ("Could not create the directory '%s' (%Rrc)"),
-                strDir.c_str(), vrc);
+                dir.raw(), vrc);
         }
     }
 
