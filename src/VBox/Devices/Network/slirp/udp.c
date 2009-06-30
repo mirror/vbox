@@ -379,6 +379,10 @@ udp_attach(PNATState pData, struct socket *so, int service_port)
          * (sendto() on an unbound socket will bind it), it's done
          * here so that emulation of ytalk etc. don't have to do it
          */
+        memset(&addr, 0, sizeof(addr));
+#ifdef RT_OS_DARWIN
+        addr.sin_len = sizeof(addr);
+#endif
         addr.sin_family = AF_INET;
         addr.sin_port = service_port;
         addr.sin_addr.s_addr = pData->bindIP.s_addr;
@@ -742,6 +746,10 @@ udp_listen(PNATState pData, u_int32_t bind_addr, u_int port, u_int32_t laddr, u_
     NSOCK_INC();
     QSOCKET_UNLOCK(udb);
 
+    memset(&addr, 0, sizeof(addr));
+#ifdef RT_OS_DARWIN
+    addr.sin_len = sizeof(addr);
+#endif
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = bind_addr;
     addr.sin_port = port;
