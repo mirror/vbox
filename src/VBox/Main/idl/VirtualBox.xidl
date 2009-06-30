@@ -2534,7 +2534,7 @@
         and in this list, the value from this list takes precedence over the
         server's variable. If the value of the environment variable is
         omitted, this variable will be removed from the resulting environment.
-        If the environment string is @c null or emprty, the server environment
+        If the environment string is @c null or empty, the server environment
         is inherited by the started process as is.
 
         <see>openExistingSession</see>
@@ -2576,7 +2576,7 @@
       </param>
       <param name="environment" type="wstring" dir="in">
         <desc>
-          Environment to pass to the opened session (may be @c null).
+          Environment to pass to the opened session.
         </desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
@@ -7707,7 +7707,7 @@
 
         The hard disk format set by this attribute is used by VirtualBox
         when the hard disk format was not specified explicitly. One example is
-        <link to="IVirtualBox::createHardDisk"/> with the @c null
+        <link to="IVirtualBox::createHardDisk"/> with the empty
         format argument. A more complex example is implicit creation of
         differencing hard disks when taking a snapshot of a virtual machine:
         this operation will try to use a format of the parent hard disk first
@@ -8347,7 +8347,7 @@
           <link to="IMachine::stateFilePath"/> attribute of the
           <link to="#machine"/> object associated with this snapshot
           will point to the saved state file. Otherwise, it will be
-          @c null.
+          an empty string.
         </note>
       </desc>
     </attribute>
@@ -8524,7 +8524,7 @@
       Note that when VirtualBox starts up (e.g. the VirtualBox object gets
       created for the first time), all known media are in the
       <link to="MediaState_Inaccessible"/> state but the value of the <link
-      to="#lastAccessError"/> attribute is @c null because no actual
+      to="#lastAccessError"/> attribute is an empty string because no actual
       accessibility check is made on startup. This is done to make the
       VirtualBox object ready for serving requests as
       fast as possible and let the end-user application decide if it needs to
@@ -8582,7 +8582,7 @@
         may be used to get more details about the failure. If the state of the
         medium is <link to="MediaState_LockedRead"/> or
         <link to="MediaState_LockedWrite"/> then it remains the same, and a
-        non-@c null value of <link to="#lastAccessError"/> will indicate a failed
+        non-empty value of <link to="#lastAccessError"/> will indicate a failed
         accessibility check in this case.
 
         Note that not all media states are applicable to all media types.
