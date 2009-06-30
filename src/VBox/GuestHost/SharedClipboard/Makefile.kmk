@@ -23,11 +23,14 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 ifdef VBOX_WITH_TESTCASES
- ifndef VBOX_ONLY_ADDITIONS
-#
-# Case conversion testcase.
-#
-  if1of ($(KBUILD_TARGET),freebsd linux netbsd openbsd solaris)
+ if1of ($(KBUILD_TARGET),freebsd linux netbsd openbsd solaris)
+  ifndef VBOX_ONLY_SDK
+
+# Set these in LocalConfig.kmk if you are working on the X11 clipboard service
+# to automatically run the unit tests at build time:
+#    OTHERS += $(PATH_tstClipboardX11)/tstClipboardX11.run
+#    OTHERS += $(PATH_tstClipboardX11Smoke)/tstClipboardX11Smoke.run
+
    PROGRAMS += tstClipboardX11 tstClipboardX11Smoke
    tstClipboardX11_TEMPLATE = VBOXR3TSTEXE
    tstClipboardX11_DEFS     = VBOX_WITH_HGCM TESTCASE
@@ -40,27 +43,19 @@ ifdef VBOX_WITH_TESTCASES
    tstClipboardX11Smoke_LIBPATH  = $(VBOX_LIBPATH_X11)
    tstClipboardX11Smoke_LIBS     = $(LIB_RUNTIME) X11 Xt
 
-# Set this in LocalConfig.kmk if you are working on the X11 clipboard service
-# to automatically run the testcase at build time.
-   ifdef VBOX_RUN_X11_CLIPBOARD_TEST
-    ifndef VBOX_ONLY_SDK
-     TESTING  += $(PATH_tstClipboardX11)/tstClipboardX11.run
-     OTHERS += $(PATH_tstClipboardX11)/tstClipboardX11.run
+   TESTING  += $(PATH_tstClipboardX11)/tstClipboardX11.run
 $$(PATH_tstClipboardX11)/tstClipboardX11.run: $$(INSTARGET_tstClipboardX11)
 	export VBOX_LOG_DEST=nofile; $(INSTARGET_tstClipboardX11) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
 
-     TESTING  += $(PATH_tstClipboardX11Smoke)/tstClipboardX11Smoke.run
-     OTHERS += $(PATH_tstClipboardX11Smoke)/tstClipboardX11Smoke.run
+   TESTING  += $(PATH_tstClipboardX11Smoke)/tstClipboardX11Smoke.run
 $$(PATH_tstClipboardX11Smoke)/tstClipboardX11Smoke.run: \
                 $$(INSTARGET_tstClipboardX11)
 	export VBOX_LOG_DEST=nofile; $(INSTARGET_tstClipboardX11Smoke) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
-    endif
-   endif
 
-  endif # 1of ($(KBUILD_TARGET),freebsd linux netbsd openbsd solaris)
- endif # ! VBOX_ONLY_ADDITIONS
+  endif # ! VBOX_ONLY_SDK
+ endif # 1of ($(KBUILD_TARGET),freebsd linux netbsd openbsd solaris)
 endif # VBOX_WITH_TESTCASES
 
 include $(KBUILD_PATH)/subfooter.kmk
