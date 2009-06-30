@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2007-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2007-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -34,6 +34,11 @@
 # error "There are no XML APIs available in Ring-0 Context!"
 #else /* IN_RING3 */
 
+#include <list>
+#include <memory>
+
+#include <iprt/ministring_cpp.h>
+
 /** @def IN_VBOXXML_R3
  * Used to indicate whether we're inside the same link module as the
  * XML Settings File Manipulation API.
@@ -53,31 +58,6 @@
 # define VBOXXML_CLASS DECLIMPORT_CLASS
 #endif
 
-/*
- * Shut up MSVC complaining that auto_ptr[_ref] template instantiations (as a
- * result of private data member declarations of some classes below) need to
- * be exported too to in order to be accessible by clients.
- *
- * The alternative is to instantiate a template before the data member
- * declaration with the VBOXXML_CLASS prefix, but the standard disables
- * explicit instantiations in a foreign namespace. In other words, a declaration
- * like:
- *
- *   template class VBOXXML_CLASS std::auto_ptr <Data>;
- *
- * right before the member declaration makes MSVC happy too, but this is not a
- * valid C++ construct (and G++ spits it out). So, for now we just disable the
- * warning and will come back to this problem one day later.
- *
- * We also disable another warning (4275) saying that a DLL-exported class
- * inherits form a non-DLL-exported one (e.g. settings::ENoMemory ->
- * std::bad_alloc). I can't get how it can harm yet.
- */
-#if defined(_MSC_VER)
-#pragma warning (disable:4251)
-#pragma warning (disable:4275)
-#endif
-
 /* Forwards */
 typedef struct _xmlParserInput xmlParserInput;
 typedef xmlParserInput *xmlParserInputPtr;
@@ -88,71 +68,6 @@ typedef xmlError *xmlErrorPtr;
 
 namespace xml
 {
-
-// Little string class for XML only
-//////////////////////////////////////////////////////////////////////////////
-
-class ministring
-{
-public:
-    ministring()
-        : m_psz(NULL)
-    {
-    }
-
-    ministring(const ministring &s)
-        : m_psz(NULL)
-    {
-        copyFrom(s.c_str());
-    }
-
-    ministring(const char *pcsz)
-        : m_psz(NULL)
-    {
-        copyFrom(pcsz);
-    }
-
-    ~ministring()
-    {
-        cleanup();
-    }
-
-    void operator=(const char *pcsz)
-    {
-        cleanup();
-        copyFrom(pcsz);
-    }
-
-    void operator=(const ministring &s)
-    {
-        cleanup();
-        copyFrom(s.c_str());
-    }
-
-    const char* c_str() const
-    {
-        return m_psz;
-    }
-
-private:
-    void cleanup()
-    {
-        if (m_psz)
-        {
-            RTStrFree(m_psz);
-            m_psz = NULL;
-        }
-    }
-
-    void copyFrom(const char *pcsz)
-    {
-        if (pcsz)
-            m_psz = RTStrDup(pcsz);
-    }
-
-
-    char *m_psz;
-};
 
 // Exceptions
 //////////////////////////////////////////////////////////////////////////////
@@ -165,58 +80,39 @@ class VBOXXML_CLASS Error : public std::exception
 public:
 
     Error(const char *pcszMessage)
-        : m_pcsz(NULL)
+        : m_s(pcszMessage)
     {
-        copyFrom(pcszMessage);
     }
 
     Error(const Error &s)
-        : std::exception(s)
+        : std::exception(s),
+          m_s(s.what())
     {
-        copyFrom(s.what());
     }
 
     virtual ~Error() throw()
     {
-        cleanup();
     }
 
     void operator=(const Error &s)
     {
-        cleanup();
-        copyFrom(s.what());
+        m_s = s.what();
     }
 
     void setWhat(const char *pcszMessage)
     {
-        cleanup();
-        copyFrom(pcszMessage);
+        m_s = pcszMessage;
     }
 
     virtual const char* what() const throw()
     {
-        return m_pcsz;
+        return m_s.c_str();
     }
 
 private:
     Error() {};     // hide the default constructor to make sure the extended one above is always used
 
-    void cleanup()
-    {
-        if (m_pcsz)
-        {
-            RTStrFree(m_pcsz);
-            m_pcsz = NULL;
-        }
-    }
-
-    void copyFrom(const char *pcszMessage)
-    {
-        if (pcszMessage)
-            m_pcsz = RTStrDup(pcszMessage);
-    }
-
-    char *m_pcsz;
+    ministring m_s;
 };
 
 class VBOXXML_CLASS LogicError : public Error
@@ -467,7 +363,7 @@ private:
 
     /* Obscure class data */
     struct Data;
-    std::auto_ptr <Data> m;
+    Data *m;
 
     /* auto_ptr data doesn't have proper copy semantics */
     DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (File)
@@ -494,7 +390,7 @@ public:
 private:
     /* Obscure class data */
     struct Data;
-    std::auto_ptr <Data> m;
+    Data *m;
 
     /* auto_ptr data doesn't have proper copy semantics */
     DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (MemoryBuf)
