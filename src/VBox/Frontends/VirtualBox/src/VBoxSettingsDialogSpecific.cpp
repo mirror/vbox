@@ -538,7 +538,7 @@ bool VBoxVMSettingsDlg::correlate (QWidget *aPage, QString &aWarning)
             generalPage->is64BitOSTypeSelected() && !systemPage->isHWVirtExEnabled())
         {
             aWarning = tr (
-                "you have selected a 64-bit guest OS type for this VM. As such guests"
+                "you have selected a 64-bit guest OS type for this VM. As such guests "
                 "require hardware virtualization (VT-x/AMD-V), this feature will be enabled "
                 "automatically.");
             return true;

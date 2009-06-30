@@ -8801,7 +8801,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
         <translation>Schermo</translation>
     </message>
     <message>
-        <source>you have selected a 64-bit guest OS type for this VM. As such guestsrequire hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
+        <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
         <translation>hai selezionato un sistema operativo guest a 64 bit per questa MV. Poiché questo tipo di guest richiede virtualizzazione hardware (VT-x/AMD-V), questa funzionalità sarà abilitata automaticamente.</translation>
     </message>
     <message>
@@ -9714,11 +9714,11 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
         <translation>hai assegnato più CPU virtuali alla macchina virtuale del numero di CPU fisiche del sistema host (&lt;b&gt;%1&lt;/b&gt;). Ciò degrada le prestazioni della macchina virtuale. Dovresti ridurre il numero di CPU virtuali.</translation>
     </message>
     <message>
-        <source>there is more than one virtual CPU assigned for this VM, which requires IO-APIC feature to be enabled too, else SMP will not be able to work, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
+        <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>c&apos;è più di una CPU virtuale assegnate a questa MV, che richiede che anche la funzionalità IO-APIC sia abilitata, altrimenti SMP non funzionerà, perciò questa funzionalità sarà abilitata automaticamente quando accetterai le impostazioni della MV premendo il pulsante OK.</translation>
     </message>
     <message>
-        <source>there is more than one virtual CPU assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else SMP will not be able to work, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
+        <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>c&apos;è più di una CPU virtuale assegnate a questa MV, che richiede che anche la funzionalità di virtualizzazione (VT-x/AMD-V) sia abilitata, altrimenti SMP non funzionerà, perciò questa funzionalità sarà abilitata automaticamente quando accetterai le impostazioni della MV premendo il pulsante OK.</translation>
     </message>
     <message>

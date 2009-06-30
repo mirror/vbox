@@ -7000,7 +7000,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="543"/>
-        <source>you have selected a 64-bit guest OS type for this VM. As such guestsrequire hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
+        <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
         <translation>du har valt en 64-bitars operativsystemstyp för denna virtuella maskin. Eftersom sådana gästoperativsystem kräver maskinvirtualisering (VT-x/AMD-V) så kommer denna funktion att vara automatiskt aktiverad.</translation>
     </message>
     <message>
@@ -8153,12 +8153,12 @@ serial ports</comment>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSystem.cpp" line="396"/>
-        <source>there is more than one virtual CPU assigned for this VM, which requires IO-APIC feature to be enabled too, else SMP will not be able to work, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
+        <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>det finns fler än en virtuell processor tilldelad till denna virtuella maskin som också kräver att funktionen IO APIC aktiveras. Om inte kommer SMP inte att fungera så att denna funktion kommer automatiskt att aktiveras när du godkänner inställningarna genom att trycka på knappen OK.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSystem.cpp" line="407"/>
-        <source>there is more than one virtual CPU assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else SMP will not be able to work, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
+        <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>det finns fler än en virtuell processor tilldelad till denna virtuella maskin som också kräver att virtualiseringsfunktionen (VT-x/AMD-V) aktiveras. Om inte kommer SMP inte att fungera så att denna funktion kommer automatiskt att aktiveras när du godkänner inställningarna genom att trycka på knappen OK.</translation>
     </message>
     <message>

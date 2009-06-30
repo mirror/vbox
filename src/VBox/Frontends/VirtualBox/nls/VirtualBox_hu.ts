@@ -8020,7 +8020,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <translation>Képernyő</translation>
     </message>
     <message>
-        <source>you have selected a 64-bit guest OS type for this VM. As such guestsrequire hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
+        <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
         <translation>egy 64 bites vendégrendszert választottál ehhez a géphez. Ezek a rendszerek igényik a hardvervirtualizációt (VT-x/AMD-V), így ez a tulajdonság automatikusan engedélyezve lesz.</translation>
     </message>
     <message>
@@ -8813,11 +8813,11 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <translation>több virtuális processzort társítottál a virtuális géphez, mint a gazda rendszer fizikai processzora (&lt;b&gt;%1&lt;/b&gt;). Ez valószínűleg csökkenteni fogja a virtuális gép teljesítményét. Fontold meg a virtuális processzorok számának csökkentését.</translation>
     </message>
     <message>
-        <source>there is more than one virtual CPU assigned for this VM, which requires IO-APIC feature to be enabled too, else SMP will not be able to work, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
+        <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>több, mint egy virtuális processzor van a virtuális géphez társítva, amely bekapcsolásához IO-APIC szolgáltatás is szükséges, különben az SMP nem tud dolgozni, így ez a szolgáltatás automatikusan bekapcsol, ha a virtuális gép beállításait elfogadod az OK gombbal.</translation>
     </message>
     <message>
-        <source>there is more than one virtual CPU assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else SMP will not be able to work, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
+        <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>több, mint egy virtuális processzor van a virtuális géphez társítva, amely bekapcsolásához virtuális szolgáltatás (VT-x/AMD-V) is szükséges, különben az SMP nem tud dolgozni, így ez a szolgáltatás automatikusan bekapcsol, ha a virtuális gép beállításait elfogadod az OK gombbal.</translation>
     </message>
     <message>

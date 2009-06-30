@@ -4972,8 +4972,8 @@ p, li {white-space: pre-wrap; }
         <translation>Anzeige</translation>
     </message>
     <message>
-        <source>you have selected a 64-bit guest OS type for this VM. As such guestsrequire hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
-        <translation>haben Sie ein 64-Bit-Gastbestriebssystem ausgewählt. Da solche Gäste Hardwarevirtualisierung benötigen (VT-x/AMD-V), wird diese VM-Einstellung automatisch aktiviert</translation>
+        <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
+        <translation>haben Sie ein 64-Bit-Gastbestriebssystem ausgewählt. Da solche Gäste Hardwarevirtualisierung benötigen (VT-x/AMD-V), wird diese VM-Einstellung automatisch aktiviert.</translation>
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. VirtualBox does not currently support more than one virtual CPU for 64-bit guests executed on 32-bit hosts.</source>
@@ -5503,11 +5503,11 @@ p, li {white-space: pre-wrap; }
         <translation>haben Sie mehr virtuellle CPUs eingestellt als physische CPU-Cores auf Ihrem Host vorhanden sind (&lt;b&gt;%1&lt;/b&gt;). Für beste Performance sollten Sie die Anzahl der virtuellen CPUs verringern.</translation>
     </message>
     <message>
-        <source>there is more than one virtual CPU assigned for this VM, which requires IO-APIC feature to be enabled too, else SMP will not be able to work, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
+        <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>haben Sie mehr als eine virtuelle CPU eingestellt. Unterstützung für mehrere CPUs im Gast erfordert die Aktivierung des IO-APIC. Dieses Feature wird automatisch aktiviert, sobald Sie die Einstellungen bestätigen.</translation>
     </message>
     <message>
-        <source>there is more than one virtual CPU assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else SMP will not be able to work, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
+        <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>haben Sie mehr als eine virtuelle CPU eingestellt. Unterstützung für mehrere CPUs im Gast erfordert die Aktivierung von VT-x/AMD-V. Dieses Feature wird automatisch aktiviert, sobald Sie die Einstellungen bestätigen.</translation>
     </message>
     <message>

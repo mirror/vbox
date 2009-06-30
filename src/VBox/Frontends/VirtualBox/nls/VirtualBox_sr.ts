@@ -5168,7 +5168,7 @@ p, li { white-space: pre-wrap; }
         <translation>Дисплеј</translation>
     </message>
     <message>
-        <source>you have selected a 64-bit guest OS type for this VM. As such guestsrequire hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
+        <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
         <translation>одабрали сте 64-битни ОС. Пошто је госту потребно хардверска виртуализација (VT-x/AMD-V), ова способност ће бити омоигучена.</translation>
     </message>
     <message>
@@ -5967,11 +5967,11 @@ p, li { white-space: pre-wrap; }
         <translation>поставили сте више виртуелних ЦПУ-а него што има хост (&lt;b&gt;%1&lt;/b&gt;). То ће највероватније покватити перформансе виртуелне машине. најбоље је да умањите број виртуелних ЦПУ-а.</translation>
     </message>
     <message>
-        <source>there is more than one virtual CPU assigned for this VM, which requires IO-APIC feature to be enabled too, else SMP will not be able to work, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
+        <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>има више него један виртуелни ЦПУ, што је потребно да буде IO-APIC упаљено, тако да ће бити аутоматско упаљено не прихватање параметра.</translation>
     </message>
     <message>
-        <source>there is more than one virtual CPU assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else SMP will not be able to work, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
+        <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>има више него један виртуелни ЦПУ, што је потребно да буде виртуализација (VT-x/AMD-V) упаљена, тако да ће бити аутоматско упаљено не прихватање параметра.</translation>
     </message>
     <message>
