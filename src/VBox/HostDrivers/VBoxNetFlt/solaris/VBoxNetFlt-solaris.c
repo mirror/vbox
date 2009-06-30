@@ -2892,15 +2892,6 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
     }
 
     /*
-     * Don't loopback packets we transmit to the wire.
-     */
-    if (vboxNetFltSolarisIsOurMBlk(pThis, pPromiscStream, pMsg))
-    {
-        LogFlow((DEVICE_NAME ":Avoiding packet loopback.\n"));
-        return VINF_SUCCESS;
-    }
-
-    /*
      * Paranoia...
      */
     if (MBLKL(pMsg) < sizeof(RTNETETHERHDR))
@@ -2929,6 +2920,15 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
         }
         else
             return VERR_NO_MEMORY;
+    }
+
+    /*
+     * Don't loopback packets we transmit to the wire.
+     */
+    if (vboxNetFltSolarisIsOurMBlk(pThis, pPromiscStream, pMsg))
+    {
+        LogFlow((DEVICE_NAME ":Avoiding packet loopback.\n"));
+        return VINF_SUCCESS;
     }
 
     /*
