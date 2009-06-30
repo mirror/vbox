@@ -515,163 +515,226 @@ typedef const RTFAR64 *PCRTFAR64;
 
 /** HC Natural signed integer.
  * @deprecated silly type. */
-typedef int32_t         RTHCINT;
+typedef int32_t             RTHCINT;
 /** Pointer to HC Natural signed integer.
  * @deprecated silly type. */
-typedef RTHCINT        *PRTHCINT;
+typedef RTHCINT            *PRTHCINT;
 /** Pointer to const HC Natural signed integer.
  * @deprecated silly type. */
-typedef const RTHCINT  *PCRTHCINT;
+typedef const RTHCINT      *PCRTHCINT;
 
 /** HC Natural unsigned integer.
  * @deprecated silly type. */
-typedef uint32_t        RTHCUINT;
+typedef uint32_t            RTHCUINT;
 /** Pointer to HC Natural unsigned integer.
  * @deprecated silly type. */
-typedef RTHCUINT       *PRTHCUINT;
+typedef RTHCUINT           *PRTHCUINT;
 /** Pointer to const HC Natural unsigned integer.
  * @deprecated silly type. */
-typedef const RTHCUINT *PCRTHCUINT;
+typedef const RTHCUINT     *PCRTHCUINT;
 
 
 /** Signed integer which can contain a HC pointer. */
 #if HC_ARCH_BITS == 32
-typedef int32_t         RTHCINTPTR;
+typedef int32_t             RTHCINTPTR;
 #elif HC_ARCH_BITS == 64
-typedef int64_t         RTHCINTPTR;
+typedef int64_t             RTHCINTPTR;
 #else
-#  error Unsupported HC_ARCH_BITS value.
+# error Unsupported HC_ARCH_BITS value.
 #endif
 /** Pointer to signed integer which can contain a HC pointer. */
-typedef RTHCINTPTR     *PRTHCINTPTR;
+typedef RTHCINTPTR         *PRTHCINTPTR;
 /** Pointer to const signed integer which can contain a HC pointer. */
-typedef const RTHCINTPTR *PCRTHCINTPTR;
+typedef const RTHCINTPTR   *PCRTHCINTPTR;
+/** Max RTHCINTPTR value. */
+#if HC_ARCH_BITS == 32
+# define RTHCINTPTR_MAX     INT32_MAX
+#else
+# define RTHCINTPTR_MAX     INT64_MAX
+#endif
+/** Min RTHCINTPTR value. */
+#if HC_ARCH_BITS == 32
+# define RTHCINTPTR_MIN     INT32_MIN
+#else
+# define RTHCINTPTR_MIN     INT64_MIN
+#endif
 
 /** Signed integer which can contain a HC ring-3 pointer. */
 #if R3_ARCH_BITS == 32
-typedef int32_t         RTR3INTPTR;
+typedef int32_t             RTR3INTPTR;
 #elif R3_ARCH_BITS == 64
-typedef int64_t         RTR3INTPTR;
+typedef int64_t             RTR3INTPTR;
 #else
 #  error Unsupported R3_ARCH_BITS value.
 #endif
 /** Pointer to signed integer which can contain a HC ring-3 pointer. */
-typedef RTR3INTPTR     *PRTR3INTPTR;
+typedef RTR3INTPTR         *PRTR3INTPTR;
 /** Pointer to const signed integer which can contain a HC ring-3 pointer. */
-typedef const RTR3INTPTR *PCRTR3INTPTR;
+typedef const RTR3INTPTR   *PCRTR3INTPTR;
+/** Max RTR3INTPTR value. */
+#if R3_ARCH_BITS == 32
+# define RTR3INTPTR_MAX     INT32_MAX
+#else
+# define RTR3INTPTR_MAX     INT64_MAX
+#endif
+/** Min RTR3INTPTR value. */
+#if R3_ARCH_BITS == 32
+# define RTR3INTPTR_MIN     INT32_MIN
+#else
+# define RTR3INTPTR_MIN     INT64_MIN
+#endif
 
 /** Signed integer which can contain a HC ring-0 pointer. */
 #if R0_ARCH_BITS == 32
-typedef int32_t         RTR0INTPTR;
+typedef int32_t             RTR0INTPTR;
 #elif R0_ARCH_BITS == 64
-typedef int64_t         RTR0INTPTR;
+typedef int64_t             RTR0INTPTR;
 #else
-#  error Unsupported R0_ARCH_BITS value.
+# error Unsupported R0_ARCH_BITS value.
 #endif
 /** Pointer to signed integer which can contain a HC ring-0 pointer. */
-typedef RTR0INTPTR     *PRTR0INTPTR;
+typedef RTR0INTPTR         *PRTR0INTPTR;
 /** Pointer to const signed integer which can contain a HC ring-0 pointer. */
-typedef const RTR0INTPTR *PCRTR0INTPTR;
+typedef const RTR0INTPTR   *PCRTR0INTPTR;
+/** Max RTR0INTPTR value. */
+#if R0_ARCH_BITS == 32
+# define RTR0INTPTR_MAX     INT32_MAX
+#else
+# define RTR0INTPTR_MAX     INT64_MAX
+#endif
+/** Min RTHCINTPTR value. */
+#if R0_ARCH_BITS == 32
+# define RTR0INTPTR_MIN     INT32_MIN
+#else
+# define RTR0INTPTR_MIN     INT64_MIN
+#endif
 
 
 /** Unsigned integer which can contain a HC pointer. */
 #if HC_ARCH_BITS == 32
-typedef uint32_t        RTHCUINTPTR;
+typedef uint32_t            RTHCUINTPTR;
 #elif HC_ARCH_BITS == 64
-typedef uint64_t        RTHCUINTPTR;
+typedef uint64_t            RTHCUINTPTR;
 #else
-#  error Unsupported HC_ARCH_BITS value.
+# error Unsupported HC_ARCH_BITS value.
 #endif
 /** Pointer to unsigned integer which can contain a HC pointer. */
-typedef RTHCUINTPTR    *PRTHCUINTPTR;
+typedef RTHCUINTPTR        *PRTHCUINTPTR;
 /** Pointer to unsigned integer which can contain a HC pointer. */
-typedef const RTHCUINTPTR *PCRTHCUINTPTR;
+typedef const RTHCUINTPTR  *PCRTHCUINTPTR;
+/** Max RTHCUINTTPR value. */
+#if HC_ARCH_BITS == 32
+# define RTHCUINTPTR_MAX    UINT32_MAX
+#else
+# define RTHCUINTPTR_MAX    UINT64_MAX
+#endif
 
 /** Unsigned integer which can contain a HC ring-3 pointer. */
 #if R3_ARCH_BITS == 32
-typedef uint32_t        RTR3UINTPTR;
+typedef uint32_t            RTR3UINTPTR;
 #elif R3_ARCH_BITS == 64
-typedef uint64_t        RTR3UINTPTR;
+typedef uint64_t            RTR3UINTPTR;
 #else
-#  error Unsupported R3_ARCH_BITS value.
+# error Unsupported R3_ARCH_BITS value.
 #endif
 /** Pointer to unsigned integer which can contain a HC ring-3 pointer. */
-typedef RTR3UINTPTR    *PRTR3UINTPTR;
+typedef RTR3UINTPTR        *PRTR3UINTPTR;
 /** Pointer to unsigned integer which can contain a HC ring-3 pointer. */
-typedef const RTR3UINTPTR *PCRTR3UINTPTR;
+typedef const RTR3UINTPTR  *PCRTR3UINTPTR;
+/** Max RTHCUINTTPR value. */
+#if R3_ARCH_BITS == 32
+# define RTR3UINTPTR_MAX    UINT32_MAX
+#else
+# define RTR3UINTPTR_MAX    UINT64_MAX
+#endif
 
 /** Unsigned integer which can contain a HC ring-0 pointer. */
 #if R0_ARCH_BITS == 32
-typedef uint32_t        RTR0UINTPTR;
+typedef uint32_t            RTR0UINTPTR;
 #elif R0_ARCH_BITS == 64
-typedef uint64_t        RTR0UINTPTR;
+typedef uint64_t            RTR0UINTPTR;
 #else
-#  error Unsupported R0_ARCH_BITS value.
+# error Unsupported R0_ARCH_BITS value.
 #endif
 /** Pointer to unsigned integer which can contain a HC ring-0 pointer. */
-typedef RTR0UINTPTR    *PRTR0UINTPTR;
+typedef RTR0UINTPTR        *PRTR0UINTPTR;
 /** Pointer to unsigned integer which can contain a HC ring-0 pointer. */
-typedef const RTR0UINTPTR *PCRTR0UINTPTR;
+typedef const RTR0UINTPTR  *PCRTR0UINTPTR;
+/** Max RTR0UINTTPR value. */
+#if HC_ARCH_BITS == 32
+# define RTR0UINTPTR_MAX    UINT32_MAX
+#else
+# define RTR0UINTPTR_MAX    UINT64_MAX
+#endif
 
 
 /** Host Physical Memory Address. */
-typedef uint64_t        RTHCPHYS;
+typedef uint64_t            RTHCPHYS;
 /** Pointer to Host Physical Memory Address. */
-typedef RTHCPHYS       *PRTHCPHYS;
+typedef RTHCPHYS           *PRTHCPHYS;
 /** Pointer to const Host Physical Memory Address. */
-typedef const RTHCPHYS *PCRTHCPHYS;
+typedef const RTHCPHYS     *PCRTHCPHYS;
 /** @def NIL_RTHCPHYS
  * NIL HC Physical Address.
  * NIL_RTHCPHYS is used to signal an invalid physical address, similar
  * to the NULL pointer.
  */
-#define NIL_RTHCPHYS     (~(RTHCPHYS)0)
+#define NIL_RTHCPHYS        (~(RTHCPHYS)0)
+/** Max RTHCPHYS value. */
+#define RTHCPHYS_MAX        UINT64_MAX
 
 
 /** HC pointer. */
 #ifndef IN_RC
-typedef void *          RTHCPTR;
+typedef void *              RTHCPTR;
 #else
-typedef RTHCUINTPTR     RTHCPTR;
+typedef RTHCUINTPTR         RTHCPTR;
 #endif
 /** Pointer to HC pointer. */
-typedef RTHCPTR        *PRTHCPTR;
+typedef RTHCPTR            *PRTHCPTR;
 /** Pointer to const HC pointer. */
-typedef const RTHCPTR  *PCRTHCPTR;
+typedef const RTHCPTR      *PCRTHCPTR;
 /** @def NIL_RTHCPTR
  * NIL HC pointer.
  */
-#define NIL_RTHCPTR     ((RTHCPTR)0)
+#define NIL_RTHCPTR         ((RTHCPTR)0)
+/** Max RTHCPTR value. */
+#define RTHCPTR_MAX         ((RTHCPTR)RTHCUINTPTR_MAX)
+
 
 /** HC ring-3 pointer. */
 #ifdef  IN_RING3
-typedef void *          RTR3PTR;
+typedef void *              RTR3PTR;
 #else
-typedef RTR3UINTPTR     RTR3PTR;
+typedef RTR3UINTPTR         RTR3PTR;
 #endif
 /** Pointer to HC ring-3 pointer. */
-typedef RTR3PTR        *PRTR3PTR;
+typedef RTR3PTR            *PRTR3PTR;
 /** Pointer to const HC ring-3 pointer. */
-typedef const RTR3PTR  *PCRTR3PTR;
+typedef const RTR3PTR      *PCRTR3PTR;
 /** @def NIL_RTR3PTR
  * NIL HC ring-3 pointer.
  */
-#define NIL_RTR3PTR     ((RTR3PTR)0)
+#define NIL_RTR3PTR         ((RTR3PTR)0)
+/** Max RTR3PTR value. */
+#define RTR3PTR_MAX         ((RTR3PTR)RTR3UINTPTR_MAX)
 
 /** HC ring-0 pointer. */
 #ifdef  IN_RING0
-typedef void *          RTR0PTR;
+typedef void *              RTR0PTR;
 #else
-typedef RTR0UINTPTR     RTR0PTR;
+typedef RTR0UINTPTR         RTR0PTR;
 #endif
 /** Pointer to HC ring-0 pointer. */
-typedef RTR0PTR        *PRTR0PTR;
+typedef RTR0PTR            *PRTR0PTR;
 /** Pointer to const HC ring-0 pointer. */
-typedef const RTR0PTR  *PCRTR0PTR;
+typedef const RTR0PTR      *PCRTR0PTR;
 /** @def NIL_RTR0PTR
  * NIL HC ring-0 pointer.
  */
-#define NIL_RTR0PTR     ((RTR0PTR)0)
+#define NIL_RTR0PTR         ((RTR0PTR)0)
+/** Max RTR3PTR value. */
+#define RTR0PTR_MAX         ((RTR0PTR)RTR0UINTPTR_MAX)
 
 
 /** Unsigned integer register in the host context. */
@@ -788,26 +851,28 @@ typedef RTGCUINTPTR64   *PRTGCUINTPTR64;
 typedef const RTGCUINTPTR64 *PCRTGCUINTPTR64;
 
 /** Guest Physical Memory Address.*/
-typedef uint64_t        RTGCPHYS;
+typedef uint64_t            RTGCPHYS;
 /** Pointer to Guest Physical Memory Address. */
-typedef RTGCPHYS       *PRTGCPHYS;
+typedef RTGCPHYS           *PRTGCPHYS;
 /** Pointer to const Guest Physical Memory Address. */
-typedef const RTGCPHYS *PCRTGCPHYS;
+typedef const RTGCPHYS     *PCRTGCPHYS;
 /** @def NIL_RTGCPHYS
  * NIL GC Physical Address.
  * NIL_RTGCPHYS is used to signal an invalid physical address, similar
  * to the NULL pointer. Note that this value may actually be valid in
  * some contexts.
  */
-#define NIL_RTGCPHYS     (~(RTGCPHYS)0U)
+#define NIL_RTGCPHYS        (~(RTGCPHYS)0U)
+/** Max guest physical memory address value. */
+#define RTGCPHYS_MAX        UINT64_MAX
 
 
 /** Guest Physical Memory Address; limited to 32 bits.*/
-typedef uint32_t        RTGCPHYS32;
+typedef uint32_t            RTGCPHYS32;
 /** Pointer to Guest Physical Memory Address. */
-typedef RTGCPHYS32     *PRTGCPHYS32;
+typedef RTGCPHYS32         *PRTGCPHYS32;
 /** Pointer to const Guest Physical Memory Address. */
-typedef const RTGCPHYS32 *PCRTGCPHYS32;
+typedef const RTGCPHYS32    *PCRTGCPHYS32;
 /** @def NIL_RTGCPHYS32
  * NIL GC Physical Address.
  * NIL_RTGCPHYS32 is used to signal an invalid physical address, similar
@@ -866,21 +931,25 @@ typedef RTGCPTR64       RTGCPTR;
 /** Pointer to a guest context pointer. */
 typedef PRTGCPTR64      PRTGCPTR;
 /** Pointer to a const guest context pointer. */
-typedef PCRTGCPTR64    PCRTGCPTR;
+typedef PCRTGCPTR64     PCRTGCPTR;
 /** @def NIL_RTGCPTR
  * NIL GC pointer.
  */
-#define NIL_RTGCPTR     NIL_RTGCPTR64
+# define NIL_RTGCPTR    NIL_RTGCPTR64
+/** Max RTGCPTR value. */
+# define RTGCPTR_MAX    UINT64_MAX
 #elif GC_ARCH_BITS == 32
 typedef RTGCPTR32       RTGCPTR;
 /** Pointer to a guest context pointer. */
 typedef PRTGCPTR32      PRTGCPTR;
 /** Pointer to a const guest context pointer. */
-typedef PCRTGCPTR32    PCRTGCPTR;
+typedef PCRTGCPTR32     PCRTGCPTR;
 /** @def NIL_RTGCPTR
  * NIL GC pointer.
  */
-#define NIL_RTGCPTR     NIL_RTGCPTR32
+# define NIL_RTGCPTR     NIL_RTGCPTR32
+/** Max RTGCPTR value. */
+# define RTGCPTR_MAX    UINT32_MAX
 #else
 # error "Unsupported GC_ARCH_BITS!"
 #endif
@@ -899,16 +968,16 @@ typedef RTGCUINTREG64        *PRTGCUINTREG64;
 typedef const RTGCUINTREG64  *PCRTGCUINTREG64;
 
 #if GC_ARCH_BITS == 64
-typedef RTGCUINTREG64       RTGCUINTREG;
+typedef RTGCUINTREG64           RTGCUINTREG;
 #elif GC_ARCH_BITS == 32
-typedef RTGCUINTREG32       RTGCUINTREG;
+typedef RTGCUINTREG32           RTGCUINTREG;
 #else
 # error "Unsupported GC_ARCH_BITS!"
 #endif
 /** Pointer to an unsigned integer register in the guest context. */
-typedef RTGCUINTREG        *PRTGCUINTREG;
+typedef RTGCUINTREG            *PRTGCUINTREG;
 /** Pointer to a const unsigned integer register in the guest context. */
-typedef const RTGCUINTREG  *PCRTGCUINTREG;
+typedef const RTGCUINTREG      *PCRTGCUINTREG;
 
 /** @} */
 
