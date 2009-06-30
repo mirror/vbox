@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBoxGuest - Guest Additions Driver.
+ * VBoxGuest - Guest Additions Driver, Common Code.
  */
 
 /*
- * Copyright (C) 2007 Sun Microsystems, Inc.
+ * Copyright (C) 2007-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1410,6 +1410,8 @@ bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt)
             RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
             RTSpinlockAcquireNoInts(pDevExt->WaitSpinlock, &Tmp);
 
+            /** @todo This looks wrong: Seems like VMMDEV_EVENT_HGCM will always be set in
+             *        f32PendingEvents... */
 #ifdef VBOX_WITH_HGCM
             /* The HGCM event/list is kind of different in that we evaluate all entries. */
             if (fEvents & VMMDEV_EVENT_HGCM)
@@ -1421,6 +1423,16 @@ bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt)
                         rc2 |= RTSemEventMultiSignal(pWait->Event);
                     }
 #endif
+
+            /* VMMDEV_EVENT_MOUSE_POSITION_CHANGED can only be polled for. */
+#if defined(RT_OS_LINUX)
+            if (fEvents & VMMDEV_EVENT_MOUSE_POSITION_CHANGED)
+            {
+                pDevExt->u32MousePosChangedSeq++;
+                VBoxGuestNativeISRMousePollEvent(pDevExt);
+            }
+#endif
+            fEvents &= ~VMMDEV_EVENT_MOUSE_POSITION_CHANGED;
 
             /* Normal FIFO evaluation. */
             fEvents |= pDevExt->f32PendingEvents;

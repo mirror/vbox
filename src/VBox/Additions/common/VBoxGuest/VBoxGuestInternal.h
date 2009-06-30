@@ -96,6 +96,9 @@ typedef struct VBOXGUESTDEVEXT
     VBOXGUESTWAITLIST           FreeList;
     /** Mask of pending events. */
     uint32_t volatile           f32PendingEvents;
+    /** Current VMMDEV_EVENT_MOUSE_POSITION_CHANGED sequence number.
+     * Used to implement polling.  */
+    uint32_t volatile           u32MousePosChangedSeq;
 
     /** Spinlock various items in the VBOXGUESTSESSION. */
     RTSPINLOCK                  SessionSpinlock;
@@ -143,6 +146,10 @@ typedef struct VBOXGUESTSESSION
      * This will be automatically disconnected when the session is closed. */
     uint32_t volatile           aHGCMClientIds[8];
 #endif
+
+    /** The last consumed VMMDEV_EVENT_MOUSE_POSITION_CHANGED sequence number.
+     * Used to implement polling.  */
+    uint32_t volatile           u32MousePosChangedSeq;
 } VBOXGUESTSESSION;
 
 
@@ -168,6 +175,13 @@ DECLVBGL(void *) VBoxGuestNativeServiceOpen(uint32_t *pu32Version);
 DECLVBGL(void)   VBoxGuestNativeServiceClose(void *pvOpaque);
 DECLVBGL(int)    VBoxGuestNativeServiceCall(void *pvOpaque, unsigned int iCmd, void *pvData, size_t cbSize, size_t *pcbReturn);
 #endif
+
+/**
+ * ISR callback for notifying threads polling for mouse events.
+ *
+ * @param   pDevExt     The device extension.
+ */
+void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt);
 
 RT_C_DECLS_END
 
