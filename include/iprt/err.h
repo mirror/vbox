@@ -978,6 +978,12 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_DBG_SEGMENT_NAME_OUT_OF_RANGE      (-663)
 /** The specified address range wraps around. */
 #define VERR_DBG_ADDRESS_WRAP                   (-664)
+/** The file is not a valid NM map file. */
+#define VERR_DBG_NOT_NM_MAP_FILE                (-665)
+/** The file is not a valid /proc/kallsyms file. */
+#define VERR_DBG_NOT_LINUX_KALLSYMS             (-666)
+/** No debug module interpreter matching the debug info. */
+#define VERR_DBG_NO_MATCHING_INTERPRETER        (-667)
 /** @} */
 
 /** @name Request Packet Status Codes.

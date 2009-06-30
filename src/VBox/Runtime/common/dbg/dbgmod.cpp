@@ -41,6 +41,7 @@
 #include <iprt/mem.h>
 #include <iprt/once.h>
 #include <iprt/param.h>
+#include <iprt/path.h>
 #include <iprt/semaphore.h>
 #include <iprt/strcache.h>
 #include <iprt/string.h>
@@ -111,12 +112,13 @@ static RTONCE           g_rtDbgModOnce = RTONCE_INITIALIZER;
 /** Read/Write semaphore protecting the list of registered interpreters.  */
 static RTSEMRW          g_hDbgModRWSem = NIL_RTSEMRW;
 /** List of registered image interpreters.  */
-static RTDBGMODREGIMG   g_pImgHead;
+static PRTDBGMODREGIMG  g_pImgHead;
 /** List of registered debug infor interpreters.  */
-static RTDBGMODREGDBG   g_pDbgHead;
+static PRTDBGMODREGDBG  g_pDbgHead;
 /** String cache for the debug info interpreters.
  * RTSTRCACHE is thread safe. */
 DECLHIDDEN(RTSTRCACHE)  g_hDbgModStrCache = NIL_RTSTRCACHE;
+
 
 
 /**
@@ -136,8 +138,62 @@ static DECLCALLBACK(void) rtDbgModTermCallback(RTTERMREASON enmReason, int32_t i
         RTStrCacheDestroy(g_hDbgModStrCache);
         g_hDbgModStrCache = NIL_RTSTRCACHE;
 
-        /** @todo deregister interpreters. */
+        PRTDBGMODREGDBG pCur = g_pDbgHead;
+        g_pDbgHead = NULL;
+        while (pCur)
+        {
+            PRTDBGMODREGDBG pNext = pCur->pNext;
+            AssertMsg(pCur->cUsers == 0, ("%#x %s\n", pCur->cUsers, pCur->pVt->pszName));
+            RTMemFree(pCur);
+            pCur = pNext;
+        }
+
+        Assert(!g_pImgHead);
     }
+}
+
+
+/**
+ * Internal worker for register a debug interpreter.
+ *
+ * Called while owning the write lock or when locking isn't required.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NO_MEMORY
+ * @retval  VERR_ALREADY_EXISTS
+ *
+ * @param   pVt                 The virtual function table of the debug
+ *                              module interpreter.
+ */
+static int rtDbgModDebugInterpreterRegister(PCRTDBGMODVTDBG pVt)
+{
+    /*
+     * Search or duplicate registration.
+     */
+    PRTDBGMODREGDBG pPrev = NULL;
+    for (PRTDBGMODREGDBG pCur = g_pDbgHead; pCur; pCur = pCur->pNext)
+    {
+        if (pCur->pVt == pVt)
+            return VERR_ALREADY_EXISTS;
+        if (!strcmp(pCur->pVt->pszName, pVt->pszName))
+            return VERR_ALREADY_EXISTS;
+        pPrev = pCur;
+    }
+
+    /*
+     * Create a new record and add it to the end of the list.
+     */
+    PRTDBGMODREGDBG pReg = (PRTDBGMODREGDBG)RTMemAlloc(sizeof(*pReg));
+    if (!pReg)
+        return VERR_NO_MEMORY;
+    pReg->pVt    = pVt;
+    pReg->cUsers = 0;
+    pReg->pNext  = NULL;
+    if (pPrev)
+        pPrev->pNext = pReg;
+    else
+        g_pDbgHead   = pReg;
+    return VINF_SUCCESS;
 }
 
 
@@ -163,8 +219,7 @@ static DECLCALLBACK(int) rtDbgModInitOnce(void *pvUser1, void *pvUser2)
         /*
          * Register the interpreters.
          */
-        /** @todo */
-
+        rc = rtDbgModDebugInterpreterRegister(&g_rtDbgModVtDbgNm);
         if (RT_SUCCESS(rc))
         {
             /*
@@ -173,15 +228,13 @@ static DECLCALLBACK(int) rtDbgModInitOnce(void *pvUser1, void *pvUser2)
             rc = RTTermRegisterCallback(rtDbgModTermCallback, NULL);
             if (RT_SUCCESS(rc))
                 return VINF_SUCCESS;
+
+            /* bail out: use the termination callback. */
         }
-
-        RTStrCacheDestroy(g_hDbgModStrCache);
-        g_hDbgModStrCache = NIL_RTSTRCACHE;
     }
-
-    RTSemRWDestroy(g_hDbgModRWSem);
-    g_hDbgModRWSem = NIL_RTSEMRW;
-
+    else
+        g_hDbgModStrCache = NIL_RTSTRCACHE;
+    rtDbgModTermCallback(RTTERMREASON_UNLOAD, 0, NULL);
     return rc;
 }
 
@@ -264,9 +317,80 @@ RTDECL(int)         RTDbgModCreateFromImage(PRTDBGMOD phDbgMod, const char *pszF
     return VERR_NOT_IMPLEMENTED;
 }
 
-RTDECL(int)         RTDbgModCreateFromMap(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, RTUINTPTR uSubtrahend, uint32_t fFlags)
+
+RTDECL(int) RTDbgModCreateFromMap(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, RTUINTPTR uSubtrahend, uint32_t fFlags)
 {
-    return VERR_NOT_IMPLEMENTED;
+    /*
+     * Input validation and lazy initialization.
+     */
+    AssertPtrReturn(phDbgMod, VERR_INVALID_POINTER);
+    *phDbgMod = NIL_RTDBGMOD;
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertReturn(*pszFilename, VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(pszName, VERR_INVALID_POINTER);
+    AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER);
+
+    int rc = rtDbgModLazyInit();
+    if (RT_FAILURE(rc))
+        return rc;
+
+    if (!pszName)
+        pszName = RTPathFilename(pszFilename);
+
+    /*
+     * Allocate a new module instance.
+     */
+    PRTDBGMODINT pDbgMod = (PRTDBGMODINT)RTMemAllocZ(sizeof(*pDbgMod));
+    if (!pDbgMod)
+        return VERR_NO_MEMORY;
+    pDbgMod->u32Magic = RTDBGMOD_MAGIC;
+    pDbgMod->cRefs = 1;
+    rc = RTCritSectInit(&pDbgMod->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        pDbgMod->pszName = RTStrCacheEnter(g_hDbgModStrCache, pszName);
+        if (pDbgMod->pszName)
+        {
+            pDbgMod->pszDbgFile = RTStrCacheEnter(g_hDbgModStrCache, pszFilename);
+            if (pDbgMod->pszDbgFile)
+            {
+                /*
+                 * Try the map file readers.
+                 */
+                rc = RTSemRWRequestRead(g_hDbgModRWSem, RT_INDEFINITE_WAIT);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = VERR_DBG_NO_MATCHING_INTERPRETER;
+                    for (PRTDBGMODREGDBG pCur = g_pDbgHead; pCur; pCur = pCur->pNext)
+                    {
+                        if (pCur->pVt->fSupports & RT_DBGTYPE_MAP)
+                        {
+                            pDbgMod->pDbgVt = pCur->pVt;
+                            pDbgMod->pvDbgPriv = NULL;
+                            rc = pCur->pVt->pfnTryOpen(pDbgMod);
+                            if (RT_SUCCESS(rc))
+                            {
+                                ASMAtomicIncU32(&pCur->cUsers);
+                                RTSemRWReleaseRead(g_hDbgModRWSem);
+
+                                *phDbgMod = pDbgMod;
+                                return rc;
+                            }
+                        }
+                    }
+
+                    /* bail out */
+                    RTSemRWReleaseRead(g_hDbgModRWSem);
+                }
+                RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszName);
+            }
+            RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszDbgFile);
+        }
+        RTCritSectDelete(&pDbgMod->CritSect);
+    }
+
+    RTMemFree(pDbgMod);
+    return rc;
 }
 
 
@@ -453,7 +577,7 @@ RTDECL(int) RTDbgModSegmentAdd(RTDBGMOD hDbgMod, RTUINTPTR uRva, RTUINTPTR cb, c
     PRTDBGMODINT pDbgMod = hDbgMod;
     RTDBGMOD_VALID_RETURN_RC(pDbgMod, VERR_INVALID_HANDLE);
     AssertMsgReturn(uRva + cb >= uRva, ("uRva=%RTptr cb=%RTptr\n", uRva, cb), VERR_DBG_ADDRESS_WRAP);
-    AssertPtr(*pszName);
+    Assert(*pszName);
     size_t cchName = strlen(pszName);
     AssertReturn(cchName > 0, VERR_DBG_SEGMENT_NAME_OUT_OF_RANGE);
     AssertReturn(cchName < RTDBG_SEGMENT_NAME_LENGTH, VERR_DBG_SEGMENT_NAME_OUT_OF_RANGE);
@@ -524,7 +648,7 @@ RTDECL(int) RTDbgModSegmentByIndex(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, PRTDBGSEG
     int rc = pDbgMod->pDbgVt->pfnSegmentByIndex(pDbgMod, iSeg, pSegInfo);
 
     RTDBGMOD_UNLOCK(pDbgMod);
-    return RT_SUCCESS(rc);
+    return rc;
 }
 
 
