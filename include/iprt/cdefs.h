@@ -777,6 +777,19 @@
 # define RTDATADECL(type)   DECLIMPORT(type)
 #endif
 
+/** @def RT_DECL_CLASS
+ * Declares an class living in the runtime.
+ */
+#if defined(IN_RT_R3) || defined(IN_RT_GC) || defined(IN_RT_R0)
+# ifdef IN_RT_STATIC
+#  define RT_DECL_CLASS
+# else
+#  define RT_DECL_CLASS     DECLEXPORT_CLASS
+# endif
+#else
+# define RT_DECL_CLASS      DECLIMPORT_CLASS
+#endif
+
 
 /** @def RT_NOCRT
  * Symbol name wrapper for the No-CRT bits.
