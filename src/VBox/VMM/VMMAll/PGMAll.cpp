@@ -463,7 +463,7 @@ VMMDECL(int) PGMTrap0eHandler(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFram
         &&  rc == VERR_PAGE_TABLE_NOT_PRESENT)
     {
         LogRel(("WARNING: Unexpected VERR_PAGE_TABLE_NOT_PRESENT for page fault at %RGv error code %x (rip=%RGv)\n", pvFault, uErr, pRegFrame->rip));
-        rc == VINF_SUCCESS;
+        rc = VINF_SUCCESS;
     }
 # endif
 
