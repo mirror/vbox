@@ -130,72 +130,6 @@ static struct clonedevs    *g_pVBoxGuestFreeBSDClones;
 /** The dev_clone event handler tag. */
 static eventhandler_tag     g_VBoxGuestFreeBSDEHTag;
 
-/**
- * VBoxGuest Common ioctl wrapper from VBoxGuestLib.
- *
- * @returns VBox error code.
- * @param   pvSession           Opaque pointer to the session.
- * @param   uCmd                Requested function.
- * @param   pvData              IO data buffer.
- * @param   cbData              Size of the data buffer.
- * @param   pcbDataReturned     Where to store the amount of returned data.
- */
-DECLVBGL(int) VBoxGuestFreeBSDServiceCall(void *pvSession, unsigned uCmd, void *pvData, size_t cbData, size_t *pcbDataReturned)
-{
-    LogFlow((DEVICE_NAME ":VBoxGuestFreeBSDServiceCall %pvSesssion=%p uCmd=%u pvData=%p cbData=%d\n", pvSession, uCmd, pvData, cbData));
-
-    PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)pvSession;
-    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
-    AssertMsgReturn(pSession->pDevExt == &g_DevExt,
-                    ("SC: %p != %p\n", pSession->pDevExt, &g_DevExt), VERR_INVALID_HANDLE);
-
-    return VBoxGuestCommonIOCtl(uCmd, &g_DevExt, pSession, pvData, cbData, pcbDataReturned);
-}
-
-
-/**
- * FreeBSD Guest service open.
- *
- * @returns Opaque pointer to session object.
- * @param   pu32Version         Where to store VMMDev version.
- */
-DECLVBGL(void *) VBoxGuestFreeBSDServiceOpen(uint32_t *pu32Version)
-{
-    LogFlow((DEVICE_NAME ":VBoxGuestFreeBSDServiceOpen\n"));
-
-    AssertPtrReturn(pu32Version, NULL);
-    PVBOXGUESTSESSION pSession;
-    int rc = VBoxGuestCreateKernelSession(&g_DevExt, &pSession);
-    if (RT_SUCCESS(rc))
-    {
-        *pu32Version = VMMDEV_VERSION;
-        return pSession;
-    }
-    LogRel((DEVICE_NAME ":VBoxGuestCreateKernelSession failed. rc=%d\n", rc));
-    return NULL;
-}
-
-
-/**
- * FreeBSD Guest service close.
- *
- * @returns VBox error code.
- * @param   pvState             Opaque pointer to the session object.
- */
-DECLVBGL(int) VBoxGuestFreeBSDServiceClose(void *pvSession)
-{
-    LogFlow((DEVICE_NAME ":VBoxGuestFreeBSDServiceClose\n"));
-
-    PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)pvSession;
-    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
-    if (pSession)
-    {
-        VBoxGuestCloseSession(&g_DevExt, pSession);
-        return VINF_SUCCESS;
-    }
-    LogRel((DEVICE_NAME ":Invalid pSession.\n"));
-    return VERR_INVALID_HANDLE;
-}
 
 /**
  * DEVFS event handler.
@@ -628,5 +562,11 @@ static devclass_t VBoxGuestFreeBSDClass;
 DRIVER_MODULE(vboxguest, pci, VBoxGuestFreeBSDDriver, VBoxGuestFreeBSDClass, 0, 0);
 MODULE_VERSION(vboxguest, 1);
 
+#if 0/** @todo This shouldn't be needed. if it is, that means exceptions hasn't been disabled correctly. */
 int __gxx_personality_v0 = 0xdeadbeef;
+#endif
+
+
+/* Common code that depend on g_DevExt. */
+#include "VBoxGuestIDC-unix.c.h"
 
