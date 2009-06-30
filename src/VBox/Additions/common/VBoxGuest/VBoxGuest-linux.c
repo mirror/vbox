@@ -137,9 +137,10 @@ static struct file_operations   g_FileOps =
 #else
     ioctl:          vboxguestLinuxIOCtl,
 #endif
+    fasync:         vboxguestFAsync,
     read:           vboxguestRead,
     poll:           vboxguestPoll,
-    fasync:         vboxguestFAsync,
+    llseek:         no_llseek,
 };
 
 /** The miscdevice structure. */
@@ -148,9 +149,6 @@ static struct miscdevice        g_MiscDevice =
     minor:          MISC_DYNAMIC_MINOR,
     name:           DEVICE_NAME,
     fops:           &g_FileOps,
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 17)
-    devfs_name:     DEVICE_NAME,
-#endif
 };
 
 /** The file_operations structure for the user device.
@@ -174,9 +172,6 @@ static struct miscdevice        g_MiscDeviceUser =
     minor:          MISC_DYNAMIC_MINOR,
     name:           DEVICE_NAME_USER,
     fops:           &g_FileOpsUser,
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 17)
-    devfs_name:     DEVICE_NAME_USER,
-#endif
 };
 
 
