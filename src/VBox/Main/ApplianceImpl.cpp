@@ -3985,7 +3985,7 @@ HRESULT Appliance::setUpProgressUpload(ComObjPtr<Progress> &pProgress, const Bst
         ulTotalOperationsWeight = 1;
         m->ulWeightPerOperation = 1;
     }
-    ULONG ulOVFCreationWeight = ((double)ulTotalOperationsWeight * 50.0 / 100.0); /* Use 50% for the creation of the OVF & the disks */
+    ULONG ulOVFCreationWeight = (ULONG)((double)ulTotalOperationsWeight * 50.0 / 100.0); /* Use 50% for the creation of the OVF & the disks */
     ulTotalOperationsWeight += ulOVFCreationWeight;
 
     Log(("Setting up progress object: ulTotalMB = %d, cDisks = %d, => cOperations = %d, ulTotalOperationsWeight = %d, m->ulWeightPerOperation = %d\n",
@@ -4375,6 +4375,7 @@ STDMETHODIMP VirtualSystemDescription::AddDescription(VirtualSystemDescriptionTy
  * @param strRef Reference item; only used with hard disk controllers.
  * @param aOrigValue Corresponding original value from OVF.
  * @param aAutoValue Initial configuration value (can be overridden by caller with setFinalValues).
+ * @param ulSizeMB Weight for IProgress
  * @param strExtraConfig Extra configuration; meaning dependent on type.
  */
 void VirtualSystemDescription::addEntry(VirtualSystemDescriptionType_T aType,
@@ -4807,6 +4808,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
                                    "",      // ref
                                    strAttachmentType,      // orig
                                    Utf8StrFmt("%RI32", (uint32_t)adapterType),   // conf
+                                   0,
                                    Utf8StrFmt("type=%s", strAttachmentType.c_str()));       // extra conf
             }
         }

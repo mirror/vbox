@@ -362,7 +362,7 @@ HRESULT VFSExplorer::deleteFS(TaskVFSExplorer *aTask)
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR, tr ("Can't delete file '%s' (%Rrc)"), szPath, vrc);
             if(aTask->progress)
-                aTask->progress->setCurrentOperationProgress(fPercentStep * i);
+                aTask->progress->setCurrentOperationProgress((ULONG)(fPercentStep * i));
         }
     }
     catch(HRESULT aRC)
@@ -488,7 +488,7 @@ HRESULT VFSExplorer::deleteS3(TaskVFSExplorer *aTask)
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR, tr ("Can't delete file '%s' (%Rrc)"), (*it).c_str(), vrc);
             if(aTask->progress)
-                aTask->progress->setCurrentOperationProgress(fPercentStep * i);
+                aTask->progress->setCurrentOperationProgress((ULONG)(fPercentStep * i));
         }
     }
     catch(HRESULT aRC)
