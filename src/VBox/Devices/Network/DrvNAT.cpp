@@ -729,7 +729,7 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCf
         /* guest address */
         struct in_addr GuestIP;
         /* @todo (vvl) use CTL_* */
-        GETIP_DEF(rc, pThis, pNode, GuestIP, htonl(ntohl(Network) | 15));
+        GETIP_DEF(rc, pThis, pNode, GuestIP, htonl(Network | 15));
 
         /*
          * Call slirp about it.
