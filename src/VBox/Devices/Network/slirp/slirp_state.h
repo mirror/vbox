@@ -349,8 +349,6 @@ typedef struct NATState
 #define queue_udp_label udb
 #define VBOX_X2(x) x
 #define VBOX_X(x) VBOX_X2(x)
-#define VBOX_STR2(x) #x
-#define VBOX_STR(x) VBOX_STR2(x)
 
 #ifdef VBOX_WITH_SLIRP_MT
 
