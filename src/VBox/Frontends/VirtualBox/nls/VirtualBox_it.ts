@@ -1769,11 +1769,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Please complete the additionally fields like the username, password and the bucket. Finally you have to provide a filename for the OVF target.</source>
-        <translation type="unfinished">Completa i campi aggiuntivi come nome utente, password e  . Infine devi fornire un nome file per l&apos;OVF di destinazione.</translation>
+        <translation>Completa i campi aggiuntivi come nome utente, password e il bucket. Infine devi fornire un nome file per l&apos;OVF di destinazione.</translation>
     </message>
     <message>
         <source>Please complete the additionally fields like the username, password, hostname and the bucket. Finally you have to provide a filename for the OVF target.</source>
-        <translation type="unfinished">Completa i campi aggiuntivi come nome utente, password, nome host e  . Infine devi fornire un nome file per l&apos;OVF di destinazione.</translation>
+        <translation>Completa i campi aggiuntivi come nome utente, password, nome host e il bucket. Infine devi fornire un nome file per l&apos;OVF di destinazione.</translation>
     </message>
     <message>
         <source>Checking files ...</source>
@@ -1813,7 +1813,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Bucket:</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&amp;Hostname:</source>
@@ -3300,7 +3300,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Raw File</source>
         <comment>PortMode</comment>
-        <translation type="unfinished">File raw</translation>
+        <translation>File raw</translation>
     </message>
 </context>
 <context>
@@ -6526,11 +6526,11 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
     </message>
     <message>
         <source>&amp;Merge Snapshot with Parent</source>
-        <translation type="unfinished">&amp;Unisci istantanea con genitrice</translation>
+        <translation>&amp;Unisci istantanea con origine</translation>
     </message>
     <message>
         <source>Merges the snapshot into the parent snapshot or disk image and then deletes the now redundant snapshot file.</source>
-        <translation type="unfinished">Unisce l&apos;istantanea all&apos;istantanea genitrice o all&apos;immagine del disco e poi elimina il file ridondante.</translation>
+        <translation>Unisce l&apos;istantanea all&apos;istantanea di origine o all&apos;immagine del disco e poi elimina il file ridondante.</translation>
     </message>
 </context>
 <context>
@@ -9076,7 +9076,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
     </message>
     <message>
         <source>&amp;Remember Runtime Changes</source>
-        <translation type="unfinished">Memo&amp;rizza le modifiche in esecuzione</translation>
+        <translation>Memo&amp;rizza le modifiche in esecuzione</translation>
     </message>
     <message>
         <source>Mini ToolBar:</source>
