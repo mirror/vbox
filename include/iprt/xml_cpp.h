@@ -39,25 +39,6 @@
 
 #include <iprt/ministring_cpp.h>
 
-/** @def IN_VBOXXML_R3
- * Used to indicate whether we're inside the same link module as the
- * XML Settings File Manipulation API.
- *
- * @todo should go to a separate common include together with VBOXXML2_CLASS
- * once there becomes more than one header in the VBoxXML2 library.
- */
-#ifdef DOXYGEN_RUNNING
-# define IN_VBOXXML_R3
-#endif
-
-/** @def VBOXXML_CLASS
- * Class export/import wrapper. */
-#ifdef IN_VBOXXML_R3
-# define VBOXXML_CLASS DECLEXPORT_CLASS
-#else
-# define VBOXXML_CLASS DECLIMPORT_CLASS
-#endif
-
 /* Forwards */
 typedef struct _xmlParserInput xmlParserInput;
 typedef xmlParserInput *xmlParserInputPtr;
@@ -75,7 +56,7 @@ namespace xml
 /**
  * Base exception class.
  */
-class VBOXXML_CLASS Error : public std::exception
+class RT_DECL_CLASS Error : public std::exception
 {
 public:
 
@@ -115,7 +96,7 @@ private:
     ministring m_s;
 };
 
-class VBOXXML_CLASS LogicError : public Error
+class RT_DECL_CLASS LogicError : public Error
 {
 public:
 
@@ -126,7 +107,7 @@ public:
     LogicError(RT_SRC_POS_DECL);
 };
 
-class VBOXXML_CLASS RuntimeError : public Error
+class RT_DECL_CLASS RuntimeError : public Error
 {
 public:
 
@@ -135,7 +116,7 @@ public:
     {}
 };
 
-class VBOXXML_CLASS XmlError : public RuntimeError
+class RT_DECL_CLASS XmlError : public RuntimeError
 {
 public:
     XmlError(xmlErrorPtr aErr);
@@ -146,28 +127,28 @@ public:
 // Logical errors
 //////////////////////////////////////////////////////////////////////////////
 
-class VBOXXML_CLASS ENotImplemented : public LogicError
+class RT_DECL_CLASS ENotImplemented : public LogicError
 {
 public:
     ENotImplemented(const char *aMsg = NULL) : LogicError(aMsg) {}
     ENotImplemented(RT_SRC_POS_DECL) : LogicError(RT_SRC_POS_ARGS) {}
 };
 
-class VBOXXML_CLASS EInvalidArg : public LogicError
+class RT_DECL_CLASS EInvalidArg : public LogicError
 {
 public:
     EInvalidArg(const char *aMsg = NULL) : LogicError(aMsg) {}
     EInvalidArg(RT_SRC_POS_DECL) : LogicError(RT_SRC_POS_ARGS) {}
 };
 
-class VBOXXML_CLASS EDocumentNotEmpty : public LogicError
+class RT_DECL_CLASS EDocumentNotEmpty : public LogicError
 {
 public:
     EDocumentNotEmpty(const char *aMsg = NULL) : LogicError(aMsg) {}
     EDocumentNotEmpty(RT_SRC_POS_DECL) : LogicError(RT_SRC_POS_ARGS) {}
 };
 
-class VBOXXML_CLASS ENodeIsNotElement : public LogicError
+class RT_DECL_CLASS ENodeIsNotElement : public LogicError
 {
 public:
     ENodeIsNotElement(const char *aMsg = NULL) : LogicError(aMsg) {}
@@ -177,14 +158,14 @@ public:
 // Runtime errors
 //////////////////////////////////////////////////////////////////////////////
 
-class VBOXXML_CLASS ENoMemory : public RuntimeError, public std::bad_alloc
+class RT_DECL_CLASS ENoMemory : public RuntimeError, public std::bad_alloc
 {
 public:
     ENoMemory(const char *aMsg = NULL) : RuntimeError (aMsg) {}
     virtual ~ENoMemory() throw() {}
 };
 
-class VBOXXML_CLASS EIPRTFailure : public RuntimeError
+class RT_DECL_CLASS EIPRTFailure : public RuntimeError
 {
 public:
 
@@ -200,7 +181,7 @@ private:
 /**
  * The Stream class is a base class for I/O streams.
  */
-class VBOXXML_CLASS Stream
+class RT_DECL_CLASS Stream
 {
 public:
 
@@ -235,7 +216,7 @@ public:
  * This is an abstract class that must be subclassed in order to fill it with
  * useful functionality.
  */
-class VBOXXML_CLASS Input : virtual public Stream
+class RT_DECL_CLASS Input : virtual public Stream
 {
 public:
 
@@ -253,7 +234,7 @@ public:
 /**
  *
  */
-class VBOXXML_CLASS Output : virtual public Stream
+class RT_DECL_CLASS Output : virtual public Stream
 {
 public:
 
@@ -290,7 +271,7 @@ public:
  * threads, you should care about serialization; otherwise you will get garbage
  * when reading from or writing to such File instances.
  */
-class VBOXXML_CLASS File : public Input, public Output
+class RT_DECL_CLASS File : public Input, public Output
 {
 public:
 
@@ -373,7 +354,7 @@ private:
  * The MemoryBuf class represents a stream implementation that reads from the
  * memory buffer.
  */
-class VBOXXML_CLASS MemoryBuf : public Input
+class RT_DECL_CLASS MemoryBuf : public Input
 {
 public:
 
@@ -408,7 +389,7 @@ typedef xmlParserInput* FNEXTERNALENTITYLOADER(const char *aURI,
                                                xmlParserCtxt *aCtxt);
 typedef FNEXTERNALENTITYLOADER *PFNEXTERNALENTITYLOADER;
 
-class VBOXXML_CLASS GlobalLock
+class RT_DECL_CLASS GlobalLock
 {
 public:
     GlobalLock();
@@ -453,7 +434,7 @@ class AttributeNode;
 
 class ContentNode;
 
-class VBOXXML_CLASS Node
+class RT_DECL_CLASS Node
 {
 public:
     ~Node();
@@ -487,7 +468,7 @@ protected:
     Data *m;
 };
 
-class VBOXXML_CLASS ElementNode : public Node
+class RT_DECL_CLASS ElementNode : public Node
 {
 public:
     int getChildElements(ElementNodesList &children,
@@ -515,7 +496,7 @@ protected:
     friend class XmlFileParser;
 };
 
-class VBOXXML_CLASS ContentNode : public Node
+class RT_DECL_CLASS ContentNode : public Node
 {
 public:
 
@@ -528,7 +509,7 @@ protected:
     friend class ElementNode;
 };
 
-class VBOXXML_CLASS AttributeNode : public Node
+class RT_DECL_CLASS AttributeNode : public Node
 {
 public:
 
@@ -546,7 +527,7 @@ protected:
  *
  */
 
-class VBOXXML_CLASS NodesLoop
+class RT_DECL_CLASS NodesLoop
 {
 public:
     NodesLoop(const ElementNode &node, const char *pcszMatch = NULL);
@@ -564,7 +545,7 @@ private:
  *
  */
 
-class VBOXXML_CLASS Document
+class RT_DECL_CLASS Document
 {
 public:
     Document();
@@ -593,7 +574,7 @@ private:
  *
  */
 
-class VBOXXML_CLASS XmlParserBase
+class RT_DECL_CLASS XmlParserBase
 {
 protected:
     XmlParserBase();
@@ -607,7 +588,7 @@ protected:
  *
  */
 
-class VBOXXML_CLASS XmlFileParser : public XmlParserBase
+class RT_DECL_CLASS XmlFileParser : public XmlParserBase
 {
 public:
     XmlFileParser();
@@ -629,7 +610,7 @@ private:
  *
  */
 
-class VBOXXML_CLASS XmlFileWriter
+class RT_DECL_CLASS XmlFileWriter
 {
 public:
     XmlFileWriter(Document &doc);

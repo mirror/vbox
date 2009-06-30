@@ -243,6 +243,25 @@
 #pragma warning (disable:4275)
 #endif
 
+/** @def IN_VBOXXML_R3
+ * Used to indicate whether we're inside the same link module as the
+ * XML Settings File Manipulation API.
+ *
+ * @todo should go to a separate common include together with VBOXXML2_CLASS
+ * once there becomes more than one header in the VBoxXML2 library.
+ */
+#ifdef DOXYGEN_RUNNING
+# define IN_VBOXXML_R3
+#endif
+
+/** @def VBOXXML_CLASS
+ * Class export/import wrapper. */
+#ifdef IN_VBOXXML_R3
+# define VBOXXML_CLASS DECLEXPORT_CLASS
+#else
+# define VBOXXML_CLASS DECLIMPORT_CLASS
+#endif
+
 /* Forwards */
 typedef struct _xmlParserInput xmlParserInput;
 typedef xmlParserInput *xmlParserInputPtr;
