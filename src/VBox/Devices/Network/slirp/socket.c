@@ -773,6 +773,10 @@ solisten(PNATState pData, u_int32_t bind_addr, u_int port, u_int32_t laddr, u_in
     so->so_lport = lport; /* Kept in network format */
     so->so_laddr.s_addr = laddr; /* Ditto */
 
+    memset(&addr, 0, sizeof(addr));
+#ifdef RT_OS_DARWIN
+    addr.sin_len = sizeof(addr);
+#endif
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = bind_addr;
     addr.sin_port = port;
