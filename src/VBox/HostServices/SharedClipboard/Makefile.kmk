@@ -68,30 +68,24 @@ endif
 VBoxSharedClipboard_LDFLAGS.darwin = \
 	-framework ApplicationServices -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxSharedClipboard.dylib
 
-ifdef VBOX_WITH_TESTCASES
- ifndef VBOX_ONLY_ADDITIONS
-  if1of ($(KBUILD_TARGET),freebsd linux netbsd openbsd solaris)
-   ifndef VBOX_ONLY_SDK
+if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
+ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
+ #
+ # Set this in LocalConfig.kmk if you are working on the X11 clipboard service
+ # to automatically run the unit test at build time.
+ #       OTHERS += $(PATH_tstClipboardX11-2)/tstClipboardX11-2.run
+ PROGRAMS += tstClipboardX11-2
+ TESTING += $(PATH_tstClipboardX11-2)/tstClipboardX11-2.run
+ tstClipboardX11-2_TEMPLATE = VBOXR3TSTEXE
+ tstClipboardX11-2_DEFS     = VBOX_WITH_HGCM TESTCASE
+ tstClipboardX11-2_SOURCES  = x11-clipboard.cpp
+ tstClipboardX11-2_LIBS     = $(LIB_RUNTIME)
+ tstClipboardX11-2_CLEANS   = $(PATH_tstClipboardX11-2)/tstClipboardX11-2.run
 
-# Set this in LocalConfig.kmk if you are working on the X11 clipboard service
-# to automatically run the unit test at build time.
-#       OTHERS += $(PATH_tstClipboardX11-2)/tstClipboardX11-2.run
-
-    PROGRAMS += tstClipboardX11-2
-    tstClipboardX11-2_TEMPLATE = VBOXR3TSTEXE
-    tstClipboardX11-2_DEFS     = VBOX_WITH_HGCM TESTCASE
-    tstClipboardX11-2_SOURCES  = x11-clipboard.cpp
-    tstClipboardX11-2_LIBS     = $(LIB_RUNTIME)
-
-    TESTING  += $(PATH_tstClipboardX11-2)/tstClipboardX11-2.run
-$$(PATH_tstClipboardX11-2)/tstClipboardX11-2.run: \
-        $$(INSTARGET_tstClipboardX11-2)
+$$(PATH_tstClipboardX11-2)/tstClipboardX11-2.run: $$(INSTARGET_tstClipboardX11-2)
 	export VBOX_LOG_DEST=nofile; $(INSTARGET_tstClipboardX11-2) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
-
-   endif # ! VBOX_WITH_SDK
-  endif # 1of ($(KBUILD_TARGET),freebsd linux netbsd openbsd solaris)
- endif # ! VBOX_ONLY_ADDITIONS
-endif # VBOX_WITH_TESTCASES
+ endif # 1of ($(KBUILD_TARGET),freebsd linux netbsd openbsd solaris)
+endif
 
 include $(KBUILD_PATH)/subfooter.kmk

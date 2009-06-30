@@ -1,10 +1,10 @@
 # $Id$
 ## @file
-# Sub-Makefile for the Guest Properties Host Service testcases.
+# Sub-Makefile for the shared clipboard code for both host and guest.
 #
 
 #
-# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+# Copyright (C) 2006-2009 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -22,41 +22,37 @@
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-ifdef VBOX_WITH_TESTCASES
- if1of ($(KBUILD_TARGET),freebsd linux netbsd openbsd solaris)
-  ifndef VBOX_ONLY_SDK
+if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
+ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
+  #
+  # Set these in LocalConfig.kmk if you are working on the X11 clipboard service
+  # to automatically run the unit tests at build time:
+  #    OTHERS += $(PATH_tstClipboardX11)/tstClipboardX11.run
+  #    OTHERS += $(PATH_tstClipboardX11Smoke)/tstClipboardX11Smoke.run
+  #
+  PROGRAMS += tstClipboardX11 tstClipboardX11Smoke
+  TESTING  += $(PATH_tstClipboardX11)/tstClipboardX11.run $(PATH_tstClipboardX11Smoke)/tstClipboardX11Smoke.run
+  tstClipboardX11_TEMPLATE = VBOXR3TSTEXE
+  tstClipboardX11_DEFS     = VBOX_WITH_HGCM TESTCASE
+  tstClipboardX11_SOURCES  = x11-clipboard.cpp clipboard-helper.cpp
+  tstClipboardX11_CLEAN    = $(PATH_tstClipboardX11)/tstClipboardX11.run
 
-# Set these in LocalConfig.kmk if you are working on the X11 clipboard service
-# to automatically run the unit tests at build time:
-#    OTHERS += $(PATH_tstClipboardX11)/tstClipboardX11.run
-#    OTHERS += $(PATH_tstClipboardX11Smoke)/tstClipboardX11Smoke.run
+  tstClipboardX11Smoke_TEMPLATE = VBOXR3TSTEXE
+  tstClipboardX11Smoke_DEFS     = VBOX_WITH_HGCM SMOKETEST
+  tstClipboardX11Smoke_SOURCES  = x11-clipboard.cpp clipboard-helper.cpp
+  tstClipboardX11Smoke_LIBPATH  = $(VBOX_LIBPATH_X11)
+  tstClipboardX11Smoke_LIBS     = X11 Xt
+  tstClipboardX11Smoke_CLEAN    = $(PATH_tstClipboardX11Smoke)/tstClipboardX11Smoke.run
 
-   PROGRAMS += tstClipboardX11 tstClipboardX11Smoke
-   tstClipboardX11_TEMPLATE = VBOXR3TSTEXE
-   tstClipboardX11_DEFS     = VBOX_WITH_HGCM TESTCASE
-   tstClipboardX11_SOURCES  = x11-clipboard.cpp clipboard-helper.cpp
-   tstClipboardX11_LIBS     = $(LIB_RUNTIME)
-
-   tstClipboardX11Smoke_TEMPLATE = VBOXR3TSTEXE
-   tstClipboardX11Smoke_DEFS     = VBOX_WITH_HGCM SMOKETEST
-   tstClipboardX11Smoke_SOURCES  = x11-clipboard.cpp clipboard-helper.cpp
-   tstClipboardX11Smoke_LIBPATH  = $(VBOX_LIBPATH_X11)
-   tstClipboardX11Smoke_LIBS     = $(LIB_RUNTIME) X11 Xt
-
-   TESTING  += $(PATH_tstClipboardX11)/tstClipboardX11.run
 $$(PATH_tstClipboardX11)/tstClipboardX11.run: $$(INSTARGET_tstClipboardX11)
 	export VBOX_LOG_DEST=nofile; $(INSTARGET_tstClipboardX11) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
 
-   TESTING  += $(PATH_tstClipboardX11Smoke)/tstClipboardX11Smoke.run
-$$(PATH_tstClipboardX11Smoke)/tstClipboardX11Smoke.run: \
-                $$(INSTARGET_tstClipboardX11)
+$$(PATH_tstClipboardX11Smoke)/tstClipboardX11Smoke.run:	$$(INSTARGET_tstClipboardX11)
 	export VBOX_LOG_DEST=nofile; $(INSTARGET_tstClipboardX11Smoke) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
-
-  endif # ! VBOX_ONLY_SDK
- endif # 1of ($(KBUILD_TARGET),freebsd linux netbsd openbsd solaris)
-endif # VBOX_WITH_TESTCASES
+ endif
+endif
 
 include $(KBUILD_PATH)/subfooter.kmk
 
