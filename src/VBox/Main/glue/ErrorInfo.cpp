@@ -117,7 +117,8 @@ void ErrorInfo::init (bool aKeepObj /* = false */)
                     gotSomething |= NS_SUCCEEDED (rc);
 
                     Utf8Str message;
-                    rc = ex->GetMessage (message.asOutParam());
+                    rc = ex->GetMessage(message.asOutParam());
+                    message.jolt();
                     gotSomething |= NS_SUCCEEDED (rc);
                     if (NS_SUCCEEDED (rc))
                         mText = message;

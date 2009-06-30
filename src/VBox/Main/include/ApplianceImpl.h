@@ -91,7 +91,7 @@ private:
     /** weak VirtualBox parent */
     const ComObjPtr <VirtualBox, ComWeakRef> mVirtualBox;
 
-    struct Data;            // obscure, defined in AppliannceImpl.cpp
+    struct Data;            // opaque, defined in ApplianceImpl.cpp
     Data *m;
 
     HRESULT LoopThruSections(const char *pcszPath, const xml::ElementNode *pReferencesElem, const xml::ElementNode *pCurElem);

@@ -30,21 +30,14 @@
 #ifndef ___VBox_settings_h
 #define ___VBox_settings_h
 
-#include <iprt/cdefs.h>
-#include <iprt/cpputils.h>
-#include <iprt/string.h>
-
-#include <list>
-#include <memory>
 #include <limits>
 
+#include <iprt/cdefs.h>
+#include <iprt/cpputils.h>
 #include <iprt/time.h>
+#include <iprt/xml_cpp.h>
 
 #include <VBox/com/Guid.h>
-
-#include <VBox/xml.h>
-
-// #include <stdarg.h>
 
 /* these conflict with numeric_digits<>::min and max */
 #undef min

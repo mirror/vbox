@@ -18,13 +18,11 @@
  * additional information or have any questions.
  */
 
-#include "Logging.h"
-
 #include <iprt/cdefs.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/lock.h>
-#include <iprt/string.h>
+#include <iprt/xml_cpp.h>
 
 #include <libxml/tree.h>
 #include <libxml/parser.h>
@@ -35,11 +33,8 @@
 
 #include <libxml/xmlschemas.h>
 
-#include <list>
 #include <map>
 #include <boost/shared_ptr.hpp>
-
-#include "VBox/xml.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -990,14 +985,14 @@ Document::Document(const Document &x)
     : m(new Data)
 {
     m->copyFrom(x.m);
-};
+}
 
 Document& Document::operator=(const Document &x)
 {
     m->reset();
     m->copyFrom(x.m);
     return *this;
-};
+}
 
 Document::~Document()
 {
