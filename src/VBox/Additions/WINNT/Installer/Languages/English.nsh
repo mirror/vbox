@@ -17,7 +17,7 @@ LangString VBOX_COMPONENT_MAIN ${LANG_ENGLISH}           "VirtualBox Guest Addit
 LangString VBOX_COMPONENT_MAIN_DESC ${LANG_ENGLISH}      "Main Files of VirtualBox Guest Additions"
 LangString VBOX_COMPONENT_D3D  ${LANG_ENGLISH}           "Direct3D Support (Experimental)"
 LangString VBOX_COMPONENT_D3D_DESC  ${LANG_ENGLISH}      "Enables Direct3D Support for Guests (Experimental)"
-LangString VBOX_COMPONENT_D3D_NO_SM ${LANG_ENGLISH}      "Windows is currently not started in safe mode.$\r$\nTherefor the D3D support cannot be installed."
+LangString VBOX_COMPONENT_D3D_NO_SM ${LANG_ENGLISH}      "Windows is currently not started in safe mode.$\r$\nTherefore the D3D support cannot be installed."
 
 LangString VBOX_WFP_WARN_REPLACE ${LANG_ENGLISH}         "The setup just has replaced some system files in order to make ${PRODUCT_NAME} work correctly.$\r$\nIn case a warning dialog from the Windows File Protection pops up, please don't restore the original files and cancel this dialog!"
 LangString VBOX_REBOOT_REQUIRED ${LANG_ENGLISH}          "To apply all changes, the system must be restarted. Restart Windows now?"
