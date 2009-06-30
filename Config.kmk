@@ -489,6 +489,8 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win freebsd)
 endif
 ## Use the new version of liblzf. Remove with the old liblzf.
 #VBOX_WITH_NEW_LIBLZF = 1
+## For experimenting with linking libxml2 into VBoxRT.
+VBOX_WITH_LIBXML2_IN_VBOXRT = 1
 
 ## For experimenting with disabling preemption instead of interrupts
 # when working VT-x/AMD-V in VMMR0.
@@ -1796,11 +1798,25 @@ VBOXLNX32GUEST_SUFF_LIB = .a
 # SDKs for external libraries.
 #
 SDK_VBOX_LIBXML2          = .
-SDK_VBOX_LIBXML2_INCS   ?= $(PATH_ROOT)/src/libs/libxml2-2.6.30/include
-SDK_VBOX_LIBXML2_DEFS  ?= _REENTRANT
-SDK_VBOX_LIBXML2_DEFS.win += WIN32 _WINDOWS _MBCS
-# note: no linking to LIB here, we do that explicitly in src/VBox/Runtime/Makefile.kmk to link
-# libxml against VBoxRT
+#if1of ($(KBUILD_TARGET),win os2 solaris)
+ SDK_VBOX_LIBXML2_INCS   ?= $(PATH_ROOT)/src/libs/libxml2-2.6.30/include
+ ifdef VBOX_WITH_LIBXML2_IN_VBOXRT
+  SDK_VBOX_LIBXML2_DEFS  ?= _REENTRANT
+ else
+  SDK_VBOX_LIBXML2_DEFS  ?= LIBXML_STATIC _REENTRANT
+  SDK_VBOX_LIBXML2_LIBS  ?= $(PATH_LIB)/VBox-libxml2$(VBOX_SUFF_LIB)
+ endif
+ SDK_VBOX_LIBXML2_DEFS.win += WIN32 _WINDOWS _MBCS
+#else if1of ($(KBUILD_TARGET),linux)
+# SDK_VBOX_LIBXML2_INCS      ?=
+# SDK_VBOX_LIBXML2_LIBS      ?=
+# SDK_VBOX_LIBXML2_CFLAGS    ?= $(shell pkg-config libxml-2.0 --cflags)
+# SDK_VBOX_LIBXML2_CXXFLAGS  ?= $(SDK_VBOX_LIBXML2_CFLAGS)
+# SDK_VBOX_LIBXML2_LDFLAGS   ?= $(shell pkg-config libxml-2.0 --libs)
+#else
+# SDK_VBOX_LIBXML2_INCS   ?=
+# SDK_VBOX_LIBXML2_LIBS   ?= xml2
+#endif
 
 SDK_VBOX_LIBXSLT          = .
 #if1of ($(KBUILD_TARGET),win os2 solaris)
@@ -1836,7 +1852,9 @@ SDK_VBOX_OPENSSL      = .
 SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS := $(PATH_OUT)/obj/crypto-headers/include
 SDK_VBOX_OPENSSL_INCS ?= $(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)
 SDK_VBOX_OPENSSL_ORDERDEPS ?= $(crypto-headers_1_TARGET)
-SDK_VBOX_OPENSSL_LIBS ?= $(PATH_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB)
+ifndef VBOX_WITH_LIBXML2_IN_VBOXRT
+ SDK_VBOX_OPENSSL_LIBS ?= $(PATH_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB)
+endif
 # Build entire openssl library, not just the minimal subset.
 if1of ($(KBUILD_TARGET), linux solaris)
  VBOX_OPENSSL_ALL=1

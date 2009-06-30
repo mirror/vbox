@@ -27,8 +27,8 @@
 #include "Logging.h"
 
 #include <iprt/param.h>
-#include <iprt/cpputils.h>
 #include <iprt/path.h>
+#include <iprt/cpputils.h>
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
@@ -198,11 +198,11 @@ HRESULT SharedFolder::protectedInit (VirtualBoxBaseWithChildrenNEXT *aParent,
         RTPATH_IS_VOLSEP (hostPath.raw()[hostPathLen - 2]))
         ;
 #else
-    if (hostPathLen == 1 && RTPATH_IS_SEP(hostPath[0]))
+    if (hostPathLen == 1 && RTPATH_IS_SEP (hostPath[0]))
         ;
 #endif
     else
-        hostPath.stripTrailingSlash();
+        RTPathStripTrailingSlash (hostPath.mutableRaw());
 
     /* Check whether the path is full (absolute) */
     char hostPathFull [RTPATH_MAX];
