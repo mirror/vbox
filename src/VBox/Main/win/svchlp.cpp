@@ -233,7 +233,7 @@ int SVCHlpClient::read (Utf8Str &aVal)
         return VINF_SUCCESS;
     }
 
-    aVal.alloc (len + 1);
+    aVal.reserve(len + 1);
     aVal.mutableRaw() [len] = 0;
 
     /* read string data */
