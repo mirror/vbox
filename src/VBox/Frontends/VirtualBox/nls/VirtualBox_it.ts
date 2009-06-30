@@ -6370,7 +6370,7 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
     </message>
     <message>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">&amp;Scarta istantanea</translation>
+        <translation>&amp;Scarta istantanea</translation>
     </message>
     <message>
         <source>Ctrl+Shift+D</source>
@@ -6406,7 +6406,7 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
     </message>
     <message>
         <source>Discard Current Snapshot and State</source>
-        <translation type="obsolete">Scarta lo stato e lo snapshot attuali</translation>
+        <translation>Scarta lo stato e lo snapshot attuali</translation>
     </message>
     <message>
         <source>D&amp;iscard Current Snapshot and State</source>
@@ -6482,7 +6482,7 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
     </message>
     <message>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Scarta l&apos;istantanea selezionata della macchina virtuale</translation>
+        <translation>Scarta l&apos;istantanea selezionata della macchina virtuale</translation>
     </message>
     <message>
         <source>Ctrl+Shift+S</source>
