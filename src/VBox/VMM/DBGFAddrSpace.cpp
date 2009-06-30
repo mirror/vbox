@@ -149,7 +149,7 @@ int dbgfR3AsInit(PVM pVM)
      * Create the standard address spaces.
      */
     RTDBGAS hDbgAs;
-    rc = RTDbgAsCreate(&hDbgAs, 0, RTRCPTR_MAX, "Global");
+    rc = RTDbgAsCreate(&hDbgAs, 0, RTGCPTR_MAX, "Global");
     AssertRCReturn(rc, rc);
     rc = DBGFR3AsAdd(pVM, hDbgAs, NIL_RTPROCESS);
     AssertRCReturn(rc, rc);
@@ -159,7 +159,7 @@ int dbgfR3AsInit(PVM pVM)
     RTDbgAsRetain(hDbgAs);
     pVM->dbgf.s.ahAsAliases[DBGF_AS_ALIAS_2_INDEX(DBGF_AS_KERNEL)] = hDbgAs;
 
-    rc = RTDbgAsCreate(&hDbgAs, 0, RTRCPTR_MAX, "Physical");
+    rc = RTDbgAsCreate(&hDbgAs, 0, RTGCPHYS_MAX, "Physical");
     AssertRCReturn(rc, rc);
     rc = DBGFR3AsAdd(pVM, hDbgAs, NIL_RTPROCESS);
     AssertRCReturn(rc, rc);
@@ -175,7 +175,7 @@ int dbgfR3AsInit(PVM pVM)
     RTDbgAsRetain(hDbgAs);
     pVM->dbgf.s.ahAsAliases[DBGF_AS_ALIAS_2_INDEX(DBGF_AS_RC_AND_GC_GLOBAL)] = hDbgAs;
 
-    rc = RTDbgAsCreate(&hDbgAs, 0, RTRCPTR_MAX, "HyperRing0");
+    rc = RTDbgAsCreate(&hDbgAs, 0, RTR0PTR_MAX, "HyperRing0");
     AssertRCReturn(rc, rc);
     rc = DBGFR3AsAdd(pVM, hDbgAs, NIL_RTPROCESS);
     AssertRCReturn(rc, rc);
