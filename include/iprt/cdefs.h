@@ -875,6 +875,16 @@
 #endif
 
 
+/** @def RT_STR
+ * Returns the argument as a string constant.
+ * @param   str     Argument to stringify.  */
+#define RT_STR(str)             #str
+/** @def RT_XSTR
+ * Returns the expanded argument as a string.
+ * @param   str     Argument to expand and stringy. */
+#define RT_XSTR(str)            RT_STR(str)
+
+
 /** @def RT_BIT
  * Convert a bit number into an integer bitmask (unsigned).
  * @param   bit     The bit number.
