@@ -3021,13 +3021,16 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
          */
         if (uOpenFlags & VD_OPEN_FLAGS_ASYNC_IO)
         {
+            unsigned cFlatExtents = 0;
+
             for (unsigned i = 0; i < pImage->cExtents; i++)
             {
                 PVMDKEXTENT pExtent = &pImage->pExtents[i];
 
-                if (    pExtent->enmType != VMDKETYPE_FLAT
-                    &&  pExtent->enmType != VMDKETYPE_ZERO
-                    &&  pExtent->enmType != VMDKETYPE_VMFS)
+                if ((    pExtent->enmType != VMDKETYPE_FLAT
+                     &&  pExtent->enmType != VMDKETYPE_ZERO
+                     &&  pExtent->enmType != VMDKETYPE_VMFS)
+                    || ((pImage->pExtents[i].enmType == VMDKETYPE_FLAT) && (cFlatExtents > 0)))
                 {
                     /*
                      * Opened image contains at least one none flat or zero extent.
@@ -3037,6 +3040,8 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
                     rc = VERR_NOT_SUPPORTED;
                     goto out;
                 }
+                if (pExtent->enmType == VMDKETYPE_FLAT)
+                    cFlatExtents++;
             }
         }
 
@@ -5730,17 +5735,26 @@ static bool vmdkIsAsyncIOSupported(void *pvBackendData)
 
     if (pImage)
     {
-        /* We only support async I/O support if the image only consists of FLAT or ZERO extents. */
+        unsigned cFlatExtents = 0;
+
+        /* We only support async I/O support if the image only consists of FLAT or ZERO extents.
+         *
+         * @todo: At the moment we only support async I/O if there is at most one FLAT extent
+         *        More than one doesn't work yet with the async I/O interface.
+         */
         fAsyncIOSupported = true;
         for (unsigned i = 0; i < pImage->cExtents; i++)
         {
-            if (    pImage->pExtents[i].enmType != VMDKETYPE_FLAT
-                &&  pImage->pExtents[i].enmType != VMDKETYPE_ZERO
-                &&  pImage->pExtents[i].enmType != VMDKETYPE_VMFS)
+            if ((    pImage->pExtents[i].enmType != VMDKETYPE_FLAT
+                 &&  pImage->pExtents[i].enmType != VMDKETYPE_ZERO
+                 &&  pImage->pExtents[i].enmType != VMDKETYPE_VMFS)
+                || ((pImage->pExtents[i].enmType == VMDKETYPE_FLAT) && (cFlatExtents > 0)))
             {
                 fAsyncIOSupported = false;
                 break; /* Stop search */
             }
+            if (pImage->pExtents[i].enmType == VMDKETYPE_FLAT)
+                cFlatExtents++;
         }
     }
 
@@ -5751,12 +5765,14 @@ static int vmdkAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
                          PPDMDATASEG paSeg, unsigned cSeg, void *pvUser)
 {
     PVMDKIMAGE pImage = (PVMDKIMAGE)pvBackendData;
-    PVMDKEXTENT pExtent;
+    PVMDKEXTENT pExtent = NULL;
     int rc = VINF_SUCCESS;
     unsigned cSegments = 0;
     PPDMDATASEG paSegCurrent = paSeg;
     size_t cbLeftInCurrentSegment = paSegCurrent->cbSeg;
     size_t uOffsetInCurrentSegment = 0;
+    size_t cbReadLeft = cbRead;
+    uint64_t uOffCurr = uOffset;
 
     AssertPtr(pImage);
     Assert(uOffset % 512 == 0);
@@ -5769,12 +5785,12 @@ static int vmdkAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
         goto out;
     }
 
-    while (cbRead && cSeg)
+    while (cbReadLeft && cSeg)
     {
         size_t cbToRead;
         uint64_t uSectorExtentRel;
 
-        rc = vmdkFindExtent(pImage, VMDK_BYTE2SECTOR(uOffset),
+        rc = vmdkFindExtent(pImage, VMDK_BYTE2SECTOR(uOffCurr),
                             &pExtent, &uSectorExtentRel);
         if (RT_FAILURE(rc))
             goto out;
@@ -5837,8 +5853,8 @@ static int vmdkAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
                 AssertMsgFailed(("Unsupported extent type %u\n", pExtent->enmType));
         }
 
-        cbRead -= cbToRead;
-        uOffset += cbToRead;
+        cbReadLeft -= cbToRead;
+        uOffCurr   += cbToRead;
         cbLeftInCurrentSegment -= cbToRead;
         uOffsetInCurrentSegment += cbToRead;
         /* Go to next extent if there is no space left in current one. */
@@ -5851,7 +5867,7 @@ static int vmdkAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
         }
     }
 
-    AssertMsg(cbRead == 0, ("No segment left but there is still data to write\n"));
+    AssertMsg(cbReadLeft == 0, ("No segment left but there is still data to write\n"));
 
     if (cSegments == 0)
     {
@@ -5877,12 +5893,14 @@ static int vmdkAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
                           PPDMDATASEG paSeg, unsigned cSeg, void *pvUser)
 {
     PVMDKIMAGE pImage = (PVMDKIMAGE)pvBackendData;
-    PVMDKEXTENT pExtent;
+    PVMDKEXTENT pExtent = NULL;
     int rc = VINF_SUCCESS;
     unsigned cSegments = 0;
     PPDMDATASEG paSegCurrent = paSeg;
     size_t cbLeftInCurrentSegment = paSegCurrent->cbSeg;
     size_t uOffsetInCurrentSegment = 0;
+    size_t cbWriteLeft = cbWrite;
+    uint64_t uOffCurr = uOffset;
 
     AssertPtr(pImage);
     Assert(uOffset % 512 == 0);
@@ -5895,12 +5913,12 @@ static int vmdkAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
         goto out;
     }
 
-    while (cbWrite && cSeg)
+    while (cbWriteLeft && cSeg)
     {
         size_t cbToWrite;
         uint64_t uSectorExtentRel;
 
-        rc = vmdkFindExtent(pImage, VMDK_BYTE2SECTOR(uOffset),
+        rc = vmdkFindExtent(pImage, VMDK_BYTE2SECTOR(uOffCurr),
                             &pExtent, &uSectorExtentRel);
         if (RT_FAILURE(rc))
             goto out;
@@ -5963,8 +5981,8 @@ static int vmdkAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
                 AssertMsgFailed(("Unsupported extent type %u\n", pExtent->enmType));
         }
 
-        cbWrite -= cbToWrite;
-        uOffset += cbToWrite;
+        cbWriteLeft -= cbToWrite;
+        uOffCurr    += cbToWrite;
         cbLeftInCurrentSegment -= cbToWrite;
         uOffsetInCurrentSegment += cbToWrite;
         /* Go to next extent if there is no space left in current one. */
@@ -5977,7 +5995,7 @@ static int vmdkAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
         }
     }
 
-    AssertMsg(cbWrite == 0, ("No segment left but there is still data to write\n"));
+    AssertMsg(cbWriteLeft == 0, ("No segment left but there is still data to write\n"));
 
     if (cSegments == 0)
     {
