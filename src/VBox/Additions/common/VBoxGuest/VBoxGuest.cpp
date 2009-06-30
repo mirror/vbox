@@ -746,26 +746,27 @@ static int VBoxGuestCommonIOCtl_WaitEvent(PVBOXGUESTDEVEXT pDevExt, VBoxGuestWai
 }
 
 
-static int VBoxGuestCommonIOCtl_VMMRequest(PVBOXGUESTDEVEXT pDevExt, VMMDevRequestHeader *pReqHdr,
-                                           size_t cbData, size_t *pcbDataReturned)
+static int VBoxGuestCommonIOCtl_VMMRequest(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
+                                           VMMDevRequestHeader *pReqHdr, size_t cbData, size_t *pcbDataReturned)
 {
     Log(("VBoxGuestCommonIOCtl: VMMREQUEST type %d\n", pReqHdr->requestType));
 
     /*
      * Validate the header and request size.
      */
-    const uint32_t cbReq = pReqHdr->size;
-    const uint32_t cbMinSize = vmmdevGetRequestSize(pReqHdr->requestType);
+    const VMMDevRequestType enmType   = pReqHdr->requestType;
+    const uint32_t          cbReq     = pReqHdr->size;
+    const uint32_t          cbMinSize = vmmdevGetRequestSize(enmType);
     if (cbReq < cbMinSize)
     {
         Log(("VBoxGuestCommonIOCtl: VMMREQUEST: invalid hdr size %#x, expected >= %#x; type=%#x!!\n",
-             cbReq, cbMinSize, pReqHdr->requestType));
+             cbReq, cbMinSize, enmType));
         return VERR_INVALID_PARAMETER;
     }
     if (cbReq > cbData)
     {
         Log(("VBoxGuestCommonIOCtl: VMMREQUEST: invalid size %#x, expected >= %#x (hdr); type=%#x!!\n",
-             cbData, cbReq, pReqHdr->requestType));
+             cbData, cbReq, enmType));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -777,15 +778,18 @@ static int VBoxGuestCommonIOCtl_VMMRequest(PVBOXGUESTDEVEXT pDevExt, VMMDevReque
      * it does makes things a bit simpler wrt to phys address.)
      */
     VMMDevRequestHeader *pReqCopy;
-    int rc = VbglGRAlloc(&pReqCopy, cbReq, pReqHdr->requestType);
+    int rc = VbglGRAlloc(&pReqCopy, cbReq, enmType);
     if (RT_FAILURE(rc))
     {
         Log(("VBoxGuestCommonIOCtl: VMMREQUEST: failed to allocate %u (%#x) bytes to cache the request. rc=%d!!\n",
              cbReq, cbReq, rc));
         return rc;
     }
-
     memcpy(pReqCopy, pReqHdr, cbReq);
+
+    if (enmType == VMMDevReq_GetMouseStatus) /* clear poll condition. */
+        pSession->u32MousePosChangedSeq = ASMAtomicUoReadU32(&pDevExt->u32MousePosChangedSeq);
+
     rc = VbglGRPerform(pReqCopy);
     if (    RT_SUCCESS(rc)
         &&  RT_SUCCESS(pReqCopy->rc))
@@ -1268,7 +1272,7 @@ int  VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUE
     if (VBOXGUEST_IOCTL_STRIP_SIZE(iFunction) == VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_VMMREQUEST(0)))
     {
         CHECKRET_MIN_SIZE("VMMREQUEST", sizeof(VMMDevRequestHeader));
-        rc = VBoxGuestCommonIOCtl_VMMRequest(pDevExt, (VMMDevRequestHeader *)pvData, cbData, pcbDataReturned);
+        rc = VBoxGuestCommonIOCtl_VMMRequest(pDevExt, pSession, (VMMDevRequestHeader *)pvData, cbData, pcbDataReturned);
     }
 #ifdef VBOX_WITH_HGCM
     /*
