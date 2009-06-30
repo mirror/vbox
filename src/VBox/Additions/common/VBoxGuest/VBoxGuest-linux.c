@@ -40,23 +40,24 @@
 #include "VBoxGuestInternal.h"
 #include "the-linux-kernel.h"
 #include <linux/miscdevice.h>
+#include <linux/poll.h>
 #include "version-generated.h"
 
 #include <iprt/assert.h>
+#include <iprt/asm.h>
+#include <iprt/err.h>
+#include <iprt/initterm.h>
+#include <iprt/mem.h>
+#include <iprt/mp.h>
+#include <iprt/process.h>
 #include <iprt/spinlock.h>
 #include <iprt/semaphore.h>
-#include <iprt/initterm.h>
-#include <iprt/process.h>
-#include <iprt/err.h>
-#include <iprt/mem.h>
 #include <VBox/log.h>
-#include <iprt/mp.h>
-#include <iprt/mem.h>
 
 
-#define xstr(s) str(s)
-#define str(s) #s
-
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
 /** The device name. */
 #define DEVICE_NAME             "vboxguest"
 /** The device name for the device node open to everyone.. */
@@ -90,6 +91,9 @@ static long vboxguestLinuxIOCtl(struct file *pFilp, unsigned int uCmd, unsigned 
 #else
 static int  vboxguestLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
 #endif
+static int  vboxguestFAsync(int fd, struct file *pFile, int fOn);
+static unsigned int vboxguestPoll(struct file *pFile, poll_table *pPt);
+static ssize_t vboxguestRead(struct file *pFile, char *pbBuf, size_t cbRead, loff_t *poff);
 
 
 /*******************************************************************************
@@ -109,6 +113,10 @@ static RTHCPHYS                 g_MMIOPhysAddr = NIL_RTHCPHYS;
 static uint32_t                 g_cbMMIO;
 /** The pointer to the mapping of the MMIO range. */
 static void                    *g_pvMMIOBase;
+/** Wait queue used by polling. */
+static wait_queue_head_t        g_PollEventQueue;
+/** Asynchronous notification stuff.  */
+static struct fasync_struct    *g_pFAsyncQueue;
 
 /** Our file node major id.
  * Either set dynamically at run time or statically at compile time. */
@@ -117,7 +125,6 @@ static unsigned int             g_iModuleMajor = CONFIG_VBOXADD_MAJOR;
 #else
 static unsigned int             g_iModuleMajor = 0;
 #endif
-
 
 /** The file_operations structure. */
 static struct file_operations   g_FileOps =
@@ -130,6 +137,9 @@ static struct file_operations   g_FileOps =
 #else
     ioctl:          vboxguestLinuxIOCtl,
 #endif
+    read:           vboxguestRead,
+    poll:           vboxguestPoll,
+    fasync:         vboxguestFAsync,
 };
 
 /** The miscdevice structure. */
@@ -441,7 +451,7 @@ static int __init vboxguestLinuxModInit(void)
     rc = RTR0Init(0);
     if (RT_FAILURE(rc))
     {
-        Log((DEVICE_NAME ": RTR0Init failed.\n"));
+        printk(KERN_ERR DEVICE_NAME ": RTR0Init failed, rc=%d.\n", rc);
         return -EINVAL;
     }
 
@@ -486,10 +496,10 @@ static int __init vboxguestLinuxModInit(void)
                 if (rc >= 0)
                 {
                     /* some useful information for the user but don't show this on the console */
-                    LogRel(("VirtualBox device settings: major %d, IRQ %d, I/O port 0x%x, MMIO at 0x%x (size 0x%x)\n",
+                    LogRel((DEVICE_NAME ": major %d, IRQ %d, I/O port 0x%x, MMIO at 0x%x (size 0x%x)\n",
                             g_iModuleMajor, g_pPciDev->irq, g_IOPortBase, g_MMIOPhysAddr, g_cbMMIO));
                     printk(KERN_DEBUG DEVICE_NAME ": Successfully loaded version "
-                            VBOX_VERSION_STRING " (interface " xstr(VMMDEV_VERSION) ")\n");
+                            VBOX_VERSION_STRING " (interface " RT_XSTR(VMMDEV_VERSION) ")\n");
                     return rc;
                 }
 
@@ -498,7 +508,7 @@ static int __init vboxguestLinuxModInit(void)
             }
             else
             {
-                LogRel(( DEVICE_NAME ": VBoxGuestInitDevExt failed with rc=%Rrc\n", rc));
+                LogRel((DEVICE_NAME ": VBoxGuestInitDevExt failed with rc=%Rrc\n", rc));
                 rc = RTErrConvertFromErrno(rc);
             }
             vboxguestLinuxTermISR();
@@ -656,6 +666,95 @@ static int vboxguestLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigne
     return rc;
 }
 
+
+/**
+ * Poll function.
+ *
+ * This returns ready to read if the mouse pointer mode or the pointer position
+ * has changed since last call to read.
+ *
+ * @returns 0 if no changes, POLLIN | POLLRDNORM if there are unseen changes.
+ *
+ * @param   pFile       The file structure.
+ * @param   pPt         The poll table.
+ */
+static unsigned int vboxguestPoll(struct file *pFile, poll_table *pPt)
+{
+    PVBOXGUESTSESSION   pSession  = (PVBOXGUESTSESSION)pFile->private_data;
+    uint32_t            u32CurSeq = ASMAtomicUoReadU32(&g_DevExt.u32MousePosChangedSeq);
+    unsigned int        fMask     = pSession->u32MousePosChangedSeq != u32CurSeq
+                                  ? POLLIN | POLLRDNORM
+                                  : 0;
+#if 1 /** @todo this isn't quite right... but it's what we used to do. */
+    pSession->u32MousePosChangedSeq = u32CurSeq;
+#endif
+    poll_wait(pFile, &g_PollEventQueue, pPt);
+    return fMask;
+}
+
+
+/**
+ * Asynchronous notification activation method.
+ *
+ * @returns 0 on success, negative errno on failure.
+ *
+ * @param   fd          The file descriptor.
+ * @param   pFile       The file structure.
+ * @param   fOn         On/off indicator.
+ */
+static int vboxguestFAsync(int fd, struct file *pFile, int fOn)
+{
+    return fasync_helper(fd, pFile, fOn, &g_pFAsyncQueue);
+}
+
+
+/**
+ * Read to go with our poll/fasync response.
+ *
+ * @returns 1 or -EINVAL.
+ *
+ * @param   pFile       The file structure.
+ * @param   pbBuf       The buffer to read into.
+ * @param   cbRead      The max number of bytes to read.
+ * @param   poff        The current file position.
+ */
+static ssize_t vboxguestRead(struct file *pFile, char *pbBuf, size_t cbRead, loff_t *poff)
+{
+    if (*poff != 0)
+        return -EINVAL;
+
+    if (cbRead > 0)
+    {
+        /* Indicate that we're up to speed. */
+        PVBOXGUESTSESSION   pSession    = (PVBOXGUESTSESSION)pFile->private_data;
+        uint32_t            u32CurSeq   = ASMAtomicUoReadU32(&g_DevExt.u32MousePosChangedSeq);
+        pSession->u32MousePosChangedSeq = u32CurSeq;
+
+        pbBuf[0] = 0;
+        return 1;
+    }
+
+#if 1 /** @todo This is wrong, see man 2 read. Does it server any purpose? */
+    return -EINVAL;
+#else
+    return 0;
+#endif
+}
+
+
+void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
+{
+    NOREF(pDevExt);
+
+    /*
+     * Wake up everyone that's in a poll() and post anyone that has
+     * subscribed to async notifications.
+     */
+    wake_up_all(&g_PollEventQueue);
+    kill_fasync(&g_pFAsyncQueue, SIGIO, POLL_IN);
+}
+
+
 /* Common code that depend on g_DevExt. */
 #include "VBoxGuestIDC-unix.c.h"
 
@@ -670,6 +769,6 @@ MODULE_AUTHOR("Sun Microsystems, Inc.");
 MODULE_DESCRIPTION("VirtualBox Guest Additions for Linux Module");
 MODULE_LICENSE("GPL");
 #ifdef MODULE_VERSION
-MODULE_VERSION(VBOX_VERSION_STRING " (" xstr(SUPDRV_IOC_VERSION) ")");
+MODULE_VERSION(VBOX_VERSION_STRING " (" RT_XSTR(SUPDRV_IOC_VERSION) ")");
 #endif
 
