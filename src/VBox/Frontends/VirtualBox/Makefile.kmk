@@ -248,6 +248,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/QIHelpButton.h \
 	include/QIDialog.h \
 	include/QIFileDialog.h \
+	include/QIAdvancedSlider.h \
 	include/VBoxFilePathSelectorWidget.h \
 	include/VBoxOSTypeSelectorButton.h \
 	include/VBoxOSTypeSelectorWidget.h \
@@ -337,6 +338,7 @@ VirtualBox_SOURCES = \
 	src/QIAbstractWizard.cpp \
 	src/QIDialog.cpp \
 	src/QIFileDialog.cpp \
+	src/QIAdvancedSlider.cpp \
 	src/QIDialogButtonBox.cpp \
 	src/QIListView.cpp \
 	src/QITreeWidget.cpp \
