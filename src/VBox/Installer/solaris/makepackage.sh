@@ -132,6 +132,9 @@ fi
 cd "$PKG_BASE_DIR"
 find . ! -type d | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vbox.pkginfo|postinstall.sh|preremove.sh|ReadMe.txt|vbox.space|vbox.copyright|VirtualBoxKern' | pkgproto >> prototype
 
+# Include only opt/VirtualBox and subdirectories as we want uninstall to clean up directory structure as well
+find . -type d | $VBOX_GGREP -E 'opt/VirtualBox' | pkgproto >> prototype
+
 # fix up file permissions (owner/group)
 # don't grok for class-specific files (like sed, if any)
 filelist_fixup prototype '$2 == "none"'                                                                '$5 = "root"; $6 = "bin"'
