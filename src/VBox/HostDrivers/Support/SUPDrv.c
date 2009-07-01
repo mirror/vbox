@@ -503,6 +503,8 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt)
                      RTLOGDEST_STDOUT | RTLOGDEST_DEBUGGER, NULL);
     if (RT_SUCCESS(rc))
         RTLogRelSetDefaultInstance(pRelLogger);
+    /** @todo Add native hook for getting logger config parameters and setting
+     *        them. On linux we should use the module parameter stuff... */
 #endif
 
     /*
