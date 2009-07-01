@@ -472,8 +472,9 @@ RTDECL(int) RTDbgAsSymbolAdd(RTDBGAS hDbgAs, const char *pszSymbol, RTUINTPTR Ad
  * @param   poffDisp        Where to return the distance between the symbol
  *                          and address. Optional.
  * @param   pSymInfo        Where to return the symbol info.
+ * @param   phMod           Where to return the module handle. Optional.
  */
-RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGSYMBOL pSymInfo);
+RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGSYMBOL pSymInfo, PRTDBGMOD phMod);
 
 /**
  * Query a symbol by address.
@@ -488,8 +489,9 @@ RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDi
  *                          and address. Optional.
  * @param   ppSymInfo       Where to return the pointer to the allocated symbol
  *                          info. Always set. Free with RTDbgSymbolFree.
+ * @param   phMod           Where to return the module handle. Optional.
  */
-RTDECL(int) RTDbgAsSymbolByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGSYMBOL *ppSymInfo);
+RTDECL(int) RTDbgAsSymbolByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGSYMBOL *ppSymInfo, PRTDBGMOD phMod);
 
 /**
  * Query a symbol by name.
@@ -498,23 +500,28 @@ RTDECL(int) RTDbgAsSymbolByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffD
  * @retval  VERR_SYMBOL_NOT_FOUND if not found.
  *
  * @param   hDbgAs          The address space handle.
- * @param   pszSymbol       The symbol name.
- * @param   pSymInfo        Where to return the symbol info.
+ * @param   pszSymbol       The symbol name. It is possible to limit the scope
+ *                          of the search by prefixing the symbol with a module
+ *                          name pattern followed by a bang (!) character.
+ *                          RTStrSimplePatternNMatch is used for the matching.
+ * @param   pSymbol         Where to return the symbol info.
+ * @param   phMod           Where to return the module handle. Optional.
  */
-RTDECL(int) RTDbgAsSymbolByName(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYMBOL pSymInfo);
+RTDECL(int) RTDbgAsSymbolByName(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYMBOL pSymbol, PRTDBGMOD phMod);
 
 /**
- * Query a symbol by name.
+ * Query a symbol by name, allocating the returned symbol structure.
  *
  * @returns IPRT status code.
  * @retval  VERR_SYMBOL_NOT_FOUND if not found.
  *
  * @param   hDbgAs          The address space handle.
- * @param   pszSymbol       The symbol name.
- * @param   ppSymInfo       Where to return the pointer to the allocated symbol
- *                          info. Always set. Free with RTDbgSymbolFree.
+ * @param   pszSymbol       The symbol name. See RTDbgAsSymbolByName for more.
+ * @param   ppSymbol        Where to return the pointer to the allocated
+ *                          symbol info. Always set. Free with RTDbgSymbolFree.
+ * @param   phMod           Where to return the module handle. Optional.
  */
-RTDECL(int) RTDbgAsSymbolByNameA(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYMBOL *ppSymInfo);
+RTDECL(int) RTDbgAsSymbolByNameA(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYMBOL *ppSymbol, PRTDBGMOD phMod);
 
 /**
  * Query a line number by address.

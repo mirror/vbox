@@ -175,7 +175,7 @@ static DECLCALLBACK(int) rtDbgModContainer_LineByAddr(PRTDBGMODINT pMod, RTDBGSE
     AssertMsgReturn(iSeg < pThis->cSegs,
                     ("iSeg=%#x cSegs=%#x\n", pThis->cSegs),
                     VERR_DBG_INVALID_SEGMENT_INDEX);
-    AssertMsgReturn(pThis->paSegs[iSeg].cb < off,
+    AssertMsgReturn(off < pThis->paSegs[iSeg].cb,
                     ("off=%RTptr cbSeg=%RTptr\n", off, pThis->paSegs[iSeg].cb),
                     VERR_DBG_INVALID_SEGMENT_OFFSET);
 
@@ -302,7 +302,7 @@ static DECLCALLBACK(int) rtDbgModContainer_SymbolByAddr(PRTDBGMODINT pMod, RTDBG
                     ("iSeg=%#x cSegs=%#x\n", pThis->cSegs),
                     VERR_DBG_INVALID_SEGMENT_INDEX);
     AssertMsgReturn(    iSeg >= RTDBGSEGIDX_SPECIAL_FIRST
-                    ||  pThis->paSegs[iSeg].cb <= off,
+                    ||  off <= pThis->paSegs[iSeg].cb,
                     ("off=%RTptr cbSeg=%RTptr\n", off, pThis->paSegs[iSeg].cb),
                     VERR_DBG_INVALID_SEGMENT_OFFSET);
 
@@ -540,7 +540,7 @@ static DECLCALLBACK(RTDBGSEGIDX) rtDbgModContainer_RvaToSegOff(PRTDBGMODINT pMod
 {
     PRTDBGMODCTN          pThis = (PRTDBGMODCTN)pMod->pvDbgPriv;
     PCRTDBGMODCTNSEGMENT  paSeg = pThis->paSegs;
-    uint32_t const              cSegs = pThis->cSegs;
+    uint32_t const        cSegs = pThis->cSegs;
     if (cSegs <= 7)
     {
         /*
