@@ -1182,8 +1182,9 @@ RTDECL(int) RTDbgAsSymbolAdd(RTDBGAS hDbgAs, const char *pszSymbol, RTUINTPTR Ad
  * @param   poffDisp        Where to return the distance between the symbol
  *                          and address. Optional.
  * @param   pSymbol         Where to return the symbol info.
+ * @param   phMod           Where to return the module handle. Optional.
  */
-RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGSYMBOL pSymbol)
+RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGSYMBOL pSymbol, PRTDBGMOD phMod)
 {
     /*
      * Validate input and resolve the address.
@@ -1196,7 +1197,11 @@ RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDi
     RTUINTPTR   MapAddr;
     RTDBGMOD    hMod = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg, &MapAddr);
     if (hMod == NIL_RTDBGMOD)
+    {
+        if (phMod)
+            *phMod = NIL_RTDBGMOD;
         return VERR_NOT_FOUND;
+    }
 
     /*
      * Forward the call.
@@ -1204,7 +1209,10 @@ RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDi
     int rc = RTDbgModSymbolByAddr(hMod, iSeg, offSeg, poffDisp, pSymbol);
     if (RT_SUCCESS(rc))
         rtDbgAsAdjustSymbolValue(pSymbol, hMod, MapAddr, iSeg);
-    RTDbgModRelease(hMod);
+    if (phMod)
+        *phMod = hMod;
+    else
+        RTDbgModRelease(hMod);
     return rc;
 }
 
@@ -1222,8 +1230,9 @@ RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDi
  *                          and address. Optional.
  * @param   ppSymbol        Where to return the pointer to the allocated
  *                          symbol info. Always set. Free with RTDbgSymbolFree.
+ * @param   phMod           Where to return the module handle. Optional.
  */
-RTDECL(int) RTDbgAsSymbolByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGSYMBOL *ppSymbol)
+RTDECL(int) RTDbgAsSymbolByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGSYMBOL *ppSymbol, PRTDBGMOD phMod)
 {
     /*
      * Validate input and resolve the address.
@@ -1236,7 +1245,11 @@ RTDECL(int) RTDbgAsSymbolByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffD
     RTUINTPTR   MapAddr;
     RTDBGMOD    hMod = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg, &MapAddr);
     if (hMod == NIL_RTDBGMOD)
+    {
+        if (phMod)
+            *phMod = NIL_RTDBGMOD;
         return VERR_NOT_FOUND;
+    }
 
     /*
      * Forward the call.
@@ -1244,7 +1257,10 @@ RTDECL(int) RTDbgAsSymbolByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffD
     int rc = RTDbgModSymbolByAddrA(hMod, iSeg, offSeg, poffDisp, ppSymbol);
     if (RT_SUCCESS(rc))
         rtDbgAsAdjustSymbolValue(*ppSymbol, hMod, MapAddr, iSeg);
-    RTDbgModRelease(hMod);
+    if (phMod)
+        *phMod = hMod;
+    else
+        RTDbgModRelease(hMod);
     return rc;
 }
 
@@ -1269,7 +1285,7 @@ DECLINLINE(PRTDBGMOD) rtDbgAsSnapshotModuleTable(PRTDBGASINT pDbgAs, uint32_t *p
     {
         while (iMod-- > 0)
         {
-            RTDBGMOD hMod = paModules[iMod];
+            RTDBGMOD hMod = (RTDBGMOD)pDbgAs->paModules[iMod].Core.Key;
             paModules[iMod] = hMod;
             RTDbgModRetain(hMod);
         }
@@ -1354,10 +1370,14 @@ static bool rtDbgAsFindMappingAndAdjustSymbolValue(PRTDBGASINT pDbgAs, RTDBGMOD 
  * @retval  VERR_SYMBOL_NOT_FOUND if not found.
  *
  * @param   hDbgAs          The address space handle.
- * @param   pszSymbol       The symbol name.
+ * @param   pszSymbol       The symbol name. It is possible to limit the scope
+ *                          of the search by prefixing the symbol with a module
+ *                          name pattern followed by a bang (!) character.
+ *                          RTStrSimplePatternNMatch is used for the matching.
  * @param   pSymbol         Where to return the symbol info.
+ * @param   phMod           Where to return the module handle. Optional.
  */
-RTDECL(int) RTDbgAsSymbolByName(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYMBOL pSymbol)
+RTDECL(int) RTDbgAsSymbolByName(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYMBOL pSymbol, PRTDBGMOD phMod)
 {
     /*
      * Validate input.
@@ -1366,6 +1386,22 @@ RTDECL(int) RTDbgAsSymbolByName(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYM
     RTDBGAS_VALID_RETURN_RC(pDbgAs, VERR_INVALID_HANDLE);
     AssertPtrReturn(pszSymbol, VERR_INVALID_POINTER);
     AssertPtrReturn(pSymbol, VERR_INVALID_POINTER);
+
+    /*
+     * Look for module pattern.
+     */
+    const char *pachModPat = NULL;
+    size_t      cchModPat  = 0;
+    const char *pszBang    = strchr(pszSymbol, '!');
+    if (pszBang)
+    {
+        pachModPat = pszSymbol;
+        cchModPat = pszBang - pszSymbol;
+        pszSymbol = pszBang + 1;
+        if (!*pszSymbol)
+            return VERR_DBG_SYMBOL_NAME_OUT_OF_RANGE;
+        /* Note! Zero length module -> no pattern -> escape for symbol with '!'. */
+    }
 
     /*
      * Iterate the modules, looking for the symbol.
@@ -1377,15 +1413,21 @@ RTDECL(int) RTDbgAsSymbolByName(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYM
 
     for (uint32_t i = 0; i < cModules; i++)
     {
-        int rc = RTDbgModSymbolByName(paModules[i], pszSymbol, pSymbol);
-        if (RT_SUCCESS(rc))
+        if (    cchModPat == 0
+            ||  RTStrSimplePatternNMatch(pachModPat, cchModPat, RTDbgModName(paModules[i]), RTSTR_MAX))
         {
-            if (rtDbgAsFindMappingAndAdjustSymbolValue(pDbgAs, paModules[i], pSymbol))
+            int rc = RTDbgModSymbolByName(paModules[i], pszSymbol, pSymbol);
+            if (RT_SUCCESS(rc))
             {
-                for (; i < cModules; i++)
-                    RTDbgModRelease(paModules[i]);
-                RTMemTmpFree(paModules);
-                return rc;
+                if (rtDbgAsFindMappingAndAdjustSymbolValue(pDbgAs, paModules[i], pSymbol))
+                {
+                    if (phMod)
+                        RTDbgModRetain(*phMod = paModules[i]);
+                    for (; i < cModules; i++)
+                        RTDbgModRelease(paModules[i]);
+                    RTMemTmpFree(paModules);
+                    return rc;
+                }
             }
         }
         RTDbgModRelease(paModules[i]);
@@ -1397,17 +1439,18 @@ RTDECL(int) RTDbgAsSymbolByName(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYM
 
 
 /**
- * Query a symbol by name.
+ * Query a symbol by name, allocating the returned symbol structure.
  *
  * @returns IPRT status code.
  * @retval  VERR_SYMBOL_NOT_FOUND if not found.
  *
  * @param   hDbgAs          The address space handle.
- * @param   pszSymbol       The symbol name.
+ * @param   pszSymbol       The symbol name. See RTDbgAsSymbolByName for more.
  * @param   ppSymbol        Where to return the pointer to the allocated
  *                          symbol info. Always set. Free with RTDbgSymbolFree.
+ * @param   phMod           Where to return the module handle. Optional.
  */
-RTDECL(int) RTDbgAsSymbolByNameA(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYMBOL *ppSymbol)
+RTDECL(int) RTDbgAsSymbolByNameA(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYMBOL *ppSymbol, PRTDBGMOD phMod)
 {
     /*
      * Validate input.
@@ -1419,6 +1462,22 @@ RTDECL(int) RTDbgAsSymbolByNameA(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSY
     AssertPtrReturn(pszSymbol, VERR_INVALID_POINTER);
 
     /*
+     * Look for module pattern.
+     */
+    const char *pachModPat = NULL;
+    size_t      cchModPat  = 0;
+    const char *pszBang    = strchr(pszSymbol, '!');
+    if (pszBang)
+    {
+        pachModPat = pszSymbol;
+        cchModPat = pszBang - pszSymbol;
+        pszSymbol = pszBang + 1;
+        if (!*pszSymbol)
+            return VERR_DBG_SYMBOL_NAME_OUT_OF_RANGE;
+        /* Note! Zero length module -> no pattern -> escape for symbol with '!'. */
+    }
+
+    /*
      * Iterate the modules, looking for the symbol.
      */
     uint32_t cModules;
@@ -1428,19 +1487,22 @@ RTDECL(int) RTDbgAsSymbolByNameA(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSY
 
     for (uint32_t i = 0; i < cModules; i++)
     {
-        int rc = RTDbgModSymbolByNameA(paModules[i], pszSymbol, ppSymbol);
-        if (RT_SUCCESS(rc))
+        if (    cchModPat == 0
+            ||  RTStrSimplePatternNMatch(pachModPat, cchModPat, RTDbgModName(paModules[i]), RTSTR_MAX))
         {
-            if (rtDbgAsFindMappingAndAdjustSymbolValue(pDbgAs, paModules[i], *ppSymbol))
+            int rc = RTDbgModSymbolByNameA(paModules[i], pszSymbol, ppSymbol);
+            if (RT_SUCCESS(rc))
             {
-                for (; i < cModules; i++)
-                    RTDbgModRelease(paModules[i]);
-                RTMemTmpFree(paModules);
-                return rc;
+                if (rtDbgAsFindMappingAndAdjustSymbolValue(pDbgAs, paModules[i], *ppSymbol))
+                {
+                    if (phMod)
+                        RTDbgModRetain(*phMod = paModules[i]);
+                    for (; i < cModules; i++)
+                        RTDbgModRelease(paModules[i]);
+                    RTMemTmpFree(paModules);
+                    return rc;
+                }
             }
-
-            RTDbgSymbolFree(*ppSymbol);
-            *ppSymbol = NULL;
         }
         RTDbgModRelease(paModules[i]);
     }
