@@ -3472,18 +3472,18 @@ ipcDConnectService::OnSetup(PRUint32 peer, const DConnectSetup *setup, PRUint32 
     case DCON_OP_SETUP_QUERY_INTERFACE:
     {
       const DConnectSetupQueryInterface *setupQI = (const DConnectSetupQueryInterface *) setup;
-      DConnectInstance *instance = (DConnectInstance *)setupQI->instance;
+      DConnectInstance *QIinstance = (DConnectInstance *)setupQI->instance;
 
       // make sure we've been sent a valid wrapper
-      if (!CheckInstanceAndAddRef(instance, peer))
+      if (!CheckInstanceAndAddRef(QIinstance, peer))
       {
         NS_NOTREACHED("instance wrapper not found");
         rv = NS_ERROR_INVALID_ARG;
       }
       else
       {
-        rv = instance->RealInstance()->QueryInterface(setupQI->iid, (void **) &instance);
-        instance->Release();
+        rv = QIinstance->RealInstance()->QueryInterface(setupQI->iid, (void **) &instance);
+        QIinstance->Release();
       }
       break;
     }
