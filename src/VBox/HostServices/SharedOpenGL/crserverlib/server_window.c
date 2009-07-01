@@ -118,8 +118,13 @@ crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint preload
     return windowID;
 }
 
+void crServerCheckCurrentCtxWindowCB(unsigned long key, void *data1, void *data2)
+{
+    CRContext *crCtx = (CRContext *) data1;
+    GLint window = *(GLint*)data2;
 
-#define EXTRA_WARN 0
+    (void) key;
+}
 
 void SERVER_DISPATCH_APIENTRY
 crServerDispatchWindowDestroy( GLint window )
@@ -129,9 +134,7 @@ crServerDispatchWindowDestroy( GLint window )
 
     mural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, window);
     if (!mural) {
-#if EXTRA_WARN
          crWarning("CRServer: invalid window %d passed to WindowDestroy()", window);
-#endif
          return;
     }
 
@@ -142,7 +145,11 @@ crServerDispatchWindowDestroy( GLint window )
     {
         for (pos = 0; pos < CR_MAX_WINDOWS; ++pos)
             if (cr_server.curClient->windowList[pos] == window)
+            {
                 cr_server.curClient->windowList[pos] = 0;
+                break;
+            }
+        CRASSERT(pos<CR_MAX_WINDOWS);
 
         if (cr_server.curClient->currentMural == mural)
         {
@@ -151,9 +158,14 @@ crServerDispatchWindowDestroy( GLint window )
         }
     }
 
+    if (cr_server.currentWindow = window)
+    {
+        cr_server.currentWindow = -1;
+    }
+
+    crHashtableWalk(cr_server.contextTable, crServerCheckCurrentCtxWindowCB, &window);
     crHashtableDelete(cr_server.pWindowCreateInfoTable, window, crServerCreateInfoDeleteCB);
-    /* @todo, can't issue it cause we could have context(s) referencing this one left */
-    /*crHashtableDelete(cr_server.muralTable, window, crFree);*/
+    crHashtableDelete(cr_server.muralTable, window, crFree);
 }
 
 

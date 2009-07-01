@@ -81,6 +81,7 @@ ThreadInfo *packspuNewThread( unsigned long id )
 GLint PACKSPU_APIENTRY
 packspu_CreateContext( const char *dpyName, GLint visual, GLint shareCtx )
 {
+    GET_THREAD(thread);
     int writeback = 1;
     GLint serverCtx = (GLint) -1;
     int slot;
@@ -88,6 +89,12 @@ packspu_CreateContext( const char *dpyName, GLint visual, GLint shareCtx )
 #ifdef CHROMIUM_THREADSAFE
     crLockMutex(&_PackMutex);
 #endif
+
+    if (!thread) {
+        thread = packspuNewThread(crThreadID());
+    }
+    CRASSERT(thread);
+    CRASSERT(thread->packer);
 
     if (shareCtx > 0) {
         /* translate to server ctx id */
@@ -97,7 +104,7 @@ packspu_CreateContext( const char *dpyName, GLint visual, GLint shareCtx )
         }
     }
 
-    crPackSetContext( pack_spu.thread[0].packer );
+    crPackSetContext( thread->packer );
 
     /* Pack the command */
     if (pack_spu.swap)
@@ -106,8 +113,8 @@ packspu_CreateContext( const char *dpyName, GLint visual, GLint shareCtx )
         crPackCreateContext( dpyName, visual, shareCtx, &serverCtx, &writeback );
 
     /* Flush buffer and get return value */
-    packspuFlush( &(pack_spu.thread[0]) );
-    if (!(pack_spu.thread[0].netServer.conn->actual_network))
+    packspuFlush(thread);
+    if (!(thread->netServer.conn->actual_network))
     {
         /* HUMUNGOUS HACK TO MATCH SERVER NUMBERING
          *

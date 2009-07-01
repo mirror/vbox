@@ -139,7 +139,11 @@ crServerDispatchDestroyContext( GLint ctx )
 
         for (pos = 0; pos < CR_MAX_CONTEXTS; ++pos)
             if (cr_server.curClient->contextList[pos] == ctx)
+            {
                 cr_server.curClient->contextList[pos] = 0;
+                break;
+            }
+        CRASSERT(pos<CR_MAX_CONTEXTS);
     }
 }
 
