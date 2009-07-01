@@ -664,9 +664,9 @@ check_queue:
                 break;
             }
         }
-        if (VM_FF_TESTANDCLEAR(pVM, VM_FF_PDM_QUEUES))
+        if (VM_FF_TESTANDCLEAR(pVM, VM_FF_PDM_QUEUES_BIT))
             goto check_queue;
-           
+
     }
 }
 
