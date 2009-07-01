@@ -640,13 +640,14 @@ VMMR3DECL(void) PDMR3QueueFlushAll(PVM pVM)
         ASMAtomicBitClear(&pVM->pdm.s.fQueueFlushing, PDM_QUEUE_FLUSH_FLAG_PENDING_BIT);
         do
         {
+            VM_FF_CLEAR(pVM, VM_FF_PDM_QUEUES);
             for (PPDMQUEUE pCur = pVM->pdm.s.pQueuesForced; pCur; pCur = pCur->pNext)
                 if (    pCur->pPendingR3
                     ||  pCur->pPendingR0
                     ||  pCur->pPendingRC)
                     pdmR3QueueFlush(pCur);
-            VM_FF_CLEAR(pVM, VM_FF_PDM_QUEUES);
-        } while (ASMAtomicBitTestAndClear(&pVM->pdm.s.fQueueFlushing, PDM_QUEUE_FLUSH_FLAG_PENDING_BIT));
+        } while (   ASMAtomicBitTestAndClear(&pVM->pdm.s.fQueueFlushing, PDM_QUEUE_FLUSH_FLAG_PENDING_BIT)
+                 || VM_FF_ISPENDING(pVM, VM_FF_PDM_QUEUES));
 
         ASMAtomicBitClear(&pVM->pdm.s.fQueueFlushing, PDM_QUEUE_FLUSH_FLAG_ACTIVE_BIT);
     }
