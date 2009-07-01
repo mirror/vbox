@@ -58,8 +58,8 @@ public:
 
     Qt::Orientation orientation() const;
 
-    void setSnapingEnabled (bool aOn);
-    bool isSnapingEnabled() const;
+    void setSnappingEnabled (bool aOn);
+    bool isSnappingEnabled() const;
 
 public slots:
 
@@ -83,7 +83,7 @@ private:
 
     /* Private member vars */
     QSlider *mSlider;
-    bool mSnapingEnabled;
+    bool mSnappingEnabled;
 };
 
 #endif /* __QIAdvancedSlider__ */
