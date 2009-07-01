@@ -2095,7 +2095,7 @@ DConnectStub::~DConnectStub()
 #ifdef IPC_LOGGING
   const char *name;
   mIInfo->GetNameShared(&name);
-  LOG(("{%p} DConnectStub::<dtor>(): peer=%d instance=%p {%s}\n",
+  LOG(("{%p} DConnectStub::<dtor>(): peer=%d instance=%#llx {%s}\n",
        this, mPeerID, mInstance, name));
 #endif
 
@@ -2292,7 +2292,7 @@ DConnectStub::QueryInterface(const nsID &aIID, void **aInstancePtr)
     dConnect->GetInterfaceInfo(aIID, getter_AddRefs(iinfoQ));
     iinfoQ->GetNameShared(&nameQ);
     LOG(("calling QueryInterface {%s} on peer object "
-         "(stub=%p, instance=%p {%s})\n",
+         "(stub=%p, instance=%#llx {%s})\n",
          nameQ, this, mInstance, name));
   }
 #endif
@@ -2367,7 +2367,7 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
 
   PRUint8 i, paramCount = aInfo->GetParamCount();
 
-  LOG(("  instance=%p\n", mInstance));
+  LOG(("  instance=%#llx\n", mInstance));
   LOG(("  name=%s\n", aInfo->GetName()));
   LOG(("  param-count=%u\n", (PRUint32) paramCount));
 
@@ -2594,7 +2594,7 @@ public:
 
     const DConnectSetupReply *reply = (const DConnectSetupReply *) op;
 
-    LOG(("got SETUP_REPLY: status=%x instance=%p\n", reply->status, reply->instance));
+    LOG(("got SETUP_REPLY: status=%x instance=%#llx\n", reply->status, reply->instance));
 
     mStatus = reply->status;
 
@@ -3121,7 +3121,7 @@ ipcDConnectService::StoreStub(DConnectStub *stub)
   nsCOMPtr<nsIInterfaceInfo> iinfo;
   stub->GetInterfaceInfo(getter_AddRefs(iinfo));
   iinfo->GetNameShared(&name);
-  LOG(("ipcDConnectService::StoreStub(): stub=%p instance=%p {%s}\n",
+  LOG(("ipcDConnectService::StoreStub(): stub=%p instance=%#llx {%s}\n",
        stub, stub->Instance(), name));
 #endif
 
@@ -3137,7 +3137,7 @@ ipcDConnectService::DeleteStub(DConnectStub *stub)
   nsCOMPtr<nsIInterfaceInfo> iinfo;
   stub->GetInterfaceInfo(getter_AddRefs(iinfo));
   iinfo->GetNameShared(&name);
-  LOG(("ipcDConnectService::DeleteStub(): stub=%p instance=%p {%s}\n",
+  LOG(("ipcDConnectService::DeleteStub(): stub=%p instance=%#llx {%s}\n",
        stub, stub->Instance(), name));
 #endif
 
@@ -3620,7 +3620,7 @@ ipcDConnectService::OnSetup(PRUint32 peer, const DConnectSetup *setup, PRUint32 
 void
 ipcDConnectService::OnRelease(PRUint32 peer, const DConnectRelease *release)
 {
-  LOG(("ipcDConnectService::OnRelease [peer=%u instance=%p]\n",
+  LOG(("ipcDConnectService::OnRelease [peer=%u instance=%#llx]\n",
        peer, release->instance));
 
   DConnectInstance *wrapper = (DConnectInstance *)release->instance;
@@ -3655,7 +3655,7 @@ ipcDConnectService::OnRelease(PRUint32 peer, const DConnectRelease *release)
 void
 ipcDConnectService::OnInvoke(PRUint32 peer, const DConnectInvoke *invoke, PRUint32 opLen)
 {
-  LOG(("ipcDConnectService::OnInvoke [peer=%u instance=%p method=%u]\n",
+  LOG(("ipcDConnectService::OnInvoke [peer=%u instance=%#llx method=%u]\n",
       peer, invoke->instance, invoke->method_index));
 
   DConnectInstance *wrapper = (DConnectInstance *)invoke->instance;
