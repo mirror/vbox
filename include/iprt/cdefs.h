@@ -1053,7 +1053,7 @@
  * @param   Type    Strucutre type.
  * @param   Member  Member name.
  */
-#define RT_FROM_MEMBER(pMem, Type, Member)      ( (Type *) ((uint8_t *)(void *)(pMem) + RT_UOFFSETOF(Type, Member)) )
+#define RT_FROM_MEMBER(pMem, Type, Member)      ( (Type *) ((uint8_t *)(void *)(pMem) - RT_UOFFSETOF(Type, Member)) )
 
 /** @def RT_ELEMENTS
  * Calculates the number of elements in a statically sized array.
