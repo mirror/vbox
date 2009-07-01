@@ -824,3 +824,183 @@ VMMR3DECL(int) DBGFR3AsLinkModule(PVM pVM, RTDBGAS hDbgAs, RTDBGMOD hMod, PCDBGF
     return rc;
 }
 
+
+/**
+ * Adds the module name to the symbol name.
+ *
+ * @param   pSymbol         The symbol info (in/out).
+ * @param   hMod            The module handle.
+ */
+static void dbgfR3AsSymbolJoinNames(PRTDBGSYMBOL pSymbol, RTDBGMOD hMod)
+{
+    /* Figure the lengths, adjust them if the result is too long. */
+    const char *pszModName = RTDbgModName(hMod);
+    size_t      cchModName = strlen(pszModName);
+    size_t      cchSymbol  = strlen(pSymbol->szName);
+    if (cchModName + 1 + cchSymbol >= sizeof(pSymbol->szName))
+    {
+        if (cchModName >= sizeof(pSymbol->szName) / 4)
+            cchModName = sizeof(pSymbol->szName) / 4;
+        if (cchModName + 1 + cchSymbol >= sizeof(pSymbol->szName))
+            cchSymbol = sizeof(pSymbol->szName) - cchModName - 2;
+        Assert(cchModName + 1 + cchSymbol < sizeof(pSymbol->szName));
+    }
+
+    /* Do the moving and copying. */
+    memmove(&pSymbol->szName[cchModName + 1], &pSymbol->szName[0], cchSymbol + 1);
+    memcpy(&pSymbol->szName[0], pszModName, cchModName);
+    pSymbol->szName[cchModName] = '!';
+}
+
+
+/** Temporary symbol conversion function. */
+static void dbgfR3AsSymbolConvert(PRTDBGSYMBOL pSymbol, PCDBGFSYMBOL pDbgfSym)
+{
+    pSymbol->offSeg = pSymbol->Value = pDbgfSym->Value;
+    pSymbol->cb = pDbgfSym->cb;
+    pSymbol->iSeg = 0;
+    pSymbol->fFlags = 0;
+    pSymbol->iOrdinal = UINT32_MAX;
+    strcpy(pSymbol->szName, pDbgfSym->szName);
+}
+
+
+/**
+ * Query a symbol by address.
+ *
+ * The returned symbol is the one we consider closes to the specified address.
+ *
+ * @returns VBox status code. See RTDbgAsSymbolByAddr.
+ *
+ * @param   pVM                 The VM handle.
+ * @param   hDbgAs              The address space handle.
+ * @param   pAddress            The address to lookup.
+ * @param   poffDisp            Where to return the distance between the
+ *                              returned symbol and pAddress. Optional.
+ * @param   pSymbol             Where to return the symbol information.
+ *                              The returned symbol name will be prefixed by
+ *                              the module name as far as space allows.
+ * @param   phMod               Where to return the module handle. Optional.
+ */
+VMMR3DECL(int) DBGFR3AsSymbolByAddr(PVM pVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddress,
+                                    PRTGCINTPTR poffDisp, PRTDBGSYMBOL pSymbol, PRTDBGMOD phMod)
+{
+    /*
+     * Implement the special address space aliases the lazy way.
+     */
+    if (hDbgAs == DBGF_AS_RC_AND_GC_GLOBAL)
+    {
+        int rc = DBGFR3AsSymbolByAddr(pVM, DBGF_AS_RC, pAddress, poffDisp, pSymbol, phMod);
+        if (RT_FAILURE(rc))
+            rc = DBGFR3AsSymbolByAddr(pVM, DBGF_AS_GLOBAL, pAddress, poffDisp, pSymbol, phMod);
+        return rc;
+    }
+
+    /*
+     * Input validation.
+     */
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn(DBGFR3AddrIsValid(pVM, pAddress), VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(poffDisp, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSymbol, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(phMod, VERR_INVALID_POINTER);
+    if (poffDisp)
+        *poffDisp = 0;
+    if (phMod)
+        *phMod = NIL_RTDBGMOD;
+    RTDBGAS hRealAS = DBGFR3AsResolveAndRetain(pVM, hDbgAs);
+    if (hRealAS == NIL_RTDBGAS)
+        return VERR_INVALID_HANDLE;
+
+    /*
+     * Do the lookup.
+     */
+    RTDBGMOD hMod;
+    int rc = RTDbgAsSymbolByAddr(hRealAS, pAddress->FlatPtr, poffDisp, pSymbol, &hMod);
+    if (RT_SUCCESS(rc))
+    {
+        dbgfR3AsSymbolJoinNames(pSymbol, hMod);
+        if (!phMod)
+            RTDbgModRelease(hMod);
+    }
+    /* Temporary conversion. */
+    else if (hDbgAs == DBGF_AS_GLOBAL)
+    {
+        DBGFSYMBOL DbgfSym;
+        rc = DBGFR3SymbolByAddr(pVM, pAddress->FlatPtr, poffDisp, &DbgfSym);
+        if (RT_SUCCESS(rc))
+            dbgfR3AsSymbolConvert(pSymbol, &DbgfSym);
+    }
+
+    return rc;
+}
+
+
+/**
+ * Query a symbol by name.
+ *
+ * The symbol can be prefixed by a module name pattern to scope the search. The
+ * pattern is a simple string pattern with '*' and '?' as wild chars. See
+ * RTStrSimplePatternMatch().
+ *
+ * @returns VBox status code. See RTDbgAsSymbolByAddr.
+ *
+ * @param   pVM                 The VM handle.
+ * @param   hDbgAs              The address space handle.
+ * @param   pszSymbol           The symbol to search for, maybe prefixed by a
+ *                              module pattern.
+ * @param   pSymbol             Where to return the symbol information.
+ *                              The returned symbol name will be prefixed by
+ *                              the module name as far as space allows.
+ * @param   phMod               Where to return the module handle. Optional.
+ */
+VMMR3DECL(int) DBGFR3AsSymbolByName(PVM pVM, RTDBGAS hDbgAs, const char *pszSymbol,
+                                    PRTDBGSYMBOL pSymbol, PRTDBGMOD phMod)
+{
+    /*
+     * Implement the special address space aliases the lazy way.
+     */
+    if (hDbgAs == DBGF_AS_RC_AND_GC_GLOBAL)
+    {
+        int rc = DBGFR3AsSymbolByName(pVM, DBGF_AS_RC, pszSymbol, pSymbol, phMod);
+        if (RT_FAILURE(rc))
+            rc = DBGFR3AsSymbolByName(pVM, DBGF_AS_GLOBAL, pszSymbol, pSymbol, phMod);
+        return rc;
+    }
+
+    /*
+     * Input validation.
+     */
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    AssertPtrReturn(pSymbol, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(phMod, VERR_INVALID_POINTER);
+    if (phMod)
+        *phMod = NIL_RTDBGMOD;
+    RTDBGAS hRealAS = DBGFR3AsResolveAndRetain(pVM, hDbgAs);
+    if (hRealAS == NIL_RTDBGAS)
+        return VERR_INVALID_HANDLE;
+
+
+    /*
+     * Do the lookup.
+     */
+    RTDBGMOD hMod;
+    int rc = RTDbgAsSymbolByName(hRealAS, pszSymbol, pSymbol, &hMod);
+    if (RT_SUCCESS(rc))
+    {
+        dbgfR3AsSymbolJoinNames(pSymbol, hMod);
+        if (!phMod)
+            RTDbgModRelease(hMod);
+    }
+    /* Temporary conversion. */
+    else if (hDbgAs == DBGF_AS_GLOBAL)
+    {
+        DBGFSYMBOL DbgfSym;
+        rc = DBGFR3SymbolByName(pVM, pszSymbol, &DbgfSym);
+        if (RT_SUCCESS(rc))
+            dbgfR3AsSymbolConvert(pSymbol, &DbgfSym);
+    }
+
+    return rc;
+}
+
