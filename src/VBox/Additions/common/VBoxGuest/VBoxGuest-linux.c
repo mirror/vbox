@@ -120,10 +120,13 @@ static struct fasync_struct    *g_pFAsyncQueue;
 
 /** Our file node major id.
  * Either set dynamically at run time or statically at compile time. */
-#ifdef CONFIG_VBOXADD_MAJOR
-static unsigned int             g_iModuleMajor = CONFIG_VBOXADD_MAJOR;
+#ifdef CONFIG_VBOXGUEST_MAJOR
+static unsigned int             g_iModuleMajor = CONFIG_VBOXGUEST_MAJOR;
 #else
 static unsigned int             g_iModuleMajor = 0;
+#endif
+#ifdef CONFIG_VBOXADD_MAJOR
+# error "CONFIG_VBOXADD_MAJOR -> CONFIG_VBOXGUEST_MAJOR"
 #endif
 
 /** The file_operations structure. */
@@ -291,7 +294,7 @@ static int __init vboxguestLinuxInitPci(void)
 /**
  * Clean up the usage of the PCI device.
  */
-static void __exit vboxguestLinuxTermPci(void)
+static void vboxguestLinuxTermPci(void)
 {
     struct pci_dev *pPciDev = g_pPciDev;
     g_pPciDev = NULL;
@@ -362,7 +365,7 @@ static int __init vboxguestLinuxInitISR(void)
 /**
  * Deregisters the ISR.
  */
-static void __exit vboxguestLinuxTermISR(void)
+static void vboxguestLinuxTermISR(void)
 {
     free_irq(g_pPciDev->irq, &g_DevExt);
 }
@@ -420,7 +423,7 @@ static int __init vboxguestLinuxInitDeviceNodes(void)
 /**
  * Deregisters the device nodes.
  */
-static void __exit vboxguestLinuxTermDeviceNodes(void)
+static void vboxguestLinuxTermDeviceNodes(void)
 {
     if (g_iModuleMajor > 0)
         unregister_chrdev(g_iModuleMajor, DEVICE_NAME);

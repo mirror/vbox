@@ -163,14 +163,15 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
     pDevExt->FreeList.pTail = NULL;
     pDevExt->f32PendingEvents = 0;
     pDevExt->u32ClipboardClientId = 0;
+    pDevExt->u32MousePosChangedSeq = 0;
 
     /*
      * If there is an MMIO region validate the version and size.
      */
     if (pvMMIOBase)
     {
-        Assert(cbMMIO);
         VMMDevMemory *pVMMDev = (VMMDevMemory *)pvMMIOBase;
+        Assert(cbMMIO);
         if (    pVMMDev->u32Version == VMMDEV_MEMORY_VERSION
             &&  pVMMDev->u32Size >= 32
             &&  pVMMDev->u32Size <= cbMMIO)
@@ -257,12 +258,13 @@ static void VBoxGuestDeleteWaitList(PVBOXGUESTWAITLIST pList)
 {
     while (pList->pHead)
     {
-        PVBOXGUESTWAIT pWait = pList->pHead;
+        int             rc2;
+        PVBOXGUESTWAIT  pWait = pList->pHead;
         pList->pHead = pWait->pNext;
 
         pWait->pNext = NULL;
         pWait->pPrev = NULL;
-        int rc2 = RTSemEventMultiDestroy(pWait->Event); AssertRC(rc2);
+        rc2 = RTSemEventMultiDestroy(pWait->Event); AssertRC(rc2);
         pWait->Event = NIL_RTSEMEVENTMULTI;
         RTMemFree(pWait);
     }
@@ -376,11 +378,12 @@ int VBoxGuestCreateKernelSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION *pp
  */
 void VBoxGuestCloseSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
 {
+    unsigned i; NOREF(i);
     Log(("VBoxGuestCloseSession: pSession=%p proc=%RTproc (%d) r0proc=%p\n",
          pSession, pSession->Process, (int)pSession->Process, (uintptr_t)pSession->R0Process)); /** @todo %RTr0proc */
 
 #ifdef VBOX_WITH_HGCM
-    for (unsigned i = 0; i < RT_ELEMENTS(pSession->aHGCMClientIds); i++)
+    for (i = 0; i < RT_ELEMENTS(pSession->aHGCMClientIds); i++)
         if (pSession->aHGCMClientIds[i])
         {
             VBoxGuestHGCMDisconnectInfo Info;
@@ -465,6 +468,7 @@ static PVBOXGUESTWAIT VBoxGuestWaitAlloc(PVBOXGUESTDEVEXT pDevExt)
     if (!pWait)
     {
         static unsigned s_cErrors = 0;
+        int rc;
 
         pWait = (PVBOXGUESTWAIT)RTMemAlloc(sizeof(*pWait));
         if (!pWait)
@@ -474,7 +478,7 @@ static PVBOXGUESTWAIT VBoxGuestWaitAlloc(PVBOXGUESTDEVEXT pDevExt)
             return NULL;
         }
 
-        int rc = RTSemEventMultiCreate(&pWait->Event);
+        rc = RTSemEventMultiCreate(&pWait->Event);
         if (RT_FAILURE(rc))
         {
             if (s_cErrors++ < 32)
