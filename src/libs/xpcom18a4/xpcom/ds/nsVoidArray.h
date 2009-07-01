@@ -375,7 +375,7 @@ public:
   PRBool EnumerateBackwards(nsVoidArrayEnumFunc aFunc, void* aData);
 
 private:
-  typedef unsigned long PtrBits;
+  typedef PRUint64 PtrBits;
 
   PRBool HasSingleChild() const
   {
