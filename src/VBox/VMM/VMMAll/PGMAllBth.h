@@ -811,7 +811,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                                 STAM_COUNTER_INC(&pVCpu->pgm.s.StatRZTrap0eWPEmulToR3);
                             return rc;
                         }
-                        AssertMsgFailed(("Unexpected r/w page %RGv flag=%x rc=%Rrc\n", pvFault, (uint32_t)fPageGst, rc));
+                        AssertMsg(RT_SUCCESS(rc), ("Unexpected r/w page %RGv flag=%x rc=%Rrc\n", pvFault, (uint32_t)fPageGst, rc));
                     }
 
                     /// @todo count the above case; else
