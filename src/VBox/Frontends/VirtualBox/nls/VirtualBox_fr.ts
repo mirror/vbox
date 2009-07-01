@@ -7140,11 +7140,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Processor</source>
-        <translation>&amp;processeur</translation>
+        <translation>&amp;Processeur</translation>
     </message>
     <message>
         <source>&amp;Processor(s):</source>
-        <translation>&amp;processeur(s):</translation>
+        <translation>&amp;Processeur(s):</translation>
     </message>
     <message>
         <source>Controls the number of virtual CPUs in the virtual machine.</source>
