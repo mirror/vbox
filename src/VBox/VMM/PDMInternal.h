@@ -723,6 +723,21 @@ typedef struct PDMQUEUE
     }                               aFreeItems[1];
 } PDMQUEUE;
 
+/** @name PDM::fQueueFlushing
+ * @{ */
+/** Indicating that an queue insert has been performed. */
+#define PDM_QUEUE_FLUSH_FLAG_ACTIVE         RT_BIT_32(PDM_QUEUE_FLUSH_FLAG_ACTIVE_BIT)
+/** The bit number for PDM_QUEUE_FLUSH_FLAG_ACTIVE_BIT.  */
+#define PDM_QUEUE_FLUSH_FLAG_ACTIVE_BIT     0
+/** Indicating there are pending items.
+ * This is make sure we don't miss inserts happening during flushing. The FF
+ * cannot be used for this since it has to be cleared immediately to prevent
+ * other EMTs from spinning. */
+#define PDM_QUEUE_FLUSH_FLAG_PENDING        RT_BIT_32(PDM_QUEUE_FLUSH_FLAG_PENDING_BIT)
+/** The bit number for PDM_QUEUE_FLUSH_FLAG_PENDING.  */
+#define PDM_QUEUE_FLUSH_FLAG_PENDING_BIT    1
+/** }@  */
+
 
 /**
  * Queue device helper task operation.
@@ -887,8 +902,9 @@ typedef struct PDM
     /** Pointer to the queue which should be manually flushed - RC Ptr.
      * Only touched by EMT. */
     RCPTRTYPE(struct PDMQUEUE *)    pQueueFlushRC;
-    /** Set if we're currently checking queues to prevent other VCPUs from doing the same concurrently. */
-    volatile uint32_t               fQueueFlushing;
+    /** Bitmask controlling the queue flushing.
+     * See PDM_QUEUE_FLUSH_FLAG_ACTIVE and PDM_QUEUE_FLUSH_FLAG_PENDING. */
+    uint32_t volatile               fQueueFlushing;
 
     /** Head of the PDM Thread list. (singly linked) */
     R3PTRTYPE(PPDMTHREAD)           pThreads;

@@ -626,47 +626,29 @@ VMMR3DECL(void) PDMR3QueueFlushAll(PVM pVM)
     VM_ASSERT_EMT(pVM);
     LogFlow(("PDMR3QueuesFlush:\n"));
 
+    /*
+     * Only let one EMT flushing queues at any one time to queue preserve order
+     * and to avoid wasting time. The FF is always cleared here, because it's
+     * only used to get someones attention. Queue inserts occuring during the
+     * flush are caught using the pending bit.
+     *
+     * Note. The order in which the FF and pending bit are set and cleared is important.
+     */
     VM_FF_CLEAR(pVM, VM_FF_PDM_QUEUES);
-
-check_queue:
-    /* Prevent other VCPUs from flushing queues at the same time; we'll never flush an item twice, but the order might change. */
-    if (ASMAtomicCmpXchgU32(&pVM->pdm.s.fQueueFlushing, 1, 0))
+    if (!ASMAtomicBitTestAndSet(&pVM->pdm.s.fQueueFlushing, PDM_QUEUE_FLUSH_FLAG_ACTIVE_BIT))
     {
-        /* Use atomic test and clear to prevent useless checks; pdmR3QueueFlush is SMP safe. */
+        ASMAtomicBitClear(&pVM->pdm.s.fQueueFlushing, PDM_QUEUE_FLUSH_FLAG_PENDING_BIT);
         do
         {
             for (PPDMQUEUE pCur = pVM->pdm.s.pQueuesForced; pCur; pCur = pCur->pNext)
-            {
                 if (    pCur->pPendingR3
                     ||  pCur->pPendingR0
                     ||  pCur->pPendingRC)
-                {
-                    if (    pdmR3QueueFlush(pCur)
-                        &&  (   pCur->pPendingR3
-                             || pCur->pPendingR0))
-                        /* new items arrived while flushing. */
-                        pdmR3QueueFlush(pCur);
-                }
-            }
-        }
-        while (VM_FF_TESTANDCLEAR(pVM, VM_FF_PDM_QUEUES_BIT));
+                    pdmR3QueueFlush(pCur);
+            VM_FF_CLEAR(pVM, VM_FF_PDM_QUEUES);
+        } while (ASMAtomicBitTestAndClear(&pVM->pdm.s.fQueueFlushing, PDM_QUEUE_FLUSH_FLAG_PENDING_BIT));
 
-        ASMAtomicXchgU32(&pVM->pdm.s.fQueueFlushing, 0);
-
-        /* Check if we missed anything. */
-        for (PPDMQUEUE pCur = pVM->pdm.s.pQueuesForced; pCur; pCur = pCur->pNext)
-        {
-            if (    pCur->pPendingR3
-                ||  pCur->pPendingR0
-                ||  pCur->pPendingRC)
-            {
-                VM_FF_SET(pVM, VM_FF_PDM_QUEUES);
-                break;
-            }
-        }
-        if (VM_FF_TESTANDCLEAR(pVM, VM_FF_PDM_QUEUES_BIT))
-            goto check_queue;
-
+        ASMAtomicBitClear(&pVM->pdm.s.fQueueFlushing, PDM_QUEUE_FLUSH_FLAG_ACTIVE_BIT);
     }
 }
 
