@@ -23,6 +23,8 @@
 #include "QIWidgetValidator.h"
 #include "VBoxVMSettingsSystem.h"
 
+#include <iprt/cdefs.h>
+
 #define ITEM_TYPE_ROLE Qt::UserRole + 1
 
 /**
@@ -52,14 +54,14 @@ VBoxVMSettingsSystem::VBoxVMSettingsSystem()
 
     /* Setup constants */
     CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
-    const uint MinRAM = sys.GetMinGuestRAM();
-    const uint MaxRAM = sys.GetMaxGuestRAM();
-    const uint MinCPU = sys.GetMinGuestCPUCount();
-    const uint MaxCPU = sys.GetMaxGuestCPUCount();
+    mMinGuestRAM = sys.GetMinGuestRAM();
+    mMaxGuestRAM = RT_MIN (RT_ALIGN (vboxGlobal().virtualBox().GetHost().GetMemorySize(), _1G / _1M), sys.GetMaxGuestRAM());
+    mMinGuestCPU = sys.GetMinGuestCPUCount();
+    mMaxGuestCPU = RT_MIN (2 * vboxGlobal().virtualBox().GetHost().GetProcessorCount(), sys.GetMaxGuestCPUCount());
 
     /* Setup validators */
-    mLeMemory->setValidator (new QIntValidator (MinRAM, MaxRAM, this));
-    mLeCPU->setValidator (new QIntValidator (MinCPU, MaxCPU, this));
+    mLeMemory->setValidator (new QIntValidator (mMinGuestRAM, mMaxGuestRAM, this));
+    mLeCPU->setValidator (new QIntValidator (mMinGuestCPU, mMaxGuestCPU, this));
 
     /* Setup connections */
     connect (mSlMemory, SIGNAL (valueChanged (int)),
@@ -94,12 +96,12 @@ VBoxVMSettingsSystem::VBoxVMSettingsSystem()
                                                    ":/list_movedown_disabled_16px.png"));
 
     /* Setup memory slider */
-    mSlMemory->setPageStep (calcPageStep (MaxRAM));
+    mSlMemory->setPageStep (calcPageStep (mMaxGuestRAM));
     mSlMemory->setSingleStep (mSlMemory->pageStep() / 4);
     mSlMemory->setTickInterval (mSlMemory->pageStep());
     /* Setup the scale so that ticks are at page step boundaries */
-    mSlMemory->setMinimum ((MinRAM / mSlMemory->pageStep()) * mSlMemory->pageStep());
-    mSlMemory->setMaximum (MaxRAM);
+    mSlMemory->setMinimum ((mMinGuestRAM / mSlMemory->pageStep()) * mSlMemory->pageStep());
+    mSlMemory->setMaximum (mMaxGuestRAM);
     /* Limit min/max. size of QLineEdit */
     mLeMemory->setFixedWidthByText (QString().fill ('8', 5));
     /* Ensure mLeMemory value and validation is updated */
@@ -110,8 +112,8 @@ VBoxVMSettingsSystem::VBoxVMSettingsSystem()
     mSlCPU->setSingleStep (1);
     mSlCPU->setTickInterval (1);
     /* Setup the scale so that ticks are at page step boundaries */
-    mSlCPU->setMinimum (MinCPU);
-    mSlCPU->setMaximum (MaxCPU);
+    mSlCPU->setMinimum (mMinGuestCPU);
+    mSlCPU->setMaximum (mMaxGuestCPU);
     /* Limit min/max. size of QLineEdit */
     mLeCPU->setFixedWidthByText (QString().fill ('8', 3));
     /* Ensure mLeMemory value and validation is updated */
@@ -454,12 +456,12 @@ void VBoxVMSettingsSystem::retranslateUi()
     CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
 
     /* Retranslate the memory slider legend */
-    mLbMemoryMin->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (sys.GetMinGuestRAM()));
-    mLbMemoryMax->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (sys.GetMaxGuestRAM()));
+    mLbMemoryMin->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (mMinGuestRAM));
+    mLbMemoryMax->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (mMaxGuestRAM));
 
     /* Retranslate the cpu slider legend */
-    mLbCPUMin->setText (tr ("<qt>%1&nbsp;CPU</qt>", "%1 is 1 for now").arg (sys.GetMinGuestCPUCount()));
-    mLbCPUMax->setText (tr ("<qt>%1&nbsp;CPUs</qt>", "%1 is 32 for now").arg (sys.GetMaxGuestCPUCount()));
+    mLbCPUMin->setText (tr ("<qt>%1&nbsp;CPU</qt>", "%1 is 1 for now").arg (mMinGuestCPU));
+    mLbCPUMax->setText (tr ("<qt>%1&nbsp;CPUs</qt>", "%1 is host cpu count * 2 for now").arg (mMaxGuestCPU));
 }
 
 void VBoxVMSettingsSystem::valueChangedRAM (int aVal)
