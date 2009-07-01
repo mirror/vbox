@@ -164,7 +164,7 @@ int QIAdvancedSlider::snapValue(int val)
     {
         float l2 = log ((float)val)/log (2.0);
         float snap = 1.0/l2 * 2; /* How much border around the current snaping value (%) */
-        int newVal = pow (2, qRound (l2)); /* The value to snap on */
+        int newVal = pow ((float)2, (int)qRound (l2)); /* The value to snap on */
         if (abs (newVal - val) < (snap * newVal)) /* Snap only if we are in a defined array */
         {
             val = newVal;
