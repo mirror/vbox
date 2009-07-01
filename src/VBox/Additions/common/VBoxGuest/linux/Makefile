@@ -1,9 +1,10 @@
-#
+# $Revision$
+## @file
 # VirtualBox Guest Additions Module Makefile.
 #
-# (For 2.6.x this file must be 'Makefile'!)
+
 #
-# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+# Copyright (C) 2006-2009 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -87,26 +88,38 @@ OBJS   = \
 	r0drv/linux/semevent-r0drv-linux.o \
 	r0drv/linux/semeventmulti-r0drv-linux.o \
 	r0drv/linux/semfastmutex-r0drv-linux.o \
+	r0drv/linux/spinlock-r0drv-linux.o \
 	r0drv/linux/thread-r0drv-linux.o \
-	RTErrConvertFromErrno.o \
-	RTErrConvertToErrno.o \
-	divdi3.o \
-	moddi3.o \
-	udivdi3.o \
-	umoddi3.o \
-	qdivrem.o \
-	logbackdoor.o \
-	logformat.o \
-	strformat.o \
-	strformatrt.o \
-	strformattype.o \
-	strprintf.o \
-	strformat-vbox.o \
-	RTAssertShouldPanic-generic.o
-ifeq ($(BUILD_TARGET_ARCH),amd64)
+	r0drv/linux/RTLogWriteDebugger-r0drv-linux.o \
+	common/err/RTErrConvertFromErrno.o \
+	common/err/RTErrConvertToErrno.o \
+	common/log/log.o \
+        common/log/logellipsis.o \
+        common/log/logrel.o \
+        common/log/logrelellipsis.o \
+        common/log/logcom.o \
+	common/log/logformat.o \
+	common/string/strformat.o \
+	common/string/strformatrt.o \
+	common/string/strformattype.o \
+	common/string/strprintf.o \
+	common/string/strtonum.o \
+	generic/RTAssertShouldPanic-generic.o \
+        generic/RTLogWriteStdErr-stub-generic.o \
+        generic/RTLogWriteStdOut-stub-generic.o \
+	VBox/log-vbox.o \
+	VBox/logbackdoor.o \
+	VBox/strformat-vbox.o
+ifeq ($(BUILD_TARGET_ARCH),x86)
 OBJS += \
-	alloc/heapsimple.o \
-	r0drv/linux/spinlock-r0drv-linux.o
+	common/math/gcc/divdi3.o \
+	common/math/gcc/moddi3.o \
+	common/math/gcc/udivdi3.o \
+	common/math/gcc/umoddi3.o \
+	common/math/gcc/qdivrem.o
+endif
+ifeq ($(BUILD_TARGET_ARCH),amd64)
+OBJS +=	common/alloc/heapsimple.o
 endif
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -200,9 +213,9 @@ ifndef INCL
  INCL    += $(addprefix -I$(KBUILD_EXTMOD),/ /include /r0drv/linux)
  export INCL
 endif
-KFLAGS   := -D__KERNEL__ -DMODULE -DRT_OS_LINUX -DIN_RING0 \
-	    -DIN_RT_R0 -DIN_SUP_R0 -DVBOX -DVBGL_VBOXGUEST -DVBOX_WITH_HGCM \
-	    -DLOG_TO_BACKDOOR -DRT_WITH_VBOX -DIN_MODULE -DIN_GUEST_R0
+KFLAGS   := -D__KERNEL__ -DMODULE \
+	-DVBOX -DRT_OS_LINUX -DIN_RING0 -DIN_RT_R0 -DIN_GUEST -DIN_GUEST_R0 \
+	-DIN_MODULE -DRT_WITH_VBOX -DVBGL_VBOXGUEST -DVBOX_WITH_HGCM
 ifeq ($(BUILD_TARGET_ARCH),amd64)
  KFLAGS  += -DRT_ARCH_AMD64 -DVBOX_WITH_64_BITS_GUESTS
 else
@@ -257,5 +270,6 @@ install: $(MODULE)
 endif # eq($(MAKECMDGOALS),clean)
 
 clean:
-	for f in . linux r0drv r0drv/linux; do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
+	for f in . linux r0drv r0drv/linux VBox common/err common/string common/log generic common/math/gcc; \
+            do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
 	rm -rf .vboxguest* .tmp_ver* vboxguest.* Module.symvers Modules.symvers modules.order

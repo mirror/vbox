@@ -239,18 +239,18 @@ static int __init vboxguestLinuxInitPci(void)
         if (rc >= 0)
         {
             /* I/O Ports are mandatory, the MMIO bit is not. */
-            if (pci_resource_start(pPciDev, 0) != 0)
+            g_IOPortBase = pci_resource_start(pPciDev, 0);
+            if (g_IOPortBase != 0)
             {
                 /*
                  * Map the register address space.
                  */
                 g_MMIOPhysAddr = pci_resource_start(pPciDev, 1);
                 g_cbMMIO       = pci_resource_len(pPciDev, 1);
-                g_IOPortBase   = pci_resource_start(pPciDev, 0);
                 if (request_mem_region(g_MMIOPhysAddr, g_cbMMIO, DEVICE_NAME) != NULL)
                 {
                     g_pvMMIOBase = ioremap(g_MMIOPhysAddr, g_cbMMIO);
-                    if (g_DevExt.pVMMDevMemory)
+                    if (g_pvMMIOBase)
                     {
                         /** @todo why aren't we requesting ownership of the I/O ports as well? */
                         g_pPciDev = pPciDev;
@@ -258,7 +258,7 @@ static int __init vboxguestLinuxInitPci(void)
                     }
 
                     /* failure cleanup path */
-                    LogRel((DEVICE_NAME ": ioremap failed\n"));
+                    LogRel((DEVICE_NAME ": ioremap failed; MMIO Addr=%RHp cb=%#x\n", g_MMIOPhysAddr, g_cbMMIO));
                     rc = -ENOMEM;
                     release_mem_region(g_MMIOPhysAddr, g_cbMMIO);
                 }
@@ -441,7 +441,9 @@ static void vboxguestLinuxTermDeviceNodes(void)
  */
 static int __init vboxguestLinuxModInit(void)
 {
-    int rc;
+    static const char * const   s_apszGroups[] = VBOX_LOGGROUP_NAMES;
+    PRTLOGGER                   pRelLogger;
+    int                         rc;
 
     /*
      * Initialize IPRT first.
@@ -452,6 +454,17 @@ static int __init vboxguestLinuxModInit(void)
         printk(KERN_ERR DEVICE_NAME ": RTR0Init failed, rc=%d.\n", rc);
         return -EINVAL;
     }
+
+    /*
+     * Create the release log.
+     */
+    rc = RTLogCreate(&pRelLogger, 0 /* fFlags */, "all",
+                     "VBOX_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups,
+                     RTLOGDEST_STDOUT | RTLOGDEST_DEBUGGER | RTLOGDEST_USER, NULL);
+    if (RT_SUCCESS(rc))
+        RTLogRelSetDefaultInstance(pRelLogger);
+/** @todo Add module parameters with flags, groups and destination
+ *        specifiers. Apply them here. */
 
     /*
      * Locate and initialize the PCI device.
@@ -494,10 +507,10 @@ static int __init vboxguestLinuxModInit(void)
                 if (rc >= 0)
                 {
                     /* some useful information for the user but don't show this on the console */
-                    LogRel((DEVICE_NAME ": major %d, IRQ %d, I/O port 0x%x, MMIO at 0x%x (size 0x%x)\n",
+                    LogRel((DEVICE_NAME ": major %d, IRQ %d, I/O port %RTiop, MMIO at %RHp (size 0x%x)\n",
                             g_iModuleMajor, g_pPciDev->irq, g_IOPortBase, g_MMIOPhysAddr, g_cbMMIO));
                     printk(KERN_DEBUG DEVICE_NAME ": Successfully loaded version "
-                            VBOX_VERSION_STRING " (interface " RT_XSTR(VMMDEV_VERSION) ")\n");
+                           VBOX_VERSION_STRING " (interface " RT_XSTR(VMMDEV_VERSION) ")\n");
                     return rc;
                 }
 
@@ -513,6 +526,8 @@ static int __init vboxguestLinuxModInit(void)
         }
         vboxguestLinuxTermPci();
     }
+    RTLogDestroy(RTLogRelSetDefaultInstance(NULL));
+    RTLogDestroy(RTLogSetDefaultInstance(NULL));
     RTR0Term();
     return rc;
 }
@@ -530,6 +545,8 @@ static void __exit vboxguestLinuxModExit(void)
     VBoxGuestDeleteDevExt(&g_DevExt);
     vboxguestLinuxTermISR();
     vboxguestLinuxTermPci();
+    RTLogDestroy(RTLogRelSetDefaultInstance(NULL));
+    RTLogDestroy(RTLogSetDefaultInstance(NULL));
     RTR0Term();
 }
 
