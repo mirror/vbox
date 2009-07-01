@@ -27,6 +27,7 @@
 #define __STDC_LIMIT_MACROS
 #define __STDC_CONSTANT_MACROS
 #include "slirp/libslirp.h"
+#include "slirp/ctl.h"
 #include <VBox/pdmdrv.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>
@@ -729,7 +730,7 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCf
         /* guest address */
         struct in_addr GuestIP;
         /* @todo (vvl) use CTL_* */
-        GETIP_DEF(rc, pThis, pNode, GuestIP, htonl(Network | 15));
+        GETIP_DEF(rc, pThis, pNode, GuestIP, htonl(Network | CTL_GUEST));
 
         /*
          * Call slirp about it.
