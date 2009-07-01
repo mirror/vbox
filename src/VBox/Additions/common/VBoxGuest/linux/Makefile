@@ -1,0 +1,261 @@
+#
+# VirtualBox Guest Additions Module Makefile.
+#
+# (For 2.6.x this file must be 'Makefile'!)
+#
+# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+# Clara, CA 95054 USA or visit http://www.sun.com if you need
+# additional information or have any questions.
+#
+
+#
+# First, figure out which architecture we're targeting and the build type.
+# (We have to support basic cross building (ARCH=i386|x86_64).)
+# While at it, warn about BUILD_* vars found to help with user problems.
+#
+ifeq ($(filter-out x86_64 amd64 AMD64,$(shell uname -m)),)
+ BUILD_TARGET_ARCH_DEF := amd64
+else
+ BUILD_TARGET_ARCH_DEF := x86
+endif
+ifneq ($(filter-out amd64 x86,$(BUILD_TARGET_ARCH)),)
+ $(warning Ignoring unknown BUILD_TARGET_ARCH value '$(BUILD_TARGET_ARCH)'.)
+ BUILD_TARGET_ARCH :=
+endif
+ifeq ($(BUILD_TARGET_ARCH),)
+ ifeq ($(ARCH),x86_64)
+  BUILD_TARGET_ARCH := amd64
+ else
+  ifeq ($(ARCH),i386)
+   BUILD_TARGET_ARCH := x86
+  else
+   BUILD_TARGET_ARCH := $(BUILD_TARGET_ARCH_DEF)
+  endif
+ endif
+else
+ ifneq ($(BUILD_TARGET_ARCH),$(BUILD_TARGET_ARCH_DEF))
+  $(warning Using BUILD_TARGET_ARCH='$(BUILD_TARGET_ARCH)' from the $(origin BUILD_TARGET_ARCH).)
+ endif
+endif
+
+ifneq ($(filter-out release profile debug strict,$(BUILD_TYPE)),)
+ $(warning Ignoring unknown BUILD_TYPE value '$(BUILD_TYPE)'.)
+ BUILD_TYPE :=
+endif
+ifeq ($(BUILD_TYPE),)
+ BUILD_TYPE := release
+else
+ ifneq ($(BUILD_TYPE),release)
+  $(warning Using BUILD_TYPE='$(BUILD_TYPE)' from the $(origin BUILD_TYPE).)
+ endif
+endif
+
+
+# override is required by the Debian guys
+override MODULE = vboxguest
+OBJS   = \
+	VBoxGuest-linux.o \
+	VBoxGuest.o \
+	GenericRequest.o \
+	HGCMInternal.o \
+	Init.o \
+	PhysHeap.o \
+	SysHlp.o \
+	VMMDev.o \
+	r0drv/alloc-r0drv.o \
+	r0drv/initterm-r0drv.o \
+	r0drv/memobj-r0drv.o \
+	r0drv/mpnotification-r0drv.o \
+	r0drv/powernotification-r0drv.o \
+	r0drv/linux/alloc-r0drv-linux.o \
+	r0drv/linux/assert-r0drv-linux.o \
+	r0drv/linux/initterm-r0drv-linux.o \
+	r0drv/linux/memobj-r0drv-linux.o \
+	r0drv/linux/mp-r0drv-linux.o \
+	r0drv/linux/mpnotification-r0drv-linux.o \
+	r0drv/linux/process-r0drv-linux.o \
+	r0drv/linux/semevent-r0drv-linux.o \
+	r0drv/linux/semeventmulti-r0drv-linux.o \
+	r0drv/linux/semfastmutex-r0drv-linux.o \
+	r0drv/linux/thread-r0drv-linux.o \
+	RTErrConvertFromErrno.o \
+	RTErrConvertToErrno.o \
+	divdi3.o \
+	moddi3.o \
+	udivdi3.o \
+	umoddi3.o \
+	qdivrem.o \
+	logbackdoor.o \
+	logformat.o \
+	strformat.o \
+	strformatrt.o \
+	strformattype.o \
+	strprintf.o \
+	strformat-vbox.o \
+	RTAssertShouldPanic-generic.o
+ifeq ($(BUILD_TARGET_ARCH),amd64)
+OBJS += \
+	alloc/heapsimple.o \
+	r0drv/linux/spinlock-r0drv-linux.o
+endif
+
+ifneq ($(MAKECMDGOALS),clean)
+
+ifeq ($(KERNELRELEASE),)
+
+ #
+ # building from this directory
+ #
+
+ # kernel base directory
+ ifndef KERN_DIR
+  KERN_DIR := /lib/modules/$(shell uname -r)/build
+  ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
+   KERN_DIR := /usr/src/linux
+   ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
+    $(error Error: unable to find the sources of your current Linux kernel. \
+	           Specify KERN_DIR=<directory> and run Make again)
+   endif
+   $(warning Warning: using /usr/src/linux as the source directory of your \
+                      Linux kernel. If this is not correct, specify \
+		      KERN_DIR=<directory> and run Make again.)
+  endif
+ else
+  ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
+   $(error Error: KERN_DIR does not point to a directory)
+  endif
+ endif
+
+ # includes
+ ifndef KERN_INCL
+  KERN_INCL = $(KERN_DIR)/include
+ endif
+ ifneq ($(shell if test -d $(KERN_INCL); then echo yes; fi),yes)
+  $(error Error: unable to find the include directory for your current Linux \
+                 kernel. Specify KERN_INCL=<directory> and run Make again)
+ endif
+
+ # module install dir, only for current kernel
+ ifneq ($(filter install install_rpm,$(MAKECMDGOALS)),)
+  ifndef MODULE_DIR
+   MODULE_DIR_TST := /lib/modules/$(shell uname -r)
+   ifeq ($(shell if test -d $(MODULE_DIR_TST); then echo yes; fi),yes)
+    MODULE_DIR := $(MODULE_DIR_TST)/misc
+   else
+    $(error Unable to find the folder to install the additions driver to)
+   endif
+  endif # MODULE_DIR unspecified
+ endif
+
+ # guess kernel version (24 or 26)
+ ifeq ($(shell if grep '"2\.4\.' $(KERN_INCL)/linux/version.h > /dev/null; then echo yes; fi),yes)
+  KERN_VERSION := 24
+ else
+  KERN_VERSION := 26
+ endif
+
+else # neq($(KERNELRELEASE),)
+
+ #
+ # building from kbuild (make -C <kernel_directory> M=`pwd`)
+ #
+
+ # guess kernel version (24 or 26)
+ ifeq ($(shell if echo "$(VERSION).$(PATCHLEVEL)." | grep '2\.4\.' > /dev/null; then echo yes; fi),yes)
+  KERN_VERSION := 24
+ else
+  KERN_VERSION := 26
+ endif
+
+endif # neq($(KERNELRELEASE),)
+
+# debug - show guesses.
+ifdef DEBUG
+$(warning dbg: KERN_DIR     = $(KERN_DIR))
+$(warning dbg: KERN_INCL    = $(KERN_INCL))
+$(warning dbg: MODULE_DIR   = $(MODULE_DIR))
+$(warning dbg: KERN_VERSION = $(KERN_VERSION))
+endif
+
+KBUILD_VERBOSE ?= 1
+
+#
+# Compiler options
+#
+ifndef INCL
+ INCL    := $(addprefix -I,$(KERN_INCL) $(EXTRA_INCL))
+ ifndef KBUILD_EXTMOD
+  KBUILD_EXTMOD := $(shell pwd)
+ endif
+ INCL    += $(addprefix -I$(KBUILD_EXTMOD),/ /include /r0drv/linux)
+ export INCL
+endif
+KFLAGS   := -D__KERNEL__ -DMODULE -DRT_OS_LINUX -DIN_RING0 \
+	    -DIN_RT_R0 -DIN_SUP_R0 -DVBOX -DVBGL_VBOXGUEST -DVBOX_WITH_HGCM \
+	    -DLOG_TO_BACKDOOR -DRT_WITH_VBOX -DIN_MODULE -DIN_GUEST_R0
+ifeq ($(BUILD_TARGET_ARCH),amd64)
+ KFLAGS  += -DRT_ARCH_AMD64 -DVBOX_WITH_64_BITS_GUESTS
+else
+ KFLAGS  += -DRT_ARCH_X86
+endif
+ifeq ($(BUILD_TYPE),debug)
+KFLAGS   += -DDEBUG
+endif
+
+ifeq ($(KERN_VERSION), 24)
+#
+# 2.4
+#
+
+CFLAGS := -O2 -DVBOX_LINUX_2_4 -DEXPORT_SYMTAB $(INCL) $(KFLAGS) $(KDEBUG)
+MODULE_EXT := o
+
+# 2.4 Module linking
+$(MODULE).o: $(OBJS)
+	$(LD) -o $@ -r $(OBJS)
+
+.PHONY: $(MODULE)
+all: $(MODULE)
+$(MODULE): $(MODULE).o
+
+else
+#
+# 2.6 and later
+#
+
+MODULE_EXT := ko
+
+$(MODULE)-y  := $(OBJS)
+
+# build defs
+EXTRA_CFLAGS += $(INCL) $(KFLAGS) $(KDEBUG)
+
+all: $(MODULE)
+
+obj-m += $(MODULE).o
+
+$(MODULE):
+	$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C $(KERN_DIR) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) modules
+
+endif
+
+install: $(MODULE)
+	@mkdir -p $(MODULE_DIR); \
+	install -m 0664 -o root -g root $(MODULE).$(MODULE_EXT) $(MODULE_DIR); \
+	PATH="$(PATH):/bin:/sbin" depmod -ae;
+
+endif # eq($(MAKECMDGOALS),clean)
+
+clean:
+	for f in . linux r0drv r0drv/linux; do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
+	rm -rf .vboxguest* .tmp_ver* vboxguest.* Module.symvers Modules.symvers modules.order
