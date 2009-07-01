@@ -116,14 +116,14 @@ Qt::Orientation QIAdvancedSlider::orientation() const
     return mSlider->orientation();
 }
 
-void QIAdvancedSlider::setSnapingEnabled (bool aOn)
+void QIAdvancedSlider::setSnappingEnabled (bool aOn)
 {
-    mSnapingEnabled = aOn;
+    mSnappingEnabled = aOn;
 }
 
-bool QIAdvancedSlider::isSnapingEnabled() const
+bool QIAdvancedSlider::isSnappingEnabled() const
 {
-    return mSnapingEnabled;
+    return mSnappingEnabled;
 }
 
 void QIAdvancedSlider::setOrientation (Qt::Orientation aOrientation)
@@ -145,7 +145,7 @@ void QIAdvancedSlider::prvSliderMoved(int val)
 
 void QIAdvancedSlider::init (Qt::Orientation aOrientation /* = Qt::Horizontal */)
 {
-    mSnapingEnabled = true;
+    mSnappingEnabled = true;
 
     QVBoxLayout *pMainLayout = new QVBoxLayout (this);
     mSlider = new QSlider (aOrientation, this);
@@ -159,7 +159,7 @@ void QIAdvancedSlider::init (Qt::Orientation aOrientation /* = Qt::Horizontal */
 
 int QIAdvancedSlider::snapValue(int val)
 {
-    if (mSnapingEnabled &&
+    if (mSnappingEnabled &&
         val > 2)
     {
         float l2 = log2 ((float)val);
