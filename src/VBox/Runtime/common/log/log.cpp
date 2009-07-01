@@ -574,7 +574,7 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
      * Acquire logger instance sem and disable all logging. (paranoia)
      */
     rc = rtlogLock(pLogger);
-    AssertRCReturn(rc, rc);
+    AssertMsgReturn(RT_SUCCESS(rc) || rc == VERR_PREEMPT_DISABLED, ("%Rrc\n", rc), rc);
 
     pLogger->fFlags |= RTLOGFLAGS_DISABLED;
     iGroup = pLogger->cGroups;
@@ -584,7 +584,7 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
     /*
      * Flush it.
      */
-    RTLogFlush(pLogger);
+    rtlogFlush(pLogger);
 
     /*
      * Close output stuffs.
