@@ -115,9 +115,9 @@ crServerDeleteClient( CRClient *client )
 {
     int i, j;
     int32_t pos;
+    CRClient *oldclient = cr_server.curClient;
 
-    crDebug("Deleting client %p (%d msgs left)", client,
-                    crNetNumMessages(client->conn));
+    crDebug("Deleting client %p (%d msgs left)", client, crNetNumMessages(client->conn));
 
 #if 0
     if (crNetNumMessages(client->conn) > 0) {
@@ -141,6 +141,22 @@ crServerDeleteClient( CRClient *client )
             break;
         }
     }
+
+    cr_server.curClient = client;
+
+    /* Destroy any windows created by the client */
+    for (pos = 0; pos<CR_MAX_WINDOWS && client->windowList[pos]; pos++) 
+    {
+        cr_server.dispatch.WindowDestroy(client->windowList[pos]);
+    }
+
+    /* Check if we have context(s) made by this client left, could happen if client side code is lazy */
+    for (pos = 0; pos<CR_MAX_CONTEXTS && client->contextList[pos]; pos++) 
+    {
+        cr_server.dispatch.DestroyContext(client->contextList[pos]);
+    }
+
+    cr_server.curClient = oldclient;
 
     /* remove from the run queue */
     if (cr_server.run_queue)
@@ -178,18 +194,6 @@ crServerDeleteClient( CRClient *client )
     }
 
     crNetFreeConnection(client->conn);
-
-    /* Destroy any windows created by the client */
-    for (pos = 0; pos<CR_MAX_WINDOWS && client->windowList[pos]; pos++) 
-    {
-        cr_server.dispatch.WindowDestroy(client->windowList[pos]);
-    }
-
-    /* Check if we have context(s) made by this client left, could happen if client side code is lazy */
-    for (pos = 0; pos<CR_MAX_CONTEXTS && client->contextList[pos]; pos++) 
-    {
-        cr_server.dispatch.DestroyContext(client->contextList[pos]);
-    }
 
     crFree(client);
 }
