@@ -394,7 +394,11 @@ nsFastLoadService::ComputeChecksum(nsIFile* aFile,
     if (NS_FAILED(rv))
         return rv;
 
+#ifndef VBOX
     mChecksumTable.Put(&key, NS_INT32_TO_PTR(checksum));
+#else /* VBOX */
+    mChecksumTable.Put(&key, (void *)checksum);
+#endif /* VBOX */
     *aChecksum = checksum;
     return NS_OK;
 }
@@ -417,7 +421,11 @@ nsFastLoadService::CacheChecksum(nsIFile* aFile, nsIObjectOutputStream *aStream)
         return rv;
 
     nsCStringKey key(path);
+#ifndef VBOX
     mChecksumTable.Put(&key, NS_INT32_TO_PTR(checksum));
+#else /* VBOX */
+    mChecksumTable.Put(&key, (void *)checksum);
+#endif /* VBOX */
     return NS_OK;
 }
 

@@ -430,12 +430,18 @@ typedef PRUint32 nsresult;
   */
 #endif
  
+#ifndef VBOX
 /* 
  * Use these macros to do 64bit safe pointer conversions.
  */
 
 #define NS_PTR_TO_INT32(x) ((char *)(x) - (char *)0)
 #define NS_INT32_TO_PTR(x) ((void *)((char *)0 + (x)))
+#else /* VBOX */
+// This stuff is (contrary to the comment) totally 64bit unsafe, so strip
+// it down to only do one direction, which is used by the hashing code.
+#define NS_PTR_TO_INT32(x) ((PRInt32)((char *)(x) - (char *)0))
+#endif /* VBOX */
 
 /*
  * These macros allow you to give a hint to the compiler about branch

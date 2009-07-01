@@ -143,7 +143,7 @@ public:
   }
 };
 
-typedef class DConnectInstance* DConAddr;
+typedef PRUint64 DConAddr;
 
 // a key class used to identify DConnectStub objects stored in a hash table
 // by a composite of peer ID and DConAddr

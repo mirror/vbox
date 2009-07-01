@@ -1532,7 +1532,7 @@ ipcDConnectService::SerializeInterfaceParam(ipcMessageWriter &writer,
     nsresult rv = obj->QueryInterface(kDConnectStubID, (void **) &stub);
     if (NS_SUCCEEDED(rv) && (stub->PeerID() == peer))
     {
-      void *p = stub->Instance();
+      DConAddr p = stub->Instance();
       writer.PutBytes(&p, sizeof(p));
     }
     else
@@ -1849,7 +1849,7 @@ ipcDConnectService::SerializeException(ipcMessageWriter &writer,
       if (NS_SUCCEEDED(rv) && (stub->Stub()->PeerID() == peer))
       {
         // send the wrapper instance back to the peer
-        void *p = stub->Stub()->Instance();
+        DConAddr p = stub->Stub()->Instance();
         writer.PutBytes(&p, sizeof(p));
       }
       else
@@ -3472,17 +3472,18 @@ ipcDConnectService::OnSetup(PRUint32 peer, const DConnectSetup *setup, PRUint32 
     case DCON_OP_SETUP_QUERY_INTERFACE:
     {
       const DConnectSetupQueryInterface *setupQI = (const DConnectSetupQueryInterface *) setup;
+      DConnectInstance *instance = (DConnectInstance *)setupQI->instance;
 
       // make sure we've been sent a valid wrapper
-      if (!CheckInstanceAndAddRef(setupQI->instance, peer))
+      if (!CheckInstanceAndAddRef(instance, peer))
       {
         NS_NOTREACHED("instance wrapper not found");
         rv = NS_ERROR_INVALID_ARG;
       }
       else
       {
-        rv = setupQI->instance->RealInstance()->QueryInterface(setupQI->iid, (void **) &instance);
-        setupQI->instance->Release();
+        rv = instance->RealInstance()->QueryInterface(setupQI->iid, (void **) &instance);
+        instance->Release();
       }
       break;
     }
@@ -3587,7 +3588,7 @@ ipcDConnectService::OnSetup(PRUint32 peer, const DConnectSetup *setup, PRUint32 
   msg.opcode_minor = 0;
   msg.flags = 0;
   msg.request_index = setup->request_index;
-  msg.instance = wrapper;
+  msg.instance = (DConAddr)wrapper;
   msg.status = rv;
 
   if (got_exception)
@@ -3622,7 +3623,7 @@ ipcDConnectService::OnRelease(PRUint32 peer, const DConnectRelease *release)
   LOG(("ipcDConnectService::OnRelease [peer=%u instance=%p]\n",
        peer, release->instance));
 
-  DConnectInstance *wrapper = release->instance;
+  DConnectInstance *wrapper = (DConnectInstance *)release->instance;
 
   nsAutoLock lock (mLock);
 
@@ -3657,7 +3658,7 @@ ipcDConnectService::OnInvoke(PRUint32 peer, const DConnectInvoke *invoke, PRUint
   LOG(("ipcDConnectService::OnInvoke [peer=%u instance=%p method=%u]\n",
       peer, invoke->instance, invoke->method_index));
 
-  DConnectInstance *wrapper = invoke->instance;
+  DConnectInstance *wrapper = (DConnectInstance *)invoke->instance;
 
   ipcMessageReader reader((const PRUint8 *) (invoke + 1), opLen - sizeof(*invoke));
 
