@@ -434,17 +434,22 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
 # if defined(IN_RC) || defined(IN_RING0)
                             if (pCur->CTX_SUFF(pfnHandler))
                             {
+                                PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 #  ifdef IN_RING0
                                 PFNPGMR0PHYSHANDLER pfnHandler = pCur->CTX_SUFF(pfnHandler);
 #  else
                                 PFNPGMRCPHYSHANDLER pfnHandler = pCur->CTX_SUFF(pfnHandler);
 #  endif
+                                bool  fLeaveLock = (pfnHandler != pPool->CTX_SUFF(pfnAccessHandler));
                                 void *pvUser = pCur->CTX_SUFF(pvUser);
 
                                 STAM_PROFILE_START(&pCur->Stat, h);
-                                pgmUnlock(pVM); /* @todo: Not entirely safe. */
+                                if (fLeaveLock)
+                                    pgmUnlock(pVM); /* @todo: Not entirely safe. */
+
                                 rc = pfnHandler(pVM, uErr, pRegFrame, pvFault, GCPhysFault, pvUser);
-                                pgmLock(pVM);
+                                if (fLeaveLock)
+                                    pgmLock(pVM);
 #  ifdef VBOX_WITH_STATISTICS
                                 pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhysFault);
                                 if (pCur)
