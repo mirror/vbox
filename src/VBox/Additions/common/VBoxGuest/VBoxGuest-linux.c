@@ -634,7 +634,7 @@ static int vboxguestLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigne
             return -ENOMEM;
         }
     }
-    if (RT_LIKELY(copy_from_user(pvBuf, (void *)ulArg, cbData)))
+    if (RT_LIKELY(copy_from_user(pvBuf, (void *)ulArg, cbData) == 0))
     {
         /*
          * Process the IOCtl.
@@ -655,7 +655,7 @@ static int vboxguestLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigne
             }
             if (cbDataReturned > 0)
             {
-                if (RT_UNLIKELY(copy_to_user((void *)ulArg, pvBuf, cbDataReturned)))
+                if (RT_UNLIKELY(copy_to_user((void *)ulArg, pvBuf, cbDataReturned) != 0))
                 {
                     LogRel((DEVICE_NAME "::IOCtl: copy_to_user failed; pvBuf=%p ulArg=%p cbDataReturned=%u uCmd=%d\n",
                             pvBuf, (void *)ulArg, cbDataReturned, uCmd, rc));
