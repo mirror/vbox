@@ -904,7 +904,7 @@ static int clipWinTxtToCTextForX11CB(Display *pDisplay, PRTUTF16 pwszSrc,
                                      unsigned long *pcLenReturn,
                                          int *piFormatReturn)
 {
-    char *pszTmp = NULL;
+    char *pszTmp = NULL, *pszTmp2 = NULL;
     size_t cbTmp = 0, cbActual = 0;
     XTextProperty property;
     int rc = VINF_SUCCESS, xrc = 0;
@@ -922,22 +922,20 @@ static int clipWinTxtToCTextForX11CB(Display *pDisplay, PRTUTF16 pwszSrc,
     if (RT_SUCCESS(rc))
         rc = clipWinTxtToUtf8(pwszSrc, cbSrc, pszTmp, cbTmp + 1,
                               &cbActual);
-    /* And finally (!) convert the Utf8 text to compound text. */
-#ifdef X_HAVE_UTF8_STRING
+    /* Convert the Utf8 text to the current encoding (usually a noop). */
     if (RT_SUCCESS(rc))
-        xrc = Xutf8TextListToTextProperty(pDisplay, &pszTmp, 1,
-                                          XCompoundTextStyle, &property);
-#else
+        rc = RTStrUtf8ToCurrentCP(&pszTmp2, pszTmp);
+    /* And finally (!) convert the resulting text to compound text. */
     if (RT_SUCCESS(rc))
-        xrc = XmbTextListToTextProperty(pDisplay, &pszTmp, 1,
+        xrc = XmbTextListToTextProperty(pDisplay, &pszTmp2, 1,
                                         XCompoundTextStyle, &property);
-#endif
     if (RT_SUCCESS(rc) && xrc < 0)
         rc = (  xrc == XNoMemory           ? VERR_NO_MEMORY
               : xrc == XLocaleNotSupported ? VERR_NOT_SUPPORTED
               : xrc == XConverterNotFound  ? VERR_NOT_SUPPORTED
               :                              VERR_UNRESOLVED_ERROR);
     RTMemFree(pszTmp);
+    RTStrFree(pszTmp2);
     *atomTypeReturn = property.encoding;
     *pValReturn = reinterpret_cast<XtPointer>(property.value);
     *pcLenReturn = property.nitems + 1;
@@ -1261,30 +1259,29 @@ static int clipCTextToWinTxt(Widget widget, unsigned char *pcSrc,
     /* Intermediate conversion to Utf8 */
     int rc = VINF_SUCCESS;
     XTextProperty property;
-    char **ppcTmp = NULL;
+    char **ppcTmp = NULL, *pszTmp = NULL;
     int cProps;
 
     property.value = pcSrc;
     property.encoding = clipGetAtom(widget, "COMPOUND_TEXT");
     property.format = 8;
     property.nitems = cbSrc;
-#ifdef X_HAVE_UTF8_STRING
-    int xrc = Xutf8TextPropertyToTextList(XtDisplay(widget), &property,
-                                          &ppcTmp, &cProps);
-#else
     int xrc = XmbTextPropertyToTextList(XtDisplay(widget), &property,
                                         &ppcTmp, &cProps);
-#endif
     if (xrc < 0)
         rc = (  xrc == XNoMemory           ? VERR_NO_MEMORY
               : xrc == XLocaleNotSupported ? VERR_NOT_SUPPORTED
               : xrc == XConverterNotFound  ? VERR_NOT_SUPPORTED
               :                              VERR_UNRESOLVED_ERROR);
+    /* Convert the text returned to UTF8 */
+    if (RT_SUCCESS(rc))
+        rc = RTStrCurrentCPToUtf8(&pszTmp, *ppcTmp);
     /* Now convert the UTF8 to UTF16 */
     if (RT_SUCCESS(rc))
-        rc = clipUtf8ToWinTxt(*ppcTmp, strlen(*ppcTmp), ppwszDest, pcbDest);
+        rc = clipUtf8ToWinTxt(pszTmp, strlen(pszTmp), ppwszDest, pcbDest);
     if (ppcTmp != NULL)
         XFreeStringList(ppcTmp);
+    RTStrFree(pszTmp);
     LogFlowFunc(("Returning %Rrc\n", rc));
     if (pcbDest)
         LogFlowFunc(("*pcbDest=%u\n", *pcbDest));
