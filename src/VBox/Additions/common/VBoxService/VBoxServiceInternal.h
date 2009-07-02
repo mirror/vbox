@@ -83,6 +83,8 @@ typedef struct
 
     /**
      * Does termination cleanups.
+     *
+     * @remarks This may be called even if pfnInit hasn't been called!
      */
     DECLCALLBACKMEMBER(void, pfnTerm)(void);
 } VBOXSERVICE;
