@@ -283,7 +283,8 @@ int VBoxServiceStartServices(unsigned iMain)
             rc = g_aServices[j].pDesc->pfnInit();
             if (RT_FAILURE(rc))
             {
-                VBoxServiceError("Service '%s' failed pre-init: %Rrc\n", g_aServices[j].pDesc->pszName);
+                VBoxServiceError("Service '%s' failed to initialize: %Rrc\n",
+                                 g_aServices[j].pDesc->pszName, rc);
                 return rc;
             }
         }
