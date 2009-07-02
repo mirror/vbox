@@ -146,16 +146,14 @@ typedef struct VBOXGUESTSESSION
      * This will be automatically disconnected when the session is closed. */
     uint32_t volatile           aHGCMClientIds[8];
 #endif
-
     /** The last consumed VMMDEV_EVENT_MOUSE_POSITION_CHANGED sequence number.
      * Used to implement polling.  */
     uint32_t volatile           u32MousePosChangedSeq;
 } VBOXGUESTSESSION;
 
-
 RT_C_DECLS_BEGIN
 
-int  VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase, void *pvMMIOBase, uint32_t cbMMIO, VBOXOSTYPE enmOSType);
+int  VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase, void *pvMMIOBase, uint32_t cbMMIO, VBOXOSTYPE enmOSType, uint32_t fEvents);
 void VBoxGuestDeleteDevExt(PVBOXGUESTDEVEXT pDevExt);
 bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt);
 int  VBoxGuestSetGuestCapabilities(uint32_t fOr, uint32_t fNot);
