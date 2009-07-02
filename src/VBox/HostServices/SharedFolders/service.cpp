@@ -135,34 +135,37 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
     /* Save all the active mappings. */
     for (int i=0;i<SHFL_MAX_MAPPINGS;i++)
     {
-        rc = SSMR3PutU32(pSSM, FolderMapping[i].cMappings);
+        /* Mapping are saved in the order of increasing root handle values. */
+        MAPPING *pFolderMapping = vbsfMappingGetByRoot(i);
+
+        rc = SSMR3PutU32(pSSM, pFolderMapping? pFolderMapping->cMappings: 0);
         AssertRCReturn(rc, rc);
 
-        rc = SSMR3PutBool(pSSM, FolderMapping[i].fValid);
+        rc = SSMR3PutBool(pSSM, pFolderMapping? pFolderMapping->fValid: false);
         AssertRCReturn(rc, rc);
 
-        if (FolderMapping[i].fValid)
+        if (pFolderMapping && pFolderMapping->fValid)
         {
             uint32_t len;
 
-            len = ShflStringSizeOfBuffer(FolderMapping[i].pFolderName);
+            len = ShflStringSizeOfBuffer(pFolderMapping->pFolderName);
             rc = SSMR3PutU32(pSSM, len);
             AssertRCReturn(rc, rc);
 
-            rc = SSMR3PutMem(pSSM, FolderMapping[i].pFolderName, len);
+            rc = SSMR3PutMem(pSSM, pFolderMapping->pFolderName, len);
             AssertRCReturn(rc, rc);
 
-            len = ShflStringSizeOfBuffer(FolderMapping[i].pMapName);
+            len = ShflStringSizeOfBuffer(pFolderMapping->pMapName);
             rc = SSMR3PutU32(pSSM, len);
             AssertRCReturn(rc, rc);
 
-            rc = SSMR3PutMem(pSSM, FolderMapping[i].pMapName, len);
+            rc = SSMR3PutMem(pSSM, pFolderMapping->pMapName, len);
             AssertRCReturn(rc, rc);
 
-            rc = SSMR3PutBool(pSSM, FolderMapping[i].fHostCaseSensitive);
+            rc = SSMR3PutBool(pSSM, pFolderMapping->fHostCaseSensitive);
             AssertRCReturn(rc, rc);
 
-            rc = SSMR3PutBool(pSSM, FolderMapping[i].fGuestCaseSensitive);
+            rc = SSMR3PutBool(pSSM, pFolderMapping->fGuestCaseSensitive);
             AssertRCReturn(rc, rc);
         }
     }
@@ -202,100 +205,60 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     /* We don't actually (fully) restore the state; we simply check if the current state is as we it expect it to be. */
     for (int i=0;i<SHFL_MAX_MAPPINGS;i++)
     {
-        if (FolderMapping[i].pFolderName)
-        {
-            LogRel(("SharedFolders host service: loading folder [%ls]\n",
-                    FolderMapping[i].pFolderName->String.ucs2));
-        }
-
-        bool fValid;
-
+        /* Load the saved mapping description and try to find it in the mappings. */
+        MAPPING mapping;
+        memset (&mapping, 0, sizeof (mapping));
+        
         /* restore the folder mapping counter. */
-        rc = SSMR3GetU32(pSSM, &FolderMapping[i].cMappings);
+        rc = SSMR3GetU32(pSSM, &mapping.cMappings);
         AssertRCReturn(rc, rc);
 
-        rc = SSMR3GetBool(pSSM, &fValid);
+        rc = SSMR3GetBool(pSSM, &mapping.fValid);
         AssertRCReturn(rc, rc);
 
-        if (fValid != FolderMapping[i].fValid)
+        if (mapping.fValid)
         {
-            LogRel(("SharedFolders host service: unexpected saved state %d, should be %d\n",
-                    fValid, FolderMapping[i].fValid));
-            return VERR_SSM_UNEXPECTED_DATA;
-        }
+            uint32_t cbFolderName;
+            PSHFLSTRING pFolderName;
 
-        if (FolderMapping[i].fValid)
-        {
-            PSHFLSTRING pName;
+            uint32_t cbMapName;
+            PSHFLSTRING pMapName;
 
-            /* Check the host path name. */
-            rc = SSMR3GetU32(pSSM, &len);
+            /* Load the host path name. */
+            rc = SSMR3GetU32(pSSM, &cbFolderName);
             AssertRCReturn(rc, rc);
 
-            if (len != ShflStringSizeOfBuffer(FolderMapping[i].pFolderName))
-            {
-                LogRel(("SharedFolders host service: unexpected saved name length %d, should be %d\n",
-                        len, ShflStringSizeOfBuffer(FolderMapping[i].pFolderName)));
-                return VERR_SSM_UNEXPECTED_DATA;
-            }
+            pFolderName = (PSHFLSTRING)RTMemAlloc(cbFolderName);
+            AssertReturn(pFolderName != NULL, VERR_NO_MEMORY);
 
-            pName = (PSHFLSTRING)RTMemAlloc(len);
-            Assert(pName);
-            if (pName == NULL)
-                return VERR_NO_MEMORY;
-
-            rc = SSMR3GetMem(pSSM, pName, len);
+            rc = SSMR3GetMem(pSSM, pFolderName, cbFolderName);
             AssertRCReturn(rc, rc);
 
-            if (memcmp(FolderMapping[i].pFolderName, pName, len))
-            {
-                LogRel(("SharedFolders host service: unexpected saved name\n%.*Rhxd\nshould be\n%.*Rhxd\n",
-                        len, pName, len, FolderMapping[i].pFolderName));
-                RTMemFree(pName);
-                return VERR_SSM_UNEXPECTED_DATA;
-            }
-            RTMemFree(pName);
-
-            /* Check the map name. */
-            rc = SSMR3GetU32(pSSM, &len);
+            /* Load the map name. */
+            rc = SSMR3GetU32(pSSM, &cbMapName);
             AssertRCReturn(rc, rc);
 
-            if (len != ShflStringSizeOfBuffer(FolderMapping[i].pMapName))
-            {
-                LogRel(("SharedFolders host service: unexpected saved map length %d, should be %d\n",
-                        len, ShflStringSizeOfBuffer(FolderMapping[i].pMapName)));
-                return VERR_SSM_UNEXPECTED_DATA;
-            }
+            pMapName = (PSHFLSTRING)RTMemAlloc(cbMapName);
+            AssertReturn(pMapName != NULL, VERR_NO_MEMORY);
 
-            pName = (PSHFLSTRING)RTMemAlloc(len);
-            Assert(pName);
-            if (pName == NULL)
-                return VERR_NO_MEMORY;
-
-            rc = SSMR3GetMem(pSSM, pName, len);
+            rc = SSMR3GetMem(pSSM, pMapName, cbMapName);
             AssertRCReturn(rc, rc);
 
-            if (memcmp(FolderMapping[i].pMapName, pName, len))
-            {
-                LogRel(("SharedFolders host service: unexpected saved map\n%.*Rhxd\nshould be\n%.*Rhxd\n",
-                        len, pName, len, FolderMapping[i].pMapName));
-                RTMemFree(pName);
-                return VERR_SSM_UNEXPECTED_DATA;
-            }
-            RTMemFree(pName);
-
-            bool fCaseSensitive;
-
-            rc = SSMR3GetBool(pSSM, &fCaseSensitive);
+            rc = SSMR3GetBool(pSSM, &mapping.fHostCaseSensitive);
             AssertRCReturn(rc, rc);
-            if (FolderMapping[i].fHostCaseSensitive != fCaseSensitive)
-            {
-                LogRel(("SharedFolders host service: unexpected saved case %d, should be %d\n",
-                        fCaseSensitive, FolderMapping[i].fHostCaseSensitive));
-                return VERR_SSM_UNEXPECTED_DATA;
-            }
 
-            rc = SSMR3GetBool(pSSM, &FolderMapping[i].fGuestCaseSensitive);
+            rc = SSMR3GetBool(pSSM, &mapping.fGuestCaseSensitive);
+            AssertRCReturn(rc, rc);
+
+            mapping.pFolderName = pFolderName;
+            mapping.pMapName = pMapName;
+
+            /* 'i' is the root handle of the saved mapping. */
+            rc = vbsfMappingLoaded (&mapping, i);
+
+            RTMemFree(pMapName);
+            RTMemFree(pFolderName);
+
             AssertRCReturn(rc, rc);
         }
     }
@@ -1352,6 +1315,8 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
         /* Init handle table */
         rc = vbsfInitHandleTable();
         AssertRC(rc);
+
+        vbsfMappingInit();
     }
 
     return rc;

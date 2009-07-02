@@ -35,7 +35,7 @@ typedef struct
     bool        fWritable;
 } MAPPING, *PMAPPING;
 
-extern MAPPING FolderMapping[SHFL_MAX_MAPPINGS];
+void vbsfMappingInit(void);
 
 bool vbsfMappingQuery(uint32_t iMapping, PMAPPING *pMapping);
 
@@ -52,6 +52,9 @@ int vbsfUnmapFolder (SHFLCLIENTDATA *pClient, SHFLROOT root);
 PCRTUTF16     vbsfMappingsQueryHostRoot (SHFLROOT root, uint32_t *pcbRoot);
 bool          vbsfIsGuestMappingCaseSensitive (SHFLROOT root);
 bool          vbsfIsHostMappingCaseSensitive (SHFLROOT root);
+
+int vbsfMappingLoaded (const MAPPING *pLoadedMapping, SHFLROOT root);
+MAPPING *vbsfMappingGetByRoot(SHFLROOT root);
 
 #endif /* !___MAPPINGS_H */
 
