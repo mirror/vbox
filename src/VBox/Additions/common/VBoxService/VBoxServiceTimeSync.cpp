@@ -76,16 +76,16 @@
  *     calculate the dynamic minimum adjust factor.
  *  -# g_TimesyncMaxLatency - When to start discarding the data as utterly
  *     useless and take a rest (someone is too busy to give us good data).
+ *  -# g_TimeSyncSetThreshold - The threshold at which we will just set the time
+ *     instead of trying to adjust it (milliseconds).
  */
-
-
 
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #ifdef RT_OS_WINDOWS
-# include <windows.h>
-# include <winbase.h>
+# include <Windows.h>
+# include <winbase.h> /** @todo r=bird: Why is this here? Windows.h should include winbase.h... */
 #else
 # include <unistd.h>
 # include <errno.h>
@@ -123,8 +123,7 @@ static uint32_t g_TimeSyncMinAdjust = 100;
 static uint32_t g_TimeSyncLatencyFactor = 8;
 /** @see pg_vboxservice_timesync */
 static uint32_t g_TimeSyncMaxLatency = 250;
-/** The threshold at which we will just set the time instead of trying to
- *  adjust it. Milliseconds. */
+/** @see pg_vboxservice_timesync */
 static uint32_t g_TimeSyncSetThreshold = 20*60*1000;
 /** Whether the next adjustment should just set the time instead of trying to
  * adjust it. This is used to implement --timesync-set-start.  */
