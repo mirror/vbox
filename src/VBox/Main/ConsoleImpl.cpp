@@ -851,7 +851,7 @@ HRESULT Console::loadDataFromSavedState()
         if (SSM_VERSION_MAJOR(version)  == SSM_VERSION_MAJOR(sSSMConsoleVer))
         {
             if (VBOX_SUCCESS (vrc))
-                vrc = loadStateFileExec (ssm, this, 0);
+                vrc = loadStateFileExecInternal (ssm, version);
             else if (vrc == VERR_SSM_UNIT_NOT_FOUND)
                 vrc = VINF_SUCCESS;
         }
@@ -925,14 +925,13 @@ Console::saveStateFileExec (PSSMHANDLE pSSM, void *pvUser)
 
 /**
  *  Callback handler to load various console data from the state file.
- *  When \a u32Version is 0, this method is called from #loadDataFromSavedState,
- *  otherwise it is called when the VM is being restored from the saved state.
+ *  Called when the VM is being restored from the saved state.
  *
  *  @param pvUser       pointer to Console
  *  @param u32Version   Console unit version.
- *                      When not 0, should match sSSMConsoleVer.
+ *                      Should match sSSMConsoleVer.
  *
- *  @note Locks the Console object for writing.
+ *  @note Should locks the Console object for writing, if necessary.
  */
 //static
 DECLCALLBACK(int)
@@ -940,24 +939,36 @@ Console::loadStateFileExec (PSSMHANDLE pSSM, void *pvUser, uint32_t u32Version)
 {
     LogFlowFunc (("\n"));
 
-    if (u32Version != 0 && SSM_VERSION_MAJOR_CHANGED(u32Version, sSSMConsoleVer))
+    if (SSM_VERSION_MAJOR_CHANGED(u32Version, sSSMConsoleVer))
         return VERR_VERSION_MISMATCH;
-
-    if (u32Version != 0)
-    {
-        /* currently, nothing to do when we've been called from VMR3Load */
-        return VINF_SUCCESS;
-    }
 
     Console *that = static_cast <Console *> (pvUser);
     AssertReturn (that, VERR_INVALID_PARAMETER);
 
-    AutoCaller autoCaller (that);
+    /* Currently, nothing to do when we've been called from VMR3Load. */
+
+    return VINF_SUCCESS;
+}
+
+/**
+ *  Method to load various console data from the state file.
+ *  Called from #loadDataFromSavedState.
+ *
+ *  @param pvUser       pointer to Console
+ *  @param u32Version   Console unit version.
+ *                      Should match sSSMConsoleVer.
+ *
+ *  @note Locks the Console object for writing.
+ */
+int
+Console::loadStateFileExecInternal (PSSMHANDLE pSSM, uint32_t u32Version)
+{
+    AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), VERR_ACCESS_DENIED);
 
-    AutoWriteLock alock (that);
+    AutoWriteLock alock (this);
 
-    AssertReturn (that->mSharedFolders.size() == 0, VERR_INTERNAL_ERROR);
+    AssertReturn (mSharedFolders.size() == 0, VERR_INTERNAL_ERROR);
 
     uint32_t size = 0;
     int vrc = SSMR3GetU32 (pSSM, &size);
@@ -993,10 +1004,10 @@ Console::loadStateFileExec (PSSMHANDLE pSSM, void *pvUser, uint32_t u32Version)
 
         ComObjPtr <SharedFolder> sharedFolder;
         sharedFolder.createObject();
-        HRESULT rc = sharedFolder->init (that, name, hostPath, writable);
+        HRESULT rc = sharedFolder->init (this, name, hostPath, writable);
         AssertComRCReturn (rc, VERR_INTERNAL_ERROR);
 
-        that->mSharedFolders.insert (std::make_pair (name, sharedFolder));
+        mSharedFolders.insert (std::make_pair (name, sharedFolder));
     }
 
     return VINF_SUCCESS;
