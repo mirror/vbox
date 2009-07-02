@@ -477,7 +477,7 @@ typedef struct VMCPU
  * @param   pVM     VM Handle.
  * @param   iBit    Bit position to check and clear
  */
-#define VM_FF_TESTANDCLEAR(pVM, iBit)        (ASMBitTestAndClear(&(pVM)->fGlobalForcedActions, iBit##_BIT))
+#define VM_FF_TESTANDCLEAR(pVM, iBit)        (ASMAtomicBitTestAndClear(&(pVM)->fGlobalForcedActions, iBit##_BIT))
 
 /** @def VMCPU_FF_TESTANDCLEAR
  * Checks if one (!) force action in the specified set is pending and clears it atomically
@@ -487,7 +487,7 @@ typedef struct VMCPU
  * @param   pVCpu   VMCPU Handle.
  * @param   iBit    Bit position to check and clear
  */
-#define VMCPU_FF_TESTANDCLEAR(pVCpu, iBit)    (ASMBitTestAndClear(&(pVCpu)->fLocalForcedActions, iBit##_BIT))
+#define VMCPU_FF_TESTANDCLEAR(pVCpu, iBit)    (ASMAtomicBitTestAndClear(&(pVCpu)->fLocalForcedActions, iBit##_BIT))
 
 /** @def VMCPU_FF_ISPENDING
  * Checks if one or more force action in the specified set is pending for the given VCPU.
