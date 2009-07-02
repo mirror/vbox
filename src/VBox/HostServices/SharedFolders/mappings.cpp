@@ -32,10 +32,11 @@ static SHFLROOT aIndexFromRoot[SHFL_MAX_MAPPINGS];
 
 void vbsfMappingInit(void)
 {
-    int root;
+    unsigned root;
+
     for (root = 0; root < RT_ELEMENTS(aIndexFromRoot); root++)
     {
-        aIndexFromRoot[root] = ~0;
+        aIndexFromRoot[root] = SHFL_ROOT_NIL;
     }
 }
 
@@ -53,8 +54,7 @@ int vbsfMappingLoaded (const MAPPING *pLoadedMapping, SHFLROOT root)
         return VERR_INVALID_PARAMETER;
     }
 
-    int i;
-
+    SHFLROOT i;
     for (i = 0; i < RT_ELEMENTS(FolderMapping); i++)
     {
         MAPPING *pMapping = &FolderMapping[i];
@@ -81,9 +81,10 @@ MAPPING *vbsfMappingGetByRoot(SHFLROOT root)
 {
     if (root < RT_ELEMENTS(aIndexFromRoot))
     {
-        int iMapping = aIndexFromRoot[root];
+        SHFLROOT iMapping = aIndexFromRoot[root];
 
-        if (0 <= iMapping && iMapping < RT_ELEMENTS(FolderMapping))
+        if (   iMapping != SHFL_ROOT_NIL
+            && iMapping < RT_ELEMENTS(FolderMapping))
         {
             return &FolderMapping[iMapping];
         }
@@ -92,9 +93,10 @@ MAPPING *vbsfMappingGetByRoot(SHFLROOT root)
     return NULL;
 }
 
-static SHFLROOT vbsfMappingGetRootFromIndex(int iMapping)
+static SHFLROOT vbsfMappingGetRootFromIndex(SHFLROOT iMapping)
 {
-    int root;
+    unsigned root;
+
     for (root = 0; root < RT_ELEMENTS(aIndexFromRoot); root++)
     {
         if (iMapping == aIndexFromRoot[root])
@@ -103,14 +105,14 @@ static SHFLROOT vbsfMappingGetRootFromIndex(int iMapping)
         }
     }
 
-    return ~0;
+    return SHFL_ROOT_NIL;
 }
 
 static MAPPING *vbsfMappingGetByName (PRTUTF16 utf16Name, SHFLROOT *pRoot)
 {
-    int i;
+    unsigned i;
 
-    for (i=0;i<SHFL_MAX_MAPPINGS;i++)
+    for (i=0; i<SHFL_MAX_MAPPINGS; i++)
     {
         if (FolderMapping[i].fValid == true)
         {
@@ -118,7 +120,7 @@ static MAPPING *vbsfMappingGetByName (PRTUTF16 utf16Name, SHFLROOT *pRoot)
             {
                 SHFLROOT root = vbsfMappingGetRootFromIndex(i);
                 
-                if (root != ~0)
+                if (root != SHFL_ROOT_NIL)
                 {
                     if (pRoot)
                     {
@@ -137,13 +139,13 @@ static MAPPING *vbsfMappingGetByName (PRTUTF16 utf16Name, SHFLROOT *pRoot)
     return NULL;
 }
 
-static void vbsfRootHandleAdd(int iMapping)
+static void vbsfRootHandleAdd(SHFLROOT iMapping)
 {
-    int root;
+    unsigned root;
 
     for (root = 0; root < RT_ELEMENTS(aIndexFromRoot); root++)
     {
-        if (aIndexFromRoot[root] == ~0)
+        if (aIndexFromRoot[root] == SHFL_ROOT_NIL)
         {
             aIndexFromRoot[root] = iMapping;
             return;
@@ -151,24 +153,22 @@ static void vbsfRootHandleAdd(int iMapping)
     }
 
     AssertFailed();
-    return;
 }
 
-static void vbsfRootHandleRemove(int iMapping)
+static void vbsfRootHandleRemove(SHFLROOT iMapping)
 {
-    int root;
+    unsigned root;
 
     for (root = 0; root < RT_ELEMENTS(aIndexFromRoot); root++)
     {
         if (aIndexFromRoot[root] == iMapping)
         {
-            aIndexFromRoot[root] = ~0;
+            aIndexFromRoot[root] = SHFL_ROOT_NIL;
             return;
         }
     }
 
     AssertFailed();
-    return;
 }
 
 
@@ -180,14 +180,14 @@ static void vbsfRootHandleRemove(int iMapping)
  */
 int vbsfMappingsAdd (PSHFLSTRING pFolderName, PSHFLSTRING pMapName, uint32_t fWritable)
 {
-    int i;
+    unsigned i;
 
     Assert(pFolderName && pMapName);
 
     Log(("vbsfMappingsAdd %ls\n", pMapName->String.ucs2));
 
     /* check for duplicates */
-    for (i=0;i<SHFL_MAX_MAPPINGS;i++)
+    for (i=0; i<SHFL_MAX_MAPPINGS; i++)
     {
         if (FolderMapping[i].fValid == true)
         {
@@ -199,7 +199,7 @@ int vbsfMappingsAdd (PSHFLSTRING pFolderName, PSHFLSTRING pMapName, uint32_t fWr
         }
     }
 
-    for (i=0;i<SHFL_MAX_MAPPINGS;i++)
+    for (i=0; i<SHFL_MAX_MAPPINGS; i++)
     {
         if (FolderMapping[i].fValid == false)
         {
@@ -260,12 +260,12 @@ int vbsfMappingsAdd (PSHFLSTRING pFolderName, PSHFLSTRING pMapName, uint32_t fWr
 
 int vbsfMappingsRemove (PSHFLSTRING pMapName)
 {
-    int i;
+    unsigned i;
 
     Assert(pMapName);
 
     Log(("vbsfMappingsRemove %ls\n", pMapName->String.ucs2));
-    for (i=0;i<SHFL_MAX_MAPPINGS;i++)
+    for (i=0; i<SHFL_MAX_MAPPINGS; i++)
     {
         if (FolderMapping[i].fValid == true)
         {
