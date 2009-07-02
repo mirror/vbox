@@ -23,7 +23,154 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 
-MAPPING FolderMapping[SHFL_MAX_MAPPINGS];
+/* Shared folders order in the saved state and in the FolderMapping can differ.
+ * So a translation array of root handle is needed.
+ */
+
+static MAPPING FolderMapping[SHFL_MAX_MAPPINGS];
+static SHFLROOT aIndexFromRoot[SHFL_MAX_MAPPINGS];
+
+void vbsfMappingInit(void)
+{
+    int root;
+    for (root = 0; root < RT_ELEMENTS(aIndexFromRoot); root++)
+    {
+        aIndexFromRoot[root] = ~0;
+    }
+}
+
+int vbsfMappingLoaded (const MAPPING *pLoadedMapping, SHFLROOT root)
+{
+    /* Mapping loaded from the saved state with the index. Which means
+     * the guest uses the iMapping as root handle for this folder.
+     * Check whether there is the same mapping in FolderMapping and
+     * update the aIndexFromRoot.
+     *
+     * Also update the mapping properties, which were lost: cMappings.
+     */
+    if (root >= SHFL_MAX_MAPPINGS)
+    {
+        return VERR_INVALID_PARAMETER;
+    }
+
+    int i;
+
+    for (i = 0; i < RT_ELEMENTS(FolderMapping); i++)
+    {
+        MAPPING *pMapping = &FolderMapping[i];
+
+        /* Equal? */
+        if (   pLoadedMapping->fValid == pMapping->fValid
+            && ShflStringSizeOfBuffer(pLoadedMapping->pMapName) == ShflStringSizeOfBuffer(pMapping->pMapName)
+            && memcmp(pLoadedMapping->pMapName, pMapping->pMapName, ShflStringSizeOfBuffer(pMapping->pMapName)) == 0)
+        {
+            /* Actual index is i. */
+            aIndexFromRoot[root] = i;
+
+            /* Update the mapping properties. */
+            pMapping->cMappings = pLoadedMapping->cMappings;
+
+            return VINF_SUCCESS;
+        }
+    }
+
+    return VERR_INVALID_PARAMETER;
+}
+
+MAPPING *vbsfMappingGetByRoot(SHFLROOT root)
+{
+    if (root < RT_ELEMENTS(aIndexFromRoot))
+    {
+        int iMapping = aIndexFromRoot[root];
+
+        if (0 <= iMapping && iMapping < RT_ELEMENTS(FolderMapping))
+        {
+            return &FolderMapping[iMapping];
+        }
+    }
+
+    return NULL;
+}
+
+static SHFLROOT vbsfMappingGetRootFromIndex(int iMapping)
+{
+    int root;
+    for (root = 0; root < RT_ELEMENTS(aIndexFromRoot); root++)
+    {
+        if (iMapping == aIndexFromRoot[root])
+        {
+            return root;
+        }
+    }
+
+    return ~0;
+}
+
+static MAPPING *vbsfMappingGetByName (PRTUTF16 utf16Name, SHFLROOT *pRoot)
+{
+    int i;
+
+    for (i=0;i<SHFL_MAX_MAPPINGS;i++)
+    {
+        if (FolderMapping[i].fValid == true)
+        {
+            if (!RTUtf16LocaleICmp(FolderMapping[i].pMapName->String.ucs2, utf16Name))
+            {
+                SHFLROOT root = vbsfMappingGetRootFromIndex(i);
+                
+                if (root != ~0)
+                {
+                    if (pRoot)
+                    {
+                        *pRoot = root;
+                    }
+                    return &FolderMapping[i];
+                }
+                else
+                {
+                    AssertFailed();
+                }
+            }
+        }
+    }
+
+    return NULL;
+}
+
+static void vbsfRootHandleAdd(int iMapping)
+{
+    int root;
+
+    for (root = 0; root < RT_ELEMENTS(aIndexFromRoot); root++)
+    {
+        if (aIndexFromRoot[root] == ~0)
+        {
+            aIndexFromRoot[root] = iMapping;
+            return;
+        }
+    }
+
+    AssertFailed();
+    return;
+}
+
+static void vbsfRootHandleRemove(int iMapping)
+{
+    int root;
+
+    for (root = 0; root < RT_ELEMENTS(aIndexFromRoot); root++)
+    {
+        if (aIndexFromRoot[root] == iMapping)
+        {
+            aIndexFromRoot[root] = ~0;
+            return;
+        }
+    }
+
+    AssertFailed();
+    return;
+}
+
 
 
 /*
@@ -97,6 +244,7 @@ int vbsfMappingsAdd (PSHFLSTRING pFolderName, PSHFLSTRING pMapName, uint32_t fWr
                 RTStrFree(utf8Root);
             }
             FolderMapping[i].fHostCaseSensitive = RT_SUCCESS(rc) ? prop.fCaseSensitive : false;
+            vbsfRootHandleAdd(i);
             break;
         }
     }
@@ -134,6 +282,7 @@ int vbsfMappingsRemove (PSHFLSTRING pMapName)
                 FolderMapping[i].pFolderName = NULL;
                 FolderMapping[i].pMapName    = NULL;
                 FolderMapping[i].fValid      = false;
+                vbsfRootHandleRemove(i);
                 break;
             }
         }
@@ -150,36 +299,39 @@ int vbsfMappingsRemove (PSHFLSTRING pMapName)
 
 PCRTUTF16 vbsfMappingsQueryHostRoot (SHFLROOT root, uint32_t *pcbRoot)
 {
-    if (root > SHFL_MAX_MAPPINGS)
+    MAPPING *pFolderMapping = vbsfMappingGetByRoot(root);
+    if (pFolderMapping == NULL)
     {
         AssertFailed();
         return NULL;
     }
 
-    *pcbRoot = FolderMapping[root].pFolderName->u16Size;
-    return &FolderMapping[root].pFolderName->String.ucs2[0];
+    *pcbRoot = pFolderMapping->pFolderName->u16Size;
+    return &pFolderMapping->pFolderName->String.ucs2[0];
 }
 
 bool vbsfIsGuestMappingCaseSensitive (SHFLROOT root)
 {
-    if (root > SHFL_MAX_MAPPINGS)
+    MAPPING *pFolderMapping = vbsfMappingGetByRoot(root);
+    if (pFolderMapping == NULL)
     {
         AssertFailed();
         return false;
     }
 
-    return FolderMapping[root].fGuestCaseSensitive;
+    return pFolderMapping->fGuestCaseSensitive;
 }
 
 bool vbsfIsHostMappingCaseSensitive (SHFLROOT root)
 {
-    if (root > SHFL_MAX_MAPPINGS)
+    MAPPING *pFolderMapping = vbsfMappingGetByRoot(root);
+    if (pFolderMapping == NULL)
     {
         AssertFailed();
         return false;
     }
 
-    return FolderMapping[root].fHostCaseSensitive;
+    return pFolderMapping->fHostCaseSensitive;
 }
 
 int vbsfMappingsQuery (SHFLCLIENTDATA *pClient, SHFLMAPPING *pMappings, uint32_t *pcMappings)
@@ -193,7 +345,8 @@ int vbsfMappingsQuery (SHFLCLIENTDATA *pClient, SHFLMAPPING *pMappings, uint32_t
     *pcMappings = 0;
     for (uint32_t i=0;i<cMaxMappings;i++)
     {
-        if (FolderMapping[i].fValid == true)
+        MAPPING *pFolderMapping = vbsfMappingGetByRoot(i);
+        if (pFolderMapping != NULL && pFolderMapping->fValid == true)
         {
             pMappings[*pcMappings].u32Status = SHFL_MS_NEW;
             pMappings[*pcMappings].root = i;
@@ -213,8 +366,11 @@ int vbsfMappingsQueryName (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *p
     LogFlow(("vbsfMappingsQuery: pClient = %p, root = %d, *pString = %p\n",
              pClient, root, pString));
 
-    if (root >= SHFL_MAX_MAPPINGS)
+    MAPPING *pFolderMapping = vbsfMappingGetByRoot(root);
+    if (pFolderMapping == NULL)
+    {
         return VERR_INVALID_PARAMETER;
+    }
 
     if (BIT_FLAG(pClient->fu32Flags, SHFL_CF_UTF8))
     {
@@ -223,10 +379,10 @@ int vbsfMappingsQueryName (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *p
         return VERR_INVALID_PARAMETER;
     }
 
-    if (FolderMapping[root].fValid == true)
+    if (pFolderMapping->fValid == true)
     {
-        pString->u16Length = FolderMapping[root].pMapName->u16Length;
-        memcpy(pString->String.ucs2, FolderMapping[root].pMapName->String.ucs2, pString->u16Size);
+        pString->u16Length = pFolderMapping->pMapName->u16Length;
+        memcpy(pString->String.ucs2, pFolderMapping->pMapName->String.ucs2, pString->u16Size);
     }
     else
         rc = VERR_FILE_NOT_FOUND;
@@ -243,11 +399,14 @@ int vbsfMappingsQueryWritable (SHFLCLIENTDATA *pClient, SHFLROOT root, bool *fWr
     LogFlow(("vbsfMappingsQueryWritable: pClient = %p, root = %d\n",
              pClient, root));
 
-    if (root >= SHFL_MAX_MAPPINGS)
+    MAPPING *pFolderMapping = vbsfMappingGetByRoot(root);
+    if (pFolderMapping == NULL)
+    {
         return VERR_INVALID_PARAMETER;
+    }
 
-    if (FolderMapping[root].fValid == true)
-        *fWritable = FolderMapping[root].fWritable;
+    if (pFolderMapping->fValid == true)
+        *fWritable = pFolderMapping->fWritable;
     else
         rc = VERR_FILE_NOT_FOUND;
 
@@ -256,27 +415,9 @@ int vbsfMappingsQueryWritable (SHFLCLIENTDATA *pClient, SHFLROOT root, bool *fWr
     return rc;
 }
 
-static int vbsfQueryMappingIndex (PRTUTF16 utf16Name, size_t *pIndex)
-{
-    size_t i;
-
-    for (i=0;i<SHFL_MAX_MAPPINGS;i++)
-    {
-        if (FolderMapping[i].fValid == true)
-        {
-            if (!RTUtf16LocaleICmp(FolderMapping[i].pMapName->String.ucs2, utf16Name))
-            {
-                *pIndex = i;
-                return 0;
-            }
-        }
-    }
-    return -1;
-}
-
 int vbsfMapFolder (SHFLCLIENTDATA *pClient, PSHFLSTRING pszMapName, RTUTF16 delimiter, bool fCaseSensitive, SHFLROOT *pRoot)
 {
-    size_t index;
+    MAPPING *pFolderMapping = NULL;
 
     if (BIT_FLAG(pClient->fu32Flags, SHFL_CF_UTF8))
     {
@@ -305,30 +446,22 @@ int vbsfMapFolder (SHFLCLIENTDATA *pClient, PSHFLSTRING pszMapName, RTUTF16 deli
         if (RT_FAILURE (rc))
             return rc;
 
-        rc = vbsfQueryMappingIndex (utf16Name, &index);
+        pFolderMapping = vbsfMappingGetByName(utf16Name, pRoot);
         RTUtf16Free (utf16Name);
-
-        if (rc)
-        {
-            // AssertMsgFailed(("vbsfMapFolder: map %s not found!!\n",
-            //                 pszMapName->String.utf8));
-            return VERR_FILE_NOT_FOUND;
-        }
     }
     else
     {
-        if (vbsfQueryMappingIndex (pszMapName->String.ucs2, &index))
-        {
-            // AssertMsgFailed(("vbsfMapFolder: map %ls not found!!\n",
-            //                  pszMapName->String.ucs2));
-            return VERR_FILE_NOT_FOUND;
-        }
+        pFolderMapping = vbsfMappingGetByName(pszMapName->String.ucs2, pRoot);
     }
 
-    FolderMapping[index].cMappings++;
-    Assert(FolderMapping[index].cMappings == 1 || FolderMapping[index].fGuestCaseSensitive == fCaseSensitive);
-    FolderMapping[index].fGuestCaseSensitive = fCaseSensitive;
-    *pRoot = (SHFLROOT)index;
+    if (!pFolderMapping)
+    {
+        return VERR_FILE_NOT_FOUND;
+    }
+
+    pFolderMapping->cMappings++;
+    Assert(pFolderMapping->cMappings == 1 || pFolderMapping->fGuestCaseSensitive == fCaseSensitive);
+    pFolderMapping->fGuestCaseSensitive = fCaseSensitive;
     return VINF_SUCCESS;
 }
 
@@ -336,15 +469,16 @@ int vbsfUnmapFolder (SHFLCLIENTDATA *pClient, SHFLROOT root)
 {
     int rc = VINF_SUCCESS;
 
-    if (root > SHFL_MAX_MAPPINGS)
+    MAPPING *pFolderMapping = vbsfMappingGetByRoot(root);
+    if (pFolderMapping == NULL)
     {
         AssertFailed();
         return VERR_FILE_NOT_FOUND;
     }
 
-    Assert(FolderMapping[root].fValid == true && FolderMapping[root].cMappings > 0);
-    if (FolderMapping[root].cMappings > 0)
-        FolderMapping[root].cMappings--;
+    Assert(pFolderMapping->fValid == true && pFolderMapping->cMappings > 0);
+    if (pFolderMapping->cMappings > 0)
+        pFolderMapping->cMappings--;
 
     Log(("vbsfUnmapFolder\n"));
     return rc;
