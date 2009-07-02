@@ -265,7 +265,7 @@ BOOL VboxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER* a_pUserInfo,
                 if (g_pfnWTSGetActiveConsoleSessionId != NULL)            /* Check terminal session ID. */
                     dwActiveSession = g_pfnWTSGetActiveConsoleSessionId();
 
-                /*VBoxServiceVerbose(3, ("vboxVMInfoThread: Users: Current active session ID: %ld\n", dwActiveSession));*/
+                /*VBoxServiceVerbose(3, ("Users: Current active session ID: %ld\n", dwActiveSession));*/
 
                 if (SidTypeUser == ownerType)
                 {
@@ -336,14 +336,15 @@ int VboxServiceWinGetAddsVersion(uint32_t uiClientID)
     DWORD dwSize = 0;
     DWORD dwType = 0;
 
-    /* First try the old registry path ... */
-    rc = RegOpenKeyExA (HKEY_LOCAL_MACHINE, "SOFTWARE\\Sun\\xVM VirtualBox Guest Additions", 0, KEY_READ, &hKey);
+    /* Check the new path first. */
+    rc = RegOpenKeyExA (HKEY_LOCAL_MACHINE, "SOFTWARE\\Sun\\VirtualBox Guest Additions", 0, KEY_READ, &hKey);
     if ((rc != ERROR_SUCCESS) && (rc != ERROR_FILE_NOT_FOUND))
-    {
-        /* Old registry path does not exist -- maybe the new one does? */
-        rc = RegOpenKeyExA (HKEY_LOCAL_MACHINE, "SOFTWARE\\Sun\\VirtualBox Guest Additions", 0, KEY_READ, &hKey);
+    {  
+        /* New path does not exist, check the old one ... */
+        rc = RegOpenKeyExA (HKEY_LOCAL_MACHINE, "SOFTWARE\\Sun\\xVM VirtualBox Guest Additions", 0, KEY_READ, &hKey);
         if ((rc != ERROR_SUCCESS) && (rc != ERROR_FILE_NOT_FOUND))
         {
+            /* Nothing seems to exist, print some warning. */
             VBoxServiceError("Failed to open registry key (guest additions)! Error: %d\n", rc);
             return 1;
         }
