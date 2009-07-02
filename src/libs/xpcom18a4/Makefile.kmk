@@ -1458,6 +1458,21 @@ VBoxPython2_5_INCS = \
 	$(VBOX_PATH_MACOSX_SDK_10_5)/System/Library/Frameworks/Python.framework/Headers
 endif
 
+if defined(VBOX_WITH_VBOXPYTHON25_FOR_SOLARIS) && "$(KBUILD_TARGET)" == "solaris"
+# Same VBoxPython except built against the newer python version.
+DLLS += VBoxPython2_5
+VBoxPython2_5_EXTENDS = VBoxPython
+VBoxPython2_5_TEMPLATE = XPCOM
+VBoxPython2_5_NAME = VBoxPython2_5
+VBoxPython2_5_INCS = \
+	python/src \
+	/usr/include/python2.5
+VBoxPython2_5_LIBS = \
+	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
+	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL) \
+	/usr/lib/$(VBOX_TMP)libpython2.5$(SUFF_DLL)
+endif
+
 # Python Client Module - the Python bits.
 VBoxPython-inst-py-xpcom_INST = $(INST_SDK)bindings/xpcom/python/xpcom/
 VBoxPython-inst-py-xpcom_SOURCES = \
