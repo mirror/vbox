@@ -60,11 +60,13 @@ public:
     }
 
     ministring(const ministring &s)
+        : m_psz(NULL)
     {
         copyFrom(s);
     }
 
     ministring(const char *pcsz)
+        : m_psz(NULL)
     {
         copyFrom(pcsz);
     }
