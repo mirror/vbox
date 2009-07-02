@@ -1576,12 +1576,20 @@ static void pgmR3InitStats(PVM pVM)
         rc = STAMR3RegisterF(pVM, a, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, c, b); \
         AssertRC(rc);
 
+# define PGM_REG_COUNTER_BYTES(a, b, c) \
+        rc = STAMR3RegisterF(pVM, a, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES, c, b); \
+        AssertRC(rc);
+
 # define PGM_REG_PROFILE(a, b, c) \
         rc = STAMR3RegisterF(pVM, a, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, c, b); \
         AssertRC(rc);
 
     PGM_REG_COUNTER(&pPGM->StatR3DetectedConflicts,           "/PGM/R3/DetectedConflicts",          "The number of times PGMR3CheckMappingConflicts() detected a conflict.");
     PGM_REG_PROFILE(&pPGM->StatR3ResolveConflict,             "/PGM/R3/ResolveConflict",            "pgmR3SyncPTResolveConflict() profiling (includes the entire relocation).");
+    PGM_REG_COUNTER(&pPGM->StatR3PhysRead,                    "/PGM/R3/Phys/Read",                  "The number of times PGMPhysRead was called.");
+    PGM_REG_COUNTER_BYTES(&pPGM->StatR3PhysReadBytes,         "/PGM/R3/Phys/Read/Bytes",            "The number of bytes read by PGMPhysRead.");
+    PGM_REG_COUNTER(&pPGM->StatR3PhysWrite,                   "/PGM/R3/Phys/Write",                 "The number of times PGMPhysWrite was called.");
+    PGM_REG_COUNTER_BYTES(&pPGM->StatR3PhysWriteBytes,        "/PGM/R3/Phys/Write/Bytes",           "The number of bytes written by PGMPhysWrite.");
 
     PGM_REG_COUNTER(&pPGM->StatRZChunkR3MapTlbHits,           "/PGM/ChunkR3Map/TlbHitsRZ",          "TLB hits.");
     PGM_REG_COUNTER(&pPGM->StatRZChunkR3MapTlbMisses,         "/PGM/ChunkR3Map/TlbMissesRZ",        "TLB misses.");
@@ -1609,11 +1617,21 @@ static void pgmR3InitStats(PVM pVM)
     PGM_REG_COUNTER(&pPGM->StatR3PageReplaceZero,             "/PGM/R3/Page/ReplacedZero",          "Times the zero page was replaced.");
 /// @todo    PGM_REG_COUNTER(&pPGM->StatR3PageHandyAllocs,             "/PGM/R3/Page/HandyAllocs",               "Number of times we've allocated more handy pages.");
 
+    PGM_REG_COUNTER(&pPGM->StatRZPhysRead,                    "/PGM/RZ/Phys/Read",                  "The number of times PGMPhysRead was called.");
+    PGM_REG_COUNTER_BYTES(&pPGM->StatRZPhysReadBytes,         "/PGM/RZ/Phys/Read/Bytes",            "The number of bytes read by PGMPhysRead.");
+    PGM_REG_COUNTER(&pPGM->StatRZPhysWrite,                   "/PGM/RZ/Phys/Write",                 "The number of times PGMPhysWrite was called.");
+    PGM_REG_COUNTER_BYTES(&pPGM->StatRZPhysWriteBytes,        "/PGM/RZ/Phys/Write/Bytes",           "The number of bytes written by PGMPhysWrite.");
+
     /* GC only: */
     PGM_REG_COUNTER(&pPGM->StatRCDynMapCacheHits,             "/PGM/RC/DynMapCache/Hits" ,          "Number of dynamic page mapping cache hits.");
     PGM_REG_COUNTER(&pPGM->StatRCDynMapCacheMisses,           "/PGM/RC/DynMapCache/Misses" ,        "Number of dynamic page mapping cache misses.");
     PGM_REG_COUNTER(&pPGM->StatRCInvlPgConflict,              "/PGM/RC/InvlPgConflict",             "Number of times PGMInvalidatePage() detected a mapping conflict.");
     PGM_REG_COUNTER(&pPGM->StatRCInvlPgSyncMonCR3,            "/PGM/RC/InvlPgSyncMonitorCR3",       "Number of times PGMInvalidatePage() ran into PGM_SYNC_MONITOR_CR3.");
+
+    PGM_REG_COUNTER(&pPGM->StatRCPhysRead,                    "/PGM/RC/Phys/Read",                  "The number of times PGMPhysRead was called.");
+    PGM_REG_COUNTER_BYTES(&pPGM->StatRCPhysReadBytes,         "/PGM/RC/Phys/Read/Bytes",            "The number of bytes read by PGMPhysRead.");
+    PGM_REG_COUNTER(&pPGM->StatRCPhysWrite,                   "/PGM/RC/Phys/Write",                 "The number of times PGMPhysWrite was called.");
+    PGM_REG_COUNTER_BYTES(&pPGM->StatRCPhysWriteBytes,        "/PGM/RC/Phys/Write/Bytes",           "The number of bytes written by PGMPhysWrite.");
 
 # ifdef PGMPOOL_WITH_GCPHYS_TRACKING
     PGM_REG_COUNTER(&pPGM->StatTrackVirgin,                   "/PGM/Track/Virgin",                  "The number of first time shadowings");

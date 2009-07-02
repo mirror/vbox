@@ -2479,6 +2479,19 @@ typedef struct PGM
     STAMCOUNTER StatRCInvlPgConflict;               /**< RC: Number of times PGMInvalidatePage() detected a mapping conflict. */
     STAMCOUNTER StatRCInvlPgSyncMonCR3;             /**< RC: Number of times PGMInvalidatePage() ran into PGM_SYNC_MONITOR_CR3. */
 
+    STAMCOUNTER StatRZPhysRead;
+    STAMCOUNTER StatRZPhysReadBytes;
+    STAMCOUNTER StatRZPhysWrite;
+    STAMCOUNTER StatRZPhysWriteBytes;
+    STAMCOUNTER StatR3PhysRead;
+    STAMCOUNTER StatR3PhysReadBytes;
+    STAMCOUNTER StatR3PhysWrite;
+    STAMCOUNTER StatR3PhysWriteBytes;
+    STAMCOUNTER StatRCPhysRead;
+    STAMCOUNTER StatRCPhysReadBytes;
+    STAMCOUNTER StatRCPhysWrite;
+    STAMCOUNTER StatRCPhysWriteBytes;
+
 # ifdef PGMPOOL_WITH_GCPHYS_TRACKING
     STAMCOUNTER StatTrackVirgin;                    /**< The number of first time shadowings. */
     STAMCOUNTER StatTrackAliased;                   /**< The number of times switching to cRef2, i.e. the page is being shadowed by two PTs. */
