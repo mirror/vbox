@@ -296,7 +296,7 @@ VMMR3DECL(int) DBGFR3VMMForcedAction(PVM pVM)
 {
     int rc = VINF_SUCCESS;
 
-    if (VM_FF_TESTANDCLEAR(pVM, VM_FF_DBGF_BIT))
+    if (VM_FF_TESTANDCLEAR(pVM, VM_FF_DBGF))
     {
         PVMCPU pVCpu = VMMGetCpu(pVM);
 
