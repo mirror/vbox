@@ -827,7 +827,7 @@ VMMR3DECL(void) PDMR3QueueFlushWorker(PVM pVM, PPDMQUEUE pQueue)
     VM_ASSERT_EMT(pVM);
 
     /** @todo This will clash with PDMR3QueueFlushAll (guest SMP)! */
-    Assert(!(pVM->pdm.s.fQueueFlushing & PDM_QUEUE_FLUSH_FLAG_ACTIVE_BIT));
+    Assert(!(pVM->pdm.s.fQueueFlushing & PDM_QUEUE_FLUSH_FLAG_ACTIVE));
 
     /*
      * Flush the queue.
