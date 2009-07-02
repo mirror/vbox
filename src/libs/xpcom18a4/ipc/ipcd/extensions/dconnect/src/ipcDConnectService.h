@@ -187,7 +187,7 @@ private:
 
 // used elsewhere like nsAtomTable to safely represent the integral value
 // of an address.
-typedef unsigned long PtrBits;
+typedef PRUint64 PtrBits;
 
 // bit flag that defines if a PtrBits value represents a remote object
 #define PTRBITS_REMOTE_BIT 0x1
