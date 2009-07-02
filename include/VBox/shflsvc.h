@@ -126,6 +126,8 @@
  */
 typedef uint32_t SHFLROOT;
 
+#define SHFL_ROOT_NIL ((SHFLROOT)~0)
+
 
 /** A shared folders handle for an opened object. */
 typedef uint64_t SHFLHANDLE;
