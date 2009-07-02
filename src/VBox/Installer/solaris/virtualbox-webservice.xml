@@ -65,7 +65,7 @@
         <exec_method
             type='method'
             name='start'
-            exec='/opt/VirtualBox/smf-vboxwebsrv %m'
+            exec='/opt/VirtualBox/smf-vboxwebsrv.sh %m'
             timeout_seconds='15'>
             <method_context>
                 <method_credential user='root' group='root' />
