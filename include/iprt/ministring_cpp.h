@@ -60,13 +60,11 @@ public:
     }
 
     ministring(const ministring &s)
-        : m_psz(NULL)
     {
         copyFrom(s);
     }
 
     ministring(const char *pcsz)
-        : m_psz(NULL)
     {
         copyFrom(pcsz);
     }
@@ -149,15 +147,21 @@ public:
 
     ministring& operator=(const char *pcsz)
     {
-        cleanup();
-        copyFrom(pcsz);
+        if (m_psz != pcsz)
+        {
+            cleanup();
+            copyFrom(pcsz);
+        }
         return *this;
     }
 
     ministring& operator=(const ministring &s)
     {
-        cleanup();
-        copyFrom(s);
+        if (this != &s)
+        {
+            cleanup();
+            copyFrom(s);
+        }
         return *this;
     }
 
@@ -271,13 +275,10 @@ protected:
      */
     void copyFrom(const ministring &s)
     {
-        if (&s != this)
-        {
-            m_cbLength = s.m_cbLength;
-            m_cbAllocated = m_cbLength + 1;
-            m_psz = (char*)RTMemAlloc(m_cbAllocated);
-            memcpy(m_psz, s.m_psz, m_cbAllocated);      // include 0 terminator
-        }
+        m_cbLength = s.m_cbLength;
+        m_cbAllocated = m_cbLength + 1;
+        m_psz = (char*)RTMemAlloc(m_cbAllocated);
+        memcpy(m_psz, s.m_psz, m_cbAllocated);      // include 0 terminator
     }
 
     /**
@@ -290,21 +291,18 @@ protected:
      */
     void copyFrom(const char *pcsz)
     {
-        if (pcsz != m_psz)  // leaves NULL as NULL also
+        if (pcsz)
         {
-            if (pcsz)
-            {
-                m_cbLength = strlen(pcsz);
-                m_cbAllocated = m_cbLength + 1;
-                m_psz = (char*)RTMemAlloc(m_cbAllocated);
-                memcpy(m_psz, pcsz, m_cbAllocated);      // include 0 terminator
-            }
-            else
-            {
-                m_cbLength = 0;
-                m_cbAllocated = 0;
-                m_psz = NULL;
-            }
+            m_cbLength = strlen(pcsz);
+            m_cbAllocated = m_cbLength + 1;
+            m_psz = (char*)RTMemAlloc(m_cbAllocated);
+            memcpy(m_psz, pcsz, m_cbAllocated);      // include 0 terminator
+        }
+        else
+        {
+            m_cbLength = 0;
+            m_cbAllocated = 0;
+            m_psz = NULL;
         }
     }
 
