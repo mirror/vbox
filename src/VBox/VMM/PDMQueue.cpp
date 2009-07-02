@@ -800,7 +800,7 @@ static bool pdmR3QueueFlush(PPDMQUEUE pQueue)
                 while (pCur->pNextR3)
                     pCur = pCur->pNextR3;
                 pCur->pNextR3 = pItems;
-                pItem = pPending;
+                pItems = pPending;
             }
         }
         return false;
