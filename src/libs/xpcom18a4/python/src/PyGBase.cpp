@@ -61,7 +61,7 @@ extern PyG_Base *MakePyG_nsIModule(PyObject *);
 extern PyG_Base *MakePyG_nsIComponentLoader(PyObject *instance);
 extern PyG_Base *MakePyG_nsIInputStream(PyObject *instance);
 
-static char *PyXPCOM_szDefaultGatewayAttributeName = "_com_instance_default_gateway_";
+static char *PyXPCOM_szDefaultGatewayAttributeName = (char*)"_com_instance_default_gateway_";
 PyG_Base *GetDefaultGateway(PyObject *instance);
 void AddDefaultGateway(PyObject *instance, nsISupports *gateway);
 PRBool CheckDefaultGateway(PyObject *real_inst, REFNSIID iid, nsISupports **ret_gateway);
@@ -301,8 +301,8 @@ PyG_Base::MakeInterfaceParam(nsISupports *pis,
 		goto done;
 
 	result = PyObject_CallMethod(m_pPyObject, 
-	                               "_MakeInterfaceParam_",
-				       "OOiOi",
+	                               (char*)"_MakeInterfaceParam_",
+				       (char*)"OOiOi",
 				       obISupports,
 				       obIID,
 				       methodIndex,
@@ -371,8 +371,8 @@ PyG_Base::QueryInterface(REFNSIID iid, void** ppv)
 			return NS_ERROR_OUT_OF_MEMORY;
 		}
 
-		PyObject *result = PyObject_CallMethod(m_pPyObject, "_QueryInterface_",
-		                                                    "OO", 
+		PyObject *result = PyObject_CallMethod(m_pPyObject, (char*)"_QueryInterface_",
+		                                                    (char*)"OO", 
 		                                                    this_interface_ob, ob);
 		Py_DECREF(ob);
 		Py_DECREF(this_interface_ob);
@@ -480,8 +480,8 @@ nsresult PyG_Base::HandleNativeGatewayError(const char *szMethodName)
 		PyErr_Fetch(&exc_typ, &exc_val, &exc_tb);
 
 		PyObject *err_result = PyObject_CallMethod(m_pPyObject, 
-	                                       "_GatewayException_",
-					       "z(OOO)",
+	                                       (char*)"_GatewayException_",
+					       (char*)"z(OOO)",
 					       szMethodName,
 		                               exc_typ ? exc_typ : Py_None, // should never be NULL, but defensive programming...
 		                               exc_val ? exc_val : Py_None, // may well be NULL.
