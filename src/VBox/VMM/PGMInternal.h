@@ -2492,6 +2492,19 @@ typedef struct PGM
     STAMCOUNTER StatRCPhysWrite;
     STAMCOUNTER StatRCPhysWriteBytes;
 
+    STAMCOUNTER StatRZPhysSimpleRead;
+    STAMCOUNTER StatRZPhysSimpleReadBytes;
+    STAMCOUNTER StatRZPhysSimpleWrite;
+    STAMCOUNTER StatRZPhysSimpleWriteBytes;
+    STAMCOUNTER StatR3PhysSimpleRead;
+    STAMCOUNTER StatR3PhysSimpleReadBytes;
+    STAMCOUNTER StatR3PhysSimpleWrite;
+    STAMCOUNTER StatR3PhysSimpleWriteBytes;
+    STAMCOUNTER StatRCPhysSimpleRead;
+    STAMCOUNTER StatRCPhysSimpleReadBytes;
+    STAMCOUNTER StatRCPhysSimpleWrite;
+    STAMCOUNTER StatRCPhysSimpleWriteBytes;
+
 # ifdef PGMPOOL_WITH_GCPHYS_TRACKING
     STAMCOUNTER StatTrackVirgin;                    /**< The number of first time shadowings. */
     STAMCOUNTER StatTrackAliased;                   /**< The number of times switching to cRef2, i.e. the page is being shadowed by two PTs. */

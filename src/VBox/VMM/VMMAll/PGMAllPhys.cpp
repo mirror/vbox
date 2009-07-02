@@ -2281,6 +2281,9 @@ VMMDECL(int) PGMPhysSimpleReadGCPtr(PVMCPU pVCpu, void *pvDst, RTGCPTR GCPtrSrc,
     if (!cb)
         return VINF_SUCCESS;
 
+    STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,PhysSimpleRead));
+    STAM_COUNTER_ADD(&pVM->pgm.s.CTX_MID_Z(Stat,PhysSimpleReadBytes), cb);
+
     /* Take the PGM lock here, because many called functions take the lock for a very short period. That's counter-productive
      * when many VCPUs are fighting for the lock.
      */
@@ -2367,6 +2370,9 @@ VMMDECL(int) PGMPhysSimpleWriteGCPtr(PVMCPU pVCpu, RTGCPTR GCPtrDst, const void 
      */
     if (!cb)
         return VINF_SUCCESS;
+
+    STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,PhysSimpleWrite));
+    STAM_COUNTER_ADD(&pVM->pgm.s.CTX_MID_Z(Stat,PhysSimpleWriteBytes), cb);
 
     /* map the 1st page */
     void *pvDst;
