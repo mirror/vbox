@@ -759,6 +759,11 @@ static int dosprintf(SprintfState *ss, const char *fmt, va_list ap)
 	 * the various sprintf() implementations are inconsistent
 	 * on this feature.
 	 */
+#ifdef VBOX
+        /* this is not expected so just ignore this flags */
+        while (c == '#')
+            c = *fmt++;
+#endif
 	while ((c == '-') || (c == '+') || (c == ' ') || (c == '0')) {
 	    if (c == '-') flags |= FLAG_LEFT;
 	    if (c == '+') flags |= FLAG_SIGNED;
