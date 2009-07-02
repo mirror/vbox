@@ -59,6 +59,7 @@
 #endif
 
 #include <stddef.h>
+#include <stdint.h>
 
 /***********************************************************************
 ** MACROS:      PR_EXTERN
