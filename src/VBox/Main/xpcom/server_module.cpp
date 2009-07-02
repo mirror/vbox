@@ -145,7 +145,7 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
                     int cbKernArch = sysinfo (SI_ARCHITECTURE_K, achKernArch, sizeof(achKernArch));
                     if (cbKernArch > 0)
                     {
-                        sprintf(VBoxSVCPath, "/opt/VirtualBox/%s/%s", achKernArch, VBoxSVC_exe);
+                        sprintf(VBoxSVCPath, "/opt/VirtualBox/%s%s", achKernArch, VBoxSVC_exe);
                         IsVBoxSVCPathSet = true;
                     }
                     else
