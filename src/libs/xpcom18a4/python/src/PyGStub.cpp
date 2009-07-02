@@ -102,8 +102,8 @@ PyXPCOM_XPTStub::CallMethod(PRUint16 methodIndex,
 	if (obParams==NULL)
 		goto done;
 	result = PyObject_CallMethod(m_pPyObject, 
-	                                       "_CallMethod_",
-					       "OiOO",
+	                                       (char*)"_CallMethod_",
+					       (char*)"OiOO",
 					       obThisObject,
 					       (int)methodIndex,
 					       obMI,
@@ -137,8 +137,8 @@ done:
 		PyErr_NormalizeException( &exc_typ, &exc_val, &exc_tb);
 
 		PyObject *err_result = PyObject_CallMethod(m_pPyObject, 
-	                                       "_CallMethodException_",
-					       "OiOO(OOO)",
+	                                       (char*)"_CallMethodException_",
+					       (char*)"OiOO(OOO)",
 					       obThisObject,
 					       (int)methodIndex,
 					       obMI,

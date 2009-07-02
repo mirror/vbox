@@ -201,11 +201,11 @@ void PyXPCOM_DLLAddRef(void)
 			// Make sure our Windows framework is all setup.
 			PyXPCOM_Globals_Ensure();
 			// Make sure we have _something_ as sys.argv.
-			if (PySys_GetObject("argv")==NULL) {
+			if (PySys_GetObject((char*)"argv")==NULL) {
 				PyObject *path = PyList_New(0);
 				PyObject *str = PyString_FromString("");
 				PyList_Append(path, str);
-				PySys_SetObject("argv", path);
+				PySys_SetObject((char*)"argv", path);
 				Py_XDECREF(path);
 				Py_XDECREF(str);
 			}
