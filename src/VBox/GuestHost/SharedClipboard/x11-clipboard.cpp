@@ -61,6 +61,7 @@ enum CLIPFORMAT
 {
     INVALID = 0,
     TARGETS,
+    TEXT,  /* Treat this as Utf8, but it may really be ascii */
     CTEXT,
     UTF8
 };
@@ -84,9 +85,9 @@ static struct _CLIPFORMATTABLE
       VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT },
     { "text/plain;charset=utf-8", UTF8,
       VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT },
-    { "STRING", UTF8, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT },
-    { "TEXT", UTF8, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT },
-    { "text/plain", UTF8, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT },
+    { "STRING", TEXT, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT },
+    { "TEXT", TEXT, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT },
+    { "text/plain", TEXT, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT },
     { "COMPOUND_TEXT", CTEXT, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT }
 };
 
@@ -332,11 +333,11 @@ void clipGetFormatsFromTargets(CLIPBACKEND *pCtx, Atom *pTargets,
 {
     bool changed = false;
     CLIPX11FORMAT bestTextFormat = NIL_CLIPX11FORMAT;
+    CLIPFORMAT enmBestTextTarget = INVALID;
     AssertPtrReturnVoid(pCtx);
     AssertPtrReturnVoid(pTargets);
     for (unsigned i = 0; i < cTargets; ++i)
     {
-        CLIPFORMAT enmBestTextTarget = INVALID;
         CLIPX11FORMAT format = clipFindX11FormatByAtom(pCtx->widget,
                                                        pTargets[i]);
         if (format != NIL_CLIPX11FORMAT)
@@ -354,6 +355,16 @@ void clipGetFormatsFromTargets(CLIPBACKEND *pCtx, Atom *pTargets,
     {
         changed = true;
         pCtx->X11TextFormat = bestTextFormat;
+#if defined(DEBUG) && !defined(TESTCASE)
+        for (unsigned i = 0; i < cTargets; ++i)
+            if (pTargets[i])
+            {
+                char *pszName = XGetAtomName(XtDisplay(pCtx->widget),
+                                                   pTargets[i]);
+                Log2(("%s: found target %s\n", __PRETTY_FUNCTION__, pszName));
+                XFree(pszName);
+            }
+#endif
     }
     pCtx->X11BitmapFormat = INVALID;  /* not yet supported */
     if (pChanged)
@@ -958,7 +969,7 @@ static int clipConvertVBoxCBForX11(CLIPBACKEND *pCtx, Atom *atomTarget,
     CLIPX11FORMAT x11Format = clipFindX11FormatByAtom(pCtx->widget,
                                                       *atomTarget);
     CLIPFORMAT format = clipRealFormatForX11Format(x11Format);
-    if (   ((format == UTF8) || (format == CTEXT))
+    if (   ((format == UTF8) || (format == CTEXT) || (format == TEXT))
         && (pCtx->vboxFormats & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT))
     {
         void *pv = NULL;
@@ -968,7 +979,7 @@ static int clipConvertVBoxCBForX11(CLIPBACKEND *pCtx, Atom *atomTarget,
                                    &pv, &cb);
         if (RT_SUCCESS(rc) && (cb == 0))
             rc = VERR_NO_DATA;
-        if (RT_SUCCESS(rc) && (format == UTF8))
+        if (RT_SUCCESS(rc) && ((format == UTF8) || (format == TEXT)))
             rc = clipWinTxtToUtf8ForX11CB(XtDisplay(pCtx->widget),
                                           (PRTUTF16)pv, cb, atomTarget,
                                           atomTypeReturn, pValReturn,
@@ -1394,6 +1405,7 @@ static void clipConvertX11CB(Widget widget, XtPointer pClientData,
                                        (PRTUTF16 *) &pvDest, &cbDest);
                 break;
             case UTF8:
+            case TEXT:
             {
                 /* If we are given broken Utf-8, we treat it as Latin1.  Is
                  * this acceptable? */
@@ -1513,6 +1525,12 @@ int ClipRequestDataFromX11(CLIPBACKEND *pCtx, uint32_t u32Format,
 }
 
 #ifdef TESTCASE
+
+/** @todo This unit test currently works by emulating the X11 and X toolkit
+ * APIs to exercise the code, since I didn't want to rewrite the code too much
+ * when I wrote the tests.  However, this makes it rather ugly and hard to
+ * understand.  Anyone doing any work on the code should feel free to
+ * rewrite the tests and the code to make them cleaner and more readable. */
 
 #include <iprt/initterm.h>
 #include <iprt/stream.h>
@@ -1754,7 +1772,7 @@ Boolean XtConvertAndStore(Widget widget, _Xconst _XtString from_type,
 
 /* The current values of the X selection, which will be returned to the
  * XtGetSelectionValue callback. */
-static Atom g_selTarget = 0;
+static Atom g_selTarget[3] = { 0 };
 static Atom g_selType = 0;
 static const void *g_pSelData = NULL;
 static unsigned long g_cSelData = 0;
@@ -1772,11 +1790,11 @@ void XtGetSelectionValue(Widget widget, Atom selection, Atom target,
     if (   (   selection != clipGetAtom(NULL, "PRIMARY")
             && selection != clipGetAtom(NULL, "CLIPBOARD")
             && selection != clipGetAtom(NULL, "TARGETS"))
-        || (   target != g_selTarget
+        || (   target != g_selTarget[0]
             && target != clipGetAtom(NULL, "TARGETS")))
     {
         /* Otherwise this is probably a caller error. */
-        Assert(target != g_selTarget);
+        Assert(target != g_selTarget[0]);
         callback(widget, closure, &selection, &type, NULL, &count, &format);
                 /* Could not convert to target. */
         return;
@@ -1789,7 +1807,7 @@ void XtGetSelectionValue(Widget widget, Atom selection, Atom target,
         else
             pValue = (XtPointer) RTMemDup(&g_selTarget, sizeof(g_selTarget));
         type = g_fTargetsTimeout ? XT_CONVERT_FAIL : XA_ATOM;
-        count = g_fTargetsFailure ? 0 : 1;
+        count = g_fTargetsFailure ? 0 : RT_ELEMENTS(g_selTarget);
         format = 32;
     }
     else
@@ -1887,7 +1905,9 @@ static void clipSetSelectionValues(const char *pcszTarget, Atom type,
                                    unsigned long count, int format)
 {
     Atom clipAtom = clipGetAtom(NULL, "CLIPBOARD");
-    g_selTarget = clipGetAtom(NULL, pcszTarget);
+    g_selTarget[0] = clipGetAtom(NULL, pcszTarget);
+    g_selTarget[1] = clipGetAtom(NULL, "text/plain");
+    g_selTarget[2] = clipGetAtom(NULL, "TARGETS");
     g_selType = type;
     g_pSelData = data;
     g_cSelData = count;
