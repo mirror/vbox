@@ -195,6 +195,14 @@ struct DConnectInvokeReply : DConnectOp
 
 //-----------------------------------------------------------------------------
 
+struct DConAddrPlusPtr
+{
+  DConAddr addr;
+  void *p;
+};
+
+//-----------------------------------------------------------------------------
+
 ipcDConnectService *ipcDConnectService::mInstance = nsnull;
 
 //-----------------------------------------------------------------------------
@@ -532,9 +540,9 @@ DeserializeParam(ipcMessageReader &reader, const nsXPTType &t, nsXPTCVariant &v)
     case nsXPTType::T_INTERFACE:
     case nsXPTType::T_INTERFACE_IS:
       {
-        reader.GetBytes(&v.val.p, sizeof(void *));
+        reader.GetBytes(&v.val.u64, sizeof(DConAddr));
         // stub creation will be handled outside this routine.  we only
-        // deserialize the DConAddr into v.val.p temporarily.
+        // deserialize the DConAddr into v.val.u64 temporarily.
       }
       break;
 
@@ -767,10 +775,12 @@ DeserializeResult(ipcMessageReader &reader, const nsXPTType &t, nsXPTCMiniVarian
     case nsXPTType::T_INTERFACE_IS:
       {
         // stub creation will be handled outside this routine.  we only
-        // deserialize the DConAddr into v.val.p temporarily.
-        void *ptr;
-        reader.GetBytes(&ptr, sizeof(void *));
-        *((void **) v.val.p) = ptr;
+        // deserialize the DConAddr and the original value of v.val.p
+        // into v.val.p temporarily.  needs temporary memory alloc.
+        DConAddrPlusPtr *buf = (DConAddrPlusPtr *) nsMemory::Alloc(sizeof(DConAddrPlusPtr));
+        reader.GetBytes(&buf->addr, sizeof(DConAddr));
+        buf->p = v.val.p;
+        v.val.p = buf;
       }
       break;
 
@@ -938,13 +948,16 @@ GetTypeSize(const nsXPTType &type, PRUint32 &size, PRBool &isSimple)
     case nsXPTType::T_IID:            /* fall through */
     case nsXPTType::T_CHAR_STR:       /* fall through */
     case nsXPTType::T_WCHAR_STR:      /* fall through */
-    case nsXPTType::T_INTERFACE:      /* fall through */
-    case nsXPTType::T_INTERFACE_IS:   /* fall through */
     case nsXPTType::T_ASTRING:        /* fall through */
     case nsXPTType::T_DOMSTRING:      /* fall through */
     case nsXPTType::T_UTF8STRING:     /* fall through */
     case nsXPTType::T_CSTRING:        /* fall through */
       size = sizeof(void *);
+      isSimple = PR_FALSE;
+      break;
+    case nsXPTType::T_INTERFACE:      /* fall through */
+    case nsXPTType::T_INTERFACE_IS:   /* fall through */
+      size = sizeof(DConAddr);
       isSimple = PR_FALSE;
       break;
     default:
@@ -1096,7 +1109,7 @@ DeserializeArrayParam(ipcDConnectService *dConnect,
     if (NS_SUCCEEDED(rv) && elemType.IsInterfacePointer())
     {
       // grab the DConAddr value temporarily stored in the param
-      PtrBits bits = (PtrBits) v.val.p;
+      PtrBits bits = v.val.u64;
 
       // DeserializeInterfaceParamBits needs IID only if it's a remote object
       nsID iid;
@@ -1524,7 +1537,8 @@ ipcDConnectService::SerializeInterfaceParam(ipcMessageWriter &writer,
   if (!obj)
   {
     // write null address
-    writer.PutBytes(&obj, sizeof(obj));
+    DConAddr nullobj = 0;
+    writer.PutBytes(&nullobj, sizeof(nullobj));
   }
   else
   {
@@ -1581,7 +1595,7 @@ ipcDConnectService::SerializeInterfaceParam(ipcMessageWriter &writer,
 
       // send address of the instance wrapper, and set the low bit to indicate
       // to the remote party that this is a remote instance wrapper.
-      PtrBits bits = ((PtrBits) wrapper) | PTRBITS_REMOTE_BIT;
+      PtrBits bits = ((PtrBits)(uintptr_t) wrapper) | PTRBITS_REMOTE_BIT;
       writer.PutBytes(&bits, sizeof(bits));
     }
     NS_IF_RELEASE(stub);
@@ -1899,7 +1913,7 @@ ipcDConnectService::SerializeException(ipcMessageWriter &writer,
 
         // send address of the instance wrapper, and set the low bit to indicate
         // to the remote party that this is a remote instance wrapper.
-        PtrBits bits = ((PtrBits) wrapper) | PTRBITS_REMOTE_BIT;
+        PtrBits bits = ((PtrBits)(uintptr_t) wrapper) | PTRBITS_REMOTE_BIT;
         writer.PutBytes(&bits, sizeof(bits));
 
         // we want to cache fields to minimize the number of IPC calls when
@@ -1986,12 +2000,10 @@ ipcDConnectService::DeserializeException(ipcMessageReader &reader,
   nsresult rv;
   PRUint32 len;
 
-  void *instance = 0;
-  reader.GetBytes(&instance, sizeof(void *));
+  PtrBits bits = 0;
+  reader.GetBytes(&bits, sizeof(DConAddr));
   if (reader.HasError())
     return NS_ERROR_INVALID_ARG;
-
-  PtrBits bits = (PtrBits) (instance);
 
   if (bits & PTRBITS_REMOTE_BIT)
   {
@@ -2513,13 +2525,15 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
       const nsXPTParamInfo &paramInfo = aInfo->GetParam(i);
       if (aParams[i].val.p && (paramInfo.IsOut() || paramInfo.IsRetval()))
       {
-        void **pptr = (void **) aParams[i].val.p;
         const nsXPTType &type = paramInfo.GetType();
         if (type.IsInterfacePointer())
         {
-          // grab the DConAddr value temporarily stored in the param
-          PtrBits bits = (PtrBits) *pptr;
-          *pptr = nsnull;
+          // grab the DConAddr value temporarily stored in the param, restore
+          // the pointer and free the temporarily allocated memory.
+          DConAddrPlusPtr *dptr = (DConAddrPlusPtr *)aParams[i].val.p;
+          PtrBits bits = dptr->addr;
+          aParams[i].val.p = dptr->p;
+          nsMemory::Free((void *)dptr);
 
           // DeserializeInterfaceParamBits needs IID only if it's a remote object
           nsID iid;
@@ -2532,7 +2546,7 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
             nsISupports *obj = nsnull;
             rv = dConnect->DeserializeInterfaceParamBits(bits, mPeerID, iid, obj);
             if (NS_SUCCEEDED(rv))
-              *pptr = obj;
+              *(void **)aParams[i].val.p = obj;
           }
         }
         else if (type.IsArray())
@@ -2542,7 +2556,7 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
                                      aMethodIndex, *aInfo, aParams, PR_FALSE,
                                      paramInfo, PR_TRUE, array);
           if (NS_SUCCEEDED(rv))
-            *pptr = array;
+            *(void **)aParams[i].val.p = array;
         }
       }
     }
@@ -3588,7 +3602,7 @@ ipcDConnectService::OnSetup(PRUint32 peer, const DConnectSetup *setup, PRUint32 
   msg.opcode_minor = 0;
   msg.flags = 0;
   msg.request_index = setup->request_index;
-  msg.instance = (DConAddr)wrapper;
+  msg.instance = (DConAddr)(uintptr_t)wrapper;
   msg.status = rv;
 
   if (got_exception)
@@ -3731,7 +3745,7 @@ ipcDConnectService::OnInvoke(PRUint32 peer, const DConnectInvoke *invoke, PRUint
       if (type.IsInterfacePointer())
       {
         // grab the DConAddr value temporarily stored in the param
-        PtrBits bits = (PtrBits) params[i].val.p;
+        PtrBits bits = (PtrBits)(uintptr_t) params[i].val.p;
 
         // DeserializeInterfaceParamBits needs IID only if it's a remote object
         nsID iid;
