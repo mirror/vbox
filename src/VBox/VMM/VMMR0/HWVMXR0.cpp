@@ -756,7 +756,7 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, CPUMCTX *pCtx)
     /* If an active trap is already pending, then we must forward it first! */
     if (!TRPMHasTrap(pVCpu))
     {
-        if (VMCPU_FF_TESTANDCLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI_BIT))
+        if (VMCPU_FF_TESTANDCLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI))
         {
             RTGCUINTPTR intInfo;
 
@@ -1870,7 +1870,7 @@ static void vmxR0SetupTLBEPT(PVM pVM, PVMCPU pVCpu)
         Assert(!pCpu->fFlushTLB);
 
     /* Check for tlb shootdown flushes. */
-    if (VMCPU_FF_TESTANDCLEAR(pVCpu, VMCPU_FF_TLB_FLUSH_BIT))
+    if (VMCPU_FF_TESTANDCLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
         pVCpu->hwaccm.s.fForceTLBFlush = true;
 
     pVCpu->hwaccm.s.idLastCpu = pCpu->idCpu;
@@ -1935,7 +1935,7 @@ static void vmxR0SetupTLBVPID(PVM pVM, PVMCPU pVCpu)
     pVCpu->hwaccm.s.idLastCpu = pCpu->idCpu;
 
     /* Check for tlb shootdown flushes. */
-    if (VMCPU_FF_TESTANDCLEAR(pVCpu, VMCPU_FF_TLB_FLUSH_BIT))
+    if (VMCPU_FF_TESTANDCLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
         pVCpu->hwaccm.s.fForceTLBFlush = true;
 
     /* Make sure we flush the TLB when required. Switch ASID to achieve the same thing, but without actually flushing the whole TLB (which is expensive). */

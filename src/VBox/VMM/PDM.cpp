@@ -1366,7 +1366,7 @@ VMMR3DECL(void) PDMR3DmaRun(PVM pVM)
     if (VMMGetCpuId(pVM) != 0)
         return;
 
-    if (VM_FF_TESTANDCLEAR(pVM, VM_FF_PDM_DMA_BIT))
+    if (VM_FF_TESTANDCLEAR(pVM, VM_FF_PDM_DMA))
     {
         if (pVM->pdm.s.pDmac)
         {
