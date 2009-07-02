@@ -1590,6 +1590,10 @@ static void pgmR3InitStats(PVM pVM)
     PGM_REG_COUNTER_BYTES(&pPGM->StatR3PhysReadBytes,         "/PGM/R3/Phys/Read/Bytes",            "The number of bytes read by PGMPhysRead.");
     PGM_REG_COUNTER(&pPGM->StatR3PhysWrite,                   "/PGM/R3/Phys/Write",                 "The number of times PGMPhysWrite was called.");
     PGM_REG_COUNTER_BYTES(&pPGM->StatR3PhysWriteBytes,        "/PGM/R3/Phys/Write/Bytes",           "The number of bytes written by PGMPhysWrite.");
+    PGM_REG_COUNTER(&pPGM->StatR3PhysSimpleRead,              "/PGM/R3/Phys/Simple/Read",           "The number of times PGMPhysSimpleReadGCPtr was called.");
+    PGM_REG_COUNTER_BYTES(&pPGM->StatR3PhysSimpleReadBytes,   "/PGM/R3/Phys/Simple/Read/Bytes",     "The number of bytes read by PGMPhysSimpleReadGCPtr.");
+    PGM_REG_COUNTER(&pPGM->StatR3PhysSimpleWrite,             "/PGM/R3/Phys/Simple/Write",          "The number of times PGMPhysSimpleWriteGCPtr was called.");
+    PGM_REG_COUNTER_BYTES(&pPGM->StatR3PhysSimpleWriteBytes,  "/PGM/R3/Phys/Simple/Write/Bytes",    "The number of bytes written by PGMPhysSimpleWriteGCPtr.");
 
     PGM_REG_COUNTER(&pPGM->StatRZChunkR3MapTlbHits,           "/PGM/ChunkR3Map/TlbHitsRZ",          "TLB hits.");
     PGM_REG_COUNTER(&pPGM->StatRZChunkR3MapTlbMisses,         "/PGM/ChunkR3Map/TlbMissesRZ",        "TLB misses.");
@@ -1621,6 +1625,10 @@ static void pgmR3InitStats(PVM pVM)
     PGM_REG_COUNTER_BYTES(&pPGM->StatRZPhysReadBytes,         "/PGM/RZ/Phys/Read/Bytes",            "The number of bytes read by PGMPhysRead.");
     PGM_REG_COUNTER(&pPGM->StatRZPhysWrite,                   "/PGM/RZ/Phys/Write",                 "The number of times PGMPhysWrite was called.");
     PGM_REG_COUNTER_BYTES(&pPGM->StatRZPhysWriteBytes,        "/PGM/RZ/Phys/Write/Bytes",           "The number of bytes written by PGMPhysWrite.");
+    PGM_REG_COUNTER(&pPGM->StatRZPhysSimpleRead,              "/PGM/RZ/Phys/Simple/Read",           "The number of times PGMPhysSimpleReadGCPtr was called.");
+    PGM_REG_COUNTER_BYTES(&pPGM->StatRZPhysSimpleReadBytes,   "/PGM/RZ/Phys/Simple/Read/Bytes",     "The number of bytes read by PGMPhysSimpleReadGCPtr.");
+    PGM_REG_COUNTER(&pPGM->StatRZPhysSimpleWrite,             "/PGM/RZ/Phys/Simple/Write",          "The number of times PGMPhysSimpleWriteGCPtr was called.");
+    PGM_REG_COUNTER_BYTES(&pPGM->StatRZPhysSimpleWriteBytes,  "/PGM/RZ/Phys/Simple/Write/Bytes",    "The number of bytes written by PGMPhysSimpleWriteGCPtr.");
 
     /* GC only: */
     PGM_REG_COUNTER(&pPGM->StatRCDynMapCacheHits,             "/PGM/RC/DynMapCache/Hits" ,          "Number of dynamic page mapping cache hits.");
@@ -1632,6 +1640,10 @@ static void pgmR3InitStats(PVM pVM)
     PGM_REG_COUNTER_BYTES(&pPGM->StatRCPhysReadBytes,         "/PGM/RC/Phys/Read/Bytes",            "The number of bytes read by PGMPhysRead.");
     PGM_REG_COUNTER(&pPGM->StatRCPhysWrite,                   "/PGM/RC/Phys/Write",                 "The number of times PGMPhysWrite was called.");
     PGM_REG_COUNTER_BYTES(&pPGM->StatRCPhysWriteBytes,        "/PGM/RC/Phys/Write/Bytes",           "The number of bytes written by PGMPhysWrite.");
+    PGM_REG_COUNTER(&pPGM->StatRCPhysSimpleRead,              "/PGM/RC/Phys/Simple/Read",           "The number of times PGMPhysSimpleReadGCPtr was called.");
+    PGM_REG_COUNTER_BYTES(&pPGM->StatRCPhysSimpleReadBytes,   "/PGM/RC/Phys/Simple/Read/Bytes",     "The number of bytes read by PGMPhysSimpleReadGCPtr.");
+    PGM_REG_COUNTER(&pPGM->StatRCPhysSimpleWrite,             "/PGM/RC/Phys/Simple/Write",          "The number of times PGMPhysSimpleWriteGCPtr was called.");
+    PGM_REG_COUNTER_BYTES(&pPGM->StatRCPhysSimpleWriteBytes,  "/PGM/RC/Phys/Simple/Write/Bytes",    "The number of bytes written by PGMPhysSimpleWriteGCPtr.");
 
 # ifdef PGMPOOL_WITH_GCPHYS_TRACKING
     PGM_REG_COUNTER(&pPGM->StatTrackVirgin,                   "/PGM/Track/Virgin",                  "The number of first time shadowings");
