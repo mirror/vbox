@@ -2726,7 +2726,7 @@ REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
     VM_ASSERT_EMT(pVM);
 
     /** @todo this isn't ensuring correct replay order. */
-    if (VM_FF_TESTANDCLEAR(pVM, VM_FF_REM_HANDLER_NOTIFY_BIT))
+    if (VM_FF_TESTANDCLEAR(pVM, VM_FF_REM_HANDLER_NOTIFY))
     {
         uint32_t    idxNext;
         uint32_t    idxRevHead;
