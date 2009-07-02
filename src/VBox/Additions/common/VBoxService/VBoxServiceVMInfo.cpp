@@ -109,7 +109,7 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
         g_VMInfoInterval = 10 * 1000;
 
     int rc = RTSemEventMultiCreate(&g_VMInfoEvent);
-    AssertRC(rc);
+    AssertRCReturn(rc, rc);
 
 #ifdef RT_OS_WINDOWS
     /* Get function pointers. */
@@ -122,13 +122,13 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
 #endif
 
     rc = VbglR3GuestPropConnect(&g_VMInfoGuestPropSvcClientID);
-    if (!RT_SUCCESS(rc))
-    {
-        VBoxServiceError("Failed to connect to the guest property service! Error: %Rrc\n", rc);
-    }
+    if (RT_SUCCESS(rc))
+        VBoxServiceVerbose(3, "Property Service Client ID: %#x\n", g_VMInfoGuestPropSvcClientID);
     else
     {
-        VBoxServiceVerbose(3, "Property Service Client ID: %ld\n", g_VMInfoGuestPropSvcClientID);
+        VBoxServiceError("Failed to connect to the guest property service! Error: %Rrc\n", rc);
+        RTSemEventMultiDestroy(g_VMInfoEvent);
+        g_VMInfoEvent = NIL_RTSEMEVENTMULTI;
     }
 
     return rc;
@@ -436,25 +436,31 @@ static DECLCALLBACK(void) VBoxServiceVMInfoTerm(void)
 {
     int rc;
 
-    /** @todo temporary solution: Zap all values which are not valid
-     *        anymore when VM goes down (reboot/shutdown ). Needs to
-     *        be replaced with "temporary properties" later. */
-    rc = VboxServiceWriteProp(g_VMInfoGuestPropSvcClientID, "GuestInfo/OS/LoggedInUsersList", NULL);
-    rc = VboxServiceWritePropInt(g_VMInfoGuestPropSvcClientID, "GuestInfo/OS/LoggedInUsers", 0);
-    if (g_VMInfoLoggedInUsers > 0)
-        VboxServiceWriteProp(g_VMInfoGuestPropSvcClientID, "GuestInfo/OS/NoLoggedInUsers", "true");
-
-    const char *apszPat[1] = { "/VirtualBox/GuestInfo/Net/*" };
-    rc = VbglR3GuestPropDelSet(g_VMInfoGuestPropSvcClientID, &apszPat[0], RT_ELEMENTS(apszPat));
-    rc = VboxServiceWritePropInt(g_VMInfoGuestPropSvcClientID, "GuestInfo/Net/Count", 0);
-
-    /* Disconnect from guest properties service. */
-    rc = VbglR3GuestPropDisconnect(g_VMInfoGuestPropSvcClientID);
-    if (RT_FAILURE(rc))
-        VBoxServiceError("Failed to disconnect from guest property service! Error: %Rrc\n", rc);
-
     if (g_VMInfoEvent != NIL_RTSEMEVENTMULTI)
     {
+        /** @todo temporary solution: Zap all values which are not valid
+         *        anymore when VM goes down (reboot/shutdown ). Needs to
+         *        be replaced with "temporary properties" later.
+         *
+         *  @todo r=bird: This code isn't called on non-Windows systems. We need
+         *        a more formal way of shutting down the service for that to work.
+         */
+        rc = VboxServiceWriteProp(g_VMInfoGuestPropSvcClientID, "GuestInfo/OS/LoggedInUsersList", NULL);
+        rc = VboxServiceWritePropInt(g_VMInfoGuestPropSvcClientID, "GuestInfo/OS/LoggedInUsers", 0);
+        if (g_VMInfoLoggedInUsers > 0)
+            VboxServiceWriteProp(g_VMInfoGuestPropSvcClientID, "GuestInfo/OS/NoLoggedInUsers", "true");
+
+        const char *apszPat[1] = { "/VirtualBox/GuestInfo/Net/*" };
+        rc = VbglR3GuestPropDelSet(g_VMInfoGuestPropSvcClientID, &apszPat[0], RT_ELEMENTS(apszPat));
+        rc = VboxServiceWritePropInt(g_VMInfoGuestPropSvcClientID, "GuestInfo/Net/Count", 0);
+
+        /* Disconnect from guest properties service. */
+        rc = VbglR3GuestPropDisconnect(g_VMInfoGuestPropSvcClientID);
+        if (RT_FAILURE(rc))
+            VBoxServiceError("Failed to disconnect from guest property service! Error: %Rrc\n", rc);
+        g_VMInfoGuestPropSvcClientID = 0;
+
+
         RTSemEventMultiDestroy(g_VMInfoEvent);
         g_VMInfoEvent = NIL_RTSEMEVENTMULTI;
     }
