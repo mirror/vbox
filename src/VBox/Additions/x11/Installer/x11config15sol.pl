@@ -76,12 +76,17 @@ foreach $cfg (@cfg_files)
                     $line = "";
                 }
 
-                # Solaris specific: /dev/kdmouse for PS/2 and not /dev/mouse
+                # Solaris specific: Use /dev/vboxguest for Xorg 1.5.3+
                 if ($os_type =~ 'SunOS')
                 {
                     if ($line =~ /^\s*option\s+\"(?:device)\"\s+\"(?:\/dev\/kdmouse)\"/i)
                     {
-                        $line = "    Option      \"Device\" \"\/dev\/mouse\"\n"
+                        $line = "    Option      \"Device\" \"\/dev\/vboxguest\"\n"
+                    }
+
+                    if ($line =~ /^\s*option\s+\"(?:device)\"\s+\"(?:\/dev\/mouse)\"/i)
+                    {
+                        $line = "    Option      \"Device\" \"\/dev\/vboxguest\"\n"
                     }
                 }
 

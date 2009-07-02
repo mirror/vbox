@@ -41,13 +41,13 @@
 #include <iprt/initterm.h>
 #include <iprt/process.h>
 #include <iprt/mem.h>
+#include <iprt/cdefs.h>
+#include <iprt/asm.h>
 
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#define VBOXSOLQUOTE2(x)                #x
-#define VBOXSOLQUOTE(x)                 VBOXSOLQUOTE2(x)
 /** The module name. */
 #define DEVICE_NAME              "vboxguest"
 /** The module description as seen in 'modinfo'. */
@@ -62,13 +62,14 @@ static int VBoxGuestSolarisClose(dev_t Dev, int fFlag, int fType, cred_t *pCred)
 static int VBoxGuestSolarisRead(dev_t Dev, struct uio *pUio, cred_t *pCred);
 static int VBoxGuestSolarisWrite(dev_t Dev, struct uio *pUio, cred_t *pCred);
 static int VBoxGuestSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred_t *pCred, int *pVal);
+static int VBoxGuestSolarisPoll(dev_t Dev, short fEvents, int fAnyYet, short *pReqEvents, struct pollhead **ppPollHead);
 
 static int VBoxGuestSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pArg, void **ppResult);
 static int VBoxGuestSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd);
 static int VBoxGuestSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd);
 
-static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip, void *pvState);
-static void VBoxGuestSolarisRemoveIRQ(dev_info_t *pDip, void *pvState);
+static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip);
+static void VBoxGuestSolarisRemoveIRQ(dev_info_t *pDip);
 static uint_t VBoxGuestSolarisISR(caddr_t Arg);
 
 
@@ -91,7 +92,7 @@ static struct cb_ops g_VBoxGuestSolarisCbOps =
     nodev,                  /* c devmap */
     nodev,                  /* c mmap */
     nodev,                  /* c segmap */
-    nochpoll,               /* c poll */
+    VBoxGuestSolarisPoll,
     ddi_prop_op,            /* property ops */
     NULL,                   /* streamtab  */
     D_NEW | D_MP,           /* compat. flag */
@@ -122,7 +123,7 @@ static struct dev_ops g_VBoxGuestSolarisDevOps =
 static struct modldrv g_VBoxGuestSolarisModule =
 {
     &mod_driverops,         /* extern from kernel */
-    DEVICE_DESC " " VBOX_VERSION_STRING "r" VBOXSOLQUOTE(VBOX_SVN_REV),
+    DEVICE_DESC " " VBOX_VERSION_STRING "r" RT_XSTR(VBOX_SVN_REV),
     &g_VBoxGuestSolarisDevOps
 };
 
@@ -141,32 +142,10 @@ static struct modlinkage g_VBoxGuestSolarisModLinkage =
  */
 typedef struct
 {
-    /** IO port handle. */
-    ddi_acc_handle_t        PciIOHandle;
-    /** MMIO handle. */
-    ddi_acc_handle_t        PciMMIOHandle;
-#if 0
-    /** Interrupt block cookie. */
-    ddi_iblock_cookie_t     BlockCookie;
-#endif
-    /** Driver Mutex. */
-    kmutex_t                Mtx;
-    /** IO Port. */
-    uint16_t                uIOPortBase;
-    /** Address of the MMIO region.*/
-    caddr_t                 pMMIOBase;
-    /** Size of the MMIO region. */
-    off_t                   cbMMIO;
-    /** VMMDev Version. */
-    uint32_t                u32Version;
-    /** Pointer to the interrupt handle vector */
-    ddi_intr_handle_t       *pIntr;
-    /** Number of actually allocated interrupt handles */
-    size_t                  cIntrAllocated;
-#ifndef USE_SESSION_HASH
     /** Pointer to the session handle. */
     PVBOXGUESTSESSION       pSession;
-#endif
+    /** The process reference for posting signals */
+    void                   *pvProcRef;
 } vboxguest_state_t;
 
 
@@ -174,26 +153,31 @@ typedef struct
 *   Global Variables                                                           *
 *******************************************************************************/
 /** Device handle (we support only one instance). */
-static dev_info_t *g_pDip;
-
-/** Opaque pointer to state */
-static void *g_pVBoxGuestSolarisState;
-
+static dev_info_t          *g_pDip = NULL;
+/** Opaque pointer to file-descriptor states */
+static void                *g_pVBoxGuestSolarisState = NULL;
 /** Device extention & session data association structure. */
 static VBOXGUESTDEVEXT      g_DevExt;
-/** Spinlock protecting g_apSessionHashTab. */
-static RTSPINLOCK           g_Spinlock = NIL_RTSPINLOCK;
-#ifdef USE_SESSION_HASH
-/** Hash table */
-static PVBOXGUESTSESSION    g_apSessionHashTab[19];
-/** Calculates the index into g_apSessionHashTab.*/
-#define SESSION_HASH(sfn) ((sfn) % RT_ELEMENTS(g_apSessionHashTab))
-#endif /* USE_SESSION_HASH */
-
-#if 0/** @todo This shouldn't be needed. if it is, that means exceptions hasn't been disabled correctly. */
-/** GCC C++ hack. */
-unsigned __gxx_personality_v0 = 0xdecea5ed;
-#endif
+/** IO port handle. */
+static ddi_acc_handle_t     g_PciIOHandle;
+/** MMIO handle. */
+static ddi_acc_handle_t     g_PciMMIOHandle;
+/** IO Port. */
+static uint16_t             g_uIOPortBase;
+/** Address of the MMIO region.*/
+static caddr_t              g_pMMIOBase;
+/** Size of the MMIO region. */
+static off_t                g_cbMMIO;
+/** VMMDev Version. */
+static uint32_t             g_u32Version;
+/** Pointer to the interrupt handle vector */
+static ddi_intr_handle_t   *g_pIntr;
+/** Number of actually allocated interrupt handles */
+static size_t               g_cIntrAllocated;
+/** The pollhead structure */
+static pollhead_t           g_PollHead;
+/** The IRQ Mutex */
+static kmutex_t             g_IrqMtx;
 
 /**
  * Kernel entry points
@@ -244,34 +228,16 @@ static int VBoxGuestSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
     {
         case DDI_ATTACH:
         {
+            if (g_pDip)
+            {
+                LogRel((DEVICE_NAME "::Attach: Only one instance supported.\n"));
+                return DDI_FAILURE;
+            }
+
             int rc;
             int instance;
-            vboxguest_state_t *pState;
 
             instance = ddi_get_instance(pDip);
-#ifdef USE_SESSION_HASH
-            rc = ddi_soft_state_zalloc(g_pVBoxGuestSolarisState, instance);
-            if (rc != DDI_SUCCESS)
-            {
-                Log((DEVICE_NAME ":ddi_soft_state_zalloc failed.\n"));
-                return DDI_FAILURE;
-            }
-
-            pState = ddi_get_soft_state(g_pVBoxGuestSolarisState, instance);
-            if (!pState)
-            {
-                ddi_soft_state_free(g_pVBoxGuestSolarisState, instance);
-                Log((DEVICE_NAME ":ddi_get_soft_state for instance %d failed\n", instance));
-                return DDI_FAILURE;
-            }
-#else
-            pState = RTMemAllocZ(sizeof(vboxguest_state_t));
-            if (!pState)
-            {
-                Log((DEVICE_NAME ":RTMemAllocZ failed to allocate %d bytes\n", sizeof(vboxguest_state_t)));
-                return DDI_FAILURE;
-            }
-#endif
 
             /*
              * Initialize IPRT R0 driver, which internally calls OS-specific r0 init.
@@ -279,98 +245,86 @@ static int VBoxGuestSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
             rc = RTR0Init(0);
             if (RT_FAILURE(rc))
             {
-                Log((DEVICE_NAME ":RTR0Init failed.\n"));
+                Log((DEVICE_NAME "::Attach: RTR0Init failed.\n"));
                 return DDI_FAILURE;
             }
 
             /*
-             * Initialize the session hash table.
+             * Enable resources for PCI access.
              */
-            rc = RTSpinlockCreate(&g_Spinlock);
-            if (RT_SUCCESS(rc))
+            ddi_acc_handle_t PciHandle;
+            rc = pci_config_setup(pDip, &PciHandle);
+            if (rc == DDI_SUCCESS)
             {
                 /*
-                 * Enable resources for PCI access.
+                 * Map the register address space.
                  */
-                ddi_acc_handle_t PciHandle;
-                rc = pci_config_setup(pDip, &PciHandle);
+                caddr_t baseAddr;
+                ddi_device_acc_attr_t deviceAttr;
+                deviceAttr.devacc_attr_version = DDI_DEVICE_ATTR_V0;
+                deviceAttr.devacc_attr_endian_flags = DDI_NEVERSWAP_ACC;
+                deviceAttr.devacc_attr_dataorder = DDI_STRICTORDER_ACC;
+                deviceAttr.devacc_attr_access = DDI_DEFAULT_ACC;
+                rc = ddi_regs_map_setup(pDip, 1, &baseAddr, 0, 0, &deviceAttr, &g_PciIOHandle);
                 if (rc == DDI_SUCCESS)
                 {
                     /*
-                     * Map the register address space.
+                     * Read size of the MMIO region.
                      */
-                    caddr_t baseAddr;
-                    ddi_device_acc_attr_t deviceAttr;
-                    deviceAttr.devacc_attr_version = DDI_DEVICE_ATTR_V0;
-                    deviceAttr.devacc_attr_endian_flags = DDI_NEVERSWAP_ACC;
-                    deviceAttr.devacc_attr_dataorder = DDI_STRICTORDER_ACC;
-                    deviceAttr.devacc_attr_access = DDI_DEFAULT_ACC;
-                    rc = ddi_regs_map_setup(pDip, 1, &baseAddr, 0, 0, &deviceAttr, &pState->PciIOHandle);
+                    g_uIOPortBase = (uintptr_t)baseAddr;
+                    rc = ddi_dev_regsize(pDip, 2, &g_cbMMIO);
                     if (rc == DDI_SUCCESS)
                     {
-                        /*
-                         * Read size of the MMIO region.
-                         */
-                        pState->uIOPortBase = (uintptr_t)baseAddr;
-                        rc = ddi_dev_regsize(pDip, 2, &pState->cbMMIO);
+                        rc = ddi_regs_map_setup(pDip, 2, &g_pMMIOBase, 0, g_cbMMIO, &deviceAttr,
+                                        &g_PciMMIOHandle);
                         if (rc == DDI_SUCCESS)
                         {
-                            rc = ddi_regs_map_setup(pDip, 2, &pState->pMMIOBase, 0, pState->cbMMIO, &deviceAttr,
-                                        &pState->PciMMIOHandle);
+                            /*
+                             * Add IRQ of VMMDev.
+                             */
+                            rc = VBoxGuestSolarisAddIRQ(pDip);
                             if (rc == DDI_SUCCESS)
                             {
                                 /*
-                                 * Add IRQ of VMMDev.
+                                 * Call the common device extension initializer.
                                  */
-                                rc = VBoxGuestSolarisAddIRQ(pDip, pState);
-                                if (rc == DDI_SUCCESS)
+                                rc = VBoxGuestInitDevExt(&g_DevExt, g_uIOPortBase, g_pMMIOBase,
+                                                         g_cbMMIO, VBOXOSTYPE_Solaris,
+                                                         VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
+                                if (RT_SUCCESS(rc))
                                 {
-                                    /*
-                                     * Call the common device extension initializer.
-                                     */
-                                    rc = VBoxGuestInitDevExt(&g_DevExt, pState->uIOPortBase, pState->pMMIOBase,
-                                                             pState->cbMMIO, VBOXOSTYPE_Solaris);
-                                    if (RT_SUCCESS(rc))
+                                    rc = ddi_create_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO, 0);
+                                    if (rc == DDI_SUCCESS)
                                     {
-                                        rc = ddi_create_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO, 0);
-                                        if (rc == DDI_SUCCESS)
-                                        {
-                                            g_pDip = pDip;
-                                            ddi_set_driver_private(pDip, pState);
-                                            pci_config_teardown(&PciHandle);
-                                            ddi_report_dev(pDip);
-                                            return DDI_SUCCESS;
-                                        }
-
-                                        LogRel((DEVICE_NAME ": ddi_create_minor_node failed.\n"));
-                                        VBoxGuestDeleteDevExt(&g_DevExt);
+                                        g_pDip = pDip;
+                                        pci_config_teardown(&PciHandle);
+                                        return DDI_SUCCESS;
                                     }
-                                    else
-                                        LogRel((DEVICE_NAME ": VBoxGuestInitDevExt failed.\n"));
-                                    VBoxGuestSolarisRemoveIRQ(pDip, pState);
+
+                                    LogRel((DEVICE_NAME "::Attach: ddi_create_minor_node failed.\n"));
+                                    VBoxGuestDeleteDevExt(&g_DevExt);
                                 }
                                 else
-                                    LogRel((DEVICE_NAME ": VBoxGuestSolarisAddIRQ failed.\n"));
-                                ddi_regs_map_free(&pState->PciMMIOHandle);
+                                    LogRel((DEVICE_NAME "::Attach: VBoxGuestInitDevExt failed.\n"));
+                                VBoxGuestSolarisRemoveIRQ(pDip);
                             }
                             else
-                                LogRel((DEVICE_NAME ": ddi_regs_map_setup for MMIO region failed.\n"));
+                                LogRel((DEVICE_NAME "::Attach: VBoxGuestSolarisAddIRQ failed.\n"));
+                            ddi_regs_map_free(&g_PciMMIOHandle);
                         }
                         else
-                            LogRel((DEVICE_NAME ": ddi_dev_regsize for MMIO region failed.\n"));
-                        ddi_regs_map_free(&pState->PciIOHandle);
+                            LogRel((DEVICE_NAME "::Attach: ddi_regs_map_setup for MMIO region failed.\n"));
                     }
                     else
-                        LogRel((DEVICE_NAME ": ddi_regs_map_setup for IOport failed.\n"));
-                    pci_config_teardown(&PciHandle);
+                        LogRel((DEVICE_NAME "::Attach: ddi_dev_regsize for MMIO region failed.\n"));
+                    ddi_regs_map_free(&g_PciIOHandle);
                 }
                 else
-                    LogRel((DEVICE_NAME ": pci_config_setup failed rc=%d.\n", rc));
-                RTSpinlockDestroy(g_Spinlock);
-                g_Spinlock = NIL_RTSPINLOCK;
+                    LogRel((DEVICE_NAME "::Attach: ddi_regs_map_setup for IOport failed.\n"));
+                pci_config_teardown(&PciHandle);
             }
             else
-                LogRel((DEVICE_NAME ": RTSpinlockCreate failed.\n"));
+                LogRel((DEVICE_NAME "::Attach: pci_config_setup failed rc=%d.\n", rc));
 
             RTR0Term();
             return DDI_FAILURE;
@@ -403,34 +357,13 @@ static int VBoxGuestSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
     {
         case DDI_DETACH:
         {
-            int rc;
-            int instance = ddi_get_instance(pDip);
-#ifdef USE_SESSION_HASH
-            vboxguest_state_t *pState = ddi_get_soft_state(g_pVBoxGuestSolarisState, instance);
-#else
-            vboxguest_state_t *pState = ddi_get_driver_private(g_pDip);
-#endif
-            if (pState)
-            {
-                VBoxGuestSolarisRemoveIRQ(pDip, pState);
-                ddi_regs_map_free(&pState->PciIOHandle);
-                ddi_regs_map_free(&pState->PciMMIOHandle);
-                ddi_remove_minor_node(pDip, NULL);
-#ifdef USE_SESSION_HASH
-                ddi_soft_state_free(g_pVBoxGuestSolarisState, instance);
-#else
-                RTMemFree(pState);
-#endif
+            VBoxGuestSolarisRemoveIRQ(pDip);
+            ddi_regs_map_free(&g_PciIOHandle);
+            ddi_regs_map_free(&g_PciMMIOHandle);
+            ddi_remove_minor_node(pDip, NULL);
 
-                rc = RTSpinlockDestroy(g_Spinlock);
-                AssertRC(rc);
-                g_Spinlock = NIL_RTSPINLOCK;
-
-                RTR0Term();
-                return DDI_SUCCESS;
-            }
-            Log((DEVICE_NAME ":ddi_get_soft_state failed. Cannot detach instance %d\n", instance));
-            return DDI_FAILURE;
+            RTR0Term();
+            return DDI_SUCCESS;
         }
 
         case DDI_SUSPEND:
@@ -496,7 +429,6 @@ static int VBoxGuestSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred
     if (fType != OTYP_CHR)
         return EINVAL;
 
-#ifndef USE_SESSION_HASH
     vboxguest_state_t *pState = NULL;
     unsigned iOpenInstance;
     for (iOpenInstance = 0; iOpenInstance < 4096; iOpenInstance++)
@@ -520,6 +452,7 @@ static int VBoxGuestSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred
     rc = VBoxGuestCreateUserSession(&g_DevExt, &pSession);
     if (RT_SUCCESS(rc))
     {
+        pState->pvProcRef = proc_ref();
         pState->pSession = pSession;
         *pDev = makedevice(getmajor(*pDev), iOpenInstance);
         Log((DEVICE_NAME "::Open: pSession=%p pState=%p pid=%d\n", pSession, pState, (int)RTProcSelf()));
@@ -528,40 +461,7 @@ static int VBoxGuestSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred
 
     /* Failed, clean up. */
     ddi_soft_state_free(g_pVBoxGuestSolarisState, iOpenInstance);
-#else
-    /*
-     * Create a new session.
-     */
-    rc = VBoxGuestCreateUserSession(&g_DevExt, &pSession);
-    if (RT_SUCCESS(rc))
-    {
-        /*
-         * Insert it into the hash table.
-         */
-        unsigned iHash = SESSION_HASH(pSession->Process);
-        RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-        RTSpinlockAcquireNoInts(g_Spinlock, &Tmp);
-        pSession->pNextHash = g_apSessionHashTab[iHash];
-        g_apSessionHashTab[iHash] = pSession;
-        RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
 
-        int instance;
-        for (instance = 0; instance < 4096; instance++)
-        {
-            vboxguest_state_t *pState = ddi_get_soft_state(g_pVBoxGuestSolarisState, instance);
-            if (pState)
-                break;
-        }
-        if (instance >= 4096)
-        {
-            Log((DEVICE_NAME "::Open: All instances exhausted\n"));
-            return ENXIO;
-        }
-        *pDev = makedevice(getmajor(*pDev), instance);
-        Log((DEVICE_NAME "::Open success: g_DevExt=%p pSession=%p rc=%d pid=%d\n", &g_DevExt, pSession, rc, (int)RTProcSelf()));
-        return 0;
-    }
-#endif
     LogRel((DEVICE_NAME "::Open: VBoxGuestCreateUserSession failed. rc=%d\n", rc));
     return EFAULT;
 }
@@ -571,7 +471,6 @@ static int VBoxGuestSolarisClose(dev_t Dev, int flag, int fType, cred_t *pCred)
 {
     LogFlow((DEVICE_NAME "::Close pid=%d\n", (int)RTProcSelf()));
 
-#ifndef USE_SESSION_HASH
     PVBOXGUESTSESSION pSession;
     vboxguest_state_t *pState = ddi_get_soft_state(g_pVBoxGuestSolarisState, getminor(Dev));
     if (!pState)
@@ -580,6 +479,7 @@ static int VBoxGuestSolarisClose(dev_t Dev, int flag, int fType, cred_t *pCred)
         return EFAULT;
     }
 
+    proc_unref(pState->pvProcRef);
     pSession = pState->pSession;
     pState->pSession = NULL;
     Log((DEVICE_NAME "::Close: pSession=%p pState=%p\n", pSession, pState));
@@ -589,52 +489,6 @@ static int VBoxGuestSolarisClose(dev_t Dev, int flag, int fType, cred_t *pCred)
         Log((DEVICE_NAME "::Close: failed to get pSession.\n"));
         return EFAULT;
     }
-
-#else /* USE_SESSION_HASH */
-    /*
-     * Remove from the hash table.
-     */
-    PVBOXGUESTSESSION   pSession;
-    const RTPROCESS     Process = RTProcSelf();
-    const unsigned      iHash = SESSION_HASH(Process);
-    RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquireNoInts(g_Spinlock, &Tmp);
-
-    pSession = g_apSessionHashTab[iHash];
-    if (pSession)
-    {
-        if (pSession->Process == Process)
-        {
-            g_apSessionHashTab[iHash] = pSession->pNextHash;
-            pSession->pNextHash = NULL;
-        }
-        else
-        {
-            PVBOXGUESTSESSION pPrev = pSession;
-            pSession = pSession->pNextHash;
-            while (pSession)
-            {
-                if (pSession->Process == Process)
-                {
-                    pPrev->pNextHash = pSession->pNextHash;
-                    pSession->pNextHash = NULL;
-                    break;
-                }
-
-                /* next */
-                pPrev = pSession;
-                pSession = pSession->pNextHash;
-            }
-        }
-    }
-    RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
-    if (!pSession)
-    {
-        Log((DEVICE_NAME "::Close: WHUT?!? pSession == NULL! This must be a mistake... pid=%d", (int)Process));
-        return EFAULT;
-    }
-    Log((DEVICE_NAME "::Close: pid=%d\n", (int)Process));
-#endif /* USE_SESSION_HASH */
 
     /*
      * Close the session.
@@ -647,6 +501,19 @@ static int VBoxGuestSolarisClose(dev_t Dev, int flag, int fType, cred_t *pCred)
 static int VBoxGuestSolarisRead(dev_t Dev, struct uio *pUio, cred_t *pCred)
 {
     LogFlow((DEVICE_NAME "::Read\n"));
+
+    PVBOXGUESTSESSION pSession;
+    vboxguest_state_t *pState = ddi_get_soft_state(g_pVBoxGuestSolarisState, getminor(Dev));
+    if (!pState)
+    {
+        Log((DEVICE_NAME "::Close: failed to get pState.\n"));
+        return EFAULT;
+    }
+
+    uint32_t u32CurSeq = ASMAtomicUoReadU32(&g_DevExt.u32MousePosChangedSeq);
+    if (pSession->u32MousePosChangedSeq != u32CurSeq)
+        pSession->u32MousePosChangedSeq = u32CurSeq;
+
     return 0;
 }
 
@@ -683,7 +550,6 @@ static int VBoxGuestSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cr
 {
     LogFlow((DEVICE_NAME ":VBoxGuestSolarisIOCtl\n"));
 
-#ifndef USE_SESSION_HASH
     /*
      * Get the session from the soft state item.
      */
@@ -700,30 +566,6 @@ static int VBoxGuestSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cr
         Log((DEVICE_NAME "::IOCtl: no session data for %d\n", getminor(Dev)));
         return EINVAL;
     }
-
-#else /* USE_SESSION_HASH */
-    RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
-    const RTPROCESS     Process = RTProcSelf();
-    const unsigned      iHash = SESSION_HASH(Process);
-    PVBOXGUESTSESSION   pSession;
-
-    /*
-     * Find the session.
-     */
-    RTSpinlockAcquireNoInts(g_Spinlock, &Tmp);
-    pSession = g_apSessionHashTab[iHash];
-    if (pSession && pSession->Process != Process)
-    {
-        do pSession = pSession->pNextHash;
-        while (pSession && pSession->Process != Process);
-    }
-    RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
-    if (!pSession)
-    {
-        Log((DEVICE_NAME "::IOCtl: WHAT?!? pSession == NULL! This must be a mistake... pid=%d iCmd=%#x\n", (int)Process, Cmd));
-        return EINVAL;
-    }
-#endif /* USE_SESSION_HASH */
 
     /*
      * Read and validate the request wrapper.
@@ -815,36 +657,47 @@ static int VBoxGuestSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cr
 }
 
 
+static int VBoxGuestSolarisPoll(dev_t Dev, short fEvents, int fAnyYet, short *pReqEvents, struct pollhead **ppPollHead)
+{
+    LogFlow((DEVICE_NAME "::Poll: fEvents=%d fAnyYet=%d\n", fEvents, fAnyYet));
+
+    vboxguest_state_t *pState = ddi_get_soft_state(g_pVBoxGuestSolarisState, getminor(Dev));
+    if (RT_LIKELY(pState))
+    {
+        PVBOXGUESTSESSION pSession  = (PVBOXGUESTSESSION)pState->pSession;
+        uint32_t u32CurSeq = ASMAtomicUoReadU32(&g_DevExt.u32MousePosChangedSeq);
+        if (pSession->u32MousePosChangedSeq != u32CurSeq)
+        {
+            *pReqEvents |= (POLLIN | POLLRDNORM);
+            pSession->u32MousePosChangedSeq = u32CurSeq;
+        }
+        else
+        {
+            *pReqEvents = 0;
+            if (!fAnyYet)
+                *ppPollHead = &g_PollHead;
+        }
+
+        return 0;
+    }
+    else
+    {
+        Log((DEVICE_NAME "::Poll: no state data for %d\n", getminor(Dev)));
+        return EINVAL;
+    }
+}
+
+
 /**
  * Sets IRQ for VMMDev.
  *
  * @returns Solaris error code.
  * @param   pDip     Pointer to the device info structure.
- * @param   pvState  Pointer to the state info structure.
  */
-static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip, void *pvState)
+static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip)
 {
-    LogFlow((DEVICE_NAME "::AddIRQ: %p\n", pvState));
+    LogFlow((DEVICE_NAME "::AddIRQ: pDip=%p\n", pDip));
 
-    vboxguest_state_t *pState = (vboxguest_state_t *)pvState;
-#if 0
-    /*
-     * These calls are supposedly deprecated. But Sun seems to use them all over
-     * the place. Anyway, once this works we will switch to the highly elaborate
-     * and non-obsolete way of setting up IRQs.
-     */
-    int rc = ddi_get_iblock_cookie(pDip, 0, &pState->BlockCookie);
-    if (rc == DDI_SUCCESS)
-    {
-        mutex_init(&pState->Mtx, "VBoxGuest Driver Mutex", MUTEX_DRIVER, (void *)pState->BlockCookie);
-        rc = ddi_add_intr(pDip, 0, &pState->BlockCookie, NULL, VBoxGuestSolarisISR, (caddr_t)pState);
-        if (rc != DDI_SUCCESS)
-            Log((DEVICE_NAME ":ddi_add_intr failed. Cannot set IRQ for VMMDev.\n"));
-    }
-    else
-        Log((DEVICE_NAME ":ddi_get_iblock_cookie failed. Cannot set IRQ for VMMDev.\n"));
-    return rc;
-#else
     int IntrType = 0;
     int rc = ddi_intr_get_supported_types(pDip, &IntrType);
     if (rc == DDI_SUCCESS)
@@ -863,29 +716,29 @@ static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip, void *pvState)
                     && IntrAvail > 0)
                 {
                     /* Allocated kernel memory for the interrupt handles. The allocation size is stored internally. */
-                    pState->pIntr = RTMemAlloc(IntrCount * sizeof(ddi_intr_handle_t));
-                    if (pState->pIntr)
+                    g_pIntr = RTMemAlloc(IntrCount * sizeof(ddi_intr_handle_t));
+                    if (g_pIntr)
                     {
                         int IntrAllocated;
-                        rc = ddi_intr_alloc(pDip, pState->pIntr, IntrType, 0, IntrCount, &IntrAllocated, DDI_INTR_ALLOC_NORMAL);
+                        rc = ddi_intr_alloc(pDip, g_pIntr, IntrType, 0, IntrCount, &IntrAllocated, DDI_INTR_ALLOC_NORMAL);
                         if (   rc == DDI_SUCCESS
                             && IntrAllocated > 0)
                         {
-                            pState->cIntrAllocated = IntrAllocated;
+                            g_cIntrAllocated = IntrAllocated;
                             uint_t uIntrPriority;
-                            rc = ddi_intr_get_pri(pState->pIntr[0], &uIntrPriority);
+                            rc = ddi_intr_get_pri(g_pIntr[0], &uIntrPriority);
                             if (rc == DDI_SUCCESS)
                             {
                                 /* Initialize the mutex. */
-                                mutex_init(&pState->Mtx, "VBoxGuestMtx", MUTEX_DRIVER, DDI_INTR_PRI(uIntrPriority));
+                                mutex_init(&g_IrqMtx, NULL, MUTEX_DRIVER, DDI_INTR_PRI(uIntrPriority));
 
                                 /* Assign interrupt handler functions and enable interrupts. */
                                 for (int i = 0; i < IntrAllocated; i++)
                                 {
-                                    rc = ddi_intr_add_handler(pState->pIntr[i], (ddi_intr_handler_t *)VBoxGuestSolarisISR,
-                                                            (caddr_t)pState, NULL);
+                                    rc = ddi_intr_add_handler(g_pIntr[i], (ddi_intr_handler_t *)VBoxGuestSolarisISR,
+                                                            NULL /* No Private Data */, NULL);
                                     if (rc == DDI_SUCCESS)
-                                        rc = ddi_intr_enable(pState->pIntr[i]);
+                                        rc = ddi_intr_enable(g_pIntr[i]);
                                     if (rc != DDI_SUCCESS)
                                     {
                                         /* Changing local IntrAllocated to hold so-far allocated handles for freeing. */
@@ -899,18 +752,18 @@ static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip, void *pvState)
                                 /* Remove any assigned handlers */
                                 LogRel((DEVICE_NAME ":failed to assign IRQs allocated=%d\n", IntrAllocated));
                                 for (int x = 0; x < IntrAllocated; x++)
-                                    ddi_intr_remove_handler(pState->pIntr[x]);
+                                    ddi_intr_remove_handler(g_pIntr[x]);
                             }
                             else
                                 LogRel((DEVICE_NAME "::AddIRQ: failed to get priority of interrupt. rc=%d\n", rc));
 
                             /* Remove allocated IRQs, too bad we can free only one handle at a time. */
-                            for (int k = 0; k < pState->cIntrAllocated; k++)
-                                ddi_intr_free(pState->pIntr[k]);
+                            for (int k = 0; k < g_cIntrAllocated; k++)
+                                ddi_intr_free(g_pIntr[k]);
                         }
                         else
                             LogRel((DEVICE_NAME "::AddIRQ: failed to allocated IRQs. count=%d\n", IntrCount));
-                        RTMemFree(pState->pIntr);
+                        RTMemFree(g_pIntr);
                     }
                     else
                         LogRel((DEVICE_NAME "::AddIRQ: failed to allocated IRQs. count=%d\n", IntrCount));
@@ -927,7 +780,6 @@ static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip, void *pvState)
     else
         LogRel((DEVICE_NAME "::AddIRQ: failed to get supported interrupt types\n"));
     return rc;
-#endif
 }
 
 
@@ -935,48 +787,52 @@ static int VBoxGuestSolarisAddIRQ(dev_info_t *pDip, void *pvState)
  * Removes IRQ for VMMDev.
  *
  * @param   pDip     Pointer to the device info structure.
- * @param   pvState  Opaque pointer to the state info structure.
  */
-static void VBoxGuestSolarisRemoveIRQ(dev_info_t *pDip, void *pvState)
+static void VBoxGuestSolarisRemoveIRQ(dev_info_t *pDip)
 {
-    vboxguest_state_t *pState = (vboxguest_state_t *)pvState;
-    LogFlow((DEVICE_NAME "::RemoveIRQ: pvState=%p\n"));
+    LogFlow((DEVICE_NAME "::RemoveIRQ:\n"));
 
-#if 0
-    ddi_remove_intr(pDip, 0, pState->BlockCookie);
-    mutex_destroy(&pState->Mtx);
-#else
-    for (int i = 0; i < pState->cIntrAllocated; i++)
+    for (int i = 0; i < g_cIntrAllocated; i++)
     {
-        int rc = ddi_intr_disable(pState->pIntr[i]);
+        int rc = ddi_intr_disable(g_pIntr[i]);
         if (rc == DDI_SUCCESS)
         {
-            rc = ddi_intr_remove_handler(pState->pIntr[i]);
+            rc = ddi_intr_remove_handler(g_pIntr[i]);
             if (rc == DDI_SUCCESS)
-                ddi_intr_free(pState->pIntr[i]);
+                ddi_intr_free(g_pIntr[i]);
         }
     }
-    RTMemFree(pState->pIntr);
-    mutex_destroy(&pState->Mtx);
-#endif
+    RTMemFree(g_pIntr);
+    mutex_destroy(&g_IrqMtx);
 }
 
 
 /**
  * Interrupt Service Routine for VMMDev.
  *
+ * @param   Arg     Private data (unused, will be NULL).
  * @returns DDI_INTR_CLAIMED if it's our interrupt, DDI_INTR_UNCLAIMED if it isn't.
  */
 static uint_t VBoxGuestSolarisISR(caddr_t Arg)
 {
-    LogFlow((DEVICE_NAME "::ISR: Arg=%p\n", Arg));
+    LogFlow((DEVICE_NAME "::ISR:\n"));
 
-    vboxguest_state_t *pState = (vboxguest_state_t *)Arg;
-    mutex_enter(&pState->Mtx);
+    mutex_enter(&g_IrqMtx);
     bool fOurIRQ = VBoxGuestCommonISR(&g_DevExt);
-    mutex_exit(&pState->Mtx);
+    mutex_exit(&g_IrqMtx);
 
     return fOurIRQ ? DDI_INTR_CLAIMED : DDI_INTR_UNCLAIMED;
+}
+
+
+void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
+{
+    LogFlow((DEVICE_NAME "::NativeISRMousePollEvent:\n"));
+
+    /*
+     * Wake up poll waiters.
+     */
+    pollwakeup(&g_PollHead, POLLIN | POLLRDNORM);
 }
 
 

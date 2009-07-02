@@ -492,7 +492,7 @@ static int VBoxGuestFreeBSDAttach(device_t pDevice)
              * Call the common device extension initializer.
              */
             rc = VBoxGuestInitDevExt(&g_DevExt, pState->uIOPortBase, pState->pMMIOBase,
-                                     pState->VMMDevMemSize, VBOXOSTYPE_FreeBSD);
+                                     pState->VMMDevMemSize, VBOXOSTYPE_FreeBSD, 0);
             if (RT_SUCCESS(rc))
             {
                 /*

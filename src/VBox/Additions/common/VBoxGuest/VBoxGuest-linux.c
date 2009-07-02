@@ -497,7 +497,8 @@ static int __init vboxguestLinuxModInit(void)
                                      g_IOPortBase,
                                      g_pvMMIOBase,
                                      g_cbMMIO,
-                                     enmOSType);
+                                     enmOSType,
+                                     VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
             if (RT_SUCCESS(rc))
             {
                 /*
