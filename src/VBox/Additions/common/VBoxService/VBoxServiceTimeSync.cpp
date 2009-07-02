@@ -354,8 +354,9 @@ DECLCALLBACK(int) VBoxServiceTimeSyncWorker(bool volatile *pfShutdown)
                         {
                             VBoxServiceVerbose(3, "Windows time adjustment: Setting system time directly.\n");
 
-
-/** @todo NT4 doesn't have GetSystemTimeAdjustment. */
+/** @todo r=bird: What about canceling any pending time adjustment? */
+/** @todo r=bird: Get current time and add the adjustment, the host time is
+ *                stale by now. */
                             FILETIME ft;
                             RTTimeSpecGetNtFileTime(&HostNow, &ft);
                             SYSTEMTIME st;
