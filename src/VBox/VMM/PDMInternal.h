@@ -229,10 +229,8 @@ typedef struct PDMCRITSECTINT
     STAMCOUNTER                     StatContentionRZUnlock;
     /** R3 lock contention. */
     STAMCOUNTER                     StatContentionR3;
-#ifdef VBOX_WITH_STATISTICS
     /** Profiling the time the section is locked. */
     STAMPROFILEADV                  StatLocked;
-#endif
 } PDMCRITSECTINT;
 typedef PDMCRITSECTINT *PPDMCRITSECTINT;
 
