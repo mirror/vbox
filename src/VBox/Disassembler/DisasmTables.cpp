@@ -429,10 +429,10 @@ const OPCODE g_aTwoByteMapX86[256] =
     OP("nop %Ev",            IDX_ParseModRM,     0,             0,          OP_NOP,     OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
 
     /* 2 */
-    OP("mov %Rd,%Cd",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOV_CR,  OP_PARM_Rd,         OP_PARM_Cd,     OP_PARM_NONE,   OPTYPE_DANGEROUS | OPTYPE_PRIVILEGED),
-    OP("mov %Rd,%Dd",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOV_DR,  OP_PARM_Rd,         OP_PARM_Dd,     OP_PARM_NONE,   OPTYPE_DANGEROUS | OPTYPE_PRIVILEGED),
-    OP("mov %Cd,%Rd",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOV_CR,  OP_PARM_Cd,         OP_PARM_Rd,     OP_PARM_NONE,   OPTYPE_DANGEROUS | OPTYPE_PRIVILEGED),
-    OP("mov %Dd,%Rd",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOV_DR,  OP_PARM_Dd,         OP_PARM_Rd,     OP_PARM_NONE,   OPTYPE_DANGEROUS | OPTYPE_PRIVILEGED),
+    OP("mov %Rd,%Cd",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOV_CR,  OP_PARM_Rd,         OP_PARM_Cd,     OP_PARM_NONE,   OPTYPE_DANGEROUS | OPTYPE_PRIVILEGED | OPTYPE_MOD_FIXED_11 | OPTYPE_FORCED_32_OP_SIZE_X86),
+    OP("mov %Rd,%Dd",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOV_DR,  OP_PARM_Rd,         OP_PARM_Dd,     OP_PARM_NONE,   OPTYPE_DANGEROUS | OPTYPE_PRIVILEGED | OPTYPE_MOD_FIXED_11 | OPTYPE_FORCED_32_OP_SIZE_X86),
+    OP("mov %Cd,%Rd",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOV_CR,  OP_PARM_Cd,         OP_PARM_Rd,     OP_PARM_NONE,   OPTYPE_DANGEROUS | OPTYPE_PRIVILEGED | OPTYPE_MOD_FIXED_11 | OPTYPE_FORCED_32_OP_SIZE_X86),
+    OP("mov %Dd,%Rd",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOV_DR,  OP_PARM_Dd,         OP_PARM_Rd,     OP_PARM_NONE,   OPTYPE_DANGEROUS | OPTYPE_PRIVILEGED | OPTYPE_MOD_FIXED_11 | OPTYPE_FORCED_32_OP_SIZE_X86),
     /* only valid for Pentium Pro & Pentium II */
     OP("mov %Rd,%Td",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOV_TR,  OP_PARM_Rd,         OP_PARM_Td,     OP_PARM_NONE,   OPTYPE_PRIVILEGED),
     INVALID_OPCODE,
