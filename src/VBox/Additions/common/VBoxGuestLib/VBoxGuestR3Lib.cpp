@@ -380,7 +380,11 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
     return VINF_SUCCESS;
 
 #elif defined(RT_OS_LINUX)
+# ifdef VBOX_VBGLR3_XFREE86
+    int rc = xf86ioctl((int)g_File, iFunction, pvData);
+# else
     int rc = ioctl((int)g_File, iFunction, pvData);
+# endif
     if (RT_LIKELY(rc == 0))
         return VINF_SUCCESS;
 
@@ -388,7 +392,11 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
     if (rc > 0)
         rc = -rc;
     else
+# ifdef VBOX_VBGLR3_XFREE86
+        rc = VERR_FILE_IO_ERROR;
+#  else
         rc = RTErrConvertFromErrno(errno);
+# endif
     NOREF(cbData);
     return rc;
 
