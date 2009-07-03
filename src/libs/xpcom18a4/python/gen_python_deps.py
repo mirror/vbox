@@ -22,25 +22,52 @@ versions = ["2.3", "2.4", "2.5", "2.6", "2.7", "2.8"]
 prefixes = ["/usr", "/usr/local", "/opt", "/opt/local"]
 known = {}
 
-def checkPair(p,v,dllpre,dllsuff):
+def checkPair(p, v,dllpre,dllsuff, do_bitness_magic):
     file =  os.path.join(p, "include", "python"+v, "Python.h")
-    # or just stat()?
     if not os.path.isfile(file):
         return None
+    if do_bitness_magic:
+        lib64 = os.path.join(p, "lib", "64", dllpre+"python"+v+dllsuff)
+    else:
+        lib64 = None
     return [os.path.join(p, "include", "python"+v), 
-            os.path.join(p, "lib", dllpre+"python"+v+dllsuff)]
+            os.path.join(p, "lib", dllpre+"python"+v+dllsuff),
+            lib64]
+
+def print_vars(vers, known, sep, do_bitness_magic):
+    print "VBOX_PYTHON%s_INC=%s%s" %(vers, known[0], sep)
+    if do_bitness_magic:
+       print "VBOX_PYTHON%s_LIB=%s%s" %(vers, known[2], sep)
+    else:
+       print "VBOX_PYTHON%s_LIB=%s%s" %(vers, known[1], sep)
+
 
 def main(argv):
     dllpre = "lib"
     dllsuff = ".so"
-    if sys.platform == 'darwin':
+    do_bitness_magic = 0
+
+    if len(argv) > 1:
+        target = argv[1]
+    else:
+        target = sys.platform
+
+    if len(argv) > 2:
+        arch = argv[2]   
+    else:
+        arch = "unknown"
+
+    if target == 'darwin':
         prefixes.insert(0, '/Developer/SDKs/MacOSX10.4u.sdk/usr')
         prefixes.insert(0, '/Developer/SDKs/MacOSX10.5.sdk/usr')
         dllsuff = '.dylib'
+
+    if target == 'solaris' and arch == 'amd64':
+        do_bitness_magic = 1
     
     for v in versions:
         for p in prefixes:
-            c = checkPair(p, v, dllpre, dllsuff)
+            c = checkPair(p, v, dllpre, dllsuff, do_bitness_magic)
             if c is not None:
                 known[v] = c
                 break
@@ -54,11 +81,9 @@ def main(argv):
         if d is None:
             d = k
         vers = k.replace('.', '')
-        print "VBOX_PYTHON%s_INC=%s%s" %(vers, known[k][0], sep)
-        print "VBOX_PYTHON%s_LIB=%s%s" %(vers, known[k][1], sep)
+        print_vars(vers, known[k], sep, do_bitness_magic)
     if d is not None:
-        print "VBOX_PYTHONDEF_INC=%s%s" %(known[d][0], sep)
-        print "VBOX_PYTHONDEF_LIB=%s%s" %(known[d][1], sep)
+        print_vars("DEF", known[d], sep, do_bitness_magic) 
 
 if __name__ == '__main__':
     main(sys.argv)

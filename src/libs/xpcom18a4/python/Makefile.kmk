@@ -23,7 +23,7 @@ SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 # list of supported Python versions
-$(eval $(patsubst %|,%$(NL),$(shell $(VBOX_BLD_PYTHON) $(PATH_SUB_CURRENT)/gen_python_deps.py)))
+$(eval $(patsubst %|,%$(NL),$(shell $(VBOX_BLD_PYTHON) $(PATH_SUB_CURRENT)/gen_python_deps.py $(KBUILD_TARGET) $(KBUILD_TARGET_ARCH))))
 
 # Python Client Module - the C++/XPCOM bits.
 VBoxPythonBase_TEMPLATE = XPCOM
