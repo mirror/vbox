@@ -504,7 +504,7 @@ static SMLSFIXTURE g_testShape =
 {
     RT_ELEMENTS(g_ahWin1),
     g_ahWin1,
-    g_aAttrib1Before,
+    g_aAttrib1After,
     g_apszNames1,
     20,
     RT_ELEMENTS(g_aRectangle5Before),
@@ -516,7 +516,7 @@ static SMLSFIXTURE g_testShape =
     20,
     RT_ELEMENTS(g_aRectangle1),
     g_aRectangle1,
-    ShapeNotify,
+    VBoxShapeNotify,
     20,
     RT_ELEMENTS(g_aRects1),
     g_aRects1
@@ -640,8 +640,7 @@ int main( int argc, char **argv)
     //                        "ConfigureNotify event (window resized)");
     cErrs += smlsDoFixture(&g_testMap, "MapNotify event");
     cErrs += smlsDoFixture(&g_testUnmap, "UnmapNotify event");
-    // Currently not working
-    // cErrs += smlsDoFixture(&g_testShape, "ShapeNotify event");
+    cErrs += smlsDoFixture(&g_testShape, "ShapeNotify event");
     if (cErrs > 0)
         RTPrintf("%u errors\n", cErrs);
     return cErrs == 0 ? 0 : 1;
