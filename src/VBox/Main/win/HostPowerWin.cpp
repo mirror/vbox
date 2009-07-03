@@ -194,6 +194,8 @@ LRESULT CALLBACK HostPowerServiceWin::WndProc(HWND hwnd, UINT msg, WPARAM wParam
                     }
                     break;
                 }
+                default:
+                    return DefWindowProc (hwnd, msg, wParam, lParam);
                 }
             }
             return TRUE;
