@@ -8078,8 +8078,10 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
             gen_exception(s, EXCP0D_GPF, pc_start - s->cs_base);
         } else {
             modrm = ldub_code(s->pc++);
+#ifndef VBOX    /* mod bits are always understood to be 11 (0xc0) regardless of actual content; see AMD manuals */
             if ((modrm & 0xc0) != 0xc0)
                 goto illegal_op;
+#endif
             rm = (modrm & 7) | REX_B(s);
             reg = ((modrm >> 3) & 7) | rex_r;
             if (CODE64(s))
@@ -8118,8 +8120,10 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
             gen_exception(s, EXCP0D_GPF, pc_start - s->cs_base);
         } else {
             modrm = ldub_code(s->pc++);
+#ifndef VBOX    /* mod bits are always understood to be 11 (0xc0) regardless of actual content; see AMD manuals */
             if ((modrm & 0xc0) != 0xc0)
                 goto illegal_op;
+#endif
             rm = (modrm & 7) | REX_B(s);
             reg = ((modrm >> 3) & 7) | rex_r;
             if (CODE64(s))
