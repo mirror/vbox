@@ -1634,6 +1634,17 @@ VMMR3DECL(bool) HWACCMR3IsEventPending(PVMCPU pVCpu)
     return HWACCMIsEnabled(pVCpu->pVMR3) && pVCpu->hwaccm.s.Event.fPending;
 }
 
+/**
+ * Restart an I/O instruction that was refused in ring-0
+ *
+ * @returns VBox status code
+ * @param   pVM         The VM to operate on.
+ * @param   pVM         The VM to operate on.
+ */
+VMMR3DECL(int)  HWACCMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu)
+{
+    return VERR_NOT_FOUND;
+}
 
 /**
  * Inject an NMI into a running VM (only VCPU 0!)
