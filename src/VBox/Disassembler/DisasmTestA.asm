@@ -33,6 +33,18 @@ BEGINCODE
 
 align 16
 BEGINPROC   TestProc
+    xor eax, eax
+    mov al, 4
+    lea edx, [4]
+    mov edx, 4
+    mov eax, 4
+    shl eax, 4
+    shl edx, 4
+    shr edx, 4
+    mov eax, edx
+    mov eax, ecx
+    mov edx, eax
+    mov ecx, eax
     DB 0xF0, 0x0F, 0x22, 0xC0
     DB 0xF0, 0x0F, 0x20, 0xC0
     smsw  word [edx+16]

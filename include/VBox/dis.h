@@ -123,6 +123,8 @@ typedef enum
 #define OPTYPE_DEFAULT_64_OP_SIZE       RT_BIT(21)  /**< Default 64 bits operand size */
 #define OPTYPE_FORCED_64_OP_SIZE        RT_BIT(22)  /**< Forced 64 bits operand size; regardless of prefix bytes */
 #define OPTYPE_REXB_EXTENDS_OPREG       RT_BIT(23)  /**< REX.B extends the register field in the opcode byte */
+#define OPTYPE_MOD_FIXED_11             RT_BIT(24)  /**< modrm.mod is always 11b */
+#define OPTYPE_FORCED_32_OP_SIZE_X86    RT_BIT(25)  /**< Forced 32 bits operand size; regardless of prefix bytes (only in 16 & 32 bits mode!) */
 #define OPTYPE_ALL                      (0xffffffff)
 
 /** Parameter usage flags.
