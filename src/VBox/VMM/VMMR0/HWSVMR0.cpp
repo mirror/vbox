@@ -2285,7 +2285,7 @@ ResumeExecution:
     case SVM_EXIT_PAUSE:
     case SVM_EXIT_MWAIT_ARMED:
     case SVM_EXIT_TASK_SWITCH:          /* can change CR3; emulate */
-        rc = VINF_EM_RAW_EXCEPTION_PRIVILEGED;
+        rc = VERR_EM_INTERPRETER;
         break;
 
     case SVM_EXIT_SHUTDOWN:
