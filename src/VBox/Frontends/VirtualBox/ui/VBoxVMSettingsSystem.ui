@@ -396,7 +396,7 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QSlider" name="mSlCPU">
+          <widget class="QIAdvancedSlider" name="mSlCPU">
            <property name="whatsThis">
             <string>Controls the number of virtual CPUs in the virtual machine.</string>
            </property>

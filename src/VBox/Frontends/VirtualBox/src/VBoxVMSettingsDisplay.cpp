@@ -73,6 +73,11 @@ VBoxVMSettingsDisplay::VBoxVMSettingsDisplay()
     /* Setup the scale so that ticks are at page step boundaries */
     mSlMemory->setMinimum ((MinVRAM / mSlMemory->pageStep()) * mSlMemory->pageStep());
     mSlMemory->setMaximum (MaxVRAM);
+    mSlMemory->setSnappingEnabled (true);
+    quint64 needMBytes = VBoxGlobal::requiredVideoMemory (&mMachine) / _1M;
+    mSlMemory->setErrorHint (0, 1);
+    mSlMemory->setWarningHint (1, needMBytes);
+    mSlMemory->setOptimalHint (needMBytes, MaxVRAM);
     /* Limit min/max. size of QLineEdit */
     mLeMemory->setFixedWidthByText (QString().fill ('8', 4));
     /* Ensure mLeMemory value and validation is updated */

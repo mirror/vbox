@@ -81,6 +81,9 @@ private:
     uint mMaxGuestRAM;
     uint mMinGuestCPU;
     uint mMaxGuestCPU;
+
+    int mMaxRAMAllowed;
+    int mMaxRAMOptimum;
 };
 
 #endif // __VBoxVMSettingsSystem_h__

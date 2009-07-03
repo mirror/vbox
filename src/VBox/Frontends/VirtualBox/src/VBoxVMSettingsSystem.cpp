@@ -56,8 +56,81 @@ VBoxVMSettingsSystem::VBoxVMSettingsSystem()
     CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
     mMinGuestRAM = sys.GetMinGuestRAM();
     mMaxGuestRAM = RT_MIN (RT_ALIGN (vboxGlobal().virtualBox().GetHost().GetMemorySize(), _1G / _1M), sys.GetMaxGuestRAM());
+    uint hostCPUs = vboxGlobal().virtualBox().GetHost().GetProcessorCount();
     mMinGuestCPU = sys.GetMinGuestCPUCount();
-    mMaxGuestCPU = RT_MIN (2 * vboxGlobal().virtualBox().GetHost().GetProcessorCount(), sys.GetMaxGuestCPUCount());
+    mMaxGuestCPU = RT_MIN (2 * hostCPUs, sys.GetMaxGuestCPUCount());
+
+    /* Come up with some nice round percent boundraries relative to
+     * the system memory. A max of 75% on a 256GB config is ridiculous,
+     * even on an 8GB rig reserving 2GB for the OS is way to conservative.
+     * The max numbers can be estimated using the following program:
+     *
+     *      double calcMaxPct(uint64_t cbRam)
+     *      {
+     *          double cbRamOverhead = cbRam * 0.0390625; // 160 bytes per page.
+     *          double cbRamForTheOS = RT_MAX(RT_MIN(_512M, cbRam * 0.25), _64M);
+     *          double OSPct  = (cbRamOverhead + cbRamForTheOS) * 100.0 / cbRam;
+     *          double MaxPct = 100 - OSPct;
+     *          return MaxPct;
+     *      }
+     *
+     *      int main()
+     *      {
+     *          uint64_t cbRam = _1G;
+     *          for (; !(cbRam >> 33); cbRam += _1G)
+     *              printf("%8lluGB %.1f%% %8lluKB\n", cbRam >> 30, calcMaxPct(cbRam),
+     *                     (uint64_t)(cbRam * calcMaxPct(cbRam) / 100.0) >> 20);
+     *          for (; !(cbRam >> 51); cbRam <<= 1)
+     *              printf("%8lluGB %.1f%% %8lluKB\n", cbRam >> 30, calcMaxPct(cbRam),
+     *                     (uint64_t)(cbRam * calcMaxPct(cbRam) / 100.0) >> 20);
+     *          return 0;
+     *      }
+     *
+     * Note. We might wanna put these calculations somewhere global later. */
+
+    /* System RAM amount test */
+    ulong fullSize = vboxGlobal().virtualBox().GetHost().GetMemorySize();
+    mMaxRAMAllowed  = 0.75 * fullSize;
+    mMaxRAMOptimum  = 0.50 * fullSize;
+    if (fullSize < 3072)
+        /* done */;
+    else if (fullSize < 4096)   /* 3GB */
+        mMaxRAMAllowed = 0.80 * fullSize;
+    else if (fullSize < 6144)   /* 4-5GB */
+    {
+        mMaxRAMAllowed = 0.84 * fullSize;
+        mMaxRAMOptimum = 0.60 * fullSize;
+    }
+    else if (fullSize < 8192)   /* 6-7GB */
+    {
+        mMaxRAMAllowed = 0.88 * fullSize;
+        mMaxRAMOptimum = 0.65 * fullSize;
+    }
+    else if (fullSize < 16384)  /* 8-15GB */
+    {
+        mMaxRAMAllowed = 0.90 * fullSize;
+        mMaxRAMOptimum = 0.70 * fullSize;
+    }
+    else if (fullSize < 32768)  /* 16-31GB */
+    {
+        mMaxRAMAllowed = 0.93 * fullSize;
+        mMaxRAMOptimum = 0.75 * fullSize;
+    }
+    else if (fullSize < 65536)  /* 32-63GB */
+    {
+        mMaxRAMAllowed = 0.94 * fullSize;
+        mMaxRAMOptimum = 0.80 * fullSize;
+    }
+    else if (fullSize < 131072) /* 64-127GB */
+    {
+        mMaxRAMAllowed = 0.95 * fullSize;
+        mMaxRAMOptimum = 0.85 * fullSize;
+    }
+    else                        /* 128GB- */
+    {
+        mMaxRAMAllowed = 0.96 * fullSize;
+        mMaxRAMOptimum = 0.90 * fullSize;
+    }
 
     /* Setup validators */
     mLeMemory->setValidator (new QIntValidator (mMinGuestRAM, mMaxGuestRAM, this));
@@ -102,6 +175,10 @@ VBoxVMSettingsSystem::VBoxVMSettingsSystem()
     /* Setup the scale so that ticks are at page step boundaries */
     mSlMemory->setMinimum ((mMinGuestRAM / mSlMemory->pageStep()) * mSlMemory->pageStep());
     mSlMemory->setMaximum (mMaxGuestRAM);
+    mSlMemory->setSnappingEnabled (true);
+    mSlMemory->setOptimalHint (1, mMaxRAMOptimum);
+    mSlMemory->setWarningHint (mMaxRAMOptimum, mMaxRAMAllowed);
+    mSlMemory->setErrorHint (mMaxRAMAllowed, mMaxGuestRAM);
     /* Limit min/max. size of QLineEdit */
     mLeMemory->setFixedWidthByText (QString().fill ('8', 5));
     /* Ensure mLeMemory value and validation is updated */
@@ -114,6 +191,8 @@ VBoxVMSettingsSystem::VBoxVMSettingsSystem()
     /* Setup the scale so that ticks are at page step boundaries */
     mSlCPU->setMinimum (mMinGuestCPU);
     mSlCPU->setMaximum (mMaxGuestCPU);
+    mSlCPU->setOptimalHint (1, hostCPUs);
+    mSlCPU->setWarningHint (hostCPUs, mMaxGuestCPU);
     /* Limit min/max. size of QLineEdit */
     mLeCPU->setFixedWidthByText (QString().fill ('8', 3));
     /* Ensure mLeMemory value and validation is updated */
@@ -273,95 +352,24 @@ void VBoxVMSettingsSystem::setValidator (QIWidgetValidator *aVal)
 
 bool VBoxVMSettingsSystem::revalidate (QString &aWarning, QString & /* aTitle */)
 {
-    /* Come up with some nice round percent boundraries relative to
-     * the system memory. A max of 75% on a 256GB config is ridiculous,
-     * even on an 8GB rig reserving 2GB for the OS is way to conservative.
-     * The max numbers can be estimated using the following program:
-     *
-     *      double calcMaxPct(uint64_t cbRam)
-     *      {
-     *          double cbRamOverhead = cbRam * 0.0390625; // 160 bytes per page.
-     *          double cbRamForTheOS = RT_MAX(RT_MIN(_512M, cbRam * 0.25), _64M);
-     *          double OSPct  = (cbRamOverhead + cbRamForTheOS) * 100.0 / cbRam;
-     *          double MaxPct = 100 - OSPct;
-     *          return MaxPct;
-     *      }
-     *
-     *      int main()
-     *      {
-     *          uint64_t cbRam = _1G;
-     *          for (; !(cbRam >> 33); cbRam += _1G)
-     *              printf("%8lluGB %.1f%% %8lluKB\n", cbRam >> 30, calcMaxPct(cbRam),
-     *                     (uint64_t)(cbRam * calcMaxPct(cbRam) / 100.0) >> 20);
-     *          for (; !(cbRam >> 51); cbRam <<= 1)
-     *              printf("%8lluGB %.1f%% %8lluKB\n", cbRam >> 30, calcMaxPct(cbRam),
-     *                     (uint64_t)(cbRam * calcMaxPct(cbRam) / 100.0) >> 20);
-     *          return 0;
-     *      }
-     *
-     * Note. We might wanna put these calculations somewhere global later. */
-
-    /* System RAM amount test */
     ulong fullSize = vboxGlobal().virtualBox().GetHost().GetMemorySize();
-    double maxPct  = 0.75;
-    double warnPct = 0.50;
-    if (fullSize < 3072)
-        /* done */;
-    else if (fullSize < 4096)   /* 3GB */
-        maxPct  = 0.80;
-    else if (fullSize < 6144)   /* 4-5GB */
-    {
-        maxPct  = 0.84;
-        warnPct = 0.60;
-    }
-    else if (fullSize < 8192)   /* 6-7GB */
-    {
-        maxPct  = 0.88;
-        warnPct = 0.65;
-    }
-    else if (fullSize < 16384)  /* 8-15GB */
-    {
-        maxPct  = 0.90;
-        warnPct = 0.70;
-    }
-    else if (fullSize < 32768)  /* 16-31GB */
-    {
-        maxPct  = 0.93;
-        warnPct = 0.75;
-    }
-    else if (fullSize < 65536)  /* 32-63GB */
-    {
-        maxPct  = 0.94;
-        warnPct = 0.80;
-    }
-    else if (fullSize < 131072) /* 64-127GB */
-    {
-        maxPct  = 0.95;
-        warnPct = 0.85;
-    }
-    else                        /* 128GB- */
-    {
-        maxPct  = 0.96;
-        warnPct = 0.90;
-    }
-
-    if (mSlMemory->value() > maxPct * fullSize)
+    if (mSlMemory->value() > mMaxRAMAllowed)
     {
         aWarning = tr (
             "you have assigned more than <b>%1%</b> of your computer's memory "
             "(<b>%2</b>) to the virtual machine. Not enough memory is left "
             "for your host operating system. Please select a smaller amount.")
-            .arg ((unsigned)(maxPct * 100))
+            .arg ((unsigned)qRound ((double)mMaxRAMAllowed / fullSize * 100.0))
             .arg (vboxGlobal().formatSize ((uint64_t)fullSize * _1M));
         return false;
     }
-    if (mSlMemory->value() > warnPct * fullSize)
+    if (mSlMemory->value() > mMaxRAMOptimum)
     {
         aWarning = tr (
             "you have assigned more than <b>%1%</b> of your computer's memory "
             "(<b>%2</b>) to the virtual machine. Not enough memory might be "
             "left for your host operating system. Continue at your own risk.")
-            .arg ((unsigned)(warnPct * 100))
+            .arg ((unsigned)qRound ((double)mMaxRAMOptimum / fullSize * 100.0))
             .arg (vboxGlobal().formatSize ((uint64_t)fullSize * _1M));
         return true;
     }
