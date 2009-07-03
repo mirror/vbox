@@ -1647,12 +1647,10 @@ VMMR3DECL(int)  HWACCMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pC
     HWACCMPENDINGIO enmType = pVCpu->hwaccm.s.PendingIO.enmType;
     int rc;
 
-        return VERR_NOT_FOUND;
-
     pVCpu->hwaccm.s.PendingIO.enmType = HWACCMPENDINGIO_INVALID;
 
     if (    pVCpu->hwaccm.s.PendingIO.GCPtrRip != pCtx->rip
-        ||  pVCpu->hwaccm.s.PendingIO.enmType  == HWACCMPENDINGIO_INVALID)
+        ||  enmType  == HWACCMPENDINGIO_INVALID)
         return VERR_NOT_FOUND;
 
     switch (enmType)
