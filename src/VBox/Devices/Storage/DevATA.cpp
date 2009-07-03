@@ -5704,14 +5704,18 @@ static DECLCALLBACK(int) ataDestruct(PPDMDEVINS pDevIns)
  *
  * @param   pDevIns     The device instance.
  * @param   iLUN        The logical unit which is being detached.
+ * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  */
-static DECLCALLBACK(void) ataDetach(PPDMDEVINS pDevIns, unsigned iLUN)
+static DECLCALLBACK(void) ataDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER  pCtl;
     ATADevState    *pIf;
     unsigned        iController;
     unsigned        iInterface;
+
+    AssertMsg(fFlags & PDMDEVATT_FLAGS_NOT_HOT_PLUG,
+              ("PIIX3IDE: Device does not support hotplugging\n"));
 
     /*
      * Locate the controller and stuff.
@@ -5877,8 +5881,9 @@ static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   iLUN        The logical unit which is being detached.
+ * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  */
-static DECLCALLBACK(int)  ataAttach(PPDMDEVINS pDevIns, unsigned iLUN)
+static DECLCALLBACK(int)  ataAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER  pCtl;
@@ -5886,6 +5891,10 @@ static DECLCALLBACK(int)  ataAttach(PPDMDEVINS pDevIns, unsigned iLUN)
     int             rc;
     unsigned        iController;
     unsigned        iInterface;
+
+    AssertMsgReturn(fFlags & PDMDEVATT_FLAGS_NOT_HOT_PLUG,
+                    ("PIIX3IDE: Device does not support hotplugging\n"),
+                    VERR_INVALID_PARAMETER);
 
     /*
      * Locate the controller and stuff.
