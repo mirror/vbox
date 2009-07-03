@@ -65,7 +65,7 @@ using namespace guestProp;
 VBGLR3DECL(int) VbglR3GuestPropConnect(uint32_t *pu32ClientId)
 {
     VBoxGuestHGCMConnectInfo Info;
-    Info.result = (uint32_t)VERR_WRONG_ORDER; /** @todo drop the cast when the result type has been fixed! */
+    Info.result = VERR_WRONG_ORDER;
     Info.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
     memset(&Info.Loc.u, 0, sizeof(Info.Loc.u));
     strcpy(Info.Loc.u.host.achName, "VBoxGuestPropSvc");
@@ -91,7 +91,7 @@ VBGLR3DECL(int) VbglR3GuestPropConnect(uint32_t *pu32ClientId)
 VBGLR3DECL(int) VbglR3GuestPropDisconnect(uint32_t u32ClientId)
 {
     VBoxGuestHGCMDisconnectInfo Info;
-    Info.result = (uint32_t)VERR_WRONG_ORDER;  /** @todo drop the cast when the result type has been fixed! */
+    Info.result = VERR_WRONG_ORDER;
     Info.u32ClientID = u32ClientId;
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_DISCONNECT, &Info, sizeof(Info));
@@ -119,7 +119,7 @@ VBGLR3DECL(int) VbglR3GuestPropWrite(uint32_t u32ClientId, const char *pszName, 
     {
         SetProperty Msg;
 
-        Msg.hdr.result = (uint32_t)VERR_WRONG_ORDER;  /** @todo drop the cast when the result type has been fixed! */
+        Msg.hdr.result = VERR_WRONG_ORDER;
         Msg.hdr.u32ClientID = u32ClientId;
         Msg.hdr.u32Function = SET_PROP_VALUE;
         Msg.hdr.cParms = 3;
@@ -134,7 +134,7 @@ VBGLR3DECL(int) VbglR3GuestPropWrite(uint32_t u32ClientId, const char *pszName, 
     {
         DelProperty Msg;
 
-        Msg.hdr.result = (uint32_t)VERR_WRONG_ORDER;  /** @todo drop the cast when the result type has been fixed! */
+        Msg.hdr.result = VERR_WRONG_ORDER;
         Msg.hdr.u32ClientID = u32ClientId;
         Msg.hdr.u32Function = DEL_PROP;
         Msg.hdr.cParms = 1;
@@ -168,7 +168,7 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValue(uint32_t u32ClientId, const char *pszN
     {
         SetPropertyValue Msg;
 
-        Msg.hdr.result = (uint32_t)VERR_WRONG_ORDER;  /** @todo drop the cast when the result type has been fixed! */
+        Msg.hdr.result = VERR_WRONG_ORDER;
         Msg.hdr.u32ClientID = u32ClientId;
         Msg.hdr.u32Function = SET_PROP_VALUE;
         Msg.hdr.cParms = 2;
@@ -182,7 +182,7 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValue(uint32_t u32ClientId, const char *pszN
     {
         DelProperty Msg;
 
-        Msg.hdr.result = (uint32_t)VERR_WRONG_ORDER;  /** @todo drop the cast when the result type has been fixed! */
+        Msg.hdr.result = VERR_WRONG_ORDER;
         Msg.hdr.u32ClientID = u32ClientId;
         Msg.hdr.u32Function = DEL_PROP;
         Msg.hdr.cParms = 1;
@@ -276,7 +276,7 @@ VBGLR3DECL(int) VbglR3GuestPropRead(uint32_t u32ClientId, const char *pszName,
      */
     GetProperty Msg;
 
-    Msg.hdr.result = (uint32_t)VERR_WRONG_ORDER;  /** @todo drop the cast when the result type has been fixed! */
+    Msg.hdr.result = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = u32ClientId;
     Msg.hdr.u32Function = GET_PROP;
     Msg.hdr.cParms = 4;
@@ -489,7 +489,7 @@ VBGLR3DECL(int) VbglR3GuestPropEnumRaw(uint32_t u32ClientId,
 {
     EnumProperties Msg;
 
-    Msg.hdr.result = (uint32_t)VERR_WRONG_ORDER;  /** @todo drop the cast when the result type has been fixed! */
+    Msg.hdr.result = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = u32ClientId;
     Msg.hdr.u32Function = ENUM_PROPS;
     Msg.hdr.cParms = 3;
@@ -835,7 +835,7 @@ VBGLR3DECL(int) VbglR3GuestPropWait(uint32_t u32ClientId,
 
     Msg.hdr.u32Timeout = u32Timeout;
     Msg.hdr.fInterruptible = true;
-    Msg.hdr.info.result = (uint32_t)VERR_WRONG_ORDER;  /** @todo drop the cast when the result type has been fixed! */
+    Msg.hdr.info.result = VERR_WRONG_ORDER;
     Msg.hdr.info.u32ClientID = u32ClientId;
     Msg.hdr.info.u32Function = GET_NOTIFICATION;
     Msg.hdr.info.cParms = 4;
