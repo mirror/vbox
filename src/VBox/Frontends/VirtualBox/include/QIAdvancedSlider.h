@@ -26,6 +26,8 @@
 /* Qt includes */
 #include <QSlider>
 
+class CPrivateSlider;
+
 class QIAdvancedSlider: public QWidget
 {
     Q_OBJECT;
@@ -61,6 +63,10 @@ public:
     void setSnappingEnabled (bool aOn);
     bool isSnappingEnabled() const;
 
+    void setOptimalHint (int aMin, int aMax);
+    void setWarningHint (int aMin, int aMax);
+    void setErrorHint (int aMin, int aMax);
+
 public slots:
 
     void setOrientation (Qt::Orientation aOrientation);
@@ -82,7 +88,7 @@ private:
     int snapValue(int val);
 
     /* Private member vars */
-    QSlider *mSlider;
+    CPrivateSlider *mSlider;
     bool mSnappingEnabled;
 };
 
