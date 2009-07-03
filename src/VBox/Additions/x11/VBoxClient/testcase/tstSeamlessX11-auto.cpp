@@ -425,7 +425,7 @@ static SMLSFIXTURE g_testResize =
     20,
     RT_ELEMENTS(g_aRectangle1),
     g_aRectangle1,
-    MapNotify,
+    ConfigureNotify,
     20,
     RT_ELEMENTS(g_aRects1),
     g_aRects1
@@ -562,24 +562,19 @@ static unsigned smlsDoFixture(SMLSFIXTURE *pFixture, const char *pszDesc)
     smlsSetShapeRectangles(pFixture->hShapeWindowAfter,
                            pFixture->cShapeRectsAfter,
                            pFixture->paShapeRectsAfter);
-    XEvent event = { 0 };
     switch(pFixture->x11EventType)
     {
         case ConfigureNotify:
-            event.xconfigure.window = pFixture->hEventWindow;
-            subject.doConfigureEvent(&event.xconfigure);
+            subject.doConfigureEvent(pFixture->hEventWindow);
             break;
         case MapNotify:
-            event.xmap.window = pFixture->hEventWindow;
-            subject.doMapEvent(&event.xmap);
+            subject.doMapEvent(pFixture->hEventWindow);
             break;
         case UnmapNotify:
-            event.xunmap.window = pFixture->hEventWindow;
-            subject.doUnmapEvent(&event.xunmap);
+            subject.doUnmapEvent(pFixture->hEventWindow);
             break;
         case VBoxShapeNotify:
-            event.xany.window = pFixture->hEventWindow;
-            subject.doShapeEvent((XShapeEvent *)&event);
+            subject.doShapeEvent(pFixture->hEventWindow);
             break;
         default:
             break;
@@ -636,8 +631,8 @@ int main( int argc, char **argv)
     cErrs += smlsDoFixture(&g_testMove,
                            "ConfigureNotify event (window moved)");
     // Currently not working
-    // cErrs += smlsDoFixture(&g_testResize,
-    //                        "ConfigureNotify event (window resized)");
+    cErrs += smlsDoFixture(&g_testResize,
+                           "ConfigureNotify event (window resized)");
     cErrs += smlsDoFixture(&g_testMap, "MapNotify event");
     cErrs += smlsDoFixture(&g_testUnmap, "UnmapNotify event");
     cErrs += smlsDoFixture(&g_testShape, "ShapeNotify event");
