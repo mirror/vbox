@@ -2949,7 +2949,7 @@ DECLCALLBACK(int) Console::changeDrive (Console *pThis, const char *pszDevice, u
 
             case DriveState_HostDriveCaptured:
             {
-                rc = PDMR3DeviceDetach (pVM, pszDevice, uInstance, uLun);
+                rc = PDMR3DeviceDetach (pVM, pszDevice, uInstance, uLun, PDMDEVATT_FLAGS_NOT_HOT_PLUG);
                 if (rc == VINF_PDM_NO_DRIVER_ATTACHED_TO_LUN)
                     rc = VINF_SUCCESS;
                 AssertRC (rc);
@@ -2985,7 +2985,7 @@ DECLCALLBACK(int) Console::changeDrive (Console *pThis, const char *pszDevice, u
             /*
              * Detach existing driver chain (block).
              */
-            int rc = PDMR3DeviceDetach (pVM, pszDevice, uInstance, uLun);
+            int rc = PDMR3DeviceDetach (pVM, pszDevice, uInstance, uLun, PDMDEVATT_FLAGS_NOT_HOT_PLUG);
             if (VBOX_FAILURE (rc))
             {
                 if (rc == VERR_PDM_LUN_NOT_FOUND)
@@ -3015,7 +3015,7 @@ DECLCALLBACK(int) Console::changeDrive (Console *pThis, const char *pszDevice, u
                 /*
                  * Attempt to attach the driver.
                  */
-                rc = PDMR3DeviceAttach (pVM, pszDevice, uInstance, uLun, NULL);
+                rc = PDMR3DeviceAttach (pVM, pszDevice, uInstance, uLun, NULL, PDMDEVATT_FLAGS_NOT_HOT_PLUG);
                 AssertRC (rc);
             }
             if (VBOX_FAILURE (rc))
@@ -3071,7 +3071,7 @@ DECLCALLBACK(int) Console::changeDrive (Console *pThis, const char *pszDevice, u
                         /*
                          * Attach the driver.
                          */
-                        rc = PDMR3DeviceAttach (pVM, pszDevice, uInstance, uLun, &pBase);
+                        rc = PDMR3DeviceAttach (pVM, pszDevice, uInstance, uLun, &pBase, PDMDEVATT_FLAGS_NOT_HOT_PLUG);
                         RC_CHECK();
                     }
                     else if (VBOX_FAILURE(rc))
@@ -6969,7 +6969,7 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, ULONG lInstance,
         /*
          * Detach the driver and replace the config node.
          */
-        rc = PDMR3DeviceDetach(pVM, pcszDevice, 0, iLUN);                            RC_CHECK();
+        rc = PDMR3DeviceDetach(pVM, pcszDevice, 0, iLUN, PDMDEVATT_FLAGS_NOT_HOT_PLUG); RC_CHECK();
         CFGMR3RemoveNode(pCfg);
         rc = CFGMR3InsertNode(pLunL1, "Config", &pCfg);                             RC_CHECK();
     }
@@ -7070,7 +7070,7 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, ULONG lInstance,
     /*
      * Attach the new driver.
      */
-    rc = PDMR3DeviceAttach(pVM, pcszDevice, 0, iLUN, NULL);                      RC_CHECK();
+    rc = PDMR3DeviceAttach(pVM, pcszDevice, 0, iLUN, NULL, PDMDEVATT_FLAGS_NOT_HOT_PLUG); RC_CHECK();
 
     LogFlowFunc (("Returns success\n"));
     return rc;

@@ -1019,8 +1019,8 @@ int         pdmR3UsbRegisterHub(PVM pVM, PPDMDRVINS pDrvIns, uint32_t fVersions,
 int         pdmR3UsbVMInitComplete(PVM pVM);
 
 int         pdmR3DrvInit(PVM pVM);
-int         pdmR3DrvDetach(PPDMDRVINS pDrvIns);
-void        pdmR3DrvDestroyChain(PPDMDRVINS pDrvIns);
+int         pdmR3DrvDetach(PPDMDRVINS pDrvIns, uint32_t fFlags);
+void        pdmR3DrvDestroyChain(PPDMDRVINS pDrvIns, uint32_t fFlags);
 PPDMDRV     pdmR3DrvLookup(PVM pVM, const char *pszName);
 
 int         pdmR3LdrInitU(PUVM pUVM);

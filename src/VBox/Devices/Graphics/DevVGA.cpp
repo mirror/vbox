@@ -5493,10 +5493,16 @@ static DECLCALLBACK(void) vgaR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   iLUN        The logical unit which is being detached.
+ * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  */
-static DECLCALLBACK(int)  vgaAttach(PPDMDEVINS pDevIns, unsigned iLUN)
+static DECLCALLBACK(int)  vgaAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+
+    AssertMsgReturn(fFlags & PDMDEVATT_FLAGS_NOT_HOT_PLUG,
+                    ("VGA device does not support hotplugging\n"),
+                    VERR_INVALID_PARAMETER);
+
     switch (iLUN)
     {
         /* LUN #0: Display port. */
@@ -5557,13 +5563,18 @@ static DECLCALLBACK(int)  vgaAttach(PPDMDEVINS pDevIns, unsigned iLUN)
  *
  * @param   pDevIns     The device instance.
  * @param   iLUN        The logical unit which is being detached.
+ * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  */
-static DECLCALLBACK(void)  vgaDetach(PPDMDEVINS pDevIns, unsigned iLUN)
+static DECLCALLBACK(void)  vgaDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     /*
      * Reset the interfaces and update the controller state.
      */
     PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+
+    AssertMsg(fFlags & PDMDEVATT_FLAGS_NOT_HOT_PLUG,
+              ("VGA device does not support hotplugging\n"));
+
     switch (iLUN)
     {
         /* LUN #0: Display port. */
@@ -5926,7 +5937,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Attach to the display.
      */
-    rc = vgaAttach(pDevIns, 0 /* display LUN # */);
+    rc = vgaAttach(pDevIns, 0 /* display LUN # */, PDMDEVATT_FLAGS_NOT_HOT_PLUG);
     if (RT_FAILURE(rc))
         return rc;
 

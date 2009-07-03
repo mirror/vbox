@@ -5051,8 +5051,9 @@ static DECLCALLBACK(void) e1kSuspend(PPDMDEVINS pDevIns)
  *
  * @param   pDevIns     The device instance.
  * @param   iLUN        The logical unit which is being detached.
+ * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  */
-static DECLCALLBACK(void) e1kDetach(PPDMDEVINS pDevIns, unsigned iLUN)
+static DECLCALLBACK(void) e1kDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     E1KSTATE *pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
     Log(("%s e1kDetach:\n", INSTANCE(pState)));
@@ -5083,10 +5084,11 @@ static DECLCALLBACK(void) e1kDetach(PPDMDEVINS pDevIns, unsigned iLUN)
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   iLUN        The logical unit which is being attached.
+ * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  *
  * @remarks This code path is not used during construction.
  */
-static DECLCALLBACK(int) e1kAttach(PPDMDEVINS pDevIns, unsigned iLUN)
+static DECLCALLBACK(int) e1kAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     E1KSTATE *pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
     LogFlow(("%s e1kAttach:\n",  INSTANCE(pState)));

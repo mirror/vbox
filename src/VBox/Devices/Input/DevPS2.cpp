@@ -1527,13 +1527,19 @@ static DECLCALLBACK(int) kbdMousePutEvent(PPDMIMOUSEPORT pInterface, int32_t i32
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   iLUN        The logical unit which is being detached.
+ * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  * @remark  The keyboard controller doesn't support this action, this is just
  *          implemented to try out the driver<->device structure.
  */
-static DECLCALLBACK(int)  kbdAttach(PPDMDEVINS pDevIns, unsigned iLUN)
+static DECLCALLBACK(int)  kbdAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     int         rc;
     KBDState   *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
+
+    AssertMsgReturn(fFlags & PDMDEVATT_FLAGS_NOT_HOT_PLUG,
+                    ("PS/2 device does not support hotplugging\n"),
+                    VERR_INVALID_PARAMETER);
+
     switch (iLUN)
     {
         /* LUN #0: keyboard */
@@ -1598,10 +1604,11 @@ static DECLCALLBACK(int)  kbdAttach(PPDMDEVINS pDevIns, unsigned iLUN)
  *
  * @param   pDevIns     The device instance.
  * @param   iLUN        The logical unit which is being detached.
+ * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  * @remark  The keyboard controller doesn't support this action, this is just
  *          implemented to try out the driver<->device structure.
  */
-static DECLCALLBACK(void)  kbdDetach(PPDMDEVINS pDevIns, unsigned iLUN)
+static DECLCALLBACK(void)  kbdDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
 #if 0
     /*
@@ -1722,10 +1729,10 @@ static DECLCALLBACK(int) kbdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     /*
      * Attach to the keyboard and mouse drivers.
      */
-    rc = kbdAttach(pDevIns, 0 /* keyboard LUN # */);
+    rc = kbdAttach(pDevIns, 0 /* keyboard LUN # */, PDMDEVATT_FLAGS_NOT_HOT_PLUG);
     if (RT_FAILURE(rc))
         return rc;
-    rc = kbdAttach(pDevIns, 1 /* aux/mouse LUN # */);
+    rc = kbdAttach(pDevIns, 1 /* aux/mouse LUN # */, PDMDEVATT_FLAGS_NOT_HOT_PLUG);
     if (RT_FAILURE(rc))
         return rc;
 

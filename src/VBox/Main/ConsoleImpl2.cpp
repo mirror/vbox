@@ -2101,7 +2101,7 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
 
         if (attachDetach)
         {
-            rc = PDMR3DeviceDetach (pVM, pszDevice, uInstance, uLun);
+            rc = PDMR3DeviceDetach (pVM, pszDevice, uInstance, uLun, PDMDEVATT_FLAGS_NOT_HOT_PLUG);
             if (rc == VINF_PDM_NO_DRIVER_ATTACHED_TO_LUN)
                 rc = VINF_SUCCESS;
             AssertRC (rc);
@@ -2841,7 +2841,7 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
                 {
                     if (attachDetach)
                     {
-                        rc = PDMR3DeviceAttach (pVM, pszDevice, uInstance, uLun, NULL);
+                        rc = PDMR3DeviceAttach (pVM, pszDevice, uInstance, uLun, NULL, PDMDEVATT_FLAGS_NOT_HOT_PLUG);
                         AssertRC (rc);
                     }
 

@@ -362,8 +362,9 @@ PPDMDRV pdmR3DrvLookup(PVM pVM, const char *pszName)
  *
  * @returns VINF_SUCCESS
  * @param   pDrvIns     The driver instance to detach.
+ * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  */
-int pdmR3DrvDetach(PPDMDRVINS pDrvIns)
+int pdmR3DrvDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
     LogFlow(("pdmR3DrvDetach: pDrvIns=%p '%s'/%d\n", pDrvIns, pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance));
@@ -393,7 +394,7 @@ int pdmR3DrvDetach(PPDMDRVINS pDrvIns)
     /*
      * Join paths with pdmR3DrvDestroyChain.
      */
-    pdmR3DrvDestroyChain(pDrvIns);
+    pdmR3DrvDestroyChain(pDrvIns, fFlags);
     return VINF_SUCCESS;
 }
 
@@ -404,8 +405,9 @@ int pdmR3DrvDetach(PPDMDRVINS pDrvIns)
  * This is used when unplugging a device at run time.
  *
  * @param   pDrvIns     Pointer to the driver instance to start with.
+ * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  */
-void pdmR3DrvDestroyChain(PPDMDRVINS pDrvIns)
+void pdmR3DrvDestroyChain(PPDMDRVINS pDrvIns, uint32_t fFlags)
 {
     VM_ASSERT_EMT(pDrvIns->Internal.s.pVM);
 
@@ -449,7 +451,7 @@ void pdmR3DrvDestroyChain(PPDMDRVINS pDrvIns)
             Assert(pLun->pTop == pCur);
             pLun->pTop = NULL;
             if (pLun->pDevIns->pDevReg->pfnDetach)
-                pLun->pDevIns->pDevReg->pfnDetach(pLun->pDevIns, pLun->iLun);
+                pLun->pDevIns->pDevReg->pfnDetach(pLun->pDevIns, pLun->iLun, fFlags);
         }
 
         /*
@@ -632,7 +634,8 @@ static DECLCALLBACK(int) pdmR3DrvHlp_Detach(PPDMDRVINS pDrvIns)
     int rc;
     if (pDrvIns->Internal.s.pDown)
     {
-        rc = pdmR3DrvDetach(pDrvIns->Internal.s.pDown);
+        /** @todo: Current assumption is that drivers will never initiate hot plug events. */
+        rc = pdmR3DrvDetach(pDrvIns->Internal.s.pDown, PDMDEVATT_FLAGS_NOT_HOT_PLUG);
     }
     else
     {
@@ -654,7 +657,8 @@ static DECLCALLBACK(int) pdmR3DrvHlp_DetachSelf(PPDMDRVINS pDrvIns)
              pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance));
     VM_ASSERT_EMT(pDrvIns->Internal.s.pVM);
 
-    int rc = pdmR3DrvDetach(pDrvIns);
+    /** @todo: Current assumption is that drivers will never initiate hot plug events. */
+    int rc = pdmR3DrvDetach(pDrvIns, PDMDEVATT_FLAGS_NOT_HOT_PLUG);
 
     LogFlow(("pdmR3DrvHlp_Detach: returns %Rrc\n", rc)); /* pDrvIns is freed by now. */
     return rc;
