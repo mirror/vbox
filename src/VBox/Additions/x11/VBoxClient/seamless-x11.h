@@ -348,10 +348,10 @@ public:
 
     /* Methods to handle X11 events.  These are public so that the unit test
      * can call them. */
-    void doConfigureEvent(const XConfigureEvent *event);
-    void doMapEvent(const XMapEvent *event);
-    void doUnmapEvent(const XUnmapEvent *event);
-    void doShapeEvent(const XShapeEvent *event);
+    void doConfigureEvent(Window hWin);
+    void doMapEvent(Window hWin);
+    void doUnmapEvent(Window hWin);
+    void doShapeEvent(Window hWin);
 
     VBoxGuestSeamlessX11(void)
     {

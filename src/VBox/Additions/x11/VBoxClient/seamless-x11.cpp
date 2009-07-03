@@ -292,16 +292,17 @@ void VBoxGuestSeamlessX11::nextEvent(void)
     switch (event.type)
     {
     case ConfigureNotify:
-        doConfigureEvent(&event.xconfigure);
+        doConfigureEvent(event.xconfigure.window);
         break;
     case MapNotify:
-        doMapEvent(&event.xmap);
+        doMapEvent(event.xmap.window);
         break;
     case VBoxShapeNotify:  /* This is defined wrong in my X11 header files! */
-        doShapeEvent(reinterpret_cast<XShapeEvent *>(&event));
+    /* the window member in xany is in the same place as in the shape event */
+        doShapeEvent(event.xany.window);
         break;
     case UnmapNotify:
-        doUnmapEvent(&event.xunmap);
+        doUnmapEvent(event.xunmap.window);
         break;
     default:
         break;
@@ -314,22 +315,32 @@ void VBoxGuestSeamlessX11::nextEvent(void)
  *
  * @param event the X11 event structure
  */
-void VBoxGuestSeamlessX11::doConfigureEvent(const XConfigureEvent *event)
+void VBoxGuestSeamlessX11::doConfigureEvent(Window hWin)
 {
     LogFlowThisFunc(("\n"));
     VBoxGuestWindowList::iterator iter;
 
-    iter = mGuestWindows.find(event->window);
+    iter = mGuestWindows.find(hWin);
     if (iter != mGuestWindows.end())
     {
         XWindowAttributes winAttrib;
 
-        if (XGetWindowAttributes(mDisplay, event->window, &winAttrib))
+        if (XGetWindowAttributes(mDisplay, hWin, &winAttrib))
         {
             iter->second->mX = winAttrib.x;
             iter->second->mY = winAttrib.y;
             iter->second->mWidth = winAttrib.width;
             iter->second->mHeight = winAttrib.height;
+        }
+        if (iter->second->mhasShape)
+        {
+            VBoxGuestX11Pointer<XRectangle> rects;
+            int cRects = 0, iOrdering;
+
+            rects = XShapeGetRectangles(mDisplay, hWin, ShapeBounding,
+                                        &cRects, &iOrdering);
+            iter->second->mcRects = cRects;
+            iter->second->mapRects = rects;
         }
     }
     LogFlowThisFunc(("returning\n"));
@@ -340,15 +351,15 @@ void VBoxGuestSeamlessX11::doConfigureEvent(const XConfigureEvent *event)
  *
  * @param event the X11 event structure
  */
-void VBoxGuestSeamlessX11::doMapEvent(const XMapEvent *event)
+void VBoxGuestSeamlessX11::doMapEvent(Window hWin)
 {
     LogFlowThisFunc(("\n"));
     VBoxGuestWindowList::iterator iter;
 
-    iter = mGuestWindows.find(event->window);
+    iter = mGuestWindows.find(hWin);
     if (mGuestWindows.end() == iter)
     {
-        addClientWindow(event->window);
+        addClientWindow(hWin);
     }
     LogFlowThisFunc(("returning\n"));
 }
@@ -359,18 +370,19 @@ void VBoxGuestSeamlessX11::doMapEvent(const XMapEvent *event)
  *
  * @param event the X11 event structure
  */
-void VBoxGuestSeamlessX11::doShapeEvent(const XShapeEvent *event)
+void VBoxGuestSeamlessX11::doShapeEvent(Window hWin)
 {
     LogFlowThisFunc(("\n"));
     VBoxGuestWindowList::iterator iter;
 
-    iter = mGuestWindows.find(event->window);
+    iter = mGuestWindows.find(hWin);
     if (iter != mGuestWindows.end())
     {
         VBoxGuestX11Pointer<XRectangle> rects;
         int cRects = 0, iOrdering;
 
-        rects = XShapeGetRectangles(mDisplay, event->window, ShapeBounding, &cRects, &iOrdering);
+        rects = XShapeGetRectangles(mDisplay, hWin, ShapeBounding, &cRects,
+                                    &iOrdering);
         iter->second->mhasShape = true;
         iter->second->mcRects = cRects;
         iter->second->mapRects = rects;
@@ -383,12 +395,12 @@ void VBoxGuestSeamlessX11::doShapeEvent(const XShapeEvent *event)
  *
  * @param event the X11 event structure
  */
-void VBoxGuestSeamlessX11::doUnmapEvent(const XUnmapEvent *event)
+void VBoxGuestSeamlessX11::doUnmapEvent(Window hWin)
 {
     LogFlowThisFunc(("\n"));
     VBoxGuestWindowList::iterator iter;
 
-    iter = mGuestWindows.find(event->window);
+    iter = mGuestWindows.find(hWin);
     if (mGuestWindows.end() != iter)
     {
         mGuestWindows.removeWindow(iter);
