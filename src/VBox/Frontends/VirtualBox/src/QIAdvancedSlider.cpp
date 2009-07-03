@@ -53,7 +53,7 @@ public:
         QStyleOptionSlider opt;
         initStyleOption (&opt);
         opt.subControls = QStyle::SC_All;
-        int available = style()->pixelMetric (QStyle::PM_SliderSpaceAvailable, &opt, this);
+        int available = opt.rect.width() - style()->pixelMetric (QStyle::PM_SliderLength, &opt, this);
         return QStyle::sliderPositionFromValue (opt.minimum, opt.maximum, aVal, available);
     }
 
@@ -65,7 +65,7 @@ public:
         initStyleOption (&opt);
         opt.subControls = QStyle::SC_All;
 
-        int available = style()->pixelMetric (QStyle::PM_SliderSpaceAvailable, &opt, this);
+        int available = opt.rect.width() - style()->pixelMetric (QStyle::PM_SliderLength, &opt, this);
         QSize s = size();
 
         QRect ticks = style()->subControlRect (QStyle::CC_Slider, &opt, QStyle::SC_SliderTickmarks, this);
