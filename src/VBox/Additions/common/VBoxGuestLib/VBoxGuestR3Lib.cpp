@@ -31,9 +31,14 @@
 # define INCL_ERRORS
 # include <os2.h>
 
-#elif defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
+#elif defined(RT_OS_FREEBSD) \
+   || defined(RT_OS_LINUX) \
+   || defined(RT_OS_SOLARIS)
 # include <sys/types.h>
 # include <sys/stat.h>
+# if defined(RT_OS_LINUX) /** @todo check this on solaris+freebsd as well. */
+#  include <sys/ioctl.h>
+# endif
 # include <errno.h>
 # include <unistd.h>
 #endif
@@ -373,6 +378,19 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
         return RTErrConvertFromErrno(rc);
     }
     return VINF_SUCCESS;
+
+#elif defined(RT_OS_LINUX)
+    int rc = ioctl((int)g_File, iFunction, pvData);
+    if (RT_LIKELY(rc == 0))
+        return VINF_SUCCESS;
+
+    /* Positive values are negated VBox error status codes. */
+    if (rc > 0)
+        rc = -rc;
+    else
+        rc = RTErrConvertFromErrno(errno);
+    NOREF(cbData);
+    return rc;
 
 #elif defined(VBOX_VBGLR3_XFREE86)
     /* PORTME - This is preferred over the RTFileIOCtl variant below, just be careful with the (int). */

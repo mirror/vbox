@@ -329,10 +329,6 @@ static irqreturn_t vboxguestLinuxISR(int iIrrq, void *pvDevId, struct pt_regs *p
 #endif
 {
     bool fTaken = VBoxGuestCommonISR(&g_DevExt);
-    /** @todo  if (vboxDev->irqAckRequest->events &
-     *             VMMDEV_EVENT_MOUSE_POSITION_CHANGED)
-     *             kill_fasync(&vboxDev->async_queue, SIGIO, POLL_IN);
-     */
     return IRQ_RETVAL(fTaken);
 }
 
@@ -457,6 +453,8 @@ static int __init vboxguestLinuxModInit(void)
 
     /*
      * Create the release log.
+     * (We do that here instead of common code because we want to log               .
+     * early failures using the LogRel macro.)
      */
     rc = RTLogCreate(&pRelLogger, 0 /* fFlags */, "all",
                      "VBOX_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups,
@@ -646,7 +644,7 @@ static int vboxguestLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigne
         /*
          * Copy ioctl data and output buffer back to user space.
          */
-        if (RT_LIKELY(!rc))
+        if (RT_SUCCESS(rc))
         {
             rc = 0;
             if (RT_UNLIKELY(cbDataReturned > cbData))
@@ -667,7 +665,7 @@ static int vboxguestLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigne
         else
         {
             Log(("vboxguestLinuxIOCtl: pFilp=%p uCmd=%#x ulArg=%p failed, rc=%d\n", pFilp, uCmd, (void *)ulArg, rc));
-            rc = vboxguestLinuxConvertToNegErrno(rc);
+            rc = -rc; Assert(rc > 0); /* Positive returns == negated VBox error status codes. */
         }
     }
     else
