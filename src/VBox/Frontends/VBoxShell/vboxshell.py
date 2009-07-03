@@ -28,6 +28,7 @@
 
 import os,sys
 import traceback
+import shlex
 
 # Simple implementation of IConsoleCallback, one can use it as skeleton 
 # for custom implementations
@@ -201,7 +202,8 @@ def autoCompletion(commands, ctx):
 g_verbose = True
 
 def split_no_quotes(s):
-   return s.split()
+   #return s.split()
+    return shlex.split(s)
 
 def createVm(ctx,name,kind,base):
     mgr = ctx['mgr']
