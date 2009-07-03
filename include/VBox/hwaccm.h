@@ -108,8 +108,8 @@ VMMR0DECL(int)  HWACCMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled);
 VMMR0DECL(PVMCPU)  HWACCMR0GetVMCPU(PVM pVM);
 VMMR0DECL(VMCPUID) HWACCMR0GetVMCPUId(PVM pVM);
 
+VMMR0DECL(void) HWACCMR0SavePendingIOPortWrite(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext, unsigned uPort, unsigned uAndVal, unsigned cbSize);
 VMMR0DECL(void) HWACCMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext, unsigned uPort, unsigned uAndVal, unsigned cbSize);
-VMMR0DECL(void) HWACCMR0SavePendingIOPortWrite(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext, unsigned uPort, unsigned uValue, unsigned cbSize);
 
 /** @} */
 #endif /* IN_RING0 */
@@ -139,7 +139,7 @@ VMMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmShad
 VMMR3DECL(bool) HWACCMR3IsVPIDActive(PVM pVM);
 VMMR3DECL(int)  HWACCMR3InjectNMI(PVM pVM);
 VMMR3DECL(int)  HWACCMR3EmulateIoBlock(PVM pVM, PCPUMCTX pCtx);
-VMMR3DECL(int)  HWACCMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu);
+VMMR3DECL(int)  HWACCMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
 /** @} */
 #endif /* IN_RING3 */

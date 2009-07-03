@@ -3391,7 +3391,7 @@ ResumeExecution:
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOWrite);
                 rc = IOMIOPortWrite(pVM, uPort, pCtx->eax & uAndVal, cbSize);
                 if (rc == VINF_IOM_HC_IOPORT_WRITE)
-                    HWACCMR0SavePendingIOPortWrite(pVCpu, pCtx->rip, pCtx->rip + cbInstr, uPort, pCtx->eax & uAndVal, cbSize);
+                    HWACCMR0SavePendingIOPortWrite(pVCpu, pCtx->rip, pCtx->rip + cbInstr, uPort, uAndVal, cbSize);
             }
             else
             {

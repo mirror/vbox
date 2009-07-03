@@ -1639,11 +1639,55 @@ VMMR3DECL(bool) HWACCMR3IsEventPending(PVMCPU pVCpu)
  *
  * @returns VBox status code
  * @param   pVM         The VM to operate on.
- * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VMCPU to operate on.
+ * @param   pCtx        VCPU register context
  */
-VMMR3DECL(int)  HWACCMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu)
+VMMR3DECL(int)  HWACCMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    return VERR_NOT_FOUND;
+    HWACCMPENDINGIO enmType = pVCpu->hwaccm.s.PendingIO.enmType;
+    int rc;
+
+        return VERR_NOT_FOUND;
+
+    pVCpu->hwaccm.s.PendingIO.enmType = HWACCMPENDINGIO_INVALID;
+
+    if (    pVCpu->hwaccm.s.PendingIO.GCPtrRip != pCtx->rip
+        ||  pVCpu->hwaccm.s.PendingIO.enmType  == HWACCMPENDINGIO_INVALID)
+        return VERR_NOT_FOUND;
+
+    switch (enmType)
+    {
+    case HWACCMPENDINGIO_PORT_READ:
+    {
+        uint32_t uAndVal = pVCpu->hwaccm.s.PendingIO.s.Port.uAndVal;
+        uint32_t u32Val  = 0;
+
+        rc = IOMIOPortRead(pVM, pVCpu->hwaccm.s.PendingIO.s.Port.uPort, 
+                           &u32Val, 
+                           pVCpu->hwaccm.s.PendingIO.s.Port.cbSize);
+        if (IOM_SUCCESS(rc))
+        {
+            /* Write back to the EAX register. */
+            pCtx->eax = (pCtx->eax & ~uAndVal) | (u32Val & uAndVal);
+            pCtx->rip = pVCpu->hwaccm.s.PendingIO.GCPtrRipNext;
+        }
+        break;
+    }
+
+    case HWACCMPENDINGIO_PORT_WRITE:
+        rc = IOMIOPortWrite(pVM, pVCpu->hwaccm.s.PendingIO.s.Port.uPort, 
+                            pCtx->eax & pVCpu->hwaccm.s.PendingIO.s.Port.uAndVal, 
+                            pVCpu->hwaccm.s.PendingIO.s.Port.cbSize);
+        if (IOM_SUCCESS(rc))
+            pCtx->rip = pVCpu->hwaccm.s.PendingIO.GCPtrRipNext;
+        break;
+
+    default:
+        AssertFailed();
+        return VERR_INTERNAL_ERROR;
+    }
+
+    return rc;
 }
 
 /**

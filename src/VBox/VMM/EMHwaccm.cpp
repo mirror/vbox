@@ -300,7 +300,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
     STAM_PROFILE_START(&pVCpu->em.s.StatIOEmu, a);
 
     /* Try to restart the io instruction that was refused in ring-0. */
-    rc = HWACCMR3RestartPendingIOInstr(pVM, pVCpu);
+    rc = HWACCMR3RestartPendingIOInstr(pVM, pVCpu, pCtx);
     if (rc == VINF_SUCCESS)
     {
         STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatIoRestarted);
