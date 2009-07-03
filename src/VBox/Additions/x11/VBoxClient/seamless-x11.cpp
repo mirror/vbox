@@ -36,8 +36,10 @@
 
 #include <limits.h>
 
-/* This is defined wrong in my X11 header files! */
-#define VBoxShapeNotify 64
+#ifdef TESTCASE
+#undef DefaultRootWindow
+#define DefaultRootWindow XDefaultRootWindow
+#endif
 
 /*****************************************************************************
 * Static functions                                                           *

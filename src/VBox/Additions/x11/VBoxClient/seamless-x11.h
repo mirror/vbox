@@ -37,6 +37,9 @@
 #define WM_TYPE_PROP "_NET_WM_WINDOW_TYPE"
 #define WM_TYPE_DESKTOP_PROP "_NET_WM_WINDOW_TYPE_DESKTOP"
 
+/* This is defined wrong in my X11 header files! */
+#define VBoxShapeNotify 64
+
 /**
  * Wrapper class around the VBoxGuestX11Pointer to provide reference semantics.
  * See auto_ptr in the C++ <memory> header.
@@ -288,12 +291,6 @@ private:
 
     // Private methods
 
-    // Methods to handle X11 events
-    void doConfigureEvent(const XConfigureEvent *event);
-    void doMapEvent(const XMapEvent *event);
-    void doUnmapEvent(const XUnmapEvent *event);
-    void doShapeEvent(const XShapeEvent *event);
-
     // Methods to manage guest window information
     /**
      * Store information about a desktop window and register for structure events on it.
@@ -348,6 +345,13 @@ public:
     void nextEvent(void);
     /** Wake up the event thread if it is waiting for an event so that it can exit. */
     bool interruptEvent(void);
+
+    /* Methods to handle X11 events.  These are public so that the unit test
+     * can call them. */
+    void doConfigureEvent(const XConfigureEvent *event);
+    void doMapEvent(const XMapEvent *event);
+    void doUnmapEvent(const XUnmapEvent *event);
+    void doShapeEvent(const XShapeEvent *event);
 
     VBoxGuestSeamlessX11(void)
     {
