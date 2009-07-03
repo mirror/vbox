@@ -1220,6 +1220,44 @@ VMMR0DECL(VMCPUID) HWACCMR0GetVMCPUId(PVM pVM)
 }
 
 /**
+ * Save a pending IO read.
+ *
+ * @param   pVCpu           The VMCPU to operate on.
+ * @param   GCPtrRIP        Address of IO instruction
+ * @param   uPort           Port address
+ * @param   uAndVal         And mask for saving the result in eax
+ * @param   cbSize          Read size
+ */
+VMMR0DECL(void) HWACCMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR GCPtrRIP, unsigned uPort, unsigned uAndVal, unsigned cbSize)
+{
+    pVCpu->hwaccm.s.PendingIO.enmType       = HWACCMPENDINGIO_PORT_READ;
+    pVCpu->hwaccm.s.PendingIO.Port.Read.rip      = GCPtrRIP;
+    pVCpu->hwaccm.s.PendingIO.Port.Read.uPort    = uPort;
+    pVCpu->hwaccm.s.PendingIO.Port.Read.uAndVal  = uAndVal;
+    pVCpu->hwaccm.s.PendingIO.Port.Read.cbSize   = cbSize;
+    return;
+}
+
+/**
+ * Save a pending IO write.
+ *
+ * @param   pVCpu           The VMCPU to operate on.
+ * @param   GCPtrRIP        Address of IO instruction
+ * @param   uPort           Port address
+ * @param   uValue          Value to write
+ * @param   cbSize          Read size
+ */
+VMMR0DECL(void) HWACCMR0SavePendingIOPortWrite(PVMCPU pVCpu, RTGCPTR GCPtrRIP, unsigned uPort, unsigned uValue, unsigned cbSize)
+{
+    pVCpu->hwaccm.s.PendingIO.enmType        = HWACCMPENDINGIO_PORT_WRITE;
+    pVCpu->hwaccm.s.PendingIO.Port.Write.rip      = GCPtrRIP;
+    pVCpu->hwaccm.s.PendingIO.Port.Write.uPort    = uPort;
+    pVCpu->hwaccm.s.PendingIO.Port.Write.uValue   = uValue;
+    pVCpu->hwaccm.s.PendingIO.Port.Write.cbSize   = cbSize;
+    return;
+}
+
+/**
  * Disable VT-x if it's active *and* the current switcher turns off paging
  *
  * @returns VBox status code.

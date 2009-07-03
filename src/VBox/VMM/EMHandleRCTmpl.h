@@ -125,12 +125,12 @@ int emR3HwaccmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
             rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, DIS_SELREG_CS, CPUMCTX2CORE(pCtx), pCtx->eip),
                                     PATMFL_MMIO_ACCESS | ((SELMGetCpuModeFromSelector(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid) == CPUMODE_32BIT) ? PATMFL_CODE32 : 0));
             if (RT_FAILURE(rc))
-                rc = emR3RawExecuteInstruction(pVM, pVCpu, "MMIO");
+                rc = emR3ExecuteInstruction(pVM, pVCpu, "MMIO");
             break;
 
         case VINF_PATM_HC_MMIO_PATCH_WRITE:
             AssertFailed(); /* not yet implemented. */
-            rc = emR3RawExecuteInstruction(pVM, pVCpu, "MMIO");
+            rc = emR3ExecuteInstruction(pVM, pVCpu, "MMIO");
             break;
 #endif /* EMHANDLERC_WITH_PATM */
 
@@ -199,7 +199,7 @@ int emR3HwaccmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
          */
         case VINF_IOM_HC_IOPORT_READ:
         case VINF_IOM_HC_IOPORT_WRITE:
-            rc = emR3RawExecuteIOInstruction(pVM, pVCpu);
+            rc = emR3ExecuteIOInstruction(pVM, pVCpu);
             break;
 
         /*
@@ -208,7 +208,7 @@ int emR3HwaccmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
         case VINF_IOM_HC_MMIO_READ:
         case VINF_IOM_HC_MMIO_WRITE:
         case VINF_IOM_HC_MMIO_READ_WRITE:
-            rc = emR3RawExecuteInstruction(pVM, pVCpu, "MMIO");
+            rc = emR3ExecuteInstruction(pVM, pVCpu, "MMIO");
             break;
 
 #ifdef EMHANDLERC_WITH_HWACCM
@@ -225,19 +225,19 @@ int emR3HwaccmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
          * Execute instruction.
          */
         case VINF_EM_RAW_EMULATE_INSTR_LDT_FAULT:
-            rc = emR3RawExecuteInstruction(pVM, pVCpu, "LDT FAULT: ");
+            rc = emR3ExecuteInstruction(pVM, pVCpu, "LDT FAULT: ");
             break;
         case VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT:
-            rc = emR3RawExecuteInstruction(pVM, pVCpu, "GDT FAULT: ");
+            rc = emR3ExecuteInstruction(pVM, pVCpu, "GDT FAULT: ");
             break;
         case VINF_EM_RAW_EMULATE_INSTR_IDT_FAULT:
-            rc = emR3RawExecuteInstruction(pVM, pVCpu, "IDT FAULT: ");
+            rc = emR3ExecuteInstruction(pVM, pVCpu, "IDT FAULT: ");
             break;
         case VINF_EM_RAW_EMULATE_INSTR_TSS_FAULT:
-            rc = emR3RawExecuteInstruction(pVM, pVCpu, "TSS FAULT: ");
+            rc = emR3ExecuteInstruction(pVM, pVCpu, "TSS FAULT: ");
             break;
         case VINF_EM_RAW_EMULATE_INSTR_PD_FAULT:
-            rc = emR3RawExecuteInstruction(pVM, pVCpu, "PD FAULT: ");
+            rc = emR3ExecuteInstruction(pVM, pVCpu, "PD FAULT: ");
             break;
         case VINF_EM_RAW_EMULATE_INSTR_HLT:
             /** @todo skip instruction and go directly to the halt state. (see REM for implementation details) */
@@ -247,7 +247,7 @@ int emR3HwaccmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
 
 #ifdef EMHANDLERC_WITH_PATM
         case VINF_PATM_PENDING_IRQ_AFTER_IRET:
-            rc = emR3RawExecuteInstruction(pVM, pVCpu, "EMUL: ", VINF_PATM_PENDING_IRQ_AFTER_IRET);
+            rc = emR3ExecuteInstruction(pVM, pVCpu, "EMUL: ", VINF_PATM_PENDING_IRQ_AFTER_IRET);
             break;
 
         case VINF_PATCH_EMULATE_INSTR:
@@ -255,7 +255,7 @@ int emR3HwaccmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
         case VINF_EM_RAW_GUEST_TRAP:
 #endif
         case VINF_EM_RAW_EMULATE_INSTR:
-            rc = emR3RawExecuteInstruction(pVM, pVCpu, "EMUL: ");
+            rc = emR3ExecuteInstruction(pVM, pVCpu, "EMUL: ");
             break;
 
 #ifdef EMHANDLERC_WITH_PATM

@@ -77,8 +77,8 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-DECLINLINE(int) emR3RawExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszPrefix, int rcGC = VINF_SUCCESS);
-static int emR3RawExecuteIOInstruction(PVM pVM, PVMCPU pVCpu);
+DECLINLINE(int) emR3ExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszPrefix, int rcGC = VINF_SUCCESS);
+static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu);
 static int emR3HwaccmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
 #define EMHANDLERC_WITH_HWACCM
@@ -180,9 +180,9 @@ static int emR3SingleStepExecHwAcc(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
  *                      instruction and prefix the log output with this text.
  */
 #ifdef LOG_ENABLED
-static int emR3RawExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC, const char *pszPrefix)
+static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC, const char *pszPrefix)
 #else
-static int emR3RawExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
+static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
 #endif
 {
     PCPUMCTX pCtx = pVCpu->em.s.pCtx;
@@ -276,12 +276,12 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
  *                      instruction and prefix the log output with this text.
  * @param   rcGC        GC return code
  */
-DECLINLINE(int) emR3RawExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszPrefix, int rcGC)
+DECLINLINE(int) emR3ExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszPrefix, int rcGC)
 {
 #ifdef LOG_ENABLED
-    return emR3RawExecuteInstructionWorker(pVM, pVCpu, rcGC, pszPrefix);
+    return emR3ExecuteInstructionWorker(pVM, pVCpu, rcGC, pszPrefix);
 #else
-    return emR3RawExecuteInstructionWorker(pVM, pVCpu, rcGC);
+    return emR3ExecuteInstructionWorker(pVM, pVCpu, rcGC);
 #endif
 }
 
@@ -292,7 +292,7 @@ DECLINLINE(int) emR3RawExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *psz
  * @param   pVM         VM handle.
  * @param   pVCpu       VMCPU handle.
  */
-static int emR3RawExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
+static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
 {
     int         rc;
     PCPUMCTX    pCtx = pVCpu->em.s.pCtx;
@@ -377,7 +377,7 @@ static int emR3RawExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
         AssertMsg(rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_EM_RESCHEDULE_REM, ("rc=%Rrc\n", rc));
     }
     STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
-    return emR3RawExecuteInstruction(pVM, pVCpu, "IO: ");
+    return emR3ExecuteInstruction(pVM, pVCpu, "IO: ");
 }
 
 

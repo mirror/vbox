@@ -2107,6 +2107,8 @@ ResumeExecution:
                 Log2(("IOMIOPortWrite %RGv %x %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, uIOSize));
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOWrite);
                 rc = IOMIOPortWrite(pVM, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, uIOSize);
+                if (rc == VINF_IOM_HC_IOPORT_WRITE)
+                    HWACCMR0SavePendingIOPortWrite(pVCpu, pCtx->rip, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, uIOSize);
             }
             else
             {
@@ -2120,6 +2122,9 @@ ResumeExecution:
                     pCtx->eax = (pCtx->eax & ~uAndVal) | (u32Val & uAndVal);
                     Log2(("IOMIOPortRead %RGv %x %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, u32Val & uAndVal, uIOSize));
                 }
+                else
+                if (rc == VINF_IOM_HC_IOPORT_READ)
+                    HWACCMR0SavePendingIOPortRead(pVCpu, pCtx->rip, IoExitInfo.n.u16Port, uAndVal, uIOSize);
             }
         }
         /*
