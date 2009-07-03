@@ -253,8 +253,11 @@ bool VBoxVMSettingsSerialPage::revalidate (QString &aWarning, QString &aTitle)
         VBoxVMSettingsSerial *page =
             static_cast<VBoxVMSettingsSerial*> (tab);
 
+        if (!page->mGbSerial->isChecked())
+            continue;
+
         /* Check the predefined port number unicity */
-        if (page->mGbSerial->isChecked() && !page->isUserDefined())
+        if (!page->isUserDefined())
         {
             QString port = page->mCbNumber->currentText();
             valid = !ports.contains (port);
