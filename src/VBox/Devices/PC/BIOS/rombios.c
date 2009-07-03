@@ -5254,6 +5254,16 @@ int09_function(DI, SI, BP, SP, BX, DX, CX, AX)
       write_byte(0x0040, 0x18, mf2_flags);
       break;
 
+    case 0x53: /* Del press */
+      if ((shift_flags & 0x0f) == 0x0c)
+      {
+ASM_START
+        /* Ctrl+Alt+Del => Reboot */
+        jmp 0xf000:post
+ASM_END
+      }
+      /* fall through */
+
     default:
       if (scancode & 0x80) {
         break; /* toss key releases ... */
