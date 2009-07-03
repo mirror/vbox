@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,6 +18,8 @@
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
  */
+#ifndef __EMHandleRCTmpl_h__
+#define __EMHandleRCTmpl_h__
 
 /**
  * Process a subset of the raw-mode return code.
@@ -33,7 +35,11 @@
  * @param   rc      The return code.
  * @param   pCtx    The guest cpu context.
  */
-static int EMHANDLERC_NAME(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
+#ifdef EMHANDLERC_WITH_PATM
+int emR3RawHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
+#elif defined(EMHANDLERC_WITH_HWACCM)
+int emR3HwaccmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
+#endif
 {
     switch (rc)
     {
@@ -51,32 +57,28 @@ static int EMHANDLERC_NAME(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
             rc = VINF_SUCCESS;
             break;
 
+#ifdef EMHANDLERC_WITH_PATM
         /*
          * Privileged instruction.
          */
         case VINF_EM_RAW_EXCEPTION_PRIVILEGED:
-#ifdef EMHANDLERC_WITH_PATM
         case VINF_PATM_PATCH_TRAP_GP:
-#endif
             rc = emR3RawPrivileged(pVM, pVCpu);
             break;
 
-        /*
-         * Got a trap which needs dispatching.
-         */
         case VINF_EM_RAW_GUEST_TRAP:
-#ifdef EMHANDLERC_WITH_PATM
+            /*
+             * Got a trap which needs dispatching.
+             */
             if (PATMR3IsInsidePatchJump(pVM, pCtx->eip, NULL))
             {
                 AssertReleaseMsgFailed(("FATAL ERROR: executing random instruction inside generated patch jump %08X\n", CPUMGetGuestEIP(pVCpu)));
                 rc = VERR_EM_RAW_PATCH_CONFLICT;
                 break;
             }
-#endif
             rc = emR3RawGuestTrap(pVM, pVCpu);
             break;
 
-#ifdef EMHANDLERC_WITH_PATM
         /*
          * Trap in patch code.
          */
@@ -183,7 +185,6 @@ static int EMHANDLERC_NAME(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
             }
             rc = VINF_EM_RESCHEDULE_REM;
             break;
-#endif  /* EMHANDLERC_WITH_PATM */
 
         /*
          * Other ring switch types.
@@ -191,6 +192,7 @@ static int EMHANDLERC_NAME(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
         case VINF_EM_RAW_RING_SWITCH:
             rc = emR3RawRingSwitch(pVM, pVCpu);
             break;
+#endif  /* EMHANDLERC_WITH_PATM */
 
         /*
          * I/O Port access - emulate the instruction.
@@ -209,12 +211,14 @@ static int EMHANDLERC_NAME(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
             rc = emR3RawExecuteInstruction(pVM, pVCpu, "MMIO");
             break;
 
+#ifdef EMHANDLERC_WITH_HWACCM
         /*
          * (MM)IO intensive code block detected; fall back to the recompiler for better performance
          */
         case VINF_EM_RAW_EMULATE_IO_BLOCK:
             rc = HWACCMR3EmulateIoBlock(pVM, pCtx);
             break;
+#endif
 
 #ifdef EMHANDLERC_WITH_PATM
         /*
@@ -235,12 +239,11 @@ static int EMHANDLERC_NAME(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
         case VINF_EM_RAW_EMULATE_INSTR_PD_FAULT:
             rc = emR3RawExecuteInstruction(pVM, pVCpu, "PD FAULT: ");
             break;
-#endif
-
         case VINF_EM_RAW_EMULATE_INSTR_HLT:
             /** @todo skip instruction and go directly to the halt state. (see REM for implementation details) */
             rc = emR3RawPrivileged(pVM, pVCpu);
             break;
+#endif
 
 #ifdef EMHANDLERC_WITH_PATM
         case VINF_PATM_PENDING_IRQ_AFTER_IRET:
@@ -248,6 +251,8 @@ static int EMHANDLERC_NAME(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
             break;
 
         case VINF_PATCH_EMULATE_INSTR:
+#else
+        case VINF_EM_RAW_GUEST_TRAP:
 #endif
         case VINF_EM_RAW_EMULATE_INSTR:
             rc = emR3RawExecuteInstruction(pVM, pVCpu, "EMUL: ");
@@ -306,7 +311,7 @@ static int EMHANDLERC_NAME(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
         case VERR_VMM_RING3_CALL_DISABLED:
             break;
 
-#ifndef EMHANDLERC_WITH_PATM
+#ifdef EMHANDLERC_WITH_HWACCM
         /*
          * Up a level, after HwAccM have done some release logging.
          */
@@ -334,6 +339,4 @@ static int EMHANDLERC_NAME(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
     return rc;
 }
 
-#undef EMHANDLERC_NAME
-#undef EMHANDLERC_WITH_PATM
-
+#endif

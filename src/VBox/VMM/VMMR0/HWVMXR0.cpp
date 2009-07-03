@@ -3601,7 +3601,7 @@ ResumeExecution:
 
     case VMX_EXIT_RSM:                  /* 17 Guest software attempted to execute RSM in SMM. */
         AssertFailed(); /* can't happen. */
-        rc = VINF_EM_RAW_EXCEPTION_PRIVILEGED;
+        rc = VERR_EM_INTERPRETER;
         break;
 
     case VMX_EXIT_VMCALL:               /* 18 Guest software executed VMCALL. */
@@ -3615,7 +3615,7 @@ ResumeExecution:
     case VMX_EXIT_VMXOFF:               /* 26 Guest software executed VMXOFF. */
     case VMX_EXIT_VMXON:                /* 27 Guest software executed VMXON. */
         /** @todo inject #UD immediately */
-        rc = VINF_EM_RAW_EXCEPTION_PRIVILEGED;
+        rc = VERR_EM_INTERPRETER;
         break;
 
     case VMX_EXIT_CPUID:                /* 10 Guest software attempted to execute CPUID. */
@@ -3643,13 +3643,10 @@ ResumeExecution:
     case VMX_EXIT_APIC_ACCESS:          /* 44 APIC access. Guest software attempted to access memory at a physical address on the APIC-access page. */
     case VMX_EXIT_RDMSR:                /* 31 RDMSR. Guest software attempted to execute RDMSR. */
     case VMX_EXIT_WRMSR:                /* 32 WRMSR. Guest software attempted to execute WRMSR. */
-        /* Note: If we decide to emulate them here, then we must sync the MSRs that could have been changed (sysenter, fs/gs base)!!! */
-        rc = VERR_EM_INTERPRETER;
-        break;
-
     case VMX_EXIT_MONITOR:              /* 39 Guest software attempted to execute MONITOR. */
     case VMX_EXIT_PAUSE:                /* 40 Guest software attempted to execute PAUSE. */
-        rc = VINF_EM_RAW_EXCEPTION_PRIVILEGED;
+        /* Note: If we decide to emulate them here, then we must sync the MSRs that could have been changed (sysenter, fs/gs base)!!! */
+        rc = VERR_EM_INTERPRETER;
         break;
 
     case VMX_EXIT_IRQ_WINDOW:           /* 7 Interrupt window. */

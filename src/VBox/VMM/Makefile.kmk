@@ -81,6 +81,8 @@ VMMR3_SOURCES   = \
 	DBGFStack.cpp \
 	DBGFSym.cpp \
 	EM.cpp \
+	EMRaw.cpp \
+	EMHwaccm.cpp \
 	IOM.cpp \
 	GMM.cpp \
 	MM.cpp \
