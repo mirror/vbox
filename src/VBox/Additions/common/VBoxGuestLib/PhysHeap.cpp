@@ -1,7 +1,6 @@
+/* $Revision$ */
 /** @file
- *
- * VBoxGuestLib - A support library for VirtualBox guest additions:
- * Physical memory heap
+ * VBoxGuestLibR0 - Physical memory heap.
  */
 
 /*
@@ -20,7 +19,6 @@
  * additional information or have any questions.
  */
 
-#include <VBox/VBoxGuestLib.h>
 #include "VBGLInternal.h"
 
 #include <iprt/assert.h>
@@ -627,3 +625,4 @@ DECLVBGL(void) VbglPhysHeapTerminate (void)
 
     RTSemFastMutexDestroy(g_vbgldata.mutexHeap);
 }
+

@@ -1,7 +1,6 @@
+/* $Revision$ */
 /** @file
- *
- * VBoxGuestLib - A support library for VirtualBox guest additions:
- * Library initialization
+ * VBoxGuestLibR0 - Library initialization.
  */
 
 /*
@@ -20,8 +19,6 @@
  * additional information or have any questions.
  */
 
-
-#include <VBox/VBoxGuestLib.h>
 
 #define VBGL_DECL_DATA
 #include "VBGLInternal.h"

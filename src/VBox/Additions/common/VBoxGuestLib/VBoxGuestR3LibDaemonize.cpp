@@ -48,10 +48,10 @@
 # include <errno.h>
 #endif
 
-#include <iprt/string.h>
 #include <iprt/file.h>
 #include <iprt/process.h>
-#include <VBox/VBoxGuest.h>
+#include <iprt/string.h>
+#include "VBGLR3Internal.h"
 
 
 /**

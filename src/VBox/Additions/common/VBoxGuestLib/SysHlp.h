@@ -1,7 +1,6 @@
+/* $Revision$ */
 /** @file
- *
- * VBoxGuestLib - A support library for VirtualBox guest additions:
- * System dependent helpers internal header
+ * VBoxGuestLibR0 - System dependent helpers internal header.
  */
 
 /*
@@ -20,8 +19,8 @@
  * additional information or have any questions.
  */
 
-#ifndef __SYSHLP__H
-#define __SYSHLP__H
+#ifndef __VBoxGuestLib_SysHlp_h
+#define __VBoxGuestLib_SysHlp_h
 
 #ifdef RT_OS_WINDOWS
 # if (_MSC_VER >= 1400) && !defined(VBOX_WITH_PATCHED_DDK)
@@ -107,4 +106,5 @@ void vbglDriverClose (VBGLDRIVER *pDriver);
 
 #endif
 
-#endif /* __SYSHLP__H */
+#endif /* !__VBoxGuestLib_SysHlp_h */
+

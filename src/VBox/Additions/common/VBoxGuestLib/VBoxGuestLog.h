@@ -1,7 +1,5 @@
 /** @file
- *
- * VBoxGuestLib - A support library for VirtualBox guest additions:
- * Guest Logging facility
+ * VBoxGuestLibR0 - Guest Logging facility.
  */
 
 /*
@@ -23,11 +21,12 @@
 #ifndef __VBOXGUESTLOG__H
 #define __VBOXGUESTLOG__H
 
-#if defined(RT_OS_LINUX)
+#ifndef RT_OS_WINDOWS
 
 /* Since I don't know the background for the stuff below, I prefer not to
    change it.  I don't need it or want it for backdoor logging inside the
    Linux Guest Additions kernel modules though. */
+/* Update: bird made this the stance on all non-windows platforms. */
 # include <VBox/log.h>
 
 #else  /* RT_OS_LINUX not defined */

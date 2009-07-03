@@ -1,10 +1,10 @@
-/* $Id$ */
+/* $Id:$ */
 /** @file
  * VBoxGuestR3Lib - Ring-3 Support Library for VirtualBox guest additions, Video.
  */
 
 /*
- * Copyright (C) 2007 Sun Microsystems, Inc.
+ * Copyright (C) 2007-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,9 +23,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <iprt/string.h>
-#include <iprt/mem.h>
 #include <iprt/assert.h>
+#include <iprt/mem.h>
+#include <iprt/string.h>
 #include <VBox/log.h>
 #include <VBox/HostServices/GuestPropertySvc.h>  /* For Save and RetrieveVideoMode */
 

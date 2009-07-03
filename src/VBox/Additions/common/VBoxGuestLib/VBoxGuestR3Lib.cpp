@@ -43,13 +43,12 @@
 # include <unistd.h>
 #endif
 
-#include <iprt/time.h>
-#include <iprt/asm.h>
-#include <iprt/string.h>
-#include <iprt/file.h>
 #include <iprt/assert.h>
+#include <iprt/asm.h>
+#include <iprt/file.h>
+#include <iprt/time.h>
+#include <iprt/string.h>
 #include <iprt/thread.h>
-#include <VBox/VBoxGuest.h>
 #include <VBox/log.h>
 #include "VBGLR3Internal.h"
 

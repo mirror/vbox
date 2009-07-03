@@ -1,7 +1,6 @@
+/* $Revision$ */
 /** @file
- *
- * VBoxGuestLib - A support library for VirtualBox guest additions:
- * Host-Guest Communication Manager internal functions, implemented by VBoxGuest
+ * VBoxGuestLib - Host-Guest Communication Manager internal functions, implemented by VBoxGuest
  */
 
 /*
@@ -23,7 +22,6 @@
 /* Entire file is ifdef'ed with VBGL_VBOXGUEST */
 #ifdef VBGL_VBOXGUEST
 
-#include <VBox/VBoxGuestLib.h>
 #include "VBGLInternal.h"
 #include <iprt/string.h>
 #include <iprt/assert.h>
@@ -453,3 +451,4 @@ DECLVBGL(int) VbglHGCMCall32 (VBoxGuestHGCMCallInfo *pCallInfo,
 # endif /* ARCH_BITS == 64 */
 
 #endif /* VBGL_VBOXGUEST */
+

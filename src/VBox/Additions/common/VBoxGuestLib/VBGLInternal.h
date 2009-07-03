@@ -1,7 +1,6 @@
+/* $Revision$ */
 /** @file
- *
- * VBoxGuestLib - A support library for VirtualBox guest additions:
- * Internal header
+ * VBoxGuestLibR0 - Internal header.
  */
 
 /*
@@ -20,8 +19,8 @@
  * additional information or have any questions.
  */
 
-#ifndef __VBGLINTERNAL__H
-#define __VBGLINTERNAL__H
+#ifndef __VBoxGuestLib_VBGLInternal_h
+#define __VBoxGuestLib_VBGLInternal_h
 
 /* I have added this include here as
    a) This file is always included before VBGLInternal and
@@ -33,6 +32,7 @@
 
 #include <VBox/log.h>
 
+/** @todo dprintf() -> Log() */
 #if (defined(DEBUG) && !defined(NO_LOGGING)) || defined(LOG_ENABLED)
 # define dprintf(a) RTLogBackdoorPrintf a
 #else
@@ -117,4 +117,5 @@ int vbglHGCMTerminate (void);
 #endif
 #endif
 
-#endif /* __VBGLINTERNAL__H */
+#endif /* !__VBoxGuestLib_VBGLInternal_h */
+

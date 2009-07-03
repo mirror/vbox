@@ -1,7 +1,9 @@
+/* $Revision$ */
 /** @file
+ * VBoxGuestLib - Host-Guest Communication Manager.
  *
- * VBoxGuestLib - A support library for VirtualBox guest additions:
- * Host-Guest Communication Manager
+ * These public functions can be only used by other drivers. They all
+ * do an IOCTL to VBoxGuest via IDC.
  */
 
 /*
@@ -20,14 +22,9 @@
  * additional information or have any questions.
  */
 
-/* These public functions can be only used by other drivers.
- * They all do an IOCTL to VBoxGuest.
- */
-
 /* Entire file is ifdef'ed with !VBGL_VBOXGUEST */
 #ifndef VBGL_VBOXGUEST
 
-#include <VBox/VBoxGuestLib.h>
 #include "VBGLInternal.h"
 
 #include <iprt/assert.h>
@@ -203,4 +200,5 @@ DECLVBGL(int) VbglHGCMCallTimed (VBGLHGCMHANDLE handle,
     return rc;
 }
 
-#endif /* VBGL_VBOXGUEST */
+#endif /* !VBGL_VBOXGUEST */
+
