@@ -1,5 +1,5 @@
 /** @file
- * VBoxGuest - VirtualBox Guest Additions interface.
+ * VBoxGuest - VirtualBox Guest Additions Driver Interface.
  */
 
 /*
