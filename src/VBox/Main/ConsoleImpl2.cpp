@@ -1112,8 +1112,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             SafeArray <BSTR> names;
             SafeArray <BSTR> values;
             hrc = hardDisk->GetProperties (NULL,
-                                            ComSafeArrayAsOutParam (names),
-                                            ComSafeArrayAsOutParam (values));    H();
+                                           ComSafeArrayAsOutParam (names),
+                                           ComSafeArrayAsOutParam (values));    H();
 
             if (names.size() != 0)
             {
@@ -1121,7 +1121,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 rc = CFGMR3InsertNode (pCfg, "VDConfig", &pVDC);                RC_CHECK();
                 for (size_t ii = 0; ii < names.size(); ++ ii)
                 {
-                    if (values [ii])
+                    if (values[ii] && *values[ii])
                     {
                         Utf8Str name = names [ii];
                         Utf8Str value = values [ii];
