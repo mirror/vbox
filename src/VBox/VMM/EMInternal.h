@@ -248,6 +248,7 @@ typedef struct EMSTATS
     STAMCOUNTER             StatCli;
     STAMCOUNTER             StatSti;
     STAMCOUNTER             StatIn;
+    STAMCOUNTER             StatIoRestarted;
     STAMCOUNTER             StatOut;
     STAMCOUNTER             StatInvlpg;
     STAMCOUNTER             StatHlt;

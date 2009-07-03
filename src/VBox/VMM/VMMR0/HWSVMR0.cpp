@@ -2108,7 +2108,7 @@ ResumeExecution:
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOWrite);
                 rc = IOMIOPortWrite(pVM, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, uIOSize);
                 if (rc == VINF_IOM_HC_IOPORT_WRITE)
-                    HWACCMR0SavePendingIOPortWrite(pVCpu, pCtx->rip, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, uIOSize);
+                    HWACCMR0SavePendingIOPortWrite(pVCpu, pCtx->rip, pVMCB->ctrl.u64ExitInfo2, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, uIOSize);
             }
             else
             {
@@ -2124,7 +2124,7 @@ ResumeExecution:
                 }
                 else
                 if (rc == VINF_IOM_HC_IOPORT_READ)
-                    HWACCMR0SavePendingIOPortRead(pVCpu, pCtx->rip, IoExitInfo.n.u16Port, uAndVal, uIOSize);
+                    HWACCMR0SavePendingIOPortRead(pVCpu, pCtx->rip, pVMCB->ctrl.u64ExitInfo2, IoExitInfo.n.u16Port, uAndVal, uIOSize);
             }
         }
         /*
