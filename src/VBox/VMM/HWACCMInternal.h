@@ -607,15 +607,9 @@ typedef struct HWACCMCPU
                 unsigned        uPort;
                 unsigned        uAndVal;
                 unsigned        cbSize;
-            } Read;
-            struct
-            {
-                unsigned        uPort;
-                unsigned        uValue;
-                unsigned        cbSize;
-            } Write;
+            } Port;
             uint64_t            aRaw[2];
-        } Port;
+        } s;
     } PendingIO;
 
     /** Currenty shadow paging mode. */

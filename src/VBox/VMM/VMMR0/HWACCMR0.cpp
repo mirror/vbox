@@ -1231,12 +1231,12 @@ VMMR0DECL(VMCPUID) HWACCMR0GetVMCPUId(PVM pVM)
  */
 VMMR0DECL(void) HWACCMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext, unsigned uPort, unsigned uAndVal, unsigned cbSize)
 {
-    pVCpu->hwaccm.s.PendingIO.enmType            = HWACCMPENDINGIO_PORT_READ;
-    pVCpu->hwaccm.s.PendingIO.GCPtrRip           = GCPtrRip;
-    pVCpu->hwaccm.s.PendingIO.GCPtrRipNext       = GCPtrRipNext;
-    pVCpu->hwaccm.s.PendingIO.Port.Read.uPort    = uPort;
-    pVCpu->hwaccm.s.PendingIO.Port.Read.uAndVal  = uAndVal;
-    pVCpu->hwaccm.s.PendingIO.Port.Read.cbSize   = cbSize;
+    pVCpu->hwaccm.s.PendingIO.enmType         = HWACCMPENDINGIO_PORT_READ;
+    pVCpu->hwaccm.s.PendingIO.GCPtrRip        = GCPtrRip;
+    pVCpu->hwaccm.s.PendingIO.GCPtrRipNext    = GCPtrRipNext;
+    pVCpu->hwaccm.s.PendingIO.s.Port.uPort    = uPort;
+    pVCpu->hwaccm.s.PendingIO.s.Port.uAndVal  = uAndVal;
+    pVCpu->hwaccm.s.PendingIO.s.Port.cbSize   = cbSize;
     return;
 }
 
@@ -1246,17 +1246,17 @@ VMMR0DECL(void) HWACCMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR GCPtrRip, RT
  * @param   pVCpu           The VMCPU to operate on.
  * @param   GCPtrRIP        Address of IO instruction
  * @param   uPort           Port address
- * @param   uValue          Value to write
+ * @param   uAndVal         And mask for fetching the result from eax
  * @param   cbSize          Read size
  */
-VMMR0DECL(void) HWACCMR0SavePendingIOPortWrite(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext, unsigned uPort, unsigned uValue, unsigned cbSize)
+VMMR0DECL(void) HWACCMR0SavePendingIOPortWrite(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext, unsigned uPort, unsigned uAndVal, unsigned cbSize)
 {
-    pVCpu->hwaccm.s.PendingIO.enmType             = HWACCMPENDINGIO_PORT_WRITE;
-    pVCpu->hwaccm.s.PendingIO.GCPtrRip            = GCPtrRip;
-    pVCpu->hwaccm.s.PendingIO.GCPtrRipNext        = GCPtrRipNext;
-    pVCpu->hwaccm.s.PendingIO.Port.Write.uPort    = uPort;
-    pVCpu->hwaccm.s.PendingIO.Port.Write.uValue   = uValue;
-    pVCpu->hwaccm.s.PendingIO.Port.Write.cbSize   = cbSize;
+    pVCpu->hwaccm.s.PendingIO.enmType         = HWACCMPENDINGIO_PORT_WRITE;
+    pVCpu->hwaccm.s.PendingIO.GCPtrRip        = GCPtrRip;
+    pVCpu->hwaccm.s.PendingIO.GCPtrRipNext    = GCPtrRipNext;
+    pVCpu->hwaccm.s.PendingIO.s.Port.uPort    = uPort;
+    pVCpu->hwaccm.s.PendingIO.s.Port.uAndVal  = uAndVal;
+    pVCpu->hwaccm.s.PendingIO.s.Port.cbSize   = cbSize;
     return;
 }
 
