@@ -1,10 +1,9 @@
 /** @file
- * VBoxGuestLib - Support library header for VirtualBox
- * Additions: Public header.
+ * VBoxGuestLib - VirtualBox Guest Additions Library.
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -31,46 +30,67 @@
 #ifndef ___VBox_VBoxGuestLib_h
 #define ___VBox_VBoxGuestLib_h
 
-#include <VBox/VBoxGuest.h>
-
-#include <VBox/err.h>
-
-#ifndef IN_RING0
-#error VBoxGuestLib is only suitable for ring-0!
+#ifdef IN_RING0
+# include <VBox/VBoxGuest.h> /** @todo Try stop including <VBox/VBoxGuest.h> in ring-0. */
+# include <VBox/err.h>       /** @todo Why is this here?? */
 #endif
+#include <VBox/types.h>
 
-/** @defgroup grp_guest_lib     VirtualBox Guest Library
+
+/** @defgroup grp_guest_lib     VirtualBox Guest Additions Library
  * @{
  */
 
 /** @page pg_guest_lib  VirtualBox Guest Library
  *
- * The library has 2 versions for each platform:
- *  1) for VBoxGuest main driver, who is responsible for managing the VMMDev virtual hardware;
- *  2) for other guest drivers.
+ * This is a library for abstracting the additions driver interface. There are
+ * multiple versions of the library depending on the context. The main
+ * distinction is between kernel and user mode where the interfaces are very
+ * different.
  *
- * Library therefore consists of:
- *  common code to be used by both VBoxGuest and other drivers;
- *  VBoxGuest specific code;
- *  code for other drivers which communicate with VBoxGuest via an IOCTL.
  *
- * The library sources produce 2 libs VBoxGuestLib and VBoxGuestLibBase,
- * the latter one is for VBoxGuest.
+ * @section sec_guest_lib_ring0     Ring-0
  *
- * Drivers must choose right library in their makefiles.
+ * In ring-0 there are two version:
+ *  - VBOX_LIB_VBGL_R0_BASE / VBoxGuestR0LibBase for the VBoxGuest main driver,
+ *    who is responsible for managing the VMMDev virtual hardware.
+ *  - VBOX_LIB_VBGL_R0 / VBoxGuestR0Lib for other (client) guest drivers.
  *
- * Library source code and the header have a define VBGL_VBOXGUEST,
- * which is defined for VBoxGuest and undefined for other drivers.
+ *
+ * The library source code and the header have a define VBGL_VBOXGUEST, which is
+ * defined for VBoxGuest and undefined for other drivers. Drivers must choose
+ * right library in their makefiles and set VBGL_VBOXGUEST accordingly.
+ *
+ * The libraries consists of:
+ *  - common code to be used by both VBoxGuest and other drivers;
+ *  - VBoxGuest specific code;
+ *  - code for other drivers which communicate with VBoxGuest via an IOCTL.
+ *
+ *
+ * @section sec_guest_lib_ring3     Ring-3
+ *
+ * There are more variants of the library here:
+ *  - VBOX_LIB_VBGL_R3 / VBoxGuestR3Lib for programs.
+ *  - VBOX_LIB_VBGL_R3_XFREE86 / VBoxGuestR3LibXFree86 for old style XFree
+ *    drivers which uses special loader and or symbol resolving strategy.
+ *  - VBOX_LIB_VBGL_R3_SHARED / VBoxGuestR3LibShared for shared objects / DLLs /
+ *    Dylibs.
  *
  */
 
-#define DECLVBGL(type) type VBOXCALL
-
-typedef uint32_t VBGLIOPORT;
-
 RT_C_DECLS_BEGIN
 
-#ifdef VBGL_VBOXGUEST
+
+/** @defgroup grp_guest_lib_r0     Ring-0 interface.
+ * @{
+ */
+#if defined(IN_RING0) && !defined(IN_RING0_AGNOSTIC)
+# define DECLVBGL(type) type VBOXCALL
+
+typedef uint32_t VBGLIOPORT; /**< @todo r=bird: We have RTIOPORT (uint16_t) for this. */
+
+
+# ifdef VBGL_VBOXGUEST
 
 /**
  * The library initialization function to be used by the main
@@ -80,7 +100,7 @@ RT_C_DECLS_BEGIN
  */
 DECLVBGL(int) VbglInit (VBGLIOPORT portVMMDev, VMMDevMemory *pVMMDevMemory);
 
-#else
+# else
 
 /**
  * The library initialization function to be used by all drivers
@@ -90,12 +110,13 @@ DECLVBGL(int) VbglInit (VBGLIOPORT portVMMDev, VMMDevMemory *pVMMDevMemory);
  */
 DECLVBGL(int) VbglInit (void);
 
-#endif
+# endif
 
 /**
  * The library termination function.
  */
 DECLVBGL(void) VbglTerminate (void);
+
 
 /** @name Generic request functions.
  * @{
@@ -131,9 +152,9 @@ DECLVBGL(int) VbglGRPerform (VMMDevRequestHeader *pReq);
 DECLVBGL(void) VbglGRFree (VMMDevRequestHeader *pReq);
 /** @} */
 
-#ifdef VBOX_WITH_HGCM
+# ifdef VBOX_WITH_HGCM
 
-#ifdef VBGL_VBOXGUEST
+#  ifdef VBGL_VBOXGUEST
 
 /**
  * Callback function called from HGCM helpers when a wait for request
@@ -216,7 +237,7 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
 DECLVBGL(int) VbglHGCMCall32 (VBoxGuestHGCMCallInfo *pCallInfo,
                               VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
 
-#else /* !VBGL_VBOXGUEST */
+#  else  /* !VBGL_VBOXGUEST */
 
 struct VBGLHGCMHANDLEDATA;
 typedef struct VBGLHGCMHANDLEDATA *VBGLHGCMHANDLE;
@@ -271,9 +292,9 @@ DECLVBGL(int) VbglHGCMCallTimed (VBGLHGCMHANDLE handle,
                                  VBoxGuestHGCMCallInfoTimed *pData, uint32_t cbData);
 /** @} */
 
-#endif /* !VBGL_VBOXGUEST */
+#  endif /* !VBGL_VBOXGUEST */
 
-#endif /* VBOX_WITH_HGCM */
+# endif /* VBOX_WITH_HGCM */
 
 
 /**
@@ -325,8 +346,116 @@ DECLVBGL(void) VbglPhysHeapFree (void *p);
 
 DECLVBGL(int) VbglQueryVMMDevMemory (VMMDevMemory **ppVMMDevMemory);
 
+#endif /* IN_RING0 && !IN_RING0_AGNOSTIC */
+/** @} */
+
+
+/** @defgroup grp_guest_lib_r3     Ring-3 interface.
+ * @{
+ */
+#ifdef IN_RING3
+
+/** @def VBGLR3DECL
+ * Ring 3 VBGL declaration.
+ * @param   type    The return type of the function declaration.
+ */
+# define VBGLR3DECL(type) type VBOXCALL
+
+/** @name General-purpose functions
+ * @{ */
+VBGLR3DECL(int)     VbglR3Init(void);
+VBGLR3DECL(int)     VbglR3InitUser(void);
+VBGLR3DECL(void)    VbglR3Term(void);
+# ifdef ___iprt_time_h
+VBGLR3DECL(int)     VbglR3GetHostTime(PRTTIMESPEC pTime);
+# endif
+VBGLR3DECL(int)     VbglR3InterruptEventWaits(void);
+VBGLR3DECL(int)     VbglR3WriteLog(const char *pch, size_t cb);
+VBGLR3DECL(int)     VbglR3CtlFilterMask(uint32_t fOr, uint32_t fNot);
+VBGLR3DECL(int)     VbglR3Daemonize(bool fNoChDir, bool fNoClose);
+VBGLR3DECL(int)     VbglR3PidFile(const char *pszPath, PRTFILE phFile);
+VBGLR3DECL(void)    VbglR3ClosePidFile(const char *pszPath, RTFILE hFile);
+VBGLR3DECL(int)     VbglR3SetGuestCaps(uint32_t fOr, uint32_t fNot);
+/** @} */
+
+/** @name Shared clipboard
+ * @{ */
+VBGLR3DECL(int)     VbglR3ClipboardConnect(uint32_t *pu32ClientId);
+VBGLR3DECL(int)     VbglR3ClipboardDisconnect(uint32_t u32ClientId);
+VBGLR3DECL(int)     VbglR3ClipboardGetHostMsg(uint32_t u32ClientId, uint32_t *pMsg, uint32_t *pfFormats);
+VBGLR3DECL(int)     VbglR3ClipboardReadData(uint32_t u32ClientId, uint32_t fFormat, void *pv, uint32_t cb, uint32_t *pcb);
+VBGLR3DECL(int)     VbglR3ClipboardReportFormats(uint32_t u32ClientId, uint32_t fFormats);
+VBGLR3DECL(int)     VbglR3ClipboardWriteData(uint32_t u32ClientId, uint32_t fFormat, void *pv, uint32_t cb);
+/** @} */
+
+/** @name Seamless mode
+ * @{ */
+VBGLR3DECL(int)     VbglR3SeamlessSetCap(bool fState);
+# ifdef VBOX_MOUSE_POINTER_SHAPE /** @todo Move common structures/enums out of VBoxGuest.h or/and the externalize the IOCtl interface... Whatever works, just try keep the amout of lowevel mess exposed here to a minimum. */
+VBGLR3DECL(int)     VbglR3SeamlessWaitEvent(VMMDevSeamlessMode *pMode);
+# endif
+VBGLR3DECL(int)     VbglR3SeamlessSendRects(uint32_t cRects, PRTRECT pRects);
+/** @}  */
+
+/** @name Mouse
+ * @{ */
+VBGLR3DECL(int)     VbglR3GetMouseStatus(uint32_t *pfFeatures, uint32_t *px, uint32_t *py);
+VBGLR3DECL(int)     VbglR3SetMouseStatus(uint32_t fFeatures);
+/** @}  */
+
+/** @name Video
+ * @{ */
+VBGLR3DECL(int)     VbglR3VideoAccelEnable(bool fEnable);
+VBGLR3DECL(int)     VbglR3VideoAccelFlush(void);
+VBGLR3DECL(int)     VbglR3SetPointerShape(uint32_t fFlags, uint32_t xHot, uint32_t yHot, uint32_t cx, uint32_t cy, const void *pvImg, size_t cbImg);
+# ifdef VBOX_MOUSE_POINTER_SHAPE /** @todo Move common structures/enums out of VBoxGuest.h or/and the externalize the IOCtl interface... Whatever works, just try keep the amout of lowevel mess exposed here to a minimum. */
+VBGLR3DECL(int)     VbglR3SetPointerShapeReq(VMMDevReqMousePointer *pReq);
+# endif
+/** @}  */
+
+/** @name Display
+ * @{ */
+VBGLR3DECL(int)     VbglR3GetLastDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits, uint32_t *piDisplay);
+VBGLR3DECL(int)     VbglR3DisplayChangeWaitEvent(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits, uint32_t *piDisplay);
+VBGLR3DECL(bool)    VbglR3HostLikesVideoMode(uint32_t cx, uint32_t cy, uint32_t cBits);
+VBGLR3DECL(int)     VbglR3SaveVideoMode(const char *pszName, uint32_t cx, uint32_t cy, uint32_t cBits);
+VBGLR3DECL(int)     VbglR3RetrieveVideoMode(const char *pszName, uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits);
+/** @}  */
+
+# ifdef VBOX_WITH_GUEST_PROPS
+/** @name Guest properties
+ * @{ */
+/** @todo Docs. */
+typedef struct VBGLR3GUESTPROPENUM VBGLR3GUESTPROPENUM;
+/** @todo Docs. */
+typedef VBGLR3GUESTPROPENUM *PVBGLR3GUESTPROPENUM;
+VBGLR3DECL(int)     VbglR3GuestPropConnect(uint32_t *pu32ClientId);
+VBGLR3DECL(int)     VbglR3GuestPropDisconnect(uint32_t u32ClientId);
+VBGLR3DECL(int)     VbglR3GuestPropWrite(uint32_t u32ClientId, const char *pszName, const char *pszValue, const char *pszFlags);
+VBGLR3DECL(int)     VbglR3GuestPropWriteValue(uint32_t u32ClientId, const char *pszName, const char *pszValue);
+VBGLR3DECL(int)     VbglR3GuestPropWriteValueV(uint32_t u32ClientId, const char *pszName, const char *pszValueFormat, va_list va);
+VBGLR3DECL(int)     VbglR3GuestPropWriteValueF(uint32_t u32ClientId, const char *pszName, const char *pszValueFormat, ...);
+VBGLR3DECL(int)     VbglR3GuestPropRead(uint32_t u32ClientId, const char *pszName, void *pvBuf, uint32_t cbBuf, char **ppszValue, uint64_t *pu64Timestamp, char **ppszFlags, uint32_t *pcbBufActual);
+VBGLR3DECL(int)     VbglR3GuestPropReadValue(uint32_t ClientId, const char *pszName, char *pszValue, uint32_t cchValue, uint32_t *pcchValueActual);
+VBGLR3DECL(int)     VbglR3GuestPropReadValueAlloc(uint32_t u32ClientId, const char *pszName, char **ppszValue);
+VBGLR3DECL(void)    VbglR3GuestPropReadValueFree(char *pszValue);
+VBGLR3DECL(int)     VbglR3GuestPropEnumRaw(uint32_t u32ClientId, const char *paszPatterns, char *pcBuf, uint32_t cbBuf, uint32_t *pcbBufActual);
+VBGLR3DECL(int)     VbglR3GuestPropEnum(uint32_t u32ClientId, char const * const *ppaszPatterns, uint32_t cPatterns, PVBGLR3GUESTPROPENUM *ppHandle,
+                                        char const **ppszName, char const **ppszValue, uint64_t *pu64Timestamp, char const **ppszFlags);
+VBGLR3DECL(int)     VbglR3GuestPropEnumNext(PVBGLR3GUESTPROPENUM pHandle, char const **ppszName, char const **ppszValue, uint64_t *pu64Timestamp,
+                                            char const **ppszFlags);
+VBGLR3DECL(void)    VbglR3GuestPropEnumFree(PVBGLR3GUESTPROPENUM pHandle);
+VBGLR3DECL(int)     VbglR3GuestPropDelSet(uint32_t u32ClientId, char const * const *papszPatterns, uint32_t cPatterns);
+VBGLR3DECL(int)     VbglR3GuestPropWait(uint32_t u32ClientId, const char *pszPatterns, void *pvBuf, uint32_t cbBuf, uint64_t u64Timestamp, uint32_t u32Timeout, char ** ppszName, char **ppszValue, uint64_t *pu64Timestamp, char **ppszFlags, uint32_t *pcbBufActual);
+/** @}  */
+# endif /* VBOX_WITH_GUEST_PROPS defined */
+
+#endif /* IN_RING3 */
+/** @} */
+
 RT_C_DECLS_END
 
 /** @} */
 
 #endif
+

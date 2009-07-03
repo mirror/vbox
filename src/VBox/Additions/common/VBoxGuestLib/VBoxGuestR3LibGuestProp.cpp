@@ -1,7 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxGuestR3Lib - Ring-3 Support Library for VirtualBox guest additions,
- * guest properties.
+ * VBoxGuestR3Lib - Ring-3 Support Library for VirtualBox guest additions, guest properties.
  */
 
 /*
@@ -41,6 +40,8 @@
 /**
  * Structure containing information needed to enumerate through guest
  * properties.
+ *
+ * @remarks typedef in VBoxGuestLib.h.
  */
 struct VBGLR3GUESTPROPENUM
 {

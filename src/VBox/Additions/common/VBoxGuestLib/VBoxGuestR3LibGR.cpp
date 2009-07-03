@@ -37,7 +37,6 @@ extern "C" void Xfree(pointer /*ptr*/);
 # include <iprt/string.h>
 #endif
 #include <iprt/err.h>
-#include <VBox/VBoxGuest.h>
 #include "VBGLR3Internal.h"
 
 

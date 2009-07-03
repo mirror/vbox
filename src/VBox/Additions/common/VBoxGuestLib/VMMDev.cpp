@@ -1,7 +1,5 @@
 /** @file
- *
- * VBoxGuestLib - A support library for VirtualBox guest additions:
- * VMMDev device related functions
+ * VBoxGuestLibR0 - VMMDev device related functions.
  */
 
 /*
@@ -20,7 +18,6 @@
  * additional information or have any questions.
  */
 
-#include <VBox/VBoxGuestLib.h>
 #include "VBGLInternal.h"
 
 
@@ -38,3 +35,4 @@ DECLVBGL(int) VbglQueryVMMDevMemory (VMMDevMemory **ppVMMDevMemory)
     *ppVMMDevMemory = g_vbgldata.pVMMDevMemory;
     return rc;
 }
+

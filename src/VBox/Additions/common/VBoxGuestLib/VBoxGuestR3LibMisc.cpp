@@ -28,6 +28,7 @@
 
 #include "VBGLR3Internal.h"
 
+
 /**
  * Cause any pending WaitEvent calls (VBOXGUEST_IOCTL_WAITEVENT) to return
  * with a VERR_INTERRUPTED status.

@@ -45,7 +45,7 @@ hdrs := $(filter-out \
 	VBox/usblib-solaris.h, \
 	$(wildcard VBox/*.h iprt/*.h))
 
-hdrs.r3 := $(filter-out VBox/VBoxGuestLib.h, $(hdrs))
+hdrs.r3 := $(filter-out , $(hdrs))
 hdrs.r0 := $(filter-out $(cpp_hdrs) $(r3_only_hdrs), $(hdrs))
 hdrs.gc := $(filter-out \
 	VBox/VBoxGuestLib.h \

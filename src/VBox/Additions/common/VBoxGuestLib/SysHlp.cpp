@@ -1,6 +1,6 @@
 /* $Revision$ */
 /** @file
- * VBoxGuestLib - IDC with VBoxGuest and HGCM helpers.
+ * VBoxGuestLibR0 - IDC with VBoxGuest and HGCM helpers.
  */
 
 /*
@@ -344,3 +344,4 @@ void vbglDriverClose (VBGLDRIVER *pDriver)
 }
 
 #endif /* !VBGL_VBOXGUEST */
+

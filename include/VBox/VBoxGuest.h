@@ -1,9 +1,9 @@
 /** @file
- * VBoxGuest - VirtualBox Guest Additions interface
+ * VBoxGuest - VirtualBox Guest Additions interface.
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1375,7 +1375,7 @@ AssertCompileSize(VBoxGuestFilterMaskInfo, 8);
  * therefore packing must be defined explicitely.
  */
 # pragma pack(1)
-typedef struct _VBoxGuestHGCMConnectInfo
+typedef struct _VBoxGuestHGCMConnectInfo /**< @todo I think the usage of '_' in tags, like _VBoxGuestHGCMConnectInfo here, is trespassing on the system/compiler name space. Check+fix. */
 {
     int32_t result;           /**< OUT */
     HGCMServiceLocation Loc;  /**< IN */
@@ -1652,98 +1652,8 @@ typedef VBOXGUESTOS2IDCCONNECT *PVBOXGUESTOS2IDCCONNECT;
 
 
 #ifdef IN_RING3
-
-/** @def VBGLR3DECL
- * Ring 3 VBGL declaration.
- * @param   type    The return type of the function declaration.
- */
-#define VBGLR3DECL(type) type VBOXCALL
-
-/* General-purpose functions */
-
-RT_C_DECLS_BEGIN
-VBGLR3DECL(int)     VbglR3Init(void);
-VBGLR3DECL(int)     VbglR3InitUser(void);
-VBGLR3DECL(void)    VbglR3Term(void);
-# ifdef ___iprt_time_h
-VBGLR3DECL(int)     VbglR3GetHostTime(PRTTIMESPEC pTime);
-# endif
-VBGLR3DECL(int)     VbglR3InterruptEventWaits(void);
-VBGLR3DECL(int)     VbglR3WriteLog(const char *pch, size_t cb);
-VBGLR3DECL(int)     VbglR3CtlFilterMask(uint32_t fOr, uint32_t fNot);
-VBGLR3DECL(int)     VbglR3Daemonize(bool fNoChDir, bool fNoClose);
-VBGLR3DECL(int)     VbglR3PidFile(const char *pszPath, PRTFILE phFile);
-VBGLR3DECL(void)    VbglR3ClosePidFile(const char *pszPath, RTFILE hFile);
-VBGLR3DECL(int)     VbglR3SetGuestCaps(uint32_t fOr, uint32_t fNot);
-
-/** @name Shared clipboard
- * @{ */
-VBGLR3DECL(int)     VbglR3ClipboardConnect(uint32_t *pu32ClientId);
-VBGLR3DECL(int)     VbglR3ClipboardDisconnect(uint32_t u32ClientId);
-VBGLR3DECL(int)     VbglR3ClipboardGetHostMsg(uint32_t u32ClientId, uint32_t *pMsg, uint32_t *pfFormats);
-VBGLR3DECL(int)     VbglR3ClipboardReadData(uint32_t u32ClientId, uint32_t fFormat, void *pv, uint32_t cb, uint32_t *pcb);
-VBGLR3DECL(int)     VbglR3ClipboardReportFormats(uint32_t u32ClientId, uint32_t fFormats);
-VBGLR3DECL(int)     VbglR3ClipboardWriteData(uint32_t u32ClientId, uint32_t fFormat, void *pv, uint32_t cb);
-/** @} */
-
-/** @name Seamless mode
- * @{ */
-VBGLR3DECL(int)     VbglR3SeamlessSetCap(bool fState);
-VBGLR3DECL(int)     VbglR3SeamlessWaitEvent(VMMDevSeamlessMode *pMode);
-VBGLR3DECL(int)     VbglR3SeamlessSendRects(uint32_t cRects, PRTRECT pRects);
-/** @}  */
-
-/** @name Mouse
- * @{ */
-VBGLR3DECL(int)     VbglR3GetMouseStatus(uint32_t *pfFeatures, uint32_t *px, uint32_t *py);
-VBGLR3DECL(int)     VbglR3SetMouseStatus(uint32_t fFeatures);
-/** @}  */
-
-/** @name Video
- * @{ */
-VBGLR3DECL(int)     VbglR3VideoAccelEnable(bool fEnable);
-VBGLR3DECL(int)     VbglR3VideoAccelFlush(void);
-VBGLR3DECL(int)     VbglR3SetPointerShape(uint32_t fFlags, uint32_t xHot, uint32_t yHot, uint32_t cx, uint32_t cy, const void *pvImg, size_t cbImg);
-VBGLR3DECL(int)     VbglR3SetPointerShapeReq(VMMDevReqMousePointer *pReq);
-/** @}  */
-
-/** @name Display
- * @{ */
-VBGLR3DECL(int)     VbglR3GetLastDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits, uint32_t *piDisplay);
-VBGLR3DECL(int)     VbglR3DisplayChangeWaitEvent(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits, uint32_t *piDisplay);
-VBGLR3DECL(bool)    VbglR3HostLikesVideoMode(uint32_t cx, uint32_t cy, uint32_t cBits);
-VBGLR3DECL(int)     VbglR3SaveVideoMode(const char *pszName, uint32_t cx, uint32_t cy, uint32_t cBits);
-VBGLR3DECL(int)     VbglR3RetrieveVideoMode(const char *pszName, uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits);
-/** @}  */
-
-#ifdef VBOX_WITH_GUEST_PROPS
-/** @name Guest properties
- * @{ */
-typedef struct VBGLR3GUESTPROPENUM VBGLR3GUESTPROPENUM, *PVBGLR3GUESTPROPENUM;
-VBGLR3DECL(int)     VbglR3GuestPropConnect(uint32_t *pu32ClientId);
-VBGLR3DECL(int)     VbglR3GuestPropDisconnect(uint32_t u32ClientId);
-VBGLR3DECL(int)     VbglR3GuestPropWrite(uint32_t u32ClientId, const char *pszName, const char *pszValue, const char *pszFlags);
-VBGLR3DECL(int)     VbglR3GuestPropWriteValue(uint32_t u32ClientId, const char *pszName, const char *pszValue);
-VBGLR3DECL(int)     VbglR3GuestPropWriteValueV(uint32_t u32ClientId, const char *pszName, const char *pszValueFormat, va_list va);
-VBGLR3DECL(int)     VbglR3GuestPropWriteValueF(uint32_t u32ClientId, const char *pszName, const char *pszValueFormat, ...);
-VBGLR3DECL(int)     VbglR3GuestPropRead(uint32_t u32ClientId, const char *pszName, void *pvBuf, uint32_t cbBuf, char **ppszValue, uint64_t *pu64Timestamp, char **ppszFlags, uint32_t *pcbBufActual);
-VBGLR3DECL(int)     VbglR3GuestPropReadValue(uint32_t ClientId, const char *pszName, char *pszValue, uint32_t cchValue, uint32_t *pcchValueActual);
-VBGLR3DECL(int)     VbglR3GuestPropReadValueAlloc(uint32_t u32ClientId, const char *pszName, char **ppszValue);
-VBGLR3DECL(void)    VbglR3GuestPropReadValueFree(char *pszValue);
-VBGLR3DECL(int)     VbglR3GuestPropEnumRaw(uint32_t u32ClientId, const char *paszPatterns, char *pcBuf, uint32_t cbBuf, uint32_t *pcbBufActual);
-VBGLR3DECL(int)     VbglR3GuestPropEnum(uint32_t u32ClientId, char const * const *ppaszPatterns, uint32_t cPatterns, PVBGLR3GUESTPROPENUM *ppHandle,
-                                        char const **ppszName, char const **ppszValue, uint64_t *pu64Timestamp, char const **ppszFlags);
-VBGLR3DECL(int)     VbglR3GuestPropEnumNext(PVBGLR3GUESTPROPENUM pHandle, char const **ppszName, char const **ppszValue, uint64_t *pu64Timestamp,
-                                            char const **ppszFlags);
-VBGLR3DECL(void)    VbglR3GuestPropEnumFree(PVBGLR3GUESTPROPENUM pHandle);
-VBGLR3DECL(int)     VbglR3GuestPropDelSet(uint32_t u32ClientId, char const * const *papszPatterns, uint32_t cPatterns);
-VBGLR3DECL(int)     VbglR3GuestPropWait(uint32_t u32ClientId, const char *pszPatterns, void *pvBuf, uint32_t cbBuf, uint64_t u64Timestamp, uint32_t u32Timeout, char ** ppszName, char **ppszValue, uint64_t *pu64Timestamp, char **ppszFlags, uint32_t *pcbBufActual);
-/** @}  */
-#endif /* VBOX_WITH_GUEST_PROPS defined */
-
-
-RT_C_DECLS_END
-
+# include <VBox/VBoxGuestLib.h> /** @todo eliminate this. */
 #endif /* IN_RING3 */
 
 #endif
+

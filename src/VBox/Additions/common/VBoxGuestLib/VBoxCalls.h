@@ -1,7 +1,5 @@
 /** @file
- *
- * VBoxGuestLib - A support library for VirtualBox guest additions:
- * Central calls header
+ * VBoxGuestLib - Central calls header.
  */
 
 /*

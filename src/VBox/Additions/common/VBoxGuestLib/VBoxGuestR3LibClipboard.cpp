@@ -24,12 +24,9 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <VBox/HostServices/VBoxClipboardSvc.h>
-#include <VBox/VBoxGuest.h>
-#include <iprt/string.h>
 #include <iprt/assert.h>
+#include <iprt/string.h>
 #include "VBGLR3Internal.h"
-
-
 
 
 /**
