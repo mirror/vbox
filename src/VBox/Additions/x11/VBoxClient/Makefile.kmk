@@ -77,10 +77,29 @@ $$(PATH_VBoxClient)/libstdc++.a:
 	$(QUIET)$(LN_EXT) -sf `$(TOOL_$(VBOX_GCC_TOOL)_CXX) $(TEMPLATE_VBOXGUESTR3CPPEXE_CXXFLAGS.$(KBUILD_TARGET_ARCH)) -print-file-name=libstdc++.a` $@ \
 	     || $(CP_EXT) -f  `$(TOOL_$(VBOX_GCC_TOOL)_CXX) $(TEMPLATE_VBOXGUESTR3CPPEXE_CXXFLAGS.$(KBUILD_TARGET_ARCH)) -print-file-name=libstdc++.a` $@
 
-
 ifdef VBOX_X11_SEAMLESS_GUEST
- ifdef VBOX_WITH_TESTCASES
-  ifndef VBOX_ONLY_ADDITIONS
+ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
+  if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
+
+# Set this in LocalConfig.kmk if you are working on the X11 clipboard service
+# to automatically run the unit test at build time.
+#       OTHERS += $(PATH_tstSeamlessX11-auto)/tstSeamlessX11-auto.run
+
+   PROGRAMS += tstSeamlessX11-auto
+   tstSeamlessX11-auto_TEMPLATE = VBOXR3TSTEXE
+   tstSeamlessX11-auto_SOURCES = \
+           testcase/tstSeamlessX11-auto.cpp \
+           seamless-x11.cpp
+   tstSeamlessX11-auto_DEFS = TESTCASE
+   tstSeamlessX11-auto_LIBS = \
+           $(LIB_RUNTIME)
+
+   TESTING  += $(PATH_tstSeamlessX11-auto)/tstSeamlessX11-auto
+$$(PATH_tstSeamlessX11-auto)/tstSeamlessX11-auto.run: \
+        $$(INSTARGET_tstSeamlessX11-auto)
+	export VBOX_LOG_DEST=nofile; $(INSTARGET_tstSeamlessX11-auto) quiet
+	$(QUIET)$(APPEND) -t "$@" "done"
+
    #
    # Additional testcase designed to be run manually, which initiates and starts the Linux
    # guest client part of the seamless additions in the host, faking seamless events from
