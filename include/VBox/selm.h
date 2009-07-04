@@ -1,5 +1,5 @@
 /** @file
- * SELM - The Selector Manager.
+ * SELM - The Selector Manager. (VMM)
  */
 
 /*

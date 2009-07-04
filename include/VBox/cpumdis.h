@@ -1,5 +1,5 @@
 /** @file
- * CPUM - CPU Monitor(/Manager)
+ * CPUM - Disassembler. (VMM)
  */
 
 /*

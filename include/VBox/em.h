@@ -1,5 +1,5 @@
 /** @file
- * EM - Execution Monitor.
+ * EM - Execution Monitor. (VMM)
  */
 
 /*

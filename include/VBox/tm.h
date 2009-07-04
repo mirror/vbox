@@ -1,5 +1,5 @@
 /** @file
- * TM - Time Manager.
+ * TM - Time Manager. (VMM)
  */
 
 /*

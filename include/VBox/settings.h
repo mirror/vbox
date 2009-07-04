@@ -1,5 +1,5 @@
 /** @file
- * Settings File Manipulation API.
+ * Settings File Manipulation API. (Main)
  */
 
 /*

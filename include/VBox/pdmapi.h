@@ -1,5 +1,5 @@
 /** @file
- * PDM - Pluggable Device Manager, Core API.
+ * PDM - Pluggable Device Manager, Core API. (VMM)
  *
  * The 'Core API' has been put in a different header because everyone
  * is currently including pdm.h. So, pdm.h is for including all of the

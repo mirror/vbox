@@ -1,5 +1,5 @@
 /** @file
- * GMM - The Global Memory Manager.
+ * GMM - The Global Memory Manager. (VMM)
  */
 
 /*

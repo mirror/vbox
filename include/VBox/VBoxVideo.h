@@ -1,5 +1,5 @@
 /** @file
- * VirtualBox Video interface
+ * VirtualBox Video interface.
  */
 
 /*

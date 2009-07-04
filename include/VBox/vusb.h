@@ -1,5 +1,5 @@
 /** @file
- * VUSB - VirtualBox USB.
+ * VUSB - VirtualBox USB. (DEV,VMM)
  */
 
 /*

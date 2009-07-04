@@ -1,5 +1,5 @@
 /** @file
- * DevPCNet - Private guest interface for the PCNet device.
+ * DevPCNet - Private guest interface for the PCNet device. (DEV)
  */
 
 /*

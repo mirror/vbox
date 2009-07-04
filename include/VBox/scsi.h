@@ -1,5 +1,5 @@
 /** @file
- * VirtualBox - SCSI declarations.
+ * VirtualBox - SCSI declarations. (DEV,+)
  */
 
 /*

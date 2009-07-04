@@ -1,6 +1,5 @@
 /** @file
- * VBox Remote Desktop Protocol:
- * Remote USB backend interface.
+ * VBox Remote Desktop Protocol - Remote USB backend interface. (VRDP)
  */
 
 /*

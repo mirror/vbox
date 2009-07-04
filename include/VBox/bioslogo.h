@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BiosLogo - The Private BIOS Logo Interface.
+ * BiosLogo - The Private BIOS Logo Interface. (DEV)
  */
 
 /*

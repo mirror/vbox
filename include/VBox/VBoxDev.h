@@ -1,5 +1,5 @@
 /** @file
- * Virtual Device for Guest <-> VMM/Host communication
+ * Virtual Device for Guest <-> VMM/Host communication (ADD,DEV).
  */
 
 /*

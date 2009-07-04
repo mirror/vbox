@@ -1,5 +1,5 @@
 /** @file
- * VM - The Virtual Machine, data.
+ * VM - The Virtual Machine, data. (VMM)
  */
 
 /*

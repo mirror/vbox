@@ -1,5 +1,5 @@
 /** @file
- * USB - Universal Serial Bus.
+ * USB - Universal Serial Bus. (DEV,Main?)
  */
 
 /*

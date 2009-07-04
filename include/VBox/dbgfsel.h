@@ -1,5 +1,5 @@
 /** @file
- * DBGF - Debugger Facility, selector interface partly shared with SELM.
+ * DBGF - Debugger Facility, selector interface partly shared with SELM. (VMM)
  */
 
 /*

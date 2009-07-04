@@ -1,6 +1,5 @@
 /** @file
- * VBox - Host-Guest Communication Manager (HGCM):
- * Service library definitions.
+ * Host-Guest Communication Manager (HGCM) - Service library definitions.
  */
 
 /*
@@ -185,7 +184,7 @@ typedef VBOXHGCMSVCPARM *PVBOXHGCMSVCPARM;
 
 /** Service specific extension callback.
  *  This callback is called by the service to perform service specific operation.
- *  
+ *
  * @param pvExtension The extension pointer.
  * @param u32Function What the callback is supposed to do.
  * @param pvParm      The function parameters.
@@ -242,7 +241,7 @@ typedef struct _VBOXHGCMSVCFNTABLE
      *  Return code is passed to pfnCallComplete callback.
      */
     DECLR3CALLBACKMEMBER(int, pfnHostCall, (void *pvService, uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]));
- 
+
     /** Inform the service about a VM save operation. */
     DECLR3CALLBACKMEMBER(int, pfnSaveState, (void *pvService, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM));
 

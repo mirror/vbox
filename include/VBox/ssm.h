@@ -1,5 +1,5 @@
 /** @file
- * SSM - The Save State Manager.
+ * SSM - The Save State Manager. (VMM)
  */
 
 /*

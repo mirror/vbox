@@ -1,5 +1,5 @@
 /** @file
- * TRPM - The Trap Monitor.
+ * TRPM - The Trap Monitor. (VMM)
  */
 
 /*

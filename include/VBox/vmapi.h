@@ -1,5 +1,5 @@
 /** @file
- * VM - The Virtual Machine, API.
+ * VM - The Virtual Machine, API. (VMM)
  */
 
 /*

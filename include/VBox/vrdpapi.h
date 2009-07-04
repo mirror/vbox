@@ -1,6 +1,5 @@
 /** @file
- * VBox Remote Desktop Protocol:
- * Public APIs.
+ * VBox Remote Desktop Protocol - Public APIs. (VRDP)
  */
 
 /*
