@@ -1,5 +1,5 @@
 /** @file
- * MM - The Memory Manager.
+ * MM - The Memory Manager. (VMM)
  */
 
 /*

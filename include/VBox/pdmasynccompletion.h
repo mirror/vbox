@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * PDM - Pluggable Device Manager, Async I/O Completion.
+ * PDM - Pluggable Device Manager, Async I/O Completion. (VMM)
  */
 
 /*

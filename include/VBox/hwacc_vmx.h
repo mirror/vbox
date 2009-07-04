@@ -1,5 +1,5 @@
 /** @file
- * HWACCM - VMX Structures and Definitions.
+ * HWACCM - VMX Structures and Definitions. (VMM)
  */
 
 /*

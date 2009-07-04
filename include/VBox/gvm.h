@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * GVM - The Global VM Data.
+ * GVM - The Global VM Data. (VMM)
  */
 
 /*

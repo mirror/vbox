@@ -1,5 +1,5 @@
 /** @file
- * PDM - Pluggable Device Manager, Threads.
+ * PDM - Pluggable Device Manager, Threads. (VMM)
  */
 
 /*

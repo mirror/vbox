@@ -1,5 +1,5 @@
 /** @file
- * CSAM - Guest OS Code Scanning and Analyis Manager.
+ * CSAM - Guest OS Code Scanning and Analyis Manager. (VMM)
  */
 
 /*

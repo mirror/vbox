@@ -1,5 +1,5 @@
 /** @file
- * Version management
+ * VBox Version Management.
  */
 
 /*
@@ -31,15 +31,15 @@
 #define ___VBox_version_h
 
 #ifndef RC_INVOKED
-#include <version-generated.h>
+# include <version-generated.h>
 
 /** Combined version number. */
-#define VBOX_VERSION                    (VBOX_VERSION_MAJOR << 16 | VBOX_VERSION_MINOR)
+# define VBOX_VERSION                    (VBOX_VERSION_MAJOR << 16 | VBOX_VERSION_MINOR)
 /** Get minor version from combined version */
-#define VBOX_GET_VERSION_MINOR(uVer)    (uVer & 0xffff)
+# define VBOX_GET_VERSION_MINOR(uVer)    (uVer & 0xffff)
 /** Get major version from combined version. */
-#define VBOX_GET_VERSION_MAJOR(uVer)    (uVer >> 16)
-#endif
+# define VBOX_GET_VERSION_MAJOR(uVer)    (uVer >> 16)
+#endif /* !RC_INVOKED */
 
 /** Vendor name */
 #define VBOX_VENDOR                     "Sun Microsystems, Inc."

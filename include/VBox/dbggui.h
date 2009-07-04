@@ -1,5 +1,5 @@
 /** @file
- * DBGGUI - The VirtualBox Debugger GUI.
+ * DBGGUI - The VirtualBox Debugger GUI. (VBoxDbg)
  */
 
 /*

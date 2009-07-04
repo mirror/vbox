@@ -1,5 +1,7 @@
 /** @file
- * PDM - Pluggable Device Manager, VM Services.
+ * PDM - Pluggable Device Manager, VM Services. (VMM)
+ *
+ * @todo    This has not been implemented, consider dropping the concept.
  */
 
 /*

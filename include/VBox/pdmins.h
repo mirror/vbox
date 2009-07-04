@@ -1,5 +1,5 @@
 /** @file
- * PDM - Pluggable Device Manager, Common Instance Macros.
+ * PDM - Pluggable Device Manager, Common Instance Macros. (VMM)
  */
 
 /*

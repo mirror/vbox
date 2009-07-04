@@ -1,6 +1,5 @@
 /** @file
- * USBLIB - USB Support Library.
- * This module implements the basic low-level OS interfaces.
+ * USBLib - Library for wrapping up the VBoxUSB functionality. (DEV,HDrv,Main)
  */
 
 /*

@@ -1,5 +1,5 @@
 /** @file
- * PATM - Dynamic Guest OS Patching Manager
+ * PATM - Dynamic Guest OS Patching Manager. (VMM)
  */
 
 /*

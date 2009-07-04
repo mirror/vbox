@@ -1,6 +1,5 @@
 /** @file
- * VBox Remote Desktop Protocol:
- * VRDP orders structures.
+ * VBox Remote Desktop Protocol - Orders Structures. (VRDP)
  */
 
 /*

@@ -1,5 +1,5 @@
 /** @file
- * PDM - Pluggable Device Manager, Async Task.
+ * PDM - Pluggable Device Manager, Async Task. (VMM)
  */
 
 /*

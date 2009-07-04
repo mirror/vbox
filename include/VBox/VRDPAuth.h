@@ -1,6 +1,6 @@
 /** @file
- * VBox Remote Desktop Protocol:
- * External Authentication Library Interface.
+ * VBox Remote Desktop Protocol - External Authentication Library Interface.
+ * (VRDP)
  */
 
 /*

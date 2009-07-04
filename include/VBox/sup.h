@@ -1,5 +1,5 @@
 /** @file
- * SUP - Support Library.
+ * SUP - Support Library. (HDrv)
  */
 
 /*

@@ -1,5 +1,5 @@
 /** @file
- * PDM - Pluggable Device Manager.
+ * PDM - Pluggable Device Manager. (VMM)
  */
 
 /*

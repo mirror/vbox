@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * GVMM - The Global VM Manager.
+ * GVMM - The Global VM Manager. (VMM)
  */
 
 /*

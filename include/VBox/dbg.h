@@ -1,5 +1,5 @@
 /** @file
- * Debugger Interfaces.
+ * Debugger Interfaces. (VBoxDbg)
  *
  * This header covers all external interfaces of the Debugger module.
  * However, it does not cover the DBGF interface since that part of the

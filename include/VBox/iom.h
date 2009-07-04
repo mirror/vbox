@@ -1,5 +1,5 @@
 /** @file
- * IOM - Input / Output Monitor.
+ * IOM - Input / Output Monitor. (VMM)
  */
 
 /*

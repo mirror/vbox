@@ -1,5 +1,5 @@
 /** @file
- * INETNET - Internal Networking.
+ * INETNET - Internal Networking. (DEV,++)
  */
 
 /*

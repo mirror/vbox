@@ -1,5 +1,5 @@
 /** @file
- * HWACCM - Intel/AMD VM Hardware Support Manager
+ * HWACCM - Intel/AMD VM Hardware Support Manager (VMM)
  */
 
 /*

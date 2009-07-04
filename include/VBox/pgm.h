@@ -1,5 +1,5 @@
 /** @file
- * PGM - Page Monitor / Monitor.
+ * PGM - Page Monitor / Monitor. (VMM)
  */
 
 /*

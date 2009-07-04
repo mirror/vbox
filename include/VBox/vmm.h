@@ -1,5 +1,5 @@
 /** @file
- * VMM - The Virtual Machine Monitor.
+ * VMM - The Virtual Machine Monitor. (VMM)
  */
 
 /*

@@ -1,5 +1,5 @@
 /** @file
- * PDM - Pluggable Device Manager, Queues.
+ * PDM - Pluggable Device Manager, Queues. (VMM)
  */
 
 /*

@@ -1,6 +1,5 @@
 /** @file
- * Shared Folders:
- * Common header for host service and guest clients.
+ * Shared Folders: Common header for host service and guest clients. (ADD,HSvc)
  */
 
 /*
@@ -37,7 +36,8 @@
 #include <iprt/fs.h>
 
 
-/** Some bit flag manipulation macros. to be moved to VBox/cdefs.h? */
+/** @name Some bit flag manipulation macros.
+ * @{  */
 #ifndef BIT_FLAG
 #define BIT_FLAG(__Field,__Flag)       ((__Field) & (__Flag))
 #endif
@@ -49,6 +49,7 @@
 #ifndef BIT_FLAG_CLEAR
 #define BIT_FLAG_CLEAR(__Field,__Flag) ((__Field) &= ~(__Flag))
 #endif
+/** @} */
 
 
 /**

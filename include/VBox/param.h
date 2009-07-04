@@ -1,5 +1,5 @@
 /** @file
- * VirtualBox Parameter Definitions.
+ * VirtualBox Parameter Definitions. (VMM,+)
  *
  * param.mac is generated from this file by running 'kmk incs' in the root.
  */

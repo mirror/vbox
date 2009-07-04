@@ -1,5 +1,5 @@
 /** @file
- * DBGF - Debugger Facility.
+ * DBGF - Debugger Facility. (VMM)
  */
 
 /*

@@ -1,5 +1,5 @@
 /** @file
- * REM - The Recompiled Execution Manager.
+ * REM - The Recompiled Execution Manager. (VMM)
  */
 
 /*

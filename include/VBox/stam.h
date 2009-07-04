@@ -1,5 +1,5 @@
 /** @file
- * STAM - Statistics Manager.
+ * STAM - Statistics Manager. (VMM)
  */
 
 /*
