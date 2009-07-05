@@ -134,6 +134,27 @@
 /** @} */
 
 
+/** @defgroup   grp_vbox_pci        PCI Identifiers
+ * @{ */
+/** VirtualBox PCI vendor ID. */
+#define VBOX_PCI_VENDORID           (0x80ee)
+
+/** @name VirtualBox graphics card identifiers
+ * @{ */
+#define VBOX_VENDORID               VBOX_PCI_VENDORID   /**< @todo wonderful choice of name! Please squeeze a _VGA_ or something in there, please. */
+#define VBOX_DEVICEID               (0xbeef)            /**< @todo ditto. */
+#define VBOX_VESA_VENDORID          VBOX_PCI_VENDORID
+#define VBOX_VESA_DEVICEID          (0xbeef)
+/** @} */
+
+/** @name VMMDev PCI card identifiers
+ * @{ */
+#define VMMDEV_VENDORID             VBOX_PCI_VENDORID
+#define VMMDEV_DEVICEID             (0xcafe)
+/** @} */
+
+/** @} */
+
 /** @} */
 
 #endif
