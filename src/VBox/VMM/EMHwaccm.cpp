@@ -1,4 +1,4 @@
-/* $Id: EM.cpp 49491 2009-07-03 11:39:50Z sandervl $ */
+/* $Id$ */
 /** @file
  * EM - Execution Monitor / Manager - hardware virtualization
  */

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * EM - emR3RawHandleRC template
+ * EM - emR3[Raw|Hwaccm]HandleRC template.
  */
 
 /*
@@ -18,8 +18,9 @@
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
  */
-#ifndef __EMHandleRCTmpl_h__
-#define __EMHandleRCTmpl_h__
+
+#ifndef ___EMHandleRCTmpl_h
+#define ___EMHandleRCTmpl_h
 
 /**
  * Process a subset of the raw-mode return code.
@@ -340,3 +341,4 @@ int emR3HwaccmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
 }
 
 #endif
+
