@@ -34,6 +34,9 @@ sf_reg_read_aux (const char *caller, struct sf_glob_info *sf_g,
                  struct sf_reg_info *sf_r, void *buf, uint32_t *nread,
                  uint64_t pos)
 {
+        /** @todo bird: yes, kmap() and kmalloc() input only. Since the buffer is
+         *        contiguous in physical memory (kmalloc or single page), we should
+         *        use a physical address here to speed things up. */
         int rc = vboxCallRead (&client_handle, &sf_g->map, sf_r->handle,
                                pos, nread, buf, false /* already locked? */);
         if (RT_FAILURE (rc)) {
@@ -49,6 +52,9 @@ sf_reg_write_aux (const char *caller, struct sf_glob_info *sf_g,
                   struct sf_reg_info *sf_r, void *buf, uint32_t *nwritten,
                   uint64_t pos)
 {
+        /** @todo bird: yes, kmap() and kmalloc() input only. Since the buffer is
+         *        contiguous in physical memory (kmalloc or single page), we should
+         *        use a physical address here to speed things up. */
         int rc = vboxCallWrite (&client_handle, &sf_g->map, sf_r->handle,
                                 pos, nwritten, buf, false /* already locked? */);
         if (RT_FAILURE (rc)) {
