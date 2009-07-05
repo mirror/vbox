@@ -1,5 +1,5 @@
 /** @file
- * VBoxGuest - VirtualBox Guest Additions Interface, 16-bit (OS/2) header.
+ * VBoxGuest - VirtualBox Guest Additions Driver Interface, 16-bit (OS/2) header.
  */
 
 /*
@@ -30,10 +30,7 @@
 #ifndef ___VBox_VBoxGuest16_h
 #define ___VBox_VBoxGuest16_h
 
-#define RT_BIT(bit)                                (1UL << (bit))
-
-
-#define VMMDEV_VERSION                          0x00010004UL
+#define RT_BIT(bit)                             (1UL << (bit))
 
 #define VBOXGUEST_DEVICE_NAME                   "vboxgst$"
 
@@ -43,7 +40,7 @@ typedef struct VBGOS2IDC
     unsigned long u32Version;
     unsigned long u32Session;
     unsigned long pfnServiceEP;
-    short (__cdecl __far *fpfnServiceEP)(unsigned long u32Session, unsigned short iFunction, 
+    short (__cdecl __far *fpfnServiceEP)(unsigned long u32Session, unsigned short iFunction,
                                          void __far *fpvData, unsigned short cbData, unsigned short __far *pcbDataReturned);
     unsigned long fpfnServiceAsmEP;
 } VBGOS2IDC;
@@ -52,14 +49,6 @@ typedef VBGOS2IDC *PVBGOS2IDC;
 #define VBOXGUEST_IOCTL_WAITEVENT               2
 #define VBOXGUEST_IOCTL_VMMREQUEST              3
 #define VBOXGUEST_IOCTL_OS2_IDC_DISCONNECT      48
-
-
-#define VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED RT_BIT(0)
-#define VMMDEV_EVENT_HGCM                       RT_BIT(1)
-#define VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST     RT_BIT(2)
-#define VMMDEV_EVENT_JUDGE_CREDENTIALS          RT_BIT(3)
-#define VMMDEV_EVENT_RESTORED                   RT_BIT(4)
-
 
 #define VBOXGUEST_WAITEVENT_OK                  0
 #define VBOXGUEST_WAITEVENT_TIMEOUT             1
@@ -109,6 +98,16 @@ typedef struct
     unsigned long u32OrMask;
     unsigned long u32NotMask;
 } VMMDevCtlGuestFilterMask;
+
+
+/* From VMMDev.h: */
+#define VMMDEV_VERSION                          0x00010004UL
+
+#define VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED RT_BIT(0)
+#define VMMDEV_EVENT_HGCM                       RT_BIT(1)
+#define VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST     RT_BIT(2)
+#define VMMDEV_EVENT_JUDGE_CREDENTIALS          RT_BIT(3)
+#define VMMDEV_EVENT_RESTORED                   RT_BIT(4)
 
 #endif
 

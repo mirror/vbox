@@ -32,49 +32,51 @@
 #ifndef ___VBox_VBoxGuest_h
 #define ___VBox_VBoxGuest_h
 
-
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <iprt/assert.h>
 #include <VBox/VMMDev.h> /* Temporarily. */
 
 
-#if defined(RT_OS_LINUX) && !defined(VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX)
-/** The support device name. */
-# define VBOXGUEST_DEVICE_NAME        "/dev/vboxadd"
-/** The support device name of the user accessible device node. */
-# define VBOXGUEST_USER_DEVICE_NAME   "/dev/vboxuser"
+/** @defgroup grp_vboxguest     VirtualBox Guest Additions Driver Interface
+ * @{
+ */
 
-#elif defined(RT_OS_OS2)
-/** The support device name. */
-# define VBOXGUEST_DEVICE_NAME        "\\Dev\\VBoxGst$"
-/** The support device name of the user accessible device node. */
-# define VBOXGUEST_USER_DEVICE_NAME   "\\Dev\\VBoxGst$"
+/** @todo it would be nice if we could have two define without paths. */
+
+/** @def VBOXGUEST_DEVICE_NAME
+ * The support device name. */
+/** @def VBOXGUEST_USER_DEVICE_NAME
+ * The support device name of the user accessible device node. */
+
+#if defined(RT_OS_OS2)
+# define VBOXGUEST_DEVICE_NAME          "\\Dev\\VBoxGst$"
 
 #elif defined(RT_OS_WINDOWS)
+# define VBOXGUEST_DEVICE_NAME          "\\\\.\\VBoxGuest"
+
 /** The support service name. */
-# define VBOXGUEST_SERVICE_NAME       "VBoxGuest"
-/** Win32 device name. */
-# define VBOXGUEST_DEVICE_NAME        "\\\\.\\VBoxGuest"
-/** The support device name of the user accessible device node. */
-# define VBOXGUEST_USER_DEVICE_NAME   "\\\\.\\VBoxGuest"
+# define VBOXGUEST_SERVICE_NAME         "VBoxGuest"
 /** Global name for Win2k+ */
-# define VBOXGUEST_DEVICE_NAME_GLOBAL "\\\\.\\Global\\VBoxGuest"
+# define VBOXGUEST_DEVICE_NAME_GLOBAL   "\\\\.\\Global\\VBoxGuest"
 /** Win32 driver name */
-# define VBOXGUEST_DEVICE_NAME_NT     L"\\Device\\VBoxGuest"
-/** device name */
-# define VBOXGUEST_DEVICE_NAME_DOS    L"\\DosDevices\\VBoxGuest"
+# define VBOXGUEST_DEVICE_NAME_NT       L"\\Device\\VBoxGuest"
+/** Device name. */
+# define VBOXGUEST_DEVICE_NAME_DOS      L"\\DosDevices\\VBoxGuest"
+
+#elif defined(RT_OS_LINUX) && !defined(VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX)
+# define VBOXGUEST_DEVICE_NAME          "/dev/vboxadd"
+# define VBOXGUEST_USER_DEVICE_NAME     "/dev/vboxuser"
 
 #else /* PORTME */
-/** The support device name. */
-# define VBOXGUEST_DEVICE_NAME        "/dev/vboxguest"
-/** The support device name of the user accessible device node. */
+# define VBOXGUEST_DEVICE_NAME          "/dev/vboxguest"
 # if defined(RT_OS_LINUX)
-#  define VBOXGUEST_USER_DEVICE_NAME  "/dev/vboxuser"
-# else
-#  define VBOXGUEST_USER_DEVICE_NAME  "/dev/vboxguest"
+#  define VBOXGUEST_USER_DEVICE_NAME    "/dev/vboxuser"
 # endif
+#endif
 
+#ifndef VBOXGUEST_USER_DEVICE_NAME
+# define VBOXGUEST_USER_DEVICE_NAME     VBOXGUEST_DEVICE_NAME
 #endif
 
 
@@ -88,25 +90,6 @@
  * The 7th bit is reserved for future hacks.
  * The 8th bit is reserved for distinguishing between 32-bit and 64-bit
  * processes in future 64-bit guest additions.
- *
- * While windows IOCTL function number has to start at 2048 and stop at 4096 there
- * never was any need to do this for everyone. A simple ((Function) | 0x800) would
- * have sufficed. On Linux we're now intruding upon the type field. Fortunately
- * this hasn't caused any trouble because the FILE_DEVICE_UNKNOWN value was set
- * to 0x22 (if it were 0x2C it would not have worked soo smoothly). The situation
- * would've been the same for *BSD and Darwin since they seems to share common
- * _IOC() heritage.
- *
- * However, on good old OS/2 we only have 8-bit handy for the function number. The
- * result from using the old IOCTL function numbers her would've been overlapping
- * between the two ranges.
- *
- * To fix this problem and get rid of all the unnecessary windowsy crap that I
- * bet was copied from my SUPDRVIOC.h once upon a time (although the concept of
- * prefixing macros with the purpose of avoid clashes with system stuff and
- * to indicate exactly how owns them seems to have been lost somewhere along
- * the way), I've introduced a VBOXGUEST_IOCTL_CODE for defining generic IN/OUT
- * IOCtls on new ports of the additions.
  *
  * @remarks When creating new IOCtl interfaces keep in mind that not all OSes supports
  *          reporting back the output size. (This got messed up a little bit in VBoxDrv.)
@@ -153,7 +136,8 @@ typedef struct VBGLBIGREQ
 #if HC_ARCH_BITS == 32
     uint32_t    u32Padding;
 #endif
-/** @todo r=bird: add a rc field. */
+/** @todo r=bird: We need a 'rc' field for passing VBox status codes. Reused
+ *        some input field as rc on output. */
 } VBGLBIGREQ;
 /** Pointer to a request wrapper for solaris guests. */
 typedef VBGLBIGREQ *PVBGLBIGREQ;
@@ -161,7 +145,7 @@ typedef VBGLBIGREQ *PVBGLBIGREQ;
 typedef const VBGLBIGREQ *PCVBGLBIGREQ;
 
 /** The VBGLBIGREQ::u32Magic value (Ryuu Murakami). */
-#define VBGLBIGREQ_MAGIC                        0x19520219
+#define VBGLBIGREQ_MAGIC                            0x19520219
 
 
 #if defined(RT_OS_WINDOWS)
@@ -169,49 +153,49 @@ typedef const VBGLBIGREQ *PCVBGLBIGREQ;
 /** @todo r=bird: IOCTL_CODE is supposedly defined in some header included by Windows.h or ntddk.h, which is why it wasn't in the #if 0 earlier. See HostDrivers/Support/SUPDrvIOC.h... */
 # define IOCTL_CODE(DeviceType, Function, Method, Access, DataSize_ignored) \
   ( ((DeviceType) << 16) | ((Access) << 14) | ((Function) << 2) | (Method))
-# define VBOXGUEST_IOCTL_CODE_(Function, Size)  IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2048 + (Function), METHOD_BUFFERED, FILE_WRITE_ACCESS, 0)
-# define VBOXGUEST_IOCTL_STRIP_SIZE_(Code)      (Code)
+# define VBOXGUEST_IOCTL_CODE_(Function, Size)      IOCTL_CODE(FILE_DEVICE_UNKNOWN, 2048 + (Function), METHOD_BUFFERED, FILE_WRITE_ACCESS, 0)
+# define VBOXGUEST_IOCTL_STRIP_SIZE_(Code)          (Code)
 
 #elif defined(RT_OS_OS2)
   /* No automatic buffering, size not encoded. */
-# define VBOXGUEST_IOCTL_CATEGORY               0xc2
-# define VBOXGUEST_IOCTL_CODE_(Function, Size)  ((unsigned char)(Function))
-# define VBOXGUEST_IOCTL_CATEGORY_FAST          0xc3 /**< Also defined in VBoxGuestA-os2.asm. */
-# define VBOXGUEST_IOCTL_CODE_FAST_(Function)   ((unsigned char)(Function))
-# define VBOXGUEST_IOCTL_STRIP_SIZE(Code)       (Code)
+# define VBOXGUEST_IOCTL_CATEGORY                   0xc2
+# define VBOXGUEST_IOCTL_CODE_(Function, Size)      ((unsigned char)(Function))
+# define VBOXGUEST_IOCTL_CATEGORY_FAST              0xc3 /**< Also defined in VBoxGuestA-os2.asm. */
+# define VBOXGUEST_IOCTL_CODE_FAST_(Function)       ((unsigned char)(Function))
+# define VBOXGUEST_IOCTL_STRIP_SIZE(Code)           (Code)
 
 #elif defined(RT_OS_SOLARIS)
   /* No automatic buffering, size limited to 255 bytes => use VBGLBIGREQ for everything. */
 # include <sys/ioccom.h>
-# define VBOXGUEST_IOCTL_CODE_(Function, Size)  _IOWRN('V', (Function), sizeof(VBGLBIGREQ))
-# define VBOXGUEST_IOCTL_CODE_FAST_(Function)   _IO(  'V', (Function))
-# define VBOXGUEST_IOCTL_STRIP_SIZE(Code)       (Code)
+# define VBOXGUEST_IOCTL_CODE_(Function, Size)      _IOWRN('V', (Function), sizeof(VBGLBIGREQ))
+# define VBOXGUEST_IOCTL_CODE_FAST_(Function)       _IO(  'V', (Function))
+# define VBOXGUEST_IOCTL_STRIP_SIZE(Code)           (Code)
 
 #elif defined(RT_OS_LINUX)
   /* No automatic buffering, size limited to 16KB. */
 # include <linux/ioctl.h>
-# define VBOXGUEST_IOCTL_CODE_(Function, Size)  _IOC(_IOC_READ|_IOC_WRITE, 'V', (Function), (Size))
-# define VBOXGUEST_IOCTL_CODE_FAST_(Function)   _IO(  'V', (Function))
-# define VBOXGUEST_IOCTL_STRIP_SIZE(Code)       VBOXGUEST_IOCTL_CODE_(_IOC_NR((Code)), 0)
+# define VBOXGUEST_IOCTL_CODE_(Function, Size)      _IOC(_IOC_READ|_IOC_WRITE, 'V', (Function), (Size))
+# define VBOXGUEST_IOCTL_CODE_FAST_(Function)       _IO(  'V', (Function))
+# define VBOXGUEST_IOCTL_STRIP_SIZE(Code)           VBOXGUEST_IOCTL_CODE_(_IOC_NR((Code)), 0)
 
 #elif defined(RT_OS_FREEBSD) /** @todo r=bird: Please do it like SUPDRVIOC to keep it as similar as possible. */
 # include <sys/ioccom.h>
 
-# define VBOXGUEST_IOCTL_CODE_(Function, Size)  _IOWR('V', (Function), VBGLBIGREQ)
-# define VBOXGUEST_IOCTL_CODE_FAST_(Function)   _IO(  'V', (Function))
-# define VBOXGUEST_IOCTL_STRIP_SIZE(Code)       IOCBASECMD(Code)
+# define VBOXGUEST_IOCTL_CODE_(Function, Size)      _IOWR('V', (Function), VBGLBIGREQ)
+# define VBOXGUEST_IOCTL_CODE_FAST_(Function)       _IO(  'V', (Function))
+# define VBOXGUEST_IOCTL_STRIP_SIZE(Code)           IOCBASECMD(Code)
 
 #else
 /* PORTME */
 #endif
 
-#define VBOXGUEST_IOCTL_CODE(Function, Size)     VBOXGUEST_IOCTL_CODE_((Function) | VBOXGUEST_IOCTL_FLAG, Size)
-#define VBOXGUEST_IOCTL_CODE_FAST(Function)      VBOXGUEST_IOCTL_CODE_FAST_((Function) | VBOXGUEST_IOCTL_FLAG)
+#define VBOXGUEST_IOCTL_CODE(Function, Size)        VBOXGUEST_IOCTL_CODE_((Function) | VBOXGUEST_IOCTL_FLAG, Size)
+#define VBOXGUEST_IOCTL_CODE_FAST(Function)         VBOXGUEST_IOCTL_CODE_FAST_((Function) | VBOXGUEST_IOCTL_FLAG)
 
 /* Define 32 bit codes to support 32 bit applications requests in the 64 bit guest driver. */
 #ifdef RT_ARCH_AMD64
-# define VBOXGUEST_IOCTL_CODE_32(Function, Size) VBOXGUEST_IOCTL_CODE_(Function, Size)
-# define VBOXGUEST_IOCTL_CODE_FAST_32(Function)  VBOXGUEST_IOCTL_CODE_FAST_(Function)
+# define VBOXGUEST_IOCTL_CODE_32(Function, Size)    VBOXGUEST_IOCTL_CODE_(Function, Size)
+# define VBOXGUEST_IOCTL_CODE_FAST_32(Function)     VBOXGUEST_IOCTL_CODE_FAST_(Function)
 #endif /* RT_ARCH_AMD64 */
 
 
@@ -227,13 +211,9 @@ typedef struct _VBoxGuestPortInfo
     VMMDevMemory *pVMMDevMemory;
 } VBoxGuestPortInfo;
 
+
 /** IOCTL to VBoxGuest to wait for a VMMDev host notification */
 #define VBOXGUEST_IOCTL_WAITEVENT                   VBOXGUEST_IOCTL_CODE_(2, sizeof(VBoxGuestWaitEventInfo))
-
-/** IOCTL to VBoxGuest to interrupt (cancel) any pending WAITEVENTs and return.
- * Handled inside the guest additions and not seen by the host at all.
- * @see VBOXGUEST_IOCTL_WAITEVENT */
-#define VBOXGUEST_IOCTL_CANCEL_ALL_WAITEVENTS       VBOXGUEST_IOCTL_CODE_(5, 0)
 
 /** @name Result codes for VBoxGuestWaitEventInfo::u32Result
  * @{
@@ -249,7 +229,7 @@ typedef struct _VBoxGuestPortInfo
 /** @} */
 
 /** Input and output buffers layout of the IOCTL_VBOXGUEST_WAITEVENT */
-typedef struct _VBoxGuestWaitEventInfo
+typedef struct VBoxGuestWaitEventInfo
 {
     /** timeout in milliseconds */
     uint32_t u32TimeoutIn;
@@ -262,13 +242,25 @@ typedef struct _VBoxGuestWaitEventInfo
 } VBoxGuestWaitEventInfo;
 AssertCompileSize(VBoxGuestWaitEventInfo, 16);
 
+
+/** IOCTL to VBoxGuest to interrupt (cancel) any pending WAITEVENTs and return.
+ * Handled inside the guest additions and not seen by the host at all.
+ * @see VBOXGUEST_IOCTL_WAITEVENT */
+#define VBOXGUEST_IOCTL_CANCEL_ALL_WAITEVENTS       VBOXGUEST_IOCTL_CODE_(5, 0)
+
+
+
 /** IOCTL to VBoxGuest to perform a VMM request
  * @remark  The data buffer for this IOCtl has an variable size, keep this in mind
  *          on systems where this matters. */
 #define VBOXGUEST_IOCTL_VMMREQUEST(Size)            VBOXGUEST_IOCTL_CODE_(3, (Size))
 
+
+/** IOCTL to VBoxGuest to control event filter mask. */
+#define VBOXGUEST_IOCTL_CTL_FILTER_MASK             VBOXGUEST_IOCTL_CODE_(4, sizeof(VBoxGuestFilterMaskInfo))
+
 /** Input and output buffer layout of the IOCTL_VBOXGUEST_CTL_FILTER_MASK. */
-typedef struct _VBoxGuestFilterMaskInfo
+typedef struct VBoxGuestFilterMaskInfo
 {
     uint32_t u32OrMask;
     uint32_t u32NotMask;
@@ -276,37 +268,44 @@ typedef struct _VBoxGuestFilterMaskInfo
 AssertCompileSize(VBoxGuestFilterMaskInfo, 8);
 #pragma pack()
 
-/** IOCTL to VBoxGuest to control event filter mask. */
-#define VBOXGUEST_IOCTL_CTL_FILTER_MASK             VBOXGUEST_IOCTL_CODE_(4, sizeof(VBoxGuestFilterMaskInfo))
 
 /** IOCTL to VBoxGuest to check memory ballooning. */
 #define VBOXGUEST_IOCTL_CTL_CHECK_BALLOON_MASK      VBOXGUEST_IOCTL_CODE_(7, 100)
 
-/** IOCTL to VBoxGuest to perform backdoor logging. */
+
+/** IOCTL to VBoxGuest to perform backdoor logging.
+ * The argument is a string buffer of the specified size. */
 #define VBOXGUEST_IOCTL_LOG(Size)                   VBOXGUEST_IOCTL_CODE_(6, (Size))
 
 
 #ifdef VBOX_WITH_HGCM
-/* These structures are shared between the driver and other binaries,
- * therefore packing must be defined explicitely.
- */
-# pragma pack(1)
-typedef struct _VBoxGuestHGCMConnectInfo /**< @todo I think the usage of '_' in tags, like _VBoxGuestHGCMConnectInfo here, is trespassing on the system/compiler name space. Check+fix. */
+/** IOCTL to VBoxGuest to connect to a HGCM service. */
+# define VBOXGUEST_IOCTL_HGCM_CONNECT               VBOXGUEST_IOCTL_CODE(16, sizeof(VBoxGuestHGCMConnectInfo))
+
+# pragma pack(1) /* explicit packing for good measure. */
+typedef struct VBoxGuestHGCMConnectInfo
 {
     int32_t result;           /**< OUT */
     HGCMServiceLocation Loc;  /**< IN */
     uint32_t u32ClientID;     /**< OUT */
 } VBoxGuestHGCMConnectInfo;
 AssertCompileSize(VBoxGuestHGCMConnectInfo, 4+4+128+4);
+# pragma pack()
 
-typedef struct _VBoxGuestHGCMDisconnectInfo
+
+/** IOCTL to VBoxGuest to disconnect from a HGCM service. */
+# define VBOXGUEST_IOCTL_HGCM_DISCONNECT          VBOXGUEST_IOCTL_CODE(17, sizeof(VBoxGuestHGCMDisconnectInfo))
+typedef struct VBoxGuestHGCMDisconnectInfo
 {
     int32_t result;           /**< OUT */
     uint32_t u32ClientID;     /**< IN */
 } VBoxGuestHGCMDisconnectInfo;
 AssertCompileSize(VBoxGuestHGCMDisconnectInfo, 8);
 
-typedef struct _VBoxGuestHGCMCallInfo
+
+/** IOCTL to VBoxGuest to make a call to a HGCM service. */
+# define VBOXGUEST_IOCTL_HGCM_CALL(Size)          VBOXGUEST_IOCTL_CODE(18, (Size))
+typedef struct VBoxGuestHGCMCallInfo
 {
     int32_t result;           /**< OUT Host HGCM return code.*/
     uint32_t u32ClientID;     /**< IN  The id of the caller. */
@@ -316,9 +315,13 @@ typedef struct _VBoxGuestHGCMCallInfo
 } VBoxGuestHGCMCallInfo;
 AssertCompileSize(VBoxGuestHGCMCallInfo, 16);
 
-typedef struct _VBoxGuestHGCMCallInfoTimed
+
+/** IOCTL to VBoxGuest to make a timed call to a HGCM service. */
+# define VBOXGUEST_IOCTL_HGCM_CALL_TIMED(Size)    VBOXGUEST_IOCTL_CODE(20, (Size))
+# pragma pack(1) /* explicit packing for good measure. */
+typedef struct VBoxGuestHGCMCallInfoTimed
 {
-    uint32_t u32Timeout;         /**< IN  How long to wait for completion before cancelling the call */
+    uint32_t u32Timeout;         /**< IN  How long to wait for completion before cancelling the call. */
     uint32_t fInterruptible;     /**< IN  Is this request interruptible? */
     VBoxGuestHGCMCallInfo info;  /**< IN/OUT The rest of the call information.  Placed after the timeout
                                   * so that the parameters follow as they would for a normal call. */
@@ -327,21 +330,25 @@ typedef struct _VBoxGuestHGCMCallInfoTimed
 AssertCompileSize(VBoxGuestHGCMCallInfoTimed, 8+16);
 # pragma pack()
 
-# define VBOXGUEST_IOCTL_HGCM_CONNECT             VBOXGUEST_IOCTL_CODE(16, sizeof(VBoxGuestHGCMConnectInfo))
-# define VBOXGUEST_IOCTL_HGCM_DISCONNECT          VBOXGUEST_IOCTL_CODE(17, sizeof(VBoxGuestHGCMDisconnectInfo))
-# define VBOXGUEST_IOCTL_HGCM_CALL(Size)          VBOXGUEST_IOCTL_CODE(18, (Size))
-# define VBOXGUEST_IOCTL_HGCM_CALL_TIMED(Size)    VBOXGUEST_IOCTL_CODE(20, (Size))
-# define VBOXGUEST_IOCTL_CLIPBOARD_CONNECT        VBOXGUEST_IOCTL_CODE_(19, sizeof(uint32_t))
 # ifdef RT_ARCH_AMD64
-/* Following HGCM IOCtls can be used by a 32 bit application on a 64 bit guest (Windows OpenGL guest driver). */
-#  define VBOXGUEST_IOCTL_HGCM_CONNECT_32         VBOXGUEST_IOCTL_CODE_32(16, sizeof(VBoxGuestHGCMConnectInfo))
-#  define VBOXGUEST_IOCTL_HGCM_DISCONNECT_32      VBOXGUEST_IOCTL_CODE_32(17, sizeof(VBoxGuestHGCMDisconnectInfo))
-#  define VBOXGUEST_IOCTL_HGCM_CALL_32(Size)      VBOXGUEST_IOCTL_CODE_32(18, (Size))
-#  define VBOXGUEST_IOCTL_HGCM_CALL_TIMED_32(Size) VBOXGUEST_IOCTL_CODE_32(20, (Size))
+/** @name IOCTL numbers that 32-bit clients, like the Windows OpenGL guest
+ *        driver, will use when taking to a 64-bit driver.
+ * @remarks These are only used by the driver implementation! */
+#  define VBOXGUEST_IOCTL_HGCM_CONNECT_32           VBOXGUEST_IOCTL_CODE_32(16, sizeof(VBoxGuestHGCMConnectInfo))
+#  define VBOXGUEST_IOCTL_HGCM_DISCONNECT_32        VBOXGUEST_IOCTL_CODE_32(17, sizeof(VBoxGuestHGCMDisconnectInfo))
+#  define VBOXGUEST_IOCTL_HGCM_CALL_32(Size)        VBOXGUEST_IOCTL_CODE_32(18, (Size))
+#  define VBOXGUEST_IOCTL_HGCM_CALL_TIMED_32(Size)  VBOXGUEST_IOCTL_CODE_32(20, (Size))
+/** @} */
 # endif /* RT_ARCH_AMD64 */
 
-# define VBOXGUEST_HGCM_CALL_PARMS(a)       ((HGCMFunctionParameter *)((uint8_t *)(a) + sizeof (VBoxGuestHGCMCallInfo)))
-# define VBOXGUEST_HGCM_CALL_PARMS32(a)     ((HGCMFunctionParameter32 *)((uint8_t *)(a) + sizeof (VBoxGuestHGCMCallInfo)))
+/** Get the pointer to the first HGCM parameter.  */
+# define VBOXGUEST_HGCM_CALL_PARMS(a)             ( (HGCMFunctionParameter   *)((uint8_t *)(a) + sizeof(VBoxGuestHGCMCallInfo)) )
+/** Get the pointer to the first HGCM parameter in a 32-bit request.  */
+# define VBOXGUEST_HGCM_CALL_PARMS32(a)           ( (HGCMFunctionParameter32 *)((uint8_t *)(a) + sizeof(VBoxGuestHGCMCallInfo)) )
+
+/** IOCTL to VBoxGuest to make a connect to the clipboard service.
+ * @todo Seems this is no longer is use. Try remove it. */
+# define VBOXGUEST_IOCTL_CLIPBOARD_CONNECT        VBOXGUEST_IOCTL_CODE_(19, sizeof(uint32_t))
 
 #endif /* VBOX_WITH_HGCM */
 
@@ -412,7 +419,7 @@ typedef VBOXGUESTOS2IDCCONNECT *PVBOXGUESTOS2IDCCONNECT;
  * This takes no input and it doesn't return anything. Obviously this
  * is only recognized if it arrives thru the IDC service EP.
  */
-#define VBOXGUEST_IOCTL_OS2_IDC_DISCONNECT  VBOXGUEST_IOCTL_CODE(48, sizeof(uint32_t))
+# define VBOXGUEST_IOCTL_OS2_IDC_DISCONNECT     VBOXGUEST_IOCTL_CODE(48, sizeof(uint32_t))
 
 #endif /* RT_OS_OS2 */
 
