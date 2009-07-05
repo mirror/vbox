@@ -33,6 +33,8 @@
 
 #include <VBox/version.h>
 #include <VBox/Log.h>
+#include <VBox/VBoxGuest.h> /** @todo use the VbglR3 interface! */
+#include <VBox/VBoxGuestLib.h>
 
 #define WM_VBOX_RESTORED                     0x2005
 #define WM_VBOX_CHECK_VRDP                   0x2006
