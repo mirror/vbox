@@ -27,12 +27,19 @@
  * additional information or have any questions.
  */
 
-#ifndef ___VBox_VBoxDev_h
-#define ___VBox_VBoxDev_h
+#ifndef ___VBox_VMMDev_h
+#define ___VBox_VMMDev_h
 
 #include <VBox/cdefs.h>
 
 RT_C_DECLS_BEGIN
+
+/** @defgroup grp_vmmdev    VMM Device
+ *
+ * Note! This interface cannot be changed, it can only be extended!
+ *
+ * @{
+ */
 
 /** Mouse capability bits
  * @{ */
@@ -77,13 +84,15 @@ RT_C_DECLS_BEGIN
  *  Must be big enough to contain VMMDevMemory structure (see VBoxGuest.h)
  *  For now: 4 megabyte.
  */
-#define VMMDEV_RAM_SIZE (4 * 256 * PAGE_SIZE)
+#define VMMDEV_RAM_SIZE                                     (4 * 256 * PAGE_SIZE)
 
 /** Size of VMMDev heap region accessible by guest.
- *  (must be a power of two (pci range))
+ *  (Must be a power of two (pci range).)
  */
-#define VMMDEV_HEAP_SIZE (4*PAGE_SIZE)
+#define VMMDEV_HEAP_SIZE                                    (4 * PAGE_SIZE)
 
+/** @} */
 RT_C_DECLS_END
 
 #endif
+

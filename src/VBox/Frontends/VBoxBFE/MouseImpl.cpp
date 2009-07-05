@@ -31,7 +31,7 @@
 #include <iprt/assert.h>
 #include <VBox/log.h>
 #include <iprt/asm.h>
-#include <VBox/VBoxDev.h>
+#include <VBox/VMMDev.h>
 #include "MouseImpl.h"
 #include "DisplayImpl.h"
 #include "VMMDevInterface.h"

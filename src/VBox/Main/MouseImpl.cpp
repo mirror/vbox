@@ -29,7 +29,7 @@
 
 #include <VBox/pdmdrv.h>
 #include <iprt/asm.h>
-#include <VBox/VBoxDev.h>
+#include <VBox/VMMDev.h>
 
 /**
  * Mouse driver instance data.

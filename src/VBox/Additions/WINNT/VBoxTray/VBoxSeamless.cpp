@@ -1,7 +1,6 @@
+/* $Id: $ */
 /** @file
- *
  * VBoxSeamless - Seamless windows
- *
  */
 
 /*
@@ -25,7 +24,7 @@
 #include "VBoxSeamless.h"
 #include <VBoxHook.h>
 #include <VBoxDisplay.h>
-#include <VBox/VBoxDev.h>
+#include <VBox/VMMDev.h>
 #include <iprt/assert.h>
 #include "helpers.h"
 
@@ -254,7 +253,7 @@ void VBoxSeamlessCheckWindows()
                         Log(("visible rect (%d,%d)(%d,%d)\n", lpRect[i].left, lpRect[i].top, lpRect[i].right, lpRect[i].bottom));
                     }
 #endif
-                    if (    !gCtx.lpRgnData 
+                    if (    !gCtx.lpRgnData
                         ||  (gCtx.lpRgnData->rdh.dwSize + gCtx.lpRgnData->rdh.nRgnSize != cbSize)
                         ||  memcmp(gCtx.lpRgnData, lpRgnData, cbSize))
                     {
@@ -391,7 +390,7 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
                     }
                 }
             }
-        } 
+        }
         else
         {
             Log(("VBoxTray: error 0 from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
@@ -402,7 +401,7 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
                 break;
             }
         }
-    } 
+    }
     while (!fTerminate);
 
     maskInfo.u32OrMask = 0;

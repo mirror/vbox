@@ -26,7 +26,7 @@
 *******************************************************************************/
 #define LOG_GROUP   LOG_GROUP_DEFAULT
 #include "VBoxGuestInternal.h"
-#include <VBox/VBoxDev.h> /* for VMMDEV_RAM_SIZE */
+#include <VBox/VMMDev.h> /* for VMMDEV_RAM_SIZE */
 #include <VBox/log.h>
 #include <iprt/mem.h>
 #include <iprt/time.h>

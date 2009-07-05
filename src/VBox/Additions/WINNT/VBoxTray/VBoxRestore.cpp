@@ -1,7 +1,6 @@
+/* $Id: $ */
 /** @file
- *
- * VBoxRestore - Restore notification
- *
+ * VBoxRestore - Restore notification.
  */
 
 /*
@@ -24,7 +23,7 @@
 #include "VBoxTray.h"
 #include "VBoxRestore.h"
 #include <VBoxDisplay.h>
-#include <VBox/VBoxDev.h>
+#include <VBox/VMMDev.h>
 #include <VBoxGuestInternal.h>
 #include <iprt/assert.h>
 #include "helpers.h"
@@ -70,7 +69,7 @@ void VBoxRestoreCheckVRDP()
 {
     HDC  hdc;
     BOOL ret;
-    
+
     /* Check VRDP activity */
     hdc = GetDC(HWND_DESKTOP);
 
@@ -137,7 +136,7 @@ unsigned __stdcall VBoxRestoreThread(void *pInstance)
             else
                 /** @todo Don't poll, but wait for connect/disconnect events */
                 PostMessage(gToolWindow, WM_VBOX_CHECK_VRDP, 0, 0);
-        } 
+        }
         else
         {
             Log(("VBoxTray: error 0 from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
@@ -149,7 +148,7 @@ unsigned __stdcall VBoxRestoreThread(void *pInstance)
                 break;
             }
         }
-    } 
+    }
     while (!fTerminate);
 
     maskInfo.u32OrMask = 0;
