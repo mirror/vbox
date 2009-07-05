@@ -55,7 +55,7 @@ int VBoxMouseInit(void)
         return 1;
     }
 
-    rc = VbglR3SetMouseStatus(VBOXGUEST_MOUSE_GUEST_CAN_ABSOLUTE /* | VBOXGUEST_MOUSE_GUEST_NEEDS_HOST_CURSOR */);
+    rc = VbglR3SetMouseStatus(VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE /* | VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR */);
     if (RT_FAILURE(rc))
     {
         ErrorF("Error sending mouse pointer capabilities to VMM! rc = %d (%s)\n",
@@ -88,7 +88,7 @@ int VBoxMouseQueryPosition(unsigned int *pcx, unsigned int *pcy)
     if (RT_SUCCESS(rc))
         rc = VbglR3GetMouseStatus(&fFeatures, &cx, &cy);
     if (   RT_SUCCESS(rc)
-        && !(fFeatures & VBOXGUEST_MOUSE_HOST_CAN_ABSOLUTE))
+        && !(fFeatures & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE))
         rc = VERR_NOT_SUPPORTED;
     if (RT_SUCCESS(rc))
     {

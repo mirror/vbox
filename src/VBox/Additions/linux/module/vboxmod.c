@@ -1353,7 +1353,7 @@ static int vboxadd_reserve_hypervisor(void)
             /* reserve another 4MB because the start needs to be 4MB aligned */
             uint32_t hypervisorSize = req->hypervisorSize + 0x400000;
             /* perform a fictive IO space mapping */
-            hypervisorArea = ioremap(HYPERVISOR_PHYSICAL_START, hypervisorSize);
+            hypervisorArea = ioremap(VBOXGUEST_HYPERVISOR_PHYSICAL_START, hypervisorSize);
             if (hypervisorArea)
             {
                 /* communicate result to VMM, align at 4MB */

@@ -332,7 +332,7 @@ static void vboxInformHost (PDEVICE_EXTENSION devExt)
             if (RT_SUCCESS(vboxRC))
             {
                 /* Inform host that we support absolute */
-                req->mouseFeatures = VBOXGUEST_MOUSE_GUEST_CAN_ABSOLUTE;
+                req->mouseFeatures = VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE;
                 req->pointerXPos = 0;
                 req->pointerYPos = 0;
 
@@ -1118,7 +1118,7 @@ Return Value:
 
         if (RT_SUCCESS(rc) && RT_SUCCESS(req->header.rc))
         {
-            if (req->mouseFeatures & VBOXGUEST_MOUSE_HOST_CAN_ABSOLUTE)
+            if (req->mouseFeatures & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE)
             {
                 PMOUSE_INPUT_DATA inputData = InputDataStart;
                 while (inputData < InputDataEnd)

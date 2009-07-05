@@ -172,8 +172,8 @@ DECLCALLBACK(void) VMMDev::UpdateMouseCapabilities(PPDMIVMMDEVCONNECTOR pInterfa
 
     if (gMouse)
     {
-        gMouse->setAbsoluteCoordinates(!!(newCapabilities & VMMDEV_MOUSEGUESTWANTSABS));
-        gMouse->setNeedsHostCursor(!!(newCapabilities & VMMDEV_MOUSEGUESTNEEDSHOSTCUR));
+        gMouse->setAbsoluteCoordinates(!!(newCapabilities & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE));
+        gMouse->setNeedsHostCursor(!!(newCapabilities & VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR));
     }
     if (gConsole)
     {

@@ -1689,7 +1689,7 @@ VOID reserveHypervisorMemory(PVBOXGUESTDEVEXT pDevExt)
             // 4MB more than we are actually supposed to in order to guarantee that. Maybe we
             // can come up with a less lavish algorithm lateron.
             PHYSICAL_ADDRESS physAddr;
-            physAddr.QuadPart = HYPERVISOR_PHYSICAL_START;
+            physAddr.QuadPart = VBOXGUEST_HYPERVISOR_PHYSICAL_START;
             pDevExt->hypervisorMappingSize = hypervisorSize + 0x400000;
             pDevExt->hypervisorMapping     = MmMapIoSpace(physAddr,
                                                           pDevExt->hypervisorMappingSize,

@@ -80,7 +80,7 @@ DECLVBGL(int) VbglGRPerform (VMMDevRequestHeader *pReq)
     }
     else
     {
-        ASMOutU32(g_vbgldata.portVMMDev + PORT_VMMDEV_REQUEST_OFFSET, (uint32_t)physaddr);
+        ASMOutU32(g_vbgldata.portVMMDev + VMMDEV_PORT_OFF_REQUEST, (uint32_t)physaddr);
         /* Make the compiler aware that the host has changed memory. */
         ASMCompilerBarrier();
         rc = pReq->rc;

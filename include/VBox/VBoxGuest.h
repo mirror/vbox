@@ -79,6 +79,9 @@
 # define VBOXGUEST_USER_DEVICE_NAME     VBOXGUEST_DEVICE_NAME
 #endif
 
+/** Fictive start address of the hypervisor physical memory for MmMapIoSpace. */
+#define VBOXGUEST_HYPERVISOR_PHYSICAL_START     UINT32_C(0xf8000000)
+
 
 #if !defined(IN_RC) && !defined(IN_RING0_AGNOSTIC) && !defined(IPRT_NO_CRT)
 /** @name VBoxGuest IOCTL codes and structures.

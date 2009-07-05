@@ -600,17 +600,17 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             {
                 VMMDevReqMouseStatus *mouseStatus = (VMMDevReqMouseStatus*)pRequestHeader;
                 mouseStatus->mouseFeatures = 0;
-                if (pThis->mouseCapabilities & VMMDEV_MOUSEHOSTWANTSABS)
+                if (pThis->mouseCapabilities & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE)
                 {
-                    mouseStatus->mouseFeatures |= VBOXGUEST_MOUSE_HOST_CAN_ABSOLUTE;
+                    mouseStatus->mouseFeatures |= VMMDEV_MOUSE_HOST_CAN_ABSOLUTE;
                 }
-                if (pThis->mouseCapabilities & VMMDEV_MOUSEGUESTWANTSABS)
+                if (pThis->mouseCapabilities & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE)
                 {
-                    mouseStatus->mouseFeatures |= VBOXGUEST_MOUSE_GUEST_CAN_ABSOLUTE;
+                    mouseStatus->mouseFeatures |= VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE;
                 }
-                if (pThis->mouseCapabilities & VMMDEV_MOUSEHOSTCANNOTHWPOINTER)
+                if (pThis->mouseCapabilities & VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER)
                 {
-                    mouseStatus->mouseFeatures |= VBOXGUEST_MOUSE_HOST_CANNOT_HWPOINTER;
+                    mouseStatus->mouseFeatures |= VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER;
                 }
                 mouseStatus->pointerXPos = pThis->mouseXAbs;
                 mouseStatus->pointerYPos = pThis->mouseYAbs;
@@ -639,32 +639,32 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 VMMDevReqMouseStatus *mouseStatus = (VMMDevReqMouseStatus*)pRequestHeader;
 
                 /* check if the guest wants absolute coordinates */
-                if (mouseStatus->mouseFeatures & VBOXGUEST_MOUSE_GUEST_CAN_ABSOLUTE)
+                if (mouseStatus->mouseFeatures & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE)
                 {
                     /* set the capability flag and the changed flag if it's actually a change */
-                    if (!(pThis->mouseCapabilities & VMMDEV_MOUSEGUESTWANTSABS))
+                    if (!(pThis->mouseCapabilities & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE))
                     {
-                        pThis->mouseCapabilities |= VMMDEV_MOUSEGUESTWANTSABS;
+                        pThis->mouseCapabilities |= VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE;
                         bCapsChanged = true;
                         LogRel(("Guest requests mouse pointer integration\n"));
                     }
                 } else
                 {
-                    if (pThis->mouseCapabilities & VMMDEV_MOUSEGUESTWANTSABS)
+                    if (pThis->mouseCapabilities & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE)
                     {
-                        pThis->mouseCapabilities &= ~VMMDEV_MOUSEGUESTWANTSABS;
+                        pThis->mouseCapabilities &= ~VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE;
                         bCapsChanged = true;
                         LogRel(("Guest disables mouse pointer integration\n"));
                     }
                 }
-                if (mouseStatus->mouseFeatures & VBOXGUEST_MOUSE_GUEST_NEEDS_HOST_CURSOR)
-                    pThis->mouseCapabilities |= VMMDEV_MOUSEGUESTNEEDSHOSTCUR;
+                if (mouseStatus->mouseFeatures & VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR)
+                    pThis->mouseCapabilities |= VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR;
                 else
-                    pThis->mouseCapabilities &= ~VMMDEV_MOUSEGUESTNEEDSHOSTCUR;
-                if (mouseStatus->mouseFeatures & VBOXGUEST_MOUSE_GUEST_USES_VMMDEV)
-                    pThis->mouseCapabilities |= VMMDEV_MOUSEGUESTUSESVMMDEV;
+                    pThis->mouseCapabilities &= ~VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR;
+                if (mouseStatus->mouseFeatures & VMMDEV_MOUSE_GUEST_USES_VMMDEV)
+                    pThis->mouseCapabilities |= VMMDEV_MOUSE_GUEST_USES_VMMDEV;
                 else
-                    pThis->mouseCapabilities &= ~VMMDEV_MOUSEGUESTUSESVMMDEV;
+                    pThis->mouseCapabilities &= ~VMMDEV_MOUSE_GUEST_USES_VMMDEV;
 
                 /*
                  * Notify connector if something has changed
@@ -1708,7 +1708,7 @@ static DECLCALLBACK(int) vmmdevIOPortRegionMap(PPCIDEVICE pPciDev, /*unsigned*/ 
      * Register our port IO handlers.
      */
     rc = PDMDevHlpIOPortRegister(pPciDev->pDevIns,
-                                 (RTIOPORT)GCPhysAddress + PORT_VMMDEV_REQUEST_OFFSET, 1,
+                                 (RTIOPORT)GCPhysAddress + VMMDEV_PORT_OFF_REQUEST, 1,
                                  (void*)pThis, vmmdevRequestHandler,
                                  NULL, NULL, NULL, "VMMDev Request Handler");
     AssertRC(rc);
@@ -1831,20 +1831,20 @@ static DECLCALLBACK(int) vmmdevSetMouseCapabilities(PPDMIVMMDEVPORT pInterface, 
 {
     VMMDevState *pThis = IVMMDEVPORT_2_VMMDEVSTATE(pInterface);
 
-    bool bCapsChanged = ((capabilities & VMMDEV_MOUSEHOSTWANTSABS)
-                         != (pThis->mouseCapabilities & VMMDEV_MOUSEHOSTWANTSABS));
+    bool bCapsChanged = ((capabilities & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE)
+                         != (pThis->mouseCapabilities & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE));
 
     Log(("vmmdevSetMouseCapabilities: bCapsChanged %d\n", bCapsChanged));
 
-    if (capabilities & VMMDEV_MOUSEHOSTCANNOTHWPOINTER)
-        pThis->mouseCapabilities |= VMMDEV_MOUSEHOSTCANNOTHWPOINTER;
+    if (capabilities & VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER)
+        pThis->mouseCapabilities |= VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER;
     else
-        pThis->mouseCapabilities &= ~VMMDEV_MOUSEHOSTCANNOTHWPOINTER;
+        pThis->mouseCapabilities &= ~VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER;
 
-    if (capabilities & VMMDEV_MOUSEHOSTWANTSABS)
-        pThis->mouseCapabilities |= VMMDEV_MOUSEHOSTWANTSABS;
+    if (capabilities & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE)
+        pThis->mouseCapabilities |= VMMDEV_MOUSE_HOST_CAN_ABSOLUTE;
     else
-        pThis->mouseCapabilities &= ~VMMDEV_MOUSEHOSTWANTSABS;
+        pThis->mouseCapabilities &= ~VMMDEV_MOUSE_HOST_CAN_ABSOLUTE;
 
     if (bCapsChanged)
         VMMDevNotifyGuest (pThis, VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED);
@@ -2413,9 +2413,9 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     /*
      * Reset the mouse integration feature bit
      */
-    if (pThis->mouseCapabilities & (VMMDEV_MOUSEGUESTWANTSABS|VMMDEV_MOUSEGUESTNEEDSHOSTCUR))
+    if (pThis->mouseCapabilities & (VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE|VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR))
     {
-        pThis->mouseCapabilities &= ~VMMDEV_MOUSEGUESTWANTSABS;
+        pThis->mouseCapabilities &= ~VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE;
         /* notify the connector */
         Log(("vmmdevReset: capabilities changed (%x), informing connector\n", pThis->mouseCapabilities));
         pThis->pDrv->pfnUpdateMouseCapabilities(pThis->pDrv, pThis->mouseCapabilities);

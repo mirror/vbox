@@ -41,7 +41,7 @@ public:
     int handleDisplayResize (int w, int h);
     void handleDisplayUpdate (int x, int y, int cx, int cy);
 
-    int VideoAccelEnable (bool fEnable, struct _VBVAMEMORY *pVbvaMemory);
+    int VideoAccelEnable (bool fEnable, struct VBVAMEMORY *pVbvaMemory);
     void VideoAccelFlush (void);
     bool VideoAccelAllowed (void);
 
@@ -87,10 +87,10 @@ private:
 
     ULONG mSupportedAccelOps;
 
-    struct _VBVAMEMORY *mpVbvaMemory;
+    struct VBVAMEMORY *mpVbvaMemory;
     bool        mfVideoAccelEnabled;
 
-    struct _VBVAMEMORY *mpPendingVbvaMemory;
+    struct VBVAMEMORY *mpPendingVbvaMemory;
     bool        mfPendingVideoAccelEnable;
     bool        mfMachineRunning;
 
@@ -102,7 +102,7 @@ private:
 
     void handleResizeCompletedEMT (void);
     volatile uint32_t mu32ResizeStatus;
-    
+
     enum {
         ResizeStatus_Void,
         ResizeStatus_InProgress,

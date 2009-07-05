@@ -1705,11 +1705,11 @@ typedef struct PDMIVMMDEVPORT
      * Note that there can only be one set of credentials and the guest may or may not
      * query them and may do whatever it wants with them.
      *
-     * @returns VBox status code
-     * @param   pszUsername            User name, may be empty (UTF-8)
-     * @param   pszPassword            Password, may be empty (UTF-8)
-     * @param   pszDomain              Domain name, may be empty (UTF-8)
-     * @param   fFlags                 Bitflags
+     * @returns VBox status code.
+     * @param   pszUsername            User name, may be empty (UTF-8).
+     * @param   pszPassword            Password, may be empty (UTF-8).
+     * @param   pszDomain              Domain name, may be empty (UTF-8).
+     * @param   fFlags                 VMMDEV_SETCREDENTIALS_*.
      */
     DECLR3CALLBACKMEMBER(int, pfnSetCredentials,(PPDMIVMMDEVPORT pInterface, const char *pszUsername,
                                                  const char *pszPassword, const char *pszDomain,
@@ -1767,14 +1767,25 @@ typedef struct PDMIVMMDEVPORT
 
 } PDMIVMMDEVPORT;
 
+/** @name Flags for PDMIVMMDEVPORT::pfnSetCredentials.
+ * @{ */
+/** The guest should perform a logon with the credentials. */
+#define VMMDEV_SETCREDENTIALS_GUESTLOGON                    RT_BIT(0)
+/** The guest should prevent local logons. */
+#define VMMDEV_SETCREDENTIALS_NOLOCALLOGON                  RT_BIT(1)
+/** The guest should verify the credentials. */
+#define VMMDEV_SETCREDENTIALS_JUDGE                         RT_BIT(15)
+/** @} */
+
+
 /** Forward declaration of the video accelerator command memory. */
-struct _VBVAMEMORY;
+struct VBVAMEMORY;
 /** Forward declaration of the guest information structure. */
 struct VBoxGuestInfo;
 /** Forward declaration of the guest statistics structure */
 struct VBoxGuestStatistics;
 /** Pointer to video accelerator command memory. */
-typedef struct _VBVAMEMORY *PVBVAMEMORY;
+typedef struct VBVAMEMORY *PVBVAMEMORY;
 
 /** Pointer to a VMMDev connector interface. */
 typedef struct PDMIVMMDEVCONNECTOR *PPDMIVMMDEVCONNECTOR;
