@@ -47,38 +47,6 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-/** @todo The following is a temporary fix for the problem of accessing
-    hypervisor pointers from within guest additions */
-
-/** Hypervisor linear pointer size type.
- * @todo r=bird: only hypervisorStart is a "hypervisor" address, all other use
- *       is guest addresses...
- *   */
-typedef RTGCPTR32   VMMDEVHYPPTR32;
-/** Hypervisor linear pointer sized type.
- * @todo r=bird: This is never used for any "hypervisor" addresses, only guest
- *       addresses. */
-typedef RTGCPTR64   VMMDEVHYPPTR64;
-/** Hypervisor physical pointer sized type.
- * @todo r=bird: Same confusion as with VMMDEVHYPPTR64. */
-typedef RTGCPHYS32  VMMDEVHYPPHYS32;
-/** Hypervisor physical pointer sized type.
- * @todo r=bird: Same confusion as with VMMDEVHYPPTR64. */
-typedef RTGCPHYS64  VMMDEVHYPPHYS64;
-
-/** @def VMMDEVHYPPTR Hypervisor linear pointer sized type size type.
- * @todo r=bird: Same confusion as with VMMDEVHYPPTR64. */
-/** @def VMMDEVHYPPHYS Hypervisor physical pointer sized type.
- * @todo r=bird: Same confusion as with VMMDEVHYPPTR64. */
-#if defined(VBOX_WITH_64_BITS_GUESTS) && ARCH_BITS == 64
-# define VMMDEVHYPPTR   VMMDEVHYPPTR64
-# define VMMDEVHYPPHYS  VMMDEVHYPPHYS64
-# else
-# define VMMDEVHYPPTR   VMMDEVHYPPTR32
-# define VMMDEVHYPPHYS  VMMDEVHYPPHYS32
-#endif
-
-
 /** @name Mouse capability bits
  * @{ */
 /** the guest requests absolute mouse coordinates (guest additions installed) */
@@ -398,7 +366,7 @@ typedef struct
     VMMDevRequestHeader header;
     /** guest virtual address of proposed hypervisor start */
     /** TODO: Make this 64-bit compatible */
-    VMMDEVHYPPTR32 hypervisorStart;
+    RTGCPTR32 hypervisorStart;
     /** hypervisor size in bytes */
     uint32_t hypervisorSize;
 } VMMDevReqHypervisorInfo;
@@ -744,8 +712,8 @@ typedef struct _HGCMFUNCTIONPARAMETER32
 
             union
             {
-                VMMDEVHYPPHYS32 physAddr;
-                VMMDEVHYPPTR32  linearAddr;
+                RTGCPHYS32 physAddr;
+                RTGCPTR32  linearAddr;
             } u;
         } Pointer;
     } u;
@@ -787,7 +755,7 @@ typedef struct _HGCMFUNCTIONPARAMETER32
     {
         type                    = VMMDevHGCMParmType_LinAddr;
         u.Pointer.size          = cb;
-        u.Pointer.u.linearAddr  = (VMMDEVHYPPTR32)(uintptr_t)pv;
+        u.Pointer.u.linearAddr  = (RTGCPTR32)(uintptr_t)pv;
     }
 #endif
 } HGCMFunctionParameter32;
@@ -805,8 +773,8 @@ typedef struct _HGCMFUNCTIONPARAMETER64
 
             union
             {
-                VMMDEVHYPPHYS64 physAddr;
-                VMMDEVHYPPTR64  linearAddr;
+                RTGCPHYS64 physAddr;
+                RTGCPTR64  linearAddr;
             } u;
         } Pointer;
     } u;
@@ -866,8 +834,8 @@ typedef struct _HGCMFUNCTIONPARAMETER
 
             union
             {
-                VMMDEVHYPPHYS32 physAddr;
-                VMMDEVHYPPTR32  linearAddr;
+                RTGCPHYS32 physAddr;
+                RTGCPTR32  linearAddr;
             } u;
         } Pointer;
     } u;
