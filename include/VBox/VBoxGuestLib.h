@@ -30,11 +30,12 @@
 #ifndef ___VBox_VBoxGuestLib_h
 #define ___VBox_VBoxGuestLib_h
 
-#ifdef IN_RING0
-# include <VBox/VBoxGuest.h> /** @todo Try stop including <VBox/VBoxGuest.h> in ring-0. */
-# include <VBox/err.h>       /** @todo Why is this here?? */
-#endif
 #include <VBox/types.h>
+#include <VBox/VMMDev2.h>
+#ifdef IN_RING0
+# include <VBox/VMMDev.h>     /* grumble */
+# include <VBox/VBoxGuest2.h>
+#endif
 
 
 /** @defgroup grp_guest_lib     VirtualBox Guest Additions Library
@@ -98,7 +99,7 @@ typedef uint32_t VBGLIOPORT; /**< @todo r=bird: We have RTIOPORT (uint16_t) for 
  *
  * @return VBox status code.
  */
-DECLVBGL(int) VbglInit (VBGLIOPORT portVMMDev, VMMDevMemory *pVMMDevMemory);
+DECLVBGL(int) VbglInit (VBGLIOPORT portVMMDev, struct VMMDevMemory *pVMMDevMemory);
 
 # else
 
@@ -391,9 +392,7 @@ VBGLR3DECL(int)     VbglR3ClipboardWriteData(uint32_t u32ClientId, uint32_t fFor
 /** @name Seamless mode
  * @{ */
 VBGLR3DECL(int)     VbglR3SeamlessSetCap(bool fState);
-# ifdef VBOX_MOUSE_POINTER_SHAPE /** @todo Move common structures/enums out of VBoxGuest.h or/and the externalize the IOCtl interface... Whatever works, just try keep the amout of lowevel mess exposed here to a minimum. */
 VBGLR3DECL(int)     VbglR3SeamlessWaitEvent(VMMDevSeamlessMode *pMode);
-# endif
 VBGLR3DECL(int)     VbglR3SeamlessSendRects(uint32_t cRects, PRTRECT pRects);
 /** @}  */
 
@@ -408,9 +407,7 @@ VBGLR3DECL(int)     VbglR3SetMouseStatus(uint32_t fFeatures);
 VBGLR3DECL(int)     VbglR3VideoAccelEnable(bool fEnable);
 VBGLR3DECL(int)     VbglR3VideoAccelFlush(void);
 VBGLR3DECL(int)     VbglR3SetPointerShape(uint32_t fFlags, uint32_t xHot, uint32_t yHot, uint32_t cx, uint32_t cy, const void *pvImg, size_t cbImg);
-# ifdef VBOX_MOUSE_POINTER_SHAPE /** @todo Move common structures/enums out of VBoxGuest.h or/and the externalize the IOCtl interface... Whatever works, just try keep the amout of lowevel mess exposed here to a minimum. */
-VBGLR3DECL(int)     VbglR3SetPointerShapeReq(VMMDevReqMousePointer *pReq);
-# endif
+VBGLR3DECL(int)     VbglR3SetPointerShapeReq(struct VMMDevReqMousePointer *pReq);
 /** @}  */
 
 /** @name Display

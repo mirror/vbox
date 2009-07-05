@@ -23,6 +23,7 @@
 #include "VBoxGINA.h"
 
 #include <VBox/VBoxGuest.h>
+#include <VBox/VMMDev.h>
 #include <iprt/string.h>
 
 /* the credentials */

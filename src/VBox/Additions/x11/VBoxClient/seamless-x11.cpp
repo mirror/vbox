@@ -1,7 +1,5 @@
 /** @file
- *
- * Seamless mode:
- * Linux guest.
+ * X11 Seamless mode.
  */
 
 /*
@@ -27,7 +25,6 @@
 #include <iprt/err.h>
 #include <iprt/assert.h>
 #include <VBox/log.h>
-#include <VBox/VBoxGuest.h>
 
 #include "seamless-guest.h"
 
@@ -276,7 +273,7 @@ void VBoxGuestSeamlessX11::freeWindowTree(void)
 
 
 /**
- * Waits for a position or shape-related event from guest windows 
+ * Waits for a position or shape-related event from guest windows
  *
  * @note Called from the guest event thread.
  */

@@ -130,7 +130,7 @@
 #include <iprt/time.h>
 #include <iprt/string.h>
 
-#include <VBox/VBoxGuest.h>
+#include <VBox/VMMDev.h>
 #include <VBox/VBoxVideo.h>
 #include <VBox/bioslogo.h>
 

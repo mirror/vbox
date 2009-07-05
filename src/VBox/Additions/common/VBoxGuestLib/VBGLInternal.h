@@ -19,15 +19,11 @@
  * additional information or have any questions.
  */
 
-#ifndef __VBoxGuestLib_VBGLInternal_h
-#define __VBoxGuestLib_VBGLInternal_h
+#ifndef ___VBoxGuestLib_VBGLInternal_h
+#define ___VBoxGuestLib_VBGLInternal_h
 
-/* I have added this include here as
-   a) This file is always included before VBGLInternal and
-   b) It contains a definition for VBGLHGCMHANDLE, so we definitely do not
-      need to redefine that here.  The C (without ++) compiler was complaining
-      that it was defined twice.
-*/
+#include <VBox/VMMDev.h>
+#include <VBox/VBoxGuest.h>
 #include <VBox/VBoxGuestLib.h>
 
 #include <VBox/log.h>
@@ -109,13 +105,13 @@ extern VBGLDATA g_vbgldata;
 int VbglEnter (void);
 
 #ifdef VBOX_WITH_HGCM
-#ifndef VBGL_VBOXGUEST
+# ifndef VBGL_VBOXGUEST
 /* Initialize HGCM subsystem. */
 int vbglHGCMInit (void);
 /* Terminate HGCM subsystem. */
 int vbglHGCMTerminate (void);
-#endif
-#endif
+# endif
+#endif /* VBOX_WITH_HGCM */
 
-#endif /* !__VBoxGuestLib_VBGLInternal_h */
+#endif /* !___VBoxGuestLib_VBGLInternal_h */
 

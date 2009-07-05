@@ -16,14 +16,14 @@
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
  */
-#include <windows.h>
+#include <Windows.h>
 #include <VBoxHook.h>
 #include <stdio.h>
 
-#pragma data_seg("SHARED") 
-static HWINEVENTHOOK    hEventHook[2]    = {0}; 
-#pragma data_seg() 
-#pragma comment(linker, "/section:SHARED,RWS") 
+#pragma data_seg("SHARED")
+static HWINEVENTHOOK    hEventHook[2]    = {0};
+#pragma data_seg()
+#pragma comment(linker, "/section:SHARED,RWS")
 
 static HANDLE   hNotifyEvent = 0;
 
@@ -35,8 +35,8 @@ void WriteLog(char *String, ...);
 #endif /* DEBUG */
 
 
-void CALLBACK VBoxHandleWinEvent(HWINEVENTHOOK hook, DWORD event, HWND hwnd, 
-                                 LONG idObject, LONG idChild, 
+void CALLBACK VBoxHandleWinEvent(HWINEVENTHOOK hook, DWORD event, HWND hwnd,
+                                 LONG idObject, LONG idChild,
                                  DWORD dwEventThread, DWORD dwmsEventTime)
 {
     DWORD dwStyle;
@@ -127,6 +127,7 @@ BOOL VBoxRemoveHook()
 
 #ifdef DEBUG
 #include <VBox/VBoxGuest.h>
+#include <VBox/VMMDev.h>
 
 static char LogBuffer[1024];
 static HANDLE gVBoxDriver = INVALID_HANDLE_VALUE;

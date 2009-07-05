@@ -40,7 +40,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
 
-#include <VBox/VBoxGuest.h>
+#include <VBox/VMMDev.h>
 
 /**
  * A service gets one thread, which synchronously delivers messages to

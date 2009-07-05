@@ -35,7 +35,11 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <iprt/assert.h>
+#include <VBox/VMMDev2.h>
+#include <VBox/VBoxGuest2.h>
+#if 0
 #include <VBox/VMMDev.h> /* Temporarily. */
+#endif
 
 
 /** @defgroup grp_vboxguest     VirtualBox Guest Additions Driver Interface
@@ -208,10 +212,10 @@ typedef const VBGLBIGREQ *PCVBGLBIGREQ;
 #define VBOXGUEST_IOCTL_GETVMMDEVPORT               VBOXGUEST_IOCTL_CODE(1, sizeof(VBoxGuestPortInfo))
 
 #pragma pack(4)
-typedef struct _VBoxGuestPortInfo
+typedef struct VBoxGuestPortInfo
 {
     uint32_t portAddress;
-    VMMDevMemory *pVMMDevMemory;
+    struct VMMDevMemory *pVMMDevMemory;
 } VBoxGuestPortInfo;
 
 
@@ -285,53 +289,15 @@ AssertCompileSize(VBoxGuestFilterMaskInfo, 8);
 /** IOCTL to VBoxGuest to connect to a HGCM service. */
 # define VBOXGUEST_IOCTL_HGCM_CONNECT               VBOXGUEST_IOCTL_CODE(16, sizeof(VBoxGuestHGCMConnectInfo))
 
-# pragma pack(1) /* explicit packing for good measure. */
-typedef struct VBoxGuestHGCMConnectInfo
-{
-    int32_t result;           /**< OUT */
-    HGCMServiceLocation Loc;  /**< IN */
-    uint32_t u32ClientID;     /**< OUT */
-} VBoxGuestHGCMConnectInfo;
-AssertCompileSize(VBoxGuestHGCMConnectInfo, 4+4+128+4);
-# pragma pack()
-
-
 /** IOCTL to VBoxGuest to disconnect from a HGCM service. */
-# define VBOXGUEST_IOCTL_HGCM_DISCONNECT          VBOXGUEST_IOCTL_CODE(17, sizeof(VBoxGuestHGCMDisconnectInfo))
-typedef struct VBoxGuestHGCMDisconnectInfo
-{
-    int32_t result;           /**< OUT */
-    uint32_t u32ClientID;     /**< IN */
-} VBoxGuestHGCMDisconnectInfo;
-AssertCompileSize(VBoxGuestHGCMDisconnectInfo, 8);
+# define VBOXGUEST_IOCTL_HGCM_DISCONNECT            VBOXGUEST_IOCTL_CODE(17, sizeof(VBoxGuestHGCMDisconnectInfo))
 
-
-/** IOCTL to VBoxGuest to make a call to a HGCM service. */
-# define VBOXGUEST_IOCTL_HGCM_CALL(Size)          VBOXGUEST_IOCTL_CODE(18, (Size))
-typedef struct VBoxGuestHGCMCallInfo
-{
-    int32_t result;           /**< OUT Host HGCM return code.*/
-    uint32_t u32ClientID;     /**< IN  The id of the caller. */
-    uint32_t u32Function;     /**< IN  Function number. */
-    uint32_t cParms;          /**< IN  How many parms. */
-    /* Parameters follow in form HGCMFunctionParameter aParms[cParms] */
-} VBoxGuestHGCMCallInfo;
-AssertCompileSize(VBoxGuestHGCMCallInfo, 16);
-
+/** IOCTL to VBoxGuest to make a call to a HGCM service.
+ * @see VBoxGuestHGCMCallInfo */
+# define VBOXGUEST_IOCTL_HGCM_CALL(Size)            VBOXGUEST_IOCTL_CODE(18, (Size))
 
 /** IOCTL to VBoxGuest to make a timed call to a HGCM service. */
-# define VBOXGUEST_IOCTL_HGCM_CALL_TIMED(Size)    VBOXGUEST_IOCTL_CODE(20, (Size))
-# pragma pack(1) /* explicit packing for good measure. */
-typedef struct VBoxGuestHGCMCallInfoTimed
-{
-    uint32_t u32Timeout;         /**< IN  How long to wait for completion before cancelling the call. */
-    uint32_t fInterruptible;     /**< IN  Is this request interruptible? */
-    VBoxGuestHGCMCallInfo info;  /**< IN/OUT The rest of the call information.  Placed after the timeout
-                                  * so that the parameters follow as they would for a normal call. */
-    /* Parameters follow in form HGCMFunctionParameter aParms[cParms] */
-} VBoxGuestHGCMCallInfoTimed;
-AssertCompileSize(VBoxGuestHGCMCallInfoTimed, 8+16);
-# pragma pack()
+# define VBOXGUEST_IOCTL_HGCM_CALL_TIMED(Size)      VBOXGUEST_IOCTL_CODE(20, (Size))
 
 # ifdef RT_ARCH_AMD64
 /** @name IOCTL numbers that 32-bit clients, like the Windows OpenGL guest
@@ -430,7 +396,7 @@ typedef VBOXGUESTOS2IDCCONNECT *PVBOXGUESTOS2IDCCONNECT;
 #endif /* !defined(IN_RC) && !defined(IN_RING0_AGNOSTIC) && !defined(IPRT_NO_CRT) */
 
 
-#ifdef IN_RING3
+#if 0 /*def IN_RING3*/
 # include <VBox/VBoxGuestLib.h> /** @todo eliminate this. */
 #endif /* IN_RING3 */
 

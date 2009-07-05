@@ -23,7 +23,6 @@
 #include <iprt/initterm.h>
 #include <iprt/log.h>
 
-#include <VBox/VBoxGuest.h>
 #include <VBox/Log.h>
 
 /** Handle to Winlogon service */

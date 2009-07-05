@@ -92,7 +92,7 @@ do { \
 
 #define BOOL_STR(a) ((a) ? "TRUE" : "FALSE")
 
-#include <VBox/VBoxGuest.h>
+#include <VBox/VMMDev.h>
 
 /* All drivers should typically include these */
 #include "xf86.h"

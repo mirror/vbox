@@ -1,5 +1,4 @@
 /** @file
- *
  * Linux Additions X11 graphics driver helper module
  */
 

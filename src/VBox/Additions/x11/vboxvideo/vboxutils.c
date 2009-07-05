@@ -19,7 +19,6 @@
  */
 
 #include <VBox/VMMDev.h>
-#include <VBox/VBoxGuest.h>
 #include <VBox/VBoxGuestLib.h>
 
 #ifndef PCIACCESS

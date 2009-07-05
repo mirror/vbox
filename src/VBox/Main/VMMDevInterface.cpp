@@ -1,6 +1,5 @@
 /** @file
- *
- * VirtualBox Driver Interface to VMM device
+ * VirtualBox Driver Interface to VMM device.
  */
 
 /*
@@ -28,7 +27,6 @@
 
 #include <VBox/pdmdrv.h>
 #include <VBox/VMMDev.h>
-#include <VBox/VBoxGuest.h>
 #include <VBox/shflsvc.h>
 #include <iprt/asm.h>
 

@@ -22,9 +22,7 @@
 #ifndef ___VMMDev_VMMDevState_h
 #define ___VMMDev_VMMDevState_h
 
-#include <VBox/cdefs.h>
-#include <VBox/types.h>
-
+#include <VBox/VMMDev.h>
 #include <VBox/pdmdev.h>
 #include <VBox/pdmifs.h>
 

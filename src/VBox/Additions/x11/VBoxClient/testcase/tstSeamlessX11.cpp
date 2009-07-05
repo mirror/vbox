@@ -23,7 +23,6 @@
 
 #include <iprt/initterm.h>
 #include <iprt/semaphore.h>
-#include <VBox/VBoxGuest.h>
 #include <VBox/VBoxGuestLib.h>
 
 #include "../seamless.h"

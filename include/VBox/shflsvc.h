@@ -31,7 +31,8 @@
 #define ___VBox_shflsvc_h
 
 #include <VBox/types.h>
-#include <VBox/VBoxGuest.h>
+#include <VBox/VBoxGuest2.h>
+#include <VBox/VMMDev.h>
 #include <VBox/hgcmsvc.h>
 #include <iprt/fs.h>
 

@@ -20,6 +20,7 @@
  */
 
 #include <iprt/assert.h>
+#include <VBox/VMMDev.h>
 #include <VBox/VBoxGuest.h>
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxUtils.h"
@@ -30,7 +31,7 @@
 #include "compiler.h"
 
 #ifndef RT_OS_SOLARIS
-#include <asm/ioctl.h>
+# include <asm/ioctl.h>
 #endif
 
 #ifdef RT_OS_SOLARIS        /** @todo later Linux should also use R3 lib for this */

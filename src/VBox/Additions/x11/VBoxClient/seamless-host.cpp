@@ -1,7 +1,6 @@
 /** @file
- *
- * Seamless mode:
- * Linux guest.
+ * X11 Guest client - seamless mode, missing proper description while using the
+ * potentially confusing word 'host'.
  */
 
 /*
@@ -23,9 +22,9 @@
 /*****************************************************************************
 *   Header files                                                             *
 *****************************************************************************/
-
 #include <VBox/log.h>
-#include <VBox/VBoxGuest.h>
+#include <VBox/VMMDev.h>
+#include <VBox/VBoxGuestLib.h>
 #include <iprt/err.h>
 
 #include "seamless-host.h"

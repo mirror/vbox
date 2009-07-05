@@ -1,9 +1,9 @@
+/* $Id$ */
 /** @file
- *
- * VBoxGuest -- VirtualBox Win 2000/XP guest display driver
- *
- * VBox support functions.
- *
+ * Display - VirtualBox Win 2000/XP guest display driver, support functions.
+ */
+
+/*
  * Copyright (C) 2006-2007 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
@@ -21,6 +21,7 @@
 
 #include "driver.h"
 
+#include <VBox/VMMDev.h>
 #include <VBox/VBoxGuest.h>
 #include <VBox/err.h>
 #include <iprt/asm.h>

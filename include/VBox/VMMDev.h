@@ -35,6 +35,7 @@
 #include <VBox/types.h>
 #include <VBox/err.h>
 #include <VBox/ostypes.h>
+#include <VBox/VMMDev2.h>
 #include <iprt/assert.h>
 
 
@@ -49,8 +50,8 @@ RT_C_DECLS_BEGIN
 
 
 /** Size of VMMDev RAM region accessible by guest.
- *  Must be big enough to contain VMMDevMemory structure (see VBoxGuest.h)
- *  For now: 4 megabyte.
+ * Must be big enough to contain VMMDevMemory structure (see further down).
+ * For now: 4 megabyte.
  */
 #define VMMDEV_RAM_SIZE                                     (4 * 256 * PAGE_SIZE)
 
@@ -199,7 +200,7 @@ typedef struct
 {
     /** IN: Size of the structure in bytes (including body). */
     uint32_t size;
-    /** IN: Version of the structure.*/
+    /** IN: Version of the structure.  */
     uint32_t version;
     /** IN: Type of the request. */
     VMMDevRequestType requestType;
@@ -258,7 +259,7 @@ AssertCompileSize(VMMDevReqMouseStatus, 24+12);
  *
  * Used by VMMDevReq_SetPointerShape. The size is variable.
  */
-typedef struct
+typedef struct VMMDevReqMousePointer
 {
     /** Header. */
     VMMDevRequestHeader header;
@@ -739,27 +740,6 @@ AssertCompileSize(VMMDevCredentials, 24+4+3*128);
 
 
 /**
- * Seamless mode.
- *
- * Used by VbglR3SeamlessWaitEvent
- *
- * @todo DARN! DARN! DARN! Who forgot to do the 32-bit hack here???
- *       FIXME! XXX!
- *
- *       We will now have to carefully check how our compilers have treated this
- *       flag. If any are compressing it into a byte type, we'll have to check
- *       how the request memory is initialized. If we are 104% sure it's ok to
- *       expand it, we'll expand it. If not, we must redefine the field to a
- *       uint8_t and a 3 byte padding.
- *  */
-typedef enum
-{
-    VMMDev_Seamless_Disabled         = 0,     /**< normal mode; entire guest desktop displayed. */
-    VMMDev_Seamless_Visible_Region   = 1,     /**< visible region mode; only top-level guest windows displayed. */
-    VMMDev_Seamless_Host_Window      = 2      /**< windowed mode; each top-level guest window is represented in a host window. */
-} VMMDevSeamlessMode;
-
-/**
  * Seamless mode change request structure.
  *
  * Used by VMMDevReq_GetSeamlessChangeRequest.
@@ -953,92 +933,6 @@ AssertCompileSize(VMMDevVideoSetVisibleRegion, 24+4+16);
 
 #pragma pack()
 
-/**
- * VBVA command header.
- */
-#pragma pack(1) /* unnecessary */
-typedef struct _VBVACMDHDR
-{
-   /** Coordinates of affected rectangle. */
-   int16_t x;
-   int16_t y;
-   uint16_t w;
-   uint16_t h;
-} VBVACMDHDR;
-#pragma pack()
-
-/** @name VBVA ring defines.
- *
- * The VBVA ring buffer is suitable for transferring large (< 2GB) amount of
- * data. For example big bitmaps which do not fit to the buffer.
- *
- * Guest starts writing to the buffer by initializing a record entry in the
- * aRecords queue. VBVA_F_RECORD_PARTIAL indicates that the record is being
- * written. As data is written to the ring buffer, the guest increases off32End
- * for the record.
- *
- * The host reads the aRecords on flushes and processes all completed records.
- * When host encounters situation when only a partial record presents and
- * cbRecord & ~VBVA_F_RECORD_PARTIAL >= VBVA_RING_BUFFER_SIZE -
- * VBVA_RING_BUFFER_THRESHOLD, the host fetched all record data and updates
- * off32Head. After that on each flush the host continues fetching the data
- * until the record is completed.
- *
- */
-#define VBVA_RING_BUFFER_SIZE        (_4M - _1K)
-#define VBVA_RING_BUFFER_THRESHOLD   (4 * _1K)
-
-#define VBVA_MAX_RECORDS (64)
-
-#define VBVA_F_MODE_ENABLED         (0x00000001)
-#define VBVA_F_MODE_VRDP            (0x00000002)
-#define VBVA_F_MODE_VRDP_RESET      (0x00000004)
-#define VBVA_F_MODE_VRDP_ORDER_MASK (0x00000008)
-
-#define VBVA_F_RECORD_PARTIAL       (0x80000000)
-/** @} */
-
-typedef struct
-{
-    /** The length of the record. Changed by guest. */
-    uint32_t cbRecord;
-} VBVARECORD;
-AssertCompileSize(VBVARECORD, 4);
-
-/**
- * VBVA memory layout.
- */
-#pragma pack(1) /* paranoia */
-typedef struct VBVAMEMORY
-{
-    /** VBVA_F_MODE_*. */
-    uint32_t fu32ModeFlags;
-
-    /** The offset where the data start in the buffer. */
-    uint32_t off32Data;
-    /** The offset where next data must be placed in the buffer. */
-    uint32_t off32Free;
-
-    /** The ring buffer for data. */
-    uint8_t  au8RingBuffer[VBVA_RING_BUFFER_SIZE];
-
-    /** The queue of record descriptions. */
-    VBVARECORD aRecords[VBVA_MAX_RECORDS];
-    uint32_t indexRecordFirst;
-    uint32_t indexRecordFree;
-
-    /** RDP orders supported by the client. The guest reports only them
-     * and falls back to DIRTY rects for not supported ones.
-     *
-     * (1 << VBVA_VRDP_*)
-     */
-    uint32_t fu32SupportedOrders;
-
-} VBVAMEMORY;
-#pragma pack()
-AssertCompileSize(VBVAMEMORY, 12 + (_4M-_1K) + 4*64 + 12);
-
-
 
 #ifdef VBOX_WITH_HGCM
 
@@ -1066,42 +960,6 @@ typedef struct VMMDevHGCMRequestHeader
     int32_t result;
 } VMMDevHGCMRequestHeader;
 AssertCompileSize(VMMDevHGCMRequestHeader, 24+8);
-
-/**
- * HGCM service location types.
- */
-typedef enum
-{
-    VMMDevHGCMLoc_Invalid    = 0,
-    VMMDevHGCMLoc_LocalHost  = 1,
-    VMMDevHGCMLoc_LocalHost_Existing = 2,
-    VMMDevHGCMLoc_SizeHack   = 0x7fffffff
-} HGCMServiceLocationType;
-AssertCompileSize(HGCMServiceLocationType, 4);
-
-/**
- * HGCM host service location.
- */
-typedef struct
-{
-    char achName[128]; /**< This is really szName. */
-} HGCMServiceLocationHost;
-AssertCompileSize(HGCMServiceLocationHost, 128);
-
-/**
- * HGCM service location.
- */
-typedef struct HGCMSERVICELOCATION
-{
-    /** Type of the location. */
-    HGCMServiceLocationType type;
-
-    union
-    {
-        HGCMServiceLocationHost host;
-    } u;
-} HGCMServiceLocation;
-AssertCompileSize(HGCMServiceLocation, 128+4);
 
 /**
  * HGCM connect request structure.
@@ -1540,23 +1398,120 @@ DECLINLINE(int) vmmdevInitRequest(VMMDevRequestHeader *req, VMMDevRequestType ty
 
 
 /**
+ * VBVA command header.
+ *
+ * @todo Where does this fit in?
+ */
+#pragma pack(1) /* unnecessary */
+typedef struct VBVACMDHDR
+{
+   /** Coordinates of affected rectangle. */
+   int16_t x;
+   int16_t y;
+   uint16_t w;
+   uint16_t h;
+} VBVACMDHDR;
+#pragma pack()
+
+/** @name VBVA ring defines.
+ *
+ * The VBVA ring buffer is suitable for transferring large (< 2GB) amount of
+ * data. For example big bitmaps which do not fit to the buffer.
+ *
+ * Guest starts writing to the buffer by initializing a record entry in the
+ * aRecords queue. VBVA_F_RECORD_PARTIAL indicates that the record is being
+ * written. As data is written to the ring buffer, the guest increases off32End
+ * for the record.
+ *
+ * The host reads the aRecords on flushes and processes all completed records.
+ * When host encounters situation when only a partial record presents and
+ * cbRecord & ~VBVA_F_RECORD_PARTIAL >= VBVA_RING_BUFFER_SIZE -
+ * VBVA_RING_BUFFER_THRESHOLD, the host fetched all record data and updates
+ * off32Head. After that on each flush the host continues fetching the data
+ * until the record is completed.
+ *
+ */
+#define VBVA_RING_BUFFER_SIZE        (_4M - _1K)
+#define VBVA_RING_BUFFER_THRESHOLD   (4 * _1K)
+
+#define VBVA_MAX_RECORDS (64)
+
+#define VBVA_F_MODE_ENABLED         (0x00000001)
+#define VBVA_F_MODE_VRDP            (0x00000002)
+#define VBVA_F_MODE_VRDP_RESET      (0x00000004)
+#define VBVA_F_MODE_VRDP_ORDER_MASK (0x00000008)
+
+#define VBVA_F_RECORD_PARTIAL       (0x80000000)
+/** @} */
+
+/**
+ * VBVA record.
+ */
+typedef struct
+{
+    /** The length of the record. Changed by guest. */
+    uint32_t cbRecord;
+} VBVARECORD;
+AssertCompileSize(VBVARECORD, 4);
+
+
+/**
+ * VBVA memory layout.
+ *
+ * This is a subsection of the VMMDevMemory structure.
+ */
+#pragma pack(1) /* paranoia */
+typedef struct VBVAMEMORY
+{
+    /** VBVA_F_MODE_*. */
+    uint32_t fu32ModeFlags;
+
+    /** The offset where the data start in the buffer. */
+    uint32_t off32Data;
+    /** The offset where next data must be placed in the buffer. */
+    uint32_t off32Free;
+
+    /** The ring buffer for data. */
+    uint8_t  au8RingBuffer[VBVA_RING_BUFFER_SIZE];
+
+    /** The queue of record descriptions. */
+    VBVARECORD aRecords[VBVA_MAX_RECORDS];
+    uint32_t indexRecordFirst;
+    uint32_t indexRecordFree;
+
+    /** RDP orders supported by the client. The guest reports only them
+     * and falls back to DIRTY rects for not supported ones.
+     *
+     * (1 << VBVA_VRDP_*)
+     */
+    uint32_t fu32SupportedOrders;
+
+} VBVAMEMORY;
+#pragma pack()
+AssertCompileSize(VBVAMEMORY, 12 + (_4M-_1K) + 4*64 + 12);
+
+
+/**
  * The layout of VMMDEV RAM region that contains information for guest.
  */
 #pragma pack(1) /* paranoia */
-typedef struct
+typedef struct VMMDevMemory
 {
-    /** size */
+    /** The size of this structure. */
     uint32_t u32Size;
-    /** version */
+    /** The structure version. (VMMDEV_MEMORY_VERSION) */
     uint32_t u32Version;
 
-    union {
-        /** Flag telling that VMMDev set the IRQ and acknowlegment is required */
-        struct {
+    union
+    {
+        struct
+        {
+            /** Flag telling that VMMDev set the IRQ and acknowlegment is required */
             bool fHaveEvents;
         } V1_04;
 
-        struct {
+        struct
+        {
             /** Pending events flags, set by host. */
             uint32_t u32HostEvents;
             /** Mask of events the guest wants to see, set by guest. */

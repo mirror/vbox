@@ -1,6 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * Guest client: display auto-resize.
+ * X11 guest client - display auto-resize.
  */
 
 /*
@@ -32,7 +32,7 @@
 #include <iprt/err.h>
 #include <iprt/thread.h>
 #include <VBox/log.h>
-#include <VBox/VBoxGuest.h>
+#include <VBox/VMMDev.h>
 #include <VBox/VBoxGuestLib.h>
 
 #include "VBoxClient.h"

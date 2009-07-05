@@ -1,9 +1,10 @@
 /** @file
- *
- * VBoxGuest -- VirtualBox Win 2000/XP guest video driver
+ * VBoxGraphics - VirtualBox Win 2000/XP guest video driver.
  *
  * Display driver entry points.
- *
+ */
+
+/*
  * Copyright (C) 2006-2007 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
@@ -22,6 +23,7 @@
 #ifndef __VBOXIOCTL__H
 #define __VBOXIOCTL__H
 
+#include <VBox/VMMDev.h>
 #include <VBox/VBoxGuest.h>
 
 #ifdef VBOX_WITH_HGSMI

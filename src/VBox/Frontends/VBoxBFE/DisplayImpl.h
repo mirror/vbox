@@ -27,7 +27,7 @@
 #include <VBox/pdm.h>
 
 #include "Framebuffer.h"
-struct _VBVACMDHDR;
+struct VBVACMDHDR;
 
 class VMDisplay
 {
@@ -97,8 +97,8 @@ private:
     uint8_t    *mpu8VbvaPartial;
     uint32_t   mcbVbvaPartial;
 
-    bool vbvaFetchCmd (struct _VBVACMDHDR **ppHdr, uint32_t *pcbCmd);
-    void vbvaReleaseCmd (struct _VBVACMDHDR *pHdr, int32_t cbCmd);
+    bool vbvaFetchCmd (struct VBVACMDHDR **ppHdr, uint32_t *pcbCmd);
+    void vbvaReleaseCmd (struct VBVACMDHDR *pHdr, int32_t cbCmd);
 
     void handleResizeCompletedEMT (void);
     volatile uint32_t mu32ResizeStatus;

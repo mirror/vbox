@@ -22,11 +22,6 @@
 #ifndef ___VMMDev_VMMDevHGCM_h
 #define ___VMMDev_VMMDevHGCM_h
 
-#include <VBox/cdefs.h>
-#include <VBox/types.h>
-
-#include <VBox/VBoxGuest.h>
-
 #include "VMMDevState.h"
 
 RT_C_DECLS_BEGIN

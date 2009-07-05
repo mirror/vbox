@@ -30,7 +30,7 @@
 
 #include "driver.h"
 
-#include <VBox/VBoxGuest.h> /* for VBOX_MOUSE_POINTER_* flags */
+#include <VBox/VMMDev.h> /* for VMMDEV_MOUSE_POINTER_* flags */
 
 #ifndef SPS_ALPHA
 #define SPS_ALPHA 0x00000010L
@@ -164,7 +164,7 @@ ULONG DrvSetPointerShape
     DWORD   returnedDataLength;
 
     DISPDBG((0, "DISP bSetHardwarePointerShape SPS_ALPHA = %d\n", fl & SPS_ALPHA));
-    
+
     // We don't use the exclusion rectangle because we only support
     // hardware Pointers. If we were doing our own Pointer simulations
     // we would want to update prcl so that the engine would call us
@@ -278,15 +278,15 @@ FLONG     fl)
      * They will be encoded in the pPointerAttributes::Enable field.
      * High word will contain hot spot info and low word - flags.
      */
-    
+
     pPointerAttributes->Enable |= (ppdev->ptlHotSpot.y & 0xFF) << 24;
     pPointerAttributes->Enable |= (ppdev->ptlHotSpot.x & 0xFF) << 16;
-    
+
     if (fl & SPS_ALPHA)
     {
         pPointerAttributes->Enable |= VBOX_MOUSE_POINTER_ALPHA;
     }
-    
+
     //
     // set animate flags
     //
@@ -296,7 +296,7 @@ FLONG     fl)
     } else if (fl & SPS_ANIMATEUPDATE) {
         pPointerAttributes->Flags |= VIDEO_MODE_ANIMATE_UPDATE;
     }
-    
+
 
     //
     // Set the new Pointer shape.
@@ -313,17 +313,17 @@ FLONG     fl)
         DISPDBG((1, "DISP:Failed IOCTL_VIDEO_SET_POINTER_ATTR call\n"));
         return(FALSE);
     }
-    
+
     //
     // Set new pointer position
     //
-    
+
     if (x != -1) {
         VIDEO_POINTER_POSITION vpp;
-        
+
         vpp.Column = pPointerAttributes->Column;
         vpp.Row = pPointerAttributes->Row;
-        
+
         if (EngDeviceIoControl(ppdev->hDriver,
                                IOCTL_VIDEO_SET_POINTER_POSITION,
                                &vpp,
@@ -331,12 +331,12 @@ FLONG     fl)
                                NULL,
                                0,
                                &returnedDataLength)) {
-            
+
             // Should never fail, informational message.
             DISPDBG((1, "DISP:Failed IOCTL_VIDEO_SET_POINTER_POSITION call\n"));
-        }    
+        }
     }
-    
+
     return(TRUE);
 }
 
@@ -355,25 +355,25 @@ BOOL bCopyMonoPointer(
     SURFOBJ *psoMask)
 {
     PBYTE pjSrc = NULL;
-    
+
     ULONG cy = 0;
-    
+
     PVIDEO_POINTER_ATTRIBUTES pPointerAttributes = ppdev->pPointerAttributes;
-    
+
     PBYTE pjDstAnd = pPointerAttributes->Pixels;
     ULONG cjAnd = 0;
     PBYTE pjDstXor = pPointerAttributes->Pixels;
 
     ULONG cxSrc = psoMask->sizlBitmap.cx;
     ULONG cySrc = psoMask->sizlBitmap.cy / 2; /* /2 because both masks are in there */
-    
+
     // Make sure the new pointer isn't too big to handle,
     // strip the size to 64x64 if necessary
     if (cxSrc > ppdev->PointerCapabilities.MaxWidth)
     {
         cxSrc = ppdev->PointerCapabilities.MaxWidth;
     }
-    
+
     if (cySrc > ppdev->PointerCapabilities.MaxHeight)
     {
         cySrc = ppdev->PointerCapabilities.MaxWidth;
@@ -381,51 +381,51 @@ BOOL bCopyMonoPointer(
 
     /* Size of AND mask in bytes */
     cjAnd = ((cxSrc + 7) / 8) * cySrc;
-    
+
     /* Pointer to XOR mask is 4-bytes aligned */
     pjDstXor += (cjAnd + 3) & ~3;
-    
+
     pPointerAttributes->Width = cxSrc;
     pPointerAttributes->Height = cySrc;
     pPointerAttributes->WidthInBytes = cxSrc * 4;
-    
+
     /* Init AND mask to 1 */
     RtlFillMemory (pjDstAnd, cjAnd, 0xFF);
-    
-    /* 
+
+    /*
      * Copy AND mask.
      */
-         
+
     DISPDBG((0, "DISP bCopyMonoPointer going to copy AND mask\n"));
-        
+
     pjSrc = (PBYTE)psoMask->pvScan0;
-        
+
     for (cy = 0; cy < cySrc; cy++)
     {
         RtlCopyMemory (pjDstAnd, pjSrc, (cxSrc + 7) / 8);
-    
+
         // Point to next source and dest scans
         pjSrc += psoMask->lDelta;
         pjDstAnd += (cxSrc + 7) / 8;
     }
-        
+
     DISPDBG((0, "DISP bCopyMonoPointer AND mask copied\n"));
-        
+
     DISPDBG((0, "DISP bCopyMonoPointer going to create RGB0 XOR mask\n"));
-    
+
     for (cy = 0; cy < cySrc; ++cy)
     {
         ULONG cx;
-        
+
         UCHAR bitmask = 0x80;
-                        
+
         for (cx = 0; cx < cxSrc; cx++, bitmask >>= 1)
         {
             if (bitmask == 0)
             {
                 bitmask = 0x80;
             }
-        
+
             if (pjSrc[cx / 8] & bitmask)
             {
                 *(ULONG *)&pjDstXor[cx * 4] = 0x00FFFFFF;
@@ -440,7 +440,7 @@ BOOL bCopyMonoPointer(
         pjSrc += psoMask->lDelta;
         pjDstXor += cxSrc * 4;
     }
-    
+
     DISPDBG((0, "DISP bCopyMonoPointer created RGB0 XOR mask\n"));
 
     return(TRUE);
@@ -472,7 +472,7 @@ FLONG fl)
      * Otherwise A bytes are undefined (but will be 0).
      *
      */
-     
+
     /* To simplify this function we use the following method:
      *   for pointers with alpha channel
      *     we have BGRA values in psoColor and will simply copy them to pPointerAttributes->Pixels
@@ -480,31 +480,31 @@ FLONG fl)
      *     always convert supplied bitmap to 32 bit BGR0
      *     copy AND mask and new BGR0 XOR mask to pPointerAttributes->Pixels
      */
-    
+
     HSURF hsurf32bpp  = NULL;
     SURFOBJ *pso32bpp = NULL;
 
     PBYTE pjSrcAnd = NULL;
     PBYTE pjSrcXor = NULL;
-    
+
     ULONG cy = 0;
-    
+
     PVIDEO_POINTER_ATTRIBUTES pPointerAttributes = ppdev->pPointerAttributes;
-    
+
     PBYTE pjDstAnd = pPointerAttributes->Pixels;
     ULONG cjAnd = 0;
     PBYTE pjDstXor = pPointerAttributes->Pixels;
 
     ULONG cxSrc = psoColor->sizlBitmap.cx;
     ULONG cySrc = psoColor->sizlBitmap.cy;
-    
+
     // Make sure the new pointer isn't too big to handle,
     // strip the size to 64x64 if necessary
     if (cxSrc > ppdev->PointerCapabilities.MaxWidth)
     {
         cxSrc = ppdev->PointerCapabilities.MaxWidth;
     }
-    
+
     if (cySrc > ppdev->PointerCapabilities.MaxHeight)
     {
         cySrc = ppdev->PointerCapabilities.MaxWidth;
@@ -512,56 +512,56 @@ FLONG fl)
 
     /* Size of AND mask in bytes */
     cjAnd = ((cxSrc + 7) / 8) * cySrc;
-    
+
     /* Pointer to XOR mask is 4-bytes aligned */
     pjDstXor += (cjAnd + 3) & ~3;
-    
+
     pPointerAttributes->Width = cxSrc;
     pPointerAttributes->Height = cySrc;
     pPointerAttributes->WidthInBytes = cxSrc * 4;
-    
+
     /* Init AND mask to 1 */
     RtlFillMemory (pjDstAnd, cjAnd, 0xFF);
 
     if (fl & SPS_ALPHA)
     {
         PBYTE pjSrcAlpha = (PBYTE)psoColor->pvScan0;
-        
+
         DISPDBG((0, "DISP bCopyColorPointer SPS_ALPHA\n"));
-        
+
         pso32bpp = psoColor;
-        
-        /* 
-         * Emulate AND mask to provide viewable mouse pointer for 
+
+        /*
+         * Emulate AND mask to provide viewable mouse pointer for
          * hardware which does not support alpha channel.
          */
-        
+
         DISPDBG((0, "DISP bCopyColorPointer going to emulate AND mask\n"));
-        
+
         for (cy = 0; cy < cySrc; cy++)
         {
             ULONG cx;
-            
+
             UCHAR bitmask = 0x80;
-            
+
             for (cx = 0; cx < cxSrc; cx++, bitmask >>= 1)
             {
                 if (bitmask == 0)
                 {
                     bitmask = 0x80;
                 }
-                
+
                 if (pjSrcAlpha[cx * 4 + 3] > 0x7f)
                 {
                     pjDstAnd[cx / 8] &= ~bitmask;
                 }
             }
-    
+
             // Point to next source and dest scans
             pjSrcAlpha += pso32bpp->lDelta;
             pjDstAnd += (cxSrc + 7) / 8;
         }
-        
+
         DISPDBG((0, "DISP bCopyColorPointer AND mask emulated\n"));
     }
     else
@@ -571,33 +571,33 @@ FLONG fl)
             /* This can not be, mask must be supplied for a color pointer. */
             return (FALSE);
         }
-        
-        /* 
+
+        /*
          * Copy AND mask.
          */
-         
+
         DISPDBG((0, "DISP bCopyColorPointer going to copy AND mask\n"));
-        
+
         pjSrcAnd = (PBYTE)psoMask->pvScan0;
-        
+
         for (cy = 0; cy < cySrc; cy++)
         {
             RtlCopyMemory (pjDstAnd, pjSrcAnd, (cxSrc + 7) / 8);
-    
+
             // Point to next source and dest scans
             pjSrcAnd += psoMask->lDelta;
             pjDstAnd += (cxSrc + 7) / 8;
         }
-        
+
         DISPDBG((0, "DISP bCopyColorPointer AND mask copied\n"));
-        
-        /* 
+
+        /*
          * Convert given psoColor to 32 bit BGR0.
          */
-         
+
         DISPDBG((0, "DISP bCopyColorPointer psoScreen t = %d, f = %d, psoColor t = %d, f = %d, pxlo = %p, psoColor->lDelta = %d, ->cx = %d\n",
                  psoScreen->iType, psoScreen->iBitmapFormat, psoColor->iType, psoColor->iBitmapFormat, pxlo, psoColor->lDelta, psoColor->sizlBitmap.cx));
-        
+
         if (psoColor->iType == STYPE_BITMAP
             && psoColor->iBitmapFormat == BMF_32BPP)
         {
@@ -609,51 +609,51 @@ FLONG fl)
         {
             HSURF hsurfBitmap  = NULL;
             SURFOBJ *psoBitmap = NULL;
-            
+
             SIZEL sizl = psoColor->sizlBitmap;
-            
+
             if ((pxlo != NULL && pxlo->flXlate != XO_TRIVIAL)
                 || (psoColor->iType != STYPE_BITMAP))
             {
                 /* Convert the unknown format to a screen format bitmap. */
-                
+
                 RECTL rclDst;
                 POINTL ptlSrc;
-            
+
                 DISPDBG((0, "DISP bCopyColorPointer going to convert XOR mask to bitmap\n"));
-            
+
                 hsurfBitmap = (HSURF)EngCreateBitmap (sizl, 0, psoScreen->iBitmapFormat, BMF_TOPDOWN, NULL);
-            
+
                 if (hsurfBitmap == NULL)
                 {
                     return FALSE;
                 }
-             
+
                 psoBitmap = EngLockSurface (hsurfBitmap);
-            
+
                 if (psoBitmap == NULL)
                 {
                     EngDeleteSurface (hsurfBitmap);
                     return FALSE;
                 }
-            
+
                 /* Now do the bitmap conversion using EngCopyBits(). */
-            
+
                 rclDst.left = 0;
                 rclDst.top = 0;
                 rclDst.right = sizl.cx;
                 rclDst.bottom = sizl.cy;
-            
+
                 ptlSrc.x = 0;
                 ptlSrc.y = 0;
-                
+
                 if (!EngCopyBits (psoBitmap, psoColor, NULL, pxlo, &rclDst, &ptlSrc))
                 {
                     EngUnlockSurface (psoBitmap);
                     EngDeleteSurface (hsurfBitmap);
                     return FALSE;
                 }
-            
+
                 DISPDBG((0, "DISP bCopyColorPointer XOR mask converted to bitmap\n"));
             }
             else
@@ -661,21 +661,21 @@ FLONG fl)
                 DISPDBG((0, "DISP bCopyColorPointer XOR mask is already a bitmap\n"));
                 psoBitmap = psoColor;
             }
-            
+
             /* Create 32 bpp surface for XOR mask */
             hsurf32bpp = (HSURF)EngCreateBitmap (sizl, 0, BMF_32BPP, BMF_TOPDOWN, NULL);
-            
+
             if (hsurf32bpp != NULL)
             {
                 pso32bpp = EngLockSurface (hsurf32bpp);
-            
+
                 if (pso32bpp == NULL)
                 {
                     EngDeleteSurface (hsurf32bpp);
                     hsurf32bpp = NULL;
                 }
             }
-            
+
             if (pso32bpp)
             {
                 /* Convert psoBitmap bits to pso32bpp bits for known formats */
@@ -683,22 +683,22 @@ FLONG fl)
                 {
                     PBYTE src = (PBYTE)psoBitmap->pvScan0;
                     PBYTE dst = (PBYTE)pso32bpp->pvScan0;
-                    
+
                     PPALETTEENTRY pPal = ppdev->pPal;
                     ULONG cPalette = 256; /* 256 is hardcoded in the driver in palette.c */
-                    
+
                     DISPDBG((0, "DISP bCopyColorPointer XOR mask conv 8 bpp to 32 bpp palette: %d entries\n", cPalette));
-                    
+
                     for (cy = 0; cy < (ULONG)sizl.cy; cy++)
                     {
                         ULONG cx;
-                        
+
                         PBYTE d = dst;
-                        
+
                         for (cx = 0; cx < (ULONG)sizl.cx; cx++)
                         {
                             BYTE index = src[cx];
-                            
+
                             *d++ = pPal[index].peBlue;  /* B */
                             *d++ = pPal[index].peGreen; /* G */
                             *d++ = pPal[index].peRed;   /* R */
@@ -709,26 +709,26 @@ FLONG fl)
                         src += psoBitmap->lDelta;
                         dst += pso32bpp->lDelta;
                     }
-                    
+
                     DISPDBG((0, "DISP bCopyColorPointer XOR mask conv 8 bpp to 32 bpp completed\n"));
                 }
                 else if (psoBitmap->iBitmapFormat == BMF_16BPP)
                 {
                     PBYTE src = (PBYTE)psoBitmap->pvScan0;
                     PBYTE dst = (PBYTE)pso32bpp->pvScan0;
-                    
+
                     DISPDBG((0, "DISP bCopyColorPointer XOR mask conv 16 bpp to 32 bpp\n"));
-                    
+
                     for (cy = 0; cy < (ULONG)sizl.cy; cy++)
                     {
                         ULONG cx;
-                    
+
                         PBYTE d = dst;
-                        
+
                         for (cx = 0; cx < (ULONG)sizl.cx; cx++)
                         {
                             USHORT usSrc = *(USHORT *)&src[cx * 2];
-                            
+
                             *d++ = (BYTE)( usSrc        << 3); /* B */
                             *d++ = (BYTE)((usSrc >> 5)  << 2); /* G */
                             *d++ = (BYTE)((usSrc >> 11) << 3); /* R */
@@ -739,23 +739,23 @@ FLONG fl)
                         src += psoBitmap->lDelta;
                         dst += pso32bpp->lDelta;
                     }
-                    
+
                     DISPDBG((0, "DISP bCopyColorPointer XOR mask conv 16 bpp to 32 bpp completed\n"));
                 }
                 else if (psoBitmap->iBitmapFormat == BMF_24BPP)
                 {
                     PBYTE src = (PBYTE)psoBitmap->pvScan0;
                     PBYTE dst = (PBYTE)pso32bpp->pvScan0;
-                    
+
                     DISPDBG((0, "DISP bCopyColorPointer XOR mask conv 24 bpp to 32 bpp\n"));
-                    
+
                     for (cy = 0; cy < (ULONG)sizl.cy; cy++)
                     {
                         ULONG cx;
-                        
+
                         PBYTE s = src;
                         PBYTE d = dst;
-                        
+
                         for (cx = 0; cx < (ULONG)sizl.cx; cx++)
                         {
                             *d++ = *s++; /* B */
@@ -768,28 +768,28 @@ FLONG fl)
                         src += psoBitmap->lDelta;
                         dst += pso32bpp->lDelta;
                     }
-                    
+
                     DISPDBG((0, "DISP bCopyColorPointer XOR mask conv 24 bpp to 32 bpp completed\n"));
                 }
                 else if (psoBitmap->iBitmapFormat == BMF_32BPP)
                 {
                     DISPDBG((0, "DISP bCopyColorPointer XOR mask conv 32 bpp to 32 bpp, pso32bpp->cjBits = %d, psoBitmap->cjBits = %d\n", pso32bpp->cjBits, psoBitmap->cjBits));
-                    
+
                     RtlCopyMemory (pso32bpp->pvBits, psoBitmap->pvBits, min(pso32bpp->cjBits, psoBitmap->cjBits));
-                    
+
                     DISPDBG((0, "DISP bCopyColorPointer XOR mask conv 32 bpp to 32 bpp completed\n"));
                 }
                 else
                 {
                     DISPDBG((0, "DISP bCopyColorPointer XOR mask unsupported bpp\n"));
-                    
+
                     EngUnlockSurface (pso32bpp);
                     pso32bpp = NULL;
                     EngDeleteSurface (hsurf32bpp);
                     hsurf32bpp = NULL;
                 }
             }
-            
+
             if (hsurfBitmap)
             {
                 EngUnlockSurface (psoBitmap);
@@ -799,35 +799,35 @@ FLONG fl)
             }
         }
     }
-    
+
     if (!pso32bpp)
     {
          return (FALSE);
     }
-    
-    /* 
-     * pso is 32 bit BGRX bitmap. Copy it to Pixels 
+
+    /*
+     * pso is 32 bit BGRX bitmap. Copy it to Pixels
      */
-    
+
     pjSrcXor = (PBYTE)pso32bpp->pvScan0;
-    
+
     for (cy = 0; cy < cySrc; cy++)
     {
         /* 32 bit bitmap is being copied */
-        RtlCopyMemory (pjDstXor, pjSrcXor, cxSrc * 4); 
+        RtlCopyMemory (pjDstXor, pjSrcXor, cxSrc * 4);
 
         /* Point to next source and dest scans */
         pjSrcXor += pso32bpp->lDelta;
         pjDstXor += pPointerAttributes->WidthInBytes;
     }
-    
+
     if (pso32bpp != psoColor)
     {
         /* Deallocate the temporary 32 bit pso */
         EngUnlockSurface (pso32bpp);
         EngDeleteSurface (hsurf32bpp);
     }
-    
+
     return (TRUE);
 }
 
@@ -892,7 +892,7 @@ BOOL bInitPointer(PPDEV ppdev, DEVINFO *pdevinfo)
     {
        pdevinfo->flGraphicsCaps &= ~GCAPS_ASYNCMOVE;
     }
-    
+
     /* VBOX supports pointers with alpha channel */
     pdevinfo->flGraphicsCaps2 |= GCAPS2_ALPHACURSOR;
 

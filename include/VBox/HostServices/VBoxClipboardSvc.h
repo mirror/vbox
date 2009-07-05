@@ -32,7 +32,8 @@
 #define ___VBox_HostService_VBoxClipboardSvc_h
 
 #include <VBox/types.h>
-#include <VBox/VBoxGuest.h>
+#include <VBox/VMMDev.h>
+#include <VBox/VBoxGuest2.h>
 #include <VBox/hgcmsvc.h>
 
 /*

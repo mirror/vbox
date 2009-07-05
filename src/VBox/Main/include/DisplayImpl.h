@@ -29,7 +29,7 @@
 
 #include <iprt/semaphore.h>
 #include <VBox/pdmdrv.h>
-#include <VBox/VBoxGuest.h>
+#include <VBox/VMMDev.h>
 #include <VBox/VBoxVideo.h>
 
 class Console;
