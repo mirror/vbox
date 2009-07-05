@@ -24,6 +24,7 @@
 #include "VBoxGINA.h"
 #include "Helper.h"
 #include "Dialog.h"
+#include <VBox/VBoxGuestLib.h>
 
 /*
  * Global variables
