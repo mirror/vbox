@@ -43,7 +43,7 @@ int VBoxMouseInit(void)
         return 1;
     }
 
-    rc = VbglR3SetMouseStatus(VBOXGUEST_MOUSE_GUEST_CAN_ABSOLUTE | VBOXGUEST_MOUSE_GUEST_NEEDS_HOST_CURSOR);
+    rc = VbglR3SetMouseStatus(VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE | VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR);
     if (RT_FAILURE(rc))
     {
         ErrorF("Error sending mouse pointer capabilities to VMM! rc = %d (%s)\n",
@@ -118,7 +118,7 @@ int VBoxMouseInit(void)
 
     /* tell the host that we want absolute coordinates */
     vmmdevInitRequest((VMMDevRequestHeader*)&req, VMMDevReq_SetMouseStatus);
-    req.mouseFeatures = VBOXGUEST_MOUSE_GUEST_CAN_ABSOLUTE | VBOXGUEST_MOUSE_GUEST_NEEDS_HOST_CURSOR;
+    req.mouseFeatures = VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE | VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR;
     req.pointerXPos = 0;
     req.pointerYPos = 0;
 /** @todo r=bird: Michael, I thought we decided a long time ago that all these should be replaced by VbglR3. I assume this is just a leftover... */
@@ -152,7 +152,7 @@ int VBoxMouseQueryPosition(unsigned int *abs_x, unsigned int *abs_y)
         if (RT_SUCCESS(g_vmmreqMouseStatus->header.rc))
         {
             /* does the host want absolute coordinates? */
-            if (g_vmmreqMouseStatus->mouseFeatures & VBOXGUEST_MOUSE_HOST_CAN_ABSOLUTE)
+            if (g_vmmreqMouseStatus->mouseFeatures & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE)
             {
                 *abs_x = g_vmmreqMouseStatus->pointerXPos;
                 *abs_y = g_vmmreqMouseStatus->pointerYPos;

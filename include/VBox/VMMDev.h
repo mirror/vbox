@@ -47,45 +47,6 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-/** @name Mouse capability bits
- * @{ */
-/** the guest requests absolute mouse coordinates (guest additions installed) */
-#define VMMDEV_MOUSEGUESTWANTSABS                           RT_BIT(0)
-/** the host wants to send absolute mouse coordinates (input not captured) */
-#define VMMDEV_MOUSEHOSTWANTSABS                            RT_BIT(1)
-/** the guest needs a hardware cursor on host. When guest additions are installed
- *  and the host has promised to display the cursor itself, the guest installs a
- *  hardware mouse driver. Don't ask the guest to switch to a software cursor then. */
-#define VMMDEV_MOUSEGUESTNEEDSHOSTCUR                       RT_BIT(2)
-/** the host is NOT able to draw the cursor itself (e.g. L4 console) */
-#define VMMDEV_MOUSEHOSTCANNOTHWPOINTER                     RT_BIT(3)
-/** The guest can read VMMDev events to find out about pointer movement */
-#define VMMDEV_MOUSEGUESTUSESVMMDEV                         RT_BIT(4)
-/** @} */
-
-/** @name Flags for pfnSetCredentials
- * @{ */
-/** the guest should perform a logon with the credentials */
-#define VMMDEV_SETCREDENTIALS_GUESTLOGON                    RT_BIT(0)
-/** the guest should prevent local logons */
-#define VMMDEV_SETCREDENTIALS_NOLOCALLOGON                  RT_BIT(1)
-/** the guest should verify the credentials */
-#define VMMDEV_SETCREDENTIALS_JUDGE                         RT_BIT(15)
-/** @} */
-
-/** @name Guest capability bits.
- * VMMDevReq_ReportGuestCapabilities, VMMDevReq_SetGuestCapabilities
- * @{ */
-/** the guest supports seamless display rendering */
-#define VMMDEV_GUEST_SUPPORTS_SEAMLESS                      RT_BIT(0)
-/** the guest supports mapping guest to host windows */
-#define VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING     RT_BIT(1)
-/** the guest graphical additions are active - used for fast activation
- *  and deactivation of certain graphical operations (e.g. resizing & seamless).
- *  The legacy VMMDevReq_ReportGuestCapabilities request sets this
- *  automatically, but VMMDevReq_SetGuestCapabilities does not. */
-#define VMMDEV_GUEST_SUPPORTS_GRAPHICS                      RT_BIT(2)
-/** @} */
 
 /** Size of VMMDev RAM region accessible by guest.
  *  Must be big enough to contain VMMDevMemory structure (see VBoxGuest.h)
@@ -98,33 +59,45 @@ RT_C_DECLS_BEGIN
  */
 #define VMMDEV_HEAP_SIZE                                    (4 * PAGE_SIZE)
 
+/** Port for generic request interface (relative offset). */
+#define VMMDEV_PORT_OFF_REQUEST                             0
 
-/** @name VBoxGuest port definitions
+
+/** @name VMMDev events.
+ *
+ * Used mainly by VMMDevReq_AcknowledgeEvents/VMMDevEvents and version 1.3 of
+ * VMMDevMemory.
+ *
+ * @{
+ */
+/** Host mouse capabilities has been changed. */
+#define VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED             RT_BIT(0)
+/** HGCM event. */
+#define VMMDEV_EVENT_HGCM                                   RT_BIT(1)
+/** A display change request has been issued. */
+#define VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST                 RT_BIT(2)
+/** Credentials are available for judgement. */
+#define VMMDEV_EVENT_JUDGE_CREDENTIALS                      RT_BIT(3)
+/** The guest has been restored. */
+#define VMMDEV_EVENT_RESTORED                               RT_BIT(4)
+/** Seamless mode state changed. */
+#define VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST           RT_BIT(5)
+/** Memory balloon size changed. */
+#define VMMDEV_EVENT_BALLOON_CHANGE_REQUEST                 RT_BIT(6)
+/** Statistics interval changed. */
+#define VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST     RT_BIT(7)
+/** VRDP status changed. */
+#define VMMDEV_EVENT_VRDP                                   RT_BIT(8)
+/** New mouse position data available */
+#define VMMDEV_EVENT_MOUSE_POSITION_CHANGED                 RT_BIT(9)
+/** @} */
+
+
+/** @defgroup grp_vmmdev_req    VMMDev Generic Request Interface
  * @{
  */
 
-/** guest can (== wants to) handle absolute coordinates */
-#define VBOXGUEST_MOUSE_GUEST_CAN_ABSOLUTE      RT_BIT(0)
-/** host can (== wants to) send absolute coordinates */
-#define VBOXGUEST_MOUSE_HOST_CAN_ABSOLUTE       RT_BIT(1)
-/** guest can *NOT* switch to software cursor and therefore depends on the host cursor */
-#define VBOXGUEST_MOUSE_GUEST_NEEDS_HOST_CURSOR RT_BIT(2)
-/** host does NOT provide support for drawing the cursor itself (e.g. L4 console) */
-#define VBOXGUEST_MOUSE_HOST_CANNOT_HWPOINTER   RT_BIT(3)
-/** The guest can read VMMDev events to find out about pointer movement */
-#define VBOXGUEST_MOUSE_GUEST_USES_VMMDEV       RT_BIT(4)
-
-/** fictive start address of the hypervisor physical memory for MmMapIoSpace */
-#define HYPERVISOR_PHYSICAL_START  0xf8000000
-
-/*
- * VMMDev Generic Request Interface
- */
-
-/** port for generic request interface */
-#define PORT_VMMDEV_REQUEST_OFFSET 0
-
-/** Current version of the VMMDev interface.
+/** @name Current version of the VMMDev interface.
  *
  * Additions are allowed to work only if
  * additions_major == vmmdev_current && additions_minor <= vmmdev_current.
@@ -132,11 +105,12 @@ RT_C_DECLS_BEGIN
  *
  * @remark  These defines also live in the 16-bit and assembly versions of this header.
  */
-#define VMMDEV_VERSION       0x00010004
-#define VMMDEV_VERSION_MAJOR (VMMDEV_VERSION >> 16)
-#define VMMDEV_VERSION_MINOR (VMMDEV_VERSION & 0xffff)
+#define VMMDEV_VERSION                      0x00010004
+#define VMMDEV_VERSION_MAJOR                (VMMDEV_VERSION >> 16)
+#define VMMDEV_VERSION_MINOR                (VMMDEV_VERSION & 0xffff)
+/** @} */
 
-/* Maximum request packet size */
+/** Maximum request packet size. */
 #define VMMDEV_MAX_VMMDEVREQ_SIZE           _1M
 
 /**
@@ -216,62 +190,87 @@ typedef enum
 /** Version of VMMDevRequestHeader structure. */
 #define VMMDEV_REQUEST_HEADER_VERSION (0x10001)
 
-#pragma pack(4)
-/** generic VMMDev request header */
+#pragma pack(4) /* force structure dword packing here. */
+
+/**
+ * Generic VMMDev request header.
+ */
 typedef struct
 {
-    /** size of the structure in bytes (including body). Filled by caller */
+    /** IN: Size of the structure in bytes (including body). */
     uint32_t size;
-    /** version of the structure. Filled by caller */
+    /** IN: Version of the structure.*/
     uint32_t version;
-    /** type of the request */
+    /** IN: Type of the request. */
     VMMDevRequestType requestType;
-    /** return code. Filled by VMMDev */
+    /** OUT: Return code. */
     int32_t  rc;
-    /** reserved fields */
+    /** Reserved field no.1. MBZ. */
     uint32_t reserved1;
+    /** Reserved field no.2. MBZ. */
     uint32_t reserved2;
 } VMMDevRequestHeader;
 AssertCompileSize(VMMDevRequestHeader, 24);
 
-/** mouse status request structure */
+
+/**
+ * Mouse status request structure.
+ *
+ * Used by VMMDevReq_GetMouseStatus and VMMDevReq_SetMouseStatus.
+ */
 typedef struct
 {
     /** header */
     VMMDevRequestHeader header;
-    /** mouse feature mask */
+    /** Mouse feature mask. See VMMDEV_MOUSE_*. */
     uint32_t mouseFeatures;
-    /** mouse x position */
+    /** Mouse x position. */
     uint32_t pointerXPos;
-    /** mouse y position */
+    /** Mouse y position. */
     uint32_t pointerYPos;
 } VMMDevReqMouseStatus;
+AssertCompileSize(VMMDevReqMouseStatus, 24+12);
 
-/** Note VBOX_MOUSE_POINTER_* flags are used in guest video driver,
- *  values must be <= 0x8000 and must not be changed.
+/** @name Mouse capability bits (VMMDevReqMouseStatus::mouseFeatures).
+ * @{ */
+/** The guest can (== wants to) handle absolute coordinates.  */
+#define VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE                     RT_BIT(0)
+/** The host can (== wants to) send absolute coordinates.
+ * (Input not captured.) */
+#define VMMDEV_MOUSE_HOST_CAN_ABSOLUTE                      RT_BIT(1)
+/** The guest can *NOT* switch to software cursor and therefore depends on the
+ * host cursor.
+ *
+ * When guest additions are installed and the host has promised to display the
+ * cursor itself, the guest installs a hardware mouse driver. Don't ask the
+ * guest to switch to a software cursor then. */
+#define VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR                RT_BIT(2)
+/** The host does NOT provide support for drawing the cursor itself.
+ * This is for instance the case for the L4 console. */
+#define VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER                  RT_BIT(3)
+/** The guest can read VMMDev events to find out about pointer movement */
+#define VMMDEV_MOUSE_GUEST_USES_VMMDEV                      RT_BIT(4)
+/** @} */
+
+
+/**
+ * Mouse pointer shape/visibility change request.
+ *
+ * Used by VMMDevReq_SetPointerShape. The size is variable.
  */
-
-/** pointer is visible */
-#define VBOX_MOUSE_POINTER_VISIBLE (0x0001)
-/** pointer has alpha channel */
-#define VBOX_MOUSE_POINTER_ALPHA   (0x0002)
-/** pointerData contains new pointer shape */
-#define VBOX_MOUSE_POINTER_SHAPE   (0x0004)
-
-/** mouse pointer shape/visibility change request */
 typedef struct
 {
-    /** header */
+    /** Header. */
     VMMDevRequestHeader header;
-    /** VBOX_MOUSE_POINTER_* bit flags */
+    /** VBOX_MOUSE_POINTER_* bit flags. */
     uint32_t fFlags;
-    /** x coordinate of hot spot */
+    /** x coordinate of hot spot. */
     uint32_t xHot;
-    /** y coordinate of hot spot */
+    /** y coordinate of hot spot. */
     uint32_t yHot;
-    /** width of the pointer in pixels */
+    /** Width of the pointer in pixels. */
     uint32_t width;
-    /** height of the pointer in scanlines */
+    /** Height of the pointer in scanlines. */
     uint32_t height;
     /** Pointer data.
      *
@@ -296,12 +295,33 @@ typedef struct
      * cXor = width * 4 * height.
      ****
      *
-     * Preallocate 4 bytes for accessing actual data as p->pointerData
+     * Preallocate 4 bytes for accessing actual data as p->pointerData.
      */
     char pointerData[4];
 } VMMDevReqMousePointer;
+AssertCompileSize(VMMDevReqMousePointer, 24+24);
 
-/** string log request structure */
+/** @name VMMDevReqMousePointer::fFlags
+ * @note The VBOX_MOUSE_POINTER_* flags are used in the guest video driver,
+ *       values must be <= 0x8000 and must not be changed. (try make more sense
+ *       of this, please).
+ * @{
+ */
+/** pointer is visible */
+#define VBOX_MOUSE_POINTER_VISIBLE (0x0001)
+/** pointer has alpha channel */
+#define VBOX_MOUSE_POINTER_ALPHA   (0x0002)
+/** pointerData contains new pointer shape */
+#define VBOX_MOUSE_POINTER_SHAPE   (0x0004)
+/** @} */
+
+
+/**
+ * String log request structure.
+ *
+ * Used by VMMDevReq_LogString.
+ * @deprecated  Use the IPRT logger or VbglR3WriteLog instead.
+ */
 typedef struct
 {
     /** header */
@@ -309,69 +329,126 @@ typedef struct
     /** variable length string data */
     char szString[1];
 } VMMDevReqLogString;
+AssertCompileSize(VMMDevReqLogString, 24+4);
 
-/** host version request structure */
+
+/**
+ * VirtualBox host version request structure.
+ *
+ * Used by VMMDevReq_GetHostVersion.
+ */
 typedef struct
 {
-    /** header */
+    /** Header. */
     VMMDevRequestHeader header;
-    /** major version */
+    /** Major version. */
     uint32_t major;
-    /** minor version */
+    /** Minor version. */
     uint32_t minor;
-    /** build number */
+    /** Build number. */
     uint32_t build;
 } VMMDevReqHostVersion;
+AssertCompileSize(VMMDevReqHostVersion, 24+12);
 
-/** guest capabilites structure */
+
+/**
+ * Guest capabilites structure.
+ *
+ * Used by VMMDevReq_ReportGuestCapabilities.
+ */
 typedef struct
 {
-    /** header */
+    /** Header. */
     VMMDevRequestHeader header;
-    /** capabilities (VMMDEV_GUEST_*) */
-    uint32_t    caps;
+    /** Capabilities (VMMDEV_GUEST_*). */
+    uint32_t caps;
 } VMMDevReqGuestCapabilities;
+AssertCompileSize(VMMDevReqGuestCapabilities, 24+4);
 
-/** guest capabilites structure */
+/**
+ * Guest capabilites structure, version 2.
+ *
+ * Used by VMMDevReq_SetGuestCapabilities.
+ */
 typedef struct
 {
-    /** header */
+    /** Header. */
     VMMDevRequestHeader header;
-    /** mask of capabilities to be added */
-    uint32_t    u32OrMask;
-    /** mask of capabilities to be removed */
-    uint32_t    u32NotMask;
+    /** Mask of capabilities to be added. */
+    uint32_t u32OrMask;
+    /** Mask of capabilities to be removed. */
+    uint32_t u32NotMask;
 } VMMDevReqGuestCapabilities2;
+AssertCompileSize(VMMDevReqGuestCapabilities2, 24+8);
 
-/** idle request structure */
+/** @name Guest capability bits .
+ * Used by VMMDevReq_ReportGuestCapabilities and VMMDevReq_SetGuestCapabilities.
+ * @{ */
+/** The guest supports seamless display rendering. */
+#define VMMDEV_GUEST_SUPPORTS_SEAMLESS                      RT_BIT_32(0)
+/** The guest supports mapping guest to host windows. */
+#define VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING     RT_BIT_32(1)
+/** The guest graphical additions are active.
+ * Used for fast activation and deactivation of certain graphical operations
+ * (e.g. resizing & seamless). The legacy VMMDevReq_ReportGuestCapabilities
+ * request sets this automatically, but VMMDevReq_SetGuestCapabilities does
+ * not. */
+#define VMMDEV_GUEST_SUPPORTS_GRAPHICS                      RT_BIT_32(2)
+/** @} */
+
+
+/**
+ * Idle request structure.
+ *
+ * Used by VMMDevReq_Idle.
+ */
 typedef struct
 {
-    /** header */
+    /** Header. */
     VMMDevRequestHeader header;
 } VMMDevReqIdle;
+AssertCompileSize(VMMDevReqIdle, 24);
 
-/** host time request structure */
+
+/**
+ * Host time request structure.
+ *
+ * Used by VMMDevReq_GetHostTime.
+ */
 typedef struct
 {
-    /** header */
+    /** Header */
     VMMDevRequestHeader header;
-    /** time in milliseconds since unix epoch. Filled by VMMDev. */
+    /** OUT: Time in milliseconds since unix epoch. */
     uint64_t time;
 } VMMDevReqHostTime;
+AssertCompileSize(VMMDevReqHostTime, 24+8);
 
-/** hypervisor info structure */
+
+/**
+ * Hypervisor info structure.
+ *
+ * Used by VMMDevReq_GetHypervisorInfo and VMMDevReq_SetHypervisorInfo.
+ */
 typedef struct
 {
-    /** header */
+    /** Header. */
     VMMDevRequestHeader header;
-    /** guest virtual address of proposed hypervisor start */
-    /** TODO: Make this 64-bit compatible */
+    /** Guest virtual address of proposed hypervisor start.
+     * Not used by VMMDevReq_GetHypervisorInfo.
+     * @todo Make this 64-bit compatible? */
     RTGCPTR32 hypervisorStart;
-    /** hypervisor size in bytes */
+    /** Hypervisor size in bytes. */
     uint32_t hypervisorSize;
 } VMMDevReqHypervisorInfo;
+AssertCompileSize(VMMDevReqHypervisorInfo, 24+8);
 
-/** system power requests */
+
+/**
+ * Guest power requests.
+ *
+ * See VMMDevReq_SetPowerStatus and VMMDevPowerStateRequest.
+ */
 typedef enum
 {
     VMMDevPowerState_Invalid   = 0,
@@ -380,56 +457,134 @@ typedef enum
     VMMDevPowerState_SaveState = 3,
     VMMDevPowerState_SizeHack = 0x7fffffff
 } VMMDevPowerState;
+AssertCompileSize(VMMDevPowerState, 4);
 
-/** system power status structure */
+/**
+ * VM power status structure.
+ *
+ * Used by VMMDevReq_SetPowerStatus.
+ */
 typedef struct
 {
-    /** header */
+    /** Header. */
     VMMDevRequestHeader header;
-    /** power state request */
+    /** Power state request. */
     VMMDevPowerState powerState;
 } VMMDevPowerStateRequest;
+AssertCompileSize(VMMDevPowerStateRequest, 24+4);
 
-/** pending events structure */
+
+/**
+ * Pending events structure.
+ *
+ * Used by VMMDevReq_AcknowledgeEvents.
+ */
 typedef struct
 {
-    /** header */
+    /** Header. */
     VMMDevRequestHeader header;
-    /** pending event bitmap */
+    /** OUT: Pending event mask. */
     uint32_t events;
 } VMMDevEvents;
+AssertCompileSize(VMMDevEvents, 24+4);
 
-/** guest filter mask control */
+
+/**
+ * Guest event filter mask control.
+ *
+ * Used by VMMDevReq_CtlGuestFilterMask.
+ */
 typedef struct
 {
-    /** header */
+    /** Header. */
     VMMDevRequestHeader header;
-    /** mask of events to be added to filter */
+    /** Mask of events to be added to the filter. */
     uint32_t u32OrMask;
-    /** mask of events to be removed from filter */
+    /** Mask of events to be removed from the filter. */
     uint32_t u32NotMask;
 } VMMDevCtlGuestFilterMask;
+AssertCompileSize(VMMDevCtlGuestFilterMask, 24+8);
 
-/** guest information structure */
+
+/**
+ * Guest information structure.
+ *
+ * Used by VMMDevReportGuestInfo and PDMIVMMDEVCONNECTOR::pfnUpdateGuestVersion.
+ */
 typedef struct VBoxGuestInfo
 {
     /** The VMMDev interface version expected by additions. */
     uint32_t additionsVersion;
-    /** guest OS type */
+    /** Guest OS type. */
     VBOXOSTYPE osType;
-    /** @todo */
 } VBoxGuestInfo;
+AssertCompileSize(VBoxGuestInfo, 8);
 
-/** guest information structure */
+/**
+ * Guest information report.
+ *
+ * Used by VMMDevReq_ReportGuestInfo.
+ */
 typedef struct
 {
-    /** header */
+    /** Header. */
     VMMDevRequestHeader header;
     /** Guest information. */
     VBoxGuestInfo guestInfo;
 } VMMDevReportGuestInfo;
+AssertCompileSize(VMMDevReportGuestInfo, 24+8);
 
-/** guest statistics values */
+
+/**
+ * Guest statistics structure.
+ *
+ * Used by VMMDevReportGuestStats and PDMIVMMDEVCONNECTOR::pfnReportStatistics.
+ */
+typedef struct VBoxGuestStatistics
+{
+    /** Virtual CPU ID. */
+    uint32_t        u32CpuId;
+    /** Reported statistics. */
+    uint32_t        u32StatCaps;
+    /** Idle CPU load (0-100) for last interval. */
+    uint32_t        u32CpuLoad_Idle;
+    /** Kernel CPU load (0-100) for last interval. */
+    uint32_t        u32CpuLoad_Kernel;
+    /** User CPU load (0-100) for last interval. */
+    uint32_t        u32CpuLoad_User;
+    /** Nr of threads. */
+    uint32_t        u32Threads;
+    /** Nr of processes. */
+    uint32_t        u32Processes;
+    /** Nr of handles. */
+    uint32_t        u32Handles;
+    /** Memory load (0-100). */
+    uint32_t        u32MemoryLoad;
+    /** Page size of guest system. */
+    uint32_t        u32PageSize;
+    /** Total physical memory (in 4KB pages). */
+    uint32_t        u32PhysMemTotal;
+    /** Available physical memory (in 4KB pages). */
+    uint32_t        u32PhysMemAvail;
+    /** Ballooned physical memory (in 4KB pages). */
+    uint32_t        u32PhysMemBalloon;
+    /** Total number of committed memory (which is not necessarily in-use) (in 4KB pages). */
+    uint32_t        u32MemCommitTotal;
+    /** Total amount of memory used by the kernel (in 4KB pages). */
+    uint32_t        u32MemKernelTotal;
+    /** Total amount of paged memory used by the kernel (in 4KB pages). */
+    uint32_t        u32MemKernelPaged;
+    /** Total amount of nonpaged memory used by the kernel (in 4KB pages). */
+    uint32_t        u32MemKernelNonPaged;
+    /** Total amount of memory used for the system cache (in 4KB pages). */
+    uint32_t        u32MemSystemCache;
+    /** Pagefile size (in 4KB pages). */
+    uint32_t        u32PageFileSize;
+} VBoxGuestStatistics;
+AssertCompileSize(VBoxGuestStatistics, 19*4);
+
+/** @name Guest statistics values (VBoxGuestStatistics::u32StatCaps).
+ * @{ */
 #define VBOX_GUEST_STAT_CPU_LOAD_IDLE       RT_BIT(0)
 #define VBOX_GUEST_STAT_CPU_LOAD_KERNEL     RT_BIT(1)
 #define VBOX_GUEST_STAT_CPU_LOAD_USER       RT_BIT(2)
@@ -446,185 +601,460 @@ typedef struct
 #define VBOX_GUEST_STAT_MEM_KERNEL_NONPAGED RT_BIT(13)
 #define VBOX_GUEST_STAT_MEM_SYSTEM_CACHE    RT_BIT(14)
 #define VBOX_GUEST_STAT_PAGE_FILE_SIZE      RT_BIT(15)
+/** @} */
 
-
-/** guest statistics structure */
-typedef struct VBoxGuestStatistics
-{
-    /** Virtual CPU id */
-    uint32_t        u32CpuId;
-    /** Reported statistics */
-    uint32_t        u32StatCaps;
-    /** Idle CPU load (0-100) for last interval */
-    uint32_t        u32CpuLoad_Idle;
-    /** Kernel CPU load (0-100) for last interval */
-    uint32_t        u32CpuLoad_Kernel;
-    /** User CPU load (0-100) for last interval */
-    uint32_t        u32CpuLoad_User;
-    /** Nr of threads */
-    uint32_t        u32Threads;
-    /** Nr of processes */
-    uint32_t        u32Processes;
-    /** Nr of handles */
-    uint32_t        u32Handles;
-    /** Memory load (0-100) */
-    uint32_t        u32MemoryLoad;
-    /** Page size of guest system */
-    uint32_t        u32PageSize;
-    /** Total physical memory (in 4kb pages) */
-    uint32_t        u32PhysMemTotal;
-    /** Available physical memory (in 4kb pages) */
-    uint32_t        u32PhysMemAvail;
-    /** Ballooned physical memory (in 4kb pages) */
-    uint32_t        u32PhysMemBalloon;
-    /** Total number of committed memory (which is not necessarily in-use) (in 4kb pages) */
-    uint32_t        u32MemCommitTotal;
-    /** Total amount of memory used by the kernel (in 4kb pages) */
-    uint32_t        u32MemKernelTotal;
-    /** Total amount of paged memory used by the kernel (in 4kb pages) */
-    uint32_t        u32MemKernelPaged;
-    /** Total amount of nonpaged memory used by the kernel (in 4kb pages) */
-    uint32_t        u32MemKernelNonPaged;
-    /** Total amount of memory used for the system cache (in 4kb pages) */
-    uint32_t        u32MemSystemCache;
-    /** Pagefile size (in 4kb pages) */
-    uint32_t        u32PageFileSize;
-} VBoxGuestStatistics;
-
-/** guest statistics command structure */
+/**
+ * Guest statistics command structure.
+ *
+ * Used by VMMDevReq_ReportGuestStats.
+ */
 typedef struct
 {
-    /** header */
+    /** Header. */
     VMMDevRequestHeader header;
     /** Guest information. */
     VBoxGuestStatistics guestStats;
 } VMMDevReportGuestStats;
+AssertCompileSize(VMMDevReportGuestStats, 24+19*4);
 
-/** memory balloon change request structure */
-#define VMMDEV_MAX_MEMORY_BALLOON(PhysMemTotal)     ((90*PhysMemTotal)/100)
 
+/** Memory balloon change request structure. */
+#define VMMDEV_MAX_MEMORY_BALLOON(PhysMemTotal)     ( (9 * (PhysMemTotal)) / 10 )
+
+/**
+ * Poll for ballooning change request.
+ *
+ * Used by VMMDevReq_GetMemBalloonChangeRequest.
+ */
 typedef struct
 {
-    /** header */
+    /** Header. */
     VMMDevRequestHeader header;
-    uint32_t            u32BalloonSize;     /* balloon size in megabytes */
-    uint32_t            u32PhysMemSize;     /* guest ram size in megabytes */
+    /** Balloon size in megabytes. */
+    uint32_t            u32BalloonSize;
+    /** Guest ram size in megabytes. */
+    uint32_t            u32PhysMemSize;
+    /** Setting this to VMMDEV_EVENT_BALLOON_CHANGE_REQUEST indicates that the
+     * request is a response to that event.
+     * (Don't confuse this with VMMDevReq_AcknowledgeEvents.) */
     uint32_t            eventAck;
 } VMMDevGetMemBalloonChangeRequest;
+AssertCompileSize(VMMDevGetMemBalloonChangeRequest, 24+12);
 
-/** inflate/deflate memory balloon structure */
-#define VMMDEV_MEMORY_BALLOON_CHUNK_PAGES            (_1M/4096)
-#define VMMDEV_MEMORY_BALLOON_CHUNK_SIZE             (VMMDEV_MEMORY_BALLOON_CHUNK_PAGES*4096)
 
+/**
+ * Change the size of the balloon.
+ *
+ * Used by VMMDevReq_ChangeMemBalloon.
+ */
 typedef struct
 {
-    /** header */
+    /** Header. */
     VMMDevRequestHeader header;
+    /** The number of pages in the array. */
     uint32_t            cPages;
-    uint32_t            fInflate;       /* true = inflate, false = defalte */
+    /** true = inflate, false = deflate.  */
+    uint32_t            fInflate;
     /** Physical address (RTGCPHYS) of each page, variable size. */
     RTGCPHYS            aPhysPage[1];
 } VMMDevChangeMemBalloon;
+AssertCompileSize(VMMDevChangeMemBalloon, 24+16);
 
-/** guest statistics interval change request structure */
+/** @name The ballooning chunk size which VMMDev works at.
+ * @{ */
+#define VMMDEV_MEMORY_BALLOON_CHUNK_PAGES            (_1M/4096)
+#define VMMDEV_MEMORY_BALLOON_CHUNK_SIZE             (VMMDEV_MEMORY_BALLOON_CHUNK_PAGES*4096)
+/** @} */
+
+
+/**
+ * Guest statistics interval change request structure.
+ *
+ * Used by VMMDevReq_GetStatisticsChangeRequest.
+ */
 typedef struct
 {
-    /** header */
+    /** Header. */
     VMMDevRequestHeader header;
-    uint32_t            u32StatInterval; /* interval in seconds */
+    /** The interval in seconds. */
+    uint32_t            u32StatInterval;
+    /** Setting this to VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST indicates
+     * that the request is a response to that event.
+     * (Don't confuse this with VMMDevReq_AcknowledgeEvents.) */
     uint32_t            eventAck;
 } VMMDevGetStatisticsChangeRequest;
+AssertCompileSize(VMMDevGetStatisticsChangeRequest, 24+8);
 
-/** display change request structure */
+
+/** The length of a string field in the credentials request.
+ * @see VMMDevCredentials  */
+#define VMMDEV_CREDENTIALS_STRLEN           128
+
+/**
+ * Credentials request structure.
+ *
+ * Used by VMMDevReq_QueryCredentials.
+ */
+#pragma pack(4)
 typedef struct
 {
-    /** header */
+    /** Header. */
     VMMDevRequestHeader header;
-    /** horizontal pixel resolution (0 = do not change) */
+    /** IN/OUT: Request flags. */
+    uint32_t u32Flags;
+    /** OUT: User name (UTF-8). */
+    char szUserName[VMMDEV_CREDENTIALS_STRLEN];
+    /** OUT: Password (UTF-8). */
+    char szPassword[VMMDEV_CREDENTIALS_STRLEN];
+    /** OUT: Domain name (UTF-8). */
+    char szDomain[VMMDEV_CREDENTIALS_STRLEN];
+} VMMDevCredentials;
+AssertCompileSize(VMMDevCredentials, 24+4+3*128);
+#pragma pack()
+
+/** @name Credentials request flag (VMMDevCredentials::u32Flags)
+ * @{ */
+/** query from host whether credentials are present */
+#define VMMDEV_CREDENTIALS_QUERYPRESENCE     RT_BIT(1)
+/** read credentials from host (can be combined with clear) */
+#define VMMDEV_CREDENTIALS_READ              RT_BIT(2)
+/** clear credentials on host (can be combined with read) */
+#define VMMDEV_CREDENTIALS_CLEAR             RT_BIT(3)
+/** read credentials for judgement in the guest */
+#define VMMDEV_CREDENTIALS_READJUDGE         RT_BIT(8)
+/** clear credentials for judegement on the host */
+#define VMMDEV_CREDENTIALS_CLEARJUDGE        RT_BIT(9)
+/** report credentials acceptance by guest */
+#define VMMDEV_CREDENTIALS_JUDGE_OK          RT_BIT(10)
+/** report credentials denial by guest */
+#define VMMDEV_CREDENTIALS_JUDGE_DENY        RT_BIT(11)
+/** report that no judgement could be made by guest */
+#define VMMDEV_CREDENTIALS_JUDGE_NOJUDGEMENT RT_BIT(12)
+
+/** flag telling the guest that credentials are present */
+#define VMMDEV_CREDENTIALS_PRESENT           RT_BIT(16)
+/** flag telling guest that local logons should be prohibited */
+#define VMMDEV_CREDENTIALS_NOLOCALLOGON      RT_BIT(17)
+/** @} */
+
+
+/**
+ * Seamless mode.
+ *
+ * Used by VbglR3SeamlessWaitEvent
+ *
+ * @todo DARN! DARN! DARN! Who forgot to do the 32-bit hack here???
+ *       FIXME! XXX!
+ *
+ *       We will now have to carefully check how our compilers have treated this
+ *       flag. If any are compressing it into a byte type, we'll have to check
+ *       how the request memory is initialized. If we are 104% sure it's ok to
+ *       expand it, we'll expand it. If not, we must redefine the field to a
+ *       uint8_t and a 3 byte padding.
+ *  */
+typedef enum
+{
+    VMMDev_Seamless_Disabled         = 0,     /**< normal mode; entire guest desktop displayed. */
+    VMMDev_Seamless_Visible_Region   = 1,     /**< visible region mode; only top-level guest windows displayed. */
+    VMMDev_Seamless_Host_Window      = 2      /**< windowed mode; each top-level guest window is represented in a host window. */
+} VMMDevSeamlessMode;
+
+/**
+ * Seamless mode change request structure.
+ *
+ * Used by VMMDevReq_GetSeamlessChangeRequest.
+ */
+typedef struct
+{
+    /** Header. */
+    VMMDevRequestHeader header;
+
+    /** New seamless mode. */
+    VMMDevSeamlessMode mode;
+    /** Setting this to VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST indicates
+     * that the request is a response to that event.
+     * (Don't confuse this with VMMDevReq_AcknowledgeEvents.) */
+    uint32_t eventAck;
+} VMMDevSeamlessChangeRequest;
+AssertCompileSize(VMMDevSeamlessChangeRequest, 24+8);
+AssertCompileMemberOffset(VMMDevSeamlessChangeRequest, eventAck, 24+4);
+
+
+/**
+ * Display change request structure.
+ *
+ * Used by VMMDevReq_GetDisplayChangeRequest.
+ */
+typedef struct
+{
+    /** Header. */
+    VMMDevRequestHeader header;
+    /** Horizontal pixel resolution (0 = do not change). */
     uint32_t xres;
-    /** vertical pixel resolution (0 = do not change) */
+    /** Vertical pixel resolution (0 = do not change). */
     uint32_t yres;
-    /** bits per pixel (0 = do not change) */
+    /** Bits per pixel (0 = do not change). */
     uint32_t bpp;
-    /** Flag that the request is an acknowlegement for the VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST.
-     *  Values: 0 - just querying, VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST - event acknowledged.
-     */
+    /** Setting this to VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST indicates
+     * that the request is a response to that event.
+     * (Don't confuse this with VMMDevReq_AcknowledgeEvents.) */
     uint32_t eventAck;
 } VMMDevDisplayChangeRequest;
+AssertCompileSize(VMMDevDisplayChangeRequest, 24+16);
 
+
+/**
+ * Display change request structure, version 2.
+ *
+ * Used by VMMDevReq_GetDisplayChangeRequest2.
+ */
 typedef struct
 {
-    /** header */
+    /** Header. */
     VMMDevRequestHeader header;
-    /** horizontal pixel resolution (0 = do not change) */
+    /** Horizontal pixel resolution (0 = do not change). */
     uint32_t xres;
-    /** vertical pixel resolution (0 = do not change) */
+    /** Vertical pixel resolution (0 = do not change). */
     uint32_t yres;
-    /** bits per pixel (0 = do not change) */
+    /** Bits per pixel (0 = do not change). */
     uint32_t bpp;
-    /** Flag that the request is an acknowlegement for the VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST.
-     *  Values: 0 - just querying, VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST - event acknowledged.
-     */
+    /** Setting this to VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST indicates
+     * that the request is a response to that event.
+     * (Don't confuse this with VMMDevReq_AcknowledgeEvents.) */
     uint32_t eventAck;
     /** 0 for primary display, 1 for the first secondary, etc. */
     uint32_t display;
 } VMMDevDisplayChangeRequest2;
+AssertCompileSize(VMMDevDisplayChangeRequest2, 24+20);
 
-/** video mode supported request structure */
+
+/**
+ * Video mode supported request structure.
+ *
+ * Used by VMMDevReq_VideoModeSupported.
+ */
 typedef struct
 {
-    /** header */
+    /** Header. */
     VMMDevRequestHeader header;
-    /** horizontal pixel resolution (input) */
+    /** IN: Horizontal pixel resolution. */
     uint32_t width;
-    /** vertical pixel resolution (input) */
+    /** IN: Vertical pixel resolution. */
     uint32_t height;
-    /** bits per pixel (input) */
+    /** IN: Bits per pixel. */
     uint32_t bpp;
-    /** supported flag (output) */
+    /** OUT: Support indicator. */
     bool fSupported;
 } VMMDevVideoModeSupportedRequest;
+AssertCompileSize(VMMDevVideoModeSupportedRequest, 24+16);
 
-/** video modes height reduction request structure */
+
+/**
+ * Video modes height reduction request structure.
+ *
+ * Used by VMMDevReq_GetHeightReduction.
+ */
 typedef struct
 {
-    /** header */
+    /** Header. */
     VMMDevRequestHeader header;
-    /** height reduction in pixels (output) */
+    /** OUT: Height reduction in pixels. */
     uint32_t heightReduction;
 } VMMDevGetHeightReductionRequest;
+AssertCompileSize(VMMDevGetHeightReductionRequest, 24+4);
 
-#define VRDP_EXPERIENCE_LEVEL_ZERO     0 /* Theming disabled. */
-#define VRDP_EXPERIENCE_LEVEL_LOW      1 /* Full window dragging and desktop wallpaper disabled. */
-#define VRDP_EXPERIENCE_LEVEL_MEDIUM   2 /* Font smoothing, gradients. */
-#define VRDP_EXPERIENCE_LEVEL_HIGH     3 /* Animation effects disabled. */
-#define VRDP_EXPERIENCE_LEVEL_FULL     4 /* Everything enabled. */
 
+/**
+ * VRDP change request structure.
+ *
+ * Used by VMMDevReq_GetVRDPChangeRequest.
+ */
 typedef struct
 {
-    /** header */
+    /** Header */
     VMMDevRequestHeader header;
-    /** Whether VRDP is active or not */
+    /** Whether VRDP is active or not. */
     uint8_t u8VRDPActive;
     /** The configured experience level for active VRDP. */
     uint32_t u32VRDPExperienceLevel;
 } VMMDevVRDPChangeRequest;
+AssertCompileSize(VMMDevVRDPChangeRequest, 24+8);
+AssertCompileMemberOffset(VMMDevVRDPChangeRequest, u8VRDPActive, 24);
+AssertCompileMemberOffset(VMMDevVRDPChangeRequest, u32VRDPExperienceLevel, 24+4);
+
+/** @name VRDP Experience level (VMMDevVRDPChangeRequest::u32VRDPExperienceLevel)
+ * @{ */
+#define VRDP_EXPERIENCE_LEVEL_ZERO     0 /**< Theming disabled. */
+#define VRDP_EXPERIENCE_LEVEL_LOW      1 /**< Full window dragging and desktop wallpaper disabled. */
+#define VRDP_EXPERIENCE_LEVEL_MEDIUM   2 /**< Font smoothing, gradients. */
+#define VRDP_EXPERIENCE_LEVEL_HIGH     3 /**< Animation effects disabled. */
+#define VRDP_EXPERIENCE_LEVEL_FULL     4 /**< Everything enabled. */
+/** @} */
 
 
+/**
+ * VBVA enable request structure.
+ *
+ * Used by VMMDevReq_VideoAccelEnable.
+ */
+typedef struct
+{
+    /** Header. */
+    VMMDevRequestHeader header;
+    /** 0 - disable, !0 - enable. */
+    uint32_t u32Enable;
+    /** The size of VBVAMEMORY::au8RingBuffer expected by driver.
+     *  The host will refuse to enable VBVA if the size is not equal to
+     *  VBVA_RING_BUFFER_SIZE.
+     */
+    uint32_t cbRingBuffer;
+    /** Guest initializes the status to 0. Host sets appropriate VBVA_F_STATUS_ flags. */
+    uint32_t fu32Status;
+} VMMDevVideoAccelEnable;
+AssertCompileSize(VMMDevVideoAccelEnable, 24+12);
+
+/** @name VMMDevVideoAccelEnable::fu32Status.
+ * @{ */
+#define VBVA_F_STATUS_ACCEPTED (0x01)
+#define VBVA_F_STATUS_ENABLED  (0x02)
+/** @} */
+
+
+/**
+ * VBVA flush request structure.
+ *
+ * Used by VMMDevReq_VideoAccelFlush.
+ */
+typedef struct
+{
+    /** Header. */
+    VMMDevRequestHeader header;
+} VMMDevVideoAccelFlush;
+AssertCompileSize(VMMDevVideoAccelFlush, 24);
+
+
+/**
+ * VBVA set visible region request structure.
+ *
+ * Used by VMMDevReq_VideoSetVisibleRegion.
+ */
+typedef struct
+{
+    /** Header. */
+    VMMDevRequestHeader header;
+    /** Number of rectangles */
+    uint32_t cRect;
+    /** Rectangle array.
+     * @todo array is spelled aRects[1].  */
+    RTRECT Rect;
+} VMMDevVideoSetVisibleRegion;
+AssertCompileSize(RTRECT, 16);
+AssertCompileSize(VMMDevVideoSetVisibleRegion, 24+4+16);
 
 #pragma pack()
 
-#ifdef VBOX_WITH_HGCM
-
-/** HGCM flags.
- *  @{
+/**
+ * VBVA command header.
  */
-#define VBOX_HGCM_REQ_DONE      (0x1)
-#define VBOX_HGCM_REQ_CANCELLED (0x2)
+#pragma pack(1) /* unnecessary */
+typedef struct _VBVACMDHDR
+{
+   /** Coordinates of affected rectangle. */
+   int16_t x;
+   int16_t y;
+   uint16_t w;
+   uint16_t h;
+} VBVACMDHDR;
+#pragma pack()
+
+/** @name VBVA ring defines.
+ *
+ * The VBVA ring buffer is suitable for transferring large (< 2GB) amount of
+ * data. For example big bitmaps which do not fit to the buffer.
+ *
+ * Guest starts writing to the buffer by initializing a record entry in the
+ * aRecords queue. VBVA_F_RECORD_PARTIAL indicates that the record is being
+ * written. As data is written to the ring buffer, the guest increases off32End
+ * for the record.
+ *
+ * The host reads the aRecords on flushes and processes all completed records.
+ * When host encounters situation when only a partial record presents and
+ * cbRecord & ~VBVA_F_RECORD_PARTIAL >= VBVA_RING_BUFFER_SIZE -
+ * VBVA_RING_BUFFER_THRESHOLD, the host fetched all record data and updates
+ * off32Head. After that on each flush the host continues fetching the data
+ * until the record is completed.
+ *
+ */
+#define VBVA_RING_BUFFER_SIZE        (_4M - _1K)
+#define VBVA_RING_BUFFER_THRESHOLD   (4 * _1K)
+
+#define VBVA_MAX_RECORDS (64)
+
+#define VBVA_F_MODE_ENABLED         (0x00000001)
+#define VBVA_F_MODE_VRDP            (0x00000002)
+#define VBVA_F_MODE_VRDP_RESET      (0x00000004)
+#define VBVA_F_MODE_VRDP_ORDER_MASK (0x00000008)
+
+#define VBVA_F_RECORD_PARTIAL       (0x80000000)
 /** @} */
 
-#pragma pack(4)
-typedef struct _VMMDevHGCMRequestHeader
+typedef struct
+{
+    /** The length of the record. Changed by guest. */
+    uint32_t cbRecord;
+} VBVARECORD;
+AssertCompileSize(VBVARECORD, 4);
+
+/**
+ * VBVA memory layout.
+ */
+#pragma pack(1) /* paranoia */
+typedef struct VBVAMEMORY
+{
+    /** VBVA_F_MODE_*. */
+    uint32_t fu32ModeFlags;
+
+    /** The offset where the data start in the buffer. */
+    uint32_t off32Data;
+    /** The offset where next data must be placed in the buffer. */
+    uint32_t off32Free;
+
+    /** The ring buffer for data. */
+    uint8_t  au8RingBuffer[VBVA_RING_BUFFER_SIZE];
+
+    /** The queue of record descriptions. */
+    VBVARECORD aRecords[VBVA_MAX_RECORDS];
+    uint32_t indexRecordFirst;
+    uint32_t indexRecordFree;
+
+    /** RDP orders supported by the client. The guest reports only them
+     * and falls back to DIRTY rects for not supported ones.
+     *
+     * (1 << VBVA_VRDP_*)
+     */
+    uint32_t fu32SupportedOrders;
+
+} VBVAMEMORY;
+#pragma pack()
+AssertCompileSize(VBVAMEMORY, 12 + (_4M-_1K) + 4*64 + 12);
+
+
+
+#ifdef VBOX_WITH_HGCM
+
+/** @name HGCM flags.
+ * @{
+ */
+# define VBOX_HGCM_REQ_DONE      (0x1)
+# define VBOX_HGCM_REQ_CANCELLED (0x2)
+/** @} */
+
+# pragma pack(4)
+
+/**
+ * HGCM request header.
+ */
+typedef struct VMMDevHGCMRequestHeader
 {
     /** Request header. */
     VMMDevRequestHeader header;
@@ -637,7 +1067,9 @@ typedef struct _VMMDevHGCMRequestHeader
 } VMMDevHGCMRequestHeader;
 AssertCompileSize(VMMDevHGCMRequestHeader, 24+8);
 
-/** HGCM service location types. */
+/**
+ * HGCM service location types.
+ */
 typedef enum
 {
     VMMDevHGCMLoc_Invalid    = 0,
@@ -645,12 +1077,20 @@ typedef enum
     VMMDevHGCMLoc_LocalHost_Existing = 2,
     VMMDevHGCMLoc_SizeHack   = 0x7fffffff
 } HGCMServiceLocationType;
+AssertCompileSize(HGCMServiceLocationType, 4);
 
+/**
+ * HGCM host service location.
+ */
 typedef struct
 {
     char achName[128]; /**< This is really szName. */
 } HGCMServiceLocationHost;
+AssertCompileSize(HGCMServiceLocationHost, 128);
 
+/**
+ * HGCM service location.
+ */
 typedef struct HGCMSERVICELOCATION
 {
     /** Type of the location. */
@@ -661,10 +1101,16 @@ typedef struct HGCMSERVICELOCATION
         HGCMServiceLocationHost host;
     } u;
 } HGCMServiceLocation;
+AssertCompileSize(HGCMServiceLocation, 128+4);
 
+/**
+ * HGCM connect request structure.
+ *
+ * Used by VMMDevReq_HGCMConnect.
+ */
 typedef struct
 {
-    /* request header */
+    /** HGCM request header. */
     VMMDevHGCMRequestHeader header;
 
     /** IN: Description of service to connect to. */
@@ -673,16 +1119,27 @@ typedef struct
     /** OUT: Client identifier assigned by local instance of HGCM. */
     uint32_t u32ClientID;
 } VMMDevHGCMConnect;
+AssertCompileSize(VMMDevHGCMConnect, 32+132+4);
 
+
+/**
+ * HGCM disconnect request structure.
+ *
+ * Used by VMMDevReq_HGCMDisconnect.
+ */
 typedef struct
 {
-    /* request header */
+    /** HGCM request header. */
     VMMDevHGCMRequestHeader header;
 
     /** IN: Client identifier. */
     uint32_t u32ClientID;
 } VMMDevHGCMDisconnect;
+AssertCompileSize(VMMDevHGCMDisconnect, 32+4);
 
+/**
+ * HGCM parameter type.
+ */
 typedef enum
 {
     VMMDevHGCMParmType_Invalid            = 0,
@@ -697,9 +1154,13 @@ typedef enum
     VMMDevHGCMParmType_LinAddr_Locked_Out = 9, /**< Locked Out (write; host->guest) */
     VMMDevHGCMParmType_SizeHack           = 0x7fffffff
 } HGCMFunctionParameterType;
+AssertCompileSize(HGCMFunctionParameterType, 4);
 
-#ifdef VBOX_WITH_64_BITS_GUESTS
-typedef struct _HGCMFUNCTIONPARAMETER32
+# ifdef VBOX_WITH_64_BITS_GUESTS
+/**
+ * HGCM function parameter, 32-bit client.
+ */
+typedef struct
 {
     HGCMFunctionParameterType type;
     union
@@ -717,7 +1178,7 @@ typedef struct _HGCMFUNCTIONPARAMETER32
             } u;
         } Pointer;
     } u;
-#ifdef __cplusplus
+#  ifdef __cplusplus
     void SetUInt32(uint32_t u32)
     {
         type = VMMDevHGCMParmType_32bit;
@@ -757,10 +1218,14 @@ typedef struct _HGCMFUNCTIONPARAMETER32
         u.Pointer.size          = cb;
         u.Pointer.u.linearAddr  = (RTGCPTR32)(uintptr_t)pv;
     }
-#endif
+#  endif /* __cplusplus */
 } HGCMFunctionParameter32;
+AssertCompileSize(HGCMFunctionParameter32, 4+8);
 
-typedef struct _HGCMFUNCTIONPARAMETER64
+/**
+ * HGCM function parameter, 64-bit client.
+ */
+typedef struct
 {
     HGCMFunctionParameterType type;
     union
@@ -778,7 +1243,7 @@ typedef struct _HGCMFUNCTIONPARAMETER64
             } u;
         } Pointer;
     } u;
-#ifdef __cplusplus
+#  ifdef __cplusplus
     void SetUInt32(uint32_t u32)
     {
         type = VMMDevHGCMParmType_32bit;
@@ -818,10 +1283,29 @@ typedef struct _HGCMFUNCTIONPARAMETER64
         u.Pointer.size          = cb;
         u.Pointer.u.linearAddr  = (uintptr_t)pv;
     }
-#endif
+#  endif /** __cplusplus */
 } HGCMFunctionParameter64;
-#else /* !VBOX_WITH_64_BITS_GUESTS */
-typedef struct _HGCMFUNCTIONPARAMETER
+AssertCompileSize(HGCMFunctionParameter64, 4+12);
+
+/* Redefine the structure type for the guest code. */
+#  ifndef VBOX_HGCM_HOST_CODE
+#   if ARCH_BITS == 64
+#     define HGCMFunctionParameter  HGCMFunctionParameter64
+#   elif ARCH_BITS == 32
+#     define HGCMFunctionParameter  HGCMFunctionParameter32
+#   else
+#    error "Unsupported sizeof (void *)"
+#   endif
+#  endif /* !VBOX_HGCM_HOST_CODE */
+
+# else /* !VBOX_WITH_64_BITS_GUESTS */
+
+/**
+ * HGCM function parameter, 32-bit client.
+ *
+ * @todo If this is the same as HGCMFunctionParameter32, why the duplication?
+ */
+typedef struct
 {
     HGCMFunctionParameterType type;
     union
@@ -839,7 +1323,7 @@ typedef struct _HGCMFUNCTIONPARAMETER
             } u;
         } Pointer;
     } u;
-#ifdef __cplusplus
+#  ifdef __cplusplus
     void SetUInt32(uint32_t u32)
     {
         type = VMMDevHGCMParmType_32bit;
@@ -879,24 +1363,16 @@ typedef struct _HGCMFUNCTIONPARAMETER
         u.Pointer.size          = cb;
         u.Pointer.u.linearAddr  = (uintptr_t)pv;
     }
-#endif
+#  endif /* __cplusplus */
 } HGCMFunctionParameter;
-#endif /* !VBOX_WITH_64_BITS_GUESTS */
+AssertCompileSize(HGCMFunctionParameter, 4+8);
+# endif /* !VBOX_WITH_64_BITS_GUESTS */
 
-
-#ifdef VBOX_WITH_64_BITS_GUESTS
-/* Redefine the structure type for the guest code. */
-# ifndef VBOX_HGCM_HOST_CODE
-#  if ARCH_BITS == 64
-#    define HGCMFunctionParameter HGCMFunctionParameter64
-#  elif ARCH_BITS == 32
-#    define HGCMFunctionParameter HGCMFunctionParameter32
-#  else
-#   error "Unsupported sizeof (void *)"
-#  endif
-# endif /* !VBOX_HGCM_HOST_CODE */
-#endif /* VBOX_WITH_64_BITS_GUESTS */
-
+/**
+ * HGCM call request structure.
+ *
+ * Used by VMMDevReq_HGCMCall, VMMDevReq_HGCMCall32 and VMMDevReq_HGCMCall64.
+ */
 typedef struct
 {
     /* request header */
@@ -910,291 +1386,41 @@ typedef struct
     uint32_t cParms;
     /** Parameters follow in form: HGCMFunctionParameter aParms[X]; */
 } VMMDevHGCMCall;
-#pragma pack()
+AssertCompileSize(VMMDevHGCMCall, 32+12);
 
-#define VMMDEV_HGCM_CALL_PARMS(a)   ((HGCMFunctionParameter *)((uint8_t *)a + sizeof (VMMDevHGCMCall)))
-#define VMMDEV_HGCM_CALL_PARMS32(a) ((HGCMFunctionParameter32 *)((uint8_t *)a + sizeof (VMMDevHGCMCall)))
+# pragma pack()
 
-#ifdef VBOX_WITH_64_BITS_GUESTS
+/** Get the pointer to the first parmater of a HGCM call request.  */
+# define VMMDEV_HGCM_CALL_PARMS(a)   ((HGCMFunctionParameter *)((uint8_t *)(a) + sizeof (VMMDevHGCMCall)))
+/** Get the pointer to the first parmater of a 32-bit HGCM call request.  */
+# define VMMDEV_HGCM_CALL_PARMS32(a) ((HGCMFunctionParameter32 *)((uint8_t *)(a) + sizeof (VMMDevHGCMCall)))
+
+# ifdef VBOX_WITH_64_BITS_GUESTS
 /* Explicit defines for the host code. */
-# ifdef VBOX_HGCM_HOST_CODE
-#  define VMMDEV_HGCM_CALL_PARMS32(a) ((HGCMFunctionParameter32 *)((uint8_t *)a + sizeof (VMMDevHGCMCall)))
-#  define VMMDEV_HGCM_CALL_PARMS64(a) ((HGCMFunctionParameter64 *)((uint8_t *)a + sizeof (VMMDevHGCMCall)))
-# endif /* VBOX_HGCM_HOST_CODE */
-#endif /* VBOX_WITH_64_BITS_GUESTS */
+#  ifdef VBOX_HGCM_HOST_CODE
+#   define VMMDEV_HGCM_CALL_PARMS32(a) ((HGCMFunctionParameter32 *)((uint8_t *)(a) + sizeof (VMMDevHGCMCall)))
+#   define VMMDEV_HGCM_CALL_PARMS64(a) ((HGCMFunctionParameter64 *)((uint8_t *)(a) + sizeof (VMMDevHGCMCall)))
+#  endif /* VBOX_HGCM_HOST_CODE */
+# endif /* VBOX_WITH_64_BITS_GUESTS */
 
-#define VBOX_HGCM_MAX_PARMS 32
+# define VBOX_HGCM_MAX_PARMS 32
 
-/* The Cancel request is issued using the same physical memory address
- * as was used for the corresponding initial HGCMCall.
+/**
+ * HGCM cancel request structure.
+ *
+ * The Cancel request is issued using the same physical memory address as was
+ * used for the corresponding initial HGCMCall.
+ *
+ * Used by VMMDevReq_HGCMCancel.
  */
 typedef struct
 {
-    /* request header */
+    /** Header. */
     VMMDevHGCMRequestHeader header;
 } VMMDevHGCMCancel;
+AssertCompileSize(VMMDevHGCMCancel, 32);
 
 #endif /* VBOX_WITH_HGCM */
-
-
-#define VBVA_F_STATUS_ACCEPTED (0x01)
-#define VBVA_F_STATUS_ENABLED  (0x02)
-
-#pragma pack(4)
-
-typedef struct _VMMDevVideoAccelEnable
-{
-    /* request header */
-    VMMDevRequestHeader header;
-
-    /** 0 - disable, !0 - enable. */
-    uint32_t u32Enable;
-
-    /** The size of VBVAMEMORY::au8RingBuffer expected by driver.
-     *  The host will refuse to enable VBVA if the size is not equal to
-     *  VBVA_RING_BUFFER_SIZE.
-     */
-    uint32_t cbRingBuffer;
-
-    /** Guest initializes the status to 0. Host sets appropriate VBVA_F_STATUS_ flags. */
-    uint32_t fu32Status;
-
-} VMMDevVideoAccelEnable;
-
-typedef struct _VMMDevVideoAccelFlush
-{
-    /* request header */
-    VMMDevRequestHeader header;
-
-} VMMDevVideoAccelFlush;
-
-
-typedef struct _VMMDevVideoSetVisibleRegion
-{
-    /* request header */
-    VMMDevRequestHeader header;
-
-    /** Number of rectangles */
-    uint32_t cRect;
-
-    /** Rectangle array */
-    RTRECT   Rect;
-} VMMDevVideoSetVisibleRegion;
-
-
-/** Seamless mode */
-typedef enum
-{
-    VMMDev_Seamless_Disabled         = 0,     /* normal mode; entire guest desktop displayed */
-    VMMDev_Seamless_Visible_Region   = 1,     /* visible region mode; only top-level guest windows displayed */
-    VMMDev_Seamless_Host_Window      = 2      /* windowed mode; each top-level guest window is represented in a host window */
-} VMMDevSeamlessMode;
-
-typedef struct
-{
-    /** header */
-    VMMDevRequestHeader header;
-
-    /** New seamless mode */
-    VMMDevSeamlessMode  mode;
-    /** Flag that the request is an acknowlegement for the VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST.
-     *  Values: 0 - just querying, VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST - event acknowledged.
-     */
-    uint32_t eventAck;
-} VMMDevSeamlessChangeRequest;
-
-#pragma pack()
-
-#pragma pack(1)
-/** VBVA command header. */
-typedef struct _VBVACMDHDR
-{
-   /** Coordinates of affected rectangle. */
-   int16_t x;
-   int16_t y;
-   uint16_t w;
-   uint16_t h;
-} VBVACMDHDR;
-#pragma pack()
-
-/* The VBVA ring buffer is suitable for transferring large (< 2gb) amount of data.
- * For example big bitmaps which do not fit to the buffer.
- *
- * Guest starts writing to the buffer by initializing a record entry in the
- * aRecords queue. VBVA_F_RECORD_PARTIAL indicates that the record is being
- * written. As data is written to the ring buffer, the guest increases off32End
- * for the record.
- *
- * The host reads the aRecords on flushes and processes all completed records.
- * When host encounters situation when only a partial record presents and
- * cbRecord & ~VBVA_F_RECORD_PARTIAL >= VBVA_RING_BUFFER_SIZE - VBVA_RING_BUFFER_THRESHOLD,
- * the host fetched all record data and updates off32Head. After that on each flush
- * the host continues fetching the data until the record is completed.
- *
- */
-
-#define VBVA_RING_BUFFER_SIZE        (_4M - _1K)
-#define VBVA_RING_BUFFER_THRESHOLD   (4 * _1K)
-
-#define VBVA_MAX_RECORDS (64)
-
-#define VBVA_F_MODE_ENABLED         (0x00000001)
-#define VBVA_F_MODE_VRDP            (0x00000002)
-#define VBVA_F_MODE_VRDP_RESET      (0x00000004)
-#define VBVA_F_MODE_VRDP_ORDER_MASK (0x00000008)
-
-#define VBVA_F_RECORD_PARTIAL   (0x80000000)
-
-#pragma pack(1)
-typedef struct _VBVARECORD
-{
-    /** The length of the record. Changed by guest. */
-    uint32_t cbRecord;
-} VBVARECORD;
-
-typedef struct _VBVAMEMORY
-{
-    /** VBVA_F_MODE_* */
-    uint32_t fu32ModeFlags;
-
-    /** The offset where the data start in the buffer. */
-    uint32_t off32Data;
-    /** The offset where next data must be placed in the buffer. */
-    uint32_t off32Free;
-
-    /** The ring buffer for data. */
-    uint8_t  au8RingBuffer[VBVA_RING_BUFFER_SIZE];
-
-    /** The queue of record descriptions. */
-    VBVARECORD aRecords[VBVA_MAX_RECORDS];
-    uint32_t indexRecordFirst;
-    uint32_t indexRecordFree;
-
-    /* RDP orders supported by the client. The guest reports only them
-     * and falls back to DIRTY rects for not supported ones.
-     *
-     * (1 << VBVA_VRDP_*)
-     */
-    uint32_t fu32SupportedOrders;
-
-} VBVAMEMORY;
-#pragma pack()
-
-/** @} */
-
-
-/**
- * VMMDev RAM
- * @{
- */
-
-#pragma pack(1)
-/** Layout of VMMDEV RAM region that contains information for guest */
-typedef struct
-{
-    /** size */
-    uint32_t u32Size;
-    /** version */
-    uint32_t u32Version;
-
-    union {
-        /** Flag telling that VMMDev set the IRQ and acknowlegment is required */
-        struct {
-            bool fHaveEvents;
-        } V1_04;
-
-        struct {
-            /** Pending events flags, set by host. */
-            uint32_t u32HostEvents;
-            /** Mask of events the guest wants to see, set by guest. */
-            uint32_t u32GuestEventMask;
-        } V1_03;
-    } V;
-
-    VBVAMEMORY vbvaMemory;
-
-} VMMDevMemory;
-#pragma pack()
-
-/** Version of VMMDevMemory structure. */
-#define VMMDEV_MEMORY_VERSION (1)
-
-/** @} */
-
-
-/**
- * VMMDev events.
- * @{
- */
-
-/** Host mouse capabilities has been changed. */
-#define VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED             RT_BIT(0)
-/** HGCM event. */
-#define VMMDEV_EVENT_HGCM                                   RT_BIT(1)
-/** A display change request has been issued. */
-#define VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST                 RT_BIT(2)
-/** Credentials are available for judgement. */
-#define VMMDEV_EVENT_JUDGE_CREDENTIALS                      RT_BIT(3)
-/** The guest has been restored. */
-#define VMMDEV_EVENT_RESTORED                               RT_BIT(4)
-/** Seamless mode state changed */
-#define VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST           RT_BIT(5)
-/** Memory balloon size changed */
-#define VMMDEV_EVENT_BALLOON_CHANGE_REQUEST                 RT_BIT(6)
-/** Statistics interval changed */
-#define VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST     RT_BIT(7)
-/** VRDP status changed. */
-#define VMMDEV_EVENT_VRDP                                   RT_BIT(8)
-/** New mouse position data available */
-#define VMMDEV_EVENT_MOUSE_POSITION_CHANGED                 RT_BIT(9)
-
-/** @} */
-
-
-/*
- * Credentials request flags and structure
- */
-
-#define VMMDEV_CREDENTIALS_STRLEN           128
-
-/** query from host whether credentials are present */
-#define VMMDEV_CREDENTIALS_QUERYPRESENCE     RT_BIT(1)
-/** read credentials from host (can be combined with clear) */
-#define VMMDEV_CREDENTIALS_READ              RT_BIT(2)
-/** clear credentials on host (can be combined with read) */
-#define VMMDEV_CREDENTIALS_CLEAR             RT_BIT(3)
-/** read credentials for judgement in the guest */
-#define VMMDEV_CREDENTIALS_READJUDGE         RT_BIT(8)
-/** clear credentials for judegement on the host */
-#define VMMDEV_CREDENTIALS_CLEARJUDGE        RT_BIT(9)
-/** report credentials acceptance by guest */
-#define VMMDEV_CREDENTIALS_JUDGE_OK          RT_BIT(10)
-/** report credentials denial by guest */
-#define VMMDEV_CREDENTIALS_JUDGE_DENY        RT_BIT(11)
-/** report that no judgement could be made by guest */
-#define VMMDEV_CREDENTIALS_JUDGE_NOJUDGEMENT RT_BIT(12)
-
-/** flag telling the guest that credentials are present */
-#define VMMDEV_CREDENTIALS_PRESENT           RT_BIT(16)
-/** flag telling guest that local logons should be prohibited */
-#define VMMDEV_CREDENTIALS_NOLOCALLOGON      RT_BIT(17)
-
-/** credentials request structure */
-#pragma pack(4)
-typedef struct _VMMDevCredentials
-{
-    /* request header */
-    VMMDevRequestHeader header;
-    /* request flags (in/out) */
-    uint32_t u32Flags;
-    /* user name (UTF-8) (out) */
-    char szUserName[VMMDEV_CREDENTIALS_STRLEN];
-    /* password (UTF-8) (out) */
-    char szPassword[VMMDEV_CREDENTIALS_STRLEN];
-    /* domain name (UTF-8) (out) */
-    char szDomain[VMMDEV_CREDENTIALS_STRLEN];
-} VMMDevCredentials;
-#pragma pack()
 
 
 /**
@@ -1278,6 +1504,8 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevVRDPChangeRequest);
         case VMMDevReq_LogString:
             return sizeof(VMMDevReqLogString);
+        case VMMDevReq_CtlGuestFilterMask:
+            return sizeof(VMMDevCtlGuestFilterMask);
         default:
             return 0;
     }
@@ -1307,6 +1535,44 @@ DECLINLINE(int) vmmdevInitRequest(VMMDevRequestHeader *req, VMMDevRequestType ty
     req->reserved2   = 0;
     return VINF_SUCCESS;
 }
+
+/** @} */
+
+
+/**
+ * The layout of VMMDEV RAM region that contains information for guest.
+ */
+#pragma pack(1) /* paranoia */
+typedef struct
+{
+    /** size */
+    uint32_t u32Size;
+    /** version */
+    uint32_t u32Version;
+
+    union {
+        /** Flag telling that VMMDev set the IRQ and acknowlegment is required */
+        struct {
+            bool fHaveEvents;
+        } V1_04;
+
+        struct {
+            /** Pending events flags, set by host. */
+            uint32_t u32HostEvents;
+            /** Mask of events the guest wants to see, set by guest. */
+            uint32_t u32GuestEventMask;
+        } V1_03;
+    } V;
+
+    VBVAMEMORY vbvaMemory;
+
+} VMMDevMemory;
+AssertCompileSize(VMMDevMemory, 8+8 + (12 + (_4M-_1K) + 4*64 + 12) );
+#pragma pack()
+
+/** Version of VMMDevMemory structure (VMMDevMemory::u32Version). */
+#define VMMDEV_MEMORY_VERSION   (1)
+
 
 /** @} */
 RT_C_DECLS_END

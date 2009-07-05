@@ -1350,7 +1350,7 @@ Return Value:
         if (RT_SUCCESS(vboxRC))
         {
             /* Inform host that we support absolute */
-            req->mouseFeatures = VBOXGUEST_MOUSE_GUEST_CAN_ABSOLUTE;
+            req->mouseFeatures = VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE;
             req->pointerXPos = 0;
             req->pointerYPos = 0;
 

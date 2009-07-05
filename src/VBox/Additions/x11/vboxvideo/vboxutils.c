@@ -141,9 +141,9 @@ vbox_host_uses_hwcursor(ScrnInfoPtr pScrn)
      * to draw the pointer. */
     if (rc)
     {
-        if (   (fFeatures & VBOXGUEST_MOUSE_HOST_CANNOT_HWPOINTER)
-            || !(fFeatures & VBOXGUEST_MOUSE_GUEST_CAN_ABSOLUTE)
-            ||!(fFeatures & VBOXGUEST_MOUSE_HOST_CAN_ABSOLUTE)
+        if (   (fFeatures & VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER)
+            || !(fFeatures & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE)
+            ||!(fFeatures & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE)
            )
             rc = FALSE;
     }

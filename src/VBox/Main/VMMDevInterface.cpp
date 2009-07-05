@@ -246,8 +246,8 @@ DECLCALLBACK(void) vmmdevUpdateMouseCapabilities(PPDMIVMMDEVCONNECTOR pInterface
      * Tell the console interface about the event
      * so that it can notify its consumers.
      */
-    pDrv->pVMMDev->getParent()->onMouseCapabilityChange(BOOL (newCapabilities & VMMDEV_MOUSEGUESTWANTSABS),
-                                                        BOOL (newCapabilities & VMMDEV_MOUSEGUESTNEEDSHOSTCUR));
+    pDrv->pVMMDev->getParent()->onMouseCapabilityChange(BOOL (newCapabilities & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE),
+                                                        BOOL (newCapabilities & VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR));
 }
 
 

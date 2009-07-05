@@ -192,7 +192,7 @@ static BOOLEAN vboxQueryPointerPosInternal (uint16_t *pointerXPos, uint16_t *poi
 
         if (RT_SUCCESS(rc) && RT_SUCCESS(req->header.rc))
         {
-            if (req->mouseFeatures & VBOXGUEST_MOUSE_HOST_CAN_ABSOLUTE)
+            if (req->mouseFeatures & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE)
             {
                 if (pointerXPos)
                 {

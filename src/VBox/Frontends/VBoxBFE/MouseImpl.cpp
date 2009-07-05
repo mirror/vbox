@@ -71,7 +71,7 @@ int Mouse::setNeedsHostCursor(bool fNeedsHostCursor)
 
 int Mouse::setHostCursor(bool enable)
 {
-    uHostCaps = enable ? 0 : VMMDEV_MOUSEHOSTCANNOTHWPOINTER;
+    uHostCaps = enable ? 0 : VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER;
     gVMMDev->SetMouseCapabilities(uHostCaps);
     return S_OK;
 }
@@ -95,7 +95,7 @@ int Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG buttonState)
      * longer wants to use absolute coordinates. If the VMM
      * device isn't aware of that yet, tell it.
      */
-    if (mouseCaps & VMMDEV_MOUSEHOSTWANTSABS)
+    if (mouseCaps & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE)
     {
         gVMMDev->SetMouseCapabilities(uHostCaps);
     }
@@ -135,9 +135,9 @@ int Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG buttonState)
      * longer wants to use absolute coordinates. If the VMM
      * device isn't aware of that yet, tell it.
      */
-    if (!(mouseCaps & VMMDEV_MOUSEHOSTWANTSABS))
+    if (!(mouseCaps & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE))
     {
-        gVMMDev->SetMouseCapabilities(uHostCaps | VMMDEV_MOUSEHOSTWANTSABS);
+        gVMMDev->SetMouseCapabilities(uHostCaps | VMMDEV_MOUSE_HOST_CAN_ABSOLUTE);
     }
 
     ULONG displayWidth;
@@ -155,7 +155,7 @@ int Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG buttonState)
     AssertRC(vrc);
 
     // check if the guest actually wants absolute mouse positions
-    if (mouseCaps & VMMDEV_MOUSEGUESTWANTSABS)
+    if (mouseCaps & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE)
     {
         uint32_t fButtons = 0;
         if (buttonState & PDMIMOUSEPORT_BUTTON_LEFT)
