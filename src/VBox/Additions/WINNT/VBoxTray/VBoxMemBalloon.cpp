@@ -24,7 +24,7 @@
 #include "VBoxTray.h"
 #include "VBoxMemBalloon.h"
 #include <VBoxDisplay.h>
-#include <VBox/VBoxDev.h>
+#include <VBox/VMMDev.h>
 #include <VBoxGuestInternal.h>
 #include <iprt/assert.h>
 #include "helpers.h"
