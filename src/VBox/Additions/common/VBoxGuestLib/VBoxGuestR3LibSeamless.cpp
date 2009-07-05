@@ -26,7 +26,7 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 
-#include <VBox/VBoxDev.h>
+#include <VBox/VMMDev.h>
 #include <VBox/log.h>
 
 #include "VBGLR3Internal.h"

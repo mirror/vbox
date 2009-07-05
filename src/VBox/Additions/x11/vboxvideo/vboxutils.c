@@ -18,9 +18,9 @@
  * additional information or have any questions.
  */
 
+#include <VBox/VMMDev.h>
 #include <VBox/VBoxGuest.h>
 #include <VBox/VBoxGuestLib.h>
-#include <VBox/VBoxDev.h>
 
 #ifndef PCIACCESS
 # include <xf86Pci.h>

@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
  * VBoxVRDP - VBox VRDP connection notification
- *
  */
 
 /*
@@ -25,7 +24,7 @@
 #include <windows.h>
 #include "VBoxTray.h"
 #include "VBoxVRDP.h"
-#include <VBox/VBoxDev.h>
+#include <VBox/VMMDev.h>
 #include <VBoxGuestInternal.h>
 #include <iprt/assert.h>
 #include "helpers.h"

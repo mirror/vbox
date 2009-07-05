@@ -27,7 +27,7 @@
 #include "Logging.h"
 
 #include <VBox/pdmdrv.h>
-#include <VBox/VBoxDev.h>
+#include <VBox/VMMDev.h>
 #include <VBox/VBoxGuest.h>
 #include <VBox/shflsvc.h>
 #include <iprt/asm.h>

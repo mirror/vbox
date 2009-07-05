@@ -67,7 +67,7 @@ do { \
 #include "waitcompat.h"
 
 #include <VBox/log.h>
-#include <VBox/VBoxDev.h>
+#include <VBox/VMMDev.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/mem.h>

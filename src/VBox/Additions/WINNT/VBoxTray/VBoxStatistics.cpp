@@ -1,7 +1,6 @@
+/* $Id: $ */
 /** @file
- *
  * VBoxStats - Guest statistics notification
- *
  */
 
 /*
@@ -26,7 +25,7 @@
 #include "VBoxStatistics.h"
 #include "VBoxMemBalloon.h"
 #include <VBoxDisplay.h>
-#include <VBox/VBoxDev.h>
+#include <VBox/VMMDev.h>
 #include <VBox/VBoxGuest.h>
 #include <VBoxGuestInternal.h>
 #include <iprt/assert.h>
@@ -137,7 +136,7 @@ void VBoxStatsReportStatistics(VBOXSTATSCONTEXT *pCtx)
     HANDLE   gVBoxDriver = pCtx->pEnv->hDriver;
 
     Assert(gCtx.pfnGlobalMemoryStatusEx && gCtx.pfnNtQuerySystemInformation);
-    if (    !gCtx.pfnGlobalMemoryStatusEx 
+    if (    !gCtx.pfnGlobalMemoryStatusEx
         ||  !gCtx.pfnNtQuerySystemInformation)
         return;
 
@@ -191,7 +190,7 @@ void VBoxStatsReportStatistics(VBOXSTATSCONTEXT *pCtx)
         &&  cbReturned == cbStruct)
     {
         if (gCtx.ullLastCpuLoad_Kernel == 0)
-        {   
+        {
             /* first time */
             gCtx.ullLastCpuLoad_Idle    = pProcInfo->IdleTime.QuadPart;
             gCtx.ullLastCpuLoad_Kernel  = pProcInfo->KernelTime.QuadPart;
@@ -290,7 +289,7 @@ unsigned __stdcall VBoxStatsThread(void *pInstance)
                 else
                     Log(("VBoxStatsThread: DeviceIoControl (stat) failed with %d\n", GetLastError()));
             }
-        } 
+        }
         else
         {
             Log(("VBoxStatsThread: error 0 from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
@@ -303,12 +302,12 @@ unsigned __stdcall VBoxStatsThread(void *pInstance)
             }
         }
         /* Report statistics to the host */
-        if (    gCtx.uStatInterval 
+        if (    gCtx.uStatInterval
             &&  gCtx.pfnNtQuerySystemInformation)
         {
             VBoxStatsReportStatistics(pCtx);
         }
-    } 
+    }
     while (!fTerminate);
 
     maskInfo.u32OrMask = 0;

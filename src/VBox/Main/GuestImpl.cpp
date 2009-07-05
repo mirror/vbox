@@ -29,7 +29,7 @@
 
 #include "Logging.h"
 
-#include <VBox/VBoxDev.h>
+#include <VBox/VMMDev.h>
 #include <iprt/cpputils.h>
 
 // defines

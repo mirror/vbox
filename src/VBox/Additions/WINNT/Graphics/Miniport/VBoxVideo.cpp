@@ -22,8 +22,8 @@
 #include "Helper.h"
 
 #include <iprt/log.h>
+#include <VBox/VMMDev.h>
 #include <VBox/VBoxGuest.h>
-#include <VBox/VBoxDev.h>
 #include <VBox/VBoxVideo.h>
 
 #include <VBox/VBoxGuestLib.h>

@@ -27,7 +27,7 @@
 /* Enable dev_vmm Log3 statements to get IRQ-related logging. */
 
 #define LOG_GROUP LOG_GROUP_DEV_VMM
-#include <VBox/VBoxDev.h>
+#include <VBox/VMMDev.h>
 #include <VBox/VBoxGuest.h>
 #include <VBox/log.h>
 #include <VBox/param.h>

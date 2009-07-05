@@ -81,7 +81,7 @@
 #   include <VBox/pdmusb.h>
 #endif
 
-#include <VBox/VBoxDev.h>
+#include <VBox/VMMDev.h>
 
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #ifdef VBOX_WITH_GUEST_PROPS
