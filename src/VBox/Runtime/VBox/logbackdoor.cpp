@@ -35,7 +35,7 @@
 #include <iprt/asm.h>
 #include <iprt/string.h>
 #ifdef IN_GUEST_R3
-# include <VBox/VBoxGuest.h>
+# include <VBox/VBoxGuestLib.h>
 #endif
 
 

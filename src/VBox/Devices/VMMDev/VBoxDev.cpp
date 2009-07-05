@@ -28,7 +28,6 @@
 
 #define LOG_GROUP LOG_GROUP_DEV_VMM
 #include <VBox/VMMDev.h>
-#include <VBox/VBoxGuest.h>
 #include <VBox/log.h>
 #include <VBox/param.h>
 #include <VBox/mm.h>

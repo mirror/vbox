@@ -25,6 +25,7 @@
 #if defined(RT_OS_WINDOWS) /** @todo explain why this is here. */
 # include <Windows.h>
 #endif
+#include <VBox/VMMDev.h>
 #include <VBox/VBoxGuest.h>
 #include <VBox/VBoxGuestLib.h>
 

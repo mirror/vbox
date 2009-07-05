@@ -30,7 +30,6 @@
 #include <iprt/semaphore.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
-#include <VBox/VBoxGuest.h>
 
 #include "../seamless.h"
 

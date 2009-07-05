@@ -29,7 +29,6 @@
 #endif
 #include <VBox/pdm.h>
 #include <VBox/VMMDev.h>
-#include <VBox/VBoxGuest.h>
 #include <VBox/cfgm.h>
 #include <VBox/err.h>
 #include <iprt/assert.h>

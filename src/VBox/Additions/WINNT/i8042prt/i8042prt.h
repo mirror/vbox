@@ -28,6 +28,7 @@ Revision History:
 #endif
 
 //VBOX begin
+#include <VBox/VMMDev.h>
 #include <VBox/VBoxGuest.h>
 #include <VBox/VBoxGuestLib.h>
 
@@ -250,7 +251,7 @@ KEYBOARD_TYPE_INFORMATION KeyboardTypeInformation[NUM_KNOWN_KEYBOARD_TYPES] = {
 // Define the 8042 responses.
 //
 
-#define ACKNOWLEDGE         0xFA        
+#define ACKNOWLEDGE         0xFA
 #define RESEND              0xFE
 
 //
@@ -681,7 +682,7 @@ typedef struct _PORT_MOUSE_EXTENSION {
     //
     // Keep track of last byte of data received from mouse so we can detect
     // the two-byte string which indicates a potential reset
-    // 
+    //
 
     UCHAR LastByteReceived;
 

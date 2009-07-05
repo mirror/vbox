@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxService - Guest Additions Service, Internal Header.
+ * VBoxTray - Guest Additions Tray, Internal Header.
  */
 
 /*
@@ -32,7 +32,6 @@
 #include <iprt/string.h>
 
 #include <VBox/version.h>
-#include <VBox/VBoxGuest.h>
 #include <VBox/Log.h>
 
 #define WM_VBOX_RESTORED                     0x2005

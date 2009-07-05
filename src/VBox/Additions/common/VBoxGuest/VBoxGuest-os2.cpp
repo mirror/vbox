@@ -54,8 +54,6 @@
 #include <os2ddk/bsekee.h>
 
 #include "VBoxGuestInternal.h"
-#include <VBox/VMMDev.h>                /* VMMDEV_RAM_SIZE */
-#include <VBox/VBoxGuest.h>
 #include <VBox/version.h>
 #include <iprt/initterm.h>
 #include <iprt/string.h>

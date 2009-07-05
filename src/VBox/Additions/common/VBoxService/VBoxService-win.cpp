@@ -24,7 +24,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/assert.h>
-#include <VBox/VBoxGuest.h>
+#include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
 
 #include <Windows.h>
@@ -223,7 +223,7 @@ int VBoxServiceWinStart()
         VBoxServiceError("AllocateAndInitializeSid: Error %u\n", GetLastError());
     }
     else
-    {  
+    {
         DWORD dwRes = VBoxServiceWinAddAceToObjectsSecurityDescriptor (TEXT("\\\\.\\VBoxMiniRdrDN"),
                                                                        SE_FILE_OBJECT,
                                                                        (LPTSTR)pBuiltinUsersSID,
@@ -337,7 +337,7 @@ void WINAPI VBoxServiceWinMain (DWORD argc, LPTSTR *argv)
             break;
         }
     }
-    else 
+    else
     {
         VBoxServiceVerbose(2, "Service control handler registered.\n");
 

@@ -32,7 +32,8 @@
 #define ___VBox_HostService_GuestPropertyService_h
 
 #include <VBox/types.h>
-#include <VBox/VBoxGuest.h>
+#include <VBox/VMMDev.h>
+#include <VBox/VBoxGuest2.h>
 #include <VBox/hgcmsvc.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>

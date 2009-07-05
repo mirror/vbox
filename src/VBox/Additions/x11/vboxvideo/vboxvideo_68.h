@@ -56,7 +56,7 @@
 #ifndef _VBOXVIDEO_H_
 #define _VBOXVIDEO_H_
 
-#include <VBox/VBoxGuest.h>
+#include <VBox/VMMDev.h>
 
 /* All drivers should typically include these */
 #include "xf86.h"
@@ -153,8 +153,8 @@ typedef struct _VBOXRec
     Bool pointerOffscreen;
     Bool useVbva;
     int viewportX, viewportY;
-    VMMDevVideoAccelFlush *reqf; 
-    VMMDevVideoAccelEnable *reqe; 
+    VMMDevVideoAccelFlush *reqf;
+    VMMDevVideoAccelEnable *reqe;
     VMMDevMemory *pVMMDevMemory;
     VBVAMEMORY *pVbvaMemory;
 } VBOXRec, *VBOXPtr;

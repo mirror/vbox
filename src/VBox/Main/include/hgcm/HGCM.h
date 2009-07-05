@@ -1,6 +1,5 @@
 /** @file
- *
- * HGCM - Host-Guest Communication Manager
+ * HGCM - Host-Guest Communication Manager.
  */
 
 /*
@@ -26,7 +25,7 @@
 #include <VBox/types.h>
 #include <VBox/pdm.h>
 
-#include <VBox/VBoxGuest.h>
+#include <VBox/VMMDev.h>
 #include <VBox/hgcmsvc.h>
 
 /* HGCM saved state version */

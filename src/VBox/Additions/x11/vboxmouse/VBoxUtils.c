@@ -20,7 +20,8 @@
  */
 
 #include <iprt/assert.h>
-#include <VBox/VBoxGuest.h>
+#include <iprt/err.h>
+#include <VBox/VMMDev.h>
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxUtils.h"
 

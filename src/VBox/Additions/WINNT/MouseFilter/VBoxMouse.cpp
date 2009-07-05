@@ -25,7 +25,6 @@
 
 // VBOX start
 #include <VBox/err.h>
-#include <VBox/VBoxGuest.h>
 #include <VBox/VBoxGuestLib.h>
 // VBOX end
 

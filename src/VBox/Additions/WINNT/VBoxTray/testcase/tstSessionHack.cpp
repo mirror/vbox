@@ -20,7 +20,6 @@
  */
 #define _WIN32_WINNT 0x0500
 #include <Windows.h>
-#include <VBox/VMMDev.h>
 #include <VBox/VBoxGuest.h>
 #include <VBoxGuestInternal.h>
 #include <iprt/assert.h>

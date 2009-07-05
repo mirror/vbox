@@ -1,6 +1,6 @@
+/* $Revision$ */
 /** @file
- *
- * vboxadd -- VirtualBox Guest Additions for Linux
+ * vboxadd - VirtualBox Guest Additions for Linux.
  */
 
 /*
@@ -22,6 +22,7 @@
 #ifndef VBOXMOD_H
 #define VBOXMOD_H
 
+#include <VBox/VMMDev.h>
 #include <VBox/VBoxGuest.h>
 #include <VBox/VBoxGuestLib.h>
 #include <iprt/asm.h>

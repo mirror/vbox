@@ -25,6 +25,7 @@
 #include <iprt/types.h>
 #include <iprt/semaphore.h>
 #include <iprt/spinlock.h>
+#include <VBox/VMMDev.h>
 #include <VBox/VBoxGuest.h>
 #include <VBox/VBoxGuestLib.h>
 

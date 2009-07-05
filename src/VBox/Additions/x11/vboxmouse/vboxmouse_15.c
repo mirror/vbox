@@ -47,8 +47,9 @@
  *      Adam Jackson (ajax@redhat.com)
  */
 
-#include <VBox/VBoxGuest.h>
+#include <VBox/VMMDev.h>
 #include <VBox/VBoxGuestLib.h>
+#include <iprt/err.h>
 #include <xf86.h>
 #include <xf86Xinput.h>
 #include <exevents.h>

@@ -51,7 +51,7 @@
 # include <QX11Info>
 #endif
 
-#include <VBox/VBoxGuest.h>
+#include <VBox/VMMDev.h> /** @todo @bugref{4084} */
 
 #if defined(Q_WS_X11)
 #include <X11/Xlib.h>
@@ -3601,7 +3601,7 @@ void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion,
     QString versionStr = QString ("%1.%2")
         .arg (RT_HIWORD (version)).arg (RT_LOWORD (version));
     QString expectedStr = QString ("%1.%2")
-        .arg (VMMDEV_VERSION_MAJOR).arg (VMMDEV_VERSION_MINOR);
+        .arg (VMMDEV_VERSION_MAJOR).arg (VMMDEV_VERSION_MINOR); /** @todo r=bird: This isn't want we want! We want the VirtualBox version of the additions, all three numbers. See @bugref{4084}.*/
 
     if (RT_HIWORD (version) < VMMDEV_VERSION_MAJOR)
     {
