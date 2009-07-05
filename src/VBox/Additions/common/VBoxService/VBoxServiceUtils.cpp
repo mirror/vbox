@@ -1,4 +1,3 @@
-
 /* $Id$ */
 /** @file
  * VBoxServiceUtils - Some utility functions.
@@ -25,14 +24,14 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #ifdef RT_OS_WINDOWS
-#include <windows.h>
+# include <Windows.h>
 #endif
 
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
 
-#include <VBox/VBoxGuest.h>
+#include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
 
 
@@ -52,7 +51,7 @@ int VboxServiceWriteProp(uint32_t uiClientID, const char *pszKey, const char *ps
     if (pszValue != NULL)
     {
         rc = RTStrCurrentCPToUtf8(&pszValueTemp, pszValue);
-        if (!RT_SUCCESS(rc)) 
+        if (!RT_SUCCESS(rc))
         {
             VBoxServiceError("vboxVMInfoThread: Failed to convert the value name \"%s\" to Utf8! Error: %Rrc\n", pszValue, rc);
             goto cleanup;
@@ -91,9 +90,9 @@ int VboxServiceWritePropInt(uint32_t uiClientID, const char *pszKey, int32_t iVa
 
 #ifdef RT_OS_WINDOWS
 /** @todo Use TCHAR here instead of LPC*STR crap. */
-BOOL VboxServiceGetFileString(LPCWSTR pszFileName, 
-                              LPWSTR pszBlock, 
-                              LPWSTR pszString, 
+BOOL VboxServiceGetFileString(LPCWSTR pszFileName,
+                              LPWSTR pszBlock,
+                              LPWSTR pszString,
                               PUINT puiSize)
 {
     DWORD dwHandle, dwLen = 0;
@@ -148,9 +147,9 @@ BOOL VboxServiceGetFileString(LPCWSTR pszFileName,
 
 
 BOOL VboxServiceGetFileVersion(LPCWSTR pszFileName,
-                               DWORD* pdwMajor, 
-                               DWORD* pdwMinor, 
-                               DWORD* pdwBuildNumber, 
+                               DWORD* pdwMajor,
+                               DWORD* pdwMinor,
+                               DWORD* pdwBuildNumber,
                                DWORD* pdwRevisionNumber)
 {
     DWORD dwHandle, dwLen = 0;
@@ -232,3 +231,4 @@ BOOL VboxServiceGetFileVersionString(LPCWSTR pszPath, LPCWSTR pszFileName, char*
     return bRet;
 }
 #endif /* !RT_OS_WINDOWS */
+

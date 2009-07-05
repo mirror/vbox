@@ -20,6 +20,7 @@
  */
 
 #include <VBox/VBoxGuest.h>
+#include <VBox/VBoxGuestLib.h>
 
 #include <xf86Pci.h>
 #include <Pci.h>

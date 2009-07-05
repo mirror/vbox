@@ -98,7 +98,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/time.h>
 #include <iprt/assert.h>
-#include <VBox/VBoxGuest.h>
+#include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
 
 

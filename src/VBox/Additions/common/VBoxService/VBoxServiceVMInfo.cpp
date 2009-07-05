@@ -51,7 +51,7 @@
 #include <iprt/system.h>
 #include <iprt/time.h>
 #include <iprt/assert.h>
-#include <VBox/VBoxGuest.h>
+#include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceUtils.h"
 

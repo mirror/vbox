@@ -35,7 +35,7 @@
 #include <iprt/path.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
-#include <VBox/VBoxGuest.h>
+#include <VBox/VBoxGuestLib.h>
 #include <VBox/log.h>
 
 #include "VBoxClient.h"
