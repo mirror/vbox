@@ -1,4 +1,4 @@
-/* $Id: EMInternal.h 48532 2009-06-13 20:53:44Z bird $ */
+/* $Id$ */
 /** @file
  * EM - emR3RawHandleRC template
  */
