@@ -29,15 +29,18 @@
 #include <X11/Xlib.h>
 
 #include <iprt/assert.h>
+#include <iprt/err.h>
 #include <iprt/thread.h>
 #include <VBox/log.h>
 #include <VBox/VBoxGuest.h>
+#include <VBox/VBoxGuestLib.h>
 
 #include "VBoxClient.h"
 
 static int initAutoResize()
 {
-    int rc = VINF_SUCCESS, rcSystem, rcErrno;
+    int rc = VINF_SUCCESS;
+    int rcSystem, rcErrno;
 
     LogFlowFunc(("\n"));
     rcSystem = system("VBoxRandR --test");

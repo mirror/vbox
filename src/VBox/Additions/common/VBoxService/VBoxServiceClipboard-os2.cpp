@@ -36,7 +36,7 @@
 #include <iprt/param.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
-#include <VBox/VBoxGuest.h>
+#include <VBox/VBoxGuestLib.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include "VBoxServiceInternal.h"
 

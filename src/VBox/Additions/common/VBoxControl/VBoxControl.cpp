@@ -1,6 +1,6 @@
 /** $Id$ */
 /** @file
- * VBoxControl - Guest Additions Command Line Management Interface
+ * VBoxControl - Guest Additions Command Line Management Interface.
  */
 
 /*
@@ -19,23 +19,21 @@
  * additional information or have any questions.
  */
 
-
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include <iprt/alloca.h>
+#include <iprt/autores.h>
+#include <iprt/initterm.h>
 #include <iprt/mem.h>
+#include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
-#include <iprt/path.h>
-#include <iprt/initterm.h>
-#include <iprt/autores.h>
 #include <VBox/log.h>
-#include <VBox/VBoxGuest.h>
 #include <VBox/version.h>
+#include <VBox/VBoxGuestLib.h>
 #ifdef RT_OS_WINDOWS
-# include <windows.h>
-# include <malloc.h>  /* for alloca */
+# include <Windows.h>
 #endif
 #ifdef VBOX_WITH_GUEST_PROPS
 # include <VBox/HostServices/GuestPropertySvc.h>
@@ -1434,3 +1432,4 @@ int main(int argc, char **argv)
 
     return rc;
 }
+

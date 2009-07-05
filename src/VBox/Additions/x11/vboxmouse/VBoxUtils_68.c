@@ -21,6 +21,7 @@
 
 #include <iprt/assert.h>
 #include <VBox/VBoxGuest.h>
+#include <VBox/VBoxGuestLib.h>
 #include "VBoxUtils.h"
 
 #include "xf86.h"

@@ -37,7 +37,7 @@
 #include <iprt/asm.h>
 #include <iprt/path.h>
 #include <VBox/log.h>
-#include <VBox/VBoxGuest.h>
+#include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
 
 

@@ -25,6 +25,7 @@
 *****************************************************************************/
 
 #include <VBox/log.h>
+#include <VBox/VBoxGuest.h>
 #include <iprt/err.h>
 
 #include "seamless-host.h"

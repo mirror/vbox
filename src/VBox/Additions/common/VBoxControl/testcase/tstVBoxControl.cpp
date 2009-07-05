@@ -24,15 +24,15 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <iprt/mem.h>
-#include <iprt/string.h>
-#include <iprt/stream.h>
-#include <iprt/path.h>
-#include <iprt/initterm.h>
 #include <iprt/autores.h>
+#include <iprt/initterm.h>
+#include <iprt/mem.h>
+#include <iprt/path.h>
+#include <iprt/stream.h>
+#include <iprt/string.h>
 #include <VBox/log.h>
-#include <VBox/VBoxGuest.h>
 #include <VBox/version.h>
+#include <VBox/VBoxGuestLib.h>
 #ifdef VBOX_WITH_GUEST_PROPS
 # include <VBox/HostServices/GuestPropertySvc.h>
 #endif

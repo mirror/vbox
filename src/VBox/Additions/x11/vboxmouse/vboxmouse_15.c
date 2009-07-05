@@ -48,6 +48,7 @@
  */
 
 #include <VBox/VBoxGuest.h>
+#include <VBox/VBoxGuestLib.h>
 #include <xf86.h>
 #include <xf86Xinput.h>
 #include <exevents.h>
@@ -139,7 +140,7 @@ VBoxProc(DeviceIntPtr device, int what)
         xf86AddEnabledDevice(pInfo);
         device->public.on = TRUE;
         break;
-    
+
     case DEVICE_OFF:
         xf86Msg(X_INFO, "%s: Off.\n", pInfo->name);
         VbglR3SetMouseStatus(0);
@@ -189,7 +190,7 @@ VBoxPreInit(InputDriverPtr drv, IDevPtr dev, int flags)
             XI86_ALWAYS_CORE;
 
     xf86CollectInputOptions(pInfo, NULL, NULL);
-    xf86ProcessCommonOptions(pInfo, pInfo->options); 
+    xf86ProcessCommonOptions(pInfo, pInfo->options);
 
     device = xf86CheckStrOption(dev->commonOptions, "Device",
                                 "/dev/vboxadd");
