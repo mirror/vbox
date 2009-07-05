@@ -276,7 +276,7 @@ DevicesR3_SOURCES       = \
 	PC/DevRTC.cpp \
 	PC/DevPcBios.cpp \
 	PC/DevPcArch.c \
-	VMMDev/VBoxDev.cpp \
+	VMMDev/VMMDev.cpp \
 	VMMDev/VMMDevHGCM.cpp \
 	Network/DevPCNet.cpp \
 	Audio/DevIchAc97.cpp \
