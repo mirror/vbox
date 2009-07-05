@@ -18,6 +18,7 @@
  */
 #include <Windows.h>
 #include <VBoxHook.h>
+#include <VBox/VBoxGuestLib.h>
 #include <stdio.h>
 
 #pragma data_seg("SHARED")
