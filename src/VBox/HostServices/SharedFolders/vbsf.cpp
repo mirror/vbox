@@ -1742,9 +1742,9 @@ static int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Ha
             RTFMODE fMode = pSFDEntry->Attr.fMode;
 
 #ifndef RT_OS_WINDOWS
-            /* don't allow to clear the own bit, otherwise the guest wouldn't be
-             * able to access this file anymore */
-            if (fMode)
+            /* Don't allow the guest to clear the own bit, otherwise the guest wouldn't be
+             * able to access this file anymore. Only for guests, which set the UNIX mode. */
+            if (fMode & RTFS_UNIX_MASK)
                 fMode |= RTFS_UNIX_IRUSR;
 #endif
 
