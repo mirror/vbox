@@ -196,26 +196,26 @@ ifdef VBOX_GSOAP_INSTALLED
 	$(VBOXWEB_OUT_DIR)/soapC.cpp
  else
   vboxsoap_SOURCES = \
-  	$(VBOXWEB_OUT_DIR)/soapC-1.cpp \
-  	$(VBOXWEB_OUT_DIR)/soapC-2.cpp \
-  	$(VBOXWEB_OUT_DIR)/soapC-3.cpp \
-  	$(VBOXWEB_OUT_DIR)/soapC-4.cpp \
-  	$(VBOXWEB_OUT_DIR)/soapC-5.cpp \
-  	$(VBOXWEB_OUT_DIR)/soapC-6.cpp \
-  	$(VBOXWEB_OUT_DIR)/soapC-7.cpp \
-  	$(VBOXWEB_OUT_DIR)/soapC-8.cpp \
-  	$(VBOXWEB_OUT_DIR)/soapC-9.cpp \
-  	$(VBOXWEB_OUT_DIR)/soapC-10.cpp \
-  	$(VBOXWEB_OUT_DIR)/soapC-11.cpp \
-  	$(VBOXWEB_OUT_DIR)/soapC-12.cpp \
-  	$(VBOXWEB_OUT_DIR)/soapC-13.cpp \
-  	$(VBOXWEB_OUT_DIR)/soapC-14.cpp \
-  	$(VBOXWEB_OUT_DIR)/soapC-15.cpp \
-  	$(VBOXWEB_OUT_DIR)/soapC-16.cpp \
-  	$(VBOXWEB_OUT_DIR)/soapC-17.cpp \
-  	$(VBOXWEB_OUT_DIR)/soapC-18.cpp \
-  	$(VBOXWEB_OUT_DIR)/soapC-19.cpp \
-  	$(VBOXWEB_OUT_DIR)/soapC-20.cpp
+	$(VBOXWEB_OUT_DIR)/soapC-1.cpp \
+	$(VBOXWEB_OUT_DIR)/soapC-2.cpp \
+	$(VBOXWEB_OUT_DIR)/soapC-3.cpp \
+	$(VBOXWEB_OUT_DIR)/soapC-4.cpp \
+	$(VBOXWEB_OUT_DIR)/soapC-5.cpp \
+	$(VBOXWEB_OUT_DIR)/soapC-6.cpp \
+	$(VBOXWEB_OUT_DIR)/soapC-7.cpp \
+	$(VBOXWEB_OUT_DIR)/soapC-8.cpp \
+	$(VBOXWEB_OUT_DIR)/soapC-9.cpp \
+	$(VBOXWEB_OUT_DIR)/soapC-10.cpp \
+	$(VBOXWEB_OUT_DIR)/soapC-11.cpp \
+	$(VBOXWEB_OUT_DIR)/soapC-12.cpp \
+	$(VBOXWEB_OUT_DIR)/soapC-13.cpp \
+	$(VBOXWEB_OUT_DIR)/soapC-14.cpp \
+	$(VBOXWEB_OUT_DIR)/soapC-15.cpp \
+	$(VBOXWEB_OUT_DIR)/soapC-16.cpp \
+	$(VBOXWEB_OUT_DIR)/soapC-17.cpp \
+	$(VBOXWEB_OUT_DIR)/soapC-18.cpp \
+	$(VBOXWEB_OUT_DIR)/soapC-19.cpp \
+	$(VBOXWEB_OUT_DIR)/soapC-20.cpp
  endif
  vboxsoap_CLEAN := $(vboxsoap_SOURCES) # lazy bird
  vboxsoap_SOURCES += \
@@ -247,23 +247,23 @@ endif
  vboxwebsrv_TEMPLATE = VBOXMAINCLIENTEXE
  vboxwebsrv_DEFS += SOCKET_CLOSE_ON_EXEC
  vboxwebsrv_INCS = \
-     	$(VBOX_GSOAP_INCS) \
-     	$(VBOXWEB_OUT_DIR) \
-     	.
+	$(VBOX_GSOAP_INCS) \
+	$(VBOXWEB_OUT_DIR) \
+	.
  ifdef VBOX_USE_VCC80
   vboxwebsrv_CXXFLAGS.win += -bigobj
  endif
  vboxwebsrv_LIBS += \
-     	$(PATH_LIB)/vboxsoap$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/vboxsoap$(VBOX_SUFF_LIB) \
 	$(VBOX_GSOAP_CXX_LIBS)
  vboxwebsrv_LIBS.solaris += socket nsl
  vboxwebsrv_SOURCES = \
-     	vboxweb.cpp \
-     	$(VBOXWEB_OUT_DIR)/methodmaps.cpp \
-     	$(VBOXWEB_OUT_DIR)/soapServer.cpp
+	vboxweb.cpp \
+	$(VBOXWEB_OUT_DIR)/methodmaps.cpp \
+	$(VBOXWEB_OUT_DIR)/soapServer.cpp
  vboxwebsrv_CLEAN = \
-     	$(VBOXWEB_OUT_DIR)/methodmaps.cpp \
-     	$(VBOXWEB_OUT_DIR)/soapServer.cpp
+	$(VBOXWEB_OUT_DIR)/methodmaps.cpp \
+	$(VBOXWEB_OUT_DIR)/soapServer.cpp
 
  vboxwebsrv_ORDERDEPS = $(VBOXWEB_OUT_DIR)/gsoap_copy_all_ts
  endif # !VBOX_ONLY_SDK
@@ -283,7 +283,7 @@ endif
      $(VBOXWEB_OUT_DIR) \
      .
  webtest_LIBS += \
-     	$(PATH_LIB)/vboxsoap$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/vboxsoap$(VBOX_SUFF_LIB) \
 	$(VBOX_GSOAP_CXX_LIBS)
  webtest_LIBS.solaris += nsl
  webtest_SOURCES = \
@@ -342,8 +342,8 @@ ifdef VBOX_ONLY_SDK
  VBOX_JAXWS_LIBDIR             = $(VBOX_PATH_WEBSERVICE)/jaxlibs
  # well, not really good
  VBOX_JAVA15                   = $(firstword $(wildcard \
- 	/usr/lib/jvm/java-1.5.0-sun/bin/java \
- 	/usr/jdk/jdk1.5*/bin/java \
+	/usr/lib/jvm/java-1.5.0-sun/bin/java \
+	/usr/jdk/jdk1.5*/bin/java \
 	/opt/sun-jdk-1.5*/bin/java))
  ifndef VBOX_JAVA15
   $(error Failed to autodetect VBOX_JAVA15, please set it manually)
@@ -446,7 +446,8 @@ $(VBOXWEB_GLUE_PYTHON): $(VBOXWEB_IDL_SRC) $(VBOXWEB_WSDL) $(VBOXWEBSERVICE_WSDL
 $(VBOXWEB_WS_PYTHON): $(VBOXWEB_WSDL) $(VBOXWEBSERVICE_WSDL)
 	$(call MSG_GENERATE,,$@, WS Python bindings)
 	$(QUIET)$(MKDIR) -p $(@D)
-	$(QUIET)$(REDIRECT) -C $(@D) -- $(VBOX_WSDL2PY) -b --file  $(VBOXWEBSERVICE_WSDL)
+# Try both w/o and with --file option
+	$(QUIET)$(REDIRECT) -C $(@D) -- $(VBOX_WSDL2PY) -b $(VBOXWEBSERVICE_WSDL) || $(VBOX_WSDL2PY) -b  --file $(VBOXWEBSERVICE_WSDL)
 	$(QUIET)$(APPEND) $@ ''
 
 $(VBOXWEB_WS_PERL): $(VBOXWEB_WSDL) $(VBOXWEBSERVICE_WSDL)
