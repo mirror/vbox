@@ -105,7 +105,8 @@ typedef struct _VBOXVHWASURFDESC
     VBOXVHWA_SURFHANDLE hHostHandle;
     volatile uint32_t cPendingBltsSrc;
     volatile uint32_t cPendingBltsDst;
-    volatile uint32_t cPendingFlips;
+    volatile uint32_t cPendingFlipsCurr;
+    volatile uint32_t cPendingFlipsTarg;
     uint32_t cBitsPerPixel;
 }VBOXVHWASURFDESC, *PVBOXVHWASURFDESC;
 
