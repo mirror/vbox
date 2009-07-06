@@ -415,7 +415,9 @@ endif
 # Enables the Python<->XPCOM and Python<->COM bindings.
 VBOX_WITH_PYTHON ?= 1
 # Build multiple Python<->XPCOM bridges for different Python version 
-VBOX_WITH_MULTIVERSION_PYTHON ?= 1
+ifn1of ($(KBUILD_TARGET), darwin)
+ VBOX_WITH_MULTIVERSION_PYTHON ?= 1
+endif
 # Enables hardening.
 # Most developers will want to disable this in their LocalConfig.kmk.
 ifn1of ($(KBUILD_TARGET), win)
