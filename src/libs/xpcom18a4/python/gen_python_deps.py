@@ -22,21 +22,28 @@ versions = ["2.3", "2.4", "2.5", "2.6", "2.7", "2.8"]
 prefixes = ["/usr", "/usr/local", "/opt", "/opt/local"]
 known = {}
 
-def checkPair(p, v,dllpre,dllsuff, do_bitness_magic):
+def checkPair(p, v,dllpre,dllsuff, bitness_magic):
     file =  os.path.join(p, "include", "python"+v, "Python.h")
     if not os.path.isfile(file):
         return None
-    if do_bitness_magic:
+
+    lib = os.path.join(p, "lib", dllpre+"python"+v+dllsuff)
+
+    if bitness_magic == 1:
         lib64 = os.path.join(p, "lib", "64", dllpre+"python"+v+dllsuff)
+    elif bitness_magic == 2:
+        lib64 = os.path.join(p, "lib64", dllpre+"python"+v+dllsuff)
+        if not os.path.isfile(lib64):
+            lib64 = lib
     else:
         lib64 = None
     return [os.path.join(p, "include", "python"+v), 
-            os.path.join(p, "lib", dllpre+"python"+v+dllsuff),
+            lib,
             lib64]
 
-def print_vars(vers, known, sep, do_bitness_magic):
+def print_vars(vers, known, sep, bitness_magic):
     print "VBOX_PYTHON%s_INC=%s%s" %(vers, known[0], sep)
-    if do_bitness_magic:
+    if bitness_magic > 0:
        print "VBOX_PYTHON%s_LIB=%s%s" %(vers, known[2], sep)
     else:
        print "VBOX_PYTHON%s_LIB=%s%s" %(vers, known[1], sep)
@@ -45,7 +52,7 @@ def print_vars(vers, known, sep, do_bitness_magic):
 def main(argv):
     dllpre = "lib"
     dllsuff = ".so"
-    do_bitness_magic = 0
+    bitness_magic = 0
 
     if len(argv) > 1:
         target = argv[1]
@@ -66,11 +73,14 @@ def main(argv):
         dllsuff = '.dylib'
 
     if target == 'solaris' and arch == 'amd64':
-        do_bitness_magic = 1
-    
+        bitness_magic = 1
+
+    if target == 'linux' and arch == 'amd64':
+        bitness_magic = 2
+
     for v in versions:
         for p in prefixes:
-            c = checkPair(p, v, dllpre, dllsuff, do_bitness_magic)
+            c = checkPair(p, v, dllpre, dllsuff, bitness_magic)
             if c is not None:
                 known[v] = c
                 break
@@ -84,9 +94,9 @@ def main(argv):
         if d is None:
             d = k
         vers = k.replace('.', '')
-        print_vars(vers, known[k], sep, do_bitness_magic)
+        print_vars(vers, known[k], sep, bitness_magic)
     if d is not None:
-        print_vars("DEF", known[d], sep, do_bitness_magic) 
+        print_vars("DEF", known[d], sep, bitness_magic) 
 
 if __name__ == '__main__':
     main(sys.argv)
