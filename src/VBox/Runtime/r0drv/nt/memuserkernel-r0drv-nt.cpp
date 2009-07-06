@@ -89,3 +89,9 @@ RTR0DECL(bool) RTR0MemKernelIsValidAddr(void *pv)
 #endif
 }
 
+
+RTR0DECL(bool) RTR0MemAreKernelAndUserRangesDifferent(void)
+{
+    return true;
+}
+

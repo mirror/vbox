@@ -72,3 +72,10 @@ RTR0DECL(bool) RTR0MemKernelIsValidAddr(void *pv)
     return R3Ptr >= UINT32_C(0x20000000); /* 512MB */
 }
 
+
+RTR0DECL(bool) RTR0MemAreKernelAndUserRangesDifferent(void)
+{
+    /** @todo this is all wrong, see RTR0MemUserIsValidAddr. */
+    return false;
+}
+

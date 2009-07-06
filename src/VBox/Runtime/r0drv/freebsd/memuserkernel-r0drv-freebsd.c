@@ -67,3 +67,9 @@ RTR0DECL(bool) RTR0MemKernelIsValidAddr(void *pv)
     return R3Ptr >= VM_MAXUSER_ADDRESS;
 }
 
+
+RTR0DECL(bool) RTR0MemAreKernelAndUserRangesDifferent(void)
+{
+    return true;
+}
+
