@@ -60,9 +60,9 @@ RTR0DECL(bool) RTR0MemUserIsValidAddr(RTR3PTR R3Ptr)
 {
     /* the commpage is above this. */
 #ifdef RT_ARCH_X86
-    return (R3Ptr) < VM_MAX_ADDRESS;
+    return R3Ptr < VM_MAX_ADDRESS;
 #else
-    return (R3Ptr) < VM_MAX_PAGE_ADDRESS;
+    return R3Ptr < VM_MAX_PAGE_ADDRESS;
 #endif
 }
 
