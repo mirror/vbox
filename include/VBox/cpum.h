@@ -955,6 +955,8 @@ VMMDECL(bool)           CPUMIsGuestFPUStateActive(PVMCPU pVCPU);
 VMMDECL(void)           CPUMDeactivateGuestFPUState(PVMCPU pVCpu);
 VMMDECL(bool)           CPUMIsGuestDebugStateActive(PVMCPU pVCpu);
 VMMDECL(void)           CPUMDeactivateGuestDebugState(PVMCPU pVCpu);
+VMMDECL(bool)           CPUMIsHyperDebugStateActive(PVMCPU pVCpu);
+VMMDECL(void)           CPUMDeactivateHyperDebugState(PVMCPU pVCpu);
 VMMDECL(uint32_t)       CPUMGetGuestCPL(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore);
 VMMDECL(bool)           CPUMAreHiddenSelRegsValid(PVM pVM);
 
@@ -1037,6 +1039,9 @@ VMMR0DECL(int)          CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 VMMR0DECL(int)          CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 VMMR0DECL(int)          CPUMR0SaveGuestDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, bool fDR6);
 VMMR0DECL(int)          CPUMR0LoadGuestDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, bool fDR6);
+VMMR0DECL(int)          CPUMR0LoadHostDebugState(PVM pVM, PVMCPU pVCpu);
+VMMR0DECL(int)          CPUMR0SaveHostDebugState(PVM pVM, PVMCPU pVCpu);
+VMMR0DECL(int)          CPUMR0LoadHyperDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, bool fDR6);
 
 /** @} */
 #endif /* IN_RING0 */

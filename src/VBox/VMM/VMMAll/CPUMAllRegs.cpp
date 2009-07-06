@@ -1929,6 +1929,17 @@ VMMDECL(bool) CPUMIsGuestDebugStateActive(PVMCPU pVCpu)
     return (pVCpu->cpum.s.fUseFlags & CPUM_USE_DEBUG_REGS) != 0;
 }
 
+/**
+ * Checks if the hyper debug state is active
+ *
+ * @returns boolean
+ * @param   pVM         VM handle.
+ */
+VMMDECL(bool) CPUMIsHyperDebugStateActive(PVMCPU pVCpu)
+{
+    return (pVCpu->cpum.s.fUseFlags & CPUM_USE_DEBUG_REGS_HYPER) != 0;
+}
+
 
 /**
  * Mark the guest's debug state as inactive
@@ -1941,6 +1952,17 @@ VMMDECL(void) CPUMDeactivateGuestDebugState(PVMCPU pVCpu)
     pVCpu->cpum.s.fUseFlags &= ~CPUM_USE_DEBUG_REGS;
 }
 
+
+/**
+ * Mark the hypervisor's debug state as inactive
+ *
+ * @returns boolean
+ * @param   pVM         VM handle.
+ */
+VMMDECL(void) CPUMDeactivateHyperDebugState(PVMCPU pVCpu)
+{
+    pVCpu->cpum.s.fUseFlags &= ~CPUM_USE_DEBUG_REGS_HYPER;
+}
 
 /**
  * Checks if the hidden selector registers are valid

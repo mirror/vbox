@@ -75,6 +75,8 @@
 #define CPUM_SYNC_FPU_STATE             RT_BIT(7)
 /** Sync the debug state on entry (32->64 switcher only). */
 #define CPUM_SYNC_DEBUG_STATE           RT_BIT(8)
+/** Enabled use of hypervisor debug registers in guest context. */
+#define CPUM_USE_DEBUG_REGS_HYPER       RT_BIT(9)
 /** @} */
 
 /* Sanity check. */
