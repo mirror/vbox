@@ -42,7 +42,7 @@ RTR0DECL(int) RTR0MemUserCopyFrom(void *pvDst, RTR3PTR R3PtrSrc, size_t cb)
 {
     __try
     {
-        ProbeForRead(R3PtrSrc, cb, 1);
+        ProbeForRead((PVOID)R3PtrSrc, cb, 1);
         memcpy(pvDst, (void const *)R3PtrSrc, cb);
     }
     __except(EXCEPTION_EXECUTE_HANDLER)
@@ -57,7 +57,7 @@ RTR0DECL(int) RTR0MemUserCopyTo(RTR3PTR R3PtrDst, void const *pvSrc, size_t cb)
 {
     __try
     {
-        ProbeForWrite(R3PtrDst, cb, 1);
+        ProbeForWrite((PVOID)R3PtrDst, cb, 1);
         memcpy((void *)R3PtrDst, pvSrc, cb);
     }
     __except(EXCEPTION_EXECUTE_HANDLER)
@@ -74,7 +74,7 @@ RTR0DECL(bool) RTR0MemUserIsValidAddr(RTR3PTR R3Ptr)
     /* Play safe+wrong... it used to be a constant, but in w2k+ is a variable. */
     return R3Ptr < _2G;
 #else
-    return R3Ptr <= MM_HIGHEST_USER_ADDRESS;
+    return R3Ptr <= (uintptr_t)MM_HIGHEST_USER_ADDRESS;
 #endif
 }
 
@@ -85,7 +85,7 @@ RTR0DECL(bool) RTR0MemKernelIsValidAddr(void *pv)
     /* Play safe+wrong... it used to be a constant, but in w2k+ is a variable. */
     return (uintptr_t) >= _2G;
 #else
-    return (uintptr_t)pv >= MM_SYSTEM_RANGE_START;
+    return (uintptr_t)pv >= (uintptr_t)MM_SYSTEM_RANGE_START;
 #endif
 }
 
