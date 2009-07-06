@@ -52,7 +52,6 @@ VBoxGuestR0Lib_INCS         = \
 	$(PATH_VBoxGuestR0Lib)
 VBoxGuestR0Lib_SOURCES      = \
 	GenericRequest.cpp \
-	SysHlp.cpp \
 	PhysHeap.cpp \
 	Init.cpp \
 	VMMDev.cpp \
