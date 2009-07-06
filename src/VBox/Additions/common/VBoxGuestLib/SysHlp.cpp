@@ -26,11 +26,13 @@
 #include "SysHlp.h"
 
 #include <iprt/assert.h>
+
+#ifdef VBGL_VBOXGUEST
+
 #if !defined (RT_OS_WINDOWS) \
  && (!defined (RT_OS_LINUX) || defined (VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX))
 # include <iprt/memobj.h>
 #endif
-
 
 
 /**
@@ -156,7 +158,7 @@ void vbglUnlockLinear (void *pvCtx, void *pv, uint32_t u32Size)
 #endif
 }
 
-#ifndef VBGL_VBOXGUEST
+#else  /* !VBGL_VBOXGUEST */
 
 # if defined (RT_OS_LINUX) && !defined (__KERNEL__) /** @todo r=bird: What is this for?????? */
 #  include <unistd.h>
