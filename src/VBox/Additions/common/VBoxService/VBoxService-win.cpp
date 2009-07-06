@@ -212,6 +212,7 @@ int VBoxServiceWinStart()
 {
     int rc = VINF_SUCCESS;
 
+#ifndef TARGET_NT4
     /* Create a well-known SID for the "Builtin Users" group. */
     PSID pBuiltinUsersSID = NULL;
     SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_LOCAL_SID_AUTHORITY;
@@ -237,6 +238,7 @@ int VBoxServiceWinStart()
             rc = VERR_ACCESS_DENIED; /* Need to add some better code later. */
         }
     }
+#endif
 
     if (RT_SUCCESS(rc))
     {
