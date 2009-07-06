@@ -202,7 +202,6 @@ def autoCompletion(commands, ctx):
 g_verbose = True
 
 def split_no_quotes(s):
-   #return s.split()
     return shlex.split(s)
 
 def createVm(ctx,name,kind,base):
@@ -337,7 +336,8 @@ def cmdExistingVm(ctx,mach,cmd,args):
          'powerbutton':  lambda: console.powerButton(),
          'stats':      lambda: guestStats(ctx, mach),
          'guest':      lambda: guestExec(ctx, mach, console, args),
-         'monitorGuest': lambda: monitorGuest(ctx, mach, console, args)
+         'monitorGuest': lambda: monitorGuest(ctx, mach, console, args),
+         'save' :     lambda: console.saveState().waitForCompletion(-1)
          }
     try:
         ops[cmd]()
@@ -488,6 +488,13 @@ def resumeCmd(ctx, args):
     cmdExistingVm(ctx, mach, 'resume', '')
     return 0
 
+def saveCmd(ctx, args):
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+    cmdExistingVm(ctx, mach, 'save', '')
+    return 0
+
 def statsCmd(ctx, args):
     mach = argsToMach(ctx,args)
     if mach == None:
@@ -529,7 +536,11 @@ def setvarCmd(ctx, args):
 def quitCmd(ctx, args):
     return 1
 
-def aliasesCmd(ctx, args):
+def aliasCmd(ctx, args):
+    if (len(args) == 3):
+        aliases[args[1]] = args[2]
+        return 0
+    
     for (k,v) in aliases.items():
         print "'%s' is an alias for '%s'" %(k,v)
     return 0
@@ -551,7 +562,6 @@ def hostCmd(ctx, args):
        print metric['name'], metric['values_as_string']
 
    return 0
-
 
 def monitorGuestCmd(ctx, args):
     if (len(args) < 2):
@@ -666,7 +676,7 @@ aliases = {'s':'start',
            'i':'info',
            'l':'list',
            'h':'help',
-           'a':'aliases',
+           'a':'alias',
            'q':'quit', 'exit':'quit',
            'v':'verbose'}
 
@@ -676,18 +686,19 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'remove':['Remove virtual machine', removeCmd, 0],
             'pause':['Pause virtual machine', pauseCmd, 0],
             'resume':['Resume virtual machine', resumeCmd, 0],
+            'save':['Save execution state of virtual machine', saveCmd, 0],
             'stats':['Stats for virtual machine', statsCmd, 0],
             'powerdown':['Power down virtual machine', powerdownCmd, 0],
             'powerbutton':['Effectively press power button', powerbuttonCmd, 0],
             'list':['Shows known virtual machines', listCmd, 0],
             'info':['Shows info on machine', infoCmd, 0],
-            'aliases':['Shows aliases', aliasesCmd, 0],
+            'alias':['Control aliases', aliasCmd, 0],
             'verbose':['Toggle verbosity', verboseCmd, 0],
             'setvar':['Set VMs variable: setvar Fedora BIOSSettings.ACPIEnabled True', setvarCmd, 0],
-            'eval':['Evaluate arbitrary Python construction: eval for m in getMachines(ctx): print m.name,"has",m.memorySize,"M"', evalCmd, 0],
+            'eval':['Evaluate arbitrary Python construction: eval \'for m in getMachines(ctx): print m.name,"has",m.memorySize,"M"\'', evalCmd, 0],
             'quit':['Exits', quitCmd, 0],
             'host':['Show host information', hostCmd, 0],
-            'guest':['Execute command for guest: guest Win32 console.mouse.putMouseEvent(20, 20, 0, 0)', guestCmd, 0],
+            'guest':['Execute command for guest: guest Win32 \'console.mouse.putMouseEvent(20, 20, 0, 0)\'', guestCmd, 0],
             'monitorGuest':['Monitor what happens with the guest for some time: monitorGuest Win32 10', monitorGuestCmd, 0],
             'monitorVbox':['Monitor what happens with Virtual Box for some time: monitorVbox 10', monitorVboxCmd, 0],
             'portForward':['Setup permanent port forwarding for a VM, takes adapter number host port and guest port: portForward Win32 0 8080 80', portForwardCmd, 0],
