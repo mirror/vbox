@@ -1435,7 +1435,7 @@ ResumeExecution:
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestDB);
 
             /* Note that we don't support guest and host-initiated debugging at the same time. */
-            Assert(DBGFIsStepping(pVCpu));
+            Assert(DBGFIsStepping(pVCpu) || CPUMIsHyperDebugStateActive(pVCpu));
 
             rc = DBGFRZTrap01Handler(pVM, pVCpu, CPUMCTX2CORE(pCtx), pCtx->dr[6]);
             if (rc == VINF_EM_RAW_GUEST_TRAP)

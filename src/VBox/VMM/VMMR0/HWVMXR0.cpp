@@ -2656,7 +2656,7 @@ ResumeExecution:
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestDB);
 
                 /* Note that we don't support guest and host-initiated debugging at the same time. */
-                Assert(DBGFIsStepping(pVCpu) || CPUMIsGuestInRealModeEx(pCtx));
+                Assert(DBGFIsStepping(pVCpu) || CPUMIsGuestInRealModeEx(pCtx) || CPUMIsHyperDebugStateActive(pVCpu));
 
                 uDR6  = X86_DR6_INIT_VAL;
                 uDR6 |= (exitQualification & (X86_DR6_B0|X86_DR6_B1|X86_DR6_B2|X86_DR6_B3|X86_DR6_BD|X86_DR6_BS));
