@@ -101,6 +101,9 @@
 #  pragma intrinsic(_InterlockedCompareExchange)
 #  pragma intrinsic(_InterlockedCompareExchange64)
 #  ifdef RT_ARCH_AMD64
+#   pragma intrinsic(_mm_mfence)
+#   pragma intrinsic(_mm_sfence)
+#   pragma intrinsic(_mm_lfence)
 #   pragma intrinsic(__stosq)
 #   pragma intrinsic(__readcr8)
 #   pragma intrinsic(__writecr8)
@@ -1340,9 +1343,9 @@ DECLINLINE(RTCCUINTREG) ASMGetCR4(void)
 #  else
         push    eax /* just in case */
         /*mov     eax, cr4*/
-        _emit 0x0f
-        _emit 0x20
-        _emit 0xe0
+        _emit   0x0f
+        _emit   0x20
+        _emit   0xe0
         mov     [uCR4], eax
         pop     eax
 #  endif
@@ -3903,12 +3906,14 @@ DECLINLINE(void) ASMMemoryFenceSSE2(void)
 {
 #if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__ (".byte 0x0f,0xae,0xf0\n\t");
+#elif RT_INLINE_ASM_USES_INTRIN
+    _mm_mfence();
 #else
     __asm
     {
-        _emit 0x0f
-        _emit 0xae
-        _emit 0xf0
+        _emit   0x0f
+        _emit   0xae
+        _emit   0xf0
     }
 #endif
 }
@@ -3922,12 +3927,14 @@ DECLINLINE(void) ASMWriteFenceSSE(void)
 {
 #if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__ (".byte 0x0f,0xae,0xf8\n\t");
+#elif RT_INLINE_ASM_USES_INTRIN
+    _mm_sfence();
 #else
     __asm
     {
-        _emit 0x0f
-        _emit 0xae
-        _emit 0xf8
+        _emit   0x0f
+        _emit   0xae
+        _emit   0xf8
     }
 #endif
 }
@@ -3941,12 +3948,14 @@ DECLINLINE(void) ASMReadFenceSSE2(void)
 {
 #if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__ (".byte 0x0f,0xae,0xe8\n\t");
+#elif RT_INLINE_ASM_USES_INTRIN
+    _mm_lfence();
 #else
     __asm
     {
-        _emit 0x0f
-        _emit 0xae
-        _emit 0xe8
+        _emit   0x0f
+        _emit   0xae
+        _emit   0xe8
     }
 #endif
 }
