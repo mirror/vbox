@@ -353,6 +353,13 @@ public:
         mIsClear = false;
     }
 
+    void add(const VBoxVHWADirtyRect & aRect)
+    {
+        if(aRect.isClear())
+            return;
+        add(aRect.rect());
+    }
+
     void set(const QRect & aRect)
     {
         if(aRect.isEmpty())
@@ -463,10 +470,25 @@ private:
     VBoxVHWAColorComponent mB;
 };
 
+/* data flow:
+ * I. NON-Yinverted surface:
+ * 1.direct memory update (paint, lock/unlock):
+ *  mem->tex->fb
+ * 2.blt
+ *  srcTex->invFB->tex->fb
+ *              |->mem
+ *
+ * II. Yinverted surface:
+ * 1.direct memory update (paint, lock/unlock):
+ *  mem->tex->fb
+ * 2.blt
+ *  srcTex->fb->tex
+ *           |->mem
+ * */
 class VBoxVHWASurfaceBase
 {
 public:
-    VBoxVHWASurfaceBase(GLsizei aWidth, GLsizei aHeight,
+    VBoxVHWASurfaceBase(class VBoxVHWAGlContextState *aState, bool aIsYInverted, GLsizei aWidth, GLsizei aHeight,
             VBoxVHWAColorFormat & aColorFormat,
             VBoxVHWAColorKey * pSrcBltCKey, VBoxVHWAColorKey * pDstBltCKey,
             VBoxVHWAColorKey * pSrcOverlayCKey, VBoxVHWAColorKey * pDstOverlayCKey);
@@ -517,7 +539,7 @@ public:
     const VBoxVHWAColorFormat & colorFormat() {return mColorFormat; }
 
     /* clients should treat the returned texture as read-only */
-    GLuint textureSynched(const QRect * aRect) { synchTexture(aRect); return mTexture; }
+    GLuint textureSynched(const QRect * aRect) { synchTex(aRect); return mTexture; }
 
     void setAddress(uchar * addr);
 
@@ -528,6 +550,10 @@ public:
 //    /* surface representing the main framebuffer. */
 //    virtual bool isMainFramebuffer() = 0;
     virtual void makeCurrent() = 0;
+    virtual void makeYInvertedCurrent() = 0;
+
+    bool isYInverted() {return mIsYInverted; }
+
 #ifdef VBOX_WITH_VIDEOHWACCEL
     virtual class VBoxVHWAGlProgramMngr * getGlProgramMngr() = 0;
     static int setCKey(class VBoxVHWAGlProgramVHWA * pProgram, const VBoxVHWAColorFormat * pFormat, const VBoxVHWAColorKey * pCKey);
@@ -535,9 +561,15 @@ public:
 private:
     void initDisplay();
     void deleteDisplay();
-    void updateTexture(const QRect * aRect);
-    void synchTexture(const QRect * aRect);
+    void synchTex(const QRect * aRect);
+    void synchTexMem(const QRect * aRect);
+    void synchTexFB(const QRect * aRect);
     void synchMem(const QRect * aRect);
+    void synchFB(const QRect * aRect);
+
+    void doTex2FB(const QRect * aRect);
+
+
 
     QRect mRect;
 
@@ -566,34 +598,116 @@ private:
 
     int mLockCount;
     /* memory buffer not reflected in fm and texture, e.g if memory buffer is replaced or in case of lock/unlock  */
-    VBoxVHWADirtyRect mUpdateMemRect;
+    VBoxVHWADirtyRect mUpdateMem2TexRect;
+    /* memory buffer not reflected in fm and texture, e.g if memory buffer is replaced or in case of lock/unlock  */
+    VBoxVHWADirtyRect mUpdateTex2FBRect;
     /*in case of blit we blit from another surface's texture, so our current texture gets durty  */
     VBoxVHWADirtyRect mUpdateFB2TexRect;
     /*in case of blit the memory buffer does not get updated until we need it, e.g. for paint or lock operations */
     VBoxVHWADirtyRect mUpdateFB2MemRect;
 
     bool mFreeAddress;
+
+    bool mIsYInverted;
+    typedef std::list <VBoxVHWASurfaceBase*> OverlayList;
+    VBoxVHWASurfaceBase * mOverlayed;
+    OverlayList mOverlays;
+protected:
+    virtual void init(uchar *pvMem, bool bInverted);
+
+    class VBoxVHWAGlContextState *mState;
+
+};
+
+class VBoxVHWAGlContextState
+{
+public:
+    VBoxVHWAGlContextState() : mContext(NULL), mInverted(false) {}
+
+    void assertCurrent(class VBoxVHWASurfaceBase *aContext, bool bInverted)
+    {
+        mContext = aContext;
+        if(aContext && aContext->isYInverted())
+        {
+            mInverted = true;
+        }
+        else
+        {
+            mInverted = bInverted;
+        }
+    }
+
+    void makeYInvertedCurrent(class VBoxVHWASurfaceBase *aContext)
+    {
+        if(mContext != aContext)
+        {
+//            aContext->makeCurrent();
+            aContext->makeYInvertedCurrent();
+            assertCurrent(aContext, true);
+        }
+        else
+        {
+            if(!aContext->isYInverted() && !mInverted)
+            {
+//                aContext->makeCurrent();
+                aContext->makeYInvertedCurrent();
+                mInverted = true;
+            }
+        }
+    }
+
+    void makeCurrent(class VBoxVHWASurfaceBase *aContext)
+    {
+        if(mContext != aContext)
+        {
+            aContext->makeCurrent();
+            assertCurrent(aContext, false);
+        }
+        else
+        {
+            if(!aContext->isYInverted() && mInverted)
+            {
+                aContext->makeCurrent();
+                mInverted = false;
+            }
+        }
+    }
+
+    class VBoxVHWASurfaceBase * getCurrent() {return mContext; }
+    bool isCurrentYInverted() {return mInverted; }
+
+private:
+
+    class VBoxVHWASurfaceBase *mContext;
+    bool mInverted;
 };
 
 class VBoxVHWASurfaceQGL : public VBoxVHWASurfaceBase
 {
 public:
-    VBoxVHWASurfaceQGL(GLsizei aWidth, GLsizei aHeight,
+    VBoxVHWASurfaceQGL(class VBoxVHWAGlContextState *aState, GLsizei aWidth, GLsizei aHeight,
             VBoxVHWAColorFormat & aColorFormat,
             VBoxVHWAColorKey * pSrcBltCKey, VBoxVHWAColorKey * pDstBltCKey,
             VBoxVHWAColorKey * pSrcOverlayCKey, VBoxVHWAColorKey * pDstOverlayCKey,
             class VBoxGLWidget *pWidget,
-            bool bBackBuffer) :
-                VBoxVHWASurfaceBase(aWidth, aHeight,
+            bool bInvisibleBuffer) :
+                VBoxVHWASurfaceBase(aState, bInvisibleBuffer, aWidth, aHeight,
                         aColorFormat,
                         pSrcBltCKey, pDstBltCKey, pSrcOverlayCKey, pDstOverlayCKey),
                 mWidget(pWidget),
-                mCreateBuf(bBackBuffer)
+                mBuffer(NULL)
     {}
 
+    ~VBoxVHWASurfaceQGL();
+
     void makeCurrent();
+    void makeYInvertedCurrent();
 
     void init(uchar *pvMem);
+
+    void uninit();
+
+    int flip(VBoxVHWASurfaceQGL * aCurrSurface);
 
 //    int unlock()
 //    {
@@ -608,7 +722,8 @@ public:
 private:
     class VBoxGLWidget *mWidget;
     class QGLPixelBuffer *mBuffer;
-    bool mCreateBuf;
+protected:
+    virtual void init(uchar *pvMem, bool bInverted);
 };
 
 class VBoxGLWidget : public QGLWidget
@@ -630,6 +745,9 @@ typedef void (VBoxGLWidget::*PFNVBOXQGLOP)(void* );
 
     void vboxPaintEvent (QPaintEvent *pe) {vboxPerformGLOp(&VBoxGLWidget::vboxDoPaint, pe);}
     void vboxResizeEvent (VBoxResizeEvent *re) {vboxPerformGLOp(&VBoxGLWidget::vboxDoResize, re);}
+#ifdef DEBUG_misha
+    void vboxTestSurfaces () {vboxPerformGLOp(&VBoxGLWidget::vboxDoTestSurfaces, NULL);}
+#endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
     void vboxVHWACmd (struct _VBOXVHWACMD * pCmd) {vboxPerformGLOp(&VBoxGLWidget::vboxDoVHWACmd, pCmd);}
     class VBoxVHWAGlProgramMngr * vboxVHWAGetGlProgramMngr();
@@ -639,7 +757,17 @@ typedef void (VBoxGLWidget::*PFNVBOXQGLOP)(void* );
 protected:
 //    void resizeGL (int height, int width);
 
-    void paintGL() { (this->*mpfnOp)(mOpContext); }
+    void paintGL()
+    {
+        Assert(mState.getCurrent() == NULL);
+        /* we are called with QGLWidget context */
+        mState.assertCurrent(pDisplay, false);
+        (this->*mpfnOp)(mOpContext);
+        /* restore the context */
+        mState.makeCurrent(pDisplay);
+        /* clear*/
+        mState.assertCurrent(NULL, false);
+    }
 
     void initializeGL();
 
@@ -649,6 +777,9 @@ private:
 //    void vboxDoPerformDisplay() { Assert(mDisplayInitialized); glCallList(mDisplay); }
     void vboxDoResize(void *re);
     void vboxDoPaint(void *rec);
+#ifdef DEBUG_misha
+    void vboxDoTestSurfaces(void *context);
+#endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
     void vboxDoVHWACmd(void *cmd);
     void vboxCheckUpdateAddress (VBoxVHWASurfaceBase * pSurface, uint64_t offset)
@@ -668,11 +799,13 @@ private:
     int vhwaSurfaceLock(struct _VBOXVHWACMD_SURF_LOCK *pCmd);
     int vhwaSurfaceUnlock(struct _VBOXVHWACMD_SURF_UNLOCK *pCmd);
     int vhwaSurfaceBlt(struct _VBOXVHWACMD_SURF_BLT *pCmd);
+    int vhwaSurfaceFlip(struct _VBOXVHWACMD_SURF_FLIP *pCmd);
     int vhwaQueryInfo1(struct _VBOXVHWACMD_QUERYINFO1 *pCmd);
     int vhwaQueryInfo2(struct _VBOXVHWACMD_QUERYINFO2 *pCmd);
 #endif
 
     VBoxVHWASurfaceQGL * pDisplay;
+
     /* we need to do all opengl stuff in the paintGL context,
      * submit the operation to be performed */
     void vboxPerformGLOp(PFNVBOXQGLOP pfn, void* pContext) {mpfnOp = pfn; mOpContext = pContext; updateGL();}
@@ -683,6 +816,8 @@ private:
 //    ulong  mBitsPerPixel;
     ulong  mPixelFormat;
     bool   mUsesGuestVRAM;
+
+    VBoxVHWAGlContextState mState;
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     class VBoxVHWAGlProgramMngr *mpMngr;
@@ -717,7 +852,7 @@ public:
 #endif
 
 private:
-    void vboxMakeCurrent();
+//    void vboxMakeCurrent();
     VBoxGLWidget * vboxWidget();
 };
 

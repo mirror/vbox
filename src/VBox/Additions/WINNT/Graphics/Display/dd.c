@@ -47,7 +47,7 @@ static DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface);
 static bool getDDHALInfo(PPDEV pDev, DD_HALINFO* pHALInfo);
 static DECLCALLBACK(void) vboxVHWAFreeCmdCompletion(PPDEV ppdev, VBOXVHWACMD * pCmd, void * pContext);
 static DECLCALLBACK(void) vboxVHWASurfBltCompletion(PPDEV ppdev, VBOXVHWACMD * pCmd, void * pContext);
-
+static DECLCALLBACK(void) vboxVHWASurfFlipCompletion(PPDEV ppdev, VBOXVHWACMD * pCmd, void * pContext);
 #endif
 
 /**
@@ -1036,7 +1036,8 @@ DWORD APIENTRY DdLock(PDD_LOCKDATA lpLock)
         {
             if(ASMAtomicUoReadU32(&pDesc->cPendingBltsSrc)
                     || ASMAtomicUoReadU32(&pDesc->cPendingBltsDst)
-                    || ASMAtomicUoReadU32(&pDesc->cPendingFlips))
+                    || ASMAtomicUoReadU32(&pDesc->cPendingFlipsTarg)
+                    || ASMAtomicUoReadU32(&pDesc->cPendingFlipsCurr))
             {
                 lpLock->ddRVal = DDERR_WASSTILLDRAWING;
                 return DDHAL_DRIVER_HANDLED;
@@ -1470,22 +1471,112 @@ DWORD APIENTRY DdBlt(PDD_BLTDATA  lpBlt)
 
 DWORD APIENTRY DdFlip(PDD_FLIPDATA  lpFlip)
 {
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    PPDEV pDev = (PPDEV)lpFlip->lpDD->dhpdev;
+    DD_SURFACE_LOCAL*   lpTargSurfaceLocal = lpFlip->lpSurfTarg;
+    DD_SURFACE_GLOBAL*  lpTargSurfaceGlobal = lpTargSurfaceLocal->lpGbl;
+    DD_SURFACE_LOCAL*   lpCurrSurfaceLocal = lpFlip->lpSurfCurr;
+    DD_SURFACE_GLOBAL*  lpCurrSurfaceGlobal = lpCurrSurfaceLocal->lpGbl;
+    PVBOXVHWASURFDESC pCurrDesc = (PVBOXVHWASURFDESC)lpCurrSurfaceGlobal->dwReserved1;
+    PVBOXVHWASURFDESC pTargDesc = (PVBOXVHWASURFDESC)lpTargSurfaceGlobal->dwReserved1;
+    VBOXVHWACMD* pCmd;
+
     DISPDBG((0, "%s\n", __FUNCTION__));
-    lpFlip->ddRVal = DD_OK;
+
+    /* ensure we have host cmds processed to update pending blits and flips */
+    vboxVHWACommandCheckHostCmds(pDev);
+
+//    if(VBOXDD_CHECKFLAG(lpLock, DDLOCK_DONOTWAIT))
+    {
+        if(
+//                ASMAtomicUoReadU32(&pDesc->cPendingBltsSrc)
+//                || ASMAtomicUoReadU32(&pDesc->cPendingBltsDst)
+//                ||
+                ASMAtomicUoReadU32(&pCurrDesc->cPendingFlipsTarg)
+                || ASMAtomicUoReadU32(&pCurrDesc->cPendingFlipsCurr)
+                || ASMAtomicUoReadU32(&pTargDesc->cPendingFlipsTarg)
+                || ASMAtomicUoReadU32(&pTargDesc->cPendingFlipsCurr))
+        {
+            lpFlip->ddRVal = DDERR_WASSTILLDRAWING;
+            return DDHAL_DRIVER_HANDLED;
+        }
+    }
+
+    pCmd = vboxVHWACommandCreate (pDev, VBOXVHWACMD_TYPE_SURF_FLIP, sizeof(VBOXVHWACMD_SURF_FLIP));
+    //    int rc = VERR_GENERAL_FAILURE;
+    if(pCmd)
+    {
+        VBOXVHWACMD_SURF_FLIP * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_FLIP);
+
+        memset(pBody, 0, sizeof(VBOXVHWACMD_SURF_FLIP));
+
+        pBody->u.in.offCurrSurface = (uint64_t)lpCurrSurfaceGlobal->fpVidMem;
+        pBody->u.in.offTargSurface = (uint64_t)lpTargSurfaceGlobal->fpVidMem;
+
+        pBody->u.in.hTargSurf = pTargDesc->hHostHandle;
+        pBody->u.in.hCurrSurf = pCurrDesc->hHostHandle;
+        pBody->TargGuestSurfInfo = (uint64_t)pTargDesc;
+        pBody->CurrGuestSurfInfo = (uint64_t)pCurrDesc;
+
+//        pBody->u.in.flags = vboxVHWAFromDDFLIPs(lpFlip->dwFlags);
+
+        ASMAtomicIncU32(&pCurrDesc->cPendingFlipsCurr);
+        ASMAtomicIncU32(&pTargDesc->cPendingFlipsTarg);
+
+//            if(VBOXDD_CHECKFLAG(lpBlt->dwFlags, DDBLT_ASYNC))
+//            {
+                vboxVHWACommandSubmitAsynch(pDev, pCmd, vboxVHWASurfFlipCompletion, NULL);
+//            }
+//            else
+//            {
+//                vboxVHWACommandSubmit(pDev, pCmd);
+//            }
+        lpFlip->ddRVal = DD_OK;
+    }
+    else
+    {
+        lpFlip->ddRVal = DDERR_GENERIC;
+    }
     return DDHAL_DRIVER_HANDLED;
+#else
+    DISPDBG((0, "%s\n", __FUNCTION__));
+    lpFlip->ddRVal = DDERR_GENERIC;
+    return DDHAL_DRIVER_NOTHANDLED;
+#endif
 }
 
 DWORD APIENTRY DdGetBltStatus(PDD_GETBLTSTATUSDATA  lpGetBltStatus)
 {
+    PPDEV pDev = (PPDEV)lpGetBltStatus->lpDD->dhpdev;
+
     DISPDBG((0, "%s\n", __FUNCTION__));
 
     if(lpGetBltStatus->dwFlags == DDGBS_CANBLT)
     {
         lpGetBltStatus->ddRVal = DD_OK;
     }
-    else
+    else /* DDGBS_ISBLTDONE */
     {
-        lpGetBltStatus->ddRVal = DD_OK;
+        DD_SURFACE_LOCAL*   lpSurfaceLocal = lpGetBltStatus->lpDDSurface;
+        DD_SURFACE_GLOBAL*  lpSurfaceGlobal = lpSurfaceLocal->lpGbl;
+        PVBOXVHWASURFDESC pDesc = (PVBOXVHWASURFDESC)lpSurfaceGlobal->dwReserved1;
+
+        /* ensure we have host cmds processed to update pending blits and flips */
+        vboxVHWACommandCheckHostCmds(pDev);
+
+        if(
+                    ASMAtomicUoReadU32(&pDesc->cPendingBltsSrc)
+                    || ASMAtomicUoReadU32(&pDesc->cPendingBltsDst)
+    //                || ASMAtomicUoReadU32(&pDesc->cPendingFlipsTarg)
+    //                || ASMAtomicUoReadU32(&pDesc->cPendingFlipsCurr)
+                    )
+        {
+            lpGetBltStatus->ddRVal = DDERR_WASSTILLDRAWING;
+        }
+        else
+        {
+            lpGetBltStatus->ddRVal = DD_OK;
+        }
     }
 
     return DDHAL_DRIVER_HANDLED;
@@ -1493,15 +1584,39 @@ DWORD APIENTRY DdGetBltStatus(PDD_GETBLTSTATUSDATA  lpGetBltStatus)
 
 DWORD APIENTRY DdGetFlipStatus(PDD_GETFLIPSTATUSDATA  lpGetFlipStatus)
 {
+    PPDEV pDev = (PPDEV)lpGetFlipStatus->lpDD->dhpdev;
+    DD_SURFACE_LOCAL*   lpSurfaceLocal = lpGetFlipStatus->lpDDSurface;
+    DD_SURFACE_GLOBAL*  lpSurfaceGlobal = lpSurfaceLocal->lpGbl;
+    PVBOXVHWASURFDESC pDesc = (PVBOXVHWASURFDESC)lpSurfaceGlobal->dwReserved1;
+
     DISPDBG((0, "%s\n", __FUNCTION__));
-    if(lpGetFlipStatus->dwFlags == DDGFS_CANFLIP)
+
+    /* ensure we have host cmds processed to update pending blits and flips */
+    vboxVHWACommandCheckHostCmds(pDev);
+
+    if(
+//                ASMAtomicUoReadU32(&pDesc->cPendingBltsSrc)
+//                || ASMAtomicUoReadU32(&pDesc->cPendingBltsDst)
+//                ||
+                ASMAtomicUoReadU32(&pDesc->cPendingFlipsTarg)
+                || ASMAtomicUoReadU32(&pDesc->cPendingFlipsCurr)
+                )
     {
-        lpGetFlipStatus->ddRVal = DD_OK;
+        lpGetFlipStatus->ddRVal = DDERR_WASSTILLDRAWING;
     }
     else
     {
         lpGetFlipStatus->ddRVal = DD_OK;
     }
+
+//    if(lpGetFlipStatus->dwFlags == DDGFS_CANFLIP)
+//    {
+//        lpGetFlipStatus->ddRVal = DD_OK;
+//    }
+//    else
+//    {
+//        lpGetFlipStatus->ddRVal = DD_OK;
+//    }
 
     return DDHAL_DRIVER_HANDLED;
 }
@@ -1843,6 +1958,18 @@ static DECLCALLBACK(void) vboxVHWASurfBltCompletion(PPDEV ppdev, VBOXVHWACMD * p
 
     ASMAtomicDecU32(&pSrcDesc->cPendingBltsSrc);
     ASMAtomicDecU32(&pDestDesc->cPendingBltsDst);
+
+    vboxVHWACommandFree(ppdev, pCmd);
+}
+
+static DECLCALLBACK(void) vboxVHWASurfFlipCompletion(PPDEV ppdev, VBOXVHWACMD * pCmd, void * pContext)
+{
+    VBOXVHWACMD_SURF_FLIP * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_FLIP);
+    PVBOXVHWASURFDESC pCurrDesc = (PVBOXVHWASURFDESC)pBody->CurrGuestSurfInfo;
+    PVBOXVHWASURFDESC pTargDesc = (PVBOXVHWASURFDESC)pBody->TargGuestSurfInfo;
+
+    ASMAtomicDecU32(&pCurrDesc->cPendingFlipsCurr);
+    ASMAtomicDecU32(&pTargDesc->cPendingFlipsTarg);
 
     vboxVHWACommandFree(ppdev, pCmd);
 }

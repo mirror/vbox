@@ -408,6 +408,7 @@ typedef struct _VBOXVHWA_OVERLAYFX
 #define VBOXVHWA_SCAPS_VISIBLE          0x00000010
 #define VBOXVHWA_SCAPS_VIDEOMEMORY      0x00000020
 #define VBOXVHWA_SCAPS_LOCALVIDMEM      0x00000040
+#define VBOXVHWA_SCAPS_COMPLEX          0x00000080
 
 
 #define VBOXVHWA_PF_RGB                 0x00000001
@@ -580,6 +581,24 @@ typedef struct _VBOXVHWACMD_SURF_BLT
         } in;
     } u;
 } VBOXVHWACMD_SURF_BLT;
+
+typedef struct _VBOXVHWACMD_SURF_FLIP
+{
+    uint64_t TargGuestSurfInfo;
+    uint64_t CurrGuestSurfInfo;
+    union
+    {
+        struct
+        {
+            VBOXVHWA_SURFHANDLE hTargSurf;
+            uint64_t offTargSurface;
+            VBOXVHWA_SURFHANDLE hCurrSurf;
+            uint64_t offCurrSurface;
+            uint32_t flags;
+            uint32_t reserved;
+        } in;
+    } u;
+} VBOXVHWACMD_SURF_FLIP;
 
 typedef struct _VBOXVHWACMD_SURF_OVERLAY_UPDATE
 {
