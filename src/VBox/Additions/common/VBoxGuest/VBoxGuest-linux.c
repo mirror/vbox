@@ -37,8 +37,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_SUP_DRV
-#include "VBoxGuestInternal.h"
 #include "the-linux-kernel.h"
+#include "VBoxGuestInternal.h"
 #include <linux/miscdevice.h>
 #include <linux/poll.h>
 #include "version-generated.h"
@@ -453,7 +453,7 @@ static int __init vboxguestLinuxModInit(void)
 
     /*
      * Create the release log.
-     * (We do that here instead of common code because we want to log               .
+     * (We do that here instead of common code because we want to log
      * early failures using the LogRel macro.)
      */
     rc = RTLogCreate(&pRelLogger, 0 /* fFlags */, "all",
