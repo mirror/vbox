@@ -40,7 +40,7 @@
 
 RTR0DECL(int) RTR0MemUserCopyFrom(void *pvDst, RTR3PTR R3PtrSrc, size_t cb)
 {
-    int rc = ddi_copyin((const char *)R3PtrSrc, pvDst, 0 /*flags*/);
+    int rc = ddi_copyin((const char *)R3PtrSrc, pvDst, cb, 0 /*flags*/);
     if (RT_LIKELY(rc == 0))
         return VINF_SUCCESS;
     return VERR_ACCESS_DENIED;
@@ -49,7 +49,7 @@ RTR0DECL(int) RTR0MemUserCopyFrom(void *pvDst, RTR3PTR R3PtrSrc, size_t cb)
 
 RTR0DECL(int) RTR0MemUserCopyTo(RTR3PTR R3PtrDst, void const *pvSrc, size_t cb)
 {
-    int rc = ddi_copyout(pvSrc, (void *)R3PtrDst, cb);
+    int rc = ddi_copyout(pvSrc, (void *)R3PtrDst, cb, 0 /*flags*/);
     if (RT_LIKELY(rc == 0))
         return VINF_SUCCESS;
     return VERR_ACCESS_DENIED;
