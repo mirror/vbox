@@ -86,7 +86,11 @@ RT_C_DECLS_BEGIN
  * @{
  */
 #if defined(IN_RING0) && !defined(IN_RING0_AGNOSTIC)
-# define DECLVBGL(type) type VBOXCALL
+/** @def DECLR0VBGL
+ * Declare a VBGL ring-0 API with the right calling convention and visibilitiy.
+ * @param type      Return type.  */
+# define DECLR0VBGL(type) type VBOXCALL
+# define DECLVBGL(type) DECLR0VBGL(type)
 
 typedef uint32_t VBGLIOPORT; /**< @todo r=bird: We have RTIOPORT (uint16_t) for this. */
 
@@ -183,8 +187,8 @@ typedef DECLVBGL(void) VBGLHGCMCALLBACK(VMMDevHGCMRequestHeader *pHeader, void *
  * @return VBox status code.
  */
 
-DECLVBGL(int) VbglHGCMConnect (VBoxGuestHGCMConnectInfo *pConnectInfo,
-                               VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
+DECLR0VBGL(int) VbglR0HGCMInternalConnect (VBoxGuestHGCMConnectInfo *pConnectInfo,
+                                           VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
 
 
 /**
@@ -203,14 +207,15 @@ DECLVBGL(int) VbglHGCMConnect (VBoxGuestHGCMConnectInfo *pConnectInfo,
  * @return VBox status code.
  */
 
-DECLVBGL(int) VbglHGCMDisconnect (VBoxGuestHGCMDisconnectInfo *pDisconnectInfo,
-                                  VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
+DECLR0VBGL(int) VbglR0HGCMInternalDisconnect (VBoxGuestHGCMDisconnectInfo *pDisconnectInfo,
+                                              VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
 
 /** Call a HGCM service.
  *
  * @note This function can deal with cancelled requests.
  *
  * @param pCallInfo       The request data.
+ * @param fFlags          Flags, see VBGLR0_HGCMCALL_F_XXX.
  * @param pAsyncCallback  Required pointer to function that is called when
  *                        host returns VINF_HGCM_ASYNC_EXECUTE. VBoxGuest
  *                        implements waiting for an IRQ in this function.
@@ -219,14 +224,15 @@ DECLVBGL(int) VbglHGCMDisconnect (VBoxGuestHGCMDisconnectInfo *pDisconnectInfo,
  *
  * @return VBox status code.
  */
-DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
-                            VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
+DECLR0VBGL(int) VbglR0HGCMInternalCall (VBoxGuestHGCMCallInfo *pCallInfo, uint32_t fFlags,
+                                        VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
 
 /** Call a HGCM service. (32 bits packet structure in a 64 bits guest)
  *
  * @note This function can deal with cancelled requests.
  *
  * @param pCallInfo       The request data.
+ * @param fFlags          Flags, see VBGLR0_HGCMCALL_F_XXX.
  * @param pAsyncCallback  Required pointer to function that is called when
  *                        host returns VINF_HGCM_ASYNC_EXECUTE. VBoxGuest
  *                        implements waiting for an IRQ in this function.
@@ -235,8 +241,23 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
  *
  * @return VBox status code.
  */
-DECLVBGL(int) VbglHGCMCall32 (VBoxGuestHGCMCallInfo *pCallInfo,
-                              VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
+DECLR0VBGL(int) VbglR0HGCMInternalCall32 (VBoxGuestHGCMCallInfo *pCallInfo, uint32_t fFlags,
+                                          VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
+
+/** @name VbglR0HGCMInternalCall flags
+ * @{ */
+/** User mode request.
+ * Indicates that only user mode addresses are permitted as parameters. */
+#define VBGLR0_HGCMCALL_F_USER          UINT32_C(0)
+/** Kernel mode request.
+ * Indicates that kernel mode addresses are permitted as parameters. Whether or
+ * not user mode addresses are permitted is, unfortunately, OS specific. The
+ * following OSes allows user mode addresses: Windows, TODO.
+ */
+#define VBGLR0_HGCMCALL_F_KERNEL        UINT32_C(1)
+/** Mode mask. */
+#define VBGLR0_HGCMCALL_F_MODE_MASK     UINT32_C(1)
+/** @} */
 
 #  else  /* !VBGL_VBOXGUEST */
 

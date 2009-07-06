@@ -52,33 +52,33 @@ DECLVBGL (int) vboxadd_cmc_call (void *opaque, uint32_t func, void *data)
 {
     int rc = VINF_SUCCESS;
 
-    /* this function can handle cancelled requests */
     if (   VBOXGUEST_IOCTL_STRIP_SIZE(func)
         == VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL(0)))
-        rc = VbglHGCMCall (data, vboxadd_hgcm_callback_interruptible, opaque, RT_INDEFINITE_WAIT);
-    /* this function can handle cancelled requests */
+        /* this function can handle cancelled requests */
+        rc = VbglR0HGCMInternalCall (data, VBGLR0_HGCMCALL_F_KERNEL,
+                                     vboxadd_hgcm_callback_interruptible, opaque, RT_INDEFINITE_WAIT);
     else if (   VBOXGUEST_IOCTL_STRIP_SIZE(func)
              == VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL_TIMED(0)))
     {
         VBoxGuestHGCMCallInfoTimed *pCallInfo;
         pCallInfo = (VBoxGuestHGCMCallInfoTimed *) data;
         if (pCallInfo->fInterruptible)
-            rc = VbglHGCMCall (&pCallInfo->info, vboxadd_hgcm_callback_interruptible,
-                               opaque, pCallInfo->u32Timeout);
+            rc = VbglR0HGCMInternalCall (&pCallInfo->info, VBGLR0_HGCMCALL_F_KERNEL,
+                                         vboxadd_hgcm_callback_interruptible, opaque, pCallInfo->u32Timeout);
         else
-            rc = VbglHGCMCall (&pCallInfo->info, vboxadd_hgcm_callback,
-                               opaque, pCallInfo->u32Timeout);
+            rc = VbglR0HGCMInternalCall (&pCallInfo->info, VBGLR0_HGCMCALL_F_KERNEL,
+                                         vboxadd_hgcm_callback, opaque, pCallInfo->u32Timeout);
     }
     else switch (func)
     {
         /* this function can NOT handle cancelled requests */
         case VBOXGUEST_IOCTL_HGCM_CONNECT:
-            rc = VbglHGCMConnect (data, vboxadd_hgcm_callback, opaque, RT_INDEFINITE_WAIT);
+            rc = VbglR0HGCMInternalConnect (data, vboxadd_hgcm_callback, opaque, RT_INDEFINITE_WAIT);
             break;
 
         /* this function can NOT handle cancelled requests */
         case VBOXGUEST_IOCTL_HGCM_DISCONNECT:
-            rc = VbglHGCMDisconnect (data, vboxadd_hgcm_callback, opaque, RT_INDEFINITE_WAIT);
+            rc = VbglR0HGCMInternalDisconnect (data, vboxadd_hgcm_callback, opaque, RT_INDEFINITE_WAIT);
             break;
 
         case VBOXGUEST_IOCTL_GETVMMDEVPORT:

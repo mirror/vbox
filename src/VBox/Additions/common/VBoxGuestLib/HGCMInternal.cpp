@@ -29,9 +29,9 @@
 
 /* These functions can be only used by VBoxGuest. */
 
-DECLVBGL(int) VbglHGCMConnect (VBoxGuestHGCMConnectInfo *pConnectInfo,
-                               VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData,
-                               uint32_t u32AsyncData)
+DECLVBGL(int) VbglR0HGCMInternalConnect (VBoxGuestHGCMConnectInfo *pConnectInfo,
+                                         VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData,
+                                         uint32_t u32AsyncData)
 {
     VMMDevHGCMConnect *pHGCMConnect;
     int rc;
@@ -77,8 +77,8 @@ DECLVBGL(int) VbglHGCMConnect (VBoxGuestHGCMConnectInfo *pConnectInfo,
 }
 
 
-DECLVBGL(int) VbglHGCMDisconnect (VBoxGuestHGCMDisconnectInfo *pDisconnectInfo,
-                                  VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
+DECLR0VBGL(int) VbglR0HGCMInternalDisconnect (VBoxGuestHGCMDisconnectInfo *pDisconnectInfo,
+                                              VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
 {
     VMMDevHGCMDisconnect *pHGCMDisconnect;
     int rc;
@@ -121,8 +121,8 @@ DECLVBGL(int) VbglHGCMDisconnect (VBoxGuestHGCMDisconnectInfo *pDisconnectInfo,
 
 
 /** @todo merge with the one below (use a header file). Too lazy now. */
-DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
-                            VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
+DECLR0VBGL(int) VbglR0HGCMInternalCall (VBoxGuestHGCMCallInfo *pCallInfo, uint32_t fFlags,
+                                        VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
 {
     VMMDevHGCMCall *pHGCMCall;
     uint32_t cbParms;
@@ -130,13 +130,12 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
     unsigned iParm;
     int rc;
 
-    if (!pCallInfo || !pAsyncCallback || pCallInfo->cParms > VBOX_HGCM_MAX_PARMS)
-    {
-        AssertFailed();
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertMsgReturn(!pCallInfo || !pAsyncCallback || pCallInfo->cParms > VBOX_HGCM_MAX_PARMS || !(fFlags & ~VBGLR0_HGCMCALL_F_MODE_MASK),
+                    ("pCallInfo=%p pAsyncCallback=%p fFlags=%#x\n", pCallInfo, pAsyncCallback, fFlags),
+                    VERR_INVALID_PARAMETER);
 
-    Log (("VbglHGCMCall: pCallInfo->cParms = %d, pHGCMCall->u32Function = %d\n", pCallInfo->cParms, pCallInfo->u32Function));
+    Log (("VbglR0HGCMInternalCall: pCallInfo->cParms = %d, pHGCMCall->u32Function = %d, fFlags=%#x\n",
+          pCallInfo->cParms, pCallInfo->u32Function, fFlags));
 
     pHGCMCall = NULL;
 
@@ -145,7 +144,7 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
     /* Allocate request */
     rc = VbglGRAlloc ((VMMDevRequestHeader **)&pHGCMCall, sizeof (VMMDevHGCMCall) + cbParms, VMMDevReq_HGCMCall);
 
-    Log (("VbglHGCMCall Allocated gr %p, rc = %Rrc, cbParms = %d\n", pHGCMCall, rc, cbParms));
+    Log (("VbglR0HGCMInternalCall: Allocated gr %p, rc = %Rrc, cbParms = %d\n", pHGCMCall, rc, cbParms));
 
     if (RT_SUCCESS(rc))
     {
@@ -286,8 +285,8 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
 }
 # if ARCH_BITS == 64
 /** @todo merge with the one above (use a header file). Too lazy now. */
-DECLVBGL(int) VbglHGCMCall32 (VBoxGuestHGCMCallInfo *pCallInfo,
-                              VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
+DECLR0VBGL(int) VbglR0HGCMInternalCall32 (VBoxGuestHGCMCallInfo *pCallInfo, uint32_t fFlags,
+                                          VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
 {
     VMMDevHGCMCall *pHGCMCall;
     uint32_t cbParms;
@@ -295,13 +294,12 @@ DECLVBGL(int) VbglHGCMCall32 (VBoxGuestHGCMCallInfo *pCallInfo,
     unsigned iParm;
     int rc;
 
-    if (!pCallInfo || !pAsyncCallback || pCallInfo->cParms > VBOX_HGCM_MAX_PARMS)
-    {
-        AssertFailed();
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertMsgReturn(!pCallInfo || !pAsyncCallback || pCallInfo->cParms > VBOX_HGCM_MAX_PARMS || !(fFlags & ~VBGLR0_HGCMCALL_F_MODE_MASK),
+                    ("pCallInfo=%p pAsyncCallback=%p fFlags=%#x\n", pCallInfo, pAsyncCallback, fFlags),
+                    VERR_INVALID_PARAMETER);
 
-    Log (("VbglHGCMCall: pCallInfo->cParms = %d, pHGCMCall->u32Function = %d\n", pCallInfo->cParms, pCallInfo->u32Function));
+    Log (("VbglR0HGCMInternalCall32: pCallInfo->cParms = %d, pHGCMCall->u32Function = %d, fFlags=%#x\n",
+          pCallInfo->cParms, pCallInfo->u32Function, fFlags));
 
     pHGCMCall = NULL;
 
@@ -310,7 +308,7 @@ DECLVBGL(int) VbglHGCMCall32 (VBoxGuestHGCMCallInfo *pCallInfo,
     /* Allocate request */
     rc = VbglGRAlloc ((VMMDevRequestHeader **)&pHGCMCall, sizeof (VMMDevHGCMCall) + cbParms, VMMDevReq_HGCMCall32);
 
-    Log (("VbglHGCMCall Allocated gr %p, rc = %Rrc, cbParms = %d\n", pHGCMCall, rc, cbParms));
+    Log (("VbglR0HGCMInternalCall32: Allocated gr %p, rc = %Rrc, cbParms = %d\n", pHGCMCall, rc, cbParms));
 
     if (RT_SUCCESS(rc))
     {
