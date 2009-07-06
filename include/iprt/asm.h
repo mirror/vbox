@@ -3896,6 +3896,63 @@ DECLINLINE(void) ASMSerializeInstruction(void)
 
 
 /**
+ * Memory load/store fence, waits for any pending writes and reads to complete.
+ * Requires the X86_CPUID_FEATURE_EDX_SSE2 CPUID bit set.
+ */
+DECLINLINE(void) ASMMemoryFenceSSE2(void)
+{
+#ifdef RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__ (".byte 0x0f,0xae,0xf0\n\t");
+#else
+    __asm
+    {
+        _emit 0x0f
+        _emit 0xae
+        _emit 0xf0
+    }
+#endif
+}
+
+
+/**
+ * Memory store fence, waits for any writes to complete.
+ * Requires the X86_CPUID_FEATURE_EDX_SSE CPUID bit set.
+ */
+DECLINLINE(void) ASMWriteFenceSSE(void)
+{
+#ifdef RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__ (".byte 0x0f,0xae,0xf8\n\t");
+#else
+    __asm
+    {
+        _emit 0x0f
+        _emit 0xae
+        _emit 0xf8
+    }
+#endif
+}
+
+
+/**
+ * Memory load fence, waits for any pending reads to complete.
+ * Requires the X86_CPUID_FEATURE_EDX_SSE2 CPUID bit set.
+ */
+DECLINLINE(void) ASMReadFenceSSE2(void)
+{
+#ifdef RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__ (".byte 0x0f,0xae,0xe8\n\t");
+#else
+    __asm
+    {
+        _emit 0x0f
+        _emit 0xae
+        _emit 0xe8
+    }
+#endif
+}
+
+
+/**
  * Memory fence, waits for any pending writes and reads to complete.
  */
 DECLINLINE(void) ASMMemoryFence(void)
