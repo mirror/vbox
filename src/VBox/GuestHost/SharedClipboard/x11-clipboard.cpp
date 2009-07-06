@@ -1103,10 +1103,7 @@ static void clipNewVBoxFormatsWorker(XtPointer pUserData,
     RTMemFree(pFormats);
     LogFlowFunc (("u32Formats=%d\n", u32Formats));
     clipInvalidateVBoxCBCache(pCtx);
-    if (u32Formats == 0)
-        clipGiveUpX11CB(pCtx);
-    else
-        clipGrabX11CB(pCtx, u32Formats);
+    clipGrabX11CB(pCtx, u32Formats);
     clipResetX11Formats(pCtx);
     LogFlowFunc(("returning\n"));
 }
@@ -2466,8 +2463,13 @@ int main()
         ++cErrs;
 
     /*** No data in VBox clipboard ***/
-    RTPrintf(TEST_NAME ": TESTING reading from VBox with no data\n");
+    RTPrintf(TEST_NAME ": TESTING an empty VBox clipboard\n");
     clipEmptyVBox(pCtx, VINF_SUCCESS);
+    if (!pCtx->fOwnsClipboard)
+    {
+        RTPrintf(TEST_NAME ": VBox grabbed the clipboard with no data and we ignored it\n");
+        ++cErrs;
+    }
     if (!testStringFromVBoxFailed(pCtx, "UTF8_STRING"))
         ++cErrs;
 
@@ -2475,6 +2477,11 @@ int main()
     RTPrintf(TEST_NAME ": TESTING reading an unknown VBox format\n");
     clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "", 2);
     ClipAnnounceFormatToX11(pCtx, 0xa0000);
+    if (!pCtx->fOwnsClipboard)
+    {
+        RTPrintf(TEST_NAME ": VBox grabbed the clipboard with unknown data and we ignored it\n");
+        ++cErrs;
+    }
     if (!testStringFromVBoxFailed(pCtx, "UTF8_STRING"))
         ++cErrs;
 
