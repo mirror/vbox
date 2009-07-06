@@ -265,10 +265,6 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
     } while (0)
 #endif
 
-#ifndef PAGE_OFFSET_MASK
-# define PAGE_OFFSET_MASK (PAGE_SIZE - 1)
-#endif
-
 /** @def ONE_MSEC_IN_JIFFIES
  * The number of jiffies that make up 1 millisecond. Must be at least 1! */
 #if HZ <= 1000
@@ -302,6 +298,15 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
 # define IPRT_DEBUG_SEMS_ADDRESS(addr)  ( ((long)(addr) & (long)~UINT64_C(0xfffffff000000000)) )
 #else
 # define IPRT_DEBUG_SEMS_ADDRESS(addr)  ( (long)(addr) )
+#endif
+
+/*
+ * There are some conflicting defines in iprt/param.h, sort them out here.
+ */
+#ifndef ___iprt_param_h
+# undef PAGE_SIZE
+# undef PAGE_OFFSET_MASK
+# include <iprt/param.h>
 #endif
 
 #endif
