@@ -168,14 +168,32 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall (VBoxGuestHGCMCallInfo *pCallInfo, uint32
             {
                 switch (pParm->type)
                 {
+                case VMMDevHGCMParmType_32bit:
+                case VMMDevHGCMParmType_64bit:
+                    break;
+
+                case VMMDevHGCMParmType_PhysAddr:
+                    if ((fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER)
+                        rc = VERR_INVALID_PARAMETER;
+                    break;
+
                 case VMMDevHGCMParmType_LinAddr_Locked_In:
-                    pParm->type = VMMDevHGCMParmType_LinAddr_In;
+                    if ((fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER)
+                        rc = VERR_INVALID_PARAMETER;
+                    else
+                        pParm->type = VMMDevHGCMParmType_LinAddr_In;
                     break;
                 case VMMDevHGCMParmType_LinAddr_Locked_Out:
-                    pParm->type = VMMDevHGCMParmType_LinAddr_Out;
+                    if ((fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER)
+                        rc = VERR_INVALID_PARAMETER;
+                    else
+                        pParm->type = VMMDevHGCMParmType_LinAddr_Out;
                     break;
                 case VMMDevHGCMParmType_LinAddr_Locked:
-                    pParm->type = VMMDevHGCMParmType_LinAddr;
+                    if ((fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER)
+                        rc = VERR_INVALID_PARAMETER;
+                    else
+                        pParm->type = VMMDevHGCMParmType_LinAddr;
                     break;
 
                 case VMMDevHGCMParmType_LinAddr_In:
@@ -189,10 +207,13 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall (VBoxGuestHGCMCallInfo *pCallInfo, uint32
 
                        These kind of problems actually applies to some patched linux kernels too, including older
                        fedora releases. (The patch is the infamous 4G/4G patch, aka 4g4g, by Ingo Molnar.) */
-                    rc = vbglLockLinear (&apvCtx[iParm], (void *)pParm->u.Pointer.u.linearAddr, pParm->u.Pointer.size, (pParm->type == VMMDevHGCMParmType_LinAddr_In) ? false : true /* write access */);
+                    rc = vbglLockLinear (&apvCtx[iParm], (void *)pParm->u.Pointer.u.linearAddr, pParm->u.Pointer.size,
+                                         (pParm->type == VMMDevHGCMParmType_LinAddr_In) ? false : true /* write access */,
+                                         fFlags);
                     break;
+
                 default:
-                    /* make gcc happy */
+                    rc = VERR_INVALID_PARAMETER;
                     break;
                 }
                 if (RT_FAILURE (rc))
@@ -332,14 +353,32 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall32 (VBoxGuestHGCMCallInfo *pCallInfo, uint
             {
                 switch (pParm->type)
                 {
+                case VMMDevHGCMParmType_32bit:
+                case VMMDevHGCMParmType_64bit:
+                    break;
+
+                case VMMDevHGCMParmType_PhysAddr:
+                    if ((fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER)
+                        rc = VERR_INVALID_PARAMETER;
+                    break;
+
                 case VMMDevHGCMParmType_LinAddr_Locked_In:
-                    pParm->type = VMMDevHGCMParmType_LinAddr_In;
+                    if ((fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER)
+                        rc = VERR_INVALID_PARAMETER;
+                    else
+                        pParm->type = VMMDevHGCMParmType_LinAddr_In;
                     break;
                 case VMMDevHGCMParmType_LinAddr_Locked_Out:
-                    pParm->type = VMMDevHGCMParmType_LinAddr_Out;
+                    if ((fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER)
+                        rc = VERR_INVALID_PARAMETER;
+                    else
+                        pParm->type = VMMDevHGCMParmType_LinAddr_Out;
                     break;
                 case VMMDevHGCMParmType_LinAddr_Locked:
-                    pParm->type = VMMDevHGCMParmType_LinAddr;
+                    if ((fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER)
+                        rc = VERR_INVALID_PARAMETER;
+                    else
+                        pParm->type = VMMDevHGCMParmType_LinAddr;
                     break;
 
                 case VMMDevHGCMParmType_LinAddr_In:
@@ -353,10 +392,13 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall32 (VBoxGuestHGCMCallInfo *pCallInfo, uint
 
                        These kind of problems actually applies to some patched linux kernels too, including older
                        fedora releases. (The patch is the infamous 4G/4G patch, aka 4g4g, by Ingo Molnar.) */
-                    rc = vbglLockLinear (&apvCtx[iParm], (void *)pParm->u.Pointer.u.linearAddr, pParm->u.Pointer.size, (pParm->type == VMMDevHGCMParmType_LinAddr_In) ? false : true /* write access */);
+                    rc = vbglLockLinear (&apvCtx[iParm], (void *)pParm->u.Pointer.u.linearAddr, pParm->u.Pointer.size,
+                                         (pParm->type == VMMDevHGCMParmType_LinAddr_In) ? false : true /* write access */,
+                                         fFlags);
                     break;
+
                 default:
-                    /* make gcc happy */
+                    rc = VERR_INVALID_PARAMETER;
                     break;
                 }
                 if (RT_FAILURE (rc))
