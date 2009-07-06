@@ -32,7 +32,18 @@
 #endif
 
 
-int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess)
+
+/**
+ * Internal worker for locking a range of linear addresses.
+ *
+ * @returns VBox status code.
+ * @param   ppvCtx          Where to store context data.
+ * @param   pv              The start of the range.
+ * @param   u32Size         The size of the range.
+ * @param   fWriteAccess    Lock for read-write (true) or readonly (false).
+ * @param   fFlags          HGCM call flags, VBGLR0_HGCM_F_XXX.
+ */
+int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess, uint32_t fFlags)
 {
     int rc = VINF_SUCCESS;
 
@@ -48,6 +59,8 @@ int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess
         return VINF_SUCCESS;
     }
 
+    /** @todo just use IPRT here. the extra allocation shouldn't matter much...
+     *        Then we can most all this up one level even. */
 #ifdef RT_OS_WINDOWS
     PMDL pMdl = IoAllocateMdl (pv, u32Size, FALSE, FALSE, NULL);
 
@@ -61,6 +74,7 @@ int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess
         __try {
             /* Calls to MmProbeAndLockPages must be enclosed in a try/except block. */
             MmProbeAndLockPages (pMdl,
+                                 /** @todo (fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER? UserMode: KernelMode */
                                  KernelMode,
                                  (fWriteAccess) ? IoModifyAccess : IoReadAccess);
 
@@ -69,6 +83,7 @@ int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess
         } __except(EXCEPTION_EXECUTE_HANDLER) {
 
             IoFreeMdl (pMdl);
+            /** @todo  */
             rc = VERR_INVALID_PARAMETER;
             AssertMsgFailed(("MmProbeAndLockPages %p %x failed!!\n", pv, u32Size));
         }
@@ -83,15 +98,28 @@ int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess
      *  to have two separate paths here - at any rate, Linux R0 shouldn't
      *  end up calling this API.  In practice, Linux R3 does it's own thing
      *  before winding up in the R0 path - which calls this stub API.
+     *
+     * bird: this will soon be obsoleted.
      */
     NOREF(ppvCtx);
     NOREF(pv);
     NOREF(u32Size);
+    NOREF(fFlags);
 
 #else
-    /* Default to IPRT - this ASSUMES that it is USER addresses we're locking. */
-    RTR0MEMOBJ MemObj;
-    rc = RTR0MemObjLockUser(&MemObj, (RTR3PTR)pv, u32Size, NIL_RTR0PROCESS);
+    /*
+     * Lock depending on context.
+     *
+     * Note: We will later use the memory object here to convert the HGCM
+     *       linear buffer paramter into a physical page list. This is why
+     *       we lock both kernel pages on all systems, even those where we
+     *       know they aren't pagable.
+     */
+    RTR0MEMOBJ MemObj = NIL_RTR0MEMOBJ;
+    if ((fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER)
+        rc = RTR0MemObjLockUser(&MemObj, (RTR3PTR)pv, u32Size, NIL_RTR0PROCESS);
+    else
+        rc = RTR0MemObjLockKernel(&MemObj, pv, u32Size);
     if (RT_SUCCESS(rc))
         *ppvCtx = MemObj;
     else
@@ -121,7 +149,6 @@ void vbglUnlockLinear (void *pvCtx, void *pv, uint32_t u32Size)
     NOREF(pvCtx);
 
 #else
-    /* default to IPRT */
     RTR0MEMOBJ MemObj = (RTR0MEMOBJ)pvCtx;
     int rc = RTR0MemObjFree(MemObj, false);
     AssertRC(rc);
