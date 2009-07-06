@@ -261,14 +261,22 @@ int VBoxServiceWinStart()
     return rc;
 }
 
+#ifdef TARGET_NT4
+VOID WINAPI VBoxServiceWinCtrlHandler (DWORD dwControl)
+#else
 DWORD WINAPI VBoxServiceWinCtrlHandler (DWORD dwControl,
                                         DWORD dwEventType,
                                         LPVOID lpEventData,
                                         LPVOID lpContext)
+#endif
 {
     DWORD rc = NO_ERROR;
 
-    VBoxServiceVerbose(2, "Control handler: Control=%ld, EventType=%ld\n", dwControl, dwEventType);
+    VBoxServiceVerbose(2, "Control handler: Control=%ld\n", dwControl);
+#ifndef TARGET_NT4
+    VBoxServiceVerbose(2, "Control handler: EventType=%ld\n", dwEventType);
+#endif
+
     switch (dwControl)
     {
 
@@ -289,9 +297,9 @@ DWORD WINAPI VBoxServiceWinCtrlHandler (DWORD dwControl,
 
     case SERVICE_CONTROL_SESSIONCHANGE:     /* Only Win XP and up. */
 
+#ifndef TARGET_NT4
         switch (dwEventType)
         {
-
         /*case WTS_SESSION_LOGON:
             VBoxServiceVerbose(2, "A user has logged on to the session.\n");
             break;
@@ -299,10 +307,10 @@ DWORD WINAPI VBoxServiceWinCtrlHandler (DWORD dwControl,
         case WTS_SESSION_LOGOFF:
             VBoxServiceVerbose(2, "A user has logged off from the session.\n");
             break;*/
-
         default:
             break;
         }
+#endif /* TARGET_NT4 */
         break;
 
     default:
@@ -311,7 +319,10 @@ DWORD WINAPI VBoxServiceWinCtrlHandler (DWORD dwControl,
         rc = ERROR_CALL_NOT_IMPLEMENTED;
         break;
     }
+
+#ifndef TARGET_NT4
     return rc;
+#endif
 }
 
 void WINAPI VBoxServiceWinMain (DWORD argc, LPTSTR *argv)
@@ -319,7 +330,11 @@ void WINAPI VBoxServiceWinMain (DWORD argc, LPTSTR *argv)
     int rc = VINF_SUCCESS;
 
     VBoxServiceVerbose(2, "Registering service control handler ...\n");
+#ifdef TARGET_NT4
+    g_hWinServiceStatus = RegisterServiceCtrlHandler (VBOXSERVICE_NAME, VBoxServiceWinCtrlHandler);
+#else
     g_hWinServiceStatus = RegisterServiceCtrlHandlerEx (VBOXSERVICE_NAME, VBoxServiceWinCtrlHandler, NULL);
+#endif
 
     if (NULL == g_hWinServiceStatus)
     {

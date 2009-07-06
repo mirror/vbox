@@ -26,8 +26,13 @@ if "$(KBUILD_HOST)" != "os2" || defined(VBOX_WITH_OS2_ADDITIONS)
  PROGRAMS += VBoxService
 endif
 
+# Build special VBoxService version for NT4.
+ifeq ($(KBUILD_TARGET), win)
+ PROGRAMS.x86 += VBoxServiceNT
+endif
+
 #
-# VBoxService.exe
+# VBoxService
 #
 VBoxService_TEMPLATE      = VBOXGUESTR3EXE
 VBoxService_DEFS          = VBOXSERVICE_TIMESYNC
@@ -64,6 +69,31 @@ ifdef VBOX_WITH_GUEST_PROPS
  VBoxService_LIBS.solaris += \
 	nsl
 endif
+
+#
+# VBoxServiceNT - NT version of VBoxService (x86 only).
+#
+VBoxServiceNT_TEMPLATE    = VBOXGUESTR3EXE
+VBoxServiceNT_DEFS        = VBOXSERVICE_TIMESYNC
+VBoxServiceNT_DEFS       += _WIN32_WINNT=0x0400 _UNICODE UNICODE TARGET_NT4
+ifdef VBOX_WITH_GUEST_PROPS
+ VBoxServiceNT_DEFS      += VBOX_WITH_GUEST_PROPS VBOXSERVICE_VMINFO
+endif
+VBoxServiceNT_SOURCES       = \
+	VBoxService.cpp \
+	VBoxServiceTimeSync.cpp \
+	VBoxServiceUtils.cpp \
+	VBoxService-win.rc \
+	VBoxService-win.cpp
+ifdef VBOX_WITH_GUEST_PROPS
+ VBoxServiceNT_SOURCES     += \
+	VBoxServiceVMInfo.cpp \
+	VBoxServiceVMInfo-win.cpp
+endif
+VBoxServiceNT_LIBS          = \
+	$(VBOX_LIB_IPRT_GUEST_R3) \
+	$(VBOX_LIB_VBGL_R3) \
+	$(VBOX_LIB_IPRT_GUEST_R3)
 
 # The icon is configurable.
 VBoxService-win.rc_INCS = $(PATH_VBoxService)

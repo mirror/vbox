@@ -43,12 +43,15 @@
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/** Function prototypes for dynamic loading. */
-extern fnWTSGetActiveConsoleSessionId g_pfnWTSGetActiveConsoleSessionId;
-/** The vminfo interval (millseconds). */
-uint32_t g_VMInfoLoggedInUsersCount = 0;
+#ifndef TARGET_NT4
+ /** Function prototypes for dynamic loading. */
+ extern fnWTSGetActiveConsoleSessionId g_pfnWTSGetActiveConsoleSessionId;
+ /** The vminfo interval (millseconds). */
+ uint32_t g_VMInfoLoggedInUsersCount = 0;
+#endif
 
 
+#ifndef TARGET_NT4
 /* Function GetLUIDsFromProcesses() written by Stefan Kuhr. */
 DWORD VboxServiceVMInfoWinGetLUIDsFromProcesses(PLUID *ppLuid)
 {
@@ -324,6 +327,8 @@ BOOL VboxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER* a_pUserInfo,
     return bLoggedIn;
 }
 
+#endif /* TARGET_NT4 */
+
 int VboxServiceWinGetAddsVersion(uint32_t uiClientID)
 {
     char szInstDir[_MAX_PATH] = {0};
@@ -335,19 +340,25 @@ int VboxServiceWinGetAddsVersion(uint32_t uiClientID)
     DWORD dwSize = 0;
     DWORD dwType = 0;
 
+    VBoxServiceVerbose(3, "Guest Additions version lookup: Looking up ...\n");
+
     /* Check the new path first. */
     rc = RegOpenKeyExA (HKEY_LOCAL_MACHINE, "SOFTWARE\\Sun\\VirtualBox Guest Additions", 0, KEY_READ, &hKey);
-    if ((rc != ERROR_SUCCESS) && (rc != ERROR_FILE_NOT_FOUND))
+    if (rc != ERROR_SUCCESS)
     {
+        VBoxServiceVerbose(3, "Guest Additions version lookup: Looking in xVM key ...\n");
+
         /* New path does not exist, check the old one ... */
         rc = RegOpenKeyExA (HKEY_LOCAL_MACHINE, "SOFTWARE\\Sun\\xVM VirtualBox Guest Additions", 0, KEY_READ, &hKey);
-        if ((rc != ERROR_SUCCESS) && (rc != ERROR_FILE_NOT_FOUND))
+        if (rc != ERROR_SUCCESS)
         {
             /* Nothing seems to exist, print some warning. */
             VBoxServiceError("Failed to open registry key (guest additions)! Error: %d\n", rc);
             return 1;
         }
     }
+
+    VBoxServiceVerbose(3, "Guest Additions version lookup: Key: 0x%p, RC: %d\n", hKey, rc);
 
     /* Installation directory. */
     dwSize = sizeof(szInstDir);
@@ -408,6 +419,7 @@ int VboxServiceWinGetComponentVersions(uint32_t uiClientID)
     swprintf(szDriversDir, (_MAX_PATH + 32), TEXT("%s\\drivers"), szSysDir);
 
     /* The file information table. */
+#ifndef TARGET_NT4
     VBOXSERVICEVMINFOFILE vboxFileInfoTable[] =
     {
         { szSysDir, TEXT("VBoxControl.exe"), },
@@ -435,6 +447,24 @@ int VboxServiceWinGetComponentVersions(uint32_t uiClientID)
             NULL
         }
     };
+#else /* File lookup for NT4. */
+    VBOXSERVICEVMINFOFILE vboxFileInfoTable[] =
+    {
+        { szSysDir, TEXT("VBoxControl.exe"), },
+        { szSysDir, TEXT("VBoxHook.dll"), },
+        { szSysDir, TEXT("VBoxDisp.dll"), },
+        { szSysDir, TEXT("VBoxService.exe"), },
+        { szSysDir, TEXT("VBoxTray.exe"), },
+
+        { szDriversDir, TEXT("VBoxGuestNT.sys"), },
+        { szDriversDir, TEXT("VBoxMouseNT.sys"), },
+        { szDriversDir, TEXT("VBoxVideo.sys"), },
+
+        {
+            NULL
+        }
+    };
+#endif
 
     PVBOXSERVICEVMINFOFILE pTable = vboxFileInfoTable;
     Assert(pTable);
