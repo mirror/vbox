@@ -3901,7 +3901,7 @@ DECLINLINE(void) ASMSerializeInstruction(void)
  */
 DECLINLINE(void) ASMMemoryFenceSSE2(void)
 {
-#ifdef RT_INLINE_ASM_GNU_STYLE
+#if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__ (".byte 0x0f,0xae,0xf0\n\t");
 #else
     __asm
@@ -3920,7 +3920,7 @@ DECLINLINE(void) ASMMemoryFenceSSE2(void)
  */
 DECLINLINE(void) ASMWriteFenceSSE(void)
 {
-#ifdef RT_INLINE_ASM_GNU_STYLE
+#if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__ (".byte 0x0f,0xae,0xf8\n\t");
 #else
     __asm
@@ -3939,7 +3939,7 @@ DECLINLINE(void) ASMWriteFenceSSE(void)
  */
 DECLINLINE(void) ASMReadFenceSSE2(void)
 {
-#ifdef RT_INLINE_ASM_GNU_STYLE
+#if RT_INLINE_ASM_GNU_STYLE
     __asm__ __volatile__ (".byte 0x0f,0xae,0xe8\n\t");
 #else
     __asm
