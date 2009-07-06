@@ -1988,7 +1988,8 @@ ResumeExecution:
         Log2(("SVM: %RGv mov dr%d, x\n", (RTGCPTR)pCtx->rip, exitCode - SVM_EXIT_WRITE_DR0));
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitDRxWrite);
 
-        if (!DBGFIsStepping(pVCpu))
+        if (    !DBGFIsStepping(pVCpu)
+            &&  !CPUMIsHyperDebugStateActive(pVCpu))
         {
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatDRxContextSwitch);
 
