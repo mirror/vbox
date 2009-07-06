@@ -1587,6 +1587,24 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         rc = VMXWriteVMCS64(VMX_VMCS64_GUEST_DR7, pCtx->dr[7]);
         AssertRC(rc);
 
+#ifdef DEBUG
+        /* Sync the hypervisor debug state now if any breakpoint is armed. */
+        if (    CPUMGetHyperDR7(pVCpu) & (X86_DR7_ENABLED_MASK|X86_DR7_GD)
+            &&  !CPUMIsHyperDebugStateActive(pVCpu)
+            &&  !DBGFIsStepping(pVCpu))
+        {
+            /* Save the host and load the hypervisor debug state. */
+            rc = CPUMR0LoadHyperDebugState(pVM, pVCpu, pCtx, true /* include DR6 */);
+            AssertRC(rc);
+
+            /* DRx intercepts remain enabled. */
+
+            /* Override dr7 with the hypervisor value. */
+            rc = VMXWriteVMCS64(VMX_VMCS64_GUEST_DR7, CPUMGetHyperDR7(pVCpu));
+            AssertRC(rc);
+        }
+        else
+#endif
         /* Sync the debug state now if any breakpoint is armed. */
         if (    (pCtx->dr[7] & (X86_DR7_ENABLED_MASK|X86_DR7_GD))
             &&  !CPUMIsGuestDebugStateActive(pVCpu)
@@ -3799,6 +3817,13 @@ VMMR0DECL(int) VMXR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     Assert(pVM->hwaccm.s.vmx.fSupported);
 
+#ifdef DEBUG
+    if (CPUMIsHyperDebugStateActive(pVCpu))
+    {
+        CPUMR0LoadHostDebugState(pVM, pVCpu);
+    }
+    else
+#endif
     /* Save the guest debug state if necessary. */
     if (CPUMIsGuestDebugStateActive(pVCpu))
     {
