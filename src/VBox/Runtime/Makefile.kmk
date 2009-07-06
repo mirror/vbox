@@ -1251,6 +1251,7 @@ RuntimeR0Drv_SOURCES.os2 = \
 	r0drv/os2/assertA-r0drv-os2.asm \
 	r0drv/os2/initterm-r0drv-os2.cpp \
 	r0drv/os2/memobj-r0drv-os2.cpp \
+	r0drv/os2/memuserkernel-r0drv-os2.cpp \
 	r0drv/os2/os2imports.imp \
 	r0drv/os2/process-r0drv-os2.cpp \
 	r0drv/os2/RTR0AssertPanicSystem-r0drv-os2.asm \
