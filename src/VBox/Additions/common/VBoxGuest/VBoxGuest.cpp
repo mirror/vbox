@@ -392,7 +392,7 @@ void VBoxGuestCloseSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
             Info.u32ClientID = pSession->aHGCMClientIds[i];
             pSession->aHGCMClientIds[i] = 0;
             Log(("VBoxGuestCloseSession: disconnecting client id %#RX32\n", Info.u32ClientID));
-            VbglHGCMDisconnect(&Info, VBoxGuestHGCMAsyncWaitCallback, pDevExt, RT_INDEFINITE_WAIT);
+            VbglR0HGCMInternalDisconnect(&Info, VBoxGuestHGCMAsyncWaitCallback, pDevExt, RT_INDEFINITE_WAIT);
         }
 #endif
 
@@ -966,7 +966,7 @@ static int VBoxGuestCommonIOCtl_HGCMConnect(PVBOXGUESTDEVEXT pDevExt, PVBOXGUEST
          pInfo->Loc.type == VMMDevHGCMLoc_LocalHost || pInfo->Loc.type == VMMDevHGCMLoc_LocalHost_Existing
          ? pInfo->Loc.u.host.achName : "<not local host>"));
 
-    int rc = VbglHGCMConnect(pInfo, VBoxGuestHGCMAsyncWaitCallback, pDevExt, RT_INDEFINITE_WAIT);
+    int rc = VbglR0HGCMInternalConnect(pInfo, VBoxGuestHGCMAsyncWaitCallback, pDevExt, RT_INDEFINITE_WAIT);
     if (RT_SUCCESS(rc))
     {
         Log(("VBoxGuestCommonIOCtl: HGCM_CONNECT: u32Client=%RX32 result=%Rrc (rc=%Rrc)\n",
@@ -996,7 +996,7 @@ static int VBoxGuestCommonIOCtl_HGCMConnect(PVBOXGUESTDEVEXT pDevExt, PVBOXGUEST
                 VBoxGuestHGCMDisconnectInfo Info;
                 Info.result = 0;
                 Info.u32ClientID = pInfo->u32ClientID;
-                VbglHGCMDisconnect(&Info, VBoxGuestHGCMAsyncWaitCallback, pDevExt, RT_INDEFINITE_WAIT);
+                VbglR0HGCMInternalDisconnect(&Info, VBoxGuestHGCMAsyncWaitCallback, pDevExt, RT_INDEFINITE_WAIT);
                 return VERR_TOO_MANY_OPEN_FILES;
             }
         }
@@ -1038,7 +1038,7 @@ static int VBoxGuestCommonIOCtl_HGCMDisconnect(PVBOXGUESTDEVEXT pDevExt, PVBOXGU
      * to deal with cancelled requests.
      */
     Log(("VBoxGuestCommonIOCtl: HGCM_DISCONNECT: u32Client=%RX32\n", pInfo->u32ClientID));
-    int rc = VbglHGCMDisconnect(pInfo, VBoxGuestHGCMAsyncWaitCallback, pDevExt, RT_INDEFINITE_WAIT);
+    int rc = VbglR0HGCMInternalDisconnect(pInfo, VBoxGuestHGCMAsyncWaitCallback, pDevExt, RT_INDEFINITE_WAIT);
     if (RT_SUCCESS(rc))
     {
         Log(("VBoxGuestCommonIOCtl: HGCM_DISCONNECT: result=%Rrc\n", pInfo->result));
@@ -1111,21 +1111,22 @@ static int VBoxGuestCommonIOCtl_HGCMCall(PVBOXGUESTDEVEXT pDevExt,
      */
     Log(("VBoxGuestCommonIOCtl: HGCM_CALL: u32Client=%RX32\n", pInfo->u32ClientID));
     int rc;
+    uint32_t fFlags = pSession->R0Process == NIL_RTR0PROCESS ? VBGLR0_HGCMCALL_F_KERNEL : VBGLR0_HGCMCALL_F_USER;
 #ifdef RT_ARCH_AMD64
     if (f32bit)
     {
         if (fInterruptible)
-            rc = VbglHGCMCall32(pInfo, VBoxGuestHGCMAsyncWaitCallbackInterruptible, pDevExt, cMillies);
+            rc = VbglR0HGCMInternalCall32(pInfo, fFlags, VBoxGuestHGCMAsyncWaitCallbackInterruptible, pDevExt, cMillies);
         else
-            rc = VbglHGCMCall32(pInfo, VBoxGuestHGCMAsyncWaitCallback, pDevExt, cMillies);
+            rc = VbglR0HGCMInternalCall32(pInfo, fFlags, VBoxGuestHGCMAsyncWaitCallback, pDevExt, cMillies);
     }
     else
 #endif
     {
         if (fInterruptible)
-            rc = VbglHGCMCall(pInfo, VBoxGuestHGCMAsyncWaitCallbackInterruptible, pDevExt, cMillies);
+            rc = VbglR0HGCMInternalCall(pInfo, fFlags, VBoxGuestHGCMAsyncWaitCallbackInterruptible, pDevExt, cMillies);
         else
-            rc = VbglHGCMCall(pInfo, VBoxGuestHGCMAsyncWaitCallback, pDevExt, cMillies);
+            rc = VbglR0HGCMInternalCall(pInfo, fFlags, VBoxGuestHGCMAsyncWaitCallback, pDevExt, cMillies);
     }
     if (RT_SUCCESS(rc))
     {
@@ -1156,7 +1157,7 @@ static int VBoxGuestCommonIOCtl_HGCMClipboardReConnect(PVBOXGUESTDEVEXT pDevExt,
         VBoxGuestHGCMDisconnectInfo Info;
         Info.result = VERR_WRONG_ORDER;
         Info.u32ClientID = pDevExt->u32ClipboardClientId;
-        rc = VbglHGCMDisconnect(&Info, VBoxGuestHGCMAsyncWaitCallback, pDevExt, RT_INDEFINITE_WAIT);
+        rc = VbglR0HGCMInternalDisconnect(&Info, VBoxGuestHGCMAsyncWaitCallback, pDevExt, RT_INDEFINITE_WAIT);
         if (RT_SUCCESS(rc))
         {
             LogRel(("VBoxGuestCommonIOCtl: CLIPBOARD_CONNECT: failed to disconnect old client. VbglHGCMDisconnect -> rc=%Rrc\n", rc));
@@ -1179,7 +1180,7 @@ static int VBoxGuestCommonIOCtl_HGCMClipboardReConnect(PVBOXGUESTDEVEXT pDevExt,
     Info.u32ClientID = 0;
     Info.result = VERR_WRONG_ORDER;
 
-    rc = VbglHGCMConnect(&Info, VBoxGuestHGCMAsyncWaitCallback, pDevExt, RT_INDEFINITE_WAIT);
+    rc = VbglR0HGCMInternalConnect(&Info, VBoxGuestHGCMAsyncWaitCallback, pDevExt, RT_INDEFINITE_WAIT);
     if (RT_FAILURE(rc))
     {
         LogRel(("VBoxGuestCommonIOCtl: CLIPBOARD_CONNECT: VbglHGCMConnected -> rc=%Rrc\n", rc));
