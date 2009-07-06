@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - Include all necessary headers for the Solaris kernel.
+ * IPRT - User & Kernel Memory, Ring-0 Driver, Solaris.
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,42 +28,42 @@
  * additional information or have any questions.
  */
 
-#ifndef ___the_solaris_kernel_h
-#define ___the_solaris_kernel_h
 
-#define _MACHDEP /* needed for cpuset_t and sys/x_call.h */
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
+#include "the-solaris-kernel.h"
 
-#include <sys/kmem.h>
-#include <sys/types.h>
-#include <sys/mman.h>
-#include <sys/thread.h>
-#include <sys/mutex.h>
-#include <sys/condvar.h>
-#include <sys/sdt.h>
-#include <sys/schedctl.h>
-#include <sys/time.h>
-#include <sys/sysmacros.h>
-#include <sys/cmn_err.h>
-#include <sys/vmsystm.h>
-#include <sys/cyclic.h>
-#include <sys/class.h>
-#include <sys/cpuvar.h>
-#include <sys/x_call.h> /* in platform dir */
-#include <sys/x86_archext.h>
-#include <vm/hat.h>
-#include <vm/seg_vn.h>
-#include <vm/seg_kmem.h>
-#include <sys/ddi.h>
-#include <sys/sunddi.h>
-#include <sys/spl.h>
+#include <iprt/mem.h>
+#include <iprt/err.h>
 
-#undef u /* /usr/include/sys/user.h:249:1 is where this is defined to (curproc->p_user). very cool. */
 
-#include <iprt/cdefs.h>
+RTR0DECL(int) RTR0MemUserCopyFrom(void *pvDst, RTR3PTR R3PtrSrc, size_t cb)
+{
+    int rc = ddi_copyin((const char *)R3PtrSrc, pvDst, 0 /*flags*/);
+    if (RT_LIKELY(rc == 0))
+        return VINF_SUCCESS;
+    return VERR_ACCESS_DENIED;
+}
 
-RT_C_DECLS_BEGIN
-extern struct ddi_dma_attr g_SolarisX86PhysMemLimits;
-extern uintptr_t kernelbase;
-RT_C_DECLS_END
 
-#endif
+RTR0DECL(int) RTR0MemUserCopyTo(RTR3PTR R3PtrDst, void const *pvSrc, size_t cb)
+{
+    int rc = ddi_copyout(pvSrc, (void *)R3PtrDst, cb);
+    if (RT_LIKELY(rc == 0))
+        return VINF_SUCCESS;
+    return VERR_ACCESS_DENIED;
+}
+
+
+RTR0DECL(bool) RTR0MemUserIsValidAddr(RTR3PTR R3Ptr)
+{
+    return R3Ptr < kernelbase;
+}
+
+
+RTR0DECL(bool) RTR0MemKernelIsValidAddr(void *pv)
+{
+    return (uintptr_t)pv >= kernelbase;
+}
+
