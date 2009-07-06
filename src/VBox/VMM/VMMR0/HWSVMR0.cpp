@@ -850,7 +850,8 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
 #ifdef DEBUG
     /* Intercept X86_XCPT_DB if stepping is enabled */
-    if (DBGFIsStepping(pVCpu))
+    if (    DBGFIsStepping(pVCpu)
+        ||  CPUMIsHyperDebugStateActive(pVCpu))
         pVMCB->ctrl.u32InterceptException |=  RT_BIT(X86_XCPT_DB);
     else
         pVMCB->ctrl.u32InterceptException &= ~RT_BIT(X86_XCPT_DB);
