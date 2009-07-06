@@ -2687,6 +2687,7 @@ ResumeExecution:
                     goto ResumeExecution;
                 }
                 /* Return to ring 3 to deal with the debug exit code. */
+                Log(("Debugger hardware BP at %04x:%RGv (rc=%Rrc)\n", pCtx->cs, pCtx->rip, rc));
                 break;
             }
 
