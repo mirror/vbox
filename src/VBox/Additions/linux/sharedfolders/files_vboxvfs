@@ -44,6 +44,7 @@ FILES_VBOXVFS_NOBIN=" \
     ${PATH_ROOT}/include/VBox/hgcmsvc.h=>include/VBox/hgcmsvc.h \
     ${PATH_ROOT}/include/VBox/log.h=>include/VBox/log.h \
     ${PATH_ROOT}/include/VBox/ostypes.h=>include/VBox/ostypes.h \
+    ${PATH_ROOT}/include/VBox/param.h=>include/VBox/param.h \
     ${PATH_ROOT}/include/VBox/shflsvc.h=>include/VBox/shflsvc.h \
     ${PATH_ROOT}/include/VBox/types.h=>include/VBox/types.h \
     ${PATH_ROOT}/include/VBox/VBoxGuest.h=>include/VBox/VBoxGuest.h \
