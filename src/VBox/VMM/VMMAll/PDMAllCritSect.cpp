@@ -174,7 +174,9 @@ VMMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
     /*
      * If the critical section has already been destroyed, then inform the caller.
      */
-    AssertReturn(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC, VERR_SEM_DESTROYED);
+    AssertMsgReturn(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC,
+                    ("%p %RX32\n", pCritSect, pCritSect->s.Core.u32Magic),
+                    VERR_SEM_DESTROYED);
 
     /*
      * See if we're lucky.
@@ -241,7 +243,9 @@ VMMDECL(int) PDMCritSectTryEnter(PPDMCRITSECT pCritSect)
     /*
      * If the critical section has already been destroyed, then inform the caller.
      */
-    AssertReturn(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC, VERR_SEM_DESTROYED);
+    AssertMsgReturn(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC,
+                    ("%p %RX32\n", pCritSect, pCritSect->s.Core.u32Magic),
+                    VERR_SEM_DESTROYED);
 
     /*
      * See if we're lucky.
@@ -308,6 +312,7 @@ VMMR3DECL(int) PDMR3CritSectEnterEx(PPDMCRITSECT pCritSect, bool fCallRing3)
  */
 VMMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
 {
+    AssertMsg(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC, ("%p %RX32\n", pCritSect, pCritSect->s.Core.u32Magic));
     Assert(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC);
     Assert(pCritSect->s.Core.NativeThreadOwner == pdmCritSectGetNativeSelf(pCritSect));
     Assert(pCritSect->s.Core.cNestings >= 1);
