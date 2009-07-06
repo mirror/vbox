@@ -257,7 +257,6 @@ RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb) RT_NO_THROW;
  */
 RTR0DECL(void) RTMemContFree(void *pv, size_t cb) RT_NO_THROW;
 
-
 /**
  * Copy memory from an user mode buffer into a kernel buffer.
  *
@@ -293,7 +292,8 @@ RTR0DECL(int) RTR0MemUserCopyTo(RTR3PTR R3PtrDst, void const *pvSrc, size_t cb);
  * @param   R3Ptr       The user mode pointer to test.
  *
  * @remarks Some systems may have overlapping kernel and user address ranges.
- *          One prominent example of this is the x86 version of Mac OS X.
+ *          One prominent example of this is the x86 version of Mac OS X. Use
+ *          RTR0MemAreKernelAndUserRangesDifferent() to check.
  */
 RTR0DECL(bool) RTR0MemUserIsValidAddr(RTR3PTR R3Ptr);
 
@@ -308,9 +308,21 @@ RTR0DECL(bool) RTR0MemUserIsValidAddr(RTR3PTR R3Ptr);
  * @param   pv          The alleged kernel mode pointer.
  *
  * @remarks Some systems may have overlapping kernel and user address ranges.
- *          One prominent example of this is the x86 version of Mac OS X.
+ *          One prominent example of this is the x86 version of Mac OS X. Use
+ *          RTR0MemAreKernelAndUserRangesDifferent() to check.
  */
 RTR0DECL(bool) RTR0MemKernelIsValidAddr(void *pv);
+
+/**
+ * Are user mode and kernel mode address ranges distinctly different.
+ *
+ * This determins whether RTR0MemKernelIsValidAddr and RTR0MemUserIsValidAddr
+ * can be used for deciding whether some arbitrary address is a user mode or a
+ * kernel mode one.
+ *
+ * @returns true if they are, false if not.
+ */
+RTR0DECL(bool) RTR0MemAreKernelAndUserRangesDifferent(void);
 
 #endif /* IN_RING0 */
 

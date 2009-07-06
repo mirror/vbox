@@ -79,3 +79,13 @@ RTR0DECL(bool) RTR0MemKernelIsValidAddr(void *pv)
 #endif
 }
 
+
+RTR0DECL(bool) RTR0MemAreKernelAndUserRangesDifferent(void)
+{
+#if defined(RT_ARCH_X86) && defined(CONFIG_X86_HIGH_ENTRY) /* ?? */
+    return false;
+#else
+    return true;
+#endif
+}
+

@@ -67,3 +67,9 @@ RTR0DECL(bool) RTR0MemKernelIsValidAddr(void *pv)
     return (uintptr_t)pv >= kernelbase;
 }
 
+
+RTR0DECL(bool) RTR0MemAreKernelAndUserRangesDifferent(void)
+{
+    return true;
+}
+

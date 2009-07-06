@@ -84,3 +84,14 @@ RTR0DECL(bool) RTR0MemKernelIsValidAddr(void *pv)
 }
 
 
+RTR0DECL(bool) RTR0MemAreKernelAndUserRangesDifferent(void)
+{
+    /* As mentioned in RTR0MemKernelIsValidAddr, found no way of checking
+       this at compiler or runtime. */
+#ifdef RT_ARCH_X86
+    return false;
+#else
+    return true;
+#endif
+}
+
