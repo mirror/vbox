@@ -1286,6 +1286,7 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	r0drv/freebsd/assert-r0drv-freebsd.c \
 	r0drv/freebsd/initterm-r0drv-freebsd.c \
 	r0drv/freebsd/memobj-r0drv-freebsd.c \
+	r0drv/freebsd/memuserkernel-r0drv-freebsd.c \
 	r0drv/freebsd/process-r0drv-freebsd.c \
 	r0drv/freebsd/semevent-r0drv-freebsd.c \
 	r0drv/freebsd/semeventmulti-r0drv-freebsd.c \
