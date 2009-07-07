@@ -79,6 +79,7 @@ OBJS   = \
 	r0drv/memobj-r0drv.o \
 	r0drv/linux/alloc-r0drv-linux.o \
 	r0drv/linux/memobj-r0drv-linux.o \
+	r0drv/linux/memuserkernel-r0drv-linux.o \
 	r0drv/linux/process-r0drv-linux.o \
 	r0drv/linux/semevent-r0drv-linux.o \
 	r0drv/linux/semfastmutex-r0drv-linux.o \
@@ -87,7 +88,7 @@ OBJS   = \
 	udivdi3.o \
 	umoddi3.o \
 	qdivrem.o
-
+## @todo Use IPRT in vboxguest, the *div*/*mod* bits are x86 only.
 
 EXTRA_CFLAGS = -fshort-wchar
 
