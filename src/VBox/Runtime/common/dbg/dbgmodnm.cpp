@@ -275,7 +275,7 @@ static int rtDbgModNmScanFile(PRTDBGMODNM pThis, PRTSTREAM pStrm, bool fAddSymbo
             /*
              * Did the module change? Then update the symbol prefix.
              */
-            if (    cchMod != pszModNameEnd - pszModName
+            if (    cchMod != (size_t)(pszModNameEnd - pszModName)
                 ||  memcmp(pszModName, szSym, cchMod))
             {
                 cchMod = pszModNameEnd - pszModName;
