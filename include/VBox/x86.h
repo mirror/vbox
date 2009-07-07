@@ -203,15 +203,17 @@ typedef struct X86CPUIDFEATECX
     /** Bit 0 - SSE3 - Supports SSE3 or not. */
     unsigned    u1SSE3 : 1;
     /** Reserved. */
-    unsigned    u2Reserved1 : 2;
+    unsigned    u1Reserved1 : 1;
+    /** Bit 2 - DS Area 64-bit layout. */
+    unsigned    u1DTE64 : 1;
     /** Bit 3 - MONITOR - Supports MONITOR/MWAIT. */
     unsigned    u1Monitor : 1;
     /** Bit 4 - CPL-DS - CPL Qualified Debug Store. */
     unsigned    u1CPLDS : 1;
     /** Bit 5 - VMX - Virtual Machine Technology. */
     unsigned    u1VMX : 1;
-    /** Reserved. */
-    unsigned    u1Reserved2 : 1;
+    /** Bit 6 - SMX: Safer Mode Extensions. */
+    unsigned    u1SMX : 1;
     /** Bit 7 - EST - Enh. SpeedStep Tech. */
     unsigned    u1EST : 1;
     /** Bit 8 - TM2 - Terminal Monitor 2. */
@@ -221,14 +223,35 @@ typedef struct X86CPUIDFEATECX
     /** Bit 10 - CNTX-ID - L1 Context ID. */
     unsigned    u1CNTXID : 1;
     /** Reserved. */
-    unsigned    u2Reserved4 : 2;
+    unsigned    u2Reserved2 : 2;
     /** Bit 13 - CX16 - CMPXCHG16B. */
     unsigned    u1CX16 : 1;
     /** Bit 14 - xTPR Update Control. Processor supports changing IA32_MISC_ENABLES[bit 23]. */
     unsigned    u1TPRUpdate : 1;
+    /** Bit 15 - PDCM - Perf/Debug Capability MSR. */
+    unsigned    u1PDCM : 1;
     /** Reserved. */
-    unsigned    u17Reserved5 : 17;
-
+    unsigned    u2Reserved3 : 2;
+    /** Bit 18 - Direct Cache Access. */
+    unsigned    u1DCA : 1;
+    /** Bit 19 - SSE4_1 - Supports SSE4_1 or not. */
+    unsigned    u1SSE4_1 : 1;
+    /** Bit 20 - SSE4_2 - Supports SSE4_2 or not. */
+    unsigned    u1SSE4_2 : 1;
+    /** Bit 21 - x2APIC. */
+    unsigned    u1x2APIC : 1;
+    /** Bit 22 - MOVBE - Supports MOVBE. */
+    unsigned    u1MOVBE : 1;
+    /** Bit 23 - POPCNT - Supports POPCNT. */
+    unsigned    u1POPCNT : 1;
+    /** Reserved. */
+    unsigned    u2Reserved4 : 2;
+    /** Bit 26 - XSAVE - Supports XSAVE. */
+    unsigned    u1XSAVE : 1;
+    /** Bit 27 - OSXSAVE - Supports OSXSAVE. */
+    unsigned    u1OSXSAVE : 1;
+    /** Reserved. */
+    unsigned    u4Reserved5 : 4;
 } X86CPUIDFEATECX;
 /** Pointer to CPUID Feature Information - ECX. */
 typedef X86CPUIDFEATECX *PX86CPUIDFEATECX;
