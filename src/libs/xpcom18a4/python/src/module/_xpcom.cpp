@@ -574,7 +574,9 @@ static void deinitVBoxPython();
 static PyObject* 
 PyXPCOMMethod_DeinitCOM(PyObject *self, PyObject *args)
 {
+  Py_BEGIN_ALLOW_THREADS;
   deinitVBoxPython();
+  Py_END_ALLOW_THREADS;
   return PyInt_FromLong(0);
 }
 #endif
