@@ -440,8 +440,10 @@ static struct file_system_type vboxsf_fs_type = {
 };
 #endif
 
+#if 0
 extern int CMC_API
 vboxadd_cmc_ctl_guest_filter_mask (uint32_t or_mask, uint32_t not_mask);
+#endif
 
 /* Module initialization/finalization handlers */
 static int __init
@@ -468,10 +470,12 @@ init (void)
                 return err;
         }
 
+#if 0
         if (vboxadd_cmc_ctl_guest_filter_mask (VMMDEV_EVENT_HGCM, 0)) {
                 rcRet = -EINVAL;
                 goto fail0;
         }
+#endif
 
         rcVBox = vboxInit ();
         if (RT_FAILURE (rcVBox)) {
@@ -505,7 +509,9 @@ init (void)
  fail1:
         vboxUninit ();
  fail0:
+#if 0
         vboxadd_cmc_ctl_guest_filter_mask (0, VMMDEV_EVENT_HGCM);
+#endif
         unregister_filesystem (&vboxsf_fs_type);
         return rcRet;
 }
@@ -517,7 +523,9 @@ fini (void)
 
         vboxDisconnect (&client_handle);
         vboxUninit ();
+#if 0
         vboxadd_cmc_ctl_guest_filter_mask (0, VMMDEV_EVENT_HGCM);
+#endif
         unregister_filesystem (&vboxsf_fs_type);
 }
 
