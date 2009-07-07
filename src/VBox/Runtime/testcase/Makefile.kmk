@@ -74,6 +74,7 @@ PROGRAMS += \
 	tstLog \
 	tstMemAutoPtr \
 	tstRTMemPool \
+	tstRTR0MemUserKernelDriver \
 	tstMove \
 	tstMp-1 \
 	tstNoCrt-1 \
@@ -125,6 +126,7 @@ PROGRAMS.darwin += \
 SYSMODS += \
 	tstLdrObj \
 	tstLdrObjR0 \
+	tstRTR0MemUserKernel \
 	tstR0ThreadPreemption
 if1of ($(VBOX_LDR_FMT)), lx pe)
 LIBRARIES += \
@@ -289,6 +291,18 @@ tstMemAutoPtr_SOURCES = tstMemAutoPtr.cpp
 
 tstRTMemPool_TEMPLATE = VBOXR3TSTEXE
 tstRTMemPool_SOURCES = tstRTMemPool.cpp
+
+tstRTR0MemUserKernel_TEMPLATE = VBOXR0
+tstRTR0MemUserKernel_INST = $(INST_TESTCASE)
+tstRTR0MemUserKernel_DEFS = IN_RT_R0
+tstRTR0MemUserKernel_SYSSUFF = .r0
+tstRTR0MemUserKernel_SOURCES = tstRTR0MemUserKernel.cpp
+tstRTR0MemUserKernel_LIBS = $(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
+if1of ($(VBOX_LDR_FMT), pe lx)
+ tstRTR0MemUserKernel_LIBS += $(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
+endif
+
+tstRTR0MemUserKernelDriver_SOURCES = tstRTR0MemUserKernelDriver.cpp
 
 tstMove_SOURCES = tstMove.cpp
 
