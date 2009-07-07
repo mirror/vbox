@@ -82,7 +82,7 @@ GetExtensions(void)
         GLfloat fversion = GetVersionString();
         if (fversion>=2.f)
         {
-            sprintf((char*)gpszExtensions, "%sGL_ARB_shading_language_100 GL_ARB_shader_objects GL_ARB_vertex_shader GL_ARB_fragment_shader", ext);
+            sprintf((char*)gpszExtensions, "%sGL_ARB_shading_language_100 GL_ARB_shader_objects GL_ARB_vertex_shader GL_ARB_fragment_shader GL_EXT_texture_compression_s3tc GL_EXT_draw_range_elements", ext);
         }
     }
 #else
