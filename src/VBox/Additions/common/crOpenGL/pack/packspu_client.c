@@ -162,6 +162,7 @@ void PACKSPU_APIENTRY packspu_InterleavedArrays( GLenum format, GLsizei stride, 
 void PACKSPU_APIENTRY
 packspu_ArrayElement( GLint index )
 {
+/*@todo cash guest/host pointers calculation and use appropriate path here without crStateUseServerArrays call*/
 #if 0
     GLboolean serverArrays = GL_FALSE;
 
