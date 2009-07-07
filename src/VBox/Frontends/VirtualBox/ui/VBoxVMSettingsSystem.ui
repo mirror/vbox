@@ -67,15 +67,6 @@
            <property name="whatsThis">
             <string>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</string>
            </property>
-           <property name="maximum">
-            <number>4096</number>
-           </property>
-           <property name="singleStep">
-            <number>200</number>
-           </property>
-           <property name="value">
-            <number>512</number>
-           </property>
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
