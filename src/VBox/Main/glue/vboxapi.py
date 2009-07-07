@@ -273,7 +273,7 @@ class PlatformMSCOM:
         # looks them up on Windows
         for m in dir(impl):
            if m.startswith("on"):      
-             str += "   "+m[0].capitalize()+m[1:]+"=BaseClass."+m+"\n"
+             str += "   "+ComifyName(m)+"=BaseClass."+m+"\n"
 
         str += "   def __init__(self): BaseClass.__init__(self, arg)\n"
         #str += "win32com.server.register.UseCommandLine("+iface+"Impl)\n"
@@ -343,7 +343,7 @@ class PlatformXPCOM:
         return False
 
     def getArray(self, obj, field):
-        return obj.__getattr__('get'+field.capitalize())()
+        return obj.__getattr__('get'+ComifyName(field))()
 
     def initPerThread(self):
         pass
