@@ -1,0 +1,48 @@
+/*
+ * Copyright (C) 2009 Sun Microsystems, Inc.
+ *
+ * Sun Microsystems, Inc. confidential
+ * All rights reserved
+ */
+
+#include <windows.h>
+#include <VBox/version.h>
+
+#ifndef VBOXNETADP
+# define DESCRIPTION_STR    "VirtualBox Bridged Networking Driver\0"
+# define FILENAME_STR       "VBoxNetFlt.sys\0"
+#else
+# define DESCRIPTION_STR    "VirtualBox Host-Only Network Adapter Driver\0"
+# define FILENAME_STR       "VBoxNetAdp.sys\0"
+#endif
+
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+
+VS_VERSION_INFO VERSIONINFO
+   FILEVERSION          VBOX_VERSION_MAJOR_NR,VBOX_VERSION_MINOR_NR,VBOX_VERSION_BUILD_NR,0
+   PRODUCTVERSION	    VBOX_VERSION_MAJOR_NR,VBOX_VERSION_MINOR_NR,VBOX_VERSION_BUILD_NR,0
+   FILEFLAGSMASK        VS_FFI_FILEFLAGSMASK
+   FILEFLAGS            0x0L
+   FILEOS               VOS_NT_WINDOWS32
+   FILETYPE             VFT_DRV
+   FILESUBTYPE          VFT2_DRV_NETWORK
+BEGIN
+   BLOCK "StringFileInfo"
+   BEGIN
+      BLOCK "040904b0"
+      BEGIN
+         VALUE "CompanyName",      VBOX_RC_COMPANY_NAME
+         VALUE "FileDescription",  DESCRIPTION_STR
+         VALUE "FileVersion",	   VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD ".r" VBOX_SVN_REV "\0"
+         VALUE "InternalName",     FILENAME_STR
+         VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
+         VALUE "OriginalFilename", FILENAME_STR
+         VALUE "ProductName",	   "Sun VirtualBox\0"
+         VALUE "ProductVersion",   VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD ".r" VBOX_SVN_REV "\0"
+      END
+   END
+   BLOCK "VarFileInfo"
+   BEGIN
+      VALUE "Translation", 0x409, 1200
+   END
+END
