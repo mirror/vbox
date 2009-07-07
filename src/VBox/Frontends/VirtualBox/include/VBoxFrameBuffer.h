@@ -484,6 +484,11 @@ private:
  * 2.blt
  *  srcTex->fb->tex
  *           |->mem
+ *
+ * III. flip support:
+ * 1. Yinverted<->NON-YInverted conversion :
+ *  mem->tex-(rotate model view, force LAZY complete fb update)->invFB->tex
+ *  fb-->|                                                           |->mem
  * */
 class VBoxVHWASurfaceBase
 {
@@ -507,7 +512,7 @@ public:
 
     virtual int unlock();
 
-    void paint(const QRect * aRect);
+    void updatedMem(const QRect * aRect);
 
     void performDisplay();
 
@@ -554,6 +559,12 @@ public:
 
     bool isYInverted() {return mIsYInverted; }
 
+    int invert();
+
+    bool isFrontBuffer() {return !mIsYInverted; }
+
+    bool isOverlay() { return mIsOverlay; }
+
 #ifdef VBOX_WITH_VIDEOHWACCEL
     virtual class VBoxVHWAGlProgramMngr * getGlProgramMngr() = 0;
     static int setCKey(class VBoxVHWAGlProgramVHWA * pProgram, const VBoxVHWAColorFormat * pFormat, const VBoxVHWAColorKey * pCKey);
@@ -566,10 +577,11 @@ private:
     void synchTexFB(const QRect * aRect);
     void synchMem(const QRect * aRect);
     void synchFB(const QRect * aRect);
+    void synch(const QRect * aRect);
 
     void doTex2FB(const QRect * aRect);
 
-
+    void doSetupModelView(bool bInverted);
 
     QRect mRect;
 
@@ -606,18 +618,101 @@ private:
     /*in case of blit the memory buffer does not get updated until we need it, e.g. for paint or lock operations */
     VBoxVHWADirtyRect mUpdateFB2MemRect;
 
+    /* flag for lazy invert post-processing */
+    bool mInverted;
+
     bool mFreeAddress;
 
     bool mIsYInverted;
-    typedef std::list <VBoxVHWASurfaceBase*> OverlayList;
-    VBoxVHWASurfaceBase * mOverlayed;
-    OverlayList mOverlays;
+
+    bool mIsOverlay;
+
 protected:
     virtual void init(uchar *pvMem, bool bInverted);
 
     class VBoxVHWAGlContextState *mState;
 
 };
+
+class VBoxVHWADisplay
+{
+public:
+    VBoxVHWADisplay() :
+        mSurfVGA(NULL),
+        mSurfPrimary(NULL)
+    {}
+
+    VBoxVHWASurfaceBase * setVGA(VBoxVHWASurfaceBase * pVga)
+    {
+        VBoxVHWASurfaceBase * old = mSurfVGA;
+        mSurfVGA = pVga;
+        mSurfPrimary = pVga;
+        mOverlays.clear();
+        return old;
+    }
+
+    VBoxVHWASurfaceBase * getVGA()
+    {
+        return mSurfVGA;
+    }
+
+    void setPrimary(VBoxVHWASurfaceBase * pSurf)
+    {
+        mSurfPrimary = pSurf;
+    }
+
+    void addOverlay(VBoxVHWASurfaceBase * pSurf)
+    {
+        mOverlays.push_back(pSurf);
+    }
+
+    void removeOverlay(VBoxVHWASurfaceBase * pSurf)
+    {
+        mOverlays.remove(pSurf);
+    }
+
+    void flip(VBoxVHWASurfaceBase * pTarg, VBoxVHWASurfaceBase * pCurr)
+    {
+        pCurr->invert();
+        pTarg->invert();
+        if(pTarg->isOverlay())
+        {
+            for (OverlayList::iterator it = mOverlays.begin();
+                 it != mOverlays.end(); ++ it)
+            {
+                if((*it) == pCurr)
+                {
+                    (*it) = pTarg;
+                }
+            }
+        }
+        else
+        {
+            mSurfPrimary = pTarg;
+        }
+    }
+
+    void performDisplay()
+    {
+        mSurfPrimary->performDisplay();
+
+        for (OverlayList::const_iterator it = mOverlays.begin();
+             it != mOverlays.end(); ++ it)
+        {
+            (*it)->performDisplay();
+        }
+    }
+
+private:
+    VBoxVHWASurfaceBase *mSurfVGA;
+    VBoxVHWASurfaceBase *mSurfPrimary;
+
+    typedef std::list <VBoxVHWASurfaceBase*> OverlayList;
+
+    OverlayList mOverlays;
+};
+
+
 
 class VBoxVHWAGlContextState
 {
@@ -707,8 +802,6 @@ public:
 
     void uninit();
 
-    int flip(VBoxVHWASurfaceQGL * aCurrSurface);
-
 //    int unlock()
 //    {
 //        int rc = VBoxVHWASurfaceBase::unlock();
@@ -735,10 +828,10 @@ public:
     ulong vboxPixelFormat() { return mPixelFormat; }
     bool vboxUsesGuestVRAM() { return mUsesGuestVRAM; }
 
-    uchar *vboxAddress() { return pDisplay ? pDisplay->address() : NULL; }
+    uchar *vboxAddress() { return mDisplay.getVGA() ? mDisplay.getVGA()->address() : NULL; }
     uchar *vboxVRAMAddressFromOffset(uint64_t offset);
-    ulong vboxBitsPerPixel() { return pDisplay->bitsPerPixel(); }
-    ulong vboxBytesPerLine() { return pDisplay ? pDisplay->bytesPerLine() : NULL; }
+    ulong vboxBitsPerPixel() { return mDisplay.getVGA()->bitsPerPixel(); }
+    ulong vboxBytesPerLine() { return mDisplay.getVGA() ? mDisplay.getVGA()->bytesPerLine() : NULL; }
 
 typedef void (VBoxGLWidget::*PFNVBOXQGLOP)(void* );
 //typedef FNVBOXQGLOP *PFNVBOXQGLOP;
@@ -753,7 +846,7 @@ typedef void (VBoxGLWidget::*PFNVBOXQGLOP)(void* );
     class VBoxVHWAGlProgramMngr * vboxVHWAGetGlProgramMngr();
 #endif
 
-    VBoxVHWASurfaceQGL * vboxGetSurface() { return pDisplay; }
+    VBoxVHWASurfaceBase * vboxGetVGASurface() { return mDisplay.getVGA(); }
 protected:
 //    void resizeGL (int height, int width);
 
@@ -761,10 +854,10 @@ protected:
     {
         Assert(mState.getCurrent() == NULL);
         /* we are called with QGLWidget context */
-        mState.assertCurrent(pDisplay, false);
+        mState.assertCurrent(mDisplay.getVGA(), false);
         (this->*mpfnOp)(mOpContext);
         /* restore the context */
-        mState.makeCurrent(pDisplay);
+        mState.makeCurrent(mDisplay.getVGA());
         /* clear*/
         mState.assertCurrent(NULL, false);
     }
@@ -804,7 +897,9 @@ private:
     int vhwaQueryInfo2(struct _VBOXVHWACMD_QUERYINFO2 *pCmd);
 #endif
 
-    VBoxVHWASurfaceQGL * pDisplay;
+//    VBoxVHWASurfaceQGL * pDisplay;
+    VBoxVHWADisplay mDisplay;
+
 
     /* we need to do all opengl stuff in the paintGL context,
      * submit the operation to be performed */
