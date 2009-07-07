@@ -99,6 +99,33 @@ class PerfCollector:
             })
         return out
 
+def ComifyName(name):
+    return name[0].capitalize()+name[1:]    
+
+_COMForward = { 'getattr' : None,
+                'setattr' : None}
+          
+def CustomGetAttr(self, attr):
+    # fastpath
+    if self.__class__.__dict__.get(attr) != None:
+        return self.__class__.__dict__.get(attr)
+
+    # try case-insensitivity workaround for class attributes (COM methods)
+    for k in self.__class__.__dict__.keys():
+        if k.lower() == attr.lower():
+            self.__class__.__dict__[attr] = self.__class__.__dict__[k]
+            return getattr(self, k)
+    try:
+        return _COMForward['getattr'](self,ComifyName(attr))
+    except AttributeError:
+        return _COMForward['getattr'](self,attr)
+
+def CustomSetAttr(self, attr, value):
+    try:
+        return _COMForward['setattr'](self, ComifyName(attr), value)
+    except AttributeError:
+        return _COMForward['setattr'](self, attr, value)
+
 class PlatformMSCOM:
     # Class to fake access to constants in style of foo.bar.boo
     class ConstantFake:
@@ -162,10 +189,10 @@ class PlatformMSCOM:
     VBOX_TLB_LCID  = 0
     VBOX_TLB_MAJOR = 1
     VBOX_TLB_MINOR = 0
-
+    
     def __init__(self, params):
             from win32com import universal
-            from win32com.client import gencache, DispatchWithEvents, Dispatch
+            from win32com.client import gencache, DispatchBaseClass
             from win32com.client import constants, getevents
             import win32com
             import pythoncom
@@ -178,7 +205,12 @@ class PlatformMSCOM:
             handle = DuplicateHandle(pid, GetCurrentThread(), pid, 0, 0, DUPLICATE_SAME_ACCESS)
             self.handles = []
             self.handles.append(handle)
-
+            _COMForward['getattr'] = DispatchBaseClass.__dict__['__getattr__']
+            DispatchBaseClass.__dict__['__getattr__'] = CustomGetAttr            
+            _COMForward['setattr'] = DispatchBaseClass.__dict__['__setattr__']
+            DispatchBaseClass.__dict__['__setattr__'] = CustomSetAttr            
+            win32com.client.gencache.EnsureDispatch('VirtualBox.Session')
+            win32com.client.gencache.EnsureDispatch('VirtualBox.VirtualBox')
 
     def getSessionObject(self, vbox):
         import win32com
@@ -277,8 +309,7 @@ class PlatformMSCOM:
         pass
 
     def getPerfCollector(self, vbox):
-        # MS COM cannot invoke performance collector methods yet
-        return None
+        return PerfCollector(vbox)
 
 
 class PlatformXPCOM:
@@ -462,4 +493,4 @@ class VirtualBoxManager:
         return self.platform.waitForEvents(timeout)
 
     def getPerfCollector(self, vbox):
-        return self.platform.getPerfCollector(vbox)       
+        return PerfCollector(vbox)       
