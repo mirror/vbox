@@ -71,7 +71,7 @@ packspu_UnmapBufferARB( GLenum target )
 {
     GET_CONTEXT(ctx);
 
-#if 0
+#if CR_ARB_vertex_buffer_object
     CRBufferObject *bufObj;
 
     if (target == GL_ARRAY_BUFFER_ARB) {
