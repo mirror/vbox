@@ -356,7 +356,7 @@ typedef enum RTLOGFLAGS
     /** New lines should be prefixed with timestamp. */
     RTLOGFLAGS_PREFIX_TS            = 0x40000000,
     /** The prefix mask. */
-    RTLOGFLAGS_PREFIX_MASK          = 0x7cff8000
+    RTLOGFLAGS_PREFIX_MASK          = 0x7dff8000
 } RTLOGFLAGS;
 
 /**
