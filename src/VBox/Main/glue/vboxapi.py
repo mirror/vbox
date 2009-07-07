@@ -80,8 +80,13 @@ class PerfCollector:
         'values': collected data
         'values_as_string': pre-processed values ready for 'print' statement
         """
-        (values, names_out, objects_out, units, scales, sequence_numbers,
-            indices, lengths) = self.collector.queryMetricsData(names, objects)
+        # Get around the problem with input arrays returned in output parameters (see #3953).
+        if sys.platform == 'win32':
+            (values, names, objects, names_out, objects_out, units, scales, sequence_numbers,
+                indices, lengths) = self.collector.queryMetricsData(names, objects)
+        else:
+            (values, names_out, objects_out, units, scales, sequence_numbers,
+                indices, lengths) = self.collector.queryMetricsData(names, objects)
         out = []
         for i in xrange(0, len(names_out)):
             scale = int(scales[i])
