@@ -417,6 +417,10 @@ int VboxServiceWinGetComponentVersions(uint32_t uiClientID)
     GetSystemDirectory(szSysDir, _MAX_PATH);
     GetWindowsDirectory(szWinDir, _MAX_PATH);
     swprintf(szDriversDir, (_MAX_PATH + 32), TEXT("%s\\drivers"), szSysDir);
+#ifdef RT_ARCH_AMD64
+    TCHAR szSysWowDir[_MAX_PATH + 32] = {0};
+    swprintf(szSysWowDir, (_MAX_PATH + 32), TEXT("%s\\SysWow64"), szWinDir);
+#endif
 
     /* The file information table. */
 #ifndef TARGET_NT4
@@ -430,13 +434,25 @@ int VboxServiceWinGetComponentVersions(uint32_t uiClientID)
         { szSysDir, TEXT("VBoxTray.exe"), },
         { szSysDir, TEXT("VBoxGINA.dll"), },
 
+ /* On 64-bit we don't yet have the OpenGL DLLs in native format.
+    So just enumerate the 32-bit files in the SYSWOW directory. */
+ #ifdef RT_ARCH_AMD64
+        { szSysWowDir, TEXT("VBoxOGLarrayspu.dll"), },
+        { szSysWowDir, TEXT("VBoxOGLcrutil.dll"), },
+        { szSysWowDir, TEXT("VBoxOGLerrorspu.dll"), },
+        { szSysWowDir, TEXT("VBoxOGLpackspu.dll"), },
+        { szSysWowDir, TEXT("VBoxOGLpassthroughspu.dll"), },
+        { szSysWowDir, TEXT("VBoxOGLfeedbackspu.dll"), },
+        { szSysWowDir, TEXT("VBoxOGL.dll"), },
+ #else
         { szSysDir, TEXT("VBoxOGLarrayspu.dll"), },
         { szSysDir, TEXT("VBoxOGLcrutil.dll"), },
         { szSysDir, TEXT("VBoxOGLerrorspu.dll"), },
         { szSysDir, TEXT("VBoxOGLpackspu.dll"), },
         { szSysDir, TEXT("VBoxOGLpassthroughspu.dll"), },
         { szSysDir, TEXT("VBoxOGLfeedbackspu.dll"), },
-        { szSysDir, TEXT("VBoxOGL.dll"), },
+        { szSysDir, TEXT("VBoxOGL.dll"), },  
+ #endif
 
         { szDriversDir, TEXT("VBoxGuest.sys"), },
         { szDriversDir, TEXT("VBoxMouse.sys"), },
