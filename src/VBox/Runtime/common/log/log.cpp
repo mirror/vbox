@@ -86,7 +86,7 @@ typedef struct RTLOGOUTPUTPREFIXEDARGS
 static unsigned rtlogGroupFlags(const char *psz);
 #endif
 #ifdef IN_RING0
-static void rtR0LogLoggerExFallback(uint32_t fDestFlags, const char *pszFormat, va_list va);
+static void rtR0LogLoggerExFallback(uint32_t fDestFlags, uint32_t fFlags, const char *pszFormat, va_list va);
 #endif
 static void rtlogFlush(PRTLOGGER pLogger);
 static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t cbChars);
@@ -1686,7 +1686,7 @@ RTDECL(void) RTLogLoggerExV(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup,
     {
 #ifdef IN_RING0
         if (pLogger->fDestFlags & ~RTLOGDEST_FILE)
-            rtR0LogLoggerExFallback(pLogger->fDestFlags, pszFormat, args);
+            rtR0LogLoggerExFallback(pLogger->fDestFlags, pLogger->fFlags, pszFormat, args);
 #endif
         return;
     }
@@ -1825,15 +1825,38 @@ static DECLCALLBACK(size_t) rtR0LogLoggerExFallbackOutput(void *pv, const char *
  * dangerouse things. We won't be doing any prefixing here either, at least not
  * for the present, because it's too much hazzle.
  *
- * @param   pLogger     The destination flags.
+ * @param   fDestFlags  The destination flags.
+ * @param   fFlags      The logger flags.
  * @param   pszFormat   The format string.
  * @param   va          The format arguments.
  */
-static void rtR0LogLoggerExFallback(uint32_t fDestFlags, const char *pszFormat, va_list va)
+static void rtR0LogLoggerExFallback(uint32_t fDestFlags, uint32_t fFlags, const char *pszFormat, va_list va)
 {
     RTR0LOGLOGGERFALLBACK This;
     This.fDestFlags = fDestFlags;
-    This.offScratch = 0;
+
+    /* fallback indicator. */
+    This.offScratch = 2;
+    This.achScratch[0] = '[';
+    This.achScratch[1] = 'F';
+
+    /* selected prefixes */
+    if (fFlags & RTLOGFLAGS_PREFIX_PID)
+    {
+        RTPROCESS Process = RTProcSelf();
+        This.achScratch[This.offScratch++] = ' ';
+        This.offScratch += RTStrFormatNumber(&This.achScratch[This.offScratch], Process, 16, sizeof(RTPROCESS) * 2, 0, RTSTR_F_ZEROPAD);
+    }
+    if (fFlags & RTLOGFLAGS_PREFIX_TID)
+    {
+        RTNATIVETHREAD Thread = RTThreadNativeSelf();
+        This.achScratch[This.offScratch++] = ' ';
+        This.offScratch += RTStrFormatNumber(&This.achScratch[This.offScratch], Thread, 16, sizeof(RTNATIVETHREAD) * 2, 0, RTSTR_F_ZEROPAD);
+    }
+
+    This.achScratch[This.offScratch++] = ']';
+    This.achScratch[This.offScratch++] = ' ';
+
     RTLogFormatV(rtR0LogLoggerExFallbackOutput, &This, pszFormat, va);
 }
 #endif /* IN_RING0 */
