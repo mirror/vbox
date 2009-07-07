@@ -354,12 +354,16 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
  */
 /** ECX Bit 0 - SSE3 - Supports SSE3 or not. */
 #define X86_CPUID_FEATURE_ECX_SSE3      RT_BIT(0)
+/** ECX Bit 2 - DTES64 - DS Area 64-bit Layout. */
+#define X86_CPUID_FEATURE_ECX_DTES64    RT_BIT(2)
 /** ECX Bit 3 - MONITOR - Supports MONITOR/MWAIT. */
 #define X86_CPUID_FEATURE_ECX_MONITOR   RT_BIT(3)
 /** ECX Bit 4 - CPL-DS - CPL Qualified Debug Store. */
 #define X86_CPUID_FEATURE_ECX_CPLDS     RT_BIT(4)
 /** ECX Bit 5 - VMX - Virtual Machine Technology. */
 #define X86_CPUID_FEATURE_ECX_VMX       RT_BIT(5)
+/** ECX Bit 6 - SMX - Safer Mode Extensions. */
+#define X86_CPUID_FEATURE_ECX_SMX       RT_BIT(6)
 /** ECX Bit 7 - EST - Enh. SpeedStep Tech. */
 #define X86_CPUID_FEATURE_ECX_EST       RT_BIT(7)
 /** ECX Bit 8 - TM2 - Terminal Monitor 2. */
@@ -372,10 +376,24 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_FEATURE_ECX_CX16      RT_BIT(13)
 /** ECX Bit 14 - xTPR Update Control. Processor supports changing IA32_MISC_ENABLES[bit 23]. */
 #define X86_CPUID_FEATURE_ECX_TPRUPDATE RT_BIT(14)
+/** ECX Bit 15 - PDCM - Perf/Debug Capability MSR. */
+#define X86_CPUID_FEATURE_ECX_PDCM      RT_BIT(15)
+/** ECX Bit 18 - DCA - Direct Cache Access. */
+#define X86_CPUID_FEATURE_ECX_DCA       RT_BIT(18)
+/** ECX Bit 19 - SSE4_1 - Supports SSE4_1 or not. */
+#define X86_CPUID_FEATURE_ECX_SSE4_1    RT_BIT(19)
+/** ECX Bit 20 - SSE4_2 - Supports SSE4_2 or not. */
+#define X86_CPUID_FEATURE_ECX_SSE4_2    RT_BIT(20)
 /** ECX Bit 21 - x2APIC support. */
 #define X86_CPUID_FEATURE_ECX_X2APIC    RT_BIT(21)
+/** ECX Bit 22 - MOVBE instruction. */
+#define X86_CPUID_FEATURE_ECX_MOVBE     RT_BIT(22)
 /** ECX Bit 23 - POPCOUNT instruction. */
 #define X86_CPUID_FEATURE_ECX_POPCOUNT  RT_BIT(23)
+/** ECX Bit 26 - XSAVE instruction. */
+#define X86_CPUID_FEATURE_ECX_XSAVE     RT_BIT(26)
+/** ECX Bit 27 - OSXSAVE instruction. */
+#define X86_CPUID_FEATURE_ECX_OSXSAVE   RT_BIT(27)
 
 
 /** Bit 0 - FPU - x87 FPU on Chip. */
