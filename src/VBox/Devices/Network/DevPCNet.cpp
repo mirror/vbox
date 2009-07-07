@@ -5083,7 +5083,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Create the transmit queue.
      */
     rc = PDMDevHlpPDMQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
-                                 pcnetXmitQueueConsumer, true, &pThis->pXmitQueueR3);
+                                 pcnetXmitQueueConsumer, true, "PCNet-Xmit", &pThis->pXmitQueueR3);
     if (RT_FAILURE(rc))
         return rc;
     pThis->pXmitQueueR0 = PDMQueueR0Ptr(pThis->pXmitQueueR3);
@@ -5093,7 +5093,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Create the RX notifer signaller.
      */
     rc = PDMDevHlpPDMQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
-                                 pcnetCanRxQueueConsumer, true, &pThis->pCanRxQueueR3);
+                                 pcnetCanRxQueueConsumer, true, "PCNet-Rcv", &pThis->pCanRxQueueR3);
     if (RT_FAILURE(rc))
         return rc;
     pThis->pCanRxQueueR0 = PDMQueueR0Ptr(pThis->pCanRxQueueR3);

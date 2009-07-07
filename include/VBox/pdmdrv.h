@@ -481,20 +481,13 @@ typedef struct PDMDRVHLP
      * @param   cMilliesInterval    Number of milliseconds between polling the queue.
      *                              If 0 then the emulation thread will be notified whenever an item arrives.
      * @param   pfnCallback         The consumer function.
+     * @param   pszName             The queue base name. The instance number will be
+     *                              appended automatically.
      * @param   ppQueue             Where to store the queue handle on success.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPDMQueueCreate,(PPDMDRVINS pDrvIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval, PFNPDMQUEUEDRV pfnCallback, PPDMQUEUE *ppQueue));
-
-    /**
-     * Register a poller function.
-     * TEMPORARY HACK FOR NETWORKING! DON'T USE!
-     *
-     * @returns VBox status code.
-     * @param   pDrvIns             Driver instance.
-     * @param   pfnPoller           The callback function.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnPDMPollerRegister,(PPDMDRVINS pDrvIns, PFNPDMDRVPOLLER pfnPoller));
+    DECLR3CALLBACKMEMBER(int, pfnPDMQueueCreate,(PPDMDRVINS pDrvIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval,
+                                                 PFNPDMQUEUEDRV pfnCallback, const char *pszName, PPDMQUEUE *ppQueue));
 
     /**
      * Query the virtual timer frequency.
@@ -709,7 +702,7 @@ typedef PDMDRVHLP *PPDMDRVHLP;
 typedef const PDMDRVHLP *PCPDMDRVHLP;
 
 /** Current DRVHLP version number. */
-#define PDM_DRVHLP_VERSION  0x90040000
+#define PDM_DRVHLP_VERSION  0x90050000
 
 
 
@@ -825,9 +818,9 @@ DECLINLINE(int) PDMDrvHlpVMSetRuntimeError(PPDMDRVINS pDrvIns, uint32_t fFlags, 
  * @copydoc PDMDRVHLP::pfnPDMQueueCreate
  */
 DECLINLINE(int) PDMDrvHlpPDMQueueCreate(PPDMDRVINS pDrvIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval,
-                                        PFNPDMQUEUEDRV pfnCallback, PPDMQUEUE *ppQueue)
+                                        PFNPDMQUEUEDRV pfnCallback, const char *pszName, PPDMQUEUE *ppQueue)
 {
-    return pDrvIns->pDrvHlp->pfnPDMQueueCreate(pDrvIns, cbItem, cItems, cMilliesInterval, pfnCallback, ppQueue);
+    return pDrvIns->pDrvHlp->pfnPDMQueueCreate(pDrvIns, cbItem, cItems, cMilliesInterval, pfnCallback, pszName, ppQueue);
 }
 
 /**

@@ -699,14 +699,33 @@ typedef struct PDMQUEUE
     PVMRC                           pVMRC;
     /** LIFO of pending items - GC. */
     RCPTRTYPE(PPDMQUEUEITEMCORE) volatile pPendingRC;
+
     /** Item size (bytes). */
-    RTUINT                          cbItem;
+    uint32_t                        cbItem;
     /** Number of items in the queue. */
-    RTUINT                          cItems;
+    uint32_t                        cItems;
     /** Index to the free head (where we insert). */
     uint32_t volatile               iFreeHead;
     /** Index to the free tail (where we remove). */
     uint32_t volatile               iFreeTail;
+
+    /** Unqiue queue name. */
+    R3PTRTYPE(const char *)         pszName;
+#if HC_ARCH_BITS == 32
+    RTR3PTR                         Alignment1;
+#endif
+    /** Stat: Times PDMQueueAlloc fails. */
+    STAMCOUNTER                     StatAllocFailures;
+    /** Stat: PDMQueueInsert calls. */
+    STAMCOUNTER                     StatInsert;
+    /** Stat: Queue flushes. */
+    STAMCOUNTER                     StatFlush;
+    /** Stat: Queue flushes with pending items left over. */
+    STAMCOUNTER                     StatFlushLeftovers;
+#ifdef VBOX_WITH_STATISTICS
+    /** State: Profiling the flushing. */
+    STAMPROFILE                     StatFlushPrf;
+#endif
 
     /** Array of pointers to free items. Variable size. */
     struct PDMQUEUEFREEITEM

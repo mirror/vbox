@@ -4808,7 +4808,7 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 
     /* Create transmit queue */
     rc = PDMDevHlpPDMQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
-                                 e1kTxQueueConsumer, true, &pState->pTxQueueR3);
+                                 e1kTxQueueConsumer, true, "E1000-Xmit", &pState->pTxQueueR3);
     if (RT_FAILURE(rc))
         return rc;
     pState->pTxQueueR0 = PDMQueueR0Ptr(pState->pTxQueueR3);
@@ -4816,7 +4816,7 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 
     /* Create the RX notifier signaller. */
     rc = PDMDevHlpPDMQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
-                                 e1kCanRxQueueConsumer, true, &pState->pCanRxQueueR3);
+                                 e1kCanRxQueueConsumer, true, "E1000-Rcv", &pState->pCanRxQueueR3);
     if (RT_FAILURE(rc))
         return rc;
     pState->pCanRxQueueR0 = PDMQueueR0Ptr(pState->pCanRxQueueR3);

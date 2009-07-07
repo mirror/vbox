@@ -57,7 +57,10 @@ VMMDECL(PPDMQUEUEITEMCORE) PDMQueueAlloc(PPDMQUEUE pQueue)
     {
         i = pQueue->iFreeTail;
         if (i == pQueue->iFreeHead)
+        {
+            STAM_REL_COUNTER_INC(&pQueue->StatAllocFailures);
             return NULL;
+        }
         pNew = pQueue->aFreeItems[i].CTX_SUFF(pItem);
         iNext = (i + 1) % (pQueue->cItems + PDMQUEUE_FREE_SLACK);
     } while (!ASMAtomicCmpXchgU32(&pQueue->iFreeTail, iNext, i));
@@ -97,6 +100,7 @@ VMMDECL(void) PDMQueueInsert(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem)
         VMR3NotifyGlobalFFU(pVM->pUVM, VMNOTIFYFF_FLAGS_DONE_REM);
 #endif
     }
+    STAM_REL_COUNTER_INC(&pQueue->StatInsert);
 }
 
 
