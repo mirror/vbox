@@ -99,7 +99,7 @@ static void outputChromiumMessage( FILE *output, char *str )
             );
     fflush( output );
 
-#ifdef WINDOWS
+#if defined(DEBUG) && defined(WINDOWS)
     OutputDebugString(str);
     OutputDebugString("\n");
 #endif
@@ -238,7 +238,7 @@ DECLEXPORT(void) crWarning( char *format, ... )
 #endif
         va_end( args );
 
-#if !defined(IN_GUEST)
+#if defined(WINDOWS) && defined(DEBUG) && !defined(IN_GUEST)
         DebugBreak();
 #endif
     }
@@ -311,7 +311,7 @@ DECLEXPORT(void) crDebug( char *format, ... )
          * or CR_DEBUG_FILE is set.
          */
         if (!fname && !crGetenv("CR_DEBUG"))
-            silent = 0;
+            silent = 1;
 #endif
     }
 
@@ -364,7 +364,9 @@ DECLEXPORT(void) crDebug( char *format, ... )
 #if defined(IN_GUEST)
     outputChromiumMessage( output, txt );
 #else
+# if defined(DEBUG) && defined(DEBUG_leo)
     outputChromiumMessage( output, txt );
+# endif
     if (output==stderr)
     {
         LogRel(("%s\n", txt));

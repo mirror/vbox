@@ -63,7 +63,7 @@ static CRDLL *aglDll = NULL;
 #define GLLOADER_APIENTRY
 #endif
 
-#define CR_NO_GL_SYSTEM_PATH 1
+/*#define CR_NO_GL_SYSTEM_PATH 1*/
 
 /*
  * Add an entry to the SPUNamedFunctionTable
