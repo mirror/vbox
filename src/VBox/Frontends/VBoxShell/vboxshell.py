@@ -235,9 +235,8 @@ def startVm(ctx,mach,type):
     uuid = mach.id
     progress = vb.openRemoteSession(session, uuid, type, "")
     progress.waitForCompletion(-1)
-    completed = progress.completed
-    rc = int(progress.resultCode)
-    print "Completed:", completed, "rc:",hex(rc&0xffffffff)
+    rc = long(progress.resultCode)
+    #print "Completed:", progress.completed, "rc:",hex(rc&0xffffffff)
     if rc == 0:
         # we ignore exceptions to allow starting VM even if
         # perf collector cannot be started
@@ -332,7 +331,7 @@ def cmdExistingVm(ctx,mach,cmd,args):
     console=session.console    
     ops={'pause' :     lambda: console.pause(),
          'resume':     lambda: console.resume(),
-         'powerdown':  lambda: console.powerDown(),
+         'powerdown':  lambda: console.powerDown().waitForCompletion(-1),
          'powerbutton':  lambda: console.powerButton(),
          'stats':      lambda: guestStats(ctx, mach),
          'guest':      lambda: guestExec(ctx, mach, console, args),
@@ -674,19 +673,42 @@ def reloadExtCmd(ctx, args):
 
 
 def runScriptCmd(ctx, args):
-    if (len(args) != 2):
-        print "usage: runScript <script>"
+    import time
+    if (len(args) < 2 or len (args) > 4):
+        print "usage: runScript <script> <times> <pause>"
         return 0
+
+    if len (args) >= 3:
+        times = int(args[2])
+        if g_verbose:
+            print "repeating %d times" %(times)
+    else:
+        times = 1
+
+    if len (args) >= 4:
+        pause = int(args[3])
+    else:
+        pause = 0
+    
     try:
         lf = open(args[1], 'r')
     except IOError,e:
         print "cannot open:",args[1], ":",e
         return 0
 
+    script = []
     try:
         for line in lf:
-            done = runCommand(ctx, line)
-            if done != 0: break
+            script.append(line)
+
+        for i in range(times):
+            for line in script:
+                done = runCommand(ctx, line)
+                if done != 0: break
+            if g_verbose:
+                print "%d done" %(i)
+            if i != times - 1 and pause != 0:
+                time.sleep(pause)
     except Exception,e:
         print "error:",e
         if g_verbose:
@@ -694,6 +716,18 @@ def runScriptCmd(ctx, args):
     lf.close()
     return 0
 
+
+def runShellCmd(ctx, args):
+    if len (args) < 2:
+        print "usage: shell <command>"
+    expr = ' '.join(args[1:])
+    try:
+        os.system(expr)
+    except Exception,e:
+        print "error:",e
+        if g_verbose:
+                traceback.print_exc()
+    return 0
 
 aliases = {'s':'start',
            'i':'info',
@@ -727,7 +761,8 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'portForward':['Setup permanent port forwarding for a VM, takes adapter number host port and guest port: portForward Win32 0 8080 80', portForwardCmd, 0],
             'showLog':['Show log file of the VM, : showLog Win32', showLogCmd, 0],
             'reloadExt':['Reload custom extensions: reloadExt', reloadExtCmd, 0],
-            'runScript':['Run VBox script: runScript script.vbox', runScriptCmd, 0],
+            'runScript':['Run VBox script: runScript script.vbox <times>', runScriptCmd, 0],
+            'shell':['Execute system shell command: shell ls -l', runShellCmd, 0],
             }
 
 def runCommand(ctx, cmd):
