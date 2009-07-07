@@ -1,0 +1,85 @@
+;
+; VirtualBox Bridged Networking Driver
+;
+
+;
+; Copyright (C) 2008 Sun Microsystems, Inc.
+;
+; Sun Microsystems, Inc. confidential
+; All rights reserved
+;
+
+;
+; Based in part on Microsoft DDK sample code for Ndis Intermediate Miniport passthru driver sample.
+; Copyright (c) 1993-1999, Microsoft Corporation
+;
+
+[Version]
+signature  = "$Windows NT$"
+;cat   CatalogFile = VBoxNetFlt.cat
+Class      = Net
+ClassGUID  = {4d36e972-e325-11ce-bfc1-08002be10318}
+Provider   = %Provider%
+;DriverPackageType=NdisImMiniport
+;DriverPackageDisplayName=%VBoxNetFltMP_Desc%
+;edit-DriverVer=08/13/2008,1.1.0.1
+
+[ControlFlags]
+ExcludeFromSelect = sun_VBoxNetFltmp
+
+[DestinationDirs]
+DefaultDestDir=12
+; No files to copy
+
+[Manufacturer]
+%Provider% = VBox,NTx86,NTia64,NTamd64
+
+; For Win2K
+[VBox]
+%VBoxNetFltMP_Desc% = VBoxNetFltMP.ndi, sun_VBoxNetFltmp
+
+; For XP and later
+[VBox.NTx86]
+%VBoxNetFltMP_Desc% = VBoxNetFltMP.ndi, sun_VBoxNetFltmp
+
+[VBox.NTia64]
+%VBoxNetFltMP_Desc% = VBoxNetFltMP.ndi, sun_VBoxNetFltmp
+
+[VBox.NTamd64]
+%VBoxNetFltMP_Desc% = VBoxNetFltMP.ndi, sun_VBoxNetFltmp
+
+[VBoxNetFltMP.ndi]
+Characteristics = 0x29 ;NCF_NOT_USER_REMOVABLE | NCF_VIRTUAL | NCF_HIDDEN
+CopyFiles =
+
+[VBoxNetFltMP.ndi.Services]
+AddService = VBoxNetFlt,0x2, VBoxNetFltMP.AddService
+
+
+[VBoxNetFltMP.AddService]
+ServiceType    = 1 ;SERVICE_KERNEL_DRIVER
+StartType      = 3 ;SERVICE_DEMAND_START
+ErrorControl   = 1 ;SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\VBoxNetFlt.sys
+
+
+[VBoxNetFltMP.AddService.AddReg]
+; ----------------------------------------------------------------------
+; Add any miniport-specific parameters here.  These are params that your
+; filter device is going to use.
+;
+;HKR, Parameters, ParameterName,  0x10000, "MultiSz", "Parameter", "Value"
+;HKR, Parameters, ParameterName2, 0x10001, 4
+
+[Strings]
+Provider = "Sun Microsystems, Inc."
+VBoxNetFltMP_Desc = "VirtualBox Bridged Networking Driver Miniport"
+
+[SourceDisksNames]
+;None
+
+[SourceDisksFiles]
+;None
+
+
+

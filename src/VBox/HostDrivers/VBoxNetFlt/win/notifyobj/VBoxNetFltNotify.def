@@ -1,0 +1,6 @@
+LIBRARY      VBOXNETFLTNOTIFY
+EXPORTS
+    DllCanUnloadNow         PRIVATE
+    DllGetClassObject       PRIVATE
+    DllRegisterServer       PRIVATE
+    DllUnregisterServer     PRIVATE

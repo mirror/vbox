@@ -1,0 +1,146 @@
+;
+; VirtualBox Bridged Networking Driver
+;
+
+;
+; Copyright (C) 2008 Sun Microsystems, Inc.
+;
+; Sun Microsystems, Inc. confidential
+; All rights reserved
+;
+
+;
+; Based in part on Microsoft DDK sample code for Ndis Intermediate Miniport passthru driver sample.
+; Copyright (c) 1993-1999, Microsoft Corporation
+;
+
+[Version]
+Signature  = "$Windows NT$"
+;cat   CatalogFile = VBoxNetFlt.cat
+Class      = NetService
+ClassGUID  = {4D36E974-E325-11CE-BFC1-08002BE10318}
+Provider   = %Provider%
+;DriverPackageType=Network
+;DriverPackageDisplayName=%VBoxNetFlt_Desc%
+;edit-DriverVer=08/13/2008,1.1.0.1
+
+
+[Manufacturer]
+%Provider% = VBox,NTx86,NTia64,NTamd64
+
+[ControlFlags]
+
+;=========================================================================
+;
+;=========================================================================
+
+; For Win2K
+[VBox]
+%VBoxNetFlt_Desc% = VBoxNetFlt.ndi, sun_VBoxNetFlt
+
+; For XP and later
+[VBox.NTx86]
+%VBoxNetFlt_Desc% = VBoxNetFlt.ndi, sun_VBoxNetFlt
+
+[VBox.NTia64]
+%VBoxNetFlt_Desc% = VBoxNetFlt.ndi, sun_VBoxNetFlt
+
+[VBox.NTamd64]
+%VBoxNetFlt_Desc% = VBoxNetFlt.ndi, sun_VBoxNetFlt
+
+[VBoxNetFlt.ndi]
+AddReg          = VBoxNetFlt.ndi.AddReg, VBoxNetFlt.AddReg
+Characteristics = 0x4410 ;  NCF_FILTER | NCF_NDIS_PROTOCOL !--Filter Specific--!!
+CopyFiles       = VBoxNetFlt.Files.DLL, VBoxNetFlt.Files.Sys
+CopyInf         = VBoxNetFlt_m.inf
+
+[VBoxNetFlt.ndi.Remove]
+DelFiles        = VBoxNetFlt.Files.DLL, VBoxNetFlt.Files.Sys
+
+[VBoxNetFlt.ndi.Services]
+AddService = VBoxNetFlt,, VBoxNetFlt.AddService
+
+[VBoxNetFlt.AddService]
+DisplayName    = %VBoxNetFltService_Desc%
+ServiceType    = 1 ;SERVICE_KERNEL_DRIVER
+StartType      = 3 ;SERVICE_DEMAND_START
+ErrorControl   = 1 ;SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\VBoxNetFlt.sys
+LoadOrderGroup = PNP_TDI
+AddReg         = VBoxNetFlt.AddService.AddReg
+
+
+[VBoxNetFlt.AddService.AddReg]
+; ----------------------------------------------------------------------
+; Add any miniport-specific parameters here.  These are params that your
+; filter device is going to use.
+;
+;HKR, Parameters, ParameterName,  0x10000, "MultiSz", "Parameter", "Value"
+;HKR, Parameters, ParameterName2, 0x10001, 4
+
+
+; ----------------------------------------------------------------------
+; File copy
+;
+[SourceDisksNames]
+1=%DiskDescription%,"",,
+
+[SourceDisksFiles]
+VBoxNetFlt.sys=1
+VBoxNetFltNotify.dll=1
+
+[DestinationDirs]
+DefaultDestDir = 12
+VBoxNetFlt.Files.DLL   = 11   ; %windir%\System32
+VBoxNetFlt.Files.Sys   = 12   ; %windir%\System32\drivers
+
+[VBoxNetFlt.Files.Sys]
+VBoxNetFlt.sys,,,2
+
+[VBoxNetFlt.Files.DLL]
+VBoxNetFltNotify.dll,,,2
+
+; ----------------------------------------------------------------------
+; Filter Install
+;
+
+[VBoxNetFlt.ndi.AddReg]
+HKR, Ndi, HelpText, , %VBoxNetFlt_HELP%
+
+; ----------------------------------------------------------------------
+; !!--Filter Specific--!!
+;
+; Note:
+; 1. Other components may also have UpperRange/LowerRange but for filters
+;    the value of both of them must be noupper/nolower
+; 2. The value FilterClass is required.
+; 3. The value Service is required
+; 4. FilterDeviceInfId is the InfId of the filter device (miniport) that will
+;    be installed for each filtered adapter.
+;    In this case this is sun_VBoxNetFltmp (refer to VBoxNetFlt_m.inf)
+;
+HKR, Ndi,            ClsID,              0, {c631480a-acbe-4add-bb1d-3ed8aa52b5d9}
+HKR, Ndi,            ComponentDll,        , VBoxNetFltNotify.dll
+HKR, Ndi,            FilterClass,         , failover
+HKR, Ndi,            FilterDeviceInfId,   , sun_VBoxNetFltmp
+HKR, Ndi,            Service,             , VBoxNetFlt
+HKR, Ndi\Interfaces, UpperRange,          , noupper
+HKR, Ndi\Interfaces, LowerRange,          , nolower
+HKR, Ndi\Interfaces, FilterMediaTypes,    , "ethernet, wan, nolower"
+
+[VBoxNetFlt.AddReg]
+; The following key is Required
+; The following key is VBoxNetFlt specific
+HKR, Parameters, Param1, 0, 4
+
+; ----------------------------------------------------------------------
+[Strings]
+Provider = "Sun Microsystems, Inc."
+DiskDescription = "VirtualBox Bridged Networking Driver"
+
+VBoxNetFlt_Desc = "VirtualBox Bridged Networking Driver"
+VBoxNetFlt_HELP = "VBoxNetFlt Driver"
+VBoxNetFltService_Desc = "VBoxNetFlt Service"
+
+
+
