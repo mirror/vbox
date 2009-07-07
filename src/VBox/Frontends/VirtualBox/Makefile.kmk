@@ -345,6 +345,7 @@ VirtualBox_SOURCES = \
 	src/QIMainDialog.cpp \
 	src/QILineEdit.cpp \
 	src/QIHelpButton.cpp \
+	src/VBoxGuestRAMSlider.cpp \
 	src/VBoxFilePathSelectorWidget.cpp \
 	src/VBoxOSTypeSelectorButton.cpp \
 	src/VBoxOSTypeSelectorWidget.cpp \
