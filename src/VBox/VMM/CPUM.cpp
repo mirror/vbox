@@ -1104,6 +1104,57 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
         au32CpuId[5]      &= ~0x00ff0000;
         au32CpuIdSaved[5] &= ~0x00ff0000;
 
+        /* Ignore some advanced capability bits, that we don't expose to the guest. */
+        au32CpuId[6]      &= ~(   X86_CPUID_FEATURE_ECX_DTES64
+                               |  X86_CPUID_FEATURE_ECX_VMX
+                               |  X86_CPUID_FEATURE_ECX_SMX
+                               |  X86_CPUID_FEATURE_ECX_EST
+                               |  X86_CPUID_FEATURE_ECX_TM2
+                               |  X86_CPUID_FEATURE_ECX_CNTXID
+                               |  X86_CPUID_FEATURE_ECX_TPRUPDATE
+                               |  X86_CPUID_FEATURE_ECX_PDCM
+                               |  X86_CPUID_FEATURE_ECX_DCA
+                               |  X86_CPUID_FEATURE_ECX_X2APIC
+                               |  X86_CPUID_FEATURE_ECX_POPCOUNT
+                               |  X86_CPUID_FEATURE_ECX_MOVBE
+                               |  X86_CPUID_FEATURE_ECX_XSAVE
+                               |  X86_CPUID_FEATURE_ECX_OSXSAVE
+                              );
+        au32CpuIdSaved[6] &= ~(   X86_CPUID_FEATURE_ECX_DTES64
+                               |  X86_CPUID_FEATURE_ECX_VMX
+                               |  X86_CPUID_FEATURE_ECX_SMX
+                               |  X86_CPUID_FEATURE_ECX_EST
+                               |  X86_CPUID_FEATURE_ECX_TM2
+                               |  X86_CPUID_FEATURE_ECX_CNTXID
+                               |  X86_CPUID_FEATURE_ECX_TPRUPDATE
+                               |  X86_CPUID_FEATURE_ECX_PDCM
+                               |  X86_CPUID_FEATURE_ECX_DCA
+                               |  X86_CPUID_FEATURE_ECX_X2APIC
+                               |  X86_CPUID_FEATURE_ECX_POPCOUNT
+                               |  X86_CPUID_FEATURE_ECX_MOVBE
+                               |  X86_CPUID_FEATURE_ECX_XSAVE
+                               |  X86_CPUID_FEATURE_ECX_OSXSAVE
+                              );
+
+        /* Make sure we don't forget to update the masks when enabling 
+         * features in the future. 
+         */
+        AssertRelease(!(pVM->cpum.s.aGuestCpuIdStd[1].ecx & 
+                              (   X86_CPUID_FEATURE_ECX_DTES64
+                               |  X86_CPUID_FEATURE_ECX_VMX
+                               |  X86_CPUID_FEATURE_ECX_SMX
+                               |  X86_CPUID_FEATURE_ECX_EST
+                               |  X86_CPUID_FEATURE_ECX_TM2
+                               |  X86_CPUID_FEATURE_ECX_CNTXID
+                               |  X86_CPUID_FEATURE_ECX_TPRUPDATE
+                               |  X86_CPUID_FEATURE_ECX_PDCM
+                               |  X86_CPUID_FEATURE_ECX_DCA
+                               |  X86_CPUID_FEATURE_ECX_X2APIC
+                               |  X86_CPUID_FEATURE_ECX_POPCOUNT
+                               |  X86_CPUID_FEATURE_ECX_MOVBE
+                               |  X86_CPUID_FEATURE_ECX_XSAVE
+                               |  X86_CPUID_FEATURE_ECX_OSXSAVE
+                              )));
         /* do the compare */
         if (memcmp(au32CpuIdSaved, au32CpuId, sizeof(au32CpuIdSaved)))
         {
