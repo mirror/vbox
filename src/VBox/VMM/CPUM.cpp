@@ -426,7 +426,8 @@ static int cpumR3CpuIdInit(PVM pVM)
     {
         AssertReturn(pVM->cCPUs <= 64, VERR_TOO_MANY_CPUS);
         /* One logical processor with possibly multiple cores. */
-        pCPUM->aGuestCpuIdStd[4].eax |= (pVM->cCPUs << 26);   /* 6 bits only -> 64 cores! */
+        /* See  http://www.intel.com/Assets/PDF/appnote/241618.pdf p. 29 */
+        pCPUM->aGuestCpuIdStd[4].eax |= ((pVM->cCPUs - 1) << 26);   /* 6 bits only -> 64 cores! */
     }
 #endif
 
