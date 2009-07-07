@@ -36,23 +36,27 @@ void PACK_APIENTRY
 crPackBufferDataARB( GLenum target, GLsizeiptrARB size,
                                          const GLvoid * data, GLenum usage )
 {
-    unsigned char *data_ptr;
+    unsigned char *data_ptr, *start_ptr;
     int packet_length;
 
     packet_length = sizeof(GLenum)
-        + sizeof(target) + sizeof(size) + sizeof(usage) + size;
+        + sizeof(target) + sizeof(size) + sizeof(usage) + sizeof(GLboolean);
 
-    data_ptr = (unsigned char *) crPackAlloc( packet_length );
+    /*Note: it's valid to pass a NULL pointer here, which tells GPU drivers to allocate memory for the VBO*/
+    if (data) packet_length += size;
 
-    WRITE_DATA( 0, GLenum, CR_BUFFERDATAARB_EXTEND_OPCODE );
-    WRITE_DATA( 4, GLenum, target );
-    WRITE_DATA( 8, GLsizeiptrARB, size ); /* XXX or 8 bytes? */
-    WRITE_DATA( 12, GLenum, usage );
+    start_ptr = data_ptr = (unsigned char *) crPackAlloc( packet_length );
+
+    WRITE_DATA_AI(GLenum, CR_BUFFERDATAARB_EXTEND_OPCODE);
+    WRITE_DATA_AI(GLenum, target);
+    WRITE_DATA_AI(GLsizeiptrARB, size);
+    WRITE_DATA_AI(GLenum, usage);
+    WRITE_DATA_AI(GLboolean, (GLboolean) (data!=NULL));
     if (data)
-         crMemcpy( data_ptr + 16, data, size );
+         crMemcpy(data_ptr, data, size);
 
-    crHugePacket( CR_EXTEND_OPCODE, data_ptr );
-    crPackFree( data_ptr );
+    crHugePacket( CR_EXTEND_OPCODE, start_ptr );
+    crPackFree( start_ptr );
 }
 
 
@@ -60,7 +64,7 @@ void PACK_APIENTRY
 crPackBufferSubDataARB( GLenum target, GLintptrARB offset, GLsizeiptrARB size,
                                                 const GLvoid * data )
 {
-    unsigned char *data_ptr;
+    unsigned char *data_ptr, *start_ptr;
     int packet_length;
 
     if (!data)
@@ -69,15 +73,15 @@ crPackBufferSubDataARB( GLenum target, GLintptrARB offset, GLsizeiptrARB size,
     packet_length = sizeof(GLenum)
         + sizeof(target) + sizeof(offset) + sizeof(size) + size;
 
-    data_ptr = (unsigned char *) crPackAlloc( packet_length );
-    WRITE_DATA( 0, GLenum, CR_BUFFERSUBDATAARB_EXTEND_OPCODE );
-    WRITE_DATA( 4, GLenum, target );
-    WRITE_DATA( 8, GLintptrARB, offset ); /* XXX or 8 bytes? */
-    WRITE_DATA( 12, GLsizeiptrARB, size ); /* XXX or 8 bytes? */
-    crMemcpy( data_ptr + 16, data, size );
+    start_ptr = data_ptr = (unsigned char *) crPackAlloc(packet_length);
+    WRITE_DATA_AI(GLenum, CR_BUFFERSUBDATAARB_EXTEND_OPCODE);
+    WRITE_DATA_AI(GLenum, target);
+    WRITE_DATA_AI(GLintptrARB, offset);
+    WRITE_DATA_AI(GLsizeiptrARB, size);
+    crMemcpy(data_ptr, data, size);
 
-    crHugePacket( CR_EXTEND_OPCODE, data_ptr );
-    crPackFree( data_ptr );
+    crHugePacket(CR_EXTEND_OPCODE, start_ptr);
+    crPackFree(start_ptr);
 }
 
 
