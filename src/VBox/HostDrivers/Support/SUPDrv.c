@@ -211,6 +211,11 @@ DECLASM(int)    UNWIND_WRAP(RTR0MemObjProtect)(RTR0MEMOBJ hMemObj, size_t offsub
 /*DECLASM(bool)   UNWIND_WRAP(RTR0MemObjIsMapping)(RTR0MEMOBJ MemObj); - not necessary */
 /*DECLASM(RTHCPHYS) UNWIND_WRAP(RTR0MemObjGetPagePhysAddr)(RTR0MEMOBJ MemObj, size_t iPage); - not necessary */
 DECLASM(int)    UNWIND_WRAP(RTR0MemObjFree)(RTR0MEMOBJ MemObj, bool fFreeMappings);
+DECLASM(int)    UNWIND_WRAP(RTR0MemUserCopyFrom)(void *pvDst, RTR3PTR R3PtrSrc, size_t cb);
+DECLASM(int)    UNWIND_WRAP(RTR0MemUserCopyTo)(RTR3PTR R3PtrDst, void const *pvSrc, size_t cb);
+/* RTR0MemUserIsValidAddr - not necessary */
+/* RTR0MemKernelIsValidAddr - not necessary */
+/* RTR0MemAreKrnlAndUsrDifferent - not necessary */
 /* RTProcSelf             - not necessary */
 /* RTR0ProcHandleSelf     - not necessary */
 DECLASM(int)    UNWIND_WRAP(RTSemFastMutexCreate)(PRTSEMFASTMUTEX pMutexSem);
@@ -367,6 +372,11 @@ static SUPFUNC g_aFunctions[] =
     { "RTR0MemObjIsMapping",                    (void *)RTR0MemObjIsMapping },
     { "RTR0MemObjGetPagePhysAddr",              (void *)RTR0MemObjGetPagePhysAddr },
     { "RTR0MemObjFree",                         (void *)UNWIND_WRAP(RTR0MemObjFree) },
+    { "RTR0MemUserCopyFrom",                    (void *)UNWIND_WRAP(RTR0MemUserCopyFrom) },
+    { "RTR0MemUserCopyTo",                      (void *)UNWIND_WRAP(RTR0MemUserCopyTo) },
+    { "RTR0MemUserIsValidAddr",                 (void *)RTR0MemUserIsValidAddr },
+    { "RTR0MemKernelIsValidAddr",               (void *)RTR0MemKernelIsValidAddr },
+    { "RTR0MemAreKrnlAndUsrDifferent",          (void *)RTR0MemAreKrnlAndUsrDifferent },
 /* These don't work yet on linux - use fast mutexes!
     { "RTSemMutexCreate",                       (void *)RTSemMutexCreate },
     { "RTSemMutexRequest",                      (void *)RTSemMutexRequest },
