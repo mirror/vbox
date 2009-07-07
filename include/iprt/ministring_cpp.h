@@ -245,6 +245,8 @@ public:
     bool operator<(const char *that) const { return compare(that) < 0; }
     bool operator>(const char *that) const { return compare(that) > 0; }
 
+    operator bool() const { return !isNull(); }
+
 protected:
     /**
      *  Destructor implementation, also used to clean up in operator=()
