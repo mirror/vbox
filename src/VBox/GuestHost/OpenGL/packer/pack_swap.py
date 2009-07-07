@@ -35,6 +35,22 @@ for line in file.readlines():
             quote_index = 1000000; # HACK HACK
         the_index = min( min( paren_index, space_index ), quote_index )
         print "%sSWAP%s" % (line[:the_index], line[the_index:])
+    elif line.find("WRITE_DATA_AI") != -1:
+        lparen_index = line.find( "(" )
+        rparen_index = line.rfind( ")" )
+        args = map( string.strip, line[lparen_index+1:rparen_index].split( "," ) )
+        indentation = line[:line.find( "WRITE_DATA_AI" )]
+        if apiutil.sizeof(args[0]) == 1:
+            print "%sWRITE_DATA_AI(%s, %s);" % (indentation, args[0], args[1])
+        elif apiutil.sizeof(args[0]) == 2:
+            print "%sWRITE_DATA_AI(%s, SWAP16(%s) );" % (indentation, args[0], args[1])
+        elif args[0] == 'GLfloat' or args[0] == 'GLclampf':
+            print "%sWRITE_DATA_AI(GLuint, SWAPFLOAT(%s) );" % (indentation, args[0])
+        elif apiutil.sizeof(args[0]) == 4:
+            print "%sWRITE_DATA_AI(%s, SWAP32(%s) );" % (indentation, args[0], args[1])
+        else:
+            print >> sys.stderr, "UNKNOWN TYPE FOR WRITE_DATA: %s" % args[1]
+            sys.exit(-1)
     elif line.find( "WRITE_DATA" ) != -1:
         lparen_index = line.find( "(" )
         rparen_index = line.rfind( ")" )
