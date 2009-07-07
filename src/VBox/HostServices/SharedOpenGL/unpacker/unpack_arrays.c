@@ -116,22 +116,37 @@ void crUnpackExtendInterleavedArrays(void)
 
 void crUnpackExtendDrawElements(void)
 {
-    GLenum mode = READ_DATA( 8, GLenum );
-    GLsizei count = READ_DATA( 12, GLsizei );
-    GLenum type = READ_DATA( 16, GLenum );
+    GLenum mode         = READ_DATA( 8, GLenum );
+    GLsizei count       = READ_DATA( 12, GLsizei );
+    GLenum type         = READ_DATA( 16, GLenum );
     GLintptrARB indices = READ_DATA( 20, GLintptrARB );
-    cr_unpackDispatch.DrawElements( mode, count, type, (void *) indices);
+    void * indexptr;
+#ifdef CR_ARB_vertex_buffer_object
+    GLboolean hasidxdata = READ_DATA(24, GLboolean);
+    indexptr = hasidxdata ? DATA_POINTER(24+sizeof(GLboolean), void) : (void*)indices;
+#else
+    indexptr = DATA_POINTER(24, void);
+#endif
+    /*crDebug("DrawElements: count=%i, indexptr=%p, hasidx=%p", count, indexptr, hasidxdata);*/
+    cr_unpackDispatch.DrawElements(mode, count, type, indexptr);
 }
 
 void crUnpackExtendDrawRangeElements(void)
 {
-    GLenum mode = READ_DATA( 8, GLenum );
-    GLuint start = READ_DATA( 12, GLuint );
-    GLuint end = READ_DATA( 16, GLuint );
-    GLsizei count = READ_DATA( 20, GLsizei );
-    GLenum type = READ_DATA( 24, GLenum );
+    GLenum mode         = READ_DATA( 8, GLenum );
+    GLuint start        = READ_DATA( 12, GLuint );
+    GLuint end          = READ_DATA( 16, GLuint );
+    GLsizei count       = READ_DATA( 20, GLsizei );
+    GLenum type         = READ_DATA( 24, GLenum );
     GLintptrARB indices = READ_DATA( 28, GLintptrARB );
-    cr_unpackDispatch.DrawRangeElements( mode, start, end, count, type, (void *) indices);
+    void * indexptr;
+#ifdef CR_ARB_vertex_buffer_object
+    GLboolean hasidxdata = READ_DATA(32, GLboolean);
+    indexptr = hasidxdata ? DATA_POINTER(32+sizeof(GLboolean), void) : (void*)indices;
+#else
+    indexptr = DATA_POINTER(32, void);
+#endif
+    cr_unpackDispatch.DrawRangeElements(mode, start, end, count, type, indexptr);
 }
 
 void crUnpackMultiDrawArraysEXT(void)

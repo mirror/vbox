@@ -68,35 +68,38 @@ for func_name in keys:
         print '\t\tcrError( "packspu_%s doesn\'t work when there\'s no actual network involved!\\nTry using the simplequery SPU in your chain!" );' % func_name
         print '\t}'
         if func_name in simple_funcs:
-            print '\tif (pname == GL_UNPACK_ALIGNMENT ||'
-            print '\t\tpname == GL_UNPACK_ROW_LENGTH ||'
-            print '\t\tpname == GL_UNPACK_SKIP_PIXELS ||'
-            print '\t\tpname == GL_UNPACK_LSB_FIRST ||'
-            print '\t\tpname == GL_UNPACK_SWAP_BYTES ||'
-            print '#ifdef CR_OPENGL_VERSION_1_2'
-            print '\t\tpname == GL_UNPACK_IMAGE_HEIGHT ||'
-            print '#endif'
-            print '\t\tpname == GL_UNPACK_SKIP_ROWS ||'
-            print '\t\tpname == GL_PACK_ALIGNMENT ||'
-            print '\t\tpname == GL_PACK_ROW_LENGTH ||'
-            print '\t\tpname == GL_PACK_SKIP_PIXELS ||'
-            print '\t\tpname == GL_PACK_LSB_FIRST ||'
-            print '\t\tpname == GL_PACK_SWAP_BYTES ||'
-            print '#ifdef CR_OPENGL_VERSION_1_2'
-            print '\t\tpname == GL_PACK_IMAGE_HEIGHT ||'
-            print '#endif'
-            print '\t\tpname == GL_PACK_SKIP_ROWS'
-            print '\t\t|| pname == GL_DRAW_BUFFER'
-            print '#ifdef CR_OPENGL_VERSION_1_3'
-            print '\t\t|| pname == GL_ACTIVE_TEXTURE'
-            print '#endif'
-            print '#ifdef CR_ARB_multitexture'
-            print '\t\t|| pname == GL_ACTIVE_TEXTURE_ARB'
-            print '#endif'
-            print ') {'
-            print '\t\t\tcrState%s( pname, params );' % func_name
-            print '\t\t\treturn;'
-            print '\t}'
+            print """
+    if (pname == GL_UNPACK_ALIGNMENT
+        || pname == GL_UNPACK_ROW_LENGTH
+        || pname == GL_UNPACK_SKIP_PIXELS
+        || pname == GL_UNPACK_LSB_FIRST
+        || pname == GL_UNPACK_SWAP_BYTES
+#ifdef CR_OPENGL_VERSION_1_2
+        || pname == GL_UNPACK_IMAGE_HEIGHT
+#endif
+        || pname == GL_UNPACK_SKIP_ROWS
+        || pname == GL_PACK_ALIGNMENT
+        || pname == GL_PACK_ROW_LENGTH
+        || pname == GL_PACK_SKIP_PIXELS
+        || pname == GL_PACK_LSB_FIRST
+        || pname == GL_PACK_SWAP_BYTES
+#ifdef CR_OPENGL_VERSION_1_2
+        || pname == GL_PACK_IMAGE_HEIGHT
+#endif
+        || pname == GL_PACK_SKIP_ROWS
+        || pname == GL_DRAW_BUFFER
+#ifdef CR_OPENGL_VERSION_1_3
+        || pname == GL_ACTIVE_TEXTURE
+#endif
+#ifdef CR_ARB_multitexture
+        || pname == GL_ACTIVE_TEXTURE_ARB
+#endif
+        )
+        {
+            crState%s( pname, params );
+            return;
+        }
+            """ % func_name
         params.append( ("&writeback", "foo", 0) )
         print '\tif (pack_spu.swap)'
         print '\t{'

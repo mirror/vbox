@@ -1311,6 +1311,24 @@ void STATE_APIENTRY crStateFlushVertexArrayRangeNV(void)
     crWarning("crStateFlushVertexArrayRangeNV not implemented");
 }
 
+/*Returns if the given clientpointer could be used on server side directly*/
+#define CRSTATE_IS_SERVER_CP(cp) (!(cp).enabled || !(cp).p || ((cp).buffer && (cp).buffer->name))
+
+static crStateDumpClientPointer(CRClientPointer *cp, const char *name, int i)
+{
+  if (i<0 && cp->enabled)
+  {
+    crDebug("CP(%s): enabled:%d ptr:%p buffer:%p buffer.name:%i %s",
+            name, cp->enabled, cp->p, cp->buffer, cp->buffer? cp->buffer->name:-1,
+            CRSTATE_IS_SERVER_CP(*cp) ? "":"!FAIL!");
+  }
+  else if (0==i || cp->enabled)
+  {
+    crDebug("CP(%s%i): enabled:%d ptr:%p buffer:%p buffer.name:%i %s",
+            name, i, cp->enabled, cp->p, cp->buffer, cp->buffer? cp->buffer->name:-1,
+            CRSTATE_IS_SERVER_CP(*cp) ? "":"!FAIL!");
+  }
+}
 
 /*
  * Determine if the enabled arrays all live on the server
@@ -1322,40 +1340,47 @@ GLboolean crStateUseServerArrays(void)
     CRContext *g = GetCurrentContext();
     CRClientState *c = &(g->client);
     int i;
+    GLboolean res;
 
-    if (!c->array.v.enabled)
-        return GL_FALSE;
-
-    if (c->array.v.enabled && (!c->array.v.buffer || !c->array.v.buffer->name))
-        return GL_FALSE;
-
-    if (c->array.n.enabled && (!c->array.n.buffer || !c->array.n.buffer->name))
-        return GL_FALSE;
-
-    if (c->array.c.enabled && (!c->array.c.buffer || !c->array.c.buffer->name))
-        return GL_FALSE;
-
-    if (c->array.i.enabled && (!c->array.i.buffer || !c->array.i.buffer->name))
-        return GL_FALSE;
+    res =    CRSTATE_IS_SERVER_CP(c->array.v)
+          && CRSTATE_IS_SERVER_CP(c->array.n)
+          && CRSTATE_IS_SERVER_CP(c->array.c)
+          && CRSTATE_IS_SERVER_CP(c->array.i)
+          && CRSTATE_IS_SERVER_CP(c->array.e)
+          && CRSTATE_IS_SERVER_CP(c->array.s)
+          && CRSTATE_IS_SERVER_CP(c->array.f);
 
     for (i = 0; (unsigned int)i < g->limits.maxTextureUnits; i++)
-         if (c->array.t[i].enabled && (!c->array.t[i].buffer || !c->array.t[i].buffer->name))
-                return GL_FALSE;
-
-    if (c->array.e.enabled && (!c->array.e.buffer || !c->array.e.buffer->name))
-         return GL_FALSE;
-
-    if (c->array.s.enabled && (!c->array.s.buffer || !c->array.s.buffer->name))
-         return GL_FALSE;
-
-    if (c->array.f.enabled && (!c->array.f.buffer || !c->array.f.buffer->name))
-         return GL_FALSE;
+        if (!CRSTATE_IS_SERVER_CP(c->array.t[i]))
+        {
+            res = GL_FALSE;
+            break;    
+        }
 
     for (i = 0; (unsigned int)i < g->limits.maxVertexProgramAttribs; i++)
-         if (c->array.a[i].enabled && (!c->array.a[i].buffer || !c->array.a[i].buffer->name))
-                return GL_FALSE;
+        if (!CRSTATE_IS_SERVER_CP(c->array.a[i]))
+        {
+            res = GL_FALSE;
+            break;    
+        }
 
-    return GL_TRUE;
+    if (!res)
+    {
+        crStateDumpClientPointer(&c->array.v, "v", -1);
+        crStateDumpClientPointer(&c->array.n, "n", -1);
+        crStateDumpClientPointer(&c->array.c, "c", -1);
+        crStateDumpClientPointer(&c->array.i, "i", -1);
+        crStateDumpClientPointer(&c->array.e, "e", -1);
+        crStateDumpClientPointer(&c->array.s, "s", -1);
+        crStateDumpClientPointer(&c->array.f, "f", -1);
+        for (i = 0; (unsigned int)i < g->limits.maxTextureUnits; i++)
+            crStateDumpClientPointer(&c->array.t[i], "tex", i);
+        for (i = 0; (unsigned int)i < g->limits.maxVertexProgramAttribs; i++)
+            crStateDumpClientPointer(&c->array.a[i], "attrib", i);
+        crDebug("crStateUseServerArrays->%d", res);
+    }
+
+    return res;
 #else
     return GL_FALSE;
 #endif
