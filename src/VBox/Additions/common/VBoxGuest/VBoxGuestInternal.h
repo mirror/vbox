@@ -80,11 +80,16 @@ typedef struct VBOXGUESTDEVEXT
     RTIOPORT                    IOPortBase;
     /** Pointer to the mapping of the VMMDev adapter memory. */
     VMMDevMemory volatile      *pVMMDevMemory;
+    /** Events we won't permit anyone to filter out. */
+    uint32_t                    fFixedEvents;
 
+    /** Spinlock protecting the signaling and resetting of the wait-for-event
+     * semaphores as well as the event acking in the ISR. */
+    RTSPINLOCK                  EventSpinlock;
     /** Preallocated VMMDevEvents for the IRQ handler. */
     VMMDevEvents               *pIrqAckEvents;
-    /** Spinlock protecting the signaling and resetting of the wait-for-event semaphores. */
-    RTSPINLOCK                  WaitSpinlock;
+    /** The physical address of pIrqAckEvents. */
+    RTCCPHYS                    PhysIrqAckEvents;
     /** Wait-for-event list for threads waiting for multiple events. */
     VBOXGUESTWAITLIST           WaitList;
 #ifdef VBOX_WITH_HGCM
@@ -177,6 +182,9 @@ DECLVBGL(int)    VBoxGuestNativeServiceCall(void *pvOpaque, unsigned int iCmd, v
 
 /**
  * ISR callback for notifying threads polling for mouse events.
+ *
+ * This is called at the end of the ISR, after leaving the event spinlock, if
+ * VMMDEV_EVENT_MOUSE_POSITION_CHANGED was raised by the host.
  *
  * @param   pDevExt     The device extension.
  */
