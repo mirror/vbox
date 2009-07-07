@@ -44,7 +44,8 @@ static unsigned     g_cPasses = 0;
 static unsigned     g_cFailures = 0;
 /** The number of skipped testcases. */
 static unsigned     g_cSkipped = 0;
-/** The exclude list. */
+/** The exclude list. 
+ * @note: Stripped extensions! */
 static const char  *g_apszExclude[] =
 {
 #if 1 // slow stuff
@@ -70,7 +71,8 @@ static const char  *g_apszExclude[] =
     "testcase/tstLdrObj",
     "testcase/tstLdrObjR0",
     "testcase/tstMove",
-    "testcase/tstR0ThreadPreemption.r0", /* r0 driver, not directly executable */
+    "testcase/tstR0ThreadPreemption", /* r0 driver, not directly executable */
+    "testcase/tstRTR0MemUserKernel", /* r0 driver, not directly executable */
     "testcase/tstRunTestcases",
     "testcase/tstRTS3",             /* requires parameters <access key>, <secret key> */
     "testcase/tstSDL",
