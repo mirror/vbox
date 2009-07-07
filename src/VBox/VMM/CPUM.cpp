@@ -561,7 +561,8 @@ static int cpumR3CpuIdInit(PVM pVM)
      * Linux tries to determine the number of processors from (cpuid(4).eax >> 26) + 1.
      * We currently don't support more than 1 processor.
      */
-    pCPUM->aGuestCpuIdStd[4].eax = 0;
+    if (pVM->cCPUs == 1)
+        pCPUM->aGuestCpuIdStd[4].eax = 0;
 
     /*
      * Centaur stuff (VIA).
