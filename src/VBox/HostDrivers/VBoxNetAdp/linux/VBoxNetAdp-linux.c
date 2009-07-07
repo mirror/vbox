@@ -71,21 +71,6 @@ static int VBoxNetAdpLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsign
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-#ifdef RT_ARCH_AMD64
-/**
- * Memory for the executable memory heap (in IPRT).
- */
-extern uint8_t g_abExecMemory[4096]; /* cannot donate less than one page */
-__asm__(".section execmemory, \"awx\", @progbits\n\t"
-        ".align 32\n\t"
-        ".globl g_abExecMemory\n"
-        "g_abExecMemory:\n\t"
-        ".zero 4096\n\t"
-        ".type g_abExecMemory, @object\n\t"
-        ".size g_abExecMemory, 4096\n\t"
-        ".text\n\t");
-#endif
-
 module_init(VBoxNetAdpLinuxInit);
 module_exit(VBoxNetAdpLinuxUnload);
 
@@ -358,14 +343,6 @@ static int __init VBoxNetAdpLinuxInit(void)
     rc = RTR0Init(0);
     if (RT_SUCCESS(rc))
     {
-#ifdef RT_ARCH_AMD64
-        rc = RTR0MemExecDonate(&g_abExecMemory[0], sizeof(g_abExecMemory));
-        printk(KERN_DEBUG "VBoxNetAdp: dbg - g_abExecMemory=%p\n", (void *)&g_abExecMemory[0]);
-        if (RT_FAILURE(rc))
-        {
-            printk(KERN_WARNING "VBoxNetAdp: failed to donate exec memory, no logging will be available.\n");
-        }
-#endif
         Log(("VBoxNetAdpLinuxInit\n"));
 
         rc = vboxNetAdpInit();
@@ -416,3 +393,4 @@ static void __exit VBoxNetAdpLinuxUnload(void)
 
     Log(("VBoxNetFltLinuxUnload - done\n"));
 }
+

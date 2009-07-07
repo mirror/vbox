@@ -66,47 +66,7 @@ endif
 override MODULE = vboxnetadp
 OBJS   = \
 	linux/VBoxNetAdp-linux.o \
-	VBoxNetAdp.o \
-	r0drv/alloc-r0drv.o \
-	r0drv/initterm-r0drv.o \
-	r0drv/memobj-r0drv.o \
-	r0drv/mpnotification-r0drv.o \
-	r0drv/powernotification-r0drv.o \
-	r0drv/linux/assert-r0drv-linux.o \
-	r0drv/linux/alloc-r0drv-linux.o \
-	r0drv/linux/initterm-r0drv-linux.o \
-	r0drv/linux/memobj-r0drv-linux.o \
-	r0drv/linux/mp-r0drv-linux.o \
-	r0drv/linux/mpnotification-r0drv-linux.o \
-	r0drv/linux/process-r0drv-linux.o \
-	r0drv/linux/semevent-r0drv-linux.o \
-	r0drv/linux/semeventmulti-r0drv-linux.o \
-	r0drv/linux/semfastmutex-r0drv-linux.o \
-	r0drv/linux/spinlock-r0drv-linux.o \
-	r0drv/linux/thread-r0drv-linux.o \
-	r0drv/linux/thread2-r0drv-linux.o \
-	r0drv/linux/time-r0drv-linux.o \
-	common/err/RTErrConvertFromErrno.o \
-	common/err/RTErrConvertToErrno.o \
-	common/log/log.o \
-	common/log/logellipsis.o \
-	common/log/logrel.o \
-	common/log/logrelellipsis.o \
-	common/log/logcom.o \
-	common/log/logformat.o \
-	common/string/strformat.o \
-	common/string/strformatrt.o \
-	common/string/strformattype.o \
-	common/string/strprintf.o \
-	common/string/strtonum.o \
-	r0drv/linux/RTLogWriteDebugger-r0drv-linux.o \
-	generic/RTAssertShouldPanic-generic.o \
-	generic/RTLogWriteStdErr-stub-generic.o \
-	generic/RTLogWriteStdOut-stub-generic.o \
-	generic/RTLogWriteUser-generic.o \
-	generic/uuid-generic.o \
-	VBox/log-vbox.o \
-	VBox/strformat-vbox.o
+	VBoxNetAdp.o
 ifeq ($(BUILD_TARGET_ARCH),x86)
 OBJS += math/gcc/divdi3.o \
 	math/gcc/moddi3.o \
@@ -114,9 +74,6 @@ OBJS += math/gcc/divdi3.o \
 	math/gcc/udivdi3.o \
         math/gcc/divdi3.o \
 	math/gcc/umoddi3.o
-endif
-ifeq ($(BUILD_TARGET_ARCH),amd64)
-OBJS += alloc/heapsimple.o
 endif
 
 ifneq ($(MAKECMDGOALS),clean)

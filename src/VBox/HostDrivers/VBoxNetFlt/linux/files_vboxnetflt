@@ -1,6 +1,9 @@
 #!/bin/sh
-#
+# $Id: $
+## @file
 # Shared file between Makefile.kmk and export_modules
+#
+
 #
 # Copyright (C) 2007 Sun Microsystems, Inc.
 #
@@ -25,10 +28,6 @@
 # Clara, CA 95054 USA or visit http://www.sun.com if you need
 # additional information or have any questions.
 #
-
-## @todo
-# At the moment we'll be exporting everything we need here, later
-# we'll be linking against IPRT in vboxdrv like Darwin and Solaris does.
 
 VBOX_VBOXNETFLT_SOURCES=" \
     ${PATH_ROOT}/include/iprt/alloc.h=>include/iprt/alloc.h \
@@ -75,64 +74,16 @@ VBOX_VBOXNETFLT_SOURCES=" \
     ${PATH_ROOT}/src/VBox/HostDrivers/Support/SUPR0IdcClientComponent.c=>SUPR0IdcClientComponent.c \
     ${PATH_ROOT}/src/VBox/HostDrivers/Support/SUPR0IdcClientInternal.h=>SUPR0IdcClientInternal.h \
     ${PATH_ROOT}/src/VBox/HostDrivers/Support/linux/SUPR0IdcClient-linux.c=>SUPR0IdcClient-linux.c \
-    ${PATH_ROOT}/src/VBox/Runtime/common/alloc/heapsimple.cpp=>alloc/heapsimple.c \
-    ${PATH_ROOT}/src/VBox/Runtime/common/err/RTErrConvertFromErrno.cpp=>common/err/RTErrConvertFromErrno.c \
-    ${PATH_ROOT}/src/VBox/Runtime/common/err/RTErrConvertToErrno.cpp=>common/err/RTErrConvertToErrno.c \
-    ${PATH_ROOT}/src/VBox/Runtime/common/log/log.cpp=>common/log/log.c \
-    ${PATH_ROOT}/src/VBox/Runtime/common/log/logellipsis.cpp=>common/log/logellipsis.c \
-    ${PATH_ROOT}/src/VBox/Runtime/common/log/logrel.cpp=>common/log/logrel.c \
-    ${PATH_ROOT}/src/VBox/Runtime/common/log/logrelellipsis.cpp=>common/log/logrelellipsis.c \
-    ${PATH_ROOT}/src/VBox/Runtime/common/log/logcom.cpp=>common/log/logcom.c \
-    ${PATH_ROOT}/src/VBox/Runtime/common/log/logformat.cpp=>common/log/logformat.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/math/gcc/divdi3.c=>math/gcc/divdi3.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/math/gcc/moddi3.c=>math/gcc/moddi3.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/math/gcc/qdivrem.c=>math/gcc/qdivrem.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/math/gcc/quad.h=>math/gcc/quad.h \
     ${PATH_ROOT}/src/VBox/Runtime/common/math/gcc/udivdi3.c=>math/gcc/udivdi3.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/math/gcc/umoddi3.c=>math/gcc/umoddi3.c \
-    ${PATH_ROOT}/src/VBox/Runtime/common/string/strformat.cpp=>common/string/strformat.c \
-    ${PATH_ROOT}/src/VBox/Runtime/common/string/strformatrt.cpp=>common/string/strformatrt.c \
-    ${PATH_ROOT}/src/VBox/Runtime/common/string/strformattype.cpp=>common/string/strformattype.c \
-    ${PATH_ROOT}/src/VBox/Runtime/common/string/strprintf.cpp=>common/string/strprintf.c \
-    ${PATH_ROOT}/src/VBox/Runtime/common/string/strtonum.cpp=>common/string/strtonum.c \
     ${PATH_ROOT}/src/VBox/Runtime/include/internal/initterm.h=>include/internal/initterm.h \
     ${PATH_ROOT}/src/VBox/Runtime/include/internal/iprt.h=>include/internal/iprt.h \
     ${PATH_ROOT}/src/VBox/Runtime/include/internal/magics.h=>include/internal/magics.h \
-    ${PATH_ROOT}/src/VBox/Runtime/include/internal/memobj.h=>include/internal/memobj.h \
-    ${PATH_ROOT}/src/VBox/Runtime/include/internal/string.h=>include/internal/string.h \
-    ${PATH_ROOT}/src/VBox/Runtime/include/internal/thread.h=>include/internal/thread.h \
-    ${PATH_ROOT}/src/VBox/Runtime/generic/RTAssertShouldPanic-generic.cpp=>generic/RTAssertShouldPanic-generic.c \
-    ${PATH_ROOT}/src/VBox/Runtime/generic/RTLogWriteStdErr-stub-generic.cpp=>generic/RTLogWriteStdErr-stub-generic.c \
-    ${PATH_ROOT}/src/VBox/Runtime/generic/RTLogWriteStdOut-stub-generic.cpp=>generic/RTLogWriteStdOut-stub-generic.c \
-    ${PATH_ROOT}/src/VBox/Runtime/generic/RTLogWriteUser-generic.cpp=>generic/RTLogWriteUser-generic.c \
-    ${PATH_ROOT}/src/VBox/Runtime/generic/uuid-generic.cpp=>generic/uuid-generic.c \
-    ${PATH_ROOT}/src/VBox/Runtime/r0drv/alloc-r0drv.cpp=>r0drv/alloc-r0drv.c \
-    ${PATH_ROOT}/src/VBox/Runtime/r0drv/alloc-r0drv.h=>r0drv/alloc-r0drv.h \
-    ${PATH_ROOT}/src/VBox/Runtime/r0drv/initterm-r0drv.cpp=>r0drv/initterm-r0drv.c \
-    ${PATH_ROOT}/src/VBox/Runtime/r0drv/mp-r0drv.h=>r0drv/mp-r0drv.h \
-    ${PATH_ROOT}/src/VBox/Runtime/r0drv/mpnotification-r0drv.c=>r0drv/mpnotification-r0drv.c \
-    ${PATH_ROOT}/src/VBox/Runtime/r0drv/power-r0drv.h=>r0drv/power-r0drv.h \
-    ${PATH_ROOT}/src/VBox/Runtime/r0drv/powernotification-r0drv.c=>r0drv/powernotification-r0drv.c \
-    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/RTLogWriteDebugger-r0drv-linux.c=>r0drv/linux/RTLogWriteDebugger-r0drv-linux.c \
-    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/assert-r0drv-linux.c=>r0drv/linux/assert-r0drv-linux.c \
-    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/alloc-r0drv-linux.c=>r0drv/linux/alloc-r0drv-linux.c \
-    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/initterm-r0drv-linux.c=>r0drv/linux/initterm-r0drv-linux.c \
-    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/memobj-r0drv-linux.c=>r0drv/linux/memobj-r0drv-linux.c \
-    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/mp-r0drv-linux.c=>r0drv/linux/mp-r0drv-linux.c \
-    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/mpnotification-r0drv-linux.c=>r0drv/linux/mpnotification-r0drv-linux.c \
-    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/process-r0drv-linux.c=>r0drv/linux/process-r0drv-linux.c \
-    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/semevent-r0drv-linux.c=>r0drv/linux/semevent-r0drv-linux.c \
-    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/semeventmulti-r0drv-linux.c=>r0drv/linux/semeventmulti-r0drv-linux.c \
-    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/semfastmutex-r0drv-linux.c=>r0drv/linux/semfastmutex-r0drv-linux.c \
-    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/spinlock-r0drv-linux.c=>r0drv/linux/spinlock-r0drv-linux.c \
-    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/string.h=>r0drv/linux/string.h \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/the-linux-kernel.h=>r0drv/linux/the-linux-kernel.h \
-    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/thread-r0drv-linux.c=>r0drv/linux/thread-r0drv-linux.c \
-    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/thread2-r0drv-linux.c=>r0drv/linux/thread2-r0drv-linux.c \
-    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/time-r0drv-linux.c=>r0drv/linux/time-r0drv-linux.c \
-    ${PATH_ROOT}/src/VBox/Runtime/r0drv/memobj-r0drv.cpp=>r0drv/memobj-r0drv.c \
-    ${PATH_ROOT}/src/VBox/Runtime/VBox/log-vbox.cpp=>VBox/log-vbox.c \
-    ${PATH_ROOT}/src/VBox/Runtime/VBox/strformat-vbox.cpp=>VBox/strformat-vbox.c \
     ${PATH_OUT}/version-generated.h=>version-generated.h \
 "
 
