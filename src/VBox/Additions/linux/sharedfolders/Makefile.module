@@ -74,7 +74,9 @@ OBJS   = \
 	Init.o \
 	VMMDev.o \
 	HGCM.o \
-	VBoxCalls.o \
+	VBoxCalls.o
+ifndef VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX
+OBJS  += \
 	r0drv/alloc-r0drv.o \
 	r0drv/memobj-r0drv.o \
 	r0drv/linux/alloc-r0drv-linux.o \
@@ -82,13 +84,16 @@ OBJS   = \
 	r0drv/linux/memuserkernel-r0drv-linux.o \
 	r0drv/linux/process-r0drv-linux.o \
 	r0drv/linux/semevent-r0drv-linux.o \
-	r0drv/linux/semfastmutex-r0drv-linux.o \
+	r0drv/linux/semfastmutex-r0drv-linux.o
+endif
+ifeq ($(BUILD_TARGET_ARCH),x86)
+OBJS  += \
 	divdi3.o \
 	moddi3.o \
 	udivdi3.o \
 	umoddi3.o \
 	qdivrem.o
-## @todo Use IPRT in vboxguest, the *div*/*mod* bits are x86 only.
+endif
 
 EXTRA_CFLAGS = -fshort-wchar
 
@@ -192,7 +197,10 @@ else
  KFLAGS  += -DRT_ARCH_X86
 endif
 ifeq ($(BUILD_TYPE),debug)
-KFLAGS   += -DDEBUG
+ KFLAGS  += -DDEBUG
+endif
+ifdef VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX
+ KFLAGS  += -DVBOX_WITH_COMMON_VBOXGUEST_ON_LINUX
 endif
 
 ifeq ($(KERN_VERSION), 24)
