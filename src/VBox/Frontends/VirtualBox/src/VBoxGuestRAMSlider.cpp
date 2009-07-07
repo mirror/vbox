@@ -71,7 +71,7 @@ void VBoxGuestRAMSlider::init()
     mMinRAM = sys.GetMinGuestRAM();
     mMaxRAM = RT_MIN (RT_ALIGN (fullSize, _1G / _1M), sys.GetMaxGuestRAM());
 
-    /* Come up with some nice round percent boundraries relative to
+    /* Come up with some nice round percent boundaries relative to
      * the system memory. A max of 75% on a 256GB config is ridiculous,
      * even on an 8GB rig reserving 2GB for the OS is way to conservative.
      * The max numbers can be estimated using the following program:
@@ -149,7 +149,7 @@ void VBoxGuestRAMSlider::init()
     setMinimum ((mMinRAM / pageStep()) * pageStep());
     setMaximum (mMaxRAM);
     setSnappingEnabled (true);
-    setOptimalHint (1, mMaxRAMOpt);
+    setOptimalHint (mMinRAM, mMaxRAMOpt);
     setWarningHint (mMaxRAMOpt, mMaxRAMAlw);
     setErrorHint (mMaxRAMAlw, mMaxRAM);
 }
