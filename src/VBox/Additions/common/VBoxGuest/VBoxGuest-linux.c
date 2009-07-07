@@ -117,6 +117,24 @@ static void                    *g_pvMMIOBase;
 static wait_queue_head_t        g_PollEventQueue;
 /** Asynchronous notification stuff.  */
 static struct fasync_struct    *g_pFAsyncQueue;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+/** Whether we've create the logger or not. */
+static volatile bool            g_fLoggerCreated;
+/** Release logger group settings. */
+static char                     g_szLogGrp[128];
+/** Release logger flags settings. */
+static char                     g_szLogFlags[128];
+# if 0
+/** Release logger destination settings. */
+static char                     g_szLogDst[128];
+/** Debug logger group settings. */
+static char                     g_szDbgLogGrp[128];
+/** Debug logger flags settings. */
+static char                     g_szDbgLogFlags[128];
+/** Debug logger destination settings. */
+static char                     g_szDbgLogDst[128];
+# endif
+#endif
 
 /** Our file node major id.
  * Either set dynamically at run time or statically at compile time. */
@@ -334,12 +352,13 @@ static irqreturn_t vboxguestLinuxISR(int iIrrq, void *pvDevId, struct pt_regs *p
 
 
 /**
- * Registers the ISR.
+ * Registers the ISR and initializes the poll wait queue.
  */
 static int __init vboxguestLinuxInitISR(void)
 {
     int rc;
 
+    init_waitqueue_head(&g_PollEventQueue);
     rc = request_irq(g_pPciDev->irq,
                      vboxguestLinuxISR,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
@@ -460,9 +479,17 @@ static int __init vboxguestLinuxModInit(void)
                      "VBOX_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups,
                      RTLOGDEST_STDOUT | RTLOGDEST_DEBUGGER | RTLOGDEST_USER, NULL);
     if (RT_SUCCESS(rc))
+    {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+        RTLogGroupSettings(pRelLogger, g_szLogGrp);
+        RTLogFlags(pRelLogger, g_szLogFlags);
+        //RTLogDestination(pRelLogger, g_szLogDst);
+#endif
         RTLogRelSetDefaultInstance(pRelLogger);
-/** @todo Add module parameters with flags, groups and destination
- *        specifiers. Apply them here. */
+    }
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+    g_fLoggerCreated = true;
+#endif
 
     /*
      * Locate and initialize the PCI device.
@@ -766,8 +793,11 @@ void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
      * Wake up everyone that's in a poll() and post anyone that has
      * subscribed to async notifications.
      */
+    Log(("VBoxGuestNativeISRMousePollEvent: wake_up_all\n"));
     wake_up_all(&g_PollEventQueue);
+    Log(("VBoxGuestNativeISRMousePollEvent: kill_fasync\n"));
     kill_fasync(&g_pFAsyncQueue, SIGIO, POLL_IN);
+    Log(("VBoxGuestNativeISRMousePollEvent: done\n"));
 }
 
 
@@ -777,6 +807,89 @@ void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
 EXPORT_SYMBOL(VBoxGuestIDCOpen);
 EXPORT_SYMBOL(VBoxGuestIDCClose);
 EXPORT_SYMBOL(VBoxGuestIDCCall);
+
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+
+/** log and dbg_log parameter setter. */
+static int vboxguestLinuxParamLogGrpSet(const char *pszValue, struct kernel_param *pParam)
+{
+    if (g_fLoggerCreated)
+    {
+        PRTLOGGER pLogger = pParam->name[0] == 'd' ? RTLogDefaultInstance() : RTLogRelDefaultInstance();
+        if (pLogger)
+            RTLogGroupSettings(pLogger, pszValue);
+    }
+    else if (pParam->name[0] != 'd')
+        strlcpy(&g_szLogGrp[0], pszValue, sizeof(g_szLogGrp));
+
+    return 0;
+}
+
+
+/** log and dbg_log parameter getter. */
+static int vboxguestLinuxParamLogGrpGet(char *pszBuf, struct kernel_param *pParam)
+{
+    /** @todo add a serializer */
+    *pszBuf = '\0';
+    return 0;
+}
+
+
+/** log and dbg_log_flags parameter setter. */
+static int vboxguestLinuxParamLogFlagsSet(const char *pszValue, struct kernel_param *pParam)
+{
+    if (g_fLoggerCreated)
+    {
+        PRTLOGGER pLogger = pParam->name[0] == 'd' ? RTLogDefaultInstance() : RTLogRelDefaultInstance();
+        if (pLogger)
+            RTLogFlags(pLogger, pszValue);
+    }
+    else if (pParam->name[0] != 'd')
+        strlcpy(&g_szLogFlags[0], pszValue, sizeof(g_szLogFlags));
+    return 0;
+}
+
+
+/** log and dbg_log_flags parameter getter. */
+static int vboxguestLinuxParamLogFlagsGet(char *pszBuf, struct kernel_param *pParam)
+{
+    /** @todo add a flags serializer */
+    *pszBuf = '\0';
+    return 0;
+}
+
+
+/** log and dbg_log_dest parameter setter. */
+static int vboxguestLinuxParamLogDstSet(const char *pszValue, struct kernel_param *pParam)
+{
+    /** @todo  */
+    return 0;
+}
+
+
+/** log and dbg_log_dest parameter getter. */
+static int vboxguestLinuxParamLogDstGet(char *pszBuf, struct kernel_param *pParam)
+{
+    /** @todo add a destination serializer */
+    *pszBuf = '\0';
+    return 0;
+}
+
+/*
+ * Define module parameters.
+ */
+module_param_call(log,            vboxguestLinuxParamLogGrpSet,   vboxguestLinuxParamLogGrpGet,   NULL, 0664);
+module_param_call(log_flags,      vboxguestLinuxParamLogFlagsSet, vboxguestLinuxParamLogFlagsGet, NULL, 0664);
+module_param_call(log_dest,       vboxguestLinuxParamLogDstSet,   vboxguestLinuxParamLogDstGet,   NULL, 0664);
+# ifdef LOG_ENABLED
+module_param_call(dbg_log,        vboxguestLinuxParamLogGrpSet,   vboxguestLinuxParamLogGrpGet,   NULL, 0664);
+module_param_call(dbg_log_flags,  vboxguestLinuxParamLogFlagsSet, vboxguestLinuxParamLogFlagsGet, NULL, 0664);
+module_param_call(dbg_log_dest,   vboxguestLinuxParamLogDstSet,   vboxguestLinuxParamLogDstGet,   NULL, 0664);
+# endif
+
+#endif /* 2.6.0 and later */
+
 
 module_init(vboxguestLinuxModInit);
 module_exit(vboxguestLinuxModExit);

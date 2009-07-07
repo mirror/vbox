@@ -606,9 +606,8 @@ DECLASM(int) VBoxGuestOS2IOCtl(uint16_t sfn, uint8_t iCat, uint8_t iFunction, vo
         /*
          * Process the IOCtl.
          */
-        size_t cbDataReturned = 0;
-        rc = VBoxGuestCommonIOCtl(iFunction, &g_DevExt, pSession,
-                                  pvParm, *pcbParm, &cbDataReturned);
+        size_t cbDataReturned;
+        rc = VBoxGuestCommonIOCtl(iFunction, &g_DevExt, pSession, pvParm, *pcbParm, &cbDataReturned);
 
         /*
          * Unlock the buffers.
