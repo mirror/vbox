@@ -255,8 +255,14 @@ def startVm(ctx,mach,type):
         if not ctx['remote']:
             print session.QueryErrorObject(rc)
 
+def getArray(ctx, obj, field):
+    return ctx['global'].getArray(obj, field)
+
 def getMachines(ctx):
-    return ctx['global'].getArray(ctx['vb'], 'machines')
+    return getArray(ctx, ctx['vb'], 'machines')
+
+def getArray(ctx, obj, field):
+    return ctx['global'].getArray(obj, field)
 
 def asState(var):
     if var:
@@ -411,6 +417,7 @@ def infoCmd(ctx,args):
     print "  Monitors [monitorCount]:  %d" %(mach.monitorCount)
     print "  Clipboard mode [clipboardMode]:  %d" %(mach.clipboardMode)
     print "  Machine status [n/a]: " ,mach.sessionState
+    # getArray(ctx, mach, 'hardDiskAttachments')
     bios = mach.BIOSSettings
     print "  ACPI [BIOSSettings.ACPIEnabled]: %s" %(asState(bios.ACPIEnabled))
     print "  APIC [BIOSSettings.IOAPICEnabled]: %s" %(asState(bios.IOAPICEnabled))
