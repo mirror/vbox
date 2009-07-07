@@ -28,6 +28,7 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
@@ -48,6 +49,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/log.h>
+#include "internal/iprt.h"
+
 #include <iprt/asm.h>
 #include <iprt/stdarg.h>
 #include <iprt/string.h>
@@ -76,6 +79,7 @@ RTDECL(size_t) RTLogComPrintf(const char *pszFormat, ...)
 
     return cb;
 }
+RT_EXPORT_SYMBOL(RTLogComPrintf);
 
 
 /**
@@ -89,6 +93,7 @@ RTDECL(size_t) RTLogComPrintfV(const char *pszFormat, va_list args)
 {
     return RTLogFormatV(rtLogComOutput, NULL, pszFormat, args);
 }
+RT_EXPORT_SYMBOL(RTLogComPrintfV);
 
 
 /**
@@ -133,4 +138,5 @@ RTDECL(void) RTLogWriteCom(const char *pach, size_t cb)
         ASMOutU8(IPRT_UART_BASE, *pu8);
     }
 }
+RT_EXPORT_SYMBOL(RTLogWriteCom);
 

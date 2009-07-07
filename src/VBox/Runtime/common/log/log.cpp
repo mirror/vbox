@@ -33,6 +33,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/log.h>
+#include "internal/iprt.h"
+
 #ifndef IN_RC
 # include <iprt/alloc.h>
 # include <iprt/process.h>
@@ -487,6 +489,8 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
 
     return rc;
 }
+RT_EXPORT_SYMBOL(RTLogCreateExV);
+
 
 /**
  * Create a logger instance.
@@ -516,6 +520,8 @@ RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGro
     va_end(args);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTLogCreate);
+
 
 /**
  * Create a logger instance.
@@ -547,6 +553,8 @@ RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszG
     va_end(args);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTLogCreateEx);
+
 
 /**
  * Destroys a logger instance.
@@ -624,6 +632,7 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
 
     return rc;
 }
+RT_EXPORT_SYMBOL(RTLogDestroy);
 
 
 /**
@@ -707,6 +716,7 @@ RTDECL(int) RTLogCloneRC(PRTLOGGER pLogger, PRTLOGGERRC pLoggerRC, size_t cbLogg
 
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTLogCloneRC);
 
 
 /**
@@ -763,6 +773,7 @@ RTDECL(void) RTLogFlushRC(PRTLOGGER pLogger, PRTLOGGERRC pLoggerRC)
         rtlogUnlock(pLogger);
     }
 }
+RT_EXPORT_SYMBOL(RTLogFlushRC);
 
 
 #ifdef IN_RING3
@@ -808,6 +819,7 @@ RTDECL(int) RTLogCreateForR0(PRTLOGGER pLogger, size_t cbLogger, PFNRTLOGGER pfn
     pLogger->afGroups[0]  = 0;
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTLogCreateForR0);
 #endif /* IN_RING3 */
 
 
@@ -865,6 +877,7 @@ RTDECL(int) RTLogCopyGroupsAndFlags(PRTLOGGER pDstLogger, PCRTLOGGER pSrcLogger,
 
     return rc;
 }
+RT_EXPORT_SYMBOL(RTLogCopyGroupsAndFlags);
 
 
 /**
@@ -934,6 +947,7 @@ RTDECL(void) RTLogFlushToLogger(PRTLOGGER pSrcLogger, PRTLOGGER pDstLogger)
         rtlogUnlock(pDstLogger);
     }
 }
+RT_EXPORT_SYMBOL(RTLogFlushToLogger);
 
 
 /**
@@ -967,6 +981,7 @@ RTDECL(int) RTLogSetCustomPrefixCallback(PRTLOGGER pLogger, PFNRTLOGPREFIX pfnCa
 
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTLogSetCustomPrefixCallback);
 
 
 /**
@@ -1146,6 +1161,7 @@ RTDECL(int) RTLogGroupSettings(PRTLOGGER pLogger, const char *pszVar)
 
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTLogGroupSettings);
 
 
 /**
@@ -1376,6 +1392,7 @@ RTDECL(int) RTLogFlags(PRTLOGGER pLogger, const char *pszVar)
 
     return rc;
 }
+RT_EXPORT_SYMBOL(RTLogFlags);
 
 
 /**
@@ -1427,6 +1444,7 @@ RTDECL(void) RTLogFlush(PRTLOGGER pLogger)
 #endif
     }
 }
+RT_EXPORT_SYMBOL(RTLogFlush);
 
 
 /**
@@ -1463,6 +1481,7 @@ RTDECL(PRTLOGGER)   RTLogDefaultInstance(void)
     return g_pLogger;
 #endif /* !IN_RC */
 }
+RT_EXPORT_SYMBOL(RTLogDefaultInstance);
 
 
 /**
@@ -1493,6 +1512,7 @@ RTDECL(PRTLOGGER)   RTLogGetDefaultInstance(void)
     return g_pLogger;
 #endif
 }
+RT_EXPORT_SYMBOL(RTLogGetDefaultInstance);
 
 
 #ifndef IN_RC
@@ -1506,6 +1526,7 @@ RTDECL(PRTLOGGER) RTLogSetDefaultInstance(PRTLOGGER pLogger)
 {
     return (PRTLOGGER)ASMAtomicXchgPtr((void * volatile *)&g_pLogger, pLogger);
 }
+RT_EXPORT_SYMBOL(RTLogSetDefaultInstance);
 #endif /* !IN_RC */
 
 
@@ -1592,6 +1613,7 @@ RTDECL(int) RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t uKey)
     }
     return rc;
 }
+RT_EXPORT_SYMBOL(RTLogSetDefaultInstanceThread);
 #endif
 
 
@@ -1606,6 +1628,7 @@ RTDECL(void) RTLogLoggerV(PRTLOGGER pLogger, const char *pszFormat, va_list args
 {
     RTLogLoggerExV(pLogger, 0, ~0U, pszFormat, args);
 }
+RT_EXPORT_SYMBOL(RTLogLoggerV);
 
 
 /**
@@ -1690,6 +1713,8 @@ RTDECL(void) RTLogLoggerExV(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup,
      */
     rtlogUnlock(pLogger);
 }
+RT_EXPORT_SYMBOL(RTLogLoggerExV);
+
 
 #ifdef IN_RING0
 /**
@@ -1826,6 +1851,7 @@ RTDECL(void) RTLogPrintfV(const char *pszFormat, va_list args)
 {
     RTLogLoggerV(NULL, pszFormat, args);
 }
+RT_EXPORT_SYMBOL(RTLogPrintfV);
 
 
 /**

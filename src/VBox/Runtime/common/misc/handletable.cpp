@@ -28,10 +28,13 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/handletable.h>
+#include "internal/iprt.h"
+
 #include <iprt/mem.h>
 #include <iprt/spinlock.h>
 #include <iprt/err.h>
@@ -114,12 +117,14 @@ RTDECL(int) RTHandleTableCreateEx(PRTHANDLETABLE phHandleTable, uint32_t fFlags,
     *phHandleTable = pThis;
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTHandleTableCreateEx);
 
 
 RTDECL(int) RTHandleTableCreate(PRTHANDLETABLE phHandleTable)
 {
     return RTHandleTableCreateEx(phHandleTable, RTHANDLETABLE_FLAGS_LOCKED, 1, 65534, NULL, NULL);
 }
+RT_EXPORT_SYMBOL(RTHandleTableCreate);
 
 
 RTDECL(int) RTHandleTableDestroy(RTHANDLETABLE hHandleTable, PFNRTHANDLETABLEDELETE pfnDelete, void *pvUser)
@@ -214,4 +219,5 @@ RTDECL(int) RTHandleTableDestroy(RTHANDLETABLE hHandleTable, PFNRTHANDLETABLEDEL
 
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTHandleTableDestroy);
 

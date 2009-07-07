@@ -28,10 +28,13 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/thread.h>
+#include "internal/iprt.h"
+
 #include <iprt/assert.h>
 
 
@@ -41,4 +44,5 @@ RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
     Assert(pState->uchDummy == 42);
     pState->uchDummy = 0;
 }
+RT_EXPORT_SYMBOL(RTThreadPreemptRestore);
 

@@ -29,11 +29,12 @@
  */
 
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/file.h>
+#include "internal/iprt.h"
+
 #include <iprt/mem.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
@@ -105,4 +106,5 @@ RTDECL(int) RTFileReadAllByHandleEx(RTFILE File, RTFOFF off, RTFOFF cbMax, uint3
     }
     return rc;
 }
+RT_EXPORT_SYMBOL(RTFileReadAllByHandleEx);
 

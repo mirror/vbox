@@ -28,10 +28,12 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/mempool.h>
+#include "internal/iprt.h"
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -153,6 +155,7 @@ RTDECL(int) RTMemPoolCreate(PRTMEMPOOL phMemPool, const char *pszName)
     RTMemFree(pMemPool);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTMemPoolCreate);
 
 
 RTDECL(int) RTMemPoolDestroy(RTMEMPOOL hMemPool)
@@ -191,6 +194,7 @@ RTDECL(int) RTMemPoolDestroy(RTMEMPOOL hMemPool)
 
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTMemPoolDestroy);
 
 
 DECLINLINE(void) rtMemPoolInitAndLink(PRTMEMPOOLINT pMemPool, PRTMEMPOOLENTRY pEntry)
@@ -257,6 +261,7 @@ RTDECL(void *) RTMemPoolAlloc(RTMEMPOOL hMemPool, size_t cb) RT_NO_THROW
 
     return pEntry + 1;
 }
+RT_EXPORT_SYMBOL(RTMemPoolAlloc);
 
 
 RTDECL(void *) RTMemPoolAllocZ(RTMEMPOOL hMemPool, size_t cb) RT_NO_THROW
@@ -271,6 +276,7 @@ RTDECL(void *) RTMemPoolAllocZ(RTMEMPOOL hMemPool, size_t cb) RT_NO_THROW
 
     return pEntry + 1;
 }
+RT_EXPORT_SYMBOL(RTMemPoolAllocZ);
 
 
 RTDECL(void *) RTMemPoolDup(RTMEMPOOL hMemPool, const void *pvSrc, size_t cb) RT_NO_THROW
@@ -286,6 +292,7 @@ RTDECL(void *) RTMemPoolDup(RTMEMPOOL hMemPool, const void *pvSrc, size_t cb) RT
 
     return pEntry + 1;
 }
+RT_EXPORT_SYMBOL(RTMemPoolDup);
 
 
 RTDECL(void *) RTMemPoolDupEx(RTMEMPOOL hMemPool, const void *pvSrc, size_t cbSrc, size_t cbExtra) RT_NO_THROW
@@ -302,6 +309,7 @@ RTDECL(void *) RTMemPoolDupEx(RTMEMPOOL hMemPool, const void *pvSrc, size_t cbSr
 
     return pEntry + 1;
 }
+RT_EXPORT_SYMBOL(RTMemPoolDupEx);
 
 
 
@@ -345,12 +353,14 @@ RTDECL(void *) RTMemPoolRealloc(RTMEMPOOL hMemPool, void *pvOld, size_t cbNew) R
 
     return pEntry + 1;
 }
+RT_EXPORT_SYMBOL(RTMemPoolRealloc);
 
 
 RTDECL(void) RTMemPoolFree(RTMEMPOOL hMemPool, void *pv) RT_NO_THROW
 {
     RTMemPoolRelease(hMemPool, pv);
 }
+RT_EXPORT_SYMBOL(RTMemPoolFree);
 
 
 RTDECL(uint32_t) RTMemPoolRetain(void *pv) RT_NO_THROW
@@ -363,6 +373,7 @@ RTDECL(uint32_t) RTMemPoolRetain(void *pv) RT_NO_THROW
 
     return cRefs;
 }
+RT_EXPORT_SYMBOL(RTMemPoolRetain);
 
 
 RTDECL(uint32_t) RTMemPoolRelease(RTMEMPOOL hMemPool, void *pv) RT_NO_THROW
@@ -388,4 +399,5 @@ RTDECL(uint32_t) RTMemPoolRelease(RTMEMPOOL hMemPool, void *pv) RT_NO_THROW
 
     return cRefs;
 }
+RT_EXPORT_SYMBOL(RTMemPoolRelease);
 

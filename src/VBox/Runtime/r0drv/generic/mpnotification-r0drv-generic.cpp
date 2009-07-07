@@ -28,10 +28,13 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/mp.h>
+#include "internal/iprt.h"
+
 #include <iprt/err.h>
 #include "r0drv/mp-r0drv.h"
 
@@ -42,6 +45,7 @@ RTDECL(int) RTMpNotificationRegister(PFNRTMPNOTIFICATION pfnCallback, void *pvUs
     NOREF(pvUser);
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTMpNotificationRegister);
 
 
 RTDECL(int) RTMpNotificationDeregister(PFNRTMPNOTIFICATION pfnCallback, void *pvUser)
@@ -50,6 +54,7 @@ RTDECL(int) RTMpNotificationDeregister(PFNRTMPNOTIFICATION pfnCallback, void *pv
     NOREF(pvUser);
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTMpNotificationDeregister);
 
 
 int rtR0MpNotificationInit(void)

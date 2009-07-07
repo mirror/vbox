@@ -33,6 +33,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/string.h>
+#include "internal/iprt.h"
+
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
@@ -51,6 +53,7 @@ RTDECL(void)  RTStrFree(char *pszString)
     if (pszString)
         RTMemTmpFree(pszString);
 }
+RT_EXPORT_SYMBOL(RTStrFree);
 
 
 /**
@@ -68,6 +71,7 @@ RTDECL(char *) RTStrDup(const char *pszString)
         memcpy(psz, pszString, cch);
     return psz;
 }
+RT_EXPORT_SYMBOL(RTStrDup);
 
 
 /**
@@ -93,4 +97,5 @@ RTDECL(int)  RTStrDupEx(char **ppszString, const char *pszString)
     }
     return VERR_NO_MEMORY;
 }
+RT_EXPORT_SYMBOL(RTStrDupEx);
 

@@ -28,11 +28,16 @@
  * additional information or have any questions.
  */
 
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #include <iprt/log.h>
+
 
 RTDECL(PRTLOGGER) RTLogDefaultInit(void)
 {
     return NULL;
 }
-
+RT_EXPORT_SYMBOL(RTLogDefaultInit);
 

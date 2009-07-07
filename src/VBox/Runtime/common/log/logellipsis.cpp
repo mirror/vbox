@@ -28,10 +28,13 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/log.h>
+#include "internal/iprt.h"
+
 #include <iprt/asm.h>
 #include <iprt/stdarg.h>
 
@@ -58,6 +61,7 @@ RTDECL(void) RTLogLogger(PRTLOGGER pLogger, void *pvCallerRet, const char *pszFo
 #endif
     va_end(args);
 }
+RT_EXPORT_SYMBOL(RTLogLogger);
 
 
 /**
@@ -82,6 +86,7 @@ RTDECL(void) RTLogLoggerEx(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup, 
     RTLogLoggerExV(pLogger, fFlags, iGroup, pszFormat, args);
     va_end(args);
 }
+RT_EXPORT_SYMBOL(RTLogLoggerEx);
 
 
 /**
@@ -99,4 +104,5 @@ RTDECL(void) RTLogPrintf(const char *pszFormat, ...)
     RTLogPrintfV(pszFormat, args);
     va_end(args);
 }
+RT_EXPORT_SYMBOL(RTLogPrintf);
 

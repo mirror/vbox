@@ -79,6 +79,7 @@ __FBSDID("$FreeBSD: src/sys/libkern/crc32.c,v 1.2 2003/06/11 05:23:04 obrien Exp
 #include <sys/systm.h>
 #else
 # include <iprt/crc32.h>
+# include "internal/iprt.h"
 #endif
 
 #if 0
@@ -168,6 +169,7 @@ RTDECL(uint32_t) RTCrc32(const void *pv, size_t cb)
         uCRC32 = au32CRC32[(uCRC32 ^ *pu8++) & 0xff] ^ (uCRC32 >> 8);
     return uCRC32 ^ ~0U;
 }
+RT_EXPORT_SYMBOL(RTCrc32);
 
 
 /**
@@ -179,6 +181,7 @@ RTDECL(uint32_t) RTCrc32Start(void)
 {
     return ~0U;
 }
+RT_EXPORT_SYMBOL(RTCrc32Start);
 
 
 /**
@@ -196,6 +199,7 @@ RTDECL(uint32_t) RTCrc32Process(uint32_t uCRC32, const void *pv, size_t cb)
         uCRC32 = au32CRC32[(uCRC32 ^ *pu8++) & 0xff] ^ (uCRC32 >> 8);
     return uCRC32;
 }
+RT_EXPORT_SYMBOL(RTCrc32Process);
 
 
 /**
@@ -208,4 +212,5 @@ RTDECL(uint32_t) RTCrc32Finish(uint32_t uCRC32)
 {
     return uCRC32 ^ ~0U;
 }
+RT_EXPORT_SYMBOL(RTCrc32Finish);
 

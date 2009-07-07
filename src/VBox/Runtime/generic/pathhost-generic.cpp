@@ -34,6 +34,8 @@
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_PATH
 #include <iprt/string.h>
+#include "internal/iprt.h"
+
 #include "internal/path.h"
 
 

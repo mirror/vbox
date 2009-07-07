@@ -28,10 +28,13 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/net.h>
+#include "internal/iprt.h"
+
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 
@@ -82,6 +85,7 @@ RTDECL(uint16_t) RTNetIPv4HdrChecksum(PCRTNETIPV4 pIpHdr)
     u32Sum += u32Sum >> 16;                     /* carry */
     return (uint16_t)~u32Sum;
 }
+RT_EXPORT_SYMBOL(RTNetIPv4HdrChecksum);
 
 
 /**
@@ -123,6 +127,7 @@ RTDECL(bool) RTNetIPv4IsHdrValid(PCRTNETIPV4 pIpHdr, size_t cbHdrMax, size_t cbP
         return false;
     return true;
 }
+RT_EXPORT_SYMBOL(RTNetIPv4IsHdrValid);
 
 
 /**
@@ -158,6 +163,7 @@ RTDECL(uint32_t) RTNetIPv4PseudoChecksum(PCRTNETIPV4 pIpHdr)
 {
     return rtNetIPv4PseudoChecksum(pIpHdr);
 }
+RT_EXPORT_SYMBOL(RTNetIPv4PseudoChecksum);
 
 
 /**
@@ -183,6 +189,7 @@ RTDECL(uint32_t) RTNetIPv4PseudoChecksumBits(RTNETADDRIPV4 SrcAddr, RTNETADDRIPV
                     + RT_H2BE_U16(cbPkt);
     return u32Sum;
 }
+RT_EXPORT_SYMBOL(RTNetIPv4PseudoChecksumBits);
 
 
 /**
@@ -213,6 +220,7 @@ RTDECL(uint32_t) RTNetIPv4AddUDPChecksum(PCRTNETUDP pUdpHdr, uint32_t u32Sum)
 {
     return rtNetIPv4AddUDPChecksum(pUdpHdr, u32Sum);
 }
+RT_EXPORT_SYMBOL(RTNetIPv4AddUDPChecksum);
 
 
 /**
@@ -274,6 +282,7 @@ RTDECL(uint32_t) RTNetIPv4AddTCPChecksum(PCRTNETTCP pTcpHdr, uint32_t u32Sum)
 {
     return rtNetIPv4AddTCPChecksum(pTcpHdr, u32Sum);
 }
+RT_EXPORT_SYMBOL(RTNetIPv4AddTCPChecksum);
 
 
 /**
@@ -342,6 +351,7 @@ RTDECL(uint32_t) RTNetIPv4AddDataChecksum(void const *pvData, size_t cbData, uin
 {
     return rtNetIPv4AddDataChecksum(pvData, cbData, u32Sum, pfOdd);
 }
+RT_EXPORT_SYMBOL(RTNetIPv4AddDataChecksum);
 
 
 /**
@@ -369,6 +379,7 @@ RTDECL(uint16_t) RTNetIPv4FinalizeChecksum(uint32_t u32Sum)
 {
     return rtNetIPv4FinalizeChecksum(u32Sum);
 }
+RT_EXPORT_SYMBOL(RTNetIPv4FinalizeChecksum);
 
 
 /**
@@ -390,6 +401,7 @@ RTDECL(uint16_t) RTNetIPv4UDPChecksum(PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, vo
     u32Sum = rtNetIPv4AddDataChecksum(pvData, RT_BE2H_U16(pUdpHdr->uh_ulen) - sizeof(*pUdpHdr), u32Sum, &fOdd);
     return rtNetIPv4FinalizeChecksum(u32Sum);
 }
+RT_EXPORT_SYMBOL(RTNetIPv4UDPChecksum);
 
 
 /**
@@ -430,6 +442,7 @@ RTDECL(bool) RTNetIPv4IsUDPSizeValid(PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, siz
 {
     return rtNetIPv4IsUDPSizeValid(pIpHdr, pUdpHdr, cbPktMax);
 }
+RT_EXPORT_SYMBOL(RTNetIPv4IsUDPSizeValid);
 
 
 /**
@@ -455,6 +468,7 @@ RTDECL(bool) RTNetIPv4IsUDPValid(PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, void co
     }
     return true;
 }
+RT_EXPORT_SYMBOL(RTNetIPv4IsUDPValid);
 
 
 /**
@@ -480,6 +494,7 @@ RTDECL(uint16_t) RTNetIPv4TCPChecksum(PCRTNETIPV4 pIpHdr, PCRTNETTCP pTcpHdr, vo
                                       cbData, u32Sum, &fOdd);
     return rtNetIPv4FinalizeChecksum(u32Sum);
 }
+RT_EXPORT_SYMBOL(RTNetIPv4TCPChecksum);
 
 
 /**
@@ -525,6 +540,7 @@ RTDECL(bool) RTNetIPv4IsTCPSizeValid(PCRTNETIPV4 pIpHdr, PCRTNETTCP pTcpHdr, siz
 {
     return rtNetIPv4IsTCPSizeValid(pIpHdr, pTcpHdr, cbHdrMax, cbPktMax);
 }
+RT_EXPORT_SYMBOL(RTNetIPv4IsTCPSizeValid);
 
 
 /**
@@ -550,6 +566,7 @@ RTDECL(bool) RTNetIPv4IsTCPValid(PCRTNETIPV4 pIpHdr, PCRTNETTCP pTcpHdr, size_t 
         return false;
     return true;
 }
+RT_EXPORT_SYMBOL(RTNetIPv4IsTCPValid);
 
 
 /**
@@ -678,4 +695,5 @@ RTDECL(bool) RTNetIPv4IsDHCPValid(PCRTNETUDP pUdpHdr, PCRTNETBOOTP pDhcp, size_t
 
     return true;
 }
+RT_EXPORT_SYMBOL(RTNetIPv4IsDHCPValid);
 

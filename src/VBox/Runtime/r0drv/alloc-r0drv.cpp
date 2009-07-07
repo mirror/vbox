@@ -32,8 +32,10 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include <iprt/mem.h>
+#include "internal/iprt.h"
+
 #include <iprt/string.h>
-#include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/param.h>
 #include "r0drv/alloc-r0drv.h"
@@ -83,6 +85,7 @@ RTDECL(void *)  RTMemTmpAlloc(size_t cb) RT_NO_THROW
 {
     return RTMemAlloc(cb);
 }
+RT_EXPORT_SYMBOL(RTMemTmpAlloc);
 
 
 /**
@@ -98,6 +101,7 @@ RTDECL(void *)  RTMemTmpAllocZ(size_t cb) RT_NO_THROW
 {
     return RTMemAllocZ(cb);
 }
+RT_EXPORT_SYMBOL(RTMemTmpAllocZ);
 
 
 /**
@@ -109,6 +113,7 @@ RTDECL(void)    RTMemTmpFree(void *pv) RT_NO_THROW
 {
     return RTMemFree(pv);
 }
+RT_EXPORT_SYMBOL(RTMemTmpFree);
 
 
 /**
@@ -131,6 +136,7 @@ RTDECL(void *)  RTMemAlloc(size_t cb) RT_NO_THROW
     }
     return NULL;
 }
+RT_EXPORT_SYMBOL(RTMemAlloc);
 
 
 /**
@@ -159,6 +165,7 @@ RTDECL(void *)  RTMemAllocZ(size_t cb) RT_NO_THROW
     }
     return NULL;
 }
+RT_EXPORT_SYMBOL(RTMemAllocZ);
 
 
 /**
@@ -209,6 +216,7 @@ RTDECL(void *) RTMemRealloc(void *pvOld, size_t cbNew) RT_NO_THROW
 
     return NULL;
 }
+RT_EXPORT_SYMBOL(RTMemRealloc);
 
 
 /**
@@ -239,6 +247,7 @@ RTDECL(void) RTMemFree(void *pv) RT_NO_THROW
     else
         AssertMsgFailed(("pHdr->u32Magic=%RX32 pv=%p\n", pHdr->u32Magic, pv));
 }
+RT_EXPORT_SYMBOL(RTMemFree);
 
 
 /**
@@ -261,6 +270,7 @@ RTDECL(void *)    RTMemExecAlloc(size_t cb) RT_NO_THROW
     }
     return NULL;
 }
+RT_EXPORT_SYMBOL(RTMemExecAlloc);
 
 
 /**
@@ -290,4 +300,5 @@ RTDECL(void)      RTMemExecFree(void *pv) RT_NO_THROW
     else
         AssertMsgFailed(("pHdr->u32Magic=%RX32 pv=%p\n", pHdr->u32Magic, pv));
 }
+RT_EXPORT_SYMBOL(RTMemExecFree);
 

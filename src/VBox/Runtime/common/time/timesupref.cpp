@@ -34,6 +34,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/time.h>
+#include "internal/iprt.h"
+
 #include <iprt/asm.h>
 #include <VBox/sup.h>
 #include "internal/time.h"
@@ -47,6 +49,7 @@
 #define NEED_TRANSACTION_ID
 #define rtTimeNanoTSInternalRef RTTimeNanoTSLegacySync
 #include "timesupref.h"
+RT_EXPORT_SYMBOL(RTTimeNanoTSLegacySync);
 
 #define ASYNC_GIP
 #ifdef IN_RC
@@ -55,6 +58,7 @@
 #undef  rtTimeNanoTSInternalRef
 #define rtTimeNanoTSInternalRef RTTimeNanoTSLegacyAsync
 #include "timesupref.h"
+RT_EXPORT_SYMBOL(RTTimeNanoTSLegacyAsync);
 
 
 /*
@@ -67,6 +71,7 @@
 #undef  rtTimeNanoTSInternalRef
 #define rtTimeNanoTSInternalRef RTTimeNanoTSLFenceSync
 #include "timesupref.h"
+RT_EXPORT_SYMBOL(RTTimeNanoTSLFenceSync);
 
 #define ASYNC_GIP
 #ifdef IN_RC
@@ -75,6 +80,8 @@
 #undef  rtTimeNanoTSInternalRef
 #define rtTimeNanoTSInternalRef RTTimeNanoTSLFenceAsync
 #include "timesupref.h"
+RT_EXPORT_SYMBOL(RTTimeNanoTSLFenceAsync);
 
 
 #endif /* !IN_GUEST */
+

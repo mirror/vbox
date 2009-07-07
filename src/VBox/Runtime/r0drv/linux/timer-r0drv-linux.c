@@ -28,10 +28,12 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-linux-kernel.h"
+#include "internal/iprt.h"
 
 #include <iprt/timer.h>
 #include <iprt/time.h>
@@ -743,6 +745,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
 
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTTimerStart);
 
 
 RTDECL(int) RTTimerStop(PRTTIMER pTimer)
@@ -774,6 +777,7 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
 
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTTimerStop);
 
 
 RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
@@ -817,6 +821,7 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
 
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTTimerDestroy);
 
 
 RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigned fFlags, PFNRTTIMER pfnTimer, void *pvUser)
@@ -923,6 +928,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
     *ppTimer = pTimer;
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTTimerCreateEx);
 
 
 RTDECL(uint32_t) RTTimerGetSystemGranularity(void)
@@ -938,16 +944,19 @@ RTDECL(uint32_t) RTTimerGetSystemGranularity(void)
 #endif
     return 1000000000 / HZ; /* ns */
 }
+RT_EXPORT_SYMBOL(RTTimerGetSystemGranularity);
 
 
 RTDECL(int) RTTimerRequestSystemGranularity(uint32_t u32Request, uint32_t *pu32Granted)
 {
     return VERR_NOT_SUPPORTED;
 }
+RT_EXPORT_SYMBOL(RTTimerRequestSystemGranularity);
 
 
 RTDECL(int) RTTimerReleaseSystemGranularity(uint32_t u32Granted)
 {
     return VERR_NOT_SUPPORTED;
 }
+RT_EXPORT_SYMBOL(RTTimerReleaseSystemGranularity);
 

@@ -42,6 +42,8 @@
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_STRING
 #include <iprt/string.h>
+#include "internal/iprt.h"
+
 #include <iprt/assert.h>
 #ifdef IN_RING3
 # include <iprt/alloc.h>
@@ -153,6 +155,7 @@ RTDECL(int) RTStrFormatNumber(char *psz, uint64_t u64Value, unsigned int uiBase,
 {
     return rtStrFormatNumber(psz, *(KSIZE64 *)(void *)&u64Value, uiBase, cchWidth, cchPrecision, fFlags);
 }
+RT_EXPORT_SYMBOL(RTStrFormatNumber);
 
 
 
@@ -184,8 +187,8 @@ static int rtStrFormatNumber(char *psz, KSIZE64 ullValue, unsigned int uiBase, s
         pachDigits = "0123456789ABCDEF";
     if (fFlags & RTSTR_F_LEFT)
         fFlags &= ~RTSTR_F_ZEROPAD;
-    if (    (fFlags & RTSTR_F_THOUSAND_SEP) 
-        &&  (   uiBase != 10 
+    if (    (fFlags & RTSTR_F_THOUSAND_SEP)
+        &&  (   uiBase != 10
              || (fFlags & RTSTR_F_ZEROPAD))) /** @todo implement RTSTR_F_ZEROPAD + RTSTR_F_THOUSAND_SEP. */
         fFlags &= ~RTSTR_F_THOUSAND_SEP;
 
@@ -284,7 +287,7 @@ static int rtStrFormatNumber(char *psz, KSIZE64 ullValue, unsigned int uiBase, s
     {
         uint64_t    u64 = *(uint64_t *)(void *)&ullValue;
         if (fFlags & RTSTR_F_THOUSAND_SEP)
-        {    
+        {
             do
             {
                 if ((-i - 1) % 4 == 3)
@@ -294,7 +297,7 @@ static int rtStrFormatNumber(char *psz, KSIZE64 ullValue, unsigned int uiBase, s
             } while (u64);
         }
         else
-        {    
+        {
             do
             {
                 psz[i--] = pachDigits[u64 % uiBase];
@@ -883,6 +886,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
 
     return cch;
 }
+RT_EXPORT_SYMBOL(RTStrFormatV);
 
 
 /**
@@ -909,4 +913,5 @@ RTDECL(size_t) RTStrFormat(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRFO
     va_end(args);
     return cch;
 }
+RT_EXPORT_SYMBOL(RTStrFormat);
 

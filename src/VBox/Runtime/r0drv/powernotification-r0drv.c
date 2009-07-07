@@ -28,10 +28,13 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/power.h>
+#include "internal/iprt.h"
+
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
@@ -152,7 +155,7 @@ RTDECL(int) RTPowerSignalEvent(RTPOWEREVENT enmEvent)
     RTSpinlockRelease(hSpinlock, &Tmp);
     return VINF_SUCCESS;
 }
-
+RT_EXPORT_SYMBOL(RTPowerSignalEvent);
 
 
 RTDECL(int) RTPowerNotificationRegister(PFNRTPOWERNOTIFICATION pfnCallback, void *pvUser)
@@ -219,7 +222,7 @@ RTDECL(int) RTPowerNotificationRegister(PFNRTPOWERNOTIFICATION pfnCallback, void
 
     return VINF_SUCCESS;
 }
-
+RT_EXPORT_SYMBOL(RTPowerNotificationRegister);
 
 
 RTDECL(int) RTPowerNotificationDeregister(PFNRTPOWERNOTIFICATION pfnCallback, void *pvUser)
@@ -268,6 +271,7 @@ RTDECL(int) RTPowerNotificationDeregister(PFNRTPOWERNOTIFICATION pfnCallback, vo
 
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTPowerNotificationDeregister);
 
 
 int rtR0PowerNotificationInit(void)
@@ -328,5 +332,4 @@ void rtR0PowerNotificationTerm(void)
         }
     }
 }
-
 

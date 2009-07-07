@@ -28,10 +28,12 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-linux-kernel.h"
+#include "internal/iprt.h"
 
 #include <iprt/thread.h>
 #include <iprt/err.h>
@@ -42,9 +44,10 @@ RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void)
 {
     return (RTNATIVETHREAD)current;
 }
+RT_EXPORT_SYMBOL(RTThreadNativeSelf);
 
 
-RTDECL(int)   RTThreadSleep(unsigned cMillies)
+RTDECL(int) RTThreadSleep(unsigned cMillies)
 {
     long cJiffies = msecs_to_jiffies(cMillies);
     set_current_state(TASK_INTERRUPTIBLE);
@@ -53,6 +56,7 @@ RTDECL(int)   RTThreadSleep(unsigned cMillies)
         return VINF_SUCCESS;
     return VERR_INTERRUPTED;
 }
+RT_EXPORT_SYMBOL(RTThreadSleep);
 
 
 RTDECL(bool) RTThreadYield(void)
@@ -66,6 +70,7 @@ RTDECL(bool) RTThreadYield(void)
 #endif
     return true;
 }
+RT_EXPORT_SYMBOL(RTThreadYield);
 
 
 RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
@@ -81,6 +86,7 @@ RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
     return false;
 #endif
 }
+RT_EXPORT_SYMBOL(RTThreadPreemptIsEnabled);
 
 
 RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
@@ -99,6 +105,7 @@ RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
     return need_resched != 0;
 #endif
 }
+RT_EXPORT_SYMBOL(RTThreadPreemptIsPending);
 
 
 RTDECL(bool) RTThreadPreemptIsPendingTrusty(void)
@@ -106,6 +113,7 @@ RTDECL(bool) RTThreadPreemptIsPendingTrusty(void)
     /* yes, RTThreadPreemptIsPending is reliable. */
     return true;
 }
+RT_EXPORT_SYMBOL(RTThreadPreemptIsPendingTrusty);
 
 
 RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
@@ -121,6 +129,7 @@ RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
      */
     preempt_disable();
 }
+RT_EXPORT_SYMBOL(RTThreadPreemptDisable);
 
 
 RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
@@ -131,4 +140,5 @@ RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
 
     preempt_enable();
 }
+RT_EXPORT_SYMBOL(RTThreadPreemptRestore);
 

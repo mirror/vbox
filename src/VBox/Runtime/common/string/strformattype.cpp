@@ -34,6 +34,8 @@
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_STRING
 #include <iprt/string.h>
+#include "internal/iprt.h"
+
 #include <iprt/assert.h>
 #include <iprt/stdarg.h>
 #include <iprt/asm.h>
@@ -313,6 +315,7 @@ RTDECL(int) RTStrFormatTypeRegister(const char *pszType, PFNRTSTRFORMATTYPE pfnH
 
     return rc;
 }
+RT_EXPORT_SYMBOL(RTStrFormatTypeRegister);
 
 
 /**
@@ -357,6 +360,7 @@ RTDECL(int) RTStrFormatTypeDeregister(const char *pszType)
          ? VINF_SUCCESS
          : VERR_FILE_NOT_FOUND; /** @todo fix status code */
 }
+RT_EXPORT_SYMBOL(RTStrFormatTypeDeregister);
 
 
 /**
@@ -396,6 +400,7 @@ RTDECL(int) RTStrFormatTypeSetUser(const char *pszType, void *pvUser)
          ? VINF_SUCCESS
          : VERR_FILE_NOT_FOUND; /** @todo fix status code */
 }
+RT_EXPORT_SYMBOL(RTStrFormatTypeSetUser);
 
 
 /**

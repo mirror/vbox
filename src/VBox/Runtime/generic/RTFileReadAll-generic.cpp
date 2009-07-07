@@ -29,15 +29,16 @@
  */
 
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/file.h>
+#include "internal/iprt.h"
 
 
 RTDECL(int) RTFileReadAll(const char *pszFilename, void **ppvFile, size_t *pcbFile)
 {
     return RTFileReadAllEx(pszFilename, 0, RTFOFF_MAX, 0, ppvFile, pcbFile);
 }
+RT_EXPORT_SYMBOL(RTFileReadAll);
 

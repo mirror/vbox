@@ -33,6 +33,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/timer.h>
+#include "internal/iprt.h"
+
 #include <iprt/thread.h>
 #include <iprt/err.h>
 #include <iprt/assert.h>
@@ -133,6 +135,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
 
     return rc;
 }
+RT_EXPORT_SYMBOL(RTTimerCreateEx);
 
 
 /**
@@ -180,6 +183,7 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
     RTThreadWait(Thread, 250, NULL);
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTTimerDestroy);
 
 
 RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
@@ -203,6 +207,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
     AssertRC(rc);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTTimerStart);
 
 
 RTDECL(int) RTTimerStop(PRTTIMER pTimer)
@@ -222,6 +227,7 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
     AssertRC(rc);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTTimerStop);
 
 
 static DECLCALLBACK(int) rtTimerThread(RTTHREAD Thread, void *pvUser)
@@ -306,16 +312,19 @@ RTDECL(uint32_t) RTTimerGetSystemGranularity(void)
 {
     return 10000000; /* 10ms */
 }
+RT_EXPORT_SYMBOL(RTTimerGetSystemGranularity);
 
 
 RTDECL(int) RTTimerRequestSystemGranularity(uint32_t u32Request, uint32_t *pu32Granted)
 {
     return VERR_NOT_SUPPORTED;
 }
+RT_EXPORT_SYMBOL(RTTimerRequestSystemGranularity);
 
 
 RTDECL(int) RTTimerReleaseSystemGranularity(uint32_t u32Granted)
 {
     return VERR_NOT_SUPPORTED;
 }
+RT_EXPORT_SYMBOL(RTTimerReleaseSystemGranularity);
 

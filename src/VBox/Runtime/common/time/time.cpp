@@ -34,6 +34,8 @@
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_TIME
 #include <iprt/time.h>
+#include "internal/iprt.h"
+
 #include <iprt/string.h>
 #include <iprt/assert.h>
 #include "internal/time.h"
@@ -246,6 +248,7 @@ RTDECL(bool) RTTimeIsLeapYear(int32_t i32Year)
 {
     return rtTimeIsLeapYear(i32Year);
 }
+RT_EXPORT_SYMBOL(RTTimeIsLeapYear);
 
 
 /**
@@ -351,6 +354,7 @@ RTDECL(PRTTIME) RTTimeExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec)
 
     return pTime;
 }
+RT_EXPORT_SYMBOL(RTTimeExplode);
 
 
 /**
@@ -402,6 +406,7 @@ RTDECL(PRTTIMESPEC) RTTimeImplode(PRTTIMESPEC pTimeSpec, PCRTTIME pTime)
     pTimeSpec->i64NanosecondsRelativeToUnixEpoch = i64Nanos;
     return pTimeSpec;
 }
+RT_EXPORT_SYMBOL(RTTimeImplode);
 
 
 /**
@@ -652,6 +657,7 @@ RTDECL(PRTTIME) RTTimeNormalize(PRTTIME pTime)
         pTime->fFlags |= RTTIME_FLAGS_TYPE_UTC;
     return pTime;
 }
+RT_EXPORT_SYMBOL(RTTimeNormalize);
 
 
 /**
@@ -701,6 +707,7 @@ RTDECL(char *) RTTimeToString(PCRTTIME pTime, char *psz, size_t cb)
     }
     return psz;
 }
+RT_EXPORT_SYMBOL(RTTimeToString);
 
 
 /**
@@ -717,4 +724,5 @@ RTDECL(char *) RTTimeSpecToString(PCRTTIMESPEC pTime, char *psz, size_t cb)
     RTTIME Time;
     return RTTimeToString(RTTimeExplode(&Time, pTime), psz, cb);
 }
+RT_EXPORT_SYMBOL(RTTimeSpecToString);
 

@@ -28,10 +28,13 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/base64.h>
+#include "internal/iprt.h"
+
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/ctype.h>
@@ -215,6 +218,7 @@ RTDECL(ssize_t) RTBase64DecodedSize(const char *pszString, char **ppszEnd)
         *ppszEnd = (char *)pszString;
     return cb;
 }
+RT_EXPORT_SYMBOL(RTBase64DecodedSize);
 
 
 /**
@@ -398,6 +402,7 @@ RTDECL(int) RTBase64Decode(const char *pszString, void *pvData, size_t cbData, s
         *pcbActual = pbData - (uint8_t *)pvData;
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTBase64Decode);
 
 
 /**
@@ -435,6 +440,7 @@ RTDECL(size_t) RTBase64EncodedLength(size_t cbData)
     cch -= (cch % RTBASE64_LINE_LEN) == 0;
     return cch;
 }
+RT_EXPORT_SYMBOL(RTBase64EncodedLength);
 
 
 /**
@@ -533,4 +539,5 @@ RTDECL(int) RTBase64Encode(const void *pvData, size_t cbData, char *pszBuf, size
         *pcchActual = pchDst - pszBuf;
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTBase64Encode);
 

@@ -33,6 +33,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-linux-kernel.h"
+#include "internal/iprt.h"
 
 #include <iprt/mem.h>
 #include <iprt/err.h>
@@ -44,6 +45,7 @@ RTR0DECL(int) RTR0MemUserCopyFrom(void *pvDst, RTR3PTR R3PtrSrc, size_t cb)
         return VINF_SUCCESS;
     return VERR_ACCESS_DENIED;
 }
+RT_EXPORT_SYMBOL(RTR0MemUserCopyFrom);
 
 
 RTR0DECL(int) RTR0MemUserCopyTo(RTR3PTR R3PtrDst, void const *pvSrc, size_t cb)
@@ -52,12 +54,14 @@ RTR0DECL(int) RTR0MemUserCopyTo(RTR3PTR R3PtrDst, void const *pvSrc, size_t cb)
         return VINF_SUCCESS;
     return VERR_ACCESS_DENIED;
 }
+RT_EXPORT_SYMBOL(RTR0MemUserCopyTo);
 
 
 RTR0DECL(bool) RTR0MemUserIsValidAddr(RTR3PTR R3Ptr)
 {
     return access_ok(VERIFY_READ, (void *)R3Ptr, 1);
 }
+RT_EXPORT_SYMBOL(RTR0MemUserIsValidAddr);
 
 
 RTR0DECL(bool) RTR0MemKernelIsValidAddr(void *pv)
@@ -82,6 +86,7 @@ RTR0DECL(bool) RTR0MemKernelIsValidAddr(void *pv)
     return !access_ok(VERIFY_READ, pv, 1);
 #endif
 }
+RT_EXPORT_SYMBOL(RTR0MemKernelIsValidAddr);
 
 
 RTR0DECL(bool) RTR0MemAreKrnlAndUsrDifferent(void)
@@ -92,4 +97,5 @@ RTR0DECL(bool) RTR0MemAreKrnlAndUsrDifferent(void)
     return true;
 #endif
 }
+RT_EXPORT_SYMBOL(RTR0MemAreKrnlAndUsrDifferent);
 

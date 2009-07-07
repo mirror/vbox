@@ -33,10 +33,12 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/time.h>
+#include "internal/iprt.h"
 
 
 RTDECL(int64_t) RTTimeLocalDeltaNano(void)
 {
     return 0;
 }
+RT_EXPORT_SYMBOL(RTTimeLocalDeltaNano);
 

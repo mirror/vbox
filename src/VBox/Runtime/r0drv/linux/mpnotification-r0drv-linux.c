@@ -28,10 +28,12 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-linux-kernel.h"
+#include "internal/iprt.h"
 
 #include <iprt/mp.h>
 #include <iprt/err.h>
@@ -60,12 +62,12 @@ static struct notifier_block g_NotifierBlock =
     .priority = 0
 };
 
-#ifdef CPU_DOWN_FAILED
+# ifdef CPU_DOWN_FAILED
 /**
  * The set of CPUs we've seen going offline recently.
  */
 static RTCPUSET g_MpPendingOfflineSet;
-#endif
+# endif
 
 
 /**
@@ -95,22 +97,22 @@ static int rtMpNotificationLinuxCallback(struct notifier_block *pNotifierBlock, 
          * Pick up online events or failures to go offline.
          * Ignore failure events for CPUs we didn't see go offline.
          */
-#ifdef CPU_DOWN_FAILED
+# ifdef CPU_DOWN_FAILED
         case CPU_DOWN_FAILED:
-# if defined(CPU_TASKS_FROZEN) && defined(CPU_DOWN_FAILED_FROZEN)
+#  if defined(CPU_TASKS_FROZEN) && defined(CPU_DOWN_FAILED_FROZEN)
         case CPU_DOWN_FAILED_FROZEN:
-# endif
+#  endif
             if (!RTCpuSetIsMember(&g_MpPendingOfflineSet, idCpu))
                 return 0;
         /* fall thru */
-#endif
+# endif
         case CPU_ONLINE:
-#if defined(CPU_TASKS_FROZEN) && defined(CPU_ONLINE_FROZEN)
+# if defined(CPU_TASKS_FROZEN) && defined(CPU_ONLINE_FROZEN)
         case CPU_ONLINE_FROZEN:
-#endif
-#ifdef CPU_DOWN_FAILED
+# endif
+# ifdef CPU_DOWN_FAILED
             RTCpuSetDel(&g_MpPendingOfflineSet, idCpu);
-#endif
+# endif
             rtMpNotificationDoCallbacks(RTMPEVENT_ONLINE, idCpu);
             break;
 
@@ -119,21 +121,21 @@ static int rtMpNotificationLinuxCallback(struct notifier_block *pNotifierBlock, 
          * The only important thing here is that we get the event and that
          * it's exactly one.
          */
-#ifdef CPU_DOWN_PREPARE
+# ifdef CPU_DOWN_PREPARE
         case CPU_DOWN_PREPARE:
-# if defined(CPU_TASKS_FROZEN) && defined(CPU_DOWN_PREPARE_FROZEN)
+#  if defined(CPU_TASKS_FROZEN) && defined(CPU_DOWN_PREPARE_FROZEN)
         case CPU_DOWN_PREPARE_FROZEN:
-# endif
-#else
+#  endif
+# else
         case CPU_DEAD:
-# if defined(CPU_TASKS_FROZEN) && defined(CPU_DEAD_FROZEN)
+#  if defined(CPU_TASKS_FROZEN) && defined(CPU_DEAD_FROZEN)
         case CPU_DEAD_FROZEN:
+#  endif
 # endif
-#endif
             rtMpNotificationDoCallbacks(RTMPEVENT_OFFLINE, idCpu);
-#ifdef CPU_DOWN_FAILED
+# ifdef CPU_DOWN_FAILED
             RTCpuSetAdd(&g_MpPendingOfflineSet, idCpu);
-#endif
+# endif
             break;
     }
 
@@ -145,9 +147,9 @@ int rtR0MpNotificationNativeInit(void)
 {
     int rc;
 
-#ifdef CPU_DOWN_FAILED
+# ifdef CPU_DOWN_FAILED
     RTCpuSetEmpty(&g_MpPendingOfflineSet);
-#endif
+# endif
 
     rc = register_cpu_notifier(&g_NotifierBlock);
     AssertMsgReturn(!rc, ("%d\n", rc), RTErrConvertFromErrno(rc));

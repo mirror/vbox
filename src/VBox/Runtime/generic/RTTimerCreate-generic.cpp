@@ -33,6 +33,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/timer.h>
+#include "internal/iprt.h"
+
 #include <iprt/err.h>
 #include <iprt/assert.h>
 
@@ -50,4 +52,5 @@ RTDECL(int) RTTimerCreate(PRTTIMER *ppTimer, unsigned uMilliesInterval, PFNRTTIM
     }
     return rc;
 }
+RT_EXPORT_SYMBOL(RTTimerCreate);
 

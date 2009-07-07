@@ -28,7 +28,12 @@
  * additional information or have any questions.
  */
 
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #include "the-linux-kernel.h"
+#include "internal/iprt.h"
 #include <iprt/log.h>
 
 
@@ -36,4 +41,5 @@ RTDECL(void) RTLogWriteDebugger(const char *pch, size_t cb)
 {
     printk("%.*s", (int)cb, pch);
 }
+RT_EXPORT_SYMBOL(RTLogWriteDebugger);
 

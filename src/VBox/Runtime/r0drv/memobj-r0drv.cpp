@@ -34,6 +34,7 @@
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_DEFAULT ///@todo RTLOGGROUP_MEM
 #include <iprt/memobj.h>
+#include "internal/iprt.h"
 
 #include <iprt/alloc.h>
 #include <iprt/asm.h>
@@ -157,6 +158,7 @@ RTR0DECL(bool) RTR0MemObjIsMapping(RTR0MEMOBJ MemObj)
     /* hand it on to the inlined worker. */
     return rtR0MemObjIsMapping(pMem);
 }
+RT_EXPORT_SYMBOL(RTR0MemObjIsMapping);
 
 
 /**
@@ -180,6 +182,7 @@ RTR0DECL(void *) RTR0MemObjAddress(RTR0MEMOBJ MemObj)
     /* return the mapping address. */
     return pMem->pv;
 }
+RT_EXPORT_SYMBOL(RTR0MemObjAddress);
 
 
 /**
@@ -218,6 +221,7 @@ RTR0DECL(RTR3PTR) RTR0MemObjAddressR3(RTR0MEMOBJ MemObj)
     /* return the mapping address. */
     return (RTR3PTR)pMem->pv;
 }
+RT_EXPORT_SYMBOL(RTR0MemObjAddressR3);
 
 
 /**
@@ -242,6 +246,7 @@ RTR0DECL(size_t) RTR0MemObjSize(RTR0MEMOBJ MemObj)
     /* return the size. */
     return pMem->cb;
 }
+RT_EXPORT_SYMBOL(RTR0MemObjSize);
 
 
 /**
@@ -287,6 +292,7 @@ RTR0DECL(RTHCPHYS) RTR0MemObjGetPagePhysAddr(RTR0MEMOBJ MemObj, size_t iPage)
      */
     return rtR0MemObjNativeGetPagePhysAddr(pMem, iPage);
 }
+RT_EXPORT_SYMBOL(RTR0MemObjGetPagePhysAddr);
 
 
 /**
@@ -395,6 +401,7 @@ RTR0DECL(int) RTR0MemObjFree(RTR0MEMOBJ MemObj, bool fFreeMappings)
              pMem, pMem->enmType, pMem->pv, pMem->cb, rc));
     return rc;
 }
+RT_EXPORT_SYMBOL(RTR0MemObjFree);
 
 
 
@@ -420,6 +427,7 @@ RTR0DECL(int) RTR0MemObjAllocPage(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutab
     /* do the allocation. */
     return rtR0MemObjNativeAllocPage(pMemObj, cbAligned, fExecutable);
 }
+RT_EXPORT_SYMBOL(RTR0MemObjAllocPage);
 
 
 /**
@@ -444,6 +452,7 @@ RTR0DECL(int) RTR0MemObjAllocLow(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutabl
     /* do the allocation. */
     return rtR0MemObjNativeAllocLow(pMemObj, cbAligned, fExecutable);
 }
+RT_EXPORT_SYMBOL(RTR0MemObjAllocLow);
 
 
 /**
@@ -468,6 +477,7 @@ RTR0DECL(int) RTR0MemObjAllocCont(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutab
     /* do the allocation. */
     return rtR0MemObjNativeAllocCont(pMemObj, cbAligned, fExecutable);
 }
+RT_EXPORT_SYMBOL(RTR0MemObjAllocCont);
 
 
 /**
@@ -502,6 +512,7 @@ RTR0DECL(int) RTR0MemObjLockUser(PRTR0MEMOBJ pMemObj, RTR3PTR R3Ptr, size_t cb, 
     /* do the locking. */
     return rtR0MemObjNativeLockUser(pMemObj, R3PtrAligned, cbAligned, R0Process);
 }
+RT_EXPORT_SYMBOL(RTR0MemObjLockUser);
 
 
 /**
@@ -528,6 +539,7 @@ RTR0DECL(int) RTR0MemObjLockKernel(PRTR0MEMOBJ pMemObj, void *pv, size_t cb)
     /* do the allocation. */
     return rtR0MemObjNativeLockKernel(pMemObj, pvAligned, cbAligned);
 }
+RT_EXPORT_SYMBOL(RTR0MemObjLockKernel);
 
 
 /**
@@ -552,6 +564,7 @@ RTR0DECL(int) RTR0MemObjAllocPhys(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysH
     /* do the allocation. */
     return rtR0MemObjNativeAllocPhys(pMemObj, cbAligned, PhysHighest);
 }
+RT_EXPORT_SYMBOL(RTR0MemObjAllocPhys);
 
 
 /**
@@ -576,6 +589,7 @@ RTR0DECL(int) RTR0MemObjAllocPhysNC(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS Phy
     /* do the allocation. */
     return rtR0MemObjNativeAllocPhysNC(pMemObj, cbAligned, PhysHighest);
 }
+RT_EXPORT_SYMBOL(RTR0MemObjAllocPhysNC);
 
 
 /**
@@ -603,6 +617,7 @@ RTR0DECL(int) RTR0MemObjEnterPhys(PRTR0MEMOBJ pMemObj, RTHCPHYS Phys, size_t cb)
     /* do the allocation. */
     return rtR0MemObjNativeEnterPhys(pMemObj, PhysAligned, cbAligned);
 }
+RT_EXPORT_SYMBOL(RTR0MemObjEnterPhys);
 
 
 /**
@@ -632,6 +647,7 @@ RTR0DECL(int) RTR0MemObjReserveKernel(PRTR0MEMOBJ pMemObj, void *pvFixed, size_t
     /* do the reservation. */
     return rtR0MemObjNativeReserveKernel(pMemObj, pvFixed, cbAligned, uAlignment);
 }
+RT_EXPORT_SYMBOL(RTR0MemObjReserveKernel);
 
 
 /**
@@ -664,6 +680,7 @@ RTR0DECL(int) RTR0MemObjReserveUser(PRTR0MEMOBJ pMemObj, RTR3PTR R3PtrFixed, siz
     /* do the reservation. */
     return rtR0MemObjNativeReserveUser(pMemObj, R3PtrFixed, cbAligned, uAlignment, R0Process);
 }
+RT_EXPORT_SYMBOL(RTR0MemObjReserveUser);
 
 
 /**
@@ -681,6 +698,7 @@ RTR0DECL(int) RTR0MemObjMapKernel(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, v
 {
     return RTR0MemObjMapKernelEx(pMemObj, MemObjToMap, pvFixed, uAlignment, fProt, 0, 0);
 }
+RT_EXPORT_SYMBOL(RTR0MemObjMapKernel);
 
 
 /**
@@ -761,6 +779,7 @@ RTR0DECL(int) RTR0MemObjMapKernelEx(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap,
 
     return rc;
 }
+RT_EXPORT_SYMBOL(RTR0MemObjMapKernelEx);
 
 
 /**
@@ -820,6 +839,7 @@ RTR0DECL(int) RTR0MemObjMapUser(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, RTR
 
     return rc;
 }
+RT_EXPORT_SYMBOL(RTR0MemObjMapUser);
 
 
 RTR0DECL(int) RTR0MemObjProtect(RTR0MEMOBJ hMemObj, size_t offSub, size_t cbSub, uint32_t fProt)
@@ -847,3 +867,5 @@ RTR0DECL(int) RTR0MemObjProtect(RTR0MEMOBJ hMemObj, size_t offSub, size_t cbSub,
 
     return rc;
 }
+RT_EXPORT_SYMBOL(RTR0MemObjProtect);
+

@@ -33,6 +33,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/string.h>
+#include "internal/iprt.h"
+
 #include <iprt/assert.h>
 
 
@@ -123,6 +125,7 @@ RTDECL(bool) RTStrSpaceInsert(PRTSTRSPACE pStrSpace, PRTSTRSPACECORE pStr)
     pMatch->pList = pStr;
     return false;
 }
+RT_EXPORT_SYMBOL(RTStrSpaceInsert);
 
 
 /**
@@ -171,6 +174,7 @@ RTDECL(PRTSTRSPACECORE) RTStrSpaceRemove(PRTSTRSPACE pStrSpace, const char *pszS
 
     return pCur;
 }
+RT_EXPORT_SYMBOL(RTStrSpaceRemove);
 
 
 /**
@@ -196,6 +200,7 @@ RTDECL(PRTSTRSPACECORE) RTStrSpaceGet(PRTSTRSPACE pStrSpace, const char *pszStri
             return pCur;
     return NULL;
 }
+RT_EXPORT_SYMBOL(RTStrSpaceGet);
 
 
 
@@ -214,6 +219,7 @@ RTDECL(int) RTStrSpaceEnumerate(PRTSTRSPACE pStrSpace, PFNRTSTRSPACECALLBACK pfn
 {
     return KAVL_FN(DoWithAll)(pStrSpace, true, pfnCallback, pvUser);
 }
+RT_EXPORT_SYMBOL(RTStrSpaceEnumerate);
 
 
 /**
@@ -231,4 +237,6 @@ RTDECL(int) RTStrSpaceDestroy(PRTSTRSPACE pStrSpace, PFNRTSTRSPACECALLBACK pfnCa
 {
     return KAVL_FN(Destroy)(pStrSpace, pfnCallback, pvUser);
 }
+RT_EXPORT_SYMBOL(RTStrSpaceDestroy);
+
 

@@ -33,6 +33,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/time.h>
+#include "internal/iprt.h"
+
 #include <iprt/assert.h>
 #include "internal/time.h"
 
@@ -47,6 +49,7 @@ RTDECL(uint64_t)  RTTimeProgramNanoTS(void)
 {
     return RTTimeNanoTS() - g_u64ProgramStartNanoTS;
 }
+RT_EXPORT_SYMBOL(RTTimeProgramNanoTS);
 
 
 /**
@@ -58,6 +61,7 @@ RTDECL(uint64_t)  RTTimeProgramMicroTS(void)
 {
     return RTTimeProgramNanoTS() / 1000;
 }
+RT_EXPORT_SYMBOL(RTTimeProgramMicroTS);
 
 
 /**
@@ -69,6 +73,7 @@ RTDECL(uint64_t)  RTTimeProgramMilliTS(void)
 {
     return RTTimeMilliTS() - g_u64ProgramStartMilliTS;
 }
+RT_EXPORT_SYMBOL(RTTimeProgramMilliTS);
 
 
 /**
@@ -81,6 +86,7 @@ RTDECL(uint32_t)  RTTimeProgramSecTS(void)
     AssertMsg(g_u64ProgramStartMilliTS, ("RTR3Init hasn't been called!\n"));
     return (uint32_t)(RTTimeProgramMilliTS() / 1000);
 }
+RT_EXPORT_SYMBOL(RTTimeProgramSecTS);
 
 
 /**
@@ -92,3 +98,5 @@ RTDECL(uint64_t) RTTimeProgramStartNanoTS(void)
 {
     return g_u64ProgramStartNanoTS;
 }
+RT_EXPORT_SYMBOL(RTTimeProgramStartNanoTS);
+

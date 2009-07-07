@@ -49,9 +49,18 @@
  * will fill a supplied 16-byte array with the digest.
  */
 
-#include <iprt/string.h>		 /* for memcpy() */
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #include <iprt/md5.h>
+#include "internal/iprt.h"
 
+#include <iprt/string.h>		 /* for memcpy() */
+
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
 #ifdef sgi
 #define HIGHFIRST
 #endif
@@ -96,6 +105,8 @@ RTDECL(void) RTMd5Init(PRTMD5CONTEXT ctx)
     ctx->bits[0] = 0;
     ctx->bits[1] = 0;
 }
+RT_EXPORT_SYMBOL(RTMd5Init);
+
 
 /*
  * Update context to reflect the concatenation of another buffer full
@@ -145,6 +156,8 @@ RTDECL(void) RTMd5Update(PRTMD5CONTEXT ctx, const void *pvBuf, size_t len)
 
     memcpy(ctx->in, buf, len);
 }
+RT_EXPORT_SYMBOL(RTMd5Update);
+
 
 /*
  * Final wrapup - pad to 64-byte boundary with the bit pattern
@@ -190,6 +203,7 @@ RTDECL(void) RTMd5Final(uint8_t digest[16], PRTMD5CONTEXT ctx)
     memcpy(digest, ctx->buf, 16);
     memset(ctx, 0, sizeof(ctx));        /* In case it's sensitive */
 }
+RT_EXPORT_SYMBOL(RTMd5Final);
 
 
 /* The four core functions - F1 is optimized somewhat */

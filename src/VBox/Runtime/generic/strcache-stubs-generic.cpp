@@ -33,6 +33,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/strcache.h>
+#include "internal/iprt.h"
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -49,6 +50,7 @@ RTDECL(int) RTStrCacheCreate(PRTSTRCACHE phStrCache, const char *pszName)
     AssertCompile(RTSTRCACHE_DEFAULT == (RTSTRCACHE)RTMEMPOOL_DEFAULT);
     return RTMemPoolCreate((PRTMEMPOOL)phStrCache, pszName);
 }
+RT_EXPORT_SYMBOL(RTStrCacheCreate);
 
 
 RTDECL(int) RTStrCacheDestroy(RTSTRCACHE hStrCache)
@@ -58,6 +60,7 @@ RTDECL(int) RTStrCacheDestroy(RTSTRCACHE hStrCache)
         return VINF_SUCCESS;
     return RTMemPoolDestroy((RTMEMPOOL)hStrCache);
 }
+RT_EXPORT_SYMBOL(RTStrCacheDestroy);
 
 
 RTDECL(const char *) RTStrCacheEnterN(RTSTRCACHE hStrCache, const char *pchString, size_t cchString)
@@ -68,12 +71,14 @@ RTDECL(const char *) RTStrCacheEnterN(RTSTRCACHE hStrCache, const char *pchStrin
 
     return (const char *)RTMemPoolDupEx((RTMEMPOOL)hStrCache, pchString, cchString, 1);
 }
+RT_EXPORT_SYMBOL(RTStrCacheEnterN);
 
 
 RTDECL(const char *) RTStrCacheEnter(RTSTRCACHE hStrCache, const char *psz)
 {
     return RTStrCacheEnterN(hStrCache, psz, strlen(psz));
 }
+RT_EXPORT_SYMBOL(RTStrCacheEnter);
 
 
 RTDECL(uint32_t) RTStrCacheRetain(const char *psz)
@@ -81,6 +86,7 @@ RTDECL(uint32_t) RTStrCacheRetain(const char *psz)
     AssertPtr(psz);
     return RTMemPoolRetain((void *)psz);
 }
+RT_EXPORT_SYMBOL(RTStrCacheRetain);
 
 
 RTDECL(uint32_t) RTStrCacheRelease(RTSTRCACHE hStrCache, const char *psz)
@@ -89,6 +95,7 @@ RTDECL(uint32_t) RTStrCacheRelease(RTSTRCACHE hStrCache, const char *psz)
         return 0;
     return RTMemPoolRelease((RTMEMPOOL)hStrCache, (void *)psz);
 }
+RT_EXPORT_SYMBOL(RTStrCacheRelease);
 
 
 RTDECL(size_t) RTStrCacheLength(const char *psz)
@@ -97,4 +104,5 @@ RTDECL(size_t) RTStrCacheLength(const char *psz)
         return 0;
     return strlen(psz);
 }
+RT_EXPORT_SYMBOL(RTStrCacheLength);
 

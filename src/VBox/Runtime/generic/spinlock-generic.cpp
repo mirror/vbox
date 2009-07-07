@@ -42,6 +42,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/spinlock.h>
+#include "internal/iprt.h"
+
 #include <iprt/alloc.h>
 #include <iprt/asm.h>
 #include <iprt/err.h>
@@ -87,6 +89,7 @@ RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock)
     *pSpinlock = pSpinlockInt;
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTSpinlockCreate);
 
 
 RTDECL(int)  RTSpinlockDestroy(RTSPINLOCK Spinlock)
@@ -107,6 +110,7 @@ RTDECL(int)  RTSpinlockDestroy(RTSPINLOCK Spinlock)
     RTMemFree(pSpinlockInt);
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTSpinlockDestroy);
 
 
 RTDECL(void) RTSpinlockAcquireNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
@@ -131,6 +135,7 @@ RTDECL(void) RTSpinlockAcquireNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
         /*nothing */;
 #endif
 }
+RT_EXPORT_SYMBOL(RTSpinlockAcquireNoInts);
 
 
 RTDECL(void) RTSpinlockReleaseNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
@@ -144,6 +149,7 @@ RTDECL(void) RTSpinlockReleaseNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
         AssertMsgFailed(("Spinlock %p was not locked!\n", pSpinlockInt));
     ASMSetFlags(pTmp->uFlags);
 }
+RT_EXPORT_SYMBOL(RTSpinlockReleaseNoInts);
 
 
 RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
@@ -166,6 +172,7 @@ RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
         /*nothing */;
 #endif
 }
+RT_EXPORT_SYMBOL(RTSpinlockAcquire);
 
 
 RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
@@ -178,4 +185,5 @@ RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
     if (!ASMAtomicCmpXchgU32(&pSpinlockInt->fLocked, 0, 1))
         AssertMsgFailed(("Spinlock %p was not locked!\n", pSpinlockInt));
 }
+RT_EXPORT_SYMBOL(RTSpinlockRelease);
 

@@ -29,11 +29,12 @@
  */
 
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/file.h>
+#include "internal/iprt.h"
+
 #include <iprt/mem.h>
 #include <iprt/assert.h>
 
@@ -52,5 +53,5 @@ RTDECL(void) RTFileReadAllFree(void *pvFile, size_t cbFile)
 
     RTMemFree(pvFile);
 }
-
+RT_EXPORT_SYMBOL(RTFileReadAllFree);
 

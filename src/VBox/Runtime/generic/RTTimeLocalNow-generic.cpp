@@ -33,6 +33,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/time.h>
+#include "internal/iprt.h"
 
 
 RTDECL(PRTTIMESPEC) RTTimeLocalNow(PRTTIMESPEC pTime)
@@ -48,4 +49,5 @@ RTDECL(PRTTIMESPEC) RTTimeLocalNow(PRTTIMESPEC pTime)
 
     return RTTimeSpecAddNano(pTime, i64PostDelta);
 }
+RT_EXPORT_SYMBOL(RTTimeLocalNow);
 

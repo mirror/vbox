@@ -33,6 +33,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/uuid.h>
+#include "internal/iprt.h"
+
 #include <iprt/assert.h>
 #include <iprt/err.h>
 
@@ -78,6 +80,7 @@ RTDECL(int)  RTUuidClear(PRTUUID pUuid)
     pUuid->au64[1] = 0;
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTUuidClear);
 
 
 RTDECL(bool)  RTUuidIsNull(PCRTUUID pUuid)
@@ -86,6 +89,7 @@ RTDECL(bool)  RTUuidIsNull(PCRTUUID pUuid)
     return !pUuid->au64[0]
         && !pUuid->au64[1];
 }
+RT_EXPORT_SYMBOL(RTUuidIsNull);
 
 
 RTDECL(int)  RTUuidCompare(PCRTUUID pUuid1, PCRTUUID pUuid2)
@@ -129,6 +133,7 @@ RTDECL(int)  RTUuidCompare(PCRTUUID pUuid1, PCRTUUID pUuid2)
         return pUuid1->Gen.au8Node[5] < pUuid2->Gen.au8Node[5] ? -1 : 1;
     return 0;
 }
+RT_EXPORT_SYMBOL(RTUuidCompare);
 
 
 RTDECL(int)  RTUuidCompareStr(PCRTUUID pUuid1, const char *pszString)
@@ -148,6 +153,7 @@ RTDECL(int)  RTUuidCompareStr(PCRTUUID pUuid1, const char *pszString)
 
     return RTUuidCompare(pUuid1, &Uuid2);
 }
+RT_EXPORT_SYMBOL(RTUuidCompareStr);
 
 
 RTDECL(int)  RTUuidToStr(PCRTUUID pUuid, char *pszString, size_t cchString)
@@ -217,6 +223,7 @@ RTDECL(int)  RTUuidToStr(PCRTUUID pUuid, char *pszString, size_t cchString)
 
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTUuidToStr);
 
 
 RTDECL(int)  RTUuidFromStr(PRTUUID pUuid, const char *pszString)
@@ -311,6 +318,7 @@ RTDECL(int)  RTUuidFromStr(PRTUUID pUuid, const char *pszString)
 #undef MY_TONUM
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTUuidFromStr);
 
 
 RTDECL(int)  RTUuidToUtf16(PCRTUUID pUuid, PRTUTF16 pwszString, size_t cwcString)
@@ -381,6 +389,7 @@ RTDECL(int)  RTUuidToUtf16(PCRTUUID pUuid, PRTUTF16 pwszString, size_t cwcString
 
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTUuidToUtf16);
 
 
 RTDECL(int)  RTUuidFromUtf16(PRTUUID pUuid, PCRTUTF16 pwszString)
@@ -476,4 +485,5 @@ RTDECL(int)  RTUuidFromUtf16(PRTUUID pUuid, PCRTUTF16 pwszString)
 #undef MY_TONUM
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTUuidFromUtf16);
 

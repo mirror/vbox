@@ -28,11 +28,17 @@
  * additional information or have any questions.
  */
 
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #include <iprt/log.h>
+#include "internal/iprt.h"
 #include <stdio.h>
 
 RTDECL(void) RTLogWriteStdErr(const char *pch, size_t cb)
 {
     fwrite(pch, 1, cb, stderr);
 }
+RT_EXPORT_SYMBOL(RTLogWriteStdErr);
 

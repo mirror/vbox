@@ -33,6 +33,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-linux-kernel.h"
+#include "internal/iprt.h"
 
 #include <iprt/assert.h>
 #include <iprt/log.h>
@@ -46,16 +47,22 @@
 *******************************************************************************/
 /** The last assert message, 1st part. */
 RTDATADECL(char)                    g_szRTAssertMsg1[1024];
+RT_EXPORT_SYMBOL(g_szRTAssertMsg1);
 /** The last assert message, 2nd part. */
 RTDATADECL(char)                    g_szRTAssertMsg2[2048];
+RT_EXPORT_SYMBOL(g_szRTAssertMsg2);
 /** The last assert message, file name. */
 RTDATADECL(const char *) volatile   g_pszRTAssertExpr;
+RT_EXPORT_SYMBOL(g_pszRTAssertExpr);
 /** The last assert message, file name. */
 RTDATADECL(const char *) volatile   g_pszRTAssertFile;
+RT_EXPORT_SYMBOL(g_pszRTAssertFile);
 /** The last assert message, line number. */
 RTDATADECL(uint32_t) volatile       g_u32RTAssertLine;
+RT_EXPORT_SYMBOL(g_u32RTAssertLine);
 /** The last assert message, function name. */
 RTDATADECL(const char *) volatile   g_pszRTAssertFunction;
+RT_EXPORT_SYMBOL(g_pszRTAssertFunction);
 
 
 RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
@@ -82,6 +89,7 @@ RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile
     ASMAtomicUoWritePtr((void * volatile *)&g_pszRTAssertFunction, pszFunction);
     ASMAtomicUoWriteU32(&g_u32RTAssertLine, uLine);
 }
+RT_EXPORT_SYMBOL(AssertMsg1);
 
 
 RTDECL(void) AssertMsg2(const char *pszFormat, ...)
@@ -105,21 +113,12 @@ RTDECL(void) AssertMsg2(const char *pszFormat, ...)
     RTStrPrintfV(g_szRTAssertMsg2, sizeof(g_szRTAssertMsg2), pszFormat, va);
     va_end(va);
 }
+RT_EXPORT_SYMBOL(AssertMsg2);
 
 
 RTR0DECL(void) RTR0AssertPanicSystem(void)
 {
     panic("%s%s", g_szRTAssertMsg1, g_szRTAssertMsg2);
 }
+RT_EXPORT_SYMBOL(RTR0AssertPanicSystem);
 
-
-#if defined(RT_OS_LINUX) && defined(IN_MODULE)
-/*
- * When we build this in the Linux kernel module, we wish to make the
- * symbols available to other modules as well.
- */
-# include "the-linux-kernel.h"
-EXPORT_SYMBOL (RTR0AssertPanicSystem);
-EXPORT_SYMBOL (AssertMsg1);
-EXPORT_SYMBOL (AssertMsg2);
-#endif /* RT_OS_LINUX && IN_MODULE */

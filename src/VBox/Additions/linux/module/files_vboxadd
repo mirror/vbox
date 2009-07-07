@@ -59,6 +59,7 @@ FILES_VBOXADD_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/VBGLInternal.h=>VBGLInternal.h \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/VBoxGuestLog.h=>VBoxGuestLog.h \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/VMMDev.cpp=>VMMDev.c \
+    ${PATH_ROOT}/src/VBox/Runtime/include/internal/iprt.h=>include/internal/iprt.h \
     ${PATH_ROOT}/src/VBox/Runtime/include/internal/magics.h=>include/internal/magics.h \
     ${PATH_ROOT}/src/VBox/Runtime/include/internal/memobj.h=>include/internal/memobj.h \
     ${PATH_ROOT}/src/VBox/Runtime/include/internal/string.h=>include/internal/string.h \

@@ -29,11 +29,11 @@
  */
 
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-linux-kernel.h"
+#include "internal/iprt.h"
 #include <iprt/semaphore.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
@@ -86,6 +86,7 @@ RTDECL(int)  RTSemFastMutexCreate(PRTSEMFASTMUTEX pMutexSem)
     *pMutexSem = pFastInt;
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTSemFastMutexCreate);
 
 
 RTDECL(int)  RTSemFastMutexDestroy(RTSEMFASTMUTEX MutexSem)
@@ -106,6 +107,7 @@ RTDECL(int)  RTSemFastMutexDestroy(RTSEMFASTMUTEX MutexSem)
     RTMemFree(pFastInt);
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTSemFastMutexDestroy);
 
 
 RTDECL(int)  RTSemFastMutexRequest(RTSEMFASTMUTEX MutexSem)
@@ -132,6 +134,7 @@ RTDECL(int)  RTSemFastMutexRequest(RTSEMFASTMUTEX MutexSem)
 #endif
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTSemFastMutexRequest);
 
 
 RTDECL(int)  RTSemFastMutexRelease(RTSEMFASTMUTEX MutexSem)
@@ -157,4 +160,5 @@ RTDECL(int)  RTSemFastMutexRelease(RTSEMFASTMUTEX MutexSem)
 #endif
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTSemFastMutexRelease);
 

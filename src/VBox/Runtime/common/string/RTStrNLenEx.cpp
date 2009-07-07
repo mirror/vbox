@@ -32,6 +32,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/string.h>
+#include "internal/iprt.h"
 
 
 RTDECL(int) RTStrNLenEx(const char *pszString, size_t cchMax, size_t *pcch)
@@ -45,4 +46,5 @@ RTDECL(int) RTStrNLenEx(const char *pszString, size_t cchMax, size_t *pcch)
     *pcch = pchEnd - pszString;
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTStrNLenEx);
 

@@ -33,6 +33,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/mp.h>
+#include "internal/iprt.h"
+
 #include <iprt/asm.h>
 
 
@@ -43,6 +45,7 @@ RTDECL(RTCPUID) RTMpCpuId(void)
 #else
 # error "Not ported to this architecture."
     return NIL_RTAPICID;
-#endif 
+#endif
 }
+RT_EXPORT_SYMBOL(RTMpCpuId);
 

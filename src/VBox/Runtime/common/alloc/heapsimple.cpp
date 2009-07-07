@@ -33,13 +33,9 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_DEFAULT
-
-#if defined(IN_GUEST_R0) && defined(RT_OS_LINUX) && defined(IN_MODULE)
-/* should come first to prevent warnings about duplicate definitions of PAGE_* */
-# include "the-linux-kernel.h"
-#endif
-
 #include <iprt/heap.h>
+#include "internal/iprt.h"
+
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/string.h>
@@ -348,6 +344,7 @@ RTDECL(int) RTHeapSimpleInit(PRTHEAPSIMPLE pHeap, void *pvMemory, size_t cbMemor
 #endif
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTHeapSimpleInit);
 
 
 
@@ -396,6 +393,7 @@ RTDECL(void *) RTHeapSimpleAlloc(RTHEAPSIMPLE Heap, size_t cb, size_t cbAlignmen
     }
     return NULL;
 }
+RT_EXPORT_SYMBOL(RTHeapSimpleAlloc);
 
 
 /**
@@ -444,6 +442,7 @@ RTDECL(void *) RTHeapSimpleAllocZ(RTHEAPSIMPLE Heap, size_t cb, size_t cbAlignme
     }
     return NULL;
 }
+RT_EXPORT_SYMBOL(RTHeapSimpleAllocZ);
 
 
 /**
@@ -664,6 +663,7 @@ RTDECL(void) RTHeapSimpleFree(RTHEAPSIMPLE Heap, void *pv)
      */
     rtHeapSimpleFreeBlock(pHeapInt, pBlock);
 }
+RT_EXPORT_SYMBOL(RTHeapSimpleFree);
 
 
 /**
@@ -859,6 +859,7 @@ RTDECL(size_t) RTHeapSimpleSize(RTHEAPSIMPLE Heap, void *pv)
             - (uintptr_t)pBlock- sizeof(RTHEAPSIMPLEBLOCK);
     return cbBlock;
 }
+RT_EXPORT_SYMBOL(RTHeapSimpleSize);
 
 
 /**
@@ -884,6 +885,7 @@ RTDECL(size_t) RTHeapSimpleGetHeapSize(RTHEAPSIMPLE Heap)
     ASSERT_ANCHOR(pHeapInt);
     return pHeapInt->cbHeap;
 }
+RT_EXPORT_SYMBOL(RTHeapSimpleGetHeapSize);
 
 
 /**
@@ -908,6 +910,7 @@ RTDECL(size_t) RTHeapSimpleGetFreeSize(RTHEAPSIMPLE Heap)
     ASSERT_ANCHOR(pHeapInt);
     return pHeapInt->cbFree;
 }
+RT_EXPORT_SYMBOL(RTHeapSimpleGetFreeSize);
 
 
 /**
@@ -940,10 +943,5 @@ RTDECL(void) RTHeapSimpleDump(RTHEAPSIMPLE Heap, PFNRTHEAPSIMPLEPRINTF pfnPrintf
     }
     pfnPrintf("**** Done dumping Heap %p ****\n", Heap);
 }
+RT_EXPORT_SYMBOL(RTHeapSimpleDump);
 
-
-#if defined(IN_GUEST_R0) && defined(RT_OS_LINUX) && defined(IN_MODULE)
-EXPORT_SYMBOL(RTHeapSimpleAlloc);
-EXPORT_SYMBOL(RTHeapSimpleInit);
-EXPORT_SYMBOL(RTHeapSimpleFree);
-#endif

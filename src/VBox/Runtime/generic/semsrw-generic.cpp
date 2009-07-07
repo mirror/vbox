@@ -32,11 +32,12 @@
  */
 
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/semaphore.h>
+#include "internal/iprt.h"
+
 #include <iprt/critsect.h>
 #include <iprt/alloc.h>
 #include <iprt/time.h>
@@ -149,6 +150,7 @@ RTDECL(int) RTSemRWCreate(PRTSEMRW pRWSem)
 
     return rc;
 }
+RT_EXPORT_SYMBOL(RTSemRWCreate);
 
 
 RTDECL(int) RTSemRWDestroy(RTSEMRW RWSem)
@@ -209,6 +211,7 @@ RTDECL(int) RTSemRWDestroy(RTSEMRW RWSem)
 
     return rc;
 }
+RT_EXPORT_SYMBOL(RTSemRWDestroy);
 
 
 RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
@@ -302,12 +305,14 @@ RTDECL(int) RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
 
     return rc;
 }
+RT_EXPORT_SYMBOL(RTSemRWRequestRead);
 
 
 RTDECL(int) RTSemRWRequestReadNoResume(RTSEMRW RWSem, unsigned cMillies)
 {
     return RTSemRWRequestRead(RWSem, cMillies);
 }
+RT_EXPORT_SYMBOL(RTSemRWRequestReadNoResume);
 
 
 RTDECL(int) RTSemRWReleaseRead(RTSEMRW RWSem)
@@ -356,6 +361,7 @@ RTDECL(int) RTSemRWReleaseRead(RTSEMRW RWSem)
 
     return rc;
 }
+RT_EXPORT_SYMBOL(RTSemRWReleaseRead);
 
 
 RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
@@ -465,12 +471,14 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
     }
     return rc;
 }
+RT_EXPORT_SYMBOL(RTSemRWRequestWrite);
 
 
 RTDECL(int) RTSemRWRequestWriteNoResume(RTSEMRW RWSem, unsigned cMillies)
 {
     return RTSemRWRequestWrite(RWSem, cMillies);
 }
+RT_EXPORT_SYMBOL(RTSemRWRequestWriteNoResume);
 
 
 RTDECL(int) RTSemRWReleaseWrite(RTSEMRW RWSem)
@@ -532,6 +540,7 @@ RTDECL(int) RTSemRWReleaseWrite(RTSEMRW RWSem)
 
     return rc;
 }
+RT_EXPORT_SYMBOL(RTSemRWReleaseWrite);
 
 
 RTDECL(bool) RTSemRWIsWriteOwner(RTSEMRW RWSem)
@@ -554,6 +563,7 @@ RTDECL(bool) RTSemRWIsWriteOwner(RTSEMRW RWSem)
     ASMAtomicUoReadSize(&pThis->Writer, &Writer);
     return Writer == Self;
 }
+RT_EXPORT_SYMBOL(RTSemRWIsWriteOwner);
 
 
 RTDECL(uint32_t) RTSemRWGetWriteRecursion(RTSEMRW RWSem)
@@ -573,6 +583,7 @@ RTDECL(uint32_t) RTSemRWGetWriteRecursion(RTSEMRW RWSem)
      */
     return pThis->cWrites;
 }
+RT_EXPORT_SYMBOL(RTSemRWGetWriteRecursion);
 
 
 RTDECL(uint32_t) RTSemRWGetWriterReadRecursion(RTSEMRW RWSem)
@@ -592,3 +603,4 @@ RTDECL(uint32_t) RTSemRWGetWriterReadRecursion(RTSEMRW RWSem)
      */
     return pThis->cWriterReads;
 }
+RT_EXPORT_SYMBOL(RTSemRWGetWriterReadRecursion);

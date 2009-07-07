@@ -28,11 +28,14 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_LDR
 #include <iprt/ldr.h>
+#include "internal/iprt.h"
+
 #include <iprt/alloc.h>
 #include <iprt/file.h>
 #include <iprt/assert.h>
@@ -286,6 +289,7 @@ RTDECL(int) RTLdrOpen(const char *pszFilename, uint32_t fFlags, RTLDRARCH enmArc
     LogFlow(("RTLdrOpen: return %Rrc\n", rc));
     return rc;
 }
+RT_EXPORT_SYMBOL(RTLdrOpen);
 
 
 /**
@@ -339,4 +343,5 @@ RTDECL(int) RTLdrOpenkLdr(const char *pszFilename, uint32_t fFlags, RTLDRARCH en
     return RTLdrOpen(pszFilename, fFlags, enmArch, phLdrMod);
 #endif
 }
+RT_EXPORT_SYMBOL(RTLdrOpenkLdr);
 

@@ -28,7 +28,12 @@
  * additional information or have any questions.
  */
 
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #include <iprt/log.h>
+#include "internal/iprt.h"
 
 
 RTDECL(void) RTLogWriteUser(const char *pch, size_t cb)
@@ -37,4 +42,5 @@ RTDECL(void) RTLogWriteUser(const char *pch, size_t cb)
     NOREF(cb);
     return;
 }
+RT_EXPORT_SYMBOL(RTLogWriteUser);
 

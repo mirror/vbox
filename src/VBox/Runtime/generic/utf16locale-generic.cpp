@@ -34,10 +34,12 @@
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_UTF16
 #include <iprt/string.h>
+#include "internal/iprt.h"
 
 
 RTDECL(int) RTUtf16LocaleICmp(PCRTUTF16 pusz1, PCRTUTF16 pusz2)
 {
     return RTUtf16ICmp(pusz1, pusz2);
 }
+RT_EXPORT_SYMBOL(RTUtf16LocaleICmp);
 

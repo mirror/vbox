@@ -28,26 +28,31 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/mp.h>
+#include "internal/iprt.h"
 
 
 RTDECL(PRTCPUSET) RTMpGetPresentSet(PRTCPUSET pSet)
 {
     return RTMpGetSet(pSet);
 }
+RT_EXPORT_SYMBOL(RTMpGetPresentSet);
 
 
 RTDECL(RTCPUID) RTMpGetPresentCount(void)
 {
     return RTMpGetCount();
 }
+RT_EXPORT_SYMBOL(RTMpGetPresentCount);
 
 
 RTDECL(bool) RTMpIsCpuPresent(RTCPUID idCpu)
 {
     return RTMpIsCpuPossible(idCpu);
 }
+RT_EXPORT_SYMBOL(RTMpIsCpuPresent);
 

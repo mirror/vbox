@@ -31,8 +31,10 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <iprt/net.h>
+#include <iprt/net.h>                   /* must come before getopt.h */
 #include <iprt/getopt.h>
+#include "internal/iprt.h"
+
 #include <iprt/err.h>
 #include <iprt/string.h>
 #include <iprt/assert.h>
@@ -68,6 +70,7 @@ RTDECL(int) RTGetOptInit(PRTGETOPTSTATE pState, int argc, char **argv,
      *        first. */
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTGetOptInit);
 
 
 /**
@@ -495,4 +498,5 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
     pValueUnion->psz = pszArgThis;
     return VINF_GETOPT_NOT_OPTION;
 }
+RT_EXPORT_SYMBOL(RTGetOpt);
 
