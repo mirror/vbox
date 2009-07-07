@@ -40,7 +40,8 @@
  */
 #if defined(RT_OS_LINUX) \
  && defined(IN_RING0) \
- && defined(MODULE)
+ && defined(MODULE) \
+ && !defined(RT_NO_EXPORT_SYMBOL)
 # define bool linux_bool /* see r0drv/linux/the-linux-kernel.h */
 # include <linux/autoconf.h>
 # include <linux/module.h>
