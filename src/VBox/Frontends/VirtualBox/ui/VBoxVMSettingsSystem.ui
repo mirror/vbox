@@ -63,7 +63,7 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QIAdvancedSlider" name="mSlMemory">
+          <widget class="VBoxGuestRAMSlider" name="mSlMemory">
            <property name="whatsThis">
             <string>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</string>
            </property>
@@ -600,6 +600,11 @@
    <class>QIAdvancedSlider</class>
    <extends>QSlider</extends>
    <header>QIAdvancedSlider.h</header>
+  </customwidget>
+  <customwidget>
+   <class>VBoxGuestRAMSlider</class>
+   <extends>QIAdvancedSlider</extends>
+   <header>VBoxGuestRAMSlider.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
