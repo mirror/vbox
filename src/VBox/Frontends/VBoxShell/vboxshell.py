@@ -672,6 +672,29 @@ def reloadExtCmd(ctx, args):
    autoCompletion(commands, ctx)
    return 0
 
+
+def runScriptCmd(ctx, args):
+    if (len(args) != 2):
+        print "usage: runScript <script>"
+        return 0
+    try:
+        lf = open(args[1], 'r')
+    except IOError,e:
+        print "cannot open:",args[1], ":",e
+        return 0
+
+    try:
+        for line in lf:
+            done = runCommand(ctx, line)
+            if done != 0: break
+    except Exception,e:
+        print "error:",e
+        if g_verbose:
+                traceback.print_exc()
+    lf.close()
+    return 0
+
+
 aliases = {'s':'start',
            'i':'info',
            'l':'list',
@@ -704,6 +727,7 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'portForward':['Setup permanent port forwarding for a VM, takes adapter number host port and guest port: portForward Win32 0 8080 80', portForwardCmd, 0],
             'showLog':['Show log file of the VM, : showLog Win32', showLogCmd, 0],
             'reloadExt':['Reload custom extensions: reloadExt', reloadExtCmd, 0],
+            'runScript':['Run VBox script: runScript script.vbox', runScriptCmd, 0],
             }
 
 def runCommand(ctx, cmd):
@@ -787,15 +811,27 @@ def interpret(ctx):
     except:
         pass
 
-
-from vboxapi import VirtualBoxManager
-
-def main(argv):    
+def main(argv):
     style = None
-    if len(argv) > 1:
-        if argv[1] == "-w":
+    autopath = False
+    argv.pop(0)
+    while len(argv) > 0:
+        if argv[0] == "-w":
             style = "WEBSERVICE"
-        
+        if argv[0] == "-a":
+            autopath = True
+        argv.pop(0)
+
+    if autopath:
+        cwd = os.getcwd()
+        vpp = os.environ.get("VBOX_PROGRAM_PATH")
+        if vpp is None and (os.path.isfile(os.path.join(cwd, "VirtualBox")) or os.path.isfile(os.path.join(cwd, "VirtualBox.exe"))) :
+            vpp = cwd
+            print "Autodetected VBOX_PROGRAM_PATH as",vpp
+            os.environ["VBOX_PROGRAM_PATH"] = cwd
+            sys.path.append(os.path.join(vpp, "sdk", "installer"))
+
+    from vboxapi import VirtualBoxManager
     g_virtualBoxManager = VirtualBoxManager(style, None)
     ctx = {'global':g_virtualBoxManager,
            'mgr':g_virtualBoxManager.mgr,
