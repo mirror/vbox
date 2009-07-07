@@ -1,6 +1,7 @@
-<ui version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <comment>
- VBox frontends: Qt4 GUI ("VirtualBox"):
+ VBox frontends: Qt4 GUI (&quot;VirtualBox&quot;):
 
  Copyright (C) 2008 Sun Microsystems, Inc.
 
@@ -8,7 +9,7 @@
  available from http://www.virtualbox.org. This file is free software;
  you can redistribute it and/or modify it under the terms of the GNU
  General Public License (GPL) as published by the Free Software
- Foundation, in version 2 as it comes in the "COPYING" file of the
+ Foundation, in version 2 as it comes in the &quot;COPYING&quot; file of the
  VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 
@@ -17,41 +18,32 @@
  additional information or have any questions.
  </comment>
  <class>VBoxNewVMWzd</class>
- <widget class="QDialog" name="VBoxNewVMWzd" >
-  <property name="geometry" >
+ <widget class="QDialog" name="VBoxNewVMWzd">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>516</width>
-    <height>417</height>
+    <height>498</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>Create New Virtual Machine</string>
   </property>
-  <layout class="QVBoxLayout" >
-   <property name="leftMargin" >
-    <number>0</number>
-   </property>
-   <property name="topMargin" >
-    <number>0</number>
-   </property>
-   <property name="rightMargin" >
-    <number>0</number>
-   </property>
-   <property name="bottomMargin" >
+  <layout class="QVBoxLayout">
+   <property name="margin">
     <number>0</number>
    </property>
    <item>
-    <widget class="QStackedWidget" name="mPageStack" >
-     <property name="currentIndex" >
-      <number>0</number>
+    <widget class="QStackedWidget" name="mPageStack">
+     <property name="currentIndex">
+      <number>2</number>
      </property>
-     <widget class="QWidget" name="mPageWelcome" >
-      <layout class="QVBoxLayout" >
+     <widget class="QWidget" name="mPageWelcome">
+      <layout class="QVBoxLayout">
        <item>
-        <widget class="QLabel" name="mPageWelcomeHdr" >
-         <property name="font" >
+        <widget class="QLabel" name="mPageWelcomeHdr">
+         <property name="font">
           <font>
            <family>Arial</family>
            <pointsize>12</pointsize>
@@ -59,78 +51,78 @@
            <bold>true</bold>
           </font>
          </property>
-         <property name="text" >
+         <property name="text">
           <string>Welcome to the New Virtual Machine Wizard!</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="Line" name="line11" >
-         <property name="orientation" >
+        <widget class="Line" name="line11">
+         <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" >
-         <property name="spacing" >
+        <layout class="QHBoxLayout">
+         <property name="spacing">
           <number>10</number>
          </property>
          <item>
-          <widget class="QLabel" name="mLogoWelcome" >
-           <property name="sizePolicy" >
-            <sizepolicy vsizetype="Minimum" hsizetype="Maximum" >
+          <widget class="QLabel" name="mLogoWelcome">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Minimum">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
-           <property name="autoFillBackground" >
+           <property name="autoFillBackground">
             <bool>true</bool>
            </property>
-           <property name="text" >
+           <property name="text">
             <string/>
            </property>
-           <property name="pixmap" >
-            <pixmap resource="../VirtualBox.qrc" >:/vmw_new_welcome.png</pixmap>
+           <property name="pixmap">
+            <pixmap resource="../VirtualBox.qrc">:/vmw_new_welcome.png</pixmap>
            </property>
-           <property name="alignment" >
+           <property name="alignment">
             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
            </property>
           </widget>
          </item>
          <item>
-          <layout class="QVBoxLayout" >
-           <property name="spacing" >
+          <layout class="QVBoxLayout">
+           <property name="spacing">
             <number>10</number>
            </property>
            <item>
-            <widget class="QILabel" name="mTextWelcome" >
-             <property name="sizePolicy" >
-              <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
+            <widget class="QILabel" name="mTextWelcome">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
-             <property name="minimumSize" >
+             <property name="minimumSize">
               <size>
                <width>300</width>
                <height>0</height>
               </size>
              </property>
-             <property name="text" >
-              <string>&lt;p>This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p>&lt;p>Use the &lt;b>Next&lt;/b> button to go the next page of the wizard and the &lt;b>Back&lt;/b> button to return to the previous page.&lt;/p></string>
+             <property name="text">
+              <string>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</string>
              </property>
-             <property name="wordWrap" >
+             <property name="wordWrap">
               <bool>true</bool>
              </property>
             </widget>
            </item>
            <item>
             <spacer>
-             <property name="orientation" >
+             <property name="orientation">
               <enum>Qt::Vertical</enum>
              </property>
-             <property name="sizeHint" >
+             <property name="sizeHint" stdset="0">
               <size>
                <width>0</width>
                <height>0</height>
@@ -143,20 +135,20 @@
         </layout>
        </item>
        <item>
-        <widget class="Line" name="line12" >
-         <property name="orientation" >
+        <widget class="Line" name="line12">
+         <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" >
+        <layout class="QHBoxLayout">
          <item>
           <spacer>
-           <property name="orientation" >
+           <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
-           <property name="sizeHint" >
+           <property name="sizeHint" stdset="0">
             <size>
              <width>0</width>
              <height>0</height>
@@ -165,31 +157,31 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="mBtnBack1" >
-           <property name="enabled" >
+          <widget class="QPushButton" name="mBtnBack1">
+           <property name="enabled">
             <bool>false</bool>
            </property>
-           <property name="text" >
+           <property name="text">
             <string>&lt; &amp;Back</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="mBtnNext1" >
-           <property name="text" >
-            <string>&amp;Next ></string>
+          <widget class="QPushButton" name="mBtnNext1">
+           <property name="text">
+            <string>&amp;Next &gt;</string>
            </property>
           </widget>
          </item>
          <item>
           <spacer>
-           <property name="orientation" >
+           <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
-           <property name="sizeType" >
+           <property name="sizeType">
             <enum>QSizePolicy::Fixed</enum>
            </property>
-           <property name="sizeHint" >
+           <property name="sizeHint" stdset="0">
             <size>
              <width>5</width>
              <height>0</height>
@@ -198,8 +190,8 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="mBtnCancel1" >
-           <property name="text" >
+          <widget class="QPushButton" name="mBtnCancel1">
+           <property name="text">
             <string>Cancel</string>
            </property>
           </widget>
@@ -208,11 +200,11 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="mPageNameAndOS" >
-      <layout class="QVBoxLayout" >
+     <widget class="QWidget" name="mPageNameAndOS">
+      <layout class="QVBoxLayout">
        <item>
-        <widget class="QLabel" name="mPageNameAndOSHdr" >
-         <property name="font" >
+        <widget class="QLabel" name="mPageNameAndOSHdr">
+         <property name="font">
           <font>
            <family>Arial</family>
            <pointsize>12</pointsize>
@@ -220,132 +212,132 @@
            <bold>true</bold>
           </font>
          </property>
-         <property name="text" >
+         <property name="text">
           <string>VM Name and OS Type</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="Line" name="line21" >
-         <property name="orientation" >
+        <widget class="Line" name="line21">
+         <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" >
-         <property name="spacing" >
+        <layout class="QHBoxLayout">
+         <property name="spacing">
           <number>10</number>
          </property>
          <item>
-          <widget class="QLabel" name="mLogoNameAndOS" >
-           <property name="sizePolicy" >
-            <sizepolicy vsizetype="Minimum" hsizetype="Maximum" >
+          <widget class="QLabel" name="mLogoNameAndOS">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Minimum">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
-           <property name="autoFillBackground" >
+           <property name="autoFillBackground">
             <bool>true</bool>
            </property>
-           <property name="text" >
+           <property name="text">
             <string/>
            </property>
-           <property name="pixmap" >
-            <pixmap resource="../VirtualBox.qrc" >:/vmw_new_welcome.png</pixmap>
+           <property name="pixmap">
+            <pixmap resource="../VirtualBox.qrc">:/vmw_new_welcome.png</pixmap>
            </property>
-           <property name="alignment" >
+           <property name="alignment">
             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
            </property>
           </widget>
          </item>
          <item>
-          <layout class="QVBoxLayout" >
-           <property name="spacing" >
+          <layout class="QVBoxLayout">
+           <property name="spacing">
             <number>10</number>
            </property>
            <item>
-            <widget class="QILabel" name="mTextNameAndOS" >
-             <property name="sizePolicy" >
-              <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
+            <widget class="QILabel" name="mTextNameAndOS">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
-             <property name="minimumSize" >
+             <property name="minimumSize">
               <size>
                <width>300</width>
                <height>0</height>
               </size>
              </property>
-             <property name="text" >
-              <string>&lt;p>Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p>&lt;p>The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p></string>
+             <property name="text">
+              <string>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</string>
              </property>
-             <property name="wordWrap" >
+             <property name="wordWrap">
               <bool>true</bool>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QGroupBox" name="gbName" >
-             <property name="sizePolicy" >
-              <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+            <widget class="QGroupBox" name="gbName">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
-             <property name="title" >
+             <property name="title">
               <string>N&amp;ame</string>
              </property>
-             <layout class="QHBoxLayout" >
-              <property name="spacing" >
+             <layout class="QHBoxLayout">
+              <property name="spacing">
                <number>0</number>
               </property>
-              <property name="leftMargin" >
+              <property name="leftMargin">
                <number>9</number>
               </property>
-              <property name="topMargin" >
+              <property name="topMargin">
                <number>4</number>
               </property>
-              <property name="rightMargin" >
+              <property name="rightMargin">
                <number>9</number>
               </property>
-              <property name="bottomMargin" >
+              <property name="bottomMargin">
                <number>9</number>
               </property>
               <item>
-               <widget class="QLineEdit" name="mLeName" />
+               <widget class="QLineEdit" name="mLeName"/>
               </item>
              </layout>
             </widget>
            </item>
            <item>
-            <widget class="QGroupBox" name="gbOSType" >
-             <property name="sizePolicy" >
-              <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+            <widget class="QGroupBox" name="gbOSType">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
-             <property name="title" >
+             <property name="title">
               <string>OS &amp;Type</string>
              </property>
-             <layout class="QHBoxLayout" >
-              <property name="topMargin" >
+             <layout class="QHBoxLayout">
+              <property name="topMargin">
                <number>4</number>
               </property>
               <item>
-               <widget class="VBoxOSTypeSelectorWidget" name="mOSTypeSelector" />
+               <widget class="VBoxOSTypeSelectorWidget" name="mOSTypeSelector" native="true"/>
               </item>
              </layout>
             </widget>
            </item>
            <item>
             <spacer>
-             <property name="orientation" >
+             <property name="orientation">
               <enum>Qt::Vertical</enum>
              </property>
-             <property name="sizeHint" >
+             <property name="sizeHint" stdset="0">
               <size>
                <width>0</width>
                <height>0</height>
@@ -358,20 +350,20 @@
         </layout>
        </item>
        <item>
-        <widget class="Line" name="line22" >
-         <property name="orientation" >
+        <widget class="Line" name="line22">
+         <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" >
+        <layout class="QHBoxLayout">
          <item>
           <spacer>
-           <property name="orientation" >
+           <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
-           <property name="sizeHint" >
+           <property name="sizeHint" stdset="0">
             <size>
              <width>0</width>
              <height>0</height>
@@ -380,28 +372,28 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="mBtnBack2" >
-           <property name="text" >
+          <widget class="QPushButton" name="mBtnBack2">
+           <property name="text">
             <string>&lt; &amp;Back</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="mBtnNext2" >
-           <property name="text" >
-            <string>&amp;Next ></string>
+          <widget class="QPushButton" name="mBtnNext2">
+           <property name="text">
+            <string>&amp;Next &gt;</string>
            </property>
           </widget>
          </item>
          <item>
           <spacer>
-           <property name="orientation" >
+           <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
-           <property name="sizeType" >
+           <property name="sizeType">
             <enum>QSizePolicy::Fixed</enum>
            </property>
-           <property name="sizeHint" >
+           <property name="sizeHint" stdset="0">
             <size>
              <width>5</width>
              <height>0</height>
@@ -410,8 +402,8 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="mBtnCancel2" >
-           <property name="text" >
+          <widget class="QPushButton" name="mBtnCancel2">
+           <property name="text">
             <string>Cancel</string>
            </property>
           </widget>
@@ -420,11 +412,11 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="mPageMemory" >
-      <layout class="QVBoxLayout" >
+     <widget class="QWidget" name="mPageMemory">
+      <layout class="QVBoxLayout">
        <item>
-        <widget class="QLabel" name="mPageMemoryHdr" >
-         <property name="font" >
+        <widget class="QLabel" name="mPageMemoryHdr">
+         <property name="font">
           <font>
            <family>Arial</family>
            <pointsize>12</pointsize>
@@ -432,192 +424,192 @@
            <bold>true</bold>
           </font>
          </property>
-         <property name="text" >
+         <property name="text">
           <string>Memory</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="Line" name="line31" >
-         <property name="orientation" >
+        <widget class="Line" name="line31">
+         <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" >
-         <property name="spacing" >
+        <layout class="QHBoxLayout">
+         <property name="spacing">
           <number>10</number>
          </property>
          <item>
-          <widget class="QLabel" name="mLogoMemory" >
-           <property name="sizePolicy" >
-            <sizepolicy vsizetype="Minimum" hsizetype="Maximum" >
+          <widget class="QLabel" name="mLogoMemory">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Minimum">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
-           <property name="autoFillBackground" >
+           <property name="autoFillBackground">
             <bool>true</bool>
            </property>
-           <property name="text" >
+           <property name="text">
             <string/>
            </property>
-           <property name="pixmap" >
-            <pixmap resource="../VirtualBox.qrc" >:/vmw_new_welcome.png</pixmap>
+           <property name="pixmap">
+            <pixmap resource="../VirtualBox.qrc">:/vmw_new_welcome.png</pixmap>
            </property>
-           <property name="alignment" >
+           <property name="alignment">
             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
            </property>
           </widget>
          </item>
          <item>
-          <layout class="QVBoxLayout" >
-           <property name="spacing" >
+          <layout class="QVBoxLayout">
+           <property name="spacing">
             <number>10</number>
            </property>
            <item>
-            <widget class="QILabel" name="mTextMemory" >
-             <property name="sizePolicy" >
-              <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
+            <widget class="QILabel" name="mTextMemory">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
-             <property name="minimumSize" >
+             <property name="minimumSize">
               <size>
                <width>300</width>
                <height>0</height>
               </size>
              </property>
-             <property name="text" >
-              <string>&lt;p>Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p></string>
+             <property name="text">
+              <string>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</string>
              </property>
-             <property name="wordWrap" >
+             <property name="wordWrap">
               <bool>true</bool>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QILabel" name="mTextRAMBest" >
-             <property name="sizePolicy" >
-              <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
+            <widget class="QILabel" name="mTextRAMBest">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
-             <property name="minimumSize" >
+             <property name="minimumSize">
               <size>
                <width>300</width>
                <height>0</height>
               </size>
              </property>
-             <property name="text" >
+             <property name="text">
               <string/>
              </property>
-             <property name="wordWrap" >
+             <property name="wordWrap">
               <bool>true</bool>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QGroupBox" name="gbMemory" >
-             <property name="sizePolicy" >
-              <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+            <widget class="QGroupBox" name="gbMemory">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
-             <property name="title" >
+             <property name="title">
               <string>Base &amp;Memory Size</string>
              </property>
-             <layout class="QGridLayout" >
-              <property name="topMargin" >
+             <layout class="QGridLayout">
+              <property name="topMargin">
                <number>4</number>
               </property>
-              <item row="0" column="0" colspan="3" >
-               <widget class="QSlider" name="mSlRAM" >
-                <property name="sizePolicy" >
-                 <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+              <item row="0" column="0" colspan="3">
+               <widget class="VBoxGuestRAMSlider" name="mSlRAM">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                   <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
                 </property>
-                <property name="minimumSize" >
+                <property name="minimumSize">
                  <size>
                   <width>0</width>
                   <height>0</height>
                  </size>
                 </property>
-                <property name="orientation" >
+                <property name="orientation">
                  <enum>Qt::Horizontal</enum>
                 </property>
-                <property name="tickPosition" >
+                <property name="tickPosition">
                  <enum>QSlider::TicksBelow</enum>
                 </property>
                </widget>
               </item>
-              <item row="0" column="3" >
-               <widget class="QILineEdit" name="mLeRAM" >
-                <property name="sizePolicy" >
-                 <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
+              <item row="0" column="3">
+               <widget class="QILineEdit" name="mLeRAM">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                   <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
                 </property>
                </widget>
               </item>
-              <item row="0" column="4" >
-               <widget class="QLabel" name="txRAM" >
-                <property name="sizePolicy" >
-                 <sizepolicy vsizetype="Fixed" hsizetype="Fixed" >
+              <item row="0" column="4">
+               <widget class="QLabel" name="txRAM">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                   <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
                 </property>
-                <property name="text" >
+                <property name="text">
                  <string>MB</string>
                 </property>
                </widget>
               </item>
-              <item row="1" column="0" >
-               <widget class="QLabel" name="mTxRAMMin" >
-                <property name="sizePolicy" >
-                 <sizepolicy vsizetype="Preferred" hsizetype="Minimum" >
+              <item row="1" column="0">
+               <widget class="QLabel" name="mTxRAMMin">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
                   <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
                 </property>
-                <property name="text" >
+                <property name="text">
                  <string/>
                 </property>
-                <property name="alignment" >
+                <property name="alignment">
                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
                 </property>
                </widget>
               </item>
-              <item row="1" column="2" >
-               <widget class="QLabel" name="mTxRAMMax" >
-                <property name="sizePolicy" >
-                 <sizepolicy vsizetype="Preferred" hsizetype="Minimum" >
+              <item row="1" column="2">
+               <widget class="QLabel" name="mTxRAMMax">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
                   <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
                 </property>
-                <property name="text" >
+                <property name="text">
                  <string/>
                 </property>
-                <property name="alignment" >
+                <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTop|Qt::AlignTrailing</set>
                 </property>
                </widget>
               </item>
-              <item row="1" column="1" >
+              <item row="1" column="1">
                <spacer>
-                <property name="orientation" >
+                <property name="orientation">
                  <enum>Qt::Horizontal</enum>
                 </property>
-                <property name="sizeHint" >
+                <property name="sizeHint" stdset="0">
                  <size>
                   <width>40</width>
                   <height>5</height>
@@ -630,10 +622,10 @@
            </item>
            <item>
             <spacer>
-             <property name="orientation" >
+             <property name="orientation">
               <enum>Qt::Vertical</enum>
              </property>
-             <property name="sizeHint" >
+             <property name="sizeHint" stdset="0">
               <size>
                <width>0</width>
                <height>0</height>
@@ -646,20 +638,20 @@
         </layout>
        </item>
        <item>
-        <widget class="Line" name="line32" >
-         <property name="orientation" >
+        <widget class="Line" name="line32">
+         <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" >
+        <layout class="QHBoxLayout">
          <item>
           <spacer>
-           <property name="orientation" >
+           <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
-           <property name="sizeHint" >
+           <property name="sizeHint" stdset="0">
             <size>
              <width>0</width>
              <height>0</height>
@@ -668,28 +660,28 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="mBtnBack3" >
-           <property name="text" >
+          <widget class="QPushButton" name="mBtnBack3">
+           <property name="text">
             <string>&lt; &amp;Back</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="mBtnNext3" >
-           <property name="text" >
-            <string>&amp;Next ></string>
+          <widget class="QPushButton" name="mBtnNext3">
+           <property name="text">
+            <string>&amp;Next &gt;</string>
            </property>
           </widget>
          </item>
          <item>
           <spacer>
-           <property name="orientation" >
+           <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
-           <property name="sizeType" >
+           <property name="sizeType">
             <enum>QSizePolicy::Fixed</enum>
            </property>
-           <property name="sizeHint" >
+           <property name="sizeHint" stdset="0">
             <size>
              <width>5</width>
              <height>0</height>
@@ -698,8 +690,8 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="mBtnCancel3" >
-           <property name="text" >
+          <widget class="QPushButton" name="mBtnCancel3">
+           <property name="text">
             <string>Cancel</string>
            </property>
           </widget>
@@ -708,11 +700,11 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="mPageHDD" >
-      <layout class="QVBoxLayout" >
+     <widget class="QWidget" name="mPageHDD">
+      <layout class="QVBoxLayout">
        <item>
-        <widget class="QLabel" name="mPageHDDHdr" >
-         <property name="font" >
+        <widget class="QLabel" name="mPageHDDHdr">
+         <property name="font">
           <font>
            <family>Arial</family>
            <pointsize>12</pointsize>
@@ -720,112 +712,112 @@
            <bold>true</bold>
           </font>
          </property>
-         <property name="text" >
+         <property name="text">
           <string>Virtual Hard Disk</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="Line" name="line41" >
-         <property name="orientation" >
+        <widget class="Line" name="line41">
+         <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" >
-         <property name="spacing" >
+        <layout class="QHBoxLayout">
+         <property name="spacing">
           <number>10</number>
          </property>
          <item>
-          <widget class="QLabel" name="mLogoHDD" >
-           <property name="sizePolicy" >
-            <sizepolicy vsizetype="Minimum" hsizetype="Maximum" >
+          <widget class="QLabel" name="mLogoHDD">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Minimum">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
-           <property name="autoFillBackground" >
+           <property name="autoFillBackground">
             <bool>true</bool>
            </property>
-           <property name="text" >
+           <property name="text">
             <string/>
            </property>
-           <property name="pixmap" >
-            <pixmap resource="../VirtualBox.qrc" >:/vmw_new_welcome.png</pixmap>
+           <property name="pixmap">
+            <pixmap resource="../VirtualBox.qrc">:/vmw_new_welcome.png</pixmap>
            </property>
-           <property name="alignment" >
+           <property name="alignment">
             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
            </property>
           </widget>
          </item>
          <item>
-          <layout class="QVBoxLayout" >
-           <property name="spacing" >
+          <layout class="QVBoxLayout">
+           <property name="spacing">
             <number>10</number>
            </property>
            <item>
-            <widget class="QILabel" name="mTextVDI" >
-             <property name="sizePolicy" >
-              <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
+            <widget class="QILabel" name="mTextVDI">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
-             <property name="minimumSize" >
+             <property name="minimumSize">
               <size>
                <width>300</width>
                <height>0</height>
               </size>
              </property>
-             <property name="text" >
-              <string>&lt;p>Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b>New&lt;/b> button or select an existing hard disk image from the drop-down list or by pressing the &lt;b>Existing&lt;/b> button (to invoke the Virtual Media Manager dialog).&lt;/p>&lt;p>If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p></string>
+             <property name="text">
+              <string>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</string>
              </property>
-             <property name="wordWrap" >
+             <property name="wordWrap">
               <bool>true</bool>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QILabel" name="mTextVDIBest" >
-             <property name="sizePolicy" >
-              <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
+            <widget class="QILabel" name="mTextVDIBest">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
-             <property name="minimumSize" >
+             <property name="minimumSize">
               <size>
                <width>300</width>
                <height>0</height>
               </size>
              </property>
-             <property name="text" >
+             <property name="text">
               <string/>
              </property>
-             <property name="wordWrap" >
+             <property name="wordWrap">
               <bool>true</bool>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QGroupBox" name="mGbHDA" >
-             <property name="sizePolicy" >
-              <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+            <widget class="QGroupBox" name="mGbHDA">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
-             <property name="title" >
+             <property name="title">
               <string>Boot Hard &amp;Disk (Primary Master)</string>
              </property>
              <property name="checkable">
               <bool>true</bool>
              </property>
-             <layout class="QGridLayout" >
-              <item row="0" column="0" colspan="3" >
-               <widget class="QRadioButton" name="mNewVDIRadio" >
-                <property name="text" >
+             <layout class="QGridLayout">
+              <item row="0" column="0" colspan="3">
+               <widget class="QRadioButton" name="mNewVDIRadio">
+                <property name="text">
                  <string>&amp;Create new hard disk</string>
                 </property>
                 <property name="checked">
@@ -833,26 +825,26 @@
                 </property>
                </widget>
               </item>
-              <item row="1" column="0" colspan="3" >
-               <widget class="QRadioButton" name="mExistRadio" >
-                <property name="text" >
+              <item row="1" column="0" colspan="3">
+               <widget class="QRadioButton" name="mExistRadio">
+                <property name="text">
                  <string>&amp;Use existing hard disk</string>
                 </property>
                </widget>
               </item>
-              <item row="2" column="1" >
-               <widget class="VBoxMediaComboBox" name="mHDCombo" >
-                <property name="sizePolicy" >
-                 <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+              <item row="2" column="1">
+               <widget class="VBoxMediaComboBox" name="mHDCombo">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                   <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
                 </property>
                </widget>
               </item>
-              <item row="2" column="2" >
-               <widget class="QToolButton" name="mTbVmm" >
-                <property name="autoRaise" >
+              <item row="2" column="2">
+               <widget class="QToolButton" name="mTbVmm">
+                <property name="autoRaise">
                  <bool>true</bool>
                 </property>
                </widget>
@@ -862,10 +854,10 @@
            </item>
            <item>
             <spacer>
-             <property name="orientation" >
+             <property name="orientation">
               <enum>Qt::Vertical</enum>
              </property>
-             <property name="sizeHint" >
+             <property name="sizeHint" stdset="0">
               <size>
                <width>0</width>
                <height>0</height>
@@ -878,20 +870,20 @@
         </layout>
        </item>
        <item>
-        <widget class="Line" name="line42" >
-         <property name="orientation" >
+        <widget class="Line" name="line42">
+         <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" >
+        <layout class="QHBoxLayout">
          <item>
           <spacer>
-           <property name="orientation" >
+           <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
-           <property name="sizeHint" >
+           <property name="sizeHint" stdset="0">
             <size>
              <width>0</width>
              <height>0</height>
@@ -900,28 +892,28 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="mBtnBack4" >
-           <property name="text" >
+          <widget class="QPushButton" name="mBtnBack4">
+           <property name="text">
             <string>&lt; &amp;Back</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="mBtnNext4" >
-           <property name="text" >
-            <string>&amp;Next ></string>
+          <widget class="QPushButton" name="mBtnNext4">
+           <property name="text">
+            <string>&amp;Next &gt;</string>
            </property>
           </widget>
          </item>
          <item>
           <spacer>
-           <property name="orientation" >
+           <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
-           <property name="sizeType" >
+           <property name="sizeType">
             <enum>QSizePolicy::Fixed</enum>
            </property>
-           <property name="sizeHint" >
+           <property name="sizeHint" stdset="0">
             <size>
              <width>5</width>
              <height>0</height>
@@ -930,8 +922,8 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="mBtnCancel4" >
-           <property name="text" >
+          <widget class="QPushButton" name="mBtnCancel4">
+           <property name="text">
             <string>Cancel</string>
            </property>
           </widget>
@@ -940,11 +932,11 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="mPageSummary" >
-      <layout class="QVBoxLayout" >
+     <widget class="QWidget" name="mPageSummary">
+      <layout class="QVBoxLayout">
        <item>
-        <widget class="QLabel" name="mPageSummaryHdr" >
-         <property name="font" >
+        <widget class="QLabel" name="mPageSummaryHdr">
+         <property name="font">
           <font>
            <family>Arial</family>
            <pointsize>12</pointsize>
@@ -952,128 +944,128 @@
            <bold>true</bold>
           </font>
          </property>
-         <property name="text" >
+         <property name="text">
           <string>Summary</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="Line" name="line51" >
-         <property name="orientation" >
+        <widget class="Line" name="line51">
+         <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" >
-         <property name="spacing" >
+        <layout class="QHBoxLayout">
+         <property name="spacing">
           <number>10</number>
          </property>
          <item>
-          <widget class="QLabel" name="mLogoSummary" >
-           <property name="sizePolicy" >
-            <sizepolicy vsizetype="Minimum" hsizetype="Maximum" >
+          <widget class="QLabel" name="mLogoSummary">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Minimum">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
-           <property name="autoFillBackground" >
+           <property name="autoFillBackground">
             <bool>true</bool>
            </property>
-           <property name="text" >
+           <property name="text">
             <string/>
            </property>
-           <property name="pixmap" >
-            <pixmap resource="../VirtualBox.qrc" >:/vmw_new_welcome.png</pixmap>
+           <property name="pixmap">
+            <pixmap resource="../VirtualBox.qrc">:/vmw_new_welcome.png</pixmap>
            </property>
-           <property name="alignment" >
+           <property name="alignment">
             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
            </property>
           </widget>
          </item>
          <item>
-          <layout class="QVBoxLayout" >
-           <property name="spacing" >
+          <layout class="QVBoxLayout">
+           <property name="spacing">
             <number>10</number>
            </property>
            <item>
-            <widget class="QILabel" name="mTextSummaryHdr" >
-             <property name="sizePolicy" >
-              <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
+            <widget class="QILabel" name="mTextSummaryHdr">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
-             <property name="minimumSize" >
+             <property name="minimumSize">
               <size>
                <width>300</width>
                <height>0</height>
               </size>
              </property>
-             <property name="text" >
-              <string>&lt;p>You are going to create a new virtual machine with the following parameters:&lt;/p></string>
+             <property name="text">
+              <string>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</string>
              </property>
-             <property name="wordWrap" >
+             <property name="wordWrap">
               <bool>true</bool>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QITextEdit" name="mTeSummary" >
-             <property name="sizePolicy" >
-              <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
+            <widget class="QITextEdit" name="mTeSummary">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
-             <property name="minimumSize" >
+             <property name="minimumSize">
               <size>
                <width>300</width>
                <height>0</height>
               </size>
              </property>
-             <property name="frameShape" >
+             <property name="frameShape">
               <enum>QFrame::NoFrame</enum>
              </property>
-             <property name="autoFormatting" >
+             <property name="autoFormatting">
               <set>QTextEdit::AutoAll</set>
              </property>
-             <property name="readOnly" >
+             <property name="readOnly">
               <bool>true</bool>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QILabel" name="mTextSummaryFtr" >
-             <property name="sizePolicy" >
-              <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
+            <widget class="QILabel" name="mTextSummaryFtr">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
-             <property name="minimumSize" >
+             <property name="minimumSize">
               <size>
                <width>300</width>
                <height>0</height>
               </size>
              </property>
-             <property name="text" >
-              <string>&lt;p>If the above is correct press the &lt;b>Finish&lt;/b> button. Once you press it, a new virtual machine will be created. &lt;/p>&lt;p>Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b>Settings&lt;/b> dialog accessible through the menu of the main window.&lt;/p></string>
+             <property name="text">
+              <string>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</string>
              </property>
-             <property name="wordWrap" >
+             <property name="wordWrap">
               <bool>true</bool>
              </property>
             </widget>
            </item>
            <item>
             <spacer>
-             <property name="orientation" >
+             <property name="orientation">
               <enum>Qt::Vertical</enum>
              </property>
-             <property name="sizeType" >
+             <property name="sizeType">
               <enum>QSizePolicy::Expanding</enum>
              </property>
-             <property name="sizeHint" >
+             <property name="sizeHint" stdset="0">
               <size>
                <width>0</width>
                <height>0</height>
@@ -1086,20 +1078,20 @@
         </layout>
        </item>
        <item>
-        <widget class="Line" name="line52" >
-         <property name="orientation" >
+        <widget class="Line" name="line52">
+         <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" >
+        <layout class="QHBoxLayout">
          <item>
           <spacer>
-           <property name="orientation" >
+           <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
-           <property name="sizeHint" >
+           <property name="sizeHint" stdset="0">
             <size>
              <width>0</width>
              <height>0</height>
@@ -1108,28 +1100,28 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="mBtnBack5" >
-           <property name="text" >
+          <widget class="QPushButton" name="mBtnBack5">
+           <property name="text">
             <string>&lt; &amp;Back</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="mBtnFinish" >
-           <property name="text" >
+          <widget class="QPushButton" name="mBtnFinish">
+           <property name="text">
             <string>&amp;Finish</string>
            </property>
           </widget>
          </item>
          <item>
           <spacer>
-           <property name="orientation" >
+           <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
-           <property name="sizeType" >
+           <property name="sizeType">
             <enum>QSizePolicy::Fixed</enum>
            </property>
-           <property name="sizeHint" >
+           <property name="sizeHint" stdset="0">
             <size>
              <width>5</width>
              <height>0</height>
@@ -1138,8 +1130,8 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="mBtnCancel5" >
-           <property name="text" >
+          <widget class="QPushButton" name="mBtnCancel5">
+           <property name="text">
             <string>Cancel</string>
            </property>
           </widget>
@@ -1178,6 +1170,16 @@
    <extends>QLineEdit</extends>
    <header>QILineEdit.h</header>
   </customwidget>
+  <customwidget>
+   <class>QIAdvancedSlider</class>
+   <extends>QSlider</extends>
+   <header>QIAdvancedSlider.h</header>
+  </customwidget>
+  <customwidget>
+   <class>VBoxGuestRAMSlider</class>
+   <extends>QIAdvancedSlider</extends>
+   <header>VBoxGuestRAMSlider.h</header>
+  </customwidget>
  </customwidgets>
  <tabstops>
   <tabstop>mBtnNext1</tabstop>
@@ -1204,7 +1206,7 @@
   <tabstop>mBtnCancel5</tabstop>
  </tabstops>
  <resources>
-  <include location="../VirtualBox.qrc" />
+  <include location="../VirtualBox.qrc"/>
  </resources>
  <connections/>
 </ui>
