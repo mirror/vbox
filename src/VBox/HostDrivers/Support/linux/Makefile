@@ -1,6 +1,6 @@
-#
+# $Revision$
+## @file
 # Makefile for the VirtualBox Linux Host Driver.
-# (For 2.6.x this file must be called 'Makefile'!)
 #
 
 #
@@ -98,6 +98,7 @@ OBJS   = \
 	r0drv/linux/time-r0drv-linux.o \
 	r0drv/linux/timer-r0drv-linux.o \
 	common/err/RTErrConvertFromErrno.o \
+	common/err/RTErrConvertToErrno.o \
 	common/log/log.o \
 	common/log/logellipsis.o \
 	common/log/logrel.o \
@@ -116,6 +117,7 @@ OBJS   = \
 	generic/RTLogWriteStdErr-stub-generic.o \
 	generic/RTLogWriteStdOut-stub-generic.o \
 	generic/RTLogWriteUser-generic.o \
+	generic/uuid-generic.o \
 	VBox/log-vbox.o \
 	VBox/strformat-vbox.o
 ifeq ($(BUILD_TARGET_ARCH),x86)
