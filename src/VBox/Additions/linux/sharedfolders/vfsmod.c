@@ -458,7 +458,7 @@ init (void)
                         "Mount information structure is too large %lu\n"
                         "Must be less than or equal to %lu\n",
                         (unsigned long)sizeof (struct vbsf_mount_info_new),
-                        PAGE_SIZE);
+                        (unsigned long)PAGE_SIZE);
                 return -EINVAL;
         }
 
