@@ -71,7 +71,11 @@ RTR0DECL(bool) RTR0MemKernelIsValidAddr(void *pv)
 # endif
 
 #elif RT_ARCH_AMD64
+# ifdef KERNEL_IMAGE_START
+    return (uintptr_t)pv >= KERNEL_IMAGE_START;
+# else
     return (uintptr_t)pv >= KERNEL_TEXT_START;
+# endif
 
 #else
 # error "PORT ME"
