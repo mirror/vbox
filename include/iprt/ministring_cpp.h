@@ -42,9 +42,9 @@
  *
  *  Semantics are like in std::string, except it can do a lot less.
  *
- *  Much of the code in here used to be in Utf8Str so that Utf8Str can now
- *  derive from ministring and only contain code that is COM-specific, such
- *  as com::Bstr conversions. Compared to the old Utf8Str though, ministring
+ *  Much of the code in here used to be in com::Utf8Str so that com::Utf8Str
+ *  can now derive from ministring and only contain code that is COM-specific,
+ *  such as com::Bstr conversions. Compared to the old Utf8Str though, ministring
  *  always knows the length of its member string and the size of the buffer
  *  so it can use memcpy() instead of strdup().
  */
@@ -52,6 +52,9 @@
 class RT_DECL_CLASS ministring
 {
 public:
+    /**
+     * Creates an empty string that has no memory allocated.
+     */
     ministring()
         : m_psz(NULL),
           m_cbLength(0),
@@ -59,29 +62,47 @@ public:
     {
     }
 
+    /**
+     * Creates a copy of another ministring. This allocates
+     * s.length() + 1 bytes for the new instance.
+     * @param s
+     */
     ministring(const ministring &s)
     {
         copyFrom(s);
     }
 
+    /**
+     * Creates a copy of another ministring. This allocates
+     * strlen(pcsz) + 1 bytes for the new instance.
+     * @param pcsz
+     */
     ministring(const char *pcsz)
     {
         copyFrom(pcsz);
     }
 
+    /**
+     * Destructor.
+     */
     virtual ~ministring()
     {
         cleanup();
     }
 
+    /**
+     * Returns the length of the member string. This is always cached
+     * so calling this is cheap and requires no strlen() invocation.
+     * @return
+     */
     size_t length() const
     {
         return m_cbLength;
     }
 
     /**
-     * Returns the no. of bytes allocated in the internal string buffer,
-     * which is at least m_cbLength + 1 if m_cbLength != 0.
+     * Returns the number of bytes allocated in the internal string buffer,
+     * which is at least length() + 1 if length() > 0.
      * @return
      */
     size_t capacity() const
@@ -92,7 +113,8 @@ public:
     /**
      * Requests that the contained memory buffer have at least cb bytes allocated.
      * This may expand or shrink the string's storage, but will never truncate the
-     * contained string.
+     * contained string. In other words, cb will be ignored if it's smaller than
+     * length() + 1.
      * @param cb new minimum size of member memory buffer
      */
     void reserve(size_t cb)
@@ -106,6 +128,9 @@ public:
         }
     }
 
+    /**
+     * Deallocates all memory.
+     */
     inline void setNull()
     {
         cleanup();
@@ -145,6 +170,11 @@ public:
         }
     }
 
+    /**
+     * Assigns a copy of pcsz to "this".
+     * @param pcsz
+     * @return
+     */
     ministring& operator=(const char *pcsz)
     {
         if (m_psz != pcsz)
@@ -155,6 +185,11 @@ public:
         return *this;
     }
 
+    /**
+     * Assigns a copy of s to "this".
+     * @param s
+     * @return
+     */
     ministring& operator=(const ministring &s)
     {
         if (this != &s)
@@ -165,6 +200,10 @@ public:
         return *this;
     }
 
+    /**
+     * Appends a copy of @a that to "this".
+     * @param that
+     */
     void append(const ministring &that)
     {
         size_t cbThis = length();
@@ -183,11 +222,19 @@ public:
         }
     }
 
+    /**
+     * Returns the contained string as a C-style const char* pointer.
+     * @return
+     */
     inline const char* c_str() const
     {
         return m_psz;
     }
 
+    /**
+     * Like c_str(), for compatibility with lots of VirtualBox Main code.
+     * @return
+     */
     inline const char* raw() const
     {
         return m_psz;
@@ -199,11 +246,20 @@ public:
         return c_str();
     }
 
+    /**
+     * Returns true if the member string has no length. This states nothing about
+     * how much memory might be allocated.
+     * @return
+     */
     bool isEmpty() const
     {
         return length() == 0;
     }
 
+    /**
+     * Returns true if no memory is currently allocated.
+     * @return
+     */
     bool isNull() const
     {
         return m_psz == NULL;
@@ -215,6 +271,12 @@ public:
         CaseInsensitive
     };
 
+    /**
+     * Compares the member string to pcsz.
+     * @param pcsz
+     * @param cs Whether comparison should be case-sensitive.
+     * @return
+     */
     int compare(const char *pcsz, CaseSensitivity cs = CaseSensitive) const
     {
         if (m_psz == pcsz)
@@ -264,6 +326,7 @@ protected:
     }
 
     /**
+     * Protected internal helper.
      * copyFrom() unconditionally sets the members to a copy of the
      * given other strings and makes no assumptions about previous
      * contents. Can therefore be used both in copy constructors,
@@ -277,13 +340,21 @@ protected:
      */
     void copyFrom(const ministring &s)
     {
-        m_cbLength = s.m_cbLength;
-        m_cbAllocated = m_cbLength + 1;
-        m_psz = (char*)RTMemAlloc(m_cbAllocated);
-        memcpy(m_psz, s.m_psz, m_cbAllocated);      // include 0 terminator
+        if ((m_cbLength = s.m_cbLength))
+        {
+            m_cbAllocated = m_cbLength + 1;
+            m_psz = (char*)RTMemAlloc(m_cbAllocated);
+            memcpy(m_psz, s.m_psz, m_cbAllocated);      // include 0 terminator
+        }
+        else
+        {
+            m_cbAllocated = 0;
+            m_psz = NULL;
+        }
     }
 
     /**
+     * Protected internal helper.
      * See copyFrom() above.
      *
      * This variant copies from a C string and needs to call strlen()
