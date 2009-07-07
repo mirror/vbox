@@ -66,21 +66,23 @@ RT_C_DECLS_BEGIN
          (u64) = ((high << 32) | low); \
     } while (0)
 # endif
-#elif _MSC_VER >= 1400
-# pragma intrinsic(__rdtsc)
-# define STAM_GET_TS(u64)    \
-    do { (u64) = __rdtsc(); } while (0)
 #else
-# define STAM_GET_TS(u64)    \
-    do {                               \
-        uint64_t u64Tmp;               \
-        __asm {                        \
-            __asm rdtsc                \
-            __asm mov dword ptr [u64Tmp],     eax   \
-            __asm mov dword ptr [u64Tmp + 4], edx   \
-        }                              \
-        (u64) = u64Tmp; \
-    } while (0)
+# if _MSC_VER >= 1400
+#  pragma intrinsic(__rdtsc)
+#  define STAM_GET_TS(u64)    \
+     do { (u64) = __rdtsc(); } while (0)
+# else
+#  define STAM_GET_TS(u64)    \
+     do {                               \
+         uint64_t u64Tmp;               \
+         __asm {                        \
+             __asm rdtsc                \
+             __asm mov dword ptr [u64Tmp],     eax   \
+             __asm mov dword ptr [u64Tmp + 4], edx   \
+         }                              \
+         (u64) = u64Tmp; \
+     } while (0)
+# endif
 #endif
 
 
