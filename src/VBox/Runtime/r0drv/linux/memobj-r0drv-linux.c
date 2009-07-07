@@ -420,8 +420,8 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
         case RTR0MEMOBJTYPE_LOCK:
             if (pMemLnx->Core.u.Lock.R0Process != NIL_RTR0PROCESS)
             {
-                size_t iPage;
                 struct task_struct *pTask = rtR0ProcessToLinuxTask(pMemLnx->Core.u.Lock.R0Process);
+                size_t              iPage;
                 Assert(pTask);
                 if (pTask && pTask->mm)
                     down_read(&pTask->mm->mmap_sem);
@@ -437,8 +437,7 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
                 if (pTask && pTask->mm)
                     up_read(&pTask->mm->mmap_sem);
             }
-            else
-                AssertFailed(); /* not implemented for R0 */
+            /* else: kernel memory - nothing to do here. */
             break;
 
         case RTR0MEMOBJTYPE_RES_VIRT:
@@ -812,8 +811,86 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t c
 
 int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
 {
-    /* What is there to lock? Should/Can we fake this? */
-    return VERR_NOT_SUPPORTED;
+    void           *pvLast = (uint8_t *)pv + cb - 1;
+    size_t const    cPages = cb >> PAGE_SHIFT;
+    PRTR0MEMOBJLNX  pMemLnx;
+    bool            fLinearMapping;
+    int             rc;
+    uint8_t        *pbPage;
+    size_t          iPage;
+
+    /*
+     * Classify the memory and check that we can deal with it.
+     */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+    fLinearMapping = virt_addr_valid(pvLast)          && virt_addr_valid(pv);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
+    fLinearMapping = VALID_PAGE(virt_to_page(pvLast)) && VALID_PAGE(virt_to_page(pv));
+#else
+# error "not supported"
+#endif
+    if (!fLinearMapping)
+    {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 19)
+        if (   !RTR0MemKernelIsValidAddr(pv)
+            || !RTR0MemKernelIsValidAddr(pv + cb))
+#endif
+            return VERR_INVALID_PARAMETER;
+    }
+
+    /*
+     * Allocate the memory object.
+     */
+    pMemLnx = (PRTR0MEMOBJLNX)rtR0MemObjNew(RT_OFFSETOF(RTR0MEMOBJLNX, apPages[cPages]), RTR0MEMOBJTYPE_LOCK, pv, cb);
+    if (!pMemLnx)
+        return VERR_NO_MEMORY;
+
+    /*
+     * Gather the pages.
+     * We ASSUME all kernel pages are non-swappable.
+     */
+    rc     = VINF_SUCCESS;
+    pbPage = (uint8_t *)pvLast;
+    iPage  = cPages;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 19)
+    if (!fLinearMapping)
+    {
+        while (iPage-- > 0)
+        {
+            struct page *pPage = vmalloc_to_page(pbPage);
+            if (RT_UNLIKELY(!pPage))
+            {
+                rc = VERR_LOCK_FAILED;
+                break;
+            }
+            pMemLnx->apPages[iPage] = pPage;
+            pbPage -= PAGE_SIZE;
+        }
+    }
+    else
+#endif
+    {
+        while (iPage-- > 0)
+        {
+            pMemLnx->apPages[iPage] = virt_to_page(pbPage);
+            pbPage -= PAGE_SIZE;
+        }
+    }
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Complete the memory object and return.
+         */
+        pMemLnx->Core.u.Lock.R0Process = NIL_RTR0PROCESS;
+        pMemLnx->cPages = cPages;
+        Assert(!pMemLnx->fMappedToRing0);
+        *ppMem = &pMemLnx->Core;
+
+        return VINF_SUCCESS;
+    }
+
+    rtR0MemObjDelete(&pMemLnx->Core);
+    return rc;
 }
 
 
