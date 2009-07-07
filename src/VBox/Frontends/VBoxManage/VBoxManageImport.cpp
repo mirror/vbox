@@ -201,7 +201,7 @@ int handleImportAppliance(HandlerArg *a)
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
-                if (!strOvfFilename)
+                if (strOvfFilename.isEmpty())
                     strOvfFilename = ValueUnion.psz;
                 else
                     return errorSyntax(USAGE_IMPORTAPPLIANCE, "Invalid parameter '%s'", ValueUnion.psz);
@@ -224,7 +224,7 @@ int handleImportAppliance(HandlerArg *a)
         }
     }
 
-    if (!strOvfFilename)
+    if (strOvfFilename.isEmpty())
         return errorSyntax(USAGE_IMPORTAPPLIANCE, "Not enough arguments for \"import\" command.");
 
     do

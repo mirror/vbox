@@ -307,9 +307,13 @@ public:
     bool operator<(const char *that) const { return compare(that) < 0; }
     bool operator>(const char *that) const { return compare(that) > 0; }
 
-    operator bool() const { return !isNull(); }
-
 protected:
+
+    /**
+     * Hide operator bool() to force people to use isEmpty() explicitly.
+     */
+    operator bool() const { return false; }
+
     /**
      *  Destructor implementation, also used to clean up in operator=()
      *  before assigning a new string.
