@@ -687,7 +687,6 @@ void slirp_term(PNATState pData)
 
 #define CONN_CANFSEND(so) (((so)->so_state & (SS_FCANTSENDMORE|SS_ISFCONNECTED)) == SS_ISFCONNECTED)
 #define CONN_CANFRCV(so)  (((so)->so_state & (SS_FCANTRCVMORE|SS_ISFCONNECTED)) == SS_ISFCONNECTED)
-#define UPD_NFDS(x)       do { if (nfds < (x)) nfds = (x); } while (0)
 
 /*
  * curtime kept to an accuracy of 1ms
