@@ -814,26 +814,25 @@ static DECLCALLBACK(int) pdmR3DrvHlp_VMSetRuntimeErrorV(PPDMDRVINS pDrvIns, uint
 
 
 /** @copydoc PDMDRVHLP::pfnPDMQueueCreate */
-static DECLCALLBACK(int) pdmR3DrvHlp_PDMQueueCreate(PPDMDRVINS pDrvIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval, PFNPDMQUEUEDRV pfnCallback, PPDMQUEUE *ppQueue)
+static DECLCALLBACK(int) pdmR3DrvHlp_PDMQueueCreate(PPDMDRVINS pDrvIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval,
+                                                    PFNPDMQUEUEDRV pfnCallback, const char *pszName, PPDMQUEUE *ppQueue)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
-    LogFlow(("pdmR3DrvHlp_PDMQueueCreate: caller='%s'/%d: cbItem=%d cItems=%d cMilliesInterval=%d pfnCallback=%p ppQueue=%p\n",
-             pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, cbItem, cItems, cMilliesInterval, pfnCallback, ppQueue, ppQueue));
-    VM_ASSERT_EMT(pDrvIns->Internal.s.pVM);
+    LogFlow(("pdmR3DrvHlp_PDMQueueCreate: caller='%s'/%d: cbItem=%d cItems=%d cMilliesInterval=%d pfnCallback=%p pszName=%p:{%s} ppQueue=%p\n",
+             pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, cbItem, cItems, cMilliesInterval, pfnCallback, pszName, pszName, ppQueue, ppQueue));
+    PVM pVM = pDrvIns->Internal.s.pVM;
+    VM_ASSERT_EMT(pVM);
 
-    int rc = PDMR3QueueCreateDriver(pDrvIns->Internal.s.pVM, pDrvIns, cbItem, cItems, cMilliesInterval, pfnCallback, ppQueue);
+    if (pDrvIns->iInstance > 0)
+    {
+        pszName = MMR3HeapAPrintf(pVM, MM_TAG_PDM_DRIVER_DESC, "%s-%u", pszName, pDrvIns->iInstance);
+        AssertLogRelReturn(pszName, VERR_NO_MEMORY);
+    }
+
+    int rc = PDMR3QueueCreateDriver(pVM, pDrvIns, cbItem, cItems, cMilliesInterval, pfnCallback, pszName, ppQueue);
 
     LogFlow(("pdmR3DrvHlp_PDMQueueCreate: caller='%s'/%d: returns %Rrc *ppQueue=%p\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc, *ppQueue));
     return rc;
-}
-
-
-/** @copydoc PDMDRVHLP::pfnPDMPollerRegister */
-static DECLCALLBACK(int) pdmR3DrvHlp_PDMPollerRegister(PPDMDRVINS pDrvIns, PFNPDMDRVPOLLER pfnPoller)
-{
-    PDMDRV_ASSERT_DRVINS(pDrvIns);
-    AssertLogRelMsgFailedReturn(("pdmR3DrvHlp_PDMPollerRegister: caller='%s'/%d: pfnPoller=%p -> VERR_NOT_SUPPORTED\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, pfnPoller),
-                                VERR_NOT_SUPPORTED);
 }
 
 
@@ -1062,7 +1061,6 @@ const PDMDRVHLP g_pdmR3DrvHlp =
     pdmR3DrvHlp_VMSetRuntimeError,
     pdmR3DrvHlp_VMSetRuntimeErrorV,
     pdmR3DrvHlp_PDMQueueCreate,
-    pdmR3DrvHlp_PDMPollerRegister,
     pdmR3DrvHlp_TMGetVirtualFreq,
     pdmR3DrvHlp_TMGetVirtualTime,
     pdmR3DrvHlp_TMTimerCreate,

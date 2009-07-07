@@ -318,7 +318,7 @@ static DECLCALLBACK(int) drvKbdQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
         return rc;
     }
 
-    rc = PDMDrvHlpPDMQueueCreate(pDrvIns, sizeof(DRVKBDQUEUEITEM), cItems, cMilliesInterval, drvKbdQueueConsumer, &pDrv->pQueue);
+    rc = PDMDrvHlpPDMQueueCreate(pDrvIns, sizeof(DRVKBDQUEUEITEM), cItems, cMilliesInterval, drvKbdQueueConsumer, "Keyboard", &pDrv->pQueue);
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Failed to create driver: cItems=%d cMilliesInterval=%d rc=%Rrc\n", cItems, cMilliesInterval, rc));

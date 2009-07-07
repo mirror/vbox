@@ -2298,12 +2298,14 @@ typedef struct PDMDEVHLPR3
      * @param   cMilliesInterval    The number of milliseconds between polling the queue.
      *                              If 0 then the emulation thread will be notified whenever an item arrives.
      * @param   pfnCallback         The consumer function.
-     * @param   fGCEnabled          Set if the queue should work in GC too.
+     * @param   fRZEnabled          Set if the queue should work in RC and R0.
+     * @param   pszName             The queue base name. The instance number will be
+     *                              appended automatically.
      * @param   ppQueue             Where to store the queue handle on success.
      * @thread  The emulation thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnPDMQueueCreate,(PPDMDEVINS pDevIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval,
-                                                 PFNPDMQUEUEDEV pfnCallback, bool fGCEnabled, PPDMQUEUE *ppQueue));
+                                                 PFNPDMQUEUEDEV pfnCallback, bool fRZEnabled, const char *pszName, PPDMQUEUE *ppQueue));
 
     /**
      * Initializes a PDM critical section.
@@ -2880,7 +2882,7 @@ typedef R3PTRTYPE(struct PDMDEVHLPR3 *) PPDMDEVHLPR3;
 typedef R3PTRTYPE(const struct PDMDEVHLPR3 *) PCPDMDEVHLPR3;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLP_VERSION  0xf20a0000
+#define PDM_DEVHLP_VERSION  0xf20b0000
 
 
 /**
@@ -3581,9 +3583,9 @@ DECLINLINE(void) PDMDevHlpSTAMRegisterF(PPDMDEVINS pDevIns, void *pvSample, STAM
  * @copydoc PDMDEVHLPR3::pfnPDMQueueCreate
  */
 DECLINLINE(int) PDMDevHlpPDMQueueCreate(PPDMDEVINS pDevIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval,
-                                        PFNPDMQUEUEDEV pfnCallback, bool fGCEnabled, PPDMQUEUE *ppQueue)
+                                        PFNPDMQUEUEDEV pfnCallback, bool fGCEnabled, const char *pszName, PPDMQUEUE *ppQueue)
 {
-    return pDevIns->pDevHlpR3->pfnPDMQueueCreate(pDevIns, cbItem, cItems, cMilliesInterval, pfnCallback, fGCEnabled, ppQueue);
+    return pDevIns->pDevHlpR3->pfnPDMQueueCreate(pDevIns, cbItem, cItems, cMilliesInterval, pfnCallback, fGCEnabled, pszName, ppQueue);
 }
 
 /**

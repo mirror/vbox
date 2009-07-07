@@ -111,13 +111,13 @@ typedef DECLCALLBACK(bool) FNPDMQUEUEEXT(void *pvUser, PPDMQUEUEITEMCORE pItem);
 typedef FNPDMQUEUEEXT *PFNPDMQUEUEEXT;
 
 VMMR3DECL(int)  PDMR3QueueCreateDevice(PVM pVM, PPDMDEVINS pDevIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval,
-                                       PFNPDMQUEUEDEV pfnCallback, bool fGCEnabled, PPDMQUEUE *ppQueue);
+                                       PFNPDMQUEUEDEV pfnCallback, bool fGCEnabled, const char *pszName, PPDMQUEUE *ppQueue);
 VMMR3DECL(int)  PDMR3QueueCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval,
-                                       PFNPDMQUEUEDRV pfnCallback, PPDMQUEUE *ppQueue);
+                                       PFNPDMQUEUEDRV pfnCallback, const char *pszName, PPDMQUEUE *ppQueue);
 VMMR3DECL(int)  PDMR3QueueCreateInternal(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval,
-                                         PFNPDMQUEUEINT pfnCallback, bool fGCEnabled, PPDMQUEUE *ppQueue);
+                                         PFNPDMQUEUEINT pfnCallback, bool fGCEnabled, const char *pszName, PPDMQUEUE *ppQueue);
 VMMR3DECL(int)  PDMR3QueueCreateExternal(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval,
-                                         PFNPDMQUEUEEXT pfnCallback, void *pvUser, PPDMQUEUE *ppQueue);
+                                         PFNPDMQUEUEEXT pfnCallback, void *pvUser, const char *pszName, PPDMQUEUE *ppQueue);
 VMMR3DECL(int)  PDMR3QueueDestroy(PPDMQUEUE pQueue);
 VMMR3DECL(int)  PDMR3QueueDestroyDevice(PVM pVM, PPDMDEVINS pDevIns);
 VMMR3DECL(int)  PDMR3QueueDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns);

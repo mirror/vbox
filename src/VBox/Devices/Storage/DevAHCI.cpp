@@ -6244,7 +6244,7 @@ static DECLCALLBACK(int) ahciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      * Create the transmit queue.
      */
     rc = PDMDevHlpPDMQueueCreate(pDevIns, sizeof(DEVPORTNOTIFIERQUEUEITEM), 30*32 /*Maximum of 30 ports multiplied with 32 tasks each port*/, 0,
-                                 ahciNotifyQueueConsumer, true, &pThis->pNotifierQueueR3);
+                                 ahciNotifyQueueConsumer, true, "AHCI-Xmit", &pThis->pNotifierQueueR3);
     if (RT_FAILURE(rc))
         return rc;
     pThis->pNotifierQueueR0 = PDMQueueR0Ptr(pThis->pNotifierQueueR3);

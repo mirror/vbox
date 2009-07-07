@@ -5299,7 +5299,7 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
 
     /* Intialize task queue. */
     rc = PDMDevHlpPDMQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 2, 0,
-                                 lsilogicNotifyQueueConsumer, true, &pThis->pNotificationQueueR3);
+                                 lsilogicNotifyQueueConsumer, true, "LsiLogic-Task", &pThis->pNotificationQueueR3);
     if (RT_FAILURE(rc))
         return rc;
     pThis->pNotificationQueueR0 = PDMQueueR0Ptr(pThis->pNotificationQueueR3);
