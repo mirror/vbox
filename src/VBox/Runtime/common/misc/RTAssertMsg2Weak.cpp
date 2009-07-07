@@ -33,6 +33,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/assert.h>
+#include "internal/iprt.h"
+
 #include <iprt/stdarg.h>
 
 
@@ -43,4 +45,5 @@ RTDECL(void) AssertMsg2(const char *pszFormat, ...)
     RTAssertMsg2V(pszFormat, va);
     va_end(va);
 }
+RT_EXPORT_SYMBOL(AssertMsg2);
 

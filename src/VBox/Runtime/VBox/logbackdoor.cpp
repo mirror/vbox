@@ -32,6 +32,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <VBox/log.h>
+#include "internal/iprt.h"
 #include <iprt/asm.h>
 #include <iprt/string.h>
 #ifdef IN_GUEST_R3
@@ -57,11 +58,15 @@ RTDECL(size_t) RTLogBackdoorPrintf(const char *pszFormat, ...)
     return cb;
 }
 
+RT_EXPORT_SYMBOL(RTLogBackdoorPrintf);
+
 
 RTDECL(size_t) RTLogBackdoorPrintfV(const char *pszFormat, va_list args)
 {
     return RTLogFormatV(rtLogBackdoorOutput, NULL, pszFormat, args);
 }
+
+RT_EXPORT_SYMBOL(RTLogBackdoorPrintfV);
 
 
 /**
@@ -75,33 +80,18 @@ static DECLCALLBACK(size_t) rtLogBackdoorOutput(void *pv, const char *pachChars,
 }
 
 
+RTDECL(void) RTLogWriteUser(const char *pch, size_t cb)
+{
 #ifdef IN_GUEST_R3
-
-RTDECL(void) RTLogWriteUser(const char *pch, size_t cb)
-{
     VbglR3WriteLog(pch, cb);
-}
-
 #else  /* !IN_GUEST_R3 */
-
-RTDECL(void) RTLogWriteUser(const char *pch, size_t cb)
-{
     const uint8_t *pau8 = (const uint8_t *)pch;
     if (cb > 1)
         ASMOutStrU8(RTLOG_DEBUG_PORT, pau8, cb);
     else if (cb)
         ASMOutU8(RTLOG_DEBUG_PORT, *pau8);
+#endif /* !IN_GUEST_R3 */
 }
 
-# if defined(RT_OS_LINUX) && defined(IN_MODULE)
-/*
- * When we build this in the Linux kernel module, we wish to make the
- * symbols available to other modules as well.
- */
-#  include "the-linux-kernel.h"
-EXPORT_SYMBOL(RTLogBackdoorPrintf);
-EXPORT_SYMBOL(RTLogBackdoorPrintfV);
-EXPORT_SYMBOL(RTLogWriteUser);
-# endif /* RT_OS_LINUX && IN_MODULE */
-#endif /* !IN_GUEST_R3 */
+RT_EXPORT_SYMBOL(RTLogWriteUser);
 

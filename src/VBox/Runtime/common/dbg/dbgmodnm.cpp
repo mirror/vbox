@@ -28,10 +28,12 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/dbg.h>
+#include "internal/iprt.h"
 
 #include <iprt/err.h>
 #include <iprt/ctype.h>

@@ -33,6 +33,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/mp.h>
+#include "internal/iprt.h"
+
 #include <iprt/err.h>
 
 
@@ -43,6 +45,7 @@ RTDECL(int) RTMpOnAll(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
     NOREF(pvUser2);
     return VERR_NOT_SUPPORTED;
 }
+RT_EXPORT_SYMBOL(RTMpOnAll);
 
 
 RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
@@ -52,6 +55,7 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
     NOREF(pvUser2);
     return VERR_NOT_SUPPORTED;
 }
+RT_EXPORT_SYMBOL(RTMpOnOthers);
 
 
 RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
@@ -62,4 +66,5 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
     NOREF(pvUser2);
     return VERR_NOT_SUPPORTED;
 }
+RT_EXPORT_SYMBOL(RTMpOnSpecific);
 

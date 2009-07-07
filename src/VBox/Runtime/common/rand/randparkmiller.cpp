@@ -32,6 +32,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/rand.h>
+#include "internal/iprt.h"
+
 #include <iprt/asm.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
@@ -207,4 +209,5 @@ RTDECL(int) RTRandAdvCreateParkMiller(PRTRAND phRand) RT_NO_THROW
     *phRand = pThis;
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTRandAdvCreateParkMiller);
 

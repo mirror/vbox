@@ -29,7 +29,6 @@
  */
 
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -41,6 +40,8 @@
 #endif
 
 #include <iprt/dir.h>
+#include "internal/iprt.h"
+
 #include <iprt/path.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>

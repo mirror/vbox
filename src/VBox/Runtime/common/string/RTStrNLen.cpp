@@ -28,10 +28,12 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/string.h>
+#include "internal/iprt.h"
 
 
 RTDECL(size_t) RTStrNLen(const char *pszString, size_t cchMax)
@@ -39,4 +41,5 @@ RTDECL(size_t) RTStrNLen(const char *pszString, size_t cchMax)
     const char *pchEnd = (const char *)memchr(pszString, '\0', cchMax);
     return pchEnd ? pchEnd - pszString : cchMax;
 }
+RT_EXPORT_SYMBOL(RTStrNLen);
 

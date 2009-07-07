@@ -28,10 +28,13 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/cidr.h>
+#include "internal/iprt.h"
+
 #include <iprt/ctype.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
@@ -72,7 +75,7 @@ static int scanIPv4Digit(int iDigit, const char *psz, char **ppszNext, uint8_t *
 }
 
 
-int RTCidrStrToIPv4(const char *pszAddress, PRTIPV4ADDR pNetwork, PRTIPV4ADDR pNetmask)
+RTDECL(int) RTCidrStrToIPv4(const char *pszAddress, PRTIPV4ADDR pNetwork, PRTIPV4ADDR pNetmask)
 {
     uint8_t cBits;
     uint8_t a;
@@ -134,3 +137,5 @@ int RTCidrStrToIPv4(const char *pszAddress, PRTIPV4ADDR pNetwork, PRTIPV4ADDR pN
     *pNetmask = ~(((uint32_t)1 << (32 - cBits)) - 1);
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTCidrStrToIPv4);
+

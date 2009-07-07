@@ -33,8 +33,9 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_THREAD
-
 #include <iprt/thread.h>
+#include "internal/iprt.h"
+
 #include <iprt/err.h>
 #include <iprt/asm.h>
 #include <iprt/log.h>

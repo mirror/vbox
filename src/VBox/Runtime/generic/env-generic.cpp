@@ -33,6 +33,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/env.h>
+#include "internal/iprt.h"
+
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
 #include <iprt/alloca.h>
@@ -52,6 +54,7 @@ RT_C_DECLS_BEGIN
 extern char **environ;
 RT_C_DECLS_END
 #endif
+
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -151,6 +154,7 @@ RTDECL(int) RTEnvCreate(PRTENV pEnv)
     AssertPtrReturn(pEnv, VERR_INVALID_POINTER);
     return rtEnvCreate(pEnv, RTENV_GROW_SIZE);
 }
+RT_EXPORT_SYMBOL(RTEnvCreate);
 
 
 RTDECL(int) RTEnvDestroy(RTENV Env)
@@ -194,6 +198,7 @@ RTDECL(int) RTEnvDestroy(RTENV Env)
 
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTEnvDestroy);
 
 
 RTDECL(int) RTEnvClone(PRTENV pEnv, RTENV EnvToClone)
@@ -273,6 +278,7 @@ RTDECL(int) RTEnvClone(PRTENV pEnv, RTENV EnvToClone)
         RTENV_UNLOCK(pIntEnvToClone);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTEnvClone);
 
 
 RTDECL(int) RTEnvPutEx(RTENV Env, const char *pszVarEqualValue)
@@ -300,6 +306,7 @@ RTDECL(int) RTEnvPutEx(RTENV Env, const char *pszVarEqualValue)
     }
     return rc;
 }
+RT_EXPORT_SYMBOL(RTEnvPutEx);
 
 
 RTDECL(int) RTEnvSetEx(RTENV Env, const char *pszVar, const char *pszValue)
@@ -405,6 +412,7 @@ RTDECL(int) RTEnvSetEx(RTENV Env, const char *pszVar, const char *pszValue)
     }
     return rc;
 }
+RT_EXPORT_SYMBOL(RTEnvSetEx);
 
 
 RTDECL(int) RTEnvUnsetEx(RTENV Env, const char *pszVar)
@@ -460,6 +468,7 @@ RTDECL(int) RTEnvUnsetEx(RTENV Env, const char *pszVar)
     return rc;
 
 }
+RT_EXPORT_SYMBOL(RTEnvUnsetEx);
 
 
 RTDECL(int) RTEnvGetEx(RTENV Env, const char *pszVar, char *pszValue, size_t cbValue, size_t *pcchActual)
@@ -546,6 +555,7 @@ RTDECL(int) RTEnvGetEx(RTENV Env, const char *pszVar, char *pszValue, size_t cbV
     return rc;
 
 }
+RT_EXPORT_SYMBOL(RTEnvGetEx);
 
 
 RTDECL(bool) RTEnvExistEx(RTENV Env, const char *pszVar)
@@ -592,6 +602,7 @@ RTDECL(bool) RTEnvExistEx(RTENV Env, const char *pszVar)
     }
     return fExist;
 }
+RT_EXPORT_SYMBOL(RTEnvExistEx);
 
 
 RTDECL(char const * const *) RTEnvGetExecEnvP(RTENV Env)
@@ -654,3 +665,4 @@ RTDECL(char const * const *) RTEnvGetExecEnvP(RTENV Env)
     }
     return papszRet;
 }
+RT_EXPORT_SYMBOL(RTEnvGetExecEnvP);

@@ -34,6 +34,8 @@
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_THREAD
 #include <iprt/thread.h>
+#include "internal/iprt.h"
+
 #include <iprt/log.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>

@@ -33,10 +33,12 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/mp.h>
+#include "internal/iprt.h"
 
 
 RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
 {
     return RTMpCpuId() == idCpu;
 }
+RT_EXPORT_SYMBOL(RTMpIsCpuOnline);
 

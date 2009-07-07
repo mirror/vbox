@@ -28,10 +28,12 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/thread.h>
+#include "internal/iprt.h"
 
 
 RTDECL(bool) RTThreadPreemptIsPendingTrusty(void)
@@ -39,4 +41,5 @@ RTDECL(bool) RTThreadPreemptIsPendingTrusty(void)
     /* no, RTThreadPreemptIsPending is not reliable. */
     return false;
 }
+RT_EXPORT_SYMBOL(RTThreadPreemptIsPendingTrusty);
 

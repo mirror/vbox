@@ -33,6 +33,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/log.h>
+#include "internal/iprt.h"
+
 #include <iprt/string.h>
 #include <iprt/assert.h>
 #ifdef IN_RING3
@@ -68,6 +70,7 @@ RTDECL(size_t) RTLogFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArg, const char *p
 {
     return RTStrFormatV(pfnOutput, pvArg, rtlogFormatStr, NULL, pszFormat, args);
 }
+RT_EXPORT_SYMBOL(RTLogFormatV);
 
 
 /**

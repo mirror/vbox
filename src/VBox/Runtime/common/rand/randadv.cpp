@@ -33,6 +33,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/rand.h>
+#include "internal/iprt.h"
+
 #include <iprt/mem.h>
 #include <iprt/err.h>
 #include <iprt/assert.h>
@@ -52,6 +54,7 @@ RTDECL(int) RTRandAdvDestroy(RTRAND hRand) RT_NO_THROW
     /* forward the call */
     return pThis->pfnDestroy(pThis);
 }
+RT_EXPORT_SYMBOL(RTRandAdvDestroy);
 
 
 RTDECL(int) RTRandAdvSeed(RTRAND hRand, uint64_t u64Seed) RT_NO_THROW
@@ -64,6 +67,7 @@ RTDECL(int) RTRandAdvSeed(RTRAND hRand, uint64_t u64Seed) RT_NO_THROW
     /* forward the call */
     return pThis->pfnSeed(pThis, u64Seed);
 }
+RT_EXPORT_SYMBOL(RTRandAdvSeed);
 
 
 RTDECL(int) RTRandAdvSaveState(RTRAND hRand, char *pszState, size_t *pcbState) RT_NO_THROW
@@ -78,6 +82,7 @@ RTDECL(int) RTRandAdvSaveState(RTRAND hRand, char *pszState, size_t *pcbState) R
     /* forward the call */
     return pThis->pfnSaveState(pThis, pszState, pcbState);
 }
+RT_EXPORT_SYMBOL(RTRandAdvSaveState);
 
 
 RTDECL(int) RTRandAdvRestoreState(RTRAND hRand, char const *pszState) RT_NO_THROW
@@ -91,6 +96,7 @@ RTDECL(int) RTRandAdvRestoreState(RTRAND hRand, char const *pszState) RT_NO_THRO
     /* forward the call */
     return pThis->pfnRestoreState(pThis, pszState);
 }
+RT_EXPORT_SYMBOL(RTRandAdvRestoreState);
 
 
 RTDECL(void) RTRandAdvBytes(RTRAND hRand, void *pv, size_t cb) RT_NO_THROW
@@ -104,6 +110,7 @@ RTDECL(void) RTRandAdvBytes(RTRAND hRand, void *pv, size_t cb) RT_NO_THROW
     /* forward the call */
     return pThis->pfnGetBytes(pThis, (uint8_t *)pv, cb);
 }
+RT_EXPORT_SYMBOL(RTRandAdvBytes);
 
 
 RTDECL(int32_t) RTRandAdvS32Ex(RTRAND hRand, int32_t i32First, int32_t i32Last) RT_NO_THROW
@@ -116,6 +123,7 @@ RTDECL(int32_t) RTRandAdvS32Ex(RTRAND hRand, int32_t i32First, int32_t i32Last) 
     /* wrap the call */
     return pThis->pfnGetU32(pThis, 0, i32Last - i32First) + i32First;
 }
+RT_EXPORT_SYMBOL(RTRandAdvS32Ex);
 
 
 RTDECL(int32_t) RTRandAdvS32(RTRAND hRand) RT_NO_THROW
@@ -128,6 +136,7 @@ RTDECL(int32_t) RTRandAdvS32(RTRAND hRand) RT_NO_THROW
     /* wrap the call */
     return pThis->pfnGetU32(pThis, 0, UINT32_MAX) + INT32_MAX;
 }
+RT_EXPORT_SYMBOL(RTRandAdvS32);
 
 
 RTDECL(uint32_t) RTRandAdvU32Ex(RTRAND hRand, uint32_t u32First, uint32_t u32Last) RT_NO_THROW
@@ -140,6 +149,7 @@ RTDECL(uint32_t) RTRandAdvU32Ex(RTRAND hRand, uint32_t u32First, uint32_t u32Las
     /* forward the call */
     return pThis->pfnGetU32(pThis, u32First, u32Last);
 }
+RT_EXPORT_SYMBOL(RTRandAdvU32Ex);
 
 
 RTDECL(uint32_t) RTRandAdvU32(RTRAND hRand) RT_NO_THROW
@@ -152,6 +162,7 @@ RTDECL(uint32_t) RTRandAdvU32(RTRAND hRand) RT_NO_THROW
     /* forward the call */
     return pThis->pfnGetU32(pThis, 0, UINT32_MAX);
 }
+RT_EXPORT_SYMBOL(RTRandAdvU32);
 
 
 RTDECL(int64_t) RTRandAdvS64Ex(RTRAND hRand, int64_t i64First, int64_t i64Last) RT_NO_THROW
@@ -164,6 +175,7 @@ RTDECL(int64_t) RTRandAdvS64Ex(RTRAND hRand, int64_t i64First, int64_t i64Last) 
     /* wrap the call */
     return pThis->pfnGetU64(pThis, 0, i64Last - i64First) + i64First;
 }
+RT_EXPORT_SYMBOL(RTRandAdvS64Ex);
 
 
 RTDECL(int64_t) RTRandAdvS64(RTRAND hRand) RT_NO_THROW
@@ -176,6 +188,7 @@ RTDECL(int64_t) RTRandAdvS64(RTRAND hRand) RT_NO_THROW
     /* wrap the call */
     return pThis->pfnGetU64(pThis, 0, UINT64_MAX) + INT64_MAX;
 }
+RT_EXPORT_SYMBOL(RTRandAdvS64);
 
 
 RTDECL(uint64_t) RTRandAdvU64Ex(RTRAND hRand, uint64_t u64First, uint64_t u64Last) RT_NO_THROW
@@ -188,6 +201,7 @@ RTDECL(uint64_t) RTRandAdvU64Ex(RTRAND hRand, uint64_t u64First, uint64_t u64Las
     /* forward the call */
     return pThis->pfnGetU64(pThis, u64First, u64Last);
 }
+RT_EXPORT_SYMBOL(RTRandAdvU64Ex);
 
 
 RTDECL(uint64_t) RTRandAdvU64(RTRAND hRand) RT_NO_THROW
@@ -200,6 +214,7 @@ RTDECL(uint64_t) RTRandAdvU64(RTRAND hRand) RT_NO_THROW
     /* forward the call */
     return pThis->pfnGetU64(pThis, 0, UINT64_MAX);
 }
+RT_EXPORT_SYMBOL(RTRandAdvU64);
 
 
 DECLCALLBACK(void)  rtRandAdvSynthesizeBytesFromU32(PRTRANDINT pThis, uint8_t *pb, size_t cb)
@@ -400,5 +415,4 @@ DECLCALLBACK(int) rtRandAdvDefaultDestroy(PRTRANDINT pThis)
     RTMemFree(pThis);
     return VINF_SUCCESS;
 }
-
 

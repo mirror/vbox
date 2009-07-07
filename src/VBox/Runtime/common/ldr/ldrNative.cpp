@@ -34,6 +34,8 @@
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_LDR
 #include <iprt/ldr.h>
+#include "internal/iprt.h"
+
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/log.h>
@@ -133,6 +135,7 @@ RTDECL(int) RTLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod)
     LogFlow(("RTLdrLoad: returns %Rrc\n", rc));
     return rc;
 }
+RT_EXPORT_SYMBOL(RTLdrLoad);
 
 
 /**
@@ -198,6 +201,7 @@ RTDECL(int) RTLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD phLdrMod)
     LogFlow(("RTLdrLoadAppPriv: returns %Rrc\n", rc));
     return rc;
 }
+RT_EXPORT_SYMBOL(RTLdrLoadAppPriv);
 
 
 /**
@@ -219,4 +223,5 @@ RTDECL(const char *) RTLdrGetSuff(void)
 
     return s_szSuff;
 }
+RT_EXPORT_SYMBOL(RTLdrGetSuff);
 

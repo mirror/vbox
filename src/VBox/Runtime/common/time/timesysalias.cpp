@@ -33,6 +33,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/time.h>
+#include "internal/iprt.h"
 
 
 /**
@@ -44,6 +45,7 @@ RTDECL(uint64_t) RTTimeNanoTS(void)
 {
     return RTTimeSystemNanoTS();
 }
+RT_EXPORT_SYMBOL(RTTimeNanoTS);
 
 
 /**
@@ -55,4 +57,5 @@ RTDECL(uint64_t) RTTimeMilliTS(void)
 {
     return RTTimeSystemMilliTS();
 }
+RT_EXPORT_SYMBOL(RTTimeMilliTS);
 

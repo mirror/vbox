@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - UTF-16
+ * IPRT - UTF-16.
  */
 
 /*
@@ -33,6 +33,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/string.h>
+#include "internal/iprt.h"
+
 #include <iprt/uni.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
@@ -46,6 +48,7 @@ RTDECL(void)  RTUtf16Free(PRTUTF16 pwszString)
     if (pwszString)
         RTMemTmpFree(pwszString);
 }
+RT_EXPORT_SYMBOL(RTUtf16Free);
 
 
 RTDECL(PRTUTF16) RTUtf16Dup(PCRTUTF16 pwszString)
@@ -57,6 +60,7 @@ RTDECL(PRTUTF16) RTUtf16Dup(PCRTUTF16 pwszString)
         memcpy(pwsz, pwszString, cb);
     return pwsz;
 }
+RT_EXPORT_SYMBOL(RTUtf16Dup);
 
 
 RTDECL(int) RTUtf16DupEx(PRTUTF16 *ppwszString, PCRTUTF16 pwszString, size_t cwcExtra)
@@ -72,6 +76,7 @@ RTDECL(int) RTUtf16DupEx(PRTUTF16 *ppwszString, PCRTUTF16 pwszString, size_t cwc
     }
     return VERR_NO_MEMORY;
 }
+RT_EXPORT_SYMBOL(RTUtf16DupEx);
 
 
 RTDECL(size_t) RTUtf16Len(PCRTUTF16 pwszString)
@@ -84,6 +89,7 @@ RTDECL(size_t) RTUtf16Len(PCRTUTF16 pwszString)
         pwsz++;
     return pwsz - pwszString;
 }
+RT_EXPORT_SYMBOL(RTUtf16Len);
 
 
 RTDECL(int) RTUtf16Cmp(register PCRTUTF16 pwsz1, register PCRTUTF16 pwsz2)
@@ -105,6 +111,7 @@ RTDECL(int) RTUtf16Cmp(register PCRTUTF16 pwsz1, register PCRTUTF16 pwsz2)
         pwsz2++;
     }
 }
+RT_EXPORT_SYMBOL(RTUtf16Cmp);
 
 
 RTDECL(int) RTUtf16ICmp(register PCRTUTF16 pwsz1, register PCRTUTF16 pwsz2)
@@ -171,6 +178,7 @@ RTDECL(int) RTUtf16ICmp(register PCRTUTF16 pwsz1, register PCRTUTF16 pwsz2)
         pwsz2++;
     }
 }
+RT_EXPORT_SYMBOL(RTUtf16ICmp);
 
 
 RTDECL(PRTUTF16) RTUtf16ToLower(PRTUTF16 pwsz)
@@ -208,6 +216,7 @@ RTDECL(PRTUTF16) RTUtf16ToLower(PRTUTF16 pwsz)
     }
     return pwsz;
 }
+RT_EXPORT_SYMBOL(RTUtf16ToLower);
 
 
 RTDECL(PRTUTF16) RTUtf16ToUpper(PRTUTF16 pwsz)
@@ -241,6 +250,7 @@ RTDECL(PRTUTF16) RTUtf16ToUpper(PRTUTF16 pwsz)
     }
     return pwsz;
 }
+RT_EXPORT_SYMBOL(RTUtf16ToUpper);
 
 
 /**
@@ -454,6 +464,7 @@ RTDECL(int)  RTUtf16ToUtf8(PCRTUTF16 pwszString, char **ppszString)
     }
     return rc;
 }
+RT_EXPORT_SYMBOL(RTUtf16ToUtf8);
 
 
 RTDECL(int)  RTUtf16ToUtf8Ex(PCRTUTF16 pwszString, size_t cwcString, char **ppsz, size_t cch, size_t *pcch)
@@ -511,6 +522,7 @@ RTDECL(int)  RTUtf16ToUtf8Ex(PCRTUTF16 pwszString, size_t cwcString, char **ppsz
     }
     return rc;
 }
+RT_EXPORT_SYMBOL(RTUtf16ToUtf8Ex);
 
 
 RTDECL(size_t) RTUtf16CalcUtf8Len(PCRTUTF16 pwsz)
@@ -519,6 +531,7 @@ RTDECL(size_t) RTUtf16CalcUtf8Len(PCRTUTF16 pwsz)
     int rc = rtUtf16CalcUtf8Length(pwsz, RTSTR_MAX, &cch);
     return RT_SUCCESS(rc) ? cch : 0;
 }
+RT_EXPORT_SYMBOL(RTUtf16CalcUtf8Len);
 
 
 RTDECL(int) RTUtf16CalcUtf8LenEx(PCRTUTF16 pwsz, size_t cwc, size_t *pcch)
@@ -529,6 +542,7 @@ RTDECL(int) RTUtf16CalcUtf8LenEx(PCRTUTF16 pwsz, size_t cwc, size_t *pcch)
         *pcch = RT_SUCCESS(rc) ? cch : ~(size_t)0;
     return rc;
 }
+RT_EXPORT_SYMBOL(RTUtf16CalcUtf8LenEx);
 
 
 RTDECL(RTUNICP) RTUtf16GetCpInternal(PCRTUTF16 pwsz)
@@ -559,6 +573,7 @@ RTDECL(RTUNICP) RTUtf16GetCpInternal(PCRTUTF16 pwsz)
         RTStrAssertMsgFailed(("wc=%#08x - endian indicator\n", wc));
     return RTUNICP_INVALID;
 }
+RT_EXPORT_SYMBOL(RTUtf16GetCpInternal);
 
 
 RTDECL(int) RTUtf16GetCpExInternal(PCRTUTF16 *ppwsz, PRTUNICP pCp)
@@ -603,6 +618,7 @@ RTDECL(int) RTUtf16GetCpExInternal(PCRTUTF16 *ppwsz, PRTUNICP pCp)
     (*ppwsz)++;
     return rc;
 }
+RT_EXPORT_SYMBOL(RTUtf16GetCpExInternal);
 
 
 RTDECL(PRTUTF16) RTUtf16PutCpInternal(PRTUTF16 pwsz, RTUNICP CodePoint)
@@ -630,5 +646,5 @@ RTDECL(PRTUTF16) RTUtf16PutCpInternal(PRTUTF16 pwsz, RTUNICP CodePoint)
     *pwsz++ = 0x7f;
     return pwsz;
 }
-
+RT_EXPORT_SYMBOL(RTUtf16PutCpInternal);
 

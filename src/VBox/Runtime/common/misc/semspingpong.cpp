@@ -33,6 +33,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/semaphore.h>
+#include "internal/iprt.h"
+
 #include <iprt/thread.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -68,7 +70,7 @@
  * @returns iprt status code.
  * @param   pPP         Pointer to the ping-pong structure which needs initialization.
  */
-RTR3DECL(int) RTSemPingPongInit(PRTPINGPONG pPP)
+RTDECL(int) RTSemPingPongInit(PRTPINGPONG pPP)
 {
     /*
      * Init the structure.
@@ -86,6 +88,7 @@ RTR3DECL(int) RTSemPingPongInit(PRTPINGPONG pPP)
 
     return rc;
 }
+RT_EXPORT_SYMBOL(RTSemPingPongInit);
 
 
 /**
@@ -95,7 +98,7 @@ RTR3DECL(int) RTSemPingPongInit(PRTPINGPONG pPP)
  * @param   pPP         Pointer to the ping-pong structure which is to be destroyed.
  *                      (I.e. put into uninitialized state.)
  */
-RTR3DECL(int) RTSemPingPongDelete(PRTPINGPONG pPP)
+RTDECL(int) RTSemPingPongDelete(PRTPINGPONG pPP)
 {
     /*
      * Validate input
@@ -116,6 +119,7 @@ RTR3DECL(int) RTSemPingPongDelete(PRTPINGPONG pPP)
 
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTSemPingPongDelete);
 
 
 /**
@@ -125,7 +129,7 @@ RTR3DECL(int) RTSemPingPongDelete(PRTPINGPONG pPP)
  * @returns iprt status code.
  * @param   pPP         Pointer to the ping-pong structure to ping.
  */
-RTR3DECL(int) RTSemPing(PRTPINGPONG pPP)
+RTDECL(int) RTSemPing(PRTPINGPONG pPP)
 {
     /*
      * Validate input
@@ -148,6 +152,7 @@ RTR3DECL(int) RTSemPing(PRTPINGPONG pPP)
     ASMAtomicWriteSize(&pPP->enmSpeaker, RTPINGPONGSPEAKER_PING);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTSemPing);
 
 
 /**
@@ -157,7 +162,7 @@ RTR3DECL(int) RTSemPing(PRTPINGPONG pPP)
  * @returns iprt status code.
  * @param   pPP         Pointer to the ping-pong structure to pong.
  */
-RTR3DECL(int) RTSemPong(PRTPINGPONG pPP)
+RTDECL(int) RTSemPong(PRTPINGPONG pPP)
 {
     /*
      * Validate input
@@ -180,6 +185,7 @@ RTR3DECL(int) RTSemPong(PRTPINGPONG pPP)
     ASMAtomicWriteSize(&pPP->enmSpeaker, RTPINGPONGSPEAKER_PONG);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTSemPong);
 
 
 /**
@@ -190,7 +196,7 @@ RTR3DECL(int) RTSemPong(PRTPINGPONG pPP)
  * @param   pPP         Pointer to the ping-pong structure to wait on.
  * @param   cMillies    Number of milliseconds to wait.
  */
-RTR3DECL(int) RTSemPingWait(PRTPINGPONG pPP, unsigned cMillies)
+RTDECL(int) RTSemPingWait(PRTPINGPONG pPP, unsigned cMillies)
 {
     /*
      * Validate input
@@ -212,6 +218,7 @@ RTR3DECL(int) RTSemPingWait(PRTPINGPONG pPP, unsigned cMillies)
     Assert(rc != VERR_INTERRUPTED);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTSemPingWait);
 
 
 /**
@@ -222,7 +229,7 @@ RTR3DECL(int) RTSemPingWait(PRTPINGPONG pPP, unsigned cMillies)
  * @param   pPP         Pointer to the ping-pong structure to wait on.
  * @param   cMillies    Number of milliseconds to wait.
  */
-RTR3DECL(int) RTSemPongWait(PRTPINGPONG pPP, unsigned cMillies)
+RTDECL(int) RTSemPongWait(PRTPINGPONG pPP, unsigned cMillies)
 {
     /*
      * Validate input
@@ -244,4 +251,5 @@ RTR3DECL(int) RTSemPongWait(PRTPINGPONG pPP, unsigned cMillies)
     Assert(rc != VERR_INTERRUPTED);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTSemPongWait);
 

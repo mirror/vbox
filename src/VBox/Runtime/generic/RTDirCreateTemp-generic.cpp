@@ -33,6 +33,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/dir.h>
+#include "internal/iprt.h"
 
 #include <iprt/assert.h>
 #include <iprt/err.h>
@@ -116,4 +117,5 @@ RTDECL(int) RTDirCreateTemp(char *pszTemplate)
     *pszTemplate = '\0';
     return VERR_ALREADY_EXISTS;
 }
+RT_EXPORT_SYMBOL(RTDirCreateTemp);
 

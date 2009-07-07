@@ -28,10 +28,13 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/thread.h>
+#include "internal/iprt.h"
+
 #include <iprt/assert.h>
 
 
@@ -40,4 +43,5 @@ RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
     Assert(hThread == NIL_RTTHREAD);
     return true;
 }
+RT_EXPORT_SYMBOL(RTThreadPreemptIsEnabled);
 

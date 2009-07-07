@@ -33,6 +33,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/mp.h>
+#include "internal/iprt.h"
+
 #include <iprt/cpuset.h>
 
 
@@ -42,4 +44,5 @@ RTDECL(RTCPUID) RTMpGetCount(void)
     RTMpGetSet(&Set);
     return RTCpuSetCount(&Set);
 }
+RT_EXPORT_SYMBOL(RTMpGetCount);
 

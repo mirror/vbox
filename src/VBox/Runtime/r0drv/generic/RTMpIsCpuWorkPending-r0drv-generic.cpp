@@ -33,6 +33,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/mp.h>
+#include "internal/iprt.h"
 
 
 /**
@@ -44,4 +45,5 @@ RTDECL(bool) RTMpIsCpuWorkPending(void)
 {
     return false;
 }
+RT_EXPORT_SYMBOL(RTMpIsCpuWorkPending);
 

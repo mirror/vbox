@@ -33,6 +33,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/string.h>
+#include "internal/iprt.h"
+
 #include <iprt/err.h>
 
 
@@ -209,6 +211,7 @@ RTDECL(int) RTStrToUInt64Ex(const char *pszValue, char **ppszNext, unsigned uBas
 
     return rc;
 }
+RT_EXPORT_SYMBOL(RTStrToUInt64Ex);
 
 
 /**
@@ -246,6 +249,7 @@ RTDECL(int) RTStrToUInt64Full(const char *pszValue, unsigned uBase, uint64_t *pu
     }
     return rc;
 }
+RT_EXPORT_SYMBOL(RTStrToUInt64Full);
 
 
 /**
@@ -264,6 +268,7 @@ RTDECL(uint64_t) RTStrToUInt64(const char *pszValue)
         return u64;
     return 0;
 }
+RT_EXPORT_SYMBOL(RTStrToUInt64);
 
 
 /**
@@ -297,6 +302,7 @@ RTDECL(int) RTStrToUInt32Ex(const char *pszValue, char **ppszNext, unsigned uBas
         *pu32 = (uint32_t)u64;
     return rc;
 }
+RT_EXPORT_SYMBOL(RTStrToUInt32Ex);
 
 
 /**
@@ -330,6 +336,7 @@ RTDECL(int) RTStrToUInt32Full(const char *pszValue, unsigned uBase, uint32_t *pu
         *pu32 = (uint32_t)u64;
     return rc;
 }
+RT_EXPORT_SYMBOL(RTStrToUInt32Full);
 
 
 /**
@@ -348,6 +355,7 @@ RTDECL(uint32_t) RTStrToUInt32(const char *pszValue)
         return u32;
     return 0;
 }
+RT_EXPORT_SYMBOL(RTStrToUInt32);
 
 
 /**
@@ -381,6 +389,7 @@ RTDECL(int) RTStrToUInt16Ex(const char *pszValue, char **ppszNext, unsigned uBas
         *pu16 = (uint16_t)u64;
     return rc;
 }
+RT_EXPORT_SYMBOL(RTStrToUInt16Ex);
 
 
 /**
@@ -414,6 +423,7 @@ RTDECL(int) RTStrToUInt16Full(const char *pszValue, unsigned uBase, uint16_t *pu
         *pu16 = (uint16_t)u64;
     return rc;
 }
+RT_EXPORT_SYMBOL(RTStrToUInt16Full);
 
 
 /**
@@ -432,6 +442,7 @@ RTDECL(uint16_t) RTStrToUInt16(const char *pszValue)
         return u16;
     return 0;
 }
+RT_EXPORT_SYMBOL(RTStrToUInt16);
 
 
 /**
@@ -465,6 +476,7 @@ RTDECL(int) RTStrToUInt8Ex(const char *pszValue, char **ppszNext, unsigned uBase
         *pu8 = (uint8_t)u64;
     return rc;
 }
+RT_EXPORT_SYMBOL(RTStrToUInt8Ex);
 
 
 /**
@@ -498,6 +510,7 @@ RTDECL(int) RTStrToUInt8Full(const char *pszValue, unsigned uBase, uint8_t *pu8)
         *pu8 = (uint8_t)u64;
     return rc;
 }
+RT_EXPORT_SYMBOL(RTStrToUInt8Full);
 
 
 /**
@@ -516,6 +529,7 @@ RTDECL(uint8_t) RTStrToUInt8(const char *pszValue)
         return u8;
     return 0;
 }
+RT_EXPORT_SYMBOL(RTStrToUInt8);
 
 
 
@@ -638,6 +652,7 @@ RTDECL(int) RTStrToInt64Ex(const char *pszValue, char **ppszNext, unsigned uBase
 
     return rc;
 }
+RT_EXPORT_SYMBOL(RTStrToInt64Ex);
 
 
 /**
@@ -674,6 +689,7 @@ RTDECL(int) RTStrToInt64Full(const char *pszValue, unsigned uBase, int64_t *pi64
     }
     return rc;
 }
+RT_EXPORT_SYMBOL(RTStrToInt64Full);
 
 
 /**
@@ -692,6 +708,7 @@ RTDECL(int64_t) RTStrToInt64(const char *pszValue)
         return i64;
     return 0;
 }
+RT_EXPORT_SYMBOL(RTStrToInt64);
 
 
 /**
@@ -725,6 +742,7 @@ RTDECL(int) RTStrToInt32Ex(const char *pszValue, char **ppszNext, unsigned uBase
         *pi32 = (int32_t)i64;
     return rc;
 }
+RT_EXPORT_SYMBOL(RTStrToInt32Ex);
 
 
 /**
@@ -758,6 +776,7 @@ RTDECL(int) RTStrToInt32Full(const char *pszValue, unsigned uBase, int32_t *pi32
         *pi32 = (int32_t)i64;
     return rc;
 }
+RT_EXPORT_SYMBOL(RTStrToInt32Full);
 
 
 /**
@@ -776,6 +795,7 @@ RTDECL(int32_t) RTStrToInt32(const char *pszValue)
         return i32;
     return 0;
 }
+RT_EXPORT_SYMBOL(RTStrToInt32);
 
 
 /**
@@ -809,6 +829,7 @@ RTDECL(int) RTStrToInt16Ex(const char *pszValue, char **ppszNext, unsigned uBase
         *pi16 = (int16_t)i64;
     return rc;
 }
+RT_EXPORT_SYMBOL(RTStrToInt16Ex);
 
 
 /**
@@ -842,6 +863,7 @@ RTDECL(int) RTStrToInt16Full(const char *pszValue, unsigned uBase, int16_t *pi16
         *pi16 = (int16_t)i64;
     return rc;
 }
+RT_EXPORT_SYMBOL(RTStrToInt16Full);
 
 
 /**
@@ -860,6 +882,7 @@ RTDECL(int16_t) RTStrToInt16(const char *pszValue)
         return i16;
     return 0;
 }
+RT_EXPORT_SYMBOL(RTStrToInt16);
 
 
 /**
@@ -893,6 +916,7 @@ RTDECL(int) RTStrToInt8Ex(const char *pszValue, char **ppszNext, unsigned uBase,
         *pi8 = (int8_t)i64;
     return rc;
 }
+RT_EXPORT_SYMBOL(RTStrToInt8Ex);
 
 
 /**
@@ -926,6 +950,7 @@ RTDECL(int) RTStrToInt8Full(const char *pszValue, unsigned uBase, int8_t *pi8)
         *pi8 = (int8_t)i64;
     return rc;
 }
+RT_EXPORT_SYMBOL(RTStrToInt8Full);
 
 
 /**
@@ -944,4 +969,5 @@ RTDECL(int8_t) RTStrToInt8(const char *pszValue)
         return i8;
     return 0;
 }
+RT_EXPORT_SYMBOL(RTStrToInt8);
 

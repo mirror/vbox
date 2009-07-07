@@ -33,10 +33,12 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/mp.h>
+#include "internal/iprt.h"
 
 
 RTDECL(RTCPUID) RTMpGetMaxCpuId(void)
 {
     return RTMpCpuId();
 }
+RT_EXPORT_SYMBOL(RTMpGetMaxCpuId);
 

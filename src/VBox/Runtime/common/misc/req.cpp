@@ -32,6 +32,8 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include <iprt/req.h>
+#include "internal/iprt.h"
 
 #include <iprt/assert.h>
 #include <iprt/asm.h>
@@ -39,7 +41,6 @@
 #include <iprt/time.h>
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
-#include <iprt/req.h>
 #include <iprt/log.h>
 #include <iprt/mem.h>
 
@@ -69,6 +70,7 @@ RTDECL(int) RTReqCreateQueue(PRTREQQUEUE *ppQueue)
 
     return rc;
 }
+RT_EXPORT_SYMBOL(RTReqCreateQueue);
 
 
 /**
@@ -91,6 +93,7 @@ RTDECL(int) RTReqDestroyQueue(PRTREQQUEUE pQueue)
     RTMemFree(pQueue);
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTReqDestroyQueue);
 
 /**
  * Process one or more request packets
@@ -175,6 +178,7 @@ RTDECL(int) RTReqProcess(PRTREQQUEUE pQueue, unsigned cMillies)
     LogFlow(("RTReqProcess: returns %Rrc\n", rc));
     return rc;
 }
+RT_EXPORT_SYMBOL(RTReqProcess);
 
 /**
  * Allocate and queue a call request.
@@ -207,6 +211,7 @@ RTDECL(int) RTReqCall(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, PFNR
     va_end(va);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTReqCall);
 
 
 /**
@@ -240,6 +245,7 @@ RTDECL(int) RTReqCallVoid(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, 
     va_end(va);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTReqCallVoid);
 
 
 /**
@@ -275,6 +281,7 @@ RTDECL(int) RTReqCallEx(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, un
     va_end(va);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTReqCallEx);
 
 
 /**
@@ -362,6 +369,7 @@ RTDECL(int) RTReqCallV(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, uns
     Assert(rc != VERR_INTERRUPTED);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTReqCallV);
 
 
 /**
@@ -431,6 +439,7 @@ static void vmr3ReqJoinFree(PRTREQQUEUE pQueue, PRTREQ pList)
  */
 RTDECL(int) RTReqAlloc(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTREQTYPE enmType)
 {
+    RT_EXPORT_SYMBOL(RTReqAlloc);
     /*
      * Validate input.
      */
@@ -608,6 +617,7 @@ RTDECL(int) RTReqFree(PRTREQ pReq)
     }
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTReqFree);
 
 
 /**
@@ -681,6 +691,7 @@ RTDECL(int) RTReqQueue(PRTREQ pReq, unsigned cMillies)
     LogFlow(("RTReqQueue: returns %Rrc\n", rc));
     return rc;
 }
+RT_EXPORT_SYMBOL(RTReqQueue);
 
 
 /**
@@ -744,6 +755,7 @@ RTDECL(int) RTReqWait(PRTREQ pReq, unsigned cMillies)
     Assert(rc != VERR_INTERRUPTED);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTReqWait);
 
 
 /**
@@ -888,7 +900,4 @@ static int  rtReqProcessOne(PRTREQ pReq)
     }
     return rcRet;
 }
-
-
-
 

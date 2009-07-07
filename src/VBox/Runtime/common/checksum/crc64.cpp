@@ -33,10 +33,12 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/crc64.h>
+#include "internal/iprt.h"
 
 
 /*******************************************************************************
@@ -167,6 +169,7 @@ RTDECL(uint64_t) RTCrc64(const void *pv, size_t cb)
         uCRC64 = g_au64CRC64[(uCRC64 ^ *pu8++) & 0xff] ^ (uCRC64 >> 8);
     return uCRC64;
 }
+RT_EXPORT_SYMBOL(RTCrc64);
 
 
 /**
@@ -178,6 +181,7 @@ RTDECL(uint64_t) RTCrc64Start(void)
 {
     return 0ULL;
 }
+RT_EXPORT_SYMBOL(RTCrc64Start);
 
 
 /**
@@ -195,6 +199,7 @@ RTDECL(uint64_t) RTCrc64Process(uint64_t uCRC64, const void *pv, size_t cb)
         uCRC64 = g_au64CRC64[(uCRC64 ^ *pu8++) & 0xff] ^ (uCRC64 >> 8);
     return uCRC64;
 }
+RT_EXPORT_SYMBOL(RTCrc64Process);
 
 
 /**
@@ -207,4 +212,5 @@ RTDECL(uint64_t) RTCrc64Finish(uint64_t uCRC64)
 {
     return uCRC64;
 }
+RT_EXPORT_SYMBOL(RTCrc64Finish);
 

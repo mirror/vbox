@@ -53,6 +53,8 @@
 #endif
 
 #include <iprt/zip.h>
+#include "internal/iprt.h"
+
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
@@ -1342,6 +1344,7 @@ RTDECL(int)     RTZipCompCreate(PRTZIPCOMP *ppZip, void *pvUser, PFNRTZIPOUT pfn
         RTMemFree(pZip);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTZipCompCreate);
 
 
 /**
@@ -1358,6 +1361,7 @@ RTDECL(int)     RTZipCompress(PRTZIPCOMP pZip, const void *pvBuf, size_t cbBuf)
         return VINF_SUCCESS;
     return pZip->pfnCompress(pZip, pvBuf, cbBuf);
 }
+RT_EXPORT_SYMBOL(RTZipCompress);
 
 
 /**
@@ -1371,6 +1375,7 @@ RTDECL(int)     RTZipCompFinish(PRTZIPCOMP pZip)
 {
     return pZip->pfnFinish(pZip);
 }
+RT_EXPORT_SYMBOL(RTZipCompFinish);
 
 
 /**
@@ -1394,6 +1399,7 @@ RTDECL(int)     RTZipCompDestroy(PRTZIPCOMP pZip)
     RTMemFree(pZip);
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTZipCompDestroy);
 
 
 /**
@@ -1452,6 +1458,7 @@ RTDECL(int)     RTZipDecompCreate(PRTZIPDECOMP *ppZip, void *pvUser, PFNRTZIPIN 
     *ppZip = pZip;
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTZipDecompCreate);
 
 
 /**
@@ -1563,6 +1570,8 @@ RTDECL(int)     RTZipDecompress(PRTZIPDECOMP pZip, void *pvBuf, size_t cbBuf, si
      */
     return pZip->pfnDecompress(pZip, pvBuf, cbBuf, pcbWritten);
 }
+RT_EXPORT_SYMBOL(RTZipDecompress);
+
 
 /**
  * Destroys the decompressor instance.
@@ -1585,5 +1594,5 @@ RTDECL(int)     RTZipDecompDestroy(PRTZIPDECOMP pZip)
     RTMemFree(pZip);
     return rc;
 }
-
+RT_EXPORT_SYMBOL(RTZipDecompDestroy);
 

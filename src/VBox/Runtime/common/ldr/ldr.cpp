@@ -34,6 +34,8 @@
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_LDR
 #include <iprt/ldr.h>
+#include "internal/iprt.h"
+
 #include <iprt/alloc.h>
 #include <iprt/string.h>
 #include <iprt/assert.h>
@@ -83,6 +85,7 @@ RTDECL(bool) RTLdrIsLoadable(const char *pszFilename)
     }
     return false;
 }
+RT_EXPORT_SYMBOL(RTLdrIsLoadable);
 
 
 /**
@@ -127,6 +130,7 @@ RTDECL(int) RTLdrGetSymbol(RTLDRMOD hLdrMod, const char *pszSymbol, void **ppvVa
     LogFlow(("RTLdrGetSymbol: return %Rrc *ppvValue=%p\n", rc, *ppvValue));
     return rc;
 }
+RT_EXPORT_SYMBOL(RTLdrGetSymbol);
 
 
 /**
@@ -161,4 +165,5 @@ RTDECL(int) RTLdrClose(RTLDRMOD hLdrMod)
     LogFlow(("RTLdrClose: returns VINF_SUCCESS\n"));
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTLdrClose);
 

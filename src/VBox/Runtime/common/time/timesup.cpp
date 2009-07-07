@@ -34,6 +34,8 @@
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_TIME
 #include <iprt/time.h>
+#include "internal/iprt.h"
+
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
@@ -190,6 +192,7 @@ RTDECL(uint64_t) RTTimeNanoTS(void)
 {
     return rtTimeNanoTSInternal();
 }
+RT_EXPORT_SYMBOL(RTTimeNanoTS);
 
 
 /**
@@ -201,6 +204,7 @@ RTDECL(uint64_t) RTTimeMilliTS(void)
 {
     return rtTimeNanoTSInternal() / 1000000;
 }
+RT_EXPORT_SYMBOL(RTTimeMilliTS);
 
 
 #if !defined(IN_GUEST) && !defined(RT_NO_GIP)
@@ -213,6 +217,7 @@ RTDECL(uint32_t) RTTimeDbgSteps(void)
 {
     return g_TimeNanoTSData.c1nsSteps;
 }
+RT_EXPORT_SYMBOL(RTTimeDbgSteps);
 
 
 /**
@@ -224,6 +229,7 @@ RTDECL(uint32_t) RTTimeDbgExpired(void)
 {
     return g_TimeNanoTSData.cExpired;
 }
+RT_EXPORT_SYMBOL(RTTimeDbgExpired);
 
 
 /**
@@ -235,6 +241,7 @@ RTDECL(uint32_t) RTTimeDbgBad(void)
 {
     return g_TimeNanoTSData.cBadPrev;
 }
+RT_EXPORT_SYMBOL(RTTimeDbgBad);
 
 
 /**
@@ -246,4 +253,6 @@ RTDECL(uint32_t) RTTimeDbgRaces(void)
 {
     return g_TimeNanoTSData.cUpdateRaces;
 }
+RT_EXPORT_SYMBOL(RTTimeDbgRaces);
 #endif /* !IN_GUEST && !RT_NO_GIP */
+

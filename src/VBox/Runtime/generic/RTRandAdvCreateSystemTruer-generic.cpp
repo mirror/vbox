@@ -28,10 +28,13 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/rand.h>
+#include "internal/iprt.h"
+
 #include <iprt/err.h>
 
 
@@ -40,4 +43,5 @@ RTDECL(int) RTRandAdvCreateSystemTruer(PRTRAND phRand) RT_NO_THROW
     NOREF(phRand);
     return VERR_NOT_SUPPORTED;
 }
+RT_EXPORT_SYMBOL(RTRandAdvCreateSystemTruer);
 

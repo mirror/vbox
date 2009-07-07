@@ -28,10 +28,13 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/critsect.h>
+#include "internal/iprt.h"
+
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
 #include <iprt/assert.h>
@@ -54,6 +57,7 @@ RTDECL(int) RTCritSectInit(PRTCRITSECT pCritSect)
 {
     return RTCritSectInitEx(pCritSect, 0);
 }
+RT_EXPORT_SYMBOL(RTCritSectInit);
 
 
 /**
@@ -86,6 +90,7 @@ RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags)
     pCritSect->u32Magic = (uint32_t)rc;
     return rc;
 }
+RT_EXPORT_SYMBOL(RTCritSectInitEx);
 
 
 /**
@@ -197,6 +202,7 @@ RTDECL(int) RTCritSectEnterMultipleDebug(unsigned cCritSects, PRTCRITSECT *papCr
         i = j;
     }
 }
+RT_EXPORT_SYMBOL(RTCritSectEnterMultiple);
 
 
 /**
@@ -260,6 +266,7 @@ RTDECL(int) RTCritSectTryEnterDebug(PRTCRITSECT pCritSect, const char *pszFile, 
 
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTCritSectTryEnter);
 
 
 /**
@@ -348,6 +355,7 @@ RTDECL(int) RTCritSectEnterDebug(PRTCRITSECT pCritSect, const char *pszFile, uns
 
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTCritSectEnter);
 
 
 /**
@@ -393,6 +401,7 @@ RTDECL(int) RTCritSectLeave(PRTCRITSECT pCritSect)
     }
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTCritSectLeave);
 
 
 /**
@@ -413,6 +422,7 @@ RTDECL(int) RTCritSectLeaveMultiple(unsigned cCritSects, PRTCRITSECT *papCritSec
     }
     return rc;
 }
+RT_EXPORT_SYMBOL(RTCritSectLeaveMultiple);
 
 
 #ifndef RTCRITSECT_STRICT
@@ -431,6 +441,9 @@ RTDECL(int) RTCritSectEnterMultipleDebug(unsigned cCritSects, PRTCRITSECT *papCr
     return RTCritSectEnterMultiple(cCritSects, papCritSects);
 }
 #endif /* RT_STRICT */
+RT_EXPORT_SYMBOL(RTCritSectEnterDebug);
+RT_EXPORT_SYMBOL(RTCritSectTryEnterDebug);
+RT_EXPORT_SYMBOL(RTCritSectEnterMultipleDebug);
 
 
 /**
@@ -468,4 +481,5 @@ RTDECL(int) RTCritSectDelete(PRTCRITSECT pCritSect)
 
     return rc;
 }
+RT_EXPORT_SYMBOL(RTCritSectDelete);
 

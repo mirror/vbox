@@ -33,6 +33,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-linux-kernel.h"
+#include "internal/iprt.h"
 
 #include <iprt/mp.h>
 #include <iprt/cpuset.h>
@@ -45,24 +46,28 @@ RTDECL(RTCPUID) RTMpCpuId(void)
 {
     return smp_processor_id();
 }
+RT_EXPORT_SYMBOL(RTMpCpuId);
 
 
 RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
 {
     return idCpu < NR_CPUS ? (int)idCpu : -1;
 }
+RT_EXPORT_SYMBOL(RTMpCpuIdToSetIndex);
 
 
 RTDECL(RTCPUID) RTMpCpuIdFromSetIndex(int iCpu)
 {
     return iCpu < NR_CPUS ? (RTCPUID)iCpu : NIL_RTCPUID;
 }
+RT_EXPORT_SYMBOL(RTMpCpuIdFromSetIndex);
 
 
 RTDECL(RTCPUID) RTMpGetMaxCpuId(void)
 {
     return NR_CPUS - 1; //???
 }
+RT_EXPORT_SYMBOL(RTMpGetMaxCpuId);
 
 
 RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
@@ -80,6 +85,7 @@ RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
     return idCpu == RTMpCpuId();
 #endif
 }
+RT_EXPORT_SYMBOL(RTMpIsCpuPossible);
 
 
 RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
@@ -95,6 +101,7 @@ RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
     } while (idCpu-- > 0);
     return pSet;
 }
+RT_EXPORT_SYMBOL(RTMpGetSet);
 
 
 RTDECL(RTCPUID) RTMpGetCount(void)
@@ -115,6 +122,7 @@ RTDECL(RTCPUID) RTMpGetCount(void)
     return 1;
 #endif
 }
+RT_EXPORT_SYMBOL(RTMpGetCount);
 
 
 RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
@@ -131,6 +139,7 @@ RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
     return idCpu == RTMpCpuId();
 #endif
 }
+RT_EXPORT_SYMBOL(RTMpIsCpuOnline);
 
 
 RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
@@ -151,6 +160,7 @@ RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
 #endif
     return pSet;
 }
+RT_EXPORT_SYMBOL(RTMpGetOnlineSet);
 
 
 RTDECL(RTCPUID) RTMpGetOnlineCount(void)
@@ -167,6 +177,7 @@ RTDECL(RTCPUID) RTMpGetOnlineCount(void)
     return 1;
 #endif
 }
+RT_EXPORT_SYMBOL(RTMpGetOnlineCount);
 
 
 RTDECL(bool) RTMpIsCpuWorkPending(void)
@@ -174,6 +185,7 @@ RTDECL(bool) RTMpIsCpuWorkPending(void)
     /** @todo (not used on non-Windows platforms yet). */
     return false;
 }
+RT_EXPORT_SYMBOL(RTMpIsCpuWorkPending);
 
 
 /**
@@ -221,6 +233,7 @@ RTDECL(int) RTMpOnAll(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
     Assert(rc == 0); NOREF(rc);
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTMpOnAll);
 
 
 RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
@@ -249,6 +262,7 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
     Assert(rc == 0); NOREF(rc);
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTMpOnOthers);
 
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
@@ -318,6 +332,7 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
     NOREF(rc);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTMpOnSpecific);
 
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
@@ -358,4 +373,5 @@ RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
     return VERR_NOT_SUPPORTED;
 #endif /* older kernels */
 }
+RT_EXPORT_SYMBOL(RTMpPokeCpu);
 

@@ -32,6 +32,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/err.h>
+#include "internal/iprt.h"
+
 #include <iprt/asm.h>
 #include <iprt/string.h>
 #include <iprt/err.h>
@@ -149,4 +151,5 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc)
     RTStrPrintf(&g_aszUnknownStr[iMsg][0], sizeof(g_aszUnknownStr[iMsg]), "Unknown Status 0x%X", rc);
     return &g_aUnknownMsgs[iMsg];
 }
+RT_EXPORT_SYMBOL(RTErrCOMGet);
 

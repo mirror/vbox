@@ -33,6 +33,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-linux-kernel.h"
+#include "internal/iprt.h"
 #include <iprt/semaphore.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
@@ -73,6 +74,7 @@ RTDECL(int)  RTSemEventCreate(PRTSEMEVENT pEventSem)
     }
     return VERR_NO_MEMORY;
 }
+RT_EXPORT_SYMBOL(RTSemEventCreate);
 
 
 RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
@@ -99,6 +101,7 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
     RTMemFree(pEventInt);
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTSemEventDestroy);
 
 
 RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
@@ -124,6 +127,7 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
 
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTSemEventSignal);
 
 
 /**
@@ -203,6 +207,7 @@ RTDECL(int) RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies)
         return VINF_SUCCESS;
     return rtSemEventWait(pEventInt, cMillies, false /* fInterruptible */);
 }
+RT_EXPORT_SYMBOL(RTSemEventWait);
 
 
 RTDECL(int) RTSemEventWaitNoResume(RTSEMEVENT EventSem, unsigned cMillies)
@@ -221,4 +226,5 @@ RTDECL(int) RTSemEventWaitNoResume(RTSEMEVENT EventSem, unsigned cMillies)
         return VINF_SUCCESS;
     return rtSemEventWait(pEventInt, cMillies, true /* fInterruptible */);
 }
+RT_EXPORT_SYMBOL(RTSemEventWaitNoResume);
 

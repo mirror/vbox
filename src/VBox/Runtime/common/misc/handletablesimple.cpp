@@ -28,10 +28,13 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/handletable.h>
+#include "internal/iprt.h"
+
 #include <iprt/mem.h>
 #include <iprt/spinlock.h>
 #include <iprt/err.h>
@@ -199,6 +202,7 @@ RTDECL(int)     RTHandleTableAlloc(RTHANDLETABLE hHandleTable, void *pvObj, uint
 
     return rc;
 }
+RT_EXPORT_SYMBOL(RTHandleTableAlloc);
 
 
 RTDECL(void *)  RTHandleTableLookup(RTHANDLETABLE hHandleTable, uint32_t h)
@@ -239,6 +243,7 @@ RTDECL(void *)  RTHandleTableLookup(RTHANDLETABLE hHandleTable, uint32_t h)
     rtHandleTableUnlock(pThis, &Tmp);
     return pvObj;
 }
+RT_EXPORT_SYMBOL(RTHandleTableLookup);
 
 
 RTDECL(void *)  RTHandleTableFree(RTHANDLETABLE hHandleTable, uint32_t h)
@@ -302,4 +307,5 @@ RTDECL(void *)  RTHandleTableFree(RTHANDLETABLE hHandleTable, uint32_t h)
     rtHandleTableUnlock(pThis, &Tmp);
     return pvObj;
 }
+RT_EXPORT_SYMBOL(RTHandleTableFree);
 

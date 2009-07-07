@@ -33,6 +33,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/err.h>
+#include "internal/iprt.h"
+
 #include <iprt/assert.h>
 #include <iprt/err.h>
 
@@ -455,12 +457,5 @@ RTDECL(int) RTErrConvertToErrno(int iErr)
 #endif
     }
 }
+RT_EXPORT_SYMBOL(RTErrConvertToErrno);
 
-#if defined(RT_OS_LINUX) && defined(IN_MODULE)
-/*
- * When we build this in the Linux kernel module, we wish to make the
- * symbols available to other modules as well.
- */
-# include "the-linux-kernel.h"
-EXPORT_SYMBOL(RTErrConvertToErrno);
-#endif

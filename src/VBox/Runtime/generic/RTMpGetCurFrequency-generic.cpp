@@ -28,10 +28,12 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/mp.h>
+#include "internal/iprt.h"
 
 
 RTDECL(uint32_t) RTMpGetCurFrequency(RTCPUID idCpu)
@@ -40,4 +42,5 @@ RTDECL(uint32_t) RTMpGetCurFrequency(RTCPUID idCpu)
     /* this is a generic stub which returns "unknown". */
     return 0;
 }
+RT_EXPORT_SYMBOL(RTMpGetCurFrequency);
 

@@ -215,10 +215,9 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
             if (RT_SUCCESS(rc))
             {
 #ifdef VBOX_WITH_HGCM
-                rc = vboxGuestInitFilterMask(pDevExt, VMMDEV_EVENT_HGCM | fEvents);
-#else
-                rc = vboxGuestInitFilterMask(pDevExt, fEvents);
+                fEvents |= VMMDEV_EVENT_HGCM;
 #endif
+                rc = vboxGuestInitFilterMask(pDevExt, fEvents);
                 if (RT_SUCCESS(rc))
                 {
                     /*

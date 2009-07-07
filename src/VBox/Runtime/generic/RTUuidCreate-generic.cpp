@@ -33,6 +33,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/uuid.h>
+#include "internal/iprt.h"
+
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/rand.h>
@@ -54,4 +56,5 @@ RTDECL(int)  RTUuidCreate(PRTUUID pUuid)
 
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTUuidCreate);
 

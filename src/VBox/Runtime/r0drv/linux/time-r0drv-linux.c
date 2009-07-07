@@ -34,6 +34,7 @@
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_TIME
 #include "the-linux-kernel.h"
+#include "internal/iprt.h"
 #include <iprt/time.h>
 #include <iprt/asm.h>
 
@@ -146,24 +147,28 @@ RTDECL(uint64_t) RTTimeNanoTS(void)
 {
     return rtTimeGetSystemNanoTS();
 }
+RT_EXPORT_SYMBOL(RTTimeNanoTS);
 
 
 RTDECL(uint64_t) RTTimeMilliTS(void)
 {
     return rtTimeGetSystemNanoTS() / 1000000;
 }
+RT_EXPORT_SYMBOL(RTTimeMilliTS);
 
 
 RTDECL(uint64_t) RTTimeSystemNanoTS(void)
 {
     return rtTimeGetSystemNanoTS();
 }
+RT_EXPORT_SYMBOL(RTTimeSystemNanoTS);
 
 
 RTDECL(uint64_t) RTTimeSystemMilliTS(void)
 {
     return rtTimeGetSystemNanoTS() / 1000000;
 }
+RT_EXPORT_SYMBOL(RTTimeSystemMilliTS);
 
 
 RTDECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime)
@@ -179,4 +184,5 @@ RTDECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime)
     return RTTimeSpecSetTimeval(pTime, &Tv);
 #endif
 }
+RT_EXPORT_SYMBOL(RTTimeNow);
 

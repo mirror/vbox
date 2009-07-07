@@ -33,6 +33,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/mp.h>
+#include "internal/iprt.h"
+
 #include <iprt/cpuset.h>
 
 
@@ -49,4 +51,5 @@ RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
     } while (idCpu-- > 0);
     return pSet;
 }
+RT_EXPORT_SYMBOL(RTMpGetOnlineSet);
 

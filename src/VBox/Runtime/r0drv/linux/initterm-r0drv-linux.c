@@ -33,6 +33,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-linux-kernel.h"
+#include "internal/iprt.h"
 #include <iprt/err.h>
 #include <iprt/assert.h>
 #include "internal/initterm.h"
@@ -44,7 +45,7 @@
 #ifdef RT_ARCH_AMD64
 /* in alloc-r0drv0-linux.c */
 extern void rtR0MemExecCleanup(void);
-#endif 
+#endif
 
 
 int rtR0InitNative(void)
@@ -57,6 +58,6 @@ void rtR0TermNative(void)
 {
 #ifdef RT_ARCH_AMD64
     rtR0MemExecCleanup();
-#endif 
+#endif
 }
 

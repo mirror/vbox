@@ -33,10 +33,12 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/mp.h>
+#include "internal/iprt.h"
 
 
 RTDECL(RTCPUID) RTMpCpuIdFromSetIndex(int iCpu)
 {
     return iCpu >= 0 ? iCpu : NIL_RTCPUID;
 }
+RT_EXPORT_SYMBOL(RTMpCpuIdFromSetIndex);
 

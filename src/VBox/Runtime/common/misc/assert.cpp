@@ -33,6 +33,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/assert.h>
+#include "internal/iprt.h"
+
 #include <iprt/log.h>
 #include <iprt/string.h>
 #include <iprt/stdarg.h>
@@ -41,7 +43,9 @@
 #endif
 
 
-#if defined(IN_GUEST_R0) && (defined(RT_OS_LINUX) || defined(RT_OS_WINDOWS))
+#if defined(IN_GUEST_R0) \
+ && (  (defined(RT_OS_LINUX) && !defined(VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX)) \
+     || defined(RT_OS_WINDOWS))
 /*
  * This is legacy that should be eliminated. OS specific code deals with
  * R0 assertions now and it will do the backdoor printfs in addition to
@@ -66,6 +70,7 @@ RTDECL(void)    AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszF
                         "Location  : %s(%d) %s\n",
                         pszExpr, pszFile, uLine, pszFunction);
 }
+RT_EXPORT_SYMBOL(AssertMsg1);
 
 
 /**
@@ -82,16 +87,7 @@ RTDECL(void) AssertMsg2(const char *pszFormat, ...)
     RTLogBackdoorPrintfV(pszFormat, args);
     va_end(args);
 }
-
-# if defined(RT_OS_LINUX) && defined(IN_MODULE)
-/*
- * When we build this in the Linux kernel module, we wish to make the
- * symbols available to other modules as well.
- */
-#  include "the-linux-kernel.h"
-EXPORT_SYMBOL(AssertMsg1);
-EXPORT_SYMBOL(AssertMsg2);
-# endif
+RT_EXPORT_SYMBOL(AssertMsg2);
 
 #elif defined(IN_RING0)
 

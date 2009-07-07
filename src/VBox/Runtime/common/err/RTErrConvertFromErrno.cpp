@@ -33,8 +33,9 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/err.h>
+#include "internal/iprt.h"
+
 #include <iprt/assert.h>
-#include <iprt/err.h>
 
 #if defined(RT_OS_DARWIN) && defined(KERNEL)
 # include <sys/errno.h>
@@ -445,4 +446,5 @@ RTDECL(int)  RTErrConvertFromErrno(unsigned uNativeCode)
             return VERR_UNRESOLVED_ERROR;
     }
 }
+RT_EXPORT_SYMBOL(RTErrConvertFromErrno);
 

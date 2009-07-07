@@ -34,6 +34,8 @@
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_LDR
 #include <iprt/ldr.h>
+#include "internal/iprt.h"
+
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/log.h>
@@ -194,6 +196,7 @@ RTDECL(size_t) RTLdrSize(RTLDRMOD hLdrMod)
     LogFlow(("RTLdrSize: returns %zu\n", cb));
     return cb;
 }
+RT_EXPORT_SYMBOL(RTLdrSize);
 
 
 /**
@@ -230,6 +233,7 @@ RTDECL(int) RTLdrGetBits(RTLDRMOD hLdrMod, void *pvBits, RTUINTPTR BaseAddress, 
     LogFlow(("RTLdrGetBits: returns %Rrc\n",rc));
     return rc;
 }
+RT_EXPORT_SYMBOL(RTLdrGetBits);
 
 
 /**
@@ -268,6 +272,7 @@ RTDECL(int) RTLdrRelocate(RTLDRMOD hLdrMod, void *pvBits, RTUINTPTR NewBaseAddre
     LogFlow(("RTLdrRelocate: returns %Rrc\n", rc));
     return rc;
 }
+RT_EXPORT_SYMBOL(RTLdrRelocate);
 
 
 /**
@@ -320,6 +325,7 @@ RTDECL(int) RTLdrGetSymbolEx(RTLDRMOD hLdrMod, const void *pvBits, RTUINTPTR Bas
     LogFlow(("RTLdrGetSymbolEx: returns %Rrc *pValue=%p\n", rc, *pValue));
     return rc;
 }
+RT_EXPORT_SYMBOL(RTLdrGetSymbolEx);
 
 
 /**
@@ -356,4 +362,5 @@ RTDECL(int) RTLdrEnumSymbols(RTLDRMOD hLdrMod, unsigned fFlags, const void *pvBi
     LogFlow(("RTLdrEnumSymbols: returns %Rrc\n", rc));
     return rc;
 }
+RT_EXPORT_SYMBOL(RTLdrEnumSymbols);
 

@@ -28,10 +28,13 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/dbg.h>
+#include "internal/iprt.h"
+
 #include <iprt/asm.h>
 #include <iprt/avl.h>
 #include <iprt/assert.h>
@@ -223,6 +226,7 @@ RTDECL(int) RTDbgAsCreate(PRTDBGAS phDbgAs, RTUINTPTR FirstAddr, RTUINTPTR LastA
     RTMemFree(pDbgAs);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTDbgAsCreate);
 
 
 /**
@@ -250,6 +254,7 @@ RTDECL(int) RTDbgAsCreateV(PRTDBGAS phDbgAs, RTUINTPTR FirstAddr, RTUINTPTR Last
     RTStrFree(pszName);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTDbgAsCreateV);
 
 
 /**
@@ -271,6 +276,7 @@ RTDECL(int) RTDbgAsCreateF(PRTDBGAS phDbgAs, RTUINTPTR FirstAddr, RTUINTPTR Last
     va_end(va);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTDbgAsCreateF);
 
 
 /**
@@ -350,6 +356,7 @@ RTDECL(uint32_t) RTDbgAsRetain(RTDBGAS hDbgAs)
     RTDBGAS_VALID_RETURN_RC(pDbgAs, UINT32_MAX);
     return ASMAtomicIncU32(&pDbgAs->cRefs);
 }
+RT_EXPORT_SYMBOL(RTDbgAsRetain);
 
 
 /**
@@ -379,6 +386,7 @@ RTDECL(uint32_t) RTDbgAsRelease(RTDBGAS hDbgAs)
         rtDbgAsDestroy(pDbgAs);
     return cRefs;
 }
+RT_EXPORT_SYMBOL(RTDbgAsRelease);
 
 
 /**
@@ -397,6 +405,7 @@ RTDECL(const char *) RTDbgAsName(RTDBGAS hDbgAs)
     RTDBGAS_VALID_RETURN_RC(pDbgAs, NULL);
     return pDbgAs->szName;
 }
+RT_EXPORT_SYMBOL(RTDbgAsName);
 
 
 /**
@@ -415,6 +424,7 @@ RTDECL(RTUINTPTR) RTDbgAsFirstAddr(RTDBGAS hDbgAs)
     RTDBGAS_VALID_RETURN_RC(pDbgAs, 0);
     return pDbgAs->FirstAddr;
 }
+RT_EXPORT_SYMBOL(RTDbgAsFirstAddr);
 
 
 /**
@@ -433,6 +443,7 @@ RTDECL(RTUINTPTR) RTDbgAsLastAddr(RTDBGAS hDbgAs)
     RTDBGAS_VALID_RETURN_RC(pDbgAs, 0);
     return pDbgAs->LastAddr;
 }
+RT_EXPORT_SYMBOL(RTDbgAsLastAddr);
 
 /**
  * Gets the number of modules in the address space.
@@ -452,6 +463,7 @@ RTDECL(uint32_t) RTDbgAsModuleCount(RTDBGAS hDbgAs)
     RTDBGAS_VALID_RETURN_RC(pDbgAs, 0);
     return pDbgAs->cModules;
 }
+RT_EXPORT_SYMBOL(RTDbgAsModuleCount);
 
 
 /**
@@ -634,6 +646,7 @@ RTDECL(int) RTDbgAsModuleLink(RTDBGAS hDbgAs, RTDBGMOD hDbgMod, RTUINTPTR ImageA
     RTDBGAS_UNLOCK_WRITE(pDbgAs);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTDbgAsModuleLink);
 
 
 /**
@@ -682,6 +695,7 @@ RTDECL(int) RTDbgAsModuleLinkSeg(RTDBGAS hDbgAs, RTDBGMOD hDbgMod, RTDBGSEGIDX i
     RTDBGAS_UNLOCK_WRITE(pDbgAs);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTDbgAsModuleLinkSeg);
 
 
 /**
@@ -838,6 +852,7 @@ RTDECL(int) RTDbgAsModuleUnlink(RTDBGAS hDbgAs, RTDBGMOD hDbgMod)
     RTDBGAS_UNLOCK_WRITE(pDbgAs);
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTDbgAsModuleUnlink);
 
 
 /**
@@ -873,6 +888,7 @@ RTDECL(int) RTDbgAsModuleUnlinkByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr)
     RTDBGAS_UNLOCK_WRITE(pDbgAs);
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTDbgAsModuleUnlinkByAddr);
 
 
 /**
@@ -913,6 +929,7 @@ RTDECL(RTDBGMOD) RTDbgAsModuleByIndex(RTDBGAS hDbgAs, uint32_t iModule)
     RTDBGAS_UNLOCK_READ(pDbgAs);
     return hMod;
 }
+RT_EXPORT_SYMBOL(RTDbgAsModuleByIndex);
 
 
 /**
@@ -964,6 +981,7 @@ RTDECL(int) RTDbgAsModuleByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTDBGMOD phMod,
     RTDBGAS_UNLOCK_READ(pDbgAs);
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTDbgAsModuleByAddr);
 
 
 /**
@@ -1018,6 +1036,7 @@ RTDECL(int) RTDbgAsModuleByName(RTDBGAS hDbgAs, const char *pszName, uint32_t iN
     RTDBGAS_UNLOCK_READ(pDbgAs);
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTDbgAsModuleByName);
 
 
 /**
@@ -1168,6 +1187,7 @@ RTDECL(int) RTDbgAsSymbolAdd(RTDBGAS hDbgAs, const char *pszSymbol, RTUINTPTR Ad
     RTDbgModRelease(hMod);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTDbgAsSymbolAdd);
 
 
 /**
@@ -1215,6 +1235,7 @@ RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDi
         RTDbgModRelease(hMod);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTDbgAsSymbolByAddr);
 
 
 /**
@@ -1263,6 +1284,7 @@ RTDECL(int) RTDbgAsSymbolByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffD
         RTDbgModRelease(hMod);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTDbgAsSymbolByAddrA);
 
 
 /**
@@ -1436,6 +1458,7 @@ RTDECL(int) RTDbgAsSymbolByName(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYM
     RTMemTmpFree(paModules);
     return VERR_SYMBOL_NOT_FOUND;
 }
+RT_EXPORT_SYMBOL(RTDbgAsSymbolByName);
 
 
 /**
@@ -1510,6 +1533,7 @@ RTDECL(int) RTDbgAsSymbolByNameA(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSY
     RTMemTmpFree(paModules);
     return VERR_SYMBOL_NOT_FOUND;
 }
+RT_EXPORT_SYMBOL(RTDbgAsSymbolByNameA);
 
 
 /**
@@ -1550,6 +1574,7 @@ RTDECL(int) RTDbgAsLineAdd(RTDBGAS hDbgAs, const char *pszFile, uint32_t uLineNo
     RTDbgModRelease(hMod);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTDbgAsLineAdd);
 
 
 /**
@@ -1589,6 +1614,7 @@ RTDECL(int) RTDbgAsLineByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp
     RTDbgModRelease(hMod);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTDbgAsLineByAddr);
 
 
 /**
@@ -1629,4 +1655,5 @@ RTDECL(int) RTDbgAsLineByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDis
     RTDbgModRelease(hMod);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTDbgAsLineByAddrA);
 

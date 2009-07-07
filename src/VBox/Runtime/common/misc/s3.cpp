@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * S3 communication API.
+ * IPRT - S3 communication API.
  */
 
 /*
@@ -32,7 +32,8 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include "iprt/s3.h"
+#include <iprt/s3.h>
+#include "internal/iprt.h"
 
 #include <iprt/err.h>
 #include <iprt/mem.h>
@@ -47,6 +48,10 @@
 
 #include "internal/magics.h"
 
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
 typedef struct RTS3INTERNAL
 {
     uint32_t u32Magic;
@@ -70,6 +75,7 @@ typedef struct RTS3TMPMEMCHUNK
 } RTS3TMPMEMCHUNK;
 typedef RTS3TMPMEMCHUNK *PRTS3TMPMEMCHUNK;
 
+
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
@@ -90,6 +96,7 @@ typedef RTS3TMPMEMCHUNK *PRTS3TMPMEMCHUNK;
         AssertPtrReturnVoid(hS3); \
         AssertReturnVoid((hS3)->u32Magic == RTS3_MAGIC); \
     } while (0)
+
 
 /*******************************************************************************
 *   Private RTS3 helper                                                        *

@@ -33,6 +33,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/mp.h>
+#include "internal/iprt.h"
 
 
 static DECLCALLBACK(void) rtMpNtPokeCpuDummy(RTCPUID idCpu, void *pvUser1, void *pvUser2)
@@ -47,4 +48,5 @@ RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
 {
     return RTMpOnSpecific(idCpu, rtMpNtPokeCpuDummy, NULL, NULL);
 }
+RT_EXPORT_SYMBOL(RTMpPokeCpu);
 

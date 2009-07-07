@@ -28,10 +28,12 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/process.h>
+#include "internal/iprt.h"
 
 
 RTR3DECL(bool) RTProcIsRunningByName(const char *pszName)

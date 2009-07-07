@@ -33,6 +33,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/string.h>
+#include "internal/iprt.h"
+
 #include <iprt/uni.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
@@ -281,6 +283,7 @@ RTDECL(size_t) RTStrUniLen(const char *psz)
     int rc = rtUtf8Length(psz, RTSTR_MAX, &cCodePoints, NULL);
     return RT_SUCCESS(rc) ? cCodePoints : 0;
 }
+RT_EXPORT_SYMBOL(RTStrUniLen);
 
 
 RTDECL(int) RTStrUniLenEx(const char *psz, size_t cch, size_t *pcCps)
@@ -291,12 +294,14 @@ RTDECL(int) RTStrUniLenEx(const char *psz, size_t cch, size_t *pcCps)
         *pcCps = RT_SUCCESS(rc) ? cCodePoints : 0;
     return rc;
 }
+RT_EXPORT_SYMBOL(RTStrUniLenEx);
 
 
 RTDECL(int) RTStrValidateEncoding(const char *psz)
 {
     return RTStrValidateEncodingEx(psz, RTSTR_MAX, 0);
 }
+RT_EXPORT_SYMBOL(RTStrValidateEncoding);
 
 
 RTDECL(int) RTStrValidateEncodingEx(const char *psz, size_t cch, uint32_t fFlags)
@@ -321,6 +326,7 @@ RTDECL(int) RTStrValidateEncodingEx(const char *psz, size_t cch, uint32_t fFlags
 
     return RTStrUniLenEx(psz, cch, &cCpsIgnored);
 }
+RT_EXPORT_SYMBOL(RTStrValidateEncodingEx);
 
 
 RTDECL(bool) RTStrIsValidEncoding(const char *psz)
@@ -328,6 +334,7 @@ RTDECL(bool) RTStrIsValidEncoding(const char *psz)
     int rc = RTStrValidateEncodingEx(psz, RTSTR_MAX, 0);
     return RT_SUCCESS(rc);
 }
+RT_EXPORT_SYMBOL(RTStrIsValidEncoding);
 
 
 RTDECL(int) RTStrToUni(const char *pszString, PRTUNICP *ppaCps)
@@ -368,6 +375,7 @@ RTDECL(int) RTStrToUni(const char *pszString, PRTUNICP *ppaCps)
     }
     return rc;
 }
+RT_EXPORT_SYMBOL(RTStrToUni);
 
 
 RTDECL(int)  RTStrToUniEx(const char *pszString, size_t cchString, PRTUNICP *ppaCps, size_t cCps, size_t *pcCps)
@@ -427,6 +435,7 @@ RTDECL(int)  RTStrToUniEx(const char *pszString, size_t cchString, PRTUNICP *ppa
     }
     return rc;
 }
+RT_EXPORT_SYMBOL(RTStrToUniEx);
 
 
 /**
@@ -688,6 +697,7 @@ RTDECL(int) RTStrToUtf16(const char *pszString, PRTUTF16 *ppwszString)
     }
     return rc;
 }
+RT_EXPORT_SYMBOL(RTStrToUtf16);
 
 
 RTDECL(int)  RTStrToUtf16Ex(const char *pszString, size_t cchString, PRTUTF16 *ppwsz, size_t cwc, size_t *pcwc)
@@ -747,6 +757,7 @@ RTDECL(int)  RTStrToUtf16Ex(const char *pszString, size_t cchString, PRTUTF16 *p
     }
     return rc;
 }
+RT_EXPORT_SYMBOL(RTStrToUtf16Ex);
 
 
 RTDECL(size_t) RTStrCalcUtf16Len(const char *psz)
@@ -755,6 +766,7 @@ RTDECL(size_t) RTStrCalcUtf16Len(const char *psz)
     int rc = rtUtf8CalcUtf16Length(psz, RTSTR_MAX, &cwc);
     return RT_SUCCESS(rc) ? cwc : 0;
 }
+RT_EXPORT_SYMBOL(RTStrCalcUtf16Len);
 
 
 RTDECL(int) RTStrCalcUtf16LenEx(const char *psz, size_t cch, size_t *pcwc)
@@ -765,6 +777,7 @@ RTDECL(int) RTStrCalcUtf16LenEx(const char *psz, size_t cch, size_t *pcwc)
         *pcwc = RT_SUCCESS(rc) ? cwc : ~(size_t)0;
     return rc;
 }
+RT_EXPORT_SYMBOL(RTStrCalcUtf16LenEx);
 
 
 /**
@@ -791,6 +804,7 @@ RTDECL(RTUNICP) RTStrGetCpInternal(const char *psz)
     RTStrGetCpExInternal(&psz, &Cp);
     return Cp;
 }
+RT_EXPORT_SYMBOL(RTStrGetCpInternal);
 
 
 RTDECL(int) RTStrGetCpExInternal(const char **ppsz, PRTUNICP pCp)
@@ -913,6 +927,7 @@ RTDECL(int) RTStrGetCpExInternal(const char **ppsz, PRTUNICP pCp)
     *ppsz = (const char *)puch;
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTStrGetCpExInternal);
 
 
 /**
@@ -1068,6 +1083,7 @@ RTDECL(int) RTStrGetCpNExInternal(const char **ppsz, size_t *pcch, PRTUNICP pCp)
     (*pcch) = cch;
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTStrGetCpNExInternal);
 
 
 RTDECL(char *) RTStrPutCpInternal(char *psz, RTUNICP uc)
@@ -1128,6 +1144,7 @@ RTDECL(char *) RTStrPutCpInternal(char *psz, RTUNICP uc)
 
     return (char *)puch;
 }
+RT_EXPORT_SYMBOL(RTStrPutCpInternal);
 
 
 RTDECL(char *) RTStrPrevCp(const char *pszStart, const char *psz)
@@ -1160,6 +1177,7 @@ RTDECL(char *) RTStrPrevCp(const char *pszStart, const char *psz)
     }
     return (char *)pszStart;
 }
+RT_EXPORT_SYMBOL(RTStrPrevCp);
 
 
 /**
@@ -1186,6 +1204,7 @@ RTDECL(int) RTStrCmp(const char *psz1, const char *psz2)
 
     return strcmp(psz1, psz2);
 }
+RT_EXPORT_SYMBOL(RTStrCmp);
 
 
 /**
@@ -1214,6 +1233,7 @@ RTDECL(int) RTStrNCmp(const char *psz1, const char *psz2, size_t cchMax)
 
     return strncmp(psz1, psz2, cchMax);
 }
+RT_EXPORT_SYMBOL(RTStrNCmp);
 
 
 /**
@@ -1288,6 +1308,7 @@ RTDECL(int) RTStrICmp(const char *psz1, const char *psz2)
     /* Hit some bad encoding, continue in case insensitive mode. */
     return RTStrCmp(psz1, psz2);
 }
+RT_EXPORT_SYMBOL(RTStrICmp);
 
 
 /**
@@ -1368,6 +1389,7 @@ RTDECL(int) RTStrNICmp(const char *psz1, const char *psz2, size_t cchMax)
     /* Hit some bad encoding, continue in case insensitive mode. */
     return RTStrNCmp(psz1, psz2, cchMax);
 }
+RT_EXPORT_SYMBOL(RTStrNICmp);
 
 
 RTDECL(char *) RTStrStr(const char *pszHaystack, const char *pszNeedle)
@@ -1381,6 +1403,7 @@ RTDECL(char *) RTStrStr(const char *pszHaystack, const char *pszNeedle)
     /* The rest is CRT. */
     return (char *)strstr(pszHaystack, pszNeedle);
 }
+RT_EXPORT_SYMBOL(RTStrStr);
 
 
 RTDECL(char *) RTStrIStr(const char *pszHaystack, const char *pszNeedle)
@@ -1458,6 +1481,7 @@ RTDECL(char *) RTStrIStr(const char *pszHaystack, const char *pszNeedle)
 
     return NULL;
 }
+RT_EXPORT_SYMBOL(RTStrIStr);
 
 
 RTDECL(char *) RTStrToLower(char *psz)
@@ -1478,6 +1502,7 @@ RTDECL(char *) RTStrToLower(char *psz)
     }
     return psz;
 }
+RT_EXPORT_SYMBOL(RTStrToLower);
 
 
 RTDECL(char *) RTStrToUpper(char *psz)
@@ -1498,4 +1523,5 @@ RTDECL(char *) RTStrToUpper(char *psz)
     }
     return psz;
 }
+RT_EXPORT_SYMBOL(RTStrToUpper);
 

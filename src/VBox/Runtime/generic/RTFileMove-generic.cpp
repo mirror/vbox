@@ -28,8 +28,14 @@
  * additional information or have any questions.
  */
 
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_FILE
 #include <iprt/file.h>
+#include "internal/iprt.h"
+
 #include <iprt/path.h>
 #include <iprt/err.h>
 #include <iprt/assert.h>
@@ -108,4 +114,5 @@ RTDECL(int) RTFileMove(const char *pszSrc, const char *pszDst, unsigned fMove)
              pszSrc, pszSrc, pszDst, pszDst, fMove, rc));
     return rc;
 }
+RT_EXPORT_SYMBOL(RTFileMove);
 

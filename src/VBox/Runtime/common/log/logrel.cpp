@@ -33,6 +33,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/log.h>
+#include "internal/iprt.h"
+
 #ifndef IN_RC
 # include <iprt/alloc.h>
 # include <iprt/process.h>
@@ -85,6 +87,7 @@ RTDECL(PRTLOGGER)   RTLogRelDefaultInstance(void)
     return g_pRelLogger;
 #endif /* !IN_RC */
 }
+RT_EXPORT_SYMBOL(RTLogRelDefaultInstance);
 
 
 #ifndef IN_RC
@@ -98,6 +101,7 @@ RTDECL(PRTLOGGER) RTLogRelSetDefaultInstance(PRTLOGGER pLogger)
 {
     return (PRTLOGGER)ASMAtomicXchgPtr((void * volatile *)&g_pRelLogger, pLogger);
 }
+RT_EXPORT_SYMBOL(RTLogRelSetDefaultInstance);
 #endif /* !IN_RC */
 
 
@@ -128,6 +132,7 @@ RTDECL(void) RTLogRelLoggerV(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup
     }
     RTLogLoggerExV(pLogger, fFlags, iGroup, pszFormat, args);
 }
+RT_EXPORT_SYMBOL(RTLogRelLoggerV);
 
 
 /**
@@ -142,4 +147,5 @@ RTDECL(void) RTLogRelPrintfV(const char *pszFormat, va_list args)
 {
     RTLogRelLoggerV(NULL, 0, ~0U, pszFormat, args);
 }
+RT_EXPORT_SYMBOL(RTLogRelPrintfV);
 

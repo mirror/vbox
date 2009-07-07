@@ -141,8 +141,10 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_STRING
-#include <iprt/log.h>
 #include <iprt/string.h>
+#include "internal/iprt.h"
+
+#include <iprt/log.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include <iprt/stdarg.h>

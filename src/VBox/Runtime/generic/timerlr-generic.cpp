@@ -36,6 +36,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/timer.h>
+#include "internal/iprt.h"
+
 #include <iprt/thread.h>
 #include <iprt/err.h>
 #include <iprt/assert.h>
@@ -139,6 +141,7 @@ RTDECL(int) RTTimerLRCreateEx(RTTIMERLR *phTimerLR, uint64_t u64NanoInterval, ui
 
     return rc;
 }
+RT_EXPORT_SYMBOL(RTTimerLRCreateEx);
 
 
 RTDECL(int) RTTimerLRDestroy(RTTIMERLR hTimerLR)
@@ -175,6 +178,7 @@ RTDECL(int) RTTimerLRDestroy(RTTIMERLR hTimerLR)
     RTThreadWait(hThread, 250, NULL);
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTTimerLRDestroy);
 
 
 RTDECL(int) RTTimerLRStart(RTTIMERLR hTimerLR, uint64_t u64First)
@@ -207,6 +211,7 @@ RTDECL(int) RTTimerLRStart(RTTIMERLR hTimerLR, uint64_t u64First)
     AssertRC(rc);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTTimerLRStart);
 
 
 RTDECL(int) RTTimerLRStop(RTTIMERLR hTimerLR)
@@ -232,6 +237,7 @@ RTDECL(int) RTTimerLRStop(RTTIMERLR hTimerLR)
     AssertRC(rc);
     return rc;
 }
+RT_EXPORT_SYMBOL(RTTimerLRStop);
 
 
 static DECLCALLBACK(int) rtTimerLRThread(RTTHREAD hThread, void *pvUser)
