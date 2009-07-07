@@ -44,8 +44,8 @@ static unsigned     g_cPasses = 0;
 static unsigned     g_cFailures = 0;
 /** The number of skipped testcases. */
 static unsigned     g_cSkipped = 0;
-/** The exclude list. 
- * @note: Stripped extensions! */
+/** The exclude list.
+ * @note Stripped extensions! */
 static const char  *g_apszExclude[] =
 {
 #if 1 // slow stuff
