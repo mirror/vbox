@@ -705,7 +705,7 @@ static void acpiSetupFADT(ACPIState *s, RTGCPHYS32 addr_acpi1, RTGCPHYS32 addr_a
     fadt.header.u32Length     = ACPITBLFADT_VERSION1_SIZE;
     fadt.u8IntModel           = INT_MODEL_DUAL_PIC;
     fadt.header.u8Checksum    = acpiChecksum((uint8_t *)&fadt, ACPITBLFADT_VERSION1_SIZE);
-    acpiPhyscpy(s, addr_acpi1, &fadt, sizeof(fadt));
+    acpiPhyscpy(s, addr_acpi1, &fadt, ACPITBLFADT_VERSION1_SIZE);
 }
 
 /**
