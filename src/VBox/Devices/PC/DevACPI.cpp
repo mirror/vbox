@@ -648,8 +648,8 @@ static void acpiSetupFADT(ACPIState *s, RTGCPHYS32 addr_acpi1, RTGCPHYS32 addr_a
     acpiPrepareHeader(&fadt.header, "FACP", sizeof(fadt), 4);
     fadt.u32FACS              = RT_H2LE_U32(facs_addr);
     fadt.u32DSDT              = RT_H2LE_U32(dsdt_addr);
-    fadt.u8IntModel           = 0;
-    fadt.u8PreferredPMProfile = 0; /* unspecified */
+    fadt.u8IntModel           = 0;  /* dropped from the ACPI 2.0 spec. */
+    fadt.u8PreferredPMProfile = 0;  /* unspecified */
     fadt.u16SCIInt            = RT_H2LE_U16(SCI_INT);
     fadt.u32SMICmd            = RT_H2LE_U32(SMI_CMD);
     fadt.u8AcpiEnable         = ACPI_ENABLE;
