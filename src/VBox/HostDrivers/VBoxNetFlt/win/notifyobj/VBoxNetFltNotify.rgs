@@ -1,0 +1,13 @@
+HKCR
+{
+    NoRemove CLSID
+    {
+        ForceRemove {c631480a-acbe-4add-bb1d-3ed8aa52b5d9} = s 'VirtualBox Bridged Networking Driver Notify Object'
+        {
+            InProcServer32 = s '%MODULE%'
+            {
+                val ThreadingModel = s 'Both'
+            }
+        }
+    }
+}
