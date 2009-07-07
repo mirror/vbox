@@ -101,6 +101,7 @@ VMMDECL(void) PDMQueueInsert(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem)
 #endif
     }
     STAM_REL_COUNTER_INC(&pQueue->StatInsert);
+    STAM_STATS({ ASMAtomicIncU32(&pQueue->cStatPending); });
 }
 
 

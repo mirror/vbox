@@ -725,6 +725,9 @@ typedef struct PDMQUEUE
 #ifdef VBOX_WITH_STATISTICS
     /** State: Profiling the flushing. */
     STAMPROFILE                     StatFlushPrf;
+    /** State: Pending items. */
+    uint32_t volatile               cStatPending;
+    uint32_t volatile               cAlignment;
 #endif
 
     /** Array of pointers to free items. Variable size. */
