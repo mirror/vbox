@@ -657,11 +657,12 @@ bool VBoxEmptyFileSelector::isChooserVisible() const
 
 void VBoxEmptyFileSelector::setPath (const QString& aPath)
 {
+	QString tmpPath = QDir::toNativeSeparators (aPath);
     if (mLabel)
-        mLabel->setText (QString ("<compact elipsis=\"start\">%1</compact>").arg (aPath));
+        mLabel->setText (QString ("<compact elipsis=\"start\">%1</compact>").arg (tmpPath));
     else if (mLineEdit)
-        mLineEdit->setText (aPath);
-    textChanged(aPath);
+        mLineEdit->setText (tmpPath);
+    textChanged(tmpPath);
 }
 
 QString VBoxEmptyFileSelector::path() const
