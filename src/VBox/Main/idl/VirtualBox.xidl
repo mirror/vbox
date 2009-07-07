@@ -8977,6 +8977,7 @@
       The array of hard disk attachments is returned by
       <link to="IMachine::hardDiskAttachments"/>.
     </desc>
+
     <attribute name="hardDisk" type="IHardDisk" readonly="yes">
       <desc>Hard disk object associated with this attachment.</desc>
     </attribute>
