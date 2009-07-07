@@ -372,6 +372,8 @@ struct ACPITBLFADT
 #define FADT_FL_REMOVE_POWER_ON_CAPABLE RT_BIT(17) /**< 1=platform can remote power on */
 #define FADT_FL_FORCE_APIC_CLUSTER_MODEL  RT_BIT(18)
 #define FADT_FL_FORCE_APIC_PHYS_DEST_MODE RT_BIT(19)
+
+    /** Start of the ACPI 2.0 extension. */
     ACPIGENADDR         ResetReg;               /**< ext addr of reset register */
     uint8_t             u8ResetVal;             /**< ResetReg value to reset the system */
 #define ACPI_RESET_REG_VAL  0x10
@@ -388,6 +390,7 @@ struct ACPITBLFADT
     ACPIGENADDR         X_GPE1BLK;              /**< ext addr of GPE1 regs block */
 };
 AssertCompileSize(ACPITBLFADT, 244);
+#define ACPITBLFADT_VERSION1_SIZE               RT_OFFSETOF(ACPITBLFADT, ResetReg)
 
 /** Firmware ACPI Control Structure */
 struct ACPITBLFACS
@@ -636,15 +639,16 @@ static void acpiSetupFACS(ACPIState *s, RTGCPHYS32 addr)
 }
 
 /** Fixed ACPI Description Table (FADT aka FACP) */
-static void acpiSetupFADT(ACPIState *s, RTGCPHYS32 addr, uint32_t facs_addr, uint32_t dsdt_addr)
+static void acpiSetupFADT(ACPIState *s, RTGCPHYS32 addr_acpi1, RTGCPHYS32 addr_acpi2, uint32_t facs_addr, uint32_t dsdt_addr)
 {
     ACPITBLFADT fadt;
 
+    /* First the ACPI version 2+ version of the structure. */
     memset(&fadt, 0, sizeof(fadt));
     acpiPrepareHeader(&fadt.header, "FACP", sizeof(fadt), 4);
     fadt.u32FACS              = RT_H2LE_U32(facs_addr);
     fadt.u32DSDT              = RT_H2LE_U32(dsdt_addr);
-    fadt.u8IntModel           = INT_MODEL_DUAL_PIC;
+    fadt.u8IntModel           = 0;
     fadt.u8PreferredPMProfile = 0; /* unspecified */
     fadt.u16SCIInt            = RT_H2LE_U16(SCI_INT);
     fadt.u32SMICmd            = RT_H2LE_U32(SMI_CMD);
@@ -695,7 +699,13 @@ static void acpiSetupFADT(ACPIState *s, RTGCPHYS32 addr, uint32_t facs_addr, uin
     acpiWriteGenericAddr(&fadt.X_GPE0BLK,    1, 16, 0, 1,     GPE0_BLK);
     acpiWriteGenericAddr(&fadt.X_GPE1BLK,    0,  0, 0, 0,     GPE1_BLK);
     fadt.header.u8Checksum    = acpiChecksum((uint8_t *)&fadt, sizeof(fadt));
-    acpiPhyscpy(s, addr, &fadt, sizeof(fadt));
+    acpiPhyscpy(s, addr_acpi2, &fadt, sizeof(fadt));
+
+    /* Now the ACPI 1.0 version. */
+    fadt.header.u32Length     = ACPITBLFADT_VERSION1_SIZE;
+    fadt.u8IntModel           = INT_MODEL_DUAL_PIC;
+    fadt.header.u8Checksum    = acpiChecksum((uint8_t *)&fadt, ACPITBLFADT_VERSION1_SIZE);
+    acpiPhyscpy(s, addr_acpi1, &fadt, sizeof(fadt));
 }
 
 /**
@@ -1692,9 +1702,10 @@ static DECLCALLBACK(void *) acpiQueryInterface(PPDMIBASE pInterface, PDMINTERFAC
 static int acpiPlantTables(ACPIState *s)
 {
     int        rc;
-    RTGCPHYS32 rsdt_addr, xsdt_addr, fadt_addr, facs_addr, dsdt_addr, last_addr, apic_addr = 0;
+    RTGCPHYS32 rsdt_addr, xsdt_addr, fadt_acpi1_addr, fadt_acpi2_addr, facs_addr, dsdt_addr, last_addr, apic_addr = 0;
     uint32_t   addend = 0;
     RTGCPHYS32 rsdt_addrs[4];
+    RTGCPHYS32 xsdt_addrs[4];
     uint32_t   cAddr;
     size_t     rsdt_tbl_len = sizeof(ACPITBLHEADER);
     size_t     xsdt_tbl_len = sizeof(ACPITBLHEADER);
@@ -1734,8 +1745,10 @@ static int acpiPlantTables(ACPIState *s)
 
     rsdt_addr = 0;
     xsdt_addr = RT_ALIGN_32(rsdt_addr + rsdt_tbl_len, 16);
-    fadt_addr = RT_ALIGN_32(xsdt_addr + xsdt_tbl_len, 16);
-    facs_addr = RT_ALIGN_32(fadt_addr + sizeof(ACPITBLFADT), 16);
+    fadt_acpi1_addr = RT_ALIGN_32(xsdt_addr       + xsdt_tbl_len, 16);
+    fadt_acpi2_addr = RT_ALIGN_32(fadt_acpi1_addr + ACPITBLFADT_VERSION1_SIZE, 16);
+    /** @todo ACPI 3.0 doc says it needs to be aligned on a 64 byte boundary. */
+    facs_addr = RT_ALIGN_32(fadt_acpi2_addr + sizeof(ACPITBLFADT), 16);
     if (s->u8UseIOApic)
     {
         apic_addr = RT_ALIGN_32(facs_addr + sizeof(ACPITBLFACS), 16);
@@ -1764,25 +1777,27 @@ static int acpiPlantTables(ACPIState *s)
     Log(("RSDP 0x%08X\n", find_rsdp_space()));
     addend = s->cbRamLow - 0x10000;
     Log(("RSDT 0x%08X XSDT 0x%08X\n", rsdt_addr + addend, xsdt_addr + addend));
-    Log(("FACS 0x%08X FADT 0x%08X\n", facs_addr + addend, fadt_addr + addend));
+    Log(("FACS 0x%08X FADT (1.0) 0x%08X, FADT (2+) 0x%08X\n", facs_addr + addend, fadt_acpi1_addr + addend, fadt_acpi2_addr + addend));
     Log(("DSDT 0x%08X\n", dsdt_addr + addend));
     acpiSetupRSDP((ACPITBLRSDP*)s->au8RSDPPage, rsdt_addr + addend, xsdt_addr + addend);
     acpiSetupDSDT(s, dsdt_addr + addend, pDsdtCode, uDsdtSize);
     acpiCleanupDsdt(s->pDevIns, pDsdtCode);
     acpiSetupFACS(s, facs_addr + addend);
-    acpiSetupFADT(s, fadt_addr + addend, facs_addr + addend, dsdt_addr + addend);
+    acpiSetupFADT(s, fadt_acpi1_addr + addend, fadt_acpi2_addr + addend, facs_addr + addend, dsdt_addr + addend);
 
-    rsdt_addrs[0] = fadt_addr + addend;
+    rsdt_addrs[0] = fadt_acpi1_addr + addend;
+    xsdt_addrs[0] = fadt_acpi2_addr + addend;
     if (s->u8UseIOApic)
     {
         acpiSetupMADT(s, apic_addr + addend);
         rsdt_addrs[1] = apic_addr + addend;
+        xsdt_addrs[1] = apic_addr + addend;
     }
 
     rc = acpiSetupRSDT(s, rsdt_addr + addend, cAddr, rsdt_addrs);
     if (RT_FAILURE(rc))
         return rc;
-    return acpiSetupXSDT(s, xsdt_addr + addend, cAddr, rsdt_addrs);
+    return acpiSetupXSDT(s, xsdt_addr + addend, cAddr, xsdt_addrs);
 }
 
 /**
