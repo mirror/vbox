@@ -800,7 +800,7 @@ void VBoxSDLFB::resizeSDL(void)
 
         SDL_GetDesktopDisplayMode(&desktop_mode);
         /* create new window */
-
+       
         char szTitle[64];
         RTStrPrintf(szTitle, sizeof(szTitle), "SDL window %d", mScreenId);
         mWindow = SDL_CreateWindow(szTitle, x, y,
@@ -951,7 +951,7 @@ void VBoxSDLFB::update(int x, int y, int w, int h, bool fGuestRelative)
     Assert(mSurfVRAM);
     if (!mScreen || !mSurfVRAM)
         return;
-
+    
     /* the source and destination rectangles */
     SDL_Rect srcRect;
     SDL_Rect dstRect;
@@ -1176,9 +1176,7 @@ void VBoxSDLFB::paintSecureLabel(int x, int y, int w, int h, bool fForce)
                                             mSecureLabelColorBG & 0x000000FF)); /* blue  */
 
     /* now the text */
-    if (    mLabelFont != NULL
-         && !mSecureLabelText.isEmpty()
-       )
+    if (mLabelFont != NULL && mSecureLabelText)
     {
         SDL_Color clrFg = {(mSecureLabelColorFG & 0x00FF0000) >> 16,
                            (mSecureLabelColorFG & 0x0000FF00) >> 8,
