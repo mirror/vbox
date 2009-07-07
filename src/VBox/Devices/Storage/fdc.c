@@ -2657,12 +2657,16 @@ static int fdConfig (fdrive_t *drv, PPDMDEVINS pDevIns)
  * @param   iLUN        The logical unit which is being detached.
  */
 static DECLCALLBACK(int)  fdcAttach (PPDMDEVINS pDevIns,
-                                     unsigned iLUN)
+                                     unsigned iLUN, uint32_t fFlags)
 {
     fdctrl_t *fdctrl = PDMINS_2_DATA (pDevIns, fdctrl_t *);
     fdrive_t *drv;
     int rc;
     LogFlow (("ideDetach: iLUN=%u\n", iLUN));
+
+    AssertMsgReturn(fFlags & PDMDEVATT_FLAGS_NOT_HOT_PLUG,
+                    ("The FDC device does not support hotplugging\n"),
+                    VERR_INVALID_PARAMETER);
 
     /*
      * Validate.
@@ -2705,7 +2709,7 @@ static DECLCALLBACK(int)  fdcAttach (PPDMDEVINS pDevIns,
  * @param   iLUN        The logical unit which is being detached.
  */
 static DECLCALLBACK(void) fdcDetach (PPDMDEVINS pDevIns,
-                                     unsigned iLUN)
+                                     unsigned iLUN, uint32_t fFlags)
 {
     fdctrl_t *fdctrl = PDMINS_2_DATA (pDevIns, fdctrl_t *);
     LogFlow (("ideDetach: iLUN=%u\n", iLUN));
