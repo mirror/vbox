@@ -63,7 +63,7 @@ DECLEXPORT(int) TSTRTR0MemUserKernelSrvReqHandler(PSUPDRVSESSION pSession, uint3
 
     /*
      * R3Ptr is valid and good for up to a page. The page before
-     * and after are both invalid.
+     * and after are both invalid. Or, it's a kernel page.
      */
     RTR3PTR R3Ptr = (RTR3PTR)u64Arg;
     if (R3Ptr != u64Arg)
@@ -167,6 +167,20 @@ DECLEXPORT(int) TSTRTR0MemUserKernelSrvReqHandler(PSUPDRVSESSION pSession, uint3
             for (unsigned off = 0; off < 16 && !*pszErr; off++)
                 for (unsigned cb = 0; cb < PAGE_SIZE - 16; cb++)
                     TEST_OFF_SIZE(off, cb, cb > 0 ? VERR_ACCESS_DENIED : VINF_SUCCESS);
+            break;
+        }
+
+        case TSTRTR0MEMUSERKERNEL_INVALID_ADDRESS:
+        {
+            if (    !RTR0MemUserIsValidAddr(R3Ptr)
+                &&  RTR0MemKernelIsValidAddr((void *)R3Ptr))
+            {
+                for (unsigned off = 0; off < 16 && !*pszErr; off++)
+                    for (unsigned cb = 0; cb < PAGE_SIZE - 16; cb++)
+                        TEST_OFF_SIZE(off, cb, cb > 0 ? VERR_ACCESS_DENIED : VINF_SUCCESS); /* ... */
+            }
+            else
+                RTStrPrintf(pszErr, cchErr, "RTR0MemUserIsValidAddr returns true");
             break;
         }
 
