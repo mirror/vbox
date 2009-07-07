@@ -58,8 +58,9 @@ vboxvfs_NOINST          = 1
 vboxvfs_CFLAGS          = -fshort-wchar
 vboxvfs_DEFS            = \
 	MODULE IN_RT_R0 VBOXGUEST VBOX_WITH_HGCM \
-	KBUILD_MODNAME=KBUILD_STR\(vboxadd\) \
-        KBUILD_BASENAME=KBUILD_STR\(vboxadd\)
+	$(if-expr defined(VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX),VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX,) \
+	KBUILD_MODNAME=KBUILD_STR\(vboxvfs\) \
+        KBUILD_BASENAME=KBUILD_STR\(vboxvfs\)
 vboxvfs_INCS            = \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib \
 	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
@@ -69,8 +70,7 @@ vboxvfs_SOURCES         = \
 	dirops.c \
 	regops.c
 vboxvfs_LIBS            = \
-	$(VBOX_LIB_VBGL_R0) \
-	$(VBOX_LIB_IPRT_GUEST_R0)
+	$(VBOX_LIB_VBGL_R0)
 
 # detect fc6 2.6.18
 vboxvfs_DEFS           += $(foreach inc,$(VBOX_LINUX_INCS),\
@@ -100,7 +100,7 @@ $$(PATH_vboxvfs-sh)/build_in_tmp: \
 		$(VBOX_VERSION_STAMP) \
 		| $$(dir $$@)
 	$(call MSG_TOOL,Creating,,$@)
-	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxvfs;g" < $< > $@
+	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxvfs;g" --output $@ $<
 	$(QUIET)chmod 0755 $@
 
 $$(PATH_vboxvfs-mod)/dkms.conf: \
@@ -108,7 +108,9 @@ $$(PATH_vboxvfs-mod)/dkms.conf: \
 		$(VBOX_VERSION_STAMP) \
 		| $$(dir $$@)
 	$(call MSG_TOOL,Creating,,$@)
-	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" < $< > $@
+	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" \
+		$(if-expr defined(VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX), -e 's/vboxadd/vboxguest/',) \
+		--output $@ $<
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
