@@ -36,6 +36,9 @@ all:
 	    echo; \
 	fi
 	@if [ -d vboxnetadp ]; then \
+	    if [ -f vboxdrv/Module.symvers ]; then \
+	        cp vboxdrv/Module.symvers vboxnetadp; \
+	    fi; \
 	    echo "*** Building 'vboxnetadp' module ***"; \
 	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxnetadp; \
 	    cp vboxnetadp/vboxnetadp.ko .; \
