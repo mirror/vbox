@@ -100,46 +100,46 @@ void VBoxGuestRAMSlider::init()
      * Note. We might wanna put these calculations somewhere global later. */
 
     /* System RAM amount test */
-    mMaxRAMAlw  = 0.75 * fullSize;
-    mMaxRAMOpt  = 0.50 * fullSize;
+    mMaxRAMAlw  = (uint)0.75 * fullSize;
+    mMaxRAMOpt  = (uint)0.50 * fullSize;
     if (fullSize < 3072)
         /* done */;
     else if (fullSize < 4096)   /* 3GB */
-        mMaxRAMAlw = 0.80 * fullSize;
+        mMaxRAMAlw = (uint)0.80 * fullSize;
     else if (fullSize < 6144)   /* 4-5GB */
     {
-        mMaxRAMAlw = 0.84 * fullSize;
-        mMaxRAMOpt = 0.60 * fullSize;
+        mMaxRAMAlw = (uint)0.84 * fullSize;
+        mMaxRAMOpt = (uint)0.60 * fullSize;
     }
     else if (fullSize < 8192)   /* 6-7GB */
     {
-        mMaxRAMAlw = 0.88 * fullSize;
-        mMaxRAMOpt = 0.65 * fullSize;
+        mMaxRAMAlw = (uint)0.88 * fullSize;
+        mMaxRAMOpt = (uint)0.65 * fullSize;
     }
     else if (fullSize < 16384)  /* 8-15GB */
     {
-        mMaxRAMAlw = 0.90 * fullSize;
-        mMaxRAMOpt = 0.70 * fullSize;
+        mMaxRAMAlw = (uint)0.90 * fullSize;
+        mMaxRAMOpt = (uint)0.70 * fullSize;
     }
     else if (fullSize < 32768)  /* 16-31GB */
     {
-        mMaxRAMAlw = 0.93 * fullSize;
-        mMaxRAMOpt = 0.75 * fullSize;
+        mMaxRAMAlw = (uint)0.93 * fullSize;
+        mMaxRAMOpt = (uint)0.75 * fullSize;
     }
     else if (fullSize < 65536)  /* 32-63GB */
     {
-        mMaxRAMAlw = 0.94 * fullSize;
-        mMaxRAMOpt = 0.80 * fullSize;
+        mMaxRAMAlw = (uint)0.94 * fullSize;
+        mMaxRAMOpt = (uint)0.80 * fullSize;
     }
     else if (fullSize < 131072) /* 64-127GB */
     {
-        mMaxRAMAlw = 0.95 * fullSize;
-        mMaxRAMOpt = 0.85 * fullSize;
+        mMaxRAMAlw = (uint)0.95 * fullSize;
+        mMaxRAMOpt = (uint)0.85 * fullSize;
     }
     else                        /* 128GB- */
     {
-        mMaxRAMAlw = 0.96 * fullSize;
-        mMaxRAMOpt = 0.90 * fullSize;
+        mMaxRAMAlw = (uint)0.96 * fullSize;
+        mMaxRAMOpt = (uint)0.90 * fullSize;
     }
 
     setPageStep (calcPageStep (mMaxRAM));
