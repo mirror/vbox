@@ -293,7 +293,7 @@ RTR0DECL(int) RTR0MemUserCopyTo(RTR3PTR R3PtrDst, void const *pvSrc, size_t cb);
  *
  * @remarks Some systems may have overlapping kernel and user address ranges.
  *          One prominent example of this is the x86 version of Mac OS X. Use
- *          RTR0MemAreKernelAndUserRangesDifferent() to check.
+ *          RTR0MemAreKrnlAndUsrDifferent() to check.
  */
 RTR0DECL(bool) RTR0MemUserIsValidAddr(RTR3PTR R3Ptr);
 
@@ -309,7 +309,7 @@ RTR0DECL(bool) RTR0MemUserIsValidAddr(RTR3PTR R3Ptr);
  *
  * @remarks Some systems may have overlapping kernel and user address ranges.
  *          One prominent example of this is the x86 version of Mac OS X. Use
- *          RTR0MemAreKernelAndUserRangesDifferent() to check.
+ *          RTR0MemAreKrnlAndUsrDifferent() to check.
  */
 RTR0DECL(bool) RTR0MemKernelIsValidAddr(void *pv);
 
@@ -322,7 +322,7 @@ RTR0DECL(bool) RTR0MemKernelIsValidAddr(void *pv);
  *
  * @returns true if they are, false if not.
  */
-RTR0DECL(bool) RTR0MemAreKernelAndUserRangesDifferent(void);
+RTR0DECL(bool) RTR0MemAreKrnlAndUsrDifferent(void);
 
 #endif /* IN_RING0 */
 

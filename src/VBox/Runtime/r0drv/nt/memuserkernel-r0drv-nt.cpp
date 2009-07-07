@@ -90,7 +90,7 @@ RTR0DECL(bool) RTR0MemKernelIsValidAddr(void *pv)
 }
 
 
-RTR0DECL(bool) RTR0MemAreKernelAndUserRangesDifferent(void)
+RTR0DECL(bool) RTR0MemAreKrnlAndUsrDifferent(void)
 {
     return true;
 }
