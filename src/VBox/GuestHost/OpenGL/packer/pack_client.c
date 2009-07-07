@@ -7,6 +7,112 @@
 #include "packer.h"
 #include "cr_opcodes.h"
 #include "cr_version.h"
+#include "state/cr_limits.h"
+#include "cr_glstate.h"
+
+/*Convert from GLint to GLfloat in [-1.f,1.f]*/
+#define CRP_I2F_NORM(i) ((2.f*((GLint)(i))+1.f) * (1.f/4294967294.f))
+/*Convert from GLshort to GLfloat in [-1.f,1.f]*/
+#define CRP_S2F_NORM(s) ((2.f*((GLshort)(s))+1.f) * (1.f/65535.f))
+
+
+static void crPackVertexAttrib(const CRVertexArrays *array, unsigned int attr, GLint index)
+{
+    GLint *iPtr;
+    GLshort *sPtr;
+    unsigned char *p = array->a[attr].p + index * array->a[attr].stride;
+
+#ifdef CR_ARB_vertex_buffer_object
+    if (array->a[attr].buffer && array->a[attr].buffer->data)
+    {
+        p = (unsigned char *)(array->a[attr].buffer->data) + (unsigned long)p;
+    }
+#endif
+    switch (array->a[attr].type)
+    {
+        case GL_SHORT:
+            sPtr = (GLshort*) p;
+            switch (array->a[attr].size)
+            {
+                case 1:
+                    if (array->a[attr].normalized)
+                        crPackVertexAttrib1fARB(attr, CRP_S2F_NORM(sPtr[0]));
+                    else
+                        crPackVertexAttrib1svARB(attr, sPtr);
+                    break;
+                case 2:
+                    if (array->a[attr].normalized)
+                        crPackVertexAttrib2fARB(attr, CRP_S2F_NORM(sPtr[0]), CRP_S2F_NORM(sPtr[1]));
+                    else
+                        crPackVertexAttrib2svARB(attr, sPtr);
+                    break;
+                case 3:
+                    if (array->a[attr].normalized)
+                        crPackVertexAttrib3fARB(attr, CRP_S2F_NORM(sPtr[0]), CRP_S2F_NORM(sPtr[1]), CRP_S2F_NORM(sPtr[2]));
+                    else
+                        crPackVertexAttrib3svARB(attr, sPtr);
+                    break;
+                case 4: 
+                    if (array->a[attr].normalized)
+                        crPackVertexAttrib4NsvARB(attr, sPtr);
+                    else
+                        crPackVertexAttrib4svARB(attr, sPtr);
+                    break;
+            }
+            break;
+        case GL_INT:
+            iPtr = (GLint*) p;
+            switch (array->a[attr].size)
+            {
+                case 1:
+                    if (array->a[attr].normalized)
+                        crPackVertexAttrib1fARB(attr, CRP_I2F_NORM(iPtr[0]));
+                    else
+                        crPackVertexAttrib1fARB(attr, iPtr[0]);
+                    break;
+                case 2:
+                    if (array->a[attr].normalized)
+                        crPackVertexAttrib2fARB(attr, CRP_I2F_NORM(iPtr[0]), CRP_I2F_NORM(iPtr[1]));
+                    else
+                        crPackVertexAttrib2fARB(attr, iPtr[0], iPtr[1]);
+                    break;
+                case 3:
+                    if (array->a[attr].normalized)
+                        crPackVertexAttrib3fARB(attr, CRP_I2F_NORM(iPtr[0]), CRP_I2F_NORM(iPtr[1]), CRP_I2F_NORM(iPtr[2]));
+                    else
+                        crPackVertexAttrib3fARB(attr, iPtr[0], iPtr[1], iPtr[2]);
+                    break;
+                case 4: 
+                    if (array->a[attr].normalized)
+                        crPackVertexAttrib4NivARB(attr, iPtr);
+                    else
+                        crPackVertexAttrib4fARB(attr, iPtr[0], iPtr[1], iPtr[2], iPtr[3]);
+                    break;
+            }
+            break;
+        case GL_FLOAT:
+            switch (array->a[attr].size)
+            {
+                case 1: crPackVertexAttrib1fvARB(attr, (GLfloat *)p); break;
+                case 2: crPackVertexAttrib2fvARB(attr, (GLfloat *)p); break;
+                case 3: crPackVertexAttrib3fvARB(attr, (GLfloat *)p); break;
+                case 4: crPackVertexAttrib4fvARB(attr, (GLfloat *)p); break;
+            }
+            break;
+        case GL_DOUBLE:
+            switch (array->a[attr].size)
+            {
+                case 1: crPackVertexAttrib1dvARB(attr, (GLdouble *)p); break;
+                case 2: crPackVertexAttrib2dvARB(attr, (GLdouble *)p); break;
+                case 3: crPackVertexAttrib3dvARB(attr, (GLdouble *)p); break;
+                case 4: crPackVertexAttrib4dvARB(attr, (GLdouble *)p); break;
+            }
+            break;
+        default:
+            crWarning("Bad datatype for vertex attribute [%d] array: 0x%x\n",
+                       attr, array->a[attr].type);
+    }
+}
 
 /*
  * Expand glArrayElement into crPackVertex/Color/Normal/etc.
@@ -15,74 +121,43 @@ void
 crPackExpandArrayElement(GLint index, CRClientState *c)
 {
     unsigned char *p;
-    int unit;
+    unsigned int unit, attr;
+    const CRVertexArrays *array = &(c->array);
+    const GLboolean vpEnabled = crStateGetCurrent()->program.vpEnabled;
 
-    if (c->array.e.enabled)
+    if (array->n.enabled && !(vpEnabled && array->a[VERT_ATTRIB_NORMAL].enabled))
     {
-        crPackEdgeFlagv(c->array.e.p + index * c->array.e.stride);
-    }
-    for (unit = 0; unit < CR_MAX_TEXTURE_UNITS; unit++)
-    {
-        if (c->array.t[unit].enabled)
+        p = array->n.p + index * array->n.stride;
+
+#ifdef CR_ARB_vertex_buffer_object
+        if (array->n.buffer && array->n.buffer->data)
         {
-            p = c->array.t[unit].p + index * c->array.t[unit].stride;
-            switch (c->array.t[unit].type)
-            {
-                case GL_SHORT:
-                    switch (c->array.t[c->curClientTextureUnit].size)
-                    {
-                        case 1: crPackMultiTexCoord1svARB(GL_TEXTURE0_ARB + unit, (GLshort *)p); break;
-                        case 2: crPackMultiTexCoord2svARB(GL_TEXTURE0_ARB + unit, (GLshort *)p); break;
-                        case 3: crPackMultiTexCoord3svARB(GL_TEXTURE0_ARB + unit, (GLshort *)p); break;
-                        case 4: crPackMultiTexCoord4svARB(GL_TEXTURE0_ARB + unit, (GLshort *)p); break;
-                    }
-                    break;
-                case GL_INT:
-                    switch (c->array.t[c->curClientTextureUnit].size)
-                    {
-                        case 1: crPackMultiTexCoord1ivARB(GL_TEXTURE0_ARB + unit, (GLint *)p); break;
-                        case 2: crPackMultiTexCoord2ivARB(GL_TEXTURE0_ARB + unit, (GLint *)p); break;
-                        case 3: crPackMultiTexCoord3ivARB(GL_TEXTURE0_ARB + unit, (GLint *)p); break;
-                        case 4: crPackMultiTexCoord4ivARB(GL_TEXTURE0_ARB + unit, (GLint *)p); break;
-                    }
-                    break;
-                case GL_FLOAT:
-                    switch (c->array.t[c->curClientTextureUnit].size)
-                    {
-                        case 1: crPackMultiTexCoord1fvARB(GL_TEXTURE0_ARB + unit, (GLfloat *)p); break;
-                        case 2: crPackMultiTexCoord2fvARB(GL_TEXTURE0_ARB + unit, (GLfloat *)p); break;
-                        case 3: crPackMultiTexCoord3fvARB(GL_TEXTURE0_ARB + unit, (GLfloat *)p); break;
-                        case 4: crPackMultiTexCoord4fvARB(GL_TEXTURE0_ARB + unit, (GLfloat *)p); break;
-                    }
-                    break;
-                case GL_DOUBLE:
-                    switch (c->array.t[c->curClientTextureUnit].size)
-                    {
-                        case 1: crPackMultiTexCoord1dvARB(GL_TEXTURE0_ARB + unit, (GLdouble *)p); break;
-                        case 2: crPackMultiTexCoord2dvARB(GL_TEXTURE0_ARB + unit, (GLdouble *)p); break;
-                        case 3: crPackMultiTexCoord3dvARB(GL_TEXTURE0_ARB + unit, (GLdouble *)p); break;
-                        case 4: crPackMultiTexCoord4dvARB(GL_TEXTURE0_ARB + unit, (GLdouble *)p); break;
-                    }
-                    break;
-            }
+            p = (unsigned char *)(array->n.buffer->data) + (unsigned long)p;
         }
-    } /* loop over texture units */
+#endif
 
-    if (c->array.i.enabled)
-    {
-        p = c->array.i.p + index * c->array.i.stride;
-        switch (c->array.i.type)
+        switch (array->n.type)
         {
-            case GL_SHORT: crPackIndexsv((GLshort *)p); break;
-            case GL_INT: crPackIndexiv((GLint *)p); break;
-            case GL_FLOAT: crPackIndexfv((GLfloat *)p); break;
-            case GL_DOUBLE: crPackIndexdv((GLdouble *)p); break;
+            case GL_BYTE: crPackNormal3bv((GLbyte *)p); break;
+            case GL_SHORT: crPackNormal3sv((GLshort *)p); break;
+            case GL_INT: crPackNormal3iv((GLint *)p); break;
+            case GL_FLOAT: crPackNormal3fv((GLfloat *)p); break;
+            case GL_DOUBLE: crPackNormal3dv((GLdouble *)p); break;
         }
     }
-    if (c->array.c.enabled)
+
+    if (array->c.enabled && !(vpEnabled && array->a[VERT_ATTRIB_COLOR0].enabled))
     {
-        p = c->array.c.p + index * c->array.c.stride;
-        switch (c->array.c.type)
+        p = array->c.p + index * array->c.stride;
+
+#ifdef CR_ARB_vertex_buffer_object
+        if (array->c.buffer && array->c.buffer->data)
+        {
+            p = (unsigned char *)(array->c.buffer->data) + (unsigned long)p;
+        }
+#endif
+
+        switch (array->c.type)
         {
             case GL_BYTE:
                 switch (c->array.c.size)
@@ -142,23 +217,20 @@ crPackExpandArrayElement(GLint index, CRClientState *c)
                 break;
         }
     }
-    if (c->array.n.enabled)
-    {
-        p = c->array.n.p + index * c->array.n.stride;
-        switch (c->array.n.type)
-        {
-            case GL_BYTE: crPackNormal3bv((GLbyte *)p); break;
-            case GL_SHORT: crPackNormal3sv((GLshort *)p); break;
-            case GL_INT: crPackNormal3iv((GLint *)p); break;
-            case GL_FLOAT: crPackNormal3fv((GLfloat *)p); break;
-            case GL_DOUBLE: crPackNormal3dv((GLdouble *)p); break;
-        }
-    }
+
 #ifdef CR_EXT_secondary_color
-    if (c->array.s.enabled)
+    if (array->s.enabled && !(vpEnabled && array->a[VERT_ATTRIB_COLOR1].enabled))
     {
-        p = c->array.s.p + index * c->array.s.stride;
-        switch (c->array.s.type)
+        p = array->s.p + index * array->s.stride;
+
+#ifdef CR_ARB_vertex_buffer_object
+        if (array->s.buffer && array->s.buffer->data)
+        {
+            p = (unsigned char *)(array->s.buffer->data) + (unsigned long)p;
+        }
+#endif
+
+        switch (array->s.type)
         {
             case GL_BYTE:
                 crPackSecondaryColor3bvEXT((GLbyte *)p); break;
@@ -178,42 +250,167 @@ crPackExpandArrayElement(GLint index, CRClientState *c)
                 crPackSecondaryColor3dvEXT((GLdouble *)p); break;
         }
     }
-#endif
-    if (c->array.v.enabled)
+#endif // CR_EXT_secondary_color
+
+
+#ifdef CR_EXT_fog_coord
+    if (array->f.enabled && !(vpEnabled && array->a[VERT_ATTRIB_FOG].enabled))
     {
-        p = c->array.v.p + (index * c->array.v.stride);
-        switch (c->array.v.type)
+        p = array->f.p + index * array->f.stride;
+
+#ifdef CR_ARB_vertex_buffer_object
+        if (array->f.buffer && array->f.buffer->data)
+        {
+            p = (unsigned char *)(array->f.buffer->data) + (unsigned long)p;
+        }
+#endif
+        crPackFogCoordfEXT( *((GLfloat *) p) );
+    }
+#endif // CR_EXT_fog_coord
+
+    for (unit = 0 ; unit < CR_MAX_TEXTURE_UNITS ; unit++)
+    {
+        if (array->t[unit].enabled && !(vpEnabled && array->a[VERT_ATTRIB_TEX0+unit].enabled))
+        {
+            p = array->t[unit].p + index * array->t[unit].stride;
+
+#ifdef CR_ARB_vertex_buffer_object
+            if (array->t[unit].buffer && array->t[unit].buffer->data)
+            {
+                p = (unsigned char *)(array->t[unit].buffer->data) + (unsigned long)p;
+            }
+#endif
+
+            switch (array->t[unit].type)
+            {
+                case GL_SHORT:
+                    switch (array->t[unit].size)
+                    {
+                        case 1: crPackMultiTexCoord1svARB(GL_TEXTURE0_ARB + unit, (GLshort *)p); break;
+                        case 2: crPackMultiTexCoord2svARB(GL_TEXTURE0_ARB + unit, (GLshort *)p); break;
+                        case 3: crPackMultiTexCoord3svARB(GL_TEXTURE0_ARB + unit, (GLshort *)p); break;
+                        case 4: crPackMultiTexCoord4svARB(GL_TEXTURE0_ARB + unit, (GLshort *)p); break;
+                    }
+                    break;
+                case GL_INT:
+                    switch (array->t[unit].size)
+                    {
+                        case 1: crPackMultiTexCoord1ivARB(GL_TEXTURE0_ARB + unit, (GLint *)p); break;
+                        case 2: crPackMultiTexCoord2ivARB(GL_TEXTURE0_ARB + unit, (GLint *)p); break;
+                        case 3: crPackMultiTexCoord3ivARB(GL_TEXTURE0_ARB + unit, (GLint *)p); break;
+                        case 4: crPackMultiTexCoord4ivARB(GL_TEXTURE0_ARB + unit, (GLint *)p); break;
+                    }
+                    break;
+                case GL_FLOAT:
+                    switch (array->t[unit].size)
+                    {
+                        case 1: crPackMultiTexCoord1fvARB(GL_TEXTURE0_ARB + unit, (GLfloat *)p); break;
+                        case 2: crPackMultiTexCoord2fvARB(GL_TEXTURE0_ARB + unit, (GLfloat *)p); break;
+                        case 3: crPackMultiTexCoord3fvARB(GL_TEXTURE0_ARB + unit, (GLfloat *)p); break;
+                        case 4: crPackMultiTexCoord4fvARB(GL_TEXTURE0_ARB + unit, (GLfloat *)p); break;
+                    }
+                    break;
+                case GL_DOUBLE:
+                    switch (array->t[unit].size)
+                    {
+                        case 1: crPackMultiTexCoord1dvARB(GL_TEXTURE0_ARB + unit, (GLdouble *)p); break;
+                        case 2: crPackMultiTexCoord2dvARB(GL_TEXTURE0_ARB + unit, (GLdouble *)p); break;
+                        case 3: crPackMultiTexCoord3dvARB(GL_TEXTURE0_ARB + unit, (GLdouble *)p); break;
+                        case 4: crPackMultiTexCoord4dvARB(GL_TEXTURE0_ARB + unit, (GLdouble *)p); break;
+                    }
+                    break;
+            }
+        }
+    }
+
+    if (array->i.enabled)
+    {
+        p = array->i.p + index * array->i.stride;
+
+#ifdef CR_ARB_vertex_buffer_object
+        if (array->i.buffer && array->i.buffer->data)
+        {
+            p = (unsigned char *)(array->i.buffer->data) + (unsigned long)p;
+        }
+#endif
+
+        switch (array->i.type)
+        {
+            case GL_SHORT: crPackIndexsv((GLshort *)p); break;
+            case GL_INT: crPackIndexiv((GLint *)p); break;
+            case GL_FLOAT: crPackIndexfv((GLfloat *)p); break;
+            case GL_DOUBLE: crPackIndexdv((GLdouble *)p); break;
+        }
+    }
+
+    if (array->e.enabled)
+    {
+        p = array->e.p + index * array->e.stride;
+
+#ifdef CR_ARB_vertex_buffer_object
+        if (array->e.buffer && array->e.buffer->data)
+        {
+            p = (unsigned char *)(array->e.buffer->data) + (unsigned long)p;
+        }
+#endif
+
+        crPackEdgeFlagv(p);
+    }
+
+    for (attr = 1; attr < VERT_ATTRIB_MAX; attr++)
+    {
+        if (array->a[attr].enabled)
+        {
+            crPackVertexAttrib(array, attr, index);
+        }
+    }
+
+    if (array->a[VERT_ATTRIB_POS].enabled)
+    {
+        crPackVertexAttrib(array, 0, index);
+    }
+    else if (array->v.enabled)
+    {
+        p = array->v.p + index * array->v.stride;
+
+#ifdef CR_ARB_vertex_buffer_object
+        if (array->v.buffer && array->v.buffer->data)
+        {
+            p = (unsigned char *)(array->v.buffer->data) + (unsigned long)p;
+        }
+#endif
+        switch (array->v.type)
         {
             case GL_SHORT:
                 switch (c->array.v.size)
                 {
-                    case 2: crPackVertex2svBBOX_COUNT((GLshort *)p); break;
-                    case 3: crPackVertex3svBBOX_COUNT((GLshort *)p); break;
-                    case 4: crPackVertex4svBBOX_COUNT((GLshort *)p); break;
+                    case 2: crPackVertex2sv((GLshort *)p); break;
+                    case 3: crPackVertex3sv((GLshort *)p); break;
+                    case 4: crPackVertex4sv((GLshort *)p); break;
                 }
                 break;
             case GL_INT:
                 switch (c->array.v.size)
                 {
-                    case 2: crPackVertex2ivBBOX_COUNT((GLint *)p); break;
-                    case 3: crPackVertex3ivBBOX_COUNT((GLint *)p); break;
-                    case 4: crPackVertex4ivBBOX_COUNT((GLint *)p); break;
+                    case 2: crPackVertex2iv((GLint *)p); break;
+                    case 3: crPackVertex3iv((GLint *)p); break;
+                    case 4: crPackVertex4iv((GLint *)p); break;
                 }
                 break;
             case GL_FLOAT:
                 switch (c->array.v.size)
                 {
-                    case 2: crPackVertex2fvBBOX_COUNT((GLfloat *)p); break;
-                    case 3: crPackVertex3fvBBOX_COUNT((GLfloat *)p); break;
-                    case 4: crPackVertex4fvBBOX_COUNT((GLfloat *)p); break;
+                    case 2: crPackVertex2fv((GLfloat *)p); break;
+                    case 3: crPackVertex3fv((GLfloat *)p); break;
+                    case 4: crPackVertex4fv((GLfloat *)p); break;
                 }
                 break;
             case GL_DOUBLE:
                 switch (c->array.v.size)
                 {
-                    case 2: crPackVertex2dvBBOX_COUNT((GLdouble *)p); break;
-                    case 3: crPackVertex3dvBBOX_COUNT((GLdouble *)p); break;
-                    case 4: crPackVertex4dvBBOX_COUNT((GLdouble *)p); break;
+                    case 2: crPackVertex2dv((GLdouble *)p); break;
+                    case 3: crPackVertex3dv((GLdouble *)p); break;
+                    case 4: crPackVertex4dv((GLdouble *)p); break;
                 }
                 break;
         }
@@ -246,25 +443,113 @@ crPackExpandDrawArrays(GLenum mode, GLint first, GLsizei count, CRClientState *c
     crPackEnd();
 }
 
+static GLsizei crPackElementsIndexSize(GLenum type)
+{
+    switch (type)
+    {
+        case GL_UNSIGNED_BYTE:
+            return sizeof(GLubyte);
+        case GL_UNSIGNED_SHORT:
+            return sizeof(GLushort);
+        case GL_UNSIGNED_INT:
+            return sizeof(GLuint);
+        default:
+            crError("Unknown type 0x%x in crPackElementsIndexSize", type);
+            return 0;
+    }
+}
 
-/*
- * Really pack glDrawElements (for server-side vertex arrays)
- * Note: we pack the pointer (which is actually an index into the server-side
- * vertex buffer) and not the actual indices.
- */
 void PACK_APIENTRY
 crPackDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices)
 {
-    unsigned char *data_ptr;
+    unsigned char *data_ptr, *start_ptr;
     int packet_length = sizeof(int) + sizeof(mode) + sizeof(count) + sizeof(type) + sizeof(GLintptrARB);
-    data_ptr = (unsigned char *) crPackAlloc(packet_length);
-    WRITE_DATA( 0, GLenum, CR_DRAWELEMENTS_EXTEND_OPCODE );
-    WRITE_DATA( 4, GLenum, mode );
-    WRITE_DATA( 8, GLsizei, count);
-    WRITE_DATA( 12, GLenum, type);
-    WRITE_DATA( 16, GLsizeiptrARB, (GLsizeiptrARB) indices );
-    crHugePacket( CR_EXTEND_OPCODE, data_ptr );
-    crPackFree( data_ptr );
+    GLsizei indexsize;
+#ifdef CR_ARB_vertex_buffer_object
+    CRBufferObject *elementsBuffer = crStateGetCurrent()->bufferobject.elementsBuffer;
+    packet_length += sizeof(GLboolean);
+    if (elementsBuffer && elementsBuffer->name)
+    {
+        /*@todo not sure it's possible, and not sure what to do*/
+        if (!elementsBuffer->data)
+        {
+            crWarning("crPackDrawElements: trying to use bound but empty elements buffer, ignoring.");
+            return;
+        }
+        indexsize = 0;
+    }
+    else
+#endif
+    {
+        indexsize = crPackElementsIndexSize(type);
+    }
+
+    packet_length += count * indexsize;
+
+    start_ptr = data_ptr = (unsigned char *) crPackAlloc(packet_length);
+    WRITE_DATA_AI(GLenum, CR_DRAWELEMENTS_EXTEND_OPCODE );
+    WRITE_DATA_AI(GLenum, mode );
+    WRITE_DATA_AI(GLsizei, count);
+    WRITE_DATA_AI(GLenum, type);
+    WRITE_DATA_AI(GLsizeiptrARB, (GLsizeiptrARB) indices );
+#ifdef CR_ARB_vertex_buffer_object
+    WRITE_DATA_AI(GLboolean, (GLboolean) indexsize>0);
+#endif
+    if (indexsize>0)
+    {
+        crMemcpy(data_ptr, indices, count * indexsize);
+    }
+    crHugePacket(CR_EXTEND_OPCODE, start_ptr);
+    crPackFree(start_ptr);
+}
+
+void PACK_APIENTRY
+crPackDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count,
+                                                GLenum type, const GLvoid *indices)
+{
+    unsigned char *data_ptr, *start_ptr;
+    int packet_length = sizeof(int) + sizeof(mode) + sizeof(start)
+        + sizeof(end) + sizeof(count) + sizeof(type) + sizeof(GLintptrARB);
+    GLsizei indexsize;
+
+#ifdef CR_ARB_vertex_buffer_object
+    CRBufferObject *elementsBuffer = crStateGetCurrent()->bufferobject.elementsBuffer;
+    packet_length += sizeof(GLboolean);
+    if (elementsBuffer && elementsBuffer->name)
+    {
+        /*@todo not sure it's possible, and not sure what to do*/
+        if (!elementsBuffer->data)
+        {
+            crWarning("crPackDrawElements: trying to use bound but empty elements buffer, ignoring.");
+            return;
+        }
+        indexsize = 0;
+    }
+    else
+#endif
+    {
+      indexsize = crPackElementsIndexSize(type);
+    }
+
+    packet_length += count * indexsize;
+
+    start_ptr = data_ptr = (unsigned char *) crPackAlloc(packet_length);
+    WRITE_DATA_AI(GLenum, CR_DRAWRANGEELEMENTS_EXTEND_OPCODE);
+    WRITE_DATA_AI(GLenum, mode);
+    WRITE_DATA_AI(GLuint, start);
+    WRITE_DATA_AI(GLuint, end);
+    WRITE_DATA_AI(GLsizei, count);
+    WRITE_DATA_AI(GLenum, type);
+    WRITE_DATA_AI(GLsizeiptrARB, (GLsizeiptr) indices);
+#ifdef CR_ARB_vertex_buffer_object
+    WRITE_DATA_AI(GLboolean, (GLboolean) indexsize>0);
+#endif
+    if (indexsize>0)
+    {
+        crMemcpy(data_ptr, indices, count * indexsize);
+    }
+    crHugePacket(CR_EXTEND_OPCODE, start_ptr);
+    crPackFree(start_ptr);
 }
 
 
@@ -277,6 +562,10 @@ crPackExpandDrawElements(GLenum mode, GLsizei count, GLenum type,
                                                  const GLvoid *indices, CRClientState *c)
 {
     int i;
+    GLubyte *p = (GLubyte *)indices;
+#ifdef CR_ARB_vertex_buffer_object
+    CRBufferObject *elementsBuffer = crStateGetCurrent()->bufferobject.elementsBuffer;
+#endif
 
     if (count < 0)
     {
@@ -301,35 +590,43 @@ crPackExpandDrawElements(GLenum mode, GLsizei count, GLenum type,
         return;
     }
 
+#ifdef CR_ARB_vertex_buffer_object
+    if (elementsBuffer && elementsBuffer->data)
+    {
+        p = (unsigned char *)(elementsBuffer->data) + (unsigned long)p;
+    }
+#endif
+
     if (mode != 999)
         crPackBegin(mode);
 
-    switch (type)   {
-    case GL_UNSIGNED_BYTE:
-        {
-            const GLubyte *p = (const GLubyte *) indices;
-            for (i = 0; i < count; i++)
-                crPackExpandArrayElement(p[i], c);
-        }
-        break;
-    case GL_UNSIGNED_SHORT:
-        {
-            const GLushort *p = (const GLushort *) indices;
+    //crDebug("crPackExpandDrawElements mode:0x%x, count:%d, type:0x%x", mode, count, type);
+
+    switch (type)
+    {
+        case GL_UNSIGNED_BYTE:
             for (i=0; i<count; i++)
-                crPackExpandArrayElement(p[i], c);
-        }
-        break;
-    case GL_UNSIGNED_INT:
-        {
-            const GLuint *p = (const GLuint *) indices;
-            for (i = 0; i < count; i++)
-                crPackExpandArrayElement(p[i], c);
-        }
-        break;
-    default:
-        __PackError( __LINE__, __FILE__, GL_INVALID_ENUM,
-                                 "crPackDrawElements(bad type)");
-        break;
+            {
+                crPackExpandArrayElement((GLint) *p++, c);
+            }
+            break;
+        case GL_UNSIGNED_SHORT:
+            for (i=0; i<count; i++)
+            {
+                crPackExpandArrayElement((GLint) * (GLushort *) p, c);
+                p+=sizeof (GLushort);
+            }
+            break;
+        case GL_UNSIGNED_INT:
+            for (i=0; i<count; i++)
+            {
+                crPackExpandArrayElement((GLint) * (GLuint *) p, c);
+                p+=sizeof (GLuint);
+            }
+            break;
+        default:
+            crError( "this can't happen: array_spu.self.DrawElements" );
+            break;
     }
 
     if (mode != 999)
@@ -378,88 +675,18 @@ crPackUnrollDrawElements(GLsizei count, GLenum type,
 
 
 /*
- * Really pack glDrawRangeElements (for server-side vertex arrays)
- * Note: we pack the pointer (which is actually an index into the server-side
- * vertex buffer) and not the actual indices.
- */
-void PACK_APIENTRY
-crPackDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count,
-                                                GLenum type, const GLvoid *indices)
-{
-    unsigned char *data_ptr;
-    int packet_length = sizeof(int) + sizeof(mode) + sizeof(start)
-        + sizeof(end) + sizeof(count) + sizeof(type) + sizeof(GLintptrARB);
-
-    data_ptr = (unsigned char *) crPackAlloc(packet_length);
-    WRITE_DATA( 0, GLenum, CR_DRAWRANGEELEMENTS_EXTEND_OPCODE );
-    WRITE_DATA( 4, GLenum, mode );
-    WRITE_DATA( 8, GLuint, start );
-    WRITE_DATA( 12, GLuint, end );
-    WRITE_DATA( 16, GLsizei, count );
-    WRITE_DATA( 20, GLenum, type );
-    WRITE_DATA( 24, GLsizeiptrARB, (GLsizeiptr) indices );
-    crHugePacket( CR_EXTEND_OPCODE, data_ptr );
-    crPackFree( data_ptr );
-}
-
-
-/*
  * glDrawRangeElements, expanded into crPackBegin/Vertex/End/etc.
  */
 void
 crPackExpandDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid *indices, CRClientState *c)
 {
-    int i;
-    GLubyte *p = (GLubyte *)indices;
-
-    (void) end;
-
-    if (count < 0)
+    if (start>end)
     {
-        __PackError(__LINE__, __FILE__, GL_INVALID_VALUE, "crPackDrawRangeElements(negative count)");
+        crWarning("crPackExpandDrawRangeElements start>end (%d>%d)", start, end);
         return;
     }
 
-    if (mode > GL_POLYGON)
-    {
-        __PackError(__LINE__, __FILE__, GL_INVALID_ENUM, "crPackDrawRangeElements(bad mode)");
-        return;
-    }
-
-    if (type != GL_UNSIGNED_BYTE && type != GL_UNSIGNED_SHORT && type != GL_UNSIGNED_INT)
-    {
-        __PackError(__LINE__, __FILE__, GL_INVALID_ENUM, "crPackDrawRangeElements(bad type)");
-        return;
-    }
-
-    crPackBegin(mode);
-    switch (type)
-    {
-    case GL_UNSIGNED_BYTE:
-        for (i=0; i<count; i++)
-        {
-            crPackExpandArrayElement((GLint) *p++, c);
-        }
-        break;
-    case GL_UNSIGNED_SHORT:
-        for (i=0; i<count; i++)
-        {
-            crPackExpandArrayElement((GLint) * (GLushort *) p, c);
-            p += sizeof(GLushort);
-        }
-        break;
-    case GL_UNSIGNED_INT:
-        for (i=0; i<count; i++)
-        {
-            crPackExpandArrayElement((GLint) * (GLuint *) p, c);
-            p += sizeof(GLuint);
-        }
-        break;
-    default:
-        crError( "this can't happen: crPackDrawRangeElements" );
-        break;
-    }
-    crPackEnd();
+    crPackExpandDrawElements(mode, count, type, indices, c);
 }
 
 

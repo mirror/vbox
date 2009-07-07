@@ -27,9 +27,31 @@ DECLEXPORT(const unsigned char *) cr_unpackData = NULL;
 SPUDispatchTable cr_unpackDispatch;
 
 static void crUnpackExtend(void);
+static void crUnpackExtendDbg(void);
+
+/*#define CR_UNPACK_DEBUG_OPCODES*/
+/*#define CR_UNPACK_DEBUG_LAST_OPCODES*/
 """
 
+nodebug_opcodes = [
+    "CR_MULTITEXCOORD2FARB_OPCODE",
+    "CR_VERTEX3F_OPCODE",
+    "CR_NORMAL3F_OPCODE",
+    "CR_COLOR4UB_OPCODE",
+    "CR_LOADIDENTITY_OPCODE",
+    "CR_MATRIXMODE_OPCODE",
+    "CR_LOADMATRIXF_OPCODE",
+    "CR_DISABLE_OPCODE",
+    "CR_COLOR4F_OPCODE",
+    "CR_ENABLE_OPCODE",
+    "CR_BEGIN_OPCODE",
+    "CR_END_OPCODE",
+    "CR_SECONDARYCOLOR3FEXT_OPCODE"
+]
 
+nodebug_extopcodes = [
+    "CR_ACTIVETEXTUREARB_EXTEND_OPCODE"
+]
 
 #
 # Useful functions
@@ -198,6 +220,8 @@ void crUnpack( const void *data, const void *opcodes,
     unpack_opcodes = (const unsigned char *)opcodes;
     cr_unpackData = (const unsigned char *)data;
 
+    crDebug("crUnpack: %d opcodes", num_opcodes);
+
     for (i = 0 ; i < num_opcodes ; i++)
     {
         /*crDebug(\"Unpacking opcode \%d\", *unpack_opcodes);*/
@@ -210,11 +234,28 @@ void crUnpack( const void *data, const void *opcodes,
 for func_name in keys:
     if "pack" in apiutil.ChromiumProps(func_name):
         print '\t\t\tcase %s:' % apiutil.OpcodeName( func_name )
-#        print '\t\t\t\tcrDebug("Unpack: %s");' % apiutil.OpcodeName( func_name )
+        if not apiutil.OpcodeName(func_name) in nodebug_opcodes:
+            print """
+#ifdef CR_UNPACK_DEBUG_LAST_OPCODES
+                if (i==(num_opcodes-1))
+#endif
+#if defined(CR_UNPACK_DEBUG_OPCODES) || defined(CR_UNPACK_DEBUG_LAST_OPCODES)
+                crDebug("Unpack: %s");
+#endif """ % apiutil.OpcodeName(func_name)
         print '\t\t\t\tcrUnpack%s(); \n\t\t\t\tbreak;' % func_name
 
 print """       
-            case CR_EXTEND_OPCODE: crUnpackExtend(); break;
+            case CR_EXTEND_OPCODE:
+                #ifdef CR_UNPACK_DEBUG_OPCODES 
+                    crUnpackExtendDbg();
+                #else
+                # ifdef CR_UNPACK_DEBUG_LAST_OPCODES
+                    if (i==(num_opcodes-1)) crUnpackExtendDbg();
+                    else
+                # endif
+                    crUnpackExtend();
+                #endif
+                break;
             default:
                 crError( "Unknown opcode: %d", *unpack_opcodes );
                 break;
@@ -253,6 +294,33 @@ for func_name in keys:
     if "extpack" in apiutil.ChromiumProps(func_name):
         print '\t\tcase %s:' % apiutil.ExtendedOpcodeName( func_name )
 #        print '\t\t\t\tcrDebug("Unpack: %s");' % apiutil.ExtendedOpcodeName( func_name )
+        print '\t\t\tcrUnpackExtend%s( );' % func_name
+        print '\t\t\tbreak;'
+
+print """       default:
+            crError( "Unknown extended opcode: %d", (int) extend_opcode );
+            break;
+    }
+    INCR_VAR_PTR();
+}"""
+
+print 'static void crUnpackExtendDbg(void)'
+print '{'
+print '\tGLenum extend_opcode = %s;' % ReadData( 4, 'GLenum' );
+print ''
+print '\t/*crDebug(\"Unpacking extended opcode \%d", extend_opcode);*/'
+print '\tswitch( extend_opcode )'
+print '\t{'
+
+
+#
+# Emit switch statement for extended opcodes
+#
+for func_name in keys:
+    if "extpack" in apiutil.ChromiumProps(func_name):
+        print '\t\tcase %s:' % apiutil.ExtendedOpcodeName( func_name )
+        if not apiutil.ExtendedOpcodeName(func_name) in nodebug_extopcodes:
+            print '\t\t\tcrDebug("Unpack: %s");' % apiutil.ExtendedOpcodeName( func_name )
         print '\t\t\tcrUnpackExtend%s( );' % func_name
         print '\t\t\tbreak;'
 

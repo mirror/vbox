@@ -3365,14 +3365,14 @@ name        PopClientAttrib
 return      void
 category    1.1
 props       setclient
-chromium    
+chromium    extpack
 
 name        PushClientAttrib
 return      void
 param       mask        GLbitfield
 category    1.1
 props       setclient
-chromium    
+chromium    extpack
 
 
 # GL_EXT_blend_color

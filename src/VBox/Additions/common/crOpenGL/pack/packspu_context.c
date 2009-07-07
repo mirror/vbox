@@ -162,6 +162,7 @@ packspu_CreateContext( const char *dpyName, GLint visual, GLint shareCtx )
     /* Fill in the new context info */
     /* XXX fix-up sharedCtx param here */
     pack_spu.context[slot].clientState = crStateCreateContext(NULL, visual, NULL);
+    pack_spu.context[slot].clientState->bufferobject.retainBufferData = GL_TRUE;
     pack_spu.context[slot].serverCtx = serverCtx;
 
 #ifdef CHROMIUM_THREADSAFE
@@ -226,6 +227,7 @@ void PACKSPU_APIENTRY packspu_MakeCurrent( GLint window, GLint nativeWindow, GLi
 
         crPackSetContext( thread->packer );
         crStateMakeCurrent( newCtx->clientState );
+        //crStateSetCurrentPointers(newCtx->clientState, &thread->packer->current);
         serverCtx = pack_spu.context[slot].serverCtx;
     }
     else {

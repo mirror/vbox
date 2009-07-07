@@ -171,7 +171,7 @@ crStateDeleteBuffersARB(GLsizei n, const GLuint *buffers)
                     DIRTY(bb->dirty, g->neg_bitid);
                     DIRTY(bb->elementsBinding, g->neg_bitid);
                 }
-                /* XXX check bindings with the vertex arrays */
+                /* @todo check bindings with the vertex arrays */
 
                 crHashtableDelete(b->buffers, buffers[i], crStateFreeBufferObject);
             }

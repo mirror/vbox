@@ -402,7 +402,7 @@ static unsigned int __numValues( GLenum pname )
         if (temp->pname == pname)
             return temp->num_values;
     }
-    crWarning( "Invalid pname to __numValues: 0x%x\\n", (int) pname );
+    crDebug( "Invalid pname to __numValues: 0x%x\\n", (int) pname );
     return 0;
 }
 """

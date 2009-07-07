@@ -588,7 +588,7 @@ stubInit(void)
     }
 #endif
 
-    strcpy(response, "3 0 array 1 feedback 2 pack");
+    strcpy(response, "2 0 feedback 1 pack");
     spuchain = crStrSplit( response, " " );
     num_spus = crStrToInt( spuchain[0] );
     spu_ids = (int *) crAlloc( num_spus * sizeof( *spu_ids ) );

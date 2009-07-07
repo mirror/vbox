@@ -71,3 +71,8 @@ GetProgramInfoLog
 GetShaderSource
 GetAttachedObjectsARB
 GetInfoLogARB
+BufferSubDataARB
+EnableVertexAttribArrayARB
+DisableVertexAttribArrayARB
+GetBufferSubDataARB
+IsEnabled

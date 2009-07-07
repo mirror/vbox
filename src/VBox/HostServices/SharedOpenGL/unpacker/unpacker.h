@@ -12,6 +12,7 @@
 #endif
 #define DLLDATA(type) DECLEXPORT(type)
 
+#include "cr_version.h"
 #include "cr_unpack.h"
 #include "unpack_extend.h"
 

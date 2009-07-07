@@ -477,6 +477,8 @@ static void ARRAYSPU_APIENTRY arrayspu_DrawElements(GLenum mode, GLsizei count,
         p = (unsigned char *)(elementsBuffer->data) + (unsigned long)p;
     }
 #endif
+    //crDebug("arrayspu_DrawElements mode:0x%x, count:%d, type:0x%x", mode, count, type);
+    
 
     array_spu.self.Begin(mode);
     switch (type)
@@ -520,67 +522,79 @@ static void ARRAYSPU_APIENTRY arrayspu_DrawRangeElements(GLenum mode, GLuint sta
 
 static void ARRAYSPU_APIENTRY arrayspu_ColorPointer( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer )
 {
-    crStateColorPointer( size, type, stride, pointer );
+    crStateColorPointer(size, type, stride, pointer);
+    array_spu.child.ColorPointer(size, type, stride, pointer);
 }
 
 static void ARRAYSPU_APIENTRY arrayspu_SecondaryColorPointerEXT( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer )
 {
-    crStateSecondaryColorPointerEXT( size, type, stride, pointer );
+    crStateSecondaryColorPointerEXT(size, type, stride, pointer);
+    array_spu.child.SecondaryColorPointerEXT(size, type, stride, pointer);
 }
 
 static void ARRAYSPU_APIENTRY arrayspu_VertexPointer( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer )
 {
-    crStateVertexPointer( size, type, stride, pointer );
+    crStateVertexPointer(size, type, stride, pointer);
+    array_spu.child.VertexPointer(size, type, stride, pointer);
 }
 
 static void ARRAYSPU_APIENTRY arrayspu_TexCoordPointer( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer )
 {
-    crStateTexCoordPointer( size, type, stride, pointer );
+    crStateTexCoordPointer(size, type, stride, pointer);
+    array_spu.child.TexCoordPointer(size, type, stride, pointer);
 }
 
 static void ARRAYSPU_APIENTRY arrayspu_NormalPointer( GLenum type, GLsizei stride, const GLvoid *pointer )
 {
-    crStateNormalPointer( type, stride, pointer );
+    crStateNormalPointer(type, stride, pointer);
+    array_spu.child.NormalPointer(type, stride, pointer);
 }
 
 static void ARRAYSPU_APIENTRY arrayspu_IndexPointer( GLenum type, GLsizei stride, const GLvoid *pointer )
 {
-    crStateIndexPointer( type, stride, pointer );
+    crStateIndexPointer(type, stride, pointer);
+    array_spu.child.IndexPointer(type, stride, pointer);
 }
 
 static void ARRAYSPU_APIENTRY arrayspu_EdgeFlagPointer( GLsizei stride, const GLvoid *pointer )
 {
-    crStateEdgeFlagPointer( stride, pointer );
+    crStateEdgeFlagPointer(stride, pointer);
+    array_spu.child.EdgeFlagPointer(stride, pointer);
 }
 
 static void ARRAYSPU_APIENTRY arrayspu_VertexAttribPointerNV( GLuint index, GLint size, GLenum type, GLsizei stride, const GLvoid * pointer )
 {
-    crStateVertexAttribPointerNV( index, size, type, stride, pointer );
+    crStateVertexAttribPointerNV(index, size, type, stride, pointer);
+    array_spu.child.VertexAttribPointerNV(index, size, type, stride, pointer);
 }
 
 static void ARRAYSPU_APIENTRY arrayspu_FogCoordPointerEXT( GLenum type, GLsizei stride, const GLvoid *pointer )
 {
-    crStateFogCoordPointerEXT( type, stride, pointer );
+    crStateFogCoordPointerEXT(type, stride, pointer);
+    array_spu.child.FogCoordPointerEXT(type, stride, pointer);
 }
 
 static void ARRAYSPU_APIENTRY arrayspu_GetPointerv( GLenum pname, GLvoid **params )
 {
-    crStateGetPointerv( pname, params );
+    crStateGetPointerv(pname, params);
 }
 
 static void ARRAYSPU_APIENTRY arrayspu_EnableClientState( GLenum array )
 {
-    crStateEnableClientState( array );
+    crStateEnableClientState(array);
+    array_spu.child.EnableClientState(array);
 }
 
 static void ARRAYSPU_APIENTRY arrayspu_DisableClientState( GLenum array )
 {
-    crStateDisableClientState( array );
+    crStateDisableClientState(array);
+    array_spu.child.DisableClientState(array);
 }
 
 static void ARRAYSPU_APIENTRY arrayspu_ClientActiveTextureARB( GLenum texture )
 {
-    crStateClientActiveTextureARB( texture );
+    crStateClientActiveTextureARB(texture);
+    array_spu.child.ClientActiveTextureARB(texture);
 }
 
 static void ARRAYSPU_APIENTRY arrayspu_MultiDrawArraysEXT(GLenum mode, GLint *first, GLsizei *count, GLsizei primcount)
@@ -661,7 +675,8 @@ arrayspu_VertexAttribPointerARB(GLuint index, GLint size, GLenum type,
                                 GLboolean normalized, GLsizei stride,
                                 const GLvoid *pointer)
 {
-    crStateVertexAttribPointerARB( index, size, type, normalized, stride, pointer );
+    crStateVertexAttribPointerARB(index, size, type, normalized, stride, pointer);
+    array_spu.child.VertexAttribPointerARB(index, size, type, normalized, stride, pointer);
 }
 
 
@@ -702,31 +717,34 @@ arrayspu_PopClientAttrib( void )
 static void ARRAYSPU_APIENTRY
 arrayspu_GenBuffersARB( GLsizei n, GLuint * buffers )
 {
-    crStateGenBuffersARB(n, buffers);
+    array_spu.child.GenBuffersARB(n, buffers);
 }
 
 static void ARRAYSPU_APIENTRY
 arrayspu_DeleteBuffersARB( GLsizei n, const GLuint *buffers )
 {
     crStateDeleteBuffersARB(n, buffers);
+    array_spu.child.DeleteBuffersARB(n, buffers);
 }
 
 static void ARRAYSPU_APIENTRY
 arrayspu_BindBufferARB( GLenum target, GLuint buffer )
 {
     crStateBindBufferARB(target, buffer);
+    array_spu.child.BindBufferARB(target, buffer);
 }
 
 static GLboolean ARRAYSPU_APIENTRY
 arrayspu_IsBufferARB (GLuint buffer)
 {
-    return crStateIsBufferARB(buffer);
+    return array_spu.child.IsBufferARB(buffer);
 }
 
 static void ARRAYSPU_APIENTRY
 arrayspu_BufferDataARB( GLenum target, GLsizeiptrARB size, const GLvoid * data, GLenum usage )
 {
     crStateBufferDataARB(target, size, data, usage);
+    array_spu.child.BufferDataARB(target, size, data, usage);
 }
 
 static void ARRAYSPU_APIENTRY
@@ -734,6 +752,7 @@ arrayspu_BufferSubDataARB( GLenum target, GLintptrARB offset,
                            GLsizeiptrARB size, const GLvoid * data )
 {
     crStateBufferSubDataARB(target, offset, size, data);
+    array_spu.child.BufferSubDataARB(target, offset, size, data);
 }
 
 static void ARRAYSPU_APIENTRY
@@ -751,7 +770,8 @@ arrayspu_MapBufferARB(GLenum target, GLenum access)
 static GLboolean ARRAYSPU_APIENTRY
 arrayspu_UnmapBufferARB(GLenum target)
 {
-    return crStateUnmapBufferARB(target);
+    crStateUnmapBufferARB(target);
+    return array_spu.child.UnmapBufferARB(target);
 }
 
 static void ARRAYSPU_APIENTRY

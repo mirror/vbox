@@ -31,15 +31,17 @@ void crUnpackExtendGetBufferSubDataARB( void )
 
 void crUnpackExtendBufferDataARB( void )
 {
-    GLenum target = READ_DATA( sizeof(int) + 4, GLenum );
-    GLsizeiptrARB size = READ_DATA( sizeof(int) + 8, GLsizeiptrARB );
-    GLenum usage = READ_DATA( sizeof(int) + 12, GLenum );
-    GLvoid *data = DATA_POINTER( sizeof(int) + 16, GLvoid );
+    GLenum target      = READ_DATA(sizeof(int) + 4, GLenum);
+    GLsizeiptrARB size = READ_DATA(sizeof(int) + 8, GLsizeiptrARB);
+    GLenum usage       = READ_DATA(sizeof(int) + 12, GLenum);
+    GLboolean hasdata  = READ_DATA(sizeof(int) + 16, GLboolean);
+    GLvoid *data       = DATA_POINTER(sizeof(int) + 16 + sizeof(GLboolean), GLvoid);
 
     CRASSERT(sizeof(GLsizeiptrARB) == 4);
-    CRASSERT(usage == GL_STATIC_DRAW_ARB);
+    /*@todo, why?*/
+    /*CRASSERT(usage == GL_STATIC_DRAW_ARB);*/
 
-    cr_unpackDispatch.BufferDataARB( target, size, data, usage );
+    cr_unpackDispatch.BufferDataARB(target, size, hasdata ? data:NULL, usage);
 }
 
 
