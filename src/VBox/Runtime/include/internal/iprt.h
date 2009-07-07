@@ -40,7 +40,7 @@
  */
 #if defined(RT_OS_LINUX) \
  && defined(IN_RING0) \
- && defined(IN_MODULE)
+ && defined(MODULE)
 # define bool linux_bool /* see r0drv/linux/the-linux-kernel.h */
 # include <linux/autoconf.h>
 # include <linux/module.h>
