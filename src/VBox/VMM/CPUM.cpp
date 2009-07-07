@@ -1115,10 +1115,6 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
                                |  X86_CPUID_FEATURE_ECX_PDCM
                                |  X86_CPUID_FEATURE_ECX_DCA
                                |  X86_CPUID_FEATURE_ECX_X2APIC
-                               |  X86_CPUID_FEATURE_ECX_POPCOUNT
-                               |  X86_CPUID_FEATURE_ECX_MOVBE
-                               |  X86_CPUID_FEATURE_ECX_XSAVE
-                               |  X86_CPUID_FEATURE_ECX_OSXSAVE
                               );
         au32CpuIdSaved[6] &= ~(   X86_CPUID_FEATURE_ECX_DTES64
                                |  X86_CPUID_FEATURE_ECX_VMX
@@ -1130,10 +1126,6 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
                                |  X86_CPUID_FEATURE_ECX_PDCM
                                |  X86_CPUID_FEATURE_ECX_DCA
                                |  X86_CPUID_FEATURE_ECX_X2APIC
-                               |  X86_CPUID_FEATURE_ECX_POPCOUNT
-                               |  X86_CPUID_FEATURE_ECX_MOVBE
-                               |  X86_CPUID_FEATURE_ECX_XSAVE
-                               |  X86_CPUID_FEATURE_ECX_OSXSAVE
                               );
 
         /* Make sure we don't forget to update the masks when enabling 
@@ -1150,10 +1142,6 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
                                |  X86_CPUID_FEATURE_ECX_PDCM
                                |  X86_CPUID_FEATURE_ECX_DCA
                                |  X86_CPUID_FEATURE_ECX_X2APIC
-                               |  X86_CPUID_FEATURE_ECX_POPCOUNT
-                               |  X86_CPUID_FEATURE_ECX_MOVBE
-                               |  X86_CPUID_FEATURE_ECX_XSAVE
-                               |  X86_CPUID_FEATURE_ECX_OSXSAVE
                               )));
         /* do the compare */
         if (memcmp(au32CpuIdSaved, au32CpuId, sizeof(au32CpuIdSaved)))
