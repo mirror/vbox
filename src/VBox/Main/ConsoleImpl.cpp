@@ -6665,7 +6665,7 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
                 alock.leave();
 
                 /* Load saved state? */
-                if (!!task->mSavedStateFile)
+                if (!task->mSavedStateFile.isEmpty())
                 {
                     LogFlowFunc (("Restoring saved state from '%s'...\n",
                                   task->mSavedStateFile.raw()));

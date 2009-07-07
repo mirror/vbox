@@ -595,7 +595,6 @@ protected:
 
 // work around error C2593 of the stupid MSVC 7.x ambiguity resolver
 WORKAROUND_MSVC7_ERROR_C2593_FOR_BOOL_OP (Bstr)
-WORKAROUND_MSVC7_ERROR_C2593_FOR_BOOL_OP (Utf8Str)
 
 ////////////////////////////////////////////////////////////////////////////////
 
