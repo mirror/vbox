@@ -109,6 +109,11 @@ NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0MemObjProtect
 ;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0MemObjIsMapping    - not necessary
 ;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0MemObjGetPagePhysAddr - not necessary
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0MemObjFree
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0MemUserCopyFrom
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0MemUserCopyTo
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0MemUserIsValidAddr - not necessary
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0MemKernelIsValidAdd - not necessary
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0MemAreKrnlAndUsrDifferent - not necessary
 ;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTProcSelf             - not necessary
 ;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0ProcHandleSelf     - not necessary
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTSemFastMutexCreate

@@ -84,6 +84,11 @@ EXPORTS
     RTR0MemObjIsMapping
     RTR0MemObjGetPagePhysAddr
     RTR0MemObjFree
+    RTR0MemUserCopyFrom
+    RTR0MemUserCopyTo
+    RTR0MemUserIsValidAddr
+    RTR0MemKernelIsValidAddr
+    RTR0MemAreKrnlAndUsrDifferent
     RTProcSelf
     ; broken - RTSemMutexCreate
     ; broken - RTSemMutexRequest

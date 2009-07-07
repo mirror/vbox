@@ -85,6 +85,7 @@ OBJS   = \
 	r0drv/linux/alloc-r0drv-linux.o \
 	r0drv/linux/initterm-r0drv-linux.o \
 	r0drv/linux/memobj-r0drv-linux.o \
+	r0drv/linux/memuserkernel-r0drv-linux.o \
 	r0drv/linux/mp-r0drv-linux.o \
 	r0drv/linux/mpnotification-r0drv-linux.o \
 	r0drv/linux/process-r0drv-linux.o \
