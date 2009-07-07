@@ -74,7 +74,7 @@ RTR0DECL(bool) RTR0MemKernelIsValidAddr(void *pv)
     return (uintptr_t)pv >= PAGE_OFFSET;
 # endif
 
-#elif RT_ARCH_AMD64
+#elif defined(RT_ARCH_AMD64)
 # ifdef KERNEL_IMAGE_START
     return (uintptr_t)pv >= KERNEL_IMAGE_START;
 # else
