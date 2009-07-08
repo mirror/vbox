@@ -402,7 +402,7 @@ HRESULT VFSExplorer::updateS3(TaskVFSExplorer *aTask)
 
         RTS3SetProgressCallback(hS3, VFSExplorer::TaskVFSExplorer::uploadProgress, &aTask);
         /* Do we need the list of buckets or keys? */
-        if (!m->strBucket.length())
+        if (m->strBucket.isEmpty())
         {
             PCRTS3BUCKETENTRY pBuckets = NULL;
             vrc = RTS3GetBuckets(hS3, &pBuckets);

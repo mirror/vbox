@@ -96,11 +96,14 @@ int DHCPServerRunner::start()
 
     for (unsigned i = 0; i < DHCPCFG_NOTOPT_MAXVAL; i++)
     {
-        if (mOptions[i].length())
+        if (!mOptions[i].isNull())
         {
             const ARGDEF * pArgDef = getArgDef((DHCPCFG)i);
-            args[index++] = pArgDef->Name;      // e.g. "--network"
-            args[index++] = mOptions[i].raw();  // value
+            args[index++] = pArgDef->Name;
+            if (!mOptions[i].isEmpty())
+            {
+                args[index++] = mOptions[i].raw();
+            }
         }
     }
 

@@ -411,7 +411,7 @@ void Snapshot::updateSavedStatePaths (const char *aOldPath, const char *aNewPath
     LogFlowThisFunc (("Snap[%ls].statePath={%s}\n", mData.mName.raw(), path.raw()));
 
     /* state file may be NULL (for offline snapshots) */
-    if (    path.length()
+    if (    !path.isEmpty()
          && RTPathStartsWith(path, aOldPath)
        )
     {

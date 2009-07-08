@@ -1369,8 +1369,8 @@ STDMETHODIMP Appliance::Interpret()
             /* VM name */
             /* If the there isn't any name specified create a default one out of
              * the OS type */
-            Utf8Str nameVBox(vsysThis.strName);
-            if (!nameVBox.length())
+            Utf8Str nameVBox = vsysThis.strName;
+            if (nameVBox.isEmpty())
                 nameVBox = strOsTypeVBox;
             searchUniqueVMName(nameVBox);
             pNewDesc->addEntry(VirtualSystemDescriptionType_Name,
@@ -1379,49 +1379,49 @@ STDMETHODIMP Appliance::Interpret()
                                nameVBox);
 
             /* VM Product */
-            if (vsysThis.strProduct.length())
+            if (!vsysThis.strProduct.isEmpty())
                 pNewDesc->addEntry(VirtualSystemDescriptionType_Product,
                                     "",
                                     vsysThis.strProduct,
                                     vsysThis.strProduct);
 
             /* VM Vendor */
-            if (vsysThis.strVendor.length())
+            if (!vsysThis.strVendor.isEmpty())
                 pNewDesc->addEntry(VirtualSystemDescriptionType_Vendor,
                                     "",
                                     vsysThis.strVendor,
                                     vsysThis.strVendor);
 
             /* VM Version */
-            if (vsysThis.strVersion.length())
+            if (!vsysThis.strVersion.isEmpty())
                 pNewDesc->addEntry(VirtualSystemDescriptionType_Version,
                                     "",
                                     vsysThis.strVersion,
                                     vsysThis.strVersion);
 
             /* VM ProductUrl */
-            if (vsysThis.strProductUrl.length())
+            if (!vsysThis.strProductUrl.isEmpty())
                 pNewDesc->addEntry(VirtualSystemDescriptionType_ProductUrl,
                                     "",
                                     vsysThis.strProductUrl,
                                     vsysThis.strProductUrl);
 
             /* VM VendorUrl */
-            if (vsysThis.strVendorUrl.length())
+            if (!vsysThis.strVendorUrl.isEmpty())
                 pNewDesc->addEntry(VirtualSystemDescriptionType_VendorUrl,
                                     "",
                                     vsysThis.strVendorUrl,
                                     vsysThis.strVendorUrl);
 
             /* VM description */
-            if (vsysThis.strDescription.length())
+            if (!vsysThis.strDescription.isEmpty())
                 pNewDesc->addEntry(VirtualSystemDescriptionType_Description,
                                     "",
                                     vsysThis.strDescription,
                                     vsysThis.strDescription);
 
             /* VM license */
-            if (vsysThis.strLicenseText.length())
+            if (!vsysThis.strLicenseText.isEmpty())
                 pNewDesc->addEntry(VirtualSystemDescriptionType_License,
                                     "",
                                     vsysThis.strLicenseText,
@@ -1474,7 +1474,7 @@ STDMETHODIMP Appliance::Interpret()
                                Utf8StrFmt("%RI64", (uint64_t)ullMemSizeVBox));
 
             /* Audio */
-            if (vsysThis.strSoundCardType.length())
+            if (!vsysThis.strSoundCardType.isNull())
                 /* Currently we set the AC97 always.
                    @todo: figure out the hardware which could be possible */
                 pNewDesc->addEntry(VirtualSystemDescriptionType_SoundCard,
@@ -2284,7 +2284,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
 
                         ComPtr<IHardDisk> dstHdVBox;
                         /* If strHref is empty we have to create a new file */
-                        if (!di.strHref.length())
+                        if (di.strHref.isEmpty())
                         {
                             /* Which format to use? */
                             Bstr srcFormat = L"VDI";
@@ -2927,11 +2927,11 @@ int Appliance::writeFS(TaskWriteOVF *pTask)
             std::list<VirtualSystemDescriptionEntry*> llVendor = vsdescThis->findByType(VirtualSystemDescriptionType_Vendor);
             std::list<VirtualSystemDescriptionEntry*> llVendorUrl = vsdescThis->findByType(VirtualSystemDescriptionType_VendorUrl);
             std::list<VirtualSystemDescriptionEntry*> llVersion = vsdescThis->findByType(VirtualSystemDescriptionType_Version);
-            bool fProduct = llProduct.size() && (llProduct.front()->strVbox.length() > 0);
-            bool fProductUrl = llProductUrl.size() && (llProductUrl.front()->strVbox.length() > 0);
-            bool fVendor = llVendor.size() && (llVendor.front()->strVbox.length() > 0);
-            bool fVendorUrl = llVendorUrl.size() && (llVendorUrl.front()->strVbox.length() > 0);
-            bool fVersion = llVersion.size() && (llVersion.front()->strVbox.length() > 0);
+            bool fProduct = llProduct.size() && !llProduct.front()->strVbox.isEmpty();
+            bool fProductUrl = llProductUrl.size() && !llProductUrl.front()->strVbox.isEmpty();
+            bool fVendor = llVendor.size() && !llVendor.front()->strVbox.isEmpty();
+            bool fVendorUrl = llVendorUrl.size() && !llVendorUrl.front()->strVbox.isEmpty();
+            bool fVersion = llVersion.size() && !llVersion.front()->strVbox.isEmpty();
             if (fProduct ||
                 fProductUrl ||
                 fVersion ||
@@ -2971,9 +2971,8 @@ int Appliance::writeFS(TaskWriteOVF *pTask)
 
             // description
             std::list<VirtualSystemDescriptionEntry*> llDescription = vsdescThis->findByType(VirtualSystemDescriptionType_Description);
-            if (    llDescription.size()
-                 && (llDescription.front()->strVbox.length() > 0)
-               )
+            if (llDescription.size() &&
+                !llDescription.front()->strVbox.isEmpty())
             {
                 /*  <Section ovf:required="false" xsi:type="ovf:AnnotationSection_Type">
                         <Info>A human-readable annotation</Info>
@@ -2995,9 +2994,8 @@ int Appliance::writeFS(TaskWriteOVF *pTask)
 
             // license
             std::list<VirtualSystemDescriptionEntry*> llLicense = vsdescThis->findByType(VirtualSystemDescriptionType_License);
-            if (    llLicense.size()
-                 && (llLicense.front()->strVbox.length() > 0)
-               )
+            if (llLicense.size() &&
+                !llLicense.front()->strVbox.isEmpty())
             {
                 /* <EulaSection>
                    <Info ovf:msgid="6">License agreement for the Virtual System.</Info>
@@ -3216,7 +3214,7 @@ int Appliance::writeFS(TaskWriteOVF *pTask)
                                 lAddress = 0;
                                 lBusNumber = 0;
 
-                                if (    !desc.strVbox.length()      // AHCI is the default in VirtualBox
+                                if (    desc.strVbox.isEmpty()      // AHCI is the default in VirtualBox
                                      || (!desc.strVbox.compare("ahci", Utf8Str::CaseInsensitive))
                                    )
                                     strResourceSubType = "AHCI";
@@ -3251,7 +3249,7 @@ int Appliance::writeFS(TaskWriteOVF *pTask)
                                 lAddress = 0;
                                 lBusNumber = 0;
 
-                                if (    !desc.strVbox.length()      // LsiLogic is the default in VirtualBox
+                                if (    desc.strVbox.isEmpty()      // LsiLogic is the default in VirtualBox
                                      || (!desc.strVbox.compare("lsilogic", Utf8Str::CaseInsensitive))
                                    )
                                     strResourceSubType = "lsilogic";
@@ -3427,14 +3425,14 @@ int Appliance::writeFS(TaskWriteOVF *pTask)
                         // about ordering, VMware's ovftool does and fails if the items are not written in
                         // exactly this order, as stupid as it seems.
 
-                        if (strCaption.length())
+                        if (!strCaption.isEmpty())
                         {
                             pItem->createChild("rasd:Caption")->addContent(strCaption);
                             if (pTask->enFormat == TaskWriteOVF::OVF_1_0)
                                 pItem->createChild("rasd:ElementName")->addContent(strCaption);
                         }
 
-                        if (strDescription.length())
+                        if (!strDescription.isEmpty())
                             pItem->createChild("rasd:Description")->addContent(strDescription);
 
                         // <rasd:InstanceID>1</rasd:InstanceID>
@@ -3447,13 +3445,13 @@ int Appliance::writeFS(TaskWriteOVF *pTask)
 
                         // <rasd:ResourceType>3</rasd:ResourceType>
                         pItem->createChild("rasd:ResourceType")->addContent(Utf8StrFmt("%d", type));
-                        if (strResourceSubType.length())
+                        if (!strResourceSubType.isEmpty())
                             pItem->createChild("rasd:ResourceSubType")->addContent(strResourceSubType);
 
-                        if (strHostResource.length())
+                        if (!strHostResource.isEmpty())
                             pItem->createChild("rasd:HostResource")->addContent(strHostResource);
 
-                        if (strAllocationUnits.length())
+                        if (!strAllocationUnits.isEmpty())
                             pItem->createChild("rasd:AllocationUnits")->addContent(strAllocationUnits);
 
                         // <rasd:VirtualQuantity>1</rasd:VirtualQuantity>
@@ -3463,7 +3461,7 @@ int Appliance::writeFS(TaskWriteOVF *pTask)
                         if (lAutomaticAllocation != -1)
                             pItem->createChild("rasd:AutomaticAllocation")->addContent( (lAutomaticAllocation) ? "true" : "false" );
 
-                        if (strConnection.length())
+                        if (!strConnection.isEmpty())
                             pItem->createChild("rasd:Connection")->addContent(strConnection);
 
                         if (lAddress != -1)
@@ -3650,7 +3648,7 @@ int Appliance::writeS3(TaskWriteOVF *pTask)
         tmpPath = tmpPath.substr(bpos); /* The rest of the file path */
     }
     /* If there is no bucket name provided reject the upload */
-    if (!bucket.length())
+    if (bucket.isEmpty())
         return setError(E_INVALIDARG,
                         tr("You doesn't provide a bucket name in the URI"), tmpPath.c_str());
 
