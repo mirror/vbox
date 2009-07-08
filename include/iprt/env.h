@@ -35,7 +35,7 @@
 
 RT_C_DECLS_BEGIN
 
-/** @defgroup grp_rt_env    RTProc - Process Environment Strings
+/** @defgroup grp_rt_env    RTEnv - Process Environment Strings
  * @ingroup grp_rt
  * @{
  */
