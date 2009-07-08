@@ -521,6 +521,25 @@ void PerformanceCollector::unregisterMetricsFor (const ComPtr <IUnknown> &aObjec
     //LogFlowThisFuncLeave();
 }
 
+void PerformanceCollector::suspendSampling()
+{
+    AutoCaller autoCaller (this);
+    if (!SUCCEEDED (autoCaller.rc())) return;
+
+    int rc = RTTimerLRStop(m.sampler);
+    AssertRC(rc);
+}
+
+void PerformanceCollector::resumeSampling()
+{
+    AutoCaller autoCaller (this);
+    if (!SUCCEEDED (autoCaller.rc())) return;
+
+    int rc = RTTimerLRStart(m.sampler, 0);
+    AssertRC(rc);
+}
+
+
 // private methods
 ///////////////////////////////////////////////////////////////////////////////
 

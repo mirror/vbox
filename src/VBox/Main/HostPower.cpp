@@ -54,6 +54,13 @@ void HostPowerService::notify (HostPowerEvent aEvent)
         {
             LogFunc (("SUSPEND\n"));
 
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+            /* Suspend performance sampling to avoid unnecessary callbacks due to jumps in time. */
+            PerformanceCollector *perfcollector = mVirtualBox->performanceCollector();
+
+            if (perfcollector)
+                perfcollector->suspendSampling();
+#endif
             mVirtualBox->getOpenedMachinesAndControls (machines, controls);
 
             /* pause running VMs */
@@ -102,6 +109,14 @@ void HostPowerService::notify (HostPowerEvent aEvent)
             }
 
             LogFunc (("Resumed %d VMs\n", resumed));
+
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+            /* Resume the performance sampling. */
+            PerformanceCollector *perfcollector = mVirtualBox->performanceCollector();
+
+            if (perfcollector)
+                perfcollector->resumeSampling();
+#endif
 
             mConsoles.clear();
 
