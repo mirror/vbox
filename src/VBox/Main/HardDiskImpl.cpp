@@ -3569,7 +3569,7 @@ Utf8Str HardDisk::vdError (int aVRC)
 {
     Utf8Str error;
 
-    if (!mm.vdError.length())
+    if (mm.vdError.isEmpty())
         error = Utf8StrFmt (" (%Rrc)", aVRC);
     else
         error = Utf8StrFmt (".\n%s", mm.vdError.raw());
@@ -3602,7 +3602,7 @@ DECLCALLBACK(void) HardDisk::vdErrorCall(void *pvUser, int rc, RT_SRC_POS_DECL,
     HardDisk *that = static_cast<HardDisk*>(pvUser);
     AssertReturnVoid (that != NULL);
 
-    if (!that->mm.vdError.length())
+    if (that->mm.vdError.isEmpty())
         that->mm.vdError =
             Utf8StrFmt ("%s (%Rrc)", Utf8StrFmtVA (pszFormat, va).raw(), rc);
     else

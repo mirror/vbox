@@ -65,7 +65,7 @@ public:
             : mDevice (aDevice), mUdi (aUdi != NULL ? aUdi : std::string ()),
             mDescription (aDescription != NULL ? aDescription : std::string ()) {}
     };
-
+    
     /** List (resp vector) holding drive information */
     typedef std::vector <DriveInfo> DriveInfoList;
 
@@ -143,7 +143,7 @@ public:
             : mDevice (aDevice), mSysfsPath (aSysfsPath) {}
         USBDeviceInfo () {}
     };
-
+    
     /** List (resp vector) holding drive information */
     typedef std::vector <USBDeviceInfo> DeviceInfoList;
 

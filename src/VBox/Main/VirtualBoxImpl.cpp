@@ -3480,20 +3480,19 @@ HRESULT VirtualBox::registerHardDisk(HardDisk *aHardDisk,
 
     AutoReadLock hardDiskLock (aHardDisk);
 
-    Utf8Str strConflict;
-    HRESULT rc = checkMediaForConflicts2(aHardDisk->id(),
-                                         aHardDisk->locationFull(),
-                                         strConflict);
+    Utf8Str conflict;
+    HRESULT rc = checkMediaForConflicts2 (aHardDisk->id(),
+                                          aHardDisk->locationFull(),
+                                          conflict);
     CheckComRCReturnRC (rc);
 
-    if (strConflict.length())
+    if (!conflict.isNull())
     {
-        return setError(E_INVALIDARG,
-                        tr("Cannot register the hard disk '%ls' with UUID {%RTuuid} because a %s already exists in the media registry ('%ls')"),
-                        aHardDisk->locationFull().raw(),
-                        aHardDisk->id().raw(),
-                        strConflict.raw(),
-                        mData.mCfgFile.mName.raw());
+        return setError (E_INVALIDARG,
+            tr ("Cannot register the hard disk '%ls' with UUID {%RTuuid} "
+                "because a %s already exists in the media registry ('%ls')"),
+            aHardDisk->locationFull().raw(), aHardDisk->id().raw(),
+            conflict.raw(), mData.mCfgFile.mName.raw());
     }
 
     if (aHardDisk->parent().isNull())
@@ -3598,20 +3597,18 @@ HRESULT VirtualBox::registerDVDImage (DVDImage *aImage,
 
     AutoReadLock imageLock (aImage);
 
-    Utf8Str strConflict;
-    HRESULT rc = checkMediaForConflicts2(aImage->id(),
-                                         aImage->locationFull(),
-                                         strConflict);
+    Utf8Str conflict;
+    HRESULT rc = checkMediaForConflicts2 (aImage->id(), aImage->locationFull(),
+                                          conflict);
     CheckComRCReturnRC (rc);
 
-    if (strConflict.length())
+    if (!conflict.isNull())
     {
-        return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Cannot register the CD/DVD image '%ls' with UUID {%RTuuid} because a %s already exists in the media registry ('%ls')"),
-                        aImage->locationFull().raw(),
-                        aImage->id().raw(),
-                        strConflict.raw(),
-                        mData.mCfgFile.mName.raw());
+        return setError (VBOX_E_INVALID_OBJECT_STATE,
+            tr ("Cannot register the CD/DVD image '%ls' with UUID {%RTuuid} "
+                "because a %s already exists in the media registry ('%ls')"),
+            aImage->locationFull().raw(), aImage->id().raw(),
+            conflict.raw(), mData.mCfgFile.mName.raw());
     }
 
     /* add to the collection */
@@ -3701,20 +3698,18 @@ HRESULT VirtualBox::registerFloppyImage(FloppyImage *aImage,
 
     AutoReadLock imageLock (aImage);
 
-    Utf8Str strConflict;
-    HRESULT rc = checkMediaForConflicts2(aImage->id(),
-                                         aImage->locationFull(),
-                                         strConflict);
+    Utf8Str conflict;
+    HRESULT rc = checkMediaForConflicts2 (aImage->id(), aImage->locationFull(),
+                                          conflict);
     CheckComRCReturnRC (rc);
 
-    if (strConflict.length())
+    if (!conflict.isNull())
     {
-        return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Cannot register the floppy image '%ls' with UUID {%RTuuid} because a %s already exists in the media registry ('%ls')"),
-                        aImage->locationFull().raw(),
-                        aImage->id().raw(),
-                        strConflict.raw(),
-                        mData.mCfgFile.mName.raw());
+        return setError (VBOX_E_INVALID_OBJECT_STATE,
+            tr ("Cannot register the floppy image '%ls' with UUID {%RTuuid} "
+                "because a %s already exists in the media registry ('%ls')"),
+            aImage->locationFull().raw(), aImage->id().raw(),
+            conflict.raw(), mData.mCfgFile.mName.raw());
     }
 
     /* add to the collection */
@@ -3941,7 +3936,7 @@ HRESULT VirtualBox::loadSettingsTree (settings::XmlTreeBackend &aTree,
         if (aFormatVersion != NULL)
         {
             *aFormatVersion = aTree.oldVersion();
-            if (!aFormatVersion->length())
+            if (aFormatVersion->isNull())
                 *aFormatVersion = VBOX_XML_VERSION_FULL;
         }
     }
