@@ -84,11 +84,9 @@ packspu_UnmapBufferARB( GLenum target )
 
     /* send new buffer contents to server */
     crPackBufferDataARB( target, bufObj->size, bufObj->pointer, bufObj->usage );
-
-    /* free the buffer / unmap it */
-    crFree(bufObj->pointer);
 #endif
 
+    CRASSERT(GL_TRUE == ctx->clientState->bufferobject.retainBufferData);
     crStateUnmapBufferARB( target );
 
     return GL_TRUE;
