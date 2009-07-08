@@ -188,6 +188,9 @@ public:
     void unregisterBaseMetricsFor (const ComPtr <IUnknown> &object);
     void unregisterMetricsFor (const ComPtr <IUnknown> &object);
 
+    void suspendSampling();
+    void resumeSampling();
+
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
 
