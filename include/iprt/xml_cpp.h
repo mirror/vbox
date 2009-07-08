@@ -93,7 +93,7 @@ public:
 private:
     Error() {};     // hide the default constructor to make sure the extended one above is always used
 
-    ministring m_s;
+    iprt::MiniString m_s;
 };
 
 class RT_DECL_CLASS LogicError : public Error

@@ -1084,7 +1084,7 @@ XmlParserBase::~XmlParserBase()
 struct XmlFileParser::Data
 {
     xmlParserCtxtPtr ctxt;
-    ministring strXmlFilename;
+    iprt::MiniString strXmlFilename;
 
     Data()
     {
@@ -1114,7 +1114,7 @@ XmlFileParser::~XmlFileParser()
 struct IOContext
 {
     File file;
-    ministring error;
+    iprt::MiniString error;
 
     IOContext(const char *pcszFilename, File::Mode mode)
         : file(mode, pcszFilename)
