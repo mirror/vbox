@@ -516,7 +516,7 @@
  *
  *          Do NOT use this for the actual throwing of exceptions!
  */
-#if defined(RT_EXCEPTIONS_ENABLED)
+#ifdef RT_EXCEPTIONS_ENABLED
 # ifdef _MSC_VER
 #  if _MSC_VER >= 1400
 #   define RT_THROW(type)
