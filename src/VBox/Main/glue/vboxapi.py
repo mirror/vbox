@@ -396,6 +396,7 @@ class PlatformWEBSERVICE:
 
     def getVirtualBox(self):
         self.vbox = self.wsmgr.logon(self.user, self.password)
+        return self.vbox
 
     def getConstants(self):
         return None
