@@ -323,18 +323,18 @@ inline bool operator!=(BSTR l, const Bstr &r) { return r.operator!= (l); }
  *    of COM methods using the #asOutParam() operation and correctly free them
  *    afterwards.
  */
-class Utf8Str : public ministring
+class Utf8Str : public iprt::MiniString
 {
 public:
 
     Utf8Str() {}
 
     Utf8Str(const Utf8Str &that)
-        : ministring(that)
+        : MiniString(that)
     {}
 
     Utf8Str(const char *that)
-        : ministring(that)
+        : MiniString(that)
     {}
 
     Utf8Str(const Bstr &that)
@@ -349,13 +349,13 @@ public:
 
     Utf8Str& operator=(const Utf8Str &that)
     {
-        ministring::operator=(that);
+        MiniString::operator=(that);
         return *this;
     }
 
     Utf8Str& operator=(const char *that)
     {
-        ministring::operator=(that);
+        MiniString::operator=(that);
         return *this;
     }
 

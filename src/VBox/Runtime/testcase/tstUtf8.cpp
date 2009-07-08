@@ -948,11 +948,11 @@ void testMinistring(RTTEST hTest)
             RTTestFailed(hTest, "%d: FAILED %s, got \"%d\"", __LINE__, #expr, expr); \
     } while (0)
 
-    ministring empty;
+    iprt::MiniString empty;
     CHECK( (empty.length() == 0) );
     CHECK( (empty.capacity() == 0) );
 
-    ministring sixbytes("12345");
+    iprt::MiniString sixbytes("12345");
     CHECK( (sixbytes.length() == 5) );
     CHECK( (sixbytes.capacity() == 6) );
 
@@ -969,20 +969,20 @@ void testMinistring(RTTEST hTest)
     CHECK( (sixbytes.length() == 6) );
     CHECK( (sixbytes.capacity() == 7) );
 
-    ministring morebytes("tobereplaced");
+    iprt::MiniString morebytes("tobereplaced");
     morebytes = "newstring ";
     morebytes.append(sixbytes);
 
     CHECK_DUMP( (morebytes == "newstring 123456"), morebytes.c_str() );
 
-    ministring third(morebytes);
+    iprt::MiniString third(morebytes);
     third.reserve(100 * 1024);      // 100 KB
     CHECK_DUMP( (third == "newstring 123456"), morebytes.c_str() );
     CHECK( (third.capacity() == 100 * 1024) );
     CHECK( (third.length() == morebytes.length()) );        // must not have changed
 
-    ministring copy1(morebytes);
-    ministring copy2 = morebytes;
+    iprt::MiniString copy1(morebytes);
+    iprt::MiniString copy2 = morebytes;
     CHECK( (copy1 == copy2) );
 
     copy1 = NULL;
@@ -991,9 +991,9 @@ void testMinistring(RTTEST hTest)
     copy1 = "";
     CHECK( (copy1.length() == 0) );
 
-    CHECK( (ministring("abc") < ministring("def")) );
-    CHECK( (ministring("abc") != ministring("def")) );
-    CHECK_DUMP_I( (ministring("def") > ministring("abc")) );
+    CHECK( (iprt::MiniString("abc") < iprt::MiniString("def")) );
+    CHECK( (iprt::MiniString("abc") != iprt::MiniString("def")) );
+    CHECK_DUMP_I( (iprt::MiniString("def") > iprt::MiniString("abc")) );
 
     copy2.setNull();
     for (int i = 0;

@@ -36,8 +36,11 @@
 
 #include <new>
 
+namespace iprt
+{
+
 /**
- *  "ministring" is a small C++ string class that does not depend on anything
+ *  "MiniString" is a small C++ string class that does not depend on anything
  *  else except IPRT memory management functions. This is used as the base of
  *  both the Utf8Str class that COM uses as well as C++ code in IPRT that
  *  prefers to have a string class, like in xml.cpp.
@@ -45,19 +48,19 @@
  *  Semantics are like in std::string, except it can do a lot less.
  *
  *  Much of the code in here used to be in com::Utf8Str so that com::Utf8Str
- *  can now derive from ministring and only contain code that is COM-specific,
- *  such as com::Bstr conversions. Compared to the old Utf8Str though, ministring
+ *  can now derive from MiniString and only contain code that is COM-specific,
+ *  such as com::Bstr conversions. Compared to the old Utf8Str though, MiniString
  *  always knows the length of its member string and the size of the buffer
  *  so it can use memcpy() instead of strdup().
  */
 
-class RT_DECL_CLASS ministring
+class RT_DECL_CLASS MiniString
 {
 public:
     /**
      * Creates an empty string that has no memory allocated.
      */
-    ministring()
+    MiniString()
         : m_psz(NULL),
           m_cbLength(0),
           m_cbAllocated(0)
@@ -65,21 +68,21 @@ public:
     }
 
     /**
-     * Creates a copy of another ministring. This allocates
+     * Creates a copy of another MiniString. This allocates
      * s.length() + 1 bytes for the new instance.
      * @param s
      */
-    ministring(const ministring &s)
+    MiniString(const MiniString &s)
     {
         copyFrom(s);
     }
 
     /**
-     * Creates a copy of another ministring. This allocates
+     * Creates a copy of another MiniString. This allocates
      * strlen(pcsz) + 1 bytes for the new instance.
      * @param pcsz
      */
-    ministring(const char *pcsz)
+    MiniString(const char *pcsz)
     {
         copyFrom(pcsz);
     }
@@ -87,7 +90,7 @@ public:
     /**
      * Destructor.
      */
-    virtual ~ministring()
+    virtual ~MiniString()
     {
         cleanup();
     }
@@ -148,7 +151,7 @@ public:
      *      1)  Be sure not to modify data beyond the allocated memory! Call
      *          capacity() to find out how large that buffer is.
      *      2)  After any operation that modifies the length of the string,
-     *          you _must_ call ministring::jolt(), or subsequent copy operations
+     *          you _must_ call MiniString::jolt(), or subsequent copy operations
      *          may go nowhere. Better not use mutableRaw() at all.
      */
     char* mutableRaw()
@@ -181,7 +184,7 @@ public:
      * @param pcsz
      * @return
      */
-    ministring& operator=(const char *pcsz)
+    MiniString& operator=(const char *pcsz)
     {
         if (m_psz != pcsz)
         {
@@ -196,7 +199,7 @@ public:
      * @param s
      * @return
      */
-    ministring& operator=(const ministring &s)
+    MiniString& operator=(const MiniString &s)
     {
         if (this != &s)
         {
@@ -210,7 +213,7 @@ public:
      * Appends a copy of @a that to "this".
      * @param that
      */
-    void append(const ministring &that)
+    void append(const MiniString &that)
     {
         size_t cbThis = length();
         size_t cbThat = that.length();
@@ -289,15 +292,15 @@ public:
             return ::RTStrICmp(m_psz, pcsz);
     }
 
-    int compare(const ministring &that, CaseSensitivity cs = CaseSensitive) const
+    int compare(const MiniString &that, CaseSensitivity cs = CaseSensitive) const
     {
         return compare(that.m_psz, cs);
     }
 
-    bool operator==(const ministring &that) const { return !compare(that); }
-    bool operator!=(const ministring &that) const { return !!compare(that); }
-    bool operator<(const ministring &that) const { return compare(that) < 0; }
-    bool operator>(const ministring &that) const { return compare(that) > 0; }
+    bool operator==(const MiniString &that) const { return !compare(that); }
+    bool operator!=(const MiniString &that) const { return !!compare(that); }
+    bool operator<(const MiniString &that) const { return compare(that) < 0; }
+    bool operator>(const MiniString &that) const { return compare(that) > 0; }
 
     bool operator==(const char *that) const { return !compare(that); }
     bool operator!=(const char *that) const { return !!compare(that); }
@@ -334,12 +337,12 @@ protected:
      * when member variables have no defined value, and in assignments
      * after having called cleanup().
      *
-     * This variant copies from another ministring and is fast since
+     * This variant copies from another MiniString and is fast since
      * the length of source string is known.
      *
      * @param s
      */
-    void copyFrom(const ministring &s)
+    void copyFrom(const MiniString &s)
     {
         if ((m_cbLength = s.m_cbLength))
         {
@@ -392,5 +395,7 @@ protected:
     size_t  m_cbLength;                     // strlen(m_psz)
     size_t  m_cbAllocated;                  // size of buffer that m_psz points to; at least m_cbLength + 1
 };
+
+} // namespace iprt
 
 #endif
